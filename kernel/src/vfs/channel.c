@@ -52,7 +52,7 @@ static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node);
 sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
 	sChannel *chan;
 	sVFSNode *node;
-	char *name = vfsn_getId(pid);
+	char *name = vfs_node_getId(pid);
 	if(!name)
 		return NULL;
 	node = vfs_node_create(parent,name);
@@ -154,7 +154,7 @@ s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32
 		/* if it is from a driver or fs, don't enqueue it but pass it directly to
 		 * the corresponding handler */
 		if(vfs_server_accepts(n->parent,id)) {
-			vfsreq_sendMsg(id,n,data,size);
+			vfs_req_sendMsg(id,n,data,size);
 			return 0;
 		}
 

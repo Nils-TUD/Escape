@@ -67,18 +67,18 @@ void log_vfsIsReady(void) {
 	sProc *p = proc_getRunning();
 
 	/* open log-file */
-	assert(vfsn_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
+	assert(vfs_node_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
 	nameCpy = strdup(LOG_FILENAME);
 	assert(nameCpy != NULL);
-	logNode = vfs_file_create(KERNEL_PID,vfsn_getNode(inodeNo),nameCpy,vfs_file_read,log_write);
+	logNode = vfs_file_create(KERNEL_PID,vfs_node_get(inodeNo),nameCpy,vfs_file_read,log_write);
 	assert(logNode != NULL);
-	logFile = vfs_openFile(KERNEL_PID,VFS_WRITE,vfsn_getNodeNo(logNode),VFS_DEV_NO);
+	logFile = vfs_openFile(KERNEL_PID,VFS_WRITE,vfs_node_getNo(logNode),VFS_DEV_NO);
 	assert(logFile >= 0);
 
 	/* create stdin, stdout and stderr for initloader. out and err should write to the log-file */
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
 	 * create new ones (for the vterm of the shell) */
-	assert(vfsn_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
+	assert(vfs_node_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
 	assert((inFile = vfs_openFile(p->pid,VFS_READ,inodeNo,VFS_DEV_NO)) >= 0);
 	in = proc_getFreeFd();
 	assert(in == 0 && proc_assocFd(in,inFile) == 0);

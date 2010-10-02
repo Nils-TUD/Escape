@@ -120,10 +120,10 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* vfs */
 	vid_printf("Initializing VFS...");
 	vfs_init();
-	vfsinfo_init();
-	vfsreq_init();
+	vfs_info_init();
+	vfs_req_init();
 	vfsdrv_init();
-	vfsr_init();
+	vfs_real_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* processes */

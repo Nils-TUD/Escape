@@ -757,7 +757,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 	u32 temp,frame;
 	u8 mapFlags;
 
-	file = vfsr_openInode(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
+	file = vfs_real_openInode(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
 	if(file < 0) {
 		err = file;
 		goto error;

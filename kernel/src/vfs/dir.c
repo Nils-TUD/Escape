@@ -93,7 +93,7 @@ s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 
 	assert(buffer != NULL);
 
 	/* we need the number of bytes first */
-	n = vfsn_getFirstChild(node);
+	n = vfs_node_getFirstChild(node);
 	byteCount = 0;
 	fsByteCount = 0;
 	while(n != NULL) {
@@ -110,7 +110,7 @@ s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 
 		u32 c,curSize = bufSize;
 		fsBytes = (u8*)kheap_alloc(bufSize);
 		if(fsBytes != NULL) {
-			tFileNo rfile = vfsr_openFile(pid,VFS_READ,"/");
+			tFileNo rfile = vfs_real_openPath(pid,VFS_READ,"/");
 			if(rfile >= 0) {
 				while((c = vfs_readFile(pid,rfile,fsBytes + fsByteCount,bufSize)) > 0) {
 					fsByteCount += c;
@@ -140,14 +140,14 @@ s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 
 			u16 len;
 			sVFSDirEntry *dirEntry = (sVFSDirEntry*)(fsBytesDup + fsByteCount);
 			fsBytes = fsBytesDup;
-			n = vfsn_getFirstChild(node);
+			n = vfs_node_getFirstChild(node);
 			while(n != NULL) {
 				if(node->parent == NULL && (strcmp(n->name,".") == 0 || strcmp(n->name,"..") == 0)) {
 					n = n->next;
 					continue;
 				}
 				len = strlen(n->name);
-				dirEntry->nodeNo = vfsn_getNodeNo(n);
+				dirEntry->nodeNo = vfs_node_getNo(n);
 				dirEntry->nameLen = len;
 				dirEntry->recLen = sizeof(sVFSDirEntry) + len;
 				memcpy(dirEntry + 1,n->name,len);

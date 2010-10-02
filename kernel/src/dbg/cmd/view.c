@@ -192,7 +192,7 @@ static void view_threads(void) {
 	thread_dbg_printAll();
 }
 static void view_vfstree(void) {
-	vfsn_dbg_printTree();
+	vfs_node_dbg_printTree();
 }
 static void view_gft(void) {
 	vfs_dbg_printGFT();
@@ -255,7 +255,7 @@ static void view_multiboot(void) {
 	mboot_dbg_print();
 }
 static void view_requests(void) {
-	vfsreq_dbg_printAll();
+	vfs_req_dbg_printAll();
 }
 static void view_locks(void) {
 	lock_dbg_print();

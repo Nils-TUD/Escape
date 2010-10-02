@@ -105,16 +105,16 @@ void sysc_pipe(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* resolve pipe-path */
-	err = vfsn_resolvePath("/system/pipe",&nodeNo,&created,VFS_READ);
+	err = vfs_node_resolvePath("/system/pipe",&nodeNo,&created,VFS_READ);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 
 	/* create pipe */
-	pipeNode = vfs_pipe_create(p->pid,vfsn_getNode(nodeNo));
+	pipeNode = vfs_pipe_create(p->pid,vfs_node_get(nodeNo));
 	if(pipeNode == NULL)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 
-	pipeNodeNo = vfsn_getNodeNo(pipeNode);
+	pipeNodeNo = vfs_node_getNo(pipeNode);
 	/* get free fd for reading */
 	*readFd = proc_getFreeFd();
 	if(*readFd < 0) {
@@ -403,7 +403,7 @@ void sysc_fstat(sIntrptStackFrame *stack) {
 void sysc_sync(sIntrptStackFrame *stack) {
 	s32 res;
 	sProc *p = proc_getRunning();
-	res = vfsr_sync(p->pid);
+	res = vfs_real_sync(p->pid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -471,10 +471,10 @@ void sysc_mount(sIntrptStackFrame *stack) {
 	u16 type = (u16)SYSC_ARG3(stack);
 	if(!sysc_isStringReadable(device) || !sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(vfsn_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
+	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
-	res = vfsr_mount(p->pid,device,path,type);
+	res = vfs_real_mount(p->pid,device,path,type);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -487,10 +487,10 @@ void sysc_unmount(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(vfsn_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
+	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
-	res = vfsr_unmount(p->pid,path);
+	res = vfs_real_unmount(p->pid,path);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

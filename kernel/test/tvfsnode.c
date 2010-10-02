@@ -26,9 +26,9 @@
 #include <errors.h>
 
 static void test_vfsn(void);
-static void test_vfsn_resolvePath(void);
-static bool test_vfsn_resolvePathCpy(const char *a,const char *b);
-static void test_vfsn_getPath(void);
+static void test_vfs_node_resolvePath(void);
+static bool test_vfs_node_resolvePathCpy(const char *a,const char *b);
+static void test_vfs_node_getPath(void);
 
 /* our test-module */
 sTestModule tModVFSn = {
@@ -37,56 +37,56 @@ sTestModule tModVFSn = {
 };
 
 static void test_vfsn(void) {
-	test_vfsn_resolvePath();
-	test_vfsn_getPath();
+	test_vfs_node_resolvePath();
+	test_vfs_node_getPath();
 }
 
-static void test_vfsn_resolvePath(void) {
-	test_caseStart("Testing vfsn_resolvePath()");
+static void test_vfs_node_resolvePath(void) {
+	test_caseStart("Testing vfs_node_resolvePath()");
 
-	if(!test_vfsn_resolvePathCpy("/system/..","")) return;
-	if(!test_vfsn_resolvePathCpy("/system//../..","")) return;
-	if(!test_vfsn_resolvePathCpy("/system//./.","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system/","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system//","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system///","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system/processes/..","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system/processes/.","processes")) return;
-	if(!test_vfsn_resolvePathCpy("/system/processes/./","processes")) return;
-	if(!test_vfsn_resolvePathCpy("/system/./.","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system/////processes/./././.","processes")) return;
-	if(!test_vfsn_resolvePathCpy("/system/./processes/../processes/./","processes")) return;
-	if(!test_vfsn_resolvePathCpy("/system//..//..//..","")) return;
+	if(!test_vfs_node_resolvePathCpy("/system/..","")) return;
+	if(!test_vfs_node_resolvePathCpy("/system//../..","")) return;
+	if(!test_vfs_node_resolvePathCpy("/system//./.","system")) return;
+	if(!test_vfs_node_resolvePathCpy("/system/","system")) return;
+	if(!test_vfs_node_resolvePathCpy("/system//","system")) return;
+	if(!test_vfs_node_resolvePathCpy("/system///","system")) return;
+	if(!test_vfs_node_resolvePathCpy("/system/processes/..","system")) return;
+	if(!test_vfs_node_resolvePathCpy("/system/processes/.","processes")) return;
+	if(!test_vfs_node_resolvePathCpy("/system/processes/./","processes")) return;
+	if(!test_vfs_node_resolvePathCpy("/system/./.","system")) return;
+	if(!test_vfs_node_resolvePathCpy("/system/////processes/./././.","processes")) return;
+	if(!test_vfs_node_resolvePathCpy("/system/./processes/../processes/./","processes")) return;
+	if(!test_vfs_node_resolvePathCpy("/system//..//..//..","")) return;
 
 	test_caseSucceded();
 }
 
-static bool test_vfsn_resolvePathCpy(const char *a,const char *b) {
+static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
 	s32 err;
 	tInodeNo no;
 	sVFSNode *node;
-	if((err = vfsn_resolvePath(a,&no,NULL,VFS_READ)) != 0) {
+	if((err = vfs_node_resolvePath(a,&no,NULL,VFS_READ)) != 0) {
 		test_caseFailed("Unable to resolve the path %s",a);
 		return false;
 	}
 
-	node = vfsn_getNode(no);
+	node = vfs_node_get(no);
 	return test_assertStr(node->name,(char*)b);
 }
 
-static void test_vfsn_getPath(void) {
+static void test_vfs_node_getPath(void) {
 	tInodeNo no;
 
-	test_caseStart("Testing vfsn_getPath()");
+	test_caseStart("Testing vfs_node_getPath()");
 
-	vfsn_resolvePath("/system",&no,NULL,VFS_READ);
-	test_assertStr(vfsn_getPath(no),(char*)"/system");
+	vfs_node_resolvePath("/system",&no,NULL,VFS_READ);
+	test_assertStr(vfs_node_getPath(no),(char*)"/system");
 
-	vfsn_resolvePath("/system/processes",&no,NULL,VFS_READ);
-	test_assertStr(vfsn_getPath(no),(char*)"/system/processes");
+	vfs_node_resolvePath("/system/processes",&no,NULL,VFS_READ);
+	test_assertStr(vfs_node_getPath(no),(char*)"/system/processes");
 
-	vfsn_resolvePath("/system/processes/0",&no,NULL,VFS_READ);
-	test_assertStr(vfsn_getPath(no),(char*)"/system/processes/0");
+	vfs_node_resolvePath("/system/processes/0",&no,NULL,VFS_READ);
+	test_assertStr(vfs_node_getPath(no),(char*)"/system/processes/0");
 
 	test_caseSucceded();
 }

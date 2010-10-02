@@ -41,9 +41,9 @@ static void vfsdrv_writeReqHandler(sVFSNode *node,const u8 *data,u32 size);
 static sMsg msg;
 
 void vfsdrv_init(void) {
-	vfsreq_setHandler(MSG_DRV_OPEN_RESP,vfsdrv_openReqHandler);
-	vfsreq_setHandler(MSG_DRV_READ_RESP,vfsdrv_readReqHandler);
-	vfsreq_setHandler(MSG_DRV_WRITE_RESP,vfsdrv_writeReqHandler);
+	vfs_req_setHandler(MSG_DRV_OPEN_RESP,vfsdrv_openReqHandler);
+	vfs_req_setHandler(MSG_DRV_READ_RESP,vfsdrv_readReqHandler);
+	vfs_req_setHandler(MSG_DRV_WRITE_RESP,vfsdrv_writeReqHandler);
 }
 
 s32 vfsdrv_open(tPid pid,tFileNo file,sVFSNode *node,u32 flags) {
@@ -55,20 +55,20 @@ s32 vfsdrv_open(tPid pid,tFileNo file,sVFSNode *node,u32 flags) {
 		return 0;
 
 	/* get request; maybe we have to wait */
-	req = vfsreq_getRequest(node,NULL,0);
+	req = vfs_req_getRequest(node,NULL,0);
 
 	/* send msg to driver */
 	msg.args.arg1 = flags;
 	res = vfs_sendMsg(pid,file,MSG_DRV_OPEN,(u8*)&msg,sizeof(msg.args));
 	if(res < 0) {
-		vfsreq_remRequest(req);
+		vfs_req_remRequest(req);
 		return res;
 	}
 
 	/* wait for response */
 	vfsdrv_wait(req);
 	res = (s32)req->count;
-	vfsreq_remRequest(req);
+	vfs_req_remRequest(req);
 	return res;
 }
 
@@ -97,14 +97,14 @@ s32 vfsdrv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	}
 
 	/* get request; maybe we have to wait */
-	req = vfsreq_getRequest(node,NULL,count);
+	req = vfs_req_getRequest(node,NULL,count);
 
 	/* send msg to driver */
 	msg.args.arg1 = offset;
 	msg.args.arg2 = count;
 	res = vfs_sendMsg(pid,file,MSG_DRV_READ,(u8*)&msg,sizeof(msg.args));
 	if(res < 0) {
-		vfsreq_remRequest(req);
+		vfs_req_remRequest(req);
 		return res;
 	}
 
@@ -114,7 +114,7 @@ s32 vfsdrv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	data = req->data;
 	/* Better release the request before the memcpy so that it can be reused. Because memcpy might
 	 * cause a page-fault which leads to swapping -> thread-switch. */
-	vfsreq_remRequest(req);
+	vfs_req_remRequest(req);
 	if(data) {
 		memcpy(buffer,data,res);
 		kheap_free(data);
@@ -131,27 +131,27 @@ s32 vfsdrv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 off
 		return ERR_UNSUPPORTED_OP;
 
 	/* get request; maybe we have to wait */
-	req = vfsreq_getRequest(node,NULL,0);
+	req = vfs_req_getRequest(node,NULL,0);
 
 	/* send msg to driver */
 	msg.args.arg1 = offset;
 	msg.args.arg2 = count;
 	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,(u8*)&msg,sizeof(msg.args));
 	if(res < 0) {
-		vfsreq_remRequest(req);
+		vfs_req_remRequest(req);
 		return res;
 	}
 	/* now send data */
 	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,(u8*)buffer,count);
 	if(res < 0) {
-		vfsreq_remRequest(req);
+		vfs_req_remRequest(req);
 		return res;
 	}
 
 	/* wait for response */
 	vfsdrv_wait(req);
 	res = req->count;
-	vfsreq_remRequest(req);
+	vfs_req_remRequest(req);
 	return res;
 }
 
@@ -167,7 +167,7 @@ static void vfsdrv_wait(sRequest *req) {
 	/* repeat until it succeded or the driver died */
 	volatile sRequest *r = req;
 	do
-		vfsreq_waitForReply(req,false);
+		vfs_req_waitForReply(req,false);
 	while((s32)r->count == ERR_INTERRUPTED);
 }
 
@@ -178,7 +178,7 @@ static void vfsdrv_openReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 		return;
 
 	/* find the request for the node */
-	req = vfsreq_getRequestByNode(node);
+	req = vfs_req_getRequestByNode(node);
 	if(req != NULL) {
 		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
@@ -190,7 +190,7 @@ static void vfsdrv_openReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 
 static void vfsdrv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 	/* find the request for the node */
-	sRequest *req = vfsreq_getRequestByNode(node);
+	sRequest *req = vfs_req_getRequestByNode(node);
 	if(req != NULL) {
 		sVFSNode *drv = node->parent;
 		/* the first one is the message */
@@ -239,7 +239,7 @@ static void vfsdrv_writeReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 		return;
 
 	/* find the request for the node */
-	req = vfsreq_getRequestByNode(node);
+	req = vfs_req_getRequestByNode(node);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;

@@ -64,7 +64,7 @@ void swap_start(void) {
 	tInodeNo swapIno;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
 	/* if there is no valid swap-dev specified, don't even try... */
-	if(dev == NULL || vfsn_resolvePath(dev,&swapIno,NULL,0) < 0) {
+	if(dev == NULL || vfs_node_resolvePath(dev,&swapIno,NULL,0) < 0) {
 		while(1) {
 			/* wait for ever */
 			thread_setBlocked(t->tid);

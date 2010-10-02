@@ -88,7 +88,7 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 	sFileInfo finfo;
 	sBinDesc bindesc;
 
-	file = vfsr_openFile(p->pid,VFS_READ,path);
+	file = vfs_real_openPath(p->pid,VFS_READ,path);
 	if(file < 0)
 		return ERR_INVALID_ELF_BIN;
 

@@ -24,7 +24,6 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/pipe.h>
-#include <sys/vfs/rw.h>
 #include <string.h>
 #include <errors.h>
 
@@ -47,7 +46,7 @@ static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node);
 sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent) {
 	sPipe *pipe;
 	sVFSNode *node;
-	char *name = vfsn_getId(pid);
+	char *name = vfs_node_getId(pid);
 	if(!name)
 		return NULL;
 	node = vfs_node_create(parent,name);

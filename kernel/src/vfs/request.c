@@ -41,7 +41,7 @@
 static sRequest requests[REQUEST_COUNT];
 static fReqHandler handler[HANDLER_COUNT] = {NULL};
 
-void vfsreq_init(void) {
+void vfs_req_init(void) {
 	u32 i;
 	sRequest *req;
 
@@ -57,20 +57,20 @@ void vfsreq_init(void) {
 	}
 }
 
-bool vfsreq_setHandler(tMsgId id,fReqHandler f) {
+bool vfs_req_setHandler(tMsgId id,fReqHandler f) {
 	if(id >= HANDLER_COUNT || handler[id] != NULL)
 		return false;
 	handler[id] = f;
 	return true;
 }
 
-void vfsreq_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size) {
+void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size) {
 	assert(node != NULL);
 	if(id < HANDLER_COUNT && handler[id])
 		handler[id](node,data,size);
 }
 
-sRequest *vfsreq_getRequest(sVFSNode *node,void *buffer,u32 size) {
+sRequest *vfs_req_getRequest(sVFSNode *node,void *buffer,u32 size) {
 	u32 i;
 	sThread *t = thread_getRunning();
 	sRequest *req = NULL;
@@ -106,7 +106,7 @@ retry:
 	return req;
 }
 
-void vfsreq_waitForReply(sRequest *req,bool allowSigs) {
+void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 	/* wait */
 	ev_wait(req->tid,EVI_REQ_REPLY,req->node);
 	if(allowSigs)
@@ -121,7 +121,7 @@ void vfsreq_waitForReply(sRequest *req,bool allowSigs) {
 	}
 }
 
-sRequest *vfsreq_getRequestByNode(sVFSNode *node) {
+sRequest *vfs_req_getRequestByNode(sVFSNode *node) {
 	u32 i;
 	sRequest *req = requests;
 	assert(node != NULL);
@@ -129,7 +129,7 @@ sRequest *vfsreq_getRequestByNode(sVFSNode *node) {
 		if(req->node == node) {
 			/* the thread may have been terminated... */
 			if(thread_getById(req->tid) == NULL) {
-				vfsreq_remRequest(req);
+				vfs_req_remRequest(req);
 				return NULL;
 			}
 			return req;
@@ -139,24 +139,24 @@ sRequest *vfsreq_getRequestByNode(sVFSNode *node) {
 	return NULL;
 }
 
-void vfsreq_remRequest(sRequest *r) {
+void vfs_req_remRequest(sRequest *r) {
 	r->node = NULL;
 	ev_wakeup(EVI_REQ_FREE,NULL);
 }
 
 #if DEBUGGING
 
-void vfsreq_dbg_printAll(void) {
+void vfs_req_dbg_printAll(void) {
 	u32 i;
 	vid_printf("Active requests:\n");
 	for(i = 0; i < REQUEST_COUNT; i++) {
 		if(requests[i].node != NULL)
-			vfsreq_dbg_print(requests + i);
+			vfs_req_dbg_print(requests + i);
 	}
 }
 
-void vfsreq_dbg_print(sRequest *r) {
-	vid_printf("\tRequest with %#08x (%s):\n",r->node,vfsn_getPath(vfsn_getNodeNo(r->node)));
+void vfs_req_dbg_print(sRequest *r) {
+	vid_printf("\tRequest with %#08x (%s):\n",r->node,vfs_node_getPath(vfs_node_getNo(r->node)));
 	vid_printf("\t\ttid: %d\n",r->tid);
 	vid_printf("\t\tstate: %d\n",r->state);
 	vid_printf("\t\tval1: %d\n",r->val1);

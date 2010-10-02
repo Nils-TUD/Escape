@@ -240,7 +240,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	path = pathSave;
 
 	/* resolve path; require a path in real fs */
-	res = vfsn_resolvePath(path,&nodeNo,NULL,VFS_READ);
+	res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res != ERR_REAL_PATH) {
 		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -273,7 +273,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 		tFD fd = proc_getFreeFd();
 		if(fd < 0)
 			goto error;
-		file = vfsr_openFile(p->pid,VFS_READ,path);
+		file = vfs_real_openPath(p->pid,VFS_READ,path);
 		if(file < 0)
 			goto error;
 		assert(proc_assocFd(fd,file) == 0);

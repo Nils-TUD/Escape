@@ -29,6 +29,9 @@
 #include <esc/sllist.h>
 #include <errors.h>
 
+#define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
+#define DRV_IS_FS(funcs)			((funcs) == DRV_FS)
+
 typedef struct {
 	/* whether there is data to read or not */
 	bool isEmpty;
@@ -127,7 +130,7 @@ sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {
 	/* search for a slot that needs work */
 	last = srv->lastClient;
 	if(last == NULL)
-		n = vfsn_getFirstChild(node);
+		n = vfs_node_getFirstChild(node);
 	else if(last->next == NULL) {
 		/* if we have checked all clients in this driver, give the other drivers
 		 * a chance (if there are any others) */
@@ -153,7 +156,7 @@ searchBegin:
 	if(last && n == last && vfs_chan_hasWork(n))
 		return n;
 	if(srv->lastClient) {
-		n = vfsn_getFirstChild(node);
+		n = vfs_node_getFirstChild(node);
 		srv->lastClient = NULL;
 		goto searchBegin;
 	}
@@ -163,7 +166,7 @@ searchBegin:
 #if DEBUGGING
 
 void vfs_server_dbg_print(sVFSNode *n) {
-	sVFSNode *chan = vfsn_getFirstChild(n);
+	sVFSNode *chan = vfs_node_getFirstChild(n);
 	vid_printf("\t%s:\n",n->name);
 	while(chan != NULL) {
 		vfs_chan_dbg_print(chan);

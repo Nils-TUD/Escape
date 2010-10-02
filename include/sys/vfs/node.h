@@ -27,7 +27,7 @@
 /**
  * Initializes the nodes
  */
-void vfsn_init(void);
+void vfs_node_init(void);
 
 /**
  * Checks whether the given node-number is valid
@@ -35,7 +35,7 @@ void vfsn_init(void);
  * @param nodeNo the number
  * @return true if so
  */
-bool vfsn_isValidNodeNo(tInodeNo nodeNo);
+bool vfs_node_isValid(tInodeNo nodeNo);
 
 /**
  * Checks whether the given node is a driver-node and belongs to the current process
@@ -43,19 +43,19 @@ bool vfsn_isValidNodeNo(tInodeNo nodeNo);
  * @param nodeNo the node-number
  * @return true if so
  */
-bool vfsn_isOwnDriverNode(tInodeNo nodeNo);
+bool vfs_node_isOwnDriver(tInodeNo nodeNo);
 
 /**
  * @param node the node
  * @return the node-number of the given node
  */
-tInodeNo vfsn_getNodeNo(sVFSNode *node);
+tInodeNo vfs_node_getNo(sVFSNode *node);
 
 /**
  * @param nodeNo the node-number
  * @return the node for given index
  */
-sVFSNode *vfsn_getNode(tInodeNo nodeNo);
+sVFSNode *vfs_node_get(tInodeNo nodeNo);
 
 /**
  * Fetches the first child from given nodes (taking care for links)
@@ -63,7 +63,7 @@ sVFSNode *vfsn_getNode(tInodeNo nodeNo);
  * @param node the node
  * @return the first child
  */
-sVFSNode *vfsn_getFirstChild(sVFSNode *node);
+sVFSNode *vfs_node_getFirstChild(sVFSNode *node);
 
 /**
  * Determines the path for the given node. Note that static memory will be used for that!
@@ -72,7 +72,7 @@ sVFSNode *vfsn_getFirstChild(sVFSNode *node);
  * @param nodeNo the node-number
  * @return the path
  */
-char *vfsn_getPath(tInodeNo nodeNo);
+char *vfs_node_getPath(tInodeNo nodeNo);
 
 /**
  * Retrieves information about the given node
@@ -81,7 +81,7 @@ char *vfsn_getPath(tInodeNo nodeNo);
  * @param info will be filled
  * @return 0 on success
  */
-s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info);
+s32 vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info);
 
 /**
  * Resolves the given path to a VFS-node
@@ -93,7 +93,7 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info);
  * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
  * @return 0 if successfull or the error-code
  */
-s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags);
+s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags);
 
 /**
  * Removes the last '/' from the path, if necessary, and returns a pointer to the last
@@ -103,7 +103,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags);
  * @param len the length of the path (will be updated)
  * @return pointer to the last component
  */
-char *vfsn_basename(char *path,u32 *len);
+char *vfs_node_basename(char *path,u32 *len);
 
 /**
  * Removes the last component of the path
@@ -111,7 +111,7 @@ char *vfsn_basename(char *path,u32 *len);
  * @param path the path
  * @param len the length of the path
  */
-void vfsn_dirname(char *path,u32 len);
+void vfs_node_dirname(char *path,u32 len);
 
 /**
  * Finds the child-node with name <name>
@@ -121,7 +121,7 @@ void vfsn_dirname(char *path,u32 len);
  * @param nameLen the length of the name
  * @return the node or NULL
  */
-sVFSNode *vfsn_findInDir(sVFSNode *node,const char *name,u32 nameLen);
+sVFSNode *vfs_node_findInDir(sVFSNode *node,const char *name,u32 nameLen);
 
 /**
  * Creates and appends a (incomplete) node
@@ -132,58 +132,6 @@ sVFSNode *vfsn_findInDir(sVFSNode *node,const char *name,u32 nameLen);
  * @return the node
  */
 sVFSNode *vfs_node_create(sVFSNode *parent,char *name);
-
-/**
- * Creates an info-node
- *
- * @param pid the owner
- * @param parent the parent-node
- * @param prev the previous node
- * @param name the node-name
- * @param rwHandler the read-handler
- * @param wrHandler the write-handler
- * @param generated wether the content is generated and therefore the size is not available
- * @return the node
- */
-sVFSNode *vfsn_createFile(tPid pid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler,
-		bool generated);
-
-/**
- * Creates a directory-node
- *
- * @param parent the parent-node
- * @param prev the previous node
- * @param name the node-name
- * @return the node
- */
-sVFSNode *vfsn_createDir(sVFSNode *parent,char *name);
-
-/**
- * Creates a link in directory <node> with name <name> to <target>
- *
- * @param node the directory-node
- * @param name the name
- * @param target the target-node
- * @return the created node on success or NULL
- */
-sVFSNode *vfsn_createLink(sVFSNode *node,char *name,sVFSNode *target);
-
-/**
- * Creates a pipe-container
- *
- * @param parent the parent-node
- * @param name the name
- * @return the node
- */
-sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
-
-/**
- * Appends the given node as last child to the parent
- *
- * @param parent the parent
- * @param node the child
- */
-void vfsn_appendChild(sVFSNode *parent,sVFSNode *node);
 
 /**
  * Removes the given node including all child-nodes from the parent-node and free's all
@@ -199,30 +147,19 @@ void vfs_node_destroy(sVFSNode *n);
  * @param pid the process-id
  * @return the name, allocated on the heap or NULL
  */
-char *vfsn_getId(tPid pid);
-
-/**
- * Appends a usage-node to the given node and stores the pointer to the new node
- * at <child>. Can be used for driver-usage and pipe-usages.
- *
- * @param pid the process for which the usage should be created
- * @param n the node to which the new node should be appended
- * @param child will contain the pointer to the new node, if successfull
- * @return the error-code if negative or 0 if successfull
- */
-s32 vfsn_createUse(tPid pid,sVFSNode *n,sVFSNode **child);
+char *vfs_node_getId(tPid pid);
 
 #if DEBUGGING
 
 /**
  * Prints the VFS tree
  */
-void vfsn_dbg_printTree(void);
+void vfs_node_dbg_printTree(void);
 
 /**
  * Prints the given VFS node
  */
-void vfsn_dbg_printNode(sVFSNode *node);
+void vfs_node_dbg_printNode(sVFSNode *node);
 
 #endif
 

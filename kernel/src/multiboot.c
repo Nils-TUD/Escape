@@ -146,7 +146,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		/* wait until the driver is registered */
 		vid_printf("Loading '%s'...\n",argv[0]);
 		/* don't create a pipe- or driver-usage-node here */
-		while(vfsn_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
+		while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
 			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make

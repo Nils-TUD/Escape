@@ -80,7 +80,7 @@ void proc_init(void) {
 	 * and paging refers to the current process's pagedir */
 	p->pagedir = paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* create nodes in vfs */
-	p->threadDir = vfs_createProcess(0,&vfsinfo_procReadHandler);
+	p->threadDir = vfs_createProcess(0,&vfs_info_procReadHandler);
 	if(p->threadDir == NULL)
 		util_panic("Not enough mem for init process");
 
@@ -341,7 +341,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	if(!p)
 		return ERR_NOT_ENOUGH_MEM;
 	/* first create the VFS node (we may not have enough mem) */
-	p->threadDir = vfs_createProcess(newPid,&vfsinfo_procReadHandler);
+	p->threadDir = vfs_createProcess(newPid,&vfs_info_procReadHandler);
 	if(p->threadDir == NULL) {
 		res = ERR_NOT_ENOUGH_MEM;
 		goto errorProc;
@@ -605,7 +605,7 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	/* remove other stuff */
 	env_removeFor(p->pid);
 	proc_removeRegions(p,true);
-	vfsr_removeProc(p->pid);
+	vfs_real_removeProc(p->pid);
 	lock_releaseAll(p->pid);
 	if(p->ioMap != NULL) {
 		kheap_free(p->ioMap);
@@ -994,8 +994,8 @@ void proc_dbg_print(sProc *p) {
 			tDevNo dev;
 			if(vfs_getFileId(p->fileDescs[i],&ino,&dev) == 0) {
 				vid_printf("\t\t%d : %d",i,p->fileDescs[i]);
-				if(dev == VFS_DEV_NO && vfsn_isValidNodeNo(ino))
-					vid_printf(" (%s)",vfsn_getPath(ino));
+				if(dev == VFS_DEV_NO && vfs_node_isValid(ino))
+					vid_printf(" (%s)",vfs_node_getPath(ino));
 				vid_printf("\n");
 			}
 		}

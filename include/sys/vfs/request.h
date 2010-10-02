@@ -44,7 +44,7 @@ typedef void (*fReqHandler)(sVFSNode *node,const u8 *data,u32 size);
 /**
  * Inits the vfs-requests
  */
-void vfsreq_init(void);
+void vfs_req_init(void);
 
 /**
  * Sets the handler for the given message-id
@@ -53,7 +53,7 @@ void vfsreq_init(void);
  * @param f the handler-function
  * @return true if successfull
  */
-bool vfsreq_setHandler(tMsgId id,fReqHandler f);
+bool vfs_req_setHandler(tMsgId id,fReqHandler f);
 
 /**
  * Sends the given message to the appropriate handler
@@ -63,7 +63,7 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f);
  * @param data the message
  * @param size the size of the message
  */
-void vfsreq_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size);
+void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size);
 
 /**
  * Allocates a new request-object with given properties
@@ -73,7 +73,7 @@ void vfsreq_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size);
  * @param size optional, the buffer-size (stored in dsize)
  * @return the request or NULL if not enough mem
  */
-sRequest *vfsreq_getRequest(sVFSNode *node,void *buffer,u32 size);
+sRequest *vfs_req_getRequest(sVFSNode *node,void *buffer,u32 size);
 
 /**
  * Waits for the given request. You may get interrupted even if you don't allow signals since
@@ -84,7 +84,7 @@ sRequest *vfsreq_getRequest(sVFSNode *node,void *buffer,u32 size);
  * @param req the request
  * @param allowSigs wether the thread should be interruptable by signals
  */
-void vfsreq_waitForReply(sRequest *req,bool allowSigs);
+void vfs_req_waitForReply(sRequest *req,bool allowSigs);
 
 /**
  * Searches for the request of the given node
@@ -92,28 +92,28 @@ void vfsreq_waitForReply(sRequest *req,bool allowSigs);
  * @param node the vfs-node over which the request is handled
  * @return the request or NULL
  */
-sRequest *vfsreq_getRequestByNode(sVFSNode *node);
+sRequest *vfs_req_getRequestByNode(sVFSNode *node);
 
 /**
  * Marks the given request as finished
  *
  * @param r the request
  */
-void vfsreq_remRequest(sRequest *r);
+void vfs_req_remRequest(sRequest *r);
 
 #if DEBUGGING
 
 /**
  * Prints all active requests
  */
-void vfsreq_dbg_printAll(void);
+void vfs_req_dbg_printAll(void);
 
 /**
  * Prints the given request
  *
  * @param r the request
  */
-void vfsreq_dbg_print(sRequest *r);
+void vfs_req_dbg_print(sRequest *r);
 
 #endif
 

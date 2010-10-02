@@ -24,7 +24,6 @@
 #include <sys/vfs/driver.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/dir.h>
-#include <sys/vfs/rw.h>
 #include <sys/vfs/link.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
@@ -42,18 +41,17 @@
 		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 
 /**
- * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
- *
- * @return the pointer to the node
+ * Appends the given node as last child to the parent
  */
-static sVFSNode *vfsn_requestNode(void);
-
+static void vfs_node_appendChild(sVFSNode *parent,sVFSNode *node);
+/**
+ * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
+ */
+static sVFSNode *vfs_node_requestNode(void);
 /**
  * Releases the given node
- *
- * @param node the node
  */
-static void vfsn_releaseNode(sVFSNode *node);
+static void vfs_node_releaseNode(sVFSNode *node);
 
 /* all nodes (expand dynamically) */
 static sDynArray nodeArray;
@@ -62,35 +60,35 @@ static sVFSNode *nodes = (sVFSNode*)VFSNODE_AREA;
 static sVFSNode *freeList = NULL;
 static u32 nextUsageId = 0;
 
-void vfsn_init(void) {
+void vfs_node_init(void) {
 	dyna_init(&nodeArray,sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
 }
 
-bool vfsn_isValidNodeNo(tInodeNo nodeNo) {
+bool vfs_node_isValid(tInodeNo nodeNo) {
 	return nodeNo >= 0 && nodeNo < (tInodeNo)nodeArray.objCount;
 }
 
-bool vfsn_isOwnDriverNode(tInodeNo nodeNo) {
+bool vfs_node_isOwnDriver(tInodeNo nodeNo) {
 	sProc *p = proc_getRunning();
 	sVFSNode *node = nodes + nodeNo;
-	return vfsn_isValidNodeNo(nodeNo) && node->owner == p->pid && IS_DRIVER(node->mode);
+	return vfs_node_isValid(nodeNo) && node->owner == p->pid && IS_DRIVER(node->mode);
 }
 
-tInodeNo vfsn_getNodeNo(sVFSNode *node) {
+tInodeNo vfs_node_getNo(sVFSNode *node) {
 	return ((u32)node - (u32)&nodes[0]) / sizeof(sVFSNode);
 }
 
-sVFSNode *vfsn_getNode(tInodeNo nodeNo) {
+sVFSNode *vfs_node_get(tInodeNo nodeNo) {
 	return nodes + nodeNo;
 }
 
-sVFSNode *vfsn_getFirstChild(sVFSNode *node) {
+sVFSNode *vfs_node_getFirstChild(sVFSNode *node) {
 	if(!MODE_IS_LINK((node)->mode))
 		return node->firstChild;
 	return vfs_link_resolve(node)->firstChild;
 }
 
-s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
+s32 vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info) {
 	sVFSNode *n = nodes + nodeNo;
 
 	if(n->mode == 0)
@@ -113,13 +111,13 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
 	return 0;
 }
 
-char *vfsn_getPath(tInodeNo nodeNo) {
+char *vfs_node_getPath(tInodeNo nodeNo) {
 	static char path[MAX_PATH_LEN];
 	u32 nlen,len = 0,total = 0;
 	sVFSNode *node = nodes + nodeNo;
 	sVFSNode *n = node;
 
-	assert(vfsn_isValidNodeNo(nodeNo));
+	assert(vfs_node_isValid(nodeNo));
 	/* the root-node of the whole vfs has no path */
 	vassert(n->parent != NULL,"node->parent == NULL");
 
@@ -150,7 +148,7 @@ char *vfsn_getPath(tInodeNo nodeNo) {
 	return (char*)path;
 }
 
-s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) {
+s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) {
 	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = nodes;
 	sThread *t = thread_getRunning();
@@ -186,14 +184,14 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 
 	/* root/current node requested? */
 	if(!*path) {
-		*nodeNo = vfsn_getNodeNo(n);
+		*nodeNo = vfs_node_getNo(n);
 		return 0;
 	}
 
 	depth = 0;
 	lastdepth = -1;
 	dir = n;
-	n = vfsn_getFirstChild(n);
+	n = vfs_node_getFirstChild(n);
 	while(n != NULL) {
 		/* go to next '/' and check for invalid chars */
 		if(depth != lastdepth) {
@@ -226,7 +224,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 
 			/* move to childs of this node */
 			dir = n;
-			n = vfsn_getFirstChild(n);
+			n = vfs_node_getFirstChild(n);
 			depth++;
 			continue;
 		}
@@ -268,7 +266,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 			}
 			if(created)
 				*created = true;
-			*nodeNo = vfsn_getNodeNo(child);
+			*nodeNo = vfs_node_getNo(child);
 			return 0;
 		}
 		return ERR_PATH_NOT_FOUND;
@@ -279,11 +277,11 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 		n = vfs_link_resolve(n);
 
 	/* virtual node */
-	*nodeNo = vfsn_getNodeNo(n);
+	*nodeNo = vfs_node_getNo(n);
 	return 0;
 }
 
-char *vfsn_basename(char *path,u32 *len) {
+char *vfs_node_basename(char *path,u32 *len) {
 	char *p = path + *len - 1;
 	while(*p == '/') {
 		p--;
@@ -295,7 +293,7 @@ char *vfsn_basename(char *path,u32 *len) {
 	return p + 1;
 }
 
-void vfsn_dirname(char *path,u32 len) {
+void vfs_node_dirname(char *path,u32 len) {
 	char *p = path + len - 1;
 	/* remove last '/' */
 	while(*p == '/') {
@@ -315,8 +313,8 @@ void vfsn_dirname(char *path,u32 len) {
 	*(p + 1) = '\0';
 }
 
-sVFSNode *vfsn_findInDir(sVFSNode *node,const char *name,u32 nameLen) {
-	sVFSNode *n = vfsn_getFirstChild(node);
+sVFSNode *vfs_node_findInDir(sVFSNode *node,const char *name,u32 nameLen) {
+	sVFSNode *n = vfs_node_getFirstChild(node);
 	while(n != NULL) {
 		if(strlen(n->name) == nameLen && strncmp(n->name,name,nameLen) == 0)
 			return n;
@@ -332,7 +330,7 @@ sVFSNode *vfs_node_create(sVFSNode *parent,char *name) {
 	if(strlen(name) > MAX_NAME_LEN)
 		return NULL;
 
-	node = vfsn_requestNode();
+	node = vfs_node_requestNode();
 	if(node == NULL)
 		return NULL;
 
@@ -346,33 +344,8 @@ sVFSNode *vfs_node_create(sVFSNode *parent,char *name) {
 	node->destroy = NULL;
 	node->firstChild = NULL;
 	node->lastChild = NULL;
-	vfsn_appendChild(parent,node);
+	vfs_node_appendChild(parent,node);
 	return node;
-}
-
-sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
-	sVFSNode *node = vfs_node_create(parent,name);
-	if(node == NULL)
-		return NULL;
-
-	node->mode = MODE_TYPE_PIPECON | MODE_OWNER_READ | MODE_OWNER_WRITE;
-	node->readHandler = NULL;
-	node->writeHandler = NULL;
-	return node;
-}
-
-void vfsn_appendChild(sVFSNode *parent,sVFSNode *node) {
-	vassert(node != NULL,"node == NULL");
-
-	if(parent != NULL) {
-		if(parent->firstChild == NULL)
-			parent->firstChild = node;
-		if(parent->lastChild != NULL)
-			parent->lastChild->next = node;
-		node->prev = parent->lastChild;
-		parent->lastChild = node;
-	}
-	node->parent = parent;
 }
 
 void vfs_node_destroy(sVFSNode *n) {
@@ -402,10 +375,10 @@ void vfs_node_destroy(sVFSNode *n) {
 		n->next->prev = n->prev;
 	else
 		n->parent->lastChild = n->prev;
-	vfsn_releaseNode(n);
+	vfs_node_releaseNode(n);
 }
 
-char *vfsn_getId(tPid pid) {
+char *vfs_node_getId(tPid pid) {
 	char *name;
 	u32 len,size;
 
@@ -424,7 +397,21 @@ char *vfsn_getId(tPid pid) {
 	return name;
 }
 
-static sVFSNode *vfsn_requestNode(void) {
+static void vfs_node_appendChild(sVFSNode *parent,sVFSNode *node) {
+	vassert(node != NULL,"node == NULL");
+
+	if(parent != NULL) {
+		if(parent->firstChild == NULL)
+			parent->firstChild = node;
+		if(parent->lastChild != NULL)
+			parent->lastChild->next = node;
+		node->prev = parent->lastChild;
+		parent->lastChild = node;
+	}
+	node->parent = parent;
+}
+
+static sVFSNode *vfs_node_requestNode(void) {
 	sVFSNode *node;
 	if(freeList == NULL) {
 		u32 i,oldCount = nodeArray.objCount;
@@ -443,7 +430,7 @@ static sVFSNode *vfsn_requestNode(void) {
 	return node;
 }
 
-static void vfsn_releaseNode(sVFSNode *node) {
+static void vfs_node_releaseNode(sVFSNode *node) {
 	vassert(node != NULL,"node == NULL");
 	/* mark unused */
 	node->name = NULL;
@@ -456,27 +443,27 @@ static void vfsn_releaseNode(sVFSNode *node) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent) {
+static void vfs_node_dbg_doPrintTree(u32 level,sVFSNode *parent) {
 	u32 i;
-	sVFSNode *n = vfsn_getFirstChild(parent);
+	sVFSNode *n = vfs_node_getFirstChild(parent);
 	while(n != NULL) {
 		for(i = 0;i < level;i++)
 			vid_printf(" |");
 		vid_printf("- %s\n",n->name);
 		/* don't recurse for "." and ".." */
 		if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
-			vfsn_dbg_doPrintTree(level + 1,n);
+			vfs_node_dbg_doPrintTree(level + 1,n);
 		n = n->next;
 	}
 }
 
-void vfsn_dbg_printTree(void) {
+void vfs_node_dbg_printTree(void) {
 	vid_printf("VFS:\n");
 	vid_printf("/\n");
-	vfsn_dbg_doPrintTree(1,&nodes[0]);
+	vfs_node_dbg_doPrintTree(1,&nodes[0]);
 }
 
-void vfsn_dbg_printNode(sVFSNode *node) {
+void vfs_node_dbg_printNode(sVFSNode *node) {
 	vid_printf("VFSNode @ 0x%x:\n",node);
 	if(node) {
 		vid_printf("\tname: %s\n",node->name ? node->name : "NULL");

@@ -61,7 +61,6 @@
 #include "tsignals.h"
 #include "tringbuffer.h"
 #include "tesccodes.h"
-#include "tvfslist.h"
 #include "tswapmap.h"
 #include "tregion.h"
 #include "tvmm.h"
@@ -104,10 +103,10 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* vfs */
 	vid_printf("Initializing VFS...");
 	vfs_init();
-	vfsinfo_init();
-	vfsreq_init();
+	vfs_info_init();
+	vfs_req_init();
 	vfsdrv_init();
-	vfsr_init();
+	vfs_real_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* processes */
@@ -168,7 +167,6 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModSignals);
 	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
-	test_register(&tModVFSList);
 	test_register(&tModSwapMap);
 	test_register(&tModRegion);
 	test_register(&tModVmm);

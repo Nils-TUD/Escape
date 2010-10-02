@@ -22,7 +22,6 @@
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
-#include <sys/vfs/rw.h>
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls.h>
 #include <errors.h>
@@ -54,11 +53,11 @@ void sysc_unregDriver(sIntrptStackFrame *stack) {
 	tDrvId id = SYSC_ARG1(stack);
 
 	/* check node-number */
-	if(!vfsn_isOwnDriverNode(id))
+	if(!vfs_node_isOwnDriver(id))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* remove the driver */
-	vfs_node_destroy(vfsn_getNode(id));
+	vfs_node_destroy(vfs_node_get(id));
 	SYSC_RET1(stack,0);
 }
 
@@ -69,7 +68,7 @@ void sysc_setDataReadable(sIntrptStackFrame *stack) {
 	s32 err;
 
 	/* check node-number */
-	if(!vfsn_isValidNodeNo(id))
+	if(!vfs_node_isValid(id))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	err = vfs_setDataReadable(p->pid,id,readable);
@@ -193,6 +192,6 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 	}
 
 	if(drv)
-		*drv = vfsn_getNodeNo(vfsn_getNode(client)->parent);
+		*drv = vfs_node_getNo(vfs_node_get(client)->parent);
 	SYSC_RET1(stack,fd);
 }

@@ -64,18 +64,18 @@ static void test_vfs_createDriver(void) {
 	oldHeap = kheap_getFreeMem();
 
 	id = vfs_createDriver(0,"test",0);
-	if(!test_assertTrue(vfsn_isValidNodeNo(id))) return;
+	if(!test_assertTrue(vfs_node_isValid(id))) return;
 	id2 = vfs_createDriver(0,"test2",0);
-	if(!test_assertTrue(vfsn_isValidNodeNo(id2))) return;
+	if(!test_assertTrue(vfs_node_isValid(id2))) return;
 	if(!test_assertInt(vfs_createDriver(1,"test",0),ERR_DRIVER_EXISTS)) return;
 	if(!test_assertInt(vfs_createDriver(1,"",0),ERR_INV_DRIVER_NAME)) return;
 	if(!test_assertInt(vfs_createDriver(1,"abc.def",0),ERR_INV_DRIVER_NAME)) return;
 	id3 = vfs_createDriver(1,"test3",0);
-	if(!test_assertTrue(vfsn_isValidNodeNo(id3))) return;
+	if(!test_assertTrue(vfs_node_isValid(id3))) return;
 
-	vfs_node_destroy(vfsn_getNode(id));
-	vfs_node_destroy(vfsn_getNode(id2));
-	vfs_node_destroy(vfsn_getNode(id3));
+	vfs_node_destroy(vfs_node_get(id));
+	vfs_node_destroy(vfs_node_get(id2));
+	vfs_node_destroy(vfs_node_get(id3));
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();

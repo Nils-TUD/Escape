@@ -37,7 +37,6 @@
 
 #define IS_DRIVER(mode)				(((mode) & MODE_TYPE_DRIVER) != 0)
 #define IS_DRVUSE(mode)				(((mode) & MODE_TYPE_DRVUSE) != 0)
-#define IS_PIPE(mode)				(((mode) & MODE_TYPE_PIPE) != 0)
 
 #define DRV_OPEN					1
 #define DRV_READ					2
@@ -45,8 +44,6 @@
 #define DRV_CLOSE					8
 #define DRV_FS						16
 #define DRV_TERM					32
-#define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
-#define DRV_IS_FS(funcs)			((funcs) == DRV_FS)
 
 /* GFT flags */
 enum {

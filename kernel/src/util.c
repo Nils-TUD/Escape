@@ -39,6 +39,11 @@
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5
 
+/**
+ * Builds the stacktrace with given vars
+ */
+static sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 mstart,u32 mend);
+
 /* the beginning of the kernel-stack */
 extern u32 kernelStack;
 static u64 profStart;
@@ -151,7 +156,7 @@ sFuncCall *util_getUserStackTrace(void) {
 	sIntrptStackFrame *stack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
 	vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
-	return util_getStackTrace((u32*)stack->ebp,start,end,start,end);
+	return util_getStackTrace((u32*)stack->ebp,start,start,end);
 }
 
 sFuncCall *util_getUserStackTraceOf(sThread *t) {
@@ -176,7 +181,7 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 			}
 			temp = paging_mapToTemp(frames,pcount + 1);
 			istack = (sIntrptStackFrame*)(temp + ((u32)istack & (PAGE_SIZE - 1)));
-			calls = util_getStackTrace((u32*)istack->ebp,start,end,
+			calls = util_getStackTrace((u32*)istack->ebp,start,
 					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
 			paging_unmapFromTemp(pcount + 1);
 			kheap_free(frames);
@@ -189,8 +194,7 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 sFuncCall *util_getKernelStackTraceOf(sThread *t) {
 	u32 ebp = t->save.ebp;
 	u32 temp = paging_mapToTemp(&t->kstackFrame,1);
-	sFuncCall *calls = util_getStackTrace((u32*)ebp,KERNEL_STACK,KERNEL_STACK + PAGE_SIZE,
-			temp,temp + PAGE_SIZE);
+	sFuncCall *calls = util_getStackTrace((u32*)ebp,KERNEL_STACK,temp,temp + PAGE_SIZE);
 	paging_unmapFromTemp(1);
 	return calls;
 }
@@ -209,10 +213,41 @@ sFuncCall *util_getKernelStackTrace(void) {
 		end = (u32)&kernelStack;
 	}
 
-	return util_getStackTrace(ebp,start,end,start,end);
+	return util_getStackTrace(ebp,start,start,end);
 }
 
-sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend) {
+void util_printStackTrace(sFuncCall *trace) {
+	if(trace->addr < KERNEL_AREA_V_ADDR)
+		vid_printf("User-Stacktrace:\n");
+	else
+		vid_printf("Kernel-Stacktrace:\n");
+
+	while(trace->addr != 0) {
+		vid_printf("\t0x%08x -> 0x%08x (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
+		trace++;
+	}
+}
+
+void util_dumpMem(void *addr,u32 dwordCount) {
+	u32 *ptr = (u32*)addr;
+	while(dwordCount-- > 0) {
+		vid_printf("0x%x: 0x%08x\n",ptr,*ptr);
+		ptr++;
+	}
+}
+
+void util_dumpBytes(void *addr,u32 byteCount) {
+	u32 i = 0;
+	u8 *ptr = (u8*)addr;
+	for(i = 0; byteCount-- > 0; i++) {
+		vid_printf("%02x ",*ptr);
+		ptr++;
+		if(i % 16 == 15)
+			vid_printf("\n");
+	}
+}
+
+static sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 mstart,u32 mend) {
 	static sFuncCall frames[MAX_STACK_DEPTH];
 	u32 i;
 	bool isKernel = (u32)ebp >= KERNEL_AREA_V_ADDR;
@@ -246,35 +281,4 @@ sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend) 
 	/* terminate */
 	frame->addr = 0;
 	return &frames[0];
-}
-
-void util_printStackTrace(sFuncCall *trace) {
-	if(trace->addr < KERNEL_AREA_V_ADDR)
-		vid_printf("User-Stacktrace:\n");
-	else
-		vid_printf("Kernel-Stacktrace:\n");
-
-	while(trace->addr != 0) {
-		vid_printf("\t0x%08x -> 0x%08x (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
-		trace++;
-	}
-}
-
-void util_dumpMem(void *addr,u32 dwordCount) {
-	u32 *ptr = (u32*)addr;
-	while(dwordCount-- > 0) {
-		vid_printf("0x%x: 0x%08x\n",ptr,*ptr);
-		ptr++;
-	}
-}
-
-void util_dumpBytes(void *addr,u32 byteCount) {
-	u32 i = 0;
-	u8 *ptr = (u8*)addr;
-	for(i = 0; byteCount-- > 0; i++) {
-		vid_printf("%02x ",*ptr);
-		ptr++;
-		if(i % 16 == 15)
-			vid_printf("\n");
-	}
 }

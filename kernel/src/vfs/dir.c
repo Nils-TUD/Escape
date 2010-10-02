@@ -38,6 +38,7 @@ typedef struct {
 	/* name follows (up to 255 bytes) */
 } A_PACKED sVFSDirEntry;
 
+static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 static s32 vfs_dir_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence);
 
 sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
@@ -81,7 +82,7 @@ static s32 vfs_dir_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 when
 	}
 }
 
-s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	UNUSED(file);
 	u32 byteCount,fsByteCount;
 	u8 *fsBytes = NULL,*fsBytesDup;

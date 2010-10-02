@@ -162,15 +162,6 @@ u32 proc_getCount(void) {
 	return sll_length(procs);
 }
 
-void proc_wakeup(tPid pid,void *obj,u32 events) {
-	sSLNode *n;
-	sProc *p = proc_getByPid(pid);
-	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-		sThread *t = (sThread*)n->data;
-		ev_wakeupThread(t->tid,events);
-	}
-}
-
 tFileNo proc_fdToFile(tFD fd) {
 	tFileNo fileNo;
 	sProc *p = proc_getRunning();
@@ -975,11 +966,11 @@ void proc_dbg_printAllPDs(u8 parts,bool regions) {
 void proc_dbg_print(sProc *p) {
 	u32 i;
 	sSLNode *n;
-	vid_printf("proc %d:\n",p->pid);
+	vid_printf("Proc %d:\n",p->pid);
 	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#x\n",
 			p->parentPid,p->command,p->pagedir,p->entryPoint);
-	vid_printf("\townFrames=%u, sharedFrames=%u\n",p->ownFrames,p->sharedFrames);
-	vid_printf("\tswapped=%u\n",p->swapped);
+	vid_printf("\tOwnFrames=%u, sharedFrames=%u, swapped=%u\n",
+			p->ownFrames,p->sharedFrames,p->swapped);
 	if(p->flags & P_ZOMBIE) {
 		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
 		vid_printf("\t\town=%u, shared=%u, swap=%u\n",
@@ -987,7 +978,11 @@ void proc_dbg_print(sProc *p) {
 		vid_printf("\t\tucycles=%#016Lx, kcycles=%#016Lx\n",
 				p->exitState->ucycleCount,p->exitState->kcycleCount);
 	}
-	vid_printf("\tfileDescs:\n");
+	vid_printf("\tRegions:\n");
+	vmm_dbg_printShort(p);
+	vid_printf("\tEnvironment:\n");
+	env_dbg_printAllOf(p->pid);
+	vid_printf("\tFileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {
 			tInodeNo ino;

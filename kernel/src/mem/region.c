@@ -26,6 +26,8 @@
 #include <string.h>
 #include <assert.h>
 
+static void reg_sprintfFlags(sStringBuffer *buf,sRegion *reg);
+
 /**
  * The region-module implements the abstraction 'region' which is simply a group of pages that
  * have common properties. So for example 'text' is a group, 'read-only-data', 'data', 'stack'
@@ -185,24 +187,10 @@ sRegion *reg_clone(const void *p,sRegion *reg) {
 void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 	u32 i,x;
 	sSLNode *n;
-	struct {
-		const char *name;
-		u32 no;
-	} flagNames[] = {
-		{"Growable",RF_GROWABLE},
-		{"Shareable",RF_SHAREABLE},
-		{"Writable",RF_WRITABLE},
-		{"Stack",RF_STACK},
-		{"NoFree",RF_NOFREE},
-		{"TLS",RF_TLS}
-	};
 	prf_sprintf(buf,"\tSize: %u bytes\n",reg->byteCount);
 	prf_sprintf(buf,"\tLoad: %u bytes\n",reg->loadCount);
 	prf_sprintf(buf,"\tflags: ");
-	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {
-		if(reg->flags & flagNames[i].no)
-			prf_sprintf(buf,"%s ",flagNames[i].name);
-	}
+	reg_sprintfFlags(buf,reg);
 	prf_sprintf(buf,"\n");
 	if(reg->binary.ino) {
 		prf_sprintf(buf,"\tbinary: ino=%d dev=%d modified=%u offset=%#x\n",
@@ -223,8 +211,40 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 	}
 }
 
+static void reg_sprintfFlags(sStringBuffer *buf,sRegion *reg) {
+	struct {
+		const char *name;
+		u32 no;
+	} flagNames[] = {
+		{"Growable",RF_GROWABLE},
+		{"Shareable",RF_SHAREABLE},
+		{"Writable",RF_WRITABLE},
+		{"Stack",RF_STACK},
+		{"NoFree",RF_NOFREE},
+		{"TLS",RF_TLS}
+	};
+	u32 i;
+	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {
+		if(reg->flags & flagNames[i].no)
+			prf_sprintf(buf,"%s ",flagNames[i].name);
+	}
+}
+
 
 #if DEBUGGING
+
+void reg_dbg_printFlags(sRegion *reg) {
+	sStringBuffer buf;
+	buf.dynamic = true;
+	buf.len = 0;
+	buf.size = 0;
+	buf.str = NULL;
+	reg_sprintfFlags(&buf,reg);
+	if(buf.str) {
+		vid_printf("%s",buf.str);
+		kheap_free(buf.str);
+	}
+}
 
 void reg_dbg_print(sRegion *reg,u32 virt) {
 	sStringBuffer buf;

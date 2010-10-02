@@ -45,6 +45,16 @@
 #define DRV_FS						16
 #define DRV_TERM					32
 
+/* fcntl-commands */
+#define F_GETFL						0
+#define F_SETFL						1
+#define F_SETDATA					2
+
+/* seek-types */
+#define SEEK_SET					0
+#define SEEK_CUR					1
+#define SEEK_END					2
+
 /* GFT flags */
 enum {
 	VFS_NOACCESS = 0,		/* no read and write */
@@ -55,19 +65,8 @@ enum {
 	VFS_APPEND = 16,
 	VFS_NOBLOCK = 32,
 	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
-	VFS_CREATED = 128,		/* kernel-intern: whether a new node has been created */
-	VFS_MODIFIED = 256,		/* kernel-intern: whether it has been written to the file */
+	VFS_DRIVER = 128,		/* kernel-intern: wether the file was created for a driver */
 };
-
-/* fcntl-commands */
-#define F_GETFL						0
-#define F_SETFL						1
-#define F_SETDATA					2
-
-/* seek-types */
-#define SEEK_SET					0
-#define SEEK_CUR					1
-#define SEEK_END					2
 
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
@@ -83,7 +82,7 @@ struct sVFSNode {
 	char *name;
 	/* number of open files for this node */
 	u16 refCount;
-	/* the owner of this node: used for driver-usages */
+	/* the owner of this node */
 	tPid owner;
 	/* 0 means unused; stores permissions and the type of node */
 	u32 mode;
@@ -108,6 +107,12 @@ struct sVFSNode {
  * Initializes the virtual file system
  */
 void vfs_init(void);
+
+/**
+ * @param file the file
+ * @return true if the file was created for a driver (and not a client of the driver)
+ */
+bool vfs_isDriver(tFileNo file);
 
 /**
  * Increases the references of the given file
@@ -345,14 +350,6 @@ bool vfs_hasMsg(tPid pid,tFileNo file);
  * @return true if so
  */
 bool vfs_hasData(tPid pid,tFileNo file);
-
-/**
- * Wakes up all clients of the given node for given events
- *
- * @param node the node of the driver
- * @param events the events
- */
-void vfs_wakeupClients(sVFSNode *node,u32 events);
 
 /**
  * For drivers: Looks whether a client wants to be served and return the node-number

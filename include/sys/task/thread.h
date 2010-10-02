@@ -167,6 +167,13 @@ sThread *thread_getById(tTid tid);
 void thread_switch(void);
 
 /**
+ * Switches the thread and remembers that we are waiting in the kernel. That means if you want
+ * to wait in the kernel for something, use this function so that other modules know that the
+ * current thread waits and should for example not receive signals.
+ */
+void thread_switchNoSigs(void);
+
+/**
  * Switches to the given thread
  *
  * @param tid the thread-id
@@ -177,13 +184,6 @@ void thread_switchTo(tTid tid);
  * The start-function for the idle-thread
  */
 void thread_idle(void);
-
-/**
- * Switches the thread and remembers that we are waiting in the kernel. That means if you want
- * to wait in the kernel for something, use this function so that other modules know that the
- * current thread waits and should for example not receive signals.
- */
-void thread_switchNoSigs(void);
 
 /**
  * Marks the given thread as ready (if the thread hasn't said that he don't wants to be interrupted)

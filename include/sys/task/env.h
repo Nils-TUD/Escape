@@ -22,12 +22,51 @@
 
 #include <esc/common.h>
 
+/**
+ * Returns the env-variable with given index
+ *
+ * @param pid the process-id
+ * @param index the index
+ * @return the env-variable-name or NULL if there is none
+ */
 const char *env_geti(tPid pid,u32 index);
 
+/**
+ * Returns the env-variable with given name
+ *
+ * @param pid the process-id
+ * @param name the variable-name
+ * @return the variable-value or NULL if not found
+ */
 const char *env_get(tPid pid,const char *name);
 
+/**
+ * Sets <name> to <value>
+ *
+ * @param pid the process-id
+ * @param name the variable-name
+ * @param value the (new) value
+ * @return true if successfull
+ */
 bool env_set(tPid pid,const char *name,const char *value);
 
+/**
+ * Removes all env-variables for given process
+ *
+ * @param pid the process-id
+ */
 void env_removeFor(tPid pid);
+
+
+#if DEBUGGING
+
+/**
+ * Prints all env-vars of given process
+ *
+ * @param pid the process-id
+ */
+void env_dbg_printAllOf(tPid pid);
+
+#endif
 
 #endif /* ENV_H_ */

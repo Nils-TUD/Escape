@@ -23,7 +23,21 @@
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
 
-sVFSNode *vfs_link_create(tPid pid,sVFSNode *node,char *name,sVFSNode *target);
+/**
+ * Creates a new link with name <name> in <parent> that links to <target>
+ *
+ * @param pid the process-id
+ * @param parent the parent-node
+ * @param name the name
+ * @param target the target-node
+ * @return the created node or NULL
+ */
+sVFSNode *vfs_link_create(tPid pid,sVFSNode *parent,char *name,const sVFSNode *target);
+
+/**
+ * @param node the link-node
+ * @return the link-target
+ */
 sVFSNode *vfs_link_resolve(sVFSNode *node);
 
 #endif /* LINK_H_ */

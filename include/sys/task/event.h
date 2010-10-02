@@ -23,10 +23,13 @@
 #include <sys/common.h>
 
 typedef struct {
+	/* the events to wait for */
 	u32 events;
+	/* the object (0 = ignore) */
 	tEvObj object;
 } sWaitObject;
 
+/* the event-indices */
 #define EVI_CLIENT				0
 #define EVI_RECEIVED_MSG		1
 #define EVI_CHILD_DIED			2
@@ -74,16 +77,70 @@ typedef struct {
 /* the events a user-thread can fire */
 #define EV_USER_NOTIFY_MASK		(EV_USER1 | EV_USER2)
 
+/**
+ * Inits the event-system
+ */
 void ev_init(void);
+
+/**
+ * Lets <tid> wait for the given event and object
+ *
+ * @param tid the thread-id
+ * @param evi the event-index(!)
+ * @param object the object (0 = ignore)
+ * @return true if successfull
+ */
 bool ev_wait(tTid tid,u32 evi,tEvObj object);
-bool ev_waitm(tTid tid,u32 events);
+
+/**
+ * Lets <tid> wait for the given objects
+ *
+ * @param tid the thread-id
+ * @param objects the objects to wait for
+ * @param objCount the number of objects
+ * @return true if successfull
+ */
 bool ev_waitObjects(tTid tid,const sWaitObject *objects,u32 objCount);
+
+/**
+ * Wakes up all threads that wait for given event and object
+ *
+ * @param evi the event-index(!)
+ * @param object the object
+ */
 void ev_wakeup(u32 evi,tEvObj object);
+
+/**
+ * Wakes up all threads that wait for given events and the given object
+ *
+ * @param events the event-mask (not index!)
+ * @param object the object
+ */
+void ev_wakeupm(u32 events,tEvObj object);
+
+/**
+ * Wakes up the thread <tid> for given events. That means, if it does not wait for them, it is
+ * not waked up.
+ *
+ * @param tid the thread-id
+ * @param events the event-mask (not index!)
+ * @return true if waked up
+ */
 bool ev_wakeupThread(tTid tid,u32 events);
+
+/**
+ * Removes the given thread from the event-system. Note that it will set it to the ready-state!
+ *
+ * @param tid the thread-id
+ */
 void ev_removeThread(tTid tid);
+
 
 #if DEBUGGING
 
+/**
+ * Prints all waiting threads
+ */
 void ev_dbg_print(void);
 
 #endif

@@ -22,6 +22,7 @@
 
 #include <sys/common.h>
 
+/* the states of a request */
 #define REQ_STATE_WAITING		0
 #define REQ_STATE_WAIT_DATA		1
 #define REQ_STATE_FINISHED		2
@@ -100,6 +101,7 @@ sRequest *vfs_req_getRequestByNode(sVFSNode *node);
  * @param r the request
  */
 void vfs_req_remRequest(sRequest *r);
+
 
 #if DEBUGGING
 

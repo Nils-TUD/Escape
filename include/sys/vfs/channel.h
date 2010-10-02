@@ -23,15 +23,65 @@
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
 
+/**
+ * Creates a new channel for given process
+ *
+ * @param pid the process-id
+ * @param parent the parent-node
+ * @return the created node or NULL
+ */
 sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent);
+
+/**
+ * Checks wether the given channel has a reply for the client
+ *
+ * @param node the channel-node
+ * @return true if so
+ */
 bool vfs_chan_hasReply(sVFSNode *node);
+
+/**
+ * Checks wether the given channel has work to do for the server
+ *
+ * @param node the channel-node
+ * @return true if so
+ */
 bool vfs_chan_hasWork(sVFSNode *node);
+
+/**
+ * Sends the given message to the channel
+ *
+ * @param pid the process-id
+ * @param file the file
+ * @param n the channel-node
+ * @param id the message-id
+ * @param data the message-data
+ * @param size the data-size
+ * @return 0 on success
+ */
 s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
+
+/**
+ * Receives a message from the channel
+ *
+ * @param pid the process-id
+ * @param file the file
+ * @param n the channel-node
+ * @param id will be set to the message-id (if not NULL)
+ * @param data the buffer to write the message to
+ * @param size the size of the buffer
+ * @return the number of written bytes on success
+ */
 s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size);
 
 
 #if DEBUGGING
 
+/**
+ * Prints the given channel
+ *
+ * @param n the channel-node
+ */
 void vfs_chan_dbg_print(sVFSNode *n);
 
 #endif

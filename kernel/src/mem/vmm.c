@@ -1045,6 +1045,21 @@ void vmm_sprintfRegions(sStringBuffer *buf,sProc *p) {
 
 #if DEBUGGING
 
+void vmm_dbg_printShort(sProc *p) {
+	sVMRegion *reg;
+	u32 i;
+	for(i = 0; i < p->regSize; i++) {
+		reg = REG(p,i);
+		if(reg != NULL) {
+			u32 start,end;
+			vmm_getRegRange(p,i,&start,&end);
+			vid_printf("\t\t%08x .. %08x: ",start,end - 1);
+			reg_dbg_printFlags(reg->reg);
+			vid_printf("\n");
+		}
+	}
+}
+
 void vmm_dbg_print(sProc *p) {
 	sStringBuffer buf;
 	buf.dynamic = true;

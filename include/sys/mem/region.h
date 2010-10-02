@@ -161,6 +161,13 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt);
 #if DEBUGGING
 
 /**
+ * Prints the flags of the given region
+ *
+ * @param reg the region
+ */
+void reg_dbg_printFlags(sRegion *reg);
+
+/**
  * Prints the given region
  *
  * @param reg the region

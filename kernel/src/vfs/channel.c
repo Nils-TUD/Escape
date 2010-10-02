@@ -64,8 +64,8 @@ sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
 	node->owner = pid;
 	node->mode = MODE_TYPE_DRVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 			MODE_OTHER_READ | MODE_OTHER_WRITE;
-	node->readHandler = (fRead)vfsdrv_read;
-	node->writeHandler = (fWrite)vfsdrv_write;
+	node->readHandler = (fRead)vfs_drv_read;
+	node->writeHandler = (fWrite)vfs_drv_write;
 	node->seek = vfs_chan_seek;
 	node->close = vfs_chan_close;
 	node->destroy = vfs_chan_destroy;
@@ -115,7 +115,7 @@ static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
 	if(node->refCount == 0) {
 		/* notify the driver, if it is one */
-		vfsdrv_close(pid,file,node);
+		vfs_drv_close(pid,file,node);
 
 		/* if there are message for the driver we don't want to throw them away */
 		/* if there are any in the receivelist (and no references of the node) we
@@ -140,17 +140,17 @@ bool vfs_chan_hasWork(sVFSNode *node) {
 }
 
 s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
+	UNUSED(pid);
+	UNUSED(file);
 	sSLList **list;
 	sMessage *msg;
 	sChannel *chan = (sChannel*)n->data;
 
-	UNUSED(file);
-
 	/*vid_printf("%d:%s sent msg %d with %d bytes to %s\n",pid,proc_getByPid(pid)->command,id,size,
-			n->parent->owner == pid ? n->name : n->parent->name);*/
+			vfs_isDriver(file) ? n->name : n->parent->name);*/
 
 	/* drivers write to the receive-list (which will be read by other processes) */
-	if(n->parent->owner == pid) {
+	if(vfs_isDriver(file)) {
 		/* if it is from a driver or fs, don't enqueue it but pass it directly to
 		 * the corresponding handler */
 		if(vfs_server_accepts(n->parent,id)) {
@@ -185,7 +185,7 @@ s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32
 
 	/* notify the driver */
 	if(list == &(chan->sendList))
-		proc_wakeup(n->parent->owner,n->parent,EV_CLIENT);
+		ev_wakeup(EVI_CLIENT,(tEvObj)n->parent);
 	/* notify all threads that wait on this node for a msg */
 	else
 		ev_wakeup(EVI_RECEIVED_MSG,(tEvObj)n);
@@ -193,16 +193,17 @@ s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32
 }
 
 s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
+	UNUSED(pid);
+	UNUSED(file);
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;
 	sMessage *msg;
 	u32 event;
 	s32 res;
-	UNUSED(file);
 
 	/* wait until a message arrives */
-	if(node->parent->owner == pid) {
+	if(vfs_isDriver(file)) {
 		event = EVI_CLIENT;
 		list = &chan->sendList;
 	}

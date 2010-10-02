@@ -22,8 +22,8 @@
 #include <sys/vfs/link.h>
 #include <sys/vfs/node.h>
 
-sVFSNode *vfs_link_create(tPid pid,sVFSNode *node,char *name,sVFSNode *target) {
-	sVFSNode *child = vfs_node_create(node,name);
+sVFSNode *vfs_link_create(tPid pid,sVFSNode *parent,char *name,const sVFSNode *target) {
+	sVFSNode *child = vfs_node_create(parent,name);
 	if(child == NULL)
 		return NULL;
 	child->readHandler = NULL;
@@ -32,7 +32,7 @@ sVFSNode *vfs_link_create(tPid pid,sVFSNode *node,char *name,sVFSNode *target) {
 	child->destroy = NULL;
 	child->owner = pid;
 	child->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
-	child->data = target;
+	child->data = (void*)target;
 	return child;
 }
 

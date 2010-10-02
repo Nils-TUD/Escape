@@ -112,6 +112,7 @@ void sysc_getClient(sIntrptStackFrame *stack) {
 
 void sysc_getWork(sIntrptStackFrame *stack) {
 	tFileNo files[MAX_GETWORK_DRIVERS];
+	sWaitObject waits[MAX_GETWORK_DRIVERS];
 	tFD *fds = (tFD*)SYSC_ARG1(stack);
 	u32 fdCount = SYSC_ARG2(stack);
 	tFD *drv = (tFD*)SYSC_ARG3(stack);
@@ -143,6 +144,8 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 		files[i] = proc_fdToFile(fds[i]);
 		if(files[i] < 0)
 			SYSC_ERROR(stack,files[i]);
+		waits[i].events = EV_CLIENT;
+		waits[i].object = (tEvObj)vfs_getVNode(files[i]);
 	}
 
 	/* open a client */
@@ -156,8 +159,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,clientNo);
 
 		/* otherwise wait for a client (accept signals) */
-		/* TODO wait for specific drivers! */
-		ev_wait(t->tid,EVI_CLIENT,0);
+		ev_waitObjects(t->tid,waits,fdCount);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);
@@ -171,7 +173,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,fd);
 
 	/* open file */
-	file = vfs_openFile(t->proc->pid,VFS_READ | VFS_WRITE,clientNo,VFS_DEV_NO);
+	file = vfs_openFile(t->proc->pid,VFS_READ | VFS_WRITE | VFS_DRIVER,clientNo,VFS_DEV_NO);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 

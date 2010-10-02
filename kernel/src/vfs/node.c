@@ -68,12 +68,6 @@ bool vfs_node_isValid(tInodeNo nodeNo) {
 	return nodeNo >= 0 && nodeNo < (tInodeNo)nodeArray.objCount;
 }
 
-bool vfs_node_isOwnDriver(tInodeNo nodeNo) {
-	sProc *p = proc_getRunning();
-	sVFSNode *node = nodes + nodeNo;
-	return vfs_node_isValid(nodeNo) && node->owner == p->pid && IS_DRIVER(node->mode);
-}
-
 tInodeNo vfs_node_getNo(sVFSNode *node) {
 	return ((u32)node - (u32)&nodes[0]) / sizeof(sVFSNode);
 }
@@ -341,7 +335,6 @@ sVFSNode *vfs_node_create(sVFSNode *parent,char *name) {
 	node->refCount = 0;
 	node->next = NULL;
 	node->prev = NULL;
-	node->destroy = NULL;
 	node->firstChild = NULL;
 	node->lastChild = NULL;
 	vfs_node_appendChild(parent,node);

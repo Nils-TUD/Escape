@@ -164,18 +164,6 @@ sFuncCall *util_getKernelStackTraceOf(sThread *t);
 sFuncCall *util_getKernelStackTrace(void);
 
 /**
- * Builds the stacktrace with given vars
- *
- * @param ebp the current value of ebp
- * @param rstart the stack-start (the real address)
- * @param rend the stack-end (the real address)
- * @param mstart the stack-start (the mapped address)
- * @param mend the stack-end (the mapped address)
- * @return the first function-call (for util_printStackTrace())
- */
-sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend);
-
-/**
  * Prints the given stack-trace
  *
  * @param trace the first function-call (NULL-terminated)

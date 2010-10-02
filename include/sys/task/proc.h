@@ -149,15 +149,6 @@ bool proc_exists(tPid pid);
 u32 proc_getCount(void);
 
 /**
- * Wakes up all threads of the given process for the given events
- *
- * @param pid the process-id
- * @param obj the event-object
- * @param events the event-mask
- */
-void proc_wakeup(tPid pid,void *obj,u32 events);
-
-/**
  * Returns the file-number for the given file-descriptor
  *
  * @param fd the file-descriptor

@@ -43,6 +43,7 @@ typedef struct {
 
 static void vfs_server_close(tPid pid,tFileNo file,sVFSNode *node);
 static void vfs_server_destroy(sVFSNode *node);
+static void vfs_server_wakeupClients(sVFSNode *node,u32 events);
 
 sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags) {
 	sServer *srv;
@@ -81,9 +82,7 @@ static void vfs_server_destroy(sVFSNode *node) {
 		/* wakeup all threads that may be waiting for this node so they can check
 		 * whether they are affected by the remove of this driver and perform the corresponding
 		 * action */
-		vfs_wakeupClients(node,EVI_RECEIVED_MSG);
-		vfs_wakeupClients(node,EVI_REQ_REPLY);
-		vfs_wakeupClients(node,EVI_DATA_READABLE);
+		vfs_server_wakeupClients(node,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE);
 		kheap_free(node->data);
 		node->data = NULL;
 	}
@@ -123,10 +122,8 @@ s32 vfs_server_setReadable(sVFSNode *node,bool readable) {
 		return ERR_UNSUPPORTED_OP;
 	bool wasEmpty = srv->isEmpty;
 	srv->isEmpty = !readable;
-	if(wasEmpty && readable) {
-		vfs_wakeupClients(node,EVI_RECEIVED_MSG);
-		vfs_wakeupClients(node,EVI_DATA_READABLE);
-	}
+	if(wasEmpty && readable)
+		vfs_server_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE);
 	return 0;
 }
 
@@ -171,6 +168,14 @@ searchBegin:
 		goto searchBegin;
 	}
 	return NULL;
+}
+
+static void vfs_server_wakeupClients(sVFSNode *node,u32 events) {
+	node = vfs_node_getFirstChild(node);
+	while(node != NULL) {
+		ev_wakeupm(events,(tEvObj)node);
+		node = node->next;
+	}
 }
 
 #if DEBUGGING

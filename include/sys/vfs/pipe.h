@@ -23,8 +23,13 @@
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
 
+/**
+ * Creates a new pipe for <pid> in <parent>
+ *
+ * @param pid the process-id
+ * @param parent the parent-node
+ * @return the created node or NULL
+ */
 sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent);
-s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
-s32 vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
 
 #endif /* PIPE_H_ */

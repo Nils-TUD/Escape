@@ -21,6 +21,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/env.h>
 #include <sys/mem/kheap.h>
+#include <sys/video.h>
 #include <esc/sllist.h>
 #include <string.h>
 
@@ -153,3 +154,18 @@ static sEnvVar *env_getOf(sProc *p,const char *name) {
 	}
 	return NULL;
 }
+
+
+#if DEBUGGING
+
+void env_dbg_printAllOf(tPid pid) {
+	u32 i;
+	for(i = 0; ; i++) {
+		const char *name = env_geti(pid,i);
+		if(!name)
+			break;
+		vid_printf("\t\t'%s' = '%s'\n",name,env_get(pid,name));
+	}
+}
+
+#endif

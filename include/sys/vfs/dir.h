@@ -23,7 +23,14 @@
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
 
+/**
+ * Creates a new directory with name <name> in <parent>
+ *
+ * @param pid the process-id
+ * @param parent the parent-node
+ * @param name the name
+ * @return the created node or NULL
+ */
 sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name);
-s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 #endif /* DIR_H_ */

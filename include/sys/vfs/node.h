@@ -38,14 +38,6 @@ void vfs_node_init(void);
 bool vfs_node_isValid(tInodeNo nodeNo);
 
 /**
- * Checks whether the given node is a driver-node and belongs to the current process
- *
- * @param nodeNo the node-number
- * @return true if so
- */
-bool vfs_node_isOwnDriver(tInodeNo nodeNo);
-
-/**
  * @param node the node
  * @return the node-number of the given node
  */
@@ -148,6 +140,7 @@ void vfs_node_destroy(sVFSNode *n);
  * @return the name, allocated on the heap or NULL
  */
 char *vfs_node_getId(tPid pid);
+
 
 #if DEBUGGING
 

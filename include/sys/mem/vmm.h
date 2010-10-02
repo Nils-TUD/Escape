@@ -292,6 +292,13 @@ void vmm_sprintfRegions(sStringBuffer *buf,sProc *p);
 #if DEBUGGING
 
 /**
+ * Prints a short version of the regions of given process
+ *
+ * @param p the process
+ */
+void vmm_dbg_printShort(sProc *p);
+
+/**
  * Prints all regions of the given process
  *
  * @param p the process

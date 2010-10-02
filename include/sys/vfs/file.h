@@ -23,15 +23,42 @@
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
 
+/**
+ * Creates a new file with name <name> in <parent>
+ *
+ * @param pid the process-id
+ * @param parent the parent-node
+ * @param name the name
+ * @param read the read-function; note that if you use vfs_file_read, it is expected that you
+ * 	either specify vfs_file_write, too, or use it.
+ * @param write the write-function
+ * @return the created node or NULL
+ */
 sVFSNode *vfs_file_create(tPid pid,sVFSNode *parent,char *name,fRead read,fWrite write);
 
 /**
  * The default-read-handler
+ *
+ * @param pid the process-id
+ * @param file the file
+ * @param node the file-node
+ * @param buffer to buffer to write into
+ * @param offset the offset
+ * @param count the number of bytes to read
+ * @return the number of read bytes
  */
 s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
- * The default write-handler for the VFS
+ * The default write-handler
+ *
+ * @param pid the process-id
+ * @param file the file
+ * @param n the file-node
+ * @param buffer to buffer to read from
+ * @param offset the offset
+ * @param count the number of bytes to write
+ * @return the number of written bytes
  */
 s32 vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
 

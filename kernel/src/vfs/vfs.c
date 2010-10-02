@@ -63,21 +63,10 @@ typedef struct {
 
 /**
  * Checks whether the process with given pid has the permission to do the given stuff with <nodeNo>.
- *
- * @param pid the process-id
- * @param nodeNo the node-number
- * @param flags specifies what you want to do (VFS_READ | VFS_WRITE)
- * @return 0 if the process has permission or the error-code
  */
 static s32 vfs_hasAccess(tPid pid,tInodeNo nodeNo,u16 flags);
 /**
  * Searches for a free file for the given flags and node-number
- *
- * @param pid the process to use
- * @param flags the flags (read, write)
- * @param nodeNo the node-number to open
- * @param devNo the device-number
- * @return the file-number on success or the negative error-code
  */
 static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
 
@@ -131,6 +120,12 @@ static s32 vfs_hasAccess(tPid pid,tInodeNo nodeNo,u16 flags) {
 	return 0;
 }
 
+bool vfs_isDriver(tFileNo file) {
+	sGFTEntry *e = globalFileTable + file;
+	assert(file >= 0 && file < FILE_COUNT);
+	return e->flags & VFS_DRIVER;
+}
+
 s32 vfs_incRefs(tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	if(file < 0 || file >= FILE_COUNT || e->flags == 0)
@@ -170,7 +165,7 @@ s32 vfs_fcntl(tPid pid,tFileNo file,u32 cmd,s32 arg) {
 		case F_GETFL:
 			return e->flags;
 		case F_SETFL:
-			e->flags &= VFS_READ | VFS_WRITE | VFS_CREATE;
+			e->flags &= VFS_READ | VFS_WRITE | VFS_CREATE | VFS_DRIVER;
 			e->flags |= arg & VFS_NOBLOCK;
 			return 0;
 		case F_SETDATA: {
@@ -215,9 +210,6 @@ tFileNo vfs_openPath(tPid pid,u16 flags,const char *path) {
 		/* handle virtual files */
 		if(err < 0)
 			return err;
-		/* store whether we have created the node */
-		if(created)
-			flags |= VFS_CREATED;
 
 		/* if its a driver, create the usage-node */
 		if(IS_DRIVER(node->mode)) {
@@ -235,7 +227,7 @@ tFileNo vfs_openPath(tPid pid,u16 flags,const char *path) {
 
 		/* if it is a driver, call the driver open-command */
 		if(IS_DRVUSE(node->mode)) {
-			err = vfsdrv_open(pid,file,node,flags);
+			err = vfs_drv_open(pid,file,node,flags);
 			if(err < 0) {
 				/* close removes the driver-usage-node, if it is one */
 				vfs_closeFile(pid,file);
@@ -261,7 +253,7 @@ tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 	tFileNo f;
 
 	/* cleanup flags */
-	flags &= VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_CREATED;
+	flags &= VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER;
 
 	/* determine free file */
 	f = vfs_getFreeFile(pid,flags,nodeNo,devNo);
@@ -297,13 +289,13 @@ tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 	tFileNo i;
 	tFileNo freeSlot = ERR_NO_FREE_FILE;
-	u16 rwFlags = flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK);
+	u16 rwFlags = flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER);
 	bool isDrvUse = false;
 	sGFTEntry *e = globalFileTable;
 
 	/* ensure that we don't increment usages of an unused slot */
 	assert(flags & (VFS_READ | VFS_WRITE));
-	assert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_CREATED)));
+	assert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER)));
 
 	if(devNo == VFS_DEV_NO) {
 		sVFSNode *n = vfs_node_get(nodeNo);
@@ -319,7 +311,7 @@ static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 			if(e->devNo == devNo && e->nodeNo == nodeNo) {
 				if(e->owner == pid) {
 					/* if the flags are the same we don't need a new file */
-					if((e->flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK)) == rwFlags)
+					if((e->flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER)) == rwFlags)
 						return i;
 				}
 				/* two procs that want to write at the same time? no! */
@@ -481,10 +473,8 @@ s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count) {
 
 		/* write to the node */
 		writtenBytes = n->writeHandler(pid,file,n,buffer,e->position,count);
-		if(writtenBytes > 0) {
-			e->flags |= VFS_MODIFIED;
+		if(writtenBytes > 0)
 			e->position += writtenBytes;
-		}
 	}
 	else {
 		/* query the fs-driver to write to the inode */
@@ -746,7 +736,7 @@ tFileNo vfs_createDriver(tPid pid,const char *name,u32 flags) {
 	/* create node */
 	n = vfs_server_create(pid,drv,hname,flags);
 	if(n != NULL)
-		return vfs_openFile(pid,VFS_READ,vfs_node_getNo(n),VFS_DEV_NO);
+		return vfs_openFile(pid,VFS_READ | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
 
 	/* failed, so cleanup */
 	kheap_free(hname);
@@ -775,16 +765,8 @@ bool vfs_hasData(tPid pid,tFileNo file) {
 	return n->name != NULL && IS_DRIVER(n->parent->mode) && vfs_server_isReadable(n->parent);
 }
 
-void vfs_wakeupClients(sVFSNode *node,u32 events) {
-	assert(IS_DRIVER(node->mode));
-	node = vfs_node_getFirstChild(node);
-	while(node != NULL) {
-		ev_wakeup(events,(tEvObj)node);
-		node = node->next;
-	}
-}
-
 s32 vfs_getClient(tPid pid,tFileNo *files,u32 count,s32 *index) {
+	UNUSED(pid);
 	sVFSNode *node = NULL,*client,*match = NULL;
 	u32 i;
 	bool retry,cont = true;
@@ -796,7 +778,7 @@ start:
 			return ERR_INVALID_FILE;
 
 		node = vfs_node_get(e->nodeNo);
-		if(node->owner != pid || !IS_DRIVER(node->mode))
+		if(!IS_DRIVER(node->mode))
 			return ERR_NOT_OWN_DRIVER;
 
 		client = vfs_server_getWork(node,&cont,&retry);
@@ -819,13 +801,12 @@ start:
 }
 
 tInodeNo vfs_getClientId(tPid pid,tFileNo file) {
+	UNUSED(pid);
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = vfs_node_get(e->nodeNo);
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
-	if(e->devNo != VFS_DEV_NO || e->owner != pid)
-		return ERR_INVALID_FILE;
-	if(!IS_DRVUSE(n->mode))
+	if(e->devNo != VFS_DEV_NO || !IS_DRVUSE(n->mode))
 		return ERR_INVALID_FILE;
 	return e->nodeNo;
 }
@@ -846,7 +827,7 @@ tFileNo vfs_openClient(tPid pid,tFileNo file,tInodeNo clientId) {
 		return ERR_PATH_NOT_FOUND;
 
 	/* open file */
-	return vfs_openFile(pid,VFS_READ | VFS_WRITE,vfs_node_getNo(n),VFS_DEV_NO);
+	return vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
 }
 
 sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
@@ -905,23 +886,8 @@ errorName:
 }
 
 void vfs_removeProcess(tPid pid) {
-	sVFSNode *rn = devNode;
-	sVFSNode *n,*tn;
-	sProc *p = proc_getByPid(pid);
-
-	/* check if the process has a driver */
-	n = vfs_node_getFirstChild(rn->firstChild);
-	while(n != NULL) {
-		if(IS_DRIVER(n->mode) && n->owner == pid) {
-			tn = n->next;
-			vfs_node_destroy(n);
-			n = tn;
-		}
-		else
-			n = n->next;
-	}
-
 	/* remove from /system/processes */
+	sProc *p = proc_getByPid(pid);
 	vfs_node_destroy(p->threadDir->parent);
 }
 
@@ -1020,6 +986,8 @@ void vfs_dbg_printGFT(void) {
 				vid_printf("WRITE ");
 			if(e->flags & VFS_NOBLOCK)
 				vid_printf("NOBLOCK ");
+			if(e->flags & VFS_DRIVER)
+				vid_printf("DRIVER ");
 			vid_printf("\n");
 			vid_printf("\t\tnodeNo: %d\n",e->nodeNo);
 			vid_printf("\t\tdevNo: %d\n",e->devNo);

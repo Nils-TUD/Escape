@@ -37,9 +37,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/lock.h>
 #include <sys/util.h>
-#include <sys/debug.h>
 #include <sys/video.h>
-#include <esc/hashmap.h>
 #include <assert.h>
 #include <string.h>
 #include <errors.h>
@@ -116,6 +114,13 @@ void thread_switch(void) {
 	thread_switchTo(sched_perform()->tid);
 }
 
+void thread_switchNoSigs(void) {
+	/* remember that the current thread wants to ignore signals */
+	cur->ignoreSignals = 1;
+	thread_switch();
+	cur->ignoreSignals = 0;
+}
+
 void thread_switchTo(tTid tid) {
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {
@@ -190,13 +195,6 @@ void thread_idle(void) {
 	while(true) {
 		__asm__("hlt");
 	}
-}
-
-void thread_switchNoSigs(void) {
-	/* remember that the current thread wants to ignore signals */
-	cur->ignoreSignals = 1;
-	thread_switch();
-	cur->ignoreSignals = 0;
 }
 
 bool thread_setReady(tTid tid) {
@@ -415,14 +413,14 @@ void thread_dbg_print(sThread *t) {
 	static const char *states[] = {
 		"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE","BLOCKEDSWAP","READYSWAP"
 	};
-	vid_printf("\tthread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
-	vid_printf("\t\tstate=%s\n",states[t->state]);
-	vid_printf("\t\tevents=%#x\n",t->events);
-	vid_printf("\t\tkstackFrame=%#x\n",t->kstackFrame);
-	vid_printf("\t\ttlsRegion=%d, stackRegion=%d\n",t->tlsRegion,t->stackRegion);
-	vid_printf("\t\tucycleCount = %#016Lx\n",t->stats.ucycleCount.val64);
-	vid_printf("\t\tkcycleCount = %#016Lx\n",t->stats.kcycleCount.val64);
-	vid_printf("\t\tkernel-trace:\n");
+	vid_printf("\tThread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
+	vid_printf("\t\tState=%s\n",states[t->state]);
+	vid_printf("\t\tEvents=%#x\n",t->events);
+	vid_printf("\t\tKstackFrame=%#x\n",t->kstackFrame);
+	vid_printf("\t\tTlsRegion=%d, stackRegion=%d\n",t->tlsRegion,t->stackRegion);
+	vid_printf("\t\tUCycleCount = %#016Lx\n",t->stats.ucycleCount.val64);
+	vid_printf("\t\tKCycleCount = %#016Lx\n",t->stats.kcycleCount.val64);
+	vid_printf("\t\tKernel-trace:\n");
 	calls = util_getKernelStackTraceOf(t);
 	while(calls->addr != 0) {
 		vid_printf("\t\t\t%#08x -> %#08x (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
@@ -430,7 +428,7 @@ void thread_dbg_print(sThread *t) {
 	}
 	calls = util_getUserStackTraceOf(t);
 	if(calls) {
-		vid_printf("\t\tuser-trace:\n");
+		vid_printf("\t\tUser-trace:\n");
 		while(calls->addr != 0) {
 			vid_printf("\t\t\t%#08x -> %#08x (%s)\n",
 					(calls + 1)->addr,calls->funcAddr,calls->funcName);

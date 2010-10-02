@@ -52,9 +52,4 @@ s32 vfsinfo_regionsReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u
  */
 s32 vfsinfo_virtMemReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
-/**
- * The read-handler for directories
- */
-s32 vfsinfo_dirReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
-
 #endif /* VFSINFO_H_ */

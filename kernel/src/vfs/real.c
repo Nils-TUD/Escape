@@ -26,6 +26,7 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/request.h>
 #include <sys/vfs/real.h>
+#include <sys/vfs/channel.h>
 #include <sys/util.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
@@ -483,9 +484,11 @@ static tFileNo vfsr_requestFile(tPid pid,sVFSNode **node) {
 
 	/* create usage-node */
 	chan->node = vfsn_getNode(nodeNo);
-	err = vfsn_createUse(pid,chan->node,&child);
-	if(err < 0)
+	child = vfs_chan_create(pid,chan->node);
+	if(child == NULL) {
+		err = ERR_NOT_ENOUGH_MEM;
 		goto errorChan;
+	}
 	chan->node = child;
 	nodeNo = vfsn_getNodeNo(child);
 
@@ -503,7 +506,7 @@ static tFileNo vfsr_requestFile(tPid pid,sVFSNode **node) {
 errorClose:
 	vfs_closeFile(pid,chan->file);
 errorNode:
-	vfsn_removeNode(child);
+	vfs_node_destroy(child);
 errorChan:
 	kheap_free(chan);
 	return err;

@@ -73,15 +73,13 @@ enum {
 
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
-/* the function for read-requests on info-nodes */
+
+/* the prototypes for the operations on nodes */
 typedef s32 (*fRead)(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 typedef s32 (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
-#if 0
-typedef s32 (*fSeek)(tPid pid,tFileNo file,sVFSNode *node,s32 offset,u32 whence);
-typedef s32 (*fStat)(tPid pid,tFileNo file,sVFSNode *node,sFileInfo *info);
-typedef s32 (*fSendMsg)(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size);
-typedef s32 (*fReceiveMsg)(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size);
-typedef void (*fClose)(tPid pid,tFileNo file);
+typedef s32 (*fSeek)(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence);
+typedef void (*fClose)(tPid pid,tFileNo file,sVFSNode *node);
+typedef void (*fDestroy)(sVFSNode *n);
 
 struct sVFSNode {
 	char *name;
@@ -97,69 +95,15 @@ struct sVFSNode {
 	sVFSNode *next;
 	sVFSNode *firstChild;
 	sVFSNode *lastChild;
-	/* handler for various operations; NULL = not supported */
-	fRead read;
-	fWrite write;
-	fSeek seek;
-	fStat stat;
-	fSendMsg sendMsg;
-	fReceiveMsg recvMsg;
-	fClose close;
-	/* data in various forms, depending on the type */
-	void *data;
-};
-#endif
-
-struct sVFSNode {
-	char *name;
-	/* number of open files for this node */
-	u8 refCount;
-	/* 0 means unused; stores permissions and the type of node */
-	u32 mode;
-	/* for the vfs-structure */
-	sVFSNode *parent;
-	sVFSNode *prev;
-	sVFSNode *next;
-	sVFSNode *firstChild;
-	sVFSNode *lastChild;
 	/* the handler that perform a read-/write-operation on this node */
 	fRead readHandler;
 	fWrite writeHandler;
-	/* the owner of this node: used for driver-usages */
-	tPid owner;
+	fSeek seek;
+	fClose close;
+	fDestroy destroy;
 	/* a list of listeners for created, modified or deleted */
 	sSLList *listeners;
-	union {
-		/* for drivers/dev */
-		struct {
-			/* whether there is data to read or not */
-			bool isEmpty;
-			/* implemented functions */
-			u32 funcs;
-			/* the last served client */
-			sVFSNode *lastClient;
-		} driver;
-		/* for driver-usages */
-		struct {
-			/* a list for sending messages to the driver */
-			sSLList *sendList;
-			/* a list for reading messages from the driver */
-			sSLList *recvList;
-		} drvuse;
-		/* for pipes */
-		struct {
-			u32 total;
-			sSLList *list;
-		} pipe;
-		/* for all other node-types */
-		struct {
-			/* size of the buffer */
-			u32 size;
-			/* currently used size */
-			u32 pos;
-			void *cache;
-		} def;
-	} data;
+	void *data;
 };
 
 /**
@@ -168,28 +112,12 @@ struct sVFSNode {
 void vfs_init(void);
 
 /**
- * Checks whether the process with given pid has the permission to do the given stuff with <nodeNo>.
- *
- * @param pid the process-id
- * @param nodeNo the node-number
- * @param flags specifies what you want to do (VFS_READ | VFS_WRITE)
- * @return 0 if the process has permission or the error-code
- */
-s32 vfs_hasAccess(tPid pid,tInodeNo nodeNo,u16 flags);
-
-/**
  * Increases the references of the given file
  *
  * @param file the file
  * @return 0 on success
  */
 s32 vfs_incRefs(tFileNo file);
-
-/**
- * @param file the file-number
- * @return the owner-pid of the given file
- */
-s32 vfs_getOwner(tFileNo file);
 
 /**
  * Determines the node-number and device-number for the given file
@@ -452,14 +380,6 @@ tInodeNo vfs_getClientId(tPid pid,tFileNo file);
  * @return the file or a negative error-code
  */
 tFileNo vfs_openClient(tPid pid,tInodeNo nodeNo,tInodeNo clientId);
-
-/**
- * Removes the driver with given node-number
- *
- * @param pid the process-id
- * @param nodeNo the node-number of the driver
- */
-s32 vfs_removeDriver(tPid pid,tInodeNo nodeNo);
 
 /**
  * Creates a process-node with given pid and handler-function

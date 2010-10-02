@@ -21,6 +21,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/driver.h>
 #include <sys/vfs/request.h>
+#include <sys/vfs/server.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
@@ -50,7 +51,7 @@ s32 vfsdrv_open(tPid pid,tFileNo file,sVFSNode *node,u32 flags) {
 	sRequest *req;
 
 	/* if the driver doesn't implement open, its ok */
-	if(!DRV_IMPL(node->parent->data.driver.funcs,DRV_OPEN))
+	if(!vfs_server_supports(node->parent,DRV_OPEN))
 		return 0;
 
 	/* get request; maybe we have to wait */
@@ -79,11 +80,11 @@ s32 vfsdrv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	s32 res;
 
 	/* if the driver doesn't implement open, its an error */
-	if(!DRV_IMPL(node->parent->data.driver.funcs,DRV_READ))
+	if(!vfs_server_supports(node->parent,DRV_READ))
 		return ERR_UNSUPPORTED_OP;
 
 	/* wait until data is readable */
-	if(n->parent->data.driver.isEmpty) {
+	if(!vfs_server_isReadable(n->parent)) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
 		ev_wait(t->tid,EVI_DATA_READABLE,node->parent);
@@ -91,7 +92,7 @@ s32 vfsdrv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
 		/* if we waked up and got no signal, the driver probably died */
-		if(n->parent->data.driver.isEmpty)
+		if(!vfs_server_isReadable(n->parent))
 			return ERR_DRIVER_DIED;
 	}
 
@@ -126,7 +127,7 @@ s32 vfsdrv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 off
 	s32 res;
 
 	/* if the driver doesn't implement open, its an error */
-	if(!DRV_IMPL(node->parent->data.driver.funcs,DRV_WRITE))
+	if(!vfs_server_supports(node->parent,DRV_WRITE))
 		return ERR_UNSUPPORTED_OP;
 
 	/* get request; maybe we have to wait */
@@ -156,7 +157,7 @@ s32 vfsdrv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 off
 
 void vfsdrv_close(tPid pid,tFileNo file,sVFSNode *node) {
 	/* if the driver doesn't implement open, stop here */
-	if(!DRV_IMPL(node->parent->data.driver.funcs,DRV_CLOSE))
+	if(!vfs_server_supports(node->parent,DRV_CLOSE))
 		return;
 
 	vfs_sendMsg(pid,file,MSG_DRV_CLOSE,(u8*)&msg,sizeof(msg.args));
@@ -194,21 +195,16 @@ static void vfsdrv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 		sVFSNode *drv = node->parent;
 		/* the first one is the message */
 		if(req->state == REQ_STATE_WAITING) {
-			bool wasEmpty = drv->data.driver.isEmpty;
 			sMsg *rmsg = (sMsg*)data;
 			/* an error? */
 			if(!data || size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
 				if(data && size >= sizeof(rmsg->args)) {
-					drv->data.driver.isEmpty = !rmsg->args.arg2;
+					vfs_server_setReadable(drv,rmsg->args.arg2);
 					req->count = rmsg->args.arg1;
 				}
 				else {
-					drv->data.driver.isEmpty = false;
+					vfs_server_setReadable(drv,true);
 					req->count = 0;
-				}
-				if(wasEmpty && !drv->data.driver.isEmpty) {
-					vfs_wakeupClients(drv,EVI_RECEIVED_MSG);
-					ev_wakeup(EVI_DATA_READABLE,drv);
 				}
 				req->state = REQ_STATE_FINISHED;
 				ev_wakeupThread(req->tid,EV_REQ_REPLY);
@@ -217,13 +213,9 @@ static void vfsdrv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 			/* otherwise we'll receive the data with the next msg */
 			/* set whether data is readable; do this here because a thread-switch may cause
 			 * the driver to set that data is readable although arg2 was 0 here (= no data) */
-			drv->data.driver.isEmpty = !rmsg->args.arg2;
+			vfs_server_setReadable(drv,rmsg->args.arg2);
 			req->count = MIN(req->dsize,rmsg->args.arg1);
 			req->state = REQ_STATE_WAIT_DATA;
-			if(wasEmpty && !drv->data.driver.isEmpty) {
-				vfs_wakeupClients(drv,EVI_RECEIVED_MSG);
-				ev_wakeup(EVI_DATA_READABLE,drv);
-			}
 		}
 		else if(req->state == REQ_STATE_WAIT_DATA) {
 			/* ok, it's the data */

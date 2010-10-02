@@ -141,7 +141,7 @@ void ev_removeThread(tTid tid) {
 			}
 		}
 		sched_setReady(t);
-		assert(t->events == 0);;
+		assert(t->events == 0);
 	}
 }
 

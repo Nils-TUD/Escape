@@ -73,9 +73,9 @@ static void test_vfs_createDriver(void) {
 	id3 = vfs_createDriver(1,"test3",0);
 	if(!test_assertTrue(vfsn_isValidNodeNo(id3))) return;
 
-	vfs_removeDriver(0,id);
-	vfs_removeDriver(0,id2);
-	vfs_removeDriver(1,id3);
+	vfs_node_destroy(vfsn_getNode(id));
+	vfs_node_destroy(vfsn_getNode(id2));
+	vfs_node_destroy(vfsn_getNode(id3));
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();

@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/real.h>
+#include <sys/vfs/pipe.h>
 #include <sys/vfs/driver.h>
 #include <sys/task/thread.h>
 #include <sys/syscalls/io.h>
@@ -109,9 +110,9 @@ void sysc_pipe(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,err);
 
 	/* create pipe */
-	err = vfsn_createUse(p->pid,vfsn_getNode(nodeNo),&pipeNode);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
+	pipeNode = vfs_pipe_create(p->pid,vfsn_getNode(nodeNo));
+	if(pipeNode == NULL)
+		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 
 	pipeNodeNo = vfsn_getNodeNo(pipeNode);
 	/* get free fd for reading */
@@ -158,7 +159,7 @@ errorCloseReadFile:
 	/* vfs_closeFile() will already remove the node, so we can't do this again! */
 	SYSC_ERROR(stack,err);
 errorRemNode:
-	vfsn_removeNode(pipeNode);
+	vfs_node_destroy(pipeNode);
 	SYSC_ERROR(stack,err);
 }
 

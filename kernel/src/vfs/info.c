@@ -29,20 +29,13 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/rw.h>
+#include <sys/vfs/file.h>
 #include <sys/vfs/real.h>
 #include <sys/multiboot.h>
 #include <sys/util.h>
 #include <sys/printf.h>
 #include <assert.h>
 #include <string.h>
-
-/* VFS-directory-entry (equal to the direntry of ext2) */
-typedef struct {
-	tInodeNo nodeNo;
-	u16 recLen;
-	u16 nameLen;
-	/* name follows (up to 255 bytes) */
-} A_PACKED sVFSDirEntry;
 
 /**
  * The read-callback for the trace-read-handler
@@ -104,12 +97,12 @@ void vfsinfo_init(void) {
 	vfsn_resolvePath("/system",&nodeNo,NULL,VFS_NOACCESS);
 	sysNode = vfsn_getNode(nodeNo);
 
-	assert(vfsn_createFile(KERNEL_PID,sysNode,(char*)"memusage",
-			vfsinfo_memUsageReadHandler,NULL,true) != NULL);
-	assert(vfsn_createFile(KERNEL_PID,sysNode,(char*)"cpu",
-			vfsinfo_cpuReadHandler,NULL,true) != NULL);
-	assert(vfsn_createFile(KERNEL_PID,sysNode,(char*)"stats",
-			vfsinfo_statsReadHandler,NULL,true) != NULL);
+	assert(vfs_file_create(KERNEL_PID,sysNode,(char*)"memusage",
+			vfsinfo_memUsageReadHandler,NULL) != NULL);
+	assert(vfs_file_create(KERNEL_PID,sysNode,(char*)"cpu",
+			vfsinfo_cpuReadHandler,NULL) != NULL);
+	assert(vfs_file_create(KERNEL_PID,sysNode,(char*)"stats",
+			vfsinfo_statsReadHandler,NULL) != NULL);
 }
 
 s32 vfsinfo_traceReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
@@ -371,113 +364,4 @@ static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buff
 	paging_sprintfVirtMem(&buf,p->pagedir);
 	*buffer = buf.str;
 	*dataSize = buf.len;
-}
-
-s32 vfsinfo_dirReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	s32 byteCount,fsByteCount;
-
-	UNUSED(file);
-	vassert(node != NULL,"node == NULL");
-	vassert(buffer != NULL,"buffer == NULL");
-
-	/* TODO should we cache the fs-accesses for the root-dir, too? */
-
-	/* not cached yet? */
-	if(node->data.def.cache == NULL) {
-		/* we need the number of bytes first */
-		u8 *fsBytes = NULL,*fsBytesDup;
-		sVFSNode *n = vfsn_getFirstChild(node);
-		byteCount = 0;
-		fsByteCount = 0;
-		while(n != NULL) {
-			if(node->parent != NULL || (strcmp(n->name,".") != 0 && strcmp(n->name,"..") != 0))
-				byteCount += sizeof(sVFSDirEntry) + strlen(n->name);
-			n = n->next;
-		}
-
-		/* the root-directory is distributed on the fs-driver and the kernel */
-		/* therefore we have to read it from the fs-driver, too */
-		/* but don't do that if we're the kernel (vfsr does not work then) */
-		if(node->parent == NULL && pid != KERNEL_PID) {
-			const u32 bufSize = 1024;
-			u32 c,curSize = bufSize;
-			fsBytes = (u8*)kheap_alloc(bufSize);
-			if(fsBytes != NULL) {
-				tFileNo rfile = vfsr_openFile(pid,VFS_READ,"/");
-				if(rfile >= 0) {
-					while((c = vfs_readFile(pid,rfile,fsBytes + fsByteCount,bufSize)) > 0) {
-						fsByteCount += c;
-						if(c < bufSize)
-							break;
-
-						curSize += bufSize;
-						fsBytesDup = kheap_realloc(fsBytes,curSize);
-						if(fsBytesDup == NULL) {
-							kheap_free(fsBytes);
-							fsBytes = NULL;
-							break;
-						}
-						fsBytes = fsBytesDup;
-					}
-					vfs_closeFile(pid,rfile);
-				}
-			}
-			byteCount += fsByteCount;
-		}
-
-		node->data.def.size = byteCount;
-		node->data.def.pos = byteCount;
-		if(byteCount > 0) {
-			u8 *childs;
-			/* now allocate mem on the heap and copy all data into it */
-			if(fsBytes)
-				childs = kheap_realloc(fsBytes,byteCount);
-			else
-				childs = (u8*)kheap_alloc(byteCount);
-
-			if(childs == NULL) {
-				if(fsBytes)
-					kheap_free(fsBytes);
-				node->data.def.size = 0;
-				node->data.def.pos = 0;
-			}
-			else {
-				u16 len;
-				sVFSDirEntry *dirEntry = (sVFSDirEntry*)(childs + fsByteCount);
-				node->data.def.cache = childs;
-				n = vfsn_getFirstChild(node);
-				while(n != NULL) {
-					if(node->parent == NULL && (strcmp(n->name,".") == 0 || strcmp(n->name,"..") == 0)) {
-						n = n->next;
-						continue;
-					}
-					len = strlen(n->name);
-					dirEntry->nodeNo = vfsn_getNodeNo(n);
-					dirEntry->nameLen = len;
-					dirEntry->recLen = sizeof(sVFSDirEntry) + len;
-					memcpy(dirEntry + 1,n->name,len);
-					dirEntry = (sVFSDirEntry*)((u8*)dirEntry + dirEntry->recLen);
-					n = n->next;
-				}
-			}
-		}
-	}
-
-	if(offset > node->data.def.size)
-		offset = node->data.def.size;
-	byteCount = MIN(node->data.def.size - offset,count);
-	if(byteCount > 0) {
-		/* simply copy the data to the buffer */
-		memcpy(buffer,(u8*)node->data.def.cache + offset,byteCount);
-	}
-
-	/* no cache for root-folder */
-	if(node->parent == NULL) {
-		node->data.def.size = 0;
-		node->data.def.pos = 0;
-		kheap_free(node->data.def.cache);
-		node->data.def.cache = NULL;
-	}
-
-	return byteCount;
 }

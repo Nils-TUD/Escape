@@ -17,29 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VFSRW_H_
-#define VFSRW_H_
+#ifndef DIR_H_
+#define DIR_H_
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/node.h>
 
-/* callback function for the default read-handler */
-typedef void (*fReadCallBack)(sVFSNode *node,u32 *dataSize,void **buffer);
+sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name);
+s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
-/**
- * Creates space, calls the callback which should fill the space
- * with data and writes the corresponding part to the buffer of the user
- *
- * @param pid the process-id
- * @param node the vfs-node
- * @param buffer the buffer
- * @param offset the offset
- * @param count the number of bytes to copy
- * @param dataSize the total size of the data
- * @param callback the callback-function
- */
-s32 vfsrw_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
-		fReadCallBack callback);
-
-#endif /* VFSRW_H_ */
+#endif /* DIR_H_ */

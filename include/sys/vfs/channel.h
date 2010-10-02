@@ -17,29 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VFSRW_H_
-#define VFSRW_H_
+#ifndef CHANNEL_H_
+#define CHANNEL_H_
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/node.h>
 
-/* callback function for the default read-handler */
-typedef void (*fReadCallBack)(sVFSNode *node,u32 *dataSize,void **buffer);
+sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent);
+bool vfs_chan_hasReply(sVFSNode *node);
+bool vfs_chan_hasWork(sVFSNode *node);
+s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
+s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size);
 
-/**
- * Creates space, calls the callback which should fill the space
- * with data and writes the corresponding part to the buffer of the user
- *
- * @param pid the process-id
- * @param node the vfs-node
- * @param buffer the buffer
- * @param offset the offset
- * @param count the number of bytes to copy
- * @param dataSize the total size of the data
- * @param callback the callback-function
- */
-s32 vfsrw_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
-		fReadCallBack callback);
 
-#endif /* VFSRW_H_ */
+#if DEBUGGING
+
+void vfs_chan_dbg_print(sVFSNode *n);
+
+#endif
+
+#endif /* CHANNEL_H_ */

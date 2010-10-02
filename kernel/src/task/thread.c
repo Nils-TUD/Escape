@@ -350,6 +350,8 @@ void thread_kill(sThread *t) {
 		}
 		if(!sll_append(deadThreads,t))
 			util_panic("Not enough mem to append dead thread");
+		/* remove from event-system */
+		ev_removeThread(t->tid);
 		/* remove from scheduler and ensure that he don't picks us again */
 		sched_removeThread(t);
 		/* remove from timer, too, so that we don't get waked up again */
@@ -383,6 +385,7 @@ void thread_kill(sThread *t) {
 	}
 
 	/* remove from all modules we may be announced */
+	ev_removeThread(t->tid);
 	sched_removeThread(t);
 	timer_removeThread(t->tid);
 	fpu_freeState(&t->fpuState);

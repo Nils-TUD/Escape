@@ -17,29 +17,36 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VFSRW_H_
-#define VFSRW_H_
+#ifndef SERVER_H_
+#define SERVER_H_
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/node.h>
-
-/* callback function for the default read-handler */
-typedef void (*fReadCallBack)(sVFSNode *node,u32 *dataSize,void **buffer);
 
 /**
- * Creates space, calls the callback which should fill the space
- * with data and writes the corresponding part to the buffer of the user
+ * Creates a server-node
  *
- * @param pid the process-id
- * @param node the vfs-node
- * @param buffer the buffer
- * @param offset the offset
- * @param count the number of bytes to copy
- * @param dataSize the total size of the data
- * @param callback the callback-function
+ * @param pid the process-id to use
+ * @param parent the parent-node
+ * @param prev the previous node
+ * @param name the node-name
+ * @param flags the flags
+ * @return the node
  */
-s32 vfsrw_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
-		fReadCallBack callback);
+sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags);
 
-#endif /* VFSRW_H_ */
+void vfs_server_clientRemoved(sVFSNode *node,sVFSNode *client);
+bool vfs_server_isterm(sVFSNode *node);
+bool vfs_server_supports(sVFSNode *node,u32 funcs);
+bool vfs_server_accepts(sVFSNode *node,u32 id);
+bool vfs_server_isReadable(sVFSNode *node);
+void vfs_server_setReadable(sVFSNode *node,bool readable);
+sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry);
+
+#if DEBUGGING
+
+void vfs_server_dbg_print(sVFSNode *n);
+
+#endif
+
+#endif /* SERVER_H_ */

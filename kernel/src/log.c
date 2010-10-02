@@ -22,7 +22,7 @@
 #include <sys/machine/serial.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
-#include <sys/vfs/rw.h>
+#include <sys/vfs/file.h>
 #include <sys/printf.h>
 #include <sys/log.h>
 #include <sys/config.h>
@@ -70,7 +70,7 @@ void log_vfsIsReady(void) {
 	assert(vfsn_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
 	nameCpy = strdup(LOG_FILENAME);
 	assert(nameCpy != NULL);
-	logNode = vfsn_createFile(KERNEL_PID,vfsn_getNode(inodeNo),nameCpy,vfsrw_readDef,log_write,false);
+	logNode = vfs_file_create(KERNEL_PID,vfsn_getNode(inodeNo),nameCpy,vfs_file_read,log_write);
 	assert(logNode != NULL);
 	logFile = vfs_openFile(KERNEL_PID,VFS_WRITE,vfsn_getNodeNo(logNode),VFS_DEV_NO);
 	assert(logFile >= 0);
@@ -156,7 +156,7 @@ static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 o
 				ser_out(SER_COM1,c);
 		}
 	}
-	return vfsrw_writeDef(pid,file,node,buffer,offset,count);
+	return vfs_file_write(pid,file,node,buffer,offset,count);
 }
 
 static void log_flush(void) {

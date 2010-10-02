@@ -22,7 +22,10 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/driver.h>
+#include <sys/vfs/file.h>
+#include <sys/vfs/dir.h>
 #include <sys/vfs/rw.h>
+#include <sys/vfs/link.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/pmem.h>
@@ -37,16 +40,6 @@
 
 #define IS_ON_HEAP(addr) ((u32)(addr) >= KERNEL_HEAP_START && \
 		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
-
-/**
- * Creates a node for driver-usage or pipe-usage
- *
- * @param pid the process-id to use
- * @param parent the parent node
- * @param name the name
- * @return the node or NULL
- */
-static sVFSNode *vfsn_createUseNode(tPid pid,sVFSNode *parent,char *name);
 
 /**
  * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
@@ -80,7 +73,7 @@ bool vfsn_isValidNodeNo(tInodeNo nodeNo) {
 bool vfsn_isOwnDriverNode(tInodeNo nodeNo) {
 	sProc *p = proc_getRunning();
 	sVFSNode *node = nodes + nodeNo;
-	return node->owner == p->pid && IS_DRIVER(node->mode);
+	return vfsn_isValidNodeNo(nodeNo) && node->owner == p->pid && IS_DRIVER(node->mode);
 }
 
 tInodeNo vfsn_getNodeNo(sVFSNode *node) {
@@ -94,7 +87,7 @@ sVFSNode *vfsn_getNode(tInodeNo nodeNo) {
 sVFSNode *vfsn_getFirstChild(sVFSNode *node) {
 	if(!MODE_IS_LINK((node)->mode))
 		return node->firstChild;
-	return ((sVFSNode*)node->data.def.cache)->firstChild;
+	return vfs_link_resolve(node)->firstChild;
 }
 
 s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
@@ -116,10 +109,7 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
 	info->uid = 0;
 	info->gid = 0;
 	info->mode = n->mode;
-	if(IS_DRVUSE(n->mode))
-		info->size = 0;
-	else
-		info->size = n->data.def.pos;
+	info->size = 0;
 	return 0;
 }
 
@@ -266,13 +256,13 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 			}
 			else
 				nameLen = strlen(path);
-			/* copy the name because vfsn_createFile() will store the pointer */
+			/* copy the name because vfs_file_create() will store the pointer */
 			nameCpy = kheap_alloc(nameLen + 1);
 			if(nameCpy == NULL)
 				return ERR_NOT_ENOUGH_MEM;
 			memcpy(nameCpy,path,nameLen + 1);
 			/* now create the node and pass the node-number back */
-			if((child = vfsn_createFile(t->tid,dir,nameCpy,vfsrw_readDef,vfsrw_writeDef,false)) == NULL) {
+			if((child = vfs_file_create(t->tid,dir,nameCpy,vfs_file_read,vfs_file_write)) == NULL) {
 				kheap_free(nameCpy);
 				return ERR_NOT_ENOUGH_MEM;
 			}
@@ -286,7 +276,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 
 	/* resolve link */
 	if(!(flags & VFS_NOLINKRES) && MODE_IS_LINK(n->mode))
-		n = (sVFSNode*)n->data.def.cache;
+		n = vfs_link_resolve(n);
 
 	/* virtual node */
 	*nodeNo = vfsn_getNodeNo(n);
@@ -335,16 +325,8 @@ sVFSNode *vfsn_findInDir(sVFSNode *node,const char *name,u32 nameLen) {
 	return NULL;
 }
 
-sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name) {
-	sVFSNode *node = vfsn_createNode(name);
-	if(node)
-		vfsn_appendChild(parent,node);
-	return node;
-}
-
-sVFSNode *vfsn_createNode(char *name) {
+sVFSNode *vfs_node_create(sVFSNode *parent,char *name) {
 	sVFSNode *node;
-
 	vassert(name != NULL,"name == NULL");
 
 	if(strlen(name) > MAX_NAME_LEN)
@@ -361,69 +343,15 @@ sVFSNode *vfsn_createNode(char *name) {
 	node->refCount = 0;
 	node->next = NULL;
 	node->prev = NULL;
+	node->destroy = NULL;
 	node->firstChild = NULL;
 	node->lastChild = NULL;
-	node->data.drvuse.recvList = NULL;
-	node->data.drvuse.sendList = NULL;
-	node->data.def.cache = NULL;
-	node->data.def.size = 0;
-	node->data.def.pos = 0;
+	vfsn_appendChild(parent,node);
 	return node;
-}
-
-sVFSNode *vfsn_createFile(tPid pid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler,
-		bool generated) {
-	sVFSNode *node = vfsn_createNodeAppend(parent,name);
-	if(node == NULL)
-		return NULL;
-
-	node->owner = pid;
-	/* TODO we need write-permissions for other because we have no real user-/group-based
-	 * permission-system */
-	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ
-		| MODE_OTHER_WRITE;
-	node->readHandler = rwHandler;
-	node->writeHandler = wrHandler;
-	if(generated)
-		node->data.def.pos = -1;
-	return node;
-}
-
-sVFSNode *vfsn_createDir(sVFSNode *parent,char *name) {
-	sVFSNode *target;
-	sVFSNode *node = vfsn_createNodeAppend(parent,name);
-	if(node == NULL)
-		return NULL;
-
-	if(vfsn_createLink(node,(char*)".",node) == NULL) {
-		vfsn_removeNode(node);
-		return NULL;
-	}
-	/* the root-node has no parent */
-	target = parent == NULL ? node : parent;
-	if(vfsn_createLink(node,(char*)"..",target) == NULL) {
-		vfsn_removeNode(node);
-		return NULL;
-	}
-
-	node->mode = MODE_TYPE_DIR | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OWNER_EXEC |
-		MODE_OTHER_READ | MODE_OTHER_EXEC;
-	node->readHandler = vfsinfo_dirReadHandler;
-	node->writeHandler = NULL;
-	return node;
-}
-
-sVFSNode *vfsn_createLink(sVFSNode *node,char *name,sVFSNode *target) {
-	sVFSNode *child = vfsn_createNodeAppend(node,name);
-	if(child == NULL)
-		return NULL;
-	child->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
-	child->data.def.cache = target;
-	return child;
 }
 
 sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
-	sVFSNode *node = vfsn_createNodeAppend(parent,name);
+	sVFSNode *node = vfs_node_create(parent,name);
 	if(node == NULL)
 		return NULL;
 
@@ -433,33 +361,10 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 	return node;
 }
 
-sVFSNode *vfsn_createDriverNode(tPid pid,sVFSNode *parent,char *name,u32 flags) {
-	sVFSNode *node = vfsn_createNodeAppend(parent,name);
-	if(node == NULL)
-		return NULL;
-
-	node->owner = pid;
-	node->mode = MODE_TYPE_DRIVER | MODE_OWNER_READ | MODE_OTHER_READ;
-	node->readHandler = NULL;
-	node->writeHandler = NULL;
-	node->data.driver.funcs = flags;
-	node->data.driver.isEmpty = true;
-	node->data.driver.lastClient = NULL;
-	return node;
-}
-
 void vfsn_appendChild(sVFSNode *parent,sVFSNode *node) {
 	vassert(node != NULL,"node == NULL");
 
 	if(parent != NULL) {
-		/* invalid cache of directories */
-		if(MODE_IS_DIR(parent->mode) && parent->data.def.cache) {
-			kheap_free(parent->data.def.cache);
-			parent->data.def.cache = NULL;
-			parent->data.def.pos = 0;
-			parent->data.def.size = 0;
-		}
-
 		if(parent->firstChild == NULL)
 			parent->firstChild = node;
 		if(parent->lastChild != NULL)
@@ -470,38 +375,19 @@ void vfsn_appendChild(sVFSNode *parent,sVFSNode *node) {
 	node->parent = parent;
 }
 
-void vfsn_removeNode(sVFSNode *n) {
+void vfs_node_destroy(sVFSNode *n) {
 	/* remove childs */
 	sVFSNode *tn;
 	sVFSNode *child = n->firstChild;
 	while(child != NULL) {
 		tn = child->next;
-		vfsn_removeNode(child);
+		vfs_node_destroy(child);
 		child = tn;
 	}
 
-	if(IS_DRVUSE(n->mode)) {
-		/* free send and receive list */
-		if(n->data.drvuse.recvList != NULL) {
-			sll_destroy(n->data.drvuse.recvList,true);
-			n->data.drvuse.recvList = NULL;
-		}
-		if(n->data.drvuse.sendList != NULL) {
-			sll_destroy(n->data.drvuse.sendList,true);
-			n->data.drvuse.sendList = NULL;
-		}
-		/* we have to reset the last client for the driver here */
-		if(n->parent->data.driver.lastClient == n)
-			n->parent->data.driver.lastClient = NULL;
-	}
-	else if(IS_PIPE(n->mode)) {
-		sll_destroy(n->data.pipe.list,true);
-		n->data.pipe.list = NULL;
-	}
-	else if(n->data.def.cache != NULL && IS_ON_HEAP(n->data.def.cache)) {
-		kheap_free(n->data.def.cache);
-		n->data.def.cache = NULL;
-	}
+	/* let the node clean up */
+	if(n->destroy)
+		n->destroy(n);
 
 	/* free name */
 	if(IS_ON_HEAP(n->name))
@@ -516,69 +402,26 @@ void vfsn_removeNode(sVFSNode *n) {
 		n->next->prev = n->prev;
 	else
 		n->parent->lastChild = n->prev;
-
-	/* invalidate cache of parent-folder */
-	if(MODE_IS_DIR(n->parent->mode) && n->parent->data.def.cache) {
-		kheap_free(n->parent->data.def.cache);
-		n->parent->data.def.cache = NULL;
-		n->parent->data.def.size = 0;
-		n->parent->data.def.pos = 0;
-	}
 	vfsn_releaseNode(n);
 }
 
-s32 vfsn_createUse(tPid pid,sVFSNode *n,sVFSNode **child) {
+char *vfsn_getId(tPid pid) {
 	char *name;
-	sVFSNode *m;
 	u32 len,size;
-	assert(pid != n->owner);
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign = 11 bytes */
 	/* we want to have to form <pid>.<x>, therefore two ints, a '.' and \0 */
 	size = 11 * 2 + 1 + 1;
 	name = (char*)kheap_alloc(size);
 	if(name == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return NULL;
 
 	/* create usage-node */
 	itoa(name,size,pid);
 	len = strlen(name);
 	*(name + len) = '.';
 	itoa(name + len + 1,size - (len + 1),nextUsageId++);
-
-	/* create a driver-usage-node */
-	m = vfsn_createUseNode(pid,n,name);
-	if(m == NULL) {
-		kheap_free(name);
-		return ERR_NOT_ENOUGH_MEM;
-	}
-
-	*child = m;
-	return 0;
-}
-
-static sVFSNode *vfsn_createUseNode(tPid pid,sVFSNode *parent,char *name) {
-	sVFSNode *node = vfsn_createNodeAppend(parent,name);
-	if(node == NULL)
-		return NULL;
-
-	node->owner = pid;
-	if(IS_DRIVER(parent->mode))
-		node->mode = MODE_TYPE_DRVUSE;
-	else
-		node->mode = MODE_TYPE_PIPE;
-	node->mode |= MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ | MODE_OTHER_WRITE;
-	if(IS_DRIVER(parent->mode)) {
-		node->readHandler = (fRead)vfsdrv_read;
-		node->writeHandler = (fWrite)vfsdrv_write;
-	}
-	else {
-		node->readHandler = vfsrw_readPipe;
-		node->writeHandler = vfsrw_writePipe;
-		node->data.pipe.list = NULL;
-		node->data.pipe.total = 0;
-	}
-	return node;
+	return name;
 }
 
 static sVFSNode *vfsn_requestNode(void) {
@@ -642,19 +485,6 @@ void vfsn_dbg_printNode(sVFSNode *node) {
 		vid_printf("\tnext: 0x%x\n",node->next);
 		vid_printf("\tprev: 0x%x\n",node->prev);
 		vid_printf("\towner: %d\n",node->owner);
-		if(IS_DRVUSE(node->mode)) {
-			vid_printf("\tSendList:\n");
-			sll_dbg_print(node->data.drvuse.sendList);
-			vid_printf("\tRecvList:\n");
-			sll_dbg_print(node->data.drvuse.recvList);
-		}
-		else {
-			vid_printf("\treadHandler: 0x%x\n",node->readHandler);
-			vid_printf("\twriteHandler: 0x%x\n",node->writeHandler);
-			vid_printf("\tcache: 0x%x\n",node->data.def.cache);
-			vid_printf("\tsize: %d\n",node->data.def.size);
-			vid_printf("\tpos: %d\n",node->data.def.pos);
-		}
 	}
 }
 

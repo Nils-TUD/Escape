@@ -52,17 +52,13 @@ void sysc_regDriver(sIntrptStackFrame *stack) {
 
 void sysc_unregDriver(sIntrptStackFrame *stack) {
 	tDrvId id = SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
-	s32 err;
 
 	/* check node-number */
-	if(!vfsn_isValidNodeNo(id))
+	if(!vfsn_isOwnDriverNode(id))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* remove the driver */
-	err = vfs_removeDriver(p->pid,id);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
+	vfs_node_destroy(vfsn_getNode(id));
 	SYSC_RET1(stack,0);
 }
 
@@ -138,7 +134,6 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	tFD fd;
-	sVFSNode *cnode;
 	tInodeNo client;
 	s32 res;
 
@@ -183,6 +178,13 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
+	/* receive a message */
+	res = vfs_receiveMsg(t->proc->pid,file,id,data,size);
+	if(res < 0) {
+		vfs_closeFile(t->proc->pid,file);
+		SYSC_ERROR(stack,res);
+	}
+
 	/* assoc with fd */
 	res = proc_assocFd(fd,file);
 	if(res < 0) {
@@ -190,16 +192,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 	}
 
-	/* receive a message */
-	cnode = vfsn_getNode(client);
-	res = vfsrw_readDrvUse(t->proc->pid,file,cnode,id,data,size);
-	if(res < 0) {
-		proc_unassocFd(fd);
-		vfs_closeFile(t->proc->pid,file);
-		SYSC_ERROR(stack,res);
-	}
-
 	if(drv)
-		*drv = vfsn_getNodeNo(cnode->parent);
+		*drv = vfsn_getNodeNo(vfsn_getNode(client)->parent);
 	SYSC_RET1(stack,fd);
 }

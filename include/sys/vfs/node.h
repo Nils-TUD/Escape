@@ -131,16 +131,7 @@ sVFSNode *vfsn_findInDir(sVFSNode *node,const char *name,u32 nameLen);
  * @param name the node-name
  * @return the node
  */
-sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name);
-
-/**
- * Creates a (incomplete) node
- *
- * @param prev the previous node
- * @param name the node-name
- * @return the node
- */
-sVFSNode *vfsn_createNode(char *name);
+sVFSNode *vfs_node_create(sVFSNode *parent,char *name);
 
 /**
  * Creates an info-node
@@ -187,18 +178,6 @@ sVFSNode *vfsn_createLink(sVFSNode *node,char *name,sVFSNode *target);
 sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
 
 /**
- * Creates a driver-node
- *
- * @param pid the process-id to use
- * @param parent the parent-node
- * @param prev the previous node
- * @param name the node-name
- * @param flags the flags
- * @return the node
- */
-sVFSNode *vfsn_createDriverNode(tPid pid,sVFSNode *parent,char *name,u32 flags);
-
-/**
  * Appends the given node as last child to the parent
  *
  * @param parent the parent
@@ -212,7 +191,15 @@ void vfsn_appendChild(sVFSNode *parent,sVFSNode *node);
  *
  * @param n the node
  */
-void vfsn_removeNode(sVFSNode *n);
+void vfs_node_destroy(sVFSNode *n);
+
+/**
+ * Generates a unique id for given pid
+ *
+ * @param pid the process-id
+ * @return the name, allocated on the heap or NULL
+ */
+char *vfsn_getId(tPid pid);
 
 /**
  * Appends a usage-node to the given node and stores the pointer to the new node

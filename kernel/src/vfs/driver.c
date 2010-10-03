@@ -33,9 +33,9 @@
 #include <errors.h>
 
 static void vfs_drv_wait(sRequest *req);
-static void vfs_drv_openReqHandler(sVFSNode *node,const u8 *data,u32 size);
-static void vfs_drv_readReqHandler(sVFSNode *node,const u8 *data,u32 size);
-static void vfs_drv_writeReqHandler(sVFSNode *node,const u8 *data,u32 size);
+static void vfs_drv_openReqHandler(sVFSNode *node,const void *data,u32 size);
+static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,u32 size);
+static void vfs_drv_writeReqHandler(sVFSNode *node,const void *data,u32 size);
 
 static sMsg msg;
 
@@ -58,7 +58,7 @@ s32 vfs_drv_open(tPid pid,tFileNo file,sVFSNode *node,u32 flags) {
 
 	/* send msg to driver */
 	msg.args.arg1 = flags;
-	res = vfs_sendMsg(pid,file,MSG_DRV_OPEN,(u8*)&msg,sizeof(msg.args));
+	res = vfs_sendMsg(pid,file,MSG_DRV_OPEN,&msg,sizeof(msg.args));
 	if(res < 0) {
 		vfs_req_remRequest(req);
 		return res;
@@ -101,7 +101,7 @@ s32 vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u3
 	/* send msg to driver */
 	msg.args.arg1 = offset;
 	msg.args.arg2 = count;
-	res = vfs_sendMsg(pid,file,MSG_DRV_READ,(u8*)&msg,sizeof(msg.args));
+	res = vfs_sendMsg(pid,file,MSG_DRV_READ,&msg,sizeof(msg.args));
 	if(res < 0) {
 		vfs_req_remRequest(req);
 		return res;
@@ -135,13 +135,13 @@ s32 vfs_drv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 of
 	/* send msg to driver */
 	msg.args.arg1 = offset;
 	msg.args.arg2 = count;
-	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,(u8*)&msg,sizeof(msg.args));
+	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,&msg,sizeof(msg.args));
 	if(res < 0) {
 		vfs_req_remRequest(req);
 		return res;
 	}
 	/* now send data */
-	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,(u8*)buffer,count);
+	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,buffer,count);
 	if(res < 0) {
 		vfs_req_remRequest(req);
 		return res;
@@ -159,7 +159,7 @@ void vfs_drv_close(tPid pid,tFileNo file,sVFSNode *node) {
 	if(!vfs_server_supports(node->parent,DRV_CLOSE))
 		return;
 
-	vfs_sendMsg(pid,file,MSG_DRV_CLOSE,(u8*)&msg,sizeof(msg.args));
+	vfs_sendMsg(pid,file,MSG_DRV_CLOSE,&msg,sizeof(msg.args));
 }
 
 static void vfs_drv_wait(sRequest *req) {
@@ -170,7 +170,7 @@ static void vfs_drv_wait(sRequest *req) {
 	while((s32)r->count == ERR_INTERRUPTED);
 }
 
-static void vfs_drv_openReqHandler(sVFSNode *node,const u8 *data,u32 size) {
+static void vfs_drv_openReqHandler(sVFSNode *node,const void *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->args))
@@ -187,7 +187,7 @@ static void vfs_drv_openReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 	}
 }
 
-static void vfs_drv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
+static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,u32 size) {
 	/* find the request for the node */
 	sRequest *req = vfs_req_getRequestByNode(node);
 	if(req != NULL) {
@@ -231,7 +231,7 @@ static void vfs_drv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 	}
 }
 
-static void vfs_drv_writeReqHandler(sVFSNode *node,const u8 *data,u32 size) {
+static void vfs_drv_writeReqHandler(sVFSNode *node,const void *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->args))

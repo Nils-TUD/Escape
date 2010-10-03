@@ -58,7 +58,7 @@ void sysc_getClient(sIntrptStackFrame *stack);
  * @param u32 the number of fds
  * @param tFD* will be set to the file-desc from which the client has been taken
  * @param tMsgId* will be set to the msg-id
- * @param sMsg* the message
+ * @param void* the message
  * @param u32 the (max) size of the message
  * @param u8 flags
  * @return tFD the file-desc to serve the client or a negative error-code

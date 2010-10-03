@@ -47,7 +47,7 @@ s32 elf_loadFromFile(const char *path,sStartupInfo *info);
  * @param info various information about the loaded program
  * @return 0 on success
  */
-s32 elf_loadFromMem(const u8 *code,u32 length,sStartupInfo *info);
+s32 elf_loadFromMem(const void *code,u32 length,sStartupInfo *info);
 
 /* Standard ELF types.  */
 

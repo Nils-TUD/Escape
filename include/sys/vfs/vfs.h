@@ -73,8 +73,8 @@ enum {
 typedef struct sVFSNode sVFSNode;
 
 /* the prototypes for the operations on nodes */
-typedef s32 (*fRead)(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
-typedef s32 (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
+typedef s32 (*fRead)(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count);
+typedef s32 (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count);
 typedef s32 (*fSeek)(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence);
 typedef void (*fClose)(tPid pid,tFileNo file,sVFSNode *node);
 typedef void (*fDestroy)(sVFSNode *n);
@@ -240,7 +240,7 @@ s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence);
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count);
+s32 vfs_readFile(tPid pid,tFileNo file,void *buffer,u32 count);
 
 /**
  * Writes count bytes from the given buffer into the given file and returns the number of written
@@ -252,7 +252,7 @@ s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count);
  * @param count the number of bytes to write
  * @return the number of bytes written
  */
-s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count);
+s32 vfs_writeFile(tPid pid,tFileNo file,const void *buffer,u32 count);
 
 /**
  * Sends a message to the corresponding driver
@@ -264,7 +264,7 @@ s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count);
  * @param size the message-size
  * @return 0 on success
  */
-s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size);
+s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const void *data,u32 size);
 
 /**
  * Receives a message from the corresponding driver
@@ -275,7 +275,7 @@ s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size);
  * @param data the message to write to
  * @return the number of written bytes (or < 0 if an error occurred)
  */
-s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size);
+s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,void *data,u32 size);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count

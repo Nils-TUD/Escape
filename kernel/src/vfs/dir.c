@@ -38,7 +38,7 @@ typedef struct {
 	/* name follows (up to 255 bytes) */
 } A_PACKED sVFSDirEntry;
 
-static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count);
 static s32 vfs_dir_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence);
 
 sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
@@ -83,10 +83,10 @@ static s32 vfs_dir_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 when
 	}
 }
 
-static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count) {
 	UNUSED(file);
 	u32 byteCount,fsByteCount;
-	u8 *fsBytes = NULL,*fsBytesDup;
+	void *fsBytes = NULL,*fsBytesDup;
 	sVFSNode *n;
 	assert(node != NULL);
 	assert(buffer != NULL);
@@ -107,11 +107,11 @@ static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offs
 	if(node->parent == NULL && pid != KERNEL_PID) {
 		const u32 bufSize = 1024;
 		u32 c,curSize = bufSize;
-		fsBytes = (u8*)kheap_alloc(bufSize);
+		fsBytes = kheap_alloc(bufSize);
 		if(fsBytes != NULL) {
 			tFileNo rfile = vfs_real_openPath(pid,VFS_READ,"/");
 			if(rfile >= 0) {
-				while((c = vfs_readFile(pid,rfile,fsBytes + fsByteCount,bufSize)) > 0) {
+				while((c = vfs_readFile(pid,rfile,(u8*)fsBytes + fsByteCount,bufSize)) > 0) {
 					fsByteCount += c;
 					if(c < bufSize)
 						break;
@@ -137,7 +137,7 @@ static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offs
 			byteCount = 0;
 		else {
 			u16 len;
-			sVFSDirEntry *dirEntry = (sVFSDirEntry*)(fsBytesDup + fsByteCount);
+			sVFSDirEntry *dirEntry = (sVFSDirEntry*)((u8*)fsBytesDup + fsByteCount);
 			fsBytes = fsBytesDup;
 			n = vfs_node_getFirstChild(node);
 			while(n != NULL) {
@@ -161,7 +161,7 @@ static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offs
 	byteCount = MIN(byteCount - offset,count);
 	if(byteCount > 0) {
 		/* simply copy the data to the buffer */
-		memcpy(buffer,fsBytes + offset,byteCount);
+		memcpy(buffer,(u8*)fsBytes + offset,byteCount);
 	}
 	kheap_free(fsBytes);
 	return byteCount;

@@ -138,7 +138,7 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 	return sll_length(chan->sendList) > 0;
 }
 
-s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
+s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,u32 size) {
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
@@ -191,7 +191,7 @@ s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32
 	return 0;
 }
 
-s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
+s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *data,u32 size) {
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
@@ -232,7 +232,7 @@ s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 
 	/* the data is behind the message */
 	if(data)
-		memcpy(data,(u8*)(msg + 1),msg->length);
+		memcpy(data,msg + 1,msg->length);
 
 	/*vid_printf("%s received msg %d from %s\n",proc_getByPid(pid)->command,
 					msg->id,node->parent->name);*/

@@ -88,7 +88,7 @@ s32 vfs_real_istat(tPid pid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
  * @param count the number of bytes to copy
  * @return the number of read bytes
  */
-s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u32 count);
+s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,u32 offset,u32 count);
 
 /**
  * Writes to the given inode at <offset> <count> bytes from the given buffer
@@ -101,7 +101,7 @@ s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u
  * @param count the number of bytes to copy
  * @return the number of written bytes
  */
-s32 vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,u32 count);
+s32 vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,u32 offset,u32 count);
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>

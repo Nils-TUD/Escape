@@ -98,7 +98,7 @@ static s32 vfs_file_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whe
 	}
 }
 
-s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count) {
 	UNUSED(pid);
 	UNUSED(file);
 	s32 byteCount;
@@ -117,7 +117,7 @@ s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32
 	return byteCount;
 }
 
-s32 vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
+s32 vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,u32 offset,u32 count) {
 	UNUSED(pid);
 	UNUSED(file);
 	void *oldData;

@@ -55,7 +55,7 @@ s32 cons_cmd_file(s32 argc,char **argv) {
 		res = file;
 		goto error;
 	}
-	while((res = vfs_readFile(p->pid,file,(u8*)buffer,sizeof(buffer))) > 0) {
+	while((res = vfs_readFile(p->pid,file,buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(i = 0; i < res; i++) {
 			if(buffer[i] == '\n') {

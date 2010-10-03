@@ -41,7 +41,7 @@
 static void log_printc(char c);
 static u8 log_pipePad(void);
 static void log_escape(const char **str);
-static s32 log_write(tPid pid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
+static s32 log_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,u32 offset,u32 count);
 static void log_flush(void);
 
 /* don't use a heap here to prevent problems */
@@ -145,7 +145,7 @@ static void log_escape(const char **str) {
 	escc_get(str,&n1,&n2,&n3);
 }
 
-static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
+static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count) {
 	if(conf_get(CONF_LOG_TO_COM1) && logToSer) {
 		char *str = (char*)buffer;
 		u32 i;
@@ -161,7 +161,7 @@ static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 o
 
 static void log_flush(void) {
 	if(vfsIsReady && bufPos) {
-		vfs_writeFile(KERNEL_PID,logFile,(u8*)buf,bufPos);
+		vfs_writeFile(KERNEL_PID,logFile,buf,bufPos);
 		bufPos = 0;
 	}
 }

@@ -423,7 +423,7 @@ s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence) {
 	return e->position;
 }
 
-s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
+s32 vfs_readFile(tPid pid,tFileNo file,void *buffer,u32 count) {
 	s32 err,readBytes;
 	sGFTEntry *e = globalFileTable + file;
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
@@ -457,7 +457,7 @@ s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
 	return readBytes;
 }
 
-s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count) {
+s32 vfs_writeFile(tPid pid,tFileNo file,const void *buffer,u32 count) {
 	s32 err,writtenBytes;
 	sGFTEntry *e = globalFileTable + file;
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
@@ -491,7 +491,7 @@ s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count) {
 	return writtenBytes;
 }
 
-s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
+s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const void *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n;
@@ -515,7 +515,7 @@ s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 	return err;
 }
 
-s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
+s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,void *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n;

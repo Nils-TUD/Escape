@@ -127,7 +127,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			proc_removeRegions(p,false);
 			/* now load module */
 			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
-			if(elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart,&info) < 0)
+			if(elf_loadFromMem((void*)mod->modStart,mod->modEnd - mod->modStart,&info) < 0)
 				util_panic("Loading multiboot-module %s failed",p->command);
 			/* build args */
 			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);

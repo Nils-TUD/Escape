@@ -49,10 +49,10 @@ static s32 vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,
 static void vfs_real_wait(sRequest *req);
 
 /* The response-handler for the different message-ids */
-static void vfs_real_openRespHandler(sVFSNode *node,const u8 *data,u32 size);
-static void vfs_real_readRespHandler(sVFSNode *node,const u8 *data,u32 size);
-static void vfs_real_statRespHandler(sVFSNode *node,const u8 *data,u32 size);
-static void vfs_real_defRespHandler(sVFSNode *node,const u8 *data,u32 size);
+static void vfs_real_openRespHandler(sVFSNode *node,const void *data,u32 size);
+static void vfs_real_readRespHandler(sVFSNode *node,const void *data,u32 size);
+static void vfs_real_statRespHandler(sVFSNode *node,const void *data,u32 size);
+static void vfs_real_defRespHandler(sVFSNode *node,const void *data,u32 size);
 
 /* for requesting and releasing a file for communication */
 static tFileNo vfs_real_requestFile(tPid pid,sVFSNode **node);
@@ -106,7 +106,7 @@ s32 vfs_real_openPath(tPid pid,u16 flags,const char *path) {
 	/* send msg to fs */
 	msg.str.arg1 = flags;
 	memcpy(msg.str.s1,path,pathLen + 1);
-	res = vfs_sendMsg(pid,fs,MSG_FS_OPEN,(u8*)&msg,sizeof(msg.str));
+	res = vfs_sendMsg(pid,fs,MSG_FS_OPEN,&msg,sizeof(msg.str));
 	if(res < 0)
 		goto error;
 
@@ -164,12 +164,12 @@ static s32 vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,s
 	/* send msg to fs */
 	if(path) {
 		memcpy(msg.str.s1,path,pathLen + 1);
-		res = vfs_sendMsg(pid,fs,MSG_FS_STAT,(u8*)&msg,sizeof(msg.str));
+		res = vfs_sendMsg(pid,fs,MSG_FS_STAT,&msg,sizeof(msg.str));
 	}
 	else {
 		msg.args.arg1 = ino;
 		msg.args.arg2 = devNo;
-		res = vfs_sendMsg(pid,fs,MSG_FS_ISTAT,(u8*)&msg,sizeof(msg.args));
+		res = vfs_sendMsg(pid,fs,MSG_FS_ISTAT,&msg,sizeof(msg.args));
 	}
 	if(res < 0)
 		goto error;
@@ -196,7 +196,7 @@ error:
 	return res;
 }
 
-s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u32 count) {
+s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,u32 offset,u32 count) {
 	sRequest *req;
 	s32 res;
 	void *data;
@@ -213,7 +213,7 @@ s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u
 	msg.args.arg2 = devNo;
 	msg.args.arg3 = offset;
 	msg.args.arg4 = count;
-	res = vfs_sendMsg(pid,fs,MSG_FS_READ,(u8*)&msg,sizeof(msg.args));
+	res = vfs_sendMsg(pid,fs,MSG_FS_READ,&msg,sizeof(msg.args));
 	if(res < 0) {
 		vfs_req_remRequest(req);
 		vfs_real_releaseFile(pid,fs);
@@ -236,7 +236,7 @@ s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u
 	return res;
 }
 
-s32 vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,u32 count) {
+s32 vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,u32 offset,u32 count) {
 	sRequest *req;
 	s32 res;
 	sVFSNode *node;
@@ -252,7 +252,7 @@ s32 vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 o
 	msg.args.arg2 = devNo;
 	msg.args.arg3 = offset;
 	msg.args.arg4 = count;
-	res = vfs_sendMsg(pid,fs,MSG_FS_WRITE,(u8*)&msg,sizeof(msg.data));
+	res = vfs_sendMsg(pid,fs,MSG_FS_WRITE,&msg,sizeof(msg.data));
 	if(res < 0)
 		goto error;
 	/* now send data */
@@ -299,7 +299,7 @@ s32 vfs_real_sync(tPid pid) {
 	tFileNo fs = vfs_real_requestFile(pid,NULL);
 	if(fs < 0)
 		return fs;
-	res = vfs_sendMsg(pid,fs,MSG_FS_SYNC,(u8*)&msg,sizeof(msg.args));
+	res = vfs_sendMsg(pid,fs,MSG_FS_SYNC,&msg,sizeof(msg.args));
 	vfs_real_releaseFile(pid,fs);
 	return res;
 }
@@ -312,7 +312,7 @@ void vfs_real_close(tPid pid,tInodeNo inodeNo,tDevNo devNo) {
 	/* write message to fs */
 	msg.args.arg1 = inodeNo;
 	msg.args.arg2 = devNo;
-	vfs_sendMsg(pid,fs,MSG_FS_CLOSE,(u8*)&msg,sizeof(msg.args));
+	vfs_sendMsg(pid,fs,MSG_FS_CLOSE,&msg,sizeof(msg.args));
 	/* no response necessary, therefore no wait, too */
 	vfs_real_releaseFile(pid,fs);
 }
@@ -340,7 +340,7 @@ static s32 vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,
 	if(path2)
 		strcpy(msg.str.s2,path2);
 	msg.str.arg1 = arg1;
-	res = vfs_sendMsg(pid,fs,cmd,(u8*)&msg,sizeof(msg.str));
+	res = vfs_sendMsg(pid,fs,cmd,&msg,sizeof(msg.str));
 	if(res < 0)
 		goto error;
 
@@ -360,7 +360,7 @@ static void vfs_real_wait(sRequest *req) {
 	while((s32)req->count == ERR_DRIVER_DIED);
 }
 
-static void vfs_real_openRespHandler(sVFSNode *node,const u8 *data,u32 size) {
+static void vfs_real_openRespHandler(sVFSNode *node,const void *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->args))
@@ -378,7 +378,7 @@ static void vfs_real_openRespHandler(sVFSNode *node,const u8 *data,u32 size) {
 	}
 }
 
-static void vfs_real_readRespHandler(sVFSNode *node,const u8 *data,u32 size) {
+static void vfs_real_readRespHandler(sVFSNode *node,const void *data,u32 size) {
 	/* find the request for the node */
 	sRequest *req = vfs_req_getRequestByNode(node);
 	if(req != NULL) {
@@ -411,7 +411,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,const u8 *data,u32 size) {
 	}
 }
 
-static void vfs_real_statRespHandler(sVFSNode *node,const u8 *data,u32 size) {
+static void vfs_real_statRespHandler(sVFSNode *node,const void *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->data))
@@ -431,7 +431,7 @@ static void vfs_real_statRespHandler(sVFSNode *node,const u8 *data,u32 size) {
 	}
 }
 
-static void vfs_real_defRespHandler(sVFSNode *node,const u8 *data,u32 size) {
+static void vfs_real_defRespHandler(sVFSNode *node,const void *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->args))

@@ -47,7 +47,7 @@ sVFSNode *vfs_file_create(tPid pid,sVFSNode *parent,char *name,fRead read,fWrite
  * @param count the number of bytes to read
  * @return the number of read bytes
  */
-s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count);
 
 /**
  * The default write-handler
@@ -60,6 +60,6 @@ s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32
  * @param count the number of bytes to write
  * @return the number of written bytes
  */
-s32 vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
+s32 vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,u32 offset,u32 count);
 
 #endif /* FILE_H_ */

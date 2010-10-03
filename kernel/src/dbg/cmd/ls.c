@@ -91,7 +91,7 @@ static s32 cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e) {
 	s32 res;
 	u32 len;
 	/* default way; read the entry without name first */
-	if((res = vfs_readFile(pid,file,(u8*)e,DIRE_SIZE)) < 0)
+	if((res = vfs_readFile(pid,file,e,DIRE_SIZE)) < 0)
 		return res;
 	/* EOF? */
 	if(res == 0)
@@ -103,7 +103,7 @@ static s32 cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e) {
 		return ERR_INVALID_FILE;
 
 	/* now read the name */
-	if((res = vfs_readFile(pid,file,(u8*)e->name,len)) < 0)
+	if((res = vfs_readFile(pid,file,e->name,len)) < 0)
 		return res;
 
 	/* if the record is longer, we have to skip the stuff until the next record */

@@ -751,7 +751,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 	s32 err;
 	tPid pid = t->proc->pid;
 	sFileInfo info;
-	u8 *tempBuf;
+	void *tempBuf;
 	tFileNo file;
 	sSLNode *n;
 	u32 temp,frame;
@@ -772,12 +772,12 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 	/* first read into a temp-buffer because we can't mark the page as present until
 	 * its read from disk. and we can't use a temporary mapping when switching
 	 * threads. */
-	tempBuf = (u8*)kheap_alloc(loadCount);
+	tempBuf = kheap_alloc(loadCount);
 	if(tempBuf == NULL) {
 		err = ERR_NOT_ENOUGH_MEM;
 		goto errorClose;
 	}
-	if((err = vfs_readFile(pid,file,(u8*)tempBuf,loadCount)) < 0)
+	if((err = vfs_readFile(pid,file,tempBuf,loadCount)) < 0)
 		goto errorFree;
 
 	/* ensure that a frame is available; note that its easy here since no one else can demand load

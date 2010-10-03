@@ -40,7 +40,7 @@ typedef struct {
 } sRequest;
 
 /* a request-handler */
-typedef void (*fReqHandler)(sVFSNode *node,const u8 *data,u32 size);
+typedef void (*fReqHandler)(sVFSNode *node,const void *data,u32 size);
 
 /**
  * Inits the vfs-requests
@@ -64,7 +64,7 @@ bool vfs_req_setHandler(tMsgId id,fReqHandler f);
  * @param data the message
  * @param size the size of the message
  */
-void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size);
+void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,u32 size);
 
 /**
  * Allocates a new request-object with given properties

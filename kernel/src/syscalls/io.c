@@ -205,7 +205,7 @@ void sysc_seek(sIntrptStackFrame *stack) {
 
 void sysc_read(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	u8 *buffer = (u8*)SYSC_ARG2(stack);
+	void *buffer = (void*)SYSC_ARG2(stack);
 	u32 count = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 	s32 readBytes;
@@ -232,7 +232,7 @@ void sysc_read(sIntrptStackFrame *stack) {
 
 void sysc_write(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	u8 *buffer = (u8*)SYSC_ARG2(stack);
+	void *buffer = (void*)SYSC_ARG2(stack);
 	u32 count = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 	s32 writtenBytes;
@@ -275,7 +275,7 @@ void sysc_isterm(sIntrptStackFrame *stack) {
 void sysc_send(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tMsgId id = (tMsgId)SYSC_ARG2(stack);
-	u8 *data = (u8*)SYSC_ARG3(stack);
+	const void *data = (const void*)SYSC_ARG3(stack);
 	u32 size = SYSC_ARG4(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
@@ -301,7 +301,7 @@ void sysc_send(sIntrptStackFrame *stack) {
 void sysc_receive(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tMsgId *id = (tMsgId*)SYSC_ARG2(stack);
-	u8 *data = (u8*)SYSC_ARG3(stack);
+	void *data = (void*)SYSC_ARG3(stack);
 	u32 size = SYSC_ARG4(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;

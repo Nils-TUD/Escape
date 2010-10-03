@@ -117,7 +117,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 	u32 fdCount = SYSC_ARG2(stack);
 	tFD *drv = (tFD*)SYSC_ARG3(stack);
 	tMsgId *id = (tMsgId*)SYSC_ARG4(stack);
-	u8 *data = (u8*)SYSC_ARG5(stack);
+	void *data = (void*)SYSC_ARG5(stack);
 	u32 size = SYSC_ARG6(stack);
 	u8 flags = (u8)SYSC_ARG7(stack);
 	sThread *t = thread_getRunning();

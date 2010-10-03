@@ -64,7 +64,7 @@ bool vfs_req_setHandler(tMsgId id,fReqHandler f) {
 	return true;
 }
 
-void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size) {
+void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,u32 size) {
 	assert(node != NULL);
 	if(id < HANDLER_COUNT && handler[id])
 		handler[id](node,data,size);

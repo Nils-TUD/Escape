@@ -62,11 +62,11 @@ sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent) {
 	node->owner = pid;
 	node->mode = MODE_TYPE_PIPE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 			MODE_OTHER_READ | MODE_OTHER_WRITE;
-	node->readHandler = vfs_pipe_read;
-	node->writeHandler = vfs_pipe_write;
+	node->read = vfs_pipe_read;
+	node->write = vfs_pipe_write;
 	node->seek = NULL;
-	node->close = vfs_pipe_close;
 	node->destroy = vfs_pipe_destroy;
+	node->close = vfs_pipe_close;
 	node->data = NULL;
 	pipe = (sPipe*)kheap_alloc(sizeof(sPipe));
 	if(!pipe) {

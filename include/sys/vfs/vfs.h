@@ -94,8 +94,8 @@ struct sVFSNode {
 	sVFSNode *firstChild;
 	sVFSNode *lastChild;
 	/* the handler that perform a read-/write-operation on this node */
-	fRead readHandler;
-	fWrite writeHandler;
+	fRead read;
+	fWrite write;
 	fSeek seek;
 	fClose close;
 	fDestroy destroy;

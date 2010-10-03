@@ -59,10 +59,11 @@ sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
 
 	node->mode = MODE_TYPE_DIR | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OWNER_EXEC |
 		MODE_OTHER_READ | MODE_OTHER_EXEC;
-	node->readHandler = vfs_dir_read;
-	node->writeHandler = NULL;
+	node->read = vfs_dir_read;
+	node->write = NULL;
 	node->seek = vfs_dir_seek;
 	node->destroy = NULL;
+	node->close = NULL;
 	return node;
 }
 

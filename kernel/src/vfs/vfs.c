@@ -435,11 +435,11 @@ s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
 		sVFSNode *n = vfs_node_get(e->nodeNo);
 		if((err = vfs_hasAccess(pid,e->nodeNo,VFS_READ)) < 0)
 			return err;
-		if(n->readHandler == NULL)
+		if(n->read == NULL)
 			return ERR_NO_READ_PERM;
 
 		/* use the read-handler */
-		readBytes = n->readHandler(pid,file,n,buffer,e->position,count);
+		readBytes = n->read(pid,file,n,buffer,e->position,count);
 		if(readBytes > 0)
 			e->position += readBytes;
 	}
@@ -469,11 +469,11 @@ s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count) {
 		sVFSNode *n = vfs_node_get(e->nodeNo);
 		if((err = vfs_hasAccess(pid,e->nodeNo,VFS_WRITE)) < 0)
 			return err;
-		if(n->writeHandler == NULL)
+		if(n->write == NULL)
 			return ERR_NO_WRITE_PERM;
 
 		/* write to the node */
-		writtenBytes = n->writeHandler(pid,file,n,buffer,e->position,count);
+		writtenBytes = n->write(pid,file,n,buffer,e->position,count);
 		if(writtenBytes > 0)
 			e->position += writtenBytes;
 	}

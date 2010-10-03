@@ -51,8 +51,8 @@ sVFSNode *vfs_file_create(tPid pid,sVFSNode *parent,char *name,fRead read,fWrite
 	 * permission-system */
 	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ
 		| MODE_OTHER_WRITE;
-	node->readHandler = read;
-	node->writeHandler = write;
+	node->read = read;
+	node->write = write;
 	node->seek = vfs_file_seek;
 	node->close = NULL;
 	node->destroy = vfs_file_destroy;

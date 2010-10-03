@@ -53,8 +53,8 @@ sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags) {
 
 	node->owner = pid;
 	node->mode = MODE_TYPE_DRIVER | MODE_OWNER_READ | MODE_OTHER_READ;
-	node->readHandler = NULL;
-	node->writeHandler = NULL;
+	node->read = NULL;
+	node->write = NULL;
 	node->seek = NULL;
 	node->close = vfs_server_close;
 	node->destroy = vfs_server_destroy;

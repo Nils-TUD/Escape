@@ -26,10 +26,11 @@ sVFSNode *vfs_link_create(tPid pid,sVFSNode *parent,char *name,const sVFSNode *t
 	sVFSNode *child = vfs_node_create(parent,name);
 	if(child == NULL)
 		return NULL;
-	child->readHandler = NULL;
-	child->writeHandler = NULL;
+	child->read = NULL;
+	child->write = NULL;
 	child->seek = NULL;
 	child->destroy = NULL;
+	child->close = NULL;
 	child->owner = pid;
 	child->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
 	child->data = (void*)target;

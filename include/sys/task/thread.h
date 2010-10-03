@@ -117,6 +117,11 @@ struct sThread {
 };
 
 /**
+ * The start-function for the idle-thread
+ */
+extern void thread_idle(void);
+
+/**
  * Saves the state of the current thread in the given area
  *
  * @param saveArea the area where to save the state
@@ -179,11 +184,6 @@ void thread_switchNoSigs(void);
  * @param tid the thread-id
  */
 void thread_switchTo(tTid tid);
-
-/**
- * The start-function for the idle-thread
- */
-void thread_idle(void);
 
 /**
  * Marks the given thread as ready (if the thread hasn't said that he don't wants to be interrupted)

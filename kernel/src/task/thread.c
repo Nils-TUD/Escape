@@ -190,13 +190,6 @@ void thread_switchTo(tTid tid) {
 	}
 }
 
-void thread_idle(void) {
-	__asm__("sti");
-	while(true) {
-		__asm__("hlt");
-	}
-}
-
 bool thread_setReady(tTid tid) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL && t != cur,"tid=%d, pid=%d, cmd=%s",

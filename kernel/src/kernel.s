@@ -45,6 +45,7 @@
 .global fpu_finit
 .global fpu_saveState
 .global fpu_restoreState
+.global thread_idle
 .global thread_save
 .global thread_resume
 .global getStackFrameStart
@@ -318,6 +319,13 @@ fpu_restoreState:
 	mov			4(%esp),%eax
 	frstor	(%eax)
 	ret
+
+# void thread_idle(void);
+thread_idle:
+	sti
+1:
+	hlt
+	jmp			1b
 
 # bool thread_save(sThreadRegs *saveArea);
 thread_save:

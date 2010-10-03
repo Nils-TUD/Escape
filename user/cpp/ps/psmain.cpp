@@ -172,7 +172,7 @@ int main(int argc,char **argv) {
 	);
 
 	// calc with to the process-command
-	size_t width2cmd = 49 + maxPid + maxPmem + maxShmem + maxSmem + maxInput + maxOutput;
+	size_t width2cmd = 50 + maxPid + maxPmem + maxShmem + maxSmem + maxInput + maxOutput;
 	// get console-size
 	sVTSize consSize;
 	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)

@@ -137,6 +137,8 @@ int main(int argc,char **argv) {
 	/* give vterm our pid */
 	tPid pid = getpid();
 	sendMsgData(fin,MSG_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
+	/* discard response */
+	receive(fin,NULL,NULL,0);
 
 	return shell_main();
 }

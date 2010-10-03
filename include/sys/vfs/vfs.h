@@ -98,8 +98,7 @@ struct sVFSNode {
 	fSeek seek;
 	fClose close;
 	fDestroy destroy;
-	/* a list of listeners for created, modified or deleted */
-	sSLList *listeners;
+	/* data in various forms, depending on the node-type */
 	void *data;
 };
 

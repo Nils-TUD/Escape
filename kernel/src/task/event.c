@@ -39,6 +39,11 @@ void ev_init(void) {
 		sll_init(evlists + i,slln_allocNode,slln_freeNode);
 }
 
+bool ev_waitsFor(tTid tid,u32 events) {
+	sThread *t = thread_getById(tid);
+	return t->events & events;
+}
+
 bool ev_wait(tTid tid,u32 evi,tEvObj object) {
 	sThread *t = thread_getById(tid);
 	sSLList *list = evlists + evi;

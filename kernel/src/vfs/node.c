@@ -146,7 +146,7 @@ s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 fla
 	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = nodes;
 	sThread *t = thread_getRunning();
-	s32 pos,depth,lastdepth;
+	s32 pos = 0,depth,lastdepth;
 	if(created)
 		*created = false;
 

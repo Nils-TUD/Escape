@@ -415,9 +415,8 @@ s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence) {
 	}
 
 	if((s32)e->position < 0) {
-		s32 err = e->position;
 		e->position = oldPos;
-		return err;
+		return ERR_INVALID_ARGS;
 	}
 	return e->position;
 }

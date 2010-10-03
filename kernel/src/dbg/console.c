@@ -86,6 +86,8 @@ void cons_start(void) {
 		argv = cons_readCommand(&argc);
 		vid_printf("\n");
 
+		if(argc == 0)
+			continue;
 		if(strcmp(argv[0],"exit") == 0)
 			break;
 		if(strcmp(argv[0],"help") == 0) {
@@ -158,7 +160,7 @@ static char **cons_readCommand(s32 *argc) {
 	args[0] = argvals[0];
 	while(*line) {
 		if(*line == ' ') {
-			if(args[j][0]) {
+			if(i > 0) {
 				if(j + 1 >= MAX_ARG_COUNT)
 					break;
 				args[j][i] = '\0';
@@ -171,8 +173,12 @@ static char **cons_readCommand(s32 *argc) {
 			args[j][i++] = *line;
 		line++;
 	}
-	*argc = j + 1;
-	args[j][i] = '\0';
+	if(i > 0) {
+		*argc = j + 1;
+		args[j][i] = '\0';
+	}
+	else
+		*argc = j;
 	return args;
 }
 

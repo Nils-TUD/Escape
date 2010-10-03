@@ -129,7 +129,6 @@ static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node) {
 }
 
 bool vfs_chan_hasReply(const sVFSNode *node) {
-	/* TODO temporary */
 	sChannel *chan = (sChannel*)node->data;
 	return sll_length(chan->recvList) > 0;
 }

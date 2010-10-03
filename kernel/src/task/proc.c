@@ -646,16 +646,8 @@ void proc_kill(sProc *p) {
 }
 
 static void proc_notifyProcDied(tPid parent) {
-	sSLNode *tn;
 	sig_addSignalFor(parent,SIG_CHILD_TERM);
-
-	/* check whether there is a parent-thread that waits for a child */
-	for(tn = sll_begin(proc_getByPid(parent)->threads); tn != NULL; tn = tn->next) {
-		sThread *t = (sThread*)tn->data;
-		/* wake the thread and delay the destruction until this read has got the exit-state */
-		if(ev_wakeupThread(t->tid,EV_CHILD_DIED))
-			return;
-	}
+	ev_wakeup(EVI_CHILD_DIED,(tEvObj)proc_getByPid(parent));
 }
 
 s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromUser) {
@@ -885,6 +877,7 @@ static void proc_remove(sProc *p) {
 
 
 /* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
 
 #define PROF_PROC_COUNT		128
 
@@ -930,8 +923,6 @@ void proc_dbg_stopProf(void) {
 		}
 	}
 }
-
-#if DEBUGGING
 
 void proc_dbg_printAll(void) {
 	sSLNode *n;

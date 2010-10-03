@@ -28,10 +28,9 @@
 #include <sys/task/event.h>
 #include <sys/task/signals.h>
 #include <esc/sllist.h>
+#include <esc/messages.h>
 #include <string.h>
 #include <errors.h>
-
-#include <esc/messages.h>
 
 static void vfs_drv_wait(sRequest *req);
 static void vfs_drv_openReqHandler(sVFSNode *node,const u8 *data,u32 size);

@@ -87,7 +87,7 @@ void swap_start(void) {
 			u32 count = 0;
 			swapping = true;
 			while(count < MAX_SWAP_AT_ONCE && mm_getFreeFrames(MM_DEF) < neededFrames) {
-				u32 index,free;
+				u32 index = 0,free;
 				sRegion *reg = swap_findVictim(&index);
 				if(reg == NULL)
 					util_panic("No process to swap out");

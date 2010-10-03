@@ -35,7 +35,7 @@ typedef struct {
  */
 extern s32 _lock(u32 ident,bool global,u16 flags);
 extern s32 _unlock(u32 ident,bool global);
-extern s32 _waitUnlock(u32 events,tEvObj object,u32 ident,bool global);
+extern s32 _waitUnlock(sWaitObject *objects,u32 objCount,u32 ident,bool global);
 
 static sSLList *tvalmap[HASHMAP_SIZE];
 
@@ -108,11 +108,17 @@ s32 lockg(u32 ident,u16 flags) {
 }
 
 s32 waitUnlock(u32 events,tEvObj object,u32 ident) {
-	return _waitUnlock(events,object,ident,false);
+	sWaitObject obj;
+	obj.events = events;
+	obj.object = object;
+	return _waitUnlock(&obj,1,ident,false);
 }
 
 s32 waitUnlockg(u32 events,tEvObj object,u32 ident) {
-	return _waitUnlock(events,object,ident,true);
+	sWaitObject obj;
+	obj.events = events;
+	obj.object = object;
+	return _waitUnlock(&obj,1,ident,true);
 }
 
 s32 unlock(u32 ident) {

@@ -193,6 +193,7 @@ s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 
 			/* string */
 			case 's':
+				b = 0;
 				s = va_arg(ap, char*);
 				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
 					width = precision == -1 ? strlen(s) : (u32)precision;

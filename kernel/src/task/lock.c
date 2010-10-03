@@ -35,7 +35,7 @@ typedef struct {
 	u16 flags;
 	tPid pid;
 	volatile u16 readRefs;
-	volatile u16 writeRef;
+	volatile tTid writer;
 	u16 waitCount;
 } sLock;
 
@@ -50,9 +50,9 @@ static sLock *locks = NULL;
 /* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
 
 static bool lock_isLocked(sLock *l,u16 flags) {
-	if((flags & LOCK_EXCLUSIVE) && (l->readRefs > 0 || l->writeRef))
+	if((flags & LOCK_EXCLUSIVE) && (l->readRefs > 0 || l->writer != INVALID_TID))
 		return true;
-	if(!(flags & LOCK_EXCLUSIVE) && l->writeRef)
+	if(!(flags & LOCK_EXCLUSIVE) && l->writer != INVALID_TID)
 		return true;
 	return false;
 }
@@ -70,6 +70,7 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 	if(l->flags) {
 		/* if it exists and is locked, wait */
 		u32 event = (flags & LOCK_EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
+		assert(l->writer != t->tid);
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
 			ev_wait(t->tid,event,(tEvObj)ident);
@@ -82,14 +83,14 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 		l->ident = ident;
 		l->pid = pid;
 		l->readRefs = 0;
-		l->writeRef = 0;
+		l->writer = INVALID_TID;
 		l->waitCount = 0;
 	}
 
 	/* lock it */
 	l->flags = flags | LOCK_USED;
 	if(flags & LOCK_EXCLUSIVE)
-		l->writeRef = 1;
+		l->writer = t->tid;
 	else
 		l->readRefs++;
 	return 0;
@@ -103,16 +104,16 @@ s32 lock_release(tPid pid,u32 ident) {
 
 	/* unlock */
 	if(l->flags & LOCK_EXCLUSIVE) {
-		vassert(l->writeRef == 1,"ident=%#08x, pid=%d",l->ident,l->pid);
-		l->writeRef = 0;
+		vassert(l->writer != INVALID_TID,"ident=%#08x, pid=%d",l->ident,l->pid);
+		l->writer = INVALID_TID;
 	}
 	else {
 		vassert(l->readRefs > 0,"ident=%#08x, pid=%d",l->ident,l->pid);
 		l->readRefs--;
 	}
-	/* write-refs can't be > 0 here (either we were the writer -> free now, or we wouldn't
+	/* writer can't be != INVALID_TID here (either we were the writer -> free now, or we wouldn't
 	 * have got the read-lock before) */
-	assert(l->writeRef == 0);
+	assert(l->writer == INVALID_TID);
 
 	/* are there waiting threads? */
 	if(l->waitCount) {
@@ -172,8 +173,8 @@ void lock_dbg_print(void) {
 	for(i = 0; i < lockCount; i++) {
 		sLock *l = locks + i;
 		if(l->flags) {
-			vid_printf("\t%08x: pid=%u, flags=%#x, reads=%u, writes=%u, waits=%d\n",
-					l->ident,l->pid,l->flags,l->readRefs,l->writeRef,l->waitCount);
+			vid_printf("\t%08x: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
+					l->ident,l->pid,l->flags,l->readRefs,l->writer,l->waitCount);
 		}
 	}
 }

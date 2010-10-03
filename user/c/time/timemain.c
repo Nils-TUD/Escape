@@ -20,10 +20,11 @@
 #include <esc/common.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
-#include <stdio.h>
 #include <esc/dir.h>
-#include <signal.h>
 #include <esc/conf.h>
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errors.h>
 
@@ -55,11 +56,19 @@ int main(int argc,char **argv) {
 
 	if((waitingPid = fork()) == 0) {
 		s32 i;
-		argv[0] = path;
-		for(i = 1; i < argc - 1; i++)
-			argv[i] = argv[i + 1];
-		argv[argc - 1] = NULL;
-		exec(argv[0],(const char**)argv);
+		u32 size = 1;
+		const char *args[] = {"/bin/shell","-e",NULL,NULL};
+		char *arg = NULL;
+		for(i = 1; i < argc; i++) {
+			size += strlen(argv[i]) + 1;
+			arg = (char*)realloc(arg,size);
+			if(!arg)
+				error("Not enough memory for arguments");
+			strcat(arg,argv[i]);
+			strcat(arg," ");
+		}
+		args[2] = arg;
+		exec(args[0],args);
 		error("Exec failed");
 	}
 	else if(waitingPid < 0)

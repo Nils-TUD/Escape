@@ -234,7 +234,7 @@ s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 	if(data)
 		memcpy(data,(u8*)(msg + 1),msg->length);
 
-	/*vid_printf("%s received msg %d from %s\n",thread_getById(tid)->proc->command,
+	/*vid_printf("%s received msg %d from %s\n",proc_getByPid(pid)->command,
 					msg->id,node->parent->name);*/
 
 	/* set id, return size and free msg */

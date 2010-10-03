@@ -186,7 +186,8 @@ void sig_ackHandling(tTid tid) {
 }
 
 static bool sig_isFatal(tSig sig) {
-	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT;
+	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT ||
+		sig == SIG_PIPE_CLOSED;
 }
 
 static void sig_add(sSigThread *t,tSig sig) {
@@ -254,7 +255,7 @@ const char *sig_dbg_getName(tSig signal) {
 		"SIG_SEGFAULT",
 		"SIG_PROC_DIED",
 		"SIG_THREAD_DIED",
-		"SIG_CHILD_DIED",
+		"SIG_PIPE_CLOSED",
 		"SIG_CHILD_TERM",
 		"SIG_INTRPT",
 		"SIG_INTRPT_TIMER",

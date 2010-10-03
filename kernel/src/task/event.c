@@ -176,6 +176,14 @@ static const char *ev_getName(u32 evi) {
 	return names[evi];
 }
 
+void ev_dbg_printEvMask(u32 mask) {
+	u32 e;
+	for(e = 0; e < EV_COUNT; e++) {
+		if(mask & (1 << e))
+			vid_printf("%s ",ev_getName(e));
+	}
+}
+
 void ev_dbg_print(void) {
 	u32 e;
 	vid_printf("Eventlists:\n");

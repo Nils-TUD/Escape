@@ -634,7 +634,6 @@ void proc_kill(sProc *p) {
 	vfs_removeProcess(p->pid);
 	/* notify processes that wait for dying procs */
 	/* TODO sig_addSignal(SIG_PROC_DIED,p->pid);*/
-	sig_addSignalFor(p->parentPid,SIG_CHILD_DIED);
 
 	/* free exit-state, if not already done */
 	if(p->exitState)

@@ -24,6 +24,14 @@
 #include <esc/sllist.h>
 #include <assert.h>
 
+/* The idea is to provide a very fast node-allocation and -deallocation for the single-linked-list
+ * that is used in kernel. It is used at very many places, so that its really worth it.
+ * To achieve that, we use the dynamic-array and dedicate an area in virtual-memory to the nodes.
+ * This area is extended on demand and all nodes are put in a freelist (they have a next-element
+ * anyway). This is much quicker than using the heap everytime a node is allocated or free'd.
+ * That means, if we put no heap-allocated data in the sll (so data, that does exist anyway), using
+ * it does basically cost nothing :) */
+
 /* has to match the node of the sll */
 typedef struct sNode sNode;
 struct sNode {

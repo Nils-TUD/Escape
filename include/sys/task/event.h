@@ -148,6 +148,13 @@ void ev_removeThread(tTid tid);
 #if DEBUGGING
 
 /**
+ * Prints the given event-mask
+ *
+ * @param mask the mask
+ */
+void ev_dbg_printEvMask(u32 mask);
+
+/**
  * Prints all waiting threads
  */
 void ev_dbg_print(void);

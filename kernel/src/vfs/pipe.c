@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
 #include <sys/task/thread.h>
+#include <sys/task/signals.h>
 #include <sys/task/event.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -28,6 +29,7 @@
 #include <errors.h>
 
 typedef struct {
+	u8 noReader;
 	/* total number of bytes available */
 	u32 total;
 	/* a list with sPipeData */
@@ -71,6 +73,7 @@ sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent) {
 		vfs_node_destroy(node);
 		return NULL;
 	}
+	pipe->noReader = false;
 	pipe->total = 0;
 	pipe->list = NULL;
 	node->data = pipe;
@@ -93,8 +96,17 @@ static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node) {
 	}
 	/* there are still references to the pipe, write an EOF into it (0 references
 	 * mean that the pipe should be removed) */
-	else
-		vfs_writeFile(pid,file,NULL,0);
+	else {
+		/* if thats the read-end, save that there is no reader anymore and wakeup the writers */
+		if(vfs_fcntl(pid,file,F_GETACCESS,0) == VFS_READ) {
+			sPipe *pipe = (sPipe*)node->data;
+			pipe->noReader = true;
+			ev_wakeup(EVI_PIPE_EMPTY,(tEvObj)node);
+		}
+		/* otherwise write EOF in the pipe */
+		else
+			vfs_writeFile(pid,file,NULL,0);
+	}
 }
 
 static s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
@@ -172,6 +184,12 @@ static s32 vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,
 		while((vpipe->total + count) >= MAX_VFS_FILE_SIZE) {
 			ev_wait(t->tid,EVI_PIPE_EMPTY,(tEvObj)node);
 			thread_switchNoSigs();
+			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
+			 * either terminate or react on that signal. */
+			if(vpipe->noReader) {
+				sig_addSignalFor(pid,SIG_PIPE_CLOSED);
+				return ERR_EOF;
+			}
 		}
 	}
 

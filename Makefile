@@ -1,5 +1,5 @@
 # general
-BUILDDIR = $(abspath build/debug)
+BUILDDIR = $(abspath build/release)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -59,7 +59,7 @@ ifeq ($(BUILDDIR),$(abspath build/debug))
 else
 	DIRS = tools lib drivers user kernel/src
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -g0 -O3
+	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 	export BUILDTYPE=release
 endif

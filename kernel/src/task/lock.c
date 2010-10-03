@@ -64,7 +64,7 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 	if(i < 0)
 		return ERR_NOT_ENOUGH_MEM;
 
-	/* note that we have to use the index here since locks can chance if another threads reallocates
+	/* note that we have to use the index here since locks can change if another threads reallocates
 	 * it in the meanwhile */
 	l = locks + i;
 	if(l->flags) {

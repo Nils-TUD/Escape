@@ -363,8 +363,8 @@ void thread_kill(sThread *t) {
 	fpu_freeState(&t->fpuState);
 	vfs_removeThread(t->tid);
 
-	/* notify others that wait for dying threads */
-	/* TODO sig_addSignal(SIG_THREAD_DIED,t->tid);*/
+	/* notify the process about it */
+	sig_addSignalFor(t->proc->pid,SIG_THREAD_DIED);
 	ev_wakeup(EVI_THREAD_DIED,(tEvObj)t->proc);
 
 	/* finally, destroy thread */
@@ -415,7 +415,9 @@ void thread_dbg_print(const sThread *t) {
 	};
 	vid_printf("\tThread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tState=%s\n",states[t->state]);
-	vid_printf("\t\tEvents=%#x\n",t->events);
+	vid_printf("\t\tEvents=");
+	ev_dbg_printEvMask(t->events);
+	vid_printf("\n");
 	vid_printf("\t\tKstackFrame=%#x\n",t->kstackFrame);
 	vid_printf("\t\tTlsRegion=%d, stackRegion=%d\n",t->tlsRegion,t->stackRegion);
 	vid_printf("\t\tUCycleCount = %#016Lx\n",t->stats.ucycleCount.val64);

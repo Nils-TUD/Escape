@@ -162,8 +162,10 @@ s32 vfs_fcntl(tPid pid,tFileNo file,u32 cmd,s32 arg) {
 	sGFTEntry *e = globalFileTable + file;
 	assert(file >= 0 && file < FILE_COUNT);
 	switch(cmd) {
+		case F_GETACCESS:
+			return e->flags & (VFS_READ | VFS_WRITE);
 		case F_GETFL:
-			return e->flags;
+			return e->flags & VFS_NOBLOCK;
 		case F_SETFL:
 			e->flags &= VFS_READ | VFS_WRITE | VFS_CREATE | VFS_DRIVER;
 			e->flags |= arg & VFS_NOBLOCK;

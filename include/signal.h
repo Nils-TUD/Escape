@@ -37,7 +37,7 @@
 #define SIG_SEGFAULT		3
 #define SIG_PROC_DIED		4
 #define SIG_THREAD_DIED		5
-#define SIG_CHILD_DIED		6
+#define SIG_PIPE_CLOSED		6
 #define SIG_CHILD_TERM		7
 #define SIG_INTRPT			8
 #define SIG_INTRPT_TIMER	9

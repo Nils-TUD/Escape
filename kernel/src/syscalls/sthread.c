@@ -260,8 +260,10 @@ static s32 sysc_doWait(sWaitObject *uobjects,u32 objCount) {
 			goto error;
 		}
 		/* if we're waiting for other events, too, we have to wake up */
-		if((kobjects[i].events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
-			goto done;
+		for(i = 0; i < objCount; i++) {
+			if((kobjects[i].events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
+				goto done;
+		}
 	}
 
 done:

@@ -30,24 +30,24 @@
 
 /* the signals */
 #define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
-#define SIG_KILL			0
-#define SIG_TERM			1
-#define SIG_ILL_INSTR		2
-#define SIG_SEGFAULT		3
-#define SIG_PROC_DIED		4
-#define SIG_THREAD_DIED		5
-#define SIG_CHILD_DIED		6
-#define SIG_CHILD_TERM		7
-#define SIG_INTRPT			8
-#define SIG_INTRPT_TIMER	9
-#define SIG_INTRPT_KB		10
-#define SIG_INTRPT_COM1		11
-#define SIG_INTRPT_COM2		12
-#define SIG_INTRPT_FLOPPY	13
-#define SIG_INTRPT_CMOS		14
-#define SIG_INTRPT_ATA1		15
-#define SIG_INTRPT_ATA2		16
-#define SIG_INTRPT_MOUSE	17
+#define SIG_KILL			0						/* kills a proc; not catchable */
+#define SIG_TERM			1						/* terminates a proc; catchable */
+#define SIG_ILL_INSTR		2						/* TODO atm unused */
+#define SIG_SEGFAULT		3						/* TODO atm unused */
+#define SIG_PROC_DIED		4						/* TODO remove */
+#define SIG_THREAD_DIED		5						/* sent to the proc in which the thread died */
+#define SIG_PIPE_CLOSED		6						/* sent to the pipe-writer when reader died */
+#define SIG_CHILD_TERM		7						/* sent to parent-proc */
+#define SIG_INTRPT			8						/* used to interrupt a process; used by shell */
+#define SIG_INTRPT_TIMER	9						/* timer-interrupt */
+#define SIG_INTRPT_KB		10						/* keyboard-interrupt */
+#define SIG_INTRPT_COM1		11						/* com1-interrupt */
+#define SIG_INTRPT_COM2		12						/* com2-interrupt */
+#define SIG_INTRPT_FLOPPY	13						/* floppy-interrupt */
+#define SIG_INTRPT_CMOS		14						/* cmos-interrupt */
+#define SIG_INTRPT_ATA1		15						/* ata1-interrupt */
+#define SIG_INTRPT_ATA2		16						/* ata2-interrupt */
+#define SIG_INTRPT_MOUSE	17						/* mouse-interrupt */
 
 /* signal-handler-signature */
 typedef void (*fSignal)(s32);

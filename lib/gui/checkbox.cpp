@@ -50,7 +50,7 @@ namespace gui {
 	}
 
 	void Checkbox::onKeyReleased(const KeyEvent &e) {
-		u8 keycode = e.getKeyCode();
+		uchar keycode = e.getKeyCode();
 		UIElement::onKeyReleased(e);
 		if(keycode == VK_ENTER || keycode == VK_SPACE)
 			setChecked(!_checked);
@@ -67,8 +67,8 @@ namespace gui {
 	}
 
 	void Checkbox::paint(Graphics &g) {
-		u32 cheight = g.getFont().getHeight();
-		u32 boxSize = getHeight();
+		tSize cheight = g.getFont().getHeight();
+		tSize boxSize = getHeight();
 
 		g.setColor(BGCOLOR);
 		g.fillRect(0,0,getWidth(),getHeight());

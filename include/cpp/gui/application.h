@@ -54,7 +54,7 @@ namespace gui {
 		inline tSize getScreenHeight() const {
 			return _vesaInfo.height;
 		};
-		inline u8 getColorDepth() const {
+		inline uchar getColorDepth() const {
 			return _vesaInfo.bitsPerPixel;
 		};
 
@@ -78,7 +78,7 @@ namespace gui {
 		inline void *getVesaMem() const {
 			return _vesaMem;
 		};
-		void passToWindow(tWinId win,tCoord x,tCoord y,s16 movedX,s16 movedY,u8 buttons);
+		void passToWindow(tWinId win,tCoord x,tCoord y,short movedX,short movedY,uchar buttons);
 		void closePopups(tWinId id,tCoord x,tCoord y);
 		void requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height);
 		void addWindow(Window *win);
@@ -91,7 +91,7 @@ namespace gui {
 		tFD _winFd;
 		sMsg _msg;
 	private:
-		u8 _mouseBtns;
+		uchar _mouseBtns;
 		tFD _vesaFd;
 		void *_vesaMem;
 		sVESAInfo _vesaInfo;

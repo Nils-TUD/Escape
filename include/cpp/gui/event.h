@@ -31,16 +31,16 @@ namespace gui {
 		friend std::ostream &operator<<(std::ostream &s,const MouseEvent &e);
 
 	public:
-		static const u8 MOUSE_MOVED		= 0;
-		static const u8 MOUSE_PRESSED	= 1;
-		static const u8 MOUSE_RELEASED	= 2;
+		static const uchar MOUSE_MOVED		= 0;
+		static const uchar MOUSE_PRESSED	= 1;
+		static const uchar MOUSE_RELEASED	= 2;
 
-		static const u8 BUTTON1_MASK	= 0x1;
-		static const u8 BUTTON2_MASK	= 0x2;
-		static const u8 BUTTON3_MASK	= 0x4;
+		static const uchar BUTTON1_MASK	= 0x1;
+		static const uchar BUTTON2_MASK	= 0x2;
+		static const uchar BUTTON3_MASK	= 0x4;
 
 	public:
-		MouseEvent(u8 type,s16 movedx,s16 movedy,tCoord x,tCoord y,u8 buttons)
+		MouseEvent(uchar type,short movedx,short movedy,tCoord x,tCoord y,uchar buttons)
 			: _type(type), _movedx(movedx), _movedy(movedy), _x(x), _y(y), _buttons(buttons) {
 		};
 		MouseEvent(const MouseEvent &e)
@@ -61,7 +61,7 @@ namespace gui {
 			return *this;
 		}
 
-		inline u8 getType() const {
+		inline uchar getType() const {
 			return _type;
 		};
 		inline tCoord getX() const {
@@ -70,10 +70,10 @@ namespace gui {
 		inline tCoord getY() const {
 			return _y;
 		};
-		inline s16 getXMovement() const {
+		inline short getXMovement() const {
 			return _movedx;
 		};
-		inline s16 getYMovement() const {
+		inline short getYMovement() const {
 			return _movedy;
 		};
 		inline bool isButton1Down() const {
@@ -87,23 +87,23 @@ namespace gui {
 		};
 
 	private:
-		u8 _type;
-		s16 _movedx;
-		s16 _movedy;
+		uchar _type;
+		short _movedx;
+		short _movedy;
 		tCoord _x;
 		tCoord _y;
-		u8 _buttons;
+		uchar _buttons;
 	};
 
 	class KeyEvent {
 		friend std::ostream &operator<<(std::ostream &s,const KeyEvent &e);
 
 	public:
-		static const u8 KEY_PRESSED		= 0;
-		static const u8 KEY_RELEASED	= 1;
+		static const uchar KEY_PRESSED		= 0;
+		static const uchar KEY_RELEASED	= 1;
 
 	public:
-		KeyEvent(u8 type,u8 keycode,char character,u8 modifier)
+		KeyEvent(uchar type,uchar keycode,char character,uchar modifier)
 			: _type(type), _keycode(keycode), _character(character), _modifier(modifier) {
 		};
 		KeyEvent(const KeyEvent &e)
@@ -121,10 +121,10 @@ namespace gui {
 			return *this;
 		};
 
-		inline u8 getType() const {
+		inline uchar getType() const {
 			return _type;
 		};
-		inline u8 getKeyCode() const {
+		inline uchar getKeyCode() const {
 			return _keycode;
 		};
 		inline char getCharacter() const {
@@ -144,10 +144,10 @@ namespace gui {
 		};
 
 	private:
-		u8 _type;
-		u8 _keycode;
+		uchar _type;
+		uchar _keycode;
 		char _character;
-		u8 _modifier;
+		uchar _modifier;
 	};
 
 	std::ostream &operator<<(std::ostream &s,const MouseEvent &e);

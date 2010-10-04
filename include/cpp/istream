@@ -35,7 +35,7 @@ namespace std {
 		typedef ios::char_type char_type;
 		typedef ios::int_type int_type;
 		typedef ios::size_type size_type;
-		typedef s32 esc_type;
+		typedef int esc_type;
 
 		/**
 		 * Constructs an object of class istream with given stream-buffer

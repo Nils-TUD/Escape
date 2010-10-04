@@ -22,16 +22,16 @@
 #include <gui/color.h>
 
 namespace gui {
-	u32 Color::toCurMode() const {
+	Color::color_type Color::toCurMode() const {
 		const sVESAInfo *vesaInfo = Application::getInstance()->getVesaInfo();
-		u8 red = getRed() >> (8 - vesaInfo->redMaskSize);
-		u8 green = getGreen() >> (8 - vesaInfo->greenMaskSize);
-		u8 blue = getBlue() >> (8 - vesaInfo->blueMaskSize);
-		u32 val = (red << vesaInfo->redFieldPosition) |
+		comp_type red = getRed() >> (8 - vesaInfo->redMaskSize);
+		comp_type green = getGreen() >> (8 - vesaInfo->greenMaskSize);
+		comp_type blue = getBlue() >> (8 - vesaInfo->blueMaskSize);
+		color_type val = (red << vesaInfo->redFieldPosition) |
 				(green << vesaInfo->greenFieldPosition) |
 				(blue << vesaInfo->blueFieldPosition);
 		if(vesaInfo->bitsPerPixel == 32)
-			val |= (u32)getAlpha() << 24;
+			val |= (color_type)getAlpha() << 24;
 		return val;
 	}
 

@@ -136,20 +136,20 @@ namespace std {
 	 */
 	class io_exception : public exception {
 	public:
-		explicit io_exception(const string& s,s32 err)
+		explicit io_exception(const string& s,int err)
 			: _error(err), _msg(s + ": " + strerror(err)) {
 		}
 		virtual ~io_exception() throw () {
 		}
 
-		s32 error() const {
+		int error() const {
 			return _error;
 		}
 		virtual const char* what() const throw () {
 			return _msg.c_str();
 		}
 	private:
-		s32 _error;
+		int _error;
 		string _msg;
 	};
 }

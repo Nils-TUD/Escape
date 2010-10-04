@@ -49,10 +49,10 @@ namespace gui {
 		};
 		ProgressBar &operator=(const ProgressBar &b);
 
-		inline u32 getPosition() const {
+		inline size_t getPosition() const {
 			return _position;
 		};
-		inline void setPosition(u32 pos) {
+		inline void setPosition(size_t pos) {
 			_position = MIN(100,pos);
 			repaint();
 		};
@@ -67,7 +67,7 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
-		u32 _position;
+		size_t _position;
 		std::string _text;
 	};
 }

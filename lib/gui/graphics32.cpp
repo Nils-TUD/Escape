@@ -38,7 +38,7 @@ namespace gui {
 	}
 
 	void Graphics32::doSetPixel(tCoord x,tCoord y) {
-		u32 *addr = (u32*)(_pixels + ((_offy + y) * _width + (_offx + x)) * 4);
+		uint32_t *addr = (uint32_t*)(_pixels + ((_offy + y) * _width + (_offx + x)) * 4);
 		*addr = _col;
 	}
 
@@ -55,9 +55,9 @@ namespace gui {
 		// that the compiler doesn't inline). Additionally the offset into the
 		// memory-region will be calculated many times.
 		// This version is much quicker :)
-		u32 widthadd = _width;
-		u32 *addr;
-		u32 *orgaddr = (u32*)(_pixels + (((_offy + y) * _width + (_offx + x)) * 4));
+		tSize widthadd = _width;
+		uint32_t *addr;
+		uint32_t *orgaddr = (uint32_t*)(_pixels + (((_offy + y) * _width + (_offx + x)) * 4));
 		for(; y < yend; y++) {
 			addr = orgaddr;
 			for(xcur = x; xcur < xend; xcur++)

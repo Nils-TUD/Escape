@@ -38,7 +38,7 @@ namespace gui {
 
 	tWinId Window::NEXT_TMP_ID = 0xFFFF;
 
-	Window::Window(const string &title,tCoord x,tCoord y,tSize width,tSize height,u8 style)
+	Window::Window(const string &title,tCoord x,tCoord y,tSize width,tSize height,uchar style)
 		: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_title(title), _titleBarHeight(20), _inTitle(false), _inResizeLeft(false),
@@ -148,14 +148,14 @@ namespace gui {
 		passToCtrl(e,KEY_RELEASED);
 	}
 
-	void Window::passToCtrl(const KeyEvent &e,u8 event) {
+	void Window::passToCtrl(const KeyEvent &e,uchar event) {
 		// no events until we're created
 		if(!_created)
 			return;
 
 		// handle focus-change
 		if(event == KEY_RELEASED && e.getKeyCode() == VK_TAB) {
-			s32 old = _focus;
+			int old = _focus;
 			if(_focus == -1)
 				_focus = 0;
 			else if(e.isShiftDown())
@@ -184,7 +184,7 @@ namespace gui {
 		}
 	}
 
-	void Window::passToCtrl(const MouseEvent &e,u8 event) {
+	void Window::passToCtrl(const MouseEvent &e,uchar event) {
 		// no events until we're created
 		if(!_created)
 			return;
@@ -227,7 +227,7 @@ namespace gui {
 		_focus = -1;
 	}
 
-	void Window::resize(s16 width,s16 height) {
+	void Window::resize(short width,short height) {
 		if(getWidth() + width < MIN_WIDTH)
 			width = -getWidth() + MIN_WIDTH;
 		if(getHeight() + height < MIN_HEIGHT)
@@ -251,7 +251,7 @@ namespace gui {
 		}
 	}
 
-	void Window::move(s16 x,s16 y) {
+	void Window::move(short x,short y) {
 		tSize screenWidth = Application::getInstance()->getScreenWidth();
 		tSize screenHeight = Application::getInstance()->getScreenHeight();
 		x = MAX(-getWidth(),MIN(screenWidth - 1,getX() + x));
@@ -288,9 +288,9 @@ namespace gui {
 
 		// draw cross
 		g.setColor(BORDER_COLOR);
-		const u32 boxPad = 2;
-		const u32 crossPad = 2;
-		u32 cboxSize = _titleBarHeight - boxPad * 2;
+		const tSize boxPad = 2;
+		const tSize crossPad = 2;
+		tSize cboxSize = _titleBarHeight - boxPad * 2;
 		g.drawRect(getWidth() - cboxSize - boxPad,boxPad,cboxSize,cboxSize);
 		g.drawLine(getWidth() - cboxSize - boxPad + crossPad,boxPad + crossPad,
 				getWidth() - boxPad - crossPad,_titleBarHeight - boxPad - crossPad);

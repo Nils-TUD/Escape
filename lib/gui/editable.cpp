@@ -23,9 +23,9 @@
 #include <esc/keycodes.h>
 
 namespace gui {
-	const u8 Editable::DIR_NONE = 0;
-	const u8 Editable::DIR_LEFT = 1;
-	const u8 Editable::DIR_RIGHT = 2;
+	const uchar Editable::DIR_NONE = 0;
+	const uchar Editable::DIR_LEFT = 1;
+	const uchar Editable::DIR_RIGHT = 2;
 	const Color Editable::BGCOLOR = Color(0xFF,0xFF,0xFF);
 	const Color Editable::FGCOLOR = Color(0,0,0);
 	const Color Editable::SEL_BGCOLOR = Color(0,0,0xFF);
@@ -51,12 +51,12 @@ namespace gui {
 	}
 
 	void Editable::paint(Graphics &g) {
-		u32 cwidth = g.getFont().getWidth();
-		u32 cheight = g.getFont().getHeight();
-		s32 count = getMaxCharNum(g);
+		tSize cwidth = g.getFont().getWidth();
+		tSize cheight = g.getFont().getHeight();
+		int count = getMaxCharNum(g);
 		tCoord ystart = (getHeight() - cheight) / 2;
-		s32 start = _begin;
-		count = MIN((s32)_str.length(),count);
+		int start = _begin;
+		count = MIN((int)_str.length(),count);
 
 		g.setColor(BGCOLOR);
 		g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
@@ -64,7 +64,7 @@ namespace gui {
 		g.drawRect(0,0,getWidth(),getHeight());
 
 		if(_selStart != -1) {
-			s32 spos;
+			int spos;
 			/* selection background */
 			g.setColor(SEL_BGCOLOR);
 			spos = (start > _selStart ? 0 : (_selStart - start));
@@ -87,7 +87,7 @@ namespace gui {
 				g.setColor(FGCOLOR);
 				spos = _selEnd - start;
 				g.drawString(PADDING + spos * cwidth,ystart,_str,_selEnd,
-					MIN(count - spos,MIN((s32)_str.length() - start,(s32)_str.length() - _selEnd)));
+					MIN(count - spos,MIN((int)_str.length() - start,(int)_str.length() - _selEnd)));
 			}
 		}
 		else {
@@ -115,8 +115,8 @@ namespace gui {
 		UIElement::onMouseMoved(e);
 		if(_selecting) {
 			bool changed = false;
-			s32 pos = getPosAt(e.getX());
-			u8 dir = pos > (s32)_cursor ? DIR_RIGHT : DIR_LEFT;
+			int pos = getPosAt(e.getX());
+			uchar dir = pos > (int)_cursor ? DIR_RIGHT : DIR_LEFT;
 			changed |= changeSelection(pos,pos,dir);
 			changed |= moveCursorTo(pos);
 			if(changed)
@@ -139,18 +139,18 @@ namespace gui {
 		_startSel = true;
 	}
 
-	s32 Editable::getPosAt(tCoord x) {
-		s32 pos = 0;
+	int Editable::getPosAt(tCoord x) {
+		int pos = 0;
 		if(x >= getX()) {
 			pos = (x - getX()) / getGraphics()->getFont().getWidth();
-			if(pos > (s32)_str.length())
+			if(pos > (int)_str.length())
 				pos = _str.length();
 		}
 		return pos;
 	}
 
-	void Editable::moveCursor(s32 amount) {
-		u32 max = getMaxCharNum(*getGraphics());
+	void Editable::moveCursor(int amount) {
+		size_t max = getMaxCharNum(*getGraphics());
 		_cursor += amount;
 		if(amount > 0 && _cursor - _begin > max)
 			_begin += amount;
@@ -158,9 +158,9 @@ namespace gui {
 			_begin = _cursor;
 	}
 
-	bool Editable::moveCursorTo(u32 pos) {
-		u32 oldCur = _cursor;
-		u32 max = getMaxCharNum(*getGraphics());
+	bool Editable::moveCursorTo(size_t pos) {
+		size_t oldCur = _cursor;
+		size_t max = getMaxCharNum(*getGraphics());
 		_cursor = pos;
 		if(_cursor > max)
 			_begin = _cursor - max;
@@ -175,9 +175,9 @@ namespace gui {
 		_selDir = DIR_NONE;
 	}
 
-	bool Editable::changeSelection(s32 pos,s32 oldPos,u8 dir) {
-		s32 oldStart = _selStart;
-		s32 oldEnd = _selEnd;
+	bool Editable::changeSelection(int pos,int oldPos,uchar dir) {
+		int oldStart = _selStart;
+		int oldEnd = _selEnd;
 		if(_startSel || _selStart == -1) {
 			_selStart = dir == DIR_RIGHT ? oldPos : pos;
 			_selEnd = dir == DIR_LEFT ? oldPos : pos;
@@ -224,7 +224,7 @@ namespace gui {
 			repaint();
 		}
 		else {
-			u32 oldPos;
+			size_t oldPos;
 			bool changed = false;
 			switch(e.getKeyCode()) {
 				case VK_DELETE:

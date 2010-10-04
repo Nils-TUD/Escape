@@ -44,25 +44,25 @@ namespace gui {
 		static Color TITLE_FGCOLOR;
 		static Color BORDER_COLOR;
 
-		static u16 NEXT_TMP_ID;
+		static tWinId NEXT_TMP_ID;
 
 		static const tSize MIN_WIDTH = 40;
 		static const tSize MIN_HEIGHT = 40;
 
-		static const u8 MOUSE_MOVED = 0;
-		static const u8 MOUSE_RELEASED = 1;
-		static const u8 MOUSE_PRESSED = 2;
-		static const u8 KEY_RELEASED = 3;
-		static const u8 KEY_PRESSED = 4;
+		static const uchar MOUSE_MOVED = 0;
+		static const uchar MOUSE_RELEASED = 1;
+		static const uchar MOUSE_PRESSED = 2;
+		static const uchar KEY_RELEASED = 3;
+		static const uchar KEY_PRESSED = 4;
 
 	public:
-		static const u8 STYLE_DEFAULT = 0;
-		static const u8 STYLE_POPUP = 1;
-		static const u8 STYLE_DESKTOP = 2;
+		static const uchar STYLE_DEFAULT = 0;
+		static const uchar STYLE_POPUP = 1;
+		static const uchar STYLE_DESKTOP = 2;
 
 	public:
 		Window(const string &title,tCoord x,tCoord y,tSize width,tSize height,
-				u8 style = STYLE_DEFAULT);
+				uchar style = STYLE_DEFAULT);
 		Window(const Window &w);
 		virtual ~Window();
 		Window &operator=(const Window &w);
@@ -70,7 +70,7 @@ namespace gui {
 		inline tWinId getId() const {
 			return _id;
 		};
-		inline u8 getStyle() const {
+		inline uchar getStyle() const {
 			return _style;
 		};
 		inline bool isActive() const {
@@ -97,9 +97,9 @@ namespace gui {
 		virtual void onKeyReleased(const KeyEvent &e);
 
 		virtual void paint(Graphics &g);
-		void resize(s16 width,s16 height);
+		void resize(short width,short height);
 		void resizeTo(tSize width,tSize height);
-		void move(s16 x,s16 y);
+		void move(short x,short y);
 		void moveTo(tCoord x,tCoord y);
 		void add(Control &c);
 
@@ -112,8 +112,8 @@ namespace gui {
 
 	private:
 		void init();
-		void passToCtrl(const KeyEvent &e,u8 event);
-		void passToCtrl(const MouseEvent &e,u8 event);
+		void passToCtrl(const KeyEvent &e,uchar event);
+		void passToCtrl(const MouseEvent &e,uchar event);
 		void setActive(bool active);
 		void onCreated(tWinId id);
 		void update(tCoord x,tCoord y,tSize width,tSize height);
@@ -121,7 +121,7 @@ namespace gui {
 	private:
 		tWinId _id;
 		bool _created;
-		u8 _style;
+		uchar _style;
 		string _title;
 		tSize _titleBarHeight;
 		bool _inTitle;
@@ -130,7 +130,7 @@ namespace gui {
 		bool _inResizeBottom;
 		bool _isActive;
 	protected:
-		s32 _focus;
+		int _focus;
 		vector<Control*> _controls;
 	};
 

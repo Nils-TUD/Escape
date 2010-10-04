@@ -51,16 +51,16 @@ namespace gui {
 	void Graphics::allocBuffer() {
 		switch(_bpp) {
 			case 32:
-				_pixels = (u8*)calloc(_width * _height,4);
+				_pixels = (uint8_t*)calloc(_width * _height,4);
 				break;
 			case 24:
-				_pixels = (u8*)calloc(_width * _height,3);
+				_pixels = (uint8_t*)calloc(_width * _height,3);
 				break;
 			case 16:
-				_pixels = (u8*)calloc(_width * _height,2);
+				_pixels = (uint8_t*)calloc(_width * _height,2);
 				break;
 			default:
-				cerr << "Unsupported color-depth: " << (u32)_bpp << endl;
+				cerr << "Unsupported color-depth: " << _bpp << endl;
 				exit(EXIT_FAILURE);
 				break;
 		}
@@ -70,12 +70,12 @@ namespace gui {
 		}
 	}
 
-	void Graphics::moveLines(tCoord y,tSize height,s16 up) {
+	void Graphics::moveLines(tCoord y,tSize height,int up) {
 		tCoord x = 0;
 		tSize width = _width;
 		validateParams(x,y,width,height);
 		tCoord starty = _offy + y;
-		u32 psize = _bpp / 8;
+		tSize psize = _bpp / 8;
 		if(up > 0) {
 			if(y < up)
 				up = y;
@@ -110,20 +110,20 @@ namespace gui {
 		drawString(x,y,str,0,str.length());
 	}
 
-	void Graphics::drawString(tCoord x,tCoord y,const string &str,u32 start,u32 count) {
-		u32 charWidth = _font.getWidth();
-		u32 end = start + MIN(str.length(),count);
-		for(u32 i = start; i < end; i++) {
+	void Graphics::drawString(tCoord x,tCoord y,const string &str,size_t start,size_t count) {
+		size_t charWidth = _font.getWidth();
+		size_t end = start + MIN(str.length(),count);
+		for(size_t i = start; i < end; i++) {
 			drawChar(x,y,str[i]);
 			x += charWidth;
 		}
 	}
 
 	void Graphics::drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn) {
-		s32	dx,	dy,	d;
-		s32 incrE, incrNE;	/*Increments for move to E	& NE*/
+		int	dx,	dy,	d;
+		int incrE, incrNE;	/*Increments for move to E	& NE*/
 		tCoord x,y;			/*Start & current pixel*/
-		s32 incx, incy;
+		int incx, incy;
 		tCoord *px, *py;
 
 		// TODO later we should calculate with sin&cos the end-position in bounds so that
@@ -271,14 +271,14 @@ namespace gui {
 			width = MIN(screenWidth - (x + _x),MIN(_width - x,width));
 			height = MIN(screenHeight - (y + _y),MIN(_height - y,height));
 			void *vesaMem = Application::getInstance()->getVesaMem();
-			u8 *src,*dst;
+			uint8_t *src,*dst;
 			tCoord endy = y + height;
-			u32 psize = _bpp / 8;
-			u32 count = width * psize;
-			u32 srcAdd = _width * psize;
-			u32 dstAdd = screenWidth * psize;
+			size_t psize = _bpp / 8;
+			size_t count = width * psize;
+			size_t srcAdd = _width * psize;
+			size_t dstAdd = screenWidth * psize;
 			src = _pixels + (y * _width + x) * psize;
-			dst = (u8*)vesaMem + ((_y + y) * screenWidth + (_x + x)) * psize;
+			dst = (uint8_t*)vesaMem + ((_y + y) * screenWidth + (_x + x)) * psize;
 			while(y < endy) {
 				memcpy(dst,src,count);
 				src += srcAdd;
@@ -332,8 +332,8 @@ namespace gui {
 
 	void Graphics::validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height) {
 		if(_offx + x + width > _width)
-			width = MAX(0,(s32)_width - x - _offx);
+			width = MAX(0,(int)_width - x - _offx);
 		if(_offy + y + height > _height)
-			height = MAX(0,(s32)_height - y - _offy);
+			height = MAX(0,(int)_height - y - _offy);
 	}
 }

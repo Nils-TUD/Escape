@@ -81,8 +81,8 @@ namespace gui {
 	void Application::handleMessage(tMsgId mid,const sMsg *msg) {
 		switch(mid) {
 			case MSG_WIN_CREATE_RESP: {
-				u16 tmpId = msg->args.arg1;
-				u16 id = msg->args.arg2;
+				tWinId tmpId = msg->args.arg1;
+				tWinId id = msg->args.arg2;
 				// notify the window that it has been created
 				Window *w = getWindowById(tmpId);
 				if(w)
@@ -93,20 +93,20 @@ namespace gui {
 			case MSG_WIN_MOUSE: {
 				tCoord x = (tCoord)msg->args.arg1;
 				tCoord y = (tCoord)msg->args.arg2;
-				s16 movedX = (s16)msg->args.arg3;
-				s16 movedY = (s16)msg->args.arg4;
-				u8 buttons = (u8)msg->args.arg5;
+				short movedX = (short)msg->args.arg3;
+				short movedY = (short)msg->args.arg4;
+				uchar buttons = (uchar)msg->args.arg5;
 				tWinId win = (tWinId)msg->args.arg6;
 				passToWindow(win,x,y,movedX,movedY,buttons);
 			}
 			break;
 
 			case MSG_WIN_KEYBOARD: {
-				u8 keycode = (u8)msg->args.arg1;
+				uchar keycode = (uchar)msg->args.arg1;
 				bool isBreak = (bool)msg->args.arg2;
 				tWinId win = (tWinId)msg->args.arg3;
 				char character = (char)msg->args.arg4;
-				u8 modifier = (u8)msg->args.arg5;
+				uchar modifier = (uchar)msg->args.arg5;
 				Window *w = getWindowById(win);
 				if(w) {
 					if(isBreak) {
@@ -154,7 +154,8 @@ namespace gui {
 		}
 	}
 
-	void Application::passToWindow(tWinId win,tCoord x,tCoord y,s16 movedX,s16 movedY,u8 buttons) {
+	void Application::passToWindow(tWinId win,tCoord x,tCoord y,short movedX,short movedY,
+			uchar buttons) {
 		bool moved,released,pressed;
 
 		moved = movedX || movedY;

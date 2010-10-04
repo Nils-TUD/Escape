@@ -38,8 +38,8 @@ namespace gui {
 	}
 
 	void Graphics24::doSetPixel(tCoord x,tCoord y) {
-		u8 *col = (u8*)&_col;
-		u8 *addr = _pixels + ((_offy + y) * _width + (_offx + x)) * 3;
+		uint8_t *col = (uint8_t*)&_col;
+		uint8_t *addr = _pixels + ((_offy + y) * _width + (_offx + x)) * 3;
 		*addr++ = *col++;
 		*addr++ = *col++;
 		*addr = *col;
@@ -58,10 +58,10 @@ namespace gui {
 		// that the compiler doesn't inline). Additionally the offset into the
 		// memory-region will be calculated many times.
 		// This version is much quicker :)
-		u8 *col = (u8*)&_col;
-		u32 widthadd = _width * 3;
-		u8 *addr;
-		u8 *orgaddr = _pixels + (((_offy + y) * _width + (_offx + x)) * 3);
+		uint8_t *col = (uint8_t*)&_col;
+		tSize widthadd = _width * 3;
+		uint8_t *addr;
+		uint8_t *orgaddr = _pixels + (((_offy + y) * _width + (_offx + x)) * 3);
 		for(; y < yend; y++) {
 			addr = orgaddr;
 			for(xcur = x; xcur < xend; xcur++) {

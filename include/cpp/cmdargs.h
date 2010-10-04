@@ -30,8 +30,8 @@ namespace std {
 	 * A usage-example:
 	 *
 	 * string s;
-	 * s32 d = 0;
-	 * u32 k = 0,flag = 0;
+	 * int d = 0;
+	 * uint k = 0,flag = 0;
 	 * cmdargs a(argc,argv,0);
 	 * try {
 	 *   a.parse("=s a1=d a2=k flag",&s,&a1,&a2,&flag);
@@ -109,11 +109,11 @@ namespace std {
 		 * tells the parser that the argument has a value. Behind it the type of the value follows.
 		 * The type may be:
 		 * 	's':			a string, expects a std::string* as argument
-		 * 	'd' or 'i':		a signed integer, expects a s32* as argument
-		 * 	'u':			a unsigned integer to base 10, expects a u32* as argument
-		 * 	'x' or 'X':		a unsigned integer to base 16, expects a u32* as argument
+		 * 	'd' or 'i':		a signed integer, expects a int* as argument
+		 * 	'u':			a unsigned integer to base 10, expects a uint* as argument
+		 * 	'x' or 'X':		a unsigned integer to base 16, expects a uint* as argument
 		 * 	'c':			a character, expects a char* as argument
-		 * 	'k':			a unsigned integer with optional suffix K,M or G. expects a u32* as arg
+		 * 	'k':			a unsigned integer with optional suffix K,M or G. expects a uint* as arg
 		 * After the type may follow a '*' to tell the parser that the argument is required. If the
 		 * argument has no value a bool* is expected as argument. The arguments have to be separated
 		 * by spaces.
@@ -121,7 +121,7 @@ namespace std {
 		 * An example is:
 		 * bool flag;
 		 * string s;
-		 * s32 d;
+		 * int d;
 		 * args->parse(args,"flag a=s arg2=d*",&flag,&s,&d);
 		 *
 		 * There are some special things to know:

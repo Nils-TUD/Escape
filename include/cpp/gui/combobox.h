@@ -65,11 +65,11 @@ namespace gui {
 			ItemWindow &operator=(const ItemWindow &w);
 
 			void closeImpl();
-			s32 getItemAt(tCoord x,tCoord y);
+			int getItemAt(tCoord x,tCoord y);
 
 		private:
 			ComboBox *_cb;
-			s32 _highlighted;
+			int _highlighted;
 		};
 
 	public:
@@ -89,11 +89,11 @@ namespace gui {
 		inline void addItem(const string &s) {
 			_items.push_back(s);
 		};
-		inline s32 getSelectedIndex() const {
+		inline int getSelectedIndex() const {
 			return _selected;
 		};
-		inline void setSelectedIndex(s32 index) {
-			if(index >= 0 && index < (s32)_items.size())
+		inline void setSelectedIndex(int index) {
+			if(index >= 0 && index < (int)_items.size())
 				_selected = index;
 			else
 				_selected = -1;
@@ -106,7 +106,7 @@ namespace gui {
 
 	private:
 		vector<string> _items;
-		s32 _selected;
+		int _selected;
 		bool _pressed;
 		ItemWindow *_win;
 	};

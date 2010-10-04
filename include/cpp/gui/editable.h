@@ -28,13 +28,13 @@
 namespace gui {
 	class Editable : public Control {
 	public:
-		static const u8 DIR_NONE;
-		static const u8 DIR_LEFT;
-		static const u8 DIR_RIGHT;
+		static const uchar DIR_NONE;
+		static const uchar DIR_LEFT;
+		static const uchar DIR_RIGHT;
 
-		static const u32 PADDING = 3;
-		static const u32 CURSOR_WIDTH = 2;
-		static const u32 CURSOR_OVERLAP = 2;
+		static const uint PADDING = 3;
+		static const uint CURSOR_WIDTH = 2;
+		static const uint CURSOR_OVERLAP = 2;
 
 		static const Color BGCOLOR;
 		static const Color FGCOLOR;
@@ -74,25 +74,25 @@ namespace gui {
 		virtual void onKeyPressed(const KeyEvent &e);
 
 	private:
-		s32 getPosAt(tCoord x);
-		void moveCursor(s32 amount);
-		bool moveCursorTo(u32 pos);
+		int getPosAt(tCoord x);
+		void moveCursor(int amount);
+		bool moveCursorTo(size_t pos);
 		void clearSelection();
-		bool changeSelection(s32 pos,s32 oldPos,u8 dir);
+		bool changeSelection(int pos,int oldPos,uchar dir);
 		void deleteSelection();
-		inline u32 getMaxCharNum(Graphics &g) {
+		inline size_t getMaxCharNum(Graphics &g) {
 			return (getWidth() - PADDING) / g.getFont().getWidth();
 		};
 
 	private:
-		u32 _cursor;
-		u32 _begin;
+		size_t _cursor;
+		size_t _begin;
 		bool _focused;
 		bool _selecting;
 		bool _startSel;
-		u8 _selDir;
-		s32 _selStart;
-		s32 _selEnd;
+		uchar _selDir;
+		int _selStart;
+		int _selEnd;
 		string _str;
 	};
 }

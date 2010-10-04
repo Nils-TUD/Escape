@@ -31,11 +31,11 @@ namespace std {
 	public:
 		typedef size_t size_type;
 		typedef time_t time_type;
-		typedef u16 user_type;
-		typedef u16 group_type;
+		typedef ushort user_type;
+		typedef ushort group_type;
 		typedef tInodeNo inode_type;
 		typedef tDevNo dev_type;
-		typedef u16 mode_type;
+		typedef ushort mode_type;
 
 	public:
 		/**

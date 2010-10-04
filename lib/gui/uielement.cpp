@@ -76,7 +76,7 @@ namespace gui {
 	void UIElement::notifyListener(const MouseEvent &e) {
 		if(_mlist == NULL)
 			return;
-		u8 type = e.getType();
+		uchar type = e.getType();
 		for(vector<MouseListener*>::iterator it = _mlist->begin(); it != _mlist->end(); ++it) {
 			MouseListener *l = *it;
 			switch(type) {
@@ -95,7 +95,7 @@ namespace gui {
 	void UIElement::notifyListener(const KeyEvent &e) {
 		if(_klist == NULL)
 			return;
-		u8 type = e.getType();
+		uchar type = e.getType();
 		for(vector<KeyListener*>::iterator it = _klist->begin(); it != _klist->end(); ++it) {
 			KeyListener *l = *it;
 			switch(type) {

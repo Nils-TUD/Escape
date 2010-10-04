@@ -21,10 +21,10 @@
 #define GUI_COMMON_H_
 
 namespace gui {
-	typedef u16 tSize;
-	typedef s16 tCoord;
-	typedef u8 tColDepth;
-	typedef u16 tWinId;
+	typedef ushort tSize;
+	typedef short tCoord;
+	typedef uchar tColDepth;
+	typedef ushort tWinId;
 }
 
 #endif /* GUI_COMMON_H_ */

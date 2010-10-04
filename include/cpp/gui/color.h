@@ -28,9 +28,12 @@
 namespace gui {
 	class Color {
 	public:
-		Color(u32 color = 0) : _color(color) {
+		typedef uint32_t color_type;
+		typedef uint8_t comp_type;
+
+		Color(color_type color = 0) : _color(color) {
 		};
-		Color(u8 red,u8 green,u8 blue,u8 alpha = 0) : _color(0) {
+		Color(comp_type red,comp_type green,comp_type blue,comp_type alpha = 0) : _color(0) {
 			setColor(red,green,blue,alpha);
 		};
 		Color(const Color &col) : _color(col._color) {
@@ -43,32 +46,32 @@ namespace gui {
 			return *this;
 		};
 
-		inline u32 getColor() const {
+		inline color_type getColor() const {
 			return _color;
 		};
-		inline void setColor(u32 color) {
+		inline void setColor(color_type color) {
 			_color = color;
 		};
-		inline void setColor(u8 red,u8 green,u8 blue,u8 alpha = 0) {
+		inline void setColor(comp_type red,comp_type green,comp_type blue,comp_type alpha = 0) {
 			_color = (alpha << 24) | (red << 16) | (green << 8) | blue;
 		};
 
-		inline u8 getRed() const {
-			return (u8)(_color >> 16);
+		inline comp_type getRed() const {
+			return (comp_type)(_color >> 16);
 		};
-		inline u8 getGreen() const {
-			return (u8)(_color >> 8);
+		inline comp_type getGreen() const {
+			return (comp_type)(_color >> 8);
 		};
-		inline u8 getBlue() const {
-			return (u8)(_color & 0xFF);
+		inline comp_type getBlue() const {
+			return (comp_type)(_color & 0xFF);
 		};
-		inline u8 getAlpha() const {
-			return (u8)(_color >> 24);
+		inline comp_type getAlpha() const {
+			return (comp_type)(_color >> 24);
 		};
-		u32 toCurMode() const;
+		color_type toCurMode() const;
 
 	private:
-		u32 _color;
+		color_type _color;
 	};
 
 	std::ostream &operator<<(std::ostream &s,const Color &c);

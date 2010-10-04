@@ -44,7 +44,7 @@ namespace gui {
 		g.drawRect(0,0,getWidth(),getHeight());
 
 		// draw bar
-		u32 barWidth;
+		tSize barWidth;
 		if(_position == 0)
 			barWidth = 0;
 		else

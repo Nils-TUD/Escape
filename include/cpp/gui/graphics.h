@@ -123,7 +123,7 @@ namespace gui {
 		 * @param height the number of lines to move
 		 * @param up amount to move up / down
 		 */
-		virtual void moveLines(tCoord y,tSize height,s16 up);
+		virtual void moveLines(tCoord y,tSize height,int up);
 
 		/**
 		 * Draws the given character at given position
@@ -154,7 +154,7 @@ namespace gui {
 		 * @param start the start-position in the string
 		 * @param count the number of characters
 		 */
-		virtual void drawString(tCoord x,tCoord y,const string &str,u32 start,u32 count);
+		virtual void drawString(tCoord x,tCoord y,const string &str,size_t start,size_t count);
 
 		/**
 		 * Draws a line from (x0,y0) to (xn,yn)
@@ -275,12 +275,12 @@ namespace gui {
 		// used color-depth
 		tColDepth _bpp;
 		// current color
-		u32 _col;
+		Color::color_type _col;
 		Color _colInst;
 		// dirty region
 		tCoord _minx,_miny,_maxx,_maxy;
 		// buffer for this window; controls use this, too (don't have their own)
-		u8 *_pixels;
+		uint8_t *_pixels;
 		// current font
 		Font _font;
 		// for controls: the graphics-instance of the window

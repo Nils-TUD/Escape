@@ -34,8 +34,8 @@ namespace gui {
 		static Color LIGHT_BOX_COLOR;
 		static Color DARK_BOX_COLOR;
 		static Color BOX_BGCOLOR;
-		static const u32 CROSS_PADDING = 2;
-		static const u32 TEXT_PADDING = 4;
+		static const uint CROSS_PADDING = 2;
+		static const uint TEXT_PADDING = 4;
 
 	public:
 		Checkbox(tCoord x,tCoord y,tSize width,tSize height)

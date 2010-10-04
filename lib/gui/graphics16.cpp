@@ -39,7 +39,7 @@ namespace gui {
 	}
 
 	void Graphics16::doSetPixel(tCoord x,tCoord y) {
-		u16 *addr = (u16*)(_pixels + ((_offy + y) * _width + (_offx + x)) * 2);
+		uint16_t *addr = (uint16_t*)(_pixels + ((_offy + y) * _width + (_offx + x)) * 2);
 		*addr = _col;
 	}
 
@@ -56,9 +56,9 @@ namespace gui {
 		// that the compiler doesn't inline). Additionally the offset into the
 		// memory-region will be calculated many times.
 		// This version is much quicker :)
-		u32 widthadd = _width;
-		u16 *addr;
-		u16 *orgaddr = (u16*)(_pixels + (((_offy + y) * _width + (_offx + x)) * 2));
+		tSize widthadd = _width;
+		uint16_t *addr;
+		uint16_t *orgaddr = (uint16_t*)(_pixels + (((_offy + y) * _width + (_offx + x)) * 2));
 		for(; y < yend; y++) {
 			addr = orgaddr;
 			for(xcur = x; xcur < xend; xcur++)

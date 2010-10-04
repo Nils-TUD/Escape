@@ -60,7 +60,7 @@ namespace gui {
 		tSize itemHeight = g.getFont().getHeight();
 		tCoord y = 0;
 		for(vector<string>::iterator it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
-			if(_highlighted == (s32)std::distance(_cb->_items.begin(),it)) {
+			if(_highlighted == (int)std::distance(_cb->_items.begin(),it)) {
 				g.setColor(SEL_BGCOLOR);
 				g.fillRect(1,y + 1,getWidth() - 2,itemHeight + PADDING * 2 - 2);
 				g.setColor(SEL_FGCOLOR);
@@ -72,8 +72,8 @@ namespace gui {
 	}
 
 	void ComboBox::ItemWindow::onMouseMoved(const MouseEvent &e) {
-		s32 item = getItemAt(e.getX(),e.getY());
-		if(item < (s32)_cb->_items.size() && item != _highlighted) {
+		int item = getItemAt(e.getX(),e.getY());
+		if(item < (int)_cb->_items.size() && item != _highlighted) {
 			_highlighted = item;
 			repaint();
 		}
@@ -85,7 +85,7 @@ namespace gui {
 		closeImpl();
 	}
 
-	s32 ComboBox::ItemWindow::getItemAt(tCoord x,tCoord y) {
+	int ComboBox::ItemWindow::getItemAt(tCoord x,tCoord y) {
 		UNUSED(x);
 		return y / (getGraphics()->getFont().getHeight() + PADDING * 2);
 	}
@@ -110,7 +110,7 @@ namespace gui {
 	}
 
 	void ComboBox::paint(Graphics &g) {
-		u32 btnWidth = getHeight();
+		tSize btnWidth = getHeight();
 		// paint item
 		g.setColor(ITEM_BGCOLOR);
 		g.fillRect(1,1,getWidth() - btnWidth - 2,getHeight() - 2);
@@ -128,8 +128,8 @@ namespace gui {
 		g.drawRect(getWidth() - btnWidth + 1,0,btnWidth - 1,getHeight());
 
 		// paint cross
-		u32 arrowPad = 4;
-		u32 pressedPad = _pressed ? 1 : 0;
+		size_t arrowPad = 4;
+		size_t pressedPad = _pressed ? 1 : 0;
 		g.setColor(BTN_ARROWCOLOR);
 		g.drawLine(getWidth() - btnWidth + arrowPad,arrowPad + pressedPad,
 				getWidth() - arrowPad,arrowPad + pressedPad);

@@ -49,13 +49,13 @@ namespace gui {
 	}
 
 	void Button::onKeyPressed(const KeyEvent &e) {
-		u8 keycode = e.getKeyCode();
+		uchar keycode = e.getKeyCode();
 		UIElement::onKeyPressed(e);
 		if(keycode == VK_ENTER || keycode == VK_SPACE)
 			setPressed(true);
 	}
 	void Button::onKeyReleased(const KeyEvent &e) {
-		u8 keycode = e.getKeyCode();
+		uchar keycode = e.getKeyCode();
 		UIElement::onKeyReleased(e);
 		if(keycode == VK_ENTER || keycode == VK_SPACE)
 			setPressed(false);

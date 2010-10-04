@@ -29,12 +29,12 @@ namespace gui {
 			return;
 		switch(_infoHeader->compression) {
 			case BI_RGB: {
-				u32 bitCount = _infoHeader->bitCount;
-				u8 *oldData,*data = _data;
+				size_t bitCount = _infoHeader->bitCount;
+				uint8_t *oldData,*data = _data;
 				tSize w = _infoHeader->width, h = _infoHeader->height;
 				tSize pw = w, ph = h, pad;
 				tCoord cx,cy;
-				u32 lastCol = 0;
+				size_t lastCol = 0;
 				g.validateParams(x,y,pw,ph);
 				g.setColor(Color(0));
 				g.updateMinMax(x,y);
@@ -47,7 +47,7 @@ namespace gui {
 					for(cx = 0; cx < w; cx++) {
 						if(cx < pw) {
 							// TODO performance might be improvable
-							u32 col = bitCount <= 8 ? *data : (*(u32*)data) & 0xFFFFFF;
+							size_t col = bitCount <= 8 ? *data : (*(uint32_t*)data) & 0xFFFFFF;
 							if(col != lastCol) {
 								g.setColor(Color(bitCount <= 8 ? _colorTable[col] : col));
 								lastCol = col;
@@ -78,13 +78,13 @@ namespace gui {
 
 	void BitmapImage::loadFromFile(const string &filename) {
 		// read header
-		u32 headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
-		u8 *header = new u8[headerSize];
+		size_t headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
+		uint8_t *header = new uint8_t[headerSize];
 		rawfile f;
 
 		try {
 			f.open(filename,rawfile::READ);
-			f.read(header,sizeof(u8),headerSize);
+			f.read(header,sizeof(uint8_t),headerSize);
 		}
 		catch(io_exception &e) {
 			throw img_load_error(filename + ": Unable to open or read header: " + e.what());
@@ -107,15 +107,15 @@ namespace gui {
 		else
 			_tableSize = _infoHeader->colorsUsed;
 
-		u16 bitCount = _infoHeader->bitCount;
+		uint16_t bitCount = _infoHeader->bitCount;
 		if(bitCount != 1 && bitCount != 4 && bitCount != 8 && bitCount != 24)
 			throw img_load_error(filename + "Invalid bitdepth: 1,4,8,24 are supported");
 
 		// read color-table, if present
 		if(_tableSize > 0) {
-			_colorTable = new u32[_tableSize];
+			_colorTable = new uint32_t[_tableSize];
 			try {
-				f.read(_colorTable,sizeof(u32),_tableSize);
+				f.read(_colorTable,sizeof(uint32_t),_tableSize);
 			}
 			catch(io_exception &e) {
 				throw img_load_error(filename + ": Unable to read color-table: " + e.what());
@@ -124,16 +124,16 @@ namespace gui {
 
 		// now read the data
 		if(_infoHeader->compression == BI_RGB) {
-			u32 bytesPerLine;
+			size_t bytesPerLine;
 			bytesPerLine = _infoHeader->width * (_infoHeader->bitCount / 8);
-			bytesPerLine = (bytesPerLine + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
+			bytesPerLine = (bytesPerLine + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
 			_dataSize = bytesPerLine * _infoHeader->height;
 		}
 		else
 			_dataSize = _infoHeader->sizeImage;
-		_data = new u8[_dataSize];
+		_data = new uint8_t[_dataSize];
 		try {
-			f.read(_data,sizeof(u8),_dataSize);
+			f.read(_data,sizeof(uint8_t),_dataSize);
 		}
 		catch(io_exception &e) {
 			throw img_load_error(filename + ": Unable to read image-data: " + e.what());

@@ -32,7 +32,8 @@
 
 /* This is mostly borrowed from doc/vbecore.pdf */
 
-#define VM86_ADDR_RM2PM(addr)				((((u32)(addr) & 0xFFFF0000) >> 12) | ((u32)(addr) & 0xFFFF))
+#define VM86_ADDR_RM2PM(addr)				((((uintptr_t)(addr) & 0xFFFF0000) >> 12) | \
+		((uintptr_t)(addr) & 0xFFFF))
 #define ABS(x)								((x) > 0 ? (x) : -(x))
 
 #define VM86_DATA_ADDR						0x80000
@@ -45,16 +46,16 @@
 /* SuperVGA information block */
 typedef struct {
 	char signature[4];			/* 'VESA' 4 byte signature      */
-	u16 version;				/* VBE version number           */
+	uint16_t version;			/* VBE version number           */
 	char *oemString;			/* Pointer to OEM string        */
-	u32 capabilities;			/* Capabilities of video card   */
-	u16 *videoModesPtr;			/* Pointer to supported modes   */
-	u16 totalMemory;			/* Number of 64kb memory blocks */
-	u8 reserved[236];			/* Pad to 256 byte block size   */
+	uint32_t capabilities;		/* Capabilities of video card   */
+	uint16_t *videoModesPtr;	/* Pointer to supported modes   */
+	uint16_t totalMemory;		/* Number of 64kb memory blocks */
+	uint8_t reserved[236];		/* Pad to 256 byte block size   */
 } A_PACKED sVbeInfo;
 
-static s32 vbe_loadInfo(void);
-static bool vbe_loadModeInfo(sVbeModeInfo *info,u16 mode);
+static int vbe_loadInfo(void);
+static bool vbe_loadModeInfo(sVbeModeInfo *info,uint mode);
 static void vbe_detectModes(void);
 
 static sSLList *modes = NULL;
@@ -74,7 +75,7 @@ void vbe_init(void) {
 	vbe_detectModes();
 }
 
-sVbeModeInfo *vbe_getModeInfo(u16 mode) {
+sVbeModeInfo *vbe_getModeInfo(uint mode) {
 	sSLNode *n;
 	sVbeModeInfo *info;
 	for(n = sll_begin(modes); n != NULL; n = n->next) {
@@ -85,12 +86,12 @@ sVbeModeInfo *vbe_getModeInfo(u16 mode) {
 	return NULL;
 }
 
-u16 vbe_findMode(u16 resX,u16 resY,u16 bpp) {
+uint vbe_findMode(uint resX,uint resY,uint bpp) {
 	sSLNode *n;
 	sVbeModeInfo *info;
-	u16 best = 0;
-	u32 pixdiff, bestpixdiff = ABS(320 * 200 - resX * resY);
-	u32 depthdiff, bestdepthdiff = 8 >= bpp ? 8 - bpp : (bpp - 8) * 2;
+	uint best = 0;
+	size_t pixdiff, bestpixdiff = ABS(320 * 200 - resX * resY);
+	size_t depthdiff, bestdepthdiff = 8 >= bpp ? 8 - bpp : (bpp - 8) * 2;
 	for(n = sll_begin(modes); n != NULL; n = n->next) {
 		info = (sVbeModeInfo*)n->data;
 		/* skip unsupported modes */
@@ -124,7 +125,7 @@ u16 vbe_findMode(u16 resX,u16 resY,u16 bpp) {
 	return best;
 }
 
-u16 vbe_getMode(void) {
+uint vbe_getMode(void) {
 	sVM86Regs regs;
 	regs.ax = 0x4F03;
 	if(vm86int(0x10,&regs,NULL,0) < 0)
@@ -132,7 +133,7 @@ u16 vbe_getMode(void) {
 	return regs.bx;
 }
 
-bool vbe_setMode(u16 mode) {
+bool vbe_setMode(uint mode) {
 	sVM86Regs regs;
 	regs.ax = 0x4F02;
 	regs.bx = mode | VBE_MODE_SET_LFB;
@@ -141,8 +142,8 @@ bool vbe_setMode(u16 mode) {
 	return true;
 }
 
-static s32 vbe_loadInfo(void) {
-	s32 res;
+static int vbe_loadInfo(void) {
+	int res;
 	sVM86Regs regs;
 	sVM86Memarea areas[2];
 	regs.ax = 0x4F00;
@@ -154,10 +155,10 @@ static s32 vbe_loadInfo(void) {
 	areas[0].data.direct.size = sizeof(sVbeInfo);
 	areas[1].type = VM86_MEM_PTR;
 	areas[1].data.ptr.srcPtr = (void**)&vbeInfo.videoModesPtr;
-	areas[1].data.ptr.result = (u32)malloc(MAX_MODE_COUNT * sizeof(u32));
+	areas[1].data.ptr.result = (uintptr_t)malloc(MAX_MODE_COUNT * sizeof(uint));
 	if(areas[1].data.ptr.result == 0)
 		return VBEERR_GETINFO_FAILED;
-	areas[1].data.ptr.size = MAX_MODE_COUNT * sizeof(u32);
+	areas[1].data.ptr.size = MAX_MODE_COUNT * sizeof(uint);
 	memcpy(vbeInfo.signature,"VBE2",4);
 	if((res = vm86int(0x10,&regs,areas,2)) < 0)
 		return res;
@@ -165,13 +166,13 @@ static s32 vbe_loadInfo(void) {
 		return VBEERR_UNSUPPORTED;
 	if((regs.ax & 0xFF00) != 0)
 		return VBEERR_GETINFO_FAILED;
-	vbeInfo.videoModesPtr = (u16*)areas[1].data.ptr.result;
+	vbeInfo.videoModesPtr = (uint16_t*)areas[1].data.ptr.result;
 	/* TODO */
 	vbeInfo.oemString = 0;
 	return 0;
 }
 
-static bool vbe_loadModeInfo(sVbeModeInfo *info,u16 mode) {
+static bool vbe_loadModeInfo(sVbeModeInfo *info,uint mode) {
 	sVM86Regs regs;
 	sVM86Memarea area;
 	/* Ignore non-VBE modes */
@@ -195,7 +196,8 @@ static bool vbe_loadModeInfo(sVbeModeInfo *info,u16 mode) {
 }
 
 static void vbe_detectModes(void) {
-	u16 i,*p;
+	uint16_t *p;
+	size_t i;
 	sVbeModeInfo mode;
 	sVbeModeInfo *modeCpy;
 	FILE *f = fopen("/system/devices/vbe","w");
@@ -208,7 +210,8 @@ static void vbe_detectModes(void) {
 	fprintf(f,"videoModes: 0x%x\n",vbeInfo.videoModesPtr);
 	fprintf(f,"\n");
 	fprintf(f,"Available video modes:\n");
-	for(i = 0, p = (u16*)vbeInfo.videoModesPtr; i < MAX_MODE_COUNT && *p != (u16)-1; i++, p++) {
+	p = (uint16_t*)vbeInfo.videoModesPtr;
+	for(i = 0; i < MAX_MODE_COUNT && *p != (uint16_t)-1; i++, p++) {
 		if(vbe_loadModeInfo(&mode,*p)) {
 			fprintf(f,"  %4x: %4d x %4d %2d bpp, %d planes, %s, %s, %s (attr %x) (@%x)\n",mode.modeNo,
 					mode.xResolution,mode.yResolution,

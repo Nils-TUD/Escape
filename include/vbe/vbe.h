@@ -27,38 +27,38 @@
 
 /* SuperVGA mode information block */
 typedef struct {
-	u16 modeAttributes;			/* Mode attributes                 */
-	u8 winAAttributes;			/* Window A attributes             */
-	u8 winBAttributes;			/* Window B attributes             */
-	u16 winGranularity;			/* Window granularity in k         */
-	u16 winSize;				/* Window size in k                */
-	u16 winASegment;			/* Window A segment                */
-	u16 winBSegment;			/* Window B segment                */
-	void (*winFuncPtr)(void);	/* Pointer to window function      */
-	u16 bytesPerScanLine;		/* Bytes per scanline              */
-	u16 xResolution;			/* Horizontal resolution           */
-	u16 yResolution;			/* Vertical resolution             */
-	u8 xCharSize;				/* Character cell width            */
-	u8 yCharSize;				/* Character cell height           */
-	u8 numberOfPlanes;			/* Number of memory planes         */
-	u8 bitsPerPixel;			/* Bits per pixel                  */
-	u8 numberOfBanks;			/* Number of CGA style banks       */
-	u8 memoryModel;				/* Memory model type               */
-	u8 bankSize;				/* Size of CGA style banks         */
-	u8 numberOfImagePages;		/* Number of images pages          */
-	u8 : 8;						/* Reserved                        */
-	u8 redMaskSize;				/* Size of direct color red mask   */
-	u8 redFieldPosition;		/* Bit posn of lsb of red mask     */
-	u8 greenMaskSize;			/* Size of direct color green mask */
-	u8 greenFieldPosition;		/* Bit posn of lsb of green mask   */
-	u8 blueMaskSize;			/* Size of direct color blue mask  */
-	u8 blueFieldPosition;		/* Bit posn of lsb of blue mask    */
-	u8 rsvdMaskSize;			/* Size of direct color res mask   */
-	u8 rsvdFieldPosition;		/* Bit posn of lsb of res mask     */
-	u8 directColorModeInfo;		/* Direct color mode attributes    */
-	u32 physBasePtr;			/* Physical address for flat memory frame buffer (VBE 2.0) */
-	u16 modeNo;					/* BEWARE: Used in this driver, reserved by VBE! */
-	u8 reserved[216];			/* Pad to 256 byte block size      */
+	uint16_t modeAttributes;		/* Mode attributes                 */
+	uint8_t winAAttributes;			/* Window A attributes             */
+	uint8_t winBAttributes;			/* Window B attributes             */
+	uint16_t winGranularity;		/* Window granularity in k         */
+	uint16_t winSize;				/* Window size in k                */
+	uint16_t winASegment;			/* Window A segment                */
+	uint16_t winBSegment;			/* Window B segment                */
+	void (*winFuncPtr)(void);		/* Pointer to window function      */
+	uint16_t bytesPerScanLine;		/* Bytes per scanline              */
+	uint16_t xResolution;			/* Horizontal resolution           */
+	uint16_t yResolution;			/* Vertical resolution             */
+	uint8_t xCharSize;				/* Character cell width            */
+	uint8_t yCharSize;				/* Character cell height           */
+	uint8_t numberOfPlanes;			/* Number of memory planes         */
+	uint8_t bitsPerPixel;			/* Bits per pixel                  */
+	uint8_t numberOfBanks;			/* Number of CGA style banks       */
+	uint8_t memoryModel;			/* Memory model type               */
+	uint8_t bankSize;				/* Size of CGA style banks         */
+	uint8_t numberOfImagePages;		/* Number of images pages          */
+	uint8_t : 8;					/* Reserved                        */
+	uint8_t redMaskSize;			/* Size of direct color red mask   */
+	uint8_t redFieldPosition;		/* Bit posn of lsb of red mask     */
+	uint8_t greenMaskSize;			/* Size of direct color green mask */
+	uint8_t greenFieldPosition;		/* Bit posn of lsb of green mask   */
+	uint8_t blueMaskSize;			/* Size of direct color blue mask  */
+	uint8_t blueFieldPosition;		/* Bit posn of lsb of blue mask    */
+	uint8_t rsvdMaskSize;			/* Size of direct color res mask   */
+	uint8_t rsvdFieldPosition;		/* Bit posn of lsb of res mask     */
+	uint8_t directColorModeInfo;	/* Direct color mode attributes    */
+	uint32_t physBasePtr;			/* Physical address for flat memory frame buffer (VBE 2.0) */
+	uint16_t modeNo;				/* BEWARE: Used in this driver, reserved by VBE! */
+	uint8_t reserved[216];			/* Pad to 256 byte block size      */
 } A_PACKED sVbeModeInfo;
 
 #define MODE_SUPPORTED				(1 << 0)	/* Wether the mode is supported */
@@ -94,7 +94,7 @@ void vbe_init(void);
  * @param mode the mode-number
  * @return information about the given mode (or NULL if not found)
  */
-sVbeModeInfo *vbe_getModeInfo(u16 mode);
+sVbeModeInfo *vbe_getModeInfo(uint mode);
 
 /**
  * Tries to find the most suitable mode for the given settings
@@ -104,12 +104,12 @@ sVbeModeInfo *vbe_getModeInfo(u16 mode);
  * @param bpp bits per pixel
  * @return the mode or 0 if no matching mode found
  */
-u16 vbe_findMode(u16 resX,u16 resY,u16 bpp);
+uint vbe_findMode(uint resX,uint resY,uint bpp);
 
 /**
  * @return the current mode-number
  */
-u16 vbe_getMode(void);
+uint vbe_getMode(void);
 
 /**
  * Sets the given mode
@@ -117,7 +117,7 @@ u16 vbe_getMode(void);
  * @param mode the mode-number
  * @return true on success
  */
-bool vbe_setMode(u16 mode);
+bool vbe_setMode(uint mode);
 
 #ifdef __cplusplus
 }

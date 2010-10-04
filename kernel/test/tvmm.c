@@ -35,10 +35,10 @@ sTestModule tModVmm = {
 	"Virtual Memory Manager",
 	&test_vmm
 };
-static u32 heapBefore;
-static u32 framesBefore;
-static u32 heapAfter;
-static u32 framesAfter;
+static size_t heapBefore;
+static size_t framesBefore;
+static size_t heapAfter;
+static size_t framesAfter;
 
 static void test_init(void) {
 	heapBefore = kheap_getFreeMem();
@@ -108,7 +108,7 @@ static void test_1(void) {
 
 static void test_2(void) {
 	tVMRegNo rno;
-	u32 start,end;
+	uintptr_t start,end;
 	sProc *p = proc_getRunning();
 	test_caseStart("Testing vmm_grow()");
 

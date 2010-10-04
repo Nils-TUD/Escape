@@ -36,7 +36,7 @@ static void test_sched(void) {
 #if 0
 	sProc *x = (sProc*)proc_getByPid(proc_getFreePid());
 	sProc *rand[5] = {x + 1,x,x + 4,x + 2,x + 3};
-	s32 i;
+	size_t i;
 	bool res = true;
 	/* not relevant here */
 	sProc *p = (sProc*)x, *pp;

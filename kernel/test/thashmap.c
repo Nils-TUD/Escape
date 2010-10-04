@@ -30,8 +30,8 @@ static void test_hashmap(void);
 static void test_basic(void);
 static void test_remove(void);
 static void test_iterator(void);
-static u32 test_getkey(const void *data) {
-	return (u32)data;
+static uint test_getkey(const void *data) {
+	return (uint)data;
 }
 
 /* our test-module */
@@ -49,7 +49,7 @@ static void test_hashmap(void) {
 static void test_basic(void) {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
-	u32 before = kheap_getFreeMem();
+	size_t before = kheap_getFreeMem();
 	test_caseStart("Testing basic functionality");
 
 	m = hm_create(testmap,TEST_MAP_SIZE,test_getkey);
@@ -78,7 +78,7 @@ static void test_basic(void) {
 static void test_remove(void) {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
-	u32 before = kheap_getFreeMem();
+	size_t before = kheap_getFreeMem();
 	test_caseStart("Testing remove");
 
 	m = hm_create(testmap,TEST_MAP_SIZE,test_getkey);
@@ -117,8 +117,9 @@ static void test_remove(void) {
 static void test_iterator(void) {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
-	u32 i,j,elems[] = {44,12,18,34,1,109};
-	u32 before = kheap_getFreeMem();
+	size_t j;
+	uint i,elems[] = {44,12,18,34,1,109};
+	size_t before = kheap_getFreeMem();
 	test_caseStart("Testing map iterator");
 
 	m = hm_create(testmap,TEST_MAP_SIZE,test_getkey);
@@ -129,7 +130,7 @@ static void test_iterator(void) {
 	hm_remove(m,(void*)elems[2]);
 
 	j = 0;
-	for(hm_begin(m); (i = (u32)hm_next(m)); ) {
+	for(hm_begin(m); (i = (uint)hm_next(m)); ) {
 		tprintf("%d: %u\n",j,i);
 		test_assertTrue(i == elems[0] || i == elems[1] ||
 				i == elems[3] || i == elems[4] || i == elems[5]);

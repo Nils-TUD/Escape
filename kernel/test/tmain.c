@@ -67,7 +67,7 @@
 #include "tshm.h"
 #include "thashmap.h"
 
-s32 main(sMultiBoot *mbp,u32 magic) {
+int main(sMultiBoot *mbp,uint32_t magic) {
 	UNUSED(magic);
 
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on

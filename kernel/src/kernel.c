@@ -79,7 +79,7 @@ static uint8_t initloader[] = {
 #endif
 };
 
-int main(sMultiBoot *mbp,uint magic) {
+int main(sMultiBoot *mbp,uint32_t magic) {
 	sStartupInfo info;
 	sThread *t;
 

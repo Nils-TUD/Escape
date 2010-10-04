@@ -58,7 +58,7 @@ typedef struct {
 	fNodeFree ffree;
 	sNode *first;
 	sNode *last;
-	u32 length;
+	size_t length;
 } sList;
 
 /**
@@ -68,7 +68,7 @@ typedef struct {
  * @param index the index
  * @return the node
  */
-static sNode *sll_getNode(const sSLList *list,u32 index);
+static sNode *sll_getNode(const sSLList *list,size_t index);
 
 sSLList *sll_create(void) {
 	sList *l = (sList*)heapalloc(sizeof(sList));
@@ -132,21 +132,21 @@ sSLNode *sll_begin(const sSLList *list) {
 	return (sSLNode*)((sList*)list)->first;
 }
 
-sSLNode *sll_nodeAt(const sSLList *list,u32 index) {
+sSLNode *sll_nodeAt(const sSLList *list,size_t index) {
 	return (sSLNode*)sll_getNode(list,index);
 }
 
-u32 sll_length(const sSLList *list) {
+size_t sll_length(const sSLList *list) {
 	sList *l = (sList*)list;
 	if(l == NULL)
 		return 0;
 	return l->length;
 }
 
-s32 sll_indexOf(const sSLList *list,const void *data) {
+ssize_t sll_indexOf(const sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first;
-	s32 i;
+	ssize_t i;
 	for(i = 0; n != NULL; i++) {
 		if(n->data == data)
 			return i;
@@ -166,11 +166,11 @@ sSLNode *sll_nodeWith(const sSLList *list,const void *data) {
 	return NULL;
 }
 
-void *sll_get(const sSLList *list,u32 index) {
+void *sll_get(const sSLList *list,size_t index) {
 	return (void*)sll_getNode(list,index)->data;
 }
 
-void sll_set(sSLList *list,const void *data,u32 index) {
+void sll_set(sSLList *list,const void *data,size_t index) {
 	sNode *n;
 	n = sll_getNode(list,index);
 	n->data = data;
@@ -181,7 +181,7 @@ bool sll_append(sSLList *list,const void *data) {
 	return sll_insert(list,data,l->length);
 }
 
-bool sll_insert(sSLList *list,const void *data,u32 index) {
+bool sll_insert(sSLList *list,const void *data,size_t index) {
 	sList *l = (sList*)list;
 	sNode *ln = NULL;
 
@@ -292,7 +292,7 @@ bool sll_removeFirst(sSLList *list,const void *data) {
 	return true;
 }
 
-void *sll_removeIndex(sSLList *list,u32 index) {
+void *sll_removeIndex(sSLList *list,size_t index) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
 	void *res = NULL;
@@ -314,7 +314,7 @@ void *sll_removeIndex(sSLList *list,u32 index) {
 	return res;
 }
 
-static sNode *sll_getNode(const sSLList *list,u32 index) {
+static sNode *sll_getNode(const sSLList *list,size_t index) {
 	sList *l = (sList*)list;
 	sNode *n;
 

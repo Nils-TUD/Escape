@@ -36,8 +36,8 @@ sTestModule tModRegion = {
 	"VMM Regions",
 	&test_region
 };
-static u32 heapBefore;
-static u32 heapAfter;
+static size_t heapBefore;
+static size_t heapAfter;
 
 static void test_init(void) {
 	heapBefore = kheap_getFreeMem();
@@ -63,8 +63,8 @@ static void test_1(void) {
 	reg = reg_create(NULL,123,124,124,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
 	test_assertUInt(reg->binary.modifytime,0);
-	test_assertUInt((u32)reg->binary.ino,0);
-	test_assertUInt((u32)reg->binary.dev,0);
+	test_assertInt(reg->binary.ino,0);
+	test_assertInt(reg->binary.dev,0);
 	test_assertUInt(reg->binOffset,0);
 	test_assertUInt(reg->flags,RF_GROWABLE);
 	test_assertUInt(reg->byteCount,124);
@@ -116,7 +116,7 @@ static void test_2(void) {
 
 static void test_3(void) {
 	sRegion *reg;
-	u32 i;
+	size_t i;
 	test_caseStart("Testing reg_grow()");
 
 	test_init();

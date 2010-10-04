@@ -54,7 +54,7 @@ static void test_signals(void) {
 }
 
 static void test_canHandle(void) {
-	u32 i;
+	size_t i;
 	test_caseStart("Testing sig_canHandle()");
 
 	for(i = 0; i < ARRAY_SIZE(signals); i++)

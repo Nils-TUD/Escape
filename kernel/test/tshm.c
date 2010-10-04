@@ -36,10 +36,10 @@ sTestModule tModShm = {
 	"Shared memory",
 	&test_shm
 };
-static u32 framesBefore;
-static u32 heapBefore;
-static u32 framesAfter;
-static u32 heapAfter;
+static size_t framesBefore;
+static size_t heapBefore;
+static size_t framesAfter;
+static size_t heapAfter;
 
 static void test_init(void) {
 	heapBefore = kheap_getFreeMem();

@@ -28,10 +28,10 @@
 /* forward declarations */
 static void test_paging(void);
 static void test_paging_foreign(void);
-static bool test_paging_cycle(u32 addr,u32 count);
-static void test_paging_allocate(u32 addr,u32 count);
-static void test_paging_access(u32 addr,u32 count);
-static void test_paging_free(u32 addr,u32 count);
+static bool test_paging_cycle(uintptr_t addr,size_t count);
+static void test_paging_allocate(uintptr_t addr,size_t count);
+static void test_paging_access(uintptr_t addr,size_t count);
+static void test_paging_free(uintptr_t addr,size_t count);
 
 /* our test-module */
 sTestModule tModPaging = {
@@ -39,13 +39,10 @@ sTestModule tModPaging = {
 	&test_paging
 };
 
-#define TEST_MAX_FRAMES 1024*3
-u32 frames[TEST_MAX_FRAMES];
-
 static void test_paging(void) {
-	u32 x,y;
-	u32 addr[] = {0x0,0xB0000000,0xA0000000,0x4000,0x1234};
-	u32 count[] = {0,1,50,1024,1025,2048,2051};
+	size_t x,y;
+	uintptr_t addr[] = {0x0,0xB0000000,0xA0000000,0x4000,0x1234};
+	size_t count[] = {0,1,50,1024,1025,2048,2051};
 
 	for(y = 0; y < ARRAY_SIZE(addr); y++) {
 		for(x = 0; x < ARRAY_SIZE(count); x++) {
@@ -57,7 +54,7 @@ static void test_paging(void) {
 }
 
 static void test_paging_foreign(void) {
-	u32 oldFF, newFF;
+	size_t oldFF, newFF;
 	sProc *child;
 	sAllocStats stats;
 	tPid pid = proc_getFreePid();
@@ -100,8 +97,8 @@ static void test_paging_foreign(void) {
 	proc_kill(child);
 }
 
-static bool test_paging_cycle(u32 addr,u32 count) {
-	u32 oldFF, newFF, oldPC, newPC;
+static bool test_paging_cycle(uintptr_t addr,size_t count) {
+	size_t oldFF, newFF, oldPC, newPC;
 
 	test_caseStart("Mapping %d pages to 0x%08x",count,addr);
 
@@ -125,22 +122,22 @@ static bool test_paging_cycle(u32 addr,u32 count) {
 	return true;
 }
 
-static void test_paging_allocate(u32 addr,u32 count) {
+static void test_paging_allocate(uintptr_t addr,size_t count) {
 	paging_map(addr,NULL,count,PG_PRESENT | PG_WRITABLE);
 }
 
-static void test_paging_access(u32 addr,u32 count) {
-	u32 i;
+static void test_paging_access(uintptr_t addr,size_t count) {
+	size_t i;
 	addr &= ~(PAGE_SIZE - 1);
 	for(i = 0; i < count; i++) {
 		/* write to the first word */
-		*(u32*)addr = 0xDEADBEEF;
+		*(uint*)addr = 0xDEADBEEF;
 		/* write to the last word */
-		*(u32*)(addr + PAGE_SIZE - sizeof(u32)) = 0xDEADBEEF;
+		*(uint*)(addr + PAGE_SIZE - sizeof(uint)) = 0xDEADBEEF;
 		addr += PAGE_SIZE;
 	}
 }
 
-static void test_paging_free(u32 addr,u32 count) {
+static void test_paging_free(uintptr_t addr,size_t count) {
 	paging_unmap(addr,count,true);
 }

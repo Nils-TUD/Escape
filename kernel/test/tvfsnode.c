@@ -62,7 +62,7 @@ static void test_vfs_node_resolvePath(void) {
 }
 
 static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
-	s32 err;
+	int err;
 	tInodeNo no;
 	sVFSNode *node;
 	if((err = vfs_node_resolvePath(a,&no,NULL,VFS_READ)) != 0) {

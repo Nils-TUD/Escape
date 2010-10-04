@@ -39,7 +39,7 @@
 #	define hmmalloc		malloc
 #endif
 
-sHashMap *hm_create(sSLList **map,u32 mapSize,fGetKey keyFunc) {
+sHashMap *hm_create(sSLList **map,size_t mapSize,fGetKey keyFunc) {
 	sHashMap *m = (sHashMap*)hmmalloc(sizeof(sSLList*) * mapSize);
 	if(!m)
 		return NULL;
@@ -50,11 +50,11 @@ sHashMap *hm_create(sSLList **map,u32 mapSize,fGetKey keyFunc) {
 	return m;
 }
 
-u32 hm_getCount(sHashMap *m) {
+size_t hm_getCount(sHashMap *m) {
 	return m->elCount;
 }
 
-void *hm_get(sHashMap *m,u32 key) {
+void *hm_get(sHashMap *m,uint key) {
 	sSLNode *n;
 	sSLList *l = m->map[key % m->mapSize];
 	if(!l || m->elCount == 0)
@@ -67,7 +67,7 @@ void *hm_get(sHashMap *m,u32 key) {
 }
 
 bool hm_add(sHashMap *m,const void *data) {
-	u32 index = m->keyFunc(data) % m->mapSize;
+	size_t index = m->keyFunc(data) % m->mapSize;
 	sSLList *list = m->map[index];
 	if(!list) {
 		list = m->map[index] = sll_create();
@@ -83,7 +83,7 @@ bool hm_add(sHashMap *m,const void *data) {
 
 void hm_remove(sHashMap *m,const void *data) {
 	sSLNode *n,*p;
-	u32 key = m->keyFunc(data);
+	uint key = m->keyFunc(data);
 	sSLList *l = m->map[key % m->mapSize];
 	if(!l || m->elCount == 0)
 		return;
@@ -112,7 +112,7 @@ void *hm_next(sHashMap *m) {
 	if(m->curElIndex >= m->elCount)
 		return NULL;
 	if(m->curNode == NULL) {
-		u32 i,size = m->mapSize;
+		size_t i,size = m->mapSize;
 		for(i = m->curIndex; i < size; i++) {
 			sSLList *list = m->map[i];
 			if(!list)
@@ -132,7 +132,7 @@ void *hm_next(sHashMap *m) {
 }
 
 void hm_destroy(sHashMap *m) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < m->mapSize; i++) {
 		if(m->map[i])
 			sll_destroy(m->map[i],false);
@@ -143,7 +143,7 @@ void hm_destroy(sHashMap *m) {
 #if DEBUGGING
 
 void hm_dbg_print(sHashMap *m) {
-	u32 i;
+	size_t i;
 	hmprintf("HashMap: elCount=%u, mapSize=%u\n",m->elCount,m->mapSize);
 	for(i = 0; i < m->mapSize; i++) {
 		hmprintf("\t%d: %x (%d elements)\n",i,m->map[i],m->map[i] ? sll_length(m->map[i]) : 0);

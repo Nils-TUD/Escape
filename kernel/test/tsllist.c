@@ -57,7 +57,8 @@ static void test_sllist(void) {
 }
 
 static void test_1(void) {
-	u32 i,free,x = 0x100,len;
+	uint x = 0x100;
+	size_t i,free,len;
 	bool res = true;
 	sSLList *list;
 	free = kheap_getFreeMem();
@@ -89,7 +90,8 @@ static void test_1(void) {
 }
 
 static void test_2(void) {
-	u32 i,free,x = 0x100,len;
+	uint x = 0x100;
+	size_t i,free,len;
 	sSLList *list;
 	free = kheap_getFreeMem();
 	test_caseStart("Append & remove first (NULL)");
@@ -111,7 +113,8 @@ static void test_2(void) {
 }
 
 static void test_3(void) {
-	u32 i,free,x = 0x100,len;
+	uint x = 0x100;
+	size_t i,free,len;
 	sSLList *list;
 	free = kheap_getFreeMem();
 	test_caseStart("Append & remove first (x)");
@@ -134,7 +137,8 @@ static void test_3(void) {
 }
 
 static void test_4(void) {
-	u32 i,free,x = 0x100;
+	uint x = 0x100;
+	size_t i,free;
 	sSLList *list;
 	free = kheap_getFreeMem();
 	test_caseStart("Create & append & destroy");
@@ -152,7 +156,8 @@ static void test_4(void) {
 }
 
 static void test_5(void) {
-	u32 i,free,x = 0x100;
+	uint x = 0x100;
+	size_t i,free;
 	sSLList *list;
 	bool res = true;
 	free = kheap_getFreeMem();
@@ -188,7 +193,8 @@ static void test_5(void) {
 }
 
 static void test_6(void) {
-	u32 i,free,x = 0x100;
+	uint x = 0x100;
+	size_t i,free;
 	sSLList *list;
 	bool res = true;
 	free = kheap_getFreeMem();
@@ -224,7 +230,8 @@ static void test_6(void) {
 }
 
 static void test_7(void) {
-	u32 free,x = 0x100;
+	uint x = 0x100;
+	size_t free;
 	bool res;
 	sSLList *list;
 	free = kheap_getFreeMem();
@@ -303,9 +310,9 @@ static void test_10(void) {
 	sll_append(l1,(void*)2);
 	l2 = sll_clone(l1);
 	test_assertUInt(sll_length(l2),3);
-	test_assertInt((s32)sll_get(l2,0),4);
-	test_assertInt((s32)sll_get(l2,1),3);
-	test_assertInt((s32)sll_get(l2,2),2);
+	test_assertInt((uint)sll_get(l2,0),4);
+	test_assertInt((uint)sll_get(l2,1),3);
+	test_assertInt((uint)sll_get(l2,2),2);
 	sll_destroy(l1,false);
 	sll_destroy(l2,false);
 

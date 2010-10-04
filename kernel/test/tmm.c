@@ -38,7 +38,7 @@ sTestModule tModMM = {
 	&test_mm
 };
 
-static u32 frames[FRAME_COUNT];
+static tFrameNo frames[FRAME_COUNT];
 
 static void test_mm(void) {
 	test_default();
@@ -47,7 +47,7 @@ static void test_mm(void) {
 }
 
 static void test_default(void) {
-	u32 freeDefFrames;
+	size_t freeDefFrames;
 
 	test_caseStart("Requesting and freeing %d frames",FRAME_COUNT);
 
@@ -60,8 +60,8 @@ static void test_default(void) {
 }
 
 static void test_contiguous(void) {
-	s32 res1,res2,res3,res4;
-	u32 freeContFrames;
+	ssize_t res1,res2,res3,res4;
+	size_t freeContFrames;
 
 	test_caseStart("Requesting once and free");
 	freeContFrames = mm_getFreeFrames(MM_CONT);
@@ -109,8 +109,8 @@ static void test_contiguous(void) {
 }
 
 static void test_contiguous_align(void) {
-	s32 res1,res2,res3,res4;
-	u32 freeContFrames;
+	ssize_t res1,res2,res3,res4;
+	size_t freeContFrames;
 
 	test_caseStart("[Align] Requesting once and free");
 	freeContFrames = mm_getFreeFrames(MM_CONT);
@@ -170,7 +170,7 @@ static void test_contiguous_align(void) {
 }
 
 static void test_mm_allocate(void) {
-	s32 i = 0;
+	ssize_t i = 0;
 	while(i < FRAME_COUNT) {
 		frames[i] = mm_allocate();
 		i++;
@@ -178,7 +178,7 @@ static void test_mm_allocate(void) {
 }
 
 static void test_mm_free(void) {
-	s32 i = FRAME_COUNT - 1;
+	ssize_t i = FRAME_COUNT - 1;
 	while(i >= 0) {
 		mm_free(frames[i]);
 		i--;

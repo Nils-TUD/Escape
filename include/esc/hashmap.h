@@ -26,23 +26,23 @@
 /**
  * A function to calculate the key of the given data
  */
-typedef u32 (*fGetKey)(const void *data);
+typedef uint (*fGetKey)(const void *data);
 
 typedef struct {
 	/* array of linked lists as map */
 	sSLList **map;
 	/* number of linked lists */
-	u32 mapSize;
+	size_t mapSize;
 	/* number of elements in the map */
-	u32 elCount;
+	size_t elCount;
 	/* the function to calculate the key of data */
 	fGetKey keyFunc;
 	/* for iterating: the current index in the map */
-	u32 curIndex;
+	size_t curIndex;
 	/* for iterating: the current node in a linked list */
 	sSLNode *curNode;
 	/* for iterating: the current overall element-index */
-	u32 curElIndex;
+	size_t curElIndex;
 } sHashMap;
 
 /**
@@ -53,13 +53,13 @@ typedef struct {
  * @param keyFunc the function to calculate the key of data
  * @return the created map
  */
-sHashMap *hm_create(sSLList **map,u32 mapSize,fGetKey keyFunc);
+sHashMap *hm_create(sSLList **map,size_t mapSize,fGetKey keyFunc);
 
 /**
  * @param m the hashmap
  * @return the number of elements in the map
  */
-u32 hm_getCount(sHashMap *m);
+size_t hm_getCount(sHashMap *m);
 
 /**
  * Fetches the data for the given key
@@ -68,7 +68,7 @@ u32 hm_getCount(sHashMap *m);
  * @param key the key of the data to find
  * @return the data or NULL if not found
  */
-void *hm_get(sHashMap *m,u32 key);
+void *hm_get(sHashMap *m,uint key);
 
 /**
  * Adds (i.e. it will NOT replace data with the same key!) the given data to the map.

@@ -48,10 +48,10 @@ static void test_rbuf(void) {
 
 static void test_1(void) {
 	sRingBuf *rb;
-	u32 free = kheap_getFreeMem();
+	size_t free = kheap_getFreeMem();
 	test_caseStart("Create & Destroy");
 
-	rb = rb_create(sizeof(u32),10,RB_DEFAULT);
+	rb = rb_create(sizeof(size_t),10,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
 
 	test_assertUInt(rb_length(rb),0);
@@ -66,10 +66,10 @@ static void test_1(void) {
 
 static void test_2(void) {
 	sRingBuf *rb;
-	u32 i,x;
+	size_t i,x;
 	test_caseStart("Write & Read");
 
-	rb = rb_create(sizeof(u32),10,RB_DEFAULT);
+	rb = rb_create(sizeof(size_t),10,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
 
 	for(i = 0; i < 10; i++)
@@ -88,10 +88,10 @@ static void test_2(void) {
 
 static void test_3(void) {
 	sRingBuf *rb;
-	u32 i,x;
+	size_t i,x;
 	test_caseStart("Write & Read - Full RB_OVERWRITE");
 
-	rb = rb_create(sizeof(u32),5,RB_OVERWRITE);
+	rb = rb_create(sizeof(size_t),5,RB_OVERWRITE);
 	test_assertTrue(rb != NULL);
 
 	/* overwrite 1 */
@@ -131,10 +131,10 @@ static void test_3(void) {
 
 static void test_4(void) {
 	sRingBuf *rb;
-	u32 i,x;
+	size_t i,x;
 	test_caseStart("Write & Read - Full RB_DEFAULT");
 
-	rb = rb_create(sizeof(u32),5,RB_DEFAULT);
+	rb = rb_create(sizeof(size_t),5,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
 
 	for(i = 0; i < 5; i++)
@@ -154,12 +154,12 @@ static void test_4(void) {
 }
 
 static void test_5(void) {
-	u32 i;
+	size_t i;
 	sRingBuf *rb1,*rb2;
 	test_caseStart("Move");
 
-	rb1 = rb_create(sizeof(u32),8,RB_OVERWRITE);
-	rb2 = rb_create(sizeof(u32),5,RB_OVERWRITE);
+	rb1 = rb_create(sizeof(size_t),8,RB_OVERWRITE);
+	rb2 = rb_create(sizeof(size_t),5,RB_OVERWRITE);
 	test_assertTrue(rb1 != NULL);
 	test_assertTrue(rb2 != NULL);
 

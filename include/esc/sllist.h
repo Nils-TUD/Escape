@@ -42,7 +42,7 @@ typedef struct {
 	const fNodeFree ffree;
 	const sSLNode *const first;
 	const sSLNode *const last;
-	const u32 length;
+	const size_t length;
 } sSLList;
 
 #ifdef __cplusplus
@@ -103,7 +103,7 @@ void sll_clear(sSLList *list);
  * @param list the list
  * @return the number of elements in the list
  */
-u32 sll_length(const sSLList *list);
+size_t sll_length(const sSLList *list);
 
 /**
  * Returns the first node in the list. That allows you to iterate through it:
@@ -127,7 +127,7 @@ sSLNode *sll_begin(const sSLList *list);
  * @param index the index
  * @return the node at given index
  */
-sSLNode *sll_nodeAt(const sSLList *list,u32 index);
+sSLNode *sll_nodeAt(const sSLList *list,size_t index);
 
 /**
  * Determines the index of the given data
@@ -136,7 +136,7 @@ sSLNode *sll_nodeAt(const sSLList *list,u32 index);
  * @param data the data to search for
  * @return the index of the first matching node or -1 if not found
  */
-s32 sll_indexOf(const sSLList *list,const void *data);
+ssize_t sll_indexOf(const sSLList *list,const void *data);
 
 /**
  * Determines the node with given data
@@ -154,7 +154,7 @@ sSLNode *sll_nodeWith(const sSLList *list,const void *data);
  * @param index the index
  * @return the data at the given index
  */
-void *sll_get(const sSLList *list,u32 index);
+void *sll_get(const sSLList *list,size_t index);
 
 /**
  * Searches for the element at given index and sets the data to the given one. First and last
@@ -164,7 +164,7 @@ void *sll_get(const sSLList *list,u32 index);
  * @param data the new data (NULL is not allowed!)
  * @param index the index
  */
-void sll_set(sSLList *list,const void *data,u32 index);
+void sll_set(sSLList *list,const void *data,size_t index);
 
 /**
  * Appends the given data to the list. This can be done in O(1).
@@ -184,7 +184,7 @@ bool sll_append(sSLList *list,const void *data);
  * @param index the index
  * @return true if successfull (otherwise not enough mem)
  */
-bool sll_insert(sSLList *list,const void *data,u32 index);
+bool sll_insert(sSLList *list,const void *data,size_t index);
 
 /**
  * Inserts the given data behind <prev>. <prev> may be NULL if you want to insert it at the
@@ -224,7 +224,7 @@ bool sll_removeFirst(sSLList *list,const void *data);
  * @param index the index
  * @return the data of the removed node or NULL if not found
  */
-void *sll_removeIndex(sSLList *list,u32 index);
+void *sll_removeIndex(sSLList *list,size_t index);
 
 #if DEBUGGING
 

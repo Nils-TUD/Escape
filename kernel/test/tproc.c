@@ -34,7 +34,7 @@ sTestModule tModProc = {
 	&test_proc
 };
 
-s32 oldFF, newFF;
+static size_t oldFF, newFF;
 
 /**
  * Stores the current page-count and free frames and starts a test-case
@@ -62,7 +62,7 @@ static void test_check(void) {
 }
 
 static void test_proc(void) {
-	u32 x;
+	size_t x;
 
 	/* test process clone & destroy */
 	test_init("Cloning and destroying processes");

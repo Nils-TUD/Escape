@@ -24,7 +24,7 @@
 
 /* forward declarations */
 static void test_esccodes(void);
-static void test_check(const char *str,s32 cmd,s32 n1,s32 n2,s32 n3);
+static void test_check(const char *str,int cmd,int n1,int n2,int n3);
 static void test_1(void);
 static void test_2(void);
 static void test_3(void);
@@ -41,10 +41,10 @@ static void test_esccodes(void) {
 	test_3();
 }
 
-static void test_check(const char *str,s32 cmd,s32 n1,s32 n2,s32 n3) {
-	s32 rn1,rn2,rn3;
+static void test_check(const char *str,int cmd,int n1,int n2,int n3) {
+	int rn1,rn2,rn3;
 	const char *s = str + 1;
-	u32 rcmd = escc_get(&s,&rn1,&rn2,&rn3);
+	int rcmd = escc_get(&s,&rn1,&rn2,&rn3);
 	test_assertInt(rcmd,cmd);
 	if(cmd == ESCC_INCOMPLETE)
 		test_assertInt(*s,str[1]);
@@ -105,7 +105,7 @@ static void test_1(void) {
 }
 
 static void test_2(void) {
-	u32 i;
+	size_t i;
 	const char *str[] = {
 		"\033[]","\033[ab]","\033[ab;]","\033[;]","\033[;;]","\033[;;;]","\033[;bb;a]",
 		"\033]]","\033[colorcodeandmore]","\033[co;123123123123123123;12312313]","\033[co;+23,-12]",
@@ -119,7 +119,7 @@ static void test_2(void) {
 }
 
 static void test_3(void) {
-	u32 i;
+	size_t i;
 	const char *str[] = {
 		"\033[","\033[c","\033[co","\033[co;","\033[co;1","\033[co;12","\033[co;12;","\033[co;12;3"
 	};

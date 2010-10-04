@@ -39,7 +39,7 @@ sTestModule tModSwapMap = {
 	&test_swapmap
 };
 
-static u32 spaceBefore;
+static size_t spaceBefore;
 
 static void test_swapmap(void) {
 	test_swapmap1();
@@ -49,7 +49,7 @@ static void test_swapmap(void) {
 }
 
 static void test_swapmap1(void) {
-	u32 blocks[5];
+	uint blocks[5];
 	test_doStart("Testing alloc & free");
 
 	blocks[0] = swmap_alloc();
@@ -76,7 +76,7 @@ static void test_swapmap1(void) {
 }
 
 static void test_swapmap2(void) {
-	u32 blocks[5];
+	uint blocks[5];
 	test_doStart("Testing alloc & reverse free");
 
 	blocks[0] = swmap_alloc();
@@ -95,7 +95,7 @@ static void test_swapmap2(void) {
 }
 
 static void test_swapmap5(void) {
-	u32 blocks[8];
+	uint blocks[8];
 	test_doStart("Testing alloc & free mixed");
 
 	blocks[0] = swmap_alloc();
@@ -148,7 +148,7 @@ static void test_swapmap5(void) {
 }
 
 static void test_swapmap6(void) {
-	s32 count;
+	ssize_t count;
 	test_doStart("Testing alloc all & free");
 
 	count = 0;
@@ -168,7 +168,7 @@ static void test_doStart(const char *title) {
 }
 
 static void test_finish(void) {
-	u32 spaceAfter = swmap_freeSpace();
+	size_t spaceAfter = swmap_freeSpace();
 	if(spaceAfter != spaceBefore)
 		test_caseFailed("Space before: %d, After: %d",spaceBefore,spaceAfter);
 	else

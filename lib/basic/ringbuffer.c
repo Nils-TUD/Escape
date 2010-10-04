@@ -39,16 +39,16 @@
 #endif
 
 typedef struct {
-	u32 count;		/* current number of elements that can be read */
-	u32 readPos;	/* current read-pos */
-	u32 writePos;	/* current write-pos */
-	u32 eSize;		/* size of one entry */
-	u32 eMax;		/* max number of entries in <data> */
-	u8 flags;
+	size_t count;		/* current number of elements that can be read */
+	size_t readPos;		/* current read-pos */
+	size_t writePos;	/* current write-pos */
+	size_t eSize;		/* size of one entry */
+	size_t eMax;		/* max number of entries in <data> */
+	uint flags;
 	char data[];
 } sIRingBuf;
 
-sRingBuf *rb_create(u32 eSize,u32 eCount,u8 flags) {
+sRingBuf *rb_create(size_t eSize,size_t eCount,uint flags) {
 	sIRingBuf *rb;
 
 	vassert(eSize > 0,"eSize == 0");
@@ -71,7 +71,7 @@ void rb_destroy(sRingBuf *r) {
 	free(r);
 }
 
-u32 rb_length(sRingBuf *r) {
+size_t rb_length(sRingBuf *r) {
 	sIRingBuf *rb = (sIRingBuf*)r;
 	vassert(r != NULL,"r == NULL");
 	return rb == NULL ? 0 : rb->count;
@@ -95,7 +95,7 @@ bool rb_write(sRingBuf *r,const void *e) {
 	return true;
 }
 
-u32 rb_writen(sRingBuf *r,const void *e,u32 n) {
+size_t rb_writen(sRingBuf *r,const void *e,size_t n) {
 	sIRingBuf *rb = (sIRingBuf*)r;
 	char *d = (char*)e;
 	vassert(r != NULL,"r == NULL");
@@ -105,7 +105,7 @@ u32 rb_writen(sRingBuf *r,const void *e,u32 n) {
 			break;
 		d += rb->eSize;
 	}
-	return ((u32)d - (u32)e) / rb->eSize;
+	return ((uintptr_t)d - (uintptr_t)e) / rb->eSize;
 }
 
 bool rb_read(sRingBuf *r,void *e) {
@@ -121,9 +121,9 @@ bool rb_read(sRingBuf *r,void *e) {
 	return true;
 }
 
-u32 rb_readn(sRingBuf *r,void *e,u32 n) {
+size_t rb_readn(sRingBuf *r,void *e,size_t n) {
 	char *d;
-	u32 count;
+	size_t count;
 	sIRingBuf *rb = (sIRingBuf*)r;
 	vassert(r != NULL,"r == NULL");
 	vassert(e != NULL,"e == NULL");
@@ -138,11 +138,11 @@ u32 rb_readn(sRingBuf *r,void *e,u32 n) {
 		rb->count -= count;
 		rb->readPos = (rb->readPos + count) % rb->eMax;
 	}
-	return ((u32)d - (u32)e) / rb->eSize;
+	return ((uintptr_t)d - (uintptr_t)e) / rb->eSize;
 }
 
-u32 rb_move(sRingBuf *dst,sRingBuf *src,u32 n) {
-	u32 count,c = 0;
+size_t rb_move(sRingBuf *dst,sRingBuf *src,size_t n) {
+	size_t count,c = 0;
 	sIRingBuf *rdst = (sIRingBuf*)dst;
 	sIRingBuf *rsrc= (sIRingBuf*)src;
 	vassert(dst != NULL,"dst == NULL");
@@ -167,7 +167,7 @@ u32 rb_move(sRingBuf *dst,sRingBuf *src,u32 n) {
 
 void rb_dbg_print(sRingBuf *r) {
 	sIRingBuf *rb = (sIRingBuf*)r;
-	u32 i,c,s;
+	size_t i,c,s;
 	char *addr;
 	vassert(r != NULL,"r == NULL");
 

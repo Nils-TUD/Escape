@@ -152,7 +152,7 @@ static void test_atoll(void) {
 	test_caseSucceded();
 }
 
-static bool test_itoacpy(s32 n,const char *expected) {
+static bool test_itoacpy(int n,const char *expected) {
 	static char str[12];
 	itoa(str,sizeof(str),n);
 	return test_assertStr(str,(char*)expected);
@@ -498,7 +498,7 @@ static void test_strchri(void) {
 	if(!test_assertTrue(strchri(str1,'a') == 0)) return;
 	if(!test_assertTrue(strchri(str1,'b') == 1)) return;
 	if(!test_assertTrue(strchri(str1,'c') == 2)) return;
-	if(!test_assertTrue(strchri(str1,'g') == (s32)strlen(str1))) return;
+	if(!test_assertTrue(strchri(str1,'g') == (ssize_t)strlen(str1))) return;
 
 	test_caseSucceded();
 }
@@ -744,7 +744,7 @@ static void test_strtold(void) {
 		{"0xABC.DEp2",	0xABC.DEp2L},
 		{"0xA.",		0xAL},
 	};
-	u32 i;
+	size_t i;
 	long double res;
 	char *end;
 	test_caseStart("Testing strtold()");
@@ -763,8 +763,8 @@ static void test_strtold(void) {
 static void test_strtol(void) {
 	typedef struct {
 		const char *str;
-		u16 base;
-		s32 res;
+		uint base;
+		long res;
 	} sStrtolTest;
 	sStrtolTest tests[] = {
 		{"1234",		10,	1234},
@@ -781,8 +781,8 @@ static void test_strtol(void) {
 		{"0",			7,	0},
 		{"-1",			7,	-1},
 	};
-	u32 i;
-	s32 res;
+	size_t i;
+	long res;
 	char *end;
 
 	test_caseStart("Testing strtol()");
@@ -799,7 +799,7 @@ static void test_strtol(void) {
 }
 
 static void test_ecvt(void) {
-	s32 decpt,sign;
+	int decpt,sign;
 	char *s;
 	test_caseStart("Testing ecvt()");
 

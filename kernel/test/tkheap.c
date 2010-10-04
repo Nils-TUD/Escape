@@ -44,14 +44,14 @@ sTestModule tModKHeap = {
 };
 
 #define SINGLE_BYTE_COUNT 10000
-u32 *ptrsSingle[SINGLE_BYTE_COUNT];
+uint *ptrsSingle[SINGLE_BYTE_COUNT];
 
-u32 sizes[] = {1,4,10,1023,1024,1025,2048,4097};
-u32 *ptrs[ARRAY_SIZE(sizes)];
-u32 randFree1[] = {7,5,2,0,6,3,4,1};
-u32 randFree2[] = {3,4,1,5,6,0,7,2};
+size_t sizes[] = {1,4,10,1023,1024,1025,2048,4097};
+uint *ptrs[ARRAY_SIZE(sizes)];
+size_t randFree1[] = {7,5,2,0,6,3,4,1};
+size_t randFree2[] = {3,4,1,5,6,0,7,2};
 
-u32 oldFH, newFH;
+size_t oldFH, newFH;
 
 /* helper */
 
@@ -74,7 +74,7 @@ static void test_check(void) {
 	}
 }
 
-static bool test_checkContent(u32 *ptr,u32 count,u32 value) {
+static bool test_checkContent(uint *ptr,size_t count,uint value) {
 	while(count-- > 0) {
 		if(*ptr++ != value)
 			return false;
@@ -83,11 +83,11 @@ static bool test_checkContent(u32 *ptr,u32 count,u32 value) {
 }
 
 static void test_t1alloc(void) {
-	u32 size;
+	size_t size;
 	tprintf("Allocating...(%d free frames)\n",mm_getFreeFrames(MM_DEF));
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
-		tprintf("%d bytes\n",sizes[size] * sizeof(u32));
-		ptrs[size] = (u32*)kheap_alloc(sizes[size] * sizeof(u32));
+		tprintf("%d bytes\n",sizes[size] * sizeof(uint));
+		ptrs[size] = (uint*)kheap_alloc(sizes[size] * sizeof(uint));
 		if(ptrs[size] == NULL)
 			tprintf("Not enough mem\n");
 		else {
@@ -112,7 +112,7 @@ static void test_kheap(void) {
 		&test_kheap_realloc
 	};
 
-	u32 i;
+	size_t i;
 	for(i = 0; i < ARRAY_SIZE(tests); i++) {
 		tests[i]();
 	}
@@ -122,7 +122,7 @@ static void test_kheap(void) {
 
 /* allocate, free in same direction */
 static void test_kheap_t1v1(void) {
-	u32 size,i;
+	size_t size,i;
 	test_init("Allocate, then free in same direction");
 	test_t1alloc();
 	tprintf("Freeing...\n");
@@ -144,7 +144,7 @@ static void test_kheap_t1v1(void) {
 
 /* allocate, free in opposite direction */
 static void test_kheap_t1v2(void) {
-	s32 size,i;
+	ssize_t size,i;
 	test_init("Allocate, then free in opposite direction");
 	test_t1alloc();
 	tprintf("Freeing...\n");
@@ -166,11 +166,11 @@ static void test_kheap_t1v2(void) {
 
 /* allocate, free in random direction 1 */
 static void test_kheap_t1v3(void) {
-	u32 size;
+	size_t size;
 	test_init("Allocate, then free in \"random\" direction 1");
 	test_t1alloc();
 	tprintf("Freeing...\n");
-	for(size = 0; (u32)size < ARRAY_SIZE(sizes); size++) {
+	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
 		if(ptrs[randFree1[size]] != NULL) {
 			tprintf("FREE3: address=0x%x, i=%d\n",ptrs[randFree1[size]],size);
 			kheap_free(ptrs[randFree1[size]]);
@@ -181,11 +181,11 @@ static void test_kheap_t1v3(void) {
 
 /* allocate, free in random direction 2 */
 static void test_kheap_t1v4(void) {
-	u32 size;
+	size_t size;
 	test_init("Allocate, then free in \"random\" direction 2");
 	test_t1alloc();
 	tprintf("Freeing...\n");
-	for(size = 0; (u32)size < ARRAY_SIZE(sizes); size++) {
+	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
 		if(ptrs[randFree2[size]] != NULL) {
 			tprintf("FREE4: address=0x%x, i=%d\n",ptrs[randFree2[size]],size);
 			kheap_free(ptrs[randFree2[size]]);
@@ -196,11 +196,11 @@ static void test_kheap_t1v4(void) {
 
 /* allocate area 1, free area 1, ... */
 static void test_kheap_t2(void) {
-	u32 size;
+	size_t size;
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
-		test_init("Allocate and free %d bytes",sizes[size] * sizeof(u32));
+		test_init("Allocate and free %d bytes",sizes[size] * sizeof(uint));
 
-		ptrs[0] = (u32*)kheap_alloc(sizes[size] * sizeof(u32));
+		ptrs[0] = (uint*)kheap_alloc(sizes[size] * sizeof(uint));
 		if(ptrs[0] != NULL) {
 			tprintf("Write test for 0x%x...",ptrs[0]);
 			/* write test */
@@ -221,7 +221,7 @@ static void test_kheap_t2(void) {
 
 /* allocate single bytes to reach the next page for the mem-area-structs */
 static void test_kheap_t3(void) {
-	u32 i;
+	size_t i;
 	test_init("Allocate %d times 1 byte",SINGLE_BYTE_COUNT);
 	for(i = 0; i < SINGLE_BYTE_COUNT; i++) {
 		ptrsSingle[i] = kheap_alloc(1);
@@ -234,25 +234,25 @@ static void test_kheap_t3(void) {
 
 /* reallocate test */
 static void test_kheap_t5(void) {
-	u32 i;
-	u32 *ptr1,*ptr2,*ptr3,*ptr4,*ptr5;
+	size_t i;
+	uint *ptr1,*ptr2,*ptr3,*ptr4,*ptr5;
 	test_init("Allocating 3 regions");
-	ptr1 = kheap_alloc(4 * sizeof(u32));
+	ptr1 = kheap_alloc(4 * sizeof(uint));
 	for(i = 0;i < 4;i++)
 		*(ptr1+i) = 1;
-	ptr2 = kheap_alloc(8 * sizeof(u32));
+	ptr2 = kheap_alloc(8 * sizeof(uint));
 	for(i = 0;i < 8;i++)
 		*(ptr2+i) = 2;
-	ptr3 = kheap_alloc(12 * sizeof(u32));
+	ptr3 = kheap_alloc(12 * sizeof(uint));
 	for(i = 0;i < 12;i++)
 		*(ptr3+i) = 3;
 	tprintf("Freeing region 2...\n");
 	kheap_free(ptr2);
 	tprintf("Reusing region 2...\n");
-	ptr4 = kheap_alloc(6 * sizeof(u32));
+	ptr4 = kheap_alloc(6 * sizeof(uint));
 	for(i = 0;i < 6;i++)
 		*(ptr4+i) = 4;
-	ptr5 = kheap_alloc(2 * sizeof(u32));
+	ptr5 = kheap_alloc(2 * sizeof(uint));
 	for(i = 0;i < 2;i++)
 		*(ptr5+i) = 5;
 
@@ -272,23 +272,23 @@ static void test_kheap_t5(void) {
 }
 
 static void test_kheap_realloc(void) {
-	u32 i;
-	u32 *p,*ptr1,*ptr2,*ptr3;
+	size_t i;
+	uint *p,*ptr1,*ptr2,*ptr3;
 	test_init("Testing realloc()");
 
-	ptr1 = (u32*)kheap_alloc(10 * sizeof(u32));
+	ptr1 = (uint*)kheap_alloc(10 * sizeof(uint));
 	for(p = ptr1,i = 0;i < 10;i++)
 		*p++ = 1;
 
-	ptr2 = (u32*)kheap_alloc(5 * sizeof(u32));
+	ptr2 = (uint*)kheap_alloc(5 * sizeof(uint));
 	for(p = ptr2,i = 0;i < 5;i++)
 		*p++ = 2;
 
-	ptr3 = (u32*)kheap_alloc(2 * sizeof(u32));
+	ptr3 = (uint*)kheap_alloc(2 * sizeof(uint));
 	for(p = ptr3,i = 0;i < 2;i++)
 		*p++ = 3;
 
-	ptr2 = (u32*)kheap_realloc(ptr2,10 * sizeof(u32));
+	ptr2 = (uint*)kheap_realloc(ptr2,10 * sizeof(uint));
 
 	/* check content */
 	if(!test_checkContent(ptr1,10,1)) {
@@ -308,7 +308,7 @@ static void test_kheap_realloc(void) {
 	for(p = ptr2,i = 0;i < 10;i++)
 		*p++ = 2;
 
-	ptr3 = (u32*)kheap_realloc(ptr3,6 * sizeof(u32));
+	ptr3 = (uint*)kheap_realloc(ptr3,6 * sizeof(uint));
 
 	/* check content */
 	if(!test_checkContent(ptr1,10,1)) {
@@ -328,7 +328,7 @@ static void test_kheap_realloc(void) {
 	for(p = ptr3,i = 0;i < 6;i++)
 		*p++ = 3;
 
-	ptr3 = (u32*)kheap_realloc(ptr3,7 * sizeof(u32));
+	ptr3 = (uint*)kheap_realloc(ptr3,7 * sizeof(uint));
 
 	/* check content */
 	if(!test_checkContent(ptr1,10,1)) {

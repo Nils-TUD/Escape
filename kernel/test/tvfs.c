@@ -36,8 +36,8 @@ static void test_vfs_createDriver(void);
 /* public vfs-node for test-purposes */
 typedef struct {
 	tInodeNo nodeNo;
-	u16 recLen;
-	u16 nameLen;
+	uint16_t recLen;
+	uint16_t nameLen;
 	/* name follows (up to 255 bytes) */
 } A_PACKED sVFSDirEntry;
 typedef struct {
@@ -56,26 +56,26 @@ static void test_vfs(void) {
 }
 
 static void test_vfs_createDriver(void) {
-	u32 oldHeap,newHeap;
-	s32 id,id2,id3;
+	size_t oldHeap,newHeap;
+	tFileNo f1,f2,f3;
 
 	test_caseStart("Testing vfs_createDriver()");
 
 	oldHeap = kheap_getFreeMem();
 
-	id = vfs_createDriver(0,"test",0);
-	if(!test_assertTrue(vfs_node_isValid(id))) return;
-	id2 = vfs_createDriver(0,"test2",0);
-	if(!test_assertTrue(vfs_node_isValid(id2))) return;
+	f1 = vfs_createDriver(0,"test",0);
+	if(!test_assertTrue(vfs_node_isValid(f1))) return;
+	f2 = vfs_createDriver(0,"test2",0);
+	if(!test_assertTrue(vfs_node_isValid(f2))) return;
 	if(!test_assertInt(vfs_createDriver(1,"test",0),ERR_DRIVER_EXISTS)) return;
 	if(!test_assertInt(vfs_createDriver(1,"",0),ERR_INV_DRIVER_NAME)) return;
 	if(!test_assertInt(vfs_createDriver(1,"abc.def",0),ERR_INV_DRIVER_NAME)) return;
-	id3 = vfs_createDriver(1,"test3",0);
-	if(!test_assertTrue(vfs_node_isValid(id3))) return;
+	f3 = vfs_createDriver(1,"test3",0);
+	if(!test_assertTrue(vfs_node_isValid(f3))) return;
 
-	vfs_node_destroy(vfs_node_get(id));
-	vfs_node_destroy(vfs_node_get(id2));
-	vfs_node_destroy(vfs_node_get(id3));
+	vfs_closeFile(KERNEL_PID,f1);
+	vfs_closeFile(KERNEL_PID,f2);
+	vfs_closeFile(KERNEL_PID,f3);
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();

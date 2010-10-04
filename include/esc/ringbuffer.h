@@ -38,7 +38,7 @@ extern "C" {
  * @param flags RB_DEFAULT or RB_OVERWRITE
  * @return the ring-buffer or NULL if failed
  */
-sRingBuf *rb_create(u32 eSize,u32 eCount,u8 flags);
+sRingBuf *rb_create(size_t eSize,size_t eCount,uint flags);
 
 /**
  * Destroys the given ring-buffer
@@ -51,7 +51,7 @@ void rb_destroy(sRingBuf *r);
  * @param r the ring-buffer
  * @return the number of elements that can be read
  */
-u32 rb_length(sRingBuf *r);
+size_t rb_length(sRingBuf *r);
 
 /**
  * Writes the given element into the ring-buffer. If RB_OVERWRITE is set for the ring-buffer
@@ -72,7 +72,7 @@ bool rb_write(sRingBuf *r,const void *e);
  * @param n the number of elements to write
  * @return the number of written elements
  */
-u32 rb_writen(sRingBuf *r,const void *e,u32 n);
+size_t rb_writen(sRingBuf *r,const void *e,size_t n);
 
 /**
  * Reads the next element from the ring-buffer. If there is no element, false is returned.
@@ -91,7 +91,7 @@ bool rb_read(sRingBuf *r,void *e);
  * @param n the number of elements to read
  * @return the number of read elements
  */
-u32 rb_readn(sRingBuf *r,void *e,u32 n);
+size_t rb_readn(sRingBuf *r,void *e,size_t n);
 
 /**
  * Moves the next <n> elements from <src> to <dst>. Note that the element-size has to be equal!
@@ -101,7 +101,7 @@ u32 rb_readn(sRingBuf *r,void *e,u32 n);
  * @param n the number of elements to move
  * @return the number of moved elements
  */
-u32 rb_move(sRingBuf *dst,sRingBuf *src,u32 n);
+size_t rb_move(sRingBuf *dst,sRingBuf *src,size_t n);
 
 
 #if DEBUGGING

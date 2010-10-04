@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <ctype.h>
 
-bool isxdigit(s32 c) {
+int isxdigit(int c) {
 	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }

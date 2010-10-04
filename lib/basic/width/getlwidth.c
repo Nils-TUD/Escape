@@ -20,8 +20,8 @@
 #include <stddef.h>
 #include <esc/width.h>
 
-u8 getlwidth(s64 l) {
-	u8 c = 0;
+size_t getlwidth(llong l) {
+	size_t c = 0;
 	if(l < 0) {
 		l = -l;
 		c++;

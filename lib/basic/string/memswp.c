@@ -20,12 +20,12 @@
 #include <ctype.h>
 #include <string.h>
 
-void memswp(void *a,void *b,u32 n) {
+void memswp(void *a,void *b,size_t n) {
 	char *iptr = (char*)a;
 	char *jptr = (char*)b;
 	/* *iptr XOR *jptr == 0 for *iptr == *jptr ... */
 	if(memcmp(iptr,jptr,n) != 0) {
-		u32 x;
+		size_t x;
 		for(x = 0; x < n; x++) {
 			*iptr ^= *jptr;
 			*jptr ^= *iptr;

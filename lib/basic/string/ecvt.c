@@ -24,18 +24,18 @@
 
 #define MAX_DBL_LEN		64
 
-char *ecvt(double number,s32 ndigits,s32 *decpt,s32 *sign) {
+char *ecvt(double number,int ndigits,int *decpt,int *sign) {
 	static char res[MAX_DBL_LEN];
 	char *str = res;
 	/* put the stuff before decpt into the string */
-	s64 val = (s64)number;
-	s32 c;
-	u32 vwidth = getlwidth(val);
+	llong val = (llong)number;
+	int c;
+	size_t vwidth = getlwidth(val);
 	assert(ndigits < MAX_DBL_LEN);
 	/* getlwidth counts the '-' for negatives and '0' for zero */
 	if(val <= 0)
 		vwidth--;
-	str = res + MIN(ndigits,(s32)vwidth);
+	str = res + MIN(ndigits,(int)vwidth);
 	if(val < 0) {
 		val = -val;
 		*sign = 1;
@@ -58,12 +58,12 @@ char *ecvt(double number,s32 ndigits,s32 *decpt,s32 *sign) {
 	/* now build the fraction digits */
 	str = res + vwidth;
 	if(number != 0) {
-		number -= (s64)number;
+		number -= (llong)number;
 		if(number < 0)
 			number = -number;
 		while(number > 0 && ndigits-- > 0) {
 			number *= 10;
-			val = (s64)number;
+			val = (llong)number;
 			*str++ = (val % 10) + '0';
 			number -= val;
 		}

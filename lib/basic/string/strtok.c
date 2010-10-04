@@ -23,7 +23,7 @@
 char *strtok(char *str,const char *delimiters) {
 	static char *last = NULL;
 	char *res;
-	u32 start,end;
+	size_t start,end;
 	if(str)
 		last = str;
 	if(last == NULL)

@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <ctype.h>
 
-bool isupper(s32 c) {
+int isupper(int c) {
 	return (c >= 'A' && c <= 'Z');
 }

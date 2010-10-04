@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-char *strncpy(char *to,const char *from,u32 count) {
+char *strncpy(char *to,const char *from,size_t count) {
 	char *res = to;
 
 	vassert(from != NULL,"from == NULL");

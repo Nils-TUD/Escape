@@ -21,8 +21,8 @@
 #include <assert.h>
 #include <string.h>
 
-u32 strspn(const char *str1,const char *str2) {
-	u32 count = 0;
+size_t strspn(const char *str1,const char *str2) {
+	size_t count = 0;
 
 	vassert(str1 != NULL,"str1 == NULL");
 	vassert(str2 != NULL,"str2 == NULL");

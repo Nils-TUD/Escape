@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
-bool isprint(s32 c) {
+int isprint(int c) {
 	/* exclude 0xFF (=IO_EOF) */
 	/* 0x15 = § in codepage 437 */
 	return (c >= ' ' && c < 0xFF) || c == 0x15;

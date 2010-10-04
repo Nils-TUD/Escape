@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-char *strncat(char *str1,const char *str2,u32 count) {
+char *strncat(char *str1,const char *str2,size_t count) {
 	char *res = str1;
 
 	vassert(str1 != NULL,"str1 == NULL");

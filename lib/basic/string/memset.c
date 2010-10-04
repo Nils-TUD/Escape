@@ -20,16 +20,16 @@
 #include <stddef.h>
 #include <string.h>
 
-void memset(void *addr,s32 value,u32 count) {
-	u8 *baddr;
-	u32 dwval = (value << 24) | (value << 16) | (value << 8) | value;
-	u32 *dwaddr = (u32*)addr;
-	while(count >= sizeof(u32)) {
+void memset(void *addr,int value,size_t count) {
+	uchar *baddr;
+	uint dwval = (value << 24) | (value << 16) | (value << 8) | value;
+	uint *dwaddr = (uint*)addr;
+	while(count >= sizeof(uint)) {
 		*dwaddr++ = dwval;
-		count -= sizeof(u32);
+		count -= sizeof(uint);
 	}
 
-	baddr = (u8*)dwaddr;
+	baddr = (uchar*)dwaddr;
 	while(count-- > 0)
 		*baddr++ = value;
 }

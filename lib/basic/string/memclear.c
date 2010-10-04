@@ -20,11 +20,11 @@
 #include <stddef.h>
 #include <string.h>
 
-void memclear(void *addr,u32 count) {
-	u8 *baddr;
+void memclear(void *addr,size_t count) {
+	uchar *baddr;
 	/* clear dwords first with loop-unrolling */
-	u32 *daddr = (u32*)addr;
-	while(count >= sizeof(u32) * 8) {
+	uint *daddr = (uint*)addr;
+	while(count >= sizeof(uint) * 8) {
 		*daddr = 0;
 		*(daddr + 1) = 0;
 		*(daddr + 2) = 0;
@@ -34,16 +34,16 @@ void memclear(void *addr,u32 count) {
 		*(daddr + 6) = 0;
 		*(daddr + 7) = 0;
 		daddr += 8;
-		count -= sizeof(u32) * 8;
+		count -= sizeof(uint) * 8;
 	}
 	/* clear remaining dwords */
-	while(count >= sizeof(u32)) {
+	while(count >= sizeof(uint)) {
 		*daddr++ = 0;
-		count -= sizeof(u32);
+		count -= sizeof(uint);
 	}
 
 	/* clear remaining bytes */
-	baddr = (u8*)daddr;
+	baddr = (uchar*)daddr;
 	while(count-- > 0)
 		*baddr++ = 0;
 }

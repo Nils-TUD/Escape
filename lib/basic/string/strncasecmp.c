@@ -22,9 +22,9 @@
 #include <ctype.h>
 #include <string.h>
 
-s32 strncasecmp(const char *str1,const char *str2,u32 count) {
+int strncasecmp(const char *str1,const char *str2,size_t count) {
 	char c1,c2;
-	s32 rem = count;
+	ssize_t rem = count;
 	vassert(str1 != NULL,"str1 == NULL");
 	vassert(str2 != NULL,"str2 == NULL");
 

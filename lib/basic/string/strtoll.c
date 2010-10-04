@@ -22,8 +22,8 @@
 #include <string.h>
 #include <assert.h>
 
-s64 strtoll(const char *nptr,char **endptr,s32 base) {
-	s64 i = 0;
+llong strtoll(const char *nptr,char **endptr,int base) {
+	llong i = 0;
 	bool neg = false;
 	char c;
 	assert(nptr);

@@ -20,12 +20,12 @@
 #include <stddef.h>
 #include <string.h>
 
-void *memcpy(void *dest,const void *src,u32 len) {
-	u8 *bdest,*bsrc;
+void *memcpy(void *dest,const void *src,size_t len) {
+	uchar *bdest,*bsrc;
 	/* copy dwords first with loop-unrolling */
-	u32 *ddest = (u32*)dest;
-	u32 *dsrc = (u32*)src;
-	while(len >= sizeof(u32) * 8) {
+	uint *ddest = (uint*)dest;
+	uint *dsrc = (uint*)src;
+	while(len >= sizeof(uint) * 8) {
 		*ddest = *dsrc;
 		*(ddest + 1) = *(dsrc + 1);
 		*(ddest + 2) = *(dsrc + 2);
@@ -36,17 +36,17 @@ void *memcpy(void *dest,const void *src,u32 len) {
 		*(ddest + 7) = *(dsrc + 7);
 		ddest += 8;
 		dsrc += 8;
-		len -= sizeof(u32) * 8;
+		len -= sizeof(uint) * 8;
 	}
 	/* copy remaining dwords */
-	while(len >= sizeof(u32)) {
+	while(len >= sizeof(uint)) {
 		*ddest++ = *dsrc++;
-		len -= sizeof(u32);
+		len -= sizeof(uint);
 	}
 
 	/* copy remaining bytes */
-	bdest = (u8*)ddest;
-	bsrc = (u8*)dsrc;
+	bdest = (uchar*)ddest;
+	bsrc = (uchar*)dsrc;
 	while(len-- > 0)
 		*bdest++ = *bsrc++;
 	return dest;

@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <ctype.h>
 
-bool iscntrl(s32 c) {
+int iscntrl(int c) {
 	return c < ' ';
 }

@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-char *strrchr(const char *str,s32 ch) {
+char *strrchr(const char *str,int ch) {
 	char *pos = NULL;
 
 	vassert(str != NULL,"str == NULL");

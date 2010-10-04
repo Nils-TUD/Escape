@@ -33,49 +33,47 @@
 #include <esc/thread.h>
 #include <iostream>
 
-using namespace gui;
-
-ProgressBar *pb = NULL;
-Window *w1 = NULL;
+gui::ProgressBar *pb = NULL;
+gui::Window *w1 = NULL;
 
 static int pbThread(void *arg);
 
-class MyImgWindow : public Window {
+class MyImgWindow : public gui::Window {
 public:
 	MyImgWindow()
-		: Window("Window 2",250,250,500,400), img1(BitmapImage("/test.bmp")),
-		img2(BitmapImage("/bbc.bmp")) {
+		: Window("Window 2",250,250,500,400), img1(gui::BitmapImage("/test.bmp")),
+		img2(gui::BitmapImage("/bbc.bmp")) {
 	}
 	~MyImgWindow() {
 	}
 
-	void paint(Graphics &g) {
+	void paint(gui::Graphics &g) {
 		Window::paint(g);
 		img1.paint(g,30,30);
 		img2.paint(g,100,30);
 	}
 
 private:
-	BitmapImage img1;
-	BitmapImage img2;
+	gui::BitmapImage img1;
+	gui::BitmapImage img2;
 };
 
 int main(void) {
 	if(fork() == 0) {
-		Application *app = Application::getInstance();
-		w1 = new Window("Window 1",100,100,200,300);
-		Button b("Click me!!",10,10,120,25);
+		gui::Application *app = gui::Application::getInstance();
+		w1 = new gui::Window("Window 1",100,100,200,300);
+		gui::Button b("Click me!!",10,10,120,25);
 		w1->add(b);
-		Editable e(10,40,200,25);
+		gui::Editable e(10,40,200,25);
 		w1->add(e);
-		ComboBox cb(10,80,100,25);
+		gui::ComboBox cb(10,80,100,25);
 		cb.addItem("Test item");
 		cb.addItem("Foo bar");
 		cb.addItem("abc 123");
 		w1->add(cb);
-		Checkbox check("Meine Checkbox",10,120,200,20);
+		gui::Checkbox check("Meine Checkbox",10,120,200,20);
 		w1->add(check);
-		pb = new ProgressBar("Progress...",10,160,200,25);
+		pb = new gui::ProgressBar("Progress...",10,160,200,25);
 		w1->add(*pb);
 		if(startThread(pbThread,NULL) < 0)
 			std::cerr << "[GUITEST] Unable to start thread" << std::endl;
@@ -83,14 +81,14 @@ int main(void) {
 	}
 
 	if(fork() == 0) {
-		Application *app = Application::getInstance();
+		gui::Application *app = gui::Application::getInstance();
 		w1 = new MyImgWindow();
 		return app->run();
 	}
 
 	if(fork() == 0) {
-		Application *app = Application::getInstance();
-		w1 = new Window("Window 3",50,50,100,40);
+		gui::Application *app = gui::Application::getInstance();
+		w1 = new gui::Window("Window 3",50,50,100,40);
 		return app->run();
 	}
 #if 1
@@ -104,9 +102,9 @@ int main(void) {
 	}
 #endif
 
-	Application *app = Application::getInstance();
+	gui::Application *app = gui::Application::getInstance();
 	//w1 = new Window("Window 4",180,90,900,800);
-	w1 = new Window("Window 4",180,90,100,80);
+	w1 = new gui::Window("Window 4",180,90,100,80);
 	/*startThread(pbThread);*/
 	return app->run();
 }

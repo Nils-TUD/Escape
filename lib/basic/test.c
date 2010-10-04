@@ -36,17 +36,17 @@
 #endif
 
 static sTestModule *modules[MAX_TESTS];
-static u32 moduleCount = 0;
-static u32 testCase = 0;
+static size_t moduleCount = 0;
+static size_t testCase = 0;
 
-static u32 modsSucc = 0;
-static u32 modsFailed = 0;
-static u32 totalSucc = 0;
-static u32 totalFail = 0;
-static u32 succCount = 0;
-static u32 failCount = 0;
+static size_t modsSucc = 0;
+static size_t modsFailed = 0;
+static size_t totalSucc = 0;
+static size_t totalFail = 0;
+static size_t succCount = 0;
+static size_t failCount = 0;
 
-static u32 assertCount = 0;
+static size_t assertCount = 0;
 
 void test_noPrint(const char *fmt,...) {
 	/* do nothing */
@@ -78,7 +78,7 @@ void test_caseSucceded(void) {
 	succCount++;
 }
 
-bool test_doAssertTrue(bool received,const char *func,u32 line) {
+bool test_doAssertTrue(bool received,const char *func,int line) {
 	assertCount++;
 	if(!received) {
 		test_caseFailed("Assert %d in %s line %d: Received false, expected true",assertCount,func,line);
@@ -88,7 +88,7 @@ bool test_doAssertTrue(bool received,const char *func,u32 line) {
 	return true;
 }
 
-bool test_doAssertFalse(bool received,const char *func,u32 line) {
+bool test_doAssertFalse(bool received,const char *func,int line) {
 	assertCount++;
 	if(received) {
 		test_caseFailed("Assert %d in %s line %d: Received true, expected false",assertCount,func,line);
@@ -98,7 +98,7 @@ bool test_doAssertFalse(bool received,const char *func,u32 line) {
 	return true;
 }
 
-bool test_doAssertPtr(const void *received,const void *expected,const char *func,u32 line) {
+bool test_doAssertPtr(const void *received,const void *expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
 		test_caseFailed("Assert %d in %s line %d: Pointers are not equal: Expected 0x%x, got 0x%x",
@@ -109,7 +109,7 @@ bool test_doAssertPtr(const void *received,const void *expected,const char *func
 	return true;
 }
 
-bool test_doAssertInt(s32 received,s32 expected,const char *func,u32 line) {
+bool test_doAssertInt(int received,int expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
 		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected %d, got %d",
@@ -120,7 +120,7 @@ bool test_doAssertInt(s32 received,s32 expected,const char *func,u32 line) {
 	return true;
 }
 
-bool test_doAssertUInt(u32 received,u32 expected,const char *func,u32 line) {
+bool test_doAssertUInt(uint received,uint expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
 		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%x, got 0x%x",
@@ -131,11 +131,11 @@ bool test_doAssertUInt(u32 received,u32 expected,const char *func,u32 line) {
 	return true;
 }
 
-bool test_doAssertLInt(s64 received,s64 expected,const char *func,u32 line) {
+bool test_doAssertLInt(llong received,llong expected,const char *func,int line) {
 	return test_doAssertULInt(received,expected,func,line);
 }
 
-bool test_doAssertULInt(u64 received,u64 expected,const char *func,u32 line) {
+bool test_doAssertULInt(ullong received,ullong expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
 		uLongLong urecv,uexp;
@@ -150,7 +150,7 @@ bool test_doAssertULInt(u64 received,u64 expected,const char *func,u32 line) {
 	return true;
 }
 
-bool test_doAssertStr(const char *received,const char *expected,const char *func,u32 line) {
+bool test_doAssertStr(const char *received,const char *expected,const char *func,int line) {
 	char *s1 = (char*)expected;
 	char *s2 = (char*)received;
 	assertCount++;
@@ -193,7 +193,7 @@ void test_register(sTestModule *mod) {
 }
 
 void test_start(void) {
-	u32 i;
+	size_t i;
 	testPrintf("\n====== Starting test-procedure ======\n");
 
 	for(i = 0; i < moduleCount; i++) {

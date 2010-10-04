@@ -20,7 +20,11 @@
 #ifndef WIDTH_H_
 #define WIDTH_H_
 
-#include <types.h>
+#include <esc/common.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Determines the width of the given signed 32-bit integer in base 10
@@ -28,7 +32,7 @@
  * @param n the integer
  * @return the width
  */
-u8 getnwidth(s32 n);
+size_t getnwidth(int n);
 
 /**
  * Determines the width of the given signed 64-bit integer in base 10
@@ -36,7 +40,7 @@ u8 getnwidth(s32 n);
  * @param n the integer
  * @return the width
  */
-u8 getlwidth(s64 n);
+size_t getlwidth(llong n);
 
 /**
  * Determines the width of the given unsigned 32-bit integer in the given base
@@ -45,7 +49,7 @@ u8 getlwidth(s64 n);
  * @param base the base (2..16)
  * @return the width
  */
-u8 getuwidth(u32 n,u8 base);
+size_t getuwidth(uint n,uint base);
 
 /**
  * Determines the width of the given unsigned 64-bit integer in the given base
@@ -54,6 +58,10 @@ u8 getuwidth(u32 n,u8 base);
  * @param base the base (2..16)
  * @return the width
  */
-u8 getulwidth(u64 n,u8 base);
+size_t getulwidth(ullong n,uint base);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* WIDTH_H_ */

@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-s32 strchri(const char *str,s32 ch) {
+int strchri(const char *str,int ch) {
 	const char *save = str;
 
 	vassert(str != NULL,"str == NULL");

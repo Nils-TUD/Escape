@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <string.h>
 
-s32 atol(const char *nptr) {
+long atol(const char *nptr) {
 	return atoi(nptr);
 }

@@ -88,6 +88,8 @@ typedef s64 int64_t;
 typedef s32 intptr_t;
 typedef u32 uintptr_t;
 
+typedef s32 ssize_t;
+
 #ifdef __cplusplus
 namespace std {
 #endif
@@ -102,7 +104,6 @@ typedef s32 ptrdiff_t;
 typedef u32 size_t;
 #endif
 
-typedef s32 ssize_t;
 typedef s32 off_t;
 typedef u16 mode_t;
 

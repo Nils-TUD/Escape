@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
-s32 tolower(s32 ch) {
+int tolower(int ch) {
 	if(ch >= 'A' && ch <= 'Z')
 		return ch - ('A' - 'a');
 	return ch;

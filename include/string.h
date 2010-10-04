@@ -44,7 +44,7 @@ double atof(const char *nptr);
  * @param str the string
  * @return the integer
  */
-s32 atoi(const char *nptr);
+int atoi(const char *nptr);
 
 /**
  * An alias of atoi()
@@ -52,7 +52,7 @@ s32 atoi(const char *nptr);
  * @param nptr the string
  * @return the integer
  */
-s32 atol(const char *nptr);
+long atol(const char *nptr);
 
 /**
  * The same as atoi(), but for a long long int
@@ -60,7 +60,7 @@ s32 atol(const char *nptr);
  * @param nptr the string
  * @return the integer
  */
-s64 atoll(const char *nptr);
+llong atoll(const char *nptr);
 
 /**
  * Converts the given signed integer to a string
@@ -70,7 +70,7 @@ s64 atoll(const char *nptr);
  * @param n the integer
  * @return the target-string
  */
-char *itoa(char *target,u32 targetSize,s32 n);
+char *itoa(char *target,size_t targetSize,int n);
 
 /**
  * The memchr() function looks for the first occurrence of c within count characters in
@@ -81,7 +81,7 @@ char *itoa(char *target,u32 targetSize,s32 n);
  * @param count the number of characters to loop through
  * @return NULL if not found or the pointer to the found element
  */
-void *memchr(const void *buffer,int c,u32 count);
+void *memchr(const void *buffer,int c,size_t count);
 
 /**
  * Copies <len> words from <src> to <dest>
@@ -90,7 +90,7 @@ void *memchr(const void *buffer,int c,u32 count);
  * @param src the source-address
  * @param len the number of words to copy
  */
-void *memcpy(void *dest,const void *src,u32 len);
+void *memcpy(void *dest,const void *src,size_t len);
 
 /**
  * Compares <count> words of <str1> and <str2> and returns whether they are equal
@@ -100,7 +100,7 @@ void *memcpy(void *dest,const void *src,u32 len);
  * @param count the number of words
  * @return -1 if <str1> lt <str2>, 0 if equal and 1 if <str1> gt <str2>
  */
-s32 memcmp(const void *str1,const void *str2,u32 count);
+int memcmp(const void *str1,const void *str2,size_t count);
 
 /**
  * Swaps the <n>-byte big values <a> and <b>
@@ -109,7 +109,7 @@ s32 memcmp(const void *str1,const void *str2,u32 count);
  * @param b pointer to the second value
  * @param n the number of bytes
  */
-void memswp(void *a,void *b,u32 n);
+void memswp(void *a,void *b,size_t n);
 
 /**
  * Sets <count> bytes starting at <addr> to 0.
@@ -117,7 +117,7 @@ void memswp(void *a,void *b,u32 n);
  * @param addr the starting address
  * @param count the number of bytes
  */
-void memclear(void *addr,u32 count);
+void memclear(void *addr,size_t count);
 
 /**
  * Sets all bytes in memory beginning at <addr> and ending at <addr> + <count>
@@ -127,7 +127,7 @@ void memclear(void *addr,u32 count);
  * @param value the value to set
  * @param count the number of bytes
  */
-void memset(void *addr,int value,u32 count);
+void memset(void *addr,int value,size_t count);
 
 /**
  * Copies the values of num bytes from the location pointed by source to the memory block pointed
@@ -139,7 +139,7 @@ void memset(void *addr,int value,u32 count);
  * @param count the number of bytes to move
  * @return the destination
  */
-void *memmove(void *dest,const void *src,u32 count);
+void *memmove(void *dest,const void *src,size_t count);
 
 /**
  * The strcpy() function copies characters in the string <from> to the string <to>, including the
@@ -163,7 +163,7 @@ char *strcpy(char *to,const char *from);
  * @param count the number of chars to copy
  * @return the target string
  */
-char *strncpy(char *to,const char *from,u32 count);
+char *strncpy(char *to,const char *from,size_t count);
 
 /**
  * The strcat() function concatenates str2 onto the end of str1, and returns str1.
@@ -183,7 +183,7 @@ char *strcat(char *str1,const char *str2);
  * @param count the number of elements to concatenate to str1
  * @return resulting string
  */
-char *strncat(char *str1,const char *str2,u32 count);
+char *strncat(char *str1,const char *str2,size_t count);
 
 /**
  * The function strcmp() compares str1 and str2, then returns:
@@ -195,7 +195,7 @@ char *strncat(char *str1,const char *str2,u32 count);
  * @param str2 the second string
  * @return the result
  */
-s32 strcmp(const char *str1,const char *str2);
+int strcmp(const char *str1,const char *str2);
 
 /**
  * Compares at most count characters of str1 and str2. The return value is as follows:
@@ -208,7 +208,7 @@ s32 strcmp(const char *str1,const char *str2);
  * @param count the number of chars to compare
  * @return the result
  */
-s32 strncmp(const char *str1,const char *str2,u32 count);
+int strncmp(const char *str1,const char *str2,size_t count);
 
 /**
  * The function strcasecmp() compares str1 and str2 ignoring case, then returns:
@@ -220,7 +220,7 @@ s32 strncmp(const char *str1,const char *str2,u32 count);
  * @param str2 the second string
  * @return the result
  */
-s32 strcasecmp(const char *str1,const char *str2);
+int strcasecmp(const char *str1,const char *str2);
 
 /**
  * Compares at most count characters of str1 and str2 ignoring case. The return value is as follows:
@@ -233,7 +233,7 @@ s32 strcasecmp(const char *str1,const char *str2);
  * @param count the number of chars to compare
  * @return the result
  */
-s32 strncasecmp(const char *str1,const char *str2,u32 count);
+int strncasecmp(const char *str1,const char *str2,size_t count);
 
 /**
  * The function strchr() returns a pointer to the first occurence of ch in str, or NULL
@@ -243,7 +243,7 @@ s32 strncasecmp(const char *str1,const char *str2,u32 count);
  * @param ch the character
  * @return NULL if not found or the pointer to the found character
  */
-char *strchr(const char *str,s32 ch);
+char *strchr(const char *str,int ch);
 
 /**
  * Returns the index of the first occurrences of ch in str or strlen(str) if ch is not found.
@@ -252,14 +252,14 @@ char *strchr(const char *str,s32 ch);
  * @param ch the character
  * @return the index of the character or strlen(str) if not found
  */
-s32 strchri(const char *str,s32 ch);
+int strchri(const char *str,int ch);
 
 /**
  * @param str the string to search
  * @param ch the character to search for
  * @return a pointer to the last occurrence of ch in str, or NULL if no match is found
  */
-char *strrchr(const char *str,s32 ch);
+char *strrchr(const char *str,int ch);
 
 /**
  * The function strstr() returns a pointer to the first occurrence of str2 in str1, or NULL
@@ -279,7 +279,7 @@ char *strstr(const char *str1,const char *str2);
  * @param str2 the character list
  * @return the length of the initial portion of str1 containing only characters that appear in str2.
  */
-u32 strspn(const char *str1,const char *str2);
+size_t strspn(const char *str1,const char *str2);
 
 /**
  * Scans str1 for the first occurrence of any of the characters that are part of str2, returning
@@ -292,7 +292,7 @@ u32 strspn(const char *str1,const char *str2);
  * @return the length of the initial part of str1 not containing any of the characters that are
  * 	part of str2.
  */
-u32 strcspn(const char *str1,const char *str2);
+size_t strcspn(const char *str1,const char *str2);
 
 /**
  * The function returns a pointer to the first occurrence in str1 of any character in
@@ -334,13 +334,13 @@ char *strtok(char *str,const char *delimiters);
  * @param count the number of chars to remove
  * @return the string
  */
-char *strcut(char *str,u32 count);
+char *strcut(char *str,size_t count);
 
 /**
  * @param str the string
  * @return the length of str (determined by the number of characters before null termination).
  */
-u32 strlen(const char *str);
+size_t strlen(const char *str);
 
 /**
  * Determines the length of the string to the given maximum length. That means the function
@@ -350,7 +350,7 @@ u32 strlen(const char *str);
  * @param max the maximum number of characters
  * @return the length of the string or -1 if the string is too long
  */
-s32 strnlen(const char *str,s32 max);
+ssize_t strnlen(const char *str,ssize_t max);
 
 /**
  * Checks whether the given string contains just alphanumeric characters
@@ -369,7 +369,7 @@ bool isalnumstr(const char *str);
  * @param errnum the error-code
  * @return the error-message
  */
-char *strerror(s32 errnum);
+char *strerror(int errnum);
 
 /**
  * The strdup() function returns a pointer to a new string which is a duplicate of the string s.
@@ -397,7 +397,7 @@ bool strmatch(const char *pattern,const char *str);
  * @param n the number of chars
  * @return the duplicated string or NULL
  */
-char *strndup(const char *s,u32 n);
+char *strndup(const char *s,size_t n);
 
 /**
  * The  strtol()  function  converts  the  initial part of the string in nptr to a long integer
@@ -425,8 +425,8 @@ char *strndup(const char *s,u32 n);
  * @param base the base (2 - 36 inclusive; 0 = determine automatically)
  * @return the number
  */
-s32 strtol(const char *nptr,char **endptr,s32 base);
-s64 strtoll(const char *nptr,char **endptr,s32 base);
+long strtol(const char *nptr,char **endptr,int base);
+llong strtoll(const char *nptr,char **endptr,int base);
 
 /**
  * The  strtoul()  function  converts  the initial part of the string in nptr to an unsigned long
@@ -455,8 +455,8 @@ s64 strtoll(const char *nptr,char **endptr,s32 base);
  * @param base the base (2 - 36 inclusive; 0 = determine automatically)
  * @return the number
 */
-u32 strtoul(const char *nptr,char **endptr,s32 base);
-u64 strtoull(const char *nptr,char **endptr,s32 base);
+ulong strtoul(const char *nptr,char **endptr,int base);
+ullong strtoull(const char *nptr,char **endptr,int base);
 
 /**
  * The strtod, strtof, and strtold functions convert the initial portion of the string
@@ -487,7 +487,7 @@ long double strtold(const char *nptr,char **endptr);
  * of the string.  If the sign of number is negative, *sign is set to a non-zero value, otherwise
  * it is set to 0.  If number is zero, it is unspecified whether *decpt is 0 or 1.
  */
-char *ecvt(double number,s32 ndigits,s32 *decpt,s32 *sign);
+char *ecvt(double number,int ndigits,int *decpt,int *sign);
 
 #ifdef __cplusplus
 }

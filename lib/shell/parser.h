@@ -35,7 +35,7 @@
 /* "%code requires" blocks.  */
 
 /* Line 1676 of yacc.c  */
-#line 11 "script.y"
+#line 12 "script.y"
 
 	char *filename; /* current filename here for the lexer */
 	
@@ -76,7 +76,7 @@
 
 
 /* Line 1676 of yacc.c  */
-#line 50 "script.y"
+#line 51 "script.y"
 
 	#include "ast/node.h"
 	#include "ast/assignexpr.h"
@@ -159,7 +159,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 77 "script.y"
+#line 78 "script.y"
 
 	int intval;
 	char *strval;

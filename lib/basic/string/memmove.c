@@ -20,22 +20,22 @@
 #include <stddef.h>
 #include <string.h>
 
-void *memmove(void *dest,const void *src,u32 count) {
-	u8 *s,*d;
+void *memmove(void *dest,const void *src,size_t count) {
+	uchar *s,*d;
 	/* nothing to do? */
-	if((u8*)dest == (u8*)src || count == 0)
+	if((uchar*)dest == (uchar*)src || count == 0)
 		return dest;
 
 	/* moving forward */
-	if((u8*)dest > (u8*)src) {
-		u32 *dsrc = (u32*)((u8*)src + count - sizeof(u32));
-		u32 *ddest = (u32*)((u8*)dest + count - sizeof(u32));
-		while(count >= sizeof(u32)) {
+	if((uintptr_t)dest > (uintptr_t)src) {
+		uint *dsrc = (uint*)((uintptr_t)src + count - sizeof(uint));
+		uint *ddest = (uint*)((uintptr_t)dest + count - sizeof(uint));
+		while(count >= sizeof(uint)) {
 			*ddest-- = *dsrc--;
-			count -= sizeof(u32);
+			count -= sizeof(uint);
 		}
-		s = (u8*)dsrc + (sizeof(u32) - 1);
-		d = (u8*)ddest + (sizeof(u32) - 1);
+		s = (uchar*)dsrc + (sizeof(uint) - 1);
+		d = (uchar*)ddest + (sizeof(uint) - 1);
 		while(count-- > 0)
 			*d-- = *s--;
 	}

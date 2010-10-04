@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
-bool ispunct(s32 c) {
+int ispunct(int c) {
 	return (c >= '!' && c <= '/') || (c >= ':' && c <= '@') || (c >= '[' && c <= '`') ||
 		(c >= '{' && c <= '~');
 }

@@ -37,6 +37,6 @@ typedef double double_t;
 
 enum { FP_NAN, FP_INFINITE, FP_ZERO, FP_SUBNORMAL, FP_NORMAL };
 
-s32 pow(s32 a,s32 b);
+int pow(int a,int b);
 
 #endif /* MATH_H_ */

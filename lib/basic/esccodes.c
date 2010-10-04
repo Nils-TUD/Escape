@@ -23,14 +23,14 @@
 
 #define MAX_ARG_COUNT		3
 
-s32 escc_get(const char **str,s32 *n1,s32 *n2,s32 *n3) {
-	s32 cmd = ESCC_INVALID;
+int escc_get(const char **str,int *n1,int *n2,int *n3) {
+	int cmd = ESCC_INVALID;
 	const char *s = *str;
 	if(*s == '\0')
 		return ESCC_INCOMPLETE;
 	if(*s == '[') {
-		u32 i,j,cmdlen = 0;
-		s32 n[MAX_ARG_COUNT];
+		size_t i,j,cmdlen = 0;
+		int n[MAX_ARG_COUNT];
 		char c,*start = (char*)s + 1;
 		/* read code */
 		for(cmdlen = 0, s++; (c = *s) && cmdlen < 2 && c != ';' && c != ']'; cmdlen++)

@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-s32 strcmp(const char *str1,const char *str2) {
+int strcmp(const char *str1,const char *str2) {
 	char c1 = *str1,c2 = *str2;
 
 	vassert(str1 != NULL,"str1 == NULL");

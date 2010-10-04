@@ -3,6 +3,7 @@
 	/* reduce the initial stack-size a bit (default=200) */
 	#define YYINITDEPTH		30
 	#define YYDEBUG 1
+	#define YYSIZE_T size_t
 	#include <stdio.h>
 	int yylex (void);
 	void yyerror(char const *,...);

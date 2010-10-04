@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <string.h>
 
-void *memchr(const void *buffer,s32 c,u32 count) {
+void *memchr(const void *buffer,int c,size_t count) {
 	const char *str = (const char*)buffer;
 	while(*str && count-- > 0) {
 		if(*str == c)

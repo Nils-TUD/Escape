@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <ctype.h>
 
-bool isspace(s32 c) {
+int isspace(int c) {
 	return (c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == '\f' || c == '\v');
 }

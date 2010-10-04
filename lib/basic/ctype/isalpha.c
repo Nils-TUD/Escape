@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <ctype.h>
 
-bool isalpha(s32 c) {
+int isalpha(int c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }

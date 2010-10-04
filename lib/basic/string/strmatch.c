@@ -33,9 +33,9 @@ bool strmatch(const char *pattern,const char *str) {
 	}
 	/* does the end match? */
 	if(lastStar[1] != '\0') {
-		u32 plen = strlen(pattern);
-		u32 slen = strlen(str);
-		u32 cmplen = pattern + plen - lastStar - 1;
+		size_t plen = strlen(pattern);
+		size_t slen = strlen(str);
+		size_t cmplen = pattern + plen - lastStar - 1;
 		if(strncmp(lastStar + 1,str + slen - cmplen,cmplen) != 0)
 			return false;
 	}

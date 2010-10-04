@@ -27,8 +27,8 @@
 #	include <stdlib.h>
 #endif
 
-char *strndup(const char *s,u32 n) {
-	u32 len = strlen(s);
+char *strndup(const char *s,size_t n) {
+	size_t len = strlen(s);
 	len = MIN(len,n);
 	char *res = (char*)malloc(len + 1);
 	if(res) {

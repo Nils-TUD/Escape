@@ -21,8 +21,8 @@
 #include <assert.h>
 #include <string.h>
 
-s32 strncmp(const char *str1,const char *str2,u32 count) {
-	s32 rem = count;
+int strncmp(const char *str1,const char *str2,size_t count) {
+	ssize_t rem = count;
 	vassert(str1 != NULL,"str1 == NULL");
 	vassert(str2 != NULL,"str2 == NULL");
 

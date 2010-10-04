@@ -75,7 +75,7 @@ double atof(const char *nptr);
  * @param nptr the string
  * @return the integer
  */
-s32 atoi(const char *nptr);
+int atoi(const char *nptr);
 
 /**
  * An alias of atoi()
@@ -83,7 +83,7 @@ s32 atoi(const char *nptr);
  * @param nptr the string
  * @return the integer
  */
-s32 atol(const char *nptr);
+long atol(const char *nptr);
 
 /**
  * The same as atoi(), but for a long long int
@@ -91,7 +91,7 @@ s32 atol(const char *nptr);
  * @param nptr the string
  * @return the integer
  */
-s64 atoll(const char *nptr);
+llong atoll(const char *nptr);
 
 /**
  * The strtod, strtof, and strtold functions convert the initial portion of the string
@@ -138,8 +138,8 @@ long double strtold(const char *nptr,char **endptr);
  * @param base the base (2 - 36 inclusive; 0 = determine automatically)
  * @return the number
  */
-s32 strtol(const char *nptr,char **endptr,s32 base);
-s64 strtoll(const char *nptr,char **endptr,s32 base);
+long strtol(const char *nptr,char **endptr,int base);
+llong strtoll(const char *nptr,char **endptr,int base);
 
 /**
  * The  strtoul()  function  converts  the initial part of the string in nptr to an unsigned long
@@ -168,8 +168,8 @@ s64 strtoll(const char *nptr,char **endptr,s32 base);
  * @param base the base (2 - 36 inclusive; 0 = determine automatically)
  * @return the number
 */
-u32 strtoul(const char *nptr,char **endptr,s32 base);
-u64 strtoull(const char *nptr,char **endptr,s32 base);
+ulong strtoul(const char *nptr,char **endptr,int base);
+ullong strtoull(const char *nptr,char **endptr,int base);
 
 /**
  * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).

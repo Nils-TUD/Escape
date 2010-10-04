@@ -31,75 +31,75 @@ extern "C" {
  * @return non-zero if its argument is a numeric digit or a letter of the alphabet.
  * 	Otherwise, zero is returned.
  */
-bool isalnum(s32 c);
+int isalnum(int c);
 
 /**
  * @param c the character
  * @return non-zero if its argument is a letter of the alphabet. Otherwise, zero is returned.
  */
-bool isalpha(s32 c);
+int isalpha(int c);
 
 /**
  * @param c the character
  * @return non-zero if its argument is a control-character ( < 0x20 )
  */
-bool iscntrl(s32 c);
+int iscntrl(int c);
 
 /**
  * @param c the character
  * @return non-zero if its argument is a digit between 0 and 9. Otherwise, zero is returned.
  */
-bool isdigit(s32 c);
+int isdigit(int c);
 
 /**
  * @param c the character
  * @return non-zero if its argument is a lowercase letter. Otherwise, zero is returned.
  */
-bool islower(s32 c);
+int islower(int c);
 
 /**
  * @param c the character
  * @return non-zero if its argument is a printable character
  */
-bool isprint(s32 c);
+int isprint(int c);
 
 /**
  * @param c the character
  * @return non-zero if its argument is a punctuation character
  */
-bool ispunct(s32 c);
+int ispunct(int c);
 
 /**
  * @param c the character
  * @return non-zero if its argument is some sort of space (i.e. single space, tab,
  * 	vertical tab, form feed, carriage return, or newline). Otherwise, zero is returned.
  */
-bool isspace(s32 c);
+int isspace(int c);
 
 /**
  * @param c the character
  * @return non-zero if its argument is an uppercase letter. Otherwise, zero is returned.
  */
-bool isupper(s32 c);
+int isupper(int c);
 
 /**
  *
  * @param c the character
  * @return non-zero if its argument is a hexadecimal digit
  */
-bool isxdigit(s32 c);
+int isxdigit(int c);
 
 /**
  * @param ch the char
  * @return the lowercase version of the character ch.
  */
-s32 tolower(s32 ch);
+int tolower(int ch);
 
 /**
  * @param ch the char
  * @return the uppercase version of the character ch.
  */
-s32 toupper(s32 ch);
+int toupper(int ch);
 
 #ifdef __cplusplus
 }

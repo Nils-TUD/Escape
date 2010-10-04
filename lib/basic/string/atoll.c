@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <string.h>
 
-s64 atoll(const char *nptr) {
+llong atoll(const char *nptr) {
 	return strtoll(nptr,NULL,10);
 }

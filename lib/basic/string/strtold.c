@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include <math.h>
 
-static s32 getDigitVal(char c,u8 base);
+static int getDigitVal(char c,uint base);
 
 long double strtold(const char *nptr,char **endptr) {
 	bool neg = false;
@@ -58,14 +58,14 @@ long double strtold(const char *nptr,char **endptr) {
 	/* default */
 	else {
 		char c;
-		u8 base = 10;
+		uint base = 10;
 		if(strncasecmp(nptr,"0X",2) == 0) {
 			nptr += 2;
 			base = 16;
 		}
 		/* in front of "." */
 		while((c = *nptr)) {
-			s32 val = getDigitVal(c,base);
+			int val = getDigitVal(c,base);
 			if(val == -1)
 				break;
 			res = res * base + val;
@@ -73,10 +73,10 @@ long double strtold(const char *nptr,char **endptr) {
 		}
 		/* after "." */
 		if(*nptr == '.') {
-			u32 mul = base;
+			uint mul = base;
 			nptr++;
 			while((c = *nptr)) {
-				s32 val = getDigitVal(c,base);
+				int val = getDigitVal(c,base);
 				if(val == -1)
 					break;
 				res += (long double)val / mul;
@@ -87,12 +87,12 @@ long double strtold(const char *nptr,char **endptr) {
 		/* handle exponent */
 		if((base == 10 && tolower(*nptr) == 'e') ||
 			(base == 16 && tolower(*nptr) == 'p')) {
-			s32 expo = 0;
+			int expo = 0;
 			bool negExp = *++nptr == '-';
 			if(*nptr == '-' || *nptr == '+')
 				nptr++;
 			while((c = *nptr)) {
-				s32 val = getDigitVal(c,base);
+				int val = getDigitVal(c,base);
 				if(val == -1)
 					break;
 				expo = expo * base + val;
@@ -116,7 +116,7 @@ long double strtold(const char *nptr,char **endptr) {
 	return res;
 }
 
-static s32 getDigitVal(char c,u8 base) {
+static int getDigitVal(char c,uint base) {
 	if(isdigit(c))
 		return c - '0';
 	if(base == 16) {

@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <string.h>
 
-s32 atoi(const char *nptr) {
+int atoi(const char *nptr) {
 	return strtol(nptr,NULL,10);
 }

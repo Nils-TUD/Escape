@@ -20,9 +20,9 @@
 #include <stddef.h>
 #include <esc/width.h>
 
-u8 getnwidth(s32 n) {
+size_t getnwidth(int n) {
 	/* we have at least one char */
-	u8 width = 1;
+	size_t width = 1;
 	if(n < 0) {
 		width++;
 		n = -n;

@@ -29,7 +29,8 @@
 #	define outb			util_outByte
 #	define inb			util_inByte
 #	define gettid()		({ \
-	u32 __tid,__esp; \
+	uintptr_t __esp; \
+	tTid __tid; \
 	GET_REG("esp",__esp); \
 	__tid = (__esp >= KERNEL_STACK - PAGE_SIZE) ? thread_getRunning()->tid : 0; \
 })
@@ -46,15 +47,15 @@
 #define STACK_SIZE	1024
 
 #ifdef PROFILE
-static void logUnsigned(u64 n,u8 base);
+static void logUnsigned(ullong n,uint base);
 static void logChar(char c);
 
 #if !IN_KERNEL
 static bool initialized = false;
 #endif
-static u32 stackPos = 0;
+static size_t stackPos = 0;
 static bool inProf = false;
-static u64 callStack[STACK_SIZE];
+static uint64_t callStack[STACK_SIZE];
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,9 +82,9 @@ void __cyg_profile_func_enter(void *this_fn,void *call_site) {
 	}
 #endif
 	logChar('>');
-	logUnsigned((u32)gettid(),10);
+	logUnsigned((unsigned)gettid(),10);
 	logChar(':');
-	logUnsigned((u32)this_fn,16);
+	logUnsigned((unsigned)this_fn,16);
 	logChar('\n');
 	callStack[stackPos++] = getCycles();
 	inProf = false;
@@ -92,21 +93,21 @@ void __cyg_profile_func_enter(void *this_fn,void *call_site) {
 void __cyg_profile_func_exit(void *this_fn,void *call_site) {
 	UNUSED(this_fn);
 	UNUSED(call_site);
-	u64 now;
+	uint64_t now;
 	if(inProf || stackPos <= 0)
 		return;
 	inProf = true;
 	now = getCycles();
 	stackPos--;
 	logChar('<');
-	logUnsigned((u32)gettid(),10);
+	logUnsigned((unsigned)gettid(),10);
 	logChar(':');
 	logUnsigned(now - callStack[stackPos],10);
 	logChar('\n');
 	inProf = false;
 }
 
-static void logUnsigned(u64 n,u8 base) {
+static void logUnsigned(ullong n,uint base) {
 	if(n >= base)
 		logUnsigned(n / base,base);
 	logChar("0123456789ABCDEF"[(n % base)]);

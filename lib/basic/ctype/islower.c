@@ -20,6 +20,6 @@
 #include <stddef.h>
 #include <ctype.h>
 
-bool islower(s32 c) {
+int islower(int c) {
 	return (c >= 'a' && c <= 'z');
 }

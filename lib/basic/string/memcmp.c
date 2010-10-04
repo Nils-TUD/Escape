@@ -20,9 +20,9 @@
 #include <stddef.h>
 #include <string.h>
 
-s32 memcmp(const void *str1,const void *str2,u32 count) {
-	const u8 *s1 = (const u8*)str1;
-	const u8 *s2 = (const u8*)str2;
+int memcmp(const void *str1,const void *str2,size_t count) {
+	const uchar *s1 = (const uchar*)str1;
+	const uchar *s2 = (const uchar*)str2;
 	while(count-- > 0) {
 		if(*s1++ != *s2++)
 			return s1[-1] < s2[-1] ? -1 : 1;

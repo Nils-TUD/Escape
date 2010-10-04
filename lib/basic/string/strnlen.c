@@ -21,8 +21,8 @@
 #include <assert.h>
 #include <string.h>
 
-s32 strnlen(const char *str,s32 max) {
-	s32 len = 0;
+ssize_t strnlen(const char *str,ssize_t max) {
+	ssize_t len = 0;
 	vassert(str != NULL,"str == NULL");
 	vassert(max >= 0,"max < 0");
 

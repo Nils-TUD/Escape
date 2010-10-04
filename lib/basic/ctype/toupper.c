@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
-s32 toupper(s32 ch) {
+int toupper(int ch) {
 	if(ch >= 'a' && ch <= 'z')
 		return ch + ('A' - 'a');
 	return ch;

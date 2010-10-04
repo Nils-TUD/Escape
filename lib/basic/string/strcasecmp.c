@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include <string.h>
 
-s32 strcasecmp(const char *str1,const char *str2) {
+int strcasecmp(const char *str1,const char *str2) {
 	char c1 = tolower(*str1),c2 = tolower(*str2);
 
 	vassert(str1 != NULL,"str1 == NULL");

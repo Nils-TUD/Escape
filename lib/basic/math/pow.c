@@ -20,9 +20,9 @@
 #include <stddef.h>
 #include <math.h>
 
-s32 pow(s32 a,s32 b) {
-	s32 i;
-	s32 res = 1;
+int pow(int a,int b) {
+	int i;
+	int res = 1;
 	for(i = 0; i < b; i++)
 		res *= a;
 	return res;

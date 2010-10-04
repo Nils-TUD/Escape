@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-char *strcut(char *str,u32 count) {
+char *strcut(char *str,size_t count) {
 	char *res = str;
 
 	vassert(str != NULL,"str == NULL");

@@ -21,8 +21,8 @@
 #include <assert.h>
 #include <string.h>
 
-u32 strlen(const char *str) {
-	u32 len = 0;
+size_t strlen(const char *str) {
+	size_t len = 0;
 
 	vassert(str != NULL,"str == NULL");
 

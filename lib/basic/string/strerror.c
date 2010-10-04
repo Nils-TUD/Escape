@@ -98,8 +98,8 @@ static const char *msgs[] = {
 	/* -73 (ERR_WOULD_BLOCK) */				"Thread would block",
 };
 
-char *strerror(s32 errnum) {
-	if((u32)-errnum < ARRAY_SIZE(msgs))
+char *strerror(int errnum) {
+	if((size_t)-errnum < ARRAY_SIZE(msgs))
 		return (char*)msgs[-errnum];
 	else
 		return (char*)msgs[0];

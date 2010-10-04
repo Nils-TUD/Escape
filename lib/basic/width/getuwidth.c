@@ -20,8 +20,8 @@
 #include <stddef.h>
 #include <esc/width.h>
 
-u8 getuwidth(u32 n,u8 base) {
-	u8 width = 1;
+size_t getuwidth(uint n,uint base) {
+	size_t width = 1;
 	while(n >= base) {
 		n /= base;
 		width++;

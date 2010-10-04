@@ -48,7 +48,7 @@ static void test_bintree(void) {
 }
 
 static void test_insert(void) {
-	u32 before,after;
+	size_t before,after;
 	test_caseStart("Testing insert");
 
 	bintree<int,int>::iterator it;
@@ -171,7 +171,7 @@ static void test_order(void) {
 }
 
 static void test_copy(void) {
-	u32 before,after;
+	size_t before,after;
 	test_caseStart("Testing copy");
 
 	bintree<int,int>::iterator it;
@@ -223,7 +223,7 @@ static void test_copy(void) {
 }
 
 static void test_erase(void) {
-	u32 before,after;
+	size_t before,after;
 	test_caseStart("Testing erase");
 
 	bintree<int,int>::iterator it;

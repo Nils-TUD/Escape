@@ -47,7 +47,7 @@ private:
 	ShellApplication(const ShellApplication &app);
 	ShellApplication &operator=(const ShellApplication &app);
 
-	void putIn(char *s,u32 len);
+	void putIn(char *s,size_t len);
 	void handleKbMsg();
 	void handleKeycode();
 	void driverMain();
@@ -58,7 +58,7 @@ private:
 	ShellControl *_sh;
 	sVTermCfg _cfg;
 	char *rbuffer;
-	u32 rbufPos;
+	size_t rbufPos;
 };
 
 #endif /* SHELLAPP_H_ */

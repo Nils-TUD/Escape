@@ -37,7 +37,7 @@
 #if 0
 class my {
 private:
-	u32 abc;
+	uint abc;
 public:
 	my() : abc(4) {
 		cout << "Constructor for " << this << endl;

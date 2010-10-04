@@ -63,7 +63,7 @@ int main(void) {
 
 static void startDriver(const char *name,const char *wait) {
 	tFD fd;
-	u32 i;
+	size_t i;
 	char path[MAX_PATH_LEN + 1] = "/sbin/";
 	// start
 	strcat(path,name);

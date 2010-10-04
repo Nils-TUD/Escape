@@ -87,7 +87,7 @@ int main(void) {
 		ostringstream vtermName;
 		vtermName << "vterm" << i;
 		string name = vtermName.str();
-		s32 child = fork();
+		int child = fork();
 		if(child == 0) {
 			const char *args[] = {"/bin/shell",NULL,NULL};
 			args[1] = name.c_str();

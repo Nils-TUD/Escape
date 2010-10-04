@@ -100,10 +100,10 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static u32 flags;
+static uint flags;
 
 int main(int argc,char *argv[]) {
-	u32 widths[WIDTHS_COUNT] = {0};
+	size_t widths[WIDTHS_COUNT] = {0};
 	sVTSize consSize;
 
 	// parse params
@@ -150,7 +150,7 @@ int main(int argc,char *argv[]) {
 
 	// calc widths
 	for(vector<lsfile*>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
-		u32 x;
+		size_t x;
 		lsfile *f = *it;
 		if(flags & F_INODE) {
 			if((x = getnwidth(f->inode())) > widths[W_INODE])
@@ -173,7 +173,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	// display
-	u32 pos = 0;
+	size_t pos = 0;
 	for(vector<lsfile*>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
 		lsfile *f = *it;
 		if(flags & F_LONG) {

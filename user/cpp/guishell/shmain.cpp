@@ -41,7 +41,7 @@
 using namespace gui;
 
 static char *drvName;
-static s32 childPid = -1;
+static int childPid = -1;
 
 /**
  * The shell-Thread
@@ -75,7 +75,7 @@ int main(int argc,char **argv) {
 	// announce driver; try to find an unused driver-name because maybe a user wants
 	// to start us multiple times
 	tFD sid;
-	u32 no = 0;
+	size_t no = 0;
 	drvName = new char[MAX_PATH_LEN + 1];
 	do {
 		snprintf(drvName,MAX_PATH_LEN + 1,"guiterm%d",no);
@@ -136,7 +136,7 @@ int main(int argc,char **argv) {
 
 	/* give vterm our pid */
 	tPid pid = getpid();
-	sendMsgData(fin,MSG_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
+	sendMsgData(fin,MSG_VT_SHELLPID,&pid,sizeof(tPid));
 	/* discard response */
 	receive(fin,NULL,NULL,0);
 

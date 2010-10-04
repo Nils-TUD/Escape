@@ -44,12 +44,12 @@ class ShellControl : public Control {
 private:
 	static Color COLORS[16];
 
-	static const u32 COLUMNS = 80;
-	static const u32 ROWS = 25;
-	static const u32 PADDING = 3;
-	static const u32 TEXTSTARTX = 2;
-	static const u32 TEXTSTARTY = 2;
-	static const u32 CURSOR_WIDTH = 2;
+	static const size_t COLUMNS = 80;
+	static const size_t ROWS = 25;
+	static const size_t PADDING = 3;
+	static const size_t TEXTSTARTX = 2;
+	static const size_t TEXTSTARTY = 2;
+	static const size_t CURSOR_WIDTH = 2;
 	static const Color BGCOLOR;
 	static const Color FGCOLOR;
 	static const Color BORDER_COLOR;
@@ -116,12 +116,12 @@ public:
 	};
 
 private:
-	void clearRows(Graphics &g,u32 start,u32 count);
-	void paintRows(Graphics &g,u32 start,u32 count);
-	void paintRow(Graphics &g,u32 cwidth,u32 cheight,char *buf,tCoord y);
+	void clearRows(Graphics &g,size_t start,size_t count);
+	void paintRows(Graphics &g,size_t start,size_t count);
+	void paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,tCoord y);
 	void update();
 	bool setCursor();
-	inline u32 getLineCount() const {
+	inline size_t getLineCount() const {
 		return (getHeight() / (getGraphics()->getFont().getHeight() + PADDING));
 	};
 	inline sRingBuf *getInBuf() {
@@ -131,8 +131,8 @@ private:
 		return _vt;
 	};
 
-	u16 _lastCol;
-	u16 _lastRow;
+	ushort _lastCol;
+	ushort _lastRow;
 	sVTerm *_vt;
 };
 

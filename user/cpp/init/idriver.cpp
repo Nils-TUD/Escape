@@ -34,7 +34,7 @@ void driver::load() {
 
 	// now load the driver
 	std::string path = string("/sbin/") + _name;
-	s32 child = fork();
+	int child = fork();
 	if(child == 0) {
 		exec(path.c_str(),NULL);
 		cerr << "Exec of '" << path << "' failed" << endl;
@@ -46,7 +46,7 @@ void driver::load() {
 	// wait for all specified waits
 	for(std::vector<std::string>::const_iterator it = _waits.begin(); it != _waits.end(); ++it) {
 		sFileInfo info;
-		s32 res;
+		int res;
 		int j = 0;
 		do {
 			res = stat(it->c_str(),&info);

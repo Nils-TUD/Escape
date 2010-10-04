@@ -44,7 +44,7 @@ static void test_cmdargs(void) {
 }
 
 static void test_flags(void) {
-	u32 before;
+	size_t before;
 	test_caseStart("Testing flags");
 
 	before = heapspace();
@@ -91,7 +91,7 @@ static void test_flags(void) {
 }
 
 static void test_vals(void) {
-	u32 before;
+	size_t before;
 	test_caseStart("Testing values");
 
 	before = heapspace();
@@ -101,8 +101,8 @@ static void test_vals(void) {
 		const char * const argv3[] = {"progname","-a=test","--long","444",NULL};
 		const char *format = "a=s b=d c=i d=x long=d";
 		string a;
-		s32 b,c,_long;
-		u32 d;
+		int b,c,_long;
+		uint d;
 		cmdargs *args;
 
 		a = "";
@@ -144,7 +144,7 @@ static void test_vals(void) {
 }
 
 static void test_reqNFree(void) {
-	u32 before;
+	size_t before;
 	test_caseStart("Testing required and free args");
 
 	// one exception before to allocate mem for exception-stuff
@@ -163,9 +163,9 @@ static void test_reqNFree(void) {
 		const char * const argv4[] = {"progname","-b=12","--nreq=f","--req=test","free1","-free2","--req",NULL};
 		const char *format = "b=d* req=s* nreq=X";
 		bool ex;
-		s32 b;
+		int b;
 		string req;
-		u32 nreq;
+		uint nreq;
 		cmdargs *a;
 
 		try {

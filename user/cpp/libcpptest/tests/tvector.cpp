@@ -77,7 +77,7 @@ static void test_constr(void) {
 static void test_assign(void) {
 	test_caseStart("Testing assign");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		vector<int> v1(5);
@@ -99,7 +99,7 @@ static void test_assign(void) {
 			test_assertInt(v4[i],3);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -126,7 +126,7 @@ static void test_iterators(void) {
 static void test_insert(void) {
 	test_caseStart("Testing insert");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		vector<int>::iterator it;
@@ -188,7 +188,7 @@ static void test_insert(void) {
 		test_assertInt(v1[9],5);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -225,7 +225,7 @@ static void test_at(void) {
 static void test_erase(void) {
 	test_caseStart("Testing erase");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		vector<int>::iterator it;
@@ -258,7 +258,7 @@ static void test_erase(void) {
 		test_assertUInt(v1.size(),0);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();

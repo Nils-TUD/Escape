@@ -116,7 +116,7 @@ static int pbThread(void *arg) {
 		if(fork() == 0)
 			exec("/bin/ps",NULL);
 	}*/
-	/*s16 x = 10,y = 10;*/
+	/*int x = 10,y = 10;*/
 	bool forward = true;
 	while(1) {
 		/*if(w1->getX() + w1->getWidth() >= Application::getInstance()->getScreenWidth() - 1)
@@ -129,7 +129,7 @@ static int pbThread(void *arg) {
 			y = 10;
 		w1->move(x,y);*/
 		if(pb != NULL) {
-			u32 pos = pb->getPosition();
+			size_t pos = pb->getPosition();
 			if(forward) {
 				if(pos < 100)
 					pb->setPosition(pos + 1);

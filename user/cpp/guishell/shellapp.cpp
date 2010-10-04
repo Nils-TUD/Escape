@@ -50,7 +50,7 @@ ShellApplication::~ShellApplication() {
 
 void ShellApplication::doEvents() {
 	tMsgId mid;
-	s32 res = RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg)));
+	ssize_t res = RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg)));
 	if(res < 0 && res != ERR_WOULD_BLOCK)
 		error("Read from window-manager failed");
 	if(res > 0) {
@@ -69,10 +69,10 @@ void ShellApplication::doEvents() {
 }
 
 void ShellApplication::handleKbMsg() {
-	u8 keycode = (u8)_msg.args.arg1;
+	uchar keycode = (uchar)_msg.args.arg1;
 	bool isBreak = (bool)_msg.args.arg2;
 	char character = (char)_msg.args.arg4;
-	u8 modifier = (u8)_msg.args.arg5;
+	uchar modifier = (uchar)_msg.args.arg5;
 	if(isBreak)
 		return;
 
@@ -103,7 +103,7 @@ void ShellApplication::driverMain() {
 				sVTerm *vt = _sh->getVTerm();
 				sRingBuf *inbuf = _sh->getInBuf();
 				// offset is ignored here
-				u32 count = _msg.args.arg2;
+				size_t count = _msg.args.arg2;
 				char *data = (char*)malloc(count);
 				_msg.args.arg1 = 0;
 				if(data)
@@ -120,9 +120,9 @@ void ShellApplication::driverMain() {
 			break;
 
 			case MSG_DRV_WRITE: {
-				u32 amount;
+				size_t amount;
 				char *data;
-				u32 c = _msg.args.arg2;
+				size_t c = _msg.args.arg2;
 				data = (char*)malloc(c + 1);
 				_msg.args.arg1 = 0;
 				if(data) {

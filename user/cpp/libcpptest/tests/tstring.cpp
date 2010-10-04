@@ -303,7 +303,7 @@ static void test_erase(void) {
 	test_assertUInt(s4.length(),4);
 
 	it = s4.erase(s4.end() - 1);
-	test_assertUInt((u32)it,(u32)s4.end());
+	test_assertUInt((uint)it,(uint)s4.end());
 	test_assertStr(s4.c_str(),"bar");
 	test_assertUInt(s4.length(),3);
 

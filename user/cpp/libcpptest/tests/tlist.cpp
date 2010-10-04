@@ -133,7 +133,7 @@ static void test_iterators(void) {
 static void test_insert(void) {
 	test_caseStart("Testing insert");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int>::iterator it;
@@ -162,7 +162,7 @@ static void test_insert(void) {
 		check_content(v1,10,1,6,6,8,8,8,2,3,4,5);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -171,7 +171,7 @@ static void test_insert(void) {
 static void test_erase(void) {
 	test_caseStart("Testing erase");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int>::iterator it;
@@ -196,7 +196,7 @@ static void test_erase(void) {
 		check_content(v1,0);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -205,7 +205,7 @@ static void test_erase(void) {
 static void test_splice(void) {
 	test_caseStart("Testing splice");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int> mylist1,mylist2;
@@ -233,7 +233,7 @@ static void test_splice(void) {
 		check_content(mylist1,6,30,3,4,1,10,20);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -242,7 +242,7 @@ static void test_splice(void) {
 static void test_resize(void) {
 	test_caseStart("Testing resize");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int> l;
@@ -259,7 +259,7 @@ static void test_resize(void) {
 		check_content(l,12,1,2,3,4,5,100,100,100,0,0,0,0);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -272,7 +272,7 @@ static bool removePred(int v) {
 static void test_remove(void) {
 	test_caseStart("Testing remove");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int> l;
@@ -299,7 +299,7 @@ static void test_remove(void) {
 		check_content(l,2,1,1);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -312,7 +312,7 @@ static bool isSame(int a,int b) {
 static void test_unique(void) {
 	test_caseStart("Testing unique");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int> l;
@@ -333,7 +333,7 @@ static void test_unique(void) {
 		check_content(l,5,1,3,8,1,4);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -342,7 +342,7 @@ static void test_unique(void) {
 static void test_sort(void) {
 	test_caseStart("Testing sort");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int> l;
@@ -367,7 +367,7 @@ static void test_sort(void) {
 		check_content(l2,5,1,2,3,4,5);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -376,7 +376,7 @@ static void test_sort(void) {
 static void test_merge(void) {
 	test_caseStart("Testing merge");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int> l;
@@ -397,7 +397,7 @@ static void test_merge(void) {
 		check_content(l,12,1,2,2,2,4,5,6,14,16,21,44,66);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();
@@ -406,7 +406,7 @@ static void test_merge(void) {
 static void test_reverse(void) {
 	test_caseStart("Testing reverse");
 
-	u32 before = heapspace();
+	size_t before = heapspace();
 
 	{
 		list<int> l;
@@ -440,7 +440,7 @@ static void test_reverse(void) {
 		check_content(l4,3,1,2,3);
 	}
 
-	u32 after = heapspace();
+	size_t after = heapspace();
 	test_assertUInt(after,before);
 
 	test_caseSucceded();

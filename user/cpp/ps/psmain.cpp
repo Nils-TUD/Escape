@@ -69,7 +69,7 @@ static bool compareProcs(const process* a,const process* b);
 static vector<process*> getProcs();
 static process* getProc(const char* name);
 static void usage(const char *name) {
-	u32 i;
+	size_t i;
 	cerr << "Usage: " << name <<" [-t][-n <count>][-s <sort>]" << endl;
 	cerr << "	-t			: Print threads, too" << endl;
 	cerr << "	-n <count>	: Print first <count> processes" << endl;

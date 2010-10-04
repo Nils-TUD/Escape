@@ -21,6 +21,6 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 fputc(s32 c,FILE *file) {
+int fputc(int c,FILE *file) {
 	return bputc(file,c);
 }

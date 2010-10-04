@@ -20,6 +20,6 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-s32 fsetpos(FILE *stream,const fpos_t *pos) {
+int fsetpos(FILE *stream,const fpos_t *pos) {
 	return fseek(stream,*pos,SEEK_SET);
 }

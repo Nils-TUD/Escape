@@ -20,21 +20,21 @@
 #include <esc/common.h>
 #include <stdlib.h>
 
-div_t div(s32 numerator,s32 denominator) {
+div_t div(int numerator,int denominator) {
 	div_t res;
 	res.quot = numerator / denominator;
 	res.rem = numerator % denominator;
 	return res;
 }
 
-ldiv_t ldiv(s32 numerator,s32 denominator) {
+ldiv_t ldiv(long numerator,long denominator) {
 	ldiv_t res;
 	res.quot = numerator / denominator;
 	res.rem = numerator % denominator;
 	return res;
 }
 
-lldiv_t lldiv(s64 numerator,s64 denominator) {
+lldiv_t lldiv(llong numerator,llong denominator) {
 	lldiv_t res;
 	res.quot = numerator / denominator;
 	res.rem = numerator % denominator;

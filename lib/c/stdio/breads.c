@@ -22,8 +22,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
-s32 breads(FILE *f,s32 length,char *str) {
-	s32 rc;
+int breads(FILE *f,size_t length,char *str) {
+	int rc;
 	while(length != 0) {
 		rc = bgetc(f);
 		if(rc == EOF)

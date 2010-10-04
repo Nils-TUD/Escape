@@ -22,10 +22,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-u32 abspath(char *dst,u32 dstSize,const char *src) {
+size_t abspath(char *dst,size_t dstSize,const char *src) {
 	char *curtemp,*pathtemp,*p;
-	u32 layer,pos;
-	u32 count = 0;
+	int layer,pos;
+	size_t count = 0;
 
 	p = (char*)src;
 	pathtemp = dst;
@@ -77,7 +77,7 @@ u32 abspath(char *dst,u32 dstSize,const char *src) {
 			p += 3;
 		}
 		else {
-			if(dstSize - count < pos + 2)
+			if(dstSize - count < (size_t)(pos + 2))
 				return count;
 			/* append to path */
 			*pathtemp++ = '/';

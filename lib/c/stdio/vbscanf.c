@@ -24,17 +24,17 @@
 
 /* execute <expr> and return count if its < 0; otherwise you get the value of <expr> */
 #define READERR(count,expr)		({ \
-		s32 __err = (expr); \
+		int __err = (expr); \
 		if(__err < 0) \
 			return (count); \
 		__err; \
 	})
 
-s32 vbscanf(FILE *f,const char *fmt,va_list ap) {
+int vbscanf(FILE *f,const char *fmt,va_list ap) {
 	char *str = NULL,c,rc = 0;
-	s32 *n,count = 0;
-	u32 *u;
-	s32 length;
+	int *n,count = 0;
+	uint *u;
+	int length;
 	bool readFlags;
 	bool shortPtr;
 	bool discard;
@@ -95,21 +95,21 @@ s32 vbscanf(FILE *f,const char *fmt,va_list ap) {
 			case 'X':
 			case 'u':
 			case 'd': {
-				s32 val = 0;
+				int val = 0;
 				READERR(count,breadn(f,&val,length,c));
 				/* store value */
 				if(!discard) {
 					if(c == 'd') {
-						n = va_arg(ap, s32*);
+						n = va_arg(ap, int*);
 						if(shortPtr)
-							*(s16*)n = val;
+							*(short*)n = val;
 						else
 							*n = val;
 					}
 					else {
-						u = va_arg(ap, u32*);
+						u = va_arg(ap, uint*);
 						if(shortPtr)
-							*(u16*)u = val;
+							*(ushort*)u = val;
 						else
 							*u = val;
 					}

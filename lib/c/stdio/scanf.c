@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-s32 scanf(const char *fmt,...) {
-	s32 res;
+int scanf(const char *fmt,...) {
+	int res;
 	va_list ap;
 	va_start(ap,fmt);
 	res = vfscanf(stdin,fmt,ap);

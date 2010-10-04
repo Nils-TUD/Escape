@@ -22,13 +22,13 @@
 #include <stdio.h>
 #include <ctype.h>
 
-s32 breadn(FILE *f,s32 *num,s32 length,char c) {
+int breadn(FILE *f,int *num,size_t length,int c) {
 	bool neg = false;
-	s32 val = 0;
-	u8 base;
+	int val = 0;
+	uint base;
 	/* handle '-' */
 	if(c == 'd') {
-		s32 rc = RETERR(bgetc(f));
+		int rc = RETERR(bgetc(f));
 		if(rc == '-') {
 			neg = true;
 			length--;
@@ -56,7 +56,7 @@ s32 breadn(FILE *f,s32 *num,s32 length,char c) {
 
 	/* read until an invalid char is found or the max length is reached */
 	while(length != 0) {
-		s32 tc = bgetc(f);
+		int tc = bgetc(f);
 		if(tc == EOF)
 			break;
 		tc = tolower(tc);

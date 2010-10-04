@@ -52,7 +52,7 @@
 
 /* retry a syscall until it succeded, skipping tries that failed because of a signal */
 #define RETRY(expr)				({ \
-		s32 __err; \
+		int __err; \
 		do { \
 			__err = (expr); \
 		} \
@@ -71,7 +71,7 @@ extern "C" {
  * @param mode the mode
  * @return the file-descriptor; negative if error
  */
-tFD open(const char *path,u8 mode) A_CHECKRET;
+tFD open(const char *path,uint mode) A_CHECKRET;
 
 /**
  * Creates a pipe with 2 separate files for reading and writing.
@@ -80,7 +80,7 @@ tFD open(const char *path,u8 mode) A_CHECKRET;
  * @param writeFd will be set to the fd for writing
  * @return 0 on success
  */
-s32 pipe(tFD *readFd,tFD *writeFd) A_CHECKRET;
+int pipe(tFD *readFd,tFD *writeFd) A_CHECKRET;
 
 /**
  * Retrieves information about the given file
@@ -89,7 +89,7 @@ s32 pipe(tFD *readFd,tFD *writeFd) A_CHECKRET;
  * @param info will be filled
  * @return 0 on success
  */
-s32 stat(const char *path,sFileInfo *info) A_CHECKRET;
+int stat(const char *path,sFileInfo *info) A_CHECKRET;
 
 /**
  * Retrieves information about the file behind the given file-descriptor
@@ -98,7 +98,7 @@ s32 stat(const char *path,sFileInfo *info) A_CHECKRET;
  * @param info will be filled
  * @return 0 on success
  */
-s32 fstat(tFD fd,sFileInfo *info) A_CHECKRET;
+int fstat(tFD fd,sFileInfo *info) A_CHECKRET;
 
 /**
  * Asks for the current file-position
@@ -107,7 +107,7 @@ s32 fstat(tFD fd,sFileInfo *info) A_CHECKRET;
  * @param pos will point to the current file-position on success
  * @return 0 on success
  */
-s32 tell(tFD fd,s32 *pos) A_CHECKRET;
+int tell(tFD fd,int *pos) A_CHECKRET;
 
 /**
  * Manipulates the given file-descriptor, depending on the command
@@ -117,7 +117,7 @@ s32 tell(tFD fd,s32 *pos) A_CHECKRET;
  * @param arg the argument (just used for F_SETFL)
  * @return >= 0 on success
  */
-s32 fcntl(tFD fd,u32 cmd,s32 arg);
+int fcntl(tFD fd,uint cmd,int arg);
 
 /**
  * The  isterm()  function  tests  whether  fd  is an open file descriptor
@@ -136,7 +136,7 @@ bool isterm(tFD fd);
  * @param whence the seek-type: SEEK_SET, SEEK_CUR or SEEK_END
  * @return the new position on success, of the negative error-code
  */
-s32 seek(tFD fd,s32 offset,u32 whence) A_CHECKRET;
+int seek(tFD fd,int offset,uint whence) A_CHECKRET;
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the
@@ -147,7 +147,7 @@ s32 seek(tFD fd,s32 offset,u32 whence) A_CHECKRET;
  * @param count the number of bytes
  * @return the actual read number of bytes; negative if an error occurred
  */
-s32 read(tFD fd,void *buffer,u32 count) A_CHECKRET;
+ssize_t read(tFD fd,void *buffer,size_t count) A_CHECKRET;
 
 /**
  * Writes count bytes from the given buffer into the given fd and returns the number of written
@@ -158,7 +158,7 @@ s32 read(tFD fd,void *buffer,u32 count) A_CHECKRET;
  * @param count the number of bytes to write
  * @return the number of bytes written; negative if an error occurred
  */
-s32 write(tFD fd,const void *buffer,u32 count) A_CHECKRET;
+ssize_t write(tFD fd,const void *buffer,size_t count) A_CHECKRET;
 
 /**
  * Sends a message to the driver identified by <fd>.
@@ -169,7 +169,7 @@ s32 write(tFD fd,const void *buffer,u32 count) A_CHECKRET;
  * @param size the size of the message
  * @return 0 on success or < 0 if an error occurred
  */
-s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
+ssize_t send(tFD fd,tMsgId id,const void *msg,size_t size);
 
 /**
  * Receives a message from the driver identified by <fd>. Blocks if no message is available.
@@ -181,7 +181,7 @@ s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
  * @param size the (max) size of the message
  * @return the size of the message
  */
-s32 receive(tFD fd,tMsgId *id,void *msg,u32 size) A_CHECKRET;
+ssize_t receive(tFD fd,tMsgId *id,void *msg,size_t size) A_CHECKRET;
 
 /**
  * Sends the given data in the data-part of the standard-message. Doesn't wait for the response.
@@ -190,9 +190,9 @@ s32 receive(tFD fd,tMsgId *id,void *msg,u32 size) A_CHECKRET;
  * @param id the msg-id
  * @param data the data to send
  * @param size the size of the data (if too big an error will be reported)
- * @return 0 on success
+ * @return >= 0 on success
  */
-s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size);
+ssize_t sendMsgData(tFD fd,tMsgId id,const void *data,size_t size);
 
 /**
  * Sends a message with given id and optionally data to the given driver. Afterwards it receives
@@ -204,7 +204,7 @@ s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size);
  * @param size if data is not NULL, the size of data
  * @return the result
  */
-s32 sendRecvMsgData(tFD fd,tMsgId id,const void *data,u32 size);
+ssize_t sendRecvMsgData(tFD fd,tMsgId id,const void *data,size_t size);
 
 /**
  * Sends a message with given id and no data to the given driver, receives a message and
@@ -216,7 +216,7 @@ s32 sendRecvMsgData(tFD fd,tMsgId id,const void *data,u32 size);
  * @param size the size of the buffer
  * @return the number of copied bytes on success
  */
-s32 recvMsgData(tFD fd,tMsgId id,void *data,u32 size) A_CHECKRET;
+ssize_t recvMsgData(tFD fd,tMsgId id,void *data,size_t size) A_CHECKRET;
 
 /**
  * The same as recvMsgData, except that it expects <argc> arguments behind <argc>, which are
@@ -229,7 +229,7 @@ s32 recvMsgData(tFD fd,tMsgId id,void *data,u32 size) A_CHECKRET;
  * @param argc the number of args
  * @return the number of copied bytes on success
  */
-s32 vrecvMsgData(tFD fd,tMsgId id,void *data,u32 size,u32 argc,...) A_CHECKRET;
+ssize_t vrecvMsgData(tFD fd,tMsgId id,void *data,size_t size,size_t argc,...) A_CHECKRET;
 
 /**
  * Duplicates the given file-descriptor
@@ -246,7 +246,7 @@ tFD dupFd(tFD fd);
  * @param dst the destination-file-descriptor
  * @return the error-code or 0 if successfull
  */
-s32 redirFd(tFD src,tFD dst);
+int redirFd(tFD src,tFD dst);
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>
@@ -255,7 +255,7 @@ s32 redirFd(tFD src,tFD dst);
  * @param newPath the link-path
  * @return 0 on success
  */
-s32 link(const char *oldPath,const char *newPath) A_CHECKRET;
+int link(const char *oldPath,const char *newPath) A_CHECKRET;
 
 /**
  * Unlinks the given path. That means, the directory-entry will be removed and if there are no
@@ -264,7 +264,7 @@ s32 link(const char *oldPath,const char *newPath) A_CHECKRET;
  * @param path the path
  * @return 0 on success
  */
-s32 unlink(const char *path) A_CHECKRET;
+int unlink(const char *path) A_CHECKRET;
 
 /**
  * Creates the given directory. Expects that all except the last path-component exist.
@@ -272,7 +272,7 @@ s32 unlink(const char *path) A_CHECKRET;
  * @param path the path
  * @return 0 on success
  */
-s32 mkdir(const char *path) A_CHECKRET;
+int mkdir(const char *path) A_CHECKRET;
 
 /**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
@@ -280,7 +280,7 @@ s32 mkdir(const char *path) A_CHECKRET;
  * @param path the path
  * @return 0 on success
  */
-s32 rmdir(const char *path) A_CHECKRET;
+int rmdir(const char *path) A_CHECKRET;
 
 /**
  * Mounts <device> at <path> with fs <type>
@@ -290,7 +290,7 @@ s32 rmdir(const char *path) A_CHECKRET;
  * @param type the fs-type
  * @return 0 on success
  */
-s32 mount(const char *device,const char *path,u16 type) A_CHECKRET;
+int mount(const char *device,const char *path,uint type) A_CHECKRET;
 
 /**
  * Unmounts the device mounted at <path>
@@ -298,14 +298,14 @@ s32 mount(const char *device,const char *path,u16 type) A_CHECKRET;
  * @param path the path
  * @return 0 on success
  */
-s32 unmount(const char *path) A_CHECKRET;
+int unmount(const char *path) A_CHECKRET;
 
 /**
  * Writes all dirty objects of the filesystem to disk
  *
  * @return 0 on success
  */
-s32 sync(void) A_CHECKRET;
+int sync(void) A_CHECKRET;
 
 /**
  * Closes the given file-descriptor

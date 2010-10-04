@@ -21,8 +21,8 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 fseek(FILE *stream,s32 offset,s32 whence) {
-	s32 res;
+int fseek(FILE *stream,int offset,uint whence) {
+	int res;
 	if(stream->in.fd >= 0) {
 		/* if we want to move relatively, we have to reduce the offset by the number of chars left
 		 * in buffer. */

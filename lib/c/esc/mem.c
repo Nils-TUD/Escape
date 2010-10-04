@@ -21,57 +21,58 @@
 #include <esc/mem.h>
 
 /* the assembler-routine */
-extern u32 _changeSize(s32 count);
-extern u32 _mapPhysical(u32 *phys,u32 count,u32 align);
-extern u32 _addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type);
-extern u32 _createSharedMem(const char *name,u32 byteCount);
-extern u32 _joinSharedMem(const char *name);
+extern ssize_t _changeSize(ssize_t count);
+extern intptr_t _mapPhysical(uintptr_t *phys,size_t count,size_t align);
+extern intptr_t _addRegion(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,
+		size_t loadCount,uint type);
+extern intptr_t _createSharedMem(const char *name,size_t byteCount);
+extern intptr_t _joinSharedMem(const char *name);
 
 /* just a convenience for the user because the return-value is negative if an error occurred */
-void *changeSize(s32 count) {
-	u32 addr = _changeSize(count);
+void *changeSize(ssize_t count) {
+	ssize_t addr = _changeSize(count);
 	/* FIXME workaround until we have TLS */
-	if((s32)addr >= -200 && (s32)addr < 0)
+	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
-void *mapPhysical(u32 phys,u32 count) {
-	u32 addr = _mapPhysical(&phys,count,1);
+void *mapPhysical(uintptr_t phys,size_t count) {
+	intptr_t addr = _mapPhysical(&phys,count,1);
 	/* FIXME workaround until we have TLS */
-	if((s32)addr >= -200 && (s32)addr < 0)
+	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
-void *allocPhysical(u32 *phys,u32 count,u32 align) {
-	u32 addr = _mapPhysical(phys,count,align);
+void *allocPhysical(uintptr_t *phys,size_t count,size_t align) {
+	intptr_t addr = _mapPhysical(phys,count,align);
 	/* FIXME workaround until we have TLS */
-	if((s32)addr >= -200 && (s32)addr < 0)
+	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
-void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type) {
-	u32 addr = _addRegion(bin,binOffset,byteCount,loadCount,type);
+void *addRegion(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type) {
+	intptr_t addr = _addRegion(bin,binOffset,byteCount,loadCount,type);
 	/* FIXME workaround until we have TLS */
-	if((s32)addr >= -200 && (s32)addr < 0)
+	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
-void *createSharedMem(const char *name,u32 byteCount) {
-	u32 addr = _createSharedMem(name,byteCount);
+void *createSharedMem(const char *name,size_t byteCount) {
+	intptr_t addr = _createSharedMem(name,byteCount);
 	/* FIXME workaround until we have TLS */
-	if((s32)addr >= -200 && (s32)addr < 0)
+	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
 void *joinSharedMem(const char *name) {
-	u32 addr = _joinSharedMem(name);
+	intptr_t addr = _joinSharedMem(name);
 	/* FIXME workaround until we have TLS */
-	if((s32)addr >= -200 && (s32)addr < 0)
+	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }

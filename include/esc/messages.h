@@ -152,69 +152,69 @@
 /* the data read from the keyboard */
 typedef struct {
 	/* the keycode (see keycodes.h) */
-	u8 keycode;
+	uchar keycode;
 	/* whether the key was released */
-	u8 isBreak;
+	uchar isBreak;
 } sKbData;
 
 typedef struct {
 	/* whether the key was released */
-	u8 isBreak;
+	uchar isBreak;
 	/* the keycode (see keycodes.h) */
-	u8 keycode;
+	uchar keycode;
 	/* modifiers (STATE_CTRL, STATE_SHIFT, STATE_ALT) */
-	u8 modifier;
+	uchar modifier;
 	/* the character, translated by the current keymap */
 	char character;
 } sKmData;
 
 /* the data read from the mouse */
 typedef struct {
-	s8 x;
-	s8 y;
-	u8 buttons;
+	short x;
+	short y;
+	uchar buttons;
 } sMouseData;
 
 typedef struct {
-	u16 width;					/* x-resolution */
-	u16 height;					/* y-resolution */
-	u8 bitsPerPixel;			/* Bits per pixel                  */
-	u8 redMaskSize;				/* Size of direct color red mask   */
-	u8 redFieldPosition;		/* Bit posn of lsb of red mask     */
-	u8 greenMaskSize;			/* Size of direct color green mask */
-	u8 greenFieldPosition;		/* Bit posn of lsb of green mask   */
-	u8 blueMaskSize;			/* Size of direct color blue mask  */
-	u8 blueFieldPosition;		/* Bit posn of lsb of blue mask    */
+	ushort width;					/* x-resolution */
+	ushort height;					/* y-resolution */
+	uchar bitsPerPixel;				/* Bits per pixel                  */
+	uchar redMaskSize;				/* Size of direct color red mask   */
+	uchar redFieldPosition;			/* Bit posn of lsb of red mask     */
+	uchar greenMaskSize;			/* Size of direct color green mask */
+	uchar greenFieldPosition;		/* Bit posn of lsb of green mask   */
+	uchar blueMaskSize;				/* Size of direct color blue mask  */
+	uchar blueFieldPosition;		/* Bit posn of lsb of blue mask    */
 } sVESAInfo;
 
 typedef struct {
-	u32 col;
-	u32 row;
+	uint col;
+	uint row;
 } sVTPos;
 
 typedef struct {
-	u32 width;
-	u32 height;
+	uint width;
+	uint height;
 } sVTSize;
 
 typedef struct {
 	enum {BAR_MEM,BAR_IO} type;
-	u32 addr;
-	u32 size;
+	uintptr_t addr;
+	size_t size;
 } sPCIBar;
 
 typedef struct {
-	u8 bus;
-	u8 dev;
-	u8 func;
-	u8 type;
-	u16 deviceId;
-	u16 vendorId;
-	u8 baseClass;
-	u8 subClass;
-	u8 progInterface;
-	u8 revId;
-	u8 irq;
+	uchar bus;
+	uchar dev;
+	uchar func;
+	uchar type;
+	ushort deviceId;
+	ushort vendorId;
+	uchar baseClass;
+	uchar subClass;
+	uchar progInterface;
+	uchar revId;
+	uchar irq;
 	sPCIBar bars[6];
 } sPCIDevice;
 
@@ -222,28 +222,28 @@ typedef struct {
 typedef union {
 	/* for messages with integer arguments only */
 	struct {
-		u32 arg1;
-		u32 arg2;
-		u32 arg3;
-		u32 arg4;
-		u32 arg5;
-		u32 arg6;
+		uint arg1;
+		uint arg2;
+		uint arg3;
+		uint arg4;
+		uint arg5;
+		uint arg6;
 	} args;
 	/* for messages with a few integer arguments and one or two strings */
 	struct {
-		u32 arg1;
-		u32 arg2;
-		u32 arg3;
-		u32 arg4;
+		uint arg1;
+		uint arg2;
+		uint arg3;
+		uint arg4;
 		char s1[MAX_MSGSTR_LEN];
 		char s2[MAX_MSGSTR_LEN];
 	} str;
 	/* for messages with a few integer arguments and a data-part */
 	struct {
-		u32 arg1;
-		u32 arg2;
-		u32 arg3;
-		u32 arg4;
+		uint arg1;
+		uint arg2;
+		uint arg3;
+		uint arg4;
 		char d[MAX_MSG_SIZE];
 	} data;
 } sMsg;

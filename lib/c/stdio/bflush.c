@@ -21,18 +21,18 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bflush(FILE *f) {
+int bflush(FILE *f) {
 	sIOBuf *buf = &f->out;
 	if(buf->fd >= 0) {
 		if(buf->pos > 0) {
-			s32 res;
+			ssize_t res;
 			/* flush stdout first if we're stderr */
 			if(f == stderr)
 				fflush(stdout);
 			res = buf->pos;
 			buf->pos = 0;
 			if((res = write(buf->fd,buf->buffer,res * sizeof(char))) < 0) {
-				f->error = res;
+				f->error = (int)res;
 				return EOF;
 			}
 		}

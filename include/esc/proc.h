@@ -32,17 +32,17 @@ typedef struct {
 	/* the signal that killed the process (SIG_COUNT if none) */
 	tSig signal;
 	/* exit-code the process gave us via exit() */
-	s32 exitCode;
+	int exitCode;
 	/* memory it has used */
-	u32 ownFrames;
-	u32 sharedFrames;
-	u32 swapped;
+	size_t ownFrames;
+	size_t sharedFrames;
+	size_t swapped;
 	/* cycle-count */
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;
 	/* other stats */
-	u32 schedCount;
-	u32 syscalls;
+	uint schedCount;
+	uint syscalls;
 } sExitState;
 
 #ifdef __cplusplus
@@ -65,14 +65,14 @@ tPid getppid(void);
  * @param pid the process-id
  * @return the parent-pid
  */
-s32 getppidof(tPid pid);
+int getppidof(tPid pid);
 
 /**
  * Clones the current process
  *
  * @return new pid for parent, 0 for child, < 0 if failed
  */
-s32 fork(void) A_CHECKRET;
+int fork(void) A_CHECKRET;
 
 /**
  * Exchanges the process-data with the given program
@@ -81,7 +81,7 @@ s32 fork(void) A_CHECKRET;
  * @param args a NULL-terminated array of arguments
  * @return a negative error-code if failed
  */
-s32 exec(const char *path,const char **args);
+int exec(const char *path,const char **args);
 
 /**
  * Waits until a child terminates and stores information about it into <state>.
@@ -92,7 +92,7 @@ s32 exec(const char *path,const char **args);
  * @param state the exit-state (may be NULL)
  * @return 0 on success
  */
-s32 waitChild(sExitState *state);
+int waitChild(sExitState *state);
 
 /**
  * The system function is used to issue a command. Execution of your program will not
@@ -105,7 +105,7 @@ s32 waitChild(sExitState *state);
  * 	When the argument passed is NULL, the function returns a nonzero value if the command
  * 	processor is available, and zero otherwise.
  */
-s32 system(const char *cmd);
+int system(const char *cmd);
 
 /**
  * Registers the given function for calling when _exit() is called. Registered functions are
@@ -114,14 +114,14 @@ s32 system(const char *cmd);
  * @param func the function
  * @return 0 if successfull
  */
-s32 atexit(fExitFunc func);
+int atexit(fExitFunc func);
 
 /**
  * Calls atexit-functions and then _exit()
  *
  * @param errorCode the error-code for the parent
  */
-void exit(s32 errorCode) A_NORETURN;
+void exit(int errorCode) A_NORETURN;
 
 #ifdef __cplusplus
 }

@@ -21,11 +21,11 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-char *bgets(FILE *f,char *str,s32 size) {
+char *bgets(FILE *f,char *str,size_t size) {
 	char *res = str;
 	/* wait for one char left (\0) or a newline or error/EOF */
 	while(size-- > 1) {
-		s32 c = bgetc(f);
+		int c = bgetc(f);
 		if(c == EOF) {
 			if(str == res)
 				res = NULL;

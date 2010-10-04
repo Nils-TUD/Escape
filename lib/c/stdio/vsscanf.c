@@ -22,8 +22,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-s32 vsscanf(const char *str,const char *fmt,va_list ap) {
-	s32 res;
+int vsscanf(const char *str,const char *fmt,va_list ap) {
+	int res;
 	FILE *sbuf = bcreate(-1,IO_READ,(char*)str,strlen(str));
 	if(!sbuf)
 		return EOF;

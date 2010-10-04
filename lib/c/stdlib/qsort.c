@@ -25,24 +25,24 @@
  * Quicksort-implementation
  * source: http://de.wikipedia.org/wiki/Quicksort
  */
-static void _qsort(void *base,size_t size,fCompare cmp,s32 left,s32 right);
-static s32 divide(void *base,size_t size,fCompare cmp,s32 left,s32 right);
+static void _qsort(void *base,size_t size,fCompare cmp,int left,int right);
+static int divide(void *base,size_t size,fCompare cmp,int left,int right);
 
 void qsort(void *base,size_t nmemb,size_t size,fCompare cmp) {
 	_qsort(base,size,cmp,0,nmemb - 1);
 }
 
-static void _qsort(void *base,size_t size,fCompare cmp,s32 left,s32 right) {
+static void _qsort(void *base,size_t size,fCompare cmp,int left,int right) {
 	/* TODO someday we should provide a better implementation which uses another sort-algo
 	 * for small arrays, don't uses recursion and so on */
 	if(left < right) {
-		s32 i = divide(base,size,cmp,left,right);
+		int i = divide(base,size,cmp,left,right);
 		_qsort(base,size,cmp,left,i - 1);
 		_qsort(base,size,cmp,i + 1,right);
 	}
 }
 
-static s32 divide(void *base,size_t size,fCompare cmp,s32 left,s32 right) {
+static int divide(void *base,size_t size,fCompare cmp,int left,int right) {
 	char *pleft = (char*)base + left * size;
 	char *piv = (char*)base + right * size;
 	char *i = pleft;
@@ -67,5 +67,5 @@ static s32 divide(void *base,size_t size,fCompare cmp,s32 left,s32 right) {
 	/* swap piv with element i */
 	if(cmp(i,piv) > 0)
 		memswp(i,piv,size);
-	return (u32)(i - (char*)base) / size;
+	return (uint)(i - (char*)base) / size;
 }

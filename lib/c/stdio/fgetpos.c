@@ -21,8 +21,8 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 fgetpos(FILE *stream,fpos_t *pos) {
-	s32 res;
+int fgetpos(FILE *stream,fpos_t *pos) {
+	int res;
 	if(stream->in.fd >= 0)
 		res = tell(stream->in.fd,pos);
 	else

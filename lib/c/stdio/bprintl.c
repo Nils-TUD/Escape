@@ -21,8 +21,8 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bprintl(FILE *f,s64 l) {
-	s32 c = 0;
+int bprintl(FILE *f,llong l) {
+	int c = 0;
 	if(l < 0) {
 		RETERR(bputc(f,'-'));
 		l = -l;

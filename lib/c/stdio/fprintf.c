@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-s32 fprintf(FILE *file,const char *fmt,...) {
-	s32 res;
+int fprintf(FILE *file,const char *fmt,...) {
+	int res;
 	va_list ap;
 	va_start(ap,fmt);
 	res = vfprintf(file,fmt,ap);

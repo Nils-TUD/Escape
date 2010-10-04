@@ -69,29 +69,29 @@ typedef struct {
 	tDevNo device;
 	tInodeNo inodeNo;
 	/* protection */
-	u16 mode;
+	ushort mode;
 	/* number of hard links */
-	u16 linkCount;
+	ushort linkCount;
 	/* owner user- and group-id */
-	u16 uid;
-	u16 gid;
+	ushort uid;
+	ushort gid;
 	/* total size, in bytes */
-	s32 size;
+	int size;
 	/* blocksize for efficent filesystem I/O */
-	u16 blockSize;
+	ushort blockSize;
 	/* number of blocks allocated */
-	u16 blockCount;
+	ushort blockCount;
 	/* times */
-	u32 accesstime;
-	u32 modifytime;
-	u32 createtime;
+	tTime accesstime;
+	tTime modifytime;
+	tTime createtime;
 } sFileInfo;
 
 /* a directory-entry */
 typedef struct {
 	tInodeNo nodeNo;
-	u16 recLen;
-	u16 nameLen;
+	uint16_t recLen;
+	uint16_t nameLen;
 	char name[MAX_NAME_LEN + 1];
 } A_PACKED sDirEntry;
 

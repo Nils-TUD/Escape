@@ -29,10 +29,10 @@
 #define MAX_ERR_LEN			64
 #define MAX_ARGNAME_LEN		16
 
-static s32 ca_find(const char *begin,const char *end,bool hasVal);
-static s32 ca_setVal(bool hasVal,bool isEmpty,const char *begin,s32 argi,char type,void *ptr);
-static u32 ca_readk(const char *str);
-static s32 ca_getArgVal(s32 i,bool isEmpty,bool hasVal,const char *begin,const char **val);
+static int ca_find(const char *begin,const char *end,bool hasVal);
+static int ca_setVal(bool hasVal,bool isEmpty,const char *begin,int argi,char type,void *ptr);
+static size_t ca_readk(const char *str);
+static int ca_getArgVal(int i,bool isEmpty,bool hasVal,const char *begin,const char **val);
 
 bool isHelpCmd(int argc,char **argv) {
 	if(argc <= 1)
@@ -44,14 +44,14 @@ bool isHelpCmd(int argc,char **argv) {
 }
 
 static char errmsg[MAX_ERR_LEN];
-static u16 flags;
+static uint flags;
 static int argc;
 static const char **argv;
 static bool hasHelp = false;
 static sSLList *freeArgs = NULL;
 static const char **freeArgsArray = NULL;
 
-const char *ca_error(s32 err) {
+const char *ca_error(int err) {
 	switch(err) {
 		case CA_ERR_REQUIRED_MISSING:
 			return errmsg;
@@ -86,14 +86,14 @@ const char **ca_getfree(void) {
 	return freeArgsArray;
 }
 
-s32 ca_parse(int argcnt,const char **args,u16 aflags,const char *fmt,...) {
+int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	const char *helps[] = {"-h","--help","-?"};
 	va_list ap;
 	sSLNode *n;
 	bool required;
 	bool hasVal;
 	char type;
-	s32 i,j;
+	int i,j;
 	char *f = (char*)fmt;
 
 	flags = aflags;
@@ -109,7 +109,7 @@ s32 ca_parse(int argcnt,const char **args,u16 aflags,const char *fmt,...) {
 
 	/* check for help-requests */
 	for(i = 1; i < argc; i++) {
-		for(j = 0; j < (s32)ARRAY_SIZE(helps); j++) {
+		for(j = 0; j < (int)ARRAY_SIZE(helps); j++) {
 			if(strcmp(argv[i],helps[j]) == 0) {
 				hasHelp = true;
 				return 0;
@@ -187,21 +187,21 @@ s32 ca_parse(int argcnt,const char **args,u16 aflags,const char *fmt,...) {
 	if(freeArgsArray == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	for(i = 0, n = sll_begin(freeArgs); n != NULL; n = n->next,i++)
-		freeArgsArray[i] = argv[(s32)n->data];
+		freeArgsArray[i] = argv[(int)n->data];
 	freeArgsArray[i] = NULL;
 	sll_destroy(freeArgs,false);
 	return 0;
 }
 
-static s32 ca_find(const char *begin,const char *end,bool hasVal) {
-	s32 i;
+static int ca_find(const char *begin,const char *end,bool hasVal) {
+	int i;
 	bool onechar = end - begin == 1;
 	/* empty? */
 	if(begin == end) {
 		/* use the first free arg */
 		if(sll_length(freeArgs) == 0)
 			return CA_ERR_NO_FREE;
-		return (s32)sll_get(freeArgs,0);
+		return (int)sll_get(freeArgs,0);
 	}
 	for(i = 1; i < argc; i++) {
 		const char *next;
@@ -235,8 +235,8 @@ static s32 ca_find(const char *begin,const char *end,bool hasVal) {
 	return CA_ERR_REQUIRED_MISSING;
 }
 
-static s32 ca_setVal(bool hasVal,bool isEmpty,const char *begin,s32 argi,char type,void *ptr) {
-	s32 res = 0;
+static int ca_setVal(bool hasVal,bool isEmpty,const char *begin,int argi,char type,void *ptr) {
+	int res = 0;
 	const char *val;
 	if(hasVal) {
 		if(argi < 0)
@@ -258,7 +258,7 @@ static s32 ca_setVal(bool hasVal,bool isEmpty,const char *begin,s32 argi,char ty
 
 			case 'd':
 			case 'i': {
-				s32 *n = (s32*)ptr;
+				int *n = (int*)ptr;
 				if((res = ca_getArgVal(argi,isEmpty,hasVal,begin,&val)) == 0)
 					*n = strtol(val,NULL,10);
 			}
@@ -266,14 +266,14 @@ static s32 ca_setVal(bool hasVal,bool isEmpty,const char *begin,s32 argi,char ty
 
 			case 'x':
 			case 'X': {
-				u32 *u = (u32*)ptr;
+				uint *u = (uint*)ptr;
 				if((res = ca_getArgVal(argi,isEmpty,hasVal,begin,&val)) == 0)
 					*u = strtoul(val,NULL,16);
 			}
 			break;
 
 			case 'k': {
-				u32 *k = (u32*)ptr;
+				size_t *k = (size_t*)ptr;
 				if((res = ca_getArgVal(argi,isEmpty,hasVal,begin,&val)) == 0)
 					*k = ca_readk(val);
 			}
@@ -289,8 +289,8 @@ static s32 ca_setVal(bool hasVal,bool isEmpty,const char *begin,s32 argi,char ty
 	return res;
 }
 
-static u32 ca_readk(const char *str) {
-	u32 val = 0;
+static size_t ca_readk(const char *str) {
+	size_t val = 0;
 	while(isdigit(*str))
 		val = val * 10 + (*str++ - '0');
 	switch(*str) {
@@ -310,7 +310,7 @@ static u32 ca_readk(const char *str) {
 	return val;
 }
 
-static s32 ca_getArgVal(s32 i,bool isEmpty,bool hasVal,const char *begin,const char **val) {
+static int ca_getArgVal(int i,bool isEmpty,bool hasVal,const char *begin,const char **val) {
 	const char *arg = argv[i];
 	char *eqPos = strchr(arg,'=');
 	sll_removeFirst(freeArgs,(void*)i);

@@ -23,20 +23,20 @@
 #include <string.h>
 
 void rectAdd(sRectangle *r1,sRectangle *r2) {
-	s16 x = r1->x, y = r1->y;
+	int x = r1->x, y = r1->y;
 	r1->x = MIN(r1->x,r2->x);
 	r1->y = MIN(r1->y,r2->y);
 	r1->width = MAX(x + r1->width,r2->x + r2->width) - r1->x;
 	r1->height = MAX(y + r1->height,r2->y + r2->height) - r1->y;
 }
 
-bool rectContains(sRectangle *r,s16 x,s16 y) {
+bool rectContains(sRectangle *r,int x,int y) {
 	return x >= r->x && x < r->x + r->width &&
 		y >= r->y && y < r->y + r->height;
 }
 
-sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) {
-	u32 i,orgCount,count = 0;
+sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,size_t *rectCount) {
+	size_t i,orgCount,count = 0;
 	sRectangle **res;
 	bool other = false;
 	bool p1in,p2in,p3in,p4in;

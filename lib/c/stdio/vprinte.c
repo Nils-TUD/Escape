@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-s32 vprinte(const char *prefix,va_list ap) {
+int vprinte(const char *prefix,va_list ap) {
 	char *msg;
 	vfprintf(stderr,prefix,ap);
 	if(errno < 0) {

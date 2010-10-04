@@ -22,9 +22,9 @@
 #include <time.h>
 #include "timeintern.h"
 
-s32 readdate(struct tm *t) {
+int readdate(struct tm *t) {
 	/* open CMOS and read date */
-	s32 err;
+	int err;
 	tFD fd = open("/dev/cmos",IO_READ);
 	if(fd < 0)
 		return fd;

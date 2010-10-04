@@ -63,7 +63,7 @@ extern "C" {
  * @param n3 will be set to the third argument (ESCC_ARG_UNUSED if unused)
  * @return the scanned escape-code (ESCC_*)
  */
-s32 escc_get(const char **str,s32 *n1,s32 *n2,s32 *n3);
+int escc_get(const char **str,int *n1,int *n2,int *n3);
 
 #ifdef __cplusplus
 }

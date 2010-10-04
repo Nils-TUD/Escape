@@ -53,7 +53,7 @@ void _free(void *addr);
 /* an area in memory */
 typedef struct sMemArea sMemArea;
 struct sMemArea {
-	u32 size;
+	size_t size;
 	void *address;
 	sMemArea *next;
 };
@@ -65,7 +65,7 @@ static sMemArea *freeList = NULL;
 /* a hashmap with occupied-lists, key is getHash(address) */
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
 /* total number of pages we're using */
-static u32 pageCount = 0;
+static size_t pageCount = 0;
 
 /**
  * Allocates a new page for areas
@@ -80,7 +80,7 @@ static bool loadNewAreas(void);
  * @param size the minimum size
  * @return true on success
  */
-static bool loadNewSpace(u32 size);
+static bool loadNewSpace(size_t size);
 
 /**
  * Calculates the hash for the given address that should be used as key in occupiedMap
@@ -88,31 +88,31 @@ static bool loadNewSpace(u32 size);
  * @param addr the address
  * @return the key
  */
-static u32 getHash(void *addr);
+static uint getHash(void *addr);
 
 /* the lock for the heap */
 static tULock mlock = 0;
 
 #if DEBUG_ADD_GUARDS
 void *malloc_guard(size_t size) {
-	void *a = _malloc(size + sizeof(u32) * 3);
+	void *a = _malloc(size + sizeof(uint) * 3);
 	if(a) {
-		*((u32*)a) = 0xDEADBEEF;
-		*((u32*)a + 1) = size;
-		*((u32*)((u32)a + sizeof(u32) * 2 + size)) = 0xDEADBEEF;
-		return (void*)((u32)a + sizeof(u32) * 2);
+		*((uint*)a) = 0xDEADBEEF;
+		*((uint*)a + 1) = size;
+		*((uint*)((uintptr_t)a + sizeof(uint) * 2 + size)) = 0xDEADBEEF;
+		return (void*)((uintptr_t)a + sizeof(uint) * 2);
 	}
 	return NULL;
 }
 
 void *calloc_guard(size_t num,size_t size) {
-	void *a = _malloc(num * size + sizeof(u32) * 3);
+	void *a = _malloc(num * size + sizeof(uint) * 3);
 	if(a) {
 		void *res;
-		*((u32*)a) = 0xDEADBEEF;
-		*((u32*)a + 1) = num * size;
-		*((u32*)((u32)a + sizeof(u32) * 2 + num * size)) = 0xDEADBEEF;
-		res = (void*)((u32)a + sizeof(u32) * 2);
+		*((uint*)a) = 0xDEADBEEF;
+		*((uint*)a + 1) = num * size;
+		*((uint*)((uintptr_t)a + sizeof(uint) * 2 + num * size)) = 0xDEADBEEF;
+		res = (void*)((uintptr_t)a + sizeof(uint) * 2);
 		memclear(res,num * size);
 		return res;
 	}
@@ -122,26 +122,26 @@ void *calloc_guard(size_t num,size_t size) {
 void *realloc_guard(void *addr,size_t size) {
 	void *a;
 	if(addr) {
-		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
-		assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
+		assert(*(uint*)((uintptr_t)addr - sizeof(uint) * 2) == 0xDEADBEEF);
+		assert(*(uint*)((uintptr_t)addr + *((uint*)addr - 1)) == 0xDEADBEEF);
 	}
-	a = _realloc(addr ? (void*)((u32)addr - sizeof(u32) * 2) : NULL,size + sizeof(u32) * 3);
+	a = _realloc(addr ? (void*)((uintptr_t)addr - sizeof(uint) * 2) : NULL,size + sizeof(uint) * 3);
 	if(a) {
-		*((u32*)a) = 0xDEADBEEF;
-		*((u32*)a + 1) = size;
-		*((u32*)((u32)a + sizeof(u32) * 2 + size)) = 0xDEADBEEF;
-		return (void*)((u32)a + sizeof(u32) * 2);
+		*((uint*)a) = 0xDEADBEEF;
+		*((uint*)a + 1) = size;
+		*((uint*)((uintptr_t)a + sizeof(uint) * 2 + size)) = 0xDEADBEEF;
+		return (void*)((uintptr_t)a + sizeof(uint) * 2);
 	}
 	return NULL;
 }
 
 void free_guard(void *addr) {
 	if(addr) {
-		vassert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF,
-				"Actually: %x",*(u32*)((u32)addr - sizeof(u32) * 2));
-		vassert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF,
-				"Actually: %x",*(u32*)((u32)addr + *((u32*)addr - 1)));
-		_free((void*)((u32)addr - sizeof(u32) * 2));
+		vassert(*(uint*)((uintptr_t)addr - sizeof(uint) * 2) == 0xDEADBEEF,
+				"Actually: %x",*(uint*)((uintptr_t)addr - sizeof(uint) * 2));
+		vassert(*(uint*)((uintptr_t)addr + *((uint*)addr - 1)) == 0xDEADBEEF,
+				"Actually: %x",*(uint*)((uintptr_t)addr + *((uint*)addr - 1)));
+		_free((void*)((uintptr_t)addr - sizeof(uint) * 2));
 	}
 }
 #endif
@@ -197,7 +197,7 @@ void *_malloc(size_t size) {
 		/* split the area */
 		narea = freeList;
 		freeList = freeList->next;
-		narea->address = (void*)((u32)area->address + size);
+		narea->address = (void*)((uintptr_t)area->address + size);
 		narea->size = area->size - size;
 		area->size = size;
 		/* insert in usable-list */
@@ -207,7 +207,7 @@ void *_malloc(size_t size) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
-		u32 i = 0,*trace = getStackTrace();
+		size_t i = 0,*trace = getStackTrace();
 		debugf("[A] %x %d ",area->address,area->size);
 		while(*trace && i++ < 10) {
 			debugf("%x",*trace);
@@ -270,11 +270,11 @@ void _free(void *addr) {
 	nprev = NULL;
 	a = usableList;
 	while(a != NULL) {
-		if((u32)a->address + a->size == (u32)addr) {
+		if((uintptr_t)a->address + a->size == (uintptr_t)addr) {
 			prev = a;
 			pprev = tprev;
 		}
-		if((u32)a->address == (u32)addr + area->size) {
+		if((uintptr_t)a->address == (uintptr_t)addr + area->size) {
 			next = a;
 			nprev = tprev;
 		}
@@ -293,7 +293,7 @@ void _free(void *addr) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
-		u32 i = 0,*trace = getStackTrace();
+		size_t i = 0,*trace = getStackTrace();
 		debugf("[F] %x %d ",area->address,area->size);
 		while(*trace && i++ < 10) {
 			debugf("%x",*trace);
@@ -391,13 +391,13 @@ void *_realloc(void *addr,size_t size) {
 	prev = NULL;
 	while(a != NULL) {
 		/* found the area behind? */
-		if(a->address == (u8*)area->address + area->size) {
+		if(a->address == (uchar*)area->address + area->size) {
 			/* if the size of both is big enough we can use them */
 			if(area->size + a->size >= size) {
 				/* space left? */
 				if(size < area->size + a->size) {
 					/* so move the area forward */
-					a->address = (void*)((u32)area->address + size);
+					a->address = (void*)((uintptr_t)area->address + size);
 					a->size = (area->size + a->size) - size;
 				}
 				/* otherwise we don't need a anymore */
@@ -437,9 +437,9 @@ void *_realloc(void *addr,size_t size) {
 	return a;
 }
 
-static bool loadNewSpace(u32 size) {
+static bool loadNewSpace(size_t size) {
 	void *oldEnd;
-	s32 count;
+	size_t count;
 	sMemArea *area;
 
 	/* no free areas? */
@@ -462,7 +462,7 @@ static bool loadNewSpace(u32 size) {
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
 	freeList = freeList->next;
-	area->address = (void*)((u32)oldEnd * PAGE_SIZE);
+	area->address = (void*)((uintptr_t)oldEnd * PAGE_SIZE);
 	area->size = PAGE_SIZE * count;
 	/* put area in the usable-list */
 	area->next = usableList;
@@ -481,7 +481,7 @@ static bool loadNewAreas(void) {
 
 	/* determine start- and end-address */
 	pageCount++;
-	area = (sMemArea*)((u32)oldEnd * PAGE_SIZE);
+	area = (sMemArea*)((uintptr_t)oldEnd * PAGE_SIZE);
 	end = area + (PAGE_SIZE / sizeof(sMemArea));
 
 	/* put all areas in the freelist */
@@ -496,18 +496,18 @@ static bool loadNewAreas(void) {
 	return true;
 }
 
-static u32 getHash(void *addr) {
+static uint getHash(void *addr) {
 	/* the algorithm distributes the entries more equally in the occupied-map. */
 	/* borrowed from java.util.HashMap :) */
-	u32 h = (u32)addr;
+	uint h = (uint)addr;
 	h ^= (h >> 20) ^ (h >> 12);
 	/* note that we can use & (a-1) since OCC_MAP_SIZE = 2^x */
 	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
 }
 
-u32 heapspace(void) {
+size_t heapspace(void) {
 	sMemArea *area;
-	u32 c = 0;
+	size_t c = 0;
 	area = usableList;
 	while(area != NULL) {
 		c += area->size;
@@ -521,7 +521,7 @@ u32 heapspace(void) {
 
 void printheap(void) {
 	sMemArea *area;
-	u32 i;
+	size_t i;
 
 	printf("PageCount=%d\n",pageCount);
 	printf("UsableList:\n");

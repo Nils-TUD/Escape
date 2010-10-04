@@ -22,7 +22,7 @@
 .global setjmp
 .global longjmp
 
-# s32 setjmp(sJumpEnv *env);
+# int setjmp(sJumpEnv *env);
 .type setjmp, @function
 setjmp:
 	push	%ebp
@@ -45,7 +45,7 @@ setjmp:
 	leave
 	ret
 
-# s32 longjmp(sJumpEnv *env,s32 val);
+# int longjmp(sJumpEnv *env,int val);
 .type longjmp, @function
 longjmp:
 	push	%ebp

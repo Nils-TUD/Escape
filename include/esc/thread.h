@@ -38,11 +38,11 @@ typedef int (*fThreadEntry)(void *arg);
 
 /* an object to wait for */
 typedef struct {
-	u32 events;
+	uint events;
 	tEvObj object;
 } sWaitObject;
 
-typedef u32 tULock;
+typedef uint tULock;
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,7 +56,7 @@ tTid gettid(void);
 /**
  * @return the number of threads in the current process
  */
-u32 getThreadCount(void);
+size_t getThreadCount(void);
 
 /**
  * Starts a new thread
@@ -65,19 +65,19 @@ u32 getThreadCount(void);
  * @param arg the argument to pass (just the pointer)
  * @return the new tid, < 0 if failed
  */
-s32 startThread(fThreadEntry entryPoint,void *arg) A_CHECKRET;
+int startThread(fThreadEntry entryPoint,void *arg) A_CHECKRET;
 
 /**
  * The syscall exit
  *
  * @param errorCode the error-code for the parent
  */
-void _exit(s32 exitCode) A_NORETURN;
+void _exit(int exitCode) A_NORETURN;
 
 /**
  * @return the cpu-cycles of the current thread
  */
-u64 getCycles(void);
+uint64_t getCycles(void);
 
 /**
  * Releases the CPU (reschedule)
@@ -91,7 +91,7 @@ void yield(void);
  * @param msecs the number of milliseconds to wait
  * @return 0 on success
  */
-s32 sleep(u32 msecs);
+int sleep(tTime msecs);
 
 /**
  * Puts the current thread to sleep until one of the given events occurrs. Note that you will
@@ -102,7 +102,7 @@ s32 sleep(u32 msecs);
  * @param objCount the number of objects
  * @return 0 on success and a negative error-code if failed
  */
-s32 waitm(sWaitObject *objects,u32 objCount);
+int waitm(sWaitObject *objects,size_t objCount);
 
 /**
  * Does the same as waitm(), but waits for only one object
@@ -111,7 +111,7 @@ s32 waitm(sWaitObject *objects,u32 objCount);
  * @param object the object to wait for
  * @return 0 on success and a negative error-code if failed
  */
-s32 wait(u32 events,tEvObj object);
+int wait(uint events,tEvObj object);
 
 /**
  * Notifies the given thread about the given events. If it was waiting for them, it will be
@@ -121,7 +121,7 @@ s32 wait(u32 events,tEvObj object);
  * @param events the events on which you want to wake up
  * @return 0 on success and a negative error-code if failed
  */
-s32 notify(tTid tid,u32 events);
+int notify(tTid tid,uint events);
 
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
@@ -129,7 +129,7 @@ s32 notify(tTid tid,u32 events);
  * @param tid the thread-id (0 = wait until all other threads died)
  * @return 0 on success
  */
-s32 join(tTid tid);
+int join(tTid tid);
 
 /**
  * Suspends a thread from the own process. That means it is blocked until resume() is called.
@@ -137,7 +137,7 @@ s32 join(tTid tid);
  * @param tid the thread-id
  * @return 0 on success
  */
-s32 suspend(tTid tid);
+int suspend(tTid tid);
 
 /**
  * Resumes a thread from the own process that has been suspended previously
@@ -145,7 +145,7 @@ s32 suspend(tTid tid);
  * @param tid the thread-id
  * @return 0 on success
  */
-s32 resume(tTid tid);
+int resume(tTid tid);
 
 /**
  * Sets the thread-value with given key to given value (for the current thread)
@@ -154,7 +154,7 @@ s32 resume(tTid tid);
  * @param val the value
  * @return true if successfull
  */
-bool setThreadVal(u32 key,void *val);
+bool setThreadVal(uint key,void *val);
 
 /**
  * Retrieves the value of the thread-value with given key (for the current thread)
@@ -162,7 +162,7 @@ bool setThreadVal(u32 key,void *val);
  * @param key the key
  * @return the value or NULL if not found
  */
-void *getThreadVal(u32 key);
+void *getThreadVal(uint key);
 
 /**
  * Aquires a process-local lock with ident. You can specify with the flags whether it should
@@ -172,7 +172,7 @@ void *getThreadVal(u32 key);
  * @param flags flags (LOCK_*)
  * @return 0 on success
  */
-s32 lock(u32 ident,u16 flags);
+int lock(uint ident,uint flags);
 
 /**
  * Aquires a process-local lock in user-space. If the given lock is in use, the process waits
@@ -189,7 +189,7 @@ void locku(tULock *lock);
  * @param ident to identify the lock
  * @return 0 on success
  */
-s32 lockg(u32 ident,u16 flags);
+int lockg(uint ident,uint flags);
 
 /**
  * First it releases the specified process-local lock. After that it blocks the thread until
@@ -210,7 +210,7 @@ s32 lockg(u32 ident,u16 flags);
  * @param ident the ident to unlock
  * @return 0 on success
  */
-s32 waitUnlock(u32 events,tEvObj object,u32 ident);
+int waitUnlock(uint events,tEvObj object,uint ident);
 
 /**
  * First it releases the specified global lock. After that it blocks the thread until one of the
@@ -231,7 +231,7 @@ s32 waitUnlock(u32 events,tEvObj object,u32 ident);
  * @param ident the ident to unlock
  * @return 0 on success
  */
-s32 waitUnlockg(u32 events,tEvObj object,u32 ident);
+int waitUnlockg(uint events,tEvObj object,uint ident);
 
 /**
  * Releases the process-local lock with given ident
@@ -239,7 +239,7 @@ s32 waitUnlockg(u32 events,tEvObj object,u32 ident);
  * @param ident to identify the lock
  * @return 0 on success
  */
-s32 unlock(u32 ident);
+int unlock(uint ident);
 
 /**
  * Releases the process-local lock that is locked in user-space
@@ -254,7 +254,7 @@ void unlocku(tULock *lock);
  * @param ident to identify the lock
  * @return 0 on success
  */
-s32 unlockg(u32 ident);
+int unlockg(uint ident);
 
 #ifdef __cplusplus
 }

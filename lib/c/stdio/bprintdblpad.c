@@ -22,12 +22,12 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bprintdblpad(FILE *f,double d,u8 pad,u16 flags,u32 precision) {
-	s32 count = 0;
-	s64 pre = (s64)d;
+int bprintdblpad(FILE *f,double d,uint pad,uint flags,uint precision) {
+	int count = 0;
+	llong pre = (llong)d;
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
-		u32 width = getlwidth(pre) + precision + 1;
+		size_t width = getlwidth(pre) + precision + 1;
 		if(pre > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
 		count += RETERR(bprintpad(f,pad - width,flags));

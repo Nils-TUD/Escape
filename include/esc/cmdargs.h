@@ -40,13 +40,15 @@ extern "C" {
 #define CA_ERR_MAX1_FREE			-6
 #define CA_ERR_NO_FREE				-7
 
-const char *ca_error(s32 err);
+/* TODO comments.. */
+
+const char *ca_error(int err);
 
 bool ca_hasHelp(void);
 
 const char **ca_getfree(void);
 
-s32 ca_parse(int argcnt,const char **args,u16 aflags,const char *fmt,...);
+int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...);
 
 /**
  * Checks whether the given arguments may be a kind of help-request. That means one of:

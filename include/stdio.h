@@ -46,7 +46,7 @@
 #	define EOF			-1
 #endif
 
-typedef s32 fpos_t;
+typedef int fpos_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,7 +75,7 @@ extern FILE *stderr;
  * @param filename the filename
  * @return 0 on success
  */
-s32 remove(const char *filename);
+int remove(const char *filename);
 
 /**
  * The rename function causes the file whose name is the string pointed to by old to be
@@ -87,7 +87,7 @@ s32 remove(const char *filename);
  * @param newn the new name
  * @return 0 on success
  */
-s32 rename(const char *old,const char *newn);
+int rename(const char *old,const char *newn);
 
 /**
  * The tmpfile function creates a temporary binary file that is different from any other
@@ -192,7 +192,7 @@ void setbuf(FILE *stream,char *buf);
  * @param size the size of the buffer
  * @return 0 on success
  */
-s32 setvbuf(FILE *stream,char *buf,s32 mode,size_t size);
+int setvbuf(FILE *stream,char *buf,int mode,size_t size);
 
 /**
  * The  function  fflush  forces a write of all buffered data for the given output
@@ -200,7 +200,7 @@ s32 setvbuf(FILE *stream,char *buf,s32 mode,size_t size);
  * @param stream the stream
  * @return 0 on success or EOF
  */
-s32 fflush(FILE *stream);
+int fflush(FILE *stream);
 
 /**
  * Closes the given stream
@@ -208,7 +208,7 @@ s32 fflush(FILE *stream);
  * @param stream the stream
  * @return 0 on success or EOF
  */
-s32 fclose(FILE *stream);
+int fclose(FILE *stream);
 
 /* --- Direct input/output --- */
 
@@ -248,7 +248,7 @@ size_t fwrite(const void *ptr,size_t size,size_t count,FILE *file);
  * @param file the file
  * @return the character or IO_EOF
  */
-s32 fgetc(FILE *stream);
+int fgetc(FILE *stream);
 
 /**
  * Reads max. <max> from <file> (or till EOF) into the given buffer
@@ -258,7 +258,7 @@ s32 fgetc(FILE *stream);
  * @param file the file
  * @return str on success or NULL
  */
-char *fgets(char *str,s32 max,FILE *file);
+char *fgets(char *str,size_t max,FILE *file);
 
 /**
  * The same as fgets(), except that it don't includes the newline into the string
@@ -268,7 +268,7 @@ char *fgets(char *str,s32 max,FILE *file);
  * @param file the file
  * @return str on success or NULL
  */
-char *fgetl(char *str,s32 max,FILE *f);
+char *fgetl(char *str,size_t max,FILE *f);
 
 /**
  * Prints the given character to <file>
@@ -277,7 +277,7 @@ char *fgetl(char *str,s32 max,FILE *f);
  * @param file the file
  * @return the character or IO_EOF if failed
  */
-s32 fputc(s32 c,FILE *file);
+int fputc(int c,FILE *file);
 
 /**
  * Prints the given string to <file>
@@ -286,7 +286,7 @@ s32 fputc(s32 c,FILE *file);
  * @param file the file
  * @return the number of written chars
  */
-s32 fputs(const char *str,FILE *file);
+int fputs(const char *str,FILE *file);
 
 /**
  * Reads one char from <file>
@@ -294,14 +294,14 @@ s32 fputs(const char *str,FILE *file);
  * @param file the file
  * @return the character or IO_EOF
  */
-s32 getc(FILE *file);
+int getc(FILE *file);
 
 /**
  * Reads one char from STDIN
  *
  * @return the character or IO_EOF
  */
-s32 getchar(void);
+int getchar(void);
 
 /**
  * Reads from STDIN (or till EOF) into the given buffer
@@ -318,7 +318,7 @@ char *gets(char *buffer);
  * @param file the file
  * @return the character or IO_EOF if failed
  */
-s32 putc(s32 c,FILE *file);
+int putc(int c,FILE *file);
 
 /**
  * Prints the given character to STDOUT
@@ -326,7 +326,7 @@ s32 putc(s32 c,FILE *file);
  * @param c the character
  * @return the character or IO_EOF if failed
  */
-s32 putchar(s32 c);
+int putchar(int c);
 
 /**
  * Prints the given string to STDOUT
@@ -334,7 +334,7 @@ s32 putchar(s32 c);
  * @param str the string
  * @return the number of written chars
  */
-s32 puts(const char *str);
+int puts(const char *str);
 
 /**
  * Puts the given character back to the buffer for <file>. If the buffer is full, the character
@@ -344,7 +344,7 @@ s32 puts(const char *str);
  * @param file the file
  * @return 0 on success or IO_EOF
  */
-s32 ungetc(s32 c,FILE *file);
+int ungetc(int c,FILE *file);
 
 /* --- File positioning --- */
 
@@ -358,7 +358,7 @@ s32 ungetc(s32 c,FILE *file);
  * @param pos where to store the position
  * @return 0 on success
  */
-s32 fgetpos(FILE *stream,fpos_t *pos);
+int fgetpos(FILE *stream,fpos_t *pos);
 
 /**
  * The fseek function sets the file position indicator for the stream pointed to by stream.
@@ -381,7 +381,7 @@ s32 fgetpos(FILE *stream,fpos_t *pos);
  * @param whence the type of seek (SEEK_*)
  * @return 0 on success
  */
-s32 fseek(FILE *stream,s32 offset,s32 whence);
+int fseek(FILE *stream,int offset,uint whence);
 
 /**
  * The fsetpos function sets the mbstate_t object (if any) and file position indicator
@@ -398,7 +398,7 @@ s32 fseek(FILE *stream,s32 offset,s32 whence);
  * @param pos the new position
  * @return 0 on success
  */
-s32 fsetpos(FILE *stream,const fpos_t *pos);
+int fsetpos(FILE *stream,const fpos_t *pos);
 
 /**
  * The ftell function obtains the current value of the file position indicator for the stream
@@ -412,7 +412,7 @@ s32 fsetpos(FILE *stream,const fpos_t *pos);
  * @param stream the stream
  * @return the current position
  */
-s32 ftell(FILE *stream);
+int ftell(FILE *stream);
 
 /**
  * The rewind function sets the file position indicator for the stream pointed to by
@@ -440,7 +440,7 @@ void clearerr(FILE *stream);
  * @param stream the stream
  * @return true if at EOF
  */
-s32 feof(FILE *stream);
+int feof(FILE *stream);
 
 /**
  * The ferror function tests the error indicator for the stream pointed to by stream.
@@ -448,7 +448,7 @@ s32 feof(FILE *stream);
  * @param stream the stream
  * @return nonzero if and only if the error indicator is set for stream.
  */
-s32 ferror(FILE *stream);
+int ferror(FILE *stream);
 
 /**
  * Prints "<msg>: <lastError>"
@@ -508,7 +508,7 @@ void perror(const char *msg);
  * @param fmt the format
  * @return the number of written chars
  */
-s32 printf(const char *fmt,...);
+int printf(const char *fmt,...);
 
 /**
  * Like printf(), but prints to <file>
@@ -517,7 +517,7 @@ s32 printf(const char *fmt,...);
  * @param fmt the format
  * @return the number of written chars
  */
-s32 fprintf(FILE *file,const char *fmt,...);
+int fprintf(FILE *file,const char *fmt,...);
 
 /**
  * Like printf(), but prints to the given string
@@ -526,7 +526,7 @@ s32 fprintf(FILE *file,const char *fmt,...);
  * @param fmt the format
  * @return the number of written chars
  */
-s32 sprintf(char *str,const char *fmt,...);
+int sprintf(char *str,const char *fmt,...);
 
 /**
  * Like sprintf(), but with max length
@@ -537,7 +537,7 @@ s32 sprintf(char *str,const char *fmt,...);
  * @return the number chars that have been written or would have been written if <n> were
  * 	large enough
  */
-s32 snprintf(char *str,size_t n,const char *fmt,...);
+int snprintf(char *str,size_t n,const char *fmt,...);
 
 /**
  * Like snprintf() but with given arguments
@@ -549,7 +549,7 @@ s32 snprintf(char *str,size_t n,const char *fmt,...);
  * @return the number chars that have been written or would have been written if <n> were
  * 	large enough
  */
-s32 vsnprintf(char *str,size_t n,const char *fmt,va_list ap);
+int vsnprintf(char *str,size_t n,const char *fmt,va_list ap);
 
 /**
  * Like printf(), but lets you specify the argument-list
@@ -558,7 +558,7 @@ s32 vsnprintf(char *str,size_t n,const char *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vprintf(const char *fmt,va_list ap);
+int vprintf(const char *fmt,va_list ap);
 
 /**
  * Like vprintf(), but prints to <file>
@@ -568,7 +568,7 @@ s32 vprintf(const char *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vfprintf(FILE *file,const char *fmt,va_list ap);
+int vfprintf(FILE *file,const char *fmt,va_list ap);
 
 /**
  * Like vprintf(), but prints to <str>
@@ -578,7 +578,7 @@ s32 vfprintf(FILE *file,const char *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vsprintf(char *str,const char *fmt,va_list ap);
+int vsprintf(char *str,const char *fmt,va_list ap);
 
 /**
  * Reads data in the specified format from STDIN. Supports:
@@ -598,7 +598,7 @@ s32 vsprintf(char *str,const char *fmt,va_list ap);
  * @param fmt the format
  * @return the number of matched variables
  */
-s32 scanf(const char *fmt,...);
+int scanf(const char *fmt,...);
 
 /**
  * Like scanf, but with specified arguments
@@ -607,7 +607,7 @@ s32 scanf(const char *fmt,...);
  * @param ap the argument-list
  * @return the number of matched variables
  */
-s32 vscanf(const char *fmt,va_list ap);
+int vscanf(const char *fmt,va_list ap);
 
 /**
  * Reads data in the specified format from <file>. See scanf().
@@ -616,7 +616,7 @@ s32 vscanf(const char *fmt,va_list ap);
  * @param fmt the format
  * @return the number of matched variables
  */
-s32 fscanf(FILE *file,const char *fmt,...);
+int fscanf(FILE *file,const char *fmt,...);
 
 /**
  * Like fscanf, but with specified arguments
@@ -626,7 +626,7 @@ s32 fscanf(FILE *file,const char *fmt,...);
  * @param ap the argument-list
  * @return the number of matched variables
  */
-s32 vfscanf(FILE *file,const char *fmt,va_list ap);
+int vfscanf(FILE *file,const char *fmt,va_list ap);
 
 /**
  * Reads data in the specified format from <str>. See scanf().
@@ -635,7 +635,7 @@ s32 vfscanf(FILE *file,const char *fmt,va_list ap);
  * @param fmt the format
  * @return the number of matched variables
  */
-s32 sscanf(const char *str,const char *fmt,...);
+int sscanf(const char *str,const char *fmt,...);
 
 /**
  * Like sscanf(), but with specified arguments
@@ -645,7 +645,7 @@ s32 sscanf(const char *str,const char *fmt,...);
  * @param ap the argument-list
  * @return the number of matched variables
  */
-s32 vsscanf(const char *str,const char *fmt,va_list ap);
+int vsscanf(const char *str,const char *fmt,va_list ap);
 
 /* --- Other --- */
 
@@ -668,7 +668,7 @@ tFD fileno(FILE *stream);
  * @param n3 will be set to the third argument (ESCC_ARG_UNUSED if unused)
  * @return the scanned escape-code (ESCC_*)
  */
-s32 freadesc(FILE *f,s32 *n1,s32 *n2,s32 *n3);
+int freadesc(FILE *f,int *n1,int *n2,int *n3);
 
 /**
  * Prints "<prefix>: <lastError>" to stderr
@@ -676,7 +676,7 @@ s32 freadesc(FILE *f,s32 *n1,s32 *n2,s32 *n3);
  * @param prefix the prefix of the message
  * @return the number of written chars
  */
-s32 printe(const char *prefix,...);
+int printe(const char *prefix,...);
 
 /**
  * The same as printe(), but with argument-pointer specified
@@ -685,7 +685,7 @@ s32 printe(const char *prefix,...);
  * @param ap the argument-pointer
  * @return the number of written chars
  */
-s32 vprinte(const char *prefix,va_list ap);
+int vprinte(const char *prefix,va_list ap);
 
 /**
  * The  isatty()  function  tests  whether  fd  is an open file descriptor
@@ -694,7 +694,7 @@ s32 vprinte(const char *prefix,va_list ap);
  * @param fd the file-descriptor
  * @return true if it referrs to a terminal
  */
-s32 isatty(s32 fd);
+int isatty(int fd);
 
 /**
  * The lseek() function repositions the offset of the open file associated with the file descriptor
@@ -708,7 +708,7 @@ s32 isatty(s32 fd);
  * @param whence the type of seek (SEEK_*)
  * @return the new position
  */
-off_t lseek(s32 fd,off_t offset,s32 whence);
+off_t lseek(int fd,off_t offset,uint whence);
 
 #ifdef __cplusplus
 }

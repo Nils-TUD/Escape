@@ -21,6 +21,6 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 ferror(FILE *stream) {
+int ferror(FILE *stream) {
 	return stream->error;
 }

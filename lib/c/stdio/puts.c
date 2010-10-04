@@ -20,8 +20,8 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-s32 puts(const char *str) {
-	s32 res = fputs(str,stdout);
+int puts(const char *str) {
+	int res = fputs(str,stdout);
 	if(res != EOF) {
 		if(putc('\n',stdout) != EOF)
 			res++;

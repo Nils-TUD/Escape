@@ -22,18 +22,18 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bprintulpad(FILE *f,u64 u,u8 base,u8 pad,u16 flags) {
-	s32 count = 0;
+int bprintulpad(FILE *f,ullong u,uint base,uint pad,uint flags) {
+	int count = 0;
 	/* pad left - spaces */
 	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
-		u32 width = getulwidth(u,base);
+		size_t width = getulwidth(u,base);
 		count += RETERR(bprintpad(f,pad - width,flags));
 	}
 	/* print base-prefix */
 	PRINT_UNSIGNED_PREFIX(count,f,base,flags);
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
-		u32 width = getulwidth(u,base);
+		size_t width = getulwidth(u,base);
 		count += RETERR(bprintpad(f,pad - width,flags));
 	}
 	/* print number */

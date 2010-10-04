@@ -29,7 +29,7 @@ DIR *opendir(const char *path) {
 
 bool readdir(DIR *dir,sDirEntry *e) {
 	if(fread(e,1,DIRE_SIZE,dir) > 0) {
-		u32 len = e->nameLen;
+		size_t len = e->nameLen;
 		/* ensure that the name is short enough */
 		if(len >= MAX_NAME_LEN)
 			return false;

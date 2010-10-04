@@ -30,36 +30,37 @@ extern "C" {
 #define VM86_MEM_PTR		1
 
 typedef struct {
-	u16 ax;
-	u16 bx;
-	u16 cx;
-	u16 dx;
-	u16 si;
-	u16 di;
-	u16 ds;
-	u16 es;
+	uint16_t ax;
+	uint16_t bx;
+	uint16_t cx;
+	uint16_t dx;
+	uint16_t si;
+	uint16_t di;
+	uint16_t ds;
+	uint16_t es;
 } sVM86Regs;
 
 typedef struct {
-	u8 type;
+	uchar type;
 	union {
 		/* copy it directly to a place in the process-space (dst) */
 		struct {
 			void *src;
-			u32 dst;
-			u32 size;
+			uintptr_t dst;
+			size_t size;
 		} direct;
 		/* copy result from *<srcPtr> (a pointer to a real-mode-address) to the process space */
 		struct {
 			void **srcPtr;
-			u32 result;
-			u32 size;
+			uintptr_t result;
+			size_t size;
 		} ptr;
 	} data;
 } sVM86Memarea;
 
 #define VM86_PAGE_SIZE		4096
-#define VM86_ADDR(src,dst)	(((u32)(dst) & ~(VM86_PAGE_SIZE - 1)) | ((u32)(src) & (VM86_PAGE_SIZE - 1)))
+#define VM86_ADDR(src,dst)	(((uintptr_t)(dst) & ~(VM86_PAGE_SIZE - 1)) | \
+		((uintptr_t)(src) & (VM86_PAGE_SIZE - 1)))
 #define VM86_OFF(src,dst)	(VM86_ADDR(src,dst) & 0xFFFF)
 #define VM86_SEG(src,dst)	((VM86_ADDR(src,dst) & 0xF0000) >> 4)
 
@@ -70,12 +71,12 @@ typedef struct {
  * You can also specify memory-areas which will be mapped at the requested real-mode-address,
  * so that it can be read to it and written from it.
  *
- * @param sVM86Regs* the registers
- * @param sVM86Memarea* the memareas (may be NULL)
- * @param u16 mem-area count
+ * @param regs the registers
+ * @param areas the memareas (may be NULL)
+ * @param areaCount mem-area count
  * @return 0 on success
  */
-s32 vm86int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount);
+int vm86int(uint16_t interrupt,sVM86Regs *regs,sVM86Memarea *areas,size_t areaCount);
 
 #ifdef __cplusplus
 }

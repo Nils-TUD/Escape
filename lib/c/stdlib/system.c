@@ -22,8 +22,8 @@
 #include <esc/io.h>
 #include <errors.h>
 
-s32 system(const char *cmd) {
-	s32 child;
+int system(const char *cmd) {
+	int child;
 	sExitState state;
 	/* check whether we have a shell */
 	if(cmd == NULL) {

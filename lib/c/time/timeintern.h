@@ -33,8 +33,8 @@
 #define DEF_YEAR				0
 #define LEAP_YEAR				1
 
-extern const u8 daysPerMonth[2][12];
+extern const uchar daysPerMonth[2][12];
 
-s32 readdate(struct tm *t);
+int readdate(struct tm *t);
 
 #endif /* TIMEINTERN_H_ */

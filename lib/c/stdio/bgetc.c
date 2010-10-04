@@ -21,7 +21,7 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bgetc(FILE *f) {
+int bgetc(FILE *f) {
 	sIOBuf *buf = &f->in;
 	if(f->eof || buf->buffer == NULL)
 		return EOF;
@@ -30,9 +30,9 @@ s32 bgetc(FILE *f) {
 		if(f == stdin)
 			fflush(stdout);
 		if(buf->pos >= buf->max) {
-			s32 count = RETRY(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
+			ssize_t count = RETRY(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
 			if(count < 0) {
-				f->error = count;
+				f->error = (int)count;
 				return EOF;
 			}
 			if(count == 0) {

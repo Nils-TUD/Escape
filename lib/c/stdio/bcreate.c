@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-FILE *bcreate(tFD fd,u8 flags,char *buffer,u32 size) {
+FILE *bcreate(tFD fd,uint flags,char *buffer,size_t size) {
 	FILE *f = (FILE*)malloc(sizeof(FILE));
 	if(!f)
 		return NULL;

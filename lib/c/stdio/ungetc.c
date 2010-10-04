@@ -21,7 +21,7 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 ungetc(s32 c,FILE *file) {
+int ungetc(int c,FILE *file) {
 	if(file->in.buffer == NULL || file->in.pos == 0)
 		return EOF;
 	file->eof = false;

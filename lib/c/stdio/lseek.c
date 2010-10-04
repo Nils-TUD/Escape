@@ -22,6 +22,6 @@
 #include <esc/io.h>
 #include <stdio.h>
 
-off_t lseek(s32 fd,off_t offset,s32 whence) {
+off_t lseek(int fd,off_t offset,uint whence) {
 	return seek(fd,offset,whence);
 }

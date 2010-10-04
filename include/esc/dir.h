@@ -40,7 +40,7 @@ extern "C" {
  * @param src your relative path
  * @return the number of written chars (without null-termination)
  */
-u32 abspath(char *dst,u32 dstSize,const char *src);
+	size_t abspath(char *dst,size_t dstSize,const char *src);
 
 /**
  * Removes the last path-component, if possible

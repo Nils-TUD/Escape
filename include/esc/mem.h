@@ -30,7 +30,7 @@ extern "C" {
 typedef struct {
 	tInodeNo ino;
 	tDevNo dev;
-	u32 modifytime;
+	tTime modifytime;
 } sBinDesc;
 
 /* the region-types */
@@ -57,7 +57,7 @@ typedef struct {
  * @param count the number of pages to add / remove
  * @return the *old* end of the data-segment. NULL indicates an error
  */
-void *changeSize(s32 count) A_CHECKRET;
+void *changeSize(ssize_t count) A_CHECKRET;
 
 /**
  * Adds a region to the current process at the appropriate virtual address (depending on
@@ -70,7 +70,7 @@ void *changeSize(s32 count) A_CHECKRET;
  * @param type the region-type (see REG_*)
  * @return the address of the region on success, NULL on failure
  */
-void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type);
+void *addRegion(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type);
 
 /**
  * Changes the protection of the region denoted by the given address.
@@ -79,7 +79,7 @@ void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type)
  * @param prot the new protection-setting (PROT_*)
  * @return 0 on success
  */
-s32 setRegProt(u32 addr,u8 prot);
+int setRegProt(uintptr_t addr,uint prot);
 
 /**
  * Maps <count> bytes at <phys> into the virtual user-space and returns the start-address.
@@ -88,7 +88,7 @@ s32 setRegProt(u32 addr,u8 prot);
  * @param count the number of bytes to map
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
-void *mapPhysical(u32 phys,u32 count) A_CHECKRET;
+void *mapPhysical(uintptr_t phys,size_t count) A_CHECKRET;
 
 /**
  * Allocates <count> bytes contiguous physical memory, <align>-bytes aligned.
@@ -98,7 +98,7 @@ void *mapPhysical(u32 phys,u32 count) A_CHECKRET;
  * @param aligh the alignment (in bytes)
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
-void *allocPhysical(u32 *phys,u32 count,u32 align) A_CHECKRET;
+void *allocPhysical(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
 
 /**
  * Creates a shared-memory region
@@ -107,7 +107,7 @@ void *allocPhysical(u32 *phys,u32 count,u32 align) A_CHECKRET;
  * @param byteCount the number of bytes
  * @return the address on success or NULL
  */
-void *createSharedMem(const char *name,u32 byteCount) A_CHECKRET;
+void *createSharedMem(const char *name,size_t byteCount) A_CHECKRET;
 
 /**
  * Joines a shared-memory region
@@ -123,7 +123,7 @@ void *joinSharedMem(const char *name) A_CHECKRET;
  * @param name the name
  * @return 0 on success
  */
-s32 leaveSharedMem(const char *name);
+int leaveSharedMem(const char *name);
 
 /**
  * Destroys a shared-memory region
@@ -131,7 +131,7 @@ s32 leaveSharedMem(const char *name);
  * @param name the name
  * @return 0 on success
  */
-s32 destroySharedMem(const char *name);
+int destroySharedMem(const char *name);
 
 #ifdef __cplusplus
 }

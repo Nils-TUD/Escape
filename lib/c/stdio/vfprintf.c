@@ -22,6 +22,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-s32 vfprintf(FILE *file,const char *fmt,va_list ap) {
+int vfprintf(FILE *file,const char *fmt,va_list ap) {
 	return vbprintf(file,fmt,ap);
 }

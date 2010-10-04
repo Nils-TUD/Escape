@@ -26,20 +26,20 @@
 
 typedef struct {
 	tTid tid;
-	u32 key;
+	uint key;
 	void *val;
 } sThreadVal;
 
 /**
  * Assembler-routines
  */
-extern s32 _lock(u32 ident,bool global,u16 flags);
-extern s32 _unlock(u32 ident,bool global);
-extern s32 _waitUnlock(sWaitObject *objects,u32 objCount,u32 ident,bool global);
+extern int _lock(uint ident,bool global,uint flags);
+extern int _unlock(uint ident,bool global);
+extern int _waitUnlock(sWaitObject *objects,size_t objCount,uint ident,bool global);
 
 static sSLList *tvalmap[HASHMAP_SIZE];
 
-bool setThreadVal(u32 key,void *val) {
+bool setThreadVal(uint key,void *val) {
 	tTid tid = gettid();
 	sSLList *list;
 	sThreadVal *tval = (sThreadVal*)malloc(sizeof(sThreadVal));
@@ -65,7 +65,7 @@ bool setThreadVal(u32 key,void *val) {
 	return true;
 }
 
-void *getThreadVal(u32 key) {
+void *getThreadVal(uint key) {
 	sSLNode *n;
 	tTid tid = gettid();
 	sSLList *list = tvalmap[tid % HASHMAP_SIZE];
@@ -79,14 +79,14 @@ void *getThreadVal(u32 key) {
 	return NULL;
 }
 
-s32 wait(u32 events,u32 object) {
+int wait(uint events,tEvObj object) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;
 	return waitm(&obj,1);
 }
 
-s32 lock(u32 ident,u16 flags) {
+int lock(uint ident,uint flags) {
 	/* nasm doesn't like "lock" as label... */
 	return _lock(ident,false,flags);
 }
@@ -103,25 +103,25 @@ void locku(tULock *l) {
 	);
 }
 
-s32 lockg(u32 ident,u16 flags) {
+int lockg(uint ident,uint flags) {
 	return _lock(ident,true,flags);
 }
 
-s32 waitUnlock(u32 events,tEvObj object,u32 ident) {
+int waitUnlock(uint events,tEvObj object,uint ident) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;
 	return _waitUnlock(&obj,1,ident,false);
 }
 
-s32 waitUnlockg(u32 events,tEvObj object,u32 ident) {
+int waitUnlockg(uint events,tEvObj object,uint ident) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;
 	return _waitUnlock(&obj,1,ident,true);
 }
 
-s32 unlock(u32 ident) {
+int unlock(uint ident) {
 	return _unlock(ident,false);
 }
 
@@ -129,6 +129,6 @@ void unlocku(tULock *l) {
 	*l = false;
 }
 
-s32 unlockg(u32 ident) {
+int unlockg(uint ident) {
 	return _unlock(ident,true);
 }

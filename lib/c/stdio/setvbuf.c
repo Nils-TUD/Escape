@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-s32 setvbuf(FILE *stream,char *buf,s32 mode,size_t size) {
+int setvbuf(FILE *stream,char *buf,int mode,size_t size) {
 	UNUSED(stream);
 	UNUSED(buf);
 	UNUSED(mode);

@@ -41,7 +41,7 @@
 
 /* execute <expr> and return if its < 0; otherwise you get the value of <expr> */
 #define RETERR(expr)		({ \
-		s32 __err = (expr); \
+		int __err = (expr); \
 		if(__err < 0) \
 			return __err; \
 		__err; \
@@ -75,43 +75,43 @@
 
 typedef struct {
 	tFD fd;
-	s32 pos;
-	s32 max;
+	int pos;
+	int max;
 	char *buffer;
 	tULock lck;
 } sIOBuf;
 
 typedef struct {
-	u8 eof;
-	s32 error;
+	uchar eof;
+	int error;
 	sIOBuf in;
 	sIOBuf out;
 } FILE;
 
-s32 bputc(FILE *f,char c);
-s32 bputs(FILE *f,const char *str);
-s32 bflush(FILE *f);
-s32 bprintpad(FILE *f,s32 count,u16 flags);
-s32 bprintn(FILE *f,s32 n);
-s32 bprintnpad(FILE *f,s32 n,u8 pad,u16 flags);
-s32 bprintl(FILE *f,s64 l);
-s32 bprintlpad(FILE *f,s64 n,u8 pad,u16 flags);
-s32 bprintu(FILE *f,u32 u,u8 base,const char *hexchars);
-s32 bprintupad(FILE *f,u32 u,u8 base,u8 pad,u16 flags);
-s32 bprintul(FILE *f,u64 u,u8 base,const char *hexchars);
-s32 bprintulpad(FILE *f,u64 u,u8 base,u8 pad,u16 flags);
-s32 bprintdbl(FILE *f,double d,u32 precision);
-s32 bprintdblpad(FILE *f,double d,u8 pad,u16 flags,u32 precision);
-s32 vbprintf(FILE *f,const char *fmt,va_list ap);
+int bputc(FILE *f,int c);
+int bputs(FILE *f,const char *str);
+int bflush(FILE *f);
+int bprintpad(FILE *f,size_t count,uint flags);
+int bprintn(FILE *f,int n);
+int bprintnpad(FILE *f,int n,uint pad,uint flags);
+int bprintl(FILE *f,llong l);
+int bprintlpad(FILE *f,llong n,uint pad,uint flags);
+int bprintu(FILE *f,uint u,uint base,const char *hexchars);
+int bprintupad(FILE *f,uint u,uint base,uint pad,uint flags);
+int bprintul(FILE *f,ullong u,uint base,const char *hexchars);
+int bprintulpad(FILE *f,ullong u,uint base,uint pad,uint flags);
+int bprintdbl(FILE *f,double d,uint precision);
+int bprintdblpad(FILE *f,double d,uint pad,uint flags,uint precision);
+int vbprintf(FILE *f,const char *fmt,va_list ap);
 
-s32 bback(FILE *file);
-s32 bgetc(FILE *f);
-char *bgets(FILE *f,char *str,s32 size);
-s32 breadn(FILE *f,s32 *num,s32 length,char c);
-s32 breads(FILE *f,s32 length,char *str);
-s32 vbscanf(FILE *f,const char *fmt,va_list ap);
+int bback(FILE *file);
+int bgetc(FILE *f);
+char *bgets(FILE *f,char *str,size_t size);
+int breadn(FILE *f,int *num,size_t length,int c);
+int breads(FILE *f,size_t length,char *str);
+int vbscanf(FILE *f,const char *fmt,va_list ap);
 
-FILE *bcreate(tFD fd,u8 flags,char *buffer,u32 size);
+FILE *bcreate(tFD fd,uint flags,char *buffer,size_t size);
 
 extern const char *hexCharsBig;
 extern const char *hexCharsSmall;

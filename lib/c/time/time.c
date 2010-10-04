@@ -24,7 +24,7 @@
 time_t time(time_t *timer) {
 	time_t ts;
 	struct tm t;
-	s32 res = readdate(&t);
+	int res = readdate(&t);
 	if(res < 0)
 		return 0;
 	ts = mktime(&t);

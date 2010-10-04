@@ -21,8 +21,8 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bprintpad(FILE *f,s32 count,u16 flags) {
-	s32 x = 0;
+int bprintpad(FILE *f,size_t count,uint flags) {
+	int x = 0;
 	char c = flags & FFL_PADZEROS ? '0' : ' ';
 	while(count-- > 0) {
 		RETERR(bputc(f,c));

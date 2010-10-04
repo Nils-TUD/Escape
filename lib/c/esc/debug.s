@@ -21,7 +21,7 @@
 
 .global cpu_rdtsc
 
-# u64 cpu_rdtsc(void);
+# uint64_t cpu_rdtsc(void);
 .type cpu_rdtsc, @function
 cpu_rdtsc:
 	rdtsc

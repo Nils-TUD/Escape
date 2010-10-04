@@ -21,11 +21,11 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-char *fgetl(char *str,s32 max,FILE *f) {
+char *fgetl(char *str,size_t max,FILE *f) {
 	char *res = str;
 	/* wait for one char left (\0) or a newline or error/EOF */
 	while(max-- > 1) {
-		s32 c = bgetc(f);
+		int c = bgetc(f);
 		if(c == EOF) {
 			if(str == res)
 				res = NULL;

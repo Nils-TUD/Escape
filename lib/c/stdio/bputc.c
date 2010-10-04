@@ -21,7 +21,7 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bputc(FILE *f,char c) {
+int bputc(FILE *f,int c) {
 	sIOBuf *buf = &f->out;
 	if(buf->buffer == NULL)
 		return EOF;
@@ -38,7 +38,5 @@ s32 bputc(FILE *f,char c) {
 			return EOF;
 		buf->buffer[buf->pos++] = c;
 	}
-	/* the cast is necessary to ensure that chars that are < 0 (e.g. german umlaute), won't be
-	 * converted to a s32 < 0, but to a s32 > 0 with the 8 LSB's filled */
-	return (u8)c;
+	return c;
 }

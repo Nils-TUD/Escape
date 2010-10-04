@@ -50,7 +50,7 @@
 
 /* prints the values in the general-purpose-, segment- and eflags-registers */
 #define PRINT_CURREGS(pad) \
-	u32 ___regs[REG_COUNT]; \
+	uint32_t ___regs[REG_COUNT]; \
 	GET_REGS(___regs); \
 	PRINT_REGS(___regs,pad);
 

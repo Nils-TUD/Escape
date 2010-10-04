@@ -60,7 +60,7 @@
 #define SIGTERM				SIG_TERM
 
 /* the signature */
-typedef void (*fSignal)(s32);
+typedef void (*fSignal)(int);
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,7 +73,7 @@ extern "C" {
  * @param handler the handler-function
  * @return 0 on success
  */
-s32 setSigHandler(tSig signal,fSignal handler) A_CHECKRET;
+int setSigHandler(tSig signal,fSignal handler) A_CHECKRET;
 
 /**
  * Sends the given signal to all process (that have announced a handler)
@@ -81,7 +81,7 @@ s32 setSigHandler(tSig signal,fSignal handler) A_CHECKRET;
  * @param signal the signal
  * @return 0 on success
  */
-s32 sendSignal(tSig signal) A_CHECKRET;
+int sendSignal(tSig signal) A_CHECKRET;
 
 /**
  * Sends the given signal to given process (interrupts can't be sended)
@@ -90,7 +90,7 @@ s32 sendSignal(tSig signal) A_CHECKRET;
  * @param signal the signal
  * @return 0 on success
  */
-s32 sendSignalTo(tPid pid,tSig signal) A_CHECKRET;
+int sendSignalTo(tPid pid,tSig signal) A_CHECKRET;
 
 /**
  * The  signal  system call installs a new signal handler for#
@@ -103,7 +103,7 @@ s32 sendSignalTo(tPid pid,tSig signal) A_CHECKRET;
  * @param handler the new handler-function
  * @return the previous handler-function
  */
-fSignal signal(s32 sig,fSignal handler);
+fSignal signal(int sig,fSignal handler);
 
 /**
  * raise()  sends  a  signal  to  the current process.  It is
@@ -112,7 +112,7 @@ fSignal signal(s32 sig,fSignal handler);
  * @param sig the signal
  * @return zero on success
  */
-s32 raise(s32 sig);
+int raise(int sig);
 
 #ifdef __cplusplus
 }

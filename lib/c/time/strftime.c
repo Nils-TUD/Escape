@@ -37,7 +37,7 @@ static const char *abrMonthNames[] = {
 	"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
 };
 
-const u8 daysPerMonth[2][12] = {
+const uchar daysPerMonth[2][12] = {
 	/* DEF_YEAR */	{31,28,31,30,31,30,31,31,30,31,30,31},
 	/* LEAP_YEAR */	{31,29,31,30,31,30,31,31,30,31,30,31}
 };

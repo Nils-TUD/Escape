@@ -20,6 +20,6 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-s32 putc(s32 c,FILE *file) {
+int putc(int c,FILE *file) {
 	return fputc(c,file);
 }

@@ -20,14 +20,14 @@
 #include <esc/common.h>
 #include <stdlib.h>
 
-s32 abs(s32 n) {
+int abs(int n) {
 	return n < 0 ? -n : n;
 }
 
-s32 labs(s32 n) {
+long labs(long n) {
 	return n < 0 ? -n : n;
 }
 
-s64 llabs(s64 n) {
+llong llabs(llong n) {
 	return n < 0 ? -n : n;
 }

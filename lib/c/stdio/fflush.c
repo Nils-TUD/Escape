@@ -21,6 +21,6 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 fflush(FILE *stream) {
+int fflush(FILE *stream) {
 	return bflush(stream);
 }

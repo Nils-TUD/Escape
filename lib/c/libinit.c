@@ -36,7 +36,7 @@ typedef struct {
 void __libc_init(void);
 
 static tULock exitLock = 0;
-static s16 exitFuncCount = 0;
+static size_t exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 
 /**
@@ -72,7 +72,7 @@ void __cxa_finalize(void *d) {
 	UNUSED(d);
 	/* if we're the last thread, call the exit-functions */
 	if(getThreadCount() == 1) {
-		s16 i;
+		ssize_t i;
 		for(i = exitFuncCount - 1; i >= 0; i--)
 			exitFuncs[i].f(exitFuncs[i].p);
 	}

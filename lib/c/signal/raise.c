@@ -21,6 +21,6 @@
 #include <esc/proc.h>
 #include <signal.h>
 
-s32 raise(s32 sig) {
+int raise(int sig) {
 	return sendSignalTo(getpid(),sig);
 }

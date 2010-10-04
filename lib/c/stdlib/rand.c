@@ -23,19 +23,19 @@
 
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
 static tULock randLock = 0;
-static u32 randa = 1103515245;
-static u32 randc = 12345;
-static u32 lastRand = 0;
+static uint randa = 1103515245;
+static uint randc = 12345;
+static uint lastRand = 0;
 
-s32 rand(void) {
-	s32 res;
+int rand(void) {
+	int res;
 	locku(&randLock);
 	lastRand = randa * lastRand + randc;
-	res = (s32)((u32)(lastRand / 65536) % 32768);
+	res = (int)((uint)(lastRand / 65536) % 32768);
 	unlocku(&randLock);
 	return res;
 }
 
-void srand(u32 seed) {
+void srand(uint seed) {
 	lastRand = seed;
 }

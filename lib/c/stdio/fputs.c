@@ -21,6 +21,6 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 fputs(const char *str,FILE *file) {
+int fputs(const char *str,FILE *file) {
 	return bputs(file,str);
 }

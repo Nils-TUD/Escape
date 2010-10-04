@@ -38,20 +38,20 @@ bool is_dir(const char *path) {
 	return MODE_IS_DIR(info.mode);
 }
 
-s32 sendRecvMsgData(tFD fd,tMsgId id,const void *data,u32 size) {
+ssize_t sendRecvMsgData(tFD fd,tMsgId id,const void *data,size_t size) {
 	tMsgId mid;
 	sMsg msg;
-	s32 res;
+	int res;
 	if(data)
 		memcpy(msg.data.d,data,size);
 	if((res = send(fd,id,data,size)) < 0)
 		return res;
 	if((res = receive(fd,&mid,&msg,sizeof(msg))) < 0)
 		return res;
-	return (s32)msg.args.arg1;
+	return (ssize_t)msg.args.arg1;
 }
 
-s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size) {
+ssize_t sendMsgData(tFD fd,tMsgId id,const void *data,size_t size) {
 	sMsg msg;
 	if(size > sizeof(msg.data.d))
 		return ERR_NOT_ENOUGH_MEM;
@@ -59,39 +59,39 @@ s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size) {
 	return send(fd,id,&msg,sizeof(msg.data));
 }
 
-s32 recvMsgData(tFD fd,tMsgId id,void *data,u32 size) {
+ssize_t recvMsgData(tFD fd,tMsgId id,void *data,size_t size) {
 	sMsg msg;
-	s32 res;
+	ssize_t res;
 	if((res = send(fd,id,NULL,0)) < 0)
 		return res;
 	if((res = RETRY(receive(fd,NULL,&msg,sizeof(msg)))) < 0)
 		return res;
-	res = (s32)msg.data.arg1;
-	if(res > (s32)size)
+	res = (ssize_t)msg.data.arg1;
+	if(res > (ssize_t)size)
 		res = size;
 	if(res > 0)
 		memcpy(data,msg.data.d,res);
 	return res;
 }
 
-s32 vrecvMsgData(tFD fd,tMsgId id,void *data,u32 size,u32 argc,...) {
+ssize_t vrecvMsgData(tFD fd,tMsgId id,void *data,size_t size,size_t argc,...) {
 	sMsg msg;
-	s32 res;
+	ssize_t res;
 	va_list ap;
 	va_start(ap,argc);
-	msg.args.arg1 = argc >= 1 ? va_arg(ap,u32) : 0;
-	msg.args.arg2 = argc >= 2 ? va_arg(ap,u32) : 0;
-	msg.args.arg3 = argc >= 3 ? va_arg(ap,u32) : 0;
-	msg.args.arg4 = argc >= 4 ? va_arg(ap,u32) : 0;
-	msg.args.arg5 = argc >= 5 ? va_arg(ap,u32) : 0;
-	msg.args.arg6 = argc >= 6 ? va_arg(ap,u32) : 0;
+	msg.args.arg1 = argc >= 1 ? va_arg(ap,uint) : 0;
+	msg.args.arg2 = argc >= 2 ? va_arg(ap,uint) : 0;
+	msg.args.arg3 = argc >= 3 ? va_arg(ap,uint) : 0;
+	msg.args.arg4 = argc >= 4 ? va_arg(ap,uint) : 0;
+	msg.args.arg5 = argc >= 5 ? va_arg(ap,uint) : 0;
+	msg.args.arg6 = argc >= 6 ? va_arg(ap,uint) : 0;
 	va_end(ap);
 	if((res = send(fd,id,&msg,sizeof(msg.args))) < 0)
 		return res;
 	if((res = RETRY(receive(fd,NULL,&msg,sizeof(msg)))) < 0)
 		return res;
-	res = (s32)msg.data.arg1;
-	if(res > (s32)size)
+	res = (ssize_t)msg.data.arg1;
+	if(res > (ssize_t)size)
 		res = size;
 	if(res > 0)
 		memcpy(data,msg.data.d,res);

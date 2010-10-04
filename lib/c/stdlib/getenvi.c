@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdlib.h>
 
-char *getenvi(u32 index) {
+char *getenvi(size_t index) {
 	static char name[MAX_NAME_LEN];
 	if(getenvito(name,sizeof(name),index) >= 0)
 		return name;

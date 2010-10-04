@@ -21,8 +21,8 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bprintn(FILE *f,s32 n) {
-	s32 c = 0;
+int bprintn(FILE *f,int n) {
+	int c = 0;
 	if(n < 0) {
 		RETERR(bputc(f,'-'));
 		n = -n;

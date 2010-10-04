@@ -22,6 +22,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-s32 vfscanf(FILE *file,const char *fmt,va_list ap) {
+int vfscanf(FILE *file,const char *fmt,va_list ap) {
 	return vbscanf(file,fmt,ap);
 }

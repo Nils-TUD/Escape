@@ -24,15 +24,15 @@
 int __cxa_atexit(void (*f)(void *),void *p,void *d);
 void __cxa_finalize(void *d);
 
-s32 atexit(fExitFunc func) {
+int atexit(fExitFunc func) {
 	return __cxa_atexit(func,NULL,NULL);
 }
 
-void exit(s32 status) {
+void exit(int status) {
 	__cxa_finalize(NULL);
 	_exit(status);
 }
 
-void _Exit(s32 status) {
+void _Exit(int status) {
 	_exit(status);
 }

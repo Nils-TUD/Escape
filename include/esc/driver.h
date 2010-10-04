@@ -52,7 +52,7 @@ extern "C" {
  * @param flags what functions do you want to implement (DRV_*) ?
  * @return the file-desc if successfull, < 0 if an error occurred
  */
-tFD regDriver(const char *name,u32 flags) A_CHECKRET;
+tFD regDriver(const char *name,uint flags) A_CHECKRET;
 
 /**
  * Fetches the client-id from the given file-descriptor
@@ -86,7 +86,7 @@ tFD getClient(tFD fd,tInodeNo cid) A_CHECKRET;
  * @param flags the flags
  * @return the file-descriptor for the communication with the client
  */
-tFD getWork(tFD *fds,u32 fdCount,tFD *drv,tMsgId *mid,void *msg,u32 size,u8 flags) A_CHECKRET;
+tFD getWork(tFD *fds,size_t fdCount,tFD *drv,tMsgId *mid,void *msg,size_t size,uint flags) A_CHECKRET;
 
 #ifdef __cplusplus
 }

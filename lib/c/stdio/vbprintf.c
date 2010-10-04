@@ -23,21 +23,20 @@
 #include <string.h>
 #include <stdarg.h>
 
-s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
+int vbprintf(FILE *f,const char *fmt,va_list ap) {
 	char c,b,pad;
 	char *s;
-	s32 *ptr;
-	s32 n;
-	u32 u;
-	s64 l;
-	u64 ul;
+	int *ptr;
+	int n;
+	uint u;
+	llong l;
+	ullong ul;
 	double d;
 	float fl;
 	bool readFlags;
-	u16 flags;
-	s16 precision;
-	u8 width,base;
-	s32 count = 0;
+	uint flags,width,base;
+	int precision;
+	int count = 0;
 
 	while(1) {
 		/* wait for a '%' */
@@ -76,7 +75,7 @@ s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 					fmt++;
 					break;
 				case '*':
-					pad = (u8)va_arg(ap, u32);
+					pad = va_arg(ap, uint);
 					fmt++;
 					break;
 				default:
@@ -126,12 +125,12 @@ s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 			case 'd':
 			case 'i':
 				if(flags & FFL_LONGLONG) {
-					l = va_arg(ap, u32);
-					l |= ((s64)va_arg(ap, s32)) << 32;
+					l = va_arg(ap, uint);
+					l |= ((llong)va_arg(ap, int)) << 32;
 					count += RETERR(bprintlpad(f,l,pad,flags));
 				}
 				else {
-					n = va_arg(ap, s32);
+					n = va_arg(ap, int);
 					if(flags & FFL_SHORT)
 						n &= 0xFFFF;
 					count += RETERR(bprintnpad(f,n,pad,flags));
@@ -140,7 +139,7 @@ s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 
 			/* pointer */
 			case 'p':
-				u = va_arg(ap, u32);
+				u = va_arg(ap, uint);
 				flags |= FFL_PADZEROS;
 				pad = 9;
 				count += RETERR(bprintupad(f,u >> 16,16,pad - 5,flags));
@@ -151,7 +150,7 @@ s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 
 			/* number of chars written so far */
 			case 'n':
-				ptr = va_arg(ap, s32*);
+				ptr = va_arg(ap, int*);
 				*ptr = count;
 				break;
 
@@ -179,12 +178,12 @@ s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 				if(c == 'X')
 					flags |= FFL_CAPHEX;
 				if(flags & FFL_LONGLONG) {
-					ul = va_arg(ap, u32);
-					ul |= ((u64)va_arg(ap, u32)) << 32;
+					ul = va_arg(ap, uint);
+					ul |= ((ullong)va_arg(ap, uint)) << 32;
 					count += RETERR(bprintulpad(f,ul,base,pad,flags));
 				}
 				else {
-					u = va_arg(ap, u32);
+					u = va_arg(ap, uint);
 					if(flags & FFL_SHORT)
 						u &= 0xFFFF;
 					count += RETERR(bprintupad(f,u,base,pad,flags));
@@ -196,7 +195,7 @@ s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 				b = 0;
 				s = va_arg(ap, char*);
 				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
-					width = precision == -1 ? strlen(s) : (u32)precision;
+					width = precision == -1 ? strlen(s) : (uint)precision;
 					count += RETERR(bprintpad(f,pad - width,flags));
 				}
 				if(precision != -1) {
@@ -213,7 +212,7 @@ s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 
 			/* character */
 			case 'c':
-				b = (char)va_arg(ap, u32);
+				b = (char)va_arg(ap, uint);
 				RETERR(bputc(f,b));
 				count++;
 				break;

@@ -23,7 +23,7 @@
 
 void dirname(char *path) {
 	char *p;
-	u32 len = strlen(path);
+	size_t len = strlen(path);
 
 	p = path + len - 1;
 	/* remove last '/' */

@@ -35,7 +35,7 @@
 
 static char *getProcName(void);
 
-s32 errno = 0;
+int errno = 0;
 
 /**
  * Displays an error-message according to given format and arguments and appends ': <errmsg>' if
@@ -51,22 +51,23 @@ void error(const char *fmt,...) {
 	exit(EXIT_FAILURE);
 }
 
-u32 *getStackTrace(void) {
-	static u32 frames[MAX_STACK_DEPTH];
-	u32 i,end,start;
-	u32 *ebp;
-	u32 *frame = &frames[0];
+uintptr_t *getStackTrace(void) {
+	static uintptr_t frames[MAX_STACK_DEPTH];
+	uintptr_t end,start;
+	size_t i;
+	uint32_t *ebp;
+	uintptr_t *frame = &frames[0];
 	GET_REG("ebp",ebp);
 	/* TODO just temporary */
-	end = ((u32)ebp + (MAX_STACK_PAGES * PAGE_SIZE - 1)) & ~(MAX_STACK_PAGES * PAGE_SIZE - 1);
+	end = ((uintptr_t)ebp + (MAX_STACK_PAGES * PAGE_SIZE - 1)) & ~(MAX_STACK_PAGES * PAGE_SIZE - 1);
 	start = end - PAGE_SIZE * MAX_STACK_PAGES;
 
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* prevent page-fault */
-		if((u32)ebp < start || (u32)ebp >= end)
+		if((uintptr_t)ebp < start || (uintptr_t)ebp >= end)
 			break;
 		*frame = *(ebp + 1) - CALL_INSTR_SIZE;
-		ebp = (u32*)*ebp;
+		ebp = (uint32_t*)*ebp;
 		frame++;
 	}
 
@@ -76,7 +77,7 @@ u32 *getStackTrace(void) {
 }
 
 void printStackTrace(void) {
-	u32 *trace = getStackTrace();
+	uintptr_t *trace = getStackTrace();
 	char *name = getProcName();
 	debugf("Process %s - stack-trace:\n",name ? name : "???");
 	/* TODO maybe we should skip printStackTrace here? */

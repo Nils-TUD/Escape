@@ -39,9 +39,9 @@ extern "C" {
  * Gets the value of a kernel-configuration
  *
  * @param id the id of the config-value (CONF_*)
- * @return s32 the value or the negative error-code
+ * @return the value or the negative error-code
  */
-s32 getConf(u32 id);
+int getConf(uint id);
 
 #ifdef __cplusplus
 }

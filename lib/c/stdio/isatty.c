@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-s32 isatty(s32 fd) {
+int isatty(int fd) {
 	/* TODO to be implemented */
 	UNUSED(fd);
 	return 0;

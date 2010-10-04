@@ -22,8 +22,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-s32 fclose(FILE *stream) {
-	s32 res = 0;
+int fclose(FILE *stream) {
+	int res = 0;
 	fflush(stream);
 	if(stream->in.fd >= 0)
 		close(stream->in.fd);

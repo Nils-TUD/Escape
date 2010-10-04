@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-extern u64 cpu_rdtsc(void);
+extern uint64_t cpu_rdtsc(void);
 
 /**
  * Starts the timer, i.e. reads the current cpu-cycle count for this thread
@@ -39,7 +39,7 @@ void dbg_startUTimer(void);
  *
  * @param prefix the prefix to print
  */
-void dbg_stopUTimer(char *prefix);
+void dbg_stopUTimer(const char *prefix);
 
 /**
  * Starts the timer (cpu_rdtsc())
@@ -51,7 +51,7 @@ void dbg_startTimer(void);
  *
  * @param prefix the prefix for the output
  */
-void dbg_stopTimer(char *prefix);
+void dbg_stopTimer(const char *prefix);
 
 /**
  * Just intended for debugging. May be used for anything :)
@@ -66,7 +66,7 @@ void debug(void);
  * @param addr the start-address
  * @param byteCount the number of bytes
  */
-void dumpBytes(void *addr,u32 byteCount);
+void dumpBytes(const void *addr,size_t byteCount);
 
 /**
  * Prints <dwordCount> dwords at <addr>
@@ -74,7 +74,7 @@ void dumpBytes(void *addr,u32 byteCount);
  * @param addr the start-address
  * @param dwordCount the number of dwords
  */
-void dumpDwords(void *addr,u32 dwordCount);
+void dumpDwords(const void *addr,size_t dwordCount);
 
 /**
  * Prints <num> elements each <elsize> big of <array>
@@ -83,7 +83,7 @@ void dumpDwords(void *addr,u32 dwordCount);
  * @param num the number of elements
  * @param elsize the size of each element
  */
-void dumpArray(void *array,u32 num,u32 elsize);
+void dumpArray(const void *array,size_t num,size_t elsize);
 
 /**
  * Prints <byteCount> bytes at <addr> with debugf
@@ -91,7 +91,7 @@ void dumpArray(void *array,u32 num,u32 elsize);
  * @param addr the start-address
  * @param byteCount the number of bytes
  */
-void debugBytes(void *addr,u32 byteCount);
+void debugBytes(const void *addr,size_t byteCount);
 
 /**
  * Prints <dwordCount> dwords at <addr> with debugf
@@ -99,7 +99,7 @@ void debugBytes(void *addr,u32 byteCount);
  * @param addr the start-address
  * @param dwordCount the number of dwords
  */
-void debugDwords(void *addr,u32 dwordCount);
+void debugDwords(const void *addr,size_t dwordCount);
 
 /**
  * Prints the given char
@@ -137,14 +137,14 @@ void debugf(const char *fmt, ...);
  * @param n the number
  * @param base the base
  */
-void debugUint(u32 n,u8 base);
+void debugUint(uint n,uint base);
 
 /**
  * Prints the given integer in base 10
  *
  * @param n the number
  */
-void debugInt(s32 n);
+void debugInt(int n);
 
 /**
  * Prints the given string

@@ -20,6 +20,6 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-s32 getc(FILE *file) {
+int getc(FILE *file) {
 	return fgetc(file);
 }

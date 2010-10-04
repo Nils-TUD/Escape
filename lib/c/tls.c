@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 static tULock tlsLock;
-static u32 *tlsCopy = NULL;
+static uint *tlsCopy = NULL;
 
 /**
  * TODO: Actually this is not exact the model described in doc/thread-local-storage.pdf.
@@ -44,15 +44,15 @@ static u32 *tlsCopy = NULL;
  */
 
 /* make gcc happy */
-u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize);
+uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize);
 
-u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
+uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize) {
 	if(tlsSize) {
-		u32 i;
+		size_t i;
 		locku(&tlsLock);
 		/* create copy if not already done */
 		if(tlsCopy == NULL) {
-			tlsCopy = (u32*)malloc(tlsSize);
+			tlsCopy = (uint*)malloc(tlsSize);
 			assert(tlsCopy);
 			memcpy(tlsCopy,tlsStart,tlsSize);
 		}
@@ -62,7 +62,7 @@ u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
 		for(i = 0; i < tlsSize - 1; i++)
 			tlsStart[i] = tlsCopy[i];
 		/* put pointer to TCB in TCB */
-		tlsStart[tlsSize - 1] = (u32)(tlsStart + tlsSize - 1);
+		tlsStart[tlsSize - 1] = (uint)(tlsStart + tlsSize - 1);
 		unlocku(&tlsLock);
 	}
 	return entryPoint;

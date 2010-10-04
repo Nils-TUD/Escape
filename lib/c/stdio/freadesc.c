@@ -22,8 +22,8 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 freadesc(FILE *f,s32 *n1,s32 *n2,s32 *n3) {
-	u32 i;
+int freadesc(FILE *f,int *n1,int *n2,int *n3) {
+	size_t i;
 	char ec,escape[MAX_ESCC_LENGTH] = {0};
 	const char *escPtr = (const char*)escape;
 	for(i = 0; i < MAX_ESCC_LENGTH - 1 && (ec = RETERR(bgetc(f))) != ']'; i++)

@@ -21,8 +21,8 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 bprintu(FILE *f,u32 u,u8 base,const char *hexchars) {
-	s32 c = 0;
+int bprintu(FILE *f,uint u,uint base,const char *hexchars) {
+	int c = 0;
 	if(u >= base)
 		c += RETERR(bprintu(f,u / base,base,hexchars));
 	RETERR(bputc(f,hexchars[(u % base)]));

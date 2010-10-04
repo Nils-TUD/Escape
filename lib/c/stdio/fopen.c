@@ -26,7 +26,7 @@
 FILE *fopen(const char *filename,const char *mode) {
 	char c;
 	tFD fd;
-	u8 flags = 0;
+	uint flags = 0;
 	FILE *f = NULL;
 
 	/* parse mode */

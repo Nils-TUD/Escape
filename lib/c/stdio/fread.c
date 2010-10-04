@@ -25,14 +25,14 @@
 
 size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
 	sIOBuf *buf = &file->in;
-	s32 res = 1; /* for reading from buffer something > 0 */
+	int res = 1; /* for reading from buffer something > 0 */
 	size_t rem = size * count;
 	char *cptr = (char*)ptr;
 	if(buf->fd < 0 || file->eof)
 		return 0;
 	/* at first, read from the buffer, if there is something left */
 	if(buf->pos < buf->max) {
-		size_t amount = MIN(rem,(u32)(buf->max - buf->pos));
+		size_t amount = MIN(rem,(size_t)(buf->max - buf->pos));
 		memcpy(cptr,buf->buffer + buf->pos,amount);
 		buf->pos += amount;
 		cptr += amount;
@@ -48,7 +48,7 @@ size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
 	else if(rem > 0) {
 		res = RETRY(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
 		if(res > 0) {
-			size_t amount = MIN((u32)res,rem);
+			size_t amount = MIN((size_t)res,rem);
 			memcpy(cptr,file->in.buffer,amount);
 			buf->pos = amount;
 			buf->max = res;

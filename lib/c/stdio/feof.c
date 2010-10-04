@@ -21,6 +21,6 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-s32 feof(FILE *stream) {
+int feof(FILE *stream) {
 	return stream->eof;
 }

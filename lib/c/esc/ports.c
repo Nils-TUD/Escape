@@ -20,22 +20,22 @@
 #include <esc/common.h>
 #include <esc/ports.h>
 
-s32 requestIOPort(u16 port) {
+int requestIOPort(uint16_t port) {
 	return requestIOPorts(port,1);
 }
 
-s32 releaseIOPort(u16 port) {
+int releaseIOPort(uint16_t port) {
 	return releaseIOPorts(port,1);
 }
 
-void inWordStr(u16 port,void *addr,u32 count) {
+void inWordStr(uint16_t port,void *addr,size_t count) {
 	__asm__ volatile (
 		"rep; insw"
 		: : "D"(addr), "c"(count), "d"(port)
 	);
 }
 
-void outWordStr(u16 port,const void *addr,u32 count) {
+void outWordStr(uint16_t port,const void *addr,size_t count) {
 	__asm__ volatile (
 		"rep; outsw"
 		: : "S"(addr), "c"(count), "d"(port)

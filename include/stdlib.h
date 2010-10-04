@@ -37,14 +37,17 @@ using namespace std;
 
 /* results of div, ldiv and lldiv */
 typedef struct {
-	s32 quot;
-	s32 rem;
+	int quot;
+	int rem;
 } div_t;
 typedef struct {
-	s64 quot;
-	s64 rem;
+	long quot;
+	long rem;
+} ldiv_t;
+typedef struct {
+	llong quot;
+	llong rem;
 } lldiv_t;
-typedef div_t ldiv_t;
 
 /* function that compares <a> and <b> and returns:
  * 	<a> <  <b>: negative value
@@ -176,13 +179,13 @@ ullong strtoull(const char *nptr,char **endptr,int base);
  *
  * @return the random number
  */
-s32 rand(void);
+int rand(void);
 
 /**
  * Srand seeds the random number generation function rand so it does not produce the same
  * sequence of numbers.
  */
-void srand(u32 seed);
+void srand(uint seed);
 
 /**
  * Allocates space for <nobj> elements, each <size> big, on the heap and memset's the area to 0.
@@ -224,7 +227,7 @@ void *realloc(void *addr,size_t size);
  *
  * @return the free space on the heap
  */
-u32 heapspace(void);
+size_t heapspace(void);
 
 #if DEBUGGING
 /**
@@ -245,14 +248,14 @@ void abort(void);
  * @param func the function
  * @return zero if the registration succeeds, nonzero if it fails
  */
-s32 atexit(void (*func)(void *));
+int atexit(void (*func)(void *));
 
 /**
  * Exit causes the program to end and supplies a status code to the calling environment.
  *
  * @param status the status-code
  */
-void exit(s32 status);
+void exit(int status);
 
 /**
  * The _Exit function causes normal program termination to occur and control to be
@@ -264,7 +267,7 @@ void exit(s32 status);
  *
  * @param status the status-code
  */
-void _Exit(s32 status);
+void _Exit(int status);
 
 /**
  * Fetches the value of the given environment-variable
@@ -274,7 +277,7 @@ void _Exit(s32 status);
  * @param name the environment-variable-name
  * @return 0 if successfull
  */
-extern s32 getenvto(char *value,u32 valSize,const char *name) A_CHECKRET;
+extern int getenvto(char *value,size_t valSize,const char *name) A_CHECKRET;
 
 /**
  * Returns the value of the given environment-variable
@@ -292,7 +295,7 @@ char *getenv(const char *name) A_CHECKRET;
  * @param index the index
  * @return 0 if successfull
  */
-extern s32 getenvito(char *name,u32 nameSize,u32 index);
+extern int getenvito(char *name,size_t nameSize,size_t index);
 
 /**
  * Returns the env-variable-name with given index
@@ -300,7 +303,7 @@ extern s32 getenvito(char *name,u32 nameSize,u32 index);
  * @param index the index
  * @return the value (statically allocated) or NULL
  */
-char *getenvi(u32 index) A_CHECKRET;
+char *getenvi(size_t index) A_CHECKRET;
 
 /**
  * Sets the environment-variable <name> to <value>.
@@ -309,7 +312,7 @@ char *getenvi(u32 index) A_CHECKRET;
  * @param value the value
  * @return 0 on success
  */
-extern s32 setenv(const char *name,const char *value);
+extern int setenv(const char *name,const char *value);
 
 /**
  * The system function is used to issue a command. Execution of your program will not
@@ -322,7 +325,7 @@ extern s32 setenv(const char *name,const char *value);
  * 	When the argument passed is NULL, the function returns a nonzero value if the command
  * 	processor is available, and zero otherwise.
  */
-s32 system(const char *cmd);
+int system(const char *cmd);
 
 /**
  * Searches the given key in the array pointed by base that is formed by num elements,
@@ -363,9 +366,9 @@ void qsort(void *base,size_t num,size_t size,fCompare cmp);
  * @param j the number
  * @return absolute value of <j>
  */
-s32 abs(s32 j);
-s32 labs(s32 j);
-s64 llabs(s64 j);
+int abs(int j);
+long labs(long j);
+llong llabs(llong j);
 
 /**
  * Returns the integral quotient and remainder of the division of numerator by denominator as a
@@ -375,9 +378,9 @@ s64 llabs(s64 j);
  * @param denominator the denominator
  * @return quotient and remainder
  */
-div_t div(s32 numer,s32 denom);
-ldiv_t ldiv(s32 numer,s32 denom);
-lldiv_t lldiv(s64 numer,s64 denom);
+div_t div(int numer,int denom);
+ldiv_t ldiv(long numer,long denom);
+lldiv_t lldiv(llong numer,llong denom);
 
 #ifdef __cplusplus
 }

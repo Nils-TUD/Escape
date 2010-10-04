@@ -21,6 +21,6 @@
 #include <esc/io.h>
 #include <stdio.h>
 
-s32 remove(const char *filename) {
+int remove(const char *filename) {
 	return unlink(filename);
 }

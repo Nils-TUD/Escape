@@ -24,12 +24,12 @@
 
 /* a rectangle */
 typedef struct {
-	s16 x;
-	s16 y;
-	u16 width;
-	u16 height;
+	int x;
+	int y;
+	ushort width;
+	ushort height;
 	/* TODO remove! */
-	u16 window;
+	ushort window;
 } sRectangle;
 
 #ifdef __cplusplus
@@ -50,7 +50,7 @@ void rectAdd(sRectangle *r1,sRectangle *r2);
  * @param y the y-coordinate
  * @return whether the rectangle contains the given point
  */
-bool rectContains(sRectangle *r,s16 x,s16 y);
+bool rectContains(sRectangle *r,int x,int y);
 
 /**
  * Splits <r1> by <r2> and creates an array of rectangles that are parts of <r1> and not
@@ -77,7 +77,7 @@ bool rectContains(sRectangle *r,s16 x,s16 y);
  * @param rectCount will be set to the number of created rects
  * @return the rectangle array, allocated on the heap; NULL if rectCount = 0
  */
-sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) A_CHECKRET;
+sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,size_t *rectCount) A_CHECKRET;
 
 /**
  * Calculates the intersection of <r1> and <r2>.

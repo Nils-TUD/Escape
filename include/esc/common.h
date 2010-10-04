@@ -38,7 +38,7 @@ extern "C" {
 /**
  * The last error-code
  */
-extern s32 errno;
+extern int errno;
 
 /**
  * Displays an error-message according to given format and arguments and appends ': <errmsg>' if
@@ -53,7 +53,7 @@ void error(const char *fmt,...) A_NORETURN;
  *
  * @return the trace (null-terminated)
  */
-u32 *getStackTrace(void);
+uintptr_t *getStackTrace(void);
 
 /**
  * Prints the stack-trace

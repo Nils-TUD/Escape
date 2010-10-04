@@ -21,6 +21,6 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-char *fgets(char *str,s32 max,FILE *file) {
+char *fgets(char *str,size_t max,FILE *file) {
 	return bgets(file,str,max);
 }

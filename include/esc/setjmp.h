@@ -23,16 +23,16 @@
 #include <esc/common.h>
 
 typedef struct {
-	u32 ebx;
-	u32 esp;
-	u32 edi;
-	u32 esi;
-	u32 ebp;
-	u32 eflags;
-	u32 eip;
+	uint32_t ebx;
+	uint32_t esp;
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t eflags;
+	uint32_t eip;
 } sJumpEnv;
 
-extern s32 setjmp(sJumpEnv *env);
-extern s32 longjmp(sJumpEnv *env,s32 val);
+extern int setjmp(sJumpEnv *env);
+extern int longjmp(sJumpEnv *env,int val);
 
 #endif /* SETJMP_H_ */

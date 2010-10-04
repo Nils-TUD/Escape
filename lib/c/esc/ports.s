@@ -26,28 +26,28 @@
 .global outWord
 .global outDWord
 
-# u8 inByte(u16 port)
+# uint8_t inByte(uint16_t port)
 .type inByte, @function
 inByte:
 	mov		4(%esp),%dx										# load port
 	in		%dx,%al												# read from port
 	ret
 
-# u16 inWord(u16 port)
+# uint16_t inWord(uint16_t port)
 .type inWord, @function
 inWord:
 	mov		4(%esp),%dx										# load port
 	in		%dx,%ax												# read from port
 	ret
 
-# u32 inDWord(u16 port)
+# uint32_t inDWord(uint16_t port)
 .type inDWord, @function
 inDWord:
 	mov		4(%esp),%dx										# load port
 	in		%dx,%eax											# read from port
 	ret
 
-# void outByte(u16 port,u8 val)
+# void outByte(uint16_t port,uint8_t val)
 .type outByte, @function
 outByte:
 	mov		4(%esp),%dx										# load port
@@ -55,7 +55,7 @@ outByte:
 	out		%al,%dx												# write to port
 	ret
 
-# void outWord(u16 port,u16 val)
+# void outWord(uint16_t port,uint16_t val)
 .type outWord, @function
 outWord:
 	mov		4(%esp),%dx										# load port
@@ -63,7 +63,7 @@ outWord:
 	out		%ax,%dx												# write to port
 	ret
 
-# void outDWord(u16 port,u32 val)
+# void outDWord(uint16_t port,uint32_t val)
 .type outDWord, @function
 outDWord:
 	mov		4(%esp),%dx										# load port

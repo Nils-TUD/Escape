@@ -43,7 +43,7 @@ static void vterm_newLine(sVTerm *vt);
  * @param vt the vterm
  * @param count the number of characters
  */
-static void vterm_delete(sVTerm *vt,u32 count);
+static void vterm_delete(sVTerm *vt,size_t count);
 
 /**
  * Handles an escape-code
@@ -56,14 +56,14 @@ static bool vterm_handleEscape(sVTerm *vt,char **str);
 
 static sMsg msg;
 
-void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
+void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	char c,*start = str;
 
 	/* are we waiting to finish an escape-code? */
 	if(vt->escapePos >= 0) {
-		u32 oldLen = vt->escapePos;
+		size_t oldLen = vt->escapePos;
 		char *escPtr = vt->escapeBuf;
-		u16 length = MIN((s32)len,MAX_ESCC_LENGTH - vt->escapePos - 1);
+		size_t length = MIN((int)len,MAX_ESCC_LENGTH - vt->escapePos - 1);
 		/* append the string */
 		memcpy(vt->escapeBuf + vt->escapePos,str,length);
 		vt->escapePos += length;
@@ -73,7 +73,7 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 		if(!vterm_handleEscape(vt,&escPtr)) {
 			/* if no space is left, quit and simply print the code */
 			if(vt->escapePos >= MAX_ESCC_LENGTH - 1) {
-				u32 i;
+				size_t i;
 				for(i = 0; i < MAX_ESCC_LENGTH; i++) {
 					if(vt->printToRL)
 						vterm_rlPutchar(vt,vt->escapeBuf[i]);
@@ -101,7 +101,7 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 			/* if the escape-code is incomplete, store what we have so far and wait for
 			 * further input */
 			if(!vterm_handleEscape(vt,&str)) {
-				u32 count = MIN(MAX_ESCC_LENGTH,len - (str - start));
+				size_t count = MIN(MAX_ESCC_LENGTH,len - (str - start));
 				memcpy(vt->escapeBuf,str,count);
 				vt->escapePos = count;
 				break;
@@ -126,7 +126,7 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 }
 
 void vterm_putchar(sVTerm *vt,char c) {
-	u32 i;
+	size_t i;
 
 	/* move all one line up, if necessary */
 	if(vt->row >= vt->rows) {
@@ -194,7 +194,7 @@ void vterm_putchar(sVTerm *vt,char c) {
 
 static void vterm_newLine(sVTerm *vt) {
 	char *src,*dst;
-	u32 i,count = (HISTORY_SIZE * vt->rows - vt->firstLine) * vt->cols * 2;
+	size_t i,count = (HISTORY_SIZE * vt->rows - vt->firstLine) * vt->cols * 2;
 	/* move one line back */
 	if(vt->firstLine > 0) {
 		dst = vt->buffer + ((vt->firstLine - 1) * vt->cols * 2);
@@ -219,10 +219,10 @@ static void vterm_newLine(sVTerm *vt) {
 	vt->upScroll++;
 }
 
-static void vterm_delete(sVTerm *vt,u32 count) {
+static void vterm_delete(sVTerm *vt,size_t count) {
 	if((!vt->readLine && vt->col >= count) || (vt->readLine && vt->rlBufPos >= count)) {
 		if(!vt->readLine || vt->echo) {
-			u32 i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
+			size_t i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
 			/* move the characters back in the buffer */
 			memmove(vt->buffer + i - 2 * count,vt->buffer + i,(vt->cols - vt->col) * 2);
 			vt->col -= count;
@@ -246,7 +246,7 @@ static void vterm_delete(sVTerm *vt,u32 count) {
 }
 
 static bool vterm_handleEscape(sVTerm *vt,char **str) {
-	s32 cmd,n1,n2,n3;
+	int cmd,n1,n2,n3;
 	cmd = escc_get((const char**)str,&n1,&n2,&n3);
 	if(cmd == ESCC_INCOMPLETE)
 		return false;
@@ -280,7 +280,7 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 		case ESCC_DEL_BACK:
 			if(vt->readLine) {
 				vt->rlBufPos = MIN(vt->rlBufSize - 1,vt->rlBufPos + n1);
-				vt->rlBufPos = MIN((u32)vt->cols - vt->rlStartCol,vt->rlBufPos);
+				vt->rlBufPos = MIN((size_t)vt->cols - vt->rlStartCol,vt->rlBufPos);
 				vt->col = vt->rlBufPos + vt->rlStartCol;
 			}
 			else

@@ -35,16 +35,16 @@
 /**
  * @return the current position in the readline-buffer
  */
-static u32 vterm_rlGetBufPos(sVTerm *vt);
+static size_t vterm_rlGetBufPos(sVTerm *vt);
 
 /**
  * Handles the given keycode for readline
  *
  * @return true if handled
  */
-static bool vterm_rlHandleKeycode(sVTerm *vt,u8 keycode);
+static bool vterm_rlHandleKeycode(sVTerm *vt,uchar keycode);
 
-void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
+void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	if((modifier & STATE_SHIFT) && vt->navigation) {
 		switch(keycode) {
 			case VK_PGUP:
@@ -80,7 +80,7 @@ void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 	/* send escape-code when we're not in readline-mode */
 	if(!vt->readLine) {
 		/* we want to treat the character as unsigned here and extend it to 32bit */
-		u32 code = *(u8*)&c;
+		uint code = *(uchar*)&c;
 		bool empty = rb_length(vt->inbuf) == 0;
 		char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
 		snprintf(escape,sizeof(escape),"\033[kc;%u;%u;%u]",code,keycode,modifier);
@@ -93,7 +93,7 @@ void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 }
 
 void vterm_rlFlushBuf(sVTerm *vt) {
-	u32 i = 0,len = rb_length(vt->inbuf);
+	size_t i = 0,len = rb_length(vt->inbuf);
 	while(vt->rlBufPos > 0) {
 		rb_write(vt->inbuf,vt->rlBuffer + i);
 		vt->rlBufPos--;
@@ -107,10 +107,11 @@ void vterm_rlFlushBuf(sVTerm *vt) {
 void vterm_rlPutchar(sVTerm *vt,char c) {
 	switch(c) {
 		case '\b': {
-			u32 bufPos = vterm_rlGetBufPos(vt);
+			size_t bufPos = vterm_rlGetBufPos(vt);
 			if(bufPos > 0) {
 				if(vt->echo) {
-					u32 i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
+					size_t i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2);
+					i += (vt->col * 2);
 					/* move the characters back in the buffer */
 					memmove(vt->buffer + i - 2,vt->buffer + i,(vt->cols - vt->col) * 2);
 					vt->col--;
@@ -138,7 +139,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 		default: {
 			bool flushed = false;
 			bool moved = false;
-			u32 bufPos = vterm_rlGetBufPos(vt);
+			size_t bufPos = vterm_rlGetBufPos(vt);
 
 			/* increase buffer size? */
 			if(vt->rlBuffer && bufPos >= vt->rlBufSize) {
@@ -170,7 +171,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 			/* echo character, if required */
 			if(vt->echo) {
 				if(moved && !flushed) {
-					u32 count = vt->rlBufPos - bufPos + 1;
+					size_t count = vt->rlBufPos - bufPos + 1;
 					char *copy = (char*)malloc(count * sizeof(char));
 					if(copy != NULL) {
 						/* print the end of the buffer again */
@@ -193,14 +194,14 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 	}
 }
 
-static u32 vterm_rlGetBufPos(sVTerm *vt) {
+static size_t vterm_rlGetBufPos(sVTerm *vt) {
 	if(vt->echo)
 		return vt->col - vt->rlStartCol;
 	else
 		return vt->rlBufPos;
 }
 
-static bool vterm_rlHandleKeycode(sVTerm *vt,u8 keycode) {
+static bool vterm_rlHandleKeycode(sVTerm *vt,uchar keycode) {
 	bool res = false;
 	switch(keycode) {
 		case VK_LEFT:

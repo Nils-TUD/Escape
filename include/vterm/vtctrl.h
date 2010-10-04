@@ -38,7 +38,7 @@ extern "C" {
  * The handler for shortcuts
  */
 typedef struct sVTerm sVTerm;
-typedef bool (*fHandleShortcut)(sVTerm *vt,u32 keycode,u8 modifier,char c);
+typedef bool (*fHandleShortcut)(sVTerm *vt,uchar keycode,uchar modifier,char c);
 typedef void (*fSetCursor)(sVTerm *vt);
 
 /* global configuration */
@@ -50,64 +50,64 @@ typedef struct {
 /* our vterm-state */
 struct sVTerm {
 	/* identification */
-	u8 index;
+	uchar index;
 	tFD sid;
 	char name[MAX_VT_NAME_LEN + 1];
 	/* function-pointers */
 	fHandleShortcut handlerShortcut;
 	fSetCursor setCursor;
 	/* number of cols/rows on the screen */
-	u8 cols;
-	u8 rows;
+	uchar cols;
+	uchar rows;
 	/* position (on the current page) */
-	u8 col;
-	u8 row;
+	uchar col;
+	uchar row;
 	/* colors */
-	u8 defForeground;
-	u8 defBackground;
-	u8 foreground;
-	u8 background;
+	uchar defForeground;
+	uchar defBackground;
+	uchar foreground;
+	uchar background;
 	/* whether this vterm is currently active */
-	u8 active;
+	uchar active;
 	/* file-descriptors */
 	tFD video;
 	tFD speaker;
 	/* the first line with content */
-	u16 firstLine;
+	ushort firstLine;
 	/* the line where row+col starts */
-	u16 currLine;
+	ushort currLine;
 	/* the first visible line */
-	u16 firstVisLine;
+	ushort firstVisLine;
 	/* a range that should be updated */
-	u16 upStart;
-	u16 upLength;
-	s16 upScroll;
+	ushort upStart;
+	ushort upLength;
+	short upScroll;
 	/* whether entered characters should be echo'd to screen */
-	u8 echo;
+	uchar echo;
 	/* whether the vterm should read until a newline occurrs */
-	u8 readLine;
+	uchar readLine;
 	/* whether navigation via up/down/pageup/pagedown is enabled */
-	u8 navigation;
+	uchar navigation;
 	/* whether all output should be printed into the readline-buffer */
-	u8 printToRL;
+	uchar printToRL;
 	/* whether all output should be printed to COM1 */
-	u8 printToCom1;
+	uchar printToCom1;
 	/* a backup of the screen; initially NULL */
 	char *screenBackup;
-	u16 backupCol;
-	u16 backupRow;
+	ushort backupCol;
+	ushort backupRow;
 	/* the buffer for the input-stream */
-	u8 inbufEOF;
+	uchar inbufEOF;
 	sRingBuf *inbuf;
 	/* the pid of the shell for ctrl+c notifications */
 	tPid shellPid;
 	/* the escape-state */
-	s32 escapePos;
+	int escapePos;
 	char escapeBuf[MAX_ESCC_LENGTH];
 	/* readline-buffer */
-	u8 rlStartCol;
-	u32 rlBufSize;
-	u32 rlBufPos;
+	uchar rlStartCol;
+	size_t rlBufSize;
+	size_t rlBufPos;
 	char *rlBuffer;
 	char *buffer;
 	char *titleBar;
@@ -153,7 +153,7 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd);
  * @param data the data
  * @return the result
  */
-s32 vterm_ctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data);
+int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data);
 
 /**
  * Scrolls the screen by <lines> up (positive) or down (negative)
@@ -161,7 +161,7 @@ s32 vterm_ctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data);
  * @param vt the vterm
  * @param lines the number of lines to move
  */
-void vterm_scroll(sVTerm *vt,s16 lines);
+void vterm_scroll(sVTerm *vt,int lines);
 
 /**
  * Marks the whole screen including title-bar dirty
@@ -177,7 +177,7 @@ void vterm_markScrDirty(sVTerm *vt);
  * @param start the start-position
  * @param length the number of bytes
  */
-void vterm_markDirty(sVTerm *vt,u16 start,u16 length);
+void vterm_markDirty(sVTerm *vt,ushort start,size_t length);
 
 /**
  * Releases resources

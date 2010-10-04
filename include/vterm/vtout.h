@@ -35,7 +35,7 @@ extern "C" {
  * @param len the string-length
  * @param resetRead whether readline-stuff should be reset
  */
-void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead);
+void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead);
 
 /**
  * Prints the given character to screen

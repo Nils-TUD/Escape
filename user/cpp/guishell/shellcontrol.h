@@ -36,7 +36,7 @@ using namespace gui;
 
 class ShellApplication;
 
-bool handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c);
+bool handleShortcut(sVTerm *vt,uchar keycode,uchar modifier,char c);
 
 class ShellControl : public Control {
 	friend class ShellApplication;

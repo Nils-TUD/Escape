@@ -41,7 +41,7 @@
 /**
  * Handles shortcuts
  */
-static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c);
+static bool vterm_handleShortcut(sVTerm *vt,uchar keycode,uchar modifier,char c);
 /**
  * Updates the cursor
  */
@@ -172,7 +172,7 @@ void vterm_update(sVTerm *vt) {
 	vt->upScroll = 0;
 }
 
-static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
+static bool vterm_handleShortcut(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	UNUSED(c);
 	if(modifier & STATE_CTRL) {
 		switch(keycode) {

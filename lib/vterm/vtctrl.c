@@ -55,8 +55,8 @@
 static bool reqPorts = false;
 
 bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
-	u32 i,len;
-	u8 color;
+	size_t i,len;
+	uchar color;
 	char *ptr,*s;
 	vt->cols = vidSize->width;
 	vt->rows = vidSize->height;
@@ -155,8 +155,8 @@ void vterm_destroy(sVTerm *vt) {
 	free(vt->rlBuffer);
 }
 
-s32 vterm_ctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
-	s32 res = 0;
+int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
+	int res = 0;
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
 			/* do it just once */
@@ -229,11 +229,11 @@ s32 vterm_ctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
 	return res;
 }
 
-void vterm_scroll(sVTerm *vt,s16 lines) {
-	u16 old = vt->firstVisLine;
+void vterm_scroll(sVTerm *vt,int lines) {
+	ushort old = vt->firstVisLine;
 	if(lines > 0) {
 		/* ensure that we don't scroll above the first line with content */
-		vt->firstVisLine = MAX(vt->firstLine,(s16)vt->firstVisLine - lines);
+		vt->firstVisLine = MAX(vt->firstLine,(int)vt->firstVisLine - lines);
 	}
 	else {
 		/* ensure that we don't scroll behind the last line */
@@ -248,13 +248,13 @@ void vterm_markScrDirty(sVTerm *vt) {
 	vterm_markDirty(vt,0,vt->cols * vt->rows * 2);
 }
 
-void vterm_markDirty(sVTerm *vt,u16 start,u16 length) {
+void vterm_markDirty(sVTerm *vt,ushort start,size_t length) {
 	if(vt->upLength == 0) {
 		vt->upStart = start;
 		vt->upLength = length;
 	}
 	else {
-		u16 oldstart = vt->upStart;
+		ushort oldstart = vt->upStart;
 		if(start < oldstart)
 			vt->upStart = start;
 		vt->upLength = MAX(oldstart + vt->upLength,start + length) - vt->upStart;

@@ -35,7 +35,7 @@ extern "C" {
  * @param modifier the modifiers
  * @param c the character
  */
-void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c);
+void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
 
 /**
  * Flushes the readline-buffer

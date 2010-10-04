@@ -55,7 +55,7 @@ const Color ShellControl::FGCOLOR = Color(0x0,0x0,0x0);
 const Color ShellControl::BORDER_COLOR = Color(0x0,0x0,0x0);
 const Color ShellControl::CURSOR_COLOR = Color(0x0,0x0,0x0);
 
-bool handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
+bool handleShortcut(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	UNUSED(c);
 	if(modifier & STATE_CTRL) {
 		switch(keycode) {

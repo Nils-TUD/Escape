@@ -46,7 +46,7 @@ sValue *ast_execIfStmt(sEnv *e,sIfStmt *n) {
 	return NULL;
 }
 
-void ast_printIfStmt(sIfStmt *s,u32 layer) {
+void ast_printIfStmt(sIfStmt *s,uint layer) {
 	printf("%*sif ( ",layer,"");
 	ast_printTree(s->cond,layer);
 	printf(" )\n");

@@ -34,7 +34,7 @@ sValue *ast_execExprStmt(sEnv *e,sExprStmt *n) {
 	return ast_execute(e,n->expr);
 }
 
-void ast_printExprStmt(sExprStmt *s,u32 layer) {
+void ast_printExprStmt(sExprStmt *s,uint layer) {
 	printf("%*s",layer,"");
 	ast_printTree(s->expr,layer);
 	printf(";\n");

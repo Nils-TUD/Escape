@@ -44,7 +44,7 @@ extern char *curLine;
  * @param argc the number of args
  * @param argv the arguments
  */
-void shell_init(s32 argc,const char **argv);
+void shell_init(int argc,const char **argv);
 
 /**
  * Prints the shell-prompt
@@ -65,7 +65,7 @@ tPid shell_getWaitingPid(void);
  * @param isFile whether <line> is a file
  * @return the result
  */
-s32 shell_executeCmd(char *line,bool isFile);
+int shell_executeCmd(char *line,bool isFile);
 
 /**
  * Reads a line
@@ -74,7 +74,7 @@ s32 shell_executeCmd(char *line,bool isFile);
  * @param max the maximum number of chars
  * @return the number of read chars, < 0 if an error occurred
  */
-s32 shell_readLine(char *buffer,u32 max);
+int shell_readLine(char *buffer,size_t max);
 
 /**
  * Handles the given keycode for the shell
@@ -85,7 +85,8 @@ s32 shell_readLine(char *buffer,u32 max);
  * @param cursorPos the current cursor-position in the buffer (may be changed)
  * @param charcount the number of read characters so far (may be changed)
  */
-bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos,u32 *charcount);
+bool shell_handleSpecialKey(char *buffer,int keycode,int modifier,size_t *cursorPos,
+		size_t *charcount);
 
 /**
  * Completes the current input, if possible
@@ -94,7 +95,7 @@ bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
  * @param cursorPos the cursor-position (may be changed)
  * @param length the number of entered characters yet (may be changed)
  */
-void shell_complete(char *line,u32 *cursorPos,u32 *length);
+void shell_complete(char *line,size_t *cursorPos,size_t *length);
 
 #ifdef __cplusplus
 }

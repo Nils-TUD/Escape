@@ -62,7 +62,7 @@ sValue *ast_execProperty(sEnv *e,sProperty *n) {
 	return res;
 }
 
-void ast_printProperty(sProperty *s,u32 layer) {
+void ast_printProperty(sProperty *s,uint layer) {
 	ast_printTree(s->expr,layer);
 	printf(".%s",s->name);
 	if(s->args) {

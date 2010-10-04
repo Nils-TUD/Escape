@@ -40,7 +40,7 @@ void ast_addDStrComp(sASTNode *n,sASTNode *expr) {
 sValue *ast_execDStrExpr(sEnv *e,sDStrExpr *n) {
 	sSLNode *node;
 	sValue *v;
-	u32 total = 0,len;
+	size_t total = 0,len;
 	char *part;
 	char *buf = NULL;
 	if(sll_length(n->list) == 0)
@@ -63,7 +63,7 @@ sValue *ast_execDStrExpr(sEnv *e,sDStrExpr *n) {
 	return val_createStr(buf);
 }
 
-void ast_printDStrExpr(sDStrExpr *s,u32 layer) {
+void ast_printDStrExpr(sDStrExpr *s,uint layer) {
 	sSLNode *n;
 	printf("\"");
 	for(n = sll_begin(s->list); n != NULL; n = n->next)

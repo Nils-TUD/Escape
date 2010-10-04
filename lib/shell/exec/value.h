@@ -33,7 +33,7 @@
 
 /* a value */
 typedef struct {
-	u8 type;
+	uchar type;
 	union {
 		tIntType intval;
 		char *strval;
@@ -139,7 +139,7 @@ bool val_isTrue(const sValue *v);
  * @param op the compare-op (CMP_OP_*)
  * @return the compare-result
  */
-sValue *val_cmp(const sValue *v1,const sValue *v2,u8 op);
+sValue *val_cmp(const sValue *v1,const sValue *v2,uchar op);
 
 /**
  * Returns the value at given index, if possible.

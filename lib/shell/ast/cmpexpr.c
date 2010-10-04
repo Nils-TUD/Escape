@@ -23,7 +23,7 @@
 #include "node.h"
 #include "../mem.h"
 
-sASTNode *ast_createCmpExpr(sASTNode *operand1,u8 operation,sASTNode *operand2) {
+sASTNode *ast_createCmpExpr(sASTNode *operand1,uint operation,sASTNode *operand2) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sCmpExpr *expr = node->data = emalloc(sizeof(sCmpExpr));
 	expr->operand1 = operand1;
@@ -42,7 +42,7 @@ sValue *ast_execCmpExpr(sEnv *e,sCmpExpr *n) {
 	return res;
 }
 
-void ast_printCmpExpr(sCmpExpr *s,u32 layer) {
+void ast_printCmpExpr(sCmpExpr *s,uint layer) {
 	ast_printTree(s->operand1,layer);
 	switch(s->operation) {
 		case CMP_OP_EQ:

@@ -52,7 +52,7 @@ sValue *ast_execIntExpr(sEnv *e,sIntExpr *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printIntExpr(sIntExpr *s,u32 layer);
+void ast_printIntExpr(sIntExpr *s,uint layer);
 
 /**
  * Destroys the given int-expression (should be called from ast_destroy() only!)

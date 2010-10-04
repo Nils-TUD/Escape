@@ -22,6 +22,6 @@
 
 #include <esc/common.h>
 
-s32 shell_cmdInclude(u32 argc,char **argv);
+int shell_cmdInclude(int argc,char **argv);
 
 #endif /* INCLUDE_H_ */

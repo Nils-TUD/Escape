@@ -59,7 +59,7 @@ sASTNode *ast_addCmdExpr(sASTNode *l,sASTNode *s);
  * @param s the list
  * @param layer the layer
  */
-void ast_printCmdExprList(sCmdExprList *s,u32 layer);
+void ast_printCmdExprList(sCmdExprList *s,uint layer);
 
 /**
  * Destroys the given command-expression-list (should be called from ast_destroy() only!)

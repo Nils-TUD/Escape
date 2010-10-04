@@ -60,7 +60,7 @@ static sValue *ast_readCmdOutput(tFD *pipe);
 /**
  * Waits for all processes of the current command
  */
-static s32 ast_waitForCmd(void);
+static int ast_waitForCmd(void);
 /**
  * Terminates all processes of the current command
  */
@@ -68,18 +68,18 @@ static void ast_termProcsOfCmd(void);
 /**
  * Signal-handler for processes in background
  */
-static void ast_sigChildHndl(s32 sig);
+static void ast_sigChildHndl(int sig);
 /**
  * Removes the given proc (called in sigChildHndl)
  */
-static void ast_removeProc(sRunningProc *p,s32 res);
+static void ast_removeProc(sRunningProc *p,int res);
 
 static bool setSigHdl = false;
-static s32 curResult = 0;
-static volatile u32 curWaitCount = 0;
+static int curResult = 0;
+static volatile size_t curWaitCount = 0;
 static tCmdId curCmd = 0;
-static s32 diedProc = -1;
-static s32 diedRes = -1;
+static int diedProc = -1;
+static int diedRes = -1;
 
 sASTNode *ast_createCommand(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
@@ -92,15 +92,15 @@ sASTNode *ast_createCommand(void) {
 }
 
 sValue *ast_execCommand(sEnv *e,sCommand *n) {
-	s32 res = 0;
+	int res = 0;
 	sSLNode *sub;
 	sExecSubCmd *cmd;
 	sShellCmd **shcmd = NULL;
-	u32 cmdNo,cmdCount;
+	size_t cmdNo,cmdCount;
 	sRedirFile *redirOut,*redirIn,*redirErr;
 	sRedirFd *redirFdesc;
 	char path[MAX_CMD_LEN] = APPS_DIR;
-	s32 pid,prevPid = -1;
+	int pid,prevPid = -1;
 	tFD pipeFds[2],prevPipe,errFd;
 	curCmd = run_requestId();
 
@@ -314,7 +314,7 @@ error:
 static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir) {
 	tFD fd;
 	/* redirection to file */
-	u8 flags = IO_READ;
+	uint flags = IO_READ;
 	sValue *fileExpr = ast_execute(e,redir->expr);
 	char *filename = val_getStr(fileExpr);
 	fd = open(filename,flags);
@@ -330,7 +330,7 @@ static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir) {
 static tFD ast_redirToFile(sEnv *e,sRedirFile *redir) {
 	tFD fd;
 	/* redirection to file */
-	u8 flags = IO_WRITE;
+	uint flags = IO_WRITE;
 	sValue *fileExpr = ast_execute(e,redir->expr);
 	char *filename = val_getStr(fileExpr);
 	if(redir->type == REDIR_OUTCREATE)
@@ -348,8 +348,8 @@ static tFD ast_redirToFile(sEnv *e,sRedirFile *redir) {
 }
 
 static void ast_destroyExecCmd(sExecSubCmd *cmd) {
-	u32 i;
 	if(cmd) {
+		size_t i;
 		for(i = 0; i < cmd->exprCount; i++)
 			efree(cmd->exprs[i]);
 		efree(cmd->exprs);
@@ -358,10 +358,10 @@ static void ast_destroyExecCmd(sExecSubCmd *cmd) {
 }
 
 static sValue *ast_readCmdOutput(tFD *pipeFds) {
-	u32 outSize = OUTBUF_SIZE;
-	u32 outPos = 0;
+	size_t outSize = OUTBUF_SIZE;
+	size_t outPos = 0;
 	char *outBuf;
-	s32 count;
+	ssize_t count;
 	/* read from the pipe and return it as string */
 	outBuf = (char*)malloc(OUTBUF_SIZE + 1);
 	while(outBuf && (count = read(pipeFds[0],outBuf + outPos,OUTBUF_SIZE)) > 0) {
@@ -380,8 +380,8 @@ static sValue *ast_readCmdOutput(tFD *pipeFds) {
 	return val_createInt(1);
 }
 
-static s32 ast_waitForCmd() {
-	s32 res;
+static int ast_waitForCmd() {
+	int res;
 	if(lang_isInterrupted())
 		ast_termProcsOfCmd();
 	else {
@@ -405,7 +405,7 @@ static s32 ast_waitForCmd() {
 
 static void ast_termProcsOfCmd(void) {
 	sRunningProc *p;
-	s32 i = 0;
+	int i = 0;
 	p = run_getXProcOf(curCmd,i);
 	while(p != NULL) {
 		/* send SIG_INTRPT */
@@ -418,11 +418,11 @@ static void ast_termProcsOfCmd(void) {
 	}
 }
 
-static void ast_sigChildHndl(s32 sig) {
+static void ast_sigChildHndl(int sig) {
 	UNUSED(sig);
 	sRunningProc *p;
 	sExitState state;
-	s32 res = waitChild(&state);
+	int res = waitChild(&state);
 	if(res < 0) {
 		printe("Unable to wait for child");
 		return;
@@ -439,7 +439,7 @@ static void ast_sigChildHndl(s32 sig) {
 	}
 }
 
-static void ast_removeProc(sRunningProc *p,s32 res) {
+static void ast_removeProc(sRunningProc *p,int res) {
 	if(p->cmdId == curCmd && curWaitCount > 0) {
 		curResult = res;
 		curWaitCount--;
@@ -464,7 +464,7 @@ void ast_addSubCmd(sASTNode *c,sASTNode *sub) {
 	esll_append(cmd->subList,sub);
 }
 
-void ast_printCommand(sCommand *s,u32 layer) {
+void ast_printCommand(sCommand *s,uint layer) {
 	sSLNode *n;
 	if(s->retOutput)
 		printf("`");

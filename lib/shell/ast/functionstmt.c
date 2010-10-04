@@ -44,7 +44,7 @@ sValue *ast_execFunctionStmt(sEnv *e,sFunctionStmt *n) {
 	return NULL;
 }
 
-s32 ast_callFunction(sFunctionStmt *n,s32 argc,const char **argv) {
+int ast_callFunction(sFunctionStmt *n,int argc,const char **argv) {
 	sEnv *ne = env_create(n->env);
 	env_addArgs(ne,argc,argv);
 	sValue *v = ast_execute(ne,n->stmts);
@@ -53,7 +53,7 @@ s32 ast_callFunction(sFunctionStmt *n,s32 argc,const char **argv) {
 	return 0;
 }
 
-void ast_printFunctionStmt(sFunctionStmt *n,u32 layer) {
+void ast_printFunctionStmt(sFunctionStmt *n,uint layer) {
 	printf("%*sfunction %s begin\n",layer,"",n->name);
 	ast_printTree(n->stmts,layer + 1);
 	printf("%*send\n",layer,"");

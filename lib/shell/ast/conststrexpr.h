@@ -53,7 +53,7 @@ sValue *ast_execConstStrExpr(sEnv *e,sConstStrExpr *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printConstStrExpr(sConstStrExpr *s,u32 layer);
+void ast_printConstStrExpr(sConstStrExpr *s,uint layer);
 
 /**
  * Destroys the given const-str-expression (should be called from ast_destroy() only!)

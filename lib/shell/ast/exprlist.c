@@ -49,7 +49,7 @@ sASTNode *ast_addExpr(sASTNode *l,sASTNode *e) {
 	return l;
 }
 
-void ast_printExprList(sExprList *s,u32 layer) {
+void ast_printExprList(sExprList *s,uint layer) {
 	sSLNode *n;
 	for(n = sll_begin(s->list); n != NULL; n = n->next) {
 		ast_printTree((sASTNode*)n->data,layer);

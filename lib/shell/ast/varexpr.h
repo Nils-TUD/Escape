@@ -53,7 +53,7 @@ sValue *ast_execVarExpr(sEnv *e,sVarExpr *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printVarExpr(sVarExpr *s,u32 layer);
+void ast_printVarExpr(sVarExpr *s,uint layer);
 
 /**
  * Destroys the given variable-expression (should be called from ast_destroy() only!)

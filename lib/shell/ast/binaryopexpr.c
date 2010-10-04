@@ -66,7 +66,7 @@ sValue *ast_execBinOpExpr(sEnv *e,sBinaryOpExpr *n) {
 	return res;
 }
 
-void ast_printBinOpExpr(sBinaryOpExpr *s,u32 layer) {
+void ast_printBinOpExpr(sBinaryOpExpr *s,uint layer) {
 	printf("(");
 	ast_printTree(s->operand1,layer);
 	printf(" %c ",s->operation);
@@ -80,8 +80,7 @@ void ast_destroyBinOpExpr(sBinaryOpExpr *n) {
 }
 
 static tIntType pow(tIntType a,tIntType b) {
-	s32 i;
-	tIntType res = 1;
+	tIntType i,res = 1;
 	for(i = 0; i < b; i++)
 		res *= a;
 	return res;

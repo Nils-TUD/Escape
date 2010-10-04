@@ -48,7 +48,7 @@ bool run_addProc(tCmdId cmdId,tPid pid) {
 	return false;
 }
 
-sRunningProc *run_getXProcOf(tCmdId cmdId,s32 i) {
+sRunningProc *run_getXProcOf(tCmdId cmdId,int i) {
 	sSLNode *n;
 	sRunningProc *p;
 	for(n = sll_begin(running); n != NULL; n = n->next) {

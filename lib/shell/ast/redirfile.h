@@ -28,7 +28,7 @@
 #define REDIR_OUTAPPEND		2
 
 typedef struct {
-	u8 type;
+	uchar type;
 	sASTNode *expr;
 } sRedirFile;
 
@@ -39,7 +39,7 @@ typedef struct {
  * @param type the redirect-type
  * @return the created node
  */
-sASTNode *ast_createRedirFile(sASTNode *expr,u8 type);
+sASTNode *ast_createRedirFile(sASTNode *expr,uchar type);
 
 /**
  * Prints this redirfile
@@ -47,7 +47,7 @@ sASTNode *ast_createRedirFile(sASTNode *expr,u8 type);
  * @param s the redirfile
  * @param layer the layer
  */
-void ast_printRedirFile(sRedirFile *s,u32 layer);
+void ast_printRedirFile(sRedirFile *s,uint layer);
 
 /**
  * Destroys the given redirfile (should be called from ast_destroy() only!)

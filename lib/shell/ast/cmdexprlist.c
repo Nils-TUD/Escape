@@ -46,7 +46,7 @@ sASTNode *ast_addCmdExpr(sASTNode *l,sASTNode *s) {
 	return l;
 }
 
-void ast_printCmdExprList(sCmdExprList *s,u32 layer) {
+void ast_printCmdExprList(sCmdExprList *s,uint layer) {
 	sSLNode *n;
 	for(n = sll_begin(s->list); n != NULL; n = n->next) {
 		ast_printTree((sASTNode*)n->data,layer);

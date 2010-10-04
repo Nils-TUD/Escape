@@ -27,13 +27,13 @@
 
 #define INIT_SIZE		16
 
-static void vec_grow(sVector *v,u32 reqSize);
+static void vec_grow(sVector *v,size_t reqSize);
 
-sVector *vec_create(u32 elSize) {
+sVector *vec_create(size_t elSize) {
 	return vec_createSize(elSize,INIT_SIZE);
 }
 
-sVector *vec_createSize(u32 elSize,u32 count) {
+sVector *vec_createSize(size_t elSize,size_t count) {
 	sVector *v = (sVector*)emalloc(sizeof(sVector));
 	v->_elSize = elSize;
 	v->_size = elSize * count;
@@ -49,7 +49,7 @@ sVector *vec_copy(const sVector *v) {
 	return cpy;
 }
 
-void *vec_get(sVector *v,u32 i) {
+void *vec_get(sVector *v,size_t i) {
 	assert(i < v->count);
 	return *(void**)((char*)v->_elements + i * v->_elSize);
 }
@@ -60,12 +60,12 @@ void vec_add(sVector *v,const void *p) {
 	v->count++;
 }
 
-void vec_set(sVector *v,u32 index,const void *p) {
+void vec_set(sVector *v,size_t index,const void *p) {
 	assert(index < v->count);
 	memcpy((char*)v->_elements + index * v->_elSize,p,v->_elSize);
 }
 
-void vec_insert(sVector *v,u32 index,const void *p) {
+void vec_insert(sVector *v,size_t index,const void *p) {
 	char *dst = (char*)v->_elements + v->_elSize * index;
 	assert(index <= v->count);
 	vec_grow(v,v->_elSize * (v->count + 1));
@@ -76,13 +76,13 @@ void vec_insert(sVector *v,u32 index,const void *p) {
 }
 
 void vec_removeObj(sVector *v,const void *p) {
-	s32 index = vec_find(v,p);
+	ssize_t index = vec_find(v,p);
 	if(index == -1)
 		return;
 	vec_remove(v,index,1);
 }
 
-void vec_remove(sVector *v,u32 start,u32 count) {
+void vec_remove(sVector *v,size_t start,size_t count) {
 	assert(start < v->count);
 	assert(start + count <= v->count && start + count >= start);
 	if(start + count < v->count) {
@@ -93,8 +93,8 @@ void vec_remove(sVector *v,u32 start,u32 count) {
 	v->count -= count;
 }
 
-s32 vec_find(sVector *v,const void *p) {
-	s32 i,count = v->count;
+ssize_t vec_find(sVector *v,const void *p) {
+	size_t i,count = v->count;
 	for(i = 0; i < count; i++) {
 		void *el = (char*)v->_elements + i * v->_elSize;
 		if(memcmp(p,el,v->_elSize) == 0)
@@ -105,7 +105,7 @@ s32 vec_find(sVector *v,const void *p) {
 
 void vec_destroy(sVector *v,bool freeElements) {
 	if(freeElements) {
-		s32 i,count = v->count;
+		size_t i,count = v->count;
 		for(i = 0; i < count; i++)
 			efree(*(void**)((char*)v->_elements + i * v->_elSize));
 	}
@@ -113,7 +113,7 @@ void vec_destroy(sVector *v,bool freeElements) {
 	efree(v);
 }
 
-static void vec_grow(sVector *v,u32 reqSize) {
+static void vec_grow(sVector *v,size_t reqSize) {
 	if(v->_size < reqSize) {
 		v->_size = MAX(v->_size * 2,reqSize);
 		v->_elements = erealloc(v->_elements,v->_size);
@@ -123,13 +123,13 @@ static void vec_grow(sVector *v,u32 reqSize) {
 #if DEBUGGING
 
 void vec_dbg_print(sVector *v) {
-	u32 i;
+	size_t i;
 	debugf("Vector @ %x (%d bytes, %d elements, %d bytes each)\n",v,v->_size,v->count,v->_elSize);
 	for(i = 0; i < v->count; i++) {
-		u32 j;
+		size_t j;
 		debugf("	");
-		for(j = 0; j < v->_elSize / sizeof(u32); j++)
-			debugf("%08x",*(u32*)((char*)v->_elements + v->_elSize * i + j * sizeof(u32)));
+		for(j = 0; j < v->_elSize / sizeof(uint); j++)
+			debugf("%08x",*(uint*)((char*)v->_elements + v->_elSize * i + j * sizeof(uint)));
 		debugf("\n");
 	}
 	debugf("\n");

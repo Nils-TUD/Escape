@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include "cd.h"
 
-s32 shell_cmdCd(u32 argc,char **argv) {
+int shell_cmdCd(int argc,char **argv) {
 	char path[MAX_PATH_LEN];
 	sFileInfo info;
 

@@ -24,7 +24,7 @@
 
 #define CMD_ID_ALL			0
 
-typedef u32 tCmdId;
+typedef uint tCmdId;
 
 typedef struct sRunningProc sRunningProc;
 struct sRunningProc {
@@ -61,7 +61,7 @@ bool run_addProc(tCmdId cmdId,tPid pid);
  * @param i the number
  * @return the process or NULL
  */
-sRunningProc *run_getXProcOf(tCmdId cmdId,s32 i);
+sRunningProc *run_getXProcOf(tCmdId cmdId,int i);
 
 /**
  * Searches for the running process with given id

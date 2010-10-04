@@ -22,14 +22,14 @@
 #include <string.h>
 #include "mem.h"
 
-void *emalloc(u32 size) {
+void *emalloc(size_t size) {
 	void *p = malloc(size);
 	if(!p)
 		error("Unable to allocate %d bytes",size);
 	return p;
 }
 
-void *erealloc(void *p,u32 size) {
+void *erealloc(void *p,size_t size) {
 	void *pn = realloc(p,size);
 	if(!pn)
 		error("Unable to realloc mem @ %x to %d bytes",p,size);
@@ -43,7 +43,7 @@ char *estrdup(const char *s) {
 	return dup;
 }
 
-char *estrndup(const char *s,u32 n) {
+char *estrndup(const char *s,size_t n) {
 	char *dup = strndup(s,n);
 	if(!dup)
 		error("Unable to duplicate string '%s'",s);

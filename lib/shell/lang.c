@@ -53,7 +53,7 @@ bool lang_isInterrupted(void) {
 }
 
 static void vlyyerror(YYLTYPE t,const char *s,va_list ap) {
-	s32 i;
+	ssize_t i;
 	if(t.first_line)
 		fprintf(stderr,"%s:%d: ",t.filename,t.first_line);
 	vfprintf(stderr,s,ap);

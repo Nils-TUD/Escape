@@ -47,7 +47,7 @@
 #define AST_EXPR_LIST			20
 #define AST_PROPERTY			21
 
-typedef u8 tASTType;
+typedef uchar tASTType;
 
 typedef struct sASTNode sASTNode;
 struct sASTNode {
@@ -61,7 +61,7 @@ struct sASTNode {
  * @param n the node to start with
  * @param layer the layer to start with (indention)
  */
-void ast_printTree(sASTNode *n,u32 layer);
+void ast_printTree(sASTNode *n,uint layer);
 
 /**
  * Executes the given node(-tree)

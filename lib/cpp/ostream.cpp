@@ -52,12 +52,12 @@ namespace std {
 		if(se) {
 			bool readFlags;
 			ios_base::fmtflags fflags;
-			s16 prec;
+			int prec;
 			char c,*str,b;
-			s32 n;
-			u32 u;
+			int n;
+			uint u;
 			double d;
-			u8 intsize,pad;
+			uint intsize,pad;
 
 			ios_base::fmtflags oldflags = ios_base::flags();
 			streamsize oldprec = ios_base::precision();
@@ -98,7 +98,7 @@ namespace std {
 								fmt++;
 								break;
 							case '*':
-								pad = (u8)va_arg(ap, u32);
+								pad = va_arg(ap, uint);
 								fmt++;
 								break;
 							default:
@@ -149,7 +149,7 @@ namespace std {
 						/* signed integer */
 						case 'd':
 						case 'i':
-							n = va_arg(ap, s32);
+							n = va_arg(ap, int);
 							if(fflags & FFL_SHORT)
 								n &= 0xFFFF;
 							writeSigned(n);
@@ -157,7 +157,7 @@ namespace std {
 
 						/* pointer */
 						case 'p':
-							u = va_arg(ap, u32);
+							u = va_arg(ap, uint);
 							// TODO
 							writeUnsigned(u);
 							break;
@@ -182,7 +182,7 @@ namespace std {
 									ios_base::setf(ios_base::uppercase);
 								ios_base::setf(ios_base::hex);
 							}
-							u = va_arg(ap, u32);
+							u = va_arg(ap, uint);
 							if(intsize & FFL_SHORT)
 								u &= 0xFFFF;
 							writeUnsigned(u);
@@ -196,7 +196,7 @@ namespace std {
 
 						/* character */
 						case 'c':
-							b = (char)va_arg(ap, u32);
+							b = (char)va_arg(ap, uint);
 							_sb->put(b);
 							break;
 

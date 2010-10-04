@@ -78,7 +78,7 @@ namespace std {
 		else
 			_name = string(apath.begin() + pos + 1,apath.end());
 		_parent = string(apath.begin(),apath.begin() + pos + 1);
-		s32 res = stat(apath.c_str(),&_info);
+		int res = stat(apath.c_str(),&_info);
 		if(res < 0)
 			throw io_exception("stat failed",res);
 	}

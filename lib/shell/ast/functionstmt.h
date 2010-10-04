@@ -57,7 +57,7 @@ sValue *ast_execFunctionStmt(sEnv *e,sFunctionStmt *n);
  * @param argv the arguments
  * @return the result
  */
-s32 ast_callFunction(sFunctionStmt *n,s32 argc,const char **argv);
+int ast_callFunction(sFunctionStmt *n,int argc,const char **argv);
 
 /**
  * Prints this function-statement
@@ -65,7 +65,7 @@ s32 ast_callFunction(sFunctionStmt *n,s32 argc,const char **argv);
  * @param s the list
  * @param layer the layer
  */
-void ast_printFunctionStmt(sFunctionStmt *n,u32 layer);
+void ast_printFunctionStmt(sFunctionStmt *n,uint layer);
 
 /**
  * Does nothing

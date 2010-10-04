@@ -57,7 +57,7 @@ sValue *ast_execForStmt(sEnv *e,sForStmt *n);
  * @param s the statement
  * @param layer the layer
  */
-void ast_printForStmt(sForStmt *s,u32 layer);
+void ast_printForStmt(sForStmt *s,uint layer);
 
 /**
  * Destroys the given for-statement (should be called from ast_destroy() only!)

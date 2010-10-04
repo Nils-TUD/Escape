@@ -28,14 +28,14 @@
 #define HISTORY_SIZE		30
 
 /* command history (ring buffer) */
-static s16 histWritePos = 0;
-static s16 histReadPos = -1;
-static u16 histSize = 0;
+static ssize_t histWritePos = 0;
+static ssize_t histReadPos = -1;
+static ssize_t histSize = 0;
 static char *history[HISTORY_SIZE] = {NULL};
 
 void shell_addToHistory(char *line) {
-	u32 len = strlen(line);
-	u16 lastPos = histWritePos == 0 ? HISTORY_SIZE - 1 : histWritePos - 1;
+	size_t len = strlen(line);
+	ssize_t lastPos = histWritePos == 0 ? HISTORY_SIZE - 1 : histWritePos - 1;
 	/* don't add an entry twice in a row and ignore empty lines */
 	if(*line == '\n' || (lastPos < histSize && strcmp(history[lastPos],line) == 0)) {
 		/* ensure that we start at the beginning on next histUp/histDown */
@@ -83,7 +83,7 @@ char *shell_histDown(void) {
 }
 
 void shell_histPrint(void) {
-	s32 i;
+	ssize_t i;
 	printf("History: (write=%d,read=%d,size=%d)\n",histWritePos,histReadPos,histSize);
 	for(i = 0; i < histSize; i++)
 		printf("%d: %s\n",i,history[i]);

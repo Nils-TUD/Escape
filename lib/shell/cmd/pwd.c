@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include "pwd.h"
 
-s32 shell_cmdPwd(u32 argc,char **argv) {
+int shell_cmdPwd(int argc,char **argv) {
 	char *path;
 	UNUSED(argc);
 	UNUSED(argv);

@@ -55,7 +55,7 @@ sValue *ast_execIfStmt(sEnv *e,sIfStmt *n);
  * @param s the statement
  * @param layer the layer
  */
-void ast_printIfStmt(sIfStmt *s,u32 layer);
+void ast_printIfStmt(sIfStmt *s,uint layer);
 
 /**
  * Destroys the given if-statement (should be called from ast_destroy() only!)

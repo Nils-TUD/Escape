@@ -38,7 +38,7 @@ sValue *ast_execConstStrExpr(sEnv *e,sConstStrExpr *n) {
 	return val_createStr(n->str);
 }
 
-void ast_printConstStrExpr(sConstStrExpr *s,u32 layer) {
+void ast_printConstStrExpr(sConstStrExpr *s,uint layer) {
 	UNUSED(layer);
 	printf("'%s'",s->str);
 }

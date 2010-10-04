@@ -29,7 +29,7 @@
  * @param size the number of bytes
  * @return the pointer to the memory
  */
-void *emalloc(u32 size);
+void *emalloc(size_t size);
 
 /**
  * Calls realloc() and exits if no more memory is available
@@ -38,7 +38,7 @@ void *emalloc(u32 size);
  * @param size the number of bytes
  * @return the pointer to the memory
  */
-void *erealloc(void *p,u32 size);
+void *erealloc(void *p,size_t size);
 
 /**
  * Calls strdup() and exits if no more memory is available
@@ -55,7 +55,7 @@ char *estrdup(const char *s);
  * @param n the number of characters to copy at max.
  * @return the copy
  */
-char *estrndup(const char *s,u32 n);
+char *estrndup(const char *s,size_t n);
 
 /**
  * Calls sll_create() and exits if no more mem is available

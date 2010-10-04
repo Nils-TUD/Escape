@@ -47,7 +47,7 @@ sValue *ast_execWhileStmt(sEnv *e,sWhileStmt *n) {
 	return NULL;
 }
 
-void ast_printWhileStmt(sWhileStmt *s,u32 layer) {
+void ast_printWhileStmt(sWhileStmt *s,uint layer) {
 	printf("%*swhile ( ",layer,"");
 	ast_printTree(s->condExpr,layer);
 	printf(" ) do\n");

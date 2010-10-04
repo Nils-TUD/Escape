@@ -41,7 +41,7 @@
  * @param size the current size
  * @return the commands
  */
-static sShellCmd **compl_incrArray(sShellCmd **array,u32 pos,u32 *size);
+static sShellCmd **compl_incrArray(sShellCmd **array,size_t pos,size_t *size);
 
 /* our commands */
 static sShellCmd commands[] = {
@@ -52,9 +52,9 @@ static sShellCmd commands[] = {
 	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC), {"include"	}, shell_cmdInclude	,-1},
 };
 
-sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool searchPath) {
-	u32 arraySize,arrayPos;
-	u32 i,len,cmdlen,start,matchLen,pathLen;
+sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,bool searchPath) {
+	size_t arraySize,arrayPos;
+	size_t i,len,cmdlen,start,matchLen,pathLen;
 	DIR *dd;
 	sDirEntry entry;
 	sShellCmd *cmd;
@@ -251,7 +251,7 @@ void compl_free(sShellCmd **matches) {
 	}
 }
 
-static sShellCmd **compl_incrArray(sShellCmd **array,u32 pos,u32 *size) {
+static sShellCmd **compl_incrArray(sShellCmd **array,size_t pos,size_t *size) {
 	if(pos >= *size) {
 		*size = *size + MATCHES_ARRAY_INC;
 		array = (sShellCmd**)realloc(array,*size * sizeof(sShellCmd*));

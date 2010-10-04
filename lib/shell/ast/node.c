@@ -42,7 +42,7 @@
 #include "property.h"
 #include "../mem.h"
 
-void ast_printTree(sASTNode *n,u32 layer) {
+void ast_printTree(sASTNode *n,uint layer) {
 	switch(n->type) {
 		case AST_ASSIGN_STMT:
 			ast_printAssignExpr((sAssignExpr*)n->data,layer);

@@ -29,7 +29,7 @@
 static sVector *val_cloneArray(const sValue *v);
 static void val_destroyValue(sValue *v);
 static void val_validateRange(tIntType vallen,tIntType *start,tIntType *count);
-static bool val_doCmp(const sValue *v1,const sValue *v2,u8 op);
+static bool val_doCmp(const sValue *v1,const sValue *v2,uchar op);
 static void val_ensureArray(sValue *array);
 static char *val_arr2Str(const sValue *v,bool brackets);
 
@@ -85,7 +85,7 @@ sValue *val_clone(const sValue *v) {
 static sVector *val_cloneArray(const sValue *v) {
 	/* make a clone of the vector and elements */
 	if(v->type == VAL_TYPE_ARRAY) {
-		u32 i;
+		size_t i;
 		sVector *clone = vec_copy(v->v.vec);
 		for(i = 0; i < clone->count; i++) {
 			sValue *cpy = val_clone((sValue*)vec_get(clone,i));
@@ -233,14 +233,14 @@ bool val_isTrue(const sValue *v) {
 	return false;
 }
 
-sValue *val_cmp(const sValue *v1,const sValue *v2,u8 op) {
+sValue *val_cmp(const sValue *v1,const sValue *v2,uchar op) {
 	bool res = val_doCmp(v1,v2,op);
 	return val_createInt(res);
 }
 
-static bool val_doCmp(const sValue *v1,const sValue *v2,u8 op) {
-	u8 t1 = v1->type;
-	u8 t2 = v2->type;
+static bool val_doCmp(const sValue *v1,const sValue *v2,uchar op) {
+	uchar t1 = v1->type;
+	uchar t2 = v2->type;
 	tIntType diff;
 	assert(t1 != VAL_TYPE_FUNC && t2 != VAL_TYPE_FUNC);
 	/* first compute the difference; compare strings if both are strings
@@ -250,8 +250,8 @@ static bool val_doCmp(const sValue *v1,const sValue *v2,u8 op) {
 	else if(t1 == VAL_TYPE_INT && t2 == VAL_TYPE_INT)
 		diff = val_getInt(v1) - val_getInt(v2);
 	else if(t1 == VAL_TYPE_ARRAY && t2 == VAL_TYPE_ARRAY) {
-		u32 v1c = v1->v.vec->count;
-		u32 v2c = v2->v.vec->count;
+		size_t v1c = v1->v.vec->count;
+		size_t v2c = v2->v.vec->count;
 		/* arrays are equal if all elements are equal.
 		 * for all other operators: its true if a compare of one element-pair is true and false
 		 * otherwise. So e.g. ['a','b','c'] < ['b','b','c']
@@ -259,7 +259,7 @@ static bool val_doCmp(const sValue *v1,const sValue *v2,u8 op) {
 		if(v1c != v2c)
 			diff = v1c - v2c;
 		else {
-			u32 i,c = 0;
+			size_t i,c = 0;
 			for(i = 0; i < v1c; i++) {
 				bool res = val_doCmp(vec_get(v1->v.vec,i),vec_get(v2->v.vec,i),op);
 				if(res && op != CMP_OP_EQ)
@@ -300,7 +300,7 @@ sValue *val_index(sValue *array,const sValue *index) {
 	if(array->type != VAL_TYPE_ARRAY)
 		return NULL;
 	i = val_getInt(index);
-	if(i < 0 || i >= (s32)array->v.vec->count)
+	if(i < 0 || i >= (tIntType)array->v.vec->count)
 		return NULL;
 	return vec_get(array->v.vec,i);
 }
@@ -314,7 +314,7 @@ void val_append(sValue *array,const sValue *val) {
 void val_setIndex(sValue *array,const sValue *index,const sValue *val) {
 	tIntType i = val_getInt(index);
 	val_ensureArray(array);
-	while(i > (s32)array->v.vec->count) {
+	while(i > (tIntType)array->v.vec->count) {
 		sValue *zero = val_createInt(0);
 		vec_add(array->v.vec,&zero);
 	}
@@ -404,13 +404,13 @@ sVector *val_getArray(const sValue *v) {
 }
 
 static char *val_arr2Str(const sValue *v,bool brackets) {
-	u32 count = 0,size = 16;
+	size_t count = 0,size = 16;
 	char *str = (char*)emalloc(size);
-	u32 i,len = v->v.vec->count;
+	size_t i,len = v->v.vec->count;
 	if(brackets)
 		str[count++] = '[';
 	for(i = 0; i < len; i++) {
-		u32 slen;
+		size_t slen;
 		sValue *el = vec_get(v->v.vec,i);
 		char *elstr = val_getStr(el);
 		if(4 + count + (slen = strlen(elstr)) >= size) {

@@ -57,7 +57,7 @@ sValue *ast_execAssignExpr(sEnv *e,sAssignExpr *n) {
 	}
 }
 
-void ast_printAssignExpr(sAssignExpr *s,u32 layer) {
+void ast_printAssignExpr(sAssignExpr *s,uint layer) {
 	ast_printTree(s->var,layer);
 	if(s->hasIndex) {
 		printf("[");

@@ -26,11 +26,11 @@
 typedef struct {
 /* private: */
 	void *_elements;
-	u32 _size;			/* size of the memarea <elements> */
-	u32 _elSize;		/* size of one element */
+	size_t _size;			/* size of the memarea <elements> */
+	size_t _elSize;		/* size of one element */
 
 /* public: */
-	u32 count;			/* number of elements in the vector */
+	size_t count;			/* number of elements in the vector */
 } sVector;
 
 /**
@@ -39,7 +39,7 @@ typedef struct {
  * @param elSize the element-size
  * @return the vector
  */
-sVector *vec_create(u32 elSize);
+sVector *vec_create(size_t elSize);
 
 /**
  * Creates a new vector with given element-size and given initial size
@@ -48,7 +48,7 @@ sVector *vec_create(u32 elSize);
  * @param count the number of initial elements to reserve space for
  * @return the vector
  */
-sVector *vec_createSize(u32 elSize,u32 count);
+sVector *vec_createSize(size_t elSize,size_t count);
 
 /**
  * Creates a new vector from the given one, i.e. copies all elements
@@ -65,7 +65,7 @@ sVector *vec_copy(const sVector *v);
  * @param i the index
  * @return the element
  */
-void *vec_get(sVector *v,u32 i);
+void *vec_get(sVector *v,size_t i);
 
 /**
  * Adds the given element to the vector, i.e. the memory at <p> will be copied into the vector.
@@ -82,7 +82,7 @@ void vec_add(sVector *v,const void *p);
  * @param index the index
  * @param p the value
  */
-void vec_set(sVector *v,u32 index,const void *p);
+void vec_set(sVector *v,size_t index,const void *p);
 
 /**
  * Inserts the given element at the given index, i.e. the memory at <p> will be copied into the
@@ -92,7 +92,7 @@ void vec_set(sVector *v,u32 index,const void *p);
  * @param index the index
  * @param p the pointer to the element to insert
  */
-void vec_insert(sVector *v,u32 index,const void *p);
+void vec_insert(sVector *v,size_t index,const void *p);
 
 /**
  * Removes the given object from the vector, i.e. the memory at <p> will be compared with all
@@ -110,7 +110,7 @@ void vec_removeObj(sVector *v,const void *p);
  * @param start the start-position
  * @param count the number of elements to remove
  */
-void vec_remove(sVector *v,u32 start,u32 count);
+void vec_remove(sVector *v,size_t start,size_t count);
 
 /**
  * Searches for the given element in the vector, i.e. the memory at <p> will be compared with all
@@ -120,7 +120,7 @@ void vec_remove(sVector *v,u32 start,u32 count);
  * @param p the pointer to the element to find
  * @return the index or -1 if not found
  */
-s32 vec_find(sVector *v,const void *p);
+ssize_t vec_find(sVector *v,const void *p);
 
 /**
  * Destroys the given vector

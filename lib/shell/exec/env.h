@@ -52,7 +52,7 @@ sEnv *env_create(sEnv *parent);
  * @param count the arg-count
  * @param args the arguments
  */
-void env_addArgs(sEnv *e,s32 count,const char **args);
+void env_addArgs(sEnv *e,int count,const char **args);
 
 /**
  * Prints the contents of the given environment
@@ -70,7 +70,7 @@ void env_print(sEnv *env);
  * @param searchCmd wether you want to have a command that can be executed
  * @return a linked list with all names; you have to free it with sll_destroy(list,false);
  */
-sSLList *env_getMatching(sEnv *env,const char *name,u32 length,bool searchCmd);
+sSLList *env_getMatching(sEnv *env,const char *name,size_t length,bool searchCmd);
 
 /**
  * Returns the value of the given variable in the given environment. If not present, it looks

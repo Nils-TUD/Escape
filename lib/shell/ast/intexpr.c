@@ -36,7 +36,7 @@ sValue *ast_execIntExpr(sEnv *e,sIntExpr *n) {
 	return val_createInt(n->val);
 }
 
-void ast_printIntExpr(sIntExpr *s,u32 layer) {
+void ast_printIntExpr(sIntExpr *s,uint layer) {
 	UNUSED(layer);
 	printf("%d",s->val);
 }

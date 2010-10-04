@@ -31,7 +31,7 @@
 #define UN_OP_POSTDEC	4
 
 typedef struct {
-	u8 operation;
+	uchar operation;
 	sASTNode *operand1;
 } sUnaryOpExpr;
 
@@ -42,7 +42,7 @@ typedef struct {
  * @param op the operation
  * @return the created node
  */
-sASTNode *ast_createUnaryOpExpr(sASTNode *expr,u8 op);
+sASTNode *ast_createUnaryOpExpr(sASTNode *expr,uchar op);
 
 /**
  * Executes the given node(-tree)
@@ -59,7 +59,7 @@ sValue *ast_execUnaryOpExpr(sEnv *e,sUnaryOpExpr *n);
  * @param s the list
  * @param layer the layer
  */
-void ast_printUnaryOpExpr(sUnaryOpExpr *s,u32 layer);
+void ast_printUnaryOpExpr(sUnaryOpExpr *s,uint layer);
 
 /**
  * Destroys the given expression (should be called from ast_destroy() only!)

@@ -22,7 +22,7 @@
 #include <shell/shell.h>
 #include "include.h"
 
-s32 shell_cmdInclude(u32 argc,char **argv) {
+int shell_cmdInclude(int argc,char **argv) {
 	if(argc != 2) {
 		fprintf(stderr,"Usage: %s <file>\n",argv[0]);
 		return EXIT_FAILURE;

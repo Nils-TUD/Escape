@@ -28,7 +28,7 @@
 
 #define MAX_ENV_LEN		255
 
-s32 shell_cmdEnv(u32 argc,char **argv) {
+int shell_cmdEnv(int argc,char **argv) {
 	char *valBuf,*nameBuf;
 	if(argc > 2 || isHelpCmd(argc,argv)) {
 		printf("Usage: %s [<name>|<name>=<value>]\n",argv[0]);
@@ -45,7 +45,7 @@ s32 shell_cmdEnv(u32 argc,char **argv) {
 
 	/* list all env-vars */
 	if(argc < 2) {
-		u32 i;
+		int i;
 		for(i = 0; getenvito(nameBuf,MAX_ENV_LEN + 1,i) >= 0; i++) {
 			if(getenvto(valBuf,MAX_ENV_LEN + 1,nameBuf) >= 0)
 				printf("%s=%s\n",nameBuf,valBuf);
@@ -53,7 +53,7 @@ s32 shell_cmdEnv(u32 argc,char **argv) {
 	}
 	else if(argc == 2) {
 		/* set? */
-		u32 pos = strchri(argv[1],'=');
+		ssize_t pos = strchri(argv[1],'=');
 		if(argv[1][pos] == '\0') {
 			if(getenvto(valBuf,MAX_ENV_LEN + 1,argv[1]) >= 0)
 				printf("%s=%s\n",argv[1],valBuf);

@@ -34,7 +34,7 @@ typedef struct {
 
 typedef struct {
 	char **exprs;
-	u32 exprCount;
+	size_t exprCount;
 	sASTNode *redirFd;
 	sASTNode *redirIn;
 	sASTNode *redirOut;
@@ -69,7 +69,7 @@ sValue *ast_execSubCmd(sEnv *e,sSubCmd *n);
  * @param s the command
  * @param layer the layer
  */
-void ast_printSubCmd(sSubCmd *s,u32 layer);
+void ast_printSubCmd(sSubCmd *s,uint layer);
 
 /**
  * Destroys the given command (should be called from ast_destroy() only!)

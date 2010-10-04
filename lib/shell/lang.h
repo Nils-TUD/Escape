@@ -20,7 +20,7 @@
 #ifndef LANG_H_
 #define LANG_H_
 
-typedef s32 tIntType;
+typedef int tIntType;
 
 /**
  * Resets the position

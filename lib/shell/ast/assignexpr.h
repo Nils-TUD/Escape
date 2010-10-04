@@ -57,7 +57,7 @@ sValue *ast_execAssignExpr(sEnv *e,sAssignExpr *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printAssignExpr(sAssignExpr *s,u32 layer);
+void ast_printAssignExpr(sAssignExpr *s,uint layer);
 
 /**
  * Destroys the given assign-expression (should be called from ast_destroy() only!)

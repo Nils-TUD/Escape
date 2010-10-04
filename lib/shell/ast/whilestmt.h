@@ -53,7 +53,7 @@ sValue *ast_execWhileStmt(sEnv *e,sWhileStmt *n);
  * @param s the statement
  * @param layer the layer
  */
-void ast_printWhileStmt(sWhileStmt *s,u32 layer);
+void ast_printWhileStmt(sWhileStmt *s,uint layer);
 
 /**
  * Destroys the given while-statement (should be called from ast_destroy() only!)

@@ -38,23 +38,23 @@
 #include "parser.h"
 #include "exec/running.h"
 
-static void shell_sigIntrpt(s32 sig);
-static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos);
-static u16 shell_toPrevWord(char *buffer,u32 *icursorPos);
-static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPath);
+static void shell_sigIntrpt(int sig);
+static size_t shell_toNextWord(char *buffer,size_t icharcount,size_t *icursorPos);
+static size_t shell_toPrevWord(char *buffer,size_t *icursorPos);
+static char *shell_getComplToken(char *line,size_t length,size_t *start,bool *searchPath);
 extern int yyparse(void);
 extern int yylex_destroy(void);
 extern int yydebug;
 extern char *filename;
 
 static bool resetReadLine = false;
-static u32 tabCount = 0;
+static size_t tabCount = 0;
 char *curLine = NULL;
 FILE *curStream = NULL;
 bool curIsStream = false;
 sEnv *curEnv = NULL;
 
-void shell_init(s32 argc,const char **argv) {
+void shell_init(int argc,const char **argv) {
 	run_init();
 	curEnv = env_create(NULL);
 	env_addArgs(curEnv,argc,argv);
@@ -72,7 +72,7 @@ bool shell_prompt(void) {
 	return true;
 }
 
-static void shell_sigIntrpt(s32 sig) {
+static void shell_sigIntrpt(int sig) {
 	UNUSED(sig);
 	/* if data is not 1 the source is not vterm so that we should exit now */
 	/* TODO if(data != 1)
@@ -82,8 +82,8 @@ static void shell_sigIntrpt(s32 sig) {
 	resetReadLine = true;
 }
 
-s32 shell_executeCmd(char *line,bool isFile) {
-	s32 res;
+int shell_executeCmd(char *line,bool isFile) {
+	int res;
 	curIsStream = isFile;
 	if(isFile) {
 		curStream = fopen(line,"r");
@@ -105,10 +105,10 @@ s32 shell_executeCmd(char *line,bool isFile) {
 	return res;
 }
 
-s32 shell_readLine(char *buffer,u32 max) {
-	u32 cursorPos = 0;
-	u32 i = 0;
-	s32 res;
+int shell_readLine(char *buffer,size_t max) {
+	size_t cursorPos = 0;
+	size_t i = 0;
+	ssize_t res;
 	resetReadLine = false;
 
 	/* disable "readline", enable "echo", enable "navi" (just to be sure) */
@@ -123,7 +123,7 @@ s32 shell_readLine(char *buffer,u32 max) {
 	*buffer = '\0';
 	while(i < max) {
 		char c = 0;
-		s32 cmd,n1,n2,n3;
+		int cmd,n1,n2,n3;
 		/* use read to interrupt for signals; ensure that stdout is flushed */
 		fflush(stdout);
 		/* stop if we were unable to read from stdin */
@@ -167,7 +167,7 @@ s32 shell_readLine(char *buffer,u32 max) {
 		}
 		/* not at the end */
 		if(cursorPos < i) {
-			u32 x;
+			size_t x;
 			/* at first move all one char forward */
 			memmove(buffer + cursorPos + 1,buffer + cursorPos,i - cursorPos);
 			buffer[cursorPos] = n1;
@@ -195,16 +195,17 @@ s32 shell_readLine(char *buffer,u32 max) {
 	return i;
 }
 
-bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos,u32 *charcount) {
+bool shell_handleSpecialKey(char *buffer,int keycode,int modifier,size_t *cursorPos,
+		size_t *charcount) {
 	bool res = false;
 	char *line = NULL;
-	u32 icursorPos = *cursorPos;
-	u32 icharcount = *charcount;
+	size_t icursorPos = *cursorPos;
+	size_t icharcount = *charcount;
 	switch(keycode) {
 		case VK_W:
 			if(modifier & STATE_CTRL) {
-				u32 oldPos = icursorPos;
-				u16 count = shell_toPrevWord(buffer,&icursorPos);
+				size_t oldPos = icursorPos;
+				size_t count = shell_toPrevWord(buffer,&icursorPos);
 				if(count > 0) {
 					memmove(buffer + icursorPos,buffer + oldPos,icharcount - oldPos);
 					icharcount -= count;
@@ -260,7 +261,7 @@ bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 			if(icursorPos < icharcount) {
 				/* to next word */
 				if(modifier & STATE_CTRL) {
-					u16 count = shell_toNextWord(buffer,icharcount,&icursorPos);
+					size_t count = shell_toNextWord(buffer,icharcount,&icursorPos);
 					if(count > 0)
 						printf("\033[mr;%d]",count);
 				}
@@ -275,7 +276,7 @@ bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 			if(icursorPos > 0) {
 				/* to prev word */
 				if(modifier & STATE_CTRL) {
-					u16 count = shell_toPrevWord(buffer,&icursorPos);
+					size_t count = shell_toPrevWord(buffer,&icursorPos);
 					if(count > 0)
 						printf("\033[ml;%d]",count);
 				}
@@ -297,8 +298,8 @@ bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 	}
 
 	if(line != NULL) {
-		u32 pos = *charcount;
-		u32 i,len = strlen(line);
+		size_t pos = *charcount;
+		size_t i,len = strlen(line);
 
 		/* go to line end */
 		printf("\033[mr;%d]",*charcount - *cursorPos);
@@ -326,8 +327,8 @@ bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 	return res;
 }
 
-static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos) {
-	u16 count = 0;
+static size_t shell_toNextWord(char *buffer,size_t icharcount,size_t *icursorPos) {
+	size_t count = 0;
 	/* skip first whitespace */
 	while(*icursorPos < icharcount && isspace(buffer[*icursorPos])) {
 		count++;
@@ -341,8 +342,8 @@ static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos) {
 	return count;
 }
 
-static u16 shell_toPrevWord(char *buffer,u32 *icursorPos) {
-	u16 count = 0;
+static size_t shell_toPrevWord(char *buffer,size_t *icursorPos) {
+	size_t count = 0;
 	/* skip first whitespace */
 	while(*icursorPos > 0 && isspace(buffer[*icursorPos - 1])) {
 		count++;
@@ -356,15 +357,15 @@ static u16 shell_toPrevWord(char *buffer,u32 *icursorPos) {
 	return count;
 }
 
-static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPath) {
+static char *shell_getComplToken(char *line,size_t length,size_t *start,bool *searchPath) {
 	char c;
 	char *res;
 	bool inSStr = false;
 	bool inDStr = false;
 	bool inWord = false;
 	bool inSubCmd = false;
-	u32 startPos = 0;
-	u32 i;
+	size_t startPos = 0;
+	size_t i;
 	*searchPath = true;
 	for(i = 0; i < length; i++) {
 		c = line[i];
@@ -432,9 +433,9 @@ static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPa
 	return res;
 }
 
-void shell_complete(char *line,u32 *cursorPos,u32 *length) {
-	u32 icursorPos = *cursorPos;
-	u32 i,cmdlen,ilength = *length;
+void shell_complete(char *line,size_t *cursorPos,size_t *length) {
+	size_t icursorPos = *cursorPos;
+	size_t i,cmdlen,ilength = *length;
 	char *orgLine = line;
 
 	/* ignore tabs when the cursor is not at the end of the input */
@@ -442,8 +443,8 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 		sShellCmd **matches;
 		sShellCmd **cmd;
 		bool searchPath = false;
-		u32 partLen;
-		u32 startPos;
+		size_t partLen;
+		size_t startPos;
 		char *part;
 		/* extract part to complete */
 		line[ilength] = '\0';
@@ -494,7 +495,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 		}
 		else {
 			char last;
-			u32 oldLen = ilength;
+			size_t oldLen = ilength;
 			bool allEqual;
 			/* note that we can assume here that its the same for all matches because it just makes
 			 * a difference if we're completing in a subdir. If we are in a subdir all matches

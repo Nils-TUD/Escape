@@ -60,7 +60,7 @@ sASTNode *ast_addStmt(sASTNode *l,sASTNode *s);
  * @param s the list
  * @param layer the layer
  */
-void ast_printStmtList(sStmtList *s,u32 layer);
+void ast_printStmtList(sStmtList *s,uint layer);
 
 /**
  * Destroys the given statement-list (should be called from ast_destroy() only!)

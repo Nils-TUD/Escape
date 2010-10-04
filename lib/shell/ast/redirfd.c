@@ -23,7 +23,7 @@
 #include "redirfd.h"
 #include "node.h"
 
-sASTNode *ast_createRedirFd(u8 type) {
+sASTNode *ast_createRedirFd(uchar type) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sRedirFd *expr = node->data = emalloc(sizeof(sRedirFd));
 	expr->type = type;
@@ -31,7 +31,7 @@ sASTNode *ast_createRedirFd(u8 type) {
 	return node;
 }
 
-void ast_printRedirFd(sRedirFd *s,u32 layer) {
+void ast_printRedirFd(sRedirFd *s,uint layer) {
 	UNUSED(layer);
 	switch(s->type) {
 		case REDIR_ERR2OUT:

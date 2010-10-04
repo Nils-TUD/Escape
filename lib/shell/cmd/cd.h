@@ -22,6 +22,6 @@
 
 #include <esc/common.h>
 
-s32 shell_cmdCd(u32 argc,char **argv);
+int shell_cmdCd(int argc,char **argv);
 
 #endif /* CD_H_ */

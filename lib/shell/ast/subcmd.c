@@ -34,11 +34,11 @@ static bool ast_expandable(sASTNode *node);
 /**
  * Copies <str> to <path> + <pos> and ensures that max. MAX_PATH_LEN chars are copied into <path>.
  */
-static void ast_appendToPath(char *path,u32 pos,const char *str);
+static void ast_appendToPath(char *path,size_t pos,const char *str);
 /**
  * Adds all pathnames that match <str> to <buf> beginning at <i> and increments <i> correspondingly
  */
-static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char *str);
+static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path,char *str);
 
 sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redFd,sASTNode *redirIn,sASTNode *redirOut,
 		sASTNode *redirErr) {
@@ -54,10 +54,10 @@ sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redFd,sASTNode *redirIn,
 }
 
 sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
-	u32 i;
+	size_t i;
 	char *str;
 	sSLNode *node,*exprNode;
-	u32 exprSize;
+	size_t exprSize;
 	/* TODO the whole stuff here isn't really nice. perhaps we should move the cmdexprlist to
 	 * this node or at least simply pass it to this one when executing? */
 	sSLList *elist = (sSLList*)ast_execute(e,n->exprList);
@@ -108,15 +108,15 @@ static bool ast_expandable(sASTNode *node) {
 	return node->type == AST_VAR_EXPR;
 }
 
-static void ast_appendToPath(char *path,u32 pos,const char *str) {
-	u32 amount = MIN(MAX_PATH_LEN - pos,strlen(str));
+static void ast_appendToPath(char *path,size_t pos,const char *str) {
+	size_t amount = MIN(MAX_PATH_LEN - pos,strlen(str));
 	strncpy(path + pos,str,amount);
 	path[pos + amount] = '\0';
 }
 
-static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char *str) {
+static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path,char *str) {
 	bool hasStar,wasNull = false;
-	u32 ipathlen = strlen(path);
+	size_t ipathlen = strlen(path);
 	/* the basic idea is to split the pattern by '/' and append the names together until we find
 	 * a '*' or are at the end. then we collect the matching items and for each item we do it
 	 * recursively again if its a directory and the pattern has something left. */
@@ -136,7 +136,7 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 			/* determine path and search-pattern */
 			char *search,*pos;
 			if((pos = strrchr(last,'/')) != NULL) {
-				u32 x = 0;
+				size_t x = 0;
 				*pos = '\0';
 				if(*path) {
 					ast_appendToPath(path,ipathlen,"/");
@@ -152,14 +152,14 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 			/* get all files in that directory */
 			abspath(apath,sizeof(apath),path);
 			if((dir = opendir(apath))) {
-				u32 apathlen = strlen(apath);
+				size_t apathlen = strlen(apath);
 				sDirEntry e;
 				while(readdir(dir,&e)) {
 					if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
 						continue;
 					if(strmatch(search,e.name)) {
 						sFileInfo info;
-						u32 pathlen = strlen(path);
+						size_t pathlen = strlen(path);
 						ast_appendToPath(apath,apathlen,e.name);
 						if(stat(apath,&info) < 0)
 							continue;
@@ -183,7 +183,7 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 						}
 						else {
 							/* copy path and filename into a new string */
-							u32 totallen = (pathlen ? pathlen + 1 : 0) + e.nameLen + 1;
+							size_t totallen = (pathlen ? pathlen + 1 : 0) + e.nameLen + 1;
 							char *dup = (char*)emalloc(totallen + 1);
 							if(pathlen) {
 								strcpy(dup,path);
@@ -230,7 +230,7 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 	return buf;
 }
 
-void ast_printSubCmd(sSubCmd *s,u32 layer) {
+void ast_printSubCmd(sSubCmd *s,uint layer) {
 	ast_printTree(s->exprList,layer);
 	ast_printTree(s->redirFd,layer);
 	ast_printTree(s->redirIn,layer);

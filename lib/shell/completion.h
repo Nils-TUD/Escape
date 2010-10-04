@@ -33,13 +33,13 @@
 #define APPS_DIR			"/bin/"
 
 /* the builtin shell-commands */
-typedef s32 (*fCommand)(u32 argc,char **argv);
+typedef int (*fCommand)(int argc,char **argv);
 typedef struct {
-	u8 type;
-	u16 mode;
+	uchar type;
+	ushort mode;
 	char name[MAX_CMDNAME_LEN + 1];
 	fCommand func;
-	s32 complStart;
+	int complStart;
 } sShellCmd;
 
 #ifdef __cplusplus
@@ -56,7 +56,7 @@ extern "C" {
  * @param searchCmd whether you're looking for a command to execute
  * @return the matches or NULL if failed
  */
-sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool searchPath);
+sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,bool searchPath);
 
 /**
  * Free's the given matches

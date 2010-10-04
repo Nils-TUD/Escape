@@ -22,6 +22,6 @@
 
 #include <esc/common.h>
 
-s32 shell_cmdEcho(u32 argc,char *argv[]);
+int shell_cmdEcho(int argc,char *argv[]);
 
 #endif /* ECHO_H_ */

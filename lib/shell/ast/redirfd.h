@@ -28,7 +28,7 @@
 #define REDIR_OUT2ERR	2
 
 typedef struct {
-	u8 type;
+	uchar type;
 } sRedirFd;
 
 /**
@@ -37,7 +37,7 @@ typedef struct {
  * @param type the redirect-type
  * @return the created node
  */
-sASTNode *ast_createRedirFd(u8 type);
+sASTNode *ast_createRedirFd(uchar type);
 
 /**
  * Prints this redirfd
@@ -45,7 +45,7 @@ sASTNode *ast_createRedirFd(u8 type);
  * @param s the redirfd
  * @param layer the layer
  */
-void ast_printRedirFd(sRedirFd *s,u32 layer);
+void ast_printRedirFd(sRedirFd *s,uint layer);
 
 /**
  * Destroys the given redirfd (should be called from ast_destroy() only!)

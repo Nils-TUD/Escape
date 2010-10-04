@@ -55,7 +55,7 @@ sValue *ast_execBinOpExpr(sEnv *e,sBinaryOpExpr *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printBinOpExpr(sBinaryOpExpr *s,u32 layer);
+void ast_printBinOpExpr(sBinaryOpExpr *s,uint layer);
 
 /**
  * Destroys the given binary-op-expression (should be called from ast_destroy() only!)

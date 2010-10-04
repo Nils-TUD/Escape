@@ -59,7 +59,7 @@ sValue *ast_execDStrExpr(sEnv *e,sDStrExpr *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printDStrExpr(sDStrExpr *s,u32 layer);
+void ast_printDStrExpr(sDStrExpr *s,uint layer);
 
 /**
  * Destroys the given expression (should be called from ast_destroy() only!)

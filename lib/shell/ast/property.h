@@ -55,7 +55,7 @@ sValue *ast_execProperty(sEnv *e,sProperty *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printProperty(sProperty *s,u32 layer);
+void ast_printProperty(sProperty *s,uint layer);
 
 /**
  * Destroys the given expression (should be called from ast_destroy() only!)

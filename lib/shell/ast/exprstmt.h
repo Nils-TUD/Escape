@@ -51,7 +51,7 @@ sValue *ast_execExprStmt(sEnv *e,sExprStmt *n);
  * @param s the statement
  * @param layer the layer
  */
-void ast_printExprStmt(sExprStmt *s,u32 layer);
+void ast_printExprStmt(sExprStmt *s,uint layer);
 
 /**
  * Destroys the given statement (should be called from ast_destroy() only!)

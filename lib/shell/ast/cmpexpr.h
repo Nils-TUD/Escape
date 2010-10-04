@@ -32,7 +32,7 @@
 #define CMP_OP_GEQ	5
 
 typedef struct {
-	u8 operation;
+	uint operation;
 	sASTNode *operand1;
 	sASTNode *operand2;
 } sCmpExpr;
@@ -45,7 +45,7 @@ typedef struct {
  * @param operand2 the second operand
  * @return the created node
  */
-sASTNode *ast_createCmpExpr(sASTNode *operand1,u8 operation,sASTNode *operand2);
+sASTNode *ast_createCmpExpr(sASTNode *operand1,uint operation,sASTNode *operand2);
 
 /**
  * Executes the given node(-tree)
@@ -62,7 +62,7 @@ sValue *ast_execCmpExpr(sEnv *e,sCmpExpr *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printCmpExpr(sCmpExpr *s,u32 layer);
+void ast_printCmpExpr(sCmpExpr *s,uint layer);
 
 /**
  * Destroys the given compare-expression (should be called from ast_destroy() only!)

@@ -23,8 +23,8 @@
 #include <string.h>
 #include "echo.h"
 
-s32 shell_cmdEcho(u32 argc,char *argv[]) {
-	u32 i = 1;
+int shell_cmdEcho(int argc,char *argv[]) {
+	int i = 1;
 	bool nl = true;
 	if(argc > 1 && strcmp(argv[i],"-n") == 0) {
 		nl = false;

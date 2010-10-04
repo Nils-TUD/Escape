@@ -53,7 +53,7 @@ sValue *ast_execForStmt(sEnv *e,sForStmt *n) {
 	return NULL;
 }
 
-void ast_printForStmt(sForStmt *s,u32 layer) {
+void ast_printForStmt(sForStmt *s,uint layer) {
 	printf("%*sfor ( ",layer,"");
 	ast_printTree(s->initExpr,layer);
 	printf(" ; ");

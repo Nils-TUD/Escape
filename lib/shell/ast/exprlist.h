@@ -60,7 +60,7 @@ sASTNode *ast_addExpr(sASTNode *l,sASTNode *e);
  * @param s the list
  * @param layer the layer
  */
-void ast_printExprList(sExprList *s,u32 layer);
+void ast_printExprList(sExprList *s,uint layer);
 
 /**
  * Destroys the given expression-list (should be called from ast_destroy() only!)

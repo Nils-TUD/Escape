@@ -23,7 +23,7 @@
 #include "env.h"
 #include "../mem.h"
 
-static void env_doGetMatching(sEnv *env,sSLList *list,const char *name,u32 length,bool searchCmd);
+static void env_doGetMatching(sEnv *env,sSLList *list,const char *name,size_t length,bool searchCmd);
 static sVar *env_createVar(const char *name,sValue *val);
 static sVar *env_getByName(sEnv *env,const char *name);
 
@@ -34,8 +34,8 @@ sEnv *env_create(sEnv *parent) {
 	return env;
 }
 
-void env_addArgs(sEnv *e,s32 count,const char **args) {
-	s32 i;
+void env_addArgs(sEnv *e,int count,const char **args) {
+	int i;
 	sValue *vargs = val_createArray(NULL);
 	for(i = 0; i < count; i++)
 		val_append(vargs,val_createStr(args[i]));
@@ -52,7 +52,7 @@ void env_print(sEnv *env) {
 	}
 }
 
-sSLList *env_getMatching(sEnv *env,const char *name,u32 length,bool searchCmd) {
+sSLList *env_getMatching(sEnv *env,const char *name,size_t length,bool searchCmd) {
 	sSLList *matching = esll_create();
 	env_doGetMatching(env,matching,name,length,searchCmd);
 	return matching;
@@ -93,14 +93,14 @@ void env_destroy(sEnv *env) {
 	efree(env);
 }
 
-static void env_doGetMatching(sEnv *env,sSLList *list,const char *name,u32 length,bool searchCmd) {
+static void env_doGetMatching(sEnv *env,sSLList *list,const char *name,size_t length,bool searchCmd) {
 	sSLNode *n;
 	if(env->parent)
 		env_doGetMatching(env->parent,list,name,length,searchCmd);
 	for(n = sll_begin(env->vars); n != NULL; n = n->next) {
 		sVar *v = (sVar*)n->data;
-		u32 varlen = strlen(v->name);
-		u32 matchLen = searchCmd ? varlen : length;
+		size_t varlen = strlen(v->name);
+		size_t matchLen = searchCmd ? varlen : length;
 		if(length <= varlen && strncmp(name,v->name,matchLen) == 0)
 			esll_append(list,v->name);
 	}

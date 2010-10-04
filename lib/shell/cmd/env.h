@@ -22,6 +22,6 @@
 
 #include <esc/common.h>
 
-s32 shell_cmdEnv(u32 argc,char **argv);
+int shell_cmdEnv(int argc,char **argv);
 
 #endif /* SHELL_ENV_H_ */

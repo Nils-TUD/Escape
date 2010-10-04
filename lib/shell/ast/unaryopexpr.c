@@ -27,7 +27,7 @@
 static sValue *ast_execUnaryPreOp(sEnv *e,sUnaryOpExpr *n,sValue *v,tIntType inc);
 static sValue *ast_execUnaryPostOp(sEnv *e,sUnaryOpExpr *n,sValue *v,tIntType inc);
 
-sASTNode *ast_createUnaryOpExpr(sASTNode *expr,u8 op) {
+sASTNode *ast_createUnaryOpExpr(sASTNode *expr,uchar op) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sUnaryOpExpr *res = node->data = emalloc(sizeof(sUnaryOpExpr));
 	res->operand1 = expr;
@@ -60,7 +60,7 @@ sValue *ast_execUnaryOpExpr(sEnv *e,sUnaryOpExpr *n) {
 	return res;
 }
 
-void ast_printUnaryOpExpr(sUnaryOpExpr *s,u32 layer) {
+void ast_printUnaryOpExpr(sUnaryOpExpr *s,uint layer) {
 	switch(s->operation) {
 		case UN_OP_NEG:
 			printf("-");

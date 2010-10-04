@@ -77,7 +77,7 @@ void ast_addSubCmd(sASTNode *c,sASTNode *sub);
  * @param s the command
  * @param layer the layer
  */
-void ast_printCommand(sCommand *s,u32 layer);
+void ast_printCommand(sCommand *s,uint layer);
 
 /**
  * Destroys the given command (should be called from ast_destroy() only!)

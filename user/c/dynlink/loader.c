@@ -31,15 +31,17 @@
 
 static void load_library(sSharedLib *dst);
 static sSharedLib *load_addLib(sSharedLib *lib);
-static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,bool isLib);
-static void load_read(tFD binFd,u32 offset,void *buffer,u32 count);
+static uintptr_t load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
+		bool isLib);
+static void load_read(tFD binFd,uint offset,void *buffer,size_t count);
 
 void load_doLoad(tFD binFd,sSharedLib *dst) {
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
 	sFileInfo info;
-	u8 const *datPtr;
-	u32 j,textOffset = 0xFFFFFFFF;
+	uint8_t const *datPtr;
+	ssize_t textOffset = -1;
+	size_t j;
 
 	/* build bindesc */
 	if(fstat(binFd,&info) < 0)
@@ -54,24 +56,24 @@ void load_doLoad(tFD binFd,sSharedLib *dst) {
 	load_read(binFd,0,&eheader,sizeof(Elf32_Ehdr));
 
 	/* check magic-number */
-	if(eheader.e_ident.dword != *(u32*)ELFMAG)
+	if(eheader.e_ident.dword != *(uint32_t*)ELFMAG)
 		load_error("Invalid ELF-magic");
 
-	datPtr = (u8 const*)(eheader.e_phoff);
+	datPtr = (uint8_t const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
-		load_read(binFd,(u32)datPtr,&pheader,sizeof(Elf32_Phdr));
+		load_read(binFd,(uint)datPtr,&pheader,sizeof(Elf32_Phdr));
 
 		/* in shared libraries the text is @ 0x0 (will be relocated anyway), but the entry
 		 * DT_STRTAB in the dynamic table is the virtual address, not the file offset. Therefore
 		 * we have to add the difference of the text in the file and in virtual memory.
 		 * This will be 0 for executables and 0x1000 for shared libraries
 		 * (Note that the first load-segment is the text) */
-		if(textOffset == 0xFFFFFFFF && pheader.p_type == PT_LOAD)
+		if(textOffset == -1 && pheader.p_type == PT_LOAD)
 			textOffset = pheader.p_offset - pheader.p_vaddr;
 
 		if(pheader.p_type == PT_DYNAMIC) {
-			u32 strtblSize,i;
+			size_t strtblSize,i;
 			/* TODO we don't have to read them from file; if we load data and text first, we
 			 * already have them */
 			/* read dynamic-entries */
@@ -116,15 +118,15 @@ void load_doLoad(tFD binFd,sSharedLib *dst) {
 	}
 }
 
-u32 load_addSegments(void) {
+uintptr_t load_addSegments(void) {
 	sSLNode *n;
-	u32 entryPoint = 0;
+	uintptr_t entryPoint = 0;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
 		Elf32_Ehdr eheader;
 		Elf32_Phdr pheader;
-		u8 const *datPtr;
-		u32 j,loadSeg;
+		uint8_t const *datPtr;
+		size_t j,loadSeg;
 
 		/* read header */
 		load_read(l->fd,0,&eheader,sizeof(Elf32_Ehdr));
@@ -133,12 +135,12 @@ u32 load_addSegments(void) {
 			entryPoint = eheader.e_entry;
 
 		loadSeg = 0;
-		datPtr = (u8 const*)(eheader.e_phoff);
+		datPtr = (uint8_t const*)(eheader.e_phoff);
 		for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 			/* read pheader */
-			load_read(l->fd,(u32)datPtr,&pheader,sizeof(Elf32_Phdr));
+			load_read(l->fd,(uint)datPtr,&pheader,sizeof(Elf32_Phdr));
 			if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
-				u32 addr = load_addSeg(l->fd,&l->bin,&pheader,loadSeg,l->isDSO);
+				uintptr_t addr = load_addSeg(l->fd,&l->bin,&pheader,loadSeg,l->isDSO);
 				if(addr == 0)
 					load_error("Unable to add segment %d (type %d)",j,pheader.p_type);
 				/* store load-address of text */
@@ -158,13 +160,13 @@ u32 load_addSegments(void) {
 		l->dynsyms = (Elf32_Sym*)load_getDyn(l->dyn,DT_SYMTAB);
 		l->jmprel = (Elf32_Rel*)load_getDyn(l->dyn,DT_JMPREL);
 		if(l->dynstrtbl)
-			l->dynstrtbl = (char*)((u32)l->dynstrtbl + l->loadAddr);
+			l->dynstrtbl = (char*)((uintptr_t)l->dynstrtbl + l->loadAddr);
 		if(l->hashTbl)
-			l->hashTbl = (Elf32_Word*)((u32)l->hashTbl + l->loadAddr);
+			l->hashTbl = (Elf32_Word*)((uintptr_t)l->hashTbl + l->loadAddr);
 		if(l->dynsyms)
-			l->dynsyms = (Elf32_Sym*)((u32)l->dynsyms + l->loadAddr);
+			l->dynsyms = (Elf32_Sym*)((uintptr_t)l->dynsyms + l->loadAddr);
 		if(l->jmprel)
-			l->jmprel = (Elf32_Rel*)((u32)l->jmprel + l->loadAddr);
+			l->jmprel = (Elf32_Rel*)((uintptr_t)l->jmprel + l->loadAddr);
 	}
 	return entryPoint;
 }
@@ -191,8 +193,9 @@ static sSharedLib *load_addLib(sSharedLib *lib) {
 	return NULL;
 }
 
-static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,bool isLib) {
-	u8 stype;
+static uintptr_t load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
+		bool isLib) {
+	uint stype;
 	void *addr;
 	/* determine type */
 	if(loadSegNo == 0) {
@@ -228,15 +231,15 @@ static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadS
 		return 0;
 	if(stype == REG_TLS) {
 		/* read tdata and clear tbss */
-		load_read(binFd,(u32)pheader->p_offset,addr,pheader->p_filesz);
-		memclear((void*)((u32)addr + pheader->p_filesz),pheader->p_memsz - pheader->p_filesz);
+		load_read(binFd,(uint)pheader->p_offset,addr,pheader->p_filesz);
+		memclear((void*)((uintptr_t)addr + pheader->p_filesz),pheader->p_memsz - pheader->p_filesz);
 	}
-	return (u32)addr;
+	return (uintptr_t)addr;
 }
 
-static void load_read(tFD binFd,u32 offset,void *buffer,u32 count) {
-	if(seek(binFd,(u32)offset,SEEK_SET) < 0)
+static void load_read(tFD binFd,uint offset,void *buffer,size_t count) {
+	if(seek(binFd,offset,SEEK_SET) < 0)
 		load_error("Unable to seek to %x",offset);
-	if(RETRY(read(binFd,buffer,count)) != (s32)count)
+	if(RETRY(read(binFd,buffer,count)) != (ssize_t)count)
 		load_error("Unable to read %d bytes @ %x",count,offset);
 }

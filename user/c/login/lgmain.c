@@ -27,7 +27,7 @@
 #define PASSWORD	"test"
 #define MAX_LEN		10
 
-static void termHandler(s32 sig);
+static void termHandler(int sig);
 
 int main(void) {
 	char un[MAX_LEN];
@@ -57,7 +57,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void termHandler(s32 sig) {
+static void termHandler(int sig) {
 	UNUSED(sig);
 	printf("Got TERM-signal but I don't want to die :P\n");
 }

@@ -21,9 +21,9 @@
 #include "shltlib.h"
 #include "seclib.h"
 
-u32 calls = 0;
-static u32 calls1 = 0;
-static u32 calls2 = 0;
+int calls = 0;
+static int calls1 = 0;
+static int calls2 = 0;
 
 static void dummy() {}
 

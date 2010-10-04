@@ -34,8 +34,8 @@ static void string_appends(sString *s,const char *str);
 struct sString {
 	const ClassString *class;
 	char *str;
-	u32 len;
-	u32 size;
+	size_t len;
+	size_t size;
 };
 struct ClassString {
 	size_t size;
@@ -57,14 +57,14 @@ typedef struct ClassMyString ClassMyString;
 static sMyString *mystring_ctor(void *size);
 static void mystring_dtor(sMyString *s);
 static void mystring_append(sString *s,char c);
-static void mystring_insert(sMyString *s,u32 index,char c);
+static void mystring_insert(sMyString *s,size_t index,char c);
 
 struct sMyString {
 	const ClassMyString *class;
 	char *str;
-	u32 len;
-	u32 size;
-	u32 stats;
+	size_t len;
+	size_t size;
+	size_t stats;
 };
 struct ClassMyString {
 	size_t size;
@@ -73,7 +73,7 @@ struct ClassMyString {
 	void (*dtor)(sMyString *s);
 	void (*append)(sString *s,char c);
 	void (*appends)(sString *s,const char *str);
-	void (*insert)(sMyString *s,u32 index,char c);
+	void (*insert)(sMyString *s,size_t index,char c);
 } MyString = {
 	.size = sizeof(sMyString),
 	.super = &String,
@@ -121,7 +121,7 @@ static void mystring_dtor(sMyString *s) {
 static void mystring_append(sString *s,char c) {
 	printf("%s: Appending %c to %p\n",__FUNCTION__,c,s);
 }
-static void mystring_insert(sMyString *s,u32 index,char c) {
+static void mystring_insert(sMyString *s,size_t index,char c) {
 	ClassMyString *this = (ClassMyString*)s->class;
 	this->append((sString*)s,c);
 }
@@ -401,7 +401,7 @@ int main(int argc,char *argv[]) {
 	printf("812917263123223.81672813231=");
 	printDouble(812917263123223.81672813231);*/
 
-	u32 i;
+	size_t i;
 	printf("%Ld, %Ld, %Ld\n",1LL,8167127123123123LL,-81273123LL);
 	printf("%Lu, %Lx, %016LX\n",1ULL,0x7179bafed2122ULL,0x1234ULL);
 

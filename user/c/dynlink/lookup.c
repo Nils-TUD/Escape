@@ -27,30 +27,30 @@
 #include "lookup.h"
 #include "loader.h"
 
-static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,u32 hash);
-static u32 lookup_getHash(const unsigned char *name);
+static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,uint32_t hash);
+static uintptr_t lookup_getHash(const unsigned char *name);
 
 #ifdef CALLTRACE_PID
-static s32 pid = -1;
-static s32 depth = 0;
+static int pid = -1;
+static int depth = 0;
 #endif
 
 #ifdef CALLTRACE_PID
-u32 lookup_resolve(u32 retAddr,sSharedLib *lib,u32 offset) {
+uintptr_t lookup_resolve(uintptr_t retAddr,sSharedLib *lib,size_t offset) {
 #else
-u32 lookup_resolve(sSharedLib *lib,u32 offset) {
+uintptr_t lookup_resolve(sSharedLib *lib,size_t offset) {
 #endif
 	Elf32_Sym *foundSym;
-	Elf32_Rel *rel = (Elf32_Rel*)((u32)lib->jmprel + offset);
+	Elf32_Rel *rel = (Elf32_Rel*)((uintptr_t)lib->jmprel + offset);
 	Elf32_Sym *sym = lib->dynsyms + ELF32_R_SYM(rel->r_info);
-	u32 value,*addr;
+	uintptr_t value,*addr;
 #ifndef CALLTRACE_PID
 	DBGDL("Lookup symbol @ %x (%s) in lib %s\n",offset,lib->dynstrtbl + sym->st_name,lib->name);
 #endif
 	foundSym = lookup_byName(NULL,lib->dynstrtbl + sym->st_name,&value);
 	if(foundSym == NULL)
 		error("Unable to find symbol %s",lib->dynstrtbl + sym->st_name);
-	addr = (u32*)(rel->r_offset + lib->loadAddr);
+	addr = (uintptr_t*)(rel->r_offset + lib->loadAddr);
 #ifdef CALLTRACE_PID
 	if(pid == -1)
 		pid = getpid();
@@ -89,10 +89,10 @@ void lookup_tracePop(void) {
 }
 #endif
 
-Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value) {
+Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,uintptr_t *value) {
 	sSLNode *n;
 	Elf32_Sym *s;
-	u32 hash = lookup_getHash((const unsigned char*)name);
+	uint32_t hash = lookup_getHash((const unsigned char*)name);
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
 		if(l == skip)
@@ -106,15 +106,15 @@ Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value) {
 	return NULL;
 }
 
-Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,u32 *value) {
-	u32 hash = lookup_getHash((const unsigned char*)name);
+Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,uintptr_t *value) {
+	uint32_t hash = lookup_getHash((const unsigned char*)name);
 	Elf32_Sym *sym = lookup_byNameIntern(lib,name,hash);
 	if(sym)
 		*value = sym->st_value + lib->loadAddr;
 	return sym;
 }
 
-static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,u32 hash) {
+static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,uint32_t hash) {
 	Elf32_Word nhash;
 	Elf32_Word symindex;
 	Elf32_Sym *sym;
@@ -130,8 +130,8 @@ static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,u32 hash)
 	return NULL;
 }
 
-static u32 lookup_getHash(const unsigned char *name) {
-	u32 h = 0,g;
+static uint32_t lookup_getHash(const unsigned char *name) {
+	uint32_t h = 0,g;
 	while(*name) {
 		h = (h << 4) + *name++;
 		if((g = (h & 0xf0000000)))

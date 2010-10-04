@@ -38,5 +38,7 @@ int bputc(FILE *f,int c) {
 			return EOF;
 		buf->buffer[buf->pos++] = c;
 	}
-	return c;
+	/* cast to unsigned char and back to int to ensure that chars < 0 (e.g. german umlaute) are
+	 * not negative */
+	return (int)(uchar)c;
 }

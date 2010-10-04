@@ -196,7 +196,8 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 				s = va_arg(ap, char*);
 				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
 					width = precision == -1 ? strlen(s) : (uint)precision;
-					count += RETERR(bprintpad(f,pad - width,flags));
+					if(pad > (int)width)
+						count += RETERR(bprintpad(f,pad - width,flags));
 				}
 				if(precision != -1) {
 					b = s[precision];
@@ -205,7 +206,7 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 				n = RETERR(bputs(f,s));
 				if(precision != -1)
 					s[precision] = b;
-				if(pad > 0 && (flags & FFL_PADRIGHT))
+				if(pad > n && (flags & FFL_PADRIGHT))
 					count += RETERR(bprintpad(f,pad - n,flags));
 				count += n;
 				break;

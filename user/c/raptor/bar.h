@@ -24,7 +24,7 @@
 
 void bar_init(void);
 
-void bar_getDim(u32 *start,u32 *end);
+void bar_getDim(size_t *start,size_t *end);
 
 void bar_moveLeft(void);
 

@@ -43,21 +43,21 @@
 #define DIR_DOWN		8
 
 typedef struct {
-	u8 type;
-	u8 x;
-	u8 y;
-	u8 width;
-	u8 height;
-	u8 direction;
-	u8 speed;
-	u8 moveCnt;
+	int type;
+	int x;
+	int y;
+	int width;
+	int height;
+	int direction;
+	int speed;
+	int moveCnt;
 } sObject;
 
-sObject *obj_createAirplain(u8 x,u8 y,u8 direction,u8 speed);
+sObject *obj_createAirplain(int x,int y,int direction,int speed);
 
-sObject *obj_createBullet(u8 x,u8 y,u8 direction,u8 speed);
+sObject *obj_createBullet(int x,int y,int direction,int speed);
 
-sObject *obj_create(u8 type,u8 x,u8 y,u8 width,u8 height,u8 direction,u8 speed);
+sObject *obj_create(int type,int x,int y,int width,int height,int direction,int speed);
 
 bool obj_explode(sObject *o);
 

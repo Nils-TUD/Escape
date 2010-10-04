@@ -47,14 +47,14 @@ void displ_finish(void);
  * @param col will be set to the column
  * @param row will be set to the row
  */
-void displ_getCurPos(s32 *col,s32 *row);
+void displ_getCurPos(int *col,int *row);
 
 /**
  * Moves the cursor horizontal. Maybe a vertical movement is done, too
  *
  * @param type the movement-type. See HOR_MOVE_*
  */
-void displ_mvCurHor(u8 type);
+void displ_mvCurHor(uint type);
 
 /**
  * Moves the cursor one page up or down
@@ -68,7 +68,7 @@ void displ_mvCurVertPage(bool up);
  *
  * @param lineCount if positive, move down, otherwise up
  */
-void displ_mvCurVert(s32 lineCount);
+void displ_mvCurVert(int lineCount);
 
 /**
  * Marks the given region "dirty"
@@ -76,7 +76,7 @@ void displ_mvCurVert(s32 lineCount);
  * @param start the first row
  * @param count the number of rows
  */
-void displ_markDirty(u32 start,u32 count);
+void displ_markDirty(size_t start,size_t count);
 
 /**
  * Updates all dirty regions
@@ -90,12 +90,12 @@ void displ_update(void);
  * @param bufSize the size of <file>
  * @return the result of scanl()
  */
-s32 displ_getSaveFile(char *file,u32 bufSize);
+int displ_getSaveFile(char *file,size_t bufSize);
 
 /**
  * @param c the char
  * @return the display-length of the given character
  */
-u32 displ_getCharLen(char c);
+size_t displ_getCharLen(char c);
 
 #endif /* DISPLAY_H_ */

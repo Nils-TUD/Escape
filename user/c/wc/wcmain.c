@@ -38,15 +38,15 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static u32 lines = 0;
-static u32 bytes = 0;
-static u32 words = 0;
+static uint lines = 0;
+static uint bytes = 0;
+static uint words = 0;
 
 int main(int argc,const char *argv[]) {
-	u8 flags = 0;
+	uint flags = 0;
 	bool flines = false,fwords = false,fbytes = false;
 
-	s32 res = ca_parse(argc,argv,0,"w c l",&fwords,&fbytes,&flines);
+	int res = ca_parse(argc,argv,0,"w c l",&fwords,&fbytes,&flines);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
@@ -97,7 +97,7 @@ int main(int argc,const char *argv[]) {
 }
 
 static void countFile(FILE *in) {
-	u32 bufPos = 0;
+	uint bufPos = 0;
 	char c;
 	while((c = getc(in)) != EOF) {
 		if(isspace(c)) {

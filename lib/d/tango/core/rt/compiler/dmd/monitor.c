@@ -19,7 +19,7 @@
 typedef struct Monitor {
 	void* impl; /* for user-level monitors */
 	Array devt; /* for internal monitors */
-	u32 count; /* needed to allow multiple locks from the same thread */
+	size_t count; /* needed to allow multiple locks from the same thread */
 	tULock mon;
 } Monitor;
 

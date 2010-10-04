@@ -29,10 +29,10 @@
 
 static tTid parent = -1;
 static tTid child = -1;
-static u32 parentCount = 0;
-static u32 childCount = 0;
+static size_t parentCount = 0;
+static size_t childCount = 0;
 
-static void timerIRQ(s32 sig) {
+static void timerIRQ(int sig) {
 	UNUSED(sig);
 	if(gettid() == parent)
 		parentCount++;
@@ -41,7 +41,7 @@ static void timerIRQ(s32 sig) {
 }
 
 int mod_sigclone(int argc,char *argv[]) {
-	s32 res;
+	int res;
 	UNUSED(argc);
 	UNUSED(argv);
 	parent = gettid();

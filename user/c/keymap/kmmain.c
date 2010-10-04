@@ -36,7 +36,7 @@ static void usage(const char *name) {
 int main(int argc,const char **argv) {
 	char *kmname = NULL;
 
-	s32 res = ca_parse(argc,argv,CA_NO_FREE,"set=s",&kmname);
+	int res = ca_parse(argc,argv,CA_NO_FREE,"set=s",&kmname);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
@@ -48,13 +48,13 @@ int main(int argc,const char **argv) {
 	if(kmname != NULL) {
 		char path[MAX_PATH_LEN];
 		sMsg msg;
-		u32 len;
+		size_t len;
 		tFD fd = open("/dev/kmmanager",IO_READ | IO_WRITE);
 		if(fd < 0)
 			error("Unable to open keymap-manager");
 		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
 		if(sendMsgData(fd,MSG_KM_SET,path,len + 1) < 0 ||
-				RETRY(receive(fd,NULL,&msg,sizeof(msg))) < 0 || (s32)msg.args.arg1 < 0)
+				RETRY(receive(fd,NULL,&msg,sizeof(msg))) < 0 || (int)msg.args.arg1 < 0)
 			fprintf(stderr,"Setting the keymap '%s' failed\n",kmname);
 		else
 			printf("Successfully changed keymap to '%s'\n",kmname);

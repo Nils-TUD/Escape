@@ -28,8 +28,8 @@
 
 #define MAX_LINE_LEN	255
 
-static void printFields(char *line,const char *delim,s32 first,s32 last);
-static void parseFields(const char *fields,s32 *first,s32 *last);
+static void printFields(char *line,const char *delim,int first,int last);
+static void parseFields(const char *fields,int *first,int *last);
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s -f <fields> [-d <delim>] [<file>]\n",name);
@@ -44,11 +44,11 @@ static void usage(const char *name) {
 
 int main(int argc,const char **argv) {
 	char line[MAX_LINE_LEN];
-	s32 first = 1,last = -1;
+	int first = 1,last = -1;
 	char *fields = NULL;
 	char *delim = (char*)"\t";
 
-	s32 res = ca_parse(argc,argv,0,"f=s* d=s",&fields,&delim);
+	int res = ca_parse(argc,argv,0,"f=s* d=s",&fields,&delim);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
@@ -84,11 +84,11 @@ int main(int argc,const char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static void printFields(char *line,const char *delim,s32 first,s32 last) {
+static void printFields(char *line,const char *delim,int first,int last) {
 	if(first == 0 && last == -1)
 		puts(line);
 	else {
-		s32 i = 1;
+		int i = 1;
 		char *tok = strtok(line,delim);
 		while(tok != NULL) {
 			if(i >= first && (last == -1 || i <= last))
@@ -100,7 +100,7 @@ static void printFields(char *line,const char *delim,s32 first,s32 last) {
 	}
 }
 
-static void parseFields(const char *fields,s32 *first,s32 *last) {
+static void parseFields(const char *fields,int *first,int *last) {
 	if(*fields == '-')
 		*first = 1;
 	else {

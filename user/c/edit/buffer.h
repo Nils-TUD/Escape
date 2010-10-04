@@ -32,9 +32,9 @@ typedef struct {
 /* one line in our linked lists of lines */
 typedef struct {
 	char *str;
-	u32 size;		/* size of <str> */
-	u32 length;		/* length of the line */
-	u32 displLen;	/* length for displaying the line (tabs expanded,...) */
+	size_t size;		/* size of <str> */
+	size_t length;		/* length of the line */
+	size_t displLen;	/* length for displaying the line (tabs expanded,...) */
 } sLine;
 
 /**
@@ -47,7 +47,7 @@ void buf_open(const char *file);
 /**
  * @return the number of lines
  */
-u32 buf_getLineCount(void);
+size_t buf_getLineCount(void);
 
 /**
  * @return the buffer
@@ -61,7 +61,7 @@ sFileBuffer *buf_get(void);
  * @param row the row
  * @param c the character
  */
-void buf_insertAt(s32 col,s32 row,char c);
+void buf_insertAt(int col,int row,char c);
 
 /**
  * Creates a new line behind the given row and moves all stuff behind <col> from the current
@@ -70,14 +70,14 @@ void buf_insertAt(s32 col,s32 row,char c);
  * @param col the column
  * @param row the row
  */
-void buf_newLine(s32 col,s32 row);
+void buf_newLine(int col,int row);
 
 /**
  * Moves the line <row> to the end of the previous one
  *
  * @param row the current row
  */
-void buf_moveToPrevLine(s32 row);
+void buf_moveToPrevLine(int row);
 
 /**
  * Removes the current char
@@ -85,7 +85,7 @@ void buf_moveToPrevLine(s32 row);
  * @param col the column
  * @param row the row
  */
-void buf_removeCur(s32 col,s32 row);
+void buf_removeCur(int col,int row);
 
 /**
  * Stores the buffer to the given file

@@ -26,30 +26,29 @@
 #include "thread.h"
 
 #define THREAD_COUNT	10
-
-static tULock lck;
+#define LOCK_IDENT		0x11111111
 
 static int myThread(void *arg) {
-	u32 i;
+	size_t i;
 	UNUSED(arg);
-	locku(&lck);
+	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
 	printf("Thread %d starts\n",gettid());
 	fflush(stdout);
-	unlocku(&lck);
+	unlock(LOCK_IDENT);
 	for(i = 0; i < 10; i++)
 		sleep(100);
-	locku(&lck);
+	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
 	printf("Thread %d is done\n",gettid());
 	fflush(stdout);
-	unlocku(&lck);
+	unlock(LOCK_IDENT);
 	return 0;
 }
 
 int mod_thread(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
-	s32 threads[THREAD_COUNT];
-	u32 i;
+	int threads[THREAD_COUNT];
+	size_t i;
 	for(i = 0; i < THREAD_COUNT; i++)
 		assert((threads[i] = startThread(myThread,NULL)) >= 0);
 	sleep(100);

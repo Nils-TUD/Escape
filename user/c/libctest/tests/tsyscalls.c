@@ -56,9 +56,10 @@ static void test_exec(void);
 static void test_seek(void);
 static void test_stat(void);
 
-/* we want to be able to use u32 for all syscalls */
-static s32 test_doSyscall7(u32 syscallNo,u32 arg1,u32 arg2,u32 arg3,u32 arg4,u32 arg5,u32 arg6,u32 arg7) {
-	s32 res;
+/* we want to be able to use uint for all syscalls */
+static int test_doSyscall7(uint syscallNo,uint arg1,uint arg2,uint arg3,uint arg4,uint arg5,
+		uint arg6,uint arg7) {
+	int res;
 	__asm__ __volatile__ (
 		"movl	%2,%%ecx\n"
 		"movl	%3,%%edx\n"
@@ -83,8 +84,8 @@ static s32 test_doSyscall7(u32 syscallNo,u32 arg1,u32 arg2,u32 arg3,u32 arg4,u32
 	);
 	return res;
 }
-static s32 test_doSyscall(u32 syscallNo,u32 arg1,u32 arg2,u32 arg3) {
-	s32 res;
+static int test_doSyscall(uint syscallNo,uint arg1,uint arg2,uint arg3) {
+	int res;
 	__asm__ __volatile__ (
 		"movl	%2,%%ecx\n"
 		"movl	%3,%%edx\n"
@@ -103,62 +104,62 @@ static s32 test_doSyscall(u32 syscallNo,u32 arg1,u32 arg2,u32 arg3) {
 	return res;
 }
 /* some convenience functions */
-static s32 _getppidof(u32 pid) {
+static int _getppidof(uint pid) {
 	return test_doSyscall(1,pid,0,0);
 }
-static s32 _open(const char *path,u32 mode) {
-	return test_doSyscall(5,(u32)path,mode,0);
+static int _open(const char *path,uint mode) {
+	return test_doSyscall(5,(uint)path,mode,0);
 }
-static s32 _close(u32 fd) {
+static int _close(uint fd) {
 	return test_doSyscall(6,fd,0,0);
 }
-static s32 _read(u32 fd,void *buffer,u32 count) {
-	return test_doSyscall(7,fd,(u32)buffer,count);
+static int _read(uint fd,void *buffer,uint count) {
+	return test_doSyscall(7,fd,(uint)buffer,count);
 }
-static s32 _regDriver(const char *name,u32 type) {
-	return test_doSyscall(8,(u32)name,type,0);
+static int _regDriver(const char *name,uint type) {
+	return test_doSyscall(8,(uint)name,type,0);
 }
-static s32 _changeSize(u32 change) {
+static int _changeSize(uint change) {
 	return test_doSyscall(9,change,0,0);
 }
-static s32 __mapPhysical(u32 addr,u32 count) {
+static int __mapPhysical(uint addr,uint count) {
 	return test_doSyscall(10,addr,count,0);
 }
-static s32 _write(u32 fd,void *buffer,u32 count) {
-	return test_doSyscall(11,fd,(u32)buffer,count);
+static int _write(uint fd,void *buffer,uint count) {
+	return test_doSyscall(11,fd,(uint)buffer,count);
 }
-static s32 _requestIOPorts(u32 start,u32 count) {
+static int _requestIOPorts(uint start,uint count) {
 	return test_doSyscall(13,start,count,0);
 }
-static s32 _releaseIOPorts(u32 start,u32 count) {
+static int _releaseIOPorts(uint start,uint count) {
 	return test_doSyscall(14,start,count,0);
 }
-static s32 _dupFd(u32 fd) {
+static int _dupFd(uint fd) {
 	return test_doSyscall(15,fd,0,0);
 }
-static s32 _redirFd(u32 src,u32 dst) {
+static int _redirFd(uint src,uint dst) {
 	return test_doSyscall(16,src,dst,0);
 }
-static s32 _wait(u32 ev) {
+static int _wait(uint ev) {
 	return test_doSyscall(17,ev,0,0);
 }
-static s32 _setSigHandler(u32 sig,u32 handler) {
+static int _setSigHandler(uint sig,uint handler) {
 	return test_doSyscall(18,sig,handler,0);
 }
-static s32 _sendSignalTo(u32 pid,u32 sig) {
+static int _sendSignalTo(uint pid,uint sig) {
 	return test_doSyscall(20,pid,sig,0);
 }
-static s32 _exec(const char *path,const char **args) {
-	return test_doSyscall(21,(u32)path,(u32)args,0);
+static int _exec(const char *path,const char **args) {
+	return test_doSyscall(21,(uint)path,(uint)args,0);
 }
-static s32 _seek(u32 fd,s32 pos,u32 whence) {
+static int _seek(uint fd,int pos,uint whence) {
 	return test_doSyscall(25,fd,pos,whence);
 }
-static s32 _stat(const char *path,sFileInfo *info) {
-	return test_doSyscall(26,(u32)path,(u32)info,0);
+static int _stat(const char *path,sFileInfo *info) {
+	return test_doSyscall(26,(uint)path,(uint)info,0);
 }
-static s32 _getWork(tFD *ids,u32 count,tFD *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
-	return test_doSyscall7(53,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
+static int _getWork(tFD *ids,uint count,tFD *client,tMsgId *mid,sMsg *msg,uint size,uint flags) {
+	return test_doSyscall7(53,(uint)ids,count,(uint)client,(uint)mid,(uint)msg,size,flags);
 }
 
 /* our test-module */

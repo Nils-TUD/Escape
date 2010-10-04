@@ -64,7 +64,7 @@ void buf_open(const char *file) {
 	}
 }
 
-u32 buf_getLineCount(void) {
+size_t buf_getLineCount(void) {
 	return sll_length(buf.lines);
 }
 
@@ -72,15 +72,15 @@ sFileBuffer *buf_get(void) {
 	return &buf;
 }
 
-void buf_insertAt(s32 col,s32 row,char c) {
-	assert(row >= 0 && row < (s32)sll_length(buf.lines));
+void buf_insertAt(int col,int row,char c) {
+	assert(row >= 0 && row < (int)sll_length(buf.lines));
 	sLine *line = (sLine*)sll_get(buf.lines,row);
-	assert(col >= 0 && col <= (s32)line->length);
+	assert(col >= 0 && col <= (int)line->length);
 	if(line->length >= line->size - 1) {
 		line->size *= 2;
 		line->str = erealloc(line->str,line->size);
 	}
-	if(col < (s32)line->length)
+	if(col < (int)line->length)
 		memmove(line->str + col + 1,line->str + col,line->length - col);
 	line->str[col] = c;
 	line->str[++line->length] = '\0';
@@ -88,12 +88,12 @@ void buf_insertAt(s32 col,s32 row,char c) {
 	buf.modified = true;
 }
 
-void buf_newLine(s32 col,s32 row) {
-	assert(row < (s32)sll_length(buf.lines));
+void buf_newLine(int col,int row) {
+	assert(row < (int)sll_length(buf.lines));
 	sLine *cur = sll_get(buf.lines,row);
 	sLine *line = buf_createLine();
-	if(col < (s32)cur->length) {
-		u32 i,moveLen = cur->length - col;
+	if(col < (int)cur->length) {
+		size_t i,moveLen = cur->length - col;
 		/* append to next and remove from current */
 		if(line->size - line->length <= moveLen) {
 			line->size += moveLen;
@@ -101,7 +101,7 @@ void buf_newLine(s32 col,s32 row) {
 		}
 		strncpy(line->str + line->length,cur->str + col,moveLen);
 		for(i = col; i < cur->length; i++) {
-			u32 clen = displ_getCharLen(cur->str[i]);
+			size_t clen = displ_getCharLen(cur->str[i]);
 			line->displLen += clen;
 			cur->displLen -= clen;
 		}
@@ -114,8 +114,8 @@ void buf_newLine(s32 col,s32 row) {
 	buf.modified = true;
 }
 
-void buf_moveToPrevLine(s32 row) {
-	assert(row > 0 && row < (s32)sll_length(buf.lines));
+void buf_moveToPrevLine(int row) {
+	assert(row > 0 && row < (int)sll_length(buf.lines));
 	sLine *cur = sll_get(buf.lines,row);
 	sLine *prev = sll_get(buf.lines,row - 1);
 	/* append to prev */
@@ -133,15 +133,15 @@ void buf_moveToPrevLine(s32 row) {
 	buf.modified = true;
 }
 
-void buf_removeCur(s32 col,s32 row) {
-	assert(row >= 0 && row < (s32)sll_length(buf.lines));
+void buf_removeCur(int col,int row) {
+	assert(row >= 0 && row < (int)sll_length(buf.lines));
 	sLine *line = (sLine*)sll_get(buf.lines,row);
-	assert(col >= 0 && col <= (s32)line->length);
+	assert(col >= 0 && col <= (int)line->length);
 	col++;
-	if(col > (s32)line->length)
+	if(col > (int)line->length)
 		return;
 	line->displLen -= displ_getCharLen(line->str[col - 1]);
-	if(col < (s32)line->length)
+	if(col < (int)line->length)
 		memmove(line->str + col - 1,line->str + col,line->length - col);
 	line->str[--line->length] = '\0';
 	buf.modified = true;

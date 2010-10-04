@@ -50,6 +50,7 @@ namespace std {
 		 * Destructor
 		 */
 		virtual ~ofstream() {
+			delete rdbuf();
 		}
 
 		/**

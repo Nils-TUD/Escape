@@ -41,12 +41,12 @@
 
 typedef struct sSharedLib sSharedLib;
 struct sSharedLib {
-	u8 isDSO;
+	uchar isDSO;
 	const char *name;
 	tFD fd;
 	sBinDesc bin;
-	u32 loadAddr;
-	u32 textSize;
+	uintptr_t loadAddr;
+	size_t textSize;
 	Elf32_Dyn *dyn;
 	Elf32_Word *hashTbl;
 	Elf32_Rel *jmprel;
@@ -72,7 +72,7 @@ void load_error(const char *fmt,...);
  * @param binFd the file-descriptor
  * @return the entryPoint to jump at
  */
-u32 load_setupProg(tFD binFd);
+uintptr_t load_setupProg(tFD binFd);
 
 /**
  * Determines the value of the given tag in the dynamic-section
@@ -81,6 +81,6 @@ u32 load_setupProg(tFD binFd);
  * @param tag the tag to find
  * @return the value
  */
-u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
+uint load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
 
 #endif /* LINKER_H_ */

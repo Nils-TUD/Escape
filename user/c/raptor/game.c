@@ -36,13 +36,13 @@
 #define FIRE_INTERVAL		(UPDATE_INTERVAL * 8)
 #define ADDPLAIN_INTERVAL	(UPDATE_INTERVAL * 90)
 
-static bool game_performAction(u32 time,u8 keycode);
+static bool game_performAction(tTime time,uchar keycode);
 static void game_fire(void);
 static void game_addAirplain(void);
 
-static u32 score;
-static s32 timerFreq;
-static u8 pressed[KEYCODE_COUNT];
+static uint score;
+static int timerFreq;
+static uchar pressed[KEYCODE_COUNT];
 
 bool game_init(void) {
 	timerFreq = getConf(CONF_TIMER_FREQ);
@@ -64,22 +64,22 @@ void game_deinit(void) {
 	displ_destroy();
 }
 
-u32 game_getScore(void) {
+uint game_getScore(void) {
 	return score;
 }
 
-void game_handleKey(u8 keycode,u8 modifiers,u8 isBreak,char c) {
+void game_handleKey(uchar keycode,uchar modifiers,uchar isBreak,char c) {
 	UNUSED(modifiers);
 	UNUSED(c);
 	pressed[keycode] = !isBreak;
 }
 
-bool game_tick(u32 gtime) {
+bool game_tick(tTime gtime) {
 	bool stop = false;
 	if((gtime % UPDATE_INTERVAL) == 0) {
-		s32 scoreChg;
+		int scoreChg;
 		if((gtime % KEYPRESS_INTERVAL) == 0) {
-			u32 i;
+			size_t i;
 			for(i = 0; i < KEYCODE_COUNT; i++) {
 				if(pressed[i])
 					stop |= !game_performAction(gtime,i);
@@ -88,7 +88,7 @@ bool game_tick(u32 gtime) {
 		if((gtime % ADDPLAIN_INTERVAL) == 0)
 			game_addAirplain();
 		scoreChg = objlist_tick();
-		if((s32)(scoreChg + score) < 0)
+		if((int)(scoreChg + score) < 0)
 			score = 0;
 		else
 			score += scoreChg;
@@ -97,7 +97,7 @@ bool game_tick(u32 gtime) {
 	return !stop;
 }
 
-static bool game_performAction(u32 gtime,u8 keycode) {
+static bool game_performAction(tTime gtime,uchar keycode) {
 	switch(keycode) {
 		case VK_LEFT:
 			bar_moveLeft();
@@ -116,7 +116,7 @@ static bool game_performAction(u32 gtime,u8 keycode) {
 }
 
 static void game_fire(void) {
-	u32 start,end;
+	size_t start,end;
 	sObject *o;
 	bar_getDim(&start,&end);
 	o = obj_createBullet(start + (end - start) / 2,GHEIGHT - 2,DIR_UP,4);
@@ -125,8 +125,8 @@ static void game_fire(void) {
 
 static void game_addAirplain(void) {
 	sObject *o;
-	u8 x = rand() % (GWIDTH - 2);
-	u8 dir = DIR_DOWN;
+	uint x = rand() % (GWIDTH - 2);
+	uint dir = DIR_DOWN;
 	switch(rand() % 3) {
 		case 0:
 			dir |= DIR_LEFT;

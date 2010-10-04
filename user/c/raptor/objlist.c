@@ -39,11 +39,11 @@ sSLList *objlist_get(void) {
 	return objects;
 }
 
-s32 objlist_tick(void) {
+int objlist_tick(void) {
 	sSLNode *n,*pn,*nnext,*m,*pm;
 	sObject *o1,*o2;
 	bool removeO1;
-	s32 scoreChg = 0;
+	int scoreChg = 0;
 	pn = NULL;
 	for(n = sll_begin(objects); n != NULL; ) {
 		o1 = (sObject*)n->data;

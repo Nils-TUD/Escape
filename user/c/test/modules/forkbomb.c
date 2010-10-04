@@ -27,11 +27,11 @@
 
 #define MAX_PIDS	2048
 
-s32 pids[MAX_PIDS];
+int pids[MAX_PIDS];
 
 int mod_forkbomb(int argc,char *argv[]) {
-	u32 n = argc > 2 ? atoi(argv[2]) : 100;
-	u32 i = 0;
+	size_t n = argc > 2 ? atoi(argv[2]) : 100;
+	size_t i = 0;
 	while(1) {
 		pids[i] = fork();
 		/* failed? so send all created child-procs the kill-signal */
@@ -39,7 +39,7 @@ int mod_forkbomb(int argc,char *argv[]) {
 			printf("Fork() failed, so kill all childs...\n");
 			fflush(stdout);
 			while(i-- > 0) {
-				s32 res = sendSignalTo(pids[i],SIG_KILL);
+				int res = sendSignalTo(pids[i],SIG_KILL);
 				res = 1;
 				waitChild(NULL);
 			}

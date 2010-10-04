@@ -48,9 +48,9 @@ int main(int argc,const char *argv[]) {
 	tSig sig = SIG_KILL;
 	char *ssig = NULL;
 	bool list = false;
-	u32 i;
+	size_t i;
 
-	s32 res = ca_parse(argc,argv,0,"L s=s",&list,&ssig);
+	int res = ca_parse(argc,argv,0,"L s=s",&list,&ssig);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);

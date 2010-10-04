@@ -30,7 +30,7 @@ __thread int t2;
 __thread int t3 = 12345;
 
 int mod_tls(int argc,char *argv[]) {
-	u32 i;
+	size_t i;
 	UNUSED(argc);
 	UNUSED(argv);
 	if(startThread(otherThread,NULL) < 0)
@@ -45,7 +45,7 @@ int mod_tls(int argc,char *argv[]) {
 }
 
 static int otherThread(void *arg) {
-	u32 i;
+	size_t i;
 	UNUSED(arg);
 	t1 = 4;
 	t2 = 5;

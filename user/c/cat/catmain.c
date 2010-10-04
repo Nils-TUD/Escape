@@ -39,7 +39,7 @@ int main(int argc,char *argv[]) {
 	if(argc < 2)
 		printFile("STDIN",stdin);
 	else {
-		s32 i;
+		int i;
 		FILE *file;
 		for(i = 1; i < argc; i++) {
 			/* check if it's a directory */

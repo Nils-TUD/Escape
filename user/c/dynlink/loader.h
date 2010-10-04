@@ -36,6 +36,6 @@ void load_doLoad(tFD binFd,sSharedLib *dst);
  *
  * @return the entry-point of the executable
  */
-u32 load_addSegments(void);
+uintptr_t load_addSegments(void);
 
 #endif /* LOADER_H_ */

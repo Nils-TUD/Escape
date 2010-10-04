@@ -40,7 +40,7 @@ void load_error(const char *fmt,...) {
 	exit(1);
 }
 
-u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
+uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 	if(dyn == NULL)
 		load_error("No dynamic entries");
 	while(dyn->d_tag != DT_NULL) {
@@ -51,8 +51,8 @@ u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 	return 0;
 }
 
-u32 load_setupProg(tFD binFd) {
-	u32 entryPoint;
+uintptr_t load_setupProg(tFD binFd) {
+	uintptr_t entryPoint;
 	libs = sll_create();
 	if(!libs)
 		load_error("Not enough mem!");

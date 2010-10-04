@@ -28,13 +28,13 @@
 #include <errors.h>
 #include "game.h"
 
-static void sigTimer(s32 sig);
+static void sigTimer(int sig);
 static void qerror(const char *msg,...);
 static void quit(void);
 
 static tFD keymap = -1;
 static sKmData kmdata;
-static u32 time = 0;
+static tTime time = 0;
 
 int main(void) {
 	/* backup screen and stop vterm to read from keyboard */
@@ -56,7 +56,7 @@ int main(void) {
 	game_tick(time);
 	while(1) {
 		if(wait(EV_DATA_READABLE,keymap) != ERR_INTERRUPTED) {
-			s32 res = RETRY(read(keymap,&kmdata,sizeof(kmdata)));
+			ssize_t res = RETRY(read(keymap,&kmdata,sizeof(kmdata)));
 			if(res < 0) {
 				if(res != ERR_WOULD_BLOCK)
 					qerror("Unable to read from keymap");
@@ -73,7 +73,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void sigTimer(s32 sig) {
+static void sigTimer(int sig) {
 	UNUSED(sig);
 	time++;
 }

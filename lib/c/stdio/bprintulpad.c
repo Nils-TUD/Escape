@@ -27,14 +27,16 @@ int bprintulpad(FILE *f,ullong u,uint base,uint pad,uint flags) {
 	/* pad left - spaces */
 	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
 		size_t width = getulwidth(u,base);
-		count += RETERR(bprintpad(f,pad - width,flags));
+		if(pad > width)
+			count += RETERR(bprintpad(f,pad - width,flags));
 	}
 	/* print base-prefix */
 	PRINT_UNSIGNED_PREFIX(count,f,base,flags);
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
 		size_t width = getulwidth(u,base);
-		count += RETERR(bprintpad(f,pad - width,flags));
+		if(pad > width)
+			count += RETERR(bprintpad(f,pad - width,flags));
 	}
 	/* print number */
 	if(flags & FFL_CAPHEX)
@@ -42,7 +44,7 @@ int bprintulpad(FILE *f,ullong u,uint base,uint pad,uint flags) {
 	else
 		count += RETERR(bprintul(f,u,base,hexCharsSmall));
 	/* pad right */
-	if((flags & FFL_PADRIGHT) && pad > 0)
+	if((flags & FFL_PADRIGHT) && (int)pad > count)
 		count += RETERR(bprintpad(f,pad - count,flags));
 	return count;
 }

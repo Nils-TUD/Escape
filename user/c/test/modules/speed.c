@@ -19,46 +19,52 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/dir.h>
 #include <esc/debug.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <errors.h>
 
 #include "speed.h"
 
-/*#define BUF_SIZE	4096 * 32
-#define COUNT		18000*/
-#define BUF_SIZE	4096 * 32
-#define COUNT		30000
-
-static u8 buffer[BUF_SIZE];
-
 int mod_speed(int argc,char *argv[]) {
 	tFD fd;
-	u64 start;
-	uLongLong total;
-	u64 i,diff,t;
-	char rpath[MAX_PATH_LEN] = "/system/test";
+	ullong start;
+	ullong total;
+	ullong i,diff,t;
+	size_t count = 30000;
+	size_t bufSize = 4096;
+	void *buffer;
+	const char *path = "/system/test";
 
 	if(argc > 2)
-		abspath(rpath,MAX_PATH_LEN,argv[2]);
+		path = argv[2];
+	if(argc > 3)
+		count = atoi(argv[3]);
+	if(argc > 4)
+		bufSize = atoi(argv[4]);
 
-	fd = open(rpath,IO_READ | IO_WRITE | IO_CREATE | IO_TRUNCATE);
+	if(count == 0)
+		error("Got count=0");
+	buffer = malloc(bufSize);
+	if(!buffer)
+		error("malloc");
+
+	fd = open(path,IO_READ | IO_WRITE | IO_CREATE | IO_TRUNCATE);
 	if(fd < 0)
 		error("open");
 
-	printf("Testing speed of read/write from/to '%s'\n",rpath);
-	printf("Transferring %u MiB in chunks of %d bytes\n",(u32)(((u64)COUNT * BUF_SIZE) / (1024 * 1024)),
-			BUF_SIZE);
+	printf("Testing speed of read/write from/to '%s'\n",path);
+	printf("Transferring %u MiB in chunks of %d bytes\n",
+			(uint)(((ullong)count * bufSize) / (1024 * 1024)),bufSize);
 	printf("\n");
 
-#if 0
 	/* write */
 	t = time(NULL);
 	start = cpu_rdtsc();
-	for(i = 0; i < COUNT; i++) {
-		if(write(fd,buffer,sizeof(buffer)) < 0) {
+	for(i = 0; i < count; i++) {
+		if(write(fd,buffer,bufSize) < 0) {
 			printe("write");
 			break;
 		}
@@ -66,50 +72,49 @@ int mod_speed(int argc,char *argv[]) {
 			printe("seek");
 			break;
 		}
-		if(i % (COUNT / 1000) == 0) {
+		if(count >= 1000 && i % (count / 1000) == 0) {
 			diff = time(NULL) - t;
-			printf("\rWriting with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
-			flush();
+			printf("\rWriting with	%07d KiB/s",
+					diff == 0 ? 0 : ((i * bufSize / diff) / 1024));
+			fflush(stdout);
 		}
 	}
 
-	total.val64 = cpu_rdtsc() - start;
+	total = cpu_rdtsc() - start;
 	diff = time(NULL) - t;
 	printf("\n");
-	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
-	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
+	printf("Instructions:	%016Lx\n",total);
+	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * bufSize / diff) / 1024));
 	printf("\n");
-#endif
 
 	/* read */
-	debug();
 	t = time(NULL);
 	start = cpu_rdtsc();
-	for(i = 0; i < COUNT; i++) {
-		if(RETRY(read(fd,buffer,sizeof(buffer))) < 0) {
+	for(i = 0; i < count; i++) {
+		if(RETRY(read(fd,buffer,bufSize)) < 0) {
 			printe("read");
 			break;
 		}
-#if 0
 		if(seek(fd,0,SEEK_SET) < 0) {
 			printe("seek");
 			break;
 		}
-		if(i % (COUNT / 1000) == 0) {
+		if(count >= 1000 && i % (count / 1000) == 0) {
 			diff = time(NULL) - t;
-			printf("\rReading with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
-			flush();
+			printf("\rReading with	%07d KiB/s",
+					diff == 0 ? 0 : ((i * bufSize / diff) / 1024));
+			fflush(stdout);
 		}
-#endif
 	}
-	debug();
 
-	total.val64 = cpu_rdtsc() - start;
+	total = cpu_rdtsc() - start;
 	diff = time(NULL) - t;
 	printf("\n");
-	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
-	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / (double)diff) / 1024));
+	printf("Instructions:	%016Lx\n",total);
+	printf("Speed:			%07d KiB/s\n",
+			diff == 0 ? 0 : ((i * bufSize / diff) / 1024));
 
+	free(buffer);
 	close(fd);
 
 	return EXIT_SUCCESS;

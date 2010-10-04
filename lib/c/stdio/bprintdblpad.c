@@ -30,14 +30,15 @@ int bprintdblpad(FILE *f,double d,uint pad,uint flags,uint precision) {
 		size_t width = getlwidth(pre) + precision + 1;
 		if(pre > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
-		count += RETERR(bprintpad(f,pad - width,flags));
+		if(pad > width)
+			count += RETERR(bprintpad(f,pad - width,flags));
 	}
 	/* print '+' or ' ' instead of '-' */
 	PRINT_SIGNED_PREFIX(count,f,pre,flags);
 	/* print number */
 	count += RETERR(bprintdbl(f,d,precision));
 	/* pad right */
-	if((flags & FFL_PADRIGHT) && pad > 0)
+	if((flags & FFL_PADRIGHT) && (int)pad > count)
 		count += RETERR(bprintpad(f,pad - count,flags));
 	return count;
 }

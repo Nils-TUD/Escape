@@ -23,15 +23,15 @@
 #include "object.h"
 #include "display.h"
 
-sObject *obj_createAirplain(u8 x,u8 y,u8 direction,u8 speed) {
+sObject *obj_createAirplain(int x,int y,int direction,int speed) {
 	return obj_create(TYPE_AIRPLANE,x,y,AIRPLANE_WIDTH,AIRPLANE_HEIGHT,direction,speed);
 }
 
-sObject *obj_createBullet(u8 x,u8 y,u8 direction,u8 speed) {
+sObject *obj_createBullet(int x,int y,int direction,int speed) {
 	return obj_create(TYPE_BULLET,x,y,BULLET_WIDTH,BULLET_HEIGHT,direction,speed);
 }
 
-sObject *obj_create(u8 type,u8 x,u8 y,u8 width,u8 height,u8 direction,u8 speed) {
+sObject *obj_create(int type,int x,int y,int width,int height,int direction,int speed) {
 	sObject *o = (sObject*)malloc(sizeof(sObject));
 	assert(o != NULL);
 	o->type = type;
@@ -100,7 +100,7 @@ bool obj_tick(sObject *o) {
 			o->y--;
 		}
 		if(o->direction & DIR_DOWN) {
-			if(o->y + o->height == GHEIGHT)
+			if(o->y + o->height == (int)GHEIGHT)
 				return false;
 			o->y++;
 		}
@@ -110,7 +110,7 @@ bool obj_tick(sObject *o) {
 			o->x--;
 		}
 		if(o->direction & DIR_RIGHT) {
-			if(o->x + o->width == GWIDTH)
+			if(o->x + o->width == (int)GWIDTH)
 				return false;
 			o->x++;
 		}

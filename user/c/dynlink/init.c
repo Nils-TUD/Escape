@@ -48,7 +48,7 @@ static void load_initLib(sSharedLib *l) {
 
 	/* if its not the executable, call the init-function */
 	if(l->isDSO) {
-		u32 initAddr = load_getDyn(l->dyn,DT_INIT);
+		uintptr_t initAddr = (uintptr_t)load_getDyn(l->dyn,DT_INIT);
 		if(initAddr) {
 			void (*initFunc)(void) = (void (*)(void))(initAddr + l->loadAddr);
 			initFunc();

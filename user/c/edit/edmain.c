@@ -37,7 +37,7 @@ static void usage(const char *name) {
 int main(int argc,char *argv[]) {
 	bool run = true;
 	char c;
-	s32 cmd,n1,n2,n3;
+	int cmd,n1,n2,n3;
 	if(argc > 2 || isHelpCmd(argc,argv))
 		usage(argv[0]);
 
@@ -55,7 +55,7 @@ int main(int argc,char *argv[]) {
 
 			/* insert a char? */
 			if(n1 == '\t' || (isprint(n1) && !(n3 & (STATE_CTRL | STATE_ALT)))) {
-				s32 col,row;
+				int col,row;
 				displ_getCurPos(&col,&row);
 				buf_insertAt(col,row,n1);
 				displ_markDirty(row,1);
@@ -67,7 +67,7 @@ int main(int argc,char *argv[]) {
 						if(n3 & STATE_CTRL) {
 							if(buf_get()->modified) {
 								char dstFile[MAX_PATH_LEN];
-								s32 res = displ_getSaveFile(dstFile,MAX_PATH_LEN);
+								int res = displ_getSaveFile(dstFile,MAX_PATH_LEN);
 								if(res != EOF) {
 									buf_store(dstFile);
 									run = false;
@@ -79,7 +79,7 @@ int main(int argc,char *argv[]) {
 						break;
 
 					case VK_ENTER: {
-						s32 col,row;
+						int col,row;
 						displ_getCurPos(&col,&row);
 						buf_newLine(col,row);
 						/* to beginning of next line */
@@ -91,11 +91,11 @@ int main(int argc,char *argv[]) {
 
 					case VK_DELETE:
 					case VK_BACKSP: {
-						s32 col,row;
+						int col,row;
 						displ_getCurPos(&col,&row);
 						if(n2 == VK_DELETE) {
 							sLine *cur = sll_get(buf_get()->lines,row);
-							if(col == (s32)cur->length) {
+							if(col == (int)cur->length) {
 								buf_moveToPrevLine(row + 1);
 								displ_markDirty(row,buf_getLineCount() + 1);
 							}

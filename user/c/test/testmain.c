@@ -68,7 +68,7 @@ static sTestModule modules[] = {
 };
 
 int main(int argc,char *argv[]) {
-	u32 i;
+	size_t i;
 	if(argc < 2 || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s <module> [...]\n",argv[0]);
 		fprintf(stderr,"	Available modules:\n");

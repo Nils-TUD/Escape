@@ -25,8 +25,8 @@
 
 int main(void) {
 	sVTSize consSize;
-	u32 maxWidth;
-	u32 p,i,j;
+	size_t maxWidth;
+	size_t p,i,j;
 	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
 		error("Unable to get vterm-size");
 	maxWidth = consSize.width - 3;

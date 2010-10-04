@@ -28,16 +28,16 @@
 #include <string.h>
 #include <errors.h>
 
-static void sigTimer(s32 sig);
-static void sigHdlr(s32 sig);
+static void sigTimer(int sig);
+static void sigHdlr(int sig);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <program> [arguments...]\n",name);
 	exit(EXIT_FAILURE);
 }
 
-static s32 timerFreq;
-static u32 ms = 0;
-static s32 waitingPid = 0;
+static int timerFreq;
+static tTime ms = 0;
+static int waitingPid = 0;
 
 int main(int argc,char **argv) {
 	char path[MAX_PATH_LEN + 1] = "/bin/";
@@ -55,8 +55,8 @@ int main(int argc,char **argv) {
 		error("Unable to set sig-handler for signal %d",SIG_INTRPT_TIMER);
 
 	if((waitingPid = fork()) == 0) {
-		s32 i;
-		u32 size = 1;
+		int i;
+		size_t size = 1;
 		const char *args[] = {"/bin/shell","-e",NULL,NULL};
 		char *arg = NULL;
 		for(i = 1; i < argc; i++) {
@@ -75,7 +75,7 @@ int main(int argc,char **argv) {
 		error("Fork failed");
 	else {
 		sExitState state;
-		s32 res;
+		int res;
 		while(1) {
 			res = waitChild(&state);
 			if(res != ERR_INTERRUPTED)
@@ -103,12 +103,12 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static void sigTimer(s32 sig) {
+static void sigTimer(int sig) {
 	UNUSED(sig);
 	ms += 1000 / timerFreq;
 }
 
-static void sigHdlr(s32 sig) {
+static void sigHdlr(int sig) {
 	UNUSED(sig);
 	if(waitingPid > 0) {
 		/* send SIG_INTRPT to the child */

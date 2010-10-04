@@ -38,7 +38,7 @@ typedef struct {
 	void *data;
 } sTestRequest;
 
-static u32 respId = 1;
+static int respId = 1;
 static sMsg msg;
 static tFD id;
 
@@ -55,7 +55,7 @@ static void printffl(const char *fmt,...) {
 }
 
 int mod_driver(int argc,char *argv[]) {
-	u32 i;
+	size_t i;
 	UNUSED(argc);
 	UNUSED(argv);
 

@@ -26,7 +26,7 @@
 #include "lookup.h"
 
 static void load_relocLib(sSharedLib *l);
-static void load_adjustCopyGotEntry(const char *name,u32 copyAddr);
+static void load_adjustCopyGotEntry(const char *name,uintptr_t copyAddr);
 
 void load_reloc(void) {
 	sSLNode *n;
@@ -59,22 +59,22 @@ static void load_relocLib(sSharedLib *l) {
 
 	rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
 	if(rel) {
-		u32 x;
-		u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
+		size_t x;
+		size_t relCount = load_getDyn(l->dyn,DT_RELSZ);
 		relCount /= sizeof(Elf32_Rel);
-		rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
+		rel = (Elf32_Rel*)((uintptr_t)rel + l->loadAddr);
 		for(x = 0; x < relCount; x++) {
-			u32 relType = ELF32_R_TYPE(rel[x].r_info);
+			uint relType = ELF32_R_TYPE(rel[x].r_info);
 			if(relType == R_386_NONE)
 				continue;
 			if(relType == R_386_GLOB_DAT) {
-				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+				uint symIndex = ELF32_R_SYM(rel[x].r_info);
+				uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->dynsyms + symIndex;
 				/* if the symbol-value is 0, it seems that we have to lookup the symbol now and
 				 * store that value instead. TODO I'm not sure if thats correct */
 				if(sym->st_value == 0) {
-					u32 value;
+					uintptr_t value;
 					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
 						DBGDL("Unable to find symbol %s\n",l->dynstrtbl + sym->st_name);
 					else
@@ -86,8 +86,8 @@ static void load_relocLib(sSharedLib *l) {
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr,sym->st_value);
 			}
 			else if(relType == R_386_COPY) {
-				u32 value;
-				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
+				uintptr_t value;
+				uint symIndex = ELF32_R_SYM(rel[x].r_info);
 				const char *name = l->dynstrtbl + l->dynsyms[symIndex].st_name;
 				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
 				if(foundSym == NULL)
@@ -97,16 +97,16 @@ static void load_relocLib(sSharedLib *l) {
 				 * the value to. TODO I'm not sure if that's the intended way... */
 				load_adjustCopyGotEntry(name,rel[x].r_offset);
 				DBGDL("Rel (COPY) off=%x sym=%s addr=%x val=%x\n",rel[x].r_offset,name,
-						value,*(u32*)value);
+						value,*(uintptr_t*)value);
 			}
 			else if(relType == R_386_RELATIVE) {
-				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+				uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 				*ptr += l->loadAddr;
 				DBGDL("Rel (RELATIVE) off=%x orgoff=%x reloc=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr);
 			}
 			else if(relType == R_386_32) {
-				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+				uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
 				/* TODO well, again I can't explain why this is needed. If I understand
 				 * the code in glibc/sysdeps/i386/dl-machine.h correct, they just do a
@@ -117,7 +117,7 @@ static void load_relocLib(sSharedLib *l) {
 				 * anything about this.. :D
 				 */
 				if(sym->st_value == 0) {
-					u32 value;
+					uintptr_t value;
 					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
 						load_error("Unable to find symbol %s",l->dynstrtbl + sym->st_name);
 					*ptr += value;
@@ -129,7 +129,7 @@ static void load_relocLib(sSharedLib *l) {
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr);
 			}
 			else if(relType == R_386_PC32) {
-				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+				uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
 				DBGDL("Rel (PC32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
@@ -149,18 +149,18 @@ static void load_relocLib(sSharedLib *l) {
 
 	/* adjust addresses in PLT-jumps */
 	if(l->jmprel) {
-		u32 x,jmpCount = load_getDyn(l->dyn,DT_PLTRELSZ);
+		size_t x,jmpCount = load_getDyn(l->dyn,DT_PLTRELSZ);
 		jmpCount /= sizeof(Elf32_Rel);
 		for(x = 0; x < jmpCount; x++) {
-			u32 *addr = (u32*)(l->jmprel[x].r_offset + l->loadAddr);
+			uintptr_t *addr = (uintptr_t*)(l->jmprel[x].r_offset + l->loadAddr);
 			/* if the address is 0 (should be the next instruction at the beginning),
 			 * do the symbol-lookup immediatly.
 			 * TODO i can't imagine that this is the intended way. why is the address 0 in
 			 * this case??? (instead of the offset from the beginning of the shared lib,
 			 * so that we can simply add the loadAddr) */
 			if(LD_BIND_NOW || *addr == 0) {
-				u32 value;
-				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
+				uintptr_t value;
+				uint symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
 				const char *name = l->dynstrtbl + l->dynsyms[symIndex].st_name;
 				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
 				/* TODO there must be a better way... */
@@ -184,10 +184,10 @@ static void load_relocLib(sSharedLib *l) {
 	}
 
 	/* store pointer to library and lookup-function into GOT */
-	got = (u32*)load_getDyn(l->dyn,DT_PLTGOT);
+	got = (Elf32_Addr*)load_getDyn(l->dyn,DT_PLTGOT);
 	DBGDL("GOT-Address of %s: %x\n",l->name,got);
 	if(got) {
-		got = (Elf32_Addr*)((u32)got + l->loadAddr);
+		got = (Elf32_Addr*)((uintptr_t)got + l->loadAddr);
 		got[1] = (Elf32_Addr)l;
 		got[2] = (Elf32_Addr)&lookup_resolveStart;
 	}
@@ -197,9 +197,9 @@ static void load_relocLib(sSharedLib *l) {
 	close(l->fd);
 }
 
-static void load_adjustCopyGotEntry(const char *name,u32 copyAddr) {
+static void load_adjustCopyGotEntry(const char *name,uintptr_t copyAddr) {
 	sSLNode *n;
-	u32 address;
+	uintptr_t address;
 	/* go through all libraries and copy the address of the object (copy-relocated) to
 	 * the corresponding GOT-entry. this ensures that all DSO's use the same object */
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
@@ -212,15 +212,14 @@ static void load_adjustCopyGotEntry(const char *name,u32 copyAddr) {
 			/* TODO we should store DT_REL and DT_RELSZ */
 			Elf32_Rel *rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
 			if(rel) {
-				u32 x;
-				u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
+				size_t x,relCount = load_getDyn(l->dyn,DT_RELSZ);
 				relCount /= sizeof(Elf32_Rel);
-				rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
+				rel = (Elf32_Rel*)((uintptr_t)rel + l->loadAddr);
 				for(x = 0; x < relCount; x++) {
 					if(ELF32_R_TYPE(rel[x].r_info) == R_386_GLOB_DAT) {
-						u32 symIndex = ELF32_R_SYM(rel[x].r_info);
+						uint symIndex = ELF32_R_SYM(rel[x].r_info);
 						if(l->dynsyms[symIndex].st_value + l->loadAddr == address) {
-							u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+							uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 							*ptr = copyAddr;
 							break;
 						}

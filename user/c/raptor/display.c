@@ -85,7 +85,7 @@ static char *buffer = NULL;
 static char *backup = NULL;
 
 bool displ_init(void) {
-	u32 vidMode = getConf(CONF_BOOT_VIDEOMODE);
+	int vidMode = getConf(CONF_BOOT_VIDEOMODE);
 	if(vidMode == CONF_VIDMODE_VGATEXT)
 		video = open(VIDEO_DRIVER,IO_READ | IO_WRITE);
 	else
@@ -134,7 +134,7 @@ void displ_update(void) {
 }
 
 static void displ_drawScore(void) {
-	u32 x,i;
+	size_t x,i;
 	char scoreStr[SCORE_WIDTH];
 	snprintf(scoreStr,sizeof(scoreStr),"%*u",SCORE_WIDTH - 2,game_getScore());
 	for(i = 0, x = WIDTH - SCORE_WIDTH + 1; scoreStr[i]; i++, x++)
@@ -142,14 +142,14 @@ static void displ_drawScore(void) {
 }
 
 static void displ_drawObjects(void) {
-	u8 y;
+	int y;
 	sSLNode *n;
 	sObject *o;
 	char *src;
 	sSLList *objects = objlist_get();
 	for(n = sll_begin(objects); n != NULL; n = n->next) {
 		o = (sObject*)n->data;
-		if((u32)(o->x + PADDING + o->width) >= (u32)(WIDTH - SCORE_WIDTH) &&
+		if((size_t)(o->x + PADDING + o->width) >= (size_t)(WIDTH - SCORE_WIDTH) &&
 				(o->y + PADDING) <= SCORE_HEIGHT) {
 			/* don't draw objects over the score-area */
 			continue;
@@ -184,7 +184,7 @@ static void displ_drawObjects(void) {
 }
 
 static void displ_drawBar(void) {
-	u32 x,start,end;
+	size_t x,start,end;
 	bar_getDim(&start,&end);
 	for(x = start + PADDING; x <= end; x++) {
 		buffer[XYCHAR(x,HEIGHT - 2)] = 0xDB;
@@ -197,7 +197,7 @@ static void displ_restoreBackup(void) {
 }
 
 static void displ_setBackup(void) {
-	u32 i,x,y;
+	size_t i,x,y;
 	const char *title = "Score:";
 	/* fill bg */
 	for(i = 0; i < WIDTH * HEIGHT * 2; i += 2) {

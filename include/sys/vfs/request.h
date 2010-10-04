@@ -74,7 +74,7 @@ void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,size_t size);
  * @param size optional, the buffer-size (stored in dsize)
  * @return the request or NULL if not enough mem
  */
-sRequest *vfs_req_getRequest(sVFSNode *node,void *buffer,size_t size);
+sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size);
 
 /**
  * Waits for the given request. You may get interrupted even if you don't allow signals since
@@ -93,14 +93,21 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs);
  * @param node the vfs-node over which the request is handled
  * @return the request or NULL
  */
-sRequest *vfs_req_getRequestByNode(const sVFSNode *node);
+sRequest *vfs_req_getByNode(const sVFSNode *node);
 
 /**
- * Marks the given request as finished
+ * Removes the request from the queue (so that it can't receive a msg anymore), but does not free it
  *
  * @param r the request
  */
-void vfs_req_remRequest(sRequest *r);
+void vfs_req_remove(sRequest *r);
+
+/**
+ * Removes the request from the queue and free's it
+ *
+ * @param r the request
+ */
+void vfs_req_free(sRequest *r);
 
 
 #if DEBUGGING

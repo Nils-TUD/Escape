@@ -33,28 +33,16 @@
 #include <string.h>
 #include <errors.h>
 
-#define FS_RESERVED			32
-#define REQUEST_COUNT		1024
 #define HANDLER_COUNT		32
 
 /* the vfs-driver-file */
-static sRequest requests[REQUEST_COUNT];
+static sSLList *requests;
 static fReqHandler handler[HANDLER_COUNT] = {NULL};
 
 void vfs_req_init(void) {
-	size_t i;
-	sRequest *req;
-
-	req = requests;
-	for(i = 0; i < REQUEST_COUNT; i++) {
-		/* a few slots are reserved for fs; because we need driver-requests to handle fs-requests */
-		if(i < FS_RESERVED)
-			req->tid = KERNEL_TID;
-		else
-			req->tid = INVALID_TID;
-		req->node = NULL;
-		req++;
-	}
+	requests = sll_create();
+	if(!requests)
+		util_panic("Unable to create linked list for requests");
 }
 
 bool vfs_req_setHandler(tMsgId id,fReqHandler f) {
@@ -70,31 +58,14 @@ void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,size_t size) {
 		handler[id](node,data,size);
 }
 
-sRequest *vfs_req_getRequest(sVFSNode *node,void *buffer,size_t size) {
-	size_t i;
+sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size) {
 	sThread *t = thread_getRunning();
 	sRequest *req = NULL;
 	assert(node != NULL);
 
-retry:
-	for(i = 0; i < REQUEST_COUNT; i++) {
-		/* another request with that node? wait! */
-		if(requests[i].node == node) {
-			req = NULL;
-			break;
-		}
-		if(!req && requests[i].node == NULL &&
-				(t->proc->pid == FS_PID || requests[i].tid != KERNEL_TID))
-			req = requests + i;
-	}
-	/* if there is no free slot or another one is using that node, wait */
-	if(!req) {
-		/* TODO don't block here when VFS_NOBLOCK is set? */
-		ev_wait(t->tid,EVI_REQ_FREE,0);
-		thread_switch();
-		goto retry;
-	}
-
+	req = (sRequest*)kheap_alloc(sizeof(sRequest));
+	if(!req)
+		return NULL;
 	req->tid = t->tid;
 	req->node = node;
 	req->state = REQ_STATE_WAITING;
@@ -103,6 +74,10 @@ retry:
 	req->data = buffer;
 	req->dsize = size;
 	req->count = 0;
+	if(!sll_append(requests,req)) {
+		kheap_free(req);
+		return NULL;
+	}
 	return req;
 }
 
@@ -121,37 +96,42 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 	}
 }
 
-sRequest *vfs_req_getRequestByNode(const sVFSNode *node) {
-	size_t i;
-	sRequest *req = requests;
-	assert(node != NULL);
-	for(i = 0; i < REQUEST_COUNT; i++) {
+sRequest *vfs_req_getByNode(const sVFSNode *node) {
+	sSLNode *n,*p;
+	p = NULL;
+	for(n = sll_begin(requests); n != NULL; p = n, n = n->next) {
+		sRequest *req = (sRequest*)n->data;
 		if(req->node == node) {
 			/* the thread may have been terminated... */
 			if(thread_getById(req->tid) == NULL) {
-				vfs_req_remRequest(req);
+				vfs_req_free(req);
 				return NULL;
 			}
 			return req;
 		}
-		req++;
 	}
 	return NULL;
 }
 
-void vfs_req_remRequest(sRequest *r) {
-	r->node = NULL;
-	ev_wakeup(EVI_REQ_FREE,0);
+void vfs_req_remove(sRequest *r) {
+	sll_removeFirst(requests,r);
+}
+
+void vfs_req_free(sRequest *r) {
+	if(r) {
+		sll_removeFirst(requests,r);
+		kheap_free(r);
+	}
 }
 
 #if DEBUGGING
 
 void vfs_req_dbg_printAll(void) {
-	size_t i;
+	sSLNode *n;
 	vid_printf("Active requests:\n");
-	for(i = 0; i < REQUEST_COUNT; i++) {
-		if(requests[i].node != NULL)
-			vfs_req_dbg_print(requests + i);
+	for(n = sll_begin(requests); n != NULL; n = n->next) {
+		sRequest *req = (sRequest*)n->data;
+		vfs_req_dbg_print(req);
 	}
 }
 

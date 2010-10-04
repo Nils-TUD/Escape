@@ -34,7 +34,7 @@
 #define MAX_BASE		16
 
 static char ascii[MAX_BASE];
-static u8 buffer[BUF_SIZE];
+static uchar buffer[BUF_SIZE];
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
@@ -46,8 +46,8 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static void printAscii(u8 base,s32 pos) {
-	s32 j;
+static void printAscii(uint base,int pos) {
+	uint j;
 	if(pos > 0) {
 		while(pos % base != 0) {
 			ascii[pos % base] = ' ';
@@ -64,12 +64,12 @@ static void printAscii(u8 base,s32 pos) {
 
 int main(int argc,const char *argv[]) {
 	FILE *in = stdin;
-	u8 base = 16;
+	uint base = 16;
 	char format = OUT_FORMAT_HEX;
-	s32 i,count = -1;
+	int i,count = -1;
 	const char **args;
 
-	s32 res = ca_parse(argc,argv,CA_MAX1_FREE,"n=d f=c",&count,&format);
+	int res = ca_parse(argc,argv,CA_MAX1_FREE,"n=d f=c",&count,&format);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);

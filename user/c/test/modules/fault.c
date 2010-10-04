@@ -24,13 +24,13 @@
 #include "fault.h"
 
 int mod_fault(int argc,char *argv[]) {
-	u32 *ptr;
+	uint *ptr;
 	tFD fd;
 	UNUSED(argc);
 	UNUSED(argv);
 	printf("I am evil ^^\n");
 	fd = open((char*)0x12345678,IO_READ);
-	ptr = (u32*)0xFFFFFFFF;
+	ptr = (uint*)0xFFFFFFFF;
 	*ptr = 1;
 	printf("Never printed\n");
 	close(fd);

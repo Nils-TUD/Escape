@@ -41,9 +41,9 @@ extern void lookup_resolveStart(void);
  * @return the address of the symbol
  */
 #ifdef CALLTRACE_PID
-u32 lookup_resolve(u32 retAddr,sSharedLib *lib,u32 offset);
+uintptr_t lookup_resolve(uintptr_t retAddr,sSharedLib *lib,size_t offset);
 #else
-u32 lookup_resolve(sSharedLib *lib,u32 offset);
+uintptr_t lookup_resolve(sSharedLib *lib,size_t offset);
 #endif
 
 /**
@@ -54,7 +54,7 @@ u32 lookup_resolve(sSharedLib *lib,u32 offset);
  * @param value will be set to the address (absolute = already adjusted by the loadAddr)
  * @return the symbol if successfull or NULL
  */
-Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value);
+Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,uintptr_t *value);
 
 /**
  * Resolves a symbol by name in the given library
@@ -64,6 +64,6 @@ Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value);
  * @param value will be set to the address (absolute = already adjusted by the loadAddr)
  * @return the symbol if successfull or NULL
  */
-Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,u32 *value);
+Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,uintptr_t *value);
 
 #endif /* LOOKUP_H_ */

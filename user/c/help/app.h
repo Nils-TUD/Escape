@@ -28,7 +28,7 @@
 
 /* information about an application */
 typedef struct {
-	u8 type;
+	uint type;
 	char *name;
 	char *start;
 	char *desc;

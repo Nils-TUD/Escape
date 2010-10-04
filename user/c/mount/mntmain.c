@@ -29,7 +29,7 @@
 #define FS_NAME_LEN	12
 
 typedef struct {
-	u16 type;
+	uint type;
 	char name[FS_NAME_LEN];
 } sFSType;
 
@@ -39,7 +39,7 @@ static sFSType types[] = {
 };
 
 static void usage(const char *name) {
-	u32 i;
+	size_t i;
 	fprintf(stderr,"Usage: %s <device> <path> <type>\n",name);
 	fprintf(stderr,"	Types: ");
 	for(i = 0; i < ARRAY_SIZE(types); i++)
@@ -52,9 +52,10 @@ int main(int argc,const char *argv[]) {
 	char *path = NULL;
 	char *dev = NULL;
 	char *stype = NULL;
-	u32 type,i;
+	size_t i;
+	uint type;
 
-	s32 res = ca_parse(argc,argv,CA_NO_FREE,"=s* =s* =s*",&dev,&path,&stype);
+	int res = ca_parse(argc,argv,CA_NO_FREE,"=s* =s* =s*",&dev,&path,&stype);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);

@@ -29,14 +29,15 @@ int bprintnpad(FILE *f,int n,uint pad,uint flags) {
 		size_t width = getnwidth(n);
 		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
-		count += RETERR(bprintpad(f,pad - width,flags));
+		if(pad > width)
+			count += RETERR(bprintpad(f,pad - width,flags));
 	}
 	/* print '+' or ' ' instead of '-' */
 	PRINT_SIGNED_PREFIX(count,f,n,flags);
 	/* print number */
 	count += RETERR(bprintn(f,n));
 	/* pad right */
-	if((flags & FFL_PADRIGHT) && pad > 0)
+	if((flags & FFL_PADRIGHT) && (int)pad > count)
 		count += RETERR(bprintpad(f,pad - count,flags));
 	return count;
 }

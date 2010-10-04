@@ -32,21 +32,21 @@ static void usage(const char *name) {
 	fprintf(stderr,"	You can use the suffixes K, M and G to specify N\n");
 	exit(EXIT_FAILURE);
 }
-static void interrupted(s32 sig) {
+static void interrupted(int sig) {
 	UNUSED(sig);
 	run = false;
 }
 
 int main(int argc,const char *argv[]) {
-	u32 bs = 4096;
-	u32 count = 0;
-	u64 total = 0;
+	size_t bs = 4096;
+	size_t count = 0;
+	ullong total = 0;
 	char *inFile = NULL;
 	char *outFile = NULL;
 	FILE *in = stdin;
 	FILE *out = stdout;
 
-	s32 res = ca_parse(argc,argv,CA_NO_DASHES | CA_NO_FREE | CA_REQ_EQ,
+	int res = ca_parse(argc,argv,CA_NO_DASHES | CA_NO_FREE | CA_REQ_EQ,
 			"if=s of=s bs=k count=k",&inFile,&outFile,&bs,&count);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
@@ -70,12 +70,12 @@ int main(int argc,const char *argv[]) {
 	}
 
 	size_t result;
-	u8 *buffer = (u8*)malloc(bs);
-	u64 limit = (u64)count * bs;
+	void *buffer = malloc(bs);
+	ullong limit = (ullong)count * bs;
 	while(run && (!count || total < limit)) {
-		if((result = fread(buffer,sizeof(u8),bs,in)) == 0)
+		if((result = fread(buffer,1,bs,in)) == 0)
 			break;
-		if(fwrite(buffer,sizeof(u8),bs,out) == 0)
+		if(fwrite(buffer,1,bs,out) == 0)
 			break;
 		total += result;
 	}

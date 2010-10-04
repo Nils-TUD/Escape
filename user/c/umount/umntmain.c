@@ -33,7 +33,7 @@ static void usage(const char *name) {
 int main(int argc,const char *argv[]) {
 	char *path = NULL;
 
-	s32 res = ca_parse(argc,argv,CA_NO_FREE,"=s*",&path);
+	int res = ca_parse(argc,argv,CA_NO_FREE,"=s*",&path);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);

@@ -22,7 +22,7 @@
 #include <stdlib.h>
 
 int main(void) {
-	u32 i,j;
+	size_t i,j;
 	fputs("    ",stdout);
 	for(i = 0; i < 16; i++)
 		printf("%02x ",i << 4);

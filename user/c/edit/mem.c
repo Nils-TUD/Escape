@@ -23,14 +23,14 @@
 #include <esc/sllist.h>
 #include "mem.h"
 
-void *emalloc(u32 size) {
+void *emalloc(size_t size) {
 	void *p = malloc(size);
 	if(!p)
 		error("Unable to allocate %d bytes",size);
 	return p;
 }
 
-void *erealloc(void *p,u32 size) {
+void *erealloc(void *p,size_t size) {
 	void *pn = realloc(p,size);
 	if(!pn)
 		error("Unable to realloc mem @ %x to %d bytes",p,size);
@@ -44,7 +44,7 @@ char *estrdup(const char *s) {
 	return dup;
 }
 
-char *estrndup(const char *s,u32 n) {
+char *estrndup(const char *s,size_t n) {
 	char *dup = strndup(s,n);
 	if(!dup)
 		error("Unable to duplicate string '%s'",s);
@@ -58,7 +58,7 @@ sSLList *esll_create(void) {
 	return list;
 }
 
-void esll_insert(sSLList *list,const void *data,u32 index) {
+void esll_insert(sSLList *list,const void *data,size_t index) {
 	if(!sll_insert(list,data,index))
 		error("Unable to insert an element to the linked list");
 }

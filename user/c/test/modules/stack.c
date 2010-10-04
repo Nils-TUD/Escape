@@ -23,7 +23,7 @@
 #include <signal.h>
 #include "stack.h"
 
-static void sigHandler(s32 sig);
+static void sigHandler(int sig);
 static void f(int a);
 
 int mod_stack(int argc,char *argv[]) {
@@ -35,7 +35,7 @@ int mod_stack(int argc,char *argv[]) {
 	return 0;
 }
 
-static void sigHandler(s32 sig) {
+static void sigHandler(int sig) {
 	UNUSED(sig);
 }
 

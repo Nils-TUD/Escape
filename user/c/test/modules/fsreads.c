@@ -33,7 +33,7 @@ static int threadFunc(void *arg);
 int mod_fsreads(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
-	u32 i;
+	size_t i;
 	for(i = 0; i < THREAD_COUNT; i++) {
 		if(startThread(threadFunc,(void*)"/zeros") < 0)
 			error("Unable to start thread");
@@ -60,7 +60,7 @@ int mod_fsreads(int argc,char *argv[]) {
 static int threadFunc(void *arg) {
 	char buffer[BUF_SIZE];
 	FILE *f = fopen((char*)arg,"r");
-	s32 count;
+	ssize_t count;
 	if(!f)
 		error("Unable to open '%s'",(char*)arg);
 	while((count = fread(buffer,1,BUF_SIZE,f)) > 0)

@@ -151,8 +151,8 @@ static void printProgHeaders(void);
 static const char *getProgFlags(Elf32_Word flags);
 static void printDynSection(void);
 static void printRelocations(void);
-static void printRelocTable(Elf32_Rel *rel,s32 relCount);
-static void readat(u32 offset,void *buffer,u32 count);
+static void printRelocTable(Elf32_Rel *rel,size_t relCount);
+static void readat(uint offset,void *buffer,size_t count);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-ahlSrd] <file>\n",name);
 	exit(EXIT_FAILURE);
@@ -167,7 +167,7 @@ static char *shsymbols = NULL;
 static char *dynstrtbl = NULL;
 
 int main(int argc,char **argv) {
-	s32 i;
+	int i;
 	bool elfh = false,ph = false,sh = false,rel = false,dyns = false;
 	char *file = NULL;
 
@@ -219,10 +219,10 @@ int main(int argc,char **argv) {
 
 static Elf32_Shdr *getSecByName(const char *name) {
 	static Elf32_Shdr section[1];
-	s32 i;
-	u8 *datPtr = (u8*)eheader.e_shoff;
+	size_t i;
+	uchar *datPtr = (uchar*)eheader.e_shoff;
 	for(i = 0; i < eheader.e_shnum; datPtr += eheader.e_shentsize, i++) {
-		readat((u32)datPtr,section,sizeof(Elf32_Shdr));
+		readat((uint)datPtr,section,sizeof(Elf32_Shdr));
 		if(strcmp(shsymbols + section->sh_name,name) == 0)
 			return section;
 	}
@@ -231,8 +231,8 @@ static Elf32_Shdr *getSecByName(const char *name) {
 
 static void loadShSyms(void) {
 	Elf32_Shdr sheader;
-	u8 *datPtr = (u8*)(eheader.e_shoff + eheader.e_shstrndx * eheader.e_shentsize);
-	readat((u32)datPtr,&sheader,sizeof(Elf32_Shdr));
+	uchar *datPtr = (uchar*)(eheader.e_shoff + eheader.e_shstrndx * eheader.e_shentsize);
+	readat((uint)datPtr,&sheader,sizeof(Elf32_Shdr));
 	shsymbols = (char*)malloc(sheader.sh_size);
 	if(shsymbols == NULL)
 		error("Not enough mem for section-header-names");
@@ -241,11 +241,11 @@ static void loadShSyms(void) {
 
 static void loadDynSection(void) {
 	Elf32_Phdr pheader;
-	u8 *datPtr = (u8*)(eheader.e_phoff);
-	s32 i;
+	uchar *datPtr = (uchar*)(eheader.e_phoff);
+	size_t i;
 	/* find dynamic-section */
 	for(i = 0; i < eheader.e_phnum; datPtr += eheader.e_phentsize, i++) {
-		readat((u32)datPtr,&pheader,sizeof(Elf32_Phdr));
+		readat((uint)datPtr,&pheader,sizeof(Elf32_Phdr));
 		if(pheader.p_type == PT_DYNAMIC)
 			break;
 	}
@@ -276,7 +276,7 @@ static void loadDynSection(void) {
 }
 
 static void printHeader(void) {
-	s32 i;
+	size_t i;
 	printf("ELF Header:\n");
 	printf("  Magic: ");
 	for(i = 0; i < EI_NIDENT; i++)
@@ -298,16 +298,16 @@ static void printHeader(void) {
 
 static void printSectionHeader(void) {
 	Elf32_Shdr sheader;
-	u8 *datPtr;
-	s32 i;
+	uchar *datPtr;
+	size_t i;
 
 	/* print sections */
 	printf("Section Headers:\n");
 	printf("  [Nr] %-17s %-15s %-8s %-6s %-6s %-2s %-3s %-2s %-3s %-2s\n",
 			"Name","Type","Addr","Off","Size","ES","Flg","Lk","Inf","Al");
-	datPtr = (u8*)(eheader.e_shoff);
+	datPtr = (uchar*)(eheader.e_shoff);
 	for(i = 0; i < eheader.e_shnum; datPtr += eheader.e_shentsize, i++) {
-		readat((u32)datPtr,&sheader,sizeof(Elf32_Shdr));
+		readat((uint)datPtr,&sheader,sizeof(Elf32_Shdr));
 		printf("  [%2d] %-17s %-15s %08x %06x %06x %02x %3s %2d %3d %2d\n",
 				i,shsymbols + sheader.sh_name,
 				sheader.sh_type < ARRAY_SIZE(secTypes) ? secTypes[sheader.sh_type] : "-Unknown-",
@@ -348,14 +348,14 @@ static const char *getSectionFlags(Elf32_Word flags) {
 
 static void printProgHeaders(void) {
 	Elf32_Phdr pheader;
-	u8 *datPtr = (u8*)(eheader.e_phoff);
-	s32 i;
+	uchar *datPtr = (uchar*)(eheader.e_phoff);
+	size_t i;
 
 	printf("Program Headers:\n");
 	printf("  %-14s %-8s %-10s %-10s %-7s %-7s %-3s %-4s\n",
 			"Type","Offset","VirtAddr","PhysAddr","FileSiz","MemSiz","Flg","Align");
 	for(i = 0; i < eheader.e_phnum; datPtr += eheader.e_phentsize, i++) {
-		readat((u32)datPtr,&pheader,sizeof(Elf32_Phdr));
+		readat((uint)datPtr,&pheader,sizeof(Elf32_Phdr));
 		printf("  %-14s %#06x %#08x %#08x %#05x %#05x %3s %#04x\n",
 				pheader.p_type < ARRAY_SIZE(progTypes) ? progTypes[pheader.p_type] : "-Unknown-",
 				pheader.p_offset,pheader.p_vaddr,pheader.p_paddr,pheader.p_filesz,
@@ -374,7 +374,7 @@ static const char *getProgFlags(Elf32_Word flags) {
 
 static void printDynSection(void) {
 	Elf32_Dyn *dwalk = dyn;
-	u32 eCount = 0;
+	size_t eCount = 0;
 	if(dyn == NULL) {
 		printf("There is no dynamic section in this file.\n\n");
 		return;
@@ -392,7 +392,7 @@ static void printDynSection(void) {
 	printf("  %-10s %-28s %s\n","Tag","Type","Name/Value");
 	while(dwalk->d_tag != DT_NULL) {
 		printf(" %#08x %-28s",dwalk->d_tag,
-			dwalk->d_tag < (s32)ARRAY_SIZE(relocTypes) ? relocTypes[dwalk->d_tag] : "-Unknown-");
+			dwalk->d_tag < (int)ARRAY_SIZE(relocTypes) ? relocTypes[dwalk->d_tag] : "-Unknown-");
 		switch(dwalk->d_tag) {
 			case DT_SONAME:
 			case DT_NEEDED:
@@ -426,7 +426,7 @@ static void printDynSection(void) {
 
 static void printRelocations(void) {
 	Elf32_Shdr *relSec = getSecByName(".rel.dyn");
-	u32 relCount = relSec ? relSec->sh_size / sizeof(Elf32_Rel) : 0;
+	size_t relCount = relSec ? relSec->sh_size / sizeof(Elf32_Rel) : 0;
 	Elf32_Rel *rel;
 	if(relSec == NULL || relCount == 0) {
 		printf("There are no relocations in this file.\n\n");
@@ -461,18 +461,18 @@ static void printRelocations(void) {
 	free(rel);
 }
 
-static void printRelocTable(Elf32_Rel *rel,s32 relCount) {
+static void printRelocTable(Elf32_Rel *rel,size_t relCount) {
 	char symcopy[MAX_SYM_LEN];
-	s32 i;
+	size_t i;
 	for(i = 0; i < relCount; i++) {
-		u32 relType = ELF32_R_TYPE(rel[i].r_info);
-		u32 symIndex = ELF32_R_SYM(rel[i].r_info);
+		uint relType = ELF32_R_TYPE(rel[i].r_info);
+		uint symIndex = ELF32_R_SYM(rel[i].r_info);
 		printf("%08x  %08x %-16s",rel[i].r_offset,rel[i].r_info,
 			relType < ARRAY_SIZE(i386Relocs) ? i386Relocs[relType] : "-Unknown-");
 		if(symIndex != 0) {
 			Elf32_Sym *sym = dynsyms + symIndex;
 			const char *symName = dynstrtbl + sym->st_name;
-			u32 len = 0;
+			size_t len = 0;
 			if(symName) {
 				len = MIN(strlen(symName),MAX_SYM_LEN - 1);
 				strncpy(symcopy,symName,len);
@@ -484,9 +484,9 @@ static void printRelocTable(Elf32_Rel *rel,s32 relCount) {
 	}
 }
 
-static void readat(u32 offset,void *buffer,u32 count) {
-	if(seek(fd,(u32)offset,SEEK_SET) < 0)
+static void readat(uint offset,void *buffer,size_t count) {
+	if(seek(fd,offset,SEEK_SET) < 0)
 		error("Unable to seek to %x",offset);
-	if(RETRY(read(fd,buffer,count)) != (s32)count)
+	if(RETRY(read(fd,buffer,count)) != (ssize_t)count)
 		error("Unable to read %d bytes @ %x",count,offset);
 }

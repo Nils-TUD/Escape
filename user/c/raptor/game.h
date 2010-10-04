@@ -30,10 +30,10 @@ bool game_init(void);
 
 void game_deinit(void);
 
-u32 game_getScore(void);
+uint game_getScore(void);
 
-void game_handleKey(u8 keycode,u8 modifiers,u8 isBreak,char c);
+void game_handleKey(uchar keycode,uchar modifiers,uchar isBreak,char c);
 
-bool game_tick(u32 time);
+bool game_tick(tTime time);
 
 #endif /* GAME_H_ */

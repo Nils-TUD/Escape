@@ -124,7 +124,7 @@ void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	int err;
 
 	/* check range */
-	if(count == 0 || (uint32_t)start + (uint32_t)count > 0xFFFF)
+	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	err = ioports_request(p,start,count);
@@ -142,7 +142,7 @@ void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	int err;
 
 	/* check range */
-	if(count == 0 || (uint32_t)start + (uint32_t)count > 0xFFFF)
+	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	p = proc_getRunning();

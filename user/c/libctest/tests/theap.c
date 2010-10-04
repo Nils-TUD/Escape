@@ -42,14 +42,14 @@ sTestModule tModHeap = {
 };
 
 #define SINGLE_BYTE_COUNT 10000
-u32 *ptrsSingle[SINGLE_BYTE_COUNT];
+uint *ptrsSingle[SINGLE_BYTE_COUNT];
 
-u32 sizes[] = {1,2,4,1023,1024,1025,2048,4097};
-u32 *ptrs[ARRAY_SIZE(sizes)];
-u32 randFree1[] = {7,5,2,0,6,3,4,1};
-u32 randFree2[] = {3,4,1,5,6,0,7,2};
+size_t sizes[] = {1,2,4,1023,1024,1025,2048,4097};
+uint *ptrs[ARRAY_SIZE(sizes)];
+size_t randFree1[] = {7,5,2,0,6,3,4,1};
+size_t randFree2[] = {3,4,1,5,6,0,7,2};
 
-u32 oldFree, newFree;
+size_t oldFree, newFree;
 
 static void test_heap(void) {
 	void (*tests[])(void) = {
@@ -61,7 +61,7 @@ static void test_heap(void) {
 		&test_heap_t3,
 	};
 
-	u32 i;
+	size_t i;
 	for(i = 0; i < ARRAY_SIZE(tests); i++) {
 		tests[i]();
 	}
@@ -89,11 +89,11 @@ static void test_check(void) {
 }
 
 static void test_t1alloc(void) {
-	u32 size;
+	size_t size;
 	tprintf("Allocating...\n");
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
-		tprintf("%d bytes\n",sizes[size] * sizeof(u32));
-		ptrs[size] = (u32*)malloc(sizes[size] * sizeof(u32));
+		tprintf("%d bytes\n",sizes[size] * sizeof(uint));
+		ptrs[size] = (uint*)malloc(sizes[size] * sizeof(uint));
 		tprintf("Write test for 0x%x...",ptrs[size]);
 		/* write test */
 		*(ptrs[size]) = 4;
@@ -106,7 +106,7 @@ static void test_t1alloc(void) {
 
 /* allocate, free in same direction */
 static void test_heap_t1v1(void) {
-	u32 size,i;
+	size_t size,i;
 	test_init("Allocate, then free in same direction");
 	test_t1alloc();
 	tprintf("Freeing...\n");
@@ -124,7 +124,7 @@ static void test_heap_t1v1(void) {
 
 /* allocate, free in opposite direction */
 static void test_heap_t1v2(void) {
-	s32 size,i;
+	ssize_t size,i;
 	test_init("Allocate, then free in opposite direction");
 	test_t1alloc();
 	tprintf("Freeing...\n");
@@ -142,11 +142,11 @@ static void test_heap_t1v2(void) {
 
 /* allocate, free in random direction 1 */
 static void test_heap_t1v3(void) {
-	u32 size;
+	size_t size;
 	test_init("Allocate, then free in \"random\" direction 1");
 	test_t1alloc();
 	tprintf("Freeing...\n");
-	for(size = 0; (u32)size < ARRAY_SIZE(sizes); size++) {
+	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
 		tprintf("FREE3: address=0x%x, i=%d\n",ptrs[randFree1[size]],size);
 		free(ptrs[randFree1[size]]);
 	}
@@ -155,11 +155,11 @@ static void test_heap_t1v3(void) {
 
 /* allocate, free in random direction 2 */
 static void test_heap_t1v4(void) {
-	u32 size;
+	size_t size;
 	test_init("Allocate, then free in \"random\" direction 2");
 	test_t1alloc();
 	tprintf("Freeing...\n");
-	for(size = 0; (u32)size < ARRAY_SIZE(sizes); size++) {
+	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
 		tprintf("FREE4: address=0x%x, i=%d\n",ptrs[randFree2[size]],size);
 		free(ptrs[randFree2[size]]);
 	}
@@ -168,11 +168,11 @@ static void test_heap_t1v4(void) {
 
 /* allocate area 1, free area 1, ... */
 static void test_heap_t2(void) {
-	u32 size;
+	size_t size;
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
-		test_init("Allocate and free %d bytes",sizes[size] * sizeof(u32));
+		test_init("Allocate and free %d bytes",sizes[size] * sizeof(uint));
 
-		ptrs[0] = (u32*)malloc(sizes[size] * sizeof(u32));
+		ptrs[0] = (uint*)malloc(sizes[size] * sizeof(uint));
 		tprintf("Write test for 0x%x...",ptrs[0]);
 		/* write test */
 		*(ptrs[0]) = 1;
@@ -187,7 +187,7 @@ static void test_heap_t2(void) {
 
 /* allocate single bytes */
 static void test_heap_t3(void) {
-	u32 i;
+	size_t i;
 	test_init("Allocate %d times 1 byte",SINGLE_BYTE_COUNT);
 	for(i = 0; i < SINGLE_BYTE_COUNT; i++) {
 		ptrsSingle[i] = malloc(1);

@@ -52,7 +52,7 @@ static void test_setget(void) {
 }
 
 static void test_geti(void) {
-	u32 i;
+	size_t i;
 	test_caseStart("Testing getenvi()");
 
 	for(i = 0; ; i++) {

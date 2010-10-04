@@ -26,8 +26,8 @@
 
 /* forward declarations */
 static void test_fileio(void);
-static bool test_fileio_checkPrint(s32 recvRes,s32 expRes,char *recvStr,const char *expStr);
-static bool test_fileio_checkScan(u32 recvRes,u32 expRes,const char *fmt,...);
+static bool test_fileio_checkPrint(int recvRes,int expRes,char *recvStr,const char *expStr);
+static bool test_fileio_checkScan(uint recvRes,uint expRes,const char *fmt,...);
 static void test_fileio_print(void);
 static void test_fileio_scan(void);
 
@@ -42,20 +42,20 @@ static void test_fileio(void) {
 	test_fileio_scan();
 }
 
-static bool test_fileio_checkPrint(s32 res,s32 expRes,char *recvStr,const char *expStr) {
+static bool test_fileio_checkPrint(int res,int expRes,char *recvStr,const char *expStr) {
 	if(!test_assertStr(recvStr,expStr))
 		return false;
-	if(!test_assertInt(res,expRes == -1 ? (s32)strlen(expStr) : expRes))
+	if(!test_assertInt(res,expRes == -1 ? (int)strlen(expStr) : expRes))
 		return false;
 	return true;
 }
 
-static bool test_fileio_checkScan(u32 recvRes,u32 expRes,const char *fmt,...) {
+static bool test_fileio_checkScan(uint recvRes,uint expRes,const char *fmt,...) {
 	va_list ap;
 	char ch;
 	char *rs,*es;
-	u32 ru,eu;
-	s32 rd,ed;
+	uint ru,eu;
+	int rd,ed;
 
 	if(!test_assertUInt(recvRes,expRes))
 		return false;
@@ -68,8 +68,8 @@ static bool test_fileio_checkScan(u32 recvRes,u32 expRes,const char *fmt,...) {
 			/* signed */
 			case 'c':
 			case 'd':
-				rd = va_arg(ap,s32);
-				ed = va_arg(ap,s32);
+				rd = va_arg(ap,int);
+				ed = va_arg(ap,int);
 				if(!test_assertInt(rd,ed)) {
 					va_end(ap);
 					return false;
@@ -81,8 +81,8 @@ static bool test_fileio_checkScan(u32 recvRes,u32 expRes,const char *fmt,...) {
 			case 'b':
 			case 'o':
 			case 'u':
-				ru = va_arg(ap,u32);
-				eu = va_arg(ap,u32);
+				ru = va_arg(ap,uint);
+				eu = va_arg(ap,uint);
 				if(!test_assertUInt(ru,eu)) {
 					va_end(ap);
 					return false;
@@ -105,9 +105,9 @@ static bool test_fileio_checkScan(u32 recvRes,u32 expRes,const char *fmt,...) {
 }
 
 static void test_fileio_print(void) {
-	char str[200],c;
-	u32 tmplen,i;
-	s32 res;
+	char str[200];
+	size_t i;
+	int res;
 
 	test_caseStart("Testing *printf()");
 
@@ -189,9 +189,9 @@ static void test_fileio_print(void) {
 
 static void test_fileio_scan(void) {
 	char s[200],c1,c2,c3,c4;
-	u32 x,o,b,u;
-	s32 d1,d2,d3;
-	u32 res;
+	uint x,o,b,u;
+	int d1,d2,d3;
+	int res;
 	test_caseStart("Testing *scanf()");
 
 	res = sscanf("ABC, 123","%x,%s",&x,s);

@@ -23,13 +23,13 @@
 
 #define BAR_WIDTH		6
 
-static u32 pos;
+static size_t pos;
 
 void bar_init(void) {
 	pos = 0;
 }
 
-void bar_getDim(u32 *start,u32 *end) {
+void bar_getDim(size_t *start,size_t *end) {
 	*start = pos;
 	*end = pos + BAR_WIDTH - 1;
 }

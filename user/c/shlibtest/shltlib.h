@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 
-extern u32 calls;
+extern int calls;
 double circumfenceSquared(double r);
 double circumfenceDoubled(double r);
 

@@ -40,7 +40,7 @@ int main(int argc,const char *argv[]) {
 	sMsg msg;
 	tFD fd;
 
-	s32 res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);
+	int res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);
 	if(res < 0 || (!reboot && !shutdown) || (reboot && shutdown)) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);

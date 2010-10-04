@@ -60,7 +60,7 @@ static void test_opendir(void) {
 }
 
 static void test_abspath(void) {
-	u32 count;
+	size_t count;
 	char *path;
 
 	test_caseStart("Testing abspath");

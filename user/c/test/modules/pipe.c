@@ -56,7 +56,7 @@ static void pipeReadChild(void) {
 	tFD fd[2];
 	tPid child;
 	char buf[10];
-	s32 c;
+	ssize_t c;
 	if(pipe(fd,fd + 1) < 0)
 		error("Unable to create pipe");
 
@@ -91,7 +91,7 @@ static void pipeReadParent(void) {
 	tFD fd[2];
 	tPid child;
 	char buf[10];
-	s32 c;
+	ssize_t c;
 	if(pipe(fd,fd + 1) < 0)
 		error("Unable to create pipe");
 
@@ -197,7 +197,7 @@ static void pipeThrough(void) {
 		}
 		else if(child > 0) {
 			/* parent */
-			s32 c;
+			ssize_t c;
 			char buf[10];
 			close(fd[0]);
 			close(fd[3]);

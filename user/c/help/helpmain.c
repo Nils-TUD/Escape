@@ -29,7 +29,7 @@
 
 #define MAX_APPS		256
 
-static s32 appCompare(const void *a,const void *b);
+static int appCompare(const void *a,const void *b);
 static bool addApp(const char *def,char *search,bool listUser,bool system);
 static char *readApp(char *path);
 
@@ -60,13 +60,13 @@ static const char *includeCmd = "name: \"include\""
 		"type: \"user\""
 		"desc: \"Executes the given file in the current shell\"";
 
-static u32 appCount = 0;
+static size_t appCount = 0;
 static sApp *apps[MAX_APPS];
 
 int main(int argc,char **argv) {
 	sDirEntry e;
 	DIR *dir;
-	u32 i;
+	size_t i;
 	char *appdef;
 	char *pathEnd;
 	char path[MAX_PATH_LEN] = "/apps/";
@@ -78,7 +78,7 @@ int main(int argc,char **argv) {
 	if(isHelpCmd(argc,argv))
 		usage();
 
-	for(i = 1; (s32)i < argc; i++) {
+	for(i = 1; (int)i < argc; i++) {
 		if(strncmp(argv[i],"--",2) == 0) {
 			if(strcmp(argv[i] + 2,"detail") == 0)
 				detail = true;
@@ -189,7 +189,7 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static s32 appCompare(const void *a,const void *b) {
+static int appCompare(const void *a,const void *b) {
 	sApp *aa = *(sApp**)a;
 	sApp *ab = *(sApp**)b;
 	return strcmp(aa->name,ab->name);
@@ -211,10 +211,10 @@ static bool addApp(const char *def,char *search,bool listUser,bool listSys) {
 
 static char *readApp(char *path) {
 	tFD fileFd;
-	const u32 incSize = 128;
-	u32 count;
-	u32 appSize = incSize;
-	u32 appPos = 0;
+	const size_t incSize = 128;
+	ssize_t count;
+	size_t appSize = incSize;
+	size_t appPos = 0;
 	char *app = (char*)malloc(appSize);
 	if(!app) {
 		printe("Unable to alloc mem for app");

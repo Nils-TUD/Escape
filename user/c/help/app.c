@@ -33,8 +33,8 @@
 
 typedef struct {
 	const char *str;
-	u32 tokLen;
-	u32 tokType;
+	size_t tokLen;
+	uint tokType;
 	char token[MAX_TOKEN_LEN + 1];
 } sParseInfo;
 

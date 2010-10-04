@@ -45,7 +45,7 @@ int main(int argc,const char *argv[]) {
 	char *pattern = NULL;
 	const char **args;
 
-	s32 res = ca_parse(argc,argv,CA_MAX1_FREE,"=s*",&pattern);
+	int res = ca_parse(argc,argv,CA_MAX1_FREE,"=s*",&pattern);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);

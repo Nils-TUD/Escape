@@ -30,6 +30,6 @@ void objlist_add(sObject *o);
 
 sSLList *objlist_get(void);
 
-s32 objlist_tick(void);
+int objlist_tick(void);
 
 #endif /* OBJLIST_H_ */

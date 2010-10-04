@@ -24,7 +24,7 @@
 #include "fork.h"
 
 int mod_fork(int argc,char *argv[]) {
-	u32 i,count = 100;
+	size_t i,count = 100;
 	if(argc > 2)
 		count = atoi(argv[2]);
 	for(i = 0; i < count; i++) {

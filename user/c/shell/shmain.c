@@ -40,7 +40,7 @@ static void usage(char *name) {
 int main(int argc,char **argv) {
 	tFD fd;
 	tPid pid;
-	u32 vterm;
+	int vterm;
 	char *buffer;
 	char drvPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
 

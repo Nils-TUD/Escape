@@ -33,6 +33,15 @@
 #include <string.h>
 #include <errors.h>
 
+/* A small note to this: we can use one channel (identified by the node) in parallel because
+ * we expect all drivers to handle the requests in FIFO order. That means, if we order the
+ * requests (append new ones at the end), we can simply choose the first with the specified node
+ * when looking for a channel that should receive the response.
+ * As soon as a request should no longer receive messages, vfs/driver and vfs/real remove the
+ * request from the list via vfs_req_remove(). This HAS TO be done by the one that sends the
+ * response! Later, when the client got the response, it free's the request.
+ */
+
 #define HANDLER_COUNT		32
 
 /* the vfs-driver-file */

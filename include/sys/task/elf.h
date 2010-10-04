@@ -94,7 +94,7 @@ typedef struct
 {
   union {
 	  unsigned char	chars[EI_NIDENT];	/* Magic number and other info */
-	  u32 dword;
+	  uint32_t dword;
   } e_ident;
   Elf32_Half	e_type;			/* Object file type */
   Elf32_Half	e_machine;		/* Architecture */

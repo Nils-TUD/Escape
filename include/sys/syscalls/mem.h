@@ -29,8 +29,8 @@
 /**
  * Changes the process-size
  *
- * @param u32 number of pages
- * @return u32 the previous number of text+data pages
+ * @param ssize_t number of pages
+ * @return ssize_t the previous number of text+data pages
  */
 void sysc_changeSize(sIntrptStackFrame *stack);
 
@@ -39,9 +39,9 @@ void sysc_changeSize(sIntrptStackFrame *stack);
  * existing regions and the region-type) from given binary.
  *
  * @param sBinDesc* the binary (may be NULL; means: no demand-loading possible)
- * @param u32 the offset of the region in the binary (for demand-loading)
- * @param u32 the number of bytes of the region
- * @param u8 the region-type (see REG_*)
+ * @param uintptr_t the offset of the region in the binary (for demand-loading)
+ * @param size_t the number of bytes of the region
+ * @param uint the region-type (see REG_*)
  * @return void* the address of the region on success, NULL on failure
  */
 void sysc_addRegion(sIntrptStackFrame *stack);
@@ -49,17 +49,17 @@ void sysc_addRegion(sIntrptStackFrame *stack);
 /**
  * Changes the protection of the region denoted by the given address.
  *
- * @param u32 the virtual address
- * @param u8 the new protection-setting (PROT_*)
- * @return s32 0 on success
+ * @param uintptr_t the virtual address
+ * @param uint the new protection-setting (PROT_*)
+ * @return int 0 on success
  */
 void sysc_setRegProt(sIntrptStackFrame *stack);
 
 /**
  * Maps physical memory in the virtual user-space
  *
- * @param u32 physical address
- * @param u32 number of bytes
+ * @param uintptr_t physical address
+ * @param size_t number of bytes
  * @return void* the start-address
  */
 void sysc_mapPhysical(sIntrptStackFrame *stack);
@@ -68,8 +68,8 @@ void sysc_mapPhysical(sIntrptStackFrame *stack);
  * Creates a shared-memory region
  *
  * @param char* the name
- * @param u32 number of bytes
- * @return s32 the address on success, negative error-code otherwise
+ * @param size_t number of bytes
+ * @return intptr_t the address on success, negative error-code otherwise
  */
 void sysc_createSharedMem(sIntrptStackFrame *stack);
 
@@ -77,7 +77,7 @@ void sysc_createSharedMem(sIntrptStackFrame *stack);
  * Joines a shared-memory region
  *
  * @param char* the name
- * @return s32 the address on success, negative error-code otherwise
+ * @return intptr_t the address on success, negative error-code otherwise
  */
 void sysc_joinSharedMem(sIntrptStackFrame *stack);
 
@@ -85,7 +85,7 @@ void sysc_joinSharedMem(sIntrptStackFrame *stack);
  * Leaves a shared-memory region
  *
  * @param char* the name
- * @return s32 the address on success, negative error-code otherwise
+ * @return int 0 on success, negative error-code otherwise
  */
 void sysc_leaveSharedMem(sIntrptStackFrame *stack);
 
@@ -93,7 +93,7 @@ void sysc_leaveSharedMem(sIntrptStackFrame *stack);
  * Destroys a shared-memory region
  *
  * @param char* the name
- * @return s32 the address on success, negative error-code otherwise
+ * @return int 0 on success, negative error-code otherwise
  */
 void sysc_destroySharedMem(sIntrptStackFrame *stack);
 

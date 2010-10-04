@@ -34,8 +34,8 @@ typedef struct {
 
 typedef struct {
 	uint32_t size;
-	u64 baseAddr;
-	u64 length;
+	uint64_t baseAddr;
+	uint64_t length;
 	uint32_t type;
 } A_PACKED sMemMap;
 

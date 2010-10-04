@@ -25,10 +25,10 @@
 #include <esc/defines.h>
 
 /* file-number (in global file table) */
-typedef s32 tFileNo;
-typedef u32 tPageDir;
-typedef s32 tVMRegNo;
-typedef u32 tFrameNo;
+typedef int tFileNo;
+typedef uintptr_t tPageDir;
+typedef int tVMRegNo;
+typedef uint tFrameNo;
 
 #ifndef NDEBUG
 #define DEBUGGING 1

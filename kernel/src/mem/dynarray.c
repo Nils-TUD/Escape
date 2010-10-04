@@ -24,7 +24,7 @@
 #include <sys/util.h>
 #include <string.h>
 
-void dyna_init(sDynArray *d,u32 objSize,u32 areaBegin,u32 areaSize) {
+void dyna_init(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize) {
 	d->objSize = objSize;
 	d->areaBegin = areaBegin;
 	d->areaSize = areaSize;
@@ -33,7 +33,7 @@ void dyna_init(sDynArray *d,u32 objSize,u32 areaBegin,u32 areaSize) {
 }
 
 bool dyna_extend(sDynArray *d) {
-	u32 addr = d->areaBegin + d->pageCount * PAGE_SIZE;
+	uintptr_t addr = d->areaBegin + d->pageCount * PAGE_SIZE;
 	if(mm_getFreeFrames(MM_DEF) == 0 || d->pageCount * PAGE_SIZE >= d->areaSize)
 		return false;
 	paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT);

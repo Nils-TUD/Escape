@@ -31,14 +31,14 @@
 
 typedef struct {
 	/* size of the buffer */
-	u32 size;
+	size_t size;
 	/* currently used size */
-	u32 pos;
+	size_t pos;
 	void *data;
 } sFileContent;
 
 static void vfs_file_destroy(sVFSNode *n);
-static s32 vfs_file_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence);
+static int vfs_file_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence);
 
 sVFSNode *vfs_file_create(tPid pid,sVFSNode *parent,char *name,fRead read,fWrite write) {
 	sVFSNode *node;
@@ -79,7 +79,7 @@ static void vfs_file_destroy(sVFSNode *n) {
 	}
 }
 
-static s32 vfs_file_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence) {
+static int vfs_file_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence) {
 	UNUSED(pid);
 	switch(whence) {
 		case SEEK_SET:
@@ -98,10 +98,10 @@ static s32 vfs_file_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whe
 	}
 }
 
-s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count) {
+ssize_t vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
-	s32 byteCount;
+	size_t byteCount;
 	sFileContent *con = (sFileContent*)node->data;
 	/* no data available? */
 	if(con->data == NULL)
@@ -112,16 +112,17 @@ s32 vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u
 	byteCount = MIN(con->pos - offset,count);
 	if(byteCount > 0) {
 		/* simply copy the data to the buffer */
-		memcpy(buffer,(u8*)con->data + offset,byteCount);
+		memcpy(buffer,(uint8_t*)con->data + offset,byteCount);
 	}
 	return byteCount;
 }
 
-s32 vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,u32 offset,u32 count) {
+ssize_t vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,uint offset,
+		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
 	void *oldData;
-	u32 newSize = 0;
+	size_t newSize = 0;
 	sFileContent *con = (sFileContent*)n->data;
 	oldData = con->data;
 
@@ -139,7 +140,7 @@ s32 vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,u32 offs
 	/* need to increase cache-size? */
 	else if(con->size < offset + count) {
 		/* ensure that we allocate enough memory */
-		newSize = MAX(offset + count,(u32)con->size * 2);
+		newSize = MAX(offset + count,con->size * 2);
 		if(newSize > MAX_VFS_FILE_SIZE)
 			return ERR_NOT_ENOUGH_MEM;
 
@@ -149,7 +150,7 @@ s32 vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,u32 offs
 	/* all ok? */
 	if(con->data != NULL) {
 		/* copy the data into the cache */
-		memcpy((u8*)con->data + offset,buffer,count);
+		memcpy((uint8_t*)con->data + offset,buffer,count);
 		/* set total size and number of used bytes */
 		if(newSize)
 			con->size = newSize;

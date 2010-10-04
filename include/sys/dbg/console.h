@@ -27,8 +27,8 @@
 /* to make a screen-backup */
 typedef struct {
 	char screen[VID_COLS * VID_ROWS * 2];
-	u16 row;
-	u16 col;
+	ushort row;
+	ushort col;
 } sScreenBackup;
 
 /**

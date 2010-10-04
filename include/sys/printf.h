@@ -25,7 +25,7 @@
 
 typedef void (*fPrintc)(char c);
 typedef void (*fEscape)(const char **fmt);
-typedef u8 (*fPipePad)(void);
+typedef uchar (*fPipePad)(void);
 
 typedef struct {
 	fPrintc print;		/* must be provided */
@@ -37,10 +37,10 @@ typedef struct {
  * The buffer for prf_(v)sprintf()
  */
 typedef struct {
-	u8 dynamic;
+	uchar dynamic;
 	char *str;
-	u32 size;
-	u32 len;
+	size_t size;
+	size_t len;
 } sStringBuffer;
 
 /**

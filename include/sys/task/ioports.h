@@ -31,7 +31,7 @@
  * @param count the number of ports
  * @return the error-code or 0
  */
-s32 ioports_request(sProc *p,u16 start,u16 count);
+int ioports_request(sProc *p,uint16_t start,size_t count);
 
 /**
  * Releases some IO-ports for the given process. Will not replace the IO-Map in TSS!
@@ -41,7 +41,7 @@ s32 ioports_request(sProc *p,u16 start,u16 count);
  * @param count the number of ports
  * @return the error-code or 0
  */
-s32 ioports_release(sProc *p,u16 start,u16 count);
+int ioports_release(sProc *p,uint16_t start,size_t count);
 
 
 #if DEBUGGING
@@ -51,7 +51,7 @@ s32 ioports_release(sProc *p,u16 start,u16 count);
  *
  * @param map the io-map
  */
-void ioports_dbg_print(u8 *map);
+void ioports_dbg_print(uint8_t *map);
 
 #endif
 

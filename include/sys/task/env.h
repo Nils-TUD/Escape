@@ -29,7 +29,7 @@
  * @param index the index
  * @return the env-variable-name or NULL if there is none
  */
-const char *env_geti(tPid pid,u32 index);
+const char *env_geti(tPid pid,size_t index);
 
 /**
  * Returns the env-variable with given name

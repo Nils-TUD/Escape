@@ -24,7 +24,7 @@
 
 /* Represents one symbol (address -> name) */
 typedef struct {
-	u32 address;
+	uintptr_t address;
 	const char *funcName;
 } sSymbol;
 
@@ -40,6 +40,6 @@ void ksym_print(void);
  * @param address the address
  * @return the pointer to the symbol (no copy!)
  */
-sSymbol *ksym_getSymbolAt(u32 address);
+sSymbol *ksym_getSymbolAt(uintptr_t address);
 
 #endif /* KSYMBOLS_H_ */

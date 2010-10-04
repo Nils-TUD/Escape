@@ -73,20 +73,22 @@ enum {
 typedef struct sVFSNode sVFSNode;
 
 /* the prototypes for the operations on nodes */
-typedef s32 (*fRead)(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count);
-typedef s32 (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count);
-typedef s32 (*fSeek)(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence);
+typedef ssize_t (*fRead)(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
+			uint offset,size_t count);
+typedef ssize_t (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
+			uint offset,size_t count);
+typedef int (*fSeek)(tPid pid,sVFSNode *node,uint position,int offset,uint whence);
 typedef void (*fClose)(tPid pid,tFileNo file,sVFSNode *node);
 typedef void (*fDestroy)(sVFSNode *n);
 
 struct sVFSNode {
 	char *name;
 	/* number of open files for this node */
-	u16 refCount;
+	ushort refCount;
 	/* the owner of this node */
 	tPid owner;
 	/* 0 means unused; stores permissions and the type of node */
-	u32 mode;
+	uint mode;
 	/* for the vfs-structure */
 	sVFSNode *parent;
 	sVFSNode *prev;
@@ -120,7 +122,7 @@ bool vfs_isDriver(tFileNo file);
  * @param file the file
  * @return 0 on success
  */
-s32 vfs_incRefs(tFileNo file);
+int vfs_incRefs(tFileNo file);
 
 /**
  * @param file the file-number
@@ -136,7 +138,7 @@ sVFSNode *vfs_getVNode(tFileNo file);
  * @param dev will be set to the devive-number
  * @return 0 on success
  */
-s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
+int vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
 
 /**
  * Manipulates the given file, depending on the command
@@ -147,7 +149,7 @@ s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
  * @param arg the argument (just used for F_SETFL)
  * @return >= 0 on success
  */
-s32 vfs_fcntl(tPid pid,tFileNo file,u32 cmd,s32 arg);
+int vfs_fcntl(tPid pid,tFileNo file,uint cmd,int arg);
 
 /**
  * @param file the file
@@ -165,7 +167,7 @@ bool vfs_shouldBlock(tFileNo file);
  * @param path the path
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
  */
-tFileNo vfs_openPath(tPid pid,u16 flags,const char *path);
+tFileNo vfs_openPath(tPid pid,ushort flags,const char *path);
 
 /**
  * Opens the file with given number and given flags. That means it walks through the global
@@ -178,7 +180,7 @@ tFileNo vfs_openPath(tPid pid,u16 flags,const char *path);
  * @param devNo the device-number
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
  */
-tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
+tFileNo vfs_openFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devNo);
 
 /**
  * Returns the current file-position
@@ -187,7 +189,7 @@ tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
  * @param file the file
  * @return the current file-position
  */
-u32 vfs_tell(tPid pid,tFileNo file);
+uint vfs_tell(tPid pid,tFileNo file);
 
 /**
  * Retrieves information about the given path
@@ -197,7 +199,7 @@ u32 vfs_tell(tPid pid,tFileNo file);
  * @param info the info to fill
  * @return 0 on success
  */
-s32 vfs_stat(tPid pid,const char *path,sFileInfo *info);
+int vfs_stat(tPid pid,const char *path,sFileInfo *info);
 
 /**
  * Retrieves information about the given file
@@ -207,7 +209,7 @@ s32 vfs_stat(tPid pid,const char *path,sFileInfo *info);
  * @param info the info to fill
  * @return 0 on success
  */
-s32 vfs_fstat(tPid pid,tFileNo file,sFileInfo *info);
+int vfs_fstat(tPid pid,tFileNo file,sFileInfo *info);
 
 /**
  * Checks whether the given file links to a terminal. That means it has to be a virtual file
@@ -228,7 +230,7 @@ bool vfs_isterm(tPid pid,tFileNo file);
  * @param whence the seek-type
  * @return the new position on success
  */
-s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence);
+int vfs_seek(tPid pid,tFileNo file,int offset,uint whence);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number
@@ -240,7 +242,7 @@ s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence);
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-s32 vfs_readFile(tPid pid,tFileNo file,void *buffer,u32 count);
+ssize_t vfs_readFile(tPid pid,tFileNo file,void *buffer,size_t count);
 
 /**
  * Writes count bytes from the given buffer into the given file and returns the number of written
@@ -252,7 +254,7 @@ s32 vfs_readFile(tPid pid,tFileNo file,void *buffer,u32 count);
  * @param count the number of bytes to write
  * @return the number of bytes written
  */
-s32 vfs_writeFile(tPid pid,tFileNo file,const void *buffer,u32 count);
+ssize_t vfs_writeFile(tPid pid,tFileNo file,const void *buffer,size_t count);
 
 /**
  * Sends a message to the corresponding driver
@@ -264,7 +266,7 @@ s32 vfs_writeFile(tPid pid,tFileNo file,const void *buffer,u32 count);
  * @param size the message-size
  * @return 0 on success
  */
-s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const void *data,u32 size);
+ssize_t vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const void *data,size_t size);
 
 /**
  * Receives a message from the corresponding driver
@@ -275,7 +277,7 @@ s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const void *data,u32 size);
  * @param data the message to write to
  * @return the number of written bytes (or < 0 if an error occurred)
  */
-s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,void *data,u32 size);
+ssize_t vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,void *data,size_t size);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count
@@ -294,7 +296,7 @@ void vfs_closeFile(tPid pid,tFileNo file);
  * @param newPath the link-name
  * @return 0 on success
  */
-s32 vfs_link(tPid pid,const char *oldPath,const char *newPath);
+int vfs_link(tPid pid,const char *oldPath,const char *newPath);
 
 /**
  * Removes the given file
@@ -303,7 +305,7 @@ s32 vfs_link(tPid pid,const char *oldPath,const char *newPath);
  * @param path the path
  * @return 0 on success
  */
-s32 vfs_unlink(tPid pid,const char *path);
+int vfs_unlink(tPid pid,const char *path);
 
 /**
  * Creates the directory <path>
@@ -312,7 +314,7 @@ s32 vfs_unlink(tPid pid,const char *path);
  * @param path the path
  * @return 0 on success
  */
-s32 vfs_mkdir(tPid pid,const char *path);
+int vfs_mkdir(tPid pid,const char *path);
 
 /**
  * Removes the given directory
@@ -321,7 +323,7 @@ s32 vfs_mkdir(tPid pid,const char *path);
  * @param path the path
  * @return 0 on success
  */
-s32 vfs_rmdir(tPid pid,const char *path);
+int vfs_rmdir(tPid pid,const char *path);
 
 /**
  * Creates a driver-node for the given process and given name and opens a file for it
@@ -331,7 +333,7 @@ s32 vfs_rmdir(tPid pid,const char *path);
  * @param flags the specified flags (implemented functions)
  * @return the file-number if ok, negative if an error occurred
  */
-tFileNo vfs_createDriver(tPid pid,const char *name,u32 flags);
+tFileNo vfs_createDriver(tPid pid,const char *name,uint flags);
 
 /**
  * Checks wether the file has a receivable message
@@ -360,7 +362,7 @@ bool vfs_hasData(tPid pid,tFileNo file);
  * @param index will be set to the index in <files> from which the client was chosen
  * @return the error-code or the node-number of the client
  */
-s32 vfs_getClient(tPid pid,const tFileNo *files,u32 count,s32 *index);
+tFileNo vfs_getClient(tPid pid,const tFileNo *files,size_t count,size_t *index);
 
 /***
  * Fetches the client-id from the given file
@@ -427,7 +429,7 @@ void vfs_dbg_printMsgs(void);
 /**
  * @return the number of entries in the global file table
  */
-u32 vfs_dbg_getGFTEntryCount(void);
+size_t vfs_dbg_getGFTEntryCount(void);
 
 #endif
 

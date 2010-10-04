@@ -98,7 +98,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	return t;
 }
 
-u32 thread_getCount(void) {
+size_t thread_getCount(void) {
 	return sll_length(threads);
 }
 
@@ -124,14 +124,14 @@ void thread_switchNoSigs(void) {
 void thread_switchTo(tTid tid) {
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {
-		u64 kcstart = cur->stats.kcycleStart;
+		uint64_t kcstart = cur->stats.kcycleStart;
 		if(kcstart > 0) {
-			u64 cycles = cpu_rdtsc();
+			uint64_t cycles = cpu_rdtsc();
 			cur->stats.kcycleCount.val64 += cycles - kcstart;
 		}
 
 		if(!thread_save(&cur->save)) {
-			u32 tlsStart,tlsEnd;
+			uintptr_t tlsStart,tlsEnd;
 			sThread *old;
 			sThread *t = thread_getById(tid);
 			vassert(t != NULL,"Thread with tid %d not found",tid);
@@ -214,12 +214,12 @@ void thread_setSuspended(tTid tid,bool blocked) {
 	sched_setSuspended(t,blocked);
 }
 
-s32 thread_extendStack(u32 address) {
+int thread_extendStack(uintptr_t address) {
 	return vmm_growStackTo(cur,address);
 }
 
-s32 thread_clone(const sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
-	s32 err = ERR_NOT_ENOUGH_MEM;
+int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,bool cloneProc) {
+	int err = ERR_NOT_ENOUGH_MEM;
 	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		return ERR_NOT_ENOUGH_MEM;
@@ -249,8 +249,8 @@ s32 thread_clone(const sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool 
 	else {
 		/* no swapping here because we don't want to make a thread-switch */
 		/* TODO */
-		u32 neededFrms = 0;/*paging_countFramesForMap(t->ustackBegin - t->ustackPages * PAGE_SIZE,
-				INITIAL_STACK_PAGES);*/
+		size_t neededFrms = 0;/*paging_countFramesForMap(
+			t->ustackBegin - t->ustackPages * PAGE_SIZE,INITIAL_STACK_PAGES);*/
 		if(mm_getFreeFrames(MM_DEF) < 1 + neededFrms)
 			goto errThread;
 
@@ -265,7 +265,7 @@ s32 thread_clone(const sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool 
 		/* add a new tls-region, if its present in the src-thread */
 		t->tlsRegion = -1;
 		if(src->tlsRegion >= 0) {
-			u32 tlsStart,tlsEnd;
+			uintptr_t tlsStart,tlsEnd;
 			vmm_getRegRange(src->proc,src->tlsRegion,&tlsStart,&tlsEnd);
 			t->tlsRegion = vmm_add(p,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS);
 			if(t->tlsRegion < 0)
@@ -344,7 +344,7 @@ void thread_kill(sThread *t) {
 	/* if there is just one thread left we have to map his kernel-stack again because we won't
 	 * do it for single-thread-processes on a switch for performance-reasons */
 	if(sll_length(t->proc->threads) == 1) {
-		u32 stackFrame = ((sThread*)sll_get(t->proc->threads,0))->kstackFrame;
+		tFrameNo stackFrame = ((sThread*)sll_get(t->proc->threads,0))->kstackFrame;
 		paging_mapTo(t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	}
@@ -366,7 +366,7 @@ void thread_kill(sThread *t) {
 }
 
 static tTid thread_getFreeTid(void) {
-	u32 count = 0;
+	size_t count = 0;
 	while(count < MAX_THREAD_COUNT) {
 		if(nextTid >= MAX_THREAD_COUNT)
 			nextTid = 0;

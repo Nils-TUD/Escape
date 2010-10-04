@@ -42,7 +42,7 @@ static sRequest requests[REQUEST_COUNT];
 static fReqHandler handler[HANDLER_COUNT] = {NULL};
 
 void vfs_req_init(void) {
-	u32 i;
+	size_t i;
 	sRequest *req;
 
 	req = requests;
@@ -64,14 +64,14 @@ bool vfs_req_setHandler(tMsgId id,fReqHandler f) {
 	return true;
 }
 
-void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,u32 size) {
+void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,size_t size) {
 	assert(node != NULL);
 	if(id < HANDLER_COUNT && handler[id])
 		handler[id](node,data,size);
 }
 
-sRequest *vfs_req_getRequest(sVFSNode *node,void *buffer,u32 size) {
-	u32 i;
+sRequest *vfs_req_getRequest(sVFSNode *node,void *buffer,size_t size) {
+	size_t i;
 	sThread *t = thread_getRunning();
 	sRequest *req = NULL;
 	assert(node != NULL);
@@ -122,7 +122,7 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 }
 
 sRequest *vfs_req_getRequestByNode(const sVFSNode *node) {
-	u32 i;
+	size_t i;
 	sRequest *req = requests;
 	assert(node != NULL);
 	for(i = 0; i < REQUEST_COUNT; i++) {
@@ -147,7 +147,7 @@ void vfs_req_remRequest(sRequest *r) {
 #if DEBUGGING
 
 void vfs_req_dbg_printAll(void) {
-	u32 i;
+	size_t i;
 	vid_printf("Active requests:\n");
 	for(i = 0; i < REQUEST_COUNT; i++) {
 		if(requests[i].node != NULL)

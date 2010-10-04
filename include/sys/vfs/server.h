@@ -32,7 +32,7 @@
  * @param flags the flags
  * @return the node
  */
-sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags);
+sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,uint flags);
 
 /**
  * Tells the server that the given client has been removed. This way, it can reset the internal
@@ -54,14 +54,14 @@ bool vfs_server_isterm(const sVFSNode *node);
  * @param funcs the functions to check
  * @return true if the server supports the given functions
  */
-bool vfs_server_supports(const sVFSNode *node,u32 funcs);
+bool vfs_server_supports(const sVFSNode *node,uint funcs);
 
 /**
  * @param node the server-node
  * @param id the msg-id to check
  * @return true if the server accepts the given message
  */
-bool vfs_server_accepts(const sVFSNode *node,u32 id);
+bool vfs_server_accepts(const sVFSNode *node,uint id);
 
 /**
  * @param node the server-node
@@ -76,7 +76,7 @@ bool vfs_server_isReadable(const sVFSNode *node);
  * @param readable the new value
  * @return 0 on success
  */
-s32 vfs_server_setReadable(sVFSNode *node,bool readable);
+int vfs_server_setReadable(sVFSNode *node,bool readable);
 
 /**
  * Searches for a client of the given server-node that should be served

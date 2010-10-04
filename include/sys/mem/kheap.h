@@ -26,25 +26,25 @@
 /**
  * @return the number of used bytes
  */
-u32 kheap_getUsedMem(void);
+size_t kheap_getUsedMem(void);
 
 /**
  * @return the total number of bytes occupied (frames reserved; maybe not all in use atm)
  */
-u32 kheap_getOccupiedMem(void);
+size_t kheap_getOccupiedMem(void);
 
 /**
  * Note that this function is intended for debugging-purposes only!
  *
  * @return the number of free bytes
  */
-u32 kheap_getFreeMem(void);
+size_t kheap_getFreeMem(void);
 
 /**
  * @param addr the area-address
  * @return the size of the area at given address (0 if not found)
  */
-u32 kheap_getAreaSize(void *addr);
+size_t kheap_getAreaSize(void *addr);
 
 /**
  * Allocates <size> bytes in kernel-space and returns the pointer to the beginning of
@@ -53,7 +53,7 @@ u32 kheap_getAreaSize(void *addr);
  * @param size the number of bytes to allocate
  * @return the address of the memory or NULL
  */
-void *kheap_alloc(u32 size);
+void *kheap_alloc(size_t size);
 
 /**
  * Allocates space for <num> elements, each <size> big, on the heap and memset's the area to 0.
@@ -63,7 +63,7 @@ void *kheap_alloc(u32 size);
  * @param size the size of each element
  * @return the address of the memory or NULL
  */
-void *kheap_calloc(u32 num,u32 size);
+void *kheap_calloc(size_t num,size_t size);
 
 /**
  * Reallocates the area at given address to the given size. That means either your data will
@@ -73,7 +73,7 @@ void *kheap_calloc(u32 num,u32 size);
  * @param size the number of bytes your area should be resized to
  * @return the address (may be different) of your area or NULL if there is not enough mem
  */
-void *kheap_realloc(void *addr,u32 size);
+void *kheap_realloc(void *addr,size_t size);
 
 /**
  * Frees the via kmalloc() allocated area starting at <addr>.

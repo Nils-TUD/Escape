@@ -24,9 +24,9 @@
 
 typedef struct {
 	char **lines;
-	s32 lineCount;
-	s32 linePos;
-	s32 lineSize;
+	size_t lineCount;
+	size_t linePos;
+	size_t lineSize;
 } sLines;
 
 /**
@@ -35,7 +35,7 @@ typedef struct {
  * @param l the lines
  * @return 0 on success
  */
-s32 lines_create(sLines *l);
+int lines_create(sLines *l);
 
 /**
  * Appends the given string to the current line, if possible
@@ -59,7 +59,7 @@ void lines_append(sLines *l,char c);
  * @param l the lines
  * @return 0 on success
  */
-s32 lines_newline(sLines *l);
+int lines_newline(sLines *l);
 
 /**
  * Ends the current line. This is intended for finalizing, i.e. you should call it when everything

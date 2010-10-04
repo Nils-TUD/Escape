@@ -50,7 +50,7 @@
 #define SIG_INTRPT_MOUSE	17						/* mouse-interrupt */
 
 /* signal-handler-signature */
-typedef void (*fSignal)(s32);
+typedef void (*fSignal)(int);
 
 /**
  * Initializes the signal-handling
@@ -81,7 +81,7 @@ bool sig_canSend(tSig signal);
  * @param func the handler-function
  * @return 0 on success
  */
-s32 sig_setHandler(tTid tid,tSig signal,fSignal func);
+int sig_setHandler(tTid tid,tSig signal,fSignal func);
 
 /**
  * Removes the signal-handler for <signal>
@@ -165,7 +165,7 @@ void sig_ackHandling(tTid tid);
 /**
  * @return the total number of announced handlers
  */
-u32 sig_dbg_getHandlerCount(void);
+size_t sig_dbg_getHandlerCount(void);
 
 /**
  * @param signal the signal-number

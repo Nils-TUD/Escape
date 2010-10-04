@@ -29,6 +29,6 @@
  * @param argv the arguments
  * @return 0 on success
  */
-s32 cons_cmd_log(s32 argc,char **argv);
+int cons_cmd_log(size_t argc,char **argv);
 
 #endif /* LOG_H_ */

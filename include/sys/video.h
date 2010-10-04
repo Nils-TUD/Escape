@@ -45,7 +45,7 @@ void vid_init(void);
  * @param row pointer to the row to set
  * @param col pointer to the col to set
  */
-void vid_backup(char *buffer,u16 *row,u16 *col);
+void vid_backup(char *buffer,ushort *row,ushort *col);
 
 /**
  * Restores the screen from the given buffer. Assumes (!) that the buffer is large enough to contain
@@ -55,14 +55,14 @@ void vid_backup(char *buffer,u16 *row,u16 *col);
  * @param row the row to set
  * @param col the col to set
  */
-void vid_restore(const char *buffer,u16 row,u16 col);
+void vid_restore(const char *buffer,ushort row,ushort col);
 
 /**
  * Sets the targets of the printing
  *
  * @param targets the targets (TARGET_*)
  */
-void vid_setTargets(u8 targets);
+void vid_setTargets(uint targets);
 
 /**
  * Clears the screen

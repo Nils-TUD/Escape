@@ -24,7 +24,7 @@
 
 typedef struct {
 	/* the events to wait for */
-	u32 events;
+	uint events;
 	/* the object (0 = ignore) */
 	tEvObj object;
 } sWaitObject;
@@ -89,7 +89,7 @@ void ev_init(void);
  * @param events the event-mask (not index!)
  * @return true if so
  */
-bool ev_waitsFor(tTid tid,u32 events);
+bool ev_waitsFor(tTid tid,uint events);
 
 /**
  * Lets <tid> wait for the given event and object
@@ -99,7 +99,7 @@ bool ev_waitsFor(tTid tid,u32 events);
  * @param object the object (0 = ignore)
  * @return true if successfull
  */
-bool ev_wait(tTid tid,u32 evi,tEvObj object);
+bool ev_wait(tTid tid,size_t evi,tEvObj object);
 
 /**
  * Lets <tid> wait for the given objects
@@ -109,7 +109,7 @@ bool ev_wait(tTid tid,u32 evi,tEvObj object);
  * @param objCount the number of objects
  * @return true if successfull
  */
-bool ev_waitObjects(tTid tid,const sWaitObject *objects,u32 objCount);
+bool ev_waitObjects(tTid tid,const sWaitObject *objects,size_t objCount);
 
 /**
  * Wakes up all threads that wait for given event and object
@@ -117,7 +117,7 @@ bool ev_waitObjects(tTid tid,const sWaitObject *objects,u32 objCount);
  * @param evi the event-index(!)
  * @param object the object
  */
-void ev_wakeup(u32 evi,tEvObj object);
+void ev_wakeup(size_t evi,tEvObj object);
 
 /**
  * Wakes up all threads that wait for given events and the given object
@@ -125,7 +125,7 @@ void ev_wakeup(u32 evi,tEvObj object);
  * @param events the event-mask (not index!)
  * @param object the object
  */
-void ev_wakeupm(u32 events,tEvObj object);
+void ev_wakeupm(uint events,tEvObj object);
 
 /**
  * Wakes up the thread <tid> for given events. That means, if it does not wait for them, it is
@@ -135,7 +135,7 @@ void ev_wakeupm(u32 events,tEvObj object);
  * @param events the event-mask (not index!)
  * @return true if waked up
  */
-bool ev_wakeupThread(tTid tid,u32 events);
+bool ev_wakeupThread(tTid tid,uint events);
 
 /**
  * Removes the given thread from the event-system. Note that it will set it to the ready-state!
@@ -152,7 +152,7 @@ void ev_removeThread(tTid tid);
  *
  * @param mask the mask
  */
-void ev_dbg_printEvMask(u32 mask);
+void ev_dbg_printEvMask(uint mask);
 
 /**
  * Prints all waiting threads

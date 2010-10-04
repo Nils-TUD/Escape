@@ -31,25 +31,25 @@
 
 /* a lock-entry */
 typedef struct {
-	u32 ident;
-	u16 flags;
+	uint ident;
+	ushort flags;
 	tPid pid;
-	volatile u16 readRefs;
+	volatile ushort readRefs;
 	volatile tTid writer;
-	u16 waitCount;
+	ushort waitCount;
 } sLock;
 
 /**
  * Searches the lock-entry for the given ident and process-id
  */
-static s32 lock_get(tPid pid,u32 ident,bool free);
+static ssize_t lock_get(tPid pid,uint ident,bool free);
 
-static s32 lockCount = 0;
+static size_t lockCount = 0;
 static sLock *locks = NULL;
 
 /* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
 
-static bool lock_isLocked(sLock *l,u16 flags) {
+static bool lock_isLocked(sLock *l,ushort flags) {
 	if((flags & LOCK_EXCLUSIVE) && (l->readRefs > 0 || l->writer != INVALID_TID))
 		return true;
 	if(!(flags & LOCK_EXCLUSIVE) && l->writer != INVALID_TID)
@@ -57,9 +57,9 @@ static bool lock_isLocked(sLock *l,u16 flags) {
 	return false;
 }
 
-s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
+int lock_aquire(tPid pid,uint ident,ushort flags) {
 	sThread *t = thread_getRunning();
-	s32 i = lock_get(pid,ident,true);
+	ssize_t i = lock_get(pid,ident,true);
 	sLock *l;
 	if(i < 0)
 		return ERR_NOT_ENOUGH_MEM;
@@ -69,7 +69,7 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 	l = locks + i;
 	if(l->flags) {
 		/* if it exists and is locked, wait */
-		u32 event = (flags & LOCK_EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
+		uint event = (flags & LOCK_EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
 		assert(l->writer != t->tid);
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
@@ -96,8 +96,8 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 	return 0;
 }
 
-s32 lock_release(tPid pid,u32 ident) {
-	s32 i = lock_get(pid,ident,false);
+int lock_release(tPid pid,uint ident) {
+	ssize_t i = lock_get(pid,ident,false);
 	sLock *l = locks + i;
 	if(i < 0)
 		return ERR_LOCK_NOT_FOUND;
@@ -130,15 +130,16 @@ s32 lock_release(tPid pid,u32 ident) {
 }
 
 void lock_releaseAll(tPid pid) {
-	s32 i;
+	size_t i;
 	for(i = 0; i < lockCount; i++) {
 		if(locks[i].flags && locks[i].pid == pid)
 			locks[i].flags = 0;
 	}
 }
 
-static s32 lock_get(tPid pid,u32 ident,bool free) {
-	s32 i,freeIdx = -1;
+static ssize_t lock_get(tPid pid,uint ident,bool free) {
+	size_t i;
+	ssize_t freeIdx = -1;
 	for(i = 0; i < lockCount; i++) {
 		if(free && freeIdx == -1 && locks[i].flags == 0)
 			freeIdx = i;
@@ -148,7 +149,7 @@ static s32 lock_get(tPid pid,u32 ident,bool free) {
 	}
 	if(freeIdx == -1 && free) {
 		sLock *nlocks;
-		s32 oldCount = lockCount;
+		size_t oldCount = lockCount;
 		if(lockCount == 0)
 			lockCount = 8;
 		else
@@ -168,7 +169,7 @@ static s32 lock_get(tPid pid,u32 ident,bool free) {
 #if DEBUGGING
 
 void lock_dbg_print(void) {
-	s32 i;
+	size_t i;
 	vid_printf("Locks:\n");
 	for(i = 0; i < lockCount; i++) {
 		sLock *l = locks + i;

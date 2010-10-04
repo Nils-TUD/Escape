@@ -41,12 +41,12 @@
 
 /* the thread-state which will be saved for context-switching */
 typedef struct {
-	u32 esp;
-	u32 edi;
-	u32 esi;
-	u32 ebp;
-	u32 eflags;
-	u32 ebx;
+	uint32_t esp;
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t eflags;
+	uint32_t ebx;
 	/* note that we don't need to save eip because when we're done in thread_resume() we have
 	 * our kernel-stack back which causes the ret-instruction to return to the point where
 	 * we've called thread_save(). the user-eip is saved on the kernel-stack anyway.. */
@@ -83,13 +83,13 @@ typedef enum {
 typedef struct sThread sThread;
 struct sThread {
 	/* thread state. see eThreadState */
-	u8 state;
+	uint8_t state;
 	/* whether signals should be ignored (while being blocked) */
-	u8 ignoreSignals;
+	uint8_t ignoreSignals;
 	/* thread id */
 	tTid tid;
 	/* the events the thread waits for (if waiting) */
-	u32 events;
+	uint events;
 	/* the process we belong to */
 	sProc *proc;
 	/* the stack-region for this thread */
@@ -97,19 +97,19 @@ struct sThread {
 	/* the TLS-region for this thread (-1 if not present) */
 	tVMRegNo tlsRegion;
 	/* the frame mapped at KERNEL_STACK */
-	u32 kstackFrame;
+	tFrameNo kstackFrame;
 	sThreadRegs save;
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
 	struct {
 		/* number of cpu-cycles the thread has used so far */
-		u64 ucycleStart;
+		uint64_t ucycleStart;
 		uLongLong ucycleCount;
-		u64 kcycleStart;
+		uint64_t kcycleStart;
 		uLongLong kcycleCount;
 		/* the number of times we got chosen so far */
-		u32 schedCount;
-		u32 syscalls;
+		uint schedCount;
+		uint syscalls;
 	} stats;
 	/* for the scheduler */
 	sThread *prev;
@@ -137,7 +137,7 @@ extern bool thread_save(sThreadRegs *saveArea);
  * @param kstackFrame the frame-number of the kernel-stack (0 = don't change)
  * @return always true
  */
-extern bool thread_resume(u32 pageDir,const sThreadRegs *saveArea,u32 kstackFrame);
+extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,tFrameNo kstackFrame);
 
 /**
  * Inits the threading-stuff. Uses <p> as first process
@@ -150,7 +150,7 @@ sThread *thread_init(sProc *p);
 /**
  * @return the number of existing threads
  */
-u32 thread_getCount(void);
+size_t thread_getCount(void);
 
 /**
  * @return the currently running thread
@@ -218,7 +218,7 @@ void thread_setSuspended(tTid tid,bool blocked);
  * @param address the address that should be accessible
  * @return 0 on success
  */
-s32 thread_extendStack(u32 address);
+int thread_extendStack(uintptr_t address);
 
 /**
  * Clones <src> to <dst>. That means a new thread will be created and <src> will be copied to the
@@ -232,7 +232,7 @@ s32 thread_extendStack(u32 address);
  * @param cloneProc whether a process is cloned or just a thread
  * @return 0 on success
  */
-s32 thread_clone(const sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc);
+int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,bool cloneProc);
 
 /**
  * Kills the given thread. If it is the current one it will be stored for later deletion.

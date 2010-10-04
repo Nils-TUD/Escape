@@ -37,8 +37,8 @@
 #include <errors.h>
 #include <ctype.h>
 
-#define IS_ON_HEAP(addr) ((u32)(addr) >= KERNEL_HEAP_START && \
-		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+#define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KERNEL_HEAP_START && \
+		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 
 /**
  * Appends the given node as last child to the parent
@@ -58,7 +58,7 @@ static sDynArray nodeArray;
 static sVFSNode *nodes = (sVFSNode*)VFSNODE_AREA;
 /* a pointer to the first free node (which points to the next and so on) */
 static sVFSNode *freeList = NULL;
-static u32 nextUsageId = 0;
+static uint nextUsageId = 0;
 
 void vfs_node_init(void) {
 	dyna_init(&nodeArray,sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
@@ -69,7 +69,7 @@ bool vfs_node_isValid(tInodeNo nodeNo) {
 }
 
 tInodeNo vfs_node_getNo(const sVFSNode *node) {
-	return ((u32)node - (u32)&nodes[0]) / sizeof(sVFSNode);
+	return ((uintptr_t)node - (uintptr_t)&nodes[0]) / sizeof(sVFSNode);
 }
 
 sVFSNode *vfs_node_get(tInodeNo nodeNo) {
@@ -82,7 +82,7 @@ sVFSNode *vfs_node_getFirstChild(const sVFSNode *node) {
 	return vfs_link_resolve(node)->firstChild;
 }
 
-s32 vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info) {
+int vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info) {
 	sVFSNode *n = nodes + nodeNo;
 
 	if(n->mode == 0)
@@ -107,7 +107,7 @@ s32 vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info) {
 
 char *vfs_node_getPath(tInodeNo nodeNo) {
 	static char path[MAX_PATH_LEN];
-	u32 nlen,len = 0,total = 0;
+	size_t nlen,len = 0,total = 0;
 	sVFSNode *node = nodes + nodeNo;
 	sVFSNode *n = node;
 
@@ -142,17 +142,17 @@ char *vfs_node_getPath(tInodeNo nodeNo) {
 	return (char*)path;
 }
 
-s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) {
+int vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,uint flags) {
 	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = nodes;
 	sThread *t = thread_getRunning();
-	s32 pos = 0,depth,lastdepth;
+	int pos = 0,depth,lastdepth;
 	if(created)
 		*created = false;
 
 	/* no absolute path? */
 	if(*path != '/') {
-		u32 len;
+		size_t len;
 		const char *cwd = env_get(t->proc->pid,"CWD");
 		if(cwd) {
 			strcpy(apath,cwd);
@@ -199,7 +199,7 @@ s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 fla
 			lastdepth = depth;
 		}
 
-		if((s32)strlen(n->name) == pos && strncmp(n->name,path,pos) == 0) {
+		if((int)strlen(n->name) == pos && strncmp(n->name,path,pos) == 0) {
 			path += pos;
 			/* finished? */
 			if(!*path)
@@ -235,7 +235,7 @@ s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 fla
 
 		/* should we create a default-file? */
 		if((flags & VFS_CREATE) && (dir->mode & MODE_TYPE_DIR)) {
-			u32 nameLen;
+			size_t nameLen;
 			sVFSNode *child;
 			char *nameCpy;
 			char *nextSlash = strchr(path,'/');
@@ -275,7 +275,7 @@ s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 fla
 	return 0;
 }
 
-char *vfs_node_basename(char *path,u32 *len) {
+char *vfs_node_basename(char *path,size_t *len) {
 	char *p = path + *len - 1;
 	while(*p == '/') {
 		p--;
@@ -287,7 +287,7 @@ char *vfs_node_basename(char *path,u32 *len) {
 	return p + 1;
 }
 
-void vfs_node_dirname(char *path,u32 len) {
+void vfs_node_dirname(char *path,size_t len) {
 	char *p = path + len - 1;
 	/* remove last '/' */
 	while(*p == '/') {
@@ -307,7 +307,7 @@ void vfs_node_dirname(char *path,u32 len) {
 	*(p + 1) = '\0';
 }
 
-sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,u32 nameLen) {
+sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,size_t nameLen) {
 	sVFSNode *n = vfs_node_getFirstChild(node);
 	while(n != NULL) {
 		if(strlen(n->name) == nameLen && strncmp(n->name,name,nameLen) == 0)
@@ -373,7 +373,7 @@ void vfs_node_destroy(sVFSNode *n) {
 
 char *vfs_node_getId(tPid pid) {
 	char *name;
-	u32 len,size;
+	size_t len,size;
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign = 11 bytes */
 	/* we want to have to form <pid>.<x>, therefore two ints, a '.' and \0 */
@@ -407,7 +407,7 @@ static void vfs_node_appendChild(sVFSNode *parent,sVFSNode *node) {
 static sVFSNode *vfs_node_requestNode(void) {
 	sVFSNode *node;
 	if(freeList == NULL) {
-		u32 i,oldCount = nodeArray.objCount;
+		size_t i,oldCount = nodeArray.objCount;
 		if(!dyna_extend(&nodeArray))
 			util_panic("No free VFS-nodes");
 		freeList = nodes + oldCount;
@@ -436,8 +436,8 @@ static void vfs_node_releaseNode(sVFSNode *node) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-static void vfs_node_dbg_doPrintTree(u32 level,sVFSNode *parent) {
-	u32 i;
+static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
+	size_t i;
 	sVFSNode *n = vfs_node_getFirstChild(parent);
 	while(n != NULL) {
 		for(i = 0;i < level;i++)

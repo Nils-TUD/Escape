@@ -28,23 +28,23 @@
 
 typedef struct {
 	tTid tid;
-	u32 object;
+	tEvObj object;
 } sWait;
 
 static sSLList evlists[EV_COUNT];
 
 void ev_init(void) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < EV_COUNT; i++)
 		sll_init(evlists + i,slln_allocNode,slln_freeNode);
 }
 
-bool ev_waitsFor(tTid tid,u32 events) {
+bool ev_waitsFor(tTid tid,uint events) {
 	sThread *t = thread_getById(tid);
 	return t->events & events;
 }
 
-bool ev_wait(tTid tid,u32 evi,tEvObj object) {
+bool ev_wait(tTid tid,size_t evi,tEvObj object) {
 	sThread *t = thread_getById(tid);
 	sSLList *list = evlists + evi;
 	sWait *w = (sWait*)kheap_alloc(sizeof(sWait));
@@ -61,10 +61,10 @@ bool ev_wait(tTid tid,u32 evi,tEvObj object) {
 	return true;
 }
 
-bool ev_waitObjects(tTid tid,const sWaitObject *objects,u32 objCount) {
-	u32 i,e;
+bool ev_waitObjects(tTid tid,const sWaitObject *objects,size_t objCount) {
+	size_t i,e;
 	for(i = 0; i < objCount; i++) {
-		u32 events = objects[i].events;
+		uint events = objects[i].events;
 		if(events == 0)
 			sched_setBlocked(thread_getById(tid));
 		else {
@@ -82,7 +82,7 @@ bool ev_waitObjects(tTid tid,const sWaitObject *objects,u32 objCount) {
 	return true;
 }
 
-void ev_wakeup(u32 evi,tEvObj object) {
+void ev_wakeup(size_t evi,tEvObj object) {
 	sSLList *list = evlists + evi;
 	sSLNode *n,*p;
 	p = NULL;
@@ -102,8 +102,8 @@ void ev_wakeup(u32 evi,tEvObj object) {
 	}
 }
 
-void ev_wakeupm(u32 events,tEvObj object) {
-	u32 e;
+void ev_wakeupm(uint events,tEvObj object) {
+	size_t e;
 	for(e = 0; events && e < EV_COUNT; e++) {
 		if(events & (1 << e)) {
 			ev_wakeup(e,object);
@@ -112,7 +112,7 @@ void ev_wakeupm(u32 events,tEvObj object) {
 	}
 }
 
-bool ev_wakeupThread(tTid tid,u32 events) {
+bool ev_wakeupThread(tTid tid,uint events) {
 	sThread *t = thread_getById(tid);
 	if(t->events & events) {
 		ev_removeThread(tid);
@@ -124,7 +124,7 @@ bool ev_wakeupThread(tTid tid,u32 events) {
 void ev_removeThread(tTid tid) {
 	sThread *t = thread_getById(tid);
 	if(t->events) {
-		u32 e;
+		size_t e;
 		for(e = 0; t->events && e < EV_COUNT; e++) {
 			if(t->events & (1 << e)) {
 				sSLNode *n,*tn,*p = NULL;
@@ -152,7 +152,7 @@ void ev_removeThread(tTid tid) {
 
 #if DEBUGGING
 
-static const char *ev_getName(u32 evi) {
+static const char *ev_getName(size_t evi) {
 	static const char *names[] = {
 		"CLIENT",
 		"RECEIVED_MSG",
@@ -176,8 +176,8 @@ static const char *ev_getName(u32 evi) {
 	return names[evi];
 }
 
-void ev_dbg_printEvMask(u32 mask) {
-	u32 e;
+void ev_dbg_printEvMask(uint mask) {
+	uint e;
 	for(e = 0; e < EV_COUNT; e++) {
 		if(mask & (1 << e))
 			vid_printf("%s ",ev_getName(e));
@@ -185,7 +185,7 @@ void ev_dbg_printEvMask(u32 mask) {
 }
 
 void ev_dbg_print(void) {
-	u32 e;
+	size_t e;
 	vid_printf("Eventlists:\n");
 	for(e = 0; e < EV_COUNT; e++) {
 		sSLList *list = evlists + e;

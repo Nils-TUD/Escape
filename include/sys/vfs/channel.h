@@ -59,7 +59,7 @@ bool vfs_chan_hasWork(const sVFSNode *node);
  * @param size the data-size
  * @return 0 on success
  */
-s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,u32 size);
+ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,size_t size);
 
 /**
  * Receives a message from the channel
@@ -72,7 +72,7 @@ s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,u
  * @param size the size of the buffer
  * @return the number of written bytes on success
  */
-s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *data,u32 size);
+ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *data,size_t size);
 
 
 #if DEBUGGING

@@ -31,24 +31,24 @@
 
 static void conf_set(const char *name,const char *value);
 
-static u8 bootVidMode;
-static u8 logToCom1 = true;
+static uchar bootVidMode;
+static uchar logToCom1 = true;
 static char swapDev[MAX_BPVAL_LEN + 1] = "";
 
-void conf_parseBootParams(s32 argc,const char *const *argv) {
+void conf_parseBootParams(int argc,const char *const *argv) {
 	char name[MAX_BPNAME_LEN + 1];
 	char value[MAX_BPVAL_LEN + 1];
-	s32 i;
+	int i;
 	for(i = 1; i < argc; i++) {
-		u32 len = strlen(argv[i]);
+		size_t len = strlen(argv[i]);
 		if(len > MAX_BPNAME_LEN + MAX_BPVAL_LEN + 1)
 			continue;
-		s32 eq = strchri(argv[i],'=');
+		int eq = strchri(argv[i],'=');
 		if(eq > MAX_BPNAME_LEN || (len - eq) > MAX_BPVAL_LEN)
 			continue;
 		strncpy(name,argv[i],eq);
 		name[eq] = '\0';
-		if(eq != (s32)len) {
+		if(eq != (int)len) {
 			strncpy(value,argv[i] + eq + 1,len - eq - 1);
 			value[len - eq - 1] = '\0';
 		}
@@ -58,7 +58,7 @@ void conf_parseBootParams(s32 argc,const char *const *argv) {
 	}
 }
 
-const char *conf_getStr(u32 id) {
+const char *conf_getStr(uint id) {
 	const char *res = NULL;
 	switch(id) {
 		case CONF_SWAP_DEVICE:
@@ -68,8 +68,8 @@ const char *conf_getStr(u32 id) {
 	return res;
 }
 
-s32 conf_get(u32 id) {
-	s32 res;
+int conf_get(uint id) {
+	int res;
 	switch(id) {
 		case CONF_BOOT_VIDEOMODE:
 			res = bootVidMode;

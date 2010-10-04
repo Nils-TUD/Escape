@@ -22,10 +22,10 @@
 #include <sys/util.h>
 #include <assert.h>
 
-static int ser_isTransmitEmpty(u16 port);
-static void ser_initPort(u16 port);
+static int ser_isTransmitEmpty(uint16_t port);
+static void ser_initPort(uint16_t port);
 
-static u16 ports[] = {
+static uint16_t ports[] = {
 	/* COM1 */	0x3F8,
 	/* COM2 */	0x2E8,
 	/* COM3 */	0x2F8,
@@ -36,19 +36,19 @@ void ser_init(void) {
 	ser_initPort(ports[SER_COM1]);
 }
 
-void ser_out(u16 port,u8 byte) {
-	u16 ioport;
+void ser_out(uint16_t port,uint8_t byte) {
+	uint16_t ioport;
 	assert(port < ARRAY_SIZE(ports));
 	ioport = ports[port];
 	while(ser_isTransmitEmpty(ioport) == 0);
 	util_outByte(ioport,byte);
 }
 
-static int ser_isTransmitEmpty(u16 port) {
+static int ser_isTransmitEmpty(uint16_t port) {
 	return util_inByte(port + 5) & 0x20;
 }
 
-static void ser_initPort(u16 port) {
+static void ser_initPort(uint16_t port) {
 	util_outByte(port + 1, 0x00);	/* Disable all interrupts */
 	util_outByte(port + 3, 0x80);	/* Enable DLAB (set baud rate divisor) */
 	util_outByte(port + 0, 0x03);	/* Set divisor to 3 (lo byte) 38400 baud */

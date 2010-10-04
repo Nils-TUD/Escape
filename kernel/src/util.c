@@ -42,19 +42,19 @@
 /**
  * Builds the stacktrace with given vars
  */
-static sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 mstart,u32 mend);
+static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
 
 /* the beginning of the kernel-stack */
-extern u32 kernelStack;
-static u64 profStart;
+extern uintptr_t kernelStack;
+static uint64_t profStart;
 
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
-static u32 randa = 1103515245;
-static u32 randc = 12345;
-static u32 lastRand = 0;
+static uint randa = 1103515245;
+static uint randc = 12345;
+static uint lastRand = 0;
 
 void util_panic(const char *fmt,...) {
-	static u32 regs[REG_COUNT];
+	static uint32_t regs[REG_COUNT];
 	sIntrptStackFrame *istack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
 	va_list ap;
@@ -126,14 +126,14 @@ void util_panic(const char *fmt,...) {
 #endif
 }
 
-s32 util_rand(void) {
-	s32 res;
+int util_rand(void) {
+	int res;
 	lastRand = randa * lastRand + randc;
-	res = (s32)((u32)(lastRand / 65536) % 32768);
+	res = (int)((uint)(lastRand / 65536) % 32768);
 	return res;
 }
 
-void util_srand(u32 seed) {
+void util_srand(uint seed) {
 	lastRand = seed;
 }
 
@@ -152,24 +152,26 @@ void util_stopTimer(const char *prefix,...) {
 }
 
 sFuncCall *util_getUserStackTrace(void) {
-	u32 start,end;
+	uintptr_t start,end;
 	sIntrptStackFrame *stack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
 	vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
-	return util_getStackTrace((u32*)stack->ebp,start,start,end);
+	return util_getStackTrace((uint32_t*)stack->ebp,start,start,end);
 }
 
 sFuncCall *util_getUserStackTraceOf(const sThread *t) {
-	u32 start,end,pcount;
+	uintptr_t start,end;
+	size_t pcount;
 	sFuncCall *calls;
-	u32 *frames;
+	tFrameNo *frames;
 	if(t->stackRegion >= 0) {
 		vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
 		pcount = (end - start) / PAGE_SIZE;
-		frames = kheap_alloc((pcount + 2) * sizeof(u32));
+		frames = kheap_alloc((pcount + 2) * sizeof(tFrameNo));
 		if(frames) {
 			sIntrptStackFrame *istack = intrpt_getCurStack();
-			u32 temp,i,startCpy = start;
+			uintptr_t temp,startCpy = start;
+			size_t i;
 			frames[0] = t->kstackFrame;
 			for(i = 0; startCpy < end; i++) {
 				if(!paging_isPresent(t->proc->pagedir,startCpy)) {
@@ -180,8 +182,8 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 				startCpy += PAGE_SIZE;
 			}
 			temp = paging_mapToTemp(frames,pcount + 1);
-			istack = (sIntrptStackFrame*)(temp + ((u32)istack & (PAGE_SIZE - 1)));
-			calls = util_getStackTrace((u32*)istack->ebp,start,
+			istack = (sIntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));
+			calls = util_getStackTrace((uint32_t*)istack->ebp,start,
 					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
 			paging_unmapFromTemp(pcount + 1);
 			kheap_free(frames);
@@ -192,25 +194,25 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 }
 
 sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
-	u32 ebp = t->save.ebp;
-	u32 temp = paging_mapToTemp(&t->kstackFrame,1);
-	sFuncCall *calls = util_getStackTrace((u32*)ebp,KERNEL_STACK,temp,temp + PAGE_SIZE);
+	uint32_t ebp = t->save.ebp;
+	uintptr_t temp = paging_mapToTemp(&t->kstackFrame,1);
+	sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,KERNEL_STACK,temp,temp + PAGE_SIZE);
 	paging_unmapFromTemp(1);
 	return calls;
 }
 
 sFuncCall *util_getKernelStackTrace(void) {
-	u32 start,end;
-	u32* ebp = (u32*)getStackFrameStart();
+	uintptr_t start,end;
+	uint32_t* ebp = (uint32_t*)getStackFrameStart();
 
 	/* determine the stack-bounds; we have a temp stack at the beginning */
-	if((u32)ebp >= KERNEL_STACK && (u32)ebp < KERNEL_STACK + PAGE_SIZE) {
+	if((uintptr_t)ebp >= KERNEL_STACK && (uintptr_t)ebp < KERNEL_STACK + PAGE_SIZE) {
 		start = KERNEL_STACK;
 		end = KERNEL_STACK + PAGE_SIZE;
 	}
 	else {
-		start = ((u32)&kernelStack) - TMP_STACK_SIZE;
-		end = (u32)&kernelStack;
+		start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
+		end = (uintptr_t)&kernelStack;
 	}
 
 	return util_getStackTrace(ebp,start,start,end);
@@ -228,17 +230,17 @@ void util_printStackTrace(const sFuncCall *trace) {
 	}
 }
 
-void util_dumpMem(const void *addr,u32 dwordCount) {
-	u32 *ptr = (u32*)addr;
+void util_dumpMem(const void *addr,size_t dwordCount) {
+	uint *ptr = (uint*)addr;
 	while(dwordCount-- > 0) {
 		vid_printf("0x%x: 0x%08x\n",ptr,*ptr);
 		ptr++;
 	}
 }
 
-void util_dumpBytes(const void *addr,u32 byteCount) {
-	u32 i = 0;
-	u8 *ptr = (u8*)addr;
+void util_dumpBytes(const void *addr,size_t byteCount) {
+	size_t i = 0;
+	uchar *ptr = (uchar*)addr;
 	for(i = 0; byteCount-- > 0; i++) {
 		vid_printf("%02x ",*ptr);
 		ptr++;
@@ -247,10 +249,10 @@ void util_dumpBytes(const void *addr,u32 byteCount) {
 	}
 }
 
-static sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 mstart,u32 mend) {
+static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
 	static sFuncCall frames[MAX_STACK_DEPTH];
-	u32 i;
-	bool isKernel = (u32)ebp >= KERNEL_AREA_V_ADDR;
+	size_t i;
+	bool isKernel = (uintptr_t)ebp >= KERNEL_AREA_V_ADDR;
 	sFuncCall *frame = &frames[0];
 	sSymbol *sym;
 
@@ -259,10 +261,11 @@ static sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 mstart,u32 mend) {
 			break;
 		/* adjust it if we're in the kernel-stack but are using the temp-area (to print the trace
 		 * for another thread). don't do this for the temp-kernel-stack */
-		if(rstart != ((u32)&kernelStack) - TMP_STACK_SIZE && rstart != mstart)
-			ebp = (u32*)(mstart + ((u32)ebp & (PAGE_SIZE - 1)));
+		if(rstart != ((uintptr_t)&kernelStack) - TMP_STACK_SIZE && rstart != mstart)
+			ebp = (uint32_t*)(mstart + ((uintptr_t)ebp & (PAGE_SIZE - 1)));
 		/* prevent page-fault */
-		if((u32)ebp < mstart || (((u32)(ebp + 1) + sizeof(u32) - 1) & ~(sizeof(u32) - 1)) >= mend)
+		if((uintptr_t)ebp < mstart ||
+				(((uintptr_t)(ebp + 1) + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1)) >= mend)
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
 		if(isKernel) {
@@ -274,7 +277,7 @@ static sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 mstart,u32 mend) {
 			frame->funcAddr = frame->addr;
 			frame->funcName = "Unknown";
 		}
-		ebp = (u32*)*ebp;
+		ebp = (uint32_t*)*ebp;
 		frame++;
 	}
 

@@ -42,8 +42,8 @@ void sysc_debug(sIntrptStackFrame *stack);
 /**
  * Gets the value of a kernel-configuration
  *
- * @param u32 the id of the config-value (CONF_*)
- * @return s32 the value or the negative error-code
+ * @param uint the id of the config-value (CONF_*)
+ * @return int the value or the negative error-code
  */
 void sysc_getConf(sIntrptStackFrame *stack);
 

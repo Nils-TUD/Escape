@@ -48,14 +48,14 @@ void gdt_init(void);
 /**
  * Initializes the TLS-segment for the given TLS-region
  */
-void gdt_setTLS(u32 tlsAddr,u32 tlsSize);
+void gdt_setTLS(uintptr_t tlsAddr,size_t tlsSize);
 
 /**
  * Sets the stack-pointer for the TSS
  *
  * @param isVM86 whether the current task is a Vm86-task
  */
-void tss_setStackPtr(u8 isVM86);
+void tss_setStackPtr(bool isVM86);
 
 /**
  * Checks whether the io-map is set
@@ -70,7 +70,7 @@ bool tss_ioMapPresent(void);
  *
  * @param ioMap the io-map to set
  */
-void tss_setIOMap(const u8 *ioMap);
+void tss_setIOMap(const uint8_t *ioMap);
 
 /**
  * Removes the io-map from the TSS so that an exception will be raised if a user-process

@@ -36,12 +36,12 @@ void timer_init(void);
 /**
  * @return the number of timer-interrupts so far
  */
-u32 timer_getIntrptCount(void);
+size_t timer_getIntrptCount(void);
 
 /**
  * @return the kernel-internal timestamp; starts from zero, in milliseconds, increased by timer-irq
  */
-u64 timer_getTimestamp(void);
+tTime timer_getTimestamp(void);
 
 /**
  * Puts the given thread to sleep for the given number of milliseconds
@@ -50,7 +50,7 @@ u64 timer_getTimestamp(void);
  * @param msecs the number of milliseconds to wait
  * @return 0 on success
  */
-s32 timer_sleepFor(tTid tid,u32 msecs);
+int timer_sleepFor(tTid tid,tTime msecs);
 
 /**
  * Removes the given thread from the timer

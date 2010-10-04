@@ -43,20 +43,20 @@
 
 #define vid_printf(...)
 
-static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,u32 addr);
-static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,u32 index);
+static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,uintptr_t addr);
+static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,size_t index);
 static void swap_setSuspended(const sSLList *procs,bool blocked);
-static sRegion *swap_findVictim(u32 *index);
+static sRegion *swap_findVictim(size_t *index);
 
 static bool enabled = false;
 static bool swapping = false;
 static const sProc *swapinProc = NULL;
-static u32 swapinAddr = 0;
+static uintptr_t swapinAddr = 0;
 static tTid swapinTid = INVALID_TID;
 static sThread *swapper = NULL;
-static u32 neededFrames = HIGH_WATER;
+static size_t neededFrames = HIGH_WATER;
 /* no heap-usage here */
-static u8 buffer[PAGE_SIZE];
+static uint8_t buffer[PAGE_SIZE];
 
 void swap_start(void) {
 	tFileNo swapFile = -1;
@@ -84,10 +84,10 @@ void swap_start(void) {
 		if(mm_getFreeFrames(MM_DEF) < LOW_WATER || neededFrames > HIGH_WATER) {
 			vid_printf("Starting to swap out (%d free frames; %d needed)\n",
 					mm_getFreeFrames(MM_DEF),neededFrames);
-			u32 count = 0;
+			size_t count = 0;
 			swapping = true;
 			while(count < MAX_SWAP_AT_ONCE && mm_getFreeFrames(MM_DEF) < neededFrames) {
-				u32 index = 0,free;
+				size_t index = 0,free;
 				sRegion *reg = swap_findVictim(&index);
 				if(reg == NULL)
 					util_panic("No process to swap out");
@@ -121,8 +121,8 @@ void swap_start(void) {
 	vfs_closeFile(swapper->proc->pid,swapFile);
 }
 
-bool swap_outUntil(u32 frameCount) {
-	u32 free = mm_getFreeFrames(MM_DEF);
+bool swap_outUntil(size_t frameCount) {
+	size_t free = mm_getFreeFrames(MM_DEF);
 	sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
@@ -143,7 +143,7 @@ bool swap_outUntil(u32 frameCount) {
 }
 
 void swap_check(void) {
-	u32 freeFrm;
+	size_t freeFrm;
 	if(!enabled)
 		return;
 
@@ -164,7 +164,7 @@ void swap_check(void) {
 	}
 }
 
-bool swap_in(const sProc *p,u32 addr) {
+bool swap_in(const sProc *p,uintptr_t addr) {
 	sThread *t = thread_getRunning();
 	if(!enabled)
 		return false;
@@ -184,10 +184,13 @@ bool swap_in(const sProc *p,u32 addr) {
 	return true;
 }
 
-static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,u32 addr) {
+static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,uintptr_t addr) {
 	tVMRegNo rno = vmm_getRegionOf(p,addr);
 	sVMRegion *vmreg = vmm_getRegion(p,rno);
-	u32 temp,frame,block,index;
+	uintptr_t temp;
+	tFrameNo frame;
+	uint block;
+	size_t index;
 	addr &= ~(PAGE_SIZE - 1);
 
 	index = (addr - vmreg->virt) / PAGE_SIZE;
@@ -230,10 +233,12 @@ static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,u32 addr) {
 	swap_setSuspended(vmreg->reg->procs,false);
 }
 
-static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,u32 index) {
+static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,size_t index) {
 	tVMRegNo rno;
 	sVMRegion *vmreg;
-	u32 block,frameNo,temp;
+	tFrameNo frameNo;
+	uint block;
+	uintptr_t temp;
 	sProc *first = (sProc*)sll_get(reg->procs,0);
 
 	swap_setSuspended(reg->procs,true);
@@ -279,7 +284,7 @@ static void swap_setSuspended(const sSLList *procs,bool blocked) {
 	}
 }
 
-static sRegion *swap_findVictim(u32 *index) {
+static sRegion *swap_findVictim(size_t *index) {
 	sRegion *reg = proc_getLRURegion();
 	if(reg == NULL)
 		return NULL;

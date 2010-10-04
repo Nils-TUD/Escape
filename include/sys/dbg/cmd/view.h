@@ -30,6 +30,6 @@
  * @param argv the arguments
  * @return 0 on success
  */
-s32 cons_cmd_view(s32 argc,char **argv);
+int cons_cmd_view(size_t argc,char **argv);
 
 #endif /* VIEW_H_ */

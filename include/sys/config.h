@@ -38,7 +38,7 @@
  * @param argc the number of args
  * @param argv the arguments
  */
-void conf_parseBootParams(s32 argc,const char *const *argv);
+void conf_parseBootParams(int argc,const char *const *argv);
 
 /**
  * Returns the value for the given configuration-string-value
@@ -46,7 +46,7 @@ void conf_parseBootParams(s32 argc,const char *const *argv);
  * @param id the config-id
  * @return the value or NULL
  */
-const char *conf_getStr(u32 id);
+const char *conf_getStr(uint id);
 
 /**
  * Returns the value for the given configuration-value
@@ -54,6 +54,6 @@ const char *conf_getStr(u32 id);
  * @param id the config-id
  * @return the value or < 0 if an error occurred
  */
-s32 conf_get(u32 id);
+int conf_get(uint id);
 
 #endif /* CONFIG_H_ */

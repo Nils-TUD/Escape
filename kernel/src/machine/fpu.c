@@ -47,7 +47,7 @@ extern void fpu_restoreState(sFPUState *state);
 static sFPUState **curFPUState = NULL;
 
 void fpu_init(void) {
-	u32 cr0 = cpu_getCR0();
+	uint32_t cr0 = cpu_getCR0();
 	/* enable coprocessor monitoring */
 	cr0 |= CR0_MONITOR_COPROC;
 	/* disable emulate */

@@ -31,9 +31,9 @@
 #define KE_BREAK	8
 
 typedef struct {
-	u8 keycode;
+	uint8_t keycode;
 	char character;
-	u8 flags;
+	uint8_t flags;
 } sKeyEvent;
 
 /**
@@ -45,6 +45,6 @@ typedef struct {
  * @param wait wether to wait until a scancode is present
  * @return true if a key could be read. false if not (always true, when <wait> is true)
  */
-bool kb_get(sKeyEvent *ev,u8 events,bool wait);
+bool kb_get(sKeyEvent *ev,uint8_t events,bool wait);
 
 #endif /* KB_H_ */

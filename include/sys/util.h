@@ -30,8 +30,8 @@
  * Represents one function-call
  */
 typedef struct {
-	u32 addr;
-	u32 funcAddr;
+	uintptr_t addr;
+	uintptr_t funcAddr;
 	const char *funcName;
 } sFuncCall;
 
@@ -49,7 +49,7 @@ extern void util_halt(void);
  * @param port the port
  * @param val the value
  */
-extern void util_outByte(u16 port,u8 val);
+extern void util_outByte(uint16_t port,uint8_t val);
 
 /**
  * Outputs the <val> to the I/O-Port <port>
@@ -57,7 +57,7 @@ extern void util_outByte(u16 port,u8 val);
  * @param port the port
  * @param val the value
  */
-extern void util_outWord(u16 port,u16 val);
+extern void util_outWord(uint16_t port,uint16_t val);
 
 /**
  * Outputs the <val> to the I/O-Port <port>
@@ -65,7 +65,7 @@ extern void util_outWord(u16 port,u16 val);
  * @param port the port
  * @param val the value
  */
-extern void util_outDWord(u16 port,u32 val);
+extern void util_outDWord(uint16_t port,uint32_t val);
 
 /**
  * Reads the value from the I/O-Port <port>
@@ -73,7 +73,7 @@ extern void util_outDWord(u16 port,u32 val);
  * @param port the port
  * @return the value
  */
-extern u8 util_inByte(u16 port);
+extern uint8_t util_inByte(uint16_t port);
 
 /**
  * Reads the value from the I/O-Port <port>
@@ -81,7 +81,7 @@ extern u8 util_inByte(u16 port);
  * @param port the port
  * @return the value
  */
-extern u16 util_inWord(u16 port);
+extern uint16_t util_inWord(uint16_t port);
 
 /**
  * Reads the value from the I/O-Port <port>
@@ -89,12 +89,12 @@ extern u16 util_inWord(u16 port);
  * @param port the port
  * @return the value
  */
-extern u32 util_inDWord(u16 port);
+extern uint32_t util_inDWord(uint16_t port);
 
 /**
  * @return the address of the stack-frame-start
  */
-extern u32 getStackFrameStart(void);
+extern uintptr_t getStackFrameStart(void);
 
 /**
  * PANIC: Displays the given message and halts
@@ -113,13 +113,13 @@ void util_logViewer(void);
  *
  * @return the random number
  */
-s32 util_rand(void);
+int util_rand(void);
 
 /**
  * Srand seeds the random number generation function rand so it does not produce the same
  * sequence of numbers.
  */
-void util_srand(u32 seed);
+void util_srand(uint seed);
 
 /**
  * Starts the timer
@@ -176,7 +176,7 @@ void util_printStackTrace(const sFuncCall *trace);
  * @param addr the staring address
  * @param dwordCount the number of dwords to print
  */
-void util_dumpMem(const void *addr,u32 dwordCount);
+void util_dumpMem(const void *addr,size_t dwordCount);
 
 /**
  * Prints <byteCount> bytes at <addr>
@@ -184,6 +184,6 @@ void util_dumpMem(const void *addr,u32 dwordCount);
  * @param addr the start-address
  * @param byteCount the number of bytes
  */
-void util_dumpBytes(const void *addr,u32 byteCount);
+void util_dumpBytes(const void *addr,size_t byteCount);
 
 #endif /*UTIL_H_*/

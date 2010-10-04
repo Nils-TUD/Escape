@@ -27,14 +27,14 @@
  *
  * @param tSig signal
  * @param fSigHandler handler
- * @return s32 0 if no error
+ * @return int 0 if no error
  */
 void sysc_setSigHandler(sIntrptStackFrame *stack);
 
 /**
  * Acknoledges that the processing of a signal is finished
  *
- * @return s32 0 if no error
+ * @return int 0 if no error
  */
 void sysc_ackSignal(sIntrptStackFrame *stack);
 
@@ -43,7 +43,7 @@ void sysc_ackSignal(sIntrptStackFrame *stack);
  *
  * @param tPid pid
  * @param tSig signal
- * @return s32 0 if no error
+ * @return int 0 if no error
  */
 void sysc_sendSignalTo(sIntrptStackFrame *stack);
 

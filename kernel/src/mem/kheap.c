@@ -35,9 +35,9 @@
 #endif
 
 #if DEBUG_ADD_GUARDS
-void *_kheap_alloc(u32 size);
-void *_kheap_calloc(u32 num,u32 size);
-void * _kheap_realloc(void *addr,u32 size);
+void *_kheap_alloc(size_t size);
+void *_kheap_calloc(size_t num,size_t size);
+void * _kheap_realloc(void *addr,size_t size);
 void _kheap_free(void *addr);
 #	define kheap_alloc_guard(size)			kheap_alloc(size)
 #	define kheap_calloc_guard(num,size)		kheap_calloc(num,size)
@@ -53,7 +53,7 @@ void _kheap_free(void *addr);
 /* an area in memory */
 typedef struct sMemArea sMemArea;
 struct sMemArea {
-	u32 size;
+	size_t size;
 	void *address;
 	sMemArea *next;
 };
@@ -71,7 +71,7 @@ static bool kheap_loadNewAreas(void);
  * @param size the minimum size
  * @return true on success
  */
-static bool kheap_loadNewSpace(u32 size);
+static bool kheap_loadNewSpace(size_t size);
 
 /**
  * Calculates the hash for the given address that should be used as key in occupiedMap
@@ -79,7 +79,7 @@ static bool kheap_loadNewSpace(u32 size);
  * @param addr the address
  * @return the key
  */
-static u32 kheap_getHash(void *addr);
+static size_t kheap_getHash(void *addr);
 
 /* a linked list of free and usable areas. That means the areas have an address and size */
 static sMemArea *usableList = NULL;
@@ -88,14 +88,14 @@ static sMemArea *freeList = NULL;
 /* a hashmap with occupied-lists, key is getHash(address) */
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
 /* number of currently occupied pages */
-static u32 pages = 0;
+static size_t pages = 0;
 
 #if DEBUGGING
 static bool aafEnabled = false;
 #endif
 
-u32 kheap_getUsedMem(void) {
-	u32 i,c = 0;
+size_t kheap_getUsedMem(void) {
+	size_t i,c = 0;
 	sMemArea *a;
 	for(i = 0; i < OCC_MAP_SIZE; i++) {
 		a = occupiedMap[i];
@@ -107,12 +107,12 @@ u32 kheap_getUsedMem(void) {
 	return c;
 }
 
-u32 kheap_getOccupiedMem(void) {
+size_t kheap_getOccupiedMem(void) {
 	return pages * PAGE_SIZE;
 }
 
-u32 kheap_getFreeMem(void) {
-	u32 c = 0;
+size_t kheap_getFreeMem(void) {
+	size_t c = 0;
 	sMemArea *a = usableList;
 	while(a != NULL) {
 		c += a->size;
@@ -121,7 +121,7 @@ u32 kheap_getFreeMem(void) {
 	return c;
 }
 
-u32 kheap_getAreaSize(void *addr) {
+size_t kheap_getAreaSize(void *addr) {
 	sMemArea *area;
 	area = occupiedMap[kheap_getHash(addr)];
 	while(area != NULL) {
@@ -133,59 +133,60 @@ u32 kheap_getAreaSize(void *addr) {
 }
 
 #if DEBUG_ADD_GUARDS
-void *kheap_alloc_guard(u32 size) {
-	void *a = _kheap_alloc(size + sizeof(u32) * 3);
+void *kheap_alloc_guard(size_t size) {
+	void *a = _kheap_alloc(size + sizeof(uint32_t) * 3);
 	if(a) {
-		*((u32*)a) = 0xDEADBEEF;
-		*((u32*)a + 1) = size;
-		*((u32*)((u32)a + sizeof(u32) * 2 + size)) = 0xDEADBEEF;
-		return (void*)((u32)a + sizeof(u32) * 2);
+		*((uint32_t*)a) = 0xDEADBEEF;
+		*((uint32_t*)a + 1) = size;
+		*((uint32_t*)((uintptr_t)a + sizeof(uint32_t) * 2 + size)) = 0xDEADBEEF;
+		return (void*)((uintptr_t)a + sizeof(uint32_t) * 2);
 	}
 	return NULL;
 }
 
-void *kheap_calloc_guard(u32 num,u32 size) {
-	void *a = _kheap_alloc(num * size + sizeof(u32) * 3);
+void *kheap_calloc_guard(size_t num,size_t size) {
+	void *a = _kheap_alloc(num * size + sizeof(uint32_t) * 3);
 	if(a) {
 		void *res;
-		*((u32*)a) = 0xDEADBEEF;
-		*((u32*)a + 1) = num * size;
-		*((u32*)((u32)a + sizeof(u32) * 2 + num * size)) = 0xDEADBEEF;
-		res = (void*)((u32)a + sizeof(u32) * 2);
+		*((uint32_t*)a) = 0xDEADBEEF;
+		*((uint32_t*)a + 1) = num * size;
+		*((uint32_t*)((uintptr_t)a + sizeof(uint32_t) * 2 + num * size)) = 0xDEADBEEF;
+		res = (void*)((uintptr_t)a + sizeof(uint32_t) * 2);
 		memclear(res,num * size);
 		return res;
 	}
 	return NULL;
 }
 
-void *kheap_realloc_guard(void *addr,u32 size) {
+void *kheap_realloc_guard(void *addr,size_t size) {
 	void *a;
 	if(addr) {
-		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
-		assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
-		a = _kheap_realloc((void*)((u32)addr - sizeof(u32) * 2),size + sizeof(u32) * 3);
+		assert(*(uint32_t*)((uintptr_t)addr - sizeof(uint32_t) * 2) == 0xDEADBEEF);
+		assert(*(uint32_t*)((uintptr_t)addr + *((uint32_t*)addr - 1)) == 0xDEADBEEF);
+		a = _kheap_realloc((void*)((uintptr_t)addr - sizeof(uint32_t) * 2),
+				size + sizeof(uint32_t) * 3);
 	}
 	else
-		a = _kheap_realloc(NULL,size + sizeof(u32) * 3);
+		a = _kheap_realloc(NULL,size + sizeof(uint32_t) * 3);
 	if(a) {
-		*((u32*)a) = 0xDEADBEEF;
-		*((u32*)a + 1) = size;
-		*((u32*)((u32)a + sizeof(u32) * 2 + size)) = 0xDEADBEEF;
-		return (void*)((u32)a + sizeof(u32) * 2);
+		*((uint32_t*)a) = 0xDEADBEEF;
+		*((uint32_t*)a + 1) = size;
+		*((uint32_t*)((uintptr_t)a + sizeof(uint32_t) * 2 + size)) = 0xDEADBEEF;
+		return (void*)((uintptr_t)a + sizeof(uint32_t) * 2);
 	}
 	return NULL;
 }
 
 void kheap_free_guard(void *addr) {
 	if(addr) {
-		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
-		assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
-		_kheap_free((void*)((u32)addr - sizeof(u32) * 2));
+		assert(*(uint32_t*)((uintptr_t)addr - sizeof(uint32_t) * 2) == 0xDEADBEEF);
+		assert(*(uint32_t*)((uintptr_t)addr + *((uint32_t*)addr - 1)) == 0xDEADBEEF);
+		_kheap_free((void*)((uintptr_t)addr - sizeof(uint32_t) * 2));
 	}
 }
 #endif
 
-void *_kheap_alloc(u32 size) {
+void *_kheap_alloc(size_t size) {
 	sMemArea *area,*prev,*narea;
 	sMemArea **list;
 
@@ -231,7 +232,7 @@ void *_kheap_alloc(u32 size) {
 		/* split the area */
 		narea = freeList;
 		freeList = freeList->next;
-		narea->address = (void*)((u32)area->address + size);
+		narea->address = (void*)((uintptr_t)area->address + size);
 		narea->size = area->size - size;
 		area->size = size;
 		/* insert in usable-list */
@@ -242,7 +243,7 @@ void *_kheap_alloc(u32 size) {
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
 		sFuncCall *trace = util_getKernelStackTrace();
-		u32 i = 0;
+		size_t i = 0;
 		vid_printf("[A] %x %d ",area->address,area->size);
 		while(trace->addr != 0 && i++ < 10) {
 			vid_printf("%x",trace->addr);
@@ -262,7 +263,7 @@ void *_kheap_alloc(u32 size) {
 	return area->address;
 }
 
-void *_kheap_calloc(u32 num,u32 size) {
+void *_kheap_calloc(size_t num,size_t size) {
 	void *a = _kheap_alloc(num * size);
 	if(a == NULL)
 		return NULL;
@@ -300,11 +301,11 @@ void _kheap_free(void *addr) {
 	nprev = NULL;
 	a = usableList;
 	while(a != NULL) {
-		if((u32)a->address + a->size == (u32)addr) {
+		if((uintptr_t)a->address + a->size == (uintptr_t)addr) {
 			prev = a;
 			pprev = tprev;
 		}
-		if((u32)a->address == (u32)addr + area->size) {
+		if((uintptr_t)a->address == (uintptr_t)addr + area->size) {
 			next = a;
 			nprev = tprev;
 		}
@@ -324,7 +325,7 @@ void _kheap_free(void *addr) {
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
 		sFuncCall *trace = util_getKernelStackTrace();
-		u32 i = 0;
+		size_t i = 0;
 		vid_printf("[F] %x %d ",addr,area->size);
 		while(trace->addr != 0 && i++ < 10) {
 			vid_printf("%x",trace->addr);
@@ -389,7 +390,7 @@ void _kheap_free(void *addr) {
 	}
 }
 
-void *_kheap_realloc(void *addr,u32 size) {
+void *_kheap_realloc(void *addr,size_t size) {
 	sMemArea *area,*a,*prev;
 
 	if(addr == NULL)
@@ -415,13 +416,13 @@ void *_kheap_realloc(void *addr,u32 size) {
 	prev = NULL;
 	while(a != NULL) {
 		/* found the area behind? */
-		if(a->address == (u8*)area->address + area->size) {
+		if((uintptr_t)a->address == (uintptr_t)area->address + area->size) {
 			/* if the size of both is big enough we can use them */
 			if(area->size + a->size >= size) {
 				/* space left? */
 				if(size < area->size + a->size) {
 					/* so move the area forward */
-					a->address = (void*)((u32)area->address + size);
+					a->address = (void*)((uintptr_t)area->address + size);
 					a->size = (area->size + a->size) - size;
 				}
 				/* otherwise we don't need a anymore */
@@ -458,9 +459,9 @@ void *_kheap_realloc(void *addr,u32 size) {
 	return a;
 }
 
-static bool kheap_loadNewSpace(u32 size) {
+static bool kheap_loadNewSpace(size_t size) {
 	sMemArea *area;
-	s32 count;
+	size_t count;
 
 	/* no free areas? */
 	if(freeList == NULL) {
@@ -476,7 +477,7 @@ static bool kheap_loadNewSpace(u32 size) {
 
 	/* allocate the required pages */
 	count = BYTES_2_PAGES(size);
-	if((s32)mm_getFreeFrames(MM_DEF) < count || (pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+	if(mm_getFreeFrames(MM_DEF) < count || (pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
 	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
@@ -496,7 +497,7 @@ static bool kheap_loadNewSpace(u32 size) {
 
 static bool kheap_loadNewAreas(void) {
 	sMemArea *area,*end;
-	u32 frameNo;
+	tFrameNo frameNo;
 
 	if(mm_getFreeFrames(MM_DEF) < 1 || (pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
@@ -526,10 +527,10 @@ static bool kheap_loadNewAreas(void) {
 	return true;
 }
 
-static u32 kheap_getHash(void *addr) {
+static size_t kheap_getHash(void *addr) {
 	/* the algorithm distributes the entries more equally in the occupied-map. */
 	/* borrowed from java.util.HashMap :) */
-	u32 h = (u32)addr;
+	size_t h = (uintptr_t)addr;
 	h ^= (h >> 20) ^ (h >> 12);
 	/* note that we can use & (a-1) since OCC_MAP_SIZE = 2^x */
 	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
@@ -545,13 +546,14 @@ void kheap_dbg_setAaFEnabled(bool enabled) {
 
 void kheap_dbg_print(void) {
 	sMemArea *area;
-	u32 i;
+	size_t i;
 
 	vid_printf("Used=%d, free=%d, pages=%d\n",kheap_getUsedMem(),kheap_getFreeMem(),pages);
 	vid_printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
-		vid_printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+		vid_printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,
+				area->next);
 		area = area->next;
 	}
 
@@ -561,7 +563,8 @@ void kheap_dbg_print(void) {
 		if(area != NULL) {
 			vid_printf("\t%d:\n",i);
 			while(area != NULL) {
-				vid_printf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+				vid_printf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,
+						area->size,area->next);
 				area = area->next;
 			}
 		}

@@ -27,8 +27,8 @@
 #define STATUS_OUTBUF_FULL			(1 << 0)
 
 typedef struct {
-	u8 def;
-	u8 ext;
+	uint8_t def;
+	uint8_t ext;
 } sScanCodeEntry;
 
 typedef struct {
@@ -37,8 +37,8 @@ typedef struct {
 	char alt;
 } sKeymapEntry;
 
-static bool kb_translate(sKeyEvent *ev,u8 scanCode);
-static u8 kb_toggleFlag(u8 isbreak,u8 val,u8 flag);
+static bool kb_translate(sKeyEvent *ev,uint8_t scanCode);
+static uint8_t kb_toggleFlag(bool isbreak,uint8_t val,uint8_t flag);
 
 static sScanCodeEntry scanCode2KeyCode[] = {
 	/* 00 */	{0,				0},
@@ -302,12 +302,12 @@ static sKeymapEntry keymap[] = {
 	/* VK_PIPE */				{'<','>','|'},
 };
 
-static u8 set = 0;
-static u8 flags = 0;
+static uint8_t set = 0;
+static uint8_t flags = 0;
 
-bool kb_get(sKeyEvent *ev,u8 events,bool wait) {
+bool kb_get(sKeyEvent *ev,uint8_t events,bool wait) {
 	while(true) {
-		u8 status = util_inByte(IOPORT_KB_CTRL);
+		uint8_t status = util_inByte(IOPORT_KB_CTRL);
 		if(!(status & STATUS_OUTBUF_FULL)) {
 			if(!wait)
 				break;
@@ -324,8 +324,8 @@ bool kb_get(sKeyEvent *ev,u8 events,bool wait) {
 	return false;
 }
 
-static bool kb_translate(sKeyEvent *ev,u8 scanCode) {
-	u8 keycode;
+static bool kb_translate(sKeyEvent *ev,uint8_t scanCode) {
+	uint8_t keycode;
 	sScanCodeEntry *e;
 	sKeymapEntry *km;
 	/* extended code-start? */
@@ -380,7 +380,7 @@ static bool kb_translate(sKeyEvent *ev,u8 scanCode) {
 	return true;
 }
 
-static u8 kb_toggleFlag(u8 isbreak,u8 val,u8 flag) {
+static uint8_t kb_toggleFlag(bool isbreak,uint8_t val,uint8_t flag) {
 	if(isbreak)
 		return val & ~flag;
 	return val | flag;

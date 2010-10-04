@@ -33,13 +33,14 @@
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {
 	tInodeNo nodeNo;
-	u16 recLen;
-	u16 nameLen;
+	uint16_t recLen;
+	uint16_t nameLen;
 	/* name follows (up to 255 bytes) */
 } A_PACKED sVFSDirEntry;
 
-static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count);
-static s32 vfs_dir_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence);
+static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,
+		size_t count);
+static int vfs_dir_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence);
 
 sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
 	sVFSNode *target;
@@ -67,7 +68,7 @@ sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
 	return node;
 }
 
-static s32 vfs_dir_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence) {
+static int vfs_dir_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence) {
 	UNUSED(pid);
 	UNUSED(node);
 	switch(whence) {
@@ -83,9 +84,10 @@ static s32 vfs_dir_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 when
 	}
 }
 
-static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count) {
+static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,
+		size_t count) {
 	UNUSED(file);
-	u32 byteCount,fsByteCount;
+	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
 	sVFSNode *n;
 	assert(node != NULL);
@@ -105,13 +107,13 @@ static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 of
 	/* therefore we have to read it from the fs-driver, too */
 	/* but don't do that if we're the kernel (vfsr does not work then) */
 	if(node->parent == NULL && pid != KERNEL_PID) {
-		const u32 bufSize = 1024;
-		u32 c,curSize = bufSize;
+		const size_t bufSize = 1024;
+		size_t c,curSize = bufSize;
 		fsBytes = kheap_alloc(bufSize);
 		if(fsBytes != NULL) {
 			tFileNo rfile = vfs_real_openPath(pid,VFS_READ,"/");
 			if(rfile >= 0) {
-				while((c = vfs_readFile(pid,rfile,(u8*)fsBytes + fsByteCount,bufSize)) > 0) {
+				while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
 					fsByteCount += c;
 					if(c < bufSize)
 						break;
@@ -136,8 +138,8 @@ static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 of
 		if(fsBytesDup == NULL)
 			byteCount = 0;
 		else {
-			u16 len;
-			sVFSDirEntry *dirEntry = (sVFSDirEntry*)((u8*)fsBytesDup + fsByteCount);
+			size_t len;
+			sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
 			fsBytes = fsBytesDup;
 			n = vfs_node_getFirstChild(node);
 			while(n != NULL) {
@@ -150,7 +152,7 @@ static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 of
 				dirEntry->nameLen = len;
 				dirEntry->recLen = sizeof(sVFSDirEntry) + len;
 				memcpy(dirEntry + 1,n->name,len);
-				dirEntry = (sVFSDirEntry*)((u8*)dirEntry + dirEntry->recLen);
+				dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + dirEntry->recLen);
 				n = n->next;
 			}
 		}
@@ -161,7 +163,7 @@ static s32 vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 of
 	byteCount = MIN(byteCount - offset,count);
 	if(byteCount > 0) {
 		/* simply copy the data to the buffer */
-		memcpy(buffer,(u8*)fsBytes + offset,byteCount);
+		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
 	}
 	kheap_free(fsBytes);
 	return byteCount;

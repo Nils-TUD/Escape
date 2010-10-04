@@ -47,7 +47,7 @@ void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 #if DEBUGGING
 #if 0
-	static u32 foo = 0;
+	static size_t foo = 0;
 	if(foo == 0) {
 		proc_dbg_startProf();
 		foo = 1;
@@ -63,8 +63,8 @@ void sysc_debug(sIntrptStackFrame *stack) {
 }
 
 void sysc_getConf(sIntrptStackFrame *stack) {
-	u32 id = SYSC_ARG1(stack);
-	s32 res = conf_get(id);
+	uint id = SYSC_ARG1(stack);
+	int res = conf_get(id);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

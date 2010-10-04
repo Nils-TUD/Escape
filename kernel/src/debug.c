@@ -22,7 +22,7 @@
 #include <sys/debug.h>
 #include <sys/video.h>
 
-static u64 start = 0;
+static uint64_t start = 0;
 
 void dbg_startTimer(void) {
 	start = cpu_rdtsc();

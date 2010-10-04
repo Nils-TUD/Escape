@@ -27,37 +27,37 @@
 #define VM86_MEM_PTR		1
 
 typedef struct {
-	u16 ax;
-	u16 bx;
-	u16 cx;
-	u16 dx;
-    u16 si;
-    u16 di;
-    u16 ds;
-    u16 es;
+	uint16_t ax;
+	uint16_t bx;
+	uint16_t cx;
+	uint16_t dx;
+    uint16_t si;
+    uint16_t di;
+    uint16_t ds;
+    uint16_t es;
 } sVM86Regs;
 
 typedef struct {
-	u8 type;
+	uchar type;
 	union {
 		struct {
 			void *src;
-			u32 dst;
-			u32 size;
+			uintptr_t dst;
+			size_t size;
 		} direct;
 		struct {
 			void **srcPtr;
-			u32 result;
-			u32 size;
+			uintptr_t result;
+			size_t size;
 		} ptr;
 	} data;
 } sVM86Memarea;
 
 typedef struct {
-	u16 interrupt;
+	uint16_t interrupt;
 	sVM86Regs regs;
 	sVM86Memarea *areas;
-	u16 areaCount;
+	size_t areaCount;
 } sVM86Info;
 
 /**
@@ -65,7 +65,7 @@ typedef struct {
  *
  * @return 0 on success
  */
-s32 vm86_create(void);
+int vm86_create(void);
 
 /**
  * Performs a VM86-interrupt
@@ -76,7 +76,7 @@ s32 vm86_create(void);
  * @param areaCount the number of memareas
  * @return 0 on success
  */
-s32 vm86_int(u16 interrupt,sVM86Regs *regs,const sVM86Memarea *areas,u16 areaCount);
+int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t areaCount);
 
 /**
  * Handles a GPF

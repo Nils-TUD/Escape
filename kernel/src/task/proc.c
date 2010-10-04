@@ -53,9 +53,9 @@
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
 static void proc_notifyProcDied(tPid parent);
-static s32 proc_finishClone(sThread *nt,u32 stackFrame);
-static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,u32 tentryPoint);
-static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread);
+static int proc_finishClone(sThread *nt,tFrameNo stackFrame);
+static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint);
+static uint32_t *proc_addStartArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 static bool proc_add(sProc *p);
 static void proc_remove(sProc *p);
 
@@ -71,7 +71,8 @@ static tPid nextPid = 1;
 
 void proc_init(void) {
 	sThread *t;
-	u32 i,stackFrame;
+	tFrameNo stackFrame;
+	size_t i;
 	
 	/* init the first process */
 	sProc *p = &first;
@@ -128,7 +129,7 @@ void proc_init(void) {
 }
 
 tPid proc_getFreePid(void) {
-	u32 count = 0;
+	size_t count = 0;
 	while(count < MAX_PROC_COUNT) {
 		/* 0 is always present */
 		if(nextPid >= MAX_PROC_COUNT)
@@ -158,7 +159,7 @@ bool proc_exists(tPid pid) {
 	return pidToProc[pid] != NULL;
 }
 
-u32 proc_getCount(void) {
+size_t proc_getCount(void) {
 	return sll_length(procs);
 }
 
@@ -187,7 +188,7 @@ tFD proc_getFreeFd(void) {
 	return ERR_MAX_PROC_FDS;
 }
 
-s32 proc_assocFd(tFD fd,tFileNo fileNo) {
+int proc_assocFd(tFD fd,tFileNo fileNo) {
 	sProc *p = proc_getRunning();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
@@ -201,7 +202,8 @@ s32 proc_assocFd(tFD fd,tFileNo fileNo) {
 
 tFD proc_dupFd(tFD fd) {
 	tFileNo f;
-	s32 err,nfd;
+	tFD nfd;
+	int err;
 	sProc *p = proc_getRunning();
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT)
@@ -223,9 +225,9 @@ tFD proc_dupFd(tFD fd) {
 	return nfd;
 }
 
-s32 proc_redirFd(tFD src,tFD dst) {
+int proc_redirFd(tFD src,tFD dst) {
 	tFileNo fSrc,fDst;
-	s32 err;
+	int err;
 	sProc *p = proc_getRunning();
 
 	/* check fds */
@@ -276,7 +278,7 @@ sProc *proc_getProcWithBin(const sBinDesc *bin,tVMRegNo *rno) {
 }
 
 sRegion *proc_getLRURegion(void) {
-	u32 ts = ULONG_MAX;
+	tTime ts = ULONG_MAX;
 	sRegion *lru = NULL;
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
@@ -292,8 +294,8 @@ sRegion *proc_getLRURegion(void) {
 	return lru;
 }
 
-void proc_getMemUsage(u32 *paging,u32 *dataShared,u32 *dataOwn,u32 *dataReal) {
-	u32 pages,pmem = 0,ownMem = 0,shMem = 0;
+void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
+	size_t pages,pmem = 0,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
@@ -307,7 +309,7 @@ void proc_getMemUsage(u32 *paging,u32 *dataShared,u32 *dataOwn,u32 *dataReal) {
 	*paging = pmem * PAGE_SIZE;
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
-	*dataReal = (u32)(dReal + cow_getFrmCount()) * PAGE_SIZE;
+	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;
 }
 
 bool proc_hasChild(tPid pid) {
@@ -320,13 +322,14 @@ bool proc_hasChild(tPid pid) {
 	return false;
 }
 
-s32 proc_clone(tPid newPid,bool isVM86) {
-	u32 i,dummy,stackFrame;
+int proc_clone(tPid newPid,bool isVM86) {
+	tFrameNo stackFrame,dummy;
+	size_t i;
 	sProc *p;
 	sProc *cur = proc_getRunning();
 	sThread *curThread = thread_getRunning();
 	sThread *nt;
-	s32 res;
+	int res;
 
 	p = (sProc*)kheap_alloc(sizeof(sProc));
 	if(!p)
@@ -429,12 +432,12 @@ errorProc:
 	return res;
 }
 
-s32 proc_startThread(u32 entryPoint,const void *arg) {
-	u32 stackFrame;
+int proc_startThread(uintptr_t entryPoint,const void *arg) {
+	tFrameNo stackFrame;
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	sThread *nt;
-	s32 res;
+	int res;
 	if((res = thread_clone(t,&nt,t->proc,&stackFrame,false)) < 0)
 		return res;
 
@@ -466,11 +469,12 @@ s32 proc_startThread(u32 entryPoint,const void *arg) {
 	return nt->tid;
 }
 
-static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
-	u32 i,*src;
+static int proc_finishClone(sThread *nt,tFrameNo stackFrame) {
+	uint *src;
+	size_t i;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	u32 *dst = (u32*)paging_mapToTemp(&stackFrame,1);
+	uint *dst = (uint*)paging_mapToTemp(&stackFrame,1);
 
 	if(thread_save(&nt->save)) {
 		/* child */
@@ -479,7 +483,7 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
 
 	/* now copy the stack */
 	/* copy manually to prevent a function-call (otherwise we would change the stack) */
-	src = (u32*)KERNEL_STACK;
+	src = (uint*)KERNEL_STACK;
 	for(i = 0; i < PT_ENTRY_COUNT; i++)
 		*dst++ = *src++;
 
@@ -489,7 +493,7 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
 	return 0;
 }
 
-void proc_destroyThread(s32 exitCode) {
+void proc_destroyThread(int exitCode) {
 	sProc *cur = proc_getRunning();
 	/* last thread? */
 	if(sll_length(cur->threads) == 1)
@@ -502,7 +506,7 @@ void proc_destroyThread(s32 exitCode) {
 }
 
 void proc_removeRegions(sProc *p,bool remStack) {
-	u32 i;
+	size_t i;
 	sSLNode *n;
 	assert(p);
 	/* remove from shared-memory; do this first because it will remove the region and simply
@@ -524,7 +528,7 @@ void proc_removeRegions(sProc *p,bool remStack) {
 	}
 }
 
-s32 proc_getExitState(tPid ppid,sExitState *state) {
+int proc_getExitState(tPid ppid,sExitState *state) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
@@ -544,9 +548,9 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 	return ERR_NO_CHILD;
 }
 
-void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
+void proc_terminate(sProc *p,int exitCode,tSig signal) {
 	sSLNode *tn,*tmpn;
-	u32 i;
+	size_t i;
 	vassert(p->pid != 0,"You can't terminate the initial process");
 
 	/* if its already a zombie and we don't want to kill ourself, kill the process */
@@ -649,12 +653,12 @@ static void proc_notifyProcDied(tPid parent) {
 	ev_wakeup(EVI_CHILD_DIED,(tEvObj)proc_getByPid(parent));
 }
 
-s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromUser) {
+int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
 	const char *const *arg;
 	char *bufPos;
-	u32 argc = 0;
-	s32 remaining = EXEC_MAX_ARGSIZE;
-	s32 len;
+	int argc = 0;
+	size_t remaining = EXEC_MAX_ARGSIZE;
+	ssize_t len;
 
 	/* alloc space for the arguments */
 	*argBuffer = (char*)kheap_alloc(EXEC_MAX_ARGSIZE);
@@ -669,7 +673,7 @@ s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromU
 	arg = args;
 	while(1) {
 		/* check if it is a valid pointer */
-		if(fromUser && !paging_isRangeUserReadable((u32)arg,sizeof(char*))) {
+		if(fromUser && !paging_isRangeUserReadable((uintptr_t)arg,sizeof(char*))) {
 			kheap_free(*argBuffer);
 			return ERR_INVALID_ARGS;
 		}
@@ -703,11 +707,11 @@ s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromU
 	return argc;
 }
 
-bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,const char *args,u32 argsSize,
+bool proc_setupUserStack(sIntrptStackFrame *frame,int argc,const char *args,size_t argsSize,
 		const sStartupInfo *info) {
-	u32 *esp;
+	uint32_t *esp;
 	char **argv;
-	u32 totalSize;
+	size_t totalSize;
 	sThread *t = thread_getRunning();
 	vassert(frame != NULL,"frame == NULL");
 
@@ -733,27 +737,28 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,const char *args,u32 
 	totalSize = 0;
 	if(argc > 0) {
 		/* first round the size of the arguments up. then we need argc+1 pointer */
-		totalSize += (argsSize + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
-		totalSize += sizeof(u32) * (argc + 1);
+		totalSize += (argsSize + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
+		totalSize += sizeof(void*) * (argc + 1);
 	}
 	/* finally we need argc, argv, tlsSize, tlsStart and entryPoint */
-	totalSize += sizeof(u32) * 5;
+	totalSize += sizeof(uint32_t) * 5;
 
 	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(u32*)&esp);
+	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&esp);
 
 	/* extend the stack if necessary */
-	if(thread_extendStack((u32)esp - totalSize) < 0)
+	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
 		return false;
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable((u32)esp - totalSize,totalSize);
+	paging_isRangeUserWritable((uintptr_t)esp - totalSize,totalSize);
 
 	/* copy arguments on the user-stack (4byte space) */
 	esp--;
 	argv = NULL;
 	if(argc > 0) {
 		char *str;
-		u32 i,len;
+		int i;
+		size_t len;
 		argv = (char**)(esp - argc);
 		/* space for the argument-pointer */
 		esp -= argc;
@@ -770,22 +775,22 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,const char *args,u32 
 			args += len;
 		}
 		/* ensure that we don't overwrites the characters */
-		esp = (u32*)(((u32)str & ~(sizeof(u32) - 1)) - sizeof(u32));
+		esp = (uint32_t*)(((uintptr_t)str & ~(sizeof(uint32_t) - 1)) - sizeof(uint32_t));
 	}
 
 	/* store argc and argv */
-	*esp-- = (u32)argv;
+	*esp-- = (uintptr_t)argv;
 	*esp-- = argc;
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
 	esp = proc_addStartArgs(t,esp,info->progEntry,false);
 
-	frame->uesp = (u32)esp;
+	frame->uesp = (uint32_t)esp;
 	frame->ebp = frame->uesp;
 	return true;
 }
 
-void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {
+void proc_setupStart(sIntrptStackFrame *frame,uintptr_t entryPoint) {
 	vassert(frame != NULL,"frame == NULL");
 
 	/* user-mode segments */
@@ -806,9 +811,9 @@ void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {
 	frame->edi = 0;
 }
 
-static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,u32 tentryPoint) {
-	u32 *esp;
-	u32 totalSize = 3 * sizeof(u32) + sizeof(void*);
+static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint) {
+	uint32_t *esp;
+	size_t totalSize = 3 * sizeof(uint32_t) + sizeof(void*);
 	sThread *t = thread_getRunning();
 
 	/*
@@ -825,29 +830,29 @@ static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,u32 t
 	 */
 
 	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(u32*)&esp);
+	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&esp);
 
 	/* extend the stack if necessary */
-	if(thread_extendStack((u32)esp - totalSize) < 0)
+	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
 		return false;
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable((u32)esp - totalSize,totalSize);
+	paging_isRangeUserWritable((uintptr_t)esp - totalSize,totalSize);
 
 	/* put arg on stack */
 	esp--;
-	*esp-- = (u32)arg;
+	*esp-- = (uintptr_t)arg;
 	/* add TLS args and entrypoint */
 	esp = proc_addStartArgs(t,esp,tentryPoint,true);
 
-	frame->uesp = (u32)esp;
+	frame->uesp = (uint32_t)esp;
 	frame->ebp = frame->uesp;
 	return true;
 }
 
-static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread) {
+static uint32_t *proc_addStartArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	if(t->tlsRegion >= 0) {
-		u32 tlsStart,tlsEnd;
+		uintptr_t tlsStart,tlsEnd;
 		vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
 		*esp-- = tlsEnd - tlsStart;
 		*esp-- = tlsStart;
@@ -880,8 +885,8 @@ static void proc_remove(sProc *p) {
 
 #define PROF_PROC_COUNT		128
 
-static u64 ucycles[PROF_PROC_COUNT];
-static u64 kcycles[PROF_PROC_COUNT];
+static uint64_t ucycles[PROF_PROC_COUNT];
+static uint64_t kcycles[PROF_PROC_COUNT];
 
 void proc_dbg_startProf(void) {
 	sSLNode *n,*m;
@@ -940,7 +945,7 @@ void proc_dbg_printAllRegions(void) {
 	}
 }
 
-void proc_dbg_printAllPDs(u8 parts,bool regions) {
+void proc_dbg_printAllPDs(uint parts,bool regions) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
@@ -954,7 +959,7 @@ void proc_dbg_printAllPDs(u8 parts,bool regions) {
 }
 
 void proc_dbg_print(const sProc *p) {
-	u32 i;
+	size_t i;
 	sSLNode *n;
 	vid_printf("Proc %d:\n",p->pid);
 	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#x\n",

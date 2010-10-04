@@ -32,12 +32,12 @@
  * I.e. as soon as a region is removed all blocks in the swapmap are marked as free.
  */
 
-static u8 *bitmap = NULL;
-static u32 totalBlocks = 0;
-static u32 freeBlocks = 0;
-static u32 nextBlock = 0;
+static uint8_t *bitmap = NULL;
+static size_t totalBlocks = 0;
+static size_t freeBlocks = 0;
+static uint nextBlock = 0;
 
-void swmap_init(u32 swapSize) {
+void swmap_init(size_t swapSize) {
 	totalBlocks = swapSize / PAGE_SIZE;
 	freeBlocks = totalBlocks;
 	bitmap = kheap_calloc(totalBlocks / 8,1);
@@ -45,16 +45,16 @@ void swmap_init(u32 swapSize) {
 		util_panic("Unable to allocate swap-bitmap");
 }
 
-u32 swmap_alloc(void) {
-	u32 i;
+uint swmap_alloc(void) {
+	uint i;
 begin:
 	for(i = nextBlock; i < totalBlocks; ) {
-		u32 idx = i / 8;
+		size_t idx = i / 8;
 		/* skip this byte if its completly used */
 		if(bitmap[idx] == 0xFF)
 			i += 8 - (i % 8);
 		else {
-			u32 bit = 1 << (i % 8);
+			uint32_t bit = 1 << (i % 8);
 			if(!(bitmap[idx] & bit)) {
 				/* mark used */
 				bitmap[idx] |= bit;
@@ -72,19 +72,19 @@ begin:
 	return INVALID_BLOCK;
 }
 
-bool swmap_isUsed(u32 block) {
+bool swmap_isUsed(uint block) {
 	assert(block < totalBlocks);
 	return bitmap[block / 8] & (1 << (block % 8));
 }
 
-void swmap_free(u32 block) {
+void swmap_free(uint block) {
 	assert(block < totalBlocks);
 	bitmap[block / 8] &= ~(1 << (block % 8));
 	nextBlock = block;
 	freeBlocks++;
 }
 
-u32 swmap_freeSpace(void) {
+size_t swmap_freeSpace(void) {
 	return freeBlocks * PAGE_SIZE;
 }
 

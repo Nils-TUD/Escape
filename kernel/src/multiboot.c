@@ -39,32 +39,32 @@
 #define MAX_ARG_LEN				64
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 
-static const char **mboot_parseArgs(const char *line,s32 *argc);
+static const char **mboot_parseArgs(const char *line,int *argc);
 
-extern u32 KernelStart;
+extern uintptr_t KernelStart;
 static sMultiBoot *mb;
 static bool loadedMods = false;
 
 void mboot_init(sMultiBoot *mbp) {
-	u32 i;
+	size_t i;
 	sModule *mod;
-	s32 argc;
+	int argc;
 	const char **argv;
 
 	/* save the multiboot-structure
 	 * (change to 0xC...0 since we get the address at 0x0...0 from GRUB) */
-	mb = (sMultiBoot*)((u32)mbp | KERNEL_AREA_V_ADDR);
+	mb = (sMultiBoot*)((uintptr_t)mbp | KERNEL_AREA_V_ADDR);
 
 	/* change the address of the pointers in the structure, too */
-	mb->cmdLine = (char*)((u32)mb->cmdLine | KERNEL_AREA_V_ADDR);
-	mb->modsAddr = (sModule*)((u32)mb->modsAddr | KERNEL_AREA_V_ADDR);
-	mb->mmapAddr = (sMemMap*)((u32)mb->mmapAddr | KERNEL_AREA_V_ADDR);
-	mb->drivesAddr = (sDrive*)((u32)mb->drivesAddr | KERNEL_AREA_V_ADDR);
+	mb->cmdLine = (char*)((uintptr_t)mb->cmdLine | KERNEL_AREA_V_ADDR);
+	mb->modsAddr = (sModule*)((uintptr_t)mb->modsAddr | KERNEL_AREA_V_ADDR);
+	mb->mmapAddr = (sMemMap*)((uintptr_t)mb->mmapAddr | KERNEL_AREA_V_ADDR);
+	mb->drivesAddr = (sDrive*)((uintptr_t)mb->drivesAddr | KERNEL_AREA_V_ADDR);
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
 		mod->modStart |= KERNEL_AREA_V_ADDR;
 		mod->modEnd |= KERNEL_AREA_V_ADDR;
-		mod->name = (char*)((u32)mod->name | KERNEL_AREA_V_ADDR);
+		mod->name = (char*)((uintptr_t)mod->name | KERNEL_AREA_V_ADDR);
 		mod++;
 	}
 
@@ -77,20 +77,20 @@ const sMultiBoot *mboot_getInfo(void) {
 	return mb;
 }
 
-u32 mboot_getKernelSize(void) {
-	u32 start = (u32)&KernelStart | KERNEL_AREA_V_ADDR;
-	u32 end = mb->modsAddr[0].modStart;
+size_t mboot_getKernelSize(void) {
+	uintptr_t start = (uintptr_t)&KernelStart | KERNEL_AREA_V_ADDR;
+	uintptr_t end = mb->modsAddr[0].modStart;
 	return end - start;
 }
 
-u32 mboot_getModuleSize(void) {
-	u32 start = mb->modsAddr[0].modStart;
-	u32 end = mb->modsAddr[mb->modsCount - 1].modEnd;
+size_t mboot_getModuleSize(void) {
+	uintptr_t start = mb->modsAddr[0].modStart;
+	uintptr_t end = mb->modsAddr[mb->modsCount - 1].modEnd;
 	return end - start;
 }
 
 void mboot_loadModules(sIntrptStackFrame *stack) {
-	u32 i;
+	size_t i;
 	tPid pid;
 	tInodeNo nodeNo;
 	sModule *mod = mb->modsAddr;
@@ -108,7 +108,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	loadedMods = true;
 	for(i = 0; i < mb->modsCount; i++) {
 		/* parse args */
-		s32 argc;
+		int argc;
 		const char **argv = mboot_parseArgs(mod->name,&argc);
 		if(argc < 2)
 			util_panic("Invalid arguments for multiboot-module: %s\n",mod->name);
@@ -120,7 +120,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 
 		if(proc_clone(pid,false)) {
 			sStartupInfo info;
-			u32 argSize = 0;
+			size_t argSize = 0;
 			char *argBuffer = NULL;
 			sProc *p = proc_getRunning();
 			/* remove regions (except stack) */
@@ -168,22 +168,22 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	assert(vm86_create() == 0);
 }
 
-u32 mboot_getUsableMemCount(void) {
+size_t mboot_getUsableMemCount(void) {
 	sMemMap *mmap;
-	u32 size = 0;
+	size_t size = 0;
 	for(mmap = mb->mmapAddr;
-		(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
-		mmap = (sMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
+		(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
+		mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
 		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
 			size += mmap->length;
 	}
 	return size;
 }
 
-static const char **mboot_parseArgs(const char *line,s32 *argc) {
+static const char **mboot_parseArgs(const char *line,int *argc) {
 	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
 	static char *args[MAX_ARG_COUNT];
-	s32 i = 0,j = 0;
+	size_t i = 0,j = 0;
 	args[0] = argvals[0];
 	while(*line) {
 		if(*line == ' ') {
@@ -210,7 +210,7 @@ static const char **mboot_parseArgs(const char *line,s32 *argc) {
 #if DEBUGGING
 
 void mboot_dbg_print(void) {
-	u32 x;
+	size_t x;
 	sMemMap *mmap;
 	vid_printf("MultiBoot-Structure:\n---------------------\nflags=0x%x\n",mb->flags);
 	if(CHECK_FLAG(mb->flags,0)) {
@@ -218,14 +218,14 @@ void mboot_dbg_print(void) {
 	}
 	if(CHECK_FLAG(mb->flags,1)) {
 		vid_printf("biosDriveNumber=%2X, part1=%2X, part2=%2X, part3=%2X\n",
-			(u32)mb->bootDevice.drive,(u32)mb->bootDevice.partition1,(u32)mb->bootDevice.partition2,
-			(u32)mb->bootDevice.partition3);
+			(uintptr_t)mb->bootDevice.drive,(uintptr_t)mb->bootDevice.partition1,
+			(uintptr_t)mb->bootDevice.partition2,(uintptr_t)mb->bootDevice.partition3);
 	}
 	if(CHECK_FLAG(mb->flags,2)) {
 		vid_printf("cmdLine=%s\n",mb->cmdLine);
 	}
 	if(CHECK_FLAG(mb->flags,3)) {
-		u32 i;
+		size_t i;
 		sModule *mod = mb->modsAddr;
 		vid_printf("modsCount=%d:\n",mb->modsCount);
 		for(i = 0; i < mb->modsCount; i++) {
@@ -247,24 +247,24 @@ void mboot_dbg_print(void) {
 		vid_printf("memory-map:\n");
 		x = 0;
 		for(mmap = (sMemMap*)mb->mmapAddr;
-			(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
-			mmap = (sMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
+			(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
+			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
 			if(mmap != NULL) {
 				vid_printf("\t%d: addr=0x%08x, size=0x%08x, type=%s\n",
-						x,(u32)mmap->baseAddr,(u32)mmap->length,
+						x,(uintptr_t)mmap->baseAddr,(size_t)mmap->length,
 						mmap->type == MMAP_TYPE_AVAILABLE ? "free" : "used");
 				x++;
 			}
 		}
 	}
 	if(CHECK_FLAG(mb->flags,7) && mb->drivesLength > 0) {
-		u32 i;
+		size_t i;
 		sDrive *drive = mb->drivesAddr;
 		vid_printf("Drives: (size=%u)\n",mb->drivesLength);
 		for(x = 0, i = 0; x < mb->drivesLength; x += drive->size) {
 			vid_printf("\t%d: no=%x, mode=%x, cyl=%u, heads=%u, sectors=%u\n",
-					i,(u32)drive->number,(u32)drive->mode,(u32)drive->cylinders,(u32)drive->heads,
-					(u32)drive->sectors);
+					i,(uint)drive->number,(uint)drive->mode,(uint)drive->cylinders,
+					(uint)drive->heads,(uint)drive->sectors);
 		}
 	}
 

@@ -48,13 +48,13 @@
 /* describes the array */
 typedef struct {
 	/* number of objects currently avaiable */
-	u32 objCount;
-	u32 objSize;
+	size_t objCount;
+	size_t objSize;
 	/* the virtual-memory-area in which the array is */
-	u32 areaBegin;
-	u32 areaSize;
+	uintptr_t areaBegin;
+	size_t areaSize;
 	/* number of pages currently used */
-	u32 pageCount;
+	size_t pageCount;
 } sDynArray;
 
 /**
@@ -65,7 +65,7 @@ typedef struct {
  * @param areaBegin the beginning of the area in virtual memory where the objects should be
  * @param areaSize the size of that area
  */
-void dyna_init(sDynArray *d,u32 objSize,u32 areaBegin,u32 areaSize);
+void dyna_init(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize);
 
 /**
  * Extends the given array. That means, it allocates one page more and changes the number of

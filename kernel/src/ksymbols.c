@@ -40,13 +40,13 @@ static sSymbol ksymbols[] = {
 };
 
 void ksym_print(void) {
-	u32 i;
+	size_t i;
 	vid_printf("Kernel-Symbols:\n");
 	for(i = 0; i < ARRAY_SIZE(ksymbols); i++)
 		vid_printf("\t0x%08x -> %s\n",ksymbols[i].address,ksymbols[i].funcName);
 }
 
-sSymbol *ksym_getSymbolAt(u32 address) {
+sSymbol *ksym_getSymbolAt(uintptr_t address) {
 	sSymbol *sym = &ksymbols[ARRAY_SIZE(ksymbols) - 1];
 	while(sym >= &ksymbols[0]) {
 		if(address >= sym->address)

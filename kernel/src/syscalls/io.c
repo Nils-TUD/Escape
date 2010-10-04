@@ -30,11 +30,11 @@
 
 void sysc_open(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
-	u16 flags = (u16)SYSC_ARG2(stack);
-	s32 pathLen;
+	uint flags = (uint)SYSC_ARG2(stack);
+	ssize_t pathLen;
 	tFileNo file;
 	tFD fd;
-	s32 err;
+	int err;
 	sProc *p = proc_getRunning();
 
 	/* at first make sure that we'll cause no page-fault */
@@ -71,11 +71,11 @@ void sysc_open(sIntrptStackFrame *stack) {
 
 void sysc_fcntl(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	u32 cmd = SYSC_ARG2(stack);
-	s32 arg = (s32)SYSC_ARG3(stack);
+	uint cmd = SYSC_ARG2(stack);
+	int arg = (int)SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
-	s32 res;
+	int res;
 
 	/* get file */
 	file = proc_fdToFile(fd);
@@ -96,12 +96,12 @@ void sysc_pipe(sIntrptStackFrame *stack) {
 	sVFSNode *pipeNode;
 	tInodeNo nodeNo,pipeNodeNo;
 	tFileNo readFile,writeFile;
-	s32 err;
+	int err;
 
 	/* check pointers */
-	if(!paging_isRangeUserWritable((u32)readFd,sizeof(tFD)))
+	if(!paging_isRangeUserWritable((uintptr_t)readFd,sizeof(tFD)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserWritable((u32)writeFd,sizeof(tFD)))
+	if(!paging_isRangeUserWritable((uintptr_t)writeFd,sizeof(tFD)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* resolve pipe-path */
@@ -165,11 +165,11 @@ errorRemNode:
 
 void sysc_tell(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	s32 *pos = (s32*)SYSC_ARG2(stack);
+	int *pos = (int*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
 
-	if(!paging_isRangeUserWritable((u32)pos,sizeof(u32)))
+	if(!paging_isRangeUserWritable((uintptr_t)pos,sizeof(long)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -183,11 +183,11 @@ void sysc_tell(sIntrptStackFrame *stack) {
 
 void sysc_seek(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	s32 offset = (s32)SYSC_ARG2(stack);
-	u32 whence = SYSC_ARG3(stack);
+	int offset = (int)SYSC_ARG2(stack);
+	uint whence = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
-	s32 res;
+	int res;
 
 	if(whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -206,15 +206,15 @@ void sysc_seek(sIntrptStackFrame *stack) {
 void sysc_read(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
-	u32 count = SYSC_ARG3(stack);
+	size_t count = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
-	s32 readBytes;
+	ssize_t readBytes;
 	tFileNo file;
 
 	/* validate count and buffer */
 	if(count <= 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserWritable((u32)buffer,count))
+	if(!paging_isRangeUserWritable((uintptr_t)buffer,count))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -233,15 +233,15 @@ void sysc_read(sIntrptStackFrame *stack) {
 void sysc_write(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
-	u32 count = SYSC_ARG3(stack);
+	size_t count = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
-	s32 writtenBytes;
+	ssize_t writtenBytes;
 	tFileNo file;
 
 	/* validate count and buffer */
 	if(count <= 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserReadable((u32)buffer,count))
+	if(!paging_isRangeUserReadable((uintptr_t)buffer,count))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -276,13 +276,13 @@ void sysc_send(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tMsgId id = (tMsgId)SYSC_ARG2(stack);
 	const void *data = (const void*)SYSC_ARG3(stack);
-	u32 size = SYSC_ARG4(stack);
+	size_t size = SYSC_ARG4(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
-	s32 res;
+	ssize_t res;
 
 	/* validate size and data */
-	if(data != NULL && !paging_isRangeUserReadable((u32)data,size))
+	if(data != NULL && !paging_isRangeUserReadable((uintptr_t)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -302,14 +302,14 @@ void sysc_receive(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tMsgId *id = (tMsgId*)SYSC_ARG2(stack);
 	void *data = (void*)SYSC_ARG3(stack);
-	u32 size = SYSC_ARG4(stack);
+	size_t size = SYSC_ARG4(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
-	s32 res;
+	ssize_t res;
 
 	/* validate id and data */
-	if((id != NULL && !paging_isRangeUserWritable((u32)id,sizeof(tMsgId))) ||
-			(data != NULL && !paging_isRangeUserWritable((u32)data,size)))
+	if((id != NULL && !paging_isRangeUserWritable((uintptr_t)id,sizeof(tMsgId))) ||
+			(data != NULL && !paging_isRangeUserWritable((uintptr_t)data,size)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -338,9 +338,7 @@ void sysc_dupFd(sIntrptStackFrame *stack) {
 void sysc_redirFd(sIntrptStackFrame *stack) {
 	tFD src = (tFD)SYSC_ARG1(stack);
 	tFD dst = (tFD)SYSC_ARG2(stack);
-	s32 err;
-
-	err = proc_redirFd(src,dst);
+	int err = proc_redirFd(src,dst);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,err);
@@ -363,11 +361,11 @@ void sysc_stat(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
-	u32 len;
-	s32 res;
+	size_t len;
+	int res;
 
 	if(!sysc_isStringReadable(path) || info == NULL ||
-			!paging_isRangeUserWritable((u32)info,sizeof(sFileInfo)))
+			!paging_isRangeUserWritable((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	len = strlen(path);
 	if(len == 0 || len >= MAX_PATH_LEN)
@@ -384,9 +382,9 @@ void sysc_fstat(sIntrptStackFrame *stack) {
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
-	s32 res;
+	int res;
 
-	if(info == NULL || !paging_isRangeUserWritable((u32)info,sizeof(sFileInfo)))
+	if(info == NULL || !paging_isRangeUserWritable((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -401,7 +399,7 @@ void sysc_fstat(sIntrptStackFrame *stack) {
 }
 
 void sysc_sync(sIntrptStackFrame *stack) {
-	s32 res;
+	int res;
 	sProc *p = proc_getRunning();
 	res = vfs_real_sync(p->pid);
 	if(res < 0)
@@ -410,7 +408,7 @@ void sysc_sync(sIntrptStackFrame *stack) {
 }
 
 void sysc_link(sIntrptStackFrame *stack) {
-	s32 res;
+	int res;
 	sProc *p = proc_getRunning();
 	char *oldPath = (char*)SYSC_ARG1(stack);
 	char *newPath = (char*)SYSC_ARG2(stack);
@@ -424,7 +422,7 @@ void sysc_link(sIntrptStackFrame *stack) {
 }
 
 void sysc_unlink(sIntrptStackFrame *stack) {
-	s32 res;
+	int res;
 	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
@@ -437,7 +435,7 @@ void sysc_unlink(sIntrptStackFrame *stack) {
 }
 
 void sysc_mkdir(sIntrptStackFrame *stack) {
-	s32 res;
+	int res;
 	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
@@ -450,7 +448,7 @@ void sysc_mkdir(sIntrptStackFrame *stack) {
 }
 
 void sysc_rmdir(sIntrptStackFrame *stack) {
-	s32 res;
+	int res;
 	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
@@ -463,12 +461,12 @@ void sysc_rmdir(sIntrptStackFrame *stack) {
 }
 
 void sysc_mount(sIntrptStackFrame *stack) {
-	s32 res;
+	int res;
 	tInodeNo ino;
 	sProc *p = proc_getRunning();
 	char *device = (char*)SYSC_ARG1(stack);
 	char *path = (char*)SYSC_ARG2(stack);
-	u16 type = (u16)SYSC_ARG3(stack);
+	uint type = (uint)SYSC_ARG3(stack);
 	if(!sysc_isStringReadable(device) || !sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
@@ -481,7 +479,7 @@ void sysc_mount(sIntrptStackFrame *stack) {
 }
 
 void sysc_unmount(sIntrptStackFrame *stack) {
-	s32 res;
+	int res;
 	tInodeNo ino;
 	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);

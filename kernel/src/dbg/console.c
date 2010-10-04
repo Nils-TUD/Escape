@@ -35,19 +35,19 @@
 #define MAX_ARG_LEN		32
 #define MAX_CMD_LEN		16
 
-typedef s32 (*fCommand)(s32 argc,char **argv);
+typedef int (*fCommand)(size_t argc,char **argv);
 typedef struct {
 	char name[MAX_ARG_LEN];
 	fCommand exec;
 } sCommand;
 
-static char **cons_readCommand(s32 *argc);
+static char **cons_readCommand(size_t *argc);
 static char *cons_readLine(void);
 static sCommand *cons_getCommand(const char *name);
 
-static u32 histWritePos = 0;
-static u32 histReadPos = 0;
-static u32 histSize = 0;
+static size_t histWritePos = 0;
+static size_t histReadPos = 0;
+static size_t histSize = 0;
 static char *history[HISTORY_SIZE];
 static char emptyLine[VID_COLS];
 static sScreenBackup backup;
@@ -61,8 +61,8 @@ static sCommand commands[] = {
 };
 
 void cons_start(void) {
-	u32 i;
-	s32 res,argc;
+	size_t i,argc;
+	int res;
 	sCommand *cmd;
 	char **argv;
 
@@ -122,7 +122,7 @@ void cons_setLogEnabled(bool enabled) {
 
 void cons_viewLines(const sLines *l) {
 	sKeyEvent ev;
-	s32 i,end,start = 0;
+	size_t i,end,start = 0;
 	while(true) {
 		/* print lines */
 		vid_clearScreen();
@@ -131,31 +131,34 @@ void cons_viewLines(const sLines *l) {
 		for(; (i - start) < VID_ROWS - 1; i++)
 			vid_printf("\n");
 		/* print info-line */
-		vid_printf("\033[co;0;7]Lines %d..%d of %d%|s\033[co]",start + 1,end,l->lineCount,
+		vid_printf("\033[co;0;7]Lines %u..%u of %u%|s\033[co]",start + 1,end,l->lineCount,
 				"Navigation: up/down, pageup/-down, home/end, q=quit");
 		/* wait for key */
 		kb_get(&ev,KEV_PRESS,true);
 		if(ev.keycode == VK_UP && start > 0)
 			start--;
-		else if(ev.keycode == VK_DOWN && start < l->lineCount - VID_ROWS + 1)
+		else if(ev.keycode == VK_DOWN && start + VID_ROWS <= l->lineCount)
 			start++;
 		else if(ev.keycode == VK_PGUP)
-			start = MAX(start - (VID_ROWS - 1),0);
-		else if(ev.keycode == VK_PGDOWN)
-			start = MAX(0,MIN(start + (VID_ROWS - 1),l->lineCount - VID_ROWS + 1));
+			start = (start >= VID_ROWS - 1) ? start - (VID_ROWS - 1) : 0;
+		else if(ev.keycode == VK_PGDOWN && l->lineCount >= VID_ROWS + 1) {
+			start += VID_ROWS - 1;
+			if(start + VID_ROWS > l->lineCount)
+				start = l->lineCount - VID_ROWS + 1;
+		}
 		else if(ev.keycode == VK_HOME)
 			start = 0;
 		else if(ev.keycode == VK_END)
-			start = MAX(0,l->lineCount - VID_ROWS + 1);
+			start = (l->lineCount >= VID_ROWS + 1) ? l->lineCount - VID_ROWS + 1 : 0;
 		else if(ev.keycode == VK_Q)
 			break;
 	}
 }
 
-static char **cons_readCommand(s32 *argc) {
+static char **cons_readCommand(size_t *argc) {
 	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
 	static char *args[MAX_ARG_COUNT];
-	s32 i = 0,j = 0;
+	size_t i = 0,j = 0;
 	char *line = cons_readLine();
 	args[0] = argvals[0];
 	while(*line) {
@@ -184,7 +187,7 @@ static char **cons_readCommand(s32 *argc) {
 
 static char *cons_readLine(void) {
 	static char line[VID_COLS + 1];
-	u32 i = 0;
+	size_t i = 0;
 	sKeyEvent ev;
 	while(true) {
 		kb_get(&ev,KEV_PRESS,true);
@@ -225,7 +228,7 @@ static char *cons_readLine(void) {
 }
 
 static sCommand *cons_getCommand(const char *name) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < ARRAY_SIZE(commands); i++) {
 		if(strcmp(commands[i].name,name) == 0)
 			return commands + i;

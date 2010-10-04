@@ -45,13 +45,13 @@
 #define CR0_MONITOR_COPROC			(1 << 1)
 
 typedef struct {
-	u8 vendor;
-	u16 model;
-	u16 family;
-	u16 type;
-	u16 brand;
-	u16 stepping;
-	u32 signature;
+	uint8_t vendor;
+	uint16_t model;
+	uint16_t family;
+	uint16_t type;
+	uint16_t brand;
+	uint16_t stepping;
+	uint32_t signature;
 } sCPU;
 
 enum eCPUIdRequests {
@@ -70,7 +70,7 @@ enum eCPUIdRequests {
 /**
  * @return the timestamp-counter value
  */
-extern u64 cpu_rdtsc(void);
+extern uint64_t cpu_rdtsc(void);
 
 /**
  * @return true if the cpuid-instruction is supported
@@ -91,7 +91,7 @@ void cpu_detect(void);
  * @param c will contain the value of ecx
  * @param d will contain the value of edx
  */
-extern void cpu_getInfo(u32 code,u32 *a,u32 *b,u32 *c,u32 *d);
+extern void cpu_getInfo(uint32_t code,uint32_t *a,uint32_t *b,uint32_t *c,uint32_t *d);
 
 /**
  * Issues the given request to CPUID and stores the result in <res>
@@ -99,7 +99,7 @@ extern void cpu_getInfo(u32 code,u32 *a,u32 *b,u32 *c,u32 *d);
  * @param code the request to perform
  * @param res will contain the result
  */
-extern void cpu_getStrInfo(u32 code,char *res);
+extern void cpu_getStrInfo(uint32_t code,char *res);
 
 /**
  * Prints information about the used CPU into the given string-buffer
@@ -111,32 +111,32 @@ void cpu_sprintf(sStringBuffer *buf);
 /**
  * @return the value of the CR0 register
  */
-extern u32 cpu_getCR0(void);
+extern uint32_t cpu_getCR0(void);
 
 /**
  * @param cr0 the new CR0 value
  */
-extern void cpu_setCR0(u32 cr0);
+extern void cpu_setCR0(uint32_t cr0);
 
 /**
  * @return the value of the CR2 register, that means the linear address that caused a page-fault
  */
-extern u32 cpu_getCR2(void);
+extern uint32_t cpu_getCR2(void);
 
 /**
  * @return the value of the CR3 register, that means the physical address of the page-directory
  */
-extern u32 cpu_getCR3(void);
+extern uint32_t cpu_getCR3(void);
 
 /**
  * @return the value of the CR4 register
  */
-extern u32 cpu_getCR4(void);
+extern uint32_t cpu_getCR4(void);
 
 /**
  * @param cr4 the new CR4 value
  */
-extern void cpu_setCR4(u32 cr4);
+extern void cpu_setCR4(uint32_t cr4);
 
 #if DEBUGGING
 

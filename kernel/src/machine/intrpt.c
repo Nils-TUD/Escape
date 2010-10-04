@@ -90,28 +90,28 @@
 /* represents an IDT-entry */
 typedef struct {
 	/* The address[0..15] of the ISR */
-	u16 offsetLow;
+	uint16_t offsetLow;
 	/* Code selector that the ISR will use */
-	u16 selector;
+	uint16_t selector;
 	/* these bits are fix: 0.1110.0000.0000b */
-	u16 fix		: 13,
+	uint16_t fix		: 13,
 	/* the privilege level, 00 = ring0, 01 = ring1, 10 = ring2, 11 = ring3 */
 	dpl			: 2,
 	/* If Present is not set to 1, an exception will occur */
 	present		: 1;
 	/* The address[16..31] of the ISR */
-	u16	offsetHigh;
+	uint16_t	offsetHigh;
 } A_PACKED sIDTEntry;
 
 /* represents an IDT-pointer */
 typedef struct {
-	u16 size;
-	u32 address;
+	uint16_t size;
+	uint32_t address;
 } A_PACKED sIDTPtr;
 
 /* storage for "delayed" signal handling */
 typedef struct {
-	u8 active;
+	uint8_t active;
 	tTid tid;
 	tSig sig;
 } sSignalData;
@@ -198,14 +198,14 @@ static void intrpt_initPic(void);
  * @param handler the ISR
  * @param dpl the privilege-level
  */
-static void intrpt_setIDT(u16 number,fISR handler,u8 dpl);
+static void intrpt_setIDT(size_t number,fISR handler,uint8_t dpl);
 
 /**
  * Sends EOI to the PIC, if necessary
  *
  * @param intrptNo the interrupt-number
  */
-static void intrpt_eoi(u32 intrptNo);
+static void intrpt_eoi(uint32_t intrptNo);
 
 /**
  * Checks for signals and notifies the corresponding process, if necessary
@@ -283,14 +283,14 @@ static sInterrupt intrptList[] = {
 };
 
 /* total number of interrupts */
-static u32 intrptCount = 0;
+static size_t intrptCount = 0;
 
-static u32 pfaddr = 0;
+static uintptr_t pfaddr = 0;
 /* stuff to count exceptions */
-static u32 exCount = 0;
-static u32 lastEx = 0xFFFFFFFF;
+static size_t exCount = 0;
+static uint32_t lastEx = 0xFFFFFFFF;
 #if DEBUG_PAGEFAULTS
-static u32 lastPFAddr = 0xFFFFFFFF;
+static uintptr_t lastPFAddr = ~(uintptr_t)0;
 static tPid lastPFProc = INVALID_PID;
 #endif
 
@@ -304,10 +304,10 @@ static sSignalData signalData;
 static sIDTEntry idt[IDT_COUNT];
 
 void intrpt_init(void) {
-	u32 i;
+	size_t i;
 	/* setup the idt-pointer */
 	sIDTPtr idtPtr;
-	idtPtr.address = (u32)idt;
+	idtPtr.address = (uintptr_t)idt;
 	idtPtr.size = sizeof(idt) - 1;
 
 	/* setup the idt */
@@ -378,7 +378,7 @@ void intrpt_init(void) {
 	intrpt_initPic();
 }
 
-u32 intrpt_getCount(void) {
+size_t intrpt_getCount(void) {
 	return intrptCount;
 }
 
@@ -418,7 +418,7 @@ static void intrpt_handleSignal(void) {
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	fSignal handler;
-	u32 *esp = (u32*)stack->uesp;
+	uint32_t *esp = (uint32_t*)stack->uesp;
 
 	/* release signal-data */
 	signalData.active = 0;
@@ -429,13 +429,13 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 		return;
 
 	/* extend the stack, if necessary */
-	if(thread_extendStack((u32)(esp - 11)) < 0) {
+	if(thread_extendStack((uintptr_t)(esp - 11)) < 0) {
 		/* TODO later we should kill the process here! */
 		util_panic("Thread %d: stack overflow",t->tid);
 		return;
 	}
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable((u32)(esp - 11),10 * sizeof(u32));
+	paging_isRangeUserWritable((uintptr_t)(esp - 11),10 * sizeof(uint32_t));
 
 	/* thread_extendStack() and paging_isRangeUserWritable() may cause a thread-switch. therefore
 	 * we may have delivered another signal in the meanwhile... */
@@ -458,12 +458,12 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	/* sigRet will remove the argument, restore the register,
 	 * acknoledge the signal and return to eip */
 	*--esp = t->proc->sigRetAddr;
-	stack->eip = (u32)handler;
-	stack->uesp = (u32)esp;
+	stack->eip = (uintptr_t)handler;
+	stack->uesp = (uint32_t)esp;
 }
 
 void intrpt_handler(sIntrptStackFrame *stack) {
-	u64 cycles;
+	uint64_t cycles;
 	sThread *t = thread_getRunning();
 	sInterrupt *intrpt = intrptList + stack->intrptNo;
 	curIntrptStack = stack;
@@ -652,16 +652,16 @@ static void intrpt_initPic(void) {
 	util_outByte(PIC_SLAVE_DATA,0x00);
 }
 
-static void intrpt_setIDT(u16 number,fISR handler,u8 dpl) {
+static void intrpt_setIDT(size_t number,fISR handler,uint8_t dpl) {
 	idt[number].fix = 0xE00;
 	idt[number].dpl = dpl;
 	idt[number].present = number != IDT_INTEL_RES1 && number != IDT_INTEL_RES2;
 	idt[number].selector = IDT_CODE_SEL;
-	idt[number].offsetHigh = ((u32)handler >> 16) & 0xFFFF;
-	idt[number].offsetLow = (u32)handler & 0xFFFF;
+	idt[number].offsetHigh = ((uintptr_t)handler >> 16) & 0xFFFF;
+	idt[number].offsetLow = (uintptr_t)handler & 0xFFFF;
 }
 
-static void intrpt_eoi(u32 intrptNo) {
+static void intrpt_eoi(uint32_t intrptNo) {
 	/* do we have to send EOI? */
 	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
 	    if(intrptNo >= IRQ_SLAVE_BASE) {

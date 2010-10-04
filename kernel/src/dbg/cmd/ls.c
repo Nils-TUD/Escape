@@ -29,17 +29,17 @@
 
 #define DIRE_SIZE		(sizeof(sDirEntry) - (MAX_NAME_LEN + 1))
 
-static s32 cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e);
+static int cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e);
 
 static sScreenBackup backup;
 
-s32 cons_cmd_ls(s32 argc,char **argv) {
+int cons_cmd_ls(size_t argc,char **argv) {
 	sProc *p = proc_getRunning();
 	sLines lines;
 	sStringBuffer buf;
 	tFileNo file;
 	sDirEntry e;
-	s32 res;
+	int res;
 	if(argc != 2) {
 		vid_printf("Usage: %s <dir>\n",argv[0]);
 		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
@@ -87,9 +87,9 @@ errorLines:
 	return res;
 }
 
-static s32 cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e) {
-	s32 res;
-	u32 len;
+static int cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e) {
+	ssize_t res;
+	size_t len;
 	/* default way; read the entry without name first */
 	if((res = vfs_readFile(pid,file,e,DIRE_SIZE)) < 0)
 		return res;

@@ -31,11 +31,11 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 
 	/* address should be valid */
-	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isRangeUserReadable((u32)handler,1))
+	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isRangeUserReadable((uintptr_t)handler,1))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if((s8)signal == SIG_RET)
-		t->proc->sigRetAddr = (u32)handler;
+	if(signal == (tSig)SIG_RET)
+		t->proc->sigRetAddr = (uintptr_t)handler;
 	else {
 		/* no signal-ret-address known yet? */
 		if(t->proc->sigRetAddr == 0)
@@ -48,7 +48,7 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 		if(handler == SIG_DFL)
 			sig_unsetHandler(t->tid,signal);
 		else {
-			s32 res = sig_setHandler(t->tid,signal,handler);
+			int res = sig_setHandler(t->tid,signal,handler);
 			if(res < 0)
 				SYSC_ERROR(stack,res);
 		}
@@ -57,12 +57,12 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 }
 
 void sysc_ackSignal(sIntrptStackFrame *stack) {
-	u32 *esp;
+	uint32_t *esp;
 	sThread *t = thread_getRunning();
 	sig_ackHandling(t->tid);
 
-	esp = (u32*)stack->uesp;
-	if(!paging_isRangeUserReadable((u32)esp,sizeof(u32) * 9))
+	esp = (uint32_t*)stack->uesp;
+	if(!paging_isRangeUserReadable((uintptr_t)esp,sizeof(uint32_t) * 9))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* remove arg */
@@ -77,7 +77,7 @@ void sysc_ackSignal(sIntrptStackFrame *stack) {
 	stack->eflags = *esp++;
 	/* return */
 	stack->eip = *esp++;
-	stack->uesp = (u32)esp;
+	stack->uesp = (uintptr_t)esp;
 }
 
 void sysc_sendSignalTo(sIntrptStackFrame *stack) {

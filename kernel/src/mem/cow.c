@@ -29,7 +29,7 @@
 #include <string.h>
 
 typedef struct {
-	u32 frameNumber;
+	tFrameNo frameNumber;
 	const sProc *proc;
 } sCOW;
 
@@ -45,12 +45,14 @@ void cow_init(void) {
 	assert(cowFrames != NULL);
 }
 
-u32 cow_pagefault(u32 address) {
+size_t cow_pagefault(uintptr_t address) {
 	sSLNode *n,*ln;
 	sCOW *cow;
 	sSLNode *ourCOW,*ourPrevCOW;
 	bool foundOther;
-	u32 frmCount,flags,frameNumber;
+	tFrameNo frameNumber;
+	size_t frmCount;
+	uint flags;
 	sProc *cp = proc_getRunning();
 
 	/* search through the copy-on-write-list whether there is another one who wants to get
@@ -93,14 +95,14 @@ u32 cow_pagefault(u32 address) {
 	/* copy? */
 	if(foundOther) {
 		/* map the frame and copy it */
-		u32 temp = paging_mapToTemp(&frameNumber,1);
+		uintptr_t temp = paging_mapToTemp(&frameNumber,1);
 		memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)temp,PAGE_SIZE);
 		paging_unmapFromTemp(1);
 	}
 	return frmCount;
 }
 
-bool cow_add(const sProc *p,u32 frameNo) {
+bool cow_add(const sProc *p,tFrameNo frameNo) {
 	sCOW *cc;
 	cc = (sCOW*)kheap_alloc(sizeof(sCOW));
 	if(cc == NULL)
@@ -114,10 +116,10 @@ bool cow_add(const sProc *p,u32 frameNo) {
 	return true;
 }
 
-u32 cow_remove(const sProc *p,u32 frameNo,bool *foundOther) {
+size_t cow_remove(const sProc *p,tFrameNo frameNo,bool *foundOther) {
 	sSLNode *n,*tn,*ln;
 	sCOW *cow;
-	u32 frmCount = 0;
+	size_t frmCount = 0;
 	bool foundOwn = false;
 
 	/* search for the frame in the COW-list */
@@ -149,10 +151,10 @@ u32 cow_remove(const sProc *p,u32 frameNo,bool *foundOther) {
 	return frmCount;
 }
 
-u32 cow_getFrmCount(void) {
+size_t cow_getFrmCount(void) {
 	sSLNode *n;
-	u32 i,count = 0;
-	u32 *frames = (u32*)kheap_calloc(sll_length(cowFrames),sizeof(u32));
+	size_t i,count = 0;
+	tFrameNo *frames = (tFrameNo*)kheap_calloc(sll_length(cowFrames),sizeof(tFrameNo));
 	if(!frames)
 		return 0;
 	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {

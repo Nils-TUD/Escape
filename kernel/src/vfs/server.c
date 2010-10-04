@@ -36,16 +36,16 @@ typedef struct {
 	/* whether there is data to read or not */
 	bool isEmpty;
 	/* implemented functions */
-	u32 funcs;
+	uint funcs;
 	/* the last served client */
 	sVFSNode *lastClient;
 } sServer;
 
 static void vfs_server_close(tPid pid,tFileNo file,sVFSNode *node);
 static void vfs_server_destroy(sVFSNode *node);
-static void vfs_server_wakeupClients(const sVFSNode *node,u32 events);
+static void vfs_server_wakeupClients(const sVFSNode *node,uint events);
 
-sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags) {
+sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,uint flags) {
 	sServer *srv;
 	sVFSNode *node = vfs_node_create(parent,name);
 	if(node == NULL)
@@ -99,14 +99,14 @@ bool vfs_server_isterm(const sVFSNode *node) {
 	return srv->funcs & DRV_TERM;
 }
 
-bool vfs_server_accepts(const sVFSNode *node,u32 id) {
+bool vfs_server_accepts(const sVFSNode *node,uint id) {
 	sServer *srv = (sServer*)node->data;
 	if(DRV_IS_FS(srv->funcs))
 		return true;
 	return id == MSG_DRV_OPEN_RESP || id == MSG_DRV_READ_RESP || id == MSG_DRV_WRITE_RESP;
 }
 
-bool vfs_server_supports(const sVFSNode *node,u32 funcs) {
+bool vfs_server_supports(const sVFSNode *node,uint funcs) {
 	sServer *srv = (sServer*)node->data;
 	return DRV_IMPL(srv->funcs,funcs);
 }
@@ -116,7 +116,7 @@ bool vfs_server_isReadable(const sVFSNode *node) {
 	return !srv->isEmpty;
 }
 
-s32 vfs_server_setReadable(sVFSNode *node,bool readable) {
+int vfs_server_setReadable(sVFSNode *node,bool readable) {
 	sServer *srv = (sServer*)node->data;
 	if(!DRV_IMPL(srv->funcs,DRV_READ))
 		return ERR_UNSUPPORTED_OP;
@@ -170,7 +170,7 @@ searchBegin:
 	return NULL;
 }
 
-static void vfs_server_wakeupClients(const sVFSNode *node,u32 events) {
+static void vfs_server_wakeupClients(const sVFSNode *node,uint events) {
 	node = vfs_node_getFirstChild(node);
 	while(node != NULL) {
 		ev_wakeupm(events,(tEvObj)node);

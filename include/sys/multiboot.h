@@ -26,81 +26,81 @@
 #define MMAP_TYPE_AVAILABLE 0x1
 
 typedef struct {
-	u32 modStart;
-	u32 modEnd;
+	uint32_t modStart;
+	uint32_t modEnd;
 	char *name;					/* may be 0 */
-	u32 reserved;				/* should be ignored */
-} sModule;
+	uint32_t reserved;				/* should be ignored */
+} A_PACKED sModule;
 
 typedef struct {
-	u32 size;
+	uint32_t size;
 	u64 baseAddr;
 	u64 length;
-	u32 type;
-} sMemMap;
+	uint32_t type;
+} A_PACKED sMemMap;
 
 typedef struct {
-	u16 version;
-	u16 cseg;
-	u16 offset;
-	u16 cseg16;
-	u16 dseg;
-	u16 flags;
-	u16 csegLen;
-	u16 cseg16Len;
-	u16 dsegLen;
-} sAPMTable;
+	uint16_t version;
+	uint16_t cseg;
+	uint16_t offset;
+	uint16_t cseg16;
+	uint16_t dseg;
+	uint16_t flags;
+	uint16_t csegLen;
+	uint16_t cseg16Len;
+	uint16_t dsegLen;
+} A_PACKED sAPMTable;
 
 typedef struct {
-	u32 size;
-	u8 number;
-	u8 mode;
-	u16 cylinders;
-	u8 heads;
-	u8 sectors;
-	u8 ports[];
-} sDrive;
+	uint32_t size;
+	uint8_t number;
+	uint8_t mode;
+	uint16_t cylinders;
+	uint8_t heads;
+	uint8_t sectors;
+	uint8_t ports[];
+} A_PACKED sDrive;
 
 /* multi-boot-information */
 typedef struct {
-	u32 flags;
-	u32 memLower;				/* present if flags[0] is set */
-	u32 memUpper;				/* present if flags[0] is set */
+	uint32_t flags;
+	uint32_t memLower;				/* present if flags[0] is set */
+	uint32_t memUpper;				/* present if flags[0] is set */
 	struct {
-		u8 partition3;			/* sub-sub-partition (0xFF = not used) */
-		u8 partition2;			/* sub-partition (0xFF = not used) */
-		u8 partition1;			/* top-level partition-number (0xFF = not used) */
-		u8 drive;				/* contains the bios drive number as understood by the bios
+		uint8_t partition3;			/* sub-sub-partition (0xFF = not used) */
+		uint8_t partition2;			/* sub-partition (0xFF = not used) */
+		uint8_t partition1;			/* top-level partition-number (0xFF = not used) */
+		uint8_t drive;				/* contains the bios drive number as understood by the bios
 								   INT 0x13 low-level disk interface: e.g. 0x00 for the first
 								   floppy disk or 0x80 for the first hard disk */
-	} bootDevice;				/* present if flags[1] is set */
+	} A_PACKED bootDevice;				/* present if flags[1] is set */
 	char *cmdLine;				/* present if flags[2] is set */
-	u32 modsCount;				/* present if flags[3] is set */
+	uint32_t modsCount;				/* present if flags[3] is set */
 	sModule *modsAddr;			/* present if flags[3] is set */
 	union {
 		struct {
-			u32 tabSize;
-			u32 strSize;
-			u32 addr;
-			u32 reserved;
-		} aDotOut;				/* present if flags[4] is set */
+			uint32_t tabSize;
+			uint32_t strSize;
+			uint32_t addr;
+			uint32_t reserved;
+		} A_PACKED aDotOut;				/* present if flags[4] is set */
 		struct {
-			u32 num;
-			u32 size;
-			u32 addr;
-			u32 shndx;
-		} ELF;					/* present if flags[5] is set */
+			uint32_t num;
+			uint32_t size;
+			uint32_t addr;
+			uint32_t shndx;
+		} A_PACKED ELF;					/* present if flags[5] is set */
 	} syms;
-	u32 mmapLength;				/* present if flags[6] is set */
+	uint32_t mmapLength;				/* present if flags[6] is set */
 	sMemMap *mmapAddr;			/* present if flags[6] is set */
-	u32 drivesLength;			/* present if flags[7] is set */
+	uint32_t drivesLength;			/* present if flags[7] is set */
 	sDrive *drivesAddr;			/* present if flags[7] is set */
 #if 0
-	u32 configTable;			/* present if flags[8] is set */
+	uint32_t configTable;			/* present if flags[8] is set */
 	char *bootLoaderName;			/* present if flags[9] is set */
 	sAPMTable *apmTable;		/* present if flags[10] is set */
 #endif
-} sMultiBoot;
+} A_PACKED sMultiBoot;
 
 /**
  * Inits the multi-boot infos
@@ -117,12 +117,12 @@ const sMultiBoot *mboot_getInfo(void);
 /**
  * @return size of the kernel (in bytes)
  */
-u32 mboot_getKernelSize(void);
+size_t mboot_getKernelSize(void);
 
 /**
  * @return size of the multiboot-modules (in bytes)
  */
-u32 mboot_getModuleSize(void);
+size_t mboot_getModuleSize(void);
 
 /**
  * Loads all multiboot-modules
@@ -134,7 +134,7 @@ void mboot_loadModules(sIntrptStackFrame *stack);
 /**
  * @return the usable memory in bytes
  */
-u32 mboot_getUsableMemCount(void);
+size_t mboot_getUsableMemCount(void);
 
 #if DEBUGGING
 
@@ -146,4 +146,3 @@ void mboot_dbg_print(void);
 #endif
 
 #endif
-

@@ -44,28 +44,28 @@
 
 #define MAX_VIEWNAME_LEN	16
 
-typedef void (*fView)(s32 argc,char **argv);
+typedef void (*fView)(size_t argc,char **argv);
 typedef struct {
 	char name[MAX_VIEWNAME_LEN];
 	fView func;
 } sView;
 
 static void view_printc(char c);
-static void view_proc(s32 argc,char **argv);
+static void view_proc(size_t argc,char **argv);
 static void view_procs(void);
 static void view_sched(void);
 static void view_signals(void);
-static void view_thread(s32 argc,char **argv);
+static void view_thread(size_t argc,char **argv);
 static void view_threads(void);
 static void view_vfstree(void);
 static void view_gft(void);
 static void view_msgs(void);
 static void view_cow(void);
 static void view_kheap(void);
-static void view_pdirall(s32 argc,char **argv);
-static void view_pdiruser(s32 argc,char **argv);
-static void view_pdirkernel(s32 argc,char **argv);
-static void view_regions(s32 argc,char **argv);
+static void view_pdirall(size_t argc,char **argv);
+static void view_pdiruser(size_t argc,char **argv);
+static void view_pdirkernel(size_t argc,char **argv);
+static void view_regions(size_t argc,char **argv);
 static void view_pmem(void);
 static void view_pmemcont(void);
 static void view_pmemstack(void);
@@ -78,10 +78,10 @@ static void view_requests(void);
 static void view_locks(void);
 static void view_events(void);
 
-static sProc *view_getProc(s32 argc,char **argv);
-static sThread *view_getThread(s32 argc,char **argv);
+static sProc *view_getProc(size_t argc,char **argv);
+static sThread *view_getThread(size_t argc,char **argv);
 
-static s32 err = 0;
+static int err = 0;
 static sLines lines;
 static sScreenBackup backup;
 static sView views[] = {
@@ -113,9 +113,9 @@ static sView views[] = {
 	{"events",(fView)view_events},
 };
 
-s32 cons_cmd_view(s32 argc,char **argv) {
-	u32 i;
-	s32 res;
+int cons_cmd_view(size_t argc,char **argv) {
+	size_t i;
+	int res;
 	if(argc < 2) {
 		vid_printf("Usage: %s <what>\n",argv[0]);
 		vid_printf("Available 'whats':\n");
@@ -169,7 +169,7 @@ static void view_printc(char c) {
 		lines_append(&lines,c);
 }
 
-static void view_proc(s32 argc,char **argv) {
+static void view_proc(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		proc_dbg_print(p);
@@ -183,7 +183,7 @@ static void view_sched(void) {
 static void view_signals(void) {
 	sig_dbg_print();
 }
-static void view_thread(s32 argc,char **argv) {
+static void view_thread(size_t argc,char **argv) {
 	sThread *t = view_getThread(argc,argv);
 	if(t != NULL)
 		thread_dbg_print(t);
@@ -206,22 +206,22 @@ static void view_cow(void) {
 static void view_kheap(void) {
 	kheap_dbg_print();
 }
-static void view_pdirall(s32 argc,char **argv) {
+static void view_pdirall(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_dbg_printPDir(p->pagedir,PD_PART_ALL);
 }
-static void view_pdiruser(s32 argc,char **argv) {
+static void view_pdiruser(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_dbg_printPDir(p->pagedir,PD_PART_USER);
 }
-static void view_pdirkernel(s32 argc,char **argv) {
+static void view_pdirkernel(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_dbg_printPDir(p->pagedir,PD_PART_KERNEL);
 }
-static void view_regions(s32 argc,char **argv) {
+static void view_regions(size_t argc,char **argv) {
 	if(argc < 3)
 		proc_dbg_printAllRegions();
 	else {
@@ -264,7 +264,7 @@ static void view_events(void) {
 	ev_dbg_print();
 }
 
-static sProc *view_getProc(s32 argc,char **argv) {
+static sProc *view_getProc(size_t argc,char **argv) {
 	sProc *p;
 	if(argc > 2)
 		p = proc_getByPid(atoi(argv[2]));
@@ -275,7 +275,7 @@ static sProc *view_getProc(s32 argc,char **argv) {
 	return p;
 }
 
-static sThread *view_getThread(s32 argc,char **argv) {
+static sThread *view_getThread(size_t argc,char **argv) {
 	sThread *t;
 	if(argc > 2)
 		t = thread_getById(atoi(argv[2]));

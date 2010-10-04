@@ -183,41 +183,41 @@
 /* the stack frame for the interrupt-handler */
 typedef struct {
 	/* stack-pointer before calling isr-handler */
-	u32 esp;
+	uint32_t esp;
 	/* segment-registers */
-	u32 es;
-	u32 ds;
-	u32 fs;
-	u32 gs;
+	uint32_t es;
+	uint32_t ds;
+	uint32_t fs;
+	uint32_t gs;
 	/* general purpose registers */
-	u32 edi;
-	u32 esi;
-	u32 ebp;
-	u32 : 32; /* esp from pusha */
-	u32 ebx;
-	u32 edx;
-	u32 ecx;
-	u32 eax;
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t : 32; /* esp from pusha */
+	uint32_t ebx;
+	uint32_t edx;
+	uint32_t ecx;
+	uint32_t eax;
 	/* interrupt-number */
-	u32 intrptNo;
+	uint32_t intrptNo;
 	/* error-code (for exceptions); default = 0 */
-	u32 errorCode;
+	uint32_t errorCode;
 	/* pushed by the CPU */
-	u32 eip;
-	u32 cs;
-	u32 eflags;
+	uint32_t eip;
+	uint32_t cs;
+	uint32_t eflags;
 	/* if we come from user-mode this fields will be present and will be restored with iret */
-	u32 uesp;
-	u32 uss;
+	uint32_t uesp;
+	uint32_t uss;
 	/* available when interrupting an vm86-task */
-	u16 vm86es;
-	u16 : 16;
-	u16 vm86ds;
-	u16 : 16;
-	u16 vm86fs;
-	u16 : 16;
-	u16 vm86gs;
-	u16 : 16;
+	uint16_t vm86es;
+	uint16_t : 16;
+	uint16_t vm86ds;
+	uint16_t : 16;
+	uint16_t vm86fs;
+	uint16_t : 16;
+	uint16_t vm86gs;
+	uint16_t : 16;
 } A_PACKED sIntrptStackFrame;
 
 /**
@@ -236,7 +236,7 @@ void intrpt_init(void);
 /**
  * @return the total number of interrupts so far
  */
-u32 intrpt_getCount(void);
+size_t intrpt_getCount(void);
 
 /**
  * @return the current interrupt-stack (may be NULL)

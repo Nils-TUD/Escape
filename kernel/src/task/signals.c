@@ -29,13 +29,13 @@
 
 typedef struct {
 	fSignal handler;
-	u32 pending;
+	size_t pending;
 } sSignalSlot;
 
 typedef struct {
 	sThread *thread;
 	/* bitmask of pending signals */
-	u32 signalsPending;
+	uint signalsPending;
 	/* signal handler */
 	sSignalSlot signals[SIG_COUNT];
 	/* the signal that the thread is currently handling (if > 0) */
@@ -48,7 +48,7 @@ static void sig_remove(sSigThread *t,tSig sig);
 static void sig_unset(sSigThread *t,tSig sig);
 static sSigThread *sig_getThread(tTid tid,bool create);
 
-static u32 pendingSignals = 0;
+static size_t pendingSignals = 0;
 static sSLList *sigThreads = NULL;
 
 void sig_init(void) {
@@ -66,7 +66,7 @@ bool sig_canSend(tSig signal) {
 	return signal < SIG_INTRPT_TIMER;
 }
 
-s32 sig_setHandler(tTid tid,tSig signal,fSignal func) {
+int sig_setHandler(tTid tid,tSig signal,fSignal func) {
 	sSigThread *t = sig_getThread(tid,true);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
 	if(!t)
@@ -88,7 +88,7 @@ void sig_unsetHandler(tTid tid,tSig signal) {
 }
 
 void sig_removeHandlerFor(tTid tid) {
-	s32 i;
+	size_t i;
 	sSigThread *t = sig_getThread(tid,false);
 	if(!t)
 		return;
@@ -99,7 +99,7 @@ void sig_removeHandlerFor(tTid tid) {
 }
 
 void sig_cloneHandler(tTid parent,tTid child) {
-	s32 i;
+	size_t i;
 	sSigThread *p = sig_getThread(parent,false);
 	sSigThread *c;
 	if(!p)
@@ -119,7 +119,7 @@ bool sig_hasSignal(tSig *sig,tTid *tid) {
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
 		sSigThread *st = (sSigThread*)n->data;
 		if(st->signalsPending && st->signal == 0 && !st->thread->ignoreSignals) {
-			s32 i;
+			size_t i;
 			for(i = 0; i < SIG_COUNT; i++) {
 				if(st->signals[i].pending) {
 					*sig = i;
@@ -234,9 +234,9 @@ static sSigThread *sig_getThread(tTid tid,bool create) {
 
 #if DEBUGGING
 
-u32 sig_dbg_getHandlerCount(void) {
+size_t sig_dbg_getHandlerCount(void) {
 	sSLNode *n;
-	u32 i,c = 0;
+	size_t i,c = 0;
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
 		sSigThread *t = (sSigThread*)n->data;
 		for(i = 0; i < SIG_COUNT; i++) {
@@ -273,7 +273,7 @@ const char *sig_dbg_getName(tSig signal) {
 }
 
 void sig_dbg_print(void) {
-	s32 i;
+	size_t i;
 	sSLNode *n;
 	vid_printf("Signal handler:\n");
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {

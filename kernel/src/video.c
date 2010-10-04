@@ -31,15 +31,15 @@
 #define TAB_WIDTH			4
 
 static void vid_move(void);
-static u8 vid_handlePipePad(void);
+static uchar vid_handlePipePad(void);
 static void vid_handleColorCode(const char **str);
 static void vid_removeBIOSCursor(void);
 
 static fPrintc printFunc = vid_putchar;
-static u16 col = 0;
-static u16 row = 0;
-static u8 color = 0;
-static u8 targets = TARGET_SCREEN | TARGET_LOG;
+static ushort col = 0;
+static ushort row = 0;
+static uchar color = 0;
+static uint targets = TARGET_SCREEN | TARGET_LOG;
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
@@ -47,19 +47,19 @@ void vid_init(void) {
 	color = (BLACK << 4) | WHITE;
 }
 
-void vid_backup(char *buffer,u16 *r,u16 *c) {
+void vid_backup(char *buffer,ushort *r,ushort *c) {
 	memcpy(buffer,(void*)VIDEO_BASE,VID_ROWS * VID_COLS * 2);
 	*r = row;
 	*c = col;
 }
 
-void vid_restore(const char *buffer,u16 r,u16 c) {
+void vid_restore(const char *buffer,ushort r,ushort c) {
 	memcpy((void*)VIDEO_BASE,buffer,VID_ROWS * VID_COLS * 2);
 	row = r;
 	col = c;
 }
 
-void vid_setTargets(u8 ntargets) {
+void vid_setTargets(uint ntargets) {
 	targets = ntargets;
 }
 
@@ -77,7 +77,7 @@ void vid_unsetPrintFunc(void) {
 }
 
 void vid_putchar(char c) {
-	u32 i;
+	size_t i;
 	char *video;
 	/* do an explicit newline if necessary */
 	if(col >= VID_COLS) {
@@ -133,22 +133,22 @@ static void vid_move(void) {
 	/* last line? */
 	if(row >= VID_ROWS) {
 		/* copy all chars one line back */
-		memmove((void*)VIDEO_BASE,(u8*)VIDEO_BASE + VID_COLS * 2,VID_ROWS * VID_COLS * 2);
+		memmove((void*)VIDEO_BASE,(uint8_t*)VIDEO_BASE + VID_COLS * 2,VID_ROWS * VID_COLS * 2);
 		row--;
 	}
 }
 
-static u8 vid_handlePipePad(void) {
+static uchar vid_handlePipePad(void) {
 	return VID_COLS - col;
 }
 
 static void vid_handleColorCode(const char **str) {
-	s32 n1,n2,n3;
-	s32 cmd = escc_get(str,&n1,&n2,&n3);
+	int n1,n2,n3;
+	int cmd = escc_get(str,&n1,&n2,&n3);
 	switch(cmd) {
 		case ESCC_COLOR: {
-			u8 fg = n1 == ESCC_ARG_UNUSED ? WHITE : MIN(9,n1);
-			u8 bg = n2 == ESCC_ARG_UNUSED ? BLACK : MIN(9,n2);
+			uchar fg = n1 == ESCC_ARG_UNUSED ? WHITE : MIN(9,n1);
+			uchar bg = n2 == ESCC_ARG_UNUSED ? BLACK : MIN(9,n2);
 			color = (bg << 4) | fg;
 		}
 		break;

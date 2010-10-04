@@ -89,7 +89,7 @@
  */
 
 /* the virtual address of the kernel-area */
-#define KERNEL_AREA_V_ADDR		((u32)0xC0000000)
+#define KERNEL_AREA_V_ADDR		((uintptr_t)0xC0000000)
 /* the virtual address of the kernel itself */
 #define KERNEL_V_ADDR			(KERNEL_AREA_V_ADDR + KERNEL_P_ADDR)
 
@@ -141,13 +141,13 @@
 #define PG_KEEPFRM				32
 
 /* converts a virtual address to the page-directory-index for that address */
-#define ADDR_TO_PDINDEX(addr)	((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
+#define ADDR_TO_PDINDEX(addr)	((size_t)((uintptr_t)(addr) / PAGE_SIZE / PT_ENTRY_COUNT))
 
 /* converts a virtual address to the index in the corresponding page-table */
-#define ADDR_TO_PTINDEX(addr)	(((u32)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT)
+#define ADDR_TO_PTINDEX(addr)	((size_t)(((uintptr_t)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT))
 
 /* converts pages to page-tables (how many page-tables are required for the pages?) */
-#define PAGES_TO_PTS(pageCount)	(((u32)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
+#define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
 /* for printing the page-directory */
 #define PD_PART_ALL				0
@@ -163,8 +163,8 @@
 #define INTERP_TEXT_BEGIN		0xA0000000
 
 typedef struct {
-	u32 ptables;
-	u32 frames;
+	size_t ptables;
+	size_t frames;
 } sAllocStats;
 
 /**
@@ -212,7 +212,7 @@ extern void paging_exchangePDir(tPageDir physAddr);
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeUserReadable(u32 virt,u32 count);
+bool paging_isRangeUserReadable(uintptr_t virt,size_t count);
 
 /**
  * Checks whether the given address-range is currently readable
@@ -221,7 +221,7 @@ bool paging_isRangeUserReadable(u32 virt,u32 count);
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeReadable(u32 virt,u32 count);
+bool paging_isRangeReadable(uintptr_t virt,size_t count);
 
 /**
  * Checks whether the given address-range is currently writable for the user.
@@ -232,7 +232,7 @@ bool paging_isRangeReadable(u32 virt,u32 count);
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeUserWritable(u32 virt,u32 count);
+bool paging_isRangeUserWritable(uintptr_t virt,size_t count);
 
 /**
  * Checks whether the given address-range is currently writable.
@@ -243,7 +243,7 @@ bool paging_isRangeUserWritable(u32 virt,u32 count);
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeWritable(u32 virt,u32 count);
+bool paging_isRangeWritable(uintptr_t virt,size_t count);
 
 /**
  * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you
@@ -253,14 +253,14 @@ bool paging_isRangeWritable(u32 virt,u32 count);
  * @param count the number of frames
  * @return the virtual start-address
  */
-u32 paging_mapToTemp(const u32 *frames,u32 count);
+uintptr_t paging_mapToTemp(const tFrameNo *frames,size_t count);
 
 /**
  * Unmaps the temporary mappings
  *
  * @param count the number of pages
  */
-void paging_unmapFromTemp(u32 count);
+void paging_unmapFromTemp(size_t count);
 
 /**
  * Clones the kernel-space of the current page-dir into a new one.
@@ -269,7 +269,7 @@ void paging_unmapFromTemp(u32 count);
  * @param pdir will be set to the page-directory address (physical)
  * @return the number of allocated frames
  */
-s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir);
+ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir);
 
 /**
  * Destroys the given page-directory (not the current!)
@@ -286,7 +286,7 @@ sAllocStats paging_destroyPDir(tPageDir pdir);
  * @param virt the virtual address
  * @return true if so
  */
-bool paging_isPresent(tPageDir pdir,u32 virt);
+bool paging_isPresent(tPageDir pdir,uintptr_t virt);
 
 /**
  * Returns the frame-number of the given virtual address in the given pagedir. Assumes that
@@ -296,7 +296,7 @@ bool paging_isPresent(tPageDir pdir,u32 virt);
  * @param virt the virtual address
  * @return the frame-number of the given virtual address
  */
-u32 paging_getFrameNo(tPageDir pdir,u32 virt);
+tFrameNo paging_getFrameNo(tPageDir pdir,uintptr_t virt);
 
 /**
  * Clones <count> pages at <virtSrc> to <virtDst> from <src> into <dst>. That means
@@ -314,7 +314,8 @@ u32 paging_getFrameNo(tPageDir pdir,u32 virt);
  * @param share wether to share the frames
  * @return the number of mapped frames (not necessarily new allocated), and allocated ptables
  */
-sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share);
+sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,
+		size_t count,bool share);
 
 /**
  * Maps <count> pages starting at <virt> to the given frames in the CURRENT page-directory.
@@ -328,7 +329,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated frames and page-tables
  */
-sAllocStats paging_map(u32 virt,const u32 *frames,u32 count,u8 flags);
+sAllocStats paging_map(uintptr_t virt,const tFrameNo *frames,size_t count,uint flags);
 
 /**
  * Maps <count> pages starting at <virt> to the given frames in the given page-directory.
@@ -343,7 +344,7 @@ sAllocStats paging_map(u32 virt,const u32 *frames,u32 count,u8 flags);
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated frames and page-tables
  */
-sAllocStats paging_mapTo(tPageDir pdir,u32 virt,const u32 *frames,u32 count,u8 flags);
+sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,size_t count,uint flags);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the CURRENT page-directory.
@@ -355,7 +356,7 @@ sAllocStats paging_mapTo(tPageDir pdir,u32 virt,const u32 *frames,u32 count,u8 f
  * @param freeFrames whether the frames should be free'd and not just unmapped
  * @return the number of free'd frames and ptables
  */
-sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames);
+sAllocStats paging_unmap(uintptr_t virt,size_t count,bool freeFrames);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the given page-directory.
@@ -368,7 +369,7 @@ sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames);
  * @param freeFrames whether the frames should be free'd and not just unmapped
  * @return the number of free'd frames and ptables
  */
-sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames);
+sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool freeFrames);
 
 /**
  * Determines the number of page-tables (in the user-area) in the given page-directory
@@ -376,7 +377,7 @@ sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames);
  * @param pdir the page-directory
  * @return the number of present page-tables
  */
-u32 paging_getPTableCount(tPageDir pdir);
+size_t paging_getPTableCount(tPageDir pdir);
 
 /**
  * Prints the user-part of the given page-directory to the given buffer
@@ -395,7 +396,7 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir);
  * @param pdir the page-directory
  * @return the number of pages
  */
-u32 paging_dbg_getPageCount(void);
+size_t paging_dbg_getPageCount(void);
 
 /**
  * Prints the page at given virtual address
@@ -403,14 +404,14 @@ u32 paging_dbg_getPageCount(void);
  * @param pdir the page-directory
  * @param virt the virtual address
  */
-void paging_dbg_printPageOf(tPageDir pdir,u32 virt);
+void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt);
 
 /**
  * Prints the given parts of the current page-directory
  *
  * @param parts the parts to print
  */
-void paging_dbg_printCur(u8 parts);
+void paging_dbg_printCur(uint parts);
 
 /**
  * Prints the given parts from the given page-directory
@@ -418,7 +419,7 @@ void paging_dbg_printCur(u8 parts);
  * @param pdir the page-directory
  * @param parts the parts to print
  */
-void paging_dbg_printPDir(tPageDir pdir,u8 parts);
+void paging_dbg_printPDir(tPageDir pdir,uint parts);
 
 #endif
 

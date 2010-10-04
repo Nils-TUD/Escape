@@ -30,7 +30,7 @@
 void sysc_gettid(sIntrptStackFrame *stack);
 
 /**
- * @return u32 the number of threads of the current process
+ * @return size_t the number of threads of the current process
  */
 void sysc_getThreadCount(sIntrptStackFrame *stack);
 
@@ -46,22 +46,22 @@ void sysc_startThread(sIntrptStackFrame *stack);
 /**
  * Destroys the process and issues a context-switch
  *
- * @param u32 the exit-code
+ * @param int the exit-code
  */
 void sysc_exit(sIntrptStackFrame *stack);
 
 /**
  * Returns the cpu-cycles for the current thread
  *
- * @return u64 the cpu-cycles
+ * @return uint64_t the cpu-cycles
  */
 void sysc_getCycles(sIntrptStackFrame *stack);
 
 /**
  * Blocks the process for a given number of milliseconds
  *
- * @param u32 the number of msecs
- * @return s32 0 on success or a negative error-code
+ * @param tTime the number of msecs
+ * @return int 0 on success or a negative error-code
  */
 void sysc_sleep(sIntrptStackFrame *stack);
 
@@ -74,8 +74,8 @@ void sysc_yield(sIntrptStackFrame *stack);
  * Blocks the thread until one of the given events occurrs
  *
  * @param sWaitObject* the objects to wait for
- * @param u32 the number of objects
- * @return s32 0 on success
+ * @param size_t the number of objects
+ * @return int 0 on success
  */
 void sysc_wait(sIntrptStackFrame *stack);
 
@@ -94,10 +94,10 @@ void sysc_wait(sIntrptStackFrame *stack);
  *  unlock(...);
  *
  * @param sWaitObject* the objects to wait for
- * @param u32 the number of objects
- * @param u32 ident the ident to unlock
+ * @param size_t the number of objects
+ * @param uint the ident to unlock
  * @param bool global whether the ident is global
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_waitUnlock(sIntrptStackFrame *stack);
 
@@ -106,24 +106,27 @@ void sysc_waitUnlock(sIntrptStackFrame *stack);
  * waked up.
  *
  * @param tTid the thread-id
- * @param u16 events the events to notify about
- * @return s32 0 on success
+ * @param uint the events to notify about
+ * @return int 0 on success
  */
 void sysc_notify(sIntrptStackFrame *stack);
 
 /**
  * Aquire a lock; wait until its unlocked, if necessary
  *
- * @param ident the lock-ident
- * @return s32 0 on success
+ * @param uint the lock-ident
+ * @param bool wether its a global-lock
+ * @param ushort the flags
+ * @return int 0 on success
  */
 void sysc_lock(sIntrptStackFrame *stack);
 
 /**
  * Releases a lock
  *
- * @param ident the lock-ident
- * @return s32 0 on success
+ * @param uint the lock-ident
+ * @param bool wether its a global-lock
+ * @return int 0 on success
  */
 void sysc_unlock(sIntrptStackFrame *stack);
 
@@ -131,7 +134,7 @@ void sysc_unlock(sIntrptStackFrame *stack);
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
  *
  * @param tTid the thread-id (0 = wait until all other threads died)
- * @return 0 on success
+ * @return int 0 on success
  */
 void sysc_join(sIntrptStackFrame *stack);
 
@@ -139,7 +142,7 @@ void sysc_join(sIntrptStackFrame *stack);
  * Suspends a thread from the own process. That means it is blocked until resume() is called.
  *
  * @param tTid the thread-id
- * @return 0 on success
+ * @return int 0 on success
  */
 void sysc_suspend(sIntrptStackFrame *stack);
 
@@ -147,7 +150,7 @@ void sysc_suspend(sIntrptStackFrame *stack);
  * Resumes a thread from the own process that has been suspended previously
  *
  * @param tTid the thread-id
- * @return 0 on success
+ * @return int 0 on success
  */
 void sysc_resume(sIntrptStackFrame *stack);
 

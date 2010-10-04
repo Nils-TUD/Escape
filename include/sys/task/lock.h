@@ -35,7 +35,7 @@
  * @param flags flags (LOCK_*)
  * @return 0 on success
  */
-s32 lock_aquire(tPid pid,u32 ident,u16 flags);
+int lock_aquire(tPid pid,uint ident,ushort flags);
 
 /**
  * Releases the lock with given ident and pid
@@ -44,7 +44,7 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags);
  * @param ident to identify the lock
  * @return 0 on success
  */
-s32 lock_release(tPid pid,u32 ident);
+int lock_release(tPid pid,uint ident);
 
 /**
  * Releases all locks of the given process

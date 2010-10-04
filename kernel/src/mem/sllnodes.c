@@ -48,7 +48,7 @@ void *slln_allocNode(size_t size) {
 	sNode *n;
 	assert(sizeof(sNode) == size && offsetof(sSLNode,next) == offsetof(sNode,next));
 	if(freelist == NULL) {
-		u32 i,oldCount;
+		size_t i,oldCount;
 		if(!initialized) {
 			dyna_init(&nodeArray,sizeof(sNode),SLLNODE_AREA,SLLNODE_AREA_SIZE);
 			initialized = true;

@@ -34,7 +34,7 @@
 
 void sysc_regDriver(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
-	u32 flags = SYSC_ARG2(stack);
+	uint flags = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	tFD fd;
 	tFileNo res;
@@ -82,7 +82,7 @@ void sysc_getClient(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	tFD fd;
 	tFileNo file,drvFile;
-	s32 res;
+	int res;
 
 	/* get driver-file */
 	drvFile = proc_fdToFile(drvFd);
@@ -114,29 +114,29 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 	tFileNo files[MAX_GETWORK_DRIVERS];
 	sWaitObject waits[MAX_GETWORK_DRIVERS];
 	tFD *fds = (tFD*)SYSC_ARG1(stack);
-	u32 fdCount = SYSC_ARG2(stack);
+	size_t fdCount = SYSC_ARG2(stack);
 	tFD *drv = (tFD*)SYSC_ARG3(stack);
 	tMsgId *id = (tMsgId*)SYSC_ARG4(stack);
 	void *data = (void*)SYSC_ARG5(stack);
-	u32 size = SYSC_ARG6(stack);
-	u8 flags = (u8)SYSC_ARG7(stack);
+	size_t size = SYSC_ARG6(stack);
+	uint flags = (uint)SYSC_ARG7(stack);
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	tInodeNo clientNo;
 	tFD fd;
-	u32 i;
-	s32 res,index;
+	size_t i,index;
+	ssize_t res;
 
 	/* validate driver-ids */
 	if(fdCount <= 0 || fdCount > MAX_GETWORK_DRIVERS || fds == NULL ||
-			!paging_isRangeUserReadable((u32)fds,fdCount * sizeof(tFD)))
+			!paging_isRangeUserReadable((uintptr_t)fds,fdCount * sizeof(tFD)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* validate id and data */
-	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId)) ||
-			!paging_isRangeUserWritable((u32)data,size))
+	if(!paging_isRangeUserWritable((uintptr_t)id,sizeof(tMsgId)) ||
+			!paging_isRangeUserWritable((uintptr_t)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* check drv */
-	if(drv != NULL && !paging_isRangeUserWritable((u32)drv,sizeof(tFD)))
+	if(drv != NULL && !paging_isRangeUserWritable((uintptr_t)drv,sizeof(tFD)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* translate to files */

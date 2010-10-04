@@ -126,7 +126,7 @@ static const char *intel6Models[] = {
 static sCPU cpu;
 
 void cpu_detect(void) {
-	u32 i;
+	size_t i;
 	/* get vendor-string */
 	char vendor[VENDOR_STRLEN + 1];
 	cpu_getStrInfo(CPUID_GETVENDORSTRING,vendor);
@@ -152,7 +152,7 @@ void cpu_detect(void) {
 	/* fetch some additional infos for known cpus */
 	switch(cpu.vendor) {
 		case CPUID_VENDOR_INTEL: {
-			u32 eax,ebx,unused;
+			uint32_t eax,ebx,unused;
 			cpu_getInfo(CPUID_GETFEATURES,&eax,&ebx,&unused,&unused);
 			cpu.model = (eax >> 4) & 0xf;
 			cpu.family = (eax >> 8) & 0xf;
@@ -164,7 +164,7 @@ void cpu_detect(void) {
 		break;
 
 		case CPUID_VENDOR_AMD: {
-			u32 eax,unused;
+			uint32_t eax,unused;
 			cpu_getInfo(CPUID_GETFEATURES,&eax,&unused,&unused,&unused);
 			cpu.model = (eax >> 4) & 0xf;
 			cpu.family = (eax >> 8) & 0xf;
@@ -175,7 +175,7 @@ void cpu_detect(void) {
 }
 
 void cpu_sprintf(sStringBuffer *buf) {
-	u32 size;
+	size_t size;
 	prf_sprintf(buf,"%-12s%s\n","Vendor:",vendors[cpu.vendor]);
 	switch(cpu.vendor) {
 		case CPUID_VENDOR_INTEL: {

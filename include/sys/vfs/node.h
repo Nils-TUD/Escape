@@ -73,7 +73,7 @@ char *vfs_node_getPath(tInodeNo nodeNo);
  * @param info will be filled
  * @return 0 on success
  */
-s32 vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info);
+int vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info);
 
 /**
  * Resolves the given path to a VFS-node
@@ -85,7 +85,7 @@ s32 vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info);
  * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
  * @return 0 if successfull or the error-code
  */
-s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags);
+int vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,uint flags);
 
 /**
  * Removes the last '/' from the path, if necessary, and returns a pointer to the last
@@ -95,7 +95,7 @@ s32 vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 fla
  * @param len the length of the path (will be updated)
  * @return pointer to the last component
  */
-char *vfs_node_basename(char *path,u32 *len);
+char *vfs_node_basename(char *path,size_t *len);
 
 /**
  * Removes the last component of the path
@@ -103,7 +103,7 @@ char *vfs_node_basename(char *path,u32 *len);
  * @param path the path
  * @param len the length of the path
  */
-void vfs_node_dirname(char *path,u32 len);
+void vfs_node_dirname(char *path,size_t len);
 
 /**
  * Finds the child-node with name <name>
@@ -113,7 +113,7 @@ void vfs_node_dirname(char *path,u32 len);
  * @param nameLen the length of the name
  * @return the node or NULL
  */
-sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,u32 nameLen);
+sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,size_t nameLen);
 
 /**
  * Creates and appends a (incomplete) node

@@ -44,11 +44,11 @@
 #define PG_GLOBAL_SHIFT		4
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
-#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + (((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
+#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + (((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 #define ADDR_TO_MAPPED_CUSTOM(mappingArea,addr) ((mappingArea) + \
-		(((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
+		(((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 
-#define PAGEDIR(ptables)	((u32)(ptables) + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
+#define PAGEDIR(ptables)	((uintptr_t)(ptables) + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 
 /**
  * Flushes the TLB-entry for the given virtual address.
@@ -59,12 +59,12 @@
 /* converts the given virtual address to a physical
  * (this assumes that the kernel lies at 0xC0000000)
  * Note that this does not work anymore as soon as the GDT is "corrected" and paging enabled! */
-#define VIRT2PHYS(addr)		((u32)(addr) + 0x40000000)
+#define VIRT2PHYS(addr)		((uintptr_t)(addr) + 0x40000000)
 
 /* represents a page-directory-entry */
 typedef struct {
 	/* 1 if the page is present in memory */
-	u32 present			: 1,
+	uint32_t present	: 1,
 	/* whether the page is writable */
 	writable			: 1,
 	/* if enabled the page may be used by privilege level 0, 1 and 2 only. */
@@ -93,7 +93,7 @@ typedef struct {
 /* represents a page-table-entry */
 typedef struct {
 	/* 1 if the page is present in memory */
-	u32 present			: 1,
+	uint32_t present	: 1,
 	/* whether the page is writable */
 	writable			: 1,
 	/* if enabled the page may be used by privilege level 0, 1 and 2 only. */
@@ -137,13 +137,13 @@ extern void paging_flushTLB(void);
  * @param virt a virtual address in the page-table
  * @param ptables the page-table mapping-area
  */
-static void paging_flushPageTable(u32 virt,u32 ptables);
+static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables);
 
-static u32 paging_getPTables(tPageDir pdir);
-static u32 paging_remEmptyPt(u32 ptables,u32 pti);
+static uintptr_t paging_getPTables(tPageDir pdir);
+static size_t paging_remEmptyPt(uintptr_t ptables,size_t pti);
 
 #if DEBUGGING
-static void paging_dbg_printPageTable(u32 ptables,u32 no,sPDEntry *pde) ;
+static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) ;
 static void paging_dbg_printPage(sPTEntry *page);
 #endif
 
@@ -159,7 +159,8 @@ static tPageDir otherPDir = 0;
 void paging_init(void) {
 	sPDEntry *pd,*pde;
 	sPTEntry *pt;
-	u32 j,i,vaddr,addr,end;
+	size_t j,i;
+	uintptr_t vaddr,addr,end;
 	sPTEntry *pts[] = {proc0PT1,proc0PT2};
 
 	/* set page-dir of first process */
@@ -179,7 +180,7 @@ void paging_init(void) {
 		end = addr + (PT_ENTRY_COUNT) * PAGE_SIZE;
 		for(i = 0; addr < end; i++, addr += PAGE_SIZE) {
 			/* build page-table entry */
-			pts[j][i].frameNumber = (u32)addr >> PAGE_SIZE_SHIFT;
+			pts[j][i].frameNumber = (uintptr_t)addr >> PAGE_SIZE_SHIFT;
 			pts[j][i].global = true;
 			pts[j][i].present = true;
 			pts[j][i].writable = true;
@@ -188,14 +189,14 @@ void paging_init(void) {
 
 		/* insert page-table in the page-directory */
 		pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(vaddr));
-		pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
+		pde->ptFrameNo = (uintptr_t)pt >> PAGE_SIZE_SHIFT;
 		pde->present = true;
 		pde->writable = true;
 		pde->exists = true;
 
 		/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
 		pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(vaddr - KERNEL_AREA_V_ADDR));
-		pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
+		pde->ptFrameNo = (uintptr_t)pt >> PAGE_SIZE_SHIFT;
 		pde->present = true;
 		pde->writable = true;
 		pde->exists = true;
@@ -204,13 +205,13 @@ void paging_init(void) {
 
 	/* put the page-directory in the last page-dir-slot */
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(MAPPED_PTS_START));
-	pde->ptFrameNo = (u32)pd >> PAGE_SIZE_SHIFT;
+	pde->ptFrameNo = (uintptr_t)pd >> PAGE_SIZE_SHIFT;
 	pde->present = true;
 	pde->writable = true;
 	pde->exists = true;
 
 	/* now set page-dir and enable paging */
-	paging_exchangePDir((u32)pd);
+	paging_exchangePDir((tPageDir)pd);
 	paging_enable();
 	/* enable global pages (TODO just possible for >= pentium pro (family 6)) */
 	cpu_setCR4(cpu_getCR4() | (1 << 7));
@@ -223,7 +224,7 @@ void paging_setCur(tPageDir pdir) {
 }
 
 void paging_mapKernelSpace(void) {
-	u32 addr,end;
+	uintptr_t addr,end;
 	sPDEntry *pde;
 	/* insert all page-tables for 0xC0800000 .. 0xFF3FFFFF into the page dir */
 	addr = KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT * 2);
@@ -231,7 +232,7 @@ void paging_mapKernelSpace(void) {
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
 		/* get frame and insert into page-dir */
-		u32 frame = mm_allocate();
+		tFrameNo frame = mm_allocate();
 		pde->ptFrameNo = frame;
 		pde->present = true;
 		pde->writable = true;
@@ -260,7 +261,7 @@ tPageDir paging_getProc0PD(void) {
 
 /* TODO perhaps we should move isRange*() to vmm? */
 
-bool paging_isRangeUserReadable(u32 virt,u32 count) {
+bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
 	if(virt + count > KERNEL_AREA_V_ADDR || virt + count < virt)
 		return false;
@@ -268,10 +269,10 @@ bool paging_isRangeUserReadable(u32 virt,u32 count) {
 	return paging_isRangeReadable(virt,count);
 }
 
-bool paging_isRangeReadable(u32 virt,u32 count) {
+bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 	sPTEntry *pt;
 	sPDEntry *pd;
-	u32 end;
+	uintptr_t end;
 	/* calc start and end pt */
 	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	virt &= ~(PAGE_SIZE - 1);
@@ -292,7 +293,7 @@ bool paging_isRangeReadable(u32 virt,u32 count) {
 	return true;
 }
 
-bool paging_isRangeUserWritable(u32 virt,u32 count) {
+bool paging_isRangeUserWritable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
 	if(virt + count > KERNEL_AREA_V_ADDR || virt + count < virt)
 		return false;
@@ -300,10 +301,10 @@ bool paging_isRangeUserWritable(u32 virt,u32 count) {
 	return paging_isRangeWritable(virt,count);
 }
 
-bool paging_isRangeWritable(u32 virt,u32 count) {
+bool paging_isRangeWritable(uintptr_t virt,size_t count) {
 	sPTEntry *pt;
 	sPDEntry *pd;
-	u32 end;
+	uintptr_t end;
 	/* calc start and end pt */
 	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	virt &= ~(PAGE_SIZE - 1);
@@ -323,18 +324,20 @@ bool paging_isRangeWritable(u32 virt,u32 count) {
 	return true;
 }
 
-u32 paging_mapToTemp(const u32 *frames,u32 count) {
+uintptr_t paging_mapToTemp(const tFrameNo *frames,size_t count) {
 	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE);
 	paging_map(TEMP_MAP_AREA,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	return TEMP_MAP_AREA;
 }
 
-void paging_unmapFromTemp(u32 count) {
+void paging_unmapFromTemp(size_t count) {
 	paging_unmap(TEMP_MAP_AREA,count,false);
 }
 
-s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir) {
-	u32 kstackAddr,frmCount = 0,pdirFrame;
+ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
+	uintptr_t kstackAddr;
+	tFrameNo pdirFrame;
+	ssize_t frmCount = 0;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
 	sProc *p;
@@ -403,7 +406,7 @@ s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir) {
 
 sAllocStats paging_destroyPDir(tPageDir pdir) {
 	sAllocStats stats;
-	u32 ptables = paging_getPTables(pdir);
+	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pde;
 	assert(pdir != curPDir);
 	/* remove kernel-stack (don't free the frame; its done in thread_kill()) */
@@ -422,8 +425,8 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	return stats;
 }
 
-bool paging_isPresent(tPageDir pdir,u32 virt) {
-	u32 ptables = paging_getPTables(pdir);
+bool paging_isPresent(tPageDir pdir,uintptr_t virt) {
+	uintptr_t ptables = paging_getPTables(pdir);
 	sPTEntry *pt;
 	sPDEntry *pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(virt);
 	if(!pde->present || !pde->exists)
@@ -432,22 +435,23 @@ bool paging_isPresent(tPageDir pdir,u32 virt) {
 	return pt->present && pt->exists;
 }
 
-u32 paging_getFrameNo(tPageDir pdir,u32 virt) {
-	u32 ptables = paging_getPTables(pdir);
+tFrameNo paging_getFrameNo(tPageDir pdir,uintptr_t virt) {
+	uintptr_t ptables = paging_getPTables(pdir);
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	assert(pt->present && pt->exists);
 	return pt->frameNumber;
 }
 
-sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share) {
+sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,
+		size_t count,bool share) {
 	sAllocStats stats = {0,0};
-	u32 srctables = paging_getPTables(src);
+	uintptr_t srctables = paging_getPTables(src);
 	assert(src != dst && (src == curPDir || dst == curPDir));
 	while(count-- > 0) {
 		sAllocStats mstats;
 		sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(srctables,virtSrc);
-		u32 *frames = NULL;
-		u8 flags = 0;
+		tFrameNo *frames = NULL;
+		uint flags = 0;
 		if(pte->present)
 			flags |= PG_PRESENT;
 		if(pte->global)
@@ -459,7 +463,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
 			flags |= PG_SUPERVISOR;
 		if(share || pte->present) {
 			flags |= PG_ADDR_TO_FRAME;
-			frames = (u32*)pte;
+			frames = (tFrameNo*)pte;
 		}
 		mstats = paging_mapTo(dst,virtDst,frames,1,flags);
 		if(flags & PG_PRESENT)
@@ -474,17 +478,18 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
 	return stats;
 }
 
-sAllocStats paging_map(u32 virt,const u32 *frames,u32 count,u8 flags) {
+sAllocStats paging_map(uintptr_t virt,const tFrameNo *frames,size_t count,uint flags) {
 	sProc *p = proc_getRunning();
 	/* for boot-phase: use the first page-dir, if the process has none */
-	tPageDir pdir = (p->pagedir == 0) ? (u32)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
+	tPageDir pdir = (p->pagedir == 0) ? (uintptr_t)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
 	return paging_mapTo(pdir,virt,frames,count,flags);
 }
 
-sAllocStats paging_mapTo(tPageDir pdir,u32 virt,const u32 *frames,u32 count,u8 flags) {
+sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,size_t count,
+		uint flags) {
 	sAllocStats stats = {0,0};
-	u32 ptables = paging_getPTables(pdir);
-	u32 pdirAddr = PAGEDIR(ptables);
+	uintptr_t ptables = paging_getPTables(pdir);
+	uintptr_t pdirAddr = PAGEDIR(ptables);
 	sPDEntry *pde;
 	sPTEntry *pte;
 	assert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_PRESENT | PG_ADDR_TO_FRAME |
@@ -545,18 +550,18 @@ sAllocStats paging_mapTo(tPageDir pdir,u32 virt,const u32 *frames,u32 count,u8 f
 	return stats;
 }
 
-sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames) {
+sAllocStats paging_unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	sProc *p = proc_getRunning();
 	/* for boot-phase: use the first page-dir, if the process has none */
-	tPageDir pdir = (p->pagedir == 0) ? (u32)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
+	tPageDir pdir = (p->pagedir == 0) ? (uintptr_t)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
 	return paging_unmapFrom(pdir,virt,count,freeFrames);
 }
 
-sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
+sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool freeFrames) {
 	sAllocStats stats = {0,0};
-	u32 ptables = paging_getPTables(pdir);
-	u32 pti = PT_ENTRY_COUNT;
-	u32 lastPti = PT_ENTRY_COUNT;
+	uintptr_t ptables = paging_getPTables(pdir);
+	size_t pti = PT_ENTRY_COUNT;
+	size_t lastPti = PT_ENTRY_COUNT;
 	sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	while(count-- > 0) {
 		/* remove and free page-table, if necessary */
@@ -591,8 +596,9 @@ sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
 	return stats;
 }
 
-u32 paging_getPTableCount(tPageDir pdir) {
-	u32 i,count = 0,ptables = paging_getPTables(pdir);
+size_t paging_getPTableCount(tPageDir pdir) {
+	size_t i,count = 0;
+	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
 		if(pdirAddr[i].present)
@@ -602,12 +608,12 @@ u32 paging_getPTableCount(tPageDir pdir) {
 }
 
 void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
-	u32 i,j;
-	u32 ptables = paging_getPTables(pdir);
+	size_t i,j;
+	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
 		if(pdirAddr[i].present) {
-			u32 addr = PAGE_SIZE * PT_ENTRY_COUNT * i;
+			uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * i;
 			sPTEntry *pte = (sPTEntry*)(ptables + i * PAGE_SIZE);
 			prf_sprintf(buf,"PageTable 0x%x (VM: 0x%08x - 0x%08x)\n",i,addr,
 					addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
@@ -627,7 +633,7 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
 	}
 }
 
-static u32 paging_getPTables(tPageDir pdir) {
+static uintptr_t paging_getPTables(tPageDir pdir) {
 	sPDEntry *pde;
 	if(pdir == curPDir)
 		return MAPPED_PTS_START;
@@ -646,10 +652,10 @@ static u32 paging_getPTables(tPageDir pdir) {
 	return TMPMAP_PTS_START;
 }
 
-static u32 paging_remEmptyPt(u32 ptables,u32 pti) {
-	u32 i;
+static size_t paging_remEmptyPt(uintptr_t ptables,size_t pti) {
+	size_t i;
 	sPDEntry *pde;
-	u32 virt = pti * PAGE_SIZE * PT_ENTRY_COUNT;
+	uintptr_t virt = pti * PAGE_SIZE * PT_ENTRY_COUNT;
 	sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(pte[i].exists)
@@ -663,12 +669,12 @@ static u32 paging_remEmptyPt(u32 ptables,u32 pti) {
 	if(ptables == MAPPED_PTS_START)
 		paging_flushPageTable(virt,ptables);
 	else
-		FLUSHADDR((u32)pte);
+		FLUSHADDR((uintptr_t)pte);
 	return 1;
 }
 
-static void paging_flushPageTable(u32 virt,u32 ptables) {
-	u32 end;
+static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables) {
+	uintptr_t end;
 	/* to beginning of page-table */
 	virt &= ~(PT_ENTRY_COUNT * PAGE_SIZE - 1);
 	end = virt + PT_ENTRY_COUNT * PAGE_SIZE;
@@ -682,9 +688,9 @@ static void paging_flushPageTable(u32 virt,u32 ptables) {
 }
 
 #if 0
-void paging_getFrameNos(u32 *nos,u32 addr,u32 size) {
+void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(addr);
-	u32 pcount = BYTES_2_PAGES((addr & (PAGE_SIZE - 1)) + size);
+	size_t pcount = BYTES_2_PAGES((addr & (PAGE_SIZE - 1)) + size);
 	while(pcount-- > 0) {
 		*nos++ = pt->frameNumber;
 		pt++;
@@ -696,8 +702,8 @@ void paging_getFrameNos(u32 *nos,u32 addr,u32 size) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-u32 paging_dbg_getPageCount(void) {
-	u32 i,x,count = 0;
+size_t paging_dbg_getPageCount(void) {
+	size_t i,x,count = 0;
 	sPTEntry *pagetable;
 	sPDEntry *pdir = (sPDEntry*)PAGE_DIR_AREA;
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
@@ -712,8 +718,8 @@ u32 paging_dbg_getPageCount(void) {
 	return count;
 }
 
-void paging_dbg_printPageOf(tPageDir pdir,u32 virt) {
-	u32 ptables = paging_getPTables(pdir);
+void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt) {
+	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
 		sPTEntry *page = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
@@ -723,13 +729,13 @@ void paging_dbg_printPageOf(tPageDir pdir,u32 virt) {
 	}
 }
 
-void paging_dbg_printCur(u8 parts) {
+void paging_dbg_printCur(uint parts) {
 	paging_dbg_printPDir(curPDir,parts);
 }
 
-void paging_dbg_printPDir(tPageDir pdir,u8 parts) {
-	u32 i;
-	u32 ptables = paging_getPTables(pdir);
+void paging_dbg_printPDir(tPageDir pdir,uint parts) {
+	size_t i;
+	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	vid_printf("page-dir @ 0x%08x:\n",pdirAddr);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
@@ -753,9 +759,9 @@ void paging_dbg_printPDir(tPageDir pdir,u8 parts) {
 	vid_printf("\n");
 }
 
-static void paging_dbg_printPageTable(u32 ptables,u32 no,sPDEntry *pde) {
-	u32 i;
-	u32 addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
+static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) {
+	size_t i;
+	uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
 	sPTEntry *pte = (sPTEntry*)(ptables + no * PAGE_SIZE);
 	vid_printf("\tpt 0x%x [frame 0x%x, %c%c] @ 0x%08x: (VM: 0x%08x - 0x%08x)\n",no,
 			pde->ptFrameNo,pde->notSuperVisor ? 'u' : 'k',pde->writable ? 'w' : 'r',pte,addr,
@@ -774,7 +780,7 @@ static void paging_dbg_printPageTable(u32 ptables,u32 no,sPDEntry *pde) {
 
 static void paging_dbg_printPage(sPTEntry *page) {
 	if(page->exists) {
-		vid_printf("r=0x%08x fr=0x%x [%c%c%c%c]",*(u32*)page,
+		vid_printf("r=0x%08x fr=0x%x [%c%c%c%c]",*(uint32_t*)page,
 				page->frameNumber,page->present ? 'p' : '-',
 				page->notSuperVisor ? 'u' : 'k',page->writable ? 'w' : 'r',
 				page->global ? 'g' : '-');

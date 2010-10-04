@@ -32,10 +32,11 @@
 static sScreenBackup backup;
 static char buffer[512];
 
-s32 cons_cmd_file(s32 argc,char **argv) {
+int cons_cmd_file(size_t argc,char **argv) {
 	sProc *p = proc_getRunning();
 	tFileNo file = -1;
-	s32 i,res;
+	ssize_t i,count;
+	int res;
 	sLines lines;
 
 	if(argc != 2) {
@@ -55,9 +56,9 @@ s32 cons_cmd_file(s32 argc,char **argv) {
 		res = file;
 		goto error;
 	}
-	while((res = vfs_readFile(p->pid,file,buffer,sizeof(buffer))) > 0) {
+	while((count = vfs_readFile(p->pid,file,buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
-		for(i = 0; i < res; i++) {
+		for(i = 0; i < count; i++) {
 			if(buffer[i] == '\n') {
 				if(lines_newline(&lines) < 0) {
 					res = ERR_NOT_ENOUGH_MEM;

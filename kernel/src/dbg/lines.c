@@ -23,7 +23,7 @@
 #include <sys/video.h>
 #include <errors.h>
 
-s32 lines_create(sLines *l) {
+int lines_create(sLines *l) {
 	l->lineCount = 0;
 	l->linePos = 0;
 	l->lineSize = 16;
@@ -48,8 +48,8 @@ void lines_append(sLines *l,char c) {
 		l->lines[l->lineCount][l->linePos++] = c;
 }
 
-s32 lines_newline(sLines *l) {
-	u32 i;
+int lines_newline(sLines *l) {
+	size_t i;
 	/* fill up with spaces */
 	for(i = l->linePos; i < VID_COLS; i++)
 		l->lines[l->lineCount][i] = ' ';
@@ -72,7 +72,7 @@ s32 lines_newline(sLines *l) {
 }
 
 void lines_end(sLines *l) {
-	u32 i;
+	size_t i;
 	for(i = l->linePos; i < VID_COLS; i++)
 		l->lines[l->lineCount][i] = ' ';
 	l->lines[l->lineCount][i] = '\0';
@@ -81,7 +81,7 @@ void lines_end(sLines *l) {
 
 void lines_destroy(sLines *l) {
 	if(l->lines) {
-		s32 i;
+		size_t i;
 		for(i = 0; i < l->lineCount; i++)
 			kheap_free(l->lines[i]);
 		kheap_free(l->lines);

@@ -34,7 +34,7 @@ void swap_start(void);
  * @param addr the address of the page
  * @return true if successfull
  */
-bool swap_in(const sProc *p,u32 addr);
+bool swap_in(const sProc *p,uintptr_t addr);
 
 /**
  * Swaps out frames until at least <frameCount> frames are free
@@ -42,7 +42,7 @@ bool swap_in(const sProc *p,u32 addr);
  * @param frameCount the number of frames you need
  * @return true if successfull. May fail if swap-space is full or nothing left to swap
  */
-bool swap_outUntil(u32 frameCount);
+bool swap_outUntil(size_t frameCount);
 
 /**
  * Checks whether there we should swap something out

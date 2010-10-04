@@ -159,7 +159,7 @@ gdt_flush:
 2:
 	ret																	# we're done
 
-# void tss_load(u16 gdtOffset);
+# void tss_load(size_t gdtOffset);
 tss_load:
 	ltr		4(%esp)												# load tss
 	ret
@@ -168,46 +168,46 @@ tss_load:
 util_halt:
 	hlt
 
-# void util_outByte(u16 port,u8 val);
+# void util_outByte(uint16_t port,uint8_t val);
 util_outByte:
 	mov		4(%esp),%dx										# load port
 	mov		8(%esp),%al										# load value
 	out		%al,%dx												# write to port
 	ret
 
-# void util_outWord(u16 port,u16 val);
+# void util_outWord(uint16_t port,uint16_t val);
 util_outWord:
 	mov		4(%esp),%dx										# load port
 	mov		8(%esp),%ax										# load value
 	out		%ax,%dx												# write to port
 	ret
 
-# void util_outWord(u16 port,u32 val);
+# void util_outWord(uint16_t port,uint32_t val);
 util_outDWord:
 	mov		4(%esp),%dx										# load port
 	mov		8(%esp),%eax									# load value
 	out		%eax,%dx											# write to port
 	ret
 
-# u8 util_inByte(u16 port);
+# uint8_t util_inByte(uint16_t port);
 util_inByte:
 	mov		4(%esp),%dx										# load port
 	in		%dx,%al												# read from port
 	ret
 
-# u16 util_inByte(u16 port);
+# uint16_t util_inByte(uint16_t port);
 util_inWord:
 	mov		4(%esp),%dx										# load port
 	in		%dx,%ax												# read from port
 	ret
 
-# u32 util_inByte(u16 port);
+# uint32_t util_inByte(uint16_t port);
 util_inDWord:
 	mov		4(%esp),%dx										# load port
 	in		%dx,%eax											# read from port
 	ret
 
-# u32 getStackFrameStart(void);
+# uintptr_t getStackFrameStart(void);
 getStackFrameStart:
 	mov		%ebp,%eax
 	ret
@@ -228,44 +228,44 @@ cpu_cpuidSupported:
 	shr		$21,%eax											# if so, return 1 (cpuid supported)
 	ret
 
-# u64 cpu_rdtsc(void);
+# uint64_t cpu_rdtsc(void);
 cpu_rdtsc:
 	rdtsc
 	ret
 
-# u32 cpu_getCR0(void);
+# uint32_t cpu_getCR0(void);
 cpu_getCR0:
 	mov		%cr0,%eax
 	ret
 
-# void cpu_setCR0(u32 cr0);
+# void cpu_setCR0(uint32_t cr0);
 cpu_setCR0:
 	mov		4(%esp),%eax
 	mov		%eax,%cr0
 	ret
 
-# u32 cpu_getCR2(void);
+# uint32_t cpu_getCR2(void);
 cpu_getCR2:
 	mov		%cr2,%eax
 	ret
 
-# u32 cpu_getCR3(void);
+# uint32_t cpu_getCR3(void);
 cpu_getCR3:
 	mov		%cr3,%eax
 	ret
 
-# u32 cpu_getCR4(void);
+# uint32_t cpu_getCR4(void);
 cpu_getCR4:
 	mov		%cr4,%eax
 	ret
 
-# void cpu_setCR4(u32 cr4);
+# void cpu_setCR4(uint32_t cr4);
 cpu_setCR4:
 	mov		4(%esp),%eax
 	mov		%eax,%cr4
 	ret
 
-# void cpu_getInfo(u32 code,u32 *a,u32 *b,u32 *c,u32 *d);
+# void cpu_getInfo(uint32_t code,uint32_t *a,uint32_t *b,uint32_t *c,uint32_t *d);
 cpu_getInfo:
 	push	%ebp
 	mov		%esp,%ebp
@@ -286,7 +286,7 @@ cpu_getInfo:
 	leave
 	ret
 
-# void cpu_getStrInfo(u32 code,char *res);
+# void cpu_getStrInfo(uint32_t code,char *res);
 cpu_getStrInfo:
 	push	%ebp
 	mov		%esp,%ebp
@@ -346,7 +346,7 @@ thread_save:
 	leave
 	ret
 
-# bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);
+# bool thread_resume(tPageDir pageDir,sThreadRegs *saveArea,tFrameNo kstackFrame);
 thread_resume:
 	push	%ebp
 	mov		%esp,%ebp
@@ -399,7 +399,7 @@ paging_flushTLB:
 	mov		%eax,%cr3
 	ret
 
-# void paging_exchangePDir(u32 physAddr);
+# void paging_exchangePDir(uintptr_t physAddr);
 paging_exchangePDir:
 	mov		4(%esp),%eax									# load page-dir-address
 	mov		%eax,%cr3											# set page-dir

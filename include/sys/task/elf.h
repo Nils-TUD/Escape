@@ -25,9 +25,9 @@
 
 typedef struct {
 	/* entry-point of the program */
-	u32 progEntry;
+	uintptr_t progEntry;
 	/* entry-point of the dynamic-linker; will be the same as progEntry if no dl is used */
-	u32 linkerEntry;
+	uintptr_t linkerEntry;
 } sStartupInfo;
 
 /**
@@ -37,7 +37,7 @@ typedef struct {
  * @param info various information about the loaded program
  * @return 0 on success
  */
-s32 elf_loadFromFile(const char *path,sStartupInfo *info);
+int elf_loadFromFile(const char *path,sStartupInfo *info);
 
 /**
  * Loads the given code into the user-space. This is just intended for loading initloader
@@ -47,7 +47,7 @@ s32 elf_loadFromFile(const char *path,sStartupInfo *info);
  * @param info various information about the loaded program
  * @return 0 on success
  */
-s32 elf_loadFromMem(const void *code,u32 length,sStartupInfo *info);
+int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info);
 
 /* Standard ELF types.  */
 

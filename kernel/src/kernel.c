@@ -71,7 +71,7 @@
  * 	- idt-descriptors:		see intel manual, vol3a, page 202
  */
 
-static u8 initloader[] = {
+static uint8_t initloader[] = {
 #if DEBUGGING
 #	include "../../build/debug/user_initloader.dump"
 #else
@@ -79,7 +79,7 @@ static u8 initloader[] = {
 #endif
 };
 
-s32 main(sMultiBoot *mbp,u32 magic) {
+int main(sMultiBoot *mbp,uint magic) {
 	sStartupInfo info;
 	sThread *t;
 

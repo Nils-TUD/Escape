@@ -40,19 +40,19 @@
 typedef struct {
 	tInodeNo ino;
 	tDevNo dev;
-	u32 modifytime;
+	tTime modifytime;
 } sBinDesc;
 
 typedef struct {
-	u32 flags;			/* flags that specify the attributes of this region */
-	sBinDesc binary;	/* the source-binary (for demand-paging) */
-	u32 binOffset;		/* offset in the binary */
-	u32 byteCount;		/* number of bytes */
-	u32 loadCount;		/* number of bytes to load from disk (the rest is zero'ed) */
-	u32 timestamp;		/* timestamp of last usage (for swapping) */
-	u32 pfSize;			/* size of pageFlags */
-	u32 *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
-	sSLList *procs;		/* linked list of processes that use this region */
+	uint flags;				/* flags that specify the attributes of this region */
+	sBinDesc binary;		/* the source-binary (for demand-paging) */
+	uintptr_t binOffset;	/* offset in the binary */
+	size_t byteCount;		/* number of bytes */
+	size_t loadCount;		/* number of bytes to load from disk (the rest is zero'ed) */
+	tTime timestamp;		/* timestamp of last usage (for swapping) */
+	size_t pfSize;			/* size of pageFlags */
+	uint *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
+	sSLList *procs;			/* linked list of processes that use this region */
 } sRegion;
 
 /**
@@ -67,7 +67,8 @@ typedef struct {
  * @param flags the flags of the region (RF_*)
  * @return the region or NULL if failed
  */
-sRegion *reg_create(const sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags,u32 flags);
+sRegion *reg_create(const sBinDesc *bin,uintptr_t binOffset,size_t bCount,size_t lCount,
+		uint pgFlags,uint flags);
 
 /**
  * Destroys the given region (regardless of the number of users!)
@@ -82,13 +83,13 @@ void reg_destroy(sRegion *reg);
  * @param reg the region
  * @return the number of present pages
  */
-u32 reg_presentPageCount(const sRegion *reg);
+size_t reg_presentPageCount(const sRegion *reg);
 
 /**
  * @param reg the region
  * @return the number of references of the given region
  */
-u32 reg_refCount(const sRegion *reg);
+size_t reg_refCount(const sRegion *reg);
 
 /**
  * Returns the swap-block in which the page with given index is stored
@@ -97,7 +98,7 @@ u32 reg_refCount(const sRegion *reg);
  * @param pageIndex the index of the page in the region
  * @return the swap-block
  */
-u32 reg_getSwapBlock(const sRegion *reg,u32 pageIndex);
+uint reg_getSwapBlock(const sRegion *reg,size_t pageIndex);
 
 /**
  * Sets the swap-block in which the page with given index is stored to <swapBlock>.
@@ -106,7 +107,7 @@ u32 reg_getSwapBlock(const sRegion *reg,u32 pageIndex);
  * @param pageIndex the index of the page in the region
  * @param swapBlock the swap-block
  */
-void reg_setSwapBlock(sRegion *reg,u32 pageIndex,u32 swapBlock);
+void reg_setSwapBlock(sRegion *reg,size_t pageIndex,uint swapBlock);
 
 /**
  * Adds the given process as user to the region
@@ -134,7 +135,7 @@ bool reg_remFrom(sRegion *reg,const void *p);
  * @param amount the number of pages
  * @return true if successfull
  */
-bool reg_grow(sRegion *reg,s32 amount);
+bool reg_grow(sRegion *reg,ssize_t amount);
 
 /**
  * Clones the given region for the given process. That means it copies the attributes from the
@@ -155,7 +156,7 @@ sRegion *reg_clone(const void *p,const sRegion *reg);
  * @param reg the region
  * @param virt the virtual-address at which the region is mapped
  */
-void reg_sprintf(sStringBuffer *buf,const sRegion *reg,u32 virt);
+void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt);
 
 
 #if DEBUGGING
@@ -173,7 +174,7 @@ void reg_dbg_printFlags(const sRegion *reg);
  * @param reg the region
  * @param virt the virtual-address at which the region is mapped
  */
-void reg_dbg_print(const sRegion *reg,u32 virt);
+void reg_dbg_print(const sRegion *reg,uintptr_t virt);
 
 #endif
 

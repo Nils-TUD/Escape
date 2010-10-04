@@ -36,23 +36,24 @@
 #define FS_PATH				"/dev/fs"
 
 typedef struct {
-	u8 active;
+	uint8_t active;
 	tFileNo file;
 	sVFSNode *node;
 } sFSChan;
 
 /* for istat() and stat() */
-static s32 vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info);
+static int vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info);
 /* The request-handler for sending a path and receiving a result */
-static s32 vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,u32 arg1,u32 cmd);
+static ssize_t vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,
+		uint arg1,uint cmd);
 /* waits for a response */
 static void vfs_real_wait(sRequest *req);
 
 /* The response-handler for the different message-ids */
-static void vfs_real_openRespHandler(sVFSNode *node,const void *data,u32 size);
-static void vfs_real_readRespHandler(sVFSNode *node,const void *data,u32 size);
-static void vfs_real_statRespHandler(sVFSNode *node,const void *data,u32 size);
-static void vfs_real_defRespHandler(sVFSNode *node,const void *data,u32 size);
+static void vfs_real_openRespHandler(sVFSNode *node,const void *data,size_t size);
+static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size);
+static void vfs_real_statRespHandler(sVFSNode *node,const void *data,size_t size);
+static void vfs_real_defRespHandler(sVFSNode *node,const void *data,size_t size);
 
 /* for requesting and releasing a file for communication */
 static tFileNo vfs_real_requestFile(tPid pid,sVFSNode **node);
@@ -87,9 +88,9 @@ void vfs_real_removeProc(tPid pid) {
 	}
 }
 
-s32 vfs_real_openPath(tPid pid,u16 flags,const char *path) {
-	s32 res;
-	u32 pathLen = strlen(path);
+tFileNo vfs_real_openPath(tPid pid,uint flags,const char *path) {
+	ssize_t res;
+	size_t pathLen = strlen(path);
 	sVFSNode *node;
 	tFileNo fs;
 	sRequest *req;
@@ -114,7 +115,7 @@ s32 vfs_real_openPath(tPid pid,u16 flags,const char *path) {
 	vfs_real_wait(req);
 
 	/* error? */
-	if((s32)req->count < 0) {
+	if((ssize_t)req->count < 0) {
 		res = req->count;
 		goto error;
 	}
@@ -128,23 +129,23 @@ error:
 	return res;
 }
 
-s32 vfs_real_openInode(tPid pid,u16 flags,tInodeNo ino,tDevNo dev) {
+tFileNo vfs_real_openInode(tPid pid,uint flags,tInodeNo ino,tDevNo dev) {
 	/* TODO maybe we should send an open-msg to fs, too, but in a different form? */
 	/* open the file */
 	return vfs_openFile(pid,flags,ino,dev);
 }
 
-s32 vfs_real_istat(tPid pid,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
+int vfs_real_istat(tPid pid,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
 	return vfs_real_doStat(pid,NULL,ino,devNo,info);
 }
 
-s32 vfs_real_stat(tPid pid,const char *path,sFileInfo *info) {
+int vfs_real_stat(tPid pid,const char *path,sFileInfo *info) {
 	return vfs_real_doStat(pid,path,0,0,info);
 }
 
-static s32 vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
-	s32 res;
-	u32 pathLen = 0;
+static int vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
+	int res;
+	size_t pathLen = 0;
 	tFileNo fs;
 	sRequest *req;
 	sVFSNode *node;
@@ -178,7 +179,7 @@ static s32 vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,s
 	vfs_real_wait(req);
 
 	/* error? */
-	if((s32)req->count < 0) {
+	if((int)req->count < 0) {
 		res = req->count;
 		goto error;
 	}
@@ -196,9 +197,9 @@ error:
 	return res;
 }
 
-s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,u32 offset,u32 count) {
+ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,uint offset,size_t count) {
 	sRequest *req;
-	s32 res;
+	ssize_t res;
 	void *data;
 	sVFSNode *node;
 	tFileNo fs = vfs_real_requestFile(pid,&node);
@@ -236,9 +237,10 @@ s32 vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,u32 offset
 	return res;
 }
 
-s32 vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,u32 offset,u32 count) {
+ssize_t vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,uint offset,
+		size_t count) {
 	sRequest *req;
-	s32 res;
+	ssize_t res;
 	sVFSNode *node;
 	tFileNo fs = vfs_real_requestFile(pid,&node);
 	if(fs < 0)
@@ -270,32 +272,32 @@ error:
 	return res;
 }
 
-s32 vfs_real_link(tPid pid,const char *oldPath,const char *newPath) {
+int vfs_real_link(tPid pid,const char *oldPath,const char *newPath) {
 	return vfs_real_pathReqHandler(pid,oldPath,newPath,0,MSG_FS_LINK);
 }
 
-s32 vfs_real_unlink(tPid pid,const char *path) {
+int vfs_real_unlink(tPid pid,const char *path) {
 	return vfs_real_pathReqHandler(pid,path,NULL,0,MSG_FS_UNLINK);
 }
 
-s32 vfs_real_mkdir(tPid pid,const char *path) {
+int vfs_real_mkdir(tPid pid,const char *path) {
 	return vfs_real_pathReqHandler(pid,path,NULL,0,MSG_FS_MKDIR);
 }
 
-s32 vfs_real_rmdir(tPid pid,const char *path) {
+int vfs_real_rmdir(tPid pid,const char *path) {
 	return vfs_real_pathReqHandler(pid,path,NULL,0,MSG_FS_RMDIR);
 }
 
-s32 vfs_real_mount(tPid pid,const char *device,const char *path,u16 type) {
+int vfs_real_mount(tPid pid,const char *device,const char *path,uint type) {
 	return vfs_real_pathReqHandler(pid,device,path,type,MSG_FS_MOUNT);
 }
 
-s32 vfs_real_unmount(tPid pid,const char *path) {
+int vfs_real_unmount(tPid pid,const char *path) {
 	return vfs_real_pathReqHandler(pid,path,NULL,0,MSG_FS_UNMOUNT);
 }
 
-s32 vfs_real_sync(tPid pid) {
-	s32 res;
+int vfs_real_sync(tPid pid) {
+	int res;
 	tFileNo fs = vfs_real_requestFile(pid,NULL);
 	if(fs < 0)
 		return fs;
@@ -317,8 +319,8 @@ void vfs_real_close(tPid pid,tInodeNo inodeNo,tDevNo devNo) {
 	vfs_real_releaseFile(pid,fs);
 }
 
-static s32 vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,u32 arg1,u32 cmd) {
-	s32 res;
+static int vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,uint arg1,uint cmd) {
+	int res;
 	sRequest *req;
 	tFileNo fs;
 	sVFSNode *node;
@@ -357,10 +359,10 @@ error:
 static void vfs_real_wait(sRequest *req) {
 	do
 		vfs_req_waitForReply(req,false);
-	while((s32)req->count == ERR_DRIVER_DIED);
+	while((int)req->count == ERR_DRIVER_DIED);
 }
 
-static void vfs_real_openRespHandler(sVFSNode *node,const void *data,u32 size) {
+static void vfs_real_openRespHandler(sVFSNode *node,const void *data,size_t size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->args))
@@ -378,7 +380,7 @@ static void vfs_real_openRespHandler(sVFSNode *node,const void *data,u32 size) {
 	}
 }
 
-static void vfs_real_readRespHandler(sVFSNode *node,const void *data,u32 size) {
+static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size) {
 	/* find the request for the node */
 	sRequest *req = vfs_req_getRequestByNode(node);
 	if(req != NULL) {
@@ -386,7 +388,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,u32 size) {
 		if(req->state == REQ_STATE_WAITING) {
 			sMsg *rmsg = (sMsg*)data;
 			/* an error? */
-			if(!data || size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
+			if(!data || size < sizeof(rmsg->args) || (int)rmsg->args.arg1 <= 0) {
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
 				ev_wakeupThread(req->tid,EV_REQ_REPLY);
@@ -400,7 +402,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,u32 size) {
 			/* ok, it's the data */
 			if(data) {
 				/* map the buffer we have to copy it to */
-				req->data = (u32*)kheap_alloc(req->count);
+				req->data = kheap_alloc(req->count);
 				if(req->data)
 					memcpy(req->data,data,req->count);
 			}
@@ -411,7 +413,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,u32 size) {
 	}
 }
 
-static void vfs_real_statRespHandler(sVFSNode *node,const void *data,u32 size) {
+static void vfs_real_statRespHandler(sVFSNode *node,const void *data,size_t size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->data))
@@ -423,7 +425,7 @@ static void vfs_real_statRespHandler(sVFSNode *node,const void *data,u32 size) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->data.arg1;
-		req->data = (void*)kheap_alloc(sizeof(sFileInfo));
+		req->data = kheap_alloc(sizeof(sFileInfo));
 		if(req->data != NULL)
 			memcpy(req->data,rmsg->data.d,sizeof(sFileInfo));
 		/* the thread can continue now */
@@ -431,7 +433,7 @@ static void vfs_real_statRespHandler(sVFSNode *node,const void *data,u32 size) {
 	}
 }
 
-static void vfs_real_defRespHandler(sVFSNode *node,const void *data,u32 size) {
+static void vfs_real_defRespHandler(sVFSNode *node,const void *data,size_t size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->args))
@@ -449,7 +451,7 @@ static void vfs_real_defRespHandler(sVFSNode *node,const void *data,u32 size) {
 }
 
 static tFileNo vfs_real_requestFile(tPid pid,sVFSNode **node) {
-	s32 err;
+	int err;
 	sSLNode *n;
 	sFSChan *chan;
 	sVFSNode *child;

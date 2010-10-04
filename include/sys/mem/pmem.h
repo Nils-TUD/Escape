@@ -63,7 +63,7 @@
 #define PAGE_SIZE_SHIFT			12
 
 /* converts bytes to pages */
-#define BYTES_2_PAGES(b)		(((u32)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
+#define BYTES_2_PAGES(b)		(((size_t)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
 
 /* set values to support bit-masks of the types */
 typedef enum {MM_CONT = 1,MM_DEF = 2} eMemType;
@@ -78,7 +78,7 @@ void mm_init(const sMultiBoot *mb);
 /**
  * @return the number of bytes used for the mm-stack
  */
-u32 mm_getStackSize(void);
+size_t mm_getStackSize(void);
 
 /**
  * Counts the number of free frames. This is primarly intended for debugging!
@@ -86,7 +86,7 @@ u32 mm_getStackSize(void);
  * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
  * @return the number of free frames
  */
-u32 mm_getFreeFrames(u32 types);
+size_t mm_getFreeFrames(uint types);
 
 /**
  * Allocates <count> contiguous frames from the MM-bitmap
@@ -95,7 +95,7 @@ u32 mm_getFreeFrames(u32 types);
  * @param align the alignment of the memory (in pages)
  * @return the first allocated frame or negative if an error occurred
  */
-s32 mm_allocateContiguous(u32 count,u32 align);
+ssize_t mm_allocateContiguous(size_t count,size_t align);
 
 /**
  * Free's <count> contiguous frames, starting at <first> in the MM-bitmap
@@ -103,7 +103,7 @@ s32 mm_allocateContiguous(u32 count,u32 align);
  * @param first the first frame-number
  * @param count the number of frames
  */
-void mm_freeContiguous(u32 first,u32 count);
+void mm_freeContiguous(tFrameNo first,size_t count);
 
 /**
  * Allocates a frame and returns the frame-number
@@ -111,7 +111,7 @@ void mm_freeContiguous(u32 first,u32 count);
  * @panic if there is no frame left anymore
  * @return the frame-number
  */
-u32 mm_allocate(void);
+tFrameNo mm_allocate(void);
 
 /**
  * Frees the given frame. Note that you can free frames allocated with mm_allocate() and
@@ -119,7 +119,7 @@ u32 mm_allocate(void);
  *
  * @param frame the frame-number
  */
-void mm_free(u32 frame);
+void mm_free(tFrameNo frame);
 
 #if DEBUGGING
 
@@ -128,7 +128,7 @@ void mm_free(u32 frame);
  *
  * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
  */
-void mm_dbg_printFreeFrames(u32 types);
+void mm_dbg_printFreeFrames(uint types);
 
 #endif
 

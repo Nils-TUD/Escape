@@ -46,35 +46,36 @@
 #define REG(p,i)			(((sVMRegion**)(p)->regions)[(i)])
 #define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
-static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr);
-static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount);
-static u32 *vmm_getPageFlag(sVMRegion *reg,u32 addr);
-static s32 vmm_findRegIndex(sProc *p,bool text);
-static u32 vmm_findFreeStack(sProc *p,u32 byteCount);
-static sVMRegion *vmm_isOccupied(sProc *p,u32 start,u32 end);
-static u32 vmm_getFirstUsableAddr(sProc *p,bool textNData);
-static u32 vmm_findFreeAddr(sProc *p,u32 byteCount);
-static bool vmm_extendRegions(sProc *p,u32 i);
+static bool vmm_demandLoad(sVMRegion *vm,uint *flags,uintptr_t addr);
+static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t loadCount);
+static uint *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr);
+static ssize_t vmm_findRegIndex(sProc *p,bool text);
+static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount);
+static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end);
+static uintptr_t vmm_getFirstUsableAddr(sProc *p,bool textNData);
+static uintptr_t vmm_findFreeAddr(sProc *p,size_t byteCount);
+static bool vmm_extendRegions(sProc *p,size_t i);
 static sVMRegion *vmm_alloc(void);
 static void vmm_free(sVMRegion *vm);
-static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *virt,s32 *rno);
+static int vmm_getAttr(sProc *p,uint type,size_t bCount,uint *pgFlags,uint *flags,
+		uintptr_t *virt,tVMRegNo *rno);
 
 void vmm_init(void) {
 	/* nothing to do */
 }
 
-u32 vmm_addPhys(sProc *p,u32 *phys,u32 bCount,u32 align) {
+uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 	tVMRegNo reg;
 	sVMRegion *vm;
 	sAllocStats stats;
-	u32 i,pages = BYTES_2_PAGES(bCount);
-	u32 *frames = (u32*)kheap_alloc(sizeof(u32) * pages);
+	size_t i,pages = BYTES_2_PAGES(bCount);
+	tFrameNo *frames = (tFrameNo*)kheap_alloc(sizeof(tFrameNo) * pages);
 	if(frames == NULL)
 		return 0;
 
 	/* if *phys is not set yet, we should allocate physical contiguous memory */
 	if(*phys == 0) {
-		s32 first = mm_allocateContiguous(pages,align / PAGE_SIZE);
+		ssize_t first = mm_allocateContiguous(pages,align / PAGE_SIZE);
 		if(first < 0)
 			return 0;
 		for(i = 0; i < pages; i++)
@@ -116,12 +117,14 @@ u32 vmm_addPhys(sProc *p,u32 *phys,u32 bCount,u32 align) {
 	return vm->virt;
 }
 
-tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type) {
+tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,uintptr_t binOffset,size_t bCount,size_t lCount,
+		uint type) {
 	sRegion *reg;
 	sVMRegion *vm;
 	tVMRegNo rno;
-	s32 res;
-	u32 virt,pgFlags,flags;
+	int res;
+	uintptr_t virt;
+	uint pgFlags,flags;
 
 	/* for text and shared-library-text: try to find another process with that text */
 	if(bin && (type == REG_TEXT || type == REG_SHLIBTEXT)) {
@@ -154,8 +157,8 @@ tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCoun
 	/* map into process */
 	if(type != REG_DEVICE && type != REG_PHYS) {
 		sAllocStats stats;
-		u8 mapFlags = 0;
-		u32 pageCount = BYTES_2_PAGES(vm->reg->byteCount);
+		uint mapFlags = 0;
+		size_t pageCount = BYTES_2_PAGES(vm->reg->byteCount);
 		if(!(pgFlags & PF_DEMANDLOAD))
 			mapFlags |= PG_PRESENT;
 		if(flags & (RF_WRITABLE))
@@ -167,7 +170,7 @@ tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCoun
 			p->ownFrames += stats.frames;
 		p->ownFrames += stats.ptables;
 #if DISABLE_DEMLOAD
-		u32 i;
+		size_t i;
 		for(i = 0; i < vm->reg->pfSize; i++)
 			vmm_pagefault(vm->virt + i * PAGE_SIZE);
 #endif
@@ -181,8 +184,8 @@ errReg:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 vmm_setRegProt(sProc *p,tVMRegNo rno,u8 flags) {
-	u32 i,pgcount;
+int vmm_setRegProt(sProc *p,tVMRegNo rno,uint flags) {
+	size_t i,pgcount;
 	sSLNode *n;
 	sVMRegion *vmreg = REG(p,rno);
 	if(!(flags & RF_WRITABLE) && flags != 0)
@@ -207,7 +210,7 @@ s32 vmm_setRegProt(sProc *p,tVMRegNo rno,u8 flags) {
 		assert(mprno != -1);
 		for(i = 0; i < pgcount; i++) {
 			/* determine flags; we can't always mark it present.. */
-			u8 mapFlags = PG_KEEPFRM;
+			uint mapFlags = PG_KEEPFRM;
 			if(!(vmreg->reg->pageFlags[i] & (PF_DEMANDLOAD | PF_LOADINPROGRESS | PF_SWAPPED)))
 				mapFlags |= PG_PRESENT;
 			if(flags & RF_WRITABLE)
@@ -218,9 +221,9 @@ s32 vmm_setRegProt(sProc *p,tVMRegNo rno,u8 flags) {
 	return 0;
 }
 
-void vmm_swapOut(sRegion *reg,u32 index) {
+void vmm_swapOut(sRegion *reg,size_t index) {
 	sSLNode *n;
-	u32 offset = index * PAGE_SIZE;
+	uintptr_t offset = index * PAGE_SIZE;
 	reg->pageFlags[index] |= PF_SWAPPED;
 	for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
@@ -237,10 +240,10 @@ void vmm_swapOut(sRegion *reg,u32 index) {
 	}
 }
 
-void vmm_swapIn(sRegion *reg,u32 index,u32 frameNo) {
+void vmm_swapIn(sRegion *reg,size_t index,tFrameNo frameNo) {
 	sSLNode *n;
-	u32 offset = index * PAGE_SIZE;
-	u8 flags = PG_PRESENT;
+	uintptr_t offset = index * PAGE_SIZE;
+	uint flags = PG_PRESENT;
 	if(reg->flags & (RF_WRITABLE))
 		flags |= PG_WRITABLE;
 	reg->pageFlags[index] &= ~PF_SWAPPED;
@@ -259,14 +262,14 @@ void vmm_swapIn(sRegion *reg,u32 index,u32 frameNo) {
 	}
 }
 
-void vmm_setTimestamp(const sThread *t,u32 timestamp) {
-	u32 i;
+void vmm_setTimestamp(const sThread *t,tTime timestamp) {
+	size_t i;
 	for(i = 0; i < t->proc->regSize; i++) {
 		sVMRegion *vm = REG(t->proc,i);
 		if(vm) {
 			/* for stack and tls: just mark the ones of the given thread used */
-			if((!(vm->reg->flags & RF_TLS) || i == (u32)t->tlsRegion) &&
-				(!(vm->reg->flags & RF_STACK) || i == (u32)t->stackRegion)) {
+			if((!(vm->reg->flags & RF_TLS) || i == (size_t)t->tlsRegion) &&
+				(!(vm->reg->flags & RF_STACK) || i == (size_t)t->stackRegion)) {
 				vm->reg->timestamp = timestamp;
 			}
 		}
@@ -275,11 +278,12 @@ void vmm_setTimestamp(const sThread *t,u32 timestamp) {
 
 sRegion *vmm_getLRURegion(const sProc *p) {
 	sRegion *lru = NULL;
-	u32 i,ts = ULONG_MAX;
+	tTime ts = ULONG_MAX; /* TODO thats not correct */
+	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
 		if(vm && !(vm->reg->flags & RF_NOFREE) && vm->reg->timestamp < ts) {
-			u32 j,count = 0,pages = BYTES_2_PAGES(vm->reg->byteCount);
+			size_t j,count = 0,pages = BYTES_2_PAGES(vm->reg->byteCount);
 			for(j = 0; j < pages; j++) {
 				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
 					count++;
@@ -295,9 +299,9 @@ sRegion *vmm_getLRURegion(const sProc *p) {
 	return lru;
 }
 
-u32 vmm_getPgIdxForSwap(const sRegion *reg) {
-	u32 i,pages = BYTES_2_PAGES(reg->byteCount);
-	u32 index,count = 0;
+size_t vmm_getPgIdxForSwap(const sRegion *reg) {
+	size_t i,pages = BYTES_2_PAGES(reg->byteCount);
+	size_t index,count = 0;
 	for(i = 0; i < pages; i++) {
 		if(!(reg->pageFlags[i] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD)))
 			count++;
@@ -316,11 +320,11 @@ u32 vmm_getPgIdxForSwap(const sRegion *reg) {
 
 bool vmm_exists(const sProc *p,tVMRegNo reg) {
 	assert(p);
-	return reg >= 0 && reg < (s32)p->regSize && REG(p,reg);
+	return reg >= 0 && reg < (tVMRegNo)p->regSize && REG(p,reg);
 }
 
 tVMRegNo vmm_getDLDataReg(const sProc *p) {
-	u32 i;
+	size_t i;
 	assert(p);
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
@@ -331,15 +335,15 @@ tVMRegNo vmm_getDLDataReg(const sProc *p) {
 	return -1;
 }
 
-float vmm_getMemUsage(const sProc *p,u32 *pages) {
-	u32 i;
+float vmm_getMemUsage(const sProc *p,size_t *pages) {
+	size_t i;
 	float rpages = 0;
 	*pages = 0;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
 		if(vm) {
-			u32 j,count = 0;
-			u32 pageCount = BYTES_2_PAGES(vm->reg->byteCount);
+			size_t j,count = 0;
+			size_t pageCount = BYTES_2_PAGES(vm->reg->byteCount);
 			for(j = 0; j < pageCount; j++) {
 				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_DEMANDLOAD | PF_COPYONWRITE)))
 					count++;
@@ -359,8 +363,8 @@ sVMRegion *vmm_getRegion(const sProc *p,tVMRegNo rno) {
 	return REG(p,rno);
 }
 
-tVMRegNo vmm_getRegionOf(const sProc *p,u32 addr) {
-	u32 i;
+tVMRegNo vmm_getRegionOf(const sProc *p,uintptr_t addr) {
+	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
 		if(vm && addr >= vm->virt && addr < vm->virt + ROUNDUP(vm->reg->byteCount))
@@ -370,7 +374,7 @@ tVMRegNo vmm_getRegionOf(const sProc *p,u32 addr) {
 }
 
 tVMRegNo vmm_getRNoByRegion(const sProc *p,const sRegion *reg) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
 		if(vm && vm->reg == reg)
@@ -379,9 +383,9 @@ tVMRegNo vmm_getRNoByRegion(const sProc *p,const sRegion *reg) {
 	return -1;
 }
 
-void vmm_getRegRange(const sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
+void vmm_getRegRange(const sProc *p,tVMRegNo reg,uintptr_t *start,uintptr_t *end) {
 	sVMRegion *vm = REG(p,reg);
-	assert(p && reg >= 0 && reg < (s32)p->regSize && vm);
+	assert(p && reg >= 0 && reg < (tVMRegNo)p->regSize && vm);
 	if(start)
 		*start = vm->virt;
 	if(end)
@@ -390,7 +394,7 @@ void vmm_getRegRange(const sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
 
 tVMRegNo vmm_hasBinary(const sProc *p,const sBinDesc *bin) {
 	sVMRegion *vm;
-	u32 i;
+	size_t i;
 	if(p->regSize == 0 || p->regions == NULL)
 		return -1;
 	for(i = 0; i < p->regSize; i++) {
@@ -405,11 +409,11 @@ tVMRegNo vmm_hasBinary(const sProc *p,const sBinDesc *bin) {
 	return -1;
 }
 
-bool vmm_pagefault(u32 addr) {
+bool vmm_pagefault(uintptr_t addr) {
 	sProc *p = proc_getRunning();
 	tVMRegNo rno = vmm_getRegionOf(p,addr);
 	sVMRegion *vm;
-	u32 *flags;
+	uint *flags;
 	if(rno < 0)
 		return false;
 	vm = REG(p,rno);
@@ -424,7 +428,7 @@ bool vmm_pagefault(u32 addr) {
 	else if(*flags & PF_SWAPPED)
 		return swap_in(p,addr);
 	else if(*flags & PF_COPYONWRITE) {
-		u32 frmCount = cow_pagefault(addr);
+		size_t frmCount = cow_pagefault(addr);
 		p->ownFrames += frmCount;
 		p->sharedFrames -= frmCount;
 		*flags &= ~PF_COPYONWRITE;
@@ -434,19 +438,19 @@ bool vmm_pagefault(u32 addr) {
 }
 
 void vmm_remove(sProc *p,tVMRegNo reg) {
-	u32 i,c = 0;
+	size_t i,c = 0;
 	sVMRegion *vm = REG(p,reg);
-	u32 pcount = BYTES_2_PAGES(vm->reg->byteCount);
-	assert(p && reg < (s32)p->regSize && vm != NULL);
+	size_t pcount = BYTES_2_PAGES(vm->reg->byteCount);
+	assert(p && reg < (tVMRegNo)p->regSize && vm != NULL);
 	assert(reg_remFrom(vm->reg,p));
 	if(reg_refCount(vm->reg) == 0) {
-		u32 virt = vm->virt;
+		uintptr_t virt = vm->virt;
 		/* remove us from cow and unmap the pages (and free frames, if necessary) */
 		for(i = 0; i < pcount; i++) {
 			sAllocStats stats;
 			bool freeFrame = !(vm->reg->flags & RF_NOFREE);
 			if(vm->reg->pageFlags[i] & PF_COPYONWRITE) {
-				u32 foundOther;
+				bool foundOther;
 				/* we can free the frame if there is no other user */
 				p->sharedFrames -= cow_remove(p,paging_getFrameNo(p->pagedir,virt),&foundOther);
 				freeFrame = !foundOther;
@@ -497,9 +501,9 @@ tVMRegNo vmm_join(const sProc *src,tVMRegNo rno,sProc *dst) {
 	sVMRegion *vm = REG(src,rno),*nvm;
 	tVMRegNo nrno;
 	sAllocStats stats;
-	u32 pageCount;
+	size_t pageCount;
 	assert(src && dst && src != dst);
-	assert(rno >= 0 && rno < (s32)src->regSize && vm != NULL);
+	assert(rno >= 0 && rno < (tVMRegNo)src->regSize && vm != NULL);
 	assert(vm->reg->flags & RF_SHAREABLE);
 	nvm = vmm_alloc();
 	if(nvm == NULL)
@@ -531,8 +535,8 @@ errVmm:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 vmm_cloneAll(sProc *dst) {
-	u32 i,j;
+int vmm_cloneAll(sProc *dst) {
+	size_t i,j;
 	sVMRegion **regs;
 	sThread *t = thread_getRunning();
 	sProc *src = proc_getRunning();
@@ -551,7 +555,7 @@ s32 vmm_cloneAll(sProc *dst) {
 		if(vm && (!(vm->reg->flags & RF_STACK) || (tVMRegNo)i == t->stackRegion)) {
 			sAllocStats stats;
 			sVMRegion *nvm = vmm_alloc();
-			u32 pageCount;
+			size_t pageCount;
 			if(nvm == NULL)
 				goto error;
 			nvm->virt = vm->virt;
@@ -574,12 +578,12 @@ s32 vmm_cloneAll(sProc *dst) {
 				dst->sharedFrames += stats.frames;
 			/* add frames to copy-on-write, if not shared */
 			else {
-				u32 virt = nvm->virt;
+				uintptr_t virt = nvm->virt;
 				for(j = 0; j < pageCount; j++) {
 					/* not when demand-load or swapping is outstanding since we've not loaded it
 					 * from disk yet */
 					if(!(vm->reg->pageFlags[j] & (PF_DEMANDLOAD | PF_SWAPPED))) {
-						u32 frameNo = paging_getFrameNo(src->pagedir,virt);
+						tFrameNo frameNo = paging_getFrameNo(src->pagedir,virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->pageFlags[j] & PF_COPYONWRITE)) {
 							vm->reg->pageFlags[j] |= PF_COPYONWRITE;
@@ -618,26 +622,27 @@ error:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 vmm_growStackTo(sThread *t,u32 addr) {
+int vmm_growStackTo(sThread *t,uintptr_t addr) {
 	sVMRegion *vm = REG(t->proc,t->stackRegion);
 	addr &= ~(PAGE_SIZE - 1);
 	/* report failure if its outside (upper) of the region */
 	if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
 		return ERR_NOT_ENOUGH_MEM;
 	if(addr < vm->virt) {
-		s32 newPages = (vm->virt - addr) / PAGE_SIZE;
+		ssize_t newPages = (vm->virt - addr) / PAGE_SIZE;
 		if(newPages > 0)
 			return vmm_grow(t->proc,t->stackRegion,newPages);
 	}
 	return 0;
 }
 
-s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
-	u32 oldSize,oldVirt,virt;
+ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
+	size_t oldSize;
+	uintptr_t oldVirt,virt;
 	sVMRegion *vm;
 
 	vm = REG(p,reg);
-	assert(p && reg >= 0 && reg < (s32)p->regSize && vm != NULL);
+	assert(p && reg >= 0 && reg < (tVMRegNo)p->regSize && vm != NULL);
 	assert((vm->reg->flags & RF_GROWABLE) && !(vm->reg->flags & RF_SHAREABLE));
 
 	/* check wether we've reached the max stack-pages */
@@ -665,7 +670,7 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 					return ERR_NOT_ENOUGH_MEM;
 			}
 			else {
-				u32 end = oldVirt + ROUNDUP(vm->reg->byteCount);
+				uintptr_t end = oldVirt + ROUNDUP(vm->reg->byteCount);
 				if(vmm_isOccupied(p,end,end + amount * PAGE_SIZE))
 					return ERR_NOT_ENOUGH_MEM;
 			}
@@ -675,7 +680,7 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 
 		/* map / unmap pages */
 		if(amount > 0) {
-			u32 mapFlags = PG_PRESENT;
+			uint mapFlags = PG_PRESENT;
 			if(vm->reg->flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
 			/* stack-pages are added before the existing */
@@ -704,12 +709,12 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 	return ((vm->reg->flags & RF_STACK) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;
 }
 
-static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr) {
+static bool vmm_demandLoad(sVMRegion *vm,uint *flags,uintptr_t addr) {
 	bool res = false;
 	sThread *t = thread_getRunning();
 
 	/* calculate the number of bytes to load and zero */
-	u32 loadCount = 0, zeroCount;
+	size_t loadCount = 0, zeroCount;
 	if(addr - vm->virt < vm->reg->loadCount)
 		loadCount = MIN(PAGE_SIZE,vm->reg->loadCount - (addr - vm->virt));
 	else
@@ -747,15 +752,16 @@ static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr) {
 	return res;
 }
 
-static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
-	s32 err;
+static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t loadCount) {
+	int err;
 	tPid pid = t->proc->pid;
 	sFileInfo info;
 	void *tempBuf;
 	tFileNo file;
 	sSLNode *n;
-	u32 temp,frame;
-	u8 mapFlags;
+	tFrameNo frame;
+	uintptr_t temp;
+	uint mapFlags;
 
 	file = vfs_real_openInode(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
 	if(file < 0) {
@@ -828,16 +834,16 @@ error:
 	return false;
 }
 
-static u32 *vmm_getPageFlag(sVMRegion *reg,u32 addr) {
+static uint *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr) {
 	return reg->reg->pageFlags + (addr - reg->virt) / PAGE_SIZE;
 }
 
 static tVMRegNo vmm_findRegIndex(sProc *p,bool text) {
-	u32 j;
+	size_t j;
 	/* start behind the fix regions (text, rodata, bss and data) */
 	tVMRegNo i = text ? 0 : RNO_DATA + 1;
 	for(j = 0; j < 2; j++) {
-		for(; i < (s32)p->regSize; i++) {
+		for(; i < (tVMRegNo)p->regSize; i++) {
 			if(REG(p,i) == NULL)
 				return i;
 		}
@@ -849,8 +855,8 @@ static tVMRegNo vmm_findRegIndex(sProc *p,bool text) {
 	return -1;
 }
 
-static u32 vmm_findFreeStack(sProc *p,u32 byteCount) {
-	u32 addr,end;
+static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount) {
+	uintptr_t addr,end;
 	if(byteCount > (MAX_STACK_PAGES - 1) * PAGE_SIZE)
 		return 0;
 	end = vmm_getFirstUsableAddr(p,true);
@@ -862,8 +868,8 @@ static u32 vmm_findFreeStack(sProc *p,u32 byteCount) {
 	return 0;
 }
 
-static sVMRegion *vmm_isOccupied(sProc *p,u32 start,u32 end) {
-	u32 i;
+static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end) {
+	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *reg = REG(p,i);
 		if(reg != NULL) {
@@ -874,9 +880,9 @@ static sVMRegion *vmm_isOccupied(sProc *p,u32 start,u32 end) {
 	return NULL;
 }
 
-static u32 vmm_getFirstUsableAddr(sProc *p,bool textNData) {
-	u32 i;
-	u32 addr = 0;
+static uintptr_t vmm_getFirstUsableAddr(sProc *p,bool textNData) {
+	size_t i;
+	uintptr_t addr = 0;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *reg = REG(p,i);
 		if(reg != NULL && (!textNData || i <= RNO_DATA) && reg->virt + reg->reg->byteCount > addr)
@@ -885,8 +891,8 @@ static u32 vmm_getFirstUsableAddr(sProc *p,bool textNData) {
 	return ROUNDUP(addr);
 }
 
-static u32 vmm_findFreeAddr(sProc *p,u32 byteCount) {
-	u32 addr;
+static uintptr_t vmm_findFreeAddr(sProc *p,size_t byteCount) {
+	uintptr_t addr;
 	if(byteCount > FREE_AREA_END - FREE_AREA_BEGIN)
 		return 0;
 	for(addr = FREE_AREA_BEGIN; addr + byteCount < FREE_AREA_END; ) {
@@ -899,8 +905,8 @@ static u32 vmm_findFreeAddr(sProc *p,u32 byteCount) {
 	return 0;
 }
 
-static bool vmm_extendRegions(sProc *p,u32 i) {
-	u32 count = MAX(4,i * 2);
+static bool vmm_extendRegions(sProc *p,size_t i) {
+	size_t count = MAX(4,i * 2);
 	sVMRegion **regs = (sVMRegion **)kheap_realloc(p->regions,count * sizeof(sVMRegion*));
 	if(regs == NULL)
 		return false;
@@ -918,7 +924,8 @@ static void vmm_free(sVMRegion *vm) {
 	kheap_free(vm);
 }
 
-static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *virt,tVMRegNo *rno) {
+static int vmm_getAttr(sProc *p,uint type,size_t bCount,uint *pgFlags,uint *flags,
+		uintptr_t *virt,tVMRegNo *rno) {
 	*rno = 0;
 	switch(type) {
 		case REG_TEXT:
@@ -990,7 +997,7 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 	}
 	/* allocate / increase regions, if necessary */
 	if(p->regions == NULL || *rno >= (tVMRegNo)p->regSize) {
-		u32 count = MAX(4,*rno + 1);
+		size_t count = MAX(4,*rno + 1);
 		void *nr = kheap_realloc(p->regions,count * sizeof(sVMRegion*));
 		if(!nr)
 			return ERR_NOT_ENOUGH_MEM;
@@ -1027,7 +1034,7 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 }
 
 void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p) {
-	u32 i,c = 0;
+	size_t i,c = 0;
 	sVMRegion *reg;
 	for(i = 0; i < p->regSize; i++) {
 		reg = REG(p,i);
@@ -1047,11 +1054,11 @@ void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p) {
 
 void vmm_dbg_printShort(const sProc *p) {
 	sVMRegion *reg;
-	u32 i;
+	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		reg = REG(p,i);
 		if(reg != NULL) {
-			u32 start,end;
+			uintptr_t start,end;
 			vmm_getRegRange(p,i,&start,&end);
 			vid_printf("\t\t%08x .. %08x: ",start,end - 1);
 			reg_dbg_printFlags(reg->reg);

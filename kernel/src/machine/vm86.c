@@ -61,30 +61,30 @@
 
 #define DBGVM86(fmt...)		/*vid_printf(fmt)*/
 
-static u16 vm86_popw(sIntrptStackFrame *stack);
-static u32 vm86_popl(sIntrptStackFrame *stack);
-static void vm86_pushw(sIntrptStackFrame *stack,u16 word);
-static void vm86_pushl(sIntrptStackFrame *stack,u32 l);
+static uint16_t vm86_popw(sIntrptStackFrame *stack);
+static uint32_t vm86_popl(sIntrptStackFrame *stack);
+static void vm86_pushw(sIntrptStackFrame *stack,uint16_t word);
+static void vm86_pushl(sIntrptStackFrame *stack,uint32_t l);
 static void vm86_start(void);
 static void vm86_stop(sIntrptStackFrame *stack);
 static void vm86_copyRegResult(sIntrptStackFrame* stack);
-static void vm86_copyPtrResult(const sVM86Memarea *areas,u16 areaCount);
-static sVM86Info *vm86_createInfo(u16 interrupt,const sVM86Regs *regs,
-		const sVM86Memarea *areas,u16 areaCount);
+static void vm86_copyPtrResult(const sVM86Memarea *areas,size_t areaCount);
+static sVM86Info *vm86_createInfo(uint16_t interrupt,const sVM86Regs *regs,
+		const sVM86Memarea *areas,size_t areaCount);
 static void vm86_destroyInfo(sVM86Info *i);
 
-static u32 frameNos[(1024 * K) / PAGE_SIZE];
+static tFrameNo frameNos[(1024 * K) / PAGE_SIZE];
 static tTid vm86Tid = INVALID_TID;
 static tTid caller = INVALID_TID;
 static sVM86Info *info = NULL;
-static s32 vm86Res = -1;
+static int vm86Res = -1;
 
-s32 vm86_create(void) {
+int vm86_create(void) {
 	sProc *p;
 	sThread *t;
 	tPid pid;
-	u32 i,frameCount;
-	s32 res;
+	size_t i,frameCount;
+	int res;
 
 	pid = proc_getFreePid();
 	if(pid == INVALID_PID)
@@ -125,7 +125,7 @@ s32 vm86_create(void) {
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
 	if(p->ioMap == NULL)
-		p->ioMap = (u8*)kheap_alloc(IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)kheap_alloc(IO_MAP_SIZE / 8);
 	if(p->ioMap != NULL)
 		memset(p->ioMap,0x00,IO_MAP_SIZE / 8);
 
@@ -142,8 +142,8 @@ s32 vm86_create(void) {
 	return 0;
 }
 
-s32 vm86_int(u16 interrupt,sVM86Regs *regs,const sVM86Memarea *areas,u16 areaCount) {
-	u32 i;
+int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t areaCount) {
+	size_t i;
 	sThread *t;
 	sThread *vm86t;
 	volatile sVM86Info **volInfo;
@@ -202,8 +202,8 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,const sVM86Memarea *areas,u16 areaCou
 }
 
 bool vm86_handleGPF(sIntrptStackFrame *stack) {
-	u8 *ops = (u8*)(stack->eip + (stack->cs << 4));
-	u8 opCode;
+	uint8_t *ops = (uint8_t*)(stack->eip + (stack->cs << 4));
+	uint8_t opCode;
 	bool data32 = false;
 	bool pref_done = false;
 	do {
@@ -230,17 +230,17 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 
 	switch(opCode) {
 		case X86OP_INT: {
-			u16 *sp;
-			volatile u32 *ivt; /* has to be volatile to prevent llvm from optimizing it away */
-			u32 intno = *ops;
-			stack->uesp -= sizeof(u16) * 3;
-			sp = (u16*)(stack->uesp + (stack->uss << 4));
+			uint16_t *sp;
+			volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
+			uint32_t intno = *ops;
+			stack->uesp -= sizeof(uint16_t) * 3;
+			sp = (uint16_t*)(stack->uesp + (stack->uss << 4));
 			/* save eflags and ip on stack */
-			sp[0] = (u16)stack->eflags;
-			sp[1] = (u16)stack->cs;
-			sp[2] = (u16)stack->eip + 2;
+			sp[0] = (uint16_t)stack->eflags;
+			sp[1] = (uint16_t)stack->cs;
+			sp[2] = (uint16_t)stack->eip + 2;
 			/* set new ip */
-			ivt = (u32*)0;
+			ivt = (uint32_t*)0;
 			assert(intno < VM86_IVT_SIZE);
 			DBGVM86("[VM86] int 0x%x @ %x:%x -> %x:%x\n",intno,stack->cs,stack->eip + 2,
 					ivt[intno] >> 16,ivt[intno] & 0xFFFF);
@@ -249,7 +249,7 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 		}
 		break;
 		case X86OP_IRET: {
-			u32 newip,newcs,newflags;
+			uint32_t newip,newcs,newflags;
 			if(data32) {
 				newflags = vm86_popl(stack);
 				newcs = vm86_popl(stack);
@@ -280,7 +280,7 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 			if(data32)
 				vm86_pushl(stack,stack->eflags);
 			else
-				vm86_pushw(stack,(u16)stack->eflags);
+				vm86_pushw(stack,(uint16_t)stack->eflags);
 			stack->eip++;
 			break;
 		case X86OP_POPF:
@@ -325,37 +325,37 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 			stack->eip++;
 			break;
 		default:
-			util_panic("Invalid opcode (0x%x) @ 0x%x",opCode,(u32)(ops - 1));
+			util_panic("Invalid opcode (0x%x) @ 0x%x",opCode,(uintptr_t)(ops - 1));
 			break;
 	}
 	return true;
 }
 
-static u16 vm86_popw(sIntrptStackFrame *stack) {
-	u16 *sp = (u16*)(stack->uesp + (stack->uss << 4));
-	stack->uesp += sizeof(u16);
+static uint16_t vm86_popw(sIntrptStackFrame *stack) {
+	uint16_t *sp = (uint16_t*)(stack->uesp + (stack->uss << 4));
+	stack->uesp += sizeof(uint16_t);
 	return *sp;
 }
 
-static u32 vm86_popl(sIntrptStackFrame *stack) {
-	u32 *sp = (u32*)(stack->uesp + (stack->uss << 4));
-	stack->uesp += sizeof(u32);
+static uint32_t vm86_popl(sIntrptStackFrame *stack) {
+	uint32_t *sp = (uint32_t*)(stack->uesp + (stack->uss << 4));
+	stack->uesp += sizeof(uint32_t);
 	return *sp;
 }
 
-static void vm86_pushw(sIntrptStackFrame *stack,u16 word) {
-	stack->uesp -= sizeof(u16);
-	*((u16*)(stack->uesp + (stack->uss << 4))) = word;
+static void vm86_pushw(sIntrptStackFrame *stack,uint16_t word) {
+	stack->uesp -= sizeof(uint16_t);
+	*((uint16_t*)(stack->uesp + (stack->uss << 4))) = word;
 }
 
-static void vm86_pushl(sIntrptStackFrame *stack,u32 l) {
-	stack->uesp -= sizeof(u32);
-	*((u32*)(stack->uesp + (stack->uss << 4))) = l;
+static void vm86_pushl(sIntrptStackFrame *stack,uint32_t l) {
+	stack->uesp -= sizeof(uint32_t);
+	*((uint32_t*)(stack->uesp + (stack->uss << 4))) = l;
 }
 
 static void vm86_start(void) {
-	volatile u32 *ivt; /* has to be volatile to prevent llvm from optimizing it away */
-	u32 i,j,frameCnt;
+	volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
+	size_t i,j,frameCnt;
 	sIntrptStackFrame *istack;
 	assert(caller != INVALID_TID);
 	assert(info != NULL);
@@ -394,8 +394,8 @@ start:
 	 * it directly to the buffer of the calling process */
 	for(i = 0; i < info->areaCount; i++) {
 		if(info->areas[i].type == VM86_MEM_DIRECT) {
-			u32 start = info->areas[i].data.direct.dst / PAGE_SIZE;
-			u32 pages = BYTES_2_PAGES(info->areas[i].data.direct.size);
+			uintptr_t start = info->areas[i].data.direct.dst / PAGE_SIZE;
+			size_t pages = BYTES_2_PAGES(info->areas[i].data.direct.size);
 			for(j = 0; j < pages; j++)
 				frameNos[start + j] = mm_allocate();
 			paging_map(info->areas[i].data.direct.dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
@@ -408,7 +408,7 @@ start:
 	/* enable VM flag */
 	istack->eflags |= 1 << 17;
 	/* set entrypoint */
-	ivt = (u32*)0;
+	ivt = (uint32_t*)0;
 	istack->eip = ivt[info->interrupt] & 0xFFFF;
 	istack->cs = ivt[info->interrupt] >> 16;
 	/* segment registers */
@@ -453,16 +453,17 @@ static void vm86_copyRegResult(sIntrptStackFrame *stack) {
 	info->regs.es = stack->vm86es;
 }
 
-static void vm86_copyPtrResult(const sVM86Memarea *areas,u16 areaCount) {
-	u32 i;
+static void vm86_copyPtrResult(const sVM86Memarea *areas,size_t areaCount) {
+	size_t i;
 	for(i = 0; i < areaCount; i++) {
 		if(areas[i].type == VM86_MEM_PTR) {
-			u32 rmAddr = *(u32*)areas[i].data.ptr.srcPtr;
-			u32 virt = ((rmAddr & 0xFFFF0000) >> 12) | (rmAddr & 0xFFFF);
-			if(virt + areas[i].data.ptr.size > virt && virt + areas[i].data.ptr.size <= 1 * M + 64 * K) {
+			uintptr_t rmAddr = *(uintptr_t*)areas[i].data.ptr.srcPtr;
+			uintptr_t virt = ((rmAddr & 0xFFFF0000) >> 12) | (rmAddr & 0xFFFF);
+			if(virt + areas[i].data.ptr.size > virt &&
+					virt + areas[i].data.ptr.size <= 1 * M + 64 * K) {
 				if(frameNos[virt / PAGE_SIZE] != virt / PAGE_SIZE) {
-					u32 pcount = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.ptr.size);
-					u32 temp = paging_mapToTemp(frameNos + virt / PAGE_SIZE,pcount);
+					size_t pcount = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.ptr.size);
+					uintptr_t temp = paging_mapToTemp(frameNos + virt / PAGE_SIZE,pcount);
 					memcpy((void*)areas[i].data.ptr.result,
 							(void*)(temp + (virt & (PAGE_SIZE - 1))),
 							areas[i].data.ptr.size);
@@ -476,10 +477,10 @@ static void vm86_copyPtrResult(const sVM86Memarea *areas,u16 areaCount) {
 			}
 		}
 		else {
-			u32 start = areas[i].data.direct.dst / PAGE_SIZE;
-			u32 virt = (u32)areas[i].data.direct.src;
-			u32 pages = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.direct.size);
-			u32 temp = paging_mapToTemp(frameNos + start,pages);
+			uintptr_t start = areas[i].data.direct.dst / PAGE_SIZE;
+			uintptr_t virt = (uintptr_t)areas[i].data.direct.src;
+			size_t pages = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.direct.size);
+			uintptr_t temp = paging_mapToTemp(frameNos + start,pages);
 			memcpy((void*)virt,(void*)(temp + (virt & (PAGE_SIZE - 1))),
 					areas[i].data.direct.size);
 			paging_unmapFromTemp(pages);
@@ -487,8 +488,8 @@ static void vm86_copyPtrResult(const sVM86Memarea *areas,u16 areaCount) {
 	}
 }
 
-static sVM86Info *vm86_createInfo(u16 interrupt,const sVM86Regs *regs,
-		const sVM86Memarea *areas,u16 areaCount) {
+static sVM86Info *vm86_createInfo(uint16_t interrupt,const sVM86Regs *regs,
+		const sVM86Memarea *areas,size_t areaCount) {
 	sVM86Info *i = (sVM86Info*)kheap_alloc(sizeof(sVM86Info));
 	if(i == NULL)
 		return NULL;

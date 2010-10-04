@@ -28,9 +28,9 @@
 #include <errors.h>
 
 void sysc_changeSize(sIntrptStackFrame *stack) {
-	s32 count = SYSC_ARG1(stack);
+	ssize_t count = SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
-	s32 oldEnd;
+	ssize_t oldEnd;
 	tVMRegNo rno = RNO_DATA;
 	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
 	if(!vmm_exists(p,rno)) {
@@ -46,17 +46,17 @@ void sysc_changeSize(sIntrptStackFrame *stack) {
 
 void sysc_addRegion(sIntrptStackFrame *stack) {
 	sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
-	u32 binOffset = SYSC_ARG2(stack);
-	u32 byteCount = SYSC_ARG3(stack);
-	u32 loadCount = SYSC_ARG4(stack);
-	u8 type = (u8)SYSC_ARG5(stack);
+	uintptr_t binOffset = SYSC_ARG2(stack);
+	size_t byteCount = SYSC_ARG3(stack);
+	size_t loadCount = SYSC_ARG4(stack);
+	uint type = SYSC_ARG5(stack);
 	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
 	tVMRegNo rno = -1;
-	u32 start;
+	uintptr_t start;
 
 	/* check bin */
-	if(bin != NULL && !paging_isRangeUserReadable((u32)bin,sizeof(sBinDesc)))
+	if(bin != NULL && !paging_isRangeUserReadable((uintptr_t)bin,sizeof(sBinDesc)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check type */
@@ -101,11 +101,11 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 
 void sysc_setRegProt(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
-	u32 addr = SYSC_ARG1(stack);
-	u8 prot = (u8)SYSC_ARG2(stack);
-	u8 flags = 0;
+	uintptr_t addr = SYSC_ARG1(stack);
+	uint prot = (uint)SYSC_ARG2(stack);
+	uint flags = 0;
 	tVMRegNo rno;
-	s32 res;
+	int res;
 
 	if(!(prot & (PROT_WRITE | PROT_READ)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -123,15 +123,15 @@ void sysc_setRegProt(sIntrptStackFrame *stack) {
 }
 
 void sysc_mapPhysical(sIntrptStackFrame *stack) {
-	u32 *phys = (u32*)SYSC_ARG1(stack);
-	u32 bytes = SYSC_ARG2(stack);
-	u32 align = SYSC_ARG3(stack);
-	u32 pages = BYTES_2_PAGES(bytes);
+	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
+	size_t bytes = SYSC_ARG2(stack);
+	size_t align = SYSC_ARG3(stack);
+	size_t pages = BYTES_2_PAGES(bytes);
 	sProc *p = proc_getRunning();
-	u32 addr;
+	uintptr_t addr;
 
 	/* check phys */
-	if(!paging_isRangeUserReadable((u32)phys,sizeof(u32)))
+	if(!paging_isRangeUserReadable((uintptr_t)phys,sizeof(uintptr_t)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* trying to map memory in kernel area? */
@@ -149,9 +149,9 @@ void sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 void sysc_createSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
-	u32 byteCount = SYSC_ARG2(stack);
+	size_t byteCount = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
+	int res;
 
 	if(!sysc_isStringReadable(name) || byteCount == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -165,7 +165,7 @@ void sysc_createSharedMem(sIntrptStackFrame *stack) {
 void sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
+	int res;
 
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -179,7 +179,7 @@ void sysc_joinSharedMem(sIntrptStackFrame *stack) {
 void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
+	int res;
 
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -193,7 +193,7 @@ void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 void sysc_destroySharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
+	int res;
 
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);

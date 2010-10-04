@@ -31,16 +31,16 @@
 typedef struct {
 	tTid tid;
 	sVFSNode *node;
-	u8 state;
-	u32 val1;
-	u32 val2;
-	u32 count;
+	uint8_t state;
+	uint val1;
+	uint val2;
+	uint count;
 	void *data;
-	u32 dsize;
+	size_t dsize;
 } sRequest;
 
 /* a request-handler */
-typedef void (*fReqHandler)(sVFSNode *node,const void *data,u32 size);
+typedef void (*fReqHandler)(sVFSNode *node,const void *data,size_t size);
 
 /**
  * Inits the vfs-requests
@@ -64,7 +64,7 @@ bool vfs_req_setHandler(tMsgId id,fReqHandler f);
  * @param data the message
  * @param size the size of the message
  */
-void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,u32 size);
+void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,size_t size);
 
 /**
  * Allocates a new request-object with given properties
@@ -74,7 +74,7 @@ void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,u32 size);
  * @param size optional, the buffer-size (stored in dsize)
  * @return the request or NULL if not enough mem
  */
-sRequest *vfs_req_getRequest(sVFSNode *node,void *buffer,u32 size);
+sRequest *vfs_req_getRequest(sVFSNode *node,void *buffer,size_t size);
 
 /**
  * Waits for the given request. You may get interrupted even if you don't allow signals since

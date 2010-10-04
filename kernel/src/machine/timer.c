@@ -52,19 +52,19 @@
 typedef struct {
 	tTid tid;
 	/* difference to the previous listener */
-	u32 time;
+	tTime time;
 } sTimerListener;
 
 /* processes that should be waked up to a specified time */
 static sSLList *listener = NULL;
 /* total elapsed milliseconds */
-static u64 elapsedMsecs = 0;
-static u64 lastResched = 0;
-static u32 timerIntrpts = 0;
+static tTime elapsedMsecs = 0;
+static tTime lastResched = 0;
+static size_t timerIntrpts = 0;
 
 void timer_init(void) {
 	/* change timer divisor */
-	u16 freq = TIMER_BASE_FREQUENCY / TIMER_FREQUENCY;
+	uint freq = TIMER_BASE_FREQUENCY / TIMER_FREQUENCY;
 	util_outByte(IOPORT_TIMER_CTRL,TIMER_CTRL_CNT0 | TIMER_CTRL_RWLOHI |
 			TIMER_CTRL_MODE2 | TIMER_CTRL_CNTBIN16);
 	util_outByte(IOPORT_TIMER_CNTDIV,freq & 0xFF);
@@ -76,16 +76,16 @@ void timer_init(void) {
 		util_panic("Not enough mem for timer-listener");
 }
 
-u32 timer_getIntrptCount(void) {
+size_t timer_getIntrptCount(void) {
 	return timerIntrpts;
 }
 
-u64 timer_getTimestamp(void) {
+tTime timer_getTimestamp(void) {
 	return elapsedMsecs;
 }
 
-s32 timer_sleepFor(tTid tid,u32 msecs) {
-	u32 msecDiff;
+int timer_sleepFor(tTid tid,tTime msecs) {
+	tTime msecDiff;
 	sSLNode *n,*p;
 	sTimerListener *nl,*l = (sTimerListener*)kheap_alloc(sizeof(sTimerListener));
 	if(l == 0)
@@ -147,7 +147,7 @@ void timer_intrpt(void) {
 	bool foundThread = false;
 	sSLNode *n,*tn;
 	sTimerListener *l;
-	u32 timeInc = 1000 / TIMER_FREQUENCY;
+	tTime timeInc = 1000 / TIMER_FREQUENCY;
 
 	timerIntrpts++;
 	elapsedMsecs += timeInc;
@@ -182,7 +182,7 @@ void timer_intrpt(void) {
 #if DEBUGGING
 
 void timer_dbg_print(void) {
-	u32 time;
+	tTime time;
 	sSLNode *n = sll_begin(listener);
 	sTimerListener *l;
 	if(n != NULL) {

@@ -35,7 +35,7 @@ void cow_init(void);
  * @param address the address
  * @return the number of frames that should be added to the current process
  */
-u32 cow_pagefault(u32 address);
+size_t cow_pagefault(uintptr_t address);
 
 /**
  * Adds the given frame and process to the cow-list.
@@ -44,7 +44,7 @@ u32 cow_pagefault(u32 address);
  * @param frameNo the frame-number
  * @return true if successfull
  */
-bool cow_add(const sProc *p,u32 frameNo);
+bool cow_add(const sProc *p,tFrameNo frameNo);
 
 /**
  * Removes the given process and frame from the cow-list
@@ -54,14 +54,14 @@ bool cow_add(const sProc *p,u32 frameNo);
  * @param foundOther will be set to true if another process still uses the frame
  * @return the number of frames to remove from <p>
  */
-u32 cow_remove(const sProc *p,u32 frameNo,bool *foundOther);
+size_t cow_remove(const sProc *p,tFrameNo frameNo,bool *foundOther);
 
 /**
  * Note that this is intended for debugging or similar only! (not very efficient)
  *
  * @return the number of different frames that are in the cow-list
  */
-u32 cow_getFrmCount(void);
+size_t cow_getFrmCount(void);
 
 #if DEBUGGING
 

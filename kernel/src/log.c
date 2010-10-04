@@ -39,15 +39,16 @@
 #define DUMMY_STDIN		"/system/stdin"
 
 static void log_printc(char c);
-static u8 log_pipePad(void);
+static uchar log_pipePad(void);
 static void log_escape(const char **str);
-static s32 log_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,u32 offset,u32 count);
+static ssize_t log_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,
+		uint offset,size_t count);
 static void log_flush(void);
 
 /* don't use a heap here to prevent problems */
 static char buf[BUF_SIZE];
-static u32 bufPos;
-static u32 col = 0;
+static uint bufPos;
+static uint col = 0;
 
 static bool logToSer = true;
 static tFileNo logFile;
@@ -136,19 +137,20 @@ static void log_printc(char c) {
 	}
 }
 
-static u8 log_pipePad(void) {
+static uchar log_pipePad(void) {
 	return VID_COLS - col;
 }
 
 static void log_escape(const char **str) {
-	s32 n1,n2,n3;
+	int n1,n2,n3;
 	escc_get(str,&n1,&n2,&n3);
 }
 
-static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count) {
+static ssize_t log_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
+		uint offset,size_t count) {
 	if(conf_get(CONF_LOG_TO_COM1) && logToSer) {
 		char *str = (char*)buffer;
-		u32 i;
+		size_t i;
 		for(i = 0; i < count; i++) {
 			char c = str[i];
 			/* write to COM1 (some chars make no sense here) */

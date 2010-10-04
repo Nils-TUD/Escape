@@ -67,6 +67,26 @@ typedef u8 tSig;
 /* msg-id */
 typedef u32 tMsgId;
 typedef u32 tEvObj;
+typedef u32 tTime;
+
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+typedef unsigned int uint;
+typedef unsigned long ulong;
+typedef signed long long llong;
+typedef unsigned long long ullong;
+
+typedef u8 uint8_t;
+typedef s8 int8_t;
+typedef u16 uint16_t;
+typedef s16 int16_t;
+typedef u32 uint32_t;
+typedef s32 int32_t;
+typedef u64 uint64_t;
+typedef s64 int64_t;
+
+typedef s32 intptr_t;
+typedef u32 uintptr_t;
 
 #ifdef __cplusplus
 namespace std {

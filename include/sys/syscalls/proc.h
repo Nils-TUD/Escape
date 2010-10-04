@@ -48,7 +48,7 @@ void sysc_fork(sIntrptStackFrame *stack);
  * Waits until a child has terminated
  *
  * @param sExitState* will be filled with information about the terminated process
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_waitChild(sIntrptStackFrame *stack);
 
@@ -62,18 +62,18 @@ void sysc_exec(sIntrptStackFrame *stack);
 /**
  * Requests some IO-ports
  *
- * @param u16 start-port
- * @param u16 number of ports
- * @return s32 0 if successfull or a negative error-code
+ * @param uint16_t start-port
+ * @param size_t number of ports
+ * @return int 0 if successfull or a negative error-code
  */
 void sysc_requestIOPorts(sIntrptStackFrame *stack);
 
 /**
  * Releases some IO-ports
  *
- * @param u16 start-port
- * @param u16 number of ports
- * @return s32 0 if successfull or a negative error-code
+ * @param uint16_t start-port
+ * @param size_t number of ports
+ * @return int 0 if successfull or a negative error-code
  */
 void sysc_releaseIOPorts(sIntrptStackFrame *stack);
 
@@ -81,9 +81,9 @@ void sysc_releaseIOPorts(sIntrptStackFrame *stack);
  * Returns the environment-variable-name with index i. Or an error if there is none.
  *
  * @param char* the buffer to write the name to
- * @param u32 the size of the buffer
- * @param u32 the index of the variable
- * @return s32 the length of the name on success
+ * @param size_t the size of the buffer
+ * @param size_t the index of the variable
+ * @return ssize_t the length of the name on success
  */
 void sysc_getenvito(sIntrptStackFrame *stack);
 
@@ -91,9 +91,9 @@ void sysc_getenvito(sIntrptStackFrame *stack);
  * Returns the value of the environment-variable with given name
  *
  * @param char* the buffer to write the name to
- * @param u32 the size of the buffer
+ * @param size_t the size of the buffer
  * @param const char* the name
- * @return s32 the length of the value on success
+ * @return ssize_t the length of the value on success
  */
 void sysc_getenvto(sIntrptStackFrame *stack);
 
@@ -102,7 +102,7 @@ void sysc_getenvto(sIntrptStackFrame *stack);
  *
  * @param const char* the name
  * @param const char* the value
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_setenv(sIntrptStackFrame *stack);
 
@@ -111,11 +111,11 @@ void sysc_setenv(sIntrptStackFrame *stack);
  * registers are set correspondingly and the tasks starts at the handler for the given interrupt.
  * As soon as the interrupt is finished the result is copied into the registers
  *
- * @param u16 the interrupt-number
+ * @param uint16_t the interrupt-number
  * @param sVM86Regs* the registers
  * @param sVM86Memarea* the memareas (may be NULL)
- * @param u16 mem-area count
- * @return 0 on success
+ * @param size_t mem-area count
+ * @return int 0 on success
  */
 void sysc_vm86int(sIntrptStackFrame *stack);
 

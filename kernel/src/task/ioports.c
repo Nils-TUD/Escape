@@ -26,9 +26,9 @@
 #include <errors.h>
 #include <string.h>
 
-s32 ioports_request(sProc *p,u16 start,u16 count) {
+int ioports_request(sProc *p,uint16_t start,size_t count) {
 	if(p->ioMap == NULL) {
-		p->ioMap = (u8*)kheap_alloc(IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)kheap_alloc(IO_MAP_SIZE / 8);
 		if(p->ioMap == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 		/* mark all as disallowed */
@@ -48,7 +48,7 @@ s32 ioports_request(sProc *p,u16 start,u16 count) {
 	return 0;
 }
 
-s32 ioports_release(sProc *p,u16 start,u16 count) {
+int ioports_release(sProc *p,uint16_t start,size_t count) {
 	if(p->ioMap == NULL)
 		return ERR_IOMAP_NOT_PRESENT;
 
@@ -68,8 +68,8 @@ s32 ioports_release(sProc *p,u16 start,u16 count) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void ioports_dbg_print(u8 *map) {
-	u32 i,j,c = 0;
+void ioports_dbg_print(uint8_t *map) {
+	size_t i,j,c = 0;
 	vid_printf("Reserved IO-ports:\n\t");
 	for(i = 0; i < IO_MAP_SIZE / 8; i++) {
 		for(j = 0; j < 8; j++) {

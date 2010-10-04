@@ -34,39 +34,39 @@
 #define ELF_TYPE_PROG		0
 #define ELF_TYPE_INTERP		1
 
-static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info);
-static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8 type);
+static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info);
+static int elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,uint type);
 
-s32 elf_loadFromFile(const char *path,sStartupInfo *info) {
+int elf_loadFromFile(const char *path,sStartupInfo *info) {
 	return elf_doLoadFromFile(path,ELF_TYPE_PROG,info);
 }
 
-s32 elf_loadFromMem(const void *code,u32 length,sStartupInfo *info) {
-	u32 loadSegNo = 0;
-	u32 j;
-	u8 const *datPtr;
+int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
+	size_t j,loadSegNo = 0;
+	uint8_t const *datPtr;
 	Elf32_Ehdr *eheader = (Elf32_Ehdr*)code;
 	Elf32_Phdr *pheader = NULL;
 
 	/* check magic */
-	if(eheader->e_ident.dword != *(u32*)ELFMAG)
+	if(eheader->e_ident.dword != *(uint32_t*)ELFMAG)
 		return ERR_INVALID_ELF_BIN;
 
 	/* load the LOAD segments. */
-	datPtr = (u8 const*)((u8*)code + eheader->e_phoff);
+	datPtr = (uint8_t const*)((uintptr_t)code + eheader->e_phoff);
 	for(j = 0; j < eheader->e_phnum; datPtr += eheader->e_phentsize, j++) {
 		pheader = (Elf32_Phdr*)datPtr;
 		/* check if all stuff is in the binary */
-		if((u8*)pheader + sizeof(Elf32_Phdr) >= (u8*)code + length)
+		if((uintptr_t)pheader + sizeof(Elf32_Phdr) >= (uintptr_t)code + length)
 			return ERR_INVALID_ELF_BIN;
 
 		if(pheader->p_type == PT_LOAD) {
-			if(pheader->p_vaddr + pheader->p_filesz >= (u32)((u8*)code + length))
+			if(pheader->p_vaddr + pheader->p_filesz >= (uintptr_t)code + length)
 				return ERR_INVALID_ELF_BIN;
 			if(elf_addSegment(NULL,pheader,loadSegNo,ELF_TYPE_PROG) < 0)
 				return ERR_INVALID_ELF_BIN;
 			/* copy the data and zero the rest, if necessary */
-			memcpy((void*)pheader->p_vaddr,(u8*)code + pheader->p_offset,pheader->p_filesz);
+			memcpy((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
+					pheader->p_filesz);
 			memclear((void*)(pheader->p_vaddr + pheader->p_filesz),
 					pheader->p_memsz - pheader->p_filesz);
 			loadSegNo++;
@@ -77,12 +77,12 @@ s32 elf_loadFromMem(const void *code,u32 length,sStartupInfo *info) {
 	return 0;
 }
 
-static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
+static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
 	tFileNo file;
-	u32 j,loadSeg = 0;
-	u8 const *datPtr;
+	size_t j,loadSeg = 0;
+	uint8_t const *datPtr;
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
 	sFileInfo finfo;
@@ -104,7 +104,7 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 		goto failed;
 
 	/* check magic */
-	if(eheader.e_ident.dword != *(u32*)ELFMAG)
+	if(eheader.e_ident.dword != *(uint32_t*)ELFMAG)
 		goto failed;
 
 	/* by default set the same; the dl will overwrite it when needed */
@@ -114,17 +114,17 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 		info->linkerEntry = eheader.e_entry;
 
 	/* load the LOAD segments. */
-	datPtr = (u8 const*)(eheader.e_phoff);
+	datPtr = (uint8_t const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
-		if(vfs_seek(p->pid,file,(u32)datPtr,SEEK_SET) < 0)
+		if(vfs_seek(p->pid,file,(int)datPtr,SEEK_SET) < 0)
 			goto failed;
 		/* read pheader */
 		if(vfs_readFile(p->pid,file,&pheader,sizeof(Elf32_Phdr)) != sizeof(Elf32_Phdr))
 			goto failed;
 
 		if(pheader.p_type == PT_INTERP) {
-			s32 res;
+			int res;
 			char *interpName;
 			/* has to be the first segment and is not allowed for the dynamic linker */
 			if(loadSeg > 0 || type != ELF_TYPE_PROG)
@@ -137,7 +137,7 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 				kheap_free(interpName);
 				goto failed;
 			}
-			if(vfs_readFile(p->pid,file,interpName,pheader.p_filesz) != (s32)pheader.p_filesz) {
+			if(vfs_readFile(p->pid,file,interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
 				kheap_free(interpName);
 				goto failed;
 			}
@@ -149,15 +149,15 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 		}
 
 		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
-			s32 stype;
+			int stype;
 			stype = elf_addSegment(&bindesc,&pheader,loadSeg,type);
 			if(stype < 0)
 				goto failed;
 			if(stype == REG_TLS) {
-				u32 tlsStart,tlsEnd;
+				uintptr_t tlsStart,tlsEnd;
 				vmm_getRegRange(p,t->tlsRegion,&tlsStart,&tlsEnd);
 				/* read tdata */
-				if(vfs_seek(p->pid,file,(u32)pheader.p_offset,SEEK_SET) < 0)
+				if(vfs_seek(p->pid,file,(int)pheader.p_offset,SEEK_SET) < 0)
 					goto failed;
 				if(vfs_readFile(p->pid,file,(void*)tlsStart,pheader.p_filesz) < 0)
 					goto failed;
@@ -176,10 +176,9 @@ failed:
 	return ERR_INVALID_ELF_BIN;
 }
 
-static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8 type) {
+static int elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,uint type) {
 	sThread *t = thread_getRunning();
-	u8 stype;
-	s32 res;
+	int stype,res;
 	/* determine type */
 	if(loadSegNo == 0) {
 		/* dynamic linker has a special entrypoint */

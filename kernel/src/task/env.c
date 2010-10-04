@@ -26,15 +26,15 @@
 #include <string.h>
 
 typedef struct {
-	u8 dup;			/* whether this is a duplicate of a parent-var */
+	uint8_t dup;		/* whether this is a duplicate of a parent-var */
 	char *name;
 	char *value;
 } sEnvVar;
 
-static sEnvVar *env_getiOf(sProc *p,u32 *index);
+static sEnvVar *env_getiOf(sProc *p,size_t *index);
 static sEnvVar *env_getOf(sProc *p,const char *name);
 
-const char *env_geti(tPid pid,u32 index) {
+const char *env_geti(tPid pid,size_t index) {
 	sProc *p = proc_getByPid(pid);
 	sEnvVar *var;
 	while(1) {
@@ -130,7 +130,7 @@ void env_removeFor(tPid pid) {
 	}
 }
 
-static sEnvVar *env_getiOf(sProc *p,u32 *index) {
+static sEnvVar *env_getiOf(sProc *p,size_t *index) {
 	sSLNode *n;
 	sEnvVar *e = NULL;
 	if(!p->env)
@@ -159,7 +159,7 @@ static sEnvVar *env_getOf(sProc *p,const char *name) {
 #if DEBUGGING
 
 void env_dbg_printAllOf(tPid pid) {
-	u32 i;
+	size_t i;
 	for(i = 0; ; i++) {
 		const char *name = env_geti(pid,i);
 		if(!name)

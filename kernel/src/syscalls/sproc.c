@@ -38,7 +38,7 @@
 #include <errors.h>
 #include <string.h>
 
-static s32 sysc_copyEnv(const char *src,char *dst,u32 size);
+static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size);
 
 void sysc_getpid(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
@@ -58,7 +58,7 @@ void sysc_getppid(sIntrptStackFrame *stack) {
 
 void sysc_fork(sIntrptStackFrame *stack) {
 	tPid newPid = proc_getFreePid();
-	s32 res;
+	int res;
 
 	/* no free slot? */
 	if(newPid == INVALID_PID)
@@ -80,11 +80,11 @@ void sysc_fork(sIntrptStackFrame *stack) {
 void sysc_waitChild(sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
 	sSLNode *n;
-	s32 res;
+	int res;
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 
-	if(state != NULL && !paging_isRangeUserWritable((u32)state,sizeof(sExitState)))
+	if(state != NULL && !paging_isRangeUserWritable((uintptr_t)state,sizeof(sExitState)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(!proc_hasChild(t->proc->pid))
 		SYSC_ERROR(stack,ERR_NO_CHILD);
@@ -118,13 +118,13 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 }
 
 void sysc_requestIOPorts(sIntrptStackFrame *stack) {
-	u16 start = SYSC_ARG1(stack);
-	u16 count = SYSC_ARG2(stack);
+	uint16_t start = SYSC_ARG1(stack);
+	size_t count = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
-	s32 err;
+	int err;
 
 	/* check range */
-	if(count == 0 || (u32)start + (u32)count > 0xFFFF)
+	if(count == 0 || (uint32_t)start + (uint32_t)count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	err = ioports_request(p,start,count);
@@ -136,13 +136,13 @@ void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 }
 
 void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
-	u16 start = SYSC_ARG1(stack);
-	u16 count = SYSC_ARG2(stack);
+	uint16_t start = SYSC_ARG1(stack);
+	size_t count = SYSC_ARG2(stack);
 	sProc *p;
-	s32 err;
+	int err;
 
 	/* check range */
-	if(count == 0 || (u32)start + (u32)count > 0xFFFF)
+	if(count == 0 || (uint32_t)start + (uint32_t)count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	p = proc_getRunning();
@@ -156,10 +156,10 @@ void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 
 void sysc_getenvito(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
-	u32 size = SYSC_ARG2(stack);
-	u32 index = SYSC_ARG3(stack);
+	size_t size = SYSC_ARG2(stack);
+	size_t index = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
+	ssize_t res;
 
 	const char *name = env_geti(p->pid,index);
 	if(name == NULL)
@@ -173,10 +173,10 @@ void sysc_getenvito(sIntrptStackFrame *stack) {
 
 void sysc_getenvto(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
-	u32 size = SYSC_ARG2(stack);
+	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
+	ssize_t res;
 
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -210,10 +210,11 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
 	char *argBuffer;
 	sStartupInfo info;
-	s32 argc,pathLen,res;
-	u32 argSize;
 	tInodeNo nodeNo;
 	sProc *p = proc_getRunning();
+	ssize_t pathLen;
+	size_t argSize;
+	int argc,res;
 
 	argc = 0;
 	argBuffer = NULL;
@@ -267,7 +268,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
 	 * so that he can load it including all shared libraries */
 	if(info.linkerEntry != info.progEntry) {
-		u32 *esp = (u32*)stack->uesp;
+		uint32_t *esp = (uint32_t*)stack->uesp;
 		tFileNo file;
 		tFD fd = proc_getFreeFd();
 		if(fd < 0)
@@ -277,7 +278,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 			goto error;
 		assert(proc_assocFd(fd,file) == 0);
 		*--esp = fd;
-		stack->uesp = (u32)esp;
+		stack->uesp = (uintptr_t)esp;
 	}
 
 	kheap_free(argBuffer);
@@ -290,20 +291,20 @@ error:
 }
 
 void sysc_vm86int(sIntrptStackFrame *stack) {
-	s32 res;
-	u16 interrupt = (u16)SYSC_ARG1(stack);
+	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	sVM86Regs *regs = (sVM86Regs*)SYSC_ARG2(stack);
 	sVM86Memarea *mAreas = (sVM86Memarea*)SYSC_ARG3(stack);
-	u16 mAreaCount = (u16)SYSC_ARG4(stack);
+	size_t mAreaCount = (size_t)SYSC_ARG4(stack);
+	int res;
 
 	/* check args */
 	if(regs == NULL)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserWritable((u32)regs,sizeof(sVM86Regs)))
+	if(!paging_isRangeUserWritable((uint32_t)regs,sizeof(sVM86Regs)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(mAreas != NULL) {
-		u32 i;
-		if(!paging_isRangeUserReadable((u32)mAreas,sizeof(sVM86Memarea) * mAreaCount))
+		size_t i;
+		if(!paging_isRangeUserReadable((uint32_t)mAreas,sizeof(sVM86Memarea) * mAreaCount))
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
 		for(i = 0; i < mAreaCount; i++) {
 			/* ensure that just something from the real-mode-memory can be copied */
@@ -311,11 +312,13 @@ void sysc_vm86int(sIntrptStackFrame *stack) {
 				if(mAreas[i].data.direct.dst + mAreas[i].data.direct.size < mAreas[i].data.direct.dst ||
 					mAreas[i].data.direct.dst + mAreas[i].data.direct.size >= (1 * M + 64 * K))
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
-				if(!paging_isRangeUserWritable((u32)mAreas[i].data.direct.src,mAreas[i].data.direct.size))
+				if(!paging_isRangeUserWritable((uint32_t)mAreas[i].data.direct.src,
+						mAreas[i].data.direct.size)) {
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
+				}
 			}
 			else {
-				if(!paging_isRangeUserReadable((u32)mAreas[i].data.ptr.srcPtr,sizeof(u16*)))
+				if(!paging_isRangeUserReadable((uint32_t)mAreas[i].data.ptr.srcPtr,sizeof(void*)))
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
 				if(!paging_isRangeUserWritable(mAreas[i].data.ptr.result,mAreas[i].data.ptr.size))
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -332,9 +335,9 @@ void sysc_vm86int(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-static s32 sysc_copyEnv(const char *src,char *dst,u32 size) {
-	u32 len;
-	if(size == 0 || !paging_isRangeUserWritable((u32)dst,size))
+static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size) {
+	size_t len;
+	if(size == 0 || !paging_isRangeUserWritable((uintptr_t)dst,size))
 		return ERR_INVALID_ARGS;
 
 	/* copy to buffer */

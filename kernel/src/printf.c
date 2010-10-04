@@ -36,12 +36,12 @@
 /* the minimum space-increase-size in prf_aprintc() */
 #define SPRINTF_INC_SIZE	10
 
-static void prf_printnpad(sPrintEnv *env,s64 n,u8 pad,u16 flags);
-static void prf_printupad(sPrintEnv *env,u64 u,u8 base,u8 pad,u16 flags);
-static s32 prf_printpad(sPrintEnv *env,s32 count,u16 flags);
-static s32 prf_printu(sPrintEnv *env,u64 n,u8 base,char *chars);
-static s32 prf_printn(sPrintEnv *env,s64 n);
-static s32 prf_puts(sPrintEnv *env,const char *str);
+static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags);
+static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags);
+static int prf_printpad(sPrintEnv *env,int count,uint flags);
+static int prf_printu(sPrintEnv *env,ullong n,uint base,char *chars);
+static int prf_printn(sPrintEnv *env,llong n);
+static int prf_puts(sPrintEnv *env,const char *str);
 static void prf_aprintc(char c);
 
 static char hexCharsBig[] = "0123456789ABCDEF";
@@ -98,12 +98,10 @@ void prf_printf(sPrintEnv *env,const char *fmt,...) {
 void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 	char c,b;
 	char *s;
-	u8 pad;
-	s64 n;
-	u64 u;
-	u8 width,base;
+	llong n;
+	ullong u;
+	uint pad,width,base,flags;
 	bool readFlags;
-	u16 flags;
 
 	while(1) {
 		/* wait for a '%' */
@@ -146,7 +144,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 					fmt++;
 					break;
 				case '*':
-					pad = (u8)va_arg(ap, u32);
+					pad = va_arg(ap, uint);
 					fmt++;
 					break;
 				case '|':
@@ -182,18 +180,18 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 			case 'd':
 			case 'i':
 				if(flags & FFL_LONGLONG)
-					n = va_arg(ap, s64);
+					n = va_arg(ap, llong);
 				else
-					n = va_arg(ap, s32);
+					n = va_arg(ap, int);
 				prf_printnpad(env,n,pad,flags);
 				break;
 
 			/* pointer */
 			case 'p':
 				if(flags & FFL_LONGLONG)
-					u = va_arg(ap, u64);
+					u = va_arg(ap, ullong);
 				else
-					u = va_arg(ap, u32);
+					u = va_arg(ap, uint);
 				flags |= FFL_PADZEROS;
 				pad = 9;
 				prf_printupad(env,u >> 16,16,pad - 5,flags);
@@ -211,9 +209,9 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 				if(c == 'X')
 					flags |= FFL_CAPHEX;
 				if(flags & FFL_LONGLONG)
-					u = va_arg(ap, u64);
+					u = va_arg(ap, ullong);
 				else
-					u = va_arg(ap, u32);
+					u = va_arg(ap, uint);
 				prf_printupad(env,u,base,pad,flags);
 				break;
 
@@ -231,7 +229,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 
 			/* character */
 			case 'c':
-				b = (char)va_arg(ap, u32);
+				b = (char)va_arg(ap, uint);
 				env->print(b);
 				break;
 
@@ -242,11 +240,11 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 	}
 }
 
-static void prf_printnpad(sPrintEnv *env,s64 n,u8 pad,u16 flags) {
-	s32 count = 0;
+static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags) {
+	int count = 0;
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
-		u32 width = getlwidth(n);
+		size_t width = getlwidth(n);
 		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
 		count += prf_printpad(env,pad - width,flags);
@@ -269,11 +267,11 @@ static void prf_printnpad(sPrintEnv *env,s64 n,u8 pad,u16 flags) {
 		prf_printpad(env,pad - count,flags);
 }
 
-static void prf_printupad(sPrintEnv *env,u64 u,u8 base,u8 pad,u16 flags) {
-	s32 count = 0;
+static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags) {
+	int count = 0;
 	/* pad left - spaces */
 	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
-		u32 width = getulwidth(u,base);
+		size_t width = getulwidth(u,base);
 		count += prf_printpad(env,pad - width,flags);
 	}
 	/* print base-prefix */
@@ -290,7 +288,7 @@ static void prf_printupad(sPrintEnv *env,u64 u,u8 base,u8 pad,u16 flags) {
 	}
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
-		u32 width = getulwidth(u,base);
+		size_t width = getulwidth(u,base);
 		count += prf_printpad(env,pad - width,flags);
 	}
 	/* print number */
@@ -303,24 +301,24 @@ static void prf_printupad(sPrintEnv *env,u64 u,u8 base,u8 pad,u16 flags) {
 		prf_printpad(env,pad - count,flags);
 }
 
-static s32 prf_printpad(sPrintEnv *env,s32 count,u16 flags) {
-	s32 res = count;
+static int prf_printpad(sPrintEnv *env,int count,uint flags) {
+	int res = count;
 	char c = flags & FFL_PADZEROS ? '0' : ' ';
 	while(count-- > 0)
 		env->print(c);
 	return res;
 }
 
-static s32 prf_printu(sPrintEnv *env,u64 n,u8 base,char *chars) {
-	s32 res = 0;
+static int prf_printu(sPrintEnv *env,ullong n,uint base,char *chars) {
+	int res = 0;
 	if(n >= base)
 		res += prf_printu(env,n / base,base,chars);
 	env->print(chars[(n % base)]);
 	return res + 1;
 }
 
-static s32 prf_printn(sPrintEnv *env,s64 n) {
-	s32 res = 0;
+static int prf_printn(sPrintEnv *env,llong n) {
+	int res = 0;
 	if(n < 0) {
 		env->print('-');
 		n = -n;
@@ -333,7 +331,7 @@ static s32 prf_printn(sPrintEnv *env,s64 n) {
 	return res + 1;
 }
 
-static s32 prf_puts(sPrintEnv *env,const char *str) {
+static int prf_puts(sPrintEnv *env,const char *str) {
 	const char *begin = str;
 	char c;
 	while((c = *str)) {

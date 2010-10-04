@@ -29,24 +29,25 @@
 #include <errors.h>
 
 typedef struct {
-	u8 noReader;
+	uint8_t noReader;
 	/* total number of bytes available */
-	u32 total;
+	size_t total;
 	/* a list with sPipeData */
 	sSLList *list;
 } sPipe;
 
 typedef struct {
-	u32 length;
-	u32 offset;
-	u8 data[];
+	size_t length;
+	uint offset;
+	uint8_t data[];
 } sPipeData;
 
 static void vfs_pipe_destroy(sVFSNode *n);
 static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node);
-static s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count);
-static s32 vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
-		u32 offset,u32 count);
+static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,
+		size_t count);
+static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
+		uint offset,size_t count);
 
 sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent) {
 	sPipe *pipe;
@@ -110,10 +111,11 @@ static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node) {
 	}
 }
 
-static s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count) {
+static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,
+		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
-	s32 byteCount,total;
+	size_t byteCount,total;
 	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 	volatile sPipe *vpipe = pipe;
@@ -139,7 +141,7 @@ static s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,u32 o
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert(data->length >= (offset - data->offset),"Illegal offset");
 		byteCount = MIN(data->length - (offset - data->offset),count);
-		memcpy((u8*)buffer + total,data->data + (offset - data->offset),byteCount);
+		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
 		count -= byteCount;
 		total += byteCount;
 		/* remove if read completely */
@@ -172,8 +174,8 @@ static s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,u32 o
 	return total;
 }
 
-static s32 vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
-		u32 offset,u32 count) {
+static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
+		uint offset,size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
 	sPipeData *data;

@@ -32,7 +32,7 @@
 #include <string.h>
 #include <errors.h>
 
-static s32 sysc_doWait(sWaitObject *uobjects,u32 objCount);
+static int sysc_doWait(sWaitObject *uobjects,size_t objCount);
 
 void sysc_gettid(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
@@ -45,16 +45,16 @@ void sysc_getThreadCount(sIntrptStackFrame *stack) {
 }
 
 void sysc_startThread(sIntrptStackFrame *stack) {
-	u32 entryPoint = SYSC_ARG1(stack);
+	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
-	s32 res = proc_startThread(entryPoint,arg);
+	int res = proc_startThread(entryPoint,arg);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 void sysc_exit(sIntrptStackFrame *stack) {
-	s32 exitCode = (s32)SYSC_ARG1(stack);
+	int exitCode = (int)SYSC_ARG1(stack);
 	proc_destroyThread(exitCode);
 	thread_switch();
 	util_panic("We shouldn't get here...");
@@ -69,9 +69,9 @@ void sysc_getCycles(sIntrptStackFrame *stack) {
 }
 
 void sysc_sleep(sIntrptStackFrame *stack) {
-	u32 msecs = SYSC_ARG1(stack);
+	tTime msecs = SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
-	s32 res;
+	int res;
 	if((res = timer_sleepFor(t->tid,msecs)) < 0)
 		SYSC_ERROR(stack,res);
 	thread_switch();
@@ -90,12 +90,14 @@ void sysc_yield(sIntrptStackFrame *stack) {
 
 void sysc_wait(sIntrptStackFrame *stack) {
 	sWaitObject *uobjects = (sWaitObject*)SYSC_ARG1(stack);
-	u32 objCount = SYSC_ARG2(stack);
+	size_t objCount = SYSC_ARG2(stack);
+	int res;
 
-	if(objCount == 0 || !paging_isRangeUserReadable((u32)uobjects,objCount * sizeof(sWaitObject)))
+	if(objCount == 0 ||
+			!paging_isRangeUserReadable((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	s32 res = sysc_doWait(uobjects,objCount);
+	res = sysc_doWait(uobjects,objCount);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -103,13 +105,14 @@ void sysc_wait(sIntrptStackFrame *stack) {
 
 void sysc_waitUnlock(sIntrptStackFrame *stack) {
 	sWaitObject *uobjects = (sWaitObject*)SYSC_ARG1(stack);
-	u32 objCount = SYSC_ARG2(stack);
-	u32 ident = SYSC_ARG3(stack);
+	size_t objCount = SYSC_ARG2(stack);
+	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
+	int res;
 
-	if(objCount == 0 || !paging_isRangeUserReadable((u32)uobjects,objCount * sizeof(sWaitObject)))
+	if(objCount == 0 ||
+			!paging_isRangeUserReadable((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* release the lock */
@@ -126,7 +129,7 @@ void sysc_waitUnlock(sIntrptStackFrame *stack) {
 
 void sysc_notify(sIntrptStackFrame *stack) {
 	tTid tid = (tTid)SYSC_ARG1(stack);
-	u32 events = SYSC_ARG2(stack);
+	uint events = SYSC_ARG2(stack);
 
 	if((events & ~EV_USER_NOTIFY_MASK) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -135,25 +138,23 @@ void sysc_notify(sIntrptStackFrame *stack) {
 }
 
 void sysc_lock(sIntrptStackFrame *stack) {
-	u32 ident = SYSC_ARG1(stack);
+	uint ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
-	u16 flags = (u16)SYSC_ARG3(stack);
+	ushort flags = (uint)SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
 
-	res = lock_aquire(global ? INVALID_PID : p->pid,ident,flags);
+	int res = lock_aquire(global ? INVALID_PID : p->pid,ident,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 void sysc_unlock(sIntrptStackFrame *stack) {
-	u32 ident = SYSC_ARG1(stack);
+	uint ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
-	s32 res;
 
-	res = lock_release(global ? INVALID_PID : p->pid,ident);
+	int res = lock_release(global ? INVALID_PID : p->pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -204,10 +205,10 @@ void sysc_resume(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static s32 sysc_doWait(sWaitObject *uobjects,u32 objCount) {
+static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
 	sThread *t = thread_getRunning();
-	s32 res = ERR_INVALID_ARGS;
-	u32 i;
+	int res = ERR_INVALID_ARGS;
+	size_t i;
 	sWaitObject *kobjects = (sWaitObject*)kheap_alloc(objCount * sizeof(sWaitObject));
 	if(kobjects == NULL)
 		return ERR_NOT_ENOUGH_MEM;

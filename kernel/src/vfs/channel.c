@@ -42,11 +42,11 @@ typedef struct {
 
 typedef struct {
 	tMsgId id;
-	u32 length;
+	size_t length;
 } sMessage;
 
 static void vfs_chan_destroy(sVFSNode *n);
-static s32 vfs_chan_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence);
+static int vfs_chan_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence);
 static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node);
 
 sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
@@ -96,7 +96,7 @@ static void vfs_chan_destroy(sVFSNode *n) {
 	}
 }
 
-static s32 vfs_chan_seek(tPid pid,sVFSNode *node,s32 position,s32 offset,u32 whence) {
+static int vfs_chan_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence) {
 	UNUSED(pid);
 	UNUSED(node);
 	switch(whence) {
@@ -138,7 +138,7 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 	return sll_length(chan->sendList) > 0;
 }
 
-s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,u32 size) {
+ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,size_t size) {
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
@@ -167,7 +167,7 @@ s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,u
 		*list = sll_create();
 
 	/* create message and copy data to it */
-	msg = (sMessage*)kheap_alloc(sizeof(sMessage) + size * sizeof(u8));
+	msg = (sMessage*)kheap_alloc(sizeof(sMessage) + size);
 	if(msg == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -191,15 +191,15 @@ s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,u
 	return 0;
 }
 
-s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *data,u32 size) {
+ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *data,size_t size) {
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;
 	sMessage *msg;
-	u32 event;
-	s32 res;
+	size_t event;
+	ssize_t res;
 
 	/* wait until a message arrives */
 	if(vfs_isDriver(file)) {
@@ -254,11 +254,11 @@ static void vfs_chan_dbg_printMessage(void *m) {
 }
 
 void vfs_chan_dbg_print(const sVFSNode *n) {
-	u32 i;
+	size_t i;
 	sChannel *chan = (sChannel*)n->data;
 	sSLList *lists[] = {chan->sendList,chan->recvList};
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
-		u32 j,count = sll_length(lists[i]);
+		size_t j,count = sll_length(lists[i]);
 		vid_printf("\t\tChannel %s %s: (%d)\n",n->name,i ? "recvs" : "sends",count);
 		for(j = 0; j < count; j++)
 			vfs_chan_dbg_printMessage(sll_get(lists[i],j));

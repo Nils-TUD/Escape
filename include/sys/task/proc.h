@@ -49,23 +49,23 @@ typedef struct {
 	/* the signal that killed the process (SIG_COUNT if none) */
 	tSig signal;
 	/* exit-code the process gave us via exit() */
-	s32 exitCode;
+	int exitCode;
 	/* memory it has used */
-	u32 ownFrames;
-	u32 sharedFrames;
-	u32 swapped;
+	uint ownFrames;
+	uint sharedFrames;
+	uint swapped;
 	/* cycle-count */
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;
 	/* other stats */
-	u32 schedCount;
-	u32 syscalls;
+	uint schedCount;
+	uint syscalls;
 } sExitState;
 
 /* represents a process */
 typedef struct {
 	/* flags for vm86 and zombie */
-	u8 flags;
+	uint8_t flags;
 	/* process id (2^16 processes should be enough :)) */
 	tPid pid;
 	/* parent process id */
@@ -74,16 +74,16 @@ typedef struct {
 	tPageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.
 	 * paging-structures are counted, too */
-	u32 ownFrames;
+	uint ownFrames;
 	/* the number of frames the process uses, but maybe other processes as well */
-	u32 sharedFrames;
+	uint sharedFrames;
 	/* pages that are in swap */
-	u32 swapped;
+	uint swapped;
 	/* the regions */
-	u32 regSize;
+	size_t regSize;
 	void *regions;
 	/* the entrypoint of the binary */
-	u32 entryPoint;
+	uintptr_t entryPoint;
 	/* file descriptors: indices of the global file table */
 	tFileNo fileDescs[MAX_FD_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
@@ -93,9 +93,9 @@ typedef struct {
 	/* for the waiting parent */
 	sExitState *exitState;
 	/* the address of the sigRet "function" */
-	u32 sigRetAddr;
+	uintptr_t sigRetAddr;
 	/* the io-map (NULL by default) */
-	u8 *ioMap;
+	uint8_t *ioMap;
 	/* start-command */
 	char command[MAX_PROC_NAME_LEN + 1];
 	/* threads of this process */
@@ -104,8 +104,8 @@ typedef struct {
 	sVFSNode *threadDir;
 	struct {
 		/* I/O stats */
-		u32 input;
-		u32 output;
+		uint input;
+		uint output;
 	} stats;
 } sProc;
 
@@ -146,7 +146,7 @@ bool proc_exists(tPid pid);
 /**
  * @return the number of existing processes
  */
-u32 proc_getCount(void);
+size_t proc_getCount(void);
 
 /**
  * Returns the file-number for the given file-descriptor
@@ -170,7 +170,7 @@ tFD proc_getFreeFd(void);
  * @param fileNo the file-number
  * @return 0 on success
  */
-s32 proc_assocFd(tFD fd,tFileNo fileNo);
+int proc_assocFd(tFD fd,tFileNo fileNo);
 
 /**
  * Duplicates the given file-descriptor
@@ -187,7 +187,7 @@ tFD proc_dupFd(tFD fd);
  * @param dst the destination-file-descriptor
  * @return the error-code or 0 if successfull
  */
-s32 proc_redirFd(tFD src,tFD dst);
+int proc_redirFd(tFD src,tFD dst);
 
 /**
  * Releases the given file-descriptor (marks it unused)
@@ -221,7 +221,7 @@ sRegion *proc_getLRURegion(void);
  * @param dataOwn will point to the number of own bytes
  * @param dataReal will point to the number of really used bytes (considers sharing)
  */
-void proc_getMemUsage(u32 *paging,u32 *dataShared,u32 *dataOwn,u32 *dataReal);
+void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *dataReal);
 
 /**
  * Determines whether the given process has a child
@@ -240,7 +240,7 @@ bool proc_hasChild(tPid pid);
  * @param isVM86 true if it should be a VM86-task
  * @return -1 if an error occurred, 0 for parent, 1 for child
  */
-s32 proc_clone(tPid newPid,bool isVM86);
+int proc_clone(tPid newPid,bool isVM86);
 
 /**
  * Starts a new thread at given entry-point. Will clone the kernel-stack from the current thread
@@ -249,7 +249,7 @@ s32 proc_clone(tPid newPid,bool isVM86);
  * @param arg the argument
  * @return < 0 if an error occurred or the new tid
  */
-s32 proc_startThread(u32 entryPoint,const void *arg);
+int proc_startThread(uintptr_t entryPoint,const void *arg);
 
 /**
  * Destroys the current thread. If it's the only thread in the process, the complete process will
@@ -258,7 +258,7 @@ s32 proc_startThread(u32 entryPoint,const void *arg);
  *
  * @param exitCode the exit-code
  */
-void proc_destroyThread(s32 exitCode);
+void proc_destroyThread(int exitCode);
 
 /**
  * Removes all regions from the given process
@@ -275,7 +275,7 @@ void proc_removeRegions(sProc *p,bool remStack);
  * @param state the pointer to the state (may be NULL!)
  * @return the pid on success
  */
-s32 proc_getExitState(tPid ppid,sExitState *state);
+int proc_getExitState(tPid ppid,sExitState *state);
 
 /**
  * Marks the given process as zombie and notifies the waiting parent thread. As soon as the parent
@@ -285,7 +285,7 @@ s32 proc_getExitState(tPid ppid,sExitState *state);
  * @param exitCode the exit-code to store
  * @param signal the signal with which it was killed (SIG_COUNT if none)
  */
-void proc_terminate(sProc *p,s32 exitCode,tSig signal);
+void proc_terminate(sProc *p,int exitCode,tSig signal);
 
 /**
  * Kills the given process, that means all structures will be destroyed and the memory free'd.
@@ -306,7 +306,7 @@ void proc_kill(sProc *p);
  * @param fromUser whether the arguments are from user-space
  * @return the number of arguments on success or < 0
  */
-s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromUser);
+int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fromUser);
 
 /**
  * Setups the user-stack for given interrupt-stack of the current process
@@ -318,7 +318,7 @@ s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromU
  * @param info startup-info
  * @return true if successfull
  */
-bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,const char *args,u32 argsSize,
+bool proc_setupUserStack(sIntrptStackFrame *frame,int argc,const char *args,size_t argsSize,
 		const sStartupInfo *info);
 
 /**
@@ -327,7 +327,7 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,const char *args,u32 
  * @param frame the interrupt-stack-frame
  * @param entryPoint the entry-point for the thread
  */
-void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint);
+void proc_setupStart(sIntrptStackFrame *frame,uintptr_t entryPoint);
 
 #if DEBUGGING
 
@@ -357,7 +357,7 @@ void proc_dbg_printAllRegions(void);
  * @param parts the parts (see paging_dbg_printPageDirOf)
  * @param regions wether to print the regions too
  */
-void proc_dbg_printAllPDs(u8 parts,bool regions);
+void proc_dbg_printAllPDs(uint parts,bool regions);
 
 /**
  * Prints the given process

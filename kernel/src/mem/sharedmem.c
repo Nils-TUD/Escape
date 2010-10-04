@@ -65,9 +65,9 @@ void shm_init(void) {
 	assert(shareList != NULL);
 }
 
-s32 shm_create(sProc *p,const char *name,u32 pageCount) {
+ssize_t shm_create(sProc *p,const char *name,size_t pageCount) {
 	sShMem *mem;
-	u32 start;
+	uintptr_t start;
 	tVMRegNo reg;
 
 	/* checks */
@@ -103,8 +103,8 @@ errMem:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 shm_join(sProc *p,const char *name) {
-	u32 start;
+ssize_t shm_join(sProc *p,const char *name) {
+	uintptr_t start;
 	tVMRegNo reg;
 	sShMemUser *owner;
 	sShMem *mem = shm_get(name);
@@ -123,7 +123,7 @@ s32 shm_join(sProc *p,const char *name) {
 	return start / PAGE_SIZE;
 }
 
-s32 shm_leave(sProc *p,const char *name) {
+int shm_leave(sProc *p,const char *name) {
 	sShMem *mem = shm_get(name);
 	sShMemUser *user;
 	if(mem == NULL)
@@ -138,7 +138,7 @@ s32 shm_leave(sProc *p,const char *name) {
 	return 0;
 }
 
-s32 shm_destroy(sProc *p,const char *name) {
+int shm_destroy(sProc *p,const char *name) {
 	sShMem *mem = shm_get(name);
 	sSLNode *n;
 	if(mem == NULL)
@@ -160,17 +160,16 @@ s32 shm_destroy(sProc *p,const char *name) {
 	return 0;
 }
 
-s32 shm_cloneProc(const sProc *parent,sProc *child) {
-	s32 res;
+int shm_cloneProc(const sProc *parent,sProc *child) {
 	sSLNode *n;
 	for(n = sll_begin(shareList); n != NULL; n = n->next) {
 		sShMem *mem = (sShMem*)n->data;
 		sShMemUser *user = shm_getUser(mem,parent);
 		if(user) {
-			if((res = shm_addUser(mem,child,user->region)) < 0) {
+			if(!shm_addUser(mem,child,user->region)) {
 				/* remove all already created entries */
 				shm_remProc(child);
-				return res;
+				return ERR_NOT_ENOUGH_MEM;
 			}
 		}
 	}

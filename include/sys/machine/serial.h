@@ -38,6 +38,6 @@ void ser_init(void);
  * @param port the port
  * @param byte the byte
  */
-void ser_out(u16 port,u8 byte);
+void ser_out(uint16_t port,uint8_t byte);
 
 #endif /* SERIAL_H_ */

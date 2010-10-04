@@ -35,7 +35,7 @@ typedef void (*fSyscall)(sIntrptStackFrame *stack);
 /* for syscall-definitions */
 typedef struct {
 	fSyscall handler;
-	u8 argCount;
+	uchar argCount;
 } sSyscall;
 
 /* our syscalls */
@@ -110,8 +110,8 @@ static sSyscall syscalls[] = {
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
-	u32 argCount,ebxSave;
-	u32 sysCallNo = SYSC_NUMBER(stack);
+	uint argCount,ebxSave;
+	uint sysCallNo = SYSC_NUMBER(stack);
 	if(sysCallNo >= ARRAY_SIZE(syscalls))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
@@ -120,7 +120,7 @@ void sysc_handle(sIntrptStackFrame *stack) {
 	/* handle copy-on-write (the first 2 args are passed in registers) */
 	if(argCount > 2) {
 		/* if the arguments are not mapped, return an error */
-		if(!paging_isRangeUserWritable((u32)stack->uesp,sizeof(u32) * (argCount - 2)))
+		if(!paging_isRangeUserWritable((uintptr_t)stack->uesp,sizeof(uint) * (argCount - 2)))
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 
@@ -136,14 +136,15 @@ void sysc_handle(sIntrptStackFrame *stack) {
 }
 
 bool sysc_isStringReadable(const char *str) {
-	u32 addr,rem;
+	uintptr_t addr;
+	size_t rem;
 	/* null is a special case */
 	if(str == NULL)
 		return false;
 
 	/* check if it is readable */
-	addr = (u32)str & ~(PAGE_SIZE - 1);
-	rem = (addr + PAGE_SIZE) - (u32)str;
+	addr = (uintptr_t)str & ~(PAGE_SIZE - 1);
+	rem = (addr + PAGE_SIZE) - (uintptr_t)str;
 	while(paging_isRangeUserReadable(addr,PAGE_SIZE)) {
 		while(rem-- > 0 && *str)
 			str++;

@@ -27,7 +27,7 @@
  * to the user.
  *
  * @param const char* the vfs-filename
- * @param u32 flags (read / write)
+ * @param uint flags (read / write)
  * @return tFD the file-descriptor
  */
 void sysc_open(sIntrptStackFrame *stack);
@@ -36,9 +36,9 @@ void sysc_open(sIntrptStackFrame *stack);
  * Manipulates the given file-descriptor, depending on the command
  *
  * @param tFD the file-descriptor
- * @param u32 the command (F_GETFL or F_SETFL)
- * @param s32 the argument (just used for F_SETFL)
- * @return s32 >= 0 on success
+ * @param uint the command (F_GETFL or F_SETFL)
+ * @param int the argument (just used for F_SETFL)
+ * @return int >= 0 on success
  */
 void sysc_fcntl(sIntrptStackFrame *stack);
 
@@ -55,8 +55,8 @@ void sysc_pipe(sIntrptStackFrame *stack);
  * Determines the current file-position
  *
  * @param tFD file-descriptor
- * @param u32* file-position
- * @return s32 0 on success
+ * @param long* file-position
+ * @return int 0 on success
  */
 void sysc_tell(sIntrptStackFrame *stack);
 
@@ -72,9 +72,9 @@ void sysc_eof(sIntrptStackFrame *stack);
  * Changes the position in the given file
  *
  * @param tFD the file-descriptor
- * @param s32 the offset
- * @param u32 the seek-type
- * @return the new position on success
+ * @param int the offset
+ * @param uint the seek-type
+ * @return int the new position on success
  */
 void sysc_seek(sIntrptStackFrame *stack);
 
@@ -83,8 +83,8 @@ void sysc_seek(sIntrptStackFrame *stack);
  *
  * @param tFD file-descriptor
  * @param void* buffer
- * @param u32 number of bytes
- * @return u32 the number of read bytes
+ * @param size_t number of bytes
+ * @return ssize_t the number of read bytes
  */
 void sysc_read(sIntrptStackFrame *stack);
 
@@ -93,8 +93,8 @@ void sysc_read(sIntrptStackFrame *stack);
  *
  * @param tFD file-descriptor
  * @param void* buffer
- * @param u32 number of bytes
- * @return u32 the number of written bytes
+ * @param size_t number of bytes
+ * @return ssize_t the number of written bytes
  */
 void sysc_write(sIntrptStackFrame *stack);
 
@@ -111,7 +111,7 @@ void sysc_dupFd(sIntrptStackFrame *stack);
  *
  * @param tFD src the source-file-descriptor
  * @param tFD dst the destination-file-descriptor
- * @return s32 the error-code or 0 if successfull
+ * @return int the error-code or 0 if successfull
  */
 void sysc_redirFd(sIntrptStackFrame *stack);
 
@@ -127,9 +127,9 @@ void sysc_close(sIntrptStackFrame *stack);
  *
  * @param tFD the file-descriptor
  * @param tMsgId the msg-id
- * @param u8 * the data
- * @param u32 the size of the data
- * @return s32 0 on success
+ * @param void* the data
+ * @param size_t the size of the data
+ * @return ssize_t 0 on success
  */
 void sysc_send(sIntrptStackFrame *stack);
 
@@ -138,8 +138,8 @@ void sysc_send(sIntrptStackFrame *stack);
  *
  * @param tFD the file-descriptor
  * @param tMsgId the msg-id
- * @param u8 * the data
- * @return s32 the message-size on success
+ * @param void* the data
+ * @return ssize_t the message-size on success
  */
 void sysc_receive(sIntrptStackFrame *stack);
 
@@ -157,7 +157,7 @@ void sysc_isterm(sIntrptStackFrame *stack);
  *
  * @param const char* path the path of the file
  * @param tFileInfo* info will be filled
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_stat(sIntrptStackFrame *stack);
 
@@ -166,14 +166,14 @@ void sysc_stat(sIntrptStackFrame *stack);
  *
  * @param tFD the file-descriptor
  * @param tFileInfo* info will be filled
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_fstat(sIntrptStackFrame *stack);
 
 /**
  * Writes all dirty objects of the filesystem to disk
  *
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_sync(sIntrptStackFrame *stack);
 
@@ -182,7 +182,7 @@ void sysc_sync(sIntrptStackFrame *stack);
  *
  * @param char* the old path
  * @param char* the new path
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_link(sIntrptStackFrame *stack);
 
@@ -191,7 +191,7 @@ void sysc_link(sIntrptStackFrame *stack);
  * more references to the inode, it will be removed.
  *
  * @param char* path
- * @return 0 on success
+ * @return int 0 on success
  */
 void sysc_unlink(sIntrptStackFrame *stack);
 
@@ -199,7 +199,7 @@ void sysc_unlink(sIntrptStackFrame *stack);
  * Creates the given directory. Expects that all except the last path-component exist.
  *
  * @param char* the path
- * @return s32 0 on success
+ * @return ssize_t 0 on success
  */
 void sysc_mkdir(sIntrptStackFrame *stack);
 
@@ -207,7 +207,7 @@ void sysc_mkdir(sIntrptStackFrame *stack);
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
  *
  * @param char* the path
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_rmdir(sIntrptStackFrame *stack);
 
@@ -216,8 +216,8 @@ void sysc_rmdir(sIntrptStackFrame *stack);
  *
  * @param char* the device-path
  * @param char* the path to mount at
- * @param u16 the fs-type
- * @return s32 0 on success
+ * @param uint the fs-type
+ * @return int 0 on success
  */
 void sysc_mount(sIntrptStackFrame *stack);
 
@@ -225,7 +225,7 @@ void sysc_mount(sIntrptStackFrame *stack);
  * Unmounts the device mounted at <path>
  *
  * @param char* the path
- * @return s32 0 on success
+ * @return int 0 on success
  */
 void sysc_unmount(sIntrptStackFrame *stack);
 

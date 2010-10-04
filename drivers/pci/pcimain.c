@@ -43,8 +43,8 @@ int main(void) {
 		else {
 			switch(mid) {
 				case MSG_PCI_GET_BY_CLASS: {
-					u8 baseClass = (u8)msg.args.arg1;
-					u8 subClass = (u8)msg.args.arg2;
+					uchar baseClass = (uchar)msg.args.arg1;
+					uchar subClass = (uchar)msg.args.arg2;
 					sPCIDevice *d = list_getByClass(baseClass,subClass);
 					msg.data.arg1 = -1;
 					if(d) {
@@ -55,9 +55,9 @@ int main(void) {
 				}
 				break;
 				case MSG_PCI_GET_BY_ID: {
-					u8 bus = (u8)msg.args.arg1;
-					u8 dev = (u8)msg.args.arg2;
-					u8 func = (u8)msg.args.arg3;
+					uchar bus = (uchar)msg.args.arg1;
+					uchar dev = (uchar)msg.args.arg2;
+					uchar func = (uchar)msg.args.arg3;
 					sPCIDevice *d = list_getById(bus,dev,func);
 					msg.data.arg1 = -1;
 					if(d) {

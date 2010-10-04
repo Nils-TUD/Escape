@@ -43,21 +43,22 @@ static bool readKeyboard(tFD drvId,tFD kmmng);
 /**
  * Destroys the windows of a died thread
  */
-static void deadThreadHandler(s32 sig);
+static void deadThreadHandler(int sig);
 /**
  * Handles a message from kmmng
  */
-static void handleKbMessage(tFD drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c);
+static void handleKbMessage(tFD drvId,sWindow *active,uchar keycode,bool isBreak,
+		uchar modifier,char c);
 /**
  * Handles a message from the mouse
  */
 static void handleMouseMessage(tFD drvId,sMouseData *mdata);
 
 /* mouse state */
-static u8 buttons = 0;
+static uchar buttons = 0;
 static tCoord curX = 0;
 static tCoord curY = 0;
-static u8 cursor = CURSOR_DEFAULT;
+static uchar cursor = CURSOR_DEFAULT;
 
 static bool enabled = false;
 static sMsg msg;
@@ -108,7 +109,7 @@ int main(void) {
 					tSize width = (tSize)(msg.args.arg2 >> 16);
 					tSize height = (tSize)(msg.args.arg2 & 0xFFFF);
 					tWinId tmpWinId = (tWinId)msg.args.arg3;
-					u8 style = (u8)msg.args.arg4;
+					uint style = msg.args.arg4;
 					msg.args.arg1 = tmpWinId;
 					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
@@ -196,7 +197,7 @@ int main(void) {
 }
 
 static bool readMouse(tFD drvId,tFD mouse) {
-	s32 count;
+	ssize_t count;
 	while((count = RETRY(read(mouse,mouseData,sizeof(mouseData)))) > 0) {
 		sMouseData *msd = mouseData;
 		count /= sizeof(sMouseData);
@@ -215,7 +216,7 @@ static bool readMouse(tFD drvId,tFD mouse) {
 
 static bool readKeyboard(tFD drvId,tFD kmmng) {
 	sWindow *active = win_getActive();
-	s32 count;
+	ssize_t count;
 	while((count = RETRY(read(kmmng,kbData,sizeof(kbData)))) > 0) {
 		sKmData *kbd = kbData;
 		count /= sizeof(sKmData);
@@ -234,7 +235,8 @@ static bool readKeyboard(tFD drvId,tFD kmmng) {
 	return true;
 }
 
-static void handleKbMessage(tFD drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c) {
+static void handleKbMessage(tFD drvId,sWindow *active,uchar keycode,bool isBreak,
+		uchar modifier,char c) {
 	tFD aWin;
 	if(!active)
 		return;

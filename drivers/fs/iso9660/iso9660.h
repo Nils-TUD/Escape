@@ -62,25 +62,25 @@
 
 /* 32-bit integer that is stored in little- and bigendian */
 typedef struct {
-	u32 littleEndian;
-	u32 bigEndian;
+	uint32_t littleEndian;
+	uint32_t bigEndian;
 } uISOInt32;
 
 /* 16-bit integer that is stored in little- and bigendian */
 typedef struct {
-	u16 littleEndian;
-	u16 bigEndian;
+	uint16_t littleEndian;
+	uint16_t bigEndian;
 } uISOInt16;
 
 /* dates how they are stored in directory-entires */
 typedef struct {
-	u8 year;				/* Number of years since 1900. */
-	u8 month;				/* Month of the year from 1 to 12. */
-	u8 day;					/* Day of the month from 1 to 31. */
-	u8 hour;				/* Hour of the day from 0 to 23. */
-	u8 minute;				/* Minute of the hour from 0 to 59. */
-	u8 second;				/* Second of the minute from 0 to 59. */
-	u8 offset;				/* Offset from GMT in 15 minute intervals from -48 (West) to +52 (East). */
+	uint8_t year;				/* Number of years since 1900. */
+	uint8_t month;				/* Month of the year from 1 to 12. */
+	uint8_t day;					/* Day of the month from 1 to 31. */
+	uint8_t hour;				/* Hour of the day from 0 to 23. */
+	uint8_t minute;				/* Minute of the hour from 0 to 59. */
+	uint8_t second;				/* Second of the minute from 0 to 59. */
+	uint8_t offset;				/* Offset from GMT in 15 minute intervals from -48 (West) to +52 (East). */
 } A_PACKED sISODirDate;
 
 /* dates how they are stored in the volume-descriptor */
@@ -92,15 +92,15 @@ typedef struct {
 	char minute[2];			/* Minute from 0 to 59. */
 	char second[2];			/* Second from 0 to 59. */
 	char second100ths[2];	/* Hundredths of a second from 0 to 99. */
-	u8 offset;				/* Offset from GMT in 15 minute intervals from -48 (West) to +52 (East) */
+	uint8_t offset;				/* Offset from GMT in 15 minute intervals from -48 (West) to +52 (East) */
 } A_PACKED sISOVolDate;
 
 /* a directory-entry */
 typedef struct {
 	/* Length of Directory Record. */
-	u8 length;
+	uint8_t length;
 	/* Extended Attribute Record length. */
-	u8 extAttrLen;
+	uint8_t extAttrLen;
 	/* Location of extent (LBA) in both-endian format. */
 	uISOInt32 extentLoc;
 	/* Data length (size of extent) in both-endian format. */
@@ -108,16 +108,16 @@ typedef struct {
 	/* Recording date and time (see format below). */
 	sISODirDate created;
 	/* File flags (see ISO_FILEFL_*). */
-	u8 flags;
+	uint8_t flags;
 	/*  File unit size for files recorded in interleaved mode, zero otherwise. */
-	u8 unitSize;
+	uint8_t unitSize;
 	/* Interleave gap size for files recorded in interleaved mode, zero otherwise. */
-	u8 gapSize;
+	uint8_t gapSize;
 	/* Volume sequence number - the volume that this extent is recorded on. */
 	uISOInt16 volSeqNo;
 	/* Length of file identifier (file name). This terminates with a ';' character followed by
 	 * the file ID number in ASCII coded decimal ('1'). */
-	u8 nameLen;
+	uint8_t nameLen;
 	/* is padded with a byte so that a directory entry will always start on an even byte number. */
 	char name[];
 } A_PACKED sISODirEntry;
@@ -125,14 +125,14 @@ typedef struct {
 /* an entry in the path-table */
 typedef struct {
 	/* Length of Directory Identifier */
-	u8 length;
+	uint8_t length;
 	/* Extended Attribute Record Length */
-	u8 extAttrLen;
+	uint8_t extAttrLen;
 	/* Location of Extent (LBA). This is in a different format depending on whether this is the
 	 * L-Table or M-Table. */
-	u32 extentLoc;
+	uint32_t extentLoc;
 	/* Directory number of parent directory (an index in to the path table). */
-	u16 parentTblIndx;
+	uint16_t parentTblIndx;
 	/* Directory Identifier (name) in d-characters. padded with a zero, if necessary, so
 	 * that each table-entry starts on a even byte number. */
 	char name[];
@@ -140,14 +140,14 @@ typedef struct {
 
 typedef struct {
 	/* see ISO_VOL_TYPE_* */
-	u8 type;
+	uint8_t type;
 	/* always 'CD001' */
 	char identifier[5];
 	/* always 0x01 */
-	u8 version;
+	uint8_t version;
 	union {
 		/* just to make the union 2041 bytes big.. */
-		u8 raw[2041];
+		uint8_t raw[2041];
 		struct {
 			/* ID of the system which can act on and boot the system from the boot record in
 			 * a-characters */
@@ -158,20 +158,20 @@ typedef struct {
 		} A_PACKED bootrecord;
 		struct {
 			/* unused; always 0x00 */
-			u8 : 8;
+			uint8_t : 8;
 			/* The name of the system that can act upon sectors 0x00-0x0F for the volume in a-characters */
 			char systemIdent[32];
 			/* Identification of this volume in d-characters */
 			char volumeIdent[32];
 			/* unused */
-			u64 : 64;
+			uint64_t : 64;
 			/* Number of Logical Blocks in which the volume is recorded */
 			uISOInt32 volSpaceSize;
 			/* unused */
-			u64 : 64;
-			u64 : 64;
-			u64 : 64;
-			u64 : 64;
+			uint64_t : 64;
+			uint64_t : 64;
+			uint64_t : 64;
+			uint64_t : 64;
 			/* The size of the set in this logical volume (number of disks). */
 			uISOInt16 volSetSize;
 			/* The number of this disk in the Volume Set. */
@@ -181,14 +181,14 @@ typedef struct {
 			/* The size in bytes of the path table */
 			uISOInt32 pathTableSize;
 			/* LBA location of the (optional) path table for little-endian */
-			u32 lPathTblLoc;
-			u32 lOptPathTblLoc;
+			uint32_t lPathTblLoc;
+			uint32_t lOptPathTblLoc;
 			/* LBA location of the (optional) path table for big-endian */
-			u32 mPathTblLoc;
-			u32 mOptPathTblLoc;
+			uint32_t mPathTblLoc;
+			uint32_t mOptPathTblLoc;
 			sISODirEntry rootDir;
 			/* root-entry is padded with one byte */
-			u8 : 8;
+			uint8_t : 8;
 			/* Identifier of the volume set of which this volume is a member in d-characters. */
 			char volumeSetIdent[128];
 			/* The volume publisher in a-characters. If unspecified, all bytes should be 0x20.
@@ -214,7 +214,7 @@ typedef struct {
 			 * be used immediately. */
 			sISOVolDate effective;
 			/* An 8 bit number specifying the directory records and path table version (always 0x01). */
-			u8 fileStructureVersion;
+			uint8_t fileStructureVersion;
 		} A_PACKED primary;
 	} data;
 } A_PACKED sISOVolDesc;
@@ -230,7 +230,7 @@ typedef struct {
 	/* the file-descs for the driver (one for each thread and one for the initial) */
 	tFD drvFds[REQ_THREAD_COUNT + 1];
 	sISOVolDesc primary;
-	u32 direcNextFree;
+	size_t direcNextFree;
 	sISOCDirEntry direcache[ISO_DIRE_CACHE_SIZE];
 	sBlockCache blockCache;
 } sISO9660;
@@ -267,7 +267,7 @@ sFileSystem *iso_getFS(void);
  * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-number on success
  */
-tInodeNo iso_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt);
+tInodeNo iso_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt);
 
 /**
  * Mount-entry for open()
@@ -277,7 +277,7 @@ tInodeNo iso_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastM
  * @param flags the open-flags
  * @return the inode on success or < 0
  */
-s32 iso_open(void *h,tInodeNo ino,u8 flags);
+tInodeNo iso_open(void *h,tInodeNo ino,uint flags);
 
 /**
  * Mount-entry for close()
@@ -295,7 +295,7 @@ void iso_close(void *h,tInodeNo ino);
  * @param info the buffer where to write the file-info
  * @return 0 on success
  */
-s32 iso_stat(void *h,tInodeNo ino,sFileInfo *info);
+int iso_stat(void *h,tInodeNo ino,sFileInfo *info);
 
 /**
  * Mount-entry for read()
@@ -307,7 +307,7 @@ s32 iso_stat(void *h,tInodeNo ino,sFileInfo *info);
  * @param count the number of bytes to read
  * @return number of read bytes on success
  */
-s32 iso_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
+ssize_t iso_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count);
 
 /**
  * BUilds a timestamp from the given dir-date
@@ -316,7 +316,7 @@ s32 iso_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
  * @param ddate the dir-date
  * @return the timestamp
  */
-u32 iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate);
+tTime iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate);
 
 #if DEBUGGING
 
@@ -327,7 +327,7 @@ void iso_dbg_printPathTbl(sISO9660 *h);
 /**
  * Prints an directory-tree
  */
-void iso_dbg_printTree(sISO9660 *h,u32 extLoc,u32 extSize,u32 layer);
+void iso_dbg_printTree(sISO9660 *h,size_t extLoc,size_t extSize,size_t layer);
 /**
  * Prints the given volume descriptor
  */

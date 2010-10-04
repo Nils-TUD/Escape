@@ -41,14 +41,15 @@
 
 #define DMA_BUF_SIZE				(64 * 1024)
 
-static void ctrl_intrptHandler(s32 sig);
+static void ctrl_intrptHandler(int sig);
 static bool ctrl_isBusResponding(sATAController* ctrl);
 
 static sPCIDevice ideCtrl;
 static sATAController ctrls[2];
 
 void ctrl_init(bool useDma) {
-	s32 i,j,res;
+	ssize_t i,j;
+	int res;
 	tFD fd;
 
 	/* get ide-controller from pci */
@@ -109,10 +110,10 @@ void ctrl_init(bool useDma) {
 		if(useDma && ctrls[i].bmrBase) {
 			ctrls[i].bmrBase += i * BMR_SEC_OFFSET;
 			/* allocate memory for PRDT and buffer */
-			ctrls[i].dma_prdt_virt = allocPhysical((u32*)&ctrls[i].dma_prdt_phys,8,4096);
+			ctrls[i].dma_prdt_virt = allocPhysical((uintptr_t*)&ctrls[i].dma_prdt_phys,8,4096);
 			if(!ctrls[i].dma_prdt_virt)
 				error("Unable to allocate PRDT for controller %d",ctrls[i].id);
-			ctrls[i].dma_buf_virt = allocPhysical((u32*)&ctrls[i].dma_buf_phys,
+			ctrls[i].dma_buf_virt = allocPhysical((uintptr_t*)&ctrls[i].dma_buf_phys,
 					DMA_BUF_SIZE,DMA_BUF_SIZE);
 			if(!ctrls[i].dma_buf_virt)
 				error("Unable to allocate dma-buffer for controller %d",ctrls[i].id);
@@ -130,46 +131,46 @@ void ctrl_init(bool useDma) {
 	ATA_PR2("All controller initialized");
 }
 
-sATADevice *ctrl_getDevice(u8 id) {
+sATADevice *ctrl_getDevice(uchar id) {
 	return ctrls[id / 2].devices + id % 2;
 }
 
-sATAController *ctrl_getCtrl(u8 id) {
+sATAController *ctrl_getCtrl(uchar id) {
 	return ctrls + id;
 }
 
-void ctrl_outbmrb(sATAController *ctrl,u16 reg,u8 value) {
+void ctrl_outbmrb(sATAController *ctrl,uint16_t reg,uint8_t value) {
 	outByte(ctrl->bmrBase + reg,value);
 }
 
-void ctrl_outbmrl(sATAController *ctrl,u16 reg,u32 value) {
+void ctrl_outbmrl(sATAController *ctrl,uint16_t reg,uint32_t value) {
 	outDWord(ctrl->bmrBase + reg,value);
 }
 
-u8 ctrl_inbmrb(sATAController *ctrl,u16 reg) {
+uint8_t ctrl_inbmrb(sATAController *ctrl,uint16_t reg) {
 	return inByte(ctrl->bmrBase + reg);
 }
 
-void ctrl_outb(sATAController *ctrl,u16 reg,u8 value) {
+void ctrl_outb(sATAController *ctrl,uint16_t reg,uint8_t value) {
 	outByte(ctrl->portBase + reg,value);
 }
 
-void ctrl_outwords(sATAController *ctrl,u16 reg,const u16 *buf,u32 count) {
+void ctrl_outwords(sATAController *ctrl,uint16_t reg,const uint16_t *buf,size_t count) {
 	/* TODO according to the wiki, we shouldn't use that because the device needs a small delay
 	 * between the words */
 	outWordStr(ctrl->portBase + reg,buf,count);
 }
 
-u8 ctrl_inb(sATAController *ctrl,u16 reg) {
+uint8_t ctrl_inb(sATAController *ctrl,uint16_t reg) {
 	return inByte(ctrl->portBase + reg);
 }
 
-void ctrl_inwords(sATAController *ctrl,u16 reg,u16 *buf,u32 count) {
+void ctrl_inwords(sATAController *ctrl,uint16_t reg,uint16_t *buf,size_t count) {
 	inWordStr(ctrl->portBase + reg,buf,count);
 }
 
 void ctrl_softReset(sATAController *ctrl) {
-	u8 status;
+	uint8_t status;
 	ctrl_outb(ctrl,ATA_REG_CONTROL,4);
 	ctrl_outb(ctrl,ATA_REG_CONTROL,0);
 	ctrl_wait(ctrl);
@@ -184,7 +185,7 @@ void ctrl_resetIrq(sATAController *ctrl) {
 }
 
 void ctrl_waitIntrpt(sATAController *ctrl) {
-	u32 time = 0;
+	tTime time = 0;
 	if(!ctrl->useIrq)
 		return;
 	while(!ctrl->gotIrq) {
@@ -200,10 +201,10 @@ void ctrl_waitIntrpt(sATAController *ctrl) {
 	}
 }
 
-s32 ctrl_waitUntil(sATAController *ctrl,u32 timeout,u32 sleepTime,u8 set,u8 unset) {
-	u32 time = 0;
+int ctrl_waitUntil(sATAController *ctrl,tTime timeout,tTime sleepTime,uint8_t set,uint8_t unset) {
+	tTime time = 0;
 	while(time < timeout) {
-		u8 status = ctrl_inb(ctrl,ATA_REG_STATUS);
+		uint8_t status = ctrl_inb(ctrl,ATA_REG_STATUS);
 		if(status & CMD_ST_ERROR)
 			return ctrl_inb(ctrl,ATA_REG_ERROR);
 		if((status & set) == set && !(status & unset))
@@ -219,8 +220,8 @@ s32 ctrl_waitUntil(sATAController *ctrl,u32 timeout,u32 sleepTime,u8 set,u8 unse
 	return -1;
 }
 
-static void ctrl_intrptHandler(s32 sig) {
-	s32 i;
+static void ctrl_intrptHandler(int sig) {
+	size_t i;
 	for(i = 0; i < 2; i++) {
 		if(ctrls[i].irq == sig) {
 			ctrls[i].gotIrq = true;
@@ -237,7 +238,7 @@ void ctrl_wait(sATAController *ctrl) {
 }
 
 static bool ctrl_isBusResponding(sATAController* ctrl) {
-	s32 i;
+	ssize_t i;
 	for(i = 1; i >= 0; i--) {
 		/* begin with slave. master should respond if there is no slave */
 		outByte(ctrl->portBase + ATA_REG_DRIVE_SELECT,i << 4);

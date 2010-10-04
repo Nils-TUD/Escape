@@ -36,50 +36,50 @@ typedef struct {
 	/* "BM" */
 	char type[2];
 	/* size of the file (not reliable) */
-	u32 size;
+	uint32_t size;
 	/* reserved */
-	u32 : 32;
+	uint32_t : 32;
 	/* offset of the data */
-	u32 dataOffset;
+	uint32_t dataOffset;
 } A_PACKED sBMFileHeader;
 
 /* the information-header */
 typedef struct {
 	/* size of this struct */
-	u32 size;
+	uint32_t size;
 	/* size of the image */
-	u32 width;
-	u32 height;
+	uint32_t width;
+	uint32_t height;
 	/* not used for BMP */
-	u16 planes;
+	uint16_t planes;
 	/* color-depth in bpp (1, 4, 8, 16, 24 or 32); 1, 4 and 8 uses indexed colors */
-	u16 bitCount;
+	uint16_t bitCount;
 	/* see BI_* */
-	u32 compression;
+	uint32_t compression;
 	/* if compression == BI_RGB: 0 or the size of the image-data */
 	/* otherwise: size of image-data */
-	u32 sizeImage;
+	uint32_t sizeImage;
 	/* horizontal/vertical resolution of the target-output-device in pixel per meter */
 	/* 0 in most cases */
-	u32 xPelsPerMeter;
-	u32 yPelsPerMeter;
+	uint32_t xPelsPerMeter;
+	uint32_t yPelsPerMeter;
 	/* if bitCount == 1: 0
 	 * if bitCount == 4 or 8: number of entries in color-table; 0 = max (16 or 256)
 	 * otherwise: number of entries in color-table; 0 = no color-table */
-	u32 colorsUsed;
+	uint32_t colorsUsed;
 	/* if bitCount == 1, 4 or 8: nnumber of colors used in the image; 0 = all colors in
 	 * 							 color-table
 	 * otherwise: if color-table available, the number of them; otherwise 0 */
-	u32 colorsImportant;
+	uint32_t colorsImportant;
 } A_PACKED sBMInfoHeader;
 
 typedef struct {
 	sBMFileHeader *fileHeader;
 	sBMInfoHeader *infoHeader;
-	u32 *colorTable;
-	u32 tableSize;
-	u8 *data;
-	u32 dataSize;
+	uint32_t *colorTable;
+	size_t tableSize;
+	void *data;
+	size_t dataSize;
 } sBitmap;
 
 /**

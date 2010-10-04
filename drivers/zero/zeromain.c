@@ -48,8 +48,8 @@ int main(void) {
 			switch(mid) {
 				case MSG_DRV_READ: {
 					/* offset is ignored here */
-					u32 count = msg.args.arg2;
-					u8 *data = (u8*)calloc(count,sizeof(u8));
+					size_t count = msg.args.arg2;
+					void *data = calloc(count,1);
 					if(!data) {
 						printe("[ZERO] Unable to alloc mem");
 						count = 0;

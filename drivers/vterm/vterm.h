@@ -36,14 +36,14 @@ bool vterm_initAll(tFD *ids,sVTermCfg *cfg);
  * @param index the index
  * @return the vterm with given index
  */
-sVTerm *vterm_get(u32 index);
+sVTerm *vterm_get(size_t index);
 
 /**
  * Selects the given vterminal
  *
  * @param index the index of the vterm
  */
-void vterm_selectVTerm(u32 index);
+void vterm_selectVTerm(size_t index);
 
 /**
  * @return the currently active vterm

@@ -33,7 +33,7 @@
  * @param isDir whether it should be an directory
  * @return 0 on success
  */
-s32 ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *ino,bool isDir);
+int ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *ino,bool isDir);
 
 /**
  * Deletes the given inode. That means all associated blocks will be free'd
@@ -42,7 +42,7 @@ s32 ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *in
  * @param cnode the cached inode
  * @return 0 on success
  */
-s32 ext2_file_delete(sExt2 *e,sExt2CInode *cnode);
+int ext2_file_delete(sExt2 *e,sExt2CInode *cnode);
 
 /**
  * Truncates the given file
@@ -52,7 +52,7 @@ s32 ext2_file_delete(sExt2 *e,sExt2CInode *cnode);
  * @param delete if set the block-numbers in the inode will not be overwritten
  * @return 0 on success
  */
-s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete);
+int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the inode with given number. Sets
@@ -66,7 +66,7 @@ s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete);
  * @param count the number of bytes to read
  * @return the number of read bytes
  */
-s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
+ssize_t ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,uint offset,size_t count);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the given cached inode. It will not
@@ -80,7 +80,7 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
  * @param count the number of bytes to read
  * @return the number of read bytes
  */
-s32 ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,u32 offset,u32 count);
+ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,uint offset,size_t count);
 
 /**
  * Writes <count> bytes at <offset> from <buffer> to the inode with given number. Will
@@ -93,7 +93,7 @@ s32 ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,u32 offset,
  * @param count the number of bytes to write
  * @return the number of written bytes
  */
-s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
+ssize_t ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,uint offset,size_t count);
 
 /**
  * Writes <count> bytes at <offset> from <buffer> to given cached inode. Will
@@ -106,6 +106,6 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
  * @param count the number of bytes to write
  * @return the number of written bytes
  */
-s32 ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,u32 offset,u32 count);
+ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,uint offset,size_t count);
 
 #endif /* FILE_H_ */

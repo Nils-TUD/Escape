@@ -47,7 +47,7 @@ bool events_send(tFD driver,sKmData *km);
  * @param modifier the modifiers
  * @return 0 if successfull
  */
-s32 events_add(tInodeNo id,u8 flags,u8 key,u8 modifier);
+int events_add(tInodeNo id,uchar flags,uchar key,uchar modifier);
 
 /**
  * Removes the given listener
@@ -57,6 +57,6 @@ s32 events_add(tInodeNo id,u8 flags,u8 key,u8 modifier);
  * @param key the key (keycode or character, depending on the flags)
  * @param modifier the modifiers
  */
-void events_remove(tInodeNo id,u8 flags,u8 key,u8 modifier);
+void events_remove(tInodeNo id,uchar flags,uchar key,uchar modifier);
 
 #endif /* EVENTS_H_ */

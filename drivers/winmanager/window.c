@@ -30,11 +30,11 @@
 #include <string.h>
 #include "window.h"
 
-static void win_repaint(sRectangle *r,sWindow *win,s16 z);
+static void win_repaint(sRectangle *r,sWindow *win,tCoord z);
 static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY);
 static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id);
-static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRectangle *r);
-static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height);
+static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,tCoord z,sRectangle *r);
+static void win_clearRegion(uint8_t *mem,tCoord x,tCoord y,tSize width,tSize height);
 static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
 
 static tFD vesa;
@@ -42,8 +42,8 @@ static tFD drvId;
 static sVESAInfo vesaInfo;
 
 static sMsg msg;	/* TODO we already have a msg in winmain.c */
-static u8 *shmem;
-static u16 activeWindow = WINDOW_COUNT;
+static uint8_t *shmem;
+static size_t activeWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
 
 bool win_init(tFD sid) {
@@ -70,7 +70,7 @@ bool win_init(tFD sid) {
 	/* store */
 	memcpy(&vesaInfo,msg.data.d,sizeof(sVESAInfo));
 
-	shmem = (u8*)joinSharedMem("vesa");
+	shmem = (uint8_t*)joinSharedMem("vesa");
 	if(shmem == NULL)
 		error("Unable to join shared memory 'vesa'");
 
@@ -90,14 +90,14 @@ tCoord win_getScreenHeight(void) {
 	return vesaInfo.height;
 }
 
-void win_setCursor(tCoord x,tCoord y,u8 cursor) {
+void win_setCursor(tCoord x,tCoord y,uint cursor) {
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
 	msg.args.arg3 = cursor;
 	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
-tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tInodeNo owner,u8 style) {
+tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tInodeNo owner,uint style) {
 	tWinId i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNSED) {
@@ -146,7 +146,7 @@ void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY) {
 	/* set highest window active */
 	if(activeWindow == id) {
 		tWinId i,winId = WINID_UNSED;
-		s16 maxz = -1;
+		int maxz = -1;
 		sWindow *w = windows;
 		for(i = 0; i < WINDOW_COUNT; i++) {
 			if(w->id != WINID_UNSED && w->z > maxz) {
@@ -172,7 +172,7 @@ bool win_exists(tWinId id) {
 
 sWindow *win_getAt(tCoord x,tCoord y) {
 	tWinId i;
-	s16 maxz = -1;
+	tCoord maxz = -1;
 	tWinId winId = WINDOW_COUNT;
 	sWindow *w = windows;
 	for(i = 0; i < WINDOW_COUNT; i++) {
@@ -197,8 +197,8 @@ sWindow *win_getActive(void) {
 
 void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
 	tWinId i;
-	s16 curz = windows[id].z;
-	s16 maxz = 0;
+	tCoord curz = windows[id].z;
+	tCoord maxz = 0;
 	sWindow *w = windows;
 	if(id != WINDOW_COUNT) {
 		for(i = 0; i < WINDOW_COUNT; i++) {
@@ -258,7 +258,7 @@ void win_resize(tWinId window,tSize width,tSize height) {
 }
 
 void win_moveTo(tWinId window,tCoord x,tCoord y) {
-	u32 i,count;
+	size_t i,count;
 	sRectangle **rects;
 	sRectangle *old = (sRectangle*)malloc(sizeof(sRectangle));
 	sRectangle *new = (sRectangle*)malloc(sizeof(sRectangle));
@@ -306,7 +306,7 @@ void win_update(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
 	win_repaint(r,win,win->z);
 }
 
-static void win_repaint(sRectangle *r,sWindow *win,s16 z) {
+static void win_repaint(sRectangle *r,sWindow *win,tCoord z) {
 	sRectangle *rect;
 	sSLNode *n;
 	sSLList *list = sll_create();
@@ -360,12 +360,12 @@ static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id
 	}
 }
 
-static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRectangle *r) {
+static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,tCoord z,sRectangle *r) {
 	sRectangle **rects;
 	sRectangle wr;
 	sRectangle *inter;
 	sWindow *w;
-	u32 count;
+	size_t count;
 	bool intersect;
 	for(; id < WINDOW_COUNT; id++) {
 		w = windows + id;
@@ -416,10 +416,10 @@ static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRe
 	sll_append(list,r);
 }
 
-static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) {
+static void win_clearRegion(uint8_t *mem,tCoord x,tCoord y,tSize width,tSize height) {
 	tCoord ysave = y;
 	tCoord maxy;
-	u32 count;
+	size_t count;
 	if(x < 0) {
 		if(-x > width)
 			return;

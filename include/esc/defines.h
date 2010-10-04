@@ -60,6 +60,8 @@ typedef u16 tTid;
 typedef s16 tFD;
 /* inode-number */
 typedef s32 tInodeNo;
+/* block number on disk */
+typedef u32 tBlockNo;
 /* device-number */
 typedef s32 tDevNo;
 /* signal-number */

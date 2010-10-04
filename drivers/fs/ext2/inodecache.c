@@ -36,7 +36,7 @@
  * Aquires the lock for given mode and inode. Assumes that ALLOC_LOCK is aquired and releases
  * it at the end.
  */
-static void ext2_icache_aquire(sExt2CInode *inode,u8 mode);
+static void ext2_icache_aquire(sExt2CInode *inode,uint mode);
 /**
  * Releases the given inode
  */
@@ -51,11 +51,11 @@ static void ext2_icache_read(sExt2 *e,sExt2CInode *inode);
 static void ext2_icache_write(sExt2 *e,sExt2CInode *inode);
 
 /* for statistics */
-static u32 cacheHits = 0;
-static u32 cacheMisses = 0;
+static uint cacheHits = 0;
+static uint cacheMisses = 0;
 
 void ext2_icache_init(sExt2 *e) {
-	u32 i;
+	size_t i;
 	sExt2CInode *inode = e->inodeCache;
 	for(i = 0; i < EXT2_ICACHE_SIZE; i++) {
 		inode->inodeNo = EXT2_BAD_INO;
@@ -82,7 +82,7 @@ void ext2_icache_markDirty(sExt2CInode *inode) {
 	inode->dirty = true;
 }
 
-sExt2CInode *ext2_icache_request(sExt2 *e,tInodeNo no,u8 mode) {
+sExt2CInode *ext2_icache_request(sExt2 *e,tInodeNo no,uint mode) {
 	/* search for the inode. perhaps it's already in cache */
 	sExt2CInode *startNode = e->inodeCache + (no & (EXT2_ICACHE_SIZE - 1));
 	sExt2CInode *iend = e->inodeCache + EXT2_ICACHE_SIZE;
@@ -162,10 +162,10 @@ void ext2_icache_release(const sExt2CInode *inode) {
 			inode->inodeNo,inode->writeRef ? IMODE_WRITE : IMODE_READ);*/
 }
 
-static void ext2_icache_aquire(sExt2CInode *inode,u8 mode) {
+static void ext2_icache_aquire(sExt2CInode *inode,uint mode) {
 	inode->refs++;
 	assert(unlock(ALLOC_LOCK) == 0);
-	assert(lock((u32)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+	assert(lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 	/*debugf("[%d] Aquired %d for %d\n",gettid(),inode->inodeNo,mode);*/
 }
 
@@ -179,35 +179,37 @@ static void ext2_icache_doRelease(sExt2CInode *ino,bool unlockAlloc) {
 	ino->refs--;
 	if(unlockAlloc)
 		assert(unlock(ALLOC_LOCK) == 0);
-	assert(unlock((u32)ino) == 0);
+	assert(unlock((uint)ino) == 0);
 }
 
 static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
 	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
-	u32 inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
-	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
-	u32 blockNo = group->inodeTable + noInGroup / inodesPerBlock;
-	u32 inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
+	size_t inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
+	size_t noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
+	tBlockNo blockNo = group->inodeTable + noInGroup / inodesPerBlock;
+	size_t inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
 	sCBlock *block = bcache_request(&e->blockCache,blockNo,BMODE_READ);
 	vassert(block != NULL,"Fetching block %d failed",blockNo);
-	memcpy(&(inode->inode),block->buffer + inodeInBlock * sizeof(sExt2Inode),sizeof(sExt2Inode));
+	memcpy(&(inode->inode),(uint8_t*)block->buffer + inodeInBlock * sizeof(sExt2Inode),
+			sizeof(sExt2Inode));
 	bcache_release(block);
 }
 
 static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
 	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
-	u32 inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
-	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
-	u32 blockNo = group->inodeTable + noInGroup / inodesPerBlock;
-	u32 inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
+	size_t inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
+	size_t noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
+	tBlockNo blockNo = group->inodeTable + noInGroup / inodesPerBlock;
+	size_t inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
 	sCBlock *block = bcache_request(&e->blockCache,blockNo,BMODE_WRITE);
 	vassert(block != NULL,"Fetching block %d failed",blockNo);
-	memcpy(block->buffer + inodeInBlock * sizeof(sExt2Inode),&(inode->inode),sizeof(sExt2Inode));
+	memcpy((uint8_t*)block->buffer + inodeInBlock * sizeof(sExt2Inode),&(inode->inode),
+			sizeof(sExt2Inode));
 	bcache_markDirty(block);
 	bcache_release(block);
 }
 
 void ext2_icache_printStats(void) {
-	printf("[InodeCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
-			(u32)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
+	printf("[InodeCache] Hits: %u, Misses: %u; %u %%\n",cacheHits,cacheMisses,
+			(uint)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }

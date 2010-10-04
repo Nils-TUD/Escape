@@ -26,13 +26,13 @@
 #include <stdlib.h>
 #include "mount.h"
 
-static u32 mntPntCount = 0;
+static size_t mntPntCount = 0;
 static sSLList *fileSystems = NULL;
 static sSLList *fsInsts = NULL;
 static sMountPoint mounts[MOUNT_TABLE_SIZE];
 
 bool mount_init(void) {
-	u32 i;
+	size_t i;
 	fileSystems = sll_create();
 	fsInsts = sll_create();
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
@@ -43,14 +43,14 @@ bool mount_init(void) {
 	return fileSystems != NULL && fsInsts != NULL;
 }
 
-s32 mount_addFS(sFileSystem *fs) {
+int mount_addFS(sFileSystem *fs) {
 	if(!sll_append(fileSystems,fs))
 		return ERR_NOT_ENOUGH_MEM;
 	return 0;
 }
 
-tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type) {
-	u32 i;
+tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,uint type) {
+	size_t i;
 	sFSInst *inst;
 	sFileSystem *fs;
 	sSLNode *n;
@@ -121,7 +121,7 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type) {
 }
 
 tDevNo mount_getByLoc(tDevNo dev,tInodeNo inode) {
-	u32 i,x;
+	size_t i,x;
 	/* we have mntPntCount+1 because of the root-fs */
 	for(i = 0,x = 0; x <= mntPntCount && i < MOUNT_TABLE_SIZE; i++) {
 		if(mounts[i].dev == dev && mounts[i].inode == inode)
@@ -132,8 +132,8 @@ tDevNo mount_getByLoc(tDevNo dev,tInodeNo inode) {
 	return ERR_NO_MNTPNT;
 }
 
-s32 mount_remMnt(tDevNo dev,tInodeNo inode) {
-	u32 i;
+int mount_remMnt(tDevNo dev,tInodeNo inode) {
+	size_t i;
 	/* search mount-point */
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		if(mounts[i].dev == dev && mounts[i].inode == inode)
@@ -157,7 +157,7 @@ s32 mount_remMnt(tDevNo dev,tInodeNo inode) {
 }
 
 tDevNo mount_getDevByHandle(void *h) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		if(mounts[i].mnt->handle == h)
 			return i;

@@ -26,25 +26,25 @@
 /* a partition on the disk */
 typedef struct {
 	/* Boot indicator bit flag: 0 = no, 0x80 = bootable (or "active") */
-	u8 bootable;
+	uint8_t bootable;
 	/* start: Cylinder, Head, Sector */
-	u8 startHead;
-	u16 startSector : 6,
+	uint8_t startHead;
+	uint16_t startSector : 6,
 		startCylinder: 10;
-	u8 systemId;
+	uint8_t systemId;
 	/* end: Cylinder, Head, Sector */
-	u8 endHead;
-	u16 endSector : 6,
+	uint8_t endHead;
+	uint16_t endSector : 6,
 		endCylinder : 10;
 	/* Relative Sector (to start of partition -- also equals the partition's starting LBA value) */
-	u32 start;
+	uint32_t start;
 	/* Total Sectors in partition */
-	u32 size;
+	uint32_t size;
 } A_PACKED sDiskPart;
 
 void part_fillPartitions(sPartition *table,void *mbr) {
-	u32 i;
-	sDiskPart *src = (sDiskPart*)((u8*)mbr + PART_TABLE_OFFSET);
+	size_t i;
+	sDiskPart *src = (sDiskPart*)((uintptr_t)mbr + PART_TABLE_OFFSET);
 	for(i = 0; i < PARTITION_COUNT; i++) {
 		table->present = src->systemId != 0;
 		table->start = src->start;

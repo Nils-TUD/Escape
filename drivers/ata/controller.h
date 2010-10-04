@@ -56,13 +56,13 @@ void ctrl_init(bool useDma);
  * @param id the id
  * @return the ATA-device with given id
  */
-sATADevice *ctrl_getDevice(u8 id);
+sATADevice *ctrl_getDevice(uchar id);
 
 /**
  * @param id the id
  * @return the ATA-Controller with given id
  */
-sATAController *ctrl_getCtrl(u8 id);
+sATAController *ctrl_getCtrl(uchar id);
 
 /**
  * Writes <value> to the bus-master-register <reg> of the given controller
@@ -71,8 +71,8 @@ sATAController *ctrl_getCtrl(u8 id);
  * @param reg the register
  * @param value the value
  */
-void ctrl_outbmrb(sATAController *ctrl,u16 reg,u8 value);
-void ctrl_outbmrl(sATAController *ctrl,u16 reg,u32 value);
+void ctrl_outbmrb(sATAController *ctrl,uint16_t reg,uint8_t value);
+void ctrl_outbmrl(sATAController *ctrl,uint16_t reg,uint32_t value);
 
 /**
  * Reads a byte from the bus-master-register <reg> of the given controller
@@ -81,7 +81,7 @@ void ctrl_outbmrl(sATAController *ctrl,u16 reg,u32 value);
  * @param reg the register
  * @return the value
  */
-u8 ctrl_inbmrb(sATAController *ctrl,u16 reg);
+uint8_t ctrl_inbmrb(sATAController *ctrl,uint16_t reg);
 
 /**
  * Writes <value> to the controller-register <reg>
@@ -90,7 +90,7 @@ u8 ctrl_inbmrb(sATAController *ctrl,u16 reg);
  * @param reg the register
  * @param value the value
  */
-void ctrl_outb(sATAController *ctrl,u16 reg,u8 value);
+void ctrl_outb(sATAController *ctrl,uint16_t reg,uint8_t value);
 /**
  * Writes <count> words from <buf> to the controller-register <reg>
  *
@@ -99,7 +99,7 @@ void ctrl_outb(sATAController *ctrl,u16 reg,u8 value);
  * @param buf the word-buffer
  * @param count the number of words
  */
-void ctrl_outwords(sATAController *ctrl,u16 reg,const u16 *buf,u32 count);
+void ctrl_outwords(sATAController *ctrl,uint16_t reg,const uint16_t *buf,size_t count);
 
 /**
  * Reads a byte from the controller-register <reg>
@@ -108,7 +108,7 @@ void ctrl_outwords(sATAController *ctrl,u16 reg,const u16 *buf,u32 count);
  * @param reg the register
  * @return the value
  */
-u8 ctrl_inb(sATAController *ctrl,u16 reg);
+uint8_t ctrl_inb(sATAController *ctrl,uint16_t reg);
 
 /**
  * Reads <count> words from the controller-register <reg> into <buf>
@@ -118,7 +118,7 @@ u8 ctrl_inb(sATAController *ctrl,u16 reg);
  * @param buf the buffer to write the words to
  * @param count the number of words
  */
-void ctrl_inwords(sATAController *ctrl,u16 reg,u16 *buf,u32 count);
+void ctrl_inwords(sATAController *ctrl,uint16_t reg,uint16_t *buf,size_t count);
 
 /**
  * Performs a software-reset for the given controller
@@ -154,7 +154,7 @@ void ctrl_waitIntrpt(sATAController *ctrl);
  * @param unset the bits to wait until they're unset
  * @return 0 on success, -1 if timeout has been reached, other: value of the error-register
  */
-s32 ctrl_waitUntil(sATAController *ctrl,u32 timeout,u32 sleepTime,u8 set,u8 unset);
+int ctrl_waitUntil(sATAController *ctrl,tTime timeout,tTime sleepTime,uint8_t set,uint8_t unset);
 
 /**
  * Performs a few io-port-reads (just to waste a bit of time ;))

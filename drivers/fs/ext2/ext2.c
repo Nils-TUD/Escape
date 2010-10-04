@@ -40,10 +40,10 @@
 /**
  * Checks whether x is a power of y
  */
-static bool ext2_isPowerOf(u32 x,u32 y);
+static bool ext2_isPowerOf(uint x,uint y);
 
 void *ext2_init(const char *driver,char **usedDev) {
-	u32 i;
+	size_t i;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
 		return NULL;
@@ -107,7 +107,7 @@ error:
 }
 
 void ext2_deinit(void *h) {
-	u32 i;
+	size_t i;
 	sExt2 *e = (sExt2*)h;
 	/* write pending changes */
 	ext2_sync(e);
@@ -144,11 +144,11 @@ sFileSystem *ext2_getFS(void) {
 	return fs;
 }
 
-tInodeNo ext2_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
+tInodeNo ext2_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt) {
 	return ext2_path_resolve((sExt2*)h,path,flags,dev,resLastMnt);
 }
 
-s32 ext2_open(void *h,tInodeNo ino,u8 flags) {
+tInodeNo ext2_open(void *h,tInodeNo ino,uint flags) {
 	sExt2 *e = (sExt2*)h;
 	/* truncate? */
 	if(flags & IO_TRUNCATE) {
@@ -168,7 +168,7 @@ void ext2_close(void *h,tInodeNo ino) {
 	UNUSED(ino);
 }
 
-s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
+int ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	sExt2 *e = (sExt2*)h;
 	const sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
 	if(cnode == NULL)
@@ -190,17 +190,17 @@ s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	return 0;
 }
 
-s32 ext2_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
+ssize_t ext2_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count) {
 	return ext2_file_read((sExt2*)h,inodeNo,buffer,offset,count);
 }
 
-s32 ext2_write(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count) {
+ssize_t ext2_write(void *h,tInodeNo inodeNo,const void *buffer,uint offset,size_t count) {
 	return ext2_file_write((sExt2*)h,inodeNo,buffer,offset,count);
 }
 
-s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
+int ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
-	s32 res;
+	int res;
 	sExt2CInode *dir,*ino;
 	dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	ino = ext2_icache_request(e,dstIno,IMODE_WRITE);
@@ -215,9 +215,9 @@ s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
 	return res;
 }
 
-s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
+int ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
-	s32 res;
+	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return ERR_INO_REQ_FAILED;
@@ -227,9 +227,9 @@ s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
 	return res;
 }
 
-s32 ext2_mkdir(void *h,tInodeNo dirIno,const char *name) {
+int ext2_mkdir(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
-	s32 res;
+	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return ERR_INO_REQ_FAILED;
@@ -238,9 +238,9 @@ s32 ext2_mkdir(void *h,tInodeNo dirIno,const char *name) {
 	return res;
 }
 
-s32 ext2_rmdir(void *h,tInodeNo dirIno,const char *name) {
+int ext2_rmdir(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
-	s32 res;
+	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return ERR_INO_REQ_FAILED;
@@ -260,24 +260,24 @@ void ext2_sync(void *h) {
 	bcache_flush(&e->blockCache);
 }
 
-u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo) {
+tBlockNo ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo) {
 	return (inodeNo - 1) / e->superBlock.inodesPerGroup;
 }
 
-u32 ext2_getGroupOfBlock(sExt2 *e,u32 block) {
+tBlockNo ext2_getGroupOfBlock(sExt2 *e,tBlockNo block) {
 	return block / e->superBlock.blocksPerGroup;
 }
 
-u32 ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo) {
+tBlockNo ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo) {
 	return inodeNo / e->superBlock.inodesPerGroup;
 }
 
-u32 ext2_getBlockGroupCount(sExt2 *e) {
-	u32 bpg = e->superBlock.blocksPerGroup;
+size_t ext2_getBlockGroupCount(sExt2 *e) {
+	size_t bpg = e->superBlock.blocksPerGroup;
 	return (e->superBlock.blockCount + bpg - 1) / bpg;
 }
 
-bool ext2_bgHasBackups(sExt2 *e,u32 i) {
+bool ext2_bgHasBackups(sExt2 *e,tBlockNo i) {
 	/* if the sparse-feature is enabled, just the groups 0, 1 and powers of 3, 5 and 7 contain
 	 * the backup */
 	if(!(e->superBlock.featureRoCompat & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
@@ -288,7 +288,7 @@ bool ext2_bgHasBackups(sExt2 *e,u32 i) {
 	return ext2_isPowerOf(i,3) || ext2_isPowerOf(i,5) || ext2_isPowerOf(i,7);
 }
 
-static bool ext2_isPowerOf(u32 x,u32 y) {
+static bool ext2_isPowerOf(uint x,uint y) {
 	while(x > 1) {
 		if(x % y != 0)
 			return false;
@@ -300,7 +300,7 @@ static bool ext2_isPowerOf(u32 x,u32 y) {
 #if DEBUGGING
 
 void ext2_bg_prints(sExt2 *e) {
-	u32 i,count = ext2_getBlockGroupCount(e);
+	size_t i,count = ext2_getBlockGroupCount(e);
 	printf("Blockgroups:\n");
 	for(i = 0; i < count; i++) {
 		printf(" Block %d\n",i);

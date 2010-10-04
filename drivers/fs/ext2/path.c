@@ -32,13 +32,13 @@
 #include "dir.h"
 #include "../mount.h"
 
-tInodeNo ext2_path_resolve(sExt2 *e,const char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
+tInodeNo ext2_path_resolve(sExt2 *e,const char *path,uint flags,tDevNo *dev,bool resLastMnt) {
 	sExt2CInode *cnode = NULL;
 	tInodeNo res;
 	tDevNo mntDev;
 	const char *p = path;
-	s32 err;
-	u32 pos;
+	int err;
+	ssize_t pos;
 
 	while(*p == '/')
 		p++;

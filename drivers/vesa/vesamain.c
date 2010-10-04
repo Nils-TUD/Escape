@@ -54,14 +54,14 @@
 #define ABS(x)							((x) > 0 ? (x) : -(x))
 
 static void vesa_doUpdate(void);
-static s32 vesa_setMode(void);
-static s32 vesa_init(void);
+static int vesa_setMode(void);
+static int vesa_init(void);
 static void vesa_update(tCoord x,tCoord y,tSize width,tSize height);
 static void vesa_setPixel16(tCoord x,tCoord y,tColor col);
 static void vesa_setPixel24(tCoord x,tCoord y,tColor col);
 static void vesa_setPixel32(tCoord x,tCoord y,tColor col);
 static void vesa_setCursor(tCoord x,tCoord y);
-static void vesa_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,
+static void vesa_copyRegion(uint8_t *src,uint8_t *dst,tSize width,tSize height,tCoord x1,tCoord y1,
 		tCoord x2,tCoord y2,tSize w1,tSize w2,tSize h1);
 
 static sSLList *dirtyRects;
@@ -71,11 +71,11 @@ static bool updCursor = false;
 static sVbeModeInfo *minfo = NULL;
 static void *video;
 static void *shmem;
-static u8 *cursorCopy;
+static uint8_t *cursorCopy;
 static tCoord lastX = 0;
 static tCoord lastY = 0;
 static sMsg msg;
-static u8 curCursor = CURSOR_DEFAULT;
+static uint8_t curCursor = CURSOR_DEFAULT;
 static sBitmap *cursor[6];
 static fSetPixel setPixel[] = {
 	/* 0 bpp */		NULL,
@@ -88,7 +88,7 @@ static fSetPixel setPixel[] = {
 int main(void) {
 	tFD id;
 	tMsgId mid;
-	u32 reqc;
+	size_t reqc;
 	bool enabled = true;
 
 	cursor[0] = bmp_loadFromFile(CURSOR_DEFAULT_FILE);
@@ -179,7 +179,7 @@ int main(void) {
 				case MSG_VESA_CURSOR: {
 					newCurX = (tCoord)msg.args.arg1;
 					newCurY = (tCoord)msg.args.arg2;
-					curCursor = ((u8)msg.args.arg3) % 6;
+					curCursor = ((uint8_t)msg.args.arg3) % 6;
 					updCursor = true;
 				}
 				break;
@@ -237,8 +237,8 @@ static void vesa_doUpdate(void) {
 	}
 }
 
-static s32 vesa_setMode(void) {
-	u16 mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
+static int vesa_setMode(void) {
+	uint mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
 	if(mode != 0) {
 		minfo = vbe_getModeInfo(mode);
 		if(minfo) {
@@ -258,7 +258,7 @@ static s32 vesa_setMode(void) {
 	return ERR_VESA_MODE_NOT_FOUND;
 }
 
-static s32 vesa_init(void) {
+static int vesa_init(void) {
 	tSize curWidth = cursor[curCursor]->infoHeader->width;
 	tSize curHeight = cursor[curCursor]->infoHeader->height;
 	shmem = createSharedMem("vesa",minfo->xResolution *
@@ -266,7 +266,7 @@ static s32 vesa_init(void) {
 	if(shmem == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
-	cursorCopy = (u8*)malloc(curWidth * curHeight * (minfo->bitsPerPixel / 8));
+	cursorCopy = (uint8_t*)malloc(curWidth * curHeight * (minfo->bitsPerPixel / 8));
 	if(cursorCopy == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -283,16 +283,16 @@ static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
 	tSize pxSize = minfo->bitsPerPixel / 8;
 	tSize curWidth = cursor[curCursor]->infoHeader->width;
 	tSize curHeight = cursor[curCursor]->infoHeader->height;
-	u32 count;
-	u8 *src,*dst;
+	size_t count;
+	uint8_t *src,*dst;
 	y1 = y;
 	y2 = MIN(yres,y + height);
 	width = MIN(xres - x,width);
 	count = width * pxSize;
 
 	/* copy from shared-mem to video-mem */
-	dst = (u8*)video + (y1 * xres + x) * pxSize;
-	src = (u8*)shmem + (y1 * xres + x) * pxSize;
+	dst = (uint8_t*)video + (y1 * xres + x) * pxSize;
+	src = (uint8_t*)shmem + (y1 * xres + x) * pxSize;
 	while(y1 < y2) {
 		memcpy(dst,src,count);
 		src += xres * pxSize;
@@ -320,11 +320,11 @@ static void vesa_setPixel16(tCoord x,tCoord y,tColor col) {
 	tSize xres = minfo->xResolution;
 	if(x >= xres || y >= minfo->yResolution)
 		return;
-	u16 *data = (u16*)((u8*)video + (y * xres + x) * 2);
-	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
-	u8 green = (col >> 8) >> (8 - minfo->greenMaskSize);
-	u8 blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
-	u16 val = (red << minfo->redFieldPosition) |
+	uint16_t *data = (uint16_t*)((uintptr_t)video + (y * xres + x) * 2);
+	uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
+	uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
+	uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+	uint16_t val = (red << minfo->redFieldPosition) |
 			(green << minfo->greenFieldPosition) |
 			(blue << minfo->blueFieldPosition);
 	*data = val;
@@ -334,11 +334,11 @@ static void vesa_setPixel24(tCoord x,tCoord y,tColor col) {
 	tSize xres = minfo->xResolution;
 	if(x >= xres || y >= minfo->yResolution)
 		return;
-	u8 *data = (u8*)video + (y * xres + x) * 3;
-	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
-	u8 green = (col >> 8) >> (8 - minfo->greenMaskSize);
-	u8 blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
-	u32 val = (red << minfo->redFieldPosition) |
+	uint8_t *data = (uint8_t*)video + (y * xres + x) * 3;
+	uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
+	uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
+	uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+	uint32_t val = (red << minfo->redFieldPosition) |
 			(green << minfo->greenFieldPosition) |
 			(blue << minfo->blueFieldPosition);
 	data[2] = val >> 16;
@@ -350,14 +350,14 @@ static void vesa_setPixel32(tCoord x,tCoord y,tColor col) {
 	tSize xres = minfo->xResolution;
 	if(x >= xres || y >= minfo->yResolution)
 		return;
-	u8 *data = (u8*)video + (y * xres + x) * 4;
-	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
-	u8 green = (col >> 8) >> (8 - minfo->greenMaskSize);
-	u8 blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
-	u32 val = (red << minfo->redFieldPosition) |
+	uint8_t *data = (uint8_t*)video + (y * xres + x) * 4;
+	uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
+	uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
+	uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+	uint32_t val = (red << minfo->redFieldPosition) |
 			(green << minfo->greenFieldPosition) |
 			(blue << minfo->blueFieldPosition);
-	*((u32*)data) = val;
+	*((uint32_t*)data) = val;
 }
 
 static void vesa_setCursor(tCoord x,tCoord y) {
@@ -382,13 +382,13 @@ static void vesa_setCursor(tCoord x,tCoord y) {
 	lastY = y;
 }
 
-static void vesa_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,
+static void vesa_copyRegion(uint8_t *src,uint8_t *dst,tSize width,tSize height,tCoord x1,tCoord y1,
 		tCoord x2,tCoord y2,tSize w1,tSize w2,tSize h1) {
 	tCoord maxy = MIN(h1,y1 + height);
 	tSize pxSize = minfo->bitsPerPixel / 8;
-	u32 count = MIN(w2 - x2,MIN(w1 - x1,width)) * pxSize;
-	u32 srcInc = w1 * pxSize;
-	u32 dstInc = w2 * pxSize;
+	size_t count = MIN(w2 - x2,MIN(w1 - x1,width)) * pxSize;
+	size_t srcInc = w1 * pxSize;
+	size_t dstInc = w2 * pxSize;
 	src += (y1 * w1 + x1) * pxSize;
 	dst += (y2 * w2 + x2) * pxSize;
 	while(y1 < maxy) {

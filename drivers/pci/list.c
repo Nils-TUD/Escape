@@ -47,9 +47,9 @@ static sPCIDeviceInfo *pci_getDevice(sPCIDevice *dev);
 static sPCIVendor *pci_getVendor(sPCIDevice *dev);
 static sPCIClassCode *pci_getClass(sPCIDevice *dev);
 static void pci_fillDev(sPCIDevice *dev);
-static void pci_fillBar(sPCIDevice *dev,u32 i);
-static u32 pci_read(u32 bus,u32 dev,u32 func,u32 offset);
-static void pci_write(u32 bus,u32 dev,u32 func,u32 offset,u32 value);
+static void pci_fillBar(sPCIDevice *dev,size_t i);
+static uint32_t pci_read(uchar bus,uchar dev,uchar func,uchar offset);
+static void pci_write(uchar bus,uchar dev,uchar func,uchar offset,uint32_t value);
 
 static sSLList *devices;
 
@@ -69,7 +69,7 @@ void list_init(void) {
 	list_detect();
 }
 
-sPCIDevice *list_getByClass(u8 baseClass,u8 subClass) {
+sPCIDevice *list_getByClass(uchar baseClass,uchar subClass) {
 	sSLNode *n;
 	for(n = sll_begin(devices); n != NULL; n = n->next) {
 		sPCIDevice *d = (sPCIDevice*)n->data;
@@ -79,7 +79,7 @@ sPCIDevice *list_getByClass(u8 baseClass,u8 subClass) {
 	return NULL;
 }
 
-sPCIDevice *list_getById(u8 bus,u8 dev,u8 func) {
+sPCIDevice *list_getById(uchar bus,uchar dev,uchar func) {
 	sSLNode *n;
 	for(n = sll_begin(devices); n != NULL; n = n->next) {
 		sPCIDevice *d = (sPCIDevice*)n->data;
@@ -90,7 +90,7 @@ sPCIDevice *list_getById(u8 bus,u8 dev,u8 func) {
 }
 
 static void list_detect(void) {
-	u8 bus,dev,func;
+	uchar bus,dev,func;
 	for(bus = 0; bus < BUS_COUNT; bus++) {
 		for(dev = 0; dev < DEV_COUNT; dev++) {
 			for(func = 0; func < FUNC_COUNT; func++) {
@@ -136,7 +136,7 @@ static void list_createVFSEntry(sPCIDevice *device) {
 			pclass ? pclass->subDesc : "?",pclass ? pclass->progDesc : "?");
 	fprintf(f,"type: 		%x\n",device->type);
 	if(device->type == 0x00) {
-		u32 i;
+		size_t i;
 		fprintf(f,"irq: 		%u\n",device->irq);
 		fprintf(f,"bars:\n");
 		for(i = 0; i < 6; i++) {
@@ -150,7 +150,7 @@ static void list_createVFSEntry(sPCIDevice *device) {
 }
 
 static sPCIDeviceInfo *pci_getDevice(sPCIDevice *dev) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < ARRAY_SIZE(pciDevices); i++) {
 		if(pciDevices[i].vendorId == dev->vendorId && pciDevices[i].deviceId == dev->deviceId)
 			return pciDevices + i;
@@ -159,7 +159,7 @@ static sPCIDeviceInfo *pci_getDevice(sPCIDevice *dev) {
 }
 
 static sPCIVendor *pci_getVendor(sPCIDevice *dev) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < ARRAY_SIZE(pciVendors); i++) {
 		if(pciVendors[i].vendorId == dev->vendorId)
 			return pciVendors + i;
@@ -168,7 +168,7 @@ static sPCIVendor *pci_getVendor(sPCIDevice *dev) {
 }
 
 static sPCIClassCode *pci_getClass(sPCIDevice *dev) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < ARRAY_SIZE(pciClassCodes); i++) {
 		if(pciClassCodes[i].baseClass == dev->baseClass &&
 				pciClassCodes[i].SubClass == dev->subClass &&
@@ -179,7 +179,7 @@ static sPCIClassCode *pci_getClass(sPCIDevice *dev) {
 }
 
 static void pci_fillDev(sPCIDevice *dev) {
-	u32 val;
+	uint32_t val;
 	val = pci_read(dev->bus,dev->dev,dev->func,0);
 	dev->vendorId = val & 0xFFFF;
 	dev->deviceId = val >> 16;
@@ -195,16 +195,16 @@ static void pci_fillDev(sPCIDevice *dev) {
 	dev->type = (val >> 16) & 0xFF;
 	dev->irq = 0;
 	if(dev->type == 0x00) {
-		u32 i;
+		size_t i;
 		for(i = 0; i < 6; i++)
 			pci_fillBar(dev,i);
 		dev->irq = pci_read(dev->bus,dev->dev,dev->func,0x3C) & 0xFF;
 	}
 }
 
-static void pci_fillBar(sPCIDevice *dev,u32 i) {
+static void pci_fillBar(sPCIDevice *dev,size_t i) {
 	sPCIBar *bar = dev->bars + i;
-	u32 barValue = pci_read(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4);
+	uint32_t barValue = pci_read(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4);
 	bar->type = barValue & 0x1;
 	bar->addr = barValue & ~0xF;
 
@@ -215,14 +215,14 @@ static void pci_fillBar(sPCIDevice *dev,u32 i) {
 	pci_write(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4,barValue);
 }
 
-static u32 pci_read(u32 bus,u32 dev,u32 func,u32 offset) {
-	u32 addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);
+static uint32_t pci_read(uchar bus,uchar dev,uchar func,uchar offset) {
+	uint32_t addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);
 	outDWord(IOPORT_PCI_CFG_ADDR,addr);
 	return inDWord(IOPORT_PCI_CFG_DATA);
 }
 
-static void pci_write(u32 bus,u32 dev,u32 func,u32 offset,u32 value) {
-	u32 addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);
+static void pci_write(uchar bus,uchar dev,uchar func,uchar offset,uint32_t value) {
+	uint32_t addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);
 	outDWord(IOPORT_PCI_CFG_ADDR,addr);
 	outDWord(IOPORT_PCI_CFG_DATA,value);
 }

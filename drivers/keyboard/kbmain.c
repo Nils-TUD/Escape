@@ -74,7 +74,7 @@
 /**
  * The keyboard-interrupt handler
  */
-static void kbIntrptHandler(s32 sig);
+static void kbIntrptHandler(int sig);
 static void kb_waitOutBuf(void);
 static void kb_waitInBuf(void);
 
@@ -87,7 +87,7 @@ static bool moving = false;
 int main(void) {
 	tFD id;
 	tMsgId mid;
-	u8 kbdata;
+	uint8_t kbdata;
 
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
@@ -210,7 +210,7 @@ int main(void) {
 			switch(mid) {
 				case MSG_DRV_READ: {
 					/* offset is ignored here */
-					u32 count = msg.args.arg2 / sizeof(sKbData);
+					size_t count = msg.args.arg2 / sizeof(sKbData);
 					sKbData *buffer = (sKbData*)malloc(count * sizeof(sKbData));
 					msg.args.arg1 = 0;
 					if(buffer)
@@ -239,8 +239,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void kbIntrptHandler(s32 sig) {
-	u8 scanCode;
+static void kbIntrptHandler(int sig) {
+	uint8_t scanCode;
 	sKbData data;
 	UNUSED(sig);
 
@@ -283,8 +283,8 @@ static void kbIntrptHandler(s32 sig) {
 }
 
 static void kb_waitOutBuf(void) {
-	u32 time = 0;
-	u8 status;
+	tTime time = 0;
+	uint8_t status;
 	do {
 		status = inByte(IOPORT_KB_CTRL);
 		if((status & STATUS_OUTBUF_FULL) == 0) {
@@ -296,8 +296,8 @@ static void kb_waitOutBuf(void) {
 }
 
 static void kb_waitInBuf(void) {
-	u32 time = 0;
-	u8 status;
+	tTime time = 0;
+	uint8_t status;
 	do {
 		status = inByte(IOPORT_KB_CTRL);
 		if((status & STATUS_INBUF_FULL) != 0) {

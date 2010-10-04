@@ -27,13 +27,13 @@
 #define ALLOC_LOCK	0xF7180000
 
 /* for statistics */
-static u32 cacheHits = 0;
-static u32 cacheMisses = 0;
+static uint cacheHits = 0;
+static uint cacheMisses = 0;
 
 /**
  * Aquires the lock, depending on <mode>, for the given block
  */
-static void bcache_aquire(sCBlock *b,u8 mode);
+static void bcache_aquire(sCBlock *b,uint mode);
 /**
  * Releases the lock for given block
  */
@@ -41,14 +41,14 @@ static void bcache_doRelease(sCBlock *b,bool unlockAlloc);
 /**
  * Requests the given block and reads it from disk if desired
  */
-static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead,u8 mode);
+static sCBlock *bcache_doRequest(sBlockCache *c,tBlockNo blockNo,bool doRead,uint mode);
 /**
  * Fetches a block-cache-entry
  */
 static sCBlock *bcache_getBlock(sBlockCache *c);
 
 void bcache_init(sBlockCache *c) {
-	u32 i;
+	size_t i;
 	sCBlock *bentry;
 	c->usedBlocks = NULL;
 	c->freeBlocks = NULL;
@@ -96,19 +96,19 @@ void bcache_markDirty(sCBlock *b) {
 	b->dirty = true;
 }
 
-sCBlock *bcache_create(sBlockCache *c,u32 blockNo) {
+sCBlock *bcache_create(sBlockCache *c,tBlockNo blockNo) {
 	return bcache_doRequest(c,blockNo,false,BMODE_WRITE);
 }
 
-sCBlock *bcache_request(sBlockCache *c,u32 blockNo,u8 mode) {
+sCBlock *bcache_request(sBlockCache *c,tBlockNo blockNo,uint mode) {
 	return bcache_doRequest(c,blockNo,true,mode);
 }
 
-static void bcache_aquire(sCBlock *b,u8 mode) {
+static void bcache_aquire(sCBlock *b,uint mode) {
 	assert(!(mode & BMODE_WRITE) || b->refs == 0);
 	b->refs++;
 	assert(unlock(ALLOC_LOCK) == 0);
-	assert(lock((u32)b,(mode & BMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+	assert(lock((uint)b,(mode & BMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 }
 
 static void bcache_doRelease(sCBlock *b,bool unlockAlloc) {
@@ -117,14 +117,14 @@ static void bcache_doRelease(sCBlock *b,bool unlockAlloc) {
 	b->refs--;
 	if(unlockAlloc)
 		assert(unlock(ALLOC_LOCK) == 0);
-	assert(unlock((u32)b) == 0);
+	assert(unlock((uint)b) == 0);
 }
 
 void bcache_release(sCBlock *b) {
 	bcache_doRelease(b,true);
 }
 
-static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead,u8 mode) {
+static sCBlock *bcache_doRequest(sBlockCache *c,tBlockNo blockNo,bool doRead,uint mode) {
 	sCBlock *block,*bentry;
 
 	/* aquire lock for getting a block */
@@ -160,7 +160,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead,u8 mode)
 	/* init cached block */
 	block = bcache_getBlock(c);
 	if(block->buffer == NULL) {
-		block->buffer = (u8*)malloc(c->blockSize);
+		block->buffer = malloc(c->blockSize);
 		if(block->buffer == NULL) {
 			assert(unlock(ALLOC_LOCK) == 0);
 			return NULL;
@@ -229,7 +229,7 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 #if DEBUGGING
 
 void bcache_print(sBlockCache *c) {
-	u32 i = 0;
+	size_t i = 0;
 	sCBlock *block;
 	printf("Used blocks:\n\t");
 	block = c->usedBlocks;
@@ -243,8 +243,8 @@ void bcache_print(sBlockCache *c) {
 }
 
 void bcache_printStats(void) {
-	printf("[BlockCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
-			(u32)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
+	printf("[BlockCache] Hits: %u, Misses: %u; %u %%\n",cacheHits,cacheMisses,
+			(uint)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }
 
 #endif

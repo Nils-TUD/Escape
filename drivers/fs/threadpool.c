@@ -39,10 +39,10 @@ static tTid acceptTid;
 static sReqThread threads[REQ_THREAD_COUNT];
 
 void tpool_init(void) {
-	u32 i;
+	size_t i;
 	acceptTid = gettid();
 	for(i = 0; i < REQ_THREAD_COUNT; i++) {
-		s32 tid = startThread((fThreadEntry)tpool_idle,threads + i);
+		int tid = startThread((fThreadEntry)tpool_idle,threads + i);
 		if(tid < 0)
 			error("[FS] Unable to start request-thread %d\n",i);
 		threads[i].id = i + 1;
@@ -52,15 +52,15 @@ void tpool_init(void) {
 }
 
 void tpool_shutdown(void) {
-	u32 i;
+	size_t i;
 	run = false;
 	for(i = 0; i < REQ_THREAD_COUNT; i++)
 		notify(threads[i].tid,EV_USER1);
 	join(0);
 }
 
-u32 tpool_tidToId(tTid tid) {
-	u32 i;
+size_t tpool_tidToId(tTid tid) {
+	size_t i;
 	for(i = 0; i < REQ_THREAD_COUNT; i++) {
 		if(threads[i].tid == tid)
 			return threads[i].id;
@@ -69,8 +69,8 @@ u32 tpool_tidToId(tTid tid) {
 	return 0;
 }
 
-bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,u32 msgSize,void *data) {
-	u32 i;
+bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,size_t msgSize,void *data) {
+	size_t i;
 	while(true) {
 		lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
 		for(i = 0; i < REQ_THREAD_COUNT; i++) {

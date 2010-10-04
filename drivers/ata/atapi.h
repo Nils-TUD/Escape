@@ -34,7 +34,7 @@
  * @param secCount number of sectors
  * @return true on success
  */
-bool atapi_read(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
+bool atapi_read(sATADevice *device,uint op,void *buffer,uint64_t lba,size_t secSize,size_t secCount);
 
 /**
  * Determines the capacity for the given device
@@ -42,6 +42,6 @@ bool atapi_read(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 sec
  * @param device the device
  * @return the capacity or 0 if failed
  */
-u32 atapi_getCapacity(sATADevice *device);
+size_t atapi_getCapacity(sATADevice *device);
 
 #endif /* ATAPI_H_ */

@@ -33,7 +33,7 @@
  * @param name the name
  * @return 0 on success
  */
-s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *name);
+int ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *name);
 
 /**
  * Removes the given name from the given directory
@@ -45,6 +45,6 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
  * @param delDir whether the entry may be an directory
  * @return 0 on success
  */
-s32 ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *name,bool delDir);
+int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *name,bool delDir);
 
 #endif /* LINK_H_ */

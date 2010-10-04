@@ -67,17 +67,17 @@
 
 #define INPUT_BUF_SIZE				128
 
-static void irqHandler(s32 sig);
+static void irqHandler(int sig);
 static void kb_init(void);
 static void kb_checkCmd(void);
-static u16 kb_read(void);
-static u16 kb_readMouse(void);
-static u16 kb_writeMouse(u8 cmd);
+static uint16_t kb_read(void);
+static uint16_t kb_readMouse(void);
+static uint8_t kb_writeMouse(uint8_t cmd);
 
 /* a mouse-packet */
 typedef struct {
 	union {
-		u8	yOverflow : 1,
+		uchar	yOverflow : 1,
 			xOverflow : 1,
 			ySign : 1,
 			xSign : 1,
@@ -85,13 +85,13 @@ typedef struct {
 			middleBtn : 1,
 			rightBtn : 1,
 			leftBtn : 1;
-		u8 all;
+		uchar all;
 	} status;
-	s8 xcoord;
-	s8 ycoord;
+	char xcoord;
+	char ycoord;
 } sMousePacket;
 
-static u8 byteNo = 0;
+static uchar byteNo = 0;
 static tFD sid;
 static sMsg msg;
 static sRingBuf *ibuf;
@@ -144,7 +144,7 @@ int main(void) {
 			switch(mid) {
 				case MSG_DRV_READ: {
 					/* offset is ignored here */
-					u32 count = msg.args.arg2 / sizeof(sMouseData);
+					size_t count = msg.args.arg2 / sizeof(sMouseData);
 					sMouseData *buffer = (sMouseData*)malloc(count * sizeof(sMouseData));
 					msg.args.arg1 = 0;
 					if(buffer)
@@ -171,8 +171,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void irqHandler(s32 sig) {
-	u8 status;
+static void irqHandler(int sig) {
+	uint8_t status;
 	UNUSED(sig);
 
 	/* check if there is mouse-data */
@@ -208,7 +208,7 @@ static void irqHandler(s32 sig) {
 }
 
 static void kb_init(void) {
-	u8 cmdByte;
+	uint8_t cmdByte;
 	/* activate mouse */
 	outByte(IOPORT_KB_CTRL,KBC_CMD_ENABLE_MOUSE);
 	kb_checkCmd();
@@ -234,25 +234,25 @@ static void kb_checkCmd(void) {
 	while(inByte(IOPORT_KB_CTRL) & KBC_STATUS_BUSY);
 }
 
-static u16 kb_read(void) {
-	u16 c = 0;
-	u8 status;
+static uint16_t kb_read(void) {
+	uint16_t c = 0;
+	uint8_t status;
 	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_DATA_AVAIL));
 	if(!(status & KBC_STATUS_DATA_AVAIL))
 		return 0xFF00;
 	return inByte(IOPORT_KB_DATA);
 }
 
-static u16 kb_readMouse(void) {
-	u16 c = 0;
-	u8 status;
+static uint16_t kb_readMouse(void) {
+	uint16_t c = 0;
+	uint8_t status;
 	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_MOUSE_DATA_AVAIL));
 	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
 		return 0xFF00;
 	return inByte(IOPORT_KB_DATA);
 }
 
-static u16 kb_writeMouse(u8 cmd) {
+static uint8_t kb_writeMouse(uint8_t cmd) {
 	outByte(IOPORT_KB_CTRL,KBC_CMD_NEXT2MOUSE);
 	kb_checkCmd();
 	outByte(IOPORT_KB_DATA,cmd);

@@ -23,8 +23,8 @@
 #include <esc/common.h>
 #include "iso9660.h"
 
-bool iso_rw_readBlocks(sISO9660 *h,void *buffer,u32 start,u16 blockCount);
+bool iso_rw_readBlocks(sISO9660 *h,void *buffer,tBlockNo start,size_t blockCount);
 
-bool iso_rw_readSectors(sISO9660 *h,void *buffer,u64 lba,u16 secCount);
+bool iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount);
 
 #endif /* RW_H_ */

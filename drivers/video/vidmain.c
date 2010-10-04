@@ -45,9 +45,9 @@
 #define MODE					MODE_80x25
 
 typedef struct {
-	u32 cols;
-	u32 rows;
-	u16 no;
+	uint cols;
+	uint rows;
+	uint no;
 } sVidMode;
 
 /**
@@ -60,7 +60,7 @@ static void vid_setMode(void);
  * @param row the row
  * @param col the col
  */
-static void vid_setCursor(u8 row,u8 col);
+static void vid_setCursor(uint row,uint col);
 
 static sVidMode modes[] = {
 	{80,25,0x0002},
@@ -69,7 +69,7 @@ static sVidMode modes[] = {
 static sVidMode *mode = modes + MODE;
 
 /* our state */
-static u8 *videoData;
+static uint8_t *videoData;
 static sMsg msg;
 
 int main(void) {
@@ -81,7 +81,7 @@ int main(void) {
 		error("Unable to register driver 'video'");
 
 	/* map video-memory for our process */
-	videoData = (u8*)mapPhysical(VIDEO_MEM,mode->cols * (mode->rows + 1) * 2);
+	videoData = (uint8_t*)mapPhysical(VIDEO_MEM,mode->cols * (mode->rows + 1) * 2);
 	if(videoData == NULL)
 		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
 
@@ -102,8 +102,8 @@ int main(void) {
 			/* see what we have to do */
 			switch(mid) {
 				case MSG_DRV_WRITE: {
-					u32 offset = msg.args.arg1;
-					u32 count = msg.args.arg2;
+					uint offset = msg.args.arg1;
+					size_t count = msg.args.arg2;
 					msg.args.arg1 = 0;
 					if(offset + count <= mode->rows * mode->cols * 2 && offset + count > offset) {
 						if(RETRY(receive(fd,&mid,videoData + offset,count)) >= 0)
@@ -153,13 +153,13 @@ static void vid_setMode(void) {
 		printe("Switch to text-mode failed");
 }
 
-static void vid_setCursor(u8 row,u8 col) {
-   u16 position = (row * mode->cols) + col;
+static void vid_setCursor(uint row,uint col) {
+	uint position = (row * mode->cols) + col;
 
    /* cursor LOW port to vga INDEX register */
    outByte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCLOW);
-   outByte(CURSOR_PORT_DATA,(u8)(position & 0xFF));
+   outByte(CURSOR_PORT_DATA,(uint8_t)(position & 0xFF));
    /* cursor HIGH port to vga INDEX register */
    outByte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCHIGH);
-   outByte(CURSOR_PORT_DATA,(u8)((position >> 8) & 0xFF));
+   outByte(CURSOR_PORT_DATA,(uint8_t)((position >> 8) & 0xFF));
 }

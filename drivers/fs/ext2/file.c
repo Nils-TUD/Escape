@@ -38,15 +38,15 @@
 /**
  * Free's the given doubly-indirect-block
  */
-static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo);
+static int ext2_file_freeDIndirBlock(sExt2 *e,tBlockNo blockNo);
 /**
  * Free's the given singly-indirect-block
  */
-static s32 ext2_file_freeIndirBlock(sExt2 *e,u32 blockNo);
+static int ext2_file_freeIndirBlock(sExt2 *e,tBlockNo blockNo);
 
-s32 ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *ino,bool isDir) {
+int ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *ino,bool isDir) {
 	sExt2CInode *cnode;
-	s32 res = ext2_inode_create(e,dirNode,&cnode,isDir);
+	int res = ext2_inode_create(e,dirNode,&cnode,isDir);
 	if(res < 0)
 		return res;
 
@@ -62,8 +62,8 @@ s32 ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *in
 	return 0;
 }
 
-s32 ext2_file_delete(sExt2 *e,sExt2CInode *cnode) {
-	s32 res;
+int ext2_file_delete(sExt2 *e,sExt2CInode *cnode) {
+	int res;
 	/* truncate the file */
 	if((res = ext2_file_truncate(e,cnode,true)) < 0)
 		return res;
@@ -73,9 +73,9 @@ s32 ext2_file_delete(sExt2 *e,sExt2CInode *cnode) {
 	return 0;
 }
 
-s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
-	s32 res;
-	u32 i;
+int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
+	int res;
+	size_t i;
 	/* free direct blocks */
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++) {
 		if(cnode->inode.dBlocks[i] == 0)
@@ -101,16 +101,16 @@ s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 	}
 	/* triple indirect */
 	if(cnode->inode.triplyIBlock) {
-		u32 count;
+		size_t count;
 		sCBlock *blocks = bcache_request(&e->blockCache,cnode->inode.triplyIBlock,BMODE_WRITE);
 		vassert(blocks != NULL,"Block %d set, but unable to load it\n",cnode->inode.triplyIBlock);
 
 		bcache_markDirty(blocks);
-		count = EXT2_BLK_SIZE(e) / sizeof(u32);
+		count = EXT2_BLK_SIZE(e) / sizeof(tBlockNo);
 		for(i = 0; i < count; i++) {
-			if(((u32*)blocks->buffer)[i] == 0)
+			if(((tBlockNo*)blocks->buffer)[i] == 0)
 				break;
-			if((res = ext2_file_freeDIndirBlock(e,((u32*)blocks->buffer)[i])) < 0) {
+			if((res = ext2_file_freeDIndirBlock(e,((tBlockNo*)blocks->buffer)[i])) < 0) {
 				bcache_release(blocks);
 				return res;
 			}
@@ -131,9 +131,9 @@ s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 	return 0;
 }
 
-s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
+ssize_t ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,uint offset,size_t count) {
 	sExt2CInode *cnode;
-	s32 res;
+	ssize_t res;
 
 	/* at first we need the inode */
 	cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
@@ -155,15 +155,16 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 	return res;
 }
 
-s32 ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,u32 offset,u32 count) {
+ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,uint offset,size_t count) {
 	/* nothing left to read? */
-	if((s32)offset < 0 || (s32)offset >= cnode->inode.size)
+	if((int32_t)offset < 0 || (int32_t)offset >= cnode->inode.size)
 		return 0;
 
 	if(buffer != NULL) {
-		u32 blockSize,startBlock,blockCount;
+		size_t blockSize,blockCount;
+		tBlockNo startBlock;
 		/* adjust count */
-		if((s32)(offset + count) < 0 || (s32)(offset + count) >= cnode->inode.size)
+		if((int32_t)(offset + count) < 0 || (int32_t)(offset + count) >= cnode->inode.size)
 			count = cnode->inode.size - offset;
 
 		blockSize = EXT2_BLK_SIZE(e);
@@ -172,18 +173,18 @@ s32 ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,u32 offset,
 		blockCount = (offset + count + blockSize - 1) / blockSize;
 
 		/* use the offset in the first block; after the first one the offset is 0 anyway */
-		u32 c,i,leftBytes = count;
-		u8 *bufWork = (u8*)buffer;
+		size_t c,i,leftBytes = count;
+		uint8_t *bufWork = (uint8_t*)buffer;
 		for(i = 0; i < blockCount; i++) {
 			/* request block */
-			u32 block = ext2_inode_getDataBlock(e,cnode,startBlock + i);
+			tBlockNo block = ext2_inode_getDataBlock(e,cnode,startBlock + i);
 			sCBlock *tmpBuffer = bcache_request(&e->blockCache,block,BMODE_READ);
 			if(tmpBuffer == NULL)
 				return ERR_BLO_REQ_FAILED;
 
 			/* copy the requested part */
 			c = MIN(leftBytes,blockSize - offset);
-			memcpy(bufWork,tmpBuffer->buffer + offset,c);
+			memcpy(bufWork,(uint8_t*)tmpBuffer->buffer + offset,c);
 			bufWork += c;
 
 			bcache_release(tmpBuffer);
@@ -198,7 +199,7 @@ s32 ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,u32 offset,
 	return count;
 }
 
-s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count) {
+ssize_t ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,uint offset,size_t count) {
 	/* at first we need the inode */
 	sExt2CInode *cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
@@ -210,15 +211,16 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 	return count;
 }
 
-s32 ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,u32 offset,u32 count) {
+ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,uint offset,size_t count) {
 	sCBlock *tmpBuffer;
-	const u8 *bufWork;
-	u32 now;
-	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
-	u32 orgOff = offset;
+	const uint8_t *bufWork;
+	tTime now;
+	size_t c,i,blockSize,blockCount,leftBytes;
+	tBlockNo startBlock;
+	uint orgOff = offset;
 
 	/* gap-filling not supported yet */
-	if((s32)offset > cnode->inode.size)
+	if((int32_t)offset > cnode->inode.size)
 		return 0;
 
 	blockSize = EXT2_BLK_SIZE(e);
@@ -227,9 +229,9 @@ s32 ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,u32 offset
 	blockCount = (offset + count + blockSize - 1) / blockSize;
 
 	leftBytes = count;
-	bufWork = (const u8*)buffer;
+	bufWork = (const uint8_t*)buffer;
 	for(i = 0; i < blockCount; i++) {
-		u32 block = ext2_inode_reqDataBlock(e,cnode,startBlock + i);
+		tBlockNo block = ext2_inode_reqDataBlock(e,cnode,startBlock + i);
 		/* error (e.g. no free block) ? */
 		if(block == 0)
 			return ERR_BLO_REQ_FAILED;
@@ -244,7 +246,7 @@ s32 ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,u32 offset
 		if(tmpBuffer == NULL)
 			return 0;
 		/* we can write it to disk later :) */
-		memcpy(tmpBuffer->buffer + offset,bufWork,c);
+		memcpy((uint8_t*)tmpBuffer->buffer + offset,bufWork,c);
 		bcache_markDirty(tmpBuffer);
 		bcache_release(tmpBuffer);
 
@@ -260,40 +262,40 @@ s32 ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,u32 offset
 	now = time(NULL);
 	cnode->inode.accesstime = now;
 	cnode->inode.modifytime = now;
-	cnode->inode.size = MAX((s32)(orgOff + count),cnode->inode.size);
+	cnode->inode.size = MAX((int32_t)(orgOff + count),cnode->inode.size);
 	ext2_icache_markDirty(cnode);
 	return count;
 }
 
-static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo) {
-	u32 i,count;
+static int ext2_file_freeDIndirBlock(sExt2 *e,tBlockNo blockNo) {
+	size_t i,count;
 	/* note that we don't need to set the block-numbers to 0 here (-> write), since the whole
 	 * block is free'd afterwards anyway */
 	sCBlock *blocks = bcache_request(&e->blockCache,blockNo,BMODE_READ);
 	vassert(blocks != NULL,"Block %d set, but unable to load it\n",blockNo);
 
-	count = EXT2_BLK_SIZE(e) / sizeof(u32);
+	count = EXT2_BLK_SIZE(e) / sizeof(tBlockNo);
 	for(i = 0; i < count; i++) {
-		if(((u32*)blocks->buffer)[i] == 0)
+		if(((tBlockNo*)blocks->buffer)[i] == 0)
 			break;
-		ext2_file_freeIndirBlock(e,((u32*)blocks->buffer)[i]);
+		ext2_file_freeIndirBlock(e,((tBlockNo*)blocks->buffer)[i]);
 	}
 	bcache_release(blocks);
 	ext2_bm_freeBlock(e,blockNo);
 	return 0;
 }
 
-static s32 ext2_file_freeIndirBlock(sExt2 *e,u32 blockNo) {
-	u32 i,count;
+static int ext2_file_freeIndirBlock(sExt2 *e,tBlockNo blockNo) {
+	size_t i,count;
 	sCBlock *blocks = bcache_request(&e->blockCache,blockNo,BMODE_WRITE);
 	vassert(blocks != NULL,"Block %d set, but unable to load it\n",blockNo);
 
-	count = EXT2_BLK_SIZE(e) / sizeof(u32);
+	count = EXT2_BLK_SIZE(e) / sizeof(tBlockNo);
 	for(i = 0; i < count; i++) {
-		if(((u32*)blocks->buffer)[i] == 0)
+		if(((tBlockNo*)blocks->buffer)[i] == 0)
 			break;
-		ext2_bm_freeBlock(e,((u32*)blocks->buffer)[i]);
-		((u32*)blocks->buffer)[i] = 0;
+		ext2_bm_freeBlock(e,((tBlockNo*)blocks->buffer)[i]);
+		((tBlockNo*)blocks->buffer)[i] = 0;
 	}
 	bcache_markDirty(blocks);
 	bcache_release(blocks);

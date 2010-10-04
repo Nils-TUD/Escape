@@ -31,15 +31,15 @@
 /* a listener */
 typedef struct {
 	tInodeNo id;
-	u8 flags;
-	u8 key;
-	u8 modifier;
+	uchar flags;
+	uchar key;
+	uchar modifier;
 } sEventListener;
 
 /**
  * Searches for the given listener
  */
-static sEventListener *events_find(tInodeNo id,u8 flags,u8 key,u8 modifier);
+static sEventListener *events_find(tInodeNo id,uchar flags,uchar key,uchar modifier);
 
 /* all announced listeners */
 static sSLList *listener;
@@ -77,7 +77,7 @@ bool events_send(tFD driver,sKmData *km) {
 	return copied;
 }
 
-s32 events_add(tInodeNo id,u8 flags,u8 key,u8 modifier) {
+int events_add(tInodeNo id,uchar flags,uchar key,uchar modifier) {
 	sEventListener *l;
 	if(events_find(id,flags,key,modifier) != NULL)
 		return ERR_LISTENER_EXISTS;
@@ -94,7 +94,7 @@ s32 events_add(tInodeNo id,u8 flags,u8 key,u8 modifier) {
 	return 0;
 }
 
-void events_remove(tInodeNo id,u8 flags,u8 key,u8 modifier) {
+void events_remove(tInodeNo id,uchar flags,uchar key,uchar modifier) {
 	sEventListener *l = events_find(id,flags,key,modifier);
 	if(l) {
 		sll_removeFirst(listener,l);
@@ -102,7 +102,7 @@ void events_remove(tInodeNo id,u8 flags,u8 key,u8 modifier) {
 	}
 }
 
-static sEventListener *events_find(tInodeNo id,u8 flags,u8 key,u8 modifier) {
+static sEventListener *events_find(tInodeNo id,uchar flags,uchar key,uchar modifier) {
 	sSLNode *n;
 	for(n = sll_begin(listener); n != NULL; n = n->next) {
 		sEventListener *l = (sEventListener*)n->data;

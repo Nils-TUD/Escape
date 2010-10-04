@@ -31,7 +31,7 @@
 
 bool ext2_bg_init(sExt2 *e) {
 	/* read block-group-descriptors */
-	u32 bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
+	size_t bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
 	e->groupsDirty = false;
 	e->groups = (sExt2BlockGrp*)malloc(bcount * EXT2_BLK_SIZE(e));
 	if(e->groups == NULL) {
@@ -51,7 +51,8 @@ void ext2_bg_destroy(sExt2 *e) {
 }
 
 void ext2_bg_update(sExt2 *e) {
-	u32 i,bno,count,bcount;
+	tBlockNo bno;
+	size_t i,count,bcount;
 	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	if(!e->groupsDirty)
@@ -88,9 +89,10 @@ done:
 /**
  * Prints the given bitmap
  */
-static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *bitmap);
+static void ext2_bg_printRanges(sExt2 *e,const char *name,tBlockNo first,tBlockNo max,
+		uint8_t *bitmap);
 
-void ext2_bg_print(sExt2 *e,u32 no,sExt2BlockGrp *bg) {
+void ext2_bg_print(sExt2 *e,tBlockNo no,sExt2BlockGrp *bg) {
 	sCBlock *bbitmap = bcache_request(&e->blockCache,bg->blockBitmap,BMODE_READ);
 	sCBlock *ibitmap = bcache_request(&e->blockCache,bg->inodeBitmap,BMODE_READ);
 	if(!bbitmap || !ibitmap)
@@ -111,15 +113,16 @@ void ext2_bg_print(sExt2 *e,u32 no,sExt2BlockGrp *bg) {
 	bcache_release(bbitmap);
 }
 
-static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *bitmap) {
+static void ext2_bg_printRanges(sExt2 *e,const char *name,tBlockNo first,tBlockNo max,
+		uint8_t *bitmap) {
 	bool lastFree;
-	u32 pcount,start,i,a,j;
+	size_t pcount,start,i,a,j;
 
 	pcount = 0;
 	start = 0;
 	lastFree = (bitmap[0] & 1) == 0;
 	printf("	Free%s:\n\t\t",name);
-	for(i = 0; i < (u32)EXT2_BLK_SIZE(e); a = 0, i++) {
+	for(i = 0; i < EXT2_BLK_SIZE(e); a = 0, i++) {
 		for(a = 0, j = 1; j < 256; a++, j <<= 1) {
 			if(i * 8 + a >= max)
 				goto freeDone;
@@ -149,7 +152,7 @@ freeDone:
 	start = 0;
 	lastFree = (bitmap[0] & 1) == 0;
 	printf("	Used%s:\n\t\t",name);
-	for(i = 0; i < (u32)EXT2_BLK_SIZE(e); a = 0, i++) {
+	for(i = 0; i < EXT2_BLK_SIZE(e); a = 0, i++) {
 		for(a = 0, j = 1; j < 256; a++, j <<= 1) {
 			if(i * 8 + a >= max)
 				goto usedDone;

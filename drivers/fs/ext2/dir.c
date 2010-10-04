@@ -28,12 +28,12 @@
 #include "link.h"
 #include "inodecache.h"
 
-s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
+int ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
 	sExt2CInode *cnode;
 	tInodeNo ino;
 
 	/* first create an inode and an entry in the directory */
-	s32 res = ext2_file_create(e,dir,name,&ino,true);
+	int res = ext2_file_create(e,dir,name,&ino,true);
 	if(res < 0)
 		return res;
 
@@ -60,10 +60,11 @@ s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
 	return 0;
 }
 
-tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,u32 nameLen) {
+tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,size_t nameLen) {
 	tInodeNo ino;
-	s32 res,size = dir->inode.size;
-	sExt2DirEntry *buffer = (sExt2DirEntry*)malloc(sizeof(u8) * size);
+	size_t size = dir->inode.size;
+	int res;
+	sExt2DirEntry *buffer = (sExt2DirEntry*)malloc(size);
 	if(buffer == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -78,8 +79,8 @@ tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,u32 nameLen) {
 	return ino;
 }
 
-tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,u32 bufSize,const char *name,u32 nameLen) {
-	s32 rem = bufSize;
+tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen) {
+	ssize_t rem = bufSize;
 	sExt2DirEntry *entry = buffer;
 
 	/* search the directory-entries */
@@ -92,14 +93,15 @@ tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,u32 bufSize,const char *name,u32 
 
 		/* to next dir-entry */
 		rem -= entry->recLen;
-		entry = (sExt2DirEntry*)((u8*)entry + entry->recLen);
+		entry = (sExt2DirEntry*)((uintptr_t)entry + entry->recLen);
 	}
 	return ERR_PATH_NOT_FOUND;
 }
 
-s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
+int ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	tInodeNo ino;
-	s32 res,size = dir->inode.size;
+	size_t size = dir->inode.size;
+	int res;
 	sExt2CInode *delIno;
 	sExt2DirEntry *entry,*buffer;
 
@@ -113,7 +115,7 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 		return ERR_INO_REQ_FAILED;
 
 	/* read the directory */
-	buffer = (sExt2DirEntry*)malloc(sizeof(u8) * size);
+	buffer = (sExt2DirEntry*)malloc(size);
 	if(buffer == NULL) {
 		res = ERR_NOT_ENOUGH_MEM;
 		goto error;
@@ -134,7 +136,7 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 
 		/* to next dir-entry */
 		size -= entry->recLen;
-		entry = (sExt2DirEntry*)((u8*)entry + entry->recLen);
+		entry = (sExt2DirEntry*)((uintptr_t)entry + entry->recLen);
 	}
 	free(buffer);
 	buffer = NULL;

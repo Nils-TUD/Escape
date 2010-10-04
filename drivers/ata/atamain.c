@@ -37,26 +37,26 @@
 #define MAX_RW_SIZE	4096
 
 typedef struct {
-	u32 device;
-	u32 partition;
+	uint device;
+	uint partition;
 } sId2Fd;
 
 static sId2Fd *getDriver(tFD sid);
 static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
 
-static s32 drvCount = 0;
+static size_t drvCount = 0;
 static tFD drivers[DEVICE_COUNT * PARTITION_COUNT];
 static sId2Fd id2Fd[DEVICE_COUNT * PARTITION_COUNT];
 /* don't use dynamic memory here since this may cause trouble with swapping (which we do) */
 /* because if the heap hasn't enough memory and we request more when we should swap the kernel
  * may not have more memory and can't do anything about it */
-static u16 buffer[MAX_RW_SIZE / sizeof(u16)];
+static uint16_t buffer[MAX_RW_SIZE / sizeof(uint16_t)];
 
 static sMsg msg;
 
 int main(int argc,char **argv) {
-	s32 i;
+	size_t i;
 	tMsgId mid;
 	bool useDma = true;
 
@@ -65,7 +65,7 @@ int main(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	for(i = 2; i < argc; i++) {
+	for(i = 2; (int)i < argc; i++) {
 		if(strcmp(argv[i],"nodma") == 0)
 			useDma = false;
 	}
@@ -105,13 +105,13 @@ int main(int argc,char **argv) {
 			ATA_PR2("Got message %d",mid);
 			switch(mid) {
 				case MSG_DRV_READ: {
-					u32 offset = msg.args.arg1;
-					u32 count = msg.args.arg2;
+					uint offset = msg.args.arg1;
+					uint count = msg.args.arg2;
 					msg.args.arg1 = 0;
 					/* we have to check whether it is at least one sector. otherwise ATA can't
 					 * handle the request */
 					if(offset + count <= part->size * device->secSize && offset + count > offset) {
-						u32 rcount = (count + device->secSize - 1) & ~(device->secSize - 1);
+						uint rcount = (count + device->secSize - 1) & ~(device->secSize - 1);
 						if(rcount <= MAX_RW_SIZE) {
 							ATA_PR2("Reading %d bytes @ %x from device %d",
 									rcount,offset,device->id);
@@ -130,8 +130,8 @@ int main(int argc,char **argv) {
 				break;
 
 				case MSG_DRV_WRITE: {
-					u32 offset = msg.args.arg1;
-					u32 count = msg.args.arg2;
+					uint offset = msg.args.arg1;
+					uint count = msg.args.arg2;
 					msg.args.arg1 = 0;
 					if(offset + count <= part->size * device->secSize && offset + count > offset) {
 						if(count <= MAX_RW_SIZE) {
@@ -166,9 +166,9 @@ int main(int argc,char **argv) {
 }
 
 static void initDrives(void) {
-	u8 deviceIds[] = {DEVICE_PRIM_MASTER,DEVICE_PRIM_SLAVE,DEVICE_SEC_MASTER,DEVICE_SEC_SLAVE};
+	uint deviceIds[] = {DEVICE_PRIM_MASTER,DEVICE_PRIM_SLAVE,DEVICE_SEC_MASTER,DEVICE_SEC_SLAVE};
 	char name[SSTRLEN("hda1") + 1];
-	u32 i,p;
+	size_t i,p;
 	for(i = 0; i < DEVICE_COUNT; i++) {
 		sATADevice *device = ctrl_getDevice(deviceIds[i]);
 		if(device->present == 0)
@@ -221,7 +221,7 @@ static void createVFSEntry(sATADevice *device,sPartition *part,const char *name)
 	}
 
 	if(part == NULL) {
-		u32 i;
+		size_t i;
 		fprintf(f,"%-15s%s\n","Type:",device->info.general.isATAPI ? "ATAPI" : "ATA");
 		fprintf(f,"%-15s","ModelNo:");
 		for(i = 0; i < 40; i += 2)
@@ -258,7 +258,7 @@ static void createVFSEntry(sATADevice *device,sPartition *part,const char *name)
 }
 
 static sId2Fd *getDriver(tFD sid) {
-	s32 i;
+	size_t i;
 	for(i = 0; i < drvCount; i++) {
 		if(drivers[i] == sid)
 			return id2Fd + i;

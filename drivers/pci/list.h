@@ -38,7 +38,7 @@ void list_init(void);
  * @param subClass the subclass
  * @return the device or NULL
  */
-sPCIDevice *list_getByClass(u8 baseClass,u8 subClass);
+sPCIDevice *list_getByClass(uchar baseClass,uchar subClass);
 
 /**
  * Finds a PCI-device by bus, dev and func
@@ -48,6 +48,6 @@ sPCIDevice *list_getByClass(u8 baseClass,u8 subClass);
  * @param func the function
  * @return the device or NULL
  */
-sPCIDevice *list_getById(u8 bus,u8 dev,u8 func);
+sPCIDevice *list_getById(uchar bus,uchar dev,uchar func);
 
 #endif /* LIST_H_ */

@@ -33,6 +33,6 @@
  * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the id or < 0
  */
-tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt);
+tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt);
 
 #endif /* PATH_H_ */

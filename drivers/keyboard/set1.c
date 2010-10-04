@@ -24,8 +24,8 @@
 
 /* an entry in the set1-map */
 typedef struct {
-	u8 def;
-	u8 ext;
+	uchar def;
+	uchar ext;
 } sScanCodeEntry;
 
 static sScanCodeEntry scanCode2KeyCode[] = {
@@ -159,9 +159,9 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 	/* 7F */	{0,				0},
 };
 
-static u8 set = 0;
+static uchar set = 0;
 
-bool kb_set1_getKeycode(u8 *isBreak,u8 *keycode,u8 scanCode) {
+bool kb_set1_getKeycode(uchar *isBreak,uchar *keycode,uchar scanCode) {
 	sScanCodeEntry *e;
 	/* extended code-start? */
 	if(scanCode == 0xE0) {

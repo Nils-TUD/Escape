@@ -26,7 +26,7 @@
 #include "vesa.h"
 
 void bmp_draw(sBitmap *bmp,tCoord x,tCoord y,fSetPixel func) {
-	u8 *data = bmp->data;
+	uint8_t *data = (uint8_t*)bmp->data;
 	tSize w = bmp->infoHeader->width, h = bmp->infoHeader->height;
 	tCoord cx,cy;
 	/* we assume RGB 24bit here */
@@ -34,7 +34,7 @@ void bmp_draw(sBitmap *bmp,tCoord x,tCoord y,fSetPixel func) {
 	assert(bmp->infoHeader->bitCount == 24);
 	for(cy = 0; cy < h; cy++) {
 		for(cx = 0; cx < w; cx++) {
-			u32 col = data[2] << 16 | data[1] << 8 | data[0];
+			uint32_t col = data[2] << 16 | data[1] << 8 | data[0];
 			if(col != TRANSPARENCY)
 				func(cx + x,y + (h - cy - 1),col);
 			data += 3;
@@ -49,10 +49,10 @@ void bmp_draw(sBitmap *bmp,tCoord x,tCoord y,fSetPixel func) {
 sBitmap *bmp_loadFromFile(const char *filename) {
 	/* read header */
 	tFD fd;
-	s32 res;
+	ssize_t res;
 	sBitmap *bmp = NULL;
-	u32 headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
-	u8 *header = malloc(headerSize);
+	size_t headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
+	void *header = malloc(headerSize);
 	if(header == NULL)
 		return NULL;
 
@@ -63,7 +63,7 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	fd = open(filename,IO_READ);
 	if(fd < 0)
 		goto errorBmp;
-	if(RETRY(read(fd,header,headerSize)) != (s32)headerSize) {
+	if(RETRY(read(fd,header,headerSize)) != (ssize_t)headerSize) {
 		printe("Invalid image '%s'",filename);
 		goto errorClose;
 	}
@@ -89,11 +89,11 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 
 	/* read color-table, if present */
 	if(bmp->tableSize > 0) {
-		bmp->colorTable = (u32*)malloc(bmp->tableSize * sizeof(u32));
+		bmp->colorTable = (uint32_t*)malloc(bmp->tableSize * sizeof(uint32_t));
 		if(bmp->colorTable == NULL)
 			goto errorClose;
-		res = RETRY(read(fd,bmp->colorTable,bmp->tableSize * sizeof(u32)));
-		if(res != (s32)(bmp->tableSize * sizeof(u32))) {
+		res = RETRY(read(fd,bmp->colorTable,bmp->tableSize * sizeof(uint32_t)));
+		if(res != (ssize_t)(bmp->tableSize * sizeof(uint32_t))) {
 			printe("Invalid image '%s'",filename);
 			goto errorColorTbl;
 		}
@@ -101,18 +101,18 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 
 	/* now read the data */
 	if(bmp->infoHeader->compression == BI_RGB) {
-		u32 bytesPerLine;
+		size_t bytesPerLine;
 		bytesPerLine = bmp->infoHeader->width * (bmp->infoHeader->bitCount / 8);
-		bytesPerLine = (bytesPerLine + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
+		bytesPerLine = (bytesPerLine + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
 		bmp->dataSize = bytesPerLine * bmp->infoHeader->height;
 	}
 	else
 		bmp->dataSize = bmp->infoHeader->sizeImage;
-	bmp->data = (u8*)malloc(bmp->dataSize);
+	bmp->data = malloc(bmp->dataSize);
 	if(bmp->data == NULL)
 		goto errorColorTbl;
-	res = RETRY(read(fd,bmp->data,bmp->dataSize * sizeof(u8)));
-	if(res != (s32)(bmp->dataSize * sizeof(u8))) {
+	res = RETRY(read(fd,bmp->data,bmp->dataSize));
+	if(res != (ssize_t)bmp->dataSize) {
 		printe("Invalid image '%s'",filename);
 		goto errorData;
 	}

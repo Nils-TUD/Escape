@@ -30,10 +30,10 @@
 #include "ata.h"
 #include "atapi.h"
 
-static bool device_identify(sATADevice *device,u8 cmd);
+static bool device_identify(sATADevice *device,uint cmd);
 
 void device_init(sATADevice *device) {
-	u16 buffer[256];
+	uint16_t buffer[256];
 	ATA_PR1("Sending 'IDENTIFY DEVICE' to device %d",device->id);
 	/* first, identify the device */
 	if(!device_identify(device,COMMAND_IDENTIFY)) {
@@ -87,9 +87,9 @@ void device_init(sATADevice *device) {
 	}
 }
 
-static bool device_identify(sATADevice *device,u8 cmd) {
-	u8 status;
-	u16 *data;
+static bool device_identify(sATADevice *device,uint cmd) {
+	uint8_t status;
+	uint16_t *data;
 	sATAController *ctrl = device->ctrl;
 
 	ATA_PR2("Selecting device %d",device->id);
@@ -108,13 +108,13 @@ static bool device_identify(sATADevice *device,u8 cmd) {
 		return false;
 	}
 	else {
-		s32 res;
+		int res;
 		/* TODO from the wiki: Because of some ATAPI drives that do not follow spec, at this point
 		 * you need to check the LBAmid and LBAhi ports (0x1F4 and 0x1F5) to see if they are
 		 * non-zero. If so, the drive is not ATA, and you should stop polling. */
 
 		/* wait while busy; the other bits aren't valid while busy is set */
-		u32 time = 0;
+		tTime time = 0;
 		while((ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY) && time < ATA_WAIT_TIMEOUT) {
 			time += 20;
 			sleep(20);
@@ -134,7 +134,7 @@ static bool device_identify(sATADevice *device,u8 cmd) {
 
 		ATA_PR2("Reading information about device");
 		/* device ready */
-		data = (u16*)&device->info;
+		data = (uint16_t*)&device->info;
 		ctrl_inwords(ctrl,ATA_REG_DATA,data,256);
 
 		/* we don't support CHS atm */
@@ -150,7 +150,7 @@ static bool device_identify(sATADevice *device,u8 cmd) {
 #if DEBUGGING
 
 void device_dbg_printInfo(sATADevice *device) {
-	u32 i;
+	size_t i;
 	printf("oldCurCylinderCount = %u\n",device->info.oldCurCylinderCount);
 	printf("oldCurHeadCount = %u\n",device->info.oldCurHeadCount);
 	printf("oldCurSecsPerTrack = %u\n",device->info.oldCurSecsPerTrack);

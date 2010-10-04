@@ -35,15 +35,15 @@ typedef struct {
 } sFSRequest;
 
 typedef struct {
-	u32 id;
+	size_t id;
 	tTid tid;
-	volatile u8 state;
+	volatile uchar state;
 	sFSRequest *req;
 } sReqThread;
 
 void tpool_init(void);
 void tpool_shutdown(void);
-u32 tpool_tidToId(tTid tid);
-bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,u32 msgSize,void *data);
+size_t tpool_tidToId(tTid tid);
+bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,size_t msgSize,void *data);
 
 #endif /* THREADPOOL_H_ */

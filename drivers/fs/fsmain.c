@@ -44,7 +44,7 @@ static tDevNo rootDev;
 static sFSInst *root;
 
 typedef struct {
-	u16 type;
+	uint type;
 	char name[FS_NAME_LEN];
 } sFSType;
 
@@ -81,7 +81,7 @@ static fReqHandler commands[] = {
 	/* MSG_FS_ISTAT */		(fReqHandler)cmdIstat,
 };
 
-static void sigTermHndl(s32 sig) {
+static void sigTermHndl(int sig) {
 	UNUSED(sig);
 	run = false;
 }
@@ -94,7 +94,8 @@ int main(int argc,char *argv[]) {
 	static sMsg msg;
 	tFD fd;
 	tMsgId mid;
-	u32 i,fstype;
+	size_t i;
+	uint fstype;
 	tFD id;
 	sFileSystem *fs;
 
@@ -188,7 +189,7 @@ int main(int argc,char *argv[]) {
 }
 
 static void shutdown(void) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		sFSInst *inst = mount_get(i);
 		if(inst && inst->fs->sync != NULL)
@@ -199,7 +200,7 @@ static void shutdown(void) {
 
 static void cmdOpen(tFD fd,sMsg *msg) {
 	tDevNo devNo = rootDev;
-	u8 flags = (u8)msg->args.arg1;
+	uint flags = msg->args.arg1;
 	sFSInst *inst;
 	tInodeNo no = root->fs->resPath(root->handle,msg->str.s1,flags,&devNo,true);
 	if(no >= 0) {
@@ -247,10 +248,10 @@ static void cmdIstat(tFD fd,sMsg *msg) {
 static void cmdRead(tFD fd,sMsg *msg) {
 	tInodeNo ino = (tInodeNo)msg->args.arg1;
 	tDevNo devNo = (tDevNo)msg->args.arg2;
-	u32 offset = msg->args.arg3;
-	u32 count = msg->args.arg4;
+	uint offset = msg->args.arg3;
+	size_t count = msg->args.arg4;
 	sFSInst *inst = mount_get(devNo);
-	u8 *buffer = NULL;
+	void *buffer = NULL;
 	if(inst == NULL)
 		msg->args.arg1 = ERR_NO_MNTPNT;
 	else if(inst->fs->read == NULL)
@@ -277,8 +278,8 @@ static void cmdRead(tFD fd,sMsg *msg) {
 static void cmdWrite(tFD fd,sMsg *msg,void *data) {
 	tInodeNo ino = (tInodeNo)msg->args.arg1;
 	tDevNo devNo = (tDevNo)msg->args.arg2;
-	u32 offset = msg->args.arg3;
-	u32 count = msg->args.arg4;
+	uint offset = msg->args.arg3;
+	size_t count = msg->args.arg4;
 	sFSInst *inst = mount_get(devNo);
 	if(inst == NULL)
 		msg->args.arg1 = ERR_NO_MNTPNT;
@@ -305,7 +306,7 @@ static void cmdLink(tFD fd,sMsg *msg) {
 	else {
 		/* split path and name */
 		char *name,backup;
-		u32 len = strlen(newPath);
+		size_t len = strlen(newPath);
 		if(newPath[len - 1] == '/')
 			newPath[len - 1] = '\0';
 		name = strrchr(newPath,'/') + 1;
@@ -339,7 +340,7 @@ static void cmdUnlink(tFD fd,sMsg *msg) {
 		msg->args.arg1 = dirIno;
 	else {
 		/* split path and name */
-		u32 len = strlen(path);
+		size_t len = strlen(path);
 		if(path[len - 1] == '/')
 			path[len - 1] = '\0';
 		name = strrchr(path,'/') + 1;
@@ -370,7 +371,7 @@ static void cmdMkdir(tFD fd,sMsg *msg) {
 	sFSInst *inst;
 
 	/* split path and name */
-	u32 len = strlen(path);
+	size_t len = strlen(path);
 	if(path[len - 1] == '/')
 		path[len - 1] = '\0';
 	name = strrchr(path,'/') + 1;
@@ -402,7 +403,7 @@ static void cmdRmdir(tFD fd,sMsg *msg) {
 	sFSInst *inst;
 
 	/* split path and name */
-	u32 len = strlen(path);
+	size_t len = strlen(path);
 	if(path[len - 1] == '/')
 		path[len - 1] = '\0';
 	name = strrchr(path,'/') + 1;
@@ -429,7 +430,7 @@ static void cmdRmdir(tFD fd,sMsg *msg) {
 static void cmdMount(tFD fd,sMsg *msg) {
 	char *device = msg->str.s1;
 	char *path = msg->str.s2;
-	u16 type = (u16)msg->str.arg1;
+	uint type = msg->str.arg1;
 	tDevNo devNo = rootDev;
 	tInodeNo ino;
 	ino = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
@@ -441,13 +442,13 @@ static void cmdMount(tFD fd,sMsg *msg) {
 			msg->args.arg1 = ERR_NO_MNTPNT;
 		else {
 			sFileInfo info;
-			s32 res = inst->fs->stat(inst->handle,ino,&info);
+			int res = inst->fs->stat(inst->handle,ino,&info);
 			if(res < 0)
 				msg->args.arg1 = res;
 			else if(!MODE_IS_DIR(info.mode))
 				msg->args.arg1 = ERR_NO_DIRECTORY;
 			else {
-				s32 pnt = mount_addMnt(devNo,ino,device,type);
+				int pnt = mount_addMnt(devNo,ino,device,type);
 				msg->args.arg1 = pnt < 0 ? pnt : 0;
 			}
 		}
@@ -470,7 +471,7 @@ static void cmdUnmount(tFD fd,sMsg *msg) {
 static void cmdSync(tFD fd,sMsg *msg) {
 	UNUSED(fd);
 	UNUSED(msg);
-	u32 i;
+	size_t i;
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		sFSInst *inst = mount_get(i);
 		if(inst && inst->fs->sync != NULL)

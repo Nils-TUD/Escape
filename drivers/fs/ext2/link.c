@@ -31,15 +31,16 @@
 /**
  * Calculates the total size of a dir-entry, including padding
  */
-static u32 ext2_link_getDirESize(u32 namelen);
+static size_t ext2_link_getDirESize(size_t namelen);
 
-s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *name) {
-	u8 *buf;
+int ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *name) {
+	uint8_t *buf;
 	sExt2DirEntry *dire;
-	u32 len = strlen(name);
-	u32 tlen = ext2_link_getDirESize(len);
-	u32 recLen = 0;
-	s32 res,dirSize = dir->inode.size;
+	size_t len = strlen(name);
+	size_t tlen = ext2_link_getDirESize(len);
+	size_t recLen = 0;
+	int res;
+	int32_t dirSize = dir->inode.size;
 
 	/* TODO we don't have to read the whole directory at once */
 
@@ -60,17 +61,17 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 
 	/* search for a place for our entry */
 	dire = (sExt2DirEntry*)buf;
-	while((u8*)dire < buf + dirSize) {
+	while((uint8_t*)dire < buf + dirSize) {
 		/* does our entry fit? */
-		u32 elen = ext2_link_getDirESize(dire->nameLen);
+		size_t elen = ext2_link_getDirESize(dire->nameLen);
 		if(elen < dire->recLen && dire->recLen - elen >= tlen) {
 			recLen = dire->recLen - elen;
 			/* adjust old entry */
 			dire->recLen -= recLen;
-			dire = (sExt2DirEntry*)((u8*)dire + elen);
+			dire = (sExt2DirEntry*)((uintptr_t)dire + elen);
 			break;
 		}
-		dire = (sExt2DirEntry*)((u8*)dire + dire->recLen);
+		dire = (sExt2DirEntry*)((uintptr_t)dire + dire->recLen);
 	}
 	/* nothing found yet? so store it on the next block */
 	if(recLen == 0) {
@@ -98,12 +99,13 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	return 0;
 }
 
-s32 ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *name,bool delDir) {
-	u8 *buf;
-	u32 nameLen;
+int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *name,bool delDir) {
+	uint8_t *buf;
+	size_t nameLen;
 	tInodeNo ino = -1;
 	sExt2DirEntry *dire,*prev;
-	s32 res,dirSize = dir->inode.size;
+	int res;
+	int32_t dirSize = dir->inode.size;
 	sExt2CInode *cnode;
 
 	/* read directory-entries */
@@ -119,7 +121,7 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 	nameLen = strlen(name);
 	prev = NULL;
 	dire = (sExt2DirEntry*)buf;
-	while((u8*)dire < buf + dirSize) {
+	while((uint8_t*)dire < buf + dirSize) {
 		if(nameLen == dire->nameLen && strncmp(dire->name,name,nameLen) == 0) {
 			ino = dire->inode;
 			if(pdir && ino == pdir->inodeNo)
@@ -150,7 +152,7 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 
 		/* to next */
 		prev = dire;
-		dire = (sExt2DirEntry*)((u8*)dire + dire->recLen);
+		dire = (sExt2DirEntry*)((uintptr_t)dire + dire->recLen);
 	}
 
 	/* no match? */
@@ -186,8 +188,8 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 	return 0;
 }
 
-static u32 ext2_link_getDirESize(u32 namelen) {
-	u32 tlen = namelen + sizeof(sExt2DirEntry);
+static size_t ext2_link_getDirESize(size_t namelen) {
+	size_t tlen = namelen + sizeof(sExt2DirEntry);
 	if((tlen % EXT2_DIRENTRY_PAD) != 0)
 		tlen += EXT2_DIRENTRY_PAD - (tlen % EXT2_DIRENTRY_PAD);
 	return tlen;

@@ -35,15 +35,16 @@
  * Performs the actual get-block-request. If <req> is true, it will allocate a new block, if
  * necessary. In this case cnode may be changed. Otherwise no changes will be made.
  */
-static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool req);
+static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo block,bool req);
 /**
  * Puts a new block in cblock->buffer if cblock->buffer[index] is 0. Marks the cblock dirty,
  * if necessary. Sets <added> to true or false, depending on whether a block was allocated.
  */
-static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,u32 index,bool *added);
+static int ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,size_t index,bool *added);
 
-s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir) {
-	u32 i,now;
+int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir) {
+	size_t i;
+	tTime now;
 	sExt2CInode *cnode;
 
 	/* request inode */
@@ -87,8 +88,8 @@ s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	return 0;
 }
 
-s32 ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
-	s32 res;
+int ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
+	int res;
 	/* free inode, clear it and ensure that it get's written back to disk */
 	if((res = ext2_bm_freeInode(e,cnode->inodeNo,MODE_IS_DIR(cnode->inode.mode))) < 0)
 		return res;
@@ -101,17 +102,18 @@ s32 ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
 	return 0;
 }
 
-u32 ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
+tBlockNo ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo block) {
 	return ext2_inode_doGetDataBlock(e,cnode,block,true);
 }
 
-u32 ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,u32 block) {
+tBlockNo ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,tBlockNo block) {
 	return ext2_inode_doGetDataBlock(e,(sExt2CInode*)cnode,block,false);
 }
 
-static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool req) {
-	u32 i,blockSize,blocksPerBlock,blperBlSq;
-	u8 bmode = req ? BMODE_WRITE : BMODE_READ;
+static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo block,bool req) {
+	tBlockNo i;
+	size_t blockSize,blocksPerBlock,blperBlSq;
+	uint bmode = req ? BMODE_WRITE : BMODE_READ;
 	bool added = false;
 	sCBlock *cblock;
 
@@ -132,7 +134,7 @@ static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool 
 	/* singly indirect */
 	block -= EXT2_DIRBLOCK_COUNT;
 	blockSize = EXT2_BLK_SIZE(e);
-	blocksPerBlock = blockSize / sizeof(u32);
+	blocksPerBlock = blockSize / sizeof(tBlockNo);
 	if(block < blocksPerBlock) {
 		added = false;
 		/* no singly-indirect-block present yet? */
@@ -157,7 +159,7 @@ static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool 
 			bcache_release(cblock);
 			return 0;
 		}
-		i = *((u32*)(cblock->buffer) + block);
+		i = *((tBlockNo*)(cblock->buffer) + block);
 		bcache_release(cblock);
 		return i;
 	}
@@ -192,7 +194,7 @@ static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool 
 			bcache_release(cblock);
 			return 0;
 		}
-		i = *((u32*)(cblock->buffer) + block / blocksPerBlock);
+		i = *((tBlockNo*)(cblock->buffer) + block / blocksPerBlock);
 		bcache_release(cblock);
 
 		/* may happen if we should not request new blocks */
@@ -211,7 +213,7 @@ static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool 
 			bcache_release(cblock);
 			return 0;
 		}
-		i = *((u32*)(cblock->buffer) + block % blocksPerBlock);
+		i = *((tBlockNo*)(cblock->buffer) + block % blocksPerBlock);
 		bcache_release(cblock);
 
 		return i;
@@ -244,7 +246,7 @@ static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool 
 		bcache_release(cblock);
 		return 0;
 	}
-	i = *((u32*)(cblock->buffer) + block / blperBlSq);
+	i = *((tBlockNo*)(cblock->buffer) + block / blperBlSq);
 	bcache_release(cblock);
 
 	if(i == 0)
@@ -263,7 +265,7 @@ static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool 
 		bcache_release(cblock);
 		return 0;
 	}
-	i = *((u32*)(cblock->buffer) + block / blocksPerBlock);
+	i = *((tBlockNo*)(cblock->buffer) + block / blocksPerBlock);
 	bcache_release(cblock);
 
 	if(i == 0)
@@ -281,16 +283,16 @@ static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool 
 		bcache_release(cblock);
 		return 0;
 	}
-	i = *((u32*)(cblock->buffer) + block % blocksPerBlock);
+	i = *((tBlockNo*)(cblock->buffer) + block % blocksPerBlock);
 	bcache_release(cblock);
 
 	return i;
 }
 
-static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,u32 index,bool *added) {
-	u32 *blockNos = (u32*)(cblock->buffer);
+static int ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,size_t index,bool *added) {
+	tBlockNo *blockNos = (tBlockNo*)(cblock->buffer);
 	if(blockNos[index] == 0) {
-		u32 bno = ext2_bm_allocBlock(e,cnode);
+		tBlockNo bno = ext2_bm_allocBlock(e,cnode);
 		if(bno == 0)
 			return 0;
 		blockNos[index] = bno;
@@ -306,7 +308,7 @@ static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,u32 ind
 #if DEBUGGING
 
 void ext2_inode_print(sExt2Inode *inode) {
-	u32 i;
+	size_t i;
 	printf("\tmode=0x%08x\n",inode->mode);
 	printf("\tuid=%d\n",inode->uid);
 	printf("\tgid=%d\n",inode->gid);

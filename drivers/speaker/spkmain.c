@@ -38,7 +38,7 @@
  *
  * @param frequency the frequency
  */
-static void playSound(u32 frequency);
+static void playSound(uint frequency);
 
 /**
  * Stops the sound
@@ -48,12 +48,12 @@ static void stopSound(void);
 /**
  * The timer-interrupt-handler
  */
-static void timerIntrptHandler(s32 sig);
+static void timerIntrptHandler(int sig);
 
 static sMsg msg;
-static s32 timerFreq;
-static u16 intrptCount = 0;
-static u16 intrptTarget = 0;
+static int timerFreq;
+static size_t intrptCount = 0;
+static size_t intrptTarget = 0;
 
 int main(void) {
 	tFD fd;
@@ -86,8 +86,8 @@ int main(void) {
 		else {
 			switch(mid) {
 				case MSG_SPEAKER_BEEP: {
-					u32 freq = msg.args.arg1;
-					u32 dur = msg.args.arg2;
+					uint freq = msg.args.arg1;
+					uint dur = msg.args.arg2;
 					if(freq > 0 && dur > 0) {
 						/* add timer-interrupt listener */
 						if(setSigHandler(SIG_INTRPT_TIMER,timerIntrptHandler) == 0) {
@@ -111,7 +111,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void timerIntrptHandler(s32 sig) {
+static void timerIntrptHandler(int sig) {
 	UNUSED(sig);
 	if(intrptTarget > 0) {
 		intrptCount += 1000 / timerFreq;
@@ -125,15 +125,15 @@ static void timerIntrptHandler(s32 sig) {
 	}
 }
 
-static void playSound(u32 frequency) {
-	u32 f;
-	u8 tmp;
+static void playSound(uint frequency) {
+	uint f;
+	uint8_t tmp;
 
 	/* Set the PIT to the desired frequency */
 	f = PIC_FREQUENCY / frequency;
 	outByte(IOPORT_PIT_CTRL_WORD_REG,0xb6);
-	outByte(IOPORT_PIT_SPEAKER,(u8)(f));
-	outByte(IOPORT_PIT_SPEAKER,(u8)(f >> 8));
+	outByte(IOPORT_PIT_SPEAKER,(uint8_t)(f));
+	outByte(IOPORT_PIT_SPEAKER,(uint8_t)(f >> 8));
 
 	/* And play the sound using the PC speaker */
 	tmp = inByte(IOPORT_KB_CTRL_B);
@@ -142,6 +142,6 @@ static void playSound(u32 frequency) {
 }
 
 static void stopSound(void) {
-	u8 tmp = inByte(IOPORT_KB_CTRL_B) & 0xFC;
+	uint8_t tmp = inByte(IOPORT_KB_CTRL_B) & 0xFC;
 	outByte(IOPORT_KB_CTRL_B,tmp);
 }

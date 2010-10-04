@@ -32,7 +32,7 @@
  * @param isDir whether it should be an directory
  * @return 0 on success
  */
-s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir);
+int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir);
 
 /**
  * Destroys the given inode. That means the inode will be marked as free in the bitmap,
@@ -42,7 +42,7 @@ s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
  * @param cnode the inode
  * @return 0 on success
  */
-s32 ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode);
+int ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode);
 
 /**
  * Determines which block should be read from disk for <block> of the given inode.
@@ -55,7 +55,7 @@ s32 ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode);
  * @param block the linear-block-number
  * @return the block to fetch from disk
  */
-u32 ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block);
+tBlockNo ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo block);
 
 /**
  * Determines which block should be read from disk for <block> of the given inode.
@@ -67,7 +67,7 @@ u32 ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block);
  * @param block the linear-block-number
  * @return the block to fetch from disk
  */
-u32 ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,u32 block);
+tBlockNo ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,tBlockNo block);
 
 #if DEBUGGING
 

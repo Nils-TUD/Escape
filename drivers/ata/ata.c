@@ -28,11 +28,12 @@
 #include "controller.h"
 #include "ata.h"
 
-static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd);
-static u8 ata_getCommand(sATADevice *device,u8 op,u16 secSize);
+static bool ata_setupCommand(sATADevice *device,uint64_t lba,size_t secCount,uint cmd);
+static uint ata_getCommand(sATADevice *device,uint op);
 
-bool ata_readWrite(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 secCount) {
-	u8 cmd = ata_getCommand(device,op,secSize);
+bool ata_readWrite(sATADevice *device,uint op,void *buffer,uint64_t lba,size_t secSize,
+		size_t secCount) {
+	uint cmd = ata_getCommand(device,op);
 	if(!ata_setupCommand(device,lba,secCount,cmd))
 		return false;
 
@@ -52,9 +53,11 @@ bool ata_readWrite(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 
 	return false;
 }
 
-bool ata_transferPIO(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCount,bool waitFirst) {
-	s32 i,res;
-	u16 *buf = buffer;
+bool ata_transferPIO(sATADevice *device,uint op,void *buffer,size_t secSize,
+		size_t secCount,bool waitFirst) {
+	size_t i;
+	int res;
+	uint16_t *buf = (uint16_t*)buffer;
 	sATAController *ctrl = device->ctrl;
 	for(i = 0; i < secCount; i++) {
 		if(i > 0 || waitFirst) {
@@ -76,21 +79,21 @@ bool ata_transferPIO(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCou
 		/* now read / write the data */
 		ATA_PR2("Ready, starting read/write");
 		if(op == OP_READ)
-			ctrl_inwords(ctrl,ATA_REG_DATA,buf,secSize / sizeof(u16));
+			ctrl_inwords(ctrl,ATA_REG_DATA,buf,secSize / sizeof(uint16_t));
 		else
-			ctrl_outwords(ctrl,ATA_REG_DATA,buf,secSize / sizeof(u16));
-		buf += secSize / sizeof(u16);
+			ctrl_outwords(ctrl,ATA_REG_DATA,buf,secSize / sizeof(uint16_t));
+		buf += secSize / sizeof(uint16_t);
 		ATA_PR2("Transfer done");
 	}
 	ATA_PR2("All sectors done");
 	return true;
 }
 
-bool ata_transferDMA(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCount) {
+bool ata_transferDMA(sATADevice *device,uint op,void *buffer,size_t secSize,size_t secCount) {
 	sATAController* ctrl = device->ctrl;
-	u8 status;
-	s32 res;
-	u32 size = secCount * secSize;
+	uint8_t status;
+	size_t size = secCount * secSize;
+	int res;
 
 	/* setup PRDT */
 	ctrl->dma_prdt_virt->buffer = ctrl->dma_buf_phys;
@@ -105,7 +108,7 @@ bool ata_transferDMA(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCou
 
 	/* set PRDT */
 	ATA_PR2("Setting PRDT");
-	ctrl_outbmrl(ctrl,BMR_REG_PRDT,(u32)ctrl->dma_prdt_phys);
+	ctrl_outbmrl(ctrl,BMR_REG_PRDT,(uint32_t)ctrl->dma_prdt_phys);
 
 	/* write data to buffer, if we should write */
 	/* TODO we should use the buffer directly when reading from the client */
@@ -146,9 +149,9 @@ bool ata_transferDMA(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCou
 	return true;
 }
 
-static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd) {
+static bool ata_setupCommand(sATADevice *device,uint64_t lba,size_t secCount,uint cmd) {
 	sATAController *ctrl = device->ctrl;
-	u8 devValue;
+	uint8_t devValue;
 
 	if(secCount == 0)
 		return false;
@@ -185,30 +188,30 @@ static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd) {
 		ctrl_outb(ctrl,ATA_REG_FEATURES,device->ctrl->useDma && device->info.capabilities.DMA);
 
 	if(device->info.features.lba48) {
-		ATA_PR2("LBA48: setting sector-count %d and LBA %x",secCount,(u32)(lba & 0xFFFFFFFF));
+		ATA_PR2("LBA48: setting sector-count %d and LBA %x",secCount,(uint)(lba & 0xFFFFFFFF));
 		/* LBA: | LBA6 | LBA5 | LBA4 | LBA3 | LBA2 | LBA1 | */
 		/*     48             32            16            0 */
 		/* sector-count high-byte */
-		ctrl_outb(ctrl,ATA_REG_SECTOR_COUNT,(u8)(secCount >> 8));
+		ctrl_outb(ctrl,ATA_REG_SECTOR_COUNT,(uint8_t)(secCount >> 8));
 		/* LBA4, LBA5 and LBA6 */
-		ctrl_outb(ctrl,ATA_REG_ADDRESS1,(u8)(lba >> 24));
-		ctrl_outb(ctrl,ATA_REG_ADDRESS2,(u8)(lba >> 32));
-		ctrl_outb(ctrl,ATA_REG_ADDRESS3,(u8)(lba >> 40));
+		ctrl_outb(ctrl,ATA_REG_ADDRESS1,(uint8_t)(lba >> 24));
+		ctrl_outb(ctrl,ATA_REG_ADDRESS2,(uint8_t)(lba >> 32));
+		ctrl_outb(ctrl,ATA_REG_ADDRESS3,(uint8_t)(lba >> 40));
 		/* sector-count low-byte */
-		ctrl_outb(ctrl,ATA_REG_SECTOR_COUNT,(u8)(secCount & 0xFF));
+		ctrl_outb(ctrl,ATA_REG_SECTOR_COUNT,(uint8_t)(secCount & 0xFF));
 		/* LBA1, LBA2 and LBA3 */
-		ctrl_outb(ctrl,ATA_REG_ADDRESS1,(u8)(lba & 0xFF));
-		ctrl_outb(ctrl,ATA_REG_ADDRESS2,(u8)(lba >> 8));
-		ctrl_outb(ctrl,ATA_REG_ADDRESS3,(u8)(lba >> 16));
+		ctrl_outb(ctrl,ATA_REG_ADDRESS1,(uint8_t)(lba & 0xFF));
+		ctrl_outb(ctrl,ATA_REG_ADDRESS2,(uint8_t)(lba >> 8));
+		ctrl_outb(ctrl,ATA_REG_ADDRESS3,(uint8_t)(lba >> 16));
 	}
 	else {
-		ATA_PR2("LBA28: setting sector-count %d and LBA %x",secCount,(u32)(lba & 0xFFFFFFFF));
+		ATA_PR2("LBA28: setting sector-count %d and LBA %x",secCount,(uint)(lba & 0xFFFFFFFF));
 		/* send sector-count */
-		ctrl_outb(ctrl,ATA_REG_SECTOR_COUNT,(u8)secCount);
+		ctrl_outb(ctrl,ATA_REG_SECTOR_COUNT,(uint8_t)secCount);
 		/* LBA1, LBA2 and LBA3 */
-		ctrl_outb(ctrl,ATA_REG_ADDRESS1,(u8)lba);
-		ctrl_outb(ctrl,ATA_REG_ADDRESS2,(u8)(lba >> 8));
-		ctrl_outb(ctrl,ATA_REG_ADDRESS3,(u8)(lba >> 16));
+		ctrl_outb(ctrl,ATA_REG_ADDRESS1,(uint8_t)lba);
+		ctrl_outb(ctrl,ATA_REG_ADDRESS2,(uint8_t)(lba >> 8));
+		ctrl_outb(ctrl,ATA_REG_ADDRESS3,(uint8_t)(lba >> 16));
 	}
 
 	/* send command */
@@ -217,14 +220,14 @@ static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd) {
 	return true;
 }
 
-static u8 ata_getCommand(sATADevice *device,u8 op,u16 secSize) {
-	static u8 commands[4][2] = {
+static uint ata_getCommand(sATADevice *device,uint op) {
+	static uint commands[4][2] = {
 		{COMMAND_READ_SEC,COMMAND_READ_SEC_EXT},
 		{COMMAND_WRITE_SEC,COMMAND_WRITE_SEC_EXT},
 		{COMMAND_READ_DMA,COMMAND_READ_DMA_EXT},
 		{COMMAND_WRITE_DMA,COMMAND_WRITE_DMA_EXT}
 	};
-	u8 offset;
+	uint offset;
 	if(op == OP_PACKET)
 		return COMMAND_PACKET;
 	offset = (device->ctrl->useDma && device->info.capabilities.DMA) ? 2 : 0;

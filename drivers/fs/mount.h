@@ -31,21 +31,21 @@
 /* The handler for the functions of the filesystem */
 typedef void *(*fFSInit)(const char *driver,char **usedDev);
 typedef void (*fFSDeinit)(void *h);
-typedef tInodeNo (*fFSResPath)(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt);
-typedef s32 (*fFSOpen)(void *h,tInodeNo ino,u8 flags);
+typedef tInodeNo (*fFSResPath)(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt);
+typedef tInodeNo (*fFSOpen)(void *h,tInodeNo ino,uint flags);
 typedef void (*fFSClose)(void *h,tInodeNo ino);
-typedef s32 (*fFSStat)(void *h,tInodeNo ino,sFileInfo *info);
-typedef s32 (*fFSRead)(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
-typedef s32 (*fFSWrite)(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
-typedef s32 (*fFSLink)(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
-typedef s32 (*fFSUnlink)(void *h,tInodeNo dirIno,const char *name);
-typedef s32 (*fFSMkDir)(void *h,tInodeNo dirIno,const char *name);
-typedef s32 (*fFSRmDir)(void *h,tInodeNo dirIno,const char *name);
+typedef int (*fFSStat)(void *h,tInodeNo ino,sFileInfo *info);
+typedef ssize_t (*fFSRead)(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count);
+typedef ssize_t (*fFSWrite)(void *h,tInodeNo inodeNo,const void *buffer,uint offset,size_t count);
+typedef int (*fFSLink)(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
+typedef int (*fFSUnlink)(void *h,tInodeNo dirIno,const char *name);
+typedef int (*fFSMkDir)(void *h,tInodeNo dirIno,const char *name);
+typedef int (*fFSRmDir)(void *h,tInodeNo dirIno,const char *name);
 typedef void (*fFSSync)(void *h);
 
 /* all information about a filesystem */
 typedef struct {
-	u16 type;
+	uint type;
 	fFSInit init;			/* required */
 	fFSDeinit deinit;		/* required */
 	fFSResPath resPath;		/* required */
@@ -66,7 +66,7 @@ typedef struct {
 	void *handle;
 	char driver[MAX_MNTNAME_LEN];
 	sFileSystem *fs;
-	u32 refs;
+	uint refs;
 } sFSInst;
 
 /* mount-point that links (inode+dev) to a specific fs-instance */
@@ -89,7 +89,7 @@ bool mount_init(void);
  * @param fs the filesystem
  * @return 0 on success
  */
-s32 mount_addFS(sFileSystem *fs);
+int mount_addFS(sFileSystem *fs);
 
 /**
  * Adds a moint-point @ (dev+inode) to the given driver using the given filesystem
@@ -100,7 +100,7 @@ s32 mount_addFS(sFileSystem *fs);
  * @param type the fs-type
  * @return the device-number (mount-point) on success or < 0
  */
-tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type);
+tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,uint type);
 
 /**
  * Determines the moint-point-id for the given location
@@ -118,7 +118,7 @@ tDevNo mount_getByLoc(tDevNo dev,tInodeNo inode);
  * @param inode the inode-number of the mount-point
  * @return 0 on success
  */
-s32 mount_remMnt(tDevNo dev,tInodeNo inode);
+int mount_remMnt(tDevNo dev,tInodeNo inode);
 
 /**
  * Determines the device-number of an fs-instance by its handle. This gives fs-instances

@@ -42,8 +42,8 @@
 
 static int refreshThread(void *arg);
 static void cmos_refresh(void);
-static u32 cmos_decodeBCD(u8 val);
-static u8 cmos_read(u8 reg);
+static uint cmos_decodeBCD(uint8_t val);
+static uint8_t cmos_read(uint8_t reg);
 
 static tULock dlock;
 static sMsg msg;
@@ -76,8 +76,8 @@ int main(void) {
 		else {
 			switch(mid) {
 				case MSG_DRV_READ: {
-					u32 offset = msg.args.arg1;
-					u32 count = msg.args.arg2;
+					uint offset = msg.args.arg1;
+					uint count = msg.args.arg2;
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
 					if(offset + count <= offset || offset + count > sizeof(struct tm))
@@ -87,7 +87,7 @@ int main(void) {
 						/* ensure that the refresh-thread doesn't access the date in the
 						 * meanwhile */
 						locku(&dlock);
-						send(fd,MSG_DRV_READ_RESP,(u8*)&date + offset,count);
+						send(fd,MSG_DRV_READ_RESP,(uchar*)&date + offset,count);
 						unlocku(&dlock);
 					}
 				}
@@ -127,11 +127,11 @@ static void cmos_refresh(void) {
 	date.tm_wday = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY)) - 1;
 }
 
-static u32 cmos_decodeBCD(u8 val) {
+static uint cmos_decodeBCD(uint8_t val) {
 	return (val >> 4) * 10 + (val & 0xF);
 }
 
-static u8 cmos_read(u8 reg) {
+static uint8_t cmos_read(uint8_t reg) {
 	outByte(IOPORT_CMOS_INDEX,reg);
 	__asm__ volatile ("nop");
 	__asm__ volatile ("nop");

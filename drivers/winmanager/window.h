@@ -32,10 +32,10 @@
 #define WIN_STYLE_POPUP					1
 #define WIN_STYLE_DESKTOP				2
 
-typedef u16 tSize;
-typedef s16 tCoord;
-typedef u32 tColor;
-typedef u16 tWinId;
+typedef ushort tSize;
+typedef short tCoord;
+typedef uint32_t tColor;
+typedef ushort tWinId;
 
 /* a window */
 typedef struct {
@@ -46,7 +46,7 @@ typedef struct {
 	tSize height;
 	tWinId id;
 	tTid owner;
-	u8 style;
+	uint style;
 } sWindow;
 
 /**
@@ -81,7 +81,7 @@ tCoord win_getScreenHeight(void);
  * @param y the y-coordinate
  * @param cursor the cursor to use
  */
-void win_setCursor(tCoord x,tCoord y,u8 cursor);
+void win_setCursor(tCoord x,tCoord y,uint cursor);
 
 /**
  * Creates a new window from given create-message
@@ -94,7 +94,7 @@ void win_setCursor(tCoord x,tCoord y,u8 cursor);
  * @param style style-attributes
  * @return the window-id or WINID_UNUSED if no slot is free
  */
-tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tInodeNo owner,u8 style);
+tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tInodeNo owner,uint style);
 
 /**
  * Updates the whole screen

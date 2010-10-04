@@ -27,11 +27,11 @@
 
 /* represents a partition (in memory) */
 typedef struct {
-	u8 present;
+	uchar present;
 	/* start sector */
-	u32 start;
+	size_t start;
 	/* sector count */
-	u32 size;
+	size_t size;
 } sPartition;
 
 /**

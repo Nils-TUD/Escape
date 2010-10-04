@@ -107,8 +107,8 @@ static void killProcs(void) {
 	tFD fd;
 	DIR *dir;
 	tPid pid,own = getpid();
-	u32 i,pidSize = ARRAY_INC_SIZE;
-	u32 pidPos = 0;
+	size_t i,pidSize = ARRAY_INC_SIZE;
+	size_t pidPos = 0;
 
 	/* first set 80x25-video-mode so that the user is able to see the messages */
 	fd = open(VIDEO_DRIVER,IO_READ | IO_WRITE);
@@ -162,7 +162,7 @@ static int pidCompare(const void *p1,const void *p2) {
 
 static void waitForProc(tPid pid) {
 	tFD fd;
-	u32 time = 0;
+	tTime time = 0;
 	char path[SSTRLEN("/system/processes/") + 12];
 	snprintf(path,sizeof(path),"/system/processes/%d",pid);
 	while(1) {

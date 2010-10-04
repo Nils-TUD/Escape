@@ -28,7 +28,8 @@
 #include "../threadpool.h"
 
 #define ATA_SECTOR_SIZE						512
-#define EXT2_BLK_SIZE(e)					(ATA_SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1))
+#define EXT2_BLK_SIZE(e)					\
+	((size_t)(ATA_SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1)))
 #define EXT2_BLKS_TO_SECS(e,x)				((x) << ((e)->superBlock.logBlockSize + 1))
 #define EXT2_SECS_TO_BLKS(e,x)				((x) >> ((e)->superBlock.logBlockSize + 1))
 #define EXT2_BYTES_TO_BLKS(e,b)				(((b) + (EXT2_BLK_SIZE(e) - 1)) / EXT2_BLK_SIZE(e))
@@ -161,174 +162,173 @@
 #define EXT3_JOURNAL_DATA_FL				0x00040000	/* journal file data */
 #define EXT2_RESERVED_FL					0x80000000	/* reserved for ext2 library */
 
-
 typedef struct {
 	/* the total number of inodes, both used and free, in the file system. */
-	u32 inodeCount;
+	uint32_t inodeCount;
 	/* the total number of blocks in the system including all used, free and reserved */
-	u32 blockCount;
+	uint32_t blockCount;
 	/* number of blocks reserved for the super-user */
-	u32 suResBlockCount;
-	u32 freeBlockCount;
-	u32 freeInodeCount;
-	u32 firstDataBlock;
+	uint32_t suResBlockCount;
+	uint32_t freeBlockCount;
+	uint32_t freeInodeCount;
+	uint32_t firstDataBlock;
 	/* blockSize = 1024 << logBlockSize; */
-	u32 logBlockSize;
+	uint32_t logBlockSize;
 	/* if(positive)
 	 *   fragmentSize = 1024 << logFragSize;
 	 * else
 	 *   fragmentSize = 1024 >> -logFragSize; */
-	u32 logFragSize;
-	u32 blocksPerGroup;
-	u32 fragsPerGroup;
-	u32 inodesPerGroup;
-	u32 lastMountTime;
-	u32 lastWritetime;
+	uint32_t logFragSize;
+	uint32_t blocksPerGroup;
+	uint32_t fragsPerGroup;
+	uint32_t inodesPerGroup;
+	uint32_t lastMountTime;
+	uint32_t lastWritetime;
 	/* number of mounts since last verification */
-	u16 mountCount;
+	uint16_t mountCount;
 	/* max number of mounts until a full check has to be performed */
-	u16 maxMountCount;
+	uint16_t maxMountCount;
 	/* should be EXT2_SUPER_MAGIC */
-	u16 magic;
+	uint16_t magic;
 	/* EXT2_VALID_FS or EXT2_ERROR_FS */
-	u16 state;
+	uint16_t state;
 	/* on of EXT2_ERRORS_* */
-	u16 errors;
-	u16 minorRevLevel;
-	u32 lastCheck;
-	u32 checkInterval;
-	u32 creatorOS;
-	u32 revLevel;
+	uint16_t errors;
+	uint16_t minorRevLevel;
+	uint32_t lastCheck;
+	uint32_t checkInterval;
+	uint32_t creatorOS;
+	uint32_t revLevel;
 	/* the default user-/group-id for reserved blocks */
-	u16 defResUid;
-	u16 defResGid;
+	uint16_t defResUid;
+	uint16_t defResGid;
 	/* the index to the first inode useable for standard files. Always EXT2_REV0_FIRST_INO for
 	 * revision 0. In revision 1 and later this value may be set to any value. */
-	u32 firstInode;
+	uint32_t firstInode;
 	/* 16bit value indicating the size of the inode structure. In revision 0, this value is always
 	 * 128 (EXT2_REV0_INODE_SIZE). In revision 1 and later, this value must be a perfect power of
 	 * 2 and must be smaller or equal to the block size (1<<s_log_block_size). */
-	u16 inodeSize;
+	uint16_t inodeSize;
 	/* the block-group which hosts this super-block */
-	u16 blockGroupNo;
+	uint16_t blockGroupNo;
 	/* 32bit bitmask of compatible features */
-	u32 featureCompat;
+	uint32_t featureCompat;
 	/* 32bit bitmask of incompatible features */
-	u32 featureInCompat;
+	uint32_t featureInCompat;
 	/* 32bit bitmask of “read-only” features. The file system implementation should mount as
 	 * read-only if any of the indicated feature is unsupported. */
-	u32 featureRoCompat;
+	uint32_t featureRoCompat;
 	/* 128bit value used as the volume id. This should, as much as possible, be unique for
 	 * each file system formatted. */
-	u8 volumeUid[16];
+	uint8_t volumeUid[16];
 	/* 16 bytes volume name, mostly unusued. A valid volume name would consist of only ISO-Latin-1
 	 * characters and be 0 terminated. */
 	char volumeName[16];
 	/* 64 bytes directory path where the file system was last mounted. */
 	char lastMountPath[64];
 	/* 32bit value used by compression algorithms to determine the compression method(s) used. */
-	u32 algoBitmap;
+	uint32_t algoBitmap;
 	/* 8-bit value representing the number of blocks the implementation should attempt to
 	 * pre-allocate when creating a new regular file. */
-	u8 preAllocBlocks;
+	uint8_t preAllocBlocks;
 	/* 8-bit value representing the number of blocks the implementation should attempt to
 	 * pre-allocate when creating a new directory. */
-	u8 preAllocDirBlocks;
+	uint8_t preAllocDirBlocks;
 	/* alignment */
-	u16 : 16;
+	uint16_t : 16;
 	/* 16-byte value containing the uuid of the journal superblock */
-	u8 journalUid[16];
+	uint8_t journalUid[16];
 	/* 32-bit inode number of the journal file */
-	u32 journalInodeNo;
+	uint32_t journalInodeNo;
 	/* 32-bit device number of the journal file */
-	u32 journalDev;
+	uint32_t journalDev;
 	/* 32-bit inode number, pointing to the first inode in the list of inodes to delete. */
-	u32 lastOrphan;
+	uint32_t lastOrphan;
 	/* An array of 4 32bit values containing the seeds used for the hash algorithm for directory
 	 * indexing. */
-	u32 hashSeed[4];
+	uint32_t hashSeed[4];
 	/* An 8bit value containing the default hash version used for directory indexing.*/
-	u8 defHashVersion;
+	uint8_t defHashVersion;
 	/* padding */
-	u16 : 16;
-	u8 : 8;
+	uint16_t : 16;
+	uint8_t : 8;
 	/* A 32bit value containing the default mount options for this file system. */
-	u32 defMountOptions;
+	uint32_t defMountOptions;
 	/* A 32bit value indicating the block group ID of the first meta block group. */
-	u32 firstMetaBg;
+	uint32_t firstMetaBg;
 	/* UNUSED */
-	u8 unused[760];
+	uint8_t unused[760];
 } A_PACKED sExt2SuperBlock;
 
 typedef struct {
 	/* block id of the first block of the "block bitmap" for the group represented. */
-	u32 blockBitmap;
+	uint32_t blockBitmap;
 	/* block id of the first block of the "inode bitmap" for the group represented. */
-	u32 inodeBitmap;
+	uint32_t inodeBitmap;
 	/* block id of the first block of the "inode table" for the group represented. */
-	u32 inodeTable;
-	u16 freeBlockCount;
-	u16 freeInodeCount;
+	uint32_t inodeTable;
+	uint16_t freeBlockCount;
+	uint16_t freeInodeCount;
 	/* the number of inodes allocated to directories for the represented group. */
-	u16 usedDirCount;
+	uint16_t usedDirCount;
 	/* padding */
-	u16 : 16;
+	uint16_t : 16;
 	/* reserved */
-	u32 : 32;
-	u32 : 32;
-	u32 : 32;
+	uint32_t : 32;
+	uint32_t : 32;
+	uint32_t : 32;
 } A_PACKED sExt2BlockGrp;
 
 typedef struct {
-	u16 mode;
-	u16 uid;
-	s32 size;
-	u32 accesstime;
-	u32 createtime;
-	u32 modifytime;
-	u32 deletetime;
-	u16 gid;
+	uint16_t mode;
+	uint16_t uid;
+	int32_t size;
+	uint32_t accesstime;
+	uint32_t createtime;
+	uint32_t modifytime;
+	uint32_t deletetime;
+	uint16_t gid;
 	/* number of links to this inode (when it reaches 0 the inode and all its associated blocks
 	 * are freed) */
-	u16 linkCount;
+	uint16_t linkCount;
 	/* The total number of blocks reserved to contain the data of this inode. That means including
 	 * the blocks with block-numbers. It is not measured in ext2-blocks, but in sectors! */
-	u32 blocks;
-	u32 flags;
+	uint32_t blocks;
+	uint32_t flags;
 	/* OS dependant value. */
-	u32 osd1;
+	uint32_t osd1;
 	/* A value of 0 in the block-array effectively terminates it with no further block being defined.
 	 * All the remaining entries of the array should still be set to 0. */
-	u32 dBlocks[12];
-	u32 singlyIBlock;
-	u32 doublyIBlock;
-	u32 triplyIBlock;
+	uint32_t dBlocks[12];
+	uint32_t singlyIBlock;
+	uint32_t doublyIBlock;
+	uint32_t triplyIBlock;
 	/* used to indicate the file version (used by NFS). */
-	u32 generation;
+	uint32_t generation;
 	/* indicating the block number containing the extended attributes. In revision 0 this value
 	 * is always 0. */
-	u32 fileACL;
+	uint32_t fileACL;
 	/* In revision 0 this 32bit value is always 0. In revision 1, for regular files this 32bit
 	 * value contains the high 32 bits of the 64bit file size. */
-	u32 dirACL;
+	uint32_t dirACL;
 	/* 32bit value indicating the location of the file fragment. */
-	u32 fragAddr;
+	uint32_t fragAddr;
 	/* 96bit OS dependant structure. */
-	u16 osd2[6];
+	uint16_t osd2[6];
 } A_PACKED sExt2Inode;
 
 typedef struct {
 	tInodeNo inode;
-	u16 recLen;
-	u16 nameLen;
+	uint16_t recLen;
+	uint16_t nameLen;
 	/* name follows (up to 255 bytes) */
 	char name[];
 } A_PACKED sExt2DirEntry;
 
 typedef struct {
 	tInodeNo inodeNo;
-	u16 dirty;
-	u16 refs;
+	ushort dirty;
+	ushort refs;
 	sExt2Inode inode;
 } sExt2CInode;
 
@@ -379,7 +379,7 @@ sFileSystem *ext2_getFS(void);
  * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-number on success
  */
-tInodeNo ext2_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt);
+tInodeNo ext2_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt);
 
 /**
  * Mount-entry for open()
@@ -389,7 +389,7 @@ tInodeNo ext2_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLast
  * @param flags the open-flags
  * @return the inode on success or < 0
  */
-s32 ext2_open(void *h,tInodeNo ino,u8 flags);
+tInodeNo ext2_open(void *h,tInodeNo ino,uint flags);
 
 /**
  * Mount-entry for close()
@@ -407,7 +407,7 @@ void ext2_close(void *h,tInodeNo ino);
  * @param info the buffer where to write the file-info
  * @return 0 on success
  */
-s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info);
+int ext2_stat(void *h,tInodeNo ino,sFileInfo *info);
 
 /**
  * Mount-entry for read()
@@ -419,7 +419,7 @@ s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info);
  * @param count the number of bytes to read
  * @return number of read bytes on success
  */
-s32 ext2_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
+ssize_t ext2_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count);
 
 /**
  * Mount-entry for write()
@@ -431,7 +431,7 @@ s32 ext2_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
  * @param count the number of bytes to write
  * @return number of written bytes on success
  */
-s32 ext2_write(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
+ssize_t ext2_write(void *h,tInodeNo inodeNo,const void *buffer,uint offset,size_t count);
 
 /**
  * Mount-entry for link()
@@ -442,7 +442,7 @@ s32 ext2_write(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count)
  * @param name the entry-name to create
  * @return 0 on success
  */
-s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
+int ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
 
 /**
  * Mount-entry for unlink()
@@ -452,7 +452,7 @@ s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
  * @param name the entry-name to remove
  * @return 0 on success
  */
-s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name);
+int ext2_unlink(void *h,tInodeNo dirIno,const char *name);
 
 /**
  * Mount-entry for mkdir()
@@ -462,7 +462,7 @@ s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name);
  * @param name the entry-name to create
  * @return 0 on success
  */
-s32 ext2_mkdir(void *h,tInodeNo dirIno,const char *name);
+int ext2_mkdir(void *h,tInodeNo dirIno,const char *name);
 
 /**
  * Mount-entry for rmdir()
@@ -472,7 +472,7 @@ s32 ext2_mkdir(void *h,tInodeNo dirIno,const char *name);
  * @param name the entry-name to remove
  * @return 0 on success
  */
-s32 ext2_rmdir(void *h,tInodeNo dirIno,const char *name);
+int ext2_rmdir(void *h,tInodeNo dirIno,const char *name);
 
 /**
  * Mount-entry for sync().
@@ -489,7 +489,7 @@ void ext2_sync(void *h);
  * @param inodeNo the inode-number
  * @return the block-number
  */
-u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo);
+tBlockNo ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo);
 
 /**
  * Determines the block-group of the given block
@@ -498,7 +498,7 @@ u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo);
  * @param block the block-number
  * @return the block-group-number
  */
-u32 ext2_getGroupOfBlock(sExt2 *e,u32 block);
+tBlockNo ext2_getGroupOfBlock(sExt2 *e,tBlockNo block);
 
 /**
  * Determines the block-group of the given inode
@@ -507,13 +507,13 @@ u32 ext2_getGroupOfBlock(sExt2 *e,u32 block);
  * @param inodeNo the inode-number
  * @return the block-group-number
  */
-u32 ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo);
+tBlockNo ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo);
 
 /**
  * @param e the ext2-data
  * @return the number of block-groups
  */
-u32 ext2_getBlockGroupCount(sExt2 *e);
+size_t ext2_getBlockGroupCount(sExt2 *e);
 
 /**
  * Determines if the given block-group should contain a backup of the super-block
@@ -523,7 +523,7 @@ u32 ext2_getBlockGroupCount(sExt2 *e);
  * @param i the block-group-number
  * @return true if so
  */
-bool ext2_bgHasBackups(sExt2 *e,u32 i);
+bool ext2_bgHasBackups(sExt2 *e,tBlockNo i);
 
 
 #if DEBUGGING

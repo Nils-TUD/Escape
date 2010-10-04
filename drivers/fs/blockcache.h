@@ -26,25 +26,25 @@
 #define BMODE_WRITE		0x2
 
 /* reading/writing of blocks */
-typedef bool (*fReadBlocks)(void *h,void *buffer,u32 start,u16 blockCount);
-typedef bool (*fWriteBlocks)(void *h,const void *buffer,u32 start,u16 blockCount);
+typedef bool (*fReadBlocks)(void *h,void *buffer,tBlockNo start,size_t blockCount);
+typedef bool (*fWriteBlocks)(void *h,const void *buffer,size_t start,size_t blockCount);
 
 /* a cached block */
 typedef struct sCBlock {
 	struct sCBlock *prev;
 	struct sCBlock *next;
-	u32 blockNo;
-	u16 dirty;
-	u16 refs;
+	size_t blockNo;
+	ushort dirty;
+	ushort refs;
 	/* NULL indicates an unused entry */
-	u8 *buffer;
+	void *buffer;
 } sCBlock;
 
 /* all information about a block-cache */
 typedef struct {
 	void *handle;
-	u32 blockCacheSize;
-	u32 blockSize;
+	size_t blockCacheSize;
+	size_t blockSize;
 	fReadBlocks read;
 	fWriteBlocks write;
 	sCBlock *usedBlocks;
@@ -90,7 +90,7 @@ void bcache_markDirty(sCBlock *b);
  * @param blockNo the block-number
  * @return the block or NULL
  */
-sCBlock *bcache_create(sBlockCache *c,u32 blockNo);
+sCBlock *bcache_create(sBlockCache *c,tBlockNo blockNo);
 
 /**
  * Requests the block with given number.
@@ -101,7 +101,7 @@ sCBlock *bcache_create(sBlockCache *c,u32 blockNo);
  * @param mode the mode (BMODE_*)
  * @return the block or NULL
  */
-sCBlock *bcache_request(sBlockCache *c,u32 blockNo,u8 mode);
+sCBlock *bcache_request(sBlockCache *c,tBlockNo blockNo,uint mode);
 
 /**
  * Releases the given block

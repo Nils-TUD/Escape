@@ -113,32 +113,32 @@
 typedef struct {
 	struct {
 		/* reserved / obsolete / retired / ... */
-		u16 : 7,
+		uint16_t : 7,
 		remMediaDevice : 1,
 		/* retired */
 		: 7,
 		/* 0 = ATA, 1 = ATAPI */
 		isATAPI : 1;
 	} A_PACKED general;
-	u16 oldCylinderCount;
+	uint16_t oldCylinderCount;
 	/* specific configuration */
-	u16 : 16;
-	u16 oldHeadCount;
-	u16 oldUnformBytesPerTrack;
-	u16 oldUnformBytesPerSec;
-	u16 oldSecsPerTrack;
+	uint16_t : 16;
+	uint16_t oldHeadCount;
+	uint16_t oldUnformBytesPerTrack;
+	uint16_t oldUnformBytesPerSec;
+	uint16_t oldSecsPerTrack;
 	/* reserved for assignment by the compactflash association */
-	u16 : 16;
-	u16 : 16;
+	uint16_t : 16;
+	uint16_t : 16;
 	/* retired */
-	u16 : 16;
+	uint16_t : 16;
 	/* 20 ASCII chars */
 	char serialNumber[20];
 	/* retired */
-	u16 : 16;
-	u16 : 16;
+	uint16_t : 16;
+	uint16_t : 16;
 	/* obsolete */
-	u16 : 16;
+	uint16_t : 16;
 	/* 8 ASCII chars, 0000h = not specified */
 	char firmwareRev[8];
 	/* 40 ASCII chars, 0000h = not specified */
@@ -146,14 +146,14 @@ typedef struct {
 	/* 00h = read/write multiple commands not implemented.
 	 * xxh = Maximum number of sectors that can be transferred per interrupt on read and write
 	 * 	multiple commands */
-	u8 maxSecsPerIntrpt;
+	uint8_t maxSecsPerIntrpt;
 	/* always 0x80 */
-	u8 : 8;
+	uint8_t : 8;
 	/* reserved */
-	u16 : 16;
+	uint16_t : 16;
 	struct {
 		/* retired */
-		u16 : 8,
+		uint16_t : 8,
 		DMA : 1,
 		LBA : 1,
 		/* IORDY may be disabled */
@@ -164,31 +164,31 @@ typedef struct {
 		: 4;
 	} A_PACKED capabilities;
 	/* further capabilities */
-	u16 : 16;
+	uint16_t : 16;
 	/* obsolete */
-	u16 : 16;
-	u16 : 16;
-	u16 words5458Valid : 1,
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t words5458Valid : 1,
 	words6470Valid : 1,
 	word88Valid : 1,
 	/* reserved */
 	: 13;
-	u16 oldCurCylinderCount;
-	u16 oldCurHeadCount;
-	u16 oldCurSecsPerTrack;
-	u32 oldCurCapacity;	/* in sectors */
+	uint16_t oldCurCylinderCount;
+	uint16_t oldCurHeadCount;
+	uint16_t oldCurSecsPerTrack;
+	uint32_t oldCurCapacity;	/* in sectors */
 	/* current seting for number of sectors that can be transferred per interrupt on R/W multiple
 	 * commands */
-	u16 curmaxSecsPerIntrpt : 8,
+	uint16_t curmaxSecsPerIntrpt : 8,
 	/* multiple sector setting is valid */
 	multipleSecsValid : 1,
 	/* reserved */
 	: 7;
 	/* total number of user addressable sectors (LBA mode only) */
-	u32 userSectorCount;
-	u8 oldswDMAActive;
-	u8 oldswDMASupported;
-	u16 mwDMAMode0Supp : 1,
+	uint32_t userSectorCount;
+	uint8_t oldswDMAActive;
+	uint8_t oldswDMASupported;
+	uint16_t mwDMAMode0Supp : 1,
 	mwDMAMode1Supp : 1,
 	mwDMAMode2Supp : 1,
 	/* reserved */
@@ -198,28 +198,28 @@ typedef struct {
 	mwDMAMode2Sel : 1,
 	/* reserved */
 	: 5;
-    u8 supportedPIOModes;
+    uint8_t supportedPIOModes;
     /* reserved */
-    u8 : 8;
-    u16 minMwDMATransTimePerWord;	/* in nanoseconds */
-    u16 recMwDMATransTime;
-    u16 minPIOTransTime;
-    u16 minPIOTransTimeIncCtrlFlow;
+    uint8_t : 8;
+    uint16_t minMwDMATransTimePerWord;	/* in nanoseconds */
+    uint16_t recMwDMATransTime;
+    uint16_t minPIOTransTime;
+    uint16_t minPIOTransTimeIncCtrlFlow;
     /* reserved / uninteresting */
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
-    u16 : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
+    uint16_t : 16;
     union {
 		struct {
-			u16 : 1,
+			uint16_t : 1,
 			ata1 : 1,
 			ata2 : 1,
 			ata3 : 1,
@@ -229,11 +229,11 @@ typedef struct {
 			ata7 : 1,
 			: 8;
 		} A_PACKED bits;
-		u16 raw;
+		uint16_t raw;
     } majorVersion;
-	u16 minorVersion;
+	uint16_t minorVersion;
 	struct {
-		u16 smart : 1,
+		uint16_t smart : 1,
 		securityMode : 1,
 		removableMedia : 1,
 		powerManagement : 1,
@@ -250,7 +250,7 @@ typedef struct {
 		nop : 1,
 		: 1;
 
-		u16 downloadMicrocode : 1,
+		uint16_t downloadMicrocode : 1,
 		rwDMAQueued : 1,
 		cfa : 1,
 		apm : 1,
@@ -267,22 +267,23 @@ typedef struct {
 		flushCacheExt : 1,
 		: 2;
 	} A_PACKED features;
-	u16 reserved[172];
+	uint16_t reserved[172];
 } A_PACKED sATAIdentify;
 
 typedef struct sATAController sATAController;
 typedef struct sATADevice sATADevice;
-typedef bool (*fReadWrite)(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
+typedef bool (*fReadWrite)(sATADevice *device,uint op,void *buffer,uint64_t lba,size_t secSize,
+		size_t secCount);
 
 struct sATADevice {
 	/* the identifier; 0-3; bit0 set means slave */
-	u8 id;
+	uchar id;
 	/* whether the device exists and we can use it */
-	u8 present;
+	uchar present;
 	/* master / slave */
-	u8 slaveBit;
+	uchar slaveBit;
 	/* the sector-size */
-	u32 secSize;
+	size_t secSize;
 	/* the ata-controller to which the device belongs */
 	sATAController *ctrl;
 	/* handler-function for reading / writing */
@@ -296,22 +297,22 @@ struct sATADevice {
 /* physical region descriptor */
 typedef struct {
 	void *buffer;
-	u16 byteCount;
-	u16 : 15;
-	u16 last : 1;
+	uint16_t byteCount;
+	uint16_t : 15;
+	uint16_t last : 1;
 } A_PACKED sPRD;
 
 /* the controller is declared here, because otherwise device.h needs controller.h and the other way
  * around */
 struct sATAController {
-	u8 id;
-	u8 useIrq;
-	u8 useDma;
-	volatile u8 gotIrq;
+	uchar id;
+	uchar useIrq;
+	uchar useDma;
+	volatile uchar gotIrq;
 	/* I/O-ports for the controllers */
-	u16 portBase;
+	uint16_t portBase;
 	/* I/O-ports for bus-mastering */
-	u16 bmrBase;
+	uint16_t bmrBase;
 	tSig irq;
 	sPRD *dma_prdt_phys;
 	sPRD *dma_prdt_virt;

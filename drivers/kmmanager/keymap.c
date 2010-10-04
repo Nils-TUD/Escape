@@ -56,7 +56,7 @@ sKeymapEntry *km_parse(const char *file) {
 	return map;
 }
 
-char km_translateKeycode(sKeymapEntry *map,bool isBreak,u32 keycode,u8 *modifier) {
+char km_translateKeycode(sKeymapEntry *map,bool isBreak,uchar keycode,uchar *modifier) {
 	sKeymapEntry *e;
 	/* handle shift, alt and ctrl */
 	switch(keycode) {
@@ -85,7 +85,7 @@ char km_translateKeycode(sKeymapEntry *map,bool isBreak,u32 keycode,u8 *modifier
 }
 
 static bool km_parseLine(FILE *f,sKeymapEntry *map) {
-	u32 i,no;
+	size_t i,no;
 	char *entries[3];
 	/* scan number */
 	if(fscanf(f,"%d",&no) != 1 || no >= KEYMAP_SIZE)
@@ -123,7 +123,7 @@ static char km_parseKey(FILE *f) {
 		return km_getKey(str);
 	}
 	else if(c == 'x') {
-		u32 code;
+		uint code;
 		fscanf(f,"%2x",&code);
 		return (char)code;
 	}

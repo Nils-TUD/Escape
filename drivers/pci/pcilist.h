@@ -47,22 +47,22 @@
  */
 
 typedef struct {
-	u16 vendorId;
+	ushort vendorId;
 	const char *vendorShort;
 	const char *vendorFull;
 } sPCIVendor;
 
 typedef struct {
-	u16 vendorId;
-	u16 deviceId;
+	ushort vendorId;
+	ushort deviceId;
 	const char *chip;
 	const char *chipDesc;
 } sPCIDeviceInfo;
 
 typedef struct {
-	u8 baseClass;
-	u8 SubClass;
-	u8 progIf;
+	uchar baseClass;
+	uchar SubClass;
+	uchar progIf;
 	const char *baseDesc;
 	const char *subDesc;
 	const char *progDesc;

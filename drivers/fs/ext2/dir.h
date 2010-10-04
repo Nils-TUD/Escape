@@ -31,7 +31,7 @@
  * @param name the name of the new directory
  * @return 0 on success
  */
-s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name);
+int ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name);
 
 /**
  * Finds the inode-number to the entry <name> in <dir>
@@ -42,7 +42,7 @@ s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name);
  * @param nameLen the length of the name
  * @return the inode-number or < 0
  */
-tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,u32 nameLen);
+tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,size_t nameLen);
 
 /**
  * Finds the inode-number to the entry <name> in the given buffer
@@ -53,7 +53,7 @@ tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,u32 nameLen);
  * @param nameLen the length of the name
  * @return the inode-number or < 0
  */
-tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,u32 bufSize,const char *name,u32 nameLen);
+tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen);
 
 /**
  * Removes the directory with given name from the given directory. It is required that
@@ -64,6 +64,6 @@ tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,u32 bufSize,const char *name,u32 
  * @param name the name of the directory to remove
  * @return 0 on success
  */
-s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name);
+int ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name);
 
 #endif /* EXT2_DIR_H_ */

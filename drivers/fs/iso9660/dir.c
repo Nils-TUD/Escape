@@ -34,16 +34,16 @@
 /**
  * Checks whether <user> matches <disk>
  */
-static bool iso_dir_match(const char *user,const char *disk,u32 userLen,u32 diskLen);
+static bool iso_dir_match(const char *user,const char *disk,size_t userLen,size_t diskLen);
 
-tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
-	u32 extLoc,extSize;
+tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt) {
+	size_t extLoc,extSize;
 	tDevNo mntDev;
 	const char *p = path;
-	u32 pos;
+	ssize_t pos;
 	tInodeNo res;
 	sCBlock *blk;
-	u32 i,blockSize = ISO_BLK_SIZE(h);
+	size_t i,blockSize = ISO_BLK_SIZE(h);
 
 	while(*p == '/')
 		p++;
@@ -61,7 +61,7 @@ tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool 
 			return ERR_BLO_REQ_FAILED;
 
 		e = (const sISODirEntry*)blk->buffer;
-		while((u8*)e < blk->buffer + blockSize) {
+		while((uintptr_t)e < (uintptr_t)blk->buffer + blockSize) {
 			/* continue with next block? */
 			if(e->length == 0) {
 				bcache_release(blk);
@@ -83,7 +83,8 @@ tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool 
 					break;
 
 				/* is it a mount-point? */
-				mntDev = mount_getByLoc(*dev,GET_INODENO(extLoc + i,blockSize,(u8*)e - blk->buffer));
+				res = GET_INODENO(extLoc + i,blockSize,(uintptr_t)e - (uintptr_t)blk->buffer);
+				mntDev = mount_getByLoc(*dev,res);
 				if(mntDev >= 0) {
 					sFSInst *inst = mount_get(mntDev);
 					*dev = mntDev;
@@ -103,28 +104,28 @@ tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool 
 				extSize = e->extentSize.littleEndian;
 				break;
 			}
-			e = (const sISODirEntry*)((u8*)e + e->length);
+			e = (const sISODirEntry*)((uintptr_t)e + e->length);
 		}
 		/* no match? */
-		if((u8*)e >= blk->buffer + blockSize || e->length == 0) {
+		if((uintptr_t)e >= (uintptr_t)blk->buffer + blockSize || e->length == 0) {
 			bcache_release(blk);
 			if(flags & IO_CREATE)
 				return ERR_UNSUPPORTED_OP;
 			return ERR_PATH_NOT_FOUND;
 		}
-		res = GET_INODENO(extLoc + i,blockSize,(u8*)e - blk->buffer);
+		res = GET_INODENO(extLoc + i,blockSize,(uintptr_t)e - (uintptr_t)blk->buffer);
 		bcache_release(blk);
 	}
 	return res;
 }
 
-static bool iso_dir_match(const char *user,const char *disk,u32 userLen,u32 diskLen) {
+static bool iso_dir_match(const char *user,const char *disk,size_t userLen,size_t diskLen) {
 	if(*disk == ISO_FILENAME_THIS)
 		return userLen == 1 && strcmp(user,".") == 0;
 	if(*disk == ISO_FILENAME_PARENT)
 		return userLen == 2 && strcmp(user,"..") == 0;
 	/* don't compare volume sequence no */
-	u32 rpos = MIN(diskLen,(u32)strchri(disk,';'));
+	size_t rpos = MIN(diskLen,(size_t)strchri(disk,';'));
 	if(disk[rpos] != ';')
 		return userLen == diskLen && strncasecmp(disk,user,userLen) == 0;
 	return userLen == rpos && strncasecmp(disk,user,userLen) == 0;

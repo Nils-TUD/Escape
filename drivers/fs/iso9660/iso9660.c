@@ -41,7 +41,7 @@
 static bool iso_setup(const char *driver,sISO9660 *iso);
 
 void *iso_init(const char *driver,char **usedDev) {
-	u32 i;
+	size_t i;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
 	if(iso == NULL)
 		return NULL;
@@ -112,7 +112,7 @@ void *iso_init(const char *driver,char **usedDev) {
 }
 
 static bool iso_setup(const char *driver,sISO9660 *iso) {
-	u32 i;
+	size_t i;
 	/* now open the driver */
 	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
 		iso->drvFds[i] = open(driver,IO_WRITE | IO_READ);
@@ -137,7 +137,7 @@ static bool iso_setup(const char *driver,sISO9660 *iso) {
 }
 
 void iso_deinit(void *h) {
-	u32 i;
+	size_t i;
 	sISO9660 *iso = (sISO9660*)h;
 	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
 		if(iso->drvFds[i] >= 0)
@@ -167,11 +167,11 @@ sFileSystem *iso_getFS(void) {
 	return fs;
 }
 
-tInodeNo iso_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
+tInodeNo iso_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt) {
 	return iso_dir_resolve((sISO9660*)h,path,flags,dev,resLastMnt);
 }
 
-s32 iso_open(void *h,tInodeNo ino,u8 flags) {
+tInodeNo iso_open(void *h,tInodeNo ino,uint flags) {
 	UNUSED(h);
 	UNUSED(flags);
 	return ino;
@@ -182,8 +182,8 @@ void iso_close(void *h,tInodeNo ino) {
 	UNUSED(ino);
 }
 
-s32 iso_stat(void *h,tInodeNo ino,sFileInfo *info) {
-	u32 ts;
+int iso_stat(void *h,tInodeNo ino,sFileInfo *info) {
+	tTime ts;
 	sISO9660 *i = (sISO9660*)h;
 	const sISOCDirEntry *e = iso_direc_get(i,ino);
 	if(e == NULL)
@@ -209,11 +209,11 @@ s32 iso_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	return 0;
 }
 
-s32 iso_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
+ssize_t iso_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count) {
 	return iso_file_read((sISO9660*)h,inodeNo,buffer,offset,count);
 }
 
-u32 iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate) {
+tTime iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate) {
 	UNUSED(h);
 	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);
@@ -222,8 +222,8 @@ u32 iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate) {
 #if DEBUGGING
 
 void iso_dbg_printPathTbl(sISO9660 *h) {
-	u32 tblSize = h->primary.data.primary.pathTableSize.littleEndian;
-	u32 secCount = (tblSize + ATAPI_SECTOR_SIZE - 1) / ATAPI_SECTOR_SIZE;
+	size_t tblSize = h->primary.data.primary.pathTableSize.littleEndian;
+	size_t secCount = (tblSize + ATAPI_SECTOR_SIZE - 1) / ATAPI_SECTOR_SIZE;
 	sISOPathTblEntry *pe = malloc((tblSize + ATAPI_SECTOR_SIZE - 1) & ~(ATAPI_SECTOR_SIZE - 1));
 	sISOPathTblEntry *start = pe;
 	if(!iso_rw_readSectors(h,pe,h->primary.data.primary.lPathTblLoc,secCount)) {
@@ -231,22 +231,22 @@ void iso_dbg_printPathTbl(sISO9660 *h) {
 		return;
 	}
 	printf("Path-Table:\n");
-	while((u8*)pe < ((u8*)start + tblSize)) {
+	while((uintptr_t)pe < ((uintptr_t)start + tblSize)) {
 		printf("	length: %u\n",pe->length);
 		printf("	extentLoc: %u\n",pe->extentLoc);
 		printf("	parentTblIndx: %u\n",pe->parentTblIndx);
 		printf("	name: %s\n",pe->name);
 		printf("---\n");
 		if(pe->length % 2 == 0)
-			pe = (sISOPathTblEntry*)((u8*)pe + sizeof(sISOPathTblEntry) + pe->length);
+			pe = (sISOPathTblEntry*)((uintptr_t)pe + sizeof(sISOPathTblEntry) + pe->length);
 		else
-			pe = (sISOPathTblEntry*)((u8*)pe + sizeof(sISOPathTblEntry) + pe->length + 1);
+			pe = (sISOPathTblEntry*)((uintptr_t)pe + sizeof(sISOPathTblEntry) + pe->length + 1);
 	}
 	free(start);
 }
 
-void iso_dbg_printTree(sISO9660 *h,u32 extLoc,u32 extSize,u32 layer) {
-	u32 i;
+void iso_dbg_printTree(sISO9660 *h,size_t extLoc,size_t extSize,size_t layer) {
+	size_t i;
 	sISODirEntry *e;
 	sISODirEntry *content = (sISODirEntry*)malloc(extSize);
 	if(content == NULL)
@@ -255,7 +255,7 @@ void iso_dbg_printTree(sISO9660 *h,u32 extLoc,u32 extSize,u32 layer) {
 		return;
 
 	e = content;
-	while((u8*)e < (u8*)content + extSize) {
+	while((uintptr_t)e < (uintptr_t)content + extSize) {
 		char bak;
 		if(e->length == 0)
 			break;
@@ -275,7 +275,7 @@ void iso_dbg_printTree(sISO9660 *h,u32 extLoc,u32 extSize,u32 layer) {
 				e->name[0] != ISO_FILENAME_THIS) {
 			iso_dbg_printTree(h,e->extentLoc.littleEndian,e->extentSize.littleEndian,layer + 1);
 		}
-		e = (sISODirEntry*)((u8*)e + e->length);
+		e = (sISODirEntry*)((uintptr_t)e + e->length);
 	}
 	free(content);
 }

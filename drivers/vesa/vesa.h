@@ -22,9 +22,9 @@
 
 #include <esc/common.h>
 
-typedef u16 tSize;
-typedef s16 tCoord;
-typedef u32 tColor;
+typedef ushort tSize;
+typedef short tCoord;
+typedef uint32_t tColor;
 
 typedef void (*fSetPixel)(tCoord x,tCoord y,tColor color);
 

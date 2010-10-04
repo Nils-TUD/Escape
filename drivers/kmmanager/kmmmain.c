@@ -102,7 +102,7 @@ int main(void) {
 		if(fd < 0) {
 			/* read from keyboard */
 			sKbData *kbd = kbData;
-			s32 count;
+			ssize_t count;
 			bool readable = false;
 			/* don't block here since there may be waiting clients.. */
 			while((count = RETRY(read(kbFd,kbData,sizeof(kbData)))) > 0) {
@@ -150,7 +150,7 @@ static void handleKeymap(tMsgId mid,tFD fd) {
 	switch(mid) {
 		case MSG_DRV_READ: {
 			/* offset is ignored here */
-			u32 count = msg.args.arg2 / sizeof(sKmData);
+			size_t count = msg.args.arg2 / sizeof(sKmData);
 			sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
 			msg.args.arg1 = 0;
 			if(buffer)
@@ -183,18 +183,18 @@ static void handleKeymap(tMsgId mid,tFD fd) {
 static void handleKeyevents(tMsgId mid,tFD fd) {
 	switch(mid) {
 		case MSG_KE_ADDLISTENER: {
-			u8 flags = (u8)msg.args.arg1;
-			u8 key = (u8)msg.args.arg2;
-			u8 modifier = (u8)msg.args.arg3;
+			uchar flags = (uchar)msg.args.arg1;
+			uchar key = (uchar)msg.args.arg2;
+			uchar modifier = (uchar)msg.args.arg3;
 			msg.args.arg1 = events_add(getClientId(fd),flags,key,modifier);
 			send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args));
 		}
 		break;
 
 		case MSG_KE_REMLISTENER: {
-			u8 flags = (u8)msg.args.arg1;
-			u8 key = (u8)msg.args.arg2;
-			u8 modifier = (u8)msg.args.arg3;
+			uchar flags = (uchar)msg.args.arg1;
+			uchar key = (uchar)msg.args.arg2;
+			uchar modifier = (uchar)msg.args.arg3;
 			events_remove(getClientId(fd),flags,key,modifier);
 		}
 		break;

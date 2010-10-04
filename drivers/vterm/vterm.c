@@ -57,7 +57,7 @@ static sVTerm vterms[VTERM_COUNT];
 static sVTerm *activeVT = NULL;
 static sVTermCfg *config;
 
-sVTerm *vterm_get(u32 index) {
+sVTerm *vterm_get(size_t index) {
 	return vterms + index;
 }
 
@@ -66,7 +66,7 @@ bool vterm_initAll(tFD *ids,sVTermCfg *cfg) {
 	sVTSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
 	const char *driver;
-	u32 i;
+	size_t i;
 
 	config = cfg;
 
@@ -117,7 +117,7 @@ sVTerm *vterm_getActive(void) {
 	return activeVT;
 }
 
-void vterm_selectVTerm(u32 index) {
+void vterm_selectVTerm(size_t index) {
 	sVTerm *vt = vterms + index;
 	if(activeVT != NULL)
 		activeVT->active = false;
@@ -130,7 +130,7 @@ void vterm_selectVTerm(u32 index) {
 }
 
 void vterm_update(sVTerm *vt) {
-	u32 byteCount;
+	size_t byteCount;
 	if(!vt->active)
 		return;
 
@@ -208,7 +208,7 @@ static void vterm_setCursor(sVTerm *vt) {
 }
 
 static int vterm_dateThread(void *arg) {
-	u32 i,j,len;
+	size_t i,j,len;
 	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
 	UNUSED(arg);
 	while(1) {

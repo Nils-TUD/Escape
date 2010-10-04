@@ -56,7 +56,7 @@ static sKmData kmData[KB_DATA_BUF_SIZE];
 static tFD drvIds[VTERM_COUNT] = {-1};
 
 int main(void) {
-	u32 i,reqc;
+	size_t i,reqc;
 	tFD kbFd;
 	tFD client;
 	tMsgId mid;
@@ -100,7 +100,7 @@ int main(void) {
 			reqc = 0;
 			if(cfg.enabled && cfg.readKb) {
 				/* read from keyboard */
-				s32 count = RETRY(read(kbFd,kmData,sizeof(kmData)));
+				ssize_t count = RETRY(read(kbFd,kmData,sizeof(kmData)));
 				if(count < 0) {
 					if(count != ERR_WOULD_BLOCK)
 						printe("[VTERM] Unable to read from km-manager");
@@ -134,7 +134,7 @@ int main(void) {
 			switch(mid) {
 				case MSG_DRV_READ: {
 					/* offset is ignored here */
-					u32 count = msg.args.arg2;
+					size_t count = msg.args.arg2;
 					char *data = (char*)malloc(count);
 					msg.args.arg1 = 0;
 					if(data)
@@ -153,8 +153,7 @@ int main(void) {
 				break;
 				case MSG_DRV_WRITE: {
 					char *data;
-					u32 c;
-					c = msg.args.arg2;
+					size_t c = msg.args.arg2;
 					data = (char*)malloc(c + 1);
 					msg.args.arg1 = 0;
 					if(data) {
@@ -173,7 +172,7 @@ int main(void) {
 				break;
 
 				case MSG_VT_SELECT: {
-					u32 index = msg.args.arg1;
+					size_t index = msg.args.arg1;
 					if(index < VTERM_COUNT && vterm_getActive()->index != index) {
 						vterm_selectVTerm(index);
 						vterm_update(vterm_getActive());
@@ -225,7 +224,7 @@ int main(void) {
 }
 
 static sVTerm *getVTerm(tFD sid) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < VTERM_COUNT; i++) {
 		if(drvIds[i] == sid)
 			return vterm_get(i);

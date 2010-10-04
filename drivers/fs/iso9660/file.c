@@ -31,13 +31,15 @@
 /**
  * Builds the required dir-entries for the fs-interface from the ISO9660-dir-entries
  */
-static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,const u8 *src,u32 offset,u32 count);
+static void iso_file_buildDirEntries(sISO9660 *h,tBlockNo lba,uint8_t *dst,const uint8_t *src,
+		uint offset,size_t count);
 
-s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
+ssize_t iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count) {
 	const sISOCDirEntry *e;
 	sCBlock *blk;
-	u8 *bufWork;
-	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
+	uint8_t *bufWork;
+	tBlockNo startBlock;
+	size_t c,i,blockSize,blockCount,leftBytes;
 
 	/* at first we need the direntry */
 	e = iso_direc_get(h,inodeNo);
@@ -45,10 +47,10 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 		return ERR_INO_REQ_FAILED;
 
 	/* nothing left to read? */
-	if((s32)offset < 0 || offset >= e->entry.extentSize.littleEndian)
+	if(offset >= e->entry.extentSize.littleEndian)
 		return 0;
 	/* adjust count */
-	if((s32)(offset + count) < 0 || (offset + count) >= e->entry.extentSize.littleEndian)
+	if((offset + count) >= e->entry.extentSize.littleEndian)
 		count = e->entry.extentSize.littleEndian - offset;
 
 	blockSize = ISO_BLK_SIZE(h);
@@ -60,7 +62,7 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 
 	/* use the offset in the first block; after the first one the offset is 0 anyway */
 	leftBytes = count;
-	bufWork = (u8*)buffer;
+	bufWork = (uint8_t*)buffer;
 	for(i = 0; i < blockCount; i++) {
 		/* read block */
 		blk = bcache_request(&h->blockCache,startBlock + i,BMODE_READ);
@@ -74,7 +76,7 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 				iso_file_buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,
 						blk->buffer,offset,c);
 			else
-				memcpy(bufWork,blk->buffer + offset,c);
+				memcpy(bufWork,(void*)((uintptr_t)blk->buffer + offset),c);
 			bufWork += c;
 		}
 		bcache_release(blk);
@@ -89,32 +91,33 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 	return count;
 }
 
-static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,const u8 *src,u32 offset,u32 count) {
+static void iso_file_buildDirEntries(sISO9660 *h,tBlockNo lba,uint8_t *dst,const uint8_t *src,
+		uint offset,size_t count) {
 	const sISODirEntry *e;
 	sDirEntry *de,*lastDe;
-	u32 i,blockSize = ISO_BLK_SIZE(h);
-	u8 *cdst;
+	size_t i,blockSize = ISO_BLK_SIZE(h);
+	uint8_t *cdst;
 
 	/* TODO the whole stuff here is of course not a good solution. but it works, thats enough
 	 * for now :) */
 
 	if(offset != 0 || count != blockSize)
-		cdst = (u8*)malloc(blockSize);
+		cdst = (uint8_t*)malloc(blockSize);
 	else
 		cdst = dst;
 
 	e = (const sISODirEntry*)src;
 	lastDe = NULL;
 	de = (sDirEntry*)cdst;
-	while((u8*)e < (u8*)src + blockSize) {
+	while((uintptr_t)e < (uintptr_t)src + blockSize) {
 		if(e->length == 0) {
 			/* stretch last entry till the block-boundary and clear the rest */
 			if(lastDe)
-				lastDe->recLen += ((u8*)cdst + blockSize) - (u8*)de;
-			memclear(de,((u8*)cdst + blockSize) - (u8*)de);
+				lastDe->recLen += ((uintptr_t)cdst + blockSize) - (uintptr_t)de;
+			memclear(de,((uintptr_t)cdst + blockSize) - (uintptr_t)de);
 			break;
 		}
-		de->nodeNo = (lba * blockSize) + ((u8*)e - (u8*)src);
+		de->nodeNo = (lba * blockSize) + ((uintptr_t)e - (uintptr_t)src);
 		if(e->name[0] == ISO_FILENAME_THIS) {
 			de->nameLen = 1;
 			de->name[0] = '.';
@@ -130,8 +133,8 @@ static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,const u8 *src,u
 		}
 		de->recLen = (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) + de->nameLen;
 		lastDe = de;
-		de = (sDirEntry*)((u8*)de + de->recLen);
-		e = (const sISODirEntry*)((const u8*)e + e->length);
+		de = (sDirEntry*)((uintptr_t)de + de->recLen);
+		e = (const sISODirEntry*)((uintptr_t)e + e->length);
 	}
 
 	if(offset != 0 || count != blockSize) {

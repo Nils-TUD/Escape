@@ -26,7 +26,7 @@
 #include "../blockcache.h"
 
 void iso_direc_init(sISO9660 *h) {
-	u32 i;
+	size_t i;
 	for(i = 0; i < ISO_DIRE_CACHE_SIZE; i++)
 		h->direcache[i].id = 0;
 	h->direcNextFree = 0;
@@ -35,8 +35,9 @@ void iso_direc_init(sISO9660 *h) {
 const sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
 	const sISODirEntry *e;
 	sCBlock *blk;
-	u32 i,blockLBA,blockSize,offset;
-	s32 unused = -1;
+	tBlockNo blockLBA;
+	size_t i,blockSize,offset;
+	int unused = -1;
 
 	/* search in the cache */
 	for(i = 0; i < ISO_DIRE_CACHE_SIZE; i++) {
@@ -65,7 +66,7 @@ const sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
 		blk = bcache_request(&h->blockCache,blockLBA,BMODE_READ);
 		if(blk == NULL)
 			return NULL;
-		e = (const sISODirEntry*)(blk->buffer + (offset % blockSize));
+		e = (const sISODirEntry*)((uintptr_t)blk->buffer + (offset % blockSize));
 		/* don't copy the name! */
 		memcpy(&(h->direcache[unused].entry),e,sizeof(sISODirEntry));
 		h->direcache[unused].id = id;

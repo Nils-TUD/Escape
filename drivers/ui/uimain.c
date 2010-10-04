@@ -30,27 +30,27 @@
 #define GUI_INDEX			6
 #define MAX_RETRY_COUNT		500
 
-static void switchTo(u32 index);
+static void switchTo(size_t index);
 static bool startGUI(void);
 static bool exists(const char *name);
 static bool startDriver(const char *name,const char *waitDev);
-static void addListener(tFD fd,u8 flags,u8 key,u8 modifiers);
+static void addListener(tFD fd,uchar flags,uchar key,uchar modifiers);
 
 static sMsg msg;
-static u32 curTerm = 0;
+static size_t curTerm = 0;
 static bool guiStarted = false;
-static u8 keys[] = {
+static uchar keys[] = {
 	VK_1,VK_2,VK_3,VK_4,VK_5,VK_6,VK_7
 };
 
-static void childTermHandler(s32 sig) {
+static void childTermHandler(int sig) {
 	UNUSED(sig);
 	RETRY(waitChild(NULL));
 }
 
 int main(void) {
 	tMsgId mid;
-	u32 i;
+	size_t i;
 	if(setSigHandler(SIG_CHILD_TERM,&childTermHandler) < 0)
 		error("Unable to set SIG_CHILD_TERM-handler");
 
@@ -73,7 +73,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void switchTo(u32 index) {
+static void switchTo(size_t index) {
 	if(index != GUI_INDEX && curTerm == GUI_INDEX) {
 		/* disable winmanager */
 		tFD fd = open("/dev/winmanager",IO_WRITE);
@@ -157,7 +157,7 @@ static bool exists(const char *name) {
 
 static bool startDriver(const char *name,const char *waitDev) {
 	tFD fd;
-	u32 i;
+	size_t i;
 	char path[MAX_PATH_LEN + 1] = "/sbin/";
 
 	/* already started? fine */
@@ -188,13 +188,13 @@ static bool startDriver(const char *name,const char *waitDev) {
 	return true;
 }
 
-static void addListener(tFD fd,u8 flags,u8 key,u8 modifiers) {
+static void addListener(tFD fd,uchar flags,uchar key,uchar modifiers) {
 	tMsgId mid;
 	msg.args.arg1 = flags;
 	msg.args.arg2 = key;
 	msg.args.arg3 = modifiers;
 	if(send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args)) < 0)
 		error("Unable to send msg to keyevents");
-	if(RETRY(receive(fd,&mid,&msg,sizeof(msg.args))) < 0 || (s32)msg.args.arg1 < 0)
+	if(RETRY(receive(fd,&mid,&msg,sizeof(msg.args))) < 0 || (int)msg.args.arg1 < 0)
 		error("Unable to receive reply or invalid reply from keyevents");
 }

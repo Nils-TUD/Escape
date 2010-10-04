@@ -49,6 +49,6 @@ sKeymapEntry *km_parse(const char *file);
  * @param modifier will be set to the current modifiers
  * @return the character
  */
-char km_translateKeycode(sKeymapEntry *map,bool isBreak,u32 keycode,u8 *modifier);
+char km_translateKeycode(sKeymapEntry *map,bool isBreak,uchar keycode,uchar *modifier);
 
 #endif /* KEYMAP_H_ */

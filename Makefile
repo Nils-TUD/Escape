@@ -1,5 +1,5 @@
 # general
-BUILDDIR = $(abspath build/debug)
+BUILDDIR = $(abspath build/release)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -195,7 +195,7 @@ prepareQemu:	hdd cd
 		sudo service qemu-kvm start || true
 
 prepareBochs:	hdd cd
-		tools/bochshdd.sh bochs.cfg $(HDD)
+		tools/bochshdd.sh bochs.cfg $(HDD) $(ISO)
 
 prepareVbox: cd $(VMDISK)
 		sudo service qemu-kvm stop || true # vbox doesn't like kvm :/

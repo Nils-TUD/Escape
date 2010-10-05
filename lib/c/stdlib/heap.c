@@ -34,6 +34,9 @@
 #define DEBUG_ADD_GUARDS		1
 #endif
 
+#define GUARD_MAGIC				0xDEADBEEF
+#define ALIGN(count,align)		(((count) + (align) - 1) & ~((align) - 1))
+
 #if DEBUG_ADD_GUARDS
 void *_malloc(size_t size);
 void *_calloc(size_t num,size_t size);
@@ -95,53 +98,57 @@ static tULock mlock = 0;
 
 #if DEBUG_ADD_GUARDS
 void *malloc_guard(size_t size) {
-	void *a = _malloc(size + sizeof(uint) * 3);
+	uint *a;
+	size = ALIGN(size,sizeof(uint));
+	a = (uint*)_malloc(size + sizeof(uint) * 3);
 	if(a) {
-		*((uint*)a) = 0xDEADBEEF;
-		*((uint*)a + 1) = size;
-		*((uint*)((uintptr_t)a + sizeof(uint) * 2 + size)) = 0xDEADBEEF;
-		return (void*)((uintptr_t)a + sizeof(uint) * 2);
+		a[0] = GUARD_MAGIC;
+		a[1] = size;
+		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		return a + 2;
 	}
 	return NULL;
 }
 
 void *calloc_guard(size_t num,size_t size) {
-	void *a = _malloc(num * size + sizeof(uint) * 3);
+	uint *a;
+	size = ALIGN(num * size,sizeof(uint));
+	a = (uint*)_malloc(size + sizeof(uint) * 3);
 	if(a) {
-		void *res;
-		*((uint*)a) = 0xDEADBEEF;
-		*((uint*)a + 1) = num * size;
-		*((uint*)((uintptr_t)a + sizeof(uint) * 2 + num * size)) = 0xDEADBEEF;
-		res = (void*)((uintptr_t)a + sizeof(uint) * 2);
-		memclear(res,num * size);
-		return res;
+		a[0] = GUARD_MAGIC;
+		a[1] = size;
+		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		memclear(a + 2,size);
+		return a + 2;
 	}
 	return NULL;
 }
 
 void *realloc_guard(void *addr,size_t size) {
-	void *a;
-	if(addr) {
-		assert(*(uint*)((uintptr_t)addr - sizeof(uint) * 2) == 0xDEADBEEF);
-		assert(*(uint*)((uintptr_t)addr + *((uint*)addr - 1)) == 0xDEADBEEF);
-	}
-	a = _realloc(addr ? (void*)((uintptr_t)addr - sizeof(uint) * 2) : NULL,size + sizeof(uint) * 3);
+	uint *a = (uint*)addr;
+	size = ALIGN(size,sizeof(uint));
 	if(a) {
-		*((uint*)a) = 0xDEADBEEF;
-		*((uint*)a + 1) = size;
-		*((uint*)((uintptr_t)a + sizeof(uint) * 2 + size)) = 0xDEADBEEF;
-		return (void*)((uintptr_t)a + sizeof(uint) * 2);
+		assert(a[-2] == GUARD_MAGIC);
+		assert(a[a[-1] / sizeof(uint)] == GUARD_MAGIC);
+		a = _realloc(a - 2,size + sizeof(uint) * 3);
+	}
+	else
+		a = _realloc(NULL,size + sizeof(uint) * 3);
+	if(a) {
+		a[0] = GUARD_MAGIC;
+		a[1] = size;
+		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		return a + 2;
 	}
 	return NULL;
 }
 
 void free_guard(void *addr) {
-	if(addr) {
-		vassert(*(uint*)((uintptr_t)addr - sizeof(uint) * 2) == 0xDEADBEEF,
-				"Actually: %x",*(uint*)((uintptr_t)addr - sizeof(uint) * 2));
-		vassert(*(uint*)((uintptr_t)addr + *((uint*)addr - 1)) == 0xDEADBEEF,
-				"Actually: %x",*(uint*)((uintptr_t)addr + *((uint*)addr - 1)));
-		_free((void*)((uintptr_t)addr - sizeof(uint) * 2));
+	uint *a = (uint*)addr;
+	if(a) {
+		assert(a[-2] == GUARD_MAGIC);
+		assert(a[a[-1] / sizeof(uint)] == GUARD_MAGIC);
+		_free(a - 2);
 	}
 }
 #endif

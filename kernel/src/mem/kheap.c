@@ -34,6 +34,9 @@
 #define DEBUG_ADD_GUARDS		1
 #endif
 
+#define GUARD_MAGIC				0xDEADBEEF
+#define ALIGN(count,align)		(((count) + (align) - 1) & ~((align) - 1))
+
 #if DEBUG_ADD_GUARDS
 void *_kheap_alloc(size_t size);
 void *_kheap_calloc(size_t num,size_t size);
@@ -134,54 +137,57 @@ size_t kheap_getAreaSize(void *addr) {
 
 #if DEBUG_ADD_GUARDS
 void *kheap_alloc_guard(size_t size) {
-	void *a = _kheap_alloc(size + sizeof(uint32_t) * 3);
+	uint *a;
+	size = ALIGN(size,sizeof(uint));
+	a = (uint*)_kheap_alloc(size + sizeof(uint) * 3);
 	if(a) {
-		*((uint32_t*)a) = 0xDEADBEEF;
-		*((uint32_t*)a + 1) = size;
-		*((uint32_t*)((uintptr_t)a + sizeof(uint32_t) * 2 + size)) = 0xDEADBEEF;
-		return (void*)((uintptr_t)a + sizeof(uint32_t) * 2);
+		a[0] = GUARD_MAGIC;
+		a[1] = size;
+		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		return a + 2;
 	}
 	return NULL;
 }
 
 void *kheap_calloc_guard(size_t num,size_t size) {
-	void *a = _kheap_alloc(num * size + sizeof(uint32_t) * 3);
+	uint *a;
+	size = ALIGN(num * size,sizeof(uint));
+	a = (uint*)_kheap_alloc(size + sizeof(uint) * 3);
 	if(a) {
-		void *res;
-		*((uint32_t*)a) = 0xDEADBEEF;
-		*((uint32_t*)a + 1) = num * size;
-		*((uint32_t*)((uintptr_t)a + sizeof(uint32_t) * 2 + num * size)) = 0xDEADBEEF;
-		res = (void*)((uintptr_t)a + sizeof(uint32_t) * 2);
-		memclear(res,num * size);
-		return res;
+		a[0] = GUARD_MAGIC;
+		a[1] = size;
+		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		memclear(a + 2,size);
+		return a + 2;
 	}
 	return NULL;
 }
 
 void *kheap_realloc_guard(void *addr,size_t size) {
-	void *a;
-	if(addr) {
-		assert(*(uint32_t*)((uintptr_t)addr - sizeof(uint32_t) * 2) == 0xDEADBEEF);
-		assert(*(uint32_t*)((uintptr_t)addr + *((uint32_t*)addr - 1)) == 0xDEADBEEF);
-		a = _kheap_realloc((void*)((uintptr_t)addr - sizeof(uint32_t) * 2),
-				size + sizeof(uint32_t) * 3);
+	uint *a = (uint*)addr;
+	size = ALIGN(size,sizeof(uint));
+	if(a) {
+		assert(a[-2] == GUARD_MAGIC);
+		assert(a[a[-1] / sizeof(uint)] == GUARD_MAGIC);
+		a = _kheap_realloc(a - 2,size + sizeof(uint) * 3);
 	}
 	else
-		a = _kheap_realloc(NULL,size + sizeof(uint32_t) * 3);
+		a = _kheap_realloc(NULL,size + sizeof(uint) * 3);
 	if(a) {
-		*((uint32_t*)a) = 0xDEADBEEF;
-		*((uint32_t*)a + 1) = size;
-		*((uint32_t*)((uintptr_t)a + sizeof(uint32_t) * 2 + size)) = 0xDEADBEEF;
-		return (void*)((uintptr_t)a + sizeof(uint32_t) * 2);
+		a[0] = GUARD_MAGIC;
+		a[1] = size;
+		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		return a + 2;
 	}
 	return NULL;
 }
 
 void kheap_free_guard(void *addr) {
-	if(addr) {
-		assert(*(uint32_t*)((uintptr_t)addr - sizeof(uint32_t) * 2) == 0xDEADBEEF);
-		assert(*(uint32_t*)((uintptr_t)addr + *((uint32_t*)addr - 1)) == 0xDEADBEEF);
-		_kheap_free((void*)((uintptr_t)addr - sizeof(uint32_t) * 2));
+	uint *a = (uint*)addr;
+	if(a) {
+		assert(a[-2] == GUARD_MAGIC);
+		assert(a[a[-1] / sizeof(uint)] == GUARD_MAGIC);
+		_kheap_free(a - 2);
 	}
 }
 #endif

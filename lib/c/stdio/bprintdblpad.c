@@ -27,7 +27,7 @@ int bprintdblpad(FILE *f,double d,uint pad,uint flags,uint precision) {
 	llong pre = (llong)d;
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
-		size_t width = getlwidth(pre) + precision + 1;
+		size_t width = getllwidth(pre) + precision + 1;
 		if(pre > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
 		if(pad > width)

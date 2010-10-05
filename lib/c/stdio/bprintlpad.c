@@ -26,7 +26,7 @@ int bprintlpad(FILE *f,llong n,uint pad,uint flags) {
 	int count = 0;
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
-		size_t width = getlwidth(n);
+		size_t width = getllwidth(n);
 		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
 		if(pad > width)

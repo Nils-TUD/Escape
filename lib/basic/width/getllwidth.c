@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <esc/width.h>
 
-size_t getlwidth(llong l) {
+size_t getllwidth(llong l) {
 	size_t c = 0;
 	if(l < 0) {
 		l = -l;

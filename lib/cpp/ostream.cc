@@ -32,7 +32,7 @@ namespace std {
 				streamsize pwidth = ios::width();
 				// determine width
 				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-					nwidth = getlwidth(n);
+					nwidth = getllwidth(n);
 					if(ios_base::flags() & ios_base::showpos)
 						nwidth++;
 				}
@@ -67,7 +67,7 @@ namespace std {
 				streamsize nwidth = 0;
 				streamsize pwidth = ios::width();
 				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-					nwidth = getulwidth(u,base);
+					nwidth = getullwidth(u,base);
 					if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
 						switch(base) {
 							case 16:

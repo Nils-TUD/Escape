@@ -30,9 +30,9 @@ char *ecvt(double number,int ndigits,int *decpt,int *sign) {
 	/* put the stuff before decpt into the string */
 	llong val = (llong)number;
 	int c;
-	size_t vwidth = getlwidth(val);
+	size_t vwidth = getllwidth(val);
 	assert(ndigits < MAX_DBL_LEN);
-	/* getlwidth counts the '-' for negatives and '0' for zero */
+	/* getllwidth counts the '-' for negatives and '0' for zero */
 	if(val <= 0)
 		vwidth--;
 	str = res + MIN(ndigits,(int)vwidth);

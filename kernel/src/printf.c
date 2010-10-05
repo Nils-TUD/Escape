@@ -244,7 +244,7 @@ static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags) {
 	int count = 0;
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
-		size_t width = getlwidth(n);
+		size_t width = getllwidth(n);
 		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
 		count += prf_printpad(env,pad - width,flags);
@@ -271,7 +271,7 @@ static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags)
 	int count = 0;
 	/* pad left - spaces */
 	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
-		size_t width = getulwidth(u,base);
+		size_t width = getullwidth(u,base);
 		count += prf_printpad(env,pad - width,flags);
 	}
 	/* print base-prefix */
@@ -288,7 +288,7 @@ static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags)
 	}
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
-		size_t width = getulwidth(u,base);
+		size_t width = getullwidth(u,base);
 		count += prf_printpad(env,pad - width,flags);
 	}
 	/* print number */

@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <esc/width.h>
 
-size_t getulwidth(ullong n,uint base) {
+size_t getullwidth(ullong n,uint base) {
 	size_t width = 1;
 	while(n >= base) {
 		n /= base;

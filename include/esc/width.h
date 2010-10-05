@@ -40,7 +40,7 @@ size_t getnwidth(int n);
  * @param n the integer
  * @return the width
  */
-size_t getlwidth(llong n);
+size_t getllwidth(llong n);
 
 /**
  * Determines the width of the given unsigned 32-bit integer in the given base
@@ -58,7 +58,7 @@ size_t getuwidth(uint n,uint base);
  * @param base the base (2..16)
  * @return the width
  */
-size_t getulwidth(ullong n,uint base);
+size_t getullwidth(ullong n,uint base);
 
 #ifdef __cplusplus
 }

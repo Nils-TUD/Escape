@@ -26,7 +26,7 @@ int bprintulpad(FILE *f,ullong u,uint base,uint pad,uint flags) {
 	int count = 0;
 	/* pad left - spaces */
 	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
-		size_t width = getulwidth(u,base);
+		size_t width = getullwidth(u,base);
 		if(pad > width)
 			count += RETERR(bprintpad(f,pad - width,flags));
 	}
@@ -34,7 +34,7 @@ int bprintulpad(FILE *f,ullong u,uint base,uint pad,uint flags) {
 	PRINT_UNSIGNED_PREFIX(count,f,base,flags);
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
-		size_t width = getulwidth(u,base);
+		size_t width = getullwidth(u,base);
 		if(pad > width)
 			count += RETERR(bprintpad(f,pad - width,flags));
 	}

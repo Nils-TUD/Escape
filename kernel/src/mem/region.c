@@ -26,8 +26,6 @@
 #include <string.h>
 #include <assert.h>
 
-static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
-
 /**
  * The region-module implements the abstraction 'region' which is simply a group of pages that
  * have common properties. So for example 'text' is a group, 'read-only-data', 'data', 'stack'
@@ -38,6 +36,8 @@ static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
  * swapped, demand-load or demand-zero. Additionally the page-flags store the swap-block if a
  * page is swapped out.
  */
+
+static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
 
 sRegion *reg_create(const sBinDesc *bin,uintptr_t binOffset,size_t bCount,size_t lCount,
 		uint pgFlags,uint flags) {

@@ -70,6 +70,7 @@ int lock_aquire(tPid pid,uint ident,ushort flags) {
 	if(l->flags) {
 		/* if it exists and is locked, wait */
 		uint event = (flags & LOCK_EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
+		/* TODO don't panic here, just return and continue using the lock */
 		assert(l->writer != t->tid);
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;

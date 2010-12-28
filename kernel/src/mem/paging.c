@@ -44,7 +44,8 @@
 #define PG_GLOBAL_SHIFT		4
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
-#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + (((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
+#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + \
+								(((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 #define ADDR_TO_MAPPED_CUSTOM(mappingArea,addr) ((mappingArea) + \
 		(((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 

@@ -37,7 +37,7 @@
 /**
  * The vmm-module manages the user-part of a process's virtual addressspace. That means it
  * manages the regions that are used by the process (as an instance of sVMRegion) and decides
- * where the regions are placed. So it bounds a region to a virtual address via sVMRegion.
+ * where the regions are placed. So it binds a region to a virtual address via sVMRegion.
  */
 
 #define FREE_AREA_BEGIN		0xA0000000

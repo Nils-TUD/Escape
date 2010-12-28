@@ -167,7 +167,6 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 			mm_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
 #endif
 
-#if 1
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
@@ -177,8 +176,4 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 	assert(t->stackRegion >= 0);
 	return info.progEntry;
-#else
-	while(1);
-	return 0;
-#endif
 }

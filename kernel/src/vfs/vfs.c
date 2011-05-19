@@ -208,12 +208,12 @@ tFileNo vfs_openPath(tPid pid,ushort flags,const char *path) {
 			return file;
 	}
 	else {
-		node = vfs_node_get(nodeNo);
 		/* handle virtual files */
+		node = vfs_node_get(nodeNo);
 		if(err < 0)
 			return err;
 
-		/* if its a driver, create the usage-node */
+		/* if its a driver, create the channel-node */
 		if(IS_DRIVER(node->mode)) {
 			sVFSNode *child = vfs_chan_create(pid,node);
 			if(child == NULL)
@@ -228,7 +228,7 @@ tFileNo vfs_openPath(tPid pid,ushort flags,const char *path) {
 			return file;
 
 		/* if it is a driver, call the driver open-command */
-		if(IS_DRVUSE(node->mode)) {
+		if(IS_CHANNEL(node->mode)) {
 			err = vfs_drv_open(pid,file,node,flags);
 			if(err < 0) {
 				/* close removes the driver-usage-node, if it is one */
@@ -303,7 +303,7 @@ static tFileNo vfs_getFreeFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devN
 		sVFSNode *n = vfs_node_get(nodeNo);
 		assert(vfs_node_isValid(nodeNo));
 		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
-		isDrvUse = (n->mode & (MODE_TYPE_DRVUSE | MODE_TYPE_PIPE)) ? true : false;
+		isDrvUse = (n->mode & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
 	}
 
 	for(i = 0; i < FILE_COUNT; i++) {
@@ -384,7 +384,7 @@ bool vfs_isterm(tPid pid,tFileNo file) {
 	/* node not present anymore */
 	if(n->name == NULL)
 		return false;
-	return IS_DRVUSE(n->mode) && vfs_server_isterm(n->parent);
+	return IS_CHANNEL(n->mode) && vfs_server_isterm(n->parent);
 }
 
 int vfs_seek(tPid pid,tFileNo file,int offset,uint whence) {
@@ -504,7 +504,7 @@ ssize_t vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const void *data,size_t size
 
 	/* send the message */
 	n = vfs_node_get(e->nodeNo);
-	if(!IS_DRVUSE(n->mode))
+	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_send(pid,file,n,id,data,size);
 
@@ -529,7 +529,7 @@ ssize_t vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,void *data,size_t size) 
 
 	/* receive the message */
 	n = vfs_node_get(e->nodeNo);
-	if(!IS_DRVUSE(n->mode))
+	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_receive(pid,file,n,id,data,size);
 
@@ -752,7 +752,7 @@ bool vfs_hasMsg(tPid pid,tFileNo file) {
 	if(e->devNo != VFS_DEV_NO)
 		return false;
 	n = vfs_node_get(e->nodeNo);
-	return n->name != NULL && IS_DRVUSE(n->mode) && vfs_chan_hasReply(n);
+	return n->name != NULL && IS_CHANNEL(n->mode) && vfs_chan_hasReply(n);
 }
 
 bool vfs_hasData(tPid pid,tFileNo file) {
@@ -807,7 +807,7 @@ tInodeNo vfs_getClientId(tPid pid,tFileNo file) {
 	sVFSNode *n = vfs_node_get(e->nodeNo);
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
-	if(e->devNo != VFS_DEV_NO || !IS_DRVUSE(n->mode))
+	if(e->devNo != VFS_DEV_NO || !IS_CHANNEL(n->mode))
 		return ERR_INVALID_FILE;
 	return e->nodeNo;
 }
@@ -1002,7 +1002,7 @@ void vfs_dbg_printGFT(void) {
 			}
 			if(e->devNo == VFS_DEV_NO) {
 				sVFSNode *n = vfs_node_get(e->nodeNo);
-				if(IS_DRVUSE(n->mode))
+				if(IS_CHANNEL(n->mode))
 					vid_printf("\t\tDriver-Usage: %s @ %s\n",n->name,n->parent->name);
 				else
 					vid_printf("\t\tFile: '%s'\n",vfs_node_getPath(vfs_node_getNo(n)));

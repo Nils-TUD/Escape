@@ -97,7 +97,7 @@ void locku(tULock *l) {
 		"lockuLoop:"
 		"	xor	%%eax,%%eax;"		/* clear eax */
 		"	lock;"					/* lock next instruction */
-		"	cmpxchg %%ecx,(%0);"	/* compare ecx with eax; if equal exchange ecx with l */
+		"	cmpxchg %%ecx,(%0);"	/* compare l with eax; if equal exchange ecx with l */
 		"	jnz		lockuLoop;"		/* try again if not equal */
 		: : "D" (l)
 	);

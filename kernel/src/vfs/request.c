@@ -106,9 +106,8 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 }
 
 sRequest *vfs_req_getByNode(const sVFSNode *node) {
-	sSLNode *n,*p;
-	p = NULL;
-	for(n = sll_begin(requests); n != NULL; p = n, n = n->next) {
+	sSLNode *n;
+	for(n = sll_begin(requests); n != NULL; n = n->next) {
 		sRequest *req = (sRequest*)n->data;
 		if(req->node == node) {
 			/* the thread may have been terminated... */

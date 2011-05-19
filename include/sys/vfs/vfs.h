@@ -27,7 +27,7 @@
 #define MAX_VFS_FILE_SIZE			(64 * K)
 
 /* some additional types for the kernel */
-#define MODE_TYPE_DRVUSE			0x0010000
+#define MODE_TYPE_CHANNEL			0x0010000
 #define MODE_TYPE_DRIVER			0x0020000
 #define MODE_TYPE_PIPECON			0x0040000
 #define MODE_TYPE_PIPE				0x0080000
@@ -36,7 +36,7 @@
 #define VFS_DEV_NO					((tDevNo)0xFF)
 
 #define IS_DRIVER(mode)				(((mode) & MODE_TYPE_DRIVER) != 0)
-#define IS_DRVUSE(mode)				(((mode) & MODE_TYPE_DRVUSE) != 0)
+#define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
 
 #define DRV_OPEN					1
 #define DRV_READ					2

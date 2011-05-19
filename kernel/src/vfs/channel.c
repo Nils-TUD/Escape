@@ -62,7 +62,7 @@ sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
 	}
 
 	node->owner = pid;
-	node->mode = MODE_TYPE_DRVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
+	node->mode = MODE_TYPE_CHANNEL | MODE_OWNER_READ | MODE_OWNER_WRITE |
 			MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->read = (fRead)vfs_drv_read;
 	node->write = (fWrite)vfs_drv_write;

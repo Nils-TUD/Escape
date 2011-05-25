@@ -1,4 +1,4 @@
-ROOT = ../..
+ROOT = ../../..
 BUILDL = $(BUILD)/drivers/$(NAME)
 BIN = $(BUILD)/driver_$(NAME).bin
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))

@@ -6,8 +6,11 @@ LSUBDIRS = $(filter-out $(wildcard $(LIBDIR)/*.*),$(wildcard $(LIBDIR)/*))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS)) $(patsubst $(LIBDIR)/%,$(BUILDL)/lib/%,$(LSUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/libc.a
-DYNLIBNAME = libc.so
-DYNLIB = $(BUILD)/$(DYNLIBNAME)
+
+ifneq ($(LINKTYPE),static)
+	DYNLIBNAME = libc.so
+	DYNLIB = $(BUILD)/$(DYNLIBNAME)
+endif
 
 CFLAGS = -nodefaultlibs $(CDEFFLAGS)
 ifeq ($(LIBGCC),static)
@@ -15,15 +18,17 @@ ifeq ($(LIBGCC),static)
 endif
 
 # sources
-START = $(wildcard crt*.s)
-SYSCALLS = syscalls.s
-CSRC = $(shell find . -name "*.c")
-ASRC = $(filter-out $(addprefix ./,$(START)),$(shell find . -name "*.s"))
+START = $(wildcard ./arch/$(ARCH)/crt*.s)
+SYSCALLS = arch/$(ARCH)/syscalls.s
+CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c"))
+CSRC += $(shell find ./arch/$(ARCH) -name "*.c")
+ASRC = $(filter-out $(shell find ./arch -name "*.s"),$(shell find . -name "*.s"))
+ASRC += $(filter-out $(START),$(shell find ./arch/$(ARCH) -name "*.s"))
 LSRC = $(shell find $(LIBDIR) -name "*.c")
 
 # objects
-STARTO = $(patsubst %.s,$(BUILD)/%.o,$(START))
-STARTOPIC = $(patsubst %.s,$(BUILD)/%S.o,$(START))
+STARTO = $(patsubst ./arch/$(ARCH)/%.s,$(BUILD)/%.o,$(START))
+STARTOPIC = $(patsubst ./arch/$(ARCH)/%.s,$(BUILD)/%S.o,$(START))
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
@@ -75,12 +80,12 @@ $(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
-$(BUILD)/crt%S.o : crt%.s
+$(BUILD)/crt%S.o : arch/$(ARCH)/crt%.s
 		@echo "	" AS $<
 		@$(AS) $(ASFLAGS) -defsym SHAREDLIB=1 -o $@ $<
 		@$(ROOT)/tools/linklib.sh $@
 
-$(BUILD)/crt%.o : crt%.s
+$(BUILD)/crt%.o : arch/$(ARCH)/crt%.s
 		@echo "	" AS $<
 		@$(AS) $(ASFLAGS) -o $@ $<
 		@$(ROOT)/tools/linklib.sh $@
@@ -89,5 +94,5 @@ $(BUILD)/crt%.o : crt%.s
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(STLIB) \
-			$(DEPS) $(STARTO) $(STARTOPIC) $(DYNLIB)
+		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) \
+			$(STLIB) $(DEPS) $(STARTO) $(STARTOPIC) $(DYNLIB)

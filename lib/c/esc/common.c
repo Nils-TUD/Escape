@@ -53,6 +53,7 @@ void error(const char *fmt,...) {
 
 uintptr_t *getStackTrace(void) {
 	static uintptr_t frames[MAX_STACK_DEPTH];
+#ifndef __eco32__
 	uintptr_t end,start;
 	size_t i;
 	uint32_t *ebp;
@@ -70,9 +71,9 @@ uintptr_t *getStackTrace(void) {
 		ebp = (uint32_t*)*ebp;
 		frame++;
 	}
-
 	/* terminate */
 	*frame = 0;
+#endif
 	return &frames[0];
 }
 

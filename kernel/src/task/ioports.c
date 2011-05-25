@@ -68,7 +68,7 @@ int ioports_release(sProc *p,uint16_t start,size_t count) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void ioports_dbg_print(uint8_t *map) {
+void ioports_dbg_print(const uint8_t *map) {
 	size_t i,j,c = 0;
 	vid_printf("Reserved IO-ports:\n\t");
 	for(i = 0; i < IO_MAP_SIZE / 8; i++) {

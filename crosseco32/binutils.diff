@@ -1,0 +1,2537 @@
+diff -rcN src_org//binutils/bfd/archures.c src/binutils/bfd/archures.c
+*** src_org//binutils/bfd/archures.c	2009-09-10 13:47:11.000000000 +0200
+--- src/binutils/bfd/archures.c	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 246,251 ****
+--- 246,253 ----
+  .#define bfd_mach_d10v_ts3	3
+  .  bfd_arch_d30v,      {* Mitsubishi D30V *}
+  .  bfd_arch_dlx,       {* DLX *}
++ .  bfd_arch_eco32,
++ .#define bfd_mach_eco32 1
+  .  bfd_arch_m68hc11,   {* Motorola 68HC11 *}
+  .  bfd_arch_m68hc12,   {* Motorola 68HC12 *}
+  .#define bfd_mach_m6812_default 0
+***************
+*** 473,478 ****
+--- 475,481 ----
+  extern const bfd_arch_info_type bfd_d10v_arch;
+  extern const bfd_arch_info_type bfd_d30v_arch;
+  extern const bfd_arch_info_type bfd_dlx_arch;
++ extern const bfd_arch_info_type bfd_eco32_arch;
+  extern const bfd_arch_info_type bfd_fr30_arch;
+  extern const bfd_arch_info_type bfd_frv_arch;
+  extern const bfd_arch_info_type bfd_h8300_arch;
+***************
+*** 549,554 ****
+--- 552,558 ----
+      &bfd_d10v_arch,
+      &bfd_d30v_arch,
+      &bfd_dlx_arch,
++     &bfd_eco32_arch,
+      &bfd_fr30_arch,
+      &bfd_frv_arch,
+      &bfd_h8300_arch,
+diff -rcN src_org//binutils/bfd/bfd-in2.h src/binutils/bfd/bfd-in2.h
+*** src_org//binutils/bfd/bfd-in2.h	2009-09-10 13:47:11.000000000 +0200
+--- src/binutils/bfd/bfd-in2.h	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 1913,1918 ****
+--- 1913,1920 ----
+  #define bfd_mach_d10v_ts3      3
+    bfd_arch_d30v,      /* Mitsubishi D30V */
+    bfd_arch_dlx,       /* DLX */
++   bfd_arch_eco32,
++ #define bfd_mach_eco32 1
+    bfd_arch_m68hc11,   /* Motorola 68HC11 */
+    bfd_arch_m68hc12,   /* Motorola 68HC12 */
+  #define bfd_mach_m6812_default 0
+***************
+*** 2378,2386 ****
+  of the relocation itself; sometimes they are relative to the start of
+  the section containing the relocation.  It depends on the specific target.
+  
+! The 24-bit relocation is used in some Intel 960 configurations.  */
+    BFD_RELOC_64_PCREL,
+    BFD_RELOC_32_PCREL,
+    BFD_RELOC_24_PCREL,
+    BFD_RELOC_16_PCREL,
+    BFD_RELOC_12_PCREL,
+--- 2380,2390 ----
+  of the relocation itself; sometimes they are relative to the start of
+  the section containing the relocation.  It depends on the specific target.
+  
+! The 24-bit relocation is used in some Intel 960 configurations.
+! The 26-bit relocation is used by eco32.  */
+    BFD_RELOC_64_PCREL,
+    BFD_RELOC_32_PCREL,
++   BFD_RELOC_26_PCREL,
+    BFD_RELOC_24_PCREL,
+    BFD_RELOC_16_PCREL,
+    BFD_RELOC_12_PCREL,
+diff -rcN src_org//binutils/bfd/config.bfd src/binutils/bfd/config.bfd
+*** src_org//binutils/bfd/config.bfd	2009-08-06 19:38:00.000000000 +0200
+--- src/binutils/bfd/config.bfd	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 81,86 ****
+--- 81,87 ----
+  crisv32)	 targ_archs=bfd_cris_arch ;;
+  crx*)		 targ_archs=bfd_crx_arch ;;
+  dlx*)		 targ_archs=bfd_dlx_arch ;;
++ eco32*)      targ_archs=bfd_eco32_arch ;;
+  fido*)		 targ_archs=bfd_m68k_arch ;;
+  hppa*)		 targ_archs=bfd_hppa_arch ;;
+  i[3-7]86)	 targ_archs=bfd_i386_arch ;;
+***************
+*** 400,405 ****
+--- 401,410 ----
+      targ_defvec=bfd_elf32_d30v_vec
+      ;;
+  
++   eco32-*-*)
++     targ_defvec=bfd_elf32_eco32_vec
++     ;;
++ 
+    fido-*-elf* )
+      targ_defvec=bfd_elf32_m68k_vec
+      targ_selvecs="m68kcoff_vec ieee_vec"
+diff -rcN src_org//binutils/bfd/configure src/binutils/bfd/configure
+*** src_org//binutils/bfd/configure	2009-10-16 13:47:47.000000000 +0200
+--- src/binutils/bfd/configure	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 14806,14811 ****
+--- 14806,14812 ----
+      bfd_elf32_d10v_vec)		tb="$tb elf32-d10v.lo elf32.lo $elf" ;;
+      bfd_elf32_d30v_vec)		tb="$tb elf32-d30v.lo elf32.lo $elf" ;;
+      bfd_elf32_dlx_big_vec)	tb="$tb elf32-dlx.lo elf32.lo $elf" ;;
++     bfd_elf32_eco32_vec)	tb="$tb elf32-eco32.lo elf32.lo $elf" ;;
+      bfd_elf32_fr30_vec)		tb="$tb elf32-fr30.lo elf32.lo $elf" ;;
+      bfd_elf32_frv_vec)		tb="$tb elf32-frv.lo elf32.lo $elf" ;;
+      bfd_elf32_frvfdpic_vec)	tb="$tb elf32-frv.lo elf32.lo $elf" ;;
+diff -rcN src_org//binutils/bfd/configure.in src/binutils/bfd/configure.in
+*** src_org//binutils/bfd/configure.in	2009-10-16 13:47:44.000000000 +0200
+--- src/binutils/bfd/configure.in	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 694,699 ****
+--- 694,700 ----
+      bfd_elf32_d10v_vec)		tb="$tb elf32-d10v.lo elf32.lo $elf" ;;
+      bfd_elf32_d30v_vec)		tb="$tb elf32-d30v.lo elf32.lo $elf" ;;
+      bfd_elf32_dlx_big_vec)	tb="$tb elf32-dlx.lo elf32.lo $elf" ;;
++     bfd_elf32_eco32_vec)	tb="$tb elf32-eco32.lo elf32.lo $elf" ;;
+      bfd_elf32_fr30_vec)		tb="$tb elf32-fr30.lo elf32.lo $elf" ;;
+      bfd_elf32_frv_vec)		tb="$tb elf32-frv.lo elf32.lo $elf" ;;
+      bfd_elf32_frvfdpic_vec)	tb="$tb elf32-frv.lo elf32.lo $elf" ;;
+diff -rcN src_org//binutils/bfd/cpu-eco32.c src/binutils/bfd/cpu-eco32.c
+*** src_org//binutils/bfd/cpu-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/bfd/cpu-eco32.c	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,18 ----
++ #include "sysdep.h"
++ #include "bfd.h"
++ #include "libbfd.h"
++ 
++ const bfd_arch_info_type bfd_eco32_arch = {
++     32,               /* 32 bits in a word.  */
++     32,               /* 32 bits in an address.  */
++     8,                /*  8 bits in a byte.  */
++     bfd_arch_eco32,   /* enum bfd_architecture arch.  */
++     bfd_mach_eco32,
++     "eco32",          /* Arch name.  */
++     "eco32",          /* Printable name.  */
++     2,                /* Unsigned int section alignment power.  */
++     TRUE,             /* This is indeed the default machine.  */
++     bfd_default_compatible, 
++     bfd_default_scan,
++     0
++ };
+diff -rcN src_org//binutils/bfd/elf32-eco32.c src/binutils/bfd/elf32-eco32.c
+*** src_org//binutils/bfd/elf32-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/bfd/elf32-eco32.c	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,425 ----
++ /* BFD backend for eco32 ELF files.  written by litb at university of
++  * applied sciences in giessen. Large parts are just copied from the
++  * ggx elf backend specification :), which itself apparently copied
++  * from openrisc hehe. */
++ 
++ #include "sysdep.h"
++ #include "bfd.h"
++ #include "libbfd.h"
++ #include "elf-bfd.h"
++ #include "elf/eco32.h"
++ 
++ reloc_howto_type eco32_elf_howto_table[] = {
++     /* This reloc does nothing.  */
++     HOWTO (R_ECO32_NONE,	/* type */
++            0,			/* rightshift */
++            2,			/* size (0 = byte, 1 = short, 2 = long) */
++            32,			/* bitsize */
++            FALSE,			/* pc_relative */
++            0,			/* bitpos */
++            complain_overflow_bitfield, /* complain_on_overflow */
++            bfd_elf_generic_reloc,	/* special_function */
++            "R_ECO32_NONE",	/* name */
++            FALSE,			/* partial_inplace */
++            0,			/* src_mask */
++            0,			/* dst_mask */
++            FALSE),		/* pcrel_offset */
++ 
++     HOWTO (R_ECO32_H16,  /* type */
++            16,			/* rightshift */
++            1,			/* size of the item */
++            16,			/* bitsize */
++            FALSE,			/* pc_relative */
++            0,			/* bitpos */
++            complain_overflow_dont, /* complain_on_overflow */
++            bfd_elf_generic_reloc, /* special_function */
++            "R_ECO32_H16",		/* name */
++            FALSE,			/* partial_inplace (addend stored in section)*/
++            0x00000000,		/* src_mask */
++            0x0000ffff,		/* dst_mask */
++            FALSE), 		/* pcrel_offset */
++     
++     HOWTO (R_ECO32_L16, /* type */
++            0,			/* rightshift */
++            1,			/* size of the item */
++            16,			/* bitsize */
++            FALSE,			/* pc_relative */
++            0,			/* bitpos */
++            complain_overflow_dont, /* complain_on_overflow */
++            bfd_elf_generic_reloc, /* special_function */
++            "R_ECO32_L16",		/* name */
++            FALSE,			/* partial_inplace (addend stored in section)*/
++            0x00000000,		/* src_mask */
++            0x0000ffff,		/* dst_mask */
++            FALSE), 		/* pcrel_offset */
++ 
++     HOWTO (R_ECO32_W32, /* type */
++            0,			/* rightshift */
++            2,			/* size of the item */
++            32,			/* bitsize */
++            FALSE,			/* pc_relative */
++            0,			/* bitpos */
++            complain_overflow_bitfield, /* complain_on_overflow */
++            bfd_elf_generic_reloc, /* special_function */
++            "R_ECO32_W32",		/* name */
++            FALSE,			/* partial_inplace (addend stored in section)*/
++            0x00000000,		/* src_mask */
++            0xffffffff,		/* dst_mask */
++            FALSE), 		/* pcrel_offset */
++ 
++     HOWTO (R_ECO32_R16, /* type */
++            2,			/* rightshift (divide by the word size here) */
++            1,			/* size (0 = byte, 1 = short, 2 = long) */
++            16,			/* bitsize */
++            TRUE,			/* pc_relative */
++            0,			/* bitpos */
++            complain_overflow_signed, /* complain_on_overflow */
++            bfd_elf_generic_reloc, /* special_function */
++            "R_ECO32_R16",		/* name */
++            FALSE,			/* partial_inplace (addend stored in section) */
++            0x00000000,		/* src_mask */
++            0x0000ffff,		/* dst_mask */
++            TRUE), 		/* pcrel_offset */
++     
++     HOWTO (R_ECO32_R26, /* type */
++            2,			/* rightshift (again, divides by the word length) */
++            2,			/* size of the item*/
++            26,			/* bitsize */
++            TRUE,			/* pc_relative */
++            0,			/* bitpos */
++            complain_overflow_signed, /* complain_on_overflow */
++            bfd_elf_generic_reloc, /* special_function */
++            "R_ECO32_R26",		/* name */
++            FALSE,			/* partial_inplace (addend stored in section)*/
++            0x00000000,		/* src_mask */
++            0x03ffffff,		/* dst_mask */
++            TRUE) 		/* pcrel_offset */
++ };
++ 
++ 
++ /* Map BFD reloc types to eco32 ELF reloc types.  */
++ struct eco32_reloc_map {
++   bfd_reloc_code_real_type bfd_reloc_type;
++   enum elf_eco32_reloc_type eco32_reloc_type;
++ };
++ 
++ static struct eco32_reloc_map const eco32_reloc_map[] = {
++   { BFD_RELOC_NONE, 		R_ECO32_NONE },
++   { BFD_RELOC_HI16, 		R_ECO32_H16 },
++   { BFD_RELOC_LO16, 		R_ECO32_L16 },
++   { BFD_RELOC_32, 		R_ECO32_W32 },
++   { BFD_RELOC_16_PCREL,	R_ECO32_R16 },
++   { BFD_RELOC_26_PCREL,	R_ECO32_R26 }
++ };
++ 
++ static reloc_howto_type *
++ eco32_reloc_type_lookup (bfd * abfd ATTRIBUTE_UNUSED,
++ 			    bfd_reloc_code_real_type code) 
++ {
++     unsigned int i;
++ 
++     for (i = sizeof eco32_reloc_map / sizeof *eco32_reloc_map; --i;)
++         if (eco32_reloc_map[i].bfd_reloc_type == code)
++             return &eco32_elf_howto_table[eco32_reloc_map[i].
++                                           eco32_reloc_type];
++     
++     return NULL;
++ }
++ 
++ static reloc_howto_type *
++ eco32_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
++                          const char *r_name)
++ {
++     unsigned int i;
++     
++     for (i = 0; i < sizeof eco32_elf_howto_table / sizeof *eco32_elf_howto_table; i++)
++         if (eco32_elf_howto_table[i].name != NULL
++             && strcasecmp (eco32_elf_howto_table[i].name, r_name) == 0)
++       return &eco32_elf_howto_table[i];
++     
++     return NULL;
++ }
++ 
++ /* Set the howto pointer for an eco32 ELF reloc.  */
++ static void
++ eco32_info_to_howto_rela (bfd * abfd ATTRIBUTE_UNUSED,
++                           arelent * cache_ptr,
++                           Elf_Internal_Rela * dst)
++ {
++     unsigned int r_type;
++     
++     r_type = ELF32_R_TYPE (dst->r_info);
++     BFD_ASSERT (r_type < (unsigned int) R_ECO32_max);
++     cache_ptr->howto = & eco32_elf_howto_table[r_type];
++ }
++ 
++ /* Perform a single relocation.  By default we use the standard BFD
++    routines, but a few relocs, we may to do them ourselves later.  
++    For now, just forward. */
++ 
++ static bfd_reloc_status_type
++ eco32_final_link_relocate (reloc_howto_type *howto,
++                            bfd *input_bfd,
++                            asection *input_section,
++                            bfd_byte *contents,
++                            Elf_Internal_Rela *rel,
++                            bfd_vma relocation)
++ {
++     bfd_reloc_status_type r = bfd_reloc_ok;
++     bfd_vma addend = rel->r_addend;
++ 
++     switch (howto->type) {
++     case R_ECO32_R16:
++     case R_ECO32_R26:
++         /* _bfd_final_link_relocate doesn't subtract the word length
++          * from the final reloc value. but this is necassary, since in
++          * eco32 pc relative relocations count from the next word */
++         /* addend -= 4; */
++         /* fall through, now done in gas tc-eco32.c */
++ 
++     default:
++         r = _bfd_final_link_relocate (howto, input_bfd, input_section,
++                                       contents, rel->r_offset,
++                                       relocation, addend);
++     }
++     
++     return r;
++ }
++ 
++ /* Relocate an eco32 ELF section.
++ 
++    The RELOCATE_SECTION function is called by the new ELF backend linker
++    to handle the relocations for a section.
++ 
++    The relocs are always passed as Rela structures; if the section
++    actually uses Rel structures, the r_addend field will always be
++    zero.
++ 
++    This function is responsible for adjusting the section contents as
++    necessary, and (if using Rela relocs and generating a relocatable
++    output file) adjusting the reloc addend as necessary.
++ 
++    This function does not have to worry about setting the reloc
++    address or the reloc symbol index.
++ 
++    LOCAL_SYMS is a pointer to the swapped in local symbols.
++ 
++    LOCAL_SECTIONS is an array giving the section in the input file
++    corresponding to the st_shndx field of each local symbol.
++ 
++    The global hash table entry for the global symbols can be found
++    via elf_sym_hashes (input_bfd).
++ 
++    When generating relocatable output, this function must handle
++    STB_LOCAL/STT_SECTION symbols specially.  The output symbol is
++    going to be the section symbol corresponding to the output
++    section, which means that the addend must be adjusted
++    accordingly.  */
++ 
++ static bfd_boolean
++ eco32_elf_relocate_section (bfd *output_bfd,
++                             struct bfd_link_info *info,
++                             bfd *input_bfd,
++                             asection *input_section,
++                             bfd_byte *contents,
++                             Elf_Internal_Rela *relocs,
++                             Elf_Internal_Sym *local_syms,
++                             asection **local_sections)
++ {
++     Elf_Internal_Shdr *symtab_hdr;
++     struct elf_link_hash_entry **sym_hashes;
++     Elf_Internal_Rela *rel;
++     Elf_Internal_Rela *relend;
++     
++     symtab_hdr = &elf_tdata (input_bfd)->symtab_hdr;
++     sym_hashes = elf_sym_hashes (input_bfd);
++     relend = relocs + input_section->reloc_count;
++     
++     for (rel = relocs; rel < relend; rel++) {
++         reloc_howto_type *howto;
++         unsigned long r_symndx;
++         Elf_Internal_Sym *sym;
++         asection *sec;
++         struct elf_link_hash_entry *h;
++         bfd_vma relocation;
++         bfd_reloc_status_type r;
++         const char *name = NULL;
++         int r_type;
++         
++         r_type = ELF32_R_TYPE (rel->r_info);
++         r_symndx = ELF32_R_SYM (rel->r_info);
++         
++         howto = eco32_elf_howto_table + r_type;
++         h = NULL;
++         sym = NULL;
++         sec = NULL;
++ 
++         if (r_symndx < symtab_hdr->sh_info) {
++             sym = local_syms + r_symndx;
++             sec = local_sections [r_symndx];
++             relocation = _bfd_elf_rela_local_sym (output_bfd, sym, &sec, rel);
++             
++             name = bfd_elf_string_from_elf_section
++                 (input_bfd, symtab_hdr->sh_link, sym->st_name);
++             name = (name == NULL) ? bfd_section_name (input_bfd, sec) : name;
++         }
++         else {
++             bfd_boolean unresolved_reloc, warned;
++             
++             RELOC_FOR_GLOBAL_SYMBOL (info, input_bfd, input_section, rel,
++                                      r_symndx, symtab_hdr, sym_hashes,
++                                      h, sec, relocation,
++                                      unresolved_reloc, warned);
++         }
++         
++         if (sec != NULL && elf_discarded_section (sec)) {
++             /* For relocs against symbols from removed linkonce sections,
++                or sections discarded by a linker script, we just want the
++                section contents zeroed.  Avoid any special processing.  */
++             _bfd_clear_contents (howto, input_bfd, contents + rel->r_offset);
++             rel->r_info = 0;
++             rel->r_addend = 0;
++             continue;
++         }
++         
++         /* if we link relocatable, don't final link yet */
++         if (info->relocatable)
++             continue;
++         
++         r = eco32_final_link_relocate (howto, input_bfd, input_section,
++                                        contents, rel, relocation);
++         
++         if (r != bfd_reloc_ok) {
++             const char *msg = NULL;
++             
++             switch (r) {
++             case bfd_reloc_overflow:
++                 r = info->callbacks->reloc_overflow
++                     (info, (h ? &h->root : NULL), name, howto->name,
++                      (bfd_vma) 0, input_bfd, input_section, rel->r_offset);
++                 break;
++                 
++             case bfd_reloc_undefined:
++                 r = info->callbacks->undefined_symbol
++                     (info, name, input_bfd, input_section, rel->r_offset, TRUE);
++                 break;
++                 
++             case bfd_reloc_outofrange:
++                 msg = _("internal error: out of range error");
++                 break;
++                 
++             case bfd_reloc_notsupported:
++                 msg = _("internal error: unsupported relocation error");
++                 break;
++                 
++             case bfd_reloc_dangerous:
++                 msg = _("internal error: dangerous relocation");
++                 break;
++                 
++             default:
++                 msg = _("internal error: unknown error");
++                 break;
++             }
++             
++             if (msg) {
++                 r = info->callbacks->warning
++                     (info, msg, name, input_bfd, input_section, rel->r_offset);
++             }
++             if (!r) {
++                 return FALSE;
++             }
++         }
++     }
++     
++     return TRUE;
++ }
++ 
++ /* Return the section that should be marked against GC for a given
++    relocation. This is for --gc-sections support. */
++ static asection *
++ eco32_elf_gc_mark_hook (asection *sec,
++                         struct bfd_link_info *info,
++                         Elf_Internal_Rela *rel,
++                         struct elf_link_hash_entry *h,
++                         Elf_Internal_Sym *sym)
++ {
++     return _bfd_elf_gc_mark_hook (sec, info, rel, h, sym);
++ }
++ 
++ /* Look through the relocs for a section during the first phase.
++    Since we don't do .gots or .plts, we just need to consider the
++    virtual table relocs for gc.  XXX: look up what this relocate stuff
++    about the vtable is about. */
++ 
++ static bfd_boolean
++ eco32_elf_check_relocs (bfd *abfd,
++                         struct bfd_link_info *info,
++                         asection *sec,
++                         const Elf_Internal_Rela *relocs)
++ {
++     Elf_Internal_Shdr *symtab_hdr;
++     struct elf_link_hash_entry **sym_hashes;
++     Elf_Internal_Rela const *rel;
++     Elf_Internal_Rela const *rel_end;
++     
++     if (info->relocatable)
++         return TRUE;
++     
++     symtab_hdr = &elf_tdata (abfd)->symtab_hdr;
++     sym_hashes = elf_sym_hashes (abfd);
++     
++     rel_end = relocs + sec->reloc_count;
++     for (rel = relocs; rel < rel_end; rel++) {
++         struct elf_link_hash_entry *h;
++         unsigned long r_symndx;
++         
++         r_symndx = ELF32_R_SYM (rel->r_info);
++         if (r_symndx < symtab_hdr->sh_info)
++             h = NULL;
++         else {
++             h = sym_hashes[r_symndx - symtab_hdr->sh_info];
++             while (h->root.type == bfd_link_hash_indirect
++                    || h->root.type == bfd_link_hash_warning)
++                 h = (struct elf_link_hash_entry *) h->root.u.i.link;
++         }
++     }
++ 
++     return TRUE;
++ }
++ 
++ static void
++ eco32_elf_begin_write_processing (bfd *abfd,
++                                   struct bfd_link_info *link_info ATTRIBUTE_UNUSED) {
++     /*
++      * if the D_PAGED bit is set, bfd will align segments on page boundaries
++      * in the file, so that an OS can directly map the file, to map its content
++      * on demand. This functionality is not needed by us, so we disable this.
++      */
++     abfd->flags &= ~D_PAGED; 
++ }
++ 
++ extern const bfd_arch_info_type bfd_eco32_arch;
++ 
++ #define ELF_ARCH			bfd_arch_eco32
++ #define ELF_MACHINE_CODE		EM_ECO32
++ #define ELF_MINPAGESIZE			0x1000
++ #define ELF_COMMONPAGESIZE  	0x1000
++ #define ELF_MAXPAGESIZE			0x1000
++ #define TARGET_BIG_SYM			bfd_elf32_eco32_vec
++ #define TARGET_BIG_NAME			"elf32-eco32"
++ 
++ #define elf_info_to_howto_rel		NULL
++ #define elf_info_to_howto		eco32_info_to_howto_rela
++ #define elf_backend_relocate_section  eco32_elf_relocate_section
++ #define elf_backend_gc_mark_hook	eco32_elf_gc_mark_hook
++ #define elf_backend_check_relocs	eco32_elf_check_relocs
++ #define elf_backend_begin_write_processing	eco32_elf_begin_write_processing
++ 
++ #define elf_backend_can_gc_sections	1
++ #define elf_backend_rela_normal		1
++ 
++ #define bfd_elf32_bfd_reloc_type_lookup eco32_reloc_type_lookup
++ #define bfd_elf32_bfd_reloc_name_lookup eco32_reloc_name_lookup
++ 
++ #include "elf32-target.h"
++ 
+diff -rcN src_org//binutils/bfd/libbfd.h src/binutils/bfd/libbfd.h
+*** src_org//binutils/bfd/libbfd.h	2009-09-02 10:10:55.000000000 +0200
+--- src/binutils/bfd/libbfd.h	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 806,811 ****
+--- 806,812 ----
+    "BFD_RELOC_8",
+    "BFD_RELOC_64_PCREL",
+    "BFD_RELOC_32_PCREL",
++   "BFD_RELOC_26_PCREL",
+    "BFD_RELOC_24_PCREL",
+    "BFD_RELOC_16_PCREL",
+    "BFD_RELOC_12_PCREL",
+diff -rcN src_org//binutils/bfd/Makefile.am src/binutils/bfd/Makefile.am
+*** src_org//binutils/bfd/Makefile.am	2009-10-16 13:47:44.000000000 +0200
+--- src/binutils/bfd/Makefile.am	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 81,86 ****
+--- 81,87 ----
+  	cpu-d10v.lo \
+  	cpu-d30v.lo \
+  	cpu-dlx.lo \
++ 	cpu-eco32.lo \
+  	cpu-fr30.lo \
+  	cpu-frv.lo \
+  	cpu-h8300.lo \
+***************
+*** 152,157 ****
+--- 153,159 ----
+  	cpu-d10v.c \
+  	cpu-d30v.c \
+  	cpu-dlx.c \
++ 	cpu-eco32.c \
+  	cpu-fr30.c \
+  	cpu-frv.c \
+  	cpu-h8300.c \
+***************
+*** 277,282 ****
+--- 279,285 ----
+  	elf32-d10v.lo \
+  	elf32-d30v.lo \
+  	elf32-dlx.lo \
++ 	elf32-eco32.lo \
+  	elf32-fr30.lo \
+  	elf32-frv.lo \
+  	elf32-gen.lo \
+***************
+*** 460,465 ****
+--- 463,469 ----
+  	elf32-d10v.c \
+  	elf32-d30v.c \
+  	elf32-dlx.c \
++ 	elf32-eco32.c \
+  	elf32-fr30.c \
+  	elf32-frv.c \
+  	elf32-gen.c \
+diff -rcN src_org//binutils/bfd/Makefile.in src/binutils/bfd/Makefile.in
+*** src_org//binutils/bfd/Makefile.in	2009-10-16 13:47:48.000000000 +0200
+--- src/binutils/bfd/Makefile.in	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 376,381 ****
+--- 376,382 ----
+  	cpu-d10v.lo \
+  	cpu-d30v.lo \
+  	cpu-dlx.lo \
++ 	cpu-eco32.lo \
+  	cpu-fr30.lo \
+  	cpu-frv.lo \
+  	cpu-h8300.lo \
+***************
+*** 447,452 ****
+--- 448,454 ----
+  	cpu-d10v.c \
+  	cpu-d30v.c \
+  	cpu-dlx.c \
++ 	cpu-eco32.c \
+  	cpu-fr30.c \
+  	cpu-frv.c \
+  	cpu-h8300.c \
+***************
+*** 573,578 ****
+--- 575,581 ----
+  	elf32-d10v.lo \
+  	elf32-d30v.lo \
+  	elf32-dlx.lo \
++ 	elf32-eco32.lo \
+  	elf32-fr30.lo \
+  	elf32-frv.lo \
+  	elf32-gen.lo \
+***************
+*** 756,761 ****
+--- 759,765 ----
+  	elf32-d10v.c \
+  	elf32-d30v.c \
+  	elf32-dlx.c \
++ 	elf32-eco32.c \
+  	elf32-fr30.c \
+  	elf32-frv.c \
+  	elf32-gen.c \
+diff -rcN src_org//binutils/bfd/reloc.c src/binutils/bfd/reloc.c
+*** src_org//binutils/bfd/reloc.c	2009-09-10 13:47:13.000000000 +0200
+--- src/binutils/bfd/reloc.c	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 1664,1669 ****
+--- 1664,1671 ----
+  ENUMX
+    BFD_RELOC_32_PCREL
+  ENUMX
++   BFD_RELOC_26_PCREL
++ ENUMX
+    BFD_RELOC_24_PCREL
+  ENUMX
+    BFD_RELOC_16_PCREL
+diff -rcN src_org//binutils/bfd/targets.c src/binutils/bfd/targets.c
+*** src_org//binutils/bfd/targets.c	2009-09-10 13:47:13.000000000 +0200
+--- src/binutils/bfd/targets.c	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 584,589 ****
+--- 584,590 ----
+  extern const bfd_target bfd_elf32_d10v_vec;
+  extern const bfd_target bfd_elf32_d30v_vec;
+  extern const bfd_target bfd_elf32_dlx_big_vec;
++ extern const bfd_target bfd_elf32_eco32_vec;
+  extern const bfd_target bfd_elf32_fr30_vec;
+  extern const bfd_target bfd_elf32_frv_vec;
+  extern const bfd_target bfd_elf32_frvfdpic_vec;
+***************
+*** 917,922 ****
+--- 918,924 ----
+  	&bfd_elf32_d10v_vec,
+  	&bfd_elf32_d30v_vec,
+  	&bfd_elf32_dlx_big_vec,
++     &bfd_elf32_eco32_vec,
+  	&bfd_elf32_fr30_vec,
+  	&bfd_elf32_frv_vec,
+  	&bfd_elf32_frvfdpic_vec,
+diff -rcN src_org//binutils/config.sub src/binutils/config.sub
+*** src_org//binutils/config.sub	2009-08-17 06:10:29.000000000 +0200
+--- src/binutils/config.sub	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 249,255 ****
+  	| bfin \
+  	| c4x | clipper \
+  	| d10v | d30v | dlx | dsp16xx \
+! 	| fido | fr30 | frv \
+  	| h8300 | h8500 | hppa | hppa1.[01] | hppa2.0 | hppa2.0[nw] | hppa64 \
+  	| i370 | i860 | i960 | ia64 \
+  	| ip2k | iq2000 \
+--- 249,255 ----
+  	| bfin \
+  	| c4x | clipper \
+  	| d10v | d30v | dlx | dsp16xx \
+! 	| eco32-* | fido | fr30 | frv \
+  	| h8300 | h8500 | hppa | hppa1.[01] | hppa2.0 | hppa2.0[nw] | hppa64 \
+  	| i370 | i860 | i960 | ia64 \
+  	| ip2k | iq2000 \
+***************
+*** 569,574 ****
+--- 569,578 ----
+  		basic_machine=a29k-amd
+  		os=-ebmon
+  		;;
++     eco32)
++         basic_machine=eco32-fhgi
++         os=-none
++         ;;
+  	elxsi)
+  		basic_machine=elxsi-elxsi
+  		os=-bsd
+***************
+*** 1274,1280 ****
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
+  	      | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+--- 1278,1284 ----
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
+  	      | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* | -escape* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+diff -rcN src_org//binutils/configure.ac src/binutils/configure.ac
+*** src_org//binutils/configure.ac	2009-10-16 13:52:23.000000000 +0200
+--- src/binutils/configure.ac	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 651,656 ****
+--- 651,659 ----
+    frv-*-*)
+      noconfigdirs="$noconfigdirs ${libgcj}"
+      ;;
++   eco32-*-*)
++     noconfigdirs="$noconfigdirs gold gprof"
++     ;;
+    moxie-*-*)
+      noconfigdirs="$noconfigdirs ${libgcj}"
+      noconfigdirs="$noconfigdirs gprof"
+diff -rcN src_org//binutils/gas/config/tc-eco32.c src/binutils/gas/config/tc-eco32.c
+*** src_org//binutils/gas/config/tc-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/gas/config/tc-eco32.c	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,830 ----
++ #include "as.h"
++ #include "symbols.h"
++ #include "safe-ctype.h"
++ #include "opcode/eco32.h"
++ 
++ /* yeah, rly */
++ static int parse_register_operand (char ** str);
++ 
++ /* allow / disallow of construction of an address using aux register
++  * $1, if the address is too big to fit into an immediate */
++ static void syn(int enable);
++ 
++ /* handler functions that format a given instruction */
++ static int formatN(struct eco32_opc_info_t *, char * str);
++ static int formatRH(struct eco32_opc_info_t *, char * str);
++ static int formatRHH(struct eco32_opc_info_t *, char * str);
++ static int formatRRH(struct eco32_opc_info_t *, char * str);
++ static int formatRRS(struct eco32_opc_info_t *, char * str);
++ static int formatRRR(struct eco32_opc_info_t *, char * str);
++ static int formatRRX(struct eco32_opc_info_t *, char * str);
++ static int formatRRY(struct eco32_opc_info_t *, char * str);
++ static int formatRRB(struct eco32_opc_info_t *, char * str);
++ static int formatJ(struct eco32_opc_info_t *, char * str);
++ static int formatJR(struct eco32_opc_info_t *, char * str);
++ 
++ const char comment_chars[]        = "#";
++ const char line_separator_chars[] = ";";
++ const char line_comment_chars[]   = "#";
++ 
++ static struct hash_control *opcode_hash_control;
++ static int allow_syn = 1;
++ 
++ /* pseudo-op, handler-function, argument */
++ const pseudo_typeS md_pseudo_table[] = {
++     { "half", cons, 2 },
++     { "word", cons, 4 },
++     { "dword", cons, 8 },
++ 
++     { "align", s_align_bytes, 0 },
++     { "syn", syn, 1 },
++     { "nosyn", syn, 0 },
++     { 0, 0, 0 }
++ };
++ 
++ /* we do not use floating points ,but have to define these anyway */
++ const char FLT_CHARS[] = "rf";
++ const char EXP_CHARS[] = "eE";
++ 
++ /* enable / disable syn */
++ static void 
++ syn(int enable) {
++     allow_syn = enable;
++ }
++ 
++ /* parses an expression, saving and restoring the position of the line
++  * pointer */
++ static char *
++ parse_exp_save_ilp (char *s, expressionS *op)
++ {
++   char *save = input_line_pointer;
++ 
++   input_line_pointer = s;
++   expression (op);
++   s = input_line_pointer;
++   input_line_pointer = save;
++   return s;
++ }
++ 
++ /* nonzero if the given expression is accepted as an immediate value. */
++ #define EXP_ISIMM(EXP)              \
++     (((EXP).X_op == O_constant) ||  \
++      ((EXP).X_op == O_symbol)   ||  \
++      ((EXP).X_op == O_index))
++ 
++ /* nonzero if the exp is constant */
++ #define EXP_ISCONST(EXP)                        \
++     ((EXP).X_op == O_constant)
++ 
++ struct eco32_insn_formatter {
++     unsigned tformat;
++     /* returns nonzero if successful, zero for an error. */
++     int (*formatter)(struct eco32_opc_info_t *, char * str);
++ } eco32_insn_formatters[] = {
++     { FORMAT_N, formatN },
++     { FORMAT_RH, formatRH },
++     { FORMAT_RHH, formatRHH },
++     { FORMAT_RRH, formatRRH },
++     { FORMAT_RRS, formatRRS },
++     { FORMAT_RRR, formatRRR },
++     { FORMAT_RRX, formatRRX },
++     { FORMAT_RRY, formatRRY },
++     { FORMAT_RRB, formatRRB },
++     { FORMAT_J,   formatJ },
++     { FORMAT_JR, formatJR },
++     { -1, NULL }
++ };
++ 
++ static int
++ expect (char e, char c) {
++     if(e != c) {
++         as_bad ("expected '%c', got '%c'", e, c);
++         return 0;
++     }
++     return 1;
++ }
++ 
++ static int 
++ formatN(struct eco32_opc_info_t * opc, char * str) {
++     while(ISSPACE(*str))
++         str++;
++     unsigned long imm = 0;
++     char * where = frag_more(4);
++     if(*str) {
++         /* in exceptional cases (trap) there may be one constant operand */
++         expressionS exp;
++         parse_exp_save_ilp(str, &exp);
++         if(!EXP_ISCONST(exp)) {
++             as_bad(_("constant operand expected"));
++             return 0;
++         }
++         imm = exp.X_add_number;
++     }
++     md_number_to_chars(where, (opc->opcode << 26) | (imm & 0x03ffffff), 4);
++ 	return 1;
++ }
++ 
++ static int 
++ formatRH(struct eco32_opc_info_t * opc, char * str) {
++     while(ISSPACE(*str))
++         str++;
++     char * where = frag_more (4);
++     int regnum = parse_register_operand(&str);
++     if(regnum == -1) {
++         as_bad(_("register expected"));
++         return 0;
++     }
++     while(ISSPACE(*str))
++         str++;
++     if(!expect(',', *str))
++         return 0;
++     str++;
++     expressionS exp;
++     parse_exp_save_ilp(str, &exp);
++     if(EXP_ISCONST(exp)) {
++         md_number_to_chars(where, (opc->opcode << 10) | regnum, 2); 
++         md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++     } else if(EXP_ISIMM(exp)) {
++        md_number_to_chars(where, (opc->opcode << 10) | regnum, 2);
++        fix_new_exp (frag_now, 
++                     (where + 2) - frag_now->fr_literal, 
++                     2,
++                     &exp,
++                     0,
++                     BFD_RELOC_LO16);
++     } else {
++         as_bad (_("immediate expected"));
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ formatRHH(struct eco32_opc_info_t * opc, char * str) {
++     while(ISSPACE(*str))
++         str++;
++     char * where = frag_more (4);
++     int regnum = parse_register_operand(&str);
++     if(regnum == -1) {
++         as_bad(_("register expected"));
++         return 0;
++     }
++     while(ISSPACE(*str))
++         str++;
++     if(!expect(',', *str))
++         return 0;
++     str++;
++     expressionS exp;
++     parse_exp_save_ilp(str, &exp);
++     if(EXP_ISCONST(exp)) {
++         md_number_to_chars(where, (opc->opcode << 10) | regnum, 2);
++         md_number_to_chars(where + 2, ((unsigned)exp.X_add_number >> 16) & 0xffff, 2);
++     } else if(EXP_ISIMM(exp)) {
++        md_number_to_chars(where, (opc->opcode << 10) | regnum, 2);
++        fix_new_exp (frag_now, 
++                     (where + 2) - frag_now->fr_literal, 
++                     2,
++                     &exp,
++                     0,
++                     BFD_RELOC_HI16);
++     } else {
++         as_bad (_("immediate expected"));
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ formatRRH(struct eco32_opc_info_t * opc, char * str) {
++     int i;
++     int regnums[2];
++     char * where = frag_more(4);
++     for(i = 0; i < 2; i++) {
++         while(ISSPACE(*str))
++             str++;
++         regnums[i] = parse_register_operand(&str);
++         if(regnums[i] == -1) {
++             as_bad (_("register expected"));
++             return 0;
++         }
++         while(ISSPACE(*str))
++             str++;
++         if(!expect(',', *str))
++             return 0;
++         str++;
++     }
++ 
++     expressionS exp;
++     parse_exp_save_ilp (str, &exp);
++     if(allow_syn) {
++         if(EXP_ISCONST(exp)) {
++             if((exp.X_add_number & 0xffff0000) == 0) {
++                 /* code: op dst,src,con */
++                 md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | regnums[0], 2);
++                 md_number_to_chars(where + 2, exp.X_add_number, 2);
++             } else {
++                 /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
++                 md_number_to_chars(where, (OP_LDHI << 10) | 1, 2);
++                 md_number_to_chars(where + 2, (exp.X_add_number >> 16) & 0xffff, 2);
++                 where = frag_more (4);
++                 md_number_to_chars(where, (OP_ORI << 10) | (1 << 5) | 1, 2);
++                 md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++                 where = frag_more (4);
++                 md_number_to_chars(where, (OP_ADD << 10) | (1 << 5) | 1, 2);
++                 md_number_to_chars(where + 2, regnums[1] << 11, 2);
++                 where = frag_more (4);
++                 md_number_to_chars(where, (opc->opcode << 26) | (1 << 21) | (regnums[0] << 16), 4);
++             }
++         } else if(EXP_ISIMM(exp)) {
++             /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
++             fix_new_exp (frag_now, 
++                          (where + 2) - frag_now->fr_literal, 
++                          2, &exp, 0, BFD_RELOC_HI16);
++             md_number_to_chars(where, (OP_LDHI << 10) | 1, 2);
++             where = frag_more (4);
++             fix_new_exp (frag_now, 
++                          (where + 2) - frag_now->fr_literal, 
++                          2, &exp, 0, BFD_RELOC_LO16);
++             md_number_to_chars(where, (OP_ORI << 10) | (1 << 5) | 1, 2);
++             where = frag_more (4);
++             md_number_to_chars(where, (OP_ADD << 10) | 1 << 5 | 1, 2);
++             md_number_to_chars(where + 2, regnums[1] << 11, 2);
++             where = frag_more (4);
++             md_number_to_chars(where, (opc->opcode << 26) | (1 << 21) | (regnums[0] << 16), 4);
++         } else {
++             as_bad (_("immediate expected"));
++             return 0;
++         }
++     } else {
++         if(EXP_ISCONST(exp)) {
++             md_number_to_chars(where, (opc->opcode << 10) | (regnums[0] << 5) | regnums[1], 2);
++             md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++         } else if(EXP_ISIMM(exp)) {
++             md_number_to_chars(where, (opc->opcode << 10) | (regnums[0] << 5) | regnums[1], 2);
++             fix_new_exp (frag_now, 
++                          (where + 2) - frag_now->fr_literal, 
++                          2, &exp, 0, BFD_RELOC_LO16);
++         } else {
++             as_bad (_("immediate expected"));
++             return 0;
++         }
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ formatRRS(struct eco32_opc_info_t * opc, char * str) {
++     int i;
++     int regnums[2];
++     char * where = frag_more(4);
++     for(i = 0; i < 2; i++) {
++         while(ISSPACE(*str))
++             str++;
++         regnums[i] = parse_register_operand(&str);
++         if(regnums[i] == -1) {
++             as_bad (_("register expected"));
++             return 0;
++         }
++         while(ISSPACE(*str))
++             str++;
++         if(!expect(',', *str))
++             return 0;
++         str++;
++     }
++ 
++     expressionS exp;
++     parse_exp_save_ilp(str, &exp);
++     if(allow_syn) {
++         if(EXP_ISCONST(exp)) {
++             if((exp.X_add_number & 0xffff8000) == 0 ||
++                (exp.X_add_number & 0xffff8000) == 0xffff8000) {
++                 /* code: op dst,src,con */
++                 md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | regnums[0], 2);
++                 md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++             } else {
++                 /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
++                 md_number_to_chars(where, (OP_LDHI << 10) | 1, 2);
++                 md_number_to_chars(where + 2, (exp.X_add_number >> 16) & 0xffff, 2);
++                 where = frag_more (4);
++                 md_number_to_chars(where, (OP_ORI << 10) | (1 << 5) | 1, 2);
++                 md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++                 if(regnums[1] != 0) {
++                 where = frag_more (4);
++                 md_number_to_chars(where, (OP_ADD << 10) | (1 << 5) | regnums[1], 2);
++                 md_number_to_chars(where + 2, 1 << 11, 2);
++                 }
++                 where = frag_more (4);
++                 md_number_to_chars(where, (opc->opcode << 26) | (1 << 21) | (regnums[0] << 16), 4);
++             }
++         } else if(EXP_ISIMM(exp)) {
++             /* code: ldhi $1,con; or $1,$1,con; add $1,$1,src; op dst,$1,0 */
++             fix_new_exp (frag_now, 
++                          (where + 2) - frag_now->fr_literal, 
++                          2, &exp, 0, BFD_RELOC_HI16);
++             md_number_to_chars(where, (OP_LDHI << 10) | 1, 2);
++             where = frag_more (4);
++             fix_new_exp (frag_now, 
++                          (where + 2) - frag_now->fr_literal, 
++                          2, &exp, 0, BFD_RELOC_LO16);
++             md_number_to_chars(where, (OP_ORI << 10) | (1 << 5) | 1, 2);
++             if(regnums[1] != 0) {
++             where = frag_more (4);
++             md_number_to_chars(where, (OP_ADD << 10) | 1 << 5 | regnums[1], 2);
++             md_number_to_chars(where + 2, 1 << 11, 2);
++             }
++             where = frag_more (4);
++             md_number_to_chars(where, (opc->opcode << 26) | (1 << 21) | (regnums[0] << 16), 4);
++         } else {
++             as_bad (_("immediate expected"));
++             return 0;
++         }
++     } else {
++         if(EXP_ISCONST(exp)) {
++             md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | regnums[0], 2);
++             md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++         } else if(EXP_ISIMM(exp)) {
++             md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | regnums[0], 2);
++             fix_new_exp (frag_now, 
++                          (where + 2) - frag_now->fr_literal, 
++                          2, &exp, 0, BFD_RELOC_LO16);
++         } else {
++             as_bad (_("immediate expected"));
++             return 0;
++         }
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ formatRRR(struct eco32_opc_info_t * opc, char * str) {
++     int i;
++     int regnums[3];
++     char * where = frag_more (4);
++     for(i = 0; i < 3; i++) {
++         while(ISSPACE(*str))
++             str++;
++         regnums[i] = parse_register_operand(&str);
++         if(regnums[i] == -1) {
++             as_bad (_("register expected"));
++             return 0;
++         }
++         while(ISSPACE(*str))
++             str++;
++         if(i != 2 && !expect(',', *str))
++             return 0;
++         str++;
++     }
++     md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | regnums[2], 2);
++     md_number_to_chars(where, regnums[0] << 11, 2);
++ 	return 1;
++ }
++ 
++ static int 
++ formatRRX(struct eco32_opc_info_t * opc, char * str) {
++     int i;
++     int regnums[3];
++     char * where = frag_more(4);
++     for(i = 0; i < 3; i++) {
++         while(ISSPACE(*str))
++             str++;
++         regnums[i] = parse_register_operand(&str);
++         if(regnums[i] == -1) {
++             if(i == 2)
++                 break;
++             as_bad (_("register expected"));
++             return 0;
++         }
++         while(ISSPACE(*str))
++             str++;
++         if(i != 2 && !expect(',', *str))
++             return 0;
++         str++;
++     }
++ 
++     if(regnums[2] != -1) {
++         md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | regnums[2], 2);
++         md_number_to_chars(where + 2, regnums[0] << 11, 2);
++     } else {
++         expressionS exp;
++         parse_exp_save_ilp(str, &exp);
++         if(allow_syn) {
++             if(EXP_ISCONST(exp)) {
++                 if((exp.X_add_number & 0xffff0000) == 0) {
++                     /* code: op dst,src,con */
++                     md_number_to_chars(where, ((opc->opcode + 1) << 10) | (regnums[1] << 5) | regnums[0], 2);
++                     md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++                 } else {
++                     /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
++                     md_number_to_chars(where, (OP_LDHI << 10) | 1, 2);
++                     md_number_to_chars(where + 2, (exp.X_add_number >> 16) & 0xffff, 2);
++                     where = frag_more (4);
++                     md_number_to_chars(where, (OP_ORI << 10) | (1 << 5) | 1, 2);
++                     md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++                     where = frag_more (4);
++                     md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | 1, 2);
++                     md_number_to_chars(where + 2, regnums[0] << 11, 2);
++                 }
++             } else if(EXP_ISIMM(exp)) {
++                 /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
++                 fix_new_exp (frag_now, 
++                              (where + 2) - frag_now->fr_literal, 
++                              2, &exp, 0, BFD_RELOC_HI16);
++                 md_number_to_chars(where, (OP_LDHI << 10) | 1, 2);
++                 where = frag_more (4);
++                 fix_new_exp (frag_now, 
++                              (where + 2) - frag_now->fr_literal, 
++                              2, &exp, 0, BFD_RELOC_LO16);
++                 md_number_to_chars(where, (OP_ORI << 10) | (1 << 5) | 1, 2);
++                 where = frag_more (4);
++                 md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | 1, 2);
++                 md_number_to_chars(where + 2, regnums[0] << 11, 2);
++             } else {
++                 as_bad (_("immediate expected"));
++                 return 0;
++             }
++         } else {
++             if(EXP_ISCONST(exp)) {
++                 md_number_to_chars(where, ((opc->opcode + 1) << 10) | (regnums[1] << 5) | regnums[0], 2);
++                 md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++             } else if(EXP_ISIMM(exp)) {
++                 fix_new_exp (frag_now, 
++                              (where + 2) - frag_now->fr_literal, 
++                              2, &exp, 0, BFD_RELOC_LO16);
++                 md_number_to_chars(where, ((opc->opcode + 1) << 10) | (regnums[1] << 5) | regnums[0], 2);
++             } else {
++                 as_bad (_("immediate expected"));
++                 return 0;
++             }
++         }
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ formatRRY(struct eco32_opc_info_t * opc, char * str) {
++     int i;
++     int regnums[3];
++     char * where = frag_more(4);
++     for(i = 0; i < 3; i++) {
++         while(ISSPACE(*str))
++             str++;
++         regnums[i] = parse_register_operand(&str);
++         if(regnums[i] == -1) {
++             if(i == 2)
++                 break;
++             as_bad (_("register expected"));
++             return 0;
++         }
++         while(ISSPACE(*str))
++             str++;
++         if(i != 2 && !expect(',', *str))
++             return 0;
++         str++;
++     }
++ 
++     if(regnums[2] != -1) {
++         md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | regnums[2], 2);
++         md_number_to_chars(where + 2, regnums[0] << 11, 2);
++     } else {
++         expressionS exp;
++         parse_exp_save_ilp (str, &exp);
++         if(allow_syn) {
++             if(EXP_ISCONST(exp)) {
++                 if((exp.X_add_number & 0xffff8000) == 0 ||
++                    (exp.X_add_number & 0xffff8000) == 0xffff8000) {
++                     /* code: op dst,src,con */
++                     md_number_to_chars(where, ((opc->opcode + 1) << 10) | (regnums[1] << 5) | regnums[0], 2);
++                     md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++                 } else {
++                     /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
++                     md_number_to_chars(where, (OP_LDHI << 10) | 1, 2);
++                     md_number_to_chars(where + 2, (exp.X_add_number >> 16) & 0xffff, 2);
++                     where = frag_more (4);
++                     md_number_to_chars(where, (OP_ORI << 10) | (1 << 5) | 1, 2);
++                     md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++                     where = frag_more (4);
++                     md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | 1, 2);
++                     md_number_to_chars(where + 2, regnums[0] << 11, 2);
++                 }
++             } else if(EXP_ISIMM(exp)) {
++                 /* code: ldhi $1,con; or $1,$1,con; op dst,src,$1 */
++                 fix_new_exp (frag_now, 
++                              (where + 2) - frag_now->fr_literal, 
++                              2, &exp, 0, BFD_RELOC_HI16);
++                 md_number_to_chars(where, (OP_LDHI << 10) | 1, 2);
++                 where = frag_more (4);
++                 fix_new_exp (frag_now, 
++                              (where + 2) - frag_now->fr_literal, 
++                              2, &exp, 0, BFD_RELOC_LO16);
++                 md_number_to_chars(where, (OP_ORI << 10) | (1 << 5) | 1, 2);
++                 where = frag_more (4);
++                 md_number_to_chars(where, (opc->opcode << 10) | (regnums[1] << 5) | 1, 2);
++                 md_number_to_chars(where + 2, regnums[0] << 11, 2);
++             } else {
++                 as_bad (_("immediate expected"));
++                 return 0;
++             }
++         } else {
++             if(EXP_ISCONST(exp)) {
++                 md_number_to_chars(where, ((opc->opcode + 1) << 10) | (regnums[1] << 5) | regnums[0], 2);
++                 md_number_to_chars(where + 2, exp.X_add_number & 0xffff, 2);
++             } else if(EXP_ISIMM(exp)) {
++                 fix_new_exp (frag_now, 
++                              (where + 2) - frag_now->fr_literal, 
++                              2, &exp, 0, BFD_RELOC_LO16);
++                 md_number_to_chars(where, ((opc->opcode + 1) << 10) | (regnums[1] << 5) | regnums[0], 2);
++             } else {
++                 as_bad (_("immediate expected"));
++                 return 0;
++             }
++         }
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ formatRRB(struct eco32_opc_info_t * opc, char * str) {
++     int i;
++     int regnums[2];
++     char * where = frag_more (4);
++     for(i = 0; i < 2; i++) {
++         while(ISSPACE(*str))
++             str++;
++         regnums[i] = parse_register_operand(&str);
++         if(regnums[i] == -1) {
++             as_bad (_("register expected"));
++             return 0;
++         }
++         while(ISSPACE(*str))
++             str++;
++         if(!expect(',', *str))
++             return 0;
++         str++;
++     }
++     
++     expressionS exp;
++     parse_exp_save_ilp (str, &exp);
++     if(EXP_ISCONST(exp)) {
++         int32_t imm = (exp.X_add_number - (frag_now->fr_address + (where - frag_now->fr_literal) + 4)) / 4;
++         md_number_to_chars (where, (opc->opcode << 10) | (regnums[0] << 5) | regnums[1], 2);
++         md_number_to_chars (where + 2, imm & 0xffff, 2);
++     } 
++     else if(EXP_ISIMM(exp)) {
++         md_number_to_chars (where, (opc->opcode << 10) | (regnums[0] << 5) | regnums[1], 2);
++         fix_new_exp (frag_now, 
++                      (where + 2) - frag_now->fr_literal, 
++                      2, &exp, TRUE, BFD_RELOC_16_PCREL)->fx_pcrel = 1;
++     } else {
++         as_bad (_("immediate expected"));
++         return 0;
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ formatJ(struct eco32_opc_info_t * opc, char * str) {
++     int regnum;
++     char * where = frag_more (4);
++     while(ISSPACE(*str))
++         str++;
++     regnum = parse_register_operand (&str);
++     if(regnum != -1) {
++         md_number_to_chars (where, ((opc->opcode + 1) << 26) | (regnum << 21), 4);
++     } else {
++         expressionS exp;
++         parse_exp_save_ilp (str, &exp);
++         if(EXP_ISCONST(exp)) {
++             int32_t imm = (exp.X_add_number - (frag_now->fr_address + (where - frag_now->fr_literal) + 4)) / 4;
++             md_number_to_chars (where, (opc->opcode << 26) | (imm & 0x03ffffff), 4);
++         } 
++         else if(EXP_ISIMM(exp)) {
++             md_number_to_chars (where, opc->opcode << 10, 2);
++             fix_new_exp (frag_now, 
++                          where - frag_now->fr_literal, 
++                          4, &exp, TRUE, BFD_RELOC_26_PCREL)->fx_pcrel = 1;
++         } else {
++             as_bad (_("immediate expected"));
++             return 0;
++         }
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ formatJR(struct eco32_opc_info_t * opc, char * str) {
++     int regnum;
++     char * where = frag_more (4);
++     while(ISSPACE(*str))
++         str++;
++     regnum = parse_register_operand (&str);
++     if(regnum != -1) {
++         md_number_to_chars (where, (opc->opcode << 26) | (regnum << 21), 4);
++     } else {
++         as_bad (_("register expected"));
++         return 0;
++     }
++ 	return 1;
++ }
++ 
++ static int 
++ parse_register_operand (char ** str) {
++     int nchars;
++     unsigned reg_num;
++     if(sscanf(*str, "$%u%n", &reg_num, &nchars) == 0 || 
++        (!ISSPACE(*(*str + nchars)) && *(*str + nchars) && *(*str + nchars) != ',')) {
++         return -1;
++     }
++     if(reg_num > 31) {
++         as_bad(_("register number too high"));
++         return -1;
++     }
++     *str += nchars;
++     return reg_num;
++ }
++ 
++ void
++ md_operand (expressionS *op) {
++     int regnum = parse_register_operand (&input_line_pointer);
++     if(regnum != -1) {
++         op->X_add_number = regnum;
++         op->X_op = O_register;
++     }
++ }
++ 
++ /* This function is called once, at assembler startup time.  It sets
++    up the hash table with all the opcodes in it, and also initializes
++    some aliases for compatibility with other assemblers.  */
++ void
++ md_begin (void) {
++     int i;
++     opcode_hash_control = hash_new ();
++ 
++     /* Insert names into hash table.  */
++     for (i = 0; i < NUM_OPS; i++)
++         if(!(eco32_opcodes[i].flags & OPC_FLAG_OPI))
++             hash_insert (opcode_hash_control, eco32_opcodes[i].name, eco32_opcodes + i);
++     bfd_set_arch_mach (stdoutput, TARGET_ARCH, 0);
++ }
++ 
++ /* This is the guts of the machine-dependent assembler.  STR points to
++    a machine dependent instruction.  This function is supposed to emit
++    the frags/bytes it assembles to.  */
++ void
++ md_assemble (char *str ATTRIBUTE_UNUSED) {
++     char * strp = str;
++     char * strpend = str;
++ 
++     /* skip leading whitespace */
++     while (ISSPACE(*strp))
++         strp++;
++ 
++     /* find end of the instruction */
++     while (*strpend && !ISSPACE(*strpend))
++         strpend++;
++ 
++     struct eco32_opc_info_t * code = (struct eco32_opc_info_t *) 
++         hash_find_n (opcode_hash_control, strp, strpend - strp);
++     if(!code) {
++         as_bad(_("expected instruction"));
++         return;
++     }
++ 
++     struct eco32_insn_formatter * formatters = eco32_insn_formatters;
++     while(formatters->formatter) {
++         if(formatters->tformat == code->tformat) {
++             formatters->formatter(code, strpend);
++             break;
++         }
++         formatters++;
++     }
++     if(!formatters->formatter) {
++         as_fatal(_("internal: no formatter found to handle insn '%s'"), code->name);
++         return;
++     }
++ }
++ 
++ /* no sense to have floating point constants supported for eco32 at
++  * this level. */
++ char *
++ md_atof (int type ATTRIBUTE_UNUSED, char *litP ATTRIBUTE_UNUSED, int *sizeP) {
++     *sizeP = 0;
++     return _("no support for floating point constants");
++ }
++ 
++ const char *md_shortopts = "";
++ struct option md_longopts[] =
++ {
++   {NULL, no_argument, NULL, 0}
++ };
++ size_t md_longopts_size = sizeof (md_longopts);
++ 
++ /* We have no target specific options yet, so these next
++    two functions are empty.  */
++ int
++ md_parse_option (int c ATTRIBUTE_UNUSED, char *arg ATTRIBUTE_UNUSED) {
++     return 0;
++ }
++ 
++ void
++ md_show_usage (FILE *stream ATTRIBUTE_UNUSED) {
++ }
++ 
++ /* Apply a fixup to the object file.  */
++ void
++ md_apply_fix (fixS *fixP, valueT * valP, segT seg ATTRIBUTE_UNUSED) {
++     char *buf = fixP->fx_where + fixP->fx_frag->fr_literal;
++     long value = *valP; 
++     
++     switch (fixP->fx_r_type)
++     {
++     case BFD_RELOC_HI16:
++         *valP = (value >> 16) & 0xffff;
++         *buf++ = (value >> 24) & 0xff;
++         *buf++ = (value >> 16) & 0xff;
++         break;
++     case BFD_RELOC_LO16:
++         *valP = value & 0xffff;
++         *buf++ = (value >> 8) & 0xff;
++         *buf++ = value & 0xff;
++         break;
++     case BFD_RELOC_32:
++         *buf++ = (value >> 24) & 0xff;
++         *buf++ = (value >> 16) & 0xff;
++         *buf++ = (value >> 8)  & 0xff;
++         *buf++ = value & 0xff;
++         break;
++     case BFD_RELOC_16_PCREL:
++         value /= 4;
++         *valP = value; /* give back, for overflow checking */
++         *buf++ = (value >> 8) & 0xff;
++         *buf++ = value & 0xff;
++         break;
++     case BFD_RELOC_26_PCREL:
++         value /= 4;
++         *valP = value; /* give back, for overflow checking */
++         value &= 0x03ffffff;
++         value |= (unsigned)(*buf & 0xfc) << 24;
++         *buf++ = (value >> 24) & 0xff;
++         *buf++ = (value >> 16) & 0xff;
++         *buf++ = (value >>  8) & 0xff;
++         *buf++ = value & 0xff;
++         break;
++     case BFD_RELOC_16:
++         /* used by the assembler when it encounters .half */
++         *buf++ = (value >> 8) & 0xff;
++         *buf++ = value & 0xff;
++         break;
++     default:
++         abort ();
++     }
++     if (fixP->fx_addsy == NULL && fixP->fx_pcrel == 0)
++         fixP->fx_done = 1;
++ }
++ 
++ /* Put number into target byte order (big endian).  */
++ void
++ md_number_to_chars (char *ptr, valueT use, int nbytes)
++ {
++   number_to_chars_bigendian (ptr, use, nbytes);
++ }
++ 
++ /* Generate a machine-dependent relocation.  */
++ arelent *
++ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixP)
++ {
++     arelent *relP;
++     bfd_reloc_code_real_type code = fixP->fx_r_type;
++ 
++     relP = (arelent *) xmalloc (sizeof (arelent));
++     relP->sym_ptr_ptr = (asymbol **) xmalloc (sizeof (asymbol *));
++     *relP->sym_ptr_ptr = symbol_get_bfdsym (fixP->fx_addsy);
++     relP->address = fixP->fx_frag->fr_address + fixP->fx_where;
++     relP->addend = fixP->fx_offset;
++     
++     relP->howto = bfd_reloc_type_lookup (stdoutput, code);
++     if (!relP->howto) {
++         const char *name;
++         
++         name = S_GET_NAME (fixP->fx_addsy);
++         if (name == NULL)
++             name = _("<unknown>");
++         as_fatal (_("Cannot generate relocation type for symbol %s, code %s"),
++                   name, bfd_get_reloc_code_name (code));
++     }
++     
++     /* if the relocation is pc relative, adjust the addend by the size of a word, since BFD does
++      * not have such thing as md_pcre_from like GAS has. The better place to fix this is somewhere
++      * in BFD, but i dunno where to do that. we can do a special handling in elf32-eco32.c , but then
++      * it won't be fixed if we output to a binary format. (--oformat binary) */
++     if(fixP->fx_pcrel) {
++         relP->addend -= 4;
++     }
++     return relP;
++ }
++ 
++ /* Decide from what point a pc-relative relocation is relative to,
++    relative to the pc-relative fixup. =) */
++ long
++ md_pcrel_from (fixS *fixP) {
++     /* address within the section */
++     valueT addr = fixP->fx_where + fixP->fx_frag->fr_address;
++     return (addr & ~3) + 4;
++ }
+diff -rcN src_org//binutils/gas/config/tc-eco32.h src/binutils/gas/config/tc-eco32.h
+*** src_org//binutils/gas/config/tc-eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/gas/config/tc-eco32.h	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,48 ----
++ /* By convention, you should define this macro in the `.h' file. For
++  * example, `tc-m68k.h' defines TC_M68K. You might have to use this if
++  * it is necessary to add CPU specific code to the object format
++  * file. */
++ #define TC_ECO32
++ 
++ /* This macro is the BFD target name to use when creating the output
++  * file. This will normally depend upon the OBJ_FMT macro. 
++  * eco32 currently only supports a.out. */
++ #define TARGET_FORMAT "elf32-eco32"
++ 
++ /* This macro is the BFD architecture to pass to bfd_set_arch_mach. */
++ #define TARGET_ARCH bfd_arch_eco32
++ 
++ /* This macro is the BFD machine number to pass to
++  * bfd_set_arch_mach. If it is not defined, GAS will use 0.  For
++  * eco32, this trivially is 0, since there is only one machine. */
++ #define TARGET_MACH bfd_mach_eco32
++ 
++ #define TARGET_BYTES_BIG_ENDIAN 1
++ 
++ /* we do not need the broken-words handling of gas */
++ #define WORKING_DOT_WORD
++ 
++ /* GAS will call this function when a symbol table lookup fails,
++  * before it creates a new symbol. */
++ #define md_undefined_symbol(name) 0
++ 
++ /* These macros must be defined, but is will be a fatal assembler
++  * error if we ever hit them, since we don't use relaxing (all
++  * instructions are 32bit wide, independent of any values.  */
++ #define md_estimate_size_before_relax(A, B) (as_fatal (_("md_estimate_size_before_relax\n")), 0)
++ #define md_convert_frag(B, S, F)            (as_fatal (_("md_convert_frag\n")), 0)
++ 
++ 
++ /* Return the address within the segment that a PC-relative fixup is
++    relative to. For eco32, this is always the address of the fixup
++    rounded down to word boundary plus 4bytes. */
++ #define MD_PCREL_FROM_SECTION(FIX, SEC) md_pcrel_from (FIX)
++ extern long md_pcrel_from (struct fix *);
++ 
++ /* GAS will call this function for each section at the end of the
++  * assembly, to permit the CPU backend to adjust the alignment of a
++  * section. The function must take two arguments, a segT for the
++  * section and a valueT for the size of the section, and return a
++  * valueT for the rounded size. */
++ #define md_section_align(segment, size) (size)
++ 
+diff -rcN src_org//binutils/gas/configure.tgt src/binutils/gas/configure.tgt
+*** src_org//binutils/gas/configure.tgt	2009-09-09 10:13:28.000000000 +0200
+--- src/binutils/gas/configure.tgt	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 145,150 ****
+--- 145,151 ----
+    d10v-*-*)				fmt=elf ;;
+    d30v-*-*)				fmt=elf ;;
+    dlx-*-*)				fmt=elf ;;
++   eco32-*-*)            fmt=elf ;;
+  
+    fr30-*-*)				fmt=elf ;;
+    frv-*-*linux*)			fmt=elf em=linux;;
+diff -rcN src_org//binutils/gas/Makefile.am src/binutils/gas/Makefile.am
+*** src_org//binutils/gas/Makefile.am	2009-09-07 11:16:06.000000000 +0200
+--- src/binutils/gas/Makefile.am	2011-05-19 21:05:17.000000000 +0200
+***************
+*** 50,55 ****
+--- 50,56 ----
+  	d10v \
+  	d30v \
+  	dlx \
++ 	eco32 \
+  	fr30 \
+  	frv \
+  	h8300 \
+***************
+*** 251,256 ****
+--- 252,258 ----
+  	config/tc-d10v.c \
+  	config/tc-d30v.c \
+  	config/tc-dlx.c \
++ 	config/tc-eco32.c \
+  	config/tc-fr30.c \
+  	config/tc-frv.c \
+  	config/tc-h8300.c \
+***************
+*** 314,319 ****
+--- 316,322 ----
+  	config/tc-d10v.h \
+  	config/tc-d30v.h \
+  	config/tc-dlx.h \
++ 	config/tc-eco32.h \
+  	config/tc-fr30.h \
+  	config/tc-frv.h \
+  	config/tc-h8300.h \
+diff -rcN src_org//binutils/gas/Makefile.in src/binutils/gas/Makefile.in
+*** src_org//binutils/gas/Makefile.in	2009-09-07 14:09:27.000000000 +0200
+--- src/binutils/gas/Makefile.in	2011-05-19 21:08:15.000000000 +0200
+***************
+*** 316,321 ****
+--- 316,322 ----
+  	d10v \
+  	d30v \
+  	dlx \
++ 	eco32 \
+  	fr30 \
+  	frv \
+  	h8300 \
+***************
+*** 515,520 ****
+--- 516,522 ----
+  	config/tc-d10v.c \
+  	config/tc-d30v.c \
+  	config/tc-dlx.c \
++ 	config/tc-eco32.c \
+  	config/tc-fr30.c \
+  	config/tc-frv.c \
+  	config/tc-h8300.c \
+***************
+*** 578,583 ****
+--- 580,586 ----
+  	config/tc-d10v.h \
+  	config/tc-d30v.h \
+  	config/tc-dlx.h \
++ 	config/tc-eco32.h \
+  	config/tc-fr30.h \
+  	config/tc-frv.h \
+  	config/tc-h8300.h \
+***************
+*** 956,961 ****
+--- 959,965 ----
+  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-d10v.Po@am__quote@
+  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-d30v.Po@am__quote@
+  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-dlx.Po@am__quote@
++ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-eco32.Po@am__quote@
+  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-fr30.Po@am__quote@
+  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-frv.Po@am__quote@
+  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-h8300.Po@am__quote@
+***************
+*** 1184,1189 ****
+--- 1188,1207 ----
+  @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+  @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-dlx.obj `if test -f 'config/tc-dlx.c'; then $(CYGPATH_W) 'config/tc-dlx.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-dlx.c'; fi`
+  
++ tc-eco32.o: config/tc-eco32.c
++ @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-eco32.o -MD -MP -MF $(DEPDIR)/tc-eco32.Tpo -c -o tc-eco32.o `test -f 'config/tc-eco32.c' || echo '$(srcdir)/'`config/tc-eco32.c
++ @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-eco32.Tpo $(DEPDIR)/tc-eco32.Po
++ @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config/tc-eco32.c' object='tc-eco32.o' libtool=no @AMDEPBACKSLASH@
++ @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++ @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-eco32.o `test -f 'config/tc-eco32.c' || echo '$(srcdir)/'`config/tc-eco32.c
++ 
++ tc-eco32.obj: config/tc-eco32.c
++ @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-eco32.obj -MD -MP -MF $(DEPDIR)/tc-eco32.Tpo -c -o tc-eco32.obj `if test -f 'config/tc-eco32.c'; then $(CYGPATH_W) 'config/tc-eco32.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-eco32.c'; fi`
++ @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-eco32.Tpo $(DEPDIR)/tc-eco32.Po
++ @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config/tc-eco32.c' object='tc-eco32.obj' libtool=no @AMDEPBACKSLASH@
++ @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++ @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-eco32.obj `if test -f 'config/tc-eco32.c'; then $(CYGPATH_W) 'config/tc-eco32.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-eco32.c'; fi`
++ 
+  tc-fr30.o: config/tc-fr30.c
+  @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-fr30.o -MD -MP -MF $(DEPDIR)/tc-fr30.Tpo -c -o tc-fr30.o `test -f 'config/tc-fr30.c' || echo '$(srcdir)/'`config/tc-fr30.c
+  @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-fr30.Tpo $(DEPDIR)/tc-fr30.Po
+diff -rcN src_org//binutils/include/dis-asm.h src/binutils/include/dis-asm.h
+*** src_org//binutils/include/dis-asm.h	2009-08-06 19:38:03.000000000 +0200
+--- src/binutils/include/dis-asm.h	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 233,238 ****
+--- 233,239 ----
+  extern int print_insn_d10v		(bfd_vma, disassemble_info *);
+  extern int print_insn_d30v		(bfd_vma, disassemble_info *);
+  extern int print_insn_dlx 		(bfd_vma, disassemble_info *);
++ extern int print_insn_eco32		(bfd_vma addr, struct disassemble_info *info);
+  extern int print_insn_fr30		(bfd_vma, disassemble_info *);
+  extern int print_insn_frv		(bfd_vma, disassemble_info *);
+  extern int print_insn_h8300		(bfd_vma, disassemble_info *);
+diff -rcN src_org//binutils/include/elf/common.h src/binutils/include/elf/common.h
+*** src_org//binutils/include/elf/common.h	2009-08-09 15:42:26.000000000 +0200
+--- src/binutils/include/elf/common.h	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 389,394 ****
+--- 389,397 ----
+  
+  #define EM_CYGNUS_MEP		0xF00D  /* Toshiba MeP */
+  
++ /* value for eco32 */
++ #define EM_ECO32  0xEC32 /* too bad 0xeco32 doesn't fit in :) */
++ 
+  #define EM_MOXIE                0xFEED  /* Moxie */
+  
+  /* Old Sunplus S+core7 backend magic number. Written in the absence of an ABI.  */
+diff -rcN src_org//binutils/include/elf/eco32.h src/binutils/include/elf/eco32.h
+*** src_org//binutils/include/elf/eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/include/elf/eco32.h	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,16 ----
++ #ifndef _ELF_ECO32_H
++ #define _ELF_ECO32_H
++ 
++ #include "elf/reloc-macros.h"
++ 
++ /* Relocation types.  */
++ START_RELOC_NUMBERS (elf_eco32_reloc_type)
++   RELOC_NUMBER (R_ECO32_NONE, 0)
++   RELOC_NUMBER (R_ECO32_H16, 1)
++   RELOC_NUMBER (R_ECO32_L16, 2)
++   RELOC_NUMBER (R_ECO32_W32, 3)
++   RELOC_NUMBER (R_ECO32_R16, 4)
++   RELOC_NUMBER (R_ECO32_R26, 5)
++ END_RELOC_NUMBERS (R_ECO32_max)
++ 
++ #endif
+diff -rcN src_org//binutils/include/opcode/eco32.h src/binutils/include/opcode/eco32.h
+*** src_org//binutils/include/opcode/eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/include/opcode/eco32.h	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,138 ----
++ /* Decoding the opcodes for the eco32 processor. 
++  */
++ 
++ /* all the opcodes of eco32. The *I versions of some opcodes are the
++  * variants that accept immediate values, instead of registers. */
++ #define OPC_MASK (((1 << 6) - 1) << 26)
++ #define OPC_MASK_SH 26
++ 
++ /* masks for the three possible register operands. */
++ #define REG1_MASK (((1 << 5) - 1) << (32 - 11))
++ #define REG1_SH   (32 - 11)
++ #define REG2_MASK (((1 << 5) - 1) << (32 - 11 - 5))
++ #define REG2_SH   (32 - 11 - 5)
++ #define REG3_MASK (((1 << 5) - 1) << (32 - 11 - 5 - 5))
++ #define REG3_SH   (32 - 11 - 5 - 5)
++ 
++ #define OP_ADD		0x00
++ #define OP_ADDI		0x01
++ #define OP_SUB		0x02
++ #define OP_SUBI		0x03
++ 
++ #define OP_MUL		0x04
++ #define OP_MULI		0x05
++ #define OP_MULU		0x06
++ #define OP_MULUI	0x07
++ #define OP_DIV		0x08
++ #define OP_DIVI		0x09
++ #define OP_DIVU		0x0A
++ #define OP_DIVUI	0x0B
++ #define OP_REM		0x0C
++ #define OP_REMI		0x0D
++ #define OP_REMU		0x0E
++ #define OP_REMUI	0x0F
++ 
++ #define OP_AND		0x10
++ #define OP_ANDI		0x11
++ #define OP_OR		0x12
++ #define OP_ORI		0x13
++ #define OP_XOR		0x14
++ #define OP_XORI		0x15
++ #define OP_XNOR		0x16
++ #define OP_XNORI	0x17
++ 
++ #define OP_SLL		0x18
++ #define OP_SLLI		0x19
++ #define OP_SLR		0x1A
++ #define OP_SLRI		0x1B
++ #define OP_SAR		0x1C
++ #define OP_SARI		0x1D
++ 
++ #define OP_LDHI		0x1F
++ 
++ #define OP_BEQ		0x20
++ #define OP_BNE		0x21
++ #define OP_BLE		0x22
++ #define OP_BLEU		0x23
++ #define OP_BLT		0x24
++ #define OP_BLTU		0x25
++ #define OP_BGE		0x26
++ #define OP_BGEU		0x27
++ #define OP_BGT		0x28
++ #define OP_BGTU		0x29
++ 
++ #define OP_J		0x2A
++ #define OP_JR		0x2B
++ #define OP_JAL		0x2C
++ #define OP_JALR		0x2D
++ 
++ #define OP_TRAP		0x2E
++ #define OP_RFX		0x2F
++ 
++ #define OP_LDW		0x30
++ #define OP_LDH		0x31
++ #define OP_LDHU		0x32
++ #define OP_LDB		0x33
++ #define OP_LDBU		0x34
++ 
++ #define OP_STW		0x35
++ #define OP_STH		0x36
++ #define OP_STB		0x37
++ 
++ #define OP_MVFS		0x38
++ #define OP_MVTS		0x39
++ #define OP_TBS		0x3A
++ #define OP_TBWR		0x3B
++ #define OP_TBRI		0x3C
++ #define OP_TBWI		0x3D
++ 
++ #define NUM_OPS     61
++ 
++ /* we define serveral types of instructions.  N means no operand.  R
++  * refers to a register number.  IZ<bitsize> and IS[O]<bitsize> for
++  * a zero and sign extended immediate. O is included if it is an
++  * offset (pc relative), otherwise it is omitted.  HI<bitsize> refers
++  * to the high <bitsize> bits of a word, LO<bitsize> refers to the
++  * lower <bitsize> bits of a word. */
++ #define INSN_N      0
++ #define INSN_RLO16  1
++ #define INSN_RHI16  2
++ #define INSN_RRIZ16 3
++ #define INSN_RRIS16 4
++ #define INSN_RRR    5
++ #define INSN_R      6
++ #define INSN_RRISO16  7
++ #define INSN_ISO26  8
++ 
++ /* we also define a format which the assembler source can look
++  * like. These are documented in isa.html in the eco32 package. */
++ #define FORMAT_N   0 /* no operands */
++ #define FORMAT_RH  1 /* one register and the lower 16 bits of a word */
++ #define FORMAT_RHH 2 /* one register and the upper 16 bits of a word */
++ #define FORMAT_RRH 3 /* two registers and a zero-extended halfword */
++ #define FORMAT_RRS 4 /* two registers and a sign-extended halfword */
++ #define FORMAT_RRR 5 /* three registers */
++ #define FORMAT_RRX 6 /* three registers, or two registers and a zero-extended halfword */
++ #define FORMAT_RRY 7 /* three registers, or two registers and a sign-extended halfword */
++ #define FORMAT_RRB 8 /* two registers and a sign-extended 16 bit offset */
++ #define FORMAT_J   9 /* no registers and a sign-extended 26 bit offset */
++ #define FORMAT_JR  10 /* one register */
++ 
++ #define OPC_FLAG_OPI 1 /* immediate version */
++ #define OPC_FLAG_JSR 2 /* jump to subroutine (jal[r]) */
++ #define OPC_FLAG_CBR 4 /* conditional branch */
++ #define OPC_FLAG_JMP  8 /* unconditional branch */
++ 
++ struct eco32_opc_info_t {
++     unsigned opcode;
++     /* INSN_* */
++     unsigned itype;
++     char const * name;
++     /* FORMAT_* */
++     unsigned tformat;
++     /* some flags */
++     unsigned int flags;
++ };
++ 
++ extern struct eco32_opc_info_t eco32_opcodes[NUM_OPS];
++ 
+diff -rcN src_org//binutils/ld/configure.tgt src/binutils/ld/configure.tgt
+*** src_org//binutils/ld/configure.tgt	2009-08-06 19:38:03.000000000 +0200
+--- src/binutils/ld/configure.tgt	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 149,154 ****
+--- 149,155 ----
+  			;;
+  dlx-*-elf*)		targ_emul=elf32_dlx
+  			;;
++ eco32-*-*)      targ_emul=elf32eco32; targ_extra_emuls="eco32bin" ;;
+  fido*-*-elf*)		targ_emul=m68kelf ;;
+  fr30-*-*)		targ_emul=elf32fr30
+  			;;
+diff -rcN src_org//binutils/ld/emulparams/eco32bin.sh src/binutils/ld/emulparams/eco32bin.sh
+*** src_org//binutils/ld/emulparams/eco32bin.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/emulparams/eco32bin.sh	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,14 ----
++ SCRIPT_NAME=eco32bin
++ TEMPLATE_NAME=elf32
++ TARGET_PAGE_SIZE=0x1000
++ 
++ # start address of text section is 0xC0000000. i don't know whether we
++ # should make this variable. we would use DEFINED and the --defsym
++ # feature of ld for that.
++ 
++ TEXT_START_ADDR=0x1000
++ OUTPUT_FORMAT="elf32-eco32"
++ ARCH=eco32
++ 
++ DATA_ADDR="ALIGN(${TARGET_PAGE_SIZE})"
++ 
+diff -rcN src_org//binutils/ld/emulparams/elf32eco32.sh src/binutils/ld/emulparams/elf32eco32.sh
+*** src_org//binutils/ld/emulparams/elf32eco32.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/emulparams/elf32eco32.sh	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,29 ----
++ # the linker script name to use. 
++ SCRIPT_NAME=elf
++ 
++ # use elf32.em
++ TEMPLATE_NAME=elf32
++ 
++ # the BFD output format name
++ OUTPUT_FORMAT="elf32-eco32"
++ 
++ # where the text segment starts.
++ TEXT_START_ADDR=0x00000000
++ 
++ # used by elf.sc linker script in OUTPUT_ARCH
++ ARCH=eco32
++ 
++ # yrly
++ MAXPAGESIZE="CONSTANT (MAXPAGESIZE)"
++ 
++ # we want the data to start directly on the next page. 
++ # it has no use for us to make it start at end_of_text+one_page
++ DATA_ADDR="ALIGN(${SEGMENT_SIZE})"
++ 
++ # entry point is address of symbol _start.
++ ENTRY=_start
++ 
++ # don't add the size of the elf header to the text section start
++ # address.
++ EMBEDDED=yes
++ 
+diff -rcN src_org//binutils/ld/Makefile.am src/binutils/ld/Makefile.am
+*** src_org//binutils/ld/Makefile.am	2009-09-01 22:56:51.000000000 +0200
+--- src/binutils/ld/Makefile.am	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 151,156 ****
+--- 151,157 ----
+  	ecoff_i860.o \
+  	ecoff_sparc.o \
+  	eelf32_spu.o \
++ 	eeco32bin.o \
+  	ecrisaout.o \
+  	ecriself.o \
+  	ecrislinux.o \
+***************
+*** 160,165 ****
+--- 161,167 ----
+  	ed30velf.o \
+  	edelta68.o \
+  	eelf32_dlx.o \
++ 	eelf32eco32.o \
+  	eelf32_i960.o \
+  	eelf32_i860.o \
+  	eelf32_sparc.o \
+***************
+*** 727,732 ****
+--- 729,737 ----
+    $(ELF_DEPS) $(srcdir)/scripttempl/avr.sc \
+    ${GEN_DEPENDS}
+  	${GENSCRIPTS} avr6 "$(tdir_avr2)"
++ eeco32bin.c: $(srcdir)/emulparams/eco32bin.sh $(srcdir)/emultempl/generic.em \
++   $(srcdir)/scripttempl/eco32bin.sc ${GEN_DEPENDS}
++ 	${GENSCRIPTS} eco32bin "$(tdir_eco32)"
+  ecoff_i860.c: $(srcdir)/emulparams/coff_i860.sh \
+    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i860coff.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} coff_i860 "$(tdir_coff_i860)"
+***************
+*** 768,773 ****
+--- 773,781 ----
+  eelf32_dlx.c: $(srcdir)/emulparams/elf32_dlx.sh \
+    $(ELF_GEN_DEPS) $(srcdir)/scripttempl/dlx.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} elf32_dlx "$(tdir_elf32_dlx)"
++ eelf32eco32.c: $(srcdir)/emulparams/elf32eco32.sh \
++   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++ 	${GENSCRIPTS} elf32eco32 "$(tdir_eco32)"
+  eelf32xc16x.c: $(srcdir)/emulparams/elf32xc16x.sh \
+    $(ELF_DEPS) $(srcdir)/emultempl/needrelax.em \
+    $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+diff -rcN src_org//binutils/ld/Makefile.in src/binutils/ld/Makefile.in
+*** src_org//binutils/ld/Makefile.in	2009-09-07 14:10:24.000000000 +0200
+--- src/binutils/ld/Makefile.in	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 437,442 ****
+--- 437,443 ----
+  	ecoff_i860.o \
+  	ecoff_sparc.o \
+  	eelf32_spu.o \
++ 	eeco32bin.o \
+  	ecrisaout.o \
+  	ecriself.o \
+  	ecrislinux.o \
+***************
+*** 446,451 ****
+--- 447,453 ----
+  	ed30velf.o \
+  	edelta68.o \
+  	eelf32_dlx.o \
++ 	eelf32eco32.o \
+  	eelf32_i960.o \
+  	eelf32_i860.o \
+  	eelf32_sparc.o \
+***************
+*** 2068,2073 ****
+--- 2070,2078 ----
+    $(ELF_DEPS) $(srcdir)/scripttempl/avr.sc \
+    ${GEN_DEPENDS}
+  	${GENSCRIPTS} avr6 "$(tdir_avr2)"
++ eeco32bin.c: $(srcdir)/emulparams/eco32bin.sh $(srcdir)/emultempl/generic.em \
++   $(srcdir)/scripttempl/eco32bin.sc ${GEN_DEPENDS}
++ 	${GENSCRIPTS} eco32bin "$(tdir_eco32)"
+  ecoff_i860.c: $(srcdir)/emulparams/coff_i860.sh \
+    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i860coff.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} coff_i860 "$(tdir_coff_i860)"
+***************
+*** 2109,2114 ****
+--- 2114,2122 ----
+  eelf32_dlx.c: $(srcdir)/emulparams/elf32_dlx.sh \
+    $(ELF_GEN_DEPS) $(srcdir)/scripttempl/dlx.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} elf32_dlx "$(tdir_elf32_dlx)"
++ eelf32eco32.c: $(srcdir)/emulparams/elf32eco32.sh \
++   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++ 	${GENSCRIPTS} elf32eco32 "$(tdir_eco32)"
+  eelf32xc16x.c: $(srcdir)/emulparams/elf32xc16x.sh \
+    $(ELF_DEPS) $(srcdir)/emultempl/needrelax.em \
+    $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+diff -rcN src_org//binutils/ld/scripttempl/eco32bin.sc src/binutils/ld/scripttempl/eco32bin.sc
+*** src_org//binutils/ld/scripttempl/eco32bin.sc	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/scripttempl/eco32bin.sc	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,85 ----
++ # this is the linker script for eco32, which is used to build
++ # standalone programs (-mkernel). TODO: figure out how to setup
++ # .ctors, .dtors, .init and .fini. are they even important for
++ # standalone programs?? those are used to call c++ ctors/dtors for
++ # global objects. doesn't seem to make sense to me to support them
++ # here anyway.
++ # This all relies on that --oformat binary is passed to ld.
++ 
++ cat <<EOF
++ OUTPUT_FORMAT($OUTPUT_FORMAT)
++ OUTPUT_ARCH($ARCH)
++ ENTRY(_start)
++ SECTIONS
++ {
++   .text ${RELOCATING+ ${TEXT_START_ADDR}}:
++   {
++     ${RELOCATING+_start = DEFINED(_start) ? _start : .; }
++     
++     *(.text .rodata ${RELOCATING+ .text.* .gnu.linkonce.t* .rodata.* .gnu.linkonce.r*});
++     . = ALIGN(4);
++     ${RELOCATING+ PROVIDE(etext = .);}
++     ${RELOCATING+ PROVIDE(_etext = .);}
++     ${RELOCATING+ PROVIDE(__etext = .);}
++   }
++ 
++   .data ALIGN(0x1000) : AT ( ADDR(.text) + SIZEOF (.text) )
++   {
++     ${RELOCATING+ PROVIDE(__data_start = .);}
++ 
++     *(.data${RELOCATING+ .data.* .gnu.linkonce.d*});
++ 
++     . = ALIGN(4);
++     ${RELOCATING+ PROVIDE(edata = .);}
++     ${RELOCATING+ PROVIDE(_edata = .);}
++     ${RELOCATING+ PROVIDE(__edata = .);}
++   }
++ 
++   .bss ADDR(.data) + SIZEOF(.data) : AT ( ADDR(.text) + SIZEOF(.text) + SIZEOF(.data) )
++   {
++     ${RELOCATING+ PROVIDE(__bss_start = .);}
++     *(.bss${RELOCATING+ .bss.* .gnu.linkonce.b.*});
++     
++     /* C code uses COMMON for uninitialized global for historic reasons. */
++     ${RELOCATING+ *(COMMON);} 
++   }
++   . = ALIGN(4);
++   /* this marks the start of the heap */
++   ${RELOCATING+ PROVIDE(end = .);}
++   ${RELOCATING+ PROVIDE(_end = .);}
++   ${RELOCATING+ PROVIDE(__end = .);}
++ 
++   /* The following are DWARF debugging informations that gcc and gas may
++    * include in object files. They are non-loadable, so their address are
++    * set to 0. Copied from elf.sc */
++ 
++   /* DWARF 1.1 and DWARF 2 */
++   .debug_aranges  0 : { *(.debug_aranges) }
++   .debug_pubnames 0 : { *(.debug_pubnames) }
++ 
++   /* DWARF 2 */
++   .debug_info     0 : { *(.debug_info${RELOCATING+ .gnu.linkonce.wi.*}) }
++   .debug_abbrev   0 : { *(.debug_abbrev) }
++   .debug_line     0 : { *(.debug_line) }
++   .debug_frame    0 : { *(.debug_frame) }
++   .debug_str      0 : { *(.debug_str) }
++   .debug_loc      0 : { *(.debug_loc) }
++   .debug_macinfo  0 : { *(.debug_macinfo) }
++ 
++   /* SGI/MIPS DWARF 2 extensions */
++   .debug_weaknames 0 : { *(.debug_weaknames) }
++   .debug_funcnames 0 : { *(.debug_funcnames) }
++   .debug_typenames 0 : { *(.debug_typenames) }
++   .debug_varnames  0 : { *(.debug_varnames) }
++ 
++   /* DWARF 3 */
++   .debug_pubtypes 0 : { *(.debug_pubtypes) }
++   .debug_ranges   0 : { *(.debug_ranges) }
++ 
++   /* we don't care about this section. mark it as discared as the
++      mmo.sc file does too :) */
++   /DISCARD/ :
++   { *(.gnu.warning.*); }
++ }
++ EOF
++ 
+diff -rcN src_org//binutils/opcodes/configure src/binutils/opcodes/configure
+*** src_org//binutils/opcodes/configure	2009-09-07 14:08:04.000000000 +0200
+--- src/binutils/opcodes/configure	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 12291,12296 ****
+--- 12291,12297 ----
+  	bfd_d10v_arch)		ta="$ta d10v-dis.lo d10v-opc.lo" ;;
+  	bfd_d30v_arch)		ta="$ta d30v-dis.lo d30v-opc.lo" ;;
+  	bfd_dlx_arch)		ta="$ta dlx-dis.lo" ;;
++ 	bfd_eco32_arch)     ta="$ta eco32-dis.lo eco32-opc.lo" ;;
+  	bfd_fr30_arch)          ta="$ta fr30-asm.lo fr30-desc.lo fr30-dis.lo fr30-ibld.lo fr30-opc.lo" using_cgen=yes ;;
+  	bfd_frv_arch)           ta="$ta frv-asm.lo frv-desc.lo frv-dis.lo frv-ibld.lo frv-opc.lo" using_cgen=yes ;;
+  	bfd_moxie_arch)		ta="$ta moxie-dis.lo moxie-opc.lo" ;;
+diff -rcN src_org//binutils/opcodes/configure.in src/binutils/opcodes/configure.in
+*** src_org//binutils/opcodes/configure.in	2009-09-07 14:07:53.000000000 +0200
+--- src/binutils/opcodes/configure.in	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 230,235 ****
+--- 230,236 ----
+  	bfd_d10v_arch)		ta="$ta d10v-dis.lo d10v-opc.lo" ;;
+  	bfd_d30v_arch)		ta="$ta d30v-dis.lo d30v-opc.lo" ;;
+  	bfd_dlx_arch)		ta="$ta dlx-dis.lo" ;;
++ 	bfd_eco32_arch)     ta="$ta eco32-dis.lo eco32-opc.lo" ;;
+  	bfd_fr30_arch)          ta="$ta fr30-asm.lo fr30-desc.lo fr30-dis.lo fr30-ibld.lo fr30-opc.lo" using_cgen=yes ;;
+  	bfd_frv_arch)           ta="$ta frv-asm.lo frv-desc.lo frv-dis.lo frv-ibld.lo frv-opc.lo" using_cgen=yes ;;
+  	bfd_moxie_arch)		ta="$ta moxie-dis.lo moxie-opc.lo" ;;
+diff -rcN src_org//binutils/opcodes/eco32-dis.c src/binutils/opcodes/eco32-dis.c
+*** src_org//binutils/opcodes/eco32-dis.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/opcodes/eco32-dis.c	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,169 ----
++ #include <stdint.h>
++ #include <math.h>
++ #include "sysdep.h"
++ 
++ /* some ports define this, but i don't know what this does. look it
++  * up! XXX */
++ #define STATIC_TABLE
++ #define DEFINE_TABLE
++ 
++ 
++ #include "opcode/eco32.h"
++ #include "dis-asm.h"
++ 
++ static char const* reg_names[] = { 
++     "$0", "$1", "$2", "$3", "$4", "$5", "$6", 
++     "$7", "$8", "$9",  "$10",  "$11",  "$12",   
++     "$13", "$14", "$15", "$16", "$17", "$18",   
++     "$19", "$20", "$21", "$22", "$23", "$24",   
++     "$25", "$26", "$27", "$28", "$29", "$30",   
++     "$31" 
++ };
++ 
++ static int 
++ find_opcode_idx (unsigned opcode) {
++     short low = 0, 
++         high = sizeof(eco32_opcodes) / sizeof(*eco32_opcodes) - 1,
++         mid;
++     while(low <= high) {
++         mid = (low + high) / 2;
++         if (eco32_opcodes[mid].opcode == opcode) {
++             return mid;
++         } 
++         else if (opcode < eco32_opcodes[mid].opcode) {
++             high = mid - 1;
++         } 
++         else {
++             low = mid + 1;
++         }
++     }
++     return -1;
++ }
++ 
++ static bfd_vma 
++ get_insn_target (struct eco32_opc_info_t * insn, uint32_t iword, bfd_vma addr) {
++     if(insn->flags & OPC_FLAG_CBR) {
++         uint32_t imm = addr + 4 + (int16_t)(iword & 0xffff) * 4;
++         return imm;
++     }
++     else if(insn->itype == INSN_ISO26 && 
++             ((insn->flags & OPC_FLAG_JMP) || (insn->flags & OPC_FLAG_JSR)))
++     {
++         uint32_t imm = addr + 4 + (int32_t) 
++             ((iword & (1<<25)) ? (~0x01ffffff | (iword & 0x01ffffff)) : (iword & 0x01ffffff)) * 4;        
++         return imm;
++     } 
++     else {
++         return 0x00000000;
++     }
++ }
++ 
++ static enum dis_insn_type 
++ get_insn_type (struct eco32_opc_info_t * insn) {
++     if(insn->flags & OPC_FLAG_CBR) 
++         return dis_condbranch;
++     else if(insn->flags & OPC_FLAG_JSR)
++         return dis_jsr;
++     else if(insn->flags & OPC_FLAG_JMP)
++         return dis_branch;
++     else
++         return dis_nonbranch;
++ }
++ 
++ int 
++ print_insn_eco32 (bfd_vma addr, struct disassemble_info *info) {
++     int size = 4;
++     int status;
++     bfd_byte buffer[4];
++     short opc_idx;
++     uint32_t iword;
++ 
++     fprintf_ftype fpr = info->fprintf_func;
++     void * stream = info->stream;
++ 
++     if((status = info->read_memory_func (addr, buffer, 4, info))) {
++         info->memory_error_func (status, addr, info);
++         return -1;
++     }
++     iword = bfd_getb32 (buffer);
++ 
++     opc_idx = find_opcode_idx(((iword & OPC_MASK) >> OPC_MASK_SH) & 0x3f);
++ 
++     /* invalid opcode? */
++     if(opc_idx == -1)
++         return -1;
++ 
++     struct eco32_opc_info_t * opc_info = eco32_opcodes + opc_idx;
++ 
++     info->branch_delay_insns = 0;
++     info->data_size = 0;
++     info->insn_type = get_insn_type(opc_info);
++     info->target = get_insn_target(opc_info, iword, addr);
++     info->target2 = 0;
++     /* we don't fully support these informations yet. */
++     info->insn_info_valid = /*(info->target != 0) || (info->insn_type != dis_nonbranch)*/ 0;
++ 
++     switch(opc_info->itype) {
++     case INSN_N: {
++         fpr (stream, "%s", opc_info->name);
++         break;
++     } 
++     case INSN_RLO16: {
++         short reg1 = (iword & REG2_MASK) >> REG2_SH;
++         uint32_t imm = iword & 0xffff;
++         fpr (stream, "%s \t%s, %.4x", opc_info->name, reg_names[reg1], (unsigned)imm);
++         break;
++     }
++     case INSN_RHI16: {
++         short reg1 = (iword & REG2_MASK) >> REG2_SH;
++         uint32_t imm = (iword & 0xffff) << 0x10;
++         fpr (stream, "%s \t%s, %.8x", opc_info->name, reg_names[reg1], (unsigned)imm);
++         break;
++     }
++     case INSN_RRIZ16: {
++         short reg1 = (iword & REG2_MASK) >> REG2_SH;
++         short reg2 = (iword & REG1_MASK) >> REG1_SH;
++         uint16_t imm = (iword & 0xffff);
++         fpr (stream, "%s \t%s, %s, %.4x", opc_info->name, reg_names[reg1], 
++              reg_names[reg2], (unsigned)imm);        
++         break;
++     }
++     case INSN_RRIS16: {
++         short reg1 = (iword & REG2_MASK) >> REG2_SH;
++         short reg2 = (iword & REG1_MASK) >> REG1_SH;
++         int16_t imm = (iword & 0xffff);
++         fpr (stream, "%s \t%s, %s, %s%.4x", opc_info->name, reg_names[reg1], 
++              reg_names[reg2], imm < 0 ? "-" : "", (unsigned)abs(imm)); 
++         break;
++     }
++     case INSN_RRR: {
++         short reg1 = (iword & REG3_MASK) >> REG3_SH;
++         short reg2 = (iword & REG1_MASK) >> REG1_SH;
++         short reg3 = (iword & REG2_MASK) >> REG2_SH;
++         fpr (stream, "%s \t%s, %s, %s", opc_info->name, reg_names[reg1], 
++              reg_names[reg2], reg_names[reg3]); 
++         break;
++     }
++     case INSN_R: {
++         short reg1 = (iword & REG1_MASK) >> REG1_SH;
++         fpr (stream, "%s \t%s", opc_info->name, reg_names[reg1]); 
++         break;
++     }
++     case INSN_RRISO16: {
++         short reg1 = (iword & REG1_MASK) >> REG1_SH;
++         short reg2 = (iword & REG2_MASK) >> REG2_SH;
++         /* output the real address, not only the offset */
++         fpr (stream, "%s \t%s, %s, ", opc_info->name, reg_names[reg1], reg_names[reg2]);
++         info->print_address_func(info->target, info);
++         break;
++     }
++     case INSN_ISO26: {
++         fpr (stream, "%s \t", opc_info->name);
++         info->print_address_func(info->target, info);
++         break;
++     }
++     }
++     return size;
++ }
++ 
++ 
+diff -rcN src_org//binutils/opcodes/eco32-opc.c src/binutils/opcodes/eco32-opc.c
+*** src_org//binutils/opcodes/eco32-opc.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/opcodes/eco32-opc.c	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 0 ****
+--- 1,74 ----
++ #include "opcode/eco32.h"
++ 
++ /* all the opcodes of eco32 and their properties. keep it sorted
++  * according to the values of OP_ */
++ struct eco32_opc_info_t eco32_opcodes[NUM_OPS] = {
++     { OP_ADD, INSN_RRR, "add", FORMAT_RRY, 0 },
++     { OP_ADDI, INSN_RRIS16, "add", FORMAT_RRY, OPC_FLAG_OPI },
++     { OP_SUB, INSN_RRR, "sub", FORMAT_RRY, 0 },
++     { OP_SUBI, INSN_RRIS16, "sub", FORMAT_RRY, OPC_FLAG_OPI },
++     { OP_MUL, INSN_RRR, "mul", FORMAT_RRY, 0 },
++     { OP_MULI, INSN_RRIS16, "mul", FORMAT_RRY, OPC_FLAG_OPI },
++     { OP_MULU, INSN_RRR, "mulu", FORMAT_RRX, 0 },
++     { OP_MULUI, INSN_RRIZ16, "mulu", FORMAT_RRX, OPC_FLAG_OPI },
++     { OP_DIV, INSN_RRR, "div", FORMAT_RRY, 0 },
++     { OP_DIVI, INSN_RRIS16, "div", FORMAT_RRY, OPC_FLAG_OPI },
++     { OP_DIVU, INSN_RRR, "divu", FORMAT_RRX, 0 },
++     { OP_DIVUI, INSN_RRIZ16, "divu", FORMAT_RRX, OPC_FLAG_OPI },
++     { OP_REM, INSN_RRR, "rem", FORMAT_RRY, 0 },
++     { OP_REMI, INSN_RRIS16, "rem", FORMAT_RRY, OPC_FLAG_OPI },
++     { OP_REMU, INSN_RRR, "remu", FORMAT_RRX, 0 },
++     { OP_REMUI, INSN_RRIZ16, "remu", FORMAT_RRX, OPC_FLAG_OPI },
++ 
++     { OP_AND, INSN_RRR, "and", FORMAT_RRX, 0 },
++     { OP_ANDI, INSN_RRIZ16, "and", FORMAT_RRX, OPC_FLAG_OPI },
++     { OP_OR, INSN_RRR, "or", FORMAT_RRX, 0 },
++     { OP_ORI, INSN_RRIZ16, "or", FORMAT_RRX, OPC_FLAG_OPI },
++     { OP_XOR, INSN_RRR, "xor", FORMAT_RRX, 0 },
++     { OP_XORI, INSN_RRIZ16, "xor", FORMAT_RRX, OPC_FLAG_OPI },
++     { OP_XNOR, INSN_RRR, "xnor", FORMAT_RRX, 0 },
++     { OP_XNORI, INSN_RRIZ16, "xnor", FORMAT_RRX, OPC_FLAG_OPI },
++ 
++     { OP_SLL, INSN_RRR, "sll", FORMAT_RRX, 0 },
++     { OP_SLLI, INSN_RRIZ16, "sll", FORMAT_RRX, OPC_FLAG_OPI },
++     { OP_SLR, INSN_RRR, "slr", FORMAT_RRX, 0 },
++     { OP_SLRI, INSN_RRIZ16, "slr", FORMAT_RRX, OPC_FLAG_OPI },
++     { OP_SAR, INSN_RRR, "sar", FORMAT_RRX, 0 },
++     { OP_SARI, INSN_RRIZ16, "sar", FORMAT_RRX, OPC_FLAG_OPI },
++     { OP_LDHI, INSN_RHI16, "ldhi", FORMAT_RHH, 0 },
++ 
++     { OP_BEQ, INSN_RRISO16, "beq", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BNE, INSN_RRISO16, "bne", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BLE, INSN_RRISO16, "ble", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BLEU, INSN_RRISO16, "bleu", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BLT, INSN_RRISO16, "blt", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BLTU, INSN_RRISO16, "bltu", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BGE, INSN_RRISO16, "bge", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BGEU, INSN_RRISO16, "bgeu", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BGT, INSN_RRISO16, "bgt", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_BGTU, INSN_RRISO16, "bgtu", FORMAT_RRB, OPC_FLAG_CBR },
++     { OP_J, INSN_ISO26, "j", FORMAT_J, OPC_FLAG_JMP },
++     { OP_JR, INSN_R, "jr", FORMAT_JR, OPC_FLAG_JMP },
++     { OP_JAL, INSN_ISO26, "jal", FORMAT_J, OPC_FLAG_JSR },
++     { OP_JALR, INSN_R, "jalr", FORMAT_JR, OPC_FLAG_JSR },
++ 
++     { OP_TRAP, INSN_N, "trap", FORMAT_N, 0 },
++     { OP_RFX, INSN_N, "rfx", FORMAT_N, 0 },
++ 
++     { OP_LDW, INSN_RRIS16, "ldw", FORMAT_RRS, 0 },
++     { OP_LDH, INSN_RRIS16, "ldh", FORMAT_RRS, 0 },
++     { OP_LDHU, INSN_RRIS16, "ldhu", FORMAT_RRS, 0 },
++     { OP_LDB, INSN_RRIS16, "ldb", FORMAT_RRS, 0 },
++     { OP_LDBU, INSN_RRIS16, "ldbu", FORMAT_RRS, 0 },
++     { OP_STW, INSN_RRIS16, "stw", FORMAT_RRS, 0 },
++     { OP_STH, INSN_RRIS16, "sth", FORMAT_RRS, 0 },
++     { OP_STB, INSN_RRIS16, "stb", FORMAT_RRS, 0 },
++ 
++     { OP_MVFS, INSN_RLO16, "mvfs", FORMAT_RH, 0 },
++     { OP_MVTS, INSN_RLO16, "mvts", FORMAT_RH, 0 },
++     { OP_TBS, INSN_N, "tbs", FORMAT_N, 0 },
++     { OP_TBWR, INSN_N, "tbwr", FORMAT_N, 0 },
++     { OP_TBRI, INSN_N, "tbri", FORMAT_N, 0 },
++     { OP_TBWI, INSN_N, "tbwi", FORMAT_N, 0 }
++ };
++ 
+diff -rcN src_org//binutils/opcodes/Makefile.am src/binutils/opcodes/Makefile.am
+*** src_org//binutils/opcodes/Makefile.am	2009-09-07 14:07:53.000000000 +0200
+--- src/binutils/opcodes/Makefile.am	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 96,101 ****
+--- 96,103 ----
+  	d30v-dis.c \
+  	d30v-opc.c \
+  	dlx-dis.c \
++ 	eco32-dis.c \
++ 	eco32-opc.c \
+  	fr30-asm.c \
+  	fr30-desc.c \
+  	fr30-dis.c \
+diff -rcN src_org//binutils/opcodes/Makefile.in src/binutils/opcodes/Makefile.in
+*** src_org//binutils/opcodes/Makefile.in	2009-09-07 14:08:03.000000000 +0200
+--- src/binutils/opcodes/Makefile.in	2011-05-19 21:00:40.000000000 +0200
+***************
+*** 366,371 ****
+--- 366,373 ----
+  	d30v-dis.c \
+  	d30v-opc.c \
+  	dlx-dis.c \
++ 	eco32-dis.c \
++ 	eco32-opc.c \
+  	fr30-asm.c \
+  	fr30-desc.c \
+  	fr30-dis.c \

@@ -5,8 +5,11 @@ SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 STLIB = $(BUILD)/lib$(NAME).a
-DYNLIBNAME = lib$(NAME).so
-DYNLIB = $(BUILD)/$(DYNLIBNAME)
+
+ifneq ($(LINKTYPE),static)
+	DYNLIBNAME = lib$(NAME).so
+	DYNLIB = $(BUILD)/$(DYNLIBNAME)
+endif
 
 CFLAGS = $(CDEFFLAGS)
 

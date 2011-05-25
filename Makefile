@@ -1,5 +1,8 @@
 # general
-BUILDDIR = $(abspath build/release)
+ARCH = eco32
+BUILDDIR = $(abspath build/$(ARCH)-debug)
+DIST = build/$(ARCH)-dist
+TARGET = $(ARCH)-elf-escape
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -11,10 +14,13 @@ BINNAME = kernel.bin
 BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
-#KVM = -enable-kvm
+KVM = -enable-kvm
 QEMU = qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 60 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
+ECO32 = /home/hrniels/Applications/eco32-0.20/
+ECOSIM = $(ECO32)/build/bin/sim
+ECOMON = $(ECO32)/build/monitor/monitor.bin
 
 # wether to link drivers and user-apps statically or dynamically
 export LINKTYPE = static
@@ -22,14 +28,17 @@ export LINKTYPE = static
 export LIBGCC = dynamic
 
 # flags for gcc
+export ARCH
+export TARGET
 export BUILD = $(BUILDDIR)
-export CC = $(abspath build/dist/bin/i586-elf-escape-gcc)
-export CPPC = $(abspath build/dist/bin/i586-elf-escape-g++)
-export LD = $(abspath build/dist/bin/i586-elf-escape-ld)
-export AR = $(abspath build/dist/bin/i586-elf-escape-ar)
-export AS = $(abspath build/dist/bin/i586-elf-escape-as)
-export READELF = $(abspath build/dist/bin/i586-elf-escape-readelf)
-export OBJDUMP = $(abspath build/dist/bin/i586-elf-escape-objdump)
+export HCC = gcc
+export CC = $(abspath $(DIST)/bin/$(TARGET)-gcc)
+export CPPC = $(abspath $(DIST)/bin/$(TARGET)-g++)
+export LD = $(abspath $(DIST)/bin/$(TARGET)-ld)
+export AR = $(abspath $(DIST)/bin/$(TARGET)-ar)
+export AS = $(abspath $(DIST)/bin/$(TARGET)-as)
+export READELF = $(abspath $(DIST)/bin/$(TARGET)-readelf)
+export OBJDUMP = $(abspath $(DIST)/bin/$(TARGET)-objdump)
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
@@ -50,14 +59,15 @@ export SUDO=sudo
 #		-finstrument-functions-exclude-file-list=../../../lib/basic/profile.c
 # ADDLIBS = ../../../lib/basic/profile.c
 
-ifeq ($(BUILDDIR),$(abspath build/debug))
-	DIRS = tools lib drivers user kernel/src kernel/test
+ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
+	#DIRS = tools dist lib drivers user kernel/src kernel/test
+	DIRS = tools dist lib
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 	export BUILDTYPE=debug
 else
-	DIRS = tools lib drivers user kernel/src
+	DIRS = tools dist lib drivers user kernel/src
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
@@ -147,6 +157,9 @@ ifeq ($(APP),)
 else
 		$(READELF) -a $(BUILD)/$(APP) | less
 endif
+
+eco:	all
+		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -i -m $(BUILD)/stage2.map
 
 qemu:	all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1

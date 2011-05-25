@@ -23,7 +23,7 @@
 #include <esc/common.h>
 #include <gui/common.h>
 #include <gui/control.h>
-#include <esc/ports.h>
+#include <arch/x86/ports.h>
 #include <esc/debug.h>
 #include <esc/ringbuffer.h>
 #include <esc/esccodes.h>

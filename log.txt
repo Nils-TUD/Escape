@@ -1,63 +1,115 @@
-Warning: No DNS servers found
-GDT exchanged, paging enabled, video initializedDONE
+GDT exchanged, paging enabled, video initialized                            DONE
 MultiBoot-Structure:
 ---------------------
-flags=0x7e7
-memLower=639 KB, memUpper=129984 KB
-biosDriveNumber=-128, part1=0, part2=-1, part3=-1
-cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x220000, shndx=0x10
-mmapLength=144, mmapAddr=0xc0053b04
-Available memory:
-	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
-	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
+flags=0x7ef
+memLower=637 KB, memUpper=60404 KB
+biosDriveNumber=E0, part1=FF, part2=FF, part3=FF
+cmdLine=/boot/escape.bin videomode=vesa swapdev=/dev/hda3 
+modsCount=4:
+	/sbin/pci /dev/pci (0xc01c6000 .. 0xc022ad69)
+	/sbin/ata /system/devices/ata (0xc022b000 .. 0xc025c3f5)
+	/sbin/cmos /dev/cmos (0xc025d000 .. 0xc028317f)
+	/sbin/fs /dev/fs cdrom iso9660 (0xc0284000 .. 0xc02cc7db)
+ELF: num=12, size=40, addr=0x154000, shndx=0x9
+mmapLength=144, mmapAddr=0xc002ce48
+memory-map:
+	0: addr=0x00000000, size=0x0009f400, type=free
+	1: addr=0x0009f400, size=0x00000c00, type=used
+	2: addr=0x000f0000, size=0x00010000, type=used
+	3: addr=0x00100000, size=0x03afd000, type=free
+	4: addr=0x03bfd000, size=0x00003000, type=used
+	5: addr=0xfffc0000, size=0x00040000, type=used
+Drives: (size=12)
+	0: no=80, mode=1, cyl=710, heads=5, sectors=51
 ---------------------
-Initializing memory-management...DONE
-Clock cycles: 0x00000000024da69a
-Initializing VFS...DONE
-Clock cycles: 0x000000000013293f
-Initializing process-management...DONE
-Clock cycles: 0x00000000005703d8
-Initializing IDT...DONE
-Clock cycles: 0x00000000000aa5e0
-Free frames=32495, pages mapped=1281, free mem=129980 KiB
-Got interrupt 39 (<unknown>) @ 0x0
-Drives:
-	  Primary Master (present=1,sectors=10080)
-	  	  0: start=0x3F, sectors=10017 size=5128704 byte
-	  Primary Slave (present=0,sectors=0)
-	  Secondary Master (present=0,sectors=0)
-	  Secondary Slave (present=0,sectors=0)
-Welcome to Escape v0.1!
+Initializing physical memory-management...                                  DONE
+Initializing paging...                                                      DONE
+Initializing FPU...                                                         DONE
+Initializing VFS...                                                         DONE
+Initializing process-management...                                          DONE
+Initializing virtual memory management...                                   DONE
+Initializing IDT...                                                         DONE
+Initializing timer...                                                       DONE
+Initializing signal-handling...                                             DONE
+Detecting CPU...                                                            DONE
+14365 free frames (57460 KiB)
+Loading '/sbin/pci'...
+Loading '/sbin/ata'...
+[ATA] Found IDE-controller (0.1.1): vendorId 8086, deviceId 7010, rev 0
+[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 1 not present
+[ATA] Device 0 is an ATA-device
+[ATA] Device 0 uses DMA
+[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 3 not present
+[ATA] Device 2: Error 0x4. Assuming its not present
+[ATA] Device 2 is an ATAPI-device
+[ATA] Device 2 uses DMA
+[ATA] Registered driver 'hda1' (device 0, partition 1)
+[ATA] Registered driver 'hda2' (device 0, partition 2)
+[ATA] Registered driver 'hda3' (device 0, partition 3)
+[ATA] Registered driver 'cdc1' (device 2, partition 1)
+Loading '/sbin/cmos'...
+Loading '/sbin/fs'...
+[FS] Loaded ext2-driver
+[FS] Loaded iso9660-driver
+[FS] Mounted '/dev/cdc1' with fs 'iso9660' at '/'
+[VESATEXT] Setting (115)  800 x  600 x 24
+Welcome to Escape v0.3!
 
 Try 'help' to see the current features :)
 
-file:/ # help
-Currently you can use the following commands/programs:
-	    cat [<file>]	    	    	    	    	    Read file or from STDIN and print
-	    kill <pid>	  	    	    	    	    	    Kill process
-	    libctest	    	    	    	    	    	    Run libc-tests
-	    login	   	    	    	    	    	    	    Just for fun ;)
-	    ls [<dir>]	  	    	    	    	    	    List current or specified directory
-	    mem	 	    	    	    	    	    	    	    Print memory-usage
-	    ps	  	    	    	    	    	    	    	    Print processes
-	    echo <string>,...	   	    	    	    Print given arguments
-	    env [<name>|<name>=<value>]	 	    Print or set env-variable(s)
-	    help	    	    	    	    	    	    	    Print this message
-	    cd <dir>	    	    	    	    	    	    Change to given directory
-	    pwd	 	    	    	    	    	    	    	    Print current directory
-	    wc	  	    	    	    	    	    	    	    Count and/or print words
+/ # Welcome to Escape v0.3!
 
-Additionally there is a basic shell-'language', that supports '|', '"' and ';'
-So for example you can do:
-	    ls; ps; echo "test";
-	    ls | cat; ps
-	    echo "word1" word2 "word3 and 4" | wc
-	    ps | wc | wc -p
+Try 'help' to see the current features :)
 
-Other:
-	    Tab-Completion works for programs in /apps and files/directories
-	    You can send EOF by CTRL+D and kill the current process with CTRL+C
-	    You can scroll the screen with pageUp/-Down, shift + arrowUp/-Down
+/ # Welcome to Escape v0.3!
 
-file:/ # help
+Try 'help' to see the current features :)
+
+/ # Welcome to Escape v0.3!
+
+Try 'help' to see the current features :)
+
+/ # Welcome to Escape v0.3!
+
+Try 'help' to see the current features :)
+
+/ # Welcome to Escape v0.3!
+
+Try 'help' to see the current features :)
+
+/ # ls
+apps         boot         bin          dev          etc          lib          scripts      
+system       testdir      sbin         bigfile      boot.catalog file.txt     paging.c     
+zeros        
+/ # ps
+PID  PPID  PMEM  SHMEM  VMEM SMEM   IN  OUT STATE  %CPU (USER,KERNEL) COMMAND
+  0     0   52K   100K  168K   0K  84K   1K -     89.7% ( 98%,  1%)   /bin/init
+  1     0  120K   192K  292K   0K   0K   1K -      0.7% ( 98%,  1%)   /sbin/pci
+  2     0   48K    44K  204K   0K   9K 776K -      3.7% ( 71%, 28%)   /sbin/ata
+  3     0   44K    28K   48K   0K   0K   0K -      0.0% ( 65%, 34%)   /sbin/cmos
+  4     0 1532K    72K 1548K   0K 790K 796K -      1.9% ( 32%, 67%)   /sbin/fs
+  5     0   12K     0K    0K   0K   0K   0K -      0.9% ( 96%,  3%)   VM86
+  6     0   36K    24K   44K   0K  24K   0K -      0.0% (  3%, 96%)   /sbin/speaker
+  7     0   36K    24K   44K   0K  24K   0K -      0.0% (  3%, 96%)   /sbin/zero
+  8     0   36K    24K   48K   0K  24K   0K -      0.0% (  3%, 96%)   /sbin/random
+  9     0   36K    24K   44K   0K  24K   0K -      0.0% (  3%, 96%)   /sbin/null
+ 10     0   36K    28K   48K   0K  28K   0K -      0.0% (  3%, 96%)   /sbin/powermng
+ 11     0   36K    28K   48K   0K  28K   3K -      0.1% ( 29%, 70%)   /sbin/keyboard
+ 12     0   40K    36K   56K   0K  37K   7K -      0.1% ( 17%, 82%)   /sbin/kmmanager
+ 13     0   36K    24K   48K   0K  24K   0K -      0.0% (  3%, 96%)   /sbin/ui
+ 14     0   40K    28K   52K   0K  20K   0K -      0.1% ( 69%, 30%)   /sbin/video
+ 15     0  172K  1448K 1596K   0K  81K   4K -      0.6% ( 45%, 54%)   /sbin/vesatext
+ 16     0  576K    48K  600K   0K  49K  88K -      0.4% ( 68%, 31%)   /sbin/vterm
+ 17     0   40K   124K  160K   0K 114K   4K -      0.6% (  1%, 98%)   /bin/shell
+ 18     0   40K    96K  132K   0K   2K   0K -      0.0% (  3%, 96%)   /bin/shell
+ 19     0   40K    96K  132K   0K   1K   0K -      0.0% (  3%, 96%)   /bin/shell
+ 20     0   40K    96K  132K   0K   1K   0K -      0.0% (  4%, 95%)   /bin/shell
+ 21     0   40K    96K  132K   0K   1K   0K -      0.0% (  3%, 96%)   /bin/shell
+ 22     0   40K    96K  132K   0K   1K   0K -      0.0% (  3%, 96%)   /bin/shell
+ 24    17   80K   112K  216K   0K 119K   2K -      0.3% ( 41%, 58%)   /bin/ps
+
+/ # 

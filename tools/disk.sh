@@ -23,7 +23,11 @@ HDDCYL=180
 HDDHEADS=16
 HDDTRACKSECS=63
 # partitions
-PART1OFFSET=$HDDTRACKSECS
+if [ "$ARCH" = "eco32" ]; then
+	PART1OFFSET=8
+else
+	PART1OFFSET=$HDDTRACKSECS
+fi
 PART1BLOCKS=48000
 PART2OFFSET=96063
 PART2BLOCKS=3000
@@ -84,14 +88,19 @@ buildMenuLst() {
 }
 
 addBootData() {
-	$SUDO mkdir $DISKMOUNT/boot
-	$SUDO mkdir $DISKMOUNT/boot/grub
-	$SUDO cp dist/boot/stage1 $DISKMOUNT/boot/grub;
-	$SUDO cp dist/boot/stage2 $DISKMOUNT/boot/grub;
-	$SUDO touch $DISKMOUNT/boot/grub/menu.lst;
-	$SUDO chmod 0666 $DISKMOUNT/boot/grub/menu.lst;
-	buildMenuLst;
-	echo -n -e "device (hd0) $HDD\nroot (hd0,0)\nsetup (hd0)\nquit\n" | grub --no-floppy '--batch';
+	if [ "$ARCH" = "x86" ]; then
+		$SUDO mkdir $DISKMOUNT/boot
+		$SUDO mkdir $DISKMOUNT/boot/grub
+		$SUDO cp dist/boot/stage1 $DISKMOUNT/boot/grub;
+		$SUDO cp dist/boot/stage2 $DISKMOUNT/boot/grub;
+		$SUDO touch $DISKMOUNT/boot/grub/menu.lst;
+		$SUDO chmod 0666 $DISKMOUNT/boot/grub/menu.lst;
+		buildMenuLst;
+		echo -n -e "device (hd0) $HDD\nroot (hd0,0)\nsetup (hd0)\nquit\n" | grub --no-floppy '--batch';
+	else
+		$SUDO mkdir $DISKMOUNT/boot
+		$SUDO cp $BUILD/stage2.bin $DISKMOUNT/boot
+	fi
 }
 
 addTestData() {
@@ -168,32 +177,41 @@ if [ "$1" == "build" ]; then
 	rmDiskDev
 	dd if=/dev/zero of=$HDD bs=`expr $HDDTRACKSECS \* $HDDHEADS \* 512`c count=$HDDCYL
 	mkDiskDev
-	# create partitions
-	echo "n" > $TMPFILE && \
-		echo "p" >> $TMPFILE && \
-		echo "1" >> $TMPFILE && \
-		echo "" >> $TMPFILE && \
-		echo `expr $PART2OFFSET - 1` >> $TMPFILE && \
-		echo "n" >> $TMPFILE && \
-		echo "p" >> $TMPFILE && \
-		echo "2" >> $TMPFILE && \
-		echo "" >> $TMPFILE && \
-		echo `expr $PART3OFFSET - 1` >> $TMPFILE && \
-		echo "n" >> $TMPFILE && \
-		echo "p" >> $TMPFILE && \
-		echo "3" >> $TMPFILE && \
-		echo "" >> $TMPFILE && \
-		echo "" >> $TMPFILE && \
-		echo "a" >> $TMPFILE && \
-		echo "1" >> $TMPFILE && \
-		echo "w" >> $TMPFILE;
-	$SUDO fdisk -u -C $HDDCYL -S $HDDTRACKSECS -H $HDDHEADS /dev/loop0 < $TMPFILE || true
+	
+	if [ "$ARCH" = "eco32" ]; then
+		dd if=$BUILD/stage1.bin of=$HDD bs=512 count=1 conv=notrunc
+		dd if=$BUILD/stage2.bin of=$HDD bs=512 seek=1 conv=notrunc
+	else
+		# create partitions
+		echo "n" > $TMPFILE && \
+			echo "p" >> $TMPFILE && \
+			echo "1" >> $TMPFILE && \
+			echo "" >> $TMPFILE && \
+			echo `expr $PART2OFFSET - 1` >> $TMPFILE && \
+			echo "n" >> $TMPFILE && \
+			echo "p" >> $TMPFILE && \
+			echo "2" >> $TMPFILE && \
+			echo "" >> $TMPFILE && \
+			echo `expr $PART3OFFSET - 1` >> $TMPFILE && \
+			echo "n" >> $TMPFILE && \
+			echo "p" >> $TMPFILE && \
+			echo "3" >> $TMPFILE && \
+			echo "" >> $TMPFILE && \
+			echo "" >> $TMPFILE && \
+			echo "a" >> $TMPFILE && \
+			echo "1" >> $TMPFILE && \
+			echo "w" >> $TMPFILE;
+		$SUDO fdisk -u -C $HDDCYL -S $HDDTRACKSECS -H $HDDHEADS /dev/loop0 < $TMPFILE || true
+	fi
+	
 	rmDiskDev
 	rm -f $TMPFILE
 	
 	# build ext2-filesystem
 	setupPart $PART1OFFSET $PART1BLOCKS;
-	setupPart $PART2OFFSET $PART2BLOCKS;
+	if [ "$ARCH" = "x86" ]; then
+		setupPart $PART2OFFSET $PART2BLOCKS;
+	fi
 	# part 3 is swap, therefore no fs
 	
 	# add data to disk

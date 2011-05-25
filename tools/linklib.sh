@@ -1,7 +1,6 @@
 #!/bin/bash
 ROOT=$(dirname $(dirname $(readlink -f $0)))
-DIST=$ROOT/build/dist
-TARGET=i586-elf-escape
+DIST=$ROOT/build/$ARCH-dist
 
 if [ $# != 1 ]; then
 	echo "Usage: $0 <file>" 1>&2

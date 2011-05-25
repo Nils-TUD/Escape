@@ -1,0 +1,2068 @@
+diff -rcN src_org/gcc/config.sub src/gcc/config.sub
+*** src_org/gcc/config.sub	2009-11-23 00:09:41.000000000 +0100
+--- src/gcc/config.sub	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 336,342 ****
+  	| c[123]* | c30-* | [cjt]90-* | c4x-* | c54x-* | c55x-* | c6x-* \
+  	| clipper-* | craynv-* | cydra-* \
+  	| d10v-* | d30v-* | dlx-* \
+! 	| elxsi-* \
+  	| f30[01]-* | f700-* | fido-* | fr30-* | frv-* | fx80-* \
+  	| h8300-* | h8500-* \
+  	| hppa-* | hppa1.[01]-* | hppa2.0-* | hppa2.0[nw]-* | hppa64-* \
+--- 336,342 ----
+  	| c[123]* | c30-* | [cjt]90-* | c4x-* | c54x-* | c55x-* | c6x-* \
+  	| clipper-* | craynv-* | cydra-* \
+  	| d10v-* | d30v-* | dlx-* \
+! 	| eco32-* | elxsi-* \
+  	| f30[01]-* | f700-* | fido-* | fr30-* | frv-* | fx80-* \
+  	| h8300-* | h8500-* \
+  	| hppa-* | hppa1.[01]-* | hppa2.0-* | hppa2.0[nw]-* | hppa64-* \
+***************
+*** 575,580 ****
+--- 575,584 ----
+  		basic_machine=a29k-amd
+  		os=-ebmon
+  		;;
++     eco32)
++         basic_machine=eco32-fhgi
++         os=-escape
++         ;;
+  	elxsi)
+  		basic_machine=elxsi-elxsi
+  		os=-bsd
+***************
+*** 1280,1286 ****
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
+  	      | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+--- 1284,1290 ----
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
+  	      | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* | -escape* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+diff -rcN src_org/gcc/gcc/config/eco32/constraints.md src/gcc/gcc/config/eco32/constraints.md
+*** src_org/gcc/gcc/config/eco32/constraints.md	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/constraints.md	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,22 ----
++ ;; constraints, for choosing the best matching output template among a set
++ ;; of possible candidates for an insn. 
++ 
++ (define_constraint "S"
++   "Accepts memory operand to a constant address for mov-src/dst"
++   (and (match_code "mem")
++        (match_test "CONSTANT_ADDRESS_P (XEXP (op, 0))")))
++ 
++ (define_constraint "I"
++   "A signed 16-bit constant (for arithmetic instructions)."
++   (and (match_code "const_int")
++        (match_test "ival + 0x8000 < 0x10000")))
++ 
++ (define_constraint "J"
++   "The constant zero"
++   (and (match_code "const_int")
++        (match_test "ival == 0")))
++ 
++ (define_memory_constraint "Z"
++   "Memory operand that is not an offset address."
++   (and (match_code "mem")
++        (match_test "GET_CODE (XEXP (op, 0)) != PLUS")))
+diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
+*** src_org/gcc/gcc/config/eco32/eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32.c	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,564 ----
++ #include "config.h"
++ #include "system.h"
++ #include "coretypes.h"
++ #include "tm.h" 
++ #include "rtl.h"
++ #include "tree.h"
++ #include "tm_p.h"
++ #include "regs.h"
++ #include "hard-reg-set.h"
++ #include "real.h"
++ #include "insn-config.h"
++ #include "conditions.h"
++ #include "output.h"
++ #include "insn-codes.h"
++ #include "insn-attr.h"
++ #include "flags.h"
++ #include "except.h"
++ #include "function.h"
++ #include "recog.h"
++ #include "expr.h"
++ #include "optabs.h"
++ #include "toplev.h"
++ #include "basic-block.h"
++ #include "ggc.h"
++ #include "target.h"
++ #include "target-def.h"
++ #include "langhooks.h"
++ #include "cgraph.h"
++ #include "integrate.h"
++ #include "df.h"
++ 
++ /*
++  * The operands that we save in a compare, and use in an following
++  * conditional branch
++  */
++ rtx compare_op0;
++ rtx compare_op1;
++ 
++ /* for eco32, every register is a possible base register. */
++ int eco32_is_base_reg(int regn) {
++ 	return regn >= 0 && regn < FIRST_PSEUDO_REGISTER;
++ }
++ 
++ /* in nonstrict mode (while not in reload phase), we accept every register as a
++  * base register */
++ int eco32_non_strict_base_reg(int regn) {
++ 	return eco32_is_base_reg(regn) || regn >= FIRST_PSEUDO_REGISTER;
++ }
++ 
++ /* for eco32, no index registers are available */
++ int eco32_is_index_reg(int regn ATTRIBUTE_UNUSED) {
++ 	return 0;
++ }
++ 
++ /* in eco32, no index regs, as above. */
++ int eco32_non_strict_index_reg(int regn ATTRIBUTE_UNUSED) {
++ 	return 0;
++ }
++ 
++ /* called for hard registers, or pseudo registers that are going to be allocated
++  * into a hard register (as told by reg_renumber) */
++ int eco32_regno_ok_for_base_p(int regn) {
++     return (eco32_is_base_reg(regn) 
++             || (regn >= FIRST_PSEUDO_REGISTER 
++                 && eco32_is_base_reg(reg_renumber[regn])));
++ }
++ 
++ /* eco32 doesnt have any index registers. but we define it anyway, even though is_index_reg returns
++  * false always, to document that there is that possibility too. */
++ int eco32_regno_ok_for_index_p(int regn) {
++     return (eco32_is_index_reg(regn) 
++        || (regn >= FIRST_PSEUDO_REGISTER 
++            && eco32_is_index_reg(reg_renumber[regn])));
++ }
++ 
++ /*
++  * we accept any address as constant which is accepted by CONSTANT_P, but is not a floating point
++  * contant, nor a constant wider than the host int size (which woul be also a double). 
++  * XXX: figure out what to do if we accept CONST_DOUBLE, and what CONST_VECTOR is about.
++  */
++ int eco32_constant_address_p (rtx x) {
++ 	return (CONSTANT_P(x) && GET_CODE(x) != CONST_DOUBLE && GET_CODE(x) != CONST_VECTOR);
++ }
++ 
++ /*
++  * returns 1 if x is a valid constant immediate operand 
++  */
++  int eco32_legitimate_constant(rtx x) {
++      return GET_CODE(x) != CONST_DOUBLE;
++  }
++ 
++ /* strict version of legitimate_address. gcc can use this function to test whether it
++  * needs to rewrite an adress to conform to our addressing modes 
++  * we accept the following addressing modes. All other addressings are rewritten by 
++  * gcc. the manual says it can rewrite every case. so let's trust it :)
++  *  (mem (reg))
++  *  (mem (plus (reg) (sign extended 16bit)))
++  */
++ int eco32_legitimate_address(enum machine_mode MODE ATTRIBUTE_UNUSED, rtx X) {
++ 	rtx op1,op2;
++ 	if(CONSTANT_ADDRESS_P(X))
++ 		return 1;
++ 	if(GET_CODE(X) == REG && eco32_is_base_reg(REGNO(X)))
++ 		return 1;
++ 	if(GET_CODE(X) == PLUS) {
++         /* see whether we encounter a base-displacement addressing */
++ 		op1 = XEXP(X,0);
++ 		op2 = XEXP(X,1);
++ 		if(GET_CODE(op1) == REG && CONSTANT_ADDRESS_P(op2) && eco32_is_base_reg(REGNO(op1)))
++ 			return 1;
++ 	}
++ 	return 0;
++ }
++ 
++ /* nonstrict version of legitimate_address. we accept the same addressing mode as the
++  * strict version, indeed. */
++ int eco32_non_strict_legitimate_address(enum machine_mode MODE ATTRIBUTE_UNUSED, rtx X) {
++ 	rtx op1,op2;
++ 	if(CONSTANT_ADDRESS_P(X))
++ 		return 1;
++ 	if(GET_CODE(X) == REG && eco32_non_strict_base_reg(REGNO(X)))
++ 		return 1;
++ 	if(GET_CODE(X) == PLUS) {
++         /* see whether we encounter a base-displacement addressing */
++ 		op1 = XEXP(X,0);
++ 		op2 = XEXP(X,1);
++ 		if(GET_CODE(op1) == REG && CONSTANT_ADDRESS_P(op2) && eco32_non_strict_base_reg(REGNO(op1)))
++ 			return 1;
++ 	}
++ 	return 0;
++ }
++ 
++ /* also here, strict and nonstrict versions are needed */
++ int eco32_reg_ok_for_base_p(rtx x) {
++ 	return eco32_is_base_reg(REGNO(x));
++ }
++ 
++ int eco32_non_strict_reg_ok_for_base_p(rtx x) {
++ 	return eco32_non_strict_base_reg(REGNO(x));
++ }
++ 
++ /* returns the count of callee saved registers needed to be saved */
++ static int registers_to_be_saved(void) {
++     int i, num;
++     for(i = 0, num = 0; i < FIRST_PSEUDO_REGISTER; i++) {
++         if(df_regs_ever_live_p(i) && !call_used_regs[i] && !fixed_regs[i])
++             num++;
++     }
++     return num;
++ }
++ 
++ /* finds the return adress of the given frame */
++ rtx eco32_ret_addr_rtx(int count, rtx frame ATTRIBUTE_UNUSED) {
++     if(count != 0)
++         return NULL_RTX;
++     /* register 31 is used as the return adress register
++        gcc will make sure that the register will be saved on 
++        stack or somewhere else, if $31 is clobbered */
++     return get_hard_reg_initial_val (Pmode, 31);
++ }
++ 
++ /* eliminates the register from to register to. */
++ int eco32_initial_elimination_offset(int from, int to) {
++ 	if(from == FRAME_POINTER_REGNUM && to == STACK_POINTER_REGNUM) {
++ 		return (crtl->outgoing_args_size + get_frame_size()); /* summed up size of all local slots */
++ 	}
++ 	else if(from == FRAME_POINTER_REGNUM && to == HARD_FRAME_POINTER_REGNUM) {
++ 		return -(2 + registers_to_be_saved()) * UNITS_PER_WORD;
++ 	}
++ 	else if(from == ARG_POINTER_REGNUM && to == STACK_POINTER_REGNUM) {
++ 		return  ((2 + registers_to_be_saved()) * UNITS_PER_WORD + crtl->outgoing_args_size + 
++                  get_frame_size());
++ 	}
++ 	else if(from == ARG_POINTER_REGNUM && to == HARD_FRAME_POINTER_REGNUM) {
++         return 0;
++     }
++ 	else if(from == HARD_FRAME_POINTER_REGNUM && to == STACK_POINTER_REGNUM) {
++ 		return ((2 + registers_to_be_saved()) * UNITS_PER_WORD + crtl->outgoing_args_size + 
++                  get_frame_size());
++ 	}
++ 	else { 
++ 		gcc_unreachable();
++     }
++     return 0;
++ }
++ 
++ rtx eco32_function_arg(int cum, enum machine_mode mode, tree type, 
++                        bool named ATTRIBUTE_UNUSED) {
++     int nregs;
++     if(mode == VOIDmode) {
++         /* last time we are called. just return somethin meaningful
++            which is passed to call and call_value patterns. */
++         return GEN_INT(cum);
++     }
++     if((nregs = ECO32_ARG_SIZE(mode, type)) > 1) {
++         int rly_nregs;
++         if(cum >= 4) {
++             return NULL_RTX;
++         }
++         /* more than one reg is needed, possibly splitting it up half/half 
++            into regs and stack */
++         rly_nregs = MIN(4 - cum, nregs);
++         if(rly_nregs < nregs) {
++             /* crosses register/stack boundary. for such cases we have to return
++              * the first register used. */
++             return gen_rtx_REG(mode, cum + 4);
++         } else {
++             int i;
++             int offset;
++             rtx reg;
++             rtx ret = gen_rtx_PARALLEL (mode, rtvec_alloc (nregs));
++             enum machine_mode m = SImode;
++             for(i = 0, offset = 0; i < nregs; i++, offset += UNITS_PER_WORD) {
++                 reg = gen_rtx_REG(m, cum + i + 4);
++                 XVECEXP (ret, 0, i) =
++                     gen_rtx_EXPR_LIST(VOIDmode, reg, GEN_INT(offset));
++             }
++             return ret;
++         }
++     } else {
++         if(cum < 4) {
++             return gen_rtx_REG(mode, cum + 4);
++         }
++     }
++     return NULL_RTX;
++ }
++ 
++ /* This target hook returns the number of bytes at the beginning of an
++  * argument that must be put in registers. The value must be zero for
++  * arguments that are passed entirely in registers or that are
++  * entirely pushed on the stack. */
++ int eco32_arg_partial_bytes(int *cum, enum machine_mode mode, tree type, 
++                             bool named ATTRIBUTE_UNUSED) {
++     int nregs = ECO32_ARG_SIZE(mode, type);
++     if(*cum < 4 && *cum + nregs > 4) {
++         /* argument crosses register/stack boundary */
++         return (4 - *cum) * UNITS_PER_WORD;
++     }
++     return 0;
++ }
++ 
++ /* This target hook should return true if an argument at the position
++  * indicated by cum should be passed by reference. This predicate is
++  * queried after target independent reasons for being passed by
++  * reference, such as TREE_ADDRESSABLE (type). */
++ bool eco32_pass_by_reference(int *cum ATTRIBUTE_UNUSED, enum machine_mode mode ATTRIBUTE_UNUSED, 
++                              tree type ATTRIBUTE_UNUSED, bool named ATTRIBUTE_UNUSED) {
++     /* actually, because we want to be ABI compatible with lcc, we pass the argument NOT by 
++      * reference, as lcc doesnt do so too */
++     return false;
++ }
++ 
++ bool eco32_scalar_mode_supported_p(enum machine_mode mode) {
++     switch (mode)
++     {
++     case QImode:
++     case HImode:
++     case SImode:
++     case DImode:
++     case SFmode:
++     case DFmode:
++         /* DImode not supported until we have the emulation functions
++          * needed for it for comparison and arithmetical functions */
++         return true;
++     default:
++         return false;
++     }
++     return false;
++ }
++ 
++ 
++ /* This is code for use by TARGET_FUNCTION_VALUE and LIBCALL_VALUE
++  */
++ rtx eco32_function_value_impl(enum machine_mode m) {
++     int nregs = HARD_REGNO_NREGS(2, m);
++     if(nregs == 1) {
++         return gen_rtx_REG(m, 2);
++     } else if(nregs == 2) {
++         /* the return value spans two registers. create a vector that returns two
++          * expression lists, each one for one register, and whose last element contains
++          * the offset which the corresponding register stores of the value */
++         return gen_rtx_PARALLEL
++             (m, 
++              gen_rtvec(2,
++                        gen_rtx_EXPR_LIST(VOIDmode, gen_rtx_REG(SImode, 2), const0_rtx),
++                        gen_rtx_EXPR_LIST(VOIDmode, gen_rtx_REG(SImode, 3), GEN_INT(UNITS_PER_WORD))));
++     } else {
++         gcc_assert(!"function_value called with mode size > 4byte!");
++         return NULL_RTX;
++     }
++ }
++ 
++ /* return everything >2words always in memory */
++ static bool
++ eco32_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED) {   
++     const HOST_WIDE_INT size = int_size_in_bytes (type);
++     return (TYPE_MODE(type) == BLKmode || size == -1 || 
++             size > 2 * UNITS_PER_WORD);
++ }
++ 
++ /* Define this to return an RTX representing the place where a
++  * function returns or receives a value of data type ret_type, a tree
++  * node node representing a data type. fn_decl_or_type is a tree node
++  * representing FUNCTION_DECL or FUNCTION_TYPE of a function being
++  * called. If outgoing is false, the hook should compute the register
++  * in which the caller will see the return value. Otherwise, the hook
++  * should return an RTX representing the place where a function
++  * returns a value. */ 
++ rtx eco32_function_value(tree ret_type, tree fn_decl_or_type ATTRIBUTE_UNUSED, 
++                          bool outgoing ATTRIBUTE_UNUSED) {
++     /* This is not used for aggregate function return types. so we always choose
++      * registers 2 and 3 as the function return registers for scalars. */
++     enum machine_mode m = TYPE_MODE(ret_type);
++     return eco32_function_value_impl(m);
++ }
++ 
++ /* finds out whether we need to save&restore the return address reg. */
++ static int eco32_ra_ever_killed (void) {
++     rtx top;
++ 
++     /* i'm not yet sure why wee need this extra check. so i comment it
++      * out for now. */
++ /*
++   if (!has_hard_reg_initial_val (SImode, 31))
++   return (int)df_regs_ever_live_p (31);
++ */
++     /* search in the function for any clobbers of reg31, which is
++      * caused by a call. */
++     push_topmost_sequence ();
++     top = get_insns ();
++     pop_topmost_sequence ();
++     
++     return reg_set_between_p (gen_rtx_REG (SImode, 31), top, NULL_RTX);
++ }
++ 
++ void eco32_prologue(void) {
++     int i, j;
++     int regs_saved = registers_to_be_saved() + 2;
++     int stackptr_off = (regs_saved * 4 + get_frame_size() + 
++                         crtl->outgoing_args_size);
++     rtx frame_rtx;
++ 
++     /* save the stack pointer */
++     frame_rtx = emit_move_insn(stack_pointer_rtx, 
++                                gen_rtx_MINUS(SImode, stack_pointer_rtx, 
++                                              GEN_INT(stackptr_off)));
++     RTX_FRAME_RELATED_P (frame_rtx) = 1;
++ 
++     /* save return adress */
++     if(eco32_ra_ever_killed()) {
++         frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(stack_pointer_rtx, -4 + stackptr_off)),  
++                                    gen_rtx_REG(SImode, 31));
++         RTX_FRAME_RELATED_P (frame_rtx) = 1;
++     }
++ 
++     /* save the frame pointer, if it is needed now */
++     if(frame_pointer_needed) {
++         frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(stack_pointer_rtx, -8 + stackptr_off)), 
++                                    hard_frame_pointer_rtx);
++         RTX_FRAME_RELATED_P (frame_rtx) = 1;
++     }
++     
++     /* save callee save registers */
++     for(i=0, j=3; i<FIRST_PSEUDO_REGISTER; i++) {
++         if(df_regs_ever_live_p(i) && !call_used_regs[i] && !fixed_regs[i]) {
++             frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(stack_pointer_rtx, -4 * j + stackptr_off)), 
++                                        gen_rtx_REG(SImode, i));
++             RTX_FRAME_RELATED_P (frame_rtx) = 1;
++             j++;
++         }
++     }
++ 
++     /* set the new frame pointer, if it is needed now */
++     if(frame_pointer_needed) {
++         frame_rtx = emit_move_insn(hard_frame_pointer_rtx, plus_constant(stack_pointer_rtx, stackptr_off));
++         RTX_FRAME_RELATED_P (frame_rtx) = 1;
++     }
++ }
++ 
++ void eco32_epilogue(void)
++ {
++     int i, j;
++     rtx frame_start = hard_frame_pointer_rtx;
++     int frameptr_off = 0;
++     if(!frame_pointer_needed) {
++         /* there is no frame pointer (was eliminated). Use the stack pointer to calc
++          * the begin of the frame */
++         frame_start = stack_pointer_rtx;
++         frameptr_off = eco32_initial_elimination_offset(HARD_FRAME_POINTER_REGNUM,
++                                                         STACK_POINTER_REGNUM);
++     }
++ 
++     /* restore callee-saved registers */
++     for(i=0, j=3; i<FIRST_PSEUDO_REGISTER; i++) {
++         if(df_regs_ever_live_p(i) && !call_used_regs[i] && !fixed_regs[i]) {
++             emit_move_insn(gen_rtx_REG(SImode, i), 
++                            gen_rtx_MEM(SImode, plus_constant(frame_start, -4 * j + frameptr_off)));
++             j++;
++         }
++     }
++ 
++     /* restore return adress */
++     if(eco32_ra_ever_killed()) {
++         emit_move_insn(gen_rtx_REG(SImode, 31), 
++                        gen_rtx_MEM(SImode, plus_constant(frame_start, -4 + frameptr_off)));
++     }
++ 
++     /* restore stack pointer */
++     emit_move_insn(stack_pointer_rtx, plus_constant(frame_start, frameptr_off));
++     
++     /* restore frame pointer. this must be last, since the other stuff in here is based on the frame-pointer
++      * if frame_pointer_needed is true */
++     if(frame_pointer_needed) {
++         emit_move_insn(hard_frame_pointer_rtx, 
++                        gen_rtx_MEM(SImode, plus_constant(frame_start, -8 + frameptr_off)));
++     }
++ 	emit_jump_insn(gen_ECO32_return());
++ }
++ 
++ void eco32_target_asm_function_epilogue (FILE *stream, HOST_WIDE_INT locals_size ATTRIBUTE_UNUSED) {
++     /* for readability of the generated asm code, put a newline after each function */
++     fprintf(stream, "\n");
++ }
++ 
++ /* outputs a label reference */
++ void eco32_asm_output_labelref(FILE *stream, char const *name) {
++     fputs (user_label_prefix, stream);
++     fputs (name, stream);
++ }
++ 
++ /* This is a central function: It prints out the given operand. RTL is
++  * the rtl expression of the matched operand which we matched in the
++  * rtl-md file. possible custom letters:
++  * 'B'  the mem operand is used in a load / store, and actually takes
++  *      two arguments in the assembler instruction.
++  * 'z'  prints $0, if OP is zero, otherwise print as usual.
++  * */
++ void eco32_print_operand(FILE *file, rtx op, int letter) {
++     enum rtx_code code = GET_CODE(op);
++     switch(letter) {
++     default:
++         switch(code) {
++         case REG: {
++             int regno = REGNO(op);
++             fprintf(file, "%s", reg_names[regno]);
++             break;
++         }
++         case MEM: {
++             rtx addr = XEXP(op, 0);
++             if(letter == 'B') {
++                 /* force it into a PLUS */
++                 if(GET_CODE(addr) == REG) {
++                     addr = gen_rtx_PLUS(GET_MODE(addr), addr, GEN_INT(0));
++                 }
++                 gcc_assert(GET_CODE(addr) == PLUS);
++             }
++             output_address(addr);
++             break;
++         }
++         default:
++             if(letter == 'z' && op == CONST0_RTX(GET_MODE(op))) {
++                 fputs(reg_names[0], file);
++             } else {
++                 /* floating points are /not/ handled. but we dont't have
++                  * them as arguments anyway... */
++                 output_addr_const(file, op);
++             }
++             break;
++         }
++     }
++ }
++ 
++ /* prints an address of an operand  */
++ void eco32_print_operand_address(FILE *file, rtx x)  {
++     rtx op1, op2;
++     switch(GET_CODE(x)) {
++     case REG:
++         fprintf(file, "%s", reg_names[REGNO(x)]);
++         break;
++     case PLUS:
++         op1 = XEXP(x, 0);
++         op2 = XEXP(x, 1);
++         gcc_assert(GET_CODE(op1) == REG && CONSTANT_ADDRESS_P(op2));
++         fprintf(file, "%s, ", reg_names[REGNO(op1)]);
++         output_addr_const(file, op2);
++         break;
++     default:
++         if(CONSTANT_ADDRESS_P(x)) {
++             output_addr_const(file, x);
++         } else {
++             gcc_unreachable();
++         }
++ 
++     }
++ }
++ 
++ void eco32_setup_incoming_varargs(int *cum, enum machine_mode mode, tree type, int *pretend_args_size, 
++                                   int second_time) {
++     /* make it point past the last unnamed arg */
++     int tcum = *cum, tcum_end;
++     FUNCTION_ARG_ADVANCE (tcum, mode, type, true);
++     if(tcum < 4 && !second_time) {
++         /* copy the argument registers to their respective stack
++          * place */
++         for(tcum_end = tcum; tcum_end < 4; tcum_end++) {
++             emit_move_insn(gen_rtx_MEM(SImode, plus_constant(virtual_incoming_args_rtx, tcum_end * UNITS_PER_WORD)), 
++                            gen_rtx_REG(SImode, tcum_end + 4));
++         }
++     } else {
++         tcum_end = 4;
++     }
++     if(tcum < 4) {
++         *pretend_args_size = (tcum_end - tcum) * UNITS_PER_WORD;
++     } else {
++         *pretend_args_size = 0;
++     }
++ }
++ 
++ /* initializes a trampoline */
++ void eco32_initialize_trampoline(rtx addr ATTRIBUTE_UNUSED, rtx fn_addr ATTRIBUTE_UNUSED, 
++                                  rtx static_chain ATTRIBUTE_UNUSED) {
++     /* empty */
++ }
++ 
++ /* outputs a command that advances the location pointer to a multiple of 2^power */
++ void eco32_asm_output_align(FILE *stream, int power) {
++     fprintf(stream, "\t.p2align\t%d\n", power);
++ }
++ 
++ /* override target hooks */
++ #undef TARGET_ASM_BYTE_OP
++ #define TARGET_ASM_BYTE_OP "\t.byte\t"
++ #undef TARGET_ASM_ALIGNED_HI_OP
++ #define TARGET_ASM_ALIGNED_HI_OP "\t.half\t"
++ #undef TARGET_ASM_ALIGNED_SI_OP 
++ #define TARGET_ASM_ALIGNED_SI_OP "\t.word\t"
++ #undef TARGET_ASM_FUNCTION_EPILOGUE
++ #define TARGET_ASM_FUNCTION_EPILOGUE eco32_target_asm_function_epilogue
++ 
++ #undef TARGET_ARG_PARTIAL_BYTES
++ #define TARGET_ARG_PARTIAL_BYTES eco32_arg_partial_bytes
++ #undef TARGET_PASS_BY_REFERENCE
++ #define TARGET_PASS_BY_REFERENCE eco32_pass_by_reference
++ #undef TARGET_SCALAR_MODE_SUPPORTED_P
++ #define TARGET_SCALAR_MODE_SUPPORTED_P eco32_scalar_mode_supported_p
++ #undef TARGET_FUNCTION_VALUE
++ #define TARGET_FUNCTION_VALUE eco32_function_value
++ #undef TARGET_RETURN_IN_MEMORY
++ #define TARGET_RETURN_IN_MEMORY eco32_return_in_memory
++ 
++ 
++ /* This target hook offers an alternative to using __builtin_saveregs
++  * and defining the hook TARGET_EXPAND_BUILTIN_SAVEREGS. Use it to
++  * store the anonymous register arguments into the stack so that all
++  * the arguments appear to have been passed consecutively on the
++  * stack. Once this is done, you can use the standard implementation
++  * of varargs that works for machines that pass all their arguments on
++  * the stack. */
++ #undef TARGET_SETUP_INCOMING_VARARGS
++ #define TARGET_SETUP_INCOMING_VARARGS eco32_setup_incoming_varargs
++ 
++ /* Initialize the GCC target structure.  */
++ struct gcc_target targetm = TARGET_INITIALIZER;
++ 
+diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
+*** src_org/gcc/gcc/config/eco32/eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32.h	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,748 ----
++ /*
++  * This is the Machine-Description Headerfile of the GCC backend for 
++  * eco32. Enjoy!
++  */
++ 
++ /* 15.3 Run-time Target Specification */
++ 
++ /* This function-like macro expands to a block of code that defines
++  * built-in preprocessor macros and assertions for the target CPU,
++  * using the functions builtin_define, builtin_define_std and
++  * builtin_assert. When the front end calls this macro it provides a
++  * trailing semicolon, and since it has finished command line option
++  * processing your code can use those results freely. */
++ #define TARGET_CPU_CPP_BUILTINS()             \
++     do                                        \
++     {                                         \
++         builtin_define ("__eco32__=1");          \
++         builtin_assert ("cpu=eco32");          \
++     }                                          \
++     while (0)
++ 
++ 
++ /* 15.2 Controlling the Compilation Driver, gcc */
++ 
++ /* If defined, a list of pairs of strings, the first of which is a
++  * potential command line target to the gcc driver program, and the
++  * second of which is a space-separated (tabs and other whitespace are
++  * not supported) list of options with which to replace the first
++  * option. 
++  * for the kernel, tell as and ld not to merge constants, so that
++  * we get the same symbol addresses as for the binary (which uses the binary
++  * as the objectformat, which doesn't support merging of data). 
++  * TODO: we would like to have this for -msim too, but it currently doesn't
++  * make sense, as the c library is of course compiled without it, and the linker
++  * would still merge constants then. */
++ #define TARGET_OPTION_TRANSLATE_TABLE        \
++     { "-msim",    "-msim -mkernel -fno-builtin" }, \
++     { "-mkernel", "-mkernel -fno-merge-constants -fno-builtin" } 
++ 
++ /* A C string constant that tells the GCC driver program options to
++  * pass to the linker. It can also specify how to translate options
++  * you give to GCC into options for GCC to pass to the linker.  We
++  * give it a elf format if we produce relocatable output, but we use
++  * our eco32bin emulation if we don't produce relocatable output, and
++  * if -mkernel was given which indeed shouldnt create a ELF object
++  * file. */
++ #define LINK_SPEC "%{mkernel:%{!r:-m eco32bin}}%{!mkernel|r:-m elf32eco32}"
++ 
++ /* Another C string constant used much like `LINK_SPEC'.  The
++    difference between the two is that `LIB_SPEC' is used at the end of
++    the command given to the linker.
++ 
++    If this macro is not defined, a default is provided that loads the
++    standard C library from the usual place.  See `gcc.c'. */
++ #define LIB_SPEC "%{!mkernel|msim:-lc} %{msim:-lsim}"
++ 
++ /* Another C string constant used much like LINK_SPEC. The difference
++  * between the two is that STARTFILE_SPEC is used at the very
++  * beginning of the command given to the linker. */
++ #define STARTFILE_SPEC \
++     "%{msim:crt0sim%O%s}%{!msim:%{!mkernel:crt0%O%s}}" \
++     " %{!mkernel:crti%O%s crtbegin%O%s}"
++ 
++ /* endfile spec. these are given last to the linker */
++ #define ENDFILE_SPEC "%{!mkernel:crtend%O%s crtn%O%s}"
++ 
++ /* A C statement or compound statement to output to file some
++  * assembler code to call the profiling subroutine mcount. */
++ #define FUNCTION_PROFILER(FILE, LABELNO)
++ 
++ /* 15.5 Storage Layout */
++ 
++ /* If  this  is `1'  then  most  significant  bit is  lowest
++    numbered  in   instructions  that  operate   on  numbered
++    bit-fields. */
++ #define BITS_BIG_ENDIAN 1
++ 
++ /* If this is  `1' then most significant byte  in a word has
++    the lowest number. */
++ #define BYTES_BIG_ENDIAN 1
++ 
++ /* Define this  if most significant  word of a  multiword is
++    lowest numbered. Eco32 doesnt have such instructions, so it doesnt
++    matter what we do with it i think. */
++ #define WORDS_BIG_ENDIAN 1
++           
++ /* Number of bits per addressable unit of memory */
++ #define BITS_PER_UNIT 8
++ 
++ /* Number of bits per word */
++ #define BITS_PER_WORD 32
++ 
++ /* Number of units(byte) per word */
++ #define UNITS_PER_WORD 4
++ 
++ /* Width of a pointer in bits. */
++ #define POINTER_SIZE 32
++ 
++ /* Boundary  (in  bits) on  which  stack  pointer should  be
++    aligned. 
++    XXX: LCC aligns it on 16*BITS_PER_UNIT. I'm not sure why */
++ #define STACK_BOUNDARY 32
++ 
++ /* Alignment required for a function entry point, in bits. */
++ #define FUNCTION_BOUNDARY 32
++ 
++ /* Define this if `move'  instructions will actually fail to
++    work when given unaligned data. */
++ #define STRICT_ALIGNMENT 1
++ 
++ /* Biggest alignment that any  data type can require on this
++    machine , in bits. */
++ #define BIGGEST_ALIGNMENT 32
++ 
++ /* Normal alignment required  for function parameters on the
++    stack, in  bits.  All  stack parameters receive  at least
++    this much alignment regardless of data type.*/
++ #define PARM_BOUNDARY 32
++ 
++ /* The maximum number of bytes that a single instruction can
++    move quickly between memory  and registers or between two
++    memory locations.*/
++ #define MOVE_MAX 4
++     
++ /* Specify the machine mode that pointers have.  After generation of
++    rtl, the compiler makes no further distinction between pointers and
++    any other objects of this machine mode.  */
++ #define Pmode SImode
++ 
++ /* Mode of a function address in a call instruction (for indexing
++  * purposes).  */
++ #define FUNCTION_MODE Pmode
++ 
++ /* An alias for a machine mode name. This is the machine mode that
++  * elements of a jump-table should have. */
++ #define CASE_VECTOR_MODE SImode
++ 
++ /* A C expression which is nonzero if on this machine it is safe to
++  * “convert” an integer of inprec bits to one of outprec bits (where
++  * outprec is smaller than inprec) by merely operating on it as if it
++  * had only outprec bits. 
++  * XXX: i think this can be 1 for eco32. */
++ #define TRULY_NOOP_TRUNCATION(OUTPREC, INPREC) 1
++ 
++ /* Following macro  is nonzero if access to  memory by bytes
++    is slow and undesirable. eco32 does this by stb and ldb. i 
++    think it is not slower. */
++ #define SLOW_BYTE_ACCESS 0
++ 
++ /* Maximum number  of registers that  can appear in  a valid
++    memory address.  */
++ #define MAX_REGS_PER_ADDRESS 1
++ 
++ /* 15.6 Layout of Source Language Data Types */
++      
++ /* Define number  of bits in  most basic integer  type.  (If
++    undefined, default is BITS_PER_WORD). */
++ #define INT_TYPE_SIZE 32
++ 
++ /* A C expression for the size in bits of the type short on the target machine. */
++ #define SHORT_TYPE_SIZE 16
++ 
++ /* A C expression for the size in bits of the type long on the target
++  * machine. */
++ #define LONG_TYPE_SIZE 32
++ 
++ /* A C expression for the size in bits of the type long long on the
++  * target machine. */
++ #define LONG_LONG_TYPE_SIZE 64
++ 
++ /* A C expression for the size in bits of the type char on the target
++  * machine. */
++ #define CHAR_TYPE_SIZE 8
++ 
++ /* An expression whose value is 1 or 0, according to whether the type
++  * char should be signed or unsigned by default. */
++ #define DEFAULT_SIGNED_CHAR 1
++ 
++ 
++ /* 15.7.1 Basic Characteristics of Registers */
++ 
++ /* Number of hardware registers known to the compiler. They receive 
++    numbers 0 through FIRST_PSEUDO_REGISTER-1; thus, the first pseudo
++    register's number really is assigned the number
++    FIRST_PSEUDO_REGISTER.
++ */
++ #define FIRST_PSEUDO_REGISTER 32
++ 
++ /* An initializer that says which registers are used for fixed
++  * purposes all throughout the compiled code and are therefore not
++  * available for general allocation. These would include the stack
++  * pointer, the frame pointer (except on machines where that can be
++  * used as a general register when no frame pointer is needed), the
++  * program counter on machines where that is considered one of the
++  * addressable registers, and any other numbered register with a
++  * standard use. */
++ #define FIXED_REGISTERS {                           \
++         1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
++         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1 } 
++ 
++ /* Like FIXED_REGISTERS but has 1 for each register that is clobbered
++  * (in general) by function calls as well as for fixed registers. This
++  * macro therefore identifies the registers that are not available for
++  * general allocation of values that must live across function calls. */
++ #define CALL_USED_REGISTERS {                           \
++         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
++         0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, }
++ 
++ 
++ /* 15.7.3 How Values Fit in Registers */
++ 
++ /* A C expression for the number of consecutive hard registers,
++  * starting at register number regno, required to hold a value of mode
++  * mode. This macro must never return zero, even if a register cannot
++  * hold the requested mode - indicate that with HARD_REGNO_MODE_OK
++  * and/or CANNOT_CHANGE_MODE_CLASS instead. */
++ #define HARD_REGNO_NREGS(REGN, MODE)                      \
++     ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1)           \
++      / UNITS_PER_WORD)
++ 
++ /* A C expression that is nonzero if it is permissible to store a
++  * value of mode mode in hard register number regno (or in several
++  * registers starting with that one). */
++ #define HARD_REGNO_MODE_OK(REGN, MODE) 1
++ 
++ /* A C expression that is nonzero if a value of mode mode1 is
++  * accessible 
++  * in mode mode2 without copying. 
++  * XXX I'm not completely sure about this. */
++ #define MODES_TIEABLE_P(mode1, mode2) 1
++ 
++ 
++ /* 15.8 Register Classes */
++ 
++ /* An enumerated type that must be defined with all the register class
++  * names as enumerated values. NO_REGS must be first. ALL_REGS must be
++  * the last register class, followed by one more enumerated value,
++  * LIM_REG_CLASSES, which is not a register class but rather tells how
++  * many classes there are. */ 
++ enum reg_class {
++     NO_REGS,
++     ZERO_REGS,
++     GENERAL_REGS,
++     ALL_REGS,
++     LIM_REG_CLASSES
++ };
++ 
++ /* The number of distinct register classes */
++ #define N_REG_CLASSES (int) LIM_REG_CLASSES
++ 
++ /* An initializer containing the names of the register classes as C
++  * string constants. These names are used in writing some of the
++  * debugging dumps. */ 
++ #define REG_CLASS_NAMES { "NO_REGS", "ZERO_REGS", "GENERAL_REGS", "ALL_REGS" }
++ 
++ /* An initializer containing the contents of the register classes, as
++  * integers which are bit masks. The nth integer specifies the
++  * contents of class n. The way the integer mask is interpreted is
++  * that register r is in the class if mask & (1 << r) is 1. 
++  */ 
++ #define REG_CLASS_CONTENTS {                        \
++     { 0 },   /* NO_REGS */                          \
++     { 1 },   /* ZERO_REGS */                        \
++     { ~0  }, /* GENERAL_REGS*/                      \
++     { ~0  }  /* ALL_REGS */                         \
++     }
++ 
++ /* A C expression whose value is a register class containing hard
++  * register regno. In general there is more than one such class;
++  * choose a class which is minimal, meaning that no smaller class
++  * also contains the register. */
++ #define REGNO_REG_CLASS(REGN) ((REGN == 0) ? ZERO_REGS : GENERAL_REGS)
++ 
++ /* A macro whose definition is the name of the class to which a valid
++  * base register must belong. A base register is one used in an
++  * address which is the register value plus a displacement. */
++ #define BASE_REG_CLASS GENERAL_REGS
++ 
++ /* This is a variation of the BASE_REG_CLASS macro which allows the
++  * selection of a base register in a mode dependent manner. If mode is
++  * VOIDmode then it should return the same value as BASE_REG_CLASS. */
++ #define MODE_BASE_REG_CLASS(MODE) BASE_REG_CLASS
++ 
++ /* A macro whose definition is the name of the class to which a valid
++  * index register must belong. An index register is one used in an
++  * address where its value is either multiplied by a scale factor or
++  * added to another register (as well as added to a displacement). 
++  * Eco32 doesnt have Index-Registers */
++ #define INDEX_REG_CLASS NO_REGS
++ 
++ /* A C expression which is nonzero if register number num is suitable
++  * for use as a base register in operand addresses. It may be either a
++  * suitable hard register or a pseudo register that has been allocated
++  * such a hard register. */
++ #define REGNO_OK_FOR_BASE_P(REGN) \
++     eco32_regno_ok_for_base_p((REGN))
++ 
++ /* A C expression which is nonzero if register number num is suitable
++  * for use as an index register in operand addresses. It may be either
++  * a suitable hard register or a pseudo register that has been
++  * allocated such a hard register. 
++  * Eco32 doesnt have index registers. */
++ #define REGNO_OK_FOR_INDEX_P(REGN) 0
++ 
++ /* A C expression that places additional restrictions on the register
++   class to use when it is necessary to copy value x into a register in
++   class class. The value is a register class; perhaps class, or
++   perhaps another, smaller class. */
++ #define PREFERRED_RELOAD_CLASS(X,CLASS) CLASS
++ 
++ /* A C expression for the maximum number of consecutive registers of
++  * class class needed to hold a value of mode mode. */
++ #define CLASS_MAX_NREGS(CLASS, MODE) \
++     ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD)
++ 
++ /* 15.10.1 Basic Stack Layout */
++ 
++ /* Define this macro if pushing a word onto the stack moves the stack
++  * pointer to a smaller address. */
++ #define STACK_GROWS_DOWNWARD
++ 
++ /* Define this macro to nonzero value if the addresses of local
++  * variable slots are at negative offsets from the frame pointer. */
++ #define FRAME_GROWS_DOWNWARD 1
++ 
++ /* Offset from the frame pointer to the first local variable slot to
++  * be allocated. */
++ #define STARTING_FRAME_OFFSET 0
++ 
++ /* Offset from the argument pointer register to the first argument's
++  * address. On some machines it may depend on the data type of the
++  * function. */
++ #define FIRST_PARM_OFFSET(fundecl) 0
++ 
++ /* A C expression whose value is RTL representing the address in a
++  * stack frame where the pointer to the caller's frame is
++  * stored. Assume that frameaddr is an RTL expression for the address
++  * of the stack frame itself. */
++ #define DYNAMIC_CHAIN_ADDRESS(FP) plus_constant((FP), -8)
++ 
++ /* Register numbers used for passing a function's static chain
++  * pointer. */
++ #define STATIC_CHAIN_REGNUM 24
++ 
++ /* A C expression whose value is RTL representing the value of the
++  * return address for the frame count steps up from the current frame,
++  * after the prologue. frameaddr is the frame pointer of the count
++  * frame, or the frame pointer of the count − 1 frame if
++  * RETURN_ADDR_IN_PREVIOUS_FRAME is defined. */
++ #define RETURN_ADDR_RTX(COUNT, FRAMEADDR) \
++     eco32_ret_addr_rtx((COUNT), (FRAMEADDR))
++ 
++ /* A C expression whose value is RTL representing the location of the
++  * incoming return address at the beginning of any function, before
++  * the prologue. This RTL is either a REG, indicating that the return
++  * value is saved in `REG', or a MEM representing a location in the
++  * stack. */
++ #define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (SImode, 31)
++ 
++ /* A C expression whose value is an integer giving the offset, in
++  * bytes, from the value of the stack pointer register to the top of
++  * the stack frame at the beginning of any function, before the
++  * prologue. The top of the frame is defined to be the value of the
++  * stack pointer in the previous frame, just before the call
++  * instruction. 
++  * XXX: for eco32, the incoming stack pointer is equal to the outgoing one:
++  * there is no magical changing of the SP :) . */
++ #define INCOMING_FRAME_SP_OFFSET 0
++ 
++ 
++ /* 15.10.4 Registers That Address the Stack Frame */
++ 
++ /* The register number of the stack pointer register, which must also
++  * be a fixed register according to FIXED_REGISTERS. On most machines,
++  * the hardware determines which register this is. */
++ #define STACK_POINTER_REGNUM 29
++ 
++ /* The register number of the frame pointer register, which is used to
++  * access automatic variables in the stack frame. 
++  * For eco32, this framepointer will always be eliminated to
++  * HARD_FRAME_POINTER, so it's arbitrary what this register is. */
++ #define FRAME_POINTER_REGNUM 1
++ 
++ /* On some machines the offset between the frame pointer and starting
++  * offset of the automatic variables is not known until after register
++  * allocation has been done (for example, because the saved registers
++  * are between these two locations). On those machines, define
++  * FRAME_POINTER_REGNUM the number of a special, fixed register to be
++  * used internally until the offset is known, and define
++  * HARD_FRAME_POINTER_REGNUM to be the actual hard register number
++  * used for the frame pointer. */
++ #define HARD_FRAME_POINTER_REGNUM 25
++ 
++ /* The register number of the arg pointer register, which is used to
++  * access the function's argument list. On some machines, this is the
++  * same as the frame pointer register. */
++ #define ARG_POINTER_REGNUM HARD_FRAME_POINTER_REGNUM
++ 
++ 
++ /* 15.10.5 Eliminating Frame Pointer and Arg Pointer */
++ 
++ /* A C expression which is nonzero if a function must have and use a
++  * frame pointer. This expression is evaluated in the reload pass. If
++  * its value is nonzero the function will have a frame pointer. */
++ #define FRAME_POINTER_REQUIRED 0
++ 
++ /* If defined, this macro specifies a table of register pairs used to
++  * eliminate unneeded registers that point into the stack frame. If it
++  * is not defined, the only elimination attempted by the compiler is
++  * to replace references to the frame pointer with references to the
++  * stack pointer. */
++ #define ELIMINABLE_REGS \
++     {{FRAME_POINTER_REGNUM,      STACK_POINTER_REGNUM},         \
++         {FRAME_POINTER_REGNUM,      HARD_FRAME_POINTER_REGNUM}, \
++         {ARG_POINTER_REGNUM,        STACK_POINTER_REGNUM},      \
++         {HARD_FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM}       \
++     }
++ 
++ /* A C expression that returns nonzero if the compiler is allowed to
++  * try to replace register number from-reg with register number
++  * to-reg. */
++ #define CAN_ELIMINATE(FROM, TO)                                         \
++     ((FROM == FRAME_POINTER_REGNUM && (TO == STACK_POINTER_REGNUM || TO == HARD_FRAME_POINTER_REGNUM)) \
++      || (FROM == ARG_POINTER_REGNUM && TO == STACK_POINTER_REGNUM)      \
++      || (FROM == HARD_FRAME_POINTER_REGNUM && TO == STACK_POINTER_REGNUM))
++ 
++ /* It specifies the initial difference between the specified pair of
++  * registers. */
++ #define INITIAL_ELIMINATION_OFFSET(FROM, TO, VAR) \
++     (VAR) = eco32_initial_elimination_offset((FROM), (TO))
++ 
++ 
++ /* 15.10.6 Passing Function Arguments on the Stack */
++ 
++ /* A C expression. If nonzero, push insns will be used to pass
++  * outgoing arguments. If the target machine does not have a push
++  * instruction, set it to zero. */
++ #define PUSH_ARGS 0
++ 
++ /* A C expression. If nonzero, the maximum amount of space required
++  * for outgoing arguments will be computed and placed into the
++  * variable current_function_outgoing_args_size. No space will be
++  * pushed onto the stack for each call; instead, the function prologue
++  * should increase the stack frame size by this amount. */
++ #define ACCUMULATE_OUTGOING_ARGS 1
++ 
++ /* Define this macro if functions should assume that stack space has
++  * been allocated for arguments even when their values are passed in
++  * registers. The value of this macro is the size, in bytes, of the
++  * area reserved for arguments passed in registers for the function
++  * represented by fndecl, which can be zero if GCC is calling a
++  * library function. */
++ #define REG_PARM_STACK_SPACE(FNDECL) (4 * UNITS_PER_WORD)
++ 
++ /* Define this to a nonzero value if it is the responsibility of the
++  * caller to allocate the area reserved for arguments passed in
++  * registers when calling a function of fntype. fntype may be NULL if
++  * the function called is a library function. */
++ #define OUTGOING_REG_PARM_STACK_SPACE(FNTYPE) 1
++ 
++ /* A C expression that should indicate the number of bytes of its own
++  * arguments that a function pops on returning, or 0 if the function
++  * pops no arguments and the caller must therefore pop them all after
++  * the function returns. */
++ #define RETURN_POPS_ARGS(FUNDECL, FUNTYPE, STACK_SIZE) 0
++ 
++ /* A C expression that should indicate the number of bytes a call
++  * sequence pops off the stack. It is added to the value of
++  * RETURN_POPS_ARGS when compiling a function call. */
++ #define CALL_POPS_ARGS(CUM) 0
++ 
++ 
++ /* 15.10.7 Passing Arguments in Registers */
++ 
++ /* A C expression that controls whether a function argument is passed
++  * in a register, and which register. */
++ #define FUNCTION_ARG(CUM, MODE, TYPE, NAMED) \
++     eco32_function_arg((CUM), (MODE), (TYPE), (NAMED))
++ 
++ 
++ /* A C type for declaring a variable that is used as the first
++  * argument of FUNCTION_ARG and other related values. For some target
++  * machines, the type int suffices and can hold the number of bytes of
++  * argument so far. */
++ #define CUMULATIVE_ARGS int
++ 
++ /* A C statement (without semicolon) for initializing the variable cum
++  * for the state at the beginning of the argument list. */
++ #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS) \
++     (CUM) = 0
++ 
++ /* A C statement (without semicolon) to update the summarizer variable
++  * cum to advance past an argument in the argument list. The values
++  * mode, type and named describe that argument. Once this is done, the
++  * variable cum is suitable for analyzing the following argument with
++  * FUNCTION_ARG, etc. */
++ #define FUNCTION_ARG_ADVANCE(CUM, MODE, TYPE, NAMED) \
++     (CUM) += ECO32_ARG_SIZE(MODE, TYPE)
++ 
++ /* A C expression that is nonzero if regno is the number of a hard
++  * register in which function arguments are sometimes passed. */
++ #define FUNCTION_ARG_REGNO_P(REGN) \
++     ((REGN) == 4 || (REGN) == 5 || (REGN) == 6 || (REGN) == 7)
++ 
++ 
++ /* 15.10.8 How Scalar Function Values Are Returned */
++ 
++ /* A C expression that is nonzero if regno is the number of a hard
++  * register in which the values of called function may come back. */
++ #define FUNCTION_VALUE_REGNO_P(REGN) ((REGN) == 2)
++ 
++ /* same as TARGET_FUNCTION_VALUE hook, but just for compiler support
++  * routines */
++ #define LIBCALL_VALUE(MODE) eco32_function_value_impl((MODE))
++ 
++ /* 15.14 Addressing Modes */
++ 
++ /* A C expression that is 1 if the RTX x is a constant which is a
++  * valid address. On most machines, this can be defined as CONSTANT_P
++  * (x), but a few machines are more restrictive in which constant
++  * addresses are supported. */
++ #define CONSTANT_ADDRESS_P(X) eco32_constant_address_p((X))
++ 
++ /* A number, the maximum number of registers that can appear in a
++  * valid memory address. */
++ #define MAX_REGS_PER_ADDRESS 1
++ 
++ /* A C compound statement with a conditional goto label; executed if x
++  * (an RTX) is a legitimate memory address on the target machine for a
++  * memory operand of mode mode. */
++ #ifdef REG_OK_STRICT
++ #define GO_IF_LEGITIMATE_ADDRESS(mode,x,label) \
++     do {                                       \
++         if (eco32_legitimate_address((mode),(x)))   \
++             goto label;                        \
++     } while(0)
++ #else
++ #define GO_IF_LEGITIMATE_ADDRESS(mode,x,label)    \
++     do {                                          \
++         if (eco32_non_strict_legitimate_address((mode),(x)))    \
++             goto label;                           \
++     } while(0)
++ #endif
++ 
++ #ifdef REG_OK_STRICT
++ #define REG_OK_FOR_BASE_P(x)                    \
++     eco32_reg_ok_for_base((x))
++ #else
++ #define REG_OK_FOR_BASE_P(x)                    \
++     eco32_non_strict_reg_ok_for_base((x)) 
++ #endif
++ 
++ /* A C statement or compound statement with a conditional goto label;
++    executed if memory address x (an RTX) can have different meanings
++    depending on the machine mode of the memory reference it is used
++    for or if the address is valid for some modes but not others. */
++ #define GO_IF_MODE_DEPENDENT_ADDRESS(addr, label)
++ 
++ /* A C expression that is nonzero if x is a legitimate constant for an
++  * immediate operand on the target machine. You can assume that x
++  * satisfies CONSTANT_P, so you need not check this. In fact, `1' is a
++  * suitable definition for this macro on machines where anything
++  * CONSTANT_P is valid. */
++ #define LEGITIMATE_CONSTANT_P(X) \
++     eco32_legitimate_constant((X))
++ 
++ 
++ /* 15.19 Dividing the Output into Sections (Texts, Data, ...) */
++ 
++ /* A C expression whose value is a string, including spacing,
++  * containing the assembler operation that should precede instructions
++  * and read-only data. Normally "\t.text" is right. */
++ #define TEXT_SECTION_ASM_OP "\t.section\t.text"
++ 
++ /* A C expression whose value is a string, including spacing,
++  * containing the assembler operation to identify the following data
++  * as writable initialized data. Normally "\t.data" is right. */
++ #define DATA_SECTION_ASM_OP "\t.section\t.data"
++ 
++ /* If defined, a C expression whose value is a string, including
++  * spacing, containing the assembler operation to identify the
++  * following data as uninitialized global data. */ 
++ #define BSS_SECTION_ASM_OP "\t.section\t.bss, \"aw\""
++ 
++ /* 15.21.1 The Overall Framework of an Assembler File */
++ 
++ /* A C string constant describing how to begin a comment in the target
++  * assembler language. */
++ #define ASM_COMMENT_START "#"
++ 
++ /* A C string constant for text to be output before each asm statement
++  * or group of consecutive ones. Normally this is "#APP", which is a
++  * comment that has no effect on most assemblers but tells the GNU
++  * assembler that it must check the lines that follow for all valid
++  * assembler constructs. */
++ #define ASM_APP_ON "#APP\n"
++ 
++ /* A C string constant for text to be output after each asm statement
++  * or group of consecutive ones. Normally this is "#NO_APP", which
++  * tells the GNU assembler to resume making the time-saving
++  * assumptions that are valid for ordinary compiler output. */
++ #define ASM_APP_OFF "#NO_APP\n"
++ 
++ 
++ /* 15.21.3 Output of Uninitialized Variables */
++ 
++ /* A C statement (sans semicolon) to output to the stdio stream stream
++  * the assembler definition of uninitialized global decl named name
++  * whose size is size bytes. The variable rounded is the size rounded
++  * up to whatever alignment the caller wants. use the asm_output_bss function
++  * defined by gcc in varasm.c. */
++ #define ASM_OUTPUT_BSS(stream, decl, name, size, rounded) \
++     asm_output_bss((stream), (decl), (name), (size), (rounded))
++ 
++ /* 15.21.4 Output and Generation of Labels */
++ 
++ /* Globalizing directive for a label.  */
++ #define GLOBAL_ASM_OP "\t.global\t"
++ 
++ /* A C statement (sans semicolon) to output to the stdio stream stream
++  * a reference in assembler syntax to a label named name. This should
++  * add `_' to the front of the name, if that is customary on your
++  * operating system, as it is in most Berkeley Unix systems. This
++  * macro is used in assemble_name. */
++ #define ASM_OUTPUT_LABELREF(stream, name) \
++     eco32_asm_output_labelref((stream), (name))
++ 
++ /* 15.21.7 Output of Assembler Instructions */
++ 
++ /* A C initializer containing the assembler's names for the machine
++  * registers, each one as a C string constant. This is what translates
++  * register numbers in the compiler into assembler language. */
++ #define REGISTER_NAMES                            \
++     { "$0", "$1", "$2", "$3", "$4", "$5", "$6",   \
++       "$7", "$8", "$9",  "$10",  "$11",  "$12",   \
++       "$13", "$14", "$15", "$16", "$17", "$18",   \
++       "$19", "$20", "$21", "$22", "$23", "$24",   \
++       "$25", "$26", "$27", "$28", "$29", "$30",   \
++       "$31" }
++ 
++ 
++ 
++ /* If defined, a C initializer for an array of structures containing a
++  * name and a register number. This macro defines additional names for
++  * hard registers, thus allowing the asm option in declarations to
++  * refer to registers using alternate names. */
++ #define ADDITIONAL_REGISTER_NAMES \
++     { { "$fp", 25 }, { "$ap", 25 }, { "$sp", 29 } }
++ 
++ /* A C compound statement to output to stdio stream stream the
++    assembler syntax for an instruction operand x. x is an RTL
++    expression. code is a value that can be used to specify one of
++    several ways of printing the operand. It is used when identical
++    operands must be printed differently depending on the context. code
++    comes from the `%' specification that was used to request printing
++    of the operand. If the specification was just `%digit' then code is
++    0; if the specification was `%ltr digit' then code is the ASCII
++    code for ltr. */
++ #define PRINT_OPERAND(stream, x, code) \
++     eco32_print_operand((stream), (x), (code))
++ 
++ /* A C compound statement to output to stdio stream stream the
++  * assembler syntax for an instruction operand that is a memory
++  * reference whose address is x. x is an RTL expression. */
++ #define PRINT_OPERAND_ADDRESS(stream, x) \
++     eco32_print_operand_address((stream), (x))
++ 
++ 
++ /* 15.21.10 Assembler Commands for Alignment */
++ 
++ /* A C statement to output to the stdio stream stream an assembler
++  * command to advance the location counter to a multiple of 2 to the
++  * power bytes. power will be a C expression of type int. */
++ #define ASM_OUTPUT_ALIGN(stream, power) \
++     eco32_asm_output_align((stream), (power))
++ 
++ /* 15.12 Trampolines for Nested Functions 
++  * Trampolines are not implemented for eco32 yet. Followings are
++  * dummy definitions. */
++ 
++ /* A C expression for the size in bytes of the trampoline, as an
++  * integer. */
++ #define TRAMPOLINE_SIZE 32
++ 
++ /* A C statement to initialize the variable parts of a
++  * trampoline. addr is an RTX for the address of the trampoline;
++  * fnaddr is an RTX for the address of the nested function;
++  * static_chain is an RTX for the static chain value that should be
++  * passed to the function when it is called. */
++ #define INITIALIZE_TRAMPOLINE(addr, fnaddr, static_chain) \
++     eco32_initialize_trampoline((addr), (fnaddr), (static_chain))
++ 
++ 
++ /* A helper macro to compute the size of an argument in
++  * registers. BLKmode is the mode of a aggregate that does not fit in
++  * any basic integer machine mode. */
++ #define ECO32_ARG_SIZE(MODE, TYPE)                                      \
++     ((((MODE) == BLKmode ? int_size_in_bytes (TYPE) : GET_MODE_SIZE (MODE)) \
++       + (UNITS_PER_WORD - 1)) / UNITS_PER_WORD)
++ 
++ 
++ /* 15.10.11 Function Entry and Exit */
++ 
++ /* Define this macro as a C expression that is nonzero for registers
++  * that are used by the epilogue or the `return' pattern. The stack
++  * and frame pointer registers are already assumed to be used as
++  * needed. */
++ #define EPILOGUE_USES(regno) ((regno) == 31)
++ 
++ 
++ /* 15.30 Miscellaneous Parameters */
++ 
++ /* Define this boolean macro to indicate whether or not your
++  * architecture has conditional branches that can span all of
++  * memory. It is used in conjunction with an optimization that
++  * partitions hot and cold basic blocks into separate sections of the
++  * executable. If this macro is set to false, gcc will convert any
++  * conditional branches that attempt to cross between sections into
++  * unconditional branches or indirect jumps. */
++ #define HAS_LONG_COND_BRANCH 0
++ 
++ /* Define this boolean macro to indicate whether or not your
++  * architecture has unconditional branches that can span all of
++  * memory. It is used in conjunction with an optimization that
++  * partitions hot and cold basic blocks into separate sections of the
++  * executable. If this macro is set to false, gcc will convert any
++  * unconditional branches that attempt to cross between sections into
++  * indirect jumps. */
++ #define HAS_LONG_UNCOND_BRANCH 0
++ 
++ /* Define this macro to be a C expression indicating when insns that
++  * read memory in mem_mode, an integral mode narrower than a word, set
++  * the bits outside of mem_mode to be either the sign-extension or the
++  * zero-extension of the data read. Return SIGN_EXTEND for values of
++  * mem_mode for which the insn sign-extends, ZERO_EXTEND for which it
++  * zero-extends, and UNKNOWN for other modes. */
++ #define LOAD_EXTEND_OP(mem_mode) SIGN_EXTEND
++ 
++ /* Define this macro if loading short immediate values into registers
++  * sign extends. */
++ #define SHORT_IMMEDIATES_SIGN_EXTEND 1
++ 
++ /* 17.17 Describing Relative Costs of Operations */
++ 
++ /* Define this macro if it is as good or better to call a constant
++  * function address than to call an address kept in a register. */
++ #define NO_FUNCTION_CSE 1
++ 
+diff -rcN src_org/gcc/gcc/config/eco32/eco32.md src/gcc/gcc/config/eco32/eco32.md
+*** src_org/gcc/gcc/config/eco32/eco32.md	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32.md	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,334 ----
++ ;; Operand and operator predicates and constraints
++ (include "predicates.md")
++ (include "constraints.md")
++ 
++ 
++ ; length of an instruction (in bytes)
++ (define_attr "length" "" (const_int 4))
++ 
++ ;; code iterator and their inverse for the different branch insns
++ (define_code_iterator cond_code [eq ne lt ltu gt gtu le leu ge geu])
++ (define_code_attr cond_inv [(eq "ne") (ne "eq") (lt "ge") (ltu "geu") 
++                   (gt "le") (gtu "leu") (le "gt") (leu "gtu") 
++                   (ge "lt") (geu "ltu")])
++ 
++ ;; define mode iterators. they are used as template arguments for 
++ ;; the templates were <MODE> and <mode> is used.
++ (define_mode_iterator MOVMODE [QI HI SI])
++ (define_mode_attr LOAD [(QI "ldb") (HI "ldh") (SI "ldw")])
++ (define_mode_attr STORE [(QI "stb") (HI "sth") (SI "stw")])
++ 
++ ;; jump pattern are crucial. they are used all over the place
++ (define_insn "jump"
++         [(set (pc) (label_ref (match_operand 0 "" "")))]
++     ""
++ 	"j   \\t%0"
++ )
++ 
++ (define_insn "indirect_jump"
++ 	[(set (pc) (match_operand:SI 0 "register_operand" ""))]
++ 	""
++ 	"jr  \\t%0"
++ )
++ 
++ 
++ ;; RTL generation. This will tell GCC how a move looks
++ (define_expand "mov<mode>"
++     [(set (match_operand:MOVMODE 0 "nonimmediate_operand" "")
++           (match_operand:MOVMODE 1 "general_operand" "")
++     )]
++ 	""
++ 	{
++         /* if this is a store, force the value into a register */ 
++         if(GET_CODE(operands[0]) == MEM && !reg_or_0_operand(operands[1], <MODE>mode)) {
++             /* if before reload, we can still create pseudo registers by forcing the 
++              * the memory operand on one (and if no hard register is available) */
++             if(can_create_pseudo_p()) {
++                 operands[1] = force_reg(<MODE>mode, operands[1]);
++             } 
++             /* during reload invalid addresses may be passed. we should ignore them:
++              * they are going to be replaced with valid ones later */
++         }
++  	}
++ )
++ 
++ ;; assembler output phase. we match against the generated RTL, and produce
++ ;; code.
++ (define_insn "*mov<mode>"
++     [(set (match_operand:MOVMODE 0 "nonimmediate_operand" "=r,r,r, S,m")
++           (match_operand:MOVMODE 1 "general_operand"      "ri,S,m,rJ,rJ")
++     )]
++     "register_operand (operands[0], <MODE>mode)
++        || reg_or_0_operand (operands[1], <MODE>mode)"
++     "@
++      add \\t%0, $0, %1
++      <MOVMODE:LOAD> \\t%0, $0, %1
++      <MOVMODE:LOAD> \\t%0, %B1
++      <MOVMODE:STORE> \\t%z1, $0, %0
++      <MOVMODE:STORE> \\t%z1, %B0"
++ )
++  
++ 
++ ;; arithmetical patterns for SImode. 
++ (define_insn "addsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (plus:SI (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                    (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "add \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "subsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (minus:SI (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                     (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "sub \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "mulsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (mult:SI (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                    (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "mul \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "umulsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (mult:SI (zero_extend:SI (match_operand:SI 1 "reg_or_0_operand" "rJ"))
++                    (zero_extend:SI (match_operand:SI 2 "nonmemory_operand" "ri")))
++     )]
++     ""
++     "mulu \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "divsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (div:SI (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                   (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "div \\t%0, %z1, %2"
++ )
++ 
++ 
++ (define_insn "udivsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (udiv:SI (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                    (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "divu \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "modsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (mod:SI  (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                    (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "rem \\t%0, %z1, %2"
++ )
++ 
++ 
++ (define_insn "umodsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (umod:SI  (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                    (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "remu \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "andsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (and:SI  (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                    (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "and \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "iorsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (ior:SI  (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                    (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "or  \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "xorsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (xor:SI  (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                    (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "xor \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "ashlsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (ashift:SI (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                      (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "sll \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "ashrsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (ashiftrt:SI  (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                         (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "sar \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "lshrsi3"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (lshiftrt:SI  (match_operand:SI 1 "reg_or_0_operand" "rJ")
++                         (match_operand:SI 2 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "slr \\t%0, %z1, %2"
++ )
++ 
++ (define_insn "one_cmplsi2"
++     [(set (match_operand:SI 0 "register_operand" "=r")
++           (not:SI (match_operand:SI 1 "nonmemory_operand" "ri"))
++     )]
++     ""
++     "xnor \\t%0, $0, %1"
++ )
++ 
++ ;; Function Prologue and Epilogue and function return.
++ ;;
++ (define_expand "prologue"
++     [(clobber (const_int 0))]   ;; the clobber is just a placeholder
++     ""
++ {
++     eco32_prologue();
++     DONE;
++ }
++ )
++ 
++ (define_expand "epilogue"
++     [(clobber (const_int 0))]  ;; same here. the clobber is just to have some RTL.
++     ""
++ {
++     eco32_epilogue();
++     DONE;
++ }
++ )
++ 
++ (define_insn "ECO32_return"
++     [(return)
++      (use (reg:SI 31))]
++     ""
++     "jr  \\t$31"
++ )
++ 
++ ;; Function Calls
++ ;;
++ 
++ ;; The second/third operand of the call/call_value insn is the stuff that was returned by our 
++ ;; eco32_function_arg
++ (define_insn "call"
++     [(call  (match_operand:SI 0 "memory_operand"    "Z")
++             (match_operand    1 "immediate_operand" "i"))
++      (clobber (reg:SI 31))
++     ]
++     ""
++     {
++      if(GET_CODE(XEXP(operands[0], 0)) == REG) 
++          return "jalr \\t%0";
++      else if(memory_address_p(SImode, XEXP(operands[0], 0)))
++          return "jal \\t%0";
++      else
++          gcc_unreachable(); 
++      return NULL;
++     }
++ )
++ 
++ (define_insn "call_value"
++ 	[(set (match_operand 0 "" "")
++ 	      (call (match_operand:SI 1 "memory_operand" "Z")
++ 		        (match_operand    2 "immediate_operand" "i")))
++ 	 (clobber (reg:SI 31))
++ 	]
++ 	""
++ 	{
++      if(GET_CODE(XEXP(operands[1], 0)) == REG) 
++          return "jalr \\t%1";
++      else if(memory_address_p(SImode, XEXP(operands[1], 0)))
++          return "jal \\t%1";
++      else 
++          gcc_unreachable();
++      return NULL;
++     }
++ )
++ 
++ 
++ ;; conditional branches
++ ;;
++ 
++ (define_expand "cmpsi"
++ 	[(set (cc0) (compare (match_operand:SI 0 "register_operand" "")
++                          (match_operand:SI 1 "reg_or_0_operand" "")))]
++ 	""
++ 	{
++ 		compare_op0 = operands[0];
++ 		compare_op1 = operands[1];
++ 		DONE;
++ 	}
++ )
++ 
++ (define_expand "b<code>"
++ 	[(set (pc) (if_then_else (cond_code:SI (match_dup 1) 
++ 					                       (match_dup 2)) 
++ 				 (label_ref (match_operand 0 "" "")) 
++ 				 (pc)))]
++ 	""
++ 	{
++ 		operands[1] = compare_op0;
++ 	    operands[2] = compare_op1;  
++ 	}
++ )
++ 
++ (define_insn "nop"
++   [(const_int 0)]
++   ""
++   "or  \\t$0,$0,$0")
++ 
++ ;; branch instructions can operate successful on a 16bit sign extended range. That is, 
++ ;; from -32768 to +32767. now, those are instructions. so the real byte range is 
++ ;; -131072 to +131068. now, (pc) points, to the current instruction, not to the next one,
++ ;; so the pc relative branch range for positive maximum is +131072, the one for negatives
++ ;; is -131068 :p. if the difference exceeds these values, we use a unconditional jump, 
++ ;; and use the negated branch to jump over it if the condition doesn't hold.
++ ;; NOTE: for now, use the long jump even for 32767 limit, since we can't know what the
++ ;;       assembler inserts in between, which would make the distance far again.
++ (define_insn "*b<code>"
++ 	[(set (pc) (if_then_else (cond_code:SI (match_operand:SI 1 "register_operand" "r")
++ 					                       (match_operand:SI 2 "reg_or_0_operand" "rJ")) 
++ 				 (label_ref (match_operand 0 "" "")) 
++ 				 (pc)))]
++ 	""
++ 	{
++         switch(get_attr_length(insn)) {
++         case 4: return "b<code> \\t%1, %z2, %0";
++         case 8: return "b<cond_inv> \\t%1, %z2, .LC%=\;j   \\t%0\\n.LC%=:";
++         }
++     }
++     [(set (attr "length") 
++         (if_then_else
++ 	    (and (ge (minus (match_dup 0) (pc)) (const_int -32767))
++ 	         (le (minus (match_dup 0) (pc)) (const_int  32768)))
++ 	    (const_int 4)
++ 	    (const_int 8)))]
++ )
+diff -rcN src_org/gcc/gcc/config/eco32/eco32.opt src/gcc/gcc/config/eco32/eco32.opt
+*** src_org/gcc/gcc/config/eco32/eco32.opt	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32.opt	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,9 ----
++ ; opts-file for eco32. mkernel and msim is supported
++ 
++ msim
++ Target RejectNegative
++ -msim   Link against libsim and crt0sim. 
++ 
++ mkernel
++ Target RejectNegative Var(flag_mkernel)
++ -mkernel generates code for a kernel. implies -fno-common and -fno-builtin, and doesn't implicitely link against libc. You will have to provide replacements for \"memcmp\", \"memset\", \"memcpy\" and \"memmove\" functions, which gcc will call occasionally.
+diff -rcN src_org/gcc/gcc/config/eco32/eco32-protos.h src/gcc/gcc/config/eco32/eco32-protos.h
+*** src_org/gcc/gcc/config/eco32/eco32-protos.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32-protos.h	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,38 ----
++ rtx eco32_function_arg(int cum, enum machine_mode mode, tree type, 
++                        bool named );
++ int eco32_is_base_reg(int regn);
++ int eco32_is_base_reg(int regn);
++ int eco32_non_strict_base_reg(int regn);
++ int eco32_is_index_reg(int regn);
++ int eco32_non_strict_index_reg(int regn);
++ int eco32_regno_ok_for_base_p(int regn);
++ int eco32_regno_ok_for_index_p(int regn);
++ int eco32_constant_address_p (rtx x);
++ int eco32_legitimate_constant(rtx x);
++ int eco32_legitimate_address(enum machine_mode MODE,rtx X);
++ int eco32_non_strict_legitimate_address(enum machine_mode MODE,rtx X);
++ int eco32_reg_ok_for_base_p(rtx x);
++ int eco32_non_strict_reg_ok_for_base_p(rtx x);
++ rtx eco32_ret_addr_rtx(int count, rtx frame );
++ int eco32_initial_elimination_offset(int from, int to);
++ int eco32_arg_partial_bytes(int *cum, enum machine_mode mode, tree type, 
++                             bool named);
++ bool eco32_pass_by_reference(int *cum, enum machine_mode mode, 
++                              tree type, bool named);
++ bool eco32_scalar_mode_supported_p(enum machine_mode mode);
++ rtx eco32_function_value_impl(enum machine_mode m);
++ rtx eco32_function_value(tree ret_type, tree fn_decl_or_type, bool outgoing);
++ void eco32_prologue(void);
++ void eco32_epilogue(void);
++ enum reg_class reg_class_from_letter(char ch);
++ void eco32_asm_output_labelref(FILE *stream, char const *name);
++ void eco32_print_operand(FILE *file, rtx op, int letter);
++ void eco32_print_operand_address(FILE *stream, rtx x);
++ void eco32_initialize_trampoline(rtx addr, rtx fn_addr, rtx static_chain);
++ void eco32_asm_output_align(FILE *stream, int power);
++ void eco32_target_asm_function_epilogue (FILE *stream, HOST_WIDE_INT locals_size);
++ void eco32_setup_incoming_varargs(int *cum, enum machine_mode mode, tree type, int *pretend_args_size, 
++                                   int second_time);
++ 
++ extern rtx compare_op0;
++ extern rtx compare_op1;
+diff -rcN src_org/gcc/gcc/config/eco32/predicates.md src/gcc/gcc/config/eco32/predicates.md
+*** src_org/gcc/gcc/config/eco32/predicates.md	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/predicates.md	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,19 ----
++ ;; This file defines predicates for Eco32. they are used to accept or reject 
++ ;; a pattern to match to operands.
++ 
++ ;; Return true if OP is the zero constant for MODE. 
++ ;; XXX: add const_double and const_vector , once we have
++ ;; figured out what they do and are for.
++ (define_predicate "const0_operand"
++   (and (match_code "const_int")
++        (match_test "op == CONST0_RTX (mode)")))
++ 
++ ;; Returns true if OP is either the constant zero or a register.
++ (define_predicate "reg_or_0_operand"
++   (ior (match_operand 0 "register_operand")
++        (match_operand 0 "const0_operand")))
++ 
++ ;; Returns true if OP is either a register, or a signed 16bit integer
++ (define_predicate "small_arith_operand"
++   (ior (match_operand 0 "register_operand")
++        (match_test    "GET_CODE(op) == CONST_INT && INTVAL(op) + 0x8000 < 0x10000")))
+\ No newline at end of file
+diff -rcN src_org/gcc/gcc/config/escape.h src/gcc/gcc/config/escape.h
+*** src_org/gcc/gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/escape.h	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,29 ----
++   #undef   STARTFILE_SPEC
++   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
++   
++   #undef   ENDFILE_SPEC
++   #define ENDFILE_SPEC "%{shared|pie:crtendS.o%s;:crtend.o%s} %{shared:crtnS.o%s;:crtn.o%s}"
++   
++   #undef TARGET_OS_CPP_BUILTINS
++   #define TARGET_OS_CPP_BUILTINS()      \
++     do {                                \
++       /* to force a strcmp for typeinfo-compares */ \
++       builtin_define ("__GXX_MERGED_TYPEINFO_NAMES=0"); \
++       builtin_define ("__GXX_TYPEINFO_EQUALITY_INLINE=0"); \
++       builtin_define_std ("escape");      \
++       builtin_define_std ("unix");      \
++       builtin_assert ("system=escape");   \
++       builtin_assert ("system=unix");   \
++     } while(0);
++   
++   #undef LINK_GCC_C_SEQUENCE_SPEC
++   #define LINK_GCC_C_SEQUENCE_SPEC \
++     "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
++   
++   /* Use --as-needed -lgcc_s for eh support.  */
++   #ifdef HAVE_LD_AS_NEEDED
++   #define USE_LD_AS_NEEDED 1
++   #endif
++   
++   #undef TARGET_VERSION
++   #define TARGET_VERSION fprintf(stderr, " (eco32 escape)");
+diff -rcN src_org/gcc/gcc/config.gcc src/gcc/gcc/config.gcc
+*** src_org/gcc/gcc/config.gcc	2010-01-04 16:13:08.000000000 +0100
+--- src/gcc/gcc/config.gcc	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 407,412 ****
+--- 407,419 ----
+  
+  # Common parts for widely ported systems.
+  case ${target} in
++ *-*-escape*)
++   extra_parts="crti.o crtn.o crtbegin.o crtend.o"
++   tmake_file="eco32/t-eco32"
++   gas=yes
++   gnu_ld=yes
++   default_use_cxa_atexit=yes
++   ;;
+  *-*-darwin*)
+    tm_file="${tm_file} darwin.h"
+    case ${target} in
+***************
+*** 863,868 ****
+--- 870,881 ----
+  	extra_parts="crtbegin.o crtend.o"
+  	use_collect2=no
+  	;;
++ eco32-*-*)
++     cpu_type=eco32
++     tm_file="elfos.h ${tm_file} escape.h"
++     tmake_file="eco32/t-eco32"
++     extra_parts="crti.o crtn.o crtbegin.o crtend.o"
++     ;;
+  fr30-*-elf)
+  	tm_file="dbxelf.h elfos.h svr4.h ${tm_file}"
+  	tmake_file=fr30/t-fr30
+diff -rcN src_org/gcc/libgcc/config/eco32/crti.s src/gcc/libgcc/config/eco32/crti.s
+*** src_org/gcc/libgcc/config/eco32/crti.s	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/libgcc/config/eco32/crti.s	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,16 ----
++ # this file makes the prologue for the .init and .fini sections
++ 
++         .section .init
++         .global _init
++         .type _init, @function
++ _init:
++         sub $29, $29, 4
++         stw $31, $29, 0
++ 
++         .section .fini
++         .global _fini
++         .type _fini, @function
++ _fini:
++         sub $29, $29, 4
++         stw $31, $29, 0
++         
+\ No newline at end of file
+diff -rcN src_org/gcc/libgcc/config/eco32/crtn.s src/gcc/libgcc/config/eco32/crtn.s
+*** src_org/gcc/libgcc/config/eco32/crtn.s	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/libgcc/config/eco32/crtn.s	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 0 ****
+--- 1,12 ----
++ # epilogues for .init and .fini
++ 
++         .section .init
++         ldw $31, $29, 0
++         add $29, $29, 4
++         jr $31
++ 
++         .section .fini
++         ldw $31, $29, 0
++         add $29, $29, 4
++         jr $31
++  
+\ No newline at end of file
+diff -rcN src_org/gcc/libgcc/config/eco32/t-eco32 src/gcc/libgcc/config/eco32/t-eco32
+*** src_org/gcc/libgcc/config/eco32/t-eco32	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/libgcc/config/eco32/t-eco32	2011-05-24 12:11:58.000000000 +0200
+***************
+*** 0 ****
+--- 1,24 ----
++ # This is the target Makefile fragment used by gcc to compile target
++ # specific support files.  first, grab the general floating point
++ # support files, which will be linked to libgcc.a, and which provide
++ # the basic types double, and float, and other runtime support stuff.
++ 
++ #FPBIT = fp-bit.c
++ #DPBIT = dp-bit.c
++ 
++ # we define FLOAT in this copy, to compile the float emulation instead of double.
++ #fp-bit.c: $(srcdir)/config/fp-bit.c
++ #	echo '#define FLOAT'				> fp-bit.c
++ #	cat $(srcdir)/config/fp-bit.c			>> fp-bit.c
++ 
++ #dp-bit.c: $(srcdir)/config/fp-bit.c
++ #	cat $(srcdir)/config/fp-bit.c > dp-bit.c
++ 
++ # Assemble startup files.
++ $(T)crti.o: $(srcdir)/config/eco32/crti.s $(GCC_PASSES)
++ 	$(GCC_FOR_TARGET) $(GCC_CFLAGS) $(MULTILIB_CFLAGS) $(INCLUDES) \
++ 	-c -o $(T)crti.o -x assembler $(srcdir)/config/eco32/crti.s
++ 
++ $(T)crtn.o: $(srcdir)/config/eco32/crtn.s $(GCC_PASSES)
++ 	$(GCC_FOR_TARGET) $(GCC_CFLAGS) $(MULTILIB_CFLAGS) $(INCLUDES) \
++ 	-c -o $(T)crtn.o -x assembler $(srcdir)/config/eco32/crtn.s
+diff -rcN src_org/gcc/libgcc/config.host src/gcc/libgcc/config.host
+*** src_org/gcc/libgcc/config.host	2009-04-17 13:58:41.000000000 +0200
+--- src/gcc/libgcc/config.host	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 79,84 ****
+--- 79,87 ----
+  bfin*-*)
+  	cpu_type=bfin
+  	;;
++ eco32*)
++ 	cpu_type=eco32
++ 	;;
+  fido-*-*)
+  	cpu_type=m68k
+  	;;
+***************
+*** 242,247 ****
+--- 245,254 ----
+  	;;
+  crx-*-elf)
+  	;;
++ eco32-*-*)
++ 	extra_parts="crti.o crtn.o crtbegin.o crtend.o"
++ 	tmake_file="eco32/t-eco32"
++ 	;;
+  fido-*-elf)
+  	;;
+  fr30-*-elf)
+diff -rcN src_org/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
+*** src_org/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2009-04-10 01:23:07.000000000 +0200
+--- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 38,44 ****
+  
+  /* The current installed user handler.  */
+  std::terminate_handler __cxxabiv1::__terminate_handler =
+! #if _GLIBCXX_HOSTED
+  	__gnu_cxx::__verbose_terminate_handler;
+  #else
+  	std::abort;
+--- 38,44 ----
+  
+  /* The current installed user handler.  */
+  std::terminate_handler __cxxabiv1::__terminate_handler =
+! #if 1 //_GLIBCXX_HOSTED
+  	__gnu_cxx::__verbose_terminate_handler;
+  #else
+  	std::abort;
+diff -rcN src_org/gcc/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/libsupc++/vterminate.cc
+*** src_org/gcc/libstdc++-v3/libsupc++/vterminate.cc	2009-04-10 01:23:07.000000000 +0200
+--- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2011-05-24 12:05:16.000000000 +0200
+***************
+*** 24,35 ****
+  
+  #include <bits/c++config.h>
+  
+! #if _GLIBCXX_HOSTED
+  #include <cstdlib>
+  #include <exception>
+  #include <exception_defines.h>
+  #include <cxxabi.h>
+! # include <cstdio>
+  
+  using namespace std;
+  using namespace abi;
+--- 24,40 ----
+  
+  #include <bits/c++config.h>
+  
+! #if 1 //_GLIBCXX_HOSTED
+  #include <cstdlib>
+  #include <exception>
+  #include <exception_defines.h>
+  #include <cxxabi.h>
+! // don't include cstdio here because thats too much trouble
+! //# include <cstdio>
+! extern "C" void abort(void);
+! extern "C" int fputs(const char*,void*);
+! extern "C" void *free(void*);
+! extern void *stderr;
+  
+  using namespace std;
+  using namespace abi;
+***************
+*** 60,66 ****
+  	  int status = -1;
+  	  char *dem = 0;
+  	  
+! 	  dem = __cxa_demangle(name, 0, 0, &status);
+  
+  	  fputs("terminate called after throwing an instance of '", stderr);
+  	  if (status == 0)
+--- 65,71 ----
+  	  int status = -1;
+  	  char *dem = 0;
+  	  
+! 	  //dem = __cxa_demangle(name, 0, 0, &status);
+  
+  	  fputs("terminate called after throwing an instance of '", stderr);
+  	  if (status == 0)

@@ -49,7 +49,7 @@ static sLock *locks = NULL;
 
 /* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
 
-static bool lock_isLocked(sLock *l,ushort flags) {
+static bool lock_isLocked(const sLock *l,ushort flags) {
 	if((flags & LOCK_EXCLUSIVE) && (l->readRefs > 0 || l->writer != INVALID_TID))
 		return true;
 	if(!(flags & LOCK_EXCLUSIVE) && l->writer != INVALID_TID)

@@ -1,4 +1,4 @@
-DIRS = $(filter-out $(wildcard *.*) Makefile,$(wildcard *))
+DIRS = $(ARCH) common
 
 .PHONY:  all clean
 

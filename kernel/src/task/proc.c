@@ -55,7 +55,7 @@
 static void proc_notifyProcDied(tPid parent);
 static int proc_finishClone(sThread *nt,tFrameNo stackFrame);
 static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint);
-static uint32_t *proc_addStartArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
+static uint32_t *proc_addStartArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 static bool proc_add(sProc *p);
 static void proc_remove(sProc *p);
 
@@ -849,7 +849,7 @@ static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,uintp
 	return true;
 }
 
-static uint32_t *proc_addStartArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
+static uint32_t *proc_addStartArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	if(t->tlsRegion >= 0) {
 		uintptr_t tlsStart,tlsEnd;

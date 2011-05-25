@@ -35,7 +35,7 @@
 #define ELF_TYPE_INTERP		1
 
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info);
-static int elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,uint type);
+static int elf_addSegment(const sBinDesc *bindesc,const Elf32_Phdr *pheader,size_t loadSegNo,uint type);
 
 int elf_loadFromFile(const char *path,sStartupInfo *info) {
 	return elf_doLoadFromFile(path,ELF_TYPE_PROG,info);
@@ -176,9 +176,10 @@ failed:
 	return ERR_INVALID_ELF_BIN;
 }
 
-static int elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,uint type) {
+static int elf_addSegment(const sBinDesc *bindesc,const Elf32_Phdr *pheader,size_t loadSegNo,uint type) {
 	sThread *t = thread_getRunning();
 	int stype,res;
+	size_t memsz = pheader->p_memsz;
 	/* determine type */
 	if(loadSegNo == 0) {
 		/* dynamic linker has a special entrypoint */
@@ -196,7 +197,7 @@ static int elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo
 			return ERR_INVALID_ELF_BIN;
 		stype = REG_TLS;
 		/* we need the thread-control-block at the end */
-		pheader->p_memsz += sizeof(void*);
+		memsz += sizeof(void*);
 	}
 	else if(pheader->p_flags == PF_R) {
 		/* not allowed for the dynamic linker */
@@ -210,14 +211,14 @@ static int elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo
 		return ERR_INVALID_ELF_BIN;
 
 	/* check if the sizes are valid */
-	if(pheader->p_filesz > pheader->p_memsz)
+	if(pheader->p_filesz > memsz)
 		return ERR_INVALID_ELF_BIN;
 
 	/* tls needs no binary */
 	if(stype == REG_TLS)
 		bindesc = NULL;
 	/* add the region */
-	if((res = vmm_add(t->proc,bindesc,pheader->p_offset,pheader->p_memsz,pheader->p_filesz,stype)) < 0)
+	if((res = vmm_add(t->proc,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype)) < 0)
 		return res;
 	if(stype == REG_TLS)
 		t->tlsRegion = res;

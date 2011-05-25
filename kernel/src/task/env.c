@@ -31,8 +31,8 @@ typedef struct {
 	char *value;
 } sEnvVar;
 
-static sEnvVar *env_getiOf(sProc *p,size_t *index);
-static sEnvVar *env_getOf(sProc *p,const char *name);
+static sEnvVar *env_getiOf(const sProc *p,size_t *index);
+static sEnvVar *env_getOf(const sProc *p,const char *name);
 
 const char *env_geti(tPid pid,size_t index) {
 	sProc *p = proc_getByPid(pid);
@@ -130,7 +130,7 @@ void env_removeFor(tPid pid) {
 	}
 }
 
-static sEnvVar *env_getiOf(sProc *p,size_t *index) {
+static sEnvVar *env_getiOf(const sProc *p,size_t *index) {
 	sSLNode *n;
 	sEnvVar *e = NULL;
 	if(!p->env)
@@ -143,7 +143,7 @@ static sEnvVar *env_getiOf(sProc *p,size_t *index) {
 	return NULL;
 }
 
-static sEnvVar *env_getOf(sProc *p,const char *name) {
+static sEnvVar *env_getOf(const sProc *p,const char *name) {
 	sSLNode *n;
 	if(!p->env)
 		return NULL;

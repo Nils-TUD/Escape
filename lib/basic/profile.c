@@ -36,7 +36,7 @@
 })
 #	define getCycles()	cpu_rdtsc()
 #else
-#	include <esc/ports.h>
+#	include <arch/x86/ports.h>
 #	include <esc/thread.h>
 #	include <esc/debug.h>
 #	include <stdio.h>

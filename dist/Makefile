@@ -3,6 +3,7 @@ HDD = $(BUILD)/hd.img
 DISKMNT = $(ROOT)/diskmnt
 CD = $(BUILD)/cd.iso
 SUDO = sudo
+DIRS = arch/$(ARCH)/stage1 arch/$(ARCH)/stage2
 
 BUILD_KERNEL=$(wildcard $(BUILD)/kernel*.bin)
 BUILD_BIN=$(wildcard $(BUILD)/user_*.bin)
@@ -19,7 +20,10 @@ DISK_LIBGCC=$(DISKMNT)/lib/libgcc_s.so.1
 
 .PHONY: all cd hdd
 
-all:	$(HDD) $(CD)
+all:
+		@for i in $(DIRS) ; do \
+			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+		done
 
 cd:	$(CD)
 
@@ -43,6 +47,11 @@ $(HDD): $(BUILD_KERNEL) $(BUILD_BIN) $(BUILD_SBIN) $(BUILD_LIB) $(BUILD_LIBGCC)
 		@$(SUDO) cp $(BUILD)/../dist/i586-elf-escape/lib/libgcc_s.so.1 $(DISKMNT)/lib/libgcc_s.so.1
 		@$(ROOT)/tools/disk.sh unmount
 		@touch $(HDD)
+
+clean:
+		@for i in $(DIRS) ; do \
+			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+		done
 
 #pre-hdd:
 #		@echo "	" UPDATING $(HDD)

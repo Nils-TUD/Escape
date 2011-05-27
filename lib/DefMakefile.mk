@@ -1,8 +1,8 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/$(NAME)
-SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+SUBDIRS = $(shell find . -type d)
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/lib$(NAME).a
 
 ifneq ($(LINKTYPE),static)
@@ -12,7 +12,7 @@ endif
 
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 
-CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
+CSRC = $(shell find $(SUBDIRS) -name "*.c")
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 

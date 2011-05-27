@@ -2,7 +2,8 @@
 ROOT = ../..
 BUILDK = $(BUILD)/kernel/src
 BIN = $(BUILD)/kernel.bin
-LDCONF = ../ld.conf
+MAP = $(BUILD)/kernel.map
+LDCONF = arch/$(ARCH)/ld.conf
 LIB = $(ROOT)/lib/basic
 SUBDIRS = $(shell find . -type d | grep -v '\.svn')
 LSUBDIRS = $(shell find $(LIB) -type d | grep -v '\.svn')
@@ -13,15 +14,26 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D I
  -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/profile.c
 
 # sources
-ASRC = $(shell find . -name "*.s" | grep -v '\.svn')
+ASRC = $(filter-out $(shell find ./arch -name "*.s"),\
+	$(shell find . -name "*.s" | grep -v '\.svn'))
+ASRC += $(filter-out ./arch/$(ARCH)/end.s,$(shell find ./arch/$(ARCH) -name "*.s" | grep -v '\.svn'))
+ASRC += ./arch/$(ARCH)/end.s
 ifeq ($(BUILDTYPE),release)
 # remove dbg-files in release-mode
-CSRC = $(filter-out $(shell find . -name "*.c" | grep '/dbg/'), \
+CSRC = $(filter-out $(shell find ./arch -name "*.c") $(shell find ./dbg -name "*.c"),\
 	$(shell find . -name "*.c" | grep -v '\.svn'))
+CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 else
-CSRC = $(shell find . -name "*.c" | grep -v '\.svn')
+#CSRC = printf.c
+CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c" | grep -v '\.svn'))
+CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 endif
-LSRC = $(shell find $(LIB) -name "*.c" | grep -v '\.svn')
+#LSRC = $(filter-out $(LIB)/ringbuffer.c $(LIB)/hashmap.c $(LIB)/sllist.c $(LIB)/test.c \
+#	$(LIB)/string/strdup.c $(LIB)/string/strndup.c \
+#	$(shell find $(LIB)/arch -name "*.c"),$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
+LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
+	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
+LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 
 # objects
 AOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(ASRC))
@@ -35,7 +47,7 @@ SYMBOLOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(SYMBOLSRC))
 
 .PHONY: all pre clean
 
-all:	$(BIN)
+all:	$(BIN) $(MAP)
 
 $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "	" LINKING $(BIN)
@@ -55,6 +67,11 @@ $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) -lgcc;
+
+$(MAP): $(BIN)
+		@echo "	" GEN $@
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) -lgcc -Wl,-M | \
+			gawk -f $(ROOT)/tools/createmap.awk > $@
 
 $(SYMBOLS):
 		@if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
@@ -80,4 +97,4 @@ $(BUILDK)/lib/%.o:	$(LIB)/%.c
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEPS) $(BIN) $(COBJ) $(AOBJ) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ)
+		rm -f $(DEPS) $(BIN) $(COBJ) $(AOBJ) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ) $(MAP)

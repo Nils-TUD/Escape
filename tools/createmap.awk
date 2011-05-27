@@ -2,8 +2,8 @@
 
 BEGIN {
     secRepl[".text"] = "CODE"
-    secRepl[".data"] = "DATA"
-    secRepl[".bss"] = "BSS"
+    #secRepl[".data"] = "DATA"
+    #secRepl[".bss"] = "BSS"
 }
 
 END {

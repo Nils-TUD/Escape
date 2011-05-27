@@ -1,6 +1,6 @@
 #!/bin/bash
 ROOT=$(dirname $(dirname $(readlink -f $0)))
-DIST=$ROOT/build/$ARCH-dist
+DIST=$ROOT/../toolchain/$ARCH
 
 if [ $# != 1 ]; then
 	echo "Usage: $0 <file>" 1>&2
@@ -8,7 +8,7 @@ if [ $# != 1 ]; then
 fi
 
 if [[ `basename $1` =~ ^crt(0|1|n|begin|end)S?\.o$ ]]; then
-	DIR=$DIST/lib/gcc/$TARGET/4.4.3
+	DIR=$DIST/lib/gcc/$TARGET/$GCCVER
 else
 	DIR=$DIST/$TARGET/lib
 fi

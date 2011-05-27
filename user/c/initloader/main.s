@@ -22,7 +22,7 @@
 .global _start
 .global sigRetFunc
 
-.include "../../../lib/c/syscalls.s"
+.include "../../../lib/c/arch/i586/syscalls.s"
 
 _start:
 	# load modules first

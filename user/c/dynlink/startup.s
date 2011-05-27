@@ -26,7 +26,7 @@
 .extern lookup_resolve
 .extern load_setupProg
 
-.include "../../../lib/c/syscalls.s"
+.include "../../../lib/c/arch/i586/syscalls.s"
 
 #  Initial stack:
 #  +------------------+  <- top

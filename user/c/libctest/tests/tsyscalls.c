@@ -18,12 +18,12 @@
  */
 
 #include <esc/common.h>
+#include <arch/i586/ports.h>
 #include <esc/driver.h>
 #include <esc/mem.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/io.h>
-#include <arch/x86/ports.h>
 #include <esc/messages.h>
 #include <stdio.h>
 #include <signal.h>

@@ -1,5 +1,4 @@
-DIRS = c g m shell vterm
-#DIRS = c g m cpp d gui shell vbe vterm
+DIRS = c g m cpp gui shell vbe vterm
 
 .PHONY:  all clean
 

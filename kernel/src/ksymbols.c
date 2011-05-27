@@ -26,15 +26,15 @@ static sSymbol ksymbols[] = {
 	{0,""},
 #if DEBUGGING
 #	if TESTING
-#		include "../../build/debug/kernelt_symbols.txt"
+#		include "../../build/i586-debug/kernelt_symbols.txt"
 #	else
-#		include "../../build/debug/kernel_symbols.txt"
+#		include "../../build/i586-debug/kernel_symbols.txt"
 #	endif
 #else
 #	if TESTING
-#		include "../../build/release/kernelt_symbols.txt"
+#		include "../../build/i586-release/kernelt_symbols.txt"
 #	else
-#		include "../../build/release/kernel_symbols.txt"
+#		include "../../build/i586-release/kernel_symbols.txt"
 #	endif
 #endif
 };

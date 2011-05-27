@@ -97,11 +97,11 @@ printCharStart:
 	add		$8,$0,TERM_BASE										# set I/O base address
 	add		$10,$0,OUTPUT_BASE								# set output base address
 printCharLoop:
-	ldw		$9,$8,(2 << 4 | 8)								# get xmtr status
+	ldw		$9,$8,(0 << 4 | 8)								# get xmtr status
 	and		$9,$9,1														# xmtr ready?
 	beq		$9,$0,printCharLoop								# no - wait
 	#stw		$16,$10,0													# send char to output
-	stw		$16,$8,(2 << 4 | 12)							# send char
+	stw		$16,$8,(0 << 4 | 12)							# send char
 	ldw		$31,$29,0													# restore return register
 	ldw		$16,$29,4													# restore register variable
 	add		$29,$29,8													# release stack frame

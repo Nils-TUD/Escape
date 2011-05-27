@@ -7,6 +7,9 @@ BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
+ifeq ($(LINKTYPE),static)
+	CFLAGS += -static -Wl,-Bstatic
+endif
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")

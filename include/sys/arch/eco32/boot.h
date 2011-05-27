@@ -6,15 +6,14 @@
 #define BOOT_H_
 
 #define MAX_PATH_LEN	20
-#define PROG_COUNT		4
+#define PROG_COUNT		1 /* TODO */
 
 /* a program we should load */
 typedef struct {
 	char path[MAX_PATH_LEN];
 	uint id;
 	uint start;
-	uint codeSize;
-	uint dataSize;
+	uint size;
 } sLoadProg;
 
 #define BL_HDD_ID	0

@@ -1,4 +1,5 @@
 DIRS = $(filter-out $(wildcard *.*) initloader libctest shlibtest dynlink x86mark Makefile,$(wildcard *))
+#DIRS = $(filter-out $(wildcard *.*) shlibtest Makefile,$(wildcard *))
 
 .PHONY:  all clean
 

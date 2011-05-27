@@ -12,7 +12,7 @@ CFLAGS = -static -Wl,-Bstatic -nostartfiles $(CDEFFLAGS)
 
 ASRC = $(wildcard *.s)
 AOBJ = $(patsubst %.s,$(BUILDL)/a%.o,$(ASRC))
-SYSCALLS = $(LIBC)/syscalls.s
+SYSCALLS = $(LIBC)/arch/$(ARCH)/syscalls.s
 
 .PHONY: all clean
 

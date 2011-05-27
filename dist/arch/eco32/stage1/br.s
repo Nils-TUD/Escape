@@ -35,7 +35,7 @@ reset:
 	add	$4,$0,1			# start loading with sector 1
 	add	$5,$0,loadaddr		# where to load the boot loader
 	and	$5,$5,0x3FFFFFFF	# convert to physical address
-	add	$6,$0,7			# 7 sectors to load
+	add	$6,$0,31			# 31 sectors to load
 	jal	rdsct
 	add	$8,$0,loadaddr		# start executing the boot loader
 	jr	$8
@@ -47,7 +47,7 @@ reset:
 rdsct:
 	sub	$29,$29,32
 	stw	$31,$29,20
-	add	$7,$0,16		# sector count
+	add	$7,$6,$0		# sector count
 	add	$6,$5,$0		# transfer address
 	add	$5,$4,$17		# relative sector -> absolute
 	add	$4,$0,'r'		# command

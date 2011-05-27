@@ -1,5 +1,6 @@
 #!/bin/bash
 ROOT=$(dirname $(dirname $(readlink -f $0)))
+TOOLCHAIN=$ROOT/../toolchain/$ARCH
 ISO=$BUILD/cd.iso
 OSTITLE="Escape v0.3"
 BINNAME=kernel.bin
@@ -16,7 +17,7 @@ mkdir $TMPDIR/etc/keymaps
 mkdir $TMPDIR/testdir
 
 # copy / create boot-stuff
-cp $ROOT/dist/boot/* $TMPDIR/boot/grub/
+cp $ROOT/dist/arch/$ARCH/boot/* $TMPDIR/boot/grub/
 echo 'default 0' > $TMPDIR/boot/grub/menu.lst;
 echo 'timeout 3' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
@@ -46,8 +47,9 @@ echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 cp $KERNELBIN $TMPDIR/boot/escape.bin
 
 # copy driver-deps, apps, drivers and user-apps
-cp $ROOT/dist/boot/* $TMPDIR/boot/grub
+cp $BOOT/dist/$ARCH/boot/* $TMPDIR/boot/grub
 cp $ROOT/dist/etc/* $TMPDIR/etc
+cp $ROOT/dist/arch/$ARCH/etc/* $TMPDIR/etc
 cp $ROOT/dist/etc/keymaps/* $TMPDIR/etc/keymaps
 cp $ROOT/dist/scripts/* $TMPDIR/scripts
 cp $ROOT/dist/testdir/* $TMPDIR/testdir
@@ -58,7 +60,7 @@ for i in $BUILD/lib*.so; do
 	cp $i $TMPDIR/lib/$BASE
 done;
 # copy libgcc; its in a different dir
-cp $ROOT/build/dist/i586-elf-escape/lib/libgcc_s.so.1 $TMPDIR/lib/libgcc_s.so.1
+cp $TOOLCHAIN/$TARGET/lib/libgcc_s.so.1 $TMPDIR/lib/libgcc_s.so.1
 for i in $BUILD/driver_*.bin ; do
 	BASE=`basename $i .bin`
 	cp $i $TMPDIR/sbin/`echo $BASE | sed "s/driver_\(.*\)/\1/g"`

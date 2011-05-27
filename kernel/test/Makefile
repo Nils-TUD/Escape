@@ -3,7 +3,7 @@ ROOT = ../..
 BUILDK = $(BUILD)/kernel/src
 BUILDT = $(BUILD)/kernel/test
 BIN = $(BUILD)/kernel_test.bin
-LDCONF = ../ld.conf
+LDCONF = ../src/arch/$(ARCH)/ld.conf
 LIB = $(ROOT)/lib/basic
 DEPS = $(wildcard $(BUILDT)/*.d)
 SUBDIRS = $(shell find ../src -type d | grep -v '\.svn')
@@ -15,9 +15,16 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 
 # sources
 TSRC = $(wildcard *.c)
-KSRC = $(filter-out ../src/kernel.c,$(shell find ../src -name "*.c" | grep -v '\.svn'))
-KASRC = $(shell find ../src -name "*.s" | grep -v '\.svn')
-LSRC = $(shell find $(LIB) -name "*.c" | grep -v '\.svn')
+KSRC = $(filter-out $(shell find ../src/arch -name "*.c"),\
+	$(shell find ../src -name "*.c" | grep -v '\.svn'))
+KSRC += $(filter-out ../src/arch/$(ARCH)/start.c,\
+	$(shell find ../src/arch/$(ARCH) -name "*.c" | grep -v '\.svn'))
+KASRC = $(filter-out $(shell find ../src/arch -name "*.s"),\
+	$(shell find ../src -name "*.s" | grep -v '\.svn'))
+KASRC += $(shell find ../src/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
+LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
+	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
+LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 
 # objects
 TOBJ = $(patsubst %.c,$(BUILDT)/%.o,$(TSRC))

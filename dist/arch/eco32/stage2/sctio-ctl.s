@@ -55,7 +55,7 @@ sctioctl:
 	stw	$19,$29,4
 	stw	$20,$29,0
 	add	$17,$5,$0		# sector number
-	add	$18,$6,0xC0000000	# memory address, virtualized
+	or	$18,$6,0xC0000000	# memory address, virtualized
 	add	$19,$7,$0		# number of sectors
 
 sctrd:

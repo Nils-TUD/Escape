@@ -1,8 +1,8 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/c
 LIBDIR = $(ROOT)/lib/basic
-SUBDIRS = $(filter-out $(shell find . -name "*.*"),$(shell find . -name "*"))
-LSUBDIRS = $(filter-out $(wildcard $(LIBDIR)/*.*),$(wildcard $(LIBDIR)/*))
+SUBDIRS = $(shell find . -type d)
+LSUBDIRS = $(shell find $(LIBDIR) -type d)
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS)) $(patsubst $(LIBDIR)/%,$(BUILDL)/lib/%,$(LSUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/libc.a
@@ -24,7 +24,8 @@ CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c")
 CSRC += $(shell find ./arch/$(ARCH) -name "*.c")
 ASRC = $(filter-out $(shell find ./arch -name "*.s"),$(shell find . -name "*.s"))
 ASRC += $(filter-out $(START),$(shell find ./arch/$(ARCH) -name "*.s"))
-LSRC = $(shell find $(LIBDIR) -name "*.c")
+LSRC = $(filter-out $(shell find $(LIBDIR)/arch -name "*.c"),$(shell find $(LIBDIR) -name "*.c"))
+LSRC += $(shell find $(LIBDIR)/arch/$(ARCH) -name "*.c")
 
 # objects
 STARTO = $(patsubst ./arch/$(ARCH)/%.s,$(BUILD)/%.o,$(START))

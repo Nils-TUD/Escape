@@ -1,4 +1,4 @@
-DIRS = $(filter-out Makefile powermng,$(wildcard *))
+DIRS = $(filter-out powermng Makefile,$(wildcard *))
 
 .PHONY:  all clean
 

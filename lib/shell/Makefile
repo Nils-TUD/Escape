@@ -1,9 +1,9 @@
 NAME = shell
 ROOT = ../..
 BUILDL = $(BUILD)/lib/$(NAME)
-SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+SUBDIRS = $(shell find . -type d)
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/lib$(NAME).a
 
 ifneq ($(LINKTYPE),static)
@@ -19,8 +19,7 @@ LEXGEN = lex.c
 BISONSRC = script.y
 BISONGEN = parser.c
 BISONDEBUG = parser.out
-CSRC = $(filter-out ./$(BISONGEN) ./$(LEXGEN),\
-	$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
+CSRC = $(filter-out ./$(BISONGEN) ./$(LEXGEN),$(shell find . -name "*.c"))
 
 # objects
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))

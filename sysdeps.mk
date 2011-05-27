@@ -1,13 +1,13 @@
-DEP_START = $(wildcard $(ROOT)/build/$(ARCH)-dist/lib/gcc/$(TARGET)/4.4.3/crt*.o)
-ifeq ($(ARCH),x86)
-	DEP_DEFLIBS = $(ROOT)/build/$(ARCH)-dist/lib/libsupc++.a
+DEP_START = $(wildcard $(ROOT)/../toolchain/$(ARCH)/lib/gcc/$(TARGET)/$(GCCVER)/crt*.o)
+ifeq ($(ARCH),i586)
+	DEP_DEFLIBS = $(ROOT)/../toolchain/$(ARCH)/lib/libsupc++.a
 else
 	DEP_DEFLIBS =
 endif
 ifeq ($(LINKTYPE),static)
-	DEP_DEFLIBS += $(wildcard $(ROOT)/build/$(ARCH)-dist/$(TARGET)/lib/lib*.a)
+	DEP_DEFLIBS += $(wildcard $(ROOT)/../toolchain/$(ARCH)/$(TARGET)/lib/lib*.a)
 else
-	DEP_DEFLIBS += $(filter-out $(ROOT)/build/$(ARCH)-dist/$(TARGET)/lib/libshlibtest.so \
-		$(ROOT)/build/$(ARCH)-dist/$(TARGET)/lib/libshlibtest2.so, \
-		$(wildcard $(ROOT)/build/$(ARCH)-dist/$(TARGET)/lib/lib*.so))
+	DEP_DEFLIBS += $(filter-out $(ROOT)/../toolchain/$(ARCH)/$(TARGET)/lib/libshlibtest.so \
+		$(ROOT)/../toolchain/$(ARCH)/$(TARGET)/lib/libshlibtest2.so, \
+		$(wildcard $(ROOT)/../toolchain/$(ARCH)/$(TARGET)/lib/lib*.so))
 endif

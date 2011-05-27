@@ -1,8 +1,11 @@
 # general
-ARCH = eco32
-BUILDDIR = $(abspath build/$(ARCH)-debug)
-DIST = build/$(ARCH)-dist
+ARCH = mmix
+GCCVER = 4.6.0
+#ARCH = i586
+#GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
+BUILDDIR = $(abspath build/$(ARCH)-debug)
+DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -18,9 +21,12 @@ KVM = -enable-kvm
 QEMU = qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 60 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
-ECO32 = /home/hrniels/Applications/eco32-0.20/
+ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin
+GIMMIX = /home/hrniels/mmix/gimmix
+GIMSIM = $(GIMMIX)/build/gimmix
+GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
 # wether to link drivers and user-apps statically or dynamically
 export LINKTYPE = static
@@ -29,6 +35,7 @@ export LIBGCC = dynamic
 
 # flags for gcc
 export ARCH
+export GCCVER
 export TARGET
 export BUILD = $(BUILDDIR)
 export HCC = gcc
@@ -39,6 +46,7 @@ export AR = $(abspath $(DIST)/bin/$(TARGET)-ar)
 export AS = $(abspath $(DIST)/bin/$(TARGET)-as)
 export READELF = $(abspath $(DIST)/bin/$(TARGET)-readelf)
 export OBJDUMP = $(abspath $(DIST)/bin/$(TARGET)-objdump)
+export OBJCOPY = $(abspath $(DIST)/bin/$(TARGET)-objcopy)
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
@@ -60,8 +68,8 @@ export SUDO=sudo
 # ADDLIBS = ../../../lib/basic/profile.c
 
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
-	#DIRS = tools dist lib drivers user kernel/src kernel/test
-	DIRS = tools dist lib
+	DIRS = tools dist lib drivers user kernel/src kernel/test
+	#DIRS = tools dist lib drivers user
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
@@ -158,8 +166,11 @@ else
 		$(READELF) -a $(BUILD)/$(APP) | less
 endif
 
-eco:	all
-		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -i -m $(BUILD)/stage2.map
+mmix:	all hdd
+		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -i --script=gimmix.start
+
+eco:	all hdd
+		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -c -i -m $(BUILD)/kernel.map
 
 qemu:	all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1

@@ -26,7 +26,7 @@ all:	$(BUILDDIRS) $(BIN)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		@$(CPPC) $(CFLAGS) -o $(BIN) $(COBJ) -L$(ROOT)/build/dist/lib -lstdc++ -lsupc++ $(ADDLIBS);
+		@$(CPPC) $(CFLAGS) -o $(BIN) $(COBJ) -L$(ROOT)/../toolchain/$(ARCH)/lib -lstdc++ -lsupc++ $(ADDLIBS);
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

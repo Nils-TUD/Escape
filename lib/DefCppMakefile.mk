@@ -4,8 +4,11 @@ SUBDIRS = $(filter-out Makefile $(shell find . -name "*.*"),$(shell find . -name
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/lib$(NAME).a
-DYNLIBNAME = lib$(NAME).so
-DYNLIB = $(BUILD)/$(DYNLIBNAME)
+
+ifneq ($(LINKTYPE),static)
+	DYNLIBNAME = lib$(NAME).so
+	DYNLIB = $(BUILD)/$(DYNLIBNAME)
+endif
 
 CFLAGS = $(CPPDEFFLAGS) $(ADDFLAGS)
 

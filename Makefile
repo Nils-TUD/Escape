@@ -47,6 +47,7 @@ export AS = $(abspath $(DIST)/bin/$(TARGET)-as)
 export READELF = $(abspath $(DIST)/bin/$(TARGET)-readelf)
 export OBJDUMP = $(abspath $(DIST)/bin/$(TARGET)-objdump)
 export OBJCOPY = $(abspath $(DIST)/bin/$(TARGET)-objcopy)
+export NM = $(abspath $(DIST)/bin/$(TARGET)-nm)
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
@@ -68,8 +69,8 @@ export SUDO=sudo
 # ADDLIBS = ../../../lib/basic/profile.c
 
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
-	DIRS = tools dist lib drivers user kernel/src kernel/test
-	#DIRS = tools dist lib drivers user
+	#DIRS = tools dist lib drivers user kernel/src kernel/test
+	DIRS = tools dist lib drivers user
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
@@ -167,7 +168,10 @@ else
 endif
 
 mmix:	all hdd
-		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -i --script=gimmix.start
+		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -i --script=gimmix.start -s $(BUILD)/stage2.map
+
+mmixd:	all hdd
+		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
 
 eco:	all hdd
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -c -i -m $(BUILD)/kernel.map

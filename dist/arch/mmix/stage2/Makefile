@@ -25,7 +25,7 @@ AOBJALL = $(AOBJS) $(AOBJ) $(AOBJE)
 
 .PHONY: all clean
 
-all:		$(BUILDDIRS) $(BIN) $(ELF)
+all:		$(BUILDDIRS) $(BIN) $(MAP) $(ELF)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -34,8 +34,11 @@ $(BUILDDIRS):
 
 $(ELF):	$(COBJ) $(AOBJALL) $(LOBJ) $(LDCONF)
 		@echo "	" LINKING $@
-		@$(CC) $(CFLAGS) -Wl,-s -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJS) $(COBJ) $(AOBJ) $(AOBJE) -Wl,-M \
-			| gawk -f $(ROOT)/tools/createmap.awk > $(MAP)
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJS) $(COBJ) $(AOBJ) $(AOBJE)
+
+$(MAP): $(ELF)
+		@echo "	" GEN MAP $@
+		@$(NM) -S $(ELF) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BIN): $(ELF)
 		@echo "	" GEN BIN $@

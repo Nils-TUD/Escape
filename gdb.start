@@ -1,1 +1,3 @@
-target remote localhost:1234
+target remote localhost:1235
+symbol-file build/mmix-debug/stage2.elf.bin
+break bootload

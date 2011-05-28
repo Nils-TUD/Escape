@@ -21,8 +21,13 @@
 _bcode:
 
 start:
-	GETA		$0,stack
+	GETA		$0,stack					# establish register-stack
 	UNSAVE	0,$0
+	PUT			rG,231						# setup rG for the GNU toolchain
+	SETL		$1,0x2000
+	GETA		$254,stack
+	ADDU		$254,$254,$1			# setup software-stack
+	SET			$253,$254
 
 	PUSHJ		$0,bootload				# call bootload function
 
@@ -33,15 +38,15 @@ start:
 debugChar:
 	GET		$1,rJ
 	SETH	$2,#8002						# base address: #8002000000000000
-	CMPU	$3,$1,'\n'					# char = \n?
+	CMPU	$3,$0,0xA						# char = \n?
 	BNZ		$3,1f
-	SET		$4,'\r'
+	SET		$4,0xD
 	PUSHJ	$3,debugChar				# putc('\r')
 1:
 	LDOU	$3,$2,#10						# read ctrl-reg
 	AND		$3,$3,#1						# exract RDY-bit
 	PBZ		$3,1b								# wait until its set
-	STOU	$1,$2,#18						# write char
+	STOU	$0,$2,#18						# write char
 	PUT		rJ,$1
 	POP		0,0
 
@@ -54,7 +59,7 @@ sctcapctl:
 	AND		$1,$1,#20
 	PBZ		$1,1B
 	LDOU	$0,$0,24						# read capacity
-	POP		0,0
+	POP		1,0
 
 # void dskio(int sct,void *addr,int nscts)
 dskio:

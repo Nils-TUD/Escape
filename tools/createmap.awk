@@ -21,7 +21,7 @@ END {
     if(secName ~ /\.text|\.bss|\.data/) {
         secStart = strtonum($2)
         secLen = strtonum($3)
-        sections[secName] = sprintf("%s\tstart 0x%.8X\tsize 0x%.8X",    \
+        sections[secName] = sprintf("%s\tstart 0x%.16X\tsize 0x%.16X",    \
                                     secRepl[secName], secStart, secLen)
     }
 }

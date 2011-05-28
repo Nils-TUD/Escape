@@ -40,6 +40,7 @@ static sLoadProg progs[PROG_COUNT] = {
 	{"/boot/rtc.bin",BL_RTC_ID,0,0}*/
 };
 
+static int super;
 static sExt2Simple e;
 static sExt2Inode rootIno;
 static sExt2Inode inoBuf;
@@ -306,7 +307,8 @@ sLoadProg *bootload(void) {
 		halt("Disk not found");
 
 	/* load superblock */
-	readSectors(&(e.superBlock),EXT2_SUPERBLOCK_SECNO,2);
+	readSectors(&super,EXT2_SUPERBLOCK_SECNO,2);
+	dumpBytes(&(e.superBlock),sizeof(e.superBlock));
 
 	/* TODO currently required */
 	if(BLOCK_SIZE != 1024)
@@ -317,6 +319,7 @@ sLoadProg *bootload(void) {
 
 	/* read root inode */
 	loadInode(&rootIno,EXT2_ROOT_INO);
+	printInode(&rootIno);
 
 	for(i = 0; i < PROG_COUNT; i++) {
 		/* get inode of path */

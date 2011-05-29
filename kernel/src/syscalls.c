@@ -27,6 +27,7 @@
 #include <sys/syscalls/other.h>
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls/signals.h>
+#include <assert.h>
 #include <errors.h>
 
 /* syscall-handlers */
@@ -38,8 +39,6 @@ typedef struct {
 	uchar argCount;
 } sSyscall;
 
-/* TODO */
-#ifdef __i386__
 /* our syscalls */
 static sSyscall syscalls[] = {
 	/* 0 */		{sysc_getpid,				0},
@@ -55,13 +54,24 @@ static sSyscall syscalls[] = {
 	/* 10 */	{sysc_mapPhysical,			2},
 	/* 11 */	{sysc_write,				3},
 	/* 12 */	{sysc_yield,				0},
+	/* TODO */
+#ifdef __i386__
 	/* 13 */	{sysc_requestIOPorts,		2},
 	/* 14 */	{sysc_releaseIOPorts,		2},
+#else
+	/* 13 */	{NULL,						2},
+	/* 14 */	{NULL,						2},
+#endif
 	/* 15 */	{sysc_dupFd,				1},
 	/* 16 */	{sysc_redirFd,				2},
 	/* 17 */	{sysc_wait,					2},
 	/* 18 */	{sysc_setSigHandler,		2},
+	/* TODO */
+#ifdef __i386__
 	/* 19 */	{sysc_ackSignal,			0},
+#else
+	/* 19 */	{NULL,						0},
+#endif
 	/* 20 */	{sysc_sendSignalTo,			2},
 	/* 21 */	{sysc_exec,					2},
 	/* 22 */	{sysc_fcntl,				3},
@@ -94,7 +104,12 @@ static sSyscall syscalls[] = {
 	/* 49 */	{sysc_tell,					2},
 	/* 50 */	{sysc_pipe,					2},
 	/* 51 */	{sysc_getConf,				1},
+	/* TODO */
+#ifdef __i386__
 	/* 52 */	{sysc_vm86int,				4},
+#else
+	/* 52 */	{NULL,						4},
+#endif
 	/* 53 */	{sysc_getWork,				7},
 	/* 54 */	{sysc_isterm,				1},
 	/* 55 */	{sysc_join,					1},
@@ -112,31 +127,20 @@ static sSyscall syscalls[] = {
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
-	uint argCount,ebxSave;
 	uint sysCallNo = SYSC_NUMBER(stack);
 	if(sysCallNo >= ARRAY_SIZE(syscalls))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	argCount = syscalls[sysCallNo].argCount;
-	ebxSave = stack->ebx;
-	/* handle copy-on-write (the first 2 args are passed in registers) */
-	if(argCount > 2) {
-		/* if the arguments are not mapped, return an error */
-		if(!paging_isRangeUserWritable((uintptr_t)stack->uesp,sizeof(uint) * (argCount - 2)))
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	}
-
 	/* no error by default */
 	SYSC_SETERROR(stack,0);
 	syscalls[sysCallNo].handler(stack);
-
-	/* set error-code (not for ackSignal) */
-	if(sysCallNo != 19) {
-		stack->ecx = stack->ebx;
-		stack->ebx = ebxSave;
-	}
 }
-#endif
+
+uint sysc_getArgCount(uint sysCallNo) {
+	if(sysCallNo >= ARRAY_SIZE(syscalls))
+		return 0;
+	return syscalls[sysCallNo].argCount;
+}
 
 bool sysc_isStringReadable(const char *str) {
 	uintptr_t addr;

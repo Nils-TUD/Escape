@@ -6,6 +6,7 @@
 #define CPU_H_
 
 #include <esc/common.h>
+#include <sys/printf.h>
 
 #ifdef __i386__
 #include <sys/arch/i586/cpu.h>

@@ -43,6 +43,7 @@
 #include <esc/keycodes.h>
 #include <assert.h>
 #include <string.h>
+#include <errors.h>
 
 #define DEBUG_PAGEFAULTS		0
 
@@ -624,11 +625,28 @@ static void intrpt_irqIgnore(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_syscall(sIntrptStackFrame *stack) {
+	uint argCount,ebxSave,sysCallNo;
 	sThread *t = thread_getRunning();
 	if(t->proc->flags & P_VM86)
 		util_panic("VM86-task wants to perform a syscall!?");
 	t->stats.syscalls++;
+
+	sysCallNo = SYSC_NUMBER(stack);
+	argCount = sysc_getArgCount(sysCallNo);
+	ebxSave = stack->ebx;
+	/* handle copy-on-write (the first 2 args are passed in registers) */
+	if(sysc_getArgCount(sysCallNo) > 2) {
+		/* if the arguments are not mapped, return an error */
+		if(!paging_isRangeUserWritable((uintptr_t)stack->uesp,sizeof(uint) * (argCount - 2)))
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	}
 	sysc_handle(stack);
+
+	/* set error-code (not for ackSignal) */
+	if(sysCallNo != 19) {
+		stack->ecx = stack->ebx;
+		stack->ebx = ebxSave;
+	}
 }
 
 static void intrpt_initPic(void) {

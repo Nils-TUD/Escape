@@ -22,6 +22,10 @@
 
 #include <sys/common.h>
 
+#ifdef __eco32__
+#include <sys/arch/eco32/debug.h>
+#endif
+
 /**
  * Starts the timer
  */

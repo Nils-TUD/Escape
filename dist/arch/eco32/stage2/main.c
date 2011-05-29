@@ -35,9 +35,9 @@ extern int sctcapctl(void);
 
 /* the tasks we should load */
 static sLoadProg progs[MAX_PROG_COUNT] = {
-	{"/boot/kernel.bin",BL_K_ID,0,0},
+	{"/boot/kernel.bin","/boot/kernel.bin",BL_K_ID,0,0},
 	/*{"/sbin/hdd.bin",BL_HDD_ID,0,0},*/
-	{"/sbin/fs",BL_FS_ID,0,0},
+	{"/sbin/fs","/sbin/fs /dev/fs /dev/hda1 ext2",BL_FS_ID,0,0},
 	/*{"/sbin/rtc.bin",BL_RTC_ID,0,0}*/
 };
 static sBootInfo bootinfo;

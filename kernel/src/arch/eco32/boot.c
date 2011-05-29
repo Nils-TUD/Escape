@@ -3,10 +3,23 @@
  */
 
 #include <esc/common.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/task/uenv.h>
+#include <sys/task/timer.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/paging.h>
 #include <sys/boot.h>
 #include <sys/video.h>
+#include <sys/util.h>
 #include <string.h>
 
+#define MAX_ARG_COUNT			8
+#define MAX_ARG_LEN				64
+
+static const char **boot_parseArgs(const char *line,int *argc);
+
+static bool loadedMods = false;
 static sLoadProg progs[MAX_PROG_COUNT];
 static sBootInfo info;
 
@@ -37,30 +50,29 @@ size_t boot_getUsableMemCount(void) {
 }
 
 void boot_loadModules(sIntrptStackFrame *stack) {
-	/* TODO */
-#if 0
 	size_t i;
 	tPid pid;
 	tInodeNo nodeNo;
-	sModule *mod = mb->modsAddr;
 
 	/* it's not good to do this twice.. */
 	if(loadedMods)
 		return;
 
+#if 0
 	/* start idle-thread */
 	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
 		thread_idle();
 		util_panic("Idle returned");
 	}
+#endif
 
 	loadedMods = true;
-	for(i = 0; i < mb->modsCount; i++) {
+	for(i = 1; i < info.progCount; i++) {
 		/* parse args */
 		int argc;
-		const char **argv = boot_parseArgs(mod->name,&argc);
+		const char **argv = boot_parseArgs(progs[i].command,&argc);
 		if(argc < 2)
-			util_panic("Invalid arguments for multiboot-module: %s\n",mod->name);
+			util_panic("Invalid arguments for multiboot-module: %s\n",progs[i].command);
 
 		/* clone proc */
 		pid = proc_getFreePid();
@@ -68,7 +80,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 			util_panic("No free process-slots");
 
 		if(proc_clone(pid,0)) {
-			sStartupInfo info;
+			sStartupInfo sinfo;
 			size_t argSize = 0;
 			char *argBuffer = NULL;
 			sProc *p = proc_getRunning();
@@ -76,15 +88,15 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 			proc_removeRegions(p,false);
 			/* now load module */
 			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
-			if(elf_loadFromMem((void*)mod->modStart,mod->modEnd - mod->modStart,&info) < 0)
+			if(elf_loadFromMem((void*)progs[i].start,progs[i].size,&sinfo) < 0)
 				util_panic("Loading multiboot-module %s failed",p->command);
 			/* build args */
 			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);
 			if(argc < 0)
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
 			/* no dynamic linking here */
-			p->entryPoint = info.progEntry;
-			if(!uenv_setupProc(stack,p->command,argc,argBuffer,argSize,&info,info.progEntry))
+			p->entryPoint = sinfo.progEntry;
+			if(!uenv_setupProc(stack,p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
 				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
@@ -102,19 +114,40 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 			timer_sleepFor(thread_getRunning()->tid,20);
 			thread_switch();
 		}
-
-		mod++;
 	}
 
+#if 0
 	/* start the swapper-thread. it will never return */
 	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
 		swap_start();
 		util_panic("Swapper reached this");
 	}
-
-	/* create the vm86-task */
-	assert(vm86_create() == 0);
 #endif
+}
+
+static const char **boot_parseArgs(const char *line,int *argc) {
+	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
+	static char *args[MAX_ARG_COUNT];
+	size_t i = 0,j = 0;
+	args[0] = argvals[0];
+	while(*line) {
+		if(*line == ' ') {
+			if(args[j][0]) {
+				if(j + 1 >= MAX_ARG_COUNT)
+					break;
+				args[j][i] = '\0';
+				j++;
+				i = 0;
+				args[j] = argvals[j];
+			}
+		}
+		else if(i < MAX_ARG_LEN)
+			args[j][i++] = *line;
+		line++;
+	}
+	*argc = j + 1;
+	args[j][i] = '\0';
+	return (const char**)args;
 }
 
 
@@ -128,7 +161,7 @@ void boot_dbg_print(void) {
 	vid_printf("Boot modules:\n");
 	/* skip kernel */
 	for(i = 1; i < info.progCount; i++) {
-		vid_printf("\t%s [%08x .. %08x]\n",info.progs[i].path,
+		vid_printf("\t%s [%08x .. %08x]\n",info.progs[i].command,
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}
 }

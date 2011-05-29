@@ -20,7 +20,9 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/view.h>
+#ifdef __i386__
 #include <sys/arch/i586/gdt.h>
+#endif
 #include <sys/task/proc.h>
 #include <sys/task/sched.h>
 #include <sys/task/signals.h>
@@ -71,9 +73,11 @@ static void view_pmemcont(void);
 static void view_pmemstack(void);
 static void view_shm(void);
 static void view_cpu(void);
+#ifdef __i386__
 static void view_gdt(void);
+#endif
 static void view_timer(void);
-static void view_multiboot(void);
+static void view_boot(void);
 static void view_requests(void);
 static void view_locks(void);
 static void view_events(void);
@@ -105,9 +109,11 @@ static sView views[] = {
 	{"pmemstack",(fView)view_pmemstack},
 	{"shm",(fView)view_shm},
 	{"cpu",(fView)view_cpu},
+#ifdef __i386__
 	{"gdt",(fView)view_gdt},
+#endif
 	{"timer",(fView)view_timer},
-	{"multiboot",(fView)view_multiboot},
+	{"boot",(fView)view_boot},
 	{"requests",(fView)view_requests},
 	{"locks",(fView)view_locks},
 	{"events",(fView)view_events},
@@ -245,13 +251,15 @@ static void view_shm(void) {
 static void view_cpu(void) {
 	cpu_dbg_print();
 }
+#ifdef __i386__
 static void view_gdt(void) {
 	gdt_dbg_print();
 }
+#endif
 static void view_timer(void) {
 	timer_dbg_print();
 }
-static void view_multiboot(void) {
+static void view_boot(void) {
 	boot_dbg_print();
 }
 static void view_requests(void) {

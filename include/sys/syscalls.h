@@ -38,6 +38,12 @@
 void sysc_handle(sIntrptStackFrame *intrptStack);
 
 /**
+ * @param sysCallNo the syscall-number
+ * @return the number of arguments for the given syscall
+ */
+uint sysc_getArgCount(uint sysCallNo);
+
+/**
  * Checks whether the given null-terminated string (in user-space) is readable
  *
  * @param char* the string

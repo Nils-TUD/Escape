@@ -24,6 +24,8 @@
 #define CTRL_MASK		2
 #define ALT_MASK		4
 
+#define VK_NOKEY		128
+
 #define VK_ACCENT		1
 #define VK_0			2
 #define VK_1			3

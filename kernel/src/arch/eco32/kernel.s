@@ -29,7 +29,7 @@
 	.global tlb_replace
 
 	.global logByte
-	.global dbg_putc
+	.global debugc
 
 	.global intrpt_exKMiss
 	.global intrpt_setEnabled
@@ -180,23 +180,23 @@ logByte:
 	jr		$31
 
 # void dbg_putc(char c)
-dbg_putc:
+debugc:
 	sub		$29,$29,8													# create stack frame
 	stw		$31,$29,0													# save return register
 	stw		$16,$29,4													# save register variable
 	add		$16,$4,0													# save argument
 	add		$10,$0,0x0A
-	bne		$4,$10,printCharStart
+	bne		$4,$10,debugcStart
 	add		$4,$0,0x0D
-	jal		dbg_putc
-printCharStart:
+	jal		debugc
+debugcStart:
 	add		$8,$0,TERM_BASE										# set I/O base address
 	add		$10,$0,OUTPUT_BASE								# set output base address
-printCharLoop:
+debugcLoop:
 	ldw		$9,$8,(0 << 4 | 8)								# get xmtr status
 	and		$9,$9,1														# xmtr ready?
-	beq		$9,$0,printCharLoop								# no - wait
-	#stw		$16,$10,0													# send char to output
+	beq		$9,$0,debugcLoop									# no - wait
+	stw		$16,$10,0													# send char to output
 	stw		$16,$8,(0 << 4 | 12)							# send char
 	ldw		$31,$29,0													# restore return register
 	ldw		$16,$29,4													# restore register variable

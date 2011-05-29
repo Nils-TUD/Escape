@@ -5,6 +5,7 @@
 #include <esc/common.h>
 #include <sys/task/signals.h>
 #include <sys/task/timer.h>
+#include <sys/syscalls.h>
 #include <sys/intrpt.h>
 #include <sys/video.h>
 #include <sys/util.h>
@@ -35,14 +36,9 @@ typedef struct {
 	tSig signal;
 } sInterrupt;
 
-/**
- * Handles a TLB-miss >= 0x80000000 && < 0xC0000000
- */
 extern void intrpt_exKMiss(sIntrptStackFrame *frame);
-/**
- * The default handler for all interrupts we do not expect
- */
 static void intrpt_defHandler(sIntrptStackFrame *frame);
+static void intrpt_exTrap(sIntrptStackFrame *frame);
 static void intrpt_irqTimer(sIntrptStackFrame *stack);
 
 static sInterrupt intrptList[] = {
@@ -66,7 +62,7 @@ static sInterrupt intrptList[] = {
 	/* 0x11: EXC_ILL_INSTRCT */	{intrpt_defHandler,	"Ill. instr. exception",0},
 	/* 0x12: EXC_PRV_INSTRCT */	{intrpt_defHandler,	"Prv. instr. exception",0},
 	/* 0x13: EXC_DIVIDE */		{intrpt_defHandler,	"Divide exception",		0},
-	/* 0x14: EXC_TRAP */		{intrpt_defHandler,	"Trap exception",		0},
+	/* 0x14: EXC_TRAP */		{intrpt_exTrap,		"Trap exception",		0},
 	/* 0x15: EXC_TLB_MISS */	{intrpt_exKMiss,	"TLB miss exception",	0},
 	/* 0x16: EXC_TLB_WRITE */	{intrpt_defHandler,	"TLB write exception",	0},
 	/* 0x17: EXC_TLB_INVALID */	{intrpt_defHandler,	"TLB invalid exception",0},
@@ -102,6 +98,13 @@ static void intrpt_defHandler(sIntrptStackFrame *frame) {
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ 0x%08x\n",
 			frame->irqNo,intrptList[frame->irqNo & 0x1f].name,frame->r[30]);
+}
+
+static void intrpt_exTrap(sIntrptStackFrame *frame) {
+	cons_start();
+	sThread *t = thread_getRunning();
+	t->stats.syscalls++;
+	sysc_handle(frame);
 }
 
 static void intrpt_irqTimer(sIntrptStackFrame *stack) {

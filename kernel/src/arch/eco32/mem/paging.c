@@ -179,8 +179,8 @@ bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 			return false;
 		if(!pt->present) {
 			/* we have tp handle the page-fault here */
-			/* TODO if(!vmm_pagefault(virt))
-				return false;*/
+			if(!vmm_pagefault(virt))
+				return false;
 		}
 		virt += PAGE_SIZE;
 		pt++;
@@ -210,8 +210,8 @@ bool paging_isRangeWritable(uintptr_t virt,size_t count) {
 		if(!pd->present || !pt->exists)
 			return false;
 		if(!pt->present || !pt->writable) {
-			/* TODO if(!vmm_pagefault(virt))
-				return false;*/
+			if(!vmm_pagefault(virt))
+				return false;
 		}
 		virt += PAGE_SIZE;
 		pt++;
@@ -233,9 +233,7 @@ void paging_unmapFromTemp(size_t count) {
 		paging_unmap(TEMP_MAP_AREA,count,false);
 }
 
-#if 0
 ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
-	uintptr_t kstackAddr;
 	tFrameNo pdirFrame;
 	ssize_t frmCount = 0;
 	sPDEntry *pd,*npd,*tpd;
@@ -257,15 +255,19 @@ ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	frmCount++;
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
-	pd = (sPDEntry*)PAGE_DIR_AREA;
-	npd = (sPDEntry*)paging_mapToTemp(&pdirFrame,1);
+	pd = (sPDEntry*)PAGE_DIR_DIRMAP;
+	npd = (sPDEntry*)((pdirFrame * PAGE_SIZE) | DIR_MAPPED_SPACE);
 
 	/* clear user-space page-tables */
 	memclear(npd,ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) * sizeof(sPDEntry));
-	/* copy kernel-space page-tables */
+	/* copy kernel-space page-tables (beginning to temp-map-area, inclusive) */
 	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
 			pd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
-			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)) * sizeof(sPDEntry));
+			(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE - KERNEL_AREA_V_ADDR) /
+				(PAGE_SIZE * PT_ENTRY_COUNT) * sizeof(sPDEntry));
+	/* clear the rest */
+	memclear(npd + ADDR_TO_PDINDEX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE),
+			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)) * sizeof(sPDEntry));
 
 	/* map our new page-dir in the last slot of the new page-dir */
 	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;
@@ -281,38 +283,31 @@ ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	tpd->exists = true;
 	frmCount++;
 	/* clear the page-table */
-	kstackAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
-			KERNEL_STACK & ~(PT_ENTRY_COUNT * PAGE_SIZE - 1));
-	FLUSHADDR(kstackAddr);
 	otherPDir = 0;
-	memclear((void*)kstackAddr,PAGE_SIZE);
+	pt = (sPTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAPPED_SPACE);
+	memclear(pt,PAGE_SIZE);
 
 	/* create stack-page */
-	pt = (sPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));
+	pt += ADDR_TO_PTINDEX(KERNEL_STACK);
 	pt->frameNumber = pmem_allocate();
-	*stackFrame = pt->frameNumber;
 	pt->present = true;
 	pt->writable = true;
 	pt->exists = true;
 	frmCount++;
 
-	paging_unmapFromTemp(1);
-
-	/* one final flush to ensure everything is correct */
-	paging_flushTLB();
+	*stackFrame = pt->frameNumber;
 	*pdir = pdirFrame << PAGE_SIZE_SHIFT;
 	return frmCount;
 }
 
 sAllocStats paging_destroyPDir(tPageDir pdir) {
 	sAllocStats stats;
-	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pde;
 	assert(pdir != curPDir);
 	/* remove kernel-stack (don't free the frame; its done in thread_kill()) */
 	stats = paging_unmapFrom(pdir,KERNEL_STACK,1,false);
 	/* free page-table for kernel-stack */
-	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK);
+	pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(pdir) + ADDR_TO_PDINDEX(KERNEL_STACK);
 	pde->present = false;
 	pde->exists = false;
 	pmem_free(pde->ptFrameNo);
@@ -324,7 +319,6 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	otherPDir = 0;
 	return stats;
 }
-#endif
 
 bool paging_isPresent(tPageDir pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
@@ -505,7 +499,6 @@ static size_t paging_remEmptyPt(tPageDir pdir,uintptr_t ptables,size_t pti) {
 
 size_t paging_getPTableCount(tPageDir pdir) {
 	size_t i,count = 0;
-	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(pdir);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
 		if(pdirAddr[i].present)
@@ -514,7 +507,6 @@ size_t paging_getPTableCount(tPageDir pdir) {
 	return count;
 }
 
-#if 0
 void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
 	size_t i,j;
 	uintptr_t ptables = paging_getPTables(pdir);
@@ -539,7 +531,6 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
 		}
 	}
 }
-#endif
 
 #if 0
 void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {

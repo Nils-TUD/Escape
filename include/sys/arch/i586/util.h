@@ -72,9 +72,4 @@ void util_startTimer(void);
  */
 void util_stopTimer(const char *prefix,...);
 
-/**
- * Builds the stacktrace with given vars
- */
-sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
-
 #endif /* I586_UTIL_H_ */

@@ -21,10 +21,25 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/real.h>
+#include <sys/vfs/info.h>
+#include <sys/vfs/request.h>
+#include <sys/vfs/driver.h>
+#include <sys/task/event.h>
+#include <sys/task/proc.h>
+#include <sys/task/sched.h>
+#include <sys/task/timer.h>
+#include <sys/task/signals.h>
+#include <sys/task/elf.h>
+#include <sys/mem/vmm.h>
+#include <sys/mem/sharedmem.h>
+#include <sys/mem/cow.h>
+#include <sys/log.h>
 #include <sys/boot.h>
 #include <sys/video.h>
 
-/* TODO
+#if 0
 static uint8_t initloader[] = {
 #if DEBUGGING
 #	include "../../build/eco32-debug/user_initloader.dump"
@@ -32,22 +47,19 @@ static uint8_t initloader[] = {
 #	include "../../build/eco32-release/user_initloader.dump"
 #endif
 };
-*/
+#endif
 
-int main(const sBootInfo *info) {
+int main(const sBootInfo *bootinfo) {
 	size_t i;
+	sThread *t;
+	sStartupInfo info;
 
-	boot_init(info);
+	boot_init(bootinfo);
 	vid_init();
 
-	vid_printf("Memory size: %u bytes\n",info->memSize);
-	vid_printf("Disk size: %u bytes\n",info->diskSize);
-	vid_printf("Boot modules:\n");
-	/* skip kernel */
-	for(i = 1; i < info->progCount; i++) {
-		vid_printf("\t%s [%08x .. %08x]\n",info->progs[i].path,
-				info->progs[i].start,info->progs[i].start + info->progs[i].size);
-	}
+#if DEBUGGING
+	boot_dbg_print();
+#endif
 
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
@@ -57,57 +69,6 @@ int main(const sBootInfo *info) {
 	/* paging */
 	vid_printf("Initializing paging...");
 	paging_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	paging_mapTo(paging_getCur(),0,NULL,10,PG_WRITABLE | PG_PRESENT);
-	paging_mapTo(paging_getCur(),0xF0000,NULL,3,PG_PRESENT);
-	paging_unmapFrom(paging_getCur(),0x2000,3,true);
-
-	paging_dbg_printCur(PD_PART_ALL);
-
-#if DEBUGGING
-	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
-			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
-#endif
-
-	while(1);
-
-#if 0
-	sStartupInfo info;
-	sThread *t;
-
-	UNUSED(magic);
-
-	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
-	 * and "correct" the GDT */
-	paging_init();
-	gdt_init();
-	boot_init(mbp);
-
-	/* init video and serial-ports */
-	vid_init();
-	ser_init();
-
-	vid_printf("GDT exchanged, paging enabled, video initialized");
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-#if DEBUGGING
-	boot_dbg_print();
-#endif
-
-	/* mm */
-	vid_printf("Initializing physical memory-management...");
-	pmem_init(boot_getInfo());
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* paging */
-	vid_printf("Initializing paging...");
-	paging_mapKernelSpace();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* fpu */
-	vid_printf("Initializing FPU...");
-	fpu_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* vfs */
@@ -135,11 +96,6 @@ int main(const sBootInfo *info) {
 	shm_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	/* idt */
-	vid_printf("Initializing IDT...");
-	intrpt_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
 	/* timer */
 	vid_printf("Initializing timer...");
 	timer_init();
@@ -150,16 +106,14 @@ int main(const sBootInfo *info) {
 	sig_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	/* cpu */
-	vid_printf("Detecting CPU...");
-	cpu_detect();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
 #if DEBUGGING
 	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
 			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
 #endif
 
+	while(1);
+
+#if 0
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");

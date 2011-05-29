@@ -18,7 +18,10 @@
  */
 
 #include <sys/common.h>
+/* TODO */
+#ifdef __i386__
 #include <sys/arch/i586/serial.h>
+#endif
 #include <sys/task/thread.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -109,11 +112,14 @@ void log_vprintf(const char *fmt,va_list ap) {
 }
 
 static void log_printc(char c) {
+	/* TODO */
+#ifdef __i386__
 	if(conf_get(CONF_LOG_TO_COM1) && !vfsIsReady) {
 		/* write to COM1 (some chars make no sense here) */
 		if(c != '\r' && c != '\b')
 			ser_out(SER_COM1,c);
 	}
+#endif
 	if(bufPos >= BUF_SIZE)
 		log_flush();
 	if(bufPos < BUF_SIZE) {
@@ -148,6 +154,8 @@ static void log_escape(const char **str) {
 
 static ssize_t log_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
 		uint offset,size_t count) {
+/* TODO */
+#ifdef __i386__
 	if(conf_get(CONF_LOG_TO_COM1) && logToSer) {
 		char *str = (char*)buffer;
 		size_t i;
@@ -158,6 +166,7 @@ static ssize_t log_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer
 				ser_out(SER_COM1,c);
 		}
 	}
+#endif
 	return vfs_file_write(pid,file,node,buffer,offset,count);
 }
 

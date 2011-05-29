@@ -24,6 +24,10 @@
 #include <stdarg.h>
 #include <string.h>
 
+static sFuncCall frames[1] = {
+	{0,0,""}
+};
+
 void util_panic(const char *fmt,...) {
 	/*sIntrptStackFrame *istack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();*/
@@ -90,106 +94,20 @@ void util_panic(const char *fmt,...) {
 }
 
 sFuncCall *util_getUserStackTrace(void) {
-	uintptr_t start,end;
-	sIntrptStackFrame *stack = intrpt_getCurStack();
-	sThread *t = thread_getRunning();
-	vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
-	return util_getStackTrace((uint32_t*)stack->ebp,start,start,end);
+	/* eco32 has no frame-pointer; therefore without information about the stackframe-sizes or
+	 * similar, there is no way to determine the stacktrace */
+	return frames;
 }
 
 sFuncCall *util_getKernelStackTrace(void) {
-	uintptr_t start,end;
-	uint32_t* ebp = (uint32_t*)getStackFrameStart();
-
-	/* determine the stack-bounds; we have a temp stack at the beginning */
-	if((uintptr_t)ebp >= KERNEL_STACK && (uintptr_t)ebp < KERNEL_STACK + PAGE_SIZE) {
-		start = KERNEL_STACK;
-		end = KERNEL_STACK + PAGE_SIZE;
-	}
-	else {
-		start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
-		end = (uintptr_t)&kernelStack;
-	}
-
-	return util_getStackTrace(ebp,start,start,end);
+	return frames;
 }
 
 sFuncCall *util_getUserStackTraceOf(const sThread *t) {
-	uintptr_t start,end;
-	size_t pcount;
-	sFuncCall *calls;
-	tFrameNo *frames;
-	if(t->stackRegion >= 0) {
-		vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
-		pcount = (end - start) / PAGE_SIZE;
-		frames = kheap_alloc((pcount + 2) * sizeof(tFrameNo));
-		if(frames) {
-			sIntrptStackFrame *istack = intrpt_getCurStack();
-			uintptr_t temp,startCpy = start;
-			size_t i;
-			frames[0] = t->kstackFrame;
-			for(i = 0; startCpy < end; i++) {
-				if(!paging_isPresent(t->proc->pagedir,startCpy)) {
-					kheap_free(frames);
-					return NULL;
-				}
-				frames[i + 1] = paging_getFrameNo(t->proc->pagedir,startCpy);
-				startCpy += PAGE_SIZE;
-			}
-			temp = paging_mapToTemp(frames,pcount + 1);
-			istack = (sIntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));
-			calls = util_getStackTrace((uint32_t*)istack->ebp,start,
-					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
-			paging_unmapFromTemp(pcount + 1);
-			kheap_free(frames);
-			return calls;
-		}
-	}
-	return NULL;
+	return frames;
 }
 
 sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
-	uint32_t ebp = t->save.ebp;
-	uintptr_t temp = paging_mapToTemp(&t->kstackFrame,1);
-	sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,KERNEL_STACK,temp,temp + PAGE_SIZE);
-	paging_unmapFromTemp(1);
-	return calls;
-}
-
-sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
-	static sFuncCall frames[MAX_STACK_DEPTH];
-	size_t i;
-	bool isKernel = (uintptr_t)ebp >= KERNEL_AREA_V_ADDR;
-	sFuncCall *frame = &frames[0];
-	sSymbol *sym;
-
-	for(i = 0; i < MAX_STACK_DEPTH; i++) {
-		if(ebp == NULL)
-			break;
-		/* adjust it if we're in the kernel-stack but are using the temp-area (to print the trace
-		 * for another thread). don't do this for the temp-kernel-stack */
-		if(rstart != ((uintptr_t)&kernelStack) - TMP_STACK_SIZE && rstart != mstart)
-			ebp = (uint32_t*)(mstart + ((uintptr_t)ebp & (PAGE_SIZE - 1)));
-		/* prevent page-fault */
-		if((uintptr_t)ebp < mstart ||
-				(((uintptr_t)(ebp + 1) + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1)) >= mend)
-			break;
-		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
-		if(isKernel) {
-			sym = ksym_getSymbolAt(frame->addr);
-			frame->funcAddr = sym->address;
-			frame->funcName = sym->funcName;
-		}
-		else {
-			frame->funcAddr = frame->addr;
-			frame->funcName = "Unknown";
-		}
-		ebp = (uint32_t*)*ebp;
-		frame++;
-	}
-
-	/* terminate */
-	frame->addr = 0;
-	return &frames[0];
+	return frames;
 }
 

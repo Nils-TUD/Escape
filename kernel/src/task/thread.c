@@ -183,7 +183,10 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 	t->state = ST_RUNNING;
 	t->events = 0;
 	t->ignoreSignals = 0;
+	/* TODO find a nicer solution */
+#ifdef __i386__
 	fpu_cloneState(&(t->fpuState),src->fpuState);
+#endif
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
 	t->stats.ucycleCount.val64 = 0;
@@ -303,7 +306,10 @@ void thread_kill(sThread *t) {
 	ev_removeThread(t->tid);
 	sched_removeThread(t);
 	timer_removeThread(t->tid);
+	/* TODO find a nicer solution */
+#ifdef __i386__
 	fpu_freeState(&t->fpuState);
+#endif
 	vfs_removeThread(t->tid);
 
 	/* notify the process about it */

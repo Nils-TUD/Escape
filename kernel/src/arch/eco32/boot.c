@@ -4,6 +4,7 @@
 
 #include <esc/common.h>
 #include <sys/boot.h>
+#include <sys/video.h>
 #include <string.h>
 
 static sLoadProg progs[MAX_PROG_COUNT];
@@ -34,3 +35,21 @@ size_t boot_getModuleSize(void) {
 size_t boot_getUsableMemCount(void) {
 	return info.memSize;
 }
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void boot_dbg_print(void) {
+	size_t i;
+	vid_printf("Memory size: %u bytes\n",info.memSize);
+	vid_printf("Disk size: %u bytes\n",info.diskSize);
+	vid_printf("Boot modules:\n");
+	/* skip kernel */
+	for(i = 1; i < info.progCount; i++) {
+		vid_printf("\t%s [%08x .. %08x]\n",info.progs[i].path,
+				info.progs[i].start,info.progs[i].start + info.progs[i].size);
+	}
+}
+
+#endif

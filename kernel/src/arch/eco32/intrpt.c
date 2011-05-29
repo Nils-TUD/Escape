@@ -3,20 +3,20 @@
  */
 
 #include <esc/common.h>
-#include <sys/arch/eco32/intrpt.h>
+#include <sys/intrpt.h>
 #include <sys/video.h>
 #include <sys/util.h>
 
-typedef void (*fIntrptHandler)(int irqNo,sIntrptRegs *regs);
+typedef void (*fIntrptHandler)(sIntrptStackFrame *frame);
 
 /**
  * Handles a TLB-miss >= 0x80000000 && < 0xC0000000
  */
-extern void intrpt_kernelMiss(int irqNo,sIntrptRegs *regs);
+extern void intrpt_kernelMiss(sIntrptStackFrame *frame);
 /**
  * The default handler for all interrupts we do not expect
  */
-static void intrpt_defHandler(int irqNo,sIntrptRegs *regs);
+static void intrpt_defHandler(sIntrptStackFrame *frame);
 
 static const char *irq2Name[] = {
 	/*  0 */ "Terminal 0 Transmitter",
@@ -87,16 +87,27 @@ static fIntrptHandler handler[32] = {
 	/* 30 */ intrpt_defHandler,
 	/* 31 */ intrpt_defHandler,
 };
+static size_t irqCount = 0;
+static sIntrptStackFrame *curFrame;
 
-void irq_handler(int irqNo,sIntrptRegs *regs) {
-	vid_printf("Got interrupt %d (%s) @ 0x%08x\n",
-			irqNo,irq2Name[irqNo & 0x1f],regs->r[30]);
+void intrpt_handler(sIntrptStackFrame *frame) {
+	curFrame = frame;
+	irqCount++;
+
 	/* call handler */
-	handler[irqNo & 0x1f](irqNo,regs);
+	handler[frame->irqNo & 0x1f](frame);
 }
 
-static void intrpt_defHandler(int irqNo,sIntrptRegs *regs) {
+size_t intrpt_getCount(void) {
+	return irqCount;
+}
+
+sIntrptStackFrame *intrpt_getCurStack(void) {
+	return curFrame;
+}
+
+static void intrpt_defHandler(sIntrptStackFrame *frame) {
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ 0x%08x\n",
-			irqNo,irq2Name[irqNo & 0x1f],regs->r[30]);
+			frame->irqNo,irq2Name[frame->irqNo & 0x1f],frame->r[30]);
 }

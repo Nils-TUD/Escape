@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/gdt.h>
+#include <sys/arch/i586/task/ioports.h>
 #include <sys/task/proc.h>
-#include <sys/task/ioports.h>
 #include <sys/mem/kheap.h>
 #include <sys/video.h>
 #include <errors.h>

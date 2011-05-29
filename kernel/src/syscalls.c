@@ -38,6 +38,8 @@ typedef struct {
 	uchar argCount;
 } sSyscall;
 
+/* TODO */
+#ifdef __i386__
 /* our syscalls */
 static sSyscall syscalls[] = {
 	/* 0 */		{sysc_getpid,				0},
@@ -134,6 +136,7 @@ void sysc_handle(sIntrptStackFrame *stack) {
 		stack->ebx = ebxSave;
 	}
 }
+#endif
 
 bool sysc_isStringReadable(const char *str) {
 	uintptr_t addr;

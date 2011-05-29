@@ -40,6 +40,8 @@
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5
 
+static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
+
 /* the beginning of the kernel-stack */
 extern uintptr_t kernelStack;
 static uint64_t profStart;
@@ -198,7 +200,7 @@ sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
 	return calls;
 }
 
-sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
+static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
 	static sFuncCall frames[MAX_STACK_DEPTH];
 	size_t i;
 	bool isKernel = (uintptr_t)ebp >= KERNEL_AREA_V_ADDR;

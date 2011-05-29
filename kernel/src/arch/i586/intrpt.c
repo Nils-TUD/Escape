@@ -26,7 +26,6 @@
 #include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/signals.h>
-#include <sys/task/ioports.h>
 #include <sys/task/proc.h>
 #include <sys/task/elf.h>
 #include <sys/task/sched.h>

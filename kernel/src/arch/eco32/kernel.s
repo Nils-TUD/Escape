@@ -17,7 +17,7 @@
 	.global	_bbss
 
 	.extern	dbg_prints
-	.extern irq_handler
+	.extern intrpt_handler
 	.extern curPDir
 	.extern util_panic
 
@@ -219,7 +219,7 @@ isrStackOk:
 
 isrStackPresent:
 	# now save registers to kernel-stack
-	sub		$28,$28,33 * 4
+	sub		$28,$28,34 * 4
 	stw		$1,$28,4
 	.syn
 	stw		$2,$28,8
@@ -255,10 +255,11 @@ isrStackPresent:
 	stw		$4,$28,128												# store psw
 	slr		$4,$4,16
 	and		$4,$4,0x1F
+	stw		$4,$28,132												# store irq-number
 	# setup stack-pointer and handle interrupt
 	sub		$29,$28,4
-	add		$5,$28,0													#	the intrpt-handler wants to access the registers
-	jal		irq_handler
+	add		$4,$28,0													#	the intrpt-handler wants to access the registers
+	jal		intrpt_handler
 
 	# restore tlb-Entry-High for the case that we have got a TLB-miss
 	.nosyn

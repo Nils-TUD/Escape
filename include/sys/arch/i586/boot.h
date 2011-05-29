@@ -121,13 +121,4 @@ const sMultiBoot *boot_getInfo(void);
  */
 void boot_loadModules(sIntrptStackFrame *stack);
 
-#if DEBUGGING
-
-/**
- * Prints all interesting elements of the multi-boot-structure
- */
-void boot_dbg_print(void);
-
-#endif
-
 #endif /* I586_BOOT_H_ */

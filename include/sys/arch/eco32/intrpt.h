@@ -11,10 +11,9 @@
 
 /* the saved registers */
 typedef struct {
-	ulong r[REG_COUNT];
-	ulong psw;
-} sIntrptRegs;
-
-void irq_handler(int irqNo,sIntrptRegs *regs);
+	uint32_t r[REG_COUNT];
+	uint32_t psw;
+	uint32_t irqNo;
+} A_PACKED sIntrptStackFrame;
 
 #endif /* ECO32_INTRPT_H_ */

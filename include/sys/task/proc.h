@@ -21,12 +21,10 @@
 #define PROC_H_
 
 #include <sys/common.h>
-#include <sys/machine/intrpt.h>
-#include <sys/machine/fpu.h>
-#include <sys/machine/vm86.h>
 #include <sys/mem/region.h>
 #include <sys/task/elf.h>
 #include <sys/vfs/node.h>
+#include <sys/intrpt.h>
 
 /* max number of coexistent processes */
 #define MAX_PROC_COUNT		8192

@@ -22,6 +22,13 @@
 
 #include <sys/common.h>
 
+#ifdef __i386__
+#include <sys/arch/i586/task/timer.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/timer.h>
+#endif
+
 /* timer frequency => time-slice = 5ms */
 #define TIMER_FREQUENCY			200
 

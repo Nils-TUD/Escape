@@ -20,6 +20,8 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/view.h>
+#include <sys/arch/i586/cpu.h>
+#include <sys/arch/i586/gdt.h>
 #include <sys/task/proc.h>
 #include <sys/task/sched.h>
 #include <sys/task/signals.h>
@@ -35,9 +37,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/sharedmem.h>
 #include <sys/mem/vmm.h>
-#include <sys/machine/cpu.h>
-#include <sys/machine/gdt.h>
-#include <sys/machine/timer.h>
+#include <sys/task/timer.h>
 #include <sys/multiboot.h>
 #include <string.h>
 #include <errors.h>

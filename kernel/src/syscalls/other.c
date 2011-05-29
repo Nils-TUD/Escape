@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/multiboot.h>
-#include <sys/machine/intrpt.h>
-#include <sys/machine/timer.h>
+#include <sys/intrpt.h>
+#include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
 #include <sys/task/lock.h>

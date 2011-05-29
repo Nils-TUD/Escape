@@ -20,7 +20,7 @@
 #ifndef SYSCALLS_DRIVER_H_
 #define SYSCALLS_DRIVER_H_
 
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 /**
  * Registers a driver

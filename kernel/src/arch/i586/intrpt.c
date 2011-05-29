@@ -18,12 +18,10 @@
  */
 
 #include <sys/common.h>
-#include <sys/machine/intrpt.h>
-#include <sys/machine/cpu.h>
-#include <sys/machine/fpu.h>
-#include <sys/machine/gdt.h>
-#include <sys/machine/timer.h>
-#include <sys/machine/vm86.h>
+#include <sys/arch/i586/cpu.h>
+#include <sys/arch/i586/fpu.h>
+#include <sys/arch/i586/gdt.h>
+#include <sys/arch/i586/vm86.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/swap.h>
@@ -33,10 +31,12 @@
 #include <sys/task/proc.h>
 #include <sys/task/elf.h>
 #include <sys/task/sched.h>
+#include <sys/task/timer.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
+#include <sys/intrpt.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>

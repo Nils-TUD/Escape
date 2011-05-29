@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/machine/serial.h>
 #include <sys/util.h>
 #include <sys/log.h>
 #include <sys/printf.h>

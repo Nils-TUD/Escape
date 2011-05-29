@@ -24,7 +24,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/event.h>
 #include <sys/task/lock.h>
-#include <sys/machine/timer.h>
+#include <sys/task/timer.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/syscalls/thread.h>

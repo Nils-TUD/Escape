@@ -20,7 +20,7 @@
 #ifndef SYSCALLS_MEM_H_
 #define SYSCALLS_MEM_H_
 
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 /* protection-flags */
 #define PROT_READ			1

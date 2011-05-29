@@ -5,10 +5,10 @@
 #include <esc/common.h>
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
-#include <sys/machine/gdt.h>
-#include <sys/machine/timer.h>
-#include <sys/machine/cpu.h>
-#include <sys/machine/fpu.h>
+#include <sys/task/timer.h>
+#include <sys/arch/i586/gdt.h>
+#include <sys/arch/i586/cpu.h>
+#include <sys/arch/i586/fpu.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <assert.h>

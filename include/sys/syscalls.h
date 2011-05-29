@@ -21,7 +21,7 @@
 #define SYSCALLS_H_
 
 #include <sys/common.h>
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 /* some convenience-macros */
 #define SYSC_SETERROR(stack,errorCode)	((stack)->ebx = (errorCode))

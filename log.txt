@@ -6,10 +6,10 @@ memLower=637 KB, memUpper=60404 KB
 biosDriveNumber=E0, part1=FF, part2=FF, part3=FF
 cmdLine=/boot/escape.bin videomode=vesa swapdev=/dev/hda3 
 modsCount=4:
-	/sbin/pci /dev/pci (0xc01c8000 .. 0xc022cd61)
-	/sbin/ata /system/devices/ata (0xc022d000 .. 0xc025e491)
-	/sbin/cmos /dev/cmos (0xc025f000 .. 0xc028520f)
-	/sbin/fs /dev/fs cdrom iso9660 (0xc0286000 .. 0xc02ce86f)
+	/sbin/pci /dev/pci (0xc01c9000 .. 0xc022dd61)
+	/sbin/ata /system/devices/ata (0xc022e000 .. 0xc025f491)
+	/sbin/cmos /dev/cmos (0xc0260000 .. 0xc028620f)
+	/sbin/fs /dev/fs cdrom iso9660 (0xc0287000 .. 0xc02cf86f)
 ELF: num=12, size=40, addr=0x154000, shndx=0x9
 mmapLength=144, mmapAddr=0xc002ce48
 memory-map:
@@ -32,7 +32,7 @@ Initializing IDT...                                                         DONE
 Initializing timer...                                                       DONE
 Initializing signal-handling...                                             DONE
 Detecting CPU...                                                            DONE
-14363 free frames (57452 KiB)
+14362 free frames (57448 KiB)
 Loading '/sbin/pci'...
 Loading '/sbin/ata'...
 [ATA] Found IDE-controller (0.1.1): vendorId 8086, deviceId 7010, rev 0

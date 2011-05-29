@@ -20,7 +20,7 @@
 #ifndef SYSCALLS_SIGNALS_H_
 #define SYSCALLS_SIGNALS_H_
 
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 /**
  * Sets a handler-function for a specific signal

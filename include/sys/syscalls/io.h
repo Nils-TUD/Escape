@@ -20,7 +20,7 @@
 #ifndef SYSCALLS_IO_H_
 #define SYSCALLS_IO_H_
 
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 /**
  * Open-syscall. Opens a given path with given mode and returns the file-descriptor to use

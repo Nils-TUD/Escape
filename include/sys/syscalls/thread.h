@@ -20,7 +20,7 @@
 #ifndef SYSCALLS_THREAD_H_
 #define SYSCALLS_THREAD_H_
 
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 /**
  * Returns the tid of the current thread

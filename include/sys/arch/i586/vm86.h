@@ -21,7 +21,7 @@
 #define VM86_H_
 
 #include <sys/common.h>
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 #define VM86_MEM_DIRECT		0
 #define VM86_MEM_PTR		1

@@ -18,7 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/machine/timer.h>
+#include <sys/arch/i586/vm86.h>
+#include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/swap.h>

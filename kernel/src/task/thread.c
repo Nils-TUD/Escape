@@ -22,9 +22,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
-#include <sys/machine/cpu.h>
-#include <sys/machine/gdt.h>
-#include <sys/machine/timer.h>
+#include <sys/task/timer.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>

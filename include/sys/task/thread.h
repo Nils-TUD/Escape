@@ -21,7 +21,7 @@
 #define THREAD_H_
 
 #include <sys/common.h>
-#include <sys/machine/fpu.h>
+#include <sys/arch/i586/fpu.h>
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <esc/hashmap.h>

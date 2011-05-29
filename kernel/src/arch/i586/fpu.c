@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/machine/fpu.h>
-#include <sys/machine/cpu.h>
+#include <sys/arch/i586/fpu.h>
+#include <sys/arch/i586/cpu.h>
 #include <sys/mem/kheap.h>
 #include <sys/video.h>
 #include <string.h>

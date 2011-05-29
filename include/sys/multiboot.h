@@ -21,7 +21,7 @@
 #define MULTIBOOT_H_
 
 #include <sys/common.h>
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 #define MMAP_TYPE_AVAILABLE 0x1
 

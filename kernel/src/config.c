@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/machine/timer.h>
+#include <sys/task/timer.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/config.h>

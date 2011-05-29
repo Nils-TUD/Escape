@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/machine/serial.h>
+#include <sys/arch/i586/serial.h>
 #include <sys/util.h>
 #include <assert.h>
 

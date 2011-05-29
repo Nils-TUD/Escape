@@ -18,12 +18,12 @@
  */
 
 #include <sys/common.h>
+#include <sys/arch/i586/cpu.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/vmm.h>
-#include <sys/machine/timer.h>
-#include <sys/machine/cpu.h>
+#include <sys/task/timer.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>

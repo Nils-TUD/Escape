@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
+#include <sys/arch/i586/serial.h>
 #include <sys/task/thread.h>
-#include <sys/machine/serial.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/file.h>

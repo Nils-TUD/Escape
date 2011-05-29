@@ -25,8 +25,8 @@ CSRC = $(filter-out $(shell find ./arch -name "*.c") $(shell find ./dbg -name "*
 CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 else
 ifeq ($(ARCH),eco32)
-	CSRC = printf.c task/proc.c $(wildcard vfs/*.c) \
-		task/env.c task/event.c task/lock.c task/sched.c task/signals.c $(wildcard mem/*.c)
+	CSRC = printf.c task/proc.c $(wildcard vfs/*.c) task/env.c task/event.c task/lock.c \
+		task/sched.c task/signals.c task/thread.c task/timer.c $(wildcard mem/*.c)
 else
 	CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c" | grep -v '\.svn'))
 endif
@@ -34,7 +34,6 @@ CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 endif
 ifeq ($(ARCH),eco32)
 	LSRC = $(filter-out $(LIB)/test.c \
-		$(LIB)/string/strdup.c $(LIB)/string/strndup.c \
 		$(shell find $(LIB)/arch -name "*.c"),$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 else
 	LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\

@@ -20,7 +20,7 @@
 #ifndef SYSCALLS_PROC_H_
 #define SYSCALLS_PROC_H_
 
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 /**
  * Returns the pid of the current process

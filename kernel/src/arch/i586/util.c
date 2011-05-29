@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/machine/intrpt.h>
-#include <sys/machine/cpu.h>
+#include <sys/arch/i586/cpu.h>
+#include <sys/arch/i586/vm86.h>
 #include <sys/task/proc.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
@@ -27,6 +27,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/vmm.h>
+#include <sys/intrpt.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
 #include <sys/util.h>

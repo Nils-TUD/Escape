@@ -21,7 +21,7 @@
 #define UTIL_H_
 
 #include <sys/common.h>
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 #include <sys/task/thread.h>
 #include <sys/ksymbols.h>
 #include <stdarg.h>

@@ -18,6 +18,8 @@
  */
 
 #include <sys/common.h>
+#include <sys/arch/i586/vm86.h>
+#include <sys/arch/i586/gdt.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
@@ -26,8 +28,6 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
-#include <sys/machine/vm86.h>
-#include <sys/machine/gdt.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <string.h>

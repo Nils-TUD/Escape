@@ -19,7 +19,7 @@
 
 #include <assert.h>
 #ifdef IN_KERNEL
-#	include <sys/machine/cpu.h>
+#	include <sys/arch/i586/cpu.h>
 #	include <sys/task/thread.h>
 #	include <sys/mem/paging.h>
 #	include <sys/ksymbols.h>

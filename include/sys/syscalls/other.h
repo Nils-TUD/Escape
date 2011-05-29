@@ -20,7 +20,7 @@
 #ifndef SYSCALLS_OTHER_H_
 #define SYSCALLS_OTHER_H_
 
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 
 /**
  * Loads the multiboot-modules. This is intended for initloader only!

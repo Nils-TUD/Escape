@@ -6,7 +6,7 @@
 #define UENV_H_
 
 #include <esc/common.h>
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 #include <sys/task/elf.h>
 
 /**

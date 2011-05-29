@@ -33,7 +33,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
 #include <sys/mem/sharedmem.h>
-#include <sys/machine/intrpt.h>
+#include <sys/intrpt.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>

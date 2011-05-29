@@ -7,7 +7,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
-#include <sys/machine/gdt.h>
+#include <sys/arch/i586/gdt.h>
 #include <string.h>
 #include <assert.h>
 

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MULTIBOOT_H_
-#define MULTIBOOT_H_
+#ifndef I586_BOOT_H_
+#define I586_BOOT_H_
 
 #include <sys/common.h>
 #include <sys/intrpt.h>
@@ -107,42 +107,27 @@ typedef struct {
  *
  * @param mbp the pointer to the multi-boot-structure
  */
-void mboot_init(sMultiBoot *mbp);
+void boot_init(sMultiBoot *mbp);
 
 /**
  * @return the multiboot-info-structure
  */
-const sMultiBoot *mboot_getInfo(void);
-
-/**
- * @return size of the kernel (in bytes)
- */
-size_t mboot_getKernelSize(void);
-
-/**
- * @return size of the multiboot-modules (in bytes)
- */
-size_t mboot_getModuleSize(void);
+const sMultiBoot *boot_getInfo(void);
 
 /**
  * Loads all multiboot-modules
  *
  * @param stack the interrupt-stack-frame
  */
-void mboot_loadModules(sIntrptStackFrame *stack);
-
-/**
- * @return the usable memory in bytes
- */
-size_t mboot_getUsableMemCount(void);
+void boot_loadModules(sIntrptStackFrame *stack);
 
 #if DEBUGGING
 
 /**
  * Prints all interesting elements of the multi-boot-structure
  */
-void mboot_dbg_print(void);
+void boot_dbg_print(void);
 
 #endif
 
-#endif
+#endif /* I586_BOOT_H_ */

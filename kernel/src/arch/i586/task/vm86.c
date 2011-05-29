@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/vm86.h>
+#include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>

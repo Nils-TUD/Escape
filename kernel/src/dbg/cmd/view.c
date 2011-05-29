@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/view.h>
-#include <sys/arch/i586/cpu.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/task/proc.h>
 #include <sys/task/sched.h>
@@ -38,7 +37,8 @@
 #include <sys/mem/sharedmem.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/timer.h>
-#include <sys/multiboot.h>
+#include <sys/boot.h>
+#include <sys/cpu.h>
 #include <string.h>
 #include <errors.h>
 
@@ -252,7 +252,7 @@ static void view_timer(void) {
 	timer_dbg_print();
 }
 static void view_multiboot(void) {
-	mboot_dbg_print();
+	boot_dbg_print();
 }
 static void view_requests(void) {
 	vfs_req_dbg_printAll();

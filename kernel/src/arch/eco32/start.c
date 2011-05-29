@@ -18,10 +18,10 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/eco32/boot.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
+#include <sys/boot.h>
 #include <sys/video.h>
 
 /* TODO
@@ -82,7 +82,7 @@ int main(const sBootInfo *info) {
 	 * and "correct" the GDT */
 	paging_init();
 	gdt_init();
-	mboot_init(mbp);
+	boot_init(mbp);
 
 	/* init video and serial-ports */
 	vid_init();
@@ -92,12 +92,12 @@ int main(const sBootInfo *info) {
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #if DEBUGGING
-	mboot_dbg_print();
+	boot_dbg_print();
 #endif
 
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
-	pmem_init(mboot_getInfo());
+	pmem_init(boot_getInfo());
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* paging */

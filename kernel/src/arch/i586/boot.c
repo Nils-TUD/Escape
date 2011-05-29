@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/vm86.h>
+#include <sys/arch/i586/task/vm86.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
@@ -29,7 +29,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/uenv.h>
 #include <sys/vfs/node.h>
-#include <sys/multiboot.h>
+#include <sys/boot.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/config.h>
@@ -41,13 +41,13 @@
 #define MAX_ARG_LEN				64
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 
-static const char **mboot_parseArgs(const char *line,int *argc);
+static const char **boot_parseArgs(const char *line,int *argc);
 
 extern uintptr_t KernelStart;
 static sMultiBoot *mb;
 static bool loadedMods = false;
 
-void mboot_init(sMultiBoot *mbp) {
+void boot_init(sMultiBoot *mbp) {
 	size_t i;
 	sModule *mod;
 	int argc;
@@ -71,27 +71,39 @@ void mboot_init(sMultiBoot *mbp) {
 	}
 
 	/* parse the boot parameter */
-	argv = mboot_parseArgs(mb->cmdLine,&argc);
+	argv = boot_parseArgs(mb->cmdLine,&argc);
 	conf_parseBootParams(argc,argv);
 }
 
-const sMultiBoot *mboot_getInfo(void) {
+const sMultiBoot *boot_getInfo(void) {
 	return mb;
 }
 
-size_t mboot_getKernelSize(void) {
+size_t boot_getKernelSize(void) {
 	uintptr_t start = (uintptr_t)&KernelStart | KERNEL_AREA_V_ADDR;
 	uintptr_t end = mb->modsAddr[0].modStart;
 	return end - start;
 }
 
-size_t mboot_getModuleSize(void) {
+size_t boot_getModuleSize(void) {
 	uintptr_t start = mb->modsAddr[0].modStart;
 	uintptr_t end = mb->modsAddr[mb->modsCount - 1].modEnd;
 	return end - start;
 }
 
-void mboot_loadModules(sIntrptStackFrame *stack) {
+size_t boot_getUsableMemCount(void) {
+	sMemMap *mmap;
+	size_t size = 0;
+	for(mmap = mb->mmapAddr;
+		(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
+		mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
+		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
+			size += mmap->length;
+	}
+	return size;
+}
+
+void boot_loadModules(sIntrptStackFrame *stack) {
 	size_t i;
 	tPid pid;
 	tInodeNo nodeNo;
@@ -111,7 +123,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	for(i = 0; i < mb->modsCount; i++) {
 		/* parse args */
 		int argc;
-		const char **argv = mboot_parseArgs(mod->name,&argc);
+		const char **argv = boot_parseArgs(mod->name,&argc);
 		if(argc < 2)
 			util_panic("Invalid arguments for multiboot-module: %s\n",mod->name);
 
@@ -169,19 +181,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	assert(vm86_create() == 0);
 }
 
-size_t mboot_getUsableMemCount(void) {
-	sMemMap *mmap;
-	size_t size = 0;
-	for(mmap = mb->mmapAddr;
-		(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
-		mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
-			size += mmap->length;
-	}
-	return size;
-}
-
-static const char **mboot_parseArgs(const char *line,int *argc) {
+static const char **boot_parseArgs(const char *line,int *argc) {
 	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
 	static char *args[MAX_ARG_COUNT];
 	size_t i = 0,j = 0;
@@ -210,7 +210,7 @@ static const char **mboot_parseArgs(const char *line,int *argc) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void mboot_dbg_print(void) {
+void boot_dbg_print(void) {
 	size_t x;
 	sMemMap *mmap;
 	vid_printf("MultiBoot-Structure:\n---------------------\nflags=0x%x\n",mb->flags);

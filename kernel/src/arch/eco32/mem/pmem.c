@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/eco32/boot.h>
 #include <sys/mem/pmem.h>
+#include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <assert.h>

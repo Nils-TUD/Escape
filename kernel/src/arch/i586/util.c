@@ -18,8 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/cpu.h>
-#include <sys/arch/i586/vm86.h>
+#include <sys/arch/i586/task/vm86.h>
 #include <sys/task/proc.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
@@ -27,6 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/vmm.h>
+#include <sys/cpu.h>
 #include <sys/intrpt.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
@@ -40,19 +40,9 @@
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5
 
-/**
- * Builds the stacktrace with given vars
- */
-static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
-
 /* the beginning of the kernel-stack */
 extern uintptr_t kernelStack;
 static uint64_t profStart;
-
-/* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
-static uint randa = 1103515245;
-static uint randc = 12345;
-static uint lastRand = 0;
 
 void util_panic(const char *fmt,...) {
 	static uint32_t regs[REG_COUNT];
@@ -127,17 +117,6 @@ void util_panic(const char *fmt,...) {
 #endif
 }
 
-int util_rand(void) {
-	int res;
-	lastRand = randa * lastRand + randc;
-	res = (int)((uint)(lastRand / 65536) % 32768);
-	return res;
-}
-
-void util_srand(uint seed) {
-	lastRand = seed;
-}
-
 void util_startTimer(void) {
 	profStart = cpu_rdtsc();
 }
@@ -158,6 +137,23 @@ sFuncCall *util_getUserStackTrace(void) {
 	sThread *t = thread_getRunning();
 	vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
 	return util_getStackTrace((uint32_t*)stack->ebp,start,start,end);
+}
+
+sFuncCall *util_getKernelStackTrace(void) {
+	uintptr_t start,end;
+	uint32_t* ebp = (uint32_t*)getStackFrameStart();
+
+	/* determine the stack-bounds; we have a temp stack at the beginning */
+	if((uintptr_t)ebp >= KERNEL_STACK && (uintptr_t)ebp < KERNEL_STACK + PAGE_SIZE) {
+		start = KERNEL_STACK;
+		end = KERNEL_STACK + PAGE_SIZE;
+	}
+	else {
+		start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
+		end = (uintptr_t)&kernelStack;
+	}
+
+	return util_getStackTrace(ebp,start,start,end);
 }
 
 sFuncCall *util_getUserStackTraceOf(const sThread *t) {
@@ -202,55 +198,7 @@ sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
 	return calls;
 }
 
-sFuncCall *util_getKernelStackTrace(void) {
-	uintptr_t start,end;
-	uint32_t* ebp = (uint32_t*)getStackFrameStart();
-
-	/* determine the stack-bounds; we have a temp stack at the beginning */
-	if((uintptr_t)ebp >= KERNEL_STACK && (uintptr_t)ebp < KERNEL_STACK + PAGE_SIZE) {
-		start = KERNEL_STACK;
-		end = KERNEL_STACK + PAGE_SIZE;
-	}
-	else {
-		start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
-		end = (uintptr_t)&kernelStack;
-	}
-
-	return util_getStackTrace(ebp,start,start,end);
-}
-
-void util_printStackTrace(const sFuncCall *trace) {
-	if(trace->addr < KERNEL_AREA_V_ADDR)
-		vid_printf("User-Stacktrace:\n");
-	else
-		vid_printf("Kernel-Stacktrace:\n");
-
-	while(trace->addr != 0) {
-		vid_printf("\t0x%08x -> 0x%08x (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
-		trace++;
-	}
-}
-
-void util_dumpMem(const void *addr,size_t dwordCount) {
-	uint *ptr = (uint*)addr;
-	while(dwordCount-- > 0) {
-		vid_printf("0x%x: 0x%08x\n",ptr,*ptr);
-		ptr++;
-	}
-}
-
-void util_dumpBytes(const void *addr,size_t byteCount) {
-	size_t i = 0;
-	uchar *ptr = (uchar*)addr;
-	for(i = 0; byteCount-- > 0; i++) {
-		vid_printf("%02x ",*ptr);
-		ptr++;
-		if(i % 16 == 15)
-			vid_printf("\n");
-	}
-}
-
-static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
+sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
 	static sFuncCall frames[MAX_STACK_DEPTH];
 	size_t i;
 	bool isKernel = (uintptr_t)ebp >= KERNEL_AREA_V_ADDR;
@@ -286,3 +234,4 @@ static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t ms
 	frame->addr = 0;
 	return &frames[0];
 }
+

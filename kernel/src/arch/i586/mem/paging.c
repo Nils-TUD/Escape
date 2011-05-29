@@ -18,8 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/intrpt.h>
-#include <sys/arch/i586/cpu.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
@@ -29,6 +27,8 @@
 #include <sys/mem/vmm.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
+#include <sys/intrpt.h>
+#include <sys/cpu.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <sys/printf.h>
@@ -480,10 +480,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintpt
 }
 
 sAllocStats paging_map(uintptr_t virt,const tFrameNo *frames,size_t count,uint flags) {
-	sProc *p = proc_getRunning();
-	/* for boot-phase: use the first page-dir, if the process has none */
-	tPageDir pdir = (p->pagedir == 0) ? (uintptr_t)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
-	return paging_mapTo(pdir,virt,frames,count,flags);
+	return paging_mapTo(curPDir,virt,frames,count,flags);
 }
 
 sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,size_t count,
@@ -552,10 +549,7 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 }
 
 sAllocStats paging_unmap(uintptr_t virt,size_t count,bool freeFrames) {
-	sProc *p = proc_getRunning();
-	/* for boot-phase: use the first page-dir, if the process has none */
-	tPageDir pdir = (p->pagedir == 0) ? (uintptr_t)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
-	return paging_unmapFrom(pdir,virt,count,freeFrames);
+	return paging_unmapFrom(curPDir,virt,count,freeFrames);
 }
 
 sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool freeFrames) {

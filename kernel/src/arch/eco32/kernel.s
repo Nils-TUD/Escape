@@ -40,8 +40,8 @@
 	.global task_idle
 	.global task_sysStart
 	.global task_userStart
-	.global	task_save
-	.global task_resume
+	.global	thread_save
+	.global thread_resume
 
 #===========================================
 # Constants
@@ -461,8 +461,8 @@ task_idleLoop:
 	j			task_idleLoop
 
 # save a tasks context
-# int task_save(int *regs)
-task_save:
+# bool thread_save(sThreadRegs *saveArea)
+thread_save:
 	# save callee-save registers
 	stw		$16,$4,0
 	stw		$17,$4,4
@@ -479,22 +479,19 @@ task_save:
 	jr		$31
 
 # resume a task
-# int task_resume(PTE *pageDir,int *regs)
-task_resume:
+# bool thread_resume(tPageDir pageDir,sThreadRegs *saveArea,tFrameNo kstackFrame);
+thread_resume:
 	# save parameter (we can use $16 since the current process
 	# will not continue after resume)
 	add		$16,$5,$0
 
 	# set page-directory for new process
-	#stw		$4,$0,curPageDir
+	stw		$4,$0,curPDir
 
 	# we have to refresh the fix entry for the process
-	ldw		$17,$4,(KERNEL_STACK >> 20) & 0xFFC				# load page-table of kernel-stack
-	add		$4,$0,0														# index = 0
-	add		$5,$0,KERNEL_STACK & ~0xFFF				# virtual address
-	and		$17,$17,~0x3
-	or		$17,$17,DIR_MAP_START							# remove flags and make direct addressable
-	ldw		$6,$17,(KERNEL_STACK >> 10) & 0xFFC					# load pte
+	add		$4,$0,$0
+	ldhi	$5,KERNEL_STACK										# ASSUMES that only the high 16 bit are interesting here
+	or		$6,$6,0x7													# make existing, present and writable
 	# Note that we assume that setTLB doesnt need a stack
 	jal		tlb_set														# store into TLB
 
@@ -507,7 +504,6 @@ task_resume:
 resumeClearTLBLoop:
 	jal 	tlb_set
 	add		$4,$4,1														# $4++
-	add		$5,$5,PAGE_SIZE
 	blt		$4,$7,resumeClearTLBLoop					# if $4 < $7, jump to resumeClearTLBLoop
 
 	# restore registers

@@ -6,14 +6,13 @@
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
-#include <sys/arch/i586/gdt.h>
-#include <sys/arch/i586/fpu.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
-#include <sys/cpu.h>
 #include <assert.h>
 
 void thread_switchTo(tTid tid) {
+	/* TODO */
+#if 0
 	sThread *cur = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {
@@ -70,4 +69,5 @@ void thread_switchTo(tTid tid) {
 	}
 
 	thread_killDead();
+#endif
 }

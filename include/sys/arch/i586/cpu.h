@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPU_H_
-#define CPU_H_
+#ifndef I586_CPU_H_
+#define I586_CPU_H_
 
 #include <sys/common.h>
 #include <sys/printf.h>
@@ -68,11 +68,6 @@ enum eCPUIdRequests {
 };
 
 /**
- * @return the timestamp-counter value
- */
-extern uint64_t cpu_rdtsc(void);
-
-/**
  * @return true if the cpuid-instruction is supported
  */
 extern bool cpu_cpuidSupported(void);
@@ -100,13 +95,6 @@ extern void cpu_getInfo(uint32_t code,uint32_t *a,uint32_t *b,uint32_t *c,uint32
  * @param res will contain the result
  */
 extern void cpu_getStrInfo(uint32_t code,char *res);
-
-/**
- * Prints information about the used CPU into the given string-buffer
- *
- * @param buf the string-buffer
- */
-void cpu_sprintf(sStringBuffer *buf);
 
 /**
  * @return the value of the CR0 register
@@ -138,10 +126,4 @@ extern uint32_t cpu_getCR4(void);
  */
 extern void cpu_setCR4(uint32_t cr4);
 
-#if DEBUGGING
-
-void cpu_dbg_print(void);
-
-#endif
-
-#endif /*CPU_H_*/
+#endif /*I586_CPU_H_*/

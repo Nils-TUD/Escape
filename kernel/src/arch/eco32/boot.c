@@ -3,7 +3,7 @@
  */
 
 #include <esc/common.h>
-#include <sys/arch/eco32/boot.h>
+#include <sys/boot.h>
 #include <string.h>
 
 static sLoadProg progs[MAX_PROG_COUNT];
@@ -19,4 +19,18 @@ void boot_init(const sBootInfo *binfo) {
 
 const sBootInfo *boot_getInfo(void) {
 	return &info;
+}
+
+size_t boot_getKernelSize(void) {
+	return progs[0].size;
+}
+
+size_t boot_getModuleSize(void) {
+	uintptr_t start = progs[1].start;
+	uintptr_t end = progs[info.progCount - 1].start + progs[info.progCount - 1].size;
+	return end - start;
+}
+
+size_t boot_getUsableMemCount(void) {
+	return info.memSize;
 }

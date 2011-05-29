@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/pmem.h>
-#include <sys/multiboot.h>
+#include <sys/boot.h>
 #include <sys/mem/paging.h>
 #include <sys/util.h>
 #include <sys/video.h>
@@ -68,7 +68,7 @@ static tFrameNo *stack = NULL;
 void pmem_init(void) {
 	sMemMap *mmap;
 	size_t memSize,defPageCount;
-	const sMultiBoot *mb = mboot_getInfo();
+	const sMultiBoot *mb = boot_getInfo();
 
 	/* put the MM-stack behind the last multiboot-module */
 	if(mb->modsCount == 0)

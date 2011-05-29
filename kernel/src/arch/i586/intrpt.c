@@ -18,10 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/cpu.h>
 #include <sys/arch/i586/fpu.h>
 #include <sys/arch/i586/gdt.h>
-#include <sys/arch/i586/vm86.h>
+#include <sys/arch/i586/task/vm86.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/swap.h>
@@ -36,6 +35,7 @@
 #include <sys/vfs/real.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
+#include <sys/cpu.h>
 #include <sys/intrpt.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>

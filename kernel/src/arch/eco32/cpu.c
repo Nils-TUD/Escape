@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: cpu.c 870 2011-05-29 10:46:59Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,18 +18,19 @@
  */
 
 #include <sys/common.h>
+#include <sys/mem/kheap.h>
 #include <sys/cpu.h>
-#include <sys/debug.h>
+#include <sys/printf.h>
 #include <sys/video.h>
+#include <string.h>
 
-static uint64_t start = 0;
-
-void dbg_startTimer(void) {
-	start = cpu_rdtsc();
+uint64_t cpu_rdtsc(void) {
+	/* TODO not implemented yet */
+	return 0;
 }
 
-void dbg_stopTimer(const char *prefix) {
-	uLongLong diff;
-	diff.val64 = cpu_rdtsc() - start;
-	vid_printf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
+void cpu_sprintf(sStringBuffer *buf) {
+	size_t size;
+	prf_sprintf(buf,"%-12s%s\n","Vendor:","THM");
+	prf_sprintf(buf,"%-12s%d\n","Model:","ECO32");
 }

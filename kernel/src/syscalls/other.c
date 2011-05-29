@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/multiboot.h>
+#include <sys/boot.h>
 #include <sys/intrpt.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
@@ -34,7 +34,7 @@
 
 void sysc_loadMods(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	mboot_loadModules(intrpt_getCurStack());
+	boot_loadModules(intrpt_getCurStack());
 }
 
 void sysc_debugc(sIntrptStackFrame *stack) {

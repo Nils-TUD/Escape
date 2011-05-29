@@ -21,7 +21,6 @@
 #define UTIL_H_
 
 #include <sys/common.h>
-#include <sys/intrpt.h>
 #include <sys/task/thread.h>
 #include <sys/ksymbols.h>
 #include <stdarg.h>
@@ -35,6 +34,13 @@ typedef struct {
 	const char *funcName;
 } sFuncCall;
 
+#ifdef __i386__
+#include <sys/arch/i586/util.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/util.h>
+#endif
+
 /* The max. stack-depth util_getStackTrace() supports */
 #define MAX_STACK_DEPTH 100
 
@@ -42,59 +48,6 @@ typedef struct {
  * Assembler routine to halt the processor
  */
 extern void util_halt(void);
-
-/**
- * Outputs the <val> to the I/O-Port <port>
- *
- * @param port the port
- * @param val the value
- */
-extern void util_outByte(uint16_t port,uint8_t val);
-
-/**
- * Outputs the <val> to the I/O-Port <port>
- *
- * @param port the port
- * @param val the value
- */
-extern void util_outWord(uint16_t port,uint16_t val);
-
-/**
- * Outputs the <val> to the I/O-Port <port>
- *
- * @param port the port
- * @param val the value
- */
-extern void util_outDWord(uint16_t port,uint32_t val);
-
-/**
- * Reads the value from the I/O-Port <port>
- *
- * @param port the port
- * @return the value
- */
-extern uint8_t util_inByte(uint16_t port);
-
-/**
- * Reads the value from the I/O-Port <port>
- *
- * @param port the port
- * @return the value
- */
-extern uint16_t util_inWord(uint16_t port);
-
-/**
- * Reads the value from the I/O-Port <port>
- *
- * @param port the port
- * @return the value
- */
-extern uint32_t util_inDWord(uint16_t port);
-
-/**
- * @return the address of the stack-frame-start
- */
-extern uintptr_t getStackFrameStart(void);
 
 /**
  * PANIC: Displays the given message and halts
@@ -120,18 +73,6 @@ int util_rand(void);
  * sequence of numbers.
  */
 void util_srand(uint seed);
-
-/**
- * Starts the timer
- */
-void util_startTimer(void);
-
-/**
- * Stops the timer and displays "<prefix>: <instructions>"
- *
- * @param prefix the prefix to display
- */
-void util_stopTimer(const char *prefix,...);
 
 /**
  * Builds the user-stack-trace for the current thread

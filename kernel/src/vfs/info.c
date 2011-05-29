@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/cpu.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
@@ -30,7 +29,8 @@
 #include <sys/vfs/info.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/real.h>
-#include <sys/multiboot.h>
+#include <sys/cpu.h>
+#include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/printf.h>
 #include <assert.h>
@@ -306,9 +306,9 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	buf.len = 0;
 
 	free = pmem_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
-	total = mboot_getUsableMemCount();
-	ksize = mboot_getKernelSize();
-	msize = mboot_getModuleSize();
+	total = boot_getUsableMemCount();
+	ksize = boot_getKernelSize();
+	msize = boot_getModuleSize();
 	kheap = kheap_getOccupiedMem();
 	pmem = pmem_getStackSize();
 	proc_getMemUsage(&paging,&dataShared,&dataOwn,&dataReal);

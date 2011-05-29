@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/fpu.h>
-#include <sys/arch/i586/cpu.h>
 #include <sys/arch/i586/serial.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
@@ -40,10 +39,11 @@
 #include <sys/vfs/request.h>
 #include <sys/vfs/driver.h>
 #include <sys/vfs/real.h>
+#include <sys/cpu.h>
 #include <sys/intrpt.h>
 #include <sys/util.h>
 #include <sys/debug.h>
-#include <sys/multiboot.h>
+#include <sys/boot.h>
 #include <sys/video.h>
 #include <esc/test.h>
 #include <sys/log.h>
@@ -74,7 +74,7 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 	 * and "correct" the GDT */
 	paging_init();
 	gdt_init();
-	mboot_init(mbp);
+	boot_init(mbp);
 
 	/* init video and serial-ports */
 	vid_init();
@@ -83,11 +83,11 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 	vid_printf("GDT exchanged, paging enabled, video initialized");
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	mboot_dbg_print();
+	boot_dbg_print();
 
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
-	pmem_init(mboot_getInfo());
+	pmem_init(boot_getInfo());
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* paging */

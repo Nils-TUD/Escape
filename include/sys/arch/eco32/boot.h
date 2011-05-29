@@ -2,8 +2,10 @@
  * $Id$
  */
 
-#ifndef BOOT_H_
-#define BOOT_H_
+#ifndef ECO32_BOOT_H_
+#define ECO32_BOOT_H_
+
+#include <esc/common.h>
 
 #define MAX_PATH_LEN	20
 #define MAX_PROG_COUNT	8
@@ -31,4 +33,4 @@ typedef struct {
 void boot_init(const sBootInfo *binfo);
 const sBootInfo *boot_getInfo(void);
 
-#endif /* BOOT_H_ */
+#endif /* ECO32_BOOT_H_ */

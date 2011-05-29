@@ -219,17 +219,21 @@ bool paging_isRangeWritable(uintptr_t virt,size_t count) {
 	return true;
 }
 
-#if 0
 uintptr_t paging_mapToTemp(const tFrameNo *frames,size_t count) {
 	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE);
+	/* if its only one frame, we can access it over the directly mapped space */
+	if(count == 1)
+		return (*frames * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	paging_map(TEMP_MAP_AREA,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	return TEMP_MAP_AREA;
 }
 
 void paging_unmapFromTemp(size_t count) {
-	paging_unmap(TEMP_MAP_AREA,count,false);
+	if(count > 1)
+		paging_unmap(TEMP_MAP_AREA,count,false);
 }
 
+#if 0
 ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	uintptr_t kstackAddr;
 	tFrameNo pdirFrame;

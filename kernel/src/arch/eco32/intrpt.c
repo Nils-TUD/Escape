@@ -3,89 +3,81 @@
  */
 
 #include <esc/common.h>
+#include <sys/task/signals.h>
+#include <sys/task/timer.h>
 #include <sys/intrpt.h>
 #include <sys/video.h>
 #include <sys/util.h>
 
+/* interrupt- and exception-numbers */
+#define IRQ_TTY0_XMTR		0
+#define IRQ_TTY0_RCVR		1
+#define IRQ_TTY1_XMTR		2
+#define IRQ_TTY1_RCVR		3
+#define IRQ_KEYBOARD		4
+#define IRQ_DISK			8
+#define IRQ_TIMER			14
+#define EXC_BUS_TIMEOUT		16
+#define EXC_ILL_INSTRCT		17
+#define EXC_PRV_INSTRCT		18
+#define EXC_DIVIDE			19
+#define EXC_TRAP			20
+#define EXC_TLB_MISS		21
+#define EXC_TLB_WRITE		22
+#define EXC_TLB_INVALID		23
+#define EXC_ILL_ADDRESS		24
+#define EXC_PRV_ADDRESS		25
+
 typedef void (*fIntrptHandler)(sIntrptStackFrame *frame);
+typedef struct {
+	fIntrptHandler handler;
+	const char *name;
+	tSig signal;
+} sInterrupt;
 
 /**
  * Handles a TLB-miss >= 0x80000000 && < 0xC0000000
  */
-extern void intrpt_kernelMiss(sIntrptStackFrame *frame);
+extern void intrpt_exKMiss(sIntrptStackFrame *frame);
 /**
  * The default handler for all interrupts we do not expect
  */
 static void intrpt_defHandler(sIntrptStackFrame *frame);
+static void intrpt_irqTimer(sIntrptStackFrame *stack);
 
-static const char *irq2Name[] = {
-	/*  0 */ "Terminal 0 Transmitter",
-	/*  1 */ "Terminal 0 Receiver",
-	/*  2 */ "Terminal 1 Transmitter",
-	/*  3 */ "Terminal 1 Receiver",
-	/*  4 */ "Keyboard",
-	/*  5 */ "Unused",
-	/*  6 */ "Unused",
-	/*  7 */ "Unused",
-	/*  8 */ "Disk",
-	/*  9 */ "Unused",
-	/* 10 */ "Unused",
-	/* 11 */ "Unused",
-	/* 12 */ "Unused",
-	/* 13 */ "Unused",
-	/* 14 */ "Timer",
-	/* 15 */ "Unused",
-	/* 16 */ "Bus timeout",
-	/* 17 */ "Illegal instruction",
-	/* 18 */ "Privileged instruction",
-	/* 19 */ "Divide instruction",
-	/* 20 */ "Trap instruction",
-	/* 21 */ "TLB miss",
-	/* 22 */ "TLB write",
-	/* 23 */ "TLB invalid",
-	/* 24 */ "Illegal address",
-	/* 25 */ "Privileged address",
-	/* 26 */ "Unused",
-	/* 27 */ "Unused",
-	/* 28 */ "Unused",
-	/* 29 */ "Unused",
-	/* 30 */ "Unused",
-	/* 31 */ "Unused",
-};
-
-static fIntrptHandler handler[32] = {
-	/*  0 */ intrpt_defHandler,						/* terminal 0 transmitter interrupt */
-	/*  1 */ intrpt_defHandler,						/* terminal 0 receiver interrupt */
-	/*  2 */ intrpt_defHandler,						/* terminal 1 transmitter interrupt */
-	/*  3 */ intrpt_defHandler,						/* terminal 1 receiver interrupt */
-	/*  4 */ intrpt_defHandler,						/* keyboard interrupt */
-	/*  5 */ intrpt_defHandler,
-	/*  6 */ intrpt_defHandler,
-	/*  7 */ intrpt_defHandler,
-	/*  8 */ intrpt_defHandler,						/* disk interrupt */
-	/*  9 */ intrpt_defHandler,
-	/* 10 */ intrpt_defHandler,
-	/* 11 */ intrpt_defHandler,
-	/* 12 */ intrpt_defHandler,
-	/* 13 */ intrpt_defHandler,
-	/* 14 */ intrpt_defHandler,						/* timer interrupt */
-	/* 15 */ intrpt_defHandler,
-	/* 16 */ intrpt_defHandler,						/* bus timeout exception */
-	/* 17 */ intrpt_defHandler,						/* illegal instruction exception */
-	/* 18 */ intrpt_defHandler,						/* privileged instruction exception */
-	/* 19 */ intrpt_defHandler,						/* divide instruction exception */
-	/* 20 */ intrpt_defHandler,						/* trap instruction exception */
-	/* 21 */ intrpt_kernelMiss,						/* TLB miss exception */
-	/* 22 */ intrpt_defHandler,						/* TLB write exception */
-	/* 23 */ intrpt_defHandler,						/* TLB invalid exception */
-	/* 24 */ intrpt_defHandler,						/* illegal address exception */
-	/* 25 */ intrpt_defHandler,						/* privileged address exception */
-	/* 26 */ intrpt_defHandler,
-	/* 27 */ intrpt_defHandler,
-	/* 28 */ intrpt_defHandler,
-	/* 29 */ intrpt_defHandler,
-	/* 30 */ intrpt_defHandler,
-	/* 31 */ intrpt_defHandler,
+static sInterrupt intrptList[] = {
+	/* 0x00: IRQ_TTY0_XMTR */	{intrpt_defHandler,	"Terminal 0 Transmitter",0},
+	/* 0x01: IRQ_TTY0_RCVR */	{intrpt_defHandler,	"Terminal 0 Receiver",	0},
+	/* 0x02: IRQ_TTY1_XMTR */	{intrpt_defHandler,	"Terminal 1 Transmitter",0},
+	/* 0x03: IRQ_TTY1_RCVR */	{intrpt_defHandler,	"Terminal 1 Receiver",	0},
+	/* 0x04: IRQ_KEYBOARD */	{intrpt_defHandler,	"Keyboard",				SIG_INTRPT_KB},
+	/* 0x05: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x06: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x07: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x08: IRQ_DISK */		{intrpt_defHandler,	"Disk",					SIG_INTRPT_ATA1},
+	/* 0x09: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x0A: - */				{intrpt_defHandler,	"??",					0},
+	/* 0x0B: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x0C: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x0D: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x0E: IRQ_TIMER */		{intrpt_irqTimer,	"Timer",				SIG_INTRPT_TIMER},
+	/* 0x0F: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x10: EXC_BUS_TIMEOUT */	{intrpt_defHandler,	"Bus timeout exception",0},
+	/* 0x11: EXC_ILL_INSTRCT */	{intrpt_defHandler,	"Ill. instr. exception",0},
+	/* 0x12: EXC_PRV_INSTRCT */	{intrpt_defHandler,	"Prv. instr. exception",0},
+	/* 0x13: EXC_DIVIDE */		{intrpt_defHandler,	"Divide exception",		0},
+	/* 0x14: EXC_TRAP */		{intrpt_defHandler,	"Trap exception",		0},
+	/* 0x15: EXC_TLB_MISS */	{intrpt_exKMiss,	"TLB miss exception",	0},
+	/* 0x16: EXC_TLB_WRITE */	{intrpt_defHandler,	"TLB write exception",	0},
+	/* 0x17: EXC_TLB_INVALID */	{intrpt_defHandler,	"TLB invalid exception",0},
+	/* 0x18: EXC_ILL_ADDRESS */	{intrpt_defHandler,	"Ill. addr. exception",	0},
+	/* 0x19: EXC_PRV_ADDRESS */	{intrpt_defHandler,	"Prv. addr. exception",	0},
+	/* 0x1A: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x1B: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x1C: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x1D: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x1E: -- */				{intrpt_defHandler,	"??",					0},
+	/* 0x1F: -- */				{intrpt_defHandler,	"??",					0},
 };
 static size_t irqCount = 0;
 static sIntrptStackFrame *curFrame;
@@ -95,7 +87,7 @@ void intrpt_handler(sIntrptStackFrame *frame) {
 	irqCount++;
 
 	/* call handler */
-	handler[frame->irqNo & 0x1f](frame);
+	intrptList[frame->irqNo & 0x1f].handler(frame);
 }
 
 size_t intrpt_getCount(void) {
@@ -109,5 +101,13 @@ sIntrptStackFrame *intrpt_getCurStack(void) {
 static void intrpt_defHandler(sIntrptStackFrame *frame) {
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ 0x%08x\n",
-			frame->irqNo,irq2Name[frame->irqNo & 0x1f],frame->r[30]);
+			frame->irqNo,intrptList[frame->irqNo & 0x1f].name,frame->r[30]);
+}
+
+static void intrpt_irqTimer(sIntrptStackFrame *stack) {
+	sInterrupt *intrpt = intrptList + stack->irqNo;
+	if(intrpt->signal)
+		sig_addSignal(intrpt->signal);
+	timer_intrpt();
+	timer_ackIntrpt();
 }

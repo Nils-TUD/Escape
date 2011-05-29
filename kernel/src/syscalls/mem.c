@@ -135,11 +135,13 @@ void sysc_mapPhysical(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* trying to map memory in kernel area? */
+#ifdef __i386__
 	/* TODO is this ok? */
 	/* TODO I think we should check here wether it is in a used-region, according to multiboot-memmap */
 	if(*phys &&
 			OVERLAPS(*phys,*phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+#endif
 
 	addr = vmm_addPhys(p,phys,bytes,align);
 	if(addr == 0)

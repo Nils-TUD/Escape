@@ -13,6 +13,7 @@
  * Setups the user-stack for given interrupt-stack, when starting the current process
  *
  * @param frame the interrupt-stack-frame
+ * @param path the executable-path
  * @param argc the argument-count
  * @param args the arguments on after another, allocated on the heap; may be NULL
  * @param argsSize the total number of bytes for the arguments (just the data)
@@ -20,8 +21,8 @@
  * @param entryPoint the entry-point
  * @return true if successfull
  */
-bool uenv_setupProc(sIntrptStackFrame *frame,int argc,const char *args,size_t argsSize,
-		const sStartupInfo *info,uintptr_t entryPoint);
+bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
+		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint);
 
 /**
  * Setups the user-environment for the given interrupt-stack, when starting the current thread

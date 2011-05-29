@@ -114,11 +114,4 @@ void boot_init(sMultiBoot *mbp);
  */
 const sMultiBoot *boot_getInfo(void);
 
-/**
- * Loads all multiboot-modules
- *
- * @param stack the interrupt-stack-frame
- */
-void boot_loadModules(sIntrptStackFrame *stack);
-
 #endif /* I586_BOOT_H_ */

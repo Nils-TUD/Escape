@@ -26,7 +26,7 @@ CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 else
 ifeq ($(ARCH),eco32)
 	CSRC = printf.c syscalls.c log.c config.c util.c $(wildcard vfs/*.c) \
-		$(wildcard task/*.c) $(wildcard mem/*.c)
+		$(wildcard task/*.c) $(wildcard mem/*.c) $(wildcard syscalls/*.c)
 else
 	CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c" | grep -v '\.svn'))
 endif

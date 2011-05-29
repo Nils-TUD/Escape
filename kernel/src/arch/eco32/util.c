@@ -18,6 +18,8 @@
  */
 
 #include <sys/common.h>
+#include <sys/mem/paging.h>
+#include <sys/task/proc.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
 #include <sys/util.h>
@@ -91,6 +93,38 @@ void util_panic(const char *fmt,...) {
 	while(1)
 		util_halt();
 #endif
+}
+
+void util_copyToUser(void *dst,const void *src,size_t count) {
+	/* on eco32 we can't write to non-writable pages in kernel-mode */
+	/* therefore, we copy it page by page and use the direct mapped space */
+	sProc *p = proc_getRunning();
+	uintptr_t isrc = (uintptr_t)src;
+	uintptr_t idst = (uintptr_t)dst;
+	size_t offset = idst & (PAGE_SIZE - 1);
+	while(count > 0) {
+		tFrameNo frameNo = paging_getFrameNo(p->pagedir,idst);
+		size_t amount = MIN(count,PAGE_SIZE - offset);
+		memcpy((void*)((frameNo * PAGE_SIZE) | DIR_MAPPED_SPACE),(void*)isrc,amount);
+		idst += amount;
+		isrc += amount;
+		count -= amount;
+		offset = 0;
+	}
+}
+
+void util_zeroToUser(void *dst,size_t count) {
+	sProc *p = proc_getRunning();
+	uintptr_t idst = (uintptr_t)dst;
+	size_t offset = idst & (PAGE_SIZE - 1);
+	while(count > 0) {
+		tFrameNo frameNo = paging_getFrameNo(p->pagedir,idst);
+		size_t amount = MIN(count,PAGE_SIZE - offset);
+		memclear((void*)((frameNo * PAGE_SIZE) | DIR_MAPPED_SPACE),amount);
+		idst += amount;
+		count -= amount;
+		offset = 0;
+	}
 }
 
 sFuncCall *util_getUserStackTrace(void) {

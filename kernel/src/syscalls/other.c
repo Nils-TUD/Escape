@@ -45,6 +45,8 @@ void sysc_debugc(sIntrptStackFrame *stack) {
 
 void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
+	/* TODO */
+#ifdef __i386__
 #if DEBUGGING
 #if 0
 	static size_t foo = 0;
@@ -58,6 +60,7 @@ void sysc_debug(sIntrptStackFrame *stack) {
 	}
 #else
 	cons_start();
+#endif
 #endif
 #endif
 }

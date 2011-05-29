@@ -1,5 +1,5 @@
 #
-# $Id: ports.s 716 2010-07-29 09:39:46Z nasmussen $
+# $Id: main.s 867 2011-05-27 16:57:47Z nasmussen $
 # Copyright (C) 2008 - 2009 Nils Asmussen
 #
 # This program is free software; you can redistribute it and/or
@@ -19,9 +19,32 @@
 
 .section .text
 
-.include "arch/eco32/syscalls.s"
+.global _start
+.global sigRetFunc
 
-.extern errno
+.include "../../../lib/c/arch/eco32/syscalls.s"
 
-SYSC_RET_2ARGS_ERR requestIOPorts,SYSCALL_REQIOPORTS
-SYSC_RET_2ARGS_ERR releaseIOPorts,SYSCALL_RELIOPORTS
+_start:
+	# load modules first
+	add		$4,$0,SYSCALL_LOADMODS
+	trap
+
+	# now replace with init
+	add		$4,$0,SYSCALL_EXEC				# set syscall-number
+	add		$5,$0,progName						# set path
+	add		$6,$0,args								# set arguments
+	trap
+
+	# we should not reach this
+1:
+	j			1b
+
+# provide just a dummy
+sigRetFunc:
+	j			sigRetFunc
+
+args:
+	.long			progName,0
+
+progName:
+	.asciz		"/bin/init"

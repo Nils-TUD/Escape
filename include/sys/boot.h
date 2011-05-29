@@ -6,6 +6,7 @@
 #define BOOT_H_
 
 #include <esc/common.h>
+#include <sys/intrpt.h>
 
 #ifdef __i386__
 #include <sys/arch/i586/boot.h>
@@ -28,6 +29,13 @@ size_t boot_getModuleSize(void);
  * @return the usable memory in bytes
  */
 size_t boot_getUsableMemCount(void);
+
+/**
+ * Loads all multiboot-modules
+ *
+ * @param stack the interrupt-stack-frame
+ */
+void boot_loadModules(sIntrptStackFrame *stack);
 
 #if DEBUGGING
 

@@ -118,6 +118,8 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
+/* TODO */
+#ifdef __i386__
 void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
@@ -154,6 +156,7 @@ void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	tss_setIOMap(p->ioMap);
 	SYSC_RET1(stack,0);
 }
+#endif
 
 void sysc_getenvito(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
@@ -259,27 +262,11 @@ void sysc_exec(sIntrptStackFrame *stack) {
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
 	/* make process ready */
-	/* for starting use the linker-entry, which will be progEntry if no dl is present */
-	if(!uenv_setupProc(stack,argc,argBuffer,argSize,&info,info.linkerEntry))
-		goto error;
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
-
-	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
-	 * so that he can load it including all shared libraries */
-	if(info.linkerEntry != info.progEntry) {
-		uint32_t *esp = (uint32_t*)stack->uesp;
-		tFileNo file;
-		tFD fd = proc_getFreeFd();
-		if(fd < 0)
-			goto error;
-		file = vfs_real_openPath(p->pid,VFS_READ,path);
-		if(file < 0)
-			goto error;
-		assert(proc_assocFd(fd,file) == 0);
-		*--esp = fd;
-		stack->uesp = (uintptr_t)esp;
-	}
+	/* for starting use the linker-entry, which will be progEntry if no dl is present */
+	if(!uenv_setupProc(stack,path,argc,argBuffer,argSize,&info,info.linkerEntry))
+		goto error;
 
 	kheap_free(argBuffer);
 	return;
@@ -290,6 +277,8 @@ error:
 	thread_switch();
 }
 
+/* TODO */
+#ifdef __i386__
 void sysc_vm86int(sIntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	sVM86Regs *regs = (sVM86Regs*)SYSC_ARG2(stack);
@@ -334,6 +323,7 @@ void sysc_vm86int(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
+#endif
 
 static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size) {
 	size_t len;

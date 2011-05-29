@@ -149,7 +149,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
 			/* no dynamic linking here */
 			p->entryPoint = info.progEntry;
-			if(!uenv_setupProc(stack,argc,argBuffer,argSize,&info,info.progEntry))
+			if(!uenv_setupProc(stack,p->command,argc,argBuffer,argSize,&info,info.progEntry))
 				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */

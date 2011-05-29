@@ -182,7 +182,8 @@ mmixd:	all hdd
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
 
 eco:	all hdd
-		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i -m $(BUILD)/kernel.map
+		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
+			-m $(BUILD)/kernel.map $(BUILD)/user_initloader.map
 
 qemu:	all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1

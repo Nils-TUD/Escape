@@ -56,6 +56,8 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
+/* TODO */
+#ifdef __i386__
 void sysc_ackSignal(sIntrptStackFrame *stack) {
 	uint32_t *esp;
 	sThread *t = thread_getRunning();
@@ -79,6 +81,7 @@ void sysc_ackSignal(sIntrptStackFrame *stack) {
 	stack->eip = *esp++;
 	stack->uesp = (uintptr_t)esp;
 }
+#endif
 
 void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);

@@ -119,6 +119,14 @@ void util_panic(const char *fmt,...) {
 #endif
 }
 
+void util_copyToUser(void *dst,const void *src,size_t count) {
+	memcpy(dst,src,count);
+}
+
+void util_zeroToUser(void *dst,size_t count) {
+	memclear(dst,count);
+}
+
 void util_startTimer(void) {
 	profStart = cpu_rdtsc();
 }

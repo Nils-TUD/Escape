@@ -31,7 +31,7 @@
 	.global logByte
 	.global dbg_putc
 
-	.global intrpt_kernelMiss
+	.global intrpt_exKMiss
 	.global intrpt_setEnabled
 	.global intrpt_orMask
 	.global intrpt_andMask
@@ -109,7 +109,7 @@ intrpt_userMiss:
 .syn
 
 # kernel-TLB-miss-handler (for the addresses 0x80000000 - 0xBFFFFFFF)
-intrpt_kernelMiss:
+intrpt_exKMiss:
 	ldw		$9,$0,curPDir											# load page-dir
 	or		$9,$9,DIR_MAP_START								# make virtual
 	mvfs	$10,FS_TLB_EHIGH									# load tlbEntryHi
@@ -117,7 +117,7 @@ intrpt_kernelMiss:
 	and		$10,$10,0xFFC
 	add		$9,$9,$10													# add to page-directory
 	ldw		$9,$9,0														# load direct mapped page-table-address
-	beq		$9,$0,intrpt_kernelMissWrite			# does the page-table exist?
+	beq		$9,$0,intrpt_exKMissWrite					# does the page-table exist?
 	mvfs	$10,FS_TLB_EHIGH									# load tlbEntryHi
 	slr		$10,$10,10												# grab the page-number
 	and		$10,$10,0xFFC
@@ -125,7 +125,7 @@ intrpt_kernelMiss:
 	or		$9,$9,DIR_MAP_START								# remove flags and make direct addressable
 	add		$9,$9,$10													# add to page-table
 	ldw		$9,$9,0														# load page-table-entry
-intrpt_kernelMissWrite:
+intrpt_exKMissWrite:
 	mvts	$9,FS_TLB_ELOW										# page-table-entry to tlbEntryLo
 	tbwr																		# write virt. & phys. address into TLB
 	jr		$31
@@ -156,6 +156,14 @@ start:
 	# call main
 	add		$4,$16,$0													# give main the load-progs-array
 	jal		main															# call 'main' function
+
+	# initloader has been loaded, so jump to it
+	add		$30,$0,$2													# main returns the entry-point
+	mvfs	$8,FS_PSW
+	or		$8,$8,PINTRPT_FLAG								# enable previous interrupts
+	and		$8,$8,~PUSER_MODE_FLAG						# disable user-mode
+	mvts	$8,FS_PSW
+	rfx
 
 	# just to be sure
 loop:

@@ -39,18 +39,15 @@
 #include <sys/boot.h>
 #include <sys/video.h>
 
-#if 0
 static uint8_t initloader[] = {
 #if DEBUGGING
-#	include "../../build/eco32-debug/user_initloader.dump"
+#	include "../../../../build/eco32-debug/user_initloader.dump"
 #else
-#	include "../../build/eco32-release/user_initloader.dump"
+#	include "../../../../build/eco32-release/user_initloader.dump"
 #endif
 };
-#endif
 
 int main(const sBootInfo *bootinfo) {
-	size_t i;
 	sThread *t;
 	sStartupInfo info;
 
@@ -111,9 +108,6 @@ int main(const sBootInfo *bootinfo) {
 			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
 #endif
 
-	while(1);
-
-#if 0
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
@@ -123,6 +117,4 @@ int main(const sBootInfo *bootinfo) {
 			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 	assert(t->stackRegion >= 0);
 	return info.progEntry;
-#endif
-	return 0;
 }

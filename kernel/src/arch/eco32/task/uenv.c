@@ -10,8 +10,8 @@
 #include <string.h>
 #include <assert.h>
 
-bool uenv_setupProc(sIntrptStackFrame *frame,int argc,const char *args,size_t argsSize,
-		const sStartupInfo *info,uintptr_t entryPoint) {
+bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
+		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint) {
 #if 0
 	uint32_t *esp;
 	char **argv;

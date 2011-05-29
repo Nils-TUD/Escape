@@ -26,6 +26,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
+#include <sys/util.h>
 #include <sys/video.h>
 #include <string.h>
 #include <errors.h>
@@ -48,7 +49,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 	Elf32_Phdr *pheader = NULL;
 
 	/* check magic */
-	if(eheader->e_ident.dword != *(uint32_t*)ELFMAG)
+	if(memcmp(eheader->e_ident.chars,ELFMAG,4) != 0)
 		return ERR_INVALID_ELF_BIN;
 
 	/* load the LOAD segments. */
@@ -65,9 +66,9 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 			if(elf_addSegment(NULL,pheader,loadSegNo,ELF_TYPE_PROG) < 0)
 				return ERR_INVALID_ELF_BIN;
 			/* copy the data and zero the rest, if necessary */
-			memcpy((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
+			util_copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
 					pheader->p_filesz);
-			memclear((void*)(pheader->p_vaddr + pheader->p_filesz),
+			util_zeroToUser((void*)(pheader->p_vaddr + pheader->p_filesz),
 					pheader->p_memsz - pheader->p_filesz);
 			loadSegNo++;
 		}
@@ -104,7 +105,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 		goto failed;
 
 	/* check magic */
-	if(eheader.e_ident.dword != *(uint32_t*)ELFMAG)
+	if(memcmp(eheader.e_ident.chars,ELFMAG,4) != 0)
 		goto failed;
 
 	/* by default set the same; the dl will overwrite it when needed */
@@ -162,7 +163,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				if(vfs_readFile(p->pid,file,(void*)tlsStart,pheader.p_filesz) < 0)
 					goto failed;
 				/* clear tbss */
-				memclear((void*)(tlsStart + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
+				util_zeroToUser((void*)(tlsStart + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
 			}
 			loadSeg++;
 		}

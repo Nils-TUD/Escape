@@ -3,19 +3,20 @@
  */
 
 #include <esc/common.h>
+#include <sys/arch/i586/gdt.h>
 #include <sys/task/uenv.h>
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
-#include <sys/arch/i586/gdt.h>
+#include <sys/vfs/real.h>
 #include <string.h>
 #include <assert.h>
 
 static void uenv_setupStack(sIntrptStackFrame *frame,uintptr_t entryPoint);
 static uint32_t *uenv_addArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 
-bool uenv_setupProc(sIntrptStackFrame *frame,int argc,const char *args,size_t argsSize,
-		const sStartupInfo *info,uintptr_t entryPoint) {
+bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
+		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint) {
 	uint32_t *esp;
 	char **argv;
 	size_t totalSize;
@@ -91,6 +92,20 @@ bool uenv_setupProc(sIntrptStackFrame *frame,int argc,const char *args,size_t ar
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
 	esp = uenv_addArgs(t,esp,info->progEntry,false);
+
+	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
+	 * so that he can load it including all shared libraries */
+	if(info->linkerEntry != info->progEntry) {
+		tFileNo file;
+		tFD fd = proc_getFreeFd();
+		if(fd < 0)
+			return false;
+		file = vfs_real_openPath(t->proc->pid,VFS_READ,path);
+		if(file < 0)
+			return false;
+		assert(proc_assocFd(fd,file) == 0);
+		*--esp = fd;
+	}
 
 	frame->uesp = (uint32_t)esp;
 	frame->ebp = frame->uesp;

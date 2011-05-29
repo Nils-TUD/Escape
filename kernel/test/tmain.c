@@ -87,7 +87,7 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
-	mm_init(mboot_getInfo());
+	pmem_init(mboot_getInfo());
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* paging */
@@ -146,8 +146,8 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 	cpu_detect();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	vid_printf("%d free frames (%d KiB)\n",mm_getFreeFrames(MM_CONT | MM_DEF),
-			mm_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
+	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
+			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
 
 	/* swapmap (needed for swapmap tests) */
 	vid_printf("Initializing Swapmap...");

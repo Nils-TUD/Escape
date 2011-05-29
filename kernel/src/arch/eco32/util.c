@@ -91,3 +91,22 @@ void util_panic(const char *fmt,...) {
 #endif
 }
 
+void util_dumpMem(const void *addr,size_t wordCount) {
+	uint *ptr = (uint*)addr;
+	while(wordCount-- > 0) {
+		vid_printf("0x%x: 0x%08x\n",ptr,*ptr);
+		ptr++;
+	}
+}
+
+void util_dumpBytes(const void *addr,size_t byteCount) {
+	size_t i = 0;
+	uchar *ptr = (uchar*)addr;
+	for(i = 0; byteCount-- > 0; i++) {
+		vid_printf("%02x ",*ptr);
+		ptr++;
+		if(i % 16 == 15)
+			vid_printf("\n");
+	}
+}
+

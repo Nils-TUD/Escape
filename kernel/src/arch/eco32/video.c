@@ -28,8 +28,10 @@
 #include <stdarg.h>
 
 #define VIDEO_BASE			0xF0100000
+#define MAX_COLS			128
 #define TAB_WIDTH			4
 
+extern void logByte(char c);
 static void vid_move(void);
 static void vid_copy(void *dst,const void *src,size_t count);
 static void vid_clear(void);
@@ -48,13 +50,13 @@ void vid_init(void) {
 }
 
 void vid_backup(char *buffer,ushort *r,ushort *c) {
-	vid_copy(buffer,(void*)VIDEO_BASE,VID_ROWS * VID_COLS);
+	vid_copy(buffer,(void*)VIDEO_BASE,VID_ROWS);
 	*r = row;
 	*c = col;
 }
 
 void vid_restore(const char *buffer,ushort r,ushort c) {
-	vid_copy((void*)VIDEO_BASE,buffer,VID_ROWS * VID_COLS);
+	vid_copy((void*)VIDEO_BASE,buffer,VID_ROWS);
 	row = r;
 	col = c;
 }
@@ -85,8 +87,11 @@ void vid_putchar(char c) {
 		col = 0;
 	}
 	vid_move();
-	video = (uint32_t*)(VIDEO_BASE + row * VID_COLS * 4 + col * 4);
+	video = (uint32_t*)(VIDEO_BASE + row * MAX_COLS * 4 + col * 4);
 
+	/* TODO temporary */
+	if(c != '\t')
+		logByte(c);
 
 	if(c == '\n') {
 		row++;
@@ -126,25 +131,37 @@ void vid_vprintf(const char *fmt,va_list ap) {
 static void vid_move(void) {
 	/* last line? */
 	if(row >= VID_ROWS) {
+		size_t x;
 		/* copy all chars one line back */
-		vid_copy((void*)VIDEO_BASE,(uint32_t*)VIDEO_BASE + VID_COLS,VID_ROWS * (VID_COLS - 1));
+		vid_copy((void*)VIDEO_BASE,(uint32_t*)VIDEO_BASE + MAX_COLS,VID_ROWS - 1);
+		/* clear last line */
+		uint32_t *screen = (uint32_t*)VIDEO_BASE + MAX_COLS * (VID_ROWS - 1);
+		for(x = 0; x < VID_COLS; x++)
+			*screen++ = 0;
 		row--;
 	}
 }
 
-static void vid_copy(void *dst,const void *src,size_t count) {
-	size_t i;
+static void vid_copy(void *dst,const void *src,size_t rows) {
+	size_t x,y;
 	uint32_t *idst = (uint32_t*)dst;
 	uint32_t *isrc = (uint32_t*)src;
-	for(i = 0; i < count; i++)
-		*idst++ = *isrc++;
+	for(y = 0; y < rows; y++) {
+		for(x = 0; x < VID_COLS; x++)
+			*idst++ = *isrc++;
+		idst += MAX_COLS - VID_COLS;
+		isrc += MAX_COLS - VID_COLS;
+	}
 }
 
 static void vid_clear(void) {
-	size_t i;
+	size_t x,y;
 	uint32_t *screen = (uint32_t*)VIDEO_BASE;
-	for(i = 0; i < VID_ROWS * VID_COLS; i++)
-		*screen++ = 0;
+	for(y = 0; y < VID_ROWS; y++) {
+		for(x = 0; x < VID_COLS; x++)
+			*screen++ = 0;
+		screen += MAX_COLS - VID_COLS;
+	}
 }
 
 static uchar vid_handlePipePad(void) {

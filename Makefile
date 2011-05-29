@@ -1,7 +1,9 @@
 # general
-ARCH = mmix
-GCCVER = 4.6.0
-#ARCH = i586
+#ARCH = mmix
+#GCCVER = 4.6.0
+ARCH = i586
+GCCVER = 4.4.3
+#ARCH = eco32
 #GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-debug)
@@ -17,6 +19,7 @@ BINNAME = kernel.bin
 BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
+# simulators
 KVM = -enable-kvm
 QEMU = qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 60 -localtime
@@ -33,7 +36,7 @@ export LINKTYPE = static
 # if LINKTYPE = dynamic: wether to use the static or dynamic libgcc (and libgcc_eh)
 export LIBGCC = dynamic
 
-# flags for gcc
+# various variables, that are used in many makefiles and shellscripts
 export ARCH
 export GCCVER
 export TARGET
@@ -45,7 +48,11 @@ export LD = $(abspath $(DIST)/bin/$(TARGET)-ld)
 export AR = $(abspath $(DIST)/bin/$(TARGET)-ar)
 export AS = $(abspath $(DIST)/bin/$(TARGET)-as)
 export READELF = $(abspath $(DIST)/bin/$(TARGET)-readelf)
+ifeq ($(ARCH),eco32)
+export OBJDUMP = /home/hrniels/Applications/gcc/bin/eco32-objdump
+else
 export OBJDUMP = $(abspath $(DIST)/bin/$(TARGET)-objdump)
+endif
 export OBJCOPY = $(abspath $(DIST)/bin/$(TARGET)-objcopy)
 export NM = $(abspath $(DIST)/bin/$(TARGET)-nm)
 export CWFLAGS=-Wall -ansi \
@@ -68,9 +75,10 @@ export SUDO=sudo
 #		-finstrument-functions-exclude-file-list=../../../lib/basic/profile.c
 # ADDLIBS = ../../../lib/basic/profile.c
 
+# build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
 	#DIRS = tools dist lib drivers user kernel/src kernel/test
-	DIRS = tools dist lib drivers user
+	DIRS = tools dist lib drivers user kernel/src
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
@@ -174,7 +182,7 @@ mmixd:	all hdd
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
 
 eco:	all hdd
-		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -c -i -m $(BUILD)/kernel.map
+		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i -m $(BUILD)/kernel.map
 
 qemu:	all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1
@@ -219,7 +227,8 @@ testvbox: all prepareVbox prepareTest
 testvmware:	all prepareVmware prepareTest
 		vmplayer vmware/escape.vmx
 
-prepareQemu:	hdd cd
+#prepareQemu:	hdd cd
+prepareQemu:	cd
 		sudo service qemu-kvm start || true
 
 prepareBochs:	hdd cd

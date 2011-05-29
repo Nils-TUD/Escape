@@ -17,8 +17,9 @@
 	.global	_bbss
 
 	.extern	dbg_prints
-	.extern intrpt_handler
-	.extern curPageDir
+	.extern irq_handler
+	.extern curPDir
+	.extern util_panic
 
 	.global start
 	.global tlb_remove
@@ -52,9 +53,9 @@
 
 	.set		PAGE_SIZE,0x1000
 	.set		PAGE_SIZE_SHIFT,12
-	.set		PTE_MAP_ADDR,0x80400000
+	.set		PTE_MAP_ADDR,0x80000000
 	.set		DIR_MAP_START,0xC0000000
-	.set		KERNEL_STACK,0x80000FFC					# our kernel-stack (the top)
+	.set		KERNEL_STACK,0x83400FFC					# our kernel-stack (the top)
 																					# individually for each process and stored fix in the
 																					# first entry of the TLB
 	.set		TLB_INDEX_INVALID,0x80000000		# represents an invalid index
@@ -109,7 +110,8 @@ intrpt_userMiss:
 
 # kernel-TLB-miss-handler (for the addresses 0x80000000 - 0xBFFFFFFF)
 intrpt_kernelMiss:
-	#ldw		$9,$0,curPageDir									# load page-dir
+	ldw		$9,$0,curPDir											# load page-dir
+	or		$9,$9,DIR_MAP_START								# make virtual
 	mvfs	$10,FS_TLB_EHIGH									# load tlbEntryHi
 	slr		$10,$10,20												# grab the offset of the page-table
 	and		$10,$10,0xFFC
@@ -119,7 +121,7 @@ intrpt_kernelMiss:
 	mvfs	$10,FS_TLB_EHIGH									# load tlbEntryHi
 	slr		$10,$10,10												# grab the page-number
 	and		$10,$10,0xFFC
-	and		$9,$9,~0x3
+	and		$9,$9,~0x7
 	or		$9,$9,DIR_MAP_START								# remove flags and make direct addressable
 	add		$9,$9,$10													# add to page-table
 	ldw		$9,$9,0														# load page-table-entry
@@ -186,7 +188,7 @@ printCharLoop:
 	ldw		$9,$8,(0 << 4 | 8)								# get xmtr status
 	and		$9,$9,1														# xmtr ready?
 	beq		$9,$0,printCharLoop								# no - wait
-	#stw		$16,$10,0												# send char to output
+	#stw		$16,$10,0													# send char to output
 	stw		$16,$8,(0 << 4 | 12)							# send char
 	ldw		$31,$29,0													# restore return register
 	ldw		$16,$29,4													# restore register variable
@@ -256,7 +258,7 @@ isrStackPresent:
 	# setup stack-pointer and handle interrupt
 	sub		$29,$28,4
 	add		$5,$28,0													#	the intrpt-handler wants to access the registers
-	#jal		intrpt_handler
+	jal		irq_handler
 
 	# restore tlb-Entry-High for the case that we have got a TLB-miss
 	.nosyn

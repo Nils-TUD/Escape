@@ -1,4 +1,8 @@
-DIRS = $(filter-out powermng Makefile,$(wildcard *))
+ifeq ($(ARCH),eco32)
+	DIRS = $(filter-out powermng Makefile,$(wildcard *))
+else
+	DIRS = $(filter-out Makefile,$(wildcard *))
+endif
 
 .PHONY:  all clean
 

@@ -24,8 +24,12 @@
 #include <sys/printf.h>
 #include <stdarg.h>
 
-#define VID_COLS				80
-#define VID_ROWS				25
+#ifdef __i386__
+#include <sys/arch/i586/video.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/video.h>
+#endif
 
 #define TARGET_SCREEN			1
 #define TARGET_LOG				2

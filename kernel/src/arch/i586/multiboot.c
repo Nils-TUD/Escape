@@ -26,6 +26,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/task/elf.h>
+#include <sys/task/uenv.h>
 #include <sys/vfs/node.h>
 #include <sys/multiboot.h>
 #include <sys/video.h>
@@ -118,7 +119,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		if(pid == INVALID_PID)
 			util_panic("No free process-slots");
 
-		if(proc_clone(pid,false)) {
+		if(proc_clone(pid,0)) {
 			sStartupInfo info;
 			size_t argSize = 0;
 			char *argBuffer = NULL;
@@ -133,11 +134,10 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);
 			if(argc < 0)
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
-			if(!proc_setupUserStack(stack,argc,argBuffer,argSize,&info))
-				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
 			/* no dynamic linking here */
 			p->entryPoint = info.progEntry;
-			proc_setupStart(stack,info.progEntry);
+			if(!uenv_setupProc(stack,argc,argBuffer,argSize,&info,info.progEntry))
+				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
 			return;

@@ -24,15 +24,22 @@ CSRC = $(filter-out $(shell find ./arch -name "*.c") $(shell find ./dbg -name "*
 	$(shell find . -name "*.c" | grep -v '\.svn'))
 CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 else
-#CSRC = printf.c
-CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c" | grep -v '\.svn'))
+ifeq ($(ARCH),eco32)
+	CSRC = printf.c task/proc.c $(wildcard vfs/*.c) \
+		task/env.c task/event.c task/lock.c task/sched.c task/signals.c $(wildcard mem/*.c)
+else
+	CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c" | grep -v '\.svn'))
+endif
 CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 endif
-#LSRC = $(filter-out $(LIB)/ringbuffer.c $(LIB)/hashmap.c $(LIB)/sllist.c $(LIB)/test.c \
-#	$(LIB)/string/strdup.c $(LIB)/string/strndup.c \
-#	$(shell find $(LIB)/arch -name "*.c"),$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
-LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
-	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
+ifeq ($(ARCH),eco32)
+	LSRC = $(filter-out $(LIB)/test.c \
+		$(LIB)/string/strdup.c $(LIB)/string/strndup.c \
+		$(shell find $(LIB)/arch -name "*.c"),$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
+else
+	LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
+		$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
+endif
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 
 # objects
@@ -69,9 +76,8 @@ $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) -lgcc;
 
 $(MAP): $(BIN)
-		@echo "	" GEN $@
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) -lgcc -Wl,-M | \
-			gawk -f $(ROOT)/tools/createmap.awk > $@
+		@echo "	" GEN MAP $@
+		@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(SYMBOLS):
 		@if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi

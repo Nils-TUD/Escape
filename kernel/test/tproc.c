@@ -45,14 +45,14 @@ static void test_init(const char *fmt,...) {
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 
-	oldFF = mm_getFreeFrames(MM_DEF);
+	oldFF = pmem_getFreeFrames(MM_DEF);
 }
 
 /**
  * Checks whether the page-count and free-frames are still the same and finishes the test-case
  */
 static void test_check(void) {
-	newFF = mm_getFreeFrames(MM_DEF);
+	newFF = pmem_getFreeFrames(MM_DEF);
 	if(oldFF != newFF) {
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	}
@@ -69,7 +69,7 @@ static void test_proc(void) {
 	for(x = 0; x < 5; x++) {
 		tPid newPid = proc_getFreePid();
 		tprintf("Cloning process to pid=%d\n",newPid);
-		test_assertTrue(proc_clone(newPid,false) >= 0);
+		test_assertTrue(proc_clone(newPid,0) >= 0);
 		tprintf("Destroying process\n",newPid);
 		proc_kill(proc_getByPid(newPid));
 	}

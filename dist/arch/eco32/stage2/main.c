@@ -10,11 +10,12 @@
 #include "../../../../drivers/common/fs/ext2/ext2.h"
 #include <stdarg.h>
 
+#define PROG_COUNT			2
 #define SEC_SIZE			512								/* disk sector size in bytes */
 #define BLOCK_SIZE			((size_t)(1024 << le32tocpu(e.superBlock.logBlockSize)))
 #define SPB					(BLOCK_SIZE / SEC_SIZE)			/* sectors per block */
 #define BLOCKS_TO_SECS(x)	((x) << (le32tocpu(e.superBlock.logBlockSize) + 1))
-#define GROUP_COUNT			4								/* no. of block groups to load */
+#define GROUP_COUNT			6								/* no. of block groups to load */
 #define PAGE_SIZE			4096
 
 /* hardcoded here; the monitor will choose them later */
@@ -33,12 +34,13 @@ extern int dskio(int dskno,char cmd,int sct,void *addr,int nscts);
 extern int sctcapctl(void);
 
 /* the tasks we should load */
-static sLoadProg progs[PROG_COUNT] = {
+static sLoadProg progs[MAX_PROG_COUNT] = {
 	{"/boot/kernel.bin",BL_K_ID,0,0},
-	/*{"/boot/hdd.bin",BL_HDD_ID,0,0},
-	{"/boot/fs.bin",BL_FS_ID,0,0},
-	{"/boot/rtc.bin",BL_RTC_ID,0,0}*/
+	/*{"/sbin/hdd.bin",BL_HDD_ID,0,0},*/
+	{"/sbin/fs",BL_FS_ID,0,0},
+	/*{"/sbin/rtc.bin",BL_RTC_ID,0,0}*/
 };
+static sBootInfo bootinfo;
 
 static sExt2Simple e;
 static sExt2Inode rootIno;
@@ -49,7 +51,7 @@ static Elf32_Phdr pheader;
 /* temporary buffer to read a block from disk */
 static uint buffer[1024 / sizeof(uint)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
-static uint loadAddr = 0xC0100000;
+static uint loadAddr = 0xC0000000;
 
 static uint16_t le16tocpu(uint16_t in) {
 	return ((in >> 8) & 0xFF) << 0 |
@@ -131,15 +133,17 @@ static int readBlocks(void *dst,tBlockNo start,size_t blockCount) {
 }
 
 static void readFromDisk(tBlockNo blkno,char *buf,uint offset,uint nbytes) {
+	char *dst = offset == 0 && (nbytes % BLOCK_SIZE) == 0 ? buf : buffer;
 	if(offset >= BLOCK_SIZE || offset + nbytes > BLOCK_SIZE)
 		halt("Offset / nbytes invalid");
 
 	/*debugf("Reading sectors %d .. %d\n",sector + START_SECTOR,sector + START_SECTOR + SPB);*/
-	int result = readSectors(buffer,blkno * SPB,SPB);
+	int result = readSectors(dst,blkno * SPB,SPB);
 	if(result != 0)
 		halt("Load error");
 
-	memcpy(buf,(char*)buffer + offset,nbytes);
+	if(dst != buf)
+		memcpy(buf,(char*)buffer + offset,nbytes);
 }
 
 static void loadInode(sExt2Inode *ip,tInodeNo inodeno) {
@@ -177,7 +181,7 @@ static tInodeNo searchDir(tInodeNo dirIno,sExt2Inode *dir,const char *name,size_
 }
 
 static tBlockNo getBlock(sExt2Inode *ino,ulong offset) {
-	tBlockNo block = offset / BLOCK_SIZE;
+	tBlockNo i,block = offset / BLOCK_SIZE;
 	size_t blockSize,blocksPerBlock;
 
 	/* direct block */
@@ -188,11 +192,20 @@ static tBlockNo getBlock(sExt2Inode *ino,ulong offset) {
 	block -= EXT2_DIRBLOCK_COUNT;
 	blockSize = BLOCK_SIZE;
 	blocksPerBlock = blockSize / sizeof(tBlockNo);
-	if(block >= blocksPerBlock)
-		halt("Block-number %u to high; double indirect",block + EXT2_DIRBLOCK_COUNT);
+	if(block < blocksPerBlock) {
+		readBlocks(buffer,le32tocpu(ino->singlyIBlock),1);
+		return le32tocpu(*((tBlockNo*)buffer + block));
+	}
 
-	readBlocks(buffer,le32tocpu(ino->singlyIBlock),1);
-	return le32tocpu(*((tBlockNo*)buffer + block));
+	/* doubly indirect */
+	block -= blocksPerBlock;
+	if(block >= blocksPerBlock * blocksPerBlock)
+		halt("Block-number %u to high; triply indirect",block + EXT2_DIRBLOCK_COUNT);
+
+	readBlocks(buffer,le32tocpu(ino->doublyIBlock),1);
+	i = le32tocpu(*((tBlockNo*)buffer + block / blocksPerBlock));
+	readBlocks(buffer,i,1);
+	return le32tocpu(*((tBlockNo*)buffer + block % blocksPerBlock));
 }
 
 static tInodeNo namei(char *path,sExt2Inode *ino) {
@@ -237,7 +250,7 @@ static tInodeNo namei(char *path,sExt2Inode *ino) {
 	return inodeno;
 }
 
-void copyToMem(sExt2Inode *ino,uint offset,uint count) {
+uint copyToMem(sExt2Inode *ino,uint offset,uint count,uint dest) {
 	tBlockNo blk;
 	uint offInBlk,amount;
 	while(count > 0) {
@@ -245,17 +258,18 @@ void copyToMem(sExt2Inode *ino,uint offset,uint count) {
 
 		offInBlk = offset % BLOCK_SIZE;
 		amount = MIN(count,BLOCK_SIZE - offInBlk);
-		readFromDisk(blk,(char*)loadAddr,offInBlk,amount);
+		readFromDisk(blk,(char*)dest,offInBlk,amount);
 
 		count -= amount;
 		offset += amount;
-		loadAddr += amount;
+		dest += amount;
 		/* printing a loading-'status' lowers the subjective wait-time ^^ */
 		debugChar('.');
 	}
+	return dest;
 }
 
-int loadKernel(sExt2Inode *ino) {
+int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	size_t j,loadSegNo = 0;
 	uint8_t const *datPtr;
 
@@ -278,13 +292,21 @@ int loadKernel(sExt2Inode *ino) {
 
 		if(pheader.p_type == PT_LOAD) {
 			/* read into memory */
-			copyToMem(ino,pheader.p_offset,pheader.p_filesz);
+			copyToMem(ino,pheader.p_offset,pheader.p_filesz,pheader.p_vaddr);
 			/* zero the rest */
 			memclear((void*)(pheader.p_vaddr + pheader.p_filesz),
 					pheader.p_memsz - pheader.p_filesz);
 			loadSegNo++;
+			if(pheader.p_vaddr + pheader.p_memsz > loadAddr)
+				loadAddr = pheader.p_vaddr + pheader.p_memsz;
 		}
 	}
+
+	prog->start = 0xC0000000;
+	prog->size = loadAddr - 0xC0000000;
+
+	/* leave one page for stack */
+	loadAddr += (PAGE_SIZE + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	return 1;
 }
 
@@ -292,18 +314,23 @@ static int readInProg(sLoadProg *prog,sExt2Inode *ino) {
 	/* make page-boundary */
 	loadAddr = (loadAddr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	prog->start = loadAddr;
-	prog->size = ino->size;
+	prog->size = le32tocpu(ino->size);
 
 	/* load file into memory */
-	copyToMem(ino,0,ino->size);
+	loadAddr = copyToMem(ino,0,le32tocpu(ino->size),loadAddr);
 	return 1;
 }
 
-sLoadProg *bootload(void) {
+sBootInfo *bootload(uint memSize) {
 	int i;
 	int cap = sctcapctl();
 	if(cap == 0)
 		halt("Disk not found");
+
+	bootinfo.progCount = 0;
+	bootinfo.progs = progs;
+	bootinfo.diskSize = cap * SEC_SIZE;
+	bootinfo.memSize = memSize;
 
 	/* load superblock */
 	readSectors(&(e.superBlock),EXT2_SUPERBLOCK_SECNO,2);
@@ -325,16 +352,14 @@ sLoadProg *bootload(void) {
 		else {
 			/* load program */
 			debugf("Loading %s",progs[i].path);
-			if(progs[i].id == BL_K_ID) {
-				loadAddr = 0xC0000000;
-				loadKernel(&inoBuf);
-				loadAddr = 0xC0100000;
-			}
+			if(progs[i].id == BL_K_ID)
+				loadKernel(progs + i,&inoBuf);
 			else
 				readInProg(progs + i,&inoBuf);
 			debugf("\n");
 		}
+		bootinfo.progCount++;
 	}
 
-	return progs;
+	return &bootinfo;
 }

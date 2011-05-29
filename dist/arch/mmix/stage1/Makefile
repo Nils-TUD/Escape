@@ -18,7 +18,7 @@ AOBJ = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
 
 .PHONY: all clean
 
-all:		$(BUILDDIRS) $(BIN) $(ELF)
+all:		$(BUILDDIRS) $(BIN) $(MAP) $(ELF)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -27,8 +27,11 @@ $(BUILDDIRS):
 
 $(ELF):	$(AOBJ) $(LDCONF)
 		@echo "	" LINKING $@
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJ) -Wl,-M \
-			| gawk -f $(ROOT)/tools/createmap.awk > $(MAP)
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJ)
+
+$(MAP): $(ELF)
+		@echo "	" GEN MAP $@
+		@$(NM) -S $(ELF) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BIN):	$(ELF)
 		@echo "	" GEN BIN $@

@@ -237,10 +237,10 @@ bool proc_hasChild(tPid pid);
  * The function returns -1 if there is not enough memory.
  *
  * @param newPid the target-pid
- * @param isVM86 true if it should be a VM86-task
+ * @param flags the flags to set for the process (e.g. P_VM86)
  * @return -1 if an error occurred, 0 for parent, 1 for child
  */
-int proc_clone(tPid newPid,bool isVM86);
+int proc_clone(tPid newPid,uint8_t flags);
 
 /**
  * Starts a new thread at given entry-point. Will clone the kernel-stack from the current thread
@@ -307,27 +307,6 @@ void proc_kill(sProc *p);
  * @return the number of arguments on success or < 0
  */
 int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fromUser);
-
-/**
- * Setups the user-stack for given interrupt-stack of the current process
- *
- * @param frame the interrupt-stack-frame
- * @param argc the argument-count
- * @param args the arguments on after another, allocated on the heap; may be NULL
- * @param argsSize the total number of bytes for the arguments (just the data)
- * @param info startup-info
- * @return true if successfull
- */
-bool proc_setupUserStack(sIntrptStackFrame *frame,int argc,const char *args,size_t argsSize,
-		const sStartupInfo *info);
-
-/**
- * Setups the start of execution in user-mode for given interrupt-stack
- *
- * @param frame the interrupt-stack-frame
- * @param entryPoint the entry-point for the thread
- */
-void proc_setupStart(sIntrptStackFrame *frame,uintptr_t entryPoint);
 
 #if DEBUGGING
 

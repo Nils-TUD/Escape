@@ -17,50 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MM_H_
-#define MM_H_
+#ifndef PMEM_H_
+#define PMEM_H_
 
 #include <sys/common.h>
-#include <sys/multiboot.h>
 
-/**
- * Physical memory layout:
- * 0x00000000: +-----------------------------------+   -----
- *             |                                   |     |
- *             |                VM86               |     |
- *             |                                   |     |
- * 0x00100000: +-----------------------------------+     |
- *             |                                   |
- *             |          kernel code+data         |  unmanaged
- *             |                                   |
- *             +-----------------------------------+     |
- *             |         multiboot-modules         |     |
- *             +-----------------------------------+     |
- *             |              MM-stack             |     |
- *             +-----------------------------------+   -----
- *             |             MM-bitmap             |     |
- *             +-----------------------------------+     |
- *             |                                   |
- *             |                                   |  bitmap managed (2 MiB)
- *             |                ...                |
- *             |                                   |     |
- *             |                                   |     |
- *             +-----------------------------------+   -----
- *             |                                   |     |
- *             |                                   |
- *             |                ...                |  stack managed (remaining)
- *             |                                   |
- *             |                                   |     |
- * 0xFFFFFFFF: +-----------------------------------+   -----
- */
-
-/* the physical start-address of the kernel-area */
-#define KERNEL_AREA_P_ADDR		0x0
-/* the physical start-address of the kernel itself */
-#define KERNEL_P_ADDR			(1 * M)
-
-#define PAGE_SIZE				(4 * K)
-#define PAGE_SIZE_SHIFT			12
+#ifdef __i386__
+#include <sys/arch/i586/mem/pmem.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/mem/pmem.h>
+#endif
 
 /* converts bytes to pages */
 #define BYTES_2_PAGES(b)		(((size_t)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
@@ -70,15 +37,13 @@ typedef enum {MM_CONT = 1,MM_DEF = 2} eMemType;
 
 /**
  * Initializes the memory-management
- *
- * @param mb the multiboot-info
  */
-void mm_init(const sMultiBoot *mb);
+void pmem_init(void);
 
 /**
  * @return the number of bytes used for the mm-stack
  */
-size_t mm_getStackSize(void);
+size_t pmem_getStackSize(void);
 
 /**
  * Counts the number of free frames. This is primarly intended for debugging!
@@ -86,7 +51,7 @@ size_t mm_getStackSize(void);
  * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
  * @return the number of free frames
  */
-size_t mm_getFreeFrames(uint types);
+size_t pmem_getFreeFrames(uint types);
 
 /**
  * Allocates <count> contiguous frames from the MM-bitmap
@@ -95,7 +60,7 @@ size_t mm_getFreeFrames(uint types);
  * @param align the alignment of the memory (in pages)
  * @return the first allocated frame or negative if an error occurred
  */
-ssize_t mm_allocateContiguous(size_t count,size_t align);
+ssize_t pmem_allocateContiguous(size_t count,size_t align);
 
 /**
  * Free's <count> contiguous frames, starting at <first> in the MM-bitmap
@@ -103,7 +68,7 @@ ssize_t mm_allocateContiguous(size_t count,size_t align);
  * @param first the first frame-number
  * @param count the number of frames
  */
-void mm_freeContiguous(tFrameNo first,size_t count);
+void pmem_freeContiguous(tFrameNo first,size_t count);
 
 /**
  * Allocates a frame and returns the frame-number
@@ -111,15 +76,15 @@ void mm_freeContiguous(tFrameNo first,size_t count);
  * @panic if there is no frame left anymore
  * @return the frame-number
  */
-tFrameNo mm_allocate(void);
+tFrameNo pmem_allocate(void);
 
 /**
- * Frees the given frame. Note that you can free frames allocated with mm_allocate() and
- * mm_allocateContiguous() with this function!
+ * Frees the given frame. Note that you can free frames allocated with pmem_allocate() and
+ * pmem_allocateContiguous() with this function!
  *
  * @param frame the frame-number
  */
-void mm_free(tFrameNo frame);
+void pmem_free(tFrameNo frame);
 
 #if DEBUGGING
 
@@ -128,8 +93,8 @@ void mm_free(tFrameNo frame);
  *
  * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
  */
-void mm_dbg_printFreeFrames(uint types);
+void pmem_dbg_printFreeFrames(uint types);
 
 #endif
 
-#endif /*MM_H_*/
+#endif /*PMEM_H_*/

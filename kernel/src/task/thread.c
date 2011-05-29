@@ -106,6 +106,10 @@ sThread *thread_getRunning(void) {
 	return cur;
 }
 
+void thread_setRunning(sThread *t) {
+	cur = t;
+}
+
 sThread *thread_getById(tTid tid) {
 	return tidToThread[tid];
 }
@@ -121,59 +125,7 @@ void thread_switchNoSigs(void) {
 	cur->ignoreSignals = 0;
 }
 
-void thread_switchTo(tTid tid) {
-	/* finish kernel-time here since we're switching the process */
-	if(tid != cur->tid) {
-		uint64_t kcstart = cur->stats.kcycleStart;
-		if(kcstart > 0) {
-			uint64_t cycles = cpu_rdtsc();
-			cur->stats.kcycleCount.val64 += cycles - kcstart;
-		}
-
-		if(!thread_save(&cur->save)) {
-			uintptr_t tlsStart,tlsEnd;
-			sThread *old;
-			sThread *t = thread_getById(tid);
-			vassert(t != NULL,"Thread with tid %d not found",tid);
-
-			/* mark old process ready, if it should not be blocked, killed or something */
-			if(cur->state == ST_RUNNING)
-				sched_setReady(cur);
-
-			old = cur;
-			cur = t;
-
-			/* set used */
-			cur->stats.schedCount++;
-			vmm_setTimestamp(cur,timer_getTimestamp());
-			sched_setRunning(cur);
-
-			if(old->proc != cur->proc) {
-				/* remove the io-map. it will be set as soon as the process accesses an io-port
-				 * (we'll get an exception) */
-				tss_removeIOMap();
-				tss_setStackPtr(cur->proc->flags & P_VM86);
-				paging_setCur(cur->proc->pagedir);
-			}
-
-			/* set TLS-segment in GDT */
-			if(cur->tlsRegion >= 0) {
-				vmm_getRegRange(cur->proc,cur->tlsRegion,&tlsStart,&tlsEnd);
-				gdt_setTLS(tlsStart,tlsEnd - tlsStart);
-			}
-			else
-				gdt_setTLS(0,0xFFFFFFFF);
-			/* lock the FPU so that we can save the FPU-state for the previous process as soon
-			 * as this one wants to use the FPU */
-			fpu_lockFPU();
-			thread_resume(cur->proc->pagedir,&cur->save,
-					sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
-		}
-
-		/* now start kernel-time again */
-		cur->stats.kcycleStart = cpu_rdtsc();
-	}
-
+void thread_killDead(void) {
 	/* destroy threads, if there are any */
 	if(deadThreads != NULL) {
 		sSLNode *n;
@@ -251,7 +203,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 		/* TODO */
 		size_t neededFrms = 0;/*paging_countFramesForMap(
 			t->ustackBegin - t->ustackPages * PAGE_SIZE,INITIAL_STACK_PAGES);*/
-		if(mm_getFreeFrames(MM_DEF) < 1 + neededFrms)
+		if(pmem_getFreeFrames(MM_DEF) < 1 + neededFrms)
 			goto errThread;
 
 		/* add a new stack-region */
@@ -260,7 +212,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 		if(t->stackRegion < 0)
 			goto errThread;
 		/* add kernel-stack */
-		*stackFrame = t->kstackFrame = mm_allocate();
+		*stackFrame = t->kstackFrame = pmem_allocate();
 		p->ownFrames++;
 		/* add a new tls-region, if its present in the src-thread */
 		t->tlsRegion = -1;
@@ -295,7 +247,7 @@ errClone:
 		vmm_remove(p,t->tlsRegion);
 errStack:
 	if(!cloneProc) {
-		mm_free(t->kstackFrame);
+		pmem_free(t->kstackFrame);
 		p->ownFrames--;
 		vmm_remove(p,t->stackRegion);
 	}
@@ -336,7 +288,7 @@ void thread_kill(sThread *t) {
 		t->stackRegion = -1;
 	}
 	/* free kernel-stack */
-	mm_free(t->kstackFrame);
+	pmem_free(t->kstackFrame);
 	t->proc->ownFrames--;
 
 	/* remove from process */

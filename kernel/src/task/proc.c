@@ -26,6 +26,7 @@
 #include <sys/task/lock.h>
 #include <sys/task/env.h>
 #include <sys/task/event.h>
+#include <sys/task/uenv.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
@@ -33,10 +34,6 @@
 #include <sys/mem/cow.h>
 #include <sys/mem/sharedmem.h>
 #include <sys/machine/intrpt.h>
-#include <sys/machine/fpu.h>
-#include <sys/machine/gdt.h>
-#include <sys/machine/cpu.h>
-#include <sys/machine/timer.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>
@@ -54,8 +51,6 @@
 
 static void proc_notifyProcDied(tPid parent);
 static int proc_finishClone(sThread *nt,tFrameNo stackFrame);
-static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint);
-static uint32_t *proc_addStartArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 static bool proc_add(sProc *p);
 static void proc_remove(sProc *p);
 
@@ -79,7 +74,7 @@ void proc_init(void) {
 
 	/* do this first because vfs_createProcess may use the kheap so that the kheap needs paging
 	 * and paging refers to the current process's pagedir */
-	p->pagedir = paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
+	p->pagedir = paging_getCur();
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(0,&vfs_info_procReadHandler);
 	if(p->threadDir == NULL)
@@ -112,9 +107,8 @@ void proc_init(void) {
 	if(!sll_append(p->threads,thread_init(p)))
 		util_panic("Unable to append the initial thread");
 
-	paging_exchangePDir(p->pagedir);
 	/* setup kernel-stack for us */
-	stackFrame = mm_allocate();
+	stackFrame = pmem_allocate();
 	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 
 	/* set kernel-stack for first thread */
@@ -322,7 +316,8 @@ bool proc_hasChild(tPid pid) {
 	return false;
 }
 
-int proc_clone(tPid newPid,bool isVM86) {
+int proc_clone(tPid newPid,uint8_t flags) {
+	assert((flags & P_ZOMBIE) == 0);
 	tFrameNo stackFrame,dummy;
 	size_t i;
 	sProc *p;
@@ -361,8 +356,7 @@ int proc_clone(tPid newPid,bool isVM86) {
 	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
-	if(isVM86)
-		p->flags |= P_VM86;
+	p->flags = flags;
 	/* give the process the same name (may be changed by exec) */
 	strcpy(p->command,cur->command);
 	/* clone regions */
@@ -456,14 +450,13 @@ int proc_startThread(uintptr_t entryPoint,const void *arg) {
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {
 		sIntrptStackFrame *istack = intrpt_getCurStack();
-		if(!proc_setupThreadStack(istack,arg,entryPoint)) {
+		if(!uenv_setupThread(istack,arg,entryPoint)) {
 			thread_kill(nt);
 			/* do a switch here because we can't continue */
 			thread_switch();
 			/* never reached */
 			return ERR_NOT_ENOUGH_MEM;
 		}
-		proc_setupStart(istack,p->entryPoint);
 	}
 
 	return nt->tid;
@@ -705,166 +698,6 @@ int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fr
 	/* store args-size and return argc */
 	*size = EXEC_MAX_ARGSIZE - remaining;
 	return argc;
-}
-
-bool proc_setupUserStack(sIntrptStackFrame *frame,int argc,const char *args,size_t argsSize,
-		const sStartupInfo *info) {
-	uint32_t *esp;
-	char **argv;
-	size_t totalSize;
-	sThread *t = thread_getRunning();
-	vassert(frame != NULL,"frame == NULL");
-
-	/*
-	 * Initial stack:
-	 * +------------------+  <- top
-	 * |     arguments    |
-	 * |        ...       |
-	 * +------------------+
-	 * |       argv       |
-	 * +------------------+
-	 * |       argc       |
-	 * +------------------+
-	 * |     TLSSize      |  0 if not present
-	 * +------------------+
-	 * |     TLSStart     |  0 if not present
-	 * +------------------+
-	 * |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-	 * +------------------+
-	 */
-
-	/* we need to know the total number of bytes we'll store on the stack */
-	totalSize = 0;
-	if(argc > 0) {
-		/* first round the size of the arguments up. then we need argc+1 pointer */
-		totalSize += (argsSize + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
-		totalSize += sizeof(void*) * (argc + 1);
-	}
-	/* finally we need argc, argv, tlsSize, tlsStart and entryPoint */
-	totalSize += sizeof(uint32_t) * 5;
-
-	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&esp);
-
-	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
-		return false;
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)esp - totalSize,totalSize);
-
-	/* copy arguments on the user-stack (4byte space) */
-	esp--;
-	argv = NULL;
-	if(argc > 0) {
-		char *str;
-		int i;
-		size_t len;
-		argv = (char**)(esp - argc);
-		/* space for the argument-pointer */
-		esp -= argc;
-		/* start for the arguments */
-		str = (char*)esp;
-		for(i = 0; i < argc; i++) {
-			/* start <len> bytes backwards */
-			len = strlen(args) + 1;
-			str -= len;
-			/* store arg-pointer and copy arg */
-			argv[i] = str;
-			memcpy(str,args,len);
-			/* to next */
-			args += len;
-		}
-		/* ensure that we don't overwrites the characters */
-		esp = (uint32_t*)(((uintptr_t)str & ~(sizeof(uint32_t) - 1)) - sizeof(uint32_t));
-	}
-
-	/* store argc and argv */
-	*esp-- = (uintptr_t)argv;
-	*esp-- = argc;
-	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
-	 * program, not the dynamic-linker */
-	esp = proc_addStartArgs(t,esp,info->progEntry,false);
-
-	frame->uesp = (uint32_t)esp;
-	frame->ebp = frame->uesp;
-	return true;
-}
-
-void proc_setupStart(sIntrptStackFrame *frame,uintptr_t entryPoint) {
-	vassert(frame != NULL,"frame == NULL");
-
-	/* user-mode segments */
-	frame->cs = SEGSEL_GDTI_UCODE | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->ds = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->es = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->fs = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	/* gs is used for TLS */
-	frame->gs = SEGSEL_GDTI_UTLS | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->uss = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->eip = entryPoint;
-	/* general purpose register */
-	frame->eax = 0;
-	frame->ebx = 0;
-	frame->ecx = 0;
-	frame->edx = 0;
-	frame->esi = 0;
-	frame->edi = 0;
-}
-
-static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint) {
-	uint32_t *esp;
-	size_t totalSize = 3 * sizeof(uint32_t) + sizeof(void*);
-	sThread *t = thread_getRunning();
-
-	/*
-	 * Initial stack:
-	 * +------------------+  <- top
-	 * |       arg        |
-	 * +------------------+
-	 * |     TLSSize      |  0 if not present
-	 * +------------------+
-	 * |     TLSStart     |  0 if not present
-	 * +------------------+
-	 * |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-	 * +------------------+
-	 */
-
-	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&esp);
-
-	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
-		return false;
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)esp - totalSize,totalSize);
-
-	/* put arg on stack */
-	esp--;
-	*esp-- = (uintptr_t)arg;
-	/* add TLS args and entrypoint */
-	esp = proc_addStartArgs(t,esp,tentryPoint,true);
-
-	frame->uesp = (uint32_t)esp;
-	frame->ebp = frame->uesp;
-	return true;
-}
-
-static uint32_t *proc_addStartArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
-	/* put address and size of the tls-region on the stack */
-	if(t->tlsRegion >= 0) {
-		uintptr_t tlsStart,tlsEnd;
-		vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
-		*esp-- = tlsEnd - tlsStart;
-		*esp-- = tlsStart;
-	}
-	else {
-		/* no tls */
-		*esp-- = 0;
-		*esp-- = 0;
-	}
-
-	*esp = newThread ? tentryPoint : 0;
-	return esp;
 }
 
 static bool proc_add(sProc *p) {

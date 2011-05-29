@@ -25,6 +25,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/signals.h>
 #include <sys/task/env.h>
+#include <sys/task/uenv.h>
 #include <sys/machine/timer.h>
 #include <sys/machine/gdt.h>
 #include <sys/machine/vm86.h>
@@ -64,7 +65,7 @@ void sysc_fork(sIntrptStackFrame *stack) {
 	if(newPid == INVALID_PID)
 		SYSC_ERROR(stack,ERR_NO_FREE_PROCS);
 
-	res = proc_clone(newPid,false);
+	res = proc_clone(newPid,0);
 
 	/* error? */
 	if(res < 0)
@@ -258,12 +259,11 @@ void sysc_exec(sIntrptStackFrame *stack) {
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
 	/* make process ready */
-	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,&info))
+	/* for starting use the linker-entry, which will be progEntry if no dl is present */
+	if(!uenv_setupProc(stack,argc,argBuffer,argSize,&info,info.linkerEntry))
 		goto error;
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
-	/* for starting use the linker-entry, which will be progEntry if no dl is present */
-	proc_setupStart(stack,info.linkerEntry);
 
 	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
 	 * so that he can load it including all shared libraries */

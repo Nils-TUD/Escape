@@ -2,6 +2,7 @@ ROOT = ../../../..
 BUILDL = $(BUILD)/stage1
 BIN = $(BUILD)/stage1.bin
 MAP = $(BUILD)/stage1.map
+ELF = $(BUILD)/stage1.elf.bin
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
@@ -17,22 +18,26 @@ AOBJ = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
 
 .PHONY: all clean
 
-all:		$(BUILDDIRS) $(BIN) $(MAP)
+all:		$(BUILDDIRS) $(BIN) $(MAP) $(ELF)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
 		done;
 
-$(BIN):	$(AOBJ) $(LDCONF)
-		@echo "	" LINKING $<
-		@$(CC) $(CFLAGS) -Wl,-s -Wl,-x -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ)
+$(ELF):	$(AOBJ) $(LDCONF)
+		@echo "	" LINKING $@
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJ)
+
+$(MAP): $(ELF)
+		@echo "	" GEN MAP $@
+		@$(NM) -S $(ELF) | $(ROOT)/tools/createmap-mmix.php > $@
+
+$(BIN):	$(ELF)
+		@echo "	" GEN BIN $@
+		@$(OBJCOPY) -O binary $(ELF) $(BIN)
 		@echo "	" COPYING TO DISK
 		@dd if=$(BIN) of=$(BUILD)/hd.img bs=512 count=1 conv=notrunc
-
-$(MAP): $(BIN)
-		@echo "	" GEN $@
-		@$(LD) -s -x -T $(LDCONF) -o $(BIN) $(AOBJ) -M | gawk -f $(ROOT)/tools/createmap.awk > $@
 
 $(BUILDL)/%.s.o:	%.s
 		@echo "	" AS $<

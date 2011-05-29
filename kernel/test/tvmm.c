@@ -42,11 +42,11 @@ static size_t framesAfter;
 
 static void test_init(void) {
 	heapBefore = kheap_getFreeMem();
-	framesBefore = mm_getFreeFrames(MM_DEF);
+	framesBefore = pmem_getFreeFrames(MM_DEF);
 }
 static void test_finish(void) {
 	heapAfter = kheap_getFreeMem();
-	framesAfter = mm_getFreeFrames(MM_DEF);
+	framesAfter = pmem_getFreeFrames(MM_DEF);
 	test_assertTrue(heapAfter >= heapBefore);
 	test_assertUInt(framesAfter,framesBefore);
 }
@@ -89,7 +89,7 @@ static void test_1(void) {
 	test_finish();
 
 	pid = proc_getFreePid();
-	test_assertUInt(proc_clone(pid,false),0);
+	test_assertUInt(proc_clone(pid,0),0);
 	clone = proc_getByPid(pid);
 
 	test_init();

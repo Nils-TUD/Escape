@@ -20,9 +20,6 @@
 
 	.set	sctsize,512		# sector size in bytes
 
-	.set	retries,10000000		# retries to get disk ready
-
-	.global	sctcapctl		# determine disk capacity
 	.global	sctioctl		# do disk I/O
 
 #***************************************************************
@@ -30,25 +27,16 @@
 .section .text
 .align	4
 
+# sctioctl(int sector,void *dest,int secCount)
 sctioctl:
-	sub	$29,$29,24
-	stw	$31,$29,20
-	stw	$16,$29,16
-	stw	$17,$29,12
-	stw	$18,$29,8
-	stw	$19,$29,4
-	stw	$20,$29,0
-	add	$17,$5,$0		# sector number
-	add	$18,$6,0xC0000000	# memory address, virtualized
-	add	$19,$7,$0		# number of sectors
-
+	add	$6,$6,0xC0000000	# memory address, virtualized
 sctrd:
 	add	$2,$0,$0		# return ok
-	beq	$19,$0,sctx		# if no (more) sectors
+	beq	$7,$0,sctx		# if no (more) sectors
 	add	$8,$0,dskbase
 	add	$9,$0,1
 	stw	$9,$8,dskcnt		# number of sectors
-	stw	$17,$8,dsksct		# sector number on disk
+	stw	$5,$8,dsksct		# sector number on disk
 	add	$9,$0,ctrlstrt
 	stw	$9,$8,dskctrl		# start command
 sctrd1:
@@ -61,21 +49,13 @@ sctrd1:
 	add	$9,$0,sctsize
 sctrd2:
 	ldw	$10,$8,0		# from disk buffer
-	stw	$10,$18,0		# to memory
+	stw	$10,$6,0		# to memory
 	add	$8,$8,4
-	add	$18,$18,4
+	add	$6,$6,4
 	sub	$9,$9,4
 	bne	$9,$0,sctrd2
-	add	$17,$17,1		# increment sector number
-	sub	$19,$19,1		# decrement number of sectors
+	add	$5,$5,1		# increment sector number
+	sub	$7,$7,1		# decrement number of sectors
 	j	sctrd			# next sector
-
 sctx:
-	ldw	$20,$29,0
-	ldw	$19,$29,4
-	ldw	$18,$29,8
-	ldw	$17,$29,12
-	ldw	$16,$29,16
-	ldw	$31,$29,20
-	add	$29,$29,24
 	jr	$31

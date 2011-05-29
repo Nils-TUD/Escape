@@ -19,6 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/arch/eco32/boot.h>
+#include <sys/mem/pmem.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/kheap.h>
 #include <sys/video.h>
 
 /* TODO
@@ -31,11 +34,41 @@ static uint8_t initloader[] = {
 };
 */
 
-int main(const sLoadProg *progs) {
+int main(const sBootInfo *info) {
 	size_t i;
-	for(i = 0; i < PROG_COUNT; i++) {
-		vid_printf("name=%s, start=%08x, size=%08x\n",progs[i].path,progs[i].start,progs[i].size);
+
+	boot_init(info);
+	vid_init();
+
+	vid_printf("Memory size: %u bytes\n",info->memSize);
+	vid_printf("Disk size: %u bytes\n",info->diskSize);
+	vid_printf("Boot modules:\n");
+	/* skip kernel */
+	for(i = 1; i < info->progCount; i++) {
+		vid_printf("\t%s [%08x .. %08x]\n",info->progs[i].path,
+				info->progs[i].start,info->progs[i].start + info->progs[i].size);
 	}
+
+	/* mm */
+	vid_printf("Initializing physical memory-management...");
+	pmem_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* paging */
+	vid_printf("Initializing paging...");
+	paging_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	paging_mapTo(paging_getCur(),0,NULL,10,PG_WRITABLE | PG_PRESENT);
+	paging_mapTo(paging_getCur(),0xF0000,NULL,3,PG_PRESENT);
+	paging_unmapFrom(paging_getCur(),0x2000,3,true);
+
+	paging_dbg_printCur(PD_PART_ALL);
+
+#if DEBUGGING
+	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
+			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
+#endif
 
 	while(1);
 
@@ -64,7 +97,7 @@ int main(const sLoadProg *progs) {
 
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
-	mm_init(mboot_getInfo());
+	pmem_init(mboot_getInfo());
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* paging */
@@ -123,8 +156,8 @@ int main(const sLoadProg *progs) {
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #if DEBUGGING
-	vid_printf("%d free frames (%d KiB)\n",mm_getFreeFrames(MM_CONT | MM_DEF),
-			mm_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
+	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
+			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
 #endif
 
 	/* load initloader */

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: pmem.c 847 2010-10-04 01:25:15Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,34 +18,21 @@
  */
 
 #include <sys/common.h>
+#include <sys/arch/eco32/boot.h>
 #include <sys/mem/pmem.h>
-#include <sys/mem/paging.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <assert.h>
 #include <string.h>
 #include <errors.h>
 
+#define KERNEL_AREA_V_ADDR			0xC0000000	/* TODO move to paging */
 #define BITMAP_PAGE_COUNT			((2 * M) / PAGE_SIZE)
 #define BITMAP_START_FRAME			(BITMAP_START / PAGE_SIZE)
 #define BITMAP_START				((uintptr_t)bitmap - KERNEL_AREA_V_ADDR)
 
-/**
- * Marks the given range as used or not used
- *
- * @param from the start-address
- * @param to the end-address
- * @param used whether the frame is used
- */
-static void mm_markRangeUsed(uintptr_t from,uintptr_t to,bool used);
-
-/**
- * Marks the given frame-number as used or not used
- *
- * @param frame the frame-number
- * @param used whether the frame is used
- */
-static void mm_markUsed(tFrameNo frame,bool used);
+static void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used);
+static void pmem_markUsed(tFrameNo frame,bool used);
 
 /* start-address of the kernel */
 extern uintptr_t KernelStart;
@@ -64,19 +51,21 @@ static size_t stackSize = 0;
 static uintptr_t stackBegin = 0;
 static tFrameNo *stack = NULL;
 
-void mm_init(const sMultiBoot *mb) {
-	sMemMap *mmap;
-	size_t memSize,defPageCount;
+void pmem_init(void) {
+	const sBootInfo *binfo = boot_getInfo();
+	const sLoadProg *last;
+	size_t defPageCount;
 
-	/* put the MM-stack behind the last multiboot-module */
-	if(mb->modsCount == 0)
-		util_panic("No multiboot-modules found");
-	stack = (tFrameNo*)(mb->modsAddr[mb->modsCount - 1].modEnd);
+	/* put the mm-stack behind the last boot-module */
+	if(binfo->progCount == 0)
+		util_panic("No boot-modules found");
+	last = binfo->progs + binfo->progCount - 1;
+	/* word align the stack begin */
+	stack = (tFrameNo*)((last->start + last->size + sizeof(int) - 1) & ~(sizeof(int) - 1));
 	stackBegin = (uintptr_t)stack;
 
 	/* calculate mm-stack-size */
-	memSize = mb->memUpper * K;
-	defPageCount = (memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT / PAGE_SIZE);
+	defPageCount = (binfo->memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT / PAGE_SIZE);
 	stackSize = (defPageCount + (PAGE_SIZE - 1) / sizeof(tFrameNo)) / (PAGE_SIZE / sizeof(tFrameNo));
 
 	/* the first usable frame in the bitmap is behind the mm-stack */
@@ -86,22 +75,17 @@ void mm_init(const sMultiBoot *mb) {
 	memset(bitmap,0xFF,BITMAP_PAGE_COUNT / 8);
 	freeCont = 0;
 
-	/* now walk through the memory-map and mark all free areas as free */
-	for(mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
-			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
-			mm_markRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
-	}
-
-	/* mark the bitmap used in itself */
-	mm_markRangeUsed(BITMAP_START,BITMAP_START + BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8),true);
+	/* mark bitmap used */
+	pmem_markRangeUsed(BITMAP_START,BITMAP_START + BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8),true);
+	/* mark other frames unused */
+	pmem_markRangeUsed(BITMAP_START + BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8),binfo->memSize,false);
 }
 
-size_t mm_getStackSize(void) {
+size_t pmem_getStackSize(void) {
 	return stackSize * PAGE_SIZE;
 }
 
-size_t mm_getFreeFrames(uint types) {
+size_t pmem_getFreeFrames(uint types) {
 	size_t count = 0;
 	if(types & MM_CONT)
 		count += freeCont;
@@ -110,7 +94,7 @@ size_t mm_getFreeFrames(uint types) {
 	return count;
 }
 
-ssize_t mm_allocateContiguous(size_t count,size_t align) {
+ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	size_t i,c = 0;
 	/* align in physical memory */
 	i = (BITMAP_START_FRAME + align - 1) & ~(align - 1);
@@ -137,33 +121,33 @@ ssize_t mm_allocateContiguous(size_t count,size_t align) {
 
 	/* the bitmap starts managing the memory at itself */
 	i += BITMAP_START_FRAME;
-	mm_markRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
+	pmem_markRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
 	return i;
 }
 
-void mm_freeContiguous(tFrameNo first,size_t count) {
-	mm_markRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
+void pmem_freeContiguous(tFrameNo first,size_t count) {
+	pmem_markRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
 }
 
-tFrameNo mm_allocate(void) {
+tFrameNo pmem_allocate(void) {
 	/* no more frames free? */
 	if((uintptr_t)stack == stackBegin)
 		util_panic("Not enough memory :(");
 	return *(--stack);
 }
 
-void mm_free(tFrameNo frame) {
-	mm_markUsed(frame,false);
+void pmem_free(tFrameNo frame) {
+	pmem_markUsed(frame,false);
 }
 
-static void mm_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
+static void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
 	/* ensure that we start at a page-start */
 	from &= ~(PAGE_SIZE - 1);
 	for(; from < to; from += PAGE_SIZE)
-		mm_markUsed(from >> PAGE_SIZE_SHIFT,used);
+		pmem_markUsed(from >> PAGE_SIZE_SHIFT,used);
 }
 
-static void mm_markUsed(tFrameNo frame,bool used) {
+static void pmem_markUsed(tFrameNo frame,bool used) {
 	/* ignore the stuff before; we don't manage it */
 	if(frame < BITMAP_START_FRAME)
 		return;
@@ -188,8 +172,8 @@ static void mm_markUsed(tFrameNo frame,bool used) {
 		/* we don't mark frames as used since this function is just used for initializing the
 		 * memory-management */
 		if(!used) {
-			if((uintptr_t)stack >= KERNEL_HEAP_START)
-				util_panic("MM-Stack too small for physical memory!");
+			/* TODO if((uintptr_t)stack >= KERNEL_HEAP_START)
+				util_panic("MM-Stack too small for physical memory!");*/
 			*stack = frame;
 			stack++;
 		}
@@ -200,7 +184,7 @@ static void mm_markUsed(tFrameNo frame,bool used) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void mm_dbg_printFreeFrames(uint types) {
+void pmem_dbg_printFreeFrames(uint types) {
 	size_t i,pos = BITMAP_START;
 	tFrameNo *ptr;
 	if(types & MM_CONT) {

@@ -81,25 +81,25 @@ void swap_start(void) {
 	/* start main-loop; wait for work */
 	while(1) {
 		/* swapping out is more important than swapping in to prevent that we run out of memory */
-		if(mm_getFreeFrames(MM_DEF) < LOW_WATER || neededFrames > HIGH_WATER) {
+		if(pmem_getFreeFrames(MM_DEF) < LOW_WATER || neededFrames > HIGH_WATER) {
 			vid_printf("Starting to swap out (%d free frames; %d needed)\n",
-					mm_getFreeFrames(MM_DEF),neededFrames);
+					pmem_getFreeFrames(MM_DEF),neededFrames);
 			size_t count = 0;
 			swapping = true;
-			while(count < MAX_SWAP_AT_ONCE && mm_getFreeFrames(MM_DEF) < neededFrames) {
+			while(count < MAX_SWAP_AT_ONCE && pmem_getFreeFrames(MM_DEF) < neededFrames) {
 				size_t index = 0,free;
 				sRegion *reg = swap_findVictim(&index);
 				if(reg == NULL)
 					util_panic("No process to swap out");
 				swap_doSwapOut(swapper->proc->pid,swapFile,reg,index);
 				/* notify the threads that require the currently available frame-count */
-				free = mm_getFreeFrames(MM_DEF);
+				free = pmem_getFreeFrames(MM_DEF);
 				if(free > HIGH_WATER)
 					ev_wakeup(EVI_SWAP_FREE,(tEvObj)(free - HIGH_WATER));
 				count++;
 			}
 			/* if we've reached the needed frame-count, reset it */
-			if(mm_getFreeFrames(MM_DEF) >= neededFrames)
+			if(pmem_getFreeFrames(MM_DEF) >= neededFrames)
 				neededFrames = HIGH_WATER;
 			swapping = false;
 		}
@@ -111,7 +111,7 @@ void swap_start(void) {
 			swapping = false;
 		}
 
-		if(mm_getFreeFrames(MM_DEF) >= LOW_WATER && neededFrames == HIGH_WATER) {
+		if(pmem_getFreeFrames(MM_DEF) >= LOW_WATER && neededFrames == HIGH_WATER) {
 			/* we may receive new work now */
 			ev_wakeup(EVI_SWAP_FREE,0);
 			ev_wait(swapper->tid,EVI_SWAP_WORK,0);
@@ -122,7 +122,7 @@ void swap_start(void) {
 }
 
 bool swap_outUntil(size_t frameCount) {
-	size_t free = mm_getFreeFrames(MM_DEF);
+	size_t free = pmem_getFreeFrames(MM_DEF);
 	sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
@@ -136,7 +136,7 @@ bool swap_outUntil(size_t frameCount) {
 		ev_wait(t->tid,EVI_SWAP_FREE,(tEvObj)(frameCount - free));
 		thread_switchNoSigs();
 		/* TODO report error if swap-space is full or nothing left to swap */
-		free = mm_getFreeFrames(MM_DEF);
+		free = pmem_getFreeFrames(MM_DEF);
 	}
 	while(free < frameCount);
 	return true;
@@ -147,7 +147,7 @@ void swap_check(void) {
 	if(!enabled)
 		return;
 
-	freeFrm = mm_getFreeFrames(MM_DEF);
+	freeFrm = pmem_getFreeFrames(MM_DEF);
 	if(freeFrm < LOW_WATER/* || neededFrames < HIGH_WATER*/) {
 		/* notify swapper-thread */
 		if(/*freeFrm < LOW_WATER && */!swapping)
@@ -217,9 +217,9 @@ static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,uintptr_t addr) {
 	assert(vfs_readFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
-	if(mm_getFreeFrames(MM_DEF) == 0)
+	if(pmem_getFreeFrames(MM_DEF) == 0)
 		util_panic("No free frame to swap in");
-	frame = mm_allocate();
+	frame = pmem_allocate();
 	temp = paging_mapToTemp(&frame,1);
 	memcpy((void*)temp,buffer,PAGE_SIZE);
 	paging_unmapFromTemp(1);
@@ -246,7 +246,7 @@ static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,size_t index) {
 	vmreg = vmm_getRegion(first,rno);
 	block = swmap_alloc();
 	vid_printf("Swapout free=%d %x:%d (first=%p %s:%d) to blk %d...",
-			mm_getFreeFrames(MM_DEF),reg,index,vmreg->virt + index * PAGE_SIZE,
+			pmem_getFreeFrames(MM_DEF),reg,index,vmreg->virt + index * PAGE_SIZE,
 			first->command,first->pid,block);
 	assert(block != INVALID_BLOCK);
 
@@ -259,7 +259,7 @@ static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,size_t index) {
 	/* mark as swapped and unmap from processes */
 	reg_setSwapBlock(reg,index,block);
 	vmm_swapOut(reg,index);
-	mm_free(frameNo);
+	pmem_free(frameNo);
 
 	/* write out on disk */
 	assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);

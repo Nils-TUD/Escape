@@ -231,13 +231,13 @@ static void view_regions(size_t argc,char **argv) {
 	}
 }
 static void view_pmem(void) {
-	mm_dbg_printFreeFrames(MM_DEF | MM_CONT);
+	pmem_dbg_printFreeFrames(MM_DEF | MM_CONT);
 }
 static void view_pmemcont(void) {
-	mm_dbg_printFreeFrames(MM_CONT);
+	pmem_dbg_printFreeFrames(MM_CONT);
 }
 static void view_pmemstack(void) {
-	mm_dbg_printFreeFrames(MM_DEF);
+	pmem_dbg_printFreeFrames(MM_DEF);
 }
 static void view_shm(void) {
 	shm_dbg_print();

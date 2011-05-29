@@ -43,11 +43,11 @@ static size_t heapAfter;
 
 static void test_init(void) {
 	heapBefore = kheap_getFreeMem();
-	framesBefore = mm_getFreeFrames(MM_DEF);
+	framesBefore = pmem_getFreeFrames(MM_DEF);
 }
 static void test_finish(void) {
 	heapAfter = kheap_getFreeMem();
-	framesAfter = mm_getFreeFrames(MM_DEF);
+	framesAfter = pmem_getFreeFrames(MM_DEF);
 	test_assertUInt(heapAfter,heapBefore);
 	test_assertUInt(framesAfter,framesBefore);
 }
@@ -77,10 +77,10 @@ static void test_2(void) {
 	test_caseStart("Testing shm_join() & shm_leave() & shm_remProc()");
 
 	pid1 = proc_getFreePid();
-	test_assertInt(proc_clone(pid1,false),0);
+	test_assertInt(proc_clone(pid1,0),0);
 	child1 = proc_getByPid(pid1);
 	pid2 = proc_getFreePid();
-	test_assertInt(proc_clone(pid2,false),0);
+	test_assertInt(proc_clone(pid2,0),0);
 	child2 = proc_getByPid(pid2);
 
 	test_init();

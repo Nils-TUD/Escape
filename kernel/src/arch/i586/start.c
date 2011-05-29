@@ -81,7 +81,7 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
-	mm_init(mboot_getInfo());
+	pmem_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* paging */
@@ -107,6 +107,7 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 	vid_printf("Initializing process-management...");
 	ev_init();
 	proc_init();
+	paging_exchangePDir(proc_getRunning()->pagedir);
 	sched_init();
 	/* the process and thread-stuff has to be ready, too ... */
 	log_vfsIsReady();
@@ -140,8 +141,8 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #if DEBUGGING
-	vid_printf("%d free frames (%d KiB)\n",mm_getFreeFrames(MM_CONT | MM_DEF),
-			mm_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
+	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
+			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
 #endif
 
 	/* load initloader */

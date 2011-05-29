@@ -23,6 +23,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/file.h>
+#include <sys/video.h>
 #include <sys/printf.h>
 #include <sys/log.h>
 #include <sys/config.h>
@@ -31,7 +32,6 @@
 #include <assert.h>
 #include <string.h>
 
-#define VID_COLS		80
 #define TAB_WIDTH		4
 #define BUF_SIZE		2048
 #define LOG_DIR			"/system"

@@ -40,9 +40,6 @@
  * where the regions are placed. So it binds a region to a virtual address via sVMRegion.
  */
 
-#define FREE_AREA_BEGIN		0xA0000000
-#define FREE_AREA_END		KERNEL_AREA_V_ADDR
-
 #define REG(p,i)			(((sVMRegion**)(p)->regions)[(i)])
 #define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
@@ -75,7 +72,7 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 
 	/* if *phys is not set yet, we should allocate physical contiguous memory */
 	if(*phys == 0) {
-		ssize_t first = mm_allocateContiguous(pages,align / PAGE_SIZE);
+		ssize_t first = pmem_allocateContiguous(pages,align / PAGE_SIZE);
 		if(first < 0)
 			return 0;
 		for(i = 0; i < pages; i++)
@@ -93,7 +90,7 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 	reg = vmm_add(p,NULL,0,bCount,bCount,*phys ? REG_DEVICE : REG_PHYS);
 	if(reg < 0) {
 		if(!*phys)
-			mm_freeContiguous(frames[0],pages);
+			pmem_freeContiguous(frames[0],pages);
 		kheap_free(frames);
 		return 0;
 	}
@@ -795,7 +792,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 			!(vm->reg->pageFlags[(addr - vm->virt) / PAGE_SIZE] & PF_DEMANDLOAD))
 		goto errorFree;
 
-	frame = mm_allocate();
+	frame = pmem_allocate();
 	mapFlags = PG_PRESENT;
 	if(vm->reg->flags & RF_WRITABLE)
 		mapFlags |= PG_WRITABLE;

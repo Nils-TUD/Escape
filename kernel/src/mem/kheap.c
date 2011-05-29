@@ -483,7 +483,7 @@ static bool kheap_loadNewSpace(size_t size) {
 
 	/* allocate the required pages */
 	count = BYTES_2_PAGES(size);
-	if(mm_getFreeFrames(MM_DEF) < count || (pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+	if(pmem_getFreeFrames(MM_DEF) < count || (pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
 	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
@@ -505,12 +505,12 @@ static bool kheap_loadNewAreas(void) {
 	sMemArea *area,*end;
 	tFrameNo frameNo;
 
-	if(mm_getFreeFrames(MM_DEF) < 1 || (pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+	if(pmem_getFreeFrames(MM_DEF) < 1 || (pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
 
 	/* allocate one page for area-structs */
 	/* don't use NULL for paging_map here to prevent swapping */
-	frameNo = mm_allocate();
+	frameNo = pmem_allocate();
 	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,&frameNo,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
 

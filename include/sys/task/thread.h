@@ -158,6 +158,13 @@ size_t thread_getCount(void);
 sThread *thread_getRunning(void);
 
 /**
+ * Sets the currently running thread. Should ONLY be called by thread_switchTo()!
+ *
+ * @param t the thread
+ */
+void thread_setRunning(sThread *t);
+
+/**
  * Fetches the thread with given id from the internal thread-map
  *
  * @param tid the thread-id
@@ -184,6 +191,12 @@ void thread_switchNoSigs(void);
  * @param tid the thread-id
  */
 void thread_switchTo(tTid tid);
+
+/**
+ * Kills dead threads, if there are any; is called by thread_switchTo(). Should NOT be called by
+ * anyone else.
+ */
+void thread_killDead(void);
 
 /**
  * Marks the given thread as ready (if the thread hasn't said that he don't wants to be interrupted)

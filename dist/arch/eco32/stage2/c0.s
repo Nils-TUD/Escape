@@ -44,6 +44,8 @@ userMiss:
 	j			handleUserMiss
 
 handleIntrpt:
+	mvfs	$8,FS_PSW
+
 	add		$4,$0,errIntrpt
 	jal		debugString
 	j			loop
@@ -57,6 +59,7 @@ loop:
 	j			loop
 
 start:
+	add		$19,$4,$0													# save $4
 	# setup psw
 	mvfs	$8,FS_PSW
 	and		$8,$8,~INTRPTS_IN_RAM							# let vector point to ROM
@@ -76,10 +79,11 @@ initTLBLoop:
 	add		$16,$16,PAGE_SIZE
 	blt		$17,$18,initTLBLoop								# if $17 < $18, jump to initTLBLoop
 
+	add		$4,$19,$0													# give bootload the memory size
 	add		$29,$0,0xC0200000 - 4							# setup stack
 	jal		bootload													# call bootload function
 
-	add		$4,$2,$0													# give the kernel the load-progs-array
+	add		$4,$2,$0													# give the kernel the boot infos
 	add		$31,$0,0xC0000000									# jump to kernel
 	jr		$31
 
@@ -100,7 +104,7 @@ printCharLoop:
 	ldw		$9,$8,(0 << 4 | 8)								# get xmtr status
 	and		$9,$9,1														# xmtr ready?
 	beq		$9,$0,printCharLoop								# no - wait
-	#stw		$16,$10,0													# send char to output
+	stw		$16,$10,0													# send char to output
 	stw		$16,$8,(0 << 4 | 12)							# send char
 	ldw		$31,$29,0													# restore return register
 	ldw		$16,$29,4													# restore register variable

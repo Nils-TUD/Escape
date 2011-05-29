@@ -94,6 +94,7 @@ size_t cow_pagefault(uintptr_t address) {
 
 	/* copy? */
 	if(foundOther) {
+		/* TODO add paging-function to copy a frame or something */
 		/* map the frame and copy it */
 		uintptr_t temp = paging_mapToTemp(&frameNumber,1);
 		memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)temp,PAGE_SIZE);

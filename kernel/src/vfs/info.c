@@ -305,12 +305,12 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	buf.size = (11 + 10 + 1) * 13 + 1;
 	buf.len = 0;
 
-	free = mm_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
+	free = pmem_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
 	total = mboot_getUsableMemCount();
 	ksize = mboot_getKernelSize();
 	msize = mboot_getModuleSize();
 	kheap = kheap_getOccupiedMem();
-	pmem = mm_getStackSize();
+	pmem = pmem_getStackSize();
 	proc_getMemUsage(&paging,&dataShared,&dataOwn,&dataReal);
 	prf_sprintf(
 		&buf,

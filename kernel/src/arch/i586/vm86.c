@@ -94,7 +94,7 @@ int vm86_create(void) {
 	/* Note that it is really necessary to set whether we're a VM86-task or not BEFORE we get
 	 * chosen by the scheduler the first time. Otherwise the scheduler can't set the right
 	 * value for tss.esp0 and we will get a wrong stack-layout on the next interrupt */
-	res = proc_clone(pid,true);
+	res = proc_clone(pid,P_VM86);
 	if(res < 0)
 		return res;
 	/* parent */
@@ -381,7 +381,7 @@ start:
 	/* if there is not enough mem, stop here */
 	/* Note that we can't determine that before because the amount of physmem may change in the
 	 * meanwhile */
-	if(mm_getFreeFrames(MM_DEF) < frameCnt) {
+	if(pmem_getFreeFrames(MM_DEF) < frameCnt) {
 		vm86Res = ERR_NOT_ENOUGH_MEM;
 		/* make caller ready, block us and do a switch */
 		thread_setReady(caller);
@@ -397,7 +397,7 @@ start:
 			uintptr_t start = info->areas[i].data.direct.dst / PAGE_SIZE;
 			size_t pages = BYTES_2_PAGES(info->areas[i].data.direct.size);
 			for(j = 0; j < pages; j++)
-				frameNos[start + j] = mm_allocate();
+				frameNos[start + j] = pmem_allocate();
 			paging_map(info->areas[i].data.direct.dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
 		}
 	}

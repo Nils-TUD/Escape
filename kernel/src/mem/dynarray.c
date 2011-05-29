@@ -34,7 +34,7 @@ void dyna_init(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize) 
 
 bool dyna_extend(sDynArray *d) {
 	uintptr_t addr = d->areaBegin + d->pageCount * PAGE_SIZE;
-	if(mm_getFreeFrames(MM_DEF) == 0 || d->pageCount * PAGE_SIZE >= d->areaSize)
+	if(pmem_getFreeFrames(MM_DEF) == 0 || d->pageCount * PAGE_SIZE >= d->areaSize)
 		return false;
 	paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT);
 	memset((void*)addr,0,PAGE_SIZE);

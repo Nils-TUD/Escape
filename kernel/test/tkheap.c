@@ -84,7 +84,7 @@ static bool test_checkContent(uint *ptr,size_t count,uint value) {
 
 static void test_t1alloc(void) {
 	size_t size;
-	tprintf("Allocating...(%d free frames)\n",mm_getFreeFrames(MM_DEF));
+	tprintf("Allocating...(%d free frames)\n",pmem_getFreeFrames(MM_DEF));
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
 		tprintf("%d bytes\n",sizes[size] * sizeof(uint));
 		ptrs[size] = (uint*)kheap_alloc(sizes[size] * sizeof(uint));

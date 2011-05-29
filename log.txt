@@ -1,0 +1,59 @@
+GDT exchanged, paging enabled, video initialized                            DONE
+MultiBoot-Structure:
+---------------------
+flags=0x7ef
+memLower=637 KB, memUpper=60404 KB
+biosDriveNumber=E0, part1=FF, part2=FF, part3=FF
+cmdLine=/boot/escape.bin videomode=vesa swapdev=/dev/hda3 
+modsCount=4:
+	/sbin/pci /dev/pci (0xc01c8000 .. 0xc022cd61)
+	/sbin/ata /system/devices/ata (0xc022d000 .. 0xc025e491)
+	/sbin/cmos /dev/cmos (0xc025f000 .. 0xc028520f)
+	/sbin/fs /dev/fs cdrom iso9660 (0xc0286000 .. 0xc02ce86f)
+ELF: num=12, size=40, addr=0x154000, shndx=0x9
+mmapLength=144, mmapAddr=0xc002ce48
+memory-map:
+	0: addr=0x00000000, size=0x0009f400, type=free
+	1: addr=0x0009f400, size=0x00000c00, type=used
+	2: addr=0x000f0000, size=0x00010000, type=used
+	3: addr=0x00100000, size=0x03afd000, type=free
+	4: addr=0x03bfd000, size=0x00003000, type=used
+	5: addr=0xfffc0000, size=0x00040000, type=used
+Drives: (size=12)
+	0: no=80, mode=1, cyl=710, heads=5, sectors=51
+---------------------
+Initializing physical memory-management...                                  DONE
+Initializing paging...                                                      DONE
+Initializing FPU...                                                         DONE
+Initializing VFS...                                                         DONE
+Initializing process-management...                                          DONE
+Initializing virtual memory management...                                   DONE
+Initializing IDT...                                                         DONE
+Initializing timer...                                                       DONE
+Initializing signal-handling...                                             DONE
+Detecting CPU...                                                            DONE
+14363 free frames (57452 KiB)
+Loading '/sbin/pci'...
+Loading '/sbin/ata'...
+[ATA] Found IDE-controller (0.1.1): vendorId 8086, deviceId 7010, rev 0
+[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 1 not present
+[ATA] Device 0 is an ATA-device
+[ATA] Device 0 uses DMA
+[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 3 not present
+[ATA] Device 2: Error 0x4. Assuming its not present
+[ATA] Device 2 is an ATAPI-device
+[ATA] Device 2 uses DMA
+[ATA] Registered driver 'hda1' (device 0, partition 1)
+[ATA] Registered driver 'hda2' (device 0, partition 2)
+[ATA] Registered driver 'hda3' (device 0, partition 3)
+[ATA] Registered driver 'cdc1' (device 2, partition 1)
+Loading '/sbin/cmos'...
+Loading '/sbin/fs'...
+[FS] Loaded ext2-driver
+[FS] Loaded iso9660-driver
+[FS] Mounted '/dev/cdc1' with fs 'iso9660' at '/'
+[VESATEXT] Setting (115)  800 x  600 x 24

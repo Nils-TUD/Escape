@@ -85,13 +85,8 @@ void util_panic(const char *fmt,...) {
 		kb_get(NULL,KEV_PRESS,true);
 		cons_start();
 	}*/
-
-	while(1);
-
 #else
-	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */
-	while(1)
-		util_halt();
+	while(1);
 #endif
 }
 

@@ -53,6 +53,7 @@ void error(const char *fmt,...) {
 
 uintptr_t *getStackTrace(void) {
 	static uintptr_t frames[MAX_STACK_DEPTH];
+	/* TODO */
 #ifdef i386
 	uintptr_t end,start;
 	size_t i;

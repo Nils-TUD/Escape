@@ -27,13 +27,8 @@ else
 CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c" | grep -v '\.svn'))
 CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 endif
-ifeq ($(ARCH),eco32)
-	LSRC = $(filter-out $(LIB)/test.c \
-		$(shell find $(LIB)/arch -name "*.c"),$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
-else
-	LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
-		$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
-endif
+LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
+	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 
 # objects

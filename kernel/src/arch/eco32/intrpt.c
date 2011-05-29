@@ -101,7 +101,9 @@ static void intrpt_defHandler(sIntrptStackFrame *frame) {
 }
 
 static void intrpt_exTrap(sIntrptStackFrame *frame) {
+#if DEBUGGING
 	cons_start();
+#endif
 	sThread *t = thread_getRunning();
 	t->stats.syscalls++;
 	sysc_handle(frame);

@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/pmem.h>
+#include <sys/mem/paging.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/video.h>
@@ -26,10 +27,9 @@
 #include <string.h>
 #include <errors.h>
 
-#define KERNEL_AREA_V_ADDR			0xC0000000	/* TODO move to paging */
 #define BITMAP_PAGE_COUNT			((2 * M) / PAGE_SIZE)
 #define BITMAP_START_FRAME			(BITMAP_START / PAGE_SIZE)
-#define BITMAP_START				((uintptr_t)bitmap - KERNEL_AREA_V_ADDR)
+#define BITMAP_START				((uintptr_t)bitmap - DIR_MAPPED_SPACE)
 
 static void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used);
 static void pmem_markUsed(tFrameNo frame,bool used);
@@ -172,8 +172,6 @@ static void pmem_markUsed(tFrameNo frame,bool used) {
 		/* we don't mark frames as used since this function is just used for initializing the
 		 * memory-management */
 		if(!used) {
-			/* TODO if((uintptr_t)stack >= KERNEL_HEAP_START)
-				util_panic("MM-Stack too small for physical memory!");*/
 			*stack = frame;
 			stack++;
 		}

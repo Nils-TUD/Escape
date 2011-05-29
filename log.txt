@@ -1,59 +1,157 @@
-GDT exchanged, paging enabled, video initialized                            DONE
-MultiBoot-Structure:
----------------------
-flags=0x7ef
-memLower=637 KB, memUpper=60404 KB
-biosDriveNumber=E0, part1=FF, part2=FF, part3=FF
-cmdLine=/boot/escape.bin videomode=vesa swapdev=/dev/hda3 
-modsCount=4:
-	/sbin/pci /dev/pci (0xc01ca000 .. 0xc022ed61)
-	/sbin/ata /system/devices/ata (0xc022f000 .. 0xc0260491)
-	/sbin/cmos /dev/cmos (0xc0261000 .. 0xc028720f)
-	/sbin/fs /dev/fs cdrom iso9660 (0xc0288000 .. 0xc02d086f)
-ELF: num=12, size=40, addr=0x154000, shndx=0x9
-mmapLength=144, mmapAddr=0xc002ce48
-memory-map:
-	0: addr=0x00000000, size=0x0009f400, type=free
-	1: addr=0x0009f400, size=0x00000c00, type=used
-	2: addr=0x000f0000, size=0x00010000, type=used
-	3: addr=0x00100000, size=0x03afd000, type=free
-	4: addr=0x03bfd000, size=0x00003000, type=used
-	5: addr=0xfffc0000, size=0x00040000, type=used
-Drives: (size=12)
-	0: no=80, mode=1, cyl=710, heads=5, sectors=51
----------------------
-Initializing physical memory-management...                                  DONE
-Initializing paging...                                                      DONE
-Initializing FPU...                                                         DONE
-Initializing VFS...                                                         DONE
-Initializing process-management...                                          DONE
-Initializing virtual memory management...                                   DONE
-Initializing IDT...                                                         DONE
-Initializing timer...                                                       DONE
-Initializing signal-handling...                                             DONE
-Detecting CPU...                                                            DONE
-14361 free frames (57444 KiB)
-Loading '/sbin/pci'...
-Loading '/sbin/ata'...
-[ATA] Found IDE-controller (0.1.1): vendorId 8086, deviceId 7010, rev 0
-[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
-[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
-[ATA] Device 1 not present
-[ATA] Device 0 is an ATA-device
-[ATA] Device 0 uses DMA
-[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
-[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
-[ATA] Device 3 not present
-[ATA] Device 2: Error 0x4. Assuming its not present
-[ATA] Device 2 is an ATAPI-device
-[ATA] Device 2 uses DMA
-[ATA] Registered driver 'hda1' (device 0, partition 1)
-[ATA] Registered driver 'hda2' (device 0, partition 2)
-[ATA] Registered driver 'hda3' (device 0, partition 3)
-[ATA] Registered driver 'cdc1' (device 2, partition 1)
-Loading '/sbin/cmos'...
+Loading /boot/kernel.bin...............................................................................................................................................................................................................................................................................
+Loading /sbin/fs.......................................................................................................................................................................................................................................................................................................................
+Memory size: 4194304 bytes
+Disk size: 92897280 bytes
+Boot modules:
+    /sbin/fs /dev/fs /dev/hda1 ext2 [c0063000 .. c00b0bc7]
+Initializing physical memory-management...                                  DONEInitializing paging...                                                      DONEInitializing VFS...                                                         DONEInitializing process-management...                                          DONEInitializing virtual memory management...                                   DONEInitializing timer...                                                       DONEInitializing signal-handling...                                             DONE821 free frames (3284 KiB)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Welcome to the debugging console!
+Type 'help' to get a list of commands!
+
+# vieww                                                                                # vieww                                                                                # vieww                                                                               # view proc
+Proc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quit#                                                                                # view proc
+Proc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quit#                                                                                # view proc
+Proc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quit# view regions
+Regions of proc 0 (initloader)                                                  VMRegion 0 (0x00001000 .. 0x00001041):                                              Size: 66 bytes                                                                     Load: 66 bytes                                                                     flags: Shareable                                                                   Timestamp: 0                                                                       Processes: 0                                                                       Pages (1):                                                                             0: (0x00001000) (swblk 0) ---                                                                                                                                 VMRegion 3 (0x5ffff000 .. 0x5fffffff):                                              Size: 4096 bytes                                                                   Load: 4096 bytes                                                                   flags: Growable Writable Stack                                                     Timestamp: 0                                                                       Processes: 0                                                                       Pages (1):                                                                             0: (0x5ffff000) (swblk 0) ---                                                                                                                                                                                                                                                                                                 
+
+
+
+
+
+
+
+Lines 1..21 of 21            Navigation: up/down, pageup/-down, home/end, q=quit#                                                                                # view regions                                                                               # view proc
+Proc 0:                                                                             ppid=0, cmd=initloader, pdir=0x3ff000, entry=0x0                                   OwnFrames=6, sharedFrames=1, swapped=0                                             Regions:                                                                               00001000 .. 00001041: Shareable                                                       5ffff000 .. 5fffffff: Growable Writable Stack                                     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=RUNNING                                                                         Events=                                                                               KstackFrame=0x3eb                                                                     TlsRegion=-1, stackRegion=3                                                           UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   
+
+
+
+
+
+
+Lines 1..22 of 22            Navigation: up/down, pageup/-down, home/end, q=quit#                                                                                # view proc                                                                               # view regions                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view regions                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view proc                                                                               # view procq                                                                               # view proc                                                                               # view pro                                                                               # view pr                                                                               # view p                                                                               # view                                                                                # view                                                                               # vie                                                                               # vi                                                                               # v                                                                               # exit
 Loading '/sbin/fs'...
-[FS] Loaded ext2-driver
-[FS] Loaded iso9660-driver
-[FS] Mounted '/dev/cdc1' with fs 'iso9660' at '/'
-[VESATEXT] Setting (115)  800 x  600 x 24

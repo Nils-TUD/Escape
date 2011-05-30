@@ -1,10 +1,10 @@
 # general
 #ARCH = mmix
 #GCCVER = 4.6.0
-#ARCH = i586
-#GCCVER = 4.4.3
-ARCH = eco32
+ARCH = i586
 GCCVER = 4.4.3
+#ARCH = eco32
+#GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-debug)
 DIST = ../toolchain/$(ARCH)
@@ -183,7 +183,7 @@ mmixd:	all hdd
 
 eco:	all hdd
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
-			-m $(BUILD)/kernel.map $(BUILD)/driver_fs.map -n
+			-m $(BUILD)/kernel.map $(BUILD)/driver_disk.map -n
 
 qemu:	all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1

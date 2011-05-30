@@ -15,6 +15,7 @@ static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t ten
 
 bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint) {
+	UNUSED(path);
 	uint32_t *sp;
 	char **argv;
 	size_t totalSize;
@@ -97,9 +98,8 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 }
 
 bool uenv_setupThread(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint) {
-#if 0
-	uint32_t *esp;
-	size_t totalSize = 3 * sizeof(uint32_t) + sizeof(void*);
+	uint32_t *sp;
+	size_t totalSize = sizeof(void*);
 	sThread *t = thread_getRunning();
 
 	/*
@@ -107,33 +107,31 @@ bool uenv_setupThread(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryP
 	 * +------------------+  <- top
 	 * |       arg        |
 	 * +------------------+
-	 * |     TLSSize      |  0 if not present
-	 * +------------------+
-	 * |     TLSStart     |  0 if not present
-	 * +------------------+
-	 * |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-	 * +------------------+
+	 *
+	 * Registers:
+	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
+	 * $5 = TLSStart (0 if not present)
+	 * $6 = TLSSize (0 if not present)
 	 */
 
 	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&esp);
+	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&sp);
 
 	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
+	if(thread_extendStack((uintptr_t)sp - totalSize) < 0)
 		return false;
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)esp - totalSize,totalSize);
+	paging_isRangeUserWritable((uintptr_t)sp - totalSize,totalSize);
 
 	/* put arg on stack */
-	esp--;
-	*esp-- = (uintptr_t)arg;
+	sp--;
+	*sp-- = (uintptr_t)arg;
 	/* add TLS args and entrypoint */
-	esp = uenv_addArgs(t,esp,tentryPoint,true);
+	uenv_addArgs(t,frame,tentryPoint,true);
 
-	frame->uesp = (uint32_t)esp;
-	frame->ebp = frame->uesp;
-	uenv_setupStack(frame,t->proc->entryPoint);
-#endif
+	/* set entry-point and stack-pointer */
+	frame->r[29] = (uint32_t)sp;
+	frame->r[30] = t->proc->entryPoint - 4; /* we'll skip the trap-instruction for syscalls */
 	return true;
 }
 

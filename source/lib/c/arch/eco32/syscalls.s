@@ -192,7 +192,7 @@
 .type \name, @function
 \name:
 	add		$2,$0,\syscno					# set syscall-number
-	ldw		$8,$29,0							# load arg 5 into $8
+	ldw		$8,$29,16							# load arg 5 into $8
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno
@@ -207,9 +207,9 @@
 .type \name, @function
 \name:
 	add		$2,$0,\syscno					# set syscall-number
-	ldw		$8,$29,8							# load arg 5 into $8
-	ldw		$9,$29,4							# load arg 6 into $9
-	ldw		$10,$29,0							# load arg 7 into $10
+	ldw		$8,$29,16							# load arg 5 into $8
+	ldw		$9,$29,20							# load arg 6 into $9
+	ldw		$10,$29,24						# load arg 7 into $10
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno

@@ -32,7 +32,7 @@
 static void conf_set(const char *name,const char *value);
 
 static uchar bootVidMode;
-static uchar logToCom1 = true;
+static uchar doLog = true;
 static char swapDev[MAX_BPVAL_LEN + 1] = "";
 
 void conf_parseBootParams(int argc,const char *const *argv) {
@@ -83,8 +83,8 @@ int conf_get(uint id) {
 		case CONF_MAX_FDS:
 			res = MAX_FD_COUNT;
 			break;
-		case CONF_LOG_TO_COM1:
-			res = logToCom1;
+		case CONF_LOG:
+			res = doLog;
 			break;
 		default:
 			res = ERR_INVALID_ARGS;
@@ -103,5 +103,5 @@ static void conf_set(const char *name,const char *value) {
 	else if(strcmp(name,"swapdev") == 0)
 		strcpy(swapDev,value);
 	else if(strcmp(name,"nolog") == 0)
-		logToCom1 = false;
+		doLog = false;
 }

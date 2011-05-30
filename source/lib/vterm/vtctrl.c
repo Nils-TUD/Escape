@@ -87,7 +87,7 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
 	vt->readLine = true;
 	vt->navigation = true;
 	vt->printToRL = false;
-	vt->printToCom1 = getConf(CONF_LOG_TO_COM1);
+	vt->printToCom1 = getConf(CONF_LOG);
 	if(vt->printToCom1 && !reqPorts) {
 		/* TODO */
 #ifdef i386

@@ -9,7 +9,7 @@ modsCount=4:
 	/sbin/pci /dev/pci (0xc01c5000 .. 0xc0229d61)
 	/sbin/ata /system/devices/ata (0xc022a000 .. 0xc025b491)
 	/sbin/cmos /dev/cmos (0xc025c000 .. 0xc028220f)
-	/sbin/fs /dev/fs /dev/hda1 ext2 (0xc0283000 .. 0xc02cbd03)
+	/sbin/fs /dev/fs /dev/hda1 ext2 (0xc0283000 .. 0xc02cbceb)
 ELF: num=12, size=40, addr=0x14f000, shndx=0x9
 mmapLength=144, mmapAddr=0xc0053b04
 memory-map:

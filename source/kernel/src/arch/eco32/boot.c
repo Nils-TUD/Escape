@@ -60,7 +60,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 
 	/* start idle-thread */
 	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
-		vid_printf("IDLE reached\n");
+		vid_printf("idle...\n");
 		while(1);
 		/*thread_idle();*/
 		util_panic("Idle returned");

@@ -41,9 +41,9 @@
 #define DEBUG(x)
 
 static uint getDiskCapacity(void);
-static int diskRead(void *buf,uint secNo,uint secCount);
-static int diskWrite(const void *buf,uint secNo,uint secCount);
-static int diskWait(void);
+static bool diskRead(void *buf,uint secNo,uint secCount);
+static bool diskWrite(const void *buf,uint secNo,uint secCount);
+static bool diskWait(void);
 static void regDrives(void);
 static void createVFSEntry(const char *name,bool isPart);
 
@@ -82,7 +82,7 @@ int main(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	DISK_LOG("Found disk with %u sectors (%u bytes)",diskCap,diskCap * SECTOR_SIZE);
+	DISK_LOG("Found disk with %u sectors (%u bytes)",diskCap / SECTOR_SIZE,diskCap);
 
 	/* detect and init all devices */
 	regDrives();
@@ -90,8 +90,8 @@ int main(int argc,char **argv) {
 	fflush(stdout);
 
 	/* enable interrupts */
-	/*uint *diskCtrl = diskRegs + DISK_CTRL;
-	*diskCtrl = DISK_IEN | DISK_DONE;*/
+	uint *diskCtrl = diskRegs + DISK_CTRL;
+	*diskCtrl = /*DISK_IEN | */DISK_DONE;
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that the disk is registered */
 	FILE *f = fopen("/system/devices/disk","w");
@@ -170,36 +170,47 @@ static uint getDiskCapacity(void) {
 	return *diskCapReg * SECTOR_SIZE;
 }
 
-static int diskRead(void *buf,uint secNo,uint secCount) {
+static bool diskRead(void *buf,uint secNo,uint secCount) {
 	uint *diskSecReg = diskRegs + DISK_SCT;
 	uint *diskCntReg = diskRegs + DISK_CNT;
 	uint *diskCtrlReg = diskRegs + DISK_CTRL;
 
+	DISK_LOG("Reading sectors %d..%d ...",secNo,secNo + secCount - 1);
+
 	/* maybe another request is active.. */
-	if(diskWait() != 0)
-		return -1;
+	if(!diskWait()) {
+		DISK_LOG("FAILED");
+		return false;
+	}
 
 	/* set sector and sector-count, start the disk-operation and wait */
 	*diskSecReg = secNo;
 	*diskCntReg = secCount;
-	*diskCtrlReg = DISK_STRT | DISK_IEN;
+	*diskCtrlReg = DISK_STRT/* | DISK_IEN*/;
 
-	if(diskWait() != 0)
-		return -1;
+	if(!diskWait()) {
+		DISK_LOG("FAILED");
+		return false;
+	}
 
 	/* disk is ready, so copy from disk-buffer to memory */
 	memcpy(buf,diskBuf,secCount * SECTOR_SIZE);
-	return 0;
+	DISK_LOG("done");
+	return true;
 }
 
-static int diskWrite(const void *buf,uint secNo,uint secCount) {
+static bool diskWrite(const void *buf,uint secNo,uint secCount) {
 	uint *diskSecReg = diskRegs + DISK_SCT;
 	uint *diskCntReg = diskRegs + DISK_CNT;
 	uint *diskCtrlReg = diskRegs + DISK_CTRL;
 
+	DISK_LOG("Writing sectors %d..%d ...",secNo,secNo + secCount - 1);
+
 	/* maybe another request is active.. */
-	if(diskWait() != 0)
-		return -1;
+	if(!diskWait()) {
+		DISK_LOG("FAILED");
+		return false;
+	}
 
 	/* disk is ready, so copy from memory to disk-buffer */
 	memcpy(diskBuf,buf,secCount * SECTOR_SIZE);
@@ -207,20 +218,21 @@ static int diskWrite(const void *buf,uint secNo,uint secCount) {
 	/* set sector and sector-count and start the disk-operation */
 	*diskSecReg = secNo;
 	*diskCntReg = secCount;
-	*diskCtrlReg = DISK_STRT | DISK_WRT | DISK_IEN;
+	*diskCtrlReg = DISK_STRT | DISK_WRT/* | DISK_IEN*/;
 	/* we don't need to wait here because maybe there is no other request and we could therefore
 	 * save time */
-	return 0;
+	DISK_LOG("done");
+	return true;
 }
 
-static int diskWait(void) {
+static bool diskWait(void) {
 	/* TODO wait for interrupt */
 	uint *diskCtrlReg = diskRegs + DISK_CTRL;
 	while(1) {
 		if(*diskCtrlReg & (DISK_DONE | DISK_ERR))
 			break;
 	}
-	return *diskCtrlReg & DISK_ERR;
+	return (*diskCtrlReg & DISK_ERR) == 0;
 }
 
 static void regDrives(void) {

@@ -34,6 +34,13 @@ tFileNo log_getFile(void);
 void log_vfsIsReady(void);
 
 /**
+ * Writes the given character to log
+ *
+ * @param c the char
+ */
+void log_writeChar(char c);
+
+/**
  * Formatted output into the logfile
  *
  * @param fmt the format

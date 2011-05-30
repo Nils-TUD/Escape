@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<Foundry>
+<VM>
+<VMId type="string">52 b7 9f f2 3e 17 ab c3-84 db 68 2e 11 e9 65 cf</VMId>
+<ClientMetaData>
+<clientMetaDataAttributes/>
+<HistoryEventList/></ClientMetaData>
+<vmxPathName type="string">escape.vmx</vmxPathName></VM></Foundry>

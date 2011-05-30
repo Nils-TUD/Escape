@@ -88,11 +88,11 @@ buildMenuLst() {
 }
 
 addBootData() {
-	if [ "$ARCH" = "x86" ]; then
+	if [ "$ARCH" = "i586" ]; then
 		$SUDO mkdir $DISKMOUNT/boot
 		$SUDO mkdir $DISKMOUNT/boot/grub
-		$SUDO cp dist/boot/stage1 $DISKMOUNT/boot/grub;
-		$SUDO cp dist/boot/stage2 $DISKMOUNT/boot/grub;
+		$SUDO cp dist/arch/$ARCH/boot/stage1 $DISKMOUNT/boot/grub;
+		$SUDO cp dist/arch/$ARCH/boot/stage2 $DISKMOUNT/boot/grub;
 		$SUDO touch $DISKMOUNT/boot/grub/menu.lst;
 		$SUDO chmod 0666 $DISKMOUNT/boot/grub/menu.lst;
 		buildMenuLst;
@@ -112,8 +112,9 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/etc/keymaps
 	$SUDO mkdir $DISKMOUNT/testdir
 	$SUDO mkdir $DISKMOUNT/scripts
-	$SUDO cp $ROOT/dist/boot/* $DISKMOUNT/boot/grub
+	$SUDO cp $ROOT/dist/arch/$ARCH/boot/* $DISKMOUNT/boot/grub
 	$SUDO cp $ROOT/dist/etc/* $DISKMOUNT/etc
+	$SUDO cp $ROOT/dist/arch/$ARCH/etc/* $DISKMOUNT/etc
 	$SUDO cp $ROOT/dist/etc/keymaps/* $DISKMOUNT/etc/keymaps
 	$SUDO cp $ROOT/dist/scripts/* $DISKMOUNT/scripts
 	$SUDO cp $ROOT/dist/testdir/* $DISKMOUNT/testdir
@@ -209,7 +210,7 @@ if [ "$1" == "build" ]; then
 	
 	# build ext2-filesystem
 	setupPart $PART1OFFSET $PART1BLOCKS;
-	if [ "$ARCH" = "x86" ]; then
+	if [ "$ARCH" = "i586" ]; then
 		setupPart $PART2OFFSET $PART2BLOCKS;
 	fi
 	# part 3 is swap, therefore no fs

@@ -47,7 +47,7 @@ echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 cp $KERNELBIN $TMPDIR/boot/escape.bin
 
 # copy driver-deps, apps, drivers and user-apps
-cp $BOOT/dist/$ARCH/boot/* $TMPDIR/boot/grub
+cp $BOOT/dist/arch/$ARCH/boot/* $TMPDIR/boot/grub
 cp $ROOT/dist/etc/* $TMPDIR/etc
 cp $ROOT/dist/arch/$ARCH/etc/* $TMPDIR/etc
 cp $ROOT/dist/etc/keymaps/* $TMPDIR/etc/keymaps

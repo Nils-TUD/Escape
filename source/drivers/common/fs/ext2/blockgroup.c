@@ -26,6 +26,7 @@
 
 #include "ext2.h"
 #include "../blockcache.h"
+#include "../conv.h"
 #include "blockgroup.h"
 #include "rw.h"
 
@@ -38,7 +39,7 @@ bool ext2_bg_init(sExt2 *e) {
 		printe("Unable to allocate memory for blockgroups");
 		return false;
 	}
-	if(!ext2_rw_readBlocks(e,e->groups,e->superBlock.firstDataBlock + 1,bcount)) {
+	if(!ext2_rw_readBlocks(e,e->groups,le32tocpu(e->superBlock.firstDataBlock) + 1,bcount)) {
 		free(e->groups);
 		printe("Unable to read group-table");
 		return false;
@@ -60,13 +61,13 @@ void ext2_bg_update(sExt2 *e) {
 	bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
 
 	/* update main block-group-descriptor-table */
-	if(!ext2_rw_writeBlocks(e,e->groups,e->superBlock.firstDataBlock + 1,bcount)) {
+	if(!ext2_rw_writeBlocks(e,e->groups,le32tocpu(e->superBlock.firstDataBlock) + 1,bcount)) {
 		printe("Unable to update block-group-descriptor-table in blockgroup 0");
 		goto done;
 	}
 
 	/* update block-group-descriptor backups */
-	bno = e->superBlock.blocksPerGroup + EXT2_BLOGRPTBL_BNO;
+	bno = le32tocpu(e->superBlock.blocksPerGroup) + EXT2_BLOGRPTBL_BNO;
 	count = ext2_getBlockGroupCount(e);
 	for(i = 1; i < count; i++) {
 		if(ext2_bgHasBackups(e,i)) {
@@ -75,7 +76,7 @@ void ext2_bg_update(sExt2 *e) {
 				goto done;
 			}
 		}
-		bno += e->superBlock.blocksPerGroup;
+		bno += le32tocpu(e->superBlock.blocksPerGroup);
 	}
 
 	/* now we're in sync */
@@ -93,22 +94,24 @@ static void ext2_bg_printRanges(sExt2 *e,const char *name,tBlockNo first,tBlockN
 		uint8_t *bitmap);
 
 void ext2_bg_print(sExt2 *e,tBlockNo no,sExt2BlockGrp *bg) {
-	sCBlock *bbitmap = bcache_request(&e->blockCache,bg->blockBitmap,BMODE_READ);
-	sCBlock *ibitmap = bcache_request(&e->blockCache,bg->inodeBitmap,BMODE_READ);
+	uint32_t blocksPerGroup = le32tocpu(e->superBlock.blocksPerGroup);
+	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
+	sCBlock *bbitmap = bcache_request(&e->blockCache,le32tocpu(bg->blockBitmap),BMODE_READ);
+	sCBlock *ibitmap = bcache_request(&e->blockCache,le32tocpu(bg->inodeBitmap),BMODE_READ);
 	if(!bbitmap || !ibitmap)
 		return;
-	printf("	blockBitmapStart = %d\n",bg->blockBitmap);
-	printf("	inodeBitmapStart = %d\n",bg->inodeBitmap);
-	printf("	inodeTableStart = %d\n",bg->inodeTable);
-	printf("	freeBlocks = %d\n",bg->freeBlockCount);
-	printf("	freeInodes = %d\n",bg->freeInodeCount);
-	printf("	usedDirCount = %d\n",bg->usedDirCount);
-	ext2_bg_printRanges(e,"Blocks",no * e->superBlock.blocksPerGroup,
-			MIN(e->superBlock.blocksPerGroup,
-			e->superBlock.blockCount - (no * e->superBlock.blocksPerGroup)),bbitmap->buffer);
-	ext2_bg_printRanges(e,"Inodes",no * e->superBlock.inodesPerGroup,
-			MIN(e->superBlock.inodesPerGroup,
-			e->superBlock.inodeCount - (no * e->superBlock.inodesPerGroup)),ibitmap->buffer);
+	printf("	blockBitmapStart = %d\n",le32tocpu(bg->blockBitmap));
+	printf("	inodeBitmapStart = %d\n",le32tocpu(bg->inodeBitmap));
+	printf("	inodeTableStart = %d\n",le32tocpu(bg->inodeTable));
+	printf("	freeBlocks = %d\n",le16tocpu(bg->freeBlockCount));
+	printf("	freeInodes = %d\n",le16tocpu(bg->freeInodeCount));
+	printf("	usedDirCount = %d\n",le16tocpu(bg->usedDirCount));
+	ext2_bg_printRanges(e,"Blocks",no * blocksPerGroup,
+			MIN(blocksPerGroup,
+			le32tocpu(e->superBlock.blockCount) - (no * blocksPerGroup)),bbitmap->buffer);
+	ext2_bg_printRanges(e,"Inodes",no * inodesPerGroup,
+			MIN(inodesPerGroup,
+			le32tocpu(e->superBlock.inodeCount) - (no * inodesPerGroup)),ibitmap->buffer);
 	bcache_release(ibitmap);
 	bcache_release(bbitmap);
 }

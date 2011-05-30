@@ -26,9 +26,10 @@
 #include <stdlib.h>
 
 #include "ext2.h"
+#include "../blockcache.h"
+#include "../conv.h"
 #include "rw.h"
 #include "inodecache.h"
-#include "../blockcache.h"
 
 #define ALLOC_LOCK	0xF7180001
 
@@ -183,9 +184,10 @@ static void ext2_icache_doRelease(sExt2CInode *ino,bool unlockAlloc) {
 }
 
 static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
-	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
+	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
+	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / inodesPerGroup);
 	size_t inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
-	size_t noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
+	size_t noInGroup = (inode->inodeNo - 1) % inodesPerGroup;
 	tBlockNo blockNo = group->inodeTable + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
 	sCBlock *block = bcache_request(&e->blockCache,blockNo,BMODE_READ);
@@ -196,9 +198,10 @@ static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
 }
 
 static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
-	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
+	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
+	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / inodesPerGroup);
 	size_t inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
-	size_t noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
+	size_t noInGroup = (inode->inodeNo - 1) % inodesPerGroup;
 	tBlockNo blockNo = group->inodeTable + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
 	sCBlock *block = bcache_request(&e->blockCache,blockNo,BMODE_WRITE);

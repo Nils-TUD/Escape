@@ -24,6 +24,7 @@
 static sSymbol ksymbols[] = {
 	/* add dummy-entry to prevent empty array */
 	{0,""},
+#ifdef __i586__
 #if DEBUGGING
 #	if TESTING
 #		include "../../build/i586-debug/kernelt_symbols.txt"
@@ -36,6 +37,7 @@ static sSymbol ksymbols[] = {
 #	else
 #		include "../../build/i586-release/kernel_symbols.txt"
 #	endif
+#endif
 #endif
 };
 

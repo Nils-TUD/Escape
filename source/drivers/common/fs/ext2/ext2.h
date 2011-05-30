@@ -27,9 +27,9 @@
 #include "../blockcache.h"
 #include "../threadpool.h"
 
-#define ATA_SECTOR_SIZE						512
+#define DISK_SECTOR_SIZE						512
 #define EXT2_BLK_SIZE(e)					\
-	((size_t)(ATA_SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1)))
+	((size_t)(DISK_SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1)))
 #define EXT2_BLKS_TO_SECS(e,x)				((x) << ((e)->superBlock.logBlockSize + 1))
 #define EXT2_SECS_TO_BLKS(e,x)				((x) >> ((e)->superBlock.logBlockSize + 1))
 #define EXT2_BYTES_TO_BLKS(e,b)				(((b) + (EXT2_BLK_SIZE(e) - 1)) / EXT2_BLK_SIZE(e))

@@ -49,11 +49,11 @@
  *             |             VFS nodes             |          dynamically extending regions
  * 0x81400000: +-----------------------------------+     |
  *             |             sll nodes             |     |        |
- * 0x82400000: +-----------------------------------+     |      -----
- *             |           temp map area           |     |
  * 0x83400000: +-----------------------------------+     |      -----
+ *             |           temp map area           |     |
+ * 0x84400000: +-----------------------------------+     |      -----
  *             |           kernel stack            |     |     not shared
- * 0x83401000: +-----------------------------------+     |      -----
+ * 0x84401000: +-----------------------------------+     |      -----
  *             |                ...                |     |
  * 0xC0000000: +-----------------------------------+   -----
  *             |         kernel code+data          |     |
@@ -76,15 +76,15 @@
 /* the start of the temporary mapped page-tables area */
 #define TMPMAP_PTS_START		(MAPPED_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
 
-/* the start of the kernel-heap */
-#define KERNEL_HEAP_START		(TMPMAP_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
-/* the size of the kernel-heap (4 MiB) */
-#define KERNEL_HEAP_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE)
-
 /* page-directories in virtual memory */
 #define PAGE_DIR_AREA			(MAPPED_PTS_START + PAGE_SIZE * 512)
 /* needed for building a new page-dir */
 #define PAGE_DIR_TMP_AREA		(TMPMAP_PTS_START + PAGE_SIZE * 513)
+
+/* the start of the kernel-heap */
+#define KERNEL_HEAP_START		(TMPMAP_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
+/* the size of the kernel-heap (4 MiB) */
+#define KERNEL_HEAP_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE)
 
 /* area for global-file-table */
 #define GFT_AREA				(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
@@ -125,5 +125,10 @@
 #define FREE_AREA_END			KERNEL_AREA_V_ADDR
 
 extern tPageDir curPDir;
+
+/**
+ * Sets the entry with index <index> to the given translation
+ */
+extern void tlb_set(int index,uint virt,uint phys);
 
 #endif /* ECO32_PAGING_H_ */

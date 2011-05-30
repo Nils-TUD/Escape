@@ -26,7 +26,7 @@
 	.set		FS_PSW,0
 	.set		INTRPTS_IN_RAM,1 << 27					# the flag to handle interrupts in RAM (not ROM)
 	.set		stacktop,0xC0001000							# top of stack
-	.set		loadaddr,0xC00F0000							# where to load the boot loader
+	.set		loadaddr,0xC0200000							# where to load the boot loader
 
 	.global	reset
 

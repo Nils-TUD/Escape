@@ -10,10 +10,12 @@
 #include <string.h>
 #include <assert.h>
 
+static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
+		bool newThread);
+
 bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint) {
-#if 0
-	uint32_t *esp;
+	uint32_t *sp;
 	char **argv;
 	size_t totalSize;
 	sThread *t = thread_getRunning();
@@ -29,12 +31,11 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 	 * +------------------+
 	 * |       argc       |
 	 * +------------------+
-	 * |     TLSSize      |  0 if not present
-	 * +------------------+
-	 * |     TLSStart     |  0 if not present
-	 * +------------------+
-	 * |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-	 * +------------------+
+	 *
+	 * Registers:
+	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
+	 * $5 = TLSStart (0 if not present)
+	 * $6 = TLSSize (0 if not present)
 	 */
 
 	/* we need to know the total number of bytes we'll store on the stack */
@@ -44,30 +45,30 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 		totalSize += (argsSize + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
 		totalSize += sizeof(void*) * (argc + 1);
 	}
-	/* finally we need argc, argv, tlsSize, tlsStart and entryPoint */
-	totalSize += sizeof(uint32_t) * 5;
+	/* finally we need argc and argv */
+	totalSize += sizeof(uint32_t) * 2;
 
 	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&esp);
+	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&sp);
 
 	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
+	if(thread_extendStack((uintptr_t)sp - totalSize) < 0)
 		return false;
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)esp - totalSize,totalSize);
+	paging_isRangeUserWritable((uintptr_t)sp - totalSize,totalSize);
 
 	/* copy arguments on the user-stack (4byte space) */
-	esp--;
+	sp--;
 	argv = NULL;
 	if(argc > 0) {
 		char *str;
 		int i;
 		size_t len;
-		argv = (char**)(esp - argc);
+		argv = (char**)(sp - argc);
 		/* space for the argument-pointer */
-		esp -= argc;
+		sp -= argc;
 		/* start for the arguments */
-		str = (char*)esp;
+		str = (char*)sp;
 		for(i = 0; i < argc; i++) {
 			/* start <len> bytes backwards */
 			len = strlen(args) + 1;
@@ -79,20 +80,19 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 			args += len;
 		}
 		/* ensure that we don't overwrites the characters */
-		esp = (uint32_t*)(((uintptr_t)str & ~(sizeof(uint32_t) - 1)) - sizeof(uint32_t));
+		sp = (uint32_t*)(((uintptr_t)str & ~(sizeof(uint32_t) - 1)) - sizeof(uint32_t));
 	}
 
 	/* store argc and argv */
-	*esp-- = (uintptr_t)argv;
-	*esp-- = argc;
+	*sp-- = (uintptr_t)argv;
+	*sp = argc;
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
-	esp = uenv_addArgs(t,esp,info->progEntry,false);
+	uenv_addArgs(t,frame,info->progEntry,false);
 
-	frame->uesp = (uint32_t)esp;
-	frame->ebp = frame->uesp;
-	uenv_setupStack(frame,entryPoint);
-#endif
+	/* set entry-point and stack-pointer */
+	frame->r[29] = (uint32_t)sp;
+	frame->r[30] = entryPoint - 4; /* we'll skip the trap-instruction for syscalls */
 	return true;
 }
 
@@ -135,4 +135,22 @@ bool uenv_setupThread(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryP
 	uenv_setupStack(frame,t->proc->entryPoint);
 #endif
 	return true;
+}
+
+static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
+		bool newThread) {
+	/* put address and size of the tls-region on the stack */
+	if(t->tlsRegion >= 0) {
+		uintptr_t tlsStart,tlsEnd;
+		vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
+		frame->r[5] = tlsStart;
+		frame->r[6] = tlsEnd - tlsStart;
+	}
+	else {
+		/* no tls */
+		frame->r[5] = 0;
+		frame->r[6] = 0;
+	}
+
+	frame->r[4] = newThread ? tentryPoint : 0;
 }

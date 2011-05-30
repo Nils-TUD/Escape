@@ -22,7 +22,9 @@
 #include <errors.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "ext2.h"
+#include "../conv.h"
 #include "file.h"
 #include "link.h"
 #include "dir.h"
@@ -40,7 +42,7 @@ int ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	size_t tlen = ext2_link_getDirESize(len);
 	size_t recLen = 0;
 	int res;
-	int32_t dirSize = dir->inode.size;
+	int32_t dirSize = le32tocpu(dir->inode.size);
 
 	/* TODO we don't have to read the whole directory at once */
 
@@ -63,15 +65,16 @@ int ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	dire = (sExt2DirEntry*)buf;
 	while((uint8_t*)dire < buf + dirSize) {
 		/* does our entry fit? */
-		size_t elen = ext2_link_getDirESize(dire->nameLen);
-		if(elen < dire->recLen && dire->recLen - elen >= tlen) {
-			recLen = dire->recLen - elen;
+		size_t elen = ext2_link_getDirESize(le16tocpu(dire->nameLen));
+		uint16_t orgRecLen = le16tocpu(dire->recLen);
+		if(elen < orgRecLen && orgRecLen - elen >= tlen) {
+			recLen = orgRecLen - elen;
 			/* adjust old entry */
-			dire->recLen -= recLen;
+			dire->recLen = cputole16(orgRecLen - recLen);
 			dire = (sExt2DirEntry*)((uintptr_t)dire + elen);
 			break;
 		}
-		dire = (sExt2DirEntry*)((uintptr_t)dire + dire->recLen);
+		dire = (sExt2DirEntry*)((uintptr_t)dire + orgRecLen);
 	}
 	/* nothing found yet? so store it on the next block */
 	if(recLen == 0) {
@@ -81,9 +84,9 @@ int ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	}
 
 	/* build entry */
-	dire->inode = cnode->inodeNo;
-	dire->nameLen = len;
-	dire->recLen = recLen;
+	dire->inode = cputole32(cnode->inodeNo);
+	dire->nameLen = cputole16(len);
+	dire->recLen = cputole16(recLen);
 	memcpy(dire->name,name,len);
 
 	/* write it back */
@@ -94,7 +97,7 @@ int ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	free(buf);
 
 	/* increase link-count */
-	cnode->inode.linkCount++;
+	cnode->inode.linkCount = cputole16(le16tocpu(cnode->inode.linkCount) + 1);
 	ext2_icache_markDirty(cnode);
 	return 0;
 }
@@ -105,7 +108,7 @@ int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 	tInodeNo ino = -1;
 	sExt2DirEntry *dire,*prev;
 	int res;
-	int32_t dirSize = dir->inode.size;
+	int32_t dirSize = le32tocpu(dir->inode.size);
 	sExt2CInode *cnode;
 
 	/* read directory-entries */
@@ -122,7 +125,7 @@ int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 	prev = NULL;
 	dire = (sExt2DirEntry*)buf;
 	while((uint8_t*)dire < buf + dirSize) {
-		if(nameLen == dire->nameLen && strncmp(dire->name,name,nameLen) == 0) {
+		if(nameLen == le16tocpu(dire->nameLen) && strncmp(dire->name,name,nameLen) == 0) {
 			ino = dire->inode;
 			if(pdir && ino == pdir->inodeNo)
 				cnode = pdir;
@@ -135,7 +138,7 @@ int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 					return ERR_INO_REQ_FAILED;
 				}
 			}
-			if(!delDir && MODE_IS_DIR(cnode->inode.mode)) {
+			if(!delDir && MODE_IS_DIR(le16tocpu(cnode->inode.mode))) {
 				if(cnode != pdir && cnode != dir)
 					ext2_icache_release(cnode);
 				free(buf);
@@ -143,16 +146,16 @@ int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 			}
 			/* if we have a previous one, simply increase its length */
 			if(prev != NULL)
-				prev->recLen += dire->recLen;
+				prev->recLen = cputole16(le16tocpu(prev->recLen) + le16tocpu(dire->recLen));
 			/* otherwise make an empty entry */
 			else
-				dire->inode = 0;
+				dire->inode = cputole32(0);
 			break;
 		}
 
 		/* to next */
 		prev = dire;
-		dire = (sExt2DirEntry*)((uintptr_t)dire + dire->recLen);
+		dire = (sExt2DirEntry*)((uintptr_t)dire + le16tocpu(dire->recLen));
 	}
 
 	/* no match? */
@@ -172,9 +175,12 @@ int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 
 	/* update inode */
 	if(cnode != NULL) {
+		uint16_t linkCount;
 		/* decrease link-count */
 		ext2_icache_markDirty(cnode);
-		if(--cnode->inode.linkCount == 0) {
+		linkCount = le16tocpu(cnode->inode.linkCount) - 1;
+		cnode->inode.linkCount = cputole16(linkCount);
+		if(linkCount == 0) {
 			/* delete the file if there are no references anymore */
 			if((res = ext2_file_delete(e,cnode)) < 0) {
 				if(cnode != pdir && cnode != dir)

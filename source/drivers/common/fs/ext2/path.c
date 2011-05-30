@@ -24,13 +24,14 @@
 #include <stdlib.h>
 
 #include "ext2.h"
+#include "../mount.h"
+#include "../conv.h"
 #include "path.h"
 #include "inode.h"
 #include "inodecache.h"
 #include "rw.h"
 #include "file.h"
 #include "dir.h"
-#include "../mount.h"
 
 tInodeNo ext2_path_resolve(sExt2 *e,const char *path,uint flags,tDevNo *dev,bool resLastMnt) {
 	sExt2CInode *cnode = NULL;
@@ -77,7 +78,7 @@ tInodeNo ext2_path_resolve(sExt2 *e,const char *path,uint flags,tDevNo *dev,bool
 
 			/* move to childs of this node */
 			pos = strchri(p,'/');
-			if((cnode->inode.mode & EXT2_S_IFDIR) == 0) {
+			if((le16tocpu(cnode->inode.mode) & EXT2_S_IFDIR) == 0) {
 				ext2_icache_release(cnode);
 				return ERR_NO_DIRECTORY;
 			}

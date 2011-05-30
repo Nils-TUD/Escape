@@ -10,6 +10,7 @@
 #include <sys/arch/i586/fpu.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/video.h>
 #include <sys/cpu.h>
 #include <assert.h>
 
@@ -71,3 +72,17 @@ void thread_switchTo(tTid tid) {
 
 	thread_killDead();
 }
+
+
+#if DEBUGGING
+
+void thread_dbg_printState(const sThreadRegs *state) {
+	vid_printf("\tState:\n",state);
+	vid_printf("\t\tesp = %#08x\n",state->esp);
+	vid_printf("\t\tedi = %#08x\n",state->edi);
+	vid_printf("\t\tesi = %#08x\n",state->esi);
+	vid_printf("\t\tebp = %#08x\n",state->ebp);
+	vid_printf("\t\teflags = %#08x\n",state->eflags);
+}
+
+#endif

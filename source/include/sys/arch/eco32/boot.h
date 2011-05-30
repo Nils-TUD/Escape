@@ -27,7 +27,7 @@ typedef struct {
 	uint diskSize;
 } sBootInfo;
 
-#define BL_HDD_ID	0
+#define BL_DISK_ID	0
 #define BL_FS_ID	1
 #define BL_RTC_ID	2
 #define BL_K_ID		3

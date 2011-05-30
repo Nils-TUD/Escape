@@ -21,10 +21,20 @@
 #define THREAD_H_
 
 #include <sys/common.h>
+/* TODO */
+#ifdef __i386__
 #include <sys/arch/i586/fpu.h>
+#endif
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <esc/hashmap.h>
+
+#ifdef __i386__
+#include <sys/arch/i586/task/thread.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/thread.h>
+#endif
 
 #define MAX_STACK_PAGES			128
 
@@ -38,31 +48,6 @@
 #define INVALID_TID				0xFFFF
 /* use an invalid tid to identify the kernel */
 #define KERNEL_TID				0xFFFE
-
-/* the thread-state which will be saved for context-switching */
-typedef struct {
-	uint32_t esp;
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebp;
-	uint32_t eflags;
-	uint32_t ebx;
-	/* note that we don't need to save eip because when we're done in thread_resume() we have
-	 * our kernel-stack back which causes the ret-instruction to return to the point where
-	 * we've called thread_save(). the user-eip is saved on the kernel-stack anyway.. */
-	/* note also that this only works because when we call thread_save() in proc_finishClone
-	 * we take care not to call a function afterwards (since it would overwrite the return-address
-	 * on the stack). When we call it in thread_switch() our return-address gets overwritten, but
-	 * it doesn't really matter because it looks like this:
-	 * if(!thread_save(...)) {
-	 * 		// old thread
-	 * 		// call functions ...
-	 * 		thread_resume(...);
-	 * }
-	 * So wether we return to the instruction after the call of thread_save and jump below this
-	 * if-statement or wether we return to the instruction after thread_resume() doesn't matter.
-	 */
-} sThreadRegs;
 
 /* the thread states */
 typedef enum {
@@ -99,8 +84,11 @@ struct sThread {
 	/* the frame mapped at KERNEL_STACK */
 	tFrameNo kstackFrame;
 	sThreadRegs save;
+	/* TODO */
+#ifdef __i386__
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
+#endif
 	struct {
 		/* number of cpu-cycles the thread has used so far */
 		uint64_t ucycleStart;

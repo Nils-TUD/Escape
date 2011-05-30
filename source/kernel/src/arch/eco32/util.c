@@ -19,7 +19,12 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/vmm.h>
+#include <sys/dbg/console.h>
+#include <sys/dbg/kb.h>
 #include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/intrpt.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
 #include <sys/util.h>
@@ -31,12 +36,10 @@ static sFuncCall frames[1] = {
 };
 
 void util_panic(const char *fmt,...) {
-	/*sIntrptStackFrame *istack = intrpt_getCurStack();
-	sThread *t = thread_getRunning();*/
+	sIntrptStackFrame *istack = intrpt_getCurStack();
+	sThread *t = thread_getRunning();
 	va_list ap;
-
-	/* disable interrupts so that nothing fancy can happen */
-	/*intrpt_setEnabled(false);*/
+	int i;
 
 	/* print message */
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
@@ -47,34 +50,22 @@ void util_panic(const char *fmt,...) {
 	va_end(ap);
 	vid_printf("%|s\033[co]\n","");
 
-	/*if(t != NULL)
+	if(t != NULL)
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
-	util_printStackTrace(util_getKernelStackTrace());
 
-	if(t != NULL && t->stackRegion) {
-		util_printStackTrace(util_getUserStackTrace());
-		vid_printf("User-Register:\n");
-		regs[R_EAX] = istack->eax;
-		regs[R_EBX] = istack->ebx;
-		regs[R_ECX] = istack->ecx;
-		regs[R_EDX] = istack->edx;
-		regs[R_ESI] = istack->esi;
-		regs[R_EDI] = istack->edi;
-		regs[R_ESP] = istack->uesp;
-		regs[R_EBP] = istack->ebp;
-		regs[R_CS] = istack->cs;
-		regs[R_DS] = istack->ds;
-		regs[R_ES] = istack->es;
-		regs[R_FS] = istack->fs;
-		regs[R_GS] = istack->gs;
-		regs[R_SS] = istack->uss;
-		regs[R_EFLAGS] = istack->eflags;
-		PRINT_REGS(regs,"\t");
-	}*/
+	vid_printf("User state:\n");
+	vid_printf("\tPSW: 0x%08x\n\t",istack->psw);
+	for(i = 0; i < REG_COUNT; i++) {
+		int row = i / 4;
+		int col = i % 4;
+		vid_printf("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
+		if(i % 4 == 3)
+			vid_printf("\n\t");
+	}
 
 #if DEBUGGING
 	/* write into log only */
-	/*vid_setTargets(TARGET_SCREEN);
+	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
 	vid_setTargets(TARGET_LOG);
 	vmm_dbg_print(t->proc);
@@ -84,7 +75,7 @@ void util_panic(const char *fmt,...) {
 	while(1) {
 		kb_get(NULL,KEV_PRESS,true);
 		cons_start();
-	}*/
+	}
 #else
 	while(1);
 #endif
@@ -100,7 +91,7 @@ void util_copyToUser(void *dst,const void *src,size_t count) {
 	while(count > 0) {
 		tFrameNo frameNo = paging_getFrameNo(p->pagedir,idst);
 		size_t amount = MIN(count,PAGE_SIZE - offset);
-		memcpy((void*)((frameNo * PAGE_SIZE) | DIR_MAPPED_SPACE),(void*)isrc,amount);
+		memcpy((void*)((frameNo * PAGE_SIZE + offset) | DIR_MAPPED_SPACE),(void*)isrc,amount);
 		idst += amount;
 		isrc += amount;
 		count -= amount;
@@ -115,7 +106,7 @@ void util_zeroToUser(void *dst,size_t count) {
 	while(count > 0) {
 		tFrameNo frameNo = paging_getFrameNo(p->pagedir,idst);
 		size_t amount = MIN(count,PAGE_SIZE - offset);
-		memclear((void*)((frameNo * PAGE_SIZE) | DIR_MAPPED_SPACE),amount);
+		memclear((void*)((frameNo * PAGE_SIZE + offset) | DIR_MAPPED_SPACE),amount);
 		idst += amount;
 		count -= amount;
 		offset = 0;

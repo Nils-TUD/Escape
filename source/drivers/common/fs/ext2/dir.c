@@ -1,5 +1,5 @@
 /**
- * $Id: dir.c 797 2010-09-16 22:03:37Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -22,7 +22,9 @@
 #include <errors.h>
 #include <string.h>
 #include <assert.h>
+
 #include "ext2.h"
+#include "../conv.h"
 #include "dir.h"
 #include "file.h"
 #include "link.h"
@@ -62,7 +64,7 @@ int ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
 
 tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,size_t nameLen) {
 	tInodeNo ino;
-	size_t size = dir->inode.size;
+	size_t size = le32tocpu(dir->inode.size);
 	int res;
 	sExt2DirEntry *buffer = (sExt2DirEntry*)malloc(size);
 	if(buffer == NULL)
@@ -84,23 +86,23 @@ tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,size_t bufSize,const char *name,s
 	sExt2DirEntry *entry = buffer;
 
 	/* search the directory-entries */
-	while(rem > 0 && entry->inode != 0) {
+	while(rem > 0 && le32tocpu(entry->inode) != 0) {
 		/* found a match? */
-		if(nameLen == entry->nameLen && strncmp(entry->name,name,nameLen) == 0) {
-			tInodeNo ino = entry->inode;
+		if(nameLen == le16tocpu(entry->nameLen) && strncmp(entry->name,name,nameLen) == 0) {
+			tInodeNo ino = le32tocpu(entry->inode);
 			return ino;
 		}
 
 		/* to next dir-entry */
-		rem -= entry->recLen;
-		entry = (sExt2DirEntry*)((uintptr_t)entry + entry->recLen);
+		rem -= le16tocpu(entry->recLen);
+		entry = (sExt2DirEntry*)((uintptr_t)entry + le16tocpu(entry->recLen));
 	}
 	return ERR_PATH_NOT_FOUND;
 }
 
 int ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	tInodeNo ino;
-	size_t size = dir->inode.size;
+	size_t size = le32tocpu(dir->inode.size);
 	int res;
 	sExt2CInode *delIno;
 	sExt2DirEntry *entry,*buffer;
@@ -126,17 +128,18 @@ int ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	/* search for other entries than '.' and '..' */
 	entry = buffer;
 	while(size > 0 && entry->inode != 0) {
+		uint16_t namelen = le16tocpu(entry->nameLen);
 		/* found a match? */
-		if(entry->nameLen != 1 && entry->nameLen != 2 &&
-				strncmp(entry->name,".",entry->nameLen) != 0 &&
-				strncmp(entry->name,"..",entry->nameLen) != 0) {
+		if(namelen != 1 && namelen != 2 &&
+				strncmp(entry->name,".",namelen) != 0 &&
+				strncmp(entry->name,"..",namelen) != 0) {
 			res = ERR_DIR_NOT_EMPTY;
 			goto error;
 		}
 
 		/* to next dir-entry */
-		size -= entry->recLen;
-		entry = (sExt2DirEntry*)((uintptr_t)entry + entry->recLen);
+		size -= le16tocpu(entry->recLen);
+		entry = (sExt2DirEntry*)((uintptr_t)entry + le16tocpu(entry->recLen));
 	}
 	free(buffer);
 	buffer = NULL;

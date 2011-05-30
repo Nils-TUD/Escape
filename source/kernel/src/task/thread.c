@@ -81,7 +81,10 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->stats.kcycleStart = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
+	/* TODO */
+#ifdef __i586__
 	t->fpuState = NULL;
+#endif
 	t->stackRegion = -1;
 	t->tlsRegion = -1;
 
@@ -386,15 +389,6 @@ void thread_dbg_print(const sThread *t) {
 			calls++;
 		}
 	}
-}
-
-void thread_dbg_printState(const sThreadRegs *state) {
-	vid_printf("\tState:\n",state);
-	vid_printf("\t\tesp = %#08x\n",state->esp);
-	vid_printf("\t\tedi = %#08x\n",state->edi);
-	vid_printf("\t\tesi = %#08x\n",state->esi);
-	vid_printf("\t\tebp = %#08x\n",state->ebp);
-	vid_printf("\t\teflags = %#08x\n",state->eflags);
 }
 
 #endif

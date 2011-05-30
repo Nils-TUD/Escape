@@ -58,13 +58,13 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 	if(loadedMods)
 		return;
 
-#if 0
 	/* start idle-thread */
 	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
-		thread_idle();
+		vid_printf("IDLE reached\n");
+		while(1);
+		/*thread_idle();*/
 		util_panic("Idle returned");
 	}
-#endif
 
 	loadedMods = true;
 	for(i = 1; i < info.progCount; i++) {
@@ -72,7 +72,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 		int argc;
 		const char **argv = boot_parseArgs(progs[i].command,&argc);
 		if(argc < 2)
-			util_panic("Invalid arguments for multiboot-module: %s\n",progs[i].command);
+			util_panic("Invalid arguments for boot-module: %s\n",progs[i].command);
 
 		/* clone proc */
 		pid = proc_getFreePid();
@@ -89,15 +89,15 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 			/* now load module */
 			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
 			if(elf_loadFromMem((void*)progs[i].start,progs[i].size,&sinfo) < 0)
-				util_panic("Loading multiboot-module %s failed",p->command);
+				util_panic("Loading boot-module %s failed",p->command);
 			/* build args */
 			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);
 			if(argc < 0)
-				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
+				util_panic("Building args for boot-module %s failed: %d",p->command,argc);
 			/* no dynamic linking here */
 			p->entryPoint = sinfo.progEntry;
 			if(!uenv_setupProc(stack,p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
-				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
+				util_panic("Unable to setup user-stack for boot module %s",p->command);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
 			return;

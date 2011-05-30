@@ -32,9 +32,7 @@
 
 /* to shift a flag down to the first bit */
 #define PG_WRITABLE_SHIFT	0
-#define PG_SUPERVISOR_SHIFT	1
 #define PG_PRESENT_SHIFT	2
-#define PG_GLOBAL_SHIFT		4
 
 #define PAGE_DIR_DIRMAP		(curPDir | DIR_MAPPED_SPACE)
 #define PAGE_DIR_DIRMAP_OF(pdir) (pdir | DIR_MAPPED_SPACE)
@@ -44,14 +42,6 @@
 								(((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 #define ADDR_TO_MAPPED_CUSTOM(mappingArea,addr) ((mappingArea) + \
 		(((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
-
-#define PAGEDIR(ptables)	((uintptr_t)(ptables) + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
-
-/**
- * Flushes the TLB-entry for the given virtual address.
- * NOTE: supported for >= Intel486
- */
-#define	FLUSHADDR(addr)		__asm__ __volatile__ ("invlpg (%0)" : : "r" (addr));
 
 /* represents a page-directory-entry */
 typedef struct {

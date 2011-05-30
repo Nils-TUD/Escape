@@ -27,7 +27,7 @@ static tULock tlsLock;
 static uint *tlsCopy = NULL;
 
 /**
- * TODO: Actually this is not exact the model described in doc/thread-local-storage.pdf.
+ * TODO: Actually this is not exactly the model described in doc/thread-local-storage.pdf.
  * But linux seems to do it this way, dmd expects it to be that way (at least on linux) and it
  * works for gcc (c) and dmd (d). So its ok for now. But I don't know how it works with dynamic
  * linking...

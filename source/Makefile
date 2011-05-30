@@ -22,7 +22,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 # simulators
 KVM = -enable-kvm
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 60 -localtime
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=c -vga std -m 60 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
@@ -183,7 +183,7 @@ mmixd:	all hdd
 
 eco:	all hdd
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
-			-m $(BUILD)/kernel.map $(BUILD)/user_initloader.map -n
+			-m $(BUILD)/kernel.map $(BUILD)/driver_fs.map -n
 
 qemu:	all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1
@@ -228,8 +228,7 @@ testvbox: all prepareVbox prepareTest
 testvmware:	all prepareVmware prepareTest
 		vmplayer vmware/escape.vmx
 
-#prepareQemu:	hdd cd
-prepareQemu:	cd
+prepareQemu:	hdd cd
 		sudo service qemu-kvm start || true
 
 prepareBochs:	hdd cd

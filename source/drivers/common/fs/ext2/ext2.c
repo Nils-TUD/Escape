@@ -26,8 +26,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "ext2.h"
 #include "../blockcache.h"
+#include "../conv.h"
 #include "inodecache.h"
 #include "blockgroup.h"
 #include "superblock.h"
@@ -174,18 +176,18 @@ int ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	if(cnode == NULL)
 		return ERR_INO_REQ_FAILED;
 
-	info->accesstime = cnode->inode.accesstime;
-	info->modifytime = cnode->inode.modifytime;
-	info->createtime = cnode->inode.createtime;
-	info->blockCount = cnode->inode.blocks;
+	info->accesstime = le32tocpu(cnode->inode.accesstime);
+	info->modifytime = le32tocpu(cnode->inode.modifytime);
+	info->createtime = le32tocpu(cnode->inode.createtime);
+	info->blockCount = le32tocpu(cnode->inode.blocks);
 	info->blockSize = EXT2_BLK_SIZE(e);
 	info->device = mount_getDevByHandle(h);
-	info->uid = cnode->inode.uid;
-	info->gid = cnode->inode.gid;
+	info->uid = le16tocpu(cnode->inode.uid);
+	info->gid = le16tocpu(cnode->inode.gid);
 	info->inodeNo = cnode->inodeNo;
-	info->linkCount = cnode->inode.linkCount;
-	info->mode = cnode->inode.mode;
-	info->size = cnode->inode.size;
+	info->linkCount = le16tocpu(cnode->inode.linkCount);
+	info->mode = le16tocpu(cnode->inode.mode);
+	info->size = le32tocpu(cnode->inode.size);
 	ext2_icache_release(cnode);
 	return 0;
 }
@@ -206,7 +208,7 @@ int ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
 	ino = ext2_icache_request(e,dstIno,IMODE_WRITE);
 	if(dir == NULL || ino == NULL)
 		res = ERR_INO_REQ_FAILED;
-	else if(MODE_IS_DIR(ino->inode.mode))
+	else if(MODE_IS_DIR(le16tocpu(ino->inode.mode)))
 		res = ERR_IS_DIR;
 	else
 		res = ext2_link_create(e,dir,ino,name);
@@ -244,7 +246,7 @@ int ext2_rmdir(void *h,tInodeNo dirIno,const char *name) {
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return ERR_INO_REQ_FAILED;
-	if(!MODE_IS_DIR(dir->inode.mode))
+	if(!MODE_IS_DIR(le16tocpu(dir->inode.mode)))
 		return ERR_NO_DIRECTORY;
 	res = ext2_dir_delete(e,dir,name);
 	ext2_icache_release(dir);
@@ -261,26 +263,26 @@ void ext2_sync(void *h) {
 }
 
 tBlockNo ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo) {
-	return (inodeNo - 1) / e->superBlock.inodesPerGroup;
+	return (inodeNo - 1) / le32tocpu(e->superBlock.inodesPerGroup);
 }
 
 tBlockNo ext2_getGroupOfBlock(sExt2 *e,tBlockNo block) {
-	return block / e->superBlock.blocksPerGroup;
+	return block / le32tocpu(e->superBlock.blocksPerGroup);
 }
 
 tBlockNo ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo) {
-	return inodeNo / e->superBlock.inodesPerGroup;
+	return inodeNo / le32tocpu(e->superBlock.inodesPerGroup);
 }
 
 size_t ext2_getBlockGroupCount(sExt2 *e) {
-	size_t bpg = e->superBlock.blocksPerGroup;
-	return (e->superBlock.blockCount + bpg - 1) / bpg;
+	size_t bpg = le32tocpu(e->superBlock.blocksPerGroup);
+	return (le32tocpu(e->superBlock.blockCount) + bpg - 1) / bpg;
 }
 
 bool ext2_bgHasBackups(sExt2 *e,tBlockNo i) {
 	/* if the sparse-feature is enabled, just the groups 0, 1 and powers of 3, 5 and 7 contain
 	 * the backup */
-	if(!(e->superBlock.featureRoCompat & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
+	if(!(le32tocpu(e->superBlock.featureRoCompat) & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
 		return true;
 	/* block-group 0 is handled manually */
 	if(i == 1)

@@ -20,10 +20,12 @@
 #include <esc/common.h>
 #include <esc/thread.h>
 #include <assert.h>
+
 #include "ext2.h"
+#include "../blockcache.h"
+#include "../conv.h"
 #include "bitmap.h"
 #include "superblock.h"
-#include "../blockcache.h"
 
 /**
  * Allocates an inode in the given block-group
@@ -39,19 +41,20 @@ tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir) {
 	tBlockNo block = ext2_getBlockOfInode(e,dirInode->inodeNo);
 	tBlockNo i,group = ext2_getGroupOfBlock(e,block);
 	tInodeNo ino = 0;
+	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
 
 	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
-	if(e->superBlock.freeInodeCount == 0)
+	if(le32tocpu(e->superBlock.freeInodeCount) == 0)
 		goto done;
 
 	/* first try to find a block in the block-group of the inode */
-	ino = ext2_bm_allocInodeIn(e,group * e->superBlock.inodesPerGroup,e->groups + group,isDir);
+	ino = ext2_bm_allocInodeIn(e,group * inodesPerGroup,e->groups + group,isDir);
 	if(ino != 0)
 		goto done;
 
 	/* now try the other block-groups */
 	for(i = group + 1; i != group; i = (i + 1) % gcount) {
-		ino = ext2_bm_allocInodeIn(e,i * e->superBlock.inodesPerGroup,e->groups + i,isDir);
+		ino = ext2_bm_allocInodeIn(e,i * inodesPerGroup,e->groups + i,isDir);
 		if(ino != 0)
 			goto done;
 	}
@@ -65,9 +68,11 @@ int ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir) {
 	tBlockNo group = ext2_getGroupOfInode(e,ino);
 	uint8_t *bitmapbuf;
 	sCBlock *bitmap;
+	uint16_t freeInodeCount;
+	uint32_t sFreeInodeCount;
 
 	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
-	bitmap = bcache_request(&e->blockCache,e->groups[group].inodeBitmap,BMODE_WRITE);
+	bitmap = bcache_request(&e->blockCache,le32tocpu(e->groups[group].inodeBitmap),BMODE_WRITE);
 	if(bitmap == NULL) {
 		assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 		return -1;
@@ -75,14 +80,18 @@ int ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir) {
 
 	/* mark free in bitmap */
 	ino--;
-	ino %= e->superBlock.inodesPerGroup;
+	ino %= le32tocpu(e->superBlock.inodesPerGroup);
 	bitmapbuf = (uint8_t*)bitmap->buffer;
 	bitmapbuf[ino / 8] &= ~(1 << (ino % 8));
-	e->groups[group].freeInodeCount++;
-	if(isDir)
-		e->groups[group].usedDirCount--;
+	freeInodeCount = le16tocpu(e->groups[group].freeInodeCount);
+	e->groups[group].freeInodeCount = cputole16(freeInodeCount + 1);
+	if(isDir) {
+		uint16_t usedDirCount = le16tocpu(e->groups[group].usedDirCount);
+		e->groups[group].usedDirCount = cputole16(usedDirCount - 1);
+	}
 	e->groupsDirty = true;
-	e->superBlock.freeInodeCount++;
+	sFreeInodeCount = le32tocpu(e->superBlock.freeInodeCount);
+	e->superBlock.freeInodeCount = cputole32(sFreeInodeCount + 1);
 	e->sbDirty = true;
 	bcache_markDirty(bitmap);
 	bcache_release(bitmap);
@@ -95,11 +104,12 @@ static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,tBlockNo groupStart,sExt2BlockGrp 
 	tInodeNo ino;
 	sCBlock *bitmap;
 	uint8_t *bitmapbuf;
-	if(group->freeInodeCount == 0)
+	uint32_t sFreeInodeCount;
+	if(le16tocpu(group->freeInodeCount) == 0)
 		return 0;
 
 	/* load bitmap */
-	bitmap = bcache_request(&e->blockCache,group->inodeBitmap,BMODE_WRITE);
+	bitmap = bcache_request(&e->blockCache,le32tocpu(group->inodeBitmap),BMODE_WRITE);
 	if(bitmap == NULL)
 		return 0;
 
@@ -107,17 +117,21 @@ static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,tBlockNo groupStart,sExt2BlockGrp 
 	bitmapbuf = (uint8_t*)bitmap->buffer;
 	for(i = 0; i < EXT2_BLK_SIZE(e); i++) {
 		for(j = 1; j < 256; ino++, j <<= 1) {
-			if(ino >= (tInodeNo)e->superBlock.inodeCount) {
+			if(ino >= (tInodeNo)le32tocpu(e->superBlock.inodeCount)) {
 				bcache_release(bitmap);
 				return 0;
 			}
 			if(!(bitmapbuf[i] & j)) {
-				group->freeInodeCount--;
-				if(isDir)
-					group->usedDirCount++;
+				uint16_t freeInodeCount = le16tocpu(group->freeInodeCount);
+				group->freeInodeCount = cputole16(freeInodeCount - 1);
+				if(isDir) {
+					uint16_t usedDirCount = le16tocpu(group->usedDirCount);
+					group->usedDirCount = cputole16(usedDirCount + 1);
+				}
 				e->groupsDirty = true;
 				bitmapbuf[i] |= j;
-				e->superBlock.freeInodeCount--;
+				sFreeInodeCount = le32tocpu(e->superBlock.freeInodeCount);
+				e->superBlock.freeInodeCount = cputole32(sFreeInodeCount - 1);
 				e->sbDirty = true;
 				bcache_markDirty(bitmap);
 				bcache_release(bitmap);
@@ -134,19 +148,20 @@ tBlockNo ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode) {
 	tBlockNo block = ext2_getBlockOfInode(e,inode->inodeNo);
 	tBlockNo i,group = ext2_getGroupOfBlock(e,block);
 	tBlockNo bno = 0;
+	uint32_t blocksPerGroup = le32tocpu(e->superBlock.blocksPerGroup);
 
 	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
-	if(e->superBlock.freeBlockCount == 0)
+	if(le32tocpu(e->superBlock.freeBlockCount) == 0)
 		goto done;
 
 	/* first try to find a block in the block-group of the inode */
-	bno = ext2_bm_allocBlockIn(e,group * e->superBlock.blocksPerGroup,e->groups + group);
+	bno = ext2_bm_allocBlockIn(e,group * blocksPerGroup,e->groups + group);
 	if(bno != 0)
 		goto done;
 
 	/* now try the other block-groups */
 	for(i = group + 1; i != group; i = (i + 1) % gcount) {
-		bno = ext2_bm_allocBlockIn(e,i * e->superBlock.blocksPerGroup,e->groups + i);
+		bno = ext2_bm_allocBlockIn(e,i * blocksPerGroup,e->groups + i);
 		if(bno != 0)
 			goto done;
 	}
@@ -160,9 +175,11 @@ int ext2_bm_freeBlock(sExt2 *e,tBlockNo blockNo) {
 	tBlockNo group = ext2_getGroupOfBlock(e,blockNo);
 	sCBlock *bitmap;
 	uint8_t *bitmapbuf;
+	uint16_t freeBlockCount;
+	uint32_t sFreeBlockCount;
 
 	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
-	bitmap = bcache_request(&e->blockCache,e->groups[group].blockBitmap,BMODE_WRITE);
+	bitmap = bcache_request(&e->blockCache,le32tocpu(e->groups[group].blockBitmap),BMODE_WRITE);
 	if(bitmap == NULL) {
 		assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 		return -1;
@@ -170,12 +187,14 @@ int ext2_bm_freeBlock(sExt2 *e,tBlockNo blockNo) {
 
 	/* mark free in bitmap */
 	blockNo--;
-	blockNo %= e->superBlock.blocksPerGroup;
+	blockNo %= le32tocpu(e->superBlock.blocksPerGroup);
 	bitmapbuf = (uint8_t*)bitmap->buffer;
 	bitmapbuf[blockNo / 8] &= ~(1 << (blockNo % 8));
-	e->groups[group].freeBlockCount++;
+	freeBlockCount = le16tocpu(e->groups[group].freeBlockCount);
+	e->groups[group].freeBlockCount = cputole16(freeBlockCount + 1);
 	e->groupsDirty = true;
-	e->superBlock.freeBlockCount++;
+	sFreeBlockCount = le32tocpu(e->superBlock.freeBlockCount);
+	e->superBlock.freeBlockCount = cputole32(sFreeBlockCount + 1);
 	e->sbDirty = true;
 	bcache_markDirty(bitmap);
 	bcache_release(bitmap);
@@ -188,11 +207,13 @@ static tBlockNo ext2_bm_allocBlockIn(sExt2 *e,tBlockNo groupStart,sExt2BlockGrp 
 	tBlockNo bno;
 	sCBlock *bitmap;
 	uint8_t *bitmapbuf;
-	if(group->freeBlockCount == 0)
+	uint32_t sFreeBlockCount;
+	uint32_t blockCount = le32tocpu(e->superBlock.blockCount);
+	if(le16tocpu(group->freeBlockCount) == 0)
 		return 0;
 
 	/* load bitmap */
-	bitmap = bcache_request(&e->blockCache,group->blockBitmap,BMODE_WRITE);
+	bitmap = bcache_request(&e->blockCache,le32tocpu(group->blockBitmap),BMODE_WRITE);
 	if(bitmap == NULL)
 		return 0;
 
@@ -200,15 +221,17 @@ static tBlockNo ext2_bm_allocBlockIn(sExt2 *e,tBlockNo groupStart,sExt2BlockGrp 
 	bitmapbuf = (uint8_t*)bitmap->buffer;
 	for(i = 0; i < EXT2_BLK_SIZE(e); i++) {
 		for(j = 1; j < 256; bno++, j <<= 1) {
-			if(bno >= e->superBlock.blockCount) {
+			if(bno >= blockCount) {
 				bcache_release(bitmap);
 				return 0;
 			}
 			if(!(bitmapbuf[i] & j)) {
-				group->freeBlockCount--;
+				uint16_t freeBlockCount = le16tocpu(group->freeBlockCount);
+				group->freeBlockCount = cputole16(freeBlockCount - 1);
 				e->groupsDirty = true;
 				bitmapbuf[i] |= j;
-				e->superBlock.freeBlockCount--;
+				sFreeBlockCount = le32tocpu(e->superBlock.freeBlockCount);
+				e->superBlock.freeBlockCount = cputole32(sFreeBlockCount - 1);
 				e->sbDirty = true;
 				bcache_markDirty(bitmap);
 				bcache_release(bitmap);

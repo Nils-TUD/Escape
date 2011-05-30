@@ -26,9 +26,10 @@
 #include <time.h>
 
 #include "ext2.h"
+#include "../blockcache.h"
+#include "../conv.h"
 #include "rw.h"
 #include "inode.h"
-#include "../blockcache.h"
 #include "inodecache.h"
 #include "file.h"
 #include "superblock.h"
@@ -78,54 +79,56 @@ int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 	size_t i;
 	/* free direct blocks */
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++) {
-		if(cnode->inode.dBlocks[i] == 0)
+		if(le32tocpu(cnode->inode.dBlocks[i]) == 0)
 			break;
-		if((res = ext2_bm_freeBlock(e,cnode->inode.dBlocks[i])) < 0)
+		if((res = ext2_bm_freeBlock(e,le32tocpu(cnode->inode.dBlocks[i]))) < 0)
 			return res;
 		if(!delete)
-			cnode->inode.dBlocks[i] = 0;
+			cnode->inode.dBlocks[i] = cputole32(0);
 	}
 	/* indirect */
-	if(cnode->inode.singlyIBlock) {
-		if((res = ext2_file_freeIndirBlock(e,cnode->inode.singlyIBlock)) < 0)
+	if(le32tocpu(cnode->inode.singlyIBlock)) {
+		if((res = ext2_file_freeIndirBlock(e,le32tocpu(cnode->inode.singlyIBlock))) < 0)
 			return res;
 		if(!delete)
-			cnode->inode.singlyIBlock = 0;
+			cnode->inode.singlyIBlock = cputole32(0);
 	}
 	/* double indirect */
-	if(cnode->inode.doublyIBlock) {
-		if((res = ext2_file_freeDIndirBlock(e,cnode->inode.doublyIBlock)) < 0)
+	if(le32tocpu(cnode->inode.doublyIBlock)) {
+		if((res = ext2_file_freeDIndirBlock(e,le32tocpu(cnode->inode.doublyIBlock))) < 0)
 			return res;
 		if(!delete)
-			cnode->inode.doublyIBlock = 0;
+			cnode->inode.doublyIBlock = cputole32(0);
 	}
 	/* triple indirect */
-	if(cnode->inode.triplyIBlock) {
+	if(le32tocpu(cnode->inode.triplyIBlock)) {
 		size_t count;
-		sCBlock *blocks = bcache_request(&e->blockCache,cnode->inode.triplyIBlock,BMODE_WRITE);
-		vassert(blocks != NULL,"Block %d set, but unable to load it\n",cnode->inode.triplyIBlock);
+		sCBlock *blocks = bcache_request(&e->blockCache,
+				le32tocpu(cnode->inode.triplyIBlock),BMODE_WRITE);
+		vassert(blocks != NULL,"Block %d set, but unable to load it\n",
+				le32tocpu(cnode->inode.triplyIBlock));
 
 		bcache_markDirty(blocks);
 		count = EXT2_BLK_SIZE(e) / sizeof(tBlockNo);
 		for(i = 0; i < count; i++) {
-			if(((tBlockNo*)blocks->buffer)[i] == 0)
+			if(le32tocpu(((tBlockNo*)blocks->buffer)[i]) == 0)
 				break;
-			if((res = ext2_file_freeDIndirBlock(e,((tBlockNo*)blocks->buffer)[i])) < 0) {
+			if((res = ext2_file_freeDIndirBlock(e,le32tocpu(((tBlockNo*)blocks->buffer)[i]))) < 0) {
 				bcache_release(blocks);
 				return res;
 			}
 		}
 		bcache_release(blocks);
-		if((res = ext2_bm_freeBlock(e,cnode->inode.triplyIBlock)) < 0)
+		if((res = ext2_bm_freeBlock(e,le32tocpu(cnode->inode.triplyIBlock))) < 0)
 			return res;
 		if(!delete)
-			cnode->inode.triplyIBlock = 0;
+			cnode->inode.triplyIBlock = cputole32(0);
 	}
 
 	if(!delete) {
 		/* reset size */
-		cnode->inode.size = 0;
-		cnode->inode.blocks = 0;
+		cnode->inode.size = cputole32(0);
+		cnode->inode.blocks = cputole32(0);
 	}
 	ext2_icache_markDirty(cnode);
 	return 0;
@@ -148,7 +151,7 @@ ssize_t ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,uint offset,size_t
 	}
 
 	/* mark accessed */
-	cnode->inode.accesstime = time(NULL);
+	cnode->inode.accesstime = cputole32(time(NULL));
 	ext2_icache_markDirty(cnode);
 	ext2_icache_release(cnode);
 
@@ -157,15 +160,16 @@ ssize_t ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,uint offset,size_t
 
 ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,uint offset,size_t count) {
 	/* nothing left to read? */
-	if((int32_t)offset < 0 || (int32_t)offset >= cnode->inode.size)
+	int32_t inoSize = le32tocpu(cnode->inode.size);
+	if((int32_t)offset < 0 || (int32_t)offset >= inoSize)
 		return 0;
 
 	if(buffer != NULL) {
 		size_t blockSize,blockCount;
 		tBlockNo startBlock;
 		/* adjust count */
-		if((int32_t)(offset + count) < 0 || (int32_t)(offset + count) >= cnode->inode.size)
-			count = cnode->inode.size - offset;
+		if((int32_t)(offset + count) < 0 || (int32_t)(offset + count) >= inoSize)
+			count = inoSize - offset;
 
 		blockSize = EXT2_BLK_SIZE(e);
 		startBlock = offset / blockSize;
@@ -218,9 +222,10 @@ ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,uint o
 	size_t c,i,blockSize,blockCount,leftBytes;
 	tBlockNo startBlock;
 	uint orgOff = offset;
+	int32_t inoSize = le32tocpu(cnode->inode.size);
 
 	/* gap-filling not supported yet */
-	if((int32_t)offset > cnode->inode.size)
+	if((int32_t)offset > inoSize)
 		return 0;
 
 	blockSize = EXT2_BLK_SIZE(e);
@@ -259,10 +264,10 @@ ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,uint o
 	}
 
 	/* finally, update the inode */
-	now = time(NULL);
+	now = cputole32(time(NULL));
 	cnode->inode.accesstime = now;
 	cnode->inode.modifytime = now;
-	cnode->inode.size = MAX((int32_t)(orgOff + count),cnode->inode.size);
+	cnode->inode.size = (int32_t)cputole32(MAX((int32_t)(orgOff + count),inoSize));
 	ext2_icache_markDirty(cnode);
 	return count;
 }
@@ -276,9 +281,9 @@ static int ext2_file_freeDIndirBlock(sExt2 *e,tBlockNo blockNo) {
 
 	count = EXT2_BLK_SIZE(e) / sizeof(tBlockNo);
 	for(i = 0; i < count; i++) {
-		if(((tBlockNo*)blocks->buffer)[i] == 0)
+		if(le32tocpu(((tBlockNo*)blocks->buffer)[i]) == 0)
 			break;
-		ext2_file_freeIndirBlock(e,((tBlockNo*)blocks->buffer)[i]);
+		ext2_file_freeIndirBlock(e,le32tocpu(((tBlockNo*)blocks->buffer)[i]));
 	}
 	bcache_release(blocks);
 	ext2_bm_freeBlock(e,blockNo);
@@ -292,10 +297,10 @@ static int ext2_file_freeIndirBlock(sExt2 *e,tBlockNo blockNo) {
 
 	count = EXT2_BLK_SIZE(e) / sizeof(tBlockNo);
 	for(i = 0; i < count; i++) {
-		if(((tBlockNo*)blocks->buffer)[i] == 0)
+		if(le32tocpu(((tBlockNo*)blocks->buffer)[i]) == 0)
 			break;
-		ext2_bm_freeBlock(e,((tBlockNo*)blocks->buffer)[i]);
-		((tBlockNo*)blocks->buffer)[i] = 0;
+		ext2_bm_freeBlock(e,le32tocpu(((tBlockNo*)blocks->buffer)[i]));
+		((tBlockNo*)blocks->buffer)[i] = cputole32(0);
 	}
 	bcache_markDirty(blocks);
 	bcache_release(blocks);

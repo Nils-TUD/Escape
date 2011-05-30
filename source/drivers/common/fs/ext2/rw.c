@@ -32,13 +32,13 @@ bool ext2_rw_readBlocks(sExt2 *e,void *buffer,tBlockNo start,size_t blockCount) 
 bool ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount) {
 	ssize_t res;
 	tFD fd = e->drvFds[tpool_tidToId(gettid())];
-	if(seek(fd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
-		printe("Unable to seek to %x",lba * ATA_SECTOR_SIZE);
+	if(seek(fd,lba * DISK_SECTOR_SIZE,SEEK_SET) < 0) {
+		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return false;
 	}
-	res = RETRY(read(fd,buffer,secCount * ATA_SECTOR_SIZE));
-	if(res != (ssize_t)secCount * ATA_SECTOR_SIZE) {
-		printe("Unable to read %d sectors @ %x",secCount,lba * ATA_SECTOR_SIZE);
+	res = RETRY(read(fd,buffer,secCount * DISK_SECTOR_SIZE));
+	if(res != (ssize_t)secCount * DISK_SECTOR_SIZE) {
+		printe("Unable to read %d sectors @ %x",secCount,lba * DISK_SECTOR_SIZE);
 		return false;
 	}
 
@@ -51,12 +51,12 @@ bool ext2_rw_writeBlocks(sExt2 *e,const void *buffer,tBlockNo start,size_t block
 
 bool ext2_rw_writeSectors(sExt2 *e,const void *buffer,uint64_t lba,size_t secCount) {
 	tFD fd = e->drvFds[tpool_tidToId(gettid())];
-	if(seek(fd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
-		printe("Unable to seek to %x",lba * ATA_SECTOR_SIZE);
+	if(seek(fd,lba * DISK_SECTOR_SIZE,SEEK_SET) < 0) {
+		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return false;
 	}
-	if(write(fd,buffer,secCount * ATA_SECTOR_SIZE) != (ssize_t)secCount * ATA_SECTOR_SIZE) {
-		printe("Unable to write %d sectors @ %x",secCount,lba * ATA_SECTOR_SIZE);
+	if(write(fd,buffer,secCount * DISK_SECTOR_SIZE) != (ssize_t)secCount * DISK_SECTOR_SIZE) {
+		printe("Unable to write %d sectors @ %x",secCount,lba * DISK_SECTOR_SIZE);
 		return false;
 	}
 

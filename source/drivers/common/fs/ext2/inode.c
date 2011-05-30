@@ -25,10 +25,11 @@
 #include <time.h>
 
 #include "ext2.h"
+#include "../blockcache.h"
+#include "../conv.h"
 #include "inode.h"
 #include "superblock.h"
 #include "inodecache.h"
-#include "../blockcache.h"
 #include "bitmap.h"
 
 /**
@@ -58,31 +59,31 @@ int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	}
 
 	/* init inode */
-	cnode->inode.gid = 0;
-	cnode->inode.uid = 0;
+	cnode->inode.gid = cputole16(0);
+	cnode->inode.uid = cputole16(0);
 	if(isDir) {
-		cnode->inode.mode = EXT2_S_IFDIR |
+		cnode->inode.mode = cputole16(EXT2_S_IFDIR |
 			EXT2_S_IRUSR | EXT2_S_IRGRP | EXT2_S_IROTH |
 			EXT2_S_IXUSR | EXT2_S_IXGRP | EXT2_S_IXOTH |
-			EXT2_S_IWUSR;
+			EXT2_S_IWUSR);
 	}
 	else {
-		cnode->inode.mode = EXT2_S_IFREG |
-			EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IRGRP | EXT2_S_IROTH;
+		cnode->inode.mode = cputole16(EXT2_S_IFREG |
+			EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IRGRP | EXT2_S_IROTH);
 	}
-	cnode->inode.linkCount = 0;
-	cnode->inode.size = 0;
-	cnode->inode.singlyIBlock = 0;
-	cnode->inode.doublyIBlock = 0;
-	cnode->inode.triplyIBlock = 0;
+	cnode->inode.linkCount = cputole16(0);
+	cnode->inode.size = cputole32(0);
+	cnode->inode.singlyIBlock = cputole32(0);
+	cnode->inode.doublyIBlock = cputole32(0);
+	cnode->inode.triplyIBlock = cputole32(0);
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++)
-		cnode->inode.dBlocks[i] = 0;
-	cnode->inode.blocks = 0;
-	now = time(NULL);
+		cnode->inode.dBlocks[i] = cputole32(0);
+	cnode->inode.blocks = cputole32(0);
+	now = cputole32(time(NULL));
 	cnode->inode.accesstime = now;
 	cnode->inode.createtime = now;
 	cnode->inode.modifytime = now;
-	cnode->inode.deletetime = 0;
+	cnode->inode.deletetime = cputole32(0);
 	ext2_icache_markDirty(cnode);
 	*ino = cnode;
 	return 0;
@@ -91,13 +92,13 @@ int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 int ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
 	int res;
 	/* free inode, clear it and ensure that it get's written back to disk */
-	if((res = ext2_bm_freeInode(e,cnode->inodeNo,MODE_IS_DIR(cnode->inode.mode))) < 0)
+	if((res = ext2_bm_freeInode(e,cnode->inodeNo,MODE_IS_DIR(le16tocpu(cnode->inode.mode)))) < 0)
 		return res;
 	/* just set the delete-time and reset link-count. the block-numbers in the inode
 	 * are still present, so that it may be possible to restore the file, if the blocks
 	 * have not been overwritten in the meantime. */
-	cnode->inode.deletetime = time(NULL);
-	cnode->inode.linkCount = 0;
+	cnode->inode.deletetime = cputole32(time(NULL));
+	cnode->inode.linkCount = cputole16(0);
 	ext2_icache_markDirty(cnode);
 	return 0;
 }
@@ -123,12 +124,16 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 	/* direct block */
 	if(block < EXT2_DIRBLOCK_COUNT) {
 		/* alloc a new block if necessary */
-		if(req && cnode->inode.dBlocks[block] == 0) {
-			cnode->inode.dBlocks[block] = ext2_bm_allocBlock(e,cnode);
-			if(cnode->inode.dBlocks[block] != 0)
-				cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
+		i = le32tocpu(cnode->inode.dBlocks[block]);
+		if(req && i == 0) {
+			i = ext2_bm_allocBlock(e,cnode);
+			cnode->inode.dBlocks[block] = cputole32(i);
+			if(i != 0) {
+				uint32_t blocks = le32tocpu(cnode->inode.blocks);
+				cnode->inode.blocks = cputole32(blocks + EXT2_BLKS_TO_SECS(e,1));
+			}
 		}
-		return cnode->inode.dBlocks[block];
+		return i;
 	}
 
 	/* singly indirect */
@@ -137,18 +142,20 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 	blocksPerBlock = blockSize / sizeof(tBlockNo);
 	if(block < blocksPerBlock) {
 		added = false;
+		i = le32tocpu(cnode->inode.singlyIBlock);
 		/* no singly-indirect-block present yet? */
-		if(cnode->inode.singlyIBlock == 0) {
+		if(i == 0) {
 			if(!req)
 				return 0;
-			cnode->inode.singlyIBlock = ext2_bm_allocBlock(e,cnode);
-			if(cnode->inode.singlyIBlock == 0)
+			i = ext2_bm_allocBlock(e,cnode);
+			cnode->inode.singlyIBlock = cputole32(i);
+			if(i == 0)
 				return 0;
-			cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
+			cnode->inode.blocks = cputole32(le32tocpu(cnode->inode.blocks) + EXT2_BLKS_TO_SECS(e,1));
 			added = true;
 		}
 
-		cblock = bcache_request(&e->blockCache,cnode->inode.singlyIBlock,bmode);
+		cblock = bcache_request(&e->blockCache,i,bmode);
 		if(cblock == NULL)
 			return 0;
 		if(added) {
@@ -159,7 +166,7 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 			bcache_release(cblock);
 			return 0;
 		}
-		i = *((tBlockNo*)(cblock->buffer) + block);
+		i = le32tocpu(*((tBlockNo*)(cblock->buffer) + block));
 		bcache_release(cblock);
 		return i;
 	}
@@ -171,19 +178,21 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 	blperBlSq = blocksPerBlock * blocksPerBlock;
 	if(block < blperBlSq) {
 		added = false;
+		i = le32tocpu(cnode->inode.doublyIBlock);
 		/* no doubly-indirect-block present yet? */
-		if(cnode->inode.doublyIBlock == 0) {
+		if(i == 0) {
 			if(!req)
 				return 0;
-			cnode->inode.doublyIBlock = ext2_bm_allocBlock(e,cnode);
-			if(cnode->inode.doublyIBlock == 0)
+			i = ext2_bm_allocBlock(e,cnode);
+			cnode->inode.doublyIBlock = cputole32(i);
+			if(i == 0)
 				return 0;
 			added = true;
-			cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
+			cnode->inode.blocks = cputole32(le32tocpu(cnode->inode.blocks) + EXT2_BLKS_TO_SECS(e,1));
 		}
 
 		/* read the first block with block-numbers of the indirect blocks */
-		cblock = bcache_request(&e->blockCache,cnode->inode.doublyIBlock,bmode);
+		cblock = bcache_request(&e->blockCache,i,bmode);
 		if(cblock == NULL)
 			return 0;
 		if(added) {
@@ -194,7 +203,7 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 			bcache_release(cblock);
 			return 0;
 		}
-		i = *((tBlockNo*)(cblock->buffer) + block / blocksPerBlock);
+		i = le32tocpu(*((tBlockNo*)(cblock->buffer) + block / blocksPerBlock));
 		bcache_release(cblock);
 
 		/* may happen if we should not request new blocks */
@@ -213,7 +222,7 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 			bcache_release(cblock);
 			return 0;
 		}
-		i = *((tBlockNo*)(cblock->buffer) + block % blocksPerBlock);
+		i = le32tocpu(*((tBlockNo*)(cblock->buffer) + block % blocksPerBlock));
 		bcache_release(cblock);
 
 		return i;
@@ -223,19 +232,21 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 	block -= blperBlSq;
 
 	added = false;
+	i = le32tocpu(cnode->inode.triplyIBlock);
 	/* no triply-indirect-block present yet? */
-	if(cnode->inode.triplyIBlock == 0) {
+	if(i == 0) {
 		if(!req)
 			return 0;
-		cnode->inode.triplyIBlock = ext2_bm_allocBlock(e,cnode);
-		if(cnode->inode.triplyIBlock == 0)
+		i = ext2_bm_allocBlock(e,cnode);
+		cnode->inode.triplyIBlock = cputole32(i);
+		if(i == 0)
 			return 0;
 		added = true;
-		cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
+		cnode->inode.blocks = cputole32(le32tocpu(cnode->inode.blocks) + EXT2_BLKS_TO_SECS(e,1));
 	}
 
 	/* read the first block with block-numbers of the indirect blocks of indirect-blocks */
-	cblock = bcache_request(&e->blockCache,cnode->inode.triplyIBlock,bmode);
+	cblock = bcache_request(&e->blockCache,i,bmode);
 	if(cblock == NULL)
 		return 0;
 	if(added) {
@@ -246,7 +257,7 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 		bcache_release(cblock);
 		return 0;
 	}
-	i = *((tBlockNo*)(cblock->buffer) + block / blperBlSq);
+	i = le32tocpu(*((tBlockNo*)(cblock->buffer) + block / blperBlSq));
 	bcache_release(cblock);
 
 	if(i == 0)
@@ -265,7 +276,7 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 		bcache_release(cblock);
 		return 0;
 	}
-	i = *((tBlockNo*)(cblock->buffer) + block / blocksPerBlock);
+	i = le32tocpu(*((tBlockNo*)(cblock->buffer) + block / blocksPerBlock));
 	bcache_release(cblock);
 
 	if(i == 0)
@@ -283,7 +294,7 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 		bcache_release(cblock);
 		return 0;
 	}
-	i = *((tBlockNo*)(cblock->buffer) + block % blocksPerBlock);
+	i = le32tocpu(*((tBlockNo*)(cblock->buffer) + block % blocksPerBlock));
 	bcache_release(cblock);
 
 	return i;
@@ -291,12 +302,12 @@ static tBlockNo ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo b
 
 static int ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,size_t index,bool *added) {
 	tBlockNo *blockNos = (tBlockNo*)(cblock->buffer);
-	if(blockNos[index] == 0) {
+	if(le32tocpu(blockNos[index]) == 0) {
 		tBlockNo bno = ext2_bm_allocBlock(e,cnode);
 		if(bno == 0)
 			return 0;
-		blockNos[index] = bno;
-		cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
+		blockNos[index] = cputole32(bno);
+		cnode->inode.blocks = cputole32(le32tocpu(cnode->inode.blocks) + EXT2_BLKS_TO_SECS(e,1));
 		bcache_markDirty(cblock);
 		*added = true;
 	}
@@ -309,28 +320,29 @@ static int ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,size_t 
 
 void ext2_inode_print(sExt2Inode *inode) {
 	size_t i;
-	printf("\tmode=0x%08x\n",inode->mode);
-	printf("\tuid=%d\n",inode->uid);
-	printf("\tgid=%d\n",inode->gid);
-	printf("\tsize=%d\n",inode->size);
-	printf("\taccesstime=%d\n",inode->accesstime);
-	printf("\tcreatetime=%d\n",inode->createtime);
-	printf("\tmodifytime=%d\n",inode->modifytime);
-	printf("\tdeletetime=%d\n",inode->deletetime);
-	printf("\tlinkCount=%d\n",inode->linkCount);
-	printf("\tblocks=%d\n",inode->blocks);
-	printf("\tflags=0x%08x\n",inode->flags);
-	printf("\tosd1=0x%08x\n",inode->osd1);
+	printf("\tmode=0x%08x\n",le16tocpu(inode->mode));
+	printf("\tuid=%d\n",le16tocpu(inode->uid));
+	printf("\tgid=%d\n",le16tocpu(inode->gid));
+	printf("\tsize=%d\n",le32tocpu(inode->size));
+	printf("\taccesstime=%d\n",le32tocpu(inode->accesstime));
+	printf("\tcreatetime=%d\n",le32tocpu(inode->createtime));
+	printf("\tmodifytime=%d\n",le32tocpu(inode->modifytime));
+	printf("\tdeletetime=%d\n",le32tocpu(inode->deletetime));
+	printf("\tlinkCount=%d\n",le16tocpu(inode->linkCount));
+	printf("\tblocks=%d\n",le32tocpu(inode->blocks));
+	printf("\tflags=0x%08x\n",le32tocpu(inode->flags));
+	printf("\tosd1=0x%08x\n",le32tocpu(inode->osd1));
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++)
-		printf("\tblock%d=%d\n",i,inode->dBlocks[i]);
-	printf("\tsinglyIBlock=%d\n",inode->singlyIBlock);
-	printf("\tdoublyIBlock=%d\n",inode->doublyIBlock);
-	printf("\ttriplyIBlock=%d\n",inode->triplyIBlock);
-	printf("\tgeneration=%d\n",inode->generation);
-	printf("\tfileACL=%d\n",inode->fileACL);
-	printf("\tdirACL=%d\n",inode->dirACL);
-	printf("\tfragAddr=%d\n",inode->fragAddr);
-	printf("\tosd2=0x%08x%08x%08x%08x\n",inode->osd2[0],inode->osd2[1],inode->osd2[2],inode->osd2[3]);
+		printf("\tblock%d=%d\n",i,le32tocpu(inode->dBlocks[i]));
+	printf("\tsinglyIBlock=%d\n",le32tocpu(inode->singlyIBlock));
+	printf("\tdoublyIBlock=%d\n",le32tocpu(inode->doublyIBlock));
+	printf("\ttriplyIBlock=%d\n",le32tocpu(inode->triplyIBlock));
+	printf("\tgeneration=%d\n",le32tocpu(inode->generation));
+	printf("\tfileACL=%d\n",le32tocpu(inode->fileACL));
+	printf("\tdirACL=%d\n",le32tocpu(inode->dirACL));
+	printf("\tfragAddr=%d\n",le32tocpu(inode->fragAddr));
+	printf("\tosd2=0x%08x%08x%08x%08x\n",le16tocpu(inode->osd2[0]),le16tocpu(inode->osd2[1]),
+			le16tocpu(inode->osd2[2]),le16tocpu(inode->osd2[3]));
 }
 
 #endif

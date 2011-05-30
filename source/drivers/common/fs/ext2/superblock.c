@@ -23,9 +23,11 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "ext2.h"
-#include "rw.h"
 #include "../blockcache.h"
+#include "../conv.h"
+#include "rw.h"
 #include "inodecache.h"
 #include "superblock.h"
 
@@ -38,14 +40,15 @@ bool ext2_super_init(sExt2 *e) {
 	}
 
 	/* check magic-number */
-	if(e->superBlock.magic != EXT2_SUPER_MAGIC) {
-		printe("Invalid super-magic: Got %x, expected %x",e->superBlock.magic,EXT2_SUPER_MAGIC);
+	if(le16tocpu(e->superBlock.magic) != EXT2_SUPER_MAGIC) {
+		printe("Invalid super-magic: Got %x, expected %x",
+				le16tocpu(e->superBlock.magic),EXT2_SUPER_MAGIC);
 		return false;
 	}
 
 	/* check features */
 	/* TODO mount readonly if an unsupported feature is present in featureRoCompat */
-	if(e->superBlock.featureInCompat || e->superBlock.featureRoCompat) {
+	if(le32tocpu(e->superBlock.featureInCompat) || le32tocpu(e->superBlock.featureRoCompat)) {
 		printe("Unable to use filesystem: Incompatible features");
 		return false;
 	}
@@ -69,7 +72,7 @@ void ext2_super_update(sExt2 *e) {
 	}
 
 	/* update superblock backups */
-	bno = e->superBlock.blocksPerGroup;
+	bno = le32tocpu(e->superBlock.blocksPerGroup);
 	count = ext2_getBlockGroupCount(e);
 	for(i = 1; i < count; i++) {
 		if(ext2_bgHasBackups(e,i)) {
@@ -78,7 +81,7 @@ void ext2_super_update(sExt2 *e) {
 				goto done;
 			}
 		}
-		bno += e->superBlock.blocksPerGroup;
+		bno += le32tocpu(e->superBlock.blocksPerGroup);
 	}
 
 	/* now we're in sync */

@@ -481,7 +481,6 @@ static int proc_finishClone(sThread *nt,tFrameNo stackFrame) {
 		*dst++ = *src++;
 
 	paging_unmapFromTemp(1);
-
 	/* parent */
 	return 0;
 }

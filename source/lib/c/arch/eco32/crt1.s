@@ -20,11 +20,11 @@
 .section .init
 .global _init
 _init:
-#	push	%ebp
-#	mov		%esp,%ebp
+	sub		$29,$29,0x18
+	stw		$31,$29,0x14
 
 .section .fini
 .global _fini
 _fini:
-#	push	%ebp
-#	mov		%esp,%ebp
+	sub		$29,$29,0x18
+	stw		$31,$29,0x14

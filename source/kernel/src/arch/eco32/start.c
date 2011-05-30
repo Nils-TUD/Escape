@@ -21,6 +21,9 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
+#include <sys/mem/vmm.h>
+#include <sys/mem/sharedmem.h>
+#include <sys/mem/cow.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
 #include <sys/vfs/info.h>
@@ -32,9 +35,6 @@
 #include <sys/task/timer.h>
 #include <sys/task/signals.h>
 #include <sys/task/elf.h>
-#include <sys/mem/vmm.h>
-#include <sys/mem/sharedmem.h>
-#include <sys/mem/cow.h>
 #include <sys/log.h>
 #include <sys/boot.h>
 #include <sys/video.h>
@@ -116,5 +116,7 @@ int main(const sBootInfo *bootinfo) {
 	t->stackRegion = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 	assert(t->stackRegion >= 0);
+	/* we have to set the kernel-stack for the first process */
+	tlb_set(0,KERNEL_STACK,(t->kstackFrame * PAGE_SIZE) | 0x3);
 	return info.progEntry;
 }

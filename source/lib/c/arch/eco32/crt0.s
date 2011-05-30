@@ -37,38 +37,38 @@
 #  +------------------+
 #  |       argc       |  or the argument for threads
 #  +------------------+
-#  |     TLSSize      |  0 if not present
-#  +------------------+
-#  |     TLSStart     |  0 if not present
-#  +------------------+
-#  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-#  +------------------+
+
+#  Registers:
+#  $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
+#  $5 = TLSStart (0 if not present)
+#  $6 = TLSSize (0 if not present)
 
 .ifndef SHAREDLIB
 _start:
+	# setup a small stack-frame
+	sub		$29,$29,0x20
 	# call init_tls(entryPoint,TLSStart,TLSSize)
 	jal		init_tls
-	# remove args from stack
-	#add		$12,%esp
 	# it returns the entrypoint; 0 if we're the initial thread
-	#test	%eax,%eax
-	#je		initialThread
+	beq		$2,$0,initialThread
 	# we're an additional thread, so call the desired function
-	#call	*%eax
-	#jmp		threadExit
+	jalr	$2
+	j			threadExit
 
 	# initial thread calls main
 initialThread:
 	.extern __libc_init
-	#call	__libc_init
+	jal		__libc_init
 	# call function in .init-section
-	#call _init
+	jal		_init
 	# finally, call main
-	#call	main
+	ldw		$4,$29,0x20
+	ldw		$5,$29,0x24
+	jal		main
 
 threadExit:
-	#push	%eax
-	#call	exit
+	add		$4,$2,$0
+	jal		exit
 	# just to be sure
 	1: j			1b
 

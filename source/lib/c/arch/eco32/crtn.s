@@ -18,9 +18,11 @@
 #
 
 .section .init
-	#leave
-	#ret
+	ldw		$31,$29,0x14
+	add		$29,$29,0x18
+	jr		$31
 
 .section .fini
-	#leave
-	#ret
+	ldw		$31,$29,0x14
+	add		$29,$29,0x18
+	jr		$31

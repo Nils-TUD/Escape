@@ -21,9 +21,10 @@
 	.extern curPDir
 	.extern util_panic
 
+	.global cpu_getBadAddr
+
 	.global start
 	.global tlb_remove
-	.global tlb_getFaultAddr
 	.global tlb_set
 	.global tlb_clear
 	.global tlb_replace
@@ -55,7 +56,7 @@
 	.set		PAGE_SIZE_SHIFT,12
 	.set		PTE_MAP_ADDR,0x80000000
 	.set		DIR_MAP_START,0xC0000000
-	.set		KERNEL_STACK,0x83400FFC					# our kernel-stack (the top)
+	.set		KERNEL_STACK,0x84400FFC					# our kernel-stack (the top)
 																					# individually for each process and stored fix in the
 																					# first entry of the TLB
 	.set		TLB_INDEX_INVALID,0x80000000		# represents an invalid index
@@ -146,7 +147,7 @@ start:
 	# setup stack
 	add		$29,$0,_ebss											# setup the initial stack directly behind the bss-segment
 	and		$29,$29,~(PAGE_SIZE - 1)					# because the bootloader has reserved at least 1 and max.
-	add		$29,$29,PAGE_SIZE * 2 - 4					# 2 pages - 1byte space for us
+	add		$29,$29,PAGE_SIZE * 2 - 4					# 2 pages - 1 word space for us
 
 	# enable all interrupts via mask (we'll control them just by the interrupt-enable-flag)
 	add		$16,$4,$0													# save $4
@@ -160,8 +161,8 @@ start:
 	# initloader has been loaded, so jump to it
 	add		$30,$0,$2													# main returns the entry-point
 	mvfs	$8,FS_PSW
-	or		$8,$8,PINTRPT_FLAG								# enable previous interrupts
-	and		$8,$8,~PUSER_MODE_FLAG						# disable user-mode
+	# enable interrupts and user-mode
+	or		$8,$8,PINTRPT_FLAG | PUSER_MODE_FLAG
 	mvts	$8,FS_PSW
 	rfx
 
@@ -357,13 +358,17 @@ intrpt_setMask:
 	jr		$31
 
 #===========================================
-# TLB
+# CPU
 #===========================================
 
-# uint tlb_getFaultAddr(void)#
-tlb_getFaultAddr:
+# uint cpu_getFaultAddr(void)
+cpu_getBadAddr:
 	mvfs	$2,FS_TLB_BAD
 	jr		$31
+
+#===========================================
+# TLB
+#===========================================
 
 # tlb_set may NOT use the stack! (see resume)
 # void tlb_set(int index,unsigned int entryHi,unsigned int entryLo)
@@ -443,22 +448,6 @@ tlb_clearloop:
 # Tasks
 #===========================================
 
-# start-position for drivers# set's up the psw
-task_sysStart:
-	mvfs	$8,FS_PSW
-	or		$8,$8,PINTRPT_FLAG								# enable previous interrupts
-	and		$8,$8,~PUSER_MODE_FLAG						# disable user-mode
-	mvts	$8,FS_PSW
-	rfx
-
-# start-position for user-tasks# set's up the psw
-task_userStart:
-	mvfs	$8,FS_PSW
-	or		$8,$8,PINTRPT_FLAG
-	or		$8,$8,PUSER_MODE_FLAG							# enable interrupts and user-mode
-	mvts	$8,FS_PSW
-	rfx
-
 # void task_idle(void)
 task_idle:
 	# enable interrupts
@@ -481,9 +470,10 @@ thread_save:
 	stw		$21,$4,20
 	stw		$22,$4,24
 	stw		$23,$4,28
-	stw		$29,$4,32
-	stw		$30,$4,36
-	stw		$31,$4,40
+	stw		$25,$4,32
+	stw		$29,$4,36
+	stw		$30,$4,40
+	stw		$31,$4,44
 	add		$2,$0,0														# return 0
 	jr		$31
 
@@ -494,12 +484,18 @@ thread_resume:
 	# will not continue after resume)
 	add		$16,$5,$0
 
+	# first load the new stack-pointer; accessing the saveArea may cause a kernel-miss
+	# therefore it has to be done before the page-dir has been exchanged and the new kernel-stack
+	# has been set
+	ldw		$29,$16,36
+
 	# set page-directory for new process
 	stw		$4,$0,curPDir
 
 	# we have to refresh the fix entry for the process
 	add		$4,$0,$0
 	ldhi	$5,KERNEL_STACK										# ASSUMES that only the high 16 bit are interesting here
+	sll		$6,$6,PAGE_SIZE_SHIFT							# frame-number to address
 	or		$6,$6,0x7													# make existing, present and writable
 	# Note that we assume that setTLB doesnt need a stack
 	jal		tlb_set														# store into TLB
@@ -523,9 +519,9 @@ resumeClearTLBLoop:
 	ldw		$21,$16,20
 	ldw		$22,$16,24
 	ldw		$23,$16,28
-	ldw		$29,$16,32
-	ldw		$30,$16,36
-	ldw		$31,$16,40
+	ldw		$25,$16,32
+	ldw		$30,$16,40
+	ldw		$31,$16,44
 	ldw		$16,$16,0
 
 	add		$2,$0,1														# return 1

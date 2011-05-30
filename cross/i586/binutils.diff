@@ -1,0 +1,117 @@
+diff -rcN src/binutils_org/bfd/config.bfd src/binutils/bfd/config.bfd
+*** src/binutils_org/bfd/config.bfd	2009-08-06 19:38:00.000000000 +0200
+--- src/binutils/bfd/config.bfd	2010-07-06 13:10:35.000000000 +0200
+***************
+*** 525,530 ****
+--- 525,534 ----
+    i[3-7]86-*-chorus*)
+      targ_defvec=bfd_elf32_i386_vec
+      ;;
++   i[3-7]86-*-escape*)
++     targ_defvec=bfd_elf32_i386_vec
++     targ_selvecs=bfd_elf32_i386_vec
++     ;;
+    i[3-7]86-*-dicos*)
+      targ_defvec=bfd_elf32_i386_vec
+      targ64_selvecs="bfd_elf64_x86_64_vec bfd_elf64_l1om_vec"
+diff -rcN src/binutils_org/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
+*** src/binutils_org/bfd/elf32-i386.c	2010-07-09 19:04:29.000000000 +0200
+--- src/binutils/bfd/elf32-i386.c	2010-07-09 19:04:33.000000000 +0200
+***************
+*** 513,519 ****
+  /* The name of the dynamic interpreter.  This is put in the .interp
+     section.  */
+  
+! #define ELF_DYNAMIC_INTERPRETER "/usr/lib/libc.so.1"
+  
+  /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
+     copying dynamic variables from a shared lib into an app's dynbss
+--- 513,519 ----
+  /* The name of the dynamic interpreter.  This is put in the .interp
+     section.  */
+  
+! #define ELF_DYNAMIC_INTERPRETER "/bin/dynlink"
+  
+  /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
+     copying dynamic variables from a shared lib into an app's dynbss
+diff -rcN src/binutils_org/config.sub src/binutils/config.sub
+*** src/binutils_org/config.sub	2009-08-17 06:10:29.000000000 +0200
+--- src/binutils/config.sub	2010-07-05 21:43:58.000000000 +0200
+***************
+*** 1274,1280 ****
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
+  	      | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+--- 1274,1280 ----
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
+  	      | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* | -escape* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+diff -rcN src/binutils_org/gas/configure.tgt src/binutils/gas/configure.tgt
+*** src/binutils_org/gas/configure.tgt	2009-09-09 10:13:28.000000000 +0200
+--- src/binutils/gas/configure.tgt	2010-07-05 21:43:58.000000000 +0200
+***************
+*** 96,101 ****
+--- 96,102 ----
+  generic_target=${cpu_type}-$vendor-$os
+  # Note: This table is alpha-sorted, please try to keep it that way.
+  case ${generic_target} in
++   i386-*-escape*)    fmt=elf ;;
+    alpha-*-*vms*)			fmt=evax ;;
+    alpha-*-osf*)				fmt=ecoff ;;
+    alpha-*-linuxecoff*)			fmt=ecoff ;;
+diff -rcN src/binutils_org/ld/configure.tgt src/binutils/ld/configure.tgt
+*** src/binutils_org/ld/configure.tgt	2009-08-06 19:38:03.000000000 +0200
+--- src/binutils/ld/configure.tgt	2010-07-05 21:43:58.000000000 +0200
+***************
+*** 27,32 ****
+--- 27,33 ----
+  # architecture variants should be kept together even if their names
+  # break the alpha sorting.
+  case "${targ}" in
++ i[3-7]86-*-escape*)    targ_emul=escape_i386 ;;
+  alpha*-*-freebsd* | alpha*-*-kfreebsd*-gnu)
+  		        targ_emul=elf64alpha_fbsd
+  			targ_extra_emuls="elf64alpha alpha"
+diff -rcN src/binutils_org/ld/emulparams/escape_i386.sh src/binutils/ld/emulparams/escape_i386.sh
+*** src/binutils_org/ld/emulparams/escape_i386.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/emulparams/escape_i386.sh	2010-07-05 21:43:58.000000000 +0200
+***************
+*** 0 ****
+--- 1,15 ----
++ SCRIPT_NAME=elf
++ OUTPUT_FORMAT=elf32-i386
++ TEXT_START_ADDR=0x00001000
++ MAXPAGESIZE="CONSTANT (MAXPAGESIZE)"
++ COMMONPAGESIZE="CONSTANT (COMMONPAGESIZE)"
++ ARCH=i386
++ MACHINE=
++ NOP=0x90909090
++ TEMPLATE_NAME=elf32
++ GENERATE_SHLIB_SCRIPT=yes
++ GENERATE_PIE_SCRIPT=yes
++ NO_SMALL_DATA=yes
++ SEPARATE_GOTPLT=12
++ DATA_ADDR="ALIGN(${MAXPAGESIZE})"
++ SHLIB_DATA_ADDR="ALIGN(${MAXPAGESIZE})"
+diff -rcN src/binutils_org/ld/Makefile.in src/binutils/ld/Makefile.in
+*** src/binutils_org/ld/Makefile.in	2009-09-07 14:10:24.000000000 +0200
+--- src/binutils/ld/Makefile.in	2010-07-05 21:43:58.000000000 +0200
+***************
+*** 1930,1935 ****
+--- 1930,1937 ----
+  
+  @TDIRS@
+  
++ eescape_i386.c: $(srcdir)/emulparams/escape_i386.sh $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++ 	${GENSCRIPTS} escape_i386 "$(tdir_escape_i386)"
+  eaix5ppc.c: $(srcdir)/emulparams/aix5ppc.sh \
+    $(srcdir)/emultempl/aix.em $(srcdir)/scripttempl/aix.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} aix5ppc "$(tdir_aixppc)"

@@ -1,0 +1,93 @@
+diff -rcN src_org/gcc//config.sub src/gcc//config.sub
+*** src_org/gcc//config.sub	2010-05-25 15:22:07.000000000 +0200
+--- src/gcc//config.sub	2011-05-27 00:02:59.000000000 +0200
+***************
+*** 1297,1303 ****
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+  	      | -sym* | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+--- 1297,1303 ----
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+  	      | -sym* | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* | -escape* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+diff -rcN src_org/gcc//gcc/config/escape.h src/gcc//gcc/config/escape.h
+*** src_org/gcc//gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc//gcc/config/escape.h	2011-05-27 00:12:06.000000000 +0200
+***************
+*** 0 ****
+--- 1,34 ----
++   #undef   STARTFILE_SPEC
++   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
++   
++   #undef   ENDFILE_SPEC
++   #define ENDFILE_SPEC "%{shared|pie:crtendS.o%s;:crtend.o%s} %{shared:crtnS.o%s;:crtn.o%s}"
++   
++   #undef LINK_SPEC
++   #define LINK_SPEC ""
++   
++   #undef TARGET_OS_CPP_BUILTINS
++   #define TARGET_OS_CPP_BUILTINS()      \
++     do {                                \
++       /* to force a strcmp for typeinfo-compares */ \
++       builtin_define ("__GXX_MERGED_TYPEINFO_NAMES=0"); \
++       builtin_define ("__GXX_TYPEINFO_EQUALITY_INLINE=0"); \
++       builtin_define ("__mmix__");				\
++       builtin_define ("__MMIX__");				\
++       builtin_define_std ("escape");      \
++       builtin_define_std ("unix");      \
++       builtin_assert ("system=escape");   \
++       builtin_assert ("system=unix");   \
++     } while(0);
++   
++   #undef LINK_GCC_C_SEQUENCE_SPEC
++   #define LINK_GCC_C_SEQUENCE_SPEC \
++     "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
++   
++   /* Use --as-needed -lgcc_s for eh support.  */
++   #ifdef HAVE_LD_AS_NEEDED
++   #define USE_LD_AS_NEEDED 1
++   #endif
++   
++   #undef TARGET_VERSION
++   #define TARGET_VERSION fprintf(stderr, " (mmix escape)");
+diff -rcN src_org/gcc//gcc/config.gcc src/gcc//gcc/config.gcc
+*** src_org/gcc//gcc/config.gcc	2011-03-14 07:05:29.000000000 +0100
+--- src/gcc//gcc/config.gcc	2011-05-27 00:11:27.000000000 +0200
+***************
+*** 2024,2029 ****
+--- 2024,2034 ----
+  	need_64bit_hwint=yes
+  	use_gcc_stdint=wrap
+  	;;
++ mmix-*-escape)
++ 	tm_file="${tm_file} escape.h"
++ 	need_64bit_hwint=yes
++ 	use_gcc_stdint=wrap
++ 	;;
+  mn10300-*-*)
+  	tm_file="dbxelf.h elfos.h newlib-stdint.h ${tm_file}"
+  	if test x$stabs = xyes
+diff -rcN src_org/gcc//libgcc/config.host src/gcc//libgcc/config.host
+*** src_org/gcc//libgcc/config.host	2011-03-14 07:06:23.000000000 +0100
+--- src/gcc//libgcc/config.host	2011-05-27 00:02:59.000000000 +0200
+***************
+*** 449,454 ****
+--- 449,458 ----
+  	extra_parts="crti.o crtn.o crtbegin.o crtend.o"
+  	tmake_file="${tmake_file} ${cpu_type}/t-${cpu_type}"
+  	;;
++ mmix-*-escape)
++ 	extra_parts="crti.o crtn.o crtbegin.o crtend.o"
++ 	tmake_file="${tmake_file} ${cpu_type}/t-${cpu_type}"
++ 	;;
+  mn10300-*-*)
+  	;;
+  moxie-*-*)

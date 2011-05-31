@@ -89,10 +89,7 @@ bool vterm_initAll(tFD *ids,sVTermCfg *cfg) {
 
 	/* open speaker */
 	speakerFd = open("/dev/speaker",IO_WRITE);
-	if(speakerFd < 0) {
-		printe("Unable to open '/dev/speaker'");
-		return false;
-	}
+	/* ignore errors here. in this case we simply don't use it */
 
 	for(i = 0; i < VTERM_COUNT; i++) {
 		vterms[i].index = i;
@@ -108,8 +105,8 @@ bool vterm_initAll(tFD *ids,sVTermCfg *cfg) {
 		vterms[i].setCursor = vterm_setCursor;
 	}
 
-	if(startThread(vterm_dateThread,NULL) < 0)
-		error("Unable to start date-thread");
+	/*if(startThread(vterm_dateThread,NULL) < 0)
+		error("Unable to start date-thread");*/
 	return true;
 }
 

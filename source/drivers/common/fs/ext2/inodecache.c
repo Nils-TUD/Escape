@@ -188,7 +188,7 @@ static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
 	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / inodesPerGroup);
 	size_t inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
 	size_t noInGroup = (inode->inodeNo - 1) % inodesPerGroup;
-	tBlockNo blockNo = group->inodeTable + noInGroup / inodesPerBlock;
+	tBlockNo blockNo = le32tocpu(group->inodeTable) + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
 	sCBlock *block = bcache_request(&e->blockCache,blockNo,BMODE_READ);
 	vassert(block != NULL,"Fetching block %d failed",blockNo);
@@ -202,7 +202,7 @@ static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
 	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / inodesPerGroup);
 	size_t inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
 	size_t noInGroup = (inode->inodeNo - 1) % inodesPerGroup;
-	tBlockNo blockNo = group->inodeTable + noInGroup / inodesPerBlock;
+	tBlockNo blockNo = le32tocpu(group->inodeTable) + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
 	sCBlock *block = bcache_request(&e->blockCache,blockNo,BMODE_WRITE);
 	vassert(block != NULL,"Fetching block %d failed",blockNo);

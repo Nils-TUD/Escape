@@ -1,8 +1,4 @@
-ifeq ($(ARCH),eco32)
-	DIRS = $(filter-out $(wildcard *.*) cpp d Makefile,$(wildcard *))
-else
-	DIRS = $(filter-out $(wildcard *.*) d Makefile,$(wildcard *))
-endif
+DIRS = $(filter-out $(wildcard *.*) d Makefile,$(wildcard *))
 
 .PHONY:  all clean
 

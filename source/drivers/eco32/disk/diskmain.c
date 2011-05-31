@@ -31,6 +31,8 @@
 #define DISK_BUF			0x30480000
 #define DISK_RDY_RETRIES	10000000
 
+#define DEBUG				0
+
 #define DISK_LOG(fmt,...)	do { \
 		printf("[DISK] "); \
 		printf(fmt,## __VA_ARGS__); \
@@ -38,7 +40,16 @@
 		fflush(stdout); \
 	} while(0);
 
-#define DEBUG(x)
+#if DEBUG
+#define DISK_DBG(fmt,...)	do { \
+		printf("[DISK] "); \
+		printf(fmt,## __VA_ARGS__); \
+		printf("\n"); \
+		fflush(stdout); \
+	} while(0);
+#else
+#define DISK_DBG(...)
+#endif
 
 static uint getDiskCapacity(void);
 static bool diskRead(void *buf,uint secNo,uint secCount);
@@ -104,6 +115,7 @@ int main(int argc,char **argv) {
 				printe("[DISK] Unable to get client");
 		}
 		else {
+#if 0
 			switch(mid) {
 				case MSG_DRV_READ: {
 					uint offset = msg.args.arg1;
@@ -146,6 +158,45 @@ int main(int argc,char **argv) {
 				}
 				break;
 			}
+#else
+			if(mid == MSG_DRV_READ) {
+				uint offset = msg.args.arg1;
+				uint count = msg.args.arg2;
+				uint roffset = offset & ~(SECTOR_SIZE - 1);
+				uint rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
+				msg.args.arg1 = 0;
+				if(roffset + rcount <= partCap && roffset + rcount > roffset) {
+					if(rcount <= MAX_RW_SIZE) {
+						if(diskRead(buffer,START_SECTOR + roffset / SECTOR_SIZE,
+								rcount / SECTOR_SIZE)) {
+							msg.data.arg1 = rcount;
+						}
+					}
+				}
+				msg.args.arg2 = true;
+				send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+				if(msg.args.arg1 > 0)
+					send(fd,MSG_DRV_READ_RESP,buffer,rcount);
+			}
+			else if(mid == MSG_DRV_WRITE) {
+				uint offset = msg.args.arg1;
+				uint count = msg.args.arg2;
+				uint roffset = offset & ~(SECTOR_SIZE - 1);
+				uint rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
+				msg.args.arg1 = 0;
+				if(roffset + rcount <= partCap && roffset + rcount > roffset) {
+					if(rcount <= MAX_RW_SIZE) {
+						if(RETRY(receive(fd,&mid,buffer,rcount)) > 0) {
+							if(diskWrite(buffer,START_SECTOR + roffset / SECTOR_SIZE,
+									rcount / SECTOR_SIZE)) {
+								msg.args.arg1 = rcount;
+							}
+						}
+					}
+				}
+				send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+			}
+#endif
 			close(fd);
 		}
 	}
@@ -157,7 +208,7 @@ int main(int argc,char **argv) {
 
 static uint getDiskCapacity(void) {
 	int i;
-	uint *diskCtrlReg = diskRegs + DISK_CTRL;
+	volatile uint *diskCtrlReg = diskRegs + DISK_CTRL;
 	uint *diskCapReg = diskRegs + DISK_CAP;
 	/* wait for disk */
 	for(i = 0; i < DISK_RDY_RETRIES; i++) {
@@ -175,11 +226,11 @@ static bool diskRead(void *buf,uint secNo,uint secCount) {
 	uint *diskCntReg = diskRegs + DISK_CNT;
 	uint *diskCtrlReg = diskRegs + DISK_CTRL;
 
-	DISK_LOG("Reading sectors %d..%d ...",secNo,secNo + secCount - 1);
+	DISK_DBG("Reading sectors %d..%d ...",secNo,secNo + secCount - 1);
 
 	/* maybe another request is active.. */
 	if(!diskWait()) {
-		DISK_LOG("FAILED");
+		DISK_DBG("FAILED");
 		return false;
 	}
 
@@ -189,13 +240,13 @@ static bool diskRead(void *buf,uint secNo,uint secCount) {
 	*diskCtrlReg = DISK_STRT/* | DISK_IEN*/;
 
 	if(!diskWait()) {
-		DISK_LOG("FAILED");
+		DISK_DBG("FAILED");
 		return false;
 	}
 
 	/* disk is ready, so copy from disk-buffer to memory */
 	memcpy(buf,diskBuf,secCount * SECTOR_SIZE);
-	DISK_LOG("done");
+	DISK_DBG("done");
 	return true;
 }
 
@@ -204,11 +255,11 @@ static bool diskWrite(const void *buf,uint secNo,uint secCount) {
 	uint *diskCntReg = diskRegs + DISK_CNT;
 	uint *diskCtrlReg = diskRegs + DISK_CTRL;
 
-	DISK_LOG("Writing sectors %d..%d ...",secNo,secNo + secCount - 1);
+	DISK_DBG("Writing sectors %d..%d ...",secNo,secNo + secCount - 1);
 
 	/* maybe another request is active.. */
 	if(!diskWait()) {
-		DISK_LOG("FAILED");
+		DISK_DBG("FAILED");
 		return false;
 	}
 
@@ -221,13 +272,13 @@ static bool diskWrite(const void *buf,uint secNo,uint secCount) {
 	*diskCtrlReg = DISK_STRT | DISK_WRT/* | DISK_IEN*/;
 	/* we don't need to wait here because maybe there is no other request and we could therefore
 	 * save time */
-	DISK_LOG("done");
+	DISK_DBG("done");
 	return true;
 }
 
 static bool diskWait(void) {
 	/* TODO wait for interrupt */
-	uint *diskCtrlReg = diskRegs + DISK_CTRL;
+	volatile uint *diskCtrlReg = diskRegs + DISK_CTRL;
 	while(1) {
 		if(*diskCtrlReg & (DISK_DONE | DISK_ERR))
 			break;

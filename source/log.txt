@@ -1,59 +1,25 @@
-GDT exchanged, paging enabled, video initialized                            DONE
-MultiBoot-Structure:
----------------------
-flags=0x7ef
-memLower=637 KB, memUpper=60404 KB
-biosDriveNumber=80, part1= 0, part2=FF, part3=FF
-cmdLine=/boot/kernel.bin videomode=vesa swapdev=/dev/hda3
-modsCount=4:
-	/sbin/pci /dev/pci (0xc01c5000 .. 0xc0229d61)
-	/sbin/ata /system/devices/ata (0xc022a000 .. 0xc025b491)
-	/sbin/cmos /dev/cmos (0xc025c000 .. 0xc028220f)
-	/sbin/fs /dev/fs /dev/hda1 ext2 (0xc0283000 .. 0xc02cbceb)
-ELF: num=12, size=40, addr=0x14f000, shndx=0x9
-mmapLength=144, mmapAddr=0xc0053b04
-memory-map:
-	0: addr=0x00000000, size=0x0009f400, type=free
-	1: addr=0x0009f400, size=0x00000c00, type=used
-	2: addr=0x000f0000, size=0x00010000, type=used
-	3: addr=0x00100000, size=0x03afd000, type=free
-	4: addr=0x03bfd000, size=0x00003000, type=used
-	5: addr=0xfffc0000, size=0x00040000, type=used
-Drives: (size=12)
-	0: no=80, mode=1, cyl=710, heads=5, sectors=51
----------------------
-Initializing physical memory-management...                                  DONE
-Initializing paging...                                                      DONE
-Initializing FPU...                                                         DONE
-Initializing VFS...                                                         DONE
-Initializing process-management...                                          DONE
-Initializing virtual memory management...                                   DONE
-Initializing IDT...                                                         DONE
-Initializing timer...                                                       DONE
-Initializing signal-handling...                                             DONE
-Detecting CPU...                                                            DONE
-14366 free frames (57464 KiB)
-Loading '/sbin/pci'...
-Loading '/sbin/ata'...
-[ATA] Found IDE-controller (0.1.1): vendorId 8086, deviceId 7010, rev 0
-[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
-[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
-[ATA] Device 1 not present
-[ATA] Device 0 is an ATA-device
-[ATA] Device 0 uses DMA
-[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
-[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
-[ATA] Device 3 not present
-[ATA] Device 2: Error 0x4. Assuming its not present
-[ATA] Device 2 is an ATAPI-device
-[ATA] Device 2 uses DMA
-[ATA] Registered driver 'hda1' (device 0, partition 1)
-[ATA] Registered driver 'hda2' (device 0, partition 2)
-[ATA] Registered driver 'hda3' (device 0, partition 3)
-[ATA] Registered driver 'cdc1' (device 2, partition 1)
-Loading '/sbin/cmos'...
+Loading /boot/kernel.bin........................................................................................................................................................................
+Loading /sbin/disk................................................................................................................................
+Loading /sbin/fs.....................................................................................................................................................................................
+Initializing physical memory-management...                                  DONEInitializing paging...                                                      DONEInitializing VFS...                                                         DONEInitializing process-management...                                          DONEInitializing virtual memory management...                                   DONEInitializing timer...                                                       DONEInitializing signal-handling...                                             DONEThread 2 (proc 1:initloader): 7e0
+Loading '/sbin/disk'...
+[DISK] Found disk with 181440 sectors (92897280 bytes)
+[DISK] Registered driver 'hda1' (device 1, partition 1)
+Thread 3 (proc 2:initloader): 7c9
 Loading '/sbin/fs'...
 [FS] Loaded ext2-driver
 [FS] Loaded iso9660-driver
 [FS] Mounted '/dev/hda1' with fs 'ext2' at '/'
-[VESATEXT] Setting (115)  800 x  600 x 24
+Thread 4 (proc 3:/bin/init): 760
+Thread 5 (proc 4:/bin/init): 747
+Thread 6 (proc 5:/bin/init): 72d
+Thread 7 (proc 6:/bin/init): 713
+Thread 8 (proc 7:/bin/init): 6f9
+Thread 9 (proc 8:/bin/init): 6df
+Thread 10 (proc 9:/bin/init): 6bd
+Thread 11 (proc 10:/bin/init): 697
+Thread 12 (proc 11:/bin/init): 691
+Thread 13 (proc 12:/bin/init): 68c
+Thread 14 (proc 13:/bin/init): 68d
+Thread 15 (proc 14:/bin/init): 687
+Thread 16 (proc 15:/bin/init): 67f

@@ -53,11 +53,12 @@ static uint buffer[1024 / sizeof(uint)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
 static uint loadAddr = 0xC0000000;
 
-static uint16_t le16tocpu(uint16_t in) {
+/* have to be non-static, because they are declared by ext2.h */
+uint16_t le16tocpu(uint16_t in) {
 	return ((in >> 8) & 0xFF) << 0 |
 			((in >> 0) & 0xFF) << 8;
 }
-static uint32_t le32tocpu(uint32_t in) {
+uint32_t le32tocpu(uint32_t in) {
 	return ((in >> 24) & 0xFF) << 0 |
 			((in >> 16) & 0xFF) << 8 |
 			((in >> 8) & 0xFF) << 16 |

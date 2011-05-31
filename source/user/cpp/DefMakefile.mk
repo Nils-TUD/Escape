@@ -1,6 +1,7 @@
 ROOT = ../../..
 BUILDL = $(BUILD)/user/cpp/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
+MAP = $(BUILD)/user_$(NAME).map
 LIBC = $(ROOT)/lib/c
 LIBCPP = $(ROOT)/lib/cpp
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
@@ -22,11 +23,15 @@ COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
 
 -include $(ROOT)/sysdeps.mk
 
-all:	$(BUILDDIRS) $(BIN)
+all:	$(BUILDDIRS) $(BIN) $(MAP)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
 		@$(CPPC) $(CFLAGS) -o $(BIN) $(COBJ) -L$(ROOT)/../toolchain/$(ARCH)/lib -lstdc++ -lsupc++ $(ADDLIBS);
+
+$(MAP): $(BIN)
+		@echo "	" GEN MAP $@
+		@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -40,4 +45,4 @@ $(BUILDL)/%.o:		%.cpp
 -include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(COBJ) $(DEPS)
+		rm -f $(BIN) $(MAP) $(COBJ) $(DEPS)

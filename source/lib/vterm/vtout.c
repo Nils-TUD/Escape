@@ -163,9 +163,11 @@ void vterm_putchar(sVTerm *vt,char c) {
 
 		case '\a':
 			/* beep */
-			msg.args.arg1 = 1000;
-			msg.args.arg2 = 60;
-			send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
+			if(vt->speaker >= 0) {
+				msg.args.arg1 = 1000;
+				msg.args.arg2 = 60;
+				send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
+			}
 			break;
 
 		case '\b':
@@ -244,9 +246,11 @@ static void vterm_delete(sVTerm *vt,size_t count) {
 	}
 	else {
 		/* beep */
-		msg.args.arg1 = 1000;
-		msg.args.arg2 = 60;
-		send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
+		if(vt->speaker >= 0) {
+			msg.args.arg1 = 1000;
+			msg.args.arg2 = 60;
+			send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
+		}
 	}
 }
 

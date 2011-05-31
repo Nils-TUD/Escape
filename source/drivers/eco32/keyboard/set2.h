@@ -1,5 +1,5 @@
 /**
- * $Id: memclear.c 849 2010-10-04 11:04:51Z nasmussen $
+ * $Id: set1.h 855 2010-10-04 17:09:40Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,22 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
-#include <string.h>
+#ifndef SET2_H_
+#define SET2_H_
 
-void memclear(void *addr,size_t count) {
-	uint *waddr;
-	char *baddr = (char*)addr;
-	while((uint)baddr & (sizeof(uint) - 1)) {
-		*baddr++ = 0;
-		count--;
-	}
-	waddr = (uint*)baddr;
-	while(count >= sizeof(uint)) {
-		*waddr++ = 0;
-		count -= sizeof(uint);
-	}
-	baddr = (char*)waddr;
-	while(count-- > 0)
-		*baddr++ = 0;
-}
+#include <esc/common.h>
+
+/**
+ * Converts the given scancode to a keycode
+ *
+ * @param isBreak whether it is a break-keycode
+ * @param keycode the keycode
+ * @param scanCode the received scancode
+ * @return true if it was a keycode
+ */
+bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,uchar scanCode);
+
+#endif /* SET2_H_ */

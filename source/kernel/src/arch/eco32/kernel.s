@@ -38,9 +38,7 @@
 	.global intrpt_andMask
 	.global intrpt_setMask
 
-	.global task_idle
-	.global task_sysStart
-	.global task_userStart
+	.global thread_idle
 	.global	thread_save
 	.global thread_resume
 
@@ -445,18 +443,18 @@ tlb_clearloop:
 	jr		$31
 
 #===========================================
-# Tasks
+# Threads
 #===========================================
 
-# void task_idle(void)
-task_idle:
+# void thread_idle(void)
+thread_idle:
 	# enable interrupts
 	mvfs	$8,FS_PSW
 	or		$8,$8,CINTRPT_FLAG
 	mvts	$8,FS_PSW
 	# loop until an interrupt arrives
-task_idleLoop:
-	j			task_idleLoop
+thread_idleLoop:
+	j			thread_idleLoop
 
 # save a tasks context
 # bool thread_save(sThreadRegs *saveArea)

@@ -401,6 +401,10 @@ int proc_clone(tPid newPid,uint8_t flags) {
 	/* make thread ready */
 	thread_setReady(nt->tid);
 
+#ifdef __eco32__
+	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
+#endif
+
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {
 		/* child */

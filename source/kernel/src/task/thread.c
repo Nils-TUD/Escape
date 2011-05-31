@@ -241,9 +241,6 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 	if(!vfs_createThread(t->tid))
 		goto errAppend;
 
-#ifdef __eco32__
-	debugf("Thread %d (proc %d:%s): %x\n",t->tid,t->proc->pid,t->proc->command,*stackFrame);
-#endif
 	*dst = t;
 	return 0;
 

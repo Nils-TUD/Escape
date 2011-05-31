@@ -28,7 +28,13 @@
 
 #define OCC_MAP_SIZE			512
 #define PAGE_SIZE				4096
-#if DEBUGGING
+
+#ifdef __eco32__
+#define DEBUG_ALLOC_N_FREE		0
+#define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
+/* TODO we need the alignment */
+#define DEBUG_ADD_GUARDS		1
+#elif DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
 #define DEBUG_ADD_GUARDS		1

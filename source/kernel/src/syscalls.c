@@ -66,12 +66,7 @@ static sSyscall syscalls[] = {
 	/* 16 */	{sysc_redirFd,				2},
 	/* 17 */	{sysc_wait,					2},
 	/* 18 */	{sysc_setSigHandler,		2},
-	/* TODO */
-#ifdef __i386__
 	/* 19 */	{sysc_ackSignal,			0},
-#else
-	/* 19 */	{NULL,						0},
-#endif
 	/* 20 */	{sysc_sendSignalTo,			2},
 	/* 21 */	{sysc_exec,					2},
 	/* 22 */	{sysc_fcntl,				3},

@@ -29,7 +29,7 @@ void *memcpy(void *dest,const void *src,size_t len) {
 	if((mod = ((uint)bdest % sizeof(uint))) == ((uint)bsrc % sizeof(uint))) {
 		/* first, bring both on a word-boundary */
 		if(mod) {
-			while(mod++ < sizeof(uint)) {
+			while(len > 0 && mod++ < sizeof(uint)) {
 				*bdest++ = *bsrc++;
 				len--;
 			}

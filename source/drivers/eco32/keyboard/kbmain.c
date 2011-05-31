@@ -131,6 +131,7 @@ static void kbIntrptHandler(int sig) {
 	UNUSED(sig);
 
 	scanCode = kbRegs[KEYBOARD_DATA];
+	/*debugf("sc=%x\n",scanCode);*/
 	/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
 	/* so, simply skip the scancode in this case */
 	if(!moving) {
@@ -140,6 +141,7 @@ static void kbIntrptHandler(int sig) {
 			if(!data.isBreak && data.keycode == VK_F12) {
 				/* start debugger */
 				debug();
+				kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 				return;
 			}
 #endif
@@ -147,5 +149,8 @@ static void kbIntrptHandler(int sig) {
 			rb_write(ibuf,&data);
 		}
 	}
+
+	/* reenable interrupts */
+	kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 }
 

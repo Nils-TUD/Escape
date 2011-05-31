@@ -110,8 +110,8 @@ int main(void) {
 
 static void copy(uint offset,size_t count) {
 	uint16_t *buf = (uint16_t*)(buffer + offset);
-	size_t x = offset % (COLS * 2);
-	size_t y = offset / (COLS * 2);
+	size_t x = (offset / 2) % COLS;
+	size_t y = (offset / 2) / COLS;
 	size_t begin = y;
 	uint32_t *screen = videoData + y * MAX_COLS + x;
 	for(; count > 0 && y < ROWS; y++) {

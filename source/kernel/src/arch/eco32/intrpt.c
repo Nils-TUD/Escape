@@ -5,6 +5,7 @@
 #include <esc/common.h>
 #include <sys/task/signals.h>
 #include <sys/task/timer.h>
+#include <sys/task/uenv.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/dbg/kb.h>
@@ -17,6 +18,8 @@
 #include <sys/util.h>
 
 #define DEBUG_PAGEFAULTS	0
+
+#define PSW_PUM				0x02000000	/* previous value of PSW_UM */
 
 /* interrupt- and exception-numbers */
 #define IRQ_TTY0_XMTR		0
@@ -36,6 +39,10 @@
 #define EXC_TLB_INVALID		23
 #define EXC_ILL_ADDRESS		24
 #define EXC_PRV_ADDRESS		25
+
+#define KEYBOARD_BASE		0xF0200000
+#define KEYBOARD_CTRL		0
+#define KEYBOARD_IEN		0x02
 
 typedef void (*fIntrptHandler)(sIntrptStackFrame *stack);
 typedef struct {
@@ -97,6 +104,16 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 	/* call handler */
 	intrpt->handler(stack);
+
+	/* only handle signals, if we come directly from user-mode */
+	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
+	 * signals in that case, we might cause a thread-switch. this is not always possible! */
+	sThread *t = thread_getRunning();
+	if(t != NULL && (t->tid == IDLE_TID || (stack->psw & PSW_PUM))) {
+		uenv_handleSignal();
+		if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+			uenv_startSignalHandler(stack);
+	}
 }
 
 size_t intrpt_getCount(void) {
@@ -104,7 +121,7 @@ size_t intrpt_getCount(void) {
 }
 
 sIntrptStackFrame *intrpt_getCurStack(void) {
-	return curFrame;
+	return KERNEL_STACK + PAGE_SIZE - 4 - sizeof(sIntrptStackFrame);
 }
 
 static void intrpt_defHandler(sIntrptStackFrame *stack) {
@@ -165,6 +182,11 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_irqKB(sIntrptStackFrame *stack) {
+	/* we have to disable interrupts until the device has handled the request */
+	/* otherwise we would get into an interrupt loop */
+	uint32_t *kbRegs = (uint32_t*)KEYBOARD_BASE;
+	kbRegs[KEYBOARD_CTRL] &= ~KEYBOARD_IEN;
+
 #if 0
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
 	/* (with a present keyboard-driver we would steal him the scancodes) */

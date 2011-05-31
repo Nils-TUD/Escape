@@ -16,3 +16,7 @@ void locku(tULock *l) {
 		: : "D" (l)
 	);
 }
+
+void unlocku(tULock *l) {
+	*l = false;
+}

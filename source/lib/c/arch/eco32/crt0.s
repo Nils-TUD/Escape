@@ -74,7 +74,7 @@ threadExit:
 
 # all signal-handler return to this "function"
 sigRetFunc:
-	#mov		SYSCALL_ACKSIG,%eax
-	#int		SYSCALL_IRQ
+	add		$2,$0,SYSCALL_ACKSIG
+	trap
 	# never reached
 .endif

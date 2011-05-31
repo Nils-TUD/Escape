@@ -317,8 +317,8 @@ static void createVFSEntry(const char *name,bool isPart) {
 		fprintf(f,"%-15s%d\n","Sectors:",(diskCap / SECTOR_SIZE) - START_SECTOR);
 	}
 	else {
-		fprintf(f,"%-15s%d\n","Vendor:","THM");
-		fprintf(f,"%-15s%d\n","Model:","ECO32 Disk");
+		fprintf(f,"%-15s%s\n","Vendor:","THM");
+		fprintf(f,"%-15s%s\n","Model:","ECO32 Disk");
 		fprintf(f,"%-15s%d\n","Sectors:",diskCap / SECTOR_SIZE);
 	}
 	fclose(f);

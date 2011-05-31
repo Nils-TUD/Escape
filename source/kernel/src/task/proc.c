@@ -451,6 +451,10 @@ int proc_startThread(uintptr_t entryPoint,const void *arg) {
 	else
 		thread_setReady(nt->tid);
 
+#ifdef __eco32__
+	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
+#endif
+
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {
 		sIntrptStackFrame *istack = intrpt_getCurStack();

@@ -113,10 +113,6 @@ int unlock(uint ident) {
 	return _unlock(ident,false);
 }
 
-void unlocku(tULock *l) {
-	*l = false;
-}
-
 int unlockg(uint ident) {
 	return _unlock(ident,true);
 }

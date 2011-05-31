@@ -105,8 +105,8 @@ bool vterm_initAll(tFD *ids,sVTermCfg *cfg) {
 		vterms[i].setCursor = vterm_setCursor;
 	}
 
-	/*if(startThread(vterm_dateThread,NULL) < 0)
-		error("Unable to start date-thread");*/
+	if(startThread(vterm_dateThread,NULL) < 0)
+		error("Unable to start date-thread");
 	return true;
 }
 

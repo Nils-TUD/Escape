@@ -10,7 +10,7 @@
 #include "../../../../drivers/common/fs/ext2/ext2.h"
 #include <stdarg.h>
 
-#define PROG_COUNT			3
+#define PROG_COUNT			4
 #define SEC_SIZE			512								/* disk sector size in bytes */
 #define BLOCK_SIZE			((size_t)(1024 << le32tocpu(e.superBlock.logBlockSize)))
 #define SPB					(BLOCK_SIZE / SEC_SIZE)			/* sectors per block */
@@ -37,8 +37,8 @@ extern int sctcapctl(void);
 static sLoadProg progs[MAX_PROG_COUNT] = {
 	{"/boot/kernel.bin","/boot/kernel.bin",BL_K_ID,0,0},
 	{"/sbin/disk","/sbin/disk /system/devices/disk",BL_DISK_ID,0,0},
+	{"/sbin/rtc","/sbin/rtc /dev/rtc",BL_RTC_ID,0,0},
 	{"/sbin/fs","/sbin/fs /dev/fs /dev/hda1 ext2",BL_FS_ID,0,0},
-	/*{"/sbin/rtc.bin",BL_RTC_ID,0,0}*/
 };
 static sBootInfo bootinfo;
 

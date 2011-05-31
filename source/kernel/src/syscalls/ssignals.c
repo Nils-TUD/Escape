@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/signals.h>
 #include <sys/task/thread.h>
+#include <sys/task/uenv.h>
 #include <sys/mem/paging.h>
 #include <sys/syscalls/signals.h>
 #include <sys/syscalls.h>
@@ -56,32 +57,13 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-/* TODO */
-#ifdef __i386__
 void sysc_ackSignal(sIntrptStackFrame *stack) {
-	uint32_t *esp;
+	int res;
 	sThread *t = thread_getRunning();
 	sig_ackHandling(t->tid);
-
-	esp = (uint32_t*)stack->uesp;
-	if(!paging_isRangeUserReadable((uintptr_t)esp,sizeof(uint32_t) * 9))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	/* remove arg */
-	esp += 1;
-	/* restore regs */
-	stack->esi = *esp++;
-	stack->edi = *esp++;
-	stack->edx = *esp++;
-	stack->ecx = *esp++;
-	stack->ebx = *esp++;
-	stack->eax = *esp++;
-	stack->eflags = *esp++;
-	/* return */
-	stack->eip = *esp++;
-	stack->uesp = (uintptr_t)esp;
+	if((res = uenv_finishSignalHandler(stack)) < 0)
+		SYSC_ERROR(stack,res);
 }
-#endif
 
 void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);

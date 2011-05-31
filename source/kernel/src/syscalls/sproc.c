@@ -261,6 +261,10 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
+#ifdef __eco32__
+	debugf("EXEC: proc %d:%s\n",p->pid,p->command);
+#endif
+
 	/* make process ready */
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;

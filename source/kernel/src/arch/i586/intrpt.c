@@ -30,6 +30,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
+#include <sys/task/uenv.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
 #include <sys/dbg/kb.h>
@@ -108,13 +109,6 @@ typedef struct {
 	uint16_t size;
 	uint32_t address;
 } A_PACKED sIDTPtr;
-
-/* storage for "delayed" signal handling */
-typedef struct {
-	uint8_t active;
-	tTid tid;
-	tSig sig;
-} sSignalData;
 
 typedef void (*fIntrptHandler)(sIntrptStackFrame *stack);
 typedef struct {
@@ -208,18 +202,6 @@ static void intrpt_setIDT(size_t number,fISR handler,uint8_t dpl);
 static void intrpt_eoi(uint32_t intrptNo);
 
 /**
- * Checks for signals and notifies the corresponding process, if necessary
- */
-static void intrpt_handleSignal(void);
-
-/**
- * Finishes the signal-handling (does the user-stack-manipulation and so on)
- *
- * @param stack the interrupt-stack
- */
-static void intrpt_handleSignalFinish(sIntrptStackFrame *stack);
-
-/**
  * The exception and interrupt-handlers
  */
 static void intrpt_exFatal(sIntrptStackFrame *stack);
@@ -296,9 +278,6 @@ static tPid lastPFProc = INVALID_PID;
 
 /* pointer to the current interrupt-stack */
 static sIntrptStackFrame *curIntrptStack = NULL;
-
-/* temporary storage for signal-handling */
-static sSignalData signalData;
 
 /* the interrupt descriptor table */
 static sIDTEntry idt[IDT_COUNT];
@@ -386,82 +365,6 @@ sIntrptStackFrame *intrpt_getCurStack(void) {
 	return curIntrptStack;
 }
 
-static void intrpt_handleSignal(void) {
-	tTid tid;
-	tSig sig;
-	if(sig_hasSignal(&sig,&tid)) {
-		signalData.active = 1;
-		signalData.sig = sig;
-		signalData.tid = tid;
-
-		/* a small trick: we store the signal to handle and manipulate the user-stack
-		 * and so on later. if the thread is currently running everything is fine. we return
-		 * from here and intrpt_handleSignalFinish() will be called.
-		 * if the target-thread is not running we switch to him now. the thread is somewhere
-		 * in the kernel but he will leave the kernel IN EVERY CASE at the end of the interrupt-
-		 * handler. So if we do the signal-stuff at the end we'll get there and will
-		 * manipulate the user-stack.
-		 * This is simpler than mapping the user-stack and kernel-stack of the other thread
-		 * in the current page-dir and so on :)
-		 */
-		if(thread_getRunning()->tid != tid) {
-			/* ensure that the thread is ready */
-			/* this may fail because perhaps we're involved in a swapping-operation or similar */
-			/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
-			 * about that) */
-			if(thread_setReady(tid))
-				thread_switchTo(tid);
-		}
-	}
-}
-
-static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
-	fSignal handler;
-	uint32_t *esp = (uint32_t*)stack->uesp;
-
-	/* release signal-data */
-	signalData.active = 0;
-
-	/* if the thread_switchTo() wasn't successfull it means that we have tried to switch to
-	 * multiple threads during idle. So we ignore it and try to give the signal later to the thread */
-	if(t->tid != signalData.tid)
-		return;
-
-	/* extend the stack, if necessary */
-	if(thread_extendStack((uintptr_t)(esp - 11)) < 0) {
-		/* TODO later we should kill the process here! */
-		util_panic("Thread %d: stack overflow",t->tid);
-		return;
-	}
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)(esp - 11),10 * sizeof(uint32_t));
-
-	/* thread_extendStack() and paging_isRangeUserWritable() may cause a thread-switch. therefore
-	 * we may have delivered another signal in the meanwhile... */
-	if(t->tid != signalData.tid)
-		return;
-
-	handler = sig_startHandling(signalData.tid,signalData.sig);
-	/* the ret-instruction of sigRet() should go to the old eip */
-	*--esp = stack->eip;
-	/* save regs */
-	*--esp = stack->eflags;
-	*--esp = stack->eax;
-	*--esp = stack->ebx;
-	*--esp = stack->ecx;
-	*--esp = stack->edx;
-	*--esp = stack->edi;
-	*--esp = stack->esi;
-	/* signal-number as arguments */
-	*--esp = signalData.sig;
-	/* sigRet will remove the argument, restore the register,
-	 * acknoledge the signal and return to eip */
-	*--esp = t->proc->sigRetAddr;
-	stack->eip = (uintptr_t)handler;
-	stack->uesp = (uint32_t)esp;
-}
-
 void intrpt_handler(sIntrptStackFrame *stack) {
 	uint64_t cycles;
 	sThread *t = thread_getRunning();
@@ -490,12 +393,11 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 				intrpt->name,stack->eip,t->proc->pid,t->proc->command);
 	}
 
-	/* handle signal, if not already doing */
-	if(signalData.active == 0)
-		intrpt_handleSignal();
+	/* handle signal */
+	uenv_handleSignal();
 	/* don't try to deliver the signal if we're idling currently */
-	if(t->tid != IDLE_TID && signalData.active == 1)
-		intrpt_handleSignalFinish(stack);
+	if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+		uenv_startSignalHandler(stack);
 
 	/* kernel-mode ends */
 	if(t->tid == IDLE_TID || stack->eip < KERNEL_AREA_V_ADDR) {

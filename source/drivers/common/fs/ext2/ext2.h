@@ -23,8 +23,8 @@
 #include <esc/common.h>
 #include <esc/sllist.h>
 #include <esc/fsinterface.h>
+#include <esc/endian.h>
 #include "../mount.h"
-#include "../conv.h"
 #include "../blockcache.h"
 #include "../threadpool.h"
 

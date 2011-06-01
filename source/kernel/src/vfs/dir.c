@@ -148,11 +148,13 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,ui
 					continue;
 				}
 				len = strlen(n->name);
-				dirEntry->nodeNo = vfs_node_getNo(n);
-				dirEntry->nameLen = len;
-				dirEntry->recLen = sizeof(sVFSDirEntry) + len;
+				/* unfortunatly, we have to convert the endianess here, because readdir() expects
+				 * that its encoded in little endian */
+				dirEntry->nodeNo = cputole32(vfs_node_getNo(n));
+				dirEntry->nameLen = cputole16(len);
+				dirEntry->recLen = cputole16(sizeof(sVFSDirEntry) + len);
 				memcpy(dirEntry + 1,n->name,len);
-				dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + dirEntry->recLen);
+				dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
 				n = n->next;
 			}
 		}

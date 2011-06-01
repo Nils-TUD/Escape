@@ -21,13 +21,13 @@
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/thread.h>
+#include <esc/endian.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 
 #include "ext2.h"
 #include "../blockcache.h"
-#include "../conv.h"
 #include "rw.h"
 #include "inodecache.h"
 

@@ -19,13 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/endian.h>
 #include <string.h>
 #include <errors.h>
 #include <stdlib.h>
 
 #include "ext2.h"
 #include "../mount.h"
-#include "../conv.h"
 #include "path.h"
 #include "inode.h"
 #include "inodecache.h"

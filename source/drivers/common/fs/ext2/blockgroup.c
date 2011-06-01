@@ -20,13 +20,13 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/thread.h>
+#include <esc/endian.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "ext2.h"
 #include "../blockcache.h"
-#include "../conv.h"
 #include "blockgroup.h"
 #include "rw.h"
 

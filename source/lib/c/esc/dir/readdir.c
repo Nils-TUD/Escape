@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/dir.h>
+#include <esc/endian.h>
 #include <stdio.h>
 
 #define DIRE_SIZE	(sizeof(sDirEntry) - (MAX_NAME_LEN + 1))
@@ -29,6 +30,10 @@ DIR *opendir(const char *path) {
 
 bool readdir(DIR *dir,sDirEntry *e) {
 	if(fread(e,1,DIRE_SIZE,dir) > 0) {
+		/* convert endianess */
+		e->nameLen = le16tocpu(e->nameLen);
+		e->recLen = le16tocpu(e->recLen);
+		e->nodeNo = le32tocpu(e->nodeNo);
 		size_t len = e->nameLen;
 		/* ensure that the name is short enough */
 		if(len >= MAX_NAME_LEN)

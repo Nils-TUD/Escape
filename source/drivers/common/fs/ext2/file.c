@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
+#include <esc/endian.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>
@@ -27,7 +28,6 @@
 
 #include "ext2.h"
 #include "../blockcache.h"
-#include "../conv.h"
 #include "rw.h"
 #include "inode.h"
 #include "inodecache.h"

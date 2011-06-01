@@ -5,6 +5,7 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
+#include <esc/endian.h>
 #include <sys/arch/eco32/boot.h>
 #include <sys/task/elf.h>
 #include "../../../../drivers/common/fs/ext2/ext2.h"
@@ -53,18 +54,6 @@ static uint buffer[1024 / sizeof(uint)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
 static uint loadAddr = 0xC0000000;
 
-/* have to be non-static, because they are declared by ext2.h */
-uint16_t le16tocpu(uint16_t in) {
-	return ((in >> 8) & 0xFF) << 0 |
-			((in >> 0) & 0xFF) << 8;
-}
-uint32_t le32tocpu(uint32_t in) {
-	return ((in >> 24) & 0xFF) << 0 |
-			((in >> 16) & 0xFF) << 8 |
-			((in >> 8) & 0xFF) << 16 |
-			((in >> 0) & 0xFF) << 24;
-}
-
 static int strncmp(const char *str1,const char *str2,size_t count) {
 	ssize_t rem = count;
 	while(*str1 && *str2 && rem-- > 0) {
@@ -76,19 +65,6 @@ static int strncmp(const char *str1,const char *str2,size_t count) {
 	if(*str1 && !*str2)
 		return 1;
 	return -1;
-}
-static void *memcpy(void *dst,const void *src,size_t count) {
-	char *csrc = (char*)src;
-	char *cdst = (char*)dst;
-	while(count-- > 0)
-		*cdst++ = *csrc++;
-	return dst;
-}
-static void *memclear(void *dst,size_t count) {
-	char *cdst = (char*)dst;
-	while(count-- > 0)
-		*cdst++ = 0;
-	return dst;
 }
 
 static void halt(const char *s,...) {

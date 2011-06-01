@@ -18,13 +18,13 @@
  */
 
 #include <esc/common.h>
+#include <esc/endian.h>
 #include <stdlib.h>
 #include <errors.h>
 #include <string.h>
 #include <assert.h>
 
 #include "ext2.h"
-#include "../conv.h"
 #include "dir.h"
 #include "file.h"
 #include "link.h"

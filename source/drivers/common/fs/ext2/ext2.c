@@ -22,6 +22,7 @@
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/dir.h>
+#include <esc/endian.h>
 #include <errors.h>
 #include <string.h>
 #include <stdio.h>
@@ -29,7 +30,6 @@
 
 #include "ext2.h"
 #include "../blockcache.h"
-#include "../conv.h"
 #include "inodecache.h"
 #include "blockgroup.h"
 #include "superblock.h"

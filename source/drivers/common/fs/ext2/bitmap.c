@@ -19,11 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
+#include <esc/endian.h>
 #include <assert.h>
 
 #include "ext2.h"
 #include "../blockcache.h"
-#include "../conv.h"
 #include "bitmap.h"
 #include "superblock.h"
 

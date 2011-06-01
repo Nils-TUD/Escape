@@ -19,12 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
+#include <esc/endian.h>
 #include <errors.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "ext2.h"
-#include "../conv.h"
 #include "file.h"
 #include "link.h"
 #include "dir.h"

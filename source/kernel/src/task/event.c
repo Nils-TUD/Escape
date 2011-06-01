@@ -18,28 +18,41 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/kheap.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/task/event.h>
 #include <sys/task/sched.h>
+#include <sys/task/thread.h>
 #include <esc/sllist.h>
 #include <sys/video.h>
 #include <assert.h>
 
-typedef struct {
+/* TODO why do more than 256 not work?!?? */
+#define MAX_WAIT_COUNT		256
+
+typedef struct sWait {
 	tTid tid;
 	tEvObj object;
+	struct sWait *next;
 } sWait;
 
-/* TODO the wait-structs should be allocated statically and use a freelist */
-/* using the heap is too expensive for this central module, I think */
+static sWait *ev_allocWait(void);
+static void ev_freeWait(sWait *w);
 
+static sWait waits[MAX_WAIT_COUNT];
+static sWait *waitFree;
 static sSLList evlists[EV_COUNT];
 
 void ev_init(void) {
 	size_t i;
 	for(i = 0; i < EV_COUNT; i++)
 		sll_init(evlists + i,slln_allocNode,slln_freeNode);
+
+	waitFree = waits;
+	waitFree->next = NULL;
+	for(i = 1; i < MAX_WAIT_COUNT; i++) {
+		waits[i].next = waitFree;
+		waitFree = waits + i;
+	}
 }
 
 bool ev_waitsFor(tTid tid,uint events) {
@@ -50,13 +63,13 @@ bool ev_waitsFor(tTid tid,uint events) {
 bool ev_wait(tTid tid,size_t evi,tEvObj object) {
 	sThread *t = thread_getById(tid);
 	sSLList *list = evlists + evi;
-	sWait *w = (sWait*)kheap_alloc(sizeof(sWait));
+	sWait *w = ev_allocWait();
 	if(!w)
 		return false;
 	w->tid = tid;
 	w->object = object;
 	if(!sll_append(list,w)) {
-		kheap_free(w);
+		ev_freeWait(w);
 		return false;
 	}
 	t->events |= 1 << evi;
@@ -137,7 +150,7 @@ void ev_removeThread(tTid tid) {
 					if(w->tid == tid) {
 						tn = n->next;
 						sll_removeNode(list,n,p);
-						kheap_free(w);
+						ev_freeWait(w);
 						n = tn;
 					}
 					else {
@@ -151,6 +164,19 @@ void ev_removeThread(tTid tid) {
 		sched_setReady(t);
 		assert(t->events == 0);
 	}
+}
+
+static sWait *ev_allocWait(void) {
+	sWait *res = waitFree;
+	if(res == NULL)
+		return NULL;
+	waitFree = waitFree->next;
+	return res;
+}
+
+static void ev_freeWait(sWait *w) {
+	w->next = waitFree;
+	waitFree = w;
 }
 
 #if DEBUGGING

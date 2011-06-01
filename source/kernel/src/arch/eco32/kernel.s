@@ -24,8 +24,9 @@
 	.global cpu_getBadAddr
 
 	.global start
-	.global tlb_remove
+	.global tlb_get
 	.global tlb_set
+	.global tlb_remove
 	.global tlb_clear
 	.global tlb_replace
 
@@ -367,6 +368,16 @@ cpu_getBadAddr:
 #===========================================
 # TLB
 #===========================================
+
+# void tlb_get(int index,uint *entryHi,uint *entryLo)
+tlb_get:
+	mvts	$4,FS_TLB_INDEX
+	tbri
+	mvfs	$8,FS_TLB_EHIGH
+	stw		$8,$5,0
+	mvfs	$8,FS_TLB_ELOW
+	stw		$8,$6,0
+	jr		$31
 
 # tlb_set may NOT use the stack! (see resume)
 # void tlb_set(int index,unsigned int entryHi,unsigned int entryLo)

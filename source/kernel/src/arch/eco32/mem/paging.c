@@ -34,6 +34,9 @@
 #define PG_WRITABLE_SHIFT	0
 #define PG_PRESENT_SHIFT	2
 
+#define TLB_SIZE			32
+#define TLB_FIXED			4
+
 #define PAGE_DIR_DIRMAP		(curPDir | DIR_MAPPED_SPACE)
 #define PAGE_DIR_DIRMAP_OF(pdir) (pdir | DIR_MAPPED_SPACE)
 
@@ -74,6 +77,11 @@ typedef struct {
 } sPTEntry;
 
 
+/**
+ * Fetches the entry at index <index> from the TLB and puts the virtual address into *entryHi and
+ * the physical address including flags into *entryLo.
+ */
+extern void tlb_get(int index,uint *entryHi,uint *entryLo);
 /**
  * Removes the entry for <addr> from the TLB
  */
@@ -534,17 +542,16 @@ void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
 #endif
 
 static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables) {
-	uintptr_t end;
-	/* TODO its better to loop through all tlb-entries */
+	int i;
+	uintptr_t mapAddr = ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	/* to beginning of page-table */
 	virt &= ~(PT_ENTRY_COUNT * PAGE_SIZE - 1);
-	end = virt + PT_ENTRY_COUNT * PAGE_SIZE;
-	/* flush page-table in mapped area */
-	tlb_remove(ADDR_TO_MAPPED_CUSTOM(ptables,virt));
-	/* flush pages in the page-table */
-	while(virt < end) {
-		tlb_remove(virt);
-		virt += PAGE_SIZE;
+	for(i = TLB_FIXED; i < TLB_SIZE; i++) {
+		uint entryHi,entryLo;
+		tlb_get(i,&entryHi,&entryLo);
+		/* affected by the page-table? */
+		if((entryHi >= virt && entryHi < virt + PAGE_SIZE * PT_ENTRY_COUNT) || entryHi == mapAddr)
+			tlb_set(i,DIR_MAPPED_SPACE,0);
 	}
 }
 
@@ -568,6 +575,17 @@ static uintptr_t paging_getPTables(tPageDir pdir) {
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
+
+void paging_dbg_printTLB(void) {
+	int i;
+	vid_printf("TLB:\n");
+	for(i = 0; i < TLB_SIZE; i++) {
+		uint entryHi,entryLo;
+		tlb_get(i,&entryHi,&entryLo);
+		vid_printf("\t%d: %08x %08x %c%c\n",i,entryHi,entryLo,
+			(entryLo & 0x2) ? 'w' : '-',(entryLo & 0x1) ? 'v' : '-');
+	}
+}
 
 size_t paging_dbg_getPageCount(void) {
 	size_t i,x,count = 0;

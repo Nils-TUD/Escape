@@ -131,7 +131,6 @@ static void kbIntrptHandler(int sig) {
 	UNUSED(sig);
 
 	scanCode = kbRegs[KEYBOARD_DATA];
-	/*debugf("sc=%x\n",scanCode);*/
 	/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
 	/* so, simply skip the scancode in this case */
 	if(!moving) {

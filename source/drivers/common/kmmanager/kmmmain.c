@@ -105,7 +105,6 @@ int main(void) {
 			ssize_t count;
 			bool readable = false;
 			/* don't block here since there may be waiting clients.. */
-			/*debugf("** rc **\n");*/
 			while((count = RETRY(read(kbFd,kbData,sizeof(kbData)))) > 0) {
 				count /= sizeof(sKbData);
 				while(count-- > 0) {

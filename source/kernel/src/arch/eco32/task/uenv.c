@@ -79,13 +79,13 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 		return;
 
 	/* extend the stack, if necessary */
-	if(thread_extendStack((uintptr_t)(sp - REG_COUNT - 1)) < 0) {
+	if(thread_extendStack((uintptr_t)(sp - REG_COUNT)) < 0) {
 		/* TODO later we should kill the process here! */
 		util_panic("Thread %d: stack overflow",t->tid);
 		return;
 	}
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)(sp - REG_COUNT - 1),REG_COUNT * sizeof(uint32_t));
+	paging_isRangeUserWritable((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t));
 
 	/* thread_extendStack() and paging_isRangeUserWritable() may cause a thread-switch. therefore
 	 * we may have delivered another signal in the meanwhile... */
@@ -98,11 +98,11 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 		stack->r[30] -= 4;
 
 	handler = sig_startHandling(signalData.tid,signalData.sig);
-	memcpy(sp - REG_COUNT - 1,stack->r,REG_COUNT * sizeof(uint32_t));
+	memcpy(sp - REG_COUNT,stack->r,REG_COUNT * sizeof(uint32_t));
 	/* signal-number as arguments */
 	stack->r[4] = signalData.sig;
 	/* set new stack-pointer */
-	stack->r[29] = (uint32_t)(sp - REG_COUNT - 2);
+	stack->r[29] = (uint32_t)(sp - REG_COUNT);
 	/* the process should continue here */
 	stack->r[30] = (uint32_t)handler;
 	/* and return here after handling the signal */
@@ -114,10 +114,10 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
 	uint32_t *regs;
 	uint32_t *sp = (uint32_t*)stack->r[29];
-	if(!paging_isRangeUserReadable((uintptr_t)(sp + 1),REG_COUNT * sizeof(uint32_t)))
+	if(!paging_isRangeUserReadable((uintptr_t)sp,REG_COUNT * sizeof(uint32_t)))
 		return ERR_INVALID_ARGS;
 
-	memcpy(stack->r,sp + 1,REG_COUNT * sizeof(uint32_t));
+	memcpy(stack->r,sp,REG_COUNT * sizeof(uint32_t));
 	/* reenable device-interrupts */
 	switch(signal) {
 		case SIG_INTRPT_KB:

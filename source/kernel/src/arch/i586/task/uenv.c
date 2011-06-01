@@ -110,7 +110,8 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 	stack->uesp = (uint32_t)esp;
 }
 
-int uenv_finishSignalHandler(sIntrptStackFrame *stack) {
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
+	UNUSED(signal);
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	if(!paging_isRangeUserReadable((uintptr_t)esp,sizeof(uint32_t) * 9))
 		return ERR_INVALID_ARGS;

@@ -99,8 +99,6 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	sInterrupt *intrpt = intrptList + (stack->irqNo & 0x1F);
 	curFrame = stack;
 	irqCount++;
-	if(intrpt->signal)
-		sig_addSignal(intrpt->signal);
 
 	/* call handler */
 	intrpt->handler(stack);
@@ -177,6 +175,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 
 static void intrpt_irqTimer(sIntrptStackFrame *stack) {
 	UNUSED(stack);
+	sig_addSignal(SIG_INTRPT_TIMER);
 	timer_intrpt();
 	timer_ackIntrpt();
 }
@@ -186,6 +185,12 @@ static void intrpt_irqKB(sIntrptStackFrame *stack) {
 	/* otherwise we would get into an interrupt loop */
 	uint32_t *kbRegs = (uint32_t*)KEYBOARD_BASE;
 	kbRegs[KEYBOARD_CTRL] &= ~KEYBOARD_IEN;
+	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
+	 * call uenv_handleSignal(), which might cause a thread-switch */
+	if(!sig_addSignal(SIG_INTRPT_KB)) {
+		/* if there is no driver that handles the signal, reenable interrupts */
+		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
+	}
 
 #if 0
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */

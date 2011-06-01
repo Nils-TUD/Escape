@@ -149,8 +149,5 @@ static void kbIntrptHandler(int sig) {
 			rb_write(ibuf,&data);
 		}
 	}
-
-	/* reenable interrupts */
-	kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 }
 

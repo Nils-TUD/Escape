@@ -138,9 +138,9 @@ void sig_addSignalFor(tPid pid,tSig signal);
  * Adds the given signal to all threads that have announced a handler for it
  *
  * @param signal the signal
- * @return the thread-id to which we should switch now or INVALID_TID if we should do this later
+ * @return whether the signal has been delivered to somebody
  */
-void sig_addSignal(tSig signal);
+bool sig_addSignal(tSig signal);
 
 /**
  * Starts handling the given signal. That means the signal will be marked as "active" until
@@ -156,8 +156,9 @@ fSignal sig_startHandling(tTid tid,tSig signal);
  * Acknoledges the current signal with given thread (marks handling as finished)
  *
  * @param tid the thread-id
+ * @return the handled signal
  */
-void sig_ackHandling(tTid tid);
+tSig sig_ackHandling(tTid tid);
 
 
 #if DEBUGGING

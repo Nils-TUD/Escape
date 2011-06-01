@@ -33,9 +33,10 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack);
  * Finishes the signal-handling-process
  *
  * @param stack the interrupt-stack-frame
+ * @param signal the handled signal
  * @return 0 on success
  */
-int uenv_finishSignalHandler(sIntrptStackFrame *stack);
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal);
 
 /**
  * Setups the user-stack for given interrupt-stack, when starting the current process

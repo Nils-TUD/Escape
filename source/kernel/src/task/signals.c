@@ -157,13 +157,17 @@ void sig_addSignalFor(tPid pid,tSig signal) {
 		proc_terminate(p,1,signal);
 }
 
-void sig_addSignal(tSig signal) {
+bool sig_addSignal(tSig signal) {
 	sSLNode *n;
+	bool res = false;
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
 		sSigThread *st = (sSigThread*)n->data;
-		if(st->signals[signal].handler && st->signals[signal].handler != SIG_IGN)
+		if(st->signals[signal].handler && st->signals[signal].handler != SIG_IGN) {
 			sig_add(st,signal);
+			res = true;
+		}
 	}
+	return res;
 }
 
 fSignal sig_startHandling(tTid tid,tSig signal) {
@@ -177,12 +181,15 @@ fSignal sig_startHandling(tTid tid,tSig signal) {
 	return t->signals[signal].handler;
 }
 
-void sig_ackHandling(tTid tid) {
+tSig sig_ackHandling(tTid tid) {
+	tSig res;
 	sSigThread *t = sig_getThread(tid,false);
 	assert(t != NULL);
 	vassert(t->signal != 0,"No signal handling");
 	vassert(sig_canHandle(t->signal),"Unable to handle signal %d",t->signal);
+	res = t->signal;
 	t->signal = 0;
+	return res;
 }
 
 static bool sig_isFatal(tSig sig) {

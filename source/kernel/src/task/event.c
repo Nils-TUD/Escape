@@ -31,6 +31,9 @@ typedef struct {
 	tEvObj object;
 } sWait;
 
+/* TODO the wait-structs should be allocated statically and use a freelist */
+/* using the heap is too expensive for this central module, I think */
+
 static sSLList evlists[EV_COUNT];
 
 void ev_init(void) {

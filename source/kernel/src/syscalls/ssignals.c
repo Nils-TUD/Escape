@@ -60,8 +60,8 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 void sysc_ackSignal(sIntrptStackFrame *stack) {
 	int res;
 	sThread *t = thread_getRunning();
-	sig_ackHandling(t->tid);
-	if((res = uenv_finishSignalHandler(stack)) < 0)
+	tSig signal = sig_ackHandling(t->tid);
+	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
 }
 

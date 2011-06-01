@@ -103,7 +103,7 @@ static void test_1(void) {
 
 	proc_kill(clone);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_2(void) {
@@ -142,5 +142,5 @@ static void test_2(void) {
 	vmm_remove(p,rno);
 	test_finish();
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

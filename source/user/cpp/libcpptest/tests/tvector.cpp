@@ -71,7 +71,7 @@ static void test_constr(void) {
 	for(size_t i = 0; i < v4.size(); i++)
 		test_assertInt(v4[i],v3[i]);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_assign(void) {
@@ -102,7 +102,7 @@ static void test_assign(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_iterators(void) {
@@ -120,7 +120,7 @@ static void test_iterators(void) {
 	for(vector<int>::reverse_iterator it = v1.rbegin(); it != v1.rend(); it++)
 		test_assertInt(*it,i--);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_insert(void) {
@@ -191,7 +191,7 @@ static void test_insert(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_at(void) {
@@ -219,7 +219,7 @@ static void test_at(void) {
 		test_assertTrue(true);
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_erase(void) {
@@ -261,5 +261,5 @@ static void test_erase(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

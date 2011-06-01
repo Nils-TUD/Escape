@@ -86,7 +86,7 @@ static void test_1(void) {
 	if(!res || kheap_getFreeMem() != free || len != 0)
 		test_caseFailed("Got wrong element, elements not removed or memory not freed");
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }
 
 static void test_2(void) {
@@ -109,7 +109,7 @@ static void test_2(void) {
 	if(kheap_getFreeMem() < free || len != 0)
 		test_caseFailed("Elements not removed or memory not freed");
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }
 
 static void test_3(void) {
@@ -133,7 +133,7 @@ static void test_3(void) {
 	if(kheap_getFreeMem() < free || len != 0)
 		test_caseFailed("Elements not removed or memory not freed");
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }
 
 static void test_4(void) {
@@ -152,7 +152,7 @@ static void test_4(void) {
 	if(kheap_getFreeMem() < free)
 		test_caseFailed("Memory not freed");
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }
 
 static void test_5(void) {
@@ -189,7 +189,7 @@ static void test_5(void) {
 	if(!res || kheap_getFreeMem() < free)
 		test_caseFailed("Insert wrong or memory not freed");
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }
 
 static void test_6(void) {
@@ -226,7 +226,7 @@ static void test_6(void) {
 	if(!res || kheap_getFreeMem() < free)
 		test_caseFailed("Set wrong or Memory not freed");
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }
 
 static void test_7(void) {
@@ -251,7 +251,7 @@ static void test_7(void) {
 		test_caseFailed("Memory not freed (before=%d, after=%d), used=%d",free,
 				kheap_getFreeMem(),kheap_getUsedMem());
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }
 
 static void test_8(void) {
@@ -275,7 +275,7 @@ static void test_8(void) {
 	}
 	sll_destroy(list,false);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_9(void) {
@@ -297,7 +297,7 @@ static void test_9(void) {
 	test_assertPtr(sll_nodeWith(list,(void*)0x789),sll_nodeAt(list,2));
 	test_assertPtr(sll_nodeWith(list,(void*)0x123123),NULL);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_10(void) {
@@ -320,5 +320,5 @@ static void test_10(void) {
 	l2 = sll_clone(l1);
 	test_assertUInt(sll_length(l2),0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

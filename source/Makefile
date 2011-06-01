@@ -11,6 +11,7 @@ DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
+ISO_TEST = $(BUILDDIR)/cd_test.iso
 VBHDDTMP = $(BUILDDIR)/vbhd.bin
 VBHDD = $(BUILDDIR)/vbhd.vdi
 VMDISK = $(abspath vmware/vmwarehddimg.vmdk)
@@ -22,7 +23,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 # simulators
 KVM = -enable-kvm
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 60 -localtime
+QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 60 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
@@ -77,8 +78,7 @@ export SUDO=sudo
 
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
-	#DIRS = tools dist lib drivers user kernel/src kernel/test
-	DIRS = tools dist lib drivers user kernel/src
+	DIRS = tools dist lib drivers user kernel/src kernel/test
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
@@ -181,12 +181,16 @@ mmix:	all hdd
 mmixd:	all hdd
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
 
-eco:	all hdd
+eco:	all hdd prepareRun
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
-			-m $(BUILD)/kernel.map $(BUILD)/driver_keyboard.map -n
+			-m $(BUILD)/kernel.map -n
+
+teste:	all hdd prepareTest
+		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
+			-m $(BUILD)/kernel_test.map -n
 
 qemu:	all prepareQemu prepareRun
-		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1
+		$(QEMU) $(QEMUARGS) -cdrom $(ISO) $(KVM) > log.txt 2>&1
 
 bochs: all prepareBochs prepareRun
 		bochs -f bochs.cfg -q
@@ -198,7 +202,7 @@ vbox: all prepareVbox prepareRun
 		VBoxSDL -startvm "$(VBOXOSTITLE)"
 
 debug: all prepareQemu prepareRun
-		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
+		$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
 		sleep 1;
 		/usr/local/bin/gdbtui --command=gdb.start
 
@@ -211,13 +215,13 @@ debugbt:	all prepareBochs prepareRun
 		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 debugm: all prepareQemu prepareRun
-		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
+		$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
 
 debugt: all prepareQemu prepareTest
-		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
+		$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
 
-test: all prepareQemu prepareTest
-		$(QEMU) $(QEMUARGS) > log.txt 2>&1
+testq: all prepareQemuTest
+		$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) > log.txt 2>&1
 
 testbochs: all prepareBochs prepareTest
 		bochs -f bochs.cfg -q
@@ -243,22 +247,21 @@ prepareVmware: cd $(VMDISK)
 		sudo service qemu-kvm stop || true # vmware doesn't like kvm :/
 		tools/vmwarecd.sh vmware/escape.vmx $(ISO)
 
+prepareQemuTest:
+		sudo service qemu-kvm start || true
+		tools/iso.sh test
+
+prepareEcoTest:
+		tools/disk.sh test
+
 prepareTest:
 		tools/disk.sh mountp1
-		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel.bin`" != "" ]; then \
-			$(SUDO) sed --in-place -e "s/kernel\.bin\(.*\)/kernel_test.bin\\1/g" \
-				$(DISKMOUNT)/boot/grub/menu.lst; \
-				touch $(HDD); \
-		fi;
+		$(SUDO) cp $(BUILD)/kernel_test.bin $(DISKMOUNT)/boot/kernel.bin
 		tools/disk.sh unmount
 
 prepareRun:
 		tools/disk.sh mountp1
-		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel_test.bin`" != "" ]; then \
-			$(SUDO) sed --in-place -e "s/kernel_test\.bin\(.*\)/kernel.bin\\1/g" \
-				$(DISKMOUNT)/boot/grub/menu.lst; \
-				touch $(HDD); \
-		fi;
+		$(SUDO) cp $(BUILD)/kernel.bin $(DISKMOUNT)/boot/kernel.bin
 		tools/disk.sh unmount
 
 clean:

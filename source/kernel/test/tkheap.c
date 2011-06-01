@@ -70,7 +70,7 @@ static void test_check(void) {
 		test_caseFailed("old-heap-count=%d, new-heap-count=%d",oldFH,newFH);
 	}
 	else {
-		test_caseSucceded();
+		test_caseSucceeded();
 	}
 }
 
@@ -214,7 +214,7 @@ static void test_kheap_t2(void) {
 		}
 		else {
 			tprintf("Not enough mem\n");
-			test_caseSucceded();
+			test_caseSucceeded();
 		}
 	}
 }
@@ -261,7 +261,7 @@ static void test_kheap_t5(void) {
 			test_checkContent(ptr3,12,3) &&
 			test_checkContent(ptr4,6,4) &&
 			test_checkContent(ptr5,2,5))
-		test_caseSucceded();
+		test_caseSucceeded();
 	else
 		test_caseFailed("Contents not equal");
 

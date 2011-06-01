@@ -535,6 +535,7 @@ void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
 
 static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables) {
 	uintptr_t end;
+	/* TODO its better to loop through all tlb-entries */
 	/* to beginning of page-table */
 	virt &= ~(PT_ENTRY_COUNT * PAGE_SIZE - 1);
 	end = virt + PT_ENTRY_COUNT * PAGE_SIZE;

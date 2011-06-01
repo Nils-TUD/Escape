@@ -56,7 +56,7 @@ static void test_opendir(void) {
 	while(readdir(dir,&e));
 	closedir(dir);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_abspath(void) {
@@ -109,5 +109,5 @@ static void test_abspath(void) {
 
 	free(path);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

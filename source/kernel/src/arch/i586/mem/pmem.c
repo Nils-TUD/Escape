@@ -27,6 +27,7 @@
 #include <string.h>
 #include <errors.h>
 
+#define DEBUG_ALLOC_N_FREE			0
 #define BITMAP_PAGE_COUNT			((2 * M) / PAGE_SIZE)
 #define BITMAP_START_FRAME			(BITMAP_START / PAGE_SIZE)
 #define BITMAP_START				((uintptr_t)bitmap - KERNEL_AREA_V_ADDR)
@@ -68,7 +69,7 @@ static tFrameNo *stack = NULL;
 void pmem_init(void) {
 	sMemMap *mmap;
 	size_t memSize,defPageCount;
-	const sMultiBoot *mb = boot_getInfo();
+	const sBootInfo *mb = boot_getInfo();
 
 	/* put the MM-stack behind the last multiboot-module */
 	if(mb->modsCount == 0)
@@ -151,10 +152,35 @@ tFrameNo pmem_allocate(void) {
 	/* no more frames free? */
 	if((uintptr_t)stack == stackBegin)
 		util_panic("Not enough memory :(");
+
+#if DEBUG_ALLOC_N_FREE
+	sFuncCall *trace = util_getKernelStackTrace();
+	size_t i = 0;
+	vid_printf("[A] %x ",*(stack - 1));
+	while(trace->addr != 0 && i++ < 10) {
+		vid_printf("%x",trace->addr);
+		trace++;
+		if(trace->addr)
+			vid_printf(" ");
+	}
+	vid_printf("\n");
+#endif
 	return *(--stack);
 }
 
 void pmem_free(tFrameNo frame) {
+#if DEBUG_ALLOC_N_FREE
+	sFuncCall *trace = util_getKernelStackTrace();
+	size_t i = 0;
+	vid_printf("[F] %x ",frame);
+	while(trace->addr != 0 && i++ < 10) {
+		vid_printf("%x",trace->addr);
+		trace++;
+		if(trace->addr)
+			vid_printf(" ");
+	}
+	vid_printf("\n");
+#endif
 	pmem_markUsed(frame,false);
 }
 

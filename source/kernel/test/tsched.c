@@ -57,7 +57,7 @@ static void test_sched(void) {
 		pp++;
 	}
 	if(res)
-		test_caseSucceded();
+		test_caseSucceeded();
 	else
 		test_caseFailed("Got process 0x%x, expected 0x%x",p,pp);
 
@@ -77,7 +77,7 @@ static void test_sched(void) {
 		p--;
 	}
 	if(res)
-		test_caseSucceded();
+		test_caseSucceeded();
 	else
 		test_caseFailed("");
 
@@ -95,7 +95,7 @@ static void test_sched(void) {
 		rand[i]->state = ST_UNUSED;
 	}
 	if(res)
-		test_caseSucceded();
+		test_caseSucceeded();
 	else
 		test_caseFailed("");
 #endif

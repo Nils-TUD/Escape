@@ -91,7 +91,7 @@ static void test_1(void) {
 	reg_destroy(reg);
 	test_finish();
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_2(void) {
@@ -111,7 +111,7 @@ static void test_2(void) {
 	reg_destroy(reg);
 	test_finish();
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_3(void) {
@@ -163,7 +163,7 @@ static void test_3(void) {
 	reg_destroy(reg);
 	test_finish();
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_4(void) {
@@ -192,5 +192,5 @@ static void test_4(void) {
 	reg_destroy(clone);
 	test_finish();
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

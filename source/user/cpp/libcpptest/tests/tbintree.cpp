@@ -146,7 +146,7 @@ static void test_insert(void) {
 	after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_order(void) {
@@ -167,7 +167,7 @@ static void test_order(void) {
 	for(bintree<int,int>::iterator it = t.begin(); it != t.end(); ++it)
 		test_assertInt((*it).first,ints[i++]);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_copy(void) {
@@ -219,7 +219,7 @@ static void test_copy(void) {
 	after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_erase(void) {
@@ -365,7 +365,7 @@ static void test_erase(void) {
 	after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_iterators(void) {
@@ -389,5 +389,5 @@ static void test_iterators(void) {
 		i--;
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

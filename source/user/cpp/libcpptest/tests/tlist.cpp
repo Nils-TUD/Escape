@@ -84,7 +84,7 @@ static void test_constr(void) {
 	list<int> v4(v3);
 	check_content(v4,5,4,4,4,4,4);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_assign(void) {
@@ -109,7 +109,7 @@ static void test_assign(void) {
 	v4.back() -= 1;
 	check_content(v4,3,4,3,2);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_iterators(void) {
@@ -127,7 +127,7 @@ static void test_iterators(void) {
 	for(list<int>::reverse_iterator it = v1.rbegin(); it != v1.rend(); it++)
 		test_assertInt(*it,i--);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_insert(void) {
@@ -165,7 +165,7 @@ static void test_insert(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_erase(void) {
@@ -199,7 +199,7 @@ static void test_erase(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_splice(void) {
@@ -236,7 +236,7 @@ static void test_splice(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_resize(void) {
@@ -262,7 +262,7 @@ static void test_resize(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static bool removePred(int v) {
@@ -302,7 +302,7 @@ static void test_remove(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static bool isSame(int a,int b) {
@@ -336,7 +336,7 @@ static void test_unique(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_sort(void) {
@@ -370,7 +370,7 @@ static void test_sort(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_merge(void) {
@@ -400,7 +400,7 @@ static void test_merge(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_reverse(void) {
@@ -443,5 +443,5 @@ static void test_reverse(void) {
 	size_t after = heapspace();
 	test_assertUInt(after,before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

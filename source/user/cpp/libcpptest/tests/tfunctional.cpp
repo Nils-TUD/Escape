@@ -106,7 +106,7 @@ static void test_arithmetic(void) {
 		check_content(v,5,0,2,2,4,6);
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_comparison(void) {
@@ -119,7 +119,7 @@ static void test_comparison(void) {
 	test_assertInt(*ptiter.first,30);
 	test_assertInt(*ptiter.second,40);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_logical(void) {
@@ -132,7 +132,7 @@ static void test_logical(void) {
 	vector<bool> v(results,results + 4);
 	check_content(v,4,true,false,false,false);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_adaptors(void) {
@@ -189,5 +189,5 @@ static void test_adaptors(void) {
 		check_content(lengths,5,3,3,5,4,4);
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

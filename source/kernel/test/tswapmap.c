@@ -95,7 +95,7 @@ static void test_swapmap2(void) {
 }
 
 static void test_swapmap5(void) {
-	uint blocks[8];
+	uint blocks[9];
 	test_doStart("Testing alloc & free mixed");
 
 	blocks[0] = swmap_alloc();
@@ -172,5 +172,5 @@ static void test_finish(void) {
 	if(spaceAfter != spaceBefore)
 		test_caseFailed("Space before: %d, After: %d",spaceBefore,spaceAfter);
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }

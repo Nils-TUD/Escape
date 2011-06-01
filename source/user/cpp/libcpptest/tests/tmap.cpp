@@ -50,7 +50,7 @@ static void test_insert(void) {
 	m[4] = 2;
 	m[1] = -12;
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_operators(void) {
@@ -80,7 +80,7 @@ static void test_operators(void) {
 	m4["d"] = 142;
 	test_assertTrue(m3 < m4);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_bounds(void) {
@@ -98,5 +98,5 @@ static void test_bounds(void) {
 	test_assertTrue(m.lower_bound(8) == m.end());
 	test_assertTrue(m.upper_bound(8) == m.end());
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

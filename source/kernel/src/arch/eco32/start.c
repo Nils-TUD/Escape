@@ -18,26 +18,13 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/pmem.h>
-#include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
-#include <sys/mem/vmm.h>
-#include <sys/mem/sharedmem.h>
-#include <sys/mem/cow.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/real.h>
-#include <sys/vfs/info.h>
-#include <sys/vfs/request.h>
-#include <sys/vfs/driver.h>
-#include <sys/task/event.h>
-#include <sys/task/proc.h>
-#include <sys/task/sched.h>
-#include <sys/task/timer.h>
-#include <sys/task/signals.h>
 #include <sys/task/elf.h>
-#include <sys/log.h>
+#include <sys/task/thread.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/vmm.h>
 #include <sys/boot.h>
-#include <sys/video.h>
+#include <sys/util.h>
+#include <assert.h>
 
 static uint8_t initloader[] = {
 #if DEBUGGING
@@ -51,62 +38,7 @@ int main(const sBootInfo *bootinfo) {
 	sThread *t;
 	sStartupInfo info;
 
-	boot_init(bootinfo);
-	vid_init();
-
-#if DEBUGGING
-	boot_dbg_print();
-#endif
-
-	/* mm */
-	vid_printf("Initializing physical memory-management...");
-	pmem_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* paging */
-	vid_printf("Initializing paging...");
-	paging_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* vfs */
-	vid_printf("Initializing VFS...");
-	vfs_init();
-	vfs_info_init();
-	vfs_req_init();
-	vfs_drv_init();
-	vfs_real_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* processes */
-	vid_printf("Initializing process-management...");
-	ev_init();
-	proc_init();
-	sched_init();
-	/* the process and thread-stuff has to be ready, too ... */
-	log_vfsIsReady();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* vmm */
-	vid_printf("Initializing virtual memory management...");
-	vmm_init();
-	cow_init();
-	shm_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* timer */
-	vid_printf("Initializing timer...");
-	timer_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* signals */
-	vid_printf("Initializing signal-handling...");
-	sig_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-#if DEBUGGING
-	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
-			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
-#endif
+	boot_init(bootinfo,true);
 
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)

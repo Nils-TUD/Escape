@@ -19,19 +19,32 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/task/vm86.h>
+#include <sys/arch/i586/gdt.h>
+#include <sys/arch/i586/serial.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/cow.h>
+#include <sys/mem/sharedmem.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
+#include <sys/task/event.h>
+#include <sys/task/sched.h>
 #include <sys/task/elf.h>
 #include <sys/task/uenv.h>
 #include <sys/vfs/node.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/request.h>
+#include <sys/vfs/driver.h>
+#include <sys/vfs/real.h>
+#include <sys/vfs/info.h>
+#include <sys/log.h>
 #include <sys/boot.h>
 #include <sys/video.h>
 #include <sys/util.h>
+#include <sys/cpu.h>
 #include <sys/config.h>
 #include <errors.h>
 #include <string.h>
@@ -44,18 +57,23 @@
 static const char **boot_parseArgs(const char *line,int *argc);
 
 extern uintptr_t KernelStart;
-static sMultiBoot *mb;
+static sBootInfo *mb;
 static bool loadedMods = false;
 
-void boot_init(sMultiBoot *mbp) {
+void boot_init(sBootInfo *mbp,bool logToVFS) {
 	size_t i;
 	sModule *mod;
 	int argc;
 	const char **argv;
 
+	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
+	 * and "correct" the GDT */
+	paging_init();
+	gdt_init();
+
 	/* save the multiboot-structure
 	 * (change to 0xC...0 since we get the address at 0x0...0 from GRUB) */
-	mb = (sMultiBoot*)((uintptr_t)mbp | KERNEL_AREA_V_ADDR);
+	mb = (sBootInfo*)((uintptr_t)mbp | KERNEL_AREA_V_ADDR);
 
 	/* change the address of the pointers in the structure, too */
 	mb->cmdLine = (char*)((uintptr_t)mb->cmdLine | KERNEL_AREA_V_ADDR);
@@ -73,9 +91,87 @@ void boot_init(sMultiBoot *mbp) {
 	/* parse the boot parameter */
 	argv = boot_parseArgs(mb->cmdLine,&argc);
 	conf_parseBootParams(argc,argv);
+
+	/* init video and serial-ports */
+	vid_init();
+	ser_init();
+
+	vid_printf("GDT exchanged, paging enabled, video initialized");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+#if DEBUGGING
+	boot_dbg_print();
+#endif
+
+	/* mm */
+	vid_printf("Initializing physical memory-management...");
+	pmem_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* paging */
+	vid_printf("Initializing paging...");
+	paging_mapKernelSpace();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* fpu */
+	vid_printf("Initializing FPU...");
+	fpu_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* vfs */
+	vid_printf("Initializing VFS...");
+	vfs_init();
+	vfs_info_init();
+	vfs_req_init();
+	vfs_drv_init();
+	vfs_real_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* processes */
+	vid_printf("Initializing process-management...");
+	ev_init();
+	proc_init();
+	paging_exchangePDir(proc_getRunning()->pagedir);
+	sched_init();
+	/* the process and thread-stuff has to be ready, too ... */
+	if(logToVFS)
+		log_vfsIsReady();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* vmm */
+	vid_printf("Initializing virtual memory management...");
+	vmm_init();
+	cow_init();
+	shm_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* idt */
+	vid_printf("Initializing IDT...");
+	intrpt_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* timer */
+	vid_printf("Initializing timer...");
+	timer_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* signals */
+	vid_printf("Initializing signal-handling...");
+	sig_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* cpu */
+	vid_printf("Detecting CPU...");
+	cpu_detect();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+#if DEBUGGING
+	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
+			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
+#endif
 }
 
-const sMultiBoot *boot_getInfo(void) {
+const sBootInfo *boot_getInfo(void) {
 	return mb;
 }
 

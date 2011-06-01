@@ -40,7 +40,7 @@ static void test_fs(void) {
 	/* don't try that on readonly-filesystems */
 	stat("/bin",&info1);
 	if(!(info1.mode & MODE_OWNER_WRITE)) {
-		test_caseSucceded();
+		test_caseSucceeded();
 		return;
 	}
 
@@ -63,7 +63,7 @@ static void test_fs(void) {
 	test_assertInt(rmdir("/newdir"),0);
 	test_assertInt(sync(),0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void fs_createFile(const char *name,const char *content) {

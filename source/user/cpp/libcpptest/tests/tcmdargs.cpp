@@ -87,7 +87,7 @@ static void test_flags(void) {
 	}
 	test_assertUInt(heapspace(),before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_vals(void) {
@@ -140,7 +140,7 @@ static void test_vals(void) {
 	}
 	test_assertUInt(heapspace(),before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_reqNFree(void) {
@@ -244,5 +244,5 @@ static void test_reqNFree(void) {
 	}
 	test_assertUInt(heapspace(),before);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

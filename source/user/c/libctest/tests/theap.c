@@ -84,7 +84,7 @@ static void test_check(void) {
 		test_caseFailed("Mem not free'd: oldFree=%u, newFree=%u",oldFree,newFree);
 	}
 	else {
-		test_caseSucceded();
+		test_caseSucceeded();
 	}
 }
 

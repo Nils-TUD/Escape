@@ -58,7 +58,7 @@ static void test_vfs_node_resolvePath(void) {
 	if(!test_vfs_node_resolvePathCpy("/system/./processes/../processes/./","processes")) return;
 	if(!test_vfs_node_resolvePathCpy("/system//..//..//..","")) return;
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
@@ -88,5 +88,5 @@ static void test_vfs_node_getPath(void) {
 	vfs_node_resolvePath("/system/processes/0",&no,NULL,VFS_READ);
 	test_assertStr(vfs_node_getPath(no),(char*)"/system/processes/0");
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

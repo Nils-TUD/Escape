@@ -476,6 +476,7 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 		p->sharedFrames -= reg_presentPageCount(vm->reg);
 		p->ownFrames -= stats.ptables;
 	}
+	kheap_free(vm);
 	REG(p,reg) = NULL;
 
 	/* check wether all regions are NULL */

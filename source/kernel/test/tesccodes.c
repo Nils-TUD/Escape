@@ -101,7 +101,7 @@ static void test_1(void) {
 	test_check(str[18],ESCC_COLOR,12,441,ESCC_ARG_UNUSED);
 	test_check(str[19],ESCC_COLOR,123,123,ESCC_ARG_UNUSED);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_2(void) {
@@ -115,7 +115,7 @@ static void test_2(void) {
 	for(i = 0; i < ARRAY_SIZE(str); i++)
 		test_check(str[i],ESCC_INVALID,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_3(void) {
@@ -128,5 +128,5 @@ static void test_3(void) {
 	for(i = 0; i < ARRAY_SIZE(str); i++)
 		test_check(str[i],ESCC_INCOMPLETE,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

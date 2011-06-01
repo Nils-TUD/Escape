@@ -1,9 +1,14 @@
 #!/bin/bash
 ROOT=$(dirname $(dirname $(readlink -f $0)))
 TOOLCHAIN=$ROOT/../toolchain/$ARCH
-ISO=$BUILD/cd.iso
 OSTITLE="Escape v0.3"
-BINNAME=kernel.bin
+if [ "$1" = "test" ]; then
+	ISO=$BUILD/cd_test.iso
+	BINNAME=kernel_test.bin
+else
+	ISO=$BUILD/cd.iso
+	BINNAME=kernel.bin
+fi
 KERNELBIN=$BUILD/$BINNAME
 TMPDIR=$ROOT/diskmnt
 
@@ -22,10 +27,14 @@ echo 'default 0' > $TMPDIR/boot/grub/menu.lst;
 echo 'timeout 3' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE - VESA-text" >> $TMPDIR/boot/grub/menu.lst;
-if [ "`echo $BUILD | grep '/release'`" != "" ]; then
-	echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
+if [ "$1" = "test" ]; then
+	echo "kernel /boot/escape_test.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 else
-	echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 " >> $TMPDIR/boot/grub/menu.lst;
+	if [ "`echo $BUILD | grep '/release'`" != "" ]; then
+		echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
+	else
+		echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 " >> $TMPDIR/boot/grub/menu.lst;
+	fi
 fi
 echo 'module /sbin/pci /dev/pci' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/ata /system/devices/ata' >> $TMPDIR/boot/grub/menu.lst;
@@ -33,10 +42,14 @@ echo 'module /sbin/cmos /dev/cmos' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE - VGA-text" >> $TMPDIR/boot/grub/menu.lst;
-if [ "`echo $BUILD | grep '/release'`" != "" ]; then
-	echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
+if [ "$1" = "test" ]; then
+	echo "kernel /boot/escape_test.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 else
-	echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 " >> $TMPDIR/boot/grub/menu.lst;
+	if [ "`echo $BUILD | grep '/release'`" != "" ]; then
+		echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
+	else
+		echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 " >> $TMPDIR/boot/grub/menu.lst;
+	fi
 fi
 echo 'module /sbin/pci /dev/pci' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/ata /system/devices/ata' >> $TMPDIR/boot/grub/menu.lst;
@@ -44,7 +57,11 @@ echo 'module /sbin/cmos /dev/cmos' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 
 # copy kernel
-cp $KERNELBIN $TMPDIR/boot/escape.bin
+if [ "$1" = "test" ]; then
+	cp $KERNELBIN $TMPDIR/boot/escape_test.bin
+else
+	cp $KERNELBIN $TMPDIR/boot/escape.bin
+fi
 
 # copy driver-deps, apps, drivers and user-apps
 cp $BOOT/dist/arch/$ARCH/boot/* $TMPDIR/boot/grub

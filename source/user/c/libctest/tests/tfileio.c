@@ -184,7 +184,7 @@ static void test_fileio_print(void) {
 	if(!test_fileio_checkPrint(res,-1,str,"-1., 999.90, 1234.5678, 1189378123.7816722393"))
 		return;
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_fileio_scan(void) {
@@ -227,5 +227,5 @@ static void test_fileio_scan(void) {
 	if(!test_fileio_checkScan(res,1,"%d",d1,12))
 		return;
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

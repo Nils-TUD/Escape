@@ -32,7 +32,7 @@ typedef struct {
 #define BL_RTC_ID	2
 #define BL_K_ID		3
 
-void boot_init(const sBootInfo *binfo);
+void boot_init(const sBootInfo *binfo,bool logToVFS);
 const sBootInfo *boot_getInfo(void);
 
 #endif /* ECO32_BOOT_H_ */

@@ -100,18 +100,19 @@ typedef struct {
 	char *bootLoaderName;			/* present if flags[9] is set */
 	sAPMTable *apmTable;		/* present if flags[10] is set */
 #endif
-} A_PACKED sMultiBoot;
+} A_PACKED sBootInfo;
 
 /**
  * Inits the multi-boot infos
  *
  * @param mbp the pointer to the multi-boot-structure
+ * @param whether to log to VFS as well
  */
-void boot_init(sMultiBoot *mbp);
+void boot_init(sBootInfo *mbp,bool logToVFS);
 
 /**
  * @return the multiboot-info-structure
  */
-const sMultiBoot *boot_getInfo(void);
+const sBootInfo *boot_getInfo(void);
 
 #endif /* I586_BOOT_H_ */

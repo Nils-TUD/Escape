@@ -41,7 +41,7 @@ sTestModule tModPaging = {
 
 static void test_paging(void) {
 	size_t x,y;
-	uintptr_t addr[] = {0x0,0xB0000000,0xA0000000,0x4000,0x1234};
+	uintptr_t addr[] = {0x0,0x40000000,0x70000000,0x4000,0x1234};
 	size_t count[] = {0,1,50,1024,1025,2048,2051};
 
 	for(y = 0; y < ARRAY_SIZE(addr); y++) {
@@ -73,7 +73,7 @@ static void test_paging_foreign(void) {
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 
 	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
 	test_caseStart("Mapping %d pages to %#08x into pdir %#x, separatly",6,0x40000000,child->pagedir);
@@ -93,7 +93,7 @@ static void test_paging_foreign(void) {
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 	proc_kill(child);
 }
 
@@ -117,7 +117,7 @@ static bool test_paging_cycle(uintptr_t addr,size_t count) {
 		return false;
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 
 	return true;
 }

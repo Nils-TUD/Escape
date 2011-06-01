@@ -112,7 +112,7 @@ static void test_find(void) {
 	test_assertTrue(search(l.begin(),l.end(),r5.begin(),r5.end()) == l.end());
 	test_assertTrue(find_first_of(l.begin(),l.end(),r5.begin(),r5.end()) == l.end());
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_count(void) {
@@ -126,7 +126,7 @@ static void test_count(void) {
 	test_assertInt(count(l.begin(),l.end(),6),1);
 	test_assertInt(count(l.begin(),l.end(),12),0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static int op_increase(int i) {
@@ -153,7 +153,7 @@ static void test_transform(void) {
 	transform(first.begin(),first.end(),second.begin(),first.begin(),op_sum);
 	check_content(first,5,21,41,61,81,101);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static bool myGreater(int a) {
@@ -172,7 +172,7 @@ static void test_replace(void) {
 	replace_if(l.begin(),l.end(),myGreater,12);
 	check_content(l,8,10,12,12,12,12,10,10,12);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_fill(void) {
@@ -186,7 +186,7 @@ static void test_fill(void) {
 	fill(l.begin() + 3,l.end() - 2,8);
 	check_content(l,8,5,5,5,8,8,8,0,0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 template<int val>
@@ -205,7 +205,7 @@ static void test_generate(void) {
 	generate_n(l.begin() + 3,3,genValue<8>);
 	check_content(l,8,3,3,3,8,8,8,0,0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_remove(void) {
@@ -227,7 +227,7 @@ static void test_remove(void) {
 	l.resize(0);
 	check_content(l,0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_reverse(void) {
@@ -259,7 +259,7 @@ static void test_reverse(void) {
 	reverse_copy(ints5,ints5 + ARRAY_SIZE(ints5),l5.begin());
 	check_content(l5,9,9,8,7,6,5,4,3,2,1);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_binsearch(void) {
@@ -281,7 +281,7 @@ static void test_binsearch(void) {
 	test_assertTrue(binary_search(l.begin(),l.end(),30));
 	test_assertFalse(binary_search(l.begin(),l.end(),40));
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_merge(void) {
@@ -297,7 +297,7 @@ static void test_merge(void) {
 	merge(first,first + 5,second,second + 5,l.begin());
 	check_content(l,10,5,10,10,15,20,20,25,30,40,50);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_includes(void) {
@@ -313,7 +313,7 @@ static void test_includes(void) {
 	test_assertTrue(includes(l2.begin(),l2.end(),l2.begin(),l2.end()));
 	test_assertFalse(includes(l2.begin(),l2.end(),l1.begin(),l1.end()));
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_minmax(void) {
@@ -333,7 +333,7 @@ static void test_minmax(void) {
 	test_assertTrue(min_element(l2.begin(),l2.begin()) == l2.begin());
 	test_assertTrue(min_element(l2.end(),l2.end()) == l2.end());
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_lexcompare(void) {
@@ -345,5 +345,5 @@ static void test_lexcompare(void) {
 	test_assertTrue(lexicographical_compare(first,first + 5,second,second + 9));
 	test_assertFalse(lexicographical_compare(second,second + 9,first,first + 5));
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

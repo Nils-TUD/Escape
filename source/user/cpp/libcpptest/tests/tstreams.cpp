@@ -70,7 +70,7 @@ static void test_outformat(void) {
 				"  foo\n bar\n123 0x4d2 -12 +0------x\n0XDEADBEEF\n0X1false0\n+12.300 -2.400\n");
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_informat(void) {
@@ -99,5 +99,5 @@ static void test_informat(void) {
 		test_assertStr(buf,"myteststr");
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

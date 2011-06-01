@@ -30,11 +30,13 @@ endif
 LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
 	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
+LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
 
 # objects
 AOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(ASRC))
 COBJ = $(patsubst %.c,$(BUILDK)/%.o,$(CSRC))
 LOBJ = $(patsubst $(LIB)/%.c,$(BUILDK)/lib/%.o,$(LSRC))
+LAOBJ = $(patsubst $(LIB)/%.s,$(BUILDK)/lib/%.s.o,$(LASRC))
 
 SYMBOLS = $(BUILD)/kernel_symbols.txt
 SYMBOLSCRIPT = $(ROOT)/tools/gensymbols.sh
@@ -45,9 +47,9 @@ SYMBOLOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(SYMBOLSRC))
 
 all:	$(BIN) $(MAP)
 
-$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
+$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) -lgcc;
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) -lgcc;
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second pass the size is correct
 		@# and therefore the symbol-table will be generated correctly in the third pass :)
@@ -56,13 +58,13 @@ $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) -lgcc;
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) -lgcc;
 		@echo "	" BUILDING SYMBOL-FILE
 		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) -lgcc;
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) -lgcc;
 
 $(MAP): $(BIN)
 		@echo "	" GEN MAP $@
@@ -88,8 +90,12 @@ $(BUILDK)/lib/%.o:	$(LIB)/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
+$(BUILDK)/lib/%.s.o:	$(LIB)/%.s
+		@echo "	" AS $<
+		@$(AS) $(ASFLAGS) -o $@ $<
+
 -include $(DEPS)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEPS) $(BIN) $(COBJ) $(AOBJ) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ) $(MAP)
+		rm -f $(DEPS) $(BIN) $(COBJ) $(AOBJ) $(LOBJ) $(LAOBJ) $(SYMBOLS) $(SYMBOLOBJ) $(MAP)

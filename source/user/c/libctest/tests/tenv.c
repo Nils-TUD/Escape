@@ -48,7 +48,7 @@ static void test_setget(void) {
 	test_assertInt(setenv("A","123"),0);
 	test_assertTrue((value = getenv("A")) != NULL);
 	test_assertStr(value,"123");
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_geti(void) {
@@ -62,5 +62,5 @@ static void test_geti(void) {
 		test_assertTrue(getenv(name) != NULL);
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

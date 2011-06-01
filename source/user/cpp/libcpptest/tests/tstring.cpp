@@ -120,7 +120,7 @@ static void test_constr(void) {
 	test_assertStr(s13.c_str(),"aaaaaaaaaaaa");
 	test_assertUInt(s13.length(),12);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_iterators(void) {
@@ -134,7 +134,7 @@ static void test_iterators(void) {
 	for(string::reverse_iterator it = s1.rbegin(); it != s1.rend(); ++it)
 		test_assertInt(*it,i--);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_assign(void) {
@@ -158,7 +158,7 @@ static void test_assign(void) {
 	test_assertStr(s2.c_str(),"a");
 	test_assertUInt(s2.length(),1);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_resize(void) {
@@ -190,7 +190,7 @@ static void test_resize(void) {
 	s1.reserve(12);
 	test_assertTrue(s1.capacity() >= 12);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_clear(void) {
@@ -201,7 +201,7 @@ static void test_clear(void) {
 	test_assertStr(s1.c_str(),"");
 	test_assertUInt(s1.length(),0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_append(void) {
@@ -242,7 +242,7 @@ static void test_append(void) {
 	test_assertStr(s4.c_str(),"");
 	test_assertUInt(s4.length(),0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_insert(void) {
@@ -265,7 +265,7 @@ static void test_insert(void) {
 	test_assertStr(s1.c_str(),"atabacesto");
 	test_assertUInt(s1.length(),10);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_erase(void) {
@@ -312,7 +312,7 @@ static void test_erase(void) {
 	test_assertStr(s4.c_str(),"ar");
 	test_assertUInt(s4.length(),2);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_replace(void) {
@@ -356,7 +356,7 @@ static void test_replace(void) {
 	test_assertStr(s1.c_str(),"bar");
 	test_assertUInt(s1.length(),3);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_find(void) {
@@ -373,7 +373,7 @@ static void test_find(void) {
 	test_assertUInt(s1.find("test",1),string::npos);
 	test_assertUInt(s1.find("s",3),string::npos);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_rfind(void) {
@@ -390,7 +390,7 @@ static void test_rfind(void) {
 	test_assertUInt(s1.rfind("test",2),string::npos);
 	test_assertUInt(s1.rfind("s",1),string::npos);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_find_first_of(void) {
@@ -408,7 +408,7 @@ static void test_find_first_of(void) {
 	test_assertUInt(s1.find_first_of(""),string::npos);
 	test_assertUInt(s1.find_first_of("b"),string::npos);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_find_last_of(void) {
@@ -426,7 +426,7 @@ static void test_find_last_of(void) {
 	test_assertUInt(s1.find_last_of(""),string::npos);
 	test_assertUInt(s1.find_last_of("b"),string::npos);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_find_first_not_of(void) {
@@ -445,7 +445,7 @@ static void test_find_first_not_of(void) {
 	test_assertUInt(s1.find_first_not_of(""),0);
 	test_assertUInt(s1.find_first_not_of("b"),0);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_find_last_not_of(void) {
@@ -464,7 +464,7 @@ static void test_find_last_not_of(void) {
 	test_assertUInt(s1.find_last_not_of(""),6);
 	test_assertUInt(s1.find_last_not_of("b"),6);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_trim(void) {
@@ -519,5 +519,5 @@ static void test_trim(void) {
 		test_assertUInt(count,3);
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

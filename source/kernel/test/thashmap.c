@@ -72,7 +72,7 @@ static void test_basic(void) {
 
 	hm_destroy(m);
 	test_assertUInt(kheap_getFreeMem(),before);
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_remove(void) {
@@ -111,7 +111,7 @@ static void test_remove(void) {
 
 	hm_destroy(m);
 	test_assertUInt(kheap_getFreeMem(),before);
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_iterator(void) {
@@ -140,5 +140,5 @@ static void test_iterator(void) {
 
 	hm_destroy(m);
 	test_assertUInt(kheap_getFreeMem(),before);
-	test_caseSucceded();
+	test_caseSucceeded();
 }

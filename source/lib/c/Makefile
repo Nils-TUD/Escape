@@ -26,6 +26,7 @@ ASRC = $(filter-out $(shell find ./arch -name "*.s"),$(shell find . -name "*.s")
 ASRC += $(filter-out $(START),$(shell find ./arch/$(ARCH) -name "*.s"))
 LSRC = $(filter-out $(shell find $(LIBDIR)/arch -name "*.c"),$(shell find $(LIBDIR) -name "*.c"))
 LSRC += $(shell find $(LIBDIR)/arch/$(ARCH) -name "*.c")
+LASRC = $(shell find $(LIBDIR)/arch/$(ARCH) -name "*.s")
 
 # objects
 STARTO = $(patsubst ./arch/$(ARCH)/%.s,$(BUILD)/%.o,$(START))
@@ -36,20 +37,22 @@ AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
 APICOBJS = $(patsubst %.s,$(BUILDL)/%_pic.s.o,$(ASRC))
 LOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%.o,$(LSRC))
 LPICOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%_pic.o,$(LSRC))
+LAOBJS = $(patsubst $(LIBDIR)/%.s,$(BUILDL)/lib/%.s.o,$(LASRC))
+LAPICOBJS = $(patsubst $(LIBDIR)/%.s,$(BUILDL)/lib/%_pic.s.o,$(LASRC))
 
 .PHONY:		all clean
 
 all: $(BUILDDIRS) $(STARTO) $(STARTOPIC) $(STLIB) $(DYNLIB)
 
-$(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
+$(STLIB): $(COBJS) $(AOBJS) $(LOBJ) $(LAOBJS)
 		@echo "	" AR $(STLIB)
-		@$(AR) rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ)
+		@$(AR) rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ) $(LAOBJS)
 		@$(ROOT)/tools/linklib.sh $(STLIB)
 
-$(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
+$(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ) $(LAPICOBJS)
 		@echo "	" LINKING $(DYNLIB)
 		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) \
-			$(APICOBJS) $(LPICOBJ) $(ADDLIBS)
+			$(APICOBJS) $(LPICOBJ) $(LAPICOBJS) $(ADDLIBS)
 		@$(ROOT)/tools/linklib.sh $(DYNLIB)
 		
 $(BUILDDIRS):
@@ -81,6 +84,14 @@ $(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
+$(BUILDL)/lib/%_pic.s.o: $(LIBDIR)/%.s
+		@echo "	" AS $<
+		@$(AS) $(ASFLAGS) --defsym SHAREDLIB=1 -o $@ $<
+
+$(BUILDL)/lib/%.s.o: $(LIBDIR)/%.s
+		@echo "	" AS $<
+		@$(AS) $(ASFLAGS) -o $@ $<
+
 $(BUILD)/crt%S.o : arch/$(ARCH)/crt%.s
 		@echo "	" AS $<
 		@$(AS) $(ASFLAGS) -defsym SHAREDLIB=1 -o $@ $<
@@ -95,5 +106,5 @@ $(BUILD)/crt%.o : arch/$(ARCH)/crt%.s
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) \
+		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(LAOBJS) $(LAPICOBJS) \
 			$(STLIB) $(DEPS) $(STARTO) $(STARTOPIC) $(DYNLIB)

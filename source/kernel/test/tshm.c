@@ -66,7 +66,7 @@ static void test_1(void) {
 	test_assertTrue(shm_destroy(p,"myshm") == 0);
 	test_finish();
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_2(void) {
@@ -130,5 +130,5 @@ static void test_2(void) {
 	proc_kill(child1);
 	proc_kill(child2);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

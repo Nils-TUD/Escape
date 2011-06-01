@@ -84,5 +84,5 @@ static void test_vfs_createDriver(void) {
 		return;
 	}
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

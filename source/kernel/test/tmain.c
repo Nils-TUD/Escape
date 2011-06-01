@@ -18,36 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/gdt.h>
-#include <sys/arch/i586/fpu.h>
-#include <sys/arch/i586/serial.h>
-#include <sys/mem/pmem.h>
-#include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
-#include <sys/mem/vmm.h>
-#include <sys/mem/cow.h>
 #include <sys/mem/swapmap.h>
-#include <sys/mem/sharedmem.h>
-#include <sys/task/sched.h>
-#include <sys/task/elf.h>
-#include <sys/task/proc.h>
-#include <sys/task/signals.h>
-#include <sys/task/event.h>
-#include <sys/task/timer.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/info.h>
-#include <sys/vfs/request.h>
-#include <sys/vfs/driver.h>
-#include <sys/vfs/real.h>
-#include <sys/cpu.h>
-#include <sys/intrpt.h>
-#include <sys/util.h>
-#include <sys/debug.h>
 #include <sys/boot.h>
 #include <sys/video.h>
-#include <esc/test.h>
-#include <sys/log.h>
-#include <string.h>
 
 #include "tkheap.h"
 #include "tpaging.h"
@@ -67,87 +40,11 @@
 #include "tshm.h"
 #include "thashmap.h"
 
-int main(sMultiBoot *mbp,uint32_t magic) {
+int main(sBootInfo *bootinfo,uint32_t magic) {
 	UNUSED(magic);
 
-	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
-	 * and "correct" the GDT */
-	paging_init();
-	gdt_init();
-	boot_init(mbp);
-
-	/* init video and serial-ports */
-	vid_init();
-	ser_init();
-
-	vid_printf("GDT exchanged, paging enabled, video initialized");
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	boot_dbg_print();
-
-	/* mm */
-	vid_printf("Initializing physical memory-management...");
-	pmem_init(boot_getInfo());
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* paging */
-	vid_printf("Initializing paging...");
-	paging_mapKernelSpace();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* fpu */
-	vid_printf("Initializing FPU...");
-	fpu_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* vfs */
-	vid_printf("Initializing VFS...");
-	vfs_init();
-	vfs_info_init();
-	vfs_req_init();
-	vfs_drv_init();
-	vfs_real_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* processes */
-	vid_printf("Initializing process-management...");
-	ev_init();
-	proc_init();
-	sched_init();
-	/* the process and thread-stuff has to be ready, too ... */
-	/* but no logging to vfs in test-mode */
-	/*log_vfsIsReady();*/
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* vmm */
-	vid_printf("Initializing virtual memory management...");
-	vmm_init();
-	cow_init();
-	shm_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* idt */
-	vid_printf("Initializing IDT...");
-	intrpt_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* timer */
-	vid_printf("Initializing timer...");
-	timer_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* signals */
-	vid_printf("Initializing signal-handling...");
-	sig_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* cpu */
-	vid_printf("Detecting CPU...");
-	cpu_detect();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
-			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
+	/* init the kernel */
+	boot_init(bootinfo,false);
 
 	/* swapmap (needed for swapmap tests) */
 	vid_printf("Initializing Swapmap...");
@@ -160,7 +57,6 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
-	test_register(&tModSLList);
 	test_register(&tModString);
 	test_register(&tModVFS);
 	test_register(&tModVFSn);
@@ -172,8 +68,8 @@ int main(sMultiBoot *mbp,uint32_t magic) {
 	test_register(&tModVmm);
 	test_register(&tModShm);
 	test_register(&tModHashMap);
+	test_register(&tModSLList);
 	test_start();
-
 
 	/* stay here */
 	while(1);

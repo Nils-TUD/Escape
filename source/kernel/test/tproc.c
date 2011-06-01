@@ -57,7 +57,7 @@ static void test_check(void) {
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	}
 	else {
-		test_caseSucceded();
+		test_caseSucceeded();
 	}
 }
 
@@ -71,6 +71,8 @@ static void test_proc(void) {
 		tprintf("Cloning process to pid=%d\n",newPid);
 		test_assertTrue(proc_clone(newPid,0) >= 0);
 		tprintf("Destroying process\n",newPid);
+		/* both are necessary */
+		proc_terminate(proc_getByPid(newPid),0,0);
 		proc_kill(proc_getByPid(newPid));
 	}
 	test_check();

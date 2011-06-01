@@ -70,7 +70,7 @@ void test_noPrint(const char *fmt,...);
 void test_vnoPrint(const char *fmt,va_list ap);
 
 /**
- * Starts a test-case with given name. This ends with a call of test_caseSucceded() or
+ * Starts a test-case with given name. This ends with a call of test_caseSucceeded() or
  * test_caseFailed().
  *
  * @param fmt the format of the string to print (see vid_printf)
@@ -78,7 +78,7 @@ void test_vnoPrint(const char *fmt,va_list ap);
 void test_caseStart(const char *fmt,...);
 
 /**
- * Starts a test-case with given name. This ends with a call of test_caseSucceded() or
+ * Starts a test-case with given name. This ends with a call of test_caseSucceeded() or
  * test_caseFailed().
  *
  * @param fmt the format of the string to print (see vid_printf)
@@ -89,7 +89,7 @@ void test_caseStartv(const char *fmt,va_list ap);
 /**
  * Reports that a test-case was successfull.
  */
-void test_caseSucceded(void);
+void test_caseSucceeded(void);
 
 /**
  * Reports that a test-case has failed. Prints the given string with arguments (see vid_printf).

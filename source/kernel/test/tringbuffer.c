@@ -61,7 +61,7 @@ static void test_1(void) {
 	if(kheap_getFreeMem() != free)
 		test_caseFailed("Memory not freed");
 	else
-		test_caseSucceded();
+		test_caseSucceeded();
 }
 
 static void test_2(void) {
@@ -83,7 +83,7 @@ static void test_2(void) {
 
 	rb_destroy(rb);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_3(void) {
@@ -126,7 +126,7 @@ static void test_3(void) {
 
 	rb_destroy(rb);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_4(void) {
@@ -150,7 +150,7 @@ static void test_4(void) {
 
 	rb_destroy(rb);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }
 
 static void test_5(void) {
@@ -188,5 +188,5 @@ static void test_5(void) {
 	rb_destroy(rb1);
 	rb_destroy(rb2);
 
-	test_caseSucceded();
+	test_caseSucceeded();
 }

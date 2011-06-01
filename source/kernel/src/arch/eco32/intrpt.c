@@ -44,6 +44,10 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
+#define DISK_BASE			0xF0400000
+#define DISK_CTRL			0
+#define DISK_IEN			0x02
+
 typedef void (*fIntrptHandler)(sIntrptStackFrame *stack);
 typedef struct {
 	fIntrptHandler handler;
@@ -57,6 +61,7 @@ static void intrpt_exTrap(sIntrptStackFrame *stack);
 static void intrpt_exPageFault(sIntrptStackFrame *stack);
 static void intrpt_irqTimer(sIntrptStackFrame *stack);
 static void intrpt_irqKB(sIntrptStackFrame *stack);
+static void intrpt_irqDisk(sIntrptStackFrame *stack);
 
 static sInterrupt intrptList[] = {
 	/* 0x00: IRQ_TTY0_XMTR */	{intrpt_defHandler,	"Terminal 0 Transmitter",0},
@@ -67,7 +72,7 @@ static sInterrupt intrptList[] = {
 	/* 0x05: -- */				{intrpt_defHandler,	"??",					0},
 	/* 0x06: -- */				{intrpt_defHandler,	"??",					0},
 	/* 0x07: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x08: IRQ_DISK */		{intrpt_defHandler,	"Disk",					SIG_INTRPT_ATA1},
+	/* 0x08: IRQ_DISK */		{intrpt_irqDisk,	"Disk",					SIG_INTRPT_ATA1},
 	/* 0x09: -- */				{intrpt_defHandler,	"??",					0},
 	/* 0x0A: - */				{intrpt_defHandler,	"??",					0},
 	/* 0x0B: -- */				{intrpt_defHandler,	"??",					0},
@@ -201,6 +206,14 @@ static void intrpt_irqKB(sIntrptStackFrame *stack) {
 	if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
 		cons_start();
 #endif
+}
+
+static void intrpt_irqDisk(sIntrptStackFrame *stack) {
+	/* see interrupt_irqKb() */
+	uint32_t *diskRegs = (uint32_t*)DISK_BASE;
+	diskRegs[DISK_CTRL] &= ~DISK_IEN;
+	if(!sig_addSignal(SIG_INTRPT_ATA1))
+		diskRegs[DISK_CTRL] |= DISK_IEN;
 }
 
 

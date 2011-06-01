@@ -5,4 +5,5 @@ null; /dev/null;
 video; /dev/video;
 keyboard; /dev/keyboard;
 kmmanager; /dev/kmmanager,/dev/keyevents; keyboard
+ui; ; kmmanager
 vterm; /dev/vterm0,/dev/vterm1,/dev/vterm2,/dev/vterm3,/dev/vterm4,/dev/vterm5; kmmanager,video

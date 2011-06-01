@@ -27,6 +27,7 @@
 #include <sys/vfs/info.h>
 #include <sys/vfs/real.h>
 #include <esc/fsinterface.h>
+#include <esc/endian.h>
 #include <assert.h>
 #include <string.h>
 

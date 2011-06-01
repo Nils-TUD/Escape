@@ -124,6 +124,8 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
 			regs = (uint32_t*)KEYBOARD_BASE;
 			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 			break;
+		/* not necessary for disk here; the driver will reenable interrupts as soon as a new
+		 * command is started */
 	}
 	return 0;
 }

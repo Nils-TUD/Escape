@@ -228,28 +228,28 @@ int main(int argc,char **argv) {
 static bool compareProcs(const process* a,const process* b) {
 	switch(sortcol) {
 		case sort::PID:
-			/* ascending */
+			// ascending
 			return a->pid() < b->pid();
 		case sort::PPID:
-			/* ascending */
+			// ascending
 			return a->ppid() < b->ppid();
 		case sort::MEM:
-			/* descending */
+			// descending
 			return b->pages() < a->pages();
 		case sort::CPU:
-			/* descending */
+			// descending
 			return b->totalCycles() < a->totalCycles();
 		case sort::UCPU:
-			/* descending */
+			// descending
 			return b->userCycles() < a->userCycles();
 		case sort::KCPU:
-			/* descending */
+			// descending
 			return b->kernelCycles() < a->kernelCycles();
 		case sort::NAME:
-			/* ascending */
+			// ascending
 			return a->command() < b->command();
 	}
-	/* never reached */
+	// never reached
 	return false;
 }
 

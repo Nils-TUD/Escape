@@ -122,14 +122,14 @@ namespace std {
 		 * bool flag;
 		 * string s;
 		 * int d;
-		 * args->parse(args,"flag a=s arg2=d*",&flag,&s,&d);
+		 * args->parse("flag a=s arg2=d*",&flag,&s,&d);
 		 *
 		 * There are some special things to know:
 		 * 	- If an required argument is missing, a argument-value is missing, free arguments are
 		 *    given but not allowed, or similar, a cmdargs_error is thrown.
-		 * 	- The name of an argument may be empty. This means implicit that its an required
-		 *    argument which has just a value. Those arguments are expected in the given order. So
-		 *    if you specify an empty argument as the first, it has to be the first in the
+		 * 	- The name of an argument may be empty. This means implicitly that its an required
+		 *    argument which has just a value. These arguments are expected in the given order. So
+		 *    if you specify an empty argument as the first one, it has to be the first in the
 		 *    program-arguments (after the program-name of course).
 		 * Additionally you can manipulate the behaviour by flags when creating the instance.
 		 *
@@ -183,8 +183,7 @@ namespace std {
 		 * @param type the arg-type
 		 * @param ptr the location where to write to
 		 */
-		void setval(const string& arg,vector<string*>::iterator pos,bool hasVal,
-				char type,void *ptr);
+		void setval(const string& arg,vector<string*>::iterator pos,bool hasVal,char type,void *ptr);
 		/**
 		 * Converts the given argument to an integer and treats 'K','M' and 'G' as binary-prefixes.
 		 * I.e. K = 1024, M = 1024 * 1024, G = 1024 * 1024 * 1024

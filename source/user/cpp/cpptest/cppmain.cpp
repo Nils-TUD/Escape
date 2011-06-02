@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-/*#include <esc/common.h>
-#include <esc/debug.h>
+/*#include <esc/debug.h>
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -72,7 +71,6 @@ void my::doIt() {
 #endif
 
 int main(int argc,char **argv) {
-
 #if 0
 	int x;
 	int i = 0;

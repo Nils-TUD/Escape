@@ -161,7 +161,7 @@ static ssize_t lock_get(tPid pid,uint ident,bool free) {
 			return ERR_NOT_ENOUGH_MEM;
 		}
 		locks = nlocks;
-		memset(locks + oldCount,0,(lockCount - oldCount) * sizeof(sLock));
+		memclear(locks + oldCount,(lockCount - oldCount) * sizeof(sLock));
 		return oldCount;
 	}
 	return freeIdx;

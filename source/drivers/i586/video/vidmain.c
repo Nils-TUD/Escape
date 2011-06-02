@@ -147,7 +147,7 @@ int main(void) {
 
 static void vid_setMode(void) {
 	sVM86Regs regs;
-	memset(&regs,0,sizeof(regs));
+	memclear(&regs,sizeof(regs));
 	regs.ax = mode->no;
 	if(vm86int(0x10,&regs,NULL,0) < 0)
 		printe("Switch to text-mode failed");

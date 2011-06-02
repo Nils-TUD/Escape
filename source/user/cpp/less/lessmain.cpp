@@ -43,10 +43,16 @@ static void scrollDown(long lines);
 static void refreshScreen(void);
 static void printStatus(const char *totalStr);
 
+/* TODO when building for eco32, there seems to be an alignment problem. if we use a
+ * non-word-sized entity, _cin will be put to a non-word-aligned address. but the generated code
+ * will access a word there. thus, this can't work. it seems to be a bug in the eco32-specific part
+ * of ld? */
+/* for now it works when we make sure that the size of all stuff here together is a multiple of 4 */
+
 static ifstream vt;
 static FILE *in;
 static string filename;
-static bool seenEOF;
+static int seenEOF;
 static vector<string> lines;
 static size_t startLine = 0;
 static sVTSize consSize;
@@ -272,7 +278,7 @@ static void readLines(size_t end) {
 }
 
 static void append(string& s,int& len,char c) {
-	static bool inEsc = false;
+	static int inEsc = 0;
 	switch(c) {
 		case '\t':
 			for(int i = TAB_WIDTH - s.size() % TAB_WIDTH; i > 0; i--) {
@@ -289,10 +295,10 @@ static void append(string& s,int& len,char c) {
 			s += c;
 			if(inEsc) {
 				if(c == ']')
-					inEsc = false;
+					inEsc = 0;
 			}
 			else if(c == '\033')
-				inEsc = true;
+				inEsc = 1;
 			else
 				len++;
 			break;

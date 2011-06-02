@@ -55,7 +55,6 @@ typedef struct {
 	tSig signal;
 } sInterrupt;
 
-extern void intrpt_exKMiss(sIntrptStackFrame *stack);
 static void intrpt_defHandler(sIntrptStackFrame *stack);
 static void intrpt_exTrap(sIntrptStackFrame *stack);
 static void intrpt_exPageFault(sIntrptStackFrame *stack);
@@ -85,7 +84,7 @@ static sInterrupt intrptList[] = {
 	/* 0x12: EXC_PRV_INSTRCT */	{intrpt_defHandler,	"Prv. instr. exception",0},
 	/* 0x13: EXC_DIVIDE */		{intrpt_defHandler,	"Divide exception",		0},
 	/* 0x14: EXC_TRAP */		{intrpt_exTrap,		"Trap exception",		0},
-	/* 0x15: EXC_TLB_MISS */	{intrpt_exKMiss,	"TLB miss exception",	0},
+	/* 0x15: EXC_TLB_MISS */	{intrpt_defHandler,	"TLB miss exception",	0},
 	/* 0x16: EXC_TLB_WRITE */	{intrpt_exPageFault,"TLB write exception",	0},
 	/* 0x17: EXC_TLB_INVALID */	{intrpt_exPageFault,"TLB invalid exception",0},
 	/* 0x18: EXC_ILL_ADDRESS */	{intrpt_defHandler,	"Ill. addr. exception",	0},

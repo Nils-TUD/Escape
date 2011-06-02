@@ -37,7 +37,7 @@ bool dyna_extend(sDynArray *d) {
 	if(pmem_getFreeFrames(MM_DEF) == 0 || d->pageCount * PAGE_SIZE >= d->areaSize)
 		return false;
 	paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT);
-	memset((void*)addr,0,PAGE_SIZE);
+	memclear((void*)addr,PAGE_SIZE);
 	d->pageCount++;
 	d->objCount = (d->pageCount * PAGE_SIZE) / d->objSize;
 	return true;

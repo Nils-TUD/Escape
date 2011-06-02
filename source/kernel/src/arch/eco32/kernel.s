@@ -27,16 +27,10 @@
 	.global tlb_get
 	.global tlb_set
 	.global tlb_remove
-	.global tlb_clear
-	.global tlb_replace
 
 	.global logByte
 	.global debugc
 
-	.global intrpt_exKMiss
-	.global intrpt_setEnabled
-	.global intrpt_orMask
-	.global intrpt_andMask
 	.global intrpt_setMask
 
 	.global thread_idle
@@ -55,6 +49,7 @@
 	.set		PAGE_SIZE_SHIFT,12
 	.set		PTE_MAP_ADDR,0x80000000
 	.set		DIR_MAP_START,0xC0000000
+	.set		KERNEL_HEAP,0x80800000
 	.set		KERNEL_STACK,0x84400FFC					# our kernel-stack (the top)
 																					# individually for each process and stored fix in the
 																					# first entry of the TLB
@@ -108,28 +103,6 @@ intrpt_userMiss:
 	rfx
 .syn
 
-# kernel-TLB-miss-handler (for the addresses 0x80000000 - 0xBFFFFFFF)
-intrpt_exKMiss:
-	ldw		$9,$0,curPDir											# load page-dir
-	or		$9,$9,DIR_MAP_START								# make virtual
-	mvfs	$10,FS_TLB_EHIGH									# load tlbEntryHi
-	slr		$10,$10,20												# grab the offset of the page-table
-	and		$10,$10,0xFFC
-	add		$9,$9,$10													# add to page-directory
-	ldw		$9,$9,0														# load direct mapped page-table-address
-	beq		$9,$0,intrpt_exKMissWrite					# does the page-table exist?
-	mvfs	$10,FS_TLB_EHIGH									# load tlbEntryHi
-	slr		$10,$10,10												# grab the page-number
-	and		$10,$10,0xFFC
-	and		$9,$9,~0x7
-	or		$9,$9,DIR_MAP_START								# remove flags and make direct addressable
-	add		$9,$9,$10													# add to page-table
-	ldw		$9,$9,0														# load page-table-entry
-intrpt_exKMissWrite:
-	mvts	$9,FS_TLB_ELOW										# page-table-entry to tlbEntryLo
-	tbwr																		# write virt. & phys. address into TLB
-	jr		$31
-
 #===========================================
 # Start
 #===========================================
@@ -170,40 +143,6 @@ loop:
 	j			loop
 
 #===========================================
-# Input/Output
-#===========================================
-
-# void logByte(uchar byte)
-logByte:
-	add		$8,$0,OUTPUT_BASE									# set output base address
-	stw		$4,$8,0														# send char to output
-	jr		$31
-
-# void dbg_putc(char c)
-debugc:
-	sub		$29,$29,8													# create stack frame
-	stw		$31,$29,0													# save return register
-	stw		$16,$29,4													# save register variable
-	add		$16,$4,0													# save argument
-	add		$10,$0,0x0A
-	bne		$4,$10,debugcStart
-	add		$4,$0,0x0D
-	jal		debugc
-debugcStart:
-	add		$8,$0,TERM_BASE										# set I/O base address
-	add		$10,$0,OUTPUT_BASE								# set output base address
-debugcLoop:
-	ldw		$9,$8,(0 << 4 | 8)								# get xmtr status
-	and		$9,$9,1														# xmtr ready?
-	beq		$9,$0,debugcLoop									# no - wait
-	stw		$16,$10,0													# send char to output
-	stw		$16,$8,(0 << 4 | 12)							# send char
-	ldw		$31,$29,0													# restore return register
-	ldw		$16,$29,4													# restore register variable
-	add		$29,$29,8													# release stack frame
-	jr		$31																# return
-
-#===========================================
 # Interrupts
 #===========================================
 
@@ -228,6 +167,14 @@ isrStackOk:
 isrStackPresent:
 	# now save registers to kernel-stack
 	sub		$28,$28,34 * 4
+	stw		$9,$28,36													# first store $9 and $10 to have 2 registers
+	stw		$10,$28,40
+	mvfs	$9,FS_PSW
+	slr		$9,$9,16
+	and		$9,$9,0x1F												# determine irq-number
+	add		$10,$0,21													# kernel-miss
+	beq		$9,$10,intrpt_exKMiss							# go directly to kernel-miss handler, if it is one
+	# no kernel-miss -> ordinary procedure
 	stw		$1,$28,4
 	.syn
 	stw		$2,$28,8
@@ -237,8 +184,7 @@ isrStackPresent:
 	stw		$6,$28,24
 	stw		$7,$28,28
 	stw		$8,$28,32
-	stw		$9,$28,36
-	stw		$10,$28,40
+	# $9 and $10 are saved
 	stw		$11,$28,44
 	stw		$12,$28,48
 	stw		$13,$28,52
@@ -268,14 +214,6 @@ isrStackPresent:
 	sub		$29,$28,4
 	add		$4,$28,0													#	the intrpt-handler wants to access the registers
 	jal		intrpt_handler
-
-	# restore tlb-Entry-High for the case that we have got a TLB-miss
-	.nosyn
-	ldhi	$9,PTE_MAP_ADDR
-	sub		$8,$27,$9													# revert to entryHi
-	.syn
-	sll		$8,$8,PAGE_SIZE_SHIFT - 2
-	mvts	$8,FS_TLB_EHIGH										# store in TLB
 
 	# rebuild $28. maybe we got a tlb-miss
 	add		$28,$29,4
@@ -317,35 +255,41 @@ isrStackPresent:
 	rfx																			# return from exception
 	.syn
 
-# void intrpt_setEnabled(int enabled)
-intrpt_setEnabled:
-	mvfs	$8,FS_PSW
-	beq		$4,$0,intrpt_setEnabledDis
-	or		$8,$8,CINTRPT_FLAG
-	j			intpt_setEnabledEnd
-intrpt_setEnabledDis:
-	and		$8,$8,~CINTRPT_FLAG
-intpt_setEnabledEnd:
-	mvts	$8,FS_PSW
-	jr		$31
-
-# int intrpt_orMask(int mask)
-intrpt_orMask:
-	mvfs	$8,FS_PSW
-	and		$2,$8,0x0000FFFF   								# store old mask as return value
-	and		$4,$4,0x0000FFFF									# use lower 16 bits only
-	or		$8,$8,$4
-	mvts	$8,FS_PSW
-	jr		$31
-
-# int intrpt_andMask(int mask)
-intrpt_andMask:
-	mvfs	$8,FS_PSW
-	and		$2,$8,0x0000FFFF   								# store old mask as return value
-	or		$4,$4,0xFFFF0000									# use lower 16 bits only
-	and		$8,$8,$4
-	mvts	$8,FS_PSW
-	jr		$31
+# kernel-TLB-miss-handler (for the addresses 0x80000000 - 0xBFFFFFFF)
+intrpt_exKMiss:
+.nosyn
+	# we may only use $9 and $10 here!
+	ldhi	$9,curPDir												# put page-dir address into $9
+	or		$9,$9,curPDir
+	ldw		$9,$9,0														# page-dir is already in dir-mapped-space
+	mvfs	$10,FS_TLB_EHIGH									# load tlbEntryHi
+	slr		$10,$10,20												# grab the offset of the page-table
+	and		$10,$10,0xFFC
+	add		$9,$9,$10													# add to page-directory
+	ldw		$9,$9,0														# load direct mapped page-table-address
+	beq		$9,$0,intrpt_exKMissWrite					# does the page-table exist?
+	ldhi	$10,0xFFFFFFFF
+	or		$10,$10,0xFFF8
+	and		$9,$9,$10													# remove flags
+	ldhi	$10,0xC0000000
+	or		$9,$9,$10													# make directly addressable
+	mvfs	$10,FS_TLB_EHIGH									# load tlbEntryHi
+	slr		$10,$10,10												# grab the page-number
+	and		$10,$10,0xFFC
+	add		$9,$9,$10													# add to page-table
+	ldw		$9,$9,0														# load page-table-entry
+intrpt_exKMissWrite:
+	mvts	$9,FS_TLB_ELOW										# page-table-entry to tlbEntryLo
+	tbwr																		# write virt. & phys. address into TLB
+	# restore tlb-Entry-High for the case that we have got a TLB-miss
+	ldhi	$9,PTE_MAP_ADDR
+	sub		$10,$27,$9												# revert to entryHi
+	sll		$10,$10,PAGE_SIZE_SHIFT - 2
+	mvts	$10,FS_TLB_EHIGH									# store in TLB
+	ldw		$9,$28,36													# restore $9 and $10
+	ldw		$10,$28,40
+	rfx
+.syn
 
 # int intrpt_andMask(int mask)
 intrpt_setMask:
@@ -366,6 +310,40 @@ cpu_getBadAddr:
 	jr		$31
 
 #===========================================
+# Input/Output
+#===========================================
+
+# void logByte(uchar byte)
+logByte:
+	add		$8,$0,OUTPUT_BASE									# set output base address
+	stw		$4,$8,0														# send char to output
+	jr		$31
+
+# void dbg_putc(char c)
+debugc:
+	sub		$29,$29,8													# create stack frame
+	stw		$31,$29,0													# save return register
+	stw		$16,$29,4													# save register variable
+	add		$16,$4,0													# save argument
+	add		$10,$0,0x0A
+	bne		$4,$10,debugcStart
+	add		$4,$0,0x0D
+	jal		debugc
+debugcStart:
+	add		$8,$0,TERM_BASE										# set I/O base address
+	add		$10,$0,OUTPUT_BASE								# set output base address
+debugcLoop:
+	ldw		$9,$8,(0 << 4 | 8)								# get xmtr status
+	and		$9,$9,1														# xmtr ready?
+	beq		$9,$0,debugcLoop									# no - wait
+	stw		$16,$10,0													# send char to output
+	stw		$16,$8,(0 << 4 | 12)							# send char
+	ldw		$31,$29,0													# restore return register
+	ldw		$16,$29,4													# restore register variable
+	add		$29,$29,8													# release stack frame
+	jr		$31																# return
+
+#===========================================
 # TLB
 #===========================================
 
@@ -379,7 +357,6 @@ tlb_get:
 	stw		$8,$6,0
 	jr		$31
 
-# tlb_set may NOT use the stack! (see resume)
 # void tlb_set(int index,unsigned int entryHi,unsigned int entryLo)
 tlb_set:
 	mvts	$4,FS_TLB_INDEX										# set index
@@ -388,7 +365,6 @@ tlb_set:
 	tbwi																		# write TLB entry at index
 	jr		$31
 
-# removes the given virtual address from the TLB
 # void tlb_remove(unsigned int addr)
 tlb_remove:
 	and		$4,$4,~(PAGE_SIZE - 1)						# get the page-start
@@ -397,61 +373,13 @@ tlb_remove:
 	mvfs	$8,FS_TLB_INDEX										# now we have the index
 	add		$9,$0,TLB_INDEX_INVALID
 	beq		$8,$9,tlb_removeExit							# TLB_INDEX_INVALID = entry not found
-	sll		$8,$8,12													# * PAGE_SIZE to get 0xC000X000
 	add		$8,$0,DIR_MAP_START
 	mvts	$8,FS_TLB_EHIGH										# use this as entry-high
+	mvts	$0,FS_TLB_ELOW										# invalidate
 	tbwi																		# write index
 tlb_removeExit:
 	jr		$31
 
-# searches for the <high> and replaces its low-entry with <low>. If there is no such
-# entry, it will write it at a random index.
-# void tlb_replace(unsigned int high,unsigned int low)
-tlb_replace:
-	and		$4,$4,~(PAGE_SIZE - 1)						# get the page-start
-	mvts	$4,FS_TLB_EHIGH										# search for the virtual address
-	tbs
-	add		$8,$0,TLB_INDEX_INVALID
-	mvfs	$9,FS_TLB_INDEX
-	mvts	$5,FS_TLB_ELOW										# use new low-entry
-	beq		$8,$9,tlb_replaceRandom						# TLB_INDEX_INVALID = entry not found
-	tbwi																		# write index
-	j			tlb_replaceExit
-tlb_replaceRandom:
-	tbwr																		# write at a random index
-tlb_replaceExit:
-	jr		$31
-
-# void tlb_clear(void)
-tlb_clear:
-	# save registers
-	sub		$29,$29,16
-	stw		$31,$29,0
-	stw		$16,$29,4
-	stw		$17,$29,8
-	stw		$18,$29,12
-
-	# initialize the TLB with invalid entries
-	add		$16,$0,DIR_MAP_START							# 0xC0000000
-	add		$17,$0,1													# loop index (first index is fix)
-	add		$18,$0,32													# loop end
-tlb_clearloop:
-	add		$4,$17,0													# index
-	add		$5,$16,0													# entryHi
-	add		$6,$0,0														# entryLo
-	jal 	tlb_set
-	add		$17,$17,1													# $17++
-	add		$16,$16,PAGE_SIZE
-	blt		$17,$18,tlb_clearloop							# if $17 < $18, jump to tlb_clearloop
-
-	# restore registers
-	ldw		$18,$29,12
-	ldw		$17,$29,8
-	ldw		$16,$29,4
-	ldw		$31,$29,0
-	add		$29,$29,16
-
-	jr		$31
 
 #===========================================
 # Threads
@@ -502,21 +430,31 @@ thread_resume:
 	stw		$4,$0,curPDir
 
 	# we have to refresh the fix entry for the process
-	add		$4,$0,$0
-	ldhi	$5,KERNEL_STACK										# ASSUMES that only the high 16 bit are interesting here
-	sll		$6,$6,PAGE_SIZE_SHIFT							# frame-number to address
-	or		$6,$6,0x7													# make existing, present and writable
-	# Note that we assume that setTLB doesnt need a stack
-	jal		tlb_set														# store into TLB
+	mvts	$0,FS_TLB_INDEX
+	ldhi	$10,KERNEL_STACK									# ASSUMES that only the high 16 bit are interesting here
+	mvts	$10,FS_TLB_EHIGH
+	sll		$8,$6,PAGE_SIZE_SHIFT							# frame-number to address
+	or		$8,$8,0x7													# make existing, present and writable
+	mvts	$8,FS_TLB_ELOW
+	tbwi
 
-	# clear TLB
-	# Note: tlb_set does not change $4 - $7, so we can use them here
+	# remove all entries from the TLB that come from not-shared pagetables
+	add		$9,$0,KERNEL_HEAP
 	add		$4,$0,1														# loop index (first index is fix)
 	add		$5,$0,DIR_MAP_START								# 0xC0000000
 	add		$6,$0,$0													# entryLo (stays always the same)
 	add		$7,$0,32													# loop end
 resumeClearTLBLoop:
-	jal 	tlb_set
+	mvts	$4,FS_TLB_INDEX
+	tbri
+	mvfs	$8,FS_TLB_EHIGH
+	bltu	$8,$9,1f													# virt < KERNEL_HEAP?
+	bltu	$8,$10,2f													# virt < KERNEL_STACK?
+1:
+	mvts	$5,FS_TLB_EHIGH										# not in the shared-page-table-area
+	mvts	$6,FS_TLB_ELOW										# therefore, invalidate the entry
+	tbwi
+2:
 	add		$4,$4,1														# $4++
 	blt		$4,$7,resumeClearTLBLoop					# if $4 < $7, jump to resumeClearTLBLoop
 

@@ -12,6 +12,8 @@ memset:
 	beq		$8,$0,3f										# already word-aligned?
 2:
 	# ok, word-align dest
+	add		$9,$0,4
+	sub		$8,$9,$8										# remaining = 4 - (addr & 3)
 	add		$9,$4,$8										# dest + number of bytes to copy before word-aligned
 	bgeu	$6,$8,5f										# less than len?
 	add		$9,$4,$6										# no, so take len as number of bytes
@@ -31,9 +33,11 @@ memset:
 	sll		$8,$5,24
 	or		$11,$11,$8
 	# first, copy with loop-unrolling
-	ldhi	$12,0xFFFF									# save $12 for later usage
+	sub		$8,$10,$4										# $8 = number of remaining bytes
+	ldhi	$12,0xFFFF0000							# save $12 for later usage
 	or		$9,$12,0xFFE0
-	and		$9,$10,$9										# align $9 to 8 words
+	and		$9,$8,$9										# align it to 8*4 bytes
+	add		$9,$9,$4										# add dest
 	j			2f
 3:
 	stw		$11,$4,0										# word 1
@@ -44,17 +48,19 @@ memset:
 	stw		$11,$4,20										# word 6
 	stw		$11,$4,24										# word 7
 	stw		$11,$4,28										# word 8
-	add		$11,$4,32
+	add		$4,$4,32
 2:
 	bltu	$4,$9,3b										# stop if $4 >= $9
 	# now clear the remaining words
+	sub		$8,$10,$4										# $8 = number of remaining bytes
 	or		$9,$12,0xFFFC
-	and		$9,$10,$9										# word align dest-end
-	j			2f
+	and		$9,$8,$9										# word-align it
+	add		$9,$9,$4										# add dest
+	j			6f
 3:
 	stw		$11,$4,0
 	add		$4,$4,4
-2:
+6:
 	bltu	$4,$9,3b										# stop if $4 >= $9
 	# maybe, there are some bytes left to copy
 	j			1f

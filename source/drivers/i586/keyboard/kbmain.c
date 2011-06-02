@@ -256,7 +256,7 @@ static void kbIntrptHandler(int sig) {
 			if(!data.isBreak && data.keycode == VK_F12) {
 				/* switch to vga-text-mode */
 				sVM86Regs vmregs;
-				memset(&vmregs,0,sizeof(vmregs));
+				memclear(&vmregs,sizeof(vmregs));
 				vmregs.ax = 0x2;
 				vm86int(0x10,&vmregs,NULL,0);
 

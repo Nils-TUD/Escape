@@ -31,18 +31,18 @@
 #include <errors.h>
 
 /* to shift a flag down to the first bit */
-#define PG_WRITABLE_SHIFT	0
-#define PG_PRESENT_SHIFT	2
+#define PG_WRITABLE_SHIFT			0
+#define PG_PRESENT_SHIFT			2
 
-#define TLB_SIZE			32
-#define TLB_FIXED			4
+#define TLB_SIZE					32
+#define TLB_FIXED					4
 
-#define PAGE_DIR_DIRMAP		(curPDir | DIR_MAPPED_SPACE)
-#define PAGE_DIR_DIRMAP_OF(pdir) (pdir | DIR_MAPPED_SPACE)
+#define PAGE_DIR_DIRMAP				(curPDir)
+#define PAGE_DIR_DIRMAP_OF(pdir) 	(pdir)
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
-#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + \
-								(((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
+#define ADDR_TO_MAPPED(addr)		(MAPPED_PTS_START + \
+		(((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 #define ADDR_TO_MAPPED_CUSTOM(mappingArea,addr) ((mappingArea) + \
 		(((uintptr_t)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 
@@ -111,14 +111,14 @@ void paging_init(void) {
 	sPDEntry *pd,*pde;
 
 	/* set page-dir of first process */
-	curPDir = (tPageDir)pmem_allocate() * PAGE_SIZE;
-	pd = (sPDEntry*)(curPDir | DIR_MAPPED_SPACE);
+	curPDir = (tPageDir)(pmem_allocate() * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	pd = (sPDEntry*)curPDir;
 	/* clear */
 	memclear(pd,PAGE_SIZE);
 
 	/* put the page-directory in itself */
 	pde = pd + ADDR_TO_PDINDEX(MAPPED_PTS_START);
-	pde->ptFrameNo = curPDir / PAGE_SIZE;
+	pde->ptFrameNo = (curPDir & ~DIR_MAPPED_SPACE) / PAGE_SIZE;
 	pde->present = true;
 	pde->writable = true;
 	pde->exists = true;
@@ -294,7 +294,7 @@ ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	frmCount++;
 
 	*stackFrame = pt->frameNumber;
-	*pdir = pdirFrame << PAGE_SIZE_SHIFT;
+	*pdir = DIR_MAPPED_SPACE | (pdirFrame << PAGE_SIZE_SHIFT);
 	return frmCount;
 }
 
@@ -311,7 +311,7 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	pmem_free(pde->ptFrameNo);
 	stats.ptables++;
 	/* free page-dir */
-	pmem_free(pdir >> PAGE_SIZE_SHIFT);
+	pmem_free((pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT);
 	stats.ptables++;
 	/* ensure that we don't use it again */
 	otherPDir = 0;
@@ -565,7 +565,7 @@ static uintptr_t paging_getPTables(tPageDir pdir) {
 	pde = ((sPDEntry*)PAGE_DIR_DIRMAP) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
 	pde->present = true;
 	pde->exists = true;
-	pde->ptFrameNo = pdir >> PAGE_SIZE_SHIFT;
+	pde->ptFrameNo = (pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT;
 	pde->writable = true;
 	/* we want to access the whole page-table */
 	paging_flushPageTable(TMPMAP_PTS_START,MAPPED_PTS_START);

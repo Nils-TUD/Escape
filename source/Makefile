@@ -170,9 +170,9 @@ endif
 
 elf:
 ifeq ($(APP),)
-		$(READELF) -a $(BIN) | less
+		$(READELF) -a -W $(BIN) | less
 else
-		$(READELF) -a $(BUILD)/$(APP) | less
+		$(READELF) -a -W $(BUILD)/$(APP) | less
 endif
 
 mmix:	all hdd
@@ -183,7 +183,7 @@ mmixd:	all hdd
 
 eco:	all hdd prepareRun
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
-			-m $(BUILD)/kernel.map $(BUILD)/driver_fs.map -n
+			-m $(BUILD)/kernel.map $(BUILD)/driver_rtc.map -n
 
 teste:	all hdd prepareTest
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \

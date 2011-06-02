@@ -127,7 +127,7 @@ int vm86_create(void) {
 	if(p->ioMap == NULL)
 		p->ioMap = (uint8_t*)kheap_alloc(IO_MAP_SIZE / 8);
 	if(p->ioMap != NULL)
-		memset(p->ioMap,0x00,IO_MAP_SIZE / 8);
+		memclear(p->ioMap,IO_MAP_SIZE / 8);
 
 	/* give it a name */
 	strcpy(p->command,"VM86");

@@ -57,7 +57,7 @@ void util_panic(const char *fmt,...) {
 	 * to find the real reason for a failure. so it might be a good idea to turn it off during
 	 * kernel-debugging :)  */
 	sVM86Regs vmregs;
-	memset(&vmregs,0,sizeof(vmregs));
+	memclear(&vmregs,sizeof(vmregs));
 	vmregs.ax = 0x2;
 	vm86_int(0x10,&vmregs,NULL,0);
 	vid_clearScreen();

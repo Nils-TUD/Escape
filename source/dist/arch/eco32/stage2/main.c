@@ -23,6 +23,7 @@
 #include <sys/arch/eco32/boot.h>
 #include <sys/task/elf.h>
 #include "../../../../drivers/common/fs/ext2/ext2.h"
+#include <string.h>
 #include <stdarg.h>
 
 #define PROG_COUNT			4
@@ -68,7 +69,7 @@ static uint buffer[1024 / sizeof(uint)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
 static uint loadAddr = 0xC0000000;
 
-static int strncmp(const char *str1,const char *str2,size_t count) {
+static int mystrncmp(const char *str1,const char *str2,size_t count) {
 	ssize_t rem = count;
 	while(*str1 && *str2 && rem-- > 0) {
 		if(*str1++ != *str2++)
@@ -123,8 +124,8 @@ static int readBlocks(void *dst,tBlockNo start,size_t blockCount) {
 	return dskio(BOOT_DISK,'r',START_SECTOR + BLOCKS_TO_SECS(start),dst,BLOCKS_TO_SECS(blockCount));
 }
 
-static void readFromDisk(tBlockNo blkno,char *buf,uint offset,uint nbytes) {
-	char *dst = offset == 0 && (nbytes % BLOCK_SIZE) == 0 ? buf : buffer;
+static void readFromDisk(tBlockNo blkno,void *buf,uint offset,uint nbytes) {
+	void *dst = offset == 0 && (nbytes % BLOCK_SIZE) == 0 ? buf : buffer;
 	if(offset >= BLOCK_SIZE || offset + nbytes > BLOCK_SIZE)
 		halt("Offset / nbytes invalid");
 
@@ -161,7 +162,7 @@ static tInodeNo searchDir(tInodeNo dirIno,sExt2Inode *dir,const char *name,size_
 	/* search the directory-entries */
 	while(rem > 0 && le32tocpu(entry->inode) != 0) {
 		/* found a match? */
-		if(nameLen == le16tocpu(entry->nameLen) && strncmp(entry->name,name,nameLen) == 0)
+		if(nameLen == le16tocpu(entry->nameLen) && mystrncmp(entry->name,name,nameLen) == 0)
 			return le32tocpu(entry->inode);
 
 		/* to next dir-entry */
@@ -241,7 +242,7 @@ static tInodeNo namei(char *path,sExt2Inode *ino) {
 	return inodeno;
 }
 
-uint copyToMem(sExt2Inode *ino,uint offset,uint count,uint dest) {
+static uint copyToMem(sExt2Inode *ino,uint offset,uint count,uint dest) {
 	tBlockNo blk;
 	uint offInBlk,amount;
 	while(count > 0) {
@@ -249,7 +250,7 @@ uint copyToMem(sExt2Inode *ino,uint offset,uint count,uint dest) {
 
 		offInBlk = offset % BLOCK_SIZE;
 		amount = MIN(count,BLOCK_SIZE - offInBlk);
-		readFromDisk(blk,(char*)dest,offInBlk,amount);
+		readFromDisk(blk,(void*)dest,offInBlk,amount);
 
 		count -= amount;
 		offset += amount;
@@ -260,12 +261,12 @@ uint copyToMem(sExt2Inode *ino,uint offset,uint count,uint dest) {
 	return dest;
 }
 
-int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
+static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	size_t j,loadSegNo = 0;
 	uint8_t const *datPtr;
 
 	/* read header */
-	readFromDisk(le32tocpu(ino->dBlocks[0]),(char*)&eheader,0,sizeof(Elf32_Ehdr));
+	readFromDisk(le32tocpu(ino->dBlocks[0]),&eheader,0,sizeof(Elf32_Ehdr));
 
 	/* check magic */
 	if(eheader.e_ident.chars[0] != ELFMAG[0] ||
@@ -279,7 +280,7 @@ int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
 		tBlockNo block = getBlock(ino,(ulong)datPtr);
-		readFromDisk(block,(char*)&pheader,(uint)datPtr & (BLOCK_SIZE - 1),sizeof(Elf32_Phdr));
+		readFromDisk(block,&pheader,(uint)datPtr & (BLOCK_SIZE - 1),sizeof(Elf32_Phdr));
 
 		if(pheader.p_type == PT_LOAD) {
 			/* read into memory */

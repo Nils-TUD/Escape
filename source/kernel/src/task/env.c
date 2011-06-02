@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/env.h>
 #include <sys/mem/kheap.h>

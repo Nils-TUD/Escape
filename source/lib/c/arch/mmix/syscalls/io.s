@@ -1,5 +1,5 @@
 #
-# $Id: io.s 827 2010-10-01 15:05:25Z nasmussen $
+# $Id$
 # Copyright (C) 2008 - 2009 Nils Asmussen
 #
 # This program is free software; you can redistribute it and/or

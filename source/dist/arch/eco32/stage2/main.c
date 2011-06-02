@@ -1,5 +1,5 @@
 /**
- * $Id: main.c 52 2009-08-13 12:39:24Z nasmussen $
+ * $Id$
  * Copyright (C) 2009 Nils Asmussen
  */
 

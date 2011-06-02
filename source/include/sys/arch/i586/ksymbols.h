@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: ksymbols.h 847 2010-10-04 01:25:15Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,14 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_ENDIAN_H_
-#define ECO32_ENDIAN_H_
-
-#include <esc/common.h>
-
-uint16_t le16tocpu(uint16_t in);
-uint32_t le32tocpu(uint32_t in);
-uint16_t cputole16(uint16_t in);
-uint32_t cputole32(uint32_t in);
-
-#endif /* ECO32_ENDIAN_H_ */
+#if DEBUGGING
+#	if TESTING
+#		include "../../../../build/i586-debug/kernelt_symbols.txt"
+#	else
+#		include "../../../../build/i586-debug/kernel_symbols.txt"
+#	endif
+#else
+#	if TESTING
+#		include "../../../../build/i586-release/kernelt_symbols.txt"
+#	else
+#		include "../../../../build/i586-release/kernel_symbols.txt"
+#	endif
+#endif

@@ -1,5 +1,5 @@
 /**
- * $Id: debug.c 871 2011-05-29 11:55:58Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/debug.h>
 #include <esc/width.h>
 #include <string.h>

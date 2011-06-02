@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DEBUG_H_
-#define DEBUG_H_
+#ifndef SYS_DEBUG_H_
+#define SYS_DEBUG_H_
 
 #include <sys/common.h>
 
@@ -36,4 +36,4 @@ void dbg_startTimer(void);
  */
 void dbg_stopTimer(const char *prefix);
 
-#endif /*DEBUG_H_*/
+#endif /* SYS_DEBUG_H_ */

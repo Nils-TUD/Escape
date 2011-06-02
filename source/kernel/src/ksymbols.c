@@ -24,20 +24,11 @@
 static sSymbol ksymbols[] = {
 	/* add dummy-entry to prevent empty array */
 	{0,""},
-#ifdef __i586__
-#if DEBUGGING
-#	if TESTING
-#		include "../../build/i586-debug/kernelt_symbols.txt"
-#	else
-#		include "../../build/i586-debug/kernel_symbols.txt"
-#	endif
-#else
-#	if TESTING
-#		include "../../build/i586-release/kernelt_symbols.txt"
-#	else
-#		include "../../build/i586-release/kernel_symbols.txt"
-#	endif
+#ifdef __i386__
+#include <sys/arch/i586/ksymbols.h>
 #endif
+#ifdef __eco32__
+#include <sys/arch/eco32/ksymbols.h>
 #endif
 };
 

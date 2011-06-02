@@ -1,5 +1,5 @@
 /**
- * $Id: paging.c 863 2010-12-28 11:51:59Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

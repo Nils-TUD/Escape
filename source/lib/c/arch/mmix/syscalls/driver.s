@@ -1,5 +1,5 @@
 #
-# $Id: driver.s 833 2010-10-02 14:17:28Z nasmussen $
+# $Id$
 # Copyright (C) 2008 - 2009 Nils Asmussen
 #
 # This program is free software; you can redistribute it and/or

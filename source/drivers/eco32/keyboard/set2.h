@@ -1,5 +1,5 @@
 /**
- * $Id: set1.h 855 2010-10-04 17:09:40Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

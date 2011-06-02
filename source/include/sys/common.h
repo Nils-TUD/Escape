@@ -38,8 +38,4 @@ typedef uint tFrameNo;
 #define M						(1024 * K)
 #define G						(1024 * M)
 
-/* debugging */
-#define DBG_PGCLONEPD(s)
-#define DBG_KMALLOC(s)
-
 #endif /*SYS_COMMON_H_*/

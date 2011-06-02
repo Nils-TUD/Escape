@@ -2,9 +2,9 @@ ROOT = ../../..
 BUILDL = $(BUILD)/user/c/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
 MAP = $(BUILD)/user_$(NAME).map
-SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+SUBDIRS = $(shell find . -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+DEPS = $(shell find $(BUILDL) -name "*.d")
 
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 ifeq ($(LINKTYPE),static)
@@ -12,7 +12,7 @@ ifeq ($(LINKTYPE),static)
 endif
 
 # sources
-CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
+CSRC = $(shell find . -name "*.c")
 
 # objects
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))

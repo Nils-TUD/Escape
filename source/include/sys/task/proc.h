@@ -26,6 +26,13 @@
 #include <sys/vfs/node.h>
 #include <sys/intrpt.h>
 
+#ifdef __i386__
+#include <sys/arch/i586/task/proc.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/proc.h>
+#endif
+
 /* max number of coexistent processes */
 #define MAX_PROC_COUNT		8192
 #define MAX_PROC_NAME_LEN	30
@@ -34,9 +41,6 @@
 /* for marking unused */
 #define INVALID_PID			(MAX_PROC_COUNT + 1)
 #define KERNEL_PID			MAX_PROC_COUNT
-#define ATA_PID				2
-#define FS_PID				4
-#define KEYBOARD_PID		12	/* just for debugging */
 
 /* process flags */
 #define P_ZOMBIE			1

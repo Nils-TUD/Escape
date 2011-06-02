@@ -12,6 +12,25 @@
 #include <esc/sllist.h>
 #include <assert.h>
 
+int thread_initArch(sThread *t) {
+	UNUSED(t);
+	/* nothing to do */
+	return 0;
+}
+
+int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
+	UNUSED(src);
+	UNUSED(dst);
+	UNUSED(cloneProc);
+	/* nothing to do */
+	return 0;
+}
+
+void thread_freeArch(sThread *t) {
+	UNUSED(t);
+	/* nothing to do */
+}
+
 void thread_switchTo(tTid tid) {
 	sThread *cur = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */

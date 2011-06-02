@@ -455,7 +455,7 @@ static void intrpt_exGenProtFault(sIntrptStackFrame *stack) {
 static void intrpt_exCoProcNA(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	sThread *t = thread_getRunning();
-	fpu_handleCoProcNA(&t->fpuState);
+	fpu_handleCoProcNA(&t->archAttr.fpuState);
 }
 
 static void intrpt_exPageFault(sIntrptStackFrame *stack) {

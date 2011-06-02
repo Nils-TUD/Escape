@@ -17,12 +17,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+#include <esc/syscalls.h>
+#include <arch/eco32/syscalls.s>
+
 .section .text
 
 .global _start
 .global sigRetFunc
-
-.include "../../../lib/c/arch/eco32/syscalls.s"
 
 _start:
 	# load modules first

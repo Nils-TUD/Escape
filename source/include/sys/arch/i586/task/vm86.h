@@ -82,8 +82,7 @@ int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t
  * Handles a GPF
  *
  * @param stack the interrupt-stack-frame
- * @return true if handled?? TODO
  */
-bool vm86_handleGPF(sIntrptStackFrame *stack);
+void vm86_handleGPF(sIntrptStackFrame *stack);
 
 #endif /* VM86_H_ */

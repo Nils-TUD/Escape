@@ -107,7 +107,7 @@ int main(int argc,char *argv[]) {
 	if(setSigHandler(SIG_TERM,sigTermHndl) < 0)
 		error("Unable to set signal-handler for SIG_TERM");
 
-	/*TODO tpool_init();*/
+	tpool_init();
 	mount_init();
 
 	/* add ext2 */
@@ -172,16 +172,19 @@ int main(int argc,char *argv[]) {
 						continue;
 					}
 				}
-				/*TODO if(!tpool_addRequest(commands[mid - MSG_FS_OPEN],fd,&msg,sizeof(msg),data))
-					printf("[FS] Not enough mem for request %d\n",mid);*/
+#if REQ_THREAD_COUNT > 0
+				if(!tpool_addRequest(commands[mid - MSG_FS_OPEN],fd,&msg,sizeof(msg),data))
+					printf("[FS] Not enough mem for request %d\n",mid);
+#else
 				commands[mid - MSG_FS_OPEN](fd,&msg,data);
 				close(fd);
+#endif
 			}
 		}
 	}
 
 	/* clean up */
-	/*TODO tpool_shutdown();*/
+	tpool_shutdown();
 	shutdown();
 	close(id);
 

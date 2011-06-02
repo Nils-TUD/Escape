@@ -1,12 +1,12 @@
 # general
 #ARCH = mmix
 #GCCVER = 4.6.0
-#ARCH = i586
-#GCCVER = 4.4.3
-ARCH = eco32
+ARCH = i586
 GCCVER = 4.4.3
+#ARCH = eco32
+#GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-release)
+BUILDDIR = $(abspath build/$(ARCH)-debug)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -44,6 +44,7 @@ export TARGET
 export BUILD = $(BUILDDIR)
 export HCC = gcc
 export CC = $(abspath $(DIST)/bin/$(TARGET)-gcc)
+export CPP = $(abspath $(DIST)/bin/$(TARGET)-cpp)
 export CPPC = $(abspath $(DIST)/bin/$(TARGET)-g++)
 export LD = $(abspath $(DIST)/bin/$(TARGET)-ld)
 export AR = $(abspath $(DIST)/bin/$(TARGET)-ar)
@@ -64,7 +65,7 @@ export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long
 export DWFLAGS=-w -wi
-export ASFLAGS = --warn
+export ASFLAGS = --warn -I $(abspath include)
 ifeq ($(LIBGCC),static)
 	CWFLAGS += -static-libgcc
 	CPPWFLAGS += -static-libgcc
@@ -183,7 +184,7 @@ mmixd:	all hdd
 
 eco:	all hdd prepareRun
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
-			-m $(BUILD)/kernel.map $(BUILD)/driver_rtc.map -n
+			-m $(BUILD)/kernel.map $(BUILD)/driver_fs.map -n
 
 teste:	all hdd prepareTest
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \

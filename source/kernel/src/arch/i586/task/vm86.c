@@ -201,7 +201,7 @@ int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t
 	return vm86Res;
 }
 
-bool vm86_handleGPF(sIntrptStackFrame *stack) {
+void vm86_handleGPF(sIntrptStackFrame *stack) {
 	uint8_t *ops = (uint8_t*)(stack->eip + (stack->cs << 4));
 	uint8_t opCode;
 	bool data32 = false;
@@ -266,7 +266,7 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 				DBGVM86("[VM86] done\n");
 				vm86_stop(stack);
 				/* don't continue here */
-				return true;
+				return;
 			}
             stack->eip = newip;
             stack->cs = newcs;
@@ -328,7 +328,6 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 			util_panic("Invalid opcode (0x%x) @ 0x%x",opCode,(uintptr_t)(ops - 1));
 			break;
 	}
-	return true;
 }
 
 static uint16_t vm86_popw(sIntrptStackFrame *stack) {

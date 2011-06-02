@@ -1,8 +1,8 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/$(NAME)
-SUBDIRS = $(shell find . -type d)
+SUBDIRS = $(shell find . -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -name "*.d")
+DEPS = $(shell find $(BUILDL) -name "*.d")
 STLIB = $(BUILD)/lib$(NAME).a
 
 ifneq ($(LINKTYPE),static)

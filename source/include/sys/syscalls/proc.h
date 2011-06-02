@@ -22,6 +22,10 @@
 
 #include <sys/intrpt.h>
 
+#ifdef __i386__
+#include <sys/arch/i586/syscalls/proc.h>
+#endif
+
 /**
  * Returns the pid of the current process
  *
@@ -60,24 +64,6 @@ void sysc_waitChild(sIntrptStackFrame *stack);
 void sysc_exec(sIntrptStackFrame *stack);
 
 /**
- * Requests some IO-ports
- *
- * @param uint16_t start-port
- * @param size_t number of ports
- * @return int 0 if successfull or a negative error-code
- */
-void sysc_requestIOPorts(sIntrptStackFrame *stack);
-
-/**
- * Releases some IO-ports
- *
- * @param uint16_t start-port
- * @param size_t number of ports
- * @return int 0 if successfull or a negative error-code
- */
-void sysc_releaseIOPorts(sIntrptStackFrame *stack);
-
-/**
  * Returns the environment-variable-name with index i. Or an error if there is none.
  *
  * @param char* the buffer to write the name to
@@ -105,18 +91,5 @@ void sysc_getenvto(sIntrptStackFrame *stack);
  * @return int 0 on success
  */
 void sysc_setenv(sIntrptStackFrame *stack);
-
-/**
- * Performs a VM86-interrupt. That means a VM86-task is created as a child-process, the
- * registers are set correspondingly and the tasks starts at the handler for the given interrupt.
- * As soon as the interrupt is finished the result is copied into the registers
- *
- * @param uint16_t the interrupt-number
- * @param sVM86Regs* the registers
- * @param sVM86Memarea* the memareas (may be NULL)
- * @param size_t mem-area count
- * @return int 0 on success
- */
-void sysc_vm86int(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_PROC_H_ */

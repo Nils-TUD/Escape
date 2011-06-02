@@ -14,6 +14,21 @@
 #include <sys/cpu.h>
 #include <assert.h>
 
+int thread_initArch(sThread *t) {
+	t->archAttr.fpuState = NULL;
+	return 0;
+}
+
+int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
+	UNUSED(cloneProc);
+	fpu_cloneState(&(dst->archAttr.fpuState),src->archAttr.fpuState);
+	return 0;
+}
+
+void thread_freeArch(sThread *t) {
+	fpu_freeState(&t->archAttr.fpuState);
+}
+
 void thread_switchTo(tTid tid) {
 	sThread *cur = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */

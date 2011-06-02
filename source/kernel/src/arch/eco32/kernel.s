@@ -44,6 +44,7 @@
 	.set		TERM_BASE,0xF0300000						# terminal base address
 	.set		OUTPUT_BASE,0xFF000000					# output base address
 	.set		TIMER_BASE,0xF0000000						# timer base address
+	.set		KEYBOARD_BASE,0xF0200000				# keyboard base address
 
 	.set		PAGE_SIZE,0x1000
 	.set		PAGE_SIZE_SHIFT,12
@@ -125,6 +126,12 @@ start:
 	add		$16,$4,$0													# save $4
 	add		$4,$0,0xFFFF
 	jal		intrpt_setMask
+
+	# enable keyboard-interrupts to be able to react on F12 for entering the debugging-console before
+	# the keyboard driver is running
+	add		$8,$0,KEYBOARD_BASE
+	add		$9,$0,0x2
+	stw		$9,$8,0
 
 	# call main
 	add		$4,$16,$0													# give main the load-progs-array

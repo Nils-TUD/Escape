@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+#include <esc/syscalls.h>
+#include <arch/eco32/syscalls.s>
+
 .section .text
 
 .global _start
@@ -25,8 +28,6 @@
 .extern exit
 .extern init_tls
 .extern _init
-
-.include "arch/eco32/syscalls.s"
 
 #  Initial stack:
 #  +------------------+  <- top

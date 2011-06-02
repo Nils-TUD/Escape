@@ -277,7 +277,7 @@ sRegion *proc_getLRURegion(void) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
-		if(p->pid != ATA_PID) {
+		if(p->pid != DISK_PID) {
 			sRegion *reg = vmm_getLRURegion(p);
 			if(reg && reg->timestamp < ts) {
 				ts = reg->timestamp;

@@ -199,7 +199,7 @@ tFileNo vfs_openPath(tPid pid,ushort flags,const char *path) {
 		 * if the user tries to mount the device "/realfile" the userspace has no opportunity
 		 * to distinguish between virtual and real files. therefore fs will try to open this
 		 * path and shoot itself in the foot... */
-		if(pid == ATA_PID || pid == FS_PID)
+		if(pid == DISK_PID || pid == FS_PID)
 			return ERR_PATH_NOT_FOUND;
 
 		/* send msg to fs and wait for reply */

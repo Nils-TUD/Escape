@@ -6,6 +6,7 @@
 #define I586_THREAD_H_
 
 #include <esc/common.h>
+#include <sys/arch/i586/fpu.h>
 
 /* the thread-state which will be saved for context-switching */
 typedef struct {
@@ -31,5 +32,10 @@ typedef struct {
 	 * if-statement or wether we return to the instruction after thread_resume() doesn't matter.
 	 */
 } sThreadRegs;
+
+typedef struct {
+	/* FPU-state; initially NULL */
+	sFPUState *fpuState;
+} sThreadArchAttr;
 
 #endif /* I586_THREAD_H_ */

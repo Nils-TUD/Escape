@@ -17,6 +17,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+#include <esc/syscalls.h>
+#include <arch/i586/syscalls.s>
+
 .section .text
 
 .global sigRetFunc
@@ -25,8 +28,6 @@
 .extern __libc_init
 .extern lookup_resolve
 .extern load_setupProg
-
-.include "../../../lib/c/arch/i586/syscalls.s"
 
 #  Initial stack:
 #  +------------------+  <- top

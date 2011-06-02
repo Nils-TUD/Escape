@@ -21,10 +21,6 @@
 #define THREAD_H_
 
 #include <sys/common.h>
-/* TODO */
-#ifdef __i386__
-#include <sys/arch/i586/fpu.h>
-#endif
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <esc/hashmap.h>
@@ -83,12 +79,10 @@ struct sThread {
 	tVMRegNo tlsRegion;
 	/* the frame mapped at KERNEL_STACK */
 	tFrameNo kstackFrame;
+	/* the save-area for registers */
 	sThreadRegs save;
-	/* TODO */
-#ifdef __i386__
-	/* FPU-state; initially NULL */
-	sFPUState *fpuState;
-#endif
+	/* architecture-specific attributes */
+	sThreadArchAttr archAttr;
 	struct {
 		/* number of cpu-cycles the thread has used so far */
 		uint64_t ucycleStart;
@@ -134,6 +128,11 @@ extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,tFrameNo 
  * @return the first thread
  */
 sThread *thread_init(sProc *p);
+
+/**
+ * Inits the architecture-specific attributes of the given thread
+ */
+int thread_initArch(sThread *t);
 
 /**
  * @return the number of existing threads
@@ -236,11 +235,27 @@ int thread_extendStack(uintptr_t address);
 int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,bool cloneProc);
 
 /**
+ * Clones the architecture-specific attributes of the given thread
+ *
+ * @param src the thread to copy
+ * @param dst will contain a pointer to the new thread
+ * @param cloneProc whether a process is cloned or just a thread
+ */
+int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc);
+
+/**
  * Kills the given thread. If it is the current one it will be stored for later deletion.
  *
  * @param t the thread
  */
 void thread_kill(sThread *t);
+
+/**
+ * Frees the architecture-specific attributes of the given thread
+ *
+ * @param t the thread
+ */
+void thread_freeArch(sThread *t);
 
 
 /* #### TEST/DEBUG FUNCTIONS #### */

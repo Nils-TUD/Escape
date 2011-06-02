@@ -23,4 +23,8 @@ typedef struct {
 	uint32_t r31;
 } sThreadRegs;
 
+typedef struct {
+	char dummy;	/* empty struct not allowed */
+} sThreadArchAttr;
+
 #endif /* ECO32_THREAD_H_ */

@@ -1,55 +1,59 @@
-Loading /boot/kernel.bin..........................................................................................................................................................................
-Loading /sbin/disk...........................................................................................................................
-Loading /sbin/rtc...........................................................................................................................
-Loading /sbin/fs....................................................................................................................................................................................
-Initializing physical memory-management...                                  DONEInitializing paging...                                                      DONEInitializing VFS...                                                         DONEInitializing process-management...                                          DONEInitializing virtual memory management...                                   DONEInitializing timer...                                                       DONEInitializing signal-handling...                                             DONEThread 1 (proc 0:initloader): be3
-Thread 2 (proc 1:initloader): be0
-Loading '/sbin/disk'...
-[DISK] Found disk with 181440 sectors (92897280 bytes)
-[DISK] Registered driver 'hda1' (device 1, partition 1)
-Thread 3 (proc 2:initloader): bc9
-Loading '/sbin/rtc'...
-Thread 4 (proc 2:/sbin/rtc): bb5
-Thread 5 (proc 3:initloader): bb2
+GDT exchanged, paging enabled, video initialized                            DONE
+MultiBoot-Structure:
+---------------------
+flags=0x7ef
+memLower=637 KB, memUpper=60404 KB
+biosDriveNumber=E0, part1=FF, part2=FF, part3=FF
+cmdLine=/boot/escape.bin videomode=vesa swapdev=/dev/hda3 
+modsCount=4:
+	/sbin/pci /dev/pci (0xc01c4000 .. 0xc02258b9)
+	/sbin/ata /system/devices/ata (0xc0226000 .. 0xc0253fe9)
+	/sbin/cmos /dev/cmos (0xc0254000 .. 0xc0276d67)
+	/sbin/fs /dev/fs cdrom iso9660 (0xc0277000 .. 0xc02bc5c2)
+ELF: num=12, size=40, addr=0x14f000, shndx=0x9
+mmapLength=144, mmapAddr=0xc002ce48
+memory-map:
+	0: addr=0x00000000, size=0x0009f400, type=free
+	1: addr=0x0009f400, size=0x00000c00, type=used
+	2: addr=0x000f0000, size=0x00010000, type=used
+	3: addr=0x00100000, size=0x03afd000, type=free
+	4: addr=0x03bfd000, size=0x00003000, type=used
+	5: addr=0xfffc0000, size=0x00040000, type=used
+Drives: (size=12)
+	0: no=80, mode=1, cyl=710, heads=5, sectors=51
+---------------------
+Initializing physical memory-management...                                  DONE
+Initializing paging...                                                      DONE
+Initializing FPU...                                                         DONE
+Initializing VFS...                                                         DONE
+Initializing process-management...                                          DONE
+Initializing virtual memory management...                                   DONE
+Initializing IDT...                                                         DONE
+Initializing timer...                                                       DONE
+Initializing signal-handling...                                             DONE
+Detecting CPU...                                                            DONE
+14381 free frames (57524 KiB)
+Loading '/sbin/pci'...
+Loading '/sbin/ata'...
+[ATA] Found IDE-controller (0.1.1): vendorId 8086, deviceId 7010, rev 0
+[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 1 not present
+[ATA] Device 0 is an ATA-device
+[ATA] Device 0 uses DMA
+[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 3 not present
+[ATA] Device 2: Error 0x4. Assuming its not present
+[ATA] Device 2 is an ATAPI-device
+[ATA] Device 2 uses DMA
+[ATA] Registered driver 'hda1' (device 0, partition 1)
+[ATA] Registered driver 'hda2' (device 0, partition 2)
+[ATA] Registered driver 'hda3' (device 0, partition 3)
+[ATA] Registered driver 'cdc1' (device 2, partition 1)
+Loading '/sbin/cmos'...
 Loading '/sbin/fs'...
 [FS] Loaded ext2-driver
 [FS] Loaded iso9660-driver
-[FS] Mounted '/dev/hda1' with fs 'ext2' at '/'
-EXEC: proc 0:/bin/init
-Thread 6 (proc 4:/bin/init): b46
-EXEC: proc 4:/sbin/zero
-Thread 7 (proc 5:/bin/init): b2f
-EXEC: proc 5:/sbin/random
-Thread 8 (proc 6:/bin/init): b15
-EXEC: proc 6:/sbin/null
-Thread 9 (proc 7:/bin/init): afc
-EXEC: proc 7:/sbin/video
-Thread 10 (proc 8:/bin/init): ae0
-EXEC: proc 8:/sbin/keyboard
-Thread 11 (proc 9:/bin/init): ac5
-EXEC: proc 9:/sbin/kmmanager
-Thread 12 (proc 10:/bin/init): aa3
-Thread 13 (proc 11:/bin/init): a97
-EXEC: proc 10:/sbin/ui
-EXEC: proc 11:/sbin/vterm
-Thread 14 (proc 11:/sbin/vterm): a02
-Thread 15 (proc 12:/bin/init): 9ff
-Thread 16 (proc 13:/bin/init): 9f5
-Thread 17 (proc 14:/bin/init): 9eb
-Thread 18 (proc 15:/bin/init): 9e0
-Thread 19 (proc 16:/bin/init): 9d6
-Thread 20 (proc 17:/bin/init): 9cc
-EXEC: proc 12:/bin/shell
-EXEC: proc 13:/bin/shell
-EXEC: proc 14:/bin/shell
-EXEC: proc 15:/bin/shell
-EXEC: proc 16:/bin/shell
-EXEC: proc 17:/bin/shell
-Thread 21 (proc 18:/bin/shell): 96c
-EXEC: proc 18:/bin/cat
-Thread 22 (proc 19:/bin/shell): 96c
-EXEC: proc 19:/bin/sort
-Thread 23 (proc 20:/bin/shell): 97f
-EXEC: proc 20:/bin/cat
-Thread 24 (proc 21:/bin/shell): 97f
-EXEC: proc 21:/bin/sort
+[FS] Mounted '/dev/cdc1' with fs 'iso9660' at '/'
+[VESATEXT] Setting (115)  800 x  600 x 24

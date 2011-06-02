@@ -81,12 +81,10 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->stats.kcycleStart = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
-	/* TODO */
-#ifdef __i586__
-	t->fpuState = NULL;
-#endif
 	t->stackRegion = -1;
 	t->tlsRegion = -1;
+	if(thread_initArch(t) < 0)
+		util_panic("Unable to init the arch-specific attributes of initial thread");
 
 	/* create list */
 	if(!thread_add(t))
@@ -186,10 +184,6 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 	t->state = ST_RUNNING;
 	t->events = 0;
 	t->ignoreSignals = 0;
-	/* TODO find a nicer solution */
-#ifdef __i386__
-	fpu_cloneState(&(t->fpuState),src->fpuState);
-#endif
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
 	t->stats.ucycleCount.val64 = 0;
@@ -229,9 +223,13 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 		}
 	}
 
+	/* clone architecture-specific stuff */
+	if((err = thread_cloneArch(src,t,cloneProc)) < 0)
+		goto errClone;
+
 	/* insert into thread-list */
 	if(!thread_add(t))
-		goto errClone;
+		goto errArch;
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
 	if(cloneProc)
@@ -246,6 +244,8 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 
 errAppend:
 	thread_remove(t);
+errArch:
+	thread_freeArch(t);
 errClone:
 	if(t->tlsRegion >= 0)
 		vmm_remove(p,t->tlsRegion);
@@ -309,10 +309,7 @@ void thread_kill(sThread *t) {
 	ev_removeThread(t->tid);
 	sched_removeThread(t);
 	timer_removeThread(t->tid);
-	/* TODO find a nicer solution */
-#ifdef __i386__
-	fpu_freeState(&t->fpuState);
-#endif
+	thread_freeArch(t);
 	vfs_removeThread(t->tid);
 
 	/* notify the process about it */

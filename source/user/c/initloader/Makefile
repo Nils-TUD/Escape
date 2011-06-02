@@ -5,15 +5,14 @@ BIN = $(BUILD)/user_$(NAME).bin
 DUMP = $(BUILD)/user_$(NAME).dump
 MAP = $(BUILD)/user_$(NAME).map
 LIBC = $(ROOT)/lib/c
-SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+SUBDIRS = $(shell find . -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+DEPS = $(shell find $(BUILDL) -name "*.d")
 
 CFLAGS = -static -Wl,-Bstatic -nostartfiles $(CDEFFLAGS)
 
 ASRC = $(wildcard $(ARCH)/*.s)
-AOBJ = $(patsubst %.s,$(BUILDL)/%.a.o,$(ASRC))
-SYSCALLS = $(LIBC)/arch/$(ARCH)/syscalls.s
+AOBJ = $(patsubst %.s,$(BUILDL)/%.o,$(ASRC))
 
 .PHONY: all clean
 
@@ -34,9 +33,12 @@ $(BUILDDIRS):
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
 		done;
 
-$(BUILDL)/%.a.o: %.s	$(SYSCALLS)
+$(BUILDL)/%.o: %.s
+		@echo "	" CPP $<
+		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
 		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -o $@ $<
+		@$(AS) $(ASFLAGS) -o $@ $@.tmp
+		@rm -f $@.tmp
 
 $(DUMP):	$(BIN)
 		@echo "	" GENERATING DUMP

@@ -17,12 +17,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+#include <esc/syscalls.h>
+#include <arch/i586/syscalls.s>
+
 .section .text
 
 .global _start
 .global sigRetFunc
-
-.include "../../../lib/c/arch/i586/syscalls.s"
 
 _start:
 	# load modules first
@@ -32,7 +33,7 @@ _start:
 	# now replace with init
 	mov		$progName,%ecx						# set path
 	mov		$args,%edx								# set arguments
-	mov		$SYSCALL_EXEC,%eax				# set syscall-number
+	mov		$SYSCALL_EXEC,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
 
 	# we should not reach this

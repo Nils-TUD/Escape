@@ -23,7 +23,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 
-#define REQ_THREAD_COUNT	8
+#define REQ_THREAD_COUNT	0
 
 typedef void (*fReqHandler)(tFD fd,sMsg *msg,void *data);
 

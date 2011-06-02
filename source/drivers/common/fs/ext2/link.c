@@ -126,7 +126,7 @@ int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *nam
 	dire = (sExt2DirEntry*)buf;
 	while((uint8_t*)dire < buf + dirSize) {
 		if(nameLen == le16tocpu(dire->nameLen) && strncmp(dire->name,name,nameLen) == 0) {
-			ino = dire->inode;
+			ino = le32tocpu(dire->inode);
 			if(pdir && ino == pdir->inodeNo)
 				cnode = pdir;
 			else if(ino == dir->inodeNo)

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: debug.h 850 2010-10-04 12:17:32Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,43 +18,18 @@
  */
 
 #include <esc/common.h>
+#include <arch/i586/register.h>
 #include <esc/debug.h>
-#include <esc/proc.h>
-#include <esc/dir.h>
-#include <esc/register.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
 
 #define MAX_STACK_PAGES		128
 #define PAGE_SIZE			4096
-#define PROCINFO_BUF_SIZE	256
+
 #define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE		5
 
-static char *getProcName(void);
-
-int errno = 0;
-
-/**
- * Displays an error-message according to given format and arguments and appends ': <errmsg>' if
- * errno is < 0. After that exit(EXIT_FAILURE) is called.
- *
- * @param fmt the error-message-format
- */
-void error(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	vprinte(fmt,ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
-}
-
 uintptr_t *getStackTrace(void) {
 	static uintptr_t frames[MAX_STACK_DEPTH];
-	/* TODO */
-#ifdef i386
 	uintptr_t end,start;
 	size_t i;
 	uint32_t *ebp;
@@ -74,41 +49,5 @@ uintptr_t *getStackTrace(void) {
 	}
 	/* terminate */
 	*frame = 0;
-#endif
 	return &frames[0];
-}
-
-void printStackTrace(void) {
-	uintptr_t *trace = getStackTrace();
-	char *name = getProcName();
-	debugf("Process %s - stack-trace:\n",name ? name : "???");
-	/* TODO maybe we should skip printStackTrace here? */
-	while(*trace != 0) {
-		debugf("\t0x%08x\n",*trace);
-		trace++;
-	}
-}
-
-static char *getProcName(void) {
-	static char name[MAX_NAME_LEN];
-	char buffer[PROCINFO_BUF_SIZE];
-	char path[MAX_PATH_LEN];
-	tFD fd;
-	snprintf(path,sizeof(path),"/system/processes/%d/info",getpid());
-	fd = open(path,IO_READ);
-	if(fd >= 0) {
-		if(RETRY(read(fd,buffer,PROCINFO_BUF_SIZE - 1)) < 0) {
-			close(fd);
-			return NULL;
-		}
-		buffer[PROCINFO_BUF_SIZE - 1] = '\0';
-		sscanf(
-			buffer,
-			"%*s%*hu" "%*s%*hu" "%*s%s",
-			name
-		);
-		close(fd);
-		return name;
-	}
-	return NULL;
 }

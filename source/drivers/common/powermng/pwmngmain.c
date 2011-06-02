@@ -45,7 +45,7 @@
 static void killProcs(void);
 static int pidCompare(const void *p1,const void *p2);
 static void waitForProc(tPid pid);
-static void getProcName(tPid pid,char *name);
+static void getProcNameOf(tPid pid,char *name);
 
 static sMsg msg;
 
@@ -145,7 +145,7 @@ static void killProcs(void) {
 
 	qsort(pids,pidPos,sizeof(tPid),pidCompare);
 	for(i = 0; i < pidPos; i++) {
-		getProcName(pids[i],name);
+		getProcNameOf(pids[i],name);
 		debugf("Terminating process %d (%s)",pids[i],name);
 		if(sendSignalTo(pids[i],SIG_TERM) < 0)
 			printe("[PWMNG] Unable to send the term-signal to %d",pids[i]);
@@ -183,7 +183,7 @@ static void waitForProc(tPid pid) {
 	debugf("\n");
 }
 
-static void getProcName(tPid pid,char *name) {
+static void getProcNameOf(tPid pid,char *name) {
 	tFD fd;
 	char buffer[PROC_BUFFER_SIZE];
 	char path[SSTRLEN("/system/processes//info") + 12];

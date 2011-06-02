@@ -26,7 +26,7 @@
 #include <sys/video.h>
 #include <assert.h>
 
-/* TODO why do more than 256 not work?!?? */
+/* TODO eco32: why do more than 256 not work?!?? */
 #define MAX_WAIT_COUNT		256
 
 typedef struct sWait {

@@ -25,6 +25,7 @@
 #include <esc/thread.h>
 #include <stdio.h>
 #include <errors.h>
+#include <error.h>
 #include <string.h>
 #include <time.h>
 

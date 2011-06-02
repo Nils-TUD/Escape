@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+#include <error.h>
 
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>

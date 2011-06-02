@@ -19,12 +19,14 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/messages.h>
+#include <esc/sllist.h>
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
-#include <esc/sllist.h>
 #include <string.h>
-#include <esc/messages.h>
+#include <error.h>
+
 #include "buffer.h"
 #include "mem.h"
 #include "display.h"

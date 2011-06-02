@@ -26,6 +26,30 @@
 extern "C" {
 #endif
 
+/**
+ * Calculates the stacktrace
+ *
+ * @return the trace (null-terminated)
+ */
+uintptr_t *getStackTrace(void);
+
+/**
+ * Prints the stack-trace
+ */
+void printStackTrace(void);
+
+/**
+ * Determines the program-name of the running process
+ *
+ * @return the name, statically allocated
+ */
+const char *getProcName(void);
+
+/**
+ * Reads the timestamp-counter
+ *
+ * @return the number of cycles
+ */
 extern uint64_t cpu_rdtsc(void);
 
 /**

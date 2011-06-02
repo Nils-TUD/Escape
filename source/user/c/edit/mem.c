@@ -18,9 +18,11 @@
  */
 
 #include <esc/common.h>
+#include <esc/sllist.h>
 #include <stdlib.h>
 #include <string.h>
-#include <esc/sllist.h>
+#include <error.h>
+
 #include "mem.h"
 
 void *emalloc(size_t size) {

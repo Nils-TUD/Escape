@@ -19,13 +19,13 @@
 
 #include <assert.h>
 #ifdef IN_KERNEL
+#	include <arch/i586/register.h>
 #	include <sys/task/thread.h>
 #	include <sys/mem/paging.h>
 #	include <sys/ksymbols.h>
 #	include <sys/cpu.h>
 #	include <sys/video.h>
 #	include <sys/util.h>
-#	include <esc/register.h>
 #	define outb			util_outByte
 #	define inb			util_inByte
 #	define gettid()		({ \

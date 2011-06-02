@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: debug.h 850 2010-10-04 12:17:32Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,20 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <esc/debug.h>
 
-int errno = 0;
-
-void abort(void) {
-	exit(EXIT_FAILURE);
-}
-
-void error(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	vprinte(fmt,ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
+uintptr_t *getStackTrace(void) {
+	static uintptr_t frames[1];
+	/* TODO not supported currently */
+	*frames = 0;
+	return &frames[0];
 }

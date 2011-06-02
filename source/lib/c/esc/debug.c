@@ -27,12 +27,48 @@
 #include <string.h>
 #include <stdarg.h>
 
+#define PROCINFO_BUF_SIZE	256
 #define DBG_FFL_PADZEROS	1
 
 static void debugPad(size_t count,uint flags);
 static void debugStringn(char *s,uint precision);
 
 static uint64_t start;
+
+void printStackTrace(void) {
+	uintptr_t *trace = getStackTrace();
+	char *name = getProcName();
+	debugf("Process %s - stack-trace:\n",name ? name : "???");
+	/* TODO maybe we should skip printStackTrace here? */
+	while(*trace != 0) {
+		debugf("\t0x%08x\n",*trace);
+		trace++;
+	}
+}
+
+const char *getProcName(void) {
+	static char name[MAX_NAME_LEN];
+	char buffer[PROCINFO_BUF_SIZE];
+	char path[MAX_PATH_LEN];
+	tFD fd;
+	snprintf(path,sizeof(path),"/system/processes/%d/info",getpid());
+	fd = open(path,IO_READ);
+	if(fd >= 0) {
+		if(RETRY(read(fd,buffer,PROCINFO_BUF_SIZE - 1)) < 0) {
+			close(fd);
+			return NULL;
+		}
+		buffer[PROCINFO_BUF_SIZE - 1] = '\0';
+		sscanf(
+			buffer,
+			"%*s%*hu" "%*s%*hu" "%*s%s",
+			name
+		);
+		close(fd);
+		return name;
+	}
+	return NULL;
+}
 
 void dbg_startUTimer(void) {
 	start = getCycles();

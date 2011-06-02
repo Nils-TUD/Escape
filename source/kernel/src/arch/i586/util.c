@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+#include <arch/i586/register.h>
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/task/proc.h>
 #include <sys/dbg/kb.h>
@@ -32,7 +33,6 @@
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/log.h>
-#include <esc/register.h>
 #include <esc/keycodes.h>
 #include <stdarg.h>
 #include <string.h>

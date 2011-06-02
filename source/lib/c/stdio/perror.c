@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <string.h>
+#include <error.h>
 
 void perror(const char *prefix) {
 	fprintf(stderr,prefix);

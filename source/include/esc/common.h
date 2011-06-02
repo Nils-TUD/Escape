@@ -24,44 +24,12 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <esc/defines.h>
+#include <esc/debug.h>
 
 #ifndef NDEBUG
 #define DEBUGGING 1
 #endif
 
 #define VTERM_COUNT		6
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * The last error-code
- */
-extern int errno;
-
-/**
- * Displays an error-message according to given format and arguments and appends ': <errmsg>' if
- * errno is < 0. After that exit(EXIT_FAILURE) is called.
- *
- * @param fmt the error-message-format
- */
-void error(const char *fmt,...) A_NORETURN;
-
-/**
- * Calculates the stacktrace
- *
- * @return the trace (null-terminated)
- */
-uintptr_t *getStackTrace(void);
-
-/**
- * Prints the stack-trace
- */
-void printStackTrace(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /*ESC_COMMON_H_*/

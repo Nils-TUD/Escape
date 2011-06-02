@@ -19,8 +19,10 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
-#include <stdio.h>
 #include <esc/proc.h>
+#include <stdio.h>
+#include <error.h>
+
 #include "tls.h"
 
 static int otherThread(void *arg);

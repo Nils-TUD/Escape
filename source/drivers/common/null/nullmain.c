@@ -19,10 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/driver.h>
+#include <esc/messages.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <esc/messages.h>
 #include <errors.h>
+#include <error.h>
 
 static sMsg msg;
 

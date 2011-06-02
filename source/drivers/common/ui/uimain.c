@@ -25,6 +25,7 @@
 #include <esc/keycodes.h>
 #include <stdio.h>
 #include <string.h>
+#include <error.h>
 #include <signal.h>
 
 #define GUI_INDEX			6

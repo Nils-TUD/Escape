@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <error.h>
 
 int vprinte(const char *prefix,va_list ap) {
 	char *msg;

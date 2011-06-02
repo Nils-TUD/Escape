@@ -27,6 +27,8 @@
 #include <esc/messages.h>
 #include <signal.h>
 #include <stdio.h>
+#include <error.h>
+
 #include "window.h"
 
 #define MOUSE_DATA_BUF_SIZE	128

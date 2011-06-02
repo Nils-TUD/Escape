@@ -20,12 +20,14 @@
 #include <esc/common.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
-#include <stdio.h>
 #include <esc/keycodes.h>
 #include <esc/dir.h>
 #include <esc/esccodes.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <limits.h>
+#include <error.h>
+
 #include "buffer.h"
 #include "display.h"
 

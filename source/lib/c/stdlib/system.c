@@ -21,6 +21,7 @@
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <errors.h>
+#include <error.h>
 
 int system(const char *cmd) {
 	int child;

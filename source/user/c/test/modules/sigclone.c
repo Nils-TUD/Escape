@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <errors.h>
+#include <error.h>
+
 #include "sigclone.h"
 
 static tTid parent = -1;

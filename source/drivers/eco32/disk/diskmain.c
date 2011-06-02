@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errors.h>
+#include <error.h>
 
 #define SECTOR_SIZE			512
 #define START_SECTOR		32		/* part 0 */

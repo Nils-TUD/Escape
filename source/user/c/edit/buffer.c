@@ -18,11 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include <esc/dir.h>
 #include <esc/sllist.h>
+#include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <error.h>
+
 #include "mem.h"
 #include "buffer.h"
 #include "display.h"

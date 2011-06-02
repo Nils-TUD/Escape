@@ -33,19 +33,19 @@ Thread 9 (proc 7:/bin/init): b0b
 EXEC: proc 7:/sbin/video
 Thread 10 (proc 8:/bin/init): af3
 EXEC: proc 8:/sbin/keyboard
-Thread 11 (proc 9:/bin/init): ada
+Thread 11 (proc 9:/bin/init): adb
 EXEC: proc 9:/sbin/kmmanager
-Thread 12 (proc 10:/bin/init): ab8
-Thread 13 (proc 11:/bin/init): aac
+Thread 12 (proc 10:/bin/init): ab9
+Thread 13 (proc 11:/bin/init): aad
 EXEC: proc 10:/sbin/ui
 EXEC: proc 11:/sbin/vterm
-Thread 14 (proc 11:/sbin/vterm): a1f
-Thread 15 (proc 12:/bin/init): a1b
-Thread 16 (proc 13:/bin/init): a11
-Thread 17 (proc 14:/bin/init): a07
-Thread 18 (proc 15:/bin/init): 9fc
-Thread 19 (proc 16:/bin/init): 9f2
-Thread 20 (proc 17:/bin/init): 9e8
+Thread 14 (proc 11:/sbin/vterm): a22
+Thread 15 (proc 12:/bin/init): a1e
+Thread 16 (proc 13:/bin/init): a14
+Thread 17 (proc 14:/bin/init): a0a
+Thread 18 (proc 15:/bin/init): 9ff
+Thread 19 (proc 16:/bin/init): 9f5
+Thread 20 (proc 17:/bin/init): 9eb
 EXEC: proc 12:/bin/shell
 EXEC: proc 13:/bin/shell
 EXEC: proc 14:/bin/shell
@@ -53,474 +53,33 @@ EXEC: proc 15:/bin/shell
 EXEC: proc 16:/bin/shell
 EXEC: proc 17:/bin/shell
 Thread 21 (proc 18:/bin/shell): 98d
-EXEC: proc 18:/bin/test
-Thread 22 (proc 19:/bin/test): 968
-Thread 23 (proc 20:/bin/test): 963
-Thread 24 (proc 21:/bin/test): 95e
-Thread 25 (proc 22:/bin/test): 959
-Thread 26 (proc 23:/bin/test): 954
-Thread 27 (proc 24:/bin/test): 94e
-Thread 28 (proc 25:/bin/test): 949
-Thread 29 (proc 26:/bin/test): 944
-Thread 30 (proc 27:/bin/test): 93f
-Thread 31 (proc 28:/bin/test): 93a
-Thread 32 (proc 18:/bin/test): 935
-Thread 33 (proc 18:/bin/test): 915
-Thread 34 (proc 18:/bin/test): 913
-Thread 35 (proc 18:/bin/test): 911
-Thread 36 (proc 18:/bin/test): 90f
-Thread 37 (proc 18:/bin/test): 90d
-Thread 38 (proc 18:/bin/test): 90b
-Thread 39 (proc 18:/bin/test): 908
-Thread 40 (proc 18:/bin/test): 906
-Thread 41 (proc 18:/bin/test): 904
-Thread 42 (proc 18:/bin/test): 902
-Loading /boot/kernel.bin........................................................................................................................................................................
-Loading /sbin/disk............................................................................................................
-Loading /sbin/rtc............................................................................................................
-Loading /sbin/fs.................................................................................................................................................................
-Initializing physical memory-management...                                  DONE
-Initializing paging...                                                      DONE
-Initializing VFS...                                                         DONE
-Initializing process-management...                                          DONE
-Initializing virtual memory management...                                   DONE
-Initializing timer...                                                       DONE
-Initializing signal-handling...                                             DONE
-Thread 1 (proc 0:initloader): be3
-Thread 2 (proc 1:initloader): be0
-Loading '/sbin/disk'...
-[DISK] Found disk with 181440 sectors (92897280 bytes)
-[DISK] Registered driver 'hda1' (device 1, partition 1)
-Thread 3 (proc 2:initloader): bca
-Loading '/sbin/rtc'...
-Thread 4 (proc 2:/sbin/rtc): bb7
-Thread 5 (proc 3:initloader): bb4
-Loading '/sbin/fs'...
-[FS] Loaded ext2-driver
-[FS] Loaded iso9660-driver
-[FS] Mounted '/dev/hda1' with fs 'ext2' at '/'
-EXEC: proc 0:/bin/init
-Thread 6 (proc 4:/bin/init): b4f
-EXEC: proc 4:/sbin/zero
-Thread 7 (proc 5:/bin/init): b38
-EXEC: proc 5:/sbin/random
-Thread 8 (proc 6:/bin/init): b21
-EXEC: proc 6:/sbin/null
-Thread 9 (proc 7:/bin/init): b0b
-EXEC: proc 7:/sbin/video
-Thread 10 (proc 8:/bin/init): af3
-EXEC: proc 8:/sbin/keyboard
-Thread 11 (proc 9:/bin/init): ada
-EXEC: proc 9:/sbin/kmmanager
-Thread 12 (proc 10:/bin/init): ab8
-Thread 13 (proc 11:/bin/init): aac
-EXEC: proc 10:/sbin/ui
-EXEC: proc 11:/sbin/vterm
-Thread 14 (proc 11:/sbin/vterm): a1f
-Thread 15 (proc 12:/bin/init): a1b
-Thread 16 (proc 13:/bin/init): a11
-Thread 17 (proc 14:/bin/init): a07
-Thread 18 (proc 15:/bin/init): 9fc
-Thread 19 (proc 16:/bin/init): 9f2
-Thread 20 (proc 17:/bin/init): 9e8
-EXEC: proc 12:/bin/shell
-EXEC: proc 13:/bin/shell
-EXEC: proc 14:/bin/shell
-EXEC: proc 15:/bin/shell
-EXEC: proc 16:/bin/shell
-EXEC: proc 17:/bin/shell
-Thread 21 (proc 18:/bin/shell): 98d
-EXEC: proc 18:/bin/test
+EXEC: proc 18:/bin/ls
 Thread 22 (proc 19:/bin/shell): 98d
-EXEC: proc 19:/bin/test
-Thread 23 (proc 20:/bin/test): 964
-Thread 24 (proc 21:/bin/test): 95c
-Thread 25 (proc 22:/bin/test): 954
-Thread 26 (proc 23:/bin/test): 94c
-Thread 27 (proc 24:/bin/test): 944
-Thread 28 (proc 25:/bin/test): 98d
-Thread 29 (proc 26:/bin/test): 958
-Thread 30 (proc 27:/bin/test): 964
-Thread 31 (proc 28:/bin/test): 953
-Thread 32 (proc 29:/bin/test): 92f
-Thread 33 (proc 30:/bin/test): 95e
-Thread 34 (proc 31:/bin/test): 941
-Thread 35 (proc 32:/bin/test): 929
-Thread 36 (proc 33:/bin/test): 943
-Thread 37 (proc 34:/bin/test): 944
-Thread 38 (proc 35:/bin/test): 9a2
-Thread 39 (proc 36:/bin/test): 938
-Thread 40 (proc 37:/bin/test): 98d
-Thread 41 (proc 38:/bin/test): 935
-Thread 42 (proc 39:/bin/test): 911
-Thread 43 (proc 40:/bin/test): 907
-Thread 44 (proc 41:/bin/test): 948
-Thread 45 (proc 42:/bin/test): 953
-Thread 46 (proc 43:/bin/test): 95b
-Thread 47 (proc 44:/bin/test): 8f5
-Thread 48 (proc 45:/bin/test): 95d
-Thread 49 (proc 46:/bin/test): 95e
-Thread 50 (proc 47:/bin/test): 94b
-Thread 51 (proc 48:/bin/test): 941
-Thread 52 (proc 49:/bin/test): 8e1
-Thread 53 (proc 50:/bin/test): 8da
-Thread 54 (proc 51:/bin/test): 960
-Thread 55 (proc 52:/bin/test): 943
-Thread 56 (proc 53:/bin/test): 920
-Thread 57 (proc 54:/bin/test): 944
-Thread 58 (proc 55:/bin/test): 936
-Thread 59 (proc 56:/bin/test): 8c2
-Thread 60 (proc 57:/bin/test): 8b8
-Thread 61 (proc 58:/bin/test): 915
-Thread 62 (proc 59:/bin/test): 938
-Thread 63 (proc 60:/bin/test): 933
-Thread 64 (proc 61:/bin/test): 8a7
-Thread 65 (proc 62:/bin/test): 89c
-Thread 66 (proc 63:/bin/test): 93a
-Thread 67 (proc 64:/bin/test): 935
-Thread 68 (proc 65:/bin/test): 904
-Thread 69 (proc 66:/bin/test): 88b
-Thread 70 (proc 67:/bin/test): 880
-Thread 71 (proc 68:/bin/test): 901
-Thread 72 (proc 69:/bin/test): 878
-Thread 73 (proc 70:/bin/test): 8f9
-Thread 74 (proc 71:/bin/test): 86c
-Thread 75 (proc 72:/bin/test): 864
-Thread 76 (proc 73:/bin/test): 92b
-Thread 77 (proc 74:/bin/test): 947
-Thread 78 (proc 75:/bin/test): 853
-Thread 79 (proc 76:/bin/test): 8fc
-Thread 80 (proc 77:/bin/test): 95b
-Thread 81 (proc 78:/bin/test): 8ef
-Thread 82 (proc 79:/bin/test): 843
-Thread 83 (proc 80:/bin/test): 839
-Thread 84 (proc 81:/bin/test): 95d
-Thread 85 (proc 82:/bin/test): 8ec
-Thread 86 (proc 83:/bin/test): 82f
-Thread 87 (proc 84:/bin/test): 8dd
-Thread 88 (proc 85:/bin/test): 824
-Thread 89 (proc 86:/bin/test): 92f
-Thread 90 (proc 87:/bin/test): 81d
-Thread 91 (proc 88:/bin/test): 813
-Thread 92 (proc 89:/bin/test): 8e0
-Thread 93 (proc 90:/bin/test): 8e1
-Thread 94 (proc 91:/bin/test): 8d3
-Thread 95 (proc 92:/bin/test): 801
-Thread 96 (proc 93:/bin/test): 7f8
-Thread 97 (proc 94:/bin/test): 91d
-Thread 98 (proc 95:/bin/test): 960
-Thread 99 (proc 96:/bin/test): 8cb
-Thread 100 (proc 97:/bin/test): 7e6
-Thread 101 (proc 98:/bin/test): 7de
-Thread 102 (proc 99:/bin/test): 91a
-Thread 103 (proc 100:/bin/test): 920
-Thread 104 (proc 101:/bin/test): 918
-Thread 105 (proc 102:/bin/test): 8ad
-Thread 106 (proc 103:/bin/test): 8b2
-Thread 107 (proc 104:/bin/test): 8a7
-Thread 108 (proc 105:/bin/test): 89b
-Thread 109 (proc 106:/bin/test): 89c
-Thread 110 (proc 107:/bin/test): 890
-Thread 111 (proc 108:/bin/test): 8c0
-Thread 112 (proc 109:/bin/test): 93c
-Thread 113 (proc 110:/bin/test): 946
-Thread 114 (proc 111:/bin/test): 8c3
-Thread 115 (proc 112:/bin/test): 910
-Thread 116 (proc 113:/bin/test): 904
-Thread 117 (proc 114:/bin/test): 88a
-Thread 118 (proc 115:/bin/test): 88b
-Thread 119 (proc 116:/bin/test): 7b6
-Thread 120 (proc 117:/bin/test): 7ae
-Thread 121 (proc 118:/bin/test): 7a5
-Thread 122 (proc 119:/bin/test): 87a
-Thread 123 (proc 120:/bin/shell): 983
-EXEC: proc 120:/bin/ls
-Thread 124 (proc 121:/bin/shell): 983
-EXEC: proc 121:/bin/ps
-Thread 125 (proc 122:/bin/shell): 983
-EXEC: proc 122:/bin/test
-Thread 126 (proc 123:/bin/shell): 983
-EXEC: proc 123:/bin/test
-Thread 127 (proc 124:/bin/test): 976
-Thread 128 (proc 125:/bin/test): 966
-Thread 129 (proc 126:/bin/test): 9d1
-Thread 130 (proc 127:/bin/test): 7a1
-Thread 131 (proc 128:/bin/test): 7a9
-Thread 132 (proc 129:/bin/test): 7ba
-Thread 133 (proc 130:/bin/test): 7c0
-Thread 134 (proc 131:/bin/test): 910
-Thread 135 (proc 132:/bin/test): 964
-Thread 136 (proc 133:/bin/test): 7c7
-Thread 137 (proc 134:/bin/test): 7cc
-Thread 138 (proc 135:/bin/test): 934
-Thread 139 (proc 136:/bin/test): 94a
-Thread 140 (proc 137:/bin/test): 89d
-Thread 141 (proc 138:/bin/test): 8c2
-Thread 142 (proc 139:/bin/test): 894
-Thread 143 (proc 140:/bin/test): 898
-Thread 144 (proc 141:/bin/test): 915
-Thread 145 (proc 142:/bin/test): 896
-Thread 146 (proc 143:/bin/test): 912
-Thread 147 (proc 144:/bin/test): 8a1
-Thread 148 (proc 145:/bin/test): 91b
-Thread 149 (proc 146:/bin/test): 938
-Thread 150 (proc 147:/bin/test): 8c6
-Thread 151 (proc 148:/bin/test): 7da
-Thread 152 (proc 149:/bin/test): 7e3
-Thread 153 (proc 150:/bin/test): 960
-Thread 154 (proc 151:/bin/test): 91c
-Thread 155 (proc 152:/bin/test): 7ec
-Thread 156 (proc 153:/bin/test): 7f2
-Thread 157 (proc 154:/bin/test): 801
-Thread 158 (proc 155:/bin/test): 8d4
-Thread 159 (proc 156:/bin/test): 7fd
-Thread 160 (proc 157:/bin/test): 804
-Thread 161 (proc 158:/bin/test): 80d
-Thread 162 (proc 159:/bin/test): 81d
-Thread 163 (proc 160:/bin/test): 94b
-Thread 164 (proc 161:/bin/test): 927
-Thread 165 (proc 162:/bin/test): 81a
-Thread 166 (proc 163:/bin/test): 8dd
-Thread 167 (proc 164:/bin/test): 956
-Thread 168 (proc 165:/bin/test): 827
-Thread 169 (proc 166:/bin/test): 82c
-Thread 170 (proc 167:/bin/test): 95d
-Thread 171 (proc 168:/bin/test): 83b
-Thread 172 (proc 169:/bin/test): 8f3
-Thread 173 (proc 170:/bin/test): 83e
-Thread 174 (proc 171:/bin/test): 84a
-Thread 175 (proc 172:/bin/test): 8f0
-Thread 176 (proc 173:/bin/test): 854
-Thread 177 (proc 174:/bin/test): 84b
-Thread 178 (proc 175:/bin/test): 92c
-Thread 179 (proc 176:/bin/test): 85a
-Thread 180 (proc 177:/bin/test): 864
-Thread 181 (proc 178:/bin/test): 86e
-Thread 182 (proc 179:/bin/test): 909
-Thread 183 (proc 180:/bin/test): 870
-Thread 184 (proc 181:/bin/test): 873
-Thread 185 (proc 182:/bin/test): 798
-Thread 186 (proc 183:/bin/test): 792
-Thread 187 (proc 184:/bin/test): 78c
-Thread 188 (proc 185:/bin/test): 786
-Thread 189 (proc 186:/bin/test): 77f
-Thread 190 (proc 187:/bin/test): 779
-Thread 191 (proc 188:/bin/test): 75f
-Thread 192 (proc 189:/bin/test): 759
-Thread 193 (proc 190:/bin/test): 753
-Thread 194 (proc 191:/bin/test): 74c
-Thread 195 (proc 192:/bin/test): 746
-Thread 196 (proc 193:/bin/test): 740
-Thread 197 (proc 194:/bin/test): 73a
-Thread 198 (proc 195:/bin/test): 734
-Thread 199 (proc 196:/bin/test): 72d
-Thread 200 (proc 197:/bin/test): 725
-Thread 201 (proc 198:/bin/test): 6d5
-Thread 202 (proc 199:/bin/test): 6cf
-Thread 203 (proc 200:/bin/test): 6c9
-Thread 204 (proc 201:/bin/test): 6c2
-Thread 205 (proc 202:/bin/test): 6bc
-Thread 206 (proc 203:/bin/test): 6b6
-Thread 207 (proc 204:/bin/test): 6b0
-Thread 208 (proc 205:/bin/test): 6aa
-Thread 209 (proc 206:/bin/test): 694
-Thread 210 (proc 207:/bin/test): 68d
-Thread 211 (proc 208:/bin/test): 687
-Thread 212 (proc 209:/bin/test): 681
-Thread 213 (proc 210:/bin/test): 67b
-Thread 214 (proc 211:/bin/test): 675
-Thread 215 (proc 212:/bin/test): 66e
-Thread 216 (proc 213:/bin/test): 667
-Thread 217 (proc 214:/bin/test): 661
-Thread 218 (proc 215:/bin/test): 649
-Thread 219 (proc 216:/bin/test): 643
-Thread 220 (proc 217:/bin/test): 63c
-Thread 221 (proc 218:/bin/test): 636
-Thread 222 (proc 219:/bin/test): 630
-Thread 223 (proc 220:/bin/test): 62a
-Thread 224 (proc 221:/bin/test): 624
-Thread 225 (proc 222:/bin/test): 61d
-Thread 226 (proc 223:/bin/test): 617
-Thread 227 (proc 224:/bin/test): 611
-Page fault for address=0x80611003 @ 0xc001e2f8, process 123
+EXEC: proc 19:/bin/ps
+Thread 23 (proc 20:/bin/shell): 98d
+EXEC: proc 20:/bin/cat
+Thread 24 (proc 21:/bin/shell): 98d
+EXEC: proc 21:/bin/ls
+Thread 25 (proc 22:/bin/shell): 98d
+EXEC: proc 22:/bin/ls
+Thread 26 (proc 23:/bin/shell): 98d
+EXEC: proc 23:/bin/ps
+Thread 27 (proc 24:/bin/shell): 98d
+EXEC: proc 24:/bin/raptor
 
-PANIC: Page fault for address=0x80611003 @ 0xc001e2f8                           
+PANIC: Got interrupt 25 (Prv. addr. exception) @ 0xc0820008
+                                                                                
 
-Caused by thread 126 (/bin/test)
+Caused by thread 27 (/bin/raptor)
 
 User state:
-	PSW: 0x0b74ffff
-	$0 : 0x4f78bdea $8 : 0x00010d20 $16: 0x0000002a $24: 0x00000000 
-	$1 : 0x00010d20 $9 : 0x0000002d $17: 0x00010e64 $25: 0x5fffff94 
-	$2 : 0x0000002e $10: 0x00000009 $18: 0x00000064 $26: 0x83fd6a82 
-	$3 : 0x0001443c $11: 0x00000000 $19: 0x00000001 $27: 0x1044b2ad 
-	$4 : 0x00000000 $12: 0x00000030 $20: 0x000293bc $28: 0xe0726e53 
-	$5 : 0x00000000 $13: 0x00000020 $21: 0x000248d8 $29: 0x5fffff70 
-	$6 : 0x00000025 $14: 0x00023d14 $22: 0xffffffff $30: 0x00008458 
-	$7 : 0x00000062 $15: 0x00000488 $23: 0xffffffff $31: 0x00003a18 
-	Loading /boot/kernel.bin........................................................................................................................................................................
-Loading /sbin/disk............................................................................................................
-Loading /sbin/rtc............................................................................................................
-Loading /sbin/fs.................................................................................................................................................................
-Initializing physical memory-management...                                  DONE
-Initializing paging...                                                      DONE
-Initializing VFS...                                                         DONE
-Initializing process-management...                                          DONE
-Initializing virtual memory management...                                   DONE
-Initializing timer...                                                       DONE
-Initializing signal-handling...                                             DONE
-Thread 1 (proc 0:initloader): be3
-Thread 2 (proc 1:initloader): be0
-Loading '/sbin/disk'...
-[DISK] Found disk with 181440 sectors (92897280 bytes)
-[DISK] Registered driver 'hda1' (device 1, partition 1)
-Thread 3 (proc 2:initloader): bca
-Loading '/sbin/rtc'...
-Thread 4 (proc 2:/sbin/rtc): bb7
-Thread 5 (proc 3:initloader): bb4
-Loading '/sbin/fs'...
-[FS] Loaded ext2-driver
-[FS] Loaded iso9660-driver
-[FS] Mounted '/dev/hda1' with fs 'ext2' at '/'
-EXEC: proc 0:/bin/init
-Thread 6 (proc 4:/bin/init): b4f
-EXEC: proc 4:/sbin/zero
-Thread 7 (proc 5:/bin/init): b38
-EXEC: proc 5:/sbin/random
-Thread 8 (proc 6:/bin/init): b21
-EXEC: proc 6:/sbin/null
-Thread 9 (proc 7:/bin/init): b0b
-EXEC: proc 7:/sbin/video
-Thread 10 (proc 8:/bin/init): af3
-EXEC: proc 8:/sbin/keyboard
-Thread 11 (proc 9:/bin/init): ada
-EXEC: proc 9:/sbin/kmmanager
-Thread 12 (proc 10:/bin/init): ab8
-Thread 13 (proc 11:/bin/init): aac
-EXEC: proc 10:/sbin/ui
-EXEC: proc 11:/sbin/vterm
-Thread 14 (proc 11:/sbin/vterm): a1f
-Thread 15 (proc 12:/bin/init): a1b
-Thread 16 (proc 13:/bin/init): a11
-Thread 17 (proc 14:/bin/init): a07
-Thread 18 (proc 15:/bin/init): 9fc
-Thread 19 (proc 16:/bin/init): 9f2
-Thread 20 (proc 17:/bin/init): 9e8
-EXEC: proc 12:/bin/shell
-EXEC: proc 13:/bin/shell
-EXEC: proc 14:/bin/shell
-EXEC: proc 15:/bin/shell
-EXEC: proc 16:/bin/shell
-EXEC: proc 17:/bin/shell
-Thread 21 (proc 18:/bin/shell): 98d
-EXEC: proc 18:/bin/test
-Thread 22 (proc 19:/bin/shell): 98d
-EXEC: proc 19:/bin/test
-Thread 23 (proc 20:/bin/test): 967
-Thread 24 (proc 21:/bin/test): 961
-Thread 25 (proc 22:/bin/test): 95b
-Thread 26 (proc 23:/bin/test): 955
-Thread 27 (proc 24:/bin/test): 950
-Thread 28 (proc 25:/bin/test): 946
-Thread 29 (proc 26:/bin/test): 93d
-Thread 30 (proc 27:/bin/test): 92b
-Thread 31 (proc 28:/bin/test): 923
-Thread 32 (proc 29:/bin/test): 91b
-Thread 33 (proc 30:/bin/test): 913
-Thread 34 (proc 31:/bin/test): 909
-Thread 35 (proc 32:/bin/test): 901
-Thread 36 (proc 33:/bin/test): 8f9
-Thread 37 (proc 34:/bin/test): 8f1
-Thread 38 (proc 35:/bin/test): 8ec
-Thread 39 (proc 36:/bin/test): 8e0
-Thread 40 (proc 37:/bin/test): 8d8
-Thread 41 (proc 38:/bin/test): 8d0
-Thread 42 (proc 39:/bin/test): 8c8
-Thread 43 (proc 40:/bin/test): 8c0
-Thread 44 (proc 41:/bin/test): 8b7
-Thread 45 (proc 42:/bin/test): 8af
-Thread 46 (proc 43:/bin/test): 8a7
-Thread 47 (proc 44:/bin/test): 89f
-Thread 48 (proc 45:/bin/test): 895
-Thread 49 (proc 46:/bin/test): 88f
-Thread 50 (proc 47:/bin/test): 887
-Thread 51 (proc 48:/bin/test): 87f
-Thread 52 (proc 49:/bin/test): 874
-Thread 53 (proc 50:/bin/test): 86e
-Thread 54 (proc 51:/bin/test): 865
-Thread 55 (proc 52:/bin/test): 85e
-Thread 56 (proc 53:/bin/test): 851
-Thread 57 (proc 54:/bin/test): 849
-Thread 58 (proc 55:/bin/test): 844
-Thread 59 (proc 56:/bin/test): 837
-Thread 60 (proc 57:/bin/test): 82f
-Thread 61 (proc 58:/bin/test): 827
-Thread 62 (proc 59:/bin/test): 81d
-Thread 63 (proc 60:/bin/test): 815
-Thread 64 (proc 61:/bin/test): 80f
-Thread 65 (proc 62:/bin/test): 803
-Thread 66 (proc 63:/bin/test): 7fe
-Thread 67 (proc 64:/bin/test): 7f3
-Thread 68 (proc 65:/bin/test): 7eb
-Thread 69 (proc 66:/bin/test): 7e5
-Thread 70 (proc 67:/bin/test): 7da
-Thread 71 (proc 68:/bin/test): 7d4
-Thread 72 (proc 69:/bin/test): 7c8
-Thread 73 (proc 70:/bin/test): 7c2
-Thread 74 (proc 71:/bin/test): 7b7
-Thread 75 (proc 72:/bin/test): 7ad
-Thread 76 (proc 73:/bin/test): 7a8
-Thread 77 (proc 74:/bin/test): 79d
-Thread 78 (proc 75:/bin/test): 797
-Thread 79 (proc 76:/bin/test): 78d
-Thread 80 (proc 77:/bin/test): 783
-Thread 81 (proc 78:/bin/test): 77a
-Thread 82 (proc 79:/bin/test): 772
-Thread 83 (proc 80:/bin/test): 76d
-Thread 84 (proc 81:/bin/test): 760
-Thread 85 (proc 82:/bin/test): 75a
-Thread 86 (proc 83:/bin/test): 74f
-Thread 87 (proc 84:/bin/test): 749
-Thread 88 (proc 85:/bin/test): 73d
-Thread 89 (proc 86:/bin/test): 738
-Thread 90 (proc 87:/bin/test): 72b
-Thread 91 (proc 88:/bin/test): 726
-Thread 92 (proc 89:/bin/test): 71e
-Thread 93 (proc 90:/bin/test): 715
-Thread 94 (proc 91:/bin/test): 70d
-Thread 95 (proc 92:/bin/test): 701
-Thread 96 (proc 93:/bin/test): 6fb
-Thread 97 (proc 94:/bin/test): 6f0
-Thread 98 (proc 95:/bin/test): 6eb
-Thread 99 (proc 96:/bin/test): 6df
-Thread 100 (proc 97:/bin/test): 6d9
-Thread 101 (proc 98:/bin/test): 6cd
-Thread 102 (proc 99:/bin/test): 6c4
-Thread 103 (proc 100:/bin/test): 6bc
-Thread 104 (proc 101:/bin/test): 6b7
-Thread 105 (proc 102:/bin/test): 6ab
-Thread 106 (proc 103:/bin/test): 6a5
-Thread 107 (proc 104:/bin/test): 69a
-Thread 108 (proc 105:/bin/test): 694
-Thread 109 (proc 106:/bin/test): 689
-Thread 110 (proc 107:/bin/test): 681
-Thread 111 (proc 108:/bin/test): 67a
-Thread 112 (proc 109:/bin/test): 672
-Thread 113 (proc 110:/bin/test): 667
-Thread 114 (proc 111:/bin/test): 65d
-Thread 115 (proc 112:/bin/test): 658
-Thread 116 (proc 113:/bin/test): 64d
-Thread 117 (proc 114:/bin/test): 643
-Thread 118 (proc 115:/bin/test): 63e
-Thread 119 (proc 116:/bin/test): 633
-Thread 120 (proc 117:/bin/test): 62e
-Thread 121 (proc 118:/bin/test): 623
-Thread 122 (proc 119:/bin/test): 618
-Thread 123 (proc 120:/bin/shell): 605
-EXEC: proc 120:/bin/ls
-Thread 124 (proc 121:/bin/shell): 605
-EXEC: proc 121:/bin/cat
-Thread 125 (proc 122:/bin/shell): 605
-EXEC: proc 122:/bin/ps
-Thread 126 (proc 123:/bin/shell): 605
-EXEC: proc 123:/bin/ls
+	PSW: 0x0b79ffff
+	$0 : 0xeda46434 $8 : 0x0001380c $16: 0xd7b90000 $24: 0x5fffff4c 
+	$1 : 0x0000d154 $9 : 0x00010000 $17: 0x0fbd0008 $25: 0x07b90008 
+	$2 : 0x00000000 $10: 0x00013848 $18: 0xafe00000 $26: 0x01aa8bd3 
+	$3 : 0x00000000 $11: 0x00000000 $19: 0xc339fff8 $27: 0x80bdf136 
+	$4 : 0x00013394 $12: 0x00000000 $20: 0x0019e800 $28: 0x437e7c02 
+	$5 : 0x00013354 $13: 0x00000000 $21: 0xd4860004 $29: 0x00004d6c 
+	$6 : 0x0000001c $14: 0x0000ef24 $22: 0xd4850000 $30: 0xc0820008 
+	$7 : 0x0000001b $15: 0x000007b8 $23: 0xffffffff $31: 0xc0820008 
+	

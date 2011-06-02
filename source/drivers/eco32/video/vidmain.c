@@ -35,6 +35,7 @@
 #define ROWS					30
 #define MAX_COLS				128
 
+static void setCursor(uint row,uint col);
 static void copy(uint offset,size_t count);
 static void clearScreen(void);
 
@@ -86,7 +87,10 @@ int main(void) {
 				break;
 
 				case MSG_VID_SETCURSOR: {
-					/* ignored */
+					sVTPos *pos = (sVTPos*)msg.data.d;
+					pos->col = MIN(pos->col,COLS - 1);
+					pos->row = MIN(pos->row,ROWS - 1);
+					setCursor(pos->row,pos->col);
 				}
 				break;
 
@@ -106,6 +110,11 @@ int main(void) {
 	/* clean up */
 	close(id);
 	return EXIT_SUCCESS;
+}
+
+static void setCursor(uint row,uint col) {
+	uint32_t *pos = videoData + row * MAX_COLS + col;
+	*pos = (0x78 << 8) | (*pos & 0xFF);
 }
 
 static void copy(uint offset,size_t count) {
@@ -135,4 +144,3 @@ static void clearScreen(void) {
 		screen += MAX_COLS - COLS;
 	}
 }
-

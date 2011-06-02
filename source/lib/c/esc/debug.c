@@ -23,6 +23,7 @@
 #include <esc/dir.h>
 #include <esc/width.h>
 #include <esc/thread.h>
+#include <esc/proc.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -37,7 +38,7 @@ static uint64_t start;
 
 void printStackTrace(void) {
 	uintptr_t *trace = getStackTrace();
-	char *name = getProcName();
+	const char *name = getProcName();
 	debugf("Process %s - stack-trace:\n",name ? name : "???");
 	/* TODO maybe we should skip printStackTrace here? */
 	while(*trace != 0) {

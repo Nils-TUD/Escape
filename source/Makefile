@@ -184,7 +184,7 @@ mmixd:	all hdd
 
 eco:	all hdd prepareRun
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i #\
-			-m $(BUILD)/kernel.map $(BUILD)/user_raptor.map -n
+			-m $(BUILD)/kernel.map $(BUILD)/driver_keyboard.map -n
 
 teste:	all hdd prepareTest
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \

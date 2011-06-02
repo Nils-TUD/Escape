@@ -1,22 +1,21 @@
-#
-# br.s -- the boot record
-#
-
-# Runtime environment:
-#
-# This code must be loaded and started at 0xC0000000.
-# It allocates a stack from 0xC0001000 downwards. So
-# it must run within 4K (code + data + stack).
-#
-# This code expects the disk number of the boot disk
-# in $16, the start sector of the disk or partition
-# to be booted in $17 and its size in $18.
-#
-# The bootstrap loader program, which is loaded
-# by this code, must be in standalone (headerless)
-# executable format, stored at partition relative
-# disk sectors 1..7 (i.e. the boot block), and
-# gets loaded and started at 0xC00F0000.
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
 .section .text
 

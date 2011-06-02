@@ -2,6 +2,8 @@
 # sctio-ctl.s -- disk sector I/O for disk made available by disk controller
 #
 
+# copied from the eco32 distribution
+
 #***************************************************************
 
 	.set	dskbase,0xF0400000	# disk base address

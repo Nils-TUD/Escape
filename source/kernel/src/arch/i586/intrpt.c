@@ -42,6 +42,7 @@
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <esc/keycodes.h>
+#include <esc/syscalls.h>
 #include <assert.h>
 #include <string.h>
 #include <errors.h>
@@ -545,7 +546,7 @@ static void intrpt_syscall(sIntrptStackFrame *stack) {
 	sysc_handle(stack);
 
 	/* set error-code (not for ackSignal) */
-	if(sysCallNo != 19) {
+	if(sysCallNo != SYSCALL_ACKSIG) {
 		stack->ecx = stack->ebx;
 		stack->ebx = ebxSave;
 	}

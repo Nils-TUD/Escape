@@ -18,10 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include <esc/test.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+
 #include "tfileio.h"
 
 /* forward declarations */

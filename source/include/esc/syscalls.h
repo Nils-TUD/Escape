@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_H_
-#define SYSCALLS_H_
+#ifndef ESC_SYSCALLS_H_
+#define ESC_SYSCALLS_H_
 
 /* the syscall-numbers */
 #define SYSCALL_PID				0
@@ -89,4 +89,4 @@
 #define SYSCALL_RELIOPORTS		65
 #define SYSCALL_VM86INT			66
 
-#endif /* SYSCALLS_H_ */
+#endif /* ESC_SYSCALLS_H_ */

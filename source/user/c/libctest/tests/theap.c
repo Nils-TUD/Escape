@@ -18,11 +18,14 @@
  */
 
 #include <esc/common.h>
+#include <esc/test.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <esc/test.h>
 #include <stdarg.h>
+
 #include "theap.h"
+
+#define SINGLE_BYTE_COUNT 10000
 
 /* forward declarations */
 static void test_heap(void);
@@ -41,7 +44,6 @@ sTestModule tModHeap = {
 	&test_heap
 };
 
-#define SINGLE_BYTE_COUNT 10000
 uint *ptrsSingle[SINGLE_BYTE_COUNT];
 
 size_t sizes[] = {1,2,4,1023,1024,1025,2048,4097};

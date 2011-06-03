@@ -1,12 +1,12 @@
 # general
 #ARCH = mmix
 #GCCVER = 4.6.0
-#ARCH = i586
-#GCCVER = 4.4.3
-ARCH = eco32
+ARCH = i586
 GCCVER = 4.4.3
+#ARCH = eco32
+#GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-release)
+BUILDDIR = $(abspath build/$(ARCH)-debug)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -183,7 +183,7 @@ mmixd:	all hdd
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
 
 eco:	all hdd prepareRun
-		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i #\
+		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
 			-m $(BUILD)/kernel.map $(BUILD)/driver_keyboard.map -n
 
 teste:	all hdd prepareTest

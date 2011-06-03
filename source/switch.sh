@@ -4,7 +4,6 @@
 # ---
 
 ARCH=`cat Makefile | grep '^ARCH =' | cut -f 3 -d ' '`
-echo $ARCH
 
 if [ $# != 1 ] || [ "$1" != "release" ] && [ "$1" != "debug" ]; then
 	echo "Usage: $0 release|debug" 1>&2

@@ -12,10 +12,13 @@ ifeq ($(LINKTYPE),static)
 endif
 
 # sources
-CSRC = $(shell find . -name "*.c")
+CSRC = $(filter-out $(shell find ./arch -name "*.c" 2>/dev/null),$(shell find . -name "*.c"))
+CSRC += $(shell find ./arch/$(ARCH) -name "*.c" 2>/dev/null)
+ASRC = $(shell find ./arch/$(ARCH) -name "*.s" 2>/dev/null)
 
 # objects
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
+AOBJ = $(patsubst %.s,$(BUILDL)/%.a.o,$(ASRC))
 
 .PHONY: all clean
 
@@ -23,9 +26,9 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 all:	$(BUILDDIRS) $(APPCPY) $(BIN) $(MAP)
 
-$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ADDLIBS)
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(AOBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
+		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(AOBJ) $(ADDLIBS);
 
 $(MAP): $(BIN)
 		@echo "	" GEN MAP $@
@@ -36,11 +39,18 @@ $(BUILDDIRS):
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
 		done;
 
-$(BUILDL)/%.o:		%.c
+$(BUILDL)/%.o:	%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+
+$(BUILDL)/%.a.o:	%.s
+		@echo "	" CPP $<
+		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
+		@echo "	" AS $<
+		@$(AS) $(ASFLAGS) -o $@ $@.tmp
+		@rm -f $@.tmp
 
 -include $(DEPS)
 
 clean:
-		rm -f $(APPCPY) $(BIN) $(MAP) $(COBJ) $(DEPS)
+		rm -f $(APPCPY) $(BIN) $(MAP) $(COBJ) $(AOBJ) $(DEPS)

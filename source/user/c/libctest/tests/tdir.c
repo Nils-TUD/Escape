@@ -19,11 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/dir.h>
+#include <esc/test.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <esc/test.h>
 #include <stdarg.h>
 #include <string.h>
+
 #include "tdir.h"
 
 /* forward declarations */

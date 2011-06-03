@@ -18,21 +18,23 @@
  */
 
 #include <esc/common.h>
-#include <arch/i586/ports.h>
 #include <esc/driver.h>
+#include <esc/syscalls.h>
 #include <esc/mem.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/messages.h>
+#include <esc/test.h>
 #include <stdio.h>
 #include <signal.h>
 #include <errors.h>
-#include <esc/test.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
 #include "tsyscalls.h"
+#include "../syscalls.h"
 
 /* forward declarations */
 static void test_syscalls(void);
@@ -56,110 +58,63 @@ static void test_exec(void);
 static void test_seek(void);
 static void test_stat(void);
 
-/* we want to be able to use uint for all syscalls */
-static int test_doSyscall7(uint syscallNo,uint arg1,uint arg2,uint arg3,uint arg4,uint arg5,
-		uint arg6,uint arg7) {
-	int res;
-	__asm__ __volatile__ (
-		"movl	%2,%%ecx\n"
-		"movl	%3,%%edx\n"
-		"movl	%7,%%eax\n"
-		"pushl	%%eax\n"
-		"movl	%6,%%eax\n"
-		"pushl	%%eax\n"
-		"movl	%5,%%eax\n"
-		"pushl	%%eax\n"
-		"movl	%4,%%eax\n"
-		"pushl	%%eax\n"
-		"movl	%1,%%eax\n"
-		"int	$0x30\n"
-		"add	$16,%%esp\n"
-		"test	%%ecx,%%ecx\n"
-		"jz		1f\n"
-		"movl	%%ecx,%%eax\n"
-		"1:\n"
-		"mov	%%eax,%0\n"
-		: "=a" (res) : "m" (syscallNo), "m" (arg1), "m" (arg2), "m" (arg3), "m" (arg4),
-		  "m" (arg5), "m" (arg6), "m" (arg7)
-	);
-	return res;
-}
-static int test_doSyscall(uint syscallNo,uint arg1,uint arg2,uint arg3) {
-	int res;
-	__asm__ __volatile__ (
-		"movl	%2,%%ecx\n"
-		"movl	%3,%%edx\n"
-		"movl	%4,%%eax\n"
-		"pushl	%%eax\n"
-		"movl	%1,%%eax\n"
-		"int	$0x30\n"
-		"add	$4,%%esp\n"
-		"test	%%ecx,%%ecx\n"
-		"jz		1f\n"
-		"movl	%%ecx,%%eax\n"
-		"1:\n"
-		"mov	%%eax,%0\n"
-		: "=a" (res) : "m" (syscallNo), "m" (arg1), "m" (arg2), "m" (arg3)
-	);
-	return res;
-}
 /* some convenience functions */
 static int _getppidof(uint pid) {
-	return test_doSyscall(1,pid,0,0);
+	return doSyscall(SYSCALL_PPID,pid,0,0);
 }
 static int _open(const char *path,uint mode) {
-	return test_doSyscall(5,(uint)path,mode,0);
+	return doSyscall(SYSCALL_OPEN,(uint)path,mode,0);
 }
 static int _close(uint fd) {
-	return test_doSyscall(6,fd,0,0);
+	return doSyscall(SYSCALL_CLOSE,fd,0,0);
 }
 static int _read(uint fd,void *buffer,uint count) {
-	return test_doSyscall(7,fd,(uint)buffer,count);
+	return doSyscall(SYSCALL_READ,fd,(uint)buffer,count);
 }
 static int _regDriver(const char *name,uint type) {
-	return test_doSyscall(8,(uint)name,type,0);
+	return doSyscall(SYSCALL_REG,(uint)name,type,0);
 }
 static int _changeSize(uint change) {
-	return test_doSyscall(9,change,0,0);
+	return doSyscall(SYSCALL_CHGSIZE,change,0,0);
 }
 static int __mapPhysical(uint addr,uint count) {
-	return test_doSyscall(10,addr,count,0);
+	return doSyscall(SYSCALL_MAPPHYS,addr,count,0);
 }
 static int _write(uint fd,void *buffer,uint count) {
-	return test_doSyscall(11,fd,(uint)buffer,count);
+	return doSyscall(SYSCALL_WRITE,fd,(uint)buffer,count);
 }
 static int _requestIOPorts(uint start,uint count) {
-	return test_doSyscall(13,start,count,0);
+	return doSyscall(SYSCALL_REQIOPORTS,start,count,0);
 }
 static int _releaseIOPorts(uint start,uint count) {
-	return test_doSyscall(14,start,count,0);
+	return doSyscall(SYSCALL_RELIOPORTS,start,count,0);
 }
 static int _dupFd(uint fd) {
-	return test_doSyscall(15,fd,0,0);
+	return doSyscall(SYSCALL_DUPFD,fd,0,0);
 }
 static int _redirFd(uint src,uint dst) {
-	return test_doSyscall(16,src,dst,0);
+	return doSyscall(SYSCALL_REDIRFD,src,dst,0);
 }
 static int _wait(uint ev) {
-	return test_doSyscall(17,ev,0,0);
+	return doSyscall(SYSCALL_WAIT,ev,0,0);
 }
 static int _setSigHandler(uint sig,uint handler) {
-	return test_doSyscall(18,sig,handler,0);
+	return doSyscall(SYSCALL_SETSIGH,sig,handler,0);
 }
 static int _sendSignalTo(uint pid,uint sig) {
-	return test_doSyscall(20,pid,sig,0);
+	return doSyscall(SYSCALL_SENDSIG,pid,sig,0);
 }
 static int _exec(const char *path,const char **args) {
-	return test_doSyscall(21,(uint)path,(uint)args,0);
+	return doSyscall(SYSCALL_EXEC,(uint)path,(uint)args,0);
 }
 static int _seek(uint fd,int pos,uint whence) {
-	return test_doSyscall(25,fd,pos,whence);
+	return doSyscall(SYSCALL_SEEK,fd,pos,whence);
 }
 static int _stat(const char *path,sFileInfo *info) {
-	return test_doSyscall(26,(uint)path,(uint)info,0);
+	return doSyscall(SYSCALL_STAT,(uint)path,(uint)info,0);
 }
 static int _getWork(tFD *ids,uint count,tFD *client,tMsgId *mid,sMsg *msg,uint size,uint flags) {
-	return test_doSyscall7(53,(uint)ids,count,(uint)client,(uint)mid,(uint)msg,size,flags);
+	return doSyscall7(SYSCALL_GETWORK,(uint)ids,count,(uint)client,(uint)mid,(uint)msg,size,flags);
 }
 
 /* our test-module */
@@ -178,8 +133,10 @@ static void test_syscalls(void) {
 	test_mapPhysical();
 	test_write();
 	test_getWork();
+#ifdef __i386__
 	test_requestIOPorts();
 	test_releaseIOPorts();
+#endif
 	test_dupFd();
 	test_redirFd();
 	test_wait();

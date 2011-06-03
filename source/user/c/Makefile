@@ -1,5 +1,5 @@
 ifeq ($(ARCH),eco32)
-	DIRS = $(filter-out $(wildcard *.*) libctest shlibtest dynlink x86mark Makefile,$(wildcard *))
+	DIRS = $(filter-out $(wildcard *.*) shlibtest dynlink Makefile,$(wildcard *))
 else
 	DIRS = $(filter-out $(wildcard *.*) shlibtest Makefile,$(wildcard *))
 endif

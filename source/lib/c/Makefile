@@ -88,7 +88,7 @@ $(BUILDL)/%.s.o: %.s
 		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
 		@echo "	" AS $<
 		@$(AS) $(ASFLAGS) -o $@ $@.tmp
-		@#rm -f $@.tmp
+		@rm -f $@.tmp
 
 $(BUILDL)/lib/%_pic.s.o: $(LIBDIR)/%.s
 		@echo "	" CPP $<

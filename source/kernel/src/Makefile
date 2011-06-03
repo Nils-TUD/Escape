@@ -14,6 +14,10 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D I
  -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/profile.c
 
 # sources
+ifeq ($(ARCH),mmix)
+ASRC = arch/mmix/kernel.s arch/mmix/end.s
+CSRC = $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
+else
 ASRC = $(filter-out $(shell find ./arch -name "*.s"),\
 	$(shell find . -name "*.s" | grep -v '\.svn'))
 ASRC += $(filter-out ./arch/$(ARCH)/end.s,$(shell find ./arch/$(ARCH) -name "*.s" | grep -v '\.svn'))
@@ -31,6 +35,7 @@ LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
 	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
+endif
 
 # objects
 AOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(ASRC))

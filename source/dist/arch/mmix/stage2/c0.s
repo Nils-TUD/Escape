@@ -16,18 +16,20 @@
 	.global dskio
 	.global debugChar
 
+	.set		STACK_SIZE,		0x1000
 
 .section .text
 _bcode:
 
 start:
-	GETA		$0,stack					# establish register-stack
 	UNSAVE	0,$0
-	PUT			rG,231						# setup rG for the GNU toolchain
-	SETL		$1,0x2000
-	GETA		$254,stack
-	ADDU		$254,$254,$1			# setup software-stack
-	SET			$253,$254
+
+	GETA		$0,_ebss
+	SET			$1,STACK_SIZE
+	2ADDU		$0,$1,$0
+	NEGU		$2,0,$1
+	AND			$254,$0,$2				# setup stack-pointer
+	OR			$253,$254,$254		# setup frame-pointer
 
 	PUSHJ		$0,bootload				# call bootload function
 

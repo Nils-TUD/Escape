@@ -29,7 +29,13 @@
 #ifdef __eco32__
 #include "../arch/eco32/syscalls.s"
 #endif
+#ifdef __mmix__
+#include "../arch/mmix/syscalls.s"
+#endif
 
+#ifdef __mmix__
+
+#else
 # other
 SYSC_RET_1ARGS_ERR getConf,SYSCALL_GETCONF
 SYSC_VOID_1ARGS debugChar,SYSCALL_DEBUGCHAR
@@ -105,4 +111,4 @@ SYSC_RET_2ARGS_ERR _unlock,SYSCALL_UNLOCK
 SYSC_RET_1ARGS_ERR join,SYSCALL_JOIN
 SYSC_RET_1ARGS_ERR suspend,SYSCALL_SUSPEND
 SYSC_RET_1ARGS_ERR resume,SYSCALL_RESUME
-
+#endif

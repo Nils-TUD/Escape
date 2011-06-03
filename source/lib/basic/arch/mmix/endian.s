@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: endian.s 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,24 +17,38 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/thread.h>
+.global le16tocpu
+.global le32tocpu
+.global cputole16
+.global cputole32
 
-void locku(tULock *l) {
-	/* TODO */
-#if 0
-	__asm__ (
-		"mov $1,%%ecx;"				/* ecx=1 to lock it for others */
-		"lockuLoop:"
-		"	xor	%%eax,%%eax;"		/* clear eax */
-		"	lock;"					/* lock next instruction */
-		"	cmpxchg %%ecx,(%0);"	/* compare l with eax; if equal exchange ecx with l */
-		"	jnz		lockuLoop;"		/* try again if not equal */
-		: : "D" (l)
-	);
-#endif
-}
+# uint16_t cputole16(uint16_t in);
+# uint16_t le16tocpu(uint16_t in);
+cputole16:
+le16tocpu:
+	SETL	$1,#FF00
+	AND		$1,$0,$1
+	SRU		$1,$1,8
+	AND		$2,$0,#FF
+	SLU		$2,$2,8
+	OR		$0,$1,$2
+	POP		1,0
 
-void unlocku(tULock *l) {
-	/* TODO */
-}
+# uint32_t cputole32(uint32_t in);
+# uint32_t le32tocpu(uint32_t in);
+cputole32:
+le32tocpu:
+	SETL	$3,#FF00
+	AND		$2,$0,$3
+	SLU		$1,$2,8
+	AND		$2,$0,#FF
+	SLU		$2,$2,24
+	OR		$1,$1,$2
+	SRU		$0,$0,16
+	AND		$2,$0,$3
+	SRU		$2,$2,8
+	OR		$1,$1,$2
+	AND		$2,$0,#FF
+	SLU		$2,$2,8
+	OR		$0,$1,$2
+	POP		1,0

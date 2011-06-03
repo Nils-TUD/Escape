@@ -1,8 +1,8 @@
 # general
-#ARCH = mmix
-#GCCVER = 4.6.0
-ARCH = i586
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
+#ARCH = i586
+#GCCVER = 4.4.3
 #ARCH = eco32
 #GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
@@ -79,7 +79,11 @@ export SUDO=sudo
 
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
+ifeq ($(ARCH),mmix)
+	DIRS = tools dist lib kernel/src
+else
 	DIRS = tools dist lib drivers user kernel/src kernel/test
+endif
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
@@ -176,10 +180,10 @@ else
 		$(READELF) -a -W $(BUILD)/$(APP) | less
 endif
 
-mmix:	all hdd
+mmix:	all hdd prepareRun
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -i --script=gimmix.start -s $(BUILD)/stage2.map
 
-mmixd:	all hdd
+mmixd:	all hdd prepareRun
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
 
 eco:	all hdd prepareRun

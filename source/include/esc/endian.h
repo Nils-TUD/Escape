@@ -28,5 +28,8 @@
 #ifdef __eco32__
 #include <arch/eco32/endian.h>
 #endif
+#ifdef __mmix__
+#include <arch/mmix/endian.h>
+#endif
 
 #endif /* ENDIAN_H_ */

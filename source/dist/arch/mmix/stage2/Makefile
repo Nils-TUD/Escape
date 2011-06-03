@@ -1,16 +1,19 @@
 ROOT = ../../../..
 BUILDL = $(BUILD)/stage2
+LIB = $(ROOT)/lib/basic
 BIN = $(BUILD)/stage2.bin
-ELF = $(BUILD)/stage2.elf.bin
 MAP = $(BUILD)/stage2.map
-SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+ELF = $(BUILD)/stage2.elf.bin
+SUBDIRS = $(shell find . -type d)
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+DEPS = $(shell find $(BUILDL) -name "*.d")
 
-CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS)
+CFLAGS = -ffreestanding -nostartfiles -nodefaultlibs -nostdlib $(CDEFFLAGS)
 
 # sources
 CSRC = $(shell find . -name "*.c")
+LSRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.c")
+LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s")
 ASTART = c0.s
 ASRC = 
 AEND = c1.s
@@ -18,14 +21,16 @@ LDCONF = ld.conf
 
 # objects
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
+LOBJ = $(patsubst $(LIB)/arch/$(ARCH)/%.c,$(BUILDL)/%.l.o,$(LSRC))
+LOBJ += $(patsubst $(LIB)/arch/$(ARCH)/%.s,$(BUILDL)/%.l.a.o,$(LASRC))
 AOBJ = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
-AOBJS = $(BUILDL)/c0.s.o
-AOBJE = $(BUILDL)/c1.s.o
+AOBJS = $(BUILDL)/c0.o
+AOBJE = $(BUILDL)/c1.o
 AOBJALL = $(AOBJS) $(AOBJ) $(AOBJE)
 
 .PHONY: all clean
 
-all:		$(BUILDDIRS) $(BIN) $(MAP) $(ELF)
+all:		$(BUILDDIRS) $(BIN) $(ELF) $(MAP)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -34,7 +39,7 @@ $(BUILDDIRS):
 
 $(ELF):	$(COBJ) $(AOBJALL) $(LOBJ) $(LDCONF)
 		@echo "	" LINKING $@
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJS) $(COBJ) $(AOBJ) $(AOBJE)
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJS) $(COBJ) $(AOBJ) $(LOBJ) $(AOBJE)
 
 $(MAP): $(ELF)
 		@echo "	" GEN MAP $@
@@ -42,7 +47,7 @@ $(MAP): $(ELF)
 
 $(BIN): $(ELF)
 		@echo "	" GEN BIN $@
-		@$(OBJCOPY) -O binary $(ELF) $(BIN)
+		@$(OBJCOPY) -S $(ELF) $(BIN)
 		@echo "	" COPYING TO DISK
 		@dd if=$(BIN) of=$(BUILD)/hd.img bs=512 seek=1 conv=notrunc
 
@@ -50,7 +55,15 @@ $(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -c -o $@ $< -MD
 
-$(BUILDL)/%.s.o:	%.s
+$(BUILDL)/%.l.o:	$(LIB)/arch/$(ARCH)/%.c
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -c -o $@ $< -MD
+
+$(BUILDL)/%.o:	%.s
+		@echo "	" AS $<
+		@$(AS) -o $@ $<
+
+$(BUILDL)/%.l.a.o:	$(LIB)/arch/$(ARCH)/%.s
 		@echo "	" AS $<
 		@$(AS) -o $@ $<
 

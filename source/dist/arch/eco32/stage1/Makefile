@@ -46,4 +46,4 @@ $(BUILDL)/%.s.o:	%.s
 -include $(DEP)
 
 clean:
-		rm -f *~ $(AOBJ) $(BIN) $(DEP) $(MAP)
+		rm -f *~ $(AOBJ) $(BIN) $(ELF) $(DEP) $(MAP)

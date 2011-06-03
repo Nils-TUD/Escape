@@ -1,8 +1,8 @@
 ROOT = ../../../..
 BUILDL = $(BUILD)/stage1
 BIN = $(BUILD)/stage1.bin
-ELF = $(BUILD)/stage1.elf.bin
 MAP = $(BUILD)/stage1.map
+ELF = $(BUILD)/stage1.elf.bin
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")

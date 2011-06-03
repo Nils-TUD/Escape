@@ -67,7 +67,7 @@ static Elf32_Phdr pheader;
 /* temporary buffer to read a block from disk */
 static uint buffer[1024 / sizeof(uint)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
-static uint loadAddr = 0xC0000000;
+static uintptr_t loadAddr = 0xC0000000;
 
 static int mystrncmp(const char *str1,const char *str2,size_t count) {
 	ssize_t rem = count;
@@ -116,7 +116,7 @@ static void printInode(sExt2Inode *inode) {
 	debugf("\tfragAddr=%d\n",le32tocpu(inode->fragAddr));
 }
 
-static int readSectors(void *dst,uint start,size_t secCount) {
+static int readSectors(void *dst,size_t start,size_t secCount) {
 	return dskio(BOOT_DISK,'r',START_SECTOR + start,dst,secCount);
 }
 
@@ -124,7 +124,7 @@ static int readBlocks(void *dst,tBlockNo start,size_t blockCount) {
 	return dskio(BOOT_DISK,'r',START_SECTOR + BLOCKS_TO_SECS(start),dst,BLOCKS_TO_SECS(blockCount));
 }
 
-static void readFromDisk(tBlockNo blkno,void *buf,uint offset,uint nbytes) {
+static void readFromDisk(tBlockNo blkno,void *buf,size_t offset,size_t nbytes) {
 	void *dst = offset == 0 && (nbytes % BLOCK_SIZE) == 0 ? buf : buffer;
 	if(offset >= BLOCK_SIZE || offset + nbytes > BLOCK_SIZE)
 		halt("Offset / nbytes invalid");
@@ -172,7 +172,7 @@ static tInodeNo searchDir(tInodeNo dirIno,sExt2Inode *dir,const char *name,size_
 	return EXT2_BAD_INO;
 }
 
-static tBlockNo getBlock(sExt2Inode *ino,ulong offset) {
+static tBlockNo getBlock(sExt2Inode *ino,size_t offset) {
 	tBlockNo i,block = offset / BLOCK_SIZE;
 	size_t blockSize,blocksPerBlock;
 
@@ -242,9 +242,9 @@ static tInodeNo namei(char *path,sExt2Inode *ino) {
 	return inodeno;
 }
 
-static uint copyToMem(sExt2Inode *ino,uint offset,uint count,uint dest) {
+static uintptr_t copyToMem(sExt2Inode *ino,size_t offset,size_t count,uintptr_t dest) {
 	tBlockNo blk;
-	uint offInBlk,amount;
+	size_t offInBlk,amount;
 	while(count > 0) {
 		blk = getBlock(ino,offset);
 
@@ -279,8 +279,8 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	datPtr = (uint8_t const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
-		tBlockNo block = getBlock(ino,(ulong)datPtr);
-		readFromDisk(block,&pheader,(uint)datPtr & (BLOCK_SIZE - 1),sizeof(Elf32_Phdr));
+		tBlockNo block = getBlock(ino,(size_t)datPtr);
+		readFromDisk(block,&pheader,(uintptr_t)datPtr & (BLOCK_SIZE - 1),sizeof(Elf64_Phdr));
 
 		if(pheader.p_type == PT_LOAD) {
 			/* read into memory */
@@ -313,7 +313,7 @@ static int readInProg(sLoadProg *prog,sExt2Inode *ino) {
 	return 1;
 }
 
-sBootInfo *bootload(uint memSize) {
+sBootInfo *bootload(size_t memSize) {
 	int i;
 	int cap = sctcapctl();
 	if(cap == 0)

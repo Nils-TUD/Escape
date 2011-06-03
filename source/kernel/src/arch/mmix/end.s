@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: end.s 901 2011-06-02 20:25:32Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,24 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/thread.h>
+	.global	_ecode
+	.global	_edata
+	.global	_ebss
 
-void locku(tULock *l) {
-	/* TODO */
-#if 0
-	__asm__ (
-		"mov $1,%%ecx;"				/* ecx=1 to lock it for others */
-		"lockuLoop:"
-		"	xor	%%eax,%%eax;"		/* clear eax */
-		"	lock;"					/* lock next instruction */
-		"	cmpxchg %%ecx,(%0);"	/* compare l with eax; if equal exchange ecx with l */
-		"	jnz		lockuLoop;"		/* try again if not equal */
-		: : "D" (l)
-	);
-#endif
-}
+.section .text
+	.align	8
+_ecode:
 
-void unlocku(tULock *l) {
-	/* TODO */
-}
+.section .data
+	.align	8
+_edata:
+
+.section .bss
+	.align	8
+_ebss:

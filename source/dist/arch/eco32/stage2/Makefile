@@ -6,7 +6,7 @@ MAP = $(BUILD)/stage2.map
 ELF = $(BUILD)/stage2.elf.bin
 SUBDIRS = $(shell find . -type d)
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find . -name "*.d")
+DEPS = $(shell find $(BUILDL) -name "*.d")
 
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS)
 
@@ -64,4 +64,4 @@ $(BUILDL)/%.l.o:	$(LIB)/arch/$(ARCH)/%.s
 -include $(DEP)
 
 clean:
-		rm -f *~ $(COBJ) $(AOBJALL) $(LOBJ) $(BIN) $(DEP) $(MAP)
+		rm -f *~ $(COBJ) $(AOBJALL) $(LOBJ) $(BIN) $(ELF) $(DEP) $(MAP)

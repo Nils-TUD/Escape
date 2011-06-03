@@ -25,6 +25,8 @@ HDDTRACKSECS=63
 # partitions
 if [ "$ARCH" = "eco32" ]; then
 	PART1OFFSET=32
+elif [ "$ARCH" = "mmix" ]; then
+	PART1OFFSET=48
 else
 	PART1OFFSET=$HDDTRACKSECS
 fi
@@ -179,7 +181,7 @@ if [ "$1" == "build" ]; then
 	dd if=/dev/zero of=$HDD bs=`expr $HDDTRACKSECS \* $HDDHEADS \* 512`c count=$HDDCYL
 	mkDiskDev
 	
-	if [ "$ARCH" = "eco32" ]; then
+	if [ "$ARCH" = "eco32" ] || [ "$ARCH" = "mmix" ]; then
 		dd if=$BUILD/stage1.bin of=$HDD bs=512 count=1 conv=notrunc
 		dd if=$BUILD/stage2.bin of=$HDD bs=512 seek=1 conv=notrunc
 	else

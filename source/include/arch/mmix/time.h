@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: time.h 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,24 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef MMIX_TIME_H_
+#define MMIX_TIME_H_
+
 #include <esc/common.h>
-#include <esc/thread.h>
 
-void locku(tULock *l) {
-	/* TODO */
-#if 0
-	__asm__ (
-		"mov $1,%%ecx;"				/* ecx=1 to lock it for others */
-		"lockuLoop:"
-		"	xor	%%eax,%%eax;"		/* clear eax */
-		"	lock;"					/* lock next instruction */
-		"	cmpxchg %%ecx,(%0);"	/* compare l with eax; if equal exchange ecx with l */
-		"	jnz		lockuLoop;"		/* try again if not equal */
-		: : "D" (l)
-	);
-#endif
-}
+#define TIME_DRIVER		"/dev/rtc"
 
-void unlocku(tULock *l) {
-	/* TODO */
-}
+#endif /* MMIX_TIME_H_ */

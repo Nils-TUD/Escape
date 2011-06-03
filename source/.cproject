@@ -40,7 +40,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Escape/include}&quot;"/>
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1628885044" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="__eco32__"/>
+									<listOptionValue builtIn="false" value="__mmix__"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.921234755" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

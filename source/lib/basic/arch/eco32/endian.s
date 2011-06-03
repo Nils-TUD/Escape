@@ -22,6 +22,8 @@
 .global cputole16
 .global cputole32
 
+# uint16_t cputole16(uint16_t in);
+# uint16_t le16tocpu(uint16_t in);
 cputole16:
 le16tocpu:
 	.nosyn
@@ -33,6 +35,8 @@ le16tocpu:
 	jr		$31
 	.syn
 
+# uint32_t cputole32(uint32_t in);
+# uint32_t le32tocpu(uint32_t in);
 cputole32:
 le32tocpu:
 	.nosyn

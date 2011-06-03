@@ -156,8 +156,6 @@ static tInodeNo searchDir(tInodeNo dirIno,sExt2Inode *dir,const char *name,size_
 		halt("Directory %u larger than %u bytes\n",dirIno,sizeof(buffer));
 
 	readBlocks(buffer,le32tocpu(dir->dBlocks[0]),1);
-	debugf("Block %d:\n",le32tocpu(dir->dBlocks[0]));
-	dumpBytes(buffer,BLOCK_SIZE);
 	ssize_t rem = size;
 	sExt2DirEntry *entry = (sExt2DirEntry*)buffer;
 

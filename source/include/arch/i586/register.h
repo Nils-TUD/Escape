@@ -20,7 +20,7 @@
 #ifndef REGISTER_H_
 #define REGISTER_H_
 
-#include <types.h>
+#include <esc/common.h>
 #ifdef IN_KERNEL
 #	include <sys/video.h>
 #	define rprintf	vid_printf

@@ -18,9 +18,9 @@
  */
 
 
-#include <types.h>
-#include <assert.h>
+#include <esc/common.h>
 #include <esc/sllist.h>
+#include <assert.h>
 
 #ifdef IN_KERNEL
 #	include <sys/mem/kheap.h>

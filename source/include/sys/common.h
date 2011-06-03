@@ -20,9 +20,9 @@
 #ifndef SYS_COMMON_H_
 #define SYS_COMMON_H_
 
-#include <types.h>
-#include <stddef.h>
+#include <esc/common.h>
 #include <esc/defines.h>
+#include <stddef.h>
 
 /* file-number (in global file table) */
 typedef int tFileNo;

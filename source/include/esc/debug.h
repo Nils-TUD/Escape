@@ -20,6 +20,7 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+#include <esc/common.h>
 #include <stdarg.h>
 
 #ifdef __cplusplus

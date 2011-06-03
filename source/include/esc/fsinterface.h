@@ -21,7 +21,6 @@
 #define FSINTERFACE_H_
 
 #include <esc/common.h>
-#include <types.h>
 #include <stddef.h>
 
 #define MAX_NAME_LEN		50

@@ -20,9 +20,9 @@
 #ifndef MESSAGES_H_
 #define MESSAGES_H_
 
-#include <types.h>
-#include <stddef.h>
+#include <esc/common.h>
 #include <esc/fsinterface.h>
+#include <stddef.h>
 
 /* general */
 #define MAX_MSG_ARGS				10

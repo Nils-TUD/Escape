@@ -22,7 +22,7 @@
 
 /* Note that most of the comments here are from doc/iso_c99.pdf */
 
-#include <types.h>
+#include <esc/common.h>
 #include <esc/io.h>
 
 #define _IOFBF			0	/* fully buffered */

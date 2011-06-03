@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <types.h>
-#include <assert.h>
+#include <esc/common.h>
 #include <esc/hashmap.h>
+#include <assert.h>
 
 #ifdef IN_KERNEL
 #	include <sys/mem/kheap.h>

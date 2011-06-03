@@ -29,10 +29,10 @@
 #define MAX_ERR_LEN			64
 #define MAX_ARGNAME_LEN		16
 
-static int ca_find(const char *begin,const char *end,bool hasVal);
-static int ca_setVal(bool hasVal,bool isEmpty,const char *begin,int argi,char type,void *ptr);
+static ssize_t ca_find(const char *begin,const char *end,bool hasVal);
+static ssize_t ca_setVal(bool hasVal,bool isEmpty,const char *begin,ssize_t argi,char type,void *ptr);
 static size_t ca_readk(const char *str);
-static int ca_getArgVal(int i,bool isEmpty,bool hasVal,const char *begin,const char **val);
+static ssize_t ca_getArgVal(ssize_t i,bool isEmpty,bool hasVal,const char *begin,const char **val);
 
 bool isHelpCmd(int argc,char **argv) {
 	if(argc <= 1)
@@ -93,7 +93,7 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	bool required;
 	bool hasVal;
 	char type;
-	int i,j;
+	ssize_t i,j;
 	char *f = (char*)fmt;
 
 	flags = aflags;
@@ -109,7 +109,7 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 
 	/* check for help-requests */
 	for(i = 1; i < argc; i++) {
-		for(j = 0; j < (int)ARRAY_SIZE(helps); j++) {
+		for(j = 0; j < (ssize_t)ARRAY_SIZE(helps); j++) {
 			if(strcmp(argv[i],helps[j]) == 0) {
 				hasHelp = true;
 				return 0;
@@ -158,7 +158,7 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 
 		/* find the argument and set it */
 		i = ca_find(begin,end,hasVal);
-		if(required && i == CA_ERR_REQUIRED_MISSING) {
+		if(required && i == (ssize_t)CA_ERR_REQUIRED_MISSING) {
 			char argName[MAX_ARGNAME_LEN];
 			strncpy(argName,begin,end - begin);
 			argName[end - begin] = '\0';
@@ -187,21 +187,21 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	if(freeArgsArray == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	for(i = 0, n = sll_begin(freeArgs); n != NULL; n = n->next,i++)
-		freeArgsArray[i] = argv[(int)n->data];
+		freeArgsArray[i] = argv[(size_t)n->data];
 	freeArgsArray[i] = NULL;
 	sll_destroy(freeArgs,false);
 	return 0;
 }
 
-static int ca_find(const char *begin,const char *end,bool hasVal) {
-	int i;
+static ssize_t ca_find(const char *begin,const char *end,bool hasVal) {
+	ssize_t i;
 	bool onechar = end - begin == 1;
 	/* empty? */
 	if(begin == end) {
 		/* use the first free arg */
 		if(sll_length(freeArgs) == 0)
 			return CA_ERR_NO_FREE;
-		return (int)sll_get(freeArgs,0);
+		return (ssize_t)sll_get(freeArgs,0);
 	}
 	for(i = 1; i < argc; i++) {
 		const char *next;
@@ -235,8 +235,8 @@ static int ca_find(const char *begin,const char *end,bool hasVal) {
 	return CA_ERR_REQUIRED_MISSING;
 }
 
-static int ca_setVal(bool hasVal,bool isEmpty,const char *begin,int argi,char type,void *ptr) {
-	int res = 0;
+static ssize_t ca_setVal(bool hasVal,bool isEmpty,const char *begin,ssize_t argi,char type,void *ptr) {
+	ssize_t res = 0;
 	const char *val;
 	if(hasVal) {
 		if(argi < 0)
@@ -310,7 +310,7 @@ static size_t ca_readk(const char *str) {
 	return val;
 }
 
-static int ca_getArgVal(int i,bool isEmpty,bool hasVal,const char *begin,const char **val) {
+static ssize_t ca_getArgVal(ssize_t i,bool isEmpty,bool hasVal,const char *begin,const char **val) {
 	const char *arg = argv[i];
 	char *eqPos = strchr(arg,'=');
 	sll_removeFirst(freeArgs,(void*)i);

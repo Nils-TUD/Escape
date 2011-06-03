@@ -20,7 +20,7 @@
 #ifndef TIME_H_
 #define TIME_H_
 
-#include <types.h>
+#include <esc/common.h>
 
 #ifdef __i386__
 #include <arch/i586/time.h>
@@ -36,8 +36,8 @@
 #define CLOCKS_PER_SEC		(clock_t)0
 
 /* timestamp */
-typedef u32 time_t;
-typedef u32 clock_t;
+typedef uint32_t time_t;
+typedef uint32_t clock_t;
 
 /* time-struct */
 struct tm {

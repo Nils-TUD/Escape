@@ -20,7 +20,7 @@
 #ifndef STDDEF_H_
 #define STDDEF_H_
 
-#include <esc/defines.h>
+#include <esc/common.h>
 
 #define offsetof(type,field)	((size_t)(&((type *)0)->field))
 

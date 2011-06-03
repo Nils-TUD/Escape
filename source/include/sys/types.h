@@ -20,6 +20,6 @@
 #ifndef SYS_TYPES_H_
 #define SYS_TYPES_H_
 
-#include <types.h>
+#include <esc/common.h>
 
 #endif /* SYS_TYPES_H_ */

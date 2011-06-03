@@ -20,11 +20,10 @@
 #ifndef ESC_COMMON_H_
 #define ESC_COMMON_H_
 
-#include <types.h>
 #include <stddef.h>
-#include <stdarg.h>
 #include <esc/defines.h>
-#include <esc/debug.h>
+#include <esc/types.h>
+#include <stdarg.h>
 
 #ifndef NDEBUG
 #define DEBUGGING 1

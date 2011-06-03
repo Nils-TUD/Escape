@@ -22,7 +22,6 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <types.h>
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>

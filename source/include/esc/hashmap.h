@@ -20,7 +20,7 @@
 #ifndef HASHMAP_H_
 #define HASHMAP_H_
 
-#include <types.h>
+#include <esc/common.h>
 #include <esc/sllist.h>
 
 /**

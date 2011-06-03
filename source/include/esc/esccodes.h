@@ -20,7 +20,7 @@
 #ifndef ESCCODES_H_
 #define ESCCODES_H_
 
-#include <types.h>
+#include <esc/common.h>
 
 #define MAX_ESCC_LENGTH			19
 

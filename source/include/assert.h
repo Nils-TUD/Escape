@@ -24,6 +24,7 @@
 #	include <sys/util.h>
 #else
 #	include <esc/proc.h>
+#	include <esc/debug.h>
 #	include <stdio.h>
 #endif
 

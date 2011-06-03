@@ -97,7 +97,7 @@ static bool loadNewSpace(size_t size);
  * @param addr the address
  * @return the key
  */
-static uint getHash(void *addr);
+static size_t getHash(void *addr);
 
 /* the lock for the heap */
 static tULock mlock = 0;
@@ -509,10 +509,10 @@ static bool loadNewAreas(void) {
 	return true;
 }
 
-static uint getHash(void *addr) {
+static size_t getHash(void *addr) {
 	/* the algorithm distributes the entries more equally in the occupied-map. */
 	/* borrowed from java.util.HashMap :) */
-	uint h = (uint)addr;
+	size_t h = (size_t)addr;
 	h ^= (h >> 20) ^ (h >> 12);
 	/* note that we can use & (a-1) since OCC_MAP_SIZE = 2^x */
 	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);

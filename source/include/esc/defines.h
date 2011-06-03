@@ -20,8 +20,6 @@
 #ifndef DEFINES_H_
 #define DEFINES_H_
 
-#include <types.h>
-
 /* exit-codes */
 #define EXIT_FAILURE			1
 #define EXIT_SUCCESS			0
@@ -50,67 +48,5 @@
 #define A_ALIGNED(x)			__attribute__((aligned (x)))
 #define A_CHECKRET				__attribute__((__warn_unused_result__))
 #define A_NORETURN				__attribute__((noreturn))
-
-/* process id */
-typedef u16 tPid;
-typedef u16 pid_t;
-/* thread id */
-typedef u16 tTid;
-/* file-descriptor */
-typedef s16 tFD;
-/* inode-number */
-typedef s32 tInodeNo;
-/* block number on disk */
-typedef u32 tBlockNo;
-/* device-number */
-typedef s32 tDevNo;
-/* signal-number */
-typedef u8 tSig;
-/* msg-id */
-typedef u32 tMsgId;
-typedef u32 tEvObj;
-typedef u32 tTime;
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-typedef unsigned long ulong;
-typedef signed long long llong;
-typedef unsigned long long ullong;
-
-typedef u8 uint8_t;
-typedef s8 int8_t;
-typedef u16 uint16_t;
-typedef s16 int16_t;
-typedef u32 uint32_t;
-typedef s32 int32_t;
-typedef u64 uint64_t;
-typedef s64 int64_t;
-
-typedef s32 intptr_t;
-typedef u32 uintptr_t;
-
-typedef s32 ssize_t;
-
-#ifdef __cplusplus
-namespace std {
-#endif
-
-#ifndef _PTRDIFF_T
-#define _PTRDIFF_T
-typedef s32 ptrdiff_t;
-#endif
-
-#ifndef __SIZE_T__
-#define __SIZE_T__
-typedef u32 size_t;
-#endif
-
-typedef s32 off_t;
-typedef u16 mode_t;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* DEFINES_H_ */

@@ -21,8 +21,8 @@
 #define IO_H_
 
 #include <esc/common.h>
-#include <stdarg.h>
 #include <esc/fsinterface.h>
+#include <stdarg.h>
 #include <errors.h>
 
 /* IO flags */

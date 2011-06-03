@@ -20,7 +20,7 @@
 #ifndef SLLIST_H_
 #define SLLIST_H_
 
-#include <types.h>
+#include <esc/common.h>
 
 /* a node in the list (public view) */
 typedef struct sSLNode sSLNode;

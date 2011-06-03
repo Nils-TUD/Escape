@@ -20,7 +20,7 @@
 #ifndef CTYPE_H_
 #define CTYPE_H_
 
-#include <types.h>
+#include <esc/common.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,3 +1,3 @@
 NAME=video
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

@@ -165,11 +165,11 @@ errorRemNode:
 
 void sysc_tell(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	int *pos = (int*)SYSC_ARG2(stack);
+	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
 
-	if(!paging_isRangeUserWritable((uintptr_t)pos,sizeof(long)))
+	if(!paging_isRangeUserWritable((uintptr_t)pos,sizeof(off_t)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -183,11 +183,11 @@ void sysc_tell(sIntrptStackFrame *stack) {
 
 void sysc_seek(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	int offset = (int)SYSC_ARG2(stack);
+	off_t offset = (off_t)SYSC_ARG2(stack);
 	uint whence = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
-	int res;
+	off_t res;
 
 	if(whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);

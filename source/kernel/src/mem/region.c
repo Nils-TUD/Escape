@@ -39,8 +39,8 @@
 
 static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
 
-sRegion *reg_create(const sBinDesc *bin,uintptr_t binOffset,size_t bCount,size_t lCount,
-		uint pgFlags,uint flags) {
+sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,
+		ulong pgFlags,ulong flags) {
 	size_t i,pageCount;
 	sRegion *reg;
 	assert(pgFlags == PF_DEMANDLOAD || pgFlags == 0);
@@ -73,7 +73,7 @@ sRegion *reg_create(const sBinDesc *bin,uintptr_t binOffset,size_t bCount,size_t
 	 * happen for data-regions of zero-size. We want to be able to increase their size, so they
 	 * must exist. */
 	reg->pfSize = MAX(1,pageCount);
-	reg->pageFlags = (uint*)kheap_alloc(reg->pfSize * sizeof(uint));
+	reg->pageFlags = (ulong*)kheap_alloc(reg->pfSize * sizeof(ulong));
 	if(reg->pageFlags == NULL)
 		goto errPDirs;
 	for(i = 0; i < pageCount; i++)
@@ -110,12 +110,12 @@ size_t reg_presentPageCount(const sRegion *reg) {
 	return c;
 }
 
-uint reg_getSwapBlock(const sRegion *reg,size_t pageIndex) {
+ulong reg_getSwapBlock(const sRegion *reg,size_t pageIndex) {
 	assert(reg->pageFlags[pageIndex] & PF_SWAPPED);
 	return reg->pageFlags[pageIndex] >> PF_BITCOUNT;
 }
 
-void reg_setSwapBlock(sRegion *reg,size_t pageIndex,uint swapBlock) {
+void reg_setSwapBlock(sRegion *reg,size_t pageIndex,ulong swapBlock) {
 	reg->pageFlags[pageIndex] &= (1 << PF_BITCOUNT) - 1;
 	reg->pageFlags[pageIndex] |= swapBlock << PF_BITCOUNT;
 }
@@ -141,13 +141,13 @@ bool reg_grow(sRegion *reg,ssize_t amount) {
 	assert(reg != NULL && (reg->flags & RF_GROWABLE));
 	if(amount > 0) {
 		ssize_t i;
-		uint *pf = (uint*)kheap_realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(uint));
+		ulong *pf = (ulong*)kheap_realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(ulong));
 		if(pf == NULL)
 			return false;
 		reg->pfSize += amount;
 		/* stack grows downwards */
 		if(reg->flags & RF_STACK) {
-			memmove(pf + amount,pf,count * sizeof(uint));
+			memmove(pf + amount,pf,count * sizeof(ulong));
 			for(i = 0; i < amount; i++)
 				pf[i] = 0;
 		}
@@ -168,7 +168,7 @@ bool reg_grow(sRegion *reg,ssize_t amount) {
 				swmap_free(reg_getSwapBlock(reg,i));
 		}
 		if(reg->flags & RF_STACK)
-			memmove(reg->pageFlags,reg->pageFlags + -amount,(count + amount) * sizeof(uint));
+			memmove(reg->pageFlags,reg->pageFlags + -amount,(count + amount) * sizeof(ulong));
 		reg->byteCount -= -amount * PAGE_SIZE;
 	}
 	return true;
@@ -179,7 +179,7 @@ sRegion *reg_clone(const void *p,const sRegion *reg) {
 	assert(reg != NULL && !(reg->flags & RF_SHAREABLE));
 	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,0,reg->flags);
 	if(clone) {
-		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize * sizeof(uint));
+		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize * sizeof(ulong));
 		reg_addTo(clone,p);
 	}
 	return clone;
@@ -188,13 +188,13 @@ sRegion *reg_clone(const void *p,const sRegion *reg) {
 void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt) {
 	size_t i,x;
 	sSLNode *n;
-	prf_sprintf(buf,"\tSize: %u bytes\n",reg->byteCount);
-	prf_sprintf(buf,"\tLoad: %u bytes\n",reg->loadCount);
+	prf_sprintf(buf,"\tSize: %Su bytes\n",reg->byteCount);
+	prf_sprintf(buf,"\tLoad: %Su bytes\n",reg->loadCount);
 	prf_sprintf(buf,"\tflags: ");
 	reg_sprintfFlags(buf,reg);
 	prf_sprintf(buf,"\n");
 	if(reg->binary.ino) {
-		prf_sprintf(buf,"\tbinary: ino=%d dev=%d modified=%u offset=%#x\n",
+		prf_sprintf(buf,"\tbinary: ino=%d dev=%d modified=%u offset=%#Ox\n",
 				reg->binary.ino,reg->binary.dev,reg->binary.modifytime,reg->binOffset);
 	}
 	prf_sprintf(buf,"\tTimestamp: %d\n",reg->timestamp);
@@ -204,7 +204,7 @@ void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt) {
 	prf_sprintf(buf,"\n");
 	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(reg->byteCount));
 	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {
-		prf_sprintf(buf,"\t\t%d: (%#08x) (swblk %d) %c%c%c\n",i,virt + i * PAGE_SIZE,
+		prf_sprintf(buf,"\t\t%d: (%p) (swblk %d) %c%c%c\n",i,virt + i * PAGE_SIZE,
 				(reg->pageFlags[i] & PF_SWAPPED) ? reg_getSwapBlock(reg,i) : 0,
 				reg->pageFlags[i] & PF_COPYONWRITE ? 'c' : '-',
 				reg->pageFlags[i] & PF_DEMANDLOAD ? 'l' : '-',
@@ -215,7 +215,7 @@ void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt) {
 static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 	struct {
 		const char *name;
-		uint no;
+		ulong no;
 	} flagNames[] = {
 		{"Growable",RF_GROWABLE},
 		{"Shareable",RF_SHAREABLE},

@@ -31,6 +31,9 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/task/thread.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/thread.h>
+#endif
 
 #define MAX_STACK_PAGES			128
 
@@ -90,8 +93,8 @@ struct sThread {
 		uint64_t kcycleStart;
 		uLongLong kcycleCount;
 		/* the number of times we got chosen so far */
-		uint schedCount;
-		uint syscalls;
+		ulong schedCount;
+		ulong syscalls;
 	} stats;
 	/* for the scheduler */
 	sThread *prev;
@@ -240,6 +243,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
  * @param src the thread to copy
  * @param dst will contain a pointer to the new thread
  * @param cloneProc whether a process is cloned or just a thread
+ * @return 0 on success
  */
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc);
 

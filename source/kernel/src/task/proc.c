@@ -789,7 +789,7 @@ void proc_dbg_printAllPDs(uint parts,bool regions) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
-		vid_printf("Process %d (%s) (%d own, %d sh, %d sw):\n",
+		vid_printf("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
 				p->pid,p->command,p->ownFrames,p->sharedFrames,p->swapped);
 		if(regions)
 			vmm_dbg_print(p);
@@ -802,13 +802,13 @@ void proc_dbg_print(const sProc *p) {
 	size_t i;
 	sSLNode *n;
 	vid_printf("Proc %d:\n",p->pid);
-	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#x\n",
+	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#Px\n",
 			p->parentPid,p->command,p->pagedir,p->entryPoint);
-	vid_printf("\tOwnFrames=%u, sharedFrames=%u, swapped=%u\n",
+	vid_printf("\tOwnFrames=%lu, sharedFrames=%lu, swapped=%lu\n",
 			p->ownFrames,p->sharedFrames,p->swapped);
 	if(p->flags & P_ZOMBIE) {
 		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
-		vid_printf("\t\town=%u, shared=%u, swap=%u\n",
+		vid_printf("\t\town=%lu, shared=%lu, swap=%lu\n",
 				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
 		vid_printf("\t\tucycles=%#016Lx, kcycles=%#016Lx\n",
 				p->exitState->ucycleCount,p->exitState->kcycleCount);

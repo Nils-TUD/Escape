@@ -332,7 +332,7 @@ void gdt_dbg_print(void) {
 	size_t i;
 	vid_printf("GDT:\n");
 	for(i = 0;i < GDT_ENTRY_COUNT; i++) {
-		vid_printf("\t%d: address=%02x%02x%04x, size=%02x%04x, access=%02x\n",
+		vid_printf("\t%d: address=%02x%02x:%04x, size=%02x%04x, access=%02x\n",
 				i,gdt[i].addrHigh,gdt[i].addrMiddle,gdt[i].addrLow,
 				gdt[i].sizeHigh,gdt[i].sizeLow,gdt[i].access);
 	}

@@ -1,3 +1,3 @@
 NAME=speaker
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

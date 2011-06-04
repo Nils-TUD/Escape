@@ -254,9 +254,9 @@ void *_kheap_alloc(size_t size) {
 	if(aafEnabled) {
 		sFuncCall *trace = util_getKernelStackTrace();
 		size_t i = 0;
-		vid_printf("[A] %x %d ",area->address,area->size);
+		vid_printf("[A] %Px %Sd ",area->address,area->size);
 		while(trace->addr != 0 && i++ < 10) {
-			vid_printf("%x",trace->addr);
+			vid_printf("%Px",trace->addr);
 			trace++;
 			if(trace->addr)
 				vid_printf(" ");
@@ -336,9 +336,9 @@ void _kheap_free(void *addr) {
 	if(aafEnabled) {
 		sFuncCall *trace = util_getKernelStackTrace();
 		size_t i = 0;
-		vid_printf("[F] %x %d ",addr,area->size);
+		vid_printf("[F] %Px %Sd ",addr,area->size);
 		while(trace->addr != 0 && i++ < 10) {
-			vid_printf("%x",trace->addr);
+			vid_printf("%Px",trace->addr);
 			trace++;
 			if(trace->addr)
 				vid_printf(" ");
@@ -558,11 +558,11 @@ void kheap_dbg_print(void) {
 	sMemArea *area;
 	size_t i;
 
-	vid_printf("Used=%d, free=%d, pages=%d\n",kheap_getUsedMem(),kheap_getFreeMem(),pages);
+	vid_printf("Used=%Su, free=%Su, pages=%Su\n",kheap_getUsedMem(),kheap_getFreeMem(),pages);
 	vid_printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
-		vid_printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,
+		vid_printf("\t%p: addr=%p, size=0x%Sx, next=%p\n",area,area->address,area->size,
 				area->next);
 		area = area->next;
 	}
@@ -573,7 +573,7 @@ void kheap_dbg_print(void) {
 		if(area != NULL) {
 			vid_printf("\t%d:\n",i);
 			while(area != NULL) {
-				vid_printf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,
+				vid_printf("\t\t%p: addr=%p, size=0x%Sx, next=%p\n",area,area->address,
 						area->size,area->next);
 				area = area->next;
 			}

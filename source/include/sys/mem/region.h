@@ -44,14 +44,14 @@ typedef struct {
 } sBinDesc;
 
 typedef struct {
-	uint flags;				/* flags that specify the attributes of this region */
+	ulong flags;				/* flags that specify the attributes of this region */
 	sBinDesc binary;		/* the source-binary (for demand-paging) */
-	uintptr_t binOffset;	/* offset in the binary */
+	off_t binOffset;	/* offset in the binary */
 	size_t byteCount;		/* number of bytes */
 	size_t loadCount;		/* number of bytes to load from disk (the rest is zero'ed) */
 	tTime timestamp;		/* timestamp of last usage (for swapping) */
 	size_t pfSize;			/* size of pageFlags */
-	uint *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
+	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
 	sSLList *procs;			/* linked list of processes that use this region */
 } sRegion;
 
@@ -67,8 +67,8 @@ typedef struct {
  * @param flags the flags of the region (RF_*)
  * @return the region or NULL if failed
  */
-sRegion *reg_create(const sBinDesc *bin,uintptr_t binOffset,size_t bCount,size_t lCount,
-		uint pgFlags,uint flags);
+sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,
+		ulong pgFlags,ulong flags);
 
 /**
  * Destroys the given region (regardless of the number of users!)
@@ -98,7 +98,7 @@ size_t reg_refCount(const sRegion *reg);
  * @param pageIndex the index of the page in the region
  * @return the swap-block
  */
-uint reg_getSwapBlock(const sRegion *reg,size_t pageIndex);
+ulong reg_getSwapBlock(const sRegion *reg,size_t pageIndex);
 
 /**
  * Sets the swap-block in which the page with given index is stored to <swapBlock>.
@@ -107,7 +107,7 @@ uint reg_getSwapBlock(const sRegion *reg,size_t pageIndex);
  * @param pageIndex the index of the page in the region
  * @param swapBlock the swap-block
  */
-void reg_setSwapBlock(sRegion *reg,size_t pageIndex,uint swapBlock);
+void reg_setSwapBlock(sRegion *reg,size_t pageIndex,ulong swapBlock);
 
 /**
  * Adds the given process as user to the region

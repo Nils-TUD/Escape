@@ -179,7 +179,7 @@ size_t cow_getFrmCount(void) {
 void cow_dbg_print(void) {
 	sSLNode *n;
 	sCOW *cow;
-	vid_printf("COW-Frames: (%d frames)\n",cow_getFrmCount());
+	vid_printf("COW-Frames: (%Su frames)\n",cow_getFrmCount());
 	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
 		cow = (sCOW*)n->data;
 		vid_printf("\tframe=0x%x, proc=%d (%s)\n",cow->frameNumber,cow->proc->pid,cow->proc->command);

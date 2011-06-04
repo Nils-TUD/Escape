@@ -23,7 +23,7 @@
 void memclear(void *addr,size_t count) {
 	ulong *waddr;
 	char *baddr = (char*)addr;
-	while((ulong)addr & (sizeof(ulong) - 1)) {
+	while(count > 0 && (ulong)baddr & (sizeof(ulong) - 1)) {
 		*baddr++ = 0;
 		count--;
 	}

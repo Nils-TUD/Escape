@@ -54,7 +54,7 @@ typedef struct {
 	/* number of references */
 	ushort refCount;
 	/* current position in file */
-	uint position;
+	off_t position;
 	/* node-number */
 	tInodeNo nodeNo;
 	/* the device-number */
@@ -346,7 +346,7 @@ static tFileNo vfs_getFreeFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devN
 	return freeSlot;
 }
 
-uint vfs_tell(tPid pid,tFileNo file) {
+off_t vfs_tell(tPid pid,tFileNo file) {
 	UNUSED(pid);
 	sGFTEntry *e = globalFileTable + file;
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
@@ -387,9 +387,9 @@ bool vfs_isterm(tPid pid,tFileNo file) {
 	return IS_CHANNEL(n->mode) && vfs_server_isterm(n->parent);
 }
 
-int vfs_seek(tPid pid,tFileNo file,int offset,uint whence) {
+off_t vfs_seek(tPid pid,tFileNo file,off_t offset,uint whence) {
 	sGFTEntry *e = globalFileTable + file;
-	uint oldPos = e->position;
+	off_t oldPos = e->position;
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo == VFS_DEV_NO) {
@@ -416,7 +416,7 @@ int vfs_seek(tPid pid,tFileNo file,int offset,uint whence) {
 			e->position += offset;
 	}
 
-	if((int)e->position < 0) {
+	if(e->position < 0) {
 		e->position = oldPos;
 		return ERR_INVALID_ARGS;
 	}
@@ -992,7 +992,7 @@ void vfs_dbg_printGFT(void) {
 			vid_printf("\n");
 			vid_printf("\t\tnodeNo: %d\n",e->nodeNo);
 			vid_printf("\t\tdevNo: %d\n",e->devNo);
-			vid_printf("\t\tpos: %d\n",e->position);
+			vid_printf("\t\tpos: %Od\n",e->position);
 			vid_printf("\t\trefCount: %d\n",e->refCount);
 			if(e->owner == KERNEL_PID)
 				vid_printf("\t\towner: %d (kernel)\n",e->owner);

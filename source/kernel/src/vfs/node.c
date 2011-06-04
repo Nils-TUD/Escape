@@ -377,6 +377,7 @@ char *vfs_node_getId(tPid pid) {
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign = 11 bytes */
 	/* we want to have to form <pid>.<x>, therefore two ints, a '.' and \0 */
+	/* TODO this is dangerous, because sizeof(int) might be not 4 */
 	size = 11 * 2 + 1 + 1;
 	name = (char*)kheap_alloc(size);
 	if(name == NULL)
@@ -457,13 +458,13 @@ void vfs_node_dbg_printTree(void) {
 }
 
 void vfs_node_dbg_printNode(const sVFSNode *node) {
-	vid_printf("VFSNode @ 0x%x:\n",node);
+	vid_printf("VFSNode @ %p:\n",node);
 	if(node) {
 		vid_printf("\tname: %s\n",node->name ? node->name : "NULL");
-		vid_printf("\tfirstChild: 0x%x\n",node->firstChild);
-		vid_printf("\tlastChild: 0x%x\n",node->lastChild);
-		vid_printf("\tnext: 0x%x\n",node->next);
-		vid_printf("\tprev: 0x%x\n",node->prev);
+		vid_printf("\tfirstChild: %p\n",node->firstChild);
+		vid_printf("\tlastChild: %p\n",node->lastChild);
+		vid_printf("\tnext: %p\n",node->next);
+		vid_printf("\tprev: %p\n",node->prev);
 		vid_printf("\towner: %d\n",node->owner);
 	}
 }

@@ -1,3 +1,3 @@
 NAME=progress
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

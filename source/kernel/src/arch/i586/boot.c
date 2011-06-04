@@ -315,8 +315,8 @@ void boot_dbg_print(void) {
 	}
 	if(CHECK_FLAG(mb->flags,1)) {
 		vid_printf("biosDriveNumber=%2X, part1=%2X, part2=%2X, part3=%2X\n",
-			(uintptr_t)mb->bootDevice.drive,(uintptr_t)mb->bootDevice.partition1,
-			(uintptr_t)mb->bootDevice.partition2,(uintptr_t)mb->bootDevice.partition3);
+			(uint)mb->bootDevice.drive,(uint)mb->bootDevice.partition1,
+			(uint)mb->bootDevice.partition2,(uint)mb->bootDevice.partition3);
 	}
 	if(CHECK_FLAG(mb->flags,2)) {
 		vid_printf("cmdLine=%s\n",mb->cmdLine);
@@ -326,28 +326,28 @@ void boot_dbg_print(void) {
 		sModule *mod = mb->modsAddr;
 		vid_printf("modsCount=%d:\n",mb->modsCount);
 		for(i = 0; i < mb->modsCount; i++) {
-			vid_printf("\t%s (0x%x .. 0x%x)\n",mod->name ? mod->name : "<NULL>",
+			vid_printf("\t%s [%p .. %p]\n",mod->name ? mod->name : "<NULL>",
 					mod->modStart,mod->modEnd);
 			mod++;
 		}
 	}
 	if(CHECK_FLAG(mb->flags,4)) {
-		vid_printf("a.out: tabSize=%d, strSize=%d, addr=0x%x\n",mb->syms.aDotOut.tabSize,mb->syms.aDotOut.strSize,
-			mb->syms.aDotOut.addr);
+		vid_printf("a.out: tabSize=%d, strSize=%d, addr=0x%x\n",mb->syms.aDotOut.tabSize,
+				mb->syms.aDotOut.strSize,mb->syms.aDotOut.addr);
 	}
 	else if(CHECK_FLAG(mb->flags,5)) {
 		vid_printf("ELF: num=%d, size=%d, addr=0x%x, shndx=0x%x\n",mb->syms.ELF.num,mb->syms.ELF.size,
 			mb->syms.ELF.addr,mb->syms.ELF.shndx);
 	}
 	if(CHECK_FLAG(mb->flags,6)) {
-		vid_printf("mmapLength=%d, mmapAddr=0x%x\n",mb->mmapLength,mb->mmapAddr);
+		vid_printf("mmapLength=%d, mmapAddr=%p\n",mb->mmapLength,mb->mmapAddr);
 		vid_printf("memory-map:\n");
 		x = 0;
 		for(mmap = (sMemMap*)mb->mmapAddr;
 			(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
 			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
 			if(mmap != NULL) {
-				vid_printf("\t%d: addr=0x%08x, size=0x%08x, type=%s\n",
+				vid_printf("\t%d: addr=%p, size=0x%08x, type=%s\n",
 						x,(uintptr_t)mmap->baseAddr,(size_t)mmap->length,
 						mmap->type == MMAP_TYPE_AVAILABLE ? "free" : "used");
 				x++;

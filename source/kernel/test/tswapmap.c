@@ -49,7 +49,7 @@ static void test_swapmap(void) {
 }
 
 static void test_swapmap1(void) {
-	uint blocks[5];
+	ulong blocks[5];
 	test_doStart("Testing alloc & free");
 
 	blocks[0] = swmap_alloc();
@@ -76,7 +76,7 @@ static void test_swapmap1(void) {
 }
 
 static void test_swapmap2(void) {
-	uint blocks[5];
+	ulong blocks[5];
 	test_doStart("Testing alloc & reverse free");
 
 	blocks[0] = swmap_alloc();
@@ -95,7 +95,7 @@ static void test_swapmap2(void) {
 }
 
 static void test_swapmap5(void) {
-	uint blocks[9];
+	ulong blocks[9];
 	test_doStart("Testing alloc & free mixed");
 
 	blocks[0] = swmap_alloc();

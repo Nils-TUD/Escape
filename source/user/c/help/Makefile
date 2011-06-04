@@ -1,3 +1,3 @@
 NAME=help
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

@@ -1,4 +1,4 @@
 NAME=test
 SUBDIR=modules
 
--include ../DefMakefile.mk
+-include ../RecMakefile.mk

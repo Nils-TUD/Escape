@@ -15,8 +15,9 @@
 	.global sctcapctl
 	.global dskio
 	.global debugChar
+	.global flushRegion
 
-	.set		STACK_SIZE,		0x1000
+	.set		STACK_SIZE,		0x2000
 
 .section .text
 _bcode:
@@ -34,7 +35,7 @@ start:
 	PUSHJ		$0,bootload				# call bootload function
 
 	SETH		$1,#8000
-	GO			$1,$1,0						# go to kernel; load-progs-array is in $0
+	GO			$1,$1,0						# go to kernel; kernel-stack-begin is in $0
 
 # void debugChar(octa character)
 debugChar:
@@ -51,6 +52,19 @@ debugChar:
 	STOU	$0,$2,#18						# write char
 	PUT		rJ,$1
 	POP		0,0
+
+# void flushRegion(octa addr,octa count)
+flushRegion:
+	SETL		$2,#100
+2:
+	BNP			$1,1f								# count <= 0?
+	SYNCD		#FF,$0,0						# flush to memory
+	SYNCID	#FF,$0,0						# remove from caches
+	SUB			$1,$1,$2
+	ADDU		$0,$0,$2
+	JMP			2b
+1:
+	POP			0,0
 
 # int sctcapctl(void)
 sctcapctl:

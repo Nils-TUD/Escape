@@ -28,6 +28,9 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/intrpt.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/intrpt.h>
+#endif
 
 /**
  * Enables / disables the interrupts

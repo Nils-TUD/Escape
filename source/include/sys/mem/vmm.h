@@ -88,8 +88,7 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align);
  * @param type the type of region
  * @return the region-number on success or a negative error-code
  */
-tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,uintptr_t binOffset,size_t bCount,
-		size_t lCount,uint type);
+tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type);
 
 /**
  * Changes the protection-settings of the given region. This is not possible for TLS-, stack-
@@ -100,7 +99,7 @@ tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,uintptr_t binOffset,size_t bCount,
  * @param flags the new flags (RF_WRITABLE or 0)
  * @return 0 on success
  */
-int vmm_setRegProt(sProc *p,tVMRegNo rno,uint flags);
+int vmm_setRegProt(sProc *p,tVMRegNo rno,ulong flags);
 
 /**
  * Swaps the page at given index in given region out. I.e. it marks the page as swapped in the

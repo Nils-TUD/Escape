@@ -1,3 +1,3 @@
 NAME=rmdir
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

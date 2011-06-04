@@ -54,6 +54,6 @@ const char *conf_getStr(uint id);
  * @param id the config-id
  * @return the value or < 0 if an error occurred
  */
-int conf_get(uint id);
+long conf_get(uint id);
 
 #endif /* CONFIG_H_ */

@@ -183,7 +183,7 @@ static int vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,s
 	vfs_real_wait(req);
 
 	/* error? */
-	if((int)req->count < 0) {
+	if((ssize_t)req->count < 0) {
 		res = req->count;
 		goto error;
 	}
@@ -201,7 +201,7 @@ error:
 	return res;
 }
 
-ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,uint offset,size_t count) {
+ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,off_t offset,size_t count) {
 	sRequest *req;
 	ssize_t res;
 	void *data;
@@ -245,7 +245,7 @@ ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,uint o
 	return res;
 }
 
-ssize_t vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,uint offset,
+ssize_t vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
 	ssize_t res = ERR_NOT_ENOUGH_MEM;
@@ -371,7 +371,7 @@ error:
 static void vfs_real_wait(sRequest *req) {
 	do
 		vfs_req_waitForReply(req,false);
-	while((int)req->count == ERR_DRIVER_DIED);
+	while((ssize_t)req->count == ERR_DRIVER_DIED);
 }
 
 static void vfs_real_openRespHandler(sVFSNode *node,const void *data,size_t size) {

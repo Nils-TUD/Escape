@@ -29,6 +29,9 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/boot.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/boot.h>
+#endif
 
 /**
  * @return size of the kernel (in bytes)

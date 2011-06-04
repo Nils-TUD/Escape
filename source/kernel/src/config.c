@@ -48,7 +48,7 @@ void conf_parseBootParams(int argc,const char *const *argv) {
 			continue;
 		strncpy(name,argv[i],eq);
 		name[eq] = '\0';
-		if(eq != (int)len) {
+		if(eq != (ssize_t)len) {
 			strncpy(value,argv[i] + eq + 1,len - eq - 1);
 			value[len - eq - 1] = '\0';
 		}
@@ -68,8 +68,8 @@ const char *conf_getStr(uint id) {
 	return res;
 }
 
-int conf_get(uint id) {
-	int res;
+long conf_get(uint id) {
+	long res;
 	switch(id) {
 		case CONF_BOOT_VIDEOMODE:
 			res = bootVidMode;

@@ -1,3 +1,3 @@
 NAME=stat
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

@@ -57,7 +57,11 @@ typedef uint32_t size_t;
 #endif
 #endif
 
+#ifdef __mmix__
+typedef int64_t off_t;
+#else
 typedef int32_t off_t;
+#endif
 typedef uint16_t mode_t;
 
 #ifdef __cplusplus

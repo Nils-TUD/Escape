@@ -1,3 +1,3 @@
 NAME=power
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

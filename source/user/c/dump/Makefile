@@ -1,3 +1,3 @@
 NAME=dump
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

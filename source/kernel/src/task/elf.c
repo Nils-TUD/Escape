@@ -118,7 +118,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	datPtr = (uint8_t const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
-		if(vfs_seek(p->pid,file,(int)datPtr,SEEK_SET) < 0)
+		if(vfs_seek(p->pid,file,(off_t)datPtr,SEEK_SET) < 0)
 			goto failed;
 		/* read pheader */
 		if(vfs_readFile(p->pid,file,&pheader,sizeof(Elf32_Phdr)) != sizeof(Elf32_Phdr))
@@ -158,7 +158,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				uintptr_t tlsStart,tlsEnd;
 				vmm_getRegRange(p,t->tlsRegion,&tlsStart,&tlsEnd);
 				/* read tdata */
-				if(vfs_seek(p->pid,file,(int)pheader.p_offset,SEEK_SET) < 0)
+				if(vfs_seek(p->pid,file,(off_t)pheader.p_offset,SEEK_SET) < 0)
 					goto failed;
 				if(vfs_readFile(p->pid,file,(void*)tlsStart,pheader.p_filesz) < 0)
 					goto failed;

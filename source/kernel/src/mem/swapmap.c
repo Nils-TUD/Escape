@@ -35,7 +35,7 @@
 static uint8_t *bitmap = NULL;
 static size_t totalBlocks = 0;
 static size_t freeBlocks = 0;
-static uint nextBlock = 0;
+static ulong nextBlock = 0;
 
 void swmap_init(size_t swapSize) {
 	totalBlocks = swapSize / PAGE_SIZE;
@@ -45,8 +45,8 @@ void swmap_init(size_t swapSize) {
 		util_panic("Unable to allocate swap-bitmap");
 }
 
-uint swmap_alloc(void) {
-	uint i;
+ulong swmap_alloc(void) {
+	ulong i;
 begin:
 	for(i = nextBlock; i < totalBlocks; ) {
 		size_t idx = i / 8;
@@ -72,12 +72,12 @@ begin:
 	return INVALID_BLOCK;
 }
 
-bool swmap_isUsed(uint block) {
+bool swmap_isUsed(ulong block) {
 	assert(block < totalBlocks);
 	return bitmap[block / 8] & (1 << (block % 8));
 }
 
-void swmap_free(uint block) {
+void swmap_free(ulong block) {
 	assert(block < totalBlocks);
 	bitmap[block / 8] &= ~(1 << (block % 8));
 	nextBlock = block;

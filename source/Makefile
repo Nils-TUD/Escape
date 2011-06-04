@@ -181,7 +181,7 @@ else
 endif
 
 mmix:	all hdd prepareRun
-		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -i --script=gimmix.start -s $(BUILD)/stage2.map
+		$(GIMSIM) -r $(GIMMON) -c -t 1 -d $(HDD) -i --script=gimmix.start -s $(BUILD)/kernel.map
 
 mmixd:	all hdd prepareRun
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235

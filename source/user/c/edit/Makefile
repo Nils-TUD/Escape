@@ -1,3 +1,3 @@
 NAME=edit
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

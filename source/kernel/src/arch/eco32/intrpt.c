@@ -238,7 +238,7 @@ static void intrpt_irqDisk(sIntrptStackFrame *stack) {
 
 void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 	int i;
-	vid_printf("stack-frame @ 0x%x\n",stack);
+	vid_printf("stack-frame @ 0x%Px\n",stack);
 	vid_printf("\tirqNo=%d\n",stack->irqNo);
 	vid_printf("\tpsw=#%08x\n",stack->psw);
 	vid_printf("\tregister:\n");

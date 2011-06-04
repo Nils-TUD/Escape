@@ -1,3 +1,3 @@
 NAME=ui
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

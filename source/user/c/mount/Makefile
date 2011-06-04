@@ -1,3 +1,3 @@
 NAME=mount
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

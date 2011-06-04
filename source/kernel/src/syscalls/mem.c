@@ -46,7 +46,7 @@ void sysc_changeSize(sIntrptStackFrame *stack) {
 
 void sysc_addRegion(sIntrptStackFrame *stack) {
 	sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
-	uintptr_t binOffset = SYSC_ARG2(stack);
+	off_t binOffset = SYSC_ARG2(stack);
 	size_t byteCount = SYSC_ARG3(stack);
 	size_t loadCount = SYSC_ARG4(stack);
 	uint type = SYSC_ARG5(stack);
@@ -103,7 +103,7 @@ void sysc_setRegProt(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	uintptr_t addr = SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
-	uint flags = 0;
+	ulong flags = 0;
 	tVMRegNo rno;
 	int res;
 

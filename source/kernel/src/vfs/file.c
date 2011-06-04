@@ -33,12 +33,12 @@ typedef struct {
 	/* size of the buffer */
 	size_t size;
 	/* currently used size */
-	size_t pos;
+	off_t pos;
 	void *data;
 } sFileContent;
 
 static void vfs_file_destroy(sVFSNode *n);
-static int vfs_file_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence);
+static off_t vfs_file_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 
 sVFSNode *vfs_file_create(tPid pid,sVFSNode *parent,char *name,fRead read,fWrite write) {
 	sVFSNode *node;
@@ -79,7 +79,7 @@ static void vfs_file_destroy(sVFSNode *n) {
 	}
 }
 
-static int vfs_file_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence) {
+static off_t vfs_file_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
 	UNUSED(pid);
 	switch(whence) {
 		case SEEK_SET:
@@ -98,7 +98,7 @@ static int vfs_file_seek(tPid pid,sVFSNode *node,uint position,int offset,uint w
 	}
 }
 
-ssize_t vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,size_t count) {
+ssize_t vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
 	size_t byteCount;
@@ -109,7 +109,7 @@ ssize_t vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint off
 
 	if(offset > con->pos)
 		offset = con->pos;
-	byteCount = MIN(con->pos - offset,count);
+	byteCount = MIN((size_t)(con->pos - offset),count);
 	if(byteCount > 0) {
 		/* simply copy the data to the buffer */
 		memcpy(buffer,(uint8_t*)con->data + offset,byteCount);
@@ -117,7 +117,7 @@ ssize_t vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint off
 	return byteCount;
 }
 
-ssize_t vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,uint offset,
+ssize_t vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
@@ -155,8 +155,7 @@ ssize_t vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,uint
 		if(newSize)
 			con->size = newSize;
 		/* we have checked size for overflow. so it is ok here */
-		con->pos = MAX(con->pos,offset + count);
-
+		con->pos = MAX(con->pos,(off_t)(offset + count));
 		return count;
 	}
 	/* don't throw the data away, use the old version */

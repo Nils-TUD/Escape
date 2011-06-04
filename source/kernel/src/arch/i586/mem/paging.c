@@ -718,7 +718,7 @@ void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt) {
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
 		sPTEntry *page = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-		vid_printf("Page @ %08x: ",virt);
+		vid_printf("Page @ %p: ",virt);
 		paging_dbg_printPage(page);
 		vid_printf("\n");
 	}
@@ -732,7 +732,7 @@ void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 	size_t i;
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
-	vid_printf("page-dir @ 0x%08x:\n",pdirAddr);
+	vid_printf("page-dir @ %p:\n",pdirAddr);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(!pdirAddr[i].present)
 			continue;
@@ -758,15 +758,15 @@ static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde)
 	size_t i;
 	uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
 	sPTEntry *pte = (sPTEntry*)(ptables + no * PAGE_SIZE);
-	vid_printf("\tpt 0x%x [frame 0x%x, %c%c] @ 0x%08x: (VM: 0x%08x - 0x%08x)\n",no,
+	vid_printf("\tpt 0x%x [frame 0x%x, %c%c] @ %p: (VM: %p - %p)\n",no,
 			pde->ptFrameNo,pde->notSuperVisor ? 'u' : 'k',pde->writable ? 'w' : 'r',pte,addr,
 			addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
 	if(pte) {
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i].exists) {
-				vid_printf("\t\t0x%x: ",i);
+				vid_printf("\t\t0x%Sx: ",i);
 				paging_dbg_printPage(pte + i);
-				vid_printf(" (VM: 0x%08x - 0x%08x)\n",addr,addr + PAGE_SIZE - 1);
+				vid_printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
 			addr += PAGE_SIZE;
 		}

@@ -1,3 +1,3 @@
 NAME=login
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

@@ -1,3 +1,3 @@
 NAME=raptor
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

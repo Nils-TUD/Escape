@@ -374,14 +374,14 @@ void thread_dbg_print(const sThread *t) {
 	vid_printf("\t\tKernel-trace:\n");
 	calls = util_getKernelStackTraceOf(t);
 	while(calls->addr != 0) {
-		vid_printf("\t\t\t%#08x -> %#08x (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+		vid_printf("\t\t\t%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
 		calls++;
 	}
 	calls = util_getUserStackTraceOf(t);
 	if(calls) {
 		vid_printf("\t\tUser-trace:\n");
 		while(calls->addr != 0) {
-			vid_printf("\t\t\t%#08x -> %#08x (%s)\n",
+			vid_printf("\t\t\t%p -> %p (%s)\n",
 					(calls + 1)->addr,calls->funcAddr,calls->funcName);
 			calls++;
 		}

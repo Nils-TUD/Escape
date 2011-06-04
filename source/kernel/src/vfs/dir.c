@@ -39,9 +39,9 @@ typedef struct {
 	/* name follows (up to 255 bytes) */
 } A_PACKED sVFSDirEntry;
 
-static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,
+static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
-static int vfs_dir_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence);
+static off_t vfs_dir_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 
 sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
 	sVFSNode *target;
@@ -69,7 +69,7 @@ sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
 	return node;
 }
 
-static int vfs_dir_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence) {
+static off_t vfs_dir_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
 	UNUSED(pid);
 	UNUSED(node);
 	switch(whence) {
@@ -85,7 +85,7 @@ static int vfs_dir_seek(tPid pid,sVFSNode *node,uint position,int offset,uint wh
 	}
 }
 
-static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,
+static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(file);
 	size_t byteCount,fsByteCount;
@@ -161,7 +161,7 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,ui
 		}
 	}
 
-	if(offset > byteCount)
+	if(offset > (off_t)byteCount)
 		offset = byteCount;
 	byteCount = MIN(byteCount - offset,count);
 	if(byteCount > 0) {

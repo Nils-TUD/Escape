@@ -5,4 +5,4 @@ else
 	ADDFLAGS = -lvbe
 endif
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

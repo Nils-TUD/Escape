@@ -188,7 +188,7 @@ void pmem_dbg_printFreeFrames(uint types) {
 	if(types & MM_CONT) {
 		vid_printf("Bitmap:\n");
 		for(i = 0; i < BITMAP_PAGE_COUNT / 8; i++) {
-			vid_printf("%08x..%08x: %032b\n",pos,pos + PAGE_SIZE * 32 - 1,bitmap[i]);
+			vid_printf("%08Sx..%08Sx: %032b\n",pos,pos + PAGE_SIZE * 32 - 1,bitmap[i]);
 			pos += PAGE_SIZE * 32;
 		}
 	}

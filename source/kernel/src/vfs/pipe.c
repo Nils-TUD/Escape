@@ -38,16 +38,16 @@ typedef struct {
 
 typedef struct {
 	size_t length;
-	uint offset;
+	off_t offset;
 	uint8_t data[];
 } sPipeData;
 
 static void vfs_pipe_destroy(sVFSNode *n);
 static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node);
-static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,
+static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
 static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
-		uint offset,size_t count);
+		off_t offset,size_t count);
 
 sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent) {
 	sPipe *pipe;
@@ -111,7 +111,7 @@ static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node) {
 	}
 }
 
-static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,
+static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
@@ -139,7 +139,7 @@ static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,u
 	while(1) {
 		/* copy */
 		vassert(offset >= data->offset,"Illegal offset");
-		vassert(data->length >= (offset - data->offset),"Illegal offset");
+		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
 		byteCount = MIN(data->length - (offset - data->offset),count);
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
 		count -= byteCount;
@@ -175,7 +175,7 @@ static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,u
 }
 
 static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
 	sPipeData *data;

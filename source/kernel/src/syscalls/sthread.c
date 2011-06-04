@@ -138,7 +138,7 @@ void sysc_notify(sIntrptStackFrame *stack) {
 }
 
 void sysc_lock(sIntrptStackFrame *stack) {
-	uint ident = SYSC_ARG1(stack);
+	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	ushort flags = (uint)SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
@@ -150,7 +150,7 @@ void sysc_lock(sIntrptStackFrame *stack) {
 }
 
 void sysc_unlock(sIntrptStackFrame *stack) {
-	uint ident = SYSC_ARG1(stack);
+	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 

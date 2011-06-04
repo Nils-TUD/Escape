@@ -1,3 +1,3 @@
 NAME=cut
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

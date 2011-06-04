@@ -34,7 +34,7 @@ typedef struct {
 	uint8_t state;
 	uint val1;
 	uint val2;
-	uint count;
+	size_t count;
 	void *data;
 	size_t dsize;
 } sRequest;

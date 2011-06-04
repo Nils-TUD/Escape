@@ -74,10 +74,10 @@ typedef struct sVFSNode sVFSNode;
 
 /* the prototypes for the operations on nodes */
 typedef ssize_t (*fRead)(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-			uint offset,size_t count);
+			off_t offset,size_t count);
 typedef ssize_t (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
-			uint offset,size_t count);
-typedef int (*fSeek)(tPid pid,sVFSNode *node,uint position,int offset,uint whence);
+			off_t offset,size_t count);
+typedef int (*fSeek)(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 typedef void (*fClose)(tPid pid,tFileNo file,sVFSNode *node);
 typedef void (*fDestroy)(sVFSNode *n);
 
@@ -189,7 +189,7 @@ tFileNo vfs_openFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devNo);
  * @param file the file
  * @return the current file-position
  */
-uint vfs_tell(tPid pid,tFileNo file);
+off_t vfs_tell(tPid pid,tFileNo file);
 
 /**
  * Retrieves information about the given path
@@ -230,7 +230,7 @@ bool vfs_isterm(tPid pid,tFileNo file);
  * @param whence the seek-type
  * @return the new position on success
  */
-int vfs_seek(tPid pid,tFileNo file,int offset,uint whence);
+off_t vfs_seek(tPid pid,tFileNo file,off_t offset,uint whence);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number

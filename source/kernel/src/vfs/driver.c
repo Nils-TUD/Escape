@@ -73,7 +73,7 @@ ssize_t vfs_drv_open(tPid pid,tFileNo file,sVFSNode *node,uint flags) {
 	return res;
 }
 
-ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint offset,size_t count) {
+ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
 	sRequest *req;
 	sThread *t = thread_getRunning();
 	volatile sVFSNode *n = node;
@@ -125,7 +125,7 @@ ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,uint offs
 	return res;
 }
 
-ssize_t vfs_drv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,uint offset,
+ssize_t vfs_drv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
 	ssize_t res;
@@ -174,7 +174,7 @@ static void vfs_drv_wait(sRequest *req) {
 	volatile sRequest *r = req;
 	do
 		vfs_req_waitForReply(req,false);
-	while((int)r->count == ERR_INTERRUPTED);
+	while((ssize_t)r->count == ERR_INTERRUPTED);
 }
 
 static void vfs_drv_openReqHandler(sVFSNode *node,const void *data,size_t size) {

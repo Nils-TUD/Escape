@@ -1,3 +1,3 @@
 NAME=rm
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

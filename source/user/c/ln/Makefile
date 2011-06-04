@@ -1,3 +1,3 @@
 NAME=ln
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

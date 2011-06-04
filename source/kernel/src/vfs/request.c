@@ -144,14 +144,14 @@ void vfs_req_dbg_printAll(void) {
 }
 
 void vfs_req_dbg_print(sRequest *r) {
-	vid_printf("\tRequest with %#08x (%s):\n",r->node,vfs_node_getPath(vfs_node_getNo(r->node)));
+	vid_printf("\tRequest with %p (%s):\n",r->node,vfs_node_getPath(vfs_node_getNo(r->node)));
 	vid_printf("\t\ttid: %d\n",r->tid);
-	vid_printf("\t\tstate: %d\n",r->state);
-	vid_printf("\t\tval1: %d\n",r->val1);
-	vid_printf("\t\tval2: %d\n",r->val2);
-	vid_printf("\t\tdata: %d\n",r->data);
-	vid_printf("\t\tdsize: %d\n",r->dsize);
-	vid_printf("\t\tcount: %d\n",r->count);
+	vid_printf("\t\tstate: %u\n",r->state);
+	vid_printf("\t\tval1: %u\n",r->val1);
+	vid_printf("\t\tval2: %u\n",r->val2);
+	vid_printf("\t\tdata: %p\n",r->data);
+	vid_printf("\t\tdsize: %Su\n",r->dsize);
+	vid_printf("\t\tcount: %Su\n",r->count);
 }
 
 #endif

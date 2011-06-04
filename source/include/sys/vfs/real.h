@@ -89,7 +89,7 @@ int vfs_real_istat(tPid pid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
  * @return the number of read bytes
  */
 ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,
-		uint offset,size_t count);
+		off_t offset,size_t count);
 
 /**
  * Writes to the given inode at <offset> <count> bytes from the given buffer
@@ -103,7 +103,7 @@ ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,
  * @return the number of written bytes
  */
 ssize_t vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,
-		uint offset,size_t count);
+		off_t offset,size_t count);
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>

@@ -25,6 +25,9 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/debug.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/debug.h>
+#endif
 
 /**
  * Starts the timer

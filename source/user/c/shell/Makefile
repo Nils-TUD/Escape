@@ -5,4 +5,4 @@ else
 	ADDFLAGS = -lshell
 endif
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

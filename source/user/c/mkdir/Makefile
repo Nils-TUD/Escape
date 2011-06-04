@@ -1,3 +1,3 @@
 NAME=mkdir
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

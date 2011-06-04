@@ -30,6 +30,9 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/video.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/video.h>
+#endif
 
 #define TARGET_SCREEN			1
 #define TARGET_LOG				2

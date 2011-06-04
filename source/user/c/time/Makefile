@@ -1,3 +1,3 @@
 NAME=time
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

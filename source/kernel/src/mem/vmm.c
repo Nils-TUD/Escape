@@ -43,9 +43,9 @@
 #define REG(p,i)			(((sVMRegion**)(p)->regions)[(i)])
 #define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
-static bool vmm_demandLoad(sVMRegion *vm,uint *flags,uintptr_t addr);
+static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr);
 static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t loadCount);
-static uint *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr);
+static ulong *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr);
 static ssize_t vmm_findRegIndex(sProc *p,bool text);
 static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount);
 static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end);
@@ -54,7 +54,7 @@ static uintptr_t vmm_findFreeAddr(sProc *p,size_t byteCount);
 static bool vmm_extendRegions(sProc *p,size_t i);
 static sVMRegion *vmm_alloc(void);
 static void vmm_free(sVMRegion *vm);
-static int vmm_getAttr(sProc *p,uint type,size_t bCount,uint *pgFlags,uint *flags,
+static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,
 		uintptr_t *virt,tVMRegNo *rno);
 
 void vmm_init(void) {
@@ -114,14 +114,13 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 	return vm->virt;
 }
 
-tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,uintptr_t binOffset,size_t bCount,size_t lCount,
-		uint type) {
+tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type) {
 	sRegion *reg;
 	sVMRegion *vm;
 	tVMRegNo rno;
 	int res;
 	uintptr_t virt;
-	uint pgFlags,flags;
+	ulong pgFlags,flags;
 
 	/* for text and shared-library-text: try to find another process with that text */
 	if(bin && (type == REG_TEXT || type == REG_SHLIBTEXT)) {
@@ -181,7 +180,7 @@ errReg:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-int vmm_setRegProt(sProc *p,tVMRegNo rno,uint flags) {
+int vmm_setRegProt(sProc *p,tVMRegNo rno,ulong flags) {
 	size_t i,pgcount;
 	sSLNode *n;
 	sVMRegion *vmreg = REG(p,rno);
@@ -410,7 +409,7 @@ bool vmm_pagefault(uintptr_t addr) {
 	sProc *p = proc_getRunning();
 	tVMRegNo rno = vmm_getRegionOf(p,addr);
 	sVMRegion *vm;
-	uint *flags;
+	ulong *flags;
 	if(rno < 0)
 		return false;
 	vm = REG(p,rno);
@@ -707,7 +706,7 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 	return ((vm->reg->flags & RF_STACK) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;
 }
 
-static bool vmm_demandLoad(sVMRegion *vm,uint *flags,uintptr_t addr) {
+static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr) {
 	bool res = false;
 	sThread *t = thread_getRunning();
 
@@ -832,7 +831,7 @@ error:
 	return false;
 }
 
-static uint *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr) {
+static ulong *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr) {
 	return reg->reg->pageFlags + (addr - reg->virt) / PAGE_SIZE;
 }
 
@@ -922,7 +921,7 @@ static void vmm_free(sVMRegion *vm) {
 	kheap_free(vm);
 }
 
-static int vmm_getAttr(sProc *p,uint type,size_t bCount,uint *pgFlags,uint *flags,
+static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,
 		uintptr_t *virt,tVMRegNo *rno) {
 	*rno = 0;
 	switch(type) {
@@ -1039,7 +1038,7 @@ void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p) {
 		if(reg != NULL) {
 			if(c)
 				prf_sprintf(buf,"\n");
-			prf_sprintf(buf,"VMRegion %d (%#08x .. %#08x):\n",i,reg->virt,
+			prf_sprintf(buf,"VMRegion %d (%p .. %p):\n",i,reg->virt,
 					reg->virt + reg->reg->byteCount - 1);
 			reg_sprintf(buf,reg->reg,reg->virt);
 			c++;
@@ -1058,7 +1057,7 @@ void vmm_dbg_printShort(const sProc *p) {
 		if(reg != NULL) {
 			uintptr_t start,end;
 			vmm_getRegRange(p,i,&start,&end);
-			vid_printf("\t\t%08x .. %08x: ",start,end - 1);
+			vid_printf("\t\t%p .. %p: ",start,end - 1);
 			reg_dbg_printFlags(reg->reg);
 			vid_printf("\n");
 		}

@@ -41,12 +41,12 @@ static void log_printc(char c);
 static uchar log_pipePad(void);
 static void log_escape(const char **str);
 static ssize_t log_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,
-		uint offset,size_t count);
+		off_t offset,size_t count);
 static void log_flush(void);
 
 /* don't use a heap here to prevent problems */
 static char buf[BUF_SIZE];
-static uint bufPos;
+static size_t bufPos;
 static uint col = 0;
 
 static bool logToSer = true;
@@ -143,7 +143,7 @@ static void log_escape(const char **str) {
 }
 
 static ssize_t log_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	if(conf_get(CONF_LOG) && logToSer) {
 		char *str = (char*)buffer;
 		size_t i;

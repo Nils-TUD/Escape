@@ -1,3 +1,3 @@
 NAME=task2
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

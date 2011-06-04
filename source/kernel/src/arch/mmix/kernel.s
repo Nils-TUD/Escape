@@ -56,8 +56,9 @@
 # Constants
 #===========================================
 
-	.set		PAGE_SIZE,0x1000
-	.set		PAGE_SIZE_SHIFT,12
+	.set		PAGE_SIZE,0x2000
+	.set		PAGE_SIZE_SHIFT,13
+	.set		STACK_SIZE,PAGE_SIZE
 	.set		PTE_MAP_ADDR,0x80000000
 	.set		DIR_MAP_START,0xC0000000
 	.set		KERNEL_HEAP,0x80800000
@@ -73,12 +74,43 @@ _bcode:
 #===========================================
 
 start:
+	# establish the register-stack
+	UNSAVE	0,$0
+
+	# bootinfo is in $0
+	LDOU		$254,$0,32							# load kstackbegin from bootinfo
+	SETL		$1,STACK_SIZE
+	2ADDU		$254,$1,$254						# += 2 * STACK_SIZE
+	SUBU		$254,$254,8							# stack-pointer = kstackbegin + 2 * STACK_SIZE - 8
+	OR			$253,$254,$254					# frame-pointer = stack-pointer
+
 	# call main
-	PUSHJ		$0,main													# call 'main' function
+	OR			$1,$0,$0								# pass bootinfo to bo
+	PUSHJ		$0,main									# call 'main' function
 
 	# just to be sure
 loop:
 	JMP		loop
+
+#===========================================
+# Input/Output
+#===========================================
+
+# void debugc(octa character)
+debugc:
+	GET		$1,rJ
+	SETH	$2,#8002						# base address: #8002000000000000
+	CMPU	$3,$0,0xA						# char = \n?
+	BNZ		$3,1f
+	SET		$4,0xD
+	PUSHJ	$3,debugc						# putc('\r')
+1:
+	LDOU	$3,$2,#10						# read ctrl-reg
+	AND		$3,$3,#1						# exract RDY-bit
+	PBZ		$3,1b								# wait until its set
+	STOU	$0,$2,#18						# write char
+	PUT		rJ,$1
+	POP		0,0
 
 #===========================================
 # Data

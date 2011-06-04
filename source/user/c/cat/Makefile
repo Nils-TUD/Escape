@@ -1,3 +1,3 @@
 NAME=cat
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

@@ -32,6 +32,10 @@
 #define FFL_PADZEROS		16
 #define FFL_CAPHEX			32
 #define FFL_LONGLONG		64
+#define FFL_LONG			128
+#define FFL_SIZE_T			256
+#define FFL_INTPTR_T		512
+#define FFL_OFF_T			1024
 
 /* the minimum space-increase-size in prf_aprintc() */
 #define SPRINTF_INC_SIZE	10
@@ -48,6 +52,7 @@ static char hexCharsBig[] = "0123456789ABCDEF";
 static char hexCharsSmall[] = "0123456789abcdef";
 static sStringBuffer *curbuf = NULL;
 
+#ifndef __mmix__
 void prf_sprintf(sStringBuffer *buf,const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
@@ -87,6 +92,7 @@ static void prf_aprintc(char c) {
 			curbuf->len++;
 	}
 }
+#endif
 
 void prf_printf(sPrintEnv *env,const char *fmt,...) {
 	va_list ap;
@@ -100,6 +106,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 	char *s;
 	llong n;
 	ullong u;
+	size_t size;
 	uint pad,width,base,flags;
 	bool readFlags;
 
@@ -168,8 +175,24 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 
 		/* read length */
 		switch(*fmt) {
+			case 'l':
+				flags |= FFL_LONG;
+				fmt++;
+				break;
 			case 'L':
 				flags |= FFL_LONGLONG;
+				fmt++;
+				break;
+			case 'S':
+				flags |= FFL_SIZE_T;
+				fmt++;
+				break;
+			case 'P':
+				flags |= FFL_INTPTR_T;
+				fmt++;
+				break;
+			case 'O':
+				flags |= FFL_OFF_T;
 				fmt++;
 				break;
 		}
@@ -181,6 +204,14 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 			case 'i':
 				if(flags & FFL_LONGLONG)
 					n = va_arg(ap, llong);
+				else if(flags & FFL_LONG)
+					n = va_arg(ap, long);
+				else if(flags & FFL_SIZE_T)
+					n = va_arg(ap, ssize_t);
+				else if(flags & FFL_INTPTR_T)
+					n = va_arg(ap, intptr_t);
+				else if(flags & FFL_OFF_T)
+					n = va_arg(ap, off_t);
 				else
 					n = va_arg(ap, int);
 				prf_printnpad(env,n,pad,flags);
@@ -188,15 +219,17 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 
 			/* pointer */
 			case 'p':
-				if(flags & FFL_LONGLONG)
-					u = va_arg(ap, ullong);
-				else
-					u = va_arg(ap, uint);
+				size = sizeof(uintptr_t);
+				u = va_arg(ap, uintptr_t);
 				flags |= FFL_PADZEROS;
-				pad = 9;
-				prf_printupad(env,u >> 16,16,pad - 5,flags);
-				env->print(':');
-				prf_printupad(env,u & 0xFFFF,16,4,flags);
+				/* 2 hex-digits per byte and a ':' every 2 bytes */
+				pad = size * 2 + size / 2;
+				while(size > 0) {
+					prf_printupad(env,(u >> (size * 8 - 16)) & 0xFFFF,16,4,flags);
+					size -= 2;
+					if(size > 0)
+						env->print(':');
+				}
 				break;
 
 			/* unsigned integer */
@@ -210,6 +243,14 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 					flags |= FFL_CAPHEX;
 				if(flags & FFL_LONGLONG)
 					u = va_arg(ap, ullong);
+				else if(flags & FFL_LONG)
+					u = va_arg(ap, ulong);
+				else if(flags & FFL_SIZE_T)
+					u = va_arg(ap, size_t);
+				else if(flags & FFL_INTPTR_T)
+					u = va_arg(ap, uintptr_t);
+				else if(flags & FFL_OFF_T)
+					u = va_arg(ap, off_t);
 				else
 					u = va_arg(ap, uint);
 				prf_printupad(env,u,base,pad,flags);

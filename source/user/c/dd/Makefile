@@ -1,3 +1,3 @@
 NAME=dd
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

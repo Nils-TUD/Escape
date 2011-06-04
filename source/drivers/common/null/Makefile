@@ -1,3 +1,3 @@
 NAME=null
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

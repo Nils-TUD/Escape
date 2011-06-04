@@ -289,7 +289,7 @@ void sig_dbg_print(void) {
 		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(st->signals[i].handler) {
-				vid_printf("\t\t%s: handler=%#08x pending=%u\n",
+				vid_printf("\t\t%s: handler=%p pending=%Su\n",
 						sig_dbg_getName(i),st->signals[i].handler,st->signals[i].pending);
 			}
 		}

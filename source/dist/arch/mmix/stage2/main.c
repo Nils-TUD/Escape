@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/endian.h>
-#include <sys/arch/eco32/boot.h>
+#include <sys/arch/mmix/boot.h>
 #include <sys/task/elf.h>
 #include "../../../../drivers/common/fs/ext2/ext2.h"
 #include <string.h>
@@ -32,7 +32,7 @@
 #define SPB					(BLOCK_SIZE / SEC_SIZE)			/* sectors per block */
 #define BLOCKS_TO_SECS(x)	((x) << (le32tocpu(e.superBlock.logBlockSize) + 1))
 #define GROUP_COUNT			6								/* no. of block groups to load */
-#define PAGE_SIZE			4096
+#define PAGE_SIZE			8192
 
 /* hardcoded here; the monitor will choose them later */
 #define BOOT_DISK			0
@@ -43,6 +43,7 @@ typedef struct {
 	sExt2BlockGrp groups[GROUP_COUNT];
 } sExt2Simple;
 
+extern void flushRegion(void *addr,size_t count);
 /**
  * Reads/Writes from/to disk
  */
@@ -63,11 +64,12 @@ static sExt2Inode rootIno;
 static sExt2Inode inoBuf;
 static Elf64_Ehdr eheader;
 static Elf64_Phdr pheader;
+static Elf64_Shdr sheader;
 
 /* temporary buffer to read a block from disk */
-static ulong buffer[1024 / sizeof(ulong)];
+static ulong buffer[2048 / sizeof(ulong)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
-static uintptr_t loadAddr = 0xC0000000;
+static uintptr_t loadAddr = 0x8000000000000000;
 
 static int mystrncmp(const char *str1,const char *str2,size_t count) {
 	ssize_t rem = count;
@@ -121,16 +123,18 @@ static int readSectors(void *dst,size_t start,size_t secCount) {
 }
 
 static int readBlocks(void *dst,tBlockNo start,size_t blockCount) {
-	return dskio(START_SECTOR + BLOCKS_TO_SECS(start),dst,BLOCKS_TO_SECS(blockCount));
+	return readSectors(dst,BLOCKS_TO_SECS(start),BLOCKS_TO_SECS(blockCount));
 }
 
 static void readFromDisk(tBlockNo blkno,void *buf,size_t offset,size_t nbytes) {
 	void *dst = offset == 0 && (nbytes % BLOCK_SIZE) == 0 ? buf : buffer;
-	if(offset >= BLOCK_SIZE || offset + nbytes > BLOCK_SIZE)
-		halt("Offset / nbytes invalid");
+	size_t secCount = (offset + nbytes + SEC_SIZE - 1) / SEC_SIZE;
+	if(offset >= BLOCK_SIZE || nbytes > BLOCK_SIZE)
+		halt("offset invalid");
 
-	/*debugf("Reading sectors %d .. %d\n",sector + START_SECTOR,sector + START_SECTOR + SPB);*/
-	int result = readSectors(dst,blkno * SPB,SPB);
+	/*debugf("Reading sectors %d .. %d\n",START_SECTOR + blkno * SPB,
+			START_SECTOR + blkno * SPB + secCount - 1);*/
+	int result = readSectors(dst,blkno * SPB,secCount);
 	if(result != 0)
 		halt("Load error");
 
@@ -266,7 +270,7 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	uint8_t const *datPtr;
 
 	/* read header */
-	readFromDisk(le32tocpu(ino->dBlocks[0]),&eheader,0,sizeof(Elf32_Ehdr));
+	readFromDisk(le32tocpu(ino->dBlocks[0]),&eheader,0,sizeof(Elf64_Ehdr));
 
 	/* check magic */
 	if(eheader.e_ident[0] != ELFMAG[0] ||
@@ -276,6 +280,7 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 		return 0;
 
 	/* load the LOAD segments. */
+	/* TODO it would be better to take care that we don't load a block twice */
 	datPtr = (uint8_t const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
@@ -288,6 +293,10 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 			/* zero the rest */
 			memclear((void*)(pheader.p_vaddr + pheader.p_filesz),
 					pheader.p_memsz - pheader.p_filesz);
+			if(loadSegNo == 0) {
+				/* flush to memory and sync caches; we'll use them as instructions */
+				flushRegion((void*)pheader.p_vaddr,pheader.p_memsz);
+			}
 			loadSegNo++;
 			if(pheader.p_vaddr + pheader.p_memsz > loadAddr)
 				loadAddr = pheader.p_vaddr + pheader.p_memsz;
@@ -297,8 +306,42 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	prog->start = 0x8000000000000000;
 	prog->size = loadAddr - 0x8000000000000000;
 
-	/* leave one page for stack */
-	loadAddr += (PAGE_SIZE + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	/* to next page for the stack */
+	loadAddr = (loadAddr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	bootinfo.kstackBegin = loadAddr;
+
+	/* load the regs-section */
+	datPtr = (uint8_t const*)(eheader.e_shoff);
+	for(j = 0; j < eheader.e_shnum; datPtr += eheader.e_shentsize, j++) {
+		/* read pheader */
+		tBlockNo block = getBlock(ino,(size_t)datPtr);
+		readFromDisk(block,&sheader,(uintptr_t)datPtr & (BLOCK_SIZE - 1),sizeof(Elf64_Shdr));
+
+		/* the first section with type == PROGBITS and addr != 0 should be .MMIX.reg_contents */
+		if(sheader.sh_type == SHT_PROGBITS && sheader.sh_addr < prog->start && sheader.sh_addr != 0) {
+			/* give the kernel the bootinfo in $0 */
+			*(uint64_t*)loadAddr = &bootinfo;
+			loadAddr += 8;
+			/* set rL to 1 */
+			*(uint64_t*)loadAddr = 1;
+			loadAddr += 8;
+			/* append global registers */
+			copyToMem(ino,sheader.sh_offset,sheader.sh_size,loadAddr);
+			loadAddr += sheader.sh_size;
+			/* $255 */
+			*(uint64_t*)loadAddr = 0;
+			loadAddr += 8;
+			/* 12 slots for special registers */
+			memclear((void*)loadAddr,12 * 8);
+			loadAddr += 12 * 8;
+			/* set rG|rA */
+			*(uint64_t*)loadAddr = (255 - (sheader.sh_size / 8)) << 56;
+			loadAddr += 8;
+			bootinfo.kstackEnd = loadAddr - 8;
+			break;
+		}
+	}
+
 	return 1;
 }
 
@@ -313,7 +356,7 @@ static int readInProg(sLoadProg *prog,sExt2Inode *ino) {
 	return 1;
 }
 
-sBootInfo *bootload(size_t memSize) {
+uintptr_t bootload(size_t memSize) {
 	int i;
 	int cap = sctcapctl();
 	if(cap == 0)
@@ -352,6 +395,5 @@ sBootInfo *bootload(size_t memSize) {
 		}
 		bootinfo.progCount++;
 	}
-
-	return &bootinfo;
+	return bootinfo.kstackEnd;
 }

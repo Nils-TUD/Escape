@@ -37,13 +37,13 @@ void swmap_init(size_t swapSize);
  *
  * @return the starting block on the swap-device or INVALID_BLOCK if no free space is left
  */
-uint swmap_alloc(void);
+ulong swmap_alloc(void);
 
 /**
  * @param block the block-number
  * @return true if the given block is used
  */
-bool swmap_isUsed(uint block);
+bool swmap_isUsed(ulong block);
 
 /**
  * Determines the free space in the swapmap
@@ -57,7 +57,7 @@ size_t swmap_freeSpace(void);
  *
  * @param block the block to free
  */
-void swmap_free(uint block);
+void swmap_free(ulong block);
 
 
 #if DEBUGGING

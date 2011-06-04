@@ -200,6 +200,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 		}
 	}
 
+	/* TODO */
 #if 0
 	/* start the swapper-thread. it will never return */
 	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
@@ -240,12 +241,12 @@ static const char **boot_parseArgs(const char *line,int *argc) {
 
 void boot_dbg_print(void) {
 	size_t i;
-	vid_printf("Memory size: %u bytes\n",info.memSize);
-	vid_printf("Disk size: %u bytes\n",info.diskSize);
+	vid_printf("Memory size: %Su bytes\n",info.memSize);
+	vid_printf("Disk size: %Su bytes\n",info.diskSize);
 	vid_printf("Boot modules:\n");
 	/* skip kernel */
 	for(i = 1; i < info.progCount; i++) {
-		vid_printf("\t%s [%08x .. %08x]\n",info.progs[i].command,
+		vid_printf("\t%s [%p .. %p]\n",info.progs[i].command,
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}
 }

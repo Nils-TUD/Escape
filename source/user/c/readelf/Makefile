@@ -1,3 +1,3 @@
 NAME=readelf
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

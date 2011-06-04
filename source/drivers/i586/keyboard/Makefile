@@ -1,3 +1,3 @@
 NAME=keyboard
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

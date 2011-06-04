@@ -31,7 +31,7 @@
 
 /* a lock-entry */
 typedef struct {
-	uint ident;
+	ulong ident;
 	ushort flags;
 	tPid pid;
 	volatile ushort readRefs;
@@ -42,7 +42,7 @@ typedef struct {
 /**
  * Searches the lock-entry for the given ident and process-id
  */
-static ssize_t lock_get(tPid pid,uint ident,bool free);
+static ssize_t lock_get(tPid pid,ulong ident,bool free);
 
 static size_t lockCount = 0;
 static sLock *locks = NULL;
@@ -57,7 +57,7 @@ static bool lock_isLocked(const sLock *l,ushort flags) {
 	return false;
 }
 
-int lock_aquire(tPid pid,uint ident,ushort flags) {
+int lock_aquire(tPid pid,ulong ident,ushort flags) {
 	sThread *t = thread_getRunning();
 	ssize_t i = lock_get(pid,ident,true);
 	sLock *l;
@@ -97,7 +97,7 @@ int lock_aquire(tPid pid,uint ident,ushort flags) {
 	return 0;
 }
 
-int lock_release(tPid pid,uint ident) {
+int lock_release(tPid pid,ulong ident) {
 	ssize_t i = lock_get(pid,ident,false);
 	sLock *l = locks + i;
 	if(i < 0)
@@ -138,7 +138,7 @@ void lock_releaseAll(tPid pid) {
 	}
 }
 
-static ssize_t lock_get(tPid pid,uint ident,bool free) {
+static ssize_t lock_get(tPid pid,ulong ident,bool free) {
 	size_t i;
 	ssize_t freeIdx = -1;
 	for(i = 0; i < lockCount; i++) {
@@ -175,7 +175,7 @@ void lock_dbg_print(void) {
 	for(i = 0; i < lockCount; i++) {
 		sLock *l = locks + i;
 		if(l->flags) {
-			vid_printf("\t%08x: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
+			vid_printf("\t%08lx: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
 					l->ident,l->pid,l->flags,l->readRefs,l->writer,l->waitCount);
 		}
 	}

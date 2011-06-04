@@ -1,3 +1,3 @@
 NAME=mouse
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

@@ -1,3 +1,3 @@
 NAME=colortbl
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

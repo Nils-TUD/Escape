@@ -31,15 +31,15 @@ typedef struct {
 	char path[MAX_PATH_LEN];
 	char command[MAX_PATH_LEN];
 	uint id;
-	uint start;
-	uint size;
+	uintptr_t start;
+	size_t size;
 } sLoadProg;
 
 typedef struct {
-	uint progCount;
+	size_t progCount;
 	const sLoadProg *progs;
-	uint memSize;
-	uint diskSize;
+	size_t memSize;
+	size_t diskSize;
 } sBootInfo;
 
 #define BL_DISK_ID	0

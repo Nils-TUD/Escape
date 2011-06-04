@@ -1,4 +1,4 @@
 NAME=libctest
 SUBDIR=tests
 
--include ../DefMakefile.mk
+-include ../RecMakefile.mk

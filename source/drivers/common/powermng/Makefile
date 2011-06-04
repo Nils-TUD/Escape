@@ -1,3 +1,3 @@
 NAME=powermng
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

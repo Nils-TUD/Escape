@@ -1,3 +1,3 @@
 NAME=date
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

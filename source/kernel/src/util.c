@@ -58,7 +58,7 @@ void util_printStackTrace(const sFuncCall *trace) {
 		vid_printf("Kernel-Stacktrace:\n");
 
 	while(trace->addr != 0) {
-		vid_printf("\t0x%08x -> 0x%08x (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
+		vid_printf("\t%p -> %p (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
 		trace++;
 	}
 }
@@ -66,7 +66,7 @@ void util_printStackTrace(const sFuncCall *trace) {
 void util_dumpMem(const void *addr,size_t dwordCount) {
 	uint *ptr = (uint*)addr;
 	while(dwordCount-- > 0) {
-		vid_printf("0x%x: 0x%08x\n",ptr,*ptr);
+		vid_printf("%p: 0x%08x\n",ptr,*ptr);
 		ptr++;
 	}
 }
@@ -81,4 +81,3 @@ void util_dumpBytes(const void *addr,size_t byteCount) {
 			vid_printf("\n");
 	}
 }
-

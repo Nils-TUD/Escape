@@ -1,3 +1,3 @@
 NAME=wc
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

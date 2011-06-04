@@ -86,7 +86,7 @@ void vid_putchar(char c) {
 		col = 0;
 	}
 	vid_move();
-	video = (uint32_t*)(VIDEO_BASE + row * MAX_COLS * 4 + col * 4);
+	video = (uint32_t*)VIDEO_BASE + row * MAX_COLS + col;
 
 	if(c == '\n') {
 		row++;

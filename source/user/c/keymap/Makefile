@@ -1,3 +1,3 @@
 NAME=keymap
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

@@ -43,7 +43,7 @@ typedef void (*fReadCallBack)(sVFSNode *node,size_t *dataSize,void **buffer);
  * Creates space, calls the callback which should fill the space
  * with data and writes the corresponding part to the buffer of the user
  */
-static ssize_t vfsrw_readHelper(tPid pid,sVFSNode *node,void *buffer,uint offset,size_t count,
+static ssize_t vfsrw_readHelper(tPid pid,sVFSNode *node,void *buffer,off_t offset,size_t count,
 		size_t dataSize,fReadCallBack callback);
 
 /**
@@ -64,7 +64,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
  * The cpu-read-handler
  */
 static ssize_t vfs_info_cpuReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count);
+		off_t offset,size_t count);
 
 /**
  * The read-callback for the cpu-read-handler
@@ -75,7 +75,7 @@ static void vfs_info_cpuReadCallback(sVFSNode *node,size_t *dataSize,void **buff
  * The stats-read-handler
  */
 static ssize_t vfs_info_statsReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count);
+		off_t offset,size_t count);
 
 /**
  * The read-callback for the stats-read-handler
@@ -86,7 +86,7 @@ static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **bu
  * The read-handler for the mem-usage-node
  */
 static ssize_t vfs_info_memUsageReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count);
+		off_t offset,size_t count);
 
 /**
  * The read-callback for the VFS memusage-read-handler
@@ -118,7 +118,7 @@ void vfs_info_init(void) {
 }
 
 ssize_t vfs_info_traceReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,0,vfs_info_traceReadCallback);
 }
@@ -135,13 +135,13 @@ static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 	prf_sprintf(&buf,"Kernel:\n");
 	call = util_getKernelStackTraceOf(t);
 	while(call && call->addr != 0) {
-		prf_sprintf(&buf,"\t%#08x -> %#08x (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
+		prf_sprintf(&buf,"\t%p -> %p (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
 		call++;
 	}
 	prf_sprintf(&buf,"User:\n");
 	call = util_getUserStackTraceOf(t);
 	while(call && call->addr != 0) {
-		prf_sprintf(&buf,"\t%#08x -> %#08x\n",(call + 1)->addr,call->funcAddr);
+		prf_sprintf(&buf,"\t%p -> %p\n",(call + 1)->addr,call->funcAddr);
 		call++;
 	}
 	*buffer = buf.str;
@@ -149,7 +149,7 @@ static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 }
 
 ssize_t vfs_info_procReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(file);
 	/* don't use the cache here to prevent that one process occupies it for all others */
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
@@ -174,12 +174,12 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%s\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
+		"%-16s%Su\n"
+		"%-16s%lu\n"
+		"%-16s%lu\n"
+		"%-16s%lu\n"
+		"%-16s%lu\n"
+		"%-16s%lu\n"
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
@@ -195,7 +195,7 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 }
 
 ssize_t vfs_info_threadReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,
 			17 * 8 + 6 * 10 + 2 * 16 + 1,vfs_info_threadReadCallback);
@@ -217,9 +217,9 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
+		"%-16s%Su\n"
+		"%-16s%Su\n"
+		"%-16s%Su\n"
 		"%-16s%08x%08x\n"
 		"%-16s%08x%08x\n"
 		,
@@ -236,7 +236,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 }
 
 static ssize_t vfs_info_cpuReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,0,vfs_info_cpuReadCallback);
 }
@@ -254,7 +254,7 @@ static void vfs_info_cpuReadCallback(sVFSNode *node,size_t *dataSize,void **buff
 }
 
 static ssize_t vfs_info_statsReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,0,vfs_info_statsReadCallback);
 }
@@ -272,11 +272,11 @@ static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 	cycles.val64 = cpu_rdtsc();
 	prf_sprintf(
 		&buf,
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
+		"%-16s%Su\n"
+		"%-16s%Su\n"
+		"%-16s%Su\n"
 		"%-16s%08x%08x\n"
-		"%-16s%us\n"
+		"%-16s%Sus\n"
 		,
 		"Processes:",proc_getCount(),
 		"Threads:",thread_getCount(),
@@ -289,7 +289,7 @@ static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 }
 
 static ssize_t vfs_info_memUsageReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,(11 + 10 + 1) * 13 + 1,
 			vfs_info_memUsageReadCallback);
@@ -314,19 +314,19 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	proc_getMemUsage(&paging,&dataShared,&dataOwn,&dataReal);
 	prf_sprintf(
 		&buf,
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
-		"%-11s%10u\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
 		,
 		"Total:",total,
 		"Used:",total - free,
@@ -346,7 +346,7 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 }
 
 ssize_t vfs_info_regionsReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,0,vfs_info_regionsReadCallback);
 }
@@ -365,7 +365,7 @@ static void vfs_info_regionsReadCallback(sVFSNode *node,size_t *dataSize,void **
 }
 
 ssize_t vfs_info_virtMemReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
-		uint offset,size_t count) {
+		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,0,vfs_info_virtMemReadCallback);
 }
@@ -383,7 +383,7 @@ static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **
 	*dataSize = buf.len;
 }
 
-static ssize_t vfsrw_readHelper(tPid pid,sVFSNode *node,void *buffer,uint offset,size_t count,
+static ssize_t vfsrw_readHelper(tPid pid,sVFSNode *node,void *buffer,off_t offset,size_t count,
 		size_t dataSize,fReadCallBack callback) {
 	void *mem = NULL;
 
@@ -397,7 +397,7 @@ static ssize_t vfsrw_readHelper(tPid pid,sVFSNode *node,void *buffer,uint offset
 		if(offset == 0 && count == dataSize)
 			mem = buffer;
 		/* don't waste time in this case */
-		else if(offset >= dataSize)
+		else if(offset >= (off_t)dataSize)
 			return 0;
 		/* ok, use the heap as temporary storage */
 		else {
@@ -415,7 +415,7 @@ static ssize_t vfsrw_readHelper(tPid pid,sVFSNode *node,void *buffer,uint offset
 	/* stored on kheap? */
 	if((uintptr_t)mem != (uintptr_t)buffer) {
 		/* correct vars */
-		if(offset > dataSize)
+		if(offset > (off_t)dataSize)
 			offset = dataSize;
 		count = MIN(dataSize - offset,count);
 		/* copy */

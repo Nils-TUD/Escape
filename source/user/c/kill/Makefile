@@ -1,3 +1,3 @@
 NAME=kill
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

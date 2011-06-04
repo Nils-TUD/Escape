@@ -53,15 +53,15 @@ typedef struct {
 	/* exit-code the process gave us via exit() */
 	int exitCode;
 	/* memory it has used */
-	uint ownFrames;
-	uint sharedFrames;
-	uint swapped;
+	ulong ownFrames;
+	ulong sharedFrames;
+	ulong swapped;
 	/* cycle-count */
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;
 	/* other stats */
-	uint schedCount;
-	uint syscalls;
+	ulong schedCount;
+	ulong syscalls;
 } sExitState;
 
 /* represents a process */
@@ -76,11 +76,11 @@ typedef struct {
 	tPageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.
 	 * paging-structures are counted, too */
-	uint ownFrames;
+	ulong ownFrames;
 	/* the number of frames the process uses, but maybe other processes as well */
-	uint sharedFrames;
+	ulong sharedFrames;
 	/* pages that are in swap */
-	uint swapped;
+	ulong swapped;
 	/* the regions */
 	size_t regSize;
 	void *regions;
@@ -106,8 +106,8 @@ typedef struct {
 	sVFSNode *threadDir;
 	struct {
 		/* I/O stats */
-		uint input;
-		uint output;
+		ulong input;
+		ulong output;
 	} stats;
 } sProc;
 

@@ -1,3 +1,3 @@
 NAME=kmmanager
 
--include ../../ShlibMakefile.mk
+-include ../../ShlibSimpleMakefile.mk

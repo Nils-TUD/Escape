@@ -82,7 +82,7 @@ void swap_start(void) {
 	while(1) {
 		/* swapping out is more important than swapping in to prevent that we run out of memory */
 		if(pmem_getFreeFrames(MM_DEF) < LOW_WATER || neededFrames > HIGH_WATER) {
-			vid_printf("Starting to swap out (%d free frames; %d needed)\n",
+			vid_printf("Starting to swap out (%Su free frames; %Su needed)\n",
 					pmem_getFreeFrames(MM_DEF),neededFrames);
 			size_t count = 0;
 			swapping = true;
@@ -189,7 +189,7 @@ static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,uintptr_t addr) {
 	sVMRegion *vmreg = vmm_getRegion(p,rno);
 	uintptr_t temp;
 	tFrameNo frame;
-	uint block;
+	ulong block;
 	size_t index;
 	addr &= ~(PAGE_SIZE - 1);
 
@@ -209,7 +209,7 @@ static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,uintptr_t addr) {
 
 	block = reg_getSwapBlock(vmreg->reg,index);
 
-	vid_printf("Swapin %x:%d (first=%p %s:%d) from blk %d...",
+	vid_printf("Swapin %Sx:%Su (first=%p %s:%d) from blk %ld...",
 			vmreg->reg,index,addr,p->command,p->pid,block);
 
 	/* read into buffer */
@@ -237,7 +237,7 @@ static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,size_t index) {
 	tVMRegNo rno;
 	sVMRegion *vmreg;
 	tFrameNo frameNo;
-	uint block;
+	ulong block;
 	uintptr_t temp;
 	sProc *first = (sProc*)sll_get(reg->procs,0);
 
@@ -245,7 +245,7 @@ static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,size_t index) {
 	rno = vmm_getRNoByRegion(first,reg);
 	vmreg = vmm_getRegion(first,rno);
 	block = swmap_alloc();
-	vid_printf("Swapout free=%d %x:%d (first=%p %s:%d) to blk %d...",
+	vid_printf("Swapout free=%Su %Sx:%Su (first=%p %s:%d) to blk %ld...",
 			pmem_getFreeFrames(MM_DEF),reg,index,vmreg->virt + index * PAGE_SIZE,
 			first->command,first->pid,block);
 	assert(block != INVALID_BLOCK);

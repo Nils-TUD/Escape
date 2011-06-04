@@ -46,7 +46,7 @@ typedef struct {
 } sMessage;
 
 static void vfs_chan_destroy(sVFSNode *n);
-static int vfs_chan_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence);
+static off_t vfs_chan_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node);
 
 sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
@@ -96,7 +96,7 @@ static void vfs_chan_destroy(sVFSNode *n) {
 	}
 }
 
-static int vfs_chan_seek(tPid pid,sVFSNode *node,uint position,int offset,uint whence) {
+static off_t vfs_chan_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
 	UNUSED(pid);
 	UNUSED(node);
 	switch(whence) {
@@ -250,7 +250,7 @@ ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *d
 
 static void vfs_chan_dbg_printMessage(void *m) {
 	sMessage *msg = (sMessage*)m;
-	vid_printf("\t\t\tid=%u len=%u\n",msg->id,msg->length);
+	vid_printf("\t\t\tid=%u len=%Su\n",msg->id,msg->length);
 }
 
 void vfs_chan_dbg_print(const sVFSNode *n) {
@@ -259,7 +259,7 @@ void vfs_chan_dbg_print(const sVFSNode *n) {
 	sSLList *lists[] = {chan->sendList,chan->recvList};
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
 		size_t j,count = sll_length(lists[i]);
-		vid_printf("\t\tChannel %s %s: (%d)\n",n->name,i ? "recvs" : "sends",count);
+		vid_printf("\t\tChannel %s %s: (%Su)\n",n->name,i ? "recvs" : "sends",count);
 		for(j = 0; j < count; j++)
 			vfs_chan_dbg_printMessage(sll_get(lists[i],j));
 	}

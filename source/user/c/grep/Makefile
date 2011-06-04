@@ -1,3 +1,3 @@
 NAME=grep
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

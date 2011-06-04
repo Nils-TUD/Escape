@@ -36,7 +36,7 @@ void ksym_print(void) {
 	size_t i;
 	vid_printf("Kernel-Symbols:\n");
 	for(i = 0; i < ARRAY_SIZE(ksymbols); i++)
-		vid_printf("\t0x%08x -> %s\n",ksymbols[i].address,ksymbols[i].funcName);
+		vid_printf("\t%p -> %s\n",ksymbols[i].address,ksymbols[i].funcName);
 }
 
 sSymbol *ksym_getSymbolAt(uintptr_t address) {

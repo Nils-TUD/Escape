@@ -1,3 +1,3 @@
 NAME=umount
 
--include ../DefMakefile.mk
+-include ../SimpleMakefile.mk

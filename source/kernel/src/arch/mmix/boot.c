@@ -1,0 +1,238 @@
+/**
+ * $Id: boot.c 900 2011-06-02 20:18:17Z nasmussen $
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <sys/common.h>
+#include <sys/boot.h>
+#include <string.h>
+
+#define MAX_ARG_COUNT			8
+#define MAX_ARG_LEN				64
+
+static const char **boot_parseArgs(const char *line,int *argc);
+
+static bool loadedMods = false;
+static sLoadProg progs[MAX_PROG_COUNT];
+static sBootInfo info;
+
+void boot_init(const sBootInfo *binfo,bool logToVFS) {
+	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
+	 * shortly */
+	memcpy(&info,binfo,sizeof(sBootInfo));
+	info.progs = progs;
+	memcpy((void*)info.progs,binfo->progs,sizeof(sLoadProg) * binfo->progCount);
+
+	vid_init();
+
+#if DEBUGGING
+	boot_dbg_print();
+#endif
+
+#if 0
+	/* mm */
+	vid_printf("Initializing physical memory-management...");
+	pmem_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* paging */
+	vid_printf("Initializing paging...");
+	paging_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* vfs */
+	vid_printf("Initializing VFS...");
+	vfs_init();
+	vfs_info_init();
+	vfs_req_init();
+	vfs_drv_init();
+	vfs_real_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* processes */
+	vid_printf("Initializing process-management...");
+	ev_init();
+	proc_init();
+	sched_init();
+	/* the process and thread-stuff has to be ready, too ... */
+	if(logToVFS)
+		log_vfsIsReady();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* vmm */
+	vid_printf("Initializing virtual memory management...");
+	vmm_init();
+	cow_init();
+	shm_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* timer */
+	vid_printf("Initializing timer...");
+	timer_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* signals */
+	vid_printf("Initializing signal-handling...");
+	sig_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+#if DEBUGGING
+	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
+			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
+#endif
+#endif
+}
+
+#if 0
+const sBootInfo *boot_getInfo(void) {
+	return &info;
+}
+
+size_t boot_getKernelSize(void) {
+	return progs[0].size;
+}
+
+size_t boot_getModuleSize(void) {
+	uintptr_t start = progs[1].start;
+	uintptr_t end = progs[info.progCount - 1].start + progs[info.progCount - 1].size;
+	return end - start;
+}
+
+size_t boot_getUsableMemCount(void) {
+	return info.memSize;
+}
+
+void boot_loadModules(sIntrptStackFrame *stack) {
+	size_t i;
+	tPid pid;
+	tInodeNo nodeNo;
+
+	/* it's not good to do this twice.. */
+	if(loadedMods)
+		return;
+
+	/* start idle-thread */
+	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
+		thread_idle();
+		util_panic("Idle returned");
+	}
+
+	loadedMods = true;
+	for(i = 1; i < info.progCount; i++) {
+		/* parse args */
+		int argc;
+		const char **argv = boot_parseArgs(progs[i].command,&argc);
+		if(argc < 2)
+			util_panic("Invalid arguments for boot-module: %s\n",progs[i].command);
+
+		/* clone proc */
+		pid = proc_getFreePid();
+		if(pid == INVALID_PID)
+			util_panic("No free process-slots");
+
+		if(proc_clone(pid,0)) {
+			sStartupInfo sinfo;
+			size_t argSize = 0;
+			char *argBuffer = NULL;
+			sProc *p = proc_getRunning();
+			/* remove regions (except stack) */
+			proc_removeRegions(p,false);
+			/* now load module */
+			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
+			if(elf_loadFromMem((void*)progs[i].start,progs[i].size,&sinfo) < 0)
+				util_panic("Loading boot-module %s failed",p->command);
+			/* build args */
+			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);
+			if(argc < 0)
+				util_panic("Building args for boot-module %s failed: %d",p->command,argc);
+			/* no dynamic linking here */
+			p->entryPoint = sinfo.progEntry;
+			if(!uenv_setupProc(stack,p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
+				util_panic("Unable to setup user-stack for boot module %s",p->command);
+			kheap_free(argBuffer);
+			/* we don't want to continue the loop ;) */
+			return;
+		}
+
+		/* wait until the driver is registered */
+		vid_printf("Loading '%s'...\n",argv[0]);
+		/* don't create a pipe- or driver-usage-node here */
+		while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
+			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
+			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
+			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
+			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
+			timer_sleepFor(thread_getRunning()->tid,20);
+			thread_switch();
+		}
+	}
+
+	/* TODO */
+#if 0
+	/* start the swapper-thread. it will never return */
+	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
+		swap_start();
+		util_panic("Swapper reached this");
+	}
+#endif
+}
+
+static const char **boot_parseArgs(const char *line,int *argc) {
+	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
+	static char *args[MAX_ARG_COUNT];
+	size_t i = 0,j = 0;
+	args[0] = argvals[0];
+	while(*line) {
+		if(*line == ' ') {
+			if(args[j][0]) {
+				if(j + 1 >= MAX_ARG_COUNT)
+					break;
+				args[j][i] = '\0';
+				j++;
+				i = 0;
+				args[j] = argvals[j];
+			}
+		}
+		else if(i < MAX_ARG_LEN)
+			args[j][i++] = *line;
+		line++;
+	}
+	*argc = j + 1;
+	args[j][i] = '\0';
+	return (const char**)args;
+}
+#endif
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void boot_dbg_print(void) {
+	size_t i;
+	vid_printf("Memory size: %Su bytes\n",info.memSize);
+	vid_printf("Disk size: %Su bytes\n",info.diskSize);
+	vid_printf("Kernelstack-begin: %p\n",info.kstackBegin);
+	vid_printf("Kernelstack-end: %p\n",info.kstackEnd);
+	vid_printf("Boot modules:\n");
+	/* skip kernel */
+	for(i = 1; i < info.progCount; i++) {
+		vid_printf("\t%s [%p .. %p]\n",info.progs[i].command,
+				info.progs[i].start,info.progs[i].start + info.progs[i].size);
+	}
+}
+
+#endif

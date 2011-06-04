@@ -341,7 +341,7 @@ logByte:
 	stw		$4,$8,0														# send char to output
 	jr		$31
 
-# void dbg_putc(char c)
+# void debugc(char c)
 debugc:
 	sub		$29,$29,8													# create stack frame
 	stw		$31,$29,0													# save return register

@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+#include <sys/boot.h>
 
 /*static uint8_t initloader[] = {
 #if DEBUGGING
@@ -27,11 +28,8 @@
 #endif
 };*/
 
-static int dummy = 4;
-
-int main(void) {
-	while(1)
-		dummy++;
+int main(const sBootInfo *bootinfo) {
+	boot_init(bootinfo,true);
 
 #if 0
 	sThread *t;

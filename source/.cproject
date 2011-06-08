@@ -31,6 +31,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Escape/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Escape/include/cpp}&quot;"/>
 								</option>
+								<option id="gnu.cpp.compiler.option.preprocessor.def.962922040" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="__eco32__"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1617988809" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.2048396778" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug">
@@ -41,6 +44,8 @@
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1628885044" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__mmix__"/>
+									<listOptionValue builtIn="false" value="__eco32__"/>
+									<listOptionValue builtIn="false" value="__i386__"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.921234755" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: log.c 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,16 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_PROC_H_
-#define I586_PROC_H_
+#include <sys/common.h>
+#include <sys/debug.h>
 
-#include <esc/common.h>
+#define OUTPUT_BASE	0x8004000000000000	/* physical output device address */
 
-#define DISK_PID			2
-#define FS_PID				4
-#define KEYBOARD_PID		12	/* just for debugging */
+static uint64_t *output = (uint64_t*)OUTPUT_BASE;
 
-/* special process-flag for x86 */
-#define P_VM86				2
-
-#endif /* I586_PROC_H_ */
+void log_writeChar(char c) {
+	/* some chars make no sense here */
+	if(c != '\r' && c != '\b')
+		*output = c;
+}

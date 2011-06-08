@@ -18,7 +18,10 @@
  */
 
 #include <sys/common.h>
+#include <sys/mem/pmem.h>
+#include <sys/mem/paging.h>
 #include <sys/boot.h>
+#include <sys/video.h>
 #include <string.h>
 
 #define MAX_ARG_COUNT			8
@@ -43,7 +46,6 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	boot_dbg_print();
 #endif
 
-#if 0
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
 	pmem_init();
@@ -51,9 +53,27 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 
 	/* paging */
 	vid_printf("Initializing paging...");
+	aspace_init();
 	paging_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
+	paging_map(0,NULL,10,PG_PRESENT | PG_WRITABLE | PG_EXECUTABLE);
+	paging_map(0x2000000000000000,NULL,4,PG_PRESENT);
+	paging_map(0x2000000000008000,NULL,4,PG_WRITABLE);
+	paging_map(0x2000000000010000,NULL,4,PG_EXECUTABLE);
+	paging_map(PAGE_SIZE * PT_ENTRY_COUNT,NULL,4,PG_WRITABLE);
+	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * 2,NULL,3,PG_EXECUTABLE);
+	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT,NULL,2,PG_PRESENT);
+	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT * PT_ENTRY_COUNT + PAGE_SIZE * 900,
+			NULL,126,PG_PRESENT);
+	paging_map(1UL << 61 | PAGE_SIZE * PT_ENTRY_COUNT,NULL,4,PG_WRITABLE);
+	paging_map(1UL << 61 | PAGE_SIZE * PT_ENTRY_COUNT * 2,NULL,3,PG_EXECUTABLE);
+	paging_map(1UL << 61 | PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT,NULL,2,PG_PRESENT);
+	paging_map(1UL << 61 | PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT * PT_ENTRY_COUNT + PAGE_SIZE * 900,
+			NULL,126,PG_PRESENT);
+	paging_dbg_printCur(PD_PART_ALL);
+
+#if 0
 	/* vfs */
 	vid_printf("Initializing VFS...");
 	vfs_init();
@@ -97,7 +117,6 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 #endif
 }
 
-#if 0
 const sBootInfo *boot_getInfo(void) {
 	return &info;
 }
@@ -116,6 +135,7 @@ size_t boot_getUsableMemCount(void) {
 	return info.memSize;
 }
 
+#if 0
 void boot_loadModules(sIntrptStackFrame *stack) {
 	size_t i;
 	tPid pid;
@@ -229,8 +249,8 @@ void boot_dbg_print(void) {
 	vid_printf("Kernelstack-end: %p\n",info.kstackEnd);
 	vid_printf("Boot modules:\n");
 	/* skip kernel */
-	for(i = 1; i < info.progCount; i++) {
-		vid_printf("\t%s [%p .. %p]\n",info.progs[i].command,
+	for(i = 0; i < info.progCount; i++) {
+		vid_printf("\t%s\n\t\t[%p .. %p]\n",info.progs[i].command,
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}
 }

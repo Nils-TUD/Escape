@@ -17,14 +17,18 @@
 	.global debugChar
 	.global flushRegion
 
-	.set		STACK_SIZE,		0x2000
+	.set		NONEX_MEM_EX,	#4
+	.set		PAGE_SIZE,		#2000
+	.set		STACK_SIZE,		PAGE_SIZE
 
 .section .text
 _bcode:
 
 start:
+	# setup global and special registers; the MBR has setup $0 for us
 	UNSAVE	0,$0
 
+	# setup software-stack
 	GETA		$0,_ebss
 	SET			$1,STACK_SIZE
 	2ADDU		$0,$1,$0
@@ -32,6 +36,19 @@ start:
 	AND			$254,$0,$2				# setup stack-pointer
 	OR			$253,$254,$254		# setup frame-pointer
 
+	# determine the amount of main memory
+	SETH		$0,#8000
+	SET			$2,PAGE_SIZE
+1:
+	LDOU		$1,$0,0
+	GET			$1,rQ
+	BNZ			$1,2f
+	ADDU		$0,$0,$2
+	JMP			1b
+2:
+	PUT			rQ,0							# unset non-existing-memory-exception
+	SETH		$1,#8000
+	SUBU		$1,$0,$1
 	PUSHJ		$0,bootload				# call bootload function
 
 	SETH		$1,#8000

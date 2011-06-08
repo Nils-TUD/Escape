@@ -20,6 +20,8 @@
 #ifndef ECO32_PMEM_H_
 #define ECO32_PMEM_H_
 
+#include <esc/common.h>
+
 /**
  * Physical memory layout:
  * 0x00000000: +-----------------------------------+   -----
@@ -44,10 +46,27 @@
  *             |                ...                |  stack managed (remaining)
  *             |                                   |
  *             |                                   |     |
- * 0xFFFFFFFF: +-----------------------------------+   -----
+ *             +-----------------------------------+   -----
+ *             |                ...                |
+ * 0xE0000000: +-----------------------------------+
+ *             |                                   |
+ *             |                ROM                |
+ *             |                                   |
+ * 0xF0000000: +-----------------------------------+
+ *             |                                   |
+ *             |         memory mapped I/O         |
+ *             |                                   |
+ * 0xFFFFFFFF: +-----------------------------------+
  */
 
 #define PAGE_SIZE				(4 * K)
 #define PAGE_SIZE_SHIFT			12
+
+#define BITMAP_PAGE_COUNT		((2 * M) / PAGE_SIZE)
+/* the end is not important here, since the mm-stack lies in physical memory and we will simply
+ * use as much as we need, without the possibility to overwrite anything */
+#define PMEM_END				0xE0000000
+
+typedef ulong tBitmap;
 
 #endif /* ECO32_PMEM_H_ */

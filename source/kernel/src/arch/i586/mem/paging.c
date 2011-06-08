@@ -165,13 +165,13 @@ void paging_init(void) {
 	sPTEntry *pts[] = {proc0PT1,proc0PT2};
 
 	/* set page-dir of first process */
-	curPDir = (tPageDir)proc0PD & ~KERNEL_AREA_V_ADDR;
+	curPDir = (tPageDir)proc0PD & ~KERNEL_START;
 
 	/* note that we assume here that the kernel including mm-stack is not larger than 2
 	 * complete page-tables (8MiB)! */
 
 	/* map 2 page-tables at 0xC0000000 */
-	vaddr = KERNEL_AREA_V_ADDR;
+	vaddr = KERNEL_START;
 	addr = KERNEL_AREA_P_ADDR;
 	pd = (sPDEntry*)VIRT2PHYS(proc0PD);
 	for(j = 0; j < 2; j++) {
@@ -196,7 +196,7 @@ void paging_init(void) {
 		pde->exists = true;
 
 		/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
-		pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(vaddr - KERNEL_AREA_V_ADDR));
+		pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(vaddr - KERNEL_START));
 		pde->ptFrameNo = (uintptr_t)pt >> PAGE_SIZE_SHIFT;
 		pde->present = true;
 		pde->writable = true;
@@ -232,7 +232,7 @@ void paging_mapKernelSpace(void) {
 	uintptr_t addr,end;
 	sPDEntry *pde;
 	/* insert all page-tables for 0xC0800000 .. 0xFF3FFFFF into the page dir */
-	addr = KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT * 2);
+	addr = KERNEL_START + (PAGE_SIZE * PT_ENTRY_COUNT * 2);
 	end = KERNEL_STACK;
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
@@ -264,7 +264,7 @@ void paging_gdtFinished(void) {
 
 bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > KERNEL_AREA_V_ADDR || virt + count < virt)
+	if(virt + count > KERNEL_START || virt + count < virt)
 		return false;
 
 	return paging_isRangeReadable(virt,count);
@@ -296,7 +296,7 @@ bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 
 bool paging_isRangeUserWritable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > KERNEL_AREA_V_ADDR || virt + count < virt)
+	if(virt + count > KERNEL_START || virt + count < virt)
 		return false;
 
 	return paging_isRangeWritable(virt,count);
@@ -362,11 +362,11 @@ ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	npd = (sPDEntry*)paging_mapToTemp(&pdirFrame,1);
 
 	/* clear user-space page-tables */
-	memclear(npd,ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) * sizeof(sPDEntry));
+	memclear(npd,ADDR_TO_PDINDEX(KERNEL_START) * sizeof(sPDEntry));
 	/* copy kernel-space page-tables */
-	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
-			pd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
-			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)) * sizeof(sPDEntry));
+	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_START),
+			pd + ADDR_TO_PDINDEX(KERNEL_START),
+			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_START)) * sizeof(sPDEntry));
 
 	/* map our new page-dir in the last slot of the new page-dir */
 	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;
@@ -562,7 +562,7 @@ sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool free
 		/* remove and free page-table, if necessary */
 		pti = ADDR_TO_PDINDEX(virt);
 		if(pti != lastPti) {
-			if(lastPti != PT_ENTRY_COUNT && virt < KERNEL_AREA_V_ADDR)
+			if(lastPti != PT_ENTRY_COUNT && virt < KERNEL_START)
 				stats.ptables += paging_remEmptyPt(ptables,lastPti);
 			lastPti = pti;
 		}
@@ -586,7 +586,7 @@ sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool free
 		virt += PAGE_SIZE;
 	}
 	/* check if the last changed pagetable is empty */
-	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA_V_ADDR)
+	if(pti != PT_ENTRY_COUNT && virt < KERNEL_START)
 		stats.ptables += paging_remEmptyPt(ptables,pti);
 	return stats;
 }
@@ -595,7 +595,7 @@ size_t paging_getPTableCount(tPageDir pdir) {
 	size_t i,count = 0;
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
+	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_START); i++) {
 		if(pdirAddr[i].present)
 			count++;
 	}
@@ -606,7 +606,7 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
 	size_t i,j;
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
+	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_START); i++) {
 		if(pdirAddr[i].present) {
 			uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * i;
 			sPTEntry *pte = (sPTEntry*)(ptables + i * PAGE_SIZE);
@@ -737,8 +737,8 @@ void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 		if(!pdirAddr[i].present)
 			continue;
 		if(parts == PD_PART_ALL ||
-			(i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) && (parts & PD_PART_USER)) ||
-			(i >= ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) &&
+			(i < ADDR_TO_PDINDEX(KERNEL_START) && (parts & PD_PART_USER)) ||
+			(i >= ADDR_TO_PDINDEX(KERNEL_START) &&
 					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START) &&
 					(parts & PD_PART_KERNEL)) ||
 			(i >= ADDR_TO_PDINDEX(TEMP_MAP_AREA) &&

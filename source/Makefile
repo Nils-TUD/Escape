@@ -28,7 +28,7 @@ BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin
-GIMMIX = /home/hrniels/mmix/gimmix
+GIMMIX = /home/hrniels/mmix/gimmix-escape
 GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
@@ -60,7 +60,7 @@ export NM = $(abspath $(DIST)/bin/$(TARGET)-nm)
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
-				 -Wstrict-prototypes -fms-extensions -fno-builtin
+				 -Wstrict-prototypes -fms-extensions
 export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long
@@ -80,20 +80,30 @@ export SUDO=sudo
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
 ifeq ($(ARCH),mmix)
-	DIRS = tools dist lib kernel/src
+	DIRS = tools dist lib drivers kernel/src kernel/test
 else
 	DIRS = tools dist lib drivers user kernel/src kernel/test
 endif
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
-	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
+	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 	export BUILDTYPE=debug
 else
+ifeq ($(ARCH),mmix)
+	DIRS = tools dist lib drivers kernel/src
+else
 	DIRS = tools dist lib drivers user kernel/src
+endif
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 	export BUILDTYPE=release
+endif
+
+# atm we have to disable base-addresses, because the mmix-gcc-port seems to be unable to handle it
+# correctly
+ifeq ($(ARCH),mmix)
+CDEFFLAGS += -mno-base-addresses
 endif
 
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
@@ -181,10 +191,15 @@ else
 endif
 
 mmix:	all hdd prepareRun
-		$(GIMSIM) -r $(GIMMON) -c -t 1 -d $(HDD) -i --script=gimmix.start -s $(BUILD)/kernel.map
+		$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
+			-s $(BUILD)/stage2.map $(BUILD)/kernel.map
 
 mmixd:	all hdd prepareRun
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
+
+testm:	all hdd prepareTest
+		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \
+			-s $(BUILD)/kernel_test.map
 
 eco:	all hdd prepareRun
 		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \

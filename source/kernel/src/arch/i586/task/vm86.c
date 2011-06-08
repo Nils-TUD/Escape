@@ -471,7 +471,7 @@ static void vm86_copyPtrResult(const sVM86Memarea *areas,size_t areaCount) {
 				else {
 					/* note that the first MiB is mapped to 0xC0000000, too */
 					memcpy((void*)areas[i].data.ptr.result,
-							(void*)(virt | KERNEL_AREA_V_ADDR),areas[i].data.ptr.size);
+							(void*)(virt | KERNEL_START),areas[i].data.ptr.size);
 				}
 			}
 		}

@@ -26,9 +26,8 @@
 
 /* file-number (in global file table) */
 typedef int tFileNo;
-typedef uintptr_t tPageDir;
 typedef int tVMRegNo;
-typedef uint tFrameNo;
+typedef uintptr_t tFrameNo;
 
 #ifndef NDEBUG
 #define DEBUGGING 1

@@ -1,4 +1,4 @@
-ifeq ($(ARCH),eco32)
+ifneq ($(ARCH),i586)
 	DIRS = $(filter-out powermng Makefile,$(wildcard *))
 else
 	DIRS = $(filter-out Makefile,$(wildcard *))

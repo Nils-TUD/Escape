@@ -26,29 +26,23 @@
 # uint16_t le16tocpu(uint16_t in);
 cputole16:
 le16tocpu:
-	SETL	$1,#FF00
-	AND		$1,$0,$1
-	SRU		$1,$1,8
-	AND		$2,$0,#FF
-	SLU		$2,$2,8
-	OR		$0,$1,$2
+	SETH	$1,#0102
+	ORMH	$1,#0408
+	ORML	$1,#1020
+	ORL		$1,#4080
+	MOR		$0,$0,$1
+	SRU		$0,$0,48
 	POP		1,0
 
 # uint32_t cputole32(uint32_t in);
 # uint32_t le32tocpu(uint32_t in);
 cputole32:
 le32tocpu:
-	SETL	$3,#FF00
-	AND		$2,$0,$3
-	SLU		$1,$2,8
-	AND		$2,$0,#FF
-	SLU		$2,$2,24
-	OR		$1,$1,$2
-	SRU		$0,$0,16
-	AND		$2,$0,$3
-	SRU		$2,$2,8
-	OR		$1,$1,$2
-	AND		$2,$0,#FF
-	SLU		$2,$2,8
-	OR		$0,$1,$2
+	SETH	$1,#0102
+	ORMH	$1,#0408
+	ORML	$1,#1020
+	ORL		$1,#4080
+	MOR		$0,$0,$1
+	SRU		$0,$0,32
 	POP		1,0
+

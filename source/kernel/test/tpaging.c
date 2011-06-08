@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
+#include <sys/task/proc.h>
 #include <sys/mem/pmem.h>
 #include <sys/video.h>
 #include <string.h>

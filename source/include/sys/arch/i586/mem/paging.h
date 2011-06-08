@@ -84,9 +84,9 @@
  */
 
 /* the virtual address of the kernel-area */
-#define KERNEL_AREA_V_ADDR		((uintptr_t)0xC0000000)
+#define KERNEL_START			((uintptr_t)0xC0000000)
 /* the virtual address of the kernel itself */
-#define KERNEL_V_ADDR			(KERNEL_AREA_V_ADDR + KERNEL_P_ADDR)
+#define KERNEL_V_ADDR			(KERNEL_START + KERNEL_P_ADDR)
 
 /* the number of entries in a page-directory or page-table */
 #define PT_ENTRY_COUNT			(PAGE_SIZE / 4)
@@ -96,7 +96,7 @@
 /* the start of the temporary mapped page-tables area */
 #define TMPMAP_PTS_START		(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the start of the kernel-heap */
-#define KERNEL_HEAP_START		(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
+#define KERNEL_HEAP_START		(KERNEL_START + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
 /* the size of the kernel-heap (4 MiB) */
 #define KERNEL_HEAP_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE /* * 4 */)
 
@@ -140,7 +140,9 @@
 
 /* free area for shared memory, tls, shared libraries, ... */
 #define FREE_AREA_BEGIN			0xA0000000
-#define FREE_AREA_END			KERNEL_AREA_V_ADDR
+#define FREE_AREA_END			KERNEL_START
+
+typedef uintptr_t tPageDir;
 
 /**
  * Reserves page-tables for the whole higher-half and inserts them into the page-directory.

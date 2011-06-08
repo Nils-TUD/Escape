@@ -7,15 +7,29 @@ MAP = $(BUILD)/kernel_test.map
 LDCONF = ../src/arch/$(ARCH)/ld.conf
 LIB = $(ROOT)/lib/basic
 DEPS = $(wildcard $(BUILDT)/*.d)
-SUBDIRS = $(shell find ../src -type d | grep -v '\.svn')
+SUBDIRS = $(shell find . -type d | grep -v '\.svn')
 LSUBDIRS = $(shell find $(LIB) -type d | grep -v '\.svn')
-BUILDDIRS = $(BUILDT) $(patsubst $(LIB)/%,$(BUILDT)/lib/%,$(LSUBDIRS))
+BUILDDIRS = $(BUILDT) $(addprefix $(BUILDT)/,$(SUBDIRS))
+BUILDDIRS += $(patsubst $(LIB)/%,$(BUILDT)/lib/%,$(LSUBDIRS))
 
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 	-D TESTING=1 -D IN_KERNEL=1
 
 # sources
+ifeq ($(ARCH),mmix)
+TSRC = tmain.c $(wildcard arch/$(ARCH)/*.c)
+KASRC = arch/mmix/kernel.s arch/mmix/end.s
+KSRC = $(filter-out ../src/arch/$(ARCH)/start.c,\
+	$(shell find ../src/arch/$(ARCH) -name "*.c" | grep -v '\.svn'))
+KSRC += printf.c mem/pmem.c
+LSRC = $(filter-out $(LIB)/hashmap.c $(LIB)/sllist.c $(LIB)/ringbuffer.c \
+	$(LIB)/string/strdup.c $(LIB)/string/strndup.c $(shell find $(LIB)/arch -name "*.c"),\
+	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
+LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
+LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
+else
 TSRC = $(wildcard *.c)
+TSRC += $(wildcard arch/$(ARCH)/*.c)
 KSRC = $(filter-out $(shell find ../src/arch -name "*.c"),\
 	$(shell find ../src -name "*.c" | grep -v '\.svn'))
 KSRC += $(filter-out ../src/arch/$(ARCH)/start.c,\
@@ -27,6 +41,7 @@ LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
 	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
+endif
 
 # objects
 TOBJ = $(patsubst %.c,$(BUILDT)/%.o,$(TSRC))

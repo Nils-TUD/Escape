@@ -39,6 +39,10 @@
 #include "tvmm.h"
 #include "tshm.h"
 #include "thashmap.h"
+/* TODO find a better solution */
+#ifdef __mmix__
+#include "arch/mmix/taddrspace.h"
+#endif
 
 int main(sBootInfo *bootinfo,uint32_t magic) {
 	UNUSED(magic);
@@ -46,12 +50,15 @@ int main(sBootInfo *bootinfo,uint32_t magic) {
 	/* init the kernel */
 	boot_init(bootinfo,false);
 
+	/* start tests */
+#ifdef __mmix__
+	test_register(&tModAddrSpace);
+#else
 	/* swapmap (needed for swapmap tests) */
 	vid_printf("Initializing Swapmap...");
 	swmap_init(256 * K);
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	/* start tests */
 	test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
@@ -69,6 +76,7 @@ int main(sBootInfo *bootinfo,uint32_t magic) {
 	test_register(&tModShm);
 	test_register(&tModHashMap);
 	test_register(&tModSLList);
+#endif
 	test_start();
 
 	/* stay here */

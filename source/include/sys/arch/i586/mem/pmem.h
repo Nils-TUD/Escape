@@ -20,6 +20,9 @@
 #ifndef I586_PMEM_H_
 #define I586_PMEM_H_
 
+#include <esc/common.h>
+#include <sys/arch/i586/mem/paging.h>
+
 /**
  * Physical memory layout:
  * 0x00000000: +-----------------------------------+   -----
@@ -58,5 +61,10 @@
 
 #define PAGE_SIZE				(4 * K)
 #define PAGE_SIZE_SHIFT			12
+
+#define BITMAP_PAGE_COUNT		((2 * M) / PAGE_SIZE)
+#define PMEM_END				KERNEL_HEAP_START
+
+typedef ulong tBitmap;
 
 #endif /* I586_PMEM_H_ */

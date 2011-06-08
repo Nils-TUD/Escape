@@ -79,15 +79,17 @@
  * 0xFFFFFFFF: +-----------------------------------+   -----
  */
 
-/* the virtual address of the kernel-area */
-#define KERNEL_AREA_V_ADDR		((uintptr_t)0x80000000)
+/* beginning of the kernel-code */
+#define KERNEL_START			((uintptr_t)0xC0000000)
+/* beginning of the kernel-data-structures */
+#define KERNEL_AREA				((uintptr_t)0x80000000)
 #define DIR_MAPPED_SPACE		((uintptr_t)0xC0000000)
 
 /* the number of entries in a page-directory or page-table */
 #define PT_ENTRY_COUNT			(PAGE_SIZE / 4)
 
 /* the start of the mapped page-tables area */
-#define MAPPED_PTS_START		KERNEL_AREA_V_ADDR
+#define MAPPED_PTS_START		KERNEL_AREA
 /* the start of the temporary mapped page-tables area */
 #define TMPMAP_PTS_START		(MAPPED_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
 
@@ -137,7 +139,9 @@
 
 /* free area for shared memory, tls, shared libraries, ... */
 #define FREE_AREA_BEGIN			0x60000000
-#define FREE_AREA_END			KERNEL_AREA_V_ADDR
+#define FREE_AREA_END			KERNEL_AREA
+
+typedef uintptr_t tPageDir;
 
 extern tPageDir curPDir;
 

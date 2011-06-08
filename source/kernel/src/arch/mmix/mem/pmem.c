@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: pmem.c 906 2011-06-04 15:45:33Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -23,42 +23,40 @@
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <assert.h>
 #include <string.h>
+#include <errors.h>
 
 static uintptr_t bitmapStart;
 
 void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
-	size_t memSize,defPageCount;
-	const sBootInfo *mb = boot_getInfo();
+	size_t defPageCount;
+	const sBootInfo *binfo = boot_getInfo();
+	const sLoadProg *last;
 
-	/* put the MM-stack behind the last multiboot-module */
-	if(mb->modsCount == 0)
-		util_panic("No multiboot-modules found");
-	*stackBegin = mb->modsAddr[mb->modsCount - 1].modEnd;
+	/* put the mm-stack behind the last boot-module */
+	if(binfo->progCount == 0)
+		util_panic("No boot-modules found");
+	last = binfo->progs + binfo->progCount - 1;
+	/* word align the stack begin */
+	*stackBegin = (last->start + last->size + sizeof(long) - 1) & ~(sizeof(long) - 1);
 
 	/* calculate mm-stack-size */
-	memSize = mb->memUpper * K;
-	defPageCount = (memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT / PAGE_SIZE);
+	defPageCount = (binfo->memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT / PAGE_SIZE);
 	*stackSize = (defPageCount + (PAGE_SIZE - 1) / sizeof(tFrameNo)) / (PAGE_SIZE / sizeof(tFrameNo));
 
 	/* the first usable frame in the bitmap is behind the mm-stack */
 	*bitmap = (tBitmap*)(*stackBegin + (*stackSize + 1) * PAGE_SIZE);
 	*bitmap = (tBitmap*)(((uintptr_t)*bitmap + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-	bitmapStart = (uintptr_t)*bitmap - KERNEL_START;
+	bitmapStart = (uintptr_t)*bitmap & ~DIR_MAPPED_SPACE;
 	/* mark all free */
 	memset(*bitmap,0xFF,BITMAP_PAGE_COUNT / 8);
 }
 
 void pmem_markAvailable(void) {
-	sMemMap *mmap;
-	const sBootInfo *mb = boot_getInfo();
-	/* now walk through the memory-map and mark all free areas as free */
-	for(mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
-			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
-			pmem_markRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
-	}
-
-	/* mark the bitmap used in itself */
+	const sBootInfo *binfo = boot_getInfo();
+	/* mark bitmap used */
 	pmem_markRangeUsed(bitmapStart,bitmapStart + BITMAP_PAGE_COUNT / 8,true);
+	/* mark other frames unused */
+	pmem_markRangeUsed(bitmapStart + BITMAP_PAGE_COUNT / 8 + PAGE_SIZE - 1,binfo->memSize,false);
 }

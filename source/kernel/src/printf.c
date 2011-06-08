@@ -151,7 +151,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 					fmt++;
 					break;
 				case '*':
-					pad = va_arg(ap, uint);
+					pad = va_arg(ap, ulong);
 					fmt++;
 					break;
 				case '|':

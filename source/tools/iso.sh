@@ -12,6 +12,7 @@ fi
 KERNELBIN=$BUILD/$BINNAME
 TMPDIR=$ROOT/diskmnt
 
+sudo rm -Rf $TMPDIR/*
 mkdir -p $TMPDIR/boot/grub
 mkdir $TMPDIR/apps
 mkdir $TMPDIR/bin

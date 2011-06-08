@@ -28,6 +28,9 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/mem/pmem.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/mem/pmem.h>
+#endif
 
 /* converts bytes to pages */
 #define BYTES_2_PAGES(b)		(((size_t)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
@@ -39,6 +42,32 @@ typedef enum {MM_CONT = 1,MM_DEF = 2} eMemType;
  * Initializes the memory-management
  */
 void pmem_init(void);
+
+/**
+ * Inits the architecture-specific part of the physical-memory management.
+ * This function should not be called by other modules!
+ *
+ * @param stackBegin is set to the beginning of the stack
+ * @param stackSize the size of the stack
+ * @param bitmap the start of the bitmap
+ */
+void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap);
+
+/**
+ * Marks all memory available/occupied as necessary.
+ * This function should not be called by other modules!
+ */
+void pmem_markAvailable(void);
+
+/**
+ * Marks the given range as used or not used.
+ * This function should not be called by other modules!
+ *
+ * @param from the start-address
+ * @param to the end-address
+ * @param used whether the frame is used
+ */
+void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used);
 
 /**
  * @return the number of bytes used for the mm-stack

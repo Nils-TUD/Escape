@@ -373,7 +373,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	curIntrptStack = stack;
 	intrptCount++;
 
-	if(t->tid == IDLE_TID || stack->eip < KERNEL_AREA_V_ADDR) {
+	if(t->tid == IDLE_TID || stack->eip < KERNEL_START) {
 		cycles = cpu_rdtsc();
 		if(t->stats.ucycleStart > 0)
 			t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
@@ -401,7 +401,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		uenv_startSignalHandler(stack);
 
 	/* kernel-mode ends */
-	if(t->tid == IDLE_TID || stack->eip < KERNEL_AREA_V_ADDR) {
+	if(t->tid == IDLE_TID || stack->eip < KERNEL_START) {
 		t = thread_getRunning();
 		cycles = cpu_rdtsc();
 		if(t->stats.kcycleStart > 0)
@@ -419,7 +419,7 @@ static void intrpt_exFatal(sIntrptStackFrame *stack) {
 		/* stop here? */
 		if(exCount >= MAX_EX_COUNT) {
 			/* for exceptions in kernel: ensure that we have the default print-function */
-			if(stack->eip >= KERNEL_AREA_V_ADDR)
+			if(stack->eip >= KERNEL_START)
 				vid_unsetPrintFunc();
 			util_panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
 					stack->intrptNo,exCount,stack->eip);
@@ -434,7 +434,7 @@ static void intrpt_exFatal(sIntrptStackFrame *stack) {
 static void intrpt_exGenProtFault(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	/* for exceptions in kernel: ensure that we have the default print-function */
-	if(stack->eip >= KERNEL_AREA_V_ADDR)
+	if(stack->eip >= KERNEL_START)
 		vid_unsetPrintFunc();
 	/* io-map not loaded yet? */
 	if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
@@ -461,7 +461,7 @@ static void intrpt_exCoProcNA(sIntrptStackFrame *stack) {
 
 static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	/* for exceptions in kernel: ensure that we have the default print-function */
-	if(stack->eip >= KERNEL_AREA_V_ADDR)
+	if(stack->eip >= KERNEL_START)
 		vid_unsetPrintFunc();
 
 #if DEBUG_PAGEFAULTS

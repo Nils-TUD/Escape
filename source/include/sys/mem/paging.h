@@ -22,8 +22,6 @@
 
 #include <sys/common.h>
 #include <sys/mem/pmem.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
 #include <sys/printf.h>
 
 #ifdef __i386__
@@ -32,11 +30,16 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/mem/paging.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/mem/paging.h>
+#endif
 
 /* flags for paging_map() */
 #define PG_WRITABLE				1
 #define PG_SUPERVISOR			2
 #define PG_PRESENT				4
+/* TODO */
+#define PG_EXECUTABLE			64
 /* tells paging_map() that it gets the frame-address and should convert it to a frame-number first */
 #define PG_ADDR_TO_FRAME		8
 /* make it a global page */

@@ -22,6 +22,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/region.h>
+#include <sys/mem/paging.h>
 #include <sys/task/elf.h>
 #include <sys/vfs/node.h>
 #include <sys/intrpt.h>
@@ -44,7 +45,6 @@
 
 /* process flags */
 #define P_ZOMBIE			1
-#define P_VM86				2
 
 typedef struct {
 	tPid pid;

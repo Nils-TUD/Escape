@@ -26,7 +26,7 @@ HDDTRACKSECS=63
 if [ "$ARCH" = "eco32" ]; then
 	PART1OFFSET=32
 elif [ "$ARCH" = "mmix" ]; then
-	PART1OFFSET=48
+	PART1OFFSET=64
 else
 	PART1OFFSET=$HDDTRACKSECS
 fi

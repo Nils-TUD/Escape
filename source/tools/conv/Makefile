@@ -6,7 +6,7 @@ BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 
 CC = g++
-CFLAGS = $(CPPDEFFLAGS)
+CFLAGS = $(CPPWFLAGS)
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -name "*.cpp")

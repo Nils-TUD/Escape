@@ -84,7 +84,6 @@ bool test_doAssertTrue(bool received,const char *func,int line) {
 		test_caseFailed("Assert %d in %s line %d: Received false, expected true",assertCount,func,line);
 		return false;
 	}
-	testPrintf("vassert %d succeeded\n",assertCount);
 	return true;
 }
 
@@ -94,7 +93,6 @@ bool test_doAssertFalse(bool received,const char *func,int line) {
 		test_caseFailed("Assert %d in %s line %d: Received true, expected false",assertCount,func,line);
 		return false;
 	}
-	testPrintf("vassert %d succeeded\n",assertCount);
 	return true;
 }
 
@@ -105,7 +103,6 @@ bool test_doAssertPtr(const void *received,const void *expected,const char *func
 				assertCount,func,line,expected,received);
 		return false;
 	}
-	testPrintf("vassert %d succeeded\n",assertCount);
 	return true;
 }
 
@@ -116,7 +113,6 @@ bool test_doAssertInt(int received,int expected,const char *func,int line) {
 				assertCount,func,line,expected,received);
 		return false;
 	}
-	testPrintf("vassert %d succeeded\n",assertCount);
 	return true;
 }
 
@@ -127,7 +123,6 @@ bool test_doAssertUInt(uint received,uint expected,const char *func,int line) {
 				assertCount,func,line,expected,received);
 		return false;
 	}
-	testPrintf("vassert %d succeeded\n",assertCount);
 	return true;
 }
 
@@ -146,7 +141,6 @@ bool test_doAssertULInt(ullong received,ullong expected,const char *func,int lin
 				uexp.val32.upper,uexp.val32.lower,urecv.val32.upper,urecv.val32.lower);
 		return false;
 	}
-	testPrintf("vassert %d succeeded\n",assertCount);
 	return true;
 }
 
@@ -172,7 +166,6 @@ bool test_doAssertStr(const char *received,const char *expected,const char *func
 				assertCount,func,line,expected,received);
 		return false;
 	}
-	testPrintf("vassert %d succeeded\n",assertCount);
 	return true;
 }
 

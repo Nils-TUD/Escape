@@ -211,7 +211,7 @@ sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
 static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
 	static sFuncCall frames[MAX_STACK_DEPTH];
 	size_t i;
-	bool isKernel = (uintptr_t)ebp >= KERNEL_AREA_V_ADDR;
+	bool isKernel = (uintptr_t)ebp >= KERNEL_START;
 	sFuncCall *frame = &frames[0];
 	sSymbol *sym;
 

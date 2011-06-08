@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: diskmain.c 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -30,7 +30,7 @@
 #include <error.h>
 
 #define SECTOR_SIZE			512
-#define START_SECTOR		32		/* part 0 */
+#define START_SECTOR		64		/* part 0 */
 #define MAX_RW_SIZE			(SECTOR_SIZE * 8)
 
 #define DISK_CTRL			0		/* control register */
@@ -45,8 +45,8 @@
 #define DISK_DONE			0x10	/* 1 = disk has finished the command */
 #define DISK_READY			0x20	/* 1 = capacity valid, disk accepts command */
 
-#define DISK_BASE			0x30400000
-#define DISK_BUF			0x30480000
+#define DISK_BASE			0x0003000000000000
+#define DISK_BUF			0x0003000000080000
 #define DISK_RDY_RETRIES	10000000
 
 #define IRQ_TIMEOUT			1000
@@ -79,13 +79,13 @@ static bool diskWait(void);
 static void regDrives(void);
 static void createVFSEntry(const char *name,bool isPart);
 
-static uint32_t *diskRegs;
-static uint32_t *diskBuf;
+static uint64_t *diskRegs;
+static uint64_t *diskBuf;
 static tFD drvId;
 static uint diskCap = 0;
 static uint partCap = 0;
 static sMsg msg;
-static uint32_t buffer[MAX_RW_SIZE / sizeof(uint32_t)];
+static uint64_t buffer[MAX_RW_SIZE / sizeof(uint64_t)];
 
 int main(int argc,char **argv) {
 	tMsgId mid;
@@ -188,8 +188,8 @@ static void diskInterrupt(int sig) {
 
 static uint getDiskCapacity(void) {
 	int i;
-	volatile uint32_t *diskCtrlReg = diskRegs + DISK_CTRL;
-	uint32_t *diskCapReg = diskRegs + DISK_CAP;
+	volatile uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
+	uint64_t *diskCapReg = diskRegs + DISK_CAP;
 	/* wait for disk */
 	for(i = 0; i < DISK_RDY_RETRIES; i++) {
 		if(*diskCtrlReg & DISK_READY)
@@ -202,9 +202,9 @@ static uint getDiskCapacity(void) {
 }
 
 static bool diskRead(void *buf,uint secNo,uint secCount) {
-	uint32_t *diskSecReg = diskRegs + DISK_SCT;
-	uint32_t *diskCntReg = diskRegs + DISK_CNT;
-	uint32_t *diskCtrlReg = diskRegs + DISK_CTRL;
+	uint64_t *diskSecReg = diskRegs + DISK_SCT;
+	uint64_t *diskCntReg = diskRegs + DISK_CNT;
+	uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
 
 	DISK_DBG("Reading sectors %d..%d ...",secNo,secNo + secCount - 1);
 
@@ -231,9 +231,9 @@ static bool diskRead(void *buf,uint secNo,uint secCount) {
 }
 
 static bool diskWrite(const void *buf,uint secNo,uint secCount) {
-	uint32_t *diskSecReg = diskRegs + DISK_SCT;
-	uint32_t *diskCntReg = diskRegs + DISK_CNT;
-	uint32_t *diskCtrlReg = diskRegs + DISK_CTRL;
+	uint64_t *diskSecReg = diskRegs + DISK_SCT;
+	uint64_t *diskCntReg = diskRegs + DISK_CNT;
+	uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
 
 	DISK_DBG("Writing sectors %d..%d ...",secNo,secNo + secCount - 1);
 
@@ -257,7 +257,7 @@ static bool diskWrite(const void *buf,uint secNo,uint secCount) {
 }
 
 static bool diskWait(void) {
-	volatile uint32_t *diskCtrlReg = diskRegs + DISK_CTRL;
+	volatile uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
 	if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
 		sleep(IRQ_TIMEOUT);
 		if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {

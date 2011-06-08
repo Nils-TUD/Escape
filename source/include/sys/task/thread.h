@@ -23,6 +23,7 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
+#include <sys/mem/paging.h>
 #include <esc/hashmap.h>
 
 #ifdef __i386__

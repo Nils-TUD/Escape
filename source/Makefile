@@ -1,8 +1,8 @@
 # general
-ARCH = mmix
-GCCVER = 4.6.0
-#ARCH = i586
-#GCCVER = 4.4.3
+#ARCH = mmix
+#GCCVER = 4.6.0
+ARCH = i586
+GCCVER = 4.4.3
 #ARCH = eco32
 #GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
@@ -198,7 +198,7 @@ mmixd:	all hdd prepareRun
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
 
 testm:	all hdd prepareTest
-		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \
+		$(GIMSIM) -r $(GIMMON) -m 24 -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \
 			-s $(BUILD)/kernel_test.map
 
 eco:	all hdd prepareRun
@@ -234,11 +234,11 @@ debugbt:	all prepareBochs prepareRun
 		sleep 1;
 		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
-debugm: all prepareQemu prepareRun
+debugq: all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
 
-debugt: all prepareQemu prepareTest
-		$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
+debugqt: all prepareQemuTest prepareTest
+		$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) -S -s > log.txt 2>&1 &
 
 testq: all prepareQemuTest
 		$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) > log.txt 2>&1

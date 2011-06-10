@@ -115,6 +115,7 @@ static void test_setHandler(void) {
 	test_caseSucceeded();
 
 	test_caseStart("Testing sig_removeHandlerFor()");
+	test_assertTrue(thread_getById(1) != NULL);
 	sig_setHandler(0,SIG_TERM,(fSignal)0x456);
 	sig_setHandler(0,SIG_SEGFAULT,(fSignal)0x456);
 	sig_setHandler(0,SIG_INTRPT_ATA1,(fSignal)0x456);

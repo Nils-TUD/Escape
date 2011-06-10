@@ -80,6 +80,21 @@ void *kheap_realloc(void *addr,size_t size);
  */
 void kheap_free(void *addr);
 
+/**
+ * Internal: Allocates one page for areas
+ *
+ * @return the address at which the space can be accessed
+ */
+uintptr_t kheap_allocAreas(void);
+
+/**
+ * Internal: Allocates <count> pages for data
+ *
+ * @param count the number of pages
+ * @return the address at which the space can be accessed
+ */
+uintptr_t kheap_allocSpace(size_t count);
+
 #if DEBUGGING
 
 /**

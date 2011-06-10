@@ -17,9 +17,8 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D I
 ifeq ($(ARCH),mmix)
 ASRC = arch/mmix/kernel.s arch/mmix/end.s
 CSRC = $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
-CSRC += printf.c mem/pmem.c
-LSRC = $(filter-out $(LIB)/hashmap.c $(LIB)/sllist.c $(LIB)/ringbuffer.c \
-	$(LIB)/string/strdup.c $(LIB)/string/strndup.c $(shell find $(LIB)/arch -name "*.c"),\
+CSRC += printf.c mem/pmem.c mem/kheap.c mem/sllnodes.c mem/dynarray.c
+LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
 	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')

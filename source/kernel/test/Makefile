@@ -17,13 +17,13 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 
 # sources
 ifeq ($(ARCH),mmix)
-TSRC = tmain.c $(wildcard arch/$(ARCH)/*.c)
+TSRC = tmain.c tpaging.c tkheap.c tsllist.c tringbuffer.c thashmap.c tesccodes.c tstring.c \
+	$(wildcard arch/$(ARCH)/*.c)
 KASRC = arch/mmix/kernel.s arch/mmix/end.s
 KSRC = $(filter-out ../src/arch/$(ARCH)/start.c,\
 	$(shell find ../src/arch/$(ARCH) -name "*.c" | grep -v '\.svn'))
-KSRC += printf.c mem/pmem.c
-LSRC = $(filter-out $(LIB)/hashmap.c $(LIB)/sllist.c $(LIB)/ringbuffer.c \
-	$(LIB)/string/strdup.c $(LIB)/string/strndup.c $(shell find $(LIB)/arch -name "*.c"),\
+KSRC += printf.c mem/pmem.c mem/kheap.c mem/sllnodes.c mem/dynarray.c
+LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
 	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')

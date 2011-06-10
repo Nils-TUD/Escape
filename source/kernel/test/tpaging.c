@@ -42,8 +42,25 @@ sTestModule tModPaging = {
 
 static void test_paging(void) {
 	size_t x,y;
-	uintptr_t addr[] = {0x0,0x40000000,0x70000000,0x4000,0x1234};
+	uintptr_t addr[] = {
+#ifdef __mmix__
+		0x0,1UL << 61,
+		PAGE_SIZE * PT_ENTRY_COUNT,
+		PAGE_SIZE * PT_ENTRY_COUNT * 2,
+		PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT,
+		PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT * PT_ENTRY_COUNT + PAGE_SIZE * 1000
+#else
+		0x0,0x40000000,0x70000000,0x4000,0x1234
+#endif
+	};
 	size_t count[] = {0,1,50,1024,1025,2048,2051};
+
+#ifdef __mmix__
+	tPageDir pdir = paging_getCur();
+	uint64_t rv = pdir->rV;
+	pdir->rV = ((uint64_t)0x48C0 << 48) | (pdir->rV & 0xFFFFFFFFFFFF);
+	paging_setrV(pdir->rV);
+#endif
 
 	for(y = 0; y < ARRAY_SIZE(addr); y++) {
 		for(x = 0; x < ARRAY_SIZE(count); x++) {
@@ -51,9 +68,16 @@ static void test_paging(void) {
 		}
 	}
 
+#ifdef __mmix__
+	paging_getCur()->rV = rv;
+	paging_setrV(rv);
+#else
 	test_paging_foreign();
+#endif
 }
 
+/* TODO */
+#ifndef __mmix__
 static void test_paging_foreign(void) {
 	size_t oldFF, newFF;
 	sProc *child;
@@ -63,7 +87,7 @@ static void test_paging_foreign(void) {
 	child = proc_getByPid(pid);
 
 	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
-	test_caseStart("Mapping %d pages to %#08x into pdir %#x",3,0,child->pagedir);
+	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,child->pagedir);
 	stats = paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
 	test_assertUInt(stats.frames,3);
 	test_assertUInt(stats.ptables,1);
@@ -77,7 +101,7 @@ static void test_paging_foreign(void) {
 		test_caseSucceeded();
 
 	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
-	test_caseStart("Mapping %d pages to %#08x into pdir %#x, separatly",6,0x40000000,child->pagedir);
+	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,child->pagedir);
 	stats = paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
 	test_assertUInt(stats.frames,3);
 	test_assertUInt(stats.ptables,1);
@@ -92,16 +116,17 @@ static void test_paging_foreign(void) {
 	test_assertUInt(stats.ptables,1);
 	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
 	if(oldFF != newFF)
-		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
+		test_caseFailed("oldFF=%Su, newFF=%Su",oldFF,newFF);
 	else
 		test_caseSucceeded();
 	proc_kill(child);
 }
+#endif
 
 static bool test_paging_cycle(uintptr_t addr,size_t count) {
 	size_t oldFF, newFF, oldPC, newPC;
 
-	test_caseStart("Mapping %d pages to 0x%08x",count,addr);
+	test_caseStart("Mapping %Su pages to %p",count,addr);
 
 	oldPC = paging_dbg_getPageCount();
 	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
@@ -114,7 +139,7 @@ static bool test_paging_cycle(uintptr_t addr,size_t count) {
 	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
 
 	if(oldFF != newFF || oldPC != newPC) {
-		test_caseFailed("oldPC=%d, oldFF=%d, newPC=%d, newFF=%d",oldPC,oldFF,newPC,newFF);
+		test_caseFailed("oldPC=%Su, oldFF=%Su, newPC=%Su, newFF=%Su",oldPC,oldFF,newPC,newFF);
 		return false;
 	}
 
@@ -133,8 +158,10 @@ static void test_paging_access(uintptr_t addr,size_t count) {
 	for(i = 0; i < count; i++) {
 		/* write to the first word */
 		*(uint*)addr = 0xDEADBEEF;
+		test_assertUInt(*(uint*)addr,0xDEADBEEF);
 		/* write to the last word */
 		*(uint*)(addr + PAGE_SIZE - sizeof(uint)) = 0xDEADBEEF;
+		test_assertUInt(*(uint*)(addr + PAGE_SIZE - sizeof(uint)),0xDEADBEEF);
 		addr += PAGE_SIZE;
 	}
 }

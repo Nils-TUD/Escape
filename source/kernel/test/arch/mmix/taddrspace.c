@@ -4,6 +4,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/mmix/mem/addrspace.h>
+#include <sys/mem/paging.h>
 #include <esc/test.h>
 
 #define ADDR_SPACE_COUNT		1024
@@ -21,10 +22,16 @@ sTestModule tModAddrSpace = {
 static sAddressSpace *spaces[ADDR_SPACE_COUNT * 3];
 
 static void test_addrspace(void) {
+	/* a trick to ensure that no address-spaces are in use yet: temporary free the first one and
+	 * allocate it again when we're finished */
+	aspace_free(paging_getCur()->addrSpace);
 	test_basics();
 	test_dupUsage();
 	/* do it twice to ensure that the cleanup is correct */
 	test_dupUsage();
+	paging_getCur()->addrSpace = aspace_alloc();
+	paging_getCur()->rV &= ~0x3F;
+	paging_getCur()->rV |= (paging_getCur()->addrSpace->no << 3);
 }
 
 static void test_basics(void) {

@@ -51,7 +51,16 @@
  *                     |       thread local storage        |     |
  *                     |        memory mapped stuff        |     |
  *                     |        (in arbitrary order)       |     |
- * 0x4000000000000000: +-----------------------------------+   -----
+ * 0x4000000000000000: +-----------------------------------+   -----    -----
+ *                     |       VFS global file table       |     |        |
+ * 0x4000000000400000: +-----------------------------------+     k
+ *                     |             VFS nodes             |     e    dynamically extending regions
+ * 0x4000000000800000: +-----------------------------------+     r
+ *                     |             sll nodes             |     n        |
+ * 0x4000000002800000: +-----------------------------------+     e      -----
+ *                     |                ...                |     l
+ *                     |                                   |     |
+ * 0x6000000000000000: +-----------------------------------+   -----
  *                     |                ...                |
  * 0x8000000000000000: +-----------------------------------+   -----
  *                     |         kernel code+data          |     |
@@ -64,7 +73,14 @@
 
 /* beginning of the kernel-code */
 #define KERNEL_START			((uintptr_t)0x8000000000000000)
+/* beginning of the kernel-data-structures */
+#define KERNEL_AREA				((uintptr_t)0x4000000000000000)
 #define DIR_MAPPED_SPACE		((uintptr_t)0x8000000000000000)
+
+/* number of used segments */
+#define SEGMENT_COUNT			3
+/* page-tables for each segments in root-location */
+#define PTS_PER_SEGMENT			2
 
 /* the number of entries in a page-directory or page-table */
 #define PT_ENTRY_COUNT			(PAGE_SIZE / 8)
@@ -78,6 +94,16 @@
 /* converts pages to page-tables (how many page-tables are required for the pages?) */
 #define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
+/* area for global-file-table */
+#define GFT_AREA				KERNEL_AREA
+#define GFT_AREA_SIZE			(PAGE_SIZE * PT_ENTRY_COUNT)
+/* area for vfs-nodes */
+#define VFSNODE_AREA			(GFT_AREA + GFT_AREA_SIZE)
+#define VFSNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT)
+/* area for sll-nodes */
+#define SLLNODE_AREA			(VFSNODE_AREA + VFSNODE_AREA_SIZE)
+#define SLLNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT * 8)
+
 /* start-address of the text */
 #define TEXT_BEGIN				0x2000
 /* start-address of the text in dynamic linker */
@@ -90,6 +116,7 @@
 typedef struct {
 	sAddressSpace *addrSpace;
 	uint64_t rV;
+	ulong ptables;
 } sContext;
 
 typedef sContext *tPageDir;

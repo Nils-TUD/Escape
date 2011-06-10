@@ -28,8 +28,8 @@ void *memmove(void *dest,const void *src,size_t count) {
 
 	/* moving forward */
 	if((uchar*)dest > (uchar*)src) {
-		s = (uchar*)src + count + sizeof(uchar);
-		d = (uchar*)dest + count + sizeof(uchar);
+		s = (uchar*)src + count - sizeof(uchar);
+		d = (uchar*)dest + count - sizeof(uchar);
 		while(count-- > 0)
 			*d-- = *s--;
 	}

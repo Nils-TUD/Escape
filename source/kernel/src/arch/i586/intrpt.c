@@ -47,7 +47,7 @@
 #include <string.h>
 #include <errors.h>
 
-#define DEBUG_PAGEFAULTS		0
+#define DEBUG_PAGEFAULTS		1
 
 #define IDT_COUNT				256
 /* the privilege level */

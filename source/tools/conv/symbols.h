@@ -24,5 +24,6 @@
 
 void sym_init(const char *file);
 const char *sym_resolve(unsigned long addr);
+void specialChars(const char *src,char *dst,size_t dstSize);
 
 #endif /* SYMBOLS_H_ */

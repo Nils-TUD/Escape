@@ -144,6 +144,8 @@ sProc *proc_getRunning(void) {
 }
 
 sProc *proc_getByPid(tPid pid) {
+	if(pid >= ARRAY_SIZE(pidToProc))
+		return NULL;
 	return pidToProc[pid];
 }
 
@@ -324,7 +326,7 @@ int proc_clone(tPid newPid,uint8_t flags) {
 	sProc *cur = proc_getRunning();
 	sThread *curThread = thread_getRunning();
 	sThread *nt;
-	int res;
+	int res = 0;
 
 	p = (sProc*)kheap_alloc(sizeof(sProc));
 	if(!p)

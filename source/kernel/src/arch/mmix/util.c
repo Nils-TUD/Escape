@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/debug.h>
 #include <sys/util.h>
+#include <sys/video.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -28,16 +29,13 @@ static sFuncCall frames[1] = {
 };
 
 void util_panic(const char *fmt,...) {
-	debugf("PANIC\n");
-	while(1);
-#if 0
-	sIntrptStackFrame *istack = intrpt_getCurStack();
-	sThread *t = thread_getRunning();
+	/*sIntrptStackFrame *istack = intrpt_getCurStack();
+	sThread *t = thread_getRunning();*/
 	va_list ap;
 	int i;
 
 	/* print message */
-	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+	/*vid_setTargets(TARGET_SCREEN | TARGET_LOG);*/
 	vid_printf("\n");
 	vid_printf("\033[co;7;4]PANIC: ");
 	va_start(ap,fmt);
@@ -45,7 +43,7 @@ void util_panic(const char *fmt,...) {
 	va_end(ap);
 	vid_printf("%|s\033[co]\n","");
 
-	if(t != NULL)
+	/*if(t != NULL)
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 
 	vid_printf("User state:\n");
@@ -56,9 +54,9 @@ void util_panic(const char *fmt,...) {
 		vid_printf("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
 		if(i % 4 == 3)
 			vid_printf("\n\t");
-	}
+	}*/
 
-#if DEBUGGING
+#if 0 && DEBUGGING
 	/* write into log only */
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
@@ -73,7 +71,6 @@ void util_panic(const char *fmt,...) {
 	}
 #else
 	while(1);
-#endif
 #endif
 }
 

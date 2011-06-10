@@ -21,6 +21,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
+#include <string>
 #include "symbols.h"
 
 struct sFuncCall {
@@ -29,6 +31,7 @@ struct sFuncCall {
 	sFuncCall *child;
 	char name[MAX_FUNC_LEN + 1];
 	unsigned long long time;
+	unsigned long long begin;
 	unsigned long calls;
 };
 
@@ -38,13 +41,196 @@ struct sContext {
 	sFuncCall *root;
 };
 
+typedef void (*fParse)(FILE *f);
+typedef struct {
+	const char *name;
+	fParse parse;
+} sParser;
+
+static sContext *getCurrent(unsigned long tid);
+static void funcEnter(unsigned long tid,const char *name);
+static void funcLeave(unsigned long tid,unsigned long long time);
+static void parseI586(FILE *f);
+static void parseMMIX(FILE *f);
+static const char *resolve(const char *name);
+static sFuncCall *getFunc(sFuncCall *cur,const char *name);
+static sFuncCall *append(sFuncCall *cur,const char *name);
+static void printFunc(sFuncCall *f,int layer);
+
+static sParser parsers[] = {
+	{"i586",parseI586},
+	{"mmix",parseMMIX},
+};
+static unsigned long contextSize = 0;
+static sContext *contexts;
+
+int main(int argc,char *argv[]) {
+	unsigned long long totalTime;
+	unsigned long tid;
+	bool haveFile = false;
+	FILE *f = stdin;
+	int parser = -1;
+
+	if(argc < 3 || argc > 4) {
+		fprintf(stderr,"Usage: %s <format> <input> [<symbolFile>]\n",argv[0]);
+		return EXIT_FAILURE;
+	}
+
+	for(int i = 0; i < sizeof(parsers) / sizeof(parsers[0]); i++) {
+		if(strcmp(argv[1],parsers[i].name) == 0) {
+			parser = i;
+			break;
+		}
+	}
+	if(parser == -1) {
+		fprintf(stderr,"'%s' is no known format. Use 'i586' or 'mmix'.\n",argv[1]);
+		return EXIT_FAILURE;
+	}
+
+	if(strcmp(argv[2],"-") != 0) {
+		haveFile = true;
+		f = fopen(argv[2],"r");
+		if(!f)
+			perror("fopen");
+	}
+	if(argc > 3)
+		sym_init(argv[3]);
+	parsers[parser].parse(f);
+	if(haveFile)
+		fclose(f);
+
+	/* calculate total time via sum of the root-child-times */
+	totalTime = 0;
+	for(tid = 0; tid < contextSize; tid++) {
+		if(contexts[tid].current) {
+			unsigned long long threadTime = 0;
+			sFuncCall *cur = contexts[tid].root->child;
+			while(cur != NULL) {
+				totalTime += cur->time;
+				threadTime += cur->time;
+				cur = cur->next;
+			}
+			contexts[tid].root->time = threadTime;
+		}
+	}
+	/* print header */
+	printf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
+	printf("<functionCalls>\n");
+	printf("  <fileName>dummyFile</fileName>\n");
+	printf("  <totalTime>%Lu</totalTime>\n",totalTime);
+	printf("  <totalMem>0</totalMem>\n");
+	for(tid = 0; tid < contextSize; tid++) {
+		if(contexts[tid].current)
+			printFunc(contexts[tid].root,1);
+	}
+	printf("</functionCalls>\n");
+
+	return EXIT_SUCCESS;
+}
+
+static void parseI586(FILE *f) {
+	char funcName[MAX_FUNC_LEN + 1];
+	int c;
+	unsigned long tid;
+	unsigned long long time;
+	while((c = getc(f)) != EOF) {
+		/* function-enter */
+		if(c == '>') {
+			fscanf(f,"%lu:",&tid);
+			fscanf(f,"%s",funcName);
+			funcEnter(tid,funcName);
+		}
+		/* function-return */
+		else if(c == '<') {
+			fscanf(f,"%lu:",&tid);
+			fscanf(f,"%Lu",&time);
+			funcLeave(tid,time);
+		}
+	}
+}
+
+static void parseMMIX(FILE *f) {
+	char funcName[MAX_FUNC_LEN + 1];
+	int c;
+	unsigned long long time;
+	while((c = getc(f)) != EOF) {
+		sContext *con;
+		/* skip whitespace at the beginning */
+		while(isspace((c = getc(f))))
+			;
+		/* function-enter */
+		if(c == '\\') {
+			size_t i;
+			for(i = 0; i < MAX_FUNC_LEN && (c = getc(f)) != '('; i++)
+				funcName[i] = c;
+			funcName[i] = '\0';
+			funcEnter(0,funcName);
+			con = getCurrent(0);
+			while((c = getc(f)) != ',')
+				;
+			fscanf(f," ic=#%Lx",&time);
+			con->current->begin = time;
+		}
+		/* function-return */
+		else if(c == '/') {
+			con = getCurrent(0);
+			fscanf(f," ic=#%Lx",&time);
+			funcLeave(0,time - con->current->begin);
+		}
+		/* to line end */
+		while(getc(f) != '\n')
+			;
+	}
+}
+
+static sContext *getCurrent(unsigned long tid) {
+	if(tid >= contextSize) {
+		unsigned long oldSize = contextSize;
+		contextSize = contextSize == 0 ? 8 : std::max(contextSize * 2,tid + 1);
+		contexts = (sContext*)realloc(contexts,contextSize * sizeof(sContext));
+		memset(contexts + oldSize,0,(contextSize - oldSize) * sizeof(sContext*));
+	}
+	if(contexts[tid].current == NULL) {
+		contexts[tid].layer = 0;
+		contexts[tid].root = (sFuncCall*)malloc(sizeof(sFuncCall));
+		contexts[tid].root->next = NULL;
+		contexts[tid].root->child = NULL;
+		contexts[tid].root->parent = NULL;
+		sprintf(contexts[tid].root->name,"Thread %lu",tid);
+		contexts[tid].root->time = 0;
+		contexts[tid].root->calls = 0;
+		contexts[tid].current = contexts[tid].root;
+	}
+	return contexts + tid;
+}
+
+static void funcEnter(unsigned long tid,const char *name) {
+	sContext *context = getCurrent(tid);
+	sFuncCall *call = getFunc(context->current,name);
+	if(call == NULL)
+		context->current = append(context->current,name);
+	else
+		context->current = call;
+	context->current->calls++;
+	context->layer++;
+}
+
+static void funcLeave(unsigned long tid,unsigned long long time) {
+	sContext *context = getCurrent(tid);
+	if(context->layer > 0) {
+		context->current->time += time;
+		context->current = context->current->parent;
+		context->layer--;
+	}
+}
+
 static const char *resolve(const char *name) {
 	static char resolved[MAX_FUNC_LEN];
 	unsigned long addr;
 	char *end;
 	addr = strtoul(name,&end,16);
-	strcpy(resolved,name);
-	if(addr) {
+	specialChars(name,resolved,MAX_FUNC_LEN);
+	if(std::string(name).find_first_not_of("0123456789ABCDEFabcdef",0) == std::string::npos) {
 		strcat(resolved,": ");
 		strcat(resolved,sym_resolve(addr));
 	}
@@ -106,110 +292,4 @@ static void printFunc(sFuncCall *f,int layer) {
 			c = c->next;
 		}
 	}
-}
-
-static char *getSymName(unsigned long addr) {
-	/*readelf -sW build/debug/user_cppsort.bin | grep 2fff | xargs | cut -d ' ' -f 8 | c++filt*/
-}
-
-static unsigned long contextSize = 0;
-static sContext *contexts;
-
-static sContext *getCurrent(FILE *f) {
-	unsigned long tid;
-	fscanf(f,"%lu:",&tid);
-	if(tid >= contextSize) {
-		unsigned long oldSize = contextSize;
-		contextSize = contextSize == 0 ? 8 : std::max(contextSize * 2,tid + 1);
-		contexts = (sContext*)realloc(contexts,contextSize * sizeof(sContext));
-		memset(contexts + oldSize,0,(contextSize - oldSize) * sizeof(sContext*));
-	}
-	if(contexts[tid].current == NULL) {
-		contexts[tid].layer = 0;
-		contexts[tid].root = (sFuncCall*)malloc(sizeof(sFuncCall));
-		contexts[tid].root->next = NULL;
-		contexts[tid].root->child = NULL;
-		contexts[tid].root->parent = NULL;
-		sprintf(contexts[tid].root->name,"Thread %lu",tid);
-		contexts[tid].root->time = 0;
-		contexts[tid].root->calls = 0;
-		contexts[tid].current = contexts[tid].root;
-	}
-	return contexts + tid;
-}
-
-int main(int argc,char *argv[]) {
-	char funcName[MAX_FUNC_LEN + 1];
-	unsigned long long totalTime;
-	unsigned long long time;
-	unsigned long tid;
-	char c;
-	sContext *context;
-	FILE *f = stdin;
-
-	if(strcmp(argv[1],"-f") == 0) {
-		f = fopen(argv[2],"r");
-		if(!f)
-			perror("fopen");
-		sym_init(argc > 3 ? argv[3] : NULL);
-	}
-	else
-		sym_init(argc > 1 ? argv[1] : NULL);
-
-	while((c = getc(f)) != EOF) {
-		sFuncCall *call;
-		/* function-enter */
-		if(c == '>') {
-			context = getCurrent(f);
-			fscanf(f,"%s",funcName);
-			call = getFunc(context->current,funcName);
-			if(call == NULL)
-				context->current = append(context->current,funcName);
-			else
-				context->current = call;
-			context->current->calls++;
-			context->layer++;
-		}
-		/* function-return */
-		else if(c == '<') {
-			context = getCurrent(f);
-			if(context->layer > 0) {
-				fscanf(f,"%Lu",&time);
-				context->current->time += time;
-				context->current = context->current->parent;
-				context->layer--;
-			}
-		}
-	}
-
-	if(strcmp(argv[1],"-f") == 0)
-		fclose(f);
-
-	/* calculate total time via sum of the root-child-times */
-	totalTime = 0;
-	for(tid = 0; tid < contextSize; tid++) {
-		if(contexts[tid].current) {
-			unsigned long long threadTime = 0;
-			sFuncCall *cur = contexts[tid].root->child;
-			while(cur != NULL) {
-				totalTime += cur->time;
-				threadTime += cur->time;
-				cur = cur->next;
-			}
-			contexts[tid].root->time = threadTime;
-		}
-	}
-	/* print header */
-	printf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
-	printf("<functionCalls>\n");
-	printf("  <fileName>dummyFile</fileName>\n");
-	printf("  <totalTime>%Lu</totalTime>\n",totalTime);
-	printf("  <totalMem>0</totalMem>\n");
-	for(tid = 0; tid < contextSize; tid++) {
-		if(contexts[tid].current)
-			printFunc(contexts[tid].root,1);
-	}
-	printf("</functionCalls>\n");
-
-	return EXIT_SUCCESS;
 }

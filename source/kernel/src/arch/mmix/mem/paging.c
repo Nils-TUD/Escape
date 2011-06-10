@@ -65,17 +65,13 @@ typedef struct {
 							: 3;
 } sPTP;
 
-
-/**
- * Flushes the whole page-table including the page in the mapped page-table-area
- *
- * @param virt a virtual address in the page-table
- * @param ptables the page-table mapping-area
- */
-static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables);
-
-static uintptr_t paging_getPTables(tPageDir pdir);
-static size_t paging_remEmptyPt(tPageDir pdir,uintptr_t ptables,size_t pti);
+static sPTE *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create,size_t *createdPts);
+static sPTE paging_getPTEOf(tPageDir pdir,uintptr_t virt);
+static size_t paging_removePts(tPageDir pdir,uint64_t pageNo,uint64_t c,ulong level,ulong depth);
+static size_t paging_remEmptyPts(tPageDir pdir,uintptr_t virt);
+static void paging_tcRemPT(tPageDir pdir,uintptr_t virt);
+extern void tc_update(uint64_t key);
+extern void paging_setrV(uint64_t rv);
 
 #if DEBUGGING
 static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
@@ -90,17 +86,19 @@ void paging_init(void) {
 	uintptr_t rootLoc;
 	ssize_t res;
 	/* set root-location of first process */
-	if((res = pmem_allocateContiguous(8,1)) < 0)
+	if((res = pmem_allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1)) < 0)
 		util_panic("Not enough contiguous memory for the root-location of the first process");
 	rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	/* clear */
-	memclear((void*)rootLoc,PAGE_SIZE * 8);
+	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
 	/* create context for the first process */
 	firstCon.addrSpace = aspace_alloc();
-	/* set value for rV: b1 = 4, b2 = 8, b3 = 1, b4 = 0, page-size = 2^13 */
-	firstCon.rV = 0x48100DUL << 40 | (rootLoc & ~DIR_MAPPED_SPACE) | (firstCon.addrSpace->no << 3);
+	/* set value for rV: b1 = 2, b2 = 4, b3 = 6, b4 = 0, page-size = 2^13 */
+	firstCon.rV = 0x24600DUL << 40 | (rootLoc & ~DIR_MAPPED_SPACE) | (firstCon.addrSpace->no << 3);
 	context = &firstCon;
+	/* enable paging */
+	paging_setrV(firstCon.rV);
 }
 
 tPageDir paging_getCur(void) {
@@ -111,55 +109,11 @@ void paging_setCur(tPageDir pdir) {
 	context = pdir;
 }
 
-static sPTE *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create) {
-	ulong i = virt >> 61;
-	int size1 = SEGSIZE(pdir->rV,i + 1);
-	int size2 = SEGSIZE(pdir->rV,i);
-	uint64_t pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
-	uint64_t limit = 1UL << (10 * (size1 - size2));
-	if(size1 < size2 || pageNo >= limit)
-		return NULL;
-
-	int j = 0;
-	while(pageNo >= 1024) {
-		j++;
-		pageNo /= 1024;
-	}
-	pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
-	uint64_t c = ((pdir->rV & 0xFFFFFFFFFF) >> 13) + size2 + j;
-	for(; j > 0; j--) {
-		ulong ax = (pageNo >> (10 * j)) & 0x3FF;
-		uint64_t *ptpAddr = (uint64_t*)(DIR_MAPPED_SPACE | ((c << 13) + (ax << 3)));
-		uint64_t ptp = *ptpAddr;
-		if(ptp == 0) {
-			if(!create)
-				return NULL;
-			/* allocate page-table and clear it */
-			*ptpAddr = DIR_MAPPED_SPACE | (pmem_allocate() * PAGE_SIZE);
-			memclear((void*)*ptpAddr,PAGE_SIZE);
-			/* put rV.n in that page-table */
-			*ptpAddr |= pdir->addrSpace->no << 3;
-			ptp = *ptpAddr;
-		}
-		c = (ptp & ~DIR_MAPPED_SPACE) >> 13;
-	}
-	return (sPTE*)(DIR_MAPPED_SPACE | (c << 13));
-}
-
-static sPTE paging_getPTEOf(tPageDir pdir,uintptr_t virt) {
-	sPTE pte = {0,0,0,0,0,0};
-	ulong pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
-	sPTE *pt = paging_getPTOf(pdir,virt,false);
-	if(pt)
-		return pt[pageNo % 1024];
-	return pte;
-}
-
 /* TODO perhaps we should move isRange*() to vmm? */
 
 bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > DIR_MAPPED_SPACE || virt + count < virt)
+	if(virt + count > KERNEL_AREA || virt + count < virt)
 		return false;
 
 	return paging_isRangeReadable(virt,count);
@@ -186,7 +140,7 @@ bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 
 bool paging_isRangeUserWritable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > DIR_MAPPED_SPACE || virt + count < virt)
+	if(virt + count > KERNEL_AREA || virt + count < virt)
 		return false;
 
 	return paging_isRangeWritable(virt,count);
@@ -222,7 +176,6 @@ void paging_unmapFromTemp(size_t count) {
 	/* nothing to do */
 }
 
-#if 0
 ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	tFrameNo pdirFrame;
 	ssize_t frmCount = 0;
@@ -239,6 +192,22 @@ ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	p = curThread->proc;
 	if(pmem_getFreeFrames(MM_DEF) < 3)
 		return ERR_NOT_ENOUGH_MEM;
+
+	/* allocate root-location */
+	uintptr_t rootLoc;
+	ssize_t res = pmem_allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1);
+	rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	/* clear */
+	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
+
+	/* build context */
+	sContext *con = kheap_alloc(sizeof(sContext));
+	if(con == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	con->addrSpace = aspace_alloc();
+	con->ptables = 0;
+	con->rV = context->rV & 0xFFFFFF0000000000;
+	con->rV |= (rootLoc & ~DIR_MAPPED_SPACE) | (con->addrSpace->no << 3);
 
 	/* we need a new page-directory */
 	pdirFrame = pmem_allocate();
@@ -309,7 +278,6 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	otherPDir = 0;
 	return stats;
 }
-#endif
 
 bool paging_isPresent(tPageDir pdir,uintptr_t virt) {
 	sPTE pte = paging_getPTEOf(pdir,virt);
@@ -371,9 +339,11 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 	while(count-- > 0) {
 		/* get page-table */
 		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
-			/* TODO stats for pts */
-			pt = paging_getPTOf(pdir,virt,true);
+			size_t ptables = 0;
+			pt = paging_getPTOf(pdir,virt,true,&ptables);
 			assert(pt != NULL);
+			stats.ptables += ptables;
+			pdir->ptables += ptables;
 		}
 
 		/* setup page */
@@ -382,6 +352,7 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 		pte->executable = (flags & PG_EXECUTABLE) >> PG_EXECUTABLE_SHIFT;
 		pte->readable = (flags & PG_PRESENT) >> PG_READABLE_SHIFT;
 		pte->writable = (flags & PG_WRITABLE) >> PG_WRITABLE_SHIFT;
+		pte->addressSpaceNumber = pdir->addrSpace->no;
 		pte->exists = true;
 
 		/* set frame-number */
@@ -405,29 +376,35 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 	return stats;
 }
 
-#if 0
 sAllocStats paging_unmap(uintptr_t virt,size_t count,bool freeFrames) {
-	return paging_unmapFrom(rootLoc,virt,count,freeFrames);
+	return paging_unmapFrom(context,virt,count,freeFrames);
 }
 
 sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool freeFrames) {
 	sAllocStats stats = {0,0};
-	uintptr_t ptables = paging_getPTables(pdir);
-	size_t pti = PT_ENTRY_COUNT;
-	size_t lastPti = PT_ENTRY_COUNT;
-	sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
+	size_t ptables;
+	ulong pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
+	sPTE *pte,*pt = NULL;
+	virt &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {
-		/* remove and free page-table, if necessary */
-		pti = ADDR_TO_PDINDEX(virt);
-		if(pti != lastPti) {
-			if(lastPti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
-				stats.ptables += paging_remEmptyPt(pdir,ptables,lastPti);
-			lastPti = pti;
+		/* get page-table */
+		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
+			/* not the first one? then check if its empty */
+			if(pt) {
+				ptables = paging_remEmptyPts(pdir,virt - PAGE_SIZE);
+				stats.ptables += ptables;
+				pdir->ptables -= ptables;
+			}
+			pt = paging_getPTOf(pdir,virt,false,NULL);
+			assert(pt != NULL);
 		}
 
 		/* remove page and free if necessary */
-		if(pte->present) {
-			pte->present = false;
+		pte = pt + (pageNo % PT_ENTRY_COUNT);
+		if(pte->readable | pte->writable | pte->executable) {
+			pte->readable = false;
+			pte->writable = false;
+			pte->executable = false;
 			if(freeFrames) {
 				pmem_free(pte->frameNumber);
 				stats.frames++;
@@ -435,75 +412,158 @@ sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool free
 		}
 		pte->exists = false;
 
-		/* invalidate TLB-entry */
-		if(pdir == rootLoc)
-			tlb_remove(virt);
-
 		/* to next page */
-		pte++;
 		virt += PAGE_SIZE;
+		pageNo++;
 	}
-	/* check if the last changed pagetable is empty */
-	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
-		stats.ptables += paging_remEmptyPt(pdir,ptables,pti);
+	/* check if the last changed pagetable is empty (pt is NULL if no pages have been unmapped) */
+	if(pt) {
+		ptables = paging_remEmptyPts(pdir,virt - PAGE_SIZE);
+		stats.ptables += ptables;
+		pdir->ptables -= ptables;
+	}
 	return stats;
 }
 
-static size_t paging_remEmptyPt(tPageDir pdir,uintptr_t ptables,size_t pti) {
-	size_t i;
-	sPDEntry *pde;
-	uintptr_t virt = pti * PAGE_SIZE * PT_ENTRY_COUNT;
-	sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-	for(i = 0; i < PT_ENTRY_COUNT; i++) {
-		if(pte[i].exists)
-			return 0;
+static sPTE *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create,size_t *createdPts) {
+	ulong j,i = virt >> 61;
+	ulong size1 = SEGSIZE(pdir->rV,i + 1);
+	ulong size2 = SEGSIZE(pdir->rV,i);
+	uint64_t c,pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
+	uint64_t limit = 1UL << (10 * (size1 - size2));
+	if(size1 < size2 || pageNo >= limit)
+		return NULL;
+
+	j = 0;
+	while(pageNo >= PT_ENTRY_COUNT) {
+		j++;
+		pageNo /= PT_ENTRY_COUNT;
 	}
-	/* empty => can be removed */
-	pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(pdir) + pti;
-	pde->present = false;
-	pde->exists = false;
-	pmem_free(pde->ptFrameNo);
-	if(ptables == MAPPED_PTS_START)
-		paging_flushPageTable(virt,ptables);
-	else
-		tlb_remove((uintptr_t)pte);
-	return 1;
+	pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
+	c = ((pdir->rV & 0xFFFFFFFFFF) >> 13) + size2 + j;
+	for(; j > 0; j--) {
+		ulong ax = (pageNo >> (10 * j)) & 0x3FF;
+		uint64_t *ptpAddr = (uint64_t*)(DIR_MAPPED_SPACE | ((c << 13) + (ax << 3)));
+		uint64_t ptp = *ptpAddr;
+		if(ptp == 0) {
+			if(!create)
+				return NULL;
+			/* allocate page-table and clear it */
+			*ptpAddr = DIR_MAPPED_SPACE | (pmem_allocate() * PAGE_SIZE);
+			memclear((void*)*ptpAddr,PAGE_SIZE);
+			/* put rV.n in that page-table */
+			*ptpAddr |= pdir->addrSpace->no << 3;
+			ptp = *ptpAddr;
+			if(createdPts)
+				(*createdPts)++;
+		}
+		c = (ptp & ~DIR_MAPPED_SPACE) >> 13;
+	}
+	return (sPTE*)(DIR_MAPPED_SPACE | (c << 13));
 }
 
-size_t paging_getPTableCount(tPageDir pdir) {
-	size_t i,count = 0;
-	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(pdir);
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
-		if(pdirAddr[i].present)
+static sPTE paging_getPTEOf(tPageDir pdir,uintptr_t virt) {
+	sPTE pte = {0,0,0,0,0,0};
+	ulong pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
+	sPTE *pt = paging_getPTOf(pdir,virt,false,NULL);
+	if(pt)
+		return pt[pageNo % PT_ENTRY_COUNT];
+	return pte;
+}
+
+static size_t paging_removePts(tPageDir pdir,uint64_t pageNo,uint64_t c,ulong level,ulong depth) {
+	size_t i;
+	bool empty = true;
+	size_t count = 0;
+	/* page-table with PTPs? */
+	if(level > 0) {
+		ulong ax = (pageNo >> (10 * level)) & 0x3FF;
+		uint64_t *ptpAddr = (uint64_t*)(DIR_MAPPED_SPACE | ((c << 13) + (ax << 3)));
+		count = paging_removePts(pdir,pageNo,(*ptpAddr & ~DIR_MAPPED_SPACE) >> 13,level - 1,depth + 1);
+		/* if count is equal to level, we know that all deeper page-tables have been free'd.
+		 * therefore, we can remove the entry in our page-table */
+		if(count == level)
+			*ptpAddr = 0;
+		/* don't free frames in the root-location */
+		if(depth > 0) {
+			/* now go through our page-table and check whether there still are used entries */
+			sPTP *ptp = (sPTP*)(DIR_MAPPED_SPACE | (c << 13));
+			for(i = 0; i < PT_ENTRY_COUNT; i++) {
+				if(ptp->ptFrameNo != 0) {
+					empty = false;
+					break;
+				}
+				ptp++;
+			}
+			/* free the frame, if the pt is empty */
+			if(empty) {
+				pmem_free(c);
+				count++;
+			}
+		}
+	}
+	else if(depth > 0) {
+		/* go through our page-table and check whether there still are used entries */
+		sPTE *pte = (sPTE*)(DIR_MAPPED_SPACE | (c << 13));
+		for(i = 0; i < PT_ENTRY_COUNT; i++) {
+			if(pte->exists) {
+				empty = false;
+				break;
+			}
+			pte++;
+		}
+		/* free the frame, if the pt is empty */
+		if(empty) {
+			/* remove all pages in that page-table from the TCs */
+			paging_tcRemPT(pdir,pageNo * PAGE_SIZE);
+			pmem_free(c);
 			count++;
+		}
 	}
 	return count;
 }
 
-void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
-	size_t i,j;
-	uintptr_t ptables = paging_getPTables(pdir);
-	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(pdir);
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
-		if(pdirAddr[i].present) {
-			uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * i;
-			sPTEntry *pte = (sPTEntry*)(ptables + i * PAGE_SIZE);
-			prf_sprintf(buf,"PageTable 0x%x (VM: 0x%08x - 0x%08x)\n",i,addr,
-					addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
-			for(j = 0; j < PT_ENTRY_COUNT; j++) {
-				if(pte[j].exists) {
-					sPTEntry *page = pte + j;
-					prf_sprintf(buf,"\tPage 0x%03x: ",j);
-					prf_sprintf(buf,"frame 0x%05x [%c%c] (VM: 0x%08x - 0x%08x)\n",
-							page->frameNumber,page->present ? 'p' : '-',
-							page->writable ? 'w' : 'r',
-							addr,addr + PAGE_SIZE - 1);
-				}
-				addr += PAGE_SIZE;
-			}
-		}
+static size_t paging_remEmptyPts(tPageDir pdir,uintptr_t virt) {
+	ulong i = virt >> 61;
+	uint64_t pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
+	int j = 0;
+	while(pageNo >= PT_ENTRY_COUNT) {
+		j++;
+		pageNo /= PT_ENTRY_COUNT;
+	}
+	pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
+	uint64_t c = ((pdir->rV & 0xFFFFFFFFFF) >> 13) + SEGSIZE(pdir->rV,i) + j;
+	return paging_removePts(pdir,pageNo,c,j,0);
+}
+
+static void paging_tcRemPT(tPageDir pdir,uintptr_t virt) {
+	size_t i;
+	uint64_t key = (virt & ~(PAGE_SIZE - 1)) | (pdir->addrSpace->no << 3);
+	for(i = 0; i < PT_ENTRY_COUNT; i++) {
+		tc_update(key);
+		key += PAGE_SIZE;
 	}
 }
+
+size_t paging_getPTableCount(tPageDir pdir) {
+	return pdir->ptables;
+}
+
+#if 0
+static sStringBuffer *strBuf = NULL;
+
+static void paging_sprintfPrint(char c) {
+	prf_sprintf(strBuf,"%c",c);
+}
+
+void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
+	size_t i,j;
+	strBuf = buf;
+	vid_setPrintFunc(paging_sprintfPrint);
+	paging_dbg_printPDir(pdir,0);
+	vid_unsetPrintFunc();
+}
+#endif
 
 #if 0
 void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
@@ -516,59 +576,42 @@ void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
 }
 #endif
 
-static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables) {
-	int i;
-	uintptr_t mapAddr = ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-	/* to beginning of page-table */
-	virt &= ~(PT_ENTRY_COUNT * PAGE_SIZE - 1);
-	for(i = TLB_FIXED; i < TLB_SIZE; i++) {
-		uint entryHi,entryLo;
-		tlb_get(i,&entryHi,&entryLo);
-		/* affected by the page-table? */
-		if((entryHi >= virt && entryHi < virt + PAGE_SIZE * PT_ENTRY_COUNT) || entryHi == mapAddr)
-			tlb_set(i,DIR_MAPPED_SPACE,0);
-	}
-}
-
-static uintptr_t paging_getPTables(tPageDir pdir) {
-	sPDEntry *pde;
-	if(pdir == rootLoc)
-		return MAPPED_PTS_START;
-	if(pdir == otherPDir)
-		return TMPMAP_PTS_START;
-	/* map page-tables to other area*/
-	pde = ((sPDEntry*)PAGE_DIR_DIRMAP) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
-	pde->present = true;
-	pde->exists = true;
-	pde->ptFrameNo = (pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT;
-	pde->writable = true;
-	/* we want to access the whole page-table */
-	paging_flushPageTable(TMPMAP_PTS_START,MAPPED_PTS_START);
-	otherPDir = pdir;
-	return TMPMAP_PTS_START;
-}
-#endif
-
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-#if 0
-size_t paging_dbg_getPageCount(void) {
-	size_t i,x,count = 0;
-	sPTEntry *pagetable;
-	sPDEntry *pdir = (sPDEntry*)PAGE_DIR_DIRMAP;
-	for(i = 0; i < PT_ENTRY_COUNT; i++) {
-		if(pdir[i].present) {
-			pagetable = (sPTEntry*)(MAPPED_PTS_START + i * PAGE_SIZE);
-			for(x = 0; x < PT_ENTRY_COUNT; x++) {
-				if(pagetable[x].present)
-					count++;
-			}
+static size_t paging_dbg_getPageCountOf(uint64_t *pt,size_t level) {
+	size_t i,count = 0;
+	sPTE *pte;
+	if(level > 0) {
+		/* page-table with PTPs */
+		for(i = 0; i < PT_ENTRY_COUNT; i++) {
+			if(pt[i] != 0)
+				count += paging_dbg_getPageCountOf((uint64_t*)(pt[i] & 0xFFFFFFFFFFFFE000),level - 1);
+		}
+	}
+	else {
+		/* page-table with PTEs */
+		pte = (sPTE*)pt;
+		for(i = 0; i < PT_ENTRY_COUNT; i++) {
+			if(pte[i].readable || pte[i].writable || pte[i].executable)
+				count++;
 		}
 	}
 	return count;
 }
-#endif
+
+size_t paging_dbg_getPageCount(void) {
+	size_t i,j,count = 0;
+	uintptr_t root = DIR_MAPPED_SPACE | (context->rV & 0xFFFFFFE000);
+	for(i = 0; i < SEGMENT_COUNT; i++) {
+		ulong segSize = SEGSIZE(context->rV,i + 1) - SEGSIZE(context->rV,i);
+		for(j = 0; j < segSize; j++) {
+			count += paging_dbg_getPageCountOf((uint64_t*)root,j);
+			root += PAGE_SIZE;
+		}
+	}
+	return count;
+}
 
 void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt) {
 	sPTE pte = paging_getPTEOf(pdir,virt);
@@ -588,12 +631,12 @@ void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rV & 0xFFFFFFE000);
 	/* go through all page-tables in the root-location */
 	vid_printf("root-location @ %p:\n",root);
-	for(i = 0; i < 2; i++) {
+	for(i = 0; i < SEGMENT_COUNT; i++) {
 		uintptr_t addr = (i << 61);
 		vid_printf("segment %Su:\n",i);
-		for(j = 0; j < 4; j++) {
+		for(j = 0; j < PTS_PER_SEGMENT; j++) {
 			paging_dbg_printPageTable(i,addr,(uint64_t*)root,j,1);
-			addr += PAGE_SIZE * (1UL << (10 * (j + 1)));
+			addr = (i << 61) | (PAGE_SIZE * (1UL << (10 * (j + 1))));
 			root += PAGE_SIZE;
 		}
 	}

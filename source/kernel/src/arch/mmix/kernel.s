@@ -36,17 +36,12 @@
 	.extern curPDir
 	.extern util_panic
 
-	.global cpu_getBadAddr
-
 	.global start
-	.global tlb_get
-	.global tlb_set
-	.global tlb_remove
 
 	.global logByte
 	.global debugc
-
-	.global intrpt_setMask
+	.global paging_setrV
+	.global tc_update
 
 	.global thread_idle
 	.global	thread_save
@@ -93,10 +88,28 @@ loop:
 	JMP		loop
 
 #===========================================
+# Paging
+#===========================================
+
+# void paging_setrV(uint64_t rv)
+paging_setrV:
+	PUT		rV,$0
+	POP		0,0
+
+#===========================================
+# TC
+#===========================================
+
+# void tc_update(uint64_t key)
+tc_update:
+	LDVTS	$0,$0,0
+	POP		0,0
+
+#===========================================
 # Input/Output
 #===========================================
 
-# void debugc(octa character)
+# void debugc(char character)
 debugc:
 	GET		$1,rJ
 	SETH	$2,#8002						# base address: #8002000000000000

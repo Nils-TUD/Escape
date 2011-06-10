@@ -110,6 +110,8 @@ void thread_setRunning(sThread *t) {
 }
 
 sThread *thread_getById(tTid tid) {
+	if(tid >= ARRAY_SIZE(tidToThread))
+		return NULL;
 	return tidToThread[tid];
 }
 

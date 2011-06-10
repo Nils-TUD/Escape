@@ -57,21 +57,26 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	paging_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
+	/*vid_printf("\n");
 	paging_map(0,NULL,10,PG_PRESENT | PG_WRITABLE | PG_EXECUTABLE);
 	paging_map(0x2000000000000000,NULL,4,PG_PRESENT);
 	paging_map(0x2000000000008000,NULL,4,PG_WRITABLE);
 	paging_map(0x2000000000010000,NULL,4,PG_EXECUTABLE);
 	paging_map(PAGE_SIZE * PT_ENTRY_COUNT,NULL,4,PG_WRITABLE);
 	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * 2,NULL,3,PG_EXECUTABLE);
-	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT,NULL,2,PG_PRESENT);
-	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT * PT_ENTRY_COUNT + PAGE_SIZE * 900,
-			NULL,126,PG_PRESENT);
-	paging_map(1UL << 61 | PAGE_SIZE * PT_ENTRY_COUNT,NULL,4,PG_WRITABLE);
-	paging_map(1UL << 61 | PAGE_SIZE * PT_ENTRY_COUNT * 2,NULL,3,PG_EXECUTABLE);
-	paging_map(1UL << 61 | PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT,NULL,2,PG_PRESENT);
-	paging_map(1UL << 61 | PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT * PT_ENTRY_COUNT + PAGE_SIZE * 900,
-			NULL,126,PG_PRESENT);
+	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * (PT_ENTRY_COUNT - 1),NULL,2,PG_PRESENT);
+	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * (PT_ENTRY_COUNT - 2),NULL,26,PG_PRESENT);
+	paging_map((1UL << 61) | (PAGE_SIZE * PT_ENTRY_COUNT),NULL,4,PG_WRITABLE);
+	paging_map((1UL << 61) | (PAGE_SIZE * PT_ENTRY_COUNT * 2),NULL,3,PG_EXECUTABLE);
 	paging_dbg_printCur(PD_PART_ALL);
+
+	paging_unmap(0x2000000000000000,8,true);
+	paging_unmap(0x2000000000010000,4,true);
+	paging_unmap(PAGE_SIZE * PT_ENTRY_COUNT,4,true);
+	paging_unmap(PAGE_SIZE * PT_ENTRY_COUNT * 2,3,true);
+	paging_unmap(PAGE_SIZE * PT_ENTRY_COUNT * (PT_ENTRY_COUNT - 1),2,true);
+	paging_unmap(PAGE_SIZE * PT_ENTRY_COUNT * (PT_ENTRY_COUNT - 2),25,true);
+	paging_dbg_printCur(PD_PART_ALL);*/
 
 #if 0
 	/* vfs */

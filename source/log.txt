@@ -1,321 +1,709 @@
-Memory size: 33554432 bytes
-Disk size: 92897280 bytes
-Kernelstack-begin: 8000:0000:0001:8000
-Kernelstack-end: 8000:0000:0001:8138
-Boot modules:
-	    /boot/kernel.bin
-	    	    [8000:0000:0000:0000 .. 8000:0000:0001:7c7f]
-	    /sbin/disk /system/devices/disk
-	    	    [8000:0000:0001:a000 .. 8000:0000:0004:2dd3]
-Initializing physical memory-management...                                  DONEInitializing paging...                                                      DONEroot-location @ 8000:0000:0004:e000:
-segment 0:
-  0: fff [rwx] (VM: 0000:0000:0000:0000 - 0000:0000:0000:1fff)
-  1: ffe [rwx] (VM: 0000:0000:0000:2000 - 0000:0000:0000:3fff)
-  2: ffd [rwx] (VM: 0000:0000:0000:4000 - 0000:0000:0000:5fff)
-  3: ffc [rwx] (VM: 0000:0000:0000:6000 - 0000:0000:0000:7fff)
-  4: ffb [rwx] (VM: 0000:0000:0000:8000 - 0000:0000:0000:9fff)
-  5: ffa [rwx] (VM: 0000:0000:0000:a000 - 0000:0000:0000:bfff)
-  6: ff9 [rwx] (VM: 0000:0000:0000:c000 - 0000:0000:0000:dfff)
-  7: ff8 [rwx] (VM: 0000:0000:0000:e000 - 0000:0000:0000:ffff)
-  8: ff7 [rwx] (VM: 0000:0000:0001:0000 - 0000:0000:0001:1fff)
-  9: ff6 [rwx] (VM: 0000:0000:0001:2000 - 0000:0000:0001:3fff)
-  PTP1[1]=fe9 (VM: 0000:0000:0100:0000 - 0000:0000:017f:ffff)
-    0: fe8 [-w-] (VM: 0000:0000:0100:0000 - 0000:0000:0100:1fff)
-    1: fe7 [-w-] (VM: 0000:0000:0100:2000 - 0000:0000:0100:3fff)
-    2: fe6 [-w-] (VM: 0000:0000:0100:4000 - 0000:0000:0100:5fff)
-    3: fe5 [-w-] (VM: 0000:0000:0100:6000 - 0000:0000:0100:7fff)
-  PTP1[2]=fe4 (VM: 0000:0000:0180:0000 - 0000:0000:01ff:ffff)
-    0: fe3 [--x] (VM: 0000:0000:0180:0000 - 0000:0000:0180:1fff)
-    1: fe2 [--x] (VM: 0000:0000:0180:2000 - 0000:0000:0180:3fff)
-    2: fe1 [--x] (VM: 0000:0000:0180:4000 - 0000:0000:0180:5fff)
-  PTP2[1]=fe0 (VM: 0000:0004:0080:0000 - 0000:0006:007f:ffff)
-    PTP1[0]=fdf (VM: 0000:0004:0080:0000 - 0000:0004:00ff:ffff)
-      0: fde [r--] (VM: 0000:0004:0080:0000 - 0000:0004:0080:1fff)
-      1: fdd [r--] (VM: 0000:0004:0080:2000 - 0000:0004:0080:3fff)
-  PTP3[1]=fdc (VM: 0000:1002:0080:0000 - 0000:1802:007f:ffff)
-    PTP2[0]=fdb (VM: 0000:1002:0080:0000 - 0000:1004:007f:ffff)
-      PTP1[0]=fda (VM: 0000:1002:0080:0000 - 0000:1002:00ff:ffff)
-        384: fd9 [r--] (VM: 0000:1002:00f0:8000 - 0000:1002:00f0:9fff)
-        385: fd8 [r--] (VM: 0000:1002:00f0:a000 - 0000:1002:00f0:bfff)
-        386: fd7 [r--] (VM: 0000:1002:00f0:c000 - 0000:1002:00f0:dfff)
-        387: fd6 [r--] (VM: 0000:1002:00f0:e000 - 0000:1002:00f0:ffff)
-        388: fd5 [r--] (VM: 0000:1002:00f1:0000 - 0000:1002:00f1:1fff)
-        389: fd4 [r--] (VM: 0000:1002:00f1:2000 - 0000:1002:00f1:3fff)
-        38a: fd3 [r--] (VM: 0000:1002:00f1:4000 - 0000:1002:00f1:5fff)
-        38b: fd2 [r--] (VM: 0000:1002:00f1:6000 - 0000:1002:00f1:7fff)
-        38c: fd1 [r--] (VM: 0000:1002:00f1:8000 - 0000:1002:00f1:9fff)
-        38d: fd0 [r--] (VM: 0000:1002:00f1:a000 - 0000:1002:00f1:bfff)
-        38e: fcf [r--] (VM: 0000:1002:00f1:c000 - 0000:1002:00f1:dfff)
-        38f: fce [r--] (VM: 0000:1002:00f1:e000 - 0000:1002:00f1:ffff)
-        390: fcd [r--] (VM: 0000:1002:00f2:0000 - 0000:1002:00f2:1fff)
-        391: fcc [r--] (VM: 0000:1002:00f2:2000 - 0000:1002:00f2:3fff)
-        392: fcb [r--] (VM: 0000:1002:00f2:4000 - 0000:1002:00f2:5fff)
-        393: fca [r--] (VM: 0000:1002:00f2:6000 - 0000:1002:00f2:7fff)
-        394: fc9 [r--] (VM: 0000:1002:00f2:8000 - 0000:1002:00f2:9fff)
-        395: fc8 [r--] (VM: 0000:1002:00f2:a000 - 0000:1002:00f2:bfff)
-        396: fc7 [r--] (VM: 0000:1002:00f2:c000 - 0000:1002:00f2:dfff)
-        397: fc6 [r--] (VM: 0000:1002:00f2:e000 - 0000:1002:00f2:ffff)
-        398: fc5 [r--] (VM: 0000:1002:00f3:0000 - 0000:1002:00f3:1fff)
-        399: fc4 [r--] (VM: 0000:1002:00f3:2000 - 0000:1002:00f3:3fff)
-        39a: fc3 [r--] (VM: 0000:1002:00f3:4000 - 0000:1002:00f3:5fff)
-        39b: fc2 [r--] (VM: 0000:1002:00f3:6000 - 0000:1002:00f3:7fff)
-        39c: fc1 [r--] (VM: 0000:1002:00f3:8000 - 0000:1002:00f3:9fff)
-        39d: fc0 [r--] (VM: 0000:1002:00f3:a000 - 0000:1002:00f3:bfff)
-        39e: fbf [r--] (VM: 0000:1002:00f3:c000 - 0000:1002:00f3:dfff)
-        39f: fbe [r--] (VM: 0000:1002:00f3:e000 - 0000:1002:00f3:ffff)
-        3a0: fbd [r--] (VM: 0000:1002:00f4:0000 - 0000:1002:00f4:1fff)
-        3a1: fbc [r--] (VM: 0000:1002:00f4:2000 - 0000:1002:00f4:3fff)
-        3a2: fbb [r--] (VM: 0000:1002:00f4:4000 - 0000:1002:00f4:5fff)
-        3a3: fba [r--] (VM: 0000:1002:00f4:6000 - 0000:1002:00f4:7fff)
-        3a4: fb9 [r--] (VM: 0000:1002:00f4:8000 - 0000:1002:00f4:9fff)
-        3a5: fb8 [r--] (VM: 0000:1002:00f4:a000 - 0000:1002:00f4:bfff)
-        3a6: fb7 [r--] (VM: 0000:1002:00f4:c000 - 0000:1002:00f4:dfff)
-        3a7: fb6 [r--] (VM: 0000:1002:00f4:e000 - 0000:1002:00f4:ffff)
-        3a8: fb5 [r--] (VM: 0000:1002:00f5:0000 - 0000:1002:00f5:1fff)
-        3a9: fb4 [r--] (VM: 0000:1002:00f5:2000 - 0000:1002:00f5:3fff)
-        3aa: fb3 [r--] (VM: 0000:1002:00f5:4000 - 0000:1002:00f5:5fff)
-        3ab: fb2 [r--] (VM: 0000:1002:00f5:6000 - 0000:1002:00f5:7fff)
-        3ac: fb1 [r--] (VM: 0000:1002:00f5:8000 - 0000:1002:00f5:9fff)
-        3ad: fb0 [r--] (VM: 0000:1002:00f5:a000 - 0000:1002:00f5:bfff)
-        3ae: faf [r--] (VM: 0000:1002:00f5:c000 - 0000:1002:00f5:dfff)
-        3af: fae [r--] (VM: 0000:1002:00f5:e000 - 0000:1002:00f5:ffff)
-        3b0: fad [r--] (VM: 0000:1002:00f6:0000 - 0000:1002:00f6:1fff)
-        3b1: fac [r--] (VM: 0000:1002:00f6:2000 - 0000:1002:00f6:3fff)
-        3b2: fab [r--] (VM: 0000:1002:00f6:4000 - 0000:1002:00f6:5fff)
-        3b3: faa [r--] (VM: 0000:1002:00f6:6000 - 0000:1002:00f6:7fff)
-        3b4: fa9 [r--] (VM: 0000:1002:00f6:8000 - 0000:1002:00f6:9fff)
-        3b5: fa8 [r--] (VM: 0000:1002:00f6:a000 - 0000:1002:00f6:bfff)
-        3b6: fa7 [r--] (VM: 0000:1002:00f6:c000 - 0000:1002:00f6:dfff)
-        3b7: fa6 [r--] (VM: 0000:1002:00f6:e000 - 0000:1002:00f6:ffff)
-        3b8: fa5 [r--] (VM: 0000:1002:00f7:0000 - 0000:1002:00f7:1fff)
-        3b9: fa4 [r--] (VM: 0000:1002:00f7:2000 - 0000:1002:00f7:3fff)
-        3ba: fa3 [r--] (VM: 0000:1002:00f7:4000 - 0000:1002:00f7:5fff)
-        3bb: fa2 [r--] (VM: 0000:1002:00f7:6000 - 0000:1002:00f7:7fff)
-        3bc: fa1 [r--] (VM: 0000:1002:00f7:8000 - 0000:1002:00f7:9fff)
-        3bd: fa0 [r--] (VM: 0000:1002:00f7:a000 - 0000:1002:00f7:bfff)
-        3be: f9f [r--] (VM: 0000:1002:00f7:c000 - 0000:1002:00f7:dfff)
-        3bf: f9e [r--] (VM: 0000:1002:00f7:e000 - 0000:1002:00f7:ffff)
-        3c0: f9d [r--] (VM: 0000:1002:00f8:0000 - 0000:1002:00f8:1fff)
-        3c1: f9c [r--] (VM: 0000:1002:00f8:2000 - 0000:1002:00f8:3fff)
-        3c2: f9b [r--] (VM: 0000:1002:00f8:4000 - 0000:1002:00f8:5fff)
-        3c3: f9a [r--] (VM: 0000:1002:00f8:6000 - 0000:1002:00f8:7fff)
-        3c4: f99 [r--] (VM: 0000:1002:00f8:8000 - 0000:1002:00f8:9fff)
-        3c5: f98 [r--] (VM: 0000:1002:00f8:a000 - 0000:1002:00f8:bfff)
-        3c6: f97 [r--] (VM: 0000:1002:00f8:c000 - 0000:1002:00f8:dfff)
-        3c7: f96 [r--] (VM: 0000:1002:00f8:e000 - 0000:1002:00f8:ffff)
-        3c8: f95 [r--] (VM: 0000:1002:00f9:0000 - 0000:1002:00f9:1fff)
-        3c9: f94 [r--] (VM: 0000:1002:00f9:2000 - 0000:1002:00f9:3fff)
-        3ca: f93 [r--] (VM: 0000:1002:00f9:4000 - 0000:1002:00f9:5fff)
-        3cb: f92 [r--] (VM: 0000:1002:00f9:6000 - 0000:1002:00f9:7fff)
-        3cc: f91 [r--] (VM: 0000:1002:00f9:8000 - 0000:1002:00f9:9fff)
-        3cd: f90 [r--] (VM: 0000:1002:00f9:a000 - 0000:1002:00f9:bfff)
-        3ce: f8f [r--] (VM: 0000:1002:00f9:c000 - 0000:1002:00f9:dfff)
-        3cf: f8e [r--] (VM: 0000:1002:00f9:e000 - 0000:1002:00f9:ffff)
-        3d0: f8d [r--] (VM: 0000:1002:00fa:0000 - 0000:1002:00fa:1fff)
-        3d1: f8c [r--] (VM: 0000:1002:00fa:2000 - 0000:1002:00fa:3fff)
-        3d2: f8b [r--] (VM: 0000:1002:00fa:4000 - 0000:1002:00fa:5fff)
-        3d3: f8a [r--] (VM: 0000:1002:00fa:6000 - 0000:1002:00fa:7fff)
-        3d4: f89 [r--] (VM: 0000:1002:00fa:8000 - 0000:1002:00fa:9fff)
-        3d5: f88 [r--] (VM: 0000:1002:00fa:a000 - 0000:1002:00fa:bfff)
-        3d6: f87 [r--] (VM: 0000:1002:00fa:c000 - 0000:1002:00fa:dfff)
-        3d7: f86 [r--] (VM: 0000:1002:00fa:e000 - 0000:1002:00fa:ffff)
-        3d8: f85 [r--] (VM: 0000:1002:00fb:0000 - 0000:1002:00fb:1fff)
-        3d9: f84 [r--] (VM: 0000:1002:00fb:2000 - 0000:1002:00fb:3fff)
-        3da: f83 [r--] (VM: 0000:1002:00fb:4000 - 0000:1002:00fb:5fff)
-        3db: f82 [r--] (VM: 0000:1002:00fb:6000 - 0000:1002:00fb:7fff)
-        3dc: f81 [r--] (VM: 0000:1002:00fb:8000 - 0000:1002:00fb:9fff)
-        3dd: f80 [r--] (VM: 0000:1002:00fb:a000 - 0000:1002:00fb:bfff)
-        3de: f7f [r--] (VM: 0000:1002:00fb:c000 - 0000:1002:00fb:dfff)
-        3df: f7e [r--] (VM: 0000:1002:00fb:e000 - 0000:1002:00fb:ffff)
-        3e0: f7d [r--] (VM: 0000:1002:00fc:0000 - 0000:1002:00fc:1fff)
-        3e1: f7c [r--] (VM: 0000:1002:00fc:2000 - 0000:1002:00fc:3fff)
-        3e2: f7b [r--] (VM: 0000:1002:00fc:4000 - 0000:1002:00fc:5fff)
-        3e3: f7a [r--] (VM: 0000:1002:00fc:6000 - 0000:1002:00fc:7fff)
-        3e4: f79 [r--] (VM: 0000:1002:00fc:8000 - 0000:1002:00fc:9fff)
-        3e5: f78 [r--] (VM: 0000:1002:00fc:a000 - 0000:1002:00fc:bfff)
-        3e6: f77 [r--] (VM: 0000:1002:00fc:c000 - 0000:1002:00fc:dfff)
-        3e7: f76 [r--] (VM: 0000:1002:00fc:e000 - 0000:1002:00fc:ffff)
-        3e8: f75 [r--] (VM: 0000:1002:00fd:0000 - 0000:1002:00fd:1fff)
-        3e9: f74 [r--] (VM: 0000:1002:00fd:2000 - 0000:1002:00fd:3fff)
-        3ea: f73 [r--] (VM: 0000:1002:00fd:4000 - 0000:1002:00fd:5fff)
-        3eb: f72 [r--] (VM: 0000:1002:00fd:6000 - 0000:1002:00fd:7fff)
-        3ec: f71 [r--] (VM: 0000:1002:00fd:8000 - 0000:1002:00fd:9fff)
-        3ed: f70 [r--] (VM: 0000:1002:00fd:a000 - 0000:1002:00fd:bfff)
-        3ee: f6f [r--] (VM: 0000:1002:00fd:c000 - 0000:1002:00fd:dfff)
-        3ef: f6e [r--] (VM: 0000:1002:00fd:e000 - 0000:1002:00fd:ffff)
-        3f0: f6d [r--] (VM: 0000:1002:00fe:0000 - 0000:1002:00fe:1fff)
-        3f1: f6c [r--] (VM: 0000:1002:00fe:2000 - 0000:1002:00fe:3fff)
-        3f2: f6b [r--] (VM: 0000:1002:00fe:4000 - 0000:1002:00fe:5fff)
-        3f3: f6a [r--] (VM: 0000:1002:00fe:6000 - 0000:1002:00fe:7fff)
-        3f4: f69 [r--] (VM: 0000:1002:00fe:8000 - 0000:1002:00fe:9fff)
-        3f5: f68 [r--] (VM: 0000:1002:00fe:a000 - 0000:1002:00fe:bfff)
-        3f6: f67 [r--] (VM: 0000:1002:00fe:c000 - 0000:1002:00fe:dfff)
-        3f7: f66 [r--] (VM: 0000:1002:00fe:e000 - 0000:1002:00fe:ffff)
-        3f8: f65 [r--] (VM: 0000:1002:00ff:0000 - 0000:1002:00ff:1fff)
-        3f9: f64 [r--] (VM: 0000:1002:00ff:2000 - 0000:1002:00ff:3fff)
-        3fa: f63 [r--] (VM: 0000:1002:00ff:4000 - 0000:1002:00ff:5fff)
-        3fb: f62 [r--] (VM: 0000:1002:00ff:6000 - 0000:1002:00ff:7fff)
-        3fc: f61 [r--] (VM: 0000:1002:00ff:8000 - 0000:1002:00ff:9fff)
-        3fd: f60 [r--] (VM: 0000:1002:00ff:a000 - 0000:1002:00ff:bfff)
-        3fe: f5f [r--] (VM: 0000:1002:00ff:c000 - 0000:1002:00ff:dfff)
-        3ff: f5e [r--] (VM: 0000:1002:00ff:e000 - 0000:1002:00ff:ffff)
-      PTP1[1]=f5d (VM: 0000:1002:0100:0000 - 0000:1002:017f:ffff)
-        0: f5c [r--] (VM: 0000:1002:0100:0000 - 0000:1002:0100:1fff)
-        1: f5b [r--] (VM: 0000:1002:0100:2000 - 0000:1002:0100:3fff)
-segment 1:
-  0: ff5 [r--] (VM: 2000:0000:0000:0000 - 2000:0000:0000:1fff)
-  1: ff4 [r--] (VM: 2000:0000:0000:2000 - 2000:0000:0000:3fff)
-  2: ff3 [r--] (VM: 2000:0000:0000:4000 - 2000:0000:0000:5fff)
-  3: ff2 [r--] (VM: 2000:0000:0000:6000 - 2000:0000:0000:7fff)
-  4: ff1 [-w-] (VM: 2000:0000:0000:8000 - 2000:0000:0000:9fff)
-  5: ff0 [-w-] (VM: 2000:0000:0000:a000 - 2000:0000:0000:bfff)
-  6: fef [-w-] (VM: 2000:0000:0000:c000 - 2000:0000:0000:dfff)
-  7: fee [-w-] (VM: 2000:0000:0000:e000 - 2000:0000:0000:ffff)
-  8: fed [--x] (VM: 2000:0000:0001:0000 - 2000:0000:0001:1fff)
-  9: fec [--x] (VM: 2000:0000:0001:2000 - 2000:0000:0001:3fff)
-  a: feb [--x] (VM: 2000:0000:0001:4000 - 2000:0000:0001:5fff)
-  b: fea [--x] (VM: 2000:0000:0001:6000 - 2000:0000:0001:7fff)
-  PTP1[1]=f5a (VM: 2000:0000:0100:0000 - 2000:0000:017f:ffff)
-    0: f59 [-w-] (VM: 2000:0000:0100:0000 - 2000:0000:0100:1fff)
-    1: f58 [-w-] (VM: 2000:0000:0100:2000 - 2000:0000:0100:3fff)
-    2: f57 [-w-] (VM: 2000:0000:0100:4000 - 2000:0000:0100:5fff)
-    3: f56 [-w-] (VM: 2000:0000:0100:6000 - 2000:0000:0100:7fff)
-  PTP1[2]=f55 (VM: 2000:0000:0180:0000 - 2000:0000:01ff:ffff)
-    0: f54 [--x] (VM: 2000:0000:0180:0000 - 2000:0000:0180:1fff)
-    1: f53 [--x] (VM: 2000:0000:0180:2000 - 2000:0000:0180:3fff)
-    2: f52 [--x] (VM: 2000:0000:0180:4000 - 2000:0000:0180:5fff)
-  PTP2[1]=f51 (VM: 2000:0004:0080:0000 - 2000:0006:007f:ffff)
-    PTP1[0]=f50 (VM: 2000:0004:0080:0000 - 2000:0004:00ff:ffff)
-      0: f4f [r--] (VM: 2000:0004:0080:0000 - 2000:0004:0080:1fff)
-      1: f4e [r--] (VM: 2000:0004:0080:2000 - 2000:0004:0080:3fff)
-  PTP3[1]=f4d (VM: 2000:1002:0080:0000 - 2000:1802:007f:ffff)
-    PTP2[0]=f4c (VM: 2000:1002:0080:0000 - 2000:1004:007f:ffff)
-      PTP1[0]=f4b (VM: 2000:1002:0080:0000 - 2000:1002:00ff:ffff)
-        384: f4a [r--] (VM: 2000:1002:00f0:8000 - 2000:1002:00f0:9fff)
-        385: f49 [r--] (VM: 2000:1002:00f0:a000 - 2000:1002:00f0:bfff)
-        386: f48 [r--] (VM: 2000:1002:00f0:c000 - 2000:1002:00f0:dfff)
-        387: f47 [r--] (VM: 2000:1002:00f0:e000 - 2000:1002:00f0:ffff)
-        388: f46 [r--] (VM: 2000:1002:00f1:0000 - 2000:1002:00f1:1fff)
-        389: f45 [r--] (VM: 2000:1002:00f1:2000 - 2000:1002:00f1:3fff)
-        38a: f44 [r--] (VM: 2000:1002:00f1:4000 - 2000:1002:00f1:5fff)
-        38b: f43 [r--] (VM: 2000:1002:00f1:6000 - 2000:1002:00f1:7fff)
-        38c: f42 [r--] (VM: 2000:1002:00f1:8000 - 2000:1002:00f1:9fff)
-        38d: f41 [r--] (VM: 2000:1002:00f1:a000 - 2000:1002:00f1:bfff)
-        38e: f40 [r--] (VM: 2000:1002:00f1:c000 - 2000:1002:00f1:dfff)
-        38f: f3f [r--] (VM: 2000:1002:00f1:e000 - 2000:1002:00f1:ffff)
-        390: f3e [r--] (VM: 2000:1002:00f2:0000 - 2000:1002:00f2:1fff)
-        391: f3d [r--] (VM: 2000:1002:00f2:2000 - 2000:1002:00f2:3fff)
-        392: f3c [r--] (VM: 2000:1002:00f2:4000 - 2000:1002:00f2:5fff)
-        393: f3b [r--] (VM: 2000:1002:00f2:6000 - 2000:1002:00f2:7fff)
-        394: f3a [r--] (VM: 2000:1002:00f2:8000 - 2000:1002:00f2:9fff)
-        395: f39 [r--] (VM: 2000:1002:00f2:a000 - 2000:1002:00f2:bfff)
-        396: f38 [r--] (VM: 2000:1002:00f2:c000 - 2000:1002:00f2:dfff)
-        397: f37 [r--] (VM: 2000:1002:00f2:e000 - 2000:1002:00f2:ffff)
-        398: f36 [r--] (VM: 2000:1002:00f3:0000 - 2000:1002:00f3:1fff)
-        399: f35 [r--] (VM: 2000:1002:00f3:2000 - 2000:1002:00f3:3fff)
-        39a: f34 [r--] (VM: 2000:1002:00f3:4000 - 2000:1002:00f3:5fff)
-        39b: f33 [r--] (VM: 2000:1002:00f3:6000 - 2000:1002:00f3:7fff)
-        39c: f32 [r--] (VM: 2000:1002:00f3:8000 - 2000:1002:00f3:9fff)
-        39d: f31 [r--] (VM: 2000:1002:00f3:a000 - 2000:1002:00f3:bfff)
-        39e: f30 [r--] (VM: 2000:1002:00f3:c000 - 2000:1002:00f3:dfff)
-        39f: f2f [r--] (VM: 2000:1002:00f3:e000 - 2000:1002:00f3:ffff)
-        3a0: f2e [r--] (VM: 2000:1002:00f4:0000 - 2000:1002:00f4:1fff)
-        3a1: f2d [r--] (VM: 2000:1002:00f4:2000 - 2000:1002:00f4:3fff)
-        3a2: f2c [r--] (VM: 2000:1002:00f4:4000 - 2000:1002:00f4:5fff)
-        3a3: f2b [r--] (VM: 2000:1002:00f4:6000 - 2000:1002:00f4:7fff)
-        3a4: f2a [r--] (VM: 2000:1002:00f4:8000 - 2000:1002:00f4:9fff)
-        3a5: f29 [r--] (VM: 2000:1002:00f4:a000 - 2000:1002:00f4:bfff)
-        3a6: f28 [r--] (VM: 2000:1002:00f4:c000 - 2000:1002:00f4:dfff)
-        3a7: f27 [r--] (VM: 2000:1002:00f4:e000 - 2000:1002:00f4:ffff)
-        3a8: f26 [r--] (VM: 2000:1002:00f5:0000 - 2000:1002:00f5:1fff)
-        3a9: f25 [r--] (VM: 2000:1002:00f5:2000 - 2000:1002:00f5:3fff)
-        3aa: f24 [r--] (VM: 2000:1002:00f5:4000 - 2000:1002:00f5:5fff)
-        3ab: f23 [r--] (VM: 2000:1002:00f5:6000 - 2000:1002:00f5:7fff)
-        3ac: f22 [r--] (VM: 2000:1002:00f5:8000 - 2000:1002:00f5:9fff)
-        3ad: f21 [r--] (VM: 2000:1002:00f5:a000 - 2000:1002:00f5:bfff)
-        3ae: f20 [r--] (VM: 2000:1002:00f5:c000 - 2000:1002:00f5:dfff)
-        3af: f1f [r--] (VM: 2000:1002:00f5:e000 - 2000:1002:00f5:ffff)
-        3b0: f1e [r--] (VM: 2000:1002:00f6:0000 - 2000:1002:00f6:1fff)
-        3b1: f1d [r--] (VM: 2000:1002:00f6:2000 - 2000:1002:00f6:3fff)
-        3b2: f1c [r--] (VM: 2000:1002:00f6:4000 - 2000:1002:00f6:5fff)
-        3b3: f1b [r--] (VM: 2000:1002:00f6:6000 - 2000:1002:00f6:7fff)
-        3b4: f1a [r--] (VM: 2000:1002:00f6:8000 - 2000:1002:00f6:9fff)
-        3b5: f19 [r--] (VM: 2000:1002:00f6:a000 - 2000:1002:00f6:bfff)
-        3b6: f18 [r--] (VM: 2000:1002:00f6:c000 - 2000:1002:00f6:dfff)
-        3b7: f17 [r--] (VM: 2000:1002:00f6:e000 - 2000:1002:00f6:ffff)
-        3b8: f16 [r--] (VM: 2000:1002:00f7:0000 - 2000:1002:00f7:1fff)
-        3b9: f15 [r--] (VM: 2000:1002:00f7:2000 - 2000:1002:00f7:3fff)
-        3ba: f14 [r--] (VM: 2000:1002:00f7:4000 - 2000:1002:00f7:5fff)
-        3bb: f13 [r--] (VM: 2000:1002:00f7:6000 - 2000:1002:00f7:7fff)
-        3bc: f12 [r--] (VM: 2000:1002:00f7:8000 - 2000:1002:00f7:9fff)
-        3bd: f11 [r--] (VM: 2000:1002:00f7:a000 - 2000:1002:00f7:bfff)
-        3be: f10 [r--] (VM: 2000:1002:00f7:c000 - 2000:1002:00f7:dfff)
-        3bf: f0f [r--] (VM: 2000:1002:00f7:e000 - 2000:1002:00f7:ffff)
-        3c0: f0e [r--] (VM: 2000:1002:00f8:0000 - 2000:1002:00f8:1fff)
-        3c1: f0d [r--] (VM: 2000:1002:00f8:2000 - 2000:1002:00f8:3fff)
-        3c2: f0c [r--] (VM: 2000:1002:00f8:4000 - 2000:1002:00f8:5fff)
-        3c3: f0b [r--] (VM: 2000:1002:00f8:6000 - 2000:1002:00f8:7fff)
-        3c4: f0a [r--] (VM: 2000:1002:00f8:8000 - 2000:1002:00f8:9fff)
-        3c5: f09 [r--] (VM: 2000:1002:00f8:a000 - 2000:1002:00f8:bfff)
-        3c6: f08 [r--] (VM: 2000:1002:00f8:c000 - 2000:1002:00f8:dfff)
-        3c7: f07 [r--] (VM: 2000:1002:00f8:e000 - 2000:1002:00f8:ffff)
-        3c8: f06 [r--] (VM: 2000:1002:00f9:0000 - 2000:1002:00f9:1fff)
-        3c9: f05 [r--] (VM: 2000:1002:00f9:2000 - 2000:1002:00f9:3fff)
-        3ca: f04 [r--] (VM: 2000:1002:00f9:4000 - 2000:1002:00f9:5fff)
-        3cb: f03 [r--] (VM: 2000:1002:00f9:6000 - 2000:1002:00f9:7fff)
-        3cc: f02 [r--] (VM: 2000:1002:00f9:8000 - 2000:1002:00f9:9fff)
-        3cd: f01 [r--] (VM: 2000:1002:00f9:a000 - 2000:1002:00f9:bfff)
-        3ce: f00 [r--] (VM: 2000:1002:00f9:c000 - 2000:1002:00f9:dfff)
-        3cf: eff [r--] (VM: 2000:1002:00f9:e000 - 2000:1002:00f9:ffff)
-        3d0: efe [r--] (VM: 2000:1002:00fa:0000 - 2000:1002:00fa:1fff)
-        3d1: efd [r--] (VM: 2000:1002:00fa:2000 - 2000:1002:00fa:3fff)
-        3d2: efc [r--] (VM: 2000:1002:00fa:4000 - 2000:1002:00fa:5fff)
-        3d3: efb [r--] (VM: 2000:1002:00fa:6000 - 2000:1002:00fa:7fff)
-        3d4: efa [r--] (VM: 2000:1002:00fa:8000 - 2000:1002:00fa:9fff)
-        3d5: ef9 [r--] (VM: 2000:1002:00fa:a000 - 2000:1002:00fa:bfff)
-        3d6: ef8 [r--] (VM: 2000:1002:00fa:c000 - 2000:1002:00fa:dfff)
-        3d7: ef7 [r--] (VM: 2000:1002:00fa:e000 - 2000:1002:00fa:ffff)
-        3d8: ef6 [r--] (VM: 2000:1002:00fb:0000 - 2000:1002:00fb:1fff)
-        3d9: ef5 [r--] (VM: 2000:1002:00fb:2000 - 2000:1002:00fb:3fff)
-        3da: ef4 [r--] (VM: 2000:1002:00fb:4000 - 2000:1002:00fb:5fff)
-        3db: ef3 [r--] (VM: 2000:1002:00fb:6000 - 2000:1002:00fb:7fff)
-        3dc: ef2 [r--] (VM: 2000:1002:00fb:8000 - 2000:1002:00fb:9fff)
-        3dd: ef1 [r--] (VM: 2000:1002:00fb:a000 - 2000:1002:00fb:bfff)
-        3de: ef0 [r--] (VM: 2000:1002:00fb:c000 - 2000:1002:00fb:dfff)
-        3df: eef [r--] (VM: 2000:1002:00fb:e000 - 2000:1002:00fb:ffff)
-        3e0: eee [r--] (VM: 2000:1002:00fc:0000 - 2000:1002:00fc:1fff)
-        3e1: eed [r--] (VM: 2000:1002:00fc:2000 - 2000:1002:00fc:3fff)
-        3e2: eec [r--] (VM: 2000:1002:00fc:4000 - 2000:1002:00fc:5fff)
-        3e3: eeb [r--] (VM: 2000:1002:00fc:6000 - 2000:1002:00fc:7fff)
-        3e4: eea [r--] (VM: 2000:1002:00fc:8000 - 2000:1002:00fc:9fff)
-        3e5: ee9 [r--] (VM: 2000:1002:00fc:a000 - 2000:1002:00fc:bfff)
-        3e6: ee8 [r--] (VM: 2000:1002:00fc:c000 - 2000:1002:00fc:dfff)
-        3e7: ee7 [r--] (VM: 2000:1002:00fc:e000 - 2000:1002:00fc:ffff)
-        3e8: ee6 [r--] (VM: 2000:1002:00fd:0000 - 2000:1002:00fd:1fff)
-        3e9: ee5 [r--] (VM: 2000:1002:00fd:2000 - 2000:1002:00fd:3fff)
-        3ea: ee4 [r--] (VM: 2000:1002:00fd:4000 - 2000:1002:00fd:5fff)
-        3eb: ee3 [r--] (VM: 2000:1002:00fd:6000 - 2000:1002:00fd:7fff)
-        3ec: ee2 [r--] (VM: 2000:1002:00fd:8000 - 2000:1002:00fd:9fff)
-        3ed: ee1 [r--] (VM: 2000:1002:00fd:a000 - 2000:1002:00fd:bfff)
-        3ee: ee0 [r--] (VM: 2000:1002:00fd:c000 - 2000:1002:00fd:dfff)
-        3ef: edf [r--] (VM: 2000:1002:00fd:e000 - 2000:1002:00fd:ffff)
-        3f0: ede [r--] (VM: 2000:1002:00fe:0000 - 2000:1002:00fe:1fff)
-        3f1: edd [r--] (VM: 2000:1002:00fe:2000 - 2000:1002:00fe:3fff)
-        3f2: edc [r--] (VM: 2000:1002:00fe:4000 - 2000:1002:00fe:5fff)
-        3f3: edb [r--] (VM: 2000:1002:00fe:6000 - 2000:1002:00fe:7fff)
-        3f4: eda [r--] (VM: 2000:1002:00fe:8000 - 2000:1002:00fe:9fff)
-        3f5: ed9 [r--] (VM: 2000:1002:00fe:a000 - 2000:1002:00fe:bfff)
-        3f6: ed8 [r--] (VM: 2000:1002:00fe:c000 - 2000:1002:00fe:dfff)
-        3f7: ed7 [r--] (VM: 2000:1002:00fe:e000 - 2000:1002:00fe:ffff)
-        3f8: ed6 [r--] (VM: 2000:1002:00ff:0000 - 2000:1002:00ff:1fff)
-        3f9: ed5 [r--] (VM: 2000:1002:00ff:2000 - 2000:1002:00ff:3fff)
-        3fa: ed4 [r--] (VM: 2000:1002:00ff:4000 - 2000:1002:00ff:5fff)
-        3fb: ed3 [r--] (VM: 2000:1002:00ff:6000 - 2000:1002:00ff:7fff)
-        3fc: ed2 [r--] (VM: 2000:1002:00ff:8000 - 2000:1002:00ff:9fff)
-        3fd: ed1 [r--] (VM: 2000:1002:00ff:a000 - 2000:1002:00ff:bfff)
-        3fe: ed0 [r--] (VM: 2000:1002:00ff:c000 - 2000:1002:00ff:dfff)
-        3ff: ecf [r--] (VM: 2000:1002:00ff:e000 - 2000:1002:00ff:ffff)
-      PTP1[1]=ece (VM: 2000:1002:0100:0000 - 2000:1002:017f:ffff)
-        0: ecd [r--] (VM: 2000:1002:0100:0000 - 2000:1002:0100:1fff)
-        1: ecc [r--] (VM: 2000:1002:0100:2000 - 2000:1002:0100:3fff)
+GDT exchanged, paging enabled, video initialized                            DONE
+MultiBoot-Structure:
+---------------------
+flags=0x7ef
+memLower=637 KB, memUpper=60404 KB
+biosDriveNumber=E0, part1=FF, part2=FF, part3=FF
+cmdLine=/boot/escape_test.bin videomode=vga swapdev=/dev/hda3
+modsCount=4:
+	/sbin/pci /dev/pci [c01f:2000 .. c025:34e2]
+	/sbin/ata /system/devices/ata [c025:4000 .. c028:1b7e]
+	/sbin/cmos /dev/cmos [c028:2000 .. c02a:49bc]
+	/sbin/fs /dev/fs cdrom iso9660 [c02a:5000 .. c02e:b1c9]
+ELF: num=12, size=40, addr=0x16a000, shndx=0x9
+mmapLength=144, mmapAddr=c002:ce48
+memory-map:
+	0: addr=0000:0000, size=0x0009f400, type=free
+	1: addr=0009:f400, size=0x00000c00, type=used
+	2: addr=000f:0000, size=0x00010000, type=used
+	3: addr=0010:0000, size=0x03afd000, type=free
+	4: addr=03bf:d000, size=0x00003000, type=used
+	5: addr=fffc:0000, size=0x00040000, type=used
+Drives: (size=12)
+	0: no=80, mode=1, cyl=710, heads=5, sectors=51
+---------------------
+Initializing physical memory-management...                                  DONE
+Initializing paging...                                                      DONE
+Initializing FPU...                                                         DONE
+Initializing VFS...                                                         DONE
+Initializing process-management...                                          DONE
+Initializing virtual memory management...                                   DONE
+Initializing IDT...                                                         DONE
+Initializing timer...                                                       DONE
+Initializing signal-handling...                                             DONE
+Detecting CPU...                                                            DONE
+14335 free frames (57340 KiB)
+Initializing Swapmap...                                                     DONE
 
+====== Starting test-procedure ======
+---- Starting with module 0 : "Physical memory-management" ----
+
+== Testcase 1 : Requesting and freeing 50 frames ==
+== >> SUCCESS ==
+
+== Testcase 2 : Requesting once and free ==
+== >> SUCCESS ==
+
+== Testcase 3 : Requesting twice and free ==
+== >> SUCCESS ==
+
+== Testcase 4 : Request, free, request and free ==
+== >> SUCCESS ==
+
+== Testcase 5 : Request a lot multiple times and free ==
+== >> SUCCESS ==
+
+== Testcase 6 : [Align] Requesting once and free ==
+== >> SUCCESS ==
+
+== Testcase 7 : [Align] Requesting twice and free ==
+== >> SUCCESS ==
+
+== Testcase 8 : [Align] Request, free, request and free ==
+== >> SUCCESS ==
+
+== Testcase 9 : [Align] Request a lot multiple times and free ==
+== >> SUCCESS ==
+
+---- Module "Physical memory-management" finished. Summary: ----
+-- 9 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 1 : "Paging" ----
+
+== Testcase 1 : Mapping 0 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Mapping 1 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 3 : Mapping 50 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 4 : Mapping 1024 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 5 : Mapping 1025 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 6 : Mapping 2048 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 7 : Mapping 2051 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 8 : Mapping 0 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 9 : Mapping 1 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 10 : Mapping 50 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 11 : Mapping 1024 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 12 : Mapping 1025 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 13 : Mapping 2048 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 14 : Mapping 2051 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 15 : Mapping 0 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 16 : Mapping 1 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 17 : Mapping 50 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 18 : Mapping 1024 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 19 : Mapping 1025 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 20 : Mapping 2048 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 21 : Mapping 2051 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 22 : Mapping 0 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 23 : Mapping 1 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 24 : Mapping 50 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 25 : Mapping 1024 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 26 : Mapping 1025 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 27 : Mapping 2048 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 28 : Mapping 2051 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 29 : Mapping 0 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 30 : Mapping 1 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 31 : Mapping 50 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 32 : Mapping 1024 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 33 : Mapping 1025 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 34 : Mapping 2048 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 35 : Mapping 2051 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 36 : Mapping 3 pages to 0000:0000 into pdir 0370:5000 ==
+== >> SUCCESS ==
+
+== Testcase 37 : Mapping 6 pages to 4000:0000 into pdir 0370:5000, separatly ==
+== >> SUCCESS ==
+
+---- Module "Paging" finished. Summary: ----
+-- 37 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 2 : "Kernel-Heap" ----
+
+== Testcase 1 : Allocate, then free in same direction ==
+Allocating...(14334 free frames)
+4 bytes
+Write test for 0xc08011bc...done
+16 bytes
+Write test for 0xc08011cc...done
+40 bytes
+Write test for 0xc08011e8...done
+4092 bytes
+Write test for 0xc0802008...done
+4096 bytes
+Write test for 0xc0804008...done
+4100 bytes
+Write test for 0xc0806008...done
+8192 bytes
+Write test for 0xc0808008...done
+16388 bytes
+Write test for 0xc080b008...done
+Freeing...
+FREE1: address=0xc08011bc, i=0
+FREE1: address=0xc08011cc, i=1
+FREE1: address=0xc08011e8, i=2
+FREE1: address=0xc0802008, i=3
+FREE1: address=0xc0804008, i=4
+FREE1: address=0xc0806008, i=5
+FREE1: address=0xc0808008, i=6
+FREE1: address=0xc080b008, i=7
+== >> SUCCESS ==
+
+== Testcase 2 : Allocate, then free in opposite direction ==
+Allocating...(14320 free frames)
+4 bytes
+Write test for 0xc08013d8...done
+16 bytes
+Write test for 0xc08013e8...done
+40 bytes
+Write test for 0xc0801404...done
+4092 bytes
+Write test for 0xc0801438...done
+4096 bytes
+Write test for 0xc0802440...done
+4100 bytes
+Write test for 0xc080344c...done
+8192 bytes
+Write test for 0xc080445c...done
+16388 bytes
+Write test for 0xc0806468...done
+Freeing...
+FREE2: address=0xc0806468, i=7
+FREE2: address=0xc080445c, i=6
+FREE2: address=0xc080344c, i=5
+FREE2: address=0xc0802440, i=4
+FREE2: address=0xc0801438, i=3
+FREE2: address=0xc0801404, i=2
+FREE2: address=0xc08013e8, i=1
+FREE2: address=0xc08013d8, i=0
+== >> SUCCESS ==
+
+== Testcase 3 : Allocate, then free in "random" direction 1 ==
+Allocating...(14320 free frames)
+4 bytes
+Write test for 0xc08013d8...done
+16 bytes
+Write test for 0xc08013e8...done
+40 bytes
+Write test for 0xc0801404...done
+4092 bytes
+Write test for 0xc0801438...done
+4096 bytes
+Write test for 0xc0802440...done
+4100 bytes
+Write test for 0xc080344c...done
+8192 bytes
+Write test for 0xc080445c...done
+16388 bytes
+Write test for 0xc0806468...done
+Freeing...
+FREE3: address=0xc0806468, i=0
+FREE3: address=0xc080344c, i=1
+FREE3: address=0xc0801404, i=2
+FREE3: address=0xc08013d8, i=3
+FREE3: address=0xc080445c, i=4
+FREE3: address=0xc0801438, i=5
+FREE3: address=0xc0802440, i=6
+FREE3: address=0xc08013e8, i=7
+== >> SUCCESS ==
+
+== Testcase 4 : Allocate, then free in "random" direction 2 ==
+Allocating...(14320 free frames)
+4 bytes
+Write test for 0xc08013d8...done
+16 bytes
+Write test for 0xc08013e8...done
+40 bytes
+Write test for 0xc0801404...done
+4092 bytes
+Write test for 0xc0801438...done
+4096 bytes
+Write test for 0xc0802440...done
+4100 bytes
+Write test for 0xc080344c...done
+8192 bytes
+Write test for 0xc080445c...done
+16388 bytes
+Write test for 0xc0806468...done
+Freeing...
+FREE4: address=0xc0801438, i=0
+FREE4: address=0xc0802440, i=1
+FREE4: address=0xc08013e8, i=2
+FREE4: address=0xc080344c, i=3
+FREE4: address=0xc080445c, i=4
+FREE4: address=0xc08013d8, i=5
+FREE4: address=0xc0806468, i=6
+FREE4: address=0xc0801404, i=7
+== >> SUCCESS ==
+
+== Testcase 5 : Allocate and free 4 bytes ==
+Write test for 0xc08013d8...done
+Freeing mem @ 0xc08013d8
+== >> SUCCESS ==
+
+== Testcase 6 : Allocate and free 16 bytes ==
+Write test for 0xc08013d8...done
+Freeing mem @ 0xc08013d8
+== >> SUCCESS ==
+
+== Testcase 7 : Allocate and free 40 bytes ==
+Write test for 0xc08013d8...done
+Freeing mem @ 0xc08013d8
+== >> SUCCESS ==
+
+== Testcase 8 : Allocate and free 4092 bytes ==
+Write test for 0xc08013d8...done
+Freeing mem @ 0xc08013d8
+== >> SUCCESS ==
+
+== Testcase 9 : Allocate and free 4096 bytes ==
+Write test for 0xc08013d8...done
+Freeing mem @ 0xc08013d8
+== >> SUCCESS ==
+
+== Testcase 10 : Allocate and free 4100 bytes ==
+Write test for 0xc08013d8...done
+Freeing mem @ 0xc08013d8
+== >> SUCCESS ==
+
+== Testcase 11 : Allocate and free 8192 bytes ==
+Write test for 0xc08013d8...done
+Freeing mem @ 0xc08013d8
+== >> SUCCESS ==
+
+== Testcase 12 : Allocate and free 16388 bytes ==
+Write test for 0xc08013d8...done
+Freeing mem @ 0xc08013d8
+== >> SUCCESS ==
+
+== Testcase 13 : Allocate 10000 times 1 byte ==
+== >> SUCCESS ==
+
+== Testcase 14 : Allocating 3 regions ==
+Freeing region 2...
+Reusing region 2...
+Testing contents...
+== >> SUCCESS ==
+
+== Testcase 15 : Testing realloc() ==
+== >> SUCCESS ==
+
+---- Module "Kernel-Heap" finished. Summary: ----
+-- 15 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 3 : "Scheduling" ----
+
+---- Module "Scheduling" finished. Summary: ----
+-- 0 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 4 : "String" ----
+
+== Testcase 1 : Testing atoi() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing atoll() ==
+== >> SUCCESS ==
+
+== Testcase 3 : Testing itoa() ==
+== >> SUCCESS ==
+
+== Testcase 4 : Testing memset() ==
+== >> SUCCESS ==
+
+== Testcase 5 : Testing memclear() ==
+== >> SUCCESS ==
+
+== Testcase 6 : Testing memchr() ==
+== >> SUCCESS ==
+
+== Testcase 7 : Testing memcpy() ==
+== >> SUCCESS ==
+
+== Testcase 8 : Testing memcmp() ==
+== >> SUCCESS ==
+
+== Testcase 9 : Testing memmove() ==
+== >> SUCCESS ==
+
+== Testcase 10 : Testing strcpy() ==
+== >> SUCCESS ==
+
+== Testcase 11 : Testing strncpy() ==
+== >> SUCCESS ==
+
+== Testcase 12 : Testing strtok() ==
+== >> SUCCESS ==
+
+== Testcase 13 : Testing strcat() ==
+== >> SUCCESS ==
+
+== Testcase 14 : Testing strnat() ==
+== >> SUCCESS ==
+
+== Testcase 15 : Testing strcmp() ==
+== >> SUCCESS ==
+
+== Testcase 16 : Testing strncmp() ==
+== >> SUCCESS ==
+
+== Testcase 17 : Testing strcasecmp() ==
+== >> SUCCESS ==
+
+== Testcase 18 : Testing strncasecmp() ==
+== >> SUCCESS ==
+
+== Testcase 19 : Testing strchr() ==
+== >> SUCCESS ==
+
+== Testcase 20 : Testing strchri() ==
+== >> SUCCESS ==
+
+== Testcase 21 : Testing strrchr() ==
+== >> SUCCESS ==
+
+== Testcase 22 : Testing strstr() ==
+== >> SUCCESS ==
+
+== Testcase 23 : Testing strspn() ==
+== >> SUCCESS ==
+
+== Testcase 24 : Testing strcspn() ==
+== >> SUCCESS ==
+
+== Testcase 25 : Testing strpbrk() ==
+== >> SUCCESS ==
+
+== Testcase 26 : Testing strcut() ==
+== >> SUCCESS ==
+
+== Testcase 27 : Testing strlen() ==
+== >> SUCCESS ==
+
+== Testcase 28 : Testing strnlen() ==
+== >> SUCCESS ==
+
+== Testcase 29 : Testing tolower() ==
+== >> SUCCESS ==
+
+== Testcase 30 : Testing toupper() ==
+== >> SUCCESS ==
+
+== Testcase 31 : Testing isalnumstr() ==
+== >> SUCCESS ==
+
+== Testcase 32 : Testing strmatch() ==
+== >> SUCCESS ==
+
+== Testcase 33 : Testing strtold() ==
+== >> SUCCESS ==
+
+== Testcase 34 : Testing strtol() ==
+== >> SUCCESS ==
+
+== Testcase 35 : Testing ecvt() ==
+== >> SUCCESS ==
+
+---- Module "String" finished. Summary: ----
+-- 35 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 5 : "VFS" ----
+
+== Testcase 1 : Testing vfs_createDriver() ==
+== >> SUCCESS ==
+
+---- Module "VFS" finished. Summary: ----
+-- 1 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 6 : "VFSNode" ----
+
+== Testcase 1 : Testing vfs_node_resolvePath() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing vfs_node_getPath() ==
+== >> SUCCESS ==
+
+---- Module "VFSNode" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 7 : "Signals" ----
+
+== Testcase 1 : Testing sig_canHandle() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing sig_setHandler() ==
+== >> SUCCESS ==
+
+== Testcase 3 : Adding and handling a signal ==
+== >> SUCCESS ==
+
+== Testcase 4 : Adding nested signals ==
+== >> SUCCESS ==
+
+== Testcase 5 : Adding signal for process ==
+== >> SUCCESS ==
+
+== Testcase 6 : Testing sig_unsetHandler() ==
+== >> SUCCESS ==
+
+== Testcase 7 : Testing sig_removeHandlerFor() ==
+== >> SUCCESS ==
+
+---- Module "Signals" finished. Summary: ----
+-- 7 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 8 : "Ring buffer" ----
+
+== Testcase 1 : Create & Destroy ==
+== >> SUCCESS ==
+
+== Testcase 2 : Write & Read ==
+== >> SUCCESS ==
+
+== Testcase 3 : Write & Read - Full RB_OVERWRITE ==
+== >> SUCCESS ==
+
+== Testcase 4 : Write & Read - Full RB_DEFAULT ==
+== >> SUCCESS ==
+
+== Testcase 5 : Move ==
+== >> SUCCESS ==
+
+---- Module "Ring buffer" finished. Summary: ----
+-- 5 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 9 : "Escape-Codes" ----
+
+== Testcase 1 : Valid codes ==
+== >> SUCCESS ==
+
+== Testcase 2 : Invalid codes ==
+== >> SUCCESS ==
+
+== Testcase 3 : Incomplete codes ==
+== >> SUCCESS ==
+
+---- Module "Escape-Codes" finished. Summary: ----
+-- 3 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 10 : "SwapMap" ----
+
+== Testcase 1 : Testing alloc & free ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing alloc & reverse free ==
+== >> SUCCESS ==
+
+== Testcase 3 : Testing alloc & free mixed ==
+== >> SUCCESS ==
+
+== Testcase 4 : Testing alloc all & free ==
+== >> SUCCESS ==
+
+---- Module "SwapMap" finished. Summary: ----
+-- 4 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 11 : "VMM Regions" ----
+
+== Testcase 1 : Testing reg_create() & reg_destroy() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing reg_addTo() & reg_remFrom() ==
+== >> SUCCESS ==
+
+== Testcase 3 : Testing reg_grow() ==
+== >> SUCCESS ==
+
+== Testcase 4 : Testing reg_clone() ==
+== >> SUCCESS ==
+
+---- Module "VMM Regions" finished. Summary: ----
+-- 4 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 12 : "Virtual Memory Manager" ----
+
+== Testcase 1 : Testing vmm_add() and vmm_remove() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing vmm_grow() ==
+== >> SUCCESS ==
+
+---- Module "Virtual Memory Manager" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 13 : "Shared memory" ----
+
+== Testcase 1 : Testing shm_create() & shm_destroy() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing shm_join() & shm_leave() & shm_remProc() ==
+== >> SUCCESS ==
+
+---- Module "Shared memory" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 14 : "HashMap" ----
+
+== Testcase 1 : Testing basic functionality ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing remove ==
+== >> SUCCESS ==
+
+== Testcase 3 : Testing map iterator ==
+0: 1
+1: 34
+2: 44
+3: 12
+4: 109
+== >> SUCCESS ==
+
+---- Module "HashMap" finished. Summary: ----
+-- 3 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 15 : "Single linked list" ----
+
+== Testcase 1 : Append & check & remove index 0 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Append & remove first (NULL) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Append & remove first (x) ==
+== >> SUCCESS ==
+
+== Testcase 4 : Create & append & destroy ==
+== >> SUCCESS ==
+
+== Testcase 5 : Create & append & insert somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 6 : Create & append & set somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 7 : Append until no mem left & destroy ==
+Appended 4194297 elements
+Freeing...done
+== >> SUCCESS ==
+
+== Testcase 8 : Walking through the list ==
+Starting at index 0
+element @ 0xd27ff000 : 0x123
+element @ 0xd27ff008 : 0x456
+element @ 0xd27ff010 : 0x789
+Starting at index 2
+element @ 0xd27ff010 : 0x789
+== >> SUCCESS ==
+
+== Testcase 9 : Testing sll_indexOf and sll_nodeWith ==
+== >> SUCCESS ==
+
+== Testcase 10 : Testing sll_clone ==
+== >> SUCCESS ==
+
+---- Module "Single linked list" finished. Summary: ----
+-- 10 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+====== All modules done ======
+== 16 modules successfull ==
+== 0 modules failed ==
+== 139 testcases successfull ==
+== 0 testcases failed ==
+============================

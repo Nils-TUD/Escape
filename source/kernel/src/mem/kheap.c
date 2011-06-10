@@ -28,7 +28,6 @@
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
-#define AREA_PAGE_COUNT			64
 #ifdef __eco32__
 #define DEBUG_ALLOC_N_FREE		0
 /* TODO we need the alignment */
@@ -141,26 +140,26 @@ size_t kheap_getAreaSize(void *addr) {
 
 #if DEBUG_ADD_GUARDS
 void *kheap_alloc_guard(size_t size) {
-	uint *a;
-	size = ALIGN(size,sizeof(uint));
-	a = (uint*)_kheap_alloc(size + sizeof(uint) * 3);
+	ulong *a;
+	size = ALIGN(size,sizeof(ulong));
+	a = (ulong*)_kheap_alloc(size + sizeof(ulong) * 3);
 	if(a) {
 		a[0] = GUARD_MAGIC;
 		a[1] = size;
-		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
 		return a + 2;
 	}
 	return NULL;
 }
 
 void *kheap_calloc_guard(size_t num,size_t size) {
-	uint *a;
-	size = ALIGN(num * size,sizeof(uint));
-	a = (uint*)_kheap_alloc(size + sizeof(uint) * 3);
+	ulong *a;
+	size = ALIGN(num * size,sizeof(ulong));
+	a = (ulong*)_kheap_alloc(size + sizeof(ulong) * 3);
 	if(a) {
 		a[0] = GUARD_MAGIC;
 		a[1] = size;
-		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
 		memclear(a + 2,size);
 		return a + 2;
 	}
@@ -168,29 +167,29 @@ void *kheap_calloc_guard(size_t num,size_t size) {
 }
 
 void *kheap_realloc_guard(void *addr,size_t size) {
-	uint *a = (uint*)addr;
-	size = ALIGN(size,sizeof(uint));
+	ulong *a = (ulong*)addr;
+	size = ALIGN(size,sizeof(ulong));
 	if(a) {
 		assert(a[-2] == GUARD_MAGIC);
-		assert(a[a[-1] / sizeof(uint)] == GUARD_MAGIC);
-		a = _kheap_realloc(a - 2,size + sizeof(uint) * 3);
+		assert(a[a[-1] / sizeof(ulong)] == GUARD_MAGIC);
+		a = _kheap_realloc(a - 2,size + sizeof(ulong) * 3);
 	}
 	else
-		a = _kheap_realloc(NULL,size + sizeof(uint) * 3);
+		a = _kheap_realloc(NULL,size + sizeof(ulong) * 3);
 	if(a) {
 		a[0] = GUARD_MAGIC;
 		a[1] = size;
-		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
 		return a + 2;
 	}
 	return NULL;
 }
 
 void kheap_free_guard(void *addr) {
-	uint *a = (uint*)addr;
+	ulong *a = (ulong*)addr;
 	if(a) {
 		assert(a[-2] == GUARD_MAGIC);
-		assert(a[a[-1] / sizeof(uint)] == GUARD_MAGIC);
+		assert(a[a[-1] / sizeof(ulong)] == GUARD_MAGIC);
 		_kheap_free(a - 2);
 	}
 }
@@ -471,6 +470,7 @@ void *_kheap_realloc(void *addr,size_t size) {
 
 static bool kheap_loadNewSpace(size_t size) {
 	sMemArea *area;
+	uintptr_t addr;
 	size_t count;
 
 	/* no free areas? */
@@ -487,15 +487,14 @@ static bool kheap_loadNewSpace(size_t size) {
 
 	/* allocate the required pages */
 	count = BYTES_2_PAGES(size);
-	if(pmem_getFreeFrames(MM_DEF) < count || (pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+	addr = kheap_allocSpace(count);
+	if(addr == 0)
 		return false;
-	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
-			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
 
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
 	freeList = freeList->next;
-	area->address = (void*)(KERNEL_HEAP_START + pages * PAGE_SIZE);
+	area->address = (void*)addr;
 	area->size = PAGE_SIZE * count;
 	/* put area in the usable-list */
 	area->next = usableList;
@@ -507,19 +506,14 @@ static bool kheap_loadNewSpace(size_t size) {
 
 static bool kheap_loadNewAreas(void) {
 	sMemArea *area,*end;
-	tFrameNo frameNo;
+	uintptr_t addr;
 
-	if(pmem_getFreeFrames(MM_DEF) < 1 || (pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+	addr = kheap_allocAreas();
+	if(addr == 0)
 		return false;
 
-	/* allocate one page for area-structs */
-	/* don't use NULL for paging_map here to prevent swapping */
-	frameNo = pmem_allocate();
-	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,&frameNo,1,
-			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
-
 	/* determine start- and end-address */
-	area = (sMemArea*)(KERNEL_HEAP_START + pages * PAGE_SIZE);
+	area = (sMemArea*)addr;
 	end = area + (PAGE_SIZE / sizeof(sMemArea));
 
 	/* put all areas in the freelist */
@@ -533,7 +527,6 @@ static bool kheap_loadNewAreas(void) {
 	}
 
 	pages++;
-
 	return true;
 }
 

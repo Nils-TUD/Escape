@@ -226,7 +226,6 @@ static void test_memset(void) {
 	/* test alignment */
 	for(i = 0; i < 8; i++) {
 		for(j = 0; j < 8; j++) {
-			tprintf("Testing i=%d,j=%d\n",i,j);
 			memset(buf,0xFF,16);
 			memset(buf + i,0,j);
 			checkZero(buf,i,j,16);
@@ -256,7 +255,6 @@ static void test_memclear(void) {
 	/* test alignment */
 	for(i = 0; i < 8; i++) {
 		for(j = 0; j < 8; j++) {
-			tprintf("Testing i=%d,j=%d\n",i,j);
 			memset(buf,0xFF,16);
 			memclear(buf + i,j);
 			checkZero(buf,i,j,16);
@@ -285,7 +283,6 @@ static void test_memcpy(void) {
 	/* test alignment */
 	for(i = 0; i < 8; i++) {
 		for(j = 0; j < 8; j++) {
-			tprintf("Testing i=%d,j=%d\n",i,j);
 			memset(dest,0xFF,16);
 			memcpy(dest + i,zeros + i,j);
 			checkZero(dest,i,j,16);
@@ -317,7 +314,6 @@ static void test_memmove(void) {
 	/* test alignment */
 	for(i = 0; i < 8; i++) {
 		for(j = 0; j < 8; j++) {
-			tprintf("Testing i=%d,j=%d\n",i,j);
 			memset(zdest,0xFF,32);
 			memset(zdest + j,0,abs(i - j));
 			memmove(zdest + i,zdest + j,abs(i - j));

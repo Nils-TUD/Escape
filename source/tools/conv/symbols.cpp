@@ -65,6 +65,7 @@ void sym_init(const char *file) {
 
 const char *sym_resolve(unsigned long addr) {
 	static char symbolName[MAX_FUNC_LEN];
+	static char cleanSymbolName[MAX_FUNC_LEN];
 	for(int i = 0; i < symcount; i++) {
 		if(ELF32_ST_TYPE(symtab[i].st_info) == STT_FUNC && symtab[i].st_value == addr) {
 			demangle(symbolName,MAX_FUNC_LEN,strtab + symtab[i].st_name);
@@ -72,19 +73,13 @@ const char *sym_resolve(unsigned long addr) {
 		}
 	}
 	sprintf(symbolName,"%lu",addr);
-	return symbolName;
+	specialChars(symbolName,cleanSymbolName,sizeof(cleanSymbolName));
+	return cleanSymbolName;
 }
 
-static void demangle(char *dst,size_t dstSize,const char *name) {
-	char *tmp = (char*)malloc(dstSize);
-	int status;
-	tmp = abi::__cxa_demangle(name,tmp,&dstSize,&status);
-	std::string repl;
-	if(status == 0 && tmp)
-		repl = tmp;
-	else
-		repl = name;
-	size_t index = -1;
+void specialChars(const char *src,char *dst,size_t dstSize) {
+	std::string repl(src);
+	size_t index = std::string::npos;
 	while((index = repl.find("&",index + 1)) != std::string::npos)
 		repl.replace(index,1,"&amp;");
 	while((index = repl.find("<")) != std::string::npos)
@@ -93,6 +88,16 @@ static void demangle(char *dst,size_t dstSize,const char *name) {
 		repl.replace(index,1,"&gt;");
 	strncpy(dst,repl.c_str(),dstSize);
 	dst[dstSize - 1] = '\0';
+}
+
+static void demangle(char *dst,size_t dstSize,const char *name) {
+	char *tmp = (char*)malloc(dstSize);
+	int status;
+	tmp = abi::__cxa_demangle(name,tmp,&dstSize,&status);
+	if(status == 0 && tmp)
+		specialChars(tmp,dst,dstSize);
+	else
+		specialChars(name,dst,dstSize);
 	free(tmp);
 }
 

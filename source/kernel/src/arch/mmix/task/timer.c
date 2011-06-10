@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: timer.c 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,38 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPU_H_
-#define CPU_H_
+#include <sys/common.h>
+#include <sys/task/timer.h>
 
-#include <esc/common.h>
-#include <sys/printf.h>
+#define TIMER_BASE			0x8001000000000000
 
-#ifdef __i386__
-#include <sys/arch/i586/cpu.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/cpu.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/cpu.h>
-#endif
+#define TIMER_CTRL			0		/* timer control register */
+#define TIMER_DIVISOR		1		/* timer divisor register */
 
-/**
- * @return the timestamp-counter value
- */
-uint64_t cpu_rdtsc(void);
+#define TIMER_EXP			0x01	/* timer has expired */
+#define TIMER_IEN			0x02	/* enable timer interrupt */
 
-/**
- * Prints information about the used CPU into the given string-buffer
- *
- * @param buf the string-buffer
- */
-void cpu_sprintf(sStringBuffer *buf);
+void timer_arch_init(void) {
+	ulong *regs = (ulong*)TIMER_BASE;
+	/* set frequency */
+	regs[TIMER_DIVISOR] = TIMER_FREQUENCY;
+	/* enable timer */
+	regs[TIMER_CTRL] = TIMER_IEN;
+}
 
-#if DEBUGGING
-
-void cpu_dbg_print(void);
-
-#endif
-
-#endif /* CPU_H_ */
+void timer_ackIntrpt(void) {
+	ulong *regs = (ulong*)TIMER_BASE;
+	/* remove expired-flag */
+	regs[TIMER_CTRL] = TIMER_IEN;
+}

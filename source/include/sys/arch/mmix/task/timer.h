@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: timer.h 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,38 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPU_H_
-#define CPU_H_
+#ifndef MMIX_TIMER_H_
+#define MMIX_TIMER_H_
 
 #include <esc/common.h>
-#include <sys/printf.h>
-
-#ifdef __i386__
-#include <sys/arch/i586/cpu.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/cpu.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/cpu.h>
-#endif
 
 /**
- * @return the timestamp-counter value
+ * Inits the architecture-dependent part of the timer
  */
-uint64_t cpu_rdtsc(void);
+void timer_arch_init(void);
 
 /**
- * Prints information about the used CPU into the given string-buffer
- *
- * @param buf the string-buffer
+ * Acknoleges a timer-interrupt
  */
-void cpu_sprintf(sStringBuffer *buf);
+void timer_ackIntrpt(void);
 
-#if DEBUGGING
-
-void cpu_dbg_print(void);
-
-#endif
-
-#endif /* CPU_H_ */
+#endif /* MMIX_TIMER_H_ */

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: cpu.c 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,38 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPU_H_
-#define CPU_H_
-
-#include <esc/common.h>
+#include <sys/common.h>
+#include <sys/mem/kheap.h>
+#include <sys/cpu.h>
 #include <sys/printf.h>
+#include <sys/video.h>
+#include <string.h>
 
-#ifdef __i386__
-#include <sys/arch/i586/cpu.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/cpu.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/cpu.h>
-#endif
+uint64_t cpu_rdtsc(void) {
+	/* TODO not implemented yet */
+	return 0;
+}
 
-/**
- * @return the timestamp-counter value
- */
-uint64_t cpu_rdtsc(void);
-
-/**
- * Prints information about the used CPU into the given string-buffer
- *
- * @param buf the string-buffer
- */
-void cpu_sprintf(sStringBuffer *buf);
-
-#if DEBUGGING
-
-void cpu_dbg_print(void);
-
-#endif
-
-#endif /* CPU_H_ */
+void cpu_sprintf(sStringBuffer *buf) {
+	prf_sprintf(buf,"%-12s%s\n","Vendor:","THM");
+	prf_sprintf(buf,"%-12s%s\n","Model:","GIMMIX");
+	/* TODO */
+	prf_sprintf(buf,"%-12s%d.%d.%d\n","Version:",1,0,2);
+	prf_sprintf(buf,"%-12s%u\n","Builddate",0);
+}

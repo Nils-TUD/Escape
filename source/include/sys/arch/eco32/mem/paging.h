@@ -141,6 +141,10 @@
 #define FREE_AREA_BEGIN			0x60000000
 #define FREE_AREA_END			KERNEL_AREA
 
+/* determines whether the given address is on the heap */
+#define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KERNEL_HEAP_START && \
+		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+
 typedef uintptr_t tPageDir;
 
 extern tPageDir curPDir;

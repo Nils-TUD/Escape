@@ -42,7 +42,6 @@ struct sNode {
 static bool initialized = false;
 static sDynArray nodeArray;
 static sNode *freelist = NULL;
-static sNode *nodes = (sNode*)SLLNODE_AREA;
 
 void *slln_allocNode(size_t size) {
 	sNode *n;
@@ -50,15 +49,16 @@ void *slln_allocNode(size_t size) {
 	if(freelist == NULL) {
 		size_t i,oldCount;
 		if(!initialized) {
-			dyna_init(&nodeArray,sizeof(sNode),SLLNODE_AREA,SLLNODE_AREA_SIZE);
+			dyna_start(&nodeArray,sizeof(sNode),SLLNODE_AREA,SLLNODE_AREA_SIZE);
 			initialized = true;
 		}
 		oldCount = nodeArray.objCount;
 		if(!dyna_extend(&nodeArray))
 			return NULL;
 		for(i = oldCount; i < nodeArray.objCount; i++) {
-			nodes[i].next = freelist;
-			freelist = nodes + i;
+			n = dyna_getObj(&nodeArray,i);
+			n->next = freelist;
+			freelist = n;
 		}
 	}
 	n = freelist;

@@ -37,9 +37,6 @@
 #include <errors.h>
 #include <ctype.h>
 
-#define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KERNEL_HEAP_START && \
-		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
-
 /**
  * Appends the given node as last child to the parent
  */
@@ -55,13 +52,12 @@ static void vfs_node_releaseNode(sVFSNode *node);
 
 /* all nodes (expand dynamically) */
 static sDynArray nodeArray;
-static sVFSNode *nodes = (sVFSNode*)VFSNODE_AREA;
 /* a pointer to the first free node (which points to the next and so on) */
 static sVFSNode *freeList = NULL;
 static uint nextUsageId = 0;
 
 void vfs_node_init(void) {
-	dyna_init(&nodeArray,sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
+	dyna_start(&nodeArray,sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
 }
 
 bool vfs_node_isValid(tInodeNo nodeNo) {
@@ -69,11 +65,11 @@ bool vfs_node_isValid(tInodeNo nodeNo) {
 }
 
 tInodeNo vfs_node_getNo(const sVFSNode *node) {
-	return ((uintptr_t)node - (uintptr_t)&nodes[0]) / sizeof(sVFSNode);
+	return (tInodeNo)dyna_getIndex(&nodeArray,node);
 }
 
 sVFSNode *vfs_node_get(tInodeNo nodeNo) {
-	return nodes + nodeNo;
+	return (sVFSNode*)dyna_getObj(&nodeArray,nodeNo);
 }
 
 sVFSNode *vfs_node_getFirstChild(const sVFSNode *node) {
@@ -83,7 +79,7 @@ sVFSNode *vfs_node_getFirstChild(const sVFSNode *node) {
 }
 
 int vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info) {
-	sVFSNode *n = nodes + nodeNo;
+	sVFSNode *n = vfs_node_get(nodeNo);
 
 	if(n->mode == 0)
 		return ERR_INVALID_INODENO;
@@ -108,7 +104,7 @@ int vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info) {
 char *vfs_node_getPath(tInodeNo nodeNo) {
 	static char path[MAX_PATH_LEN];
 	size_t nlen,len = 0,total = 0;
-	sVFSNode *node = nodes + nodeNo;
+	sVFSNode *node = vfs_node_get(nodeNo);
 	sVFSNode *n = node;
 
 	assert(vfs_node_isValid(nodeNo));
@@ -144,7 +140,7 @@ char *vfs_node_getPath(tInodeNo nodeNo) {
 
 int vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,uint flags) {
 	static char apath[MAX_PATH_LEN];
-	sVFSNode *dir,*n = nodes;
+	sVFSNode *dir,*n = vfs_node_get(0);
 	sThread *t = thread_getRunning();
 	int pos = 0,depth,lastdepth;
 	if(created)
@@ -411,10 +407,10 @@ static sVFSNode *vfs_node_requestNode(void) {
 		size_t i,oldCount = nodeArray.objCount;
 		if(!dyna_extend(&nodeArray))
 			util_panic("No free VFS-nodes");
-		freeList = nodes + oldCount;
+		freeList = vfs_node_get(oldCount);
 		for(i = oldCount; i < nodeArray.objCount - 1; i++) {
-			node = nodes + i;
-			node->next = nodes + i + 1;
+			node = vfs_node_get(i);
+			node->next = vfs_node_get(i + 1);
 		}
 		node->next = NULL;
 	}
@@ -454,7 +450,7 @@ static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
 void vfs_node_dbg_printTree(void) {
 	vid_printf("VFS:\n");
 	vid_printf("/\n");
-	vfs_node_dbg_doPrintTree(1,&nodes[0]);
+	vfs_node_dbg_doPrintTree(1,vfs_node_get(0));
 }
 
 void vfs_node_dbg_printNode(const sVFSNode *node) {

@@ -44,8 +44,7 @@ typedef struct {
 /* for istat() and stat() */
 static int vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info);
 /* The request-handler for sending a path and receiving a result */
-static ssize_t vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,
-		uint arg1,uint cmd);
+static int vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,uint arg1,uint cmd);
 /* waits for a response */
 static void vfs_real_wait(sRequest *req);
 

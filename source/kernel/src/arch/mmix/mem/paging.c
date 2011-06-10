@@ -177,6 +177,7 @@ void paging_unmapFromTemp(size_t count) {
 }
 
 ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
+#if 0
 	tFrameNo pdirFrame;
 	ssize_t frmCount = 0;
 	sPDEntry *pd,*npd,*tpd;
@@ -257,10 +258,13 @@ ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	*stackFrame = pt->frameNumber;
 	*pdir = DIR_MAPPED_SPACE | (pdirFrame << PAGE_SIZE_SHIFT);
 	return frmCount;
+#endif
+	return 0;
 }
 
 sAllocStats paging_destroyPDir(tPageDir pdir) {
 	sAllocStats stats;
+#if 0
 	sPDEntry *pde;
 	assert(pdir != rootLoc);
 	/* remove kernel-stack (don't free the frame; its done in thread_kill()) */
@@ -276,6 +280,7 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	stats.ptables++;
 	/* ensure that we don't use it again */
 	otherPDir = 0;
+#endif
 	return stats;
 }
 
@@ -549,7 +554,6 @@ size_t paging_getPTableCount(tPageDir pdir) {
 	return pdir->ptables;
 }
 
-#if 0
 static sStringBuffer *strBuf = NULL;
 
 static void paging_sprintfPrint(char c) {
@@ -557,13 +561,11 @@ static void paging_sprintfPrint(char c) {
 }
 
 void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
-	size_t i,j;
 	strBuf = buf;
 	vid_setPrintFunc(paging_sprintfPrint);
 	paging_dbg_printPDir(pdir,0);
 	vid_unsetPrintFunc();
 }
-#endif
 
 #if 0
 void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {

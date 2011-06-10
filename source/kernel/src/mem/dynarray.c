@@ -18,31 +18,36 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/paging.h>
-#include <sys/mem/pmem.h>
 #include <sys/mem/dynarray.h>
-#include <sys/util.h>
-#include <string.h>
 
-void dyna_init(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize) {
+void dyna_start(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize) {
 	d->objSize = objSize;
-	d->areaBegin = areaBegin;
-	d->areaSize = areaSize;
 	d->objCount = 0;
-	d->pageCount = 0;
+	d->_areaBegin = areaBegin;
+	d->_areaSize = areaSize;
+	d->_regions = NULL;
 }
 
-bool dyna_extend(sDynArray *d) {
-	uintptr_t addr = d->areaBegin + d->pageCount * PAGE_SIZE;
-	if(pmem_getFreeFrames(MM_DEF) == 0 || d->pageCount * PAGE_SIZE >= d->areaSize)
-		return false;
-	paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT);
-	memclear((void*)addr,PAGE_SIZE);
-	d->pageCount++;
-	d->objCount = (d->pageCount * PAGE_SIZE) / d->objSize;
-	return true;
+void *dyna_getObj(sDynArray *d,size_t index) {
+	sDynaRegion *reg = d->_regions;
+	size_t offset = index * d->objSize;
+	while(reg != NULL) {
+		if(offset < reg->size)
+			return (void*)(reg->addr + offset);
+		offset -= reg->size;
+		reg = reg->next;
+	}
+	return NULL;
 }
 
-void dyna_destroy(sDynArray *d) {
-	paging_unmap(d->areaBegin,d->pageCount,true);
+ssize_t dyna_getIndex(sDynArray *d,const void *obj) {
+	sDynaRegion *reg = d->_regions;
+	size_t index = 0;
+	while(reg != NULL) {
+		if((uintptr_t)obj >= reg->addr && (uintptr_t)obj < reg->addr + reg->size)
+			return index + ((uintptr_t)obj - reg->addr) / d->objSize;
+		index += reg->size / d->objSize;
+		reg = reg->next;
+	}
+	return -1;
 }

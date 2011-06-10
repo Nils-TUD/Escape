@@ -37,7 +37,7 @@ void vfs_drv_init(void);
  * @param flags the open-flags
  * @return 0 if successfull
  */
-int vfs_drv_open(tPid pid,tFileNo file,sVFSNode *node,uint flags);
+ssize_t vfs_drv_open(tPid pid,tFileNo file,sVFSNode *node,uint flags);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the given driver. Note that not all

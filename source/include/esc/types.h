@@ -94,7 +94,7 @@ typedef int32_t tDevNo;
 typedef uint8_t tSig;
 /* msg-id */
 typedef uint32_t tMsgId;
-typedef uint32_t tEvObj;
+typedef uintptr_t tEvObj;
 typedef uint32_t tTime;
 
 #endif /* TYPES_H_ */

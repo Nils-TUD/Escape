@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include <sys/arch/mmix/mem/addrspace.h>
+#include <sys/boot.h>
 
 /**
  * Virtual memory layout:
@@ -112,6 +113,10 @@
 /* free area for shared memory, tls, shared libraries, ... */
 #define FREE_AREA_BEGIN			0x2000000000000000
 #define FREE_AREA_END			0x4000000000000000
+
+/* determines whether the given address is on the heap */
+/* in this case it is sufficient to check whether its not in the data-area of the kernel */
+#define IS_ON_HEAP(addr) ((uintptr_t)(addr) > KERNEL_START + boot_getKernelSize())
 
 typedef struct {
 	sAddressSpace *addrSpace;

@@ -108,8 +108,11 @@ void proc_init(void) {
 		util_panic("Unable to append the initial thread");
 
 	/* setup kernel-stack for us */
+	/* TODO */
+#ifndef __mmix__
 	stackFrame = pmem_allocate();
 	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+#endif
 
 	/* set kernel-stack for first thread */
 	t = (sThread*)sll_get(p->threads,0);
@@ -473,6 +476,8 @@ int proc_startThread(uintptr_t entryPoint,const void *arg) {
 }
 
 static int proc_finishClone(sThread *nt,tFrameNo stackFrame) {
+	/* TODO */
+#ifndef __mmix__
 	uint *src;
 	size_t i;
 	/* we clone just the current thread. all other threads are ignored */
@@ -492,6 +497,7 @@ static int proc_finishClone(sThread *nt,tFrameNo stackFrame) {
 
 	paging_unmapFromTemp(1);
 	/* parent */
+#endif
 	return 0;
 }
 

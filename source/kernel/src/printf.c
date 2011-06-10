@@ -52,7 +52,6 @@ static char hexCharsBig[] = "0123456789ABCDEF";
 static char hexCharsSmall[] = "0123456789abcdef";
 static sStringBuffer *curbuf = NULL;
 
-#ifndef __mmix__
 void prf_sprintf(sStringBuffer *buf,const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
@@ -92,7 +91,6 @@ static void prf_aprintc(char c) {
 			curbuf->len++;
 	}
 }
-#endif
 
 void prf_printf(sPrintEnv *env,const char *fmt,...) {
 	va_list ap;

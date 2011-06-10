@@ -74,9 +74,8 @@ void util_panic(const char *fmt,...) {
 #endif
 }
 
-#if 0
 void util_copyToUser(void *dst,const void *src,size_t count) {
-	/* on eco32 we can't write to non-writable pages in kernel-mode */
+	/* on mmix we can't write to non-writable pages in kernel-mode */
 	/* therefore, we copy it page by page and use the direct mapped space */
 	sProc *p = proc_getRunning();
 	uintptr_t isrc = (uintptr_t)src;
@@ -106,9 +105,9 @@ void util_zeroToUser(void *dst,size_t count) {
 		offset = 0;
 	}
 }
-#endif
 
 sFuncCall *util_getUserStackTrace(void) {
+	/* TODO */
 	/* eco32 has no frame-pointer; therefore without information about the stackframe-sizes or
 	 * similar, there is no way to determine the stacktrace */
 	return frames;

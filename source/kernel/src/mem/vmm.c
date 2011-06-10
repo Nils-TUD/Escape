@@ -46,7 +46,7 @@
 static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr);
 static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t loadCount);
 static ulong *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr);
-static ssize_t vmm_findRegIndex(sProc *p,bool text);
+static tVMRegNo vmm_findRegIndex(sProc *p,bool text);
 static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount);
 static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end);
 static uintptr_t vmm_getFirstUsableAddr(sProc *p,bool textNData);
@@ -274,7 +274,7 @@ void vmm_setTimestamp(const sThread *t,tTime timestamp) {
 
 sRegion *vmm_getLRURegion(const sProc *p) {
 	sRegion *lru = NULL;
-	tTime ts = ULONG_MAX; /* TODO thats not correct */
+	tTime ts = UINT_MAX; /* TODO thats not correct */
 	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);

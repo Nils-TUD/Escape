@@ -28,6 +28,9 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/task/timer.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/timer.h>
+#endif
 
 /* timer frequency => time-slice = 5ms */
 #define TIMER_FREQUENCY			200

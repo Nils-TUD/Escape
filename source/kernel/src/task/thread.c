@@ -302,9 +302,12 @@ void thread_kill(sThread *t) {
 	/* if there is just one thread left we have to map his kernel-stack again because we won't
 	 * do it for single-thread-processes on a switch for performance-reasons */
 	if(sll_length(t->proc->threads) == 1) {
+		/* TODO */
+#ifndef __mmix__
 		tFrameNo stackFrame = ((sThread*)sll_get(t->proc->threads,0))->kstackFrame;
 		paging_mapTo(t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+#endif
 	}
 
 	/* remove from all modules we may be announced */

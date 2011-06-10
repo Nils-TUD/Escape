@@ -23,6 +23,7 @@
 #include <sys/video.h>
 
 #include "tkheap.h"
+#include "tdynarray.h"
 #include "tpaging.h"
 #include "tproc.h"
 #include "tmm.h"
@@ -53,6 +54,7 @@ int main(sBootInfo *bootinfo,uint32_t magic) {
 	/* start tests */
 #ifdef __mmix__
 	test_register(&tModAddrSpace);
+	test_register(&tModDynArray);
 	test_register(&tModPaging);
 	test_register(&tModKHeap);
 	test_register(&tModString);
@@ -67,8 +69,9 @@ int main(sBootInfo *bootinfo,uint32_t magic) {
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	test_register(&tModMM);
+	test_register(&tModDynArray);
 	test_register(&tModPaging);
-	/*test_register(&tModProc);*/
+	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
 	test_register(&tModString);

@@ -31,6 +31,8 @@
 int main(const sBootInfo *bootinfo) {
 	boot_init(bootinfo,true);
 
+	while(1);
+
 #if 0
 	sThread *t;
 	sStartupInfo info;

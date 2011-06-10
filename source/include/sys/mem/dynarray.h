@@ -45,27 +45,60 @@
  * have a huge static array.
  */
 
-/* describes the array */
+/* describes a dynarray-region */
+typedef struct sDynaRegion {
+	uintptr_t addr;
+	size_t size;
+	struct sDynaRegion *next;
+} sDynaRegion;
+
+/* describes an dyn-array */
 typedef struct {
+	/* public: */
 	/* number of objects currently avaiable */
 	size_t objCount;
 	size_t objSize;
-	/* the virtual-memory-area in which the array is */
-	uintptr_t areaBegin;
-	size_t areaSize;
-	/* number of pages currently used */
-	size_t pageCount;
+
+	/* private: */
+	/* the area in virtual memory; might not be used, depending on the architecture */
+	uintptr_t _areaBegin;
+	size_t _areaSize;
+	/* the regions for this array */
+	sDynaRegion *_regions;
 } sDynArray;
 
 /**
- * Initializes the given dynamic array
+ * Initializes the dynamic-array-system
+ */
+void dyna_init(void);
+
+/**
+ * Starts the given dynamic array
  *
  * @param d the dynamic array
  * @param objSize the size of one object
  * @param areaBegin the beginning of the area in virtual memory where the objects should be
  * @param areaSize the size of that area
  */
-void dyna_init(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize);
+void dyna_start(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize);
+
+/**
+ * Retrieves an object from the given dynarray with given index
+ *
+ * @param d the dynamic array
+ * @param index the index of the object
+ * @return the object or NULL if out of range
+ */
+void *dyna_getObj(sDynArray *d,size_t index);
+
+/**
+ * Retrieves the index for the given object in the given dynarray
+ *
+ * @param d the dynamic array
+ * @param obj the object
+ * @return the index or -1 if not found
+ */
+ssize_t dyna_getIndex(sDynArray *d,const void *obj);
 
 /**
  * Extends the given array. That means, it allocates one page more and changes the number of

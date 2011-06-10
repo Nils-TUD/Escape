@@ -18,8 +18,29 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/swap.h>
+#include <sys/mem/vmm.h>
+#include <sys/mem/cow.h>
+#include <sys/mem/sharedmem.h>
+#include <sys/mem/dynarray.h>
+#include <sys/arch/mmix/mem/addrspace.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/task/event.h>
+#include <sys/task/sched.h>
+#include <sys/task/elf.h>
+#include <sys/task/uenv.h>
+#include <sys/task/timer.h>
+#include <sys/vfs/node.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/request.h>
+#include <sys/vfs/driver.h>
+#include <sys/vfs/real.h>
+#include <sys/vfs/info.h>
+#include <sys/vfs/info.h>
+#include <sys/log.h>
 #include <sys/boot.h>
 #include <sys/video.h>
 #include <string.h>
@@ -57,30 +78,9 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	paging_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	/*vid_printf("\n");
-	paging_map(0,NULL,10,PG_PRESENT | PG_WRITABLE | PG_EXECUTABLE);
-	paging_map(0x2000000000000000,NULL,4,PG_PRESENT);
-	paging_map(0x2000000000008000,NULL,4,PG_WRITABLE);
-	paging_map(0x2000000000010000,NULL,4,PG_EXECUTABLE);
-	paging_map(PAGE_SIZE * PT_ENTRY_COUNT,NULL,4,PG_WRITABLE);
-	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * 2,NULL,3,PG_EXECUTABLE);
-	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * (PT_ENTRY_COUNT - 1),NULL,2,PG_PRESENT);
-	paging_map(PAGE_SIZE * PT_ENTRY_COUNT * (PT_ENTRY_COUNT - 2),NULL,26,PG_PRESENT);
-	paging_map((1UL << 61) | (PAGE_SIZE * PT_ENTRY_COUNT),NULL,4,PG_WRITABLE);
-	paging_map((1UL << 61) | (PAGE_SIZE * PT_ENTRY_COUNT * 2),NULL,3,PG_EXECUTABLE);
-	paging_dbg_printCur(PD_PART_ALL);
-
-	paging_unmap(0x2000000000000000,8,true);
-	paging_unmap(0x2000000000010000,4,true);
-	paging_unmap(PAGE_SIZE * PT_ENTRY_COUNT,4,true);
-	paging_unmap(PAGE_SIZE * PT_ENTRY_COUNT * 2,3,true);
-	paging_unmap(PAGE_SIZE * PT_ENTRY_COUNT * (PT_ENTRY_COUNT - 1),2,true);
-	paging_unmap(PAGE_SIZE * PT_ENTRY_COUNT * (PT_ENTRY_COUNT - 2),25,true);
-	paging_dbg_printCur(PD_PART_ALL);*/
-
-#if 0
 	/* vfs */
 	vid_printf("Initializing VFS...");
+	dyna_init();
 	vfs_init();
 	vfs_info_init();
 	vfs_req_init();
@@ -118,7 +118,6 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 #if DEBUGGING
 	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
 			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
-#endif
 #endif
 }
 

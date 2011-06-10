@@ -28,6 +28,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
 #include <sys/mem/sharedmem.h>
+#include <sys/mem/dynarray.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
@@ -120,6 +121,7 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 
 	/* vfs */
 	vid_printf("Initializing VFS...");
+	dyna_init();
 	vfs_init();
 	vfs_info_init();
 	vfs_req_init();

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROC_H_
-#define PROC_H_
+#ifndef SYS_PROC_H_
+#define SYS_PROC_H_
 
 #include <sys/common.h>
 #include <sys/mem/region.h>
@@ -32,6 +32,9 @@
 #endif
 #ifdef __eco32__
 #include <sys/arch/eco32/task/proc.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/proc.h>
 #endif
 
 /* max number of coexistent processes */
@@ -349,4 +352,4 @@ void proc_dbg_print(const sProc *p);
 
 #endif
 
-#endif /*PROC_H_*/
+#endif /*SYS_PROC_H_*/

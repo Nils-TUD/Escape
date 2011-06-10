@@ -33,7 +33,6 @@
 #define HISTORY_SIZE	32
 #define MAX_ARG_COUNT	5
 #define MAX_ARG_LEN		32
-#define MAX_CMD_LEN		16
 
 typedef int (*fCommand)(size_t argc,char **argv);
 typedef struct {

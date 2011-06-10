@@ -77,7 +77,7 @@ typedef ssize_t (*fRead)(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
 			off_t offset,size_t count);
 typedef ssize_t (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
 			off_t offset,size_t count);
-typedef int (*fSeek)(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
+typedef off_t (*fSeek)(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 typedef void (*fClose)(tPid pid,tFileNo file,sVFSNode *node);
 typedef void (*fDestroy)(sVFSNode *n);
 

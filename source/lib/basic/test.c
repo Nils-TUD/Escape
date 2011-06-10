@@ -96,16 +96,6 @@ bool test_doAssertFalse(bool received,const char *func,int line) {
 	return true;
 }
 
-bool test_doAssertPtr(const void *received,const void *expected,const char *func,int line) {
-	assertCount++;
-	if(expected != received) {
-		test_caseFailed("Assert %d in %s line %d: Pointers are not equal: Expected 0x%x, got 0x%x",
-				assertCount,func,line,expected,received);
-		return false;
-	}
-	return true;
-}
-
 bool test_doAssertInt(int received,int expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
@@ -126,19 +116,91 @@ bool test_doAssertUInt(uint received,uint expected,const char *func,int line) {
 	return true;
 }
 
-bool test_doAssertLInt(llong received,llong expected,const char *func,int line) {
-	return test_doAssertULInt(received,expected,func,line);
-}
-
-bool test_doAssertULInt(ullong received,ullong expected,const char *func,int line) {
+bool test_doAssertLInt(long received,long expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
-		uLongLong urecv,uexp;
-		urecv.val64 = received;
-		uexp.val64 = expected;
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected %ld, got %ld",
+				assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertULInt(ulong received,ulong expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
 		test_caseFailed("Assert %d in %s line %d: Integers are not equal: "
-				"Expected 0x%08x%08x, got 0x%08x%08x",assertCount,func,line,
-				uexp.val32.upper,uexp.val32.lower,urecv.val32.upper,urecv.val32.lower);
+				"Expected 0x%lx, got 0x%lx",assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertLLInt(llong received,llong expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected %Ld, got %Ld",
+				assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertULLInt(ullong received,ullong expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: "
+				"Expected 0x%Lx, got 0x%Lx",assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertPtr(const void *received,const void *expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Pointers are not equal: Expected %p, got %p",
+				assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertUIntPtr(uintptr_t received,uintptr_t expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%Px, got 0x%Px",
+				assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertSize(size_t received,size_t expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%Sx, got 0x%Sx",
+				assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertSSize(ssize_t received,ssize_t expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%Sx, got 0x%Sx",
+				assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertOff(off_t received,off_t expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%Ox, got 0x%Ox",
+				assertCount,func,line,expected,received);
 		return false;
 	}
 	return true;

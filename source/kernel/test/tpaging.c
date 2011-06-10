@@ -43,24 +43,9 @@ sTestModule tModPaging = {
 static void test_paging(void) {
 	size_t x,y;
 	uintptr_t addr[] = {
-#ifdef __mmix__
-		0x0,1UL << 61,
-		PAGE_SIZE * PT_ENTRY_COUNT,
-		PAGE_SIZE * PT_ENTRY_COUNT * 2,
-		PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT,
-		PAGE_SIZE * PT_ENTRY_COUNT * PT_ENTRY_COUNT * PT_ENTRY_COUNT + PAGE_SIZE * 1000
-#else
 		0x0,0x40000000,0x70000000,0x4000,0x1234
-#endif
 	};
 	size_t count[] = {0,1,50,1024,1025,2048,2051};
-
-#ifdef __mmix__
-	tPageDir pdir = paging_getCur();
-	uint64_t rv = pdir->rV;
-	pdir->rV = ((uint64_t)0x48C0 << 48) | (pdir->rV & 0xFFFFFFFFFFFF);
-	paging_setrV(pdir->rV);
-#endif
 
 	for(y = 0; y < ARRAY_SIZE(addr); y++) {
 		for(x = 0; x < ARRAY_SIZE(count); x++) {
@@ -68,10 +53,7 @@ static void test_paging(void) {
 		}
 	}
 
-#ifdef __mmix__
-	paging_getCur()->rV = rv;
-	paging_setrV(rv);
-#else
+#ifndef __mmix__
 	test_paging_foreign();
 #endif
 }
@@ -89,11 +71,11 @@ static void test_paging_foreign(void) {
 	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
 	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,child->pagedir);
 	stats = paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
-	test_assertUInt(stats.frames,3);
-	test_assertUInt(stats.ptables,1);
+	test_assertULInt(stats.frames,3);
+	test_assertULInt(stats.ptables,1);
 	stats = paging_unmapFrom(child->pagedir,0,3,true);
-	test_assertUInt(stats.frames,3);
-	test_assertUInt(stats.ptables,1);
+	test_assertULInt(stats.frames,3);
+	test_assertULInt(stats.ptables,1);
 	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
@@ -103,17 +85,17 @@ static void test_paging_foreign(void) {
 	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
 	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,child->pagedir);
 	stats = paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
-	test_assertUInt(stats.frames,3);
-	test_assertUInt(stats.ptables,1);
+	test_assertULInt(stats.frames,3);
+	test_assertULInt(stats.ptables,1);
 	stats = paging_mapTo(child->pagedir,0x40003000,NULL,3,PG_PRESENT | PG_WRITABLE);
-	test_assertUInt(stats.frames,3);
-	test_assertUInt(stats.ptables,0);
+	test_assertULInt(stats.frames,3);
+	test_assertULInt(stats.ptables,0);
 	stats = paging_unmapFrom(child->pagedir,0x40000000,1,true);
-	test_assertUInt(stats.frames,1);
-	test_assertUInt(stats.ptables,0);
+	test_assertULInt(stats.frames,1);
+	test_assertULInt(stats.ptables,0);
 	stats = paging_unmapFrom(child->pagedir,0x40001000,5,true);
-	test_assertUInt(stats.frames,5);
-	test_assertUInt(stats.ptables,1);
+	test_assertULInt(stats.frames,5);
+	test_assertULInt(stats.ptables,1);
 	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%Su, newFF=%Su",oldFF,newFF);

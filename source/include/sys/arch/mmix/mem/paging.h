@@ -53,15 +53,6 @@
  *                     |        memory mapped stuff        |     |
  *                     |        (in arbitrary order)       |     |
  * 0x4000000000000000: +-----------------------------------+   -----    -----
- *                     |       VFS global file table       |     |        |
- * 0x4000000000400000: +-----------------------------------+     k
- *                     |             VFS nodes             |     e    dynamically extending regions
- * 0x4000000000800000: +-----------------------------------+     r
- *                     |             sll nodes             |     n        |
- * 0x4000000002800000: +-----------------------------------+     e      -----
- *                     |                ...                |     l
- *                     |                                   |     |
- * 0x6000000000000000: +-----------------------------------+   -----
  *                     |                ...                |
  * 0x8000000000000000: +-----------------------------------+   -----
  *                     |         kernel code+data          |     |
@@ -74,8 +65,6 @@
 
 /* beginning of the kernel-code */
 #define KERNEL_START			((uintptr_t)0x8000000000000000)
-/* beginning of the kernel-data-structures */
-#define KERNEL_AREA				((uintptr_t)0x4000000000000000)
 #define DIR_MAPPED_SPACE		((uintptr_t)0x8000000000000000)
 
 /* number of used segments */
@@ -95,14 +84,16 @@
 /* converts pages to page-tables (how many page-tables are required for the pages?) */
 #define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
-/* area for global-file-table */
-#define GFT_AREA				KERNEL_AREA
+/* on mmix, the dynamically extending regions are not mapped into the virtual memory. because
+ * if we did so, we would have to copy all page-tables for that on every process-clone (the
+ * address-space-number has to match rV.n). thus, we provide a different strategy for these
+ * areas, that access the stuff over the directly mapped space. therefore, only the sizes are
+ * important here. the start-addresses are ignored */
+#define GFT_AREA				0
+#define VFSNODE_AREA			0
+#define SLLNODE_AREA			0
 #define GFT_AREA_SIZE			(PAGE_SIZE * PT_ENTRY_COUNT)
-/* area for vfs-nodes */
-#define VFSNODE_AREA			(GFT_AREA + GFT_AREA_SIZE)
 #define VFSNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT)
-/* area for sll-nodes */
-#define SLLNODE_AREA			(VFSNODE_AREA + VFSNODE_AREA_SIZE)
 #define SLLNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT * 8)
 
 /* start-address of the text */
@@ -116,7 +107,7 @@
 
 /* determines whether the given address is on the heap */
 /* in this case it is sufficient to check whether its not in the data-area of the kernel */
-#define IS_ON_HEAP(addr) ((uintptr_t)(addr) > KERNEL_START + boot_getKernelSize())
+#define IS_ON_HEAP(addr) 		((uintptr_t)(addr) > KERNEL_START + boot_getKernelSize())
 
 typedef struct {
 	sAddressSpace *addrSpace;

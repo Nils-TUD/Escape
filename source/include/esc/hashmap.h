@@ -26,7 +26,7 @@
 /**
  * A function to calculate the key of the given data
  */
-typedef uint (*fGetKey)(const void *data);
+typedef ulong (*fGetKey)(const void *data);
 
 typedef struct {
 	/* array of linked lists as map */
@@ -68,7 +68,7 @@ size_t hm_getCount(sHashMap *m);
  * @param key the key of the data to find
  * @return the data or NULL if not found
  */
-void *hm_get(sHashMap *m,uint key);
+void *hm_get(sHashMap *m,ulong key);
 
 /**
  * Adds (i.e. it will NOT replace data with the same key!) the given data to the map.

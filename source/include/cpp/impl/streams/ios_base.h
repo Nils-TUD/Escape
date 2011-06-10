@@ -28,7 +28,7 @@
 #include <new>
 
 namespace std {
-	typedef std::off_t streamoff;
+	typedef off_t streamoff;
 	typedef size_t streamsize;
 
 	class ios_base {

@@ -132,24 +132,24 @@ static void test_atoi(void) {
 static void test_atoll(void) {
 	test_caseStart("Testing atoll()");
 
-	if(!test_assertLInt(atoll("123"),123)) return;
-	if(!test_assertLInt(atoll("1"),1)) return;
-	if(!test_assertLInt(atoll("0"),0)) return;
-	if(!test_assertLInt(atoll("123456789"),123456789)) return;
-	if(!test_assertLInt(atoll("-1"),-1)) return;
-	if(!test_assertLInt(atoll("-546"),-546)) return;
-	if(!test_assertLInt(atoll("  45  "),45)) return;
-	if(!test_assertLInt(atoll("\t\n\r12.4\n"),12)) return;
-	if(!test_assertLInt(atoll("2147483647"),2147483647LL)) return;
-	if(!test_assertLInt(atoll("-2147483648"),-2147483648LL)) return;
-	if(!test_assertLInt(atoll("8278217191231"),8278217191231LL)) return;
-	if(!test_assertLInt(atoll("-8278217191231"),-8278217191231LL)) return;
-	if(!test_assertLInt(atoll("9223372036854775807"),9223372036854775807LL)) return;
-	if(!test_assertLInt(atoll("-9223372036854775808"),-9223372036854775808LL)) return;
-	if(!test_assertLInt(atoll(""),0)) return;
-	if(!test_assertLInt(atoll("-"),0)) return;
-	if(!test_assertLInt(atoll("abc"),0)) return;
-	if(!test_assertLInt(atoll("a123b"),0)) return;
+	if(!test_assertLLInt(atoll("123"),123)) return;
+	if(!test_assertLLInt(atoll("1"),1)) return;
+	if(!test_assertLLInt(atoll("0"),0)) return;
+	if(!test_assertLLInt(atoll("123456789"),123456789)) return;
+	if(!test_assertLLInt(atoll("-1"),-1)) return;
+	if(!test_assertLLInt(atoll("-546"),-546)) return;
+	if(!test_assertLLInt(atoll("  45  "),45)) return;
+	if(!test_assertLLInt(atoll("\t\n\r12.4\n"),12)) return;
+	if(!test_assertLLInt(atoll("2147483647"),2147483647LL)) return;
+	if(!test_assertLLInt(atoll("-2147483648"),-2147483648LL)) return;
+	if(!test_assertLLInt(atoll("8278217191231"),8278217191231LL)) return;
+	if(!test_assertLLInt(atoll("-8278217191231"),-8278217191231LL)) return;
+	if(!test_assertLLInt(atoll("9223372036854775807"),9223372036854775807LL)) return;
+	if(!test_assertLLInt(atoll("-9223372036854775808"),-9223372036854775808LL)) return;
+	if(!test_assertLLInt(atoll(""),0)) return;
+	if(!test_assertLLInt(atoll("-"),0)) return;
+	if(!test_assertLLInt(atoll("abc"),0)) return;
+	if(!test_assertLLInt(atoll("a123b"),0)) return;
 
 	test_caseSucceeded();
 }
@@ -626,18 +626,18 @@ static void test_strstr(void) {
 static void test_strspn(void) {
 	test_caseStart("Testing strspn()");
 
-	if(!test_assertUInt(strspn("abc","def"),0)) return;
-	if(!test_assertUInt(strspn("abc","a"),1)) return;
-	if(!test_assertUInt(strspn("abc","ab"),2)) return;
-	if(!test_assertUInt(strspn("abc","abc"),3)) return;
-	if(!test_assertUInt(strspn("abc","bca"),3)) return;
-	if(!test_assertUInt(strspn("abc","cab"),3)) return;
-	if(!test_assertUInt(strspn("abc","cba"),3)) return;
-	if(!test_assertUInt(strspn("abc","bac"),3)) return;
-	if(!test_assertUInt(strspn("abc","b"),0)) return;
-	if(!test_assertUInt(strspn("abc","cdef"),0)) return;
-	if(!test_assertUInt(strspn("","123"),0)) return;
-	if(!test_assertUInt(strspn("",""),0)) return;
+	if(!test_assertSize(strspn("abc","def"),0)) return;
+	if(!test_assertSize(strspn("abc","a"),1)) return;
+	if(!test_assertSize(strspn("abc","ab"),2)) return;
+	if(!test_assertSize(strspn("abc","abc"),3)) return;
+	if(!test_assertSize(strspn("abc","bca"),3)) return;
+	if(!test_assertSize(strspn("abc","cab"),3)) return;
+	if(!test_assertSize(strspn("abc","cba"),3)) return;
+	if(!test_assertSize(strspn("abc","bac"),3)) return;
+	if(!test_assertSize(strspn("abc","b"),0)) return;
+	if(!test_assertSize(strspn("abc","cdef"),0)) return;
+	if(!test_assertSize(strspn("","123"),0)) return;
+	if(!test_assertSize(strspn("",""),0)) return;
 
 	test_caseSucceeded();
 }
@@ -645,12 +645,12 @@ static void test_strspn(void) {
 static void test_strcspn(void) {
 	test_caseStart("Testing strcspn()");
 
-	if(!test_assertUInt(strcspn("abc","def"),3)) return;
-	if(!test_assertUInt(strcspn("abc","a"),0)) return;
-	if(!test_assertUInt(strcspn("abc","b"),1)) return;
-	if(!test_assertUInt(strcspn("abc","cdef"),2)) return;
-	if(!test_assertUInt(strcspn("","123"),0)) return;
-	if(!test_assertUInt(strcspn("",""),0)) return;
+	if(!test_assertSize(strcspn("abc","def"),3)) return;
+	if(!test_assertSize(strcspn("abc","a"),0)) return;
+	if(!test_assertSize(strcspn("abc","b"),1)) return;
+	if(!test_assertSize(strcspn("abc","cdef"),2)) return;
+	if(!test_assertSize(strcspn("","123"),0)) return;
+	if(!test_assertSize(strcspn("",""),0)) return;
 
 	test_caseSucceeded();
 }
@@ -699,10 +699,10 @@ static void test_strcut(void) {
 static void test_strlen(void) {
 	test_caseStart("Testing strlen()");
 
-	if(!test_assertUInt(strlen("abc"),3)) return;
-	if(!test_assertUInt(strlen(""),0)) return;
-	if(!test_assertUInt(strlen("abcdef"),6)) return;
-	if(!test_assertUInt(strlen("1"),1)) return;
+	if(!test_assertSize(strlen("abc"),3)) return;
+	if(!test_assertSize(strlen(""),0)) return;
+	if(!test_assertSize(strlen("abcdef"),6)) return;
+	if(!test_assertSize(strlen("1"),1)) return;
 
 	test_caseSucceeded();
 }
@@ -710,17 +710,17 @@ static void test_strlen(void) {
 static void test_strnlen(void) {
 	test_caseStart("Testing strnlen()");
 
-	if(!test_assertInt(strnlen("abc",10),3)) return;
-	if(!test_assertInt(strnlen("",10),0)) return;
-	if(!test_assertInt(strnlen("abcdef",10),6)) return;
-	if(!test_assertInt(strnlen("1",10),1)) return;
-	if(!test_assertInt(strnlen("abc",3),3)) return;
-	if(!test_assertInt(strnlen("",0),0)) return;
-	if(!test_assertInt(strnlen("abcdef",6),6)) return;
-	if(!test_assertInt(strnlen("1",1),1)) return;
-	if(!test_assertInt(strnlen("abc",2),-1)) return;
-	if(!test_assertInt(strnlen("abcdef",5),-1)) return;
-	if(!test_assertInt(strnlen("1",0),-1)) return;
+	if(!test_assertSSize(strnlen("abc",10),3)) return;
+	if(!test_assertSSize(strnlen("",10),0)) return;
+	if(!test_assertSSize(strnlen("abcdef",10),6)) return;
+	if(!test_assertSSize(strnlen("1",10),1)) return;
+	if(!test_assertSSize(strnlen("abc",3),3)) return;
+	if(!test_assertSSize(strnlen("",0),0)) return;
+	if(!test_assertSSize(strnlen("abcdef",6),6)) return;
+	if(!test_assertSSize(strnlen("1",1),1)) return;
+	if(!test_assertSSize(strnlen("abc",2),-1)) return;
+	if(!test_assertSSize(strnlen("abcdef",5),-1)) return;
+	if(!test_assertSSize(strnlen("1",0),-1)) return;
 
 	test_caseSucceeded();
 }
@@ -877,10 +877,10 @@ static void test_strtol(void) {
 
 	for(i = 0; i < ARRAY_SIZE(tests); i++) {
 		res = strtol(tests[i].str,&end,tests[i].base);
-		test_assertInt(res,tests[i].res);
+		test_assertLInt(res,tests[i].res);
 		test_assertTrue(*end == '\0');
 		res = strtol(tests[i].str,NULL,tests[i].base);
-		test_assertInt(res,tests[i].res);
+		test_assertLInt(res,tests[i].res);
 	}
 
 	test_caseSucceeded();

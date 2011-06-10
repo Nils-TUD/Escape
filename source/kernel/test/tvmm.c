@@ -41,14 +41,14 @@ static size_t heapAfter;
 static size_t framesAfter;
 
 static void test_init(void) {
-	heapBefore = kheap_getFreeMem();
+	heapBefore = kheap_getUsedMem();
 	framesBefore = pmem_getFreeFrames(MM_DEF);
 }
 static void test_finish(void) {
-	heapAfter = kheap_getFreeMem();
+	heapAfter = kheap_getUsedMem();
 	framesAfter = pmem_getFreeFrames(MM_DEF);
-	test_assertTrue(heapAfter >= heapBefore);
-	test_assertUInt(framesAfter,framesBefore);
+	test_assertSize(heapAfter,heapBefore);
+	test_assertSize(framesAfter,framesBefore);
 }
 
 static void test_vmm(void) {
@@ -57,7 +57,7 @@ static void test_vmm(void) {
 }
 
 static void test_1(void) {
-	tVMRegNo rno,rno2;
+	tVMRegNo rno,rno2,rno3;
 	tPid pid;
 	sProc *p = proc_getRunning();
 	sProc *clone;
@@ -72,11 +72,13 @@ static void test_1(void) {
 	test_init();
 	rno = vmm_add(p,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_TEXT);
 	test_assertInt(rno,RNO_TEXT);
-	rno = vmm_add(p,NULL,0,PAGE_SIZE * 3,PAGE_SIZE * 3,REG_RODATA);
-	test_assertInt(rno,RNO_RODATA);
-	rno = vmm_add(p,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_DATA);
-	test_assertInt(rno,RNO_DATA);
-	proc_removeRegions(p,false);
+	rno2 = vmm_add(p,NULL,0,PAGE_SIZE * 3,PAGE_SIZE * 3,REG_RODATA);
+	test_assertInt(rno2,RNO_RODATA);
+	rno3 = vmm_add(p,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_DATA);
+	test_assertInt(rno3,RNO_DATA);
+	vmm_remove(p,rno);
+	vmm_remove(p,rno2);
+	vmm_remove(p,rno3);
 	test_finish();
 
 	test_init();
@@ -89,7 +91,7 @@ static void test_1(void) {
 	test_finish();
 
 	pid = proc_getFreePid();
-	test_assertUInt(proc_clone(pid,0),0);
+	test_assertInt(proc_clone(pid,0),0);
 	clone = proc_getByPid(pid);
 
 	test_init();
@@ -116,13 +118,13 @@ static void test_2(void) {
 	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
 	test_assertTrue(rno >= 0);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,3),end / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,3),end / PAGE_SIZE);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,-2),end / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,-2),end / PAGE_SIZE);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,1),end / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,1),end / PAGE_SIZE);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,-3),end / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,-3),end / PAGE_SIZE);
 	vmm_remove(p,rno);
 	test_finish();
 
@@ -130,15 +132,15 @@ static void test_2(void) {
 	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
 	test_assertTrue(rno >= 0);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,3),start / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,3),start / PAGE_SIZE);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,2),start / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,2),start / PAGE_SIZE);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,-4),start / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,-4),start / PAGE_SIZE);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,1),start / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,1),start / PAGE_SIZE);
 	vmm_getRegRange(p,rno,&start,&end);
-	test_assertInt(vmm_grow(p,rno,-1),start / PAGE_SIZE);
+	test_assertSSize(vmm_grow(p,rno,-1),start / PAGE_SIZE);
 	vmm_remove(p,rno);
 	test_finish();
 

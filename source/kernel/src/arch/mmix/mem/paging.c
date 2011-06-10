@@ -113,7 +113,7 @@ void paging_setCur(tPageDir pdir) {
 
 bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > KERNEL_AREA || virt + count < virt)
+	if(virt + count > DIR_MAPPED_SPACE || virt + count < virt)
 		return false;
 
 	return paging_isRangeReadable(virt,count);
@@ -130,7 +130,7 @@ bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 			return false;
 		if(!pte.readable) {
 			/* we have to handle the page-fault here */
-			/* TODO if(!vmm_pagefault(virt))*/
+			if(!vmm_pagefault(virt))
 				return false;
 		}
 		virt += PAGE_SIZE;
@@ -140,7 +140,7 @@ bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 
 bool paging_isRangeUserWritable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > KERNEL_AREA || virt + count < virt)
+	if(virt + count > DIR_MAPPED_SPACE || virt + count < virt)
 		return false;
 
 	return paging_isRangeWritable(virt,count);
@@ -156,7 +156,7 @@ bool paging_isRangeWritable(uintptr_t virt,size_t count) {
 		if(!pte.exists)
 			return false;
 		if(!pte.readable || !pte.writable) {
-			/* TODO if(!vmm_pagefault(virt))*/
+			if(!vmm_pagefault(virt))
 				return false;
 		}
 		virt += PAGE_SIZE;
@@ -634,9 +634,10 @@ void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 	/* go through all page-tables in the root-location */
 	vid_printf("root-location @ %p:\n",root);
 	for(i = 0; i < SEGMENT_COUNT; i++) {
+		ulong segSize = SEGSIZE(context->rV,i + 1) - SEGSIZE(context->rV,i);
 		uintptr_t addr = (i << 61);
 		vid_printf("segment %Su:\n",i);
-		for(j = 0; j < PTS_PER_SEGMENT; j++) {
+		for(j = 0; j < segSize; j++) {
 			paging_dbg_printPageTable(i,addr,(uint64_t*)root,j,1);
 			addr = (i << 61) | (PAGE_SIZE * (1UL << (10 * (j + 1))));
 			root += PAGE_SIZE;

@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/region.h>
+#include <sys/mem/paging.h>
 #include <sys/video.h>
 #include <esc/test.h>
 #include "tregion.h"
@@ -65,11 +66,11 @@ static void test_1(void) {
 	test_assertUInt(reg->binary.modifytime,0);
 	test_assertInt(reg->binary.ino,0);
 	test_assertInt(reg->binary.dev,0);
-	test_assertUInt(reg->binOffset,0);
-	test_assertUInt(reg->flags,RF_GROWABLE);
-	test_assertUInt(reg->byteCount,124);
-	test_assertUInt(reg_refCount(reg),0);
-	test_assertUInt(reg->pageFlags[0],PF_DEMANDLOAD);
+	test_assertOff(reg->binOffset,0);
+	test_assertULInt(reg->flags,RF_GROWABLE);
+	test_assertSize(reg->byteCount,124);
+	test_assertSize(reg_refCount(reg),0);
+	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	reg_destroy(reg);
 	test_finish();
 
@@ -77,17 +78,17 @@ static void test_1(void) {
 	bindesc.modifytime = 1234;
 	bindesc.ino = 42;
 	bindesc.dev = 4;
-	reg = reg_create(&bindesc,123,4097,4097,0,RF_STACK);
+	reg = reg_create(&bindesc,123,PAGE_SIZE + 1,PAGE_SIZE + 1,0,RF_STACK);
 	test_assertTrue(reg != NULL);
 	test_assertUInt(reg->binary.modifytime,1234);
 	test_assertInt(reg->binary.ino,42);
 	test_assertInt(reg->binary.dev,4);
-	test_assertUInt(reg->binOffset,123);
-	test_assertUInt(reg->flags,RF_STACK);
-	test_assertUInt(reg->byteCount,4097);
-	test_assertUInt(reg_refCount(reg),0);
-	test_assertUInt(reg->pageFlags[0],0);
-	test_assertUInt(reg->pageFlags[1],0);
+	test_assertOff(reg->binOffset,123);
+	test_assertULInt(reg->flags,RF_STACK);
+	test_assertSize(reg->byteCount,PAGE_SIZE + 1);
+	test_assertSize(reg_refCount(reg),0);
+	test_assertULInt(reg->pageFlags[0],0);
+	test_assertULInt(reg->pageFlags[1],0);
 	reg_destroy(reg);
 	test_finish();
 
@@ -103,11 +104,11 @@ static void test_2(void) {
 	test_assertTrue(reg != NULL);
 	test_assertTrue(reg_addTo(reg,(const void*)0x1234));
 	test_assertTrue(reg_addTo(reg,(const void*)0x5678));
-	test_assertUInt(reg_refCount(reg),2);
+	test_assertSize(reg_refCount(reg),2);
 	test_assertTrue(reg_remFrom(reg,(const void*)0x5678));
-	test_assertUInt(reg_refCount(reg),1);
+	test_assertSize(reg_refCount(reg),1);
 	test_assertTrue(reg_remFrom(reg,(const void*)0x1234));
-	test_assertUInt(reg_refCount(reg),0);
+	test_assertSize(reg_refCount(reg),0);
 	reg_destroy(reg);
 	test_finish();
 
@@ -120,46 +121,46 @@ static void test_3(void) {
 	test_caseStart("Testing reg_grow()");
 
 	test_init();
-	reg = reg_create(NULL,123,0x1000,0x1000,PF_DEMANDLOAD,RF_GROWABLE);
+	reg = reg_create(NULL,123,PAGE_SIZE,PAGE_SIZE,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
-	test_assertUInt(reg->byteCount,0x1000);
-	test_assertUInt(reg->pageFlags[0],PF_DEMANDLOAD);
+	test_assertSize(reg->byteCount,PAGE_SIZE);
+	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	test_assertTrue(reg_grow(reg,10));
-	test_assertUInt(reg->pageFlags[0],PF_DEMANDLOAD);
+	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	for(i = 1; i < 11; i++)
-		test_assertUInt(reg->pageFlags[i],0);
-	test_assertUInt(reg->byteCount,0xB000);
+		test_assertULInt(reg->pageFlags[i],0);
+	test_assertSize(reg->byteCount,PAGE_SIZE * 11);
 	test_assertTrue(reg_grow(reg,-5));
-	test_assertUInt(reg->byteCount,0x6000);
+	test_assertSize(reg->byteCount,PAGE_SIZE * 6);
 	test_assertTrue(reg_grow(reg,-3));
-	test_assertUInt(reg->byteCount,0x3000);
+	test_assertSize(reg->byteCount,PAGE_SIZE * 3);
 	test_assertTrue(reg_grow(reg,-3));
-	test_assertUInt(reg->byteCount,0x0000);
+	test_assertSize(reg->byteCount,0);
 	reg_destroy(reg);
 	test_finish();
 
 	test_init();
-	reg = reg_create(NULL,123,0x1000,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
+	reg = reg_create(NULL,123,PAGE_SIZE,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
 	test_assertTrue(reg != NULL);
-	test_assertUInt(reg->byteCount,0x1000);
-	test_assertUInt(reg->pageFlags[0],PF_DEMANDLOAD);
+	test_assertSize(reg->byteCount,PAGE_SIZE);
+	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	test_assertTrue(reg_grow(reg,10));
 	for(i = 0; i < 10; i++)
-		test_assertUInt(reg->pageFlags[i],0);
-	test_assertUInt(reg->pageFlags[10],PF_DEMANDLOAD);
-	test_assertUInt(reg->byteCount,0xB000);
+		test_assertULInt(reg->pageFlags[i],0);
+	test_assertULInt(reg->pageFlags[10],PF_DEMANDLOAD);
+	test_assertSize(reg->byteCount,PAGE_SIZE * 11);
 	test_assertTrue(reg_grow(reg,-5));
 	for(i = 0; i < 5; i++)
-		test_assertUInt(reg->pageFlags[i],0);
-	test_assertUInt(reg->pageFlags[5],PF_DEMANDLOAD);
-	test_assertUInt(reg->byteCount,0x6000);
+		test_assertULInt(reg->pageFlags[i],0);
+	test_assertULInt(reg->pageFlags[5],PF_DEMANDLOAD);
+	test_assertSize(reg->byteCount,PAGE_SIZE * 6);
 	test_assertTrue(reg_grow(reg,-3));
 	for(i = 0; i < 2; i++)
-		test_assertUInt(reg->pageFlags[i],0);
-	test_assertUInt(reg->pageFlags[2],PF_DEMANDLOAD);
-	test_assertUInt(reg->byteCount,0x3000);
+		test_assertULInt(reg->pageFlags[i],0);
+	test_assertULInt(reg->pageFlags[2],PF_DEMANDLOAD);
+	test_assertSize(reg->byteCount,PAGE_SIZE * 3);
 	test_assertTrue(reg_grow(reg,-3));
-	test_assertUInt(reg->byteCount,0x0000);
+	test_assertSize(reg->byteCount,0);
 	reg_destroy(reg);
 	test_finish();
 
@@ -175,19 +176,19 @@ static void test_4(void) {
 	bindesc.modifytime = 444;
 	bindesc.ino = 23;
 	bindesc.dev = 2;
-	reg = reg_create(&bindesc,123,0x1000,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
+	reg = reg_create(&bindesc,123,PAGE_SIZE,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
 	test_assertTrue(reg != NULL);
 	clone = reg_clone((const void*)0x1234,reg);
 	test_assertTrue(clone != NULL);
 	test_assertUInt(clone->binary.modifytime,444);
 	test_assertInt(clone->binary.ino,23);
 	test_assertInt(clone->binary.dev,2);
-	test_assertUInt(clone->binOffset,123);
-	test_assertUInt(clone->flags,RF_GROWABLE | RF_STACK);
-	test_assertUInt(clone->byteCount,0x1000);
-	test_assertUInt(reg_refCount(reg),0);
-	test_assertUInt(reg_refCount(clone),1);
-	test_assertUInt(clone->pageFlags[0],PF_DEMANDLOAD);
+	test_assertOff(clone->binOffset,123);
+	test_assertULInt(clone->flags,RF_GROWABLE | RF_STACK);
+	test_assertSize(clone->byteCount,PAGE_SIZE);
+	test_assertSize(reg_refCount(reg),0);
+	test_assertSize(reg_refCount(clone),1);
+	test_assertULInt(clone->pageFlags[0],PF_DEMANDLOAD);
 	reg_destroy(reg);
 	reg_destroy(clone);
 	test_finish();

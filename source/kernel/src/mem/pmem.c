@@ -83,7 +83,7 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 		for(c = 0; c < count; j++,c++) {
 			tBitmap dword = bitmap[j / BITS_PER_BMWORD];
 			tBitmap bit = (BITS_PER_BMWORD - 1) - (j % BITS_PER_BMWORD);
-			if(dword & (1 << bit))
+			if(dword & (1UL << bit))
 				break;
 		}
 		/* found enough? */
@@ -162,11 +162,11 @@ static void pmem_markUsed(tFrameNo frame,bool used) {
 		bitmapEntry = (tBitmap*)(bitmap + (frame / BITS_PER_BMWORD));
 		bit = (BITS_PER_BMWORD - 1) - (frame % BITS_PER_BMWORD);
 		if(used) {
-			*bitmapEntry = *bitmapEntry | (1 << bit);
+			*bitmapEntry = *bitmapEntry | (1UL << bit);
 			freeCont--;
 		}
 		else {
-			*bitmapEntry = *bitmapEntry & ~(1 << bit);
+			*bitmapEntry = *bitmapEntry & ~(1UL << bit);
 			freeCont++;
 		}
 	}
@@ -193,7 +193,7 @@ void pmem_dbg_printFreeFrames(uint types) {
 	if(types & MM_CONT) {
 		vid_printf("Bitmap: (frame numbers)\n");
 		for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
-			vid_printf("0x%08Px..: %0*b\n",pos / PAGE_SIZE,sizeof(uintptr_t) * 8,bitmap[i]);
+			vid_printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
 			pos += PAGE_SIZE * BITS_PER_BMWORD;
 		}
 	}

@@ -1,10 +1,750 @@
-Memory size: 33554432 bytes
+Loading /boot/kernel.bin......................................................................................................................................................................................................................................................................................................................................................
+Loading /sbin/disk.....................................................................................................................................................................................................................
+Loading /sbin/rtc......................................................................................................................................................................................................................
+Loading /sbin/fs...........................................................................................................................................................................................................................................................................................................................................................................................................................
+Memory size: 12582912 bytes
 Disk size: 92897280 bytes
-Kernelstack-begin: 8000:0000:0008:a000
-Kernelstack-end: 8000:0000:0008:a138
 Boot modules:
-	    /boot/kernel.bin
-	    	    [8000:0000:0000:0000 .. 8000:0000:0008:828b]
-	    /sbin/disk /system/devices/disk
-	    	    [8000:0000:0008:c000 .. 8000:0000:000b:4deb]
-Initializing physical memory-management...                                  DONEInitializing paging...                                                      DONEInitializing VFS...                                                         DONEInitializing process-management...                                          DONEInitializing virtual memory management...                                   DONEInitializing timer...                                                       DONEInitializing signal-handling...                                             DONE3987 free frames (31896 KiB)
+	/sbin/disk /system/devices/disk [c008:0000 .. c00b:511f]
+	/sbin/rtc /dev/rtc [c00b:6000 .. c00e:b70f]
+	/sbin/fs /dev/fs /dev/hda1 ext2 [c00e:c000 .. c015:2a3a]
+Initializing physical memory-management...                                  DONE
+Initializing paging...                                                      DONE
+Initializing VFS...                                                         DONE
+Initializing process-management...                                          DONE
+Initializing virtual memory management...                                   DONE
+Initializing timer...                                                       DONE
+Initializing signal-handling...                                             DONE
+2705 free frames (10820 KiB)
+Initializing Swapmap...                                                     DONE
+
+====== Starting test-procedure ======
+---- Starting with module 0 : "Physical memory-management" ----
+
+== Testcase 1 : Requesting and freeing 50 frames ==
+== >> SUCCESS ==
+
+== Testcase 2 : Requesting once and free ==
+== >> SUCCESS ==
+
+== Testcase 3 : Requesting twice and free ==
+== >> SUCCESS ==
+
+== Testcase 4 : Request, free, request and free ==
+== >> SUCCESS ==
+
+== Testcase 5 : Request a lot multiple times and free ==
+== >> SUCCESS ==
+
+== Testcase 6 : [Align] Requesting once and free ==
+== >> SUCCESS ==
+
+== Testcase 7 : [Align] Requesting twice and free ==
+== >> SUCCESS ==
+
+== Testcase 8 : [Align] Request, free, request and free ==
+== >> SUCCESS ==
+
+== Testcase 9 : [Align] Request a lot multiple times and free ==
+== >> SUCCESS ==
+
+---- Module "Physical memory-management" finished. Summary: ----
+-- 9 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 1 : "Dynamic array" ----
+
+== Testcase 1 : Test various functions ==
+== >> SUCCESS ==
+
+---- Module "Dynamic array" finished. Summary: ----
+-- 1 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 2 : "Paging" ----
+
+== Testcase 1 : Mapping 0 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Mapping 1 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 3 : Mapping 50 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 4 : Mapping 1024 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 5 : Mapping 1025 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 6 : Mapping 2048 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 7 : Mapping 2051 pages to 0000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 8 : Mapping 0 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 9 : Mapping 1 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 10 : Mapping 50 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 11 : Mapping 1024 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 12 : Mapping 1025 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 13 : Mapping 2048 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 14 : Mapping 2051 pages to 4000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 15 : Mapping 0 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 16 : Mapping 1 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 17 : Mapping 50 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 18 : Mapping 1024 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 19 : Mapping 1025 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 20 : Mapping 2048 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 21 : Mapping 2051 pages to 7000:0000 ==
+== >> SUCCESS ==
+
+== Testcase 22 : Mapping 0 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 23 : Mapping 1 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 24 : Mapping 50 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 25 : Mapping 1024 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 26 : Mapping 1025 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 27 : Mapping 2048 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 28 : Mapping 2051 pages to 0000:4000 ==
+== >> SUCCESS ==
+
+== Testcase 29 : Mapping 0 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 30 : Mapping 1 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 31 : Mapping 50 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 32 : Mapping 1024 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 33 : Mapping 1025 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 34 : Mapping 2048 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+== Testcase 35 : Mapping 2051 pages to 0000:1234 ==
+== >> SUCCESS ==
+
+Thread 1 (proc 1:initloader): 3f4
+== Testcase 36 : Mapping 3 pages to 0000:0000 into pdir c07f:3000 ==
+== >> SUCCESS ==
+
+== Testcase 37 : Mapping 6 pages to 4000:0000 into pdir c07f:3000, separatly ==
+== >> SUCCESS ==
+
+---- Module "Paging" finished. Summary: ----
+-- 37 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 3 : "Process-Management" ----
+
+== Testcase 1 : Cloning and destroying processes ==
+Cloning process to pid=2
+Thread 2 (proc 2:initloader): 3f5
+Destroying process
+Cloning process to pid=3
+Thread 3 (proc 3:initloader): 3f5
+Destroying process
+Cloning process to pid=4
+Thread 4 (proc 4:initloader): 3f5
+Destroying process
+Cloning process to pid=5
+Thread 5 (proc 5:initloader): 3f5
+Destroying process
+Cloning process to pid=6
+Thread 6 (proc 6:initloader): 3f5
+Destroying process
+== >> SUCCESS ==
+
+---- Module "Process-Management" finished. Summary: ----
+-- 1 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 4 : "Kernel-Heap" ----
+
+== Testcase 1 : Allocate, then free in same direction ==
+Allocating...(2704 free frames)
+4 bytes
+Write test for 0x80801408...done
+16 bytes
+Write test for 0x80801418...done
+40 bytes
+Write test for 0x80801434...done
+4092 bytes
+Write test for 0x80802008...done
+4096 bytes
+Write test for 0x80804008...done
+4100 bytes
+Write test for 0x80806008...done
+8192 bytes
+Write test for 0x80808008...done
+16388 bytes
+Write test for 0x8080b008...done
+Freeing...
+FREE1: address=0x80801408, i=0
+FREE1: address=0x80801418, i=1
+FREE1: address=0x80801434, i=2
+FREE1: address=0x80802008, i=3
+FREE1: address=0x80804008, i=4
+FREE1: address=0x80806008, i=5
+FREE1: address=0x80808008, i=6
+FREE1: address=0x8080b008, i=7
+== >> SUCCESS ==
+
+== Testcase 2 : Allocate, then free in opposite direction ==
+Allocating...(2690 free frames)
+4 bytes
+Write test for 0x80801408...done
+16 bytes
+Write test for 0x80801418...done
+40 bytes
+Write test for 0x80801434...done
+4092 bytes
+Write test for 0x80801468...done
+4096 bytes
+Write test for 0x80802470...done
+4100 bytes
+Write test for 0x8080347c...done
+8192 bytes
+Write test for 0x8080448c...done
+16388 bytes
+Write test for 0x80806498...done
+Freeing...
+FREE2: address=0x80806498, i=7
+FREE2: address=0x8080448c, i=6
+FREE2: address=0x8080347c, i=5
+FREE2: address=0x80802470, i=4
+FREE2: address=0x80801468, i=3
+FREE2: address=0x80801434, i=2
+FREE2: address=0x80801418, i=1
+FREE2: address=0x80801408, i=0
+== >> SUCCESS ==
+
+== Testcase 3 : Allocate, then free in "random" direction 1 ==
+Allocating...(2690 free frames)
+4 bytes
+Write test for 0x80801408...done
+16 bytes
+Write test for 0x80801418...done
+40 bytes
+Write test for 0x80801434...done
+4092 bytes
+Write test for 0x80801468...done
+4096 bytes
+Write test for 0x80802470...done
+4100 bytes
+Write test for 0x8080347c...done
+8192 bytes
+Write test for 0x8080448c...done
+16388 bytes
+Write test for 0x80806498...done
+Freeing...
+FREE3: address=0x80806498, i=0
+FREE3: address=0x8080347c, i=1
+FREE3: address=0x80801434, i=2
+FREE3: address=0x80801408, i=3
+FREE3: address=0x8080448c, i=4
+FREE3: address=0x80801468, i=5
+FREE3: address=0x80802470, i=6
+FREE3: address=0x80801418, i=7
+== >> SUCCESS ==
+
+== Testcase 4 : Allocate, then free in "random" direction 2 ==
+Allocating...(2690 free frames)
+4 bytes
+Write test for 0x80801408...done
+16 bytes
+Write test for 0x80801418...done
+40 bytes
+Write test for 0x80801434...done
+4092 bytes
+Write test for 0x80801468...done
+4096 bytes
+Write test for 0x80802470...done
+4100 bytes
+Write test for 0x8080347c...done
+8192 bytes
+Write test for 0x8080448c...done
+16388 bytes
+Write test for 0x80806498...done
+Freeing...
+FREE4: address=0x80801468, i=0
+FREE4: address=0x80802470, i=1
+FREE4: address=0x80801418, i=2
+FREE4: address=0x8080347c, i=3
+FREE4: address=0x8080448c, i=4
+FREE4: address=0x80801408, i=5
+FREE4: address=0x80806498, i=6
+FREE4: address=0x80801434, i=7
+== >> SUCCESS ==
+
+== Testcase 5 : Allocate and free 4 bytes ==
+Write test for 0x80801408...done
+Freeing mem @ 0x80801408
+== >> SUCCESS ==
+
+== Testcase 6 : Allocate and free 16 bytes ==
+Write test for 0x80801408...done
+Freeing mem @ 0x80801408
+== >> SUCCESS ==
+
+== Testcase 7 : Allocate and free 40 bytes ==
+Write test for 0x80801408...done
+Freeing mem @ 0x80801408
+== >> SUCCESS ==
+
+== Testcase 8 : Allocate and free 4092 bytes ==
+Write test for 0x80801408...done
+Freeing mem @ 0x80801408
+== >> SUCCESS ==
+
+== Testcase 9 : Allocate and free 4096 bytes ==
+Write test for 0x80801408...done
+Freeing mem @ 0x80801408
+== >> SUCCESS ==
+
+== Testcase 10 : Allocate and free 4100 bytes ==
+Write test for 0x80801408...done
+Freeing mem @ 0x80801408
+== >> SUCCESS ==
+
+== Testcase 11 : Allocate and free 8192 bytes ==
+Write test for 0x80801408...done
+Freeing mem @ 0x80801408
+== >> SUCCESS ==
+
+== Testcase 12 : Allocate and free 16388 bytes ==
+Write test for 0x80801408...done
+Freeing mem @ 0x80801408
+== >> SUCCESS ==
+
+== Testcase 13 : Allocate 10000 times 1 byte ==
+== >> SUCCESS ==
+
+== Testcase 14 : Allocating 3 regions ==
+Freeing region 2...
+Reusing region 2...
+Testing contents...
+== >> SUCCESS ==
+
+== Testcase 15 : Testing realloc() ==
+== >> SUCCESS ==
+
+---- Module "Kernel-Heap" finished. Summary: ----
+-- 15 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 5 : "Scheduling" ----
+
+---- Module "Scheduling" finished. Summary: ----
+-- 0 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 6 : "String" ----
+
+== Testcase 1 : Testing atoi() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing atoll() ==
+== >> SUCCESS ==
+
+== Testcase 3 : Testing itoa() ==
+== >> SUCCESS ==
+
+== Testcase 4 : Testing memset() ==
+== >> SUCCESS ==
+
+== Testcase 5 : Testing memclear() ==
+== >> SUCCESS ==
+
+== Testcase 6 : Testing memchr() ==
+== >> SUCCESS ==
+
+== Testcase 7 : Testing memcpy() ==
+== >> SUCCESS ==
+
+== Testcase 8 : Testing memcmp() ==
+== >> SUCCESS ==
+
+== Testcase 9 : Testing memmove() ==
+== >> SUCCESS ==
+
+== Testcase 10 : Testing strcpy() ==
+== >> SUCCESS ==
+
+== Testcase 11 : Testing strncpy() ==
+== >> SUCCESS ==
+
+== Testcase 12 : Testing strtok() ==
+== >> SUCCESS ==
+
+== Testcase 13 : Testing strcat() ==
+== >> SUCCESS ==
+
+== Testcase 14 : Testing strnat() ==
+== >> SUCCESS ==
+
+== Testcase 15 : Testing strcmp() ==
+== >> SUCCESS ==
+
+== Testcase 16 : Testing strncmp() ==
+== >> SUCCESS ==
+
+== Testcase 17 : Testing strcasecmp() ==
+== >> SUCCESS ==
+
+== Testcase 18 : Testing strncasecmp() ==
+== >> SUCCESS ==
+
+== Testcase 19 : Testing strchr() ==
+== >> SUCCESS ==
+
+== Testcase 20 : Testing strchri() ==
+== >> SUCCESS ==
+
+== Testcase 21 : Testing strrchr() ==
+== >> SUCCESS ==
+
+== Testcase 22 : Testing strstr() ==
+== >> SUCCESS ==
+
+== Testcase 23 : Testing strspn() ==
+== >> SUCCESS ==
+
+== Testcase 24 : Testing strcspn() ==
+== >> SUCCESS ==
+
+== Testcase 25 : Testing strpbrk() ==
+== >> SUCCESS ==
+
+== Testcase 26 : Testing strcut() ==
+== >> SUCCESS ==
+
+== Testcase 27 : Testing strlen() ==
+== >> SUCCESS ==
+
+== Testcase 28 : Testing strnlen() ==
+== >> SUCCESS ==
+
+== Testcase 29 : Testing tolower() ==
+== >> SUCCESS ==
+
+== Testcase 30 : Testing toupper() ==
+== >> SUCCESS ==
+
+== Testcase 31 : Testing isalnumstr() ==
+== >> SUCCESS ==
+
+== Testcase 32 : Testing strmatch() ==
+== >> SUCCESS ==
+
+== Testcase 33 : Testing strtold() ==
+== >> SUCCESS ==
+
+== Testcase 34 : Testing strtol() ==
+== >> SUCCESS ==
+
+== Testcase 35 : Testing ecvt() ==
+== >> SUCCESS ==
+
+---- Module "String" finished. Summary: ----
+-- 35 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 7 : "VFS" ----
+
+== Testcase 1 : Testing vfs_createDriver() ==
+== >> SUCCESS ==
+
+---- Module "VFS" finished. Summary: ----
+-- 1 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 8 : "VFSNode" ----
+
+== Testcase 1 : Testing vfs_node_resolvePath() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing vfs_node_getPath() ==
+== >> SUCCESS ==
+
+---- Module "VFSNode" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 9 : "Signals" ----
+
+== Testcase 1 : Testing sig_canHandle() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing sig_setHandler() ==
+== >> SUCCESS ==
+
+== Testcase 3 : Adding and handling a signal ==
+== >> SUCCESS ==
+
+== Testcase 4 : Adding nested signals ==
+== >> SUCCESS ==
+
+== Testcase 5 : Adding signal for process ==
+== >> SUCCESS ==
+
+== Testcase 6 : Testing sig_unsetHandler() ==
+== >> SUCCESS ==
+
+== Testcase 7 : Testing sig_removeHandlerFor() ==
+== >> SUCCESS ==
+
+---- Module "Signals" finished. Summary: ----
+-- 7 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 10 : "Ring buffer" ----
+
+== Testcase 1 : Create & Destroy ==
+== >> SUCCESS ==
+
+== Testcase 2 : Write & Read ==
+== >> SUCCESS ==
+
+== Testcase 3 : Write & Read - Full RB_OVERWRITE ==
+== >> SUCCESS ==
+
+== Testcase 4 : Write & Read - Full RB_DEFAULT ==
+== >> SUCCESS ==
+
+== Testcase 5 : Move ==
+== >> SUCCESS ==
+
+---- Module "Ring buffer" finished. Summary: ----
+-- 5 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 11 : "Escape-Codes" ----
+
+== Testcase 1 : Valid codes ==
+== >> SUCCESS ==
+
+== Testcase 2 : Invalid codes ==
+== >> SUCCESS ==
+
+== Testcase 3 : Incomplete codes ==
+== >> SUCCESS ==
+
+---- Module "Escape-Codes" finished. Summary: ----
+-- 3 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 12 : "SwapMap" ----
+
+== Testcase 1 : Testing alloc & free ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing alloc & reverse free ==
+== >> SUCCESS ==
+
+== Testcase 3 : Testing alloc & free mixed ==
+== >> SUCCESS ==
+
+== Testcase 4 : Testing alloc all & free ==
+== >> SUCCESS ==
+
+---- Module "SwapMap" finished. Summary: ----
+-- 4 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 13 : "VMM Regions" ----
+
+== Testcase 1 : Testing reg_create() & reg_destroy() ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing reg_addTo() & reg_remFrom() ==
+== >> SUCCESS ==
+
+== Testcase 3 : Testing reg_grow() ==
+== >> SUCCESS ==
+
+== Testcase 4 : Testing reg_clone() ==
+== >> SUCCESS ==
+
+---- Module "VMM Regions" finished. Summary: ----
+-- 4 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 14 : "Virtual Memory Manager" ----
+
+== Testcase 1 : Testing vmm_add() and vmm_remove() ==
+virt=0000:0000
+virt=0000:1000
+virt=0000:3000
+virt=0000:6000
+virt=5fff:f000
+virt=5ff7:e000
+Thread 7 (proc 7:initloader): bb5
+virt=6000:0000
+== >> SUCCESS ==
+
+== Testcase 2 : Testing vmm_grow() ==
+virt=0000:0000
+virt=5fff:f000
+== >> SUCCESS ==
+
+---- Module "Virtual Memory Manager" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 15 : "Shared memory" ----
+
+== Testcase 1 : Testing shm_create() & shm_destroy() ==
+virt=6000:0000
+== >> SUCCESS ==
+
+== Testcase 2 : Testing shm_join() & shm_leave() & shm_remProc() ==
+Thread 8 (proc 8:initloader): be6
+Thread 9 (proc 9:initloader): be3
+virt=6000:0000
+virt=6000:0000
+virt=6000:0000
+virt=6000:0000
+virt=6000:0000
+virt=6000:0000
+virt=6000:0000
+virt=6000:0000
+virt=6000:0000
+== >> SUCCESS ==
+
+---- Module "Shared memory" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 16 : "HashMap" ----
+
+== Testcase 1 : Testing basic functionality ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing remove ==
+== >> SUCCESS ==
+
+== Testcase 3 : Testing map iterator ==
+0: 1
+1: 34
+2: 44
+3: 12
+4: 109
+== >> SUCCESS ==
+
+---- Module "HashMap" finished. Summary: ----
+-- 3 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 17 : "Single linked list" ----
+
+== Testcase 1 : Append & check & remove index 0 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Append & remove first (NULL) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Append & remove first (x) ==
+== >> SUCCESS ==
+
+== Testcase 4 : Create & append & destroy ==
+== >> SUCCESS ==
+
+== Testcase 5 : Create & append & insert somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 6 : Create & append & set somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 7 : Append until no mem left & destroy ==
+Appended 1086965 elements
+Freeing...done
+== >> SUCCESS ==
+
+== Testcase 8 : Walking through the list ==
+Starting at index 0
+element @ 0x81c4a000 : 0x123
+element @ 0x81c4a008 : 0x456
+element @ 0x81c4a010 : 0x789
+Starting at index 2
+element @ 0x81c4a010 : 0x789
+== >> SUCCESS ==
+
+== Testcase 9 : Testing sll_indexOf and sll_nodeWith ==
+== >> SUCCESS ==
+
+== Testcase 10 : Testing sll_clone ==
+== >> SUCCESS ==
+
+---- Module "Single linked list" finished. Summary: ----
+-- 10 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+====== All modules done ======
+== 18 modules successfull ==
+== 0 modules failed ==
+== 141 testcases successfull ==
+== 0 testcases failed ==
+============================

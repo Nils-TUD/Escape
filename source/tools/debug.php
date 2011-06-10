@@ -28,7 +28,7 @@ foreach($matches[0] as $k => $v) {
 }
 
 foreach($allocs as $addr => $open) {
-	if($open[0] > 0)
+	if($open[0] != 0)
 		echo $addr.' => '.$open[0].' (size='.$open[1].', caller='.strtolower($open[2]).')'."\n";
 }
 ?>

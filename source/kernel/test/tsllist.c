@@ -57,7 +57,7 @@ static void test_sllist(void) {
 }
 
 static void test_1(void) {
-	uint x = 0x100;
+	ulong x = 0x100;
 	size_t i,free,len;
 	bool res = true;
 	sSLList *list;
@@ -90,7 +90,7 @@ static void test_1(void) {
 }
 
 static void test_2(void) {
-	uint x = 0x100;
+	ulong x = 0x100;
 	size_t i,free,len;
 	sSLList *list;
 	free = kheap_getFreeMem();
@@ -113,7 +113,7 @@ static void test_2(void) {
 }
 
 static void test_3(void) {
-	uint x = 0x100;
+	ulong x = 0x100;
 	size_t i,free,len;
 	sSLList *list;
 	free = kheap_getFreeMem();
@@ -137,7 +137,7 @@ static void test_3(void) {
 }
 
 static void test_4(void) {
-	uint x = 0x100;
+	ulong x = 0x100;
 	size_t i,free;
 	sSLList *list;
 	free = kheap_getFreeMem();
@@ -156,7 +156,7 @@ static void test_4(void) {
 }
 
 static void test_5(void) {
-	uint x = 0x100;
+	ulong x = 0x100;
 	size_t i,free;
 	sSLList *list;
 	bool res = true;
@@ -193,7 +193,7 @@ static void test_5(void) {
 }
 
 static void test_6(void) {
-	uint x = 0x100;
+	ulong x = 0x100;
 	size_t i,free;
 	sSLList *list;
 	bool res = true;
@@ -230,7 +230,7 @@ static void test_6(void) {
 }
 
 static void test_7(void) {
-	uint x = 0x100;
+	ulong x = 0x100;
 	size_t free;
 	bool res;
 	sSLList *list;
@@ -288,10 +288,10 @@ static void test_9(void) {
 	sll_append(list,(void*)0x456);
 	sll_append(list,(void*)0x789);
 
-	test_assertInt(sll_indexOf(list,(void*)0x123),0);
-	test_assertInt(sll_indexOf(list,(void*)0x456),1);
-	test_assertInt(sll_indexOf(list,(void*)0x789),2);
-	test_assertInt(sll_indexOf(list,(void*)0x123123),-1);
+	test_assertSSize(sll_indexOf(list,(void*)0x123),0);
+	test_assertSSize(sll_indexOf(list,(void*)0x456),1);
+	test_assertSSize(sll_indexOf(list,(void*)0x789),2);
+	test_assertSSize(sll_indexOf(list,(void*)0x123123),-1);
 	test_assertPtr(sll_nodeWith(list,(void*)0x123),sll_nodeAt(list,0));
 	test_assertPtr(sll_nodeWith(list,(void*)0x456),sll_nodeAt(list,1));
 	test_assertPtr(sll_nodeWith(list,(void*)0x789),sll_nodeAt(list,2));
@@ -309,16 +309,16 @@ static void test_10(void) {
 	sll_append(l1,(void*)3);
 	sll_append(l1,(void*)2);
 	l2 = sll_clone(l1);
-	test_assertUInt(sll_length(l2),3);
-	test_assertInt((uint)sll_get(l2,0),4);
-	test_assertInt((uint)sll_get(l2,1),3);
-	test_assertInt((uint)sll_get(l2,2),2);
+	test_assertSize(sll_length(l2),3);
+	test_assertPtr(sll_get(l2,0),(void*)4);
+	test_assertPtr(sll_get(l2,1),(void*)3);
+	test_assertPtr(sll_get(l2,2),(void*)2);
 	sll_destroy(l1,false);
 	sll_destroy(l2,false);
 
 	l1 = sll_create();
 	l2 = sll_clone(l1);
-	test_assertUInt(sll_length(l2),0);
+	test_assertSize(sll_length(l2),0);
 
 	test_caseSucceeded();
 }

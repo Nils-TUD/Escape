@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+#include <sys/dbg/console.h>
 #include <sys/boot.h>
 
 /*static uint8_t initloader[] = {
@@ -31,6 +32,7 @@
 int main(const sBootInfo *bootinfo) {
 	boot_init(bootinfo,true);
 
+	cons_start();
 	while(1);
 
 #if 0

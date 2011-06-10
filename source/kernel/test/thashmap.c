@@ -30,8 +30,8 @@ static void test_hashmap(void);
 static void test_basic(void);
 static void test_remove(void);
 static void test_iterator(void);
-static uint test_getkey(const void *data) {
-	return (uint)data;
+static ulong test_getkey(const void *data) {
+	return (ulong)data;
 }
 
 /* our test-module */
@@ -60,7 +60,7 @@ static void test_basic(void) {
 	hm_add(m,(void*)17);
 	hm_add(m,(void*)19);
 
-	test_assertUInt(hm_getCount(m),6);
+	test_assertSize(hm_getCount(m),6);
 	test_assertPtr(hm_get(m,1),(void*)1);
 	test_assertPtr(hm_get(m,2),(void*)2);
 	test_assertPtr(hm_get(m,3),(void*)3);
@@ -71,7 +71,7 @@ static void test_basic(void) {
 	test_assertPtr(hm_get(m,27),NULL);
 
 	hm_destroy(m);
-	test_assertUInt(kheap_getFreeMem(),before);
+	test_assertSize(kheap_getFreeMem(),before);
 	test_caseSucceeded();
 }
 
@@ -89,28 +89,28 @@ static void test_remove(void) {
 	hm_add(m,(void*)16);
 	hm_add(m,(void*)3);
 
-	test_assertUInt(hm_getCount(m),6);
+	test_assertSize(hm_getCount(m),6);
 	hm_remove(m,(void*)3);
 	test_assertPtr(hm_get(m,3),NULL);
-	test_assertUInt(hm_getCount(m),5);
+	test_assertSize(hm_getCount(m),5);
 	hm_remove(m,(void*)1);
 	test_assertPtr(hm_get(m,1),NULL);
-	test_assertUInt(hm_getCount(m),4);
+	test_assertSize(hm_getCount(m),4);
 	hm_remove(m,(void*)88);
 	test_assertPtr(hm_get(m,88),NULL);
-	test_assertUInt(hm_getCount(m),3);
+	test_assertSize(hm_getCount(m),3);
 	hm_remove(m,(void*)5);
 	test_assertPtr(hm_get(m,5),NULL);
-	test_assertUInt(hm_getCount(m),2);
+	test_assertSize(hm_getCount(m),2);
 	hm_remove(m,(void*)16);
 	test_assertPtr(hm_get(m,16),NULL);
-	test_assertUInt(hm_getCount(m),1);
+	test_assertSize(hm_getCount(m),1);
 	hm_remove(m,(void*)6);
 	test_assertPtr(hm_get(m,6),NULL);
-	test_assertUInt(hm_getCount(m),0);
+	test_assertSize(hm_getCount(m),0);
 
 	hm_destroy(m);
-	test_assertUInt(kheap_getFreeMem(),before);
+	test_assertSize(kheap_getFreeMem(),before);
 	test_caseSucceeded();
 }
 
@@ -118,27 +118,27 @@ static void test_iterator(void) {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
 	size_t j;
-	uint i,elems[] = {44,12,18,34,1,109};
+	ulong i,elems[] = {44,12,18,34,1,109};
 	size_t before = kheap_getFreeMem();
 	test_caseStart("Testing map iterator");
 
 	m = hm_create(testmap,TEST_MAP_SIZE,test_getkey);
 	for(i = 0; i < ARRAY_SIZE(elems); i++)
 		hm_add(m,(void*)elems[i]);
-	test_assertUInt(hm_getCount(m),ARRAY_SIZE(elems));
+	test_assertSize(hm_getCount(m),ARRAY_SIZE(elems));
 
 	hm_remove(m,(void*)elems[2]);
 
 	j = 0;
-	for(hm_begin(m); (i = (uint)hm_next(m)); ) {
+	for(hm_begin(m); (i = (ulong)hm_next(m)); ) {
 		tprintf("%d: %u\n",j,i);
 		test_assertTrue(i == elems[0] || i == elems[1] ||
 				i == elems[3] || i == elems[4] || i == elems[5]);
 		j++;
 	}
-	test_assertUInt(hm_getCount(m),j);
+	test_assertSize(hm_getCount(m),j);
 
 	hm_destroy(m);
-	test_assertUInt(kheap_getFreeMem(),before);
+	test_assertSize(kheap_getFreeMem(),before);
 	test_caseSucceeded();
 }

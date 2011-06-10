@@ -133,6 +133,7 @@ tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 	/* get the attributes of the region (depending on type) */
 	if((res = vmm_getAttr(p,type,bCount,&pgFlags,&flags,&virt,&rno)) < 0)
 		return res;
+	vid_printf("virt=%p\n",virt);
 	/* no demand-loading if the binary isn't present */
 	if(bin == NULL)
 		pgFlags &= ~PF_DEMANDLOAD;

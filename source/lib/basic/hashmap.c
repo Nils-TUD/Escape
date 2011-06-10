@@ -54,7 +54,7 @@ size_t hm_getCount(sHashMap *m) {
 	return m->elCount;
 }
 
-void *hm_get(sHashMap *m,uint key) {
+void *hm_get(sHashMap *m,ulong key) {
 	sSLNode *n;
 	sSLList *l = m->map[key % m->mapSize];
 	if(!l || m->elCount == 0)
@@ -83,7 +83,7 @@ bool hm_add(sHashMap *m,const void *data) {
 
 void hm_remove(sHashMap *m,const void *data) {
 	sSLNode *n,*p;
-	uint key = m->keyFunc(data);
+	ulong key = m->keyFunc(data);
 	sSLList *l = m->map[key % m->mapSize];
 	if(!l || m->elCount == 0)
 		return;

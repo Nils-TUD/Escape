@@ -33,6 +33,7 @@ sTestModule tModSched = {
 };
 
 static void test_sched(void) {
+	/* TODO implement for threads */
 #if 0
 	sProc *x = (sProc*)proc_getByPid(proc_getFreePid());
 	sProc *rand[5] = {x + 1,x,x + 4,x + 2,x + 3};

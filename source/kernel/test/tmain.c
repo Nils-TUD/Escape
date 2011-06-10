@@ -52,32 +52,28 @@ int main(sBootInfo *bootinfo,uint32_t magic) {
 	boot_init(bootinfo,false);
 
 	/* start tests */
-#ifdef __mmix__
-	test_register(&tModAddrSpace);
-	test_register(&tModDynArray);
-	test_register(&tModPaging);
-	test_register(&tModKHeap);
-	test_register(&tModString);
-	test_register(&tModRBuffer);
-	test_register(&tModEscCodes);
-	test_register(&tModHashMap);
-	test_register(&tModSLList);
-#else
 	/* swapmap (needed for swapmap tests) */
 	vid_printf("Initializing Swapmap...");
 	swmap_init(256 * K);
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
+#ifdef __mmix__
+	test_register(&tModAddrSpace);
+#endif
 	test_register(&tModMM);
 	test_register(&tModDynArray);
 	test_register(&tModPaging);
+#ifndef __mmix__
 	test_register(&tModProc);
+#endif
 	test_register(&tModKHeap);
 	test_register(&tModSched);
 	test_register(&tModString);
 	test_register(&tModVFS);
 	test_register(&tModVFSn);
+#ifndef __mmix__
 	test_register(&tModSignals);
+#endif
 	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
 	test_register(&tModSwapMap);
@@ -86,7 +82,6 @@ int main(sBootInfo *bootinfo,uint32_t magic) {
 	test_register(&tModShm);
 	test_register(&tModHashMap);
 	test_register(&tModSLList);
-#endif
 	test_start();
 
 	/* stay here */

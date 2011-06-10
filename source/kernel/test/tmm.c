@@ -54,7 +54,7 @@ static void test_default(void) {
 	freeDefFrames = pmem_getFreeFrames(MM_DEF);
 	test_mm_allocate();
 	test_mm_free();
-	test_assertUInt(pmem_getFreeFrames(MM_DEF),freeDefFrames);
+	test_assertSize(pmem_getFreeFrames(MM_DEF),freeDefFrames);
 
 	test_caseSucceeded();
 }
@@ -67,7 +67,7 @@ static void test_contiguous(void) {
 	freeContFrames = pmem_getFreeFrames(MM_CONT);
 	res1 = pmem_allocateContiguous(3,1);
 	pmem_freeContiguous(res1,3);
-	test_assertUInt(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
 	test_caseSucceeded();
 
 	test_caseStart("Requesting twice and free");
@@ -76,7 +76,7 @@ static void test_contiguous(void) {
 	res2 = pmem_allocateContiguous(5,1);
 	pmem_freeContiguous(res1,6);
 	pmem_freeContiguous(res2,5);
-	test_assertUInt(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
 	test_caseSucceeded();
 
 	test_caseStart("Request, free, request and free");
@@ -91,7 +91,7 @@ static void test_contiguous(void) {
 	pmem_freeContiguous(res2,3);
 	pmem_freeContiguous(res3,5);
 	pmem_freeContiguous(res4,3);
-	test_assertUInt(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
 	test_caseSucceeded();
 
 	test_caseStart("Request a lot multiple times and free");
@@ -104,7 +104,7 @@ static void test_contiguous(void) {
 	pmem_freeContiguous(res1,35);
 	pmem_freeContiguous(res2,12);
 	pmem_freeContiguous(res4,56);
-	test_assertUInt(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
 	test_caseSucceeded();
 }
 
@@ -117,7 +117,7 @@ static void test_contiguous_align(void) {
 	res1 = pmem_allocateContiguous(3,4);
 	test_assertTrue((res1 % 4) == 0);
 	pmem_freeContiguous(res1,3);
-	test_assertUInt(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Requesting twice and free");
@@ -128,7 +128,7 @@ static void test_contiguous_align(void) {
 	test_assertTrue((res2 % 8) == 0);
 	pmem_freeContiguous(res1,6);
 	pmem_freeContiguous(res2,5);
-	test_assertUInt(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Request, free, request and free");
@@ -148,7 +148,7 @@ static void test_contiguous_align(void) {
 	pmem_freeContiguous(res2,3);
 	pmem_freeContiguous(res3,5);
 	pmem_freeContiguous(res4,3);
-	test_assertUInt(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Request a lot multiple times and free");
@@ -165,7 +165,7 @@ static void test_contiguous_align(void) {
 	pmem_freeContiguous(res1,35);
 	pmem_freeContiguous(res2,12);
 	pmem_freeContiguous(res4,56);
-	test_assertUInt(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
 	test_caseSucceeded();
 }
 

@@ -48,8 +48,8 @@ static void test_init(void) {
 static void test_finish(void) {
 	heapAfter = kheap_getFreeMem();
 	framesAfter = pmem_getFreeFrames(MM_DEF);
-	test_assertUInt(heapAfter,heapBefore);
-	test_assertUInt(framesAfter,framesBefore);
+	test_assertSize(heapAfter,heapBefore);
+	test_assertSize(framesAfter,framesBefore);
 }
 
 static void test_shm(void) {

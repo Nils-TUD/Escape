@@ -54,7 +54,7 @@ static void test_1(void) {
 	rb = rb_create(sizeof(size_t),10,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
 
-	test_assertUInt(rb_length(rb),0);
+	test_assertSize(rb_length(rb),0);
 
 	rb_destroy(rb);
 
@@ -74,12 +74,12 @@ static void test_2(void) {
 
 	for(i = 0; i < 10; i++)
 		test_assertTrue(rb_write(rb,&i));
-	test_assertUInt(rb_length(rb),10);
+	test_assertSize(rb_length(rb),10);
 	for(i = 0; i < 10; i++) {
 		test_assertTrue(rb_read(rb,&x));
-		test_assertUInt(x,i);
+		test_assertSize(x,i);
 	}
-	test_assertUInt(rb_length(rb),0);
+	test_assertSize(rb_length(rb),0);
 
 	rb_destroy(rb);
 
@@ -97,32 +97,32 @@ static void test_3(void) {
 	/* overwrite 1 */
 	for(i = 0; i < 6; i++)
 		test_assertTrue(rb_write(rb,&i));
-	test_assertUInt(rb_length(rb),5);
+	test_assertSize(rb_length(rb),5);
 	for(i = 0; i < 5; i++) {
 		test_assertTrue(rb_read(rb,&x));
-		test_assertUInt(x,i + 1);
+		test_assertSize(x,i + 1);
 	}
-	test_assertUInt(rb_length(rb),0);
+	test_assertSize(rb_length(rb),0);
 
 	/* overwrite 5 = all */
 	for(i = 0; i < 10; i++)
 		test_assertTrue(rb_write(rb,&i));
-	test_assertUInt(rb_length(rb),5);
+	test_assertSize(rb_length(rb),5);
 	for(i = 0; i < 5; i++) {
 		test_assertTrue(rb_read(rb,&x));
-		test_assertUInt(x,i + 5);
+		test_assertSize(x,i + 5);
 	}
-	test_assertUInt(rb_length(rb),0);
+	test_assertSize(rb_length(rb),0);
 
 	/* overwrite 2 */
 	for(i = 0; i < 7; i++)
 		test_assertTrue(rb_write(rb,&i));
-	test_assertUInt(rb_length(rb),5);
+	test_assertSize(rb_length(rb),5);
 	for(i = 0; i < 5; i++) {
 		test_assertTrue(rb_read(rb,&x));
-		test_assertUInt(x,i + 2);
+		test_assertSize(x,i + 2);
 	}
-	test_assertUInt(rb_length(rb),0);
+	test_assertSize(rb_length(rb),0);
 
 	rb_destroy(rb);
 
@@ -139,14 +139,14 @@ static void test_4(void) {
 
 	for(i = 0; i < 5; i++)
 		test_assertTrue(rb_write(rb,&i));
-	test_assertUInt(rb_length(rb),5);
+	test_assertSize(rb_length(rb),5);
 	test_assertFalse(rb_write(rb,&i));
-	test_assertUInt(rb_length(rb),5);
+	test_assertSize(rb_length(rb),5);
 	for(i = 0; i < 5; i++) {
 		test_assertTrue(rb_read(rb,&x));
-		test_assertUInt(x,i);
+		test_assertSize(x,i);
 	}
-	test_assertUInt(rb_length(rb),0);
+	test_assertSize(rb_length(rb),0);
 
 	rb_destroy(rb);
 
@@ -165,25 +165,25 @@ static void test_5(void) {
 
 	for(i = 0; i < 5; i++)
 		test_assertTrue(rb_write(rb1,&i));
-	test_assertUInt(rb_move(rb2,rb1,5),5);
-	test_assertUInt(rb_length(rb1),0);
-	test_assertUInt(rb_length(rb2),5);
+	test_assertSize(rb_move(rb2,rb1,5),5);
+	test_assertSize(rb_length(rb1),0);
+	test_assertSize(rb_length(rb2),5);
 
-	test_assertUInt(rb_move(rb1,rb2,3),3);
-	test_assertUInt(rb_length(rb1),3);
-	test_assertUInt(rb_length(rb2),2);
+	test_assertSize(rb_move(rb1,rb2,3),3);
+	test_assertSize(rb_length(rb1),3);
+	test_assertSize(rb_length(rb2),2);
 
-	test_assertUInt(rb_move(rb1,rb2,1),1);
-	test_assertUInt(rb_length(rb1),4);
-	test_assertUInt(rb_length(rb2),1);
+	test_assertSize(rb_move(rb1,rb2,1),1);
+	test_assertSize(rb_length(rb1),4);
+	test_assertSize(rb_length(rb2),1);
 
-	test_assertUInt(rb_move(rb1,rb2,4),1);
-	test_assertUInt(rb_length(rb1),5);
-	test_assertUInt(rb_length(rb2),0);
+	test_assertSize(rb_move(rb1,rb2,4),1);
+	test_assertSize(rb_length(rb1),5);
+	test_assertSize(rb_length(rb2),0);
 
-	test_assertUInt(rb_move(rb2,rb1,5),5);
-	test_assertUInt(rb_length(rb1),0);
-	test_assertUInt(rb_length(rb2),5);
+	test_assertSize(rb_move(rb2,rb1,5),5);
+	test_assertSize(rb_length(rb1),0);
+	test_assertSize(rb_length(rb2),5);
 
 	rb_destroy(rb1);
 	rb_destroy(rb2);

@@ -50,10 +50,16 @@ typedef struct {
 #define test_assertTrue(val) test_doAssertTrue((val),__FUNCTION__,__LINE__)
 #define test_assertFalse(val) test_doAssertFalse((val),__FUNCTION__,__LINE__)
 #define test_assertPtr(recv,exp) test_doAssertPtr((recv),(exp),__FUNCTION__,__LINE__)
+#define test_assertUIntPtr(recv,exp) test_doAssertUIntPtr((recv),(exp),__FUNCTION__,__LINE__)
+#define test_assertSize(recv,exp) test_doAssertSize((recv),(exp),__FUNCTION__,__LINE__)
+#define test_assertSSize(recv,exp) test_doAssertSSize((recv),(exp),__FUNCTION__,__LINE__)
+#define test_assertOff(recv,exp) test_doAssertOff((recv),(exp),__FUNCTION__,__LINE__)
 #define test_assertInt(recv,exp) test_doAssertInt((recv),(exp),__FUNCTION__,__LINE__)
 #define test_assertUInt(recv,exp) test_doAssertUInt((recv),(exp),__FUNCTION__,__LINE__)
 #define test_assertLInt(recv,exp) test_doAssertLInt((recv),(exp),__FUNCTION__,__LINE__)
 #define test_assertULInt(recv,exp) test_doAssertULInt((recv),(exp),__FUNCTION__,__LINE__)
+#define test_assertLLInt(recv,exp) test_doAssertLLInt((recv),(exp),__FUNCTION__,__LINE__)
+#define test_assertULLInt(recv,exp) test_doAssertULLInt((recv),(exp),__FUNCTION__,__LINE__)
 #define test_assertStr(recv,exp) test_doAssertStr((recv),(exp),__FUNCTION__,__LINE__)
 
 #ifdef __cplusplus
@@ -99,7 +105,7 @@ void test_caseSucceeded(void);
 void test_caseFailed(const char *fmt,...);
 
 /**
- * Checks whether the given argument is true. If not it calls test_caseFailed() and returns
+ * Checks whether the given argument is true/false. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received your received value
@@ -108,32 +114,10 @@ void test_caseFailed(const char *fmt,...);
  * @return true if received is true
  */
 bool test_doAssertTrue(bool received,const char *func,int line);
-
-/**
- * Checks whether the given argument is false. If not it calls test_caseFailed() and returns
- * false.
- *
- * @param received your received value
- * @param func the function-name
- * @param line the line
- * @return true if received is false
- */
 bool test_doAssertFalse(bool received,const char *func,int line);
 
 /**
- * Checks whether the given pointers are equal. If not it calls test_caseFailed() and returns
- * false.
- *
- * @param received the result you received
- * @param expected your expected result
- * @param func the function-name
- * @param line the line
- * @return true if the pointers are equal
- */
-bool test_doAssertPtr(const void *received,const void *expected,const char *func,int line);
-
-/**
- * Checks whether the given integers are equal. If not it calls test_caseFailed() and returns
+ * Checks whether the given values are equal. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received the result you received
@@ -143,53 +127,16 @@ bool test_doAssertPtr(const void *received,const void *expected,const char *func
  * @return true if the integers are equal
  */
 bool test_doAssertInt(int received,int expected,const char *func,int line);
-
-/**
- * Checks whether the given integers are equal. If not it calls test_caseFailed() and returns
- * false.
- *
- * @param received the result you received
- * @param expected your expected result
- * @param func the function-name
- * @param line the line
- * @return true if the integers are equal
- */
 bool test_doAssertUInt(uint received,uint expected,const char *func,int line);
-
-/**
- * Checks whether the given long integers are equal. If not it calls test_caseFailed() and returns
- * false.
- *
- * @param received the result you received
- * @param expected your expected result
- * @param func the function-name
- * @param line the line
- * @return true if the integers are equal
- */
-bool test_doAssertLInt(llong received,llong expected,const char *func,int line);
-
-/**
- * Checks whether the given unsigned long integers are equal. If not it calls test_caseFailed()
- * and returns false.
- *
- * @param received the result you received
- * @param expected your expected result
- * @param func the function-name
- * @param line the line
- * @return true if the integers are equal
- */
-bool test_doAssertULInt(ullong received,ullong expected,const char *func,int line);
-
-/**
- * Checks whether the given strings are equal. If not it calls test_caseFailed() and returns
- * false.
- *
- * @param received the result you received
- * @param expected your expected result
- * @param func the function-name
- * @param line the line
- * @return true if the strings are equal
- */
+bool test_doAssertLInt(long received,long expected,const char *func,int line);
+bool test_doAssertULInt(ulong received,ulong expected,const char *func,int line);
+bool test_doAssertLLInt(llong received,llong expected,const char *func,int line);
+bool test_doAssertULLInt(ullong received,ullong expected,const char *func,int line);
+bool test_doAssertPtr(const void *received,const void *expected,const char *func,int line);
+bool test_doAssertUIntPtr(uintptr_t received,uintptr_t expected,const char *func,int line);
+bool test_doAssertSize(size_t received,size_t expected,const char *func,int line);
+bool test_doAssertSSize(ssize_t received,ssize_t expected,const char *func,int line);
+bool test_doAssertOff(off_t received,off_t expected,const char *func,int line);
 bool test_doAssertStr(const char *received,const char *expected,const char *func,int line);
 
 /**

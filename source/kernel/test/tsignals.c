@@ -108,20 +108,22 @@ static void test_setHandler(void) {
 	test_caseSucceeded();
 
 	test_caseStart("Testing sig_unsetHandler()");
-	test_assertUInt(sig_dbg_getHandlerCount(),2);
+	test_assertSize(sig_dbg_getHandlerCount(),2);
 	sig_unsetHandler(t->tid,SIG_INTRPT_ATA1);
 	sig_unsetHandler(t->tid,SIG_TERM);
-	test_assertUInt(sig_dbg_getHandlerCount(),0);
+	test_assertSize(sig_dbg_getHandlerCount(),0);
 	test_caseSucceeded();
 
 	test_caseStart("Testing sig_removeHandlerFor()");
-	test_assertTrue(thread_getById(1) != NULL);
 	sig_setHandler(0,SIG_TERM,(fSignal)0x456);
 	sig_setHandler(0,SIG_SEGFAULT,(fSignal)0x456);
 	sig_setHandler(0,SIG_INTRPT_ATA1,(fSignal)0x456);
-	sig_setHandler(1,SIG_INTRPT_ATA1,(fSignal)0x1337);
-	sig_setHandler(1,SIG_INTRPT_COM1,(fSignal)0x1337);
-	sig_removeHandlerFor(1);
-	test_assertUInt(sig_dbg_getHandlerCount(),3);
+	test_assertTrue(thread_getById(1) != NULL);
+	if(thread_getById(1) != NULL) {
+		sig_setHandler(1,SIG_INTRPT_ATA1,(fSignal)0x1337);
+		sig_setHandler(1,SIG_INTRPT_COM1,(fSignal)0x1337);
+		sig_removeHandlerFor(1);
+	}
+	test_assertSize(sig_dbg_getHandlerCount(),3);
 	test_caseSucceeded();
 }

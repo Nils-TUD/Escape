@@ -43,14 +43,14 @@ static void test_dynarray(void) {
 
 	for(i = 0, j = 0; j < REGION_SIZE; i++, j += sizeof(uint)) {
 		uint *l = dyna_getObj(&da,i);
-		test_assertUInt(dyna_getIndex(&da,l),i);
+		test_assertSSize(dyna_getIndex(&da,l),i);
 		test_assertUInt(*l,i);
 	}
 
 	dyna_destroy(&da);
 
-	test_assertUInt(paging_dbg_getPageCount(),mappedPages);
-	test_assertUInt(pmem_getFreeFrames(MM_DEF | MM_CONT),freeFrames);
+	test_assertSize(paging_dbg_getPageCount(),mappedPages);
+	test_assertSize(pmem_getFreeFrames(MM_DEF | MM_CONT),freeFrames);
 
 	test_caseSucceeded();
 }

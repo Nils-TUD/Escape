@@ -182,7 +182,7 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 	totalSize += sizeof(uint32_t) * 2;
 
 	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&sp);
+	vmm_getRegRange(t->proc,t->stackRegions[0],NULL,(uintptr_t*)&sp);
 
 	/* extend the stack if necessary */
 	if(thread_extendStack((uintptr_t)sp - totalSize) < 0)
@@ -247,7 +247,7 @@ bool uenv_setupThread(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryP
 	 */
 
 	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&sp);
+	vmm_getRegRange(t->proc,t->stackRegions[0],NULL,(uintptr_t*)&sp);
 	sp--;
 
 	/* extend the stack if necessary */

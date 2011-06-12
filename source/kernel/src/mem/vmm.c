@@ -47,7 +47,7 @@ static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr);
 static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t loadCount);
 static ulong *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr);
 static tVMRegNo vmm_findRegIndex(sProc *p,bool text);
-static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount);
+static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags);
 static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end);
 static uintptr_t vmm_getFirstUsableAddr(sProc *p,bool textNData);
 static uintptr_t vmm_findFreeAddr(sProc *p,size_t byteCount);
@@ -133,7 +133,6 @@ tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 	/* get the attributes of the region (depending on type) */
 	if((res = vmm_getAttr(p,type,bCount,&pgFlags,&flags,&virt,&rno)) < 0)
 		return res;
-	vid_printf("virt=%p\n",virt);
 	/* no demand-loading if the binary isn't present */
 	if(bin == NULL)
 		pgFlags &= ~PF_DEMANDLOAD;
@@ -266,7 +265,7 @@ void vmm_setTimestamp(const sThread *t,tTime timestamp) {
 		if(vm) {
 			/* for stack and tls: just mark the ones of the given thread used */
 			if((!(vm->reg->flags & RF_TLS) || i == (size_t)t->tlsRegion) &&
-				(!(vm->reg->flags & RF_STACK) || i == (size_t)t->stackRegion)) {
+				(!(vm->reg->flags & RF_STACK) || thread_hasStackRegion(t,i))) {
 				vm->reg->timestamp = timestamp;
 			}
 		}
@@ -550,7 +549,7 @@ int vmm_cloneAll(sProc *dst) {
 	for(i = 0; i < src->regSize; i++) {
 		sVMRegion *vm = REG(src,i);
 		/* just clone the stack-region of the current thread */
-		if(vm && (!(vm->reg->flags & RF_STACK) || (tVMRegNo)i == t->stackRegion)) {
+		if(vm && (!(vm->reg->flags & RF_STACK) || thread_hasStackRegion(t,i))) {
 			sAllocStats stats;
 			sVMRegion *nvm = vmm_alloc();
 			size_t pageCount;
@@ -621,15 +620,29 @@ error:
 }
 
 int vmm_growStackTo(sThread *t,uintptr_t addr) {
-	sVMRegion *vm = REG(t->proc,t->stackRegion);
+	size_t i;
 	addr &= ~(PAGE_SIZE - 1);
-	/* report failure if its outside (upper) of the region */
-	if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
-		return ERR_NOT_ENOUGH_MEM;
-	if(addr < vm->virt) {
-		ssize_t newPages = (vm->virt - addr) / PAGE_SIZE;
+	for(i = 0; i < STACK_REG_COUNT; i++) {
+		sVMRegion *vm = REG(t->proc,t->stackRegions[i]);
+		ssize_t newPages = 0;
+		/* report failure if its outside (upper / lower) of the region */
+		/* note that we assume here that if a thread has multiple stack-regions, they grow towards
+		 * each other */
+		if(vm->reg->flags & RF_GROWS_DOWN) {
+			if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
+				return ERR_NOT_ENOUGH_MEM;
+			if(addr < vm->virt)
+				newPages = (vm->virt - addr) / PAGE_SIZE;
+		}
+		else {
+			if(addr < vm->virt)
+				return ERR_NOT_ENOUGH_MEM;
+			if(addr > vm->virt + ROUNDUP(vm->reg->byteCount))
+				newPages = (addr - vm->virt + ROUNDUP(vm->reg->byteCount)) / PAGE_SIZE;
+		}
+
 		if(newPages > 0)
-			return vmm_grow(t->proc,t->stackRegion,newPages);
+			return vmm_grow(t->proc,t->stackRegions[i],newPages);
 	}
 	return 0;
 }
@@ -644,7 +657,8 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 	assert((vm->reg->flags & RF_GROWABLE) && !(vm->reg->flags & RF_SHAREABLE));
 
 	/* check wether we've reached the max stack-pages */
-	if(vm->reg->flags & RF_STACK && BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1)
+	if((vm->reg->flags & RF_STACK) &&
+			BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* swap out, if necessary */
@@ -653,7 +667,8 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 
 	/* check again to be sure */
 	vm = REG(p,reg);
-	if(vm->reg->flags & RF_STACK && BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1)
+	if((vm->reg->flags & RF_STACK) &&
+			BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* resize region */
@@ -663,7 +678,7 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 		sAllocStats stats;
 		/* check wether the space is free */
 		if(amount > 0) {
-			if(vm->reg->flags & RF_STACK) {
+			if(vm->reg->flags & RF_GROWS_DOWN) {
 				if(vmm_isOccupied(p,oldVirt - amount * PAGE_SIZE,oldVirt))
 					return ERR_NOT_ENOUGH_MEM;
 			}
@@ -681,8 +696,8 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 			uint mapFlags = PG_PRESENT;
 			if(vm->reg->flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
-			/* stack-pages are added before the existing */
-			if(vm->reg->flags & RF_STACK) {
+			/* if it grows down, pages are added before the existing */
+			if(vm->reg->flags & RF_GROWS_DOWN) {
 				vm->virt -= amount * PAGE_SIZE;
 				virt = vm->virt;
 			}
@@ -694,7 +709,7 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 			memclear((void*)virt,PAGE_SIZE * amount);
 		}
 		else {
-			if(vm->reg->flags & RF_STACK) {
+			if(vm->reg->flags & RF_GROWS_DOWN) {
 				virt = vm->virt;
 				vm->virt += -amount * PAGE_SIZE;
 			}
@@ -704,7 +719,7 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 			p->ownFrames -= stats.frames + stats.ptables;
 		}
 	}
-	return ((vm->reg->flags & RF_STACK) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;
+	return ((vm->reg->flags & RF_GROWS_DOWN) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;
 }
 
 static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr) {
@@ -853,16 +868,30 @@ static tVMRegNo vmm_findRegIndex(sProc *p,bool text) {
 	return -1;
 }
 
-static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount) {
+static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags) {
 	uintptr_t addr,end;
+	/* leave a gap between the stacks as a guard */
 	if(byteCount > (MAX_STACK_PAGES - 1) * PAGE_SIZE)
 		return 0;
+#if STACK_AREA_GROWS_DOWN
+	UNUSED(rflags);
 	end = vmm_getFirstUsableAddr(p,true);
-	for(addr = FREE_AREA_BEGIN; addr > end; addr -= MAX_STACK_PAGES * PAGE_SIZE) {
-		/* leave a gap between the stacks as a guard */
+	for(addr = STACK_AREA_END; addr > end; addr -= MAX_STACK_PAGES * PAGE_SIZE) {
 		if(vmm_isOccupied(p,addr - (MAX_STACK_PAGES - 1) * PAGE_SIZE,addr) == NULL)
 			return addr - ROUNDUP(byteCount);
 	}
+#else
+	for(addr = STACK_AREA_BEGIN; addr < STACK_AREA_END; addr += MAX_STACK_PAGES * PAGE_SIZE) {
+		if(rflags & RF_GROWS_DOWN) {
+			if(vmm_isOccupied(p,addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE) == NULL)
+				return addr;
+		}
+		else {
+			if(vmm_isOccupied(p,addr - (MAX_STACK_PAGES - 1) * PAGE_SIZE,addr) == NULL)
+				return addr - ROUNDUP(byteCount);
+		}
+	}
+#endif
 	return 0;
 }
 
@@ -944,10 +973,13 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 			*virt = vmm_getFirstUsableAddr(p,true);
 			*rno = RNO_DATA;
 			break;
+		case REG_STACKUP:
 		case REG_STACK:
 			*pgFlags = 0;
 			*flags = RF_GROWABLE | RF_WRITABLE | RF_STACK;
-			*virt = vmm_findFreeStack(p,bCount);
+			if(type == REG_STACK)
+				*flags |= RF_GROWS_DOWN;
+			*virt = vmm_findFreeStack(p,bCount,*flags);
 			if(*virt == 0)
 				return ERR_NOT_ENOUGH_MEM;
 			break;
@@ -1020,6 +1052,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 		case REG_DLDATA:
 		case REG_TLS:
 		case REG_STACK:
+		case REG_STACKUP:
 		case REG_DEVICE:
 		case REG_PHYS:
 		case REG_SHM:

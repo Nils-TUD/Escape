@@ -32,19 +32,27 @@
  *                     |               rodata              |     |
  *         ---         +-----------------------------------+     |
  *                     |                data               |     |
- *          |          |                                   |
- *          v          |                ...                |     u
- *         ---         +-----------------------------------+     s
- *          ^          |                                   |     e
- *          |          |        user-stack thread n        |     r
- *                     |                                   |     a
- *         ---         +-----------------------------------+     r
- *                     |                ...                |     e
- *         ---         +-----------------------------------+     a
- *          ^          |                                   |
- *          |          |        user-stack thread 0        |     |
- *                     |                                   |     |
+ *          |          |                                   |     |
+ *          v          |                                   |     |
  * 0x2000000000000000: +-----------------------------------+     |
+ *                     |                                   |     |
+ *          |          |      register-stack thread 0      |     |
+ *          v          |                                   |     |
+ *         ---         +-----------------------------------+     |
+ *          ^          |                                   |     |
+ *          |          |      software-stack thread 0      |     |
+ *                     |                                   |     |
+ *         ---         +-----------------------------------+     |
+ *                     |                ...                |     |
+ *         ---         +-----------------------------------+     |
+ *                     |                                   |     |
+ *          |          |      register-stack thread n      |     |
+ *          v          |                                   |     |
+ *         ---         +-----------------------------------+     |
+ *          ^          |                                   |     |
+ *          |          |      software-stack thread n      |     |
+ *                     |                                   |     |
+ * 0x4000000000000000: +-----------------------------------+     |
  *                     |  dynlinker (always first, if ex)  |     |
  *                     |           shared memory           |     |
  *                     |         shared libraries          |     |
@@ -52,7 +60,7 @@
  *                     |       thread local storage        |     |
  *                     |        memory mapped stuff        |     |
  *                     |        (in arbitrary order)       |     |
- * 0x4000000000000000: +-----------------------------------+   -----    -----
+ * 0x6000000000000000: +-----------------------------------+   -----
  *                     |                ...                |
  * 0x8000000000000000: +-----------------------------------+   -----
  *                     |         kernel code+data          |     |
@@ -99,11 +107,16 @@
 /* start-address of the text */
 #define TEXT_BEGIN				0x2000
 /* start-address of the text in dynamic linker */
-#define INTERP_TEXT_BEGIN		0x2000000000000000
+#define INTERP_TEXT_BEGIN		((uintptr_t)0x4000000000000000)
 
 /* free area for shared memory, tls, shared libraries, ... */
-#define FREE_AREA_BEGIN			0x2000000000000000
-#define FREE_AREA_END			0x4000000000000000
+#define FREE_AREA_BEGIN			((uintptr_t)0x4000000000000000)
+#define FREE_AREA_END			((uintptr_t)0x6000000000000000)
+
+/* the stack-area grows upwards in the second segment */
+#define STACK_AREA_GROWS_DOWN	0
+#define STACK_AREA_BEGIN		((uintptr_t)0x2000000000000000)
+#define STACK_AREA_END			((uintptr_t)0x4000000000000000)
 
 /* determines whether the given address is on the heap */
 /* in this case it is sufficient to check whether its not in the data-area of the kernel */

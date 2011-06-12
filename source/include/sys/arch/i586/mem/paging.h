@@ -142,6 +142,10 @@
 #define FREE_AREA_BEGIN			0xA0000000
 #define FREE_AREA_END			KERNEL_START
 
+/* the stack-area grows downwards from the free area to data, text and so on */
+#define STACK_AREA_GROWS_DOWN	1
+#define STACK_AREA_END			FREE_AREA_BEGIN
+
 /* determines whether the given address is on the heap */
 #define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KERNEL_HEAP_START && \
 		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)

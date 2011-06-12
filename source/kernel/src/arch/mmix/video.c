@@ -32,7 +32,9 @@
 
 extern void logByte(char c);
 static void vid_move(void);
-static void vid_copy(void *dst,const void *src,size_t count);
+static void vid_copyScrToScr(void *dst,const void *src,size_t rows);
+static void vid_copyScrToMem(void *dst,const void *src,size_t rows);
+static void vid_copyMemToScr(void *dst,const void *src,size_t rows);
 static void vid_clear(void);
 static uchar vid_handlePipePad(void);
 static void vid_handleColorCode(const char **str);
@@ -49,13 +51,13 @@ void vid_init(void) {
 }
 
 void vid_backup(char *buffer,ushort *r,ushort *c) {
-	vid_copy(buffer,(void*)VIDEO_BASE,VID_ROWS);
+	vid_copyScrToMem(buffer,(void*)VIDEO_BASE,VID_ROWS);
 	*r = row;
 	*c = col;
 }
 
 void vid_restore(const char *buffer,ushort r,ushort c) {
-	vid_copy((void*)VIDEO_BASE,buffer,VID_ROWS);
+	vid_copyMemToScr((void*)VIDEO_BASE,buffer,VID_ROWS);
 	row = r;
 	col = c;
 }
@@ -131,7 +133,7 @@ static void vid_move(void) {
 	if(row >= VID_ROWS) {
 		size_t x;
 		/* copy all chars one line back */
-		vid_copy((void*)VIDEO_BASE,(uint64_t*)VIDEO_BASE + MAX_COLS,VID_ROWS - 1);
+		vid_copyScrToScr((void*)VIDEO_BASE,(uint64_t*)VIDEO_BASE + MAX_COLS,VID_ROWS - 1);
 		/* clear last line */
 		uint64_t *screen = (uint64_t*)VIDEO_BASE + MAX_COLS * (VID_ROWS - 1);
 		for(x = 0; x < VID_COLS; x++)
@@ -140,7 +142,7 @@ static void vid_move(void) {
 	}
 }
 
-static void vid_copy(void *dst,const void *src,size_t rows) {
+static void vid_copyScrToScr(void *dst,const void *src,size_t rows) {
 	size_t x,y;
 	uint64_t *idst = (uint64_t*)dst;
 	uint64_t *isrc = (uint64_t*)src;
@@ -149,6 +151,28 @@ static void vid_copy(void *dst,const void *src,size_t rows) {
 			*idst++ = *isrc++;
 		idst += MAX_COLS - VID_COLS;
 		isrc += MAX_COLS - VID_COLS;
+	}
+}
+
+static void vid_copyScrToMem(void *dst,const void *src,size_t rows) {
+	size_t x,y;
+	uint16_t *idst = (uint16_t*)dst;
+	uint64_t *isrc = (uint64_t*)src;
+	for(y = 0; y < rows; y++) {
+		for(x = 0; x < VID_COLS; x++)
+			*idst++ = *isrc++;
+		isrc += MAX_COLS - VID_COLS;
+	}
+}
+
+static void vid_copyMemToScr(void *dst,const void *src,size_t rows) {
+	size_t x,y;
+	uint64_t *idst = (uint64_t*)dst;
+	uint16_t *isrc = (uint16_t*)src;
+	for(y = 0; y < rows; y++) {
+		for(x = 0; x < VID_COLS; x++)
+			*idst++ = *isrc++;
+		idst += MAX_COLS - VID_COLS;
 	}
 }
 

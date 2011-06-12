@@ -44,7 +44,6 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 	size_t i,pageCount;
 	sRegion *reg;
 	assert(pgFlags == PF_DEMANDLOAD || pgFlags == 0);
-	assert((flags & ~(RF_GROWABLE | RF_SHAREABLE | RF_WRITABLE | RF_STACK | RF_NOFREE | RF_TLS)) == 0);
 
 	reg = (sRegion*)kheap_alloc(sizeof(sRegion));
 	if(reg == NULL)
@@ -145,8 +144,7 @@ bool reg_grow(sRegion *reg,ssize_t amount) {
 		if(pf == NULL)
 			return false;
 		reg->pfSize += amount;
-		/* stack grows downwards */
-		if(reg->flags & RF_STACK) {
+		if(reg->flags & RF_GROWS_DOWN) {
 			memmove(pf + amount,pf,count * sizeof(ulong));
 			for(i = 0; i < amount; i++)
 				pf[i] = 0;
@@ -167,7 +165,7 @@ bool reg_grow(sRegion *reg,ssize_t amount) {
 			if(reg->pageFlags[i] & PF_SWAPPED)
 				swmap_free(reg_getSwapBlock(reg,i));
 		}
-		if(reg->flags & RF_STACK)
+		if(reg->flags & RF_GROWS_DOWN)
 			memmove(reg->pageFlags,reg->pageFlags + -amount,(count + amount) * sizeof(ulong));
 		reg->byteCount -= -amount * PAGE_SIZE;
 	}
@@ -222,7 +220,8 @@ static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 		{"Writable",RF_WRITABLE},
 		{"Stack",RF_STACK},
 		{"NoFree",RF_NOFREE},
-		{"TLS",RF_TLS}
+		{"TLS",RF_TLS},
+		{"GrowsDown",RF_GROWS_DOWN}
 	};
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {

@@ -28,6 +28,7 @@
 #include <sys/video.h>
 #include <sys/cpu.h>
 #include <assert.h>
+#include <errors.h>
 
 int thread_initArch(sThread *t) {
 	t->archAttr.fpuState = NULL;
@@ -35,12 +36,32 @@ int thread_initArch(sThread *t) {
 }
 
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
-	UNUSED(cloneProc);
+	if(!cloneProc) {
+		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
+			return ERR_NOT_ENOUGH_MEM;
+
+		/* add a new stack-region */
+		dst->stackRegions[0] = vmm_add(dst->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+		if(dst->stackRegions[0] < 0)
+			return dst->stackRegions[0];
+	}
 	fpu_cloneState(&(dst->archAttr.fpuState),src->archAttr.fpuState);
 	return 0;
 }
 
 void thread_freeArch(sThread *t) {
+	if(t->stackRegions[0] >= 0) {
+		vmm_remove(t->proc,t->stackRegions[0]);
+		t->stackRegions[0] = -1;
+	}
+	/* if there is just one thread left we have to map his kernel-stack again because we won't
+	 * do it for single-thread-processes on a switch for performance-reasons */
+	if(sll_length(t->proc->threads) == 1) {
+		tFrameNo stackFrame = ((sThread*)sll_get(t->proc->threads,0))->kstackFrame;
+		paging_mapTo(t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
+				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	}
 	fpu_freeState(&t->archAttr.fpuState);
 }
 

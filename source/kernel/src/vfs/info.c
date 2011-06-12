@@ -204,13 +204,19 @@ ssize_t vfs_info_threadReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *bu
 static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sThread *t = thread_getById(atoi(node->parent->name));
 	sStringBuffer buf;
-	uintptr_t stackBegin = 0,stackEnd = 0;
+	size_t i;
+	ulong stackPages = 0;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 8 + 6 * 10 + 2 * 16 + 1;
 	buf.len = 0;
-	if(t->stackRegion >= 0)
-		vmm_getRegRange(t->proc,t->stackRegion,&stackBegin,&stackEnd);
+	for(i = 0; i < STACK_REG_COUNT; i++) {
+		if(t->stackRegions[i] >= 0) {
+			uintptr_t stackBegin = 0,stackEnd = 0;
+			vmm_getRegRange(t->proc,t->stackRegions[i],&stackBegin,&stackEnd);
+			stackPages += (stackEnd - stackBegin) / PAGE_SIZE;
+		}
+	}
 
 	prf_sprintf(
 		&buf,
@@ -226,7 +232,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"Tid:",t->tid,
 		"Pid:",t->proc->pid,
 		"State:",t->state,
-		"StackPages:",(stackEnd - stackBegin) / PAGE_SIZE,
+		"StackPages:",stackPages,
 		"SchedCount:",t->stats.schedCount,
 		"Syscalls:",t->stats.syscalls,
 		"UCPUCycles:",t->stats.ucycleCount.val32.upper,t->stats.ucycleCount.val32.lower,

@@ -65,6 +65,7 @@ sThread *thread_init(sProc *p) {
 }
 
 static sThread *thread_createInitial(sProc *p,eThreadState state) {
+	size_t i;
 	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
@@ -81,7 +82,8 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->stats.kcycleStart = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
-	t->stackRegion = -1;
+	for(i = 0; i < STACK_REG_COUNT; i++)
+		t->stackRegions[i] = -1;
 	t->tlsRegion = -1;
 	if(thread_initArch(t) < 0)
 		util_panic("Unable to init the arch-specific attributes of initial thread");
@@ -167,6 +169,15 @@ void thread_setSuspended(tTid tid,bool blocked) {
 	sched_setSuspended(t,blocked);
 }
 
+bool thread_hasStackRegion(const sThread *t,tVMRegNo regNo) {
+	size_t i;
+	for(i = 0; i < STACK_REG_COUNT; i++) {
+		if(t->stackRegions[i] == regNo)
+			return true;
+	}
+	return false;
+}
+
 int thread_extendStack(uintptr_t address) {
 	return vmm_growStackTo(cur,address);
 }
@@ -194,8 +205,10 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 	t->stats.syscalls = 0;
 	t->proc = p;
 	if(cloneProc) {
+		size_t i;
 		/* proc_clone() sets t->kstackFrame in this case */
-		t->stackRegion = src->stackRegion;
+		for(i = 0; i < STACK_REG_COUNT; i++)
+			t->stackRegions[i] = src->stackRegions[i];
 		t->tlsRegion = src->tlsRegion;
 	}
 	else {
@@ -206,11 +219,6 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 		if(pmem_getFreeFrames(MM_DEF) < 1 + neededFrms)
 			goto errThread;
 
-		/* add a new stack-region */
-		t->stackRegion = vmm_add(p,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-		if(t->stackRegion < 0)
-			goto errThread;
 		/* add kernel-stack */
 		*stackFrame = t->kstackFrame = pmem_allocate();
 		p->ownFrames++;
@@ -255,7 +263,6 @@ errStack:
 	if(!cloneProc) {
 		pmem_free(t->kstackFrame);
 		p->ownFrames--;
-		vmm_remove(p,t->stackRegion);
 	}
 errThread:
 	kheap_free(t);
@@ -288,27 +295,12 @@ void thread_kill(sThread *t) {
 		vmm_remove(t->proc,t->tlsRegion);
 		t->tlsRegion = -1;
 	}
-	if(t->stackRegion >= 0) {
-		/* remove stack-region */
-		vmm_remove(t->proc,t->stackRegion);
-		t->stackRegion = -1;
-	}
 	/* free kernel-stack */
 	pmem_free(t->kstackFrame);
 	t->proc->ownFrames--;
 
 	/* remove from process */
 	sll_removeFirst(t->proc->threads,t);
-	/* if there is just one thread left we have to map his kernel-stack again because we won't
-	 * do it for single-thread-processes on a switch for performance-reasons */
-	if(sll_length(t->proc->threads) == 1) {
-		/* TODO */
-#ifndef __mmix__
-		tFrameNo stackFrame = ((sThread*)sll_get(t->proc->threads,0))->kstackFrame;
-		paging_mapTo(t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
-				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-#endif
-	}
 
 	/* remove from all modules we may be announced */
 	ev_removeThread(t->tid);
@@ -363,6 +355,7 @@ void thread_dbg_printAll(void) {
 }
 
 void thread_dbg_print(const sThread *t) {
+	size_t i;
 	sFuncCall *calls;
 	static const char *states[] = {
 		"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE","BLOCKEDSWAP","READYSWAP"
@@ -373,7 +366,13 @@ void thread_dbg_print(const sThread *t) {
 	ev_dbg_printEvMask(t->events);
 	vid_printf("\n");
 	vid_printf("\t\tKstackFrame=%#x\n",t->kstackFrame);
-	vid_printf("\t\tTlsRegion=%d, stackRegion=%d\n",t->tlsRegion,t->stackRegion);
+	vid_printf("\t\tTlsRegion=%d, ",t->tlsRegion);
+	for(i = 0; i < STACK_REG_COUNT; i++) {
+		vid_printf("stackRegion=%d",t->stackRegions[i]);
+		if(i < STACK_REG_COUNT - 1)
+			vid_printf(", ");
+	}
+	vid_printf("\n");
 	vid_printf("\t\tUCycleCount = %#016Lx\n",t->stats.ucycleCount.val64);
 	vid_printf("\t\tKCycleCount = %#016Lx\n",t->stats.kcycleCount.val64);
 	vid_printf("\t\tKernel-trace:\n");

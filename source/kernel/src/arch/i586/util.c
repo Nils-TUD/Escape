@@ -78,7 +78,7 @@ void util_panic(const char *fmt,...) {
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 	util_printStackTrace(util_getKernelStackTrace());
 
-	if(t != NULL && t->stackRegion) {
+	if(t != NULL && t->stackRegions[0] >= 0) {
 		util_printStackTrace(util_getUserStackTrace());
 		vid_printf("User-Register:\n");
 		regs[R_EAX] = istack->eax;
@@ -145,7 +145,7 @@ sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
 	sIntrptStackFrame *stack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
-	vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
+	vmm_getRegRange(t->proc,t->stackRegions[0],&start,&end);
 	return util_getStackTrace((uint32_t*)stack->ebp,start,start,end);
 }
 
@@ -171,8 +171,8 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 	size_t pcount;
 	sFuncCall *calls;
 	tFrameNo *frames;
-	if(t->stackRegion >= 0) {
-		vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
+	if(t->stackRegions[0] >= 0) {
+		vmm_getRegRange(t->proc,t->stackRegions[0],&start,&end);
 		pcount = (end - start) / PAGE_SIZE;
 		frames = kheap_alloc((pcount + 2) * sizeof(tFrameNo));
 		if(frames) {

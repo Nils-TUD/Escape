@@ -42,4 +42,6 @@ typedef struct {
 	char dummy;	/* empty struct not allowed */
 } sThreadArchAttr;
 
+#define STACK_REG_COUNT		1
+
 #endif /* ECO32_THREAD_H_ */

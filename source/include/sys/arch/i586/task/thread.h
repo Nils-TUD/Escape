@@ -53,4 +53,6 @@ typedef struct {
 	sFPUState *fpuState;
 } sThreadArchAttr;
 
+#define STACK_REG_COUNT		1
+
 #endif /* I586_THREAD_H_ */

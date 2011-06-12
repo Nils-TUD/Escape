@@ -45,9 +45,9 @@ int main(const sBootInfo *bootinfo) {
 		util_panic("Unable to load initloader");
 	t = thread_getRunning();
 	/* give the process some stack pages */
-	t->stackRegion = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+	t->stackRegions[0] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-	assert(t->stackRegion >= 0);
+	assert(t->stackRegions[0] >= 0);
 	/* we have to set the kernel-stack for the first process */
 	tlb_set(0,KERNEL_STACK,(t->kstackFrame * PAGE_SIZE) | 0x3);
 	return info.progEntry;

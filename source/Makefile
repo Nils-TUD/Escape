@@ -192,7 +192,7 @@ endif
 
 mmix:	all hdd prepareRun
 		$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-			#-s $(BUILD)/stage2.map $(BUILD)/kernel.map
+			-b -s $(BUILD)/stage2.map $(BUILD)/kernel.map
 
 mmixd:	all hdd prepareRun
 		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235

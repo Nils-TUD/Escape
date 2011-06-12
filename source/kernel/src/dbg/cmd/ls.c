@@ -24,6 +24,7 @@
 #include <sys/dbg/cmd/ls.h>
 #include <sys/mem/kheap.h>
 #include <esc/fsinterface.h>
+#include <esc/endian.h>
 #include <string.h>
 #include <errors.h>
 
@@ -97,6 +98,9 @@ static int cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e) {
 	if(res == 0)
 		return 0;
 
+	e->nameLen = le16tocpu(e->nameLen);
+	e->recLen = le16tocpu(e->recLen);
+	e->nodeNo = le32tocpu(e->nodeNo);
 	len = e->nameLen;
 	/* ensure that the name is short enough */
 	if(len >= MAX_NAME_LEN)

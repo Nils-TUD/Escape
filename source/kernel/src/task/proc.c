@@ -529,8 +529,10 @@ void proc_removeRegions(sProc *p,bool remStack) {
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		t->tlsRegion = -1;
-		if(remStack)
-			t->stackRegion = -1;
+		if(remStack) {
+			for(i = 0; i < STACK_REG_COUNT; i++)
+				t->stackRegions[i] = -1;
+		}
 		/* remove all signal-handler since we've removed the code to handle signals */
 		sig_removeHandlerFor(t->tid);
 	}

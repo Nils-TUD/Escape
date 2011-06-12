@@ -43,4 +43,6 @@ typedef struct {
 	char dummy;	/* empty struct not allowed */
 } sThreadArchAttr;
 
+#define STACK_REG_COUNT		2
+
 #endif /* MMIX_THREAD_H_ */

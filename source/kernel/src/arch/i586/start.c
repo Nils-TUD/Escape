@@ -47,8 +47,8 @@ int main(sBootInfo *mbp,uint32_t magic) {
 		util_panic("Unable to load initloader");
 	t = thread_getRunning();
 	/* give the process some stack pages */
-	t->stackRegion = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+	t->stackRegions[0] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-	assert(t->stackRegion >= 0);
+	assert(t->stackRegions[0] >= 0);
 	return info.progEntry;
 }

@@ -26,6 +26,7 @@
 #include <sys/cpu.h>
 #include <esc/sllist.h>
 #include <assert.h>
+#include <errors.h>
 
 int thread_initArch(sThread *t) {
 	UNUSED(t);
@@ -34,16 +35,24 @@ int thread_initArch(sThread *t) {
 }
 
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
-	UNUSED(src);
-	UNUSED(dst);
-	UNUSED(cloneProc);
-	/* nothing to do */
+	if(!cloneProc) {
+		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
+			return ERR_NOT_ENOUGH_MEM;
+
+		/* add a new stack-region */
+		dst->stackRegions[0] = vmm_add(dst->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+		if(dst->stackRegions[0] < 0)
+			return dst->stackRegions[0];
+	}
 	return 0;
 }
 
 void thread_freeArch(sThread *t) {
-	UNUSED(t);
-	/* nothing to do */
+	if(t->stackRegions[0] >= 0) {
+		vmm_remove(t->proc,t->stackRegions[0]);
+		t->stackRegions[0] = -1;
+	}
 }
 
 void thread_switchTo(tTid tid) {

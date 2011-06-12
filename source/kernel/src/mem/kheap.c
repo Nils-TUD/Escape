@@ -33,7 +33,7 @@
 /* TODO we need the alignment */
 #define DEBUG_ADD_GUARDS		1
 #elif DEBUGGING
-#define DEBUG_ALLOC_N_FREE		1
+#define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ADD_GUARDS		1
 #endif
 
@@ -555,8 +555,7 @@ void kheap_dbg_print(void) {
 	vid_printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
-		vid_printf("\t%p: addr=%p, size=0x%Sx, next=%p\n",area,area->address,area->size,
-				area->next);
+		vid_printf("\t%p: addr=%p, size=0x%Sx\n",area,area->address,area->size);
 		area = area->next;
 	}
 
@@ -566,8 +565,7 @@ void kheap_dbg_print(void) {
 		if(area != NULL) {
 			vid_printf("\t%d:\n",i);
 			while(area != NULL) {
-				vid_printf("\t\t%p: addr=%p, size=0x%Sx, next=%p\n",area,area->address,
-						area->size,area->next);
+				vid_printf("\t\t%p: addr=%p, size=0x%Sx\n",area,area->address,area->size);
 				area = area->next;
 			}
 		}

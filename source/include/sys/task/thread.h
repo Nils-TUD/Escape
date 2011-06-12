@@ -77,8 +77,8 @@ struct sThread {
 	uint events;
 	/* the process we belong to */
 	sProc *proc;
-	/* the stack-region for this thread */
-	tVMRegNo stackRegion;
+	/* the stack-region(s) for this thread */
+	tVMRegNo stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
 	tVMRegNo tlsRegion;
 	/* the frame mapped at KERNEL_STACK */
@@ -212,6 +212,15 @@ bool thread_setBlocked(tTid tid);
  * @param blocked wether to suspend or "unsuspend" the thread
  */
 void thread_setSuspended(tTid tid,bool blocked);
+
+/**
+ * Checks whether the given thread has the given region-number for stack
+ *
+ * @param t the thread
+ * @param regNo the region-number
+ * @return true if so
+ */
+bool thread_hasStackRegion(const sThread *t,tVMRegNo regNo);
 
 /**
  * Extends the stack of the current thread so that the given address is accessible. If that

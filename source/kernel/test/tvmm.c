@@ -86,8 +86,11 @@ static void test_1(void) {
 	test_assertTrue(rno >= 0);
 	rno2 = vmm_add(p,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_STACK);
 	test_assertTrue(rno2 >= 0);
+	rno3 = vmm_add(p,NULL,0,PAGE_SIZE * 5,PAGE_SIZE * 5,REG_STACKUP);
+	test_assertTrue(rno3 >= 0);
 	vmm_remove(p,rno);
 	vmm_remove(p,rno2);
+	vmm_remove(p,rno3);
 	test_finish();
 
 	pid = proc_getFreePid();

@@ -63,17 +63,13 @@ int main(sBootInfo *bootinfo,uint32_t magic) {
 	test_register(&tModMM);
 	test_register(&tModDynArray);
 	test_register(&tModPaging);
-#ifndef __mmix__
 	test_register(&tModProc);
-#endif
 	test_register(&tModKHeap);
 	test_register(&tModSched);
 	test_register(&tModString);
 	test_register(&tModVFS);
 	test_register(&tModVFSn);
-#ifndef __mmix__
 	test_register(&tModSignals);
-#endif
 	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
 	test_register(&tModSwapMap);

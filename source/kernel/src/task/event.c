@@ -100,21 +100,17 @@ bool ev_waitObjects(tTid tid,const sWaitObject *objects,size_t objCount) {
 
 void ev_wakeup(size_t evi,tEvObj object) {
 	sSLList *list = evlists + evi;
-	sSLNode *n,*p;
-	p = NULL;
+	sSLNode *n;
 	for(n = sll_begin(list); n != NULL; ) {
 		sWait *w = (sWait*)n->data;
 		if(w->object == 0 || w->object == object) {
 			ev_removeThread(w->tid);
 			/* we have to start at the beginning again, since its possible that the thread
 			 * is before this node for a different object */
-			p = NULL;
 			n = sll_begin(list);
 		}
-		else {
-			p = n;
+		else
 			n = n->next;
-		}
 	}
 }
 

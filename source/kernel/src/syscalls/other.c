@@ -38,12 +38,8 @@ void sysc_loadMods(sIntrptStackFrame *stack) {
 
 void sysc_debugc(sIntrptStackFrame *stack) {
 	char c = (char)SYSC_ARG1(stack);
-#ifdef __eco32__
-	debugc(c);
-#else
 	vid_putchar(c);
 	log_printf("%c",c);
-#endif
 }
 
 void sysc_debug(sIntrptStackFrame *stack) {

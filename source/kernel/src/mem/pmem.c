@@ -100,10 +100,16 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	/* the bitmap starts managing the memory at itself */
 	i += BITMAP_START_FRAME;
 	pmem_markRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
+#if DEBUG_ALLOC_N_FREE
+	vid_printf("[AC] %x:%Su\n",i,count);
+#endif
 	return i;
 }
 
 void pmem_freeContiguous(tFrameNo first,size_t count) {
+#if DEBUG_ALLOC_N_FREE
+	vid_printf("[FC] %x:%Su\n",first,count);
+#endif
 	pmem_markRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
 }
 

@@ -277,7 +277,7 @@ sProc *proc_getProcWithBin(const sBinDesc *bin,tVMRegNo *rno) {
 }
 
 sRegion *proc_getLRURegion(void) {
-	tTime ts = ULONG_MAX;
+	tTime ts = (tTime)ULONG_MAX;
 	sRegion *lru = NULL;
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {

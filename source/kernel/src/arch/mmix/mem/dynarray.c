@@ -36,7 +36,7 @@ bool dyna_extend(sDynArray *d) {
 	/* allocate new region */
 	sDynaRegion *reg = freeList;
 	if(reg == NULL)
-		util_panic("No free dynamic-array-regions");
+		return false;
 	freeList = freeList->next;
 	reg->next = NULL;
 

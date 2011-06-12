@@ -138,7 +138,7 @@ size_t intrpt_getCount(void) {
 }
 
 sIntrptStackFrame *intrpt_getCurStack(void) {
-	return KERNEL_STACK + PAGE_SIZE - 4 - sizeof(sIntrptStackFrame);
+	return (sIntrptStackFrame*)(KERNEL_STACK + PAGE_SIZE - 4 - sizeof(sIntrptStackFrame));
 }
 
 static void intrpt_defHandler(sIntrptStackFrame *stack) {
@@ -200,6 +200,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_irqKB(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	/* we have to disable interrupts until the device has handled the request */
 	/* otherwise we would get into an interrupt loop */
 	uint32_t *kbRegs = (uint32_t*)KEYBOARD_BASE;
@@ -226,6 +227,7 @@ static void intrpt_irqKB(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_irqDisk(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	/* see interrupt_irqKb() */
 	uint32_t *diskRegs = (uint32_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;

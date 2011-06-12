@@ -124,10 +124,12 @@ sFuncCall *util_getKernelStackTrace(void) {
 }
 
 sFuncCall *util_getUserStackTraceOf(const sThread *t) {
+	UNUSED(t);
 	return frames;
 }
 
 sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
+	UNUSED(t);
 	return frames;
 }
 

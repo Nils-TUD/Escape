@@ -21,6 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/kheap.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/util.h>
@@ -177,110 +178,50 @@ void paging_unmapFromTemp(size_t count) {
 }
 
 ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
-#if 0
-	tFrameNo pdirFrame;
 	ssize_t frmCount = 0;
-	sPDEntry *pd,*npd,*tpd;
-	sPTEntry *pt;
-	sProc *p;
-	sThread *curThread = thread_getRunning();
 
 	/* frames needed:
-	 * 	- page directory
-	 * 	- kernel-stack page-table
+	 * 	- root location
 	 * 	- kernel stack
 	 */
-	p = curThread->proc;
-	if(pmem_getFreeFrames(MM_DEF) < 3)
+	if(pmem_getFreeFrames(MM_DEF) < SEGMENT_COUNT * PTS_PER_SEGMENT + 1)
+		return ERR_NOT_ENOUGH_MEM;
+
+	/* allocate context */
+	sContext *con = kheap_alloc(sizeof(sContext));
+	if(con == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* allocate root-location */
 	uintptr_t rootLoc;
 	ssize_t res = pmem_allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1);
+	frmCount += SEGMENT_COUNT * PTS_PER_SEGMENT;
 	rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	/* clear */
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
-	/* build context */
-	sContext *con = kheap_alloc(sizeof(sContext));
-	if(con == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+	/* init context */
 	con->addrSpace = aspace_alloc();
 	con->ptables = 0;
 	con->rV = context->rV & 0xFFFFFF0000000000;
 	con->rV |= (rootLoc & ~DIR_MAPPED_SPACE) | (con->addrSpace->no << 3);
 
-	/* we need a new page-directory */
-	pdirFrame = pmem_allocate();
+	/* allocate and clear kernel-stack */
+	*stackFrame = pmem_allocate();
 	frmCount++;
-
-	/* Map page-dir into temporary area, so we can access both page-dirs atm */
-	pd = (sPDEntry*)PAGE_DIR_DIRMAP;
-	npd = (sPDEntry*)((pdirFrame * PAGE_SIZE) | DIR_MAPPED_SPACE);
-
-	/* clear user-space page-tables */
-	memclear(npd,ADDR_TO_PDINDEX(KERNEL_AREA) * sizeof(sPDEntry));
-	/* copy kernel-space page-tables (beginning to temp-map-area, inclusive) */
-	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA),
-			pd + ADDR_TO_PDINDEX(KERNEL_AREA),
-			(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE - KERNEL_AREA) /
-				(PAGE_SIZE * PT_ENTRY_COUNT) * sizeof(sPDEntry));
-	/* clear the rest */
-	memclear(npd + ADDR_TO_PDINDEX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE),
-			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)) * sizeof(sPDEntry));
-
-	/* map our new page-dir in the last slot of the new page-dir */
-	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;
-
-	/* map the page-tables of the new process so that we can access them */
-	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
-
-	/* get new page-table for the kernel-stack-area and the stack itself */
-	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
-	tpd->ptFrameNo = pmem_allocate();
-	tpd->present = true;
-	tpd->writable = true;
-	tpd->exists = true;
-	frmCount++;
-	/* clear the page-table */
-	otherPDir = 0;
-	pt = (sPTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAPPED_SPACE);
-	memclear(pt,PAGE_SIZE);
-
-	/* create stack-page */
-	pt += ADDR_TO_PTINDEX(KERNEL_STACK);
-	pt->frameNumber = pmem_allocate();
-	pt->present = true;
-	pt->writable = true;
-	pt->exists = true;
-	frmCount++;
-
-	*stackFrame = pt->frameNumber;
-	*pdir = DIR_MAPPED_SPACE | (pdirFrame << PAGE_SIZE_SHIFT);
+	memclear((void*)(DIR_MAPPED_SPACE | (*stackFrame * PAGE_SIZE)),PAGE_SIZE);
+	*pdir = con;
 	return frmCount;
-#endif
-	return 0;
 }
 
 sAllocStats paging_destroyPDir(tPageDir pdir) {
 	sAllocStats stats;
-#if 0
-	sPDEntry *pde;
-	assert(pdir != rootLoc);
-	/* remove kernel-stack (don't free the frame; its done in thread_kill()) */
-	stats = paging_unmapFrom(pdir,KERNEL_STACK,1,false);
-	/* free page-table for kernel-stack */
-	pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(pdir) + ADDR_TO_PDINDEX(KERNEL_STACK);
-	pde->present = false;
-	pde->exists = false;
-	pmem_free(pde->ptFrameNo);
-	stats.ptables++;
+	assert(pdir != context);
+	/* don't free kernel-stack-frame; its done in thread_kill() */
 	/* free page-dir */
-	pmem_free((pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT);
-	stats.ptables++;
-	/* ensure that we don't use it again */
-	otherPDir = 0;
-#endif
+	pmem_freeContiguous((pdir->rV >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
+	stats.ptables += SEGMENT_COUNT * PTS_PER_SEGMENT;
+	kheap_free(pdir);
 	return stats;
 }
 
@@ -629,6 +570,7 @@ void paging_dbg_printCur(uint parts) {
 }
 
 void paging_dbg_printPDir(tPageDir pdir,uint parts) {
+	UNUSED(parts);
 	size_t i,j;
 	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rV & 0xFFFFFFE000);
 	/* go through all page-tables in the root-location */

@@ -882,13 +882,10 @@ static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags) {
 	}
 #else
 	for(addr = STACK_AREA_BEGIN; addr < STACK_AREA_END; addr += MAX_STACK_PAGES * PAGE_SIZE) {
-		if(rflags & RF_GROWS_DOWN) {
-			if(vmm_isOccupied(p,addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE) == NULL)
-				return addr;
-		}
-		else {
-			if(vmm_isOccupied(p,addr - (MAX_STACK_PAGES - 1) * PAGE_SIZE,addr) == NULL)
-				return addr - ROUNDUP(byteCount);
+		if(vmm_isOccupied(p,addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE) == NULL) {
+			if(rflags & RF_GROWS_DOWN)
+				return addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE - ROUNDUP(byteCount);
+			return addr;
 		}
 	}
 #endif

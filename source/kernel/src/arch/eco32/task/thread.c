@@ -24,6 +24,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/cpu.h>
+#include <sys/video.h>
 #include <esc/sllist.h>
 #include <assert.h>
 #include <errors.h>
@@ -35,6 +36,7 @@ int thread_initArch(sThread *t) {
 }
 
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
+	UNUSED(src);
 	if(!cloneProc) {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
 			return ERR_NOT_ENOUGH_MEM;

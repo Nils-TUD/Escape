@@ -30,7 +30,6 @@ uint64_t cpu_rdtsc(void) {
 }
 
 void cpu_sprintf(sStringBuffer *buf) {
-	size_t size;
 	prf_sprintf(buf,"%-12s%s\n","Vendor:","THM");
 	prf_sprintf(buf,"%-12s%s\n","Model:","ECO32");
 }

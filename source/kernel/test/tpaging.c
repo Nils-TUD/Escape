@@ -53,57 +53,51 @@ static void test_paging(void) {
 		}
 	}
 
-#ifndef __mmix__
 	test_paging_foreign();
-#endif
 }
 
-/* TODO */
-#ifndef __mmix__
 static void test_paging_foreign(void) {
-	size_t oldFF, newFF;
+	size_t oldFF, newFF, ownFrames, sharedFrames;
 	sProc *child;
-	sAllocStats stats;
 	tPid pid = proc_getFreePid();
 	test_assertInt(proc_clone(pid,0),0);
 	child = proc_getByPid(pid);
 
+	ownFrames = child->ownFrames;
+	sharedFrames = child->sharedFrames;
 	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
+
 	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,child->pagedir);
-	stats = paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
-	test_assertULInt(stats.frames,3);
-	test_assertULInt(stats.ptables,1);
-	stats = paging_unmapFrom(child->pagedir,0,3,true);
-	test_assertULInt(stats.frames,3);
-	test_assertULInt(stats.ptables,1);
+	paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_unmapFrom(child->pagedir,0,3,true);
+
 	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
-	if(oldFF != newFF)
-		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
+	if(oldFF != newFF || child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
+		test_caseFailed("oldFF=%Su, newFF=%Su, oldOwn=%Su, newOwn=%Su, oldSh=%Su, newSh=%Su",
+				oldFF,newFF,ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
+	}
 	else
 		test_caseSucceeded();
 
+	ownFrames = child->ownFrames;
+	sharedFrames = child->sharedFrames;
 	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
+
 	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,child->pagedir);
-	stats = paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
-	test_assertULInt(stats.frames,3);
-	test_assertULInt(stats.ptables,1);
-	stats = paging_mapTo(child->pagedir,0x40003000,NULL,3,PG_PRESENT | PG_WRITABLE);
-	test_assertULInt(stats.frames,3);
-	test_assertULInt(stats.ptables,0);
-	stats = paging_unmapFrom(child->pagedir,0x40000000,1,true);
-	test_assertULInt(stats.frames,1);
-	test_assertULInt(stats.ptables,0);
-	stats = paging_unmapFrom(child->pagedir,0x40001000,5,true);
-	test_assertULInt(stats.frames,5);
-	test_assertULInt(stats.ptables,1);
+	paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_mapTo(child->pagedir,0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_unmapFrom(child->pagedir,0x40000000,1,true);
+	paging_unmapFrom(child->pagedir,0x40000000 + PAGE_SIZE * 1,5,true);
+
 	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
-	if(oldFF != newFF)
-		test_caseFailed("oldFF=%Su, newFF=%Su",oldFF,newFF);
+	if(oldFF != newFF || child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
+		test_caseFailed("oldFF=%Su, newFF=%Su, oldOwn=%Su, newOwn=%Su, oldSh=%Su, newSh=%Su",
+				oldFF,newFF,ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
+	}
 	else
 		test_caseSucceeded();
 	proc_kill(child);
 }
-#endif
 
 static bool test_paging_cycle(uintptr_t addr,size_t count) {
 	size_t oldFF, newFF, oldPC, newPC;

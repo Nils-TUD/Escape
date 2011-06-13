@@ -365,10 +365,10 @@ void thread_dbg_print(const sThread *t) {
 	vid_printf("\t\tEvents=");
 	ev_dbg_printEvMask(t->events);
 	vid_printf("\n");
-	vid_printf("\t\tKstackFrame=%#x\n",t->kstackFrame);
+	vid_printf("\t\tKstackFrame=%#Px\n",t->kstackFrame);
 	vid_printf("\t\tTlsRegion=%d, ",t->tlsRegion);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
-		vid_printf("stackRegion=%d",t->stackRegions[i]);
+		vid_printf("stackRegion%Su=%d",i,t->stackRegions[i]);
 		if(i < STACK_REG_COUNT - 1)
 			vid_printf(", ");
 	}

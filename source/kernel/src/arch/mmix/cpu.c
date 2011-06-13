@@ -24,15 +24,52 @@
 #include <sys/video.h>
 #include <string.h>
 
-uint64_t cpu_rdtsc(void) {
-	/* TODO not implemented yet */
-	return 0;
+static const char *specialRegs[] = {
+	/* 00 */	"rB",
+	/* 01 */	"rD",
+	/* 02 */	"rE",
+	/* 03 */	"rH",
+	/* 04 */	"rJ",
+	/* 05 */	"rM",
+	/* 06 */	"rR",
+	/* 07 */	"rBB",
+	/* 08 */	"rC",
+	/* 09 */	"rN",
+	/* 0A */	"rO",
+	/* 0B */	"rS",
+	/* 0C */	"rI",
+	/* 0D */	"rT",
+	/* 0E */	"rTT",
+	/* 0F */	"rK",
+	/* 10 */	"rQ",
+	/* 11 */	"rU",
+	/* 12 */	"rV",
+	/* 13 */	"rG",
+	/* 14 */	"rL",
+	/* 15 */	"rA",
+	/* 16 */	"rF",
+	/* 17 */	"rP",
+	/* 18 */	"rW",
+	/* 19 */	"rX",
+	/* 1A */	"rY",
+	/* 1B */	"rZ",
+	/* 1C */	"rWW",
+	/* 1D */	"rXX",
+	/* 1E */	"rYY",
+	/* 1F */	"rZZ",
+	/* 20 */	"rSS"
+};
+
+const char *cpu_getSpecialName(int rno) {
+	if(rno >= (int)ARRAY_SIZE(specialRegs))
+		return "??";
+	return specialRegs[rno];
 }
 
 void cpu_sprintf(sStringBuffer *buf) {
+	uint64_t rn = cpu_getSpecial(rN);
 	prf_sprintf(buf,"%-12s%s\n","Vendor:","THM");
 	prf_sprintf(buf,"%-12s%s\n","Model:","GIMMIX");
-	/* TODO */
-	prf_sprintf(buf,"%-12s%d.%d.%d\n","Version:",1,0,2);
-	prf_sprintf(buf,"%-12s%u\n","Builddate",0);
+	prf_sprintf(buf,"%-12s%d.%d.%d\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
+	prf_sprintf(buf,"%-12s%lu\n","Builddate",rn & 0xFFFFFFFFFF);
 }

@@ -270,13 +270,13 @@ static void test_memcpy(void) {
 	uint8_t src[16] = "0123456789ABCDEF",dest[16];
 	test_caseStart("Testing memcpy()");
 
-	memcpy(dest,src,10);
+	test_assertPtr(memcpy(dest,src,10),dest);
 	dest[10] = '\0';
 	if(!test_assertStr((char*)dest,"0123456789")) return;
-	memcpy(dest,src,4);
+	test_assertPtr(memcpy(dest,src,4),dest);
 	dest[4] = '\0';
 	if(!test_assertStr((char*)dest,"0123")) return;
-	memcpy(dest,src,0);
+	test_assertPtr(memcpy(dest,src,0),dest);
 	dest[0] = '\0';
 	if(!test_assertStr((char*)dest,"")) return;
 
@@ -284,7 +284,7 @@ static void test_memcpy(void) {
 	for(i = 0; i < 8; i++) {
 		for(j = 0; j < 8; j++) {
 			memset(dest,0xFF,16);
-			memcpy(dest + i,zeros + i,j);
+			test_assertPtr(memcpy(dest + i,zeros + i,j),dest + i);
 			checkZero(dest,i,j,16);
 		}
 	}

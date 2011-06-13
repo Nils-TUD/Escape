@@ -42,6 +42,9 @@
 	.global debugc
 	.global paging_setrV
 	.global tc_update
+	.global cpu_rdtsc
+	.global cpu_getGlobal
+	.global cpu_getSpecial
 
 	.global thread_idle
 	.global	thread_save
@@ -57,9 +60,7 @@
 	.set		PTE_MAP_ADDR,0x80000000
 	.set		DIR_MAP_START,0xC0000000
 	.set		KERNEL_HEAP,0x80800000
-	.set		KERNEL_STACK,0x84400FFC					% our kernel-stack (the top)
-																					% individually for each process and stored fix in the
-																					% first entry of the TLB
+	.set		KERNEL_STACK,0x84400FFC		% our kernel-stack (the top)
 
 .section .text
 _bcode:
@@ -73,15 +74,15 @@ start:
 	UNSAVE	0,$0
 
 	# bootinfo is in $0
-	LDOU		$254,$0,32							# load kstackbegin from bootinfo
+	LDOU		$254,$0,32					# load kstackbegin from bootinfo
 	SETL		$1,STACK_SIZE
-	2ADDU		$254,$1,$254						# += 2 * STACK_SIZE
-	SUBU		$254,$254,8							# stack-pointer = kstackbegin + 2 * STACK_SIZE - 8
-	OR			$253,$254,$254					# frame-pointer = stack-pointer
+	2ADDU		$254,$1,$254				# += 2 * STACK_SIZE
+	SUBU		$254,$254,8					# stack-pointer = kstackbegin + 2 * STACK_SIZE - 8
+	OR			$253,$254,$254				# frame-pointer = stack-pointer
 
 	# call main
-	OR			$1,$0,$0								# pass bootinfo to bo
-	PUSHJ		$0,main									# call 'main' function
+	OR			$1,$0,$0					# pass bootinfo to bo
+	PUSHJ		$0,main						# call 'main' function
 
 	# just to be sure
 loop:
@@ -106,6 +107,38 @@ tc_update:
 	POP		0,0
 
 #===========================================
+# CPU
+#===========================================
+
+# uint64_t cpu_rdtsc(void)
+cpu_rdtsc:
+	GET		$0,rC
+	POP		1,0
+
+# uint64_t cpu_getGlobal(int rno)
+cpu_getGlobal:
+	SETH	$1,#0000
+	ORML	$1,#C100
+	SLU		$0,$0,8
+	OR		$1,$1,$0						# ORI $0,$<rno>,0
+	PUT		rX,$1
+	GETA	$0,@+12
+	PUT		rW,$0
+	RESUME	0
+	POP		1,0
+
+# uint64_t cpu_getSpecial(int rno)
+cpu_getSpecial:
+	SETH	$1,#0000
+	ORML	$1,#FE00
+	OR		$1,$1,$0						# GET $0,<rno>
+	PUT		rX,$1
+	GETA	$0,@+12
+	PUT		rW,$0
+	RESUME	0
+	POP		1,0
+
+#===========================================
 # Input/Output
 #===========================================
 
@@ -120,7 +153,7 @@ debugc:
 1:
 	LDOU	$3,$2,#10						# read ctrl-reg
 	AND		$3,$3,#1						# exract RDY-bit
-	PBZ		$3,1b								# wait until its set
+	PBZ		$3,1b							# wait until its set
 	STOU	$0,$2,#18						# write char
 	PUT		rJ,$1
 	POP		0,0

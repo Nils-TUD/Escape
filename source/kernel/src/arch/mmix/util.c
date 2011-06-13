@@ -18,8 +18,12 @@
  */
 
 #include <sys/common.h>
+#include <sys/dbg/console.h>
+#include <sys/dbg/kb.h>
+#include <sys/mem/vmm.h>
 #include <sys/debug.h>
 #include <sys/util.h>
+#include <sys/cpu.h>
 #include <sys/video.h>
 #include <stdarg.h>
 #include <string.h>
@@ -29,13 +33,14 @@ static sFuncCall frames[1] = {
 };
 
 void util_panic(const char *fmt,...) {
-	/*sIntrptStackFrame *istack = intrpt_getCurStack();
-	sThread *t = thread_getRunning();*/
+	/*sIntrptStackFrame *istack = intrpt_getCurStack();*/
+	sThread *t = thread_getRunning();
 	va_list ap;
-	int i;
+	size_t i;
+	uint64_t rg;
 
 	/* print message */
-	/*vid_setTargets(TARGET_SCREEN | TARGET_LOG);*/
+	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	vid_printf("\n");
 	vid_printf("\033[co;7;4]PANIC: ");
 	va_start(ap,fmt);
@@ -43,10 +48,18 @@ void util_panic(const char *fmt,...) {
 	va_end(ap);
 	vid_printf("%|s\033[co]\n","");
 
-	/*if(t != NULL)
+	if(t != NULL)
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 
-	vid_printf("User state:\n");
+	vid_printf("Kernel registers:\n\t");
+	for(i = 0; i < SPECIAL_NUM; i++) {
+		vid_printf("%-3s: #%016lX ",cpu_getSpecialName(i),cpu_getSpecial(i));
+		if(i % 3 == 2)
+			vid_printf("\n\t");
+	}
+	vid_printf("SP : #%016lx FP : #%016lx\n\n",cpu_getGlobal(254),cpu_getGlobal(253));
+
+	/*vid_printf("User state:\n");
 	vid_printf("\tPSW: 0x%08x\n\t",istack->psw);
 	for(i = 0; i < REG_COUNT; i++) {
 		int row = i / 4;
@@ -56,7 +69,7 @@ void util_panic(const char *fmt,...) {
 			vid_printf("\n\t");
 	}*/
 
-#if 0 && DEBUGGING
+#if DEBUGGING
 	/* write into log only */
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");

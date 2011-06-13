@@ -32,7 +32,7 @@
 int main(const sBootInfo *bootinfo) {
 	boot_init(bootinfo,true);
 
-	cons_start();
+	util_panic("Ätsch!");
 	while(1);
 
 #if 0

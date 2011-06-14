@@ -139,8 +139,8 @@ size_t boot_getUsableMemCount(void) {
 	return info.memSize;
 }
 
-#if 0
 void boot_loadModules(sIntrptStackFrame *stack) {
+#if 0
 	size_t i;
 	tPid pid;
 	tInodeNo nodeNo;
@@ -213,6 +213,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 		util_panic("Swapper reached this");
 	}
 #endif
+#endif
 }
 
 static const char **boot_parseArgs(const char *line,int *argc) {
@@ -239,7 +240,6 @@ static const char **boot_parseArgs(const char *line,int *argc) {
 	args[j][i] = '\0';
 	return (const char**)args;
 }
-#endif
 
 
 /* #### TEST/DEBUG FUNCTIONS #### */

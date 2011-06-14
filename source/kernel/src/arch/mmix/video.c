@@ -91,7 +91,8 @@ void vid_putchar(char c) {
 	video = (uint64_t*)VIDEO_BASE + row * MAX_COLS + col;
 
 	/* TODO temporary */
-	log_writeChar(c);
+	if(c != '\t')
+		log_writeChar(c);
 
 	if(c == '\n') {
 		row++;

@@ -1,5 +1,5 @@
 #
-# $Id$
+# $Id: main.s 900 2011-06-02 20:18:17Z nasmussen $
 # Copyright (C) 2008 - 2009 Nils Asmussen
 #
 # This program is free software; you can redistribute it and/or
@@ -17,19 +17,34 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+#include <esc/syscalls.h>
+
 .section .text
 
-.include "arch/mmix/syscalls.s"
+.global _start
+.global sigRetFunc
 
-.extern errno
+_start:
+	# load modules first
+	SET		$7,SYSCALL_LOADMODS
+	TRAP	1,0,0
 
-.global setSigHandler
-setSigHandler:
-	POP		0,0
+	# now replace with init
+	SET		$7,SYSCALL_EXEC
+	GETA	$0,progName
+	GETA	$1,args
+	TRAP	1,0,0
 
-.global sendSignalTo
-sendSignalTo:
-	POP		0,0
+	# we should not reach this
+1:
+	JMP		1b
 
-#SYSC_RET_2ARGS_ERR setSigHandler,$SYSCALL_SETSIGH
-#SYSC_RET_3ARGS_ERR sendSignalTo,$SYSCALL_SENDSIG
+# provide just a dummy
+sigRetFunc:
+	JMP		sigRetFunc
+
+args:
+	.long	progName,0
+
+progName:
+	.asciz	"/bin/init"

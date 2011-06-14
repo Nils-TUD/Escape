@@ -19,39 +19,43 @@
 
 #include <sys/common.h>
 #include <sys/dbg/console.h>
+#include <sys/task/thread.h>
+#include <sys/task/elf.h>
+#include <sys/mem/vmm.h>
 #include <sys/boot.h>
+#include <sys/util.h>
+#include <assert.h>
 
-/*static uint8_t initloader[] = {
+static uint8_t initloader[] = {
 #if DEBUGGING
-#	include "../../../../build/eco32-debug/user_initloader.dump"
+#	include "../../../../build/mmix-debug/user_initloader.dump"
 #else
-#	include "../../../../build/eco32-release/user_initloader.dump"
+#	include "../../../../build/mmix-release/user_initloader.dump"
 #endif
-};*/
+};
 
-int main(const sBootInfo *bootinfo) {
-	boot_init(bootinfo,true);
-
-	util_panic("Ätsch!");
-	while(1);
-
-#if 0
+int main(const sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	sThread *t;
 	sStartupInfo info;
 
 	boot_init(bootinfo,true);
 
+	/* give the process some stack pages */
+	t = thread_getRunning();
+	t->stackRegions[0] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP);
+	assert(t->stackRegions[0] >= 0);
+	t->stackRegions[1] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+	assert(t->stackRegions[1] >= 0);
+
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
-	t = thread_getRunning();
-	/* give the process some stack pages */
-	t->stackRegion = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-	assert(t->stackRegion >= 0);
-	/* we have to set the kernel-stack for the first process */
-	tlb_set(0,KERNEL_STACK,(t->kstackFrame * PAGE_SIZE) | 0x3);
+	*stackBegin = info.stackBegin;
+	*rss = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
+	vid_printf("rss=%lx *rss=%lx\n",rss,*rss);
+	paging_dbg_printCur(0);
+	vmm_dbg_print(t->proc);
 	return info.progEntry;
-#endif
-	return 0;
 }

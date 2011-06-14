@@ -157,8 +157,10 @@ tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 		size_t pageCount = BYTES_2_PAGES(vm->reg->byteCount);
 		if(!(pgFlags & PF_DEMANDLOAD))
 			mapFlags |= PG_PRESENT;
-		if(flags & (RF_WRITABLE))
+		if(flags & RF_WRITABLE)
 			mapFlags |= PG_WRITABLE;
+		if(flags & RF_EXECUTABLE)
+			mapFlags |= PG_EXECUTABLE;
 		stats = paging_mapTo(p->pagedir,virt,NULL,pageCount,mapFlags);
 		if(flags & RF_SHAREABLE)
 			p->sharedFrames += stats.frames;
@@ -211,6 +213,8 @@ int vmm_setRegProt(sProc *p,tVMRegNo rno,ulong flags) {
 				mapFlags |= PG_PRESENT;
 			if(flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
+			if(flags & RF_EXECUTABLE)
+				mapFlags |= PG_EXECUTABLE;
 			paging_mapTo(mp->pagedir,mpreg->virt + i * PAGE_SIZE,NULL,1,mapFlags);
 		}
 	}
@@ -240,8 +244,10 @@ void vmm_swapIn(sRegion *reg,size_t index,tFrameNo frameNo) {
 	sSLNode *n;
 	uintptr_t offset = index * PAGE_SIZE;
 	uint flags = PG_PRESENT;
-	if(reg->flags & (RF_WRITABLE))
+	if(reg->flags & RF_WRITABLE)
 		flags |= PG_WRITABLE;
+	if(reg->flags & RF_EXECUTABLE)
+		flags |= PG_EXECUTABLE;
 	reg->pageFlags[index] &= ~PF_SWAPPED;
 	for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
@@ -954,7 +960,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 	switch(type) {
 		case REG_TEXT:
 			*pgFlags = PF_DEMANDLOAD;
-			*flags = RF_SHAREABLE;
+			*flags = RF_SHAREABLE | RF_EXECUTABLE;
 			*virt = TEXT_BEGIN;
 			*rno = RNO_TEXT;
 			break;
@@ -1002,7 +1008,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 			 * case since when doing exec(), the process is empty except stacks. */
 			else if(type == REG_SHLIBTEXT) {
 				*flags = RF_SHAREABLE;
-				*pgFlags = PF_DEMANDLOAD;
+				*pgFlags = PF_DEMANDLOAD | RF_EXECUTABLE;
 			}
 			else if(type == REG_DLDATA) {
 				/* its growable to give the dynamic linker the chance to use dynamic memory

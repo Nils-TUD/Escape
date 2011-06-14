@@ -126,8 +126,10 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 	/* make sure that it is really released now */
 	signalData.active = 0;
 }
+#endif
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
+#if 0
 	uint32_t *regs;
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	if(!paging_isRangeUserReadable((uintptr_t)sp,REG_COUNT * sizeof(uint32_t)))
@@ -143,11 +145,13 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
 		/* not necessary for disk here; the driver will reenable interrupts as soon as a new
 		 * command is started */
 	}
+#endif
 	return 0;
 }
 
 bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint) {
+#if 0
 	UNUSED(path);
 	uint32_t *sp;
 	char **argv;
@@ -227,9 +231,9 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 	/* set entry-point and stack-pointer */
 	frame->r[29] = (uint32_t)sp;
 	frame->r[30] = entryPoint - 4; /* we'll skip the trap-instruction for syscalls */
+#endif
 	return true;
 }
-#endif
 
 bool uenv_setupThread(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint) {
 #if 0

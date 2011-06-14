@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/task/proc.h>
 #include <sys/task/elf.h>
+#include <sys/task/proc.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/vmm.h>
@@ -36,7 +36,8 @@
 #define ELF_TYPE_INTERP		1
 
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info);
-static int elf_addSegment(const sBinDesc *bindesc,const Elf32_Phdr *pheader,size_t loadSegNo,uint type);
+static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
+		size_t loadSegNo,uint type);
 
 int elf_loadFromFile(const char *path,sStartupInfo *info) {
 	return elf_doLoadFromFile(path,ELF_TYPE_PROG,info);
@@ -44,20 +45,20 @@ int elf_loadFromFile(const char *path,sStartupInfo *info) {
 
 int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 	size_t j,loadSegNo = 0;
-	uint8_t const *datPtr;
-	Elf32_Ehdr *eheader = (Elf32_Ehdr*)code;
-	Elf32_Phdr *pheader = NULL;
+	uintptr_t datPtr;
+	sElfEHeader *eheader = (sElfEHeader*)code;
+	sElfPHeader *pheader = NULL;
 
 	/* check magic */
-	if(memcmp(eheader->e_ident.chars,ELFMAG,4) != 0)
+	if(memcmp(eheader->e_ident,ELFMAG,4) != 0)
 		return ERR_INVALID_ELF_BIN;
 
 	/* load the LOAD segments. */
-	datPtr = (uint8_t const*)((uintptr_t)code + eheader->e_phoff);
+	datPtr = (uintptr_t)code + eheader->e_phoff;
 	for(j = 0; j < eheader->e_phnum; datPtr += eheader->e_phentsize, j++) {
-		pheader = (Elf32_Phdr*)datPtr;
+		pheader = (sElfPHeader*)datPtr;
 		/* check if all stuff is in the binary */
-		if((uintptr_t)pheader + sizeof(Elf32_Phdr) >= (uintptr_t)code + length)
+		if((uintptr_t)pheader + sizeof(sElfPHeader) >= (uintptr_t)code + length)
 			return ERR_INVALID_ELF_BIN;
 
 		if(pheader->p_type == PT_LOAD) {
@@ -74,6 +75,9 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 		}
 	}
 
+	if(elf_finishFromMem(code,length,info) < 0)
+		return ERR_INVALID_ELF_BIN;
+
 	info->linkerEntry = info->progEntry = eheader->e_entry;
 	return 0;
 }
@@ -83,9 +87,9 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	sProc *p = t->proc;
 	tFileNo file;
 	size_t j,loadSeg = 0;
-	uint8_t const *datPtr;
-	Elf32_Ehdr eheader;
-	Elf32_Phdr pheader;
+	uintptr_t datPtr;
+	sElfEHeader eheader;
+	sElfPHeader pheader;
 	sFileInfo finfo;
 	sBinDesc bindesc;
 
@@ -101,11 +105,11 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	bindesc.modifytime = finfo.modifytime;
 
 	/* first read the header */
-	if(vfs_readFile(p->pid,file,&eheader,sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr))
+	if(vfs_readFile(p->pid,file,&eheader,sizeof(sElfEHeader)) != sizeof(sElfEHeader))
 		goto failed;
 
 	/* check magic */
-	if(memcmp(eheader.e_ident.chars,ELFMAG,4) != 0)
+	if(memcmp(eheader.e_ident,ELFMAG,4) != 0)
 		goto failed;
 
 	/* by default set the same; the dl will overwrite it when needed */
@@ -115,13 +119,13 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 		info->linkerEntry = eheader.e_entry;
 
 	/* load the LOAD segments. */
-	datPtr = (uint8_t const*)(eheader.e_phoff);
+	datPtr = eheader.e_phoff;
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
 		if(vfs_seek(p->pid,file,(off_t)datPtr,SEEK_SET) < 0)
 			goto failed;
 		/* read pheader */
-		if(vfs_readFile(p->pid,file,&pheader,sizeof(Elf32_Phdr)) != sizeof(Elf32_Phdr))
+		if(vfs_readFile(p->pid,file,&pheader,sizeof(sElfPHeader)) != sizeof(sElfPHeader))
 			goto failed;
 
 		if(pheader.p_type == PT_INTERP) {
@@ -163,11 +167,15 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				if(vfs_readFile(p->pid,file,(void*)tlsStart,pheader.p_filesz) < 0)
 					goto failed;
 				/* clear tbss */
-				util_zeroToUser((void*)(tlsStart + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
+				util_zeroToUser((void*)(tlsStart + pheader.p_filesz),
+						pheader.p_memsz - pheader.p_filesz);
 			}
 			loadSeg++;
 		}
 	}
+
+	if(elf_finishFromFile(file,&eheader,info) < 0)
+		return ERR_INVALID_ELF_BIN;
 
 	vfs_closeFile(p->pid,file);
 	return 0;
@@ -177,7 +185,8 @@ failed:
 	return ERR_INVALID_ELF_BIN;
 }
 
-static int elf_addSegment(const sBinDesc *bindesc,const Elf32_Phdr *pheader,size_t loadSegNo,uint type) {
+static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
+		size_t loadSegNo,uint type) {
 	sThread *t = thread_getRunning();
 	int stype,res;
 	size_t memsz = pheader->p_memsz;

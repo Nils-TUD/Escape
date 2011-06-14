@@ -32,6 +32,109 @@
 #include <sys/video.h>
 #include <sys/util.h>
 
+#define TRAP_POWER_FAILURE		0	// power failure
+#define TRAP_MEMORY_PARITY		1	// memory parity error
+#define TRAP_NONEX_MEMORY		2	// non-existent memory
+#define TRAP_REBOOT				3	// reboot
+#define TRAP_INTERVAL			7	// interval-counter reached zero
+
+#define TRAP_PRIVILEGED_PC		32	// p: comes from a privileged (negative) virt addr
+#define TRAP_SEC_VIOLATION		33	// s: violates security
+#define TRAP_BREAKS_RULES		34	// b: breaks the rules of MMIX
+#define TRAP_PRIV_INSTR			35	// k: is privileged, for use by the "kernel" only
+#define TRAP_PRIV_ACCESS		36	// n: refers to a negative virtual address
+#define TRAP_PROT_EXEC			37	// x: appears in a page without execute permission
+#define TRAP_PROT_WRITE			38	// w: tries to store to a page without write perm
+#define TRAP_PROT_READ			39	// r: tries to load from a page without read perm
+
+#define TRAP_DISK				51	// disk interrupt
+#define TRAP_TIMER				52	// timer interrupt
+#define TRAP_TTY0_XMTR			53	// terminal 0 transmitter interrupt
+#define TRAP_TTY0_RCVR			54	// terminal 0 transmitter interrupt
+#define TRAP_TTY1_XMTR			55	// terminal 1 transmitter interrupt
+#define TRAP_TTY1_RCVR			56	// terminal 1 transmitter interrupt
+#define TRAP_TTY2_XMTR			57	// terminal 2 transmitter interrupt
+#define TRAP_TTY2_RCVR			58	// terminal 2 transmitter interrupt
+#define TRAP_TTY3_XMTR			59	// terminal 3 transmitter interrupt
+#define TRAP_TTY3_RCVR			60	// terminal 3 transmitter interrupt
+#define TRAP_KEYBOARD			61	// keyboard interrupt
+
+typedef void (*fIntrptHandler)(sIntrptStackFrame *stack,int irqNo);
+typedef struct {
+	fIntrptHandler handler;
+	const char *name;
+	tSig signal;
+} sInterrupt;
+
+static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo);
+static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo);
+
+static sInterrupt intrptList[] = {
+	/* 0x00: TRAP_POWER_FAILURE */	{intrpt_defHandler,	"Power failure",		0},
+	/* 0x01: TRAP_MEMORY_PARITY */	{intrpt_defHandler,	"Memory parity error",	0},
+	/* 0x02: TRAP_NONEX_MEMORY */	{intrpt_defHandler,	"Nonexistent memory",	0},
+	/* 0x03: TRAP_REBOOT */			{intrpt_defHandler,	"Reboot",				0},
+	/* 0x04: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x05: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x06: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x07: TRAP_INTERVAL */		{intrpt_defHandler,	"Interval counter",		0},
+	/* 0x08: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x09: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x0A: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x0B: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x0C: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x0D: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x0E: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x0F: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x10: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x11: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x12: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x13: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x14: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x15: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x16: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x17: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x18: -- */					{intrpt_defHandler,	"TLB invalid exception",0},
+	/* 0x19: -- */					{intrpt_defHandler,	"TLB invalid exception",0},
+	/* 0x1A: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x1B: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x1C: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x1D: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x1E: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x1F: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x20: TRAP_PRIVILEGED_PC */	{intrpt_defHandler,	"Privileged PC",		0},
+	/* 0x21: TRAP_SEC_VIOLATION */	{intrpt_defHandler,	"Security violation",	0},
+	/* 0x22: TRAP_BREAKS_RULES */	{intrpt_defHandler,	"Breaks rules",			0},
+	/* 0x23: TRAP_PRIV_INSTR */		{intrpt_defHandler,	"Privileged instr.",	0},
+	/* 0x24: TRAP_PRIV_ACCESS */	{intrpt_defHandler,	"Privileged access",	0},
+	/* 0x25: TRAP_PROT_EXEC */		{intrpt_defHandler,	"Execution protection",	0},
+	/* 0x26: TRAP_PROT_WRITE */		{intrpt_defHandler,	"Write protection",		0},
+	/* 0x27: TRAP_PROT_READ */		{intrpt_defHandler,	"Read protection",		0},
+	/* 0x28: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x29: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x2A: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x2B: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x2C: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x2D: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x2E: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x2F: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x30: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x31: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x32: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x33: TRAP_DISK */			{intrpt_defHandler,	"Disk",					0},
+	/* 0x34: TRAP_TIMER */			{intrpt_irqTimer,	"Timer",				0},
+	/* 0x35: TRAP_TTY0_XMTR */		{intrpt_defHandler,	"Terminal 0 trans.",	0},
+	/* 0x36: TRAP_TTY0_RCVR */		{intrpt_defHandler,	"Terminal 0 recv.",		0},
+	/* 0x37: TRAP_TTY1_XMTR */		{intrpt_defHandler,	"Terminal 1 trans.",	0},
+	/* 0x38: TRAP_TTY1_RCVR */		{intrpt_defHandler,	"Terminal 1 recv.",		0},
+	/* 0x39: TRAP_TTY2_XMTR */		{intrpt_defHandler,	"Terminal 2 trans.",	0},
+	/* 0x3A: TRAP_TTY2_RCVR */		{intrpt_defHandler,	"Terminal 2 recv.",		0},
+	/* 0x3B: TRAP_TTY3_XMTR */		{intrpt_defHandler,	"Terminal 3 trans.",	0},
+	/* 0x3C: TRAP_TTY3_RCVR */		{intrpt_defHandler,	"Terminal 3 recv.",		0},
+	/* 0x3D: TRAP_KEYBOARD */		{intrpt_defHandler,	"Keyboard",				0},
+	/* 0x3E: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x3F: -- */					{intrpt_defHandler,	"??",					0},
+};
 static size_t irqCount = 0;
 static sIntrptStackFrame *curFrame;
 
@@ -43,16 +146,67 @@ sIntrptStackFrame *intrpt_getCurStack(void) {
 	return 0;
 }
 
+void intrpt_forcedTrap(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
+	t->stats.syscalls++;
+	sysc_handle(stack);
+}
+
+void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
+	sInterrupt *intrpt = intrptList + (irqNo & 0x3F);
+	curFrame = stack;
+	irqCount++;
+
+	/* call handler */
+	intrpt->handler(stack,irqNo);
+	intrpt_dbg_printStackFrame(stack);
+
+#if 0
+	/* only handle signals, if we come directly from user-mode */
+	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
+	 * signals in that case, we might cause a thread-switch. this is not always possible! */
+	sThread *t = thread_getRunning();
+	if(t != NULL && (t->tid == IDLE_TID || (stack->psw & PSW_PUM))) {
+		uenv_handleSignal();
+		if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+			uenv_startSignalHandler(stack);
+	}
+#endif
+}
+
+static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
+	uint64_t rww = cpu_getSpecial(rWW);
+	/* do nothing */
+	util_panic("Got interrupt %d (%s) @ 0x%08x\n",
+			irqNo,intrptList[irqNo & 0x1f].name,rww);
+}
+
+static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
+	sig_addSignal(SIG_INTRPT_TIMER);
+	timer_intrpt();
+	timer_ackIntrpt();
+}
+
 #if DEBUGGING
 
 void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
-	int i;
+	stack--;
+	int i,rl,rg = *stack >> 56;
+	static int spregs[] = {rZ,rY,rX,rW,rP,rR,rM,rJ,rH,rE,rD,rB};
 	vid_printf("stack-frame @ 0x%Px\n",stack);
-	vid_printf("\tirqNo=%d\n",stack->irqNo);
-	vid_printf("\tpsw=#%08x\n",stack->psw);
-	vid_printf("\tregister:\n");
-	for(i = 0; i < REG_COUNT; i++)
-		vid_printf("\tr[%d]=#%08x\n",i,stack->r[i]);
+	vid_printf("\trG=%d,rA=#%x\n",rg,*stack & 0x3FFFF);
+	stack--;
+	for(i = 1; i < 12; i++)
+		vid_printf("\t%s: #%016lx\n",cpu_getSpecialName(spregs[i]),*stack--);
+	for(i = 255; i >= rg; i--)
+		vid_printf("\t$%d: #%016lx\n",i,*stack--);
+	vid_printf("\trS: #%016lx\n",*stack--);
+	vid_printf("\trO: #%016lx\n",*stack--);
+	rl = *stack--;
+	vid_printf("\trL: %d\n",rl);
+	for(i = rl - 1; i >= 0; i--)
+		vid_printf("\t$%d: #%016lx\n",i,*stack--);
 }
 
 #endif

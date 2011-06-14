@@ -73,11 +73,8 @@ static size_t paging_remEmptyPts(tPageDir pdir,uintptr_t virt);
 static void paging_tcRemPT(tPageDir pdir,uintptr_t virt);
 extern void tc_update(uint64_t key);
 extern void paging_setrV(uint64_t rv);
-
-#if DEBUGGING
 static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
 static void paging_dbg_printPage(sPTE pte);
-#endif
 
 /* the current context with the address-space and the value of rV */
 static tPageDir context = NULL;
@@ -519,56 +516,6 @@ void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
 }
 #endif
 
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
-static size_t paging_dbg_getPageCountOf(uint64_t *pt,size_t level) {
-	size_t i,count = 0;
-	sPTE *pte;
-	if(level > 0) {
-		/* page-table with PTPs */
-		for(i = 0; i < PT_ENTRY_COUNT; i++) {
-			if(pt[i] != 0)
-				count += paging_dbg_getPageCountOf((uint64_t*)(pt[i] & 0xFFFFFFFFFFFFE000),level - 1);
-		}
-	}
-	else {
-		/* page-table with PTEs */
-		pte = (sPTE*)pt;
-		for(i = 0; i < PT_ENTRY_COUNT; i++) {
-			if(pte[i].readable || pte[i].writable || pte[i].executable)
-				count++;
-		}
-	}
-	return count;
-}
-
-size_t paging_dbg_getPageCount(void) {
-	size_t i,j,count = 0;
-	uintptr_t root = DIR_MAPPED_SPACE | (context->rV & 0xFFFFFFE000);
-	for(i = 0; i < SEGMENT_COUNT; i++) {
-		ulong segSize = SEGSIZE(context->rV,i + 1) - SEGSIZE(context->rV,i);
-		for(j = 0; j < segSize; j++) {
-			count += paging_dbg_getPageCountOf((uint64_t*)root,j);
-			root += PAGE_SIZE;
-		}
-	}
-	return count;
-}
-
-void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt) {
-	sPTE pte = paging_getPTEOf(pdir,virt);
-	if(pte.exists) {
-		vid_printf("Page @ %p: ",virt);
-		paging_dbg_printPage(pte);
-		vid_printf("\n");
-	}
-}
-
-void paging_dbg_printCur(uint parts) {
-	paging_dbg_printPDir(context,parts);
-}
-
 void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 	UNUSED(parts);
 	size_t i,j;
@@ -628,6 +575,57 @@ static void paging_dbg_printPage(sPTE pte) {
 	else {
 		vid_printf("-");
 	}
+}
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt) {
+	sPTE pte = paging_getPTEOf(pdir,virt);
+	if(pte.exists) {
+		vid_printf("Page @ %p: ",virt);
+		paging_dbg_printPage(pte);
+		vid_printf("\n");
+	}
+}
+
+void paging_dbg_printCur(uint parts) {
+	paging_dbg_printPDir(context,parts);
+}
+
+static size_t paging_dbg_getPageCountOf(uint64_t *pt,size_t level) {
+	size_t i,count = 0;
+	sPTE *pte;
+	if(level > 0) {
+		/* page-table with PTPs */
+		for(i = 0; i < PT_ENTRY_COUNT; i++) {
+			if(pt[i] != 0)
+				count += paging_dbg_getPageCountOf((uint64_t*)(pt[i] & 0xFFFFFFFFFFFFE000),level - 1);
+		}
+	}
+	else {
+		/* page-table with PTEs */
+		pte = (sPTE*)pt;
+		for(i = 0; i < PT_ENTRY_COUNT; i++) {
+			if(pte[i].readable || pte[i].writable || pte[i].executable)
+				count++;
+		}
+	}
+	return count;
+}
+
+size_t paging_dbg_getPageCount(void) {
+	size_t i,j,count = 0;
+	uintptr_t root = DIR_MAPPED_SPACE | (context->rV & 0xFFFFFFE000);
+	for(i = 0; i < SEGMENT_COUNT; i++) {
+		ulong segSize = SEGSIZE(context->rV,i + 1) - SEGSIZE(context->rV,i);
+		for(j = 0; j < segSize; j++) {
+			count += paging_dbg_getPageCountOf((uint64_t*)root,j);
+			root += PAGE_SIZE;
+		}
+	}
+	return count;
 }
 
 #endif

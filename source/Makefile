@@ -80,7 +80,7 @@ export SUDO=sudo
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
 ifeq ($(ARCH),mmix)
-	DIRS = tools dist lib drivers kernel/src kernel/test
+	DIRS = tools dist lib drivers user kernel/src kernel/test
 else
 	DIRS = tools dist lib drivers user kernel/src kernel/test
 endif
@@ -104,6 +104,8 @@ endif
 # correctly
 ifeq ($(ARCH),mmix)
 CDEFFLAGS += -mno-base-addresses
+# do not warn if instructions are extended to setl,incml,...
+ASFLAGS += -x
 endif
 
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \

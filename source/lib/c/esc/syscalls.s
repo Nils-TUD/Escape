@@ -29,13 +29,11 @@
 #ifdef __eco32__
 #include "../arch/eco32/syscalls.s"
 #endif
+
 #ifdef __mmix__
 #include "../arch/mmix/syscalls.s"
-#endif
-
-#ifdef __mmix__
-
 #else
+
 # other
 SYSC_RET_1ARGS_ERR getConf,SYSCALL_GETCONF
 SYSC_VOID_1ARGS debugChar,SYSCALL_DEBUGCHAR

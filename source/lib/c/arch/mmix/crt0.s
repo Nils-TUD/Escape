@@ -45,8 +45,8 @@
 #  +------------------+
 
 .ifndef SHAREDLIB
-_start:
 	# call init_tls(entryPoint,TLSStart,TLSSize)
+_start:
 	PUSHJ		$0,init_tls
 	# remove args from stack
 	#add		$12,%esp

@@ -18,8 +18,8 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
-#ifndef _ELF_H
-#define	_ELF_H 1
+#ifndef _TASK_ELF_H
+#define	_TASK_ELF_H
 
 #include <sys/common.h>
 
@@ -28,26 +28,9 @@ typedef struct {
 	uintptr_t progEntry;
 	/* entry-point of the dynamic-linker; will be the same as progEntry if no dl is used */
 	uintptr_t linkerEntry;
+	/* the beginning of the stack; only needed for MMIX */
+	uintptr_t stackBegin;
 } sStartupInfo;
-
-/**
- * Loads the program at given path from fs into the user-space
- *
- * @param path the path to the program
- * @param info various information about the loaded program
- * @return 0 on success
- */
-int elf_loadFromFile(const char *path,sStartupInfo *info);
-
-/**
- * Loads the given code into the user-space. This is just intended for loading initloader
- *
- * @param code the address of the binary
- * @param length the length of the binary
- * @param info various information about the loaded program
- * @return 0 on success
- */
-int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info);
 
 /* Standard ELF types.  */
 
@@ -92,10 +75,7 @@ typedef Elf64_Half Elf64_Versym;
 
 typedef struct
 {
-  union {
-	  unsigned char	chars[EI_NIDENT];	/* Magic number and other info */
-	  uint32_t dword;
-  } e_ident;
+  unsigned char	e_ident[EI_NIDENT];	/* Magic number and other info */
   Elf32_Half	e_type;			/* Object file type */
   Elf32_Half	e_machine;		/* Architecture */
   Elf32_Word	e_version;		/* Object file version */
@@ -2673,4 +2653,54 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_M32R_GOTOFF_LO	64	/* Low 16 bit offset to GOT */
 #define R_M32R_NUM		256	/* Keep this the last entry. */
 
-#endif	/* elf.h */
+
+#ifdef __i386__
+#include <sys/arch/i586/task/elf.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/elf.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/elf.h>
+#endif
+
+/**
+ * Loads the program at given path from fs into the user-space
+ *
+ * @param path the path to the program
+ * @param info various information about the loaded program
+ * @return 0 on success
+ */
+int elf_loadFromFile(const char *path,sStartupInfo *info);
+
+/**
+ * Loads the given code into the user-space. This is just intended for loading initloader
+ *
+ * @param code the address of the binary
+ * @param length the length of the binary
+ * @param info various information about the loaded program
+ * @return 0 on success
+ */
+int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info);
+
+/**
+ * Architecture-specific finish-actions when loading from memory. DO NOT call it directly!
+ *
+ * @param code the address of the binary
+ * @param length the length of the binary
+ * @param info the startup-info
+ * @return 0 on success
+ */
+int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info);
+
+/**
+ * Architecture-specific finish-actions when loading from file. DO NOT call it directly!
+ *
+ * @param file the file
+ * @param eheader the elf-header
+ * @param info the startup-info
+ * @return 0 on success
+ */
+int elf_finishFromFile(tFileNo file,const sElfEHeader *eheader,sStartupInfo *info);
+
+#endif	/* TASK_ELF_H_ */

@@ -29,6 +29,9 @@
 #ifdef __eco32__
 #include <sys/arch/eco32/syscalls.h>
 #endif
+#ifdef __mmix__
+#include <sys/arch/mmix/syscalls.h>
+#endif
 
 /**
  * Handles the syscall for the given stack

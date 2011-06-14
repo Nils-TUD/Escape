@@ -218,6 +218,7 @@ static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 		{"Growable",RF_GROWABLE},
 		{"Shareable",RF_SHAREABLE},
 		{"Writable",RF_WRITABLE},
+		{"Executable",RF_EXECUTABLE},
 		{"Stack",RF_STACK},
 		{"NoFree",RF_NOFREE},
 		{"TLS",RF_TLS},

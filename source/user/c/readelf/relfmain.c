@@ -280,7 +280,7 @@ static void printHeader(void) {
 	printf("ELF Header:\n");
 	printf("  Magic: ");
 	for(i = 0; i < EI_NIDENT; i++)
-		printf("%02x ",eheader.e_ident.chars[i]);
+		printf("%02x ",eheader.e_ident[i]);
 	printf("\n");
 	printf("  %-34s %s\n","Type:",
 			eheader.e_type < ARRAY_SIZE(fileTypes) ? fileTypes[eheader.e_type] : "-Unknown-");

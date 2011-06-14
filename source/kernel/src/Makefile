@@ -14,26 +14,13 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D I
  -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/profile.c
 
 # sources
-ifeq ($(ARCH),mmix)
-ASRC = $(filter-out $(shell find ./arch -name "*.s"),\
-	$(shell find . -name "*.s" | grep -v '\.svn'))
-ASRC += $(filter-out ./arch/$(ARCH)/end.s,$(shell find ./arch/$(ARCH) -name "*.s" | grep -v '\.svn'))
-ASRC += ./arch/$(ARCH)/end.s
-CSRC = $(filter-out $(shell find ./syscalls -name "*.c") $(shell find ./arch -name "*.c"),\
-	$(shell find . -name "*.c" | grep -v '\.svn'))
-CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
-LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
-	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
-LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
-LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
-else
 ASRC = $(filter-out $(shell find ./arch -name "*.s"),\
 	$(shell find . -name "*.s" | grep -v '\.svn'))
 ASRC += $(filter-out ./arch/$(ARCH)/end.s,$(shell find ./arch/$(ARCH) -name "*.s" | grep -v '\.svn'))
 ASRC += ./arch/$(ARCH)/end.s
 ifeq ($(BUILDTYPE),release)
 # remove dbg-files in release-mode
-CSRC = $(filter-out $(shell find ./arch -name "*.c") $(shell find ./dbg -name "*.c"),\
+CSRC = $(filter-out $(shell find ./arch ./dbg -name "*.c"),\
 	$(shell find . -name "*.c" | grep -v '\.svn'))
 CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 else
@@ -44,7 +31,6 @@ LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
 	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
-endif
 
 # objects
 AOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(ASRC))

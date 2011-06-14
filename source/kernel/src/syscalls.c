@@ -40,8 +40,6 @@ typedef struct {
 } sSyscall;
 
 /* our syscalls */
-/* TODO */
-#ifndef __mmix__
 static sSyscall syscalls[] = {
 	/* 0 */		{sysc_getpid,				0},
 	/* 1 */		{sysc_getppid,				1},
@@ -129,7 +127,6 @@ uint sysc_getArgCount(uint sysCallNo) {
 		return 0;
 	return syscalls[sysCallNo].argCount;
 }
-#endif
 
 bool sysc_isStringReadable(const char *str) {
 	uintptr_t addr;

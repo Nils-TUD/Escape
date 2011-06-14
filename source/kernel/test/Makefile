@@ -16,21 +16,6 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 	-D TESTING=1 -D IN_KERNEL=1
 
 # sources
-ifeq ($(ARCH),mmix)
-TSRC = $(wildcard *.c)
-TSRC += $(wildcard arch/$(ARCH)/*.c)
-KSRC = $(filter-out $(shell find ../src/syscalls -name "*.c") $(shell find ../src/arch -name "*.c"),\
-	$(shell find ../src -name "*.c" | grep -v '\.svn'))
-KSRC += $(filter-out ../src/arch/$(ARCH)/start.c,\
-	$(shell find ../src/arch/$(ARCH) -name "*.c" | grep -v '\.svn'))
-KASRC = $(filter-out $(shell find ../src/arch -name "*.s"),\
-	$(shell find ../src -name "*.s" | grep -v '\.svn'))
-KASRC += $(shell find ../src/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
-LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
-	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
-LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
-LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
-else
 TSRC = $(wildcard *.c)
 TSRC += $(wildcard arch/$(ARCH)/*.c)
 KSRC = $(filter-out $(shell find ../src/arch -name "*.c"),\
@@ -44,7 +29,6 @@ LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
 	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')
 LASRC = $(shell find $(LIB)/arch/$(ARCH) -name "*.s" | grep -v '\.svn')
-endif
 
 # objects
 TOBJ = $(patsubst %.c,$(BUILDT)/%.o,$(TSRC))

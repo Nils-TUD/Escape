@@ -1,5 +1,5 @@
 /**
- * $Id: intrpt.h 900 2011-06-02 20:18:17Z nasmussen $
+ * $Id: syscalls.h 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,11 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_INTRPT_H_
-#define MMIX_INTRPT_H_
+#ifndef MMIX_SYSCALLS_H_
+#define MMIX_SYSCALLS_H_
 
 #include <esc/common.h>
 
-typedef uint64_t sIntrptStackFrame;
+/* some convenience-macros */
+#define SYSC_SETERROR(stack,errorCode)	((stack)[1] = (errorCode))
+#define SYSC_ERROR(stack,errorCode)		{ ((stack)[1] = (errorCode)); return; }
+#define SYSC_RET1(stack,val)			((stack)[0] = (val))
+#define SYSC_RET2(stack,val)			((stack)[1] = (val))
+#define SYSC_NUMBER(stack)				((stack)[7])
+#define SYSC_ARG1(stack)				((stack)[0])
+#define SYSC_ARG2(stack)				((stack)[1])
+#define SYSC_ARG3(stack)				((stack)[2])
+#define SYSC_ARG4(stack)				((stack)[3])
+#define SYSC_ARG5(stack)				((stack)[4])
+#define SYSC_ARG6(stack)				((stack)[5])
+#define SYSC_ARG7(stack)				((stack)[6])
 
-#endif /* MMIX_INTRPT_H_ */
+#endif /* MMIX_SYSCALLS_H_ */

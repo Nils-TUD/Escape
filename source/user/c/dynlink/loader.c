@@ -56,7 +56,7 @@ void load_doLoad(tFD binFd,sSharedLib *dst) {
 	load_read(binFd,0,&eheader,sizeof(Elf32_Ehdr));
 
 	/* check magic-number */
-	if(eheader.e_ident.dword != *(uint32_t*)ELFMAG)
+	if(memcmp(eheader.e_ident,ELFMAG,4) != 0)
 		load_error("Invalid ELF-magic");
 
 	datPtr = (uint8_t const*)(eheader.e_phoff);

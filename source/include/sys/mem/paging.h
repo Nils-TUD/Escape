@@ -259,6 +259,21 @@ size_t paging_getPTableCount(tPageDir pdir);
  */
 void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir);
 
+/**
+ * Prints the given parts of the current page-directory
+ *
+ * @param parts the parts to print
+ */
+void paging_dbg_printCur(uint parts);
+
+/**
+ * Prints the given parts from the given page-directory
+ *
+ * @param pdir the page-directory
+ * @param parts the parts to print
+ */
+void paging_dbg_printPDir(tPageDir pdir,uint parts);
+
 
 #if DEBUGGING
 
@@ -277,21 +292,6 @@ size_t paging_dbg_getPageCount(void);
  * @param virt the virtual address
  */
 void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt);
-
-/**
- * Prints the given parts of the current page-directory
- *
- * @param parts the parts to print
- */
-void paging_dbg_printCur(uint parts);
-
-/**
- * Prints the given parts from the given page-directory
- *
- * @param pdir the page-directory
- * @param parts the parts to print
- */
-void paging_dbg_printPDir(tPageDir pdir,uint parts);
 
 #endif
 

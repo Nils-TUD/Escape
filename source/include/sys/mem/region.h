@@ -33,10 +33,11 @@
 #define RF_GROWABLE			1
 #define RF_SHAREABLE		2
 #define RF_WRITABLE			4
-#define RF_STACK			8	/* means, grows downwards, and is used to find a free stack-address */
-#define RF_NOFREE			16	/* means that the memory should not be free'd on release */
-#define RF_TLS				32	/* needed to distinguish TLS-regions from others on delete */
-#define RF_GROWS_DOWN		64
+#define RF_EXECUTABLE		8
+#define RF_STACK			16	/* means, grows downwards, and is used to find a free stack-address */
+#define RF_NOFREE			32	/* means that the memory should not be free'd on release */
+#define RF_TLS				64	/* needed to distinguish TLS-regions from others on delete */
+#define RF_GROWS_DOWN		128
 
 typedef struct {
 	tInodeNo ino;

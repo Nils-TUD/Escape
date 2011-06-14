@@ -108,9 +108,9 @@ void proc_init(void) {
 		util_panic("Unable to append the initial thread");
 
 	/* setup kernel-stack for us */
+	stackFrame = pmem_allocate();
 	/* TODO */
 #ifndef __mmix__
-	stackFrame = pmem_allocate();
 	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 #endif
 
@@ -462,6 +462,7 @@ int proc_startThread(uintptr_t entryPoint,const void *arg) {
 
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {
+		/* TODO move that into uenv_setupThread */
 		sIntrptStackFrame *istack = intrpt_getCurStack();
 		if(!uenv_setupThread(istack,arg,entryPoint)) {
 			thread_kill(nt);

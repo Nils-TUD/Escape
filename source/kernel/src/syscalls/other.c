@@ -33,7 +33,8 @@
 #include <errors.h>
 
 void sysc_loadMods(sIntrptStackFrame *stack) {
-	boot_loadModules(stack);
+	int res = boot_loadModules(stack);
+	SYSC_RET1(stack,res);
 }
 
 void sysc_debugc(sIntrptStackFrame *stack) {

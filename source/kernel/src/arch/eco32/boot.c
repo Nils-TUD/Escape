@@ -137,14 +137,14 @@ size_t boot_getUsableMemCount(void) {
 	return info.memSize;
 }
 
-void boot_loadModules(sIntrptStackFrame *stack) {
+int boot_loadModules(sIntrptStackFrame *stack) {
 	size_t i;
 	tPid pid;
 	tInodeNo nodeNo;
 
 	/* it's not good to do this twice.. */
 	if(loadedMods)
-		return;
+		return 0;
 
 	/* start idle-thread */
 	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
@@ -182,11 +182,11 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 				util_panic("Building args for boot-module %s failed: %d",p->command,argc);
 			/* no dynamic linking here */
 			p->entryPoint = sinfo.progEntry;
-			if(!uenv_setupProc(stack,p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
+			if(!uenv_setupProc(p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
 				util_panic("Unable to setup user-stack for boot module %s",p->command);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
-			return;
+			return 0;
 		}
 
 		/* wait until the driver is registered */
@@ -210,6 +210,8 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 		util_panic("Swapper reached this");
 	}
 #endif
+
+	return 0;
 }
 
 static const char **boot_parseArgs(const char *line,int *argc) {

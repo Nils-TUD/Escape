@@ -226,7 +226,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
-	if(!uenv_setupProc(stack,path,argc,argBuffer,argSize,&info,info.linkerEntry))
+	if(!uenv_setupProc(path,argc,argBuffer,argSize,&info,info.linkerEntry))
 		goto error;
 
 	kheap_free(argBuffer);

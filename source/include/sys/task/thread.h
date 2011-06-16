@@ -108,24 +108,6 @@ struct sThread {
 extern void thread_idle(void);
 
 /**
- * Saves the state of the current thread in the given area
- *
- * @param saveArea the area where to save the state
- * @return false for the caller-thread, true for the resumed thread
- */
-extern bool thread_save(sThreadRegs *saveArea);
-
-/**
- * Resumes the given state
- *
- * @param pageDir the physical address of the page-dir
- * @param saveArea the area to load the state from
- * @param kstackFrame the frame-number of the kernel-stack (0 = don't change)
- * @return always true
- */
-extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,tFrameNo kstackFrame);
-
-/**
  * Inits the threading-stuff. Uses <p> as first process
  *
  * @param p the first process
@@ -232,6 +214,15 @@ bool thread_hasStackRegion(const sThread *t,tVMRegNo regNo);
  * @return 0 on success
  */
 int thread_extendStack(uintptr_t address);
+
+/**
+ * Finishes the clone of a thread
+ *
+ * @param t the original thread
+ * @param nt the new thread
+ * @return 0 for the parent, 1 for the child
+ */
+int thread_finishClone(sThread *t,sThread *nt);
 
 /**
  * Clones <src> to <dst>. That means a new thread will be created and <src> will be copied to the

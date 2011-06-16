@@ -378,7 +378,7 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 	uintptr_t pdirAddr = PAGE_DIR_DIRMAP_OF(pdir);
 	sPDEntry *pde;
 	sPTEntry *pte;
-	assert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_PRESENT | PG_ADDR_TO_FRAME |
+	assert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_PRESENT | PG_EXECUTABLE | PG_ADDR_TO_FRAME |
 			PG_GLOBAL | PG_KEEPFRM)));
 
 	virt &= ~(PAGE_SIZE - 1);

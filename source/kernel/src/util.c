@@ -64,9 +64,9 @@ void util_printStackTrace(const sFuncCall *trace) {
 }
 
 void util_dumpMem(const void *addr,size_t dwordCount) {
-	uint *ptr = (uint*)addr;
+	ulong *ptr = (ulong*)addr;
 	while(dwordCount-- > 0) {
-		vid_printf("%p: 0x%08x\n",ptr,*ptr);
+		vid_printf("%p: 0x%0*lx\n",ptr,sizeof(ulong) * 2,*ptr);
 		ptr++;
 	}
 }

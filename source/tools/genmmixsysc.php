@@ -83,10 +83,10 @@ foreach($syscalls as $sc) {
 	echo $sc[0].":\n";
 	echo "	SET		$7,".$sc[1]."				# set syscall-number\n";
 	echo "	TRAP	1,0,0\n";
-	echo "	BZ		$1,1f						# no-error?\n";
+	echo "	BZ		$7,1f						# no-error?\n";
 	echo "	GETA	$2,errno\n";
-	echo "	STOU	$1,$2,0\n";
-	echo "	SET		$0,$1\n";
+	echo "	STOU	$7,$2,0\n";
+	echo "	SET		$0,$7\n";
 	echo "1:\n";
 	echo "	POP		1,0							# return value is in $0\n";
 	echo "\n";

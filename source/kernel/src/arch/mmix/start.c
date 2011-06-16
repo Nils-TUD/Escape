@@ -54,8 +54,5 @@ int main(const sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 		util_panic("Unable to load initloader");
 	*stackBegin = info.stackBegin;
 	*rss = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
-	vid_printf("rss=%lx *rss=%lx\n",rss,*rss);
-	paging_dbg_printCur(0);
-	vmm_dbg_print(t->proc);
 	return info.progEntry;
 }

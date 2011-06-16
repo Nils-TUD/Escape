@@ -27,7 +27,12 @@
 #include <assert.h>
 
 #define OCC_MAP_SIZE			512
+/* TODO find a better way */
+#ifdef __mmix__
+#define PAGE_SIZE				8192
+#else
 #define PAGE_SIZE				4096
+#endif
 
 #ifdef __eco32__
 #define DEBUG_ALLOC_N_FREE		0

@@ -627,6 +627,7 @@ error:
 
 int vmm_growStackTo(sThread *t,uintptr_t addr) {
 	size_t i;
+	int res = 0;
 	addr &= ~(PAGE_SIZE - 1);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		sVMRegion *vm = REG(t->proc,t->stackRegions[i]);
@@ -647,10 +648,16 @@ int vmm_growStackTo(sThread *t,uintptr_t addr) {
 				newPages = (addr - vm->virt + ROUNDUP(vm->reg->byteCount)) / PAGE_SIZE;
 		}
 
-		if(newPages > 0)
+		/* if its too much, try the next one; if there is none that fits, report failure */
+		if(BYTES_2_PAGES(vm->reg->byteCount) + newPages >= MAX_STACK_PAGES - 1)
+			res = ERR_NOT_ENOUGH_MEM;
+		/* no new pages necessary? then its no failure */
+		else if(newPages == 0)
+			return 0;
+		else if(newPages > 0)
 			return vmm_grow(t->proc,t->stackRegions[i],newPages);
 	}
-	return 0;
+	return res;
 }
 
 ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {

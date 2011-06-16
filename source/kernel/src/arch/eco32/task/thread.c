@@ -29,6 +29,9 @@
 #include <assert.h>
 #include <errors.h>
 
+extern bool thread_save(sThreadRegs *saveArea);
+extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,tFrameNo kstackFrame);
+
 int thread_initArch(sThread *t) {
 	UNUSED(t);
 	/* nothing to do */
@@ -55,6 +58,29 @@ void thread_freeArch(sThread *t) {
 		vmm_remove(t->proc,t->stackRegions[0]);
 		t->stackRegions[0] = -1;
 	}
+}
+
+int thread_finishClone(sThread *t,sThread *nt) {
+	ulong *src;
+	size_t i;
+	/* we clone just the current thread. all other threads are ignored */
+	/* map stack temporary (copy later) */
+	ulong *dst = (ulong*)paging_mapToTemp(&nt->kstackFrame,1);
+
+	if(thread_save(&nt->save)) {
+		/* child */
+		return 1;
+	}
+
+	/* now copy the stack */
+	/* copy manually to prevent a function-call (otherwise we would change the stack) */
+	src = (ulong*)KERNEL_STACK;
+	for(i = 0; i < PT_ENTRY_COUNT; i++)
+		*dst++ = *src++;
+
+	paging_unmapFromTemp(1);
+	/* parent */
+	return 0;
 }
 
 void thread_switchTo(tTid tid) {

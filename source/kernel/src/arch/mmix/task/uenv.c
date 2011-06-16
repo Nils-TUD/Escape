@@ -26,7 +26,6 @@
 #include <errors.h>
 #include <assert.h>
 
-#if 0
 #define KEYBOARD_BASE		0xF0200000
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
@@ -38,9 +37,10 @@ typedef struct {
 	tSig sig;
 } sSignalData;
 
-static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
-		bool newThread);
+static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+		uintptr_t entry,uintptr_t tentry,bool thread);
 
+#if 0
 /* temporary storage for signal-handling */
 static sSignalData signalData;
 
@@ -149,64 +149,61 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
 	return 0;
 }
 
-bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
-		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint) {
-#if 0
+bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
+		const sStartupInfo *info,uintptr_t entryPoint) {
 	UNUSED(path);
-	uint32_t *sp;
+	uint64_t *ssp,*rsp;
 	char **argv;
 	size_t totalSize;
 	sThread *t = thread_getRunning();
-	vassert(frame != NULL,"frame == NULL");
 
 	/*
-	 * Initial stack:
+	 * Initial software stack:
 	 * +------------------+  <- top
 	 * |     arguments    |
 	 * |        ...       |
 	 * +------------------+
-	 * |       argv       |
-	 * +------------------+
-	 * |       argc       |
-	 * +------------------+
 	 *
 	 * Registers:
+	 * $1 = argc
+	 * $2 = argv
 	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
 	 * $5 = TLSStart (0 if not present)
 	 * $6 = TLSSize (0 if not present)
 	 */
 
 	/* we need to know the total number of bytes we'll store on the stack */
-	totalSize = 0;
+	totalSize = sizeof(void*);
 	if(argc > 0) {
 		/* first round the size of the arguments up. then we need argc+1 pointer */
-		totalSize += (argsSize + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
+		totalSize += (argsSize + sizeof(uint64_t) - 1) & ~(sizeof(uint64_t) - 1);
 		totalSize += sizeof(void*) * (argc + 1);
 	}
-	/* finally we need argc and argv */
-	totalSize += sizeof(uint32_t) * 2;
 
-	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&sp);
+	/* get register-stack */
+	vmm_getRegRange(t->proc,t->stackRegions[0],(uintptr_t*)&rsp,NULL);
+	/* get software-stack */
+	vmm_getRegRange(t->proc,t->stackRegions[1],NULL,(uintptr_t*)&ssp);
 
 	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)sp - totalSize) < 0)
+	if(thread_extendStack((uintptr_t)ssp - totalSize) < 0)
 		return false;
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)sp - totalSize,totalSize);
+	paging_isRangeUserWritable((uintptr_t)ssp - totalSize,totalSize);
+	/* register stack is already writeable (done by ELF-loader) */
 
-	/* copy arguments on the user-stack (4byte space) */
-	sp--;
+	/* copy arguments on the user-stack (8byte space) */
+	ssp--;
 	argv = NULL;
 	if(argc > 0) {
 		char *str;
 		int i;
 		size_t len;
-		argv = (char**)(sp - argc);
+		argv = (char**)(ssp - argc);
 		/* space for the argument-pointer */
-		sp -= argc;
+		ssp -= argc;
 		/* start for the arguments */
-		str = (char*)sp;
+		str = (char*)ssp;
 		for(i = 0; i < argc; i++) {
 			/* start <len> bytes backwards */
 			len = strlen(args) + 1;
@@ -218,79 +215,68 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 			args += len;
 		}
 		/* ensure that we don't overwrites the characters */
-		sp = (uint32_t*)(((uintptr_t)str & ~(sizeof(uint32_t) - 1)) - sizeof(uint32_t));
+		ssp = (uint64_t*)(((uintptr_t)str & ~(sizeof(uint64_t) - 1)) - sizeof(uint64_t));
 	}
+	*ssp = info->stackBegin;
 
 	/* store argc and argv */
-	*sp-- = (uintptr_t)argv;
-	*sp = argc;
+	rsp[1] = argc;
+	rsp[2] = (uint64_t)argv;
+
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
-	uenv_addArgs(t,frame,info->progEntry,false);
-
-	/* set entry-point and stack-pointer */
-	frame->r[29] = (uint32_t)sp;
-	frame->r[30] = entryPoint - 4; /* we'll skip the trap-instruction for syscalls */
-#endif
+	uenv_addArgs(t,info,rsp,ssp,entryPoint,0,false);
 	return true;
 }
 
-bool uenv_setupThread(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint) {
+bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 #if 0
-	uint32_t *sp;
-	size_t totalSize = sizeof(void*);
+	uint64_t *rsp;
 	sThread *t = thread_getRunning();
 
 	/*
-	 * Initial stack:
-	 * +------------------+  <- top
-	 * |       arg        |
-	 * +------------------+
-	 *
 	 * Registers:
+	 * $1 = arg
 	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
 	 * $5 = TLSStart (0 if not present)
 	 * $6 = TLSSize (0 if not present)
 	 */
 
-	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegion,NULL,(uintptr_t*)&sp);
-	sp--;
-
-	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)sp - totalSize) < 0)
-		return false;
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)sp - totalSize,totalSize);
-
-	/* put arg on stack */
-	*sp-- = (uintptr_t)arg;
+	/* get register-stack */
+	vmm_getRegRange(t->proc,t->stackRegions[0],(uintptr_t*)&rsp,NULL);
+	rsp[1] = arg;
 	/* add TLS args and entrypoint */
-	uenv_addArgs(t,frame,tentryPoint,true);
-
-	/* set entry-point and stack-pointer */
-	frame->r[29] = (uint32_t)sp;
-	frame->r[30] = t->proc->entryPoint - 4; /* we'll skip the trap-instruction for syscalls */
+	uenv_addArgs(t,info,rsp,t->proc->entryPoint,tentryPoint,true);
 #endif
 	return true;
 }
 
-#if 0
-static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
-		bool newThread) {
+static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+		uintptr_t entry,uintptr_t tentry,bool thread) {
 	/* put address and size of the tls-region on the stack */
 	if(t->tlsRegion >= 0) {
 		uintptr_t tlsStart,tlsEnd;
 		vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
-		frame->r[5] = tlsStart;
-		frame->r[6] = tlsEnd - tlsStart;
+		rsp[5] = tlsStart;
+		rsp[6] = tlsEnd - tlsStart;
 	}
 	else {
 		/* no tls */
-		frame->r[5] = 0;
-		frame->r[6] = 0;
+		rsp[5] = 0;
+		rsp[6] = 0;
 	}
+	rsp[4] = thread ? tentry : 0;
 
-	frame->r[4] = newThread ? tentryPoint : 0;
+	/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
+	uint64_t *frame = t->archAttr.kstack;
+	int rg = frame[-1] >> 56;
+	frame[-(13 + (255 - rg))] = (uint64_t)ssp;
+	frame[-(13 + (255 - rg) + 1)] = (uint64_t)ssp;
+	/* set them in the stack to unsave from in user-space */
+	rg = *(uint64_t*)info->stackBegin >> 56;
+	rsp[6 + (255 - rg)] = (uint64_t)ssp;
+	rsp[6 + (255 - rg) + 1] = (uint64_t)ssp;
+
+	/* setup start */
+	cpu_setKSpecials(0,entry,(ulong)1 << 63,0,0);
 }
-#endif

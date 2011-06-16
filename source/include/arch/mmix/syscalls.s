@@ -22,10 +22,10 @@
 getConf:
 	SET		$7,SYSCALL_GETCONF				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -34,10 +34,10 @@ getConf:
 debugChar:
 	SET		$7,SYSCALL_DEBUGCHAR				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -46,10 +46,10 @@ debugChar:
 debug:
 	SET		$7,SYSCALL_DEBUG				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -58,10 +58,10 @@ debug:
 regDriver:
 	SET		$7,SYSCALL_REG				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -70,10 +70,10 @@ regDriver:
 getClientId:
 	SET		$7,SYSCALL_GETCLIENTID				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -82,10 +82,10 @@ getClientId:
 getClient:
 	SET		$7,SYSCALL_GETCLIENTPROC				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -94,10 +94,10 @@ getClient:
 getWork:
 	SET		$7,SYSCALL_GETWORK				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -106,10 +106,10 @@ getWork:
 open:
 	SET		$7,SYSCALL_OPEN				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -118,10 +118,10 @@ open:
 pipe:
 	SET		$7,SYSCALL_PIPE				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -130,10 +130,10 @@ pipe:
 stat:
 	SET		$7,SYSCALL_STAT				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -142,10 +142,10 @@ stat:
 fstat:
 	SET		$7,SYSCALL_FSTAT				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -154,10 +154,10 @@ fstat:
 tell:
 	SET		$7,SYSCALL_TELL				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -166,10 +166,10 @@ tell:
 fcntl:
 	SET		$7,SYSCALL_FCNTL				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -178,10 +178,10 @@ fcntl:
 seek:
 	SET		$7,SYSCALL_SEEK				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -190,10 +190,10 @@ seek:
 read:
 	SET		$7,SYSCALL_READ				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -202,10 +202,10 @@ read:
 write:
 	SET		$7,SYSCALL_WRITE				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -214,10 +214,10 @@ write:
 isterm:
 	SET		$7,SYSCALL_ISTERM				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -226,10 +226,10 @@ isterm:
 send:
 	SET		$7,SYSCALL_SEND				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -238,10 +238,10 @@ send:
 receive:
 	SET		$7,SYSCALL_RECEIVE				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -250,10 +250,10 @@ receive:
 dupFd:
 	SET		$7,SYSCALL_DUPFD				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -262,10 +262,10 @@ dupFd:
 redirFd:
 	SET		$7,SYSCALL_REDIRFD				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -274,10 +274,10 @@ redirFd:
 link:
 	SET		$7,SYSCALL_LINK				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -286,10 +286,10 @@ link:
 unlink:
 	SET		$7,SYSCALL_UNLINK				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -298,10 +298,10 @@ unlink:
 mkdir:
 	SET		$7,SYSCALL_MKDIR				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -310,10 +310,10 @@ mkdir:
 rmdir:
 	SET		$7,SYSCALL_RMDIR				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -322,10 +322,10 @@ rmdir:
 mount:
 	SET		$7,SYSCALL_MOUNT				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -334,10 +334,10 @@ mount:
 unmount:
 	SET		$7,SYSCALL_UNMOUNT				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -346,10 +346,10 @@ unmount:
 sync:
 	SET		$7,SYSCALL_SYNC				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -358,10 +358,10 @@ sync:
 close:
 	SET		$7,SYSCALL_CLOSE				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -370,10 +370,10 @@ close:
 _changeSize:
 	SET		$7,SYSCALL_CHGSIZE				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -382,10 +382,10 @@ _changeSize:
 _addRegion:
 	SET		$7,SYSCALL_ADDREGION				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -394,10 +394,10 @@ _addRegion:
 setRegProt:
 	SET		$7,SYSCALL_SETREGPROT				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -406,10 +406,10 @@ setRegProt:
 _mapPhysical:
 	SET		$7,SYSCALL_MAPPHYS				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -418,10 +418,10 @@ _mapPhysical:
 _createSharedMem:
 	SET		$7,SYSCALL_CREATESHMEM				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -430,10 +430,10 @@ _createSharedMem:
 _joinSharedMem:
 	SET		$7,SYSCALL_JOINSHMEM				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -442,10 +442,10 @@ _joinSharedMem:
 leaveSharedMem:
 	SET		$7,SYSCALL_LEAVESHMEM				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -454,10 +454,10 @@ leaveSharedMem:
 destroySharedMem:
 	SET		$7,SYSCALL_DESTROYSHMEM				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -466,10 +466,10 @@ destroySharedMem:
 getpid:
 	SET		$7,SYSCALL_PID				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -478,10 +478,10 @@ getpid:
 getppidof:
 	SET		$7,SYSCALL_PPID				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -490,10 +490,10 @@ getppidof:
 fork:
 	SET		$7,SYSCALL_FORK				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -502,10 +502,10 @@ fork:
 exec:
 	SET		$7,SYSCALL_EXEC				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -514,10 +514,10 @@ exec:
 waitChild:
 	SET		$7,SYSCALL_WAITCHILD				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -526,10 +526,10 @@ waitChild:
 getenvito:
 	SET		$7,SYSCALL_GETENVITO				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -538,10 +538,10 @@ getenvito:
 getenvto:
 	SET		$7,SYSCALL_GETENVTO				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -550,10 +550,10 @@ getenvto:
 setenv:
 	SET		$7,SYSCALL_SETENV				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -562,10 +562,10 @@ setenv:
 setSigHandler:
 	SET		$7,SYSCALL_SETSIGH				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -574,10 +574,10 @@ setSigHandler:
 sendSignalTo:
 	SET		$7,SYSCALL_SENDSIG				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -586,10 +586,10 @@ sendSignalTo:
 gettid:
 	SET		$7,SYSCALL_GETTID				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -598,10 +598,10 @@ gettid:
 getThreadCount:
 	SET		$7,SYSCALL_GETTHREADCNT				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -610,10 +610,10 @@ getThreadCount:
 startThread:
 	SET		$7,SYSCALL_STARTTHREAD				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -622,10 +622,10 @@ startThread:
 _exit:
 	SET		$7,SYSCALL_EXIT				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -634,10 +634,10 @@ _exit:
 getCycles:
 	SET		$7,SYSCALL_GETCYCLES				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -646,10 +646,10 @@ getCycles:
 yield:
 	SET		$7,SYSCALL_YIELD				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -658,10 +658,10 @@ yield:
 sleep:
 	SET		$7,SYSCALL_SLEEP				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -670,10 +670,10 @@ sleep:
 waitm:
 	SET		$7,SYSCALL_WAIT				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -682,10 +682,10 @@ waitm:
 _waitUnlock:
 	SET		$7,SYSCALL_WAITUNLOCK				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -694,10 +694,10 @@ _waitUnlock:
 notify:
 	SET		$7,SYSCALL_NOTIFY				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -706,10 +706,10 @@ notify:
 _lock:
 	SET		$7,SYSCALL_LOCK				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -718,10 +718,10 @@ _lock:
 _unlock:
 	SET		$7,SYSCALL_UNLOCK				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -730,10 +730,10 @@ _unlock:
 join:
 	SET		$7,SYSCALL_JOIN				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -742,10 +742,10 @@ join:
 suspend:
 	SET		$7,SYSCALL_SUSPEND				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
 
@@ -754,9 +754,9 @@ suspend:
 resume:
 	SET		$7,SYSCALL_RESUME				# set syscall-number
 	TRAP	1,0,0
-	BZ		$1,1f						# no-error?
+	BZ		$7,1f						# no-error?
 	GETA	$2,errno
-	STOU	$1,$2,0
-	SET		$0,$1
+	STOU	$7,$2,0
+	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0

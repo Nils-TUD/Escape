@@ -143,23 +143,29 @@ size_t intrpt_getCount(void) {
 }
 
 sIntrptStackFrame *intrpt_getCurStack(void) {
-	return 0;
+	return curFrame;
 }
 
 void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
+	t->archAttr.kstack = stack;
+	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
+	begin -= *begin;
 	t->stats.syscalls++;
-	sysc_handle(stack);
+	sysc_handle(begin);
+	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
+	t = thread_getRunning(); /* thread may have changed */
+	stack[-14] = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
 }
 
 void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	sInterrupt *intrpt = intrptList + (irqNo & 0x3F);
-	curFrame = stack;
+	sThread *t = thread_getRunning();
+	t->archAttr.kstack = stack;
 	irqCount++;
 
 	/* call handler */
 	intrpt->handler(stack,irqNo);
-	intrpt_dbg_printStackFrame(stack);
 
 #if 0
 	/* only handle signals, if we come directly from user-mode */
@@ -177,8 +183,8 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
 	uint64_t rww = cpu_getSpecial(rWW);
 	/* do nothing */
-	util_panic("Got interrupt %d (%s) @ 0x%08x\n",
-			irqNo,intrptList[irqNo & 0x1f].name,rww);
+	util_panic("Got interrupt %d (%s) @ %p\n",
+			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 
 static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
@@ -192,21 +198,35 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
 
 void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 	stack--;
-	int i,rl,rg = *stack >> 56;
+	int i,j,rl,rg = *stack >> 56;
 	static int spregs[] = {rZ,rY,rX,rW,rP,rR,rM,rJ,rH,rE,rD,rB};
-	vid_printf("stack-frame @ 0x%Px\n",stack);
-	vid_printf("\trG=%d,rA=#%x\n",rg,*stack & 0x3FFFF);
-	stack--;
-	for(i = 1; i < 12; i++)
-		vid_printf("\t%s: #%016lx\n",cpu_getSpecialName(spregs[i]),*stack--);
-	for(i = 255; i >= rg; i--)
-		vid_printf("\t$%d: #%016lx\n",i,*stack--);
-	vid_printf("\trS: #%016lx\n",*stack--);
-	vid_printf("\trO: #%016lx\n",*stack--);
+	vid_printf("\trG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
+	vid_printf("\t");
+	for(j = 0, i = 1; i <= ARRAY_SIZE(spregs); j++, i++) {
+		vid_printf("%-4s: #%016lx ",cpu_getSpecialName(spregs[i - 1]),*stack--);
+		if(j % 3 == 2)
+			vid_printf("\n\t");
+	}
+	if(j % 3 != 0)
+		vid_printf("\n\t");
+	for(j = 0, i = 255; i >= rg; j++, i--) {
+		vid_printf("$%-3d: #%016lx ",i,*stack--);
+		if(j % 3 == 2)
+			vid_printf("\n\t");
+	}
+	if(j % 3 != 0)
+		vid_printf("\n");
+	vid_printf("\trS  : #%016lx",*stack--);
+	vid_printf(" rO  : #%016lx\n",*stack--);
 	rl = *stack--;
-	vid_printf("\trL: %d\n",rl);
-	for(i = rl - 1; i >= 0; i--)
-		vid_printf("\t$%d: #%016lx\n",i,*stack--);
+	vid_printf("\trL  : %d\n\t",rl);
+	for(j = 0, i = rl - 1; i >= 0; j++, i--) {
+		vid_printf("$%-3d: #%016lx ",i,*stack--);
+		if(j % 3 == 2)
+			vid_printf("\n\t");
+	}
+	if(j % 3 != 0)
+		vid_printf("\n");
 }
 
 #endif

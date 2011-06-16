@@ -53,7 +53,7 @@ size_t boot_getUsableMemCount(void);
  *
  * @param stack the interrupt-stack-frame
  */
-void boot_loadModules(sIntrptStackFrame *stack);
+int boot_loadModules(sIntrptStackFrame *stack);
 
 #if DEBUGGING
 

@@ -269,10 +269,10 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	readFromDisk(le32tocpu(ino->dBlocks[0]),&eheader,0,sizeof(Elf32_Ehdr));
 
 	/* check magic */
-	if(eheader.e_ident.chars[0] != ELFMAG[0] ||
-		eheader.e_ident.chars[1] != ELFMAG[1] ||
-		eheader.e_ident.chars[2] != ELFMAG[2] ||
-		eheader.e_ident.chars[3] != ELFMAG[3])
+	if(eheader.e_ident[0] != ELFMAG[0] ||
+		eheader.e_ident[1] != ELFMAG[1] ||
+		eheader.e_ident[2] != ELFMAG[2] ||
+		eheader.e_ident[3] != ELFMAG[3])
 		return 0;
 
 	/* load the LOAD segments. */

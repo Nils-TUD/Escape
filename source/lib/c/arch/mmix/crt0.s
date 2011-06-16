@@ -28,49 +28,45 @@
 
 .include "arch/mmix/syscalls.s"
 
-#  Initial stack:
-#  +------------------+  <- top
-#  |     arguments    |
-#  |        ...       |  not present for threads
-#  +------------------+
-#  |       argv       |  not present for threads
-#  +------------------+
-#  |       argc       |  or the argument for threads
-#  +------------------+
-#  |     TLSSize      |  0 if not present
-#  +------------------+
-#  |     TLSStart     |  0 if not present
-#  +------------------+
-#  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-#  +------------------+
+# Initial software stack:
+# +------------------+  <- top
+# |     arguments    |
+# |        ...       |
+# +------------------+
+#
+# Registers:
+# $1 = argc
+# $2 = argv
+# $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
+# $5 = TLSStart (0 if not present)
+# $6 = TLSSize (0 if not present)
 
 .ifndef SHAREDLIB
-	# call init_tls(entryPoint,TLSStart,TLSSize)
 _start:
-	PUSHJ		$0,init_tls
-	# remove args from stack
-	#add		$12,%esp
+	LDOU	$0,$254,0
+	UNSAVE	0,$0
+	# call init_tls(entryPoint,TLSStart,TLSSize)
+	PUSHJ	$3,init_tls
 	# it returns the entrypoint; 0 if we're the initial thread
-	#test	%eax,%eax
-	#je		initialThread
+	BZ		$3,initialThread
 	# we're an additional thread, so call the desired function
-	#call	*%eax
-	#jmp		threadExit
+	PUSHGO	$0,$3,0
+	JMP		threadExit
 
 	# initial thread calls main
 initialThread:
 	.extern __libc_init
-	#call	__libc_init
+	PUSHJ	$3,__libc_init
 	# call function in .init-section
-	#call _init
+	PUSHJ	$3,_init
 	# finally, call main
-	#call	main
+	PUSHJ	$0,main
 
 threadExit:
-	#push	%eax
-	#call	exit
+	SET		$1,$0
+	PUSHJ	$0,exit
 	# just to be sure
-	1: JMP			1b
+	1: JMP	1b
 
 # all signal-handler return to this "function"
 sigRetFunc:

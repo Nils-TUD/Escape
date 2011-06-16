@@ -65,6 +65,38 @@
 const char *cpu_getSpecialName(int rno);
 
 /**
+ * Sets rbb, rww, rxx, ryy and rzz to the current values of rBB, rWW, rXX, rYY and rZZ,
+ * respectively.
+ *
+ * @param rbb the pointer to rBB
+ * @param rww the pointer to rWW
+ * @param rxx the pointer to rXX
+ * @param ryy the pointer to rYY
+ * @param rzz the pointer to rZZ
+ */
+void cpu_getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy,uint64_t *rzz);
+
+/**
+ * Sets rBB, rWW, rXX, rYY and rZZ to the current values of rbb, rww, rxx, ryy and rzz,
+ * respectively.
+ *
+ * @param rbb the new value of rBB
+ * @param rww the new value of rWW
+ * @param rxx the new value of rXX
+ * @param ryy the new value of rYY
+ * @param rzz the new value of rZZ
+ */
+void cpu_setKSpecials(uint64_t rbb,uint64_t rww,uint64_t rxx,uint64_t ryy,uint64_t rzz);
+
+/**
+ * Performs a SYNCD and SYNCID for the given region to ensure that the IC agrees with the DC
+ *
+ * @param start the start-address
+ * @param end the end-address
+ */
+extern void cpu_syncid(uintptr_t start,uintptr_t end);
+
+/**
  * Retrieves the value of the global-register with given number
  *
  * @param rno the global-number

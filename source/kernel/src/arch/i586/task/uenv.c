@@ -147,13 +147,13 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
 	return 0;
 }
 
-bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
-		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint) {
+bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
+		const sStartupInfo *info,uintptr_t entryPoint) {
 	uint32_t *esp;
 	char **argv;
 	size_t totalSize;
+	sIntrptStackFrame *frame = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
-	vassert(frame != NULL,"frame == NULL");
 
 	/*
 	 * Initial stack:
@@ -245,8 +245,9 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
 	return true;
 }
 
-bool uenv_setupThread(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint) {
+bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *esp;
+	sIntrptStackFrame *frame = intrpt_getCurStack();
 	size_t totalSize = 3 * sizeof(uint32_t) + sizeof(void*);
 	sThread *t = thread_getRunning();
 

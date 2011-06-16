@@ -25,9 +25,10 @@
 .global sigRetFunc
 
 _start:
-	# load modules first
+	# load modules first; wait until we're finished ($0 = 0)
 	SET		$7,SYSCALL_LOADMODS
 	TRAP	1,0,0
+	BNZ		$0,_start
 
 	# now replace with init
 	SET		$7,SYSCALL_EXEC
@@ -48,3 +49,7 @@ args:
 
 progName:
 	.asciz	"/bin/init"
+
+# we need the stack-pointer and frame-pointer here for forking
+sp GREG
+fp GREG

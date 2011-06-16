@@ -119,19 +119,29 @@ bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
 
 bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 	uintptr_t end;
+	sPTE *pte,*pt = NULL;
 	/* calc start and end */
 	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	virt &= ~(PAGE_SIZE - 1);
+	ulong pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
 	while(virt < end) {
-		sPTE pte = paging_getPTEOf(context,virt);
-		if(!pte.exists)
+		/* get page-table */
+		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
+			pt = paging_getPTOf(context,virt,true,NULL);
+			if(pt == NULL)
+				return false;
+		}
+
+		pte = pt + (pageNo % PT_ENTRY_COUNT);
+		if(!pte->exists)
 			return false;
-		if(!pte.readable) {
+		if(!pte->readable) {
 			/* we have to handle the page-fault here */
 			if(!vmm_pagefault(virt))
 				return false;
 		}
 		virt += PAGE_SIZE;
+		pageNo++;
 	}
 	return true;
 }
@@ -146,18 +156,28 @@ bool paging_isRangeUserWritable(uintptr_t virt,size_t count) {
 
 bool paging_isRangeWritable(uintptr_t virt,size_t count) {
 	uintptr_t end;
+	sPTE *pte,*pt = NULL;
 	/* calc start and end */
 	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	virt &= ~(PAGE_SIZE - 1);
+	ulong pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
 	while(virt < end) {
-		sPTE pte = paging_getPTEOf(context,virt);
-		if(!pte.exists)
+		/* get page-table */
+		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
+			pt = paging_getPTOf(context,virt,true,NULL);
+			if(pt == NULL)
+				return false;
+		}
+
+		pte = pt + (pageNo % PT_ENTRY_COUNT);
+		if(!pte->exists)
 			return false;
-		if(!pte.readable || !pte.writable) {
+		if(!pte->readable || !pte->writable) {
 			if(!vmm_pagefault(virt))
 				return false;
 		}
 		virt += PAGE_SIZE;
+		pageNo++;
 	}
 	return true;
 }
@@ -279,6 +299,7 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 			PG_GLOBAL | PG_KEEPFRM)));
 
 	virt &= ~(PAGE_SIZE - 1);
+	uint64_t key = virt | (pdir->addrSpace->no << 3);
 	while(count-- > 0) {
 		/* get page-table */
 		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
@@ -312,8 +333,14 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 			}
 		}
 
+		/* update entries in TCs; protection-flags might have changed */
+		/* TODO only update the flags, don't remove it */
+		if(pdir == context)
+			tc_update(key);
+
 		/* to next page */
 		virt += PAGE_SIZE;
+		key += PAGE_SIZE;
 		pageNo++;
 	}
 	return stats;

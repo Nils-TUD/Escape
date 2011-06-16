@@ -26,28 +26,124 @@
 #include <sys/cpu.h>
 #include <esc/sllist.h>
 #include <assert.h>
+#include <string.h>
+#include <errors.h>
+
+/*
+ * A few words to cloning and thread-switching on MMIX...
+ * Unfortunatly, its a bit more complicated than on ECO32 and i586. There are two problems:
+ * 1. The kernel-stack is accessed over the directly mapped space. That means, the address for
+ *    every thread is different. Thus, we can't simply copy the kernel-stack, because the stack
+ *    might contain pointers to the stack (which can't be distinguished from ordinary integers).
+ * 2. It seems to be impossible to save the state somewhere and resume this state later. Because,
+ *    when using SAVE the current stack is unusable before we've used UNSAVE to switch to another
+ *    context. So, we can't continue after SAVE, but have to do an UNSAVE directly after the SAVE,
+ *    i.e. the same assembler routine has to do that to ensure that the the stack is not accessed.
+ *
+ * The first problem can be solved by the following trick: When cloning, copy the current stack
+ * to a temporary page. Then, leave the kernel directly (!) with the parent and make sure that the
+ * parent gets a different stack next time when entering the kernel. As soon as the clone wants to
+ * run, the stuff on the temporary page is copied to the page that the parent used for the stack
+ * at the time we've cloned it. This way, pointers to the stack are no problem, because the same
+ * stack-address is used by the clone.
+ * Therefore, we introduce archAttr.tempStack to store the frame-number of the temporary stack for
+ * a thread. When cloning, copy the stack to it and when the parent returns from thread_initSave,
+ * switch the stack with the clone and leave the kernel. But there is still a problem: The
+ * SAVE $X,1 at the beginning of a trap uses rSS for the kernel-stack. The corresponding UNSAVE 1,$X
+ * uses rSS as well to know the beginning. Thus, we can't simply change rSS for the parent before
+ * the UNSAVE 1,$X has been executed. Thus, we have to pass it in some way to the point after UNSAVE.
+ * Fortunatly, our rK is always -1 in userspace, i.e. $255 can be directly set before the RESUME 1.
+ * Therefore, $255 on the stack (created by SAVE 1,$X) can be used to hold the value of rSS.
+ * So, finally, intrpt_forcedTrap does always set $255 on the stack to (2^63 | kstack * PAGE_SIZE),
+ * which is put into rSS after UNSAVE.
+ * => REALLY inconvenient and probably not very efficient. But I don't see a better solution...
+ *
+ * The second problem forces us to use a different thread-switch-mechanismn than in ECO32 and i586.
+ * Because the old one relies on the opportunity to save the state at any place and resume it later.
+ * Since we have to do the SAVE and the RESUME directly after another, we provide the function
+ * thread_doSwitch and use it when switching the thread. This is no problem in thread_switchTo()
+ * and the initial state can be created by thread_initSave. This one is rather tricky as well. It
+ * performs a SAVE at first to write the whole state to memory, copies the register- and software-
+ * stack to newStack, writes rWW, ..., rZZ and the end of the stack to saveArea and executes an
+ * UNSAVE from the previous SAVE. That means we're doing:
+ * SAVE $255,0
+ * ... copy ...
+ * UNSAVE 0,$255
+ * This way, the current stack remains usable and a copy has been created. Of course, we do more
+ * than necessary, because most of the values wouldn't need to be restored. The only important ones
+ * are rS and rO, which can't be set directly.
+ */
+
+extern int thread_initSave(sThreadRegs *saveArea,void *newStack);
+extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir);
 
 int thread_initArch(sThread *t) {
-	UNUSED(t);
-	/* nothing to do */
+	t->archAttr.tempStack = -1;
+	t->archAttr.kstack = NULL;
 	return 0;
 }
 
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
 	UNUSED(src);
-	UNUSED(dst);
-	UNUSED(cloneProc);
-	/* nothing to do */
+	dst->archAttr.kstack = src->archAttr.kstack;
+	if(!cloneProc) {
+		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES * 2)
+			return ERR_NOT_ENOUGH_MEM;
+
+		/* add a new stack-region for the register-stack */
+		dst->stackRegions[0] = vmm_add(dst->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP);
+		if(dst->stackRegions[0] < 0)
+			return dst->stackRegions[0];
+		/* add a new stack-region for the software-stack */
+		dst->stackRegions[1] = vmm_add(dst->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+		if(dst->stackRegions[1] < 0) {
+			/* remove register-stack */
+			vmm_remove(dst->proc,dst->stackRegions[0]);
+			dst->stackRegions[0] = -1;
+			return dst->stackRegions[1];
+		}
+	}
 	return 0;
 }
 
 void thread_freeArch(sThread *t) {
-	UNUSED(t);
-	/* nothing to do */
+	int i;
+	for(i = 0; i < 2; i++) {
+		if(t->stackRegions[i] >= 0) {
+			vmm_remove(t->proc,t->stackRegions[i]);
+			t->stackRegions[i] = -1;
+		}
+	}
+	if(t->archAttr.tempStack != -1) {
+		pmem_free(t->archAttr.tempStack);
+		t->archAttr.tempStack = -1;
+	}
+}
+
+int thread_finishClone(sThread *t,sThread *nt) {
+	int res;
+	if(pmem_getFreeFrames(MM_DEF) < 1)
+		return ERR_NOT_ENOUGH_MEM;
+
+	nt->archAttr.tempStack = pmem_allocate();
+	vid_printf("tempstack=%Pu, new=%Pu, old=%Pu\n",nt->archAttr.tempStack,
+			nt->kstackFrame,t->kstackFrame);
+	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->archAttr.tempStack * PAGE_SIZE)));
+	if(res == 0) {
+		/* the parent needs a new kernel-stack for the next kernel-entry */
+		sIntrptStackFrame *stack = intrpt_getCurStack();
+		/* switch stacks */
+		tFrameNo kstack = t->kstackFrame;
+		t->kstackFrame = nt->kstackFrame;
+		nt->kstackFrame = kstack;
+		vid_printf("switching stacks: parent=%Pu, child=%Pu\n",t->kstackFrame,nt->kstackFrame);
+	}
+	return res;
 }
 
 void thread_switchTo(tTid tid) {
-#if 0
 	sThread *cur = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {
@@ -57,26 +153,39 @@ void thread_switchTo(tTid tid) {
 			cur->stats.kcycleCount.val64 += cycles - kcstart;
 		}
 
-		if(!thread_save(&cur->save)) {
-			sThread *old;
-			sThread *t = thread_getById(tid);
-			vassert(t != NULL,"Thread with tid %d not found",tid);
+		sThread *t = thread_getById(tid);
+		sThread *old = cur;
+		vassert(t != NULL,"Thread with tid %d not found",tid);
 
-			/* mark old process ready, if it should not be blocked, killed or something */
-			if(cur->state == ST_RUNNING)
-				sched_setReady(cur);
+		/* mark old process ready, if it should not be blocked, killed or something */
+		if(cur->state == ST_RUNNING)
+			sched_setReady(cur);
 
-			old = cur;
-			thread_setRunning(t);
-			cur = t;
+		thread_setRunning(t);
+		cur = t;
 
-			/* set used */
-			cur->stats.schedCount++;
-			vmm_setTimestamp(cur,timer_getTimestamp());
-			sched_setRunning(cur);
+		/* set used */
+		cur->stats.schedCount++;
+		vmm_setTimestamp(cur,timer_getTimestamp());
+		sched_setRunning(cur);
 
-			thread_resume(cur->proc->pagedir,&cur->save,cur->kstackFrame);
+		/* set page-dir */
+		paging_setCur(cur->proc->pagedir);
+
+		/* if we still have a temp-stack, copy the contents to our real stack and free the
+		 * temp-stack */
+		if(cur->archAttr.tempStack != -1) {
+			vid_printf("copying from %p to %p\n",
+					(void*)(DIR_MAPPED_SPACE | (cur->archAttr.tempStack * PAGE_SIZE)),
+					(void*)(DIR_MAPPED_SPACE | (cur->kstackFrame * PAGE_SIZE)));
+			memcpy((void*)(DIR_MAPPED_SPACE | cur->kstackFrame * PAGE_SIZE),
+					(void*)(DIR_MAPPED_SPACE | cur->archAttr.tempStack * PAGE_SIZE),
+					PAGE_SIZE);
+			pmem_free(cur->archAttr.tempStack);
+			cur->archAttr.tempStack = -1;
 		}
+
+		thread_doSwitch(&old->save,&cur->save,cur->proc->pagedir);
 
 		/* now start kernel-time again */
 		cur = thread_getRunning();
@@ -84,27 +193,19 @@ void thread_switchTo(tTid tid) {
 	}
 
 	thread_killDead();
-#endif
 }
 
 
 #if DEBUGGING
 
 void thread_dbg_printState(const sThreadRegs *state) {
-#if 0
 	vid_printf("\tState:\n",state);
-	vid_printf("\t\t$16 = %#08x\n",state->r16);
-	vid_printf("\t\t$17 = %#08x\n",state->r17);
-	vid_printf("\t\t$18 = %#08x\n",state->r18);
-	vid_printf("\t\t$19 = %#08x\n",state->r19);
-	vid_printf("\t\t$20 = %#08x\n",state->r20);
-	vid_printf("\t\t$21 = %#08x\n",state->r21);
-	vid_printf("\t\t$22 = %#08x\n",state->r22);
-	vid_printf("\t\t$23 = %#08x\n",state->r23);
-	vid_printf("\t\t$29 = %#08x\n",state->r29);
-	vid_printf("\t\t$30 = %#08x\n",state->r30);
-	vid_printf("\t\t$31 = %#08x\n",state->r31);
-#endif
+	vid_printf("\t\tStackend = %p\n",state->stackEnd);
+	vid_printf("\t\trBB = %#016lx\n",state->rbb);
+	vid_printf("\t\trWW = %#016lx\n",state->rww);
+	vid_printf("\t\trXX = %#016lx\n",state->rxx);
+	vid_printf("\t\trYY = %#016lx\n",state->ryy);
+	vid_printf("\t\trZZ = %#016lx\n",state->rzz);
 }
 
 #endif

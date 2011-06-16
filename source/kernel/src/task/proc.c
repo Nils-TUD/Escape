@@ -50,7 +50,6 @@
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
 static void proc_notifyProcDied(tPid parent);
-static int proc_finishClone(sThread *nt,tFrameNo stackFrame);
 static bool proc_add(sProc *p);
 static void proc_remove(sProc *p);
 
@@ -410,7 +409,7 @@ int proc_clone(tPid newPid,uint8_t flags) {
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
 #endif
 
-	res = proc_finishClone(nt,stackFrame);
+	res = thread_finishClone(curThread,nt);
 	if(res == 1) {
 		/* child */
 		return 1;
@@ -460,11 +459,9 @@ int proc_startThread(uintptr_t entryPoint,const void *arg) {
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
 #endif
 
-	res = proc_finishClone(nt,stackFrame);
+	res = thread_finishClone(t,nt);
 	if(res == 1) {
-		/* TODO move that into uenv_setupThread */
-		sIntrptStackFrame *istack = intrpt_getCurStack();
-		if(!uenv_setupThread(istack,arg,entryPoint)) {
+		if(!uenv_setupThread(arg,entryPoint)) {
 			thread_kill(nt);
 			/* do a switch here because we can't continue */
 			thread_switch();
@@ -474,32 +471,6 @@ int proc_startThread(uintptr_t entryPoint,const void *arg) {
 	}
 
 	return nt->tid;
-}
-
-static int proc_finishClone(sThread *nt,tFrameNo stackFrame) {
-	/* TODO */
-#ifndef __mmix__
-	uint *src;
-	size_t i;
-	/* we clone just the current thread. all other threads are ignored */
-	/* map stack temporary (copy later) */
-	uint *dst = (uint*)paging_mapToTemp(&stackFrame,1);
-
-	if(thread_save(&nt->save)) {
-		/* child */
-		return 1;
-	}
-
-	/* now copy the stack */
-	/* copy manually to prevent a function-call (otherwise we would change the stack) */
-	src = (uint*)KERNEL_STACK;
-	for(i = 0; i < PT_ENTRY_COUNT; i++)
-		*dst++ = *src++;
-
-	paging_unmapFromTemp(1);
-	/* parent */
-#endif
-	return 0;
 }
 
 void proc_destroyThread(int exitCode) {

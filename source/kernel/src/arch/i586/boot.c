@@ -201,7 +201,7 @@ size_t boot_getUsableMemCount(void) {
 	return size;
 }
 
-void boot_loadModules(sIntrptStackFrame *stack) {
+int boot_loadModules(sIntrptStackFrame *stack) {
 	size_t i;
 	tPid pid;
 	tInodeNo nodeNo;
@@ -209,7 +209,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 
 	/* it's not good to do this twice.. */
 	if(loadedMods)
-		return;
+		return 0;
 
 	/* start idle-thread */
 	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
@@ -247,11 +247,11 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
 			/* no dynamic linking here */
 			p->entryPoint = info.progEntry;
-			if(!uenv_setupProc(stack,p->command,argc,argBuffer,argSize,&info,info.progEntry))
+			if(!uenv_setupProc(p->command,argc,argBuffer,argSize,&info,info.progEntry))
 				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
-			return;
+			return 0;
 		}
 
 		/* wait until the driver is registered */
@@ -277,6 +277,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 
 	/* create the vm86-task */
 	assert(vm86_create() == 0);
+	return 0;
 }
 
 static const char **boot_parseArgs(const char *line,int *argc) {

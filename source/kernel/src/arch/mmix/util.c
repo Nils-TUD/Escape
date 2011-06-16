@@ -33,7 +33,6 @@ static sFuncCall frames[1] = {
 };
 
 void util_panic(const char *fmt,...) {
-	/*sIntrptStackFrame *istack = intrpt_getCurStack();*/
 	sThread *t = thread_getRunning();
 	va_list ap;
 	size_t i;
@@ -51,23 +50,12 @@ void util_panic(const char *fmt,...) {
 	if(t != NULL)
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 
-	vid_printf("Kernel registers:\n\t");
-	for(i = 0; i < SPECIAL_NUM; i++) {
-		vid_printf("%-3s: #%016lX ",cpu_getSpecialName(i),cpu_getSpecial(i));
-		if(i % 3 == 2)
-			vid_printf("\n\t");
-	}
-	vid_printf("SP : #%016lx FP : #%016lx\n\n",cpu_getGlobal(254),cpu_getGlobal(253));
-
-	/*vid_printf("User state:\n");
-	vid_printf("\tPSW: 0x%08x\n\t",istack->psw);
-	for(i = 0; i < REG_COUNT; i++) {
-		int row = i / 4;
-		int col = i % 4;
-		vid_printf("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
-		if(i % 4 == 3)
-			vid_printf("\n\t");
-	}*/
+	vid_printf("User state:\n");
+	intrpt_dbg_printStackFrame(t->archAttr.kstack);
+	uint64_t rbb,rww,rxx,ryy,rzz;
+	cpu_getKSpecials(&rbb,&rww,&rxx,&ryy,&rzz);
+	vid_printf("\trBB : #%016lx rWW : #%016lx rXX : #%016lx\n",rbb,rww,rxx);
+	vid_printf("\trYY : #%016lx rZZ : #%016lx\n",ryy,rzz);
 
 #if DEBUGGING
 	/* write into log only */

@@ -23,8 +23,8 @@
 #include <esc/common.h>
 
 /* some convenience-macros */
-#define SYSC_SETERROR(stack,errorCode)	((stack)[1] = (errorCode))
-#define SYSC_ERROR(stack,errorCode)		{ ((stack)[1] = (errorCode)); return; }
+#define SYSC_SETERROR(stack,errorCode)	((stack)[7] = (errorCode))
+#define SYSC_ERROR(stack,errorCode)		{ ((stack)[7] = (errorCode)); return; }
 #define SYSC_RET1(stack,val)			((stack)[0] = (val))
 #define SYSC_RET2(stack,val)			((stack)[1] = (val))
 #define SYSC_NUMBER(stack)				((stack)[7])

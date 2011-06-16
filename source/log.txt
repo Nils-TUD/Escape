@@ -1,64 +1,99 @@
 Memory size: 33554432 bytes
 Disk size: 92897280 bytes
-Kernelstack-begin: 8000:0000:0008:6000
-Kernelstack-end: 8000:0000:0008:6138
+Kernelstack-begin: 8000:0000:0008:8000
+Kernelstack-end: 8000:0000:0008:8138
 Boot modules:
     /boot/kernel.bin
-        [8000:0000:0000:0000 .. 8000:0000:0008:4927]
+        [8000:0000:0000:0000 .. 8000:0000:0008:7173]
     /sbin/disk /system/devices/disk
-        [8000:0000:0008:8000 .. 8000:0000:000b:08fb]
-Initializing physical memory-management...                                  DONEInitializing paging...                                                      DONEInitializing VFS...                                                         DONEInitializing process-management...                                          DONEInitializing virtual memory management...                                   DONEInitializing timer...                                                       DONEInitializing signal-handling...                                             DONE3988 free frames (31904 KiB)
-rss=8000000000089ff0 *rss=8000000001ff6000
-root-location @ 8000:0000:000b:e000:
-segment 0:
-  1: ff7 [r-x] (VM: 0000:0000:0000:2000 - 0000:0000:0000:3fff)
-segment 1:
-  0: ff9 [rw-] (VM: 2000:0000:0000:0000 - 2000:0000:0000:1fff)
-  fe: ff8 [rw-] (VM: 2000:0000:001f:c000 - 2000:0000:001f:dfff)
-segment 2:
+        [8000:0000:0008:a000 .. 8000:0000:000b:2943]
+Initializing physical memory-management...                                  DONEInitializing paging...                                                      DONEInitializing VFS...                                                         DONEInitializing process-management...                                          DONEInitializing virtual memory management...                                   DONEInitializing timer...                                                       DONEInitializing signal-handling...                                             DONE3987 free frames (31896 KiB)
+tempstack=4083, new=4086, old=4091
+switching stacks: parent=4086, child=4091
+tempstack=4081, new=4082, old=4086
+switching stacks: parent=4082, child=4086
+Loading '/sbin/disk'...
+copying from 8000:0000:01fe:2000 to 8000:0000:01fe:c000
+Not enough mem for stdout
+copying from 8000:0000:01fe:6000 to 8000:0000:01ff:6000
 
-Regions of proc 0 (initloader)
-VMRegion 0 (0000:0000:0000:2000 .. 0000:0000:0000:2031):
-    Size: 50 bytes
-    Load: 50 bytes
-    flags: Shareable Executable 
-    Timestamp: 0
-    Processes: 0 
-    Pages (1):
-        0: (0000:0000:0000:2000) (swblk 0) ---
+PANIC: Idle returned                                                            
+Caused by thread 1 (initloader)
 
-VMRegion 3 (2000:0000:0000:0000 .. 2000:0000:0000:1fff):
-    Size: 8192 bytes
-    Load: 8192 bytes
-    flags: Growable Writable Stack 
-    Timestamp: 0
-    Processes: 0 
-    Pages (1):
-        0: (2000:0000:0000:0000) (swblk 0) ---
+User state:
+    rG=253,rA=#0
+    rZ  : #0000000000000000 rY  : #0000000000000000 rX  : #0000000000000000 
+    rW  : #0000000000000000 rP  : #0000000000000000 rR  : #0000000000000000 
+    rM  : #0000000000000000 rJ  : #0000000000000000 rH  : #0000000000000000 
+    rE  : #0000000000000000 rD  : #0000000000000000 rB  : #0000000000000000 
+    $255: #0000000000000000 $254: #0000000000000000 $253: #0000000000000000 
+        rS  : #2000000000000048 rO  : #2000000000000000
+    rL  : 8
+    $7  : #0000000000000000 $6  : #0000000000000000 $5  : #0000000000000000 
+    $4  : #0000000000000000 $3  : #0000000000000000 $2  : #0000000000000000 
+    $1  : #0000000000000000 $0  : #0000000000000000 
+    rBB : #000000000000f064 rWW : #0000000000000000 rXX : #8000000000010000
+    rYY : #0000000000000000 rZZ : #0000000000000000
 
-VMRegion 4 (2000:0000:001f:c000 .. 2000:0000:001f:dfff):
-    Size: 8192 bytes
-    Load: 8192 bytes
-    flags: Growable Writable Stack GrowsDown 
-    Timestamp: 0
-    Processes: 0 
-    Pages (1):
-        0: (2000:0000:001f:c000) (swblk 0) ---
 
-stack-frame @ 0x8000000001ff6080
-    rG=255,rA=#0
-    rY: #0000000000000000
-    rX: #0000000000000000
-    rW: #0000000000000000
-    rP: #0000000000000000
-    rR: #0000000000000000
-    rM: #0000000000000000
-    rJ: #0000000000000000
-    rH: #0000000000000000
-    rE: #0000000000000000
-    rD: #0000000000000000
-    rB: #0000000000000000
-    $255: #0000000000000000
-    rS: #0000000000000000
-    rO: #2000000000000008
-    rL: 0
+Writing regions and page-directory of the current process to log...Done
+
+Press any key to start debugger
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Welcome to the debugging console!
+Type 'help' to get a list of commands!
+
+# view
+Usage: view <what>
+Available 'whats':
+    proc procs sched signals thread threads 
+    vfstree gft msgs cow kheap pdirall 
+    pdiruser pdirkernel regions pmem pmemcont pmemstack 
+    shm cpu timer boot requests locks 
+    events 
+# view proc
+Proc 0:                                                                             ppid=0, cmd=initloader, pdir=0x7ec58, entry=0x0                                    OwnFrames=6, sharedFrames=3, swapped=0                                             Regions:                                                                               0000:0000:0000:2000 .. 0000:0000:0000:2035: Shareable Executable                      2000:0000:0000:0000 .. 2000:0000:0000:1fff: Growable Writable Stack                   2000:0000:001f:c000 .. 2000:0000:001f:dfff: Growable Writable Stack GrowsDown         2000:0000:0020:0000 .. 2000:0000:0020:1fff: Growable Writable Stack                   2000:0000:003f:c000 .. 2000:0000:003f:dfff: Growable Writable Stack GrowsDown     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=BLOCKED                                                                         Events=                                                                               KstackFrame=0xff2                                                                     TlsRegion=-1, stackRegion0=3, stackRegion1=4                                          UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000004189                                                      Kernel-trace:                                                                         User-trace:                                                                       Thread 1: (process 0:initloader)                                                       State=BLOCKED                                                                         Events=                                                                               KstackFrame=0xffb                                                                     TlsRegion=-1, stackRegion0=5, stackRegion1=6                                          UCycleCount = 0x0000000000000000                                              Lines 1..29 of 34            Navigation: up/down, pageup/-down, home/end, q=quit        2000:0000:0000:0000 .. 2000:0000:0000:1fff: Growable Writable Stack                   2000:0000:001f:c000 .. 2000:0000:001f:dfff: Growable Writable Stack GrowsDown         2000:0000:0020:0000 .. 2000:0000:0020:1fff: Growable Writable Stack                   2000:0000:003f:c000 .. 2000:0000:003f:dfff: Growable Writable Stack GrowsDown     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=BLOCKED                                                                         Events=                                                                               KstackFrame=0xff2                                                                     TlsRegion=-1, stackRegion0=3, stackRegion1=4                                          UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000004189                                                      Kernel-trace:                                                                         User-trace:                                                                       Thread 1: (process 0:initloader)                                                       State=BLOCKED                                                                         Events=                                                                               KstackFrame=0xffb                                                                     TlsRegion=-1, stackRegion0=5, stackRegion1=6                                          UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000000000                                                      Kernel-trace:                                                                         User-trace:                                                                                                                                                                                                                                   Lines 6..34 of 34            Navigation: up/down, pageup/-down, home/end, q=quitProc 0:                                                                             ppid=0, cmd=initloader, pdir=0x7ec58, entry=0x0                                    OwnFrames=6, sharedFrames=3, swapped=0                                             Regions:                                                                               0000:0000:0000:2000 .. 0000:0000:0000:2035: Shareable Executable                      2000:0000:0000:0000 .. 2000:0000:0000:1fff: Growable Writable Stack                   2000:0000:001f:c000 .. 2000:0000:001f:dfff: Growable Writable Stack GrowsDown         2000:0000:0020:0000 .. 2000:0000:0020:1fff: Growable Writable Stack                   2000:0000:003f:c000 .. 2000:0000:003f:dfff: Growable Writable Stack GrowsDown     Environment:                                                                       FileDescs:                                                                             0 : 1 (/system/stdin)                                                                 1 : 0 (/system/log)                                                                   2 : 0 (/system/log)                                                               Thread 0: (process 0:initloader)                                                       State=BLOCKED                                                                         Events=                                                                               KstackFrame=0xff2                                                                     TlsRegion=-1, stackRegion0=3, stackRegion1=4                                          UCycleCount = 0x0000000000000000                                                      KCycleCount = 0x0000000000004189                                                      Kernel-trace:                                                                         User-trace:                                                                       Thread 1: (process 0:initloader)                                                       State=BLOCKED                                                                         Events=                                                                               KstackFrame=0xffb                                                                     TlsRegion=-1, stackRegion0=5, stackRegion1=6                                          UCycleCount = 0x0000000000000000                                              Lines 1..29 of 34            Navigation: up/down, pageup/-down, home/end, q=quit# voew                                                                               # voe                                                                               # vo                                                                               # view proc 1
+Proc 1:                                                                             ppid=0, cmd=/sbin/disk, pdir=0x1ffabd0, entry=0x2030                               OwnFrames=6, sharedFrames=0, swapped=0                                             Exitstate: code=1, signal=18                                                           own=120, shared=8, swap=0                                                             ucycles=0x0000000000000000, kcycles=0x0000000000000000                            Regions:                                                                           Environment:                                                                       FileDescs:                                                                                                                                                                                                                                     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lines 1..11 of 11            Navigation: up/down, pageup/-down, home/end, q=quit# 

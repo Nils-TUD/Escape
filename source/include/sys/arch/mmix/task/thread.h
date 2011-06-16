@@ -23,24 +23,20 @@
 #include <esc/common.h>
 
 /* the thread-state which will be saved for context-switching */
-/* TODO wrong */
 typedef struct {
-	uint32_t r16;
-	uint32_t r17;
-	uint32_t r18;
-	uint32_t r19;
-	uint32_t r20;
-	uint32_t r21;
-	uint32_t r22;
-	uint32_t r23;
-	uint32_t r25;
-	uint32_t r29;
-	uint32_t r30;
-	uint32_t r31;
+	uintptr_t stackEnd;
+	uint64_t rbb;
+	uint64_t rww;
+	uint64_t rxx;
+	uint64_t ryy;
+	uint64_t rzz;
 } sThreadRegs;
 
 typedef struct {
-	char dummy;	/* empty struct not allowed */
+	/* pointer to the kernel-stack end after the initial SAVE */
+	uint64_t *kstack;
+	/* use as a temporary kernel-stack for cloning */
+	tFrameNo tempStack;
 } sThreadArchAttr;
 
 #define STACK_REG_COUNT		2

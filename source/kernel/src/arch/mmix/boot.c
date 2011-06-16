@@ -50,9 +50,10 @@
 
 static const char **boot_parseArgs(const char *line,int *argc);
 
-static bool loadedMods = false;
 static sLoadProg progs[MAX_PROG_COUNT];
 static sBootInfo info;
+static int bootState = 0;
+static int bootFinished = 1;
 
 void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
@@ -60,6 +61,8 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	memcpy(&info,binfo,sizeof(sBootInfo));
 	info.progs = progs;
 	memcpy((void*)info.progs,binfo->progs,sizeof(sLoadProg) * binfo->progCount);
+	/* start idle-thread, load programs and wait for programs */
+	bootFinished = info.progCount + 2;
 
 	vid_init();
 
@@ -139,24 +142,24 @@ size_t boot_getUsableMemCount(void) {
 	return info.memSize;
 }
 
-void boot_loadModules(sIntrptStackFrame *stack) {
-#if 0
+int boot_loadModules(sIntrptStackFrame *stack) {
 	size_t i;
 	tPid pid;
-	tInodeNo nodeNo;
 
 	/* it's not good to do this twice.. */
-	if(loadedMods)
-		return;
+	if(bootState == bootFinished)
+		return 0;
 
-	/* start idle-thread */
-	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
-		thread_idle();
-		util_panic("Idle returned");
+	if(bootState == 0) {
+		/* start idle-thread */
+		if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
+			/*thread_idle();*/
+			util_panic("Idle returned");
+		}
+		bootState++;
 	}
-
-	loadedMods = true;
-	for(i = 1; i < info.progCount; i++) {
+	else if(bootState < info.progCount) {
+		i = bootState;
 		/* parse args */
 		int argc;
 		const char **argv = boot_parseArgs(progs[i].command,&argc);
@@ -177,7 +180,7 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 			proc_removeRegions(p,false);
 			/* now load module */
 			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
-			if(elf_loadFromMem((void*)progs[i].start,progs[i].size,&sinfo) < 0)
+			if(elf_loadFromMem((const void*)progs[i].start,progs[i].size,&sinfo) < 0)
 				util_panic("Loading boot-module %s failed",p->command);
 			/* build args */
 			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);
@@ -185,24 +188,35 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 				util_panic("Building args for boot-module %s failed: %d",p->command,argc);
 			/* no dynamic linking here */
 			p->entryPoint = sinfo.progEntry;
-			if(!uenv_setupProc(stack,p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
+			if(!uenv_setupProc(p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
 				util_panic("Unable to setup user-stack for boot module %s",p->command);
 			kheap_free(argBuffer);
-			/* we don't want to continue the loop ;) */
-			return;
+			/* we don't want to continue ;) */
+			return 0;
 		}
 
-		/* wait until the driver is registered */
-		vid_printf("Loading '%s'...\n",argv[0]);
-		/* don't create a pipe- or driver-usage-node here */
-		while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
-			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
-			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
-			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
-			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
-			timer_sleepFor(thread_getRunning()->tid,20);
-			thread_switch();
+		bootState++;
+	}
+	else {
+		tInodeNo nodeNo;
+		for(i = 1; i < info.progCount; i++) {
+			int argc;
+			const char **argv = boot_parseArgs(progs[i].command,&argc);
+
+			/* wait until the driver is registered */
+			vid_printf("Loading '%s'...\n",argv[0]);
+			/* don't create a pipe- or driver-usage-node here */
+			while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
+				/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
+				 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
+				 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
+				 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
+				timer_sleepFor(thread_getRunning()->tid,20);
+				thread_switch();
+			}
 		}
+
+		bootState++;
 	}
 
 	/* TODO */
@@ -213,7 +227,8 @@ void boot_loadModules(sIntrptStackFrame *stack) {
 		util_panic("Swapper reached this");
 	}
 #endif
-#endif
+
+	return bootState == bootFinished ? 0 : 1;
 }
 
 static const char **boot_parseArgs(const char *line,int *argc) {

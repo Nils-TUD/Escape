@@ -35,13 +35,17 @@
 	.global debugc
 	.global paging_setrV
 	.global tc_update
+
+	.global cpu_syncid
 	.global cpu_rdtsc
 	.global cpu_getGlobal
 	.global cpu_getSpecial
+	.global cpu_getKSpecials
+	.global cpu_setKSpecials
 
 	.global thread_idle
-	.global	thread_save
-	.global thread_resume
+	.global thread_initSave
+	.global	thread_doSwitch
 
 #===========================================
 # Constants
@@ -73,9 +77,8 @@ start:
 
 	# bootinfo is in $0
 	LDOU	$254,$0,32						# load kstackbegin from bootinfo
-	SETL	$1,STACK_SIZE
-	2ADDU	$254,$1,$254					# += 2 * STACK_SIZE
-	SUBU	$254,$254,8						# stack-pointer = kstackbegin + 2 * STACK_SIZE - 8
+	INCL	$254,STACK_SIZE
+	SUBU	$254,$254,8						# stack-pointer = kstackbegin + STACK_SIZE - 8
 	OR		$253,$254,$254					# frame-pointer = stack-pointer
 
 	# call main
@@ -122,9 +125,10 @@ forcedTrap:
 	SUBU	$254,$0,8
 	SET		$253,$254
 	SET		$0,$255							# save $255
-	GET		$2,rSS
+	GET		$2,rS
 	PUSHJ	$1,intrpt_forcedTrap
 	UNSAVE	1,$0
+	PUT		rSS,$255						# after cloning, the new value for rSS will be in $255
 	NEG		$255,0,1						# rK = -1
 	RESUME	1
 
@@ -154,6 +158,93 @@ dynamicTrap:
 	RESUME	1
 
 #===========================================
+# Thread
+#===========================================
+
+# int thread_initSave(sThreadRegs *saveArea,void *newStack)
+thread_initSave:
+	SET		$251,$0
+	SET		$252,$1							# save $0 and $1, SAVE will set rL to 0
+	PUT		rL,0							# remove $0, we don't need it anymore
+	SAVE	$255,0							# save the state on the current stack
+	# copy the register-stack
+	GET		$0,rSS							# stack-begin
+	GET		$1,rS							# stack-end
+	SUBU	$1,$1,$0						# number of bytes to copy
+1:
+	LDOU	$2,$0,$1
+	STOU	$2,$252,$1
+	SUBU	$1,$1,8
+	BNZ		$1,1b
+	# now copy the software-stack
+	INCL	$0,PAGE_SIZE-8
+	INCL	$252,PAGE_SIZE-8
+	SUBU	$1,$0,$254						# number of bytes to copy
+	SUBU	$0,$0,$1
+	SUBU	$252,$252,$1
+1:
+	LDOU	$2,$0,$1
+	STOU	$2,$252,$1
+	SUBU	$1,$1,8
+	BNZ		$1,1b
+	# store data to save-area
+	STOU	$255,$251,0						# store stack-end
+	GET		$0,rBB
+	STOU	$0,$251,8						# store rBB
+	GET		$0,rWW
+	STOU	$0,$251,16						# store rWW
+	GET		$0,rXX
+	STOU	$0,$251,24						# store rXX
+	GET		$0,rYY
+	STOU	$0,$251,32						# store rYY
+	GET		$0,rZZ
+	STOU	$0,$251,40						# store rZZ
+	# now unsave, to be able to continue with the current stack
+	UNSAVE	0,$255
+	SET		$0,0							# return 0
+	POP		1,0
+
+# int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir)
+thread_doSwitch:
+	SET		$250,$0							# save $0, SAVE will set rL to 0
+	SET		$251,$1
+	SET		$252,$2
+	PUT		rL,0							# remove $0, we don't need it anymore
+	# save state of old thread
+	SAVE	$255,0
+	STOU	$255,$250,0						# store stack-end
+	GET		$0,rBB
+	STOU	$0,$250,8						# store rBB
+	GET		$0,rWW
+	STOU	$0,$250,16						# store rWW
+	GET		$0,rXX
+	STOU	$0,$250,24						# store rXX
+	GET		$0,rYY
+	STOU	$0,$250,32						# store rYY
+	GET		$0,rZZ
+	STOU	$0,$250,40						# store rZZ
+	# restore state of new thread
+	LDOU	$0,$251,40
+	PUT		rZZ,$0							# restore rZZ
+	LDOU	$0,$251,32
+	PUT		rYY,$0							# restore rYY
+	LDOU	$0,$251,24
+	PUT		rXX,$0							# restore rXX
+	LDOU	$0,$251,16
+	PUT		rWW,$0							# restore rWW
+	LDOU	$0,$251,8
+	PUT		rWW,$0							# restore rBB
+	LDOU	$0,$252,8						# load rV
+	PUT		rV,$0
+	LDOU	$0,$251,0						# load stackend
+	SET		$1,$0
+	ANDNL	$1,#1FFF						# to page-begin
+	PUT		rSS,$1							# set rSS
+	UNSAVE	0,$0
+	SET		$0,1							# return 1
+	POP		1,0
+
+#===========================================
 # Paging
 #===========================================
 
@@ -174,6 +265,17 @@ tc_update:
 #===========================================
 # CPU
 #===========================================
+
+# void cpu_syncid(uintptr_t start,uintptr_t end)
+cpu_syncid:
+	SETL	$3,#100
+1:
+	SYNCD	#FF,$0,0
+	SYNCID	#FF,$0,0
+	ADDU	$0,$0,$3
+	CMPU	$2,$0,$1
+	BN		$2,1b
+	POP		0,0
 
 # uint64_t cpu_rdtsc(void)
 cpu_rdtsc:
@@ -202,6 +304,29 @@ cpu_getSpecial:
 	PUT		rW,$0
 	RESUME	0
 	POP		1,0
+
+# void cpu_getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy,uint64_t *rzz)
+cpu_getKSpecials:
+	GET		$5,rBB
+	STOU	$5,$0,0
+	GET		$5,rWW
+	STOU	$5,$1,0
+	GET		$5,rXX
+	STOU	$5,$2,0
+	GET		$5,rYY
+	STOU	$5,$3,0
+	GET		$5,rZZ
+	STOU	$5,$4,0
+	POP		0,0
+
+# void cpu_setKSpecials(uint64_t rbb,uint64_t rww,uint64_t rxx,uint64_t ryy,uint64_t rzz)
+cpu_setKSpecials:
+	PUT		rBB,$0
+	PUT		rWW,$1
+	PUT		rXX,$2
+	PUT		rYY,$3
+	PUT		rZZ,$4
+	POP		0,0
 
 #===========================================
 # Input/Output

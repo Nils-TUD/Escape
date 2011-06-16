@@ -56,7 +56,6 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal);
 /**
  * Setups the user-stack for given interrupt-stack, when starting the current process
  *
- * @param frame the interrupt-stack-frame
  * @param path the executable-path
  * @param argc the argument-count
  * @param args the arguments on after another, allocated on the heap; may be NULL
@@ -65,8 +64,8 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal);
  * @param entryPoint the entry-point
  * @return true if successfull
  */
-bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
-		int argc,const char *args,size_t argsSize,const sStartupInfo *info,uintptr_t entryPoint);
+bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
+		const sStartupInfo *info,uintptr_t entryPoint);
 
 /**
  * Setups the user-environment for the given interrupt-stack, when starting the current thread
@@ -75,6 +74,6 @@ bool uenv_setupProc(sIntrptStackFrame *frame,const char *path,
  * @param arg the thread-argument
  * @param tentryPoint the entry-point
  */
-bool uenv_setupThread(sIntrptStackFrame *frame,const void *arg,uintptr_t tentryPoint);
+bool uenv_setupThread(const void *arg,uintptr_t tentryPoint);
 
 #endif /* UENV_H_ */

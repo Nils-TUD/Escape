@@ -360,7 +360,7 @@ static void vm86_start(void) {
 	assert(info != NULL);
 
 start:
-	istack = intrpt_getCurStack();
+	istack = thread_getRunning()->kstackEnd;
 
 	/* undo the mappings of the previous call */
 	for(i = 0; i < (1024 * K) / PAGE_SIZE; i++) {

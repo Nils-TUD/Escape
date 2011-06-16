@@ -22,6 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/cpu.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>
@@ -268,7 +269,7 @@ static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint6
 	rsp[4] = thread ? tentry : 0;
 
 	/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
-	uint64_t *frame = t->archAttr.kstack;
+	uint64_t *frame = t->kstackEnd;
 	int rg = frame[-1] >> 56;
 	frame[-(13 + (255 - rg))] = (uint64_t)ssp;
 	frame[-(13 + (255 - rg) + 1)] = (uint64_t)ssp;

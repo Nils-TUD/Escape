@@ -33,8 +33,6 @@ typedef struct {
 } sThreadRegs;
 
 typedef struct {
-	/* pointer to the kernel-stack end after the initial SAVE */
-	uint64_t *kstack;
 	/* use as a temporary kernel-stack for cloning */
 	tFrameNo tempStack;
 } sThreadArchAttr;

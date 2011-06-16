@@ -136,19 +136,14 @@ static sInterrupt intrptList[] = {
 	/* 0x3F: -- */					{intrpt_defHandler,	"??",					0},
 };
 static size_t irqCount = 0;
-static sIntrptStackFrame *curFrame;
 
 size_t intrpt_getCount(void) {
 	return irqCount;
 }
 
-sIntrptStackFrame *intrpt_getCurStack(void) {
-	return curFrame;
-}
-
 void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
-	t->archAttr.kstack = stack;
+	t->kstackEnd = stack;
 	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
 	begin -= *begin;
 	t->stats.syscalls++;
@@ -161,7 +156,7 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	sInterrupt *intrpt = intrptList + (irqNo & 0x3F);
 	sThread *t = thread_getRunning();
-	t->archAttr.kstack = stack;
+	t->kstackEnd = stack;
 	irqCount++;
 
 	/* call handler */

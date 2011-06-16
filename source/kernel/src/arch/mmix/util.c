@@ -51,7 +51,7 @@ void util_panic(const char *fmt,...) {
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 
 	vid_printf("User state:\n");
-	intrpt_dbg_printStackFrame(t->archAttr.kstack);
+	intrpt_dbg_printStackFrame(t->kstackEnd);
 	uint64_t rbb,rww,rxx,ryy,rzz;
 	cpu_getKSpecials(&rbb,&rww,&rxx,&ryy,&rzz);
 	vid_printf("\trBB : #%016lx rWW : #%016lx rXX : #%016lx\n",rbb,rww,rxx);

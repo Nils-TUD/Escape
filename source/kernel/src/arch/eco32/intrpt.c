@@ -112,11 +112,15 @@ static sInterrupt intrptList[] = {
 	/* 0x1F: -- */				{intrpt_defHandler,	"??",					0},
 };
 static size_t irqCount = 0;
-static sIntrptStackFrame *curFrame;
+static uintptr_t pfaddr = 0;
 
 void intrpt_handler(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
 	sInterrupt *intrpt = intrptList + (stack->irqNo & 0x1F);
-	curFrame = stack;
+	/* note: we have to do that before there is a chance for a kernel-miss (e.g. t->kstackEnd
+	 * might cause one because its on the kernel-heap */
+	pfaddr = cpu_getBadAddr();
+	t->kstackEnd = stack;
 	irqCount++;
 
 	/* call handler */
@@ -125,7 +129,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	/* only handle signals, if we come directly from user-mode */
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
-	sThread *t = thread_getRunning();
+	t = thread_getRunning();
 	if(t != NULL && (t->tid == IDLE_TID || (stack->psw & PSW_PUM))) {
 		uenv_handleSignal();
 		if(t->tid != IDLE_TID && uenv_hasSignalToStart())
@@ -135,10 +139,6 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 size_t intrpt_getCount(void) {
 	return irqCount;
-}
-
-sIntrptStackFrame *intrpt_getCurStack(void) {
-	return (sIntrptStackFrame*)(KERNEL_STACK + PAGE_SIZE - 4 - sizeof(sIntrptStackFrame));
 }
 
 static void intrpt_defHandler(sIntrptStackFrame *stack) {
@@ -156,9 +156,6 @@ static void intrpt_exTrap(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_exPageFault(sIntrptStackFrame *stack) {
-	/* note: we have to make sure that the area at 0x80000000 is not used previously, because
-	 * it might change the tlb-bad-address */
-	uintptr_t pfaddr = cpu_getBadAddr();
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->r[30] >= DIR_MAPPED_SPACE)
 		vid_unsetPrintFunc();

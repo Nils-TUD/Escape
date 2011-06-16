@@ -48,7 +48,6 @@ static uint64_t profStart;
 
 void util_panic(const char *fmt,...) {
 	static uint32_t regs[REG_COUNT];
-	sIntrptStackFrame *istack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
 	va_list ap;
 
@@ -81,21 +80,21 @@ void util_panic(const char *fmt,...) {
 	if(t != NULL && t->stackRegions[0] >= 0) {
 		util_printStackTrace(util_getUserStackTrace());
 		vid_printf("User-Register:\n");
-		regs[R_EAX] = istack->eax;
-		regs[R_EBX] = istack->ebx;
-		regs[R_ECX] = istack->ecx;
-		regs[R_EDX] = istack->edx;
-		regs[R_ESI] = istack->esi;
-		regs[R_EDI] = istack->edi;
-		regs[R_ESP] = istack->uesp;
-		regs[R_EBP] = istack->ebp;
-		regs[R_CS] = istack->cs;
-		regs[R_DS] = istack->ds;
-		regs[R_ES] = istack->es;
-		regs[R_FS] = istack->fs;
-		regs[R_GS] = istack->gs;
-		regs[R_SS] = istack->uss;
-		regs[R_EFLAGS] = istack->eflags;
+		regs[R_EAX] = t->kstackEnd->eax;
+		regs[R_EBX] = t->kstackEnd->ebx;
+		regs[R_ECX] = t->kstackEnd->ecx;
+		regs[R_EDX] = t->kstackEnd->edx;
+		regs[R_ESI] = t->kstackEnd->esi;
+		regs[R_EDI] = t->kstackEnd->edi;
+		regs[R_ESP] = t->kstackEnd->uesp;
+		regs[R_EBP] = t->kstackEnd->ebp;
+		regs[R_CS] = t->kstackEnd->cs;
+		regs[R_DS] = t->kstackEnd->ds;
+		regs[R_ES] = t->kstackEnd->es;
+		regs[R_FS] = t->kstackEnd->fs;
+		regs[R_GS] = t->kstackEnd->gs;
+		regs[R_SS] = t->kstackEnd->uss;
+		regs[R_EFLAGS] = t->kstackEnd->eflags;
 		PRINT_REGS(regs,"\t");
 	}
 
@@ -143,10 +142,9 @@ void util_stopTimer(const char *prefix,...) {
 
 sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
-	sIntrptStackFrame *stack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
 	vmm_getRegRange(t->proc,t->stackRegions[0],&start,&end);
-	return util_getStackTrace((uint32_t*)stack->ebp,start,start,end);
+	return util_getStackTrace((uint32_t*)t->kstackEnd->ebp,start,start,end);
 }
 
 sFuncCall *util_getKernelStackTrace(void) {
@@ -176,7 +174,7 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 		pcount = (end - start) / PAGE_SIZE;
 		frames = kheap_alloc((pcount + 2) * sizeof(tFrameNo));
 		if(frames) {
-			sIntrptStackFrame *istack = intrpt_getCurStack();
+			sIntrptStackFrame *istack = t->kstackEnd;
 			uintptr_t temp,startCpy = start;
 			size_t i;
 			frames[0] = t->kstackFrame;

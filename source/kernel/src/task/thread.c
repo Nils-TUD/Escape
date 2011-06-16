@@ -76,6 +76,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->tid = nextTid++;
 	t->proc = p;
 	/* we'll give the thread a stack later */
+	t->kstackEnd = NULL;
 	t->stats.ucycleCount.val64 = 0;
 	t->stats.ucycleStart = 0;
 	t->stats.kcycleCount.val64 = 0;
@@ -203,6 +204,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,
 	t->stats.ucycleStart = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
+	t->kstackEnd = src->kstackEnd;
 	t->proc = p;
 	if(cloneProc) {
 		size_t i;

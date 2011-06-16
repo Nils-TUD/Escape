@@ -151,8 +151,8 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	uint32_t *sp;
 	char **argv;
 	size_t totalSize;
-	sIntrptStackFrame *frame = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
+	sIntrptStackFrame *frame = t->kstackEnd;
 
 	/*
 	 * Initial stack:
@@ -231,9 +231,9 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 
 bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *sp;
-	sIntrptStackFrame *frame = intrpt_getCurStack();
 	size_t totalSize = sizeof(void*);
 	sThread *t = thread_getRunning();
+	sIntrptStackFrame *frame = t->kstackEnd;
 
 	/*
 	 * Initial stack:

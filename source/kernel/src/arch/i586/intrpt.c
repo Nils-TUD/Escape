@@ -277,9 +277,6 @@ static uintptr_t lastPFAddr = ~(uintptr_t)0;
 static tPid lastPFProc = INVALID_PID;
 #endif
 
-/* pointer to the current interrupt-stack */
-static sIntrptStackFrame *curIntrptStack = NULL;
-
 /* the interrupt descriptor table */
 static sIDTEntry idt[IDT_COUNT];
 
@@ -362,15 +359,11 @@ size_t intrpt_getCount(void) {
 	return intrptCount;
 }
 
-sIntrptStackFrame *intrpt_getCurStack(void) {
-	return curIntrptStack;
-}
-
 void intrpt_handler(sIntrptStackFrame *stack) {
 	uint64_t cycles;
 	sThread *t = thread_getRunning();
 	sInterrupt *intrpt = intrptList + stack->intrptNo;
-	curIntrptStack = stack;
+	t->kstackEnd = stack;
 	intrptCount++;
 
 	if(t->tid == IDLE_TID || stack->eip < KERNEL_START) {

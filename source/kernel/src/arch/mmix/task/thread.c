@@ -80,13 +80,11 @@ extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pd
 
 int thread_initArch(sThread *t) {
 	t->archAttr.tempStack = -1;
-	t->archAttr.kstack = NULL;
 	return 0;
 }
 
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
 	UNUSED(src);
-	dst->archAttr.kstack = src->archAttr.kstack;
 	if(!cloneProc) {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES * 2)
 			return ERR_NOT_ENOUGH_MEM;
@@ -132,7 +130,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->archAttr.tempStack * PAGE_SIZE)));
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
-		sIntrptStackFrame *stack = intrpt_getCurStack();
+		sIntrptStackFrame *stack = t->kstackEnd;
 		/* switch stacks */
 		tFrameNo kstack = t->kstackFrame;
 		t->kstackFrame = nt->kstackFrame;

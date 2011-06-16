@@ -202,6 +202,7 @@ size_t boot_getUsableMemCount(void) {
 }
 
 int boot_loadModules(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	size_t i;
 	tPid pid;
 	tInodeNo nodeNo;

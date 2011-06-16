@@ -36,8 +36,8 @@ static sFuncCall frames[1] = {
 };
 
 void util_panic(const char *fmt,...) {
-	sIntrptStackFrame *istack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
+	sIntrptStackFrame *istack = t->kstackEnd;
 	va_list ap;
 	int i;
 

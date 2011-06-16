@@ -51,11 +51,6 @@ void intrpt_init(void);
 size_t intrpt_getCount(void);
 
 /**
- * @return the current interrupt-stack (may be NULL)
- */
-sIntrptStackFrame *intrpt_getCurStack(void);
-
-/**
  * Handles an interrupt
  *
  * @param number the interrupt-number

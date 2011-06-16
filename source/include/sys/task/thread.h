@@ -83,6 +83,8 @@ struct sThread {
 	tVMRegNo tlsRegion;
 	/* the frame mapped at KERNEL_STACK */
 	tFrameNo kstackFrame;
+	/* pointer to the kernel-stack end when entering the kernel */
+	sIntrptStackFrame *kstackEnd;
 	/* the save-area for registers */
 	sThreadRegs save;
 	/* architecture-specific attributes */

@@ -18,32 +18,32 @@ AOBJ = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
 
 .PHONY: all clean
 
-all:		$(BUILDDIRS) $(BIN) $(MAP) $(ELF)
+all:	$(BUILDDIRS) $(BIN) $(MAP) $(ELF)
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(ELF):	$(AOBJ) $(LDCONF)
-		@echo "	" LINKING $@
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJ)
+	@echo "	" LINKING $@
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJ)
 
 $(MAP): $(ELF)
-		@echo "	" GEN MAP $@
-		@$(NM) -S $(ELF) | $(ROOT)/tools/createmap-mmix.php > $@
+	@echo "	" GEN MAP $@
+	@$(NM) -S $(ELF) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BIN):	$(ELF)
-		@echo "	" GEN BIN $@
-		@$(OBJCOPY) -O binary $(ELF) $(BIN)
-		@echo "	" COPYING TO DISK
-		@dd if=$(BIN) of=$(BUILD)/hd.img bs=512 count=1 conv=notrunc
+	@echo "	" GEN BIN $@
+	@$(OBJCOPY) -O binary $(ELF) $(BIN)
+	@echo "	" COPYING TO DISK
+	@dd if=$(BIN) of=$(BUILD)/hd.img bs=512 count=1 conv=notrunc
 
 $(BUILDL)/%.s.o:	%.s
-		@echo "	" AS $<
-		@$(AS) -o $@ $<
+	@echo "	" AS $<
+	@$(AS) -o $@ $<
 
 -include $(DEP)
 
 clean:
-		rm -f *~ $(AOBJ) $(BIN) $(ELF) $(DEP) $(MAP)
+	rm -f *~ $(AOBJ) $(BIN) $(ELF) $(DEP) $(MAP)

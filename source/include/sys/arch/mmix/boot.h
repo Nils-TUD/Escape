@@ -44,10 +44,10 @@ typedef struct {
 	uintptr_t kstackEnd;
 } sBootInfo;
 
-#define BL_DISK_ID	0
-#define BL_FS_ID	1
-#define BL_RTC_ID	2
-#define BL_K_ID		3
+#define BL_K_ID		0
+#define BL_DISK_ID	1
+#define BL_FS_ID	2
+#define BL_RTC_ID	3
 
 void boot_init(const sBootInfo *binfo,bool logToVFS);
 const sBootInfo *boot_getInfo(void);

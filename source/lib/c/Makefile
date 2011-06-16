@@ -45,84 +45,84 @@ LAPICOBJS = $(patsubst $(LIBDIR)/%.s,$(BUILDL)/lib/%_pic.s.o,$(LASRC))
 all: $(BUILDDIRS) $(STARTO) $(STARTOPIC) $(STLIB) $(DYNLIB)
 
 $(STLIB): $(COBJS) $(AOBJS) $(LOBJ) $(LAOBJS)
-		@echo "	" AR $(STLIB)
-		@$(AR) rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ) $(LAOBJS)
-		@$(ROOT)/tools/linklib.sh $(STLIB)
+	@echo "	" AR $(STLIB)
+	@$(AR) rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ) $(LAOBJS)
+	@$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ) $(LAPICOBJS)
-		@echo "	" LINKING $(DYNLIB)
-		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) \
-			$(APICOBJS) $(LPICOBJ) $(LAPICOBJS) $(ADDLIBS)
-		@$(ROOT)/tools/linklib.sh $(DYNLIB)
+	@echo "	" LINKING $(DYNLIB)
+	@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) \
+		$(APICOBJS) $(LPICOBJ) $(LAPICOBJS) $(ADDLIBS)
+	@$(ROOT)/tools/linklib.sh $(DYNLIB)
 		
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o: %.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDL)/%_pic.o: %.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 $(BUILDL)/lib/%.o:	$(LIBDIR)/%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 $(BUILDL)/%_pic.s.o: %.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) --defsym SHAREDLIB=1 -o $@ $@.tmp
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) --defsym SHAREDLIB=1 -o $@ $@.tmp
+	@rm -f $@.tmp
 
 $(BUILDL)/%.s.o: %.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -o $@ $@.tmp
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) -o $@ $@.tmp
+	@rm -f $@.tmp
 
 $(BUILDL)/lib/%_pic.s.o: $(LIBDIR)/%.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) --defsym SHAREDLIB=1 -o $@ $@.tmp
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) --defsym SHAREDLIB=1 -o $@ $@.tmp
+	@rm -f $@.tmp
 
 $(BUILDL)/lib/%.s.o: $(LIBDIR)/%.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -o $@ $@.tmp
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) -o $@ $@.tmp
+	@rm -f $@.tmp
 
 $(BUILD)/crt%S.o : arch/$(ARCH)/crt%.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $(patsubst $(BUILD)/%.o,$(BUILDL)/%.o.d,$@) $< > $@.tmp
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -defsym SHAREDLIB=1 -o $@ $@.tmp
-		@$(ROOT)/tools/linklib.sh $@
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $(patsubst $(BUILD)/%.o,$(BUILDL)/%.o.d,$@) $< > $@.tmp
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) -defsym SHAREDLIB=1 -o $@ $@.tmp
+	@$(ROOT)/tools/linklib.sh $@
+	@rm -f $@.tmp
 
 $(BUILD)/crt%.o : arch/$(ARCH)/crt%.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $(patsubst $(BUILD)/%.o,$(BUILDL)/%.o.d,$@) $< > $@.tmp
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -o $@ $@.tmp
-		@$(ROOT)/tools/linklib.sh $@
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $(patsubst $(BUILD)/%.o,$(BUILDL)/%.o.d,$@) $< > $@.tmp
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) -o $@ $@.tmp
+	@$(ROOT)/tools/linklib.sh $@
+	@rm -f $@.tmp
 
 -include $(DEPS)
 
 clean:
-		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(LAOBJS) $(LAPICOBJS) \
-			$(STLIB) $(DEPS) $(STARTO) $(STARTOPIC) $(DYNLIB)
+	@echo "===== REMOVING FILES =====";
+	rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(LAOBJS) $(LAPICOBJS) \
+		$(STLIB) $(DEPS) $(STARTO) $(STARTOPIC) $(DYNLIB)

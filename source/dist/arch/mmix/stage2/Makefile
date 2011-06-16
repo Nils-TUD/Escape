@@ -33,41 +33,41 @@ AOBJALL = $(AOBJS) $(AOBJ) $(AOBJE)
 all:		$(BUILDDIRS) $(BIN) $(ELF) $(MAP)
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(ELF):	$(COBJ) $(AOBJALL) $(LOBJ) $(LDCONF)
-		@echo "	" LINKING $@
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJS) $(COBJ) $(AOBJ) $(LOBJ) $(AOBJE)
+	@echo "	" LINKING $@
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(ELF) $(AOBJS) $(COBJ) $(AOBJ) $(LOBJ) $(AOBJE)
 
 $(MAP): $(ELF)
-		@echo "	" GEN MAP $@
-		@$(NM) -S $(ELF) | $(ROOT)/tools/createmap-mmix.php > $@
+	@echo "	" GEN MAP $@
+	@$(NM) -S $(ELF) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BIN): $(ELF)
-		@echo "	" GEN BIN $@
-		@$(OBJCOPY) -S $(ELF) $(BIN)
-		@echo "	" COPYING TO DISK
-		@dd if=$(BIN) of=$(BUILD)/hd.img bs=512 seek=1 conv=notrunc
+	@echo "	" GEN BIN $@
+	@$(OBJCOPY) -S $(ELF) $(BIN)
+	@echo "	" COPYING TO DISK
+	@dd if=$(BIN) of=$(BUILD)/hd.img bs=512 seek=1 conv=notrunc
 
 $(BUILDL)/%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -c -o $@ $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -c -o $@ $< -MD
 
 $(BUILDL)/%.l.o:	$(LIB)/arch/$(ARCH)/%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -c -o $@ $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -c -o $@ $< -MD
 
 $(BUILDL)/%.o:	%.s
-		@echo "	" AS $<
-		@$(AS) -o $@ $<
+	@echo "	" AS $<
+	@$(AS) -o $@ $<
 
 $(BUILDL)/%.l.a.o:	$(LIB)/arch/$(ARCH)/%.s
-		@echo "	" AS $<
-		@$(AS) -o $@ $<
+	@echo "	" AS $<
+	@$(AS) -o $@ $<
 
 -include $(DEP)
 
 clean:
-		rm -f *~ $(COBJ) $(AOBJALL) $(LOBJ) $(BIN) $(ELF) $(DEP) $(MAP)
+	rm -f *~ $(COBJ) $(AOBJALL) $(LOBJ) $(BIN) $(ELF) $(DEP) $(MAP)

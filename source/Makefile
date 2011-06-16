@@ -6,7 +6,7 @@ GCCVER = 4.6.0
 #ARCH = eco32
 #GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -79,21 +79,13 @@ export SUDO=sudo
 
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
-ifeq ($(ARCH),mmix)
 	DIRS = tools dist lib drivers user kernel/src kernel/test
-else
-	DIRS = tools dist lib drivers user kernel/src kernel/test
-endif
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 	export BUILDTYPE=debug
 else
-ifeq ($(ARCH),mmix)
-	DIRS = tools dist lib drivers kernel/src
-else
 	DIRS = tools dist lib drivers user kernel/src
-endif
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
@@ -112,181 +104,181 @@ endif
 	dis qemu bochs debug debugu debugm debugt test clean updatehdd
 
 all: $(BUILD)
-		@[ -f $(HDD) ] || $(MAKE) createhdd;
-		@for i in $(DIRS); do \
-			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
-		done
+	@[ -f $(HDD) ] || $(MAKE) createhdd;
+	@for i in $(DIRS); do \
+		$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+	done
 
 $(BUILD):
-		[ -d $(BUILD) ] || mkdir -p $(BUILD);
+	[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
 hdd:
-		$(MAKE) -C dist hdd
+	$(MAKE) -C dist hdd
 
 cd:
-		$(MAKE) -C dist cd
+	$(MAKE) -C dist cd
 
 debughdd:
-		tools/disk.sh mkdiskdev
-		$(SUDO) fdisk /dev/loop0 -C 180 -S 63 -H 16
-		tools/disk.sh rmdiskdev
+	tools/disk.sh mkdiskdev
+	$(SUDO) fdisk /dev/loop0 -C 180 -S 63 -H 16
+	tools/disk.sh rmdiskdev
 
 mountp1:
-		tools/disk.sh mountp1
+	tools/disk.sh mountp1
 
 mountp2:
-		tools/disk.sh mountp2
+	tools/disk.sh mountp2
 
 debugp1:
-		tools/disk.sh mountp1
-		$(SUDO) debugfs -w /dev/loop0
-		tools/disk.sh unmount
+	tools/disk.sh mountp1
+	$(SUDO) debugfs -w /dev/loop0
+	tools/disk.sh unmount
 
 debugp2:
-		tools/disk.sh mountp2
-		$(SUDO) debugfs /dev/loop0
-		tools/disk.sh unmount
+	tools/disk.sh mountp2
+	$(SUDO) debugfs /dev/loop0
+	tools/disk.sh unmount
 
 checkp1:
-		tools/disk.sh mountp1
-		$(SUDO) fsck /dev/loop0 || true
-		tools/disk.sh unmount
+	tools/disk.sh mountp1
+	$(SUDO) fsck /dev/loop0 || true
+	tools/disk.sh unmount
 
 checkp2:
-		tools/disk.sh mountp2
-		$(SUDO) fsck /dev/loop0 || true
-		tools/disk.sh unmount
+	tools/disk.sh mountp2
+	$(SUDO) fsck /dev/loop0 || true
+	tools/disk.sh unmount
 
 umountp:
-		tools/disk.sh unmount
+	tools/disk.sh unmount
 
 createhdd:
-		tools/disk.sh build
-		$(MAKE) -C dist hdd
+	tools/disk.sh build
+	$(MAKE) -C dist hdd
 
 updatehdd:
-		tools/disk.sh update
-		$(MAKE) -C dist hdd
+	tools/disk.sh update
+	$(MAKE) -C dist hdd
 
 createcd:	all
-		tools/iso.sh
-		$(MAKE) -C dist cd
+	tools/iso.sh
+	$(MAKE) -C dist cd
 
 $(VMDISK): hdd
-		qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)
+	qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)
 
 swapbl:
-		tools/disk.sh swapbl $(BLOCK)
+	tools/disk.sh swapbl $(BLOCK)
 
 dis:
 ifeq ($(APP),)
-		$(OBJDUMP) -dSC $(BIN) | less
+	$(OBJDUMP) -dSC $(BIN) | less
 else
-		$(OBJDUMP) -dSC $(BUILD)/$(APP) | less
+	$(OBJDUMP) -dSC $(BUILD)/$(APP) | less
 endif
 
 elf:
 ifeq ($(APP),)
-		$(READELF) -a -W $(BIN) | less
+	$(READELF) -a -W $(BIN) | less
 else
-		$(READELF) -a -W $(BUILD)/$(APP) | less
+	$(READELF) -a -W $(BUILD)/$(APP) | less
 endif
 
 mmix:	all hdd prepareRun
-		$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-			-b -s $(BUILD)/kernel.map $(BUILD)/driver_disk.map
+	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
+		-b -s $(BUILD)/kernel.map $(BUILD)/driver_disk.map
 
 mmixd:	all hdd prepareRun
-		$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
+	$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
 
 testm:	all hdd prepareTest
-		$(GIMSIM) -r $(GIMMON) -m 20 -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \
-			-b -s $(BUILD)/kernel_test.map
+	$(GIMSIM) -r $(GIMMON) -m 20 -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \
+		-b -s $(BUILD)/kernel_test.map
 
 eco:	all hdd prepareRun
-		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
-			-m $(BUILD)/kernel.map $(BUILD)/driver_keyboard.map -n
+	$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
+		-m $(BUILD)/kernel.map $(BUILD)/driver_keyboard.map -n
 
 teste:	all hdd prepareTest
-		$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
-			-m $(BUILD)/kernel_test.map -n
+	$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
+		-m $(BUILD)/kernel_test.map -n
 
 qemu:	all prepareQemu prepareRun
-		$(QEMU) $(QEMUARGS) -cdrom $(ISO) $(KVM) > log.txt 2>&1
+	$(QEMU) $(QEMUARGS) -cdrom $(ISO) $(KVM) > log.txt 2>&1
 
 bochs: all prepareBochs prepareRun
-		bochs -f bochs.cfg -q
+	bochs -f bochs.cfg -q
 
 vmware: all prepareVmware prepareRun
-		vmplayer vmware/escape.vmx
+	vmplayer vmware/escape.vmx
 
 vbox: all prepareVbox prepareRun
-		VBoxSDL -startvm "$(VBOXOSTITLE)"
+	VBoxSDL -startvm "$(VBOXOSTITLE)"
 
 debug: all prepareQemu prepareRun
-		$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
-		sleep 1;
-		/usr/local/bin/gdbtui --command=gdb.start
+	$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
+	sleep 1;
+	/usr/local/bin/gdbtui --command=gdb.start
 
 debugb:	all prepareBochs prepareRun
-		$(BOCHSDBG) -f bochsgdb.cfg -q
+	$(BOCHSDBG) -f bochsgdb.cfg -q
 
 debugbt:	all prepareBochs prepareRun
-		$(BOCHSDBG) -f bochsgdb.cfg -q &
-		sleep 1;
-		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
+	$(BOCHSDBG) -f bochsgdb.cfg -q &
+	sleep 1;
+	/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 debugq: all prepareQemu prepareRun
-		$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
+	$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
 
 debugqt: all prepareQemuTest prepareTest
-		$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) -S -s > log.txt 2>&1 &
+	$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) -S -s > log.txt 2>&1 &
 
 testq: all prepareQemuTest
-		$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) > log.txt 2>&1
+	$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) > log.txt 2>&1
 
 testbochs: all prepareBochs prepareTest
-		bochs -f bochs.cfg -q
+	bochs -f bochs.cfg -q
 
 testvbox: all prepareVbox prepareTest
-		VBoxSDL -startvm "$(VBOXOSTITLE)"
+	VBoxSDL -startvm "$(VBOXOSTITLE)"
 
 testvmware:	all prepareVmware prepareTest
-		vmplayer vmware/escape.vmx
+	vmplayer vmware/escape.vmx
 
 prepareQemu:	hdd cd
-		sudo service qemu-kvm start || true
+	sudo service qemu-kvm start || true
 
 prepareBochs:	hdd cd
-		tools/bochshdd.sh bochs.cfg $(HDD) $(ISO)
+	tools/bochshdd.sh bochs.cfg $(HDD) $(ISO)
 
 prepareVbox: cd $(VMDISK)
-		sudo service qemu-kvm stop || true # vbox doesn't like kvm :/
-		tools/vboxcd.sh $(ISO) "$(VBOXOSTITLE)"
-		tools/vboxhddupd.sh "$(VBOXOSTITLE)" $(VMDISK)
+	sudo service qemu-kvm stop || true # vbox doesn't like kvm :/
+	tools/vboxcd.sh $(ISO) "$(VBOXOSTITLE)"
+	tools/vboxhddupd.sh "$(VBOXOSTITLE)" $(VMDISK)
 
 prepareVmware: cd $(VMDISK)
-		sudo service qemu-kvm stop || true # vmware doesn't like kvm :/
-		tools/vmwarecd.sh vmware/escape.vmx $(ISO)
+	sudo service qemu-kvm stop || true # vmware doesn't like kvm :/
+	tools/vmwarecd.sh vmware/escape.vmx $(ISO)
 
 prepareQemuTest:
-		sudo service qemu-kvm start || true
-		tools/iso.sh test
+	sudo service qemu-kvm start || true
+	tools/iso.sh test
 
 prepareEcoTest:
-		tools/disk.sh test
+	tools/disk.sh test
 
 prepareTest:
-		tools/disk.sh mountp1
-		$(SUDO) cp $(BUILD)/kernel_test.bin $(DISKMOUNT)/boot/kernel.bin
-		tools/disk.sh unmount
+	tools/disk.sh mountp1
+	$(SUDO) cp $(BUILD)/kernel_test.bin $(DISKMOUNT)/boot/kernel.bin
+	tools/disk.sh unmount
 
 prepareRun:
-		tools/disk.sh mountp1
-		$(SUDO) cp $(BUILD)/kernel.bin $(DISKMOUNT)/boot/kernel.bin
-		tools/disk.sh unmount
+	tools/disk.sh mountp1
+	$(SUDO) cp $(BUILD)/kernel.bin $(DISKMOUNT)/boot/kernel.bin
+	tools/disk.sh unmount
 
 clean:
-		@for i in $(DIRS); do \
-			$(MAKE) -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
-		done
+	@for i in $(DIRS); do \
+		$(MAKE) -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+	done

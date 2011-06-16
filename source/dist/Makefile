@@ -23,39 +23,39 @@ DISK_LIBGCC=$(DISKMNT)/lib/libgcc_s.so.1
 .PHONY: all cd hdd
 
 all:
-		@for i in $(DIRS) ; do \
-			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
-		done
+	@for i in $(DIRS) ; do \
+		$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+	done
 
 cd:	$(CD)
 
 hdd:	$(HDD)
 
 $(CD): $(BUILD_KERNEL) $(BUILD_BIN) $(BUILD_SBIN) $(BUILD_LIB) $(BUILD_LIBGCC) $(BUILD_ETC)
-		@echo "	" UPDATING $(CD)
-		@$(ROOT)/tools/iso.sh
+	@echo "	" UPDATING $(CD)
+	@$(ROOT)/tools/iso.sh
 
 $(HDD): $(BUILD_KERNEL) $(BUILD_BIN) $(BUILD_SBIN) $(BUILD_LIB) $(BUILD_LIBGCC)
-		@echo "	" UPDATING $(HDD)
-		@$(ROOT)/tools/disk.sh mountp1
-		@$(SUDO) cp $(BUILD_KERNEL) $(DISKMNT)/boot
-		@for i in $(BUILD_BIN); do \
-			$(SUDO) cp $$i $(DISKMNT)/bin/`echo $$i | sed "s/.*\/user_\(.*\)\.bin/\1/g"`; \
-		done;
-		@for i in $(BUILD_SBIN); do \
-			$(SUDO) cp $$i $(DISKMNT)/sbin/`echo $$i | sed "s/.*\/driver_\(.*\)\.bin/\1/g"`; \
-		done;
+	@echo "	" UPDATING $(HDD)
+	@$(ROOT)/tools/disk.sh mountp1
+	@$(SUDO) cp $(BUILD_KERNEL) $(DISKMNT)/boot
+	@for i in $(BUILD_BIN); do \
+		$(SUDO) cp $$i $(DISKMNT)/bin/`echo $$i | sed "s/.*\/user_\(.*\)\.bin/\1/g"`; \
+	done;
+	@for i in $(BUILD_SBIN); do \
+		$(SUDO) cp $$i $(DISKMNT)/sbin/`echo $$i | sed "s/.*\/driver_\(.*\)\.bin/\1/g"`; \
+	done;
 ifeq ($(LINKTYPE),dynamic)
-		@$(SUDO) cp -f $(BUILD_LIB) $(DISKMNT)/lib
-		@$(SUDO) cp $(BUILD)/../../../toolchain/$(ARCH)/$(TARGET)/lib/libgcc_s.so.1 $(DISKMNT)/lib/libgcc_s.so.1
+	@$(SUDO) cp -f $(BUILD_LIB) $(DISKMNT)/lib
+	@$(SUDO) cp $(BUILD)/../../../toolchain/$(ARCH)/$(TARGET)/lib/libgcc_s.so.1 $(DISKMNT)/lib/libgcc_s.so.1
 endif
-		@$(ROOT)/tools/disk.sh unmount
-		@touch $(HDD)
+	@$(ROOT)/tools/disk.sh unmount
+	@touch $(HDD)
 
 clean:
-		@for i in $(DIRS) ; do \
-			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
-		done
+	@for i in $(DIRS) ; do \
+		$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+	done
 
 #pre-hdd:
 #		@echo "	" UPDATING $(HDD)

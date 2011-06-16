@@ -23,25 +23,25 @@ DOBJS = $(patsubst %.d,$(BUILDL)/%.o,$(DSRC))
 all: $(BUILDDIRS) $(LIB)
 
 $(LIB): $(COBJS) $(DOBJS)
-		@echo "	" AR $(LIB)
-		@ar rcs $(LIB) $(COBJS) $(DOBJS)
-		@$(ROOT)/tools/linklib.sh $(LIB)
+	@echo "	" AR $(LIB)
+	@ar rcs $(LIB) $(COBJS) $(DOBJS)
+	@$(ROOT)/tools/linklib.sh $(LIB)
 		
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o: %.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -MD -c -o $@ $<
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -MD -c -o $@ $<
 
 $(BUILDL)/%.o: %.d
-		@echo "	" DC $<
-		@$(DC) $(DFLAGS) -c -of$@ $<
+	@echo "	" DC $<
+	@$(DC) $(DFLAGS) -c -of$@ $<
 
 -include $(DEPS)
 
 clean:
-		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(DOBJS) $(LIB) $(DEPS)
+	@echo "===== REMOVING FILES =====";
+	rm -f $(COBJS) $(DOBJS) $(LIB) $(DEPS)

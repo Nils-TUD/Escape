@@ -22,6 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/boot.h>
 #include <sys/cpu.h>
 #include <string.h>
 #include <errors.h>
@@ -164,6 +165,8 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	 * |     arguments    |
 	 * |        ...       |
 	 * +------------------+
+	 * |     stack-end    |  used for UNSAVE
+	 * +------------------+
 	 *
 	 * Registers:
 	 * $1 = argc
@@ -231,11 +234,19 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 }
 
 bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
-#if 0
-	uint64_t *rsp;
+	uint64_t *rsp,*ssp;
 	sThread *t = thread_getRunning();
+	sStartupInfo sinfo;
+	sinfo.progEntry = t->proc->entryPoint;
+	sinfo.linkerEntry = 0;
+	sinfo.stackBegin = 0;
 
 	/*
+	 * Initial software stack:
+	 * +------------------+  <- top
+	 * |     stack-end    |  used for UNSAVE
+	 * +------------------+
+	 *
 	 * Registers:
 	 * $1 = arg
 	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
@@ -243,12 +254,49 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	 * $6 = TLSSize (0 if not present)
 	 */
 
+	/* the thread has to perform an UNSAVE at the beginning to establish the initial state.
+	 * therefore, we have to prepare this again with the ELF-finisher. additionally, we have to
+	 * take care that we use elf_finishFromMem() for boot-modules and elf_finishFromFile() other-
+	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
+	if(t->proc->pid == DISK_PID || t->proc->pid == RTC_PID || t->proc->pid == FS_PID) {
+		size_t i;
+		const sBootInfo *info = boot_getInfo();
+		for(i = 1; i < info->progCount; i++) {
+			if(info->progs[i].id == t->proc->pid) {
+				if(elf_finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)
+					return false;
+				break;
+			}
+		}
+	}
+	else {
+		util_panic("Not implemented");
+	}
+
 	/* get register-stack */
 	vmm_getRegRange(t->proc,t->stackRegions[0],(uintptr_t*)&rsp,NULL);
-	rsp[1] = arg;
+	/* get software-stack */
+	vmm_getRegRange(t->proc,t->stackRegions[1],NULL,(uintptr_t*)&ssp);
+	/* extend the stack if necessary */
+	if(thread_extendStack((uintptr_t)ssp - 8) < 0)
+		return false;
+	/* will handle copy-on-write */
+	paging_isRangeUserWritable((uintptr_t)ssp - 8,8);
+
+	/* store location to UNSAVE from and the thread-argument */
+	*--ssp = sinfo.stackBegin;
+	rsp[1] = (uint64_t)arg;
+
 	/* add TLS args and entrypoint */
-	uenv_addArgs(t,info,rsp,t->proc->entryPoint,tentryPoint,true);
-#endif
+	uenv_addArgs(t,&sinfo,rsp,ssp,t->proc->entryPoint,tentryPoint,true);
+
+	/* change rS and rO in the save-area, to set the correct values for the new thread */
+	uint64_t *frame = t->kstackEnd;
+	int rg = frame[-1] >> 56;
+	size_t rsOff = -(13 + (255 - rg) + 2);
+	uint64_t oldrS = frame[rsOff];
+	frame[rsOff] = (uintptr_t)rsp + (oldrS & (PAGE_SIZE - 1));	/* rS */
+	frame[rsOff - 1] = (uintptr_t)rsp;							/* rO */
 	return true;
 }
 
@@ -270,11 +318,10 @@ static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint6
 
 	/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
 	uint64_t *frame = t->kstackEnd;
-	int rg = frame[-1] >> 56;
-	frame[-(13 + (255 - rg))] = (uint64_t)ssp;
-	frame[-(13 + (255 - rg) + 1)] = (uint64_t)ssp;
+	frame[-(12 + 2 + 1)] = (uint64_t)ssp;
+	frame[-(12 + 2 + 2)] = (uint64_t)ssp;
 	/* set them in the stack to unsave from in user-space */
-	rg = *(uint64_t*)info->stackBegin >> 56;
+	int rg = *(uint64_t*)info->stackBegin >> 56;
 	rsp[6 + (255 - rg)] = (uint64_t)ssp;
 	rsp[6 + (255 - rg) + 1] = (uint64_t)ssp;
 

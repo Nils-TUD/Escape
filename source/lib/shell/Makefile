@@ -32,37 +32,37 @@ PICGENOBJ = $(patsubst %.c,$(BUILDL)/%_pic.o,$(LEXGEN) $(BISONGEN))
 all:	$(BUILDDIRS) $(BISONGEN) $(LEXGEN) $(STLIB) $(DYNLIB)
 
 $(STLIB): $(COBJ) $(GENOBJ)
-		@echo "	" AR $(STLIB)
-		@$(AR) rcs $(STLIB) $(COBJ) $(GENOBJ)
-		@$(ROOT)/tools/linklib.sh $(STLIB)
+	@echo "	" AR $(STLIB)
+	@$(AR) rcs $(STLIB) $(COBJ) $(GENOBJ)
+	@$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB):	$(CPICOBJS) $(PICGENOBJ) $(SHLDCONF)
-		@echo "	" LINKING $(DYNLIB)
-		@$(LD) --eh-frame-hdr -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(PICGENOBJ);
-		@$(ROOT)/tools/linklib.sh $(DYNLIB)
+	@echo "	" LINKING $(DYNLIB)
+	@$(LD) --eh-frame-hdr -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(PICGENOBJ);
+	@$(ROOT)/tools/linklib.sh $(DYNLIB)
 
 $(LEXGEN):	$(LEXSRC)
-		@echo "	" GEN $@
-		@flex -o $(LEXGEN) --nounistd < $(LEXSRC)
+	@echo "	" GEN $@
+	@flex -o $(LEXGEN) --nounistd < $(LEXSRC)
 
 $(BISONGEN):	$(BISONSRC)
-		@echo "	" GEN $@
-		@bison -t -d --report=all --report-file=$(BISONDEBUG) -o $(BISONGEN) $(BISONSRC)
+	@echo "	" GEN $@
+	@bison -t -d --report=all --report-file=$(BISONDEBUG) -o $(BISONGEN) $(BISONSRC)
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -o $@ -c $< -MD
 
 $(BUILDL)/%_pic.o: %.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -fPIC -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -fPIC -o $@ -c $< -MD
 
 -include $(DEPS)
 
 clean:
-		rm -f $(STLIB) $(DEPS) $(COBJ) $(CPICOBJS) $(LEXGEN) $(BISONGEN) $(GENOBJ) $(PICGENOBJ)
+	rm -f $(STLIB) $(DEPS) $(COBJ) $(CPICOBJS) $(LEXGEN) $(BISONGEN) $(GENOBJ) $(PICGENOBJ)

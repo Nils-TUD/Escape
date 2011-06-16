@@ -21,30 +21,30 @@ AOBJ = $(patsubst %.s,$(BUILDL)/%.o,$(ASRC))
 all:	$(BUILDDIRS) $(BIN) $(MAP) $(DUMP)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(AOBJ)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(AOBJ);
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -o $(BIN) $(AOBJ);
 
 $(MAP): $(BIN)
-		@echo "	" GEN MAP $@
-		@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
+	@echo "	" GEN MAP $@
+	@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o: %.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -o $@ $@.tmp
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) -o $@ $@.tmp
+	@rm -f $@.tmp
 
 $(DUMP):	$(BIN)
-		@echo "	" GENERATING DUMP
-		@$(BUILD)/dump $(BIN) > $(DUMP)
+	@echo "	" GENERATING DUMP
+	@$(BUILD)/dump $(BIN) > $(DUMP)
 
 -include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(MAP) $(DEPS) $(DUMP) $(COBJ)
+	rm -f $(BIN) $(MAP) $(DEPS) $(DUMP) $(COBJ)

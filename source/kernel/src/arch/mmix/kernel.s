@@ -81,6 +81,10 @@ start:
 	SUBU	$254,$254,8						# stack-pointer = kstackbegin + STACK_SIZE - 8
 	OR		$253,$254,$254					# frame-pointer = stack-pointer
 
+	# enable keyboard-interrupts
+	SETH	$1,#8006
+	STCO	#2,$1,0
+
 	# call main
 	OR		$1,$0,$0						# pass bootinfo to main
 	SET		$2,$254							# pass pointer to stackBegin, which is set in main

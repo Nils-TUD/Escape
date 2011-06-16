@@ -1,16 +1,3 @@
-Memory size: 33554432 bytes
-Disk size: 92897280 bytes
-Kernelstack-begin: 8000:0000:0008:8000
-Kernelstack-end: 8000:0000:0008:8138
-Boot modules:
-	/boot/kernel.bin
-		[8000:0000:0000:0000 .. 8000:0000:0008:719f]
-	/sbin/disk /system/devices/disk
-		[8000:0000:0008:a000 .. 8000:0000:000b:2813]
-	/sbin/rtc /dev/rtc
-		[8000:0000:000b:4000 .. 8000:0000:000d:c2a1]
-	/sbin/fs /dev/fs /dev/hda1 ext2
-		[8000:0000:000d:e000 .. 8000:0000:0013:c071]
 Initializing physical memory-management...                                  DONE
 Initializing paging...                                                      DONE
 Initializing VFS...                                                         DONE
@@ -18,11 +5,9 @@ Initializing process-management...                                          DONE
 Initializing virtual memory management...                                   DONE
 Initializing timer...                                                       DONE
 Initializing signal-handling...                                             DONE
-3918 free frames (31344 KiB)
 Waiting for '/sbin/disk'...
 [DISK] Found disk with 181440 sectors (92897280 bytes)
 [DISK] Registered driver 'hda1' (device 1, partition 1)
-Unable to register driver 'rtc': The driver with desired name does already exist!
 [FS] Loaded ext2-driver
 [FS] Loaded iso9660-driver
 [FS] Mounted '/dev/hda1' with fs 'ext2' at '/'

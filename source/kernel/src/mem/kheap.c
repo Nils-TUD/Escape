@@ -28,11 +28,20 @@
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
+
 #ifdef __eco32__
 #define DEBUG_ALLOC_N_FREE		0
 /* TODO we need the alignment */
 #define DEBUG_ADD_GUARDS		1
-#elif DEBUGGING
+#endif
+
+#ifdef __mmix__
+#define DEBUG_ALLOC_N_FREE		0
+/* TODO we need the alignment */
+#define DEBUG_ADD_GUARDS		1
+#endif
+
+#if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ADD_GUARDS		1
 #endif

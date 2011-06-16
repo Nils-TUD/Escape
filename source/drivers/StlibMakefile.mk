@@ -22,23 +22,23 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 all:	$(BUILDDIRS) $(BIN) $(MAP)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ADDLIBS)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
 
 $(MAP): $(BIN)
-		@echo "	" GEN MAP $@
-		@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
+	@echo "	" GEN MAP $@
+	@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(MAP) $(COBJ) $(DEPS)
+	rm -f $(BIN) $(MAP) $(COBJ) $(DEPS)

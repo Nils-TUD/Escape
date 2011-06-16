@@ -21,30 +21,30 @@ CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 all:	$(BUILDDIRS) $(STLIB) $(DYNLIB)
 
 $(STLIB): $(COBJ)
-		@echo "	" AR $(STLIB)
-		@$(AR) rcs $(STLIB) $(COBJ)
-		@$(ROOT)/tools/linklib.sh $(STLIB)
+	@echo "	" AR $(STLIB)
+	@$(AR) rcs $(STLIB) $(COBJ)
+	@$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB):	$(CPICOBJS)
-		@echo "	" LINKING $(DYNLIB)
-		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) \
-			$(CPICOBJS) $(ADDLIBS)
-		@$(ROOT)/tools/linklib.sh $(DYNLIB)
+	@echo "	" LINKING $(DYNLIB)
+	@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) \
+		$(CPICOBJS) $(ADDLIBS)
+	@$(ROOT)/tools/linklib.sh $(DYNLIB)
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDL)/%_pic.o: %.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 -include $(DEPS)
 
 clean:
-		rm -f $(STLIB) $(DYNLIB) $(DEPS) $(COBJ) $(CPICOBJS)
+	rm -f $(STLIB) $(DYNLIB) $(DEPS) $(COBJ) $(CPICOBJS)

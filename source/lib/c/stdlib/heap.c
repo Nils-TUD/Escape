@@ -39,7 +39,16 @@
 #define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
 /* TODO we need the alignment */
 #define DEBUG_ADD_GUARDS		1
-#elif DEBUGGING
+#endif
+
+#ifdef __mmix__
+#define DEBUG_ALLOC_N_FREE		0
+#define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
+/* TODO we need the alignment */
+#define DEBUG_ADD_GUARDS		1
+#endif
+
+#if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
 #define DEBUG_ADD_GUARDS		1

@@ -27,19 +27,19 @@ DOBJ = $(patsubst %.d,$(BUILDL)/%.o,$(DSRC))
 all:	$(BUILDDIRS) $(BIN)
 
 $(BIN): $(DEP_START) $(DEP_DEFLIBS) $(DOBJ) $(ADDLIBS)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(DOBJ) -ld $(ADDLIBS);
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -o $(BIN) $(DOBJ) -ld $(ADDLIBS);
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o:		%.d
-		@echo "	" DC $<
-		@$(DC) $(DFLAGS) -of$@ -c $<
+	@echo "	" DC $<
+	@$(DC) $(DFLAGS) -of$@ -c $<
 
 -include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(DOBJ) $(DEPS)
+	rm -f $(BIN) $(DOBJ) $(DEPS)

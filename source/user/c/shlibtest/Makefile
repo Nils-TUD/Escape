@@ -29,37 +29,37 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 all:	$(BUILDDIRS) $(APPCPY) $(BIN)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(SHLIB) $(SECLIB)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) -l$(NAME) -l$(NAME)2 $(COBJ);
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -o $(BIN) -l$(NAME) -l$(NAME)2 $(COBJ);
 
 $(SECLIB): $(DEP_START) $(DEP_DEFLIBS) $(SECLIBOBJ)
-		@echo "	" LINKING $(SECSHLIB)
-		@$(LD) -shared -soname $(SECLIBNAME) -o $(SECLIB) $(SECLIBOBJ);
-		@$(ROOT)/tools/linklib.sh $(SECLIB)
+	@echo "	" LINKING $(SECSHLIB)
+	@$(LD) -shared -soname $(SECLIBNAME) -o $(SECLIB) $(SECLIBOBJ);
+	@$(ROOT)/tools/linklib.sh $(SECLIB)
 
 $(SHLIB): $(DEP_START) $(DEP_DEFLIBS) $(LIBOBJ)
-		@echo "	" LINKING $(SHLIB)
-		@$(LD) -shared -soname $(SHLIBNAME) -o $(SHLIB) $(LIBOBJ);
-		@$(ROOT)/tools/linklib.sh $(SHLIB)
+	@echo "	" LINKING $(SHLIB)
+	@$(LD) -shared -soname $(SHLIBNAME) -o $(SHLIB) $(LIBOBJ);
+	@$(ROOT)/tools/linklib.sh $(SHLIB)
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/lib2%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 $(BUILDL)/lib%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 $(BUILDL)/%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(SECLIB) $(SHLIB) $(COBJ) $(SECLIBOBJ) $(LIBOBJ) $(DEPS)
+	rm -f $(BIN) $(SECLIB) $(SHLIB) $(COBJ) $(SECLIBOBJ) $(LIBOBJ) $(DEPS)

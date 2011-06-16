@@ -59,6 +59,10 @@
 #define TRAP_TTY3_RCVR			60	// terminal 3 transmitter interrupt
 #define TRAP_KEYBOARD			61	// keyboard interrupt
 
+#define KEYBOARD_BASE			0x8006000000000000
+#define KEYBOARD_CTRL			0
+#define KEYBOARD_IEN			0x02
+
 typedef void (*fIntrptHandler)(sIntrptStackFrame *stack,int irqNo);
 typedef struct {
 	fIntrptHandler handler;
@@ -67,6 +71,7 @@ typedef struct {
 } sInterrupt;
 
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo);
+static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo);
 
 static sInterrupt intrptList[] = {
@@ -131,7 +136,7 @@ static sInterrupt intrptList[] = {
 	/* 0x3A: TRAP_TTY2_RCVR */		{intrpt_defHandler,	"Terminal 2 recv.",		0},
 	/* 0x3B: TRAP_TTY3_XMTR */		{intrpt_defHandler,	"Terminal 3 trans.",	0},
 	/* 0x3C: TRAP_TTY3_RCVR */		{intrpt_defHandler,	"Terminal 3 recv.",		0},
-	/* 0x3D: TRAP_KEYBOARD */		{intrpt_defHandler,	"Keyboard",				0},
+	/* 0x3D: TRAP_KEYBOARD */		{intrpt_irqKB,		"Keyboard",				0},
 	/* 0x3E: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x3F: -- */					{intrpt_defHandler,	"??",					0},
 };
@@ -182,14 +187,41 @@ static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 
+static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
+	UNUSED(irqNo);
+	/* we have to disable interrupts until the device has handled the request */
+	/* otherwise we would get into an interrupt loop */
+	uint64_t *kbRegs = (uint64_t*)KEYBOARD_BASE;
+	kbRegs[KEYBOARD_CTRL] &= ~KEYBOARD_IEN;
+
+#if DEBUGGING
+	if(proc_getByPid(KEYBOARD_PID) == NULL) {
+		/* in debug-mode, start the logviewer when the keyboard is not present yet */
+		/* (with a present keyboard-driver we would steal him the scancodes) */
+		/* this way, we can debug the system in the startup-phase without affecting timings
+		 * (before viewing the log ;)) */
+		sKeyEvent ev;
+		if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
+			cons_start();
+	}
+#endif
+
+	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
+	 * call uenv_handleSignal(), which might cause a thread-switch */
+	if(!sig_addSignal(SIG_INTRPT_KB)) {
+		/* if there is no driver that handles the signal, reenable interrupts */
+		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
+	}
+}
+
 static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
 	UNUSED(stack);
+	UNUSED(irqNo);
 	sig_addSignal(SIG_INTRPT_TIMER);
 	timer_intrpt();
 	timer_ackIntrpt();
 }
-
-#if DEBUGGING
 
 void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 	stack--;
@@ -226,5 +258,3 @@ void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 	if(j % 3 != 0)
 		vid_printf("\n");
 }
-
-#endif

@@ -27,30 +27,30 @@ AOBJ = $(patsubst %.s,$(BUILDL)/%.a.o,$(ASRC))
 all:	$(BUILDDIRS) $(APPCPY) $(BIN) $(MAP)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(AOBJ) $(ADDLIBS)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(AOBJ) $(ADDLIBS);
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(AOBJ) $(ADDLIBS);
 
 $(MAP): $(BIN)
-		@echo "	" GEN MAP $@
-		@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
+	@echo "	" GEN MAP $@
+	@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o:	%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDL)/%.a.o:	%.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -o $@ $@.tmp
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) -o $@ $@.tmp
+	@rm -f $@.tmp
 
 -include $(DEPS)
 
 clean:
-		rm -f $(APPCPY) $(BIN) $(MAP) $(COBJ) $(AOBJ) $(DEPS)
+	rm -f $(APPCPY) $(BIN) $(MAP) $(COBJ) $(AOBJ) $(DEPS)

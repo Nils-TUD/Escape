@@ -47,47 +47,47 @@ SYMBOLOBJ = $(patsubst ../src/%.c,$(BUILDT)/%.o,$(SYMBOLSRC))
 all: $(BIN) $(MAP)
 
 $(BIN):	$(BUILDDIRS) $(LDCONF) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(LAOBJ)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(LAOBJ) -lgcc;
-		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
-		@# since it's size is 0 at the first time. In the second pass the size is correct
-		@# and therefore the symbol-table will be generated correctly in the third pass :)
-		@echo "	" BUILDING SYMBOL-FILE
-		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
-		@echo "	" CC $(SYMBOLSRC)
-		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(LAOBJ) -lgcc;
-		@echo "	" BUILDING SYMBOL-FILE
-		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
-		@echo "	" CC $(SYMBOLSRC)
-		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(LAOBJ) -lgcc;
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(LAOBJ) -lgcc;
+	@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
+	@# since it's size is 0 at the first time. In the second pass the size is correct
+	@# and therefore the symbol-table will be generated correctly in the third pass :)
+	@echo "	" BUILDING SYMBOL-FILE
+	@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
+	@echo "	" CC $(SYMBOLSRC)
+	@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(LAOBJ) -lgcc;
+	@echo "	" BUILDING SYMBOL-FILE
+	@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
+	@echo "	" CC $(SYMBOLSRC)
+	@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(LAOBJ) -lgcc;
 
 $(MAP): $(BIN)
-		@echo "	" GEN MAP $@
-		@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
+	@echo "	" GEN MAP $@
+	@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDT)/%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDT)/lib/%.o:	$(LIB)/%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDT)/lib/%.s.o:	$(LIB)/%.s
-		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -o $@ $<
+	@echo "	" AS $<
+	@$(AS) $(ASFLAGS) -o $@ $<
 
 -include $(DEPS)
 
 clean:
-		@echo "===== REMOVING FILES =====";
-		rm -f $(DEPS) $(BIN) $(MAP) $(TOBJ) $(LOBJ) $(LAOBJ) $(SYMBOLS) $(SYMBOLOBJ);
+	@echo "===== REMOVING FILES =====";
+	rm -f $(DEPS) $(BIN) $(MAP) $(TOBJ) $(LOBJ) $(LAOBJ) $(SYMBOLS) $(SYMBOLOBJ);

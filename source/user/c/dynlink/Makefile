@@ -24,27 +24,27 @@ START = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASTART))
 all:	$(BUILDDIRS) $(BIN)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(LDCONF) $(COBJ) $(START)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(START) $(COBJ)
+	@echo "	" LINKING $(BIN)
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(START) $(COBJ)
 
 $(BUILDDIRS):
-		@for i in $(BUILDDIRS); do \
-			if [ ! -d $$i ]; then mkdir -p $$i; fi \
-		done;
+	@for i in $(BUILDDIRS); do \
+		if [ ! -d $$i ]; then mkdir -p $$i; fi \
+	done;
 
 $(BUILDL)/%.o:		%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+	@echo "	" CC $<
+	@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDL)/%.s.o:	%.s
-		@echo "	" CPP $<
-		@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
-		@echo "	" AS $<
-		#@$(AS) $(ASFLAGS) --defsym CALLTRACE_PID=10 -o $@ $@.tmp
-		@$(AS) $(ASFLAGS) -o $@ $@.tmp
-		@rm -f $@.tmp
+	@echo "	" CPP $<
+	@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
+	@echo "	" AS $<
+	#@$(AS) $(ASFLAGS) --defsym CALLTRACE_PID=10 -o $@ $@.tmp
+	@$(AS) $(ASFLAGS) -o $@ $@.tmp
+	@rm -f $@.tmp
 
 -include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(COBJ) $(DEPS)
+	rm -f $(BIN) $(COBJ) $(DEPS)

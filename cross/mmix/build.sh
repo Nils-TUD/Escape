@@ -75,7 +75,7 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-exit 0
+if false; then
 
 # newlib
 cd $ROOT
@@ -153,11 +153,12 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
+fi
 
 # create basic symlinks
 rm -Rf $DIST/$TARGET/sys-include $DIST/$TARGET/include
-ln -sf $ROOT/../include $DIST/$TARGET/sys-include
-ln -sf $ROOT/../include $DIST/$TARGET/include
+ln -sf $ROOT/../../source/include $DIST/$TARGET/sys-include
+ln -sf $ROOT/../../source/include $DIST/$TARGET/include
 
 # copy crt* to basic gcc-stuff
-cp -f $BUILD/gcc/$TARGET/libgcc/crt*.o $DIST/lib/gcc/$TARGET/4.4.3
+cp -f $BUILD/gcc/$TARGET/libgcc/crt*.o $DIST/lib/gcc/$TARGET/4.6.0

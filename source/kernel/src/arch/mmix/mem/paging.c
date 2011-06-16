@@ -41,11 +41,11 @@
 /* represents a page-table-entry */
 typedef struct {
 	/* unused */
-	uint64_t 				: 15,
+	uint64_t 				: 7,
 	/* Indicates that this page exists (but must not necessarily be present) */
 	exists					: 1,
 	/* the physical address of the page, divided by the page-size */
-	frameNumber				: 35,
+	frameNumber				: 43,
 	/* address-space-number; has to be equal in all PTEs, PTPs and in rV */
 	addressSpaceNumber		: 10,
 	/* permissions */
@@ -594,7 +594,7 @@ static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size
 
 static void paging_dbg_printPage(sPTE pte) {
 	if(pte.exists) {
-		vid_printf("%x [%c%c%c]",pte.frameNumber,
+		vid_printf("%Px [%c%c%c]",pte.frameNumber,
 				pte.readable ? 'r' : '-',
 				pte.writable ? 'w' : '-',
 				pte.executable ? 'x' : '-');

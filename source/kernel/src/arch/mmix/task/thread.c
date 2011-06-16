@@ -24,6 +24,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/cpu.h>
+#include <sys/video.h>
 #include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
@@ -128,8 +129,6 @@ int thread_finishClone(sThread *t,sThread *nt) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	nt->archAttr.tempStack = pmem_allocate();
-	vid_printf("tempstack=%Pu, new=%Pu, old=%Pu\n",nt->archAttr.tempStack,
-			nt->kstackFrame,t->kstackFrame);
 	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->archAttr.tempStack * PAGE_SIZE)));
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
@@ -138,7 +137,6 @@ int thread_finishClone(sThread *t,sThread *nt) {
 		tFrameNo kstack = t->kstackFrame;
 		t->kstackFrame = nt->kstackFrame;
 		nt->kstackFrame = kstack;
-		vid_printf("switching stacks: parent=%Pu, child=%Pu\n",t->kstackFrame,nt->kstackFrame);
 	}
 	return res;
 }
@@ -175,9 +173,6 @@ void thread_switchTo(tTid tid) {
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
 		if(cur->archAttr.tempStack != -1) {
-			vid_printf("copying from %p to %p\n",
-					(void*)(DIR_MAPPED_SPACE | (cur->archAttr.tempStack * PAGE_SIZE)),
-					(void*)(DIR_MAPPED_SPACE | (cur->kstackFrame * PAGE_SIZE)));
 			memcpy((void*)(DIR_MAPPED_SPACE | cur->kstackFrame * PAGE_SIZE),
 					(void*)(DIR_MAPPED_SPACE | cur->archAttr.tempStack * PAGE_SIZE),
 					PAGE_SIZE);

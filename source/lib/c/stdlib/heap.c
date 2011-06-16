@@ -109,26 +109,26 @@ static tULock mlock = 0;
 
 #if DEBUG_ADD_GUARDS
 void *malloc_guard(size_t size) {
-	uint *a;
-	size = ALIGN(size,sizeof(uint));
-	a = (uint*)_malloc(size + sizeof(uint) * 3);
+	ulong *a;
+	size = ALIGN(size,sizeof(ulong));
+	a = (ulong*)_malloc(size + sizeof(ulong) * 3);
 	if(a) {
 		a[0] = GUARD_MAGIC;
 		a[1] = size;
-		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
 		return a + 2;
 	}
 	return NULL;
 }
 
 void *calloc_guard(size_t num,size_t size) {
-	uint *a;
-	size = ALIGN(num * size,sizeof(uint));
-	a = (uint*)_malloc(size + sizeof(uint) * 3);
+	ulong *a;
+	size = ALIGN(num * size,sizeof(ulong));
+	a = (ulong*)_malloc(size + sizeof(ulong) * 3);
 	if(a) {
 		a[0] = GUARD_MAGIC;
 		a[1] = size;
-		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
 		memclear(a + 2,size);
 		return a + 2;
 	}
@@ -136,29 +136,29 @@ void *calloc_guard(size_t num,size_t size) {
 }
 
 void *realloc_guard(void *addr,size_t size) {
-	uint *a = (uint*)addr;
-	size = ALIGN(size,sizeof(uint));
+	ulong *a = (ulong*)addr;
+	size = ALIGN(size,sizeof(ulong));
 	if(a) {
 		assert(a[-2] == GUARD_MAGIC);
-		assert(a[a[-1] / sizeof(uint)] == GUARD_MAGIC);
-		a = _realloc(a - 2,size + sizeof(uint) * 3);
+		assert(a[a[-1] / sizeof(ulong)] == GUARD_MAGIC);
+		a = _realloc(a - 2,size + sizeof(ulong) * 3);
 	}
 	else
-		a = _realloc(NULL,size + sizeof(uint) * 3);
+		a = _realloc(NULL,size + sizeof(ulong) * 3);
 	if(a) {
 		a[0] = GUARD_MAGIC;
 		a[1] = size;
-		a[size / sizeof(uint) + 2] = GUARD_MAGIC;
+		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
 		return a + 2;
 	}
 	return NULL;
 }
 
 void free_guard(void *addr) {
-	uint *a = (uint*)addr;
+	ulong *a = (ulong*)addr;
 	if(a) {
 		assert(a[-2] == GUARD_MAGIC);
-		assert(a[a[-1] / sizeof(uint)] == GUARD_MAGIC);
+		assert(a[a[-1] / sizeof(ulong)] == GUARD_MAGIC);
 		_free(a - 2);
 	}
 }
@@ -562,7 +562,8 @@ void printheap(void) {
 		if(area != NULL) {
 			printf("\t%d:\n",i);
 			while(area != NULL) {
-				printf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+				printf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,
+						area->size,area->next);
 				area = area->next;
 			}
 		}

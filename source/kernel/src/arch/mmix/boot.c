@@ -61,8 +61,8 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	memcpy(&info,binfo,sizeof(sBootInfo));
 	info.progs = progs;
 	memcpy((void*)info.progs,binfo->progs,sizeof(sLoadProg) * binfo->progCount);
-	/* start idle-thread, load programs and wait for programs */
-	bootFinished = info.progCount + 2;
+	/* start idle-thread, load programs (without kernel) and wait for programs */
+	bootFinished = info.progCount + 1;
 
 	vid_init();
 
@@ -153,19 +153,13 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	if(bootState == 0) {
 		/* start idle-thread */
 		if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
-			/*thread_idle();*/
+			thread_idle();
 			util_panic("Idle returned");
 		}
 		bootState++;
 	}
 	else if(bootState < info.progCount) {
 		i = bootState;
-		/* parse args */
-		int argc;
-		const char **argv = boot_parseArgs(progs[i].command,&argc);
-		if(argc < 2)
-			util_panic("Invalid arguments for boot-module: %s\n",progs[i].command);
-
 		/* clone proc */
 		pid = proc_getFreePid();
 		if(pid == INVALID_PID)
@@ -176,6 +170,11 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			size_t argSize = 0;
 			char *argBuffer = NULL;
 			sProc *p = proc_getRunning();
+			/* parse args */
+			int argc;
+			const char **argv = boot_parseArgs(progs[i].command,&argc);
+			if(argc < 2)
+				util_panic("Invalid arguments for boot-module: %s\n",progs[i].command);
 			/* remove regions (except stack) */
 			proc_removeRegions(p,false);
 			/* now load module */
@@ -204,7 +203,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			const char **argv = boot_parseArgs(progs[i].command,&argc);
 
 			/* wait until the driver is registered */
-			vid_printf("Loading '%s'...\n",argv[0]);
+			vid_printf("Waiting for '%s'...\n",argv[0]);
 			/* don't create a pipe- or driver-usage-node here */
 			while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
 				/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not

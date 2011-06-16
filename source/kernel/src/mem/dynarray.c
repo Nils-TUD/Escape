@@ -30,11 +30,12 @@ void dyna_start(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize)
 
 void *dyna_getObj(sDynArray *d,size_t index) {
 	sDynaRegion *reg = d->_regions;
-	size_t offset = index * d->objSize;
+	/* note that we're using the index here to prevent that an object reaches out of a region */
 	while(reg != NULL) {
-		if(offset < reg->size)
-			return (void*)(reg->addr + offset);
-		offset -= reg->size;
+		size_t objsInReg = reg->size / d->objSize;
+		if(index < objsInReg)
+			return (void*)(reg->addr + index * d->objSize);
+		index -= objsInReg;
 		reg = reg->next;
 	}
 	return NULL;

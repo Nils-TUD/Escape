@@ -20,14 +20,16 @@
 .section .init
 .global _init
 _init:
-#	push	%ebp
-#	mov		%esp,%ebp
+	SUBU	$254,$254,8
+	STOU	$253,$254,0
+	GET		$0,rJ
 
 .section .fini
 .global _fini
 _fini:
-#	push	%ebp
-#	mov		%esp,%ebp
+	SUBU	$254,$254,8
+	STOU	$253,$254,0
+	GET		$0,rJ
 
 % This must be the last file on the link-line, allocating global registers
 % from the top.

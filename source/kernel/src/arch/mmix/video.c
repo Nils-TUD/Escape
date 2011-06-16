@@ -90,10 +90,6 @@ void vid_putchar(char c) {
 	vid_move();
 	video = (uint64_t*)VIDEO_BASE + row * MAX_COLS + col;
 
-	/* TODO temporary */
-	if(c != '\t')
-		log_writeChar(c);
-
 	if(c == '\n') {
 		row++;
 		col = 0;
@@ -125,8 +121,8 @@ void vid_vprintf(const char *fmt,va_list ap) {
 	env.pipePad = vid_handlePipePad;
 	if(targets & TARGET_SCREEN)
 		prf_vprintf(&env,fmt,ap);
-	/*if(targets & TARGET_LOG)
-		log_vprintf(fmt,ap);*/
+	if(targets & TARGET_LOG)
+		log_vprintf(fmt,ap);
 }
 
 static void vid_move(void) {

@@ -143,23 +143,38 @@ dynamicTrap:
 	INCL	$0,STACK_SIZE
 	SUBU	$254,$0,8
 	SET		$253,$254
-	# put various information into a struct on the stack and pass it to the handler
 	SUBU	$254,$254,6*8					# determine irq-number
 	GET		$0,rQ
 	SUBU	$1,$0,1
 	SADD	$3,$1,$0
+	# call handler with rS as argument
 	GET		$2,rS
 	SET		$0,$255							# save $255
-	# call handler
 	PUSHJ	$1,intrpt_dynTrap				# call intrpt_dynTrap(rS,irqNo)
+	# restore context
 	UNSAVE	1,$0
 	PUT		rQ,0							# TODO temporary!
+	GET		$255,rWW						# check whether rWW is negative
+	BNN		$255,1f							# if not, set rK to -1
+	NEG		$255,0,1
+	ANDNMH	$255,#0001						# if so, set it to -1, but clear privileged pc bit
+	RESUME	1								# this is only required for the idle-thread
+1:
 	NEG		$255,0,1						# rK = -1
 	RESUME	1
 
 #===========================================
 # Thread
 #===========================================
+
+# void thread_idle(void)
+thread_idle:
+	NEG		$0,0,1
+	ANDNMH	$0,#0001
+	PUT		rK,$0							# enable all bits, except privileged pc
+1:
+	SYNC	4								# power-saver mode
+	JMP		1b
 
 # int thread_initSave(sThreadRegs *saveArea,void *newStack)
 thread_initSave:
@@ -233,7 +248,7 @@ thread_doSwitch:
 	LDOU	$0,$251,16
 	PUT		rWW,$0							# restore rWW
 	LDOU	$0,$251,8
-	PUT		rWW,$0							# restore rBB
+	PUT		rBB,$0							# restore rBB
 	LDOU	$0,$252,8						# load rV
 	PUT		rV,$0
 	LDOU	$0,$251,0						# load stackend

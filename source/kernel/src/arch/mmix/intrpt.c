@@ -199,6 +199,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
 void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 	stack--;
 	int i,j,rl,rg = *stack >> 56;
+	int changedStack = (*stack >> 32) & 0x1;
 	static int spregs[] = {rZ,rY,rX,rW,rP,rR,rM,rJ,rH,rE,rD,rB};
 	vid_printf("\trG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
 	vid_printf("\t");
@@ -215,11 +216,13 @@ void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 			vid_printf("\n\t");
 	}
 	if(j % 3 != 0)
-		vid_printf("\n");
-	vid_printf("\trS  : #%016lx",*stack--);
-	vid_printf(" rO  : #%016lx\n",*stack--);
+		vid_printf("\n\t");
+	if(changedStack) {
+		vid_printf("rS  : #%016lx",*stack--);
+		vid_printf(" rO  : #%016lx\n\t",*stack--);
+	}
 	rl = *stack--;
-	vid_printf("\trL  : %d\n\t",rl);
+	vid_printf("rL  : %d\n\t",rl);
 	for(j = 0, i = rl - 1; i >= 0; j++, i--) {
 		vid_printf("$%-3d: #%016lx ",i,*stack--);
 		if(j % 3 == 2)

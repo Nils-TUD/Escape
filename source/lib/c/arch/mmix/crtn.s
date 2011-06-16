@@ -18,9 +18,11 @@
 #
 
 .section .init
-	#leave
-	#ret
+	LDOU	$253,$254,0
+	ADDU	$254,$254,8
+	POP		0,0
 
 .section .fini
-	#leave
-	#ret
+	LDOU	$253,$254,0
+	ADDU	$254,$254,8
+	POP		0,0

@@ -72,9 +72,9 @@
 #endif
 
 static void diskInterrupt(int sig);
-static uint getDiskCapacity(void);
-static bool diskRead(void *buf,uint secNo,uint secCount);
-static bool diskWrite(const void *buf,uint secNo,uint secCount);
+static ulong getDiskCapacity(void);
+static bool diskRead(void *buf,ulong secNo,ulong secCount);
+static bool diskWrite(const void *buf,ulong secNo,ulong secCount);
 static bool diskWait(void);
 static void regDrives(void);
 static void createVFSEntry(const char *name,bool isPart);
@@ -82,8 +82,8 @@ static void createVFSEntry(const char *name,bool isPart);
 static uint64_t *diskRegs;
 static uint64_t *diskBuf;
 static tFD drvId;
-static uint diskCap = 0;
-static uint partCap = 0;
+static ulong diskCap = 0;
+static ulong partCap = 0;
 static sMsg msg;
 static uint64_t buffer[MAX_RW_SIZE / sizeof(uint64_t)];
 
@@ -96,10 +96,10 @@ int main(int argc,char **argv) {
 	if(setSigHandler(SIG_INTRPT_ATA1,diskInterrupt) < 0)
 		error("Unable to announce disk-signal-handler");
 
-	diskRegs = (uint32_t*)mapPhysical(DISK_BASE,16);
+	diskRegs = (uint64_t*)mapPhysical(DISK_BASE,16);
 	if(diskRegs == NULL)
 		error("Unable to map disk registers");
-	diskBuf = (uint32_t*)mapPhysical(DISK_BUF,MAX_RW_SIZE);
+	diskBuf = (uint64_t*)mapPhysical(DISK_BUF,MAX_RW_SIZE);
 	if(diskBuf == NULL)
 		error("Unable to map disk buffer");
 
@@ -109,15 +109,15 @@ int main(int argc,char **argv) {
 	if(diskCap == 0)
 		error("Disk not found");
 
-	DISK_LOG("Found disk with %u sectors (%u bytes)",diskCap / SECTOR_SIZE,diskCap);
+	DISK_LOG("Found disk with %lu sectors (%lu bytes)",diskCap / SECTOR_SIZE,diskCap);
 
 	/* detect and init all devices */
 	regDrives();
 	/* flush prints */
 	fflush(stdout);
 
-	/* enable interrupts */
-	diskRegs[DISK_CTRL] = DISK_IEN | DISK_DONE;
+	/* enable interrupts TODO */
+	diskRegs[DISK_CTRL] = /*DISK_IEN | */DISK_DONE;
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that the disk is registered */
 	FILE *f = fopen("/system/devices/disk","w");
@@ -132,10 +132,10 @@ int main(int argc,char **argv) {
 		else {
 			switch(mid) {
 				case MSG_DRV_READ: {
-					uint offset = msg.args.arg1;
-					uint count = msg.args.arg2;
-					uint roffset = offset & ~(SECTOR_SIZE - 1);
-					uint rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
+					ulong offset = msg.args.arg1;
+					ulong count = msg.args.arg2;
+					ulong roffset = offset & ~(SECTOR_SIZE - 1);
+					ulong rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 						if(rcount <= MAX_RW_SIZE) {
@@ -153,10 +153,10 @@ int main(int argc,char **argv) {
 				break;
 
 				case MSG_DRV_WRITE: {
-					uint offset = msg.args.arg1;
-					uint count = msg.args.arg2;
-					uint roffset = offset & ~(SECTOR_SIZE - 1);
-					uint rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
+					ulong offset = msg.args.arg1;
+					ulong count = msg.args.arg2;
+					ulong roffset = offset & ~(SECTOR_SIZE - 1);
+					ulong rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 						if(rcount <= MAX_RW_SIZE) {
@@ -186,7 +186,7 @@ static void diskInterrupt(int sig) {
 	/* simply ignore the signal; most important is to interrupt the sleep call */
 }
 
-static uint getDiskCapacity(void) {
+static ulong getDiskCapacity(void) {
 	int i;
 	volatile uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
 	uint64_t *diskCapReg = diskRegs + DISK_CAP;
@@ -201,7 +201,7 @@ static uint getDiskCapacity(void) {
 	return *diskCapReg * SECTOR_SIZE;
 }
 
-static bool diskRead(void *buf,uint secNo,uint secCount) {
+static bool diskRead(void *buf,ulong secNo,ulong secCount) {
 	uint64_t *diskSecReg = diskRegs + DISK_SCT;
 	uint64_t *diskCntReg = diskRegs + DISK_CNT;
 	uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
@@ -217,7 +217,7 @@ static bool diskRead(void *buf,uint secNo,uint secCount) {
 	/* set sector and sector-count, start the disk-operation and wait */
 	*diskSecReg = secNo;
 	*diskCntReg = secCount;
-	*diskCtrlReg = DISK_STRT | DISK_IEN;
+	*diskCtrlReg = DISK_STRT/* | DISK_IEN TODO */;
 
 	if(!diskWait()) {
 		DISK_DBG("FAILED");
@@ -230,7 +230,7 @@ static bool diskRead(void *buf,uint secNo,uint secCount) {
 	return true;
 }
 
-static bool diskWrite(const void *buf,uint secNo,uint secCount) {
+static bool diskWrite(const void *buf,ulong secNo,ulong secCount) {
 	uint64_t *diskSecReg = diskRegs + DISK_SCT;
 	uint64_t *diskCntReg = diskRegs + DISK_CNT;
 	uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
@@ -249,7 +249,7 @@ static bool diskWrite(const void *buf,uint secNo,uint secCount) {
 	/* set sector and sector-count and start the disk-operation */
 	*diskSecReg = secNo;
 	*diskCntReg = secCount;
-	*diskCtrlReg = DISK_STRT | DISK_WRT | DISK_IEN;
+	*diskCtrlReg = DISK_STRT | DISK_WRT/* | DISK_IEN TODO */;
 	/* we don't need to wait here because maybe there is no other request and we could therefore
 	 * save time */
 	DISK_DBG("done");
@@ -258,13 +258,16 @@ static bool diskWrite(const void *buf,uint secNo,uint secCount) {
 
 static bool diskWait(void) {
 	volatile uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
+	/* TODO
 	if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
 		sleep(IRQ_TIMEOUT);
 		if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
 			DISK_LOG("Waiting for interrupt: Timeout reached, giving up");
 			return false;
 		}
-	}
+	}*/
+	while(!(*diskCtrlReg & (DISK_DONE | DISK_ERR)))
+		;
 	return (*diskCtrlReg & DISK_ERR) == 0;
 }
 

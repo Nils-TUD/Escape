@@ -1,8 +1,4 @@
-ifeq ($(ARCH),mmix)
-DIRS = $(filter-out $(wildcard *.*) cpp d Makefile,$(wildcard *))
-else
 DIRS = $(filter-out $(wildcard *.*) d Makefile,$(wildcard *))
-endif
 
 .PHONY:  all clean
 

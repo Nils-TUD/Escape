@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <esc/debug.h>
 #include <esc/io.h>
 #include <iostream>
 #include "idriver.h"

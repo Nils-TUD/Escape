@@ -32,6 +32,8 @@
 #include <sys/video.h>
 #include <sys/util.h>
 
+#define DEBUG_PAGEFAULTS		0
+
 #define TRAP_POWER_FAILURE		0	// power failure
 #define TRAP_MEMORY_PARITY		1	// memory parity error
 #define TRAP_NONEX_MEMORY		2	// non-existent memory
@@ -71,6 +73,7 @@ typedef struct {
 } sInterrupt;
 
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo);
+static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo);
 
@@ -112,9 +115,9 @@ static sInterrupt intrptList[] = {
 	/* 0x22: TRAP_BREAKS_RULES */	{intrpt_defHandler,	"Breaks rules",			0},
 	/* 0x23: TRAP_PRIV_INSTR */		{intrpt_defHandler,	"Privileged instr.",	0},
 	/* 0x24: TRAP_PRIV_ACCESS */	{intrpt_defHandler,	"Privileged access",	0},
-	/* 0x25: TRAP_PROT_EXEC */		{intrpt_defHandler,	"Execution protection",	0},
-	/* 0x26: TRAP_PROT_WRITE */		{intrpt_defHandler,	"Write protection",		0},
-	/* 0x27: TRAP_PROT_READ */		{intrpt_defHandler,	"Read protection",		0},
+	/* 0x25: TRAP_PROT_EXEC */		{intrpt_exProtFault,"Execution protection",	0},
+	/* 0x26: TRAP_PROT_WRITE */		{intrpt_exProtFault,"Write protection",		0},
+	/* 0x27: TRAP_PROT_READ */		{intrpt_exProtFault,"Read protection",		0},
 	/* 0x28: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x29: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x2A: -- */					{intrpt_defHandler,	"??",					0},
@@ -146,9 +149,27 @@ size_t intrpt_getCount(void) {
 	return irqCount;
 }
 
+static void intrpt_enterKernel(sThread *t) {
+	uint64_t cycles = cpu_rdtsc();
+	if(t->stats.ucycleStart > 0)
+		t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
+	/* kernel-mode starts here */
+	t->stats.kcycleStart = cycles;
+}
+
+static void intrpt_leaveKernel(sThread *t) {
+	/* kernel-mode ends */
+	uint64_t cycles = cpu_rdtsc();
+	if(t->stats.kcycleStart > 0)
+		t->stats.kcycleCount.val64 += cycles - t->stats.kcycleStart;
+	/* user-mode starts here */
+	t->stats.ucycleStart = cycles;
+}
+
 void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	t->kstackEnd = stack;
+	intrpt_enterKernel(t);
 	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
 	begin -= *begin;
 	t->stats.syscalls++;
@@ -156,15 +177,18 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
 	t = thread_getRunning(); /* thread may have changed */
 	stack[-14] = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
+	intrpt_leaveKernel(t);
 }
 
 void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
-	sInterrupt *intrpt = intrptList + (irqNo & 0x3F);
+	sInterrupt *intrpt;
 	sThread *t = thread_getRunning();
 	t->kstackEnd = stack;
+	intrpt_enterKernel(t);
 	irqCount++;
 
 	/* call handler */
+	intrpt = intrptList + (irqNo & 0x3F);
 	intrpt->handler(stack,irqNo);
 
 #if 0
@@ -178,6 +202,7 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 			uenv_startSignalHandler(stack);
 	}
 #endif
+	intrpt_leaveKernel(t);
 }
 
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
@@ -185,6 +210,40 @@ static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ %p\n",
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
+}
+
+void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
+	uintptr_t pfaddr = cpu_getFaultLoc();
+
+#if DEBUG_PAGEFAULTS
+	if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
+		exCount++;
+		if(exCount >= MAX_EX_COUNT)
+			util_panic("%d page-faults at the same address of the same process",exCount);
+	}
+	else
+		exCount = 0;
+	lastPFAddr = pfaddr;
+	lastPFProc = proc_getRunning()->pid;
+	vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
+			stack->r[30],proc_getRunning()->pid);
+#endif
+
+	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
+	if(!vmm_pagefault(pfaddr)) {
+		/* ok, now lets check if the thread wants more stack-pages */
+		if(thread_extendStack(pfaddr) < 0) {
+			uint64_t rbb,rww,rxx,ryy,rzz;
+			cpu_getKSpecials(&rbb,&rww,&rxx,&ryy,&rzz);
+			vid_printf("%s for address %p @ %p, process %d\n",intrptList[irqNo].name,pfaddr,
+					rww,proc_getRunning()->pid);
+			/*proc_terminate(t->proc);
+			thread_switch();*/
+			/* hm...there is something wrong :) */
+			/* TODO later the process should be killed here */
+			util_panic("%s for address %p @ %p",intrptList[irqNo].name,pfaddr,rww);
+		}
+	}
 }
 
 static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo) {
@@ -252,9 +311,8 @@ void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 	vid_printf("rL  : %d\n\t",rl);
 	for(j = 0, i = rl - 1; i >= 0; j++, i--) {
 		vid_printf("$%-3d: #%016lx ",i,*stack--);
-		if(j % 3 == 2)
+		if(i > 0 && j % 3 == 2)
 			vid_printf("\n\t");
 	}
-	if(j % 3 != 0)
-		vid_printf("\n");
+	vid_printf("\n");
 }

@@ -22,7 +22,10 @@
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/real.h>
 #include <sys/boot.h>
+#include <sys/log.h>
 #include <sys/cpu.h>
 #include <string.h>
 #include <errors.h>
@@ -236,6 +239,10 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint64_t *rsp,*ssp;
 	sThread *t = thread_getRunning();
+	/* for idle, there is nothing to do */
+	if(t->tid == IDLE_TID)
+		return true;
+
 	sStartupInfo sinfo;
 	sinfo.progEntry = t->proc->entryPoint;
 	sinfo.linkerEntry = 0;
@@ -270,7 +277,28 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 		}
 	}
 	else {
-		util_panic("Not implemented");
+		/* TODO well, its not really nice that we have to read this stuff again for every started
+		 * thread :/ */
+		ssize_t res;
+		sElfEHeader ehd;
+		tFileNo file = vfs_real_openPath(t->proc->pid,VFS_READ,t->proc->command);
+		if(file < 0) {
+			log_printf("[LOADER] Unable to open path '%s': %s\n",t->proc->command,strerror(file));
+			return false;
+		}
+
+		/* first read the header */
+		if((res = vfs_readFile(t->proc->pid,file,&ehd,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
+			log_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",
+					t->proc->command,strerror(res));
+			vfs_closeFile(t->proc->pid,file);
+			return false;
+		}
+
+		res = elf_finishFromFile(file,&ehd,&sinfo);
+		vfs_closeFile(t->proc->pid,file);
+		if(res < 0)
+			return false;
 	}
 
 	/* get register-stack */

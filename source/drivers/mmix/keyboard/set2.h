@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: set2.h 900 2011-06-02 20:18:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,30 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ERROR_H_
-#define ERROR_H_
+#ifndef SET2_H_
+#define SET2_H_
 
 #include <esc/common.h>
 
 /**
- * The last error-code
- */
-extern int errno;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * Displays an error-message according to given format and arguments and appends ': <errmsg>' if
- * errno is < 0. After that exit(EXIT_FAILURE) is called.
+ * Converts the given scancode to a keycode
  *
- * @param fmt the error-message-format
+ * @param isBreak whether it is a break-keycode
+ * @param keycode the keycode
+ * @param scanCode the received scancode
+ * @return true if it was a keycode
  */
-void error(const char *fmt,...) A_NORETURN;
+bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,uchar scanCode);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* ERROR_H_ */
+#endif /* SET2_H_ */

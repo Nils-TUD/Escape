@@ -408,6 +408,9 @@ int proc_clone(tPid newPid,uint8_t flags) {
 #ifdef __eco32__
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
 #endif
+#ifdef __mmix__
+	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
+#endif
 
 	res = thread_finishClone(curThread,nt);
 	if(res == 1) {
@@ -457,6 +460,9 @@ int proc_startThread(uintptr_t entryPoint,const void *arg) {
 
 #ifdef __eco32__
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
+#endif
+#ifdef __mmix__
+	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
 #endif
 
 	res = thread_finishClone(t,nt);

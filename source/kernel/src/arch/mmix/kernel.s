@@ -36,6 +36,7 @@
 	.global paging_setrV
 	.global tc_update
 
+	.global cpu_getFaultLoc
 	.global cpu_syncid
 	.global cpu_rdtsc
 	.global cpu_getGlobal
@@ -128,6 +129,8 @@ forcedTrap:
 	INCL	$0,STACK_SIZE
 	SUBU	$254,$0,8
 	SET		$253,$254
+	SETMH	$0,#FE
+	PUT		rK,$0							# enable exception-bits for kernel (to see errors early)
 	SET		$0,$255							# save $255
 	GET		$2,rS
 	PUSHJ	$1,intrpt_forcedTrap
@@ -151,13 +154,15 @@ dynamicTrap:
 	GET		$0,rQ
 	SUBU	$1,$0,1
 	SADD	$3,$1,$0
+	PUT		rQ,0							# TODO temporary!
+	SETMH	$0,#FE
+	PUT		rK,$0							# enable exception-bits for kernel (to see errors early)
 	# call handler with rS as argument
 	GET		$2,rS
 	SET		$0,$255							# save $255
 	PUSHJ	$1,intrpt_dynTrap				# call intrpt_dynTrap(rS,irqNo)
 	# restore context
 	UNSAVE	1,$0
-	PUT		rQ,0							# TODO temporary!
 	GET		$255,rWW						# check whether rWW is negative
 	BNN		$255,1f							# if not, set rK to -1
 	NEG		$255,0,1
@@ -223,8 +228,9 @@ thread_initSave:
 	SET		$0,0							# return 0
 	POP		1,0
 
-# int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir)
+# int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tTid tid)
 thread_doSwitch:
+	PUT		rF,$3							# just for backtracing: put the thread-id in rF
 	SET		$250,$0							# save $0, SAVE will set rL to 0
 	SET		$251,$1
 	SET		$252,$2
@@ -284,6 +290,11 @@ tc_update:
 #===========================================
 # CPU
 #===========================================
+
+# uintptr_t cpu_getFaultLoc(void)
+cpu_getFaultLoc:
+	GET		$0,rYY
+	POP		1,0
 
 # void cpu_syncid(uintptr_t start,uintptr_t end)
 cpu_syncid:
@@ -367,6 +378,7 @@ debugc:
 	PUT		rJ,$1
 	POP		0,0
 
+	LOC		@+(8-@)&7
 krg:
 	OCTA	0
 

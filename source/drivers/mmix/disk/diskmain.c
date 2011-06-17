@@ -231,6 +231,7 @@ static bool diskRead(void *buf,ulong secNo,ulong secCount) {
 }
 
 static bool diskWrite(const void *buf,ulong secNo,ulong secCount) {
+#if 0
 	uint64_t *diskSecReg = diskRegs + DISK_SCT;
 	uint64_t *diskCntReg = diskRegs + DISK_CNT;
 	uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
@@ -253,6 +254,7 @@ static bool diskWrite(const void *buf,ulong secNo,ulong secCount) {
 	/* we don't need to wait here because maybe there is no other request and we could therefore
 	 * save time */
 	DISK_DBG("done");
+#endif
 	return true;
 }
 

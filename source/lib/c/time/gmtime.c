@@ -40,9 +40,9 @@ struct tm *gmtime(const time_t *timer) {
 	days = timestamp;
 	for(year = 1970; ; year++) {
 		if(IS_LEAP_YEAR(year))
-			nextSecs = ts - SECS_PER_LEAPYEAR;
+			nextSecs = (long)ts - SECS_PER_LEAPYEAR;
 		else
-			nextSecs = ts - SECS_PER_YEAR;
+			nextSecs = (long)ts - SECS_PER_YEAR;
 		if(nextSecs < 0)
 			break;
 		ts = nextSecs;
@@ -52,7 +52,7 @@ struct tm *gmtime(const time_t *timer) {
 	timeptr.tm_yday = ts / SECS_PER_DAY;
 	yearType = IS_LEAP_YEAR(year) ? LEAP_YEAR : DEF_YEAR;
 	for(m = 0; ; m++) {
-		nextSecs = ts - daysPerMonth[yearType][m] * SECS_PER_DAY;
+		nextSecs = (long)ts - daysPerMonth[yearType][m] * SECS_PER_DAY;
 		if(nextSecs < 0)
 			break;
 		ts = nextSecs;

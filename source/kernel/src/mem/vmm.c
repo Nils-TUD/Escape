@@ -155,12 +155,13 @@ tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 		sAllocStats stats;
 		uint mapFlags = 0;
 		size_t pageCount = BYTES_2_PAGES(vm->reg->byteCount);
-		if(!(pgFlags & PF_DEMANDLOAD))
+		if(!(pgFlags & PF_DEMANDLOAD)) {
 			mapFlags |= PG_PRESENT;
+			if(flags & RF_EXECUTABLE)
+				mapFlags |= PG_EXECUTABLE;
+		}
 		if(flags & RF_WRITABLE)
 			mapFlags |= PG_WRITABLE;
-		if(flags & RF_EXECUTABLE)
-			mapFlags |= PG_EXECUTABLE;
 		stats = paging_mapTo(p->pagedir,virt,NULL,pageCount,mapFlags);
 		if(flags & RF_SHAREABLE)
 			p->sharedFrames += stats.frames;
@@ -825,6 +826,8 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 	mapFlags = PG_PRESENT;
 	if(vm->reg->flags & RF_WRITABLE)
 		mapFlags |= PG_WRITABLE;
+	if(vm->reg->flags & RF_EXECUTABLE)
+		mapFlags |= PG_EXECUTABLE;
 	/* copy into frame */
 	temp = paging_mapToTemp(&frame,1);
 	memcpy((void*)temp,tempBuf,loadCount);

@@ -58,7 +58,7 @@ bool dyna_extend(sDynArray *d) {
 	/* clear it and increase total size and number of objects */
 	memclear((void*)reg->addr,PAGE_SIZE);
 	d->_areaBegin += PAGE_SIZE;
-	d->objCount = d->_areaBegin / d->objSize;
+	d->objCount += PAGE_SIZE / d->objSize;
 	return true;
 }
 

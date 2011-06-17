@@ -34,6 +34,11 @@ int elf_finishFromFile(tFileNo file,const sElfEHeader *eheader,sStartupInfo *inf
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
+	if(vfs_seek(t->proc->pid,file,eheader->e_shoff,SEEK_SET) < 0) {
+		log_printf("[LOADER] Unable to seek to ELF-header\n");
+		return ERR_INVALID_ELF_BIN;
+	}
+
 	if((readRes = vfs_readFile(t->proc->pid,file,secHeaders,headerSize)) != headerSize) {
 		log_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(readRes));
 		kheap_free(secHeaders);

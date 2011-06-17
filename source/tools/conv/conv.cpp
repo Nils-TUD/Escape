@@ -161,8 +161,13 @@ static void parseMMIX(FILE *f) {
 		/* function-enter */
 		if(c == '\\') {
 			size_t i;
-			for(i = 0; i < MAX_FUNC_LEN && (c = getc(f)) != '('; i++)
+			for(i = 0; i < MAX_FUNC_LEN && (c = getc(f)) != '('; i++) {
 				funcName[i] = c;
+				if(c == '>') {
+					i++;
+					break;
+				}
+			}
 			funcName[i] = '\0';
 			funcEnter(0,funcName);
 			con = getCurrent(0);

@@ -89,6 +89,11 @@ void cpu_getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy,ui
 void cpu_setKSpecials(uint64_t rbb,uint64_t rww,uint64_t rxx,uint64_t ryy,uint64_t rzz);
 
 /**
+ * @return the fault-location for protection-faults
+ */
+extern uintptr_t cpu_getFaultLoc(void);
+
+/**
  * Performs a SYNCD and SYNCID for the given region to ensure that the IC agrees with the DC
  *
  * @param start the start-address

@@ -334,9 +334,10 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 		}
 
 		/* update entries in TCs; protection-flags might have changed */
+		/* we have to do that for not running processes as well, since their entry might still
+		 * be in the TCs */
 		/* TODO only update the flags, don't remove it */
-		if(pdir == context)
-			tc_update(key);
+		tc_update(key);
 
 		/* to next page */
 		virt += PAGE_SIZE;

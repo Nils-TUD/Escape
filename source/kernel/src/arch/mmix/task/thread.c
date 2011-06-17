@@ -76,7 +76,7 @@
  */
 
 extern int thread_initSave(sThreadRegs *saveArea,void *newStack);
-extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir);
+extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tTid tid);
 
 int thread_initArch(sThread *t) {
 	t->archAttr.tempStack = -1;
@@ -178,7 +178,7 @@ void thread_switchTo(tTid tid) {
 			cur->archAttr.tempStack = -1;
 		}
 
-		thread_doSwitch(&old->save,&cur->save,cur->proc->pagedir);
+		thread_doSwitch(&old->save,&cur->save,cur->proc->pagedir,cur->tid);
 
 		/* now start kernel-time again */
 		cur = thread_getRunning();

@@ -85,7 +85,7 @@ static void test_flags(void) {
 		test_assertTrue(flag2);
 		delete a;
 	}
-	test_assertUInt(heapspace(),before);
+	test_assertSize(heapspace(),before);
 
 	test_caseSucceeded();
 }
@@ -177,7 +177,7 @@ static void test_reqNFree(void) {
 		catch(const cmdargs_error& e) {
 			ex = true;
 		}
-		test_assertUInt(a->get_free().size(),0);
+		test_assertSize(a->get_free().size(),0);
 		test_assertTrue(ex);
 		test_assertTrue(req == "");
 		test_assertInt(b,0);
@@ -195,7 +195,7 @@ static void test_reqNFree(void) {
 		catch(const cmdargs_error& e) {
 			ex = true;
 		}
-		test_assertUInt(a->get_free().size(),0);
+		test_assertSize(a->get_free().size(),0);
 		test_assertTrue(ex);
 		test_assertTrue(req == "");
 		test_assertInt(b,12);
@@ -213,7 +213,7 @@ static void test_reqNFree(void) {
 		catch(const cmdargs_error& e) {
 			ex = true;
 		}
-		test_assertUInt(a->get_free().size(),0);
+		test_assertSize(a->get_free().size(),0);
 		test_assertFalse(ex);
 		test_assertStr(req.c_str(),"val");
 		test_assertInt(b,123);
@@ -232,7 +232,7 @@ static void test_reqNFree(void) {
 			ex = true;
 		}
 		const vector<string*>& fargs = a->get_free();
-		test_assertUInt(fargs.size(),3);
+		test_assertSize(fargs.size(),3);
 		test_assertStr(fargs[0]->c_str(),"free1");
 		test_assertStr(fargs[1]->c_str(),"-free2");
 		test_assertStr(fargs[2]->c_str(),"--req");
@@ -242,7 +242,7 @@ static void test_reqNFree(void) {
 		test_assertUInt(nreq,0xf);
 		delete a;
 	}
-	test_assertUInt(heapspace(),before);
+	test_assertSize(heapspace(),before);
 
 	test_caseSucceeded();
 }

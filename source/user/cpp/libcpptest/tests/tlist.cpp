@@ -42,7 +42,7 @@ static void test_reverse(void);
 static void check_content(const list<int> &l,size_t count,...) {
 	va_list ap;
 	va_start(ap,count);
-	test_assertUInt(l.size(),count);
+	test_assertSize(l.size(),count);
 	for(list<int>::const_iterator it = l.begin(); it != l.end(); it++)
 		test_assertInt(*it,va_arg(ap,int));
 	va_end(ap);
@@ -92,17 +92,17 @@ static void test_assign(void) {
 
 	list<int> v1(5u,3);
 	list<int> v2 = v1;
-	test_assertUInt(v1.size(),v2.size());
+	test_assertSize(v1.size(),v2.size());
 	check_content(v2,5,3,3,3,3,3);
 
 	list<int> v3;
 	v3.assign(v1.begin() + 1,v1.end());
-	test_assertUInt(v3.size(),v1.size() - 1);
+	test_assertSize(v3.size(),v1.size() - 1);
 	check_content(v3,4,3,3,3,3);
 
 	list<int> v4;
 	v4.assign(3u,3);
-	test_assertUInt(v4.size(),3);
+	test_assertSize(v4.size(),3);
 	check_content(v4,3,3,3,3);
 
 	v4.front() += 1;
@@ -163,7 +163,7 @@ static void test_insert(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }
@@ -197,7 +197,7 @@ static void test_erase(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }
@@ -234,7 +234,7 @@ static void test_splice(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }
@@ -260,7 +260,7 @@ static void test_resize(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }
@@ -300,7 +300,7 @@ static void test_remove(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }
@@ -334,7 +334,7 @@ static void test_unique(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }
@@ -368,7 +368,7 @@ static void test_sort(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }
@@ -398,7 +398,7 @@ static void test_merge(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }
@@ -441,7 +441,7 @@ static void test_reverse(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertUInt(after,before);
+	test_assertSize(after,before);
 
 	test_caseSucceeded();
 }

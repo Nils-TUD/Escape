@@ -44,8 +44,10 @@ _start:
 sigRetFunc:
 	JMP		sigRetFunc
 
+	LOC		@+(8-@)&7
 args:
-	.long	progName,0
+	OCTA	progName
+	OCTA	0
 
 progName:
 	.asciz	"/bin/init"

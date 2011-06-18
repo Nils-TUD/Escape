@@ -22,7 +22,9 @@
 #include <esc/thread.h>
 #include <stdlib.h>
 #include <assert.h>
+
 #include "blockcache.h"
+#include "threadpool.h"
 
 #define ALLOC_LOCK	0xF7180000
 
@@ -31,11 +33,11 @@ static uint cacheHits = 0;
 static uint cacheMisses = 0;
 
 /**
- * Aquires the lock, depending on <mode>, for the given block
+ * Aquires the tpool_lock, depending on <mode>, for the given block
  */
 static void bcache_aquire(sCBlock *b,uint mode);
 /**
- * Releases the lock for given block
+ * Releases the tpool_lock for given block
  */
 static void bcache_doRelease(sCBlock *b,bool unlockAlloc);
 /**
@@ -78,7 +80,7 @@ void bcache_destroy(sBlockCache *c) {
 void bcache_flush(sBlockCache *c) {
 	sCBlock *bentry = c->usedBlocks;
 	while(bentry != NULL) {
-		assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+		assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 		if(bentry->dirty) {
 			vassert(c->write != NULL,"Block %d dirty, but no write-function",bentry->blockNo);
 			bcache_aquire(bentry,BMODE_READ);
@@ -86,7 +88,7 @@ void bcache_flush(sBlockCache *c) {
 			bentry->dirty = false;
 			bcache_doRelease(bentry,false);
 		}
-		assert(unlock(ALLOC_LOCK) == 0);
+		assert(tpool_unlock(ALLOC_LOCK) == 0);
 		bentry = bentry->next;
 	}
 }
@@ -107,17 +109,17 @@ sCBlock *bcache_request(sBlockCache *c,tBlockNo blockNo,uint mode) {
 static void bcache_aquire(sCBlock *b,uint mode) {
 	assert(!(mode & BMODE_WRITE) || b->refs == 0);
 	b->refs++;
-	assert(unlock(ALLOC_LOCK) == 0);
-	assert(lock((uint)b,(mode & BMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+	assert(tpool_unlock(ALLOC_LOCK) == 0);
+	assert(tpool_lock((uint)b,(mode & BMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 }
 
 static void bcache_doRelease(sCBlock *b,bool unlockAlloc) {
-	assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	assert(b->refs > 0);
 	b->refs--;
 	if(unlockAlloc)
-		assert(unlock(ALLOC_LOCK) == 0);
-	assert(unlock((uint)b) == 0);
+		assert(tpool_unlock(ALLOC_LOCK) == 0);
+	assert(tpool_unlock((uint)b) == 0);
 }
 
 void bcache_release(sCBlock *b) {
@@ -127,8 +129,8 @@ void bcache_release(sCBlock *b) {
 static sCBlock *bcache_doRequest(sBlockCache *c,tBlockNo blockNo,bool doRead,uint mode) {
 	sCBlock *block,*bentry;
 
-	/* aquire lock for getting a block */
-	assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	/* aquire tpool_lock for getting a block */
+	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	/* search for the block. perhaps it's already in cache */
 	bentry = c->usedBlocks;
@@ -162,7 +164,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,tBlockNo blockNo,bool doRead,uin
 	if(block->buffer == NULL) {
 		block->buffer = malloc(c->blockSize);
 		if(block->buffer == NULL) {
-			assert(unlock(ALLOC_LOCK) == 0);
+			assert(tpool_unlock(ALLOC_LOCK) == 0);
 			return NULL;
 		}
 	}
@@ -172,7 +174,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,tBlockNo blockNo,bool doRead,uin
 
 	/* now read from disk */
 	if(doRead) {
-		/* we need always a write-lock because we have to read the content into it */
+		/* we need always a write-tpool_lock because we have to read the content into it */
 		bcache_aquire(block,BMODE_WRITE);
 		if(!c->read(c->handle,block->buffer,blockNo,1)) {
 			block->blockNo = 0;

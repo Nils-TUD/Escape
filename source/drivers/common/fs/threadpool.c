@@ -72,12 +72,12 @@ size_t tpool_tidToId(tTid tid) {
 bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,size_t msgSize,void *data) {
 	size_t i;
 	while(true) {
-		lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
+		tpool_lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
 		for(i = 0; i < REQ_THREAD_COUNT; i++) {
 			if(threads[i].state == RT_STATE_IDLE) {
 				sFSRequest *req = (sFSRequest*)malloc(sizeof(sFSRequest));
 				if(!req) {
-					unlock(STATE_LOCK);
+					tpool_unlock(STATE_LOCK);
 					return false;
 				}
 				req->handler = handler;
@@ -87,7 +87,7 @@ bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,size_t msgSize,
 				threads[i].req = req;
 				threads[i].state = RT_STATE_HASWORK;
 				notify(threads[i].tid,EV_USER1);
-				unlock(STATE_LOCK);
+				tpool_unlock(STATE_LOCK);
 				return true;
 			}
 		}
@@ -117,10 +117,10 @@ static int tpool_idle(sReqThread *t) {
 		t->req = NULL;
 
 		/* we're ready for new requests */
-		lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
+		tpool_lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
 		t->state = RT_STATE_IDLE;
 		notify(acceptTid,EV_USER2);
-		unlock(STATE_LOCK);
+		tpool_unlock(STATE_LOCK);
 	}
 	return 0;
 }

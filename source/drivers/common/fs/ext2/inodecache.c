@@ -34,7 +34,7 @@
 #define ALLOC_LOCK	0xF7180001
 
 /**
- * Aquires the lock for given mode and inode. Assumes that ALLOC_LOCK is aquired and releases
+ * Aquires the tpool_lock for given mode and inode. Assumes that ALLOC_LOCK is aquired and releases
  * it at the end.
  */
 static void ext2_icache_aquire(sExt2CInode *inode,uint mode);
@@ -70,7 +70,7 @@ void ext2_icache_flush(sExt2 *e) {
 	sExt2CInode *inode,*end = e->inodeCache + EXT2_ICACHE_SIZE;
 	for(inode = e->inodeCache; inode < end; inode++) {
 		if(inode->dirty) {
-			assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+			assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 			ext2_icache_aquire(inode,IMODE_READ);
 			ext2_icache_write(e,inode);
 			ext2_icache_release(inode);
@@ -91,8 +91,8 @@ sExt2CInode *ext2_icache_request(sExt2 *e,tInodeNo no,uint mode) {
 	if(no <= EXT2_BAD_INO)
 		return NULL;
 
-	/* lock the request of an inode */
-	assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	/* tpool_lock the request of an inode */
+	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	for(inode = startNode; inode < iend; inode++) {
 		if(inode->inodeNo == no) {
@@ -165,8 +165,8 @@ void ext2_icache_release(const sExt2CInode *inode) {
 
 static void ext2_icache_aquire(sExt2CInode *inode,uint mode) {
 	inode->refs++;
-	assert(unlock(ALLOC_LOCK) == 0);
-	assert(lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+	assert(tpool_unlock(ALLOC_LOCK) == 0);
+	assert(tpool_lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 	/*debugf("[%d] Aquired %d for %d\n",gettid(),inode->inodeNo,mode);*/
 }
 
@@ -176,11 +176,11 @@ static void ext2_icache_doRelease(sExt2CInode *ino,bool unlockAlloc) {
 
 	/* don't write dirty blocks back here, because this would lead to too many writes. */
 	/* skipping it until the inode-cache-entry should be reused, is better */
-	assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	ino->refs--;
 	if(unlockAlloc)
-		assert(unlock(ALLOC_LOCK) == 0);
-	assert(unlock((uint)ino) == 0);
+		assert(tpool_unlock(ALLOC_LOCK) == 0);
+	assert(tpool_unlock((uint)ino) == 0);
 }
 
 static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {

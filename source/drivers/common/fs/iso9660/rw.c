@@ -30,7 +30,11 @@ bool iso_rw_readBlocks(sISO9660 *h,void *buffer,tBlockNo start,size_t blockCount
 
 bool iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount) {
 	ssize_t res;
+#if REQ_THREAD_COUNT > 0
 	tFD fd = h->drvFds[tpool_tidToId(gettid())];
+#else
+	tFD fd = h->drvFds[0];
+#endif
 	if(seek(fd,lba * ATAPI_SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x",lba * ATAPI_SECTOR_SIZE);
 		return false;

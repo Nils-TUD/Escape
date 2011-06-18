@@ -32,7 +32,11 @@ bool ext2_rw_readBlocks(sExt2 *e,void *buffer,tBlockNo start,size_t blockCount) 
 
 bool ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount) {
 	ssize_t res;
+#if REQ_THREAD_COUNT > 0
 	tFD fd = e->drvFds[tpool_tidToId(gettid())];
+#else
+	tFD fd = e->drvFds[0];
+#endif
 	if(seek(fd,lba * DISK_SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return false;
@@ -51,7 +55,11 @@ bool ext2_rw_writeBlocks(sExt2 *e,const void *buffer,tBlockNo start,size_t block
 }
 
 bool ext2_rw_writeSectors(sExt2 *e,const void *buffer,uint64_t lba,size_t secCount) {
+#if REQ_THREAD_COUNT > 0
 	tFD fd = e->drvFds[tpool_tidToId(gettid())];
+#else
+	tFD fd = e->drvFds[0];
+#endif
 	if(seek(fd,lba * DISK_SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return false;

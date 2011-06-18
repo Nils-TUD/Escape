@@ -43,7 +43,7 @@ tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir) {
 	tInodeNo ino = 0;
 	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
 
-	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	if(le32tocpu(e->superBlock.freeInodeCount) == 0)
 		goto done;
 
@@ -60,7 +60,7 @@ tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir) {
 	}
 
 done:
-	assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 	return ino;
 }
 
@@ -71,10 +71,10 @@ int ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir) {
 	uint16_t freeInodeCount;
 	uint32_t sFreeInodeCount;
 
-	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	bitmap = bcache_request(&e->blockCache,le32tocpu(e->groups[group].inodeBitmap),BMODE_WRITE);
 	if(bitmap == NULL) {
-		assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+		assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 		return -1;
 	}
 
@@ -95,7 +95,7 @@ int ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir) {
 	e->sbDirty = true;
 	bcache_markDirty(bitmap);
 	bcache_release(bitmap);
-	assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 	return 0;
 }
 
@@ -150,7 +150,7 @@ tBlockNo ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode) {
 	tBlockNo bno = 0;
 	uint32_t blocksPerGroup = le32tocpu(e->superBlock.blocksPerGroup);
 
-	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	if(le32tocpu(e->superBlock.freeBlockCount) == 0)
 		goto done;
 
@@ -167,7 +167,7 @@ tBlockNo ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode) {
 	}
 
 done:
-	assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 	return bno;
 }
 
@@ -178,10 +178,10 @@ int ext2_bm_freeBlock(sExt2 *e,tBlockNo blockNo) {
 	uint16_t freeBlockCount;
 	uint32_t sFreeBlockCount;
 
-	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	bitmap = bcache_request(&e->blockCache,le32tocpu(e->groups[group].blockBitmap),BMODE_WRITE);
 	if(bitmap == NULL) {
-		assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+		assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 		return -1;
 	}
 
@@ -198,7 +198,7 @@ int ext2_bm_freeBlock(sExt2 *e,tBlockNo blockNo) {
 	e->sbDirty = true;
 	bcache_markDirty(bitmap);
 	bcache_release(bitmap);
-	assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 	return 0;
 }
 

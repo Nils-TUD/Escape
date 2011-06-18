@@ -54,7 +54,7 @@ void ext2_bg_destroy(sExt2 *e) {
 void ext2_bg_update(sExt2 *e) {
 	tBlockNo bno;
 	size_t i,count,bcount;
-	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	if(!e->groupsDirty)
 		goto done;
@@ -82,7 +82,7 @@ void ext2_bg_update(sExt2 *e) {
 	/* now we're in sync */
 	e->groupsDirty = false;
 done:
-	assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 }
 
 #if DEBUGGING

@@ -25,6 +25,14 @@
 
 #define REQ_THREAD_COUNT	0
 
+#if REQ_THREAD_COUNT > 0
+#define tpool_lock(x,y)		lock(x,y)
+#define tpool_unlock(x)		unlock(x)
+#else
+#define tpool_lock(x,y)		0
+#define tpool_unlock(x)		0
+#endif
+
 typedef void (*fReqHandler)(tFD fd,sMsg *msg,void *data);
 
 typedef struct {

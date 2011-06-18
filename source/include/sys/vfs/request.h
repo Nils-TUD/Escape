@@ -28,7 +28,7 @@
 #define REQ_STATE_FINISHED		2
 
 /* an entry in the request-list */
-typedef struct {
+typedef struct sRequest {
 	tTid tid;
 	sVFSNode *node;
 	uint8_t state;
@@ -37,6 +37,7 @@ typedef struct {
 	size_t count;
 	void *data;
 	size_t dsize;
+	struct sRequest *next;
 } sRequest;
 
 /* a request-handler */

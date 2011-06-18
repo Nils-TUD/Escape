@@ -21,7 +21,6 @@
 #include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/task/signals.h>
-#include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/real.h>
@@ -31,6 +30,7 @@
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
+#include <assert.h>
 #include <errors.h>
 
 /* A small note to this: we can use one channel (identified by the node) in parallel because
@@ -42,16 +42,27 @@
  * response! Later, when the client got the response, it free's the request.
  */
 
+#define REQ_COUNT			1024
 #define HANDLER_COUNT		32
 
-/* the vfs-driver-file */
-static sSLList *requests;
 static fReqHandler handler[HANDLER_COUNT] = {NULL};
 
+static sRequest requests[REQ_COUNT];
+static sRequest *reqFreeList;
+static sRequest *reqUsedList;
+static sRequest *reqUsedEnd;
+
 void vfs_req_init(void) {
-	requests = sll_create();
-	if(!requests)
-		util_panic("Unable to create linked list for requests");
+	size_t i;
+	/* init requests */
+	requests->next = NULL;
+	reqFreeList = requests;
+	for(i = 1; i < REQ_COUNT; i++) {
+		requests[i].next = reqFreeList;
+		reqFreeList = requests + i;
+	}
+	reqUsedList = NULL;
+	reqUsedEnd = NULL;
 }
 
 bool vfs_req_setHandler(tMsgId id,fReqHandler f) {
@@ -72,9 +83,12 @@ sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size) {
 	sRequest *req = NULL;
 	assert(node != NULL);
 
-	req = (sRequest*)kheap_alloc(sizeof(sRequest));
-	if(!req)
+	if(reqFreeList == NULL)
 		return NULL;
+
+	req = reqFreeList;
+	reqFreeList = req->next;
+
 	req->tid = t->tid;
 	req->node = node;
 	req->state = REQ_STATE_WAITING;
@@ -83,10 +97,12 @@ sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size) {
 	req->data = buffer;
 	req->dsize = size;
 	req->count = 0;
-	if(!sll_append(requests,req)) {
-		kheap_free(req);
-		return NULL;
-	}
+	req->next = NULL;
+	if(!reqUsedEnd)
+		reqUsedList = req;
+	else
+		reqUsedEnd->next = req;
+	reqUsedEnd = req;
 	return req;
 }
 
@@ -106,9 +122,8 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 }
 
 sRequest *vfs_req_getByNode(const sVFSNode *node) {
-	sSLNode *n;
-	for(n = sll_begin(requests); n != NULL; n = n->next) {
-		sRequest *req = (sRequest*)n->data;
+	sRequest *req = reqUsedList;
+	while(req != NULL) {
 		if(req->node == node) {
 			/* the thread may have been terminated... */
 			if(thread_getById(req->tid) == NULL) {
@@ -117,29 +132,44 @@ sRequest *vfs_req_getByNode(const sVFSNode *node) {
 			}
 			return req;
 		}
+		req = req->next;
 	}
 	return NULL;
 }
 
 void vfs_req_remove(sRequest *r) {
-	sll_removeFirst(requests,r);
+	sRequest *req = reqUsedList,*p = NULL;
+	while(req != NULL) {
+		if(req == r) {
+			if(p)
+				p->next = req->next;
+			else
+				reqUsedList = req->next;
+			if(req == reqUsedEnd)
+				reqUsedEnd = p;
+			return;
+		}
+		p = req;
+		req = req->next;
+	}
 }
 
 void vfs_req_free(sRequest *r) {
 	if(r) {
-		sll_removeFirst(requests,r);
-		kheap_free(r);
+		vfs_req_remove(r);
+		r->next = reqFreeList;
+		reqFreeList = r;
 	}
 }
 
 #if DEBUGGING
 
 void vfs_req_dbg_printAll(void) {
-	sSLNode *n;
 	vid_printf("Active requests:\n");
-	for(n = sll_begin(requests); n != NULL; n = n->next) {
-		sRequest *req = (sRequest*)n->data;
+	sRequest *req = reqUsedList;
+	while(req != NULL) {
 		vfs_req_dbg_print(req);
+		req = req->next;
 	}
 }
 

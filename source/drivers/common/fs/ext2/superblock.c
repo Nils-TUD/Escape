@@ -58,7 +58,7 @@ bool ext2_super_init(sExt2 *e) {
 void ext2_super_update(sExt2 *e) {
 	size_t i,count;
 	tBlockNo bno;
-	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	if(!e->sbDirty)
 		goto done;
@@ -87,5 +87,5 @@ void ext2_super_update(sExt2 *e) {
 	/* now we're in sync */
 	e->sbDirty = false;
 done:
-	assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 }

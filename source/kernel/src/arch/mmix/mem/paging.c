@@ -257,6 +257,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintpt
 		size_t count,bool share) {
 	sAllocStats stats = {0,0};
 	assert(src != dst && (src == context || dst == context));
+	/* TODO improve performance! */
 	while(count-- > 0) {
 		sAllocStats mstats;
 		sPTE pte = paging_getPTEOf(src,virtSrc);

@@ -36,6 +36,7 @@
 	.global paging_setrV
 	.global tc_update
 
+	.global cpu_getSyscallNo
 	.global cpu_getFaultLoc
 	.global cpu_syncid
 	.global cpu_rdtsc
@@ -154,7 +155,9 @@ dynamicTrap:
 	GET		$0,rQ
 	SUBU	$1,$0,1
 	SADD	$3,$1,$0
-	PUT		rQ,0							# TODO temporary!
+	ANDN	$1,$0,$1
+	ANDN	$0,$0,$1
+	PUT		rQ,$0							# remove that bit from rQ
 	SETMH	$0,#FE
 	PUT		rK,$0							# enable exception-bits for kernel (to see errors early)
 	# call handler with rS as argument
@@ -290,6 +293,13 @@ tc_update:
 #===========================================
 # CPU
 #===========================================
+
+# int cpu_getSyscallNo(void)
+cpu_getSyscallNo:
+	GET		$0,rXX
+	SRU		$0,$0,8
+	AND		$0,$0,0xFF
+	POP		1,0
 
 # uintptr_t cpu_getFaultLoc(void)
 cpu_getFaultLoc:

@@ -32,7 +32,7 @@
 
 #define GW_NOBLOCK					1
 
-void sysc_regDriver(sIntrptStackFrame *stack) {
+int sysc_regDriver(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	uint flags = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -60,7 +60,7 @@ void sysc_regDriver(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-void sysc_getClientId(sIntrptStackFrame *stack) {
+int sysc_getClientId(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tFileNo file;
 	tInodeNo id;
@@ -76,7 +76,7 @@ void sysc_getClientId(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,id);
 }
 
-void sysc_getClient(sIntrptStackFrame *stack) {
+int sysc_getClient(sIntrptStackFrame *stack) {
 	tFD drvFd = (tFD)SYSC_ARG1(stack);
 	tInodeNo cid = (tInodeNo)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -106,11 +106,10 @@ void sysc_getClient(sIntrptStackFrame *stack) {
 		vfs_closeFile(p->pid,file);
 		SYSC_ERROR(stack,res);
 	}
-
 	SYSC_RET1(stack,fd);
 }
 
-void sysc_getWork(sIntrptStackFrame *stack) {
+int sysc_getWork(sIntrptStackFrame *stack) {
 	tFileNo files[MAX_GETWORK_DRIVERS];
 	sWaitObject waits[MAX_GETWORK_DRIVERS];
 	tFD *fds = (tFD*)SYSC_ARG1(stack);

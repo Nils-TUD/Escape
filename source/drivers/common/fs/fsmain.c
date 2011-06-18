@@ -46,6 +46,7 @@ static sFSInst *root;
 typedef struct {
 	uint type;
 	char name[FS_NAME_LEN];
+	sFileSystem *(*fGetFS)(void);
 } sFSType;
 
 static void shutdown(void);
@@ -88,8 +89,8 @@ static void sigTermHndl(int sig) {
 
 int main(int argc,char *argv[]) {
 	static sFSType types[] = {
-		{FS_TYPE_EXT2,"ext2"},
-		{FS_TYPE_ISO9660,"iso9660"},
+		{FS_TYPE_EXT2,		"ext2",		ext2_getFS},
+		{FS_TYPE_ISO9660,	"iso9660",	iso_getFS},
 	};
 	static sMsg msg;
 	tFD fd;
@@ -110,21 +111,15 @@ int main(int argc,char *argv[]) {
 	tpool_init();
 	mount_init();
 
-	/* add ext2 */
-	fs = ext2_getFS();
-	if(!fs)
-		error("Unable to get ext2-filesystem");
-	if(mount_addFS(fs) != 0)
-		error("Unable to add ext2-filesystem");
-	printf("[FS] Loaded ext2-driver\n");
-
-	/* add iso9660 */
-	fs = iso_getFS();
-	if(!fs)
-		error("Unable to get iso9660-filesystem");
-	if(mount_addFS(fs) != 0)
-		error("Unable to add iso9660-filesystem");
-	printf("[FS] Loaded iso9660-driver\n");
+	/* add filesystems */
+	for(i = 0; i < ARRAY_SIZE(types); i++) {
+		fs = types[i].fGetFS();
+		if(!fs)
+			error("Unable to get %s-filesystem",types[i].name);
+		if(mount_addFS(fs) != 0)
+			error("Unable to add %s-filesystem",types[i].name);
+		printf("[FS] Loaded %s-driver\n",types[i].name);
+	}
 
 	/* create root-fs */
 	fstype = 0;

@@ -27,7 +27,7 @@
 #include <sys/syscalls.h>
 #include <errors.h>
 
-void sysc_requestIOPorts(sIntrptStackFrame *stack) {
+int sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -45,7 +45,7 @@ void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
+int sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	sProc *p;
@@ -64,7 +64,7 @@ void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_vm86int(sIntrptStackFrame *stack) {
+int sysc_vm86int(sIntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	sVM86Regs *regs = (sVM86Regs*)SYSC_ARG2(stack);
 	sVM86Memarea *mAreas = (sVM86Memarea*)SYSC_ARG3(stack);

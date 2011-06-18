@@ -112,7 +112,8 @@ int main(void) {
 					count /= sizeof(sKmData);
 					while(count-- > 0) {
 						if(!kmsg->isBreak) {
-							vterm_handleKey(vterm_getActive(),kmsg->keycode,kmsg->modifier,kmsg->character);
+							vterm_handleKey(vterm_getActive(),kmsg->keycode,
+									kmsg->modifier,kmsg->character);
 							vterm_update(vterm_getActive());
 						}
 						kmsg++;

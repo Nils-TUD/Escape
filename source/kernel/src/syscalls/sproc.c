@@ -38,12 +38,12 @@
 
 static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size);
 
-void sysc_getpid(sIntrptStackFrame *stack) {
+int sysc_getpid(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->pid);
 }
 
-void sysc_getppid(sIntrptStackFrame *stack) {
+int sysc_getppid(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);
 	sProc *p;
 
@@ -54,7 +54,7 @@ void sysc_getppid(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,p->parentPid);
 }
 
-void sysc_fork(sIntrptStackFrame *stack) {
+int sysc_fork(sIntrptStackFrame *stack) {
 	tPid newPid = proc_getFreePid();
 	int res;
 
@@ -71,11 +71,10 @@ void sysc_fork(sIntrptStackFrame *stack) {
 	if(res == 1)
 		SYSC_RET1(stack,0);
 	/* parent */
-	else
-		SYSC_RET1(stack,newPid);
+	SYSC_RET1(stack,newPid);
 }
 
-void sysc_waitChild(sIntrptStackFrame *stack) {
+int sysc_waitChild(sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
 	sSLNode *n;
 	int res;
@@ -115,7 +114,7 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_getenvito(sIntrptStackFrame *stack) {
+int sysc_getenvito(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	size_t index = SYSC_ARG3(stack);
@@ -132,7 +131,7 @@ void sysc_getenvito(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_getenvto(sIntrptStackFrame *stack) {
+int sysc_getenvto(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
@@ -152,7 +151,7 @@ void sysc_getenvto(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_setenv(sIntrptStackFrame *stack) {
+int sysc_setenv(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -165,7 +164,7 @@ void sysc_setenv(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_exec(sIntrptStackFrame *stack) {
+int sysc_exec(sIntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	char *path = (char*)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
@@ -233,12 +232,14 @@ void sysc_exec(sIntrptStackFrame *stack) {
 		goto error;
 
 	kheap_free(argBuffer);
-	return;
+	SYSC_RET1(stack,0);
 
 error:
 	kheap_free(argBuffer);
 	proc_terminate(p,res,SIG_COUNT);
 	thread_switch();
+	util_panic("We should not reach this!");
+	SYSC_ERROR(stack,res);
 }
 
 static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size) {

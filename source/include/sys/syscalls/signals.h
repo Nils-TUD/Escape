@@ -29,14 +29,14 @@
  * @param fSigHandler handler
  * @return int 0 if no error
  */
-void sysc_setSigHandler(sIntrptStackFrame *stack);
+int sysc_setSigHandler(sIntrptStackFrame *stack);
 
 /**
  * Acknoledges that the processing of a signal is finished
  *
  * @return int 0 if no error
  */
-void sysc_ackSignal(sIntrptStackFrame *stack);
+int sysc_ackSignal(sIntrptStackFrame *stack);
 
 /**
  * Sends a signal to a process
@@ -45,6 +45,6 @@ void sysc_ackSignal(sIntrptStackFrame *stack);
  * @param tSig signal
  * @return int 0 if no error
  */
-void sysc_sendSignalTo(sIntrptStackFrame *stack);
+int sysc_sendSignalTo(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_SIGNALS_H_ */

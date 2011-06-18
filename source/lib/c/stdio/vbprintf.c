@@ -29,12 +29,16 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 	int *ptr;
 	int n;
 	uint u;
-	llong l;
-	ullong ul;
+	long l;
+	ulong ul;
+	llong ll;
+	ullong ull;
+	uintptr_t uiptr;
 	double d;
 	float fl;
 	bool readFlags;
 	uint flags,width,base;
+	size_t size;
 	int precision;
 	int count = 0;
 
@@ -125,8 +129,11 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 			case 'd':
 			case 'i':
 				if(flags & FFL_LONGLONG) {
-					l = va_arg(ap, uint);
-					l |= ((llong)va_arg(ap, int)) << 32;
+					ll = va_arg(ap, llong);
+					count += RETERR(bprintlpad(f,ll,pad,flags));
+				}
+				else if(flags & FFL_LONG) {
+					l = va_arg(ap, long);
 					count += RETERR(bprintlpad(f,l,pad,flags));
 				}
 				else {
@@ -139,13 +146,19 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 
 			/* pointer */
 			case 'p':
-				u = va_arg(ap, uint);
+				size = sizeof(uintptr_t);
+				uiptr = va_arg(ap, uintptr_t);
 				flags |= FFL_PADZEROS;
-				pad = 9;
-				count += RETERR(bprintupad(f,u >> 16,16,pad - 5,flags));
-				RETERR(bputc(f,':'));
-				count++;
-				count += RETERR(bprintupad(f,u & 0xFFFF,16,4,flags));
+				/* 2 hex-digits per byte and a ':' every 2 bytes */
+				pad = size * 2 + size / 2;
+				while(size > 0) {
+					count += RETERR(bprintupad(f,(uiptr >> (size * 8 - 16)) & 0xFFFF,16,4,flags));
+					size -= 2;
+					if(size > 0) {
+						RETERR(bputc(f,':'));
+						count++;
+					}
+				}
 				break;
 
 			/* number of chars written so far */
@@ -178,8 +191,11 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 				if(c == 'X')
 					flags |= FFL_CAPHEX;
 				if(flags & FFL_LONGLONG) {
-					ul = va_arg(ap, uint);
-					ul |= ((ullong)va_arg(ap, uint)) << 32;
+					ull = va_arg(ap, ullong);
+					count += RETERR(bprintulpad(f,ull,base,pad,flags));
+				}
+				else if(flags & FFL_LONG) {
+					ul = va_arg(ap, ulong);
 					count += RETERR(bprintulpad(f,ul,base,pad,flags));
 				}
 				else {

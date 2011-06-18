@@ -27,7 +27,7 @@
 #include <sys/syscalls.h>
 #include <errors.h>
 
-void sysc_changeSize(sIntrptStackFrame *stack) {
+int sysc_changeSize(sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	ssize_t oldEnd;
@@ -44,7 +44,7 @@ void sysc_changeSize(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,oldEnd);
 }
 
-void sysc_addRegion(sIntrptStackFrame *stack) {
+int sysc_addRegion(sIntrptStackFrame *stack) {
 	sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
 	off_t binOffset = SYSC_ARG2(stack);
 	size_t byteCount = SYSC_ARG3(stack);
@@ -99,7 +99,7 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,start);
 }
 
-void sysc_setRegProt(sIntrptStackFrame *stack) {
+int sysc_setRegProt(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	uintptr_t addr = SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
@@ -122,7 +122,7 @@ void sysc_setRegProt(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_mapPhysical(sIntrptStackFrame *stack) {
+int sysc_mapPhysical(sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
@@ -149,7 +149,7 @@ void sysc_mapPhysical(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-void sysc_createSharedMem(sIntrptStackFrame *stack) {
+int sysc_createSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	size_t byteCount = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -164,7 +164,7 @@ void sysc_createSharedMem(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
-void sysc_joinSharedMem(sIntrptStackFrame *stack) {
+int sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	int res;
@@ -178,7 +178,7 @@ void sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
-void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
+int sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	int res;
@@ -192,7 +192,7 @@ void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_destroySharedMem(sIntrptStackFrame *stack) {
+int sysc_destroySharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	int res;

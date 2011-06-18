@@ -26,7 +26,7 @@
 #include <sys/syscalls.h>
 #include <errors.h>
 
-void sysc_setSigHandler(sIntrptStackFrame *stack) {
+int sysc_setSigHandler(sIntrptStackFrame *stack) {
 	tSig signal = (tSig)SYSC_ARG1(stack);
 	fSignal handler = (fSignal)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
@@ -57,15 +57,17 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_ackSignal(sIntrptStackFrame *stack) {
+int sysc_ackSignal(sIntrptStackFrame *stack) {
 	int res;
 	sThread *t = thread_getRunning();
 	tSig signal = sig_ackHandling(t->tid);
 	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
+	/* we don't set the error-code on the stack here */
+	return 0;
 }
 
-void sysc_sendSignalTo(sIntrptStackFrame *stack) {
+int sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);
 	tSig signal = (tSig)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();

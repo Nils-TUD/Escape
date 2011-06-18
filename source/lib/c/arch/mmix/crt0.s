@@ -26,7 +26,7 @@
 .extern init_tls
 .extern _init
 
-.include "arch/mmix/syscalls.s"
+#include "esc/syscalls.h"
 
 # Initial software stack:
 # +------------------+  <- top
@@ -70,8 +70,48 @@ threadExit:
 
 # all signal-handler return to this "function"
 sigRetFunc:
-	JMP		sigRetFunc
-	#mov		$SYSCALL_ACKSIG,%eax
-	#int		$SYSCALL_IRQ
-	# never reached
+	PUSHJ	$255,1f				# we need a few local registers..
+	# ack signal
+	TRAP	0,SYSCALL_ACKSIG,0
+	# syscall failed? -> exit
+	SET		$1,$7
+	PUSHJ	$0,exit
+	# backup a few special-registers that might affect the computation
+1:
+	GET		$0,rB
+	GET		$1,rD
+	GET		$2,rE
+	GET		$3,rH
+	GET		$4,rJ
+	GET		$5,rM
+	GET		$6,rR
+	GET		$7,rP
+	GET		$8,rW
+	GET		$9,rX
+	GET		$10,rY
+	GET		$11,rZ
+	GET		$12,rG
+	GET		$13,rA
+	# load handler-address and signal-number from stack
+	LDOU	$14,$254,8
+	LDOU	$15,$254,0
+	# call handler
+	PUSHGO	$14,$14,0
+	# restore special-registers
+	PUT		rA,$13
+	PUT		rG,$12
+	PUT		rZ,$11
+	PUT		rY,$10
+	PUT		rX,$9
+	PUT		rW,$8
+	PUT		rP,$7
+	PUT		rR,$6
+	PUT		rM,$5
+	PUT		rJ,$4
+	PUT		rH,$3
+	PUT		rE,$2
+	PUT		rD,$1
+	PUT		rB,$0
+	# return to above
+	POP		0,0
 .endif

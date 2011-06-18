@@ -27,11 +27,12 @@
 #include <sys/syscalls/other.h>
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls/signals.h>
+#include <esc/syscalls.h>
 #include <assert.h>
 #include <errors.h>
 
 /* syscall-handlers */
-typedef void (*fSyscall)(sIntrptStackFrame *stack);
+typedef int (*fSyscall)(sIntrptStackFrame *stack);
 
 /* for syscall-definitions */
 typedef struct {
@@ -113,13 +114,18 @@ static sSyscall syscalls[] = {
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
+	int res;
 	uint sysCallNo = SYSC_NUMBER(stack);
-	if(sysCallNo >= ARRAY_SIZE(syscalls))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(sysCallNo >= ARRAY_SIZE(syscalls)) {
+		SYSC_SETERROR(stack,ERR_INVALID_ARGS);
+		return;
+	}
 
-	/* no error by default */
-	SYSC_SETERROR(stack,0);
-	syscalls[sysCallNo].handler(stack);
+	res = syscalls[sysCallNo].handler(stack);
+	/* don't do that for acksig because this might overwrite a register or
+	 * something, which is not possible in all cases. */
+	if(sysCallNo != SYSCALL_ACKSIG)
+		SYSC_SETERROR(stack,res);
 }
 
 uint sysc_getArgCount(uint sysCallNo) {

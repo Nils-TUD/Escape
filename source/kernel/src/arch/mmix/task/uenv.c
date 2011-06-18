@@ -31,7 +31,7 @@
 #include <errors.h>
 #include <assert.h>
 
-#define KEYBOARD_BASE		0xF0200000
+#define KEYBOARD_BASE		0x8006000000000000
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
@@ -45,7 +45,6 @@ typedef struct {
 static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
-#if 0
 /* temporary storage for signal-handling */
 static sSignalData signalData;
 
@@ -89,7 +88,9 @@ bool uenv_hasSignalToStart(void) {
 void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	fSignal handler;
-	uint32_t *sp = (uint32_t*)stack->r[29];
+	uint64_t *sp = (uint64_t*)(t->kstackEnd[-15]);	/* $254 */
+	/* rBB,rWW,rXX,rYY,rZZ + rJ + signal + handler */
+	const ulong count = 5 + 1 + 1 + 1;
 
 	/* release signal-data */
 	signalData.active = 0;
@@ -100,57 +101,58 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 		return;
 
 	/* extend the stack, if necessary */
-	if(thread_extendStack((uintptr_t)(sp - REG_COUNT)) < 0) {
+	if(thread_extendStack((uintptr_t)(sp - count)) < 0) {
 		/* TODO later we should kill the process here! */
 		util_panic("Thread %d: stack overflow",t->tid);
 		return;
 	}
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t));
+	paging_isRangeUserWritable((uintptr_t)(sp - count),count * sizeof(uint64_t));
 
 	/* thread_extendStack() and paging_isRangeUserWritable() may cause a thread-switch. therefore
 	 * we may have delivered another signal in the meanwhile... */
 	if(t->tid != signalData.tid)
 		return;
 
-	/* if we've not entered the kernel by a trap, we have to decrease $30, because when returning
-	 * from the signal, we'll always enter it by a trap, so that $30 will be increased */
-	if(stack->irqNo != 20)
-		stack->r[30] -= 4;
-
 	handler = sig_startHandling(signalData.tid,signalData.sig);
-	memcpy(sp - REG_COUNT,stack->r,REG_COUNT * sizeof(uint32_t));
-	/* signal-number as arguments */
-	stack->r[4] = signalData.sig;
-	/* set new stack-pointer */
-	stack->r[29] = (uint32_t)(sp - REG_COUNT);
-	/* the process should continue here */
-	stack->r[30] = (uint32_t)handler;
-	/* and return here after handling the signal */
-	stack->r[31] = t->proc->sigRetAddr;
-	/* make sure that it is really released now */
-	signalData.active = 0;
+
+	/* backup rBB, rWW, rXX, rYY and rZZ */
+	cpu_getKSpecials(sp - 1,sp - 2,sp - 3,sp - 4,sp - 5);
+	sp -= 6;
+	*sp-- = t->kstackEnd[-9];			/* rJ */
+	*sp-- = (uintptr_t)handler;
+	*sp = signalData.sig;
+	t->kstackEnd[-15] = (uint64_t)sp;	/* $254 */
+
+	/* jump to sigRetAddr for setup and finish-code */
+	cpu_setKSpecials(0,t->proc->sigRetAddr,1UL << 63,0,0);
 }
-#endif
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
-#if 0
-	uint32_t *regs;
-	uint32_t *sp = (uint32_t*)stack->r[29];
-	if(!paging_isRangeUserReadable((uintptr_t)sp,REG_COUNT * sizeof(uint32_t)))
+	sThread *t = thread_getRunning();
+	uint64_t *regs;
+	uint64_t *sp = (uint64_t*)(t->kstackEnd[-15]);	/* $254 */
+	/* rBB,rWW,rXX,rYY,rZZ + rJ + signal + handler */
+	const ulong count = 5 + 1 + 1 + 1;
+	if(!paging_isRangeUserReadable((uintptr_t)sp,count * sizeof(uint64_t)))
 		return ERR_INVALID_ARGS;
 
-	memcpy(stack->r,sp,REG_COUNT * sizeof(uint32_t));
+	/* restore rBB, rWW, rXX, rYY and rZZ */
+	sp += 2;
+	t->kstackEnd[-9] = *sp++;			/* rJ */
+	cpu_setKSpecials(sp[4],sp[3],sp[2],sp[1],sp[0]);
+	sp += 5;
+	t->kstackEnd[-15] = (uint64_t)sp;	/* $254 */
+
 	/* reenable device-interrupts */
 	switch(signal) {
 		case SIG_INTRPT_KB:
-			regs = (uint32_t*)KEYBOARD_BASE;
+			regs = (uint64_t*)KEYBOARD_BASE;
 			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 			break;
 		/* not necessary for disk here; the driver will reenable interrupts as soon as a new
 		 * command is started */
 	}
-#endif
 	return 0;
 }
 

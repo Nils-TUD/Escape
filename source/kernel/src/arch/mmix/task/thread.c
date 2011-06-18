@@ -178,6 +178,7 @@ void thread_switchTo(tTid tid) {
 			cur->archAttr.tempStack = -1;
 		}
 
+		/* TODO we have to clear the TCs if the process shares its address-space with another one */
 		thread_doSwitch(&old->save,&cur->save,cur->proc->pagedir,cur->tid);
 
 		/* now start kernel-time again */

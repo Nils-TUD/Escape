@@ -28,7 +28,7 @@
 #include <errors.h>
 #include <string.h>
 
-void sysc_open(sIntrptStackFrame *stack) {
+int sysc_open(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	uint flags = (uint)SYSC_ARG2(stack);
 	ssize_t pathLen;
@@ -69,7 +69,7 @@ void sysc_open(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-void sysc_fcntl(sIntrptStackFrame *stack) {
+int sysc_fcntl(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	uint cmd = SYSC_ARG2(stack);
 	int arg = (int)SYSC_ARG3(stack);
@@ -88,7 +88,7 @@ void sysc_fcntl(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_pipe(sIntrptStackFrame *stack) {
+int sysc_pipe(sIntrptStackFrame *stack) {
 	tFD *readFd = (tFD*)SYSC_ARG1(stack);
 	tFD *writeFd = (tFD*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -147,7 +147,6 @@ void sysc_pipe(sIntrptStackFrame *stack) {
 
 	/* yay, we're done! :) */
 	SYSC_RET1(stack,0);
-	return;
 
 	/* error-handling */
 errorCloseWriteFile:
@@ -163,7 +162,7 @@ errorRemNode:
 	SYSC_ERROR(stack,err);
 }
 
-void sysc_tell(sIntrptStackFrame *stack) {
+int sysc_tell(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -181,7 +180,7 @@ void sysc_tell(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_seek(sIntrptStackFrame *stack) {
+int sysc_seek(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	off_t offset = (off_t)SYSC_ARG2(stack);
 	uint whence = SYSC_ARG3(stack);
@@ -203,7 +202,7 @@ void sysc_seek(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_read(sIntrptStackFrame *stack) {
+int sysc_read(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
@@ -226,11 +225,10 @@ void sysc_read(sIntrptStackFrame *stack) {
 	readBytes = vfs_readFile(p->pid,file,buffer,count);
 	if(readBytes < 0)
 		SYSC_ERROR(stack,readBytes);
-
 	SYSC_RET1(stack,readBytes);
 }
 
-void sysc_write(sIntrptStackFrame *stack) {
+int sysc_write(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
@@ -253,11 +251,10 @@ void sysc_write(sIntrptStackFrame *stack) {
 	writtenBytes = vfs_writeFile(p->pid,file,buffer,count);
 	if(writtenBytes < 0)
 		SYSC_ERROR(stack,writtenBytes);
-
 	SYSC_RET1(stack,writtenBytes);
 }
 
-void sysc_isterm(sIntrptStackFrame *stack) {
+int sysc_isterm(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
@@ -272,7 +269,7 @@ void sysc_isterm(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_send(sIntrptStackFrame *stack) {
+int sysc_send(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tMsgId id = (tMsgId)SYSC_ARG2(stack);
 	const void *data = (const void*)SYSC_ARG3(stack);
@@ -294,11 +291,10 @@ void sysc_send(sIntrptStackFrame *stack) {
 	res = vfs_sendMsg(p->pid,file,id,data,size);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-
 	SYSC_RET1(stack,res);
 }
 
-void sysc_receive(sIntrptStackFrame *stack) {
+int sysc_receive(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tMsgId *id = (tMsgId*)SYSC_ARG2(stack);
 	void *data = (void*)SYSC_ARG3(stack);
@@ -321,11 +317,10 @@ void sysc_receive(sIntrptStackFrame *stack) {
 	res = vfs_receiveMsg(p->pid,file,id,data,size);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-
 	SYSC_RET1(stack,res);
 }
 
-void sysc_dupFd(sIntrptStackFrame *stack) {
+int sysc_dupFd(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tFD res;
 
@@ -335,7 +330,7 @@ void sysc_dupFd(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_redirFd(sIntrptStackFrame *stack) {
+int sysc_redirFd(sIntrptStackFrame *stack) {
 	tFD src = (tFD)SYSC_ARG1(stack);
 	tFD dst = (tFD)SYSC_ARG2(stack);
 	int err = proc_redirFd(src,dst);
@@ -344,20 +339,21 @@ void sysc_redirFd(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,err);
 }
 
-void sysc_close(sIntrptStackFrame *stack) {
+int sysc_close(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 
 	/* unassoc fd */
 	tFileNo fileNo = proc_unassocFd(fd);
 	if(fileNo < 0)
-		return;
+		SYSC_ERROR(stack,fileNo);
 
 	/* close file */
 	vfs_closeFile(p->pid,fileNo);
+	SYSC_RET1(stack,0);
 }
 
-void sysc_stat(sIntrptStackFrame *stack) {
+int sysc_stat(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -377,7 +373,7 @@ void sysc_stat(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_fstat(sIntrptStackFrame *stack) {
+int sysc_fstat(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
@@ -398,7 +394,7 @@ void sysc_fstat(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_sync(sIntrptStackFrame *stack) {
+int sysc_sync(sIntrptStackFrame *stack) {
 	int res;
 	sProc *p = proc_getRunning();
 	res = vfs_real_sync(p->pid);
@@ -407,7 +403,7 @@ void sysc_sync(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_link(sIntrptStackFrame *stack) {
+int sysc_link(sIntrptStackFrame *stack) {
 	int res;
 	sProc *p = proc_getRunning();
 	char *oldPath = (char*)SYSC_ARG1(stack);
@@ -421,7 +417,7 @@ void sysc_link(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_unlink(sIntrptStackFrame *stack) {
+int sysc_unlink(sIntrptStackFrame *stack) {
 	int res;
 	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
@@ -434,7 +430,7 @@ void sysc_unlink(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_mkdir(sIntrptStackFrame *stack) {
+int sysc_mkdir(sIntrptStackFrame *stack) {
 	int res;
 	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
@@ -447,7 +443,7 @@ void sysc_mkdir(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_rmdir(sIntrptStackFrame *stack) {
+int sysc_rmdir(sIntrptStackFrame *stack) {
 	int res;
 	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
@@ -460,7 +456,7 @@ void sysc_rmdir(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_mount(sIntrptStackFrame *stack) {
+int sysc_mount(sIntrptStackFrame *stack) {
 	int res;
 	tInodeNo ino;
 	sProc *p = proc_getRunning();
@@ -478,7 +474,7 @@ void sysc_mount(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-void sysc_unmount(sIntrptStackFrame *stack) {
+int sysc_unmount(sIntrptStackFrame *stack) {
 	int res;
 	tInodeNo ino;
 	sProc *p = proc_getRunning();

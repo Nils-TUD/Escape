@@ -31,7 +31,7 @@
  *
  * @return tPid the pid
  */
-void sysc_getpid(sIntrptStackFrame *stack);
+int sysc_getpid(sIntrptStackFrame *stack);
 
 /**
  * Returns the parent-pid of the given process
@@ -39,14 +39,14 @@ void sysc_getpid(sIntrptStackFrame *stack);
  * @param pid the process-id
  * @return tPid the parent-pid
  */
-void sysc_getppid(sIntrptStackFrame *stack);
+int sysc_getppid(sIntrptStackFrame *stack);
 
 /**
  * Clones the current process
  *
  * @return tPid 0 for the child, the child-pid for the parent-process
  */
-void sysc_fork(sIntrptStackFrame *stack);
+int sysc_fork(sIntrptStackFrame *stack);
 
 /**
  * Waits until a child has terminated
@@ -54,14 +54,14 @@ void sysc_fork(sIntrptStackFrame *stack);
  * @param sExitState* will be filled with information about the terminated process
  * @return int 0 on success
  */
-void sysc_waitChild(sIntrptStackFrame *stack);
+int sysc_waitChild(sIntrptStackFrame *stack);
 
 /**
  * Exchanges the process-data with another program
  *
  * @param char* the program-path
  */
-void sysc_exec(sIntrptStackFrame *stack);
+int sysc_exec(sIntrptStackFrame *stack);
 
 /**
  * Returns the environment-variable-name with index i. Or an error if there is none.
@@ -71,7 +71,7 @@ void sysc_exec(sIntrptStackFrame *stack);
  * @param size_t the index of the variable
  * @return ssize_t the length of the name on success
  */
-void sysc_getenvito(sIntrptStackFrame *stack);
+int sysc_getenvito(sIntrptStackFrame *stack);
 
 /**
  * Returns the value of the environment-variable with given name
@@ -81,7 +81,7 @@ void sysc_getenvito(sIntrptStackFrame *stack);
  * @param const char* the name
  * @return ssize_t the length of the value on success
  */
-void sysc_getenvto(sIntrptStackFrame *stack);
+int sysc_getenvto(sIntrptStackFrame *stack);
 
 /**
  * Sets the environment-variable with given name to given value
@@ -90,6 +90,6 @@ void sysc_getenvto(sIntrptStackFrame *stack);
  * @param const char* the value
  * @return int 0 on success
  */
-void sysc_setenv(sIntrptStackFrame *stack);
+int sysc_setenv(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_PROC_H_ */

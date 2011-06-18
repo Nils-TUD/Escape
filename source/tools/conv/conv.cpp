@@ -30,6 +30,7 @@ struct sFuncCall {
 	sFuncCall *next;
 	sFuncCall *child;
 	char name[MAX_FUNC_LEN + 1];
+	unsigned long long addr;
 	unsigned long long time;
 	unsigned long long begin;
 	unsigned long calls;
@@ -48,13 +49,13 @@ typedef struct {
 } sParser;
 
 static sContext *getCurrent(unsigned long tid);
-static void funcEnter(unsigned long tid,const char *name);
+static void funcEnter(unsigned long tid,const char *name,unsigned long long addr);
 static void funcLeave(unsigned long tid,unsigned long long time);
 static void parseI586(FILE *f);
 static void parseMMIX(FILE *f);
-static const char *resolve(const char *name);
-static sFuncCall *getFunc(sFuncCall *cur,const char *name);
-static sFuncCall *append(sFuncCall *cur,const char *name);
+static const char *resolve(const char *name,unsigned long long addr);
+static sFuncCall *getFunc(sFuncCall *cur,const char *name,unsigned long long addr);
+static sFuncCall *append(sFuncCall *cur,const char *name,unsigned long long addr);
 static void printFunc(sFuncCall *f,int layer);
 
 static sParser parsers[] = {
@@ -138,7 +139,7 @@ static void parseI586(FILE *f) {
 		if(c == '>') {
 			fscanf(f,"%lu:",&tid);
 			fscanf(f,"%s",funcName);
-			funcEnter(tid,funcName);
+			funcEnter(tid,funcName,0);
 		}
 		/* function-return */
 		else if(c == '<') {
@@ -151,8 +152,8 @@ static void parseI586(FILE *f) {
 
 static void parseMMIX(FILE *f) {
 	char funcName[MAX_FUNC_LEN + 1];
-	int c;
-	unsigned long long time;
+	int c,tid;
+	unsigned long long addr,time;
 	while((c = getc(f)) != EOF) {
 		sContext *con;
 		/* skip whitespace at the beginning */
@@ -168,19 +169,19 @@ static void parseMMIX(FILE *f) {
 					break;
 				}
 			}
-			funcName[i] = '\0';
-			funcEnter(0,funcName);
-			con = getCurrent(0);
-			while((c = getc(f)) != ',')
+			while((c = getc(f)) != '>')
 				;
-			fscanf(f," ic=#%Lx",&time);
+			fscanf(f," #%Lx], t=%d, ic=#%Lx",&addr,&tid,&time);
+			funcName[i] = '\0';
+			funcEnter(tid,funcName,addr);
+			con = getCurrent(0);
 			con->current->begin = time;
 		}
 		/* function-return */
 		else if(c == '/') {
 			con = getCurrent(0);
-			fscanf(f," ic=#%Lx",&time);
-			funcLeave(0,time - con->current->begin);
+			fscanf(f," t=%d, ic=#%Lx",&tid,&time);
+			funcLeave(tid,time - con->current->begin);
 		}
 		/* to line end */
 		while(getc(f) != '\n')
@@ -209,11 +210,11 @@ static sContext *getCurrent(unsigned long tid) {
 	return contexts + tid;
 }
 
-static void funcEnter(unsigned long tid,const char *name) {
+static void funcEnter(unsigned long tid,const char *name,unsigned long long addr) {
 	sContext *context = getCurrent(tid);
-	sFuncCall *call = getFunc(context->current,name);
+	sFuncCall *call = getFunc(context->current,name,addr);
 	if(call == NULL)
-		context->current = append(context->current,name);
+		context->current = append(context->current,name,addr);
 	else
 		context->current = call;
 	context->current->calls++;
@@ -229,23 +230,25 @@ static void funcLeave(unsigned long tid,unsigned long long time) {
 	}
 }
 
-static const char *resolve(const char *name) {
+static const char *resolve(const char *name,unsigned long long addr) {
 	static char resolved[MAX_FUNC_LEN];
-	unsigned long addr;
+	unsigned long long naddr;
 	char *end;
-	addr = strtoul(name,&end,16);
+	naddr = strtoull(name,&end,16);
 	specialChars(name,resolved,MAX_FUNC_LEN);
 	if(std::string(name).find_first_not_of("0123456789ABCDEFabcdef",0) == std::string::npos) {
 		strcat(resolved,": ");
 		strcat(resolved,sym_resolve(addr));
 	}
+	else if(addr != 0)
+		snprintf(resolved + strlen(resolved),MAX_FUNC_LEN - strlen(resolved),": #%Lx",addr);
 	return resolved;
 }
 
-static sFuncCall *getFunc(sFuncCall *cur,const char *name) {
+static sFuncCall *getFunc(sFuncCall *cur,const char *name,unsigned long long addr) {
 	if(!cur->child)
 		return NULL;
-	const char *rname = resolve(name);
+	const char *rname = resolve(name,addr);
 	sFuncCall *c = cur->child;
 	while(c != NULL) {
 		if(strcmp(c->name,rname) == 0)
@@ -255,7 +258,7 @@ static sFuncCall *getFunc(sFuncCall *cur,const char *name) {
 	return NULL;
 }
 
-static sFuncCall *append(sFuncCall *cur,const char *name) {
+static sFuncCall *append(sFuncCall *cur,const char *name,unsigned long long addr) {
 	sFuncCall *c;
 	sFuncCall *call = (sFuncCall*)malloc(sizeof(sFuncCall));
 	if(call == NULL)
@@ -265,7 +268,8 @@ static sFuncCall *append(sFuncCall *cur,const char *name) {
 	call->parent = cur;
 	call->child = NULL;
 	call->next = NULL;
-	strcpy(call->name,resolve(name));
+	call->addr = addr;
+	strcpy(call->name,resolve(name,addr));
 
 	c = cur->child;
 	if(c) {

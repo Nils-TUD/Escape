@@ -116,8 +116,8 @@ int main(int argc,char **argv) {
 	/* flush prints */
 	fflush(stdout);
 
-	/* enable interrupts TODO */
-	diskRegs[DISK_CTRL] = /*DISK_IEN | */DISK_DONE;
+	/* enable interrupts */
+	diskRegs[DISK_CTRL] = DISK_IEN | DISK_DONE;
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that the disk is registered */
 	FILE *f = fopen("/system/devices/disk","w");
@@ -217,7 +217,7 @@ static bool diskRead(void *buf,ulong secNo,ulong secCount) {
 	/* set sector and sector-count, start the disk-operation and wait */
 	*diskSecReg = secNo;
 	*diskCntReg = secCount;
-	*diskCtrlReg = DISK_STRT/* | DISK_IEN TODO */;
+	*diskCtrlReg = DISK_STRT | DISK_IEN;
 
 	if(!diskWait()) {
 		DISK_DBG("FAILED");
@@ -231,7 +231,6 @@ static bool diskRead(void *buf,ulong secNo,ulong secCount) {
 }
 
 static bool diskWrite(const void *buf,ulong secNo,ulong secCount) {
-#if 0
 	uint64_t *diskSecReg = diskRegs + DISK_SCT;
 	uint64_t *diskCntReg = diskRegs + DISK_CNT;
 	uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
@@ -250,26 +249,22 @@ static bool diskWrite(const void *buf,ulong secNo,ulong secCount) {
 	/* set sector and sector-count and start the disk-operation */
 	*diskSecReg = secNo;
 	*diskCntReg = secCount;
-	*diskCtrlReg = DISK_STRT | DISK_WRT/* | DISK_IEN TODO */;
+	*diskCtrlReg = DISK_STRT | DISK_WRT | DISK_IEN;
 	/* we don't need to wait here because maybe there is no other request and we could therefore
 	 * save time */
 	DISK_DBG("done");
-#endif
 	return true;
 }
 
 static bool diskWait(void) {
 	volatile uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
-	/* TODO
 	if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
 		sleep(IRQ_TIMEOUT);
 		if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
 			DISK_LOG("Waiting for interrupt: Timeout reached, giving up");
 			return false;
 		}
-	}*/
-	while(!(*diskCtrlReg & (DISK_DONE | DISK_ERR)))
-		;
+	}
 	return (*diskCtrlReg & DISK_ERR) == 0;
 }
 
@@ -305,7 +300,7 @@ static void createVFSEntry(const char *name,bool isPart) {
 	}
 	else {
 		fprintf(f,"%-15s%s\n","Vendor:","THM");
-		fprintf(f,"%-15s%s\n","Model:","ECO32 Disk");
+		fprintf(f,"%-15s%s\n","Model:","GIMMIX Disk");
 		fprintf(f,"%-15s%d\n","Sectors:",diskCap / SECTOR_SIZE);
 	}
 	fclose(f);

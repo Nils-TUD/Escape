@@ -65,6 +65,10 @@
 #define KEYBOARD_CTRL			0
 #define KEYBOARD_IEN			0x02
 
+#define DISK_BASE				0x8003000000000000
+#define DISK_CTRL				0
+#define DISK_IEN				0x02
+
 typedef void (*fIntrptHandler)(sIntrptStackFrame *stack,int irqNo);
 typedef struct {
 	fIntrptHandler handler;
@@ -76,6 +80,7 @@ static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo);
+static void intrpt_irqDisk(sIntrptStackFrame *stack,int irqNo);
 
 static sInterrupt intrptList[] = {
 	/* 0x00: TRAP_POWER_FAILURE */	{intrpt_defHandler,	"Power failure",		0},
@@ -102,8 +107,8 @@ static sInterrupt intrptList[] = {
 	/* 0x15: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x16: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x17: -- */					{intrpt_defHandler,	"??",					0},
-	/* 0x18: -- */					{intrpt_defHandler,	"TLB invalid exception",0},
-	/* 0x19: -- */					{intrpt_defHandler,	"TLB invalid exception",0},
+	/* 0x18: -- */					{intrpt_defHandler,	"??",					0},
+	/* 0x19: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x1A: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x1B: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x1C: -- */					{intrpt_defHandler,	"??",					0},
@@ -129,7 +134,7 @@ static sInterrupt intrptList[] = {
 	/* 0x30: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x31: -- */					{intrpt_defHandler,	"??",					0},
 	/* 0x32: -- */					{intrpt_defHandler,	"??",					0},
-	/* 0x33: TRAP_DISK */			{intrpt_defHandler,	"Disk",					0},
+	/* 0x33: TRAP_DISK */			{intrpt_irqDisk,	"Disk",					0},
 	/* 0x34: TRAP_TIMER */			{intrpt_irqTimer,	"Timer",				0},
 	/* 0x35: TRAP_TTY0_XMTR */		{intrpt_defHandler,	"Terminal 0 trans.",	0},
 	/* 0x36: TRAP_TTY0_RCVR */		{intrpt_defHandler,	"Terminal 0 recv.",		0},
@@ -177,6 +182,9 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
 	t = thread_getRunning(); /* thread may have changed */
 	stack[-14] = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
+	uenv_handleSignal();
+	if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+		uenv_startSignalHandler(stack);
 	intrpt_leaveKernel(t);
 }
 
@@ -191,21 +199,18 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	intrpt = intrptList + (irqNo & 0x3F);
 	intrpt->handler(stack,irqNo);
 
-#if 0
 	/* only handle signals, if we come directly from user-mode */
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
-	sThread *t = thread_getRunning();
-	if(t != NULL && (t->tid == IDLE_TID || (stack->psw & PSW_PUM))) {
-		uenv_handleSignal();
-		if(t->tid != IDLE_TID && uenv_hasSignalToStart())
-			uenv_startSignalHandler(stack);
-	}
-#endif
+	t = thread_getRunning();
+	uenv_handleSignal();
+	if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+		uenv_startSignalHandler(stack);
 	intrpt_leaveKernel(t);
 }
 
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
 	uint64_t rww = cpu_getSpecial(rWW);
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ %p\n",
@@ -213,6 +218,7 @@ static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
 }
 
 void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
 	uintptr_t pfaddr = cpu_getFaultLoc();
 
 #if DEBUG_PAGEFAULTS
@@ -282,6 +288,15 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
 	timer_ackIntrpt();
 }
 
+static void intrpt_irqDisk(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
+	/* see interrupt_irqKb() */
+	uint64_t *diskRegs = (uint64_t*)DISK_BASE;
+	diskRegs[DISK_CTRL] &= ~DISK_IEN;
+	if(!sig_addSignal(SIG_INTRPT_ATA1))
+		diskRegs[DISK_CTRL] |= DISK_IEN;
+}
+
 void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 	stack--;
 	int i,j,rl,rg = *stack >> 56;
@@ -289,7 +304,7 @@ void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
 	static int spregs[] = {rZ,rY,rX,rW,rP,rR,rM,rJ,rH,rE,rD,rB};
 	vid_printf("\trG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
 	vid_printf("\t");
-	for(j = 0, i = 1; i <= ARRAY_SIZE(spregs); j++, i++) {
+	for(j = 0, i = 1; i <= (int)ARRAY_SIZE(spregs); j++, i++) {
 		vid_printf("%-4s: #%016lx ",cpu_getSpecialName(spregs[i - 1]),*stack--);
 		if(j % 3 == 2)
 			vid_printf("\n\t");

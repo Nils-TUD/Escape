@@ -32,7 +32,7 @@
  * @param ssize_t number of pages
  * @return ssize_t the previous number of text+data pages
  */
-void sysc_changeSize(sIntrptStackFrame *stack);
+int sysc_changeSize(sIntrptStackFrame *stack);
 
 /**
  * Adds a region to the current process at the appropriate virtual address (depending on
@@ -44,7 +44,7 @@ void sysc_changeSize(sIntrptStackFrame *stack);
  * @param uint the region-type (see REG_*)
  * @return void* the address of the region on success, NULL on failure
  */
-void sysc_addRegion(sIntrptStackFrame *stack);
+int sysc_addRegion(sIntrptStackFrame *stack);
 
 /**
  * Changes the protection of the region denoted by the given address.
@@ -53,7 +53,7 @@ void sysc_addRegion(sIntrptStackFrame *stack);
  * @param uint the new protection-setting (PROT_*)
  * @return int 0 on success
  */
-void sysc_setRegProt(sIntrptStackFrame *stack);
+int sysc_setRegProt(sIntrptStackFrame *stack);
 
 /**
  * Maps physical memory in the virtual user-space
@@ -62,7 +62,7 @@ void sysc_setRegProt(sIntrptStackFrame *stack);
  * @param size_t number of bytes
  * @return void* the start-address
  */
-void sysc_mapPhysical(sIntrptStackFrame *stack);
+int sysc_mapPhysical(sIntrptStackFrame *stack);
 
 /**
  * Creates a shared-memory region
@@ -71,7 +71,7 @@ void sysc_mapPhysical(sIntrptStackFrame *stack);
  * @param size_t number of bytes
  * @return intptr_t the address on success, negative error-code otherwise
  */
-void sysc_createSharedMem(sIntrptStackFrame *stack);
+int sysc_createSharedMem(sIntrptStackFrame *stack);
 
 /**
  * Joines a shared-memory region
@@ -79,7 +79,7 @@ void sysc_createSharedMem(sIntrptStackFrame *stack);
  * @param char* the name
  * @return intptr_t the address on success, negative error-code otherwise
  */
-void sysc_joinSharedMem(sIntrptStackFrame *stack);
+int sysc_joinSharedMem(sIntrptStackFrame *stack);
 
 /**
  * Leaves a shared-memory region
@@ -87,7 +87,7 @@ void sysc_joinSharedMem(sIntrptStackFrame *stack);
  * @param char* the name
  * @return int 0 on success, negative error-code otherwise
  */
-void sysc_leaveSharedMem(sIntrptStackFrame *stack);
+int sysc_leaveSharedMem(sIntrptStackFrame *stack);
 
 /**
  * Destroys a shared-memory region
@@ -95,6 +95,6 @@ void sysc_leaveSharedMem(sIntrptStackFrame *stack);
  * @param char* the name
  * @return int 0 on success, negative error-code otherwise
  */
-void sysc_destroySharedMem(sIntrptStackFrame *stack);
+int sysc_destroySharedMem(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_MEM_H_ */

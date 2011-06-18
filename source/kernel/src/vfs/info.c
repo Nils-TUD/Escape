@@ -226,8 +226,8 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"%-16s%Su\n"
 		"%-16s%Su\n"
 		"%-16s%Su\n"
-		"%-16s%08x%08x\n"
-		"%-16s%08x%08x\n"
+		"%-16s%016Lx\n"
+		"%-16s%016Lx\n"
 		,
 		"Tid:",t->tid,
 		"Pid:",t->proc->pid,
@@ -235,8 +235,8 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"StackPages:",stackPages,
 		"SchedCount:",t->stats.schedCount,
 		"Syscalls:",t->stats.syscalls,
-		"UCPUCycles:",t->stats.ucycleCount.val32.upper,t->stats.ucycleCount.val32.lower,
-		"KCPUCycles:",t->stats.kcycleCount.val32.upper,t->stats.kcycleCount.val32.lower
+		"UCPUCycles:",t->stats.ucycleCount.val64,
+		"KCPUCycles:",t->stats.kcycleCount.val64
 	);
 	*dataSize = buf.len;
 }
@@ -281,13 +281,13 @@ static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 		"%-16s%Su\n"
 		"%-16s%Su\n"
 		"%-16s%Su\n"
-		"%-16s%08x%08x\n"
+		"%-16s%016Lx\n"
 		"%-16s%Sus\n"
 		,
 		"Processes:",proc_getCount(),
 		"Threads:",thread_getCount(),
 		"Interrupts:",intrpt_getCount(),
-		"CPUCycles:",cycles.val32.upper,cycles.val32.lower,
+		"CPUCycles:",cycles.val64,
 		"UpTime:",timer_getIntrptCount() / TIMER_FREQUENCY
 	);
 	*buffer = buf.str;

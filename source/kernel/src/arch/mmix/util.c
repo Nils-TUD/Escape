@@ -109,8 +109,9 @@ void util_zeroToUser(void *dst,size_t count) {
 
 sFuncCall *util_getUserStackTrace(void) {
 	/* TODO */
-	/* eco32 has no frame-pointer; therefore without information about the stackframe-sizes or
-	 * similar, there is no way to determine the stacktrace */
+	/* the MMIX-toolchain doesn't use a frame-pointer when enabling optimization, as it seems.
+	 * therefore without information about the stackframe-sizes or similar, there is no way to
+	 * determine the stacktrace */
 	return frames;
 }
 

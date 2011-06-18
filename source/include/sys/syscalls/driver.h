@@ -29,7 +29,7 @@
  * @param uint flags: what functions are implemented
  * @return tFD the file-desc if successfull
  */
-void sysc_regDriver(sIntrptStackFrame *stack);
+int sysc_regDriver(sIntrptStackFrame *stack);
 
 /**
  * Fetches the client-id from the given file-descriptor
@@ -37,7 +37,7 @@ void sysc_regDriver(sIntrptStackFrame *stack);
  * @param tFD the file-descriptor
  * @return tInodeNo the id or an error
  */
-void sysc_getClientId(sIntrptStackFrame *stack);
+int sysc_getClientId(sIntrptStackFrame *stack);
 
 /**
  * For drivers: Returns the file-descriptor for a specific client
@@ -46,7 +46,7 @@ void sysc_getClientId(sIntrptStackFrame *stack);
  * @param tInodeNo the client-id
  * @return tFD the file-descriptor
  */
-void sysc_getClient(sIntrptStackFrame *stack);
+int sysc_getClient(sIntrptStackFrame *stack);
 
 /**
  * For drivers: Looks whether a client wants to be served. If not and WG_NOBLOCK is not provided
@@ -63,6 +63,6 @@ void sysc_getClient(sIntrptStackFrame *stack);
  * @param uint flags
  * @return tFD the file-desc to serve the client or a negative error-code
  */
-void sysc_getWork(sIntrptStackFrame *stack);
+int sysc_getWork(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_DRIVER_H_ */

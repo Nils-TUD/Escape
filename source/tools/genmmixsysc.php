@@ -81,12 +81,12 @@ foreach($syscalls as $sc) {
 	echo ".global ".$sc[0]."\n";
 	echo ".type ".$sc[0].", @function\n";
 	echo $sc[0].":\n";
-	echo "	SET		$7,".$sc[1]."				# set syscall-number\n";
-	echo "	TRAP	1,0,0\n";
-	echo "	BZ		$7,1f						# no-error?\n";
-	echo "	GETA	$2,errno\n";
-	echo "	STOU	$7,$2,0\n";
-	echo "	SET		$0,$7\n";
+	echo "	SET		$7,0\n";
+	echo "	TRAP	0,".$sc[1].",0\n";
+	echo "	BZ		$2,1f						# no-error?\n";
+	echo "	GETA	$3,errno\n";
+	echo "	STOU	$2,$3,0\n";
+	echo "	SET		$0,$2\n";
 	echo "1:\n";
 	echo "	POP		1,0							# return value is in $0\n";
 	echo "\n";

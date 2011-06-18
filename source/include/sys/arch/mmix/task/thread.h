@@ -35,6 +35,14 @@ typedef struct {
 typedef struct {
 	/* use as a temporary kernel-stack for cloning */
 	tFrameNo tempStack;
+	/* when handling a signal, we have to backup these registers */
+	struct {
+		uint64_t rbb;
+		uint64_t rww;
+		uint64_t rxx;
+		uint64_t ryy;
+		uint64_t rzz;
+	} sigSave;
 } sThreadArchAttr;
 
 #define STACK_REG_COUNT		2

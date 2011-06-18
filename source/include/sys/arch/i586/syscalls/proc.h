@@ -29,7 +29,7 @@
  * @param size_t number of ports
  * @return int 0 if successfull or a negative error-code
  */
-void sysc_requestIOPorts(sIntrptStackFrame *stack);
+int sysc_requestIOPorts(sIntrptStackFrame *stack);
 
 /**
  * Releases some IO-ports
@@ -38,7 +38,7 @@ void sysc_requestIOPorts(sIntrptStackFrame *stack);
  * @param size_t number of ports
  * @return int 0 if successfull or a negative error-code
  */
-void sysc_releaseIOPorts(sIntrptStackFrame *stack);
+int sysc_releaseIOPorts(sIntrptStackFrame *stack);
 
 /**
  * Performs a VM86-interrupt. That means a VM86-task is created as a child-process, the
@@ -51,6 +51,6 @@ void sysc_releaseIOPorts(sIntrptStackFrame *stack);
  * @param size_t mem-area count
  * @return int 0 on success
  */
-void sysc_vm86int(sIntrptStackFrame *stack);
+int sysc_vm86int(sIntrptStackFrame *stack);
 
 #endif /* I586_SYSCALLS_PROC_H_ */

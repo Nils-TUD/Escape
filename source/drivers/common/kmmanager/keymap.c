@@ -85,7 +85,8 @@ char km_translateKeycode(sKeymapEntry *map,bool isBreak,uchar keycode,uchar *mod
 }
 
 static bool km_parseLine(FILE *f,sKeymapEntry *map) {
-	size_t i,no;
+	size_t i;
+	int no;
 	char *entries[3];
 	/* scan number */
 	if(fscanf(f,"%d",&no) != 1 || no >= KEYMAP_SIZE)

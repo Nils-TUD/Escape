@@ -25,19 +25,19 @@
 /**
  * Loads the multiboot-modules. This is intended for initloader only!
  */
-void sysc_loadMods(sIntrptStackFrame *stack);
+int sysc_loadMods(sIntrptStackFrame *stack);
 
 /**
  * Temporary syscall to print out a character
  */
-void sysc_debugc(sIntrptStackFrame *stack);
+int sysc_debugc(sIntrptStackFrame *stack);
 
 /**
  * Just intended for debugging. May be used for anything :)
  * It's just a system-call thats used by nothing else, so we can use it e.g. for printing
  * debugging infos in the kernel to points of time controlled by user-apps.
  */
-void sysc_debug(sIntrptStackFrame *stack);
+int sysc_debug(sIntrptStackFrame *stack);
 
 /**
  * Gets the value of a kernel-configuration
@@ -45,6 +45,6 @@ void sysc_debug(sIntrptStackFrame *stack);
  * @param uint the id of the config-value (CONF_*)
  * @return int the value or the negative error-code
  */
-void sysc_getConf(sIntrptStackFrame *stack);
+int sysc_getConf(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_OTHER_H_ */

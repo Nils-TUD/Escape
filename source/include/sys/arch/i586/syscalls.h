@@ -24,9 +24,9 @@
 
 /* some convenience-macros */
 #define SYSC_SETERROR(stack,errorCode)	((stack)->ebx = (errorCode))
-#define SYSC_ERROR(stack,errorCode)		{ ((stack)->ebx = (errorCode)); return; }
-#define SYSC_RET1(stack,val)			((stack)->eax = (val))
-#define SYSC_RET2(stack,val)			((stack)->edx = (val))
+#define SYSC_ERROR(stack,errorCode)		{ ((stack)->ebx = (errorCode)); return (errorCode); }
+#define SYSC_RET1(stack,val)			{ ((stack)->eax = (val)); return 0; }
+#define SYSC_SETRET2(stack,val)			((stack)->edx = (val))
 #define SYSC_NUMBER(stack)				((stack)->eax)
 #define SYSC_ARG1(stack)				((stack)->ecx)
 #define SYSC_ARG2(stack)				((stack)->edx)

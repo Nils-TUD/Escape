@@ -23,6 +23,7 @@
 #include <cstring>
 #include <cctype>
 #include <string>
+#include <assert.h>
 #include "symbols.h"
 
 struct sFuncCall {
@@ -154,6 +155,7 @@ static void parseMMIX(FILE *f) {
 	char funcName[MAX_FUNC_LEN + 1];
 	int c,tid;
 	unsigned long long addr,time;
+	long line = 1;
 	while((c = getc(f)) != EOF) {
 		sContext *con;
 		/* skip whitespace at the beginning */
@@ -162,6 +164,9 @@ static void parseMMIX(FILE *f) {
 		/* function-enter */
 		if(c == '\\') {
 			size_t i;
+			/* skip -- */
+			while(getc(f) == '-')
+				;
 			for(i = 0; i < MAX_FUNC_LEN && (c = getc(f)) != '('; i++) {
 				funcName[i] = c;
 				if(c == '>') {
@@ -169,23 +174,27 @@ static void parseMMIX(FILE *f) {
 					break;
 				}
 			}
+			funcName[i] = '\0';
 			while((c = getc(f)) != '>')
 				;
-			fscanf(f," #%Lx], t=%d, ic=#%Lx",&addr,&tid,&time);
-			funcName[i] = '\0';
+			assert(fscanf(f," #%Lx], t=%d, ic=#%Lx",&addr,&tid,&time) == 3);
 			funcEnter(tid,funcName,addr);
-			con = getCurrent(0);
+			con = getCurrent(tid);
 			con->current->begin = time;
 		}
 		/* function-return */
 		else if(c == '/') {
-			con = getCurrent(0);
-			fscanf(f," t=%d, ic=#%Lx",&tid,&time);
+			/* skip -- */
+			while(getc(f) == '-')
+				;
+			con = getCurrent(tid);
+			assert(fscanf(f," t=%d, ic=#%Lx",&tid,&time) == 2);
 			funcLeave(tid,time - con->current->begin);
 		}
 		/* to line end */
 		while(getc(f) != '\n')
 			;
+		line++;
 	}
 }
 

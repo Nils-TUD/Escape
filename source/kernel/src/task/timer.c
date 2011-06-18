@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/kheap.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
 #include <sys/video.h>
@@ -26,11 +25,14 @@
 #include <esc/sllist.h>
 #include <errors.h>
 
+#define LISTENER_COUNT		1024
+
 /* an entry in the listener-list */
-typedef struct {
+typedef struct sTimerListener {
 	tTid tid;
 	/* difference to the previous listener */
 	tTime time;
+	struct sTimerListener *next;
 } sTimerListener;
 
 /* processes that should be waked up to a specified time */
@@ -40,8 +42,20 @@ static tTime elapsedMsecs = 0;
 static tTime lastResched = 0;
 static size_t timerIntrpts = 0;
 
+static sTimerListener listenObjs[LISTENER_COUNT];
+static sTimerListener *freeList;
+
 void timer_init(void) {
+	size_t i;
 	timer_arch_init();
+
+	/* init objects */
+	listenObjs->next = NULL;
+	freeList = listenObjs;
+	for(i = 1; i < LISTENER_COUNT; i++) {
+		listenObjs[i].next = freeList;
+		freeList = listenObjs + i;
+	}
 
 	/* init list */
 	listener = sll_create();
@@ -60,10 +74,12 @@ tTime timer_getTimestamp(void) {
 int timer_sleepFor(tTid tid,tTime msecs) {
 	tTime msecDiff;
 	sSLNode *n,*p;
-	sTimerListener *nl,*l = (sTimerListener*)kheap_alloc(sizeof(sTimerListener));
+	sTimerListener *nl,*l = freeList;
 	if(l == 0)
 		return ERR_NOT_ENOUGH_MEM;
 
+	/* remove from freelist */
+	freeList = freeList->next;
 	/* find place and calculate time */
 	l->tid = tid;
 	msecDiff = 0;
@@ -83,7 +99,8 @@ int timer_sleepFor(tTid tid,tTime msecs) {
 		nl = NULL;
 	/* insert entry */
 	if(!sll_insertAfter(listener,p,l)) {
-		kheap_free(l);
+		l->next = freeList;
+		freeList = l;
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -109,7 +126,8 @@ void timer_removeThread(tTid tid) {
 				nl->time += l->time;
 			}
 			sll_removeNode(listener,n,p);
-			kheap_free(l);
+			l->next = freeList;
+			freeList = l;
 			/* it's not possible to be in the list twice */
 			break;
 		}
@@ -140,7 +158,8 @@ void timer_intrpt(void) {
 		tn = n->next;
 		/* wake up thread */
 		thread_setReady(l->tid);
-		kheap_free(l);
+		l->next = freeList;
+		freeList = l;
 		sll_removeNode(listener,n,NULL);
 		n = tn;
 	}

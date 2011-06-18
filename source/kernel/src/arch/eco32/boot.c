@@ -34,6 +34,7 @@
 #include <sys/task/timer.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/channel.h>
 #include <sys/vfs/request.h>
 #include <sys/vfs/driver.h>
 #include <sys/vfs/real.h>
@@ -80,6 +81,7 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	vid_printf("Initializing VFS...");
 	dyna_init();
 	vfs_init();
+	vfs_chan_init();
 	vfs_info_init();
 	vfs_req_init();
 	vfs_drv_init();

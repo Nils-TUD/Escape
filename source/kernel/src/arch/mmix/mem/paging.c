@@ -334,6 +334,8 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 			}
 		}
 
+		vid_printf("%p: %lx (%lx)\n",virt,*(uint64_t*)pte,key);
+
 		/* update entries in TCs; protection-flags might have changed */
 		/* we have to do that for not running processes as well, since their entry might still
 		 * be in the TCs */

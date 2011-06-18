@@ -63,7 +63,7 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	info.progs = progs;
 	memcpy((void*)info.progs,binfo->progs,sizeof(sLoadProg) * binfo->progCount);
 	/* start idle-thread, load programs (without kernel) and wait for programs */
-	bootFinished = info.progCount + 1;
+	bootFinished = (info.progCount - 1) * 2 + 1;
 
 	vid_init();
 
@@ -160,8 +160,8 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 		}
 		bootState++;
 	}
-	else if(bootState < info.progCount) {
-		i = bootState;
+	else if((bootState % 2) == 1) {
+		i = (bootState / 2) + 1;
 		/* clone proc */
 		pid = proc_getFreePid();
 		if(pid == INVALID_PID)
@@ -199,22 +199,21 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 		bootState++;
 	}
 	else {
+		i = bootState / 2;
 		tInodeNo nodeNo;
-		for(i = 1; i < info.progCount; i++) {
-			int argc;
-			const char **argv = boot_parseArgs(progs[i].command,&argc);
+		int argc;
+		const char **argv = boot_parseArgs(progs[i].command,&argc);
 
-			/* wait until the driver is registered */
-			vid_printf("Waiting for '%s'...\n",argv[0]);
-			/* don't create a pipe- or driver-usage-node here */
-			while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
-				/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
-				 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
-				 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
-				 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
-				timer_sleepFor(thread_getRunning()->tid,20);
-				thread_switch();
-			}
+		/* wait until the driver is registered */
+		vid_printf("Waiting for '%s'...\n",argv[0]);
+		/* don't create a pipe- or driver-usage-node here */
+		while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
+			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
+			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
+			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
+			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
+			timer_sleepFor(thread_getRunning()->tid,20);
+			thread_switch();
 		}
 
 		bootState++;

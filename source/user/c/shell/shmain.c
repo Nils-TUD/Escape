@@ -89,11 +89,6 @@ int main(int argc,char **argv) {
 	/* set vterm as env-variable */
 	setenv("TERM",argv[1]);
 
-	if(strcmp(argv[1],"vterm0") == 0) {
-		shell_executeCmd((char*)"ls",false);
-		return EXIT_SUCCESS;
-	}
-
 	printf("\033[co;9]Welcome to Escape v0.3!\033[co]\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");

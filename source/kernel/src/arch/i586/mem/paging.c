@@ -38,10 +38,10 @@
 #include <errors.h>
 
 /* to shift a flag down to the first bit */
-#define PG_WRITABLE_SHIFT	0
-#define PG_SUPERVISOR_SHIFT	1
-#define PG_PRESENT_SHIFT	2
-#define PG_GLOBAL_SHIFT		4
+#define PG_PRESENT_SHIFT	0
+#define PG_WRITABLE_SHIFT	1
+#define PG_SUPERVISOR_SHIFT	3
+#define PG_GLOBAL_SHIFT		5
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
 #define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + \
@@ -490,8 +490,6 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 	uintptr_t pdirAddr = PAGEDIR(ptables);
 	sPDEntry *pde;
 	sPTEntry *pte;
-	assert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_PRESENT | PG_ADDR_TO_FRAME |
-			PG_EXECUTABLE | PG_GLOBAL | PG_KEEPFRM)));
 
 	virt &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {

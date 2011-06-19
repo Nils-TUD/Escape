@@ -45,9 +45,7 @@
 #include "arch/mmix/taddrspace.h"
 #endif
 
-int main(sBootInfo *bootinfo,uint32_t magic) {
-	UNUSED(magic);
-
+int main(sBootInfo *bootinfo) {
 	/* init the kernel */
 	boot_init(bootinfo,false);
 

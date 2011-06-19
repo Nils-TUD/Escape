@@ -186,7 +186,7 @@ endif
 
 mmix:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-		-b -s $(BUILD)/kernel.map $(BUILD)/user_ls.map
+		-b -s $(BUILD)/kernel.map $(BUILD)/user_libcpptest.map
 
 mmixd:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235
@@ -264,9 +264,6 @@ prepareVmware: cd $(VMDISK)
 prepareQemuTest:
 	sudo service qemu-kvm start || true
 	tools/iso.sh test
-
-prepareEcoTest:
-	tools/disk.sh test
 
 prepareTest:
 	tools/disk.sh mountp1

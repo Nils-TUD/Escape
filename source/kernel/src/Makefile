@@ -14,10 +14,12 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D I
  -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/profile.c
 
 # sources
-ASRC = $(filter-out $(shell find ./arch -name "*.s"),\
+ASRC = ./arch/$(ARCH)/kernel.s
+ASRC += $(filter-out $(shell find ./arch -name "*.s"),\
 	$(shell find . -name "*.s" | grep -v '\.svn'))
-ASRC += $(filter-out ./arch/$(ARCH)/end.s,$(shell find ./arch/$(ARCH) -name "*.s" | grep -v '\.svn'))
-ASRC += ./arch/$(ARCH)/end.s
+ASRC += $(filter-out ./arch/$(ARCH)/end.s ./arch/$(ARCH)/kernel.s,\
+	$(shell find ./arch/$(ARCH) -name "*.s" | grep -v '\.svn'))
+AEND = ./arch/$(ARCH)/end.s
 ifeq ($(BUILDTYPE),release)
 # remove dbg-files in release-mode
 CSRC = $(filter-out $(shell find ./arch ./dbg -name "*.c"),\
@@ -37,6 +39,7 @@ AOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(ASRC))
 COBJ = $(patsubst %.c,$(BUILDK)/%.o,$(CSRC))
 LOBJ = $(patsubst $(LIB)/%.c,$(BUILDK)/lib/%.o,$(LSRC))
 LAOBJ = $(patsubst $(LIB)/%.s,$(BUILDK)/lib/%.s.o,$(LASRC))
+AENDOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(AEND))
 
 SYMBOLS = $(BUILD)/kernel_symbols.txt
 SYMBOLSCRIPT = $(ROOT)/tools/gensymbols.sh
@@ -47,9 +50,9 @@ SYMBOLOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(SYMBOLSRC))
 
 all:	$(BIN) $(MAP)
 
-$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ)
+$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) $(AENDOBJ)
 	@echo "	" LINKING $(BIN)
-	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) -lgcc;
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) $(AENDOBJ) -lgcc;
 	@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 	@# since it's size is 0 at the first time. In the second pass the size is correct
 	@# and therefore the symbol-table will be generated correctly in the third pass :)
@@ -58,13 +61,13 @@ $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(L
 	@echo "	" CC $(SYMBOLSRC)
 	@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 	@echo "	" LINKING $(BIN)
-	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) -lgcc;
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) $(AENDOBJ) -lgcc;
 	@echo "	" BUILDING SYMBOL-FILE
 	@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 	@echo "	" CC $(SYMBOLSRC)
 	@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 	@echo "	" LINKING $(BIN)
-	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) -lgcc;
+	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) $(AENDOBJ) -lgcc;
 
 $(MAP): $(BIN)
 	@echo "	" GEN MAP $@

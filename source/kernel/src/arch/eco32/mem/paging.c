@@ -31,8 +31,8 @@
 #include <errors.h>
 
 /* to shift a flag down to the first bit */
-#define PG_WRITABLE_SHIFT			0
-#define PG_PRESENT_SHIFT			2
+#define PG_PRESENT_SHIFT			0
+#define PG_WRITABLE_SHIFT			1
 
 #define TLB_SIZE					32
 #define TLB_FIXED					4
@@ -378,8 +378,6 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 	uintptr_t pdirAddr = PAGE_DIR_DIRMAP_OF(pdir);
 	sPDEntry *pde;
 	sPTEntry *pte;
-	assert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_PRESENT | PG_EXECUTABLE | PG_ADDR_TO_FRAME |
-			PG_GLOBAL | PG_KEEPFRM)));
 
 	virt &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {

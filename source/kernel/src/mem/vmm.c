@@ -631,6 +631,10 @@ int vmm_growStackTo(sThread *t,uintptr_t addr) {
 	int res = 0;
 	addr &= ~(PAGE_SIZE - 1);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
+		/* if it does not yet exist, report an error */
+		if(t->stackRegions[i] < 0)
+			return ERR_NOT_ENOUGH_MEM;
+
 		sVMRegion *vm = REG(t->proc,t->stackRegions[i]);
 		ssize_t newPages = 0;
 		/* report failure if its outside (upper / lower) of the region */

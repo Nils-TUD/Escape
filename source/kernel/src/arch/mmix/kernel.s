@@ -71,6 +71,9 @@ _bcode:
 start:
 	# establish the register-stack
 	UNSAVE	0,$0
+	# set rSS; we need it when cloning in the test-kernel, for example
+	GET		$1,rS
+	PUT		rSS,$1
 
 	# store rG for kernel; we'll have to set it in the trap-handlers (the user may change it)
 	GETA	$1,krg

@@ -35,17 +35,16 @@
 #endif
 
 /* flags for paging_map() */
-#define PG_WRITABLE				1
-#define PG_SUPERVISOR			2
-#define PG_PRESENT				4
-/* TODO */
-#define PG_EXECUTABLE			64
+#define PG_PRESENT				1
+#define PG_WRITABLE				2
+#define PG_EXECUTABLE			4
+#define PG_SUPERVISOR			8
 /* tells paging_map() that it gets the frame-address and should convert it to a frame-number first */
-#define PG_ADDR_TO_FRAME		8
+#define PG_ADDR_TO_FRAME		16
 /* make it a global page */
-#define PG_GLOBAL				16
+#define PG_GLOBAL				32
 /* tells paging_map() to keep the currently set frame-number */
-#define PG_KEEPFRM				32
+#define PG_KEEPFRM				64
 
 /* for printing the page-directory */
 #define PD_PART_ALL				0

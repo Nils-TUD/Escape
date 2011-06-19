@@ -23,6 +23,7 @@
 
 #define FFL_SHORT			1
 #define FFL_LONG			2
+#define FFL_LONGLONG		4
 
 namespace std {
 	ostream::sentry::sentry(ostream& os)
@@ -55,7 +56,11 @@ namespace std {
 			int prec;
 			char c,*str,b;
 			int n;
+			long l;
+			long long ll;
 			uint u;
+			ulong ul;
+			ullong ull;
 			double d;
 			uint intsize,pad;
 
@@ -138,6 +143,10 @@ namespace std {
 							intsize |= FFL_LONG;
 							fmt++;
 							break;
+						case 'L':
+							intsize |= FFL_LONGLONG;
+							fmt++;
+							break;
 						case 'h':
 							intsize |= FFL_SHORT;
 							fmt++;
@@ -149,10 +158,20 @@ namespace std {
 						/* signed integer */
 						case 'd':
 						case 'i':
-							n = va_arg(ap, int);
-							if(fflags & FFL_SHORT)
-								n &= 0xFFFF;
-							writeSigned(n);
+							if(fflags & FFL_LONG) {
+								l = va_arg(ap, long);
+								writeSigned(l);
+							}
+							else if(fflags & FFL_LONGLONG) {
+								ll = va_arg(ap, llong);
+								writeSigned(ll);
+							}
+							else {
+								n = va_arg(ap, int);
+								if(fflags & FFL_SHORT)
+									n &= 0xFFFF;
+								writeSigned(n);
+							}
 							break;
 
 						/* pointer */
@@ -182,10 +201,20 @@ namespace std {
 									ios_base::setf(ios_base::uppercase);
 								ios_base::setf(ios_base::hex);
 							}
-							u = va_arg(ap, uint);
-							if(intsize & FFL_SHORT)
-								u &= 0xFFFF;
-							writeUnsigned(u);
+							if(fflags & FFL_LONG) {
+								ul = va_arg(ap, ulong);
+								writeUnsigned(ul);
+							}
+							else if(fflags & FFL_LONGLONG) {
+								ull = va_arg(ap, ullong);
+								writeUnsigned(ull);
+							}
+							else {
+								u = va_arg(ap, uint);
+								if(fflags & FFL_SHORT)
+									u &= 0xFFFF;
+								writeUnsigned(u);
+							}
 							break;
 
 						/* string */
@@ -284,7 +313,6 @@ namespace std {
 		}
 		return *this;
 	}
-
 
 	void ostream::writeDouble(long double d) {
 		sentry se(*this);

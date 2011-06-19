@@ -32,9 +32,9 @@
 #include <errors.h>
 
 /* to shift a flag down to the first bit */
-#define PG_EXECUTABLE_SHIFT			6
-#define PG_WRITABLE_SHIFT			0
-#define PG_READABLE_SHIFT			2
+#define PG_PRESENT_SHIFT			0
+#define PG_WRITABLE_SHIFT			1
+#define PG_EXECUTABLE_SHIFT			2
 
 #define SEGSIZE(rV,i)				((i) == 0 ? 0 : (((rV) >> (64 - (i) * 4)) & 0xF))
 
@@ -275,7 +275,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintpt
 			frames = (tFrameNo*)&pte;
 		}
 		mstats = paging_mapTo(dst,virtDst,frames,1,flags);
-		if(flags & (PG_PRESENT | PG_EXECUTABLE))
+		if(flags & PG_PRESENT)
 			stats.frames++;
 		stats.ptables += mstats.ptables;
 		/* if copy-on-write should be used, mark it as readable for the current (parent), too */
@@ -296,8 +296,6 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 	sAllocStats stats = {0,0};
 	ulong pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
 	sPTE *pte,*pt = NULL;
-	assert(!(flags & ~(PG_WRITABLE | PG_EXECUTABLE | PG_SUPERVISOR | PG_PRESENT | PG_ADDR_TO_FRAME |
-			PG_GLOBAL | PG_KEEPFRM)));
 
 	virt &= ~(PAGE_SIZE - 1);
 	uint64_t key = virt | (pdir->addrSpace->no << 3);
@@ -314,14 +312,14 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 		/* setup page */
 		pte = pt + (pageNo % PT_ENTRY_COUNT);
 		/* ignore already present entries */
-		pte->executable = (flags & PG_EXECUTABLE) >> PG_EXECUTABLE_SHIFT;
-		pte->readable = (flags & PG_PRESENT) >> PG_READABLE_SHIFT;
-		pte->writable = (flags & PG_WRITABLE) >> PG_WRITABLE_SHIFT;
+		pte->readable = (flags & PG_PRESENT) >> PG_PRESENT_SHIFT;
+		pte->executable = ((flags & PG_PRESENT) && (flags & PG_EXECUTABLE)) ? 1 : 0;
+		pte->writable = ((flags & PG_PRESENT) && (flags & PG_WRITABLE)) ? 1 : 0;
 		pte->addressSpaceNumber = pdir->addrSpace->no;
 		pte->exists = true;
 
 		/* set frame-number */
-		if(!(flags & PG_KEEPFRM) && (flags & (PG_PRESENT | PG_WRITABLE | PG_EXECUTABLE))) {
+		if(!(flags & PG_KEEPFRM) && (flags & PG_PRESENT)) {
 			if(frames == NULL) {
 				pte->frameNumber = pmem_allocate();
 				stats.frames++;
@@ -333,8 +331,6 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,siz
 					pte->frameNumber = *frames++;
 			}
 		}
-
-		vid_printf("%p: %lx (%lx)\n",virt,*(uint64_t*)pte,key);
 
 		/* update entries in TCs; protection-flags might have changed */
 		/* we have to do that for not running processes as well, since their entry might still

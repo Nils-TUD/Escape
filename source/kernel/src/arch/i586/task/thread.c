@@ -26,6 +26,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/video.h>
+#include <sys/config.h>
 #include <sys/cpu.h>
 #include <assert.h>
 #include <errors.h>
@@ -118,7 +119,8 @@ void thread_switchTo(tTid tid) {
 
 			/* set used */
 			cur->stats.schedCount++;
-			vmm_setTimestamp(cur,timer_getTimestamp());
+			if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
+				vmm_setTimestamp(cur,timer_getTimestamp());
 			sched_setRunning(cur);
 
 			if(old->proc != cur->proc) {

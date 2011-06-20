@@ -46,7 +46,7 @@
 #define FILE_COUNT					((tFileNo)(gftArray.objCount))
 
 /* an entry in the global file table */
-typedef struct {
+typedef struct sGFTEntry {
 	/* read OR write; flags = 0 => entry unused */
 	ushort flags;
 	/* the owner of this file */
@@ -59,6 +59,8 @@ typedef struct {
 	tInodeNo nodeNo;
 	/* the device-number */
 	tDevNo devNo;
+	/* for the freelist */
+	struct sGFTEntry *next;
 } sGFTEntry;
 
 /**
@@ -69,15 +71,21 @@ static int vfs_hasAccess(tPid pid,sVFSNode *n,ushort flags);
  * Searches for a free file for the given flags and node-number
  */
 static tFileNo vfs_getFreeFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devNo);
+/**
+ * Releases the given file
+ */
+static void vfs_releaseFile(sGFTEntry *e);
 
 /* global file table (expands dynamically) */
 static sDynArray gftArray;
+static sGFTEntry *gftFreeList;
 static sVFSNode *procsNode;
 static sVFSNode *devNode;
 
 void vfs_init(void) {
 	sVFSNode *root,*sys;
 	dyna_start(&gftArray,sizeof(sGFTEntry),GFT_AREA,GFT_AREA_SIZE);
+	gftFreeList = NULL;
 	vfs_node_init();
 
 	/*
@@ -264,15 +272,17 @@ tFileNo vfs_openFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devNo) {
 	if(f < 0)
 		return f;
 
+	e = vfs_getGFTEntry(f);
 	if(devNo == VFS_DEV_NO) {
 		int err;
 		n = vfs_node_get(nodeNo);
-		if((err = vfs_hasAccess(pid,n,flags)) < 0)
+		if((err = vfs_hasAccess(pid,n,flags)) < 0) {
+			vfs_releaseFile(e);
 			return err;
+		}
 	}
 
 	/* unused file? */
-	e = vfs_getGFTEntry(f);
 	if(e->flags == 0) {
 		/* count references of virtual nodes */
 		if(devNo == VFS_DEV_NO)
@@ -286,17 +296,13 @@ tFileNo vfs_openFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devNo) {
 	}
 	else
 		e->refCount++;
-
 	return f;
 }
 
 static tFileNo vfs_getFreeFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devNo) {
 	tFileNo i;
-	tFileNo freeSlot = ERR_NO_FREE_FILE;
-	ushort rwFlags = flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER);
 	bool isDrvUse = false;
 	sGFTEntry *e;
-
 	/* ensure that we don't increment usages of an unused slot */
 	assert(flags & (VFS_READ | VFS_WRITE));
 	assert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER)));
@@ -308,43 +314,53 @@ static tFileNo vfs_getFreeFile(tPid pid,ushort flags,tInodeNo nodeNo,tDevNo devN
 		isDrvUse = (n->mode & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
 	}
 
-	for(i = 0; i < FILE_COUNT; i++) {
-		e = vfs_getGFTEntry(i);
-		/* used slot and same node? */
-		if(e->flags != 0) {
-			/* same file? */
-			if(e->devNo == devNo && e->nodeNo == nodeNo) {
-				if(e->owner == pid) {
-					/* if the flags are the same we don't need a new file */
-					if((e->flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER)) == rwFlags)
-						return i;
+	/* for drivers it doesn't matter whether we use an existing file or a new one, because it is
+	 * no problem when multiple threads use it for writing */
+	if(!isDrvUse) {
+		ushort rwFlags = flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER);
+		for(i = 0; i < FILE_COUNT; i++) {
+			e = vfs_getGFTEntry(i);
+			/* used slot and same node? */
+			if(e->flags != 0) {
+				/* same file? */
+				if(e->devNo == devNo && e->nodeNo == nodeNo) {
+					if(e->owner == pid) {
+						/* if the flags are the same we don't need a new file */
+						if((e->flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER)) == rwFlags)
+							return i;
+					}
+					/* two procs that want to write at the same time? no! */
+					else if(!isDrvUse && (rwFlags & VFS_WRITE) && (e->flags & VFS_WRITE))
+						return ERR_FILE_IN_USE;
 				}
-				/* two procs that want to write at the same time? no! */
-				else if(!isDrvUse && (rwFlags & VFS_WRITE) && (e->flags & VFS_WRITE))
-					return ERR_FILE_IN_USE;
 			}
 		}
-		/* remember free slot */
-		else if(freeSlot == ERR_NO_FREE_FILE) {
-			freeSlot = i;
-			/* just for performance: if we've found an unused file and want to use a driver,
-			 * use this slot because it doesn't really matter whether we use a new file or an
-			 * existing one (if there even is any) */
-			/* note: we can share a file for writing in this case! */
-			/* when we don't write, we don't need to wait since it doesn't hurt if there are other
-			 * users of that file */
-			if(isDrvUse || !(rwFlags & VFS_WRITE))
-				break;
-		}
-	}
-	/* if there is no free slot anymore, extend our dyn-array */
-	if(freeSlot == ERR_NO_FREE_FILE) {
-		if(!dyna_extend(&gftArray))
-			return ERR_NO_FREE_FILE;
-		freeSlot = i;
 	}
 
-	return freeSlot;
+	/* if there is no free slot anymore, extend our dyn-array */
+	if(gftFreeList == NULL) {
+		i = gftArray.objCount;
+		tFileNo j;
+		if(!dyna_extend(&gftArray))
+			return ERR_NO_FREE_FILE;
+		/* put all except i on the freelist */
+		for(j = i + 1; j < (tFileNo)gftArray.objCount; j++) {
+			e = vfs_getGFTEntry(j);
+			e->next = gftFreeList;
+			gftFreeList = e;
+		}
+		return i;
+	}
+
+	/* use the first from the freelist */
+	e = gftFreeList;
+	gftFreeList = gftFreeList->next;
+	return dyna_getIndex(&gftArray,e);
+}
+
+static void vfs_releaseFile(sGFTEntry *e) {
+	e->next = gftFreeList;
+	gftFreeList = e;
 }
 
 off_t vfs_tell(tPid pid,tFileNo file) {
@@ -559,6 +575,7 @@ void vfs_closeFile(tPid pid,tFileNo file) {
 
 		/* mark unused */
 		e->flags = 0;
+		vfs_releaseFile(e);
 	}
 }
 

@@ -24,6 +24,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/cpu.h>
+#include <sys/config.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <assert.h>
@@ -162,7 +163,8 @@ void thread_switchTo(tTid tid) {
 
 		/* set used */
 		cur->stats.schedCount++;
-		vmm_setTimestamp(cur,timer_getTimestamp());
+		if(conf_getStr(CONF_SWAP_DEVICE))
+			vmm_setTimestamp(cur,timer_getTimestamp());
 		sched_setRunning(cur);
 
 		/* set page-dir */

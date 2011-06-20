@@ -62,7 +62,7 @@ const char *conf_getStr(uint id) {
 	const char *res = NULL;
 	switch(id) {
 		case CONF_SWAP_DEVICE:
-			res = strlen(swapDev) ? swapDev : NULL;
+			res = *swapDev ? swapDev : NULL;
 			break;
 	}
 	return res;

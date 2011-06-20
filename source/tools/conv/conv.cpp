@@ -189,7 +189,8 @@ static void parseMMIX(FILE *f) {
 				;
 			con = getCurrent(tid);
 			assert(fscanf(f," t=%d, ic=#%Lx",&tid,&time) == 2);
-			funcLeave(tid,time - con->current->begin);
+			funcLeave(tid,con->current->begin < time ?
+					time - con->current->begin : con->current->begin);
 		}
 		/* to line end */
 		while(getc(f) != '\n')

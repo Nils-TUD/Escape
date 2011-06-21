@@ -64,6 +64,7 @@ void util_panic(const char *fmt,...) {
 	vid_setTargets(TARGET_LOG);
 	vmm_dbg_print(t->proc);
 	paging_dbg_printCur(PD_PART_USER);
+	cache_dbg_print();
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("Done\n\nPress any key to start debugger");
 	while(1) {

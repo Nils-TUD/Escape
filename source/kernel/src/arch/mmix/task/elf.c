@@ -4,7 +4,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
@@ -28,7 +28,7 @@ int elf_finishFromFile(tFileNo file,const sElfEHeader *eheader,sStartupInfo *inf
 	int res = 0;
 	sThread *t = thread_getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
-	sElfSHeader *secHeaders = (sElfSHeader*)kheap_alloc(headerSize);
+	sElfSHeader *secHeaders = (sElfSHeader*)cache_alloc(headerSize);
 	if(secHeaders == NULL) {
 		log_printf("[LOADER] Unable to allocate memory for ELF-header (%Su bytes)\n",headerSize);
 		return ERR_NOT_ENOUGH_MEM;
@@ -41,12 +41,12 @@ int elf_finishFromFile(tFileNo file,const sElfEHeader *eheader,sStartupInfo *inf
 
 	if((readRes = vfs_readFile(t->proc->pid,file,secHeaders,headerSize)) != headerSize) {
 		log_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(readRes));
-		kheap_free(secHeaders);
+		cache_free(secHeaders);
 		return ERR_INVALID_ELF_BIN;
 	}
 
 	res = elf_finish(t,eheader,secHeaders,file,info);
-	kheap_free(secHeaders);
+	cache_free(secHeaders);
 	return res;
 }
 

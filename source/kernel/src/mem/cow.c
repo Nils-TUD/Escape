@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cow.h>
 #include <sys/task/proc.h>
@@ -82,7 +82,7 @@ size_t cow_pagefault(uintptr_t address) {
 	vassert(ourCOW != NULL,"No COW entry for process %d and address 0x%x",cp->pid,address);
 
 	/* remove our from list and adjust pte */
-	kheap_free(ourCOW->data);
+	cache_free(ourCOW->data);
 	sll_removeNode(cowFrames,ourCOW,ourPrevCOW);
 	/* if there is another process who wants to get the frame, we make a copy for us */
 	/* otherwise we keep the frame for ourself */
@@ -104,13 +104,13 @@ size_t cow_pagefault(uintptr_t address) {
 
 bool cow_add(const sProc *p,tFrameNo frameNo) {
 	sCOW *cc;
-	cc = (sCOW*)kheap_alloc(sizeof(sCOW));
+	cc = (sCOW*)cache_alloc(sizeof(sCOW));
 	if(cc == NULL)
 		return false;
 	cc->frameNumber = frameNo;
 	cc->proc = p;
 	if(!sll_append(cowFrames,cc)) {
-		kheap_free(cc);
+		cache_free(cc);
 		return false;
 	}
 	return true;
@@ -131,7 +131,7 @@ size_t cow_remove(const sProc *p,tFrameNo frameNo,bool *foundOther) {
 			/* remove from COW-list */
 			tn = n->next;
 			frmCount++;
-			kheap_free(cow);
+			cache_free(cow);
 			sll_removeNode(cowFrames,n,ln);
 			n = tn;
 			foundOwn = true;
@@ -154,7 +154,7 @@ size_t cow_remove(const sProc *p,tFrameNo frameNo,bool *foundOther) {
 size_t cow_getFrmCount(void) {
 	sSLNode *n;
 	size_t i,count = 0;
-	tFrameNo *frames = (tFrameNo*)kheap_calloc(sll_length(cowFrames),sizeof(tFrameNo));
+	tFrameNo *frames = (tFrameNo*)cache_calloc(sll_length(cowFrames),sizeof(tFrameNo));
 	if(!frames)
 		return 0;
 	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
@@ -169,7 +169,7 @@ size_t cow_getFrmCount(void) {
 		if(!found)
 			frames[count++] = cow->frameNumber;
 	}
-	kheap_free(frames);
+	cache_free(frames);
 	return count;
 }
 

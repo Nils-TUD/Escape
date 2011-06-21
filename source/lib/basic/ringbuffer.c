@@ -23,13 +23,13 @@
 #include <assert.h>
 
 #ifdef IN_KERNEL
-#	include <sys/mem/kheap.h>
+#	include <sys/mem/cache.h>
 #	include <sys/video.h>
 /* for util_panic (vassert) */
 #	include <sys/util.h>
 #	define rbprintf		vid_printf
-#	define free(x)		kheap_free(x)
-#	define malloc(x)	kheap_alloc(x)
+#	define free(x)		cache_free(x)
+#	define malloc(x)	cache_alloc(x)
 #else
 /* for exit (vassert) */
 #	include <esc/proc.h>

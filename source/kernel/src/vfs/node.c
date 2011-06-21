@@ -26,7 +26,7 @@
 #include <sys/vfs/dir.h>
 #include <sys/vfs/link.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/dynarray.h>
 #include <sys/task/env.h>
@@ -245,13 +245,13 @@ int vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,uint fl
 			else
 				nameLen = strlen(path);
 			/* copy the name because vfs_file_create() will store the pointer */
-			nameCpy = kheap_alloc(nameLen + 1);
+			nameCpy = cache_alloc(nameLen + 1);
 			if(nameCpy == NULL)
 				return ERR_NOT_ENOUGH_MEM;
 			memcpy(nameCpy,path,nameLen + 1);
 			/* now create the node and pass the node-number back */
 			if((child = vfs_file_create(t->tid,dir,nameCpy,vfs_file_read,vfs_file_write)) == NULL) {
-				kheap_free(nameCpy);
+				cache_free(nameCpy);
 				return ERR_NOT_ENOUGH_MEM;
 			}
 			if(created)
@@ -353,7 +353,7 @@ void vfs_node_destroy(sVFSNode *n) {
 
 	/* free name */
 	if(IS_ON_HEAP(n->name))
-		kheap_free(n->name);
+		cache_free(n->name);
 
 	/* remove from parent and release */
 	if(n->prev != NULL)
@@ -375,7 +375,7 @@ char *vfs_node_getId(tPid pid) {
 	/* we want to have to form <pid>.<x>, therefore two ints, a '.' and \0 */
 	/* TODO this is dangerous, because sizeof(int) might be not 4 */
 	size = 11 * 2 + 1 + 1;
-	name = (char*)kheap_alloc(size);
+	name = (char*)cache_alloc(size);
 	if(name == NULL)
 		return NULL;
 

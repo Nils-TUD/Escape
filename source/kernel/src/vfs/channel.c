@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
 #include <sys/vfs/vfs.h>
@@ -47,36 +47,9 @@ typedef struct {
 	size_t length;
 } sMessage;
 
-typedef struct sArgsMsg {
-	sMessage msg;
-	struct sArgsMsg *next;
-	struct {
-		uint arg1;
-		uint arg2;
-		uint arg3;
-		uint arg4;
-		uint arg5;
-		uint arg6;
-	} data;
-} sArgsMsg;
-
-static sArgsMsg argsMsgs[ARGS_MSG_COUNT];
-static sArgsMsg *amFreeList;
-
 static void vfs_chan_destroy(sVFSNode *n);
 static off_t vfs_chan_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node);
-
-void vfs_chan_init(void) {
-	size_t i;
-	/* init args-messages */
-	argsMsgs->next = NULL;
-	amFreeList = argsMsgs;
-	for(i = 1; i < ARGS_MSG_COUNT; i++) {
-		argsMsgs[i].next = amFreeList;
-		amFreeList = argsMsgs + i;
-	}
-}
 
 sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
 	sChannel *chan;
@@ -86,7 +59,7 @@ sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
 		return NULL;
 	node = vfs_node_create(parent,name);
 	if(node == NULL) {
-		kheap_free(name);
+		cache_free(name);
 		return NULL;
 	}
 
@@ -99,7 +72,7 @@ sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
 	node->close = vfs_chan_close;
 	node->destroy = vfs_chan_destroy;
 	node->data = NULL;
-	chan = (sChannel*)kheap_alloc(sizeof(sChannel));
+	chan = (sChannel*)cache_alloc(sizeof(sChannel));
 	if(!chan) {
 		vfs_node_destroy(node);
 		return NULL;
@@ -120,7 +93,7 @@ static void vfs_chan_destroy(sVFSNode *n) {
 			sll_destroy(chan->recvList,true);
 		if(chan->sendList)
 			sll_destroy(chan->sendList,true);
-		kheap_free(chan);
+		cache_free(chan);
 		n->data = NULL;
 	}
 }
@@ -171,7 +144,6 @@ ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *da
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
-	sArgsMsg *amsg;
 	sChannel *chan = (sChannel*)n->data;
 
 	/*vid_printf("%d:%s sent msg %d with %d bytes to %s\n",pid,proc_getByPid(pid)->command,id,size,
@@ -195,38 +167,20 @@ ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *da
 	if(*list == NULL)
 		*list = sll_create();
 
-	/* don't use the heap for argument-messages; they are used very often and have a fixed size */
-	if(size == sizeof(amsg->data) && amFreeList) {
-		amsg = amFreeList;
-		amFreeList = amFreeList->next;
+	/* create message and copy data to it */
+	sMessage *msg = (sMessage*)cache_alloc(sizeof(sMessage) + size);
+	if(msg == NULL)
+		return ERR_NOT_ENOUGH_MEM;
 
-		amsg->msg.length = size;
-		amsg->msg.id = id;
-		if(data)
-			memcpy(&amsg->data,data,size);
+	msg->length = size;
+	msg->id = id;
+	if(data)
+		memcpy(msg + 1,data,size);
 
-		if(!sll_append(*list,amsg)) {
-			amsg->next = amFreeList;
-			amFreeList = amsg;
-			return ERR_NOT_ENOUGH_MEM;
-		}
-	}
-	else {
-		/* create message and copy data to it */
-		sMessage *msg = (sMessage*)kheap_alloc(sizeof(sMessage) + size);
-		if(msg == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-
-		msg->length = size;
-		msg->id = id;
-		if(data)
-			memcpy(msg + 1,data,size);
-
-		/* append to list */
-		if(!sll_append(*list,msg)) {
-			kheap_free(msg);
-			return ERR_NOT_ENOUGH_MEM;
-		}
+	/* append to list */
+	if(!sll_append(*list,msg)) {
+		cache_free(msg);
+		return ERR_NOT_ENOUGH_MEM;
 	}
 
 	/* notify the driver */
@@ -271,45 +225,24 @@ ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *d
 
 	/* get first element and copy data to buffer */
 	msg = (sMessage*)sll_get(*list,0);
-	/* is it one of our args-messages? */
-	if((uintptr_t)msg >= (uintptr_t)argsMsgs &&
-			(uintptr_t)msg < (uintptr_t)(argsMsgs + ARGS_MSG_COUNT)) {
-		sArgsMsg *amsg = (sArgsMsg*)msg;
-		if(data && amsg->msg.length > size) {
-			amsg->next = amFreeList;
-			amFreeList = amsg;
-			sll_removeIndex(*list,0);
-			return ERR_INVALID_ARGS;
-		}
-
-		if(data)
-			memcpy(data,&amsg->data,amsg->msg.length);
-		if(id)
-			*id = amsg->msg.id;
-		res = amsg->msg.length;
-		amsg->next = amFreeList;
-		amFreeList = amsg;
+	if(data && msg->length > size) {
+		cache_free(msg);
+		sll_removeIndex(*list,0);
+		return ERR_INVALID_ARGS;
 	}
-	else {
-		if(data && msg->length > size) {
-			kheap_free(msg);
-			sll_removeIndex(*list,0);
-			return ERR_INVALID_ARGS;
-		}
 
-		/* the data is behind the message */
-		if(data)
-			memcpy(data,msg + 1,msg->length);
+	/* the data is behind the message */
+	if(data)
+		memcpy(data,msg + 1,msg->length);
 
-		/*vid_printf("%s received msg %d from %s\n",proc_getByPid(pid)->command,
-						msg->id,node->parent->name);*/
+	/*vid_printf("%s received msg %d from %s\n",proc_getByPid(pid)->command,
+					msg->id,node->parent->name);*/
 
-		/* set id, return size and free msg */
-		if(id)
-			*id = msg->id;
-		res = msg->length;
-		kheap_free(msg);
-	}
+	/* set id, return size and free msg */
+	if(id)
+		*id = msg->id;
+	res = msg->length;
+	cache_free(msg);
 
 	sll_removeIndex(*list,0);
 	return res;
@@ -318,15 +251,8 @@ ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *d
 #if DEBUGGING
 
 static void vfs_chan_dbg_printMessage(void *m) {
-	if((uintptr_t)m >= (uintptr_t)argsMsgs &&
-			(uintptr_t)m < (uintptr_t)(argsMsgs + ARGS_MSG_COUNT)) {
-		sArgsMsg *msg = (sArgsMsg*)m;
-		vid_printf("\t\t\tid=%u len=%Su\n",msg->msg.id,msg->msg.length);
-	}
-	else {
-		sMessage *msg = (sMessage*)m;
-		vid_printf("\t\t\tid=%u len=%Su\n",msg->id,msg->length);
-	}
+	sMessage *msg = (sMessage*)m;
+	vid_printf("\t\t\tid=%u len=%Su\n",msg->id,msg->length);
 }
 
 void vfs_chan_dbg_print(const sVFSNode *n) {

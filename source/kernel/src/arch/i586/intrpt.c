@@ -533,8 +533,10 @@ static void intrpt_syscall(sIntrptStackFrame *stack) {
 	/* handle copy-on-write (the first 2 args are passed in registers) */
 	if(sysc_getArgCount(sysCallNo) > 2) {
 		/* if the arguments are not mapped, return an error */
-		if(!paging_isRangeUserWritable((uintptr_t)stack->uesp,sizeof(uint) * (argCount - 2)))
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		if(!paging_isRangeUserWritable((uintptr_t)stack->uesp,sizeof(uint) * (argCount - 2))) {
+			SYSC_SETERROR(stack,ERR_INVALID_ARGS);
+			return;
+		}
 	}
 	sysc_handle(stack);
 

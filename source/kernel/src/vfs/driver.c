@@ -22,7 +22,7 @@
 #include <sys/vfs/driver.h>
 #include <sys/vfs/request.h>
 #include <sys/vfs/server.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
@@ -120,7 +120,7 @@ ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t off
 	vfs_req_free(req);
 	if(data) {
 		memcpy(buffer,data,res);
-		kheap_free(data);
+		cache_free(data);
 	}
 	return res;
 }
@@ -229,7 +229,7 @@ static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size) 
 			/* ok, it's the data */
 			if(data) {
 				/* map the buffer we have to copy it to */
-				req->data = kheap_alloc(req->count);
+				req->data = cache_alloc(req->count);
 				if(req->data)
 					memcpy(req->data,data,req->count);
 			}

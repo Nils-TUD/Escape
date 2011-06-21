@@ -23,7 +23,7 @@
 #include <sys/arch/i586/serial.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
@@ -124,7 +124,6 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 	vid_printf("Initializing VFS...");
 	dyna_init();
 	vfs_init();
-	vfs_chan_init();
 	vfs_info_init();
 	vfs_req_init();
 	vfs_drv_init();
@@ -241,7 +240,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			/* remove regions (except stack) */
 			proc_removeRegions(p,false);
 			/* now load module */
-			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
+			proc_setCommand(p,argv[0]);
 			if(elf_loadFromMem((void*)mod->modStart,mod->modEnd - mod->modStart,&info) < 0)
 				util_panic("Loading multiboot-module %s failed",p->command);
 			/* build args */
@@ -252,7 +251,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			p->entryPoint = info.progEntry;
 			if(!uenv_setupProc(p->command,argc,argBuffer,argSize,&info,info.progEntry))
 				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
-			kheap_free(argBuffer);
+			cache_free(argBuffer);
 			/* we don't want to continue the loop ;) */
 			return 0;
 		}

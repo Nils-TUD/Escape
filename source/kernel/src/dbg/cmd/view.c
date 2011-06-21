@@ -33,6 +33,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/request.h>
 #include <sys/mem/cow.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
@@ -63,6 +64,7 @@ static void view_vfstree(void);
 static void view_gft(void);
 static void view_msgs(void);
 static void view_cow(void);
+static void view_cache(void);
 static void view_kheap(void);
 static void view_pdirall(size_t argc,char **argv);
 static void view_pdiruser(size_t argc,char **argv);
@@ -99,6 +101,7 @@ static sView views[] = {
 	{"gft",(fView)view_gft},
 	{"msgs",(fView)view_msgs},
 	{"cow",(fView)view_cow},
+	{"cache",(fView)view_cache},
 	{"kheap",(fView)view_kheap},
 	{"pdirall",(fView)view_pdirall},
 	{"pdiruser",(fView)view_pdiruser},
@@ -208,6 +211,9 @@ static void view_msgs(void) {
 }
 static void view_cow(void) {
 	cow_dbg_print();
+}
+static void view_cache(void) {
+	cache_dbg_print();
 }
 static void view_kheap(void) {
 	kheap_dbg_print();

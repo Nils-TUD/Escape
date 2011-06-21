@@ -21,6 +21,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/timer.h>
 #include <sys/task/proc.h>
@@ -151,21 +152,16 @@ static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 ssize_t vfs_info_procReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
-	/* don't use the cache here to prevent that one process occupies it for all others */
-	/* (if the process doesn't call close() the cache will not be invalidated and therefore
-	 * other processes might miss changes) */
-	return vfsrw_readHelper(pid,node,buffer,offset,count,
-			17 * 9 + 8 * 10 + MAX_PROC_NAME_LEN + 1,
-			vfs_info_procReadCallback);
+	return vfsrw_readHelper(pid,node,buffer,offset,count,0,vfs_info_procReadCallback);
 }
 
 static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sProc *p = proc_getByPid(atoi(node->parent->name));
 	sStringBuffer buf;
 	size_t pages;
-	buf.dynamic = false;
-	buf.str = *(char**)buffer;
-	buf.size = 17 * 9 + 8 * 10 + MAX_PROC_NAME_LEN + 1;
+	buf.dynamic = true;
+	buf.str = NULL;
+	buf.size = 0;
 	buf.len = 0;
 	vmm_getMemUsage(p,&pages);
 
@@ -191,6 +187,7 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 		"Read:",p->stats.input,
 		"Write:",p->stats.output
 	);
+	*buffer = buf.str;
 	*dataSize = buf.len;
 }
 
@@ -297,18 +294,18 @@ static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 static ssize_t vfs_info_memUsageReadHandler(tPid pid,tFileNo file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
-	return vfsrw_readHelper(pid,node,buffer,offset,count,(11 + 10 + 1) * 13 + 1,
+	return vfsrw_readHelper(pid,node,buffer,offset,count,(11 + 10 + 1) * 15 + 1,
 			vfs_info_memUsageReadCallback);
 }
 
 static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
 	size_t free,total;
-	size_t paging,dataShared,dataOwn,dataReal,ksize,msize,kheap,pmem;
+	size_t paging,dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
 	UNUSED(node);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
-	buf.size = (11 + 10 + 1) * 13 + 1;
+	buf.size = (11 + 10 + 1) * 15 + 1;
 	buf.len = 0;
 
 	free = pmem_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
@@ -316,10 +313,13 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	ksize = boot_getKernelSize();
 	msize = boot_getModuleSize();
 	kheap = kheap_getOccupiedMem();
+	cache = cache_getOccMem();
 	pmem = pmem_getStackSize();
 	proc_getMemUsage(&paging,&dataShared,&dataOwn,&dataReal);
 	prf_sprintf(
 		&buf,
+		"%-11s%10Su\n"
+		"%-11s%10Su\n"
 		"%-11s%10Su\n"
 		"%-11s%10Su\n"
 		"%-11s%10Su\n"
@@ -346,7 +346,9 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 		"PhysMem:",pmem,
 		"KHeapSize:",kheap,
 		"KHeapUsage:",kheap_getUsedMem(),
-		"KernelMisc:",(total - free) - (ksize + msize + dataReal + paging + pmem + kheap)
+		"CacheSize:",cache,
+		"CacheUsage:",cache_getUsedMem(),
+		"KernelMisc:",(total - free) - (ksize + msize + dataReal + paging + pmem + kheap + cache)
 	);
 	*dataSize = buf.len;
 }
@@ -407,7 +409,7 @@ static ssize_t vfsrw_readHelper(tPid pid,sVFSNode *node,void *buffer,off_t offse
 			return 0;
 		/* ok, use the heap as temporary storage */
 		else {
-			mem = kheap_alloc(dataSize);
+			mem = cache_alloc(dataSize);
 			if(mem == NULL)
 				return 0;
 		}
@@ -428,7 +430,7 @@ static ssize_t vfsrw_readHelper(tPid pid,sVFSNode *node,void *buffer,off_t offse
 		if(count > 0)
 			memcpy(buffer,(uint8_t*)mem + offset,count);
 		/* free temp storage */
-		kheap_free(mem);
+		cache_free(mem);
 	}
 
 	return count;

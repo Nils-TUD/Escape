@@ -22,7 +22,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/swap.h>
 #include <sys/task/event.h>
 #include <sys/vfs/vfs.h>
@@ -66,7 +66,7 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 	sVMRegion *vm;
 	sAllocStats stats;
 	size_t i,pages = BYTES_2_PAGES(bCount);
-	tFrameNo *frames = (tFrameNo*)kheap_alloc(sizeof(tFrameNo) * pages);
+	tFrameNo *frames = (tFrameNo*)cache_alloc(sizeof(tFrameNo) * pages);
 	if(frames == NULL)
 		return 0;
 
@@ -91,7 +91,7 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 	if(reg < 0) {
 		if(!*phys)
 			pmem_freeContiguous(frames[0],pages);
-		kheap_free(frames);
+		cache_free(frames);
 		return 0;
 	}
 
@@ -110,7 +110,7 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 		*phys = frames[0] * PAGE_SIZE;
 	}
 
-	kheap_free(frames);
+	cache_free(frames);
 	return vm->virt;
 }
 
@@ -482,7 +482,7 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 		p->sharedFrames -= reg_presentPageCount(vm->reg);
 		p->ownFrames -= stats.ptables;
 	}
-	kheap_free(vm);
+	cache_free(vm);
 	REG(p,reg) = NULL;
 
 	/* check wether all regions are NULL */
@@ -495,7 +495,7 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 	}
 	/* free regions, if all have been removed */
 	if(c == 0) {
-		kheap_free(p->regions);
+		cache_free(p->regions);
 		p->regSize = 0;
 		p->regions = NULL;
 	}
@@ -549,7 +549,7 @@ int vmm_cloneAll(sProc *dst) {
 	if(src->regSize == 0)
 		return 0;
 	/* create array */
-	regs = (sVMRegion **)kheap_calloc(src->regSize,sizeof(sVMRegion*));
+	regs = (sVMRegion **)cache_calloc(src->regSize,sizeof(sVMRegion*));
 	if(regs == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -809,7 +809,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 	/* first read into a temp-buffer because we can't mark the page as present until
 	 * its read from disk. and we can't use a temporary mapping when switching
 	 * threads. */
-	tempBuf = kheap_alloc(loadCount);
+	tempBuf = cache_alloc(loadCount);
 	if(tempBuf == NULL) {
 		err = ERR_NOT_ENOUGH_MEM;
 		goto errorClose;
@@ -838,7 +838,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 	paging_unmapFromTemp(1);
 
 	/* free resources not needed anymore */
-	kheap_free(tempBuf);
+	cache_free(tempBuf);
 	vfs_closeFile(pid,file);
 
 	/* map into all pagedirs */
@@ -857,7 +857,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 	return true;
 
 errorFree:
-	kheap_free(tempBuf);
+	cache_free(tempBuf);
 errorClose:
 	vfs_closeFile(pid,file);
 error:
@@ -951,7 +951,7 @@ static uintptr_t vmm_findFreeAddr(sProc *p,size_t byteCount) {
 
 static bool vmm_extendRegions(sProc *p,size_t i) {
 	size_t count = MAX(4,i * 2);
-	sVMRegion **regs = (sVMRegion **)kheap_realloc(p->regions,count * sizeof(sVMRegion*));
+	sVMRegion **regs = (sVMRegion **)cache_realloc(p->regions,count * sizeof(sVMRegion*));
 	if(regs == NULL)
 		return false;
 	memclear(regs + p->regSize,(count - p->regSize) * sizeof(sVMRegion*));
@@ -961,11 +961,11 @@ static bool vmm_extendRegions(sProc *p,size_t i) {
 }
 
 static sVMRegion *vmm_alloc(void) {
-	return kheap_alloc(sizeof(sVMRegion));
+	return cache_alloc(sizeof(sVMRegion));
 }
 
 static void vmm_free(sVMRegion *vm) {
-	kheap_free(vm);
+	cache_free(vm);
 }
 
 static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,
@@ -1045,7 +1045,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 	/* allocate / increase regions, if necessary */
 	if(p->regions == NULL || *rno >= (tVMRegNo)p->regSize) {
 		size_t count = MAX(4,*rno + 1);
-		void *nr = kheap_realloc(p->regions,count * sizeof(sVMRegion*));
+		void *nr = cache_realloc(p->regions,count * sizeof(sVMRegion*));
 		if(!nr)
 			return ERR_NOT_ENOUGH_MEM;
 		memclear((sVMRegion**)nr + p->regSize,(count - p->regSize) * sizeof(sVMRegion*));
@@ -1127,7 +1127,7 @@ void vmm_dbg_print(const sProc *p) {
 		vid_printf("%s\n",buf.str);
 	else
 		vid_printf("- no regions -\n");
-	kheap_free(buf.str);
+	cache_free(buf.str);
 }
 
 #endif

@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <assert.h>
 
@@ -40,7 +40,7 @@ static ulong nextBlock = 0;
 void swmap_init(size_t swapSize) {
 	totalBlocks = swapSize / PAGE_SIZE;
 	freeBlocks = totalBlocks;
-	bitmap = kheap_calloc(totalBlocks / 8,1);
+	bitmap = cache_calloc(totalBlocks / 8,1);
 	if(bitmap == NULL)
 		util_panic("Unable to allocate swap-bitmap");
 }

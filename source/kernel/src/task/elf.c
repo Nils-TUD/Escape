@@ -23,7 +23,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/vmm.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
 #include <sys/log.h>
@@ -160,25 +160,25 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				goto failed;
 			}
 			/* read name of dynamic linker */
-			interpName = (char*)kheap_alloc(pheader.p_filesz);
+			interpName = (char*)cache_alloc(pheader.p_filesz);
 			if(interpName == NULL) {
 				log_printf("[LOADER] Allocating memory for dynamic linker name failed\n");
 				goto failed;
 			}
 			if(vfs_seek(p->pid,file,pheader.p_offset,SEEK_SET) < 0) {
 				log_printf("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
-				kheap_free(interpName);
+				cache_free(interpName);
 				goto failed;
 			}
 			if(vfs_readFile(p->pid,file,interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
 				log_printf("[LOADER] Reading dynlinker name failed\n");
-				kheap_free(interpName);
+				cache_free(interpName);
 				goto failed;
 			}
 			vfs_closeFile(p->pid,file);
 			/* now load him and stop loading the 'real' program */
 			res = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,info);
-			kheap_free(interpName);
+			cache_free(interpName);
 			return res;
 		}
 

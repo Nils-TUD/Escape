@@ -21,7 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/vmm.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/util.h>
@@ -201,7 +201,7 @@ ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* allocate context */
-	sContext *con = kheap_alloc(sizeof(sContext));
+	sContext *con = (sContext*)cache_alloc(sizeof(sContext));
 	if(con == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -234,7 +234,7 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	/* free page-dir */
 	pmem_freeContiguous((pdir->rV >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
 	stats.ptables += SEGMENT_COUNT * PTS_PER_SEGMENT;
-	kheap_free(pdir);
+	cache_free(pdir);
 	return stats;
 }
 

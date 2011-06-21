@@ -1,10 +1,10 @@
 # general
-ARCH = mmix
-GCCVER = 4.6.0
+#ARCH = mmix
+#GCCVER = 4.6.0
 ARCH = i586
 GCCVER = 4.4.3
-ARCH = eco32
-GCCVER = 4.4.3
+#ARCH = eco32
+#GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-debug)
 DIST = ../toolchain/$(ARCH)
@@ -186,7 +186,7 @@ endif
 
 mmix:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-		-b -s $(BUILD)/kernel.map $(BUILD)/driver_fs.map
+		-b -s $(BUILD)/kernel.map $(BUILD)/driver_disk.map
 
 mmixd:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -t 1 -d $(HDD) -p 1235

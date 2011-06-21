@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/cpu.h>
 #include <sys/video.h>
 
@@ -32,7 +32,7 @@ void cpu_dbg_print(void) {
 	buf.str = NULL;
 	cpu_sprintf(&buf);
 	vid_printf("%s",buf.str);
-	kheap_free(buf.str);
+	cache_free(buf.str);
 }
 
 #endif

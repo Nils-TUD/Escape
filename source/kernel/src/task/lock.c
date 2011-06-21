@@ -21,10 +21,11 @@
 #include <sys/task/lock.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <string.h>
+#include <assert.h>
 #include <errors.h>
 
 #define LOCK_USED		4
@@ -155,7 +156,7 @@ static ssize_t lock_get(tPid pid,ulong ident,bool free) {
 			lockCount = 8;
 		else
 			lockCount *= 2;
-		nlocks = kheap_realloc(locks,lockCount * sizeof(sLock));
+		nlocks = cache_realloc(locks,lockCount * sizeof(sLock));
 		if(nlocks == NULL) {
 			lockCount = oldCount;
 			return ERR_NOT_ENOUGH_MEM;

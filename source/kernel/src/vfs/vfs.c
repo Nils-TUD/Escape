@@ -33,7 +33,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/dynarray.h>
 #include <sys/util.h>
 #include <sys/video.h>
@@ -622,7 +622,7 @@ int vfs_link(tPid pid,const char *oldPath,const char *newPath) {
 	/* make copy of name */
 	*name = backup;
 	len = strlen(name);
-	namecpy = kheap_alloc(len + 1);
+	namecpy = cache_alloc(len + 1);
 	if(namecpy == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	strcpy(namecpy,name);
@@ -630,11 +630,11 @@ int vfs_link(tPid pid,const char *oldPath,const char *newPath) {
 	dir = vfs_node_get(newIno);
 	/* file exists? */
 	if(vfs_node_findInDir(dir,namecpy,len) != NULL) {
-		kheap_free(namecpy);
+		cache_free(namecpy);
 		return ERR_FILE_EXISTS;
 	}
 	if(vfs_link_create(pid,dir,namecpy,target) == NULL) {
-		kheap_free(namecpy);
+		cache_free(namecpy);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	return 0;
@@ -689,20 +689,20 @@ int vfs_mkdir(tPid pid,const char *path) {
 	/* alloc space for name and copy it over */
 	*name = backup;
 	len = strlen(name);
-	namecpy = kheap_alloc(len + 1);
+	namecpy = cache_alloc(len + 1);
 	if(namecpy == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	strcpy(namecpy,name);
 	/* create dir */
 	node = vfs_node_get(inodeNo);
 	if(vfs_node_findInDir(node,namecpy,len) != NULL) {
-		kheap_free(namecpy);
+		cache_free(namecpy);
 		return ERR_FILE_EXISTS;
 	}
 	/* TODO check access-rights */
 	child = vfs_dir_create(pid,node,namecpy);
 	if(child == NULL) {
-		kheap_free(namecpy);
+		cache_free(namecpy);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	return 0;
@@ -745,7 +745,7 @@ tFileNo vfs_createDriver(tPid pid,const char *name,uint flags) {
 	}
 
 	/* copy name to kernel-heap */
-	hname = (char*)kheap_alloc(len + 1);
+	hname = (char*)cache_alloc(len + 1);
 	if(hname == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	strncpy(hname,name,len);
@@ -757,7 +757,7 @@ tFileNo vfs_createDriver(tPid pid,const char *name,uint flags) {
 		return vfs_openFile(pid,VFS_READ | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
 
 	/* failed, so cleanup */
-	kheap_free(hname);
+	cache_free(hname);
 	return ERR_NOT_ENOUGH_MEM;
 }
 
@@ -855,7 +855,7 @@ sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 	sVFSNode *dir,*tdir;
 
 	/* build name */
-	name = (char*)kheap_alloc(12);
+	name = (char*)cache_alloc(12);
 	if(name == NULL)
 		return NULL;
 
@@ -899,7 +899,7 @@ sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 errorDir:
 	vfs_node_destroy(dir);
 errorName:
-	kheap_free(name);
+	cache_free(name);
 	return NULL;
 }
 
@@ -915,7 +915,7 @@ bool vfs_createThread(tTid tid) {
 	sThread *t = thread_getById(tid);
 
 	/* build name */
-	name = (char*)kheap_alloc(12);
+	name = (char*)cache_alloc(12);
 	if(name == NULL)
 		return false;
 	itoa(name,12,tid);
@@ -939,7 +939,7 @@ bool vfs_createThread(tTid tid) {
 errorInfo:
 	vfs_node_destroy(dir);
 errorDir:
-	kheap_free(name);
+	cache_free(name);
 	return false;
 }
 
@@ -949,7 +949,7 @@ void vfs_removeThread(tTid tid) {
 	char *name;
 
 	/* build name */
-	name = (char*)kheap_alloc(12);
+	name = (char*)cache_alloc(12);
 	if(name == NULL)
 		return;
 	itoa(name,12,tid);
@@ -964,7 +964,7 @@ void vfs_removeThread(tTid tid) {
 		n = n->next;
 	}
 
-	kheap_free(name);
+	cache_free(name);
 }
 
 /* #### TEST/DEBUG FUNCTIONS #### */

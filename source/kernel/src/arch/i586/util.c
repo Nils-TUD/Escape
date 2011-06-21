@@ -25,7 +25,7 @@
 #include <sys/dbg/console.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
 #include <sys/cpu.h>
 #include <sys/intrpt.h>
@@ -172,7 +172,7 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 	if(t->stackRegions[0] >= 0) {
 		vmm_getRegRange(t->proc,t->stackRegions[0],&start,&end);
 		pcount = (end - start) / PAGE_SIZE;
-		frames = kheap_alloc((pcount + 2) * sizeof(tFrameNo));
+		frames = cache_alloc((pcount + 2) * sizeof(tFrameNo));
 		if(frames) {
 			sIntrptStackFrame *istack = t->kstackEnd;
 			uintptr_t temp,startCpy = start;
@@ -180,7 +180,7 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 			frames[0] = t->kstackFrame;
 			for(i = 0; startCpy < end; i++) {
 				if(!paging_isPresent(t->proc->pagedir,startCpy)) {
-					kheap_free(frames);
+					cache_free(frames);
 					return NULL;
 				}
 				frames[i + 1] = paging_getFrameNo(t->proc->pagedir,startCpy);
@@ -191,7 +191,7 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 			calls = util_getStackTrace((uint32_t*)istack->ebp,start,
 					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
 			paging_unmapFromTemp(pcount + 1);
-			kheap_free(frames);
+			cache_free(frames);
 			return calls;
 		}
 	}

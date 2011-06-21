@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/event.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/channel.h>
@@ -59,7 +59,7 @@ sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,uint flags) {
 	node->close = vfs_server_close;
 	node->destroy = vfs_server_destroy;
 	node->data = NULL;
-	srv = (sServer*)kheap_alloc(sizeof(sServer));
+	srv = (sServer*)cache_alloc(sizeof(sServer));
 	if(!srv) {
 		vfs_node_destroy(node);
 		return NULL;
@@ -83,7 +83,7 @@ static void vfs_server_destroy(sVFSNode *node) {
 		 * whether they are affected by the remove of this driver and perform the corresponding
 		 * action */
 		vfs_server_wakeupClients(node,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE);
-		kheap_free(node->data);
+		cache_free(node->data);
 		node->data = NULL;
 	}
 }

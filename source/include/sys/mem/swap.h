@@ -21,6 +21,7 @@
 #define SWAP_H_
 
 #include <sys/common.h>
+#include <sys/task/proc.h>
 
 /**
  * Starts the swapping-system. This HAS TO be done with the swapping-thread!

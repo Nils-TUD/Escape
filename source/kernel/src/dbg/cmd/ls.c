@@ -22,7 +22,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/ls.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <string.h>
@@ -64,7 +64,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 		prf_sprintf(&buf,"%d %s",e.nodeNo,e.name);
 		if(buf.str) {
 			lines_appendStr(&lines,buf.str);
-			kheap_free(buf.str);
+			cache_free(buf.str);
 		}
 		if((res = lines_newline(&lines)) < 0)
 			goto errorFile;

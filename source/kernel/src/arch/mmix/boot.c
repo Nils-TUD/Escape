@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
@@ -43,6 +43,7 @@
 #include <sys/vfs/info.h>
 #include <sys/log.h>
 #include <sys/boot.h>
+#include <sys/util.h>
 #include <sys/video.h>
 #include <string.h>
 
@@ -86,7 +87,6 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	vid_printf("Initializing VFS...");
 	dyna_init();
 	vfs_init();
-	vfs_chan_init();
 	vfs_info_init();
 	vfs_req_init();
 	vfs_drv_init();
@@ -180,6 +180,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			/* remove regions (except stack) */
 			proc_removeRegions(p,false);
 			/* now load module */
+			proc_setCommand(p,argv[0]);
 			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
 			if(elf_loadFromMem((const void*)progs[i].start,progs[i].size,&sinfo) < 0)
 				util_panic("Loading boot-module %s failed",p->command);
@@ -191,7 +192,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			p->entryPoint = sinfo.progEntry;
 			if(!uenv_setupProc(p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
 				util_panic("Unable to setup user-stack for boot module %s",p->command);
-			kheap_free(argBuffer);
+			cache_free(argBuffer);
 			/* we don't want to continue ;) */
 			return 0;
 		}

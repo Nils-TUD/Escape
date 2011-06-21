@@ -29,7 +29,7 @@
 #include <sys/task/uenv.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
 #include <sys/mem/sharedmem.h>
@@ -41,6 +41,7 @@
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>
+#include <sys/debug.h>
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
@@ -93,7 +94,7 @@ void proc_init(void) {
 	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
-	strcpy(p->command,"initloader");
+	p->command = strdup("initloader");
 
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
@@ -122,6 +123,12 @@ void proc_init(void) {
 		util_panic("Unable to create process-list");
 	if(!proc_add(p))
 		util_panic("Unable to add init-process");
+}
+
+void proc_setCommand(sProc *p,const char *cmd) {
+	if(p->command)
+		cache_free(p->command);
+	p->command = strdup(cmd);
 }
 
 tPid proc_getFreePid(void) {
@@ -330,7 +337,7 @@ int proc_clone(tPid newPid,uint8_t flags) {
 	sThread *nt;
 	int res = 0;
 
-	p = (sProc*)kheap_alloc(sizeof(sProc));
+	p = (sProc*)cache_alloc(sizeof(sProc));
 	if(!p)
 		return ERR_NOT_ENOUGH_MEM;
 	/* first create the VFS node (we may not have enough mem) */
@@ -362,7 +369,7 @@ int proc_clone(tPid newPid,uint8_t flags) {
 	p->stats.output = 0;
 	p->flags = flags;
 	/* give the process the same name (may be changed by exec) */
-	strcpy(p->command,cur->command);
+	p->command = strdup(cur->command);
 	/* clone regions */
 	p->regions = NULL;
 	p->regSize = 0;
@@ -423,7 +430,7 @@ int proc_clone(tPid newPid,uint8_t flags) {
 errorThread:
 	thread_kill(nt);
 errorThreadList:
-	kheap_free(p->threads);
+	cache_free(p->threads);
 errorShm:
 	shm_remProc(p);
 errorRegs:
@@ -433,7 +440,7 @@ errorPDir:
 errorVFS:
 	vfs_removeProcess(newPid);
 errorProc:
-	kheap_free(p);
+	cache_free(p);
 	return res;
 }
 
@@ -525,7 +532,7 @@ int proc_getExitState(tPid ppid,sExitState *state) {
 				if(state) {
 					if(p->exitState) {
 						memcpy(state,p->exitState,sizeof(sExitState));
-						kheap_free(p->exitState);
+						cache_free(p->exitState);
 						p->exitState = NULL;
 					}
 				}
@@ -548,7 +555,7 @@ void proc_terminate(sProc *p,int exitCode,tSig signal) {
 	}
 
 	/* store exit-conditions */
-	p->exitState = (sExitState*)kheap_alloc(sizeof(sExitState));
+	p->exitState = (sExitState*)cache_alloc(sizeof(sExitState));
 	if(p->exitState) {
 		p->exitState->pid = p->pid;
 		p->exitState->exitCode = exitCode;
@@ -591,7 +598,7 @@ void proc_terminate(sProc *p,int exitCode,tSig signal) {
 	vfs_real_removeProc(p->pid);
 	lock_releaseAll(p->pid);
 	if(p->ioMap != NULL) {
-		kheap_free(p->ioMap);
+		cache_free(p->ioMap);
 		p->ioMap = NULL;
 	}
 
@@ -619,9 +626,8 @@ void proc_kill(sProc *p) {
 
 	/* remove pagedir; TODO we can do that on terminate, too (if we delay it when its the current) */
 	paging_destroyPDir(p->pagedir);
-	/* destroy threads-list */
 	sll_destroy(p->threads,false);
-
+	cache_free(p->command);
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);
 	/* notify processes that wait for dying procs */
@@ -629,11 +635,11 @@ void proc_kill(sProc *p) {
 
 	/* free exit-state, if not already done */
 	if(p->exitState)
-		kheap_free(p->exitState);
+		cache_free(p->exitState);
 
 	/* remove and free */
 	proc_remove(p);
-	kheap_free(p);
+	cache_free(p);
 }
 
 static void proc_notifyProcDied(tPid parent) {
@@ -649,7 +655,7 @@ int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fr
 	ssize_t len;
 
 	/* alloc space for the arguments */
-	*argBuffer = (char*)kheap_alloc(EXEC_MAX_ARGSIZE);
+	*argBuffer = (char*)cache_alloc(EXEC_MAX_ARGSIZE);
 	if(*argBuffer == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -662,7 +668,7 @@ int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fr
 	while(1) {
 		/* check if it is a valid pointer */
 		if(fromUser && !paging_isRangeUserReadable((uintptr_t)arg,sizeof(char*))) {
-			kheap_free(*argBuffer);
+			cache_free(*argBuffer);
 			return ERR_INVALID_ARGS;
 		}
 		/* end of list? */
@@ -671,7 +677,7 @@ int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fr
 
 		/* check whether the string is readable */
 		if(fromUser && !sysc_isStringReadable(*arg)) {
-			kheap_free(*argBuffer);
+			cache_free(*argBuffer);
 			return ERR_INVALID_ARGS;
 		}
 
@@ -679,7 +685,7 @@ int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fr
 		len = strnlen(*arg,remaining - 1);
 		if(len == -1) {
 			/* too long */
-			kheap_free(*argBuffer);
+			cache_free(*argBuffer);
 			return ERR_INVALID_ARGS;
 		}
 

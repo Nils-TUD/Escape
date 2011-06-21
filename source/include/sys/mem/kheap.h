@@ -24,29 +24,6 @@
 #include <assert.h>
 
 /**
- * @return the number of used bytes
- */
-size_t kheap_getUsedMem(void);
-
-/**
- * @return the total number of bytes occupied (frames reserved; maybe not all in use atm)
- */
-size_t kheap_getOccupiedMem(void);
-
-/**
- * Note that this function is intended for debugging-purposes only!
- *
- * @return the number of free bytes
- */
-size_t kheap_getFreeMem(void);
-
-/**
- * @param addr the area-address
- * @return the size of the area at given address (0 if not found)
- */
-size_t kheap_getAreaSize(void *addr);
-
-/**
  * Allocates <size> bytes in kernel-space and returns the pointer to the beginning of
  * the allocated memory. If there is not enough memory the function returns NULL.
  *
@@ -79,6 +56,37 @@ void *kheap_realloc(void *addr,size_t size);
  * Frees the via kmalloc() allocated area starting at <addr>.
  */
 void kheap_free(void *addr);
+
+/**
+ * Adds the given memory-range to the heap as free space
+ *
+ * @param addr the start-address
+ * @param size the size
+ */
+void kheap_addMemory(uintptr_t addr,size_t size);
+
+/**
+ * @return the number of used bytes
+ */
+size_t kheap_getUsedMem(void);
+
+/**
+ * @return the total number of bytes occupied (frames reserved; maybe not all in use atm)
+ */
+size_t kheap_getOccupiedMem(void);
+
+/**
+ * Note that this function is intended for debugging-purposes only!
+ *
+ * @return the number of free bytes
+ */
+size_t kheap_getFreeMem(void);
+
+/**
+ * @param addr the area-address
+ * @return the size of the area at given address (0 if not found)
+ */
+size_t kheap_getAreaSize(void *addr);
 
 /**
  * Internal: Allocates one page for areas

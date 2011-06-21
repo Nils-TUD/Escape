@@ -25,7 +25,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/util.h>
@@ -125,12 +125,12 @@ int vm86_create(void) {
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
 	if(p->ioMap == NULL)
-		p->ioMap = (uint8_t*)kheap_alloc(IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
 	if(p->ioMap != NULL)
 		memclear(p->ioMap,IO_MAP_SIZE / 8);
 
 	/* give it a name */
-	strcpy(p->command,"VM86");
+	proc_setCommand(p,"VM86");
 
 	/* block us; we get waked up as soon as someone wants to use us */
 	thread_setBlocked(t->tid);
@@ -489,7 +489,7 @@ static void vm86_copyPtrResult(const sVM86Memarea *areas,size_t areaCount) {
 
 static sVM86Info *vm86_createInfo(uint16_t interrupt,const sVM86Regs *regs,
 		const sVM86Memarea *areas,size_t areaCount) {
-	sVM86Info *i = (sVM86Info*)kheap_alloc(sizeof(sVM86Info));
+	sVM86Info *i = (sVM86Info*)cache_alloc(sizeof(sVM86Info));
 	if(i == NULL)
 		return NULL;
 	i->interrupt = interrupt;
@@ -497,9 +497,9 @@ static sVM86Info *vm86_createInfo(uint16_t interrupt,const sVM86Regs *regs,
 	i->areas = NULL;
 	i->areaCount = areaCount;
 	if(areaCount) {
-		i->areas = (sVM86Memarea*)kheap_alloc(areaCount * sizeof(sVM86Memarea));
+		i->areas = (sVM86Memarea*)cache_alloc(areaCount * sizeof(sVM86Memarea));
 		if(i->areas == NULL) {
-			kheap_free(i);
+			cache_free(i);
 			return NULL;
 		}
 		memcpy(i->areas,areas,areaCount * sizeof(sVM86Memarea));
@@ -508,6 +508,6 @@ static sVM86Info *vm86_createInfo(uint16_t interrupt,const sVM86Regs *regs,
 }
 
 static void vm86_destroyInfo(sVM86Info *i) {
-	kheap_free(i->areas);
-	kheap_free(i);
+	cache_free(i->areas);
+	cache_free(i);
 }

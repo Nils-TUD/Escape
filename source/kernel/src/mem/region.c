@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/pmem.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/region.h>
 #include <sys/mem/swapmap.h>
 #include <sys/video.h>
@@ -45,7 +45,7 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 	sRegion *reg;
 	assert(pgFlags == PF_DEMANDLOAD || pgFlags == 0);
 
-	reg = (sRegion*)kheap_alloc(sizeof(sRegion));
+	reg = (sRegion*)cache_alloc(sizeof(sRegion));
 	if(reg == NULL)
 		return NULL;
 	reg->procs = sll_create();
@@ -72,7 +72,7 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 	 * happen for data-regions of zero-size. We want to be able to increase their size, so they
 	 * must exist. */
 	reg->pfSize = MAX(1,pageCount);
-	reg->pageFlags = (ulong*)kheap_alloc(reg->pfSize * sizeof(ulong));
+	reg->pageFlags = (ulong*)cache_alloc(reg->pfSize * sizeof(ulong));
 	if(reg->pageFlags == NULL)
 		goto errPDirs;
 	for(i = 0; i < pageCount; i++)
@@ -82,7 +82,7 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 errPDirs:
 	sll_destroy(reg->procs,false);
 errReg:
-	kheap_free(reg);
+	cache_free(reg);
 	return NULL;
 }
 
@@ -94,9 +94,9 @@ void reg_destroy(sRegion *reg) {
 		if(reg->pageFlags[i] & PF_SWAPPED)
 			swmap_free(reg_getSwapBlock(reg,i));
 	}
-	kheap_free(reg->pageFlags);
+	cache_free(reg->pageFlags);
 	sll_destroy(reg->procs,false);
-	kheap_free(reg);
+	cache_free(reg);
 }
 
 size_t reg_presentPageCount(const sRegion *reg) {
@@ -140,7 +140,7 @@ bool reg_grow(sRegion *reg,ssize_t amount) {
 	assert(reg != NULL && (reg->flags & RF_GROWABLE));
 	if(amount > 0) {
 		ssize_t i;
-		ulong *pf = (ulong*)kheap_realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(ulong));
+		ulong *pf = (ulong*)cache_realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(ulong));
 		if(pf == NULL)
 			return false;
 		reg->pfSize += amount;
@@ -243,7 +243,7 @@ void reg_dbg_printFlags(const sRegion *reg) {
 	reg_sprintfFlags(&buf,reg);
 	if(buf.str) {
 		vid_printf("%s",buf.str);
-		kheap_free(buf.str);
+		cache_free(buf.str);
 	}
 }
 
@@ -258,7 +258,7 @@ void reg_dbg_print(const sRegion *reg,uintptr_t virt) {
 		vid_printf("%s",buf.str);
 	else
 		vid_printf("- no regions -\n");
-	kheap_free(buf.str);
+	cache_free(buf.str);
 }
 
 #endif

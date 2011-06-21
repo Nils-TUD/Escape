@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/node.h>
@@ -58,7 +58,7 @@ sVFSNode *vfs_file_create(tPid pid,sVFSNode *parent,char *name,fRead read,fWrite
 	node->destroy = vfs_file_destroy;
 	node->data = NULL;
 	if(read == vfs_file_read) {
-		sFileContent *con = (sFileContent*)kheap_alloc(sizeof(sFileContent));
+		sFileContent *con = (sFileContent*)cache_alloc(sizeof(sFileContent));
 		if(!con) {
 			vfs_node_destroy(node);
 			return NULL;
@@ -74,7 +74,7 @@ sVFSNode *vfs_file_create(tPid pid,sVFSNode *parent,char *name,fRead read,fWrite
 static void vfs_file_destroy(sVFSNode *n) {
 	sFileContent *con = (sFileContent*)n->data;
 	if(con) {
-		kheap_free(con);
+		cache_free(con);
 		n->data = NULL;
 	}
 }
@@ -133,7 +133,7 @@ ssize_t vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,off_
 		if(newSize > MAX_VFS_FILE_SIZE)
 			return ERR_NOT_ENOUGH_MEM;
 
-		con->data = kheap_alloc(newSize);
+		con->data = cache_alloc(newSize);
 		/* reset position */
 		con->pos = 0;
 	}
@@ -144,7 +144,7 @@ ssize_t vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,off_
 		if(newSize > MAX_VFS_FILE_SIZE)
 			return ERR_NOT_ENOUGH_MEM;
 
-		con->data = kheap_realloc(con->data,newSize);
+		con->data = cache_realloc(con->data,newSize);
 	}
 
 	/* all ok? */

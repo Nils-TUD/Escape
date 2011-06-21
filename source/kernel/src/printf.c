@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/printf.h>
 #include <esc/width.h>
 #include <stdarg.h>
@@ -37,8 +37,8 @@
 #define FFL_INTPTR_T		512
 #define FFL_OFF_T			1024
 
-/* the minimum space-increase-size in prf_aprintc() */
-#define SPRINTF_INC_SIZE	10
+/* the initial space for prf_aprintc() */
+#define SPRINTF_INIT_SIZE	16
 
 static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags);
 static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags);
@@ -73,15 +73,15 @@ void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 static void prf_aprintc(char c) {
 	if(curbuf->dynamic) {
 		if(curbuf->str == NULL) {
-			curbuf->size = SPRINTF_INC_SIZE;
-			curbuf->str = (char*)kheap_alloc(SPRINTF_INC_SIZE * sizeof(char));
+			curbuf->size = SPRINTF_INIT_SIZE;
+			curbuf->str = (char*)cache_alloc(SPRINTF_INIT_SIZE * sizeof(char));
 		}
 		if(curbuf->len >= curbuf->size) {
 			char *dup;
-			curbuf->size += SPRINTF_INC_SIZE;
-			dup = (char*)kheap_realloc(curbuf->str,curbuf->size * sizeof(char));
+			curbuf->size *= 2;
+			dup = (char*)cache_realloc(curbuf->str,curbuf->size * sizeof(char));
 			if(!dup)
-				kheap_free(curbuf->str);
+				cache_free(curbuf->str);
 			curbuf->str = dup;
 		}
 	}

@@ -27,12 +27,14 @@
 #include <sys/task/uenv.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
 #include <sys/syscalls/proc.h>
 #include <sys/syscalls.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
+#include <sys/util.h>
+#include <sys/debug.h>
 #include <errors.h>
 #include <string.h>
 
@@ -186,14 +188,14 @@ int sysc_exec(sIntrptStackFrame *stack) {
 
 	/* at first make sure that we'll cause no page-fault */
 	if(!sysc_isStringReadable(path)) {
-		kheap_free(argBuffer);
+		cache_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 
 	/* save path (we'll overwrite the process-data) */
 	pathLen = strlen(path);
 	if(pathLen >= MAX_PATH_LEN) {
-		kheap_free(argBuffer);
+		cache_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 	memcpy(pathSave,path,pathLen + 1);
@@ -202,7 +204,7 @@ int sysc_exec(sIntrptStackFrame *stack) {
 	/* resolve path; require a path in real fs */
 	res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res != ERR_REAL_PATH) {
-		kheap_free(argBuffer);
+		cache_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 
@@ -214,8 +216,7 @@ int sysc_exec(sIntrptStackFrame *stack) {
 		goto error;
 
 	/* copy path so that we can identify the process */
-	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
-			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
+	proc_setCommand(p,pathSave);
 
 #ifdef __eco32__
 	debugf("EXEC: proc %d:%s\n",p->pid,p->command);
@@ -231,11 +232,11 @@ int sysc_exec(sIntrptStackFrame *stack) {
 	if(!uenv_setupProc(path,argc,argBuffer,argSize,&info,info.linkerEntry))
 		goto error;
 
-	kheap_free(argBuffer);
+	cache_free(argBuffer);
 	SYSC_RET1(stack,0);
 
 error:
-	kheap_free(argBuffer);
+	cache_free(argBuffer);
 	proc_terminate(p,res,SIG_COUNT);
 	thread_switch();
 	util_panic("We should not reach this!");

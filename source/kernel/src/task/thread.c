@@ -27,7 +27,7 @@
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/real.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/swap.h>
@@ -66,7 +66,7 @@ sThread *thread_init(sProc *p) {
 
 static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	size_t i;
-	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
+	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
@@ -185,7 +185,7 @@ int thread_extendStack(uintptr_t address) {
 
 int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,bool cloneProc) {
 	int err = ERR_NOT_ENOUGH_MEM;
-	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
+	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -267,7 +267,7 @@ errStack:
 		p->ownFrames--;
 	}
 errThread:
-	kheap_free(t);
+	cache_free(t);
 	return err;
 }
 
@@ -317,7 +317,7 @@ void thread_kill(sThread *t) {
 
 	/* finally, destroy thread */
 	thread_remove(t);
-	kheap_free(t);
+	cache_free(t);
 }
 
 static tTid thread_getFreeTid(void) {

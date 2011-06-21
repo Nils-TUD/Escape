@@ -21,14 +21,14 @@
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/task/ioports.h>
 #include <sys/task/proc.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <errors.h>
 #include <string.h>
 
 int ioports_request(sProc *p,uint16_t start,size_t count) {
 	if(p->ioMap == NULL) {
-		p->ioMap = (uint8_t*)kheap_alloc(IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
 		if(p->ioMap == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 		/* mark all as disallowed */

@@ -21,7 +21,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <errors.h>
@@ -95,7 +95,7 @@ void sig_removeHandlerFor(tTid tid) {
 	for(i = 0; i < SIG_COUNT; i++)
 		sig_unset(t,i);
 	sll_removeFirst(sigThreads,t);
-	kheap_free(t);
+	cache_free(t);
 }
 
 void sig_cloneHandler(tTid parent,tTid child) {
@@ -227,12 +227,12 @@ static sSigThread *sig_getThread(tTid tid,bool create) {
 	}
 	if(!create)
 		return NULL;
-	st = (sSigThread*)kheap_calloc(1,sizeof(sSigThread));
+	st = (sSigThread*)cache_calloc(1,sizeof(sSigThread));
 	if(st == NULL)
 		return NULL;
 	st->thread = thread_getById(tid);
 	if(!sll_append(sigThreads,st)) {
-		kheap_free(st);
+		cache_free(st);
 		return NULL;
 	}
 	return st;

@@ -24,7 +24,7 @@
 #include <sys/dbg/cmd/log.h>
 #include <sys/dbg/cmd/ls.h>
 #include <sys/dbg/kb.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <esc/keycodes.h>
 #include <string.h>
@@ -107,7 +107,7 @@ void cons_start(void) {
 	}
 
 	for(i = 0; i < HISTORY_SIZE; i++)
-		kheap_free(history[i]);
+		cache_free(history[i]);
 	vid_restore(backup.screen,backup.row,backup.col);
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 }

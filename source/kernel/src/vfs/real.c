@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/event.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -190,7 +190,7 @@ static int vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,s
 	/* copy to info-struct */
 	if(req->data) {
 		memcpy((void*)info,req->data,sizeof(sFileInfo));
-		kheap_free(req->data);
+		cache_free(req->data);
 	}
 	res = 0;
 
@@ -239,7 +239,7 @@ ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,off_t 
 	vfs_real_releaseFile(pid,fs);
 	if(data) {
 		memcpy(buffer,data,req->count);
-		kheap_free(data);
+		cache_free(data);
 	}
 	return res;
 }
@@ -415,7 +415,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size
 			/* ok, it's the data */
 			if(data) {
 				/* map the buffer we have to copy it to */
-				req->data = kheap_alloc(req->count);
+				req->data = cache_alloc(req->count);
 				if(req->data)
 					memcpy(req->data,data,req->count);
 			}
@@ -439,7 +439,7 @@ static void vfs_real_statRespHandler(sVFSNode *node,const void *data,size_t size
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->data.arg1;
-		req->data = kheap_alloc(sizeof(sFileInfo));
+		req->data = cache_alloc(sizeof(sFileInfo));
 		if(req->data != NULL)
 			memcpy(req->data,rmsg->data.d,sizeof(sFileInfo));
 		vfs_req_remove(req);
@@ -490,7 +490,7 @@ static tFileNo vfs_real_requestFile(tPid pid,sVFSNode **node) {
 		}
 	}
 
-	chan = (sFSChan*)kheap_alloc(sizeof(sFSChan));
+	chan = (sFSChan*)cache_alloc(sizeof(sFSChan));
 	if(!chan)
 		return ERR_NOT_ENOUGH_MEM;
 	chan->active = true;
@@ -526,7 +526,7 @@ errorClose:
 errorNode:
 	vfs_node_destroy(child);
 errorChan:
-	kheap_free(chan);
+	cache_free(chan);
 	return err;
 }
 

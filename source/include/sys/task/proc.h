@@ -39,7 +39,6 @@
 
 /* max number of coexistent processes */
 #define MAX_PROC_COUNT		8192
-#define MAX_PROC_NAME_LEN	30
 #define MAX_FD_COUNT		64
 
 /* for marking unused */
@@ -102,7 +101,7 @@ typedef struct {
 	/* the io-map (NULL by default) */
 	uint8_t *ioMap;
 	/* start-command */
-	char command[MAX_PROC_NAME_LEN + 1];
+	char *command;
 	/* threads of this process */
 	sSLList *threads;
 	/* the directory-node in the VFS of this process */
@@ -121,6 +120,14 @@ typedef enum {CHG_DATA,CHG_STACK} eChgArea;
  * Initializes the process-management
  */
 void proc_init(void);
+
+/**
+ * Sets the command of <p> to <cmd> and frees the current command-string, if necessary
+ *
+ * @param p the process
+ * @param cmd the new command-name
+ */
+void proc_setCommand(sProc *p,const char *cmd);
 
 /**
  * Searches for a free pid and returns it or 0 if there is no free process-slot

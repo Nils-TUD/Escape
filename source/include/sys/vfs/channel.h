@@ -24,11 +24,6 @@
 #include <sys/vfs/vfs.h>
 
 /**
- * Inits the channel-module
- */
-void vfs_chan_init(void);
-
-/**
  * Creates a new channel for given process
  *
  * @param pid the process-id

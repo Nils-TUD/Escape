@@ -21,8 +21,8 @@
 #include <string.h>
 
 #ifdef IN_KERNEL
-#	include <sys/mem/kheap.h>
-#	define malloc kheap_alloc
+#	include <sys/mem/cache.h>
+#	define malloc cache_alloc
 #else
 #	include <stdlib.h>
 #endif

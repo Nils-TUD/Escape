@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/dir.h>
 #include <sys/vfs/link.h>
@@ -110,7 +110,7 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,of
 	if(node->parent == NULL && pid != KERNEL_PID) {
 		const size_t bufSize = 1024;
 		size_t c,curSize = bufSize;
-		fsBytes = kheap_alloc(bufSize);
+		fsBytes = cache_alloc(bufSize);
 		if(fsBytes != NULL) {
 			tFileNo rfile = vfs_real_openPath(pid,VFS_READ,"/");
 			if(rfile >= 0) {
@@ -120,7 +120,7 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,of
 						break;
 
 					curSize += bufSize;
-					fsBytesDup = kheap_realloc(fsBytes,curSize);
+					fsBytesDup = cache_realloc(fsBytes,curSize);
 					if(fsBytesDup == NULL) {
 						byteCount = 0;
 						break;
@@ -135,7 +135,7 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,of
 
 	if(byteCount > 0) {
 		/* now allocate mem on the heap and copy all data into it */
-		fsBytesDup = kheap_realloc(fsBytes,byteCount);
+		fsBytesDup = cache_realloc(fsBytes,byteCount);
 		if(fsBytesDup == NULL)
 			byteCount = 0;
 		else {
@@ -168,6 +168,6 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,of
 		/* simply copy the data to the buffer */
 		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
 	}
-	kheap_free(fsBytes);
+	cache_free(fsBytes);
 	return byteCount;
 }

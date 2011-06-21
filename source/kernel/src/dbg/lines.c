@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
 #include <errors.h>
@@ -27,10 +27,10 @@ int lines_create(sLines *l) {
 	l->lineCount = 0;
 	l->linePos = 0;
 	l->lineSize = 16;
-	l->lines = (char**)kheap_alloc(l->lineSize * sizeof(char*));
+	l->lines = (char**)cache_alloc(l->lineSize * sizeof(char*));
 	if(!l->lines)
 		return ERR_NOT_ENOUGH_MEM;
-	l->lines[l->lineCount] = kheap_alloc(VID_COLS + 1);
+	l->lines[l->lineCount] = cache_alloc(VID_COLS + 1);
 	if(!l->lines[l->lineCount]) {
 		lines_destroy(l);
 		return ERR_NOT_ENOUGH_MEM;
@@ -60,12 +60,12 @@ int lines_newline(sLines *l) {
 	/* allocate more lines if necessary */
 	if(l->lineCount >= l->lineSize) {
 		l->lineSize *= 2;
-		l->lines = (char**)kheap_realloc(l->lines,l->lineSize * sizeof(char*));
+		l->lines = (char**)cache_realloc(l->lines,l->lineSize * sizeof(char*));
 		if(!l->lines)
 			return ERR_NOT_ENOUGH_MEM;
 	}
 	/* allocate new line */
-	l->lines[l->lineCount] = kheap_alloc(VID_COLS + 1);
+	l->lines[l->lineCount] = cache_alloc(VID_COLS + 1);
 	if(!l->lines[l->lineCount])
 		return ERR_NOT_ENOUGH_MEM;
 	return 0;
@@ -83,7 +83,7 @@ void lines_destroy(sLines *l) {
 	if(l->lines) {
 		size_t i;
 		for(i = 0; i < l->lineCount; i++)
-			kheap_free(l->lines[i]);
-		kheap_free(l->lines);
+			cache_free(l->lines[i]);
+		cache_free(l->lines);
 	}
 }

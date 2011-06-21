@@ -22,13 +22,13 @@
 #include <assert.h>
 
 #ifdef IN_KERNEL
-#	include <sys/mem/kheap.h>
+#	include <sys/mem/cache.h>
 #	include <sys/video.h>
 /* for util_panic (vassert) */
 #	include <sys/util.h>
 #	define hmprintf		vid_printf
-#	define hmfree		kheap_free
-#	define hmmalloc		kheap_alloc
+#	define hmfree		cache_free
+#	define hmmalloc		cache_alloc
 #else
 /* for exit (vassert) */
 #	include <esc/proc.h>

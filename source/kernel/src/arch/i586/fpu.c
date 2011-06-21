@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/fpu.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <sys/cpu.h>
 #include <string.h>
@@ -73,7 +73,7 @@ void fpu_handleCoProcNA(sFPUState **state) {
 		if(curFPUState != NULL) {
 			/* do we have to allocate space for the state? */
 			if(*curFPUState == NULL) {
-				*curFPUState = (sFPUState*)kheap_alloc(sizeof(sFPUState));
+				*curFPUState = (sFPUState*)cache_alloc(sizeof(sFPUState));
 				/* if we can't save the state, don't unlock the FPU for another process */
 				/* TODO ok? */
 				if(*curFPUState == NULL)
@@ -101,7 +101,7 @@ void fpu_handleCoProcNA(sFPUState **state) {
 
 void fpu_cloneState(sFPUState **dst,const sFPUState *src) {
 	if(src != NULL) {
-		*dst = (sFPUState*)kheap_alloc(sizeof(sFPUState));
+		*dst = (sFPUState*)cache_alloc(sizeof(sFPUState));
 		/* simply ignore it here if alloc fails */
 		if(*dst)
 			memcpy(*dst,src,sizeof(sFPUState));
@@ -112,7 +112,7 @@ void fpu_cloneState(sFPUState **dst,const sFPUState *src) {
 
 void fpu_freeState(sFPUState **state) {
 	if(*state != NULL)
-		kheap_free(*state);
+		cache_free(*state);
 	*state = NULL;
 	/* we have to unset the current state because maybe the next created process gets
 	 * the same slot, so that the pointer is the same. */

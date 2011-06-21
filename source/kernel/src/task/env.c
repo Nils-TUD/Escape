@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/env.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <string.h>
@@ -75,11 +75,11 @@ bool env_set(tPid pid,const char *name,const char *value) {
 		if(var->value == NULL)
 			return false;
 		/* we don't need the previous value anymore */
-		kheap_free(oldVal);
+		cache_free(oldVal);
 		return true;
 	}
 
-	var = (sEnvVar*)kheap_alloc(sizeof(sEnvVar));
+	var = (sEnvVar*)cache_alloc(sizeof(sEnvVar));
 	if(var == NULL)
 		return false;
 
@@ -107,11 +107,11 @@ bool env_set(tPid pid,const char *name,const char *value) {
 errorVal:
 	if(sll_length(p->env) == 0)
 		sll_destroy(p->env,false);
-	kheap_free(var->value);
+	cache_free(var->value);
 errorName:
-	kheap_free(var->name);
+	cache_free(var->name);
 errorVar:
-	kheap_free(var);
+	cache_free(var);
 	return false;
 }
 
@@ -121,9 +121,9 @@ void env_removeFor(tPid pid) {
 		sSLNode *n;
 		for(n = sll_begin(p->env); n != NULL; n = n->next) {
 			sEnvVar *var = (sEnvVar*)n->data;
-			kheap_free(var->name);
-			kheap_free(var->value);
-			kheap_free(var);
+			cache_free(var->name);
+			cache_free(var->value);
+			cache_free(var);
 		}
 		sll_destroy(p->env,false);
 		p->env = NULL;

@@ -19,13 +19,14 @@
 
 #include <sys/common.h>
 #include <sys/mem/sharedmem.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <string.h>
+#include <assert.h>
 #include <errors.h>
 
 #define MAX_SHAREDMEM_NAME	15
@@ -77,7 +78,7 @@ ssize_t shm_create(sProc *p,const char *name,size_t pageCount) {
 		return ERR_SHARED_MEM_EXISTS;
 
 	/* create entry */
-	mem = (sShMem*)kheap_alloc(sizeof(sShMem));
+	mem = (sShMem*)cache_alloc(sizeof(sShMem));
 	if(mem == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	strcpy(mem->name,name);
@@ -99,7 +100,7 @@ errVmm:
 errUList:
 	sll_destroy(mem->users,true);
 errMem:
-	kheap_free(mem);
+	cache_free(mem);
 	return ERR_NOT_ENOUGH_MEM;
 }
 
@@ -134,7 +135,7 @@ int shm_leave(sProc *p,const char *name) {
 
 	sll_removeFirst(mem->users,user);
 	vmm_remove(p,user->region);
-	kheap_free(user);
+	cache_free(user);
 	return 0;
 }
 
@@ -156,7 +157,7 @@ int shm_destroy(sProc *p,const char *name) {
 	/* free shmem */
 	sll_removeFirst(shareList,mem);
 	sll_destroy(mem->users,true);
-	kheap_free(mem);
+	cache_free(mem);
 	return 0;
 }
 
@@ -199,13 +200,13 @@ static bool shm_isOwn(const sShMem *mem,const sProc *p) {
 }
 
 static bool shm_addUser(sShMem *mem,sProc *p,tVMRegNo reg) {
-	sShMemUser *user = (sShMemUser*)kheap_alloc(sizeof(sShMemUser));
+	sShMemUser *user = (sShMemUser*)cache_alloc(sizeof(sShMemUser));
 	if(user == NULL)
 		return false;
 	user->proc = p;
 	user->region = reg;
 	if(!sll_append(mem->users,user)) {
-		kheap_free(user);
+		cache_free(user);
 		return false;
 	}
 	return true;

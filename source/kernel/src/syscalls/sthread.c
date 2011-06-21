@@ -25,10 +25,11 @@
 #include <sys/task/event.h>
 #include <sys/task/lock.h>
 #include <sys/task/timer.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/syscalls/thread.h>
 #include <sys/syscalls.h>
+#include <sys/util.h>
 #include <string.h>
 #include <errors.h>
 
@@ -210,7 +211,7 @@ static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
 	sThread *t = thread_getRunning();
 	int res = ERR_INVALID_ARGS;
 	size_t i;
-	sWaitObject *kobjects = (sWaitObject*)kheap_alloc(objCount * sizeof(sWaitObject));
+	sWaitObject *kobjects = (sWaitObject*)cache_alloc(objCount * sizeof(sWaitObject));
 	if(kobjects == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	memcpy(kobjects,uobjects,objCount * sizeof(sWaitObject));
@@ -269,10 +270,10 @@ static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
 	}
 
 done:
-	kheap_free(kobjects);
+	cache_free(kobjects);
 	return 0;
 
 error:
-	kheap_free(kobjects);
+	cache_free(kobjects);
 	return res;
 }

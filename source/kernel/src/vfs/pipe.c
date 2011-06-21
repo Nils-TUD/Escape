@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
@@ -26,6 +26,7 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/pipe.h>
 #include <string.h>
+#include <assert.h>
 #include <errors.h>
 
 typedef struct {
@@ -57,7 +58,7 @@ sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent) {
 		return NULL;
 	node = vfs_node_create(parent,name);
 	if(node == NULL) {
-		kheap_free(name);
+		cache_free(name);
 		return NULL;
 	}
 
@@ -70,7 +71,7 @@ sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent) {
 	node->destroy = vfs_pipe_destroy;
 	node->close = vfs_pipe_close;
 	node->data = NULL;
-	pipe = (sPipe*)kheap_alloc(sizeof(sPipe));
+	pipe = (sPipe*)cache_alloc(sizeof(sPipe));
 	if(!pipe) {
 		vfs_node_destroy(node);
 		return NULL;
@@ -146,7 +147,7 @@ static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,o
 		total += byteCount;
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
-			kheap_free(data);
+			cache_free(data);
 			sll_removeIndex(vpipe->list,0);
 		}
 		pipe->total -= byteCount;
@@ -198,7 +199,7 @@ static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *b
 	}
 
 	/* build pipe-data */
-	data = (sPipeData*)kheap_alloc(sizeof(sPipeData) + count);
+	data = (sPipeData*)cache_alloc(sizeof(sPipeData) + count);
 	if(data == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	data->offset = offset;
@@ -210,14 +211,14 @@ static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *b
 	if(pipe->list == NULL) {
 		pipe->list = sll_create();
 		if(pipe->list == NULL) {
-			kheap_free(data);
+			cache_free(data);
 			return ERR_NOT_ENOUGH_MEM;
 		}
 	}
 
 	/* append */
 	if(!sll_append(pipe->list,data)) {
-		kheap_free(data);
+		cache_free(data);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	pipe->total += count;

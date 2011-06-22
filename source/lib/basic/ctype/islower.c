@@ -20,6 +20,8 @@
 #include <stddef.h>
 #include <ctype.h>
 
+extern char ctypetbl[];
+
 int islower(int c) {
-	return (c >= 'a' && c <= 'z');
+	return ctypetbl[c] & (CT_LOWER);
 }

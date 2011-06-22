@@ -21,10 +21,11 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
-#include "tkheap.h"
 #include <esc/test.h>
 #include <sys/video.h>
 #include <stdarg.h>
+#include "tkheap.h"
+#include "testutils.h"
 
 /* forward declarations */
 static void test_kheap(void);
@@ -51,28 +52,7 @@ uint *ptrs[ARRAY_SIZE(sizes)];
 size_t randFree1[] = {7,5,2,0,6,3,4,1};
 size_t randFree2[] = {3,4,1,5,6,0,7,2};
 
-size_t oldFH, newFH;
-
 /* helper */
-
-static void test_init(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	test_caseStartv(fmt,ap);
-	va_end(ap);
-
-	oldFH = kheap_getFreeMem();
-}
-
-static void test_check(void) {
-	newFH = kheap_getFreeMem();
-	if(newFH < oldFH) {
-		test_caseFailed("old-heap-count=%d, new-heap-count=%d",oldFH,newFH);
-	}
-	else {
-		test_caseSucceeded();
-	}
-}
 
 static bool test_checkContent(uint *ptr,size_t count,uint value) {
 	while(count-- > 0) {
@@ -123,7 +103,8 @@ static void test_kheap(void) {
 /* allocate, free in same direction */
 static void test_kheap_t1v1(void) {
 	size_t size,i;
-	test_init("Allocate, then free in same direction");
+	test_caseStart("Allocate, then free in same direction");
+	checkMemoryBefore(false);
 	test_t1alloc();
 	tprintf("Freeing...\n");
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
@@ -139,13 +120,14 @@ static void test_kheap_t1v1(void) {
 			}
 		}
 	}
-	test_check();
+	checkMemoryAfter(false);
 }
 
 /* allocate, free in opposite direction */
 static void test_kheap_t1v2(void) {
 	ssize_t size,i;
-	test_init("Allocate, then free in opposite direction");
+	test_caseStart("Allocate, then free in opposite direction");
+	checkMemoryBefore(false);
 	test_t1alloc();
 	tprintf("Freeing...\n");
 	for(size = ARRAY_SIZE(sizes) - 1; size >= 0; size--) {
@@ -161,13 +143,14 @@ static void test_kheap_t1v2(void) {
 			}
 		}
 	}
-	return test_check();
+	checkMemoryAfter(false);
 }
 
 /* allocate, free in random direction 1 */
 static void test_kheap_t1v3(void) {
 	size_t size;
-	test_init("Allocate, then free in \"random\" direction 1");
+	test_caseStart("Allocate, then free in \"random\" direction 1");
+	checkMemoryBefore(false);
 	test_t1alloc();
 	tprintf("Freeing...\n");
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
@@ -176,13 +159,14 @@ static void test_kheap_t1v3(void) {
 			kheap_free(ptrs[randFree1[size]]);
 		}
 	}
-	test_check();
+	checkMemoryAfter(false);
 }
 
 /* allocate, free in random direction 2 */
 static void test_kheap_t1v4(void) {
 	size_t size;
-	test_init("Allocate, then free in \"random\" direction 2");
+	test_caseStart("Allocate, then free in \"random\" direction 2");
+	checkMemoryBefore(false);
 	test_t1alloc();
 	tprintf("Freeing...\n");
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
@@ -191,14 +175,15 @@ static void test_kheap_t1v4(void) {
 			kheap_free(ptrs[randFree2[size]]);
 		}
 	}
-	test_check();
+	checkMemoryAfter(false);
 }
 
 /* allocate area 1, free area 1, ... */
 static void test_kheap_t2(void) {
 	size_t size;
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
-		test_init("Allocate and free %d bytes",sizes[size] * sizeof(uint));
+		test_caseStart("Allocate and free %d bytes",sizes[size] * sizeof(uint));
+		checkMemoryBefore(false);
 
 		ptrs[0] = (uint*)kheap_alloc(sizes[size] * sizeof(uint));
 		if(ptrs[0] != NULL) {
@@ -210,7 +195,7 @@ static void test_kheap_t2(void) {
 			tprintf("Freeing mem @ 0x%x\n",ptrs[0]);
 			kheap_free(ptrs[0]);
 
-			test_check();
+			checkMemoryAfter(false);
 		}
 		else {
 			tprintf("Not enough mem\n");
@@ -222,21 +207,23 @@ static void test_kheap_t2(void) {
 /* allocate single bytes to reach the next page for the mem-area-structs */
 static void test_kheap_t3(void) {
 	size_t i;
-	test_init("Allocate %d times 1 byte",SINGLE_BYTE_COUNT);
+	test_caseStart("Allocate %d times 1 byte",SINGLE_BYTE_COUNT);
+	checkMemoryBefore(false);
 	for(i = 0; i < SINGLE_BYTE_COUNT; i++) {
 		ptrsSingle[i] = kheap_alloc(1);
 	}
 	for(i = 0; i < SINGLE_BYTE_COUNT; i++) {
 		kheap_free(ptrsSingle[i]);
 	}
-	test_check();
+	checkMemoryAfter(false);
 }
 
 /* reallocate test */
 static void test_kheap_t5(void) {
 	size_t i;
 	uint *ptr1,*ptr2,*ptr3,*ptr4,*ptr5;
-	test_init("Allocating 3 regions");
+	test_caseStart("Allocating 3 regions");
+	checkMemoryBefore(false);
 	ptr1 = kheap_alloc(4 * sizeof(uint));
 	for(i = 0;i < 4;i++)
 		*(ptr1+i) = 1;
@@ -269,12 +256,14 @@ static void test_kheap_t5(void) {
 	kheap_free(ptr3);
 	kheap_free(ptr4);
 	kheap_free(ptr5);
+	checkMemoryAfter(false);
 }
 
 static void test_kheap_realloc(void) {
 	size_t i;
 	uint *p,*ptr1,*ptr2,*ptr3;
-	test_init("Testing realloc()");
+	test_caseStart("Testing realloc()");
+	checkMemoryBefore(false);
 
 	ptr1 = (uint*)kheap_alloc(10 * sizeof(uint));
 	for(p = ptr1,i = 0;i < 10;i++)
@@ -353,5 +342,5 @@ static void test_kheap_realloc(void) {
 	kheap_free(ptr2);
 	kheap_free(ptr3);
 
-	test_check();
+	checkMemoryAfter(false);
 }

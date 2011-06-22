@@ -40,6 +40,7 @@
 #include "tvmm.h"
 #include "tshm.h"
 #include "thashmap.h"
+#include "tctype.h"
 /* TODO find a better solution */
 #ifdef __mmix__
 #include "arch/mmix/taddrspace.h"
@@ -58,24 +59,25 @@ int main(sBootInfo *bootinfo) {
 #ifdef __mmix__
 	test_register(&tModAddrSpace);
 #endif
+	test_register(&tModCtype);
 	test_register(&tModMM);
 	test_register(&tModDynArray);
 	test_register(&tModPaging);
 	test_register(&tModProc);
+	test_register(&tModHashMap);
 	test_register(&tModKHeap);
+	test_register(&tModRegion);
+	test_register(&tModRBuffer);
+	test_register(&tModShm);
+	test_register(&tModSLList);
 	test_register(&tModSched);
 	test_register(&tModString);
 	test_register(&tModVFS);
 	test_register(&tModVFSn);
 	test_register(&tModSignals);
-	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
 	test_register(&tModSwapMap);
-	test_register(&tModRegion);
 	test_register(&tModVmm);
-	test_register(&tModShm);
-	test_register(&tModHashMap);
-	test_register(&tModSLList);
 	test_start();
 
 	/* stay here */

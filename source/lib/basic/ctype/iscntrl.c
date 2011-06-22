@@ -20,6 +20,8 @@
 #include <stddef.h>
 #include <ctype.h>
 
+extern char ctypetbl[];
+
 int iscntrl(int c) {
-	return c < ' ';
+	return ctypetbl[c] & (CT_CTRL);
 }

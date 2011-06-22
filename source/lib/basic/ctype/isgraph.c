@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: isdigit.c 849 2010-10-04 11:04:51Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +22,6 @@
 
 extern char ctypetbl[];
 
-int ispunct(int c) {
-	return ctypetbl[c] & (CT_PUNCT);
+int isgraph(int c) {
+	return (ctypetbl[c] & (CT_CTRL | CT_SPACE)) == 0;
 }

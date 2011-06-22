@@ -86,6 +86,9 @@ long conf_get(uint id) {
 		case CONF_LOG:
 			res = doLog;
 			break;
+		case CONF_PAGE_SIZE:
+			res = PAGE_SIZE;
+			break;
 		default:
 			res = ERR_INVALID_ARGS;
 			break;

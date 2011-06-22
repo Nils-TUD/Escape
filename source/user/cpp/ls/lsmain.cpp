@@ -153,17 +153,17 @@ int main(int argc,char *argv[]) {
 		size_t x;
 		lsfile *f = *it;
 		if(flags & F_INODE) {
-			if((x = getnwidth(f->inode())) > widths[W_INODE])
+			if((x = count_digits(f->inode(),10)) > widths[W_INODE])
 				widths[W_INODE] = x;
 		}
 		if(flags & F_LONG) {
-			if((x = getuwidth(f->links(),10)) > widths[W_LINKCOUNT])
+			if((x = count_digits(f->links(),10)) > widths[W_LINKCOUNT])
 				widths[W_LINKCOUNT] = x;
-			if((x = getuwidth(f->uid(),10)) > widths[W_UID])
+			if((x = count_digits(f->uid(),10)) > widths[W_UID])
 				widths[W_UID] = x;
-			if((x = getuwidth(f->gid(),10)) > widths[W_GID])
+			if((x = count_digits(f->gid(),10)) > widths[W_GID])
 				widths[W_GID] = x;
-			if((x = getnwidth(f->rsize())) > widths[W_SIZE])
+			if((x = count_digits(f->rsize(),10)) > widths[W_SIZE])
 				widths[W_SIZE] = x;
 		}
 		else {
@@ -177,13 +177,19 @@ int main(int argc,char *argv[]) {
 	for(vector<lsfile*>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
 		lsfile *f = *it;
 		if(flags & F_LONG) {
-			if(flags & F_INODE)
-				cout.format("%*d ",widths[W_INODE],f->inode());
+			if(flags & F_INODE) {
+				cout.width(widths[W_INODE]);
+				cout << f->inode() << ' ';
+			}
 			printMode(f->mode());
-			cout.format("%*u ",widths[W_LINKCOUNT],f->links());
-			cout.format("%*u ",widths[W_UID],f->uid());
-			cout.format("%*u ",widths[W_GID],f->gid());
-			cout.format("%*d ",widths[W_SIZE],f->rsize());
+			cout.width(widths[W_LINKCOUNT]);
+			cout << f->links() << ' ';
+			cout.width(widths[W_UID]);
+			cout << f->uid() << ' ';
+			cout.width(widths[W_GID]);
+			cout << f->gid() << ' ';
+			cout.width(widths[W_SIZE]);
+			cout << f->rsize() << ' ';
 			{
 				char dateStr[DATE_LEN];
 				file::time_type ts = f->modified();
@@ -205,14 +211,27 @@ int main(int argc,char *argv[]) {
 				cout << '\n';
 				pos = 0;
 			}
-			if(flags & F_INODE)
-				cout.format("%*d ",widths[W_INODE],f->inode());
-			if(f->is_dir())
-				cout.format("\033[co;9]%-*s\033[co]",widths[W_NAME] + 1,f->name().c_str());
-			else if(f->mode() & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
-				cout.format("\033[co;2]%-*s\033[co]",widths[W_NAME] + 1,f->name().c_str());
-			else
-				cout.format("%-*s",widths[W_NAME] + 1,f->name().c_str());
+			if(flags & F_INODE) {
+				cout.width(widths[W_INODE]);
+				cout << f->inode() << ' ';
+			}
+			if(f->is_dir()) {
+				cout << "\033[co;9]";
+				cout.flags(cout.left);
+				cout.width(widths[W_NAME] + 1);
+				cout << f->name() << "\033[co]";
+			}
+			else if(f->mode() & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) {
+				cout << "\033[co;2]";
+				cout.flags(cout.left);
+				cout.width(widths[W_NAME] + 1);
+				cout << f->name() << "\033[co]";
+			}
+			else {
+				cout.flags(cout.left);
+				cout.width(widths[W_NAME] + 1);
+				cout << f->name();
+			}
 			pos += widths[W_NAME] + widths[W_INODE] + 2;
 		}
 	}

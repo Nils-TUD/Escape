@@ -23,6 +23,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/video.h>
 #include <esc/test.h>
+#include "testutils.h"
 #include "tproc.h"
 
 /* forward declarations */
@@ -34,8 +35,6 @@ sTestModule tModProc = {
 	&test_proc
 };
 
-static size_t oldFF, newFF;
-
 /**
  * Stores the current page-count and free frames and starts a test-case
  */
@@ -44,21 +43,7 @@ static void test_init(const char *fmt,...) {
 	va_start(ap,fmt);
 	test_caseStartv(fmt,ap);
 	va_end(ap);
-
-	oldFF = pmem_getFreeFrames(MM_DEF);
-}
-
-/**
- * Checks whether the page-count and free-frames are still the same and finishes the test-case
- */
-static void test_check(void) {
-	newFF = pmem_getFreeFrames(MM_DEF);
-	if(oldFF != newFF) {
-		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
-	}
-	else {
-		test_caseSucceeded();
-	}
+	checkMemoryBefore(false);
 }
 
 static void test_proc(void) {
@@ -75,5 +60,6 @@ static void test_proc(void) {
 		proc_terminate(proc_getByPid(newPid),0,0);
 		proc_kill(proc_getByPid(newPid));
 	}
-	test_check();
+	checkMemoryAfter(false);
+	test_caseSucceeded();
 }

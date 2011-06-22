@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/width.h>
 #include <esc/messages.h>
 #include <esc/debug.h>
+#include <esc/conf.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +32,8 @@
 
 #include "thread.h"
 #include "process.h"
+
+using namespace std;
 
 struct sort {
 	const static int PID	= 0;
@@ -45,6 +47,11 @@ struct sort {
 	int type;
 	string name;
 };
+
+static bool compareProcs(const process* a,const process* b);
+static vector<process*> getProcs();
+static process* getProc(const char* name);
+
 static struct sort sorts[] = {
 	{sort::PID,"pid"},
 	{sort::PPID,"ppid"},
@@ -62,12 +69,8 @@ static const char *states[] = {
 	"Zom "
 };
 static int sortcol = sort::PID;
+static size_t pageSize;
 
-using namespace std;
-
-static bool compareProcs(const process* a,const process* b);
-static vector<process*> getProcs();
-static process* getProc(const char* name);
 static void usage(const char *name) {
 	size_t i;
 	cerr << "Usage: " << name <<" [-t][-n <count>][-s <sort>]" << endl;
@@ -86,6 +89,7 @@ static void usage(const char *name) {
 int main(int argc,char **argv) {
 	string ssort("pid");
 	size_t numProcs = 0;
+	pageSize = getConf(CONF_PAGE_SIZE);
 	bool printThreads = false;
 
 	// parse args
@@ -114,13 +118,13 @@ int main(int argc,char **argv) {
 
 	// determine max-values (we want to have a min-width here :))
 	process::pid_type maxPid = 100;
-	process::pid_type maxPpid = 100;
+	process::pid_type maxPpid = 1000;
 	process::size_type maxPmem = 100;
+	process::size_type maxShmem = 1000;
 	process::size_type maxVmem = 100;
 	process::size_type maxSmem = 100;
-	process::size_type maxShmem = 100;
-	process::size_type maxInput = 10000;
-	process::size_type maxOutput = 10000;
+	process::size_type maxInput = 100;
+	process::size_type maxOutput = 100;
 	process::cycle_type totalCycles = 0;
 	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
 		process *p = *it;
@@ -150,29 +154,48 @@ int main(int argc,char **argv) {
 		}
 		totalCycles += (*it)->userCycles() + (*it)->kernelCycles();
 	}
-	maxPid = getuwidth(maxPid,10);
-	maxPpid = getuwidth(maxPpid,10);
-	// display in KiB, its in pages, i.e. 4 KiB blocks
-	maxPmem = getuwidth(maxPmem * 4,10);
-	maxVmem = getuwidth(maxVmem * 4,10);
-	maxSmem = getuwidth(maxSmem * 4,10);
-	maxShmem = getuwidth(maxShmem * 4,10);
+	maxPid = count_digits(maxPid,10);
+	maxPpid = count_digits(maxPpid,10);
+	// display in KiB, its in pages
+	maxPmem = count_digits((maxPmem * pageSize) / 1024,10);
+	maxVmem = count_digits((maxVmem * pageSize) / 1024,10);
+	maxSmem = count_digits((maxSmem * pageSize) / 1024,10);
+	maxShmem = count_digits((maxShmem * pageSize) / 1024,10);
 	// display in KiB, its in bytes
-	maxInput = getuwidth(maxInput / 1024,10);
-	maxOutput = getuwidth(maxOutput / 1024,10);
+	maxInput = count_digits(maxInput / 1024,10);
+	maxOutput = count_digits(maxOutput / 1024,10);
 
 	// sort
 	std::sort(procs.begin(),procs.end(),compareProcs);
 
 	// print header
-	cout.format(
-		"%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM%*sIN%*sOUT STATE  %%CPU (USER,KERNEL) COMMAND\n",
-		maxPid - 3,"",maxPpid - 1,"",maxPmem - 2,"",maxShmem - 2,"",maxVmem - 2,"",
-		maxSmem - 2,"",maxInput,"",maxOutput - 1,""
-	);
+	cout.width(maxPid);
+	cout << "PID";
+	cout.width(maxPpid + 1);
+	cout.flags(cout.right);
+	cout << "PPID";
+	cout.width((streamsize)maxPmem + 2);
+	cout.flags(cout.right);
+	cout << "PMEM";
+	cout.width((streamsize)maxShmem + 2);
+	cout.flags(cout.right);
+	cout << "SHMEM";
+	cout.width((streamsize)maxVmem + 2);
+	cout.flags(cout.right);
+	cout << "VMEM";
+	cout.width((streamsize)maxSmem + 2);
+	cout.flags(cout.right);
+	cout << "SMEM";
+	cout.width((streamsize)maxInput + 2);
+	cout.flags(cout.right);
+	cout << "IN";
+	cout.width((streamsize)maxOutput + 2);
+	cout.flags(cout.right);
+	cout << "OUT";
+	cout << " STATE  %CPU (USER,KERNEL) COMMAND" << endl;
 
 	// calc with to the process-command
-	size_t width2cmd = 50 + maxPid + maxPmem + maxShmem + maxSmem + maxInput + maxOutput;
+	size_t width2cmd = 47 + maxPid + maxPmem + maxShmem + maxSmem + maxInput + maxOutput;
 	// get console-size
 	sVTSize consSize;
 	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
@@ -183,39 +206,76 @@ int main(int argc,char **argv) {
 	for(vector<process*>::const_iterator it = procs.begin(); it != end; ++it) {
 		process *p = *it;
 		process::cycle_type procCycles;
-		int userPercent,kernelPercent;
-		float cyclePercent;
+		int userPercent = 0;
+		int kernelPercent = 0;
+		float cyclePercent = 0;
 
 		procCycles = p->userCycles() + p->kernelCycles();
-		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
-		userPercent = (int)(100. / (procCycles / (double)p->userCycles()));
-		kernelPercent = (int)(100. / (procCycles / (double)p->kernelCycles()));
+		if(procCycles != 0)
+			cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
+		if(p->userCycles() != 0)
+			userPercent = (int)(100. / (procCycles / (double)p->userCycles()));
+		if(p->kernelCycles() != 0)
+			kernelPercent = (int)(100. / (procCycles / (double)p->kernelCycles()));
 		size_t cmdwidth = min(consSize.width - width2cmd,p->command().length());
 		string cmd = p->command().substr(0,cmdwidth);
-		cout.format("%*u   %*u %*uK  %*uK %*uK %*uK %*uK %*uK -     %4.1f%% (%3d%%,%3d%%)   %s\n",
-				maxPid,p->pid(),maxPpid,p->ppid(),
-				maxPmem,p->ownFrames() * 4,
-				maxShmem,p->sharedFrames() * 4,
-				maxVmem,p->pages() * 4,
-				maxSmem,p->swapped() * 4,
-				maxInput,p->input() / 1024,
-				maxOutput,p->output() / 1024,
-				cyclePercent,userPercent,kernelPercent,
-				cmd.c_str());
+
+		cout.width(maxPid);
+		cout << p->pid() << " ";
+		cout.width(maxPpid);
+		cout << p->ppid() << " ";
+		cout.width((streamsize)maxPmem);
+		cout << (p->ownFrames() * pageSize) / 1024 << "K ";
+		cout.width((streamsize)maxShmem);
+		cout << (p->sharedFrames() * pageSize) / 1024 << "K ";
+		cout.width((streamsize)maxVmem);
+		cout << (p->pages() * pageSize) / 1024 << "K ";
+		cout.width((streamsize)maxSmem);
+		cout << (p->swapped() * pageSize) / 1024 << "K ";
+		cout.width((streamsize)maxInput);
+		cout << p->input() / 1024 << "K ";
+		cout.width((streamsize)maxOutput);
+		cout << p->output() / 1024 << "K ";
+		cout << "-     ";
+		cout.width(4);
+		cout.precision(1);
+		cout << cyclePercent << "% (";
+		cout.width(3);
+		cout << userPercent << "%,";
+		cout.width(3);
+		cout << kernelPercent << "%)   ";
+		cout << cmd << endl;
 
 		if(printThreads) {
 			const vector<thread*>& threads = p->threads();
 			for(vector<thread*>::const_iterator tit = threads.begin(); tit != threads.end(); ++tit) {
 				thread *t = *tit;
 				process::cycle_type threadCycles = t->userCycles() + t->kernelCycles();
-				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
-				int tuserPercent = (int)(100. / (threadCycles / (double)t->userCycles()));
-				int tkernelPercent = (int)(100. / (threadCycles / (double)t->kernelCycles()));
-				cout.format("  %c\xC4%*s%*d%*s %s  %4.1f%% (%3d%%,%3d%%)\n",
-						(tit + 1 != threads.end()) ? 0xC3 : 0xC0,
-						maxPid - 3,"",maxPpid,t->tid(),
-						15 + maxPmem + maxShmem + maxVmem + maxSmem + maxInput + maxOutput,"",
-						states[t->state()],tcyclePercent,tuserPercent,tkernelPercent);
+				float tcyclePercent = 0;
+				if(threadCycles != 0)
+					tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
+				int tuserPercent = 0;
+				if(t->userCycles() != 0)
+					tuserPercent = (int)(100. / (threadCycles / (double)t->userCycles()));
+				int tkernelPercent = 0;
+				if(t->kernelCycles() != 0)
+					tkernelPercent = (int)(100. / (threadCycles / (double)t->kernelCycles()));
+
+				cout << "  " << ((tit + 1 != threads.end()) ? '\xC3' : '\xC0') << '\xC4';
+				cout.width(maxPpid);
+				cout << t->tid();
+				cout.width((streamsize)maxPmem + maxShmem + maxVmem + maxSmem + maxInput +
+						maxOutput + 2 * 6);
+				cout << "";
+				cout.width(5);
+				cout << states[t->state()];
+				cout.width(6);
+				cout.precision(1);
+				cout << tcyclePercent << "% (";
+				cout.width(3);
+				cout << tuserPercent << "%,";
+				cout.width(3);
+				cout << tkernelPercent << "%)" << endl;
 			}
 		}
 	}

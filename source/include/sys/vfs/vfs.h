@@ -83,6 +83,7 @@ typedef void (*fDestroy)(sVFSNode *n);
 
 struct sVFSNode {
 	char *name;
+	size_t nameLen;
 	/* number of open files for this node */
 	ushort refCount;
 	/* the owner of this node */

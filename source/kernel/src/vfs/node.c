@@ -113,7 +113,7 @@ char *vfs_node_getPath(tInodeNo nodeNo) {
 
 	while(n->parent != NULL) {
 		/* name + slash */
-		total += strlen(n->name) + 1;
+		total += n->nameLen + 1;
 		n = n->parent;
 	}
 
@@ -124,7 +124,7 @@ char *vfs_node_getPath(tInodeNo nodeNo) {
 	n = node;
 	len = total;
 	while(n->parent != NULL) {
-		nlen = strlen(n->name) + 1;
+		nlen = n->nameLen + 1;
 		/* insert the new element */
 		*(path + total - nlen) = '/';
 		memcpy(path + total + 1 - nlen,n->name,nlen - 1);
@@ -195,7 +195,7 @@ int vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,uint fl
 			lastdepth = depth;
 		}
 
-		if((int)strlen(n->name) == pos && strncmp(n->name,path,pos) == 0) {
+		if((int)n->nameLen == pos && strncmp(n->name,path,pos) == 0) {
 			path += pos;
 			/* finished? */
 			if(!*path)
@@ -306,7 +306,7 @@ void vfs_node_dirname(char *path,size_t len) {
 sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,size_t nameLen) {
 	sVFSNode *n = vfs_node_getFirstChild(node);
 	while(n != NULL) {
-		if(strlen(n->name) == nameLen && strncmp(n->name,name,nameLen) == 0)
+		if(n->nameLen == nameLen && strncmp(n->name,name,nameLen) == 0)
 			return n;
 		n = n->next;
 	}
@@ -326,6 +326,7 @@ sVFSNode *vfs_node_create(sVFSNode *parent,char *name) {
 
 	/* ensure that all values are initialized properly */
 	node->name = name;
+	node->nameLen = strlen(name);
 	node->mode = 0;
 	node->owner = INVALID_PID;
 	node->refCount = 0;
@@ -402,7 +403,7 @@ static void vfs_node_appendChild(sVFSNode *parent,sVFSNode *node) {
 }
 
 static sVFSNode *vfs_node_requestNode(void) {
-	sVFSNode *node;
+	sVFSNode *node = NULL;
 	if(freeList == NULL) {
 		size_t i,oldCount = nodeArray.objCount;
 		if(!dyna_extend(&nodeArray))
@@ -424,6 +425,7 @@ static void vfs_node_releaseNode(sVFSNode *node) {
 	vassert(node != NULL,"node == NULL");
 	/* mark unused */
 	node->name = NULL;
+	node->nameLen = 0;
 	node->owner = INVALID_PID;
 	node->next = freeList;
 	freeList = node;

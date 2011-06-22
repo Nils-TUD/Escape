@@ -25,10 +25,10 @@ static sSymbol ksymbols[] = {
 	/* add dummy-entry to prevent empty array */
 	{0,""},
 #ifdef __i386__
-#include <sys/arch/i586/ksymbols.h>
+#	include <sys/arch/i586/ksymbols.h>
 #endif
 #ifdef __eco32__
-#include <sys/arch/eco32/ksymbols.h>
+#	include <sys/arch/eco32/ksymbols.h>
 #endif
 };
 

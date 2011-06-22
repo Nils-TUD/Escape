@@ -20,6 +20,8 @@
 #include <stddef.h>
 #include <ctype.h>
 
+extern char ctypetbl[];
+
 int isalpha(int c) {
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+	return ctypetbl[c] & (CT_LOWER | CT_UPPER);
 }

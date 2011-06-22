@@ -62,8 +62,15 @@ void kheap_free(void *addr);
  *
  * @param addr the start-address
  * @param size the size
+ * @return true if the memory has been added (we need areas to do so, which might not be available
+ * 	when no area is free anymore and no free frame is available)
  */
-void kheap_addMemory(uintptr_t addr,size_t size);
+bool kheap_addMemory(uintptr_t addr,size_t size);
+
+/**
+ * @return the number of allocated pages
+ */
+size_t kheap_getPageCount(void);
 
 /**
  * @return the number of used bytes

@@ -159,8 +159,8 @@ static void parseMMIX(FILE *f) {
 	while((c = getc(f)) != EOF) {
 		sContext *con;
 		/* skip whitespace at the beginning */
-		while(isspace((c = getc(f))))
-			;
+		while(isspace(c))
+			c = getc(f);
 		/* function-enter */
 		if(c == '\\') {
 			size_t i;

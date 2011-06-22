@@ -23,6 +23,7 @@
 #include <esc/hashmap.h>
 #include <sys/video.h>
 #include "thashmap.h"
+#include "testutils.h"
 
 #define TEST_MAP_SIZE	16
 
@@ -49,9 +50,9 @@ static void test_hashmap(void) {
 static void test_basic(void) {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
-	size_t before = kheap_getFreeMem();
 	test_caseStart("Testing basic functionality");
 
+	checkMemoryBefore(false);
 	m = hm_create(testmap,TEST_MAP_SIZE,test_getkey);
 	hm_add(m,(void*)1);
 	hm_add(m,(void*)2);
@@ -71,16 +72,17 @@ static void test_basic(void) {
 	test_assertPtr(hm_get(m,27),NULL);
 
 	hm_destroy(m);
-	test_assertSize(kheap_getFreeMem(),before);
+	checkMemoryAfter(false);
+
 	test_caseSucceeded();
 }
 
 static void test_remove(void) {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
-	size_t before = kheap_getFreeMem();
 	test_caseStart("Testing remove");
 
+	checkMemoryBefore(false);
 	m = hm_create(testmap,TEST_MAP_SIZE,test_getkey);
 	hm_add(m,(void*)6);
 	hm_add(m,(void*)5);
@@ -110,7 +112,8 @@ static void test_remove(void) {
 	test_assertSize(hm_getCount(m),0);
 
 	hm_destroy(m);
-	test_assertSize(kheap_getFreeMem(),before);
+	checkMemoryAfter(false);
+
 	test_caseSucceeded();
 }
 
@@ -119,9 +122,9 @@ static void test_iterator(void) {
 	sHashMap *m;
 	size_t j;
 	ulong i,elems[] = {44,12,18,34,1,109};
-	size_t before = kheap_getFreeMem();
 	test_caseStart("Testing map iterator");
 
+	checkMemoryBefore(false);
 	m = hm_create(testmap,TEST_MAP_SIZE,test_getkey);
 	for(i = 0; i < ARRAY_SIZE(elems); i++)
 		hm_add(m,(void*)elems[i]);
@@ -139,6 +142,7 @@ static void test_iterator(void) {
 	test_assertSize(hm_getCount(m),j);
 
 	hm_destroy(m);
-	test_assertSize(kheap_getFreeMem(),before);
+	checkMemoryAfter(false);
+
 	test_caseSucceeded();
 }

@@ -25,6 +25,7 @@
 #include <sys/video.h>
 #include <esc/test.h>
 #include "tshm.h"
+#include "testutils.h"
 
 /* forward declarations */
 static void test_shm(void);
@@ -36,21 +37,6 @@ sTestModule tModShm = {
 	"Shared memory",
 	&test_shm
 };
-static size_t framesBefore;
-static size_t heapBefore;
-static size_t framesAfter;
-static size_t heapAfter;
-
-static void test_init(void) {
-	heapBefore = kheap_getFreeMem();
-	framesBefore = pmem_getFreeFrames(MM_DEF);
-}
-static void test_finish(void) {
-	heapAfter = kheap_getFreeMem();
-	framesAfter = pmem_getFreeFrames(MM_DEF);
-	test_assertSize(heapAfter,heapBefore);
-	test_assertSize(framesAfter,framesBefore);
-}
 
 static void test_shm(void) {
 	test_1();
@@ -60,12 +46,12 @@ static void test_shm(void) {
 static void test_1(void) {
 	sProc *p = proc_getRunning();
 	test_caseStart("Testing shm_create() & shm_destroy()");
+	checkMemoryBefore(true);
 
-	test_init();
 	test_assertTrue(shm_create(p,"myshm",3) >= 0);
 	test_assertTrue(shm_destroy(p,"myshm") == 0);
-	test_finish();
 
+	checkMemoryAfter(true);
 	test_caseSucceeded();
 }
 
@@ -83,9 +69,9 @@ static void test_2(void) {
 	test_assertInt(proc_clone(pid2,0),0);
 	child2 = proc_getByPid(pid2);
 
-	test_init();
 	/* create dummy-regions to force vmm to extend the regions-array. this way we can check
 	 * wether all memory is freed correctly */
+	checkMemoryBefore(true);
 	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);
 	reg2 = vmm_add(child2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
@@ -98,9 +84,9 @@ static void test_2(void) {
 	test_assertTrue(shm_destroy(p,"myshm") == 0);
 	vmm_remove(child2,reg2);
 	vmm_remove(child1,reg1);
-	test_finish();
+	checkMemoryAfter(true);
 
-	test_init();
+	checkMemoryBefore(true);
 	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);
 	reg2 = vmm_add(child2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
@@ -111,9 +97,9 @@ static void test_2(void) {
 	test_assertTrue(shm_destroy(p,"myshm") == 0);
 	vmm_remove(child2,reg2);
 	vmm_remove(child1,reg1);
-	test_finish();
+	checkMemoryAfter(true);
 
-	test_init();
+	checkMemoryBefore(true);
 	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);
 	reg2 = vmm_add(child2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
@@ -125,7 +111,7 @@ static void test_2(void) {
 	shm_remProc(p);
 	vmm_remove(child2,reg2);
 	vmm_remove(child1,reg1);
-	test_finish();
+	checkMemoryAfter(true);
 
 	proc_kill(child1);
 	proc_kill(child2);

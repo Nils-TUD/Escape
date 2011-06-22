@@ -23,6 +23,7 @@
 #include <esc/ringbuffer.h>
 #include <esc/test.h>
 #include "tringbuffer.h"
+#include "testutils.h"
 
 /* forward declarations */
 static void test_rbuf(void);
@@ -48,8 +49,8 @@ static void test_rbuf(void) {
 
 static void test_1(void) {
 	sRingBuf *rb;
-	size_t free = kheap_getFreeMem();
 	test_caseStart("Create & Destroy");
+	checkMemoryBefore(false);
 
 	rb = rb_create(sizeof(size_t),10,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
@@ -58,16 +59,15 @@ static void test_1(void) {
 
 	rb_destroy(rb);
 
-	if(kheap_getFreeMem() != free)
-		test_caseFailed("Memory not freed");
-	else
-		test_caseSucceeded();
+	checkMemoryAfter(false);
+	test_caseSucceeded();
 }
 
 static void test_2(void) {
 	sRingBuf *rb;
 	size_t i,x;
 	test_caseStart("Write & Read");
+	checkMemoryBefore(false);
 
 	rb = rb_create(sizeof(size_t),10,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
@@ -83,6 +83,7 @@ static void test_2(void) {
 
 	rb_destroy(rb);
 
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
 
@@ -90,6 +91,7 @@ static void test_3(void) {
 	sRingBuf *rb;
 	size_t i,x;
 	test_caseStart("Write & Read - Full RB_OVERWRITE");
+	checkMemoryBefore(false);
 
 	rb = rb_create(sizeof(size_t),5,RB_OVERWRITE);
 	test_assertTrue(rb != NULL);
@@ -126,6 +128,7 @@ static void test_3(void) {
 
 	rb_destroy(rb);
 
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
 
@@ -133,6 +136,7 @@ static void test_4(void) {
 	sRingBuf *rb;
 	size_t i,x;
 	test_caseStart("Write & Read - Full RB_DEFAULT");
+	checkMemoryBefore(false);
 
 	rb = rb_create(sizeof(size_t),5,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
@@ -150,6 +154,7 @@ static void test_4(void) {
 
 	rb_destroy(rb);
 
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
 
@@ -157,6 +162,7 @@ static void test_5(void) {
 	size_t i;
 	sRingBuf *rb1,*rb2;
 	test_caseStart("Move");
+	checkMemoryBefore(false);
 
 	rb1 = rb_create(sizeof(size_t),8,RB_OVERWRITE);
 	rb2 = rb_create(sizeof(size_t),5,RB_OVERWRITE);
@@ -188,5 +194,6 @@ static void test_5(void) {
 	rb_destroy(rb1);
 	rb_destroy(rb2);
 
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }

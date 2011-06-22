@@ -25,6 +25,7 @@
 #include <string.h>
 #include <esc/test.h>
 #include "tpaging.h"
+#include "testutils.h"
 
 /* forward declarations */
 static void test_paging(void);
@@ -57,42 +58,42 @@ static void test_paging(void) {
 }
 
 static void test_paging_foreign(void) {
-	size_t oldFF, newFF, ownFrames, sharedFrames;
+	size_t ownFrames, sharedFrames;
 	sProc *child;
 	tPid pid = proc_getFreePid();
 	test_assertInt(proc_clone(pid,0),0);
 	child = proc_getByPid(pid);
 
+	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,child->pagedir);
 	ownFrames = child->ownFrames;
 	sharedFrames = child->sharedFrames;
-	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
+	checkMemoryBefore(true);
 
-	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,child->pagedir);
 	paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
 	paging_unmapFrom(child->pagedir,0,3,true);
 
-	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
-	if(oldFF != newFF || child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
-		test_caseFailed("oldFF=%Su, newFF=%Su, oldOwn=%Su, newOwn=%Su, oldSh=%Su, newSh=%Su",
-				oldFF,newFF,ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
+	checkMemoryAfter(true);
+	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
+		test_caseFailed("oldOwn=%Su, newOwn=%Su, oldSh=%Su, newSh=%Su",
+				ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
 	}
 	else
 		test_caseSucceeded();
 
+	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,child->pagedir);
 	ownFrames = child->ownFrames;
 	sharedFrames = child->sharedFrames;
-	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
+	checkMemoryBefore(true);
 
-	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,child->pagedir);
 	paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
 	paging_mapTo(child->pagedir,0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
 	paging_unmapFrom(child->pagedir,0x40000000,1,true);
 	paging_unmapFrom(child->pagedir,0x40000000 + PAGE_SIZE * 1,5,true);
 
-	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
-	if(oldFF != newFF || child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
-		test_caseFailed("oldFF=%Su, newFF=%Su, oldOwn=%Su, newOwn=%Su, oldSh=%Su, newSh=%Su",
-				oldFF,newFF,ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
+	checkMemoryAfter(true);
+	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
+		test_caseFailed("oldOwn=%Su, newOwn=%Su, oldSh=%Su, newSh=%Su",
+				ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
 	}
 	else
 		test_caseSucceeded();
@@ -100,27 +101,16 @@ static void test_paging_foreign(void) {
 }
 
 static bool test_paging_cycle(uintptr_t addr,size_t count) {
-	size_t oldFF, newFF, oldPC, newPC;
-
 	test_caseStart("Mapping %Su pages to %p",count,addr);
-
-	oldPC = paging_dbg_getPageCount();
-	oldFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
+	checkMemoryBefore(true);
 
 	test_paging_allocate(addr,count);
 	test_paging_access(addr,count);
 	test_paging_free(addr,count);
 
-	newPC = paging_dbg_getPageCount();
-	newFF = pmem_getFreeFrames(MM_CONT | MM_DEF);
-
-	if(oldFF != newFF || oldPC != newPC) {
-		test_caseFailed("oldPC=%Su, oldFF=%Su, newPC=%Su, newFF=%Su",oldPC,oldFF,newPC,newFF);
-		return false;
-	}
+	checkMemoryAfter(true);
 
 	test_caseSucceeded();
-
 	return true;
 }
 

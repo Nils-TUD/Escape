@@ -23,11 +23,11 @@
 #include <sys/task/proc.h>
 #include <sys/mem/kheap.h>
 #include <sys/video.h>
+#include <esc/test.h>
 #include <string.h>
 #include <errors.h>
-
 #include "tvfs.h"
-#include <esc/test.h>
+#include "testutils.h"
 
 /* forward declarations */
 static void test_vfs(void);
@@ -44,12 +44,10 @@ static void test_vfs(void) {
 }
 
 static void test_vfs_createDriver(void) {
-	size_t oldHeap,newHeap;
 	tFileNo f1,f2,f3;
 
 	test_caseStart("Testing vfs_createDriver()");
-
-	oldHeap = kheap_getFreeMem();
+	checkMemoryBefore(false);
 
 	f1 = vfs_createDriver(0,"test",0);
 	test_assertTrue(f1 >= 0);
@@ -65,9 +63,6 @@ static void test_vfs_createDriver(void) {
 	vfs_closeFile(KERNEL_PID,f2);
 	vfs_closeFile(KERNEL_PID,f3);
 
-	/* check mem-usage */
-	newHeap = kheap_getFreeMem();
-	test_assertSize(oldHeap,newHeap);
-
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }

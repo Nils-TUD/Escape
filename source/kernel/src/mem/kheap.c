@@ -75,6 +75,7 @@ static sMemArea *freeList = NULL;
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
 /* currently occupied memory */
 static size_t memUsage = 0;
+static size_t pages = 0;
 
 #if DEBUGGING
 static bool aafEnabled = false;
@@ -378,7 +379,13 @@ void *kheap_realloc(void *addr,size_t size) {
 	return a;
 }
 
-void kheap_addMemory(uintptr_t addr,size_t size) {
+bool kheap_addMemory(uintptr_t addr,size_t size) {
+	/* no free areas? */
+	if(freeList == NULL) {
+		if(!kheap_loadNewAreas())
+			return false;
+	}
+
 	/* take one area from the freelist and put the memory in it */
 	sMemArea *area = freeList;
 	freeList = freeList->next;
@@ -388,6 +395,11 @@ void kheap_addMemory(uintptr_t addr,size_t size) {
 	area->next = usableList;
 	usableList = area;
 	memUsage += size;
+	return true;
+}
+
+size_t kheap_getPageCount(void) {
+	return pages;
 }
 
 size_t kheap_getUsedMem(void) {
@@ -432,12 +444,6 @@ static bool kheap_loadNewSpace(size_t size) {
 	uintptr_t addr;
 	size_t count;
 
-	/* no free areas? */
-	if(freeList == NULL) {
-		if(!kheap_loadNewAreas())
-			return false;
-	}
-
 	/* check for overflow */
 	if(size + PAGE_SIZE < PAGE_SIZE)
 		return false;
@@ -450,8 +456,8 @@ static bool kheap_loadNewSpace(size_t size) {
 	if(addr == 0)
 		return false;
 
-	kheap_addMemory(addr,count * PAGE_SIZE);
-	return true;
+	pages += count;
+	return kheap_addMemory(addr,count * PAGE_SIZE);
 }
 
 static bool kheap_loadNewAreas(void) {
@@ -476,6 +482,7 @@ static bool kheap_loadNewAreas(void) {
 		area++;
 	}
 
+	pages++;
 	memUsage += PAGE_SIZE;
 	return true;
 }

@@ -22,6 +22,7 @@ typedef struct {
 
 static void *cache_get(sCache *c,size_t i);
 
+static size_t pages = 0;
 static sCache caches[] = {
 	{8,0,0,NULL},
 	{16,0,0,NULL},
@@ -109,6 +110,10 @@ void cache_free(void *p) {
 	c->freeObjs++;
 }
 
+size_t cache_getPageCount(void) {
+	return pages;
+}
+
 size_t cache_getOccMem(void) {
 	size_t i,count = 0;
 	for(i = 0; i < ARRAY_SIZE(caches); i++)
@@ -126,15 +131,16 @@ size_t cache_getUsedMem(void) {
 static void *cache_get(sCache *c,size_t i) {
 	ulong *area;
 	if(!c->freeList) {
-		size_t pages = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
-		size_t bytes = pages * PAGE_SIZE;
+		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
+		size_t bytes = pageCount * PAGE_SIZE;
 		size_t totalObjSize = c->objSize + sizeof(ulong) * 3;
 		size_t j,objs = bytes / totalObjSize;
 		size_t rem = bytes - objs * totalObjSize;
-		ulong *space = (ulong*)kheap_allocSpace(pages);
+		ulong *space = (ulong*)kheap_allocSpace(pageCount);
 		if(space == NULL)
 			return NULL;
 
+		pages += pageCount;
 		/* if the remaining space is big enough (it won't bring advantages to add dozens e.g. 8
 		 * byte large areas to the heap), add it to the fallback-heap */
 		if(rem > SIZE_THRESHOLD)

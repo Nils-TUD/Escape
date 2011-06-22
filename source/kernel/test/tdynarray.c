@@ -7,6 +7,7 @@
 #include <sys/mem/dynarray.h>
 #include <esc/test.h>
 #include "tdynarray.h"
+#include "testutils.h"
 
 /* use the sllnode-area here and start a bit above to be sure that its not used yet */
 #define REGION_START		(SLLNODE_AREA + PAGE_SIZE * 8)
@@ -25,9 +26,8 @@ static void test_dynarray(void) {
 	test_caseStart("Test various functions");
 
 	size_t i,j;
-	size_t mappedPages = paging_dbg_getPageCount();
-	size_t freeFrames = pmem_getFreeFrames(MM_DEF | MM_CONT);
 	sDynArray da;
+	checkMemoryBefore(true);
 	dyna_start(&da,sizeof(uint),REGION_START,REGION_SIZE);
 
 	for(j = 0; j < REGION_SIZE; j += PAGE_SIZE) {
@@ -48,9 +48,7 @@ static void test_dynarray(void) {
 	}
 
 	dyna_destroy(&da);
-
-	test_assertSize(paging_dbg_getPageCount(),mappedPages);
-	test_assertSize(pmem_getFreeFrames(MM_DEF | MM_CONT),freeFrames);
+	checkMemoryAfter(true);
 
 	test_caseSucceeded();
 }

@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <limits>
+
 namespace std {
 	template<class T1,class T2>
 	static bool defEqual(T1 a,T2 b) {
@@ -528,5 +530,20 @@ namespace std {
 			first2++;
 		}
 		return (first2 != last2);
+	}
+
+	template<class T>
+	size_t count_digits(T n,unsigned int base) {
+		// we have at least one char
+		size_t count = 1;
+		if(numeric_limits<T>::is_signed && n < 0) {
+			count++;
+			n = -n;
+		}
+		while(n >= base) {
+			n /= base;
+			count++;
+		}
+		return count;
 	}
 }

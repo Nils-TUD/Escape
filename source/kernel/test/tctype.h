@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: tstring.h 696 2010-07-09 13:22:02Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,11 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
-#include <ctype.h>
+#ifndef TCTYPE_H_
+#define TCTYPE_H_
 
-extern char ctypetbl[];
+#include <sys/common.h>
+#include <esc/test.h>
 
-int ispunct(int c) {
-	return ctypetbl[c] & (CT_PUNCT);
-}
+extern sTestModule tModCtype;
+
+#endif /* TCTYPE_H_ */

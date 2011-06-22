@@ -23,6 +23,7 @@
 #include <esc/sllist.h>
 #include <esc/test.h>
 #include "tsllist.h"
+#include "testutils.h"
 
 /* forward declarations */
 static void test_sllist(void);
@@ -32,7 +33,6 @@ static void test_3(void);
 static void test_4(void);
 static void test_5(void);
 static void test_6(void);
-static void test_7(void);
 static void test_8(void);
 static void test_9(void);
 static void test_10(void);
@@ -50,7 +50,6 @@ static void test_sllist(void) {
 	test_4();
 	test_5();
 	test_6();
-	test_7();
 	test_8();
 	test_9();
 	test_10();
@@ -58,11 +57,11 @@ static void test_sllist(void) {
 
 static void test_1(void) {
 	ulong x = 0x100;
-	size_t i,free,len;
+	size_t i,len;
 	bool res = true;
 	sSLList *list;
-	free = kheap_getFreeMem();
 	test_caseStart("Append & check & remove index 0");
+	checkMemoryBefore(false);
 
 	list = sll_create();
 	for(i = 0; i < 20; i++) {
@@ -80,21 +79,22 @@ static void test_1(void) {
 			sll_removeIndex(list,0);
 		}
 	}
+	test_assertTrue(res);
 
 	len = sll_length(list);
+	test_assertSSize(len,0);
 	sll_destroy(list,false);
-	if(!res || kheap_getFreeMem() != free || len != 0)
-		test_caseFailed("Got wrong element, elements not removed or memory not freed");
-	else
-		test_caseSucceeded();
+
+	checkMemoryAfter(false);
+	test_caseSucceeded();
 }
 
 static void test_2(void) {
 	ulong x = 0x100;
-	size_t i,free,len;
+	size_t i,len;
 	sSLList *list;
-	free = kheap_getFreeMem();
 	test_caseStart("Append & remove first (NULL)");
+	checkMemoryBefore(false);
 
 	list = sll_create();
 	for(i = 0; i < 2; i++) {
@@ -105,19 +105,19 @@ static void test_2(void) {
 	}
 
 	len = sll_length(list);
+	test_assertSize(len,0);
 	sll_destroy(list,false);
-	if(kheap_getFreeMem() < free || len != 0)
-		test_caseFailed("Elements not removed or memory not freed");
-	else
-		test_caseSucceeded();
+
+	checkMemoryAfter(false);
+	test_caseSucceeded();
 }
 
 static void test_3(void) {
 	ulong x = 0x100;
-	size_t i,free,len;
+	size_t i,len;
 	sSLList *list;
-	free = kheap_getFreeMem();
 	test_caseStart("Append & remove first (x)");
+	checkMemoryBefore(false);
 
 	list = sll_create();
 	for(i = 0; i < 50; i++) {
@@ -129,19 +129,19 @@ static void test_3(void) {
 	}
 
 	len = sll_length(list);
+	test_assertSize(len,0);
 	sll_destroy(list,false);
-	if(kheap_getFreeMem() < free || len != 0)
-		test_caseFailed("Elements not removed or memory not freed");
-	else
-		test_caseSucceeded();
+
+	checkMemoryAfter(false);
+	test_caseSucceeded();
 }
 
 static void test_4(void) {
 	ulong x = 0x100;
-	size_t i,free;
+	size_t i;
 	sSLList *list;
-	free = kheap_getFreeMem();
 	test_caseStart("Create & append & destroy");
+	checkMemoryBefore(false);
 
 	list = sll_create();
 	for(i = 0; i < 200; i++) {
@@ -149,19 +149,17 @@ static void test_4(void) {
 	}
 	sll_destroy(list,false);
 
-	if(kheap_getFreeMem() < free)
-		test_caseFailed("Memory not freed");
-	else
-		test_caseSucceeded();
+	checkMemoryAfter(false);
+	test_caseSucceeded();
 }
 
 static void test_5(void) {
 	ulong x = 0x100;
-	size_t i,free;
+	size_t i;
 	sSLList *list;
 	bool res = true;
-	free = kheap_getFreeMem();
 	test_caseStart("Create & append & insert somewhere & destroy");
+	checkMemoryBefore(false);
 
 	list = sll_create();
 	for(i = 0; i < 5; i++) {
@@ -185,20 +183,19 @@ static void test_5(void) {
 	if(sll_length(list) != 10)
 		res = false;
 	sll_destroy(list,false);
+	test_assertTrue(res);
 
-	if(!res || kheap_getFreeMem() < free)
-		test_caseFailed("Insert wrong or memory not freed");
-	else
-		test_caseSucceeded();
+	checkMemoryAfter(false);
+	test_caseSucceeded();
 }
 
 static void test_6(void) {
 	ulong x = 0x100;
-	size_t i,free;
+	size_t i;
 	sSLList *list;
 	bool res = true;
-	free = kheap_getFreeMem();
 	test_caseStart("Create & append & set somewhere & destroy");
+	checkMemoryBefore(false);
 
 	list = sll_create();
 	for(i = 0; i < 5; i++) {
@@ -222,36 +219,10 @@ static void test_6(void) {
 	if(sll_length(list) != 5)
 		res = false;
 	sll_destroy(list,false);
+	test_assertTrue(res);
 
-	if(!res || kheap_getFreeMem() < free)
-		test_caseFailed("Set wrong or Memory not freed");
-	else
-		test_caseSucceeded();
-}
-
-static void test_7(void) {
-	ulong x = 0x100;
-	size_t free;
-	bool res;
-	sSLList *list;
-	free = kheap_getFreeMem();
-	test_caseStart("Append until no mem left & destroy");
-
-	list = sll_create();
-	do {
-		res = sll_append(list,(void*)x++);
-	}
-	while(res);
-	tprintf("Appended %d elements\n",sll_length(list));
-	tprintf("Freeing...");
-	sll_destroy(list,false);
-	tprintf("done\n");
-
-	if(kheap_getFreeMem() < free)
-		test_caseFailed("Memory not freed (before=%d, after=%d), used=%d",free,
-				kheap_getFreeMem(),kheap_getUsedMem());
-	else
-		test_caseSucceeded();
+	checkMemoryAfter(false);
+	test_caseSucceeded();
 }
 
 static void test_8(void) {
@@ -259,6 +230,7 @@ static void test_8(void) {
 	sSLNode *n;
 
 	test_caseStart("Walking through the list");
+	checkMemoryBefore(false);
 
 	list = sll_create();
 	sll_append(list,(void*)0x123);
@@ -275,6 +247,7 @@ static void test_8(void) {
 	}
 	sll_destroy(list,false);
 
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
 
@@ -282,6 +255,7 @@ static void test_9(void) {
 	sSLList *list;
 
 	test_caseStart("Testing sll_indexOf and sll_nodeWith");
+	checkMemoryBefore(false);
 
 	list = sll_create();
 	sll_append(list,(void*)0x123);
@@ -296,13 +270,16 @@ static void test_9(void) {
 	test_assertPtr(sll_nodeWith(list,(void*)0x456),sll_nodeAt(list,1));
 	test_assertPtr(sll_nodeWith(list,(void*)0x789),sll_nodeAt(list,2));
 	test_assertPtr(sll_nodeWith(list,(void*)0x123123),NULL);
+	sll_destroy(list,false);
 
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
 
 static void test_10(void) {
 	sSLList *l1,*l2;
 	test_caseStart("Testing sll_clone");
+	checkMemoryBefore(false);
 
 	l1 = sll_create();
 	sll_append(l1,(void*)4);
@@ -319,6 +296,9 @@ static void test_10(void) {
 	l1 = sll_create();
 	l2 = sll_clone(l1);
 	test_assertSize(sll_length(l2),0);
+	sll_destroy(l2,false);
+	sll_destroy(l1,false);
 
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }

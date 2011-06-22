@@ -73,6 +73,11 @@ typedef struct {
 void dyna_init(void);
 
 /**
+ * @return the total number of pages used for all dynamic arrays
+ */
+size_t dyna_getTotalPages(void);
+
+/**
  * Starts the given dynamic array
  *
  * @param d the dynamic array

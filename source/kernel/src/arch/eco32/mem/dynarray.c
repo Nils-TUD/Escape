@@ -14,6 +14,7 @@
 
 static sDynaRegion regions[DYNA_REG_COUNT];
 static sDynaRegion *freeList;
+static size_t totalPages = 0;
 
 void dyna_init(void) {
 	size_t i;
@@ -23,6 +24,10 @@ void dyna_init(void) {
 		regions[i].next = freeList;
 		freeList = regions + i;
 	}
+}
+
+size_t dyna_getTotalPages(void) {
+	return totalPages;
 }
 
 bool dyna_extend(sDynArray *d) {
@@ -42,6 +47,7 @@ bool dyna_extend(sDynArray *d) {
 		return false;
 	paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT);
 	memclear((void*)addr,PAGE_SIZE);
+	totalPages++;
 	reg->size += PAGE_SIZE;
 	d->objCount = reg->size / d->objSize;
 	return true;
@@ -50,6 +56,7 @@ bool dyna_extend(sDynArray *d) {
 void dyna_destroy(sDynArray *d) {
 	if(d->_regions) {
 		paging_unmap(d->_regions->addr,d->_regions->size / PAGE_SIZE,true);
+		totalPages -= d->_regions->size / PAGE_SIZE;
 		/* put region on freelist */
 		d->_regions->next = freeList;
 		freeList = d->_regions;

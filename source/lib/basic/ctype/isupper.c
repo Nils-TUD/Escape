@@ -20,6 +20,8 @@
 #include <stddef.h>
 #include <ctype.h>
 
+extern char ctypetbl[];
+
 int isupper(int c) {
-	return (c >= 'A' && c <= 'Z');
+	return ctypetbl[c] & (CT_UPPER);
 }

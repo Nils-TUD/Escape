@@ -99,8 +99,9 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,of
 	byteCount = 0;
 	fsByteCount = 0;
 	while(n != NULL) {
-		if(node->parent != NULL || (strcmp(n->name,".") != 0 && strcmp(n->name,"..") != 0))
-			byteCount += sizeof(sVFSDirEntry) + strlen(n->name);
+		if(node->parent != NULL || ((n->nameLen != 1 || strcmp(n->name,".") != 0)
+				&& (n->nameLen != 2 || strcmp(n->name,"..") != 0)))
+			byteCount += sizeof(sVFSDirEntry) + n->nameLen;
 		n = n->next;
 	}
 
@@ -144,11 +145,12 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,of
 			fsBytes = fsBytesDup;
 			n = vfs_node_getFirstChild(node);
 			while(n != NULL) {
-				if(node->parent == NULL && (strcmp(n->name,".") == 0 || strcmp(n->name,"..") == 0)) {
+				if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
+						(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
 					n = n->next;
 					continue;
 				}
-				len = strlen(n->name);
+				len = n->nameLen;
 				/* unfortunatly, we have to convert the endianess here, because readdir() expects
 				 * that its encoded in little endian */
 				dirEntry->nodeNo = cputole32(vfs_node_getNo(n));

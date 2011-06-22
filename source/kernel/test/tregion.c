@@ -24,6 +24,7 @@
 #include <sys/video.h>
 #include <esc/test.h>
 #include "tregion.h"
+#include "testutils.h"
 
 /* forward declarations */
 static void test_region(void);
@@ -37,16 +38,6 @@ sTestModule tModRegion = {
 	"VMM Regions",
 	&test_region
 };
-static size_t heapBefore;
-static size_t heapAfter;
-
-static void test_init(void) {
-	heapBefore = kheap_getFreeMem();
-}
-static void test_finish(void) {
-	heapAfter = kheap_getFreeMem();
-	test_assertUInt(heapAfter,heapBefore);
-}
 
 static void test_region(void) {
 	test_1();
@@ -60,7 +51,7 @@ static void test_1(void) {
 	sBinDesc bindesc;
 	test_caseStart("Testing reg_create() & reg_destroy()");
 
-	test_init();
+	checkMemoryBefore(false);
 	reg = reg_create(NULL,123,124,124,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
 	test_assertUInt(reg->binary.modifytime,0);
@@ -72,9 +63,9 @@ static void test_1(void) {
 	test_assertSize(reg_refCount(reg),0);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	reg_destroy(reg);
-	test_finish();
+	checkMemoryAfter(false);
 
-	test_init();
+	checkMemoryBefore(false);
 	bindesc.modifytime = 1234;
 	bindesc.ino = 42;
 	bindesc.dev = 4;
@@ -90,7 +81,7 @@ static void test_1(void) {
 	test_assertULInt(reg->pageFlags[0],0);
 	test_assertULInt(reg->pageFlags[1],0);
 	reg_destroy(reg);
-	test_finish();
+	checkMemoryAfter(false);
 
 	test_caseSucceeded();
 }
@@ -99,7 +90,7 @@ static void test_2(void) {
 	sRegion *reg;
 	test_caseStart("Testing reg_addTo() & reg_remFrom()");
 
-	test_init();
+	checkMemoryBefore(false);
 	reg = reg_create(NULL,123,124,124,PF_DEMANDLOAD,RF_SHAREABLE);
 	test_assertTrue(reg != NULL);
 	test_assertTrue(reg_addTo(reg,(const void*)0x1234));
@@ -110,7 +101,7 @@ static void test_2(void) {
 	test_assertTrue(reg_remFrom(reg,(const void*)0x1234));
 	test_assertSize(reg_refCount(reg),0);
 	reg_destroy(reg);
-	test_finish();
+	checkMemoryAfter(false);
 
 	test_caseSucceeded();
 }
@@ -120,7 +111,7 @@ static void test_3(void) {
 	size_t i;
 	test_caseStart("Testing reg_grow()");
 
-	test_init();
+	checkMemoryBefore(false);
 	reg = reg_create(NULL,123,PAGE_SIZE,PAGE_SIZE,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
@@ -137,9 +128,9 @@ static void test_3(void) {
 	test_assertTrue(reg_grow(reg,-3));
 	test_assertSize(reg->byteCount,0);
 	reg_destroy(reg);
-	test_finish();
+	checkMemoryAfter(false);
 
-	test_init();
+	checkMemoryBefore(false);
 	reg = reg_create(NULL,123,PAGE_SIZE,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
@@ -162,9 +153,9 @@ static void test_3(void) {
 	test_assertTrue(reg_grow(reg,-3));
 	test_assertSize(reg->byteCount,0);
 	reg_destroy(reg);
-	test_finish();
+	checkMemoryAfter(false);
 
-	test_init();
+	checkMemoryBefore(false);
 	reg = reg_create(NULL,123,PAGE_SIZE,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
@@ -187,7 +178,7 @@ static void test_3(void) {
 	test_assertTrue(reg_grow(reg,-3));
 	test_assertSize(reg->byteCount,0);
 	reg_destroy(reg);
-	test_finish();
+	checkMemoryAfter(false);
 
 	test_caseSucceeded();
 }
@@ -197,7 +188,7 @@ static void test_4(void) {
 	sBinDesc bindesc;
 	test_caseStart("Testing reg_clone()");
 
-	test_init();
+	checkMemoryBefore(false);
 	bindesc.modifytime = 444;
 	bindesc.ino = 23;
 	bindesc.dev = 2;
@@ -216,7 +207,7 @@ static void test_4(void) {
 	test_assertULInt(clone->pageFlags[0],PF_DEMANDLOAD);
 	reg_destroy(reg);
 	reg_destroy(clone);
-	test_finish();
+	checkMemoryAfter(false);
 
 	test_caseSucceeded();
 }

@@ -26,6 +26,14 @@
 extern "C" {
 #endif
 
+#define CT_NUMERIC	1
+#define CT_LOWER	2
+#define CT_UPPER	4
+#define CT_SPACE	8
+#define CT_HEX		16
+#define CT_PUNCT	32
+#define CT_CTRL		64
+
 /**
  * @param c the character
  * @return non-zero if its argument is a numeric digit or a letter of the alphabet.
@@ -50,6 +58,12 @@ int iscntrl(int c);
  * @return non-zero if its argument is a digit between 0 and 9. Otherwise, zero is returned.
  */
 int isdigit(int c);
+
+/**
+ * @param c the character
+ * @return non-zero if its argument has a graphical representation. Otherwise, zero is returned.
+ */
+int isgraph(int c);
 
 /**
  * @param c the character

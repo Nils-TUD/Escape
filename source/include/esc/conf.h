@@ -30,7 +30,8 @@ extern "C" {
 #define CONF_MAX_PROCS			1
 #define CONF_MAX_FDS			2
 #define CONF_BOOT_VIDEOMODE		3
-#define CONF_LOG		5
+#define CONF_LOG				5
+#define CONF_PAGE_SIZE			6
 
 #define CONF_VIDMODE_VGATEXT	0
 #define CONF_VIDMODE_VESATEXT	1

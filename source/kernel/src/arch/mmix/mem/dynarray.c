@@ -13,6 +13,7 @@
 
 static sDynaRegion regions[DYNA_REG_COUNT];
 static sDynaRegion *freeList;
+static size_t totalPages = 0;
 
 void dyna_init(void) {
 	size_t i;
@@ -22,6 +23,10 @@ void dyna_init(void) {
 		regions[i].next = freeList;
 		freeList = regions + i;
 	}
+}
+
+size_t dyna_getTotalPages(void) {
+	return totalPages;
 }
 
 bool dyna_extend(sDynArray *d) {
@@ -55,6 +60,7 @@ bool dyna_extend(sDynArray *d) {
 		return false;
 	reg->addr = DIR_MAPPED_SPACE | (pmem_allocate() * PAGE_SIZE);
 	reg->size = PAGE_SIZE;
+	totalPages++;
 	/* clear it and increase total size and number of objects */
 	memclear((void*)reg->addr,PAGE_SIZE);
 	d->_areaBegin += PAGE_SIZE;
@@ -67,6 +73,7 @@ void dyna_destroy(sDynArray *d) {
 	while(reg != NULL) {
 		sDynaRegion *next = reg->next;
 		pmem_free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE);
+		totalPages--;
 		/* put region on freelist */
 		reg->next = freeList;
 		freeList = reg;

@@ -20,8 +20,8 @@
 #include <stddef.h>
 #include <ctype.h>
 
+extern char ctypetbl[];
+
 int isprint(int c) {
-	/* exclude 0xFF (=IO_EOF) */
-	/* 0x15 = § in codepage 437 */
-	return (c >= ' ' && c < 0xFF) || c == 0x15;
+	return (ctypetbl[c] & CT_CTRL) == 0;
 }

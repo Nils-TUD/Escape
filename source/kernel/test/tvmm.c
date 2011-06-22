@@ -24,6 +24,7 @@
 #include <sys/video.h>
 #include <esc/test.h>
 #include "tvmm.h"
+#include "testutils.h"
 
 /* forward declarations */
 static void test_vmm(void);
@@ -35,21 +36,6 @@ sTestModule tModVmm = {
 	"Virtual Memory Manager",
 	&test_vmm
 };
-static size_t heapBefore;
-static size_t framesBefore;
-static size_t heapAfter;
-static size_t framesAfter;
-
-static void test_init(void) {
-	heapBefore = kheap_getUsedMem();
-	framesBefore = pmem_getFreeFrames(MM_DEF);
-}
-static void test_finish(void) {
-	heapAfter = kheap_getUsedMem();
-	framesAfter = pmem_getFreeFrames(MM_DEF);
-	test_assertSize(heapAfter,heapBefore);
-	test_assertSize(framesAfter,framesBefore);
-}
 
 static void test_vmm(void) {
 	test_1();
@@ -63,13 +49,13 @@ static void test_1(void) {
 	sProc *clone;
 	test_caseStart("Testing vmm_add() and vmm_remove()");
 
-	test_init();
+	checkMemoryBefore(true);
 	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
 	test_assertInt(rno,RNO_DATA);
 	vmm_remove(p,rno);
-	test_finish();
+	checkMemoryAfter(true);
 
-	test_init();
+	checkMemoryBefore(true);
 	rno = vmm_add(p,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_TEXT);
 	test_assertInt(rno,RNO_TEXT);
 	rno2 = vmm_add(p,NULL,0,PAGE_SIZE * 3,PAGE_SIZE * 3,REG_RODATA);
@@ -79,9 +65,9 @@ static void test_1(void) {
 	vmm_remove(p,rno);
 	vmm_remove(p,rno2);
 	vmm_remove(p,rno3);
-	test_finish();
+	checkMemoryAfter(true);
 
-	test_init();
+	checkMemoryBefore(true);
 	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
 	test_assertTrue(rno >= 0);
 	rno2 = vmm_add(p,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_STACK);
@@ -91,20 +77,20 @@ static void test_1(void) {
 	vmm_remove(p,rno);
 	vmm_remove(p,rno2);
 	vmm_remove(p,rno3);
-	test_finish();
+	checkMemoryAfter(true);
 
 	pid = proc_getFreePid();
 	test_assertInt(proc_clone(pid,0),0);
 	clone = proc_getByPid(pid);
 
-	test_init();
+	checkMemoryBefore(true);
 	rno = vmm_add(p,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_SHM);
 	test_assertTrue(rno >= 0);
 	rno2 = vmm_join(p,rno,clone);
 	test_assertTrue(rno2 >= 0);
 	vmm_remove(clone,rno2);
 	vmm_remove(p,rno);
-	test_finish();
+	checkMemoryAfter(true);
 
 	proc_kill(clone);
 
@@ -117,7 +103,7 @@ static void test_2(void) {
 	sProc *p = proc_getRunning();
 	test_caseStart("Testing vmm_grow()");
 
-	test_init();
+	checkMemoryBefore(true);
 	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
 	test_assertTrue(rno >= 0);
 	vmm_getRegRange(p,rno,&start,&end);
@@ -129,9 +115,9 @@ static void test_2(void) {
 	vmm_getRegRange(p,rno,&start,&end);
 	test_assertSSize(vmm_grow(p,rno,-3),end / PAGE_SIZE);
 	vmm_remove(p,rno);
-	test_finish();
+	checkMemoryAfter(true);
 
-	test_init();
+	checkMemoryBefore(true);
 	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
 	test_assertTrue(rno >= 0);
 	vmm_getRegRange(p,rno,&start,&end);
@@ -145,7 +131,7 @@ static void test_2(void) {
 	vmm_getRegRange(p,rno,&start,&end);
 	test_assertSSize(vmm_grow(p,rno,-1),start / PAGE_SIZE);
 	vmm_remove(p,rno);
-	test_finish();
+	checkMemoryAfter(true);
 
 	test_caseSucceeded();
 }

@@ -11,6 +11,7 @@ void *cache_alloc(size_t size);
 void *cache_calloc(size_t num,size_t size);
 void *cache_realloc(void *p,size_t size);
 void cache_free(void *p);
+size_t cache_getPageCount(void);
 size_t cache_getOccMem(void);
 size_t cache_getUsedMem(void);
 

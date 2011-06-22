@@ -21,6 +21,7 @@
 #include <sys/mem/pmem.h>
 #include <esc/test.h>
 #include "tmm.h"
+#include "testutils.h"
 
 #define FRAME_COUNT 50
 
@@ -47,40 +48,37 @@ static void test_mm(void) {
 }
 
 static void test_default(void) {
-	size_t freeDefFrames;
-
 	test_caseStart("Requesting and freeing %d frames",FRAME_COUNT);
 
-	freeDefFrames = pmem_getFreeFrames(MM_DEF);
+	checkMemoryBefore(false);
 	test_mm_allocate();
 	test_mm_free();
-	test_assertSize(pmem_getFreeFrames(MM_DEF),freeDefFrames);
+	checkMemoryAfter(false);
 
 	test_caseSucceeded();
 }
 
 static void test_contiguous(void) {
 	ssize_t res1,res2,res3,res4;
-	size_t freeContFrames;
 
 	test_caseStart("Requesting once and free");
-	freeContFrames = pmem_getFreeFrames(MM_CONT);
+	checkMemoryBefore(false);
 	res1 = pmem_allocateContiguous(3,1);
 	pmem_freeContiguous(res1,3);
-	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("Requesting twice and free");
-	freeContFrames = pmem_getFreeFrames(MM_CONT);
+	checkMemoryBefore(false);
 	res1 = pmem_allocateContiguous(6,1);
 	res2 = pmem_allocateContiguous(5,1);
 	pmem_freeContiguous(res1,6);
 	pmem_freeContiguous(res2,5);
-	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("Request, free, request and free");
-	freeContFrames = pmem_getFreeFrames(MM_CONT);
+	checkMemoryBefore(false);
 	res1 = pmem_allocateContiguous(5,1);
 	res2 = pmem_allocateContiguous(5,1);
 	res3 = pmem_allocateContiguous(5,1);
@@ -91,11 +89,11 @@ static void test_contiguous(void) {
 	pmem_freeContiguous(res2,3);
 	pmem_freeContiguous(res3,5);
 	pmem_freeContiguous(res4,3);
-	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("Request a lot multiple times and free");
-	freeContFrames = pmem_getFreeFrames(MM_CONT);
+	checkMemoryBefore(false);
 	res1 = pmem_allocateContiguous(35,1);
 	res2 = pmem_allocateContiguous(12,1);
 	res3 = pmem_allocateContiguous(89,1);
@@ -104,35 +102,34 @@ static void test_contiguous(void) {
 	pmem_freeContiguous(res1,35);
 	pmem_freeContiguous(res2,12);
 	pmem_freeContiguous(res4,56);
-	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
 
 static void test_contiguous_align(void) {
 	ssize_t res1,res2,res3,res4;
-	size_t freeContFrames;
 
 	test_caseStart("[Align] Requesting once and free");
-	freeContFrames = pmem_getFreeFrames(MM_CONT);
+	checkMemoryBefore(false);
 	res1 = pmem_allocateContiguous(3,4);
 	test_assertTrue((res1 % 4) == 0);
 	pmem_freeContiguous(res1,3);
-	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Requesting twice and free");
-	freeContFrames = pmem_getFreeFrames(MM_CONT);
+	checkMemoryBefore(false);
 	res1 = pmem_allocateContiguous(6,4);
 	test_assertTrue((res1 % 4) == 0);
 	res2 = pmem_allocateContiguous(5,8);
 	test_assertTrue((res2 % 8) == 0);
 	pmem_freeContiguous(res1,6);
 	pmem_freeContiguous(res2,5);
-	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Request, free, request and free");
-	freeContFrames = pmem_getFreeFrames(MM_CONT);
+	checkMemoryBefore(false);
 	res1 = pmem_allocateContiguous(5,16);
 	test_assertTrue((res1 % 16) == 0);
 	res2 = pmem_allocateContiguous(5,16);
@@ -148,11 +145,11 @@ static void test_contiguous_align(void) {
 	pmem_freeContiguous(res2,3);
 	pmem_freeContiguous(res3,5);
 	pmem_freeContiguous(res4,3);
-	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Request a lot multiple times and free");
-	freeContFrames = pmem_getFreeFrames(MM_CONT);
+	checkMemoryBefore(false);
 	res1 = pmem_allocateContiguous(35,4);
 	test_assertTrue((res1 % 4) == 0);
 	res2 = pmem_allocateContiguous(12,4);
@@ -165,7 +162,7 @@ static void test_contiguous_align(void) {
 	pmem_freeContiguous(res1,35);
 	pmem_freeContiguous(res2,12);
 	pmem_freeContiguous(res4,56);
-	test_assertSize(pmem_getFreeFrames(MM_CONT),freeContFrames);
+	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
 

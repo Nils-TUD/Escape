@@ -699,7 +699,7 @@ size_t paging_dbg_getPageCount(void) {
 	size_t i,x,count = 0;
 	sPTEntry *pagetable;
 	sPDEntry *pdir = (sPDEntry*)PAGE_DIR_AREA;
-	for(i = 0; i < PT_ENTRY_COUNT; i++) {
+	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_START); i++) {
 		if(pdir[i].present) {
 			pagetable = (sPTEntry*)(MAPPED_PTS_START + i * PAGE_SIZE);
 			for(x = 0; x < PT_ENTRY_COUNT; x++) {

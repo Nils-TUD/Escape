@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <env.h>
 
 #define TAB_WIDTH			4
@@ -217,14 +218,15 @@ static void refreshScreen(void) {
 }
 
 static void printStatus(const char *totalStr) {
-	string line;
+	ostringstream lineStr;
 	size_t end = min(lines.size(),(size_t)consSize.height);
+	lineStr << "Lines " << (startLine + 1) << "-" << (startLine + end) << " / ";
 	if(!totalStr)
-		line.format("Lines %d-%d / %d",startLine + 1,startLine + end,lines.size());
+		lineStr << lines.size();
 	else
-		line.format("Lines %d-%d / %s",startLine + 1,startLine + end,totalStr);
+		lineStr << totalStr;
 	cout << "\033[co;0;7]";
-	cout << line << setw(consSize.width - line.length()) << right << filename;
+	cout << lineStr.str() << setw(consSize.width - lineStr.str().length()) << right << filename;
 	cout << left << "\033[co]";
 }
 

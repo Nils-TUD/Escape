@@ -324,16 +324,6 @@ namespace std {
 		return count;
 	}
 
-	// === format ===
-	void string::format(const char *fmt,...) {
-		va_list ap;
-		ostringstream os;
-		va_start(ap,fmt);
-		os.format(fmt,ap);
-		va_end(ap);
-		assign(os.str());
-	}
-
 	// === stream stuff ===
 	ostream& operator <<(ostream& os,const string& s) {
 		stringbuf sb(s);

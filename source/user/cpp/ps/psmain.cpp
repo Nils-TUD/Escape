@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <algorithm>
 #include <cmdargs.h>
 #include <file.h>
@@ -169,29 +170,14 @@ int main(int argc,char **argv) {
 	std::sort(procs.begin(),procs.end(),compareProcs);
 
 	// print header
-	cout.width(maxPid);
-	cout << "PID";
-	cout.width(maxPpid + 1);
-	cout.flags(cout.right);
-	cout << "PPID";
-	cout.width((streamsize)maxPmem + 2);
-	cout.flags(cout.right);
-	cout << "PMEM";
-	cout.width((streamsize)maxShmem + 2);
-	cout.flags(cout.right);
-	cout << "SHMEM";
-	cout.width((streamsize)maxVmem + 2);
-	cout.flags(cout.right);
-	cout << "VMEM";
-	cout.width((streamsize)maxSmem + 2);
-	cout.flags(cout.right);
-	cout << "SMEM";
-	cout.width((streamsize)maxInput + 2);
-	cout.flags(cout.right);
-	cout << "IN";
-	cout.width((streamsize)maxOutput + 2);
-	cout.flags(cout.right);
-	cout << "OUT";
+	cout << setw(maxPid) << "PID";
+	cout << setw(maxPpid + 1) << right << "PPID";
+	cout << setw((streamsize)maxPmem + 2) << right << "PMEM";
+	cout << setw((streamsize)maxShmem + 2) << right << "SHMEM";
+	cout << setw((streamsize)maxVmem + 2) << right << "VMEM";
+	cout << setw((streamsize)maxSmem + 2) << right << "SMEM";
+	cout << setw((streamsize)maxInput + 2) << right << "IN";
+	cout << setw((streamsize)maxOutput + 2) << right << "OUT";
 	cout << " STATE  %CPU (USER,KERNEL) COMMAND" << endl;
 
 	// calc with to the process-command
@@ -220,30 +206,18 @@ int main(int argc,char **argv) {
 		size_t cmdwidth = min(consSize.width - width2cmd,p->command().length());
 		string cmd = p->command().substr(0,cmdwidth);
 
-		cout.width(maxPid);
-		cout << p->pid() << " ";
-		cout.width(maxPpid);
-		cout << p->ppid() << " ";
-		cout.width((streamsize)maxPmem);
-		cout << (p->ownFrames() * pageSize) / 1024 << "K ";
-		cout.width((streamsize)maxShmem);
-		cout << (p->sharedFrames() * pageSize) / 1024 << "K ";
-		cout.width((streamsize)maxVmem);
-		cout << (p->pages() * pageSize) / 1024 << "K ";
-		cout.width((streamsize)maxSmem);
-		cout << (p->swapped() * pageSize) / 1024 << "K ";
-		cout.width((streamsize)maxInput);
-		cout << p->input() / 1024 << "K ";
-		cout.width((streamsize)maxOutput);
-		cout << p->output() / 1024 << "K ";
+		cout << setw(maxPid) << p->pid() << " ";
+		cout << setw(maxPpid) << p->ppid() << " ";
+		cout << setw((streamsize)maxPmem) << (p->ownFrames() * pageSize) / 1024 << "K ";
+		cout << setw((streamsize)maxShmem) << (p->sharedFrames() * pageSize) / 1024 << "K ";
+		cout << setw((streamsize)maxVmem) << (p->pages() * pageSize) / 1024 << "K ";
+		cout << setw((streamsize)maxSmem) << (p->swapped() * pageSize) / 1024 << "K ";
+		cout << setw((streamsize)maxInput) << p->input() / 1024 << "K ";
+		cout << setw((streamsize)maxOutput) << p->output() / 1024 << "K ";
 		cout << "-     ";
-		cout.width(4);
-		cout.precision(1);
-		cout << cyclePercent << "% (";
-		cout.width(3);
-		cout << userPercent << "%,";
-		cout.width(3);
-		cout << kernelPercent << "%)   ";
+		cout << setw(4) << setprecision(1) << cyclePercent << "% (";
+		cout << setw(3) << userPercent << "%,";
+		cout << setw(3) << kernelPercent << "%)   ";
 		cout << cmd << endl;
 
 		if(printThreads) {
@@ -262,20 +236,13 @@ int main(int argc,char **argv) {
 					tkernelPercent = (int)(100. / (threadCycles / (double)t->kernelCycles()));
 
 				cout << "  " << ((tit + 1 != threads.end()) ? '\xC3' : '\xC0') << '\xC4';
-				cout.width(maxPpid);
-				cout << t->tid();
-				cout.width((streamsize)maxPmem + maxShmem + maxVmem + maxSmem + maxInput +
-						maxOutput + 2 * 6);
-				cout << "";
-				cout.width(5);
-				cout << states[t->state()];
-				cout.width(6);
-				cout.precision(1);
-				cout << tcyclePercent << "% (";
-				cout.width(3);
-				cout << tuserPercent << "%,";
-				cout.width(3);
-				cout << tkernelPercent << "%)" << endl;
+				cout << setw(maxPpid) << t->tid();
+				cout << setw((streamsize)maxPmem + maxShmem + maxVmem + maxSmem + maxInput +
+						maxOutput + 2 * 6) << "";
+				cout << setw(5) << states[t->state()];
+				cout << setw(6) << setprecision(1) << tcyclePercent << "% (";
+				cout << setw(3) << tuserPercent << "%,";
+				cout << setw(3) << tkernelPercent << "%)" << endl;
 			}
 		}
 	}

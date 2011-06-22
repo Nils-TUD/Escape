@@ -6,6 +6,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/pmem.h>
+#include <sys/mem/dynarray.h>
 #include <esc/test.h>
 #include "testutils.h"
 

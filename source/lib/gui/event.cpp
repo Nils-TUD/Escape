@@ -20,18 +20,19 @@
 #include <esc/common.h>
 #include <gui/common.h>
 #include <gui/event.h>
+#include <iomanip>
 
 namespace gui {
 	std::ostream &operator<<(std::ostream &s,const MouseEvent &e) {
 		s << "MouseEvent[mx=" << e._movedx << ",my=" << e._movedy;
 		s << ",x=" << e._x << ",y=" << e._y;
-		s.format(",buttons=%#x]",e._buttons);
+		s << ",buttons=" << std::hex << std::showbase << e._buttons << "]";
 		return s;
 	}
 
 	std::ostream &operator<<(std::ostream &s,const KeyEvent &e) {
 		s << "KeyEvent[keycode=" << e._keycode << ",char=" << e._character;
-		s.format(",modifier=%#x]",e._modifier);
+		s << ",modifier=" << std::hex << std::showbase << e._modifier << "]";
 		return s;
 	}
 }

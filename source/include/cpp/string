@@ -694,14 +694,6 @@ namespace std {
 		size_type ltrim();
 		size_type rtrim();
 
-		/**
-		 * Formats this string according to the given format. This is a shorthand for using
-		 * ostringstream with this string
-		 *
-		 * @param fmt the format
-		 */
-		void format(const char *fmt,...);
-
 	private:
 		char* _str;
 		size_type _size;

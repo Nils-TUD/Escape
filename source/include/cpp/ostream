@@ -79,16 +79,6 @@ namespace std {
 		};
 
 		/**
-		 * Provides printf()-like formatting.
-		 *
-		 * @param fmt the format
-		 * @param ap the argument-pointer
-		 * @return *this
-		 */
-		ostream& format(const char *fmt,...);
-		ostream& format(const char *fmt,va_list ap);
-
-		/**
 		 * Calls pf(*this) and returns *this
 		 */
 		ostream& operator <<(ostream& (*pf)(ostream&)) {

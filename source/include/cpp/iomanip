@@ -21,6 +21,9 @@
 #define IOMANIP_
 
 #include <impl/streams/ios.h>
+#include <impl/streams/ios_ops.h>
+#include <istream>
+#include <ostream>
 
 namespace std {
 	struct setflagsobj {

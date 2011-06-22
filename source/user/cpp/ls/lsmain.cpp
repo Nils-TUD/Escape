@@ -21,6 +21,7 @@
 #include <esc/width.h>
 #include <esc/messages.h>
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <file.h>
 #include <cmdargs.h>
@@ -177,19 +178,13 @@ int main(int argc,char *argv[]) {
 	for(vector<lsfile*>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
 		lsfile *f = *it;
 		if(flags & F_LONG) {
-			if(flags & F_INODE) {
-				cout.width(widths[W_INODE]);
-				cout << f->inode() << ' ';
-			}
+			if(flags & F_INODE)
+				cout << setw(widths[W_INODE]) << f->inode() << ' ';
 			printMode(f->mode());
-			cout.width(widths[W_LINKCOUNT]);
-			cout << f->links() << ' ';
-			cout.width(widths[W_UID]);
-			cout << f->uid() << ' ';
-			cout.width(widths[W_GID]);
-			cout << f->gid() << ' ';
-			cout.width(widths[W_SIZE]);
-			cout << f->rsize() << ' ';
+			cout << setw(widths[W_LINKCOUNT]) << f->links() << ' ';
+			cout << setw(widths[W_UID]) << f->uid() << ' ';
+			cout << setw(widths[W_GID]) << f->gid() << ' ';
+			cout << setw(widths[W_SIZE]) << f->rsize() << ' ';
 			{
 				char dateStr[DATE_LEN];
 				file::time_type ts = f->modified();
@@ -211,27 +206,14 @@ int main(int argc,char *argv[]) {
 				cout << '\n';
 				pos = 0;
 			}
-			if(flags & F_INODE) {
-				cout.width(widths[W_INODE]);
-				cout << f->inode() << ' ';
-			}
-			if(f->is_dir()) {
-				cout << "\033[co;9]";
-				cout.flags(cout.left);
-				cout.width(widths[W_NAME] + 1);
-				cout << f->name() << "\033[co]";
-			}
-			else if(f->mode() & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) {
-				cout << "\033[co;2]";
-				cout.flags(cout.left);
-				cout.width(widths[W_NAME] + 1);
-				cout << f->name() << "\033[co]";
-			}
-			else {
-				cout.flags(cout.left);
-				cout.width(widths[W_NAME] + 1);
-				cout << f->name();
-			}
+			if(flags & F_INODE)
+				cout << setw(widths[W_INODE]) << f->inode() << ' ';
+			if(f->is_dir())
+				cout << "\033[co;9]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
+			else if(f->mode() & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
+				cout << "\033[co;2]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
+			else
+				cout << setw(widths[W_NAME] + 1) << left << f->name();
 			pos += widths[W_NAME] + widths[W_INODE] + 2;
 		}
 	}

@@ -62,6 +62,6 @@ void env_removeFor(tPid pid);
  *
  * @param pid the process-id
  */
-void env_dbg_printAllOf(tPid pid);
+void env_printAllOf(tPid pid);
 
 #endif /* ENV_H_ */

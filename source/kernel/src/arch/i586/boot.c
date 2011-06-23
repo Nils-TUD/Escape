@@ -102,7 +102,7 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #if DEBUGGING
-	boot_dbg_print();
+	boot_print();
 #endif
 
 	/* mm */
@@ -307,7 +307,7 @@ static const char **boot_parseArgs(const char *line,int *argc) {
 	return (const char**)args;
 }
 
-void boot_dbg_print(void) {
+void boot_print(void) {
 	size_t x;
 	sMemMap *mmap;
 	vid_printf("MultiBoot-Structure:\n---------------------\nflags=0x%x\n",mb->flags);

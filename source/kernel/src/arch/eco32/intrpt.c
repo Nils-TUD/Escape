@@ -231,7 +231,7 @@ static void intrpt_irqDisk(sIntrptStackFrame *stack) {
 
 #if DEBUGGING
 
-void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
+void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	int i;
 	vid_printf("stack-frame @ 0x%Px\n",stack);
 	vid_printf("\tirqNo=%d\n",stack->irqNo);

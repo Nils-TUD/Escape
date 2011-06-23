@@ -140,16 +140,12 @@ void hm_destroy(sHashMap *m) {
 	hmfree(m);
 }
 
-#if DEBUGGING
-
-void hm_dbg_print(sHashMap *m) {
+void hm_print(sHashMap *m) {
 	size_t i;
 	hmprintf("HashMap: elCount=%u, mapSize=%u\n",m->elCount,m->mapSize);
 	for(i = 0; i < m->mapSize; i++) {
 		hmprintf("\t%d: %x (%d elements)\n",i,m->map[i],m->map[i] ? sll_length(m->map[i]) : 0);
 		if(m->map[i])
-			sll_dbg_print(m->map[i]);
+			sll_print(m->map[i]);
 	}
 }
-
-#endif

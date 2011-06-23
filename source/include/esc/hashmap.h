@@ -116,16 +116,11 @@ void *hm_next(sHashMap *m);
  */
 void hm_destroy(sHashMap *m);
 
-
-#if DEBUGGING
-
 /**
  * Prints the given hashmap
  *
  * @param m the map
  */
-void hm_dbg_print(sHashMap *m);
-
-#endif
+void hm_print(sHashMap *m);
 
 #endif /* HASHMAP_H_ */

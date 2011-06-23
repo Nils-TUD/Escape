@@ -171,7 +171,7 @@ void timer_intrpt(void) {
 	}
 }
 
-void timer_dbg_print(void) {
+void timer_print(void) {
 	tTime time;
 	sSLNode *n = sll_begin(listener);
 	sTimerListener *l;

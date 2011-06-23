@@ -116,7 +116,7 @@ void thread_freeArch(sThread *t) {
 			t->stackRegions[i] = -1;
 		}
 	}
-	if(t->archAttr.tempStack != -1) {
+	if(t->archAttr.tempStack != (tFrameNo)-1) {
 		pmem_free(t->archAttr.tempStack);
 		t->archAttr.tempStack = -1;
 	}
@@ -131,7 +131,6 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->archAttr.tempStack * PAGE_SIZE)));
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
-		sIntrptStackFrame *stack = t->kstackEnd;
 		/* switch stacks */
 		tFrameNo kstack = t->kstackFrame;
 		t->kstackFrame = nt->kstackFrame;
@@ -172,7 +171,7 @@ void thread_switchTo(tTid tid) {
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
-		if(cur->archAttr.tempStack != -1) {
+		if(cur->archAttr.tempStack != (tFrameNo)-1) {
 			memcpy((void*)(DIR_MAPPED_SPACE | cur->kstackFrame * PAGE_SIZE),
 					(void*)(DIR_MAPPED_SPACE | cur->archAttr.tempStack * PAGE_SIZE),
 					PAGE_SIZE);
@@ -194,7 +193,7 @@ void thread_switchTo(tTid tid) {
 
 #if DEBUGGING
 
-void thread_dbg_printState(const sThreadRegs *state) {
+void thread_printState(const sThreadRegs *state) {
 	vid_printf("\tState:\n",state);
 	vid_printf("\t\tStackend = %p\n",state->stackEnd);
 	vid_printf("\t\trBB = %#016lx\n",state->rbb);

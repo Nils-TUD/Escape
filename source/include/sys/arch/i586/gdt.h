@@ -81,6 +81,6 @@ void tss_removeIOMap(void);
 /**
  * Prints the GDT
  */
-void gdt_dbg_print(void);
+void gdt_print(void);
 
 #endif /*GDT_H_*/

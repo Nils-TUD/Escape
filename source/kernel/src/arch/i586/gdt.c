@@ -324,7 +324,7 @@ static void gdt_set_desc(size_t index,uintptr_t address,size_t size,uint8_t acce
 	gdt[index].access = access | ((ringLevel & 3) << 5);
 }
 
-void gdt_dbg_print(void) {
+void gdt_print(void) {
 	size_t i;
 	vid_printf("GDT:\n");
 	for(i = 0;i < GDT_ENTRY_COUNT; i++) {

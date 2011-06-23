@@ -79,6 +79,6 @@ ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *d
  *
  * @param n the channel-node
  */
-void vfs_chan_dbg_print(const sVFSNode *n);
+void vfs_chan_print(const sVFSNode *n);
 
 #endif /* CHANNEL_H_ */

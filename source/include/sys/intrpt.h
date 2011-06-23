@@ -57,15 +57,11 @@ size_t intrpt_getCount(void);
  */
 void intrpt_handler(sIntrptStackFrame *stack);
 
-#if DEBUGGING
-
 /**
  * Prints the given interrupt-stack
  *
  * @param stack the interrupt-stack
  */
-void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack);
-
-#endif
+void intrpt_printStackFrame(const sIntrptStackFrame *stack);
 
 #endif /*INTRPT_H_*/

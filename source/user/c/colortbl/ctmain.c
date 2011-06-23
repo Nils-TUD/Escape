@@ -25,13 +25,13 @@ int main(void) {
 	size_t i,j;
 	fputs("    ",stdout);
 	for(i = 0; i < 16; i++)
-		printf("%02zx ",i << 4);
+		printf("%02x ",i << 4);
 	fputc('\n',stdout);
 
 	for(i = 0; i < 16; i++) {
-		printf("%02zx: ",i);
+		printf("%02x: ",i);
 		for(j = 0; j < 16; j++)
-			printf("\033[co;%zd;%zd]##\033[co] ",i,j);
+			printf("\033[co;%d;%d]##\033[co] ",i,j);
 		fputc('\n',stdout);
 	}
 	return EXIT_SUCCESS;

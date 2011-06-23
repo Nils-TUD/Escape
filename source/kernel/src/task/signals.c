@@ -192,6 +192,61 @@ tSig sig_ackHandling(tTid tid) {
 	return res;
 }
 
+const char *sig_dbg_getName(tSig signal) {
+	static const char *names[] = {
+		"SIG_KILL",
+		"SIG_TERM",
+		"SIG_ILL_INSTR",
+		"SIG_SEGFAULT",
+		"SIG_PROC_DIED",
+		"SIG_THREAD_DIED",
+		"SIG_PIPE_CLOSED",
+		"SIG_CHILD_TERM",
+		"SIG_INTRPT",
+		"SIG_INTRPT_TIMER",
+		"SIG_INTRPT_KB",
+		"SIG_INTRPT_COM1",
+		"SIG_INTRPT_COM2",
+		"SIG_INTRPT_FLOPPY",
+		"SIG_INTRPT_CMOS",
+		"SIG_INTRPT_ATA1",
+		"SIG_INTRPT_ATA2"
+	};
+	if(signal < SIG_COUNT)
+		return names[signal];
+	return "Unknown signal";
+}
+
+void sig_print(void) {
+	size_t i;
+	sSLNode *n;
+	vid_printf("Signal handler:\n");
+	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
+		sSigThread *st = (sSigThread*)n->data;
+		sThread *t = st->thread;
+		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
+		for(i = 0; i < SIG_COUNT; i++) {
+			if(st->signals[i].handler) {
+				vid_printf("\t\t%s: handler=%p pending=%zu\n",
+						sig_dbg_getName(i),st->signals[i].handler,st->signals[i].pending);
+			}
+		}
+	}
+}
+
+size_t sig_dbg_getHandlerCount(void) {
+	sSLNode *n;
+	size_t i,c = 0;
+	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
+		sSigThread *t = (sSigThread*)n->data;
+		for(i = 0; i < SIG_COUNT; i++) {
+			if(t->signals[i].handler)
+				c++;
+		}
+	}
+	return c;
+}
+
 static bool sig_isFatal(tSig sig) {
 	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT ||
 		sig == SIG_PIPE_CLOSED;
@@ -236,59 +291,4 @@ static sSigThread *sig_getThread(tTid tid,bool create) {
 		return NULL;
 	}
 	return st;
-}
-
-size_t sig_dbg_getHandlerCount(void) {
-	sSLNode *n;
-	size_t i,c = 0;
-	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
-		sSigThread *t = (sSigThread*)n->data;
-		for(i = 0; i < SIG_COUNT; i++) {
-			if(t->signals[i].handler)
-				c++;
-		}
-	}
-	return c;
-}
-
-const char *sig_dbg_getName(tSig signal) {
-	static const char *names[] = {
-		"SIG_KILL",
-		"SIG_TERM",
-		"SIG_ILL_INSTR",
-		"SIG_SEGFAULT",
-		"SIG_PROC_DIED",
-		"SIG_THREAD_DIED",
-		"SIG_PIPE_CLOSED",
-		"SIG_CHILD_TERM",
-		"SIG_INTRPT",
-		"SIG_INTRPT_TIMER",
-		"SIG_INTRPT_KB",
-		"SIG_INTRPT_COM1",
-		"SIG_INTRPT_COM2",
-		"SIG_INTRPT_FLOPPY",
-		"SIG_INTRPT_CMOS",
-		"SIG_INTRPT_ATA1",
-		"SIG_INTRPT_ATA2"
-	};
-	if(signal < SIG_COUNT)
-		return names[signal];
-	return "Unknown signal";
-}
-
-void sig_dbg_print(void) {
-	size_t i;
-	sSLNode *n;
-	vid_printf("Signal handler:\n");
-	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
-		sSigThread *st = (sSigThread*)n->data;
-		sThread *t = st->thread;
-		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
-		for(i = 0; i < SIG_COUNT; i++) {
-			if(st->signals[i].handler) {
-				vid_printf("\t\t%s: handler=%p pending=%zu\n",
-						sig_dbg_getName(i),st->signals[i].handler,st->signals[i].pending);
-			}
-		}
-	}
 }

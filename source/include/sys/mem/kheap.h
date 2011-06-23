@@ -113,7 +113,7 @@ uintptr_t kheap_allocSpace(size_t count);
 /**
  * Prints the kernel-heap data-structure
  */
-void kheap_dbg_print(void);
+void kheap_print(void);
 
 
 #if DEBUGGING

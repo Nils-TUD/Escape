@@ -588,7 +588,7 @@ static void intrpt_eoi(uint32_t intrptNo) {
 
 #if DEBUGGING
 
-void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
+void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	vid_printf("stack-frame @ 0x%x\n",stack);
 	vid_printf("\tcs=%02x\n",stack->cs);
 	vid_printf("\tds=%02x\n",stack->ds);

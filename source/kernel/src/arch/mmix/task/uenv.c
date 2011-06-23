@@ -86,6 +86,7 @@ bool uenv_hasSignalToStart(void) {
 }
 
 void uenv_startSignalHandler(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	sThread *t = thread_getRunning();
 	fSignal handler;
 	uint64_t *sp = (uint64_t*)(t->kstackEnd[-15]);	/* $254 */
@@ -128,6 +129,7 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 }
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
+	UNUSED(stack);
 	sThread *t = thread_getRunning();
 	uint64_t *regs;
 	uint64_t *sp = (uint64_t*)(t->kstackEnd[-15]);	/* $254 */

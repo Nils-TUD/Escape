@@ -103,17 +103,12 @@ size_t rb_readn(sRingBuf *r,void *e,size_t n);
  */
 size_t rb_move(sRingBuf *dst,sRingBuf *src,size_t n);
 
-
-#if DEBUGGING
-
 /**
  * Prints information about the given ring-buffer
  *
  * @param r the ring-buffer
  */
-void rb_dbg_print(sRingBuf *r);
-
-#endif
+void rb_print(sRingBuf *r);
 
 #ifdef __cplusplus
 }

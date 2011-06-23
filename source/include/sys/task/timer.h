@@ -77,6 +77,6 @@ void timer_intrpt(void);
 /**
  * Prints the timer-queue
  */
-void timer_dbg_print(void);
+void timer_print(void);
 
 #endif /* TIMER_H_ */

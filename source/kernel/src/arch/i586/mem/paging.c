@@ -143,8 +143,8 @@ static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables);
 static uintptr_t paging_getPTables(tPageDir pdir);
 static size_t paging_remEmptyPt(uintptr_t ptables,size_t pti);
 
-static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) ;
-static void paging_dbg_printPage(sPTEntry *page);
+static void paging_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) ;
+static void paging_printPage(sPTEntry *page);
 
 /* the page-directory for process 0 */
 static sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] A_ALIGNED(PAGE_SIZE);
@@ -705,22 +705,22 @@ size_t paging_dbg_getPageCount(void) {
 	return count;
 }
 
-void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt) {
+void paging_printPageOf(tPageDir pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
 		sPTEntry *page = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 		vid_printf("Page @ %p: ",virt);
-		paging_dbg_printPage(page);
+		paging_printPage(page);
 		vid_printf("\n");
 	}
 }
 
-void paging_dbg_printCur(uint parts) {
-	paging_dbg_printPDir(curPDir,parts);
+void paging_printCur(uint parts) {
+	paging_printPDir(curPDir,parts);
 }
 
-void paging_dbg_printPDir(tPageDir pdir,uint parts) {
+void paging_printPDir(tPageDir pdir,uint parts) {
 	size_t i;
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
@@ -740,13 +740,13 @@ void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE) &&
 					(parts & PD_PART_KHEAP)) ||
 			(i >= ADDR_TO_PDINDEX(MAPPED_PTS_START) && (parts & PD_PART_PTBLS))) {
-			paging_dbg_printPageTable(ptables,i,pdirAddr + i);
+			paging_printPageTable(ptables,i,pdirAddr + i);
 		}
 	}
 	vid_printf("\n");
 }
 
-static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) {
+static void paging_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) {
 	size_t i;
 	uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
 	sPTEntry *pte = (sPTEntry*)(ptables + no * PAGE_SIZE);
@@ -757,7 +757,7 @@ static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde)
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i].exists) {
 				vid_printf("\t\t0x%zx: ",i);
-				paging_dbg_printPage(pte + i);
+				paging_printPage(pte + i);
 				vid_printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
 			addr += PAGE_SIZE;
@@ -765,7 +765,7 @@ static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde)
 	}
 }
 
-static void paging_dbg_printPage(sPTEntry *page) {
+static void paging_printPage(sPTEntry *page) {
 	if(page->exists) {
 		vid_printf("r=0x%08x fr=0x%x [%c%c%c%c]",*(uint32_t*)page,
 				page->frameNumber,page->present ? 'p' : '-',

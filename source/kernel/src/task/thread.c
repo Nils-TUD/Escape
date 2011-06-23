@@ -320,40 +320,16 @@ void thread_kill(sThread *t) {
 	cache_free(t);
 }
 
-static tTid thread_getFreeTid(void) {
-	size_t count = 0;
-	while(count < MAX_THREAD_COUNT) {
-		if(nextTid >= MAX_THREAD_COUNT)
-			nextTid = 0;
-		if(tidToThread[nextTid++] == NULL)
-			return nextTid - 1;
-		count++;
-	}
-	return INVALID_TID;
-}
-
-static bool thread_add(sThread *t) {
-	if(!sll_append(threads,t))
-		return false;
-	tidToThread[t->tid] = t;
-	return true;
-}
-
-static void thread_remove(sThread *t) {
-	sll_removeFirst(threads,t);
-	tidToThread[t->tid] = NULL;
-}
-
-void thread_dbg_printAll(void) {
+void thread_printAll(void) {
 	sSLNode *n;
 	vid_printf("Threads:\n");
 	for(n = sll_begin(threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
-		thread_dbg_print(t);
+		thread_print(t);
 	}
 }
 
-void thread_dbg_print(const sThread *t) {
+void thread_print(const sThread *t) {
 	size_t i;
 	sFuncCall *calls;
 	static const char *states[] = {
@@ -362,7 +338,7 @@ void thread_dbg_print(const sThread *t) {
 	vid_printf("\tThread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tState=%s\n",states[t->state]);
 	vid_printf("\t\tEvents=");
-	ev_dbg_printEvMask(t->events);
+	ev_printEvMask(t->events);
 	vid_printf("\n");
 	vid_printf("\t\tKstackFrame=%#Px\n",t->kstackFrame);
 	vid_printf("\t\tTlsRegion=%d, ",t->tlsRegion);
@@ -389,4 +365,28 @@ void thread_dbg_print(const sThread *t) {
 			calls++;
 		}
 	}
+}
+
+static tTid thread_getFreeTid(void) {
+	size_t count = 0;
+	while(count < MAX_THREAD_COUNT) {
+		if(nextTid >= MAX_THREAD_COUNT)
+			nextTid = 0;
+		if(tidToThread[nextTid++] == NULL)
+			return nextTid - 1;
+		count++;
+	}
+	return INVALID_TID;
+}
+
+static bool thread_add(sThread *t) {
+	if(!sll_append(threads,t))
+		return false;
+	tidToThread[t->tid] = t;
+	return true;
+}
+
+static void thread_remove(sThread *t) {
+	sll_removeFirst(threads,t);
+	tidToThread[t->tid] = NULL;
 }

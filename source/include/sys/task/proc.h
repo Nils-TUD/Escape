@@ -331,27 +331,27 @@ int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fr
 /**
  * Prints all existing processes
  */
-void proc_dbg_printAll(void);
+void proc_printAll(void);
 
 /**
  * Prints the regions of all existing processes
  */
-void proc_dbg_printAllRegions(void);
+void proc_printAllRegions(void);
 
 /**
  * Prints the given parts of the page-directory for all existing processes
  *
- * @param parts the parts (see paging_dbg_printPageDirOf)
+ * @param parts the parts (see paging_printPageDirOf)
  * @param regions wether to print the regions too
  */
-void proc_dbg_printAllPDs(uint parts,bool regions);
+void proc_printAllPDs(uint parts,bool regions);
 
 /**
  * Prints the given process
  *
  * @param p the pointer to the process
  */
-void proc_dbg_print(const sProc *p);
+void proc_print(const sProc *p);
 
 
 #if DEBUGGING

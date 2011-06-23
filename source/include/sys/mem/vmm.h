@@ -295,13 +295,13 @@ void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p);
  *
  * @param p the process
  */
-void vmm_dbg_printShort(const sProc *p);
+void vmm_printShort(const sProc *p);
 
 /**
  * Prints all regions of the given process
  *
  * @param p the process
  */
-void vmm_dbg_print(const sProc *p);
+void vmm_print(const sProc *p);
 
 #endif /* REGUSE_H_ */

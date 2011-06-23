@@ -128,7 +128,7 @@ void thread_switchTo(tTid tid) {
 
 #if DEBUGGING
 
-void thread_dbg_printState(const sThreadRegs *state) {
+void thread_printState(const sThreadRegs *state) {
 	vid_printf("\tState:\n",state);
 	vid_printf("\t\t$16 = %#08x\n",state->r16);
 	vid_printf("\t\t$17 = %#08x\n",state->r17);

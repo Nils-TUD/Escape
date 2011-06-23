@@ -64,7 +64,7 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	vid_init();
 
 #if DEBUGGING
-	boot_dbg_print();
+	boot_print();
 #endif
 
 	/* mm */
@@ -241,7 +241,7 @@ static const char **boot_parseArgs(const char *line,int *argc) {
 	return (const char**)args;
 }
 
-void boot_dbg_print(void) {
+void boot_print(void) {
 	size_t i;
 	vid_printf("Memory size: %zu bytes\n",info.memSize);
 	vid_printf("Disk size: %zu bytes\n",info.diskSize);

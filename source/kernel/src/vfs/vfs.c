@@ -977,17 +977,17 @@ size_t vfs_dbg_getGFTEntryCount(void) {
 	return count;
 }
 
-void vfs_dbg_printMsgs(void) {
+void vfs_printMsgs(void) {
 	sVFSNode *drv = vfs_node_getFirstChild(devNode);
 	vid_printf("Messages:\n");
 	while(drv != NULL) {
 		if(IS_DRIVER(drv->mode))
-			vfs_server_dbg_print(drv);
+			vfs_server_print(drv);
 		drv = drv->next;
 	}
 }
 
-void vfs_dbg_printGFT(void) {
+void vfs_printGFT(void) {
 	tFileNo i;
 	sGFTEntry *e;
 	vid_printf("Global File Table:\n");

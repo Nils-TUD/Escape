@@ -128,6 +128,15 @@ size_t cache_getUsedMem(void) {
 	return count;
 }
 
+void cache_print(void) {
+	size_t i;
+	for(i = 0; i < ARRAY_SIZE(caches); i++) {
+		vid_printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
+				caches[i].totalObjs,caches[i].freeObjs,
+				BYTES_2_PAGES(caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3)));
+	}
+}
+
 static void *cache_get(sCache *c,size_t i) {
 	ulong *area;
 	if(!c->freeList) {
@@ -165,13 +174,4 @@ static void *cache_get(sCache *c,size_t i) {
 	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
 	c->freeObjs--;
 	return area + 2;
-}
-
-void cache_dbg_print(void) {
-	size_t i;
-	for(i = 0; i < ARRAY_SIZE(caches); i++) {
-		vid_printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
-				caches[i].totalObjs,caches[i].freeObjs,
-				BYTES_2_PAGES(caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3)));
-	}
 }

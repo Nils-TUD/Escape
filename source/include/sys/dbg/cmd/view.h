@@ -24,7 +24,7 @@
 
 /**
  * Lets the user view various kind of information about the current state of the system. This works
- * by calling *_dbg_print() or similar, capture the output and display it via cons_viewLines().
+ * by calling *_print() or similar, capture the output and display it via cons_viewLines().
  *
  * @param argc the number of args
  * @param argv the arguments

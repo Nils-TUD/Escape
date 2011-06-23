@@ -263,7 +263,7 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir);
  *
  * @param parts the parts to print
  */
-void paging_dbg_printCur(uint parts);
+void paging_printCur(uint parts);
 
 /**
  * Prints the given parts from the given page-directory
@@ -271,7 +271,7 @@ void paging_dbg_printCur(uint parts);
  * @param pdir the page-directory
  * @param parts the parts to print
  */
-void paging_dbg_printPDir(tPageDir pdir,uint parts);
+void paging_printPDir(tPageDir pdir,uint parts);
 
 /**
  * Counts the number of pages that are currently present in the given page-directory
@@ -287,6 +287,6 @@ size_t paging_dbg_getPageCount(void);
  * @param pdir the page-directory
  * @param virt the virtual address
  */
-void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt);
+void paging_printPageOf(tPageDir pdir,uintptr_t virt);
 
 #endif /*PAGING_H_*/

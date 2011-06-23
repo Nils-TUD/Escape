@@ -267,20 +267,20 @@ void thread_freeArch(sThread *t);
 /**
  * Prints all threads
  */
-void thread_dbg_printAll(void);
+void thread_printAll(void);
 
 /**
  * Prints the given thread
  *
  * @param t the thread
  */
-void thread_dbg_print(const sThread *t);
+void thread_print(const sThread *t);
 
 /**
  * Prints the given thread-state
  *
  * @param state the pointer to the state-struct
  */
-void thread_dbg_printState(const sThreadRegs *state);
+void thread_printState(const sThreadRegs *state);
 
 #endif /* THREAD_H_ */

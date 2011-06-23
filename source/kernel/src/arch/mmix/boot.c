@@ -69,7 +69,7 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	vid_init();
 
 #if DEBUGGING
-	boot_dbg_print();
+	boot_print();
 #endif
 
 	/* mm */
@@ -145,6 +145,7 @@ size_t boot_getUsableMemCount(void) {
 }
 
 int boot_loadModules(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	size_t i;
 	tPid pid;
 
@@ -232,6 +233,20 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	return bootState == bootFinished ? 0 : 1;
 }
 
+void boot_print(void) {
+	size_t i;
+	vid_printf("Memory size: %zu bytes\n",info.memSize);
+	vid_printf("Disk size: %zu bytes\n",info.diskSize);
+	vid_printf("Kernelstack-begin: %p\n",info.kstackBegin);
+	vid_printf("Kernelstack-end: %p\n",info.kstackEnd);
+	vid_printf("Boot modules:\n");
+	/* skip kernel */
+	for(i = 0; i < info.progCount; i++) {
+		vid_printf("\t%s\n\t\t[%p .. %p]\n",info.progs[i].command,
+				info.progs[i].start,info.progs[i].start + info.progs[i].size);
+	}
+}
+
 static const char **boot_parseArgs(const char *line,int *argc) {
 	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
 	static char *args[MAX_ARG_COUNT];
@@ -255,18 +270,4 @@ static const char **boot_parseArgs(const char *line,int *argc) {
 	*argc = j + 1;
 	args[j][i] = '\0';
 	return (const char**)args;
-}
-
-void boot_dbg_print(void) {
-	size_t i;
-	vid_printf("Memory size: %zu bytes\n",info.memSize);
-	vid_printf("Disk size: %zu bytes\n",info.diskSize);
-	vid_printf("Kernelstack-begin: %p\n",info.kstackBegin);
-	vid_printf("Kernelstack-end: %p\n",info.kstackEnd);
-	vid_printf("Boot modules:\n");
-	/* skip kernel */
-	for(i = 0; i < info.progCount; i++) {
-		vid_printf("\t%s\n\t\t[%p .. %p]\n",info.progs[i].command,
-				info.progs[i].start,info.progs[i].start + info.progs[i].size);
-	}
 }

@@ -174,6 +174,6 @@ const char *sig_dbg_getName(tSig signal);
 /**
  * Prints all announced signal-handlers
  */
-void sig_dbg_print(void);
+void sig_print(void);
 
 #endif /* SIGNALS_H_ */

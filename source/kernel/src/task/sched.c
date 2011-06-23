@@ -54,6 +54,7 @@ static void sched_qInit(sQueue *q);
 static sThread *sched_qDequeue(sQueue *q);
 static void sched_qDequeueThread(sQueue *q,sThread *t);
 static void sched_qAppend(sQueue *q,sThread *t);
+static void sched_qPrint(sQueue *q);
 
 static sQueue readyQueue;
 static sQueue blockedQueue;
@@ -239,6 +240,14 @@ void sched_removeThread(sThread *t) {
 	}
 }
 
+void sched_print(void) {
+	vid_printf("Ready-");
+	sched_qPrint(&readyQueue);
+	vid_printf("Blocked-");
+	sched_qPrint(&blockedQueue);
+	vid_printf("\n");
+}
+
 static void sched_qInit(sQueue *q) {
 	q->first = NULL;
 	q->last = NULL;
@@ -291,12 +300,4 @@ static void sched_qPrint(sQueue *q) {
 				t->next ? itoa(name2,sizeof(name2),t->next->tid) : "-");
 		t = t->next;
 	}
-}
-
-void sched_dbg_print(void) {
-	vid_printf("Ready-");
-	sched_qPrint(&readyQueue);
-	vid_printf("Blocked-");
-	sched_qPrint(&blockedQueue);
-	vid_printf("\n");
 }

@@ -76,6 +76,11 @@ typedef struct {
 	tSig signal;
 } sInterrupt;
 
+void intrpt_forcedTrap(sIntrptStackFrame *stack);
+void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo);
+
+static void intrpt_enterKernel(sThread *t);
+static void intrpt_leaveKernel(sThread *t);
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo);
@@ -154,23 +159,6 @@ size_t intrpt_getCount(void) {
 	return irqCount;
 }
 
-static void intrpt_enterKernel(sThread *t) {
-	uint64_t cycles = cpu_rdtsc();
-	if(t->stats.ucycleStart > 0)
-		t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
-	/* kernel-mode starts here */
-	t->stats.kcycleStart = cycles;
-}
-
-static void intrpt_leaveKernel(sThread *t) {
-	/* kernel-mode ends */
-	uint64_t cycles = cpu_rdtsc();
-	if(t->stats.kcycleStart > 0)
-		t->stats.kcycleCount.val64 += cycles - t->stats.kcycleStart;
-	/* user-mode starts here */
-	t->stats.ucycleStart = cycles;
-}
-
 void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	t->kstackEnd = stack;
@@ -209,6 +197,23 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	intrpt_leaveKernel(t);
 }
 
+static void intrpt_enterKernel(sThread *t) {
+	uint64_t cycles = cpu_rdtsc();
+	if(t->stats.ucycleStart > 0)
+		t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
+	/* kernel-mode starts here */
+	t->stats.kcycleStart = cycles;
+}
+
+static void intrpt_leaveKernel(sThread *t) {
+	/* kernel-mode ends */
+	uint64_t cycles = cpu_rdtsc();
+	if(t->stats.kcycleStart > 0)
+		t->stats.kcycleCount.val64 += cycles - t->stats.kcycleStart;
+	/* user-mode starts here */
+	t->stats.ucycleStart = cycles;
+}
+
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
 	UNUSED(stack);
 	uint64_t rww = cpu_getSpecial(rWW);
@@ -217,7 +222,7 @@ static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 
-void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
+static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
 	UNUSED(stack);
 	uintptr_t pfaddr = cpu_getFaultLoc();
 
@@ -286,6 +291,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
 
 static void intrpt_irqDisk(sIntrptStackFrame *stack,int irqNo) {
 	UNUSED(stack);
+	UNUSED(irqNo);
 	/* see interrupt_irqKb() */
 	uint64_t *diskRegs = (uint64_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
@@ -293,7 +299,7 @@ static void intrpt_irqDisk(sIntrptStackFrame *stack,int irqNo) {
 		diskRegs[DISK_CTRL] |= DISK_IEN;
 }
 
-void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack) {
+void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	stack--;
 	int i,j,rl,rg = *stack >> 56;
 	int changedStack = (*stack >> 32) & 0x1;

@@ -56,6 +56,6 @@ void lock_releaseAll(tPid pid);
 /**
  * Prints all locks
  */
-void lock_dbg_print(void);
+void lock_print(void);
 
 #endif /* LOCK_H_ */

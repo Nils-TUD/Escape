@@ -740,6 +740,52 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 	return ((vm->reg->flags & RF_GROWS_DOWN) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;
 }
 
+void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p) {
+	size_t i,c = 0;
+	sVMRegion *reg;
+	for(i = 0; i < p->regSize; i++) {
+		reg = REG(p,i);
+		if(reg != NULL) {
+			if(c)
+				prf_sprintf(buf,"\n");
+			prf_sprintf(buf,"VMRegion %d (%p .. %p):\n",i,reg->virt,
+					reg->virt + reg->reg->byteCount - 1);
+			reg_sprintf(buf,reg->reg,reg->virt);
+			c++;
+		}
+	}
+}
+
+void vmm_printShort(const sProc *p) {
+	sVMRegion *reg;
+	size_t i;
+	for(i = 0; i < p->regSize; i++) {
+		reg = REG(p,i);
+		if(reg != NULL) {
+			uintptr_t start,end;
+			vmm_getRegRange(p,i,&start,&end);
+			vid_printf("\t\t%p .. %p (%5zuK): ",start,end - 1,reg->reg->byteCount / K);
+			reg_printFlags(reg->reg);
+			vid_printf("\n");
+		}
+	}
+}
+
+void vmm_print(const sProc *p) {
+	sStringBuffer buf;
+	buf.dynamic = true;
+	buf.len = 0;
+	buf.size = 0;
+	buf.str = NULL;
+	vid_printf("Regions of proc %d (%s)\n",p->pid,p->command);
+	vmm_sprintfRegions(&buf,p);
+	if(buf.str != NULL)
+		vid_printf("%s\n",buf.str);
+	else
+		vid_printf("- no regions -\n");
+	cache_free(buf.str);
+}
+
 static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr) {
 	bool res = false;
 	sThread *t = thread_getRunning();
@@ -889,13 +935,13 @@ static tVMRegNo vmm_findRegIndex(sProc *p,bool text) {
 }
 
 static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags) {
-	uintptr_t addr,end;
+	uintptr_t addr;
 	/* leave a gap between the stacks as a guard */
 	if(byteCount > (MAX_STACK_PAGES - 1) * PAGE_SIZE)
 		return 0;
 #if STACK_AREA_GROWS_DOWN
 	UNUSED(rflags);
-	end = vmm_getFirstUsableAddr(p,true);
+	uintptr_t end = vmm_getFirstUsableAddr(p,true);
 	for(addr = STACK_AREA_END; addr > end; addr -= MAX_STACK_PAGES * PAGE_SIZE) {
 		if(vmm_isOccupied(p,addr - (MAX_STACK_PAGES - 1) * PAGE_SIZE,addr) == NULL)
 			return addr - ROUNDUP(byteCount);
@@ -1079,50 +1125,4 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 			break;
 	}
 	return 0;
-}
-
-void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p) {
-	size_t i,c = 0;
-	sVMRegion *reg;
-	for(i = 0; i < p->regSize; i++) {
-		reg = REG(p,i);
-		if(reg != NULL) {
-			if(c)
-				prf_sprintf(buf,"\n");
-			prf_sprintf(buf,"VMRegion %d (%p .. %p):\n",i,reg->virt,
-					reg->virt + reg->reg->byteCount - 1);
-			reg_sprintf(buf,reg->reg,reg->virt);
-			c++;
-		}
-	}
-}
-
-void vmm_dbg_printShort(const sProc *p) {
-	sVMRegion *reg;
-	size_t i;
-	for(i = 0; i < p->regSize; i++) {
-		reg = REG(p,i);
-		if(reg != NULL) {
-			uintptr_t start,end;
-			vmm_getRegRange(p,i,&start,&end);
-			vid_printf("\t\t%p .. %p (%5zuK): ",start,end - 1,reg->reg->byteCount / K);
-			reg_dbg_printFlags(reg->reg);
-			vid_printf("\n");
-		}
-	}
-}
-
-void vmm_dbg_print(const sProc *p) {
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.len = 0;
-	buf.size = 0;
-	buf.str = NULL;
-	vid_printf("Regions of proc %d (%s)\n",p->pid,p->command);
-	vmm_sprintfRegions(&buf,p);
-	if(buf.str != NULL)
-		vid_printf("%s\n",buf.str);
-	else
-		vid_printf("- no regions -\n");
-	cache_free(buf.str);
 }

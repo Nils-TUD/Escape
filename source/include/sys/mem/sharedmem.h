@@ -86,6 +86,6 @@ void shm_remProc(sProc *p);
 /**
  * Prints all shared-memory regions
  */
-void shm_dbg_print(void);
+void shm_print(void);
 
 #endif /* SHAREDMEM_H_ */

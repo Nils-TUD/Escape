@@ -36,6 +36,7 @@ typedef struct sWait {
 
 static sWait *ev_allocWait(void);
 static void ev_freeWait(sWait *w);
+static const char *ev_getName(size_t evi);
 
 static sWait waits[MAX_WAIT_COUNT];
 static sWait *waitFree;
@@ -161,6 +162,34 @@ void ev_removeThread(tTid tid) {
 	}
 }
 
+void ev_printEvMask(uint mask) {
+	uint e;
+	for(e = 0; e < EV_COUNT; e++) {
+		if(mask & (1 << e))
+			vid_printf("%s ",ev_getName(e));
+	}
+}
+
+void ev_print(void) {
+	size_t e;
+	vid_printf("Eventlists:\n");
+	for(e = 0; e < EV_COUNT; e++) {
+		sSLList *list = evlists + e;
+		sSLNode *n;
+		vid_printf("\t%s:\n",ev_getName(e));
+		for(n = sll_begin(list); n != NULL; n = n->next) {
+			sWait *w = (sWait*)n->data;
+			sThread *t = thread_getById(w->tid);
+			vid_printf("\t\tthread=%d (%d:%s), object=%x",
+					t->tid,t->proc->pid,t->proc->command,w->object);
+			tInodeNo nodeNo = vfs_node_getNo((sVFSNode*)w->object);
+			if(vfs_node_isValid(nodeNo))
+				vid_printf("(%s)",vfs_node_getPath(nodeNo));
+			vid_printf("\n");
+		}
+	}
+}
+
 static sWait *ev_allocWait(void) {
 	sWait *res = waitFree;
 	if(res == NULL)
@@ -196,32 +225,4 @@ static const char *ev_getName(size_t evi) {
 		"UNLOCK_EX",
 	};
 	return names[evi];
-}
-
-void ev_dbg_printEvMask(uint mask) {
-	uint e;
-	for(e = 0; e < EV_COUNT; e++) {
-		if(mask & (1 << e))
-			vid_printf("%s ",ev_getName(e));
-	}
-}
-
-void ev_dbg_print(void) {
-	size_t e;
-	vid_printf("Eventlists:\n");
-	for(e = 0; e < EV_COUNT; e++) {
-		sSLList *list = evlists + e;
-		sSLNode *n;
-		vid_printf("\t%s:\n",ev_getName(e));
-		for(n = sll_begin(list); n != NULL; n = n->next) {
-			sWait *w = (sWait*)n->data;
-			sThread *t = thread_getById(w->tid);
-			vid_printf("\t\tthread=%d (%d:%s), object=%x",
-					t->tid,t->proc->pid,t->proc->command,w->object);
-			tInodeNo nodeNo = vfs_node_getNo((sVFSNode*)w->object);
-			if(vfs_node_isValid(nodeNo))
-				vid_printf("(%s)",vfs_node_getPath(nodeNo));
-			vid_printf("\n");
-		}
-	}
 }

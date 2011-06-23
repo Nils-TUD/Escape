@@ -120,6 +120,6 @@ void pmem_free(tFrameNo frame);
  *
  * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
  */
-void pmem_dbg_printFreeFrames(uint types);
+void pmem_print(uint types);
 
 #endif /*PMEM_H_*/

@@ -173,7 +173,7 @@ size_t cow_getFrmCount(void) {
 	return count;
 }
 
-void cow_dbg_print(void) {
+void cow_print(void) {
 	sSLNode *n;
 	sCOW *cow;
 	vid_printf("COW-Frames: (%zu frames)\n",cow_getFrmCount());

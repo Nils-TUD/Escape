@@ -70,8 +70,8 @@ static void paging_tcRemPT(tPageDir pdir,uintptr_t virt);
 extern void tc_clear(void);
 extern void tc_update(uint64_t key);
 extern void paging_setrV(uint64_t rv);
-static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
-static void paging_dbg_printPage(uint64_t pte);
+static void paging_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
+static void paging_printPage(uint64_t pte);
 
 /* the current context with the address-space and the value of rV */
 static tPageDir context = NULL;
@@ -544,7 +544,7 @@ static void paging_sprintfPrint(char c) {
 void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
 	strBuf = buf;
 	vid_setPrintFunc(paging_sprintfPrint);
-	paging_dbg_printPDir(pdir,0);
+	paging_printPDir(pdir,0);
 	vid_unsetPrintFunc();
 }
 
@@ -559,7 +559,7 @@ void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
 }
 #endif
 
-void paging_dbg_printPDir(tPageDir pdir,uint parts) {
+void paging_printPDir(tPageDir pdir,uint parts) {
 	UNUSED(parts);
 	size_t i,j;
 	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rV & 0xFFFFFFE000);
@@ -570,7 +570,7 @@ void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 		uintptr_t addr = (i << 61);
 		vid_printf("segment %zu:\n",i);
 		for(j = 0; j < segSize; j++) {
-			paging_dbg_printPageTable(i,addr,(uint64_t*)root,j,1);
+			paging_printPageTable(i,addr,(uint64_t*)root,j,1);
 			addr = (i << 61) | (PAGE_SIZE * (1UL << (10 * (j + 1))));
 			root += PAGE_SIZE;
 		}
@@ -578,7 +578,7 @@ void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 	vid_printf("\n");
 }
 
-static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent) {
+static void paging_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent) {
 	size_t i;
 	uint64_t *pte;
 	if(level > 0) {
@@ -588,7 +588,7 @@ static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size
 				vid_printf("%*sPTP%zd[%zd]=%PX n=%X (VM: %p - %p)\n",indent * 2,"",level,i,
 						(pt[i] & ~DIR_MAPPED_SPACE) / PAGE_SIZE,(pt[i] & PTE_NMASK) >> 3,
 						addr,addr + PAGE_SIZE * (1UL << (10 * level)) - 1);
-				paging_dbg_printPageTable(seg,addr,
+				paging_printPageTable(seg,addr,
 						(uint64_t*)(pt[i] & 0xFFFFFFFFFFFFE000),level - 1,indent + 1);
 			}
 			addr += PAGE_SIZE * (1UL << (10 * level));
@@ -600,7 +600,7 @@ static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i] & PTE_EXISTS) {
 				vid_printf("%*s%zx: ",indent * 2,"",i);
-				paging_dbg_printPage(pte[i]);
+				paging_printPage(pte[i]);
 				vid_printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
 			addr += PAGE_SIZE;
@@ -608,7 +608,7 @@ static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size
 	}
 }
 
-static void paging_dbg_printPage(uint64_t pte) {
+static void paging_printPage(uint64_t pte) {
 	if(pte & PTE_EXISTS) {
 		vid_printf("f=%PX n=%X [%c%c%c]",PTE_FRAMENO(pte),(pte & PTE_NMASK) >> 3,
 				(pte & PTE_READABLE) ? 'r' : '-',
@@ -620,17 +620,17 @@ static void paging_dbg_printPage(uint64_t pte) {
 	}
 }
 
-void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt) {
+void paging_printPageOf(tPageDir pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
 	if(pte & PTE_EXISTS) {
 		vid_printf("Page @ %p: ",virt);
-		paging_dbg_printPage(pte);
+		paging_printPage(pte);
 		vid_printf("\n");
 	}
 }
 
-void paging_dbg_printCur(uint parts) {
-	paging_dbg_printPDir(context,parts);
+void paging_printCur(uint parts) {
+	paging_printPDir(context,parts);
 }
 
 static size_t paging_dbg_getPageCountOf(uint64_t *pt,size_t level) {

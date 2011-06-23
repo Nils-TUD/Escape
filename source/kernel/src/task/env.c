@@ -130,6 +130,16 @@ void env_removeFor(tPid pid) {
 	}
 }
 
+void env_printAllOf(tPid pid) {
+	size_t i;
+	for(i = 0; ; i++) {
+		const char *name = env_geti(pid,i);
+		if(!name)
+			break;
+		vid_printf("\t\t'%s' = '%s'\n",name,env_get(pid,name));
+	}
+}
+
 static sEnvVar *env_getiOf(const sProc *p,size_t *index) {
 	sSLNode *n;
 	sEnvVar *e = NULL;
@@ -153,14 +163,4 @@ static sEnvVar *env_getOf(const sProc *p,const char *name) {
 			return e;
 	}
 	return NULL;
-}
-
-void env_dbg_printAllOf(tPid pid) {
-	size_t i;
-	for(i = 0; ; i++) {
-		const char *name = env_geti(pid,i);
-		if(!name)
-			break;
-		vid_printf("\t\t'%s' = '%s'\n",name,env_get(pid,name));
-	}
 }

@@ -62,6 +62,6 @@ void swmap_free(ulong block);
 /**
  * Prints the swap-map
  */
-void swmap_dbg_print(void);
+void swmap_print(void);
 
 #endif /* SWAPMAP_H_ */

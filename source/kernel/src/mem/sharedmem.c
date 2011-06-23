@@ -195,6 +195,22 @@ void shm_remProc(sProc *p) {
 	}
 }
 
+void shm_print(void) {
+	sSLNode *n,*m;
+	vid_printf("Shared memory:\n");
+	if(shareList == NULL)
+		return;
+	for(n = sll_begin(shareList); n != NULL; n = n->next) {
+		sShMem *mem = (sShMem*)n->data;
+		vid_printf("\tname=%s, users:\n",mem->name);
+		for(m = sll_begin(mem->users); m != NULL; m = m->next) {
+			sShMemUser *user = (sShMemUser*)m->data;
+			vid_printf("\t\tproc %d (%s) with region %d\n",user->proc->pid,user->proc->command,
+					user->region);
+		}
+	}
+}
+
 static bool shm_isOwn(const sShMem *mem,const sProc *p) {
 	return ((sShMemUser*)sll_get(mem->users,0))->proc == p;
 }
@@ -232,20 +248,4 @@ static sShMemUser *shm_getUser(const sShMem *mem,const sProc *p) {
 			return user;
 	}
 	return NULL;
-}
-
-void shm_dbg_print(void) {
-	sSLNode *n,*m;
-	vid_printf("Shared memory:\n");
-	if(shareList == NULL)
-		return;
-	for(n = sll_begin(shareList); n != NULL; n = n->next) {
-		sShMem *mem = (sShMem*)n->data;
-		vid_printf("\tname=%s, users:\n",mem->name);
-		for(m = sll_begin(mem->users); m != NULL; m = m->next) {
-			sShMemUser *user = (sShMemUser*)m->data;
-			vid_printf("\t\tproc %d (%s) with region %d\n",user->proc->pid,user->proc->command,
-					user->region);
-		}
-	}
 }

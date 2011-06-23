@@ -418,12 +418,12 @@ void vfs_removeThread(tTid tid);
 /**
  * Prints all used entries in the global file table
  */
-void vfs_dbg_printGFT(void);
+void vfs_printGFT(void);
 
 /**
  * Prints all messages of all drivers
  */
-void vfs_dbg_printMsgs(void);
+void vfs_printMsgs(void);
 
 /**
  * @return the number of entries in the global file table

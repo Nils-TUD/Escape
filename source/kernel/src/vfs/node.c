@@ -49,6 +49,7 @@ static sVFSNode *vfs_node_requestNode(void);
  * Releases the given node
  */
 static void vfs_node_releaseNode(sVFSNode *node);
+static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent);
 
 /* all nodes (expand dynamically) */
 static sDynArray nodeArray;
@@ -388,6 +389,24 @@ char *vfs_node_getId(tPid pid) {
 	return name;
 }
 
+void vfs_node_printTree(void) {
+	vid_printf("VFS:\n");
+	vid_printf("/\n");
+	vfs_node_dbg_doPrintTree(1,vfs_node_get(0));
+}
+
+void vfs_node_printNode(const sVFSNode *node) {
+	vid_printf("VFSNode @ %p:\n",node);
+	if(node) {
+		vid_printf("\tname: %s\n",node->name ? node->name : "NULL");
+		vid_printf("\tfirstChild: %p\n",node->firstChild);
+		vid_printf("\tlastChild: %p\n",node->lastChild);
+		vid_printf("\tnext: %p\n",node->next);
+		vid_printf("\tprev: %p\n",node->prev);
+		vid_printf("\towner: %d\n",node->owner);
+	}
+}
+
 static void vfs_node_appendChild(sVFSNode *parent,sVFSNode *node) {
 	vassert(node != NULL,"node == NULL");
 
@@ -442,23 +461,5 @@ static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
 		if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
 			vfs_node_dbg_doPrintTree(level + 1,n);
 		n = n->next;
-	}
-}
-
-void vfs_node_dbg_printTree(void) {
-	vid_printf("VFS:\n");
-	vid_printf("/\n");
-	vfs_node_dbg_doPrintTree(1,vfs_node_get(0));
-}
-
-void vfs_node_dbg_printNode(const sVFSNode *node) {
-	vid_printf("VFSNode @ %p:\n",node);
-	if(node) {
-		vid_printf("\tname: %s\n",node->name ? node->name : "NULL");
-		vid_printf("\tfirstChild: %p\n",node->firstChild);
-		vid_printf("\tlastChild: %p\n",node->lastChild);
-		vid_printf("\tnext: %p\n",node->next);
-		vid_printf("\tprev: %p\n",node->prev);
-		vid_printf("\towner: %d\n",node->owner);
 	}
 }

@@ -161,11 +161,7 @@ size_t rb_move(sRingBuf *dst,sRingBuf *src,size_t n) {
 	return c;
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
-void rb_dbg_print(sRingBuf *r) {
+void rb_print(sRingBuf *r) {
 	sIRingBuf *rb = (sIRingBuf*)r;
 	size_t i,c,s;
 	char *addr;
@@ -186,5 +182,3 @@ void rb_dbg_print(sRingBuf *r) {
 	}
 	rbprintf("\n");
 }
-
-#endif

@@ -210,6 +210,33 @@ void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt) {
 	}
 }
 
+void reg_printFlags(const sRegion *reg) {
+	sStringBuffer buf;
+	buf.dynamic = true;
+	buf.len = 0;
+	buf.size = 0;
+	buf.str = NULL;
+	reg_sprintfFlags(&buf,reg);
+	if(buf.str) {
+		vid_printf("%s",buf.str);
+		cache_free(buf.str);
+	}
+}
+
+void reg_print(const sRegion *reg,uintptr_t virt) {
+	sStringBuffer buf;
+	buf.dynamic = true;
+	buf.len = 0;
+	buf.size = 0;
+	buf.str = NULL;
+	reg_sprintf(&buf,reg,virt);
+	if(buf.str != NULL)
+		vid_printf("%s",buf.str);
+	else
+		vid_printf("- no regions -\n");
+	cache_free(buf.str);
+}
+
 static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 	struct {
 		const char *name;
@@ -229,31 +256,4 @@ static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 		if(reg->flags & flagNames[i].no)
 			prf_sprintf(buf,"%s ",flagNames[i].name);
 	}
-}
-
-void reg_dbg_printFlags(const sRegion *reg) {
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.len = 0;
-	buf.size = 0;
-	buf.str = NULL;
-	reg_sprintfFlags(&buf,reg);
-	if(buf.str) {
-		vid_printf("%s",buf.str);
-		cache_free(buf.str);
-	}
-}
-
-void reg_dbg_print(const sRegion *reg,uintptr_t virt) {
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.len = 0;
-	buf.size = 0;
-	buf.str = NULL;
-	reg_sprintf(&buf,reg,virt);
-	if(buf.str != NULL)
-		vid_printf("%s",buf.str);
-	else
-		vid_printf("- no regions -\n");
-	cache_free(buf.str);
 }

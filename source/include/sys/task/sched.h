@@ -79,6 +79,6 @@ void sched_removeThread(sThread *t);
 /**
  * Prints the status of the scheduler
  */
-void sched_dbg_print(void);
+void sched_print(void);
 
 #endif /* SCHED_H_ */

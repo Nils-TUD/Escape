@@ -22,7 +22,7 @@
 #include <sys/cpu.h>
 #include <sys/video.h>
 
-void cpu_dbg_print(void) {
+void cpu_print(void) {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.len = 0;

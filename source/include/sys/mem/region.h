@@ -165,7 +165,7 @@ void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt);
  *
  * @param reg the region
  */
-void reg_dbg_printFlags(const sRegion *reg);
+void reg_printFlags(const sRegion *reg);
 
 /**
  * Prints the given region
@@ -173,6 +173,6 @@ void reg_dbg_printFlags(const sRegion *reg);
  * @param reg the region
  * @param virt the virtual-address at which the region is mapped
  */
-void reg_dbg_print(const sRegion *reg,uintptr_t virt);
+void reg_print(const sRegion *reg,uintptr_t virt);
 
 #endif /* REGION_H_ */

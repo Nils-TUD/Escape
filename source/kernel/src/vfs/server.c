@@ -170,21 +170,21 @@ searchBegin:
 	return NULL;
 }
 
+void vfs_server_print(const sVFSNode *n) {
+	sServer *srv = (sServer*)n->data;
+	sVFSNode *chan = vfs_node_getFirstChild(n);
+	vid_printf("\t%s (%s):\n",n->name,srv->isEmpty ? "empty" : "full");
+	while(chan != NULL) {
+		vfs_chan_print(chan);
+		chan = chan->next;
+	}
+	vid_printf("\n");
+}
+
 static void vfs_server_wakeupClients(const sVFSNode *node,uint events) {
 	node = vfs_node_getFirstChild(node);
 	while(node != NULL) {
 		ev_wakeupm(events,(tEvObj)node);
 		node = node->next;
 	}
-}
-
-void vfs_server_dbg_print(const sVFSNode *n) {
-	sServer *srv = (sServer*)n->data;
-	sVFSNode *chan = vfs_node_getFirstChild(n);
-	vid_printf("\t%s (%s):\n",n->name,srv->isEmpty ? "empty" : "full");
-	while(chan != NULL) {
-		vfs_chan_dbg_print(chan);
-		chan = chan->next;
-	}
-	vid_printf("\n");
 }

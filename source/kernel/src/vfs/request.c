@@ -162,16 +162,16 @@ void vfs_req_free(sRequest *r) {
 	}
 }
 
-void vfs_req_dbg_printAll(void) {
+void vfs_req_printAll(void) {
 	vid_printf("Active requests:\n");
 	sRequest *req = reqUsedList;
 	while(req != NULL) {
-		vfs_req_dbg_print(req);
+		vfs_req_print(req);
 		req = req->next;
 	}
 }
 
-void vfs_req_dbg_print(sRequest *r) {
+void vfs_req_print(sRequest *r) {
 	vid_printf("\tRequest with %p (%s):\n",r->node,vfs_node_getPath(vfs_node_getNo(r->node)));
 	vid_printf("\t\ttid: %d\n",r->tid);
 	vid_printf("\t\tstate: %u\n",r->state);

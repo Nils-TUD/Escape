@@ -314,6 +314,17 @@ void *sll_removeIndex(sSLList *list,size_t index) {
 	return res;
 }
 
+void sll_print(const sSLList *list) {
+	sList *l = (sList*)list;
+	if(l != NULL) {
+		sNode *n = l->first;
+		while(n != NULL) {
+			sllprintf("\t[0x%x] data=0x%x, next=0x%x\n",n,n->data,n->next);
+			n = n->next;
+		}
+	}
+}
+
 static sNode *sll_getNode(const sSLList *list,size_t index) {
 	sList *l = (sList*)list;
 	sNode *n;
@@ -331,20 +342,3 @@ static sNode *sll_getNode(const sSLList *list,size_t index) {
 		n = n->next;
 	return n;
 }
-
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
-void sll_dbg_print(const sSLList *list) {
-	sList *l = (sList*)list;
-	if(l != NULL) {
-		sNode *n = l->first;
-		while(n != NULL) {
-			sllprintf("\t[0x%x] data=0x%x, next=0x%x\n",n,n->data,n->next);
-			n = n->next;
-		}
-	}
-}
-
-#endif

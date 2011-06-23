@@ -161,6 +161,6 @@ extern void tlb_set(int index,uint virt,uint phys);
 /**
  * Prints the contents of the TLB
  */
-void paging_dbg_printTLB(void);
+void paging_printTLB(void);
 
 #endif /* ECO32_PAGING_H_ */

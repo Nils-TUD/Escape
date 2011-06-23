@@ -226,16 +226,12 @@ bool sll_removeFirst(sSLList *list,const void *data);
  */
 void *sll_removeIndex(sSLList *list,size_t index);
 
-#if DEBUGGING
-
 /**
  * Prints the given list
  *
  * @param list the list
  */
-void sll_dbg_print(const sSLList *list);
-
-#endif
+void sll_print(const sSLList *list);
 
 #ifdef __cplusplus
 }

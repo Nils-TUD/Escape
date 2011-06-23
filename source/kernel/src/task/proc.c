@@ -569,7 +569,7 @@ void proc_terminate(sProc *p,int exitCode,tSig signal) {
 		vid_setTargets(TARGET_LOG);
 		vid_printf("Process %d:%s terminated by signal %d\n",p->pid,p->command,signal);
 #if DEBUGGING
-		proc_dbg_print(p);
+		proc_print(p);
 #endif
 		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	}
@@ -662,6 +662,75 @@ void proc_kill(sProc *p) {
 	cache_free(p);
 }
 
+void proc_printAll(void) {
+	sSLNode *n;
+	for(n = sll_begin(procs); n != NULL; n = n->next) {
+		sProc *p = (sProc*)n->data;
+		proc_print(p);
+	}
+}
+
+void proc_printAllRegions(void) {
+	sSLNode *n;
+	for(n = sll_begin(procs); n != NULL; n = n->next) {
+		sProc *p = (sProc*)n->data;
+		vmm_print(p);
+		vid_printf("\n");
+	}
+}
+
+void proc_printAllPDs(uint parts,bool regions) {
+	sSLNode *n;
+	for(n = sll_begin(procs); n != NULL; n = n->next) {
+		sProc *p = (sProc*)n->data;
+		vid_printf("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
+				p->pid,p->command,p->ownFrames,p->sharedFrames,p->swapped);
+		if(regions)
+			vmm_print(p);
+		paging_printPDir(p->pagedir,parts);
+		vid_printf("\n");
+	}
+}
+
+void proc_print(const sProc *p) {
+	size_t i;
+	sSLNode *n;
+	vid_printf("Proc %d:\n",p->pid);
+	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#Px\n",
+			p->parentPid,p->command,p->pagedir,p->entryPoint);
+	vid_printf("\tOwnFrames=%lu, sharedFrames=%lu, swapped=%lu\n",
+			p->ownFrames,p->sharedFrames,p->swapped);
+	if(p->flags & P_ZOMBIE) {
+		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
+		vid_printf("\t\town=%lu, shared=%lu, swap=%lu\n",
+				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
+		vid_printf("\t\tucycles=%#016Lx, kcycles=%#016Lx\n",
+				p->exitState->ucycleCount,p->exitState->kcycleCount);
+	}
+	vid_printf("\tRegions:\n");
+	vmm_printShort(p);
+	vid_printf("\tEnvironment:\n");
+	env_printAllOf(p->pid);
+	vid_printf("\tFileDescs:\n");
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(p->fileDescs[i] != -1) {
+			tInodeNo ino;
+			tDevNo dev;
+			if(vfs_getFileId(p->fileDescs[i],&ino,&dev) == 0) {
+				vid_printf("\t\t%d : %d",i,p->fileDescs[i]);
+				if(dev == VFS_DEV_NO && vfs_node_isValid(ino))
+					vid_printf(" (%s)",vfs_node_getPath(ino));
+				vid_printf("\n");
+			}
+		}
+	}
+	if(p->threads) {
+		for(n = sll_begin(p->threads); n != NULL; n = n->next)
+			thread_print((sThread*)n->data);
+	}
+	vid_printf("\n");
+}
+
 static void proc_notifyProcDied(tPid parent) {
 	sig_addSignalFor(parent,SIG_CHILD_TERM);
 	ev_wakeup(EVI_CHILD_DIED,(tEvObj)proc_getByPid(parent));
@@ -731,75 +800,6 @@ static bool proc_add(sProc *p) {
 static void proc_remove(sProc *p) {
 	sll_removeFirst(procs,p);
 	pidToProc[p->pid] = NULL;
-}
-
-void proc_dbg_printAll(void) {
-	sSLNode *n;
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
-		proc_dbg_print(p);
-	}
-}
-
-void proc_dbg_printAllRegions(void) {
-	sSLNode *n;
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
-		vmm_dbg_print(p);
-		vid_printf("\n");
-	}
-}
-
-void proc_dbg_printAllPDs(uint parts,bool regions) {
-	sSLNode *n;
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
-		vid_printf("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
-				p->pid,p->command,p->ownFrames,p->sharedFrames,p->swapped);
-		if(regions)
-			vmm_dbg_print(p);
-		paging_dbg_printPDir(p->pagedir,parts);
-		vid_printf("\n");
-	}
-}
-
-void proc_dbg_print(const sProc *p) {
-	size_t i;
-	sSLNode *n;
-	vid_printf("Proc %d:\n",p->pid);
-	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#Px\n",
-			p->parentPid,p->command,p->pagedir,p->entryPoint);
-	vid_printf("\tOwnFrames=%lu, sharedFrames=%lu, swapped=%lu\n",
-			p->ownFrames,p->sharedFrames,p->swapped);
-	if(p->flags & P_ZOMBIE) {
-		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
-		vid_printf("\t\town=%lu, shared=%lu, swap=%lu\n",
-				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
-		vid_printf("\t\tucycles=%#016Lx, kcycles=%#016Lx\n",
-				p->exitState->ucycleCount,p->exitState->kcycleCount);
-	}
-	vid_printf("\tRegions:\n");
-	vmm_dbg_printShort(p);
-	vid_printf("\tEnvironment:\n");
-	env_dbg_printAllOf(p->pid);
-	vid_printf("\tFileDescs:\n");
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1) {
-			tInodeNo ino;
-			tDevNo dev;
-			if(vfs_getFileId(p->fileDescs[i],&ino,&dev) == 0) {
-				vid_printf("\t\t%d : %d",i,p->fileDescs[i]);
-				if(dev == VFS_DEV_NO && vfs_node_isValid(ino))
-					vid_printf(" (%s)",vfs_node_getPath(ino));
-				vid_printf("\n");
-			}
-		}
-	}
-	if(p->threads) {
-		for(n = sll_begin(p->threads); n != NULL; n = n->next)
-			thread_dbg_print((sThread*)n->data);
-	}
-	vid_printf("\n");
 }
 
 

@@ -139,6 +139,18 @@ void lock_releaseAll(tPid pid) {
 	}
 }
 
+void lock_print(void) {
+	size_t i;
+	vid_printf("Locks:\n");
+	for(i = 0; i < lockCount; i++) {
+		sLock *l = locks + i;
+		if(l->flags) {
+			vid_printf("\t%08lx: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
+					l->ident,l->pid,l->flags,l->readRefs,l->writer,l->waitCount);
+		}
+	}
+}
+
 static ssize_t lock_get(tPid pid,ulong ident,bool free) {
 	size_t i;
 	ssize_t freeIdx = -1;
@@ -166,16 +178,4 @@ static ssize_t lock_get(tPid pid,ulong ident,bool free) {
 		return oldCount;
 	}
 	return freeIdx;
-}
-
-void lock_dbg_print(void) {
-	size_t i;
-	vid_printf("Locks:\n");
-	for(i = 0; i < lockCount; i++) {
-		sLock *l = locks + i;
-		if(l->flags) {
-			vid_printf("\t%08lx: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
-					l->ident,l->pid,l->flags,l->readRefs,l->writer,l->waitCount);
-		}
-	}
 }

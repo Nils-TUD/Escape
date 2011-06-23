@@ -58,6 +58,6 @@ int boot_loadModules(sIntrptStackFrame *stack);
 /**
  * Prints all interesting elements of the multi-boot-structure
  */
-void boot_dbg_print(void);
+void boot_print(void);
 
 #endif /* BOOT_H_ */

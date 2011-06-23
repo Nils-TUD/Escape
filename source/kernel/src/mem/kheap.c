@@ -440,6 +440,32 @@ size_t kheap_getAreaSize(void *addr) {
 	return 0;
 }
 
+void kheap_print(void) {
+	sMemArea *area;
+	size_t i;
+
+	vid_printf("Used=%zu, free=%zu, pages=%zu\n",kheap_getUsedMem(),kheap_getFreeMem(),
+			memUsage / PAGE_SIZE);
+	vid_printf("UsableList:\n");
+	area = usableList;
+	while(area != NULL) {
+		vid_printf("\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
+		area = area->next;
+	}
+
+	vid_printf("OccupiedMap:\n");
+	for(i = 0; i < OCC_MAP_SIZE; i++) {
+		area = occupiedMap[i];
+		if(area != NULL) {
+			vid_printf("\t%d:\n",i);
+			while(area != NULL) {
+				vid_printf("\t\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
+				area = area->next;
+			}
+		}
+	}
+}
+
 static bool kheap_loadNewSpace(size_t size) {
 	uintptr_t addr;
 	size_t count;
@@ -494,32 +520,6 @@ static size_t kheap_getHash(void *addr) {
 	h ^= (h >> 20) ^ (h >> 12);
 	/* note that we can use & (a-1) since OCC_MAP_SIZE = 2^x */
 	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
-}
-
-void kheap_dbg_print(void) {
-	sMemArea *area;
-	size_t i;
-
-	vid_printf("Used=%zu, free=%zu, pages=%zu\n",kheap_getUsedMem(),kheap_getFreeMem(),
-			memUsage / PAGE_SIZE);
-	vid_printf("UsableList:\n");
-	area = usableList;
-	while(area != NULL) {
-		vid_printf("\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
-		area = area->next;
-	}
-
-	vid_printf("OccupiedMap:\n");
-	for(i = 0; i < OCC_MAP_SIZE; i++) {
-		area = occupiedMap[i];
-		if(area != NULL) {
-			vid_printf("\t%d:\n",i);
-			while(area != NULL) {
-				vid_printf("\t\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
-				area = area->next;
-			}
-		}
-	}
 }
 
 #if DEBUGGING

@@ -95,6 +95,6 @@ sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry);
  *
  * @param n the server-node
  */
-void vfs_server_dbg_print(const sVFSNode *n);
+void vfs_server_print(const sVFSNode *n);
 
 #endif /* SERVER_H_ */

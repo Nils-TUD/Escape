@@ -48,6 +48,6 @@ void cpu_sprintf(sStringBuffer *buf);
 /**
  * Prints the CPU-information
  */
-void cpu_dbg_print(void);
+void cpu_print(void);
 
 #endif /* CPU_H_ */

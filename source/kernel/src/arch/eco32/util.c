@@ -68,8 +68,8 @@ void util_panic(const char *fmt,...) {
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
 	vid_setTargets(TARGET_LOG);
-	vmm_dbg_print(t->proc);
-	paging_dbg_printCur(PD_PART_USER);
+	vmm_print(t->proc);
+	paging_printCur(PD_PART_USER);
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("Done\n\nPress any key to start debugger");
 	while(1) {

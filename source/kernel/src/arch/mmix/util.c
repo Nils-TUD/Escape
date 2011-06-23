@@ -21,7 +21,9 @@
 #include <sys/dbg/console.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/cache.h>
 #include <sys/debug.h>
+#include <sys/intrpt.h>
 #include <sys/util.h>
 #include <sys/cpu.h>
 #include <sys/video.h>
@@ -35,8 +37,6 @@ static sFuncCall frames[1] = {
 void util_panic(const char *fmt,...) {
 	sThread *t = thread_getRunning();
 	va_list ap;
-	size_t i;
-	uint64_t rg;
 
 	/* print message */
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
@@ -51,7 +51,7 @@ void util_panic(const char *fmt,...) {
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 
 	vid_printf("User state:\n");
-	intrpt_dbg_printStackFrame(t->kstackEnd);
+	intrpt_printStackFrame(t->kstackEnd);
 	uint64_t rbb,rww,rxx,ryy,rzz;
 	cpu_getKSpecials(&rbb,&rww,&rxx,&ryy,&rzz);
 	vid_printf("\trBB : #%016lx rWW : #%016lx rXX : #%016lx\n",rbb,rww,rxx);
@@ -61,9 +61,9 @@ void util_panic(const char *fmt,...) {
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
 	vid_setTargets(TARGET_LOG);
-	vmm_dbg_print(t->proc);
-	paging_dbg_printCur(PD_PART_USER);
-	cache_dbg_print();
+	vmm_print(t->proc);
+	paging_printCur(PD_PART_USER);
+	cache_print();
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("Done\n\nPress any key to start debugger");
 	while(1) {
@@ -117,9 +117,11 @@ sFuncCall *util_getKernelStackTrace(void) {
 }
 
 sFuncCall *util_getUserStackTraceOf(const sThread *t) {
+	UNUSED(t);
 	return frames;
 }
 
 sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
+	UNUSED(t);
 	return frames;
 }

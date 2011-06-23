@@ -156,6 +156,26 @@ void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
 		pmem_markUsed(from >> PAGE_SIZE_SHIFT,used);
 }
 
+void pmem_print(uint types) {
+	size_t i,pos = BITMAP_START;
+	tFrameNo *ptr;
+	if(types & MM_CONT) {
+		vid_printf("Bitmap: (frame numbers)\n");
+		for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
+			vid_printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
+			pos += PAGE_SIZE * BITS_PER_BMWORD;
+		}
+	}
+	if(types & MM_DEF) {
+		vid_printf("Stack: (frame numbers)\n");
+		for(i = 0,ptr = stack - 1;(uintptr_t)ptr >= stackBegin; i++,ptr--) {
+			vid_printf("0x%08Px, ",*ptr);
+			if(i % 4 == 3)
+				vid_printf("\n");
+		}
+	}
+}
+
 static void pmem_markUsed(tFrameNo frame,bool used) {
 	/* ignore the stuff before; we don't manage it */
 	if(frame < BITMAP_START_FRAME)
@@ -185,26 +205,6 @@ static void pmem_markUsed(tFrameNo frame,bool used) {
 				util_panic("MM-Stack too small for physical memory!");
 			*stack = frame;
 			stack++;
-		}
-	}
-}
-
-void pmem_dbg_printFreeFrames(uint types) {
-	size_t i,pos = BITMAP_START;
-	tFrameNo *ptr;
-	if(types & MM_CONT) {
-		vid_printf("Bitmap: (frame numbers)\n");
-		for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
-			vid_printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
-			pos += PAGE_SIZE * BITS_PER_BMWORD;
-		}
-	}
-	if(types & MM_DEF) {
-		vid_printf("Stack: (frame numbers)\n");
-		for(i = 0,ptr = stack - 1;(uintptr_t)ptr >= stackBegin; i++,ptr--) {
-			vid_printf("0x%08Px, ",*ptr);
-			if(i % 4 == 3)
-				vid_printf("\n");
 		}
 	}
 }

@@ -144,11 +144,11 @@ char *vfs_node_getId(tPid pid);
 /**
  * Prints the VFS tree
  */
-void vfs_node_dbg_printTree(void);
+void vfs_node_printTree(void);
 
 /**
  * Prints the given VFS node
  */
-void vfs_node_dbg_printNode(const sVFSNode *node);
+void vfs_node_printNode(const sVFSNode *node);
 
 #endif /* VFSNODE_H_ */

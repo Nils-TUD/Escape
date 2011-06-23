@@ -113,13 +113,13 @@ void vfs_req_free(sRequest *r);
 /**
  * Prints all active requests
  */
-void vfs_req_dbg_printAll(void);
+void vfs_req_printAll(void);
 
 /**
  * Prints the given request
  *
  * @param r the request
  */
-void vfs_req_dbg_print(sRequest *r);
+void vfs_req_print(sRequest *r);
 
 #endif /* VFSREQ_H_ */

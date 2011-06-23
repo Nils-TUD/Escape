@@ -66,6 +66,6 @@ size_t cow_getFrmCount(void);
 /**
  * Prints the cow-list
  */
-void cow_dbg_print(void);
+void cow_print(void);
 
 #endif /* COW_H_ */

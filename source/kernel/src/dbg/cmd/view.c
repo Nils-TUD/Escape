@@ -181,101 +181,101 @@ static void view_printc(char c) {
 static void view_proc(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		proc_dbg_print(p);
+		proc_print(p);
 }
 static void view_procs(void) {
-	proc_dbg_printAll();
+	proc_printAll();
 }
 static void view_sched(void) {
-	sched_dbg_print();
+	sched_print();
 }
 static void view_signals(void) {
-	sig_dbg_print();
+	sig_print();
 }
 static void view_thread(size_t argc,char **argv) {
 	sThread *t = view_getThread(argc,argv);
 	if(t != NULL)
-		thread_dbg_print(t);
+		thread_print(t);
 }
 static void view_threads(void) {
-	thread_dbg_printAll();
+	thread_printAll();
 }
 static void view_vfstree(void) {
-	vfs_node_dbg_printTree();
+	vfs_node_printTree();
 }
 static void view_gft(void) {
-	vfs_dbg_printGFT();
+	vfs_printGFT();
 }
 static void view_msgs(void) {
-	vfs_dbg_printMsgs();
+	vfs_printMsgs();
 }
 static void view_cow(void) {
-	cow_dbg_print();
+	cow_print();
 }
 static void view_cache(void) {
-	cache_dbg_print();
+	cache_print();
 }
 static void view_kheap(void) {
-	kheap_dbg_print();
+	kheap_print();
 }
 static void view_pdirall(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_dbg_printPDir(p->pagedir,PD_PART_ALL);
+		paging_printPDir(p->pagedir,PD_PART_ALL);
 }
 static void view_pdiruser(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_dbg_printPDir(p->pagedir,PD_PART_USER);
+		paging_printPDir(p->pagedir,PD_PART_USER);
 }
 static void view_pdirkernel(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_dbg_printPDir(p->pagedir,PD_PART_KERNEL);
+		paging_printPDir(p->pagedir,PD_PART_KERNEL);
 }
 static void view_regions(size_t argc,char **argv) {
 	if(argc < 3)
-		proc_dbg_printAllRegions();
+		proc_printAllRegions();
 	else {
 		sProc *p = view_getProc(argc,argv);
 		if(p != NULL)
-			vmm_dbg_print(p);
+			vmm_print(p);
 	}
 }
 static void view_pmem(void) {
-	pmem_dbg_printFreeFrames(MM_DEF | MM_CONT);
+	pmem_print(MM_DEF | MM_CONT);
 }
 static void view_pmemcont(void) {
-	pmem_dbg_printFreeFrames(MM_CONT);
+	pmem_print(MM_CONT);
 }
 static void view_pmemstack(void) {
-	pmem_dbg_printFreeFrames(MM_DEF);
+	pmem_print(MM_DEF);
 }
 static void view_shm(void) {
-	shm_dbg_print();
+	shm_print();
 }
 static void view_cpu(void) {
-	cpu_dbg_print();
+	cpu_print();
 }
 #ifdef __i386__
 static void view_gdt(void) {
-	gdt_dbg_print();
+	gdt_print();
 }
 #endif
 static void view_timer(void) {
-	timer_dbg_print();
+	timer_print();
 }
 static void view_boot(void) {
-	boot_dbg_print();
+	boot_print();
 }
 static void view_requests(void) {
-	vfs_req_dbg_printAll();
+	vfs_req_printAll();
 }
 static void view_locks(void) {
-	lock_dbg_print();
+	lock_print();
 }
 static void view_events(void) {
-	ev_dbg_print();
+	ev_print();
 }
 
 static sProc *view_getProc(size_t argc,char **argv) {

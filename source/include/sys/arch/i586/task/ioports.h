@@ -51,7 +51,7 @@ int ioports_release(sProc *p,uint16_t start,size_t count);
  *
  * @param map the io-map
  */
-void ioports_dbg_print(const uint8_t *map);
+void ioports_print(const uint8_t *map);
 
 #endif
 

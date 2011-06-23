@@ -149,11 +149,11 @@ void ev_removeThread(tTid tid);
  *
  * @param mask the mask
  */
-void ev_dbg_printEvMask(uint mask);
+void ev_printEvMask(uint mask);
 
 /**
  * Prints all waiting threads
  */
-void ev_dbg_print(void);
+void ev_print(void);
 
 #endif /* EVENT_H_ */

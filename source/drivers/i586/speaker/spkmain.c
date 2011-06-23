@@ -98,6 +98,11 @@ int main(void) {
 					}
 				}
 				break;
+
+				default:
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					break;
 			}
 			close(fd);
 		}

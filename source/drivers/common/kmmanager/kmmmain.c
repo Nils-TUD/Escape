@@ -163,6 +163,7 @@ static void handleKeymap(tMsgId mid,tFD fd) {
 			}
 		}
 		break;
+
 		case MSG_KM_SET: {
 			char *str = msg.data.d;
 			str[sizeof(msg.data.d) - 1] = '\0';
@@ -177,6 +178,11 @@ static void handleKeymap(tMsgId mid,tFD fd) {
 			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 		}
 		break;
+
+		default:
+			msg.args.arg1 = ERR_UNSUPPORTED_OP;
+			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+			break;
 	}
 }
 
@@ -198,5 +204,10 @@ static void handleKeyevents(tMsgId mid,tFD fd) {
 			events_remove(getClientId(fd),flags,key,modifier);
 		}
 		break;
+
+		default:
+			msg.args.arg1 = ERR_UNSUPPORTED_OP;
+			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+			break;
 	}
 }

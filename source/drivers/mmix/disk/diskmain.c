@@ -171,6 +171,11 @@ int main(int argc,char **argv) {
 					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
+
+				default:
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					break;
 			}
 			close(fd);
 		}

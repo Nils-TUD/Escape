@@ -27,7 +27,7 @@ int bgetc(FILE *f) {
 		return EOF;
 	if(buf->fd >= 0) {
 		/* flush stdout if we're stdin */
-		if(f == stdin)
+		if(f == stdin && f->istty)
 			fflush(stdout);
 		if(buf->pos >= buf->max) {
 			ssize_t count = RETRY(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));

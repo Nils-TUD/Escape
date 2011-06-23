@@ -84,6 +84,7 @@ typedef struct {
 
 typedef struct {
 	uchar eof;
+	uchar istty;	/* only for stdin */
 	int error;
 	sIOBuf in;
 	sIOBuf out;

@@ -89,6 +89,10 @@ int main(void) {
 					debugf("You can turn off now\n");
 					/* TODO we should use ACPI later here */
 					break;
+				default:
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					break;
 			}
 			close(fd);
 		}

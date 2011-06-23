@@ -155,8 +155,11 @@ int main(int argc,char *argv[]) {
 			}
 		}
 		else {
-			if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT)
-				printf("[FS] Illegal command %d\n",mid);
+			if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT) {
+				msg.args.arg1 = ERR_UNSUPPORTED_OP;
+				send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				close(fd);
+			}
 			else {
 				void *data = NULL;
 				if(mid == MSG_FS_WRITE) {

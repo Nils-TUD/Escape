@@ -207,7 +207,8 @@ int main(void) {
 					break;
 
 				default:
-					printe("Unable to handle msg %d\n",mid);
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
 		}

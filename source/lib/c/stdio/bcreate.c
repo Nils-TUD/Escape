@@ -29,6 +29,7 @@ FILE *bcreate(tFD fd,uint flags,char *buffer,size_t size) {
 
 	f->eof = false;
 	f->error = 0;
+	f->istty = 0;
 	f->in.buffer = NULL;
 	f->out.buffer = NULL;
 

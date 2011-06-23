@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
+#include <esc/messages.h>
 #include <stdio.h>
 #include <assert.h>
 
 int isatty(int fd) {
-	/* TODO to be implemented */
-	UNUSED(fd);
-	return 0;
+	sVTSize consSize;
+	return recvMsgData(fd,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) >= 0;
 }

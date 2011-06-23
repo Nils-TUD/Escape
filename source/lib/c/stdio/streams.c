@@ -46,6 +46,7 @@ static void initStdio(void) {
 
 	stdin->eof = false;
 	stdin->error = 0;
+	stdin->istty = isatty(STDIN_FILENO);
 	stdin->out.fd = -1;
 	stdin->in.fd = STDIN_FILENO;
 	stdin->in.buffer = (char*)malloc(IN_BUFFER_SIZE + 1);
@@ -56,6 +57,7 @@ static void initStdio(void) {
 
 	stdout->eof = false;
 	stdout->error = 0;
+	stdout->istty = 0;
 	stdout->in.fd = -1;
 	stdout->out.fd = STDOUT_FILENO;
 	stdout->out.buffer = (char*)malloc(OUT_BUFFER_SIZE + 1);
@@ -66,6 +68,7 @@ static void initStdio(void) {
 
 	stderr->eof = false;
 	stderr->error = 0;
+	stderr->istty = 0;
 	stderr->in.fd = -1;
 	stderr->out.fd = STDERR_FILENO;
 	stderr->out.buffer = (char*)malloc(ERR_BUFFER_SIZE + 1);

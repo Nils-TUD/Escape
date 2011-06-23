@@ -114,6 +114,7 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/etc/keymaps
 	$SUDO mkdir $DISKMOUNT/testdir
 	$SUDO mkdir $DISKMOUNT/scripts
+	$SUDO cp -R $ROOT/kernel/src $DISKMOUNT
 	$SUDO cp $ROOT/dist/arch/$ARCH/boot/* $DISKMOUNT/boot/grub
 	$SUDO cp $ROOT/dist/etc/* $DISKMOUNT/etc
 	$SUDO cp $ROOT/dist/arch/$ARCH/etc/* $DISKMOUNT/etc

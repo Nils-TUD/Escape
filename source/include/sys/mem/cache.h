@@ -14,11 +14,6 @@ void cache_free(void *p);
 size_t cache_getPageCount(void);
 size_t cache_getOccMem(void);
 size_t cache_getUsedMem(void);
-
-#if DEBUGGING
-
 void cache_dbg_print(void);
-
-#endif
 
 #endif /* CACHE_H_ */

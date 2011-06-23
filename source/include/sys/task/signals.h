@@ -160,9 +160,6 @@ fSignal sig_startHandling(tTid tid,tSig signal);
  */
 tSig sig_ackHandling(tTid tid);
 
-
-#if DEBUGGING
-
 /**
  * @return the total number of announced handlers
  */
@@ -178,7 +175,5 @@ const char *sig_dbg_getName(tSig signal);
  * Prints all announced signal-handlers
  */
 void sig_dbg_print(void);
-
-#endif
 
 #endif /* SIGNALS_H_ */

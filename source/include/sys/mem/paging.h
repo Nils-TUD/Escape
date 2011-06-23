@@ -273,9 +273,6 @@ void paging_dbg_printCur(uint parts);
  */
 void paging_dbg_printPDir(tPageDir pdir,uint parts);
 
-
-#if DEBUGGING
-
 /**
  * Counts the number of pages that are currently present in the given page-directory
  *
@@ -291,7 +288,5 @@ size_t paging_dbg_getPageCount(void);
  * @param virt the virtual address
  */
 void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt);
-
-#endif
 
 #endif /*PAGING_H_*/

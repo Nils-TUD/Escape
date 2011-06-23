@@ -101,14 +101,14 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	i += BITMAP_START_FRAME;
 	pmem_markRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
 #if DEBUG_ALLOC_N_FREE
-	vid_printf("[AC] %x:%Su\n",i,count);
+	vid_printf("[AC] %x:%zu\n",i,count);
 #endif
 	return i;
 }
 
 void pmem_freeContiguous(tFrameNo first,size_t count) {
 #if DEBUG_ALLOC_N_FREE
-	vid_printf("[FC] %x:%Su\n",first,count);
+	vid_printf("[FC] %x:%zu\n",first,count);
 #endif
 	pmem_markRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
 }
@@ -189,10 +189,6 @@ static void pmem_markUsed(tFrameNo frame,bool used) {
 	}
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 void pmem_dbg_printFreeFrames(uint types) {
 	size_t i,pos = BITMAP_START;
 	tFrameNo *ptr;
@@ -212,5 +208,3 @@ void pmem_dbg_printFreeFrames(uint types) {
 		}
 	}
 }
-
-#endif

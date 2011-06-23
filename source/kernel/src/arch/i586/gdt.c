@@ -324,10 +324,6 @@ static void gdt_set_desc(size_t index,uintptr_t address,size_t size,uint8_t acce
 	gdt[index].access = access | ((ringLevel & 3) << 5);
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 void gdt_dbg_print(void) {
 	size_t i;
 	vid_printf("GDT:\n");
@@ -337,5 +333,3 @@ void gdt_dbg_print(void) {
 				gdt[i].sizeHigh,gdt[i].sizeLow,gdt[i].access);
 	}
 }
-
-#endif

@@ -181,7 +181,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 				flags |= FFL_LONGLONG;
 				fmt++;
 				break;
-			case 'S':
+			case 'z':
 				flags |= FFL_SIZE_T;
 				fmt++;
 				break;

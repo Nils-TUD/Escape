@@ -88,8 +88,6 @@ size_t swmap_freeSpace(void) {
 	return freeBlocks * PAGE_SIZE;
 }
 
-#if DEBUGGING
-
 void swmap_dbg_print(void) {
 	/* TODO sSwMapArea *a = used;
 	vid_printf("SwapMap:\n");
@@ -109,5 +107,3 @@ void swmap_dbg_print(void) {
 		a = a->next;
 	}*/
 }
-
-#endif

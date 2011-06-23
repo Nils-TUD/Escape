@@ -62,6 +62,7 @@ void thread_freeArch(sThread *t) {
 }
 
 int thread_finishClone(sThread *t,sThread *nt) {
+	UNUSED(t);
 	ulong *src;
 	size_t i;
 	/* we clone just the current thread. all other threads are ignored */

@@ -63,13 +63,9 @@ size_t cow_remove(const sProc *p,tFrameNo frameNo,bool *foundOther);
  */
 size_t cow_getFrmCount(void);
 
-#if DEBUGGING
-
 /**
  * Prints the cow-list
  */
 void cow_dbg_print(void);
-
-#endif
 
 #endif /* COW_H_ */

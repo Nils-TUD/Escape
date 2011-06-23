@@ -162,8 +162,6 @@ void vfs_req_free(sRequest *r) {
 	}
 }
 
-#if DEBUGGING
-
 void vfs_req_dbg_printAll(void) {
 	vid_printf("Active requests:\n");
 	sRequest *req = reqUsedList;
@@ -180,8 +178,6 @@ void vfs_req_dbg_print(sRequest *r) {
 	vid_printf("\t\tval1: %u\n",r->val1);
 	vid_printf("\t\tval2: %u\n",r->val2);
 	vid_printf("\t\tdata: %p\n",r->data);
-	vid_printf("\t\tdsize: %Su\n",r->dsize);
-	vid_printf("\t\tcount: %Su\n",r->count);
+	vid_printf("\t\tdsize: %zu\n",r->dsize);
+	vid_printf("\t\tcount: %zu\n",r->count);
 }
-
-#endif

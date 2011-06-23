@@ -130,7 +130,7 @@ void cons_viewLines(const sLines *l) {
 		for(; (i - start) < VID_ROWS - 1; i++)
 			vid_printf("\n");
 		/* print info-line */
-		vid_printf("\033[co;0;7]Lines %Su..%Su of %Su%|s\033[co]",start + 1,end,l->lineCount,
+		vid_printf("\033[co;0;7]Lines %zu..%zu of %zu%|s\033[co]",start + 1,end,l->lineCount,
 				"Navigation: up/down, pageup/-down, home/end, q=quit");
 		/* wait for key */
 		kb_get(&ev,KEV_PRESS,true);

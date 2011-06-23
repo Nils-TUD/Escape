@@ -49,15 +49,15 @@ int main(int argc,char *argv[]) {
 	printf("%-15s%d\n","Device:",info.device);
 	printf("%-15s%s\n","Type:",stat_getType(&info));
 	printf("%-15s%d Bytes\n","Size:",info.size);
-	printf("%-15s%d\n","Blocks:",info.blockCount);
+	printf("%-15s%hd\n","Blocks:",info.blockCount);
 	stat_printDate("Accessed:",info.accesstime);
 	stat_printDate("Modified:",info.modifytime);
 	stat_printDate("Created:",info.createtime);
-	printf("%-15s%#o\n","Mode:",info.mode);
-	printf("%-15s%d\n","GroupID:",info.gid);
-	printf("%-15s%d\n","UserID:",info.uid);
-	printf("%-15s%d\n","Hardlinks:",info.linkCount);
-	printf("%-15s%d\n","BlockSize:",info.blockSize);
+	printf("%-15s%#ho\n","Mode:",info.mode);
+	printf("%-15s%hd\n","GroupID:",info.gid);
+	printf("%-15s%hd\n","UserID:",info.uid);
+	printf("%-15s%hd\n","Hardlinks:",info.linkCount);
+	printf("%-15s%hd\n","BlockSize:",info.blockSize);
 
 	return EXIT_SUCCESS;
 }

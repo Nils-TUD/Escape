@@ -139,6 +139,7 @@ size_t boot_getUsableMemCount(void) {
 }
 
 int boot_loadModules(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	size_t i;
 	tPid pid;
 	tInodeNo nodeNo;
@@ -240,14 +241,10 @@ static const char **boot_parseArgs(const char *line,int *argc) {
 	return (const char**)args;
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 void boot_dbg_print(void) {
 	size_t i;
-	vid_printf("Memory size: %Su bytes\n",info.memSize);
-	vid_printf("Disk size: %Su bytes\n",info.diskSize);
+	vid_printf("Memory size: %zu bytes\n",info.memSize);
+	vid_printf("Disk size: %zu bytes\n",info.diskSize);
 	vid_printf("Boot modules:\n");
 	/* skip kernel */
 	for(i = 1; i < info.progCount; i++) {
@@ -255,5 +252,3 @@ void boot_dbg_print(void) {
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}
 }
-
-#endif

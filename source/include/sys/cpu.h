@@ -45,10 +45,9 @@ uint64_t cpu_rdtsc(void);
  */
 void cpu_sprintf(sStringBuffer *buf);
 
-#if DEBUGGING
-
+/**
+ * Prints the CPU-information
+ */
 void cpu_dbg_print(void);
-
-#endif
 
 #endif /* CPU_H_ */

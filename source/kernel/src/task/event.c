@@ -174,8 +174,6 @@ static void ev_freeWait(sWait *w) {
 	waitFree = w;
 }
 
-#if DEBUGGING
-
 static const char *ev_getName(size_t evi) {
 	static const char *names[] = {
 		"CLIENT",
@@ -218,10 +216,12 @@ void ev_dbg_print(void) {
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			sWait *w = (sWait*)n->data;
 			sThread *t = thread_getById(w->tid);
-			vid_printf("\t\tthread=%d (%d:%s), object=%x\n",
+			vid_printf("\t\tthread=%d (%d:%s), object=%x",
 					t->tid,t->proc->pid,t->proc->command,w->object);
+			tInodeNo nodeNo = vfs_node_getNo((sVFSNode*)w->object);
+			if(vfs_node_isValid(nodeNo))
+				vid_printf("(%s)",vfs_node_getPath(nodeNo));
+			vid_printf("\n");
 		}
 	}
 }
-
-#endif

@@ -20,15 +20,8 @@ ASRC += $(filter-out $(shell find ./arch -name "*.s"),\
 ASRC += $(filter-out ./arch/$(ARCH)/end.s ./arch/$(ARCH)/kernel.s,\
 	$(shell find ./arch/$(ARCH) -name "*.s" | grep -v '\.svn'))
 AEND = ./arch/$(ARCH)/end.s
-ifeq ($(BUILDTYPE),release)
-# remove dbg-files in release-mode
-CSRC = $(filter-out $(shell find ./arch ./dbg -name "*.c"),\
-	$(shell find . -name "*.c" | grep -v '\.svn'))
-CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
-else
 CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c" | grep -v '\.svn'))
 CSRC += $(shell find ./arch/$(ARCH) -name "*.c" | grep -v '\.svn')
-endif
 LSRC = $(filter-out $(shell find $(LIB)/arch -name "*.c"),\
 	$(shell find $(LIB) -name "*.c" | grep -v '\.svn'))
 LSRC += $(shell find $(LIB)/arch/$(ARCH) -name "*.c" | grep -v '\.svn')

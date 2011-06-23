@@ -248,11 +248,9 @@ ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *d
 	return res;
 }
 
-#if DEBUGGING
-
 static void vfs_chan_dbg_printMessage(void *m) {
 	sMessage *msg = (sMessage*)m;
-	vid_printf("\t\t\tid=%u len=%Su\n",msg->id,msg->length);
+	vid_printf("\t\t\tid=%u len=%zu\n",msg->id,msg->length);
 }
 
 void vfs_chan_dbg_print(const sVFSNode *n) {
@@ -261,10 +259,8 @@ void vfs_chan_dbg_print(const sVFSNode *n) {
 	sSLList *lists[] = {chan->sendList,chan->recvList};
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
 		size_t j,count = sll_length(lists[i]);
-		vid_printf("\t\tChannel %s %s: (%Su)\n",n->name,i ? "recvs" : "sends",count);
+		vid_printf("\t\tChannel %s %s: (%zu)\n",n->name,i ? "recvs" : "sends",count);
 		for(j = 0; j < count; j++)
 			vfs_chan_dbg_printMessage(sll_get(lists[i],j));
 	}
 }
-
-#endif

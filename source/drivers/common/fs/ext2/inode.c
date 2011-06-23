@@ -23,10 +23,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <errors.h>
-#include <time.h>
 
 #include "ext2.h"
 #include "../blockcache.h"
+#include "../fstime.h"
 #include "inode.h"
 #include "superblock.h"
 #include "inodecache.h"
@@ -79,7 +79,7 @@ int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++)
 		cnode->inode.dBlocks[i] = cputole32(0);
 	cnode->inode.blocks = cputole32(0);
-	now = cputole32(time(NULL));
+	now = cputole32(timestamp());
 	cnode->inode.accesstime = now;
 	cnode->inode.createtime = now;
 	cnode->inode.modifytime = now;
@@ -97,7 +97,7 @@ int ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
 	/* just set the delete-time and reset link-count. the block-numbers in the inode
 	 * are still present, so that it may be possible to restore the file, if the blocks
 	 * have not been overwritten in the meantime. */
-	cnode->inode.deletetime = cputole32(time(NULL));
+	cnode->inode.deletetime = cputole32(timestamp());
 	cnode->inode.linkCount = cputole16(0);
 	ext2_icache_markDirty(cnode);
 	return 0;

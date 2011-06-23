@@ -18,9 +18,6 @@
  */
 
 #include <esc/common.h>
-#ifdef i386
-#include <arch/i586/ports.h>
-#endif
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/debug.h>

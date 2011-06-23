@@ -39,6 +39,7 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 	bool readFlags;
 	uint flags,width,base;
 	size_t size;
+	ssize_t ssize;
 	int precision;
 	int count = 0;
 
@@ -117,6 +118,10 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 				flags |= FFL_LONGLONG;
 				fmt++;
 				break;
+			case 'z':
+				flags |= FFL_SIZE;
+				fmt++;
+				break;
 			case 'h':
 				flags |= FFL_SHORT;
 				fmt++;
@@ -135,6 +140,10 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 				else if(flags & FFL_LONG) {
 					l = va_arg(ap, long);
 					count += RETERR(bprintlpad(f,l,pad,flags));
+				}
+				else if(flags & FFL_SIZE) {
+					ssize = va_arg(ap, ssize_t);
+					count += RETERR(bprintlpad(f,size,pad,flags));
 				}
 				else {
 					n = va_arg(ap, int);
@@ -197,6 +206,10 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 				else if(flags & FFL_LONG) {
 					ul = va_arg(ap, ulong);
 					count += RETERR(bprintulpad(f,ul,base,pad,flags));
+				}
+				else if(flags & FFL_SIZE) {
+					size = va_arg(ap, size_t);
+					count += RETERR(bprintulpad(f,size,base,pad,flags));
 				}
 				else {
 					u = va_arg(ap, uint);

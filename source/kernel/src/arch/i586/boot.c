@@ -307,10 +307,6 @@ static const char **boot_parseArgs(const char *line,int *argc) {
 	return (const char**)args;
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 void boot_dbg_print(void) {
 	size_t x;
 	sMemMap *mmap;
@@ -372,5 +368,3 @@ void boot_dbg_print(void) {
 
 	vid_printf("---------------------\n");
 }
-
-#endif

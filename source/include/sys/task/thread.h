@@ -264,10 +264,6 @@ void thread_kill(sThread *t);
  */
 void thread_freeArch(sThread *t);
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 /**
  * Prints all threads
  */
@@ -286,7 +282,5 @@ void thread_dbg_print(const sThread *t);
  * @param state the pointer to the state-struct
  */
 void thread_dbg_printState(const sThreadRegs *state);
-
-#endif
 
 #endif /* THREAD_H_ */

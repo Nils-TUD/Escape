@@ -53,13 +53,9 @@ int lock_release(tPid pid,ulong ident);
  */
 void lock_releaseAll(tPid pid);
 
-#if DEBUGGING
-
 /**
  * Prints all locks
  */
 void lock_dbg_print(void);
-
-#endif
 
 #endif /* LOCK_H_ */

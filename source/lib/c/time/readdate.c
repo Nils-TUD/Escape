@@ -22,23 +22,16 @@
 #include <time.h>
 #include "timeintern.h"
 
-static tFD timeFd = -1;
-
 int readdate(struct tm *t) {
 	/* open CMOS and read date */
 	int err;
-	if(timeFd < 0) {
-		/* not already open, so do it */
-		timeFd = open(TIME_DRIVER,IO_READ);
-		if(timeFd < 0)
-			return timeFd;
-	}
-	else {
-		/* seek back to beginning */
-		if((err = seek(timeFd,0,SEEK_SET)) < 0)
-			return err;
-	}
-	if((err = RETRY(read(timeFd,t,sizeof(struct tm)))) < 0)
+	tFD fd = open(TIME_DRIVER,IO_READ);
+	if(fd < 0)
+		return fd;
+	if((err = RETRY(read(fd,t,sizeof(struct tm)))) < 0) {
+		close(fd);
 		return err;
+	}
+	close(fd);
 	return 0;
 }

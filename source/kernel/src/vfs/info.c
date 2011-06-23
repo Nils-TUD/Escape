@@ -170,7 +170,7 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%s\n"
-		"%-16s%Su\n"
+		"%-16s%zu\n"
 		"%-16s%lu\n"
 		"%-16s%lu\n"
 		"%-16s%lu\n"
@@ -220,9 +220,9 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
-		"%-16s%Su\n"
-		"%-16s%Su\n"
-		"%-16s%Su\n"
+		"%-16s%zu\n"
+		"%-16s%zu\n"
+		"%-16s%zu\n"
 		"%-16s%016Lx\n"
 		"%-16s%016Lx\n"
 		,
@@ -275,11 +275,11 @@ static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 	cycles.val64 = cpu_rdtsc();
 	prf_sprintf(
 		&buf,
-		"%-16s%Su\n"
-		"%-16s%Su\n"
-		"%-16s%Su\n"
+		"%-16s%zu\n"
+		"%-16s%zu\n"
+		"%-16s%zu\n"
 		"%-16s%016Lx\n"
-		"%-16s%Sus\n"
+		"%-16s%zus\n"
 		,
 		"Processes:",proc_getCount(),
 		"Threads:",thread_getCount(),
@@ -318,21 +318,21 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	proc_getMemUsage(&paging,&dataShared,&dataOwn,&dataReal);
 	prf_sprintf(
 		&buf,
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
-		"%-11s%10Su\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
 		,
 		"Total:",total,
 		"Used:",total - free,

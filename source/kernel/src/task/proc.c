@@ -543,6 +543,16 @@ int proc_getExitState(tPid ppid,sExitState *state) {
 	return ERR_NO_CHILD;
 }
 
+void proc_segFault(sProc *p) {
+	sThread *t = thread_getRunning();
+	sig_addSignalFor(p->pid,SIG_SEGFAULT);
+	if(p->flags & P_ZOMBIE)
+		thread_switch();
+	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
+	 * we might get in an endless-loop */
+	sig_unsetHandler(t->tid,SIG_SEGFAULT);
+}
+
 void proc_terminate(sProc *p,int exitCode,tSig signal) {
 	sSLNode *tn,*tmpn;
 	size_t i;
@@ -552,6 +562,16 @@ void proc_terminate(sProc *p,int exitCode,tSig signal) {
 	if((p->flags & P_ZOMBIE) && p != proc_getRunning()) {
 		proc_kill(p);
 		return;
+	}
+
+	/* print information to log */
+	if(signal != SIG_COUNT) {
+		vid_setTargets(TARGET_LOG);
+		vid_printf("Process %d:%s terminated by signal %d\n",p->pid,p->command,signal);
+#if DEBUGGING
+		proc_dbg_print(p);
+#endif
+		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	}
 
 	/* store exit-conditions */
@@ -713,55 +733,6 @@ static void proc_remove(sProc *p) {
 	pidToProc[p->pid] = NULL;
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
-#define PROF_PROC_COUNT		128
-
-static uint64_t ucycles[PROF_PROC_COUNT];
-static uint64_t kcycles[PROF_PROC_COUNT];
-
-void proc_dbg_startProf(void) {
-	sSLNode *n,*m;
-	sThread *t;
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
-		assert(p->pid < PROF_PROC_COUNT);
-		ucycles[p->pid] = 0;
-		kcycles[p->pid] = 0;
-		for(m = sll_begin(p->threads); m != NULL; m = m->next) {
-			t = (sThread*)m->data;
-			ucycles[p->pid] += t->stats.ucycleCount.val64;
-			kcycles[p->pid] += t->stats.kcycleCount.val64;
-		}
-	}
-}
-
-void proc_dbg_stopProf(void) {
-	sSLNode *n,*m;
-	sThread *t;
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
-		uLongLong curUcycles;
-		uLongLong curKcycles;
-		assert(p->pid < PROF_PROC_COUNT);
-		curUcycles.val64 = 0;
-		curKcycles.val64 = 0;
-		for(m = sll_begin(p->threads); m != NULL; m = m->next) {
-			t = (sThread*)m->data;
-			curUcycles.val64 += t->stats.ucycleCount.val64;
-			curKcycles.val64 += t->stats.kcycleCount.val64;
-		}
-		curUcycles.val64 -= ucycles[p->pid];
-		curKcycles.val64 -= kcycles[p->pid];
-		if(curUcycles.val64 > 0 || curKcycles.val64 > 0) {
-			vid_printf("Process %3d (%18s): u=%016Lx k=%016Lx\n",
-				p->pid,p->command,curUcycles.val64,curKcycles.val64);
-		}
-	}
-}
-
 void proc_dbg_printAll(void) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
@@ -829,6 +800,55 @@ void proc_dbg_print(const sProc *p) {
 			thread_dbg_print((sThread*)n->data);
 	}
 	vid_printf("\n");
+}
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+#define PROF_PROC_COUNT		128
+
+static uint64_t ucycles[PROF_PROC_COUNT];
+static uint64_t kcycles[PROF_PROC_COUNT];
+
+void proc_dbg_startProf(void) {
+	sSLNode *n,*m;
+	sThread *t;
+	for(n = sll_begin(procs); n != NULL; n = n->next) {
+		sProc *p = (sProc*)n->data;
+		assert(p->pid < PROF_PROC_COUNT);
+		ucycles[p->pid] = 0;
+		kcycles[p->pid] = 0;
+		for(m = sll_begin(p->threads); m != NULL; m = m->next) {
+			t = (sThread*)m->data;
+			ucycles[p->pid] += t->stats.ucycleCount.val64;
+			kcycles[p->pid] += t->stats.kcycleCount.val64;
+		}
+	}
+}
+
+void proc_dbg_stopProf(void) {
+	sSLNode *n,*m;
+	sThread *t;
+	for(n = sll_begin(procs); n != NULL; n = n->next) {
+		sProc *p = (sProc*)n->data;
+		uLongLong curUcycles;
+		uLongLong curKcycles;
+		assert(p->pid < PROF_PROC_COUNT);
+		curUcycles.val64 = 0;
+		curKcycles.val64 = 0;
+		for(m = sll_begin(p->threads); m != NULL; m = m->next) {
+			t = (sThread*)m->data;
+			curUcycles.val64 += t->stats.ucycleCount.val64;
+			curKcycles.val64 += t->stats.kcycleCount.val64;
+		}
+		curUcycles.val64 -= ucycles[p->pid];
+		curKcycles.val64 -= kcycles[p->pid];
+		if(curUcycles.val64 > 0 || curKcycles.val64 > 0) {
+			vid_printf("Process %3d (%18s): u=%016Lx k=%016Lx\n",
+				p->pid,p->command,curUcycles.val64,curKcycles.val64);
+		}
+	}
 }
 
 #endif

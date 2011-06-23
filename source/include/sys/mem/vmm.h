@@ -26,7 +26,7 @@
 #include <sys/task/thread.h>
 #include <sys/printf.h>
 
-#define DISABLE_DEMLOAD		1
+#define DISABLE_DEMLOAD		0
 
 #define MAX_REGUSE_COUNT	8192
 
@@ -290,8 +290,6 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount);
  */
 void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p);
 
-#if DEBUGGING
-
 /**
  * Prints a short version of the regions of given process
  *
@@ -305,7 +303,5 @@ void vmm_dbg_printShort(const sProc *p);
  * @param p the process
  */
 void vmm_dbg_print(const sProc *p);
-
-#endif
 
 #endif /* REGUSE_H_ */

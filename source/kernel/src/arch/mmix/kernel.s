@@ -34,6 +34,8 @@
 	.global logByte
 	.global debugc
 	.global paging_setrV
+
+	.global tc_clear
 	.global tc_update
 
 	.global cpu_getSyscallNo
@@ -160,9 +162,14 @@ dynamicTrap:
 	SADD	$3,$1,$0
 	ANDN	$1,$0,$1
 	ANDN	$0,$0,$1
+	# ensure that we don't trigger an exception by setting rK. that means, we'll always report the
+	# right-most exception bit and ignore all others. but this is sufficient in our case, because
+	# all the fatal exceptions cause a kill anyway and for the protection-faults we can figure out
+	# what we have to do by ourself anyway.
+	SETMH	$1,#FE
+	ANDN	$0,$0,$1
 	PUT		rQ,$0							# remove that bit from rQ
-	SETMH	$0,#FE
-	PUT		rK,$0							# enable exception-bits for kernel (to see errors early)
+	PUT		rK,$1							# enable exception-bits for kernel (to see errors early)
 	# call handler with rS as argument
 	GET		$2,rS
 	SET		$0,$255							# save $255
@@ -205,7 +212,7 @@ thread_initSave:
 	LDOU	$2,$0,$1
 	STOU	$2,$252,$1
 	SUBU	$1,$1,8
-	BNZ		$1,1b
+	BNN		$1,1b
 	# now copy the software-stack
 	INCL	$0,PAGE_SIZE-8
 	INCL	$252,PAGE_SIZE-8
@@ -287,6 +294,11 @@ paging_setrV:
 #===========================================
 # TC
 #===========================================
+
+# void tc_clear(void)
+tc_clear:
+	SYNC	6
+	POP		0,0
 
 # void tc_update(uint64_t key)
 tc_update:

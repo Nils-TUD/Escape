@@ -67,6 +67,7 @@ static uint64_t paging_getPTEOf(tPageDir pdir,uintptr_t virt);
 static size_t paging_removePts(tPageDir pdir,uint64_t pageNo,uint64_t c,ulong level,ulong depth);
 static size_t paging_remEmptyPts(tPageDir pdir,uintptr_t virt);
 static void paging_tcRemPT(tPageDir pdir,uintptr_t virt);
+extern void tc_clear(void);
 extern void tc_update(uint64_t key);
 extern void paging_setrV(uint64_t rv);
 static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
@@ -235,6 +236,12 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	pmem_freeContiguous((pdir->rV >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
 	stats.ptables += SEGMENT_COUNT * PTS_PER_SEGMENT;
 	cache_free(pdir);
+	/* we have to ensure that no tc-entries of the current process are present. otherwise we could
+	 * get the problem that the old process had a page that the new process with this
+	 * address-space-number has not. if the entry of the old one is still in the tc, the new
+	 * process could access it and write to that frame (which might be used for a different
+	 * purpose now) */
+	tc_clear();
 	return stats;
 }
 
@@ -561,7 +568,7 @@ void paging_dbg_printPDir(tPageDir pdir,uint parts) {
 	for(i = 0; i < SEGMENT_COUNT; i++) {
 		ulong segSize = SEGSIZE(context->rV,i + 1) - SEGSIZE(context->rV,i);
 		uintptr_t addr = (i << 61);
-		vid_printf("segment %Su:\n",i);
+		vid_printf("segment %zu:\n",i);
 		for(j = 0; j < segSize; j++) {
 			paging_dbg_printPageTable(i,addr,(uint64_t*)root,j,1);
 			addr = (i << 61) | (PAGE_SIZE * (1UL << (10 * (j + 1))));
@@ -578,7 +585,7 @@ static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size
 		/* page-table with PTPs */
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pt[i] != 0) {
-				vid_printf("%*sPTP%Sd[%Sd]=%PX n=%X (VM: %p - %p)\n",indent * 2,"",level,i,
+				vid_printf("%*sPTP%zd[%zd]=%PX n=%X (VM: %p - %p)\n",indent * 2,"",level,i,
 						(pt[i] & ~DIR_MAPPED_SPACE) / PAGE_SIZE,(pt[i] & PTE_NMASK) >> 3,
 						addr,addr + PAGE_SIZE * (1UL << (10 * level)) - 1);
 				paging_dbg_printPageTable(seg,addr,
@@ -592,7 +599,7 @@ static void paging_dbg_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size
 		pte = (uint64_t*)pt;
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i] & PTE_EXISTS) {
-				vid_printf("%*s%Sx: ",indent * 2,"",i);
+				vid_printf("%*s%zx: ",indent * 2,"",i);
 				paging_dbg_printPage(pte[i]);
 				vid_printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
@@ -612,10 +619,6 @@ static void paging_dbg_printPage(uint64_t pte) {
 		vid_printf("-");
 	}
 }
-
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
 
 void paging_dbg_printPageOf(tPageDir pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
@@ -663,5 +666,3 @@ size_t paging_dbg_getPageCount(void) {
 	}
 	return count;
 }
-
-#endif

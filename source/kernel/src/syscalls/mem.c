@@ -126,7 +126,6 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
-	size_t pages = BYTES_2_PAGES(bytes);
 	sProc *p = proc_getRunning();
 	uintptr_t addr;
 
@@ -136,6 +135,7 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 	/* trying to map memory in kernel area? */
 #ifdef __i386__
+	size_t pages = BYTES_2_PAGES(bytes);
 	/* TODO is this ok? */
 	/* TODO I think we should check here wether it is in a used-region, according to multiboot-memmap */
 	if(*phys &&

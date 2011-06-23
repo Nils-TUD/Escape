@@ -344,9 +344,6 @@ static void thread_remove(sThread *t) {
 	tidToThread[t->tid] = NULL;
 }
 
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 void thread_dbg_printAll(void) {
 	sSLNode *n;
 	vid_printf("Threads:\n");
@@ -370,7 +367,7 @@ void thread_dbg_print(const sThread *t) {
 	vid_printf("\t\tKstackFrame=%#Px\n",t->kstackFrame);
 	vid_printf("\t\tTlsRegion=%d, ",t->tlsRegion);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
-		vid_printf("stackRegion%Su=%d",i,t->stackRegions[i]);
+		vid_printf("stackRegion%zu=%d",i,t->stackRegions[i]);
 		if(i < STACK_REG_COUNT - 1)
 			vid_printf(", ");
 	}
@@ -393,5 +390,3 @@ void thread_dbg_print(const sThread *t) {
 		}
 	}
 }
-
-#endif

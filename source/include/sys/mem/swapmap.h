@@ -59,14 +59,9 @@ size_t swmap_freeSpace(void);
  */
 void swmap_free(ulong block);
 
-
-#if DEBUGGING
-
 /**
  * Prints the swap-map
  */
 void swmap_dbg_print(void);
-
-#endif
 
 #endif /* SWAPMAP_H_ */

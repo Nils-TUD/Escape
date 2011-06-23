@@ -110,6 +110,12 @@ uintptr_t kheap_allocAreas(void);
  */
 uintptr_t kheap_allocSpace(size_t count);
 
+/**
+ * Prints the kernel-heap data-structure
+ */
+void kheap_dbg_print(void);
+
+
 #if DEBUGGING
 
 /**
@@ -118,11 +124,6 @@ uintptr_t kheap_allocSpace(size_t count);
  * @param enabled the new value
  */
 void kheap_dbg_setAaFEnabled(bool enabled);
-
-/**
- * Prints the kernel-heap data-structure
- */
-void kheap_dbg_print(void);
 
 #endif
 

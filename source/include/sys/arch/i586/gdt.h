@@ -78,14 +78,9 @@ void tss_setIOMap(const uint8_t *ioMap);
  */
 void tss_removeIOMap(void);
 
-
-#if DEBUGGING
-
 /**
  * Prints the GDT
  */
 void gdt_dbg_print(void);
-
-#endif
 
 #endif /*GDT_H_*/

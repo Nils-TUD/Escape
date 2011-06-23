@@ -238,9 +238,6 @@ static sSigThread *sig_getThread(tTid tid,bool create) {
 	return st;
 }
 
-
-#if DEBUGGING
-
 size_t sig_dbg_getHandlerCount(void) {
 	sSLNode *n;
 	size_t i,c = 0;
@@ -289,11 +286,9 @@ void sig_dbg_print(void) {
 		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(st->signals[i].handler) {
-				vid_printf("\t\t%s: handler=%p pending=%Su\n",
+				vid_printf("\t\t%s: handler=%p pending=%zu\n",
 						sig_dbg_getName(i),st->signals[i].handler,st->signals[i].pending);
 			}
 		}
 	}
 }
-
-#endif

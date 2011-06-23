@@ -74,7 +74,7 @@ void ioports_dbg_print(const uint8_t *map) {
 	for(i = 0; i < IO_MAP_SIZE / 8; i++) {
 		for(j = 0; j < 8; j++) {
 			if(!(map[i] & (1 << j))) {
-				vid_printf("%Sx, ",i * 8 + j);
+				vid_printf("%zx, ",i * 8 + j);
 				if(++c % 10 == 0)
 					vid_printf("\n\t");
 			}

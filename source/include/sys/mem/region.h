@@ -160,9 +160,6 @@ sRegion *reg_clone(const void *p,const sRegion *reg);
  */
 void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt);
 
-
-#if DEBUGGING
-
 /**
  * Prints the flags of the given region
  *
@@ -177,7 +174,5 @@ void reg_dbg_printFlags(const sRegion *reg);
  * @param virt the virtual-address at which the region is mapped
  */
 void reg_dbg_print(const sRegion *reg,uintptr_t virt);
-
-#endif
 
 #endif /* REGION_H_ */

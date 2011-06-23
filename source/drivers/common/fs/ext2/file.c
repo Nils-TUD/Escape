@@ -24,10 +24,10 @@
 #include <errors.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include "ext2.h"
 #include "../blockcache.h"
+#include "../fstime.h"
 #include "rw.h"
 #include "inode.h"
 #include "inodecache.h"
@@ -151,7 +151,7 @@ ssize_t ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,uint offset,size_t
 	}
 
 	/* mark accessed */
-	cnode->inode.accesstime = cputole32(time(NULL));
+	cnode->inode.accesstime = cputole32(timestamp());
 	ext2_icache_markDirty(cnode);
 	ext2_icache_release(cnode);
 
@@ -264,7 +264,7 @@ ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,uint o
 	}
 
 	/* finally, update the inode */
-	now = cputole32(time(NULL));
+	now = cputole32(timestamp());
 	cnode->inode.accesstime = now;
 	cnode->inode.modifytime = now;
 	cnode->inode.size = (int32_t)cputole32(MAX((int32_t)(orgOff + count),inoSize));

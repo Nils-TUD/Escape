@@ -22,8 +22,6 @@
 #include <sys/cpu.h>
 #include <sys/video.h>
 
-#if DEBUGGING
-
 void cpu_dbg_print(void) {
 	sStringBuffer buf;
 	buf.dynamic = true;
@@ -34,5 +32,3 @@ void cpu_dbg_print(void) {
 	vid_printf("%s",buf.str);
 	cache_free(buf.str);
 }
-
-#endif

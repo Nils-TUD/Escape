@@ -102,8 +102,7 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 
 	/* extend the stack, if necessary */
 	if(thread_extendStack((uintptr_t)(sp - count)) < 0) {
-		/* TODO later we should kill the process here! */
-		util_panic("Thread %d: stack overflow",t->tid);
+		proc_segFault(t->proc);
 		return;
 	}
 	/* will handle copy-on-write */

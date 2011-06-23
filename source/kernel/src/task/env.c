@@ -155,9 +155,6 @@ static sEnvVar *env_getOf(const sProc *p,const char *name) {
 	return NULL;
 }
 
-
-#if DEBUGGING
-
 void env_dbg_printAllOf(tPid pid) {
 	size_t i;
 	for(i = 0; ; i++) {
@@ -167,5 +164,3 @@ void env_dbg_printAllOf(tPid pid) {
 		vid_printf("\t\t'%s' = '%s'\n",name,env_get(pid,name));
 	}
 }
-
-#endif

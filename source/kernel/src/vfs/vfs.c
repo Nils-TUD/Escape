@@ -967,9 +967,6 @@ void vfs_removeThread(tTid tid) {
 	cache_free(name);
 }
 
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 size_t vfs_dbg_getGFTEntryCount(void) {
 	tFileNo i;
 	size_t count = 0;
@@ -1028,5 +1025,3 @@ void vfs_dbg_printGFT(void) {
 		}
 	}
 }
-
-#endif

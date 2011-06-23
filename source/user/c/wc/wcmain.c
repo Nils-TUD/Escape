@@ -38,9 +38,9 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static uint lines = 0;
-static uint bytes = 0;
-static uint words = 0;
+static ulong lines = 0;
+static ulong bytes = 0;
+static ulong words = 0;
 
 int main(int argc,const char *argv[]) {
 	uint flags = 0;
@@ -79,18 +79,18 @@ int main(int argc,const char *argv[]) {
 	}
 
 	if(flags == WC_BYTES)
-		printf("%u\n",bytes);
+		printf("%lu\n",bytes);
 	else if(flags == WC_WORDS)
-		printf("%u\n",words);
+		printf("%lu\n",words);
 	else if(flags == WC_LINES)
-		printf("%u\n",lines);
+		printf("%lu\n",lines);
 	else {
 		if(flags & WC_LINES)
-			printf("%7u",lines);
+			printf("%7lu",lines);
 		if(flags & WC_WORDS)
-			printf("%7u",words);
+			printf("%7lu",words);
 		if(flags & WC_BYTES)
-			printf("%7u",bytes);
+			printf("%7lu",bytes);
 		putchar('\n');
 	}
 	return EXIT_SUCCESS;

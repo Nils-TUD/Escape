@@ -57,16 +57,11 @@ bool env_set(tPid pid,const char *name,const char *value);
  */
 void env_removeFor(tPid pid);
 
-
-#if DEBUGGING
-
 /**
  * Prints all env-vars of given process
  *
  * @param pid the process-id
  */
 void env_dbg_printAllOf(tPid pid);
-
-#endif
 
 #endif /* ENV_H_ */

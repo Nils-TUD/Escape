@@ -30,7 +30,7 @@ int elf_finishFromFile(tFileNo file,const sElfEHeader *eheader,sStartupInfo *inf
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
 	sElfSHeader *secHeaders = (sElfSHeader*)cache_alloc(headerSize);
 	if(secHeaders == NULL) {
-		log_printf("[LOADER] Unable to allocate memory for ELF-header (%Su bytes)\n",headerSize);
+		log_printf("[LOADER] Unable to allocate memory for ELF-header (%zu bytes)\n",headerSize);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 

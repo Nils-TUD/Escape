@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/test.h>
+#include <stdio.h>
 
 #include "tests/tstring.h"
 #include "tests/tvector.h"
@@ -41,5 +42,8 @@ int main(void) {
 	test_register(&tModMap);
 	test_register(&tModCmdArgs);
 	test_start();
+	/* flush stdout because cout will be closed before stdout is flushed by exit(). thus, that flush
+	 * will fail because the file has already been closed. */
+	fflush(stdout);
 	return EXIT_SUCCESS;
 }

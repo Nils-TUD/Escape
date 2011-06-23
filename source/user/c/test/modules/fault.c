@@ -20,14 +20,28 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/io.h>
+#include <esc/proc.h>
 #include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
 #include "fault.h"
+
+static void sig_segf(int sig) {
+	UNUSED(sig);
+	fflush(stdout);
+	if(setSigHandler(SIG_SEGFAULT,SIG_DFL) < 0)
+		error("Unable to unset signal-handler");
+	if(sendSignalTo(getpid(),SIG_SEGFAULT) < 0)
+		error("Unable to commit suicide");
+}
 
 int mod_fault(int argc,char *argv[]) {
 	uint *ptr;
 	tFD fd;
 	UNUSED(argc);
 	UNUSED(argv);
+	if(setSigHandler(SIG_SEGFAULT,sig_segf) < 0)
+		error("Unable to set signal-handler");
 	printf("I am evil ^^\n");
 	fd = open((char*)0x12345678,IO_READ);
 	ptr = (uint*)0xFFFFFFFF;

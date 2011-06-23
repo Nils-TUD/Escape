@@ -431,10 +431,6 @@ static void vfs_node_releaseNode(sVFSNode *node) {
 	freeList = node;
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
 	size_t i;
 	sVFSNode *n = vfs_node_getFirstChild(parent);
@@ -466,5 +462,3 @@ void vfs_node_dbg_printNode(const sVFSNode *node) {
 		vid_printf("\towner: %d\n",node->owner);
 	}
 }
-
-#endif

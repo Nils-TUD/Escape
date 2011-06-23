@@ -90,15 +90,11 @@ int vfs_server_setReadable(sVFSNode *node,bool readable);
  */
 sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry);
 
-#if DEBUGGING
-
 /**
  * Prints the given server
  *
  * @param n the server-node
  */
 void vfs_server_dbg_print(const sVFSNode *n);
-
-#endif
 
 #endif /* SERVER_H_ */

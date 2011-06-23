@@ -74,7 +74,7 @@ static void test_paging_foreign(void) {
 
 	checkMemoryAfter(true);
 	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
-		test_caseFailed("oldOwn=%Su, newOwn=%Su, oldSh=%Su, newSh=%Su",
+		test_caseFailed("oldOwn=%zu, newOwn=%zu, oldSh=%zu, newSh=%zu",
 				ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
 	}
 	else
@@ -92,7 +92,7 @@ static void test_paging_foreign(void) {
 
 	checkMemoryAfter(true);
 	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
-		test_caseFailed("oldOwn=%Su, newOwn=%Su, oldSh=%Su, newSh=%Su",
+		test_caseFailed("oldOwn=%zu, newOwn=%zu, oldSh=%zu, newSh=%zu",
 				ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
 	}
 	else
@@ -101,7 +101,7 @@ static void test_paging_foreign(void) {
 }
 
 static bool test_paging_cycle(uintptr_t addr,size_t count) {
-	test_caseStart("Mapping %Su pages to %p",count,addr);
+	test_caseStart("Mapping %zu pages to %p",count,addr);
 	checkMemoryBefore(true);
 
 	test_paging_allocate(addr,count);

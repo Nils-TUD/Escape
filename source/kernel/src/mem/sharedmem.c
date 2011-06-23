@@ -234,10 +234,6 @@ static sShMemUser *shm_getUser(const sShMem *mem,const sProc *p) {
 	return NULL;
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 void shm_dbg_print(void) {
 	sSLNode *n,*m;
 	vid_printf("Shared memory:\n");
@@ -253,5 +249,3 @@ void shm_dbg_print(void) {
 		}
 	}
 }
-
-#endif

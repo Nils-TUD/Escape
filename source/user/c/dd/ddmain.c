@@ -85,7 +85,7 @@ int main(int argc,const char *argv[]) {
 		error("Write failed");
 	free(buffer);
 
-	printf("Wrote %Lu bytes in %.3lf packages, each %lu bytes long\n",
+	printf("Wrote %Lu bytes in %.3lf packages, each %zu bytes long\n",
 			total,total / (double)bs,bs);
 
 	if(inFile)

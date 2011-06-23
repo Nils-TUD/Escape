@@ -24,7 +24,6 @@
 #include <esc/messages.h>
 
 #include "modules/speed.h"
-#include "modules/printf.h"
 #include "modules/tdriver.h"
 #include "modules/debug.h"
 #include "modules/fault.h"
@@ -50,7 +49,6 @@ typedef struct {
 
 static sTestModule modules[] = {
 	{"speed",mod_speed},
-	{"printf",mod_printf},
 	{"driver",mod_driver},
 	{"debug",mod_debug},
 	{"fault",mod_fault},

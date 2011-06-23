@@ -1,12 +1,12 @@
 # general
-#ARCH = mmix
-#GCCVER = 4.6.0
-ARCH = i586
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
+#ARCH = i586
+#GCCVER = 4.4.3
 #ARCH = eco32
 #GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -23,7 +23,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 # simulators
 KVM = -enable-kvm
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 60 -localtime
+QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 16 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
@@ -77,15 +77,15 @@ export SUDO=sudo
 #		-finstrument-functions-exclude-file-list=../../../lib/basic/profile.c
 # ADDLIBS = ../../../lib/basic/profile.c
 
+DIRS = tools dist lib drivers user kernel/src kernel/test
+
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
-	DIRS = tools dist lib drivers user kernel/src kernel/test
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 	export BUILDTYPE=debug
 else
-	DIRS = tools dist lib drivers user kernel/src
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
@@ -187,25 +187,25 @@ endif
 
 mmix:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-		-b -s $(BUILD)/kernel.map $(BUILD)/user_ps.map
+		#-b -s $(BUILD)/kernel.map $(BUILD)/user_test.map
 
 mmixd:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -p 1234 >/dev/null 2>&1 &
 	sleep 1;
-	/opt/mmix/bin/mmix-gdbtui --command=gdb.start --symbols $(BUILD)/user_ls.bin
+	/opt/mmix/bin/mmix-gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 testm:	all hdd prepareTest
-	$(GIMSIM) -r $(GIMMON) -m 20 -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \
+	$(GIMSIM) -r $(GIMMON) -m 24 -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \
 		-b -s $(BUILD)/kernel_test.map
 
 testmd:	all hdd prepareTest
-	$(GIMSIM) -r $(GIMMON) -m 20 -t 1 -d $(HDD) -o log.txt -c -p 1234 >/dev/null 2>&1 &
+	$(GIMSIM) -r $(GIMMON) -m 24 -t 1 -d $(HDD) -o log.txt -c -p 1234 >/dev/null 2>&1 &
 	sleep 1;
 	/opt/mmix/bin/mmix-gdbtui --command=gdb.start --symbols $(BUILD)/kernel_test.bin
 
 eco:	all hdd prepareRun
 	$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \
-		-m $(BUILD)/kernel.map $(BUILD)/driver_keyboard.map -n
+		-m $(BUILD)/kernel.map $(BUILD)/user_test.map -n
 
 teste:	all hdd prepareTest
 	$(ECOSIM) -r $(ECOMON) -t 1 -d $(HDD) -o log.txt -c -i \

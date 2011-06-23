@@ -158,13 +158,9 @@ extern tPageDir curPDir;
  */
 extern void tlb_set(int index,uint virt,uint phys);
 
-#if DEBUGGING
-
 /**
  * Prints the contents of the TLB
  */
 void paging_dbg_printTLB(void);
-
-#endif
 
 #endif /* ECO32_PAGING_H_ */

@@ -268,7 +268,7 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 
 	/* check if the sizes are valid */
 	if(pheader->p_filesz > memsz) {
-		log_printf("[LOADER] Number of bytes in file (%Sx) more than number of bytes in mem (%Sx)\n",
+		log_printf("[LOADER] Number of bytes in file (%zx) more than number of bytes in mem (%zx)\n",
 				pheader->p_filesz,memsz);
 		return ERR_INVALID_ELF_BIN;
 	}

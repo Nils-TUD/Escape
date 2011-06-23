@@ -53,9 +53,9 @@ static void load_relocLib(sSharedLib *l) {
 
 	/* make text writable because we may have to change something in it */
 	if(setRegProt(l->loadAddr ? l->loadAddr : TEXT_BEGIN,PROT_READ | PROT_WRITE) < 0)
-		load_error("Unable to make text (@ %x) of %s writable",l->loadAddr,l->name);
+		load_error("Unable to make text (@ %p) of %s writable",l->loadAddr,l->name);
 
-	DBGDL("Relocating stuff of %s (loaded @ %x)\n",l->name,l->loadAddr ? l->loadAddr : TEXT_BEGIN);
+	DBGDL("Relocating stuff of %s (loaded @ %p)\n",l->name,l->loadAddr ? l->loadAddr : TEXT_BEGIN);
 
 	rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
 	if(rel) {
@@ -82,7 +82,7 @@ static void load_relocLib(sSharedLib *l) {
 				}
 				else
 					*ptr = sym->st_value + l->loadAddr;
-				DBGDL("Rel (GLOB_DAT) off=%x orgoff=%x reloc=%x orgval=%x\n",
+				DBGDL("Rel (GLOB_DAT) off=%p orgoff=%p reloc=%p orgval=%p\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr,sym->st_value);
 			}
 			else if(relType == R_386_COPY) {
@@ -96,20 +96,20 @@ static void load_relocLib(sSharedLib *l) {
 				/* set the GOT-Entry in the library of the symbol to the address we've copied
 				 * the value to. TODO I'm not sure if that's the intended way... */
 				load_adjustCopyGotEntry(name,rel[x].r_offset);
-				DBGDL("Rel (COPY) off=%x sym=%s addr=%x val=%x\n",rel[x].r_offset,name,
+				DBGDL("Rel (COPY) off=%p sym=%s addr=%p val=%p\n",rel[x].r_offset,name,
 						value,*(uintptr_t*)value);
 			}
 			else if(relType == R_386_RELATIVE) {
 				uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 				*ptr += l->loadAddr;
-				DBGDL("Rel (RELATIVE) off=%x orgoff=%x reloc=%x\n",
+				DBGDL("Rel (RELATIVE) off=%p orgoff=%p reloc=%p\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr);
 			}
 			else if(relType == R_386_32) {
 				uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
 				/* TODO well, again I can't explain why this is needed. If I understand
-				 * the code in glibc/sysdeps/i386/dl-machine.h correct, they just do a
+				 * the code in glibc/sysdeps/i386/dl-machine.h correctly, they just do a
 				 * *ptr += sym->st_value + l->loadAddr. But resolving the symbol when the
 				 * address is 0 seems to be the only way to get exception-throwing in c++
 				 * working. Because otherwise the typeinfo-stuff doesn't get relocated
@@ -125,19 +125,19 @@ static void load_relocLib(sSharedLib *l) {
 				else
 				/*if(sym->st_value != 0)*/
 					*ptr += sym->st_value + l->loadAddr;
-				DBGDL("Rel (32) off=%x orgoff=%x symval=%x reloc=%x\n",
+				DBGDL("Rel (32) off=%p orgoff=%p symval=%p reloc=%p\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr);
 			}
 			else if(relType == R_386_PC32) {
 				uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
-				DBGDL("Rel (PC32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
+				DBGDL("Rel (PC32) off=%p orgoff=%p symval=%p org=%p reloc=%p\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
 						sym->st_value - rel[x].r_offset - 4);
 				*ptr = sym->st_value - rel[x].r_offset - 4;
 			}
 			else
-				load_error("In library %s: Unknown relocation: off=%x info=%x\n",
+				load_error("In library %s: Unknown relocation: off=%p info=%p\n",
 						l->name,rel[x].r_offset,rel[x].r_info);
 		}
 	}
@@ -174,18 +174,18 @@ static void load_relocLib(sSharedLib *l) {
 						load_error("Unable to find symbol %s",name);
 					*addr = value;
 				}
-				DBGDL("JmpRel off=%x addr=%x reloc=%x (%s)\n",l->jmprel[x].r_offset,addr,value,name);
+				DBGDL("JmpRel off=%p addr=%p reloc=%p (%s)\n",l->jmprel[x].r_offset,addr,value,name);
 			}
 			else {
 				*addr += l->loadAddr;
-				DBGDL("JmpRel off=%x addr=%x reloc=%x\n",l->jmprel[x].r_offset,addr,*addr);
+				DBGDL("JmpRel off=%p addr=%p reloc=%p\n",l->jmprel[x].r_offset,addr,*addr);
 			}
 		}
 	}
 
 	/* store pointer to library and lookup-function into GOT */
 	got = (Elf32_Addr*)load_getDyn(l->dyn,DT_PLTGOT);
-	DBGDL("GOT-Address of %s: %x\n",l->name,got);
+	DBGDL("GOT-Address of %s: %p\n",l->name,got);
 	if(got) {
 		got = (Elf32_Addr*)((uintptr_t)got + l->loadAddr);
 		got[1] = (Elf32_Addr)l;

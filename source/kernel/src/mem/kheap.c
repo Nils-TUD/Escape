@@ -143,7 +143,7 @@ void *kheap_alloc(size_t size) {
 	if(aafEnabled) {
 		sFuncCall *trace = util_getKernelStackTrace();
 		size_t i = 0;
-		vid_printf("[A] %Px %Sd ",area->address,area->size);
+		vid_printf("[A] %Px %zd ",area->address,area->size);
 		while(trace->addr != 0 && i++ < 10) {
 			vid_printf("%Px",trace->addr);
 			trace++;
@@ -236,7 +236,7 @@ void kheap_free(void *addr) {
 	if(aafEnabled) {
 		sFuncCall *trace = util_getKernelStackTrace();
 		size_t i = 0;
-		vid_printf("[F] %Px %Sd ",addr,area->size);
+		vid_printf("[F] %Px %zd ",addr,area->size);
 		while(trace->addr != 0 && i++ < 10) {
 			vid_printf("%Px",trace->addr);
 			trace++;
@@ -374,7 +374,7 @@ void *kheap_realloc(void *addr,size_t size) {
 		return NULL;
 
 	/* copy the old data and free it */
-	memcpy(a,addr,area->size);
+	memcpy(a,addr,area->size - sizeof(ulong) * 3);
 	kheap_free(addr);
 	return a;
 }
@@ -496,24 +496,16 @@ static size_t kheap_getHash(void *addr) {
 	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
-void kheap_dbg_setAaFEnabled(bool enabled) {
-	aafEnabled = enabled;
-}
-
 void kheap_dbg_print(void) {
 	sMemArea *area;
 	size_t i;
 
-	vid_printf("Used=%Su, free=%Su, pages=%Su\n",kheap_getUsedMem(),kheap_getFreeMem(),
+	vid_printf("Used=%zu, free=%zu, pages=%zu\n",kheap_getUsedMem(),kheap_getFreeMem(),
 			memUsage / PAGE_SIZE);
 	vid_printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
-		vid_printf("\t%p: addr=%p, size=0x%Sx\n",area,area->address,area->size);
+		vid_printf("\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
 		area = area->next;
 	}
 
@@ -523,11 +515,17 @@ void kheap_dbg_print(void) {
 		if(area != NULL) {
 			vid_printf("\t%d:\n",i);
 			while(area != NULL) {
-				vid_printf("\t\t%p: addr=%p, size=0x%Sx\n",area,area->address,area->size);
+				vid_printf("\t\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
 				area = area->next;
 			}
 		}
 	}
+}
+
+#if DEBUGGING
+
+void kheap_dbg_setAaFEnabled(bool enabled) {
+	aafEnabled = enabled;
 }
 
 #endif

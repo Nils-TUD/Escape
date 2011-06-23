@@ -38,6 +38,7 @@
 #define FFL_SHORT			64
 #define FFL_LONG			128
 #define FFL_LONGLONG		256
+#define FFL_SIZE			512
 
 /* execute <expr> and return if its < 0; otherwise you get the value of <expr> */
 #define RETERR(expr)		({ \

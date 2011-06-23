@@ -278,10 +278,6 @@ static void sched_qAppend(sQueue *q,sThread *t) {
 	q->last = t;
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 static void sched_qPrint(sQueue *q) {
 	char name1[12];
 	char name2[12];
@@ -304,5 +300,3 @@ void sched_dbg_print(void) {
 	sched_qPrint(&blockedQueue);
 	vid_printf("\n");
 }
-
-#endif

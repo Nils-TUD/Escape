@@ -171,8 +171,6 @@ void timer_intrpt(void) {
 	}
 }
 
-#if DEBUGGING
-
 void timer_dbg_print(void) {
 	tTime time;
 	sSLNode *n = sll_begin(listener);
@@ -188,5 +186,3 @@ void timer_dbg_print(void) {
 		}
 	}
 }
-
-#endif

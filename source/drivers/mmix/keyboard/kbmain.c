@@ -135,7 +135,6 @@ static void kbIntrptHandler(int sig) {
 	/* so, simply skip the scancode in this case */
 	if(!moving) {
 		if(kb_set2_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
-#if DEBUGGING
 			/* F12 starts the kernel-debugging-console */
 			if(!data.isBreak && data.keycode == VK_F12) {
 				/* start debugger */
@@ -143,7 +142,6 @@ static void kbIntrptHandler(int sig) {
 				kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 				return;
 			}
-#endif
 			/* write in buffer */
 			rb_write(ibuf,&data);
 		}

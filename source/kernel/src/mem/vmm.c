@@ -649,8 +649,8 @@ int vmm_growStackTo(sThread *t,uintptr_t addr) {
 		else {
 			if(addr < vm->virt)
 				return ERR_NOT_ENOUGH_MEM;
-			if(addr > vm->virt + ROUNDUP(vm->reg->byteCount))
-				newPages = (addr - vm->virt + ROUNDUP(vm->reg->byteCount)) / PAGE_SIZE;
+			if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
+				newPages = ROUNDUP(addr - (vm->virt + ROUNDUP(vm->reg->byteCount) - 1)) / PAGE_SIZE;
 		}
 
 		/* if its too much, try the next one; if there is none that fits, report failure */
@@ -1097,9 +1097,6 @@ void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p) {
 	}
 }
 
-
-#if DEBUGGING
-
 void vmm_dbg_printShort(const sProc *p) {
 	sVMRegion *reg;
 	size_t i;
@@ -1108,7 +1105,7 @@ void vmm_dbg_printShort(const sProc *p) {
 		if(reg != NULL) {
 			uintptr_t start,end;
 			vmm_getRegRange(p,i,&start,&end);
-			vid_printf("\t\t%p .. %p: ",start,end - 1);
+			vid_printf("\t\t%p .. %p (%5zuK): ",start,end - 1,reg->reg->byteCount / K);
 			reg_dbg_printFlags(reg->reg);
 			vid_printf("\n");
 		}
@@ -1129,5 +1126,3 @@ void vmm_dbg_print(const sProc *p) {
 		vid_printf("- no regions -\n");
 	cache_free(buf.str);
 }
-
-#endif

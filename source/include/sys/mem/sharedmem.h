@@ -83,15 +83,9 @@ int shm_cloneProc(const sProc *parent,sProc *child);
  */
 void shm_remProc(sProc *p);
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 /**
  * Prints all shared-memory regions
  */
 void shm_dbg_print(void);
-
-#endif
 
 #endif /* SHAREDMEM_H_ */

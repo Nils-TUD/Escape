@@ -57,7 +57,6 @@ void util_panic(const char *fmt,...) {
 	vid_printf("\trBB : #%016lx rWW : #%016lx rXX : #%016lx\n",rbb,rww,rxx);
 	vid_printf("\trYY : #%016lx rZZ : #%016lx\n",ryy,rzz);
 
-#if DEBUGGING
 	/* write into log only */
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
@@ -71,9 +70,6 @@ void util_panic(const char *fmt,...) {
 		kb_get(NULL,KEV_PRESS,true);
 		cons_start();
 	}
-#else
-	while(1);
-#endif
 }
 
 void util_copyToUser(void *dst,const void *src,size_t count) {

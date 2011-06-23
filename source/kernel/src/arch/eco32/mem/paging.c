@@ -98,10 +98,8 @@ static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables);
 static uintptr_t paging_getPTables(tPageDir pdir);
 static size_t paging_remEmptyPt(tPageDir pdir,uintptr_t ptables,size_t pti);
 
-#if DEBUGGING
 static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) ;
 static void paging_dbg_printPage(sPTEntry *page);
-#endif
 
 tPageDir curPDir = 0;
 static tPageDir otherPDir = 0;
@@ -571,9 +569,6 @@ static uintptr_t paging_getPTables(tPageDir pdir) {
 	return TMPMAP_PTS_START;
 }
 
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 void paging_dbg_printTLB(void) {
 	int i;
 	vid_printf("TLB:\n");
@@ -652,7 +647,7 @@ static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde)
 	if(pte) {
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i].exists) {
-				vid_printf("\t\t0x%Sx: ",i);
+				vid_printf("\t\t0x%zx: ",i);
 				paging_dbg_printPage(pte + i);
 				vid_printf(" (VM: 0x%08Px - 0x%08Px)\n",addr,addr + PAGE_SIZE - 1);
 			}
@@ -670,5 +665,3 @@ static void paging_dbg_printPage(sPTEntry *page) {
 		vid_printf("-");
 	}
 }
-
-#endif

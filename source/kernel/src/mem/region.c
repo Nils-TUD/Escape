@@ -186,8 +186,8 @@ sRegion *reg_clone(const void *p,const sRegion *reg) {
 void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt) {
 	size_t i,x;
 	sSLNode *n;
-	prf_sprintf(buf,"\tSize: %Su bytes\n",reg->byteCount);
-	prf_sprintf(buf,"\tLoad: %Su bytes\n",reg->loadCount);
+	prf_sprintf(buf,"\tSize: %zu bytes\n",reg->byteCount);
+	prf_sprintf(buf,"\tLoad: %zu bytes\n",reg->loadCount);
 	prf_sprintf(buf,"\tflags: ");
 	reg_sprintfFlags(buf,reg);
 	prf_sprintf(buf,"\n");
@@ -215,14 +215,14 @@ static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 		const char *name;
 		ulong no;
 	} flagNames[] = {
-		{"Growable",RF_GROWABLE},
-		{"Shareable",RF_SHAREABLE},
-		{"Writable",RF_WRITABLE},
-		{"Executable",RF_EXECUTABLE},
-		{"Stack",RF_STACK},
+		{"Gr",RF_GROWABLE},
+		{"Sh",RF_SHAREABLE},
+		{"Wr",RF_WRITABLE},
+		{"Ex",RF_EXECUTABLE},
+		{"St",RF_STACK},
 		{"NoFree",RF_NOFREE},
 		{"TLS",RF_TLS},
-		{"GrowsDown",RF_GROWS_DOWN}
+		{"GrDwn",RF_GROWS_DOWN}
 	};
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {
@@ -230,9 +230,6 @@ static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 			prf_sprintf(buf,"%s ",flagNames[i].name);
 	}
 }
-
-
-#if DEBUGGING
 
 void reg_dbg_printFlags(const sRegion *reg) {
 	sStringBuffer buf;
@@ -260,5 +257,3 @@ void reg_dbg_print(const sRegion *reg,uintptr_t virt) {
 		vid_printf("- no regions -\n");
 	cache_free(buf.str);
 }
-
-#endif

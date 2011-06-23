@@ -110,9 +110,6 @@ void vfs_req_remove(sRequest *r);
  */
 void vfs_req_free(sRequest *r);
 
-
-#if DEBUGGING
-
 /**
  * Prints all active requests
  */
@@ -124,7 +121,5 @@ void vfs_req_dbg_printAll(void);
  * @param r the request
  */
 void vfs_req_dbg_print(sRequest *r);
-
-#endif
 
 #endif /* VFSREQ_H_ */

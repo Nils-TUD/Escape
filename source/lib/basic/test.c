@@ -179,7 +179,7 @@ bool test_doAssertUIntPtr(uintptr_t received,uintptr_t expected,const char *func
 bool test_doAssertSize(size_t received,size_t expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%Sx, got 0x%Sx",
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%zx, got 0x%zx",
 				assertCount,func,line,expected,received);
 		return false;
 	}
@@ -189,7 +189,7 @@ bool test_doAssertSize(size_t received,size_t expected,const char *func,int line
 bool test_doAssertSSize(ssize_t received,ssize_t expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%Sx, got 0x%Sx",
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%zx, got 0x%zx",
 				assertCount,func,line,expected,received);
 		return false;
 	}

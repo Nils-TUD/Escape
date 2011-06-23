@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/debug.h>
+#include <sys/log.h>
 
 #define OUTPUT_BASE	0xFF000000	/* physical output device address */
 

@@ -41,7 +41,7 @@ static void sigHandler(int sig) {
 
 static void f(int a) {
 	if(a % 128 == 0)
-		printf("&a = %08x\n",&a);
+		printf("&a = %p\n",&a);
 	if(sendSignalTo(getpid(),SIG_TERM) < 0)
 		printe("Unable to send signal");
 	f(a + 1);

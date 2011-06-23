@@ -115,15 +115,11 @@ tFrameNo pmem_allocate(void);
  */
 void pmem_free(tFrameNo frame);
 
-#if DEBUGGING
-
 /**
  * Prints all free frames
  *
  * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
  */
 void pmem_dbg_printFreeFrames(uint types);
-
-#endif
 
 #endif /*PMEM_H_*/

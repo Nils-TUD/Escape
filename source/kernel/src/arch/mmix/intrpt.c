@@ -240,14 +240,12 @@ void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
 			uint64_t rbb,rww,rxx,ryy,rzz;
+			sProc *p = proc_getRunning();
 			cpu_getKSpecials(&rbb,&rww,&rxx,&ryy,&rzz);
-			vid_printf("%s for address %p @ %p, process %d\n",intrptList[irqNo].name,pfaddr,
-					rww,proc_getRunning()->pid);
-			/*proc_terminate(t->proc);
-			thread_switch();*/
-			/* hm...there is something wrong :) */
-			/* TODO later the process should be killed here */
-			util_panic("%s for address %p @ %p",intrptList[irqNo].name,pfaddr,rww);
+			vid_setTargets(TARGET_LOG);
+			vid_printf("proc %d: %s for address %p @ %p\n",p->pid,intrptList[irqNo].name,pfaddr,rww);
+			vid_setTargets(TARGET_LOG | TARGET_SCREEN);
+			proc_segFault(p);
 		}
 	}
 }
@@ -260,7 +258,6 @@ static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo) {
 	uint64_t *kbRegs = (uint64_t*)KEYBOARD_BASE;
 	kbRegs[KEYBOARD_CTRL] &= ~KEYBOARD_IEN;
 
-#if DEBUGGING
 	if(proc_getByPid(KEYBOARD_PID) == NULL) {
 		/* in debug-mode, start the logviewer when the keyboard is not present yet */
 		/* (with a present keyboard-driver we would steal him the scancodes) */
@@ -270,7 +267,6 @@ static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo) {
 		if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
 			cons_start();
 	}
-#endif
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call uenv_handleSignal(), which might cause a thread-switch */

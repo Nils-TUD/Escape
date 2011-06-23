@@ -167,15 +167,11 @@ static void *cache_get(sCache *c,size_t i) {
 	return area + 2;
 }
 
-#if DEBUGGING
-
 void cache_dbg_print(void) {
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
-		vid_printf("Cache %Su [size=%Su, total=%Su, free=%Su, pages=%Su]:\n",i,caches[i].objSize,
+		vid_printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
 				caches[i].totalObjs,caches[i].freeObjs,
 				BYTES_2_PAGES(caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3)));
 	}
 }
-
-#endif

@@ -141,9 +141,6 @@ void vfs_node_destroy(sVFSNode *n);
  */
 char *vfs_node_getId(tPid pid);
 
-
-#if DEBUGGING
-
 /**
  * Prints the VFS tree
  */
@@ -153,7 +150,5 @@ void vfs_node_dbg_printTree(void);
  * Prints the given VFS node
  */
 void vfs_node_dbg_printNode(const sVFSNode *node);
-
-#endif
 
 #endif /* VFSNODE_H_ */

@@ -178,8 +178,6 @@ static void vfs_server_wakeupClients(const sVFSNode *node,uint events) {
 	}
 }
 
-#if DEBUGGING
-
 void vfs_server_dbg_print(const sVFSNode *n) {
 	sServer *srv = (sServer*)n->data;
 	sVFSNode *chan = vfs_node_getFirstChild(n);
@@ -190,5 +188,3 @@ void vfs_server_dbg_print(const sVFSNode *n) {
 	}
 	vid_printf("\n");
 }
-
-#endif

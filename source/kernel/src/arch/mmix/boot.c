@@ -257,14 +257,10 @@ static const char **boot_parseArgs(const char *line,int *argc) {
 	return (const char**)args;
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 void boot_dbg_print(void) {
 	size_t i;
-	vid_printf("Memory size: %Su bytes\n",info.memSize);
-	vid_printf("Disk size: %Su bytes\n",info.diskSize);
+	vid_printf("Memory size: %zu bytes\n",info.memSize);
+	vid_printf("Disk size: %zu bytes\n",info.diskSize);
 	vid_printf("Kernelstack-begin: %p\n",info.kstackBegin);
 	vid_printf("Kernelstack-end: %p\n",info.kstackEnd);
 	vid_printf("Boot modules:\n");
@@ -274,5 +270,3 @@ void boot_dbg_print(void) {
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}
 }
-
-#endif

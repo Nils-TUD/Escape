@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#ifdef i386
+#ifdef __i386__
 #include <arch/i586/ports.h>
 #endif
 #include <esc/proc.h>
@@ -90,7 +90,7 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
 	vt->printToCom1 = getConf(CONF_LOG);
 	if(vt->printToCom1 && !reqPorts) {
 		/* TODO */
-#ifdef i386
+#ifdef __i386__
 		/* request io-ports for qemu and bochs */
 		if(requestIOPort(0xe9) < 0 || requestIOPort(0x3f8) < 0 || requestIOPort(0x3fd) < 0)
 			error("Unable to request ports for qemu/bochs");

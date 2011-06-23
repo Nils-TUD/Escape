@@ -168,8 +168,6 @@ static ssize_t lock_get(tPid pid,ulong ident,bool free) {
 	return freeIdx;
 }
 
-#if DEBUGGING
-
 void lock_dbg_print(void) {
 	size_t i;
 	vid_printf("Locks:\n");
@@ -181,5 +179,3 @@ void lock_dbg_print(void) {
 		}
 	}
 }
-
-#endif

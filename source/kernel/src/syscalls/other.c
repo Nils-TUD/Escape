@@ -46,7 +46,6 @@ int sysc_debugc(sIntrptStackFrame *stack) {
 
 int sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-#if DEBUGGING
 #if 0
 	static size_t foo = 0;
 	if(foo == 0) {
@@ -59,7 +58,6 @@ int sysc_debug(sIntrptStackFrame *stack) {
 	}
 #else
 	cons_start();
-#endif
 #endif
 	SYSC_RET1(stack,0);
 }

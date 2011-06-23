@@ -290,6 +290,14 @@ void proc_removeRegions(sProc *p,bool remStack);
 int proc_getExitState(tPid ppid,sExitState *state);
 
 /**
+ * Sends a SIG_SEGFAULT signal to the given process and performs a thread-switch if the process
+ * has been terminated.
+ *
+ * @param p the process
+ */
+void proc_segFault(sProc *p);
+
+/**
  * Marks the given process as zombie and notifies the waiting parent thread. As soon as the parent
  * thread fetches the exit-state we'll kill the process
  *
@@ -320,18 +328,6 @@ void proc_kill(sProc *p);
  */
 int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fromUser);
 
-#if DEBUGGING
-
-/**
- * Starts profiling all processes
- */
-void proc_dbg_startProf(void);
-
-/**
- * Stops profiling all processes and prints the result
- */
-void proc_dbg_stopProf(void);
-
 /**
  * Prints all existing processes
  */
@@ -356,6 +352,19 @@ void proc_dbg_printAllPDs(uint parts,bool regions);
  * @param p the pointer to the process
  */
 void proc_dbg_print(const sProc *p);
+
+
+#if DEBUGGING
+
+/**
+ * Starts profiling all processes
+ */
+void proc_dbg_startProf(void);
+
+/**
+ * Stops profiling all processes and prints the result
+ */
+void proc_dbg_stopProf(void);
 
 #endif
 

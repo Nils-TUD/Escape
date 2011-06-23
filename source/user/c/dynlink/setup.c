@@ -81,7 +81,7 @@ uintptr_t load_setupProg(tFD binFd) {
 	sSLNode *n,*m;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
-		debugf("[%d] Loaded %s @ %x .. %x with deps: ",
+		debugf("[%d] Loaded %s @ %p .. %p with deps: ",
 				getpid(),l->name,l->loadAddr,l->loadAddr + l->textSize);
 		for(m = sll_begin(l->deps); m != NULL; m = m->next) {
 			sSharedLib *dl = (sSharedLib*)m->data;

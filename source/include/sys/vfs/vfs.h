@@ -415,8 +415,6 @@ bool vfs_createThread(tTid tid);
  */
 void vfs_removeThread(tTid tid);
 
-#if DEBUGGING
-
 /**
  * Prints all used entries in the global file table
  */
@@ -431,7 +429,5 @@ void vfs_dbg_printMsgs(void);
  * @return the number of entries in the global file table
  */
 size_t vfs_dbg_getGFTEntryCount(void);
-
-#endif
 
 #endif /* VFS_H_ */

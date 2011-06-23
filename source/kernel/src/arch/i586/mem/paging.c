@@ -143,10 +143,8 @@ static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables);
 static uintptr_t paging_getPTables(tPageDir pdir);
 static size_t paging_remEmptyPt(uintptr_t ptables,size_t pti);
 
-#if DEBUGGING
 static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) ;
 static void paging_dbg_printPage(sPTEntry *page);
-#endif
 
 /* the page-directory for process 0 */
 static sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] A_ALIGNED(PAGE_SIZE);
@@ -691,10 +689,6 @@ void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
 }
 #endif
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 size_t paging_dbg_getPageCount(void) {
 	size_t i,x,count = 0;
 	sPTEntry *pagetable;
@@ -762,7 +756,7 @@ static void paging_dbg_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde)
 	if(pte) {
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i].exists) {
-				vid_printf("\t\t0x%Sx: ",i);
+				vid_printf("\t\t0x%zx: ",i);
 				paging_dbg_printPage(pte + i);
 				vid_printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
@@ -782,5 +776,3 @@ static void paging_dbg_printPage(sPTEntry *page) {
 		vid_printf("-");
 	}
 }
-
-#endif

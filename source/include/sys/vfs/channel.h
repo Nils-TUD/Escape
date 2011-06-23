@@ -74,16 +74,11 @@ ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *da
  */
 ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *data,size_t size);
 
-
-#if DEBUGGING
-
 /**
  * Prints the given channel
  *
  * @param n the channel-node
  */
 void vfs_chan_dbg_print(const sVFSNode *n);
-
-#endif
 
 #endif /* CHANNEL_H_ */

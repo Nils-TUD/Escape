@@ -124,7 +124,7 @@ namespace std {
 			if(res < 0)
 				throw bad_state("flush() failed");
 		}
-		else
+		else if(!_outBuf)
 			_outBuf = new char[OUT_BUF_SIZE];
 		_outPos = 0;
 	}

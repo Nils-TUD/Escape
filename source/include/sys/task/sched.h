@@ -76,13 +76,9 @@ void sched_setSuspended(sThread *t,bool blocked);
  */
 void sched_removeThread(sThread *t);
 
-#if DEBUGGING
-
 /**
  * Prints the status of the scheduler
  */
 void sched_dbg_print(void);
-
-#endif
 
 #endif /* SCHED_H_ */

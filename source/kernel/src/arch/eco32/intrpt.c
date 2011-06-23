@@ -143,7 +143,7 @@ size_t intrpt_getCount(void) {
 
 static void intrpt_defHandler(sIntrptStackFrame *stack) {
 	/* do nothing */
-	util_panic("Got interrupt %d (%s) @ 0x%08x\n",
+	util_panic("Got interrupt %d (%s) @ %p\n",
 			stack->irqNo,intrptList[stack->irqNo & 0x1f].name,stack->r[30]);
 }
 
@@ -178,13 +178,11 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	if(!vmm_pagefault(pfaddr)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
-			vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-								stack->r[30],proc_getRunning()->pid);
-			/*proc_terminate(t->proc);
-			thread_switch();*/
-			/* hm...there is something wrong :) */
-			/* TODO later the process should be killed here */
-			util_panic("Page fault for address=0x%08x @ 0x%x",pfaddr,stack->r[30]);
+			sProc *p = proc_getRunning();
+			vid_setTargets(TARGET_LOG);
+			vid_printf("proc %d, page fault for address %p @ %p\n",p->pid,pfaddr,stack->r[30]);
+			vid_setTargets(TARGET_LOG | TARGET_SCREEN);
+			proc_segFault(p);
 		}
 	}
 }
@@ -203,7 +201,6 @@ static void intrpt_irqKB(sIntrptStackFrame *stack) {
 	uint32_t *kbRegs = (uint32_t*)KEYBOARD_BASE;
 	kbRegs[KEYBOARD_CTRL] &= ~KEYBOARD_IEN;
 
-#if DEBUGGING
 	if(proc_getByPid(KEYBOARD_PID) == NULL) {
 		/* in debug-mode, start the logviewer when the keyboard is not present yet */
 		/* (with a present keyboard-driver we would steal him the scancodes) */
@@ -213,7 +210,6 @@ static void intrpt_irqKB(sIntrptStackFrame *stack) {
 		if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
 			cons_start();
 	}
-#endif
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call uenv_handleSignal(), which might cause a thread-switch */

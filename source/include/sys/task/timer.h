@@ -74,10 +74,9 @@ void timer_removeThread(tTid tid);
  */
 void timer_intrpt(void);
 
-#if DEBUGGING
-
+/**
+ * Prints the timer-queue
+ */
 void timer_dbg_print(void);
-
-#endif
 
 #endif /* TIMER_H_ */

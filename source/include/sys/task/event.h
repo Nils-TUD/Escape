@@ -144,9 +144,6 @@ bool ev_wakeupThread(tTid tid,uint events);
  */
 void ev_removeThread(tTid tid);
 
-
-#if DEBUGGING
-
 /**
  * Prints the given event-mask
  *
@@ -158,7 +155,5 @@ void ev_dbg_printEvMask(uint mask);
  * Prints all waiting threads
  */
 void ev_dbg_print(void);
-
-#endif
 
 #endif /* EVENT_H_ */

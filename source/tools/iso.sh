@@ -65,7 +65,8 @@ else
 fi
 
 # copy driver-deps, apps, drivers and user-apps
-cp $BOOT/dist/arch/$ARCH/boot/* $TMPDIR/boot/grub
+cp -R $ROOT/kernel/src $TMPDIR
+cp $ROOT/dist/arch/$ARCH/boot/* $TMPDIR/boot/grub
 cp $ROOT/dist/etc/* $TMPDIR/etc
 cp $ROOT/dist/arch/$ARCH/etc/* $TMPDIR/etc
 cp $ROOT/dist/etc/keymaps/* $TMPDIR/etc/keymaps

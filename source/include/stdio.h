@@ -46,7 +46,7 @@
 #	define EOF			-1
 #endif
 
-typedef int fpos_t;
+typedef off_t fpos_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -412,7 +412,7 @@ int fsetpos(FILE *stream,const fpos_t *pos);
  * @param stream the stream
  * @return the current position
  */
-int ftell(FILE *stream);
+long ftell(FILE *stream);
 
 /**
  * The rewind function sets the file position indicator for the stream pointed to by

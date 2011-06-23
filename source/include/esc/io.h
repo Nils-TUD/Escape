@@ -107,7 +107,7 @@ int fstat(tFD fd,sFileInfo *info) A_CHECKRET;
  * @param pos will point to the current file-position on success
  * @return 0 on success
  */
-int tell(tFD fd,int *pos) A_CHECKRET;
+int tell(tFD fd,off_t *pos) A_CHECKRET;
 
 /**
  * Manipulates the given file-descriptor, depending on the command
@@ -120,15 +120,6 @@ int tell(tFD fd,int *pos) A_CHECKRET;
 int fcntl(tFD fd,uint cmd,int arg);
 
 /**
- * The  isterm()  function  tests  whether  fd  is an open file descriptor
- * referring to a terminal.
- *
- * @param fd the file-descriptor
- * @return true if it referrs to a terminal
- */
-bool isterm(tFD fd);
-
-/**
  * Changes the position in the given file
  *
  * @param fd the file-descriptor
@@ -136,7 +127,7 @@ bool isterm(tFD fd);
  * @param whence the seek-type: SEEK_SET, SEEK_CUR or SEEK_END
  * @return the new position on success, of the negative error-code
  */
-int seek(tFD fd,int offset,uint whence) A_CHECKRET;
+off_t seek(tFD fd,off_t offset,uint whence) A_CHECKRET;
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the

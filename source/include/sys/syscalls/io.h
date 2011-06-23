@@ -144,15 +144,6 @@ int sysc_send(sIntrptStackFrame *stack);
 int sysc_receive(sIntrptStackFrame *stack);
 
 /**
- * Checks whether the given file links to a terminal. That means it has to be a virtual file
- * that acts as a driver-client for a terminal-driver.
- *
- * @param tFD the file-descriptor
- * @return bool true if so
- */
-int sysc_isterm(sIntrptStackFrame *stack);
-
-/**
  * Retrieves information about the given file
  *
  * @param const char* path the path of the file

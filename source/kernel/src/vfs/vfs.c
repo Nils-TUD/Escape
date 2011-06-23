@@ -391,19 +391,6 @@ int vfs_fstat(tPid pid,tFileNo file,sFileInfo *info) {
 	return res;
 }
 
-bool vfs_isterm(tPid pid,tFileNo file) {
-	sGFTEntry *e = vfs_getGFTEntry(file);
-	sVFSNode *n = vfs_node_get(e->nodeNo);
-	UNUSED(pid);
-	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
-	if(e->devNo != VFS_DEV_NO)
-		return false;
-	/* node not present anymore */
-	if(n->name == NULL)
-		return false;
-	return IS_CHANNEL(n->mode) && vfs_server_isterm(n->parent);
-}
-
 off_t vfs_seek(tPid pid,tFileNo file,off_t offset,uint whence) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	off_t oldPos = e->position;

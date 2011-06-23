@@ -93,7 +93,7 @@ int main(int argc,char *argv[]) {
 		if(in == NULL)
 			error("Unable to open '%s'",filename.c_str());
 	}
-	else if(isterm(STDIN_FILENO))
+	else if(isatty(STDIN_FILENO))
 		error("Using a vterm as STDIN and have got no filename");
 	else {
 		filename = "STDIN";

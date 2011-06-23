@@ -187,7 +187,7 @@ endif
 
 mmix:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-		#-b -s $(BUILD)/kernel.map $(BUILD)/user_test.map
+		-b -s $(BUILD)/kernel.map $(BUILD)/user_test.map
 
 mmixd:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -p 1234 >/dev/null 2>&1 &

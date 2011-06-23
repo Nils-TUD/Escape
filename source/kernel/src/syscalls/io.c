@@ -254,21 +254,6 @@ int sysc_write(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,writtenBytes);
 }
 
-int sysc_isterm(sIntrptStackFrame *stack) {
-	tFD fd = (tFD)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
-	tFileNo file;
-	bool res;
-
-	/* get file */
-	file = proc_fdToFile(fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
-
-	res = vfs_isterm(p->pid,file);
-	SYSC_RET1(stack,res);
-}
-
 int sysc_send(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tMsgId id = (tMsgId)SYSC_ARG2(stack);

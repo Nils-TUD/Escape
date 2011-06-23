@@ -213,16 +213,6 @@ int vfs_stat(tPid pid,const char *path,sFileInfo *info);
 int vfs_fstat(tPid pid,tFileNo file,sFileInfo *info);
 
 /**
- * Checks whether the given file links to a terminal. That means it has to be a virtual file
- * that acts as a driver-client for a terminal-driver.
- *
- * @param pid the process-id
- * @param file the file
- * @return true if so
- */
-bool vfs_isterm(tPid pid,tFileNo file);
-
-/**
  * Sets the position for the given file
  *
  * @param pid the process-id

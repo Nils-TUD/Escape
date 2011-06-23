@@ -209,18 +209,6 @@ write:
 1:
 	POP		1,0							# return value is in $0
 
-.global isterm
-.type isterm, @function
-isterm:
-	SET		$7,0
-	TRAP	0,SYSCALL_ISTERM,0
-	BZ		$2,1f						# no-error?
-	GETA	$3,errno
-	STOU	$2,$3,0
-	SET		$0,$2
-1:
-	POP		1,0							# return value is in $0
-
 .global send
 .type send, @function
 send:

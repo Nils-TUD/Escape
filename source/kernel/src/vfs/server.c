@@ -94,11 +94,6 @@ void vfs_server_clientRemoved(sVFSNode *node,const sVFSNode *client) {
 		srv->lastClient = NULL;
 }
 
-bool vfs_server_isterm(const sVFSNode *node) {
-	sServer *srv = (sServer*)node->data;
-	return srv->funcs & DRV_TERM;
-}
-
 bool vfs_server_accepts(const sVFSNode *node,uint id) {
 	sServer *srv = (sServer*)node->data;
 	if(DRV_IS_FS(srv->funcs))

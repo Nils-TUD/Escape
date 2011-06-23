@@ -45,12 +45,6 @@ void vfs_server_clientRemoved(sVFSNode *node,const sVFSNode *client);
 
 /**
  * @param node the server-node
- * @return true if its a terminal
- */
-bool vfs_server_isterm(const sVFSNode *node);
-
-/**
- * @param node the server-node
  * @param funcs the functions to check
  * @return true if the server supports the given functions
  */

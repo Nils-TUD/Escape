@@ -27,5 +27,4 @@ extern (C)
 	extern int pipe(int *readFd,int *writeFd);
 	extern int dupFd(int fd);
 	extern int redirFd(int src,int dst);
-	extern bool isterm(int fd);
 }

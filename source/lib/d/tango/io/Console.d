@@ -606,10 +606,7 @@ struct Console
                         private this (size_t handle)
                         {
                                 this.handle = cast(Handle) handle;
-                                version(Escape)
-                                	redirected = (isterm(handle) is 0);
-                                else
-                                	redirected = (isatty(handle) is 0);
+                                redirected = (isatty(handle) is 0);
                         }
                         }
         }

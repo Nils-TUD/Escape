@@ -21,57 +21,20 @@
 #include <esc/mem.h>
 #include <esc/debug.h>
 #include <esc/thread.h>
+#include <esc/conf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-#define OCC_MAP_SIZE			512
-/* TODO find a better way */
-#ifdef __mmix__
-#define PAGE_SIZE				8192
-#else
-#define PAGE_SIZE				4096
-#endif
-
-#ifdef __eco32__
-#define DEBUG_ALLOC_N_FREE		0
-#define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
-/* TODO we need the alignment */
-#define DEBUG_ADD_GUARDS		1
-#endif
-
-#ifdef __mmix__
-#define DEBUG_ALLOC_N_FREE		0
-#define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
-/* TODO we need the alignment */
-#define DEBUG_ADD_GUARDS		1
-#endif
-
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
-#define DEBUG_ADD_GUARDS		1
 #endif
 
 #define GUARD_MAGIC				0xDEADBEEF
+#define FREE_MAGIC				0xFEEEFEEE
 #define ALIGN(count,align)		(((count) + (align) - 1) & ~((align) - 1))
-
-#if DEBUG_ADD_GUARDS
-void *_malloc(size_t size);
-void *_calloc(size_t num,size_t size);
-void * _realloc(void *addr,size_t size);
-void _free(void *addr);
-#	define malloc_guard(size)			malloc(size)
-#	define calloc_guard(num,size)		calloc(num,size)
-#	define realloc_guard(addr,size)		realloc(addr,size)
-#	define free_guard(addr)				free(addr)
-#else
-#	define _malloc(size)				malloc(size)
-#	define _calloc(num,size)			calloc(num,size)
-#	define _realloc(addr,size)			realloc(addr,size)
-#	define _free(addr)					free(addr)
-#endif
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -80,15 +43,6 @@ struct sMemArea {
 	void *address;
 	sMemArea *next;
 };
-
-/* a linked list of free and usable areas. That means the areas have an address and size */
-static sMemArea *usableList = NULL;
-/* a linked list of free but not usable areas. That means the areas have no address and size */
-static sMemArea *freeList = NULL;
-/* a hashmap with occupied-lists, key is getHash(address) */
-static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
-/* total number of pages we're using */
-static size_t pageCount = 0;
 
 /**
  * Allocates a new page for areas
@@ -105,82 +59,28 @@ static bool loadNewAreas(void);
  */
 static bool loadNewSpace(size_t size);
 
-/**
- * Calculates the hash for the given address that should be used as key in occupiedMap
- *
- * @param addr the address
- * @return the key
- */
-static size_t getHash(void *addr);
+/* a linked list of free and usable areas. That means the areas have an address and size */
+static sMemArea *usableList = NULL;
+/* a linked list of free but not usable areas. That means the areas have no address and size */
+static sMemArea *freeList = NULL;
+/* total number of pages we're using */
+static size_t pageCount = 0;
+static size_t pageSize = 0;
 
 /* the lock for the heap */
 static tULock mlock = 0;
 
-#if DEBUG_ADD_GUARDS
-void *malloc_guard(size_t size) {
-	ulong *a;
-	size = ALIGN(size,sizeof(ulong));
-	a = (ulong*)_malloc(size + sizeof(ulong) * 3);
-	if(a) {
-		a[0] = GUARD_MAGIC;
-		a[1] = size;
-		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
-		return a + 2;
-	}
-	return NULL;
-}
-
-void *calloc_guard(size_t num,size_t size) {
-	ulong *a;
-	size = ALIGN(num * size,sizeof(ulong));
-	a = (ulong*)_malloc(size + sizeof(ulong) * 3);
-	if(a) {
-		a[0] = GUARD_MAGIC;
-		a[1] = size;
-		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
-		memclear(a + 2,size);
-		return a + 2;
-	}
-	return NULL;
-}
-
-void *realloc_guard(void *addr,size_t size) {
-	ulong *a = (ulong*)addr;
-	size = ALIGN(size,sizeof(ulong));
-	if(a) {
-		assert(a[-2] == GUARD_MAGIC);
-		assert(a[a[-1] / sizeof(ulong)] == GUARD_MAGIC);
-		a = _realloc(a - 2,size + sizeof(ulong) * 3);
-	}
-	else
-		a = _realloc(NULL,size + sizeof(ulong) * 3);
-	if(a) {
-		a[0] = GUARD_MAGIC;
-		a[1] = size;
-		a[size / sizeof(ulong) + 2] = GUARD_MAGIC;
-		return a + 2;
-	}
-	return NULL;
-}
-
-void free_guard(void *addr) {
-	ulong *a = (ulong*)addr;
-	if(a) {
-		assert(a[-2] == GUARD_MAGIC);
-		assert(a[a[-1] / sizeof(ulong)] == GUARD_MAGIC);
-		_free(a - 2);
-	}
-}
-#endif
-
-void *_malloc(size_t size) {
+void *malloc(size_t size) {
+	ulong *begin;
 	sMemArea *area,*prev,*narea;
-	sMemArea **list;
 
 	if(size == 0)
 		return NULL;
 
 	locku(&mlock);
+
+	/* align and we need 3 ulongs for the guards */
+	size = ALIGN(size,sizeof(ulong)) + sizeof(ulong) * 4;
 
 	/* find a suitable area */
 	prev = NULL;
@@ -246,17 +146,18 @@ void *_malloc(size_t size) {
 	}
 #endif
 
-	/* insert in occupied-map */
-	list = occupiedMap + getHash(area->address);
-	area->next = *list;
-	*list = area;
-
+	/* add guards */
+	begin = (ulong*)area->address;
+	begin[0] = (ulong)area;
+	begin[1] = size - sizeof(ulong) * 4;
+	begin[2] = GUARD_MAGIC;
+	begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
 	unlocku(&mlock);
-	return area->address;
+	return begin + 3;
 }
 
-void *_calloc(size_t num,size_t size) {
-	void *a = _malloc(num * size);
+void *calloc(size_t num,size_t size) {
+	void *a = malloc(num * size);
 	if(a == NULL)
 		return NULL;
 
@@ -264,30 +165,25 @@ void *_calloc(size_t num,size_t size) {
 	return a;
 }
 
-void _free(void *addr) {
-	sMemArea *area,*a,*prev,*next,*oprev,*nprev,*pprev,*tprev;
+void free(void *addr) {
+	ulong *begin;
+	sMemArea *area,*a,*prev,*next,*nprev,*pprev,*tprev;
 
 	/* addr may be null */
 	if(addr == NULL)
 		return;
 
+	/* check guards */
+	begin = (ulong*)addr - 3;
+	area = (sMemArea*)begin[0];
+	vassert(begin[0] != FREE_MAGIC,"Duplicate free?");
+	assert(begin[2] == GUARD_MAGIC);
+	assert(begin[begin[1] / sizeof(ulong) + 3] == GUARD_MAGIC);
+
 	locku(&mlock);
 
-	/* find the area with given address */
-	oprev = NULL;
-	area = occupiedMap[getHash(addr)];
-	while(area != NULL) {
-		if(area->address == addr)
-			break;
-		oprev = area;
-		area = area->next;
-	}
-
-	/* area not found? */
-	if(area == NULL) {
-		unlocku(&mlock);
-		return;
-	}
+	/* mark as free */
+	begin[0] = FREE_MAGIC;
 
 	/* find the previous and next free areas */
 	prev = NULL;
@@ -297,11 +193,11 @@ void _free(void *addr) {
 	nprev = NULL;
 	a = usableList;
 	while(a != NULL) {
-		if((uintptr_t)a->address + a->size == (uintptr_t)addr) {
+		if((uintptr_t)a->address + a->size == (uintptr_t)begin) {
 			prev = a;
 			pprev = tprev;
 		}
-		if((uintptr_t)a->address == (uintptr_t)addr + area->size) {
+		if((uintptr_t)a->address == (uintptr_t)begin + area->size) {
 			next = a;
 			nprev = tprev;
 		}
@@ -311,12 +207,6 @@ void _free(void *addr) {
 		tprev = a;
 		a = a->next;
 	}
-
-	/* remove area from occupied-map */
-	if(oprev)
-		oprev->next = area->next;
-	else
-		occupiedMap[getHash(addr)] = area->next;
 
 #if DEBUG_ALLOC_N_FREE
 	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
@@ -387,28 +277,25 @@ void _free(void *addr) {
 	unlocku(&mlock);
 }
 
-void *_realloc(void *addr,size_t size) {
+void *realloc(void *addr,size_t size) {
+	ulong *begin;
 	sMemArea *area,*a,*prev;
 	if(addr == NULL)
-		return _malloc(size);
+		return malloc(size);
+
+	begin = (ulong*)addr - 3;
+	area = (sMemArea*)begin[0];
+	/* check guards */
+	vassert(begin[0] != FREE_MAGIC,"Duplicate free?");
+	assert(begin[2] == GUARD_MAGIC);
+	assert(begin[begin[1] / sizeof(ulong) + 3] == GUARD_MAGIC);
 
 	locku(&mlock);
 
-	/* find the area with given address */
-	area = occupiedMap[getHash(addr)];
-	while(area != NULL) {
-		if(area->address == addr)
-			break;
-		area = area->next;
-	}
+	/* align and we need 3 ulongs for the guards */
+	size = ALIGN(size,sizeof(ulong)) + sizeof(ulong) * 4;
 
-	/* area not found? */
-	if(area == NULL) {
-		unlocku(&mlock);
-		return NULL;
-	}
-
-	/* ignore size-shrinks */
+	/* ignore shrinks */
 	if(size < area->size) {
 		unlocku(&mlock);
 		return addr;
@@ -418,7 +305,7 @@ void *_realloc(void *addr,size_t size) {
 	prev = NULL;
 	while(a != NULL) {
 		/* found the area behind? */
-		if(a->address == (uchar*)area->address + area->size) {
+		if((uintptr_t)a->address == (uintptr_t)area->address + area->size) {
 			/* if the size of both is big enough we can use them */
 			if(area->size + a->size >= size) {
 				/* space left? */
@@ -440,8 +327,13 @@ void *_realloc(void *addr,size_t size) {
 				}
 
 				area->size = size;
+				/* reset guards */
+				begin[0] = (ulong)area;
+				begin[1] = size - sizeof(ulong) * 4;
+				begin[2] = GUARD_MAGIC;
+				begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
 				unlocku(&mlock);
-				return addr;
+				return begin + 3;
 			}
 
 			/* makes no sense to continue since we've found the area behind */
@@ -454,13 +346,13 @@ void *_realloc(void *addr,size_t size) {
 	unlocku(&mlock);
 
 	/* the areas are not big enough, so allocate a new one */
-	a = _malloc(size);
+	a = malloc(size);
 	if(a == NULL)
 		return NULL;
 
 	/* copy the old data and free it */
-	memcpy(a,addr,area->size);
-	_free(addr);
+	memcpy(a,addr,area->size - sizeof(ulong) * 4);
+	free(addr);
 	return a;
 }
 
@@ -469,6 +361,10 @@ static bool loadNewSpace(size_t size) {
 	size_t count;
 	sMemArea *area;
 
+	/* determine page-size, if not already done */
+	if(pageSize == 0)
+		pageSize = getConf(CONF_PAGE_SIZE);
+
 	/* no free areas? */
 	if(freeList == NULL) {
 		if(!loadNewAreas())
@@ -476,11 +372,11 @@ static bool loadNewSpace(size_t size) {
 	}
 
 	/* check for overflow */
-	if(size + PAGE_SIZE < PAGE_SIZE)
+	if(size + pageSize < pageSize)
 		return false;
 
 	/* allocate the required pages */
-	count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
+	count = (size + pageSize - 1) / pageSize;
 	oldEnd = changeSize(count);
 	if(oldEnd == NULL)
 		return false;
@@ -489,8 +385,8 @@ static bool loadNewSpace(size_t size) {
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
 	freeList = freeList->next;
-	area->address = (void*)((uintptr_t)oldEnd * PAGE_SIZE);
-	area->size = PAGE_SIZE * count;
+	area->address = (void*)((uintptr_t)oldEnd * pageSize);
+	area->size = pageSize * count;
 	/* put area in the usable-list */
 	area->next = usableList;
 	usableList = area;
@@ -501,6 +397,10 @@ static bool loadNewAreas(void) {
 	sMemArea *area,*end;
 	void *oldEnd;
 
+	/* determine page-size, if not already done */
+	if(pageSize == 0)
+		pageSize = getConf(CONF_PAGE_SIZE);
+
 	/* allocate one page for area-structs */
 	oldEnd = changeSize(1);
 	if(oldEnd == NULL)
@@ -508,8 +408,8 @@ static bool loadNewAreas(void) {
 
 	/* determine start- and end-address */
 	pageCount++;
-	area = (sMemArea*)((uintptr_t)oldEnd * PAGE_SIZE);
-	end = area + (PAGE_SIZE / sizeof(sMemArea));
+	area = (sMemArea*)((uintptr_t)oldEnd * pageSize);
+	end = area + (pageSize / sizeof(sMemArea));
 
 	/* put all areas in the freelist */
 	freeList = area;
@@ -522,15 +422,6 @@ static bool loadNewAreas(void) {
 	}
 
 	return true;
-}
-
-static size_t getHash(void *addr) {
-	/* the algorithm distributes the entries more equally in the occupied-map. */
-	/* borrowed from java.util.HashMap :) */
-	size_t h = (size_t)addr;
-	h ^= (h >> 20) ^ (h >> 12);
-	/* note that we can use & (a-1) since OCC_MAP_SIZE = 2^x */
-	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
 }
 
 size_t heapspace(void) {
@@ -549,7 +440,6 @@ size_t heapspace(void) {
 
 void printheap(void) {
 	sMemArea *area;
-	size_t i;
 
 	printf("PageCount=%d\n",pageCount);
 	printf("UsableList:\n");
@@ -565,19 +455,6 @@ void printheap(void) {
 		printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
 		area = area->next;
 	}*/
-
-	printf("OccupiedMap:\n");
-	for(i = 0; i < OCC_MAP_SIZE; i++) {
-		area = occupiedMap[i];
-		if(area != NULL) {
-			printf("\t%d:\n",i);
-			while(area != NULL) {
-				printf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,
-						area->size,area->next);
-				area = area->next;
-			}
-		}
-	}
 }
 
 #endif

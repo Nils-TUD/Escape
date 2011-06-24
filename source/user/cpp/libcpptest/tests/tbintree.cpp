@@ -358,9 +358,31 @@ static void test_erase(void) {
 		advance(it,1);
 		t.erase(it,t.end());
 
+		it = t.find(0);
+		test_assertTrue(*it == make_pair(0,1));
+		test_assertSize(t.size(),1);
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
+	before = heapspace();
+	{
+		bintree<int,int> t;
+		t.insert(1,1);
+		t.insert(2,3);
+		t.insert(0,1);
+		t.insert(8,4);
+		t.insert(6,5);
+		t.insert(3,6);
+		t.insert(4,7);
+
+		it = t.begin();
+		advance(it,3);
+		t.erase(it,t.end());
+
 		it = t.find(2);
 		test_assertTrue(*it == make_pair(2,3));
-		test_assertSize(t.size(),1);
+		test_assertSize(t.size(),3);
 	}
 	after = heapspace();
 	test_assertSize(after,before);

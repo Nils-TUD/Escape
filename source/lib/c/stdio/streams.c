@@ -26,7 +26,7 @@ typedef void (*fConstr)(void);
 static void initStdio(void);
 static void deinitStdio(void*);
 
-fConstr stdioConstr[1] __attribute__((section(".ctors"))) = {
+fConstr stdioConstr[1] A_INIT = {
 	initStdio
 };
 

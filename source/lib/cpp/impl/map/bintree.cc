@@ -423,9 +423,15 @@ namespace std {
 	}
 	template<class Key,class T,class Cmp>
 	void bintree<Key,T,Cmp>::erase(iterator first,iterator last) {
-		while(first != last) {
-			bintree_node<Key,T,Cmp>* node = (first++).node();
-			do_erase(node);
+		/* note that we have to run to the node each time because deleted nodes might be reused for
+		 * other nodes. that is, we can't simply iterator through the sequence and delete every
+		 * node. doing so might free nodes twice. */
+		difference_type i = distance(begin(),first);
+		difference_type num = distance(first,last);
+		while(num-- > 0) {
+			iterator it = begin();
+			advance(it,i);
+			do_erase(it.node());
 		}
 	}
 	template<class Key,class T,class Cmp>

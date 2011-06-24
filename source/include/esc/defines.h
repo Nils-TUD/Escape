@@ -48,5 +48,6 @@
 #define A_ALIGNED(x)			__attribute__((aligned (x)))
 #define A_CHECKRET				__attribute__((__warn_unused_result__))
 #define A_NORETURN				__attribute__((noreturn))
+#define A_INIT					__attribute__((section(".ctors")))
 
 #endif /* DEFINES_H_ */

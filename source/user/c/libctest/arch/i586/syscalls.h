@@ -1,0 +1,12 @@
+/**
+ * $Id$
+ */
+
+#ifndef I586_LIBCTEST_SYSCALLS_H_
+#define I586_LIBCTEST_SYSCALLS_H_
+
+#define KERNEL_SPACE		0xC0000000
+#define ILLEGAL_ADDR		0x12345678
+#define HIGH_ADDR			0xFFFFFFFF
+
+#endif /* I586_LIBCTEST_SYSCALLS_H_ */

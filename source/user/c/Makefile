@@ -1,11 +1,7 @@
-ifeq ($(ARCH),eco32)
-	DIRS = $(filter-out $(wildcard *.*) shlibtest dynlink Makefile,$(wildcard *))
+ifneq ($(ARCH),i586)
+	DIRS = $(filter-out $(wildcard *.*) dynlink Makefile,$(wildcard *))
 else
-ifeq ($(ARCH),mmix)
-	DIRS = $(filter-out $(wildcard *.*) libctest shlibtest dynlink Makefile,$(wildcard *))
-else
-	DIRS = $(filter-out $(wildcard *.*) shlibtest Makefile,$(wildcard *))
-endif
+	DIRS = $(filter-out $(wildcard *.*) Makefile,$(wildcard *))
 endif
 
 .PHONY:  all clean

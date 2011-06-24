@@ -148,9 +148,17 @@ static void test_fileio_print(void) {
 	if(!test_fileio_checkPrint(res,-1,str,"09,   ff, 00001111"))
 		return;
 
-	res = snprintf(str,sizeof(str),"%p%n, %hx",0xdeadbeef,&i,0x12345678);
-	if(!test_fileio_checkPrint(res,-1,str,"dead:beef, 5678") || !test_assertUInt(i,9))
-		return;
+	res = snprintf(str,sizeof(str),"%p%zn, %hx",0xdeadbeef,&i,0x12345678);
+	if(sizeof(uintptr_t) == 4) {
+		if(!test_fileio_checkPrint(res,-1,str,"dead:beef, 5678") || !test_assertSize(i,9))
+			return;
+	}
+	else if(sizeof(uintptr_t) == 8) {
+		if(!test_fileio_checkPrint(res,-1,str,"0000:0000:dead:beef, 5678") || !test_assertSize(i,9))
+			return;
+	}
+	else
+		test_assertFalse(true);
 
 	res = snprintf(str,sizeof(str),"%Ld, %017Ld, %-*Ld",1LL,8167127123123123LL,12,-81273123LL);
 	if(!test_fileio_checkPrint(res,-1,str,"1, 08167127123123123, -81273123   "))

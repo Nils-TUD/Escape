@@ -222,28 +222,28 @@ typedef struct {
 typedef union {
 	/* for messages with integer arguments only */
 	struct {
-		uint arg1;
-		uint arg2;
-		uint arg3;
-		uint arg4;
-		uint arg5;
-		uint arg6;
+		ulong arg1;
+		ulong arg2;
+		ulong arg3;
+		ulong arg4;
+		ulong arg5;
+		ulong arg6;
 	} args;
 	/* for messages with a few integer arguments and one or two strings */
 	struct {
-		uint arg1;
-		uint arg2;
-		uint arg3;
-		uint arg4;
+		ulong arg1;
+		ulong arg2;
+		ulong arg3;
+		ulong arg4;
 		char s1[MAX_MSGSTR_LEN];
 		char s2[MAX_MSGSTR_LEN];
 	} str;
 	/* for messages with a few integer arguments and a data-part */
 	struct {
-		uint arg1;
-		uint arg2;
-		uint arg3;
-		uint arg4;
+		ulong arg1;
+		ulong arg2;
+		ulong arg3;
+		ulong arg4;
 		char d[MAX_MSG_SIZE];
 	} data;
 } sMsg;

@@ -1,12 +1,12 @@
 # general
-#ARCH = mmix
-#GCCVER = 4.6.0
-ARCH = i586
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
+#ARCH = i586
+#GCCVER = 4.4.3
 #ARCH = eco32
 #GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -187,12 +187,12 @@ endif
 
 mmix:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-		-b -s $(BUILD)/kernel.map $(BUILD)/user_ls.map
+		-b -s $(BUILD)/kernel.map $(BUILD)/user_libctest.map
 
 mmixd:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -p 1234 >/dev/null 2>&1 &
 	sleep 1;
-	/opt/mmix/bin/mmix-gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
+	/opt/mmix/bin/mmix-gdbtui --command=gdb.start --symbols $(BUILD)/driver_fs.bin
 
 testm:	all hdd prepareTest
 	$(GIMSIM) -r $(GIMMON) -m 24 -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \

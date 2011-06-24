@@ -32,8 +32,8 @@ typedef struct sRequest {
 	tTid tid;
 	sVFSNode *node;
 	uint8_t state;
-	uint val1;
-	uint val2;
+	ulong val1;
+	ulong val2;
 	size_t count;
 	void *data;
 	size_t dsize;

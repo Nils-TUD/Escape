@@ -50,7 +50,7 @@ static void test_fs(void) {
 	fs_readFile("/newdir/file1","foobar");
 	test_assertInt(link("/newdir/file1","/newdir/file2"),0);
 	test_assertInt(stat("/newdir/file1",&info1),0);
-	test_assertInt(stat("/newdir/file1",&info2),0);
+	test_assertInt(stat("/newdir/file2",&info2),0);
 	test_assertInt(memcmp(&info1,&info2,sizeof(sFileInfo)),0);
 	test_assertUInt(info1.linkCount,2);
 	test_assertInt(unlink("/newdir/file1"),0);

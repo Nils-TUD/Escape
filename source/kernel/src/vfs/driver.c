@@ -204,7 +204,7 @@ static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size) 
 		if(req->state == REQ_STATE_WAITING) {
 			sMsg *rmsg = (sMsg*)data;
 			/* an error? */
-			if(!data || size < sizeof(rmsg->args) || (int)rmsg->args.arg1 <= 0) {
+			if(!data || size < sizeof(rmsg->args) || (ssize_t)rmsg->args.arg1 <= 0) {
 				if(data && size >= sizeof(rmsg->args)) {
 					vfs_server_setReadable(drv,rmsg->args.arg2);
 					req->count = rmsg->args.arg1;

@@ -100,8 +100,8 @@ int main(int argc,const char *argv[]) {
 		}
 		while(buf->bytes == BUF_SIZE);
 
-		/* throw away the first block if its not needed */
-		if((lines - first->lines) > n) {
+		/* throw away the first blocks if they are not needed */
+		while((lines - first->lines) > n) {
 			lines -= first->lines;
 			first = first->next;
 		}

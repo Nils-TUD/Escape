@@ -513,6 +513,7 @@ static bool loadNewAreas(void) {
 
 	/* put all areas in the freelist */
 	freeList = area;
+	area->next = NULL;
 	area++;
 	while(area < end) {
 		area->next = freeList;

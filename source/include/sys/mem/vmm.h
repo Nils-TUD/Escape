@@ -50,6 +50,8 @@
 typedef struct {
 	sRegion *reg;
 	uintptr_t virt;
+	/* file for the binary (valid if >= 0) */
+	tFileNo binFile;
 } sVMRegion;
 
 /**

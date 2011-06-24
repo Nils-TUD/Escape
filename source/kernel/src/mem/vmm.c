@@ -53,7 +53,7 @@ static uintptr_t vmm_getFirstUsableAddr(sProc *p,bool textNData);
 static uintptr_t vmm_findFreeAddr(sProc *p,size_t byteCount);
 static bool vmm_extendRegions(sProc *p,size_t i);
 static sVMRegion *vmm_alloc(void);
-static void vmm_free(sVMRegion *vm);
+static void vmm_free(sVMRegion *vm,const sProc *p);
 static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,
 		uintptr_t *virt,tVMRegNo *rno);
 
@@ -146,6 +146,7 @@ tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 	vm = vmm_alloc();
 	if(vm == NULL)
 		goto errAdd;
+	vm->binFile = -1;
 	vm->reg = reg;
 	vm->virt = virt;
 	REG(p,rno) = vm;
@@ -482,7 +483,7 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 		p->sharedFrames -= reg_presentPageCount(vm->reg);
 		p->ownFrames -= stats.ptables;
 	}
-	cache_free(vm);
+	vmm_free(vm,p);
 	REG(p,reg) = NULL;
 
 	/* check wether all regions are NULL */
@@ -512,6 +513,7 @@ tVMRegNo vmm_join(const sProc *src,tVMRegNo rno,sProc *dst) {
 	nvm = vmm_alloc();
 	if(nvm == NULL)
 		return ERR_NOT_ENOUGH_MEM;
+	nvm->binFile = -1;
 	nvm->reg = vm->reg;
 	if(rno == RNO_TEXT)
 		nvm->virt = TEXT_BEGIN;
@@ -535,7 +537,7 @@ tVMRegNo vmm_join(const sProc *src,tVMRegNo rno,sProc *dst) {
 errRem:
 	reg_remFrom(vm->reg,dst);
 errVmm:
-	vmm_free(nvm);
+	vmm_free(nvm,dst);
 	return ERR_NOT_ENOUGH_MEM;
 }
 
@@ -562,6 +564,8 @@ int vmm_cloneAll(sProc *dst) {
 			size_t pageCount;
 			if(nvm == NULL)
 				goto error;
+			/* better don't share it; they may have to read in parallel */
+			nvm->binFile = -1;
 			nvm->virt = vm->virt;
 			if(vm->reg->flags & RF_SHAREABLE) {
 				reg_addTo(vm->reg,dst);
@@ -723,8 +727,6 @@ ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
 				virt = vm->virt + ROUNDUP(oldSize);
 			stats = paging_mapTo(p->pagedir,virt,NULL,amount,mapFlags);
 			p->ownFrames += stats.frames + stats.ptables;
-			/* now clear the memory */
-			memclear((void*)virt,PAGE_SIZE * amount);
 		}
 		else {
 			if(vm->reg->flags & RF_GROWS_DOWN) {
@@ -834,33 +836,32 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 	tPid pid = t->proc->pid;
 	sFileInfo info;
 	void *tempBuf;
-	tFileNo file;
 	sSLNode *n;
 	tFrameNo frame;
 	uintptr_t temp;
 	uint mapFlags;
 
-	file = vfs_real_openInode(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
-	if(file < 0) {
-		err = file;
-		goto error;
+	if(vm->binFile < 0) {
+		vm->binFile = vfs_real_openInode(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
+		if(vm->binFile < 0) {
+			err = vm->binFile;
+			goto error;
+		}
 	}
 
-	/* file not present or modified? */
-	if((err = vfs_fstat(pid,file,&info)) < 0 || info.modifytime != vm->reg->binary.modifytime)
-		goto errorClose;
-	if((err = vfs_seek(pid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET)) < 0)
-		goto errorClose;
+	/* note that we currently ignore that the file might have changed in the meantime */
+	if((err = vfs_seek(pid,vm->binFile,vm->reg->binOffset + (addr - vm->virt),SEEK_SET)) < 0)
+		goto error;
 
 	/* first read into a temp-buffer because we can't mark the page as present until
 	 * its read from disk. and we can't use a temporary mapping when switching
 	 * threads. */
-	tempBuf = cache_alloc(loadCount);
+	tempBuf = cache_alloc(PAGE_SIZE);
 	if(tempBuf == NULL) {
 		err = ERR_NOT_ENOUGH_MEM;
-		goto errorClose;
+		goto error;
 	}
-	if((err = vfs_readFile(pid,file,tempBuf,loadCount)) < 0)
+	if((err = vfs_readFile(pid,vm->binFile,tempBuf,loadCount)) < 0)
 		goto errorFree;
 
 	/* ensure that a frame is available; note that its easy here since no one else can demand load
@@ -885,7 +886,6 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 
 	/* free resources not needed anymore */
 	cache_free(tempBuf);
-	vfs_closeFile(pid,file);
 
 	/* map into all pagedirs */
 	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
@@ -904,8 +904,6 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 
 errorFree:
 	cache_free(tempBuf);
-errorClose:
-	vfs_closeFile(pid,file);
 error:
 #if DEBUGGING
 	vid_printf("Demandload for proc %s: %s (%d)\n",t->proc->command,strerror(err),err);
@@ -963,7 +961,9 @@ static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end) {
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *reg = REG(p,i);
 		if(reg != NULL) {
-			if(OVERLAPS(reg->virt,reg->virt + ROUNDUP(reg->reg->byteCount),start,end))
+			uintptr_t rstart = reg->virt;
+			uintptr_t rend = reg->virt + ROUNDUP(reg->reg->byteCount);
+			if(OVERLAPS(rstart,rend,start,end))
 				return reg;
 		}
 	}
@@ -1010,7 +1010,11 @@ static sVMRegion *vmm_alloc(void) {
 	return cache_alloc(sizeof(sVMRegion));
 }
 
-static void vmm_free(sVMRegion *vm) {
+static void vmm_free(sVMRegion *vm,const sProc *p) {
+	if(vm->binFile >= 0) {
+		vfs_closeFile(p->pid,vm->binFile);
+		vm->binFile = -1;
+	}
 	cache_free(vm);
 }
 

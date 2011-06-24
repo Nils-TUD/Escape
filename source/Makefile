@@ -23,7 +23,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 # simulators
 KVM = -enable-kvm
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 16 -localtime
+QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
@@ -187,7 +187,7 @@ endif
 
 mmix:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-		-b -s $(BUILD)/kernel.map $(BUILD)/user_test.map
+		-b -s $(BUILD)/kernel.map $(BUILD)/driver_vterm.map
 
 mmixd:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -p 1234 >/dev/null 2>&1 &

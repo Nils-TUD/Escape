@@ -127,8 +127,8 @@ int shell_readLine(char *buffer,size_t max) {
 		/* use read to interrupt for signals; ensure that stdout is flushed */
 		fflush(stdout);
 		/* stop if we were unable to read from stdin */
-		if((res = read(STDIN_FILENO,&c,1)) < 0 && res != ERR_INTERRUPTED)
-			return res;
+		if((c = fgetc(stdin)) == EOF)
+			return ferror(stdin);
 		/* maybe we've received a ^C. if so do a reset */
 		if(resetReadLine) {
 			i = 0;

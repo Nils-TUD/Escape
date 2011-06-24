@@ -36,10 +36,6 @@
 
 #include "set1.h"
 
-#define BUF_SIZE					128
-#define TIMEOUT						60
-#define SLEEP_TIME					20
-
 /* io-ports */
 #define IOPORT_PIC					0x20
 #define IOPORT_KB_DATA				0x60
@@ -71,9 +67,12 @@
 
 #define KB_MOUSE_LOCK				0x1
 
-/**
- * The keyboard-interrupt handler
- */
+#define BUF_SIZE					128
+#define SC_BUF_SIZE					16
+#define TIMEOUT						60
+#define SLEEP_TIME					20
+
+static void kbStartDbgConsole(void);
 static void kbIntrptHandler(int sig);
 static void kb_waitOutBuf(void);
 static void kb_waitInBuf(void);
@@ -81,8 +80,9 @@ static void kb_waitInBuf(void);
 /* file-descriptor for ourself */
 static sMsg msg;
 static sRingBuf *rbuf;
-static sRingBuf *ibuf;
-static bool moving = false;
+static uint8_t scBuf[SC_BUF_SIZE];
+static size_t scReadPos = 0;
+static size_t scWritePos = 0;
 
 int main(void) {
 	tFD id;
@@ -91,9 +91,8 @@ int main(void) {
 
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
-	ibuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
-	if(rbuf == NULL || ibuf == NULL)
-		error("Unable to create the ring-buffers");
+	if(rbuf == NULL)
+		error("Unable to create the ring-buffer");
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_PIC) < 0)
@@ -194,12 +193,22 @@ int main(void) {
 	while(1) {
 		tFD fd;
 
-		/* move keycodes (we can't access ibuf while doing this) */
-		moving = true;
-		rb_move(rbuf,ibuf,rb_length(ibuf));
-		if(rb_length(rbuf) > 0)
-			fcntl(id,F_SETDATA,true);
-		moving = false;
+		/* translate scancodes to keycodes */
+		if(scReadPos != scWritePos) {
+			while(scReadPos != scWritePos) {
+				sKbData data;
+				if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scBuf[scReadPos])) {
+					/* F12 starts the kernel-debugging-console */
+					if(!data.isBreak && data.keycode == VK_F12)
+						kbStartDbgConsole();
+					else
+						rb_write(rbuf,&data);
+				}
+				scReadPos = (scReadPos + 1) % SC_BUF_SIZE;
+			}
+			if(rb_length(rbuf) > 0)
+				fcntl(id,F_SETDATA,true);
+		}
 
 		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
@@ -237,54 +246,39 @@ int main(void) {
 	releaseIOPort(IOPORT_PIC);
 	releaseIOPort(IOPORT_KB_DATA);
 	releaseIOPort(IOPORT_KB_CTRL);
-	rb_destroy(ibuf);
 	rb_destroy(rbuf);
 	close(id);
 
 	return EXIT_SUCCESS;
 }
 
-static void kbIntrptHandler(int sig) {
-	uint8_t scanCode;
-	sKbData data;
-	UNUSED(sig);
+static void kbStartDbgConsole(void) {
+	/* switch to vga-text-mode */
+	sVM86Regs vmregs;
+	memclear(&vmregs,sizeof(vmregs));
+	vmregs.ax = 0x2;
+	vm86int(0x10,&vmregs,NULL,0);
 
+	/* start debugger */
+	debug();
+
+	/* restore video-mode */
+	/* TODO this is not perfect since it causes problems when we're in GUI-mode.
+	 * But its for debugging, so its ok, I think :) */
+	tFD fd = open("/dev/vterm0",IO_WRITE);
+	if(fd >= 0) {
+		sendRecvMsgData(fd,MSG_VT_ENABLE,NULL,0);
+		close(fd);
+	}
+}
+
+static void kbIntrptHandler(int sig) {
+	UNUSED(sig);
 	if(!(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
 		return;
-	scanCode = inByte(IOPORT_KB_DATA);
-	/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
-	/* so, simply skip the scancode in this case */
-	if(!moving) {
-		if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
-#if DEBUGGING
-			/* F12 starts the kernel-debugging-console */
-			if(!data.isBreak && data.keycode == VK_F12) {
-				/* switch to vga-text-mode */
-				sVM86Regs vmregs;
-				memclear(&vmregs,sizeof(vmregs));
-				vmregs.ax = 0x2;
-				vm86int(0x10,&vmregs,NULL,0);
 
-				/* start debugger */
-				debug();
-
-				/* restore video-mode */
-				/* TODO this is not perfect since it causes problems when we're in GUI-mode.
-				 * But its for debugging, so its ok, I think :) */
-				tFD fd = open("/dev/vterm0",IO_WRITE);
-				if(fd >= 0) {
-					sendRecvMsgData(fd,MSG_VT_ENABLE,NULL,0);
-					close(fd);
-				}
-				return;
-			}
-#endif
-			/* write in buffer */
-			rb_write(ibuf,&data);
-		}
-	}
-	/* ack scancode
-	outByte(IOPORT_PIC,PIC_ICW1);*/
+	scBuf[scWritePos] = inByte(IOPORT_KB_DATA);
+	scWritePos = (scWritePos + 1) % SC_BUF_SIZE;
 }
 
 static void kb_waitOutBuf(void) {

@@ -44,6 +44,7 @@
 #define KEYBOARD_IEN		0x02
 
 #define BUF_SIZE			128
+#define SC_BUF_SIZE			16
 #define TIMEOUT				60
 #define SLEEP_TIME			20
 
@@ -51,9 +52,10 @@ static void kbIntrptHandler(int sig);
 
 static sMsg msg;
 static sRingBuf *rbuf;
-static sRingBuf *ibuf;
-static bool moving = false;
 static uint64_t *kbRegs;
+static uint8_t scBuf[SC_BUF_SIZE];
+static size_t scReadPos = 0;
+static size_t scWritePos = 0;
 
 int main(void) {
 	tFD id;
@@ -65,9 +67,8 @@ int main(void) {
 
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
-	ibuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
-	if(rbuf == NULL || ibuf == NULL)
-		error("Unable to create the ring-buffers");
+	if(rbuf == NULL)
+		error("Unable to create the ring-buffer");
 
 	/* we want to get notified about keyboard interrupts */
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
@@ -84,12 +85,23 @@ int main(void) {
 	while(1) {
 		tFD fd;
 
-		/* move keycodes (we can't access ibuf while doing this) */
-		moving = true;
-		rb_move(rbuf,ibuf,rb_length(ibuf));
-		if(rb_length(rbuf) > 0)
-			fcntl(id,F_SETDATA,true);
-		moving = false;
+		/* translate scancodes to keycodes */
+		if(scReadPos != scWritePos) {
+			while(scReadPos != scWritePos) {
+				sKbData data;
+				if(kb_set2_getKeycode(&data.isBreak,&data.keycode,scBuf[scReadPos])) {
+					if(!data.isBreak && data.keycode == VK_F12) {
+						debug();
+						kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
+					}
+					else
+						rb_write(rbuf,&data);
+				}
+				scReadPos = (scReadPos + 1) % SC_BUF_SIZE;
+			}
+			if(rb_length(rbuf) > 0)
+				fcntl(id,F_SETDATA,true);
+		}
 
 		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
@@ -124,31 +136,13 @@ int main(void) {
 	}
 
 	/* clean up */
-	rb_destroy(ibuf);
 	rb_destroy(rbuf);
 	close(id);
 	return EXIT_SUCCESS;
 }
 
 static void kbIntrptHandler(int sig) {
-	uint8_t scanCode;
-	sKbData data;
 	UNUSED(sig);
-
-	scanCode = kbRegs[KEYBOARD_DATA];
-	/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
-	/* so, simply skip the scancode in this case */
-	if(!moving) {
-		if(kb_set2_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
-			/* F12 starts the kernel-debugging-console */
-			if(!data.isBreak && data.keycode == VK_F12) {
-				/* start debugger */
-				debug();
-				kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
-				return;
-			}
-			/* write in buffer */
-			rb_write(ibuf,&data);
-		}
-	}
+	scBuf[scWritePos] = kbRegs[KEYBOARD_DATA];
+	scWritePos = (scWritePos + 1) % SC_BUF_SIZE;
 }

@@ -441,6 +441,15 @@ tFrameNo paging_getFrameNo(tPageDir pdir,uintptr_t virt) {
 	return pt->frameNumber;
 }
 
+tFrameNo paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
+	UNUSED(regFlags);
+	tFrameNo frame = pmem_allocate();
+	uintptr_t temp = paging_mapToTemp(&frame,1);
+	memcpy((void*)temp,buffer,loadCount);
+	paging_unmapFromTemp(1);
+	return frame;
+}
+
 sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share) {
 	sAllocStats stats = {0,0};

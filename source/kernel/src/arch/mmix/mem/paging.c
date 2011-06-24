@@ -24,6 +24,7 @@
 #include <sys/mem/cache.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
+#include <sys/cpu.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <sys/printf.h>
@@ -90,10 +91,10 @@ void paging_init(void) {
 	/* create context for the first process */
 	firstCon.addrSpace = aspace_alloc();
 	/* set value for rV: b1 = 2, b2 = 4, b3 = 6, b4 = 0, page-size = 2^13 */
-	firstCon.rV = 0x24600DUL << 40 | (rootLoc & ~DIR_MAPPED_SPACE) | (firstCon.addrSpace->no << 3);
+	firstCon.rv = 0x24600DUL << 40 | (rootLoc & ~DIR_MAPPED_SPACE) | (firstCon.addrSpace->no << 3);
 	context = &firstCon;
 	/* enable paging */
-	paging_setrV(firstCon.rV);
+	paging_setrV(firstCon.rv);
 }
 
 tPageDir paging_getCur(void) {
@@ -217,8 +218,8 @@ ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
 	/* init context */
 	con->addrSpace = aspace_alloc();
 	con->ptables = 0;
-	con->rV = context->rV & 0xFFFFFF0000000000;
-	con->rV |= (rootLoc & ~DIR_MAPPED_SPACE) | (con->addrSpace->no << 3);
+	con->rv = context->rv & 0xFFFFFF0000000000;
+	con->rv |= (rootLoc & ~DIR_MAPPED_SPACE) | (con->addrSpace->no << 3);
 
 	/* allocate and clear kernel-stack */
 	*stackFrame = pmem_allocate();
@@ -233,7 +234,7 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	assert(pdir != context);
 	/* don't free kernel-stack-frame; its done in thread_kill() */
 	/* free page-dir */
-	pmem_freeContiguous((pdir->rV >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
+	pmem_freeContiguous((pdir->rv >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
 	stats.ptables += SEGMENT_COUNT * PTS_PER_SEGMENT;
 	cache_free(pdir);
 	/* we have to ensure that no tc-entries of the current process are present. otherwise we could
@@ -254,6 +255,17 @@ tFrameNo paging_getFrameNo(tPageDir pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
 	assert(pte & PTE_EXISTS);
 	return PTE_FRAMENO(pte);
+}
+
+tFrameNo paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
+	/* copy into frame */
+	tFrameNo frame = pmem_allocate();
+	uintptr_t addr = frame * PAGE_SIZE | DIR_MAPPED_SPACE;
+	memcpy((void*)addr,buffer,loadCount);
+	/* if its an executable region, we have to syncid the memory afterwards */
+	if(regFlags & RF_EXECUTABLE)
+		cpu_syncid(addr,addr + loadCount);
+	return frame;
 }
 
 sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,
@@ -414,8 +426,8 @@ sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool free
 
 static uint64_t *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create,size_t *createdPts) {
 	ulong j,i = virt >> 61;
-	ulong size1 = SEGSIZE(pdir->rV,i + 1);
-	ulong size2 = SEGSIZE(pdir->rV,i);
+	ulong size1 = SEGSIZE(pdir->rv,i + 1);
+	ulong size2 = SEGSIZE(pdir->rv,i);
 	uint64_t c,pageNo = PAGE_NO(virt);
 	uint64_t limit = 1UL << (10 * (size1 - size2));
 	if(size1 < size2 || pageNo >= limit)
@@ -427,7 +439,7 @@ static uint64_t *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create,size_t 
 		pageNo /= PT_ENTRY_COUNT;
 	}
 	pageNo = PAGE_NO(virt);
-	c = ((pdir->rV & 0xFFFFFFFFFF) >> 13) + size2 + j;
+	c = ((pdir->rv & 0xFFFFFFFFFF) >> 13) + size2 + j;
 	for(; j > 0; j--) {
 		ulong ax = (pageNo >> (10 * j)) & 0x3FF;
 		uint64_t *ptpAddr = (uint64_t*)(DIR_MAPPED_SPACE | ((c << 13) + (ax << 3)));
@@ -518,7 +530,7 @@ static size_t paging_remEmptyPts(tPageDir pdir,uintptr_t virt) {
 		pageNo /= PT_ENTRY_COUNT;
 	}
 	pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
-	uint64_t c = ((pdir->rV & 0xFFFFFFFFFF) >> 13) + SEGSIZE(pdir->rV,i) + j;
+	uint64_t c = ((pdir->rv & 0xFFFFFFFFFF) >> 13) + SEGSIZE(pdir->rv,i) + j;
 	return paging_removePts(pdir,pageNo,c,j,0);
 }
 
@@ -562,11 +574,11 @@ void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
 void paging_printPDir(tPageDir pdir,uint parts) {
 	UNUSED(parts);
 	size_t i,j;
-	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rV & 0xFFFFFFE000);
+	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rv & 0xFFFFFFE000);
 	/* go through all page-tables in the root-location */
-	vid_printf("root-location @ %p [n=%X]:\n",root,(pdir->rV & 0x1FF8) >> 3);
+	vid_printf("root-location @ %p [n=%X]:\n",root,(pdir->rv & 0x1FF8) >> 3);
 	for(i = 0; i < SEGMENT_COUNT; i++) {
-		ulong segSize = SEGSIZE(context->rV,i + 1) - SEGSIZE(context->rV,i);
+		ulong segSize = SEGSIZE(context->rv,i + 1) - SEGSIZE(context->rv,i);
 		uintptr_t addr = (i << 61);
 		vid_printf("segment %zu:\n",i);
 		for(j = 0; j < segSize; j++) {
@@ -656,9 +668,9 @@ static size_t paging_dbg_getPageCountOf(uint64_t *pt,size_t level) {
 
 size_t paging_dbg_getPageCount(void) {
 	size_t i,j,count = 0;
-	uintptr_t root = DIR_MAPPED_SPACE | (context->rV & 0xFFFFFFE000);
+	uintptr_t root = DIR_MAPPED_SPACE | (context->rv & 0xFFFFFFE000);
 	for(i = 0; i < SEGMENT_COUNT; i++) {
-		ulong segSize = SEGSIZE(context->rV,i + 1) - SEGSIZE(context->rV,i);
+		ulong segSize = SEGSIZE(context->rv,i + 1) - SEGSIZE(context->rv,i);
 		for(j = 0; j < segSize; j++) {
 			count += paging_dbg_getPageCountOf((uint64_t*)root,j);
 			root += PAGE_SIZE;

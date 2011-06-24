@@ -834,11 +834,9 @@ static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr) {
 static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t loadCount) {
 	int err;
 	tPid pid = t->proc->pid;
-	sFileInfo info;
 	void *tempBuf;
 	sSLNode *n;
 	tFrameNo frame;
-	uintptr_t temp;
 	uint mapFlags;
 
 	if(vm->binFile < 0) {
@@ -873,21 +871,18 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 			!(vm->reg->pageFlags[(addr - vm->virt) / PAGE_SIZE] & PF_DEMANDLOAD))
 		goto errorFree;
 
-	frame = pmem_allocate();
-	mapFlags = PG_PRESENT;
-	if(vm->reg->flags & RF_WRITABLE)
-		mapFlags |= PG_WRITABLE;
-	if(vm->reg->flags & RF_EXECUTABLE)
-		mapFlags |= PG_EXECUTABLE;
 	/* copy into frame */
-	temp = paging_mapToTemp(&frame,1);
-	memcpy((void*)temp,tempBuf,loadCount);
-	paging_unmapFromTemp(1);
+	frame = paging_demandLoad(tempBuf,loadCount,vm->reg->flags);
 
 	/* free resources not needed anymore */
 	cache_free(tempBuf);
 
 	/* map into all pagedirs */
+	mapFlags = PG_PRESENT;
+	if(vm->reg->flags & RF_WRITABLE)
+		mapFlags |= PG_WRITABLE;
+	if(vm->reg->flags & RF_EXECUTABLE)
+		mapFlags |= PG_EXECUTABLE;
 	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */

@@ -124,7 +124,7 @@
 
 typedef struct {
 	sAddressSpace *addrSpace;
-	uint64_t rV;
+	uint64_t rv;
 	ulong ptables;
 } sContext;
 

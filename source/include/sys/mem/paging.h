@@ -170,6 +170,17 @@ bool paging_isPresent(tPageDir pdir,uintptr_t virt);
 tFrameNo paging_getFrameNo(tPageDir pdir,uintptr_t virt);
 
 /**
+ * Finishes the demand-loading-process by copying <loadCount> bytes from <buffer> into a new
+ * frame and returning the frame-number
+ *
+ * @param buffer the buffer
+ * @param loadCount the number of bytes to copy
+ * @param regFlags the flags of the affected region
+ * @return the frame-number
+ */
+tFrameNo paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags);
+
+/**
  * Clones <count> pages at <virtSrc> to <virtDst> from <src> into <dst>. That means
  * the flags are copied. If <share> is true, the frames will be copied as well. Otherwise new
  * frames will be allocated if the page in <src> is present. Additionally, if <share> is false

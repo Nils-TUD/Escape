@@ -108,7 +108,6 @@ int shell_executeCmd(char *line,bool isFile) {
 int shell_readLine(char *buffer,size_t max) {
 	size_t cursorPos = 0;
 	size_t i = 0;
-	ssize_t res;
 	resetReadLine = false;
 
 	/* disable "readline", enable "echo", enable "navi" (just to be sure) */

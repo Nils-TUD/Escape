@@ -19,9 +19,6 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#ifdef __i386__
-#include <arch/i586/ports.h>
-#endif
 #include <esc/proc.h>
 #include <esc/keycodes.h>
 #include <esc/driver.h>
@@ -53,8 +50,6 @@
 							"0\x17" \
 							".\x17" \
 							"3\x17"
-
-static bool reqPorts = false;
 
 bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
 	size_t i,len;
@@ -88,15 +83,6 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
 	vt->navigation = true;
 	vt->printToRL = false;
 	vt->printToCom1 = getConf(CONF_LOG);
-	if(vt->printToCom1 && !reqPorts) {
-		/* TODO */
-#ifdef __i386__
-		/* request io-ports for qemu and bochs */
-		if(requestIOPort(0xe9) < 0 || requestIOPort(0x3f8) < 0 || requestIOPort(0x3fd) < 0)
-			error("Unable to request ports for qemu/bochs");
-#endif
-		reqPorts = true;
-	}
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;
 	vt->shellPid = 0;

@@ -20,9 +20,7 @@
 #include <esc/common.h>
 #include <esc/keycodes.h>
 #include <esc/io.h>
-#ifdef __i386__
-#include <arch/i586/ports.h>
-#endif
+#include <esc/log.h>
 #include <esc/messages.h>
 #include <esc/esccodes.h>
 #include <stdlib.h>
@@ -136,17 +134,8 @@ void vterm_putchar(sVTerm *vt,char c) {
 		vt->row--;
 	}
 
-	if(vt->printToCom1) {
-		/* TODO */
-#ifdef __i386__
-		/* write to bochs(0xe9) / qemu(0x3f8) console */
-		/* a few characters don't make much sense here */
-		if(c != '\r' && c != '\a' && c != '\b' && c != '\t') {
-			while((inByte(0x3f8 + 5) & 0x20) == 0);
-			outByte(0x3f8,c);
-		}
-#endif
-	}
+	if(vt->printToCom1 && c != '\r' && c != '\a' && c != '\b' && c != '\t')
+		logc(c);
 
 	switch(c) {
 		case '\n':

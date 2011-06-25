@@ -40,10 +40,6 @@
 #define VESA_DRIVER		"/dev/vesatext"
 
 /**
- * Handles shortcuts
- */
-static bool vterm_handleShortcut(sVTerm *vt,uchar keycode,uchar modifier,char c);
-/**
  * Updates the cursor
  */
 static void vterm_setCursor(sVTerm *vt);
@@ -102,7 +98,6 @@ bool vterm_initAll(tFD *ids,sVTermCfg *cfg) {
 		if(!vterm_init(vterms + i,&vidSize,vidFd,speakerFd))
 			return false;
 
-		vterms[i].handlerShortcut = vterm_handleShortcut;
 		vterms[i].setCursor = vterm_setCursor;
 	}
 
@@ -168,32 +163,6 @@ void vterm_update(sVTerm *vt) {
 	vt->upStart = 0;
 	vt->upLength = 0;
 	vt->upScroll = 0;
-}
-
-static bool vterm_handleShortcut(sVTerm *vt,uchar keycode,uchar modifier,char c) {
-	UNUSED(c);
-	if(modifier & STATE_CTRL) {
-		switch(keycode) {
-			case VK_C:
-				/* send interrupt to shell */
-				if(vt->shellPid) {
-					/* data=1 to distinguish it from other SIG_INTRPT-sources */
-					/* TODO */
-					if(sendSignalTo(vt->shellPid,SIG_INTRPT) < 0)
-						printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
-				}
-				return false;
-			case VK_D:
-				if(vt->readLine) {
-					vt->inbufEOF = true;
-					vterm_rlFlushBuf(vt);
-				}
-				if(rb_length(vt->inbuf) == 0)
-					fcntl(vt->sid,F_SETDATA,true);
-				return false;
-		}
-	}
-	return true;
 }
 
 static void vterm_setCursor(sVTerm *vt) {

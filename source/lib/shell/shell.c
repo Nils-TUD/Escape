@@ -24,11 +24,12 @@
 #include <esc/keycodes.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
+#include <esc/esccodes.h>
+#include <esc/thread.h>
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <esc/esccodes.h>
 #include <ctype.h>
 #include <errors.h>
 
@@ -123,11 +124,10 @@ int shell_readLine(char *buffer,size_t max) {
 	while(i < max) {
 		char c = 0;
 		int cmd,n1,n2,n3;
-		/* use read to interrupt for signals; ensure that stdout is flushed */
+		/* ensure that stdout is flushed and wait until input is available; wait gets interrupted
+		 * for signals; fgetc() won't (more precisely: it is, but it repeats the call) */
 		fflush(stdout);
-		/* stop if we were unable to read from stdin */
-		if((c = fgetc(stdin)) == EOF)
-			return ferror(stdin);
+		wait(EV_DATA_READABLE,STDIN_FILENO);
 		/* maybe we've received a ^C. if so do a reset */
 		if(resetReadLine) {
 			i = 0;
@@ -137,6 +137,9 @@ int shell_readLine(char *buffer,size_t max) {
 			shell_prompt();
 			continue;
 		}
+		/* stop if we were unable to read from stdin */
+		if((c = fgetc(stdin)) == EOF)
+			return ferror(stdin);
 		if(c != '\033')
 			continue;
 		cmd = freadesc(stdin,&n1,&n2,&n3);

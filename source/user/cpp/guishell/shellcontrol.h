@@ -36,8 +36,6 @@ using namespace gui;
 
 class ShellApplication;
 
-bool handleShortcut(sVTerm *vt,uchar keycode,uchar modifier,char c);
-
 class ShellControl : public Control {
 	friend class ShellApplication;
 
@@ -81,8 +79,6 @@ public:
 		if(!vterm_init(_vt,&size,-1,speakerFd))
 			error("Unable to init vterm");
 		_vt->active = true;
-
-		_vt->handlerShortcut = handleShortcut;
 
 		// request ports for qemu and bochs
 		if(requestIOPort(0xe9) < 0)

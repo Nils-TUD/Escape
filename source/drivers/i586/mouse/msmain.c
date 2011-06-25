@@ -29,10 +29,6 @@
 #include <stdlib.h>
 #include <errors.h>
 
-/* FIXME: THIS MAY CAUSE TROUBLE SINCE WE'RE USING AN IO-PORT THAT IS USED BY THE
- * KEYBOARD-DRIVER, TOO */
-/* we need some kind of locking-mechanism here to fix it.. */
-
 /* io ports */
 #define IOPORT_KB_CTRL				0x64
 #define IOPORT_KB_DATA				0x60

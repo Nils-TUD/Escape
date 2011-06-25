@@ -80,6 +80,7 @@ extern int thread_initSave(sThreadRegs *saveArea,void *newStack);
 extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tTid tid);
 
 int thread_initArch(sThread *t) {
+	t->kstackFrame = pmem_allocate();
 	t->archAttr.tempStack = -1;
 	return 0;
 }

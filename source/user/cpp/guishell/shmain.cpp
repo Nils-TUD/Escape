@@ -48,7 +48,7 @@ static int childPid = -1;
  */
 static int shell_main(void);
 
-static void childKiller(void*) {
+static void childKiller(void *) {
 	if(childPid >= 0)
 		(void)sendSignalTo(childPid,SIG_KILL);
 }
@@ -135,10 +135,8 @@ int main(int argc,char **argv) {
 	delete drvPath;
 
 	/* give vterm our pid */
-	tPid pid = getpid();
-	sendMsgData(fin,MSG_VT_SHELLPID,&pid,sizeof(tPid));
-	/* discard response */
-	receive(fin,NULL,NULL,0);
+	long pid = getpid();
+	sendRecvMsgData(fin,MSG_VT_SHELLPID,&pid,sizeof(long));
 
 	return shell_main();
 }
@@ -162,6 +160,8 @@ static int shell_main(void) {
 		// read command
 		if(shell_readLine(buffer,MAX_CMD_LEN) < 0)
 			error("Unable to read from STDIN");
+		if(feof(stdin))
+			break;
 
 		// execute it
 		shell_executeCmd(buffer,false);

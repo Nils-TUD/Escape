@@ -42,10 +42,15 @@ ssize_t sendRecvMsgData(tFD fd,tMsgId id,const void *data,size_t size) {
 	tMsgId mid;
 	sMsg msg;
 	int res;
-	if(data)
+	if(data) {
 		memcpy(msg.data.d,data,size);
-	if((res = send(fd,id,data,size)) < 0)
-		return res;
+		if((res = send(fd,id,&msg,sizeof(msg.data))) < 0)
+			return res;
+	}
+	else {
+		if((res = send(fd,id,NULL,0)) < 0)
+			return res;
+	}
 	if((res = receive(fd,&mid,&msg,sizeof(msg))) < 0)
 		return res;
 	return (ssize_t)msg.args.arg1;

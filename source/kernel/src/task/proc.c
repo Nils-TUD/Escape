@@ -65,8 +65,6 @@ static sProc *pidToProc[MAX_PROC_COUNT];
 static tPid nextPid = 1;
 
 void proc_init(void) {
-	sThread *t;
-	tFrameNo stackFrame;
 	size_t i;
 	
 	/* init the first process */
@@ -106,17 +104,6 @@ void proc_init(void) {
 		util_panic("Unable to create initial thread-list");
 	if(!sll_append(p->threads,thread_init(p)))
 		util_panic("Unable to append the initial thread");
-
-	/* setup kernel-stack for us */
-	stackFrame = pmem_allocate();
-	/* TODO */
-#ifndef __mmix__
-	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-#endif
-
-	/* set kernel-stack for first thread */
-	t = (sThread*)sll_get(p->threads,0);
-	t->kstackFrame = stackFrame;
 
 	/* add to procs */
 	if((procs = sll_create()) == NULL)

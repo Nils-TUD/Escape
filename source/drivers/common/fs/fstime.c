@@ -5,15 +5,13 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <time.h>
-/* TODO better solution! */
-#include "../../../lib/c/time/timeintern.h"
+#include "fstime.h"
 
 static tFD timeFd = -1;
 
 tTime timestamp(void) {
-	struct tm time;
+	struct tm t;
 	/* open CMOS and read date */
-	int err;
 	if(timeFd < 0) {
 		/* not already open, so do it */
 		timeFd = open(TIME_DRIVER,IO_READ);
@@ -25,7 +23,7 @@ tTime timestamp(void) {
 		if(seek(timeFd,0,SEEK_SET) < 0)
 			return 0;
 	}
-	if(RETRY(read(timeFd,&time,sizeof(struct tm))) < 0)
+	if(RETRY(read(timeFd,&t,sizeof(struct tm))) < 0)
 		return 0;
-	return mktime(&time);
+	return mktime(&t);
 }

@@ -55,29 +55,6 @@ const Color ShellControl::FGCOLOR = Color(0x0,0x0,0x0);
 const Color ShellControl::BORDER_COLOR = Color(0x0,0x0,0x0);
 const Color ShellControl::CURSOR_COLOR = Color(0x0,0x0,0x0);
 
-bool handleShortcut(sVTerm *vt,uchar keycode,uchar modifier,char c) {
-	UNUSED(c);
-	if(modifier & STATE_CTRL) {
-		switch(keycode) {
-			case VK_C:
-				/* send interrupt to shell (our parent) */
-				/* data=1 to distinguish it from other SIG_INTRPT-sources */
-				if(sendSignalTo(getppid(),SIG_INTRPT) < 0)
-					printe("Unable to send SIG_INTRPT to %d",getppid());
-				return false;
-			case VK_D:
-				if(vt->readLine) {
-					vt->inbufEOF = true;
-					vterm_rlFlushBuf(vt);
-				}
-				if(rb_length(vt->inbuf) == 0)
-					fcntl(vt->sid,F_SETDATA,true);
-				return false;
-		}
-	}
-	return true;
-}
-
 void ShellControl::paint(Graphics &g) {
 	// fill bg
 	g.setColor(BGCOLOR);

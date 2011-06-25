@@ -108,9 +108,9 @@ void ShellApplication::driverMain() {
 				_msg.args.arg1 = 0;
 				if(data)
 					_msg.args.arg1 = rb_readn(inbuf,data,count);
-				_msg.args.arg2 = vt->inbufEOF || rb_length(inbuf) > 0;
 				if(rb_length(inbuf) == 0)
 					vt->inbufEOF = false;
+				_msg.args.arg2 = vt->inbufEOF || rb_length(inbuf) > 0;
 				send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.args));
 				if(data) {
 					send(fd,MSG_DRV_READ_RESP,data,count);

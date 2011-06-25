@@ -54,7 +54,6 @@ struct sVTerm {
 	tFD sid;
 	char name[MAX_VT_NAME_LEN + 1];
 	/* function-pointers */
-	fHandleShortcut handlerShortcut;
 	fSetCursor setCursor;
 	/* number of cols/rows on the screen */
 	uchar cols;

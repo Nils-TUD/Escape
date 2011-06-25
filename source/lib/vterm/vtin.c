@@ -63,9 +63,24 @@ void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	}
 
 	if(c == 0 || (modifier & (STATE_CTRL | STATE_ALT))) {
-		if(vt->handlerShortcut) {
-			if(!vt->handlerShortcut(vt,keycode,modifier,c))
-				return;
+		if(modifier & STATE_CTRL) {
+			switch(keycode) {
+				case VK_C:
+					/* send interrupt to shell */
+					if(vt->shellPid) {
+						if(sendSignalTo(vt->shellPid,SIG_INTRPT) < 0)
+							printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
+					}
+					return;
+				case VK_D:
+					if(vt->readLine) {
+						vt->inbufEOF = true;
+						vterm_rlFlushBuf(vt);
+					}
+					if(rb_length(vt->inbuf) == 0)
+						fcntl(vt->sid,F_SETDATA,true);
+					return;
+			}
 		}
 
 		/* in reading mode? */

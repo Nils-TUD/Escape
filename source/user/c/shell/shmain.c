@@ -39,7 +39,7 @@ static void usage(char *name) {
 
 int main(int argc,char **argv) {
 	tFD fd;
-	tPid pid;
+	long pid;
 	int vterm;
 	char *buffer;
 	char drvPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
@@ -83,7 +83,7 @@ int main(int argc,char **argv) {
 
 	/* give vterm our pid */
 	pid = getpid();
-	if(sendRecvMsgData(fd,MSG_VT_SHELLPID,&pid,sizeof(tPid)) < 0)
+	if(sendRecvMsgData(fd,MSG_VT_SHELLPID,&pid,sizeof(long)) < 0)
 		error("Unable to send pid to vterm");
 
 	/* set vterm as env-variable */
@@ -106,6 +106,8 @@ int main(int argc,char **argv) {
 		/* read command */
 		if(shell_readLine(buffer,MAX_CMD_LEN) < 0)
 			error("Unable to read from STDIN");
+		if(feof(stdin))
+			break;
 
 		/* execute it */
 		shell_executeCmd(buffer,false);

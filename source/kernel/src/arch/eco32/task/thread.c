@@ -34,8 +34,10 @@ extern bool thread_save(sThreadRegs *saveArea);
 extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,tFrameNo kstackFrame);
 
 int thread_initArch(sThread *t) {
-	UNUSED(t);
-	/* nothing to do */
+	/* setup kernel-stack for us */
+	tFrameNo stackFrame = pmem_allocate();
+	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	t->kstackFrame = stackFrame;
 	return 0;
 }
 

@@ -59,7 +59,6 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
 	vt->rows = vidSize->height;
 
 	/* by default we have no handlers for that */
-	vt->handlerShortcut = NULL;
 	vt->setCursor = NULL;
 
 	/* init state */
@@ -152,7 +151,8 @@ int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 		case MSG_VT_SHELLPID:
 			/* do it just once */
 			if(vt->shellPid == 0)
-				vt->shellPid = *(tPid*)data;
+				vt->shellPid = *(long*)data;
+			fflush(stdout);
 			break;
 		case MSG_VT_ENABLE:
 			cfg->enabled = true;

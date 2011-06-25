@@ -73,7 +73,7 @@ typedef void (*fIntrptHandler)(sIntrptStackFrame *stack,int irqNo);
 typedef struct {
 	fIntrptHandler handler;
 	const char *name;
-	tSig signal;
+	sig_t signal;
 } sInterrupt;
 
 void intrpt_forcedTrap(sIntrptStackFrame *stack);

@@ -33,6 +33,6 @@
  * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-Number or EXT2_BAD_INO
  */
-tInodeNo ext2_path_resolve(sExt2 *e,const char *path,uint flags,tDevNo *dev,bool resLastMnt);
+inode_t ext2_path_resolve(sExt2 *e,const char *path,uint flags,dev_t *dev,bool resLastMnt);
 
 #endif /* PATH_H_ */

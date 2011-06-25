@@ -59,7 +59,7 @@ namespace std {
 		 *
 		 * @param fd the file-descriptor
 		 */
-		rawfile(tFD fd)
+		rawfile(int fd)
 			: _mode(READ | WRITE), _fd(fd) {
 			/* TODO in this case we shouldn't close the file in the destructor */
 		}
@@ -94,7 +94,7 @@ namespace std {
 		 *
 		 * @param fd the file-descriptor
 		 */
-		void use(tFD fd);
+		void use(int fd);
 		/**
 		 * Calls ::seek(fd,<offset>,<whence>)
 		 *
@@ -135,7 +135,7 @@ namespace std {
 
 	private:
 		open_type _mode;
-		tFD _fd;
+		int _fd;
 	};
 }
 

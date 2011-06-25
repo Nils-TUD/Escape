@@ -129,8 +129,8 @@ static fSetPixel setPixel[] = {
 };
 
 int main(void) {
-	tFD id;
-	tMsgId mid;
+	int id;
+	msgid_t mid;
 
 	/* load available modes etc. */
 	vbe_init();
@@ -141,7 +141,7 @@ int main(void) {
 		error("Unable to register driver 'vesatext'");
 
 	while(1) {
-		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[VESAT] Unable to get work");
 		else {

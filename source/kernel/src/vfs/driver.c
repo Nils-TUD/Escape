@@ -45,7 +45,7 @@ void vfs_drv_init(void) {
 	vfs_req_setHandler(MSG_DRV_WRITE_RESP,vfs_drv_writeReqHandler);
 }
 
-ssize_t vfs_drv_open(tPid pid,tFileNo file,sVFSNode *node,uint flags) {
+ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	ssize_t res;
 	sRequest *req;
 
@@ -73,7 +73,7 @@ ssize_t vfs_drv_open(tPid pid,tFileNo file,sVFSNode *node,uint flags) {
 	return res;
 }
 
-ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
+ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
 	sRequest *req;
 	sThread *t = thread_getRunning();
 	volatile sVFSNode *n = node;
@@ -88,7 +88,7 @@ ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t off
 	if(!vfs_server_isReadable(n->parent)) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
-		ev_wait(t->tid,EVI_DATA_READABLE,(tEvObj)node);
+		ev_wait(t->tid,EVI_DATA_READABLE,(evobj_t)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
@@ -125,7 +125,7 @@ ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t off
 	return res;
 }
 
-ssize_t vfs_drv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,off_t offset,
+ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
 	ssize_t res;
@@ -161,7 +161,7 @@ ssize_t vfs_drv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,of
 	return res;
 }
 
-void vfs_drv_close(tPid pid,tFileNo file,sVFSNode *node) {
+void vfs_drv_close(pid_t pid,file_t file,sVFSNode *node) {
 	/* if the driver doesn't implement open, stop here */
 	if(!vfs_server_supports(node->parent,DRV_CLOSE))
 		return;

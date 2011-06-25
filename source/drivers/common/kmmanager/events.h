@@ -36,7 +36,7 @@ void events_init(void);
  * @param km the keymap-data
  * @return true if we've sent it to somebody
  */
-bool events_send(tFD driver,sKmData *km);
+bool events_send(int driver,sKmData *km);
 
 /**
  * Adds the given listener
@@ -47,7 +47,7 @@ bool events_send(tFD driver,sKmData *km);
  * @param modifier the modifiers
  * @return 0 if successfull
  */
-int events_add(tInodeNo id,uchar flags,uchar key,uchar modifier);
+int events_add(inode_t id,uchar flags,uchar key,uchar modifier);
 
 /**
  * Removes the given listener
@@ -57,6 +57,6 @@ int events_add(tInodeNo id,uchar flags,uchar key,uchar modifier);
  * @param key the key (keycode or character, depending on the flags)
  * @param modifier the modifiers
  */
-void events_remove(tInodeNo id,uchar flags,uchar key,uchar modifier);
+void events_remove(inode_t id,uchar flags,uchar key,uchar modifier);
 
 #endif /* EVENTS_H_ */

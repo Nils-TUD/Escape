@@ -65,14 +65,14 @@ namespace gui {
 		virtual ~Application();
 
 		virtual void doEvents();
-		virtual void handleMessage(tMsgId mid,const sMsg *msg);
+		virtual void handleMessage(msgid_t mid,const sMsg *msg);
 
 	private:
 		// prevent copying
 		Application(const Application &a);
 		Application &operator=(const Application &a);
 
-		inline tFD getVesaFd() const {
+		inline int getVesaFd() const {
 			return _vesaFd;
 		};
 		inline void *getVesaMem() const {
@@ -88,11 +88,11 @@ namespace gui {
 		void resizeWindow(Window *win);
 
 	protected:
-		tFD _winFd;
+		int _winFd;
 		sMsg _msg;
 	private:
 		uchar _mouseBtns;
-		tFD _vesaFd;
+		int _vesaFd;
 		void *_vesaMem;
 		sVESAInfo _vesaInfo;
 		std::vector<Window*> _windows;

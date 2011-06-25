@@ -29,8 +29,8 @@
 static sMsg msg;
 
 int main(void) {
-	tFD id;
-	tMsgId mid;
+	int id;
+	msgid_t mid;
 
 	id = regDriver("random",DRV_READ);
 	if(id < 0)
@@ -43,7 +43,7 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[RAND] Unable to get work");
 		else {

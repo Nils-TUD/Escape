@@ -291,7 +291,7 @@ namespace gui {
 	}
 
 	void Graphics::notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
-		tFD vesaFd = Application::getInstance()->getVesaFd();
+		int vesaFd = Application::getInstance()->getVesaFd();
 		sMsg msg;
 		if(x < 0) {
 			width += x;

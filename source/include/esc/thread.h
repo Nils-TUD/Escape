@@ -39,7 +39,7 @@ typedef int (*fThreadEntry)(void *arg);
 /* an object to wait for */
 typedef struct {
 	uint events;
-	tEvObj object;
+	evobj_t object;
 } sWaitObject;
 
 typedef uint tULock;
@@ -51,7 +51,7 @@ extern "C" {
 /**
  * @return the id of the current thread
  */
-tTid gettid(void);
+tid_t gettid(void);
 
 /**
  * @return the number of threads in the current process
@@ -91,7 +91,7 @@ void yield(void);
  * @param msecs the number of milliseconds to wait
  * @return 0 on success
  */
-int sleep(tTime msecs);
+int sleep(time_t msecs);
 
 /**
  * Puts the current thread to sleep until one of the given events occurrs. Note that you will
@@ -111,7 +111,7 @@ int waitm(sWaitObject *objects,size_t objCount);
  * @param object the object to wait for
  * @return 0 on success and a negative error-code if failed
  */
-int wait(uint events,tEvObj object);
+int wait(uint events,evobj_t object);
 
 /**
  * Notifies the given thread about the given events. If it was waiting for them, it will be
@@ -121,7 +121,7 @@ int wait(uint events,tEvObj object);
  * @param events the events on which you want to wake up
  * @return 0 on success and a negative error-code if failed
  */
-int notify(tTid tid,uint events);
+int notify(tid_t tid,uint events);
 
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
@@ -129,7 +129,7 @@ int notify(tTid tid,uint events);
  * @param tid the thread-id (0 = wait until all other threads died)
  * @return 0 on success
  */
-int join(tTid tid);
+int join(tid_t tid);
 
 /**
  * Suspends a thread from the own process. That means it is blocked until resume() is called.
@@ -137,7 +137,7 @@ int join(tTid tid);
  * @param tid the thread-id
  * @return 0 on success
  */
-int suspend(tTid tid);
+int suspend(tid_t tid);
 
 /**
  * Resumes a thread from the own process that has been suspended previously
@@ -145,7 +145,7 @@ int suspend(tTid tid);
  * @param tid the thread-id
  * @return 0 on success
  */
-int resume(tTid tid);
+int resume(tid_t tid);
 
 /**
  * Sets the thread-value with given key to given value (for the current thread)
@@ -210,7 +210,7 @@ int lockg(uint ident,uint flags);
  * @param ident the ident to unlock
  * @return 0 on success
  */
-int waitUnlock(uint events,tEvObj object,uint ident);
+int waitUnlock(uint events,evobj_t object,uint ident);
 
 /**
  * First it releases the specified global lock. After that it blocks the thread until one of the
@@ -231,7 +231,7 @@ int waitUnlock(uint events,tEvObj object,uint ident);
  * @param ident the ident to unlock
  * @return 0 on success
  */
-int waitUnlockg(uint events,tEvObj object,uint ident);
+int waitUnlockg(uint events,evobj_t object,uint ident);
 
 /**
  * Releases the process-local lock with given ident

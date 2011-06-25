@@ -71,7 +71,7 @@ namespace std {
 		 * @param fd the file-descriptor
 		 * @param which the open-mode (in by default)
 		 */
-		void open(tFD fd,ios_base::openmode which = ios_base::in) {
+		void open(int fd,ios_base::openmode which = ios_base::in) {
 			if(!rdbuf()->open(fd,which))
 				setf(failbit);
 		}

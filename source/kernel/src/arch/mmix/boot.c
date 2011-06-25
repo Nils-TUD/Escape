@@ -147,7 +147,7 @@ size_t boot_getUsableMemCount(void) {
 int boot_loadModules(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	size_t i;
-	tPid pid;
+	pid_t pid;
 
 	/* it's not good to do this twice.. */
 	if(bootState == bootFinished)
@@ -202,7 +202,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	}
 	else {
 		i = bootState / 2;
-		tInodeNo nodeNo;
+		inode_t nodeNo;
 		int argc;
 		const char **argv = boot_parseArgs(progs[i].command,&argc);
 

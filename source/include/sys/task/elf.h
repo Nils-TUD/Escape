@@ -70,6 +70,6 @@ int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info);
  * @param info the startup-info
  * @return 0 on success
  */
-int elf_finishFromFile(tFileNo file,const sElfEHeader *eheader,sStartupInfo *info);
+int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info);
 
 #endif	/* TASK_ELF_H_ */

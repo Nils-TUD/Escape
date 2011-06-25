@@ -37,11 +37,11 @@
 /**
  * Reads from the mouse-driver
  */
-static bool readMouse(tFD drvId,tFD mouse);
+static bool readMouse(int drvId,int mouse);
 /**
  * Reads from the km-manager
  */
-static bool readKeyboard(tFD drvId,tFD kmmng);
+static bool readKeyboard(int drvId,int kmmng);
 /**
  * Destroys the windows of a died thread
  */
@@ -49,12 +49,12 @@ static void deadThreadHandler(int sig);
 /**
  * Handles a message from kmmng
  */
-static void handleKbMessage(tFD drvId,sWindow *active,uchar keycode,bool isBreak,
+static void handleKbMessage(int drvId,sWindow *active,uchar keycode,bool isBreak,
 		uchar modifier,char c);
 /**
  * Handles a message from the mouse
  */
-static void handleMouseMessage(tFD drvId,sMouseData *mdata);
+static void handleMouseMessage(int drvId,sMouseData *mdata);
 
 /* mouse state */
 static uchar buttons = 0;
@@ -72,9 +72,9 @@ static sWindow *mouseWin = NULL;
 
 int main(void) {
 	sWaitObject waits[3];
-	tFD mouse,kmmng;
-	tFD drvId;
-	tMsgId mid;
+	int mouse,kmmng;
+	int drvId;
+	msgid_t mid;
 
 	mouse = open("/dev/mouse",IO_READ | IO_NOBLOCK);
 	if(mouse < 0)
@@ -102,7 +102,7 @@ int main(void) {
 	screenHeight = win_getScreenHeight();
 
 	while(1) {
-		tFD fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd >= 0) {
 			switch(mid) {
 				case MSG_WIN_CREATE_REQ: {
@@ -203,7 +203,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static bool readMouse(tFD drvId,tFD mouse) {
+static bool readMouse(int drvId,int mouse) {
 	ssize_t count;
 	while((count = RETRY(read(mouse,mouseData,sizeof(mouseData)))) > 0) {
 		sMouseData *msd = mouseData;
@@ -221,7 +221,7 @@ static bool readMouse(tFD drvId,tFD mouse) {
 	return true;
 }
 
-static bool readKeyboard(tFD drvId,tFD kmmng) {
+static bool readKeyboard(int drvId,int kmmng) {
 	sWindow *active = win_getActive();
 	ssize_t count;
 	while((count = RETRY(read(kmmng,kbData,sizeof(kbData)))) > 0) {
@@ -242,9 +242,9 @@ static bool readKeyboard(tFD drvId,tFD kmmng) {
 	return true;
 }
 
-static void handleKbMessage(tFD drvId,sWindow *active,uchar keycode,bool isBreak,
+static void handleKbMessage(int drvId,sWindow *active,uchar keycode,bool isBreak,
 		uchar modifier,char c) {
-	tFD aWin;
+	int aWin;
 	if(!active)
 		return;
 	msg.args.arg1 = keycode;
@@ -259,7 +259,7 @@ static void handleKbMessage(tFD drvId,sWindow *active,uchar keycode,bool isBreak
 	}
 }
 
-static void handleMouseMessage(tFD drvId,sMouseData *mdata) {
+static void handleMouseMessage(int drvId,sMouseData *mdata) {
 	tCoord oldx = curX,oldy = curY;
 	bool btnChanged = false;
 	sWindow *w;
@@ -310,7 +310,7 @@ static void handleMouseMessage(tFD drvId,sMouseData *mdata) {
 	/* send to window */
 	w = mouseWin ? mouseWin : win_getActive();
 	if(w) {
-		tFD aWin = getClient(drvId,w->owner);
+		int aWin = getClient(drvId,w->owner);
 		if(aWin >= 0) {
 			msg.args.arg1 = curX;
 			msg.args.arg2 = curY;

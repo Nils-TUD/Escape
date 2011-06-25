@@ -35,7 +35,7 @@ tCmdId run_requestId(void) {
 	return nextId++;
 }
 
-bool run_addProc(tCmdId cmdId,tPid pid) {
+bool run_addProc(tCmdId cmdId,pid_t pid) {
 	sRunningProc *run = (sRunningProc*)malloc(sizeof(sRunningProc));
 	if(run) {
 		run->cmdId = cmdId;
@@ -61,7 +61,7 @@ sRunningProc *run_getXProcOf(tCmdId cmdId,int i) {
 	return NULL;
 }
 
-sRunningProc *run_findProc(tCmdId cmdId,tPid pid) {
+sRunningProc *run_findProc(tCmdId cmdId,pid_t pid) {
 	sSLNode *n;
 	sRunningProc *p;
 	for(n = sll_begin(running); n != NULL; n = n->next) {
@@ -91,7 +91,7 @@ void run_gc(void) {
 	}
 }
 
-void run_remProc(tPid pid) {
+void run_remProc(pid_t pid) {
 	sRunningProc *run = run_findProc(CMD_ID_ALL,pid);
 	if(run) {
 		sll_removeFirst(running,run);

@@ -44,14 +44,14 @@
 
 static void killProcs(void);
 static int pidCompare(const void *p1,const void *p2);
-static void waitForProc(tPid pid);
-static void getProcNameOf(tPid pid,char *name);
+static void waitForProc(pid_t pid);
+static void getProcNameOf(pid_t pid,char *name);
 
 static sMsg msg;
 
 int main(void) {
-	tFD id;
-	tMsgId mid;
+	int id;
+	msgid_t mid;
 	bool run = true;
 
 	if(requestIOPort(IOPORT_KB_DATA) < 0)
@@ -65,7 +65,7 @@ int main(void) {
 
 	/* wait for commands */
 	while(run) {
-		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[PWMNG] Unable to get work");
 		else {
@@ -108,9 +108,9 @@ int main(void) {
 static void killProcs(void) {
 	char name[MAX_PROC_NAME_LEN + 1];
 	sDirEntry e;
-	tFD fd;
+	int fd;
 	DIR *dir;
-	tPid pid,own = getpid();
+	pid_t pid,own = getpid();
 	size_t i,pidSize = ARRAY_INC_SIZE;
 	size_t pidPos = 0;
 
@@ -121,7 +121,7 @@ static void killProcs(void) {
 		close(fd);
 	}
 
-	tPid *pids = (tPid*)malloc(sizeof(tPid) * pidSize);
+	pid_t *pids = (pid_t*)malloc(sizeof(pid_t) * pidSize);
 	if(pids == NULL)
 		error("Unable to alloc mem for pids");
 
@@ -139,7 +139,7 @@ static void killProcs(void) {
 			continue;
 		if(pidPos >= pidSize) {
 			pidSize += ARRAY_INC_SIZE;
-			pids = (tPid*)realloc(pids,sizeof(tPid) * pidSize);
+			pids = (pid_t*)realloc(pids,sizeof(pid_t) * pidSize);
 			if(pids == NULL)
 				error("Unable to alloc mem for pids");
 		}
@@ -147,7 +147,7 @@ static void killProcs(void) {
 	}
 	closedir(dir);
 
-	qsort(pids,pidPos,sizeof(tPid),pidCompare);
+	qsort(pids,pidPos,sizeof(pid_t),pidCompare);
 	for(i = 0; i < pidPos; i++) {
 		getProcNameOf(pids[i],name);
 		debugf("Terminating process %d (%s)",pids[i],name);
@@ -161,12 +161,12 @@ static void killProcs(void) {
 
 static int pidCompare(const void *p1,const void *p2) {
 	/* descending */
-	return *(tPid*)p2 - *(tPid*)p1;
+	return *(pid_t*)p2 - *(pid_t*)p1;
 }
 
-static void waitForProc(tPid pid) {
-	tFD fd;
-	tTime time = 0;
+static void waitForProc(pid_t pid) {
+	int fd;
+	time_t time = 0;
 	char path[SSTRLEN("/system/processes/") + 12];
 	snprintf(path,sizeof(path),"/system/processes/%d",pid);
 	while(1) {
@@ -187,8 +187,8 @@ static void waitForProc(tPid pid) {
 	debugf("\n");
 }
 
-static void getProcNameOf(tPid pid,char *name) {
-	tFD fd;
+static void getProcNameOf(pid_t pid,char *name) {
+	int fd;
 	char buffer[PROC_BUFFER_SIZE];
 	char path[SSTRLEN("/system/processes//info") + 12];
 	snprintf(path,sizeof(path),"/system/processes/%d/info",pid);

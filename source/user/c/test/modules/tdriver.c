@@ -31,16 +31,16 @@
 #define MY_LOCK		0x487912ee
 
 typedef struct {
-	tFD fd;
-	tMsgId mid;
-	tTid tid;
+	int fd;
+	msgid_t mid;
+	tid_t tid;
 	sMsg msg;
 	void *data;
 } sTestRequest;
 
 static int respId = 1;
 static sMsg msg;
-static tFD id;
+static int id;
 
 static int getRequests(void *arg);
 static int handleRequest(void *arg);
@@ -63,7 +63,7 @@ int mod_driver(int argc,char *argv[]) {
 		if(fork() == 0) {
 			char buf[12] = {0};
 			srand(time(NULL) * i);
-			tFD fd;
+			int fd;
 			do {
 				fd = open("/dev/bla",IO_READ | IO_WRITE);
 				if(fd < 0)
@@ -100,9 +100,9 @@ int mod_driver(int argc,char *argv[]) {
 }
 
 static int getRequests(void *arg) {
-	tMsgId mid;
+	msgid_t mid;
 	while(true) {
-		tFD cfd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int cfd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(cfd < 0)
 			printe("[TEST] Unable to get work");
 		else {

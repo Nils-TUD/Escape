@@ -86,8 +86,8 @@ static fSetPixel setPixel[] = {
 };
 
 int main(void) {
-	tFD id;
-	tMsgId mid;
+	int id;
+	msgid_t mid;
 	size_t reqc;
 	bool enabled = true;
 
@@ -121,7 +121,7 @@ int main(void) {
 
 	reqc = 0;
 	while(1) {
-		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0 || reqc >= MAX_REQC) {
 			reqc = 0;
 			vesa_doUpdate();

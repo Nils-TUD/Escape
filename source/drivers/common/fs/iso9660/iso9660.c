@@ -71,8 +71,8 @@ void *iso_init(const char *driver,char **usedDev) {
 	/* otherwise try all possible ATAPI-drives */
 	else {
 		/* just needed if we would have a mount-point on the cd. this can't happen at this point */
-		tDevNo dev = 0x1234;
-		tInodeNo ino;
+		dev_t dev = 0x1234;
+		inode_t ino;
 		char path[SSTRLEN("/dev/cda1") + 1];
 		for(i = 0; i < 4; i++) {
 			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + i);
@@ -167,23 +167,23 @@ sFileSystem *iso_getFS(void) {
 	return fs;
 }
 
-tInodeNo iso_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt) {
+inode_t iso_resPath(void *h,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
 	return iso_dir_resolve((sISO9660*)h,path,flags,dev,resLastMnt);
 }
 
-tInodeNo iso_open(void *h,tInodeNo ino,uint flags) {
+inode_t iso_open(void *h,inode_t ino,uint flags) {
 	UNUSED(h);
 	UNUSED(flags);
 	return ino;
 }
 
-void iso_close(void *h,tInodeNo ino) {
+void iso_close(void *h,inode_t ino) {
 	UNUSED(h);
 	UNUSED(ino);
 }
 
-int iso_stat(void *h,tInodeNo ino,sFileInfo *info) {
-	tTime ts;
+int iso_stat(void *h,inode_t ino,sFileInfo *info) {
+	time_t ts;
 	sISO9660 *i = (sISO9660*)h;
 	const sISOCDirEntry *e = iso_direc_get(i,ino);
 	if(e == NULL)
@@ -209,11 +209,11 @@ int iso_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	return 0;
 }
 
-ssize_t iso_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count) {
+ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,uint offset,size_t count) {
 	return iso_file_read((sISO9660*)h,inodeNo,buffer,offset,count);
 }
 
-tTime iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate) {
+time_t iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate) {
 	UNUSED(h);
 	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);

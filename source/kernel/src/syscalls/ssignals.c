@@ -27,7 +27,7 @@
 #include <errors.h>
 
 int sysc_setSigHandler(sIntrptStackFrame *stack) {
-	tSig signal = (tSig)SYSC_ARG1(stack);
+	sig_t signal = (sig_t)SYSC_ARG1(stack);
 	fSignal handler = (fSignal)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
 
@@ -35,7 +35,7 @@ int sysc_setSigHandler(sIntrptStackFrame *stack) {
 	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isRangeUserReadable((uintptr_t)handler,1))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(signal == (tSig)SIG_RET)
+	if(signal == (sig_t)SIG_RET)
 		t->proc->sigRetAddr = (uintptr_t)handler;
 	else {
 		/* no signal-ret-address known yet? */
@@ -60,7 +60,7 @@ int sysc_setSigHandler(sIntrptStackFrame *stack) {
 int sysc_ackSignal(sIntrptStackFrame *stack) {
 	int res;
 	sThread *t = thread_getRunning();
-	tSig signal = sig_ackHandling(t->tid);
+	sig_t signal = sig_ackHandling(t->tid);
 	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
 	/* we don't set the error-code on the stack here */
@@ -68,12 +68,12 @@ int sysc_ackSignal(sIntrptStackFrame *stack) {
 }
 
 int sysc_sendSignalTo(sIntrptStackFrame *stack) {
-	tPid pid = (tPid)SYSC_ARG1(stack);
-	tSig signal = (tSig)SYSC_ARG2(stack);
+	pid_t pid = (pid_t)SYSC_ARG1(stack);
+	sig_t signal = (sig_t)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
 	/* store tid and check via thread_getById() because if the thread is destroyed, we can't access
 	 * it anymore */
-	tTid tid = t->tid;
+	tid_t tid = t->tid;
 
 	if(!sig_canSend(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);

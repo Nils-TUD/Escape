@@ -52,7 +52,7 @@ void ext2_bg_destroy(sExt2 *e) {
 }
 
 void ext2_bg_update(sExt2 *e) {
-	tBlockNo bno;
+	block_t bno;
 	size_t i,count,bcount;
 	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
@@ -90,10 +90,10 @@ done:
 /**
  * Prints the given bitmap
  */
-static void ext2_bg_printRanges(sExt2 *e,const char *name,tBlockNo first,tBlockNo max,
+static void ext2_bg_printRanges(sExt2 *e,const char *name,block_t first,block_t max,
 		uint8_t *bitmap);
 
-void ext2_bg_print(sExt2 *e,tBlockNo no,sExt2BlockGrp *bg) {
+void ext2_bg_print(sExt2 *e,block_t no,sExt2BlockGrp *bg) {
 	uint32_t blocksPerGroup = le32tocpu(e->superBlock.blocksPerGroup);
 	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
 	sCBlock *bbitmap = bcache_request(&e->blockCache,le32tocpu(bg->blockBitmap),BMODE_READ);
@@ -116,7 +116,7 @@ void ext2_bg_print(sExt2 *e,tBlockNo no,sExt2BlockGrp *bg) {
 	bcache_release(bbitmap);
 }
 
-static void ext2_bg_printRanges(sExt2 *e,const char *name,tBlockNo first,tBlockNo max,
+static void ext2_bg_printRanges(sExt2 *e,const char *name,block_t first,block_t max,
 		uint8_t *bitmap) {
 	bool lastFree;
 	size_t pcount,start,i,a,j;

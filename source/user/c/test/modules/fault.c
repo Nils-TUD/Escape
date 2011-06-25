@@ -37,7 +37,7 @@ static void sig_segf(int sig) {
 
 int mod_fault(int argc,char *argv[]) {
 	uint *ptr;
-	tFD fd;
+	int fd;
 	UNUSED(argc);
 	UNUSED(argv);
 	if(setSigHandler(SIG_SEGFAULT,sig_segf) < 0)

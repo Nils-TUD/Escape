@@ -30,7 +30,7 @@
 #	define inb			util_inByte
 #	define gettid()		({ \
 	uintptr_t __esp; \
-	tTid __tid; \
+	tid_t __tid; \
 	GET_REG("esp",__esp); \
 	__tid = (__esp >= KERNEL_STACK - PAGE_SIZE) ? thread_getRunning()->tid : 0; \
 })

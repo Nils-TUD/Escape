@@ -33,7 +33,7 @@
  * @param isDir whether it should be an directory
  * @return 0 on success
  */
-int ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *ino,bool isDir);
+int ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,inode_t *ino,bool isDir);
 
 /**
  * Deletes the given inode. That means all associated blocks will be free'd
@@ -66,7 +66,7 @@ int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete);
  * @param count the number of bytes to read
  * @return the number of read bytes
  */
-ssize_t ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,uint offset,size_t count);
+ssize_t ext2_file_read(sExt2 *e,inode_t inodeNo,void *buffer,uint offset,size_t count);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the given cached inode. It will not
@@ -93,7 +93,7 @@ ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,uint of
  * @param count the number of bytes to write
  * @return the number of written bytes
  */
-ssize_t ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,uint offset,size_t count);
+ssize_t ext2_file_write(sExt2 *e,inode_t inodeNo,const void *buffer,uint offset,size_t count);
 
 /**
  * Writes <count> bytes at <offset> from <buffer> to given cached inode. Will

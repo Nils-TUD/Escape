@@ -30,7 +30,7 @@
  * @param parent the parent-node
  * @return the created node or NULL
  */
-sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent);
+sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent);
 
 /**
  * Checks wether the given channel has a reply for the client
@@ -59,7 +59,7 @@ bool vfs_chan_hasWork(const sVFSNode *node);
  * @param size the data-size
  * @return 0 on success
  */
-ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,size_t size);
+ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,const void *data,size_t size);
 
 /**
  * Receives a message from the channel
@@ -72,7 +72,7 @@ ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *da
  * @param size the size of the buffer
  * @return the number of written bytes on success
  */
-ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *data,size_t size);
+ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *data,size_t size);
 
 /**
  * Prints the given channel

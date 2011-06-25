@@ -56,7 +56,7 @@ bool shell_prompt(void);
 /**
  * @return the pid we're waiting for or INVALID_PID
  */
-tPid shell_getWaitingPid(void);
+pid_t shell_getWaitingPid(void);
 
 /**
  * Executes the given line or file

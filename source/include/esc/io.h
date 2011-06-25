@@ -71,7 +71,7 @@ extern "C" {
  * @param mode the mode
  * @return the file-descriptor; negative if error
  */
-tFD open(const char *path,uint mode) A_CHECKRET;
+int open(const char *path,uint mode) A_CHECKRET;
 
 /**
  * Creates a pipe with 2 separate files for reading and writing.
@@ -80,7 +80,7 @@ tFD open(const char *path,uint mode) A_CHECKRET;
  * @param writeFd will be set to the fd for writing
  * @return 0 on success
  */
-int pipe(tFD *readFd,tFD *writeFd) A_CHECKRET;
+int pipe(int *readFd,int *writeFd) A_CHECKRET;
 
 /**
  * Retrieves information about the given file
@@ -98,7 +98,7 @@ int stat(const char *path,sFileInfo *info) A_CHECKRET;
  * @param info will be filled
  * @return 0 on success
  */
-int fstat(tFD fd,sFileInfo *info) A_CHECKRET;
+int fstat(int fd,sFileInfo *info) A_CHECKRET;
 
 /**
  * Asks for the current file-position
@@ -107,7 +107,7 @@ int fstat(tFD fd,sFileInfo *info) A_CHECKRET;
  * @param pos will point to the current file-position on success
  * @return 0 on success
  */
-int tell(tFD fd,off_t *pos) A_CHECKRET;
+int tell(int fd,off_t *pos) A_CHECKRET;
 
 /**
  * Manipulates the given file-descriptor, depending on the command
@@ -117,7 +117,7 @@ int tell(tFD fd,off_t *pos) A_CHECKRET;
  * @param arg the argument (just used for F_SETFL)
  * @return >= 0 on success
  */
-int fcntl(tFD fd,uint cmd,int arg);
+int fcntl(int fd,uint cmd,int arg);
 
 /**
  * Changes the position in the given file
@@ -127,7 +127,7 @@ int fcntl(tFD fd,uint cmd,int arg);
  * @param whence the seek-type: SEEK_SET, SEEK_CUR or SEEK_END
  * @return the new position on success, of the negative error-code
  */
-off_t seek(tFD fd,off_t offset,uint whence) A_CHECKRET;
+off_t seek(int fd,off_t offset,uint whence) A_CHECKRET;
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the
@@ -138,7 +138,7 @@ off_t seek(tFD fd,off_t offset,uint whence) A_CHECKRET;
  * @param count the number of bytes
  * @return the actual read number of bytes; negative if an error occurred
  */
-ssize_t read(tFD fd,void *buffer,size_t count) A_CHECKRET;
+ssize_t read(int fd,void *buffer,size_t count) A_CHECKRET;
 
 /**
  * Writes count bytes from the given buffer into the given fd and returns the number of written
@@ -149,7 +149,7 @@ ssize_t read(tFD fd,void *buffer,size_t count) A_CHECKRET;
  * @param count the number of bytes to write
  * @return the number of bytes written; negative if an error occurred
  */
-ssize_t write(tFD fd,const void *buffer,size_t count) A_CHECKRET;
+ssize_t write(int fd,const void *buffer,size_t count) A_CHECKRET;
 
 /**
  * Sends a message to the driver identified by <fd>.
@@ -160,7 +160,7 @@ ssize_t write(tFD fd,const void *buffer,size_t count) A_CHECKRET;
  * @param size the size of the message
  * @return 0 on success or < 0 if an error occurred
  */
-ssize_t send(tFD fd,tMsgId id,const void *msg,size_t size);
+ssize_t send(int fd,msgid_t id,const void *msg,size_t size);
 
 /**
  * Receives a message from the driver identified by <fd>. Blocks if no message is available.
@@ -172,7 +172,7 @@ ssize_t send(tFD fd,tMsgId id,const void *msg,size_t size);
  * @param size the (max) size of the message
  * @return the size of the message
  */
-ssize_t receive(tFD fd,tMsgId *id,void *msg,size_t size) A_CHECKRET;
+ssize_t receive(int fd,msgid_t *id,void *msg,size_t size) A_CHECKRET;
 
 /**
  * Sends the given data in the data-part of the standard-message. Doesn't wait for the response.
@@ -183,7 +183,7 @@ ssize_t receive(tFD fd,tMsgId *id,void *msg,size_t size) A_CHECKRET;
  * @param size the size of the data (if too big an error will be reported)
  * @return >= 0 on success
  */
-ssize_t sendMsgData(tFD fd,tMsgId id,const void *data,size_t size);
+ssize_t sendMsgData(int fd,msgid_t id,const void *data,size_t size);
 
 /**
  * Sends a message with given id and optionally data to the given driver. Afterwards it receives
@@ -195,7 +195,7 @@ ssize_t sendMsgData(tFD fd,tMsgId id,const void *data,size_t size);
  * @param size if data is not NULL, the size of data
  * @return the result
  */
-ssize_t sendRecvMsgData(tFD fd,tMsgId id,const void *data,size_t size);
+ssize_t sendRecvMsgData(int fd,msgid_t id,const void *data,size_t size);
 
 /**
  * Sends a message with given id and no data to the given driver, receives a message and
@@ -207,7 +207,7 @@ ssize_t sendRecvMsgData(tFD fd,tMsgId id,const void *data,size_t size);
  * @param size the size of the buffer
  * @return the number of copied bytes on success
  */
-ssize_t recvMsgData(tFD fd,tMsgId id,void *data,size_t size) A_CHECKRET;
+ssize_t recvMsgData(int fd,msgid_t id,void *data,size_t size) A_CHECKRET;
 
 /**
  * The same as recvMsgData, except that it expects <argc> arguments behind <argc>, which are
@@ -220,7 +220,7 @@ ssize_t recvMsgData(tFD fd,tMsgId id,void *data,size_t size) A_CHECKRET;
  * @param argc the number of args
  * @return the number of copied bytes on success
  */
-ssize_t vrecvMsgData(tFD fd,tMsgId id,void *data,size_t size,size_t argc,...) A_CHECKRET;
+ssize_t vrecvMsgData(int fd,msgid_t id,void *data,size_t size,size_t argc,...) A_CHECKRET;
 
 /**
  * Duplicates the given file-descriptor
@@ -228,7 +228,7 @@ ssize_t vrecvMsgData(tFD fd,tMsgId id,void *data,size_t size,size_t argc,...) A_
  * @param fd the file-descriptor
  * @return the error-code or the new file-descriptor
  */
-tFD dupFd(tFD fd);
+int dupFd(int fd);
 
 /**
  * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
@@ -237,7 +237,7 @@ tFD dupFd(tFD fd);
  * @param dst the destination-file-descriptor
  * @return the error-code or 0 if successfull
  */
-int redirFd(tFD src,tFD dst);
+int redirFd(int src,int dst);
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>
@@ -303,7 +303,7 @@ int sync(void) A_CHECKRET;
  *
  * @param fd the file-descriptor
  */
-void close(tFD fd);
+void close(int fd);
 
 /**
  * Checks wether the given path points to a regular file

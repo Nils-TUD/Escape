@@ -25,7 +25,7 @@
 #define HASHMAP_SIZE	64
 
 typedef struct {
-	tTid tid;
+	tid_t tid;
 	uint key;
 	void *val;
 } sThreadVal;
@@ -40,7 +40,7 @@ extern int _waitUnlock(sWaitObject *objects,size_t objCount,uint ident,bool glob
 static sSLList *tvalmap[HASHMAP_SIZE];
 
 bool setThreadVal(uint key,void *val) {
-	tTid tid = gettid();
+	tid_t tid = gettid();
 	sSLList *list;
 	sThreadVal *tval = (sThreadVal*)malloc(sizeof(sThreadVal));
 	if(!tval)
@@ -67,7 +67,7 @@ bool setThreadVal(uint key,void *val) {
 
 void *getThreadVal(uint key) {
 	sSLNode *n;
-	tTid tid = gettid();
+	tid_t tid = gettid();
 	sSLList *list = tvalmap[tid % HASHMAP_SIZE];
 	if(list == NULL)
 		return NULL;
@@ -79,7 +79,7 @@ void *getThreadVal(uint key) {
 	return NULL;
 }
 
-int wait(uint events,tEvObj object) {
+int wait(uint events,evobj_t object) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;
@@ -95,14 +95,14 @@ int lockg(uint ident,uint flags) {
 	return _lock(ident,true,flags);
 }
 
-int waitUnlock(uint events,tEvObj object,uint ident) {
+int waitUnlock(uint events,evobj_t object,uint ident) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;
 	return _waitUnlock(&obj,1,ident,false);
 }
 
-int waitUnlockg(uint events,tEvObj object,uint ident) {
+int waitUnlockg(uint events,evobj_t object,uint ident) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;

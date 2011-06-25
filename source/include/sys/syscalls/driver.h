@@ -27,24 +27,24 @@
  *
  * @param const char* name of the driver
  * @param uint flags: what functions are implemented
- * @return tFD the file-desc if successfull
+ * @return int the file-desc if successfull
  */
 int sysc_regDriver(sIntrptStackFrame *stack);
 
 /**
  * Fetches the client-id from the given file-descriptor
  *
- * @param tFD the file-descriptor
- * @return tInodeNo the id or an error
+ * @param int the file-descriptor
+ * @return inode_t the id or an error
  */
 int sysc_getClientId(sIntrptStackFrame *stack);
 
 /**
  * For drivers: Returns the file-descriptor for a specific client
  *
- * @param tFD the file-descriptor for the driver
- * @param tInodeNo the client-id
- * @return tFD the file-descriptor
+ * @param int the file-descriptor for the driver
+ * @param inode_t the client-id
+ * @return int the file-descriptor
  */
 int sysc_getClient(sIntrptStackFrame *stack);
 
@@ -54,14 +54,14 @@ int sysc_getClient(sIntrptStackFrame *stack);
  * If a client wants to be served, the message is fetched from him and the client-id is returned.
  * You can use the client-id for writing a reply.
  *
- * @param tFD* an array of file-descriptors to check
+ * @param int* an array of file-descriptors to check
  * @param size_t the number of fds
- * @param tFD* will be set to the file-desc from which the client has been taken
- * @param tMsgId* will be set to the msg-id
+ * @param int* will be set to the file-desc from which the client has been taken
+ * @param msgid_t* will be set to the msg-id
  * @param void* the message
  * @param size_t the (max) size of the message
  * @param uint flags
- * @return tFD the file-desc to serve the client or a negative error-code
+ * @return int the file-desc to serve the client or a negative error-code
  */
 int sysc_getWork(sIntrptStackFrame *stack);
 

@@ -37,8 +37,8 @@ static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,tCoord z,
 static void win_clearRegion(uint8_t *mem,tCoord x,tCoord y,tSize width,tSize height);
 static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
 
-static tFD vesa;
-static tFD drvId;
+static int vesa;
+static int drvId;
 static sVESAInfo vesaInfo;
 
 static sMsg msg;	/* TODO we already have a msg in winmain.c */
@@ -46,8 +46,8 @@ static uint8_t *shmem;
 static size_t activeWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
 
-bool win_init(tFD sid) {
-	tMsgId mid;
+bool win_init(int sid) {
+	msgid_t mid;
 	tWinId i;
 
 	drvId = sid;
@@ -97,7 +97,7 @@ void win_setCursor(tCoord x,tCoord y,uint cursor) {
 	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
-tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tInodeNo owner,uint style) {
+tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,inode_t owner,uint style) {
 	tWinId i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNSED) {
@@ -121,7 +121,7 @@ void win_updateScreen(void) {
 	win_notifyVesa(0,0,vesaInfo.width,vesaInfo.height);
 }
 
-void win_destroyWinsOf(tInodeNo cid,tCoord mouseX,tCoord mouseY) {
+void win_destroyWinsOf(inode_t cid,tCoord mouseX,tCoord mouseY) {
 	tWinId id;
 	for(id = 0; id < WINDOW_COUNT; id++) {
 		if(windows[id].id != WINID_UNSED && windows[id].owner == cid)
@@ -332,7 +332,7 @@ static void win_repaint(sRectangle *r,sWindow *win,tCoord z) {
 }
 
 static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) {
-	tFD aWin = getClient(drvId,windows[id].owner);
+	int aWin = getClient(drvId,windows[id].owner);
 	if(aWin >= 0) {
 		msg.args.arg1 = id;
 		msg.args.arg2 = isActive;
@@ -344,7 +344,7 @@ static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) 
 }
 
 static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id) {
-	tFD aWin = getClient(drvId,windows[id].owner);
+	int aWin = getClient(drvId,windows[id].owner);
 	if(aWin >= 0) {
 		if(x - windows[id].x < 0) {
 			width += x - windows[id].x;

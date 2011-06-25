@@ -28,7 +28,7 @@ class thread {
 
 public:
 	typedef process::pid_type pid_type;
-	typedef tTid tid_type;
+	typedef tid_t tid_type;
 	typedef unsigned char state_type;
 	typedef process::size_type size_type;
 	typedef process::cycle_type cycle_type;

@@ -26,7 +26,7 @@
 #define BMODE_WRITE		0x2
 
 /* reading/writing of blocks */
-typedef bool (*fReadBlocks)(void *h,void *buffer,tBlockNo start,size_t blockCount);
+typedef bool (*fReadBlocks)(void *h,void *buffer,block_t start,size_t blockCount);
 typedef bool (*fWriteBlocks)(void *h,const void *buffer,size_t start,size_t blockCount);
 
 /* a cached block */
@@ -90,7 +90,7 @@ void bcache_markDirty(sCBlock *b);
  * @param blockNo the block-number
  * @return the block or NULL
  */
-sCBlock *bcache_create(sBlockCache *c,tBlockNo blockNo);
+sCBlock *bcache_create(sBlockCache *c,block_t blockNo);
 
 /**
  * Requests the block with given number.
@@ -101,7 +101,7 @@ sCBlock *bcache_create(sBlockCache *c,tBlockNo blockNo);
  * @param mode the mode (BMODE_*)
  * @return the block or NULL
  */
-sCBlock *bcache_request(sBlockCache *c,tBlockNo blockNo,uint mode);
+sCBlock *bcache_request(sBlockCache *c,block_t blockNo,uint mode);
 
 /**
  * Releases the given block

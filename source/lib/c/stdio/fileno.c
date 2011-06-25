@@ -21,7 +21,7 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-tFD fileno(FILE *stream) {
+int fileno(FILE *stream) {
 	if(stream->in.fd >= 0)
 		return stream->in.fd;
 	return stream->out.fd;

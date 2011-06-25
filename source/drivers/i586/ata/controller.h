@@ -154,7 +154,7 @@ void ctrl_waitIntrpt(sATAController *ctrl);
  * @param unset the bits to wait until they're unset
  * @return 0 on success, -1 if timeout has been reached, other: value of the error-register
  */
-int ctrl_waitUntil(sATAController *ctrl,tTime timeout,tTime sleepTime,uint8_t set,uint8_t unset);
+int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t set,uint8_t unset);
 
 /**
  * Performs a few io-port-reads (just to waste a bit of time ;))

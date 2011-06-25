@@ -60,7 +60,7 @@ static void test_paging(void) {
 static void test_paging_foreign(void) {
 	size_t ownFrames, sharedFrames;
 	sProc *child;
-	tPid pid = proc_getFreePid();
+	pid_t pid = proc_getFreePid();
 	test_assertInt(proc_clone(pid,0),0);
 	child = proc_getByPid(pid);
 

@@ -73,7 +73,7 @@ extern "C" {
  * @param handler the handler-function
  * @return 0 on success
  */
-int setSigHandler(tSig signal,fSignal handler) A_CHECKRET;
+int setSigHandler(sig_t signal,fSignal handler) A_CHECKRET;
 
 /**
  * Sends the given signal to all process (that have announced a handler)
@@ -81,7 +81,7 @@ int setSigHandler(tSig signal,fSignal handler) A_CHECKRET;
  * @param signal the signal
  * @return 0 on success
  */
-int sendSignal(tSig signal) A_CHECKRET;
+int sendSignal(sig_t signal) A_CHECKRET;
 
 /**
  * Sends the given signal to given process (interrupts can't be sended)
@@ -90,7 +90,7 @@ int sendSignal(tSig signal) A_CHECKRET;
  * @param signal the signal
  * @return 0 on success
  */
-int sendSignalTo(tPid pid,tSig signal) A_CHECKRET;
+int sendSignalTo(pid_t pid,sig_t signal) A_CHECKRET;
 
 /**
  * The  signal  system call installs a new signal handler for#

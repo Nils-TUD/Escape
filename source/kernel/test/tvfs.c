@@ -44,7 +44,7 @@ static void test_vfs(void) {
 }
 
 static void test_vfs_createDriver(void) {
-	tFileNo f1,f2,f3;
+	file_t f1,f2,f3;
 
 	test_caseStart("Testing vfs_createDriver()");
 	checkMemoryBefore(false);

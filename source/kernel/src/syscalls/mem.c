@@ -31,7 +31,7 @@ int sysc_changeSize(sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	ssize_t oldEnd;
-	tVMRegNo rno = RNO_DATA;
+	vmreg_t rno = RNO_DATA;
 	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
 	if(!vmm_exists(p,rno)) {
 		/* if so, grow that region instead */
@@ -52,7 +52,7 @@ int sysc_addRegion(sIntrptStackFrame *stack) {
 	uint type = SYSC_ARG5(stack);
 	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
-	tVMRegNo rno = -1;
+	vmreg_t rno = -1;
 	uintptr_t start;
 
 	/* check bin */
@@ -104,7 +104,7 @@ int sysc_setRegProt(sIntrptStackFrame *stack) {
 	uintptr_t addr = SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 	ulong flags = 0;
-	tVMRegNo rno;
+	vmreg_t rno;
 	int res;
 
 	if(!(prot & (PROT_WRITE | PROT_READ)))

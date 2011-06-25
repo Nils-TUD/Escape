@@ -30,7 +30,7 @@
 
 #define DIRE_SIZE		(sizeof(sDirEntry) - (MAX_NAME_LEN + 1))
 
-static int cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e);
+static int cons_cmd_ls_read(pid_t pid,file_t file,sDirEntry *e);
 
 static sScreenBackup backup;
 
@@ -38,7 +38,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	sProc *p = proc_getRunning();
 	sLines lines;
 	sStringBuffer buf;
-	tFileNo file;
+	file_t file;
 	sDirEntry e;
 	int res;
 	if(argc != 2) {
@@ -88,7 +88,7 @@ errorLines:
 	return res;
 }
 
-static int cons_cmd_ls_read(tPid pid,tFileNo file,sDirEntry *e) {
+static int cons_cmd_ls_read(pid_t pid,file_t file,sDirEntry *e) {
 	ssize_t res;
 	size_t len;
 	/* default way; read the entry without name first */

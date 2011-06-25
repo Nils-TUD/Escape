@@ -41,7 +41,7 @@ int main(int argc,const char *argv[]) {
 	FILE *vt,*in = stdin;
 	size_t line,col;
 	sVTSize consSize;
-	tFD vtFd;
+	int vtFd;
 	int c;
 
 	/* parse args */

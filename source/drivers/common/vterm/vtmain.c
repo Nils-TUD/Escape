@@ -46,19 +46,19 @@
  * @param sid the driver-id
  * @return the vterm or NULL
  */
-static sVTerm *getVTerm(tFD sid);
+static sVTerm *getVTerm(int sid);
 
 static sMsg msg;
 static sVTermCfg cfg;
 static sKmData kmData[KB_DATA_BUF_SIZE];
 /* vterms */
-static tFD drvIds[VTERM_COUNT] = {-1};
+static int drvIds[VTERM_COUNT] = {-1};
 
 int main(void) {
 	size_t i,reqc;
-	tFD kbFd;
-	tFD client;
-	tMsgId mid;
+	int kbFd;
+	int client;
+	msgid_t mid;
 	sWaitObject waits[VTERM_COUNT + 1];
 	char name[MAX_VT_NAME_LEN + 1];
 
@@ -92,7 +92,7 @@ int main(void) {
 
 	reqc = 0;
 	while(1) {
-		tFD fd = getWork(drvIds,VTERM_COUNT,&client,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getWork(drvIds,VTERM_COUNT,&client,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if((cfg.enabled && cfg.readKb && reqc >= MAX_SEQREQ) || fd < 0) {
 			if(fd < 0 && fd != ERR_NO_CLIENT_WAITING)
 				printe("[VTERM] Unable to get work");
@@ -224,7 +224,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static sVTerm *getVTerm(tFD sid) {
+static sVTerm *getVTerm(int sid) {
 	size_t i;
 	for(i = 0; i < VTERM_COUNT; i++) {
 		if(drvIds[i] == sid)

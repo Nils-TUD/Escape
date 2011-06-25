@@ -221,14 +221,14 @@ typedef struct {
 
 /* entries in the directory-entry-cache */
 typedef struct {
-	tInodeNo id;
+	inode_t id;
 	sISODirEntry entry;
 } sISOCDirEntry;
 
 /* the iso9660-handle (all information we need when working with it) */
 typedef struct {
 	/* the file-descs for the driver (one for each thread and one for the initial) */
-	tFD drvFds[REQ_THREAD_COUNT + 1];
+	int drvFds[REQ_THREAD_COUNT + 1];
 	sISOVolDesc primary;
 	size_t direcNextFree;
 	sISOCDirEntry direcache[ISO_DIRE_CACHE_SIZE];
@@ -267,7 +267,7 @@ sFileSystem *iso_getFS(void);
  * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-number on success
  */
-tInodeNo iso_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt);
+inode_t iso_resPath(void *h,const char *path,uint flags,dev_t *dev,bool resLastMnt);
 
 /**
  * Mount-entry for open()
@@ -277,7 +277,7 @@ tInodeNo iso_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLas
  * @param flags the open-flags
  * @return the inode on success or < 0
  */
-tInodeNo iso_open(void *h,tInodeNo ino,uint flags);
+inode_t iso_open(void *h,inode_t ino,uint flags);
 
 /**
  * Mount-entry for close()
@@ -285,7 +285,7 @@ tInodeNo iso_open(void *h,tInodeNo ino,uint flags);
  * @param h the iso9660-handle
  * @param ino the inode to close
  */
-void iso_close(void *h,tInodeNo ino);
+void iso_close(void *h,inode_t ino);
 
 /**
  * Mount-entry for stat()
@@ -295,7 +295,7 @@ void iso_close(void *h,tInodeNo ino);
  * @param info the buffer where to write the file-info
  * @return 0 on success
  */
-int iso_stat(void *h,tInodeNo ino,sFileInfo *info);
+int iso_stat(void *h,inode_t ino,sFileInfo *info);
 
 /**
  * Mount-entry for read()
@@ -307,7 +307,7 @@ int iso_stat(void *h,tInodeNo ino,sFileInfo *info);
  * @param count the number of bytes to read
  * @return number of read bytes on success
  */
-ssize_t iso_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count);
+ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,uint offset,size_t count);
 
 /**
  * BUilds a timestamp from the given dir-date
@@ -316,7 +316,7 @@ ssize_t iso_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count)
  * @param ddate the dir-date
  * @return the timestamp
  */
-tTime iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate);
+time_t iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate);
 
 #if DEBUGGING
 

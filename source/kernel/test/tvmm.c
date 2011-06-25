@@ -43,8 +43,8 @@ static void test_vmm(void) {
 }
 
 static void test_1(void) {
-	tVMRegNo rno,rno2,rno3;
-	tPid pid;
+	vmreg_t rno,rno2,rno3;
+	pid_t pid;
 	sProc *p = proc_getRunning();
 	sProc *clone;
 	test_caseStart("Testing vmm_add() and vmm_remove()");
@@ -98,7 +98,7 @@ static void test_1(void) {
 }
 
 static void test_2(void) {
-	tVMRegNo rno;
+	vmreg_t rno;
 	uintptr_t start,end;
 	sProc *p = proc_getRunning();
 	test_caseStart("Testing vmm_grow()");

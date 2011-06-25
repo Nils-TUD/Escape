@@ -39,14 +39,14 @@ typedef struct {
 	/* signal handler */
 	sSignalSlot signals[SIG_COUNT];
 	/* the signal that the thread is currently handling (if > 0) */
-	tSig signal;
+	sig_t signal;
 } sSigThread;
 
-static bool sig_isFatal(tSig sig);
-static void sig_add(sSigThread *t,tSig sig);
-static void sig_remove(sSigThread *t,tSig sig);
-static void sig_unset(sSigThread *t,tSig sig);
-static sSigThread *sig_getThread(tTid tid,bool create);
+static bool sig_isFatal(sig_t sig);
+static void sig_add(sSigThread *t,sig_t sig);
+static void sig_remove(sSigThread *t,sig_t sig);
+static void sig_unset(sSigThread *t,sig_t sig);
+static sSigThread *sig_getThread(tid_t tid,bool create);
 
 static size_t pendingSignals = 0;
 static sSLList *sigThreads = NULL;
@@ -57,16 +57,16 @@ void sig_init(void) {
 		util_panic("Unable to create signal-thread-list");
 }
 
-bool sig_canHandle(tSig signal) {
+bool sig_canHandle(sig_t signal) {
 	/* we can't add a handler for SIG_KILL */
 	return signal >= 1 && signal < SIG_COUNT;
 }
 
-bool sig_canSend(tSig signal) {
+bool sig_canSend(sig_t signal) {
 	return signal < SIG_INTRPT_TIMER;
 }
 
-int sig_setHandler(tTid tid,tSig signal,fSignal func) {
+int sig_setHandler(tid_t tid,sig_t signal,fSignal func) {
 	sSigThread *t = sig_getThread(tid,true);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
 	if(!t)
@@ -78,7 +78,7 @@ int sig_setHandler(tTid tid,tSig signal,fSignal func) {
 	return 0;
 }
 
-void sig_unsetHandler(tTid tid,tSig signal) {
+void sig_unsetHandler(tid_t tid,sig_t signal) {
 	sSigThread *t = sig_getThread(tid,false);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
 	if(!t)
@@ -87,7 +87,7 @@ void sig_unsetHandler(tTid tid,tSig signal) {
 	sig_unset(t,signal);
 }
 
-void sig_removeHandlerFor(tTid tid) {
+void sig_removeHandlerFor(tid_t tid) {
 	size_t i;
 	sSigThread *t = sig_getThread(tid,false);
 	if(!t)
@@ -98,7 +98,7 @@ void sig_removeHandlerFor(tTid tid) {
 	cache_free(t);
 }
 
-void sig_cloneHandler(tTid parent,tTid child) {
+void sig_cloneHandler(tid_t parent,tid_t child) {
 	size_t i;
 	sSigThread *p = sig_getThread(parent,false);
 	sSigThread *c;
@@ -112,7 +112,7 @@ void sig_cloneHandler(tTid parent,tTid child) {
 	}
 }
 
-bool sig_hasSignal(tSig *sig,tTid *tid) {
+bool sig_hasSignal(sig_t *sig,tid_t *tid) {
 	sSLNode *n;
 	if(pendingSignals == 0)
 		return false;
@@ -132,12 +132,12 @@ bool sig_hasSignal(tSig *sig,tTid *tid) {
 	return false;
 }
 
-bool sig_hasSignalFor(tTid tid) {
+bool sig_hasSignalFor(tid_t tid) {
 	sSigThread *st = sig_getThread(tid,false);
 	return st && st->signalsPending && !st->signal && !st->thread->ignoreSignals;
 }
 
-void sig_addSignalFor(tPid pid,tSig signal) {
+void sig_addSignalFor(pid_t pid,sig_t signal) {
 	sProc *p = proc_getByPid(pid);
 	sSLNode *n;
 	bool sent = false;
@@ -157,7 +157,7 @@ void sig_addSignalFor(tPid pid,tSig signal) {
 		proc_terminate(p,1,signal);
 }
 
-bool sig_addSignal(tSig signal) {
+bool sig_addSignal(sig_t signal) {
 	sSLNode *n;
 	bool res = false;
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
@@ -170,7 +170,7 @@ bool sig_addSignal(tSig signal) {
 	return res;
 }
 
-fSignal sig_startHandling(tTid tid,tSig signal) {
+fSignal sig_startHandling(tid_t tid,sig_t signal) {
 	sSigThread *t = sig_getThread(tid,false);
 	assert(t != NULL);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
@@ -181,8 +181,8 @@ fSignal sig_startHandling(tTid tid,tSig signal) {
 	return t->signals[signal].handler;
 }
 
-tSig sig_ackHandling(tTid tid) {
-	tSig res;
+sig_t sig_ackHandling(tid_t tid) {
+	sig_t res;
 	sSigThread *t = sig_getThread(tid,false);
 	assert(t != NULL);
 	vassert(t->signal != 0,"No signal handling");
@@ -192,7 +192,7 @@ tSig sig_ackHandling(tTid tid) {
 	return res;
 }
 
-const char *sig_dbg_getName(tSig signal) {
+const char *sig_dbg_getName(sig_t signal) {
 	static const char *names[] = {
 		"SIG_KILL",
 		"SIG_TERM",
@@ -247,32 +247,32 @@ size_t sig_dbg_getHandlerCount(void) {
 	return c;
 }
 
-static bool sig_isFatal(tSig sig) {
+static bool sig_isFatal(sig_t sig) {
 	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT ||
 		sig == SIG_PIPE_CLOSED;
 }
 
-static void sig_add(sSigThread *t,tSig sig) {
+static void sig_add(sSigThread *t,sig_t sig) {
 	t->signals[sig].pending++;
 	t->signalsPending |= 1 << sig;
 	pendingSignals++;
 }
 
-static void sig_remove(sSigThread *t,tSig sig) {
+static void sig_remove(sSigThread *t,sig_t sig) {
 	assert(pendingSignals > 0);
 	if(--t->signals[sig].pending == 0)
 		t->signalsPending &= ~(1 << sig);
 	pendingSignals--;
 }
 
-static void sig_unset(sSigThread *t,tSig sig) {
+static void sig_unset(sSigThread *t,sig_t sig) {
 	assert(pendingSignals >= t->signals[sig].pending);
 	pendingSignals -= t->signals[sig].pending;
 	t->signals[sig].pending = 0;
 	t->signalsPending &= ~(1 << sig);
 }
 
-static sSigThread *sig_getThread(tTid tid,bool create) {
+static sSigThread *sig_getThread(tid_t tid,bool create) {
 	sSLNode *n;
 	sSigThread *st;
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {

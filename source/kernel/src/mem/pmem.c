@@ -38,7 +38,7 @@
  * @param frame the frame-number
  * @param used whether the frame is used
  */
-static void pmem_markUsed(tFrameNo frame,bool used);
+static void pmem_markUsed(frameno_t frame,bool used);
 
 /* the bitmap for the frames of the lowest few MB
  * 0 = free, 1 = used
@@ -51,11 +51,11 @@ static size_t freeCont = 0;
  */
 static size_t stackSize = 0;
 static uintptr_t stackBegin = 0;
-static tFrameNo *stack = NULL;
+static frameno_t *stack = NULL;
 
 void pmem_init(void) {
 	pmem_initArch(&stackBegin,&stackSize,&bitmap);
-	stack = (tFrameNo*)stackBegin;
+	stack = (frameno_t*)stackBegin;
 	pmem_markAvailable();
 }
 
@@ -68,7 +68,7 @@ size_t pmem_getFreeFrames(uint types) {
 	if(types & MM_CONT)
 		count += freeCont;
 	if(types & MM_DEF)
-		count += ((uintptr_t)stack - stackBegin) / sizeof(tFrameNo);
+		count += ((uintptr_t)stack - stackBegin) / sizeof(frameno_t);
 	return count;
 }
 
@@ -106,14 +106,14 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	return i;
 }
 
-void pmem_freeContiguous(tFrameNo first,size_t count) {
+void pmem_freeContiguous(frameno_t first,size_t count) {
 #if DEBUG_ALLOC_N_FREE
 	vid_printf("[FC] %x:%zu\n",first,count);
 #endif
 	pmem_markRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
 }
 
-tFrameNo pmem_allocate(void) {
+frameno_t pmem_allocate(void) {
 	/* no more frames free? */
 	if((uintptr_t)stack == stackBegin)
 		util_panic("Not enough memory :(");
@@ -133,7 +133,7 @@ tFrameNo pmem_allocate(void) {
 	return *(--stack);
 }
 
-void pmem_free(tFrameNo frame) {
+void pmem_free(frameno_t frame) {
 #if DEBUG_ALLOC_N_FREE
 	sFuncCall *trace = util_getKernelStackTrace();
 	size_t i = 0;
@@ -158,7 +158,7 @@ void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
 
 void pmem_print(uint types) {
 	size_t i,pos = BITMAP_START;
-	tFrameNo *ptr;
+	frameno_t *ptr;
 	if(types & MM_CONT) {
 		vid_printf("Bitmap: (frame numbers)\n");
 		for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
@@ -176,7 +176,7 @@ void pmem_print(uint types) {
 	}
 }
 
-static void pmem_markUsed(tFrameNo frame,bool used) {
+static void pmem_markUsed(frameno_t frame,bool used) {
 	/* ignore the stuff before; we don't manage it */
 	if(frame < BITMAP_START_FRAME)
 		return;

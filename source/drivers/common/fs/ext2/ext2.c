@@ -146,11 +146,11 @@ sFileSystem *ext2_getFS(void) {
 	return fs;
 }
 
-tInodeNo ext2_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt) {
+inode_t ext2_resPath(void *h,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
 	return ext2_path_resolve((sExt2*)h,path,flags,dev,resLastMnt);
 }
 
-tInodeNo ext2_open(void *h,tInodeNo ino,uint flags) {
+inode_t ext2_open(void *h,inode_t ino,uint flags) {
 	sExt2 *e = (sExt2*)h;
 	/* truncate? */
 	if(flags & IO_TRUNCATE) {
@@ -165,12 +165,12 @@ tInodeNo ext2_open(void *h,tInodeNo ino,uint flags) {
 	return ino;
 }
 
-void ext2_close(void *h,tInodeNo ino) {
+void ext2_close(void *h,inode_t ino) {
 	UNUSED(h);
 	UNUSED(ino);
 }
 
-int ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
+int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
 	sExt2 *e = (sExt2*)h;
 	const sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
 	if(cnode == NULL)
@@ -192,15 +192,15 @@ int ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	return 0;
 }
 
-ssize_t ext2_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count) {
+ssize_t ext2_read(void *h,inode_t inodeNo,void *buffer,uint offset,size_t count) {
 	return ext2_file_read((sExt2*)h,inodeNo,buffer,offset,count);
 }
 
-ssize_t ext2_write(void *h,tInodeNo inodeNo,const void *buffer,uint offset,size_t count) {
+ssize_t ext2_write(void *h,inode_t inodeNo,const void *buffer,uint offset,size_t count) {
 	return ext2_file_write((sExt2*)h,inodeNo,buffer,offset,count);
 }
 
-int ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
+int ext2_link(void *h,inode_t dstIno,inode_t dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	int res;
 	sExt2CInode *dir,*ino;
@@ -217,7 +217,7 @@ int ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
 	return res;
 }
 
-int ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
+int ext2_unlink(void *h,inode_t dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
@@ -229,7 +229,7 @@ int ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
 	return res;
 }
 
-int ext2_mkdir(void *h,tInodeNo dirIno,const char *name) {
+int ext2_mkdir(void *h,inode_t dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
@@ -240,7 +240,7 @@ int ext2_mkdir(void *h,tInodeNo dirIno,const char *name) {
 	return res;
 }
 
-int ext2_rmdir(void *h,tInodeNo dirIno,const char *name) {
+int ext2_rmdir(void *h,inode_t dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
@@ -262,15 +262,15 @@ void ext2_sync(void *h) {
 	bcache_flush(&e->blockCache);
 }
 
-tBlockNo ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo) {
+block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo) {
 	return (inodeNo - 1) / le32tocpu(e->superBlock.inodesPerGroup);
 }
 
-tBlockNo ext2_getGroupOfBlock(sExt2 *e,tBlockNo block) {
+block_t ext2_getGroupOfBlock(sExt2 *e,block_t block) {
 	return block / le32tocpu(e->superBlock.blocksPerGroup);
 }
 
-tBlockNo ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo) {
+block_t ext2_getGroupOfInode(sExt2 *e,inode_t inodeNo) {
 	return inodeNo / le32tocpu(e->superBlock.inodesPerGroup);
 }
 
@@ -279,7 +279,7 @@ size_t ext2_getBlockGroupCount(sExt2 *e) {
 	return (le32tocpu(e->superBlock.blockCount) + bpg - 1) / bpg;
 }
 
-bool ext2_bgHasBackups(sExt2 *e,tBlockNo i) {
+bool ext2_bgHasBackups(sExt2 *e,block_t i) {
 	/* if the sparse-feature is enabled, just the groups 0, 1 and powers of 3, 5 and 7 contain
 	 * the backup */
 	if(!(le32tocpu(e->superBlock.featureRoCompat) & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))

@@ -34,7 +34,7 @@ static char buffer[512];
 
 int cons_cmd_file(size_t argc,char **argv) {
 	sProc *p = proc_getRunning();
-	tFileNo file = -1;
+	file_t file = -1;
 	ssize_t i,count;
 	int res;
 	sLines lines;

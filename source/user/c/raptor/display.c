@@ -80,7 +80,7 @@ static char bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
 };
 
 sVTSize ssize;
-static tFD video;
+static int video;
 static char *buffer = NULL;
 static char *backup = NULL;
 

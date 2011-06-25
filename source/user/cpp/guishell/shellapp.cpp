@@ -31,7 +31,7 @@
 #include <vterm/vtout.h>
 #include "shellapp.h"
 
-ShellApplication::ShellApplication(tFD sid,ShellControl *sh)
+ShellApplication::ShellApplication(int sid,ShellControl *sh)
 		: Application(), _sid(sid), _sh(sh), _cfg(sVTermCfg()),
 		  rbuffer(new char[READ_BUF_SIZE]), rbufPos(0) {
 	_inst = this;
@@ -49,7 +49,7 @@ ShellApplication::~ShellApplication() {
 }
 
 void ShellApplication::doEvents() {
-	tMsgId mid;
+	msgid_t mid;
 	ssize_t res = RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg)));
 	if(res < 0 && res != ERR_WOULD_BLOCK)
 		error("Read from window-manager failed");
@@ -83,8 +83,8 @@ void ShellApplication::handleKbMsg() {
 }
 
 void ShellApplication::driverMain() {
-	tMsgId mid;
-	tFD fd = getWork(&_sid,1,NULL,&mid,&_msg,sizeof(_msg),GW_NOBLOCK);
+	msgid_t mid;
+	int fd = getWork(&_sid,1,NULL,&mid,&_msg,sizeof(_msg),GW_NOBLOCK);
 	if(fd < 0) {
 		if(fd != ERR_NO_CLIENT_WAITING)
 			printe("[GUISH] Unable to get client");

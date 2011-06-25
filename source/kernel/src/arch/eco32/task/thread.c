@@ -31,11 +31,11 @@
 #include <errors.h>
 
 extern bool thread_save(sThreadRegs *saveArea);
-extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,tFrameNo kstackFrame);
+extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
 
 int thread_initArch(sThread *t) {
 	/* setup kernel-stack for us */
-	tFrameNo stackFrame = pmem_allocate();
+	frameno_t stackFrame = pmem_allocate();
 	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	t->kstackFrame = stackFrame;
 	return 0;
@@ -87,7 +87,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	return 0;
 }
 
-void thread_switchTo(tTid tid) {
+void thread_switchTo(tid_t tid) {
 	sThread *cur = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {

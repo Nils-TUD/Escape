@@ -235,7 +235,7 @@ void paging_mapKernelSpace(void) {
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
 		/* get frame and insert into page-dir */
-		tFrameNo frame = pmem_allocate();
+		frameno_t frame = pmem_allocate();
 		pde->ptFrameNo = frame;
 		pde->present = true;
 		pde->writable = true;
@@ -323,7 +323,7 @@ bool paging_isRangeWritable(uintptr_t virt,size_t count) {
 	return true;
 }
 
-uintptr_t paging_mapToTemp(const tFrameNo *frames,size_t count) {
+uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {
 	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE);
 	paging_map(TEMP_MAP_AREA,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	return TEMP_MAP_AREA;
@@ -333,9 +333,9 @@ void paging_unmapFromTemp(size_t count) {
 	paging_unmap(TEMP_MAP_AREA,count,false);
 }
 
-ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir) {
+ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	uintptr_t kstackAddr;
-	tFrameNo pdirFrame;
+	frameno_t pdirFrame;
 	ssize_t frmCount = 0;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
@@ -434,16 +434,16 @@ bool paging_isPresent(tPageDir pdir,uintptr_t virt) {
 	return pt->present && pt->exists;
 }
 
-tFrameNo paging_getFrameNo(tPageDir pdir,uintptr_t virt) {
+frameno_t paging_getFrameNo(tPageDir pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	assert(pt->present && pt->exists);
 	return pt->frameNumber;
 }
 
-tFrameNo paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
+frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	UNUSED(regFlags);
-	tFrameNo frame = pmem_allocate();
+	frameno_t frame = pmem_allocate();
 	uintptr_t temp = paging_mapToTemp(&frame,1);
 	memcpy((void*)temp,buffer,loadCount);
 	paging_unmapFromTemp(1);
@@ -458,7 +458,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintpt
 	while(count-- > 0) {
 		sAllocStats mstats;
 		sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(srctables,virtSrc);
-		tFrameNo *frames = NULL;
+		frameno_t *frames = NULL;
 		uint flags = 0;
 		if(pte->present)
 			flags |= PG_PRESENT;
@@ -471,7 +471,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintpt
 			flags |= PG_SUPERVISOR;
 		if(share || pte->present) {
 			flags |= PG_ADDR_TO_FRAME;
-			frames = (tFrameNo*)pte;
+			frames = (frameno_t*)pte;
 		}
 		mstats = paging_mapTo(dst,virtDst,frames,1,flags);
 		if(flags & PG_PRESENT)
@@ -486,11 +486,11 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintpt
 	return stats;
 }
 
-sAllocStats paging_map(uintptr_t virt,const tFrameNo *frames,size_t count,uint flags) {
+sAllocStats paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
 	return paging_mapTo(curPDir,virt,frames,count,flags);
 }
 
-sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,size_t count,
+sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const frameno_t *frames,size_t count,
 		uint flags) {
 	sAllocStats stats = {0,0};
 	uintptr_t ptables = paging_getPTables(pdir);
@@ -688,7 +688,7 @@ static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables) {
 }
 
 #if 0
-void paging_getFrameNos(tFrameNo *nos,uintptr_t addr,size_t size) {
+void paging_getFrameNos(frameno_t *nos,uintptr_t addr,size_t size) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(addr);
 	size_t pcount = BYTES_2_PAGES((addr & (PAGE_SIZE - 1)) + size);
 	while(pcount-- > 0) {

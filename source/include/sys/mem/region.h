@@ -40,9 +40,9 @@
 #define RF_GROWS_DOWN		128
 
 typedef struct {
-	tInodeNo ino;
-	tDevNo dev;
-	tTime modifytime;
+	inode_t ino;
+	dev_t dev;
+	time_t modifytime;
 } sBinDesc;
 
 typedef struct {
@@ -51,7 +51,7 @@ typedef struct {
 	off_t binOffset;	/* offset in the binary */
 	size_t byteCount;		/* number of bytes */
 	size_t loadCount;		/* number of bytes to load from disk (the rest is zero'ed) */
-	tTime timestamp;		/* timestamp of last usage (for swapping) */
+	time_t timestamp;		/* timestamp of last usage (for swapping) */
 	size_t pfSize;			/* size of pageFlags */
 	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
 	sSLList *procs;			/* linked list of processes that use this region */

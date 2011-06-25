@@ -7,9 +7,9 @@
 #include <time.h>
 #include "fstime.h"
 
-static tFD timeFd = -1;
+static int timeFd = -1;
 
-tTime timestamp(void) {
+time_t timestamp(void) {
 	struct tm t;
 	/* open CMOS and read date */
 	if(timeFd < 0) {

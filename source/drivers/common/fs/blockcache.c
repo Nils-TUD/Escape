@@ -43,7 +43,7 @@ static void bcache_doRelease(sCBlock *b,bool unlockAlloc);
 /**
  * Requests the given block and reads it from disk if desired
  */
-static sCBlock *bcache_doRequest(sBlockCache *c,tBlockNo blockNo,bool doRead,uint mode);
+static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint mode);
 /**
  * Fetches a block-cache-entry
  */
@@ -98,11 +98,11 @@ void bcache_markDirty(sCBlock *b) {
 	b->dirty = true;
 }
 
-sCBlock *bcache_create(sBlockCache *c,tBlockNo blockNo) {
+sCBlock *bcache_create(sBlockCache *c,block_t blockNo) {
 	return bcache_doRequest(c,blockNo,false,BMODE_WRITE);
 }
 
-sCBlock *bcache_request(sBlockCache *c,tBlockNo blockNo,uint mode) {
+sCBlock *bcache_request(sBlockCache *c,block_t blockNo,uint mode) {
 	return bcache_doRequest(c,blockNo,true,mode);
 }
 
@@ -126,7 +126,7 @@ void bcache_release(sCBlock *b) {
 	bcache_doRelease(b,true);
 }
 
-static sCBlock *bcache_doRequest(sBlockCache *c,tBlockNo blockNo,bool doRead,uint mode) {
+static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint mode) {
 	sCBlock *block,*bentry;
 
 	/* aquire tpool_lock for getting a block */

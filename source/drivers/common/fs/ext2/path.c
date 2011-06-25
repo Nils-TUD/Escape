@@ -33,10 +33,10 @@
 #include "file.h"
 #include "dir.h"
 
-tInodeNo ext2_path_resolve(sExt2 *e,const char *path,uint flags,tDevNo *dev,bool resLastMnt) {
+inode_t ext2_path_resolve(sExt2 *e,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
 	sExt2CInode *cnode = NULL;
-	tInodeNo res;
-	tDevNo mntDev;
+	inode_t res;
+	dev_t mntDev;
 	const char *p = path;
 	int err;
 	ssize_t pos;

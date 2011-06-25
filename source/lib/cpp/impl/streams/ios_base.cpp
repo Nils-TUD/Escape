@@ -34,12 +34,12 @@ namespace std {
 
 	ios_base::Init::Init() {
 		if(init_cnt++ == 0) {
-			_cin.open((tFD)STDIN_FILENO);
+			_cin.open((int)STDIN_FILENO);
 			_cin.tie(&cout);
-			_cout.open((tFD)STDOUT_FILENO);
-			_cerr.open((tFD)STDERR_FILENO);
+			_cout.open((int)STDOUT_FILENO);
+			_cerr.open((int)STDERR_FILENO);
 			_cerr.tie(&cout);
-			_clog.open((tFD)STDERR_FILENO);
+			_clog.open((int)STDERR_FILENO);
 		}
 	}
 	ios_base::Init::~Init() {

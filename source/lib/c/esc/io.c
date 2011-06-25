@@ -38,8 +38,8 @@ bool is_dir(const char *path) {
 	return MODE_IS_DIR(info.mode);
 }
 
-ssize_t sendRecvMsgData(tFD fd,tMsgId id,const void *data,size_t size) {
-	tMsgId mid;
+ssize_t sendRecvMsgData(int fd,msgid_t id,const void *data,size_t size) {
+	msgid_t mid;
 	sMsg msg;
 	int res;
 	if(data) {
@@ -56,7 +56,7 @@ ssize_t sendRecvMsgData(tFD fd,tMsgId id,const void *data,size_t size) {
 	return (ssize_t)msg.args.arg1;
 }
 
-ssize_t sendMsgData(tFD fd,tMsgId id,const void *data,size_t size) {
+ssize_t sendMsgData(int fd,msgid_t id,const void *data,size_t size) {
 	sMsg msg;
 	if(size > sizeof(msg.data.d))
 		return ERR_NOT_ENOUGH_MEM;
@@ -64,7 +64,7 @@ ssize_t sendMsgData(tFD fd,tMsgId id,const void *data,size_t size) {
 	return send(fd,id,&msg,sizeof(msg.data));
 }
 
-ssize_t recvMsgData(tFD fd,tMsgId id,void *data,size_t size) {
+ssize_t recvMsgData(int fd,msgid_t id,void *data,size_t size) {
 	sMsg msg;
 	ssize_t res;
 	if((res = send(fd,id,NULL,0)) < 0)
@@ -79,7 +79,7 @@ ssize_t recvMsgData(tFD fd,tMsgId id,void *data,size_t size) {
 	return res;
 }
 
-ssize_t vrecvMsgData(tFD fd,tMsgId id,void *data,size_t size,size_t argc,...) {
+ssize_t vrecvMsgData(int fd,msgid_t id,void *data,size_t size,size_t argc,...) {
 	sMsg msg;
 	ssize_t res;
 	va_list ap;

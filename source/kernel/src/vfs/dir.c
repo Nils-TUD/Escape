@@ -33,17 +33,17 @@
 
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {
-	tInodeNo nodeNo;
+	inode_t nodeNo;
 	uint16_t recLen;
 	uint16_t nameLen;
 	/* name follows (up to 255 bytes) */
 } A_PACKED sVFSDirEntry;
 
-static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,
+static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
-static off_t vfs_dir_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
+static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 
-sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
+sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	sVFSNode *target;
 	sVFSNode *node = vfs_node_create(parent,name);
 	if(node == NULL)
@@ -69,7 +69,7 @@ sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name) {
 	return node;
 }
 
-static off_t vfs_dir_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
+static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
 	UNUSED(pid);
 	UNUSED(node);
 	switch(whence) {
@@ -85,7 +85,7 @@ static off_t vfs_dir_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,ui
 	}
 }
 
-static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,
+static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(file);
 	size_t byteCount,fsByteCount;
@@ -113,7 +113,7 @@ static ssize_t vfs_dir_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,of
 		size_t c,curSize = bufSize;
 		fsBytes = cache_alloc(bufSize);
 		if(fsBytes != NULL) {
-			tFileNo rfile = vfs_real_openPath(pid,VFS_READ,"/");
+			file_t rfile = vfs_real_openPath(pid,VFS_READ,"/");
 			if(rfile >= 0) {
 				while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
 					fsByteCount += c;

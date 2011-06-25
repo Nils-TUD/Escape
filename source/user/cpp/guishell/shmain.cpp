@@ -74,7 +74,7 @@ int main(int argc,char **argv) {
 
 	// announce driver; try to find an unused driver-name because maybe a user wants
 	// to start us multiple times
-	tFD sid;
+	int sid;
 	size_t no = 0;
 	drvName = new char[MAX_PATH_LEN + 1];
 	do {
@@ -114,7 +114,7 @@ int main(int argc,char **argv) {
 	delete drvName;
 	char *drvPath = new char[MAX_PATH_LEN + 1];
 	snprintf(drvPath,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
-	tFD fin;
+	int fin;
 	do {
 		fin = open(drvPath,IO_READ);
 		if(fin < 0)
@@ -125,7 +125,7 @@ int main(int argc,char **argv) {
 	// redirect fds so that stdin, stdout and stderr refer to our driver
 	if(redirFd(STDIN_FILENO,fin) < 0)
 		error("Unable to redirect STDIN to %d",fin);
-	tFD fout = open(drvPath,IO_WRITE);
+	int fout = open(drvPath,IO_WRITE);
 	if(fout < 0)
 		error("Unable to open '%s' for writing",drvPath);
 	if(redirFd(STDOUT_FILENO,fout) < 0)

@@ -115,7 +115,7 @@ typedef void (*fIntrptHandler)(sIntrptStackFrame *stack);
 typedef struct {
 	fIntrptHandler handler;
 	const char *name;
-	tSig signal;
+	sig_t signal;
 } sInterrupt;
 
 /* isr prototype */
@@ -274,7 +274,7 @@ static size_t exCount = 0;
 static uint32_t lastEx = 0xFFFFFFFF;
 #if DEBUG_PAGEFAULTS
 static uintptr_t lastPFAddr = ~(uintptr_t)0;
-static tPid lastPFProc = INVALID_PID;
+static pid_t lastPFProc = INVALID_PID;
 #endif
 
 /* the interrupt descriptor table */

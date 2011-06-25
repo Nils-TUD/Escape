@@ -34,7 +34,7 @@ typedef struct {
 
 typedef struct {
 	/* use as a temporary kernel-stack for cloning */
-	tFrameNo tempStack;
+	frameno_t tempStack;
 	/* when handling a signal, we have to backup these registers */
 	struct {
 		uint64_t rbb;

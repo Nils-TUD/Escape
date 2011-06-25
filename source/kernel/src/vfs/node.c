@@ -61,15 +61,15 @@ void vfs_node_init(void) {
 	dyna_start(&nodeArray,sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
 }
 
-bool vfs_node_isValid(tInodeNo nodeNo) {
-	return nodeNo >= 0 && nodeNo < (tInodeNo)nodeArray.objCount;
+bool vfs_node_isValid(inode_t nodeNo) {
+	return nodeNo >= 0 && nodeNo < (inode_t)nodeArray.objCount;
 }
 
-tInodeNo vfs_node_getNo(const sVFSNode *node) {
-	return (tInodeNo)dyna_getIndex(&nodeArray,node);
+inode_t vfs_node_getNo(const sVFSNode *node) {
+	return (inode_t)dyna_getIndex(&nodeArray,node);
 }
 
-sVFSNode *vfs_node_get(tInodeNo nodeNo) {
+sVFSNode *vfs_node_get(inode_t nodeNo) {
 	return (sVFSNode*)dyna_getObj(&nodeArray,nodeNo);
 }
 
@@ -79,7 +79,7 @@ sVFSNode *vfs_node_getFirstChild(const sVFSNode *node) {
 	return vfs_link_resolve(node)->firstChild;
 }
 
-int vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info) {
+int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info) {
 	sVFSNode *n = vfs_node_get(nodeNo);
 
 	if(n->mode == 0)
@@ -102,7 +102,7 @@ int vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info) {
 	return 0;
 }
 
-char *vfs_node_getPath(tInodeNo nodeNo) {
+char *vfs_node_getPath(inode_t nodeNo) {
 	static char path[MAX_PATH_LEN];
 	size_t nlen,len = 0,total = 0;
 	sVFSNode *node = vfs_node_get(nodeNo);
@@ -139,7 +139,7 @@ char *vfs_node_getPath(tInodeNo nodeNo) {
 	return (char*)path;
 }
 
-int vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,uint flags) {
+int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint flags) {
 	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = vfs_node_get(0);
 	sThread *t = thread_getRunning();
@@ -369,7 +369,7 @@ void vfs_node_destroy(sVFSNode *n) {
 	vfs_node_releaseNode(n);
 }
 
-char *vfs_node_getId(tPid pid) {
+char *vfs_node_getId(pid_t pid) {
 	char *name;
 	size_t len,size;
 

@@ -46,7 +46,7 @@
 static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr);
 static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t loadCount);
 static ulong *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr);
-static tVMRegNo vmm_findRegIndex(sProc *p,bool text);
+static vmreg_t vmm_findRegIndex(sProc *p,bool text);
 static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags);
 static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end);
 static uintptr_t vmm_getFirstUsableAddr(sProc *p,bool textNData);
@@ -55,18 +55,18 @@ static bool vmm_extendRegions(sProc *p,size_t i);
 static sVMRegion *vmm_alloc(void);
 static void vmm_free(sVMRegion *vm,const sProc *p);
 static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,
-		uintptr_t *virt,tVMRegNo *rno);
+		uintptr_t *virt,vmreg_t *rno);
 
 void vmm_init(void) {
 	/* nothing to do */
 }
 
 uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
-	tVMRegNo reg;
+	vmreg_t reg;
 	sVMRegion *vm;
 	sAllocStats stats;
 	size_t i,pages = BYTES_2_PAGES(bCount);
-	tFrameNo *frames = (tFrameNo*)cache_alloc(sizeof(tFrameNo) * pages);
+	frameno_t *frames = (frameno_t*)cache_alloc(sizeof(frameno_t) * pages);
 	if(frames == NULL)
 		return 0;
 
@@ -114,17 +114,17 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 	return vm->virt;
 }
 
-tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type) {
+vmreg_t vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type) {
 	sRegion *reg;
 	sVMRegion *vm;
-	tVMRegNo rno;
+	vmreg_t rno;
 	int res;
 	uintptr_t virt;
 	ulong pgFlags,flags;
 
 	/* for text and shared-library-text: try to find another process with that text */
 	if(bin && (type == REG_TEXT || type == REG_SHLIBTEXT)) {
-		tVMRegNo prno;
+		vmreg_t prno;
 		sProc *binowner = proc_getProcWithBin(bin,&prno);
 		if(binowner)
 			return vmm_join(binowner,prno,p);
@@ -184,7 +184,7 @@ errReg:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-int vmm_setRegProt(sProc *p,tVMRegNo rno,ulong flags) {
+int vmm_setRegProt(sProc *p,vmreg_t rno,ulong flags) {
 	size_t i,pgcount;
 	sSLNode *n;
 	sVMRegion *vmreg = REG(p,rno);
@@ -205,7 +205,7 @@ int vmm_setRegProt(sProc *p,tVMRegNo rno,ulong flags) {
 	for(n = sll_begin(vmreg->reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
-		tVMRegNo mprno = vmm_getRNoByRegion(mp,vmreg->reg);
+		vmreg_t mprno = vmm_getRNoByRegion(mp,vmreg->reg);
 		sVMRegion *mpreg = REG(mp,mprno);
 		assert(mprno != -1);
 		for(i = 0; i < pgcount; i++) {
@@ -230,7 +230,7 @@ void vmm_swapOut(sRegion *reg,size_t index) {
 	for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
-		tVMRegNo mprno = vmm_getRNoByRegion(mp,reg);
+		vmreg_t mprno = vmm_getRNoByRegion(mp,reg);
 		sVMRegion *mpreg = REG(mp,mprno);
 		assert(mprno != -1);
 		paging_mapTo(mp->pagedir,mpreg->virt + offset,NULL,1,0);
@@ -242,7 +242,7 @@ void vmm_swapOut(sRegion *reg,size_t index) {
 	}
 }
 
-void vmm_swapIn(sRegion *reg,size_t index,tFrameNo frameNo) {
+void vmm_swapIn(sRegion *reg,size_t index,frameno_t frameNo) {
 	sSLNode *n;
 	uintptr_t offset = index * PAGE_SIZE;
 	uint flags = PG_PRESENT;
@@ -254,7 +254,7 @@ void vmm_swapIn(sRegion *reg,size_t index,tFrameNo frameNo) {
 	for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
-		tVMRegNo mprno = vmm_getRNoByRegion(mp,reg);
+		vmreg_t mprno = vmm_getRNoByRegion(mp,reg);
 		sVMRegion *mpreg = REG(mp,mprno);
 		assert(mprno != -1);
 		paging_mapTo(mp->pagedir,mpreg->virt + offset,&frameNo,1,flags);
@@ -266,7 +266,7 @@ void vmm_swapIn(sRegion *reg,size_t index,tFrameNo frameNo) {
 	}
 }
 
-void vmm_setTimestamp(const sThread *t,tTime timestamp) {
+void vmm_setTimestamp(const sThread *t,time_t timestamp) {
 	size_t i;
 	for(i = 0; i < t->proc->regSize; i++) {
 		sVMRegion *vm = REG(t->proc,i);
@@ -282,7 +282,7 @@ void vmm_setTimestamp(const sThread *t,tTime timestamp) {
 
 sRegion *vmm_getLRURegion(const sProc *p) {
 	sRegion *lru = NULL;
-	tTime ts = UINT_MAX; /* TODO thats not correct */
+	time_t ts = UINT_MAX; /* TODO thats not correct */
 	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
@@ -322,12 +322,12 @@ size_t vmm_getPgIdxForSwap(const sRegion *reg) {
 	return 0;
 }
 
-bool vmm_exists(const sProc *p,tVMRegNo reg) {
+bool vmm_exists(const sProc *p,vmreg_t reg) {
 	assert(p);
-	return reg >= 0 && reg < (tVMRegNo)p->regSize && REG(p,reg);
+	return reg >= 0 && reg < (vmreg_t)p->regSize && REG(p,reg);
 }
 
-tVMRegNo vmm_getDLDataReg(const sProc *p) {
+vmreg_t vmm_getDLDataReg(const sProc *p) {
 	size_t i;
 	assert(p);
 	for(i = 0; i < p->regSize; i++) {
@@ -359,15 +359,15 @@ float vmm_getMemUsage(const sProc *p,size_t *pages) {
 	return rpages;
 }
 
-sSLList *vmm_getUsersOf(const sProc *p,tVMRegNo rno) {
+sSLList *vmm_getUsersOf(const sProc *p,vmreg_t rno) {
 	return REG(p,rno)->reg->procs;
 }
 
-sVMRegion *vmm_getRegion(const sProc *p,tVMRegNo rno) {
+sVMRegion *vmm_getRegion(const sProc *p,vmreg_t rno) {
 	return REG(p,rno);
 }
 
-tVMRegNo vmm_getRegionOf(const sProc *p,uintptr_t addr) {
+vmreg_t vmm_getRegionOf(const sProc *p,uintptr_t addr) {
 	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
@@ -377,7 +377,7 @@ tVMRegNo vmm_getRegionOf(const sProc *p,uintptr_t addr) {
 	return -1;
 }
 
-tVMRegNo vmm_getRNoByRegion(const sProc *p,const sRegion *reg) {
+vmreg_t vmm_getRNoByRegion(const sProc *p,const sRegion *reg) {
 	size_t i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
@@ -387,16 +387,16 @@ tVMRegNo vmm_getRNoByRegion(const sProc *p,const sRegion *reg) {
 	return -1;
 }
 
-void vmm_getRegRange(const sProc *p,tVMRegNo reg,uintptr_t *start,uintptr_t *end) {
+void vmm_getRegRange(const sProc *p,vmreg_t reg,uintptr_t *start,uintptr_t *end) {
 	sVMRegion *vm = REG(p,reg);
-	assert(p && reg >= 0 && reg < (tVMRegNo)p->regSize && vm);
+	assert(p && reg >= 0 && reg < (vmreg_t)p->regSize && vm);
 	if(start)
 		*start = vm->virt;
 	if(end)
 		*end = vm->virt + vm->reg->byteCount;
 }
 
-tVMRegNo vmm_hasBinary(const sProc *p,const sBinDesc *bin) {
+vmreg_t vmm_hasBinary(const sProc *p,const sBinDesc *bin) {
 	sVMRegion *vm;
 	size_t i;
 	if(p->regSize == 0 || p->regions == NULL)
@@ -415,7 +415,7 @@ tVMRegNo vmm_hasBinary(const sProc *p,const sBinDesc *bin) {
 
 bool vmm_pagefault(uintptr_t addr) {
 	sProc *p = proc_getRunning();
-	tVMRegNo rno = vmm_getRegionOf(p,addr);
+	vmreg_t rno = vmm_getRegionOf(p,addr);
 	sVMRegion *vm;
 	ulong *flags;
 	if(rno < 0)
@@ -441,11 +441,11 @@ bool vmm_pagefault(uintptr_t addr) {
 	return false;
 }
 
-void vmm_remove(sProc *p,tVMRegNo reg) {
+void vmm_remove(sProc *p,vmreg_t reg) {
 	size_t i,c = 0;
 	sVMRegion *vm = REG(p,reg);
 	size_t pcount = BYTES_2_PAGES(vm->reg->byteCount);
-	assert(p && reg < (tVMRegNo)p->regSize && vm != NULL);
+	assert(p && reg < (vmreg_t)p->regSize && vm != NULL);
 	assert(reg_remFrom(vm->reg,p));
 	if(reg_refCount(vm->reg) == 0) {
 		uintptr_t virt = vm->virt;
@@ -502,13 +502,13 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 	}
 }
 
-tVMRegNo vmm_join(const sProc *src,tVMRegNo rno,sProc *dst) {
+vmreg_t vmm_join(const sProc *src,vmreg_t rno,sProc *dst) {
 	sVMRegion *vm = REG(src,rno),*nvm;
-	tVMRegNo nrno;
+	vmreg_t nrno;
 	sAllocStats stats;
 	size_t pageCount;
 	assert(src && dst && src != dst);
-	assert(rno >= 0 && rno < (tVMRegNo)src->regSize && vm != NULL);
+	assert(rno >= 0 && rno < (vmreg_t)src->regSize && vm != NULL);
 	assert(vm->reg->flags & RF_SHAREABLE);
 	nvm = vmm_alloc();
 	if(nvm == NULL)
@@ -591,7 +591,7 @@ int vmm_cloneAll(sProc *dst) {
 					/* not when demand-load or swapping is outstanding since we've not loaded it
 					 * from disk yet */
 					if(!(vm->reg->pageFlags[j] & (PF_DEMANDLOAD | PF_SWAPPED))) {
-						tFrameNo frameNo = paging_getFrameNo(src->pagedir,virt);
+						frameno_t frameNo = paging_getFrameNo(src->pagedir,virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->pageFlags[j] & PF_COPYONWRITE)) {
 							vm->reg->pageFlags[j] |= PF_COPYONWRITE;
@@ -669,13 +669,13 @@ int vmm_growStackTo(sThread *t,uintptr_t addr) {
 	return res;
 }
 
-ssize_t vmm_grow(sProc *p,tVMRegNo reg,ssize_t amount) {
+ssize_t vmm_grow(sProc *p,vmreg_t reg,ssize_t amount) {
 	size_t oldSize;
 	uintptr_t oldVirt,virt;
 	sVMRegion *vm;
 
 	vm = REG(p,reg);
-	assert(p && reg >= 0 && reg < (tVMRegNo)p->regSize && vm != NULL);
+	assert(p && reg >= 0 && reg < (vmreg_t)p->regSize && vm != NULL);
 	assert((vm->reg->flags & RF_GROWABLE) && !(vm->reg->flags & RF_SHAREABLE));
 
 	/* check wether we've reached the max stack-pages */
@@ -803,7 +803,7 @@ static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr) {
 	/* if another thread already loads it, wait here until he's done */
 	if(*flags & PF_LOADINPROGRESS) {
 		do {
-			ev_wait(t->tid,EVI_VMM_DONE,(tEvObj)vm->reg);
+			ev_wait(t->tid,EVI_VMM_DONE,(evobj_t)vm->reg);
 			thread_switchNoSigs();
 		}
 		while(*flags & PF_LOADINPROGRESS);
@@ -827,16 +827,16 @@ static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr) {
 
 	/* wakeup all waiting processes */
 	*flags &= ~PF_LOADINPROGRESS;
-	ev_wakeup(EVI_VMM_DONE,(tEvObj)vm->reg);
+	ev_wakeup(EVI_VMM_DONE,(evobj_t)vm->reg);
 	return res;
 }
 
 static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t loadCount) {
 	int err;
-	tPid pid = t->proc->pid;
+	pid_t pid = t->proc->pid;
 	void *tempBuf;
 	sSLNode *n;
-	tFrameNo frame;
+	frameno_t frame;
 	uint mapFlags;
 
 	if(vm->binFile < 0) {
@@ -886,7 +886,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,uintptr_t addr,size_t load
 	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
-		tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
+		vmreg_t mprno = vmm_getRNoByRegion(mp,vm->reg);
 		sVMRegion *mpreg = REG(mp,mprno);
 		assert(mprno != -1);
 		paging_mapTo(mp->pagedir,mpreg->virt + (addr - vm->virt),&frame,1,mapFlags);
@@ -910,12 +910,12 @@ static ulong *vmm_getPageFlag(sVMRegion *reg,uintptr_t addr) {
 	return reg->reg->pageFlags + (addr - reg->virt) / PAGE_SIZE;
 }
 
-static tVMRegNo vmm_findRegIndex(sProc *p,bool text) {
+static vmreg_t vmm_findRegIndex(sProc *p,bool text) {
 	size_t j;
 	/* start behind the fix regions (text, rodata, bss and data) */
-	tVMRegNo i = text ? 0 : RNO_DATA + 1;
+	vmreg_t i = text ? 0 : RNO_DATA + 1;
 	for(j = 0; j < 2; j++) {
-		for(; i < (tVMRegNo)p->regSize; i++) {
+		for(; i < (vmreg_t)p->regSize; i++) {
 			if(REG(p,i) == NULL)
 				return i;
 		}
@@ -1014,7 +1014,7 @@ static void vmm_free(sVMRegion *vm,const sProc *p) {
 }
 
 static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,
-		uintptr_t *virt,tVMRegNo *rno) {
+		uintptr_t *virt,vmreg_t *rno) {
 	*rno = 0;
 	switch(type) {
 		case REG_TEXT:
@@ -1088,7 +1088,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 			break;
 	}
 	/* allocate / increase regions, if necessary */
-	if(p->regions == NULL || *rno >= (tVMRegNo)p->regSize) {
+	if(p->regions == NULL || *rno >= (vmreg_t)p->regSize) {
 		size_t count = MAX(4,*rno + 1);
 		void *nr = cache_realloc(p->regions,count * sizeof(sVMRegion*));
 		if(!nr)

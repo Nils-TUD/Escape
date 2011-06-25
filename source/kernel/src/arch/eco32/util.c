@@ -89,7 +89,7 @@ void util_copyToUser(void *dst,const void *src,size_t count) {
 	uintptr_t idst = (uintptr_t)dst;
 	size_t offset = idst & (PAGE_SIZE - 1);
 	while(count > 0) {
-		tFrameNo frameNo = paging_getFrameNo(p->pagedir,idst);
+		frameno_t frameNo = paging_getFrameNo(p->pagedir,idst);
 		size_t amount = MIN(count,PAGE_SIZE - offset);
 		memcpy((void*)((frameNo * PAGE_SIZE + offset) | DIR_MAPPED_SPACE),(void*)isrc,amount);
 		idst += amount;
@@ -104,7 +104,7 @@ void util_zeroToUser(void *dst,size_t count) {
 	uintptr_t idst = (uintptr_t)dst;
 	size_t offset = idst & (PAGE_SIZE - 1);
 	while(count > 0) {
-		tFrameNo frameNo = paging_getFrameNo(p->pagedir,idst);
+		frameno_t frameNo = paging_getFrameNo(p->pagedir,idst);
 		size_t amount = MIN(count,PAGE_SIZE - offset);
 		memclear((void*)((frameNo * PAGE_SIZE + offset) | DIR_MAPPED_SPACE),amount);
 		idst += amount;

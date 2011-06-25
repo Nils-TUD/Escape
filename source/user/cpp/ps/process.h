@@ -31,7 +31,7 @@ class process {
 	friend std::istream& operator >>(std::istream& is,process& p);
 
 public:
-	typedef tPid pid_type;
+	typedef pid_t pid_type;
 	typedef size_t size_type;
 	typedef unsigned long long cycle_type;
 

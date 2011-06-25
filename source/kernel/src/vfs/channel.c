@@ -43,15 +43,15 @@ typedef struct {
 } sChannel;
 
 typedef struct {
-	tMsgId id;
+	msgid_t id;
 	size_t length;
 } sMessage;
 
 static void vfs_chan_destroy(sVFSNode *n);
-static off_t vfs_chan_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
-static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node);
+static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
+static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node);
 
-sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent) {
+sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	sChannel *chan;
 	sVFSNode *node;
 	char *name = vfs_node_getId(pid);
@@ -98,7 +98,7 @@ static void vfs_chan_destroy(sVFSNode *n) {
 	}
 }
 
-static off_t vfs_chan_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
+static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
 	UNUSED(pid);
 	UNUSED(node);
 	switch(whence) {
@@ -113,7 +113,7 @@ static off_t vfs_chan_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,u
 	}
 }
 
-static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node) {
+static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
 	if(node->refCount == 0) {
 		/* notify the driver, if it is one */
@@ -140,7 +140,7 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 	return sll_length(chan->sendList) > 0;
 }
 
-ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *data,size_t size) {
+ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,const void *data,size_t size) {
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
@@ -185,14 +185,14 @@ ssize_t vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const void *da
 
 	/* notify the driver */
 	if(list == &(chan->sendList))
-		ev_wakeup(EVI_CLIENT,(tEvObj)n->parent);
+		ev_wakeup(EVI_CLIENT,(evobj_t)n->parent);
 	/* notify all threads that wait on this node for a msg */
 	else
-		ev_wakeup(EVI_RECEIVED_MSG,(tEvObj)n);
+		ev_wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
 	return 0;
 }
 
-ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *data,size_t size) {
+ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *data,size_t size) {
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
@@ -214,7 +214,7 @@ ssize_t vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,void *d
 	while(sll_length(*list) == 0) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
-		ev_wait(t->tid,event,(tEvObj)node);
+		ev_wait(t->tid,event,(evobj_t)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;

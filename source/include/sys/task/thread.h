@@ -72,17 +72,17 @@ struct sThread {
 	/* whether signals should be ignored (while being blocked) */
 	uint8_t ignoreSignals;
 	/* thread id */
-	tTid tid;
+	tid_t tid;
 	/* the events the thread waits for (if waiting) */
 	uint events;
 	/* the process we belong to */
 	sProc *proc;
 	/* the stack-region(s) for this thread */
-	tVMRegNo stackRegions[STACK_REG_COUNT];
+	vmreg_t stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
-	tVMRegNo tlsRegion;
+	vmreg_t tlsRegion;
 	/* the frame mapped at KERNEL_STACK */
-	tFrameNo kstackFrame;
+	frameno_t kstackFrame;
 	/* pointer to the kernel-stack end when entering the kernel */
 	sIntrptStackFrame *kstackEnd;
 	/* the save-area for registers */
@@ -145,7 +145,7 @@ void thread_setRunning(sThread *t);
  * @param tid the thread-id
  * @return the thread or NULL if not found
  */
-sThread *thread_getById(tTid tid);
+sThread *thread_getById(tid_t tid);
 
 /**
  * Performs a thread-switch. That means the current thread will be saved and the first thread
@@ -165,7 +165,7 @@ void thread_switchNoSigs(void);
  *
  * @param tid the thread-id
  */
-void thread_switchTo(tTid tid);
+void thread_switchTo(tid_t tid);
 
 /**
  * Kills dead threads, if there are any; is called by thread_switchTo(). Should NOT be called by
@@ -179,7 +179,7 @@ void thread_killDead(void);
  * @param tid the thread-id
  * @return true if the thread is ready now
  */
-bool thread_setReady(tTid tid);
+bool thread_setReady(tid_t tid);
 
 /**
  * Marks the given thread as blocked
@@ -187,7 +187,7 @@ bool thread_setReady(tTid tid);
  * @param tid the thread-id
  * @return true if the thread is blocked now
  */
-bool thread_setBlocked(tTid tid);
+bool thread_setBlocked(tid_t tid);
 
 /**
  * Marks the given thread as suspended or not-suspended
@@ -195,7 +195,7 @@ bool thread_setBlocked(tTid tid);
  * @param tid the thread-id
  * @param blocked wether to suspend or "unsuspend" the thread
  */
-void thread_setSuspended(tTid tid,bool blocked);
+void thread_setSuspended(tid_t tid,bool blocked);
 
 /**
  * Checks whether the given thread has the given region-number for stack
@@ -204,7 +204,7 @@ void thread_setSuspended(tTid tid,bool blocked);
  * @param regNo the region-number
  * @return true if so
  */
-bool thread_hasStackRegion(const sThread *t,tVMRegNo regNo);
+bool thread_hasStackRegion(const sThread *t,vmreg_t regNo);
 
 /**
  * Extends the stack of the current thread so that the given address is accessible. If that
@@ -238,7 +238,7 @@ int thread_finishClone(sThread *t,sThread *nt);
  * @param cloneProc whether a process is cloned or just a thread
  * @return 0 on success
  */
-int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,bool cloneProc);
+int thread_clone(const sThread *src,sThread **dst,sProc *p,frameno_t *stackFrame,bool cloneProc);
 
 /**
  * Clones the architecture-specific attributes of the given thread

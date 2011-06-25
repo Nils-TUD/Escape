@@ -28,7 +28,7 @@
 
 typedef struct {
 	char name[SIG_NAME_LEN + 1];
-	tSig signal;
+	sig_t signal;
 } sSigName;
 
 /* the signal the user can send */
@@ -45,7 +45,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char *argv[]) {
-	tSig sig = SIG_KILL;
+	sig_t sig = SIG_KILL;
 	char *ssig = NULL;
 	bool list = false;
 	size_t i;
@@ -78,7 +78,7 @@ int main(int argc,const char *argv[]) {
 		/* kill processes */
 		const char **args = ca_getfree();
 		while(*args) {
-			tPid pid = atoi(*args);
+			pid_t pid = atoi(*args);
 			if(pid > 0) {
 				if(sendSignalTo(pid,sig) < 0)
 					fprintf(stderr,"Unable to send signal %d to %d\n",sig,pid);

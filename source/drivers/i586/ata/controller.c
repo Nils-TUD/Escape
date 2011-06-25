@@ -50,7 +50,7 @@ static sATAController ctrls[2];
 void ctrl_init(bool useDma) {
 	ssize_t i,j;
 	int res;
-	tFD fd;
+	int fd;
 
 	/* get ide-controller from pci */
 	fd = open("/dev/pci",IO_READ | IO_WRITE);
@@ -185,7 +185,7 @@ void ctrl_resetIrq(sATAController *ctrl) {
 }
 
 void ctrl_waitIntrpt(sATAController *ctrl) {
-	tTime time = 0;
+	time_t time = 0;
 	if(!ctrl->useIrq)
 		return;
 	while(!ctrl->gotIrq) {
@@ -201,8 +201,8 @@ void ctrl_waitIntrpt(sATAController *ctrl) {
 	}
 }
 
-int ctrl_waitUntil(sATAController *ctrl,tTime timeout,tTime sleepTime,uint8_t set,uint8_t unset) {
-	tTime time = 0;
+int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t set,uint8_t unset) {
+	time_t time = 0;
 	while(time < timeout) {
 		uint8_t status = ctrl_inb(ctrl,ATA_REG_STATUS);
 		if(status & CMD_ST_ERROR)

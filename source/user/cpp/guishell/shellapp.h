@@ -36,7 +36,7 @@ using namespace gui;
 
 class ShellApplication : public Application {
 public:
-	ShellApplication(tFD sid,ShellControl *sh);
+	ShellApplication(int sid,ShellControl *sh);
 	virtual ~ShellApplication();
 
 protected:
@@ -53,7 +53,7 @@ private:
 	void driverMain();
 
 private:
-	tFD _sid;
+	int _sid;
 	sWaitObject _waits[2];
 	ShellControl *_sh;
 	sVTermCfg _cfg;

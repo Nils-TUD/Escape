@@ -58,8 +58,8 @@ sVTerm *vterm_get(size_t index) {
 	return vterms + index;
 }
 
-bool vterm_initAll(tFD *ids,sVTermCfg *cfg) {
-	tFD vidFd,speakerFd;
+bool vterm_initAll(int *ids,sVTermCfg *cfg) {
+	int vidFd,speakerFd;
 	sVTSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
 	const char *driver;

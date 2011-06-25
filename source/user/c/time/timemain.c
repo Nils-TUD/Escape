@@ -36,7 +36,7 @@ static void usage(const char *name) {
 }
 
 static int timerFreq;
-static tTime ms = 0;
+static time_t ms = 0;
 static int waitingPid = 0;
 
 int main(int argc,char **argv) {

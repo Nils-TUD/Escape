@@ -38,7 +38,7 @@ static void usage(char *name) {
 }
 
 int main(int argc,char **argv) {
-	tFD fd;
+	int fd;
 	long pid;
 	int vterm;
 	char *buffer;

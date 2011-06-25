@@ -81,14 +81,14 @@ static void createVFSEntry(const char *name,bool isPart);
 
 static uint32_t *diskRegs;
 static uint32_t *diskBuf;
-static tFD drvId;
+static int drvId;
 static uint diskCap = 0;
 static uint partCap = 0;
 static sMsg msg;
 static uint32_t buffer[MAX_RW_SIZE / sizeof(uint32_t)];
 
 int main(int argc,char **argv) {
-	tMsgId mid;
+	msgid_t mid;
 
 	if(argc < 2)
 		error("Usage: %s <wait>",argv[0]);
@@ -124,7 +124,7 @@ int main(int argc,char **argv) {
 	fclose(f);
 
 	while(1) {
-		tFD fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != ERR_INTERRUPTED)
 				printe("[DISK] Unable to get client");

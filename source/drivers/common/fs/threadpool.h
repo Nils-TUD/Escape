@@ -33,25 +33,25 @@
 #define tpool_unlock(x)		0
 #endif
 
-typedef void (*fReqHandler)(tFD fd,sMsg *msg,void *data);
+typedef void (*fReqHandler)(int fd,sMsg *msg,void *data);
 
 typedef struct {
 	fReqHandler handler;
-	tFD fd;
+	int fd;
 	sMsg msg;
 	void *data;
 } sFSRequest;
 
 typedef struct {
 	size_t id;
-	tTid tid;
+	tid_t tid;
 	volatile uchar state;
 	sFSRequest *req;
 } sReqThread;
 
 void tpool_init(void);
 void tpool_shutdown(void);
-size_t tpool_tidToId(tTid tid);
-bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,size_t msgSize,void *data);
+size_t tpool_tidToId(tid_t tid);
+bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,void *data);
 
 #endif /* THREADPOOL_H_ */

@@ -73,16 +73,16 @@ static sVM86Info *vm86_createInfo(uint16_t interrupt,const sVM86Regs *regs,
 		const sVM86Memarea *areas,size_t areaCount);
 static void vm86_destroyInfo(sVM86Info *i);
 
-static tFrameNo frameNos[(1024 * K) / PAGE_SIZE];
-static tTid vm86Tid = INVALID_TID;
-static tTid caller = INVALID_TID;
+static frameno_t frameNos[(1024 * K) / PAGE_SIZE];
+static tid_t vm86Tid = INVALID_TID;
+static tid_t caller = INVALID_TID;
 static sVM86Info *info = NULL;
 static int vm86Res = -1;
 
 int vm86_create(void) {
 	sProc *p;
 	sThread *t;
-	tPid pid;
+	pid_t pid;
 	size_t i,frameCount;
 	int res;
 

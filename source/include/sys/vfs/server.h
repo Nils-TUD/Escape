@@ -32,7 +32,7 @@
  * @param flags the flags
  * @return the node
  */
-sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,uint flags);
+sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags);
 
 /**
  * Tells the server that the given client has been removed. This way, it can reset the internal

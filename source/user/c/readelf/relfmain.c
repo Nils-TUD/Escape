@@ -166,7 +166,7 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static tFD fd;
+static int fd;
 static sElfEHeader eheader;
 static sElfAddr dynOff = 0;
 static sElfDyn *dyn = NULL;

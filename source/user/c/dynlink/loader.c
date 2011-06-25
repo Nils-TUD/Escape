@@ -31,11 +31,11 @@
 
 static void load_library(sSharedLib *dst);
 static sSharedLib *load_addLib(sSharedLib *lib);
-static uintptr_t load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
+static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
 		bool isLib);
-static void load_read(tFD binFd,uint offset,void *buffer,size_t count);
+static void load_read(int binFd,uint offset,void *buffer,size_t count);
 
-void load_doLoad(tFD binFd,sSharedLib *dst) {
+void load_doLoad(int binFd,sSharedLib *dst) {
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
 	sFileInfo info;
@@ -173,7 +173,7 @@ uintptr_t load_addSegments(void) {
 
 static void load_library(sSharedLib *dst) {
 	char path[MAX_PATH_LEN];
-	tFD fd;
+	int fd;
 	snprintf(path,sizeof(path),"/lib/%s",dst->name);
 	fd = open(path,IO_READ);
 	if(fd < 0)
@@ -193,7 +193,7 @@ static sSharedLib *load_addLib(sSharedLib *lib) {
 	return NULL;
 }
 
-static uintptr_t load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
+static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
 		bool isLib) {
 	uint stype;
 	void *addr;
@@ -237,7 +237,7 @@ static uintptr_t load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,siz
 	return (uintptr_t)addr;
 }
 
-static void load_read(tFD binFd,uint offset,void *buffer,size_t count) {
+static void load_read(int binFd,uint offset,void *buffer,size_t count) {
 	if(seek(binFd,offset,SEEK_SET) < 0)
 		load_error("Unable to seek to %x",offset);
 	if(RETRY(read(binFd,buffer,count)) != (ssize_t)count)

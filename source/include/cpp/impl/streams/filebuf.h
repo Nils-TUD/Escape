@@ -68,7 +68,7 @@ namespace std {
 		 * @param mode the mode
 		 * @return this on success, a null-pointer on failure
 		 */
-		filebuf* open(tFD fd,ios_base::openmode mode);
+		filebuf* open(int fd,ios_base::openmode mode);
 
 		/**
 		 * @return if a file has been opened successfully
@@ -130,7 +130,7 @@ namespace std {
 		bool fillBuffer() const;
 
 	private:
-		tFD _fd;
+		int _fd;
 		mutable pos_type _inPos;
 		mutable pos_type _inMax;
 		mutable char* _inBuf;

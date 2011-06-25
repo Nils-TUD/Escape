@@ -25,7 +25,7 @@
 /**
  * Returns the tid of the current thread
  *
- * @return tTid the thread-id
+ * @return tid_t the thread-id
  */
 int sysc_gettid(sIntrptStackFrame *stack);
 
@@ -39,7 +39,7 @@ int sysc_getThreadCount(sIntrptStackFrame *stack);
  *
  * @param entryPoint the entry-point
  * @param void* argument
- * @return tTid the new thread-id or < 0
+ * @return tid_t the new thread-id or < 0
  */
 int sysc_startThread(sIntrptStackFrame *stack);
 
@@ -60,7 +60,7 @@ int sysc_getCycles(sIntrptStackFrame *stack);
 /**
  * Blocks the process for a given number of milliseconds
  *
- * @param tTime the number of msecs
+ * @param time_t the number of msecs
  * @return int 0 on success or a negative error-code
  */
 int sysc_sleep(sIntrptStackFrame *stack);
@@ -105,7 +105,7 @@ int sysc_waitUnlock(sIntrptStackFrame *stack);
  * Notifies the given thread about the given events. If it was waiting for them, it will be
  * waked up.
  *
- * @param tTid the thread-id
+ * @param tid_t the thread-id
  * @param uint the events to notify about
  * @return int 0 on success
  */
@@ -133,7 +133,7 @@ int sysc_unlock(sIntrptStackFrame *stack);
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
  *
- * @param tTid the thread-id (0 = wait until all other threads died)
+ * @param tid_t the thread-id (0 = wait until all other threads died)
  * @return int 0 on success
  */
 int sysc_join(sIntrptStackFrame *stack);
@@ -141,7 +141,7 @@ int sysc_join(sIntrptStackFrame *stack);
 /**
  * Suspends a thread from the own process. That means it is blocked until resume() is called.
  *
- * @param tTid the thread-id
+ * @param tid_t the thread-id
  * @return int 0 on success
  */
 int sysc_suspend(sIntrptStackFrame *stack);
@@ -149,7 +149,7 @@ int sysc_suspend(sIntrptStackFrame *stack);
 /**
  * Resumes a thread from the own process that has been suspended previously
  *
- * @param tTid the thread-id
+ * @param tid_t the thread-id
  * @return int 0 on success
  */
 int sysc_resume(sIntrptStackFrame *stack);

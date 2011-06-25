@@ -34,7 +34,7 @@ int main(void) {
 		error("It's not good to start init twice ;)");
 
 	// wait for fs; we need it for exec
-	tFD fd;
+	int fd;
 	int retries = 0;
 	do {
 		fd = open("/dev/fs",IO_READ | IO_WRITE);

@@ -61,16 +61,16 @@ static void test_seek(void);
 static void test_stat(void);
 
 /* some convenience functions */
-static int _getppidof(tPid pid) {
+static int _getppidof(pid_t pid) {
 	return doSyscall(SYSCALL_PPID,pid,0,0);
 }
 static int _open(const char *path,uint mode) {
 	return doSyscall(SYSCALL_OPEN,(ulong)path,mode,0);
 }
-static int _close(tFD fd) {
+static int _close(int fd) {
 	return doSyscall(SYSCALL_CLOSE,fd,0,0);
 }
-static int _read(tFD fd,void *buffer,size_t count) {
+static int _read(int fd,void *buffer,size_t count) {
 	return doSyscall(SYSCALL_READ,fd,(ulong)buffer,count);
 }
 static int _regDriver(const char *name,uint type) {
@@ -82,7 +82,7 @@ static int _changeSize(size_t change) {
 static int __mapPhysical(uintptr_t addr,size_t count) {
 	return doSyscall(SYSCALL_MAPPHYS,addr,count,0);
 }
-static int _write(tFD fd,void *buffer,size_t count) {
+static int _write(int fd,void *buffer,size_t count) {
 	return doSyscall(SYSCALL_WRITE,fd,(ulong)buffer,count);
 }
 #ifdef __i386__
@@ -93,28 +93,28 @@ static int _releaseIOPorts(uint16_t start,size_t count) {
 	return doSyscall(SYSCALL_RELIOPORTS,start,count,0);
 }
 #endif
-static int _dupFd(tFD fd) {
+static int _dupFd(int fd) {
 	return doSyscall(SYSCALL_DUPFD,fd,0,0);
 }
-static int _redirFd(tFD src,tFD dst) {
+static int _redirFd(int src,int dst) {
 	return doSyscall(SYSCALL_REDIRFD,src,dst,0);
 }
 static int _setSigHandler(int sig,uintptr_t handler) {
 	return doSyscall(SYSCALL_SETSIGH,sig,handler,0);
 }
-static int _sendSignalTo(tPid pid,int sig) {
+static int _sendSignalTo(pid_t pid,int sig) {
 	return doSyscall(SYSCALL_SENDSIG,pid,sig,0);
 }
 static int _exec(const char *path,const char **args) {
 	return doSyscall(SYSCALL_EXEC,(ulong)path,(ulong)args,0);
 }
-static int _seek(tFD fd,off_t pos,uint whence) {
+static int _seek(int fd,off_t pos,uint whence) {
 	return doSyscall(SYSCALL_SEEK,fd,pos,whence);
 }
 static int _stat(const char *path,sFileInfo *info) {
 	return doSyscall(SYSCALL_STAT,(ulong)path,(ulong)info,0);
 }
-static int _getWork(tFD *ids,size_t count,tFD *client,tMsgId *mid,sMsg *msg,size_t size,uint flags) {
+static int _getWork(int *ids,size_t count,int *client,msgid_t *mid,sMsg *msg,size_t size,uint flags) {
 	return doSyscall7(SYSCALL_GETWORK,(ulong)ids,count,(ulong)client,(ulong)mid,(ulong)msg,size,flags);
 }
 
@@ -268,9 +268,9 @@ static void test_write(void) {
 }
 
 static void test_getWork(void) {
-	tFD drvs[3];
-	tFD s;
-	tMsgId mid;
+	int drvs[3];
+	int s;
+	msgid_t mid;
 	sMsg msg;
 	test_caseStart("Testing getWork()");
 	/* test drv-array */
@@ -289,19 +289,19 @@ static void test_getWork(void) {
 	test_assertInt(_getWork((void*)(KERNEL_SPACE - 1),8 * 1024 - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)HIGH_ADDR,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test driver-id */
-	test_assertInt(_getWork(drvs,1,(tFD*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,(tFD*)KERNEL_SPACE,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,(tFD*)(KERNEL_SPACE - 1),&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,(tFD*)HIGH_ADDR,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(int*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(int*)KERNEL_SPACE,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(int*)(KERNEL_SPACE - 1),&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(int*)HIGH_ADDR,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test drv-array size */
 	test_assertInt(_getWork(drvs,-1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,4 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,(KERNEL_SPACE - 1),&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test message-id */
-	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)0x12345678,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)KERNEL_SPACE,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)(KERNEL_SPACE - 1),&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)HIGH_ADDR,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,(msgid_t*)0x12345678,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,(msgid_t*)KERNEL_SPACE,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,(msgid_t*)(KERNEL_SPACE - 1),&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,(msgid_t*)HIGH_ADDR,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test message */
 	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)0x12345678,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)KERNEL_SPACE,sizeof(msg),0),ERR_INVALID_ARGS);

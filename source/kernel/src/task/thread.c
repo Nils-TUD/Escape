@@ -41,7 +41,7 @@
 #include <errors.h>
 
 static sThread *thread_createInitial(sProc *p,eThreadState state);
-static tTid thread_getFreeTid(void);
+static tid_t thread_getFreeTid(void);
 static bool thread_add(sThread *t);
 static void thread_remove(sThread *t);
 
@@ -49,7 +49,7 @@ static void thread_remove(sThread *t);
 static sSLList *threads;
 static sThread *tidToThread[MAX_THREAD_COUNT];
 static sThread *cur = NULL;
-static tTid nextTid = 0;
+static tid_t nextTid = 0;
 
 /* list of dead threads that should be destroyed */
 static sSLList* deadThreads = NULL;
@@ -112,7 +112,7 @@ void thread_setRunning(sThread *t) {
 	cur = t;
 }
 
-sThread *thread_getById(tTid tid) {
+sThread *thread_getById(tid_t tid) {
 	if(tid >= ARRAY_SIZE(tidToThread))
 		return NULL;
 	return tidToThread[tid];
@@ -146,7 +146,7 @@ void thread_killDead(void) {
 	}
 }
 
-bool thread_setReady(tTid tid) {
+bool thread_setReady(tid_t tid) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL && t != cur,"tid=%d, pid=%d, cmd=%s",
 			t ? t->tid : 0,t ? t->proc->pid : 0,t ? t->proc->command : "?");
@@ -157,20 +157,20 @@ bool thread_setReady(tTid tid) {
 	return t->state == ST_READY;
 }
 
-bool thread_setBlocked(tTid tid) {
+bool thread_setBlocked(tid_t tid) {
 	sThread *t = thread_getById(tid);
 	assert(t != NULL);
 	sched_setBlocked(t);
 	return t->state == ST_BLOCKED;
 }
 
-void thread_setSuspended(tTid tid,bool blocked) {
+void thread_setSuspended(tid_t tid,bool blocked) {
 	sThread *t = thread_getById(tid);
 	assert(t != NULL);
 	sched_setSuspended(t,blocked);
 }
 
-bool thread_hasStackRegion(const sThread *t,tVMRegNo regNo) {
+bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {
 	size_t i;
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		if(t->stackRegions[i] == regNo)
@@ -183,7 +183,7 @@ int thread_extendStack(uintptr_t address) {
 	return vmm_growStackTo(cur,address);
 }
 
-int thread_clone(const sThread *src,sThread **dst,sProc *p,tFrameNo *stackFrame,bool cloneProc) {
+int thread_clone(const sThread *src,sThread **dst,sProc *p,frameno_t *stackFrame,bool cloneProc) {
 	int err = ERR_NOT_ENOUGH_MEM;
 	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -313,7 +313,7 @@ void thread_kill(sThread *t) {
 
 	/* notify the process about it */
 	sig_addSignalFor(t->proc->pid,SIG_THREAD_DIED);
-	ev_wakeup(EVI_THREAD_DIED,(tEvObj)t->proc);
+	ev_wakeup(EVI_THREAD_DIED,(evobj_t)t->proc);
 
 	/* finally, destroy thread */
 	thread_remove(t);
@@ -367,7 +367,7 @@ void thread_print(const sThread *t) {
 	}
 }
 
-static tTid thread_getFreeTid(void) {
+static tid_t thread_getFreeTid(void) {
 	size_t count = 0;
 	while(count < MAX_THREAD_COUNT) {
 		if(nextTid >= MAX_THREAD_COUNT)

@@ -48,7 +48,7 @@ void bmp_draw(sBitmap *bmp,tCoord x,tCoord y,fSetPixel func) {
 
 sBitmap *bmp_loadFromFile(const char *filename) {
 	/* read header */
-	tFD fd;
+	int fd;
 	ssize_t res;
 	sBitmap *bmp = NULL;
 	size_t headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);

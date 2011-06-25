@@ -51,7 +51,7 @@ uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 	return 0;
 }
 
-uintptr_t load_setupProg(tFD binFd) {
+uintptr_t load_setupProg(int binFd) {
 	uintptr_t entryPoint;
 	libs = sll_create();
 	if(!libs)

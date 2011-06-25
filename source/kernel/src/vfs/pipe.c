@@ -44,13 +44,13 @@ typedef struct {
 } sPipeData;
 
 static void vfs_pipe_destroy(sVFSNode *n);
-static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node);
-static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,
+static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node);
+static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
-static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
+static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count);
 
-sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent) {
+sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	sPipe *pipe;
 	sVFSNode *node;
 	char *name = vfs_node_getId(pid);
@@ -91,7 +91,7 @@ static void vfs_pipe_destroy(sVFSNode *n) {
 	}
 }
 
-static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node) {
+static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node) {
 	/* last usage? */
 	if(node->refCount == 0) {
 		/* remove pipe-nodes if there are no references anymore */
@@ -104,7 +104,7 @@ static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node) {
 		if(vfs_fcntl(pid,file,F_GETACCESS,0) == VFS_READ) {
 			sPipe *pipe = (sPipe*)node->data;
 			pipe->noReader = true;
-			ev_wakeup(EVI_PIPE_EMPTY,(tEvObj)node);
+			ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 		}
 		/* otherwise write EOF in the pipe */
 		else
@@ -112,7 +112,7 @@ static void vfs_pipe_close(tPid pid,tFileNo file,sVFSNode *node) {
 	}
 }
 
-static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,
+static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
@@ -125,7 +125,7 @@ static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,o
 	/* wait until data is available */
 	/* don't cache the list here, because the pointer changes if the list is NULL */
 	while(sll_length(vpipe->list) == 0) {
-		ev_wait(t->tid,EVI_PIPE_FULL,(tEvObj)node);
+		ev_wait(t->tid,EVI_PIPE_FULL,(evobj_t)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
@@ -158,8 +158,8 @@ static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,o
 		while(sll_length(vpipe->list) == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
-			ev_wakeup(EVI_PIPE_EMPTY,(tEvObj)node);
-			ev_wait(t->tid,EVI_PIPE_FULL,(tEvObj)node);
+			ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
+			ev_wait(t->tid,EVI_PIPE_FULL,(evobj_t)node);
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back..
 			 */
@@ -171,11 +171,11 @@ static ssize_t vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,void *buffer,o
 			break;
 	}
 	/* wakeup all threads that wait for writing in this node */
-	ev_wakeup(EVI_PIPE_EMPTY,(tEvObj)node);
+	ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 	return total;
 }
 
-static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
+static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
@@ -187,7 +187,7 @@ static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *b
 	/* wait while our node is full */
 	if(count) {
 		while((vpipe->total + count) >= MAX_VFS_FILE_SIZE) {
-			ev_wait(t->tid,EVI_PIPE_EMPTY,(tEvObj)node);
+			ev_wait(t->tid,EVI_PIPE_EMPTY,(evobj_t)node);
 			thread_switchNoSigs();
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
@@ -222,6 +222,6 @@ static ssize_t vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const void *b
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	pipe->total += count;
-	ev_wakeup(EVI_PIPE_FULL,(tEvObj)node);
+	ev_wakeup(EVI_PIPE_FULL,(evobj_t)node);
 	return count;
 }

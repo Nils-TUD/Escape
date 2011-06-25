@@ -51,7 +51,7 @@ const char *getProcName(void) {
 	static char name[MAX_NAME_LEN];
 	char buffer[PROCINFO_BUF_SIZE];
 	char path[MAX_PATH_LEN];
-	tFD fd;
+	int fd;
 	snprintf(path,sizeof(path),"/system/processes/%d/info",getpid());
 	fd = open(path,IO_READ);
 	if(fd >= 0) {

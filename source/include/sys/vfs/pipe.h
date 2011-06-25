@@ -30,6 +30,6 @@
  * @param parent the parent-node
  * @return the created node or NULL
  */
-sVFSNode *vfs_pipe_create(tPid pid,sVFSNode *parent);
+sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent);
 
 #endif /* PIPE_H_ */

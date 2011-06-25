@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
 	sProc *proc;
-	tVMRegNo region;
+	vmreg_t region;
 } sShMemUser;
 
 /**
@@ -48,7 +48,7 @@ static bool shm_isOwn(const sShMem *mem,const sProc *p);
 /**
  * Creates and adds a new user
  */
-static bool shm_addUser(sShMem *mem,sProc *p,tVMRegNo reg);
+static bool shm_addUser(sShMem *mem,sProc *p,vmreg_t reg);
 /**
  * Retrieve the shared-memory-area by name
  */
@@ -69,7 +69,7 @@ void shm_init(void) {
 ssize_t shm_create(sProc *p,const char *name,size_t pageCount) {
 	sShMem *mem;
 	uintptr_t start;
-	tVMRegNo reg;
+	vmreg_t reg;
 
 	/* checks */
 	if(strlen(name) > MAX_SHAREDMEM_NAME)
@@ -106,7 +106,7 @@ errMem:
 
 ssize_t shm_join(sProc *p,const char *name) {
 	uintptr_t start;
-	tVMRegNo reg;
+	vmreg_t reg;
 	sShMemUser *owner;
 	sShMem *mem = shm_get(name);
 	if(mem == NULL || shm_getUser(mem,p) != NULL)
@@ -215,7 +215,7 @@ static bool shm_isOwn(const sShMem *mem,const sProc *p) {
 	return ((sShMemUser*)sll_get(mem->users,0))->proc == p;
 }
 
-static bool shm_addUser(sShMem *mem,sProc *p,tVMRegNo reg) {
+static bool shm_addUser(sShMem *mem,sProc *p,vmreg_t reg) {
 	sShMemUser *user = (sShMemUser*)cache_alloc(sizeof(sShMemUser));
 	if(user == NULL)
 		return false;

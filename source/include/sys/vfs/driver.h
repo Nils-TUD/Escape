@@ -37,7 +37,7 @@ void vfs_drv_init(void);
  * @param flags the open-flags
  * @return 0 if successfull
  */
-ssize_t vfs_drv_open(tPid pid,tFileNo file,sVFSNode *node,uint flags);
+ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the given driver. Note that not all
@@ -51,7 +51,7 @@ ssize_t vfs_drv_open(tPid pid,tFileNo file,sVFSNode *node,uint flags);
  * @param count the number of bytes to read
  * @return the number of read bytes or a negative error-code
  */
-ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,size_t count);
+ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,size_t count);
 
 /**
  * Writes <count> bytes to <offset> from <buffer> to the given driver. Note that not all
@@ -65,7 +65,7 @@ ssize_t vfs_drv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t off
  * @param count the number of bytes to write
  * @return the number of written bytes or a negative error-code
  */
-ssize_t vfs_drv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,off_t offset,
+ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,off_t offset,
 		size_t count);
 
 /**
@@ -75,6 +75,6 @@ ssize_t vfs_drv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,of
  * @param file the file for the driver
  * @param node the VFS-node of the driver
  */
-void vfs_drv_close(tPid pid,tFileNo file,sVFSNode *node);
+void vfs_drv_close(pid_t pid,file_t file,sVFSNode *node);
 
 #endif /* VFSDRV_H_ */

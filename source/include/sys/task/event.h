@@ -26,7 +26,7 @@ typedef struct {
 	/* the events to wait for */
 	uint events;
 	/* the object (0 = ignore) */
-	tEvObj object;
+	evobj_t object;
 } sWaitObject;
 
 /* the event-indices */
@@ -89,7 +89,7 @@ void ev_init(void);
  * @param events the event-mask (not index!)
  * @return true if so
  */
-bool ev_waitsFor(tTid tid,uint events);
+bool ev_waitsFor(tid_t tid,uint events);
 
 /**
  * Lets <tid> wait for the given event and object
@@ -99,7 +99,7 @@ bool ev_waitsFor(tTid tid,uint events);
  * @param object the object (0 = ignore)
  * @return true if successfull
  */
-bool ev_wait(tTid tid,size_t evi,tEvObj object);
+bool ev_wait(tid_t tid,size_t evi,evobj_t object);
 
 /**
  * Lets <tid> wait for the given objects
@@ -109,7 +109,7 @@ bool ev_wait(tTid tid,size_t evi,tEvObj object);
  * @param objCount the number of objects
  * @return true if successfull
  */
-bool ev_waitObjects(tTid tid,const sWaitObject *objects,size_t objCount);
+bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount);
 
 /**
  * Wakes up all threads that wait for given event and object
@@ -117,7 +117,7 @@ bool ev_waitObjects(tTid tid,const sWaitObject *objects,size_t objCount);
  * @param evi the event-index(!)
  * @param object the object
  */
-void ev_wakeup(size_t evi,tEvObj object);
+void ev_wakeup(size_t evi,evobj_t object);
 
 /**
  * Wakes up all threads that wait for given events and the given object
@@ -125,7 +125,7 @@ void ev_wakeup(size_t evi,tEvObj object);
  * @param events the event-mask (not index!)
  * @param object the object
  */
-void ev_wakeupm(uint events,tEvObj object);
+void ev_wakeupm(uint events,evobj_t object);
 
 /**
  * Wakes up the thread <tid> for given events. That means, if it does not wait for them, it is
@@ -135,14 +135,14 @@ void ev_wakeupm(uint events,tEvObj object);
  * @param events the event-mask (not index!)
  * @return true if waked up
  */
-bool ev_wakeupThread(tTid tid,uint events);
+bool ev_wakeupThread(tid_t tid,uint events);
 
 /**
  * Removes the given thread from the event-system. Note that it will set it to the ready-state!
  *
  * @param tid the thread-id
  */
-void ev_removeThread(tTid tid);
+void ev_removeThread(tid_t tid);
 
 /**
  * Prints the given event-mask

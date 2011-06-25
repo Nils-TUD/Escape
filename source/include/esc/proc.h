@@ -28,9 +28,9 @@
 typedef void (*fExitFunc)(void *arg);
 
 typedef struct {
-	tPid pid;
+	pid_t pid;
 	/* the signal that killed the process (SIG_COUNT if none) */
-	tSig signal;
+	sig_t signal;
 	/* exit-code the process gave us via exit() */
 	int exitCode;
 	/* memory it has used */
@@ -52,12 +52,12 @@ extern "C" {
 /**
  * @return the process-id
  */
-tPid getpid(void);
+pid_t getpid(void);
 
 /**
  * @return the parent-pid of the current process
  */
-tPid getppid(void);
+pid_t getppid(void);
 
 /**
  * Returns the parent-id of the given process
@@ -65,7 +65,7 @@ tPid getppid(void);
  * @param pid the process-id
  * @return the parent-pid
  */
-int getppidof(tPid pid);
+int getppidof(pid_t pid);
 
 /**
  * Clones the current process

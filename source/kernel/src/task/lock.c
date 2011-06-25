@@ -34,16 +34,16 @@
 typedef struct {
 	ulong ident;
 	ushort flags;
-	tPid pid;
+	pid_t pid;
 	volatile ushort readRefs;
-	volatile tTid writer;
+	volatile tid_t writer;
 	ushort waitCount;
 } sLock;
 
 /**
  * Searches the lock-entry for the given ident and process-id
  */
-static ssize_t lock_get(tPid pid,ulong ident,bool free);
+static ssize_t lock_get(pid_t pid,ulong ident,bool free);
 
 static size_t lockCount = 0;
 static sLock *locks = NULL;
@@ -58,7 +58,7 @@ static bool lock_isLocked(const sLock *l,ushort flags) {
 	return false;
 }
 
-int lock_aquire(tPid pid,ulong ident,ushort flags) {
+int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 	sThread *t = thread_getRunning();
 	ssize_t i = lock_get(pid,ident,true);
 	sLock *l;
@@ -75,7 +75,7 @@ int lock_aquire(tPid pid,ulong ident,ushort flags) {
 		assert(l->writer != t->tid);
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
-			ev_wait(t->tid,event,(tEvObj)ident);
+			ev_wait(t->tid,event,(evobj_t)ident);
 			thread_switchNoSigs();
 			locks[i].waitCount--;
 		}
@@ -98,7 +98,7 @@ int lock_aquire(tPid pid,ulong ident,ushort flags) {
 	return 0;
 }
 
-int lock_release(tPid pid,ulong ident) {
+int lock_release(pid_t pid,ulong ident) {
 	ssize_t i = lock_get(pid,ident,false);
 	sLock *l = locks + i;
 	if(i < 0)
@@ -121,9 +121,9 @@ int lock_release(tPid pid,ulong ident) {
 	if(l->waitCount) {
 		/* if there are no reads and writes, notify all.
 		 * otherwise notify just the threads that wait for a shared lock */
-		ev_wakeup(EVI_UNLOCK_SH,(tEvObj)ident);
+		ev_wakeup(EVI_UNLOCK_SH,(evobj_t)ident);
 		if(l->readRefs == 0)
-			ev_wakeup(EVI_UNLOCK_EX,(tEvObj)ident);
+			ev_wakeup(EVI_UNLOCK_EX,(evobj_t)ident);
 	}
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
 	else if(l->readRefs == 0 && !(l->flags & LOCK_KEEP))
@@ -131,7 +131,7 @@ int lock_release(tPid pid,ulong ident) {
 	return 0;
 }
 
-void lock_releaseAll(tPid pid) {
+void lock_releaseAll(pid_t pid) {
 	size_t i;
 	for(i = 0; i < lockCount; i++) {
 		if(locks[i].flags && locks[i].pid == pid)
@@ -151,7 +151,7 @@ void lock_print(void) {
 	}
 }
 
-static ssize_t lock_get(tPid pid,ulong ident,bool free) {
+static ssize_t lock_get(pid_t pid,ulong ident,bool free) {
 	size_t i;
 	ssize_t freeIdx = -1;
 	for(i = 0; i < lockCount; i++) {

@@ -656,7 +656,7 @@ int vsscanf(const char *str,const char *fmt,va_list ap);
  * @param stream the stream
  * @return the file-descriptor
  */
-tFD fileno(FILE *stream);
+int fileno(FILE *stream);
 
 /**
  * The same as escc_get() but reads the escape-code from <f>. Assumes that the last read char

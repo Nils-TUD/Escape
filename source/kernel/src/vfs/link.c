@@ -22,7 +22,7 @@
 #include <sys/vfs/link.h>
 #include <sys/vfs/node.h>
 
-sVFSNode *vfs_link_create(tPid pid,sVFSNode *parent,char *name,const sVFSNode *target) {
+sVFSNode *vfs_link_create(pid_t pid,sVFSNode *parent,char *name,const sVFSNode *target) {
 	sVFSNode *child = vfs_node_create(parent,name);
 	if(child == NULL)
 		return NULL;

@@ -29,7 +29,7 @@
 #include "speed.h"
 
 int mod_speed(int argc,char *argv[]) {
-	tFD fd;
+	int fd;
 	ullong start;
 	ullong total;
 	ullong i,diff,t;

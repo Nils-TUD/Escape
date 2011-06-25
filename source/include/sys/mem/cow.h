@@ -44,7 +44,7 @@ size_t cow_pagefault(uintptr_t address);
  * @param frameNo the frame-number
  * @return true if successfull
  */
-bool cow_add(const sProc *p,tFrameNo frameNo);
+bool cow_add(const sProc *p,frameno_t frameNo);
 
 /**
  * Removes the given process and frame from the cow-list
@@ -54,7 +54,7 @@ bool cow_add(const sProc *p,tFrameNo frameNo);
  * @param foundOther will be set to true if another process still uses the frame
  * @return the number of frames to remove from <p>
  */
-size_t cow_remove(const sProc *p,tFrameNo frameNo,bool *foundOther);
+size_t cow_remove(const sProc *p,frameno_t frameNo,bool *foundOther);
 
 /**
  * Note that this is intended for debugging or similar only! (not very efficient)

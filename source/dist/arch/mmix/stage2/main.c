@@ -122,11 +122,11 @@ static int readSectors(void *dst,size_t start,size_t secCount) {
 	return dskio(START_SECTOR + start,dst,secCount);
 }
 
-static int readBlocks(void *dst,tBlockNo start,size_t blockCount) {
+static int readBlocks(void *dst,block_t start,size_t blockCount) {
 	return readSectors(dst,BLOCKS_TO_SECS(start),BLOCKS_TO_SECS(blockCount));
 }
 
-static void readFromDisk(tBlockNo blkno,void *buf,size_t offset,size_t nbytes) {
+static void readFromDisk(block_t blkno,void *buf,size_t offset,size_t nbytes) {
 	void *dst = offset == 0 && (nbytes % BLOCK_SIZE) == 0 ? buf : buffer;
 	size_t secCount = (offset + nbytes + SEC_SIZE - 1) / SEC_SIZE;
 	if(offset >= BLOCK_SIZE || nbytes > BLOCK_SIZE)
@@ -142,19 +142,19 @@ static void readFromDisk(tBlockNo blkno,void *buf,size_t offset,size_t nbytes) {
 		memcpy(buf,(char*)buffer + offset,nbytes);
 }
 
-static void loadInode(sExt2Inode *ip,tInodeNo inodeno) {
+static void loadInode(sExt2Inode *ip,inode_t inodeno) {
 	sExt2BlockGrp *group = e.groups + ((inodeno - 1) / le32tocpu(e.superBlock.inodesPerGroup));
 	if(group >= e.groups + GROUP_COUNT)
 		halt("Invalid blockgroup of inode %u: %u\n",inodeno,group - e.groups);
 	size_t inodesPerBlock = BLOCK_SIZE / sizeof(sExt2Inode);
 	size_t noInGroup = (inodeno - 1) % le32tocpu(e.superBlock.inodesPerGroup);
-	tBlockNo blockNo = le32tocpu(group->inodeTable) + noInGroup / inodesPerBlock;
+	block_t blockNo = le32tocpu(group->inodeTable) + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inodeno - 1) % inodesPerBlock;
 	readBlocks(buffer,blockNo,1);
 	memcpy(ip,(uint8_t*)buffer + inodeInBlock * sizeof(sExt2Inode),sizeof(sExt2Inode));
 }
 
-static tInodeNo searchDir(tInodeNo dirIno,sExt2Inode *dir,const char *name,size_t nameLen) {
+static inode_t searchDir(inode_t dirIno,sExt2Inode *dir,const char *name,size_t nameLen) {
 	size_t size = le32tocpu(dir->size);
 	if(size > sizeof(buffer))
 		halt("Directory %u larger than %u bytes\n",dirIno,sizeof(buffer));
@@ -176,8 +176,8 @@ static tInodeNo searchDir(tInodeNo dirIno,sExt2Inode *dir,const char *name,size_
 	return EXT2_BAD_INO;
 }
 
-static tBlockNo getBlock(sExt2Inode *ino,size_t offset) {
-	tBlockNo i,block = offset / BLOCK_SIZE;
+static block_t getBlock(sExt2Inode *ino,size_t offset) {
+	block_t i,block = offset / BLOCK_SIZE;
 	size_t blockSize,blocksPerBlock;
 
 	/* direct block */
@@ -187,10 +187,10 @@ static tBlockNo getBlock(sExt2Inode *ino,size_t offset) {
 	/* singly indirect */
 	block -= EXT2_DIRBLOCK_COUNT;
 	blockSize = BLOCK_SIZE;
-	blocksPerBlock = blockSize / sizeof(tBlockNo);
+	blocksPerBlock = blockSize / sizeof(block_t);
 	if(block < blocksPerBlock) {
 		readBlocks(buffer,le32tocpu(ino->singlyIBlock),1);
-		return le32tocpu(*((tBlockNo*)buffer + block));
+		return le32tocpu(*((block_t*)buffer + block));
 	}
 
 	/* doubly indirect */
@@ -199,13 +199,13 @@ static tBlockNo getBlock(sExt2Inode *ino,size_t offset) {
 		halt("Block-number %u to high; triply indirect",block + EXT2_DIRBLOCK_COUNT);
 
 	readBlocks(buffer,le32tocpu(ino->doublyIBlock),1);
-	i = le32tocpu(*((tBlockNo*)buffer + block / blocksPerBlock));
+	i = le32tocpu(*((block_t*)buffer + block / blocksPerBlock));
 	readBlocks(buffer,i,1);
-	return le32tocpu(*((tBlockNo*)buffer + block % blocksPerBlock));
+	return le32tocpu(*((block_t*)buffer + block % blocksPerBlock));
 }
 
-static tInodeNo namei(char *path,sExt2Inode *ino) {
-	tInodeNo inodeno;
+static inode_t namei(char *path,sExt2Inode *ino) {
+	inode_t inodeno;
 	char *p = path;
 	char *q;
 	char name[14];
@@ -247,7 +247,7 @@ static tInodeNo namei(char *path,sExt2Inode *ino) {
 }
 
 static uintptr_t copyToMem(sExt2Inode *ino,size_t offset,size_t count,uintptr_t dest) {
-	tBlockNo blk;
+	block_t blk;
 	size_t offInBlk,amount,i = 0;
 	while(count > 0) {
 		blk = getBlock(ino,offset);
@@ -285,7 +285,7 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	datPtr = (uint8_t const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
-		tBlockNo block = getBlock(ino,(size_t)datPtr);
+		block_t block = getBlock(ino,(size_t)datPtr);
 		readFromDisk(block,&pheader,(uintptr_t)datPtr & (BLOCK_SIZE - 1),sizeof(Elf64_Phdr));
 
 		if(pheader.p_type == PT_LOAD) {
@@ -315,7 +315,7 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	datPtr = (uint8_t const*)(eheader.e_shoff);
 	for(j = 0; j < eheader.e_shnum; datPtr += eheader.e_shentsize, j++) {
 		/* read pheader */
-		tBlockNo block = getBlock(ino,(size_t)datPtr);
+		block_t block = getBlock(ino,(size_t)datPtr);
 		readFromDisk(block,&sheader,(uintptr_t)datPtr & (BLOCK_SIZE - 1),sizeof(Elf64_Shdr));
 
 		/* the first section with type == PROGBITS and addr != 0 should be .MMIX.reg_contents */

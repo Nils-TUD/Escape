@@ -32,10 +32,10 @@ void iso_direc_init(sISO9660 *h) {
 	h->direcNextFree = 0;
 }
 
-const sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
+const sISOCDirEntry *iso_direc_get(sISO9660 *h,inode_t id) {
 	const sISODirEntry *e;
 	sCBlock *blk;
-	tBlockNo blockLBA;
+	block_t blockLBA;
 	size_t i,blockSize,offset;
 	int unused = -1;
 

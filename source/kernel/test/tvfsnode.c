@@ -63,7 +63,7 @@ static void test_vfs_node_resolvePath(void) {
 
 static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
 	int err;
-	tInodeNo no;
+	inode_t no;
 	sVFSNode *node;
 	if((err = vfs_node_resolvePath(a,&no,NULL,VFS_READ)) != 0) {
 		test_caseFailed("Unable to resolve the path %s",a);
@@ -75,7 +75,7 @@ static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
 }
 
 static void test_vfs_node_getPath(void) {
-	tInodeNo no;
+	inode_t no;
 
 	test_caseStart("Testing vfs_node_getPath()");
 

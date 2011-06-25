@@ -29,7 +29,7 @@
  * @param index the index
  * @return the env-variable-name or NULL if there is none
  */
-const char *env_geti(tPid pid,size_t index);
+const char *env_geti(pid_t pid,size_t index);
 
 /**
  * Returns the env-variable with given name
@@ -38,7 +38,7 @@ const char *env_geti(tPid pid,size_t index);
  * @param name the variable-name
  * @return the variable-value or NULL if not found
  */
-const char *env_get(tPid pid,const char *name);
+const char *env_get(pid_t pid,const char *name);
 
 /**
  * Sets <name> to <value>
@@ -48,20 +48,20 @@ const char *env_get(tPid pid,const char *name);
  * @param value the (new) value
  * @return true if successfull
  */
-bool env_set(tPid pid,const char *name,const char *value);
+bool env_set(pid_t pid,const char *name,const char *value);
 
 /**
  * Removes all env-variables for given process
  *
  * @param pid the process-id
  */
-void env_removeFor(tPid pid);
+void env_removeFor(pid_t pid);
 
 /**
  * Prints all env-vars of given process
  *
  * @param pid the process-id
  */
-void env_printAllOf(tPid pid);
+void env_printAllOf(pid_t pid);
 
 #endif /* ENV_H_ */

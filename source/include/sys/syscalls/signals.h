@@ -25,7 +25,7 @@
 /**
  * Sets a handler-function for a specific signal
  *
- * @param tSig signal
+ * @param sig_t signal
  * @param fSigHandler handler
  * @return int 0 if no error
  */
@@ -41,8 +41,8 @@ int sysc_ackSignal(sIntrptStackFrame *stack);
 /**
  * Sends a signal to a process
  *
- * @param tPid pid
- * @param tSig signal
+ * @param pid_t pid
+ * @param sig_t signal
  * @return int 0 if no error
  */
 int sysc_sendSignalTo(sIntrptStackFrame *stack);

@@ -40,7 +40,7 @@
 
 #define FS_NAME_LEN		12
 
-static tDevNo rootDev;
+static dev_t rootDev;
 static sFSInst *root;
 
 typedef struct {
@@ -50,19 +50,19 @@ typedef struct {
 } sFSType;
 
 static void shutdown(void);
-static void cmdOpen(tFD fd,sMsg *msg);
-static void cmdRead(tFD fd,sMsg *msg);
-static void cmdWrite(tFD fd,sMsg *msg,void *data);
-static void cmdClose(tFD fd,sMsg *msg);
-static void cmdStat(tFD fd,sMsg *msg);
-static void cmdSync(tFD fd,sMsg *msg);
-static void cmdLink(tFD fd,sMsg *msg);
-static void cmdUnlink(tFD fd,sMsg *msg);
-static void cmdMkdir(tFD fd,sMsg *msg);
-static void cmdRmdir(tFD fd,sMsg *msg);
-static void cmdMount(tFD fd,sMsg *msg);
-static void cmdUnmount(tFD fd,sMsg *msg);
-static void cmdIstat(tFD fd,sMsg *msg);
+static void cmdOpen(int fd,sMsg *msg);
+static void cmdRead(int fd,sMsg *msg);
+static void cmdWrite(int fd,sMsg *msg,void *data);
+static void cmdClose(int fd,sMsg *msg);
+static void cmdStat(int fd,sMsg *msg);
+static void cmdSync(int fd,sMsg *msg);
+static void cmdLink(int fd,sMsg *msg);
+static void cmdUnlink(int fd,sMsg *msg);
+static void cmdMkdir(int fd,sMsg *msg);
+static void cmdRmdir(int fd,sMsg *msg);
+static void cmdMount(int fd,sMsg *msg);
+static void cmdUnmount(int fd,sMsg *msg);
+static void cmdIstat(int fd,sMsg *msg);
 
 static volatile bool run = true;
 
@@ -93,11 +93,11 @@ int main(int argc,char *argv[]) {
 		{FS_TYPE_ISO9660,	"iso9660",	iso_getFS},
 	};
 	static sMsg msg;
-	tFD fd;
-	tMsgId mid;
+	int fd;
+	msgid_t mid;
 	size_t i;
 	uint fstype;
-	tFD id;
+	int id;
 	sFileSystem *fs;
 
 	if(argc < 4) {
@@ -199,11 +199,11 @@ static void shutdown(void) {
 	exit(EXIT_SUCCESS);
 }
 
-static void cmdOpen(tFD fd,sMsg *msg) {
-	tDevNo devNo = rootDev;
+static void cmdOpen(int fd,sMsg *msg) {
+	dev_t devNo = rootDev;
 	uint flags = msg->args.arg1;
 	sFSInst *inst;
-	tInodeNo no = root->fs->resPath(root->handle,msg->str.s1,flags,&devNo,true);
+	inode_t no = root->fs->resPath(root->handle,msg->str.s1,flags,&devNo,true);
 	if(no >= 0) {
 		inst = mount_get(devNo);
 		if(inst == NULL)
@@ -217,11 +217,11 @@ static void cmdOpen(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_OPEN_RESP,msg,sizeof(msg->args));
 }
 
-static void cmdStat(tFD fd,sMsg *msg) {
-	tDevNo devNo = rootDev;
+static void cmdStat(int fd,sMsg *msg) {
+	dev_t devNo = rootDev;
 	sFSInst *inst;
 	sFileInfo *info = (sFileInfo*)&(msg->data.d);
-	tInodeNo no = root->fs->resPath(root->handle,msg->str.s1,IO_READ,&devNo,true);
+	inode_t no = root->fs->resPath(root->handle,msg->str.s1,IO_READ,&devNo,true);
 	if(no < 0)
 		msg->data.arg1 = no;
 	else {
@@ -234,9 +234,9 @@ static void cmdStat(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_STAT_RESP,msg,sizeof(msg->data));
 }
 
-static void cmdIstat(tFD fd,sMsg *msg) {
-	tInodeNo ino = (tInodeNo)msg->args.arg1;
-	tDevNo devNo = (tDevNo)msg->args.arg2;
+static void cmdIstat(int fd,sMsg *msg) {
+	inode_t ino = (inode_t)msg->args.arg1;
+	dev_t devNo = (dev_t)msg->args.arg2;
 	sFileInfo *info = (sFileInfo*)&(msg->data.d);
 	sFSInst *inst = mount_get(devNo);
 	if(inst == NULL)
@@ -246,9 +246,9 @@ static void cmdIstat(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_STAT_RESP,msg,sizeof(msg->data));
 }
 
-static void cmdRead(tFD fd,sMsg *msg) {
-	tInodeNo ino = (tInodeNo)msg->args.arg1;
-	tDevNo devNo = (tDevNo)msg->args.arg2;
+static void cmdRead(int fd,sMsg *msg) {
+	inode_t ino = (inode_t)msg->args.arg1;
+	dev_t devNo = (dev_t)msg->args.arg2;
 	uint offset = msg->args.arg3;
 	size_t count = msg->args.arg4;
 	sFSInst *inst = mount_get(devNo);
@@ -276,9 +276,9 @@ static void cmdRead(tFD fd,sMsg *msg) {
 		ext2_file_read(&ext2,data.inodeNo,NULL,data.offset + count,data.count);*/
 }
 
-static void cmdWrite(tFD fd,sMsg *msg,void *data) {
-	tInodeNo ino = (tInodeNo)msg->args.arg1;
-	tDevNo devNo = (tDevNo)msg->args.arg2;
+static void cmdWrite(int fd,sMsg *msg,void *data) {
+	inode_t ino = (inode_t)msg->args.arg1;
+	dev_t devNo = (dev_t)msg->args.arg2;
 	uint offset = msg->args.arg3;
 	size_t count = msg->args.arg4;
 	sFSInst *inst = mount_get(devNo);
@@ -293,12 +293,12 @@ static void cmdWrite(tFD fd,sMsg *msg,void *data) {
 	send(fd,MSG_FS_WRITE_RESP,msg,sizeof(msg->args));
 }
 
-static void cmdLink(tFD fd,sMsg *msg) {
+static void cmdLink(int fd,sMsg *msg) {
 	char *oldPath = msg->str.s1;
 	char *newPath = msg->str.s2;
-	tDevNo oldDev = rootDev,newDev = rootDev;
+	dev_t oldDev = rootDev,newDev = rootDev;
 	sFSInst *inst;
-	tInodeNo dirIno,dstIno = root->fs->resPath(root->handle,oldPath,IO_READ,&oldDev,true);
+	inode_t dirIno,dstIno = root->fs->resPath(root->handle,oldPath,IO_READ,&oldDev,true);
 	inst = mount_get(oldDev);
 	if(dstIno < 0)
 		msg->args.arg1 = dstIno;
@@ -329,11 +329,11 @@ static void cmdLink(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_LINK_RESP,msg,sizeof(msg->args));
 }
 
-static void cmdUnlink(tFD fd,sMsg *msg) {
+static void cmdUnlink(int fd,sMsg *msg) {
 	char *path = msg->str.s1;
 	char *name;
-	tDevNo devNo = rootDev;
-	tInodeNo dirIno;
+	dev_t devNo = rootDev;
+	inode_t dirIno;
 	sFSInst *inst;
 	char backup;
 	dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
@@ -364,11 +364,11 @@ static void cmdUnlink(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_UNLINK_RESP,msg,sizeof(msg->args));
 }
 
-static void cmdMkdir(tFD fd,sMsg *msg) {
+static void cmdMkdir(int fd,sMsg *msg) {
 	char *path = msg->str.s1;
 	char *name,backup;
-	tInodeNo dirIno;
-	tDevNo devNo = rootDev;
+	inode_t dirIno;
+	dev_t devNo = rootDev;
 	sFSInst *inst;
 
 	/* split path and name */
@@ -396,11 +396,11 @@ static void cmdMkdir(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_MKDIR_RESP,msg,sizeof(msg->args));
 }
 
-static void cmdRmdir(tFD fd,sMsg *msg) {
+static void cmdRmdir(int fd,sMsg *msg) {
 	char *path = msg->str.s1;
 	char *name,backup;
-	tInodeNo dirIno;
-	tDevNo devNo = rootDev;
+	inode_t dirIno;
+	dev_t devNo = rootDev;
 	sFSInst *inst;
 
 	/* split path and name */
@@ -428,12 +428,12 @@ static void cmdRmdir(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_RMDIR_RESP,msg,sizeof(msg->args));
 }
 
-static void cmdMount(tFD fd,sMsg *msg) {
+static void cmdMount(int fd,sMsg *msg) {
 	char *device = msg->str.s1;
 	char *path = msg->str.s2;
 	uint type = msg->str.arg1;
-	tDevNo devNo = rootDev;
-	tInodeNo ino;
+	dev_t devNo = rootDev;
+	inode_t ino;
 	ino = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
 	if(ino < 0)
 		msg->args.arg1 = ino;
@@ -457,10 +457,10 @@ static void cmdMount(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_MOUNT_RESP,msg,sizeof(msg->args));
 }
 
-static void cmdUnmount(tFD fd,sMsg *msg) {
+static void cmdUnmount(int fd,sMsg *msg) {
 	char *path = msg->str.s1;
-	tDevNo devNo = rootDev;
-	tInodeNo ino;
+	dev_t devNo = rootDev;
+	inode_t ino;
 	ino = root->fs->resPath(root->handle,path,IO_READ,&devNo,false);
 	if(ino < 0)
 		msg->args.arg1 = ino;
@@ -469,7 +469,7 @@ static void cmdUnmount(tFD fd,sMsg *msg) {
 	send(fd,MSG_FS_UNMOUNT_RESP,msg,sizeof(msg->args));
 }
 
-static void cmdSync(tFD fd,sMsg *msg) {
+static void cmdSync(int fd,sMsg *msg) {
 	UNUSED(fd);
 	UNUSED(msg);
 	size_t i;
@@ -480,10 +480,10 @@ static void cmdSync(tFD fd,sMsg *msg) {
 	}
 }
 
-static void cmdClose(tFD fd,sMsg *msg) {
+static void cmdClose(int fd,sMsg *msg) {
 	UNUSED(fd);
-	tInodeNo ino = msg->args.arg1;
-	tDevNo devNo = msg->args.arg2;
+	inode_t ino = msg->args.arg1;
+	dev_t devNo = msg->args.arg2;
 	sFSInst *inst = mount_get(devNo);
 	if(inst != NULL)
 		inst->fs->close(inst->handle,ino);

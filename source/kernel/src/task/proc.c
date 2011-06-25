@@ -50,7 +50,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-static void proc_notifyProcDied(tPid parent);
+static void proc_notifyProcDied(pid_t parent);
 static bool proc_add(sProc *p);
 static void proc_remove(sProc *p);
 
@@ -62,7 +62,7 @@ static sProc first;
 /* our processes */
 static sSLList *procs;
 static sProc *pidToProc[MAX_PROC_COUNT];
-static tPid nextPid = 1;
+static pid_t nextPid = 1;
 
 void proc_init(void) {
 	size_t i;
@@ -118,7 +118,7 @@ void proc_setCommand(sProc *p,const char *cmd) {
 	p->command = strdup(cmd);
 }
 
-tPid proc_getFreePid(void) {
+pid_t proc_getFreePid(void) {
 	size_t count = 0;
 	while(count < MAX_PROC_COUNT) {
 		/* 0 is always present */
@@ -139,13 +139,13 @@ sProc *proc_getRunning(void) {
 	return &first;
 }
 
-sProc *proc_getByPid(tPid pid) {
+sProc *proc_getByPid(pid_t pid) {
 	if(pid >= ARRAY_SIZE(pidToProc))
 		return NULL;
 	return pidToProc[pid];
 }
 
-bool proc_exists(tPid pid) {
+bool proc_exists(pid_t pid) {
 	if(pid >= MAX_PROC_COUNT)
 		return false;
 	return pidToProc[pid] != NULL;
@@ -155,8 +155,8 @@ size_t proc_getCount(void) {
 	return sll_length(procs);
 }
 
-tFileNo proc_fdToFile(tFD fd) {
-	tFileNo fileNo;
+file_t proc_fdToFile(int fd) {
+	file_t fileNo;
 	sProc *p = proc_getRunning();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
@@ -168,10 +168,10 @@ tFileNo proc_fdToFile(tFD fd) {
 	return fileNo;
 }
 
-tFD proc_getFreeFd(void) {
-	tFD i;
+int proc_getFreeFd(void) {
+	int i;
 	sProc *p = proc_getRunning();
-	tFileNo *fds = p->fileDescs;
+	file_t *fds = p->fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == -1)
 			return i;
@@ -180,7 +180,7 @@ tFD proc_getFreeFd(void) {
 	return ERR_MAX_PROC_FDS;
 }
 
-int proc_assocFd(tFD fd,tFileNo fileNo) {
+int proc_assocFd(int fd,file_t fileNo) {
 	sProc *p = proc_getRunning();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
@@ -192,9 +192,9 @@ int proc_assocFd(tFD fd,tFileNo fileNo) {
 	return 0;
 }
 
-tFD proc_dupFd(tFD fd) {
-	tFileNo f;
-	tFD nfd;
+int proc_dupFd(int fd) {
+	file_t f;
+	int nfd;
 	int err;
 	sProc *p = proc_getRunning();
 	/* check fd */
@@ -217,8 +217,8 @@ tFD proc_dupFd(tFD fd) {
 	return nfd;
 }
 
-int proc_redirFd(tFD src,tFD dst) {
-	tFileNo fSrc,fDst;
+int proc_redirFd(int src,int dst) {
+	file_t fSrc,fDst;
 	int err;
 	sProc *p = proc_getRunning();
 
@@ -242,8 +242,8 @@ int proc_redirFd(tFD src,tFD dst) {
 	return 0;
 }
 
-tFileNo proc_unassocFd(tFD fd) {
-	tFileNo fileNo;
+file_t proc_unassocFd(int fd) {
+	file_t fileNo;
 	sProc *p = proc_getRunning();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
@@ -256,11 +256,11 @@ tFileNo proc_unassocFd(tFD fd) {
 	return fileNo;
 }
 
-sProc *proc_getProcWithBin(const sBinDesc *bin,tVMRegNo *rno) {
+sProc *proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
-		tVMRegNo res = vmm_hasBinary(p,bin);
+		vmreg_t res = vmm_hasBinary(p,bin);
 		if(res != -1) {
 			*rno = res;
 			return p;
@@ -270,7 +270,7 @@ sProc *proc_getProcWithBin(const sBinDesc *bin,tVMRegNo *rno) {
 }
 
 sRegion *proc_getLRURegion(void) {
-	tTime ts = (tTime)ULONG_MAX;
+	time_t ts = (time_t)ULONG_MAX;
 	sRegion *lru = NULL;
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
@@ -304,7 +304,7 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;
 }
 
-bool proc_hasChild(tPid pid) {
+bool proc_hasChild(pid_t pid) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
@@ -314,9 +314,9 @@ bool proc_hasChild(tPid pid) {
 	return false;
 }
 
-int proc_clone(tPid newPid,uint8_t flags) {
+int proc_clone(pid_t newPid,uint8_t flags) {
 	assert((flags & P_ZOMBIE) == 0);
-	tFrameNo stackFrame,dummy;
+	frameno_t stackFrame,dummy;
 	size_t i;
 	sProc *p;
 	sProc *cur = proc_getRunning();
@@ -432,7 +432,7 @@ errorProc:
 }
 
 int proc_startThread(uintptr_t entryPoint,const void *arg) {
-	tFrameNo stackFrame;
+	frameno_t stackFrame;
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	sThread *nt;
@@ -510,7 +510,7 @@ void proc_removeRegions(sProc *p,bool remStack) {
 	}
 }
 
-int proc_getExitState(tPid ppid,sExitState *state) {
+int proc_getExitState(pid_t ppid,sExitState *state) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
@@ -540,7 +540,7 @@ void proc_segFault(sProc *p) {
 	sig_unsetHandler(t->tid,SIG_SEGFAULT);
 }
 
-void proc_terminate(sProc *p,int exitCode,tSig signal) {
+void proc_terminate(sProc *p,int exitCode,sig_t signal) {
 	sSLNode *tn,*tmpn;
 	size_t i;
 	vassert(p->pid != 0,"You can't terminate the initial process");
@@ -701,8 +701,8 @@ void proc_print(const sProc *p) {
 	vid_printf("\tFileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {
-			tInodeNo ino;
-			tDevNo dev;
+			inode_t ino;
+			dev_t dev;
 			if(vfs_getFileId(p->fileDescs[i],&ino,&dev) == 0) {
 				vid_printf("\t\t%d : %d",i,p->fileDescs[i]);
 				if(dev == VFS_DEV_NO && vfs_node_isValid(ino))
@@ -718,9 +718,9 @@ void proc_print(const sProc *p) {
 	vid_printf("\n");
 }
 
-static void proc_notifyProcDied(tPid parent) {
+static void proc_notifyProcDied(pid_t parent) {
 	sig_addSignalFor(parent,SIG_CHILD_TERM);
-	ev_wakeup(EVI_CHILD_DIED,(tEvObj)proc_getByPid(parent));
+	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
 }
 
 int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fromUser) {

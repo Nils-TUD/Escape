@@ -73,8 +73,8 @@ static uint8_t *videoData;
 static sMsg msg;
 
 int main(void) {
-	tFD id;
-	tMsgId mid;
+	int id;
+	msgid_t mid;
 
 	id = regDriver("video",DRV_WRITE);
 	if(id < 0)
@@ -95,7 +95,7 @@ int main(void) {
 
 	/* wait for messages */
 	while(1) {
-		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[VIDEO] Unable to get work");
 		else {

@@ -32,7 +32,7 @@
  * @param isDir whether the inode should be an directory
  * @return the inode-number or 0 if failed
  */
-tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir);
+inode_t ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir);
 
 /**
  * Free's the given inode-number
@@ -42,7 +42,7 @@ tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir);
  * @param isDir whether the inode is an directory
  * @return 0 on success
  */
-int ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir);
+int ext2_bm_freeInode(sExt2 *e,inode_t ino,bool isDir);
 
 /**
  * Allocates a new block for the given inode. It will be tried to allocate a block in the same
@@ -52,7 +52,7 @@ int ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir);
  * @param inode the inode
  * @return the block-number or 0 if failed
  */
-tBlockNo ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode);
+block_t ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode);
 
 /**
  * Free's the given block-number
@@ -61,6 +61,6 @@ tBlockNo ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode);
  * @param blockNo the block-number
  * @return 0 on success
  */
-int ext2_bm_freeBlock(sExt2 *e,tBlockNo blockNo);
+int ext2_bm_freeBlock(sExt2 *e,block_t blockNo);
 
 #endif /* BITMAP_H_ */

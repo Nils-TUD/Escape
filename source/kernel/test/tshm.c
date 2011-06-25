@@ -58,8 +58,8 @@ static void test_1(void) {
 static void test_2(void) {
 	sProc *p = proc_getRunning();
 	sProc *child1,*child2;
-	tPid pid1,pid2;
-	tVMRegNo reg1,reg2;
+	pid_t pid1,pid2;
+	vmreg_t reg1,reg2;
 	test_caseStart("Testing shm_join() & shm_leave() & shm_remProc()");
 
 	pid1 = proc_getFreePid();

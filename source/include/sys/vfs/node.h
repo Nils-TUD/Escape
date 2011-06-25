@@ -35,19 +35,19 @@ void vfs_node_init(void);
  * @param nodeNo the number
  * @return true if so
  */
-bool vfs_node_isValid(tInodeNo nodeNo);
+bool vfs_node_isValid(inode_t nodeNo);
 
 /**
  * @param node the node
  * @return the node-number of the given node
  */
-tInodeNo vfs_node_getNo(const sVFSNode *node);
+inode_t vfs_node_getNo(const sVFSNode *node);
 
 /**
  * @param nodeNo the node-number
  * @return the node for given index
  */
-sVFSNode *vfs_node_get(tInodeNo nodeNo);
+sVFSNode *vfs_node_get(inode_t nodeNo);
 
 /**
  * Fetches the first child from given nodes (taking care for links)
@@ -64,7 +64,7 @@ sVFSNode *vfs_node_getFirstChild(const sVFSNode *node);
  * @param nodeNo the node-number
  * @return the path
  */
-char *vfs_node_getPath(tInodeNo nodeNo);
+char *vfs_node_getPath(inode_t nodeNo);
 
 /**
  * Retrieves information about the given node
@@ -73,7 +73,7 @@ char *vfs_node_getPath(tInodeNo nodeNo);
  * @param info will be filled
  * @return 0 on success
  */
-int vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info);
+int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info);
 
 /**
  * Resolves the given path to a VFS-node
@@ -85,7 +85,7 @@ int vfs_node_getInfo(tInodeNo nodeNo,sFileInfo *info);
  * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
  * @return 0 if successfull or the error-code
  */
-int vfs_node_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,uint flags);
+int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint flags);
 
 /**
  * Removes the last '/' from the path, if necessary, and returns a pointer to the last
@@ -139,7 +139,7 @@ void vfs_node_destroy(sVFSNode *n);
  * @param pid the process-id
  * @return the name, allocated on the heap or NULL
  */
-char *vfs_node_getId(tPid pid);
+char *vfs_node_getId(pid_t pid);
 
 /**
  * Prints the VFS tree

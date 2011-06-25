@@ -114,7 +114,7 @@ static bool device_identify(sATADevice *device,uint cmd) {
 		 * non-zero. If so, the drive is not ATA, and you should stop polling. */
 
 		/* wait while busy; the other bits aren't valid while busy is set */
-		tTime time = 0;
+		time_t time = 0;
 		while((ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY) && time < ATA_WAIT_TIMEOUT) {
 			time += 20;
 			sleep(20);

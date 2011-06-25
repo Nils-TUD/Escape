@@ -38,7 +38,7 @@ namespace std {
 			throw io_exception("Unable to open",_fd);
 		_mode = mode;
 	}
-	void rawfile::use(tFD fd) {
+	void rawfile::use(int fd) {
 		close();
 		_fd = fd;
 		_mode = READ | WRITE;

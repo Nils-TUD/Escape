@@ -31,14 +31,14 @@
 /**
  * Builds the required dir-entries for the fs-interface from the ISO9660-dir-entries
  */
-static void iso_file_buildDirEntries(sISO9660 *h,tBlockNo lba,uint8_t *dst,const uint8_t *src,
+static void iso_file_buildDirEntries(sISO9660 *h,block_t lba,uint8_t *dst,const uint8_t *src,
 		uint offset,size_t count);
 
-ssize_t iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count) {
+ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,uint offset,size_t count) {
 	const sISOCDirEntry *e;
 	sCBlock *blk;
 	uint8_t *bufWork;
-	tBlockNo startBlock;
+	block_t startBlock;
 	size_t c,i,blockSize,blockCount,leftBytes;
 
 	/* at first we need the direntry */
@@ -91,7 +91,7 @@ ssize_t iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,uint offset,size
 	return count;
 }
 
-static void iso_file_buildDirEntries(sISO9660 *h,tBlockNo lba,uint8_t *dst,const uint8_t *src,
+static void iso_file_buildDirEntries(sISO9660 *h,block_t lba,uint8_t *dst,const uint8_t *src,
 		uint offset,size_t count) {
 	const sISODirEntry *e;
 	sDirEntry *de,*lastDe;

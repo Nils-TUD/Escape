@@ -38,8 +38,8 @@
 /* storage for "delayed" signal handling */
 typedef struct {
 	uint8_t active;
-	tTid tid;
-	tSig sig;
+	tid_t tid;
+	sig_t sig;
 } sSignalData;
 
 static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
@@ -49,8 +49,8 @@ static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint6
 static sSignalData signalData;
 
 void uenv_handleSignal(void) {
-	tTid tid;
-	tSig sig;
+	tid_t tid;
+	sig_t sig;
 	/* don't do anything, if we should already handle a signal */
 	if(signalData.active == 1)
 		return;
@@ -128,7 +128,7 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 	cpu_setKSpecials(0,t->proc->sigRetAddr,1UL << 63,0,0);
 }
 
-int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	UNUSED(stack);
 	sThread *t = thread_getRunning();
 	uint64_t *regs;

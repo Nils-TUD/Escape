@@ -32,9 +32,9 @@ static void sigTimer(int sig);
 static void qerror(const char *msg,...);
 static void quit(void);
 
-static tFD keymap = -1;
+static int keymap = -1;
 static sKmData kmdata;
-static tTime time = 0;
+static time_t time = 0;
 
 int main(void) {
 	/* backup screen and stop vterm to read from keyboard */

@@ -15,7 +15,7 @@
 #include <errors.h>
 
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
-		tFileNo file,sStartupInfo *info);
+		file_t file,sStartupInfo *info);
 
 int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info) {
 	UNUSED(length);
@@ -26,7 +26,7 @@ int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info) {
 	uintptr_t begin,start,end;
 	vmm_getRegRange(t->proc,REG_TEXT,&start,&end);
 	while(start < end) {
-		tFrameNo frame = paging_getFrameNo(t->proc->pagedir,start);
+		frameno_t frame = paging_getFrameNo(t->proc->pagedir,start);
 		size_t amount = MIN(PAGE_SIZE,end - start);
 		begin = DIR_MAPPED_SPACE | frame * PAGE_SIZE;
 		cpu_syncid(begin,begin + amount);
@@ -36,7 +36,7 @@ int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info) {
 	return elf_finish(t,eheader,(sElfSHeader*)((uintptr_t)code + eheader->e_shoff),-1,info);
 }
 
-int elf_finishFromFile(tFileNo file,const sElfEHeader *eheader,sStartupInfo *info) {
+int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info) {
 	int res = 0;
 	sThread *t = thread_getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
@@ -63,7 +63,7 @@ int elf_finishFromFile(tFileNo file,const sElfEHeader *eheader,sStartupInfo *inf
 }
 
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
-		tFileNo file,sStartupInfo *info) {
+		file_t file,sStartupInfo *info) {
 	/* build register-stack */
 	uintptr_t end;
 	int globalNum = 0;

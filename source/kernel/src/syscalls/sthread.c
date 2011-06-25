@@ -71,7 +71,7 @@ int sysc_getCycles(sIntrptStackFrame *stack) {
 }
 
 int sysc_sleep(sIntrptStackFrame *stack) {
-	tTime msecs = SYSC_ARG1(stack);
+	time_t msecs = SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
 	int res;
 	if((res = timer_sleepFor(t->tid,msecs)) < 0)
@@ -130,7 +130,7 @@ int sysc_waitUnlock(sIntrptStackFrame *stack) {
 }
 
 int sysc_notify(sIntrptStackFrame *stack) {
-	tTid tid = (tTid)SYSC_ARG1(stack);
+	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	uint events = SYSC_ARG2(stack);
 
 	if((events & ~EV_USER_NOTIFY_MASK) != 0)
@@ -163,7 +163,7 @@ int sysc_unlock(sIntrptStackFrame *stack) {
 }
 
 int sysc_join(sIntrptStackFrame *stack) {
-	tTid tid = (tTid)SYSC_ARG1(stack);
+	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
 	if(tid != 0) {
 		sThread *tt = thread_getById(tid);
@@ -174,7 +174,7 @@ int sysc_join(sIntrptStackFrame *stack) {
 
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
 	do {
-		ev_wait(t->tid,EVI_THREAD_DIED,(tEvObj)t->proc);
+		ev_wait(t->tid,EVI_THREAD_DIED,(evobj_t)t->proc);
 		thread_switchNoSigs();
 	}
 	while((tid == 0 && sll_length(t->proc->threads) > 1) ||
@@ -184,7 +184,7 @@ int sysc_join(sIntrptStackFrame *stack) {
 }
 
 int sysc_suspend(sIntrptStackFrame *stack) {
-	tTid tid = (tTid)SYSC_ARG1(stack);
+	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
 	sThread *tt = thread_getById(tid);
 	/* just threads from the own process */
@@ -196,7 +196,7 @@ int sysc_suspend(sIntrptStackFrame *stack) {
 }
 
 int sysc_resume(sIntrptStackFrame *stack) {
-	tTid tid = (tTid)SYSC_ARG1(stack);
+	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
 	sThread *tt = thread_getById(tid);
 	/* just threads from the own process */
@@ -222,7 +222,7 @@ static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
 			goto error;
 		if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* translate fd to node-number */
-			tFileNo file = proc_fdToFile((tFD)kobjects[i].object);
+			file_t file = proc_fdToFile((int)kobjects[i].object);
 			if(file < 0)
 				goto error;
 			/* check flags */
@@ -232,7 +232,7 @@ static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
 			}
 			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
 				goto error;
-			kobjects[i].object = (tEvObj)vfs_getVNode(file);
+			kobjects[i].object = (evobj_t)vfs_getVNode(file);
 			if(!kobjects[i].object)
 				goto error;
 		}
@@ -242,7 +242,7 @@ static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
 		/* check wether we can wait */
 		for(i = 0; i < objCount; i++) {
 			if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-				tFileNo file = proc_fdToFile((tFD)uobjects[i].object);
+				file_t file = proc_fdToFile((int)uobjects[i].object);
 				if((kobjects[i].events & EV_CLIENT) && vfs_getClient(t->proc->pid,&file,1,NULL) >= 0)
 					goto done;
 				else if((kobjects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(t->proc->pid,file))

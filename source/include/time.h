@@ -35,8 +35,6 @@
 /* TODO */
 #define CLOCKS_PER_SEC		(clock_t)0
 
-/* timestamp */
-typedef uint32_t time_t;
 typedef uint32_t clock_t;
 
 /* time-struct */

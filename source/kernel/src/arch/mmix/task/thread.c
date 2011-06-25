@@ -77,7 +77,7 @@
  */
 
 extern int thread_initSave(sThreadRegs *saveArea,void *newStack);
-extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tTid tid);
+extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tid_t tid);
 
 int thread_initArch(sThread *t) {
 	t->kstackFrame = pmem_allocate();
@@ -117,7 +117,7 @@ void thread_freeArch(sThread *t) {
 			t->stackRegions[i] = -1;
 		}
 	}
-	if(t->archAttr.tempStack != (tFrameNo)-1) {
+	if(t->archAttr.tempStack != (frameno_t)-1) {
 		pmem_free(t->archAttr.tempStack);
 		t->archAttr.tempStack = -1;
 	}
@@ -133,14 +133,14 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
 		/* switch stacks */
-		tFrameNo kstack = t->kstackFrame;
+		frameno_t kstack = t->kstackFrame;
 		t->kstackFrame = nt->kstackFrame;
 		nt->kstackFrame = kstack;
 	}
 	return res;
 }
 
-void thread_switchTo(tTid tid) {
+void thread_switchTo(tid_t tid) {
 	sThread *cur = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {
@@ -172,7 +172,7 @@ void thread_switchTo(tTid tid) {
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
-		if(cur->archAttr.tempStack != (tFrameNo)-1) {
+		if(cur->archAttr.tempStack != (frameno_t)-1) {
 			memcpy((void*)(DIR_MAPPED_SPACE | cur->kstackFrame * PAGE_SIZE),
 					(void*)(DIR_MAPPED_SPACE | cur->archAttr.tempStack * PAGE_SIZE),
 					PAGE_SIZE);

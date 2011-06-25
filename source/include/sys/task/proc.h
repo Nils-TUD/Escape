@@ -49,9 +49,9 @@
 #define P_ZOMBIE			1
 
 typedef struct {
-	tPid pid;
+	pid_t pid;
 	/* the signal that killed the process (SIG_COUNT if none) */
-	tSig signal;
+	sig_t signal;
 	/* exit-code the process gave us via exit() */
 	int exitCode;
 	/* memory it has used */
@@ -71,9 +71,9 @@ typedef struct {
 	/* flags for vm86 and zombie */
 	uint8_t flags;
 	/* process id (2^16 processes should be enough :)) */
-	tPid pid;
+	pid_t pid;
 	/* parent process id */
-	tPid parentPid;
+	pid_t parentPid;
 	/* the physical address for the page-directory of this process */
 	tPageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.
@@ -89,7 +89,7 @@ typedef struct {
 	/* the entrypoint of the binary */
 	uintptr_t entryPoint;
 	/* file descriptors: indices of the global file table */
-	tFileNo fileDescs[MAX_FD_COUNT];
+	file_t fileDescs[MAX_FD_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
 	sSLList *fsChans;
 	/* environment-variables of this process */
@@ -134,7 +134,7 @@ void proc_setCommand(sProc *p,const char *cmd);
  *
  * @return the pid or 0
  */
-tPid proc_getFreePid(void);
+pid_t proc_getFreePid(void);
 
 /**
  * @return the running process
@@ -145,7 +145,7 @@ sProc *proc_getRunning(void);
  * @param pid the pid of the process
  * @return the process with given pid
  */
-sProc *proc_getByPid(tPid pid);
+sProc *proc_getByPid(pid_t pid);
 
 /**
  * Checks whether the process with given id exists
@@ -153,7 +153,7 @@ sProc *proc_getByPid(tPid pid);
  * @param pid the process-id
  * @return true if so
  */
-bool proc_exists(tPid pid);
+bool proc_exists(pid_t pid);
 
 /**
  * @return the number of existing processes
@@ -166,14 +166,14 @@ size_t proc_getCount(void);
  * @param fd the file-descriptor
  * @return the file-number or < 0 if the fd is invalid
  */
-tFileNo proc_fdToFile(tFD fd);
+file_t proc_fdToFile(int fd);
 
 /**
  * Searches for a free file-descriptor
  *
  * @return the file-descriptor or the error-code (< 0)
  */
-tFD proc_getFreeFd(void);
+int proc_getFreeFd(void);
 
 /**
  * Associates the given file-descriptor with the given file-number
@@ -182,7 +182,7 @@ tFD proc_getFreeFd(void);
  * @param fileNo the file-number
  * @return 0 on success
  */
-int proc_assocFd(tFD fd,tFileNo fileNo);
+int proc_assocFd(int fd,file_t fileNo);
 
 /**
  * Duplicates the given file-descriptor
@@ -190,7 +190,7 @@ int proc_assocFd(tFD fd,tFileNo fileNo);
  * @param fd the file-descriptor
  * @return the error-code or the new file-descriptor
  */
-tFD proc_dupFd(tFD fd);
+int proc_dupFd(int fd);
 
 /**
  * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
@@ -199,7 +199,7 @@ tFD proc_dupFd(tFD fd);
  * @param dst the destination-file-descriptor
  * @return the error-code or 0 if successfull
  */
-int proc_redirFd(tFD src,tFD dst);
+int proc_redirFd(int src,int dst);
 
 /**
  * Releases the given file-descriptor (marks it unused)
@@ -207,7 +207,7 @@ int proc_redirFd(tFD src,tFD dst);
  * @param fd the file-descriptor
  * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
  */
-tFileNo proc_unassocFd(tFD fd);
+file_t proc_unassocFd(int fd);
 
 /**
  * Searches for a process with given binary
@@ -216,7 +216,7 @@ tFileNo proc_unassocFd(tFD fd);
  * @param rno will be set to the region-number if found
  * @return the process with the binary or NULL if not found
  */
-sProc *proc_getProcWithBin(const sBinDesc *bin,tVMRegNo *rno);
+sProc *proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno);
 
 /**
  * Determines the least recently used region of all processes
@@ -241,7 +241,7 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
  * @param pid the process-id
  * @return true if it has a child
  */
-bool proc_hasChild(tPid pid);
+bool proc_hasChild(pid_t pid);
 
 /**
  * Clones the current process into the given one, gives the new process a clone of the current
@@ -252,7 +252,7 @@ bool proc_hasChild(tPid pid);
  * @param flags the flags to set for the process (e.g. P_VM86)
  * @return -1 if an error occurred, 0 for parent, 1 for child
  */
-int proc_clone(tPid newPid,uint8_t flags);
+int proc_clone(pid_t newPid,uint8_t flags);
 
 /**
  * Starts a new thread at given entry-point. Will clone the kernel-stack from the current thread
@@ -287,7 +287,7 @@ void proc_removeRegions(sProc *p,bool remStack);
  * @param state the pointer to the state (may be NULL!)
  * @return the pid on success
  */
-int proc_getExitState(tPid ppid,sExitState *state);
+int proc_getExitState(pid_t ppid,sExitState *state);
 
 /**
  * Sends a SIG_SEGFAULT signal to the given process and performs a thread-switch if the process
@@ -305,7 +305,7 @@ void proc_segFault(sProc *p);
  * @param exitCode the exit-code to store
  * @param signal the signal with which it was killed (SIG_COUNT if none)
  */
-void proc_terminate(sProc *p,int exitCode,tSig signal);
+void proc_terminate(sProc *p,int exitCode,sig_t signal);
 
 /**
  * Kills the given process, that means all structures will be destroyed and the memory free'd.

@@ -437,7 +437,7 @@ thread_save:
 	jr		$31
 
 # resume a task
-# bool thread_resume(tPageDir pageDir,sThreadRegs *saveArea,tFrameNo kstackFrame);
+# bool thread_resume(tPageDir pageDir,sThreadRegs *saveArea,frameno_t kstackFrame);
 thread_resume:
 	# save parameter (we can use $16 since the current process
 	# will not continue after resume)

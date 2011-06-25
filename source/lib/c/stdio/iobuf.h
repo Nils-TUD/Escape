@@ -75,7 +75,7 @@
 	}
 
 typedef struct {
-	tFD fd;
+	int fd;
 	int pos;
 	int max;
 	char *buffer;
@@ -113,7 +113,7 @@ int breadn(FILE *f,int *num,size_t length,int c);
 int breads(FILE *f,size_t length,char *str);
 int vbscanf(FILE *f,const char *fmt,va_list ap);
 
-FILE *bcreate(tFD fd,uint flags,char *buffer,size_t size);
+FILE *bcreate(int fd,uint flags,char *buffer,size_t size);
 
 extern const char *hexCharsBig;
 extern const char *hexCharsSmall;

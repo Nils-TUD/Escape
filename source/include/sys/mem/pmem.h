@@ -97,7 +97,7 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align);
  * @param first the first frame-number
  * @param count the number of frames
  */
-void pmem_freeContiguous(tFrameNo first,size_t count);
+void pmem_freeContiguous(frameno_t first,size_t count);
 
 /**
  * Allocates a frame and returns the frame-number
@@ -105,7 +105,7 @@ void pmem_freeContiguous(tFrameNo first,size_t count);
  * @panic if there is no frame left anymore
  * @return the frame-number
  */
-tFrameNo pmem_allocate(void);
+frameno_t pmem_allocate(void);
 
 /**
  * Frees the given frame. Note that you can free frames allocated with pmem_allocate() and
@@ -113,7 +113,7 @@ tFrameNo pmem_allocate(void);
  *
  * @param frame the frame-number
  */
-void pmem_free(tFrameNo frame);
+void pmem_free(frameno_t frame);
 
 /**
  * Prints all free frames

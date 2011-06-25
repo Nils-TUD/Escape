@@ -40,7 +40,7 @@
 static void log_printc(char c);
 static uchar log_pipePad(void);
 static void log_escape(const char **str);
-static ssize_t log_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,
+static ssize_t log_write(pid_t pid,file_t file,sVFSNode *n,const void *buffer,
 		off_t offset,size_t count);
 static void log_flush(void);
 
@@ -50,7 +50,7 @@ static size_t bufPos;
 static uint col = 0;
 
 static bool logToSer = true;
-static tFileNo logFile;
+static file_t logFile;
 static bool vfsIsReady = false;
 static sPrintEnv env = {
 	.print = log_printc,
@@ -59,10 +59,10 @@ static sPrintEnv env = {
 };
 
 void log_vfsIsReady(void) {
-	tInodeNo inodeNo;
+	inode_t inodeNo;
 	sVFSNode *logNode;
-	tFileNo inFile;
-	tFD in,out,err;
+	file_t inFile;
+	int in,out,err;
 	char *nameCpy;
 	sProc *p = proc_getRunning();
 
@@ -142,7 +142,7 @@ static void log_escape(const char **str) {
 	escc_get(str,&n1,&n2,&n3);
 }
 
-static ssize_t log_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,
+static ssize_t log_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count) {
 	if(conf_get(CONF_LOG) && logToSer) {
 		char *str = (char*)buffer;

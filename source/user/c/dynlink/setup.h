@@ -43,7 +43,7 @@ typedef struct sSharedLib sSharedLib;
 struct sSharedLib {
 	uchar isDSO;
 	const char *name;
-	tFD fd;
+	int fd;
 	sBinDesc bin;
 	uintptr_t loadAddr;
 	size_t textSize;
@@ -72,7 +72,7 @@ void load_error(const char *fmt,...);
  * @param binFd the file-descriptor
  * @return the entryPoint to jump at
  */
-uintptr_t load_setupProg(tFD binFd);
+uintptr_t load_setupProg(int binFd);
 
 /**
  * Determines the value of the given tag in the dynamic-section

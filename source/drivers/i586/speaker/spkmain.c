@@ -56,9 +56,9 @@ static size_t intrptCount = 0;
 static size_t intrptTarget = 0;
 
 int main(void) {
-	tFD fd;
-	tMsgId mid;
-	tFD id;
+	int fd;
+	msgid_t mid;
+	int id;
 
 	/* register driver */
 	id = regDriver("speaker",0);

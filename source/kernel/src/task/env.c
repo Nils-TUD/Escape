@@ -34,7 +34,7 @@ typedef struct {
 static sEnvVar *env_getiOf(const sProc *p,size_t *index);
 static sEnvVar *env_getOf(const sProc *p,const char *name);
 
-const char *env_geti(tPid pid,size_t index) {
+const char *env_geti(pid_t pid,size_t index) {
 	sProc *p = proc_getByPid(pid);
 	sEnvVar *var;
 	while(1) {
@@ -48,7 +48,7 @@ const char *env_geti(tPid pid,size_t index) {
 	return NULL;
 }
 
-const char *env_get(tPid pid,const char *name) {
+const char *env_get(pid_t pid,const char *name) {
 	sProc *p = proc_getByPid(pid);
 	sEnvVar *var;
 	while(1) {
@@ -62,7 +62,7 @@ const char *env_get(tPid pid,const char *name) {
 	return NULL;
 }
 
-bool env_set(tPid pid,const char *name,const char *value) {
+bool env_set(pid_t pid,const char *name,const char *value) {
 	sProc *p = proc_getByPid(pid);
 	sEnvVar *var;
 
@@ -115,7 +115,7 @@ errorVar:
 	return false;
 }
 
-void env_removeFor(tPid pid) {
+void env_removeFor(pid_t pid) {
 	sProc *p = proc_getByPid(pid);
 	if(p->env) {
 		sSLNode *n;
@@ -130,7 +130,7 @@ void env_removeFor(tPid pid) {
 	}
 }
 
-void env_printAllOf(tPid pid) {
+void env_printAllOf(pid_t pid) {
 	size_t i;
 	for(i = 0; ; i++) {
 		const char *name = env_geti(pid,i);

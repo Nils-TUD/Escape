@@ -35,7 +35,7 @@
 static int tpool_idle(sReqThread *t);
 
 static volatile bool run = true;
-static tTid acceptTid;
+static tid_t acceptTid;
 static sReqThread threads[REQ_THREAD_COUNT];
 
 void tpool_init(void) {
@@ -59,7 +59,7 @@ void tpool_shutdown(void) {
 	join(0);
 }
 
-size_t tpool_tidToId(tTid tid) {
+size_t tpool_tidToId(tid_t tid) {
 	size_t i;
 	for(i = 0; i < REQ_THREAD_COUNT; i++) {
 		if(threads[i].tid == tid)
@@ -69,7 +69,7 @@ size_t tpool_tidToId(tTid tid) {
 	return 0;
 }
 
-bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,size_t msgSize,void *data) {
+bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,void *data) {
 	size_t i;
 	while(true) {
 		tpool_lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);

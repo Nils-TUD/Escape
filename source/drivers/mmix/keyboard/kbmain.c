@@ -58,8 +58,8 @@ static size_t scReadPos = 0;
 static size_t scWritePos = 0;
 
 int main(void) {
-	tFD id;
-	tMsgId mid;
+	int id;
+	msgid_t mid;
 
 	kbRegs = (uint64_t*)mapPhysical(KEYBOARD_BASE,2 * sizeof(uint64_t));
 	if(kbRegs == NULL)
@@ -83,7 +83,7 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		tFD fd;
+		int fd;
 
 		/* translate scancodes to keycodes */
 		if(scReadPos != scWritePos) {

@@ -8,6 +8,6 @@
 #include <esc/common.h>
 #include <time.h>
 
-tTime timestamp(void);
+time_t timestamp(void);
 
 #endif /* FSTIME_H_ */

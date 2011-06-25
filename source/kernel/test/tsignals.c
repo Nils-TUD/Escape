@@ -34,7 +34,7 @@ sTestModule tModSignals = {
 	&test_signals
 };
 
-static tSig signals[] = {
+static sig_t signals[] = {
 	SIG_ILL_INSTR,
 	SIG_TERM,
 	SIG_INTRPT_ATA1,
@@ -67,8 +67,8 @@ static void test_canHandle(void) {
 
 static void test_setHandler(void) {
 	sThread *t = thread_getRunning();
-	tSig sig = 0xFF;
-	tPid tid = 0x1337;
+	sig_t sig = 0xFF;
+	pid_t tid = 0x1337;
 
 	test_caseStart("Testing sig_setHandler()");
 	sig_setHandler(t->tid,SIG_INTRPT_ATA1,(fSignal)0x123);

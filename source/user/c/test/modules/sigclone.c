@@ -29,8 +29,8 @@
 
 #include "sigclone.h"
 
-static tTid parent = -1;
-static tTid child = -1;
+static tid_t parent = -1;
+static tid_t child = -1;
 static size_t parentCount = 0;
 static size_t childCount = 0;
 

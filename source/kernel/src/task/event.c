@@ -29,8 +29,8 @@
 #define MAX_WAIT_COUNT		1024
 
 typedef struct sWait {
-	tTid tid;
-	tEvObj object;
+	tid_t tid;
+	evobj_t object;
 	struct sWait *next;
 } sWait;
 
@@ -55,12 +55,12 @@ void ev_init(void) {
 	}
 }
 
-bool ev_waitsFor(tTid tid,uint events) {
+bool ev_waitsFor(tid_t tid,uint events) {
 	sThread *t = thread_getById(tid);
 	return t->events & events;
 }
 
-bool ev_wait(tTid tid,size_t evi,tEvObj object) {
+bool ev_wait(tid_t tid,size_t evi,evobj_t object) {
 	sThread *t = thread_getById(tid);
 	sSLList *list = evlists + evi;
 	sWait *w = ev_allocWait();
@@ -77,7 +77,7 @@ bool ev_wait(tTid tid,size_t evi,tEvObj object) {
 	return true;
 }
 
-bool ev_waitObjects(tTid tid,const sWaitObject *objects,size_t objCount) {
+bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
 	size_t i,e;
 	for(i = 0; i < objCount; i++) {
 		uint events = objects[i].events;
@@ -98,7 +98,7 @@ bool ev_waitObjects(tTid tid,const sWaitObject *objects,size_t objCount) {
 	return true;
 }
 
-void ev_wakeup(size_t evi,tEvObj object) {
+void ev_wakeup(size_t evi,evobj_t object) {
 	sSLList *list = evlists + evi;
 	sSLNode *n;
 	for(n = sll_begin(list); n != NULL; ) {
@@ -114,7 +114,7 @@ void ev_wakeup(size_t evi,tEvObj object) {
 	}
 }
 
-void ev_wakeupm(uint events,tEvObj object) {
+void ev_wakeupm(uint events,evobj_t object) {
 	size_t e;
 	for(e = 0; events && e < EV_COUNT; e++) {
 		if(events & (1 << e)) {
@@ -124,7 +124,7 @@ void ev_wakeupm(uint events,tEvObj object) {
 	}
 }
 
-bool ev_wakeupThread(tTid tid,uint events) {
+bool ev_wakeupThread(tid_t tid,uint events) {
 	sThread *t = thread_getById(tid);
 	if(t->events & events) {
 		ev_removeThread(tid);
@@ -133,7 +133,7 @@ bool ev_wakeupThread(tTid tid,uint events) {
 	return false;
 }
 
-void ev_removeThread(tTid tid) {
+void ev_removeThread(tid_t tid) {
 	sThread *t = thread_getById(tid);
 	if(t->events) {
 		size_t e;
@@ -182,7 +182,7 @@ void ev_print(void) {
 			sThread *t = thread_getById(w->tid);
 			vid_printf("\t\tthread=%d (%d:%s), object=%x",
 					t->tid,t->proc->pid,t->proc->command,w->object);
-			tInodeNo nodeNo = vfs_node_getNo((sVFSNode*)w->object);
+			inode_t nodeNo = vfs_node_getNo((sVFSNode*)w->object);
 			if(vfs_node_isValid(nodeNo))
 				vid_printf("(%s)",vfs_node_getPath(nodeNo));
 			vid_printf("\n");

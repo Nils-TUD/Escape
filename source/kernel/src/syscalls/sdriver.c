@@ -36,8 +36,8 @@ int sysc_regDriver(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	uint flags = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
-	tFD fd;
-	tFileNo res;
+	int fd;
+	file_t res;
 
 	/* check flags */
 	if((flags & ~DRV_ALL) != 0 && flags != DRV_FS)
@@ -61,9 +61,9 @@ int sysc_regDriver(sIntrptStackFrame *stack) {
 }
 
 int sysc_getClientId(sIntrptStackFrame *stack) {
-	tFD fd = (tFD)SYSC_ARG1(stack);
-	tFileNo file;
-	tInodeNo id;
+	int fd = (int)SYSC_ARG1(stack);
+	file_t file;
+	inode_t id;
 	sProc *p = proc_getRunning();
 
 	file = proc_fdToFile(fd);
@@ -77,11 +77,11 @@ int sysc_getClientId(sIntrptStackFrame *stack) {
 }
 
 int sysc_getClient(sIntrptStackFrame *stack) {
-	tFD drvFd = (tFD)SYSC_ARG1(stack);
-	tInodeNo cid = (tInodeNo)SYSC_ARG2(stack);
+	int drvFd = (int)SYSC_ARG1(stack);
+	inode_t cid = (inode_t)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
-	tFD fd;
-	tFileNo file,drvFile;
+	int fd;
+	file_t file,drvFile;
 	int res;
 
 	/* get driver-file */
@@ -110,32 +110,32 @@ int sysc_getClient(sIntrptStackFrame *stack) {
 }
 
 int sysc_getWork(sIntrptStackFrame *stack) {
-	tFileNo files[MAX_GETWORK_DRIVERS];
+	file_t files[MAX_GETWORK_DRIVERS];
 	sWaitObject waits[MAX_GETWORK_DRIVERS];
-	tFD *fds = (tFD*)SYSC_ARG1(stack);
+	int *fds = (int*)SYSC_ARG1(stack);
 	size_t fdCount = SYSC_ARG2(stack);
-	tFD *drv = (tFD*)SYSC_ARG3(stack);
-	tMsgId *id = (tMsgId*)SYSC_ARG4(stack);
+	int *drv = (int*)SYSC_ARG3(stack);
+	msgid_t *id = (msgid_t*)SYSC_ARG4(stack);
 	void *data = (void*)SYSC_ARG5(stack);
 	size_t size = SYSC_ARG6(stack);
 	uint flags = (uint)SYSC_ARG7(stack);
 	sThread *t = thread_getRunning();
-	tFileNo file;
-	tInodeNo clientNo;
-	tFD fd;
+	file_t file;
+	inode_t clientNo;
+	int fd;
 	size_t i,index;
 	ssize_t res;
 
 	/* validate driver-ids */
 	if(fdCount <= 0 || fdCount > MAX_GETWORK_DRIVERS || fds == NULL ||
-			!paging_isRangeUserReadable((uintptr_t)fds,fdCount * sizeof(tFD)))
+			!paging_isRangeUserReadable((uintptr_t)fds,fdCount * sizeof(int)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* validate id and data */
-	if(!paging_isRangeUserWritable((uintptr_t)id,sizeof(tMsgId)) ||
+	if(!paging_isRangeUserWritable((uintptr_t)id,sizeof(msgid_t)) ||
 			!paging_isRangeUserWritable((uintptr_t)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* check drv */
-	if(drv != NULL && !paging_isRangeUserWritable((uintptr_t)drv,sizeof(tFD)))
+	if(drv != NULL && !paging_isRangeUserWritable((uintptr_t)drv,sizeof(int)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* translate to files */
@@ -144,7 +144,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 		if(files[i] < 0)
 			SYSC_ERROR(stack,files[i]);
 		waits[i].events = EV_CLIENT;
-		waits[i].object = (tEvObj)vfs_getVNode(files[i]);
+		waits[i].object = (evobj_t)vfs_getVNode(files[i]);
 	}
 
 	/* open a client */

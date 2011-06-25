@@ -88,7 +88,7 @@ typedef struct {
 } sMousePacket;
 
 static uchar byteNo = 0;
-static tFD sid;
+static int sid;
 static sMsg msg;
 static sRingBuf *ibuf;
 static sRingBuf *rbuf;
@@ -97,7 +97,7 @@ static sMousePacket packet;
 static bool moving = false;
 
 int main(void) {
-	tMsgId mid;
+	msgid_t mid;
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_KB_CTRL) < 0 || requestIOPort(IOPORT_KB_DATA) < 0)
@@ -122,7 +122,7 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		tFD fd;
+		int fd;
 
 		/* move mouse-packages (we can't access ibuf while doing this) */
 		moving = true;

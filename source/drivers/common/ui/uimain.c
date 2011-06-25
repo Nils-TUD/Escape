@@ -35,7 +35,7 @@ static void switchTo(size_t index);
 static bool startGUI(void);
 static bool exists(const char *name);
 static bool startDriver(const char *name,const char *waitDev);
-static void addListener(tFD fd,uchar flags,uchar key,uchar modifiers);
+static void addListener(int fd,uchar flags,uchar key,uchar modifiers);
 
 static sMsg msg;
 static size_t curTerm = 0;
@@ -50,13 +50,13 @@ static void childTermHandler(int sig) {
 }
 
 int main(void) {
-	tMsgId mid;
+	msgid_t mid;
 	size_t i;
 	if(setSigHandler(SIG_CHILD_TERM,&childTermHandler) < 0)
 		error("Unable to set SIG_CHILD_TERM-handler");
 
 	/* announce listener */
-	tFD fd = open("/dev/keyevents",IO_READ | IO_WRITE);
+	int fd = open("/dev/keyevents",IO_READ | IO_WRITE);
 	if(fd < 0)
 		error("[UI] Unable to open '/dev/keyevents'");
 	for(i = 0; i < ARRAY_SIZE(keys); i++)
@@ -77,7 +77,7 @@ int main(void) {
 static void switchTo(size_t index) {
 	if(index != GUI_INDEX && curTerm == GUI_INDEX) {
 		/* disable winmanager */
-		tFD fd = open("/dev/winmanager",IO_WRITE);
+		int fd = open("/dev/winmanager",IO_WRITE);
 		if(fd >= 0) {
 			send(fd,MSG_WIN_DISABLE,NULL,0);
 			close(fd);
@@ -94,7 +94,7 @@ static void switchTo(size_t index) {
 	}
 	else if(index == GUI_INDEX && curTerm != GUI_INDEX) {
 		if(startGUI()) {
-			tFD fd = open("/dev/vterm0",IO_WRITE);
+			int fd = open("/dev/vterm0",IO_WRITE);
 			if(fd >= 0) {
 				/* diable vterm */
 				sendRecvMsgData(fd,MSG_VT_DISABLE,NULL,0);
@@ -111,7 +111,7 @@ static void switchTo(size_t index) {
 	}
 	else if(index != GUI_INDEX) {
 		/* select vterm */
-		tFD fd = open("/dev/vterm0",IO_WRITE);
+		int fd = open("/dev/vterm0",IO_WRITE);
 		if(fd >= 0) {
 			msg.args.arg1 = index;
 			send(fd,MSG_VT_SELECT,&msg,sizeof(msg.args));
@@ -148,7 +148,7 @@ static bool startGUI(void) {
 }
 
 static bool exists(const char *name) {
-	tFD fd;
+	int fd;
 	if((fd = open(name,IO_READ)) >= 0) {
 		close(fd);
 		return true;
@@ -157,7 +157,7 @@ static bool exists(const char *name) {
 }
 
 static bool startDriver(const char *name,const char *waitDev) {
-	tFD fd;
+	int fd;
 	size_t i;
 	char path[MAX_PATH_LEN + 1] = "/sbin/";
 
@@ -189,8 +189,8 @@ static bool startDriver(const char *name,const char *waitDev) {
 	return true;
 }
 
-static void addListener(tFD fd,uchar flags,uchar key,uchar modifiers) {
-	tMsgId mid;
+static void addListener(int fd,uchar flags,uchar key,uchar modifiers) {
+	msgid_t mid;
 	msg.args.arg1 = flags;
 	msg.args.arg2 = key;
 	msg.args.arg3 = modifiers;

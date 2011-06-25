@@ -33,8 +33,8 @@ namespace std {
 		typedef time_t time_type;
 		typedef ushort user_type;
 		typedef ushort group_type;
-		typedef tInodeNo inode_type;
-		typedef tDevNo dev_type;
+		typedef inode_t inode_type;
+		typedef dev_t dev_type;
 		typedef ushort mode_type;
 
 	public:

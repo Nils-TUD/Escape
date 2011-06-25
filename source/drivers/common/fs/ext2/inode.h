@@ -55,7 +55,7 @@ int ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode);
  * @param block the linear-block-number
  * @return the block to fetch from disk
  */
-tBlockNo ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo block);
+block_t ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,block_t block);
 
 /**
  * Determines which block should be read from disk for <block> of the given inode.
@@ -67,7 +67,7 @@ tBlockNo ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,tBlockNo block);
  * @param block the linear-block-number
  * @return the block to fetch from disk
  */
-tBlockNo ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,tBlockNo block);
+block_t ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,block_t block);
 
 #if DEBUGGING
 

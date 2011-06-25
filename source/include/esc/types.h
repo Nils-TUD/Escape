@@ -78,23 +78,20 @@ typedef union {
 } uLongLong;
 
 /* process id */
-typedef uint16_t tPid;
 typedef uint16_t pid_t;
 /* thread id */
-typedef uint16_t tTid;
-/* file-descriptor */
-typedef int16_t tFD;
+typedef uint16_t tid_t;
 /* inode-number */
-typedef int32_t tInodeNo;
+typedef int32_t inode_t;
 /* block number on disk */
-typedef uint32_t tBlockNo;
+typedef uint32_t block_t;
 /* device-number */
-typedef int32_t tDevNo;
+typedef int32_t dev_t;
 /* signal-number */
-typedef uint8_t tSig;
+typedef uint8_t sig_t;
 /* msg-id */
-typedef uint32_t tMsgId;
-typedef uintptr_t tEvObj;
-typedef uint32_t tTime;
+typedef uint32_t msgid_t;
+typedef uintptr_t evobj_t;
+typedef uint32_t time_t;
 
 #endif /* TYPES_H_ */

@@ -29,7 +29,7 @@
  * @param binFd the file-desc
  * @param dst the library
  */
-void load_doLoad(tFD binFd,sSharedLib *dst);
+void load_doLoad(int binFd,sSharedLib *dst);
 
 /**
  * Loads all segments from all libraries into memory

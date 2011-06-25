@@ -35,8 +35,8 @@
 #define KB_DATA_BUF_SIZE			128
 #define BUF_SIZE					128
 
-static void handleKeymap(tMsgId mid,tFD fd);
-static void handleKeyevents(tMsgId mid,tFD fd);
+static void handleKeymap(msgid_t mid,int fd);
+static void handleKeyevents(msgid_t mid,int fd);
 
 /* file-descriptor for ourself */
 static sMsg msg;
@@ -49,10 +49,10 @@ int main(void) {
 	char path[MAX_PATH_LEN];
 	char *newline;
 	sWaitObject waits[3];
-	tFD ids[2];
-	tFD drv;
-	tMsgId mid;
-	tFD kbFd;
+	int ids[2];
+	int drv;
+	msgid_t mid;
+	int kbFd;
 	FILE *f;
 
 	events_init();
@@ -98,7 +98,7 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		tFD fd = getWork(ids,2,&drv,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getWork(ids,2,&drv,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
 			/* read from keyboard */
 			sKbData *kbd = kbData;
@@ -146,7 +146,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void handleKeymap(tMsgId mid,tFD fd) {
+static void handleKeymap(msgid_t mid,int fd) {
 	switch(mid) {
 		case MSG_DRV_READ: {
 			/* offset is ignored here */
@@ -186,7 +186,7 @@ static void handleKeymap(tMsgId mid,tFD fd) {
 	}
 }
 
-static void handleKeyevents(tMsgId mid,tFD fd) {
+static void handleKeyevents(msgid_t mid,int fd) {
 	switch(mid) {
 		case MSG_KE_ADDLISTENER: {
 			uchar flags = (uchar)msg.args.arg1;

@@ -34,6 +34,6 @@ uint game_getScore(void);
 
 void game_handleKey(uchar keycode,uchar modifiers,uchar isBreak,char c);
 
-bool game_tick(tTime time);
+bool game_tick(time_t time);
 
 #endif /* GAME_H_ */

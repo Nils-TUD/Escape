@@ -51,7 +51,7 @@
 							".\x17" \
 							"3\x17"
 
-bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
+bool vterm_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
 	size_t i,len;
 	uchar color;
 	char *ptr,*s;

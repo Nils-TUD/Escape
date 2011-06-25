@@ -55,8 +55,8 @@ int mod_pipe(int argc,char *argv[]) {
 }
 
 static void pipeReadChild(void) {
-	tFD fd[2];
-	tPid child;
+	int fd[2];
+	pid_t child;
 	char buf[10];
 	ssize_t c;
 	if(pipe(fd,fd + 1) < 0)
@@ -90,8 +90,8 @@ static void pipeReadChild(void) {
 }
 
 static void pipeReadParent(void) {
-	tFD fd[2];
-	tPid child;
+	int fd[2];
+	pid_t child;
 	char buf[10];
 	ssize_t c;
 	if(pipe(fd,fd + 1) < 0)
@@ -125,8 +125,8 @@ static void pipeReadParent(void) {
 }
 
 static void pipeChild2Child(void) {
-	tFD fd[2];
-	tPid child;
+	int fd[2];
+	pid_t child;
 
 	if(pipe(fd,fd + 1) < 0)
 		error("Unable to create pipe");
@@ -166,8 +166,8 @@ static void pipeChild2Child(void) {
 }
 
 static void pipeThrough(void) {
-	tFD fd[4];
-	tPid child;
+	int fd[4];
+	pid_t child;
 
 	if(pipe(fd,fd + 1) < 0)
 		error("Unable to create pipe");

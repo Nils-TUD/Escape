@@ -50,8 +50,8 @@ static sMsg msg;
 static struct tm date;
 
 int main(void) {
-	tMsgId mid;
-	tFD id;
+	msgid_t mid;
+	int id;
 
 	/* request io-ports */
 	if(requestIOPorts(IOPORT_CMOS_INDEX,2) < 0)
@@ -70,7 +70,7 @@ int main(void) {
 
 	/* wait for commands */
 	while(1) {
-		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[CMOS] Unable to get work");
 		else {

@@ -30,7 +30,7 @@ typedef struct sRunningProc sRunningProc;
 struct sRunningProc {
 	bool removable;
 	tCmdId cmdId;
-	tPid pid;
+	pid_t pid;
 };
 
 /**
@@ -52,7 +52,7 @@ tCmdId run_requestId(void);
  * @param pid the pid
  * @return the entry on success or NULL on failure
  */
-bool run_addProc(tCmdId cmdId,tPid pid);
+bool run_addProc(tCmdId cmdId,pid_t pid);
 
 /**
  * Returns the <i>'th running process of the given command
@@ -70,7 +70,7 @@ sRunningProc *run_getXProcOf(tCmdId cmdId,int i);
  * @param pid the process-id
  * @return the information about the process or NULL
  */
-sRunningProc *run_findProc(tCmdId cmdId,tPid pid);
+sRunningProc *run_findProc(tCmdId cmdId,pid_t pid);
 
 /**
  * Removes and free's all removable processes
@@ -82,6 +82,6 @@ void run_gc(void);
  *
  * @param pid the pid
  */
-void run_remProc(tPid pid);
+void run_remProc(pid_t pid);
 
 #endif /* RUNNING_H_ */

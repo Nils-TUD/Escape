@@ -29,7 +29,7 @@
 #include <string.h>
 
 typedef struct {
-	tFrameNo frameNumber;
+	frameno_t frameNumber;
 	const sProc *proc;
 } sCOW;
 
@@ -50,7 +50,7 @@ size_t cow_pagefault(uintptr_t address) {
 	sCOW *cow;
 	sSLNode *ourCOW,*ourPrevCOW;
 	bool foundOther;
-	tFrameNo frameNumber;
+	frameno_t frameNumber;
 	size_t frmCount;
 	uint flags;
 	sProc *cp = proc_getRunning();
@@ -102,7 +102,7 @@ size_t cow_pagefault(uintptr_t address) {
 	return frmCount;
 }
 
-bool cow_add(const sProc *p,tFrameNo frameNo) {
+bool cow_add(const sProc *p,frameno_t frameNo) {
 	sCOW *cc;
 	cc = (sCOW*)cache_alloc(sizeof(sCOW));
 	if(cc == NULL)
@@ -116,7 +116,7 @@ bool cow_add(const sProc *p,tFrameNo frameNo) {
 	return true;
 }
 
-size_t cow_remove(const sProc *p,tFrameNo frameNo,bool *foundOther) {
+size_t cow_remove(const sProc *p,frameno_t frameNo,bool *foundOther) {
 	sSLNode *n,*tn,*ln;
 	sCOW *cow;
 	size_t frmCount = 0;
@@ -154,7 +154,7 @@ size_t cow_remove(const sProc *p,tFrameNo frameNo,bool *foundOther) {
 size_t cow_getFrmCount(void) {
 	sSLNode *n;
 	size_t i,count = 0;
-	tFrameNo *frames = (tFrameNo*)cache_calloc(sll_length(cowFrames),sizeof(tFrameNo));
+	frameno_t *frames = (frameno_t*)cache_calloc(sll_length(cowFrames),sizeof(frameno_t));
 	if(!frames)
 		return 0;
 	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {

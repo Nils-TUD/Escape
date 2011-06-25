@@ -36,7 +36,7 @@
 #define FIRE_INTERVAL		(UPDATE_INTERVAL * 8)
 #define ADDPLAIN_INTERVAL	(UPDATE_INTERVAL * 90)
 
-static bool game_performAction(tTime time,uchar keycode);
+static bool game_performAction(time_t time,uchar keycode);
 static void game_fire(void);
 static void game_addAirplain(void);
 
@@ -74,7 +74,7 @@ void game_handleKey(uchar keycode,uchar modifiers,uchar isBreak,char c) {
 	pressed[keycode] = !isBreak;
 }
 
-bool game_tick(tTime gtime) {
+bool game_tick(time_t gtime) {
 	bool stop = false;
 	if((gtime % UPDATE_INTERVAL) == 0) {
 		int scoreChg;
@@ -97,7 +97,7 @@ bool game_tick(tTime gtime) {
 	return !stop;
 }
 
-static bool game_performAction(tTime gtime,uchar keycode) {
+static bool game_performAction(time_t gtime,uchar keycode) {
 	switch(keycode) {
 		case VK_LEFT:
 			bar_moveLeft();

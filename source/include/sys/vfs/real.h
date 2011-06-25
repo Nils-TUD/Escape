@@ -33,7 +33,7 @@ void vfs_real_init(void);
  *
  * @param pid the process-id
  */
-void vfs_real_removeProc(tPid pid);
+void vfs_real_removeProc(pid_t pid);
 
 /**
  * Opens the given path with given flags for given process
@@ -43,7 +43,7 @@ void vfs_real_removeProc(tPid pid);
  * @param path the path
  * @return 0 on success or the error-code
  */
-tFileNo vfs_real_openPath(tPid pid,uint flags,const char *path);
+file_t vfs_real_openPath(pid_t pid,uint flags,const char *path);
 
 /**
  * Opens the given inode+devno with given flags for given process
@@ -54,7 +54,7 @@ tFileNo vfs_real_openPath(tPid pid,uint flags,const char *path);
  * @param dev the dev-number
  * @return 0 on success or the error-code
  */
-tFileNo vfs_real_openInode(tPid pid,uint flags,tInodeNo ino,tDevNo dev);
+file_t vfs_real_openInode(pid_t pid,uint flags,inode_t ino,dev_t dev);
 
 /**
  * Retrieves information about the given (real!) path
@@ -64,7 +64,7 @@ tFileNo vfs_real_openInode(tPid pid,uint flags,tInodeNo ino,tDevNo dev);
  * @param info should be filled
  * @return 0 on success
  */
-int vfs_real_stat(tPid pid,const char *path,sFileInfo *info);
+int vfs_real_stat(pid_t pid,const char *path,sFileInfo *info);
 
 /**
  * Retrieves information about the given inode on given device
@@ -75,7 +75,7 @@ int vfs_real_stat(tPid pid,const char *path,sFileInfo *info);
  * @param info should be filled
  * @return 0 on success
  */
-int vfs_real_istat(tPid pid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
+int vfs_real_istat(pid_t pid,inode_t ino,dev_t devNo,sFileInfo *info);
 
 /**
  * Reads from the given inode at <offset> <count> bytes into the given buffer
@@ -88,7 +88,7 @@ int vfs_real_istat(tPid pid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
  * @param count the number of bytes to copy
  * @return the number of read bytes
  */
-ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,
+ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,void *buffer,
 		off_t offset,size_t count);
 
 /**
@@ -102,7 +102,7 @@ ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,
  * @param count the number of bytes to copy
  * @return the number of written bytes
  */
-ssize_t vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,
+ssize_t vfs_real_write(pid_t pid,inode_t inodeNo,dev_t devNo,const void *buffer,
 		off_t offset,size_t count);
 
 /**
@@ -113,7 +113,7 @@ ssize_t vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer
  * @param newPath the link-path
  * @return 0 on success
  */
-int vfs_real_link(tPid pid,const char *oldPath,const char *newPath);
+int vfs_real_link(pid_t pid,const char *oldPath,const char *newPath);
 
 /**
  * Unlinks the given path. That means, the directory-entry will be removed and if there are no
@@ -123,7 +123,7 @@ int vfs_real_link(tPid pid,const char *oldPath,const char *newPath);
  * @param path the path
  * @return 0 on success
  */
-int vfs_real_unlink(tPid pid,const char *path);
+int vfs_real_unlink(pid_t pid,const char *path);
 
 /**
  * Creates the given directory. Expects that all except the last path-component exist.
@@ -132,7 +132,7 @@ int vfs_real_unlink(tPid pid,const char *path);
  * @param path the path
  * @return 0 on success
  */
-int vfs_real_mkdir(tPid pid,const char *path);
+int vfs_real_mkdir(pid_t pid,const char *path);
 
 /**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
@@ -141,7 +141,7 @@ int vfs_real_mkdir(tPid pid,const char *path);
  * @param path the path
  * @return 0 on success
  */
-int vfs_real_rmdir(tPid pid,const char *path);
+int vfs_real_rmdir(pid_t pid,const char *path);
 
 /**
  * Mounts <device> at <path> with fs <type>
@@ -152,7 +152,7 @@ int vfs_real_rmdir(tPid pid,const char *path);
  * @param type the fs-type
  * @return 0 on success
  */
-int vfs_real_mount(tPid pid,const char *device,const char *path,uint type);
+int vfs_real_mount(pid_t pid,const char *device,const char *path,uint type);
 
 /**
  * Unmounts the device mounted at <path>
@@ -161,7 +161,7 @@ int vfs_real_mount(tPid pid,const char *device,const char *path,uint type);
  * @param path the path
  * @return 0 on success
  */
-int vfs_real_unmount(tPid pid,const char *path);
+int vfs_real_unmount(pid_t pid,const char *path);
 
 /**
  * Writes all dirty objects of the filesystem to disk
@@ -169,7 +169,7 @@ int vfs_real_unmount(tPid pid,const char *path);
  * @param pid the process-id
  * @return 0 on success
  */
-int vfs_real_sync(tPid pid);
+int vfs_real_sync(pid_t pid);
 
 /**
  * Closes the given inode
@@ -178,6 +178,6 @@ int vfs_real_sync(tPid pid);
  * @param inodeNo the inode
  * @param devNo the device-number
  */
-void vfs_real_close(tPid pid,tInodeNo inodeNo,tDevNo devNo);
+void vfs_real_close(pid_t pid,inode_t inodeNo,dev_t devNo);
 
 #endif /* VFSREAL_H_ */

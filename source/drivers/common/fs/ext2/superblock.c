@@ -57,7 +57,7 @@ bool ext2_super_init(sExt2 *e) {
 
 void ext2_super_update(sExt2 *e) {
 	size_t i,count;
-	tBlockNo bno;
+	block_t bno;
 	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	if(!e->sbDirty)

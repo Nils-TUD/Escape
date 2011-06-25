@@ -28,9 +28,9 @@ extern "C" {
 
 /* description of a binary */
 typedef struct {
-	tInodeNo ino;
-	tDevNo dev;
-	tTime modifytime;
+	inode_t ino;
+	dev_t dev;
+	time_t modifytime;
 } sBinDesc;
 
 /* the region-types */

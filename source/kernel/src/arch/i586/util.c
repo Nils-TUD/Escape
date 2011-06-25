@@ -168,11 +168,11 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 	uintptr_t start,end;
 	size_t pcount;
 	sFuncCall *calls;
-	tFrameNo *frames;
+	frameno_t *frames;
 	if(t->stackRegions[0] >= 0) {
 		vmm_getRegRange(t->proc,t->stackRegions[0],&start,&end);
 		pcount = (end - start) / PAGE_SIZE;
-		frames = cache_alloc((pcount + 2) * sizeof(tFrameNo));
+		frames = cache_alloc((pcount + 2) * sizeof(frameno_t));
 		if(frames) {
 			sIntrptStackFrame *istack = t->kstackEnd;
 			uintptr_t temp,startCpy = start;

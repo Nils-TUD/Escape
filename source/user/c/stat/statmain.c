@@ -28,7 +28,7 @@
 
 #define MAX_DATE_LEN	64
 
-static void stat_printDate(const char *title,tTime timestamp);
+static void stat_printDate(const char *title,time_t timestamp);
 static const char *stat_getType(sFileInfo *info);
 
 int main(int argc,char *argv[]) {
@@ -62,7 +62,7 @@ int main(int argc,char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-static void stat_printDate(const char *title,tTime timestamp) {
+static void stat_printDate(const char *title,time_t timestamp) {
 	static char dateStr[MAX_DATE_LEN];
 	struct tm *date = gmtime(&timestamp);
 	strftime(dateStr,sizeof(dateStr),"%a, %m/%d/%Y %H:%M:%S",date);

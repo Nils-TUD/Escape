@@ -39,7 +39,7 @@ sTestModule tModMM = {
 	&test_mm
 };
 
-static tFrameNo frames[FRAME_COUNT];
+static frameno_t frames[FRAME_COUNT];
 
 static void test_mm(void) {
 	test_default();

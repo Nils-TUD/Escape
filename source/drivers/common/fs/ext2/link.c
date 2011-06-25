@@ -105,7 +105,7 @@ int ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *name,bool delDir) {
 	uint8_t *buf;
 	size_t nameLen;
-	tInodeNo ino = -1;
+	inode_t ino = -1;
 	sExt2DirEntry *dire,*prev;
 	int res;
 	int32_t dirSize = le32tocpu(dir->inode.size);

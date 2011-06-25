@@ -35,7 +35,7 @@ namespace gui {
 	Application::Application()
 			: _winFd(-1), _msg(sMsg()), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
 			  _vesaInfo(sVESAInfo()), _windows(vector<Window*>()) {
-		tMsgId mid;
+		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_READ | IO_WRITE);
 		if(_winFd < 0)
 			error("Unable to open window-manager");
@@ -72,13 +72,13 @@ namespace gui {
 	}
 
 	void Application::doEvents() {
-		tMsgId mid;
+		msgid_t mid;
 		if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
 			error("Read from window-manager failed");
 		handleMessage(mid,&_msg);
 	}
 
-	void Application::handleMessage(tMsgId mid,const sMsg *msg) {
+	void Application::handleMessage(msgid_t mid,const sMsg *msg) {
 		switch(mid) {
 			case MSG_WIN_CREATE_RESP: {
 				tWinId tmpId = msg->args.arg1;

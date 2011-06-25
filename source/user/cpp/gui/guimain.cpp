@@ -62,7 +62,7 @@ int main(void) {
 }
 
 static void startDriver(const char *name,const char *wait) {
-	tFD fd;
+	int fd;
 	size_t i;
 	char path[MAX_PATH_LEN + 1] = "/sbin/";
 	// start

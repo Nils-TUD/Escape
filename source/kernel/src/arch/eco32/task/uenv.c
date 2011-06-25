@@ -33,8 +33,8 @@
 /* storage for "delayed" signal handling */
 typedef struct {
 	uint8_t active;
-	tTid tid;
-	tSig sig;
+	tid_t tid;
+	sig_t sig;
 } sSignalData;
 
 static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
@@ -44,8 +44,8 @@ static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t ten
 static sSignalData signalData;
 
 void uenv_handleSignal(void) {
-	tTid tid;
-	tSig sig;
+	tid_t tid;
+	sig_t sig;
 	/* don't do anything, if we should already handle a signal */
 	if(signalData.active == 1)
 		return;
@@ -125,7 +125,7 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 	signalData.active = 0;
 }
 
-int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	uint32_t *regs;
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	if(!paging_isRangeUserReadable((uintptr_t)sp,REG_COUNT * sizeof(uint32_t)))

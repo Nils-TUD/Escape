@@ -51,7 +51,7 @@ size_t timer_getIntrptCount(void);
 /**
  * @return the kernel-internal timestamp; starts from zero, in milliseconds, increased by timer-irq
  */
-tTime timer_getTimestamp(void);
+time_t timer_getTimestamp(void);
 
 /**
  * Puts the given thread to sleep for the given number of milliseconds
@@ -60,14 +60,14 @@ tTime timer_getTimestamp(void);
  * @param msecs the number of milliseconds to wait
  * @return 0 on success
  */
-int timer_sleepFor(tTid tid,tTime msecs);
+int timer_sleepFor(tid_t tid,time_t msecs);
 
 /**
  * Removes the given thread from the timer
  *
  * @param tid the thread-id
  */
-void timer_removeThread(tTid tid);
+void timer_removeThread(tid_t tid);
 
 /**
  * Handles a timer-interrupt

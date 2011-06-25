@@ -39,7 +39,7 @@ void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	/* calculate mm-stack-size */
 	memSize = mb->memUpper * K;
 	defPageCount = (memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT / PAGE_SIZE);
-	*stackSize = (defPageCount + (PAGE_SIZE - 1) / sizeof(tFrameNo)) / (PAGE_SIZE / sizeof(tFrameNo));
+	*stackSize = (defPageCount + (PAGE_SIZE - 1) / sizeof(frameno_t)) / (PAGE_SIZE / sizeof(frameno_t));
 
 	/* the first usable frame in the bitmap is behind the mm-stack */
 	*bitmap = (tBitmap*)(*stackBegin + (*stackSize + 1) * PAGE_SIZE);

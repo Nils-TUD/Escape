@@ -25,7 +25,7 @@
 
 FILE *fopen(const char *filename,const char *mode) {
 	char c;
-	tFD fd;
+	int fd;
 	uint flags = 0;
 	FILE *f = NULL;
 

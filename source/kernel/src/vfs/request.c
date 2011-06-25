@@ -65,14 +65,14 @@ void vfs_req_init(void) {
 	reqUsedEnd = NULL;
 }
 
-bool vfs_req_setHandler(tMsgId id,fReqHandler f) {
+bool vfs_req_setHandler(msgid_t id,fReqHandler f) {
 	if(id >= HANDLER_COUNT || handler[id] != NULL)
 		return false;
 	handler[id] = f;
 	return true;
 }
 
-void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,size_t size) {
+void vfs_req_sendMsg(msgid_t id,sVFSNode *node,const void *data,size_t size) {
 	assert(node != NULL);
 	if(id < HANDLER_COUNT && handler[id])
 		handler[id](node,data,size);
@@ -108,7 +108,7 @@ sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size) {
 
 void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 	/* wait */
-	ev_wait(req->tid,EVI_REQ_REPLY,(tEvObj)req->node);
+	ev_wait(req->tid,EVI_REQ_REPLY,(evobj_t)req->node);
 	if(allowSigs)
 		thread_switch();
 	else

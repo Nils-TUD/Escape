@@ -25,9 +25,9 @@
 #include <stddef.h>
 
 /* file-number (in global file table) */
-typedef int tFileNo;
-typedef int tVMRegNo;
-typedef uintptr_t tFrameNo;
+typedef int file_t;
+typedef int vmreg_t;
+typedef uintptr_t frameno_t;
 
 #ifndef NDEBUG
 #define DEBUGGING 1

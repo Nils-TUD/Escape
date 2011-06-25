@@ -319,7 +319,7 @@ typedef struct {
 } A_PACKED sExt2Inode;
 
 typedef struct {
-	tInodeNo inode;
+	inode_t inode;
 	uint16_t recLen;
 	uint16_t nameLen;
 	/* name follows (up to 255 bytes) */
@@ -327,7 +327,7 @@ typedef struct {
 } A_PACKED sExt2DirEntry;
 
 typedef struct {
-	tInodeNo inodeNo;
+	inode_t inodeNo;
 	ushort dirty;
 	ushort refs;
 	sExt2Inode inode;
@@ -335,7 +335,7 @@ typedef struct {
 
 typedef struct {
 	/* the file-descs for the driver (one for each thread and one for the initial) */
-	tFD drvFds[REQ_THREAD_COUNT + 1];
+	int drvFds[REQ_THREAD_COUNT + 1];
 
 	/* superblock and blockgroups of that ext2-fs */
 	bool sbDirty;
@@ -380,7 +380,7 @@ sFileSystem *ext2_getFS(void);
  * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-number on success
  */
-tInodeNo ext2_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLastMnt);
+inode_t ext2_resPath(void *h,const char *path,uint flags,dev_t *dev,bool resLastMnt);
 
 /**
  * Mount-entry for open()
@@ -390,7 +390,7 @@ tInodeNo ext2_resPath(void *h,const char *path,uint flags,tDevNo *dev,bool resLa
  * @param flags the open-flags
  * @return the inode on success or < 0
  */
-tInodeNo ext2_open(void *h,tInodeNo ino,uint flags);
+inode_t ext2_open(void *h,inode_t ino,uint flags);
 
 /**
  * Mount-entry for close()
@@ -398,7 +398,7 @@ tInodeNo ext2_open(void *h,tInodeNo ino,uint flags);
  * @param h the ext2-handle
  * @param ino the inode to close
  */
-void ext2_close(void *h,tInodeNo ino);
+void ext2_close(void *h,inode_t ino);
 
 /**
  * Mount-entry for stat()
@@ -408,7 +408,7 @@ void ext2_close(void *h,tInodeNo ino);
  * @param info the buffer where to write the file-info
  * @return 0 on success
  */
-int ext2_stat(void *h,tInodeNo ino,sFileInfo *info);
+int ext2_stat(void *h,inode_t ino,sFileInfo *info);
 
 /**
  * Mount-entry for read()
@@ -420,7 +420,7 @@ int ext2_stat(void *h,tInodeNo ino,sFileInfo *info);
  * @param count the number of bytes to read
  * @return number of read bytes on success
  */
-ssize_t ext2_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count);
+ssize_t ext2_read(void *h,inode_t inodeNo,void *buffer,uint offset,size_t count);
 
 /**
  * Mount-entry for write()
@@ -432,7 +432,7 @@ ssize_t ext2_read(void *h,tInodeNo inodeNo,void *buffer,uint offset,size_t count
  * @param count the number of bytes to write
  * @return number of written bytes on success
  */
-ssize_t ext2_write(void *h,tInodeNo inodeNo,const void *buffer,uint offset,size_t count);
+ssize_t ext2_write(void *h,inode_t inodeNo,const void *buffer,uint offset,size_t count);
 
 /**
  * Mount-entry for link()
@@ -443,7 +443,7 @@ ssize_t ext2_write(void *h,tInodeNo inodeNo,const void *buffer,uint offset,size_
  * @param name the entry-name to create
  * @return 0 on success
  */
-int ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
+int ext2_link(void *h,inode_t dstIno,inode_t dirIno,const char *name);
 
 /**
  * Mount-entry for unlink()
@@ -453,7 +453,7 @@ int ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
  * @param name the entry-name to remove
  * @return 0 on success
  */
-int ext2_unlink(void *h,tInodeNo dirIno,const char *name);
+int ext2_unlink(void *h,inode_t dirIno,const char *name);
 
 /**
  * Mount-entry for mkdir()
@@ -463,7 +463,7 @@ int ext2_unlink(void *h,tInodeNo dirIno,const char *name);
  * @param name the entry-name to create
  * @return 0 on success
  */
-int ext2_mkdir(void *h,tInodeNo dirIno,const char *name);
+int ext2_mkdir(void *h,inode_t dirIno,const char *name);
 
 /**
  * Mount-entry for rmdir()
@@ -473,7 +473,7 @@ int ext2_mkdir(void *h,tInodeNo dirIno,const char *name);
  * @param name the entry-name to remove
  * @return 0 on success
  */
-int ext2_rmdir(void *h,tInodeNo dirIno,const char *name);
+int ext2_rmdir(void *h,inode_t dirIno,const char *name);
 
 /**
  * Mount-entry for sync().
@@ -490,7 +490,7 @@ void ext2_sync(void *h);
  * @param inodeNo the inode-number
  * @return the block-number
  */
-tBlockNo ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo);
+block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo);
 
 /**
  * Determines the block-group of the given block
@@ -499,7 +499,7 @@ tBlockNo ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo);
  * @param block the block-number
  * @return the block-group-number
  */
-tBlockNo ext2_getGroupOfBlock(sExt2 *e,tBlockNo block);
+block_t ext2_getGroupOfBlock(sExt2 *e,block_t block);
 
 /**
  * Determines the block-group of the given inode
@@ -508,7 +508,7 @@ tBlockNo ext2_getGroupOfBlock(sExt2 *e,tBlockNo block);
  * @param inodeNo the inode-number
  * @return the block-group-number
  */
-tBlockNo ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo);
+block_t ext2_getGroupOfInode(sExt2 *e,inode_t inodeNo);
 
 /**
  * @param e the ext2-data
@@ -524,7 +524,7 @@ size_t ext2_getBlockGroupCount(sExt2 *e);
  * @param i the block-group-number
  * @return true if so
  */
-bool ext2_bgHasBackups(sExt2 *e,tBlockNo i);
+bool ext2_bgHasBackups(sExt2 *e,block_t i);
 
 
 #if DEBUGGING

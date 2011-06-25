@@ -41,11 +41,11 @@ typedef struct {
 	sVFSNode *lastClient;
 } sServer;
 
-static void vfs_server_close(tPid pid,tFileNo file,sVFSNode *node);
+static void vfs_server_close(pid_t pid,file_t file,sVFSNode *node);
 static void vfs_server_destroy(sVFSNode *node);
 static void vfs_server_wakeupClients(const sVFSNode *node,uint events);
 
-sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,uint flags) {
+sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 	sServer *srv;
 	sVFSNode *node = vfs_node_create(parent,name);
 	if(node == NULL)
@@ -71,7 +71,7 @@ sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,uint flags) {
 	return node;
 }
 
-static void vfs_server_close(tPid pid,tFileNo file,sVFSNode *node) {
+static void vfs_server_close(pid_t pid,file_t file,sVFSNode *node) {
 	UNUSED(pid);
 	UNUSED(file);
 	vfs_node_destroy(node);
@@ -179,7 +179,7 @@ void vfs_server_print(const sVFSNode *n) {
 static void vfs_server_wakeupClients(const sVFSNode *node,uint events) {
 	node = vfs_node_getFirstChild(node);
 	while(node != NULL) {
-		ev_wakeupm(events,(tEvObj)node);
+		ev_wakeupm(events,(evobj_t)node);
 		node = node->next;
 	}
 }

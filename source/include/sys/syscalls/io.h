@@ -28,14 +28,14 @@
  *
  * @param const char* the vfs-filename
  * @param uint flags (read / write)
- * @return tFD the file-descriptor
+ * @return int the file-descriptor
  */
 int sysc_open(sIntrptStackFrame *stack);
 
 /**
  * Manipulates the given file-descriptor, depending on the command
  *
- * @param tFD the file-descriptor
+ * @param int the file-descriptor
  * @param uint the command (F_GETFL or F_SETFL)
  * @param int the argument (just used for F_SETFL)
  * @return int >= 0 on success
@@ -45,8 +45,8 @@ int sysc_fcntl(sIntrptStackFrame *stack);
 /**
  * Creates a pipe with 2 separate files for reading and writing.
  *
- * @param tFD* will be set to the fd for reading
- * @param tFD* will be set to the fd for writing
+ * @param int* will be set to the fd for reading
+ * @param int* will be set to the fd for writing
  * @return 0 on success
  */
 int sysc_pipe(sIntrptStackFrame *stack);
@@ -54,7 +54,7 @@ int sysc_pipe(sIntrptStackFrame *stack);
 /**
  * Determines the current file-position
  *
- * @param tFD file-descriptor
+ * @param int file-descriptor
  * @param long* file-position
  * @return int 0 on success
  */
@@ -63,7 +63,7 @@ int sysc_tell(sIntrptStackFrame *stack);
 /**
  * Tests whether we are at the end of the file (or if there is a message for driver-usages)
  *
- * @param tFD file-descriptor
+ * @param int file-descriptor
  * @return bool true if we are at EOF
  */
 int sysc_eof(sIntrptStackFrame *stack);
@@ -71,7 +71,7 @@ int sysc_eof(sIntrptStackFrame *stack);
 /**
  * Changes the position in the given file
  *
- * @param tFD the file-descriptor
+ * @param int the file-descriptor
  * @param int the offset
  * @param uint the seek-type
  * @return int the new position on success
@@ -81,7 +81,7 @@ int sysc_seek(sIntrptStackFrame *stack);
 /**
  * Read-syscall. Reads a given number of bytes in a given file at the current position
  *
- * @param tFD file-descriptor
+ * @param int file-descriptor
  * @param void* buffer
  * @param size_t number of bytes
  * @return ssize_t the number of read bytes
@@ -91,7 +91,7 @@ int sysc_read(sIntrptStackFrame *stack);
 /**
  * Write-syscall. Writes a given number of bytes to a given file at the current position
  *
- * @param tFD file-descriptor
+ * @param int file-descriptor
  * @param void* buffer
  * @param size_t number of bytes
  * @return ssize_t the number of written bytes
@@ -101,16 +101,16 @@ int sysc_write(sIntrptStackFrame *stack);
 /**
  * Duplicates the given file-descriptor
  *
- * @param tFD the file-descriptor
- * @return tFD the error-code or the new file-descriptor
+ * @param int the file-descriptor
+ * @return int the error-code or the new file-descriptor
  */
 int sysc_dupFd(sIntrptStackFrame *stack);
 
 /**
  * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
  *
- * @param tFD src the source-file-descriptor
- * @param tFD dst the destination-file-descriptor
+ * @param int src the source-file-descriptor
+ * @param int dst the destination-file-descriptor
  * @return int the error-code or 0 if successfull
  */
 int sysc_redirFd(sIntrptStackFrame *stack);
@@ -118,15 +118,15 @@ int sysc_redirFd(sIntrptStackFrame *stack);
 /**
  * Closes the given file-descriptor
  *
- * @param tFD the file-descriptor
+ * @param int the file-descriptor
  */
 int sysc_close(sIntrptStackFrame *stack);
 
 /**
  * Sends a message
  *
- * @param tFD the file-descriptor
- * @param tMsgId the msg-id
+ * @param int the file-descriptor
+ * @param msgid_t the msg-id
  * @param void* the data
  * @param size_t the size of the data
  * @return ssize_t 0 on success
@@ -136,8 +136,8 @@ int sysc_send(sIntrptStackFrame *stack);
 /**
  * Receives a message
  *
- * @param tFD the file-descriptor
- * @param tMsgId the msg-id
+ * @param int the file-descriptor
+ * @param msgid_t the msg-id
  * @param void* the data
  * @return ssize_t the message-size on success
  */
@@ -155,7 +155,7 @@ int sysc_stat(sIntrptStackFrame *stack);
 /**
  * Retrieves information about the file behind the given file-descriptor
  *
- * @param tFD the file-descriptor
+ * @param int the file-descriptor
  * @param tFileInfo* info will be filled
  * @return int 0 on success
  */

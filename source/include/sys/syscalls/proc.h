@@ -29,7 +29,7 @@
 /**
  * Returns the pid of the current process
  *
- * @return tPid the pid
+ * @return pid_t the pid
  */
 int sysc_getpid(sIntrptStackFrame *stack);
 
@@ -37,14 +37,14 @@ int sysc_getpid(sIntrptStackFrame *stack);
  * Returns the parent-pid of the given process
  *
  * @param pid the process-id
- * @return tPid the parent-pid
+ * @return pid_t the parent-pid
  */
 int sysc_getppid(sIntrptStackFrame *stack);
 
 /**
  * Clones the current process
  *
- * @return tPid 0 for the child, the child-pid for the parent-process
+ * @return pid_t 0 for the child, the child-pid for the parent-process
  */
 int sysc_fork(sIntrptStackFrame *stack);
 

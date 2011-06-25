@@ -57,7 +57,7 @@ void ext2_icache_markDirty(sExt2CInode *inode);
  * @param mode the mode: IMODE_*
  * @return the cached node or NULL
  */
-sExt2CInode *ext2_icache_request(sExt2 *e,tInodeNo no,uint mode);
+sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode);
 
 /**
  * Releases the given inode. That means the references will be decreased and the inode will be

@@ -29,7 +29,7 @@
 
 /* an entry in the request-list */
 typedef struct sRequest {
-	tTid tid;
+	tid_t tid;
 	sVFSNode *node;
 	uint8_t state;
 	ulong val1;
@@ -55,7 +55,7 @@ void vfs_req_init(void);
  * @param f the handler-function
  * @return true if successfull
  */
-bool vfs_req_setHandler(tMsgId id,fReqHandler f);
+bool vfs_req_setHandler(msgid_t id,fReqHandler f);
 
 /**
  * Sends the given message to the appropriate handler
@@ -65,7 +65,7 @@ bool vfs_req_setHandler(tMsgId id,fReqHandler f);
  * @param data the message
  * @param size the size of the message
  */
-void vfs_req_sendMsg(tMsgId id,sVFSNode *node,const void *data,size_t size);
+void vfs_req_sendMsg(msgid_t id,sVFSNode *node,const void *data,size_t size);
 
 /**
  * Allocates a new request-object with given properties

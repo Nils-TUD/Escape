@@ -49,7 +49,7 @@ int mount_addFS(sFileSystem *fs) {
 	return 0;
 }
 
-tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,uint type) {
+dev_t mount_addMnt(dev_t dev,inode_t inode,const char *driver,uint type) {
 	size_t i;
 	sFSInst *inst;
 	sFileSystem *fs;
@@ -120,7 +120,7 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,uint type) {
 	return i;
 }
 
-tDevNo mount_getByLoc(tDevNo dev,tInodeNo inode) {
+dev_t mount_getByLoc(dev_t dev,inode_t inode) {
 	size_t i,x;
 	/* we have mntPntCount+1 because of the root-fs */
 	for(i = 0,x = 0; x <= mntPntCount && i < MOUNT_TABLE_SIZE; i++) {
@@ -132,7 +132,7 @@ tDevNo mount_getByLoc(tDevNo dev,tInodeNo inode) {
 	return ERR_NO_MNTPNT;
 }
 
-int mount_remMnt(tDevNo dev,tInodeNo inode) {
+int mount_remMnt(dev_t dev,inode_t inode) {
 	size_t i;
 	/* search mount-point */
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
@@ -156,7 +156,7 @@ int mount_remMnt(tDevNo dev,tInodeNo inode) {
 	return 0;
 }
 
-tDevNo mount_getDevByHandle(void *h) {
+dev_t mount_getDevByHandle(void *h) {
 	size_t i;
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		if(mounts[i].mnt->handle == h)
@@ -165,7 +165,7 @@ tDevNo mount_getDevByHandle(void *h) {
 	return ERR_NO_MNTPNT;
 }
 
-sFSInst *mount_get(tDevNo dev) {
+sFSInst *mount_get(dev_t dev) {
 	if(dev >= MOUNT_TABLE_SIZE)
 		return NULL;
 	return mounts[dev].mnt;

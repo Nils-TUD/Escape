@@ -20,6 +20,6 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 
-tPid getppid(void) {
+pid_t getppid(void) {
 	return getppidof(getpid());
 }

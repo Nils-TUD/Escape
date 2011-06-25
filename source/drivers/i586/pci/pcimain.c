@@ -28,8 +28,8 @@
 static sMsg msg;
 
 int main(void) {
-	tMsgId mid;
-	tFD id;
+	msgid_t mid;
+	int id;
 
 	list_init();
 
@@ -37,7 +37,7 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register driver 'pci'");
 	while(1) {
-		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[PCI] Unable to get work");
 		else {

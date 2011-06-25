@@ -124,7 +124,7 @@ bool paging_isRangeWritable(uintptr_t virt,size_t count);
  * @param count the number of frames
  * @return the virtual start-address
  */
-uintptr_t paging_mapToTemp(const tFrameNo *frames,size_t count);
+uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count);
 
 /**
  * Unmaps the temporary mappings
@@ -140,7 +140,7 @@ void paging_unmapFromTemp(size_t count);
  * @param pdir will be set to the page-directory address (physical)
  * @return the number of allocated frames
  */
-ssize_t paging_cloneKernelspace(tFrameNo *stackFrame,tPageDir *pdir);
+ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir);
 
 /**
  * Destroys the given page-directory (not the current!)
@@ -167,7 +167,7 @@ bool paging_isPresent(tPageDir pdir,uintptr_t virt);
  * @param virt the virtual address
  * @return the frame-number of the given virtual address
  */
-tFrameNo paging_getFrameNo(tPageDir pdir,uintptr_t virt);
+frameno_t paging_getFrameNo(tPageDir pdir,uintptr_t virt);
 
 /**
  * Finishes the demand-loading-process by copying <loadCount> bytes from <buffer> into a new
@@ -178,7 +178,7 @@ tFrameNo paging_getFrameNo(tPageDir pdir,uintptr_t virt);
  * @param regFlags the flags of the affected region
  * @return the frame-number
  */
-tFrameNo paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags);
+frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags);
 
 /**
  * Clones <count> pages at <virtSrc> to <virtDst> from <src> into <dst>. That means
@@ -211,7 +211,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintpt
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated frames and page-tables
  */
-sAllocStats paging_map(uintptr_t virt,const tFrameNo *frames,size_t count,uint flags);
+sAllocStats paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
 
 /**
  * Maps <count> pages starting at <virt> to the given frames in the given page-directory.
@@ -226,7 +226,7 @@ sAllocStats paging_map(uintptr_t virt,const tFrameNo *frames,size_t count,uint f
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated frames and page-tables
  */
-sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const tFrameNo *frames,size_t count,uint flags);
+sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the CURRENT page-directory.

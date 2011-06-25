@@ -210,7 +210,7 @@ static bool addApp(const char *def,char *search,bool listUser,bool listSys) {
 }
 
 static char *readApp(char *path) {
-	tFD fileFd;
+	int fileFd;
 	const size_t incSize = 128;
 	ssize_t count;
 	size_t appSize = incSize;

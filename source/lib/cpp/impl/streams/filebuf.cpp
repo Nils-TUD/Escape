@@ -36,7 +36,7 @@ namespace std {
 		return this;
 	}
 
-	filebuf* filebuf::open(tFD filedesc,ios_base::openmode mode) {
+	filebuf* filebuf::open(int filedesc,ios_base::openmode mode) {
 		close();
 		_fd = filedesc;
 		_mode = mode;

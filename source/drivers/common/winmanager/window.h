@@ -45,7 +45,7 @@ typedef struct {
 	tSize width;
 	tSize height;
 	tWinId id;
-	tTid owner;
+	tid_t owner;
 	uint style;
 } sWindow;
 
@@ -55,7 +55,7 @@ typedef struct {
  * @param sid the driver-id
  * @return true on success
  */
-bool win_init(tFD sid);
+bool win_init(int sid);
 
 /**
  * Enables or disables VESA
@@ -94,7 +94,7 @@ void win_setCursor(tCoord x,tCoord y,uint cursor);
  * @param style style-attributes
  * @return the window-id or WINID_UNUSED if no slot is free
  */
-tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tInodeNo owner,uint style);
+tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,inode_t owner,uint style);
 
 /**
  * Updates the whole screen
@@ -108,7 +108,7 @@ void win_updateScreen(void);
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
  */
-void win_destroyWinsOf(tInodeNo cid,tCoord mouseX,tCoord mouseY);
+void win_destroyWinsOf(inode_t cid,tCoord mouseX,tCoord mouseY);
 
 /**
  * Destroys the given window

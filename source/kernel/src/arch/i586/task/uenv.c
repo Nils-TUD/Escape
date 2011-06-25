@@ -31,8 +31,8 @@
 /* storage for "delayed" signal handling */
 typedef struct {
 	uint8_t active;
-	tTid tid;
-	tSig sig;
+	tid_t tid;
+	sig_t sig;
 } sSignalData;
 
 static void uenv_setupStack(sIntrptStackFrame *frame,uintptr_t entryPoint);
@@ -42,8 +42,8 @@ static uint32_t *uenv_addArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoi
 static sSignalData signalData;
 
 void uenv_handleSignal(void) {
-	tTid tid;
-	tSig sig;
+	tid_t tid;
+	sig_t sig;
 	/* don't do anything, if we should already handle a signal */
 	if(signalData.active == 1)
 		return;
@@ -124,7 +124,7 @@ void uenv_startSignalHandler(sIntrptStackFrame *stack) {
 	stack->uesp = (uint32_t)esp;
 }
 
-int uenv_finishSignalHandler(sIntrptStackFrame *stack,tSig signal) {
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	UNUSED(signal);
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	if(!paging_isRangeUserReadable((uintptr_t)esp,sizeof(uint32_t) * 9))
@@ -227,8 +227,8 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
 	 * so that he can load it including all shared libraries */
 	if(info->linkerEntry != info->progEntry) {
-		tFileNo file;
-		tFD fd = proc_getFreeFd();
+		file_t file;
+		int fd = proc_getFreeFd();
 		if(fd < 0)
 			return false;
 		file = vfs_real_openPath(t->proc->pid,VFS_READ,path);

@@ -85,8 +85,8 @@ static size_t scReadPos = 0;
 static size_t scWritePos = 0;
 
 int main(void) {
-	tFD id;
-	tMsgId mid;
+	int id;
+	msgid_t mid;
 	uint8_t kbdata;
 
 	/* create buffers */
@@ -191,7 +191,7 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		tFD fd;
+		int fd;
 
 		/* translate scancodes to keycodes */
 		if(scReadPos != scWritePos) {
@@ -265,7 +265,7 @@ static void kbStartDbgConsole(void) {
 	/* restore video-mode */
 	/* TODO this is not perfect since it causes problems when we're in GUI-mode.
 	 * But its for debugging, so its ok, I think :) */
-	tFD fd = open("/dev/vterm0",IO_WRITE);
+	int fd = open("/dev/vterm0",IO_WRITE);
 	if(fd >= 0) {
 		sendRecvMsgData(fd,MSG_VT_ENABLE,NULL,0);
 		close(fd);
@@ -282,7 +282,7 @@ static void kbIntrptHandler(int sig) {
 }
 
 static void kb_waitOutBuf(void) {
-	tTime time = 0;
+	time_t time = 0;
 	uint8_t status;
 	do {
 		status = inByte(IOPORT_KB_CTRL);
@@ -295,7 +295,7 @@ static void kb_waitOutBuf(void) {
 }
 
 static void kb_waitInBuf(void) {
-	tTime time = 0;
+	time_t time = 0;
 	uint8_t status;
 	do {
 		status = inByte(IOPORT_KB_CTRL);

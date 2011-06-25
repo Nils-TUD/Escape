@@ -32,7 +32,7 @@
  * @param target the target-node
  * @return the created node or NULL
  */
-sVFSNode *vfs_link_create(tPid pid,sVFSNode *parent,char *name,const sVFSNode *target);
+sVFSNode *vfs_link_create(pid_t pid,sVFSNode *parent,char *name,const sVFSNode *target);
 
 /**
  * @param node the link-node

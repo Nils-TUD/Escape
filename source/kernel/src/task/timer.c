@@ -29,17 +29,17 @@
 
 /* an entry in the listener-list */
 typedef struct sTimerListener {
-	tTid tid;
+	tid_t tid;
 	/* difference to the previous listener */
-	tTime time;
+	time_t time;
 	struct sTimerListener *next;
 } sTimerListener;
 
 /* processes that should be waked up to a specified time */
 static sSLList *listener = NULL;
 /* total elapsed milliseconds */
-static tTime elapsedMsecs = 0;
-static tTime lastResched = 0;
+static time_t elapsedMsecs = 0;
+static time_t lastResched = 0;
 static size_t timerIntrpts = 0;
 
 static sTimerListener listenObjs[LISTENER_COUNT];
@@ -67,12 +67,12 @@ size_t timer_getIntrptCount(void) {
 	return timerIntrpts;
 }
 
-tTime timer_getTimestamp(void) {
+time_t timer_getTimestamp(void) {
 	return elapsedMsecs;
 }
 
-int timer_sleepFor(tTid tid,tTime msecs) {
-	tTime msecDiff;
+int timer_sleepFor(tid_t tid,time_t msecs) {
+	time_t msecDiff;
 	sSLNode *n,*p;
 	sTimerListener *nl,*l = freeList;
 	if(l == 0)
@@ -113,7 +113,7 @@ int timer_sleepFor(tTid tid,tTime msecs) {
 	return 0;
 }
 
-void timer_removeThread(tTid tid) {
+void timer_removeThread(tid_t tid) {
 	sSLNode *n,*p;
 	sTimerListener *l,*nl;
 	p = NULL;
@@ -138,7 +138,7 @@ void timer_intrpt(void) {
 	bool foundThread = false;
 	sSLNode *n,*tn;
 	sTimerListener *l;
-	tTime timeInc = 1000 / TIMER_FREQUENCY;
+	time_t timeInc = 1000 / TIMER_FREQUENCY;
 
 	timerIntrpts++;
 	elapsedMsecs += timeInc;
@@ -172,7 +172,7 @@ void timer_intrpt(void) {
 }
 
 void timer_print(void) {
-	tTime time;
+	time_t time;
 	sSLNode *n = sll_begin(listener);
 	sTimerListener *l;
 	if(n != NULL) {

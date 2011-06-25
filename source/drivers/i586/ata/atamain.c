@@ -41,12 +41,12 @@ typedef struct {
 	uint partition;
 } sId2Fd;
 
-static sId2Fd *getDriver(tFD sid);
+static sId2Fd *getDriver(int sid);
 static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
 
 static size_t drvCount = 0;
-static tFD drivers[DEVICE_COUNT * PARTITION_COUNT];
+static int drivers[DEVICE_COUNT * PARTITION_COUNT];
 static sId2Fd id2Fd[DEVICE_COUNT * PARTITION_COUNT];
 /* don't use dynamic memory here since this may cause trouble with swapping (which we do) */
 /* because if the heap hasn't enough memory and we request more when we should swap the kernel
@@ -57,7 +57,7 @@ static sMsg msg;
 
 int main(int argc,char **argv) {
 	size_t i;
-	tMsgId mid;
+	msgid_t mid;
 	bool useDma = true;
 
 	if(argc < 2) {
@@ -81,8 +81,8 @@ int main(int argc,char **argv) {
 	fclose(f);
 
 	while(1) {
-		tFD drvFd;
-		tFD fd = getWork(drivers,drvCount,&drvFd,&mid,&msg,sizeof(msg),0);
+		int drvFd;
+		int fd = getWork(drivers,drvCount,&drvFd,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != ERR_INTERRUPTED)
 				printe("[ATA] Unable to get client");
@@ -262,7 +262,7 @@ static void createVFSEntry(sATADevice *device,sPartition *part,const char *name)
 	fclose(f);
 }
 
-static sId2Fd *getDriver(tFD sid) {
+static sId2Fd *getDriver(int sid) {
 	size_t i;
 	for(i = 0; i < drvCount; i++) {
 		if(drivers[i] == sid)

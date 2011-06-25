@@ -54,9 +54,9 @@ private:
 	static const Color CURSOR_COLOR;
 
 public:
-	ShellControl(tFD sid,tCoord x,tCoord y,tSize width,tSize height) :
+	ShellControl(int sid,tCoord x,tCoord y,tSize width,tSize height) :
 		Control(x,y,width,height), _lastCol(0), _lastRow(0), _vt(NULL) {
-		tFD speakerFd;
+		int speakerFd;
 		sVTSize size;
 		Font font;
 		size.width = (width - 4) / font.getWidth();

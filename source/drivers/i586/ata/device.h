@@ -313,7 +313,7 @@ struct sATAController {
 	uint16_t portBase;
 	/* I/O-ports for bus-mastering */
 	uint16_t bmrBase;
-	tSig irq;
+	sig_t irq;
 	sPRD *dma_prdt_phys;
 	sPRD *dma_prdt_virt;
 	void *dma_buf_phys;

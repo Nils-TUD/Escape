@@ -30,7 +30,7 @@
 
 /* a listener */
 typedef struct {
-	tInodeNo id;
+	inode_t id;
 	uchar flags;
 	uchar key;
 	uchar modifier;
@@ -39,7 +39,7 @@ typedef struct {
 /**
  * Searches for the given listener
  */
-static sEventListener *events_find(tInodeNo id,uchar flags,uchar key,uchar modifier);
+static sEventListener *events_find(inode_t id,uchar flags,uchar key,uchar modifier);
 
 /* all announced listeners */
 static sSLList *listener;
@@ -49,7 +49,7 @@ void events_init(void) {
 	assert(listener);
 }
 
-bool events_send(tFD driver,sKmData *km) {
+bool events_send(int driver,sKmData *km) {
 	sSLNode *n;
 	sMsg msg;
 	bool copied = false;
@@ -62,7 +62,7 @@ bool events_send(tFD driver,sKmData *km) {
 			/* character/keycode equal? */
 			if(((l->flags & KE_EV_KEYCODE) && l->key == km->keycode) ||
 					((l->flags & KE_EV_CHARACTER) && l->key == km->character)) {
-				tFD fd = getClient(driver,l->id);
+				int fd = getClient(driver,l->id);
 				if(fd >= 0) {
 					if(!copied) {
 						memcpy(&msg.data.d,km,sizeof(sKmData));
@@ -77,7 +77,7 @@ bool events_send(tFD driver,sKmData *km) {
 	return copied;
 }
 
-int events_add(tInodeNo id,uchar flags,uchar key,uchar modifier) {
+int events_add(inode_t id,uchar flags,uchar key,uchar modifier) {
 	sEventListener *l;
 	if(events_find(id,flags,key,modifier) != NULL)
 		return ERR_LISTENER_EXISTS;
@@ -94,7 +94,7 @@ int events_add(tInodeNo id,uchar flags,uchar key,uchar modifier) {
 	return 0;
 }
 
-void events_remove(tInodeNo id,uchar flags,uchar key,uchar modifier) {
+void events_remove(inode_t id,uchar flags,uchar key,uchar modifier) {
 	sEventListener *l = events_find(id,flags,key,modifier);
 	if(l) {
 		sll_removeFirst(listener,l);
@@ -102,7 +102,7 @@ void events_remove(tInodeNo id,uchar flags,uchar key,uchar modifier) {
 	}
 }
 
-static sEventListener *events_find(tInodeNo id,uchar flags,uchar key,uchar modifier) {
+static sEventListener *events_find(inode_t id,uchar flags,uchar key,uchar modifier) {
 	sSLNode *n;
 	for(n = sll_begin(listener); n != NULL; n = n->next) {
 		sEventListener *l = (sEventListener*)n->data;

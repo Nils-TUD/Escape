@@ -51,7 +51,7 @@ typedef struct {
 struct sVTerm {
 	/* identification */
 	uchar index;
-	tFD sid;
+	int sid;
 	char name[MAX_VT_NAME_LEN + 1];
 	/* function-pointers */
 	fSetCursor setCursor;
@@ -69,8 +69,8 @@ struct sVTerm {
 	/* whether this vterm is currently active */
 	uchar active;
 	/* file-descriptors */
-	tFD video;
-	tFD speaker;
+	int video;
+	int speaker;
 	/* the first line with content */
 	ushort firstLine;
 	/* the line where row+col starts */
@@ -99,7 +99,7 @@ struct sVTerm {
 	uchar inbufEOF;
 	sRingBuf *inbuf;
 	/* the pid of the shell for ctrl+c notifications */
-	tPid shellPid;
+	pid_t shellPid;
 	/* the escape-state */
 	int escapePos;
 	char escapeBuf[MAX_ESCC_LENGTH];
@@ -141,7 +141,7 @@ typedef enum {
  * @param speakerFd the file-descriptor for the speaker-driver
  * @return true if successfull
  */
-bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd);
+bool vterm_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd);
 
 /**
  * Handles the control-commands

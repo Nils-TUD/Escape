@@ -44,11 +44,11 @@
 /**
  * Opens the given file for input-redirection
  */
-static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir);
+static int ast_redirFromFile(sEnv *e,sRedirFile *redir);
 /**
  * Opens the given file for output-redirection
  */
-static tFD ast_redirToFile(sEnv *e,sRedirFile *redir);
+static int ast_redirToFile(sEnv *e,sRedirFile *redir);
 /**
  * Free's the memory of the given command
  */
@@ -56,7 +56,7 @@ static void ast_destroyExecCmd(sExecSubCmd *cmd);
 /**
  * Reads the output of the current command from given pipe and closes the pipe afterwards
  */
-static sValue *ast_readCmdOutput(tFD *pipe);
+static sValue *ast_readCmdOutput(int *pipe);
 /**
  * Waits for all processes of the current command
  */
@@ -101,7 +101,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	sRedirFd *redirFdesc;
 	char path[MAX_CMD_LEN] = APPS_DIR;
 	int pid,prevPid = -1;
-	tFD pipeFds[2],prevPipe,errFd;
+	int pipeFds[2],prevPipe,errFd;
 	curCmd = run_requestId();
 
 	if(!setSigHdl) {
@@ -174,7 +174,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			/* redirect fds and make a copy of stdin and stdout because we want to keep them :) */
 			/* (no fork here) */
 			pid = 0;
-			tFD fdout = -1,fdin = -1,fderr = -1;
+			int fdout = -1,fdin = -1,fderr = -1;
 			if(redirFdesc->type == REDIR_OUT2ERR) {
 				fdout = dupFd(STDOUT_FILENO);
 				redirFd(STDOUT_FILENO,STDERR_FILENO);
@@ -311,8 +311,8 @@ error:
 	return val_createInt(res);
 }
 
-static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir) {
-	tFD fd;
+static int ast_redirFromFile(sEnv *e,sRedirFile *redir) {
+	int fd;
 	/* redirection to file */
 	uint flags = IO_READ;
 	sValue *fileExpr = ast_execute(e,redir->expr);
@@ -327,8 +327,8 @@ static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir) {
 	return fd;
 }
 
-static tFD ast_redirToFile(sEnv *e,sRedirFile *redir) {
-	tFD fd;
+static int ast_redirToFile(sEnv *e,sRedirFile *redir) {
+	int fd;
 	/* redirection to file */
 	uint flags = IO_WRITE;
 	sValue *fileExpr = ast_execute(e,redir->expr);
@@ -357,7 +357,7 @@ static void ast_destroyExecCmd(sExecSubCmd *cmd) {
 	}
 }
 
-static sValue *ast_readCmdOutput(tFD *pipeFds) {
+static sValue *ast_readCmdOutput(int *pipeFds) {
 	size_t outSize = OUTBUF_SIZE;
 	size_t outPos = 0;
 	char *outBuf;

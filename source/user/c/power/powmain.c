@@ -38,7 +38,7 @@ int main(int argc,const char *argv[]) {
 	bool reboot = false;
 	bool shutdown = false;
 	sMsg msg;
-	tFD fd;
+	int fd;
 
 	int res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);
 	if(res < 0 || (!reboot && !shutdown) || (reboot && shutdown)) {

@@ -31,6 +31,6 @@
  * @param name the name
  * @return the created node or NULL
  */
-sVFSNode *vfs_dir_create(tPid pid,sVFSNode *parent,char *name);
+sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name);
 
 #endif /* DIR_H_ */

@@ -65,8 +65,8 @@
 
 typedef struct {
 	/* ID of device containing file */
-	tDevNo device;
-	tInodeNo inodeNo;
+	dev_t device;
+	inode_t inodeNo;
 	/* protection */
 	ushort mode;
 	/* number of hard links */
@@ -81,14 +81,14 @@ typedef struct {
 	/* number of blocks allocated */
 	ushort blockCount;
 	/* times */
-	tTime accesstime;
-	tTime modifytime;
-	tTime createtime;
+	time_t accesstime;
+	time_t modifytime;
+	time_t createtime;
 } sFileInfo;
 
 /* a directory-entry */
 typedef struct {
-	tInodeNo nodeNo;
+	inode_t nodeNo;
 	uint16_t recLen;
 	uint16_t nameLen;
 	char name[MAX_NAME_LEN + 1];

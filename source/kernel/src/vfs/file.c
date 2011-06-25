@@ -38,9 +38,9 @@ typedef struct {
 } sFileContent;
 
 static void vfs_file_destroy(sVFSNode *n);
-static off_t vfs_file_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence);
+static off_t vfs_file_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 
-sVFSNode *vfs_file_create(tPid pid,sVFSNode *parent,char *name,fRead read,fWrite write) {
+sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrite write) {
 	sVFSNode *node;
 	node = vfs_node_create(parent,name);
 	if(node == NULL)
@@ -79,7 +79,7 @@ static void vfs_file_destroy(sVFSNode *n) {
 	}
 }
 
-static off_t vfs_file_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
+static off_t vfs_file_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
 	UNUSED(pid);
 	switch(whence) {
 		case SEEK_SET:
@@ -98,7 +98,7 @@ static off_t vfs_file_seek(tPid pid,sVFSNode *node,off_t position,off_t offset,u
 	}
 }
 
-ssize_t vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
+ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
 	size_t byteCount;
@@ -117,7 +117,7 @@ ssize_t vfs_file_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,off_t of
 	return byteCount;
 }
 
-ssize_t vfs_file_write(tPid pid,tFileNo file,sVFSNode *n,const void *buffer,off_t offset,
+ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,const void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);

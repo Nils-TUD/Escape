@@ -205,8 +205,8 @@ size_t boot_getUsableMemCount(void) {
 int boot_loadModules(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	size_t i;
-	tPid pid;
-	tInodeNo nodeNo;
+	pid_t pid;
+	inode_t nodeNo;
 	sModule *mod = mb->modsAddr;
 
 	/* it's not good to do this twice.. */

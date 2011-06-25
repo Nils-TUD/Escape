@@ -37,14 +37,14 @@
 
 typedef struct {
 	uint8_t active;
-	tFileNo file;
+	file_t file;
 	sVFSNode *node;
 } sFSChan;
 
 /* for istat() and stat() */
-static int vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info);
+static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,sFileInfo *info);
 /* The request-handler for sending a path and receiving a result */
-static int vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,uint arg1,uint cmd);
+static int vfs_real_pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd);
 /* waits for a response */
 static void vfs_real_wait(sRequest *req);
 
@@ -55,8 +55,8 @@ static void vfs_real_statRespHandler(sVFSNode *node,const void *data,size_t size
 static void vfs_real_defRespHandler(sVFSNode *node,const void *data,size_t size);
 
 /* for requesting and releasing a file for communication */
-static tFileNo vfs_real_requestFile(tPid pid,sVFSNode **node);
-static void vfs_real_releaseFile(tPid pid,tFileNo file);
+static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node);
+static void vfs_real_releaseFile(pid_t pid,file_t file);
 
 static sMsg msg;
 
@@ -74,7 +74,7 @@ void vfs_real_init(void) {
 	vfs_req_setHandler(MSG_FS_UNMOUNT_RESP,vfs_real_defRespHandler);
 }
 
-void vfs_real_removeProc(tPid pid) {
+void vfs_real_removeProc(pid_t pid) {
 	sProc *p = proc_getByPid(pid);
 	if(p->fsChans) {
 		sSLNode *n;
@@ -87,11 +87,11 @@ void vfs_real_removeProc(tPid pid) {
 	}
 }
 
-tFileNo vfs_real_openPath(tPid pid,uint flags,const char *path) {
+file_t vfs_real_openPath(pid_t pid,uint flags,const char *path) {
 	ssize_t res = ERR_NOT_ENOUGH_MEM;
 	size_t pathLen = strlen(path);
 	sVFSNode *node;
-	tFileNo fs;
+	file_t fs;
 	sRequest *req;
 
 	if(pathLen > MAX_MSGSTR_LEN)
@@ -122,7 +122,7 @@ tFileNo vfs_real_openPath(tPid pid,uint flags,const char *path) {
 	}
 
 	/* now open the file */
-	res = vfs_openFile(pid,flags,(tInodeNo)req->count,(tDevNo)req->val1);
+	res = vfs_openFile(pid,flags,(inode_t)req->count,(dev_t)req->val1);
 
 error:
 	vfs_req_free(req);
@@ -130,24 +130,24 @@ error:
 	return res;
 }
 
-tFileNo vfs_real_openInode(tPid pid,uint flags,tInodeNo ino,tDevNo dev) {
+file_t vfs_real_openInode(pid_t pid,uint flags,inode_t ino,dev_t dev) {
 	/* TODO maybe we should send an open-msg to fs, too, but in a different form? */
 	/* open the file */
 	return vfs_openFile(pid,flags,ino,dev);
 }
 
-int vfs_real_istat(tPid pid,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
+int vfs_real_istat(pid_t pid,inode_t ino,dev_t devNo,sFileInfo *info) {
 	return vfs_real_doStat(pid,NULL,ino,devNo,info);
 }
 
-int vfs_real_stat(tPid pid,const char *path,sFileInfo *info) {
+int vfs_real_stat(pid_t pid,const char *path,sFileInfo *info) {
 	return vfs_real_doStat(pid,path,0,0,info);
 }
 
-static int vfs_real_doStat(tPid pid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
+static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,sFileInfo *info) {
 	int res = ERR_NOT_ENOUGH_MEM;
 	size_t pathLen = 0;
-	tFileNo fs;
+	file_t fs;
 	sRequest *req;
 	sVFSNode *node;
 
@@ -200,12 +200,12 @@ error:
 	return res;
 }
 
-ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,off_t offset,size_t count) {
+ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,void *buffer,off_t offset,size_t count) {
 	sRequest *req;
 	ssize_t res;
 	void *data;
 	sVFSNode *node;
-	tFileNo fs = vfs_real_requestFile(pid,&node);
+	file_t fs = vfs_real_requestFile(pid,&node);
 	if(fs < 0)
 		return fs;
 
@@ -244,12 +244,12 @@ ssize_t vfs_real_read(tPid pid,tInodeNo inodeNo,tDevNo devNo,void *buffer,off_t 
 	return res;
 }
 
-ssize_t vfs_real_write(tPid pid,tInodeNo inodeNo,tDevNo devNo,const void *buffer,off_t offset,
+ssize_t vfs_real_write(pid_t pid,inode_t inodeNo,dev_t devNo,const void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
 	ssize_t res = ERR_NOT_ENOUGH_MEM;
 	sVFSNode *node;
-	tFileNo fs = vfs_real_requestFile(pid,&node);
+	file_t fs = vfs_real_requestFile(pid,&node);
 	if(fs < 0)
 		return fs;
 
@@ -281,33 +281,33 @@ error:
 	return res;
 }
 
-int vfs_real_link(tPid pid,const char *oldPath,const char *newPath) {
+int vfs_real_link(pid_t pid,const char *oldPath,const char *newPath) {
 	return vfs_real_pathReqHandler(pid,oldPath,newPath,0,MSG_FS_LINK);
 }
 
-int vfs_real_unlink(tPid pid,const char *path) {
+int vfs_real_unlink(pid_t pid,const char *path) {
 	return vfs_real_pathReqHandler(pid,path,NULL,0,MSG_FS_UNLINK);
 }
 
-int vfs_real_mkdir(tPid pid,const char *path) {
+int vfs_real_mkdir(pid_t pid,const char *path) {
 	return vfs_real_pathReqHandler(pid,path,NULL,0,MSG_FS_MKDIR);
 }
 
-int vfs_real_rmdir(tPid pid,const char *path) {
+int vfs_real_rmdir(pid_t pid,const char *path) {
 	return vfs_real_pathReqHandler(pid,path,NULL,0,MSG_FS_RMDIR);
 }
 
-int vfs_real_mount(tPid pid,const char *device,const char *path,uint type) {
+int vfs_real_mount(pid_t pid,const char *device,const char *path,uint type) {
 	return vfs_real_pathReqHandler(pid,device,path,type,MSG_FS_MOUNT);
 }
 
-int vfs_real_unmount(tPid pid,const char *path) {
+int vfs_real_unmount(pid_t pid,const char *path) {
 	return vfs_real_pathReqHandler(pid,path,NULL,0,MSG_FS_UNMOUNT);
 }
 
-int vfs_real_sync(tPid pid) {
+int vfs_real_sync(pid_t pid) {
 	int res;
-	tFileNo fs = vfs_real_requestFile(pid,NULL);
+	file_t fs = vfs_real_requestFile(pid,NULL);
 	if(fs < 0)
 		return fs;
 	res = vfs_sendMsg(pid,fs,MSG_FS_SYNC,&msg,sizeof(msg.args));
@@ -315,8 +315,8 @@ int vfs_real_sync(tPid pid) {
 	return res;
 }
 
-void vfs_real_close(tPid pid,tInodeNo inodeNo,tDevNo devNo) {
-	tFileNo fs = vfs_real_requestFile(pid,NULL);
+void vfs_real_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
+	file_t fs = vfs_real_requestFile(pid,NULL);
 	if(fs < 0)
 		return;
 
@@ -328,10 +328,10 @@ void vfs_real_close(tPid pid,tInodeNo inodeNo,tDevNo devNo) {
 	vfs_real_releaseFile(pid,fs);
 }
 
-static int vfs_real_pathReqHandler(tPid pid,const char *path1,const char *path2,uint arg1,uint cmd) {
+static int vfs_real_pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
 	int res = ERR_NOT_ENOUGH_MEM;
 	sRequest *req;
-	tFileNo fs;
+	file_t fs;
 	sVFSNode *node;
 
 	if(strlen(path1) > MAX_MSGSTR_LEN)
@@ -466,12 +466,12 @@ static void vfs_real_defRespHandler(sVFSNode *node,const void *data,size_t size)
 	}
 }
 
-static tFileNo vfs_real_requestFile(tPid pid,sVFSNode **node) {
+static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 	int err;
 	sSLNode *n;
 	sFSChan *chan;
 	sVFSNode *child;
-	tInodeNo nodeNo;
+	inode_t nodeNo;
 	sProc *p = proc_getByPid(pid);
 	if(!p->fsChans) {
 		p->fsChans = sll_create();
@@ -530,7 +530,7 @@ errorChan:
 	return err;
 }
 
-static void vfs_real_releaseFile(tPid pid,tFileNo file) {
+static void vfs_real_releaseFile(pid_t pid,file_t file) {
 	sSLNode *n;
 	sProc *p = proc_getByPid(pid);
 	for(n = sll_begin(p->fsChans); n != NULL; n = n->next) {

@@ -46,7 +46,7 @@ int sysc_getpid(sIntrptStackFrame *stack) {
 }
 
 int sysc_getppid(sIntrptStackFrame *stack) {
-	tPid pid = (tPid)SYSC_ARG1(stack);
+	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	sProc *p;
 
 	if(!proc_exists(pid))
@@ -57,7 +57,7 @@ int sysc_getppid(sIntrptStackFrame *stack) {
 }
 
 int sysc_fork(sIntrptStackFrame *stack) {
-	tPid newPid = proc_getFreePid();
+	pid_t newPid = proc_getFreePid();
 	int res;
 
 	/* no free slot? */
@@ -99,7 +99,7 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	res = proc_getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		ev_wait(t->tid,EVI_CHILD_DIED,(tEvObj)p);
+		ev_wait(t->tid,EVI_CHILD_DIED,(evobj_t)p);
 		thread_switch();
 		/* stop waiting for event; maybe we have been waked up for another reason */
 		ev_removeThread(t->tid);
@@ -172,7 +172,7 @@ int sysc_exec(sIntrptStackFrame *stack) {
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
 	char *argBuffer;
 	sStartupInfo info;
-	tInodeNo nodeNo;
+	inode_t nodeNo;
 	sProc *p = proc_getRunning();
 	ssize_t pathLen;
 	size_t argSize;

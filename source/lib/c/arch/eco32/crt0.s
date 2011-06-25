@@ -18,7 +18,7 @@
 #
 
 #include <esc/syscalls.h>
-#include <arch/eco32/syscalls.s>
+#include <esc/arch/eco32/syscalls.s>
 
 .section .text
 

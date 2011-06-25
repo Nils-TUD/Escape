@@ -45,6 +45,9 @@
 #define INVALID_PID			(MAX_PROC_COUNT + 1)
 #define KERNEL_PID			MAX_PROC_COUNT
 
+#define ROOT_UID			0
+#define ROOT_GID			0
+
 /* process flags */
 #define P_ZOMBIE			1
 
@@ -74,6 +77,14 @@ typedef struct {
 	pid_t pid;
 	/* parent process id */
 	pid_t parentPid;
+	/* real, effective and saved user-id */
+	uid_t ruid;
+	uid_t euid;
+	uid_t suid;
+	/* real, effective and saved group-id */
+	gid_t rgid;
+	gid_t egid;
+	gid_t sgid;
 	/* the physical address for the page-directory of this process */
 	tPageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.

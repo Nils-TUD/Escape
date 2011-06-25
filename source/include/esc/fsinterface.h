@@ -72,8 +72,8 @@ typedef struct {
 	/* number of hard links */
 	ushort linkCount;
 	/* owner user- and group-id */
-	ushort uid;
-	ushort gid;
+	uid_t uid;
+	gid_t gid;
 	/* total size, in bytes */
 	int size;
 	/* blocksize for efficent filesystem I/O */

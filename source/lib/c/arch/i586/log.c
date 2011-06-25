@@ -3,7 +3,7 @@
  */
 
 #include <esc/common.h>
-#include <arch/i586/ports.h>
+#include <esc/arch/i586/ports.h>
 #include <esc/log.h>
 #include <assert.h>
 

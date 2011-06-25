@@ -21,7 +21,7 @@
 #define LINKER_H_
 
 #include <esc/common.h>
-#include <sys/task/elf.h>
+#include <esc/elf.h>
 #include <esc/debug.h>
 #include <esc/sllist.h>
 #include <esc/mem.h>

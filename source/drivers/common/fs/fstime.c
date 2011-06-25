@@ -3,6 +3,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver.h>
 #include <stdio.h>
 #include <time.h>
 #include "fstime.h"

@@ -118,6 +118,12 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	bindesc.dev = finfo.device;
 	bindesc.modifytime = finfo.modifytime;
 
+	/* set suid and sgid */
+	if(finfo.mode & MODE_SETUID)
+		p->suid = finfo.uid;
+	if(finfo.mode & MODE_SETGID)
+		p->sgid = finfo.gid;
+
 	/* first read the header */
 	if((readRes = vfs_readFile(p->pid,file,&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
 		log_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(readRes));

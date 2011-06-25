@@ -22,16 +22,6 @@
 
 #include <esc/common.h>
 
-#ifdef __i386__
-#include <arch/i586/time.h>
-#endif
-#ifdef __eco32__
-#include <arch/eco32/time.h>
-#endif
-#ifdef __mmix__
-#include <arch/mmix/time.h>
-#endif
-
 /* TODO */
 #define CLOCKS_PER_SEC		(clock_t)0
 

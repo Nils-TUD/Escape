@@ -21,7 +21,7 @@
 #define LOOKUP_H_
 
 #include <esc/common.h>
-#include <sys/task/elf.h>
+#include <esc/elf.h>
 #include "loader.h"
 
 /**

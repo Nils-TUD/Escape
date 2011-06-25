@@ -22,8 +22,8 @@
 
 #include <esc/common.h>
 #include <gui/common.h>
-#include <arch/i586/ports.h>
 #include <gui/control.h>
+#include <esc/arch/i586/ports.h>
 #include <esc/debug.h>
 #include <esc/ringbuffer.h>
 #include <esc/esccodes.h>

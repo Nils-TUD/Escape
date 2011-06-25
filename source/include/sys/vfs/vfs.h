@@ -43,7 +43,6 @@
 #define DRV_WRITE					4
 #define DRV_CLOSE					8
 #define DRV_FS						16
-#define DRV_TERM					32
 
 /* fcntl-commands */
 #define F_GETFL						0

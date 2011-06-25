@@ -28,7 +28,7 @@
 
 /* implementable functions */
 #define MAX_GETWORK_DRIVERS			16
-#define DRV_ALL						(DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE | DRV_TERM)
+#define DRV_ALL						(DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE)
 
 #define GW_NOBLOCK					1
 

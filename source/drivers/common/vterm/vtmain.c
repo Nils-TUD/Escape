@@ -68,7 +68,7 @@ int main(void) {
 	/* reg drivers */
 	for(i = 0; i < VTERM_COUNT; i++) {
 		snprintf(name,sizeof(name),"vterm%d",i);
-		drvIds[i] = regDriver(name,DRV_READ | DRV_WRITE | DRV_TERM);
+		drvIds[i] = regDriver(name,DRV_READ | DRV_WRITE);
 		if(drvIds[i] < 0)
 			error("Unable to register driver '%s'",name);
 		waits[i].events = EV_CLIENT;

@@ -18,7 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <arch/i586/ports.h>
+#include <esc/arch/i586/ports.h>
+#include <esc/arch/i586/vm86.h>
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/debug.h>
@@ -27,7 +28,6 @@
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
-#include <esc/vm86.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

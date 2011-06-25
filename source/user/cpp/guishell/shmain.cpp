@@ -79,7 +79,7 @@ int main(int argc,char **argv) {
 	drvName = new char[MAX_PATH_LEN + 1];
 	do {
 		snprintf(drvName,MAX_PATH_LEN + 1,"guiterm%d",no);
-		sid = regDriver(drvName,DRV_READ | DRV_WRITE | DRV_TERM);
+		sid = regDriver(drvName,DRV_READ | DRV_WRITE);
 		if(sid >= 0)
 			break;
 		no++;
@@ -93,7 +93,7 @@ int main(int argc,char **argv) {
 	// the child handles the GUI
 	if((childPid = fork()) == 0) {
 		// re-register driver
-		sid = regDriver(drvName,DRV_READ | DRV_WRITE | DRV_TERM);
+		sid = regDriver(drvName,DRV_READ | DRV_WRITE);
 		unlockg(GUI_SHELL_LOCK);
 		if(sid < 0)
 			error("Unable to re-register driver %s",drvName);

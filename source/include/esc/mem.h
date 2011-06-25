@@ -22,10 +22,6 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* description of a binary */
 typedef struct {
 	inode_t ino;
@@ -48,6 +44,10 @@ typedef struct {
 /* protection-flags */
 #define PROT_READ			1
 #define PROT_WRITE			2
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Changes the size of the process's data-area. If <count> is positive <count> pages

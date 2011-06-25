@@ -45,6 +45,10 @@ typedef struct {
 	size_t curElIndex;
 } sHashMap;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a new hashmap
  *
@@ -122,5 +126,9 @@ void hm_destroy(sHashMap *m);
  * @param m the map
  */
 void hm_print(sHashMap *m);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* HASHMAP_H_ */

@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <arch/i586/register.h>
+#include <esc/arch/i586/register.h>
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/task/proc.h>
 #include <sys/dbg/kb.h>

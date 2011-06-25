@@ -22,6 +22,16 @@
 
 #include <esc/common.h>
 
+#ifdef __i386__
+#include <esc/arch/i586/driver.h>
+#endif
+#ifdef __eco32__
+#include <esc/arch/eco32/driver.h>
+#endif
+#ifdef __mmix__
+#include <esc/arch/mmix/driver.h>
+#endif
+
 /* the usable IRQs */
 #define IRQ_TIMER					0x20
 #define IRQ_KEYBOARD				0x21
@@ -37,7 +47,6 @@
 #define DRV_WRITE					4
 #define DRV_CLOSE					8
 #define DRV_FS						16
-#define DRV_TERM					32
 
 #define GW_NOBLOCK					1
 

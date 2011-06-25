@@ -22,10 +22,6 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define CA_NO_DASHES				1		/* disallow '-' or '--' for arguments */
 #define CA_REQ_EQ					2		/* require '=' for arguments */
 #define CA_NO_EQ					4		/* disallow '=' for arguments */
@@ -39,6 +35,10 @@ extern "C" {
 #define CA_ERR_FREE_DISALLOWED		-5
 #define CA_ERR_MAX1_FREE			-6
 #define CA_ERR_NO_FREE				-7
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* TODO comments.. */
 

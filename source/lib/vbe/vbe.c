@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/vm86.h>
+#include <esc/arch/i586/vm86.h>
 #include <esc/debug.h>
 #include <esc/sllist.h>
 #include <esc/mem.h>

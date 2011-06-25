@@ -18,14 +18,14 @@
  */
 
 #include <esc/common.h>
-#include <arch/i586/ports.h>
+#include <esc/arch/i586/ports.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
-#include <signal.h>
 #include <esc/conf.h>
 #include <esc/messages.h>
+#include <stdio.h>
+#include <signal.h>
 #include <errors.h>
 
 #define PIC_FREQUENCY				1193180

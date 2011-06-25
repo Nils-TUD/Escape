@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_TIME_H_
-#define MMIX_TIME_H_
+#ifndef MMIX_DRIVER_H_
+#define MMIX_DRIVER_H_
 
 #include <esc/common.h>
 
 #define TIME_DRIVER		"/dev/rtc"
 
-#endif /* MMIX_TIME_H_ */
+#endif /* MMIX_DRIVER_H_ */

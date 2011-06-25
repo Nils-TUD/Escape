@@ -80,6 +80,12 @@ void proc_init(void) {
 
 	p->pid = 0;
 	p->parentPid = 0;
+	p->ruid = ROOT_UID;
+	p->euid = ROOT_UID;
+	p->suid = ROOT_UID;
+	p->rgid = ROOT_GID;
+	p->egid = ROOT_GID;
+	p->sgid = ROOT_GID;
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 for kernelstack */
 	p->ownFrames = 1 + 1 + 1;
 	/* the first process has no text, data and stack */
@@ -345,6 +351,12 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	/* set basic attributes */
 	p->pid = newPid;
 	p->parentPid = cur->pid;
+	p->ruid = cur->ruid;
+	p->euid = cur->euid;
+	p->suid = cur->suid;
+	p->rgid = cur->rgid;
+	p->egid = cur->egid;
+	p->sgid = cur->sgid;
 	p->exitState = NULL;
 	p->sigRetAddr = cur->sigRetAddr;
 	p->ioMap = NULL;
@@ -685,6 +697,8 @@ void proc_print(const sProc *p) {
 	vid_printf("Proc %d:\n",p->pid);
 	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#Px\n",
 			p->parentPid,p->command,p->pagedir,p->entryPoint);
+	vid_printf("\truid=%u, euid=%u, suid=%u\n",p->ruid,p->euid,p->suid);
+	vid_printf("\trgid=%u, egid=%u, sgid=%u\n",p->rgid,p->egid,p->sgid);
 	vid_printf("\tOwnFrames=%lu, sharedFrames=%lu, swapped=%lu\n",
 			p->ownFrames,p->sharedFrames,p->swapped);
 	if(p->flags & P_ZOMBIE) {

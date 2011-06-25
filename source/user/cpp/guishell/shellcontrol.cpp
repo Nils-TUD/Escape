@@ -18,10 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/debug.h>
 #include <gui/common.h>
-#include <gui/color.h>
+#include <esc/debug.h>
 #include <esc/driver.h>
+#include <gui/color.h>
 #include <signal.h>
 #include <errors.h>
 #include "shellcontrol.h"

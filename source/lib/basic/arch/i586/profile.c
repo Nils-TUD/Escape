@@ -19,7 +19,7 @@
 
 #include <assert.h>
 #ifdef IN_KERNEL
-#	include <arch/i586/register.h>
+#	include <esc/arch/i586/register.h>
 #	include <sys/task/thread.h>
 #	include <sys/mem/paging.h>
 #	include <sys/ksymbols.h>
@@ -36,7 +36,7 @@
 })
 #	define getCycles()	cpu_rdtsc()
 #else
-#	include <arch/i586/ports.h>
+#	include <esc/arch/i586/ports.h>
 #	include <esc/thread.h>
 #	include <esc/debug.h>
 #	include <stdio.h>

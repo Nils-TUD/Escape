@@ -18,4 +18,4 @@
 #
 
 #include <esc/syscalls.h>
-#include <arch/mmix/syscalls.s>
+#include <esc/arch/mmix/syscalls.s>

@@ -1,5 +1,5 @@
 # general
-ARCH = i586
+ARCH = eco32
 GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-release)

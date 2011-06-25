@@ -2644,13 +2644,13 @@ typedef Elf32_Addr Elf32_Conflict;
 
 
 #ifdef __i386__
-#include <arch/i586/elf.h>
+#include <esc/arch/i586/elf.h>
 #endif
 #ifdef __eco32__
-#include <arch/eco32/elf.h>
+#include <esc/arch/eco32/elf.h>
 #endif
 #ifdef __mmix__
-#include <arch/mmix/elf.h>
+#include <esc/arch/mmix/elf.h>
 #endif
 
 #endif	/* ELF_H_ */

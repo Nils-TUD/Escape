@@ -30,8 +30,8 @@ static void test_addrspace(void) {
 	/* do it twice to ensure that the cleanup is correct */
 	test_dupUsage();
 	paging_getCur()->addrSpace = aspace_alloc();
-	paging_getCur()->rV &= ~0x3F;
-	paging_getCur()->rV |= (paging_getCur()->addrSpace->no << 3);
+	paging_getCur()->rv &= ~0x3F;
+	paging_getCur()->rv |= (paging_getCur()->addrSpace->no << 3);
 }
 
 static void test_basics(void) {

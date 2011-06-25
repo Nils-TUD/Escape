@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <arch/i586/register.h>
+#include <esc/arch/i586/register.h>
 #include <esc/debug.h>
 
 #define MAX_STACK_PAGES		128

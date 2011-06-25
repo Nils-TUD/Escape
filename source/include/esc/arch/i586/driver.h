@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_TIME_H_
-#define I586_TIME_H_
+#ifndef I586_DRIVER_H_
+#define I586_DRIVER_H_
 
 #include <esc/common.h>
 
 #define TIME_DRIVER		"/dev/cmos"
 
-#endif /* I586_TIME_H_ */
+#endif /* I586_DRIVER_H_ */

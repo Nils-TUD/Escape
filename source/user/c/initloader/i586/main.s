@@ -18,7 +18,7 @@
 #
 
 #include <esc/syscalls.h>
-#include <arch/i586/syscalls.s>
+#include <esc/arch/i586/syscalls.s>
 
 .section .text
 

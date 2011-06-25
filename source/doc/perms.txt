@@ -22,3 +22,16 @@ RUID: real user-id. user-id of the process-creator
 EUID: effective user-id. RUID by default. if EUID != 0, it can be changed to RUID, EUID or SUID
 SUID: saved user-id. if setuid is on, user-id of the binary, otherwise RUID
 
+RGID, EGID, SGID: the same
+
+syscalls:
+  getuid: return RUID
+  setuid: set RUID, EUID and SUID to a specified user-id (for root only)
+  geteuid: return EUID
+  seteuid: set EUID to either RUID, EUID or SUID if not root or to the specified one if root
+
+  getgid: return RGID
+  setgid: set RGID, EGID and SGID to a specified group-id (for root only)
+  getegid: return EGID
+  setegid: set EGID to either RGID, EGID or SGID if not root or to the specified one if root
+

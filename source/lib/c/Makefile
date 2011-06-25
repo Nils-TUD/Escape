@@ -19,7 +19,7 @@ endif
 
 # sources
 START = $(wildcard ./arch/$(ARCH)/crt*.s)
-SYSCALLS = ./arch/$(ARCH)/syscalls.s
+SYSCALLS = ./esc/arch/$(ARCH)/syscalls.s
 CSRC = $(filter-out $(shell find ./arch -name "*.c"),$(shell find . -name "*.c"))
 CSRC += $(shell find ./arch/$(ARCH) -name "*.c")
 ASRC = $(filter-out $(shell find ./arch -name "*.s"),$(shell find . -name "*.s"))

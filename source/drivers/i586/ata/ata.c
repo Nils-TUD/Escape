@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <arch/i586/ports.h>
+#include <esc/arch/i586/ports.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <signal.h>

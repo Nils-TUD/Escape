@@ -24,14 +24,14 @@
 .extern errno
 
 #ifdef __i386__
-#include "../arch/i586/syscalls.s"
+#include <esc/arch/i586/syscalls.s>
 #endif
 #ifdef __eco32__
-#include "../arch/eco32/syscalls.s"
+#include <esc/arch/eco32/syscalls.s>
 #endif
 
 #ifdef __mmix__
-#include "../arch/mmix/syscalls.s"
+#include <esc/arch/mmix/syscalls.s>
 #else
 
 # other

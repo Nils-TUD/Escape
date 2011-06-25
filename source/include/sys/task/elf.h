@@ -22,7 +22,7 @@
 #define	_TASK_ELF_H
 
 #include <sys/common.h>
-#include <elf.h>
+#include <esc/elf.h>
 
 typedef struct {
 	/* entry-point of the program */

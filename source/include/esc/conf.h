@@ -22,10 +22,6 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define CONF_TIMER_FREQ			0
 #define CONF_MAX_PROCS			1
 #define CONF_MAX_FDS			2
@@ -35,6 +31,10 @@ extern "C" {
 
 #define CONF_VIDMODE_VGATEXT	0
 #define CONF_VIDMODE_VESATEXT	1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Gets the value of a kernel-configuration

@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/driver.h>
 #include <time.h>
 #include "timeintern.h"
 

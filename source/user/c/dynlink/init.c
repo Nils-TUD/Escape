@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <sys/task/elf.h>
+#include <esc/elf.h>
 #include <esc/sllist.h>
 #include "init.h"
 #include "setup.h"

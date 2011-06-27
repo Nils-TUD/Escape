@@ -141,6 +141,7 @@ setPerms() {
 	# /root
 	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/root
 	$SUDO chmod -R 0600 $DISKMOUNT/root
+	$SUDO find $DISKMOUNT/root -type d | $SUDO xargs chmod +x
 	# /home/hrniels
 	$SUDO chown -R $HRNIELS:$HRNIELS $DISKMOUNT/home/hrniels
 	$SUDO chmod -R 0600 $DISKMOUNT/home/hrniels

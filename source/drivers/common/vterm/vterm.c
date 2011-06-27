@@ -29,7 +29,7 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
-#include <error.h>
+#include <stdlib.h>
 
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
@@ -72,7 +72,7 @@ bool vterm_initAll(int *ids,sVTermCfg *cfg) {
 		driver = VESA_DRIVER;
 	else
 		driver = VGA_DRIVER;
-	vidFd = open(driver,IO_WRITE);
+	vidFd = open(driver,IO_READ | IO_WRITE);
 	if(vidFd < 0) {
 		printe("Unable to open '%s'",driver);
 		return false;

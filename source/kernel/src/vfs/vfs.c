@@ -64,10 +64,6 @@ typedef struct sGFTEntry {
 } sGFTEntry;
 
 /**
- * Checks whether the process with given pid has the permission to do the given stuff with node <n>.
- */
-static int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags);
-/**
  * Searches for a free file for the given flags and node-number
  */
 static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo);
@@ -104,25 +100,35 @@ void vfs_init(void) {
 	devNode = vfs_dir_create(KERNEL_PID,root,(char*)"dev");
 }
 
-static int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
+int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
+	sProc *p;
+	uint mode;
 	if(n->name == NULL)
 		return ERR_INVALID_FILE;
 	/* kernel is allmighty :P */
 	if(pid == KERNEL_PID)
 		return 0;
 
-	if(n->owner == pid) {
-		if((flags & VFS_READ) && !(n->mode & MODE_OWNER_READ))
-			return ERR_NO_READ_PERM;
-		if((flags & VFS_WRITE) && !(n->mode & MODE_OWNER_WRITE))
-			return ERR_NO_WRITE_PERM;
-	}
-	else {
-		if((flags & VFS_READ) && !(n->mode & MODE_OTHER_READ))
-			return ERR_NO_READ_PERM;
-		if((flags & VFS_WRITE) && !(n->mode & MODE_OTHER_WRITE))
-			return ERR_NO_WRITE_PERM;
-	}
+	p = proc_getByPid(pid);
+	/* root is allmighty as well */
+	if(p->euid == ROOT_UID)
+		return 0;
+
+	/* determine mask */
+	if(p->euid == n->uid)
+		mode = n->mode & MODE_OWNER_MASK;
+	else if(p->egid == n->gid || groups_contains(p->groups,n->gid))
+		mode = n->mode & MODE_GROUP_MASK;
+	else
+		mode = n->mode & MODE_OTHER_MASK;
+
+	/* check access */
+	if((flags & VFS_READ) && !(mode & MODE_READ))
+		return ERR_NO_READ_PERM;
+	if((flags & VFS_WRITE) && !(mode & MODE_WRITE))
+		return ERR_NO_WRITE_PERM;
+	if((flags & VFS_EXEC) && !(mode & MODE_EXEC))
+		return ERR_NO_EXEC_PERM;
 	return 0;
 }
 
@@ -228,7 +234,11 @@ file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
 
 		/* if its a driver, create the channel-node */
 		if(IS_DRIVER(node->mode)) {
-			sVFSNode *child = vfs_chan_create(pid,node);
+			sVFSNode *child;
+			/* check if we can access the driver */
+			if((err = vfs_hasAccess(pid,node,flags)) < 0)
+				return err;
+			child = vfs_chan_create(pid,node);
 			if(child == NULL)
 				return ERR_NOT_ENOUGH_MEM;
 			node = child;
@@ -393,7 +403,7 @@ int vfs_chmod(pid_t pid,const char *path,mode_t mode) {
 	if(res == ERR_REAL_PATH)
 		res = vfs_real_chmod(pid,path,mode);
 	else if(res == 0)
-		res = vfs_node_chmod(nodeNo,mode);
+		res = vfs_node_chmod(pid,nodeNo,mode);
 	return res;
 }
 
@@ -405,7 +415,7 @@ int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	if(res == ERR_REAL_PATH)
 		res = vfs_real_chown(pid,path,uid,gid);
 	else if(res == 0)
-		res = vfs_node_chown(nodeNo,uid,gid);
+		res = vfs_node_chown(pid,nodeNo,uid,gid);
 	return res;
 }
 
@@ -457,7 +467,7 @@ off_t vfs_seek(pid_t pid,file_t file,off_t offset,uint whence) {
 }
 
 ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count) {
-	ssize_t err,readBytes;
+	ssize_t readBytes;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
@@ -466,8 +476,6 @@ ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count) {
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = vfs_node_get(e->nodeNo);
-		if((err = vfs_hasAccess(pid,n,VFS_READ)) < 0)
-			return err;
 		if(n->read == NULL)
 			return ERR_NO_READ_PERM;
 
@@ -491,7 +499,7 @@ ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count) {
 }
 
 ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count) {
-	ssize_t err,writtenBytes;
+	ssize_t writtenBytes;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
@@ -500,8 +508,6 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count) {
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = vfs_node_get(e->nodeNo);
-		if((err = vfs_hasAccess(pid,n,VFS_WRITE)) < 0)
-			return err;
 		if(n->write == NULL)
 			return ERR_NO_WRITE_PERM;
 
@@ -532,11 +538,9 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,const void *data,size_t siz
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
-	n = vfs_node_get(e->nodeNo);
-	if((err = vfs_hasAccess(pid,n,VFS_WRITE)) < 0)
-		return err;
 
 	/* send the message */
+	n = vfs_node_get(e->nodeNo);
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_send(pid,file,n,id,data,size);
@@ -556,11 +560,9 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size)
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
-	n = vfs_node_get(e->nodeNo);
-	if((err = vfs_hasAccess(pid,n,VFS_READ)) < 0)
-		return err;
 
 	/* receive the message */
+	n = vfs_node_get(e->nodeNo);
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_receive(pid,file,n,id,data,size);
@@ -791,7 +793,7 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags) {
 	/* create node */
 	n = vfs_server_create(pid,drv,hname,flags);
 	if(n != NULL)
-		return vfs_openFile(pid,VFS_READ | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
+		return vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
 
 	/* failed, so cleanup */
 	cache_free(hname);

@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
+#include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/node.h>
@@ -42,15 +43,11 @@ static off_t vfs_file_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,
 
 sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrite write) {
 	sVFSNode *node;
-	node = vfs_node_create(parent,name);
+	node = vfs_node_create(pid,parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = pid;
-	/* TODO we need write-permissions for other because we have no real user-/group-based
-	 * permission-system */
-	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ
-		| MODE_OTHER_WRITE;
+	node->mode = FILE_DEF_MODE;
 	node->read = read;
 	node->write = write;
 	node->seek = vfs_file_seek;

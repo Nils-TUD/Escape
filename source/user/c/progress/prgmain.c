@@ -21,7 +21,7 @@
 #include <esc/messages.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
-#include <error.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 int main(void) {

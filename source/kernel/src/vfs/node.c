@@ -95,23 +95,43 @@ int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info) {
 	info->blockSize = 512;
 	info->inodeNo = nodeNo;
 	info->linkCount = 0;
-	info->uid = 0;
-	info->gid = 0;
+	info->uid = n->uid;
+	info->gid = n->gid;
 	info->mode = n->mode;
 	info->size = 0;
 	return 0;
 }
 
-int vfs_node_chmod(inode_t nodeNo,mode_t mode) {
+int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
+	sProc *p = proc_getByPid(pid);
 	sVFSNode *n = vfs_node_get(nodeNo);
-	/* TODO */
-	n->mode = mode;
+	/* root can chmod everything; others can only chmod their own files */
+	if(p->euid != n->uid && p->euid != ROOT_UID)
+		return ERR_NO_PERM;
+	n->mode = (n->mode & ~MODE_PERM) | (mode & MODE_PERM);
 	return 0;
 }
 
-int vfs_node_chown(inode_t nodeNo,uid_t uid,gid_t gid) {
+int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
+	sProc *p = proc_getByPid(pid);
 	sVFSNode *n = vfs_node_get(nodeNo);
-	/* TODO */
+
+	/* root can chown everything; others can only chown their own files */
+	if(p->euid != n->uid && p->euid != ROOT_UID)
+		return ERR_NO_PERM;
+	if(p->euid != ROOT_UID) {
+		/* users can't change the owner */
+		if(uid != (uid_t)-1 && uid != n->uid && uid != p->euid)
+			return ERR_NO_PERM;
+		/* users can change the group only to a group they're a member of */
+		if(gid != (gid_t)-1 && gid != n->gid && gid != p->egid && !groups_contains(p->groups,gid))
+			return ERR_NO_PERM;
+	}
+
+	if(uid != (uid_t)-1)
+		n->uid = uid;
+	if(gid != (gid_t)-1)
+		n->gid = gid;
 	return 0;
 }
 
@@ -183,7 +203,9 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = vfs_node_get(0);
 	sThread *t = thread_getRunning();
-	int pos = 0,depth,lastdepth;
+	/* at the beginning, t might be NULL */
+	pid_t pid = t ? t->proc->pid : KERNEL_PID;
+	int pos = 0,err,depth,lastdepth;
 	if(created)
 		*created = false;
 
@@ -211,6 +233,10 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 		/* go to next '/' and check for invalid chars */
 		if(depth != lastdepth) {
 			char c;
+			/* check if we can access this directory */
+			if((err = vfs_hasAccess(pid,dir,VFS_EXEC)) < 0)
+				return err;
+
 			pos = 0;
 			while((c = path[pos]) && c != '/') {
 				if((c != ' ' && isspace(c)) || !isprint(c))
@@ -259,7 +285,12 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 			size_t nameLen;
 			sVFSNode *child;
 			char *nameCpy;
-			char *nextSlash = strchr(path,'/');
+			char *nextSlash;
+			/* can we create files in this directory? */
+			if((err = vfs_hasAccess(pid,dir,VFS_WRITE)) < 0)
+				return err;
+
+			nextSlash = strchr(path,'/');
 			if(nextSlash) {
 				/* if there is still a slash in the path, we can't create the file */
 				if(*(nextSlash + 1) != '\0')
@@ -338,8 +369,9 @@ sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,size_t nameLe
 	return NULL;
 }
 
-sVFSNode *vfs_node_create(sVFSNode *parent,char *name) {
+sVFSNode *vfs_node_create(pid_t pid,sVFSNode *parent,char *name) {
 	sVFSNode *node;
+	sProc *p = pid != INVALID_PID ? proc_getByPid(pid) : NULL;
 	vassert(name != NULL,"name == NULL");
 
 	if(strlen(name) > MAX_NAME_LEN)
@@ -350,10 +382,12 @@ sVFSNode *vfs_node_create(sVFSNode *parent,char *name) {
 		return NULL;
 
 	/* ensure that all values are initialized properly */
+	node->owner = pid;
+	node->uid = p ? p->euid : ROOT_UID;
+	node->gid = p ? p->egid : ROOT_GID;
 	node->name = name;
 	node->nameLen = strlen(name);
 	node->mode = 0;
-	node->owner = INVALID_PID;
 	node->refCount = 0;
 	node->next = NULL;
 	node->prev = NULL;

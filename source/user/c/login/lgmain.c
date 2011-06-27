@@ -118,6 +118,8 @@ int main(int argc,char **argv) {
 	/* cd to home-dir */
 	if(is_dir(u->home))
 		setenv("CWD",u->home);
+	else
+		setenv("CWD","/");
 
 	/* exchange with shell */
 	shargs[0] = argv[0];

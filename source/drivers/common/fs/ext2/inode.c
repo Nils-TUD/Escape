@@ -103,7 +103,7 @@ int ext2_inode_chmod(sExt2 *e,sFSUser *u,inode_t inodeNo,mode_t mode) {
 		return ERR_NO_PERM;
 
 	oldMode = le16tocpu(cnode->inode.mode);
-	cnode->inode.mode = cputole16((oldMode & ~EXT2_S_PERMS) | mode);
+	cnode->inode.mode = cputole16((oldMode & ~EXT2_S_PERMS) | (mode & EXT2_S_PERMS));
 	ext2_icache_markDirty(cnode);
 	ext2_icache_release(cnode);
 	return 0;

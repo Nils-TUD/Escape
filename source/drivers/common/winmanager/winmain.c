@@ -27,7 +27,7 @@
 #include <esc/messages.h>
 #include <signal.h>
 #include <stdio.h>
-#include <error.h>
+#include <stdlib.h>
 
 #include "window.h"
 

@@ -66,6 +66,7 @@ enum {
 	VFS_NOBLOCK = 32,
 	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
 	VFS_DRIVER = 128,		/* kernel-intern: wether the file was created for a driver */
+	VFS_EXEC = 256,			/* kernel-intern: for accessing directories */
 };
 
 /* a node in our virtual file system */
@@ -87,6 +88,8 @@ struct sVFSNode {
 	ushort refCount;
 	/* the owner of this node */
 	pid_t owner;
+	uid_t uid;
+	gid_t gid;
 	/* 0 means unused; stores permissions and the type of node */
 	uint mode;
 	/* for the vfs-structure */
@@ -109,6 +112,16 @@ struct sVFSNode {
  * Initializes the virtual file system
  */
 void vfs_init(void);
+
+/**
+ * Checks whether the process with given id has permission to use <n> with the given flags
+ *
+ * @param pid the process-id
+ * @param n the node
+ * @param flags the flags (VFS_*)
+ * @return 0 if successfull, negative if the process has no permission
+ */
+int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags);
 
 /**
  * @param file the file

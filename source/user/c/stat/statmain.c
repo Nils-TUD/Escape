@@ -23,7 +23,7 @@
 #include <esc/dir.h>
 #include <esc/cmdargs.h>
 #include <stdio.h>
-#include <error.h>
+#include <stdlib.h>
 #include <time.h>
 
 #define MAX_DATE_LEN	64

@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
+#include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/dir.h>
 #include <sys/vfs/link.h>
@@ -45,7 +46,7 @@ static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,u
 
 sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	sVFSNode *target;
-	sVFSNode *node = vfs_node_create(parent,name);
+	sVFSNode *node = vfs_node_create(pid,parent,name);
 	if(node == NULL)
 		return NULL;
 	if(vfs_link_create(pid,node,(char*)".",node) == NULL) {
@@ -59,8 +60,7 @@ sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 		return NULL;
 	}
 
-	node->mode = MODE_TYPE_DIR | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OWNER_EXEC |
-		MODE_OTHER_READ | MODE_OTHER_EXEC;
+	node->mode = DIR_DEF_MODE;
 	node->read = vfs_dir_read;
 	node->write = NULL;
 	node->seek = vfs_dir_seek;

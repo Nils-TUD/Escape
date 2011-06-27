@@ -23,7 +23,7 @@
 #include <esc/io.h>
 #include <stdio.h>
 #include <errors.h>
-#include <error.h>
+#include <stdlib.h>
 
 static sMsg msg;
 

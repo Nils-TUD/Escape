@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <error.h>
+#include <stdlib.h>
 
 int main(void) {
 	if(sync() < 0)

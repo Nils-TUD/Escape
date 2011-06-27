@@ -97,6 +97,7 @@ static const char *msgs[] = {
 	/* -72 (ERR_NO_FREE_THREADS) */			"No free thread-slots",
 	/* -73 (ERR_WOULD_BLOCK) */				"Thread would block",
 	/* -74 (ERR_NO_PERM) */					"No permission",
+	/* -75 (ERR_NO_EXEC_PERM) */			"No execute permission",
 };
 
 char *strerror(int errnum) {

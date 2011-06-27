@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/event.h>
+#include <sys/task/proc.h>
 #include <sys/mem/cache.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -47,12 +48,12 @@ static void vfs_server_wakeupClients(const sVFSNode *node,uint events);
 
 sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 	sServer *srv;
-	sVFSNode *node = vfs_node_create(parent,name);
+	sVFSNode *node = vfs_node_create(pid,parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = pid;
-	node->mode = MODE_TYPE_DRIVER | MODE_OWNER_READ | MODE_OTHER_READ;
+	node->mode = MODE_TYPE_DRIVER | MODE_OWNER_READ | MODE_OWNER_WRITE |
+			MODE_GROUP_READ | MODE_GROUP_WRITE;
 	node->read = NULL;
 	node->write = NULL;
 	node->seek = NULL;

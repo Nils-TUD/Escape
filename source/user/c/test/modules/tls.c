@@ -21,7 +21,7 @@
 #include <esc/thread.h>
 #include <esc/proc.h>
 #include <stdio.h>
-#include <error.h>
+#include <stdlib.h>
 
 #include "tls.h"
 

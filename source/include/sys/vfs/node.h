@@ -78,21 +78,23 @@ int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info);
 /**
  * Changes the mode of the given node
  *
+ * @param pid the process-id
  * @param nodeNo the node-number
  * @param mode the new mode
  * @return 0 on success
  */
-int vfs_node_chmod(inode_t nodeNo,mode_t mode);
+int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode);
 
 /**
  * Changes the owner and group of the given node
  *
+ * @param pid the process-id
  * @param nodeNo the node-number
  * @param uid the new user
  * @param gid the new group
  * @return 0 on success
  */
-int vfs_node_chown(inode_t nodeNo,uid_t uid,gid_t gid);
+int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid);
 
 /**
  * Builds an absolute path from <src> into <dst>.
@@ -147,12 +149,13 @@ sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,size_t nameLe
 /**
  * Creates and appends a (incomplete) node
  *
+ * @param pid the process-id
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
  * @return the node
  */
-sVFSNode *vfs_node_create(sVFSNode *parent,char *name);
+sVFSNode *vfs_node_create(pid_t pid,sVFSNode *parent,char *name);
 
 /**
  * Removes the given node including all child-nodes from the parent-node and free's all

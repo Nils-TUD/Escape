@@ -93,6 +93,7 @@
 #define ERR_NO_FREE_THREADS			-72
 #define ERR_WOULD_BLOCK				-73
 #define ERR_NO_PERM					-74
+#define ERR_NO_EXEC_PERM			-75
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

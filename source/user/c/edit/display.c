@@ -22,10 +22,10 @@
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
-#include <error.h>
 
 #include "buffer.h"
 #include "mem.h"

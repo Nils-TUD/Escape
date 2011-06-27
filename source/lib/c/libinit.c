@@ -22,7 +22,7 @@
 #include <esc/debug.h>
 #include <signal.h>
 #include <errors.h>
-#include <error.h>
+#include <stdlib.h>
 
 #define MAX_EXIT_FUNCS		32
 

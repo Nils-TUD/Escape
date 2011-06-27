@@ -21,6 +21,7 @@
 #include <sys/mem/cache.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
+#include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/request.h>
@@ -57,15 +58,13 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	char *name = vfs_node_getId(pid);
 	if(!name)
 		return NULL;
-	node = vfs_node_create(parent,name);
+	node = vfs_node_create(pid,parent,name);
 	if(node == NULL) {
 		cache_free(name);
 		return NULL;
 	}
 
-	node->owner = pid;
-	node->mode = MODE_TYPE_CHANNEL | MODE_OWNER_READ | MODE_OWNER_WRITE |
-			MODE_OTHER_READ | MODE_OTHER_WRITE;
+	node->mode = MODE_TYPE_CHANNEL | MODE_OWNER_READ | MODE_OWNER_WRITE;
 	node->read = (fRead)vfs_drv_read;
 	node->write = (fWrite)vfs_drv_write;
 	node->seek = vfs_chan_seek;

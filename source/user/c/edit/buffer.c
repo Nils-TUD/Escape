@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <error.h>
+#include <stdlib.h>
 
 #include "mem.h"
 #include "buffer.h"

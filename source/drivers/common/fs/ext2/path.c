@@ -33,7 +33,7 @@
 #include "file.h"
 #include "dir.h"
 
-inode_t ext2_path_resolve(sExt2 *e,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
+inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
 	sExt2CInode *cnode = NULL;
 	inode_t res;
 	dev_t mntDev;
@@ -50,6 +50,12 @@ inode_t ext2_path_resolve(sExt2 *e,const char *path,uint flags,dev_t *dev,bool r
 
 	pos = strchri(p,'/');
 	while(*p) {
+		/* we need execute-permission to access the directory */
+		if(!ext2_hasPermission(cnode,u,MODE_EXEC)) {
+			ext2_icache_release(cnode);
+			return ERR_NO_PERM;
+		}
+
 		res = ext2_dir_find(e,cnode,p,pos);
 		if(res >= 0) {
 			p += pos;
@@ -71,7 +77,7 @@ inode_t ext2_path_resolve(sExt2 *e,const char *path,uint flags,dev_t *dev,bool r
 				sFSInst *inst = mount_get(mntDev);
 				*dev = mntDev;
 				ext2_icache_release(cnode);
-				return inst->fs->resPath(inst->handle,p,flags,dev,resLastMnt);
+				return inst->fs->resPath(inst->handle,u,p,flags,dev,resLastMnt);
 			}
 			if(!*p)
 				break;
@@ -97,7 +103,7 @@ inode_t ext2_path_resolve(sExt2 *e,const char *path,uint flags,dev_t *dev,bool r
 				/* ensure that there is no '/' in the name */
 				if(slash)
 					*slash = '\0';
-				err = ext2_file_create(e,cnode,p,&res,false);
+				err = ext2_file_create(e,u,cnode,p,&res,false);
 				ext2_icache_release(cnode);
 				if(err < 0)
 					return err;

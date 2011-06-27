@@ -37,11 +37,9 @@
 #include "iso9660/iso9660.h"
 #include "mount.h"
 #include "threadpool.h"
+#include "cmds.h"
 
 #define FS_NAME_LEN		12
-
-static dev_t rootDev;
-static sFSInst *root;
 
 typedef struct {
 	uint type;
@@ -49,56 +47,19 @@ typedef struct {
 	sFileSystem *(*fGetFS)(void);
 } sFSType;
 
+static void sigTermHndl(int sig);
 static void shutdown(void);
-static void cmdOpen(int fd,sMsg *msg);
-static void cmdRead(int fd,sMsg *msg);
-static void cmdWrite(int fd,sMsg *msg,void *data);
-static void cmdClose(int fd,sMsg *msg);
-static void cmdStat(int fd,sMsg *msg);
-static void cmdSync(int fd,sMsg *msg);
-static void cmdLink(int fd,sMsg *msg);
-static void cmdUnlink(int fd,sMsg *msg);
-static void cmdMkdir(int fd,sMsg *msg);
-static void cmdRmdir(int fd,sMsg *msg);
-static void cmdMount(int fd,sMsg *msg);
-static void cmdUnmount(int fd,sMsg *msg);
-static void cmdIstat(int fd,sMsg *msg);
 
 static volatile bool run = true;
-
-static fReqHandler commands[] = {
-	/* MSG_FS_OPEN */		(fReqHandler)cmdOpen,
-	/* MSG_FS_READ */		(fReqHandler)cmdRead,
-	/* MSG_FS_WRITE */		(fReqHandler)cmdWrite,
-	/* MSG_FS_CLOSE */		(fReqHandler)cmdClose,
-	/* MSG_FS_STAT */		(fReqHandler)cmdStat,
-	/* MSG_FS_SYNC */		(fReqHandler)cmdSync,
-	/* MSG_FS_LINK */		(fReqHandler)cmdLink,
-	/* MSG_FS_UNLINK */		(fReqHandler)cmdUnlink,
-	/* MSG_FS_MKDIR */		(fReqHandler)cmdMkdir,
-	/* MSG_FS_RMDIR */		(fReqHandler)cmdRmdir,
-	/* MSG_FS_MOUNT */		(fReqHandler)cmdMount,
-	/* MSG_FS_UNMOUNT */	(fReqHandler)cmdUnmount,
-	/* MSG_FS_ISTAT */		(fReqHandler)cmdIstat,
+static sFSType types[] = {
+	{FS_TYPE_EXT2,		"ext2",		ext2_getFS},
+	{FS_TYPE_ISO9660,	"iso9660",	iso_getFS},
 };
-
-static void sigTermHndl(int sig) {
-	UNUSED(sig);
-	run = false;
-}
+static sMsg msg;
 
 int main(int argc,char *argv[]) {
-	static sFSType types[] = {
-		{FS_TYPE_EXT2,		"ext2",		ext2_getFS},
-		{FS_TYPE_ISO9660,	"iso9660",	iso_getFS},
-	};
-	static sMsg msg;
-	int fd;
-	msgid_t mid;
 	size_t i;
-	uint fstype;
 	int id;
-	sFileSystem *fs;
 
 	if(argc < 4) {
 		printe("Usage: %s <wait> <driverPath> <fsType>",argv[0]);
@@ -113,7 +74,7 @@ int main(int argc,char *argv[]) {
 
 	/* add filesystems */
 	for(i = 0; i < ARRAY_SIZE(types); i++) {
-		fs = types[i].fGetFS();
+		sFileSystem *fs = types[i].fGetFS();
 		if(!fs)
 			error("Unable to get %s-filesystem",types[i].name);
 		if(mount_addFS(fs) != 0)
@@ -122,7 +83,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* create root-fs */
-	fstype = 0;
+	uint fstype = 0;
 	for(i = 0; i < ARRAY_SIZE(types); i++) {
 		if(strcmp(types[i].name,argv[3]) == 0) {
 			fstype = types[i].type;
@@ -130,12 +91,13 @@ int main(int argc,char *argv[]) {
 		}
 	}
 
-	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,argv[2],fstype);
+	dev_t rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,argv[2],fstype);
 	if(rootDev < 0)
 		error("Unable to add root mount-point");
-	root = mount_get(rootDev);
+	sFSInst *root = mount_get(rootDev);
 	if(root == NULL)
 		error("Unable to get root mount-point");
+	cmds_setRoot(rootDev,root);
 	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->driver,argv[3]);
 	fflush(stdout);
 
@@ -144,8 +106,9 @@ int main(int argc,char *argv[]) {
 	if(id < 0)
 		error("Unable to register driver 'fs'");
 
+	msgid_t mid;
 	while(true) {
-		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
+		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
 		if(fd < 0) {
 			if(fd != ERR_INTERRUPTED) {
 				/* no requests anymore and we should shutdown? */
@@ -155,28 +118,20 @@ int main(int argc,char *argv[]) {
 			}
 		}
 		else {
-			if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT) {
+			void *data = NULL;
+			if(mid == MSG_FS_WRITE) {
+				data = malloc(msg.args.arg4);
+				if(!data || RETRY(receive(fd,NULL,data,msg.args.arg4)) < 0) {
+					printf("[FS] Illegal request\n");
+					close(fd);
+					continue;
+				}
+			}
+
+			if(!cmds_execute(mid,fd,&msg,data)) {
 				msg.args.arg1 = ERR_UNSUPPORTED_OP;
 				send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				close(fd);
-			}
-			else {
-				void *data = NULL;
-				if(mid == MSG_FS_WRITE) {
-					data = malloc(msg.args.arg4);
-					if(!data || RETRY(receive(fd,NULL,data,msg.args.arg4)) < 0) {
-						printf("[FS] Illegal request\n");
-						close(fd);
-						continue;
-					}
-				}
-#if REQ_THREAD_COUNT > 0
-				if(!tpool_addRequest(commands[mid - MSG_FS_OPEN],fd,&msg,sizeof(msg),data))
-					printf("[FS] Not enough mem for request %d\n",mid);
-#else
-				commands[mid - MSG_FS_OPEN](fd,&msg,data);
-				close(fd);
-#endif
 			}
 		}
 	}
@@ -189,6 +144,11 @@ int main(int argc,char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
+static void sigTermHndl(int sig) {
+	UNUSED(sig);
+	run = false;
+}
+
 static void shutdown(void) {
 	size_t i;
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
@@ -197,294 +157,4 @@ static void shutdown(void) {
 			inst->fs->sync(inst->handle);
 	}
 	exit(EXIT_SUCCESS);
-}
-
-static void cmdOpen(int fd,sMsg *msg) {
-	dev_t devNo = rootDev;
-	uint flags = msg->args.arg1;
-	sFSInst *inst;
-	inode_t no = root->fs->resPath(root->handle,msg->str.s1,flags,&devNo,true);
-	if(no >= 0) {
-		inst = mount_get(devNo);
-		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
-		else
-			msg->args.arg1 = inst->fs->open(inst->handle,no,flags);
-	}
-	else
-		msg->args.arg1 = ERR_PATH_NOT_FOUND;
-	msg->args.arg2 = devNo;
-	send(fd,MSG_FS_OPEN_RESP,msg,sizeof(msg->args));
-}
-
-static void cmdStat(int fd,sMsg *msg) {
-	dev_t devNo = rootDev;
-	sFSInst *inst;
-	sFileInfo *info = (sFileInfo*)&(msg->data.d);
-	inode_t no = root->fs->resPath(root->handle,msg->str.s1,IO_READ,&devNo,true);
-	if(no < 0)
-		msg->data.arg1 = no;
-	else {
-		inst = mount_get(devNo);
-		if(inst == NULL)
-			msg->data.arg1 = ERR_NO_MNTPNT;
-		else
-			msg->data.arg1 = inst->fs->stat(inst->handle,no,info);
-	}
-	send(fd,MSG_FS_STAT_RESP,msg,sizeof(msg->data));
-}
-
-static void cmdIstat(int fd,sMsg *msg) {
-	inode_t ino = (inode_t)msg->args.arg1;
-	dev_t devNo = (dev_t)msg->args.arg2;
-	sFileInfo *info = (sFileInfo*)&(msg->data.d);
-	sFSInst *inst = mount_get(devNo);
-	if(inst == NULL)
-		msg->data.arg1 = ERR_NO_MNTPNT;
-	else
-		msg->data.arg1 = inst->fs->stat(inst->handle,ino,info);
-	send(fd,MSG_FS_STAT_RESP,msg,sizeof(msg->data));
-}
-
-static void cmdRead(int fd,sMsg *msg) {
-	inode_t ino = (inode_t)msg->args.arg1;
-	dev_t devNo = (dev_t)msg->args.arg2;
-	uint offset = msg->args.arg3;
-	size_t count = msg->args.arg4;
-	sFSInst *inst = mount_get(devNo);
-	void *buffer = NULL;
-	if(inst == NULL)
-		msg->args.arg1 = ERR_NO_MNTPNT;
-	else if(inst->fs->read == NULL)
-		msg->args.arg1 = ERR_UNSUPPORTED_OP;
-	else {
-		buffer = malloc(count);
-		if(buffer == NULL)
-			msg->args.arg1 = ERR_NOT_ENOUGH_MEM;
-		else
-			msg->args.arg1 = inst->fs->read(inst->handle,ino,buffer,offset,count);
-	}
-	send(fd,MSG_FS_READ_RESP,msg,sizeof(msg->args));
-	if(buffer) {
-		if(msg->args.arg1 > 0)
-			send(fd,MSG_FS_READ_RESP,buffer,count);
-		free(buffer);
-	}
-
-	/* read ahead
-	if(count > 0)
-		ext2_file_read(&ext2,data.inodeNo,NULL,data.offset + count,data.count);*/
-}
-
-static void cmdWrite(int fd,sMsg *msg,void *data) {
-	inode_t ino = (inode_t)msg->args.arg1;
-	dev_t devNo = (dev_t)msg->args.arg2;
-	uint offset = msg->args.arg3;
-	size_t count = msg->args.arg4;
-	sFSInst *inst = mount_get(devNo);
-	if(inst == NULL)
-		msg->args.arg1 = ERR_NO_MNTPNT;
-	else if(inst->fs->write == NULL)
-		msg->args.arg1 = ERR_UNSUPPORTED_OP;
-	/* write to file */
-	else
-		msg->args.arg1 = inst->fs->write(inst->handle,ino,data,offset,count);
-	/* send response */
-	send(fd,MSG_FS_WRITE_RESP,msg,sizeof(msg->args));
-}
-
-static void cmdLink(int fd,sMsg *msg) {
-	char *oldPath = msg->str.s1;
-	char *newPath = msg->str.s2;
-	dev_t oldDev = rootDev,newDev = rootDev;
-	sFSInst *inst;
-	inode_t dirIno,dstIno = root->fs->resPath(root->handle,oldPath,IO_READ,&oldDev,true);
-	inst = mount_get(oldDev);
-	if(dstIno < 0)
-		msg->args.arg1 = dstIno;
-	else if(inst == NULL)
-		msg->args.arg1 = ERR_NO_MNTPNT;
-	else {
-		/* split path and name */
-		char *name,backup;
-		size_t len = strlen(newPath);
-		if(newPath[len - 1] == '/')
-			newPath[len - 1] = '\0';
-		name = strrchr(newPath,'/') + 1;
-		backup = *name;
-		dirname(newPath);
-
-		dirIno = root->fs->resPath(root->handle,newPath,IO_READ,&newDev,true);
-		if(dirIno < 0)
-			msg->args.arg1 = dirIno;
-		else if(newDev != oldDev)
-			msg->args.arg1 = ERR_LINK_DEVICE;
-		else if(inst->fs->link == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
-		else {
-			*name = backup;
-			msg->args.arg1 = inst->fs->link(inst->handle,dstIno,dirIno,name);
-		}
-	}
-	send(fd,MSG_FS_LINK_RESP,msg,sizeof(msg->args));
-}
-
-static void cmdUnlink(int fd,sMsg *msg) {
-	char *path = msg->str.s1;
-	char *name;
-	dev_t devNo = rootDev;
-	inode_t dirIno;
-	sFSInst *inst;
-	char backup;
-	dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
-	if(dirIno < 0)
-		msg->args.arg1 = dirIno;
-	else {
-		/* split path and name */
-		size_t len = strlen(path);
-		if(path[len - 1] == '/')
-			path[len - 1] = '\0';
-		name = strrchr(path,'/') + 1;
-		backup = *name;
-		dirname(path);
-
-		/* get directory */
-		dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
-		vassert(dirIno >= 0,"Subdir found, but parent not!?");
-		inst = mount_get(devNo);
-		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
-		else if(inst->fs->unlink == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
-		else {
-			*name = backup;
-			msg->args.arg1 = inst->fs->unlink(inst->handle,dirIno,name);
-		}
-	}
-	send(fd,MSG_FS_UNLINK_RESP,msg,sizeof(msg->args));
-}
-
-static void cmdMkdir(int fd,sMsg *msg) {
-	char *path = msg->str.s1;
-	char *name,backup;
-	inode_t dirIno;
-	dev_t devNo = rootDev;
-	sFSInst *inst;
-
-	/* split path and name */
-	size_t len = strlen(path);
-	if(path[len - 1] == '/')
-		path[len - 1] = '\0';
-	name = strrchr(path,'/') + 1;
-	backup = *name;
-	dirname(path);
-
-	dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
-	if(dirIno < 0)
-		msg->args.arg1 = dirIno;
-	else {
-		inst = mount_get(devNo);
-		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
-		else if(inst->fs->mkdir == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
-		else {
-			*name = backup;
-			msg->args.arg1 = inst->fs->mkdir(inst->handle,dirIno,name);
-		}
-	}
-	send(fd,MSG_FS_MKDIR_RESP,msg,sizeof(msg->args));
-}
-
-static void cmdRmdir(int fd,sMsg *msg) {
-	char *path = msg->str.s1;
-	char *name,backup;
-	inode_t dirIno;
-	dev_t devNo = rootDev;
-	sFSInst *inst;
-
-	/* split path and name */
-	size_t len = strlen(path);
-	if(path[len - 1] == '/')
-		path[len - 1] = '\0';
-	name = strrchr(path,'/') + 1;
-	backup = *name;
-	dirname(path);
-
-	dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
-	if(dirIno < 0)
-		msg->args.arg1 = dirIno;
-	else {
-		inst = mount_get(devNo);
-		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
-		else if(inst->fs->rmdir == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
-		else {
-			*name = backup;
-			msg->args.arg1 = inst->fs->rmdir(inst->handle,dirIno,name);
-		}
-	}
-	send(fd,MSG_FS_RMDIR_RESP,msg,sizeof(msg->args));
-}
-
-static void cmdMount(int fd,sMsg *msg) {
-	char *device = msg->str.s1;
-	char *path = msg->str.s2;
-	uint type = msg->str.arg1;
-	dev_t devNo = rootDev;
-	inode_t ino;
-	ino = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
-	if(ino < 0)
-		msg->args.arg1 = ino;
-	else {
-		sFSInst *inst = mount_get(devNo);
-		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
-		else {
-			sFileInfo info;
-			int res = inst->fs->stat(inst->handle,ino,&info);
-			if(res < 0)
-				msg->args.arg1 = res;
-			else if(!MODE_IS_DIR(info.mode))
-				msg->args.arg1 = ERR_NO_DIRECTORY;
-			else {
-				int pnt = mount_addMnt(devNo,ino,device,type);
-				msg->args.arg1 = pnt < 0 ? pnt : 0;
-			}
-		}
-	}
-	send(fd,MSG_FS_MOUNT_RESP,msg,sizeof(msg->args));
-}
-
-static void cmdUnmount(int fd,sMsg *msg) {
-	char *path = msg->str.s1;
-	dev_t devNo = rootDev;
-	inode_t ino;
-	ino = root->fs->resPath(root->handle,path,IO_READ,&devNo,false);
-	if(ino < 0)
-		msg->args.arg1 = ino;
-	else
-		msg->args.arg1 = mount_remMnt(devNo,ino);
-	send(fd,MSG_FS_UNMOUNT_RESP,msg,sizeof(msg->args));
-}
-
-static void cmdSync(int fd,sMsg *msg) {
-	UNUSED(fd);
-	UNUSED(msg);
-	size_t i;
-	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
-		sFSInst *inst = mount_get(i);
-		if(inst && inst->fs->sync != NULL)
-			inst->fs->sync(inst->handle);
-	}
-}
-
-static void cmdClose(int fd,sMsg *msg) {
-	UNUSED(fd);
-	inode_t ino = msg->args.arg1;
-	dev_t devNo = msg->args.arg2;
-	sFSInst *inst = mount_get(devNo);
-	if(inst != NULL)
-		inst->fs->close(inst->handle,ino);
 }

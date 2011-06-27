@@ -26,6 +26,7 @@
 #include <sys/task/env.h>
 #include <sys/task/uenv.h>
 #include <sys/task/timer.h>
+#include <sys/task/groups.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
@@ -54,6 +55,115 @@ int sysc_getppid(sIntrptStackFrame *stack) {
 
 	p = proc_getByPid(pid);
 	SYSC_RET1(stack,p->parentPid);
+}
+
+int sysc_getuid(sIntrptStackFrame *stack) {
+	sProc *p = proc_getRunning();
+	SYSC_RET1(stack,p->ruid);
+}
+
+int sysc_setuid(sIntrptStackFrame *stack) {
+	uid_t uid = (uid_t)SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
+	if(p->euid != ROOT_UID)
+		SYSC_ERROR(stack,ERR_NO_PERM);
+
+	p->ruid = uid;
+	p->euid = uid;
+	p->suid = uid;
+	SYSC_RET1(stack,0);
+}
+
+int sysc_getgid(sIntrptStackFrame *stack) {
+	sProc *p = proc_getRunning();
+	SYSC_RET1(stack,p->rgid);
+}
+
+int sysc_setgid(sIntrptStackFrame *stack) {
+	gid_t gid = (gid_t)SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
+	if(p->euid != ROOT_UID)
+		SYSC_ERROR(stack,ERR_NO_PERM);
+
+	p->rgid = gid;
+	p->egid = gid;
+	p->sgid = gid;
+	SYSC_RET1(stack,0);
+}
+
+int sysc_geteuid(sIntrptStackFrame *stack) {
+	sProc *p = proc_getRunning();
+	SYSC_RET1(stack,p->euid);
+}
+
+int sysc_seteuid(sIntrptStackFrame *stack) {
+	uid_t uid = (uid_t)SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
+	/* if not root, it has to be either ruid, euid or suid */
+	if(p->euid != ROOT_UID && uid != p->ruid && uid != p->euid && uid != p->suid)
+		SYSC_ERROR(stack,ERR_NO_PERM);
+
+	p->euid = uid;
+	SYSC_RET1(stack,0);
+}
+
+int sysc_getegid(sIntrptStackFrame *stack) {
+	sProc *p = proc_getRunning();
+	SYSC_RET1(stack,p->egid);
+}
+
+int sysc_setegid(sIntrptStackFrame *stack) {
+	gid_t gid = (gid_t)SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
+	/* if not root, it has to be either rgid, egid or sgid */
+	if(p->euid != ROOT_UID && gid != p->rgid && gid != p->egid && gid != p->sgid)
+		SYSC_ERROR(stack,ERR_NO_PERM);
+
+	p->egid = gid;
+	SYSC_RET1(stack,0);
+}
+
+int sysc_getgroups(sIntrptStackFrame *stack) {
+	size_t size = (size_t)SYSC_ARG1(stack);
+	gid_t *list = (gid_t*)SYSC_ARG2(stack);
+	sProc *p = proc_getRunning();
+	sProcGroups *g = p->groups;
+	size_t groupCount = g ? g->count : 0;
+	if(size == 0)
+		SYSC_RET1(stack,groupCount);
+
+	if(!paging_isRangeUserWritable((uintptr_t)list,sizeof(gid_t) * size))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	size = MIN(groupCount,size);
+	if(size > 0)
+		memcpy(list,g->groups,size);
+	SYSC_RET1(stack,size);
+}
+
+int sysc_setgroups(sIntrptStackFrame *stack) {
+	size_t size = (size_t)SYSC_ARG1(stack);
+	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
+	sProc *p = proc_getRunning();
+	sProcGroups *g;
+
+	if(size > 0 && !paging_isRangeUserReadable((uintptr_t)list,sizeof(gid_t) * size))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	g = groups_alloc(size,list);
+	if(!g)
+		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+	groups_leave(p->groups);
+	p->groups = g;
+	SYSC_RET1(stack,0);
+}
+
+int sysc_isingroup(sIntrptStackFrame *stack) {
+	pid_t pid = (pid_t)SYSC_ARG1(stack);
+	gid_t gid = (gid_t)SYSC_ARG2(stack);
+	sProc *p = proc_getByPid(pid);
+	if(!p)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	SYSC_RET1(stack,groups_contains(p->groups,gid));
 }
 
 int sysc_fork(sIntrptStackFrame *stack) {
@@ -198,8 +308,10 @@ int sysc_exec(sIntrptStackFrame *stack) {
 		cache_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
-	memcpy(pathSave,path,pathLen + 1);
-	path = pathSave;
+	if(*path != '/')
+		path = vfs_node_absolutize(pathSave,sizeof(pathSave),path);
+	else
+		path = memcpy(pathSave,path,pathLen + 1);
 
 	/* resolve path; require a path in real fs */
 	res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);

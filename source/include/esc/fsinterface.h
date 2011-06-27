@@ -55,6 +55,10 @@
 #define MODE_OTHER_WRITE	0000002
 #define MODE_OTHER_EXEC		0000001
 
+#define MODE_READ			(MODE_OWNER_READ | MODE_GROUP_READ | MODE_OTHER_READ)
+#define MODE_WRITE			(MODE_OWNER_WRITE | MODE_GROUP_WRITE | MODE_OTHER_WRITE)
+#define MODE_EXEC			(MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)
+
 #define MODE_IS_DIR(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_DIR)
 #define MODE_IS_FILE(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_FILE)
 #define MODE_IS_SOCKET(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_SOCKET)
@@ -68,7 +72,7 @@ typedef struct {
 	dev_t device;
 	inode_t inodeNo;
 	/* protection */
-	ushort mode;
+	mode_t mode;
 	/* number of hard links */
 	ushort linkCount;
 	/* owner user- and group-id */

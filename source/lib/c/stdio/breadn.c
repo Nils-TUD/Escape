@@ -25,6 +25,7 @@
 int breadn(FILE *f,int *num,size_t length,int c) {
 	bool neg = false;
 	int val = 0;
+	size_t digits = 0;
 	uint base;
 	/* handle '-' */
 	if(c == 'd') {
@@ -67,6 +68,7 @@ int breadn(FILE *f,int *num,size_t length,int c) {
 				val = val * base + (tc - '0');
 			if(length > 0)
 				length--;
+			digits++;
 		}
 		else {
 			bback(f);
@@ -76,5 +78,7 @@ int breadn(FILE *f,int *num,size_t length,int c) {
 	if(neg)
 		val = -val;
 	*num = val;
-	return 0;
+	if(digits > 0)
+		return 0;
+	return EOF;
 }

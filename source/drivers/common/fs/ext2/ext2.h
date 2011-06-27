@@ -27,6 +27,7 @@
 #include "../mount.h"
 #include "../blockcache.h"
 #include "../threadpool.h"
+#include "../cmds.h"
 
 #define DISK_SECTOR_SIZE						512
 #define EXT2_BLK_SIZE(e)					\
@@ -141,6 +142,8 @@
 #define EXT2_S_IROTH						0x0004
 #define EXT2_S_IWOTH						0x0002
 #define EXT2_S_IXOTH						0x0001
+
+#define EXT2_S_PERMS						0x0FFF
 
 /* flags */
 #define EXT2_SECRM_FL						0x00000001	/* secure deletion */
@@ -371,117 +374,16 @@ void ext2_deinit(void *h);
 sFileSystem *ext2_getFS(void);
 
 /**
- * Mount-entry for resPath()
+ * Checks whether the given user has the permission <perms> for <cnode>. <perms> should
+ * contain the bits from each entity, i.e. for example MODE_OWNER_READ | MODE_GROUP_READ |
+ * MODE_OTHER_READ when reading should be performed.
  *
- * @param h the ext2-handle
- * @param path the path
- * @param flags the flags
- * @param dev should be set to the device-number
- * @param resLastMnt whether mount-points should be resolved if the path is finished
- * @return the inode-number on success
+ * @param cnode the cached inode
+ * @param u the user
+ * @param perms the required permissions
+ * @return true if the user has permission
  */
-inode_t ext2_resPath(void *h,const char *path,uint flags,dev_t *dev,bool resLastMnt);
-
-/**
- * Mount-entry for open()
- *
- * @param h the ext2-handle
- * @param ino the inode to open
- * @param flags the open-flags
- * @return the inode on success or < 0
- */
-inode_t ext2_open(void *h,inode_t ino,uint flags);
-
-/**
- * Mount-entry for close()
- *
- * @param h the ext2-handle
- * @param ino the inode to close
- */
-void ext2_close(void *h,inode_t ino);
-
-/**
- * Mount-entry for stat()
- *
- * @param h the ext2-handle
- * @param ino the inode to open
- * @param info the buffer where to write the file-info
- * @return 0 on success
- */
-int ext2_stat(void *h,inode_t ino,sFileInfo *info);
-
-/**
- * Mount-entry for read()
- *
- * @param h the ext2-handle
- * @param inodeNo the inode
- * @param buffer the buffer to read from
- * @param offset the offset to read from
- * @param count the number of bytes to read
- * @return number of read bytes on success
- */
-ssize_t ext2_read(void *h,inode_t inodeNo,void *buffer,uint offset,size_t count);
-
-/**
- * Mount-entry for write()
- *
- * @param h the ext2-handle
- * @param inodeNo the inode
- * @param buffer the buffer to write to
- * @param offset the offset to write to
- * @param count the number of bytes to write
- * @return number of written bytes on success
- */
-ssize_t ext2_write(void *h,inode_t inodeNo,const void *buffer,uint offset,size_t count);
-
-/**
- * Mount-entry for link()
- *
- * @param h the ext2-handle
- * @param dstIno the inode-number of the link-target
- * @param dirIno the inode-number of the directory
- * @param name the entry-name to create
- * @return 0 on success
- */
-int ext2_link(void *h,inode_t dstIno,inode_t dirIno,const char *name);
-
-/**
- * Mount-entry for unlink()
- *
- * @param h the ext2-handle
- * @param dirIno the inode-number of the directory
- * @param name the entry-name to remove
- * @return 0 on success
- */
-int ext2_unlink(void *h,inode_t dirIno,const char *name);
-
-/**
- * Mount-entry for mkdir()
- *
- * @param h the ext2-handle
- * @param dirIno the inode-number of the directory
- * @param name the entry-name to create
- * @return 0 on success
- */
-int ext2_mkdir(void *h,inode_t dirIno,const char *name);
-
-/**
- * Mount-entry for rmdir()
- *
- * @param h the ext2-handle
- * @param dirIno the inode-number of the directory
- * @param name the entry-name to remove
- * @return 0 on success
- */
-int ext2_rmdir(void *h,inode_t dirIno,const char *name);
-
-/**
- * Mount-entry for sync().
- * Writes all dirty objects of the filesystem to disk.
- *
- * @param h the ext2-handle
- */
-void ext2_sync(void *h);
+bool ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms);
 
 /**
  * Determines the block of the given inode
@@ -534,7 +436,7 @@ bool ext2_bgHasBackups(sExt2 *e,block_t i);
  *
  * @param e the ext2-data
  */
-void ext2_bg_prints(sExt2 *e);
+void ext2_printBlockGroups(sExt2 *e);
 
 #endif
 

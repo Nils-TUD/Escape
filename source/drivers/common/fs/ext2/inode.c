@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/endian.h>
+#include <esc/proc.h>
 #include <stdio.h>
 #include <string.h>
 #include <errors.h>
@@ -43,7 +44,7 @@ static block_t ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,block_t blo
  */
 static int ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,size_t index,bool *added);
 
-int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir) {
+int ext2_inode_create(sExt2 *e,sFSUser *u,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir) {
 	size_t i;
 	time_t now;
 	sExt2CInode *cnode;
@@ -59,15 +60,17 @@ int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	}
 
 	/* init inode */
-	cnode->inode.gid = cputole16(0);
-	cnode->inode.uid = cputole16(0);
+	cnode->inode.uid = cputole16(u->uid);
+	cnode->inode.gid = cputole16(u->gid);
 	if(isDir) {
+		/* drwxr-xr-x */
 		cnode->inode.mode = cputole16(EXT2_S_IFDIR |
 			EXT2_S_IRUSR | EXT2_S_IRGRP | EXT2_S_IROTH |
 			EXT2_S_IXUSR | EXT2_S_IXGRP | EXT2_S_IXOTH |
 			EXT2_S_IWUSR);
 	}
 	else {
+		/* -rw-r--r-- */
 		cnode->inode.mode = cputole16(EXT2_S_IFREG |
 			EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IRGRP | EXT2_S_IROTH);
 	}
@@ -86,6 +89,53 @@ int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	cnode->inode.deletetime = cputole32(0);
 	ext2_icache_markDirty(cnode);
 	*ino = cnode;
+	return 0;
+}
+
+int ext2_inode_chmod(sExt2 *e,sFSUser *u,inode_t inodeNo,mode_t mode) {
+	mode_t oldMode;
+	sExt2CInode *cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
+	if(cnode == NULL)
+		return ERR_INO_REQ_FAILED;
+
+	/* root can chmod everything; others can only chmod their own files */
+	if(u->uid != le16tocpu(cnode->inode.uid) && u->uid != ROOT_UID)
+		return ERR_NO_PERM;
+
+	oldMode = le16tocpu(cnode->inode.mode);
+	cnode->inode.mode = cputole16((oldMode & ~EXT2_S_PERMS) | mode);
+	ext2_icache_markDirty(cnode);
+	ext2_icache_release(cnode);
+	return 0;
+}
+
+int ext2_inode_chown(sExt2 *e,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
+	uid_t oldUid;
+	gid_t oldGid;
+	sExt2CInode *cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
+	if(cnode == NULL)
+		return ERR_INO_REQ_FAILED;
+
+	/* root can chown everything; others can only chown their own files */
+	oldUid = le16tocpu(cnode->inode.uid);
+	oldGid = le16tocpu(cnode->inode.gid);
+	if(u->uid != oldUid && u->uid != ROOT_UID)
+		return ERR_NO_PERM;
+	if(u->uid != ROOT_UID) {
+		/* users can't change the owner */
+		if(uid != (uid_t)-1 && uid != oldUid && uid != u->uid)
+			return ERR_NO_PERM;
+		/* users can change the group only to a group they're a member of */
+		if(gid != (gid_t)-1 && gid != oldGid && gid != u->gid && !isingroup(u->pid,gid))
+			return ERR_NO_PERM;
+	}
+
+	if(uid != (uid_t)-1)
+		cnode->inode.uid = cputole16(uid);
+	if(gid != (gid_t)-1)
+		cnode->inode.gid = cputole16(gid);
+	ext2_icache_markDirty(cnode);
+	ext2_icache_release(cnode);
 	return 0;
 }
 

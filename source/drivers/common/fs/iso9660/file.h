@@ -34,6 +34,6 @@
  * @param count the number of bytes to read
  * @return the number of read bytes
  */
-ssize_t iso_file_read(sISO9660 *h,inode_t id,void *buffer,uint offset,size_t count);
+ssize_t iso_file_read(sISO9660 *h,inode_t id,void *buffer,off_t offset,size_t count);
 
 #endif /* FILE_H_ */

@@ -22,136 +22,20 @@
 
 #include <sys/intrpt.h>
 
-/**
- * Returns the tid of the current thread
- *
- * @return tid_t the thread-id
- */
 int sysc_gettid(sIntrptStackFrame *stack);
-
-/**
- * @return size_t the number of threads of the current process
- */
 int sysc_getThreadCount(sIntrptStackFrame *stack);
-
-/**
- * Starts a new thread
- *
- * @param entryPoint the entry-point
- * @param void* argument
- * @return tid_t the new thread-id or < 0
- */
 int sysc_startThread(sIntrptStackFrame *stack);
-
-/**
- * Destroys the process and issues a context-switch
- *
- * @param int the exit-code
- */
 int sysc_exit(sIntrptStackFrame *stack);
-
-/**
- * Returns the cpu-cycles for the current thread
- *
- * @return uint64_t the cpu-cycles
- */
 int sysc_getCycles(sIntrptStackFrame *stack);
-
-/**
- * Blocks the process for a given number of milliseconds
- *
- * @param time_t the number of msecs
- * @return int 0 on success or a negative error-code
- */
 int sysc_sleep(sIntrptStackFrame *stack);
-
-/**
- * Releases the CPU (reschedule)
- */
 int sysc_yield(sIntrptStackFrame *stack);
-
-/**
- * Blocks the thread until one of the given events occurrs
- *
- * @param sWaitObject* the objects to wait for
- * @param size_t the number of objects
- * @return int 0 on success
- */
 int sysc_wait(sIntrptStackFrame *stack);
-
-/**
- * First it releases the specified lock. After that it blocks the thread until one of the
- * given events occurrs. This gives user-threads the chance to ensure that a notify() arrives
- * AFTER a thread has called wait. So they can do:
- * thread1:
- *  lock(...);
- *  ...
- *  waitUnlock(...);
- *
- * thread2:
- *  lock(...);
- *  notify(thread1,...);
- *  unlock(...);
- *
- * @param sWaitObject* the objects to wait for
- * @param size_t the number of objects
- * @param uint the ident to unlock
- * @param bool global whether the ident is global
- * @return int 0 on success
- */
 int sysc_waitUnlock(sIntrptStackFrame *stack);
-
-/**
- * Notifies the given thread about the given events. If it was waiting for them, it will be
- * waked up.
- *
- * @param tid_t the thread-id
- * @param uint the events to notify about
- * @return int 0 on success
- */
 int sysc_notify(sIntrptStackFrame *stack);
-
-/**
- * Aquire a lock; wait until its unlocked, if necessary
- *
- * @param uint the lock-ident
- * @param bool wether its a global-lock
- * @param ushort the flags
- * @return int 0 on success
- */
 int sysc_lock(sIntrptStackFrame *stack);
-
-/**
- * Releases a lock
- *
- * @param uint the lock-ident
- * @param bool wether its a global-lock
- * @return int 0 on success
- */
 int sysc_unlock(sIntrptStackFrame *stack);
-
-/**
- * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
- *
- * @param tid_t the thread-id (0 = wait until all other threads died)
- * @return int 0 on success
- */
 int sysc_join(sIntrptStackFrame *stack);
-
-/**
- * Suspends a thread from the own process. That means it is blocked until resume() is called.
- *
- * @param tid_t the thread-id
- * @return int 0 on success
- */
 int sysc_suspend(sIntrptStackFrame *stack);
-
-/**
- * Resumes a thread from the own process that has been suspended previously
- *
- * @param tid_t the thread-id
- * @return int 0 on success
- */
 int sysc_resume(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_THREAD_H_ */

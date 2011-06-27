@@ -72,6 +72,8 @@ void vfs_real_init(void) {
 	vfs_req_setHandler(MSG_FS_RMDIR_RESP,vfs_real_defRespHandler);
 	vfs_req_setHandler(MSG_FS_MOUNT_RESP,vfs_real_defRespHandler);
 	vfs_req_setHandler(MSG_FS_UNMOUNT_RESP,vfs_real_defRespHandler);
+	vfs_req_setHandler(MSG_FS_CHMOD_RESP,vfs_real_defRespHandler);
+	vfs_req_setHandler(MSG_FS_CHOWN_RESP,vfs_real_defRespHandler);
 }
 
 void vfs_real_removeProc(pid_t pid) {
@@ -88,6 +90,7 @@ void vfs_real_removeProc(pid_t pid) {
 }
 
 file_t vfs_real_openPath(pid_t pid,uint flags,const char *path) {
+	sProc *p = proc_getByPid(pid);
 	ssize_t res = ERR_NOT_ENOUGH_MEM;
 	size_t pathLen = strlen(path);
 	sVFSNode *node;
@@ -107,6 +110,9 @@ file_t vfs_real_openPath(pid_t pid,uint flags,const char *path) {
 
 	/* send msg to fs */
 	msg.str.arg1 = flags;
+	msg.str.arg2 = p->euid;
+	msg.str.arg3 = p->egid;
+	msg.str.arg4 = p->pid;
 	memcpy(msg.str.s1,path,pathLen + 1);
 	res = vfs_sendMsg(pid,fs,MSG_FS_OPEN,&msg,sizeof(msg.str));
 	if(res < 0)
@@ -167,6 +173,10 @@ static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,sF
 
 	/* send msg to fs */
 	if(path) {
+		sProc *p = proc_getByPid(pid);
+		msg.str.arg1 = p->euid;
+		msg.str.arg2 = p->egid;
+		msg.str.arg3 = p->pid;
 		memcpy(msg.str.s1,path,pathLen + 1);
 		res = vfs_sendMsg(pid,fs,MSG_FS_STAT,&msg,sizeof(msg.str));
 	}
@@ -281,6 +291,15 @@ error:
 	return res;
 }
 
+int vfs_real_chmod(pid_t pid,const char *path,mode_t mode) {
+	return vfs_real_pathReqHandler(pid,path,NULL,mode,MSG_FS_CHMOD);
+}
+
+int vfs_real_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
+	/* TODO better solution? */
+	return vfs_real_pathReqHandler(pid,path,NULL,(uid << 16) | (gid & 0xFFFF),MSG_FS_CHOWN);
+}
+
 int vfs_real_link(pid_t pid,const char *oldPath,const char *newPath) {
 	return vfs_real_pathReqHandler(pid,oldPath,newPath,0,MSG_FS_LINK);
 }
@@ -330,6 +349,7 @@ void vfs_real_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 
 static int vfs_real_pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
 	int res = ERR_NOT_ENOUGH_MEM;
+	sProc *p = proc_getByPid(pid);
 	sRequest *req;
 	file_t fs;
 	sVFSNode *node;
@@ -353,6 +373,9 @@ static int vfs_real_pathReqHandler(pid_t pid,const char *path1,const char *path2
 	if(path2)
 		strcpy(msg.str.s2,path2);
 	msg.str.arg1 = arg1;
+	msg.str.arg2 = p->euid;
+	msg.str.arg3 = p->egid;
+	msg.str.arg4 = p->pid;
 	res = vfs_sendMsg(pid,fs,cmd,&msg,sizeof(msg.str));
 	if(res < 0)
 		goto error;

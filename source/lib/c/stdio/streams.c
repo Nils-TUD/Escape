@@ -21,6 +21,7 @@
 #include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 typedef void (*fConstr)(void);
 static void initStdio(void);
@@ -47,6 +48,8 @@ static void initStdio(void) {
 	stdin->eof = false;
 	stdin->error = 0;
 	stdin->istty = isatty(STDIN_FILENO);
+	if(errno != 0)
+		stdin->istty = -1;
 	stdin->out.fd = -1;
 	stdin->in.fd = STDIN_FILENO;
 	stdin->in.buffer = (char*)malloc(IN_BUFFER_SIZE + 1);

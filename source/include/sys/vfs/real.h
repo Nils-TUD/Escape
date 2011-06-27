@@ -106,6 +106,27 @@ ssize_t vfs_real_write(pid_t pid,inode_t inodeNo,dev_t devNo,const void *buffer,
 		off_t offset,size_t count);
 
 /**
+ * Changes the permissions of the file denoted by <path>
+ *
+ * @param pid the process-id
+ * @param path the path
+ * @param mode the new mode
+ * @return 0 on success
+ */
+int vfs_real_chmod(pid_t pid,const char *path,mode_t mode);
+
+/**
+ * Changes the owner and group of the file denoted by <path>.
+ *
+ * @param pid the process-id
+ * @param path the path
+ * @param uid the user-id
+ * @param gid the group-id
+ * @return 0 on success
+ */
+int vfs_real_chown(pid_t pid,const char *path,uid_t uid,gid_t gid);
+
+/**
  * Creates a hardlink at <newPath> which points to <oldPath>
  *
  * @param pid the process-id

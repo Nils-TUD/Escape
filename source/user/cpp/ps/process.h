@@ -32,12 +32,16 @@ class process {
 
 public:
 	typedef pid_t pid_type;
+	typedef uid_t uid_type;
+	typedef gid_t gid_type;
 	typedef size_t size_type;
 	typedef unsigned long long cycle_type;
 
 private:
 	pid_type _pid;
 	pid_type _ppid;
+	uid_type _uid;
+	gid_type _gid;
 	size_type _pages;
 	size_type _ownFrames;
 	size_type _sharedFrames;
@@ -51,19 +55,21 @@ private:
 
 public:
 	process()
-		: _pid(0), _ppid(0), _pages(0), _ownFrames(0), _sharedFrames(0), _swapped(0),
-		  _input(0), _output(0), _ucycles(-1), _kcycles(-1), _threads(std::vector<thread*>()),
-		  _cmd(std::string()) {
+		: _pid(0), _ppid(0), _uid(0), _gid(0), _pages(0), _ownFrames(0), _sharedFrames(0),
+		  _swapped(0), _input(0), _output(0), _ucycles(-1), _kcycles(-1),
+		  _threads(std::vector<thread*>()), _cmd(std::string()) {
 	}
 	process(const process& p)
-		: _pid(p._pid), _ppid(p._ppid), _pages(p._pages), _ownFrames(p._ownFrames),
-		  _sharedFrames(p._sharedFrames), _swapped(p._swapped), _input(p._input),
-		  _output(p._output), _ucycles(p._ucycles), _kcycles(p._kcycles), _threads(p._threads),
-		  _cmd(p._cmd) {
+		: _pid(p._pid), _ppid(p._ppid), _uid(p._uid), _gid(p._gid), _pages(p._pages),
+		  _ownFrames(p._ownFrames), _sharedFrames(p._sharedFrames), _swapped(p._swapped),
+		  _input(p._input), _output(p._output), _ucycles(p._ucycles), _kcycles(p._kcycles),
+		  _threads(p._threads), _cmd(p._cmd) {
 	}
 	process& operator =(const process& p) {
 		_pid = p._pid;
 		_ppid = p._ppid;
+		_uid = p._uid;
+		_gid = p._gid;
 		_pages = p._pages;
 		_ownFrames = p._ownFrames;
 		_sharedFrames = p._sharedFrames;
@@ -85,7 +91,13 @@ public:
 	pid_type ppid() const {
 		return _ppid;
 	}
-	pid_type pages() const {
+	uid_type uid() const {
+		return _uid;
+	}
+	gid_type gid() const {
+		return _gid;
+	}
+	size_type pages() const {
 		return _pages;
 	}
 	size_type ownFrames() const {

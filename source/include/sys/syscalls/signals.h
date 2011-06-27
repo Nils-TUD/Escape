@@ -22,29 +22,8 @@
 
 #include <sys/intrpt.h>
 
-/**
- * Sets a handler-function for a specific signal
- *
- * @param sig_t signal
- * @param fSigHandler handler
- * @return int 0 if no error
- */
 int sysc_setSigHandler(sIntrptStackFrame *stack);
-
-/**
- * Acknoledges that the processing of a signal is finished
- *
- * @return int 0 if no error
- */
 int sysc_ackSignal(sIntrptStackFrame *stack);
-
-/**
- * Sends a signal to a process
- *
- * @param pid_t pid
- * @param sig_t signal
- * @return int 0 if no error
- */
 int sysc_sendSignalTo(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_SIGNALS_H_ */

@@ -197,13 +197,16 @@ bool vfs_shouldBlock(file_t file) {
 }
 
 file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
+	char apath[MAX_PATH_LEN + 1];
 	inode_t nodeNo;
 	file_t file;
 	bool created;
 	sVFSNode *node = NULL;
+	int err;
 
 	/* resolve path */
-	int err = vfs_node_resolvePath(path,&nodeNo,&created,flags);
+	path = vfs_node_absolutize(apath,sizeof(apath),path);
+	err = vfs_node_resolvePath(path,&nodeNo,&created,flags);
 	if(err == ERR_REAL_PATH) {
 		/* unfortunatly we have to check for the process-ids of ata and fs here. because e.g.
 		 * if the user tries to mount the device "/realfile" the userspace has no opportunity
@@ -371,12 +374,38 @@ off_t vfs_tell(pid_t pid,file_t file) {
 }
 
 int vfs_stat(pid_t pid,const char *path,sFileInfo *info) {
+	char apath[MAX_PATH_LEN + 1];
 	inode_t nodeNo;
+	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH)
 		res = vfs_real_stat(pid,path,info);
 	else if(res == 0)
 		res = vfs_node_getInfo(nodeNo,info);
+	return res;
+}
+
+int vfs_chmod(pid_t pid,const char *path,mode_t mode) {
+	char apath[MAX_PATH_LEN + 1];
+	inode_t nodeNo;
+	path = vfs_node_absolutize(apath,sizeof(apath),path);
+	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
+	if(res == ERR_REAL_PATH)
+		res = vfs_real_chmod(pid,path,mode);
+	else if(res == 0)
+		res = vfs_node_chmod(nodeNo,mode);
+	return res;
+}
+
+int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
+	char apath[MAX_PATH_LEN + 1];
+	inode_t nodeNo;
+	path = vfs_node_absolutize(apath,sizeof(apath),path);
+	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
+	if(res == ERR_REAL_PATH)
+		res = vfs_real_chown(pid,path,uid,gid);
+	else if(res == 0)
+		res = vfs_node_chown(nodeNo,uid,gid);
 	return res;
 }
 
@@ -567,7 +596,7 @@ void vfs_closeFile(pid_t pid,file_t file) {
 }
 
 int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
-	char newPathCpy[MAX_PATH_LEN];
+	char newPathCpy[MAX_PATH_LEN + 1];
 	char *name,*namecpy,backup;
 	size_t len;
 	inode_t oldIno,newIno;
@@ -577,9 +606,25 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 	oldRes = vfs_node_resolvePath(oldPath,&oldIno,NULL,VFS_READ);
 	newRes = vfs_node_resolvePath(newPath,&newIno,NULL,VFS_WRITE);
 	if(oldRes == ERR_REAL_PATH) {
+		char *absNew,*absOld;
 		if(newRes != ERR_REAL_PATH)
 			return ERR_LINK_DEVICE;
-		return vfs_real_link(pid,oldPath,newPath);
+
+		/* absolutize the paths */
+		absOld = (char*)cache_alloc(MAX_PATH_LEN + 1);
+		if(!absOld)
+			return ERR_NOT_ENOUGH_MEM;
+		absNew = (char*)cache_alloc(MAX_PATH_LEN + 1);
+		if(!absNew) {
+			cache_free(absOld);
+			return ERR_NOT_ENOUGH_MEM;
+		}
+		vfs_node_absolutize(absOld,MAX_PATH_LEN + 1,oldPath);
+		vfs_node_absolutize(absNew,MAX_PATH_LEN + 1,newPath);
+		oldRes = vfs_real_link(pid,absOld,absNew);
+		cache_free(absOld);
+		cache_free(absNew);
+		return oldRes;
 	}
 	if(oldRes < 0)
 		return oldRes;
@@ -628,9 +673,11 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 }
 
 int vfs_unlink(pid_t pid,const char *path) {
+	char apath[MAX_PATH_LEN + 1];
 	int res;
 	inode_t ino;
 	sVFSNode *n;
+	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	res = vfs_node_resolvePath(path,&ino,NULL,VFS_WRITE | VFS_NOLINKRES);
 	if(res == ERR_REAL_PATH)
 		return vfs_real_unlink(pid,path);
@@ -645,7 +692,7 @@ int vfs_unlink(pid_t pid,const char *path) {
 }
 
 int vfs_mkdir(pid_t pid,const char *path) {
-	char pathCpy[MAX_PATH_LEN];
+	char pathCpy[MAX_PATH_LEN + 1];
 	char *name,*namecpy;
 	char backup;
 	int res;
@@ -667,6 +714,7 @@ int vfs_mkdir(pid_t pid,const char *path) {
 	res = vfs_node_resolvePath(pathCpy,&inodeNo,NULL,VFS_WRITE);
 	/* special-case: directories in / should be created in the real fs! */
 	if(res == ERR_REAL_PATH || (res >= 0 && strcmp(pathCpy,"/") == 0)) {
+		path = vfs_node_absolutize(pathCpy,sizeof(pathCpy),path);
 		/* let fs handle the request */
 		return vfs_real_mkdir(pid,path);
 	}
@@ -696,9 +744,11 @@ int vfs_mkdir(pid_t pid,const char *path) {
 }
 
 int vfs_rmdir(pid_t pid,const char *path) {
+	char apath[MAX_PATH_LEN + 1];
 	int res;
 	sVFSNode *node;
 	inode_t inodeNo;
+	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	res = vfs_node_resolvePath(path,&inodeNo,NULL,VFS_WRITE);
 	if(res == ERR_REAL_PATH)
 		return vfs_real_rmdir(pid,path);

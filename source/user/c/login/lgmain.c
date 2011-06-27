@@ -18,24 +18,71 @@
  */
 
 #include <esc/common.h>
+#include <usergroup/user.h>
+#include <usergroup/group.h>
 #include <esc/messages.h>
+#include <esc/thread.h>
+#include <esc/proc.h>
+#include <stdlib.h>
 #include <stdio.h>
-#include <signal.h>
 #include <string.h>
 #include <error.h>
 
-#define USERNAME	"hrniels"
-#define PASSWORD	"test"
-#define MAX_LEN		10
+#define SHELL_PATH			"/bin/shell"
+#define GROUPS_PATH			"/etc/groups"
+#define USERS_PATH			"/etc/users"
+#define MAX_VTERM_NAME_LEN	10
 
-static void termHandler(int sig);
+static sUser *getUser(const char *user,const char *pw);
 
-int main(void) {
-	char un[MAX_LEN];
-	char pw[MAX_LEN];
+static sGroup *groupList;
+static sUser *userList;
 
-	if(setSigHandler(SIG_TERM,termHandler) < 0)
-		error("Unable to announce term-signal-handler");
+int main(int argc,char **argv) {
+	char drvPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
+	const char *shargs[] = {NULL,NULL,NULL};
+	char un[MAX_USERNAME_LEN];
+	char pw[MAX_PW_LEN];
+	sUser *u;
+	gid_t *groups;
+	size_t groupCount;
+	size_t count;
+	off_t pos;
+	int vterm;
+	int fd;
+
+	if(argc != 2)
+		error("Usage: %s <vterm>",argv[0]);
+	if(tell(STDIN_FILENO,&pos) != ERR_INVALID_FD)
+		error("STDIN already present!? Login not usable");
+
+	/* read in groups */
+	groupList = group_parseFromFile(GROUPS_PATH,&count);
+	if(!groupList)
+		error("Unable to parse groups from '%s'",GROUPS_PATH);
+	/* read in users */
+	userList = user_parseFromFile(USERS_PATH,&count);
+	if(!userList)
+		error("Unable to parse users from '%s'",USERS_PATH);
+
+	/* open stdin */
+	strcat(drvPath,argv[1]);
+	/* parse vterm-number from "vtermX" */
+	vterm = atoi(argv[1] + 5);
+	if(open(drvPath,IO_READ) < 0)
+		error("Unable to open '%s' for STDIN",drvPath);
+
+	/* open stdout */
+	if((fd = open(drvPath,IO_WRITE)) < 0)
+		error("Unable to open '%s' for STDOUT",drvPath);
+
+	/* dup stdout to stderr */
+	if(dupFd(fd) < 0)
+		error("Unable to duplicate STDOUT to STDERR");
+
+	printf("\n\n");
+	printf("\033[co;9]Welcome to Escape v0.3, %s\033[co]\n\n",argv[1]);
+	printf("Please login to get a shell.\n\n");
 
 	while(1) {
 		printf("Username: ");
@@ -46,19 +93,51 @@ int main(void) {
 		sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
 		putchar('\n');
 
-		if(strcmp(un,USERNAME) != 0)
-			printf("\033[co;4]Sorry, invalid username. Try again!\033[co]\n");
-		else if(strcmp(pw,PASSWORD) != 0)
-			printf("\033[co;4]Sorry, invalid password. Try again!\033[co]\n");
-		else {
-			printf("\033[co;2]Login successfull.\033[co]\n");
+		u = getUser(un,pw);
+		if(u != NULL)
 			break;
-		}
+
+		printf("Sorry, invalid username or password. Try again!\n");
+		fflush(stdout);
+		sleep(1000);
 	}
+	fflush(stdout);
+
+	/* set user- and group-id */
+	if(setgid(u->gid) < 0)
+		error("Unable to set gid");
+	if(setuid(u->uid) < 0)
+		error("Unable to set uid");
+	/* determine groups and set them */
+	groups = group_collectGroupsFor(groupList,u->uid,&groupCount);
+	if(!groups)
+		error("Unable to collect group-ids");
+	if(setgroups(groupCount,groups) < 0)
+		error("Unable to set groups");
+
+	/* cd to home-dir */
+	if(is_dir(u->home))
+		setenv("CWD",u->home);
+
+	/* exchange with shell */
+	shargs[0] = argv[0];
+	shargs[1] = argv[1];
+	exec(SHELL_PATH,shargs);
+
+	/* not reached */
 	return EXIT_SUCCESS;
 }
 
-static void termHandler(int sig) {
-	UNUSED(sig);
-	printf("Got TERM-signal but I don't want to die :P\n");
+static sUser *getUser(const char *name,const char *pw) {
+	sUser *u = userList;
+	while(u != NULL) {
+		if(strcmp(u->name,name) == 0) {
+			if(strcmp(u->pw,pw) == 0)
+				return u;
+			return NULL;
+		}
+		u = u->next;
+	}
+	return NULL;
 }
+

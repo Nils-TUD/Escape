@@ -76,6 +76,35 @@ char *vfs_node_getPath(inode_t nodeNo);
 int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info);
 
 /**
+ * Changes the mode of the given node
+ *
+ * @param nodeNo the node-number
+ * @param mode the new mode
+ * @return 0 on success
+ */
+int vfs_node_chmod(inode_t nodeNo,mode_t mode);
+
+/**
+ * Changes the owner and group of the given node
+ *
+ * @param nodeNo the node-number
+ * @param uid the new user
+ * @param gid the new group
+ * @return 0 on success
+ */
+int vfs_node_chown(inode_t nodeNo,uid_t uid,gid_t gid);
+
+/**
+ * Builds an absolute path from <src> into <dst>.
+ *
+ * @param dst the destination
+ * @param size the size of the destination
+ * @param src the relative path
+ * @return the absolute path, either <dst> or <src>
+ */
+char *vfs_node_absolutize(char *dst,size_t size,const char *src);
+
+/**
  * Resolves the given path to a VFS-node
  *
  * @param path the path to resolve

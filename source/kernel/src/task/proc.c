@@ -27,6 +27,7 @@
 #include <sys/task/env.h>
 #include <sys/task/event.h>
 #include <sys/task/uenv.h>
+#include <sys/task/groups.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/cache.h>
@@ -86,6 +87,7 @@ void proc_init(void) {
 	p->rgid = ROOT_GID;
 	p->egid = ROOT_GID;
 	p->sgid = ROOT_GID;
+	p->groups = NULL;
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 for kernelstack */
 	p->ownFrames = 1 + 1 + 1;
 	/* the first process has no text, data and stack */
@@ -120,7 +122,7 @@ void proc_init(void) {
 
 void proc_setCommand(sProc *p,const char *cmd) {
 	if(p->command)
-		cache_free(p->command);
+		cache_free((char*)p->command);
 	p->command = strdup(cmd);
 }
 
@@ -357,6 +359,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->rgid = cur->rgid;
 	p->egid = cur->egid;
 	p->sgid = cur->sgid;
+	p->groups = groups_join(cur->groups);
 	p->exitState = NULL;
 	p->sigRetAddr = cur->sigRetAddr;
 	p->ioMap = NULL;
@@ -612,6 +615,8 @@ void proc_terminate(sProc *p,int exitCode,sig_t signal) {
 	}
 
 	/* remove other stuff */
+	groups_leave(p->groups);
+	p->groups = NULL;
 	env_removeFor(p->pid);
 	proc_removeRegions(p,true);
 	vfs_real_removeProc(p->pid);
@@ -646,7 +651,7 @@ void proc_kill(sProc *p) {
 	/* remove pagedir; TODO we can do that on terminate, too (if we delay it when its the current) */
 	paging_destroyPDir(p->pagedir);
 	sll_destroy(p->threads,false);
-	cache_free(p->command);
+	cache_free((char*)p->command);
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);
 	/* notify processes that wait for dying procs */
@@ -697,9 +702,12 @@ void proc_print(const sProc *p) {
 	vid_printf("Proc %d:\n",p->pid);
 	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#Px\n",
 			p->parentPid,p->command,p->pagedir,p->entryPoint);
-	vid_printf("\truid=%u, euid=%u, suid=%u\n",p->ruid,p->euid,p->suid);
-	vid_printf("\trgid=%u, egid=%u, sgid=%u\n",p->rgid,p->egid,p->sgid);
-	vid_printf("\tOwnFrames=%lu, sharedFrames=%lu, swapped=%lu\n",
+	vid_printf("\tOwner: ruid=%u, euid=%u, suid=%u\n",p->ruid,p->euid,p->suid);
+	vid_printf("\tGroup: rgid=%u, egid=%u, sgid=%u\n",p->rgid,p->egid,p->sgid);
+	vid_printf("\tGroups: ");
+	groups_print(p->groups);
+	vid_printf("\n");
+	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",
 			p->ownFrames,p->sharedFrames,p->swapped);
 	if(p->flags & P_ZOMBIE) {
 		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);

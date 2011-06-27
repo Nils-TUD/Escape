@@ -20,9 +20,14 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <stdio.h>
+#include <errno.h>
 #include <assert.h>
 
 int isatty(int fd) {
 	sVTSize consSize;
-	return recvMsgData(fd,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) >= 0;
+	int res = recvMsgData(fd,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) >= 0;
+	/* this is not considered as an error in this case */
+	if(errno == ERR_UNSUPPORTED_OP)
+		errno = 0;
+	return res;
 }

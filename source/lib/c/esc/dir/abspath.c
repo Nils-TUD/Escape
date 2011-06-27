@@ -45,7 +45,8 @@ size_t abspath(char *dst,size_t dstSize,const char *src) {
 			*pathtemp++ = *curtemp++;
 		}
 		/* remove '/' at the end */
-		pathtemp--;
+		if(*pathtemp == '/')
+			pathtemp--;
 		count = pathtemp - dst;
 	}
 	else {

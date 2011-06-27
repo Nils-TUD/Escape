@@ -26,70 +26,24 @@
 #include <sys/arch/i586/syscalls/proc.h>
 #endif
 
-/**
- * Returns the pid of the current process
- *
- * @return pid_t the pid
- */
 int sysc_getpid(sIntrptStackFrame *stack);
-
-/**
- * Returns the parent-pid of the given process
- *
- * @param pid the process-id
- * @return pid_t the parent-pid
- */
 int sysc_getppid(sIntrptStackFrame *stack);
-
-/**
- * Clones the current process
- *
- * @return pid_t 0 for the child, the child-pid for the parent-process
- */
+int sysc_getuid(sIntrptStackFrame *stack);
+int sysc_setuid(sIntrptStackFrame *stack);
+int sysc_geteuid(sIntrptStackFrame *stack);
+int sysc_seteuid(sIntrptStackFrame *stack);
+int sysc_getgid(sIntrptStackFrame *stack);
+int sysc_setgid(sIntrptStackFrame *stack);
+int sysc_getegid(sIntrptStackFrame *stack);
+int sysc_setegid(sIntrptStackFrame *stack);
+int sysc_getgroups(sIntrptStackFrame *stack);
+int sysc_setgroups(sIntrptStackFrame *stack);
+int sysc_isingroup(sIntrptStackFrame *stack);
 int sysc_fork(sIntrptStackFrame *stack);
-
-/**
- * Waits until a child has terminated
- *
- * @param sExitState* will be filled with information about the terminated process
- * @return int 0 on success
- */
 int sysc_waitChild(sIntrptStackFrame *stack);
-
-/**
- * Exchanges the process-data with another program
- *
- * @param char* the program-path
- */
 int sysc_exec(sIntrptStackFrame *stack);
-
-/**
- * Returns the environment-variable-name with index i. Or an error if there is none.
- *
- * @param char* the buffer to write the name to
- * @param size_t the size of the buffer
- * @param size_t the index of the variable
- * @return ssize_t the length of the name on success
- */
 int sysc_getenvito(sIntrptStackFrame *stack);
-
-/**
- * Returns the value of the environment-variable with given name
- *
- * @param char* the buffer to write the name to
- * @param size_t the size of the buffer
- * @param const char* the name
- * @return ssize_t the length of the value on success
- */
 int sysc_getenvto(sIntrptStackFrame *stack);
-
-/**
- * Sets the environment-variable with given name to given value
- *
- * @param const char* the name
- * @param const char* the value
- * @return int 0 on success
- */
 int sysc_setenv(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_PROC_H_ */

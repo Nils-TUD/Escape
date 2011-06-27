@@ -26,6 +26,8 @@
 #include "tests/tenv.h"
 #include "tests/tsyscalls.h"
 #include "tests/tfs.h"
+#include "tests/tgroup.h"
+#include "tests/tuser.h"
 
 int main(void) {
 	test_register(&tModHeap);
@@ -34,6 +36,8 @@ int main(void) {
 	test_register(&tModEnv);
 	test_register(&tModSyscalls);
 	test_register(&tModFs);
+	test_register(&tModGroup);
+	test_register(&tModUser);
 	test_start();
 	return EXIT_SUCCESS;
 }

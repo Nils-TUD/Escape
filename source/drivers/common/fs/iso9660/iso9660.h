@@ -261,23 +261,25 @@ sFileSystem *iso_getFS(void);
  * Mount-entry for resPath()
  *
  * @param h the ext2-handle
+ * @param u the user
  * @param path the path
  * @param flags the flags
  * @param dev should be set to the device-number
  * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-number on success
  */
-inode_t iso_resPath(void *h,const char *path,uint flags,dev_t *dev,bool resLastMnt);
+inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt);
 
 /**
  * Mount-entry for open()
  *
  * @param h the iso9660-handle
+ * @param u the user
  * @param ino the inode to open
  * @param flags the open-flags
  * @return the inode on success or < 0
  */
-inode_t iso_open(void *h,inode_t ino,uint flags);
+inode_t iso_open(void *h,sFSUser *u,inode_t ino,uint flags);
 
 /**
  * Mount-entry for close()
@@ -307,7 +309,7 @@ int iso_stat(void *h,inode_t ino,sFileInfo *info);
  * @param count the number of bytes to read
  * @return number of read bytes on success
  */
-ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,uint offset,size_t count);
+ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count);
 
 /**
  * BUilds a timestamp from the given dir-date

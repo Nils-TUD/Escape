@@ -163,15 +163,17 @@ sFileSystem *iso_getFS(void) {
 	fs->unlink = NULL;
 	fs->mkdir = NULL;
 	fs->rmdir = NULL;
+	fs->chmod = NULL;
+	fs->chown = NULL;
 	fs->sync = NULL;
 	return fs;
 }
 
-inode_t iso_resPath(void *h,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
+inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
 	return iso_dir_resolve((sISO9660*)h,path,flags,dev,resLastMnt);
 }
 
-inode_t iso_open(void *h,inode_t ino,uint flags) {
+inode_t iso_open(void *h,sFSUser *u,inode_t ino,uint flags) {
 	UNUSED(h);
 	UNUSED(flags);
 	return ino;
@@ -209,7 +211,7 @@ int iso_stat(void *h,inode_t ino,sFileInfo *info) {
 	return 0;
 }
 
-ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,uint offset,size_t count) {
+ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
 	return iso_file_read((sISO9660*)h,inodeNo,buffer,offset,count);
 }
 

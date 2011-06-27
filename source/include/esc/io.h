@@ -101,6 +101,29 @@ int stat(const char *path,sFileInfo *info) A_CHECKRET;
 int fstat(int fd,sFileInfo *info) A_CHECKRET;
 
 /**
+ * Changes the permissions of the file denoted by <path> to <mode>. This is always possible if
+ * the current process is owned by ROOT_UID. Otherwise only if the current process owns the file.
+ *
+ * @param path the path
+ * @param mode the new mode
+ * @return 0 on success
+ */
+int chmod(const char *path,mode_t mode) A_CHECKRET;
+
+/**
+ * Changes the owner and group of the file denoted by <path> to <uid> and <gid>, respectively. If
+ * the current process is owned by ROOT_UID, it can be changed arbitrarily. If the current process
+ * owns the file, the group can only be changed to a group this user is a member of. Otherwise
+ * the owner can't be changed.
+ *
+ * @param path the path
+ * @param uid the new user-id (-1 = do not change)
+ * @param gid the new group-id (-1 = do not change)
+ * @return 0 on success
+ */
+int chown(const char *path,uid_t uid,gid_t gid) A_CHECKRET;
+
+/**
  * Asks for the current file-position
  *
  * @param fd the file-descriptor

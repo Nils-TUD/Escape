@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include "iobuf.h"
+#include <errno.h>
 #include <stdio.h>
 
 int bgetc(FILE *f) {
@@ -27,8 +28,16 @@ int bgetc(FILE *f) {
 		return EOF;
 	if(buf->fd >= 0) {
 		/* flush stdout if we're stdin */
-		if(f == stdin && f->istty)
-			fflush(stdout);
+		if(f == stdin) {
+			/* if the previous attempt failed (e.g. STDIN was not present yet), try it again */
+			if(f->istty < 0) {
+				f->istty = isatty(STDIN_FILENO);
+				if(errno != 0)
+					f->istty = -1;
+			}
+			if(f->istty)
+				fflush(stdout);
+		}
 		if(buf->pos >= buf->max) {
 			ssize_t count = RETRY(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
 			if(count < 0) {

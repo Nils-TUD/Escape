@@ -32,8 +32,12 @@ namespace std {
 		return res;
 	}
 	string& env::absolutify(string& path) {
-		if(path.size() == 0 || path[0] != '/')
-			path.insert(0,env::get("CWD"));
+		if(path.size() == 0 || path[0] != '/') {
+			string cwd = env::get("CWD");
+			if(cwd.compare(cwd.length() - 1,1,"/") != 0)
+				cwd += '/';
+			path.insert(0,cwd);
+		}
 		return path;
 	}
 	string env::get(const string& name) {

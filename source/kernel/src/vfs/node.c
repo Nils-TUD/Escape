@@ -102,6 +102,19 @@ int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info) {
 	return 0;
 }
 
+int vfs_node_chmod(inode_t nodeNo,mode_t mode) {
+	sVFSNode *n = vfs_node_get(nodeNo);
+	/* TODO */
+	n->mode = mode;
+	return 0;
+}
+
+int vfs_node_chown(inode_t nodeNo,uid_t uid,gid_t gid) {
+	sVFSNode *n = vfs_node_get(nodeNo);
+	/* TODO */
+	return 0;
+}
+
 char *vfs_node_getPath(inode_t nodeNo) {
 	static char path[MAX_PATH_LEN];
 	size_t nlen,len = 0,total = 0;
@@ -139,6 +152,33 @@ char *vfs_node_getPath(inode_t nodeNo) {
 	return (char*)path;
 }
 
+char *vfs_node_absolutize(char *dst,size_t size,const char *src) {
+	if(*src != '/') {
+		size_t len;
+		sProc *p = proc_getRunning();
+		const char *cwd = env_get(p->pid,"CWD");
+		if(cwd) {
+			strncpy(dst,cwd,size);
+			dst[size - 1] = '\0';
+			len = strlen(dst);
+			if(len < size - 1 && dst[len - 1] != '/') {
+				dst[len++] = '/';
+				dst[len] = '\0';
+			}
+		}
+		else {
+			/* assume '/' */
+			len = 1;
+			dst[0] = '/';
+			dst[1] = '\0';
+		}
+		strncpy(dst + len,src,size - len);
+		dst[size - 1] = '\0';
+		return dst;
+	}
+	return (char*)src;
+}
+
 int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint flags) {
 	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = vfs_node_get(0);
@@ -149,23 +189,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 
 	/* no absolute path? */
 	if(*path != '/') {
-		size_t len;
-		const char *cwd = env_get(t->proc->pid,"CWD");
-		if(cwd) {
-			strcpy(apath,cwd);
-			len = strlen(apath);
-			if(apath[len - 1] != '/') {
-				apath[len++] = '/';
-				apath[len] = '\0';
-			}
-		}
-		else {
-			/* assume '/' */
-			len = 1;
-			apath[0] = '/';
-			apath[1] = '\0';
-		}
-		strcpy(apath + len,path);
+		vfs_node_absolutize(apath,sizeof(apath),path);
 		path = apath;
 	}
 

@@ -24,6 +24,7 @@
 #include <sys/mem/region.h>
 #include <sys/mem/paging.h>
 #include <sys/task/elf.h>
+#include <sys/task/groups.h>
 #include <sys/vfs/node.h>
 #include <sys/intrpt.h>
 
@@ -85,6 +86,8 @@ typedef struct {
 	gid_t rgid;
 	gid_t egid;
 	gid_t sgid;
+	/* all groups (may include egid or not) of this process */
+	sProcGroups *groups;
 	/* the physical address for the page-directory of this process */
 	tPageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.
@@ -112,7 +115,7 @@ typedef struct {
 	/* the io-map (NULL by default) */
 	uint8_t *ioMap;
 	/* start-command */
-	char *command;
+	const char *command;
 	/* threads of this process */
 	sSLList *threads;
 	/* the directory-node in the VFS of this process */

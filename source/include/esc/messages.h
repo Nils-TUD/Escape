@@ -51,6 +51,8 @@
 #define MSG_FS_MOUNT_RESP			9
 #define MSG_FS_UNMOUNT_RESP			10
 #define MSG_FS_ISTAT_RESP			11
+#define MSG_FS_CHMOD_RESP			12
+#define MSG_FS_CHOWN_RESP			13
 /* driver */
 #define MSG_DRV_OPEN_RESP			12
 #define MSG_DRV_READ_RESP			13
@@ -72,6 +74,8 @@
 #define MSG_FS_MOUNT				210
 #define MSG_FS_UNMOUNT				211
 #define MSG_FS_ISTAT				212
+#define MSG_FS_CHMOD				213
+#define MSG_FS_CHOWN				214
 /* requests to driver */
 #define MSG_DRV_OPEN				300
 #define MSG_DRV_READ				301

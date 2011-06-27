@@ -105,10 +105,23 @@ static sSyscall syscalls[] = {
 	/* 60 */	{sysc_getenvito,			3},
 	/* 61 */	{sysc_getenvto,				3},
 	/* 62 */	{sysc_setenv,				2},
+	/* 63 */	{sysc_getuid,				0},
+	/* 64 */	{sysc_setuid,				1},
+	/* 65 */	{sysc_geteuid,				0},
+	/* 66 */	{sysc_seteuid,				1},
+	/* 67 */	{sysc_getgid,				0},
+	/* 68 */	{sysc_setgid,				1},
+	/* 69 */	{sysc_getegid,				0},
+	/* 70 */	{sysc_setegid,				1},
+	/* 71 */	{sysc_chmod,				2},
+	/* 72 */	{sysc_chown,				3},
+	/* 73 */	{sysc_getgroups,			2},
+	/* 74 */	{sysc_setgroups,			2},
+	/* 75 */	{sysc_isingroup,			2},
 #ifdef __i386__
-	/* 63 */	{sysc_requestIOPorts,		2},
-	/* 64 */	{sysc_releaseIOPorts,		2},
-	/* 65 */	{sysc_vm86int,				4},
+	/* 76 */	{sysc_requestIOPorts,		2},
+	/* 77 */	{sysc_releaseIOPorts,		2},
+	/* 78 */	{sysc_vm86int,				4},
 #endif
 };
 

@@ -45,14 +45,19 @@ static int ext2_file_freeDIndirBlock(sExt2 *e,block_t blockNo);
  */
 static int ext2_file_freeIndirBlock(sExt2 *e,block_t blockNo);
 
-int ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,inode_t *ino,bool isDir) {
+int ext2_file_create(sExt2 *e,sFSUser *u,sExt2CInode *dirNode,const char *name,inode_t *ino,bool isDir) {
 	sExt2CInode *cnode;
-	int res = ext2_inode_create(e,dirNode,&cnode,isDir);
+	int res;
+	/* we need write-permission for the directory */
+	if(!ext2_hasPermission(dirNode,u,MODE_WRITE))
+		return ERR_NO_PERM;
+
+	res = ext2_inode_create(e,u,dirNode,&cnode,isDir);
 	if(res < 0)
 		return res;
 
 	/* link it to the directory */
-	if((res = ext2_link_create(e,dirNode,cnode,name)) < 0) {
+	if((res = ext2_link_create(e,u,dirNode,cnode,name)) < 0) {
 		ext2_inode_destroy(e,cnode);
 		ext2_icache_release(cnode);
 		return res;
@@ -134,7 +139,7 @@ int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 	return 0;
 }
 
-ssize_t ext2_file_read(sExt2 *e,inode_t inodeNo,void *buffer,uint offset,size_t count) {
+ssize_t ext2_file_read(sExt2 *e,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
 	sExt2CInode *cnode;
 	ssize_t res;
 
@@ -158,7 +163,7 @@ ssize_t ext2_file_read(sExt2 *e,inode_t inodeNo,void *buffer,uint offset,size_t 
 	return res;
 }
 
-ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,uint offset,size_t count) {
+ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,off_t offset,size_t count) {
 	/* nothing left to read? */
 	int32_t inoSize = le32tocpu(cnode->inode.size);
 	if((int32_t)offset < 0 || (int32_t)offset >= inoSize)
@@ -203,7 +208,7 @@ ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,uint of
 	return count;
 }
 
-ssize_t ext2_file_write(sExt2 *e,inode_t inodeNo,const void *buffer,uint offset,size_t count) {
+ssize_t ext2_file_write(sExt2 *e,inode_t inodeNo,const void *buffer,off_t offset,size_t count) {
 	/* at first we need the inode */
 	sExt2CInode *cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
@@ -215,13 +220,13 @@ ssize_t ext2_file_write(sExt2 *e,inode_t inodeNo,const void *buffer,uint offset,
 	return count;
 }
 
-ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,uint offset,size_t count) {
+ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,off_t offset,size_t count) {
 	sCBlock *tmpBuffer;
 	const uint8_t *bufWork;
 	time_t now;
 	size_t c,i,blockSize,blockCount,leftBytes;
 	block_t startBlock;
-	uint orgOff = offset;
+	off_t orgOff = offset;
 	int32_t inoSize = le32tocpu(cnode->inode.size);
 
 	/* gap-filling not supported yet */

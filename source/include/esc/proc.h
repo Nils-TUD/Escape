@@ -25,6 +25,9 @@
 #define MAX_PROC_NAME_LEN	30
 #define INVALID_PID			1026
 
+#define ROOT_UID			0
+#define ROOT_GID			0
+
 typedef void (*fExitFunc)(void *arg);
 
 typedef struct {
@@ -66,6 +69,91 @@ pid_t getppid(void);
  * @return the parent-pid
  */
 int getppidof(pid_t pid);
+
+/**
+ * @return the real user-id of the current process
+ */
+uid_t getuid(void);
+
+/**
+ * Sets the real, effective and saved user-id of the current process. This is allowed only if the
+ * effective user-id of the current process is ROOT_UID.
+ *
+ * @param uid the new uid
+ * @return 0 on success
+ */
+int setuid(uid_t uid);
+
+/**
+ * @return the effective user-id of the current process
+ */
+uid_t geteuid(void);
+
+/**
+ * Sets the effective user-id of the current process to <uid>. This can be either the current real,
+ * effective or saved uid of the process or anything if the effective user-id is ROOT_UID.
+ *
+ * @param uid the new user-id
+ * @return 0 on success
+ */
+int seteuid(uid_t uid);
+
+/**
+ * @return the real group-id of the current process
+ */
+gid_t getgid(void);
+
+/**
+ * Sets the real, effective and saved group-id of the current process. This is allowed only if the
+ * effective user-id of the current process is ROOT_UID.
+ *
+ * @param gid the new gid
+ * @return 0 on success
+ */
+int setgid(gid_t gid);
+
+/**
+ * @return the effective group-id of the current process
+ */
+gid_t getegid(void);
+
+/**
+ * Sets the effective group-id of the current process to <gid>. This can be either the current real,
+ * effective or saved gid of the process or anything if the effective user-id is ROOT_UID.
+ *
+ * @param gid the new group-id
+ * @return 0 on success
+ */
+int setegid(gid_t uid);
+
+/**
+ * Copies at most <size> groups of the current process into <list>.
+ * If <size> is 0, the number of groups is returned.
+ *
+ * @param size the number of elements in the array <list>
+ * @param list the list to copy the group-ids to
+ * @return the number of copied group-ids (or the total number of group-ids, if <size> is 0)
+ */
+int getgroups(size_t size,gid_t *list);
+
+/**
+ * Sets the groups of the current process to <list>. This is only allowed if the owner of the
+ * current process is ROOT_UID.
+ *
+ * @param size the number of group-ids
+ * @param list the group-ids
+ * @return 0 on success
+ */
+int setgroups(size_t size,const gid_t *list);
+
+/**
+ * Checks whether the process <pid> is in the group <gid>.
+ *
+ * @param pid the process-id
+ * @param gid the group-id
+ * @return 1 if so, 0 if not, negative if an error occurred
+ */
+int isingroup(pid_t pid,gid_t gid);
 
 /**
  * Clones the current process

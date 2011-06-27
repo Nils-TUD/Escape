@@ -36,12 +36,23 @@
 #include "path.h"
 #include "file.h"
 #include "link.h"
+#include "inode.h"
 #include "dir.h"
 #include "rw.h"
 
-/**
- * Checks whether x is a power of y
- */
+static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt);
+static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags);
+static void ext2_close(void *h,inode_t ino);
+static int ext2_stat(void *h,inode_t ino,sFileInfo *info);
+static int ext2_chmod(void *h,sFSUser *u,inode_t inodeNo,mode_t mode);
+static int ext2_chown(void *h,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid);
+static ssize_t ext2_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count);
+static ssize_t ext2_write(void *h,inode_t inodeNo,const void *buffer,off_t offset,size_t count);
+static int ext2_link(void *h,sFSUser *u,inode_t dstIno,inode_t dirIno,const char *name);
+static int ext2_unlink(void *h,sFSUser *u,inode_t dirIno,const char *name);
+static int ext2_mkdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
+static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
+static void ext2_sync(void *h);
 static bool ext2_isPowerOf(uint x,uint y);
 
 void *ext2_init(const char *driver,char **usedDev) {
@@ -142,124 +153,26 @@ sFileSystem *ext2_getFS(void) {
 	fs->unlink = ext2_unlink;
 	fs->mkdir = ext2_mkdir;
 	fs->rmdir = ext2_rmdir;
+	fs->chmod = ext2_chmod;
+	fs->chown = ext2_chown;
 	fs->sync = ext2_sync;
 	return fs;
 }
 
-inode_t ext2_resPath(void *h,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
-	return ext2_path_resolve((sExt2*)h,path,flags,dev,resLastMnt);
-}
-
-inode_t ext2_open(void *h,inode_t ino,uint flags) {
-	sExt2 *e = (sExt2*)h;
-	/* truncate? */
-	if(flags & IO_TRUNCATE) {
-		sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_WRITE);
-		if(cnode != NULL) {
-			ext2_file_truncate(e,cnode,false);
-			ext2_icache_release(cnode);
-		}
+bool ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
+	if(u->uid == ROOT_UID) {
+		/* root has exec-permission if at least one has exec-permission */
+		if(perms & MODE_EXEC)
+			return cnode->inode.mode & MODE_EXEC;
+		/* root can read and write in all cases */
+		return true;
 	}
-	/*ext2_icache_printStats();
-	bcache_printStats();*/
-	return ino;
-}
 
-void ext2_close(void *h,inode_t ino) {
-	UNUSED(h);
-	UNUSED(ino);
-}
-
-int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
-	sExt2 *e = (sExt2*)h;
-	const sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
-	if(cnode == NULL)
-		return ERR_INO_REQ_FAILED;
-
-	info->accesstime = le32tocpu(cnode->inode.accesstime);
-	info->modifytime = le32tocpu(cnode->inode.modifytime);
-	info->createtime = le32tocpu(cnode->inode.createtime);
-	info->blockCount = le32tocpu(cnode->inode.blocks);
-	info->blockSize = EXT2_BLK_SIZE(e);
-	info->device = mount_getDevByHandle(h);
-	info->uid = le16tocpu(cnode->inode.uid);
-	info->gid = le16tocpu(cnode->inode.gid);
-	info->inodeNo = cnode->inodeNo;
-	info->linkCount = le16tocpu(cnode->inode.linkCount);
-	info->mode = le16tocpu(cnode->inode.mode);
-	info->size = le32tocpu(cnode->inode.size);
-	ext2_icache_release(cnode);
-	return 0;
-}
-
-ssize_t ext2_read(void *h,inode_t inodeNo,void *buffer,uint offset,size_t count) {
-	return ext2_file_read((sExt2*)h,inodeNo,buffer,offset,count);
-}
-
-ssize_t ext2_write(void *h,inode_t inodeNo,const void *buffer,uint offset,size_t count) {
-	return ext2_file_write((sExt2*)h,inodeNo,buffer,offset,count);
-}
-
-int ext2_link(void *h,inode_t dstIno,inode_t dirIno,const char *name) {
-	sExt2 *e = (sExt2*)h;
-	int res;
-	sExt2CInode *dir,*ino;
-	dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
-	ino = ext2_icache_request(e,dstIno,IMODE_WRITE);
-	if(dir == NULL || ino == NULL)
-		res = ERR_INO_REQ_FAILED;
-	else if(MODE_IS_DIR(le16tocpu(ino->inode.mode)))
-		res = ERR_IS_DIR;
-	else
-		res = ext2_link_create(e,dir,ino,name);
-	ext2_icache_release(dir);
-	ext2_icache_release(ino);
-	return res;
-}
-
-int ext2_unlink(void *h,inode_t dirIno,const char *name) {
-	sExt2 *e = (sExt2*)h;
-	int res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
-	if(dir == NULL)
-		return ERR_INO_REQ_FAILED;
-
-	res = ext2_link_delete(e,NULL,dir,name,false);
-	ext2_icache_release(dir);
-	return res;
-}
-
-int ext2_mkdir(void *h,inode_t dirIno,const char *name) {
-	sExt2 *e = (sExt2*)h;
-	int res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
-	if(dir == NULL)
-		return ERR_INO_REQ_FAILED;
-	res = ext2_dir_create(e,dir,name);
-	ext2_icache_release(dir);
-	return res;
-}
-
-int ext2_rmdir(void *h,inode_t dirIno,const char *name) {
-	sExt2 *e = (sExt2*)h;
-	int res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
-	if(dir == NULL)
-		return ERR_INO_REQ_FAILED;
-	if(!MODE_IS_DIR(le16tocpu(dir->inode.mode)))
-		return ERR_NO_DIRECTORY;
-	res = ext2_dir_delete(e,dir,name);
-	ext2_icache_release(dir);
-	return res;
-}
-
-void ext2_sync(void *h) {
-	sExt2 *e = (sExt2*)h;
-	ext2_super_update(e);
-	ext2_bg_update(e);
-	/* flush inodes first, because they may create dirty blocks */
-	ext2_icache_flush(e);
-	bcache_flush(&e->blockCache);
+	if(cnode->inode.uid == u->uid)
+		return (cnode->inode.mode & MODE_OWNER_MASK) & perms;
+	if(cnode->inode.gid == u->gid || isingroup(u->pid,cnode->inode.gid) == 1)
+		return (cnode->inode.mode & MODE_GROUP_MASK) & perms;
+	return (cnode->inode.mode & MODE_OTHER_MASK) & perms;
 }
 
 block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo) {
@@ -290,6 +203,141 @@ bool ext2_bgHasBackups(sExt2 *e,block_t i) {
 	return ext2_isPowerOf(i,3) || ext2_isPowerOf(i,5) || ext2_isPowerOf(i,7);
 }
 
+static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,
+		bool resLastMnt) {
+	return ext2_path_resolve((sExt2*)h,u,path,flags,dev,resLastMnt);
+}
+
+static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
+	sExt2 *e = (sExt2*)h;
+	/* check permissions */
+	sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
+	uint mode = 0;
+	if(flags & IO_READ)
+		mode |= MODE_READ;
+	if(flags & IO_WRITE)
+		mode |= MODE_WRITE;
+	/* TODO exec? */
+	if(!ext2_hasPermission(cnode,u,mode))
+		return ERR_NO_PERM;
+	ext2_icache_release(cnode);
+
+	/* truncate? */
+	if(flags & IO_TRUNCATE) {
+		cnode = ext2_icache_request(e,ino,IMODE_WRITE);
+		if(cnode != NULL) {
+			ext2_file_truncate(e,cnode,false);
+			ext2_icache_release(cnode);
+		}
+	}
+	return ino;
+}
+
+static void ext2_close(void *h,inode_t ino) {
+	UNUSED(h);
+	UNUSED(ino);
+}
+
+static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
+	sExt2 *e = (sExt2*)h;
+	const sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
+	if(cnode == NULL)
+		return ERR_INO_REQ_FAILED;
+
+	info->accesstime = le32tocpu(cnode->inode.accesstime);
+	info->modifytime = le32tocpu(cnode->inode.modifytime);
+	info->createtime = le32tocpu(cnode->inode.createtime);
+	info->blockCount = le32tocpu(cnode->inode.blocks);
+	info->blockSize = EXT2_BLK_SIZE(e);
+	info->device = mount_getDevByHandle(h);
+	info->uid = le16tocpu(cnode->inode.uid);
+	info->gid = le16tocpu(cnode->inode.gid);
+	info->inodeNo = cnode->inodeNo;
+	info->linkCount = le16tocpu(cnode->inode.linkCount);
+	info->mode = le16tocpu(cnode->inode.mode);
+	info->size = le32tocpu(cnode->inode.size);
+	ext2_icache_release(cnode);
+	return 0;
+}
+
+static int ext2_chmod(void *h,sFSUser *u,inode_t inodeNo,mode_t mode) {
+	return ext2_inode_chmod((sExt2*)h,u,inodeNo,mode);
+}
+
+static int ext2_chown(void *h,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
+	return ext2_inode_chown((sExt2*)h,u,inodeNo,uid,gid);
+}
+
+static ssize_t ext2_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+	return ext2_file_read((sExt2*)h,inodeNo,buffer,offset,count);
+}
+
+static ssize_t ext2_write(void *h,inode_t inodeNo,const void *buffer,off_t offset,size_t count) {
+	return ext2_file_write((sExt2*)h,inodeNo,buffer,offset,count);
+}
+
+static int ext2_link(void *h,sFSUser *u,inode_t dstIno,inode_t dirIno,const char *name) {
+	sExt2 *e = (sExt2*)h;
+	int res;
+	sExt2CInode *dir,*ino;
+	dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
+	ino = ext2_icache_request(e,dstIno,IMODE_WRITE);
+	if(dir == NULL || ino == NULL)
+		res = ERR_INO_REQ_FAILED;
+	else if(MODE_IS_DIR(le16tocpu(ino->inode.mode)))
+		res = ERR_IS_DIR;
+	else
+		res = ext2_link_create(e,u,dir,ino,name);
+	ext2_icache_release(dir);
+	ext2_icache_release(ino);
+	return res;
+}
+
+static int ext2_unlink(void *h,sFSUser *u,inode_t dirIno,const char *name) {
+	sExt2 *e = (sExt2*)h;
+	int res;
+	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
+	if(dir == NULL)
+		return ERR_INO_REQ_FAILED;
+
+	res = ext2_link_delete(e,u,NULL,dir,name,false);
+	ext2_icache_release(dir);
+	return res;
+}
+
+static int ext2_mkdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
+	sExt2 *e = (sExt2*)h;
+	int res;
+	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
+	if(dir == NULL)
+		return ERR_INO_REQ_FAILED;
+	res = ext2_dir_create(e,u,dir,name);
+	ext2_icache_release(dir);
+	return res;
+}
+
+static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
+	sExt2 *e = (sExt2*)h;
+	int res;
+	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
+	if(dir == NULL)
+		return ERR_INO_REQ_FAILED;
+	if(!MODE_IS_DIR(le16tocpu(dir->inode.mode)))
+		return ERR_NO_DIRECTORY;
+	res = ext2_dir_delete(e,u,dir,name);
+	ext2_icache_release(dir);
+	return res;
+}
+
+static void ext2_sync(void *h) {
+	sExt2 *e = (sExt2*)h;
+	ext2_super_update(e);
+	ext2_bg_update(e);
+	/* flush inodes first, because they may create dirty blocks */
+	ext2_icache_flush(e);
+	bcache_flush(&e->blockCache);
+}
+
 static bool ext2_isPowerOf(uint x,uint y) {
 	while(x > 1) {
 		if(x % y != 0)
@@ -301,7 +349,7 @@ static bool ext2_isPowerOf(uint x,uint y) {
 
 #if DEBUGGING
 
-void ext2_bg_prints(sExt2 *e) {
+void ext2_printBlockGroups(sExt2 *e) {
 	size_t i,count = ext2_getBlockGroupCount(e);
 	printf("Blockgroups:\n");
 	for(i = 0; i < count; i++) {

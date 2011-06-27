@@ -1,4 +1,4 @@
-DIRS = c g m cpp gui shell vbe vterm
+DIRS = c g m cpp gui shell vbe vterm usergroup
 
 .PHONY:  all clean
 

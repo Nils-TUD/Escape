@@ -27,12 +27,36 @@
  * Creates a new inode for the given directory
  *
  * @param e the ext2-handle
+ * @param u the user
  * @param dirNode the directory-inode
  * @param ino will be set to the inode on success
  * @param isDir whether it should be an directory
  * @return 0 on success
  */
-int ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir);
+int ext2_inode_create(sExt2 *e,sFSUser *u,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir);
+
+/**
+ * Sets the mode of the given inode to <mode>
+ *
+ * @param e the ext2-handle
+ * @param u the user
+ * @param inodeNo the inode-number
+ * @param mode the new mode
+ * @return 0 on success
+ */
+int ext2_inode_chmod(sExt2 *e,sFSUser *u,inode_t inodeNo,mode_t mode);
+
+/**
+ * Sets the user and group of the given inode to <uid> and <gid>
+ *
+ * @param e the ext2-handle
+ * @param u the user
+ * @param inodeNo the inode-number
+ * @param uid the new user-id (-1 = don't change)
+ * @param gid the new group-id (-1 = don't change)
+ * @return 0 on success
+ */
+int ext2_inode_chown(sExt2 *e,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid);
 
 /**
  * Destroys the given inode. That means the inode will be marked as free in the bitmap,

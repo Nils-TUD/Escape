@@ -138,8 +138,11 @@ int shell_readLine(char *buffer,size_t max) {
 			continue;
 		}
 		/* stop if we were unable to read from stdin */
-		if((c = fgetc(stdin)) == EOF)
+		if((c = fgetc(stdin)) == EOF) {
+			if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0) < 0)
+				error("Unable to reenable readline");
 			return ferror(stdin);
+		}
 		if(c != '\033')
 			continue;
 		cmd = freadesc(stdin,&n1,&n2,&n3);

@@ -96,6 +96,7 @@ static const char *msgs[] = {
 	/* -71 (ERR_ENVVAR_NOT_FOUND) */		"Environment-variable not found",
 	/* -72 (ERR_NO_FREE_THREADS) */			"No free thread-slots",
 	/* -73 (ERR_WOULD_BLOCK) */				"Thread would block",
+	/* -74 (ERR_NO_PERM) */					"No permission",
 };
 
 char *strerror(int errnum) {

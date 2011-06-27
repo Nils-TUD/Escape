@@ -92,6 +92,7 @@
 #define ERR_ENVVAR_NOT_FOUND		-71
 #define ERR_NO_FREE_THREADS			-72
 #define ERR_WOULD_BLOCK				-73
+#define ERR_NO_PERM					-74
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

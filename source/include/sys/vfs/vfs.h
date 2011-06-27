@@ -202,6 +202,27 @@ off_t vfs_tell(pid_t pid,file_t file);
 int vfs_stat(pid_t pid,const char *path,sFileInfo *info);
 
 /**
+ * Sets the permissions of the file denoted by <path> to <mode>.
+ *
+ * @param pid the process-id
+ * @param path the path
+ * @param mode the new mode
+ * @return 0 on success
+ */
+int vfs_chmod(pid_t pid,const char *path,mode_t mode);
+
+/**
+ * Sets the owner and group of the file denoted by <path>
+ *
+ * @param pid the process-id
+ * @param path the path
+ * @param uid the new user-id
+ * @param gid the new group-id
+ * @return 0 on success
+ */
+int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid);
+
+/**
  * Retrieves information about the given file
  *
  * @param pid the process-id

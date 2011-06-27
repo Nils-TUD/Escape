@@ -30,12 +30,12 @@
 #include "link.h"
 #include "inodecache.h"
 
-int ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
+int ext2_dir_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
 	sExt2CInode *cnode;
 	inode_t ino;
 
 	/* first create an inode and an entry in the directory */
-	int res = ext2_file_create(e,dir,name,&ino,true);
+	int res = ext2_file_create(e,u,dir,name,&ino,true);
 	if(res < 0)
 		return res;
 
@@ -44,13 +44,13 @@ int ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
 	vassert(cnode != NULL,"Unable to load inode %d\n",ino);
 
 	/* create '.' and '..' */
-	if((res = ext2_link_create(e,cnode,cnode,".")) < 0) {
+	if((res = ext2_link_create(e,u,cnode,cnode,".")) < 0) {
 		ext2_file_delete(e,cnode);
 		ext2_icache_release(cnode);
 		return res;
 	}
-	if((res = ext2_link_create(e,cnode,dir,"..")) < 0) {
-		ext2_link_delete(e,dir,cnode,".",true);
+	if((res = ext2_link_create(e,u,cnode,dir,"..")) < 0) {
+		ext2_link_delete(e,u,dir,cnode,".",true);
 		ext2_file_delete(e,cnode);
 		ext2_icache_release(cnode);
 		return res;
@@ -100,12 +100,16 @@ inode_t ext2_dir_findIn(sExt2DirEntry *buffer,size_t bufSize,const char *name,si
 	return ERR_PATH_NOT_FOUND;
 }
 
-int ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
+int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
 	inode_t ino;
 	size_t size = le32tocpu(dir->inode.size);
 	int res;
 	sExt2CInode *delIno;
 	sExt2DirEntry *entry,*buffer;
+
+	/* we need write-permission to delete */
+	if(!ext2_hasPermission(dir,u,MODE_WRITE))
+		return ERR_NO_PERM;
 
 	/* find the entry in the given directory */
 	ino = ext2_dir_find(e,dir,name,strlen(name));
@@ -145,13 +149,13 @@ int ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	buffer = NULL;
 
 	/* ok, directory is empty, so remove '.' and '..' */
-	if((res = ext2_link_delete(e,dir,delIno,".",true)) < 0 ||
-			(res = ext2_link_delete(e,dir,delIno,"..",true)) < 0)
+	if((res = ext2_link_delete(e,u,dir,delIno,".",true)) < 0 ||
+			(res = ext2_link_delete(e,u,dir,delIno,"..",true)) < 0)
 		goto error;
 	/* first release the del-inode, since ext2_link_delete will request it again */
 	ext2_icache_release(delIno);
 	/* now remove directory from parent, which will delete it because of no more references */
-	res = ext2_link_delete(e,NULL,dir,name,true);
+	res = ext2_link_delete(e,u,NULL,dir,name,true);
 	free(buffer);
 	return res;
 

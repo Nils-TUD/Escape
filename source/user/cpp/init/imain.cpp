@@ -29,7 +29,12 @@
 
 #define PRINT_DRIVERS	0
 
+static void createLogin(int vterm);
+
+static int loginShells[VTERM_COUNT];
+
 int main(void) {
+	sExitState state;
 	if(getpid() != 0)
 		error("It's not good to start init twice ;)");
 
@@ -83,23 +88,33 @@ int main(void) {
 	close(STDIN_FILENO);
 
 	// now load the shells
-	for(int i = 0; i < VTERM_COUNT; i++) {
-		ostringstream vtermName;
-		vtermName << "vterm" << i;
-		string name = vtermName.str();
-		int child = fork();
-		if(child == 0) {
-			const char *args[] = {"/bin/shell",NULL,NULL};
-			args[1] = name.c_str();
-			exec(args[0],args);
-			error("Exec of '%s' failed",args[0]);
-		}
-		else if(child < 0)
-			error("Fork of '%s %s' failed","/bin/shell",name.c_str());
-	}
+	for(int i = 0; i < VTERM_COUNT; i++)
+		createLogin(i);
 
 	/* loop and wait forever */
-	while(1)
-		waitChild(NULL);
+	while(1) {
+		waitChild(&state);
+
+		/* restart the child */
+		for(int i = 0; i < VTERM_COUNT; i++) {
+			if(loginShells[i] == state.pid) {
+				createLogin(i);
+				break;
+			}
+		}
+	}
 	return EXIT_SUCCESS;
+}
+
+static void createLogin(int vterm) {
+	ostringstream vtermName;
+	vtermName << "vterm" << vterm;
+	string name = vtermName.str();
+	loginShells[vterm] = fork();
+	if(loginShells[vterm] == 0) {
+		const char *args[] = {"/bin/login",NULL,NULL};
+		args[1] = name.c_str();
+		exec(args[0],args);
+		error("Exec of '%s' failed",args[0]);
+	}
 }

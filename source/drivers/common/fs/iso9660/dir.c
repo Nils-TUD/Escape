@@ -89,7 +89,8 @@ inode_t iso_dir_resolve(sISO9660 *h,const char *path,uint flags,dev_t *dev,bool 
 					sFSInst *inst = mount_get(mntDev);
 					*dev = mntDev;
 					bcache_release(blk);
-					return inst->fs->resPath(inst->handle,p,flags,dev,resLastMnt);
+					/* TODO */
+					return inst->fs->resPath(inst->handle,NULL,p,flags,dev,resLastMnt);
 				}
 				if(!*p)
 					break;

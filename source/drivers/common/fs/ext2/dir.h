@@ -27,11 +27,12 @@
  * Creates a directory with given name in given directory
  *
  * @param e the ext2-data
+ * @param u the user
  * @param dir the directory
  * @param name the name of the new directory
  * @return 0 on success
  */
-int ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name);
+int ext2_dir_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name);
 
 /**
  * Finds the inode-number to the entry <name> in <dir>
@@ -60,10 +61,11 @@ inode_t ext2_dir_findIn(sExt2DirEntry *buffer,size_t bufSize,const char *name,si
  * the directory is empty!
  *
  * @param e the ext2-data
+ * @param u the user
  * @param dir the directory
  * @param name the name of the directory to remove
  * @return 0 on success
  */
-int ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name);
+int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name);
 
 #endif /* EXT2_DIR_H_ */

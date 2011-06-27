@@ -91,10 +91,9 @@ buildMenuLst() {
 
 addBootData() {
 	if [ "$ARCH" = "i586" ]; then
-		$SUDO mkdir $DISKMOUNT/boot
-		$SUDO mkdir $DISKMOUNT/boot/grub
-		$SUDO cp dist/arch/$ARCH/boot/stage1 $DISKMOUNT/boot/grub;
-		$SUDO cp dist/arch/$ARCH/boot/stage2 $DISKMOUNT/boot/grub;
+		$SUDO mkdir -p $DISKMOUNT/boot/grub 2>/dev/null
+		$SUDO cp $ROOT/dist/arch/$ARCH/boot/stage1 $DISKMOUNT/boot/grub;
+		$SUDO cp $ROOT/dist/arch/$ARCH/boot/stage2 $DISKMOUNT/boot/grub;
 		$SUDO touch $DISKMOUNT/boot/grub/menu.lst;
 		$SUDO chmod 0666 $DISKMOUNT/boot/grub/menu.lst;
 		buildMenuLst;
@@ -106,37 +105,52 @@ addBootData() {
 }
 
 addTestData() {
-	$SUDO mkdir $DISKMOUNT/apps
-	$SUDO mkdir $DISKMOUNT/bin
-	$SUDO mkdir $DISKMOUNT/sbin
-	$SUDO mkdir $DISKMOUNT/lib
-	$SUDO mkdir $DISKMOUNT/etc
-	$SUDO mkdir $DISKMOUNT/etc/keymaps
-	$SUDO mkdir $DISKMOUNT/testdir
-	$SUDO mkdir $DISKMOUNT/scripts
-	$SUDO cp -R $ROOT/kernel/src $DISKMOUNT
-	$SUDO cp $ROOT/dist/arch/$ARCH/boot/* $DISKMOUNT/boot/grub
-	$SUDO cp $ROOT/dist/etc/* $DISKMOUNT/etc
-	$SUDO cp $ROOT/dist/arch/$ARCH/etc/* $DISKMOUNT/etc
-	$SUDO cp $ROOT/dist/etc/keymaps/* $DISKMOUNT/etc/keymaps
-	$SUDO cp $ROOT/dist/scripts/* $DISKMOUNT/scripts
-	$SUDO cp $ROOT/dist/testdir/* $DISKMOUNT/testdir
-	$SUDO touch $DISKMOUNT/etc/keymap
-	$SUDO chmod 0666 $DISKMOUNT/etc/keymap
-	echo "/etc/keymaps/ger" > $DISKMOUNT/etc/keymap
-	$SUDO touch $DISKMOUNT/file.txt
-	$SUDO chmod 0666 $DISKMOUNT/file.txt
-	echo "This is a test-string!!!" > $DISKMOUNT/file.txt
-	$SUDO dd if=/dev/zero of=$DISKMOUNT/zeros bs=1024 count=1024
-	$SUDO touch $DISKMOUNT/bigfile
-	$SUDO chmod 0666 $DISKMOUNT/bigfile
-	echo -n "" > $DISKMOUNT/bigfile
-	i=0
-	while [ $i != 200 ]; do
-		printf 'Thats the %d test\n' $i >> $DISKMOUNT/bigfile;
-		i=`expr $i + 1`;
-	done;
-	$SUDO cp kernel/src/mem/paging.c $DISKMOUNT/paging.c
+	$ROOT/tools/fs.sh $DISKMOUNT
+}
+
+setPerms() {
+	SUPER=0
+	HRNIELS=1
+	JONDOE=2
+	SHARED=3
+	# /boot
+	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/boot
+	$SUDO chmod -R 0600 $DISKMOUNT/boot
+	$SUDO find $DISKMOUNT/boot -type d | $SUDO xargs chmod 0755
+	# /bin
+	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/bin
+	$SUDO chmod -R 0755 $DISKMOUNT/bin
+	# /sbin
+	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/sbin
+	$SUDO chmod 0755 $DISKMOUNT/sbin
+	$SUDO chmod 0744 $DISKMOUNT/sbin/*
+	# /lib
+	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/lib
+	$SUDO chmod 0755 $DISKMOUNT/lib
+	$SUDO chmod 0644 $DISKMOUNT/lib/*
+	# /etc
+	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/etc
+	$SUDO chmod -R 0644 $DISKMOUNT/etc
+	$SUDO chmod 0755 $DISKMOUNT/etc
+	$SUDO chmod 0755 $DISKMOUNT/etc/keymaps
+	$SUDO chmod 0600 $DISKMOUNT/etc/users
+	# /src
+	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/src
+	$SUDO find $DISKMOUNT/src -type d | $SUDO xargs chmod 0755
+	$SUDO find $DISKMOUNT/src -type f | $SUDO xargs chmod 0644
+	# /root
+	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/root
+	$SUDO chmod -R 0600 $DISKMOUNT/root
+	# /home/hrniels
+	$SUDO chown -R $HRNIELS:$HRNIELS $DISKMOUNT/home/hrniels
+	$SUDO chmod -R 0600 $DISKMOUNT/home/hrniels
+	$SUDO find $DISKMOUNT/home/hrniels -type d | $SUDO xargs chmod +rx
+	$SUDO chown -R $HRNIELS:$SHARED $DISKMOUNT/home/hrniels/scripts
+	$SUDO chmod -R 0750 $DISKMOUNT/home/hrniels/scripts
+	# /home/jon
+	$SUDO chown -R $JONDOE:$JONDOE $DISKMOUNT/home/jon
+	$SUDO chmod -R 0600 $DISKMOUNT/home/jon
+	$SUDO find $DISKMOUNT/home/jon -type d | $SUDO xargs chmod +rx
 }
 
 mkDiskDev() {
@@ -155,6 +169,7 @@ mountDisk() {
 }
 
 unmountDisk() {
+	addBootData
 	i=0
 	$SUDO umount -d -f /dev/loop0 > /dev/null 2>&1
 	while [ $? != 0 ]; \
@@ -222,6 +237,7 @@ if [ "$1" == "build" ]; then
 	mountDisk $PART1OFFSET
 	addBootData
 	addTestData
+	setPerms
 	unmountDisk
 	
 	# ensure that we'll copy all stuff to the disk with 'make all'
@@ -234,6 +250,7 @@ fi
 if [ "$1" == "update" ]; then
 	mountDisk $PART1OFFSET
 	addTestData
+	setPerms
 	unmountDisk
 fi
 

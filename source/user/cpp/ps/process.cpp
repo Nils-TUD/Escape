@@ -41,6 +41,8 @@ std::istream& operator >>(std::istream& is,process& p) {
 	std::istream::size_type unlimited = std::numeric_limits<streamsize>::max();
 	is.ignore(unlimited,' ') >> p._pid;
 	is.ignore(unlimited,' ') >> p._ppid;
+	is.ignore(unlimited,' ') >> p._uid;
+	is.ignore(unlimited,' ') >> p._gid;
 	is.ignore(unlimited,' ') >> p._cmd;
 	is.ignore(unlimited,' ') >> p._pages;
 	is.ignore(unlimited,' ') >> p._ownFrames;

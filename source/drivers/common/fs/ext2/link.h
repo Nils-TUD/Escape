@@ -28,23 +28,26 @@
  * for the given inode.
  *
  * @param e the ext2-data
+ * @param u the user
  * @param dir the directory (requested for writing!)
  * @param cnode the cached inode
  * @param name the name
  * @return 0 on success
  */
-int ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *name);
+int ext2_link_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,sExt2CInode *cnode,const char *name);
 
 /**
  * Removes the given name from the given directory
  *
  * @param e the ext2-data
+ * @param u the user
  * @param pdir if available, the parent-directory (requested for writing!)
  * @param dir the directory (requested for writing!)
  * @param name the entry-name
  * @param delDir whether the entry may be an directory
  * @return 0 on success
  */
-int ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *name,bool delDir);
+int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,const char *name,
+		bool delDir);
 
 #endif /* LINK_H_ */

@@ -28,8 +28,6 @@
 #include <shell/shell.h>
 #include <shell/history.h>
 
-#define MAX_VTERM_NAME_LEN	10
-
 static void usage(char *name) {
 	fprintf(stderr,"Usage: \n");
 	fprintf(stderr,"	Interactive:		%s <vterm>\n",name);
@@ -38,11 +36,8 @@ static void usage(char *name) {
 }
 
 int main(int argc,char **argv) {
-	int fd;
 	long pid;
-	int vterm;
 	char *buffer;
-	char drvPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
 
 	/* we need either the vterm as argument or "-e <cmd>" */
 	if((argc != 2 && argc != 3) || isHelpCmd(argc,argv)) {
@@ -66,33 +61,13 @@ int main(int argc,char **argv) {
 
 	/* interactive mode */
 
-	/* open stdin */
-	strcat(drvPath,argv[1]);
-	/* parse vterm-number from "vtermX" */
-	vterm = atoi(argv[1] + 5);
-	if(open(drvPath,IO_READ) < 0)
-		error("Unable to open '%s' for STDIN",drvPath);
-
-	/* open stdout */
-	if((fd = open(drvPath,IO_WRITE)) < 0)
-		error("Unable to open '%s' for STDOUT",drvPath);
-
-	/* dup stdout to stderr */
-	if(dupFd(fd) < 0)
-		error("Unable to duplicate STDOUT to STDERR");
-
 	/* give vterm our pid */
 	pid = getpid();
-	if(sendRecvMsgData(fd,MSG_VT_SHELLPID,&pid,sizeof(long)) < 0)
+	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_SHELLPID,&pid,sizeof(long)) < 0)
 		error("Unable to send pid to vterm");
 
 	/* set vterm as env-variable */
 	setenv("TERM",argv[1]);
-
-	printf("\033[co;9]Welcome to Escape v0.3!\033[co]\n");
-	printf("\n");
-	printf("Try 'help' to see the current features :)\n");
-	printf("\n");
 
 	while(1) {
 		/* create buffer (history will free it) */

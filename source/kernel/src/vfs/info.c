@@ -169,6 +169,8 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 		&buf,
 		"%-16s%u\n"
 		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%u\n"
 		"%-16s%s\n"
 		"%-16s%zu\n"
 		"%-16s%lu\n"
@@ -179,6 +181,8 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
+		"Uid:",p->euid,
+		"Gid:",p->egid,
 		"Command:",p->command,
 		"Pages:",pages,
 		"OwnFrames:",p->ownFrames,

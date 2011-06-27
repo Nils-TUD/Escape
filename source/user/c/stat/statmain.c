@@ -70,17 +70,17 @@ static void stat_printDate(const char *title,time_t timestamp) {
 }
 
 static const char *stat_getType(sFileInfo *info) {
-	if(MODE_IS_DIR(info->mode))
+	if(S_ISDIR(info->mode))
 		return "Directory";
-	if(MODE_IS_BLOCKDEV(info->mode))
+	if(S_ISBLK(info->mode))
 		return "Block-Device";
-	if(MODE_IS_CHARDEV(info->mode))
+	if(S_ISCHR(info->mode))
 		return "Character-Device";
-	if(MODE_IS_FIFO(info->mode))
+	if(S_ISFIFO(info->mode))
 		return "FIFO";
-	if(MODE_IS_LINK(info->mode))
+	if(S_ISLNK(info->mode))
 		return "Link";
-	if(MODE_IS_SOCKET(info->mode))
+	if(S_ISSOCK(info->mode))
 		return "Socket";
 	return "Regular File";
 }

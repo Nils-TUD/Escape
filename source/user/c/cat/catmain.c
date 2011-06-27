@@ -48,7 +48,7 @@ int main(int argc,char *argv[]) {
 				printe("Unable to get info about '%s'",argv[i]);
 				continue;
 			}
-			if(MODE_IS_DIR(info.mode)) {
+			if(S_ISDIR(info.mode)) {
 				printe("'%s' is a directory!",argv[i]);
 				continue;
 			}

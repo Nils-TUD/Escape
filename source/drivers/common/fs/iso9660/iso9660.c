@@ -204,9 +204,9 @@ int iso_stat(void *h,inode_t ino,sFileInfo *info) {
 	info->linkCount = 1;
 	/* readonly here */
 	if(e->entry.flags & ISO_FILEFL_DIR)
-		info->mode = MODE_TYPE_DIR | 0555;
+		info->mode = S_IFDIR | 0555;
 	else
-		info->mode = MODE_TYPE_FILE | 0555;
+		info->mode = S_IFREG | 0555;
 	info->size = e->entry.extentSize.littleEndian;
 	return 0;
 }

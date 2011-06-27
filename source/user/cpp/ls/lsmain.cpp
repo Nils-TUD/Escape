@@ -194,7 +194,7 @@ int main(int argc,char *argv[]) {
 			}
 			if(f->is_dir())
 				cout << "\033[co;9]" << f->name() << "\033[co]";
-			else if(f->mode() & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
+			else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
 				cout << "\033[co;2]" << f->name() << "\033[co]";
 			else
 				cout << f->name();
@@ -210,7 +210,7 @@ int main(int argc,char *argv[]) {
 				cout << setw(widths[W_INODE]) << f->inode() << ' ';
 			if(f->is_dir())
 				cout << "\033[co;9]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
-			else if(f->mode() & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
+			else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
 				cout << "\033[co;2]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
 			else
 				cout << setw(widths[W_NAME] + 1) << left << f->name();
@@ -277,16 +277,16 @@ static file::size_type getDirSize(const file& d) {
 }
 
 static void printMode(file::mode_type mode) {
-	printPerm(MODE_IS_DIR(mode),1,'d');
-	printPerm(mode,MODE_OWNER_READ,'r');
-	printPerm(mode,MODE_OWNER_WRITE,'w');
-	printPerm(mode,MODE_OWNER_EXEC,'x');
-	printPerm(mode,MODE_GROUP_READ,'r');
-	printPerm(mode,MODE_GROUP_WRITE,'w');
-	printPerm(mode,MODE_GROUP_EXEC,'x');
-	printPerm(mode,MODE_OTHER_READ,'r');
-	printPerm(mode,MODE_OTHER_WRITE,'w');
-	printPerm(mode,MODE_OTHER_EXEC,'x');
+	printPerm(S_ISDIR(mode),1,'d');
+	printPerm(mode,S_IRUSR,'r');
+	printPerm(mode,S_IWUSR,'w');
+	printPerm(mode,S_IXUSR,'x');
+	printPerm(mode,S_IRGRP,'r');
+	printPerm(mode,S_IWGRP,'w');
+	printPerm(mode,S_IXGRP,'x');
+	printPerm(mode,S_IROTH,'r');
+	printPerm(mode,S_IWOTH,'w');
+	printPerm(mode,S_IXOTH,'x');
 	cout << ' ';
 }
 

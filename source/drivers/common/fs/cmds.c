@@ -402,7 +402,7 @@ static void cmds_mount(int fd,sMsg *msg) {
 			int res = inst->fs->stat(inst->handle,ino,&info);
 			if(res < 0)
 				msg->args.arg1 = res;
-			else if(!MODE_IS_DIR(info.mode))
+			else if(!S_ISDIR(info.mode))
 				msg->args.arg1 = ERR_NO_DIRECTORY;
 			else {
 				int pnt = mount_addMnt(devNo,ino,device,type);

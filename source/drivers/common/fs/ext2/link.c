@@ -147,7 +147,7 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 					return ERR_INO_REQ_FAILED;
 				}
 			}
-			if(!delDir && MODE_IS_DIR(le16tocpu(cnode->inode.mode))) {
+			if(!delDir && S_ISDIR(le16tocpu(cnode->inode.mode))) {
 				if(cnode != pdir && cnode != dir)
 					ext2_icache_release(cnode);
 				free(buf);

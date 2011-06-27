@@ -142,7 +142,7 @@ int ext2_inode_chown(sExt2 *e,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
 int ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
 	int res;
 	/* free inode, clear it and ensure that it get's written back to disk */
-	if((res = ext2_bm_freeInode(e,cnode->inodeNo,MODE_IS_DIR(le16tocpu(cnode->inode.mode)))) < 0)
+	if((res = ext2_bm_freeInode(e,cnode->inodeNo,S_ISDIR(le16tocpu(cnode->inode.mode)))) < 0)
 		return res;
 	/* just set the delete-time and reset link-count. the block-numbers in the inode
 	 * are still present, so that it may be possible to restore the file, if the blocks

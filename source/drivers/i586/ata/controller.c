@@ -26,6 +26,7 @@
 #include <esc/mem.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "ata.h"
 #include "controller.h"
 

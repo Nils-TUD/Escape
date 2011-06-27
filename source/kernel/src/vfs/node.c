@@ -74,7 +74,7 @@ sVFSNode *vfs_node_get(inode_t nodeNo) {
 }
 
 sVFSNode *vfs_node_getFirstChild(const sVFSNode *node) {
-	if(!MODE_IS_LINK((node)->mode))
+	if(!S_ISLNK((node)->mode))
 		return node->firstChild;
 	return vfs_link_resolve(node)->firstChild;
 }
@@ -281,7 +281,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 			return ERR_REAL_PATH;
 
 		/* should we create a default-file? */
-		if((flags & VFS_CREATE) && (dir->mode & MODE_TYPE_DIR)) {
+		if((flags & VFS_CREATE) && (dir->mode & S_IFDIR)) {
 			size_t nameLen;
 			sVFSNode *child;
 			char *nameCpy;
@@ -319,7 +319,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 	}
 
 	/* resolve link */
-	if(!(flags & VFS_NOLINKRES) && MODE_IS_LINK(n->mode))
+	if(!(flags & VFS_NOLINKRES) && S_ISLNK(n->mode))
 		n = vfs_link_resolve(n);
 
 	/* virtual node */

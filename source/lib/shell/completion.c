@@ -45,11 +45,11 @@ static sShellCmd **compl_incrArray(sShellCmd **array,size_t pos,size_t *size);
 
 /* our commands */
 static sShellCmd commands[] = {
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"echo"		}, shell_cmdEcho	,-1},
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"env"		}, shell_cmdEnv		,-1},
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"pwd"		}, shell_cmdPwd		,-1},
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"cd"		}, shell_cmdCd		,-1},
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC), {"include"	}, shell_cmdInclude	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),	{"echo"		}, shell_cmdEcho	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),	{"env"		}, shell_cmdEnv		,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),	{"pwd"		}, shell_cmdPwd		,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),	{"cd"		}, shell_cmdCd		,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), {"include"	}, shell_cmdInclude	,-1},
 };
 
 sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,bool searchPath) {
@@ -94,7 +94,7 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 			const char *vname = (const char*)n->data;
 			cmd = (sShellCmd*)malloc(sizeof(sShellCmd));
 			cmd->func = NULL;
-			cmd->mode = MODE_TYPE_FILE | MODE_OTHER_EXEC;
+			cmd->mode = S_IFREG | S_IXOTH;
 			strcpy(cmd->name,vname);
 			cmd->type = cmd->name[0] == '$' ? TYPE_VARIABLE : TYPE_FUNCTION;
 			cmd->complStart = -1;

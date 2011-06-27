@@ -23,6 +23,7 @@
 #include <esc/messages.h>
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 #include "list.h"
 
 static sMsg msg;

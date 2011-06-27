@@ -44,7 +44,7 @@ int shell_cmdCd(int argc,char **argv) {
 	}
 
 	/* check if it is a directory */
-	if(!MODE_IS_DIR(info.mode)) {
+	if(!S_ISDIR(info.mode)) {
 		fprintf(stderr,"%s is no directory\n",path);
 		return EXIT_FAILURE;
 	}

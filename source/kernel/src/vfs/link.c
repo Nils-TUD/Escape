@@ -32,7 +32,7 @@ sVFSNode *vfs_link_create(pid_t pid,sVFSNode *parent,char *name,const sVFSNode *
 	child->seek = NULL;
 	child->destroy = NULL;
 	child->close = NULL;
-	child->mode = MODE_TYPE_LINK | (target->mode & MODE_PERM);
+	child->mode = S_IFLNK | (target->mode & MODE_PERM);
 	child->data = (void*)target;
 	return child;
 }

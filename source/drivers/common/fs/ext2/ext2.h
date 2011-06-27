@@ -375,8 +375,8 @@ sFileSystem *ext2_getFS(void);
 
 /**
  * Checks whether the given user has the permission <perms> for <cnode>. <perms> should
- * contain the bits from each entity, i.e. for example MODE_OWNER_READ | MODE_GROUP_READ |
- * MODE_OTHER_READ when reading should be performed.
+ * contain the bits from each entity, i.e. for example S_IRUSR | S_IRGRP |
+ * S_IROTH when reading should be performed.
  *
  * @param cnode the cached inode
  * @param u the user

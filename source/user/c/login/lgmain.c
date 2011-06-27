@@ -120,6 +120,7 @@ int main(int argc,char **argv) {
 		setenv("CWD",u->home);
 	else
 		setenv("CWD","/");
+	setenv("USER",u->name);
 
 	/* exchange with shell */
 	shargs[0] = argv[0];

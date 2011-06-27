@@ -169,10 +169,10 @@ bool ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
 	}
 
 	if(cnode->inode.uid == u->uid)
-		return (cnode->inode.mode & MODE_OWNER_MASK) & perms;
+		return (cnode->inode.mode & S_IRWXU) & perms;
 	if(cnode->inode.gid == u->gid || isingroup(u->pid,cnode->inode.gid) == 1)
-		return (cnode->inode.mode & MODE_GROUP_MASK) & perms;
-	return (cnode->inode.mode & MODE_OTHER_MASK) & perms;
+		return (cnode->inode.mode & S_IRWXG) & perms;
+	return (cnode->inode.mode & S_IRWXO) & perms;
 }
 
 block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo) {
@@ -284,7 +284,7 @@ static int ext2_link(void *h,sFSUser *u,inode_t dstIno,inode_t dirIno,const char
 	ino = ext2_icache_request(e,dstIno,IMODE_WRITE);
 	if(dir == NULL || ino == NULL)
 		res = ERR_INO_REQ_FAILED;
-	else if(MODE_IS_DIR(le16tocpu(ino->inode.mode)))
+	else if(S_ISDIR(le16tocpu(ino->inode.mode)))
 		res = ERR_IS_DIR;
 	else
 		res = ext2_link_create(e,u,dir,ino,name);
@@ -322,7 +322,7 @@ static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return ERR_INO_REQ_FAILED;
-	if(!MODE_IS_DIR(le16tocpu(dir->inode.mode)))
+	if(!S_ISDIR(le16tocpu(dir->inode.mode)))
 		return ERR_NO_DIRECTORY;
 	res = ext2_dir_delete(e,u,dir,name);
 	ext2_icache_release(dir);

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <usergroup/user.h>
 #include <esc/dir.h>
 #include <esc/proc.h>
 #include <esc/io.h>
@@ -38,6 +39,8 @@
 #include "completion.h"
 #include "parser.h"
 #include "exec/running.h"
+
+#define USERS_FILE		"/etc/users"
 
 static void shell_sigIntrpt(int sig);
 static size_t shell_toNextWord(char *buffer,size_t icharcount,size_t *icursorPos);
@@ -64,12 +67,19 @@ void shell_init(int argc,const char **argv) {
 }
 
 bool shell_prompt(void) {
+	uid_t uid = getuid();
 	char path[MAX_PATH_LEN + 1];
+	char username[MAX_USERNAME_LEN + 1];
+	if(getenvto(username,sizeof(username),"USER") < 0) {
+		printe("Unable to get USER");
+		return false;
+	}
 	if(getenvto(path,MAX_PATH_LEN + 1,"CWD") < 0) {
 		printe("Unable to get CWD");
 		return false;
 	}
-	printf("\033[co;8]%s\033[co] # ",path);
+	printf("\033[co;10]%s\033[co]:\033[co;8]%s\033[co] %c ",
+			username,path,uid == ROOT_UID ? '#' : '$');
 	return true;
 }
 
@@ -487,7 +497,7 @@ void shell_complete(char *line,size_t *cursorPos,size_t *length) {
 			}
 
 			/* append '/' or ' ' depending on whether its a dir or not */
-			last = MODE_IS_DIR(matches[0]->mode) ? '/' : ' ';
+			last = S_ISDIR(matches[0]->mode) ? '/' : ' ';
 			if(orgLine[ilength - 1] != last) {
 				orgLine[ilength++] = last;
 				putchar(last);
@@ -555,7 +565,7 @@ void shell_complete(char *line,size_t *cursorPos,size_t *length) {
 				printf("\n");
 				cmd = matches;
 				while(*cmd != NULL) {
-					printf("%s%s",(*cmd)->name,MODE_IS_DIR((*cmd)->mode) ? "/ " : " ");
+					printf("%s%s",(*cmd)->name,S_ISDIR((*cmd)->mode) ? "/ " : " ");
 					cmd++;
 				}
 

@@ -28,14 +28,14 @@ bool is_file(const char *path) {
 	sFileInfo info;
 	if(stat(path,&info) < 0)
 		return false;
-	return MODE_IS_FILE(info.mode);
+	return S_ISREG(info.mode);
 }
 
 bool is_dir(const char *path) {
 	sFileInfo info;
 	if(stat(path,&info) < 0)
 		return false;
-	return MODE_IS_DIR(info.mode);
+	return S_ISDIR(info.mode);
 }
 
 ssize_t sendRecvMsgData(int fd,msgid_t id,const void *data,size_t size) {

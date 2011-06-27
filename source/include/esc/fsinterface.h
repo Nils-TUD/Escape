@@ -31,53 +31,50 @@
 #define FS_TYPE_ISO9660		1
 
 /* mode masks */
-#define MODE_TYPE_MASK		0170000
-#define MODE_TYPE_SOCKET	0140000
-#define MODE_TYPE_LINK		0120000
-#define MODE_TYPE_FILE		0100000
-#define MODE_TYPE_BLOCKDEV	0060000
-#define MODE_TYPE_DIR		0040000
-#define MODE_TYPE_CHARDEV	0020000
-#define MODE_TYPE_FIFO		0010000
-#define MODE_SETUID			0004000
-#define MODE_SETGID			0002000
-#define MODE_STICKY			0001000
-#define MODE_OWNER_MASK		0000700
-#define MODE_OWNER_READ		0000400
-#define MODE_OWNER_WRITE	0000200
-#define MODE_OWNER_EXEC		0000100
-#define MODE_GROUP_MASK		0000070
-#define MODE_GROUP_READ		0000040
-#define MODE_GROUP_WRITE	0000020
-#define MODE_GROUP_EXEC		0000010
-#define MODE_OTHER_MASK		0000007
-#define MODE_OTHER_READ		0000004
-#define MODE_OTHER_WRITE	0000002
-#define MODE_OTHER_EXEC		0000001
+#define S_IFMT				0170000
+#define S_IFSOCK			0140000
+#define S_IFLNK				0120000
+#define S_IFREG				0100000
+#define S_IFBLK				0060000
+#define S_IFDIR				0040000
+#define S_IFCHR				0020000
+#define S_IFIFO				0010000
+#define S_ISUID				0004000
+#define S_ISGID				0002000
+#define S_ISSTICKY			0001000
+#define S_IRWXU				0000700
+#define S_IRUSR				0000400
+#define S_IWUSR				0000200
+#define S_IXUSR				0000100
+#define S_IRWXG				0000070
+#define S_IRGRP				0000040
+#define S_IWGRP				0000020
+#define S_IXGRP				0000010
+#define S_IRWXO				0000007
+#define S_IROTH				0000004
+#define S_IWOTH				0000002
+#define S_IXOTH				0000001
+
+#define S_ISDIR(mode) 		(((mode) & S_IFMT) == S_IFDIR)
+#define S_ISREG(mode) 		(((mode) & S_IFMT) == S_IFREG)
+#define S_ISSOCK(mode)		 (((mode) & S_IFMT) == S_IFSOCK)
+#define S_ISLNK(mode)		 (((mode) & S_IFMT) == S_IFLNK)
+#define S_ISCHR(mode) 		(((mode) & S_IFMT) == S_IFCHR)
+#define S_ISBLK(mode)		(((mode) & S_IFMT) == S_IFBLK)
+#define S_ISFIFO(mode)		 (((mode) & S_IFMT) == S_IFIFO)
+
+#define MODE_READ			(S_IRUSR | S_IRGRP | S_IROTH)
+#define MODE_WRITE			(S_IWUSR | S_IWGRP | S_IWOTH)
+#define MODE_EXEC			(S_IXUSR | S_IXGRP | S_IXOTH)
+#define MODE_PERM			(MODE_READ | MODE_WRITE | MODE_EXEC | \
+							S_ISUID | S_ISGID | S_ISSTICKY)
 
 /* default modes for file and folder */
-#define FILE_DEF_MODE		(MODE_TYPE_FILE | \
-								MODE_OWNER_READ | MODE_OWNER_WRITE | \
-								MODE_GROUP_READ | \
-								MODE_OTHER_READ)
-#define DIR_DEF_MODE		(MODE_TYPE_DIR | \
-								MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OWNER_EXEC | \
-								MODE_GROUP_READ | MODE_GROUP_EXEC | \
-								MODE_OTHER_READ | MODE_OTHER_EXEC)
-
-#define MODE_READ			(MODE_OWNER_READ | MODE_GROUP_READ | MODE_OTHER_READ)
-#define MODE_WRITE			(MODE_OWNER_WRITE | MODE_GROUP_WRITE | MODE_OTHER_WRITE)
-#define MODE_EXEC			(MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)
-#define MODE_PERM			(MODE_READ | MODE_WRITE | MODE_EXEC | \
-							MODE_SETUID | MODE_SETGID | MODE_STICKY)
-
-#define MODE_IS_DIR(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_DIR)
-#define MODE_IS_FILE(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_FILE)
-#define MODE_IS_SOCKET(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_SOCKET)
-#define MODE_IS_LINK(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_LINK)
-#define MODE_IS_CHARDEV(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_CHARDEV)
-#define MODE_IS_BLOCKDEV(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_BLOCKDEV)
-#define MODE_IS_FIFO(mode) (((mode) & MODE_TYPE_MASK) == MODE_TYPE_FIFO)
+#define FILE_DEF_MODE		(S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+#define DIR_DEF_MODE		(S_IFDIR | \
+								S_IRUSR | S_IWUSR | S_IXUSR | \
+								S_IRGRP | S_IXGRP | \
+								S_IROTH | S_IXOTH)
 
 typedef struct {
 	/* ID of device containing file */

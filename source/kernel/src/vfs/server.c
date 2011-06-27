@@ -52,8 +52,8 @@ sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 	if(node == NULL)
 		return NULL;
 
-	node->mode = MODE_TYPE_DRIVER | MODE_OWNER_READ | MODE_OWNER_WRITE |
-			MODE_GROUP_READ | MODE_GROUP_WRITE;
+	node->mode = MODE_TYPE_DRIVER | S_IRUSR | S_IWUSR |
+			S_IRGRP | S_IWGRP;
 	node->read = NULL;
 	node->write = NULL;
 	node->seek = NULL;

@@ -119,9 +119,9 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	bindesc.modifytime = finfo.modifytime;
 
 	/* set suid and sgid */
-	if(finfo.mode & MODE_SETUID)
+	if(finfo.mode & S_ISUID)
 		p->suid = finfo.uid;
-	if(finfo.mode & MODE_SETGID)
+	if(finfo.mode & S_ISGID)
 		p->sgid = finfo.gid;
 
 	/* first read the header */

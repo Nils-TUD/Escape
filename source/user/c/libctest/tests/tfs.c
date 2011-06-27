@@ -39,7 +39,7 @@ static void test_fs(void) {
 
 	/* don't try that on readonly-filesystems */
 	stat("/bin",&info1);
-	if(!(info1.mode & MODE_OWNER_WRITE)) {
+	if(!(info1.mode & S_IWUSR)) {
 		test_caseSucceeded();
 		return;
 	}

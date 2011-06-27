@@ -35,6 +35,10 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register driver 'null'");
 
+	/* give all read- and write-permission */
+	if(chmod("/dev/null",S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
+		error("Unable to set permissions for /dev/null");
+
 	/* /dev/null produces no output, so always available to prevent blocking */
 	if(fcntl(id,F_SETDATA,true) < 0)
 		error("fcntl");

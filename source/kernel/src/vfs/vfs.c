@@ -116,11 +116,11 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 
 	/* determine mask */
 	if(p->euid == n->uid)
-		mode = n->mode & MODE_OWNER_MASK;
+		mode = n->mode & S_IRWXU;
 	else if(p->egid == n->gid || groups_contains(p->groups,n->gid))
-		mode = n->mode & MODE_GROUP_MASK;
+		mode = n->mode & S_IRWXG;
 	else
-		mode = n->mode & MODE_OTHER_MASK;
+		mode = n->mode & S_IRWXO;
 
 	/* check access */
 	if((flags & VFS_READ) && !(mode & MODE_READ))
@@ -650,7 +650,7 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 
 	/* links to directories not allowed */
 	target = vfs_node_get(oldIno);
-	if(MODE_IS_DIR(target->mode))
+	if(S_ISDIR(target->mode))
 		return ERR_IS_DIR;
 
 	/* make copy of name */
@@ -687,7 +687,7 @@ int vfs_unlink(pid_t pid,const char *path) {
 		return ERR_PATH_NOT_FOUND;
 	/* TODO check access-rights */
 	n = vfs_node_get(ino);
-	if(!MODE_IS_FILE(n->mode) && !MODE_IS_LINK(n->mode))
+	if(!S_ISREG(n->mode) && !S_ISLNK(n->mode))
 		return ERR_NO_FILE_OR_LINK;
 	vfs_node_destroy(n);
 	return 0;
@@ -759,7 +759,7 @@ int vfs_rmdir(pid_t pid,const char *path) {
 
 	/* TODO check access-rights */
 	node = vfs_node_get(inodeNo);
-	if(!MODE_IS_DIR(node->mode))
+	if(!S_ISDIR(node->mode))
 		return ERR_NO_DIRECTORY;
 	vfs_node_destroy(node);
 	return 0;

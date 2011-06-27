@@ -86,13 +86,13 @@ namespace std {
 		 * @return wether its a file
 		 */
 		bool is_file() const {
-			return MODE_IS_FILE(_info.mode);
+			return S_ISREG(_info.mode);
 		}
 		/**
 		 * @return wether its a directory
 		 */
 		bool is_dir() const {
-			return MODE_IS_DIR(_info.mode);
+			return S_ISDIR(_info.mode);
 		}
 		/**
 		 * @return the size of the file in bytes

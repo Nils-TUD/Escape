@@ -126,7 +126,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 		/* we need exactly one match and it has to be executable */
 		if(shcmd == NULL || shcmd[0] == NULL || shcmd[1] != NULL ||
-				(shcmd[0]->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) == 0) {
+				(shcmd[0]->mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0) {
 			printf("\033[co;4]%s: Command not found\033[co]\n",cmd->exprs[0]);
 			res = -1;
 			goto error;

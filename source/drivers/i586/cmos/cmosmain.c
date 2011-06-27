@@ -26,6 +26,7 @@
 #include <esc/thread.h>
 #include <stdio.h>
 #include <errors.h>
+#include <stdlib.h>
 #include <time.h>
 
 #define IOPORT_CMOS_INDEX	0x70

@@ -63,7 +63,7 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 		return NULL;
 	}
 
-	node->mode = MODE_TYPE_PIPE | MODE_OWNER_READ | MODE_OWNER_WRITE;
+	node->mode = MODE_TYPE_PIPE | S_IRUSR | S_IWUSR;
 	node->read = vfs_pipe_read;
 	node->write = vfs_pipe_write;
 	node->seek = NULL;

@@ -164,7 +164,7 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 						if(stat(apath,&info) < 0)
 							continue;
 						if(!wasNull) {
-							if(MODE_IS_DIR(info.mode)) {
+							if(S_ISDIR(info.mode)) {
 								/* we need the full pattern for recursion */
 								*tok = '/';
 								if(pos)
@@ -193,7 +193,7 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 							else
 								strcpy(dup,e.name);
 							/* append '/' for dirs */
-							if(MODE_IS_DIR(info.mode)) {
+							if(S_ISDIR(info.mode)) {
 								dup[totallen - 1] = '/';
 								dup[totallen] = '\0';
 							}

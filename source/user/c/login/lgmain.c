@@ -33,6 +33,7 @@
 #define USERS_PATH			"/etc/users"
 #define MAX_VTERM_NAME_LEN	10
 
+static gid_t getVtermGroup(const char *vterm);
 static sUser *getUser(const char *user,const char *pw);
 
 static sGroup *groupList;
@@ -44,6 +45,7 @@ int main(int argc,char **argv) {
 	char un[MAX_USERNAME_LEN];
 	char pw[MAX_PW_LEN];
 	sUser *u;
+	gid_t gvt;
 	gid_t *groups;
 	size_t groupCount;
 	size_t count;
@@ -109,9 +111,13 @@ int main(int argc,char **argv) {
 	if(setuid(u->uid) < 0)
 		error("Unable to set uid");
 	/* determine groups and set them */
-	groups = group_collectGroupsFor(groupList,u->uid,&groupCount);
+	groups = group_collectGroupsFor(groupList,u->uid,1,&groupCount);
 	if(!groups)
 		error("Unable to collect group-ids");
+	gvt = getVtermGroup(argv[1]);
+	/* add the process to the corresponding vterm-group */
+	if(gvt != (gid_t)-1)
+		groups[groupCount++] = gvt;
 	if(setgroups(groupCount,groups) < 0)
 		error("Unable to set groups");
 
@@ -131,6 +137,16 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
+static gid_t getVtermGroup(const char *vterm) {
+	sGroup *g = groupList;
+	while(g != NULL) {
+		if(strcmp(g->name,vterm) == 0)
+			return g->gid;
+		g = g->next;
+	}
+	return -1;
+}
+
 static sUser *getUser(const char *name,const char *pw) {
 	sUser *u = userList;
 	while(u != NULL) {
@@ -143,4 +159,3 @@ static sUser *getUser(const char *name,const char *pw) {
 	}
 	return NULL;
 }
-

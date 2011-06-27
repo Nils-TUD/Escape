@@ -64,7 +64,7 @@ sGroup *group_parse(const char *groups,size_t *count) {
 			goto error;
 		/* read the name */
 		i = 0;
-		while(*p && *p != ':' && i < MAX_GROUPNAME_LEN - 1)
+		while(*p && *p != '\n' && *p != ':' && i < MAX_GROUPNAME_LEN - 1)
 			g->name[i++] = *p++;
 		/* empty name is not allowed */
 		if(i == 0)
@@ -101,8 +101,8 @@ error:
 	return NULL;
 }
 
-gid_t *group_collectGroupsFor(const sGroup *g,uid_t uid,size_t *count) {
-	size_t i,size = 8;
+gid_t *group_collectGroupsFor(const sGroup *g,uid_t uid,size_t openSlots,size_t *count) {
+	size_t i,size = MAX(openSlots,8);
 	gid_t *res = (gid_t*)malloc(sizeof(gid_t) * size);
 	if(!res)
 		return NULL;
@@ -110,7 +110,7 @@ gid_t *group_collectGroupsFor(const sGroup *g,uid_t uid,size_t *count) {
 	while(g != NULL) {
 		for(i = 0; i < g->userCount; i++) {
 			if(g->users[i] == uid) {
-				if(*count >= size) {
+				if(*count + openSlots >= size) {
 					gid_t *old = res;
 					size *= 2;
 					res = (gid_t*)realloc(res,sizeof(gid_t) * size);

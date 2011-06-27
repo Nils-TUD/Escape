@@ -106,6 +106,10 @@ int main(int argc,char *argv[]) {
 	if(id < 0)
 		error("Unable to register driver 'fs'");
 
+	/* set permissions to zero; the kernel will open the file to us and won't check them */
+	if(chmod("/dev/fs",0) < 0)
+		error("Unable to set permissions for /dev/fs");
+
 	msgid_t mid;
 	while(true) {
 		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);

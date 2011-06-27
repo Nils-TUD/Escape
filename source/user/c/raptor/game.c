@@ -47,7 +47,7 @@ static uchar pressed[KEYCODE_COUNT];
 bool game_init(void) {
 	timerFreq = getConf(CONF_TIMER_FREQ);
 	if(timerFreq < 0) {
-		fprintf(stderr,"Unable to get timer-frequency");
+		fprintf(stderr,"Unable to get timer-frequency\n");
 		return false;
 	}
 

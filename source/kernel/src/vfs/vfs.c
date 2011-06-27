@@ -110,9 +110,13 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 		return 0;
 
 	p = proc_getByPid(pid);
-	/* root is allmighty as well */
-	if(p->euid == ROOT_UID)
+	/* root is (nearly) allmighty as well */
+	if(p->euid == ROOT_UID) {
+		/* root has exec-permission if at least one has exec-permission */
+		if(flags & VFS_EXEC)
+			return (n->mode & MODE_EXEC) ? 0 : ERR_NO_EXEC_PERM;
 		return 0;
+	}
 
 	/* determine mask */
 	if(p->euid == n->uid)
@@ -771,6 +775,8 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags) {
 	size_t len;
 	char *hname;
 	vassert(name != NULL,"name == NULL");
+
+	/* TODO check permissions */
 
 	/* we don't want to have exotic driver-names */
 	if((len = strlen(name)) == 0 || !isalnumstr(name))

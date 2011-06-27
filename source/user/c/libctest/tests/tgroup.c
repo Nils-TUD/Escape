@@ -45,7 +45,7 @@ static void test_basics(void) {
 
 	{
 		oldFree = heapspace();
-		sGroup *g = group_parse("0:root",&count);
+		sGroup *g = group_parse("0:root\n",&count);
 		test_assertTrue(g != NULL);
 		test_assertSize(count,1);
 		if(g) {

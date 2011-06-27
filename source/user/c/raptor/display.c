@@ -91,25 +91,25 @@ bool displ_init(void) {
 	else
 		video = open(VESA_DRIVER,IO_READ | IO_WRITE);
 	if(video < 0) {
-		fprintf(stderr,"Unable to open video-driver");
+		fprintf(stderr,"Unable to open video-driver\n");
 		return false;
 	}
 
 	/* get screen size */
 	if(recvMsgData(video,MSG_VID_GETSIZE,&ssize,sizeof(sVTSize)) < 0) {
-		fprintf(stderr,"Unable to get screensize");
+		fprintf(stderr,"Unable to get screensize\n");
 		return false;
 	}
 	/* first line is the title */
 	HEIGHT--;
 	buffer = (char*)malloc(WIDTH * HEIGHT * 2);
 	if(!buffer) {
-		fprintf(stderr,"Unable to alloc mem for buffer");
+		fprintf(stderr,"Unable to alloc mem for buffer\n");
 		return false;
 	}
 	backup = (char*)malloc(WIDTH * HEIGHT * 2);
 	if(!backup) {
-		fprintf(stderr,"Unable to alloc mem for backup");
+		fprintf(stderr,"Unable to alloc mem for backup\n");
 		return false;
 	}
 	displ_setBackup();
@@ -128,9 +128,9 @@ void displ_update(void) {
 	displ_drawObjects();
 	displ_drawScore();
 	if(seek(video,WIDTH * 2,SEEK_SET) < 0)
-		fprintf(stderr,"Seek to %d failed",WIDTH * 2);
+		fprintf(stderr,"Seek to %d failed\n",WIDTH * 2);
 	if(write(video,buffer,WIDTH * HEIGHT * 2) < 0)
-		fprintf(stderr,"Write to video-driver failed");
+		fprintf(stderr,"Write to video-driver failed\n");
 }
 
 static void displ_drawScore(void) {

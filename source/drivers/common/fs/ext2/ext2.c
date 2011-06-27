@@ -160,19 +160,20 @@ sFileSystem *ext2_getFS(void) {
 }
 
 bool ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
+	uint16_t mode = le16tocpu(cnode->inode.mode);
 	if(u->uid == ROOT_UID) {
 		/* root has exec-permission if at least one has exec-permission */
 		if(perms & MODE_EXEC)
-			return cnode->inode.mode & MODE_EXEC;
+			return mode & MODE_EXEC;
 		/* root can read and write in all cases */
 		return true;
 	}
 
-	if(cnode->inode.uid == u->uid)
-		return (cnode->inode.mode & S_IRWXU) & perms;
-	if(cnode->inode.gid == u->gid || isingroup(u->pid,cnode->inode.gid) == 1)
-		return (cnode->inode.mode & S_IRWXG) & perms;
-	return (cnode->inode.mode & S_IRWXO) & perms;
+	if(le16tocpu(cnode->inode.uid) == u->uid)
+		return (mode & S_IRWXU) & perms;
+	if(le16tocpu(cnode->inode.gid) == u->gid || isingroup(u->pid,le16tocpu(cnode->inode.gid)) == 1)
+		return (mode & S_IRWXG) & perms;
+	return (mode & S_IRWXO) & perms;
 }
 
 block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo) {

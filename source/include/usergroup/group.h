@@ -43,10 +43,11 @@ sGroup *group_parse(const char *groups,size_t *count);
  *
  * @param g the group-list
  * @param uid the user-id
+ * @param openSlots specifies how many slots should be left open in the groups-array
  * @param count will be set to the number of collected groups
  * @return the group-id-array or NULL if failed
  */
-gid_t *group_collectGroupsFor(const sGroup *g,uid_t uid,size_t *count);
+gid_t *group_collectGroupsFor(const sGroup *g,uid_t uid,size_t openSlots,size_t *count);
 
 /**
  * Writes the given groups to the given file

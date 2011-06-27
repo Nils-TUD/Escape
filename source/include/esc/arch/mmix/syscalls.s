@@ -149,6 +149,30 @@ fstat:
 1:
 	POP		1,0							# return value is in $0
 
+.global chmod
+.type chmod, @function
+chmod:
+	SET		$7,0
+	TRAP	0,SYSCALL_CHMOD,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global chown
+.type chown, @function
+chown:
+	SET		$7,0
+	TRAP	0,SYSCALL_CHOWN,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
 .global tell
 .type tell, @function
 tell:
@@ -466,6 +490,138 @@ getpid:
 getppidof:
 	SET		$7,0
 	TRAP	0,SYSCALL_PPID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global getuid
+.type getuid, @function
+getuid:
+	SET		$7,0
+	TRAP	0,SYSCALL_GETUID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global setuid
+.type setuid, @function
+setuid:
+	SET		$7,0
+	TRAP	0,SYSCALL_SETUID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global geteuid
+.type geteuid, @function
+geteuid:
+	SET		$7,0
+	TRAP	0,SYSCALL_GETEUID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global seteuid
+.type seteuid, @function
+seteuid:
+	SET		$7,0
+	TRAP	0,SYSCALL_SETEUID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global getgid
+.type getgid, @function
+getgid:
+	SET		$7,0
+	TRAP	0,SYSCALL_GETGID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global setgid
+.type setgid, @function
+setgid:
+	SET		$7,0
+	TRAP	0,SYSCALL_SETGID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global getegid
+.type getegid, @function
+getegid:
+	SET		$7,0
+	TRAP	0,SYSCALL_GETEGID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global setegid
+.type setegid, @function
+setegid:
+	SET		$7,0
+	TRAP	0,SYSCALL_SETEGID,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global getgroups
+.type getgroups, @function
+getgroups:
+	SET		$7,0
+	TRAP	0,SYSCALL_GETGROUPS,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global setgroups
+.type setgroups, @function
+setgroups:
+	SET		$7,0
+	TRAP	0,SYSCALL_SETGROUPS,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STOU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
+.global isingroup
+.type isingroup, @function
+isingroup:
+	SET		$7,0
+	TRAP	0,SYSCALL_ISINGROUP,0
 	BZ		$2,1f						# no-error?
 	GETA	$3,errno
 	STOU	$2,$3,0

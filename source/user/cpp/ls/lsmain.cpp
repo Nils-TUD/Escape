@@ -194,6 +194,8 @@ int main(int argc,char *argv[]) {
 			}
 			if(f->is_dir())
 				cout << "\033[co;9]" << f->name() << "\033[co]";
+			else if(S_ISCHR(f->mode()))
+				cout << "\033[co;14]" << f->name() << "\033[co]";
 			else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
 				cout << "\033[co;2]" << f->name() << "\033[co]";
 			else
@@ -210,6 +212,8 @@ int main(int argc,char *argv[]) {
 				cout << setw(widths[W_INODE]) << f->inode() << ' ';
 			if(f->is_dir())
 				cout << "\033[co;9]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
+			else if(S_ISCHR(f->mode()))
+				cout << "\033[co;14]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
 			else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
 				cout << "\033[co;2]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
 			else
@@ -277,7 +281,12 @@ static file::size_type getDirSize(const file& d) {
 }
 
 static void printMode(file::mode_type mode) {
-	printPerm(S_ISDIR(mode),1,'d');
+	if(S_ISDIR(mode))
+		cout << 'd';
+	else if(S_ISCHR(mode))
+		cout << 'c';
+	else
+		cout << '-';
 	printPerm(mode,S_IRUSR,'r');
 	printPerm(mode,S_IWUSR,'w');
 	printPerm(mode,S_IXUSR,'x');

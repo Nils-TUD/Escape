@@ -28,7 +28,7 @@
 
 /* some additional types for the kernel */
 #define MODE_TYPE_CHANNEL			0x0010000
-#define MODE_TYPE_DRIVER			0x0020000
+#define MODE_TYPE_DRIVER			S_IFCHR
 #define MODE_TYPE_PIPECON			0x0040000
 #define MODE_TYPE_PIPE				0x0080000
 

@@ -281,7 +281,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 			return ERR_REAL_PATH;
 
 		/* should we create a default-file? */
-		if((flags & VFS_CREATE) && (dir->mode & S_IFDIR)) {
+		if((flags & VFS_CREATE) && S_ISDIR(dir->mode)) {
 			size_t nameLen;
 			sVFSNode *child;
 			char *nameCpy;

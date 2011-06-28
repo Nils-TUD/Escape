@@ -51,7 +51,7 @@ void driver::load() {
 	// wait for all specified devices
 	for(std::vector<device>::const_iterator it = _devices.begin(); it != _devices.end(); ++it) {
 		sFileInfo info;
-		gid_t groupId;
+		sGroup *g;
 		int res;
 		int j = 0;
 		do {
@@ -67,10 +67,10 @@ void driver::load() {
 		if(chmod(it->name().c_str(),it->permissions()) < 0)
 			throw load_error(string("Unable to set permissions for '") + it->name() + "'");
 		// set group
-		groupId = group_getByName(groupList,it->group().c_str());
-		if(groupId == (gid_t)-1)
+		g = group_getByName(groupList,it->group().c_str());
+		if(!g)
 			throw load_error(string("Unable to find group '") + it->group() + "'");
-		if(chown(it->name().c_str(),-1,groupId) < 0)
+		if(chown(it->name().c_str(),-1,g->gid) < 0)
 			throw load_error(string("Unable to set group for '") + it->name() + "'");
 	}
 }

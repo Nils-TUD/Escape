@@ -34,15 +34,15 @@
 static sUser *getUser(const char *user,const char *pw);
 
 static sGroup *groupList;
-static sUser *userList;
+static sUser *userList = NULL;
 
 int main(int argc,char **argv) {
 	char drvPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
 	const char *shargs[] = {NULL,NULL,NULL};
-	char un[MAX_USERNAME_LEN];
-	char pw[MAX_PW_LEN];
+	char un[MAX_USERNAME_LEN + 1];
+	char pw[MAX_PW_LEN + 1];
 	sUser *u;
-	gid_t gvt;
+	sGroup *gvt;
 	gid_t *groups;
 	size_t groupCount;
 	size_t count;
@@ -54,15 +54,6 @@ int main(int argc,char **argv) {
 		error("Usage: %s <vterm>",argv[0]);
 	if(tell(STDIN_FILENO,&pos) != ERR_INVALID_FD)
 		error("STDIN already present!? Login not usable");
-
-	/* read in groups */
-	groupList = group_parseFromFile(GROUPS_PATH,&count);
-	if(!groupList)
-		error("Unable to parse groups from '%s'",GROUPS_PATH);
-	/* read in users */
-	userList = user_parseFromFile(USERS_PATH,&count);
-	if(!userList)
-		error("Unable to parse users from '%s'",USERS_PATH);
 
 	/* open stdin */
 	strcat(drvPath,argv[1]);
@@ -94,6 +85,12 @@ int main(int argc,char **argv) {
 		sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
 		putchar('\n');
 
+		/* re-read users */
+		user_free(userList);
+		userList = user_parseFromFile(USERS_PATH,&count);
+		if(!userList)
+			error("Unable to parse users from '%s'",USERS_PATH);
+
 		u = getUser(un,pw);
 		if(u != NULL)
 			break;
@@ -103,6 +100,11 @@ int main(int argc,char **argv) {
 		sleep(1000);
 	}
 	fflush(stdout);
+
+	/* read in groups */
+	groupList = group_parseFromFile(GROUPS_PATH,&count);
+	if(!groupList)
+		error("Unable to parse groups from '%s'",GROUPS_PATH);
 
 	/* set user- and group-id */
 	if(setgid(u->gid) < 0)
@@ -115,8 +117,8 @@ int main(int argc,char **argv) {
 		error("Unable to collect group-ids");
 	gvt = group_getByName(groupList,argv[1]);
 	/* add the process to the corresponding vterm-group */
-	if(gvt != (gid_t)-1)
-		groups[groupCount++] = gvt;
+	if(gvt)
+		groups[groupCount++] = gvt->gid;
 	if(setgroups(groupCount,groups) < 0)
 		error("Unable to set groups");
 

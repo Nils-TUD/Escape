@@ -136,7 +136,7 @@ int sysc_getgroups(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	size = MIN(groupCount,size);
 	if(size > 0)
-		memcpy(list,g->groups,size);
+		memcpy(list,g->groups,size * sizeof(gid_t));
 	SYSC_RET1(stack,size);
 }
 

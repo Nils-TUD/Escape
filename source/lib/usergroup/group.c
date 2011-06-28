@@ -64,7 +64,7 @@ sGroup *group_parse(const char *groups,size_t *count) {
 			goto error;
 		/* read the name */
 		i = 0;
-		while(*p && *p != '\n' && *p != ':' && i < MAX_GROUPNAME_LEN - 1)
+		while(*p && *p != '\n' && *p != ':' && i < MAX_GROUPNAME_LEN)
 			g->name[i++] = *p++;
 		/* empty name is not allowed */
 		if(i == 0)
@@ -101,13 +101,58 @@ error:
 	return NULL;
 }
 
-gid_t group_getByName(const sGroup *g,const char *name) {
+void group_append(sGroup *list,sGroup *g) {
+	sGroup *gt = list;
+	while(gt && gt->next)
+		gt = gt->next;
+	if(!gt)
+		list->next = g;
+	else
+		gt->next = g;
+	g->next = NULL;
+}
+
+void group_remove(sGroup *list,sGroup *g) {
+	sGroup *p = NULL;
+	while(list != NULL) {
+		if(list == g) {
+			if(p)
+				p->next = g->next;
+			else
+				list = g->next;
+			break;
+		}
+		p = list;
+		list = list->next;
+	}
+}
+
+gid_t group_getFreeGid(const sGroup *g) {
+	gid_t res = 0;
 	while(g != NULL) {
-		if(strcmp(g->name,name) == 0)
-			return g->gid;
+		if(g->gid > res)
+			res = g->gid;
 		g = g->next;
 	}
-	return -1;
+	return res + 1;
+}
+
+sGroup *group_getById(const sGroup *g,gid_t gid) {
+	while(g != NULL) {
+		if(g->gid == gid)
+			return (sGroup*)g;
+		g = g->next;
+	}
+	return NULL;
+}
+
+sGroup *group_getByName(const sGroup *g,const char *name) {
+	while(g != NULL) {
+		if(strcmp(g->name,name) == 0)
+			return (sGroup*)g;
+		g = g->next;
+	}
+	return NULL;
 }
 
 gid_t *group_collectGroupsFor(const sGroup *g,uid_t uid,size_t openSlots,size_t *count) {
@@ -134,6 +179,33 @@ gid_t *group_collectGroupsFor(const sGroup *g,uid_t uid,size_t openSlots,size_t 
 		}
 		g = g->next;
 	}
+	return res;
+}
+
+void group_removeFrom(sGroup *g,uid_t uid) {
+	size_t i,j;
+	for(i = 0, j = 0; i < g->userCount; i++) {
+		g->users[j] = g->users[i];
+		if(g->users[i] != uid)
+			j++;
+	}
+	g->userCount = j;
+}
+
+void group_removeFromAll(sGroup *g,uid_t uid) {
+	while(g != NULL) {
+		group_removeFrom(g,uid);
+		g = g->next;
+	}
+}
+
+int group_writeToFile(const sGroup *g,const char *path) {
+	int res;
+	FILE *f = fopen(path,"w");
+	if(!f)
+		return errno;
+	res = group_write(g,f);
+	fclose(f);
 	return res;
 }
 

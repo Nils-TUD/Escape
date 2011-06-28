@@ -61,10 +61,6 @@ int main(void) {
 	if(ids[0] < 0)
 		error("Unable to register driver 'kmmanager'");
 
-	/* give all read- and write-permission */
-	if(chmod("/dev/kmmanager",S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
-		error("Unable to set permissions for /dev/kmmanager");
-
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKmData),BUF_SIZE,RB_OVERWRITE);
 	if(rbuf == NULL)

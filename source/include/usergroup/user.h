@@ -9,15 +9,15 @@
 #include <stdio.h>
 
 #define USERS_PATH			"/etc/users"
-#define MAX_USERNAME_LEN	32
-#define MAX_PW_LEN			32
+#define MAX_USERNAME_LEN	31
+#define MAX_PW_LEN			31
 
 typedef struct sUser {
 	uid_t uid;
 	gid_t gid;
-	char name[MAX_USERNAME_LEN];
-	char pw[MAX_PW_LEN];
-	char home[MAX_PATH_LEN];
+	char name[MAX_USERNAME_LEN + 1];
+	char pw[MAX_PW_LEN + 1];
+	char home[MAX_PATH_LEN + 1];
 	struct sUser *next;
 } sUser;
 
@@ -46,6 +46,39 @@ sUser *user_parseFromFile(const char *file,size_t *count);
 sUser *user_parse(const char *users,size_t *count);
 
 /**
+ * Appends the given user to <list>
+ *
+ * @param list the user-list
+ * @param u the user
+ */
+void user_append(sUser *list,sUser *u);
+
+/**
+ * Removes the given user from the list
+ *
+ * @param list the user-list
+ * @param u the user
+ */
+void user_remove(sUser *list,sUser *u);
+
+/**
+ * Searches for a free user-id in the given list
+ *
+ * @param u the user-list
+ * @return the free user-id
+ */
+uid_t user_getFreeUid(const sUser *u);
+
+/**
+ * Searches for the user with given name
+ *
+ * @param u the user-list
+ * @param name the user-name
+ * @return the user or NULL
+ */
+sUser *user_getByName(const sUser *u,const char *name);
+
+/**
  * Searches for the user with given id
  *
  * @param u the user-list
@@ -53,6 +86,15 @@ sUser *user_parse(const char *users,size_t *count);
  * @return the user or NULL
  */
 sUser *user_getById(sUser *u,uid_t uid);
+
+/**
+ * Writes the given users to the file with given path
+ *
+ * @param u the users
+ * @param path the path
+ * @return 0 on success
+ */
+int user_writeToFile(const sUser *u,const char *path);
 
 /**
  * Writes the given users to the given file

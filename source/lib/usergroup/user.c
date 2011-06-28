@@ -64,11 +64,11 @@ sUser *user_parse(const char *users,size_t *count) {
 			last->next = u;
 		u->uid = uid;
 		u->gid = gid;
-		if(!(p = user_readStr(u->name,p,MAX_USERNAME_LEN,false)))
+		if(!(p = user_readStr(u->name,p,sizeof(u->name),false)))
 			goto error;
-		if(!(p = user_readStr(u->pw,p,MAX_PW_LEN,false)))
+		if(!(p = user_readStr(u->pw,p,sizeof(u->pw),false)))
 			goto error;
-		if(!(p = user_readStr(u->home,p,MAX_PATH_LEN,true)))
+		if(!(p = user_readStr(u->home,p,sizeof(u->home),true)))
 			goto error;
 		/* to next line */
 		while(*p && *p != '\n')
@@ -85,6 +85,51 @@ error:
 	return NULL;
 }
 
+void user_append(sUser *list,sUser *u) {
+	sUser *ut = list;
+	while(ut && ut->next)
+		ut = ut->next;
+	if(!ut)
+		list->next = u;
+	else
+		ut->next = u;
+	u->next = NULL;
+}
+
+void user_remove(sUser *list,sUser *u) {
+	sUser *p = NULL;
+	while(list != NULL) {
+		if(list == u) {
+			if(p)
+				p->next = u->next;
+			else
+				list = u->next;
+			break;
+		}
+		p = list;
+		list = list->next;
+	}
+}
+
+uid_t user_getFreeUid(const sUser *u) {
+	uid_t res = 0;
+	while(u != NULL) {
+		if(u->uid > res)
+			res = u->uid;
+		u = u->next;
+	}
+	return res + 1;
+}
+
+sUser *user_getByName(const sUser *u,const char *name) {
+	while(u != NULL) {
+		if(strcmp(u->name,name) == 0)
+			return (sUser*)u;
+		u = u->next;
+	}
+	return NULL;
+}
+
 sUser *user_getById(sUser *u,uid_t uid) {
 	while(u != NULL) {
 		if(u->uid == uid)
@@ -92,6 +137,16 @@ sUser *user_getById(sUser *u,uid_t uid) {
 		u = u->next;
 	}
 	return NULL;
+}
+
+int user_writeToFile(const sUser *u,const char *path) {
+	int res;
+	FILE *f = fopen(path,"w");
+	if(!f)
+		return errno;
+	res = user_write(u,f);
+	fclose(f);
+	return res;
 }
 
 int user_write(const sUser *u,FILE *f) {

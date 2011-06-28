@@ -35,10 +35,6 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register driver 'zero'");
 
-	/* give all read- and write-permission */
-	if(chmod("/dev/zero",S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
-		error("Unable to set permissions for /dev/zero");
-
 	/* 0's are always available ;) */
 	if(fcntl(id,F_SETDATA,true) < 0)
 		error("fcntl");

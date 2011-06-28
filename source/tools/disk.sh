@@ -120,6 +120,7 @@ setPerms() {
 	# /bin
 	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/bin
 	$SUDO chmod -R 0755 $DISKMOUNT/bin
+	$SUDO chmod u+s $DISKMOUNT/bin/users $DISKMOUNT/bin/groups
 	# /sbin
 	$SUDO chown -R $SUPER:$SUPER $DISKMOUNT/sbin
 	$SUDO chmod 0755 $DISKMOUNT/sbin

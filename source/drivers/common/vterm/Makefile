@@ -1,8 +1,8 @@
 NAME=vterm
 ifeq ($(LINKTYPE),static)
-	ADDLIBS += $(BUILD)/libvterm.a
+	ADDLIBS += $(BUILD)/libvterm.a $(BUILD)/libusergroup.a
 else
-	ADDFLAGS = -lvterm
+	ADDFLAGS = -lvterm -lusergroup
 endif
 
 -include ../../ShlibSimpleMakefile.mk

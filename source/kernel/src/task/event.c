@@ -135,6 +135,8 @@ bool ev_wakeupThread(tid_t tid,uint events) {
 
 void ev_removeThread(tid_t tid) {
 	sThread *t = thread_getById(tid);
+	if(t == NULL)
+		util_printStackTrace(util_getKernelStackTrace());
 	if(t->events) {
 		size_t e;
 		for(e = 0; t->events && e < EV_COUNT; e++) {

@@ -41,8 +41,8 @@ static int pbThread(void *arg);
 class MyImgWindow : public gui::Window {
 public:
 	MyImgWindow()
-		: Window("Window 2",250,250,500,400), img1(gui::BitmapImage("/test.bmp")),
-		img2(gui::BitmapImage("/bbc.bmp")) {
+		: Window("Window 2",250,250,500,400), img1(gui::BitmapImage("/home/hrniels/testdir/test.bmp")),
+		img2(gui::BitmapImage("/home/hrniels/testdir/bbc.bmp")) {
 	}
 	~MyImgWindow() {
 	}
@@ -75,8 +75,8 @@ int main(void) {
 		w1->add(check);
 		pb = new gui::ProgressBar("Progress...",10,160,200,25);
 		w1->add(*pb);
-		if(startThread(pbThread,NULL) < 0)
-			std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+		/*if(startThread(pbThread,NULL) < 0)
+			std::cerr << "[GUITEST] Unable to start thread" << std::endl;*/
 		return app->run();
 	}
 

@@ -8,3 +8,7 @@
 7:vterm3
 8:vterm4
 9:vterm5
+10:storage
+11:input:1:2
+12:output:1:2
+13:audio:1

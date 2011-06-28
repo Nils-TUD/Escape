@@ -29,6 +29,7 @@
 #define MAX_MSG_SIZE				128
 #define MAX_MSGSTR_LEN				64
 
+/* cursors */
 #define CURSOR_DEFAULT				0
 #define CURSOR_RESIZE_L				1
 #define CURSOR_RESIZE_BR			2
@@ -36,6 +37,13 @@
 #define CURSOR_RESIZE_BL			4
 #define CURSOR_RESIZE_R				5
 #define CURSOR_RESIZE_WIDTH			10
+
+/* the possible km-events to listen to; KE_EV_PRESSED, KE_EV_RELEASED and KE_EV_KEYCODE,
+ * KE_EV_CHARACTER are mutually exclusive, each */
+#define KE_EV_PRESSED				1
+#define KE_EV_RELEASED				2
+#define KE_EV_KEYCODE				4
+#define KE_EV_CHARACTER				8
 
 /* == Messages handled by the kernel == */
 /* fs */
@@ -54,104 +62,97 @@
 #define MSG_FS_CHMOD_RESP			12
 #define MSG_FS_CHOWN_RESP			13
 /* driver */
-#define MSG_DRV_OPEN_RESP			12
-#define MSG_DRV_READ_RESP			13
-#define MSG_DRV_WRITE_RESP			14
-#define MSG_DRV_CLOSE_RESP			15
+#define MSG_DRV_OPEN_RESP			14
+#define MSG_DRV_READ_RESP			15
+#define MSG_DRV_WRITE_RESP			16
+#define MSG_DRV_CLOSE_RESP			17
 /* default response */
-#define MSG_DEF_RESPONSE			100
-/* requests to fs */
-#define MSG_FS_OPEN					200
-#define MSG_FS_READ					201
-#define MSG_FS_WRITE				202
-#define MSG_FS_CLOSE				203
-#define MSG_FS_STAT					204
-#define MSG_FS_SYNC					205
-#define MSG_FS_LINK					206
-#define MSG_FS_UNLINK				207
-#define MSG_FS_MKDIR				208
-#define MSG_FS_RMDIR				209
-#define MSG_FS_MOUNT				210
-#define MSG_FS_UNMOUNT				211
-#define MSG_FS_ISTAT				212
-#define MSG_FS_CHMOD				213
-#define MSG_FS_CHOWN				214
+#define MSG_DEF_RESPONSE			18
+
 /* requests to driver */
-#define MSG_DRV_OPEN				300
-#define MSG_DRV_READ				301
-#define MSG_DRV_WRITE				302
-#define MSG_DRV_CLOSE				303
+#define MSG_DRV_OPEN				0
+#define MSG_DRV_READ				1
+#define MSG_DRV_WRITE				2
+#define MSG_DRV_CLOSE				3
+
+/* requests to fs */
+#define MSG_FS_OPEN					4
+#define MSG_FS_READ					5
+#define MSG_FS_WRITE				6
+#define MSG_FS_CLOSE				7
+#define MSG_FS_STAT					8
+#define MSG_FS_SYNC					9
+#define MSG_FS_LINK					10
+#define MSG_FS_UNLINK				11
+#define MSG_FS_MKDIR				12
+#define MSG_FS_RMDIR				13
+#define MSG_FS_MOUNT				14
+#define MSG_FS_UNMOUNT				15
+#define MSG_FS_ISTAT				16
+#define MSG_FS_CHMOD				17
+#define MSG_FS_CHOWN				18
 
 /* == Other messages == */
-#define MSG_SPEAKER_BEEP			600
+#define MSG_SPEAKER_BEEP			100	/* performs a beep */
 
-#define MSG_ENV_GET					800
-#define MSG_ENV_SET					801
-#define MSG_ENV_GET_RESP			802
-#define MSG_ENV_GETI				803
+#define MSG_VESA_UPDATE				200	/* updates a region of the screen */
+#define MSG_VESA_CURSOR				201	/* sets the cursor */
+#define MSG_VESA_GETMODE			202	/* gets the vesa-mode */
+#define MSG_VESA_GETMODE_RESP		203	/* response for the get-mode-request */
+#define MSG_VESA_SETMODE			204	/* sets the vesa-mode */
+#define MSG_VESA_ENABLE				205	/* enables vesa */
+#define MSG_VESA_DISABLE			206	/* disables vesa */
 
-#define MSG_VESA_UPDATE				900
-#define MSG_VESA_CURSOR				901
-#define MSG_VESA_GETMODE_REQ		902
-#define MSG_VESA_GETMODE_RESP		903
-#define MSG_VESA_SETMODE			904
-#define MSG_VESA_ENABLE				905
-#define MSG_VESA_DISABLE			906
+#define MSG_WIN_CREATE				300	/* creates a window */
+#define MSG_WIN_CREATE_RESP			301	/* the create-response */
+#define MSG_WIN_MOVE				302	/* moves a window */
+#define MSG_WIN_UPDATE				303	/* requests an update of a window */
+#define MSG_WIN_SET_ACTIVE			304	/* sets the active window */
+#define MSG_WIN_DESTROY				305	/* destroys a window */
+#define MSG_WIN_RESIZE				306	/* resizes a window */
+#define MSG_WIN_ENABLE				307	/* enables the window-manager */
+#define MSG_WIN_DISABLE				308	/* disables the window-manager */
+#define MSG_WIN_UPDATE_EV			309	/* is sent by the window-manager to a window to do an update */
+#define MSG_WIN_MOUSE_EV			310	/* a mouse-event sent by the window-manager */
+#define MSG_WIN_KEYBOARD_EV			311	/* a keyboard-event sent by the window-manager */
 
-#define MSG_MOUSE					1000
+#define MSG_POWER_REBOOT			400	/* reboots the system */
+#define MSG_POWER_SHUTDOWN			401	/* shuts the system down */
 
-#define MSG_WIN_CREATE_REQ			1100
-#define MSG_WIN_CREATE_RESP			1101
-#define MSG_WIN_MOUSE				1102
-#define MSG_WIN_MOVE				1103
-#define MSG_WIN_UPDATE_REQ			1104
-#define MSG_WIN_KEYBOARD			1105
-#define MSG_WIN_SET_ACTIVE			1106
-#define MSG_WIN_DESTROY				1107
-#define MSG_WIN_UPDATE				1108
-#define MSG_WIN_RESIZE				1109
-#define MSG_WIN_ENABLE				1110
-#define MSG_WIN_DISABLE				1111
+#define MSG_VID_SETCURSOR			500	/* expects sVTPos */
+#define MSG_VID_GETSIZE				501	/* writes into sVTSize */
+#define MSG_VID_SETMODE				502	/* sets the video-mode */
 
-#define MSG_POWER_REBOOT			1300
-#define MSG_POWER_SHUTDOWN			1301
+#define MSG_VT_EN_ECHO				600	/* enables that the vterm echo's typed characters */
+#define MSG_VT_DIS_ECHO				601	/* disables echo */
+#define MSG_VT_EN_RDLINE			602	/* enables the readline-feature */
+#define MSG_VT_DIS_RDLINE			603	/* disables the readline-feature */
+#define MSG_VT_EN_RDKB				604	/* allows vterm to read from keyboard */
+#define MSG_VT_DIS_RDKB				605	/* prohibits vterm to read from keyboard */
+#define MSG_VT_EN_NAVI				606	/* enables navigation (page-up, arrow-up, ... ) */
+#define MSG_VT_DIS_NAVI				607	/* disables navigation */
+#define MSG_VT_BACKUP				608	/* backups the screen */
+#define MSG_VT_RESTORE				609	/* restores the screen */
+#define MSG_VT_SHELLPID				610	/* gives the vterm the shell-pid */
+#define MSG_VT_GETSIZE				611	/* writes into sVTSize */
+#define MSG_VT_ENABLE				612	/* enables vterm */
+#define MSG_VT_DISABLE				613	/* disables vterm */
+#define MSG_VT_SELECT				614	/* selects the vterm */
 
-#define MSG_VID_SETCURSOR			1400	/* expects sVTPos */
-#define MSG_VID_GETSIZE				1401	/* writes into sVTSize */
-#define MSG_VID_SETMODE				1402
+#define MSG_KM_SET					700	/* sets a keymap, expects the keymap-path as argument */
+#define MSG_KM_EVENT				701	/* the message-id for sending events to the listeners */
 
-#define MSG_VT_EN_ECHO				1500
-#define MSG_VT_DIS_ECHO				1501
-#define MSG_VT_EN_RDLINE			1502
-#define MSG_VT_DIS_RDLINE			1503
-#define MSG_VT_EN_RDKB				1504
-#define MSG_VT_DIS_RDKB				1505
-#define MSG_VT_EN_NAVI				1506
-#define MSG_VT_DIS_NAVI				1507
-#define MSG_VT_BACKUP				1508
-#define MSG_VT_RESTORE				1509
-#define MSG_VT_SHELLPID				1510
-#define MSG_VT_GETSIZE				1511	/* writes into sVTSize */
-#define MSG_VT_ENABLE				1512	/* enables vterm */
-#define MSG_VT_DISABLE				1513	/* disables vterm */
-#define MSG_VT_SELECT				1514	/* selects the vterm */
+#define MSG_KE_ADDLISTENER			800	/* adds a listener (see KE_EV_*) */
+#define MSG_KE_REMLISTENER			801	/* removes a listener */
 
-#define MSG_KM_SET					1600	/* sets a keymap, expects the keymap-path as argument */
-#define MSG_KM_EVENT				1601	/* the message-id for sending events to the listeners */
+#define MSG_PCI_GET_BY_CLASS		900	/* searches for a pci device with given class */
+#define MSG_PCI_GET_BY_ID			901	/* searches for a pci device with given id */
+#define MSG_PCI_DEVICE_RESP			902
 
-#define MSG_KE_ADDLISTENER			1700
-#define MSG_KE_REMLISTENER			1701
-
-#define MSG_PCI_GET_BY_CLASS		1800
-#define MSG_PCI_GET_BY_ID			1801
-#define MSG_PCI_DEVICE_RESP			1802
-
-/* the possible km-events to listen to; KE_EV_PRESSED, KE_EV_RELEASED and KE_EV_KEYCODE,
- * KE_EV_CHARACTER are mutually exclusive, each */
-#define KE_EV_PRESSED				1
-#define KE_EV_RELEASED				2
-#define KE_EV_KEYCODE				4
-#define KE_EV_CHARACTER				8
+#define IS_DRIVER_MSG(id)			((id) == MSG_DRV_OPEN || \
+									 (id) == MSG_DRV_READ || \
+									 (id) == MSG_DRV_WRITE || \
+									 (id) == MSG_DRV_CLOSE)
 
 /* the data read from the keyboard */
 typedef struct {

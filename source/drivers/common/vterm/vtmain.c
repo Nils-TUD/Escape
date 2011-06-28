@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <usergroup/group.h>
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/debug.h>
@@ -40,12 +41,7 @@
 /* max number of requests handled in a row; we have to look sometimes for the keyboard.. */
 #define MAX_SEQREQ			20
 
-/**
- * Determines the vterm for the given driver-id
- *
- * @param sid the driver-id
- * @return the vterm or NULL
- */
+static gid_t getVtermGroup(const char *vterm);
 static sVTerm *getVTerm(int sid);
 
 static sMsg msg;
@@ -55,10 +51,12 @@ static sKmData kmData[KB_DATA_BUF_SIZE];
 static int drvIds[VTERM_COUNT] = {-1};
 
 int main(void) {
+	char path[MAX_PATH_LEN] = "/dev/";
 	size_t i,reqc;
 	int kbFd;
 	int client;
 	msgid_t mid;
+	gid_t gid;
 	sWaitObject waits[VTERM_COUNT + 1];
 	char name[MAX_VT_NAME_LEN + 1];
 
@@ -71,6 +69,13 @@ int main(void) {
 		drvIds[i] = regDriver(name,DRV_READ | DRV_WRITE);
 		if(drvIds[i] < 0)
 			error("Unable to register driver '%s'",name);
+		/* set the owner of the driver to the corresponding vterm-group */
+		gid = getVtermGroup(name);
+		if(gid != (gid_t)-1) {
+			strcpy(path + SSTRLEN("/dev/"),name);
+			if(chown(path,-1,gid) < 0)
+				error("Unable to change owner of '%s'",path);
+		}
 		waits[i].events = EV_CLIENT;
 		waits[i].object = drvIds[i];
 	}
@@ -222,6 +227,17 @@ int main(void) {
 		vterm_destroy(vterm_get(i));
 	}
 	return EXIT_SUCCESS;
+}
+
+static gid_t getVtermGroup(const char *vterm) {
+	static sGroup *groupList = NULL;
+	if(!groupList) {
+		size_t count;
+		groupList = group_parseFromFile(GROUPS_PATH,&count);
+		if(!groupList)
+			error("Unable to parse groups from '%s'",GROUPS_PATH);
+	}
+	return group_getByName(groupList,vterm);
 }
 
 static sVTerm *getVTerm(int sid) {

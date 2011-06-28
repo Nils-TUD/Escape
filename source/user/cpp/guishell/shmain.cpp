@@ -116,7 +116,7 @@ int main(int argc,char **argv) {
 	snprintf(drvPath,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
 	int fin;
 	do {
-		fin = open(drvPath,IO_READ);
+		fin = open(drvPath,IO_READ | IO_MSGS);
 		if(fin < 0)
 			yield();
 	}
@@ -125,7 +125,7 @@ int main(int argc,char **argv) {
 	// redirect fds so that stdin, stdout and stderr refer to our driver
 	if(redirFd(STDIN_FILENO,fin) < 0)
 		error("Unable to redirect STDIN to %d",fin);
-	int fout = open(drvPath,IO_WRITE);
+	int fout = open(drvPath,IO_WRITE | IO_MSGS);
 	if(fout < 0)
 		error("Unable to open '%s' for writing",drvPath);
 	if(redirFd(STDOUT_FILENO,fout) < 0)
@@ -146,6 +146,9 @@ static int shell_main(void) {
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
+
+	/* TODO temporary */
+	setenv("USER","hrniels");
 
 	char *buffer;
 	while(1) {

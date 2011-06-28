@@ -64,9 +64,10 @@ enum {
 	VFS_TRUNCATE = 8,
 	VFS_APPEND = 16,
 	VFS_NOBLOCK = 32,
-	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
-	VFS_DRIVER = 128,		/* kernel-intern: wether the file was created for a driver */
-	VFS_EXEC = 256,			/* kernel-intern: for accessing directories */
+	VFS_MSGS = 64,			/* exchange msgs with a driver */
+	VFS_NOLINKRES = 128,	/* kernel-intern: don't resolve last link in path */
+	VFS_DRIVER = 256,		/* kernel-intern: wether the file was created for a driver */
+	VFS_EXEC = 512,			/* kernel-intern: for accessing directories */
 };
 
 /* a node in our virtual file system */

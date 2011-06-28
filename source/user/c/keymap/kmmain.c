@@ -49,7 +49,7 @@ int main(int argc,const char **argv) {
 		char path[MAX_PATH_LEN];
 		sMsg msg;
 		size_t len;
-		int fd = open("/dev/kmmanager",IO_READ | IO_WRITE);
+		int fd = open("/dev/kmmanager",IO_MSGS);
 		if(fd < 0)
 			error("Unable to open keymap-manager");
 		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);

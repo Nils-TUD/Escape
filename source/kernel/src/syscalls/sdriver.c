@@ -172,7 +172,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,fd);
 
 	/* open file */
-	file = vfs_openFile(t->proc->pid,VFS_READ | VFS_WRITE | VFS_DRIVER,clientNo,VFS_DEV_NO);
+	file = vfs_openFile(t->proc->pid,VFS_MSGS | VFS_DRIVER,clientNo,VFS_DEV_NO);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 

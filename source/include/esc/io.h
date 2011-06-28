@@ -33,6 +33,7 @@
 #define IO_TRUNCATE				8
 #define IO_APPEND				16
 #define IO_NOBLOCK				32	/* don't block when reading or receiving a msg from drivers */
+#define IO_MSGS					64	/* exchange messages with a driver */
 
 /* file descriptors for stdin, stdout and stderr */
 #define STDIN_FILENO			0

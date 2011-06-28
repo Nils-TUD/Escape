@@ -36,11 +36,11 @@ namespace gui {
 			: _winFd(-1), _msg(sMsg()), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
 			  _vesaInfo(sVESAInfo()), _windows(vector<Window*>()) {
 		msgid_t mid;
-		_winFd = open("/dev/winmanager",IO_READ | IO_WRITE);
+		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)
 			error("Unable to open window-manager");
 
-		_vesaFd = open("/dev/vesa",IO_READ);
+		_vesaFd = open("/dev/vesa",IO_MSGS);
 		if(_vesaFd < 0)
 			error("Unable to open vesa");
 
@@ -49,7 +49,7 @@ namespace gui {
 			error("Unable to open shared memory");
 
 		// request screen infos from vesa
-		if(send(_vesaFd,MSG_VESA_GETMODE_REQ,&_msg,sizeof(_msg.args)) < 0)
+		if(send(_vesaFd,MSG_VESA_GETMODE,&_msg,sizeof(_msg.args)) < 0)
 			error("Unable to send get-mode-request to vesa");
 		if(RETRY(receive(_vesaFd,&mid,&_msg,sizeof(_msg))) < 0 || mid != MSG_VESA_GETMODE_RESP ||
 				_msg.data.arg1 != 0) {
@@ -90,7 +90,7 @@ namespace gui {
 			}
 			break;
 
-			case MSG_WIN_MOUSE: {
+			case MSG_WIN_MOUSE_EV: {
 				tCoord x = (tCoord)msg->args.arg1;
 				tCoord y = (tCoord)msg->args.arg2;
 				short movedX = (short)msg->args.arg3;
@@ -101,7 +101,7 @@ namespace gui {
 			}
 			break;
 
-			case MSG_WIN_KEYBOARD: {
+			case MSG_WIN_KEYBOARD_EV: {
 				uchar keycode = (uchar)msg->args.arg1;
 				bool isBreak = (bool)msg->args.arg2;
 				tWinId win = (tWinId)msg->args.arg3;
@@ -121,7 +121,7 @@ namespace gui {
 			}
 			break;
 
-			case MSG_WIN_UPDATE: {
+			case MSG_WIN_UPDATE_EV: {
 				tCoord x = (tCoord)msg->args.arg1;
 				tCoord y = (tCoord)msg->args.arg2;
 				tSize width = (tSize)msg->args.arg3;
@@ -209,7 +209,7 @@ namespace gui {
 		_msg.args.arg3 = y;
 		_msg.args.arg4 = width;
 		_msg.args.arg5 = height;
-		if(send(_winFd,MSG_WIN_UPDATE_REQ,&_msg,sizeof(_msg.args)) < 0)
+		if(send(_winFd,MSG_WIN_UPDATE,&_msg,sizeof(_msg.args)) < 0)
 			error("Unable to request win-update");
 	}
 
@@ -220,7 +220,7 @@ namespace gui {
 		_msg.args.arg2 = (win->getWidth() << 16) | win->getHeight();
 		_msg.args.arg3 = win->getId();
 		_msg.args.arg4 = win->getStyle();
-		if(send(_winFd,MSG_WIN_CREATE_REQ,&_msg,sizeof(_msg.args)) < 0)
+		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.args)) < 0)
 			error("Unable to announce window to window-manager");
 	}
 

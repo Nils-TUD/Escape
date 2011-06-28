@@ -29,11 +29,8 @@
 #include <error.h>
 
 #define SHELL_PATH			"/bin/shell"
-#define GROUPS_PATH			"/etc/groups"
-#define USERS_PATH			"/etc/users"
 #define MAX_VTERM_NAME_LEN	10
 
-static gid_t getVtermGroup(const char *vterm);
 static sUser *getUser(const char *user,const char *pw);
 
 static sGroup *groupList;
@@ -71,11 +68,13 @@ int main(int argc,char **argv) {
 	strcat(drvPath,argv[1]);
 	/* parse vterm-number from "vtermX" */
 	vterm = atoi(argv[1] + 5);
-	if(open(drvPath,IO_READ) < 0)
+	/* note: we do always pass IO_MSGS to open because the user might want to request the console
+	 * size or use isatty() or something. */
+	if(open(drvPath,IO_READ | IO_MSGS) < 0)
 		error("Unable to open '%s' for STDIN",drvPath);
 
 	/* open stdout */
-	if((fd = open(drvPath,IO_WRITE)) < 0)
+	if((fd = open(drvPath,IO_WRITE | IO_MSGS)) < 0)
 		error("Unable to open '%s' for STDOUT",drvPath);
 
 	/* dup stdout to stderr */
@@ -114,7 +113,7 @@ int main(int argc,char **argv) {
 	groups = group_collectGroupsFor(groupList,u->uid,1,&groupCount);
 	if(!groups)
 		error("Unable to collect group-ids");
-	gvt = getVtermGroup(argv[1]);
+	gvt = group_getByName(groupList,argv[1]);
 	/* add the process to the corresponding vterm-group */
 	if(gvt != (gid_t)-1)
 		groups[groupCount++] = gvt;
@@ -135,16 +134,6 @@ int main(int argc,char **argv) {
 
 	/* not reached */
 	return EXIT_SUCCESS;
-}
-
-static gid_t getVtermGroup(const char *vterm) {
-	sGroup *g = groupList;
-	while(g != NULL) {
-		if(strcmp(g->name,vterm) == 0)
-			return g->gid;
-		g = g->next;
-	}
-	return -1;
 }
 
 static sUser *getUser(const char *name,const char *pw) {

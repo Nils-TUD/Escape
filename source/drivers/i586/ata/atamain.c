@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <usergroup/group.h>
 #include <esc/arch/i586/ports.h>
 #include <esc/driver.h>
 #include <esc/io.h>
@@ -173,6 +174,7 @@ int main(int argc,char **argv) {
 static void initDrives(void) {
 	uint deviceIds[] = {DEVICE_PRIM_MASTER,DEVICE_PRIM_SLAVE,DEVICE_SEC_MASTER,DEVICE_SEC_SLAVE};
 	char name[SSTRLEN("hda1") + 1];
+	char path[MAX_PATH_LEN] = "/dev/";
 	size_t i,p;
 	for(i = 0; i < DEVICE_COUNT; i++) {
 		sATADevice *device = ctrl_getDevice(deviceIds[i]);
@@ -201,6 +203,10 @@ static void initDrives(void) {
 				else {
 					ATA_LOG("Registered driver '%s' (device %d, partition %d)",
 							name,device->id,p + 1);
+					/* set group */
+					strcpy(path + SSTRLEN("/dev/"),name);
+					if(chown(path,-1,GROUP_STORAGE) < 0)
+						ATA_LOG("Unable to set group for '%s'",path);
 					/* we're a block-device, so always data available */
 					fcntl(drivers[drvCount],F_SETDATA,true);
 					createVFSEntry(device,device->partTable + p,name);

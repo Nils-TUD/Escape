@@ -105,7 +105,7 @@ int main(void) {
 		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd >= 0) {
 			switch(mid) {
-				case MSG_WIN_CREATE_REQ: {
+				case MSG_WIN_CREATE: {
 					tCoord x = (tCoord)(msg.args.arg1 >> 16);
 					tCoord y = (tCoord)(msg.args.arg1 & 0xFFFF);
 					tSize width = (tSize)(msg.args.arg2 >> 16);
@@ -145,7 +145,7 @@ int main(void) {
 				}
 				break;
 
-				case MSG_WIN_UPDATE_REQ: {
+				case MSG_WIN_UPDATE: {
 					tWinId wid = (tWinId)msg.args.arg1;
 					tCoord x = (tCoord)msg.args.arg2;
 					tCoord y = (tCoord)msg.args.arg3;
@@ -228,7 +228,6 @@ static bool readKeyboard(int drvId,int kmmng) {
 		sKmData *kbd = kbData;
 		count /= sizeof(sKmData);
 		while(count-- > 0) {
-			/*printf("kc=%d, brk=%d\n",kbd->keycode,kbd->isBreak);*/
 			handleKbMessage(drvId,active,kbd->keycode,kbd->isBreak,kbd->modifier,
 					kbd->character);
 			kbd++;
@@ -253,8 +252,10 @@ static void handleKbMessage(int drvId,sWindow *active,uchar keycode,bool isBreak
 	msg.args.arg4 = c;
 	msg.args.arg5 = modifier;
 	aWin = getClient(drvId,active->owner);
-	if(aWin >= 0) {
-		send(aWin,MSG_WIN_KEYBOARD,&msg,sizeof(msg.args));
+	if(aWin < 0)
+		printe("[WINM] Unable to get client %d",active->owner);
+	else {
+		send(aWin,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg.args));
 		close(aWin);
 	}
 }
@@ -311,14 +312,16 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 	w = mouseWin ? mouseWin : win_getActive();
 	if(w) {
 		int aWin = getClient(drvId,w->owner);
-		if(aWin >= 0) {
+		if(aWin < 0)
+			printe("[WINM] Unable to get client %d",w->owner);
+		else {
 			msg.args.arg1 = curX;
 			msg.args.arg2 = curY;
 			msg.args.arg3 = mdata->x;
 			msg.args.arg4 = -mdata->y;
 			msg.args.arg5 = mdata->buttons;
 			msg.args.arg6 = w->id;
-			send(aWin,MSG_WIN_MOUSE,&msg,sizeof(msg.args));
+			send(aWin,MSG_WIN_MOUSE_EV,&msg,sizeof(msg.args));
 			close(aWin);
 		}
 	}

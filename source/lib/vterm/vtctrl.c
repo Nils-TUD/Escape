@@ -149,9 +149,7 @@ int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 	int res = 0;
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
-			/* do it just once */
-			if(vt->shellPid == 0)
-				vt->shellPid = *(long*)data;
+			vt->shellPid = *(long*)data;
 			fflush(stdout);
 			break;
 		case MSG_VT_ENABLE:

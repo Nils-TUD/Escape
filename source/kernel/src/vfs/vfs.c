@@ -183,11 +183,11 @@ int vfs_fcntl(pid_t pid,file_t file,uint cmd,int arg) {
 	assert(file >= 0 && file < FILE_COUNT);
 	switch(cmd) {
 		case F_GETACCESS:
-			return e->flags & (VFS_READ | VFS_WRITE);
+			return e->flags & (VFS_READ | VFS_WRITE | VFS_MSGS);
 		case F_GETFL:
 			return e->flags & VFS_NOBLOCK;
 		case F_SETFL:
-			e->flags &= VFS_READ | VFS_WRITE | VFS_CREATE | VFS_DRIVER;
+			e->flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_CREATE | VFS_DRIVER;
 			e->flags |= arg & VFS_NOBLOCK;
 			return 0;
 		case F_SETDATA: {
@@ -282,7 +282,7 @@ file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
 	file_t f;
 
 	/* cleanup flags */
-	flags &= VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER;
+	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DRIVER;
 
 	/* determine free file */
 	f = vfs_getFreeFile(pid,flags,nodeNo,devNo);
@@ -317,12 +317,13 @@ file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
 }
 
 static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
+	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DRIVER;
 	file_t i;
 	bool isDrvUse = false;
 	sGFTEntry *e;
 	/* ensure that we don't increment usages of an unused slot */
-	assert(flags & (VFS_READ | VFS_WRITE));
-	assert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER)));
+	assert(flags & (VFS_READ | VFS_WRITE | VFS_MSGS));
+	assert(!(flags & ~userFlags));
 
 	if(devNo == VFS_DEV_NO) {
 		sVFSNode *n = vfs_node_get(nodeNo);
@@ -334,7 +335,7 @@ static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo)
 	/* for drivers it doesn't matter whether we use an existing file or a new one, because it is
 	 * no problem when multiple threads use it for writing */
 	if(!isDrvUse) {
-		ushort rwFlags = flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER);
+		ushort rwFlags = flags & userFlags;
 		for(i = 0; i < FILE_COUNT; i++) {
 			e = vfs_getGFTEntry(i);
 			/* used slot and same node? */
@@ -343,7 +344,7 @@ static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo)
 				if(e->devNo == devNo && e->nodeNo == nodeNo) {
 					if(e->owner == pid) {
 						/* if the flags are the same we don't need a new file */
-						if((e->flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_DRIVER)) == rwFlags)
+						if((e->flags & userFlags) == rwFlags)
 							return i;
 					}
 					/* two procs that want to write at the same time? no! */
@@ -542,6 +543,9 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,const void *data,size_t siz
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
+	/* the driver-messages (open, read, write, close) are always allowed */
+	if(!IS_DRIVER_MSG(id) && !(e->flags & VFS_MSGS))
+		return ERR_NO_EXEC_PERM;
 
 	/* send the message */
 	n = vfs_node_get(e->nodeNo);
@@ -799,7 +803,7 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags) {
 	/* create node */
 	n = vfs_server_create(pid,drv,hname,flags);
 	if(n != NULL)
-		return vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
+		return vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
 
 	/* failed, so cleanup */
 	cache_free(hname);
@@ -890,7 +894,7 @@ file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId) {
 		return ERR_PATH_NOT_FOUND;
 
 	/* open file */
-	return vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
+	return vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
 }
 
 sVFSNode *vfs_createProcess(pid_t pid,fRead handler) {
@@ -1049,6 +1053,8 @@ void vfs_printGFT(void) {
 				vid_printf("NOBLOCK ");
 			if(e->flags & VFS_DRIVER)
 				vid_printf("DRIVER ");
+			if(e->flags & VFS_MSGS)
+				vid_printf("MSGS ");
 			vid_printf("\n");
 			vid_printf("\t\tnodeNo: %d\n",e->nodeNo);
 			vid_printf("\t\tdevNo: %d\n",e->devNo);

@@ -115,7 +115,7 @@ static void killProcs(void) {
 	size_t pidPos = 0;
 
 	/* first set 80x25-video-mode so that the user is able to see the messages */
-	fd = open(VIDEO_DRIVER,IO_READ | IO_WRITE);
+	fd = open(VIDEO_DRIVER,IO_READ | IO_WRITE | IO_MSGS);
 	if(fd >= 0) {
 		send(fd,MSG_VID_SETMODE,NULL,0);
 		close(fd);

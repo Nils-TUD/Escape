@@ -41,7 +41,7 @@ int main(void) {
 	sendRecvMsgData(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
 	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDKB,NULL,0);
 
-	keymap = open("/dev/kmmanager",IO_READ | IO_WRITE | IO_NOBLOCK);
+	keymap = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
 	if(keymap < 0)
 		qerror("Unable to open keymap-driver");
 

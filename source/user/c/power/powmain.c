@@ -48,7 +48,7 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	fd = open(POWER_DRV,IO_READ | IO_WRITE);
+	fd = open(POWER_DRV,IO_MSGS);
 	if(fd < 0)
 		error("Unable to open '%s'",POWER_DRV);
 	if(reboot)

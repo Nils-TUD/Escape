@@ -47,9 +47,12 @@ FILE *fopen(const char *filename,const char *mode) {
 			case 'a':
 				flags |= IO_APPEND | IO_WRITE;
 				break;
+			case 'm':
+				flags |= IO_MSGS;
+				break;
 		}
 	}
-	if((flags & (IO_READ | IO_WRITE)) == 0)
+	if((flags & (IO_READ | IO_WRITE | IO_MSGS)) == 0)
 		return NULL;
 
 	/* open */

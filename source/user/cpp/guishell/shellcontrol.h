@@ -63,7 +63,7 @@ public:
 		size.height = (height - 4) / (font.getHeight() + PADDING);
 
 		// open speaker
-		speakerFd = open("/dev/speaker",IO_WRITE);
+		speakerFd = open("/dev/speaker",IO_MSGS);
 		if(speakerFd < 0)
 			error("Unable to open '/dev/speaker'");
 

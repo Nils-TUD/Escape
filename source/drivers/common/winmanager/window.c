@@ -56,12 +56,12 @@ bool win_init(int sid) {
 	for(i = 0; i < WINDOW_COUNT; i++)
 		windows[i].id = WINID_UNSED;
 
-	vesa = open("/dev/vesa",IO_WRITE);
+	vesa = open("/dev/vesa",IO_WRITE | IO_MSGS);
 	if(vesa < 0)
 		error("Unable to open /dev/vesa");
 
 	/* request screen infos from vesa */
-	if(send(vesa,MSG_VESA_GETMODE_REQ,&msg,sizeof(msg.args)) < 0)
+	if(send(vesa,MSG_VESA_GETMODE,&msg,sizeof(msg.args)) < 0)
 		error("Unable to send get-mode-request to vesa");
 	if(RETRY(receive(vesa,&mid,&msg,sizeof(msg))) < 0 ||
 			mid != MSG_VESA_GETMODE_RESP || msg.data.arg1 != 0)
@@ -355,7 +355,7 @@ static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id
 		msg.args.arg3 = width;
 		msg.args.arg4 = height;
 		msg.args.arg5 = id;
-		send(aWin,MSG_WIN_UPDATE,&msg,sizeof(msg.args));
+		send(aWin,MSG_WIN_UPDATE_EV,&msg,sizeof(msg.args));
 		close(aWin);
 	}
 }

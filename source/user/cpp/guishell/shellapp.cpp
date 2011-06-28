@@ -55,7 +55,7 @@ void ShellApplication::doEvents() {
 		error("Read from window-manager failed");
 	if(res > 0) {
 		switch(mid) {
-			case MSG_WIN_KEYBOARD:
+			case MSG_WIN_KEYBOARD_EV:
 				handleKbMsg();
 				break;
 

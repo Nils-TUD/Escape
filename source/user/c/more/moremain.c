@@ -64,7 +64,7 @@ int main(int argc,const char *argv[]) {
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	strncat(vtermPath,getenv("TERM"),sizeof(vtermPath));
 	vtermPath[sizeof(vtermPath) - 1] = '\0';
-	vt = fopen(vtermPath,"r");
+	vt = fopen(vtermPath,"rm");
 	if(!vt)
 		error("Unable to open '%s'",vtermPath);
 	vtFd = fileno(vt);

@@ -8,6 +8,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 
+#define USERS_PATH			"/etc/users"
 #define MAX_USERNAME_LEN	32
 #define MAX_PW_LEN			32
 
@@ -19,6 +20,10 @@ typedef struct sUser {
 	char home[MAX_PATH_LEN];
 	struct sUser *next;
 } sUser;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Parses the user-information from given file into a linked list of users.
@@ -71,5 +76,9 @@ void user_free(sUser *u);
  * @param u the users
  */
 void user_print(const sUser *u);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USER_H_ */

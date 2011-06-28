@@ -21,6 +21,7 @@
 #define DRIVER_H_
 
 #include <esc/common.h>
+#include <usergroup/group.h>
 #include <string>
 #include <vector>
 #include <ostream>
@@ -40,42 +41,63 @@ private:
 	std::string _msg;
 };
 
-class driver {
-public:
-	static const int MAX_WAIT_RETRIES = 1000;
+class device {
+	friend std::istream& operator >>(std::istream& is,device& dev);
+	typedef unsigned int perm_type;
 
 public:
-	driver(const std::string& n,const std::vector<std::string>& waitNames)
-		: _loaded(false), _name(n), _deps(vector<driver*>()), _waits(waitNames) {
+	device(): _name(std::string()), _perms(perm_type()), _group(std::string()) {
+	}
+	~device() {
+	}
+
+	const std::string& name() const {
+		return _name;
+	}
+	perm_type permissions() const {
+		return _perms;
+	}
+	const std::string& group() const {
+		return _group;
+	}
+
+private:
+	std::string _name;
+	perm_type _perms;
+	std::string _group;
+};
+
+class driver {
+	friend std::istream& operator >>(std::istream& is,driver& drv);
+
+public:
+	static const int MAX_WAIT_RETRIES	= 1000;
+	static const int RETRY_INTERVAL		= 40;
+
+private:
+	static sGroup *groupList;
+
+public:
+	driver() : _name(std::string()), _devices(std::vector<device>()) {
 	}
 	~driver() {
 	}
 
-	bool loaded() const {
-		return _loaded;
-	}
 	const std::string& name() const {
 		return _name;
 	}
-	const std::vector<driver*>& dependencies() const {
-		return _deps;
+	const std::vector<device>& devices() const {
+		return _devices;
 	}
-	const std::vector<std::string>& waits() const {
-		return _waits;
-	}
-
 	void load();
-	void add_dep(driver* drv) {
-		_deps.push_back(drv);
-	}
 
 private:
-	bool _loaded;
 	std::string _name;
-	std::vector<driver*> _deps;
-	std::vector<std::string> _waits;
+	std::vector<device> _devices;
 };
 
+std::istream& operator >>(std::istream& is,device& dev);
+std::istream& operator >>(std::istream& is,driver& drv);
 std::ostream& operator <<(std::ostream& os,const driver& drv);
 
 #endif /* DRIVER_H_ */

@@ -101,6 +101,15 @@ error:
 	return NULL;
 }
 
+gid_t group_getByName(const sGroup *g,const char *name) {
+	while(g != NULL) {
+		if(strcmp(g->name,name) == 0)
+			return g->gid;
+		g = g->next;
+	}
+	return -1;
+}
+
 gid_t *group_collectGroupsFor(const sGroup *g,uid_t uid,size_t openSlots,size_t *count) {
 	size_t i,size = MAX(openSlots,8);
 	gid_t *res = (gid_t*)malloc(sizeof(gid_t) * size);

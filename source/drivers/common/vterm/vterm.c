@@ -72,7 +72,7 @@ bool vterm_initAll(int *ids,sVTermCfg *cfg) {
 		driver = VESA_DRIVER;
 	else
 		driver = VGA_DRIVER;
-	vidFd = open(driver,IO_READ | IO_WRITE);
+	vidFd = open(driver,IO_READ | IO_WRITE | IO_MSGS);
 	if(vidFd < 0) {
 		printe("Unable to open '%s'",driver);
 		return false;
@@ -85,7 +85,7 @@ bool vterm_initAll(int *ids,sVTermCfg *cfg) {
 	}
 
 	/* open speaker */
-	speakerFd = open("/dev/speaker",IO_WRITE);
+	speakerFd = open("/dev/speaker",IO_MSGS);
 	/* ignore errors here. in this case we simply don't use it */
 
 	for(i = 0; i < VTERM_COUNT; i++) {

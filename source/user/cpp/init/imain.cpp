@@ -23,11 +23,9 @@
 #include <esc/thread.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sstream>
 #include <fstream>
-#include "iparser.h"
 #include "idriver.h"
-
-#define PRINT_DRIVERS	0
 
 static void createLogin(int vterm);
 
@@ -59,23 +57,19 @@ int main(void) {
 		error("Unable to set PATH");
 
 	try {
-		// read driver-spec from file
-		ostringstream buf;
+		// read drivers from file
+		vector<driver> drivers;
 		ifstream ifs("/etc/drivers");
-		buf << ifs.rdbuf();
+		while(!ifs.eof()) {
+			driver drv;
+			ifs >> drv;
+			drivers.push_back(drv);
+		}
 
-		// parse them and load them
-		vector<driver*> drivers = parseDrivers(buf.str());
-
-#if PRINT_DRIVERS
-		cout << "Drivers to load:" << endl;
-		for(vector<driver*>::iterator it = drivers.begin(); it != drivers.end(); ++it)
-			cout << **it;
-		cout << endl;
-#endif
-
-		for(vector<driver*>::iterator it = drivers.begin(); it != drivers.end(); ++it)
-			(*it)->load();
+		for(vector<driver>::iterator it = drivers.begin(); it != drivers.end(); ++it) {
+			cout << "Loading '/sbin/" << it->name() << "'..." << endl;
+			it->load();
+		}
 	}
 	catch(const load_error& e) {
 		cerr << "Unable to load drivers: " << e.what() << endl;

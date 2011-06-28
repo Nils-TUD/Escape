@@ -37,6 +37,9 @@ int main(void) {
 	id = regDriver("pci",0);
 	if(id < 0)
 		error("Unable to register driver 'pci'");
+	if(chmod("/dev/pci",0110) < 0)
+		error("Unable to change permissions of /dev/pci");
+
 	while(1) {
 		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)

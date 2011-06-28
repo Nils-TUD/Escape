@@ -56,7 +56,7 @@ int main(void) {
 		error("Unable to set SIG_CHILD_TERM-handler");
 
 	/* announce listener */
-	int fd = open("/dev/keyevents",IO_READ | IO_WRITE);
+	int fd = open("/dev/keyevents",IO_MSGS);
 	if(fd < 0)
 		error("[UI] Unable to open '/dev/keyevents'");
 	for(i = 0; i < ARRAY_SIZE(keys); i++)
@@ -77,12 +77,12 @@ int main(void) {
 static void switchTo(size_t index) {
 	if(index != GUI_INDEX && curTerm == GUI_INDEX) {
 		/* disable winmanager */
-		int fd = open("/dev/winmanager",IO_WRITE);
+		int fd = open("/dev/winmanager",IO_MSGS);
 		if(fd >= 0) {
 			send(fd,MSG_WIN_DISABLE,NULL,0);
 			close(fd);
 			/* enable vterm */
-			fd = open("/dev/vterm0",IO_WRITE);
+			fd = open("/dev/vterm0",IO_MSGS);
 			if(fd >= 0) {
 				sendRecvMsgData(fd,MSG_VT_ENABLE,NULL,0);
 				msg.args.arg1 = index;
@@ -94,13 +94,13 @@ static void switchTo(size_t index) {
 	}
 	else if(index == GUI_INDEX && curTerm != GUI_INDEX) {
 		if(startGUI()) {
-			int fd = open("/dev/vterm0",IO_WRITE);
+			int fd = open("/dev/vterm0",IO_MSGS);
 			if(fd >= 0) {
 				/* diable vterm */
 				sendRecvMsgData(fd,MSG_VT_DISABLE,NULL,0);
 				close(fd);
 				/* enable winmanager */
-				fd = open("/dev/winmanager",IO_WRITE);
+				fd = open("/dev/winmanager",IO_MSGS);
 				if(fd >= 0) {
 					send(fd,MSG_WIN_ENABLE,NULL,0);
 					close(fd);
@@ -111,7 +111,7 @@ static void switchTo(size_t index) {
 	}
 	else if(index != GUI_INDEX) {
 		/* select vterm */
-		int fd = open("/dev/vterm0",IO_WRITE);
+		int fd = open("/dev/vterm0",IO_MSGS);
 		if(fd >= 0) {
 			msg.args.arg1 = index;
 			send(fd,MSG_VT_SELECT,&msg,sizeof(msg.args));

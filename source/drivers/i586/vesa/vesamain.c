@@ -184,7 +184,7 @@ int main(void) {
 				}
 				break;
 
-				case MSG_VESA_GETMODE_REQ: {
+				case MSG_VESA_GETMODE: {
 					sVESAInfo *info = (sVESAInfo*)malloc(sizeof(sVESAInfo));
 					msg.data.arg1 = ERR_NOT_ENOUGH_MEM;
 					if(info) {

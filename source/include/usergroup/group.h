@@ -8,7 +8,11 @@
 #include <esc/common.h>
 #include <stdio.h>
 
+#define GROUPS_PATH			"/etc/groups"
 #define MAX_GROUPNAME_LEN	32
+
+/* fixed because boot-modules can't use the fs and thus, can't read /etc/groups */
+#define GROUP_STORAGE		10
 
 typedef struct sGroup {
 	gid_t gid;
@@ -17,6 +21,10 @@ typedef struct sGroup {
 	uid_t *users;
 	struct sGroup *next;
 } sGroup;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Parses the group-information from given file into a linked list of groups.
@@ -37,6 +45,15 @@ sGroup *group_parseFromFile(const char *file,size_t *count);
  * @return the groups or NULL if failed
  */
 sGroup *group_parse(const char *groups,size_t *count);
+
+/**
+ * Searches for the group with given name in the list denoted by <g> and returns the group-id
+ *
+ * @param g the group-list
+ * @param name the group-name
+ * @return the group-id or -1 if not found
+ */
+gid_t group_getByName(const sGroup *g,const char *name);
 
 /**
  * Collects all groups for the given user
@@ -71,5 +88,9 @@ void group_free(sGroup *g);
  * @param g the groups
  */
 void group_print(const sGroup *g);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GROUP_H_ */

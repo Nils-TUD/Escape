@@ -46,8 +46,8 @@ int sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check flags */
-	flags &= VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE | VFS_APPEND | VFS_NOBLOCK;
-	if((flags & (VFS_READ | VFS_WRITE)) == 0)
+	flags &= VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | VFS_APPEND | VFS_NOBLOCK;
+	if((flags & (VFS_READ | VFS_WRITE | VFS_MSGS)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* open the path */

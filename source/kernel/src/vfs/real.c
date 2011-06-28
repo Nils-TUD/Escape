@@ -519,7 +519,7 @@ static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 	chan->active = true;
 
 	/* resolve path to fs */
-	err = vfs_node_resolvePath(FS_PATH,&nodeNo,NULL,VFS_READ | VFS_WRITE);
+	err = vfs_node_resolvePath(FS_PATH,&nodeNo,NULL,VFS_READ | VFS_WRITE | VFS_MSGS);
 	if(err < 0)
 		goto errorChan;
 
@@ -534,7 +534,7 @@ static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 	nodeNo = vfs_node_getNo(child);
 
 	/* open file */
-	err = vfs_openFile(pid,VFS_READ | VFS_WRITE,nodeNo,VFS_DEV_NO);
+	err = vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,nodeNo,VFS_DEV_NO);
 	if(err < 0)
 		goto errorNode;
 	chan->file = err;

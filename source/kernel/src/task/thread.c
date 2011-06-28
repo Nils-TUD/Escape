@@ -272,6 +272,8 @@ errThread:
 }
 
 void thread_kill(sThread *t) {
+	if(t->tid == INIT_TID)
+		util_panic("Can't kill init-thread!");
 	/* we can't destroy the current thread */
 	if(t == cur) {
 		/* put it in the dead-thread-queue to destroy it later */

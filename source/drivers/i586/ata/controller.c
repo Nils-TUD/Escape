@@ -54,7 +54,7 @@ void ctrl_init(bool useDma) {
 	int fd;
 
 	/* get ide-controller from pci */
-	fd = open("/dev/pci",IO_READ | IO_WRITE);
+	fd = open("/dev/pci",IO_MSGS);
 	if(fd < 0)
 		error("Unable to open '/dev/pci'");
 	res = vrecvMsgData(fd,MSG_PCI_GET_BY_CLASS,&ideCtrl,sizeof(sPCIDevice),2,

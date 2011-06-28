@@ -87,9 +87,9 @@ static char *backup = NULL;
 bool displ_init(void) {
 	int vidMode = getConf(CONF_BOOT_VIDEOMODE);
 	if(vidMode == CONF_VIDMODE_VGATEXT)
-		video = open(VIDEO_DRIVER,IO_READ | IO_WRITE);
+		video = open(VIDEO_DRIVER,IO_WRITE | IO_MSGS);
 	else
-		video = open(VESA_DRIVER,IO_READ | IO_WRITE);
+		video = open(VESA_DRIVER,IO_WRITE | IO_MSGS);
 	if(video < 0) {
 		fprintf(stderr,"Unable to open video-driver\n");
 		return false;

@@ -27,7 +27,9 @@ int isatty(int fd) {
 	sVTSize consSize;
 	int res = recvMsgData(fd,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) >= 0;
 	/* this is not considered as an error in this case */
-	if(errno == ERR_UNSUPPORTED_OP)
+	/* note that we include no-exec-perm here because we assume that we can always send messages
+	 * with stdin when it is connected to a vterm. */
+	if(errno == ERR_UNSUPPORTED_OP || errno == ERR_NO_EXEC_PERM)
 		errno = 0;
 	return res;
 }

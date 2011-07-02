@@ -97,7 +97,7 @@ foreach($syscalls as $sc) {
 	echo "	TRAP	0,".$sc[1].",0\n";
 	echo "	BZ		$2,1f						# no-error?\n";
 	echo "	GETA	$3,errno\n";
-	echo "	STOU	$2,$3,0\n";
+	echo "	STTU	$2,$3,0\n";
 	echo "	SET		$0,$2\n";
 	echo "1:\n";
 	echo "	POP		1,0							# return value is in $0\n";

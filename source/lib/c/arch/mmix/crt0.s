@@ -68,7 +68,7 @@ threadExit:
 	# just to be sure
 	1: JMP	1b
 
-# all signal-handler return to this "function"
+# when we should handle a signal, the kernel lets us jump to this code
 sigRetFunc:
 	PUSHJ	$255,1f				# we need a few local registers..
 	# ack signal

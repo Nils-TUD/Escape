@@ -35,6 +35,7 @@
 #define KB_DATA_BUF_SIZE			128
 #define BUF_SIZE					128
 
+static int kbClientThread(void *arg);
 static void handleKeymap(msgid_t mid,int fd);
 static void handleKeyevents(msgid_t mid,int fd);
 
@@ -42,17 +43,15 @@ static void handleKeyevents(msgid_t mid,int fd);
 static sMsg msg;
 static sRingBuf *rbuf;
 static sKeymapEntry *map;
-static sKmData data;
-static sKbData kbData[KB_DATA_BUF_SIZE];
+static tULock lck;
+static int ids[2];
 
 int main(void) {
 	char path[MAX_PATH_LEN];
 	char *newline;
-	sWaitObject waits[3];
-	int ids[2];
+	sWaitObject waits[2];
 	int drv;
 	msgid_t mid;
-	int kbFd;
 	FILE *f;
 
 	events_init();
@@ -65,11 +64,6 @@ int main(void) {
 	rbuf = rb_create(sizeof(sKmData),BUF_SIZE,RB_OVERWRITE);
 	if(rbuf == NULL)
 		error("Unable to create the ring-buffer");
-
-	/* open keyboard */
-	kbFd = open("/dev/keyboard",IO_READ | IO_NOBLOCK);
-	if(kbFd < 0)
-		error("Unable to open '/dev/keyboard'");
 
 	/* determine default keymap */
 	f = fopen(KEYMAP_FILE,"r");
@@ -89,41 +83,20 @@ int main(void) {
 	if(ids[1] < 0)
 		error("Unable to register driver 'keyevents'");
 
+	if(startThread(kbClientThread,NULL) < 0)
+		error("Unable to start thread for reading from kb");
+
 	waits[0].events = EV_CLIENT;
 	waits[0].object = ids[0];
 	waits[1].events = EV_CLIENT;
 	waits[1].object = ids[1];
-	waits[2].events = EV_DATA_READABLE;
-	waits[2].object = kbFd;
 
     /* wait for commands */
 	while(1) {
 		int fd = getWork(ids,2,&drv,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
-			/* read from keyboard */
-			sKbData *kbd = kbData;
-			ssize_t count;
-			bool readable = false;
-			/* don't block here since there may be waiting clients.. */
-			while((count = RETRY(read(kbFd,kbData,sizeof(kbData)))) > 0) {
-				count /= sizeof(sKbData);
-				while(count-- > 0) {
-					data.isBreak = kbd->isBreak;
-					data.keycode = kbd->keycode;
-					data.character = km_translateKeycode(
-							map,kbd->isBreak,kbd->keycode,&(data.modifier));
-					/* if nobody has announced a global key-listener for it, add it to our rb */
-					if(!events_send(ids[1],&data)) {
-						rb_write(rbuf,&data);
-						readable = true;
-					}
-					kbd++;
-				}
-			}
-			if(count < 0 && count != ERR_WOULD_BLOCK)
-				printe("[KM] Unable to read");
-			if(readable)
-				fcntl(ids[0],F_SETDATA,true);
+			if(fd != ERR_NO_CLIENT_WAITING)
+				printe("[KM] Unable to get client");
 			waitm(waits,ARRAY_SIZE(waits));
 		}
 		else {
@@ -136,13 +109,48 @@ int main(void) {
 			close(fd);
 		}
 	}
+	return EXIT_SUCCESS;
+}
 
-	/* clean up */
-	close(ids[1]);
-	free(map);
-	rb_destroy(rbuf);
-	close(ids[0]);
+static int kbClientThread(void *arg) {
+	UNUSED(arg);
+	static sKmData data;
+	static sKbData kbData[KB_DATA_BUF_SIZE];
+	int kbFd;
 
+	/* open keyboard */
+	kbFd = open("/dev/keyboard",IO_READ);
+	if(kbFd < 0)
+		error("Unable to open '/dev/keyboard'");
+
+	while(1) {
+		ssize_t count = RETRY(read(kbFd,kbData,sizeof(kbData)));
+		if(count < 0)
+			printe("[KM] Unable to read");
+		else {
+			sKbData *kbd = kbData;
+			bool wasReadable = rb_length(rbuf) > 0;
+			bool readable = false;
+			count /= sizeof(sKbData);
+			while(count-- > 0) {
+				data.isBreak = kbd->isBreak;
+				data.keycode = kbd->keycode;
+				/* use the lock while we're using map, rbuf and the events */
+				locku(&lck);
+				data.character = km_translateKeycode(
+						map,kbd->isBreak,kbd->keycode,&(data.modifier));
+				/* if nobody has announced a global key-listener for it, add it to our rb */
+				if(!events_send(ids[1],&data)) {
+					rb_write(rbuf,&data);
+					readable = true;
+				}
+				unlocku(&lck);
+				kbd++;
+			}
+			if(!wasReadable && readable)
+				fcntl(ids[0],F_SETDATA,true);
+		}
+	}
 	return EXIT_SUCCESS;
 }
 
@@ -153,9 +161,11 @@ static void handleKeymap(msgid_t mid,int fd) {
 			size_t count = msg.args.arg2 / sizeof(sKmData);
 			sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
 			msg.args.arg1 = 0;
+			locku(&lck);
 			if(buffer)
 				msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
 			msg.args.arg2 = rb_length(rbuf) > 0;
+			unlocku(&lck);
 			send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 			if(buffer) {
 				send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKmData));
@@ -172,8 +182,10 @@ static void handleKeymap(msgid_t mid,int fd) {
 				msg.data.arg1 = ERR_INVALID_KEYMAP;
 			else {
 				msg.data.arg1 = 0;
+				locku(&lck);
 				free(map);
 				map = newMap;
+				unlocku(&lck);
 			}
 			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 		}
@@ -192,7 +204,10 @@ static void handleKeyevents(msgid_t mid,int fd) {
 			uchar flags = (uchar)msg.args.arg1;
 			uchar key = (uchar)msg.args.arg2;
 			uchar modifier = (uchar)msg.args.arg3;
-			msg.args.arg1 = events_add(getClientId(fd),flags,key,modifier);
+			inode_t id = getClientId(fd);
+			locku(&lck);
+			msg.args.arg1 = events_add(id,flags,key,modifier);
+			unlocku(&lck);
 			send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args));
 		}
 		break;
@@ -201,7 +216,10 @@ static void handleKeyevents(msgid_t mid,int fd) {
 			uchar flags = (uchar)msg.args.arg1;
 			uchar key = (uchar)msg.args.arg2;
 			uchar modifier = (uchar)msg.args.arg3;
-			events_remove(getClientId(fd),flags,key,modifier);
+			inode_t id = getClientId(fd);
+			locku(&lck);
+			events_remove(id,flags,key,modifier);
+			unlocku(&lck);
 		}
 		break;
 

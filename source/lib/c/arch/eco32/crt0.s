@@ -54,7 +54,7 @@ _start:
 	beq		$2,$0,initialThread
 	# we're an additional thread, so call the desired function
 	jalr	$2
-	j			threadExit
+	j		threadExit
 
 	# initial thread calls main
 initialThread:
@@ -71,7 +71,7 @@ threadExit:
 	add		$4,$2,$0
 	jal		exit
 	# just to be sure
-	1: j			1b
+	1: j	1b
 
 # all signal-handler return to this "function"
 sigRetFunc:

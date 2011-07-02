@@ -24,5 +24,5 @@
 # uint64_t cpu_rdtsc(void);
 .type cpu_rdtsc, @function
 cpu_rdtsc:
-	SETL	$0,0
+	GET		$0,rC
 	POP		1,0

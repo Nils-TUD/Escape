@@ -3,7 +3,7 @@ diff -rcN src/newlibdiff1org/newlib/libc/sys/escape/compat.c src/newlib/newlib/l
 --- src/newlib/newlib/libc/sys/escape/compat.c	2010-07-16 19:10:38.000000000 +0200
 ***************
 *** 0 ****
---- 1,50 ----
+--- 1,41 ----
 + #include <sys/stat.h>
 + #include <sys/types.h>
 + #include <sys/fcntl.h>
@@ -12,28 +12,19 @@ diff -rcN src/newlibdiff1org/newlib/libc/sys/escape/compat.c src/newlib/newlib/l
 + #include <sys/time.h>
 + #include <stdio.h>
 + 
-+ #define PAGE_SIZE 4096
-+ 
-+ extern int exec(char *name,char **argv);
-+ extern int sendSignalTo(int pid,int sig,int data);
-+ extern int _changeSize(int count);
-+ 
 + /* pointer to array of char * strings that define the current environment variables */
 + char **environ = {0};
 + 
 + int execve(char *name, char **argv, char **env) {
-+ 	return exec(name,argv);
++ 	return -1;
 + }
 + 
 + int kill(int pid, int sig) {
-+ 	return sendSignalTo(pid,sig,0);
++ 	return -1;
 + }
 + 
 + caddr_t sbrk(int incr) {
-+ 	unsigned int addr = _changeSize((incr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-+ 	if((int)addr >= -200 && (int)addr < 0)
-+ 		return NULL;
-+ 	return (void*)addr;
++ 	return (void*)0;
 + }
 + 
 + int stat(const char *file, struct stat *st) {
@@ -73,7 +64,7 @@ diff -rcN src/newlibdiff1org/newlib/libc/sys/escape/crt0.S src/newlib/newlib/lib
 --- src/newlib/newlib/libc/sys/escape/crt0.S	2010-07-16 19:10:35.000000000 +0200
 ***************
 *** 0 ****
---- 1,75 ----
+--- 1,27 ----
 + #
 + # $Id: newlib2.diff 786 2010-08-25 11:19:00Z nasmussen $
 + # Copyright (C) 2008 - 2009 Nils Asmussen
@@ -94,60 +85,13 @@ diff -rcN src/newlibdiff1org/newlib/libc/sys/escape/crt0.S src/newlib/newlib/lib
 + #
 + 
 + .global _start
-+ #.global sigRetFunc
 + .extern main
-+ .extern exit
-+ #.extern init_tls
-+ 
-+ #.include "syscalls.s"
-+ 
-+ #  Initial stack:
-+ #  +------------------+  <- top
-+ #  |     arguments    |
-+ #  |        ...       |
-+ #  +------------------+
-+ #  |       argv       |
-+ #  +------------------+
-+ #  |       argc       |
-+ #  +------------------+
-+ #  |     TLSSize      |  0 if not present
-+ #  +------------------+
-+ #  |     TLSStart     |  0 if not present
-+ #  +------------------+
-+ #  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-+ #  +------------------+
 + 
 + _start:
-+ 	# first call init_tls(entryPoint,TLSStart,TLSSize)
-+ 	#call	init_tls
-+ 	# remove args from stack
-+ 	add		$12,%esp
-+ 	# it returns the entrypoint; 0 if we're the initial thread
-+ 	#test	%eax,%eax
-+ 	#je		initialThread
-+ 	# we're an additional thread, so call the desired function
-+ 	#call	*%eax
-+ 	#jmp		threadExit
++ 	PUSHJ	$0,main
 + 
-+ 	# initial thread calls main
-+ initialThread:
-+ #.ifndef SHAREDLIB
-+ #	.extern __libc_init
-+ #	call	__libc_init
-+ #.endif
-+ 	call	main
-+ 
-+ threadExit:
-+ 	push	%eax
-+ 	call	exit
 + 	# just to be sure
-+ 	1: jmp		1b
-+ 
-+ # all signal-handler return to this "function"
-+ #sigRetFunc:
-+ #	mov		$SYSCALL_ACKSIG,%eax
-+ #	int		$SYSCALL_IRQ
-+ 	# never reached
++ 	1: JMP	1b
 + 
 diff -rcN src/newlibdiff1org/newlib/libc/sys/escape/Makefile.am src/newlib/newlib/libc/sys/escape/Makefile.am
 *** src/newlibdiff1org/newlib/libc/sys/escape/Makefile.am	1970-01-01 01:00:00.000000000 +0100

@@ -1,6 +1,6 @@
-diff -rcN src/newlib_org/config.sub src/newlib/config.sub
-*** src/newlib_org/config.sub	2010-07-16 18:26:56.000000000 +0200
---- src/newlib/config.sub	2010-07-16 18:29:09.000000000 +0200
+diff -rcN src_org/newlib//config.sub src/newlib//config.sub
+*** src_org/newlib//config.sub	2006-12-11 05:12:46.000000000 +0100
+--- src/newlib//config.sub	2011-06-17 10:59:15.000000000 +0200
 ***************
 *** 1203,1209 ****
   	      | -*vms* | -sco* | -esix* | -isc* | -aix* | -sunos | -sunos[34]*\
@@ -18,31 +18,31 @@ diff -rcN src/newlib_org/config.sub src/newlib/config.sub
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
-diff -rcN src/newlib_org/newlib/configure.host src/newlib/newlib/configure.host
-*** src/newlib_org/newlib/configure.host	2010-07-16 18:26:56.000000000 +0200
---- src/newlib/newlib/configure.host	2010-07-16 18:30:39.000000000 +0200
+diff -rcN src_org/newlib//newlib/configure.host src/newlib//newlib/configure.host
+*** src_org/newlib//newlib/configure.host	2006-12-18 22:49:14.000000000 +0100
+--- src/newlib//newlib/configure.host	2011-06-17 10:58:38.000000000 +0200
 ***************
-*** 316,321 ****
---- 316,324 ----
-  # THIS TABLE IS ALPHA SORTED.  KEEP IT THAT WAY.
-  
-  case "${host}" in
-+ 	i[3-7]86-*-escape*)
-+ 	sys_dir=escape
-+ 	;;
-    *-*-cygwin*)
+*** 425,430 ****
+--- 425,433 ----
+    mmix-knuth-mmixware)
+  	sys_dir=mmixware
+  	;;
++   mmix-*-escape*)
++     sys_dir=escape
++     ;;
+    powerpcle-*-pe)
   	posix_dir=posix
-  	stdio64_dir=stdio64
-diff -rcN src/newlib_org/newlib/libc/sys/configure.in src/newlib/newlib/libc/sys/configure.in
-*** src/newlib_org/newlib/libc/sys/configure.in	2010-07-16 18:26:56.000000000 +0200
---- src/newlib/newlib/libc/sys/configure.in	2010-07-16 18:32:05.000000000 +0200
+  	;;
+diff -rcN src_org/newlib//newlib/libc/sys/configure.in src/newlib//newlib/libc/sys/configure.in
+*** src_org/newlib//newlib/libc/sys/configure.in	2006-04-13 21:56:27.000000000 +0200
+--- src/newlib//newlib/libc/sys/configure.in	2011-06-17 11:00:05.000000000 +0200
 ***************
-*** 20,25 ****
---- 20,26 ----
-  
-  if test -n "${sys_dir}"; then
-    case ${sys_dir} in
-+   escape) AC_CONFIG_SUBDIRS(escape) ;;
-  	a29khif) AC_CONFIG_SUBDIRS(a29khif) ;;
-  	arc) AC_CONFIG_SUBDIRS(arc) ;;
+*** 25,30 ****
+--- 25,31 ----
   	arm) AC_CONFIG_SUBDIRS(arm) ;;
+  	d10v) AC_CONFIG_SUBDIRS(d10v) ;;
+  	decstation) AC_CONFIG_SUBDIRS(decstation) ;;
++ 	escape) AC_CONFIG_SUBDIRS(escape) ;;
+  	h8300hms) AC_CONFIG_SUBDIRS(h8300hms) ;;
+  	h8500hms) AC_CONFIG_SUBDIRS(h8500hms) ;;
+  	linux) AC_CONFIG_SUBDIRS(linux) ;;

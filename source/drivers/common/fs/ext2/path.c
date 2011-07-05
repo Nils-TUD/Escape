@@ -51,9 +51,9 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 	pos = strchri(p,'/');
 	while(*p) {
 		/* we need execute-permission to access the directory */
-		if(!ext2_hasPermission(cnode,u,MODE_EXEC)) {
+		if((err = ext2_hasPermission(cnode,u,MODE_EXEC)) < 0) {
 			ext2_icache_release(cnode);
-			return ERR_NO_PERM;
+			return err;
 		}
 
 		res = ext2_dir_find(e,cnode,p,pos);

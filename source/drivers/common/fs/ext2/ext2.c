@@ -159,21 +159,31 @@ sFileSystem *ext2_getFS(void) {
 	return fs;
 }
 
-bool ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
+int ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
+	int mask;
 	uint16_t mode = le16tocpu(cnode->inode.mode);
 	if(u->uid == ROOT_UID) {
 		/* root has exec-permission if at least one has exec-permission */
 		if(perms & MODE_EXEC)
-			return mode & MODE_EXEC;
+			return (mode & MODE_EXEC) ? 0 : ERR_NO_EXEC_PERM;
 		/* root can read and write in all cases */
-		return true;
+		return 0;
 	}
 
 	if(le16tocpu(cnode->inode.uid) == u->uid)
-		return (mode & S_IRWXU) & perms;
-	if(le16tocpu(cnode->inode.gid) == u->gid || isingroup(u->pid,le16tocpu(cnode->inode.gid)) == 1)
-		return (mode & S_IRWXG) & perms;
-	return (mode & S_IRWXO) & perms;
+		mask = (mode >> 6) & 0x7;
+	else if(le16tocpu(cnode->inode.gid) == u->gid || isingroup(u->pid,le16tocpu(cnode->inode.gid)) == 1)
+		mask = (mode >> 3) & 0x7;
+	else
+		mask = mode & 0x7;
+
+	if((perms & MODE_READ) && !(mask & MODE_READ))
+		return ERR_NO_READ_PERM;
+	if((perms & MODE_WRITE) && !(mask & MODE_WRITE))
+		return ERR_NO_WRITE_PERM;
+	if((perms & MODE_EXEC) && !(mask & MODE_EXEC))
+		return ERR_NO_EXEC_PERM;
+	return 0;
 }
 
 block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo) {
@@ -210,6 +220,7 @@ static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t
 }
 
 static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
+	int err;
 	sExt2 *e = (sExt2*)h;
 	/* check permissions */
 	sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
@@ -219,8 +230,8 @@ static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
 	if(flags & IO_WRITE)
 		mode |= MODE_WRITE;
 	/* TODO exec? */
-	if(!ext2_hasPermission(cnode,u,mode))
-		return ERR_NO_PERM;
+	if((err = ext2_hasPermission(cnode,u,mode)) < 0)
+		return err;
 	ext2_icache_release(cnode);
 
 	/* truncate? */

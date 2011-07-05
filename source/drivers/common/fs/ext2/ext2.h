@@ -381,9 +381,9 @@ sFileSystem *ext2_getFS(void);
  * @param cnode the cached inode
  * @param u the user
  * @param perms the required permissions
- * @return true if the user has permission
+ * @return 0 if the user has permission, the error-code otherwise
  */
-bool ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms);
+int ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms);
 
 /**
  * Determines the block of the given inode

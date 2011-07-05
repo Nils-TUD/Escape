@@ -45,8 +45,8 @@ int ext2_link_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,sExt2CInode *cnode,con
 	int32_t dirSize = le32tocpu(dir->inode.size);
 
 	/* we need write-permission to create dir-entries */
-	if(!ext2_hasPermission(dir,u,MODE_WRITE))
-		return ERR_NO_PERM;
+	if((res = ext2_hasPermission(dir,u,MODE_WRITE)) < 0)
+		return res;
 
 	/* TODO we don't have to read the whole directory at once */
 
@@ -117,8 +117,8 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 	sExt2CInode *cnode;
 
 	/* we need write-permission to delete dir-entries */
-	if(!ext2_hasPermission(dir,u,MODE_WRITE))
-		return ERR_NO_PERM;
+	if((res = ext2_hasPermission(dir,u,MODE_WRITE)) < 0)
+		return res;
 
 	/* read directory-entries */
 	buf = malloc(dirSize);

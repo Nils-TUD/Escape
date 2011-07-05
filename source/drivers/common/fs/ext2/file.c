@@ -49,8 +49,8 @@ int ext2_file_create(sExt2 *e,sFSUser *u,sExt2CInode *dirNode,const char *name,i
 	sExt2CInode *cnode;
 	int res;
 	/* we need write-permission for the directory */
-	if(!ext2_hasPermission(dirNode,u,MODE_WRITE))
-		return ERR_NO_PERM;
+	if((res = ext2_hasPermission(dirNode,u,MODE_WRITE)) < 0)
+		return res;
 
 	res = ext2_inode_create(e,u,dirNode,&cnode,isDir);
 	if(res < 0)

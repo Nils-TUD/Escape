@@ -306,7 +306,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 				return ERR_NOT_ENOUGH_MEM;
 			memcpy(nameCpy,path,nameLen + 1);
 			/* now create the node and pass the node-number back */
-			if((child = vfs_file_create(t->tid,dir,nameCpy,vfs_file_read,vfs_file_write)) == NULL) {
+			if((child = vfs_file_create(pid,dir,nameCpy,vfs_file_read,vfs_file_write)) == NULL) {
 				cache_free(nameCpy);
 				return ERR_NOT_ENOUGH_MEM;
 			}

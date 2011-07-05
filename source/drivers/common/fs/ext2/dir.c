@@ -108,8 +108,8 @@ int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
 	sExt2DirEntry *entry,*buffer;
 
 	/* we need write-permission to delete */
-	if(!ext2_hasPermission(dir,u,MODE_WRITE))
-		return ERR_NO_PERM;
+	if((res = ext2_hasPermission(dir,u,MODE_WRITE)) < 0)
+		return res;
 
 	/* find the entry in the given directory */
 	ino = ext2_dir_find(e,dir,name,strlen(name));

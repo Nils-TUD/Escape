@@ -20,10 +20,15 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/test.h>
+#include <esc/proc.h>
 #include <stdio.h>
 #include <string.h>
 
 static void test_fs(void);
+static void test_basics(void);
+static void test_perms(void);
+static void test_assertCan(const char *path,uint mode);
+static void test_assertCanNot(const char *path,uint mode,int err);
 static void fs_createFile(const char *name,const char *content);
 static void fs_readFile(const char *name,const char *content);
 
@@ -33,6 +38,11 @@ sTestModule tModFs = {
 };
 
 static void test_fs(void) {
+	test_basics();
+	test_perms();
+}
+
+static void test_basics(void) {
 	sFileInfo info1;
 	sFileInfo info2;
 	test_caseStart("Testing fs");
@@ -64,6 +74,137 @@ static void test_fs(void) {
 	test_assertInt(sync(),0);
 
 	test_caseSucceeded();
+}
+
+static void test_perms(void) {
+	size_t i;
+	sFileInfo info;
+	struct {
+		const char *dir;
+		const char *file;
+	} paths[] = {
+		{"/newfile","/newfile/test"},
+		{"/system/newfile","/system/newfile/test"}
+	};
+	test_caseStart("Testing permissions");
+
+	for(i = 0; i < ARRAY_SIZE(paths); i++) {
+		/* create new file */
+		fs_createFile(paths[i].dir,"foobar");
+		test_assertInt(chmod(paths[i].dir,0600),0);
+		test_assertInt(chown(paths[i].dir,1,1),0);
+
+		/* I'm the owner */
+		test_assertInt(setegid(1),0);
+		test_assertInt(seteuid(1),0);
+
+		test_assertCan(paths[i].dir,IO_READ);
+		test_assertCan(paths[i].dir,IO_WRITE);
+
+		/* I'm NOT the owner */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(seteuid(2),0);
+
+		test_assertCanNot(paths[i].dir,IO_READ,ERR_NO_READ_PERM);
+		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+
+		/* give group read-perm */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(chmod(paths[i].dir,0640),0);
+		test_assertInt(seteuid(2),0);
+
+		test_assertCan(paths[i].dir,IO_READ);
+		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+
+		/* neither owner nor group */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(setegid(0),0);
+		test_assertInt(setegid(2),0);
+		test_assertInt(seteuid(2),0);
+
+		test_assertCanNot(paths[i].dir,IO_READ,ERR_NO_READ_PERM);
+		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+
+		/* give others read+write perm */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(chmod(paths[i].dir,0646),0);
+		test_assertInt(seteuid(2),0);
+
+		test_assertCan(paths[i].dir,IO_READ);
+		test_assertCan(paths[i].dir,IO_WRITE);
+
+		/* delete it */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(unlink(paths[i].dir),0);
+
+
+		/* create new folder */
+		test_assertInt(mkdir(paths[i].dir),0);
+		test_assertInt(chmod(paths[i].dir,0700),0);
+		test_assertInt(chown(paths[i].dir,1,1),0);
+
+		/* I'm the owner */
+		test_assertInt(setegid(1),0);
+		test_assertInt(seteuid(1),0);
+
+		test_assertCan(paths[i].dir,IO_READ);
+		test_assertCan(paths[i].dir,IO_WRITE);
+		fs_createFile(paths[i].file,"foo");
+		test_assertInt(stat(paths[i].file,&info),0);
+
+		/* I'm NOT the owner */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(seteuid(2),0);
+
+		test_assertCanNot(paths[i].dir,IO_READ,ERR_NO_READ_PERM);
+		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+		test_assertInt(stat(paths[i].file,&info),ERR_NO_EXEC_PERM);
+
+		/* give group read-perm */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(chmod(paths[i].dir,0740),0);
+		test_assertInt(seteuid(2),0);
+
+		test_assertCan(paths[i].dir,IO_READ);
+		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+		test_assertInt(stat(paths[i].file,&info),ERR_NO_EXEC_PERM);
+
+		/* neither owner nor group */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(setegid(0),0);
+		test_assertInt(setegid(2),0);
+		test_assertInt(seteuid(2),0);
+
+		test_assertCanNot(paths[i].dir,IO_READ,ERR_NO_READ_PERM);
+		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+		test_assertInt(stat(paths[i].file,&info),ERR_NO_EXEC_PERM);
+
+		/* give others read+write perm */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(chmod(paths[i].dir,0747),0);
+		test_assertInt(seteuid(2),0);
+
+		test_assertCan(paths[i].dir,IO_READ);
+		test_assertCan(paths[i].dir,IO_WRITE);
+		test_assertInt(stat(paths[i].file,&info),0);
+
+		/* delete it */
+		test_assertInt(seteuid(0),0);
+		test_assertInt(unlink(paths[i].file),0);
+		test_assertInt(rmdir(paths[i].dir),0);
+	}
+
+	test_caseSucceeded();
+}
+
+static void test_assertCan(const char *path,uint mode) {
+	int fd = open(path,mode);
+	test_assertTrue(fd >= 0);
+	close(fd);
+}
+
+static void test_assertCanNot(const char *path,uint mode,int err) {
+	test_assertInt(open(path,mode),err);
 }
 
 static void fs_createFile(const char *name,const char *content) {

@@ -18,7 +18,9 @@
  */
 
 #include <esc/common.h>
+#include <esc/proc.h>
 #include <esc/test.h>
+#include <stdlib.h>
 
 #include "tests/theap.h"
 #include "tests/tfileio.h"
@@ -30,6 +32,9 @@
 #include "tests/tuser.h"
 
 int main(void) {
+	if(getuid() != ROOT_UID)
+		error("Please start this program as root!");
+
 	test_register(&tModHeap);
 	test_register(&tModFileio);
 	test_register(&tModDir);

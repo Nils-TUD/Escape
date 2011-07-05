@@ -69,18 +69,22 @@ static void test_fs(void) {
 static void fs_createFile(const char *name,const char *content) {
 	FILE *f = fopen(name,"w");
 	test_assertTrue(f != NULL);
-	test_assertInt(fwrite(content,1,strlen(content),f),strlen(content));
-	fclose(f);
+	if(f != NULL) {
+		test_assertInt(fwrite(content,1,strlen(content),f),strlen(content));
+		fclose(f);
+	}
 }
 
 static void fs_readFile(const char *name,const char *content) {
 	char buf[100] = {0};
 	FILE *f = fopen(name,"r");
 	test_assertTrue(f != NULL);
-	test_assertInt(fseek(f,0,SEEK_END),0);
-	test_assertInt(ftell(f),strlen(content));
-	rewind(f);
-	test_assertInt(fread(buf,1,strlen(content),f),strlen(content));
-	test_assertStr(buf,content);
-	fclose(f);
+	if(f != NULL) {
+		test_assertInt(fseek(f,0,SEEK_END),0);
+		test_assertInt(ftell(f),strlen(content));
+		rewind(f);
+		test_assertInt(fread(buf,1,strlen(content),f),strlen(content));
+		test_assertStr(buf,content);
+		fclose(f);
+	}
 }

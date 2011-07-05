@@ -72,6 +72,8 @@ static void test_abspath(void) {
 		return;
 	}
 
+	setenv("CWD","/");
+
 	count = abspath(path,MAX_PATH_LEN + 1,"/");
 	test_assertUInt(count,SSTRLEN("/"));
 	test_assertStr(path,"/");
@@ -91,6 +93,18 @@ static void test_abspath(void) {
 	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
 	test_assertUInt(count,SSTRLEN("/bin/bla/"));
 	test_assertStr(path,"/bin/bla/");
+
+	setenv("CWD","/home");
+
+	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
+	test_assertUInt(count,SSTRLEN("/home/bin/bla/"));
+	test_assertStr(path,"/home/bin/bla/");
+
+	setenv("CWD","/home/");
+
+	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
+	test_assertUInt(count,SSTRLEN("/home/bin/bla/"));
+	test_assertStr(path,"/home/bin/bla/");
 
 	count = abspath(path,3,"/");
 	if(count > 3)

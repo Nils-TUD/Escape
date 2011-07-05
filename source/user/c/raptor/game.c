@@ -43,6 +43,7 @@ static void game_addAirplain(void);
 static uint score;
 static int timerFreq;
 static uchar pressed[KEYCODE_COUNT];
+static uint addPlainInt;
 
 bool game_init(void) {
 	timerFreq = getConf(CONF_TIMER_FREQ);
@@ -50,6 +51,7 @@ bool game_init(void) {
 		fprintf(stderr,"Unable to get timer-frequency\n");
 		return false;
 	}
+	addPlainInt = ADDPLAIN_INTERVAL;
 
 	score = 0;
 	if(!displ_init())
@@ -85,8 +87,11 @@ bool game_tick(time_t gtime) {
 					stop |= !game_performAction(gtime,i);
 			}
 		}
-		if((gtime % ADDPLAIN_INTERVAL) == 0)
+		if((gtime % addPlainInt) == 0) {
+			if(addPlainInt > 20)
+				addPlainInt--;
 			game_addAirplain();
+		}
 		scoreChg = objlist_tick();
 		if((int)(scoreChg + score) < 0)
 			score = 0;

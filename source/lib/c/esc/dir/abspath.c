@@ -38,18 +38,21 @@ size_t abspath(char *dst,size_t dstSize,const char *src) {
 			return count;
 		/* copy current to path */
 		*pathtemp++ = '/';
+		*pathtemp = '\0';
 		curtemp = envPath + 1;
 		while(*curtemp) {
 			if(*curtemp == '/')
 				layer++;
 			*pathtemp++ = *curtemp++;
 		}
-		/* remove '/' at the end */
-		if(*pathtemp == '/')
-			pathtemp--;
+		/* append '/' */
+		if(pathtemp[-1] != '/')
+			*pathtemp++ = '/';
 		count = pathtemp - dst;
 	}
 	else {
+		*pathtemp++ = '/';
+		count++;
 		/* skip leading '/' */
 		do {
 			p++;
@@ -67,11 +70,11 @@ size_t abspath(char *dst,size_t dstSize,const char *src) {
 		else if(pos == 2 && strncmp(p,"..",2) == 0) {
 			if(layer > 0) {
 				char *start = pathtemp;
-				do {
+				/* to last slash */
+				pathtemp -= 2;
+				while(*pathtemp != '/')
 					pathtemp--;
-				}
-				while(*pathtemp != '/');
-				*pathtemp = '\0';
+				*++pathtemp = '\0';
 				count -= start - pathtemp;
 				layer--;
 			}
@@ -81,10 +84,10 @@ size_t abspath(char *dst,size_t dstSize,const char *src) {
 			if(dstSize - count < (size_t)(pos + 2))
 				return count;
 			/* append to path */
-			*pathtemp++ = '/';
 			strncpy(pathtemp,p,pos);
-			pathtemp[pos] = '\0';
-			pathtemp += pos;
+			pathtemp[pos] = '/';
+			pathtemp[pos + 1] = '\0';
+			pathtemp += pos + 1;
 			count += pos + 1;
 			p += pos + 1;
 			layer++;
@@ -102,8 +105,6 @@ size_t abspath(char *dst,size_t dstSize,const char *src) {
 	/* terminate */
 	if(dstSize - count < 2)
 		return count;
-	*pathtemp++ = '/';
 	*pathtemp = '\0';
-	count++;
 	return count;
 }

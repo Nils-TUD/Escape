@@ -629,9 +629,9 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 			cache_free(absOld);
 			return ERR_NOT_ENOUGH_MEM;
 		}
-		vfs_node_absolutize(absOld,MAX_PATH_LEN + 1,oldPath);
-		vfs_node_absolutize(absNew,MAX_PATH_LEN + 1,newPath);
-		oldRes = vfs_real_link(pid,absOld,absNew);
+		oldPath = vfs_node_absolutize(absOld,MAX_PATH_LEN + 1,oldPath);
+		newPath = vfs_node_absolutize(absNew,MAX_PATH_LEN + 1,newPath);
+		oldRes = vfs_real_link(pid,oldPath,newPath);
 		cache_free(absOld);
 		cache_free(absNew);
 		return oldRes;

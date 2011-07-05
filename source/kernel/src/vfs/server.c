@@ -28,6 +28,7 @@
 #include <sys/video.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
+#include <assert.h>
 #include <errors.h>
 
 #define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
@@ -38,6 +39,8 @@ typedef struct {
 	bool isEmpty;
 	/* implemented functions */
 	uint funcs;
+	/* total number of messages in all channels (for the server, not the clients) */
+	ulong msgCount;
 	/* the last served client */
 	sVFSNode *lastClient;
 } sServer;
@@ -67,6 +70,7 @@ sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 	srv->funcs = flags;
 	srv->isEmpty = true;
 	srv->lastClient = NULL;
+	srv->msgCount = 0;
 	node->data = srv;
 	return node;
 }
@@ -120,6 +124,22 @@ int vfs_server_setReadable(sVFSNode *node,bool readable) {
 	if(wasEmpty && readable)
 		vfs_server_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE);
 	return 0;
+}
+
+void vfs_server_addMsg(sVFSNode *node) {
+	sServer *srv = (sServer*)node->data;
+	srv->msgCount++;
+}
+
+void vfs_server_remMsg(sVFSNode *node) {
+	sServer *srv = (sServer*)node->data;
+	assert(srv->msgCount > 0);
+	srv->msgCount--;
+}
+
+bool vfs_server_hasWork(sVFSNode *node) {
+	sServer *srv = (sServer*)node->data;
+	return srv->msgCount > 0;
 }
 
 sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {

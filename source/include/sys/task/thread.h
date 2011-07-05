@@ -22,6 +22,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
+#include <sys/task/event.h>
 #include <sys/task/signals.h>
 #include <sys/mem/paging.h>
 #include <esc/hashmap.h>
@@ -75,6 +76,7 @@ struct sThread {
 	tid_t tid;
 	/* the events the thread waits for (if waiting) */
 	uint events;
+	sWait *waits;
 	/* the process we belong to */
 	sProc *proc;
 	/* the stack-region(s) for this thread */

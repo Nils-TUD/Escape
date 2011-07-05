@@ -29,6 +29,15 @@ typedef struct {
 	evobj_t object;
 } sWaitObject;
 
+typedef struct sWait {
+	tid_t tid;
+	ushort evi;
+	evobj_t object;
+	struct sWait *prev;
+	struct sWait *next;
+	struct sWait *tnext;
+} sWait;
+
 /* the event-indices */
 #define EVI_CLIENT				0
 #define EVI_RECEIVED_MSG		1

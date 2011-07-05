@@ -243,7 +243,7 @@ static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
 		for(i = 0; i < objCount; i++) {
 			if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 				file_t file = proc_fdToFile((int)uobjects[i].object);
-				if((kobjects[i].events & EV_CLIENT) && vfs_getClient(t->proc->pid,&file,1,NULL) >= 0)
+				if((kobjects[i].events & EV_CLIENT) && vfs_hasWork(t->proc->pid,&file,1))
 					goto done;
 				else if((kobjects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(t->proc->pid,file))
 					goto done;

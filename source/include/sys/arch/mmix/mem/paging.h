@@ -122,6 +122,10 @@
 /* in this case it is sufficient to check whether its not in the data-area of the kernel */
 #define IS_ON_HEAP(addr) 		((uintptr_t)(addr) > KERNEL_START + boot_getKernelSize())
 
+/* determines whether the given address is in a shared kernel area; in this case it is "shared"
+ * if it is accessed over the directly mapped space. */
+#define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START)
+
 typedef struct {
 	sAddressSpace *addrSpace;
 	uint64_t rv;

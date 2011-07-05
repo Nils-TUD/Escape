@@ -133,7 +133,7 @@ int shm_leave(sProc *p,const char *name) {
 	if(user == NULL || shm_isOwn(mem,p))
 		return ERR_SHARED_MEM_INVALID;
 
-	sll_removeFirst(mem->users,user);
+	sll_removeFirstWith(mem->users,user);
 	vmm_remove(p,user->region);
 	cache_free(user);
 	return 0;
@@ -155,7 +155,7 @@ int shm_destroy(sProc *p,const char *name) {
 		vmm_remove(user->proc,user->region);
 	}
 	/* free shmem */
-	sll_removeFirst(shareList,mem);
+	sll_removeFirstWith(shareList,mem);
 	sll_destroy(mem->users,true);
 	cache_free(mem);
 	return 0;

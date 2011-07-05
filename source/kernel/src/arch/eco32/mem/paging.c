@@ -102,7 +102,7 @@ static void paging_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) ;
 static void paging_printPage(sPTEntry *page);
 
 tPageDir curPDir = 0;
-static tPageDir otherPDir = 0;
+tPageDir otherPDir = 0;
 
 void paging_init(void) {
 	uintptr_t addr,end;
@@ -338,6 +338,33 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	frameno_t frame = pmem_allocate();
 	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),buffer,loadCount);
 	return frame;
+}
+
+void paging_copyToUser(void *dst,const void *src,size_t count) {
+	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(dst);
+	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
+	while(count > 0) {
+		size_t amount = MIN(PAGE_SIZE - offset,count);
+		uintptr_t addr = ((pt->frameNumber << PAGE_SIZE_SHIFT) | DIR_MAPPED_SPACE) + offset;
+		memcpy((void*)addr,src,amount);
+		src = (const void*)((uintptr_t)src + amount);
+		count -= amount;
+		offset = 0;
+		pt++;
+	}
+}
+
+void paging_zeroToUser(void *dst,size_t count) {
+	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(dst);
+	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
+	while(count > 0) {
+		size_t amount = MIN(PAGE_SIZE - offset,count);
+		uintptr_t addr = ((pt->frameNumber << PAGE_SIZE_SHIFT) | DIR_MAPPED_SPACE) + offset;
+		memclear((void*)addr,amount);
+		count -= amount;
+		offset = 0;
+		pt++;
+	}
 }
 
 sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,

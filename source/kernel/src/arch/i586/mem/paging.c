@@ -450,6 +450,14 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	return frame;
 }
 
+void paging_copyToUser(void *dst,const void *src,size_t count) {
+	memcpy(dst,src,count);
+}
+
+void paging_zeroToUser(void *dst,size_t count) {
+	memclear(dst,count);
+}
+
 sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share) {
 	sAllocStats stats = {0,0};

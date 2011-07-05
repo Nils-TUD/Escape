@@ -57,6 +57,8 @@ typedef struct sGFTEntry {
 	off_t position;
 	/* node-number */
 	inode_t nodeNo;
+	/* the node, if devNo == VFS_DEV_NO, otherwise null */
+	sVFSNode *node;
 	/* the device-number */
 	dev_t devNo;
 	/* for the freelist */
@@ -66,7 +68,7 @@ typedef struct sGFTEntry {
 /**
  * Searches for a free file for the given flags and node-number
  */
-static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo);
+static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n);
 /**
  * Releases the given file
  */
@@ -159,9 +161,7 @@ sVFSNode *vfs_getVNode(file_t file) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	if(file < 0 || file >= FILE_COUNT || e->flags == 0)
 		return NULL;
-	if(e->devNo != VFS_DEV_NO)
-		return NULL;
-	n = vfs_node_get(e->nodeNo);
+	n = e->node;
 	if(n->name == NULL)
 		return NULL;
 	return n;
@@ -191,7 +191,7 @@ int vfs_fcntl(pid_t pid,file_t file,uint cmd,int arg) {
 			e->flags |= arg & VFS_NOBLOCK;
 			return 0;
 		case F_SETDATA: {
-			sVFSNode *n = vfs_node_get(e->nodeNo);
+			sVFSNode *n = e->node;
 			if(e->devNo != VFS_DEV_NO || n->name == NULL || !IS_DRIVER(n->mode))
 				return ERR_INVALID_ARGS;
 			return vfs_server_setReadable(n,(bool)arg);
@@ -284,26 +284,28 @@ file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
 	/* cleanup flags */
 	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DRIVER;
 
+	if(devNo == VFS_DEV_NO) {
+		int err;
+		n = vfs_node_get(nodeNo);
+		if((err = vfs_hasAccess(pid,n,flags)) < 0)
+			return err;
+	}
+
 	/* determine free file */
-	f = vfs_getFreeFile(pid,flags,nodeNo,devNo);
+	f = vfs_getFreeFile(pid,flags,nodeNo,devNo,n);
 	if(f < 0)
 		return f;
 
 	e = vfs_getGFTEntry(f);
-	if(devNo == VFS_DEV_NO) {
-		int err;
-		n = vfs_node_get(nodeNo);
-		if((err = vfs_hasAccess(pid,n,flags)) < 0) {
-			vfs_releaseFile(e);
-			return err;
-		}
-	}
-
 	/* unused file? */
 	if(e->flags == 0) {
 		/* count references of virtual nodes */
-		if(devNo == VFS_DEV_NO)
+		if(devNo == VFS_DEV_NO) {
 			n->refCount++;
+			e->node = n;
+		}
+		else
+			e->node = NULL;
 		e->owner = pid;
 		e->flags = flags;
 		e->refCount = 1;
@@ -316,7 +318,7 @@ file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
 	return f;
 }
 
-static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
+static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n) {
 	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DRIVER;
 	file_t i;
 	bool isDrvUse = false;
@@ -326,8 +328,6 @@ static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo)
 	assert(!(flags & ~userFlags));
 
 	if(devNo == VFS_DEV_NO) {
-		sVFSNode *n = vfs_node_get(nodeNo);
-		assert(vfs_node_isValid(nodeNo));
 		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
 		isDrvUse = (n->mode & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
 	}
@@ -400,6 +400,17 @@ int vfs_stat(pid_t pid,const char *path,sFileInfo *info) {
 	return res;
 }
 
+int vfs_fstat(pid_t pid,file_t file,sFileInfo *info) {
+	sGFTEntry *e = vfs_getGFTEntry(file);
+	int res;
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
+	if(e->devNo == VFS_DEV_NO)
+		res = vfs_node_getInfo(e->nodeNo,info);
+	else
+		res = vfs_real_istat(pid,e->nodeNo,e->devNo,info);
+	return res;
+}
+
 int vfs_chmod(pid_t pid,const char *path,mode_t mode) {
 	char apath[MAX_PATH_LEN + 1];
 	inode_t nodeNo;
@@ -424,24 +435,13 @@ int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	return res;
 }
 
-int vfs_fstat(pid_t pid,file_t file,sFileInfo *info) {
-	sGFTEntry *e = vfs_getGFTEntry(file);
-	int res;
-	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
-	if(e->devNo == VFS_DEV_NO)
-		res = vfs_node_getInfo(e->nodeNo,info);
-	else
-		res = vfs_real_istat(pid,e->nodeNo,e->devNo,info);
-	return res;
-}
-
 off_t vfs_seek(pid_t pid,file_t file,off_t offset,uint whence) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	off_t oldPos = e->position;
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo == VFS_DEV_NO) {
-		sVFSNode *n = vfs_node_get(e->nodeNo);
+		sVFSNode *n = e->node;
 		/* node not present anymore */
 		if(n->name == NULL)
 			return ERR_INVALID_FILE;
@@ -480,7 +480,7 @@ ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count) {
 		return ERR_NO_READ_PERM;
 
 	if(e->devNo == VFS_DEV_NO) {
-		sVFSNode *n = vfs_node_get(e->nodeNo);
+		sVFSNode *n = e->node;
 		if(n->read == NULL)
 			return ERR_NO_READ_PERM;
 
@@ -512,7 +512,7 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count) {
 		return ERR_NO_WRITE_PERM;
 
 	if(e->devNo == VFS_DEV_NO) {
-		sVFSNode *n = vfs_node_get(e->nodeNo);
+		sVFSNode *n = e->node;
 		if(n->write == NULL)
 			return ERR_NO_WRITE_PERM;
 
@@ -548,7 +548,7 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,const void *data,size_t siz
 		return ERR_NO_EXEC_PERM;
 
 	/* send the message */
-	n = vfs_node_get(e->nodeNo);
+	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_send(pid,file,n,id,data,size);
@@ -570,7 +570,7 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size)
 		return ERR_INVALID_FILE;
 
 	/* receive the message */
-	n = vfs_node_get(e->nodeNo);
+	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_receive(pid,file,n,id,data,size);
@@ -589,7 +589,7 @@ void vfs_closeFile(pid_t pid,file_t file) {
 	/* decrement references */
 	if(--(e->refCount) == 0) {
 		if(e->devNo == VFS_DEV_NO) {
-			sVFSNode *n = vfs_node_get(e->nodeNo);
+			sVFSNode *n = e->node;
 			if(n->name != NULL) {
 				n->refCount--;
 				if(n->close)
@@ -817,7 +817,7 @@ bool vfs_hasMsg(pid_t pid,file_t file) {
 	assert(file >= 0 && file < FILE_COUNT);
 	if(e->devNo != VFS_DEV_NO)
 		return false;
-	n = vfs_node_get(e->nodeNo);
+	n = e->node;
 	return n->name != NULL && IS_CHANNEL(n->mode) && vfs_chan_hasReply(n);
 }
 
@@ -828,13 +828,32 @@ bool vfs_hasData(pid_t pid,file_t file) {
 	assert(file >= 0 && file < FILE_COUNT);
 	if(e->devNo != VFS_DEV_NO)
 		return false;
-	n = vfs_node_get(e->nodeNo);
+	n = e->node;
 	return n->name != NULL && IS_DRIVER(n->parent->mode) && vfs_server_isReadable(n->parent);
+}
+
+bool vfs_hasWork(pid_t pid,const file_t *files,size_t count) {
+	UNUSED(pid);
+	sVFSNode *node;
+	size_t i;
+	for(i = 0; i < count; i++) {
+		sGFTEntry *e = vfs_getGFTEntry(files[i]);
+		if(files[i] < 0 || files[i] >= FILE_COUNT || e->devNo != VFS_DEV_NO)
+			continue;
+
+		node = e->node;
+		if(!IS_DRIVER(node->mode))
+			continue;
+
+		if(vfs_server_hasWork(node))
+			return true;
+	}
+	return false;
 }
 
 inode_t vfs_getClient(pid_t pid,const file_t *files,size_t count,size_t *index) {
 	UNUSED(pid);
-	sVFSNode *node = NULL,*client,*match = NULL;
+	sVFSNode *node,*client,*match = NULL;
 	size_t i;
 	bool retry,cont = true;
 start:
@@ -844,7 +863,7 @@ start:
 		if(files[i] < 0 || files[i] >= FILE_COUNT || e->devNo != VFS_DEV_NO)
 			return ERR_INVALID_FILE;
 
-		node = vfs_node_get(e->nodeNo);
+		node = e->node;
 		if(!IS_DRIVER(node->mode))
 			return ERR_NOT_OWN_DRIVER;
 
@@ -870,7 +889,7 @@ start:
 inode_t vfs_getClientId(pid_t pid,file_t file) {
 	UNUSED(pid);
 	sGFTEntry *e = vfs_getGFTEntry(file);
-	sVFSNode *n = vfs_node_get(e->nodeNo);
+	sVFSNode *n = e->node;
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo != VFS_DEV_NO || !IS_CHANNEL(n->mode))
@@ -884,7 +903,7 @@ file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId) {
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	/* search for the client */
-	n = vfs_node_getFirstChild(vfs_node_get(e->nodeNo));
+	n = vfs_node_getFirstChild(e->node);
 	while(n != NULL) {
 		if(vfs_node_getNo(n) == clientId)
 			break;
@@ -1067,7 +1086,7 @@ void vfs_printGFT(void) {
 				vid_printf("\t\towner: %d:%s\n",p->pid,p->command);
 			}
 			if(e->devNo == VFS_DEV_NO) {
-				sVFSNode *n = vfs_node_get(e->nodeNo);
+				sVFSNode *n = e->node;
 				if(IS_CHANNEL(n->mode))
 					vid_printf("\t\tDriver-Usage: %s @ %s\n",n->name,n->parent->name);
 				else

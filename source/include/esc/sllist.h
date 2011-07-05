@@ -208,6 +208,14 @@ bool sll_insertAfter(sSLList *list,sSLNode *prev,const void *data);
 void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev);
 
 /**
+ * Removes the first node from the given list
+ *
+ * @param list the list
+ * @return the data of the first node or NULL if the list is empty
+ */
+void *sll_removeFirst(sSLList *list);
+
+/**
  * Removes the first found element with given data. If the data is NULL the first element will
  * be removed.
  *
@@ -215,7 +223,7 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev);
  * @param data the data to search for
  * @return true if something has been removed
  */
-bool sll_removeFirst(sSLList *list,const void *data);
+bool sll_removeFirstWith(sSLList *list,const void *data);
 
 /**
  * Removes the given index from the list

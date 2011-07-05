@@ -269,7 +269,23 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
 	l->ffree(n);
 }
 
-bool sll_removeFirst(sSLList *list,const void *data) {
+void *sll_removeFirst(sSLList *list) {
+	void *res;
+	sList *l = (sList*)list;
+	sNode *n;
+	if(l->length == 0)
+		return NULL;
+	n = l->first;
+	l->first = n->next;
+	if(n->next == NULL)
+		l->last = NULL;
+	l->length--;
+	res = (void*)n->data;
+	l->ffree(n);
+	return res;
+}
+
+bool sll_removeFirstWith(sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
 

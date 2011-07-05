@@ -75,9 +75,9 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 			if(elf_addSegment(NULL,pheader,loadSegNo,ELF_TYPE_PROG) < 0)
 				return ERR_INVALID_ELF_BIN;
 			/* copy the data and zero the rest, if necessary */
-			util_copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
+			paging_copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
 					pheader->p_filesz);
-			util_zeroToUser((void*)(pheader->p_vaddr + pheader->p_filesz),
+			paging_zeroToUser((void*)(pheader->p_vaddr + pheader->p_filesz),
 					pheader->p_memsz - pheader->p_filesz);
 			loadSegNo++;
 		}
@@ -208,7 +208,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 					goto failed;
 				}
 				/* clear tbss */
-				util_zeroToUser((void*)(tlsStart + pheader.p_filesz),
+				paging_zeroToUser((void*)(tlsStart + pheader.p_filesz),
 						pheader.p_memsz - pheader.p_filesz);
 			}
 			loadSeg++;

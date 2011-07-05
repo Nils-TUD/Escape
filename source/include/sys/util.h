@@ -62,25 +62,6 @@ void util_panic(const char *fmt,...);
 void util_logViewer(void);
 
 /**
- * Copies <count> bytes from <src> to <dst>, whereas <dst> is in user-space.
- * The destination memory might not be writable!
- *
- * @param dst the destination address (in user-space)
- * @param src the source address (in kernel-space)
- * @param count the number of bytes
- */
-void util_copyToUser(void *dst,const void *src,size_t count);
-
-/**
- * Fills <count> bytes at <dst> with zeros, whereas <dst> is in user-space.
- * The destination memory might not be writable!
- *
- * @param dst the destination address (in user-space)
- * @param count the number of bytes
- */
-void util_zeroToUser(void *dst,size_t count);
-
-/**
  * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
  *
  * @return the random number

@@ -27,25 +27,28 @@
 #include <assert.h>
 
 #define MAX_WAIT_COUNT		1024
+#define MAX_WAKEUPS			8
 
-typedef struct sWait {
-	tid_t tid;
-	evobj_t object;
-	struct sWait *next;
-} sWait;
+typedef struct {
+	sWait *begin;
+	sWait *last;
+} sWaitList;
 
+static sWait *ev_doWait(sThread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev);
 static sWait *ev_allocWait(void);
 static void ev_freeWait(sWait *w);
 static const char *ev_getName(size_t evi);
 
 static sWait waits[MAX_WAIT_COUNT];
 static sWait *waitFree;
-static sSLList evlists[EV_COUNT];
+static sWaitList evlists[EV_COUNT];
 
 void ev_init(void) {
 	size_t i;
-	for(i = 0; i < EV_COUNT; i++)
-		sll_init(evlists + i,slln_allocNode,slln_freeNode);
+	for(i = 0; i < EV_COUNT; i++) {
+		evlists[i].begin = NULL;
+		evlists[i].last = NULL;
+	}
 
 	waitFree = waits;
 	waitFree->next = NULL;
@@ -62,31 +65,28 @@ bool ev_waitsFor(tid_t tid,uint events) {
 
 bool ev_wait(tid_t tid,size_t evi,evobj_t object) {
 	sThread *t = thread_getById(tid);
-	sSLList *list = evlists + evi;
-	sWait *w = ev_allocWait();
-	if(!w)
-		return false;
-	w->tid = tid;
-	w->object = object;
-	if(!sll_append(list,w)) {
-		ev_freeWait(w);
-		return false;
-	}
-	t->events |= 1 << evi;
-	sched_setBlocked(t);
-	return true;
+	sWait *w = t->waits;
+	while(w && w->tnext)
+		w = w->tnext;
+	return ev_doWait(t,evi,object,&t->waits,w) != NULL;
 }
 
 bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
 	size_t i,e;
+	sThread *t = thread_getById(tid);
+	sWait *w = t->waits;
+	while(w && w->tnext)
+		w = w->tnext;
+
 	for(i = 0; i < objCount; i++) {
 		uint events = objects[i].events;
 		if(events == 0)
-			sched_setBlocked(thread_getById(tid));
+			sched_setBlocked(t);
 		else {
 			for(e = 0; events && e < EV_COUNT; e++) {
 				if(events & (1 << e)) {
-					if(!ev_wait(tid,e,objects[i].object)) {
+					w = ev_doWait(t,e,objects[i].object,&t->waits,w);
+					if(w == NULL) {
 						ev_removeThread(tid);
 						return false;
 					}
@@ -99,19 +99,27 @@ bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
 }
 
 void ev_wakeup(size_t evi,evobj_t object) {
-	sSLList *list = evlists + evi;
-	sSLNode *n;
-	for(n = sll_begin(list); n != NULL; ) {
-		sWait *w = (sWait*)n->data;
+	tid_t tids[MAX_WAKEUPS];
+	sWaitList *list = evlists + evi;
+	sWait *w = list->begin;
+	size_t i = 0;
+	while(w != NULL) {
 		if(w->object == 0 || w->object == object) {
-			ev_removeThread(w->tid);
-			/* we have to start at the beginning again, since its possible that the thread
-			 * is before this node for a different object */
-			n = sll_begin(list);
+			if(i < MAX_WAKEUPS)
+				tids[i++] = w->tid;
+			else {
+				/* all slots in use, so remove this threads and start from the beginning to find
+				 * more. hopefully, this will happen nearly never :) */
+				for(; i > 0; i--)
+					ev_removeThread(tids[i - 1]);
+				w = list->begin;
+				continue;
+			}
 		}
-		else
-			n = n->next;
+		w = w->next;
 	}
+	for(; i > 0; i--)
+		ev_removeThread(tids[i - 1]);
 }
 
 void ev_wakeupm(uint events,evobj_t object) {
@@ -135,32 +143,24 @@ bool ev_wakeupThread(tid_t tid,uint events) {
 
 void ev_removeThread(tid_t tid) {
 	sThread *t = thread_getById(tid);
-	if(t == NULL)
-		util_printStackTrace(util_getKernelStackTrace());
 	if(t->events) {
-		size_t e;
-		for(e = 0; t->events && e < EV_COUNT; e++) {
-			if(t->events & (1 << e)) {
-				sSLNode *n,*tn,*p = NULL;
-				sSLList *list = evlists + e;
-				for(n = sll_begin(list); n != NULL; ) {
-					sWait *w = (sWait*)n->data;
-					if(w->tid == tid) {
-						tn = n->next;
-						sll_removeNode(list,n,p);
-						ev_freeWait(w);
-						n = tn;
-					}
-					else {
-						p = n;
-						n = n->next;
-					}
-				}
-				t->events &= ~(1 << e);
-			}
+		sWait *w = t->waits;
+		while(w != NULL) {
+			sWait *nw = w->tnext;
+			if(w->prev)
+				w->prev->next = w->next;
+			else
+				evlists[w->evi].begin = w->next;
+			if(w->next)
+				w->next->prev = w->prev;
+			else
+				evlists[w->evi].last = w->prev;
+			ev_freeWait(w);
+			w = nw;
 		}
+		t->waits = NULL;
+		t->events = 0;
 		sched_setReady(t);
-		assert(t->events == 0);
 	}
 }
 
@@ -176,11 +176,10 @@ void ev_print(void) {
 	size_t e;
 	vid_printf("Eventlists:\n");
 	for(e = 0; e < EV_COUNT; e++) {
-		sSLList *list = evlists + e;
-		sSLNode *n;
+		sWaitList *list = evlists + e;
+		sWait *w = list->begin;
 		vid_printf("\t%s:\n",ev_getName(e));
-		for(n = sll_begin(list); n != NULL; n = n->next) {
-			sWait *w = (sWait*)n->data;
+		while(w != NULL) {
 			sThread *t = thread_getById(w->tid);
 			vid_printf("\t\tthread=%d (%d:%s), object=%x",
 					t->tid,t->proc->pid,t->proc->command,w->object);
@@ -188,8 +187,36 @@ void ev_print(void) {
 			if(vfs_node_isValid(nodeNo))
 				vid_printf("(%s)",vfs_node_getPath(nodeNo));
 			vid_printf("\n");
+			w = w->next;
 		}
 	}
+}
+
+static sWait *ev_doWait(sThread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev) {
+	sWaitList *list = evlists + evi;
+	sWait *w = ev_allocWait();
+	if(!w)
+		return NULL;
+	w->tid = t->tid;
+	w->evi = evi;
+	w->object = object;
+	/* insert into list */
+	w->next = NULL;
+	w->prev = list->last;
+	if(list->last)
+		list->last->next = w;
+	else
+		list->begin = w;
+	list->last = w;
+	/* add to thread */
+	t->events |= 1 << evi;
+	if(prev)
+		prev->tnext = w;
+	else
+		*begin = w;
+	w->tnext = NULL;
+	sched_setBlocked(t);
+	return w;
 }
 
 static sWait *ev_allocWait(void) {

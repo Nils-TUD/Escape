@@ -60,7 +60,7 @@
 #define PTE_FRAMENO_MASK			0x00FFFFFFFFFFE000
 #define PTE_NMASK					0x0000000000001FF8
 
-#define PAGE_NO(virt)				(((virt) & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT)
+#define PAGE_NO(virt)				(((uintptr_t)(virt) & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT)
 #define SEGSIZE(rV,i)				((i) == 0 ? 0 : (((rV) >> (64 - (i) * 4)) & 0xF))
 
 static uint64_t *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create,size_t *createdPts);
@@ -199,7 +199,7 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	 * 	- root location
 	 * 	- kernel stack
 	 */
-	if(pmem_getFreeFrames(MM_DEF) < SEGMENT_COUNT * PTS_PER_SEGMENT + 1)
+	if(pmem_getFreeFrames(MM_CONT) < SEGMENT_COUNT * PTS_PER_SEGMENT || pmem_getFreeFrames(MM_DEF) < 1)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* allocate context */
@@ -221,10 +221,9 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	con->rv = context->rv & 0xFFFFFF0000000000;
 	con->rv |= (rootLoc & ~DIR_MAPPED_SPACE) | (con->addrSpace->no << 3);
 
-	/* allocate and clear kernel-stack */
+	/* allocate kernel-stack */
 	*stackFrame = pmem_allocate();
 	frmCount++;
-	memclear((void*)(DIR_MAPPED_SPACE | (*stackFrame * PAGE_SIZE)),PAGE_SIZE);
 	*pdir = con;
 	return frmCount;
 }
@@ -268,43 +267,101 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	return frame;
 }
 
+void paging_copyToUser(void *dst,const void *src,size_t count) {
+	uint64_t pte,*dpt = NULL;
+	ulong dstPageNo = PAGE_NO(dst);
+	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
+	uintptr_t addr = (uintptr_t)dst;
+	while(count > 0) {
+		if(!dpt || (dstPageNo % PT_ENTRY_COUNT) == 0) {
+			dpt = paging_getPTOf(context,addr,false,NULL);
+			assert(dpt != NULL);
+		}
+		pte = dpt[dstPageNo % PT_ENTRY_COUNT];
+		addr = ((pte & PTE_FRAMENO_MASK) | DIR_MAPPED_SPACE) + offset;
+
+		size_t amount = MIN(PAGE_SIZE - offset,count);
+		memcpy((void*)addr,src,amount);
+		src = (const void*)((uintptr_t)src + amount);
+		count -= amount;
+		offset = 0;
+		dstPageNo++;
+	}
+}
+
+void paging_zeroToUser(void *dst,size_t count) {
+	uint64_t pte,*dpt = NULL;
+	ulong dstPageNo = PAGE_NO(dst);
+	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
+	uintptr_t addr = (uintptr_t)dst;
+	while(count > 0) {
+		if(!dpt || (dstPageNo % PT_ENTRY_COUNT) == 0) {
+			dpt = paging_getPTOf(context,addr,false,NULL);
+			assert(dpt != NULL);
+		}
+		pte = dpt[dstPageNo % PT_ENTRY_COUNT];
+		addr = ((pte & PTE_FRAMENO_MASK) | DIR_MAPPED_SPACE) + offset;
+
+		size_t amount = MIN(PAGE_SIZE - offset,count);
+		memclear((void*)addr,amount);
+		count -= amount;
+		offset = 0;
+		dstPageNo++;
+	}
+}
+
 sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share) {
 	assert(src != dst && (src == context || dst == context));
 	sAllocStats stats = {0,0};
-	ulong pageNo = PAGE_NO(virtSrc);
-	uint64_t pte,*pt = NULL;
+	ulong srcPageNo = PAGE_NO(virtSrc);
+	ulong dstPageNo = PAGE_NO(virtDst);
+	uint64_t pte,*spt = NULL,*dpt = NULL;
+	uint64_t dstAddrSpace = dst->addrSpace->no << 3;
+	uint64_t dstKey = virtDst | dstAddrSpace;
+	uint64_t srcKey = virtSrc | (src->addrSpace->no << 3);
 	while(count-- > 0) {
-		sAllocStats mstats;
-		/* get page-table */
-		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
-			pt = paging_getPTOf(src,virtSrc,false,NULL);
-			assert(pt != NULL);
+		/* get src-page-table */
+		if(!spt || (srcPageNo % PT_ENTRY_COUNT) == 0) {
+			spt = paging_getPTOf(src,virtSrc,false,NULL);
+			assert(spt != NULL);
 		}
-		pte = pt[pageNo % PT_ENTRY_COUNT];
-		frameno_t *frames = NULL;
-		uint flags = 0;
-		if(pte & PTE_READABLE)
-			flags |= PG_PRESENT;
+		/* get dest-page-table */
+		if(!dpt || (dstPageNo % PT_ENTRY_COUNT) == 0) {
+			size_t ptables = 0;
+			dpt = paging_getPTOf(dst,virtDst,true,&ptables);
+			assert(dpt != NULL);
+			stats.ptables += ptables;
+			dst->ptables += ptables;
+		}
+		pte = spt[srcPageNo % PT_ENTRY_COUNT];
+
 		/* when shared, simply copy the flags; otherwise: if present, we use copy-on-write */
-		if((pte & PTE_WRITABLE) && (share || !(pte & PTE_READABLE)))
-			flags |= PG_WRITABLE;
-		if(pte & PTE_EXECUTABLE)
-			flags |= PG_EXECUTABLE;
-		if(share || (pte & PTE_READABLE)) {
-			flags |= PG_ADDR_TO_FRAME;
-			frames = (frameno_t*)&pte;
+		if((pte & PTE_WRITABLE) && (!share && (pte & PTE_READABLE)))
+			pte &= ~PTE_WRITABLE;
+		if(!share && !(pte & PTE_READABLE)) {
+			pte &= ~PTE_FRAMENO_MASK;
+			pte |= pmem_allocate() << PAGE_SIZE_SHIFT;
 		}
-		mstats = paging_mapTo(dst,virtDst,frames,1,flags);
-		if(flags & PG_PRESENT)
+		if(pte & PTE_READABLE)
 			stats.frames++;
-		stats.ptables += mstats.ptables;
+		pte &= ~PTE_NMASK;
+		pte |= dstAddrSpace;
+		dpt[dstPageNo % PT_ENTRY_COUNT] = pte;
+		tc_update(dstKey);
+
 		/* if copy-on-write should be used, mark it as readable for the current (parent), too */
-		if(!share && (pte & PTE_READABLE))
-			paging_mapTo(src,virtSrc,NULL,1,flags | PG_KEEPFRM);
+		if(!share && (pte & PTE_READABLE)) {
+			spt[srcPageNo % PT_ENTRY_COUNT] &= ~PTE_WRITABLE;
+			tc_update(srcKey | (pte & (PTE_READABLE | PTE_EXECUTABLE)));
+		}
+
 		virtSrc += PAGE_SIZE;
 		virtDst += PAGE_SIZE;
-		pageNo++;
+		srcKey += PAGE_SIZE;
+		dstKey += PAGE_SIZE;
+		srcPageNo++;
+		dstPageNo++;
 	}
 	return stats;
 }

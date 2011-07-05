@@ -284,7 +284,7 @@ static ssize_t ca_setVal(bool hasVal,bool isEmpty,const char *begin,ssize_t argi
 		bool *b = (bool*)ptr;
 		*b = argi >= 0;
 		if(argi >= 0)
-			sll_removeFirst(freeArgs,(void*)argi);
+			sll_removeFirstWith(freeArgs,(void*)argi);
 	}
 	return res;
 }
@@ -313,7 +313,7 @@ static size_t ca_readk(const char *str) {
 static ssize_t ca_getArgVal(ssize_t i,bool isEmpty,bool hasVal,const char *begin,const char **val) {
 	const char *arg = argv[i];
 	char *eqPos = strchr(arg,'=');
-	sll_removeFirst(freeArgs,(void*)i);
+	sll_removeFirstWith(freeArgs,(void*)i);
 	if(eqPos == NULL) {
 		/* if its a flag, simply return the pointer to the character; we'll just use the first one
 		 * anyway */
@@ -324,7 +324,7 @@ static ssize_t ca_getArgVal(ssize_t i,bool isEmpty,bool hasVal,const char *begin
 		if(!isEmpty) {
 			if((flags & CA_REQ_EQ) || i >= argc - 1)
 				return CA_ERR_EQ_REQUIRED;
-			sll_removeFirst(freeArgs,(void*)(i + 1));
+			sll_removeFirstWith(freeArgs,(void*)(i + 1));
 			*val = argv[i + 1];
 			return 0;
 		}

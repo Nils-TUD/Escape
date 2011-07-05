@@ -147,8 +147,11 @@
 #define STACK_AREA_END			FREE_AREA_BEGIN
 
 /* determines whether the given address is on the heap */
-#define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KERNEL_HEAP_START && \
+#define IS_ON_HEAP(addr)		((uintptr_t)(addr) >= KERNEL_HEAP_START && \
 		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+
+/* determines whether the given address is in a shared kernel area */
+#define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START && (uintptr_t)(addr) < KERNEL_STACK)
 
 typedef uintptr_t tPageDir;
 

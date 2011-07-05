@@ -38,6 +38,7 @@ typedef struct {
 	uchar type;
 	ushort mode;
 	char name[MAX_CMDNAME_LEN + 1];
+	size_t nameLen;
 	fCommand func;
 	int complStart;
 } sShellCmd;

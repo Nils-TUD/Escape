@@ -94,7 +94,7 @@ void sig_removeHandlerFor(tid_t tid) {
 		return;
 	for(i = 0; i < SIG_COUNT; i++)
 		sig_unset(t,i);
-	sll_removeFirst(sigThreads,t);
+	sll_removeFirstWith(sigThreads,t);
 	cache_free(t);
 }
 

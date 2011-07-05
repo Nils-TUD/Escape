@@ -182,7 +182,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			proc_removeRegions(p,false);
 			/* now load module */
 			proc_setCommand(p,argv[0]);
-			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
+			memcpy((char*)p->command,argv[0],strlen(argv[0]) + 1);
 			if(elf_loadFromMem((const void*)progs[i].start,progs[i].size,&sinfo) < 0)
 				util_panic("Loading boot-module %s failed",p->command);
 			/* build args */

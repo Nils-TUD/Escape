@@ -26,7 +26,7 @@
 #include <sys/util.h>
 #include <assert.h>
 
-static uint8_t initloader[] = {
+static A_ALIGNED(8) uint8_t initloader[] = {
 #if DEBUGGING
 #	include "../../../../build/mmix-debug/user_initloader.dump"
 #else

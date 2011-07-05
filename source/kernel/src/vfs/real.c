@@ -220,7 +220,7 @@ ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,void *buffer,off_t o
 		return fs;
 
 	/* get request; maybe we have to wait */
-	req = vfs_req_get(node,NULL,0);
+	req = vfs_req_get(node,buffer,0);
 	if(!req) {
 		vfs_real_releaseFile(pid,fs);
 		return ERR_NOT_ENOUGH_MEM;
@@ -248,7 +248,7 @@ ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,void *buffer,off_t o
 	vfs_req_free(req);
 	vfs_real_releaseFile(pid,fs);
 	if(data) {
-		memcpy(buffer,data,req->count);
+		memcpy(buffer,data,res);
 		cache_free(data);
 	}
 	return res;
@@ -423,9 +423,10 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size
 		if(req->state == REQ_STATE_WAITING) {
 			sMsg *rmsg = (sMsg*)data;
 			/* an error? */
-			if(!data || size < sizeof(rmsg->args) || (int)rmsg->args.arg1 <= 0) {
+			if(!data || size < sizeof(rmsg->args) || (long)rmsg->args.arg1 <= 0) {
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
+				req->data = NULL;
 				vfs_req_remove(req);
 				ev_wakeupThread(req->tid,EV_REQ_REPLY);
 				return;
@@ -437,10 +438,16 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size
 		else if(req->state == REQ_STATE_WAIT_DATA) {
 			/* ok, it's the data */
 			if(data) {
-				/* map the buffer we have to copy it to */
-				req->data = cache_alloc(req->count);
-				if(req->data)
+				if(IS_SHARED(req->data)) {
 					memcpy(req->data,data,req->count);
+					req->data = NULL;
+				}
+				else {
+					/* map the buffer we have to copy it to */
+					req->data = cache_alloc(req->count);
+					if(req->data)
+						memcpy(req->data,data,req->count);
+				}
 			}
 			req->state = REQ_STATE_FINISHED;
 			vfs_req_remove(req);

@@ -36,6 +36,7 @@ static void test_6(void);
 static void test_8(void);
 static void test_9(void);
 static void test_10(void);
+static void test_11(void);
 
 /* our test-module */
 sTestModule tModSLList = {
@@ -53,6 +54,7 @@ static void test_sllist(void) {
 	test_8();
 	test_9();
 	test_10();
+	test_11();
 }
 
 static void test_1(void) {
@@ -101,7 +103,7 @@ static void test_2(void) {
 		sll_append(list,(void*)x++);
 	}
 	for(i = 0; i < 2; i++) {
-		sll_removeFirst(list,NULL);
+		sll_removeFirstWith(list,NULL);
 	}
 
 	len = sll_length(list);
@@ -125,7 +127,7 @@ static void test_3(void) {
 	}
 	x = 0x100;
 	for(i = 0; i < 50; i++) {
-		sll_removeFirst(list,(void*)x++);
+		sll_removeFirstWith(list,(void*)x++);
 	}
 
 	len = sll_length(list);
@@ -297,6 +299,29 @@ static void test_10(void) {
 	l2 = sll_clone(l1);
 	test_assertSize(sll_length(l2),0);
 	sll_destroy(l2,false);
+	sll_destroy(l1,false);
+
+	checkMemoryAfter(false);
+	test_caseSucceeded();
+}
+
+static void test_11(void) {
+	sSLList *l1;
+	test_caseStart("Testing sll_removeFirst");
+	checkMemoryBefore(false);
+
+	l1 = sll_create();
+	sll_append(l1,(void*)4);
+	sll_append(l1,(void*)3);
+	sll_append(l1,(void*)2);
+	test_assertSize(sll_length(l1),3);
+	test_assertPtr(sll_removeFirst(l1),(void*)4);
+	test_assertSize(sll_length(l1),2);
+	test_assertPtr(sll_removeFirst(l1),(void*)3);
+	test_assertSize(sll_length(l1),1);
+	test_assertPtr(sll_removeFirst(l1),(void*)2);
+	test_assertSize(sll_length(l1),0);
+	test_assertPtr(sll_removeFirst(l1),NULL);
 	sll_destroy(l1,false);
 
 	checkMemoryAfter(false);

@@ -34,7 +34,9 @@
 	.extern	dbg_prints
 	.extern intrpt_handler
 	.extern curPDir
+	.extern otherPDir
 	.extern util_panic
+	.extern paging_setCur
 
 	.global cpu_getBadAddr
 
@@ -450,6 +452,7 @@ thread_resume:
 
 	# set page-directory for new process
 	stw		$4,$0,curPDir
+	stw		$0,$0,otherPDir
 
 	# we have to refresh the fix entry for the process
 	mvts	$0,FS_TLB_INDEX

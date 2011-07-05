@@ -379,6 +379,16 @@ bool vfs_hasMsg(pid_t pid,file_t file);
 bool vfs_hasData(pid_t pid,file_t file);
 
 /**
+ * For drivers: Checks whether the files have waiting clients
+ *
+ * @param pid the driver-process-id
+ * @param files an array of files to check for clients
+ * @param count the number of files
+ * @return true if there is any client that needs to be served
+ */
+bool vfs_hasWork(pid_t pid,const file_t *files,size_t count);
+
+/**
  * For drivers: Looks whether a client wants to be served and return the node-number
  *
  * @param pid the driver-process-id

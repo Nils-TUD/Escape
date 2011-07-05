@@ -183,8 +183,10 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,const void *d
 	}
 
 	/* notify the driver */
-	if(list == &(chan->sendList))
+	if(list == &(chan->sendList)) {
+		vfs_server_addMsg(n->parent);
 		ev_wakeup(EVI_CLIENT,(evobj_t)n->parent);
+	}
 	/* notify all threads that wait on this node for a msg */
 	else
 		ev_wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
@@ -223,10 +225,9 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *
 	}
 
 	/* get first element and copy data to buffer */
-	msg = (sMessage*)sll_get(*list,0);
+	msg = (sMessage*)sll_removeFirst(*list);
 	if(data && msg->length > size) {
 		cache_free(msg);
-		sll_removeIndex(*list,0);
 		return ERR_INVALID_ARGS;
 	}
 
@@ -242,8 +243,8 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *
 		*id = msg->id;
 	res = msg->length;
 	cache_free(msg);
-
-	sll_removeIndex(*list,0);
+	if(event == EVI_CLIENT)
+		vfs_server_remMsg(node->parent);
 	return res;
 }
 

@@ -371,10 +371,11 @@ sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,size_t nameLe
 
 sVFSNode *vfs_node_create(pid_t pid,sVFSNode *parent,char *name) {
 	sVFSNode *node;
+	size_t nameLen = strlen(name);
 	sProc *p = pid != INVALID_PID ? proc_getByPid(pid) : NULL;
 	vassert(name != NULL,"name == NULL");
 
-	if(strlen(name) > MAX_NAME_LEN)
+	if(nameLen > MAX_NAME_LEN)
 		return NULL;
 
 	node = vfs_node_requestNode();
@@ -386,7 +387,7 @@ sVFSNode *vfs_node_create(pid_t pid,sVFSNode *parent,char *name) {
 	node->uid = p ? p->euid : ROOT_UID;
 	node->gid = p ? p->egid : ROOT_GID;
 	node->name = name;
-	node->nameLen = strlen(name);
+	node->nameLen = nameLen;
 	node->mode = 0;
 	node->refCount = 0;
 	node->next = NULL;

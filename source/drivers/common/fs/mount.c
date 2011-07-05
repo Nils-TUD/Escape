@@ -146,7 +146,7 @@ int mount_remMnt(dev_t dev,inode_t inode) {
 		/* call deinit to give the fs the chance to write unwritten stuff etc. */
 		mounts[i].mnt->fs->deinit(mounts[i].mnt->handle);
 		/* free fs-instance */
-		sll_removeFirst(fsInsts,mounts[i].mnt);
+		sll_removeFirstWith(fsInsts,mounts[i].mnt);
 		free(mounts[i].mnt);
 	}
 	mounts[i].mnt = NULL;

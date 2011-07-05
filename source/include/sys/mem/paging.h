@@ -181,6 +181,25 @@ frameno_t paging_getFrameNo(tPageDir pdir,uintptr_t virt);
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags);
 
 /**
+ * Copies <count> bytes from <src> to <dst> in user-space.
+ * The destination memory might not be writable!
+ *
+ * @param dst the destination address
+ * @param src the source address
+ * @param count the number of bytes to copy
+ */
+void paging_copyToUser(void *dst,const void *src,size_t count);
+
+/**
+ * Copies <count> zeros to <dst>, which is in user-space.
+ * The destination memory might not be writable!
+ *
+ * @param dst the destination address
+ * @param count the number of bytes to copy
+ */
+void paging_zeroToUser(void *dst,size_t count);
+
+/**
  * Clones <count> pages at <virtSrc> to <virtDst> from <src> into <dst>. That means
  * the flags are copied. If <share> is true, the frames will be copied as well. Otherwise new
  * frames will be allocated if the page in <src> is present. Additionally, if <share> is false

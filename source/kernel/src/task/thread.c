@@ -72,6 +72,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 
 	t->state = state;
 	t->events = 0;
+	t->waits = NULL;
 	t->ignoreSignals = 0;
 	t->tid = nextTid++;
 	t->proc = p;
@@ -197,6 +198,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,frameno_t *stackFrame
 
 	t->state = ST_RUNNING;
 	t->events = 0;
+	t->waits = NULL;
 	t->ignoreSignals = 0;
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
@@ -304,7 +306,7 @@ void thread_kill(sThread *t) {
 	t->proc->ownFrames--;
 
 	/* remove from process */
-	sll_removeFirst(t->proc->threads,t);
+	sll_removeFirstWith(t->proc->threads,t);
 
 	/* remove from all modules we may be announced */
 	ev_removeThread(t->tid);
@@ -389,6 +391,6 @@ static bool thread_add(sThread *t) {
 }
 
 static void thread_remove(sThread *t) {
-	sll_removeFirst(threads,t);
+	sll_removeFirstWith(threads,t);
 	tidToThread[t->tid] = NULL;
 }

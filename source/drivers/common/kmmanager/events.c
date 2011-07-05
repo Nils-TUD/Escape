@@ -97,7 +97,7 @@ int events_add(inode_t id,uchar flags,uchar key,uchar modifier) {
 void events_remove(inode_t id,uchar flags,uchar key,uchar modifier) {
 	sEventListener *l = events_find(id,flags,key,modifier);
 	if(l) {
-		sll_removeFirst(listener,l);
+		sll_removeFirstWith(listener,l);
 		free(l);
 	}
 }

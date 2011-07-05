@@ -32,32 +32,34 @@
 #include "exec/value.h"
 
 #define MATCHES_ARRAY_INC	8
+#define DIR_CACHE_SIZE		16
 
-/**
- * Increase the size of the given shell-commands-array
- *
- * @param array the commands
- * @param pos the current number of entries
- * @param size the current size
- * @return the commands
- */
+typedef struct {
+	bool cached;
+	dev_t devNo;
+	inode_t inodeNo;
+	time_t modified;
+	size_t cmdCount;
+	sShellCmd *cmds;
+} sDirCache;
+
 static sShellCmd **compl_incrArray(sShellCmd **array,size_t pos,size_t *size);
+static sDirCache *compl_getCache(const char *path);
+static void compl_freeCache(sDirCache *dc);
 
-/* our commands */
+static sDirCache dirCache[DIR_CACHE_SIZE];
 static sShellCmd commands[] = {
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),	{"echo"		}, shell_cmdEcho	,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),	{"env"		}, shell_cmdEnv		,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),	{"pwd"		}, shell_cmdPwd		,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),	{"cd"		}, shell_cmdCd		,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), {"include"	}, shell_cmdInclude	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"echo"		}, SSTRLEN("echo"),		shell_cmdEcho	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"env"		}, SSTRLEN("env"),		shell_cmdEnv	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"pwd"		}, SSTRLEN("pwd"),		shell_cmdPwd	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"cd"		}, SSTRLEN("cd"),		shell_cmdCd		,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"include"	}, SSTRLEN("include"),	shell_cmdInclude,-1},
 };
 
 sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,bool searchPath) {
 	size_t arraySize,arrayPos;
-	size_t i,len,cmdlen,start,matchLen,pathLen;
-	DIR *dd;
-	sDirEntry entry;
-	sShellCmd *cmd;
+	size_t i,j,len,start,matchLen,pathLen;
+	sShellCmd *ncmd,*cmd;
 	sShellCmd **matches;
 	sFileInfo info;
 	char *slash;
@@ -74,10 +76,9 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 	/* look in builtin commands */
 	if(searchPath) {
 		for(i = 0; (max == 0 || arrayPos < max) && i < ARRAY_SIZE(commands); i++) {
-			cmdlen = strlen(commands[i].name);
-			matchLen = searchCmd ? cmdlen : length;
+			matchLen = searchCmd ? commands[i].nameLen : length;
 			/* beginning matches? */
-			if(length <= cmdlen && strncmp(str,commands[i].name,matchLen) == 0) {
+			if(length <= commands[i].nameLen && strncmp(str,commands[i].name,matchLen) == 0) {
 				matches = compl_incrArray(matches,arrayPos,&arraySize);
 				if(matches == NULL)
 					goto failed;
@@ -95,7 +96,9 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 			cmd = (sShellCmd*)malloc(sizeof(sShellCmd));
 			cmd->func = NULL;
 			cmd->mode = S_IFREG | S_IXOTH;
-			strcpy(cmd->name,vname);
+			strncpy(cmd->name,vname,MAX_CMDNAME_LEN);
+			cmd->name[MAX_CMDNAME_LEN] = '\0';
+			cmd->nameLen = strlen(cmd->name);
 			cmd->type = cmd->name[0] == '$' ? TYPE_VARIABLE : TYPE_FUNCTION;
 			cmd->complStart = -1;
 			matches = compl_incrArray(matches,arrayPos,&arraySize);
@@ -154,66 +157,58 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 		goto failed;
 
 	for(i = 0; (max == 0 || arrayPos < max) && i < ARRAY_SIZE(paths); i++) {
+		sDirCache *dc;
 		/* we want to look with an empty line for paths[2] */
 		if(i == 2)
 			length = 0;
 		if(paths[i] == NULL)
 			continue;
-		if(!(dd = opendir(paths[i])))
+
+		dc = compl_getCache(paths[i]);
+		if(!dc)
 			continue;
 
 		/* copy path to the beginning of the file-path */
 		strcpy(filePath,paths[i]);
 		pathLen = strlen(paths[i]);
 
-		while(readdir(dd,&entry)) {
-			/* skip . and .. */
-			if(strcmp(entry.name,".") == 0 || strcmp(entry.name,"..") == 0)
-				continue;
-
-			cmdlen = strlen(entry.name);
-			matchLen = searchCmd ? cmdlen : length;
-			if(cmdlen < MAX_CMDNAME_LEN && length <= cmdlen && strncmp(str,entry.name,matchLen) == 0) {
+		for(j = 0; j < dc->cmdCount; j++) {
+			cmd = dc->cmds + j;
+			matchLen = searchCmd ? cmd->nameLen : length;
+			if(length <= cmd->nameLen && strncmp(str,cmd->name,matchLen) == 0) {
 				matches = compl_incrArray(matches,arrayPos,&arraySize);
-				if(matches == NULL) {
-					closedir(dd);
+				if(matches == NULL)
 					goto failed;
-				}
 
 				/* append filename and get fileinfo */
-				strcpy(filePath + pathLen,entry.name);
-				if(stat(filePath,&info) < 0) {
-					closedir(dd);
+				strcpy(filePath + pathLen,cmd->name);
+				if(stat(filePath,&info) < 0)
 					goto failed;
-				}
 
 				/* alloc mem for cmd */
-				cmd = malloc(sizeof(sShellCmd));
-				if(cmd == NULL) {
-					closedir(dd);
+				ncmd = malloc(sizeof(sShellCmd));
+				if(ncmd == NULL)
 					goto failed;
-				}
+				memcpy(ncmd,cmd,sizeof(sShellCmd));
 
 				/* fill cmd */
 				if(i == 0)
-					cmd->type = TYPE_EXTERN;
+					ncmd->type = TYPE_EXTERN;
 				else
-					cmd->type = TYPE_PATH;
-				cmd->mode = info.mode;
-				cmd->func = NULL;
-				memcpy(cmd->name,entry.name,cmdlen + 1);
+					ncmd->type = TYPE_PATH;
+				ncmd->mode = info.mode;
 				if(i == 0)
-					cmd->complStart = -1;
+					ncmd->complStart = -1;
 				else
-					cmd->complStart = start;
-				matches[arrayPos++] = cmd;
+					ncmd->complStart = start;
+				matches[arrayPos++] = ncmd;
 
 				if(max > 0 && arrayPos >= max)
 					break;
 			}
 		}
 
-		closedir(dd);
+		compl_freeCache(dc);
 	}
 
 	free(filePath);
@@ -258,4 +253,100 @@ static sShellCmd **compl_incrArray(sShellCmd **array,size_t pos,size_t *size) {
 		return array;
 	}
 	return array;
+}
+
+static sDirCache *compl_getCache(const char *path) {
+	sDirCache *dc;
+	DIR *d;
+	sDirEntry e;
+	size_t i,cmdsSize,freeIndex = DIR_CACHE_SIZE;
+	sFileInfo info;
+	int res = stat(path,&info);
+	if(res < 0)
+		return NULL;
+
+	/* first check whether we already have this dir in the cache */
+	for(i = 0; i < DIR_CACHE_SIZE; i++) {
+		if(dirCache[i].inodeNo == 0)
+			freeIndex = i;
+		else if(dirCache[i].inodeNo == info.inodeNo && dirCache[i].devNo == info.device) {
+			/* has it been modified? */
+			if(dirCache[i].modified < info.modifytime) {
+				freeIndex = i;
+				break;
+			}
+			return dirCache + i;
+		}
+	}
+
+	/* if we have no free slot, allocate a new dircache, that is used temporary and destroyed
+	 * when compl_get is finished */
+	if(freeIndex == DIR_CACHE_SIZE) {
+		dc = malloc(sizeof(sDirCache));
+		if(!dc)
+			return NULL;
+		dc->cached = false;
+	}
+	/* otherwise use one of the free slots */
+	else {
+		dc = dirCache + freeIndex;
+		dc->cached = true;
+		if(dc->inodeNo != 0)
+			free(dc->cmds);
+	}
+
+	d = opendir(path);
+	if(!d)
+		return NULL;
+	/* setup cache-entry */
+	dc->inodeNo = info.inodeNo;
+	dc->devNo = info.device;
+	dc->modified = info.modifytime;
+	cmdsSize = 8;
+	dc->cmdCount = 0;
+	dc->cmds = (sShellCmd*)malloc(cmdsSize * sizeof(sShellCmd));
+	if(!dc->cmds)
+		goto failed;
+	while(readdir(d,&e)) {
+		sShellCmd *cmd;
+		/* skip . and .. */
+		if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+			continue;
+
+		/* increase array-size? */
+		if(dc->cmdCount >= cmdsSize) {
+			sShellCmd *old = dc->cmds;
+			cmdsSize *= 2;
+			dc->cmds = (sShellCmd*)realloc(dc->cmds,cmdsSize * sizeof(sShellCmd));
+			if(!dc->cmds) {
+				dc->cmds = old;
+				goto failed;
+			}
+		}
+
+		/* build shell-command */
+		cmd = dc->cmds + dc->cmdCount++;
+		cmd->type = TYPE_PATH;
+		/* mode and complStart will be set later */
+		cmd->mode = 0;
+		cmd->complStart = 0;
+		cmd->func = NULL;
+		strncpy(cmd->name,e.name,MAX_CMDNAME_LEN);
+		cmd->name[MAX_CMDNAME_LEN] = '\0';
+		cmd->nameLen = strlen(cmd->name);
+	}
+	closedir(d);
+	return dc;
+
+failed:
+	closedir(d);
+	compl_freeCache(dc);
+	return NULL;
+}
+
+static void compl_freeCache(sDirCache *dc) {
+	if(!dc->cached) {
+		free(dc->cmds);
+		free(dc);
+	}
 }

@@ -125,6 +125,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	int fd;
 	size_t i,index;
 	ssize_t res;
+	bool inited = false;
 
 	/* validate driver-ids */
 	if(fdCount <= 0 || fdCount > MAX_GETWORK_DRIVERS || fds == NULL ||
@@ -143,8 +144,6 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 		files[i] = proc_fdToFile(fds[i]);
 		if(files[i] < 0)
 			SYSC_ERROR(stack,files[i]);
-		waits[i].events = EV_CLIENT;
-		waits[i].object = (evobj_t)vfs_getVNode(files[i]);
 	}
 
 	/* open a client */
@@ -156,6 +155,14 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 		/* if we shouldn't block, stop here */
 		if(flags & GW_NOBLOCK)
 			SYSC_ERROR(stack,clientNo);
+
+		if(!inited) {
+			for(i = 0; i < fdCount; i++) {
+				waits[i].events = EV_CLIENT;
+				waits[i].object = (evobj_t)vfs_getVNode(files[i]);
+			}
+			inited = true;
+		}
 
 		/* otherwise wait for a client (accept signals) */
 		ev_waitObjects(t->tid,waits,fdCount);

@@ -807,7 +807,7 @@ static bool proc_add(sProc *p) {
 }
 
 static void proc_remove(sProc *p) {
-	sll_removeFirst(procs,p);
+	sll_removeFirstWith(procs,p);
 	pidToProc[p->pid] = NULL;
 }
 

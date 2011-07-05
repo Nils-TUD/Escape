@@ -56,16 +56,19 @@ int main(int argc,char **argv) {
 
 	if((waitingPid = fork()) == 0) {
 		int i;
-		size_t size = 1;
+		size_t size = 1,pos = 0;
 		const char *args[] = {"/bin/shell","-e",NULL,NULL};
 		char *arg = NULL;
 		for(i = 1; i < argc; i++) {
-			size += strlen(argv[i]) + 1;
+			size_t len = strlen(argv[i]);
+			size += len + 1;
 			arg = (char*)realloc(arg,size);
 			if(!arg)
 				error("Not enough memory for arguments");
-			strcat(arg,argv[i]);
-			strcat(arg," ");
+			strcpy(arg + pos,argv[i]);
+			pos += len;
+			arg[pos++] = ' ';
+			arg[pos] = '\0';
 		}
 		args[2] = arg;
 		exec(args[0],args);

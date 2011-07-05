@@ -94,7 +94,7 @@ void run_gc(void) {
 void run_remProc(pid_t pid) {
 	sRunningProc *run = run_findProc(CMD_ID_ALL,pid);
 	if(run) {
-		sll_removeFirst(running,run);
+		sll_removeFirstWith(running,run);
 		free(run);
 	}
 }

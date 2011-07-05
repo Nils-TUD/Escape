@@ -73,6 +73,26 @@ bool vfs_server_isReadable(const sVFSNode *node);
 int vfs_server_setReadable(sVFSNode *node,bool readable);
 
 /**
+ * Increases the message-count for the given server
+ *
+ * @param node the server-node
+ */
+void vfs_server_addMsg(sVFSNode *node);
+
+/**
+ * Decreases the message-count for the given server
+ *
+ * @param node the server-node
+ */
+void vfs_server_remMsg(sVFSNode *node);
+
+/**
+ * @param node the server-node
+ * @return true if there is work
+ */
+bool vfs_server_hasWork(sVFSNode *node);
+
+/**
  * Searches for a client of the given server-node that should be served
  *
  * @param node the server-node

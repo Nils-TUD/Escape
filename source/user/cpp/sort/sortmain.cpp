@@ -29,9 +29,9 @@ using namespace std;
 
 static bool compareStrs(const string& a,const string& b);
 static void usage(const char *name) {
-	cerr << "Usage: " << name << " [-r] [-i] [<file>]" << endl;
-	cerr << "	-r: reverse; i.e. descending instead of ascending" << endl;
-	cerr << "	-i: ignore case" << endl;
+	cerr << "Usage: " << name << " [-r] [-i] [<file>]" << '\n';
+	cerr << "	-r: reverse; i.e. descending instead of ascending" << '\n';
+	cerr << "	-i: ignore case" << '\n';
 	exit(EXIT_FAILURE);
 }
 
@@ -49,7 +49,7 @@ int main(int argc,char *argv[]) {
 			usage(argv[0]);
 	}
 	catch(const cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << endl;
+		cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
 

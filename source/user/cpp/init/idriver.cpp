@@ -93,11 +93,11 @@ std::istream& operator >>(std::istream& is,driver& drv) {
 }
 
 std::ostream& operator <<(std::ostream& os,const driver& drv) {
-	os << drv.name() << std::endl;
+	os << drv.name() << '\n';
 	const std::vector<device>& devs = drv.devices();
 	for(std::vector<device>::const_iterator it = devs.begin(); it != devs.end(); ++it) {
 		os << '\t' << it->name() << ' ';
-		os << std::oct << it->permissions() << ' ' << it->group() << std::endl;
+		os << std::oct << it->permissions() << ' ' << it->group() << '\n';
 	}
 	os << std::endl;
 	return os;

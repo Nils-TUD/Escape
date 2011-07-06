@@ -92,12 +92,12 @@ static void printMode(file::mode_type mode);
 static void printPerm(file::mode_type mode,file::mode_type fl,char c);
 
 static void usage(const char *name) {
-	cerr << "Usage: " << name << " [-liasn] [<path>]" << endl;
-	cerr << "	-l: long listing" << endl;
-	cerr << "	-i: print inode-numbers" << endl;
-	cerr << "	-a: print also '.' and '..'" << endl;
-	cerr << "	-s: print size of dir-content instead of directory-entries (implies -l)" << endl;
-	cerr << "	-n: print number of directory-entries instead of their size (implies -l)" << endl;
+	cerr << "Usage: " << name << " [-liasn] [<path>]" << '\n';
+	cerr << "	-l: long listing" << '\n';
+	cerr << "	-i: print inode-numbers" << '\n';
+	cerr << "	-a: print also '.' and '..'" << '\n';
+	cerr << "	-s: print size of dir-content instead of directory-entries (implies -l)" << '\n';
+	cerr << "	-n: print number of directory-entries instead of their size (implies -l)" << '\n';
 	exit(EXIT_FAILURE);
 }
 
@@ -121,7 +121,7 @@ int main(int argc,char *argv[]) {
 			flags |= F_LONG;
 	}
 	catch(const cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << endl;
+		cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
 
@@ -145,7 +145,7 @@ int main(int argc,char *argv[]) {
 		sort(entries.begin(),entries.end(),compareEntries);
 	}
 	catch(const io_exception& e) {
-		cerr << "Unable to read dir-entries: " << e.what() << endl;
+		cerr << "Unable to read dir-entries: " << e.what() << '\n';
 		exit(EXIT_FAILURE);
 	}
 

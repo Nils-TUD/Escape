@@ -76,16 +76,16 @@ static size_t pageSize;
 
 static void usage(const char *name) {
 	size_t i;
-	cerr << "Usage: " << name <<" [-t][-n <count>][-s <sort>]" << endl;
-	cerr << "	-t			: Print threads, too" << endl;
-	cerr << "	-n <count>	: Print first <count> processes" << endl;
+	cerr << "Usage: " << name <<" [-t][-n <count>][-s <sort>]" << '\n';
+	cerr << "	-t			: Print threads, too" << '\n';
+	cerr << "	-n <count>	: Print first <count> processes" << '\n';
 	cerr << "	-s <sort>	: Sort by ";
 	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
 		cerr << "'" << sorts[i].name << "'";
 		if(i < ARRAY_SIZE(sorts) - 1)
 			cerr << ", ";
 	}
-	cerr << endl;
+	cerr << '\n';
 	exit(EXIT_FAILURE);
 }
 
@@ -103,7 +103,7 @@ int main(int argc,char **argv) {
 			usage(argv[0]);
 	}
 	catch(const cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << endl;
+		cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
 
@@ -190,7 +190,7 @@ int main(int argc,char **argv) {
 	cout << setw((streamsize)maxSmem + 2) << right << "SMEM";
 	cout << setw((streamsize)maxInput + 2) << right << "IN";
 	cout << setw((streamsize)maxOutput + 2) << right << "OUT";
-	cout << " STATE  %CPU (USER,KERNEL) COMMAND" << endl;
+	cout << " STATE  %CPU (USER,KERNEL) COMMAND" << '\n';
 
 	// calc with to the process-command
 	size_t width2cmd = maxPid + maxPpid + maxGid + maxUid + maxPmem + maxShmem + maxSmem +
@@ -229,7 +229,7 @@ int main(int argc,char **argv) {
 		cout << setw(4) << setprecision(1) << cyclePercent << "% (";
 		cout << setw(3) << userPercent << "%,";
 		cout << setw(3) << kernelPercent << "%)   ";
-		cout << cmd << endl;
+		cout << cmd << '\n';
 
 		if(printThreads) {
 			const vector<thread*>& threads = p->threads();
@@ -253,7 +253,7 @@ int main(int argc,char **argv) {
 				cout << setw(5) << states[t->state()];
 				cout << setw(6) << setprecision(1) << tcyclePercent << "% (";
 				cout << setw(3) << tuserPercent << "%,";
-				cout << setw(3) << tkernelPercent << "%)" << endl;
+				cout << setw(3) << tkernelPercent << "%)" << '\n';
 			}
 		}
 	}

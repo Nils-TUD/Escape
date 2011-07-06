@@ -60,13 +60,13 @@ static sVTSize consSize;
 static string emptyLine;
 
 static void usage(const char* name) {
-	cerr << "Usage: " << name << " [<file>]" << endl;
-	cerr << "	navigation:" << endl;
-	cerr << "		up/down	- one line up/down" << endl;
-	cerr << "		pageup/pagedown - one page up/down" << endl;
-	cerr << "		home/end - to the very beginning or end" << endl;
-	cerr << "		q - quit" << endl;
-	cerr << "		s - stop reading (e.g. when walking to EOF)" << endl;
+	cerr << "Usage: " << name << " [<file>]" << '\n';
+	cerr << "	navigation:" << '\n';
+	cerr << "		up/down	- one line up/down" << '\n';
+	cerr << "		pageup/pagedown - one page up/down" << '\n';
+	cerr << "		home/end - to the very beginning or end" << '\n';
+	cerr << "		q - quit" << '\n';
+	cerr << "		s - stop reading (e.g. when walking to EOF)" << '\n';
 	exit(EXIT_FAILURE);
 }
 
@@ -82,7 +82,7 @@ int main(int argc,char *argv[]) {
 			usage(argv[0]);
 	}
 	catch(const cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << endl;
+		cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
 

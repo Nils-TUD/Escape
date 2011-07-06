@@ -22,7 +22,7 @@
 
 #include <sys/common.h>
 
-#define SIG_COUNT			18
+#define SIG_COUNT			20
 
 #define SIG_IGN				((fSignal)-3)			/* ignore signal */
 #define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
@@ -48,6 +48,8 @@
 #define SIG_INTRPT_ATA1		15						/* ata1-interrupt */
 #define SIG_INTRPT_ATA2		16						/* ata2-interrupt */
 #define SIG_INTRPT_MOUSE	17						/* mouse-interrupt */
+#define SIG_USR1			18						/* can be used for everything */
+#define SIG_USR2			19						/* can be used for everything */
 
 /* signal-handler-signature */
 typedef void (*fSignal)(int);

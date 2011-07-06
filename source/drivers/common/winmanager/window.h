@@ -58,11 +58,16 @@ typedef struct {
 bool win_init(int sid);
 
 /**
- * Enables or disables VESA
- *
- * @param enable wether to enable or disable the VESA-driver
+ * @return whether the window-manager is enabled
  */
-void win_setVesaEnabled(bool enabled);
+bool win_isEnabled(void);
+
+/**
+ * Enables or disables the window-manager
+ *
+ * @param en the new value
+ */
+void win_setEnabled(bool en);
 
 /**
  * @return the screen-width

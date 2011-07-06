@@ -1,0 +1,129 @@
+/**
+ * $Id$
+ */
+
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/driver.h>
+#include <esc/messages.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "mouse.h"
+#include "window.h"
+
+#define MOUSE_DATA_BUF_SIZE	128
+
+static void handleMouseMessage(int drvId,sMouseData *mdata);
+
+static sMsg msg;
+static uchar buttons = 0;
+static tCoord curX = 0;
+static tCoord curY = 0;
+static uchar cursor = CURSOR_DEFAULT;
+static sMouseData mouseData[MOUSE_DATA_BUF_SIZE];
+static sWindow *mouseWin = NULL;
+
+int mouse_start(void *drvIdPtr) {
+	int drvId = *(int*)drvIdPtr;
+	int mouse = open("/dev/mouse",IO_READ);
+	if(mouse < 0)
+		error("Unable to open /dev/mouse");
+
+	while(1) {
+		ssize_t count = RETRY(read(mouse,mouseData,sizeof(mouseData)));
+		if(count < 0)
+			printe("[WINM] Unable to read from mouse");
+		else {
+			if(!win_isEnabled())
+				continue;
+
+			sMouseData *msd = mouseData;
+			count /= sizeof(sMouseData);
+			while(count-- > 0) {
+				handleMouseMessage(drvId,msd);
+				msd++;
+			}
+		}
+	}
+	close(mouse);
+	return 0;
+}
+
+tCoord mouse_getX(void) {
+	return curX;
+}
+
+tCoord mouse_getY(void) {
+	return curY;
+}
+
+static void handleMouseMessage(int drvId,sMouseData *mdata) {
+	tCoord oldx = curX,oldy = curY;
+	bool btnChanged = false;
+	sWindow *w;
+	curX = MAX(0,MIN(win_getScreenWidth() - 1,curX + mdata->x));
+	curY = MAX(0,MIN(win_getScreenHeight() - 1,curY - mdata->y));
+
+	/* set active window */
+	if(mdata->buttons != buttons) {
+		btnChanged = true;
+		buttons = mdata->buttons;
+		if(buttons) {
+			w = win_getAt(curX,curY);
+			if(w->style != WIN_STYLE_DESKTOP) {
+				if(w)
+					win_setActive(w->id,true,curX,curY);
+				else
+					win_setActive(WINDOW_COUNT,false,curX,curY);
+			}
+			mouseWin = w;
+		}
+	}
+
+	/* if no buttons are pressed, change the cursor if we're at a window-border */
+	if(!buttons) {
+		w = mouseWin ? mouseWin : win_getAt(curX,curY);
+		cursor = CURSOR_DEFAULT;
+		if(w && w->style != WIN_STYLE_POPUP && w->style != WIN_STYLE_DESKTOP) {
+			bool left = curX < w->x + CURSOR_RESIZE_WIDTH;
+			bool right = curX >= w->x + w->width - CURSOR_RESIZE_WIDTH;
+			bool bottom = curY >= w->y + w->height - CURSOR_RESIZE_WIDTH;
+			if(left && bottom)
+				cursor = CURSOR_RESIZE_BL;
+			else if(left)
+				cursor = CURSOR_RESIZE_L;
+			if(right && bottom)
+				cursor = CURSOR_RESIZE_BR;
+			else if(right)
+				cursor = CURSOR_RESIZE_R;
+			else if(bottom && !left)
+				cursor = CURSOR_RESIZE_VERT;
+		}
+	}
+
+	/* let vesa draw the cursor */
+	if(curX != oldx || curY != oldy)
+		win_setCursor(curX,curY,cursor);
+
+	/* send to window */
+	w = mouseWin ? mouseWin : win_getActive();
+	if(w) {
+		int aWin = getClient(drvId,w->owner);
+		if(aWin < 0)
+			printe("[WINM] Unable to get client %d",w->owner);
+		else {
+			msg.args.arg1 = curX;
+			msg.args.arg2 = curY;
+			msg.args.arg3 = mdata->x;
+			msg.args.arg4 = -mdata->y;
+			msg.args.arg5 = mdata->buttons;
+			msg.args.arg6 = w->id;
+			send(aWin,MSG_WIN_MOUSE_EV,&msg,sizeof(msg.args));
+			close(aWin);
+		}
+	}
+
+	if(btnChanged && !buttons)
+		mouseWin = NULL;
+}

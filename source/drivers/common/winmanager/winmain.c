@@ -30,70 +30,20 @@
 #include <stdlib.h>
 
 #include "window.h"
+#include "mouse.h"
+#include "keyboard.h"
 
-#define MOUSE_DATA_BUF_SIZE	128
-#define KB_DATA_BUF_SIZE	128
-
-/**
- * Reads from the mouse-driver
- */
-static bool readMouse(int drvId,int mouse);
-/**
- * Reads from the km-manager
- */
-static bool readKeyboard(int drvId,int kmmng);
-/**
- * Destroys the windows of a died thread
- */
-static void deadThreadHandler(int sig);
-/**
- * Handles a message from kmmng
- */
-static void handleKbMessage(int drvId,sWindow *active,uchar keycode,bool isBreak,
-		uchar modifier,char c);
-/**
- * Handles a message from the mouse
- */
-static void handleMouseMessage(int drvId,sMouseData *mdata);
-
-/* mouse state */
-static uchar buttons = 0;
-static tCoord curX = 0;
-static tCoord curY = 0;
-static uchar cursor = CURSOR_DEFAULT;
-
-static bool enabled = false;
 static sMsg msg;
 static tSize screenWidth;
 static tSize screenHeight;
-static sMouseData mouseData[MOUSE_DATA_BUF_SIZE];
-static sKmData kbData[KB_DATA_BUF_SIZE];
-static sWindow *mouseWin = NULL;
 
 int main(void) {
-	sWaitObject waits[3];
-	int mouse,kmmng;
 	int drvId;
 	msgid_t mid;
-
-	mouse = open("/dev/mouse",IO_READ | IO_NOBLOCK);
-	if(mouse < 0)
-		error("Unable to open /dev/mouse");
-
-	kmmng = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
-	if(kmmng < 0)
-		error("Unable to open /dev/kmmanager");
 
 	drvId = regDriver("winmanager",DRV_CLOSE);
 	if(drvId < 0)
 		error("Unable to create driver winmanager");
-
-	waits[0].events = EV_CLIENT;
-	waits[0].object = drvId;
-	waits[1].events = EV_DATA_READABLE;
-	waits[1].object = kmmng;
-	waits[2].events = EV_DATA_READABLE;
-	waits[2].object = mouse;
 
 	if(!win_init(drvId))
 		return EXIT_FAILURE;
@@ -101,9 +51,16 @@ int main(void) {
 	screenWidth = win_getScreenWidth();
 	screenHeight = win_getScreenHeight();
 
+	if(startThread(mouse_start,&drvId) < 0)
+		error("Unable to start thread for mouse-handler");
+	if(startThread(keyboard_start,&drvId) < 0)
+		error("Unable to start thread for keyboard-handler");
+
 	while(1) {
-		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
-		if(fd >= 0) {
+		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0)
+			printe("[WINM] Unable to get work");
+		else {
 			switch(mid) {
 				case MSG_WIN_CREATE: {
 					tCoord x = (tCoord)(msg.args.arg1 >> 16);
@@ -116,14 +73,14 @@ int main(void) {
 					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
 					if(style == WIN_STYLE_POPUP)
-						win_setActive(msg.args.arg2,false,curX,curY);
+						win_setActive(msg.args.arg2,false,mouse_getX(),mouse_getY());
 				}
 				break;
 
 				case MSG_WIN_DESTROY: {
 					tWinId wid = (tWinId)msg.args.arg1;
 					if(win_exists(wid))
-						win_destroy(wid,curX,curY);
+						win_destroy(wid,mouse_getX(),mouse_getY());
 				}
 				break;
 
@@ -131,7 +88,7 @@ int main(void) {
 					tWinId wid = (tWinId)msg.args.arg1;
 					tCoord x = (tCoord)msg.args.arg2;
 					tCoord y = (tCoord)msg.args.arg3;
-					if(enabled && win_exists(wid) && x < screenWidth && y < screenHeight)
+					if(win_isEnabled() && win_exists(wid) && x < screenWidth && y < screenHeight)
 						win_moveTo(wid,x,y);
 				}
 				break;
@@ -140,7 +97,7 @@ int main(void) {
 					tWinId wid = (tWinId)msg.args.arg1;
 					tSize width = (tSize)msg.args.arg2;
 					tSize height = (tSize)msg.args.arg3;
-					if(enabled && win_exists(wid))
+					if(win_isEnabled() && win_exists(wid))
 						win_resize(wid,width,height);
 				}
 				break;
@@ -152,7 +109,7 @@ int main(void) {
 					tSize width = (tSize)msg.args.arg4;
 					tSize height = (tSize)msg.args.arg5;
 					sWindow *win = win_get(wid);
-					if(enabled && win != NULL && x + width > x && y + height > y &&
+					if(win_isEnabled() && win != NULL && x + width > x && y + height > y &&
 						x + width <= win->width && y + height <= win->height) {
 						win_update(wid,x,y,width,height);
 					}
@@ -160,19 +117,19 @@ int main(void) {
 				break;
 
 				case MSG_WIN_ENABLE:
-					win_setVesaEnabled(true);
-					if(!enabled)
-						win_updateScreen();
-					enabled = true;
+					win_setEnabled(true);
+					win_updateScreen();
+					/* notify the keyboard-thread; it has announced the handler */
+					sendSignalTo(getpid(),SIG_USR1);
 					break;
 
 				case MSG_WIN_DISABLE:
-					win_setVesaEnabled(false);
-					enabled = false;
+					win_setEnabled(false);
+					sendSignalTo(getpid(),SIG_USR1);
 					break;
 
 				case MSG_DRV_CLOSE:
-					win_destroyWinsOf(getClientId(fd),curX,curY);
+					win_destroyWinsOf(getClientId(fd),mouse_getX(),mouse_getY());
 					break;
 
 				default:
@@ -182,150 +139,8 @@ int main(void) {
 			}
 			close(fd);
 		}
-		else {
-			bool hasRead = false;
-			if(enabled) {
-				hasRead |= readMouse(drvId,mouse);
-				hasRead |= readKeyboard(drvId,kmmng);
-			}
-			if(!hasRead) {
-				if(enabled)
-					waitm(waits,ARRAY_SIZE(waits));
-				else
-					waitm(waits,1);
-			}
-		}
 	}
 
 	close(drvId);
-	close(kmmng);
-	close(mouse);
 	return EXIT_SUCCESS;
-}
-
-static bool readMouse(int drvId,int mouse) {
-	ssize_t count;
-	while((count = RETRY(read(mouse,mouseData,sizeof(mouseData)))) > 0) {
-		sMouseData *msd = mouseData;
-		count /= sizeof(sMouseData);
-		while(count-- > 0) {
-			handleMouseMessage(drvId,msd);
-			msd++;
-		}
-	}
-	if(count < 0) {
-		if(count != ERR_WOULD_BLOCK)
-			printe("[WINM] Unable to read from mouse");
-		return false;
-	}
-	return true;
-}
-
-static bool readKeyboard(int drvId,int kmmng) {
-	sWindow *active = win_getActive();
-	ssize_t count;
-	while((count = RETRY(read(kmmng,kbData,sizeof(kbData)))) > 0) {
-		sKmData *kbd = kbData;
-		count /= sizeof(sKmData);
-		while(count-- > 0) {
-			handleKbMessage(drvId,active,kbd->keycode,kbd->isBreak,kbd->modifier,
-					kbd->character);
-			kbd++;
-		}
-	}
-	if(count < 0) {
-		if(count != ERR_WOULD_BLOCK)
-			printe("[WINM] Unable to read from kmmanager");
-		return false;
-	}
-	return true;
-}
-
-static void handleKbMessage(int drvId,sWindow *active,uchar keycode,bool isBreak,
-		uchar modifier,char c) {
-	int aWin;
-	if(!active)
-		return;
-	msg.args.arg1 = keycode;
-	msg.args.arg2 = isBreak;
-	msg.args.arg3 = active->id;
-	msg.args.arg4 = c;
-	msg.args.arg5 = modifier;
-	aWin = getClient(drvId,active->owner);
-	if(aWin < 0)
-		printe("[WINM] Unable to get client %d",active->owner);
-	else {
-		send(aWin,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg.args));
-		close(aWin);
-	}
-}
-
-static void handleMouseMessage(int drvId,sMouseData *mdata) {
-	tCoord oldx = curX,oldy = curY;
-	bool btnChanged = false;
-	sWindow *w;
-	curX = MAX(0,MIN(screenWidth - 1,curX + mdata->x));
-	curY = MAX(0,MIN(screenHeight - 1,curY - mdata->y));
-
-	/* set active window */
-	if(mdata->buttons != buttons) {
-		btnChanged = true;
-		buttons = mdata->buttons;
-		if(buttons) {
-			w = win_getAt(curX,curY);
-			if(w->style != WIN_STYLE_DESKTOP) {
-				if(w)
-					win_setActive(w->id,true,curX,curY);
-				else
-					win_setActive(WINDOW_COUNT,false,curX,curY);
-			}
-			mouseWin = w;
-		}
-	}
-
-	/* if no buttons are pressed, change the cursor if we're at a window-border */
-	if(!buttons) {
-		w = mouseWin ? mouseWin : win_getAt(curX,curY);
-		cursor = CURSOR_DEFAULT;
-		if(w && w->style != WIN_STYLE_POPUP && w->style != WIN_STYLE_DESKTOP) {
-			bool left = curX < w->x + CURSOR_RESIZE_WIDTH;
-			bool right = curX >= w->x + w->width - CURSOR_RESIZE_WIDTH;
-			bool bottom = curY >= w->y + w->height - CURSOR_RESIZE_WIDTH;
-			if(left && bottom)
-				cursor = CURSOR_RESIZE_BL;
-			else if(left)
-				cursor = CURSOR_RESIZE_L;
-			if(right && bottom)
-				cursor = CURSOR_RESIZE_BR;
-			else if(right)
-				cursor = CURSOR_RESIZE_R;
-			else if(bottom && !left)
-				cursor = CURSOR_RESIZE_VERT;
-		}
-	}
-
-	/* let vesa draw the cursor */
-	if(curX != oldx || curY != oldy)
-		win_setCursor(curX,curY,cursor);
-
-	/* send to window */
-	w = mouseWin ? mouseWin : win_getActive();
-	if(w) {
-		int aWin = getClient(drvId,w->owner);
-		if(aWin < 0)
-			printe("[WINM] Unable to get client %d",w->owner);
-		else {
-			msg.args.arg1 = curX;
-			msg.args.arg2 = curY;
-			msg.args.arg3 = mdata->x;
-			msg.args.arg4 = -mdata->y;
-			msg.args.arg5 = mdata->buttons;
-			msg.args.arg6 = w->id;
-			send(aWin,MSG_WIN_MOUSE_EV,&msg,sizeof(msg.args));
-			close(aWin);
-		}
-	}
-
-	if(btnChanged && !buttons)
-		mouseWin = NULL;
 }

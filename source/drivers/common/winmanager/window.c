@@ -41,7 +41,8 @@ static int vesa;
 static int drvId;
 static sVESAInfo vesaInfo;
 
-static sMsg msg;	/* TODO we already have a msg in winmain.c */
+static bool enabled = false;
+static sMsg msg;
 static uint8_t *shmem;
 static size_t activeWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
@@ -77,8 +78,13 @@ bool win_init(int sid) {
 	return true;
 }
 
-void win_setVesaEnabled(bool enabled) {
-	if(send(vesa,enabled ? MSG_VESA_ENABLE : MSG_VESA_DISABLE,NULL,0))
+bool win_isEnabled(void) {
+	return enabled;
+}
+
+void win_setEnabled(bool en) {
+	enabled = en;
+	if(send(vesa,en ? MSG_VESA_ENABLE : MSG_VESA_DISABLE,NULL,0))
 		error("Unable to enable/disable vesa");
 }
 

@@ -63,7 +63,7 @@ bool sig_canHandle(sig_t signal) {
 }
 
 bool sig_canSend(sig_t signal) {
-	return signal < SIG_INTRPT_TIMER;
+	return signal < SIG_INTRPT_TIMER || signal >= SIG_USR1;
 }
 
 int sig_setHandler(tid_t tid,sig_t signal,fSignal func) {

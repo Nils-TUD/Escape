@@ -46,9 +46,15 @@ memset:
 	SUBU	rem,rem,1
 5:
 	BNZ		rem,4b							# stop if rem == 0
+	ADDU	dest,dest,off
 3:
 	# now dest is word aligned
 	# first, clear with loop-unrolling
+	SUBU	count,count,off					# count = number of remaining bytes
+	SETL	off,0
+	SET		rem,count
+	CMPU	tmp2,count,8
+	BN		count,4f						# stop here if we're finished anyway
 	SET		tmp2,val						# build the octa by duplicating val 8 times
 	SLU		tmp,val,8
 	OR		tmp2,tmp2,tmp
@@ -64,8 +70,6 @@ memset:
 	OR		tmp2,tmp2,tmp
 	SLU		tmp,val,56
 	OR		tmp2,tmp2,tmp
-	SUBU	count,count,off					# count = number of remaining bytes
-	SET		rem,count
 	ANDNL	rem,#003F						# align it to 8*8 bytes
 	SUBU	count,count,rem					# the remaining bytes after this loop
 	JMP		2f
@@ -86,12 +90,12 @@ memset:
 	SET		rem,count						# the remaining bytes
 	ANDNL	rem,#0007						# word-align it
 	SUBU	count,count,rem					# the remaining bytes after this loop
-	JMP		2f
+	JMP		4f
 3:
 	STOU	tmp2,dest,off
 	ADDU	off,off,8
 	SUBU	rem,rem,8
-2:
+4:
 	BNZ		rem,3b							# stop if rem == 0
 	# maybe, there are some bytes left to copy
 	OR		rem,count,count

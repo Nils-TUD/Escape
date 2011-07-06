@@ -47,10 +47,12 @@ memclear:
 	SUBU	rem,rem,1
 5:
 	BNZ		rem,4b							# stop if rem == 0
+	ADDU	dest,dest,off
 3:
 	# now dest is word aligned
 	# first, clear with loop-unrolling
 	SUBU	count,count,off					# count = number of remaining bytes
+	SETL	off,0
 	SET		rem,count
 	ANDNL	rem,#003F						# align it to 8*8 bytes
 	SUBU	count,count,rem					# the remaining bytes after this loop

@@ -52,10 +52,13 @@ memcpy:
 	SUBU	rem,rem,1
 5:
 	BNZ		rem,4b							# stop if rem == 0
+	ADDU	dest,dest,off
+	ADDU	src,src,off
 3:
 	# now they are word aligned
 	# first, copy with loop-unrolling
 	SUBU	len,len,off						# len = number of remaining bytes
+	SETL	off,0
 	SET		rem,len
 	ANDNL	rem,#003F						# align it to 8*8 bytes
 	SUBU	len,len,rem						# the remaining bytes after this loop

@@ -117,6 +117,20 @@ namespace gui {
 		void setActive(bool active);
 		void onCreated(tWinId id);
 		void update(tCoord x,tCoord y,tSize width,tSize height);
+		void resizeMove(short x,short width,short height);
+		void resizeMoveTo(tCoord x,tSize width,tSize height);
+		inline tCoord getMoveX() const {
+			return _moveX;
+		};
+		inline tCoord getMoveY() const {
+			return _moveY;
+		};
+		inline tSize getResizeWidth() const {
+			return _resizeWidth;
+		};
+		inline tSize getResizeHeight() const {
+			return _resizeHeight;
+		};
 
 	private:
 		tWinId _id;
@@ -129,6 +143,10 @@ namespace gui {
 		bool _inResizeRight;
 		bool _inResizeBottom;
 		bool _isActive;
+		tCoord _moveX;
+		tCoord _moveY;
+		tSize _resizeWidth;
+		tSize _resizeHeight;
 	protected:
 		int _focus;
 		vector<Control*> _controls;

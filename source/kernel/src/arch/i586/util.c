@@ -98,7 +98,6 @@ void util_panic(const char *fmt,...) {
 		PRINT_REGS(regs,"\t");
 	}
 
-#if DEBUGGING
 	/* write into log only */
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
@@ -111,11 +110,6 @@ void util_panic(const char *fmt,...) {
 		kb_get(NULL,KEV_PRESS,true);
 		cons_start();
 	}
-#else
-	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */
-	while(1)
-		util_halt();
-#endif
 }
 
 void util_startTimer(void) {

@@ -42,16 +42,16 @@ namespace gui {
 		: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_title(title), _titleBarHeight(20), _inTitle(false), _inResizeLeft(false),
-			_inResizeRight(false), _inResizeBottom(false), _isActive(false), _focus(-1),
-			_controls(vector<Control*>()) {
+			_inResizeRight(false), _inResizeBottom(false), _isActive(false), _moveX(x), _moveY(y),
+			_resizeWidth(width), _resizeHeight(height), _focus(-1), _controls(vector<Control*>()) {
 		init();
 	}
 
 	Window::Window(const Window &w)
 		: UIElement(w), _id(NEXT_TMP_ID--), _created(false), _style(w._style), _title(w._title),
 			_titleBarHeight(w._titleBarHeight), _inTitle(w._inTitle), _inResizeLeft(false),
-			_inResizeRight(false), _inResizeBottom(false), _isActive(false),
-			_focus(w._focus), _controls(w._controls) {
+			_inResizeRight(false), _inResizeBottom(false), _isActive(false), _moveX(0),
+			_moveY(0), _resizeWidth(0), _resizeHeight(0), _focus(w._focus), _controls(w._controls) {
 		init();
 	}
 
@@ -71,6 +71,10 @@ namespace gui {
 		_inResizeRight = w._inResizeRight;
 		_inResizeBottom = w._inResizeBottom;
 		_isActive = false;
+		_moveX = w._moveX;
+		_moveY = w._moveY;
+		_resizeWidth = w._resizeWidth;
+		_resizeHeight = w._resizeHeight;
 		_focus = w._focus;
 		_controls = w._controls;
 		_id = NEXT_TMP_ID--;
@@ -98,9 +102,9 @@ namespace gui {
 		}
 		if(_inResizeLeft) {
 			if(e.isButton1Down()) {
-				if(_inResizeLeft)
-					move(e.getXMovement(),0);
-				resize(_inResizeLeft ? -e.getXMovement() : 0,_inResizeBottom ? e.getYMovement() : 0);
+				short width = _inResizeLeft ? -e.getXMovement() : 0;
+				short height = _inResizeBottom ? e.getYMovement() : 0;
+				resizeMove(e.getXMovement(),width,height);
 			}
 			return;
 		}
@@ -111,21 +115,49 @@ namespace gui {
 		}
 		passToCtrl(e,MOUSE_MOVED);
 	}
+
 	void Window::onMouseReleased(const MouseEvent &e) {
 		if(_style != STYLE_POPUP) {
-			if(e.getY() < _titleBarHeight) {
-				_inTitle = false;
-				return;
+			bool resizing = _inResizeBottom || _inResizeLeft || _inResizeRight;
+			bool title = _inTitle;
+
+			_inTitle = false;
+			_inResizeBottom = false;
+			_inResizeLeft = false;
+			_inResizeRight = false;
+
+			// finish resize-operation
+			if(_moveX != getX() || _resizeWidth != getWidth() || _resizeHeight != getHeight()) {
+				if(resizing) {
+					_g->moveTo(_moveX,_moveY);
+					_g->resizeTo(_resizeWidth,_resizeHeight);
+					for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+						(*it)->getGraphics()->resizeTo(_resizeWidth,_resizeHeight);
+					// when resizing left, its both a resize and move
+					setX(_moveX);
+					setY(_moveY);
+					setWidth(_resizeWidth);
+					setHeight(_resizeHeight);
+					Application::getInstance()->resizeWindow(this,true);
+					repaint();
+				}
 			}
-			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
-				_inResizeBottom = false;
-			if(e.getX() < CURSOR_RESIZE_WIDTH)
-				_inResizeLeft = false;
-			else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
-				_inResizeRight = false;
+
+			// finish move-operation
+			if(_moveX != getX() || _moveY != getY()) {
+				_g->moveTo(_moveX,_moveY);
+				setX(_g->_x);
+				setY(_g->_y);
+				Application::getInstance()->moveWindow(this,true);
+			}
+
+			// don't pass the event to controls in this case
+			if(title || resizing)
+				return;
 		}
 		passToCtrl(e,MOUSE_RELEASED);
 	}
+
 	void Window::onMousePressed(const MouseEvent &e) {
 		if(_style != STYLE_POPUP) {
 			if(e.getY() < _titleBarHeight) {
@@ -141,9 +173,11 @@ namespace gui {
 		}
 		passToCtrl(e,MOUSE_PRESSED);
 	}
+
 	void Window::onKeyPressed(const KeyEvent &e) {
 		passToCtrl(e,KEY_PRESSED);
 	}
+
 	void Window::onKeyReleased(const KeyEvent &e) {
 		passToCtrl(e,KEY_RELEASED);
 	}
@@ -228,34 +262,44 @@ namespace gui {
 	}
 
 	void Window::resize(short width,short height) {
-		if(getWidth() + width < MIN_WIDTH)
-			width = -getWidth() + MIN_WIDTH;
-		if(getHeight() + height < MIN_HEIGHT)
-			height = -getHeight() + MIN_HEIGHT;
-		resizeTo(getWidth() + width,getHeight() + height);
+		if(_resizeWidth + width < MIN_WIDTH)
+			width = -_resizeWidth + MIN_WIDTH;
+		if(_resizeHeight + height < MIN_HEIGHT)
+			height = -_resizeHeight + MIN_HEIGHT;
+		resizeTo(_resizeWidth + width,_resizeHeight + height);
 	}
 
 	void Window::resizeTo(tSize width,tSize height) {
+		resizeMoveTo(_moveX,width,height);
+	}
+
+	void Window::resizeMove(short x,short width,short height) {
+		if(_resizeWidth + width >= MIN_WIDTH && _resizeHeight + height >= MIN_HEIGHT)
+			resizeMoveTo(_moveX + x,_resizeWidth + width,_resizeHeight + height);
+	}
+
+	void Window::resizeMoveTo(tCoord x,tSize width,tSize height) {
+		// no resize until we're created
+		if(!_created)
+			return;
+
 		tSize screenWidth = Application::getInstance()->getScreenWidth();
 		tSize screenHeight = Application::getInstance()->getScreenHeight();
 		width = MIN(screenWidth,width);
 		height = MIN(screenHeight,height);
-		if(width != getWidth() || height != getHeight()) {
-			_g->resizeTo(width,height);
-			for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
-				(*it)->getGraphics()->resizeTo(width,height);
-			setWidth(width);
-			setHeight(height);
-			Application::getInstance()->resizeWindow(this);
-			repaint();
+		if(_moveX != x || width != _resizeWidth || height != _resizeHeight) {
+			_moveX = x;
+			_resizeWidth = width;
+			_resizeHeight = height;
+			Application::getInstance()->resizeWindow(this,false);
 		}
 	}
 
 	void Window::move(short x,short y) {
 		tSize screenWidth = Application::getInstance()->getScreenWidth();
 		tSize screenHeight = Application::getInstance()->getScreenHeight();
-		x = MAX(-getWidth(),MIN(screenWidth - 1,getX() + x));
-		y = MAX(0,MIN(screenHeight - 1,getY() + y));
+		x = MIN(screenWidth - 1,_moveX + x);
+		y = MAX(0,MIN(screenHeight - 1,_moveY + y));
 		moveTo(x,y);
 	}
 
@@ -264,11 +308,10 @@ namespace gui {
 		if(!_created)
 			return;
 
-		if(getX() != x || getY() != y) {
-			_g->moveTo(x,y);
-			setX(_g->_x);
-			setY(_g->_y);
-			Application::getInstance()->moveWindow(this);
+		if(_moveX != x || _moveY != y) {
+			_moveX = x;
+			_moveY = y;
+			Application::getInstance()->moveWindow(this,false);
 		}
 	}
 

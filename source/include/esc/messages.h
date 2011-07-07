@@ -102,6 +102,7 @@
 #define MSG_VESA_SETMODE			204	/* sets the vesa-mode */
 #define MSG_VESA_ENABLE				205	/* enables vesa */
 #define MSG_VESA_DISABLE			206	/* disables vesa */
+#define MSG_VESA_PREVIEWRECT		207 /* sets the preview-rectangle */
 
 #define MSG_WIN_CREATE				300	/* creates a window */
 #define MSG_WIN_CREATE_RESP			301	/* the create-response */

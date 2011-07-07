@@ -70,7 +70,7 @@ bool rectContains(sRectangle *r,int x,int y);
  * +-----+
  * That means you'll get the rectangles 1 and 2.
  *
- * NOTE: You have to free the memory, if the return-value is not NULL!
+ * NOTE: You have to free the memory using rectFree, if the return-value is not NULL!
  *
  * @param r1 the rectangle to split
  * @param r2 the rectangle to split by
@@ -78,6 +78,14 @@ bool rectContains(sRectangle *r,int x,int y);
  * @return the rectangle array, allocated on the heap; NULL if rectCount = 0
  */
 sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,size_t *rectCount) A_CHECKRET;
+
+/**
+ * Frees the given rectangles
+ *
+ * @param rects the rectangles created by rectSplit (may be NULL)
+ * @param count the number of rectangles
+ */
+void rectFree(sRectangle **rects,size_t count);
 
 /**
  * Calculates the intersection of <r1> and <r2>.

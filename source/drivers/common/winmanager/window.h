@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <esc/rect.h>
 
 #define WINDOW_COUNT					32
 #define WINID_UNSED						WINDOW_COUNT
@@ -162,22 +163,46 @@ sWindow *win_getActive(void);
 void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY);
 
 /**
- * Resizes the window to the given size
+ * Shows a preview for the given resize-operation
  *
  * @param window the window-id
+ * @param x the x-coordinate
+ * @param y the y-coordinate
  * @param width the new width
  * @param height the new height
  */
-void win_resize(tWinId window,tSize width,tSize height);
+void win_previewResize(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
 
 /**
- * Moves the given window to given position
+ * Shows a preview for the given move-operation
  *
  * @param window the window-id
  * @param x the x-coordinate
  * @param y the y-coordinate
  */
-void win_moveTo(tWinId window,tCoord x,tCoord y);
+void win_previewMove(tWinId window,tCoord x,tCoord y);
+
+/**
+ * Resizes the window to the given size
+ *
+ * @param window the window-id
+ * @param x the x-coordinate
+ * @param y the y-coordinate
+ * @param width the new width
+ * @param height the new height
+ */
+void win_resize(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
+
+/**
+ * Moves the given window to given position and optionally changes the size
+ *
+ * @param window the window-id
+ * @param x the x-coordinate
+ * @param y the y-coordinate
+ * @param width the new width
+ * @param height the new height
+ */
+void win_moveTo(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
 
 /**
  * Sends update-events to the given window to update the given area

@@ -65,7 +65,7 @@ namespace gui {
 		virtual ~Application();
 
 		virtual void doEvents();
-		virtual void handleMessage(msgid_t mid,const sMsg *msg);
+		virtual void handleMessage(msgid_t mid,sMsg *msg);
 
 	private:
 		// prevent copying
@@ -84,8 +84,8 @@ namespace gui {
 		void addWindow(Window *win);
 		void removeWindow(Window *win);
 		Window *getWindowById(tWinId id);
-		void moveWindow(Window *win);
-		void resizeWindow(Window *win);
+		void moveWindow(Window *win,bool finish);
+		void resizeWindow(Window *win,bool finish);
 
 	protected:
 		int _winFd;

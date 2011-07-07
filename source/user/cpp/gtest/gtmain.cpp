@@ -75,8 +75,8 @@ int main(void) {
 		w1->add(check);
 		pb = new gui::ProgressBar("Progress...",10,160,200,25);
 		w1->add(*pb);
-		/*if(startThread(pbThread,NULL) < 0)
-			std::cerr << "[GUITEST] Unable to start thread" << std::endl;*/
+		if(startThread(pbThread,NULL) < 0)
+			std::cerr << "[GUITEST] Unable to start thread" << std::endl;
 		return app->run();
 	}
 

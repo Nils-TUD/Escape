@@ -313,14 +313,16 @@ namespace gui {
 	}
 
 	void Graphics::resizeTo(tSize width,tSize height) {
-		_width = width;
-		_height = height;
-		if(_owner == NULL) {
-			delete [] _pixels;
-			allocBuffer();
+		if(_width != width || _height != height) {
+			_width = width;
+			_height = height;
+			if(_owner == NULL) {
+				delete [] _pixels;
+				allocBuffer();
+			}
+			else
+				_pixels = _owner->_pixels;
 		}
-		else
-			_pixels = _owner->_pixels;
 	}
 
 	void Graphics::validatePos(tCoord &x,tCoord &y) {

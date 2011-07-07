@@ -30,6 +30,7 @@
 #include "tests/tfs.h"
 #include "tests/tgroup.h"
 #include "tests/tuser.h"
+#include "tests/trect.h"
 
 int main(void) {
 	if(getuid() != ROOT_UID)
@@ -43,6 +44,7 @@ int main(void) {
 	test_register(&tModFs);
 	test_register(&tModGroup);
 	test_register(&tModUser);
+	test_register(&tModRect);
 	test_start();
 	return EXIT_SUCCESS;
 }

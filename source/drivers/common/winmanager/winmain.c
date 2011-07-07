@@ -88,17 +88,30 @@ int main(void) {
 					tWinId wid = (tWinId)msg.args.arg1;
 					tCoord x = (tCoord)msg.args.arg2;
 					tCoord y = (tCoord)msg.args.arg3;
-					if(win_isEnabled() && win_exists(wid) && x < screenWidth && y < screenHeight)
-						win_moveTo(wid,x,y);
+					bool finish = (bool)msg.args.arg4;
+					sWindow *win = win_get(wid);
+					if(win_isEnabled() && win && x < screenWidth && y < screenHeight) {
+						if(finish)
+							win_moveTo(wid,x,y,win->width,win->height);
+						else
+							win_previewMove(wid,x,y);
+					}
 				}
 				break;
 
 				case MSG_WIN_RESIZE: {
 					tWinId wid = (tWinId)msg.args.arg1;
-					tSize width = (tSize)msg.args.arg2;
-					tSize height = (tSize)msg.args.arg3;
-					if(win_isEnabled() && win_exists(wid))
-						win_resize(wid,width,height);
+					tCoord x = (tCoord)msg.args.arg2;
+					tCoord y = (tCoord)msg.args.arg3;
+					tSize width = (tSize)msg.args.arg4;
+					tSize height = (tSize)msg.args.arg5;
+					bool finish = (bool)msg.args.arg6;
+					if(win_isEnabled() && win_exists(wid)) {
+						if(finish)
+							win_resize(wid,x,y,width,height);
+						else
+							win_previewResize(wid,x,y,width,height);
+					}
 				}
 				break;
 

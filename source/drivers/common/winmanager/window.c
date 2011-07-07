@@ -233,41 +233,75 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
 			new->y = windows[activeWindow].y;
 			new->width = windows[activeWindow].width;
 			new->height = windows[activeWindow].height;
+			new->window = WINDOW_COUNT;
 			win_repaint(new,windows + activeWindow,windows[activeWindow].z);
 		}
 	}
 }
 
-void win_resize(tWinId window,tSize width,tSize height) {
-	tSize oldWidth = windows[window].width;
-	tSize oldHeight = windows[window].height;
-	windows[window].width = width;
-	windows[window].height = height;
-	if(width < oldWidth) {
-		sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
-		r->x = windows[window].x + width;
-		r->y = windows[window].y;
-		r->width = oldWidth - width;
-		r->height = oldHeight;
-		r->window = WINDOW_COUNT;
-		win_repaint(r,NULL,-1);
-	}
-	if(height < oldHeight) {
-		sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
-		r->x = windows[window].x;
-		r->y = windows[window].y + height;
-		r->width = oldWidth;
-		r->height = oldHeight - height;
-		r->window = WINDOW_COUNT;
-		win_repaint(r,NULL,-1);
+void win_previewResize(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
+	sWindow *w = windows + window;
+	msg.args.arg1 = x;
+	msg.args.arg2 = y;
+	msg.args.arg3 = width;
+	msg.args.arg4 = height;
+	msg.args.arg5 = 2;
+	send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
+}
+
+void win_previewMove(tWinId window,tCoord x,tCoord y) {
+	sWindow *w = windows + window;
+	msg.args.arg1 = x;
+	msg.args.arg2 = y;
+	msg.args.arg3 = w->width;
+	msg.args.arg4 = w->height;
+	msg.args.arg5 = 2;
+	send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
+}
+
+void win_resize(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
+	if(x != windows[window].x || y != windows[window].y)
+		win_moveTo(window,x,y,width,height);
+	else {
+		tSize oldWidth = windows[window].width;
+		tSize oldHeight = windows[window].height;
+		windows[window].width = width;
+		windows[window].height = height;
+
+		/* remove preview */
+		msg.args.arg5 = 0;
+		send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
+
+		if(width < oldWidth) {
+			sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
+			r->x = windows[window].x + width;
+			r->y = windows[window].y;
+			r->width = oldWidth - width;
+			r->height = oldHeight;
+			r->window = WINDOW_COUNT;
+			win_repaint(r,NULL,-1);
+		}
+		if(height < oldHeight) {
+			sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
+			r->x = windows[window].x;
+			r->y = windows[window].y + height;
+			r->width = oldWidth;
+			r->height = oldHeight - height;
+			r->window = WINDOW_COUNT;
+			win_repaint(r,NULL,-1);
+		}
 	}
 }
 
-void win_moveTo(tWinId window,tCoord x,tCoord y) {
+void win_moveTo(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
 	size_t i,count;
 	sRectangle **rects;
 	sRectangle *old = (sRectangle*)malloc(sizeof(sRectangle));
 	sRectangle *new = (sRectangle*)malloc(sizeof(sRectangle));
+
+	/* remove preview */
+	msg.args.arg5 = 0;
+	send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
 
 	/* save old position */
 	old->x = windows[window].x;
@@ -278,8 +312,8 @@ void win_moveTo(tWinId window,tCoord x,tCoord y) {
 	/* create rectangle for new position */
 	new->x = windows[window].x = x;
 	new->y = windows[window].y = y;
-	new->width = old->width;
-	new->height = old->height;
+	new->width = windows[window].width = width;
+	new->height = windows[window].height = height;
 
 	/* clear old position */
 	rects = rectSplit(old,new,&count);
@@ -309,6 +343,7 @@ void win_update(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
 	r->y = win->y + y;
 	r->width = width;
 	r->height = height;
+	r->window = win->id;
 	win_repaint(r,win,win->z);
 }
 
@@ -436,9 +471,9 @@ static void win_clearRegion(uint8_t *mem,tCoord x,tCoord y,tSize width,tSize hei
 		return;
 	width = MIN(vesaInfo.width - x,width);
 	count = width * PIXEL_SIZE;
-	maxy = MIN(vesaInfo.height - 1,y + height);
+	maxy = MIN(vesaInfo.height,y + height);
 	mem += (y * vesaInfo.width + x) * PIXEL_SIZE;
-	while(y <= maxy) {
+	while(y < maxy) {
 		memclear(mem,count);
 		mem += vesaInfo.width * PIXEL_SIZE;
 		y++;

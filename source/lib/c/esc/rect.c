@@ -98,9 +98,7 @@ sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,size_t *rectCount) {
 	for(i = 0; i < count; i++) {
 		res[i] = (sRectangle*)malloc(sizeof(sRectangle));
 		if(res[i] == 0) {
-			while(i-- > 0)
-				free(res[i]);
-			free(res);
+			rectFree(res,i);
 			*rectCount = 0;
 			return NULL;
 		}
@@ -245,15 +243,22 @@ sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,size_t *rectCount) {
 
 	/* free buffer if we have no rectangle */
 	if(count == 0) {
-		for(i = 0; i < orgCount; i++)
-			free(res[i]);
-		free(res);
+		rectFree(res,orgCount);
 		*rectCount = 0;
 		return NULL;
 	}
 
 	*rectCount = count;
 	return res;
+}
+
+void rectFree(sRectangle **rects,size_t count) {
+	if(rects) {
+		size_t i;
+		for(i = 0; i < count; i++)
+			free(rects[i]);
+		free(rects);
+	}
 }
 
 bool rectIntersect(sRectangle *r1,sRectangle *r2,sRectangle *intersect) {

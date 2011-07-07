@@ -78,7 +78,7 @@ namespace gui {
 		handleMessage(mid,&_msg);
 	}
 
-	void Application::handleMessage(msgid_t mid,const sMsg *msg) {
+	void Application::handleMessage(msgid_t mid,sMsg *msg) {
 		switch(mid) {
 			case MSG_WIN_CREATE_RESP: {
 				tWinId tmpId = msg->args.arg1;
@@ -233,18 +233,22 @@ namespace gui {
 		}
 	}
 
-	void Application::moveWindow(Window *win) {
+	void Application::moveWindow(Window *win,bool finish) {
 		_msg.args.arg1 = win->getId();
-		_msg.args.arg2 = win->getX();
-		_msg.args.arg3 = win->getY();
+		_msg.args.arg2 = win->getMoveX();
+		_msg.args.arg3 = win->getMoveY();
+		_msg.args.arg4 = finish;
 		if(send(_winFd,MSG_WIN_MOVE,&_msg,sizeof(_msg.args)) < 0)
 			error("Unable to move window");
 	}
 
-	void Application::resizeWindow(Window *win) {
+	void Application::resizeWindow(Window *win,bool finish) {
 		_msg.args.arg1 = win->getId();
-		_msg.args.arg2 = win->getWidth();
-		_msg.args.arg3 = win->getHeight();
+		_msg.args.arg2 = win->getMoveX();
+		_msg.args.arg3 = win->getMoveY();
+		_msg.args.arg4 = win->getResizeWidth();
+		_msg.args.arg5 = win->getResizeHeight();
+		_msg.args.arg6 = finish;
 		if(send(_winFd,MSG_WIN_RESIZE,&_msg,sizeof(_msg.args)) < 0)
 			error("Unable to resize window");
 	}

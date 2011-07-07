@@ -481,6 +481,8 @@ ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count) {
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = e->node;
+		if(n->name == NULL)
+			return ERR_INVALID_FILE;
 		if(n->read == NULL)
 			return ERR_NO_READ_PERM;
 
@@ -513,6 +515,8 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count) {
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = e->node;
+		if(n->name == NULL)
+			return ERR_INVALID_FILE;
 		if(n->write == NULL)
 			return ERR_NO_WRITE_PERM;
 
@@ -549,6 +553,8 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,const void *data,size_t siz
 
 	/* send the message */
 	n = e->node;
+	if(n->name == NULL)
+		return ERR_INVALID_FILE;
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_send(pid,file,n,id,data,size);
@@ -571,6 +577,8 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size)
 
 	/* receive the message */
 	n = e->node;
+	if(n->name == NULL)
+		return ERR_INVALID_FILE;
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_receive(pid,file,n,id,data,size);

@@ -100,6 +100,7 @@ int mod_driver(int argc,char *argv[]) {
 }
 
 static int getRequests(void *arg) {
+	UNUSED(arg);
 	msgid_t mid;
 	while(true) {
 		int cfd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);

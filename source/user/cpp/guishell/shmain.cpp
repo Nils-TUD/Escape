@@ -49,8 +49,10 @@ static int childPid = -1;
 static int shell_main(void);
 
 static void childKiller(void *) {
-	if(childPid >= 0)
-		(void)sendSignalTo(childPid,SIG_KILL);
+	if(childPid >= 0) {
+		if(sendSignalTo(childPid,SIG_KILL) < 0)
+			printe("[GUISH] Unable to kill child %d",childPid);
+	}
 }
 
 int main(int argc,char **argv) {

@@ -3,6 +3,7 @@
  */
 
 #include <esc/common.h>
+#include "../../syscalls.h"
 
 int doSyscall7(uint syscallNo,uint arg1,uint arg2,uint arg3,uint arg4,uint arg5,uint arg6,uint arg7) {
 	int res;

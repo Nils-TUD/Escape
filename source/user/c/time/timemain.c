@@ -86,7 +86,8 @@ int main(int argc,char **argv) {
 		}
 		if(res < 0)
 			error("Wait failed");
-		setSigHandler(SIG_INTRPT_TIMER,SIG_DFL);
+		if(setSigHandler(SIG_INTRPT_TIMER,SIG_DFL) < 0)
+			error("Unable to unset signal-handler");
 		printf("\n");
 		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
 		if(state.signal != SIG_COUNT)

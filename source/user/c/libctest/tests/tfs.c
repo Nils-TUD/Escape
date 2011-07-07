@@ -38,6 +38,13 @@ sTestModule tModFs = {
 };
 
 static void test_fs(void) {
+	sFileInfo info;
+	/* don't try that on readonly-filesystems */
+	if(stat("/bin",&info) < 0)
+		error("Unable to stat /bin");
+	if(!(info.mode & S_IWUSR))
+		return;
+
 	test_basics();
 	test_perms();
 }
@@ -46,13 +53,6 @@ static void test_basics(void) {
 	sFileInfo info1;
 	sFileInfo info2;
 	test_caseStart("Testing fs");
-
-	/* don't try that on readonly-filesystems */
-	stat("/bin",&info1);
-	if(!(info1.mode & S_IWUSR)) {
-		test_caseSucceeded();
-		return;
-	}
 
 	test_assertInt(mkdir("/newdir"),0);
 

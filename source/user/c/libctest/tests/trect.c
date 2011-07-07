@@ -405,5 +405,6 @@ static sRectangle create(int x,int y,ushort width,ushort height) {
 	r.y = y;
 	r.width = width;
 	r.height = height;
+	r.window = 0;
 	return r;
 }

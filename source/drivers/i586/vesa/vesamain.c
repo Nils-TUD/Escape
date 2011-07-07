@@ -452,21 +452,27 @@ static void vesa_setPreview(sRectangle *rect,tSize thickness) {
 				previewThickness,previewRect.height,0,0,previewRect.x,previewRect.y,
 				previewThickness,xres,previewRect.height);
 
-		free(previewRectCopies[0]);
-		previewRectCopies[0] = NULL;
-		free(previewRectCopies[1]);
-		previewRectCopies[1] = NULL;
-		free(previewRectCopies[2]);
-		previewRectCopies[2] = NULL;
-		free(previewRectCopies[3]);
-		previewRectCopies[3] = NULL;
+		if(thickness != previewThickness || rect->width != previewRect.width ||
+				rect->height != previewRect.height) {
+			free(previewRectCopies[0]);
+			previewRectCopies[0] = NULL;
+			free(previewRectCopies[1]);
+			previewRectCopies[1] = NULL;
+			free(previewRectCopies[2]);
+			previewRectCopies[2] = NULL;
+			free(previewRectCopies[3]);
+			previewRectCopies[3] = NULL;
+		}
 	}
 
 	if(thickness > 0) {
-		previewRectCopies[0] = (uint8_t*)malloc(rect->width * thickness * pxSize);
-		previewRectCopies[1] = (uint8_t*)malloc(rect->height * thickness * pxSize);
-		previewRectCopies[2] = (uint8_t*)malloc(rect->width * thickness * pxSize);
-		previewRectCopies[3] = (uint8_t*)malloc(rect->height * thickness * pxSize);
+		if(thickness != previewThickness || rect->width != previewRect.width ||
+				rect->height != previewRect.height) {
+			previewRectCopies[0] = (uint8_t*)malloc(rect->width * thickness * pxSize);
+			previewRectCopies[1] = (uint8_t*)malloc(rect->height * thickness * pxSize);
+			previewRectCopies[2] = (uint8_t*)malloc(rect->width * thickness * pxSize);
+			previewRectCopies[3] = (uint8_t*)malloc(rect->height * thickness * pxSize);
+		}
 
 		if(rect->x < 0) {
 			rect->width += rect->x;
@@ -481,7 +487,6 @@ static void vesa_setPreview(sRectangle *rect,tSize thickness) {
 		if(rect->y + rect->height >= yres)
 			rect->height = yres - rect->y;
 		memcpy(&previewRect,rect,sizeof(sRectangle));
-		previewThickness = thickness;
 
 		/* save content */
 		/* top */
@@ -511,6 +516,7 @@ static void vesa_setPreview(sRectangle *rect,tSize thickness) {
 		/* left */
 		vesa_clearRegion(rect->x,rect->y,thickness,rect->height);
 	}
+	previewThickness = thickness;
 }
 
 static void vesa_setCursor(tCoord x,tCoord y) {

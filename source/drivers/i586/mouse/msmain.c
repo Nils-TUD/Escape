@@ -67,7 +67,6 @@ static void irqHandler(int sig);
 static void kb_init(void);
 static void kb_checkCmd(void);
 static uint16_t kb_read(void);
-static uint16_t kb_readMouse(void);
 static uint8_t kb_writeMouse(uint8_t cmd);
 
 /* a mouse-packet */
@@ -240,15 +239,6 @@ static uint16_t kb_read(void) {
 	uint8_t status;
 	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_DATA_AVAIL));
 	if(!(status & KBC_STATUS_DATA_AVAIL))
-		return 0xFF00;
-	return inByte(IOPORT_KB_DATA);
-}
-
-static uint16_t kb_readMouse(void) {
-	uint16_t c = 0;
-	uint8_t status;
-	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_MOUSE_DATA_AVAIL));
-	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
 		return 0xFF00;
 	return inByte(IOPORT_KB_DATA);
 }

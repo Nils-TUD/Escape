@@ -165,13 +165,12 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY);
 /**
  * Shows a preview for the given resize-operation
  *
- * @param window the window-id
  * @param x the x-coordinate
  * @param y the y-coordinate
  * @param width the new width
  * @param height the new height
  */
-void win_previewResize(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
+void win_previewResize(tCoord x,tCoord y,tSize width,tSize height);
 
 /**
  * Shows a preview for the given move-operation

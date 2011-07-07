@@ -49,12 +49,10 @@ static sKmData kmData[KB_DATA_BUF_SIZE];
 static int drvIds[VTERM_COUNT] = {-1};
 
 int main(void) {
-	char path[MAX_PATH_LEN] = "/dev/";
 	size_t i,reqc;
 	int kbFd;
 	int client;
 	msgid_t mid;
-	gid_t gid;
 	sWaitObject waits[VTERM_COUNT + 1];
 	char name[MAX_VT_NAME_LEN + 1];
 

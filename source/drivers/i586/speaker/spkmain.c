@@ -126,7 +126,8 @@ static void timerIntrptHandler(int sig) {
 			/* reset */
 			intrptTarget = 0;
 			intrptCount = 0;
-			setSigHandler(SIG_INTRPT_TIMER,SIG_DFL);
+			if(setSigHandler(SIG_INTRPT_TIMER,SIG_DFL) < 0)
+				printe("[SPK] Unable to unset signal-handler");
 		}
 	}
 }

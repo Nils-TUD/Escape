@@ -1,15 +1,100 @@
+GDT exchanged, paging enabled, video initialized                            DONE
 Initializing physical memory-management...                                  DONE
 Initializing paging...                                                      DONE
+Initializing FPU...                                                         DONE
 Initializing VFS...                                                         DONE
 Initializing process-management...                                          DONE
 Initializing virtual memory management...                                   DONE
+Initializing IDT...                                                         DONE
 Initializing timer...                                                       DONE
 Initializing signal-handling...                                             DONE
-Waiting for '/sbin/disk'...
-[DISK] Found disk with 181440 sectors (92897280 bytes)
-[DISK] Registered driver 'hda1' (device 1, partition 1)
+Detecting CPU...                                                            DONE
+Loading '/sbin/pci'...
+Loading '/sbin/ata'...
+[ATA] Found IDE-controller (0.1.1): vendorId 8086, deviceId 7010, rev 0
+[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 1: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 1 not present
+[ATA] Device 0 is an ATA-device
+[ATA] Device 0 uses DMA
+[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 3: Got 0x00 from status-port, device seems not to be present
+[ATA] Device 3 not present
+[ATA] Device 2: Error 0x4. Assuming its not present
+[ATA] Device 2 is an ATAPI-device
+[ATA] Device 2 uses DMA
+[ATA] Registered driver 'hda1' (device 0, partition 1)
+[ATA] Registered driver 'hda2' (device 0, partition 2)
+[ATA] Registered driver 'hda3' (device 0, partition 3)
+[ATA] Registered driver 'cdc1' (device 2, partition 1)
+Loading '/sbin/cmos'...
+Loading '/sbin/fs'...
 [FS] Loaded ext2-driver
 [FS] Loaded iso9660-driver
-[FS] Mounted '/dev/hda1' with fs 'ext2' at '/'
-Waiting for '/sbin/rtc'...
-Waiting for '/sbin/fs'...
+[FS] Mounted '/dev/cdc1' with fs 'iso9660' at '/'
+Loading '/sbin/zero'...
+Loading '/sbin/random'...
+Loading '/sbin/null'...
+Loading '/sbin/speaker'...
+Loading '/sbin/powermng'...
+Loading '/sbin/video'...
+Loading '/sbin/vesatext'...
+Loading '/sbin/keyboard'...
+Loading '/sbin/kmmanager'...
+Loading '/sbin/vterm'...
+[VESATEXT] Setting (115)  800 x  600 x 24
+Loading '/sbin/ui'...
+
+
+Welcome to Escape v0.3, vterm0
+
+Please login to get a shell.
+
+Username: 
+
+Welcome to Escape v0.3, vterm1
+
+Please login to get a shell.
+
+Username: 
+
+Welcome to Escape v0.3, vterm2
+
+Please login to get a shell.
+
+Username: 
+
+Welcome to Escape v0.3, vterm3
+
+Please login to get a shell.
+
+Username: 
+
+Welcome to Escape v0.3, vterm4
+
+Please login to get a shell.
+
+Username: 
+
+Welcome to Escape v0.3, vterm5
+
+Please login to get a shell.
+
+Username: [VESA] Setting (118) 1024 x  768 x 24
+Welcome to Escape v0.3!
+
+Try 'help' to see the current features :)
+
+hrniels:/ # Welcome to Escape v0.3!
+
+Try 'help' to see the current features :)
+
+hrniels:/ # ls
+bin          boot         dev          etc          lib          home         
+root         sbin         src          system       boot.catalog file.txt     
+zeros        
+hrniels:/ # ls
+bin          boot         dev          etc          lib          home         
+root         sbin         src          system       boot.catalog file.txt     
+zeros        
+hrniels:/ # 

@@ -110,7 +110,7 @@ int main(void) {
 						if(finish)
 							win_resize(wid,x,y,width,height);
 						else
-							win_previewResize(wid,x,y,width,height);
+							win_previewResize(x,y,width,height);
 					}
 				}
 				break;
@@ -133,12 +133,14 @@ int main(void) {
 					win_setEnabled(true);
 					win_updateScreen();
 					/* notify the keyboard-thread; it has announced the handler */
-					sendSignalTo(getpid(),SIG_USR1);
+					if(sendSignalTo(getpid(),SIG_USR1) < 0)
+						printe("[WINM] Unable to send signal USR1 to keyboard-thread");
 					break;
 
 				case MSG_WIN_DISABLE:
 					win_setEnabled(false);
-					sendSignalTo(getpid(),SIG_USR1);
+					if(sendSignalTo(getpid(),SIG_USR1) < 0)
+						printe("[WINM] Unable to send signal USR1 to keyboard-thread");
 					break;
 
 				case MSG_DRV_CLOSE:

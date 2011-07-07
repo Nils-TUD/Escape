@@ -143,7 +143,7 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 				}
 				else if(flags & FFL_SIZE) {
 					ssize = va_arg(ap, ssize_t);
-					count += RETERR(bprintlpad(f,size,pad,flags));
+					count += RETERR(bprintlpad(f,ssize,pad,flags));
 				}
 				else {
 					n = va_arg(ap, int);

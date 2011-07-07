@@ -186,7 +186,7 @@ void ShellControl::paintRows(Graphics &g,size_t start,size_t count) {
 }
 
 void ShellControl::paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,tCoord y) {
-	uchar lastCol = 0xFFFF;
+	uchar lastCol = 0xFF;
 	// paint char by char because the color might change
 	tCoord x = TEXTSTARTX;
 	for(size_t j = 0; j < _vt->cols; j++) {

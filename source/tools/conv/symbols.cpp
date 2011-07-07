@@ -34,7 +34,7 @@ static void readat(off_t offset,void *buffer,size_t count);
 static FILE *f;
 static char *shsymbols;
 static Elf32_Sym *symtab;
-static unsigned long symcount;
+static size_t symcount;
 static char *strtab;
 static Elf32_Ehdr eheader;
 
@@ -66,7 +66,7 @@ void sym_init(const char *file) {
 const char *sym_resolve(unsigned long addr) {
 	static char symbolName[MAX_FUNC_LEN];
 	static char cleanSymbolName[MAX_FUNC_LEN];
-	for(int i = 0; i < symcount; i++) {
+	for(size_t i = 0; i < symcount; i++) {
 		if(ELF32_ST_TYPE(symtab[i].st_info) == STT_FUNC && symtab[i].st_value == addr) {
 			demangle(symbolName,MAX_FUNC_LEN,strtab + symtab[i].st_name);
 			return symbolName;

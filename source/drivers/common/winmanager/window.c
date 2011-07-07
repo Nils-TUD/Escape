@@ -239,8 +239,7 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
 	}
 }
 
-void win_previewResize(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
-	sWindow *w = windows + window;
+void win_previewResize(tCoord x,tCoord y,tSize width,tSize height) {
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
 	msg.args.arg3 = width;

@@ -23,6 +23,7 @@
 #include <esc/sllist.h>
 #include <esc/proc.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "lookup.h"
 #include "loader.h"
@@ -43,7 +44,7 @@ uintptr_t lookup_resolve(sSharedLib *lib,size_t offset) {
 	Elf32_Sym *foundSym;
 	Elf32_Rel *rel = (Elf32_Rel*)((uintptr_t)lib->jmprel + offset);
 	Elf32_Sym *sym = lib->dynsyms + ELF32_R_SYM(rel->r_info);
-	uintptr_t value,*addr;
+	uintptr_t value = 0,*addr;
 #ifndef CALLTRACE_PID
 	DBGDL("Lookup symbol @ %zx (%s) in lib %s\n",offset,lib->dynstrtbl + sym->st_name,lib->name);
 #endif

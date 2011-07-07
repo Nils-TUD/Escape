@@ -47,7 +47,7 @@ ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size
 		return ERR_INO_REQ_FAILED;
 
 	/* nothing left to read? */
-	if(offset >= e->entry.extentSize.littleEndian)
+	if(offset >= (off_t)e->entry.extentSize.littleEndian)
 		return 0;
 	/* adjust count */
 	if((offset + count) >= e->entry.extentSize.littleEndian)

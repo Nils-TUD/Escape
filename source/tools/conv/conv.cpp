@@ -78,7 +78,7 @@ int main(int argc,char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	for(int i = 0; i < sizeof(parsers) / sizeof(parsers[0]); i++) {
+	for(size_t i = 0; i < sizeof(parsers) / sizeof(parsers[0]); i++) {
 		if(strcmp(argv[1],parsers[i].name) == 0) {
 			parser = i;
 			break;

@@ -1,6 +1,6 @@
 /**
- * $Id: pmem.c 906 2011-06-04 15:45:33Z nasmussen $
- * Copyright (C) 2008 - 2009 Nils Asmussen
+ * $Id$
+ * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

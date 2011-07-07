@@ -1,5 +1,5 @@
 #
-# $Id: syscalls.s 900 2011-06-02 20:18:17Z nasmussen $
+# $Id$
 # Copyright (C) 2008 - 2009 Nils Asmussen
 #
 # This program is free software; you can redistribute it and/or

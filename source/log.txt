@@ -1,4 +1,27 @@
 GDT exchanged, paging enabled, video initialized                            DONE
+MultiBoot-Structure:
+---------------------
+flags=0x7ef
+memLower=637 KB, memUpper=31732 KB
+biosDriveNumber=80, part1= 0, part2=FF, part3=FF
+cmdLine=/boot/kernel.bin videomode=vesa swapdev=/dev/hda3
+modsCount=4:
+	/sbin/pci /dev/pci [c01e:8000 .. c024:a3bd]
+	/sbin/ata /system/devices/ata [c024:b000 .. c027:a5ee]
+	/sbin/cmos /dev/cmos [c027:b000 .. c029:f8cf]
+	/sbin/fs /dev/fs /dev/hda1 ext2 [c02a:0000 .. c02e:8ae8]
+ELF: num=12, size=40, addr=0x168000, shndx=0x9
+mmapLength=144, mmapAddr=c005:3b04
+memory-map:
+	0: addr=0000:0000, size=0x0009f400, type=free
+	1: addr=0009:f400, size=0x00000c00, type=used
+	2: addr=000f:0000, size=0x00010000, type=used
+	3: addr=0010:0000, size=0x01efd000, type=free
+	4: addr=01ff:d000, size=0x00003000, type=used
+	5: addr=fffc:0000, size=0x00040000, type=used
+Drives: (size=12)
+	0: no=80, mode=1, cyl=710, heads=5, sectors=51
+---------------------
 Initializing physical memory-management...                                  DONE
 Initializing paging...                                                      DONE
 Initializing FPU...                                                         DONE
@@ -9,6 +32,7 @@ Initializing IDT...                                                         DONE
 Initializing timer...                                                       DONE
 Initializing signal-handling...                                             DONE
 Detecting CPU...                                                            DONE
+7172 free frames (28688 KiB)
 Loading '/sbin/pci'...
 Loading '/sbin/ata'...
 [ATA] Found IDE-controller (0.1.1): vendorId 8086, deviceId 7010, rev 0
@@ -31,7 +55,7 @@ Loading '/sbin/cmos'...
 Loading '/sbin/fs'...
 [FS] Loaded ext2-driver
 [FS] Loaded iso9660-driver
-[FS] Mounted '/dev/cdc1' with fs 'iso9660' at '/'
+[FS] Mounted '/dev/hda1' with fs 'ext2' at '/'
 Loading '/sbin/zero'...
 Loading '/sbin/random'...
 Loading '/sbin/null'...
@@ -81,7 +105,7 @@ Welcome to Escape v0.3, vterm5
 Please login to get a shell.
 
 Username: [VESA] Setting (118) 1024 x  768 x 24
-Welcome to Escape v0.3!
+9Welcome to Escape v0.3!
 
 Try 'help' to see the current features :)
 
@@ -89,12 +113,4 @@ hrniels:/ # Welcome to Escape v0.3!
 
 Try 'help' to see the current features :)
 
-hrniels:/ # ls
-bin          boot         dev          etc          lib          home         
-root         sbin         src          system       boot.catalog file.txt     
-zeros        
-hrniels:/ # ls
-bin          boot         dev          etc          lib          home         
-root         sbin         src          system       boot.catalog file.txt     
-zeros        
 hrniels:/ # 

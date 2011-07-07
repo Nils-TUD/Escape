@@ -1,11 +1,11 @@
 <?php
-define('FWS_PATH','/var/www/scriptsolution/PHPLib/');
+define('FWS_PATH','/var/www/scriptsolution/FrameWorkSolution/');
 include(FWS_PATH.'init.php');
 
 $license = <<<EOF
 /**
  * \$Id\$
- * Copyright (C) 2008 - 2009 Nils Asmussen
+ * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ EOF;
 
 foreach(FWS_FileUtils::get_list('.',true,true) as $item)
 {
-	if(preg_match('/^[a-z0-9_\.]+?\.(c|h)$/',basename($item)))
+	if(preg_match('/^[a-z0-9_\.]+?\.(c|cpp|cc|h|s)$/',basename($item)))
 	{
 		$s = implode('',file($item));
 		$s = preg_replace('/^\/\*\*.+?\*\//s',$license,$s);

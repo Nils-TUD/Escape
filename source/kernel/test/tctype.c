@@ -1,6 +1,6 @@
 /**
- * $Id: tstring.c 913 2011-06-13 00:43:50Z nasmussen $
- * Copyright (C) 2008 - 2009 Nils Asmussen
+ * $Id$
+ * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

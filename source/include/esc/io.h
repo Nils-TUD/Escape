@@ -330,7 +330,7 @@ int sync(void) A_CHECKRET;
 void close(int fd);
 
 /**
- * Checks wether the given path points to a regular file
+ * Checks whether the given path points to a regular file
  *
  * @param path the (absolute!) path
  * @return true if its a file; false if not or an error occurred
@@ -338,7 +338,7 @@ void close(int fd);
 bool is_file(const char *path);
 
 /**
- * Checks wether the given path points to a directory
+ * Checks whether the given path points to a directory
  *
  * @param path the (absolute!) path
  * @return true if its a directory; false if not or an error occurred

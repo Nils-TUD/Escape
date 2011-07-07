@@ -43,8 +43,8 @@ typedef struct {
 	 * 		// call functions ...
 	 * 		thread_resume(...);
 	 * }
-	 * So wether we return to the instruction after the call of thread_save and jump below this
-	 * if-statement or wether we return to the instruction after thread_resume() doesn't matter.
+	 * So whether we return to the instruction after the call of thread_save and jump below this
+	 * if-statement or whether we return to the instruction after thread_resume() doesn't matter.
 	 */
 } sThreadRegs;
 

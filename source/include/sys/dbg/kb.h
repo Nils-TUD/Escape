@@ -44,11 +44,11 @@ uint8_t kb_getKeyCode(uint8_t *flags);
 
 /**
  * Fills the given keyevent. If <wait> is true, it waits until a scancode is present. Otherwise
- * it just checks wether one is present. If no, it gives up.
+ * it just checks whether one is present. If no, it gives up.
  *
  * @param ev the event to fill (may be NULL if you just want to wait for a keypress/-release)
  * @param events a mask of events to react on (KEV_*)
- * @param wait wether to wait until a scancode is present
+ * @param wait whether to wait until a scancode is present
  * @return true if a key could be read. false if not (always true, when <wait> is true)
  */
 bool kb_get(sKeyEvent *ev,uint8_t events,bool wait);

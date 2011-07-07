@@ -67,7 +67,7 @@ void env_print(sEnv *env);
  * @param env the env
  * @param name the name to find (or the beginning of it)
  * @param length the length of the name
- * @param searchCmd wether you want to have a command that can be executed
+ * @param searchCmd whether you want to have a command that can be executed
  * @return a linked list with all names; you have to free it with sll_destroy(list,false);
  */
 sSLList *env_getMatching(sEnv *env,const char *name,size_t length,bool searchCmd);

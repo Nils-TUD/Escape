@@ -139,7 +139,7 @@ namespace std {
 		const_reverse_iterator rend() const;
 
 		/**
-		 * @return wether the list is empty
+		 * @return whether the list is empty
 		 */
 		bool empty() const;
 		/**

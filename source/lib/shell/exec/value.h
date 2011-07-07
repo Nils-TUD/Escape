@@ -124,7 +124,7 @@ sValue *val_tos(const sValue *v);
 sValue *val_toa(const sValue *v);
 
 /**
- * Tests wether the value is true (!= 0 or none-empty string, not allowed for functions)
+ * Tests whether the value is true (!= 0 or none-empty string, not allowed for functions)
  *
  * @param v the value
  * @return true or false

@@ -195,7 +195,7 @@ bool thread_setBlocked(tid_t tid);
  * Marks the given thread as suspended or not-suspended
  *
  * @param tid the thread-id
- * @param blocked wether to suspend or "unsuspend" the thread
+ * @param blocked whether to suspend or "unsuspend" the thread
  */
 void thread_setSuspended(tid_t tid,bool blocked);
 

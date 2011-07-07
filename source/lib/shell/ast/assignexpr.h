@@ -36,7 +36,7 @@ typedef struct {
  *
  * @param var the variable
  * @param expr the expression
- * @param hasIndex wether the assignment has an index
+ * @param hasIndex whether the assignment has an index
  * @param index the index (NULL for '[]')
  * @return the created node
  */

@@ -64,7 +64,7 @@ bool vfs_server_accepts(const sVFSNode *node,uint id);
 bool vfs_server_isReadable(const sVFSNode *node);
 
 /**
- * Sets wether data is available
+ * Sets whether data is available
  *
  * @param node the server-node
  * @param readable the new value

@@ -70,7 +70,7 @@ namespace std {
 		 * Builds a vector with all entries in the directory denoted by this file-object.
 		 *
 		 * @param pattern a pattern the files have to match
-		 * @param showHidden wether to include hidden files/folders
+		 * @param showHidden whether to include hidden files/folders
 		 * @return the vector
 		 */
 		vector<sDirEntry> list_files(bool showHidden,const string& pattern = string()) const;
@@ -83,13 +83,13 @@ namespace std {
 		}
 
 		/**
-		 * @return wether its a file
+		 * @return whether its a file
 		 */
 		bool is_file() const {
 			return S_ISREG(_info.mode);
 		}
 		/**
-		 * @return wether its a directory
+		 * @return whether its a directory
 		 */
 		bool is_dir() const {
 			return S_ISDIR(_info.mode);

@@ -290,7 +290,7 @@ void proc_destroyThread(int exitCode);
  * Removes all regions from the given process
  *
  * @param p the process
- * @param remStack wether the stack should be removed too
+ * @param remStack whether the stack should be removed too
  */
 void proc_removeRegions(sProc *p,bool remStack);
 
@@ -356,7 +356,7 @@ void proc_printAllRegions(void);
  * Prints the given parts of the page-directory for all existing processes
  *
  * @param parts the parts (see paging_printPageDirOf)
- * @param regions wether to print the regions too
+ * @param regions whether to print the regions too
  */
 void proc_printAllPDs(uint parts,bool regions);
 

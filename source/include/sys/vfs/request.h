@@ -84,7 +84,7 @@ sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size);
  * retry the request if not.
  *
  * @param req the request
- * @param allowSigs wether the thread should be interruptable by signals
+ * @param allowSigs whether the thread should be interruptable by signals
  */
 void vfs_req_waitForReply(sRequest *req,bool allowSigs);
 

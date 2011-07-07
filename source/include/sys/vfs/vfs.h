@@ -66,7 +66,7 @@ enum {
 	VFS_NOBLOCK = 32,
 	VFS_MSGS = 64,			/* exchange msgs with a driver */
 	VFS_NOLINKRES = 128,	/* kernel-intern: don't resolve last link in path */
-	VFS_DRIVER = 256,		/* kernel-intern: wether the file was created for a driver */
+	VFS_DRIVER = 256,		/* kernel-intern: whether the file was created for a driver */
 	VFS_EXEC = 512,			/* kernel-intern: for accessing directories */
 };
 
@@ -167,7 +167,7 @@ int vfs_fcntl(pid_t pid,file_t file,uint cmd,int arg);
 
 /**
  * @param file the file
- * @return wether the file should be used in blocking-mode
+ * @return whether the file should be used in blocking-mode
  */
 bool vfs_shouldBlock(file_t file);
 
@@ -361,7 +361,7 @@ int vfs_rmdir(pid_t pid,const char *path);
 file_t vfs_createDriver(pid_t pid,const char *name,uint flags);
 
 /**
- * Checks wether the file has a receivable message
+ * Checks whether the file has a receivable message
  *
  * @param pid the process-id
  * @param file the file
@@ -370,7 +370,7 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags);
 bool vfs_hasMsg(pid_t pid,file_t file);
 
 /**
- * Checks wether the file can be read (driver has data to read)
+ * Checks whether the file can be read (driver has data to read)
  *
  * @param pid the process-id
  * @param file the file

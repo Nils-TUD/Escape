@@ -139,7 +139,7 @@ namespace std {
 		void parse(const char *fmt,...);
 
 		/**
-		 * @return wether its a help-request (--help, -h, -?)
+		 * @return whether its a help-request (--help, -h, -?)
 		 */
 		bool is_help() const {
 			return _ishelp;
@@ -169,7 +169,7 @@ namespace std {
 		 * and sets <pos> appropriatly to the argument-position in _args.
 		 *
 		 * @param name the argument-name
-		 * @param hasVal wether the arg has a value
+		 * @param hasVal whether the arg has a value
 		 * @param pos will be set to the position in _args
 		 * @return the value
 		 */
@@ -179,7 +179,7 @@ namespace std {
 		 *
 		 * @param arg the argument-value
 		 * @param pos the position in _args
-		 * @param hasVal wether the arg has a value
+		 * @param hasVal whether the arg has a value
 		 * @param type the arg-type
 		 * @param ptr the location where to write to
 		 */

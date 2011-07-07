@@ -92,7 +92,7 @@ typedef struct sWait {
 void ev_init(void);
 
 /**
- * Checks wether the given threads waits for the given events
+ * Checks whether the given threads waits for the given events
  *
  * @param tid the thread-id
  * @param events the event-mask (not index!)

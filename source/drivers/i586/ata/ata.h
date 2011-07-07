@@ -69,7 +69,7 @@ bool ata_readWrite(sATADevice *device,uint op,void *buffer,uint64_t lba,size_t s
  * @param buffer the buffer to write to
  * @param secSize the size of a sector
  * @param secCount number of sectors
- * @param waitFirst wether you want to wait until the device is ready BEFORE the first read
+ * @param waitFirst whether you want to wait until the device is ready BEFORE the first read
  * @return true if successfull
  */
 bool ata_transferPIO(sATADevice *device,uint op,void *buffer,size_t secSize,size_t secCount,

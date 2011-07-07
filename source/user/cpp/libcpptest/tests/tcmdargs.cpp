@@ -148,7 +148,7 @@ static void test_reqNFree(void) {
 	test_caseStart("Testing required and free args");
 
 	// one exception before to allocate mem for exception-stuff
-	// this way we can test wether everything that we've under control is free'd
+	// this way we can test whether everything that we've under control is free'd
 	try {
 		throw cmdargs_error("");
 	}

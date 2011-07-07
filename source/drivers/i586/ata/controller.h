@@ -48,7 +48,7 @@
 /**
  * Inits the controllers
  *
- * @param useDma wether to use DMA, if possible
+ * @param useDma whether to use DMA, if possible
  */
 void ctrl_init(bool useDma);
 

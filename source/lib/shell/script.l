@@ -213,7 +213,7 @@
  /* the "`...`" allow us to execute a command and collect the output, so that we can do something
   * like $a := `wc -l file.txt`; */
  /* this is possible directly in commands and in expressions. the stuff inside `...` is of course
-  * also a command, therefore we go into the INITIAL state again. to know wether its an opening
+  * also a command, therefore we go into the INITIAL state again. to know whether its an opening
   * or closing ` we simply count them. since we don't allow nested `...` its always an closing `
   * when we're in the INITIAL-state and openGraves is > 0. */
 <INITIAL>"`" {

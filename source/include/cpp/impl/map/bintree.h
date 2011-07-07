@@ -150,7 +150,7 @@ namespace std {
 		 * @param k the key
 		 * @param v the value
 		 * @param p the pair to insert
-		 * @param replace wether the value should be replaced if the key exists
+		 * @param replace whether the value should be replaced if the key exists
 		 * @return a iterator, pointing to the inserted element
 		 */
 		iterator insert(const Key& k,const T& v,bool replace = true);
@@ -163,7 +163,7 @@ namespace std {
 		 * @param pos the position where to start
 		 * @param k the key
 		 * @param v the value
-		 * @param replace wether the value should be replaced if the key exists
+		 * @param replace whether the value should be replaced if the key exists
 		 * @return a iterator, pointing to the inserted element
 		 */
 		iterator insert(iterator pos,const Key& k,const T& v,bool replace = true);
@@ -226,7 +226,7 @@ namespace std {
 		 * @param node the start-node
 		 * @param k the key
 		 * @param v the value
-		 * @param replace wether to replace existing elements
+		 * @param replace whether to replace existing elements
 		 * @return the insert-position
 		 */
 		iterator do_insert(bintree_node<Key,T,Cmp>* node,const Key& k,const T& v,bool replace);

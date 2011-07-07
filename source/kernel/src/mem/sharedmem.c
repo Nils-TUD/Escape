@@ -42,7 +42,7 @@ typedef struct {
 } sShMemUser;
 
 /**
- * Tests wether its the own (creator) shm
+ * Tests whether its the own (creator) shm
  */
 static bool shm_isOwn(const sShMem *mem,const sProc *p);
 /**

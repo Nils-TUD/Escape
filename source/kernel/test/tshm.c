@@ -70,7 +70,7 @@ static void test_2(void) {
 	child2 = proc_getByPid(pid2);
 
 	/* create dummy-regions to force vmm to extend the regions-array. this way we can check
-	 * wether all memory is freed correctly */
+	 * whether all memory is freed correctly */
 	checkMemoryBefore(true);
 	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);

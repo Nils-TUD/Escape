@@ -28,9 +28,9 @@ GIMMIX = /home/hrniels/mmix/gimmix-escape
 GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
-# wether to link drivers and user-apps statically or dynamically
+# whether to link drivers and user-apps statically or dynamically
 export LINKTYPE = static
-# if LINKTYPE = dynamic: wether to use the static or dynamic libgcc (and libgcc_eh)
+# if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (and libgcc_eh)
 export LIBGCC = dynamic
 
 # various variables, that are used in many makefiles and shellscripts

@@ -151,7 +151,7 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir);
 sAllocStats paging_destroyPDir(tPageDir pdir);
 
 /**
- * Determines wether the given page is present
+ * Determines whether the given page is present
  *
  * @param pdir the page-dir
  * @param virt the virtual address
@@ -212,7 +212,7 @@ void paging_zeroToUser(void *dst,size_t count);
  * @param virtSrc the virtual source address
  * @param virtDst the virtual destination address
  * @param count the number of pages to copy
- * @param share wether to share the frames
+ * @param share whether to share the frames
  * @return the number of mapped frames (not necessarily new allocated), and allocated ptables
  */
 sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,

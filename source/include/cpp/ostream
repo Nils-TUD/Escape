@@ -64,7 +64,7 @@ namespace std {
 			 */
 			~sentry();
 			/**
-			 * @return wether everything is ok
+			 * @return whether everything is ok
 			 */
 			operator bool() const {
 				return _ok;

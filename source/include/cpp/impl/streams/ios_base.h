@@ -217,7 +217,7 @@ namespace std {
 		}
 
 		/**
-		 * @return wether we should sync stdio
+		 * @return whether we should sync stdio
 		 */
 		static bool sync_with_stdio();
 		/**

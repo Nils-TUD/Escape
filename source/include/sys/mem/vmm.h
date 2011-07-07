@@ -149,7 +149,7 @@ sRegion *vmm_getLRURegion(const sProc *p);
 size_t vmm_getPgIdxForSwap(const sRegion *reg);
 
 /**
- * Tests wether the region with given number exists
+ * Tests whether the region with given number exists
  *
  * @param p the process
  * @param reg the region-number
@@ -220,7 +220,7 @@ vmreg_t vmm_getRNoByRegion(const sProc *p,const sRegion *reg);
 void vmm_getRegRange(const sProc *p,vmreg_t reg,uintptr_t *start,uintptr_t *end);
 
 /**
- * Checks wether the given process has the given binary as text-region
+ * Checks whether the given process has the given binary as text-region
  *
  * @param p the process
  * @param bin the binary

@@ -151,11 +151,11 @@ namespace std {
 		const T& at(const key_type& x) const;
 
 		/**
-		 * Inserts <x> into the map and returns an iterator to the insertion-point and wether
+		 * Inserts <x> into the map and returns an iterator to the insertion-point and whether
 		 * a new element has been inserted. If the key does already exists, nothing is done.
 		 *
 		 * @param x the element to insert
-		 * @return a pair of the iterator and wether an element has been inserted
+		 * @return a pair of the iterator and whether an element has been inserted
 		 */
 		pair<iterator,bool> insert(const value_type& x);
 		/**

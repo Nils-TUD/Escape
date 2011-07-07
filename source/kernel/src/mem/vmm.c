@@ -97,7 +97,7 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align) {
 
 	/* map memory */
 	vm = REG(p,reg);
-	/* TODO we have to check somehow wether we have enough mem for the page-tables */
+	/* TODO we have to check somehow whether we have enough mem for the page-tables */
 	stats = paging_mapTo(p->pagedir,vm->virt,frames,pages,PG_PRESENT | PG_WRITABLE);
 	if(*phys) {
 		/* the page-tables are ours, the pages may be used by others, too */
@@ -486,7 +486,7 @@ void vmm_remove(sProc *p,vmreg_t reg) {
 	vmm_free(vm,p);
 	REG(p,reg) = NULL;
 
-	/* check wether all regions are NULL */
+	/* check whether all regions are NULL */
 	for(i = 0; i < p->regSize; i++) {
 		vm = REG(p,i);
 		if(vm) {
@@ -678,7 +678,7 @@ ssize_t vmm_grow(sProc *p,vmreg_t reg,ssize_t amount) {
 	assert(p && reg >= 0 && reg < (vmreg_t)p->regSize && vm != NULL);
 	assert((vm->reg->flags & RF_GROWABLE) && !(vm->reg->flags & RF_SHAREABLE));
 
-	/* check wether we've reached the max stack-pages */
+	/* check whether we've reached the max stack-pages */
 	if((vm->reg->flags & RF_STACK) &&
 			BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1)
 		return ERR_NOT_ENOUGH_MEM;
@@ -698,7 +698,7 @@ ssize_t vmm_grow(sProc *p,vmreg_t reg,ssize_t amount) {
 	oldSize = vm->reg->byteCount;
 	if(amount != 0) {
 		sAllocStats stats;
-		/* check wether the space is free */
+		/* check whether the space is free */
 		if(amount > 0) {
 			if(vm->reg->flags & RF_GROWS_DOWN) {
 				if(vmm_isOccupied(p,oldVirt - amount * PAGE_SIZE,oldVirt))

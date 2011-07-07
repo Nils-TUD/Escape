@@ -239,7 +239,7 @@ static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
 	}
 
 	while(true) {
-		/* check wether we can wait */
+		/* check whether we can wait */
 		for(i = 0; i < objCount; i++) {
 			if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 				file_t file = proc_fdToFile((int)uobjects[i].object);

@@ -33,7 +33,7 @@
 sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent);
 
 /**
- * Checks wether the given channel has a reply for the client
+ * Checks whether the given channel has a reply for the client
  *
  * @param node the channel-node
  * @return true if so
@@ -41,7 +41,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent);
 bool vfs_chan_hasReply(const sVFSNode *node);
 
 /**
- * Checks wether the given channel has work to do for the server
+ * Checks whether the given channel has work to do for the server
  *
  * @param node the channel-node
  * @return true if so

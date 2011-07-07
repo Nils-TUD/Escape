@@ -2,7 +2,7 @@
 ARCH = i586
 GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -19,7 +19,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 # simulators
 KVM = -enable-kvm
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -boot order=c -vga std -m 32 -localtime
+QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
@@ -29,7 +29,7 @@ GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
 # whether to link drivers and user-apps statically or dynamically
-export LINKTYPE = static
+export LINKTYPE = dynamic
 # if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (and libgcc_eh)
 export LIBGCC = dynamic
 

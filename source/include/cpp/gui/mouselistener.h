@@ -24,6 +24,8 @@
 #include <gui/event.h>
 
 namespace gui {
+	class UIElement;
+
 	/**
 	 * The abstract class to listen for mouseevents
 	 */
@@ -41,23 +43,26 @@ namespace gui {
 		};
 
 		/**
-		 * Abstract method that is called as soon as the mouse has been moved
+		 * Is called as soon as the mouse has been moved
 		 *
+		 * @param el the ui-element that received this event
 		 * @param e the mouse-event
 		 */
-		virtual void mouseMoved(const MouseEvent &e) = 0;
+		virtual void mouseMoved(UIElement& el,const MouseEvent &e) {};
 		/**
-		 * Abstract method that is called as soon as a mouse-button has been released
+		 * Is called as soon as a mouse-button has been released
 		 *
+		 * @param el the ui-element that received this event
 		 * @param e the mouse-event
 		 */
-		virtual void mousePressed(const MouseEvent &e) = 0;
+		virtual void mousePressed(UIElement& el,const MouseEvent &e) {};
 		/**
-		 * Abstract method that is called as soon as a mouse-button has been pressed
+		 * Is called as soon as a mouse-button has been pressed
 		 *
+		 * @param el the ui-element that received this event
 		 * @param e the mouse-event
 		 */
-		virtual void mouseReleased(const MouseEvent &e) = 0;
+		virtual void mouseReleased(UIElement& el,const MouseEvent &e) {};
 
 	private:
 		// no copying

@@ -217,6 +217,14 @@ namespace gui {
 		inline gwinid_t getWindowId() const {
 			return _id;
 		};
+		/**
+		 * Sets the height of the title-bar
+		 *
+		 * @param height the new value
+		 */
+		inline void setTitleBarHeight(gsize_t height) {
+			_titleBarHeight = height;
+		};
 
 	private:
 		/**

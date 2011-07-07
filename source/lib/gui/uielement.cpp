@@ -80,13 +80,13 @@ namespace gui {
 			MouseListener *l = *it;
 			switch(type) {
 				case MouseEvent::MOUSE_MOVED:
-					l->mouseMoved(e);
+					l->mouseMoved(*this,e);
 					break;
 				case MouseEvent::MOUSE_PRESSED:
-					l->mousePressed(e);
+					l->mousePressed(*this,e);
 					break;
 				case MouseEvent::MOUSE_RELEASED:
-					l->mouseReleased(e);
+					l->mouseReleased(*this,e);
 					break;
 			}
 		}
@@ -99,10 +99,10 @@ namespace gui {
 			KeyListener *l = *it;
 			switch(type) {
 				case KeyEvent::KEY_PRESSED:
-					l->keyPressed(e);
+					l->keyPressed(*this,e);
 					break;
 				case KeyEvent::KEY_RELEASED:
-					l->keyReleased(e);
+					l->keyReleased(*this,e);
 					break;
 			}
 		}

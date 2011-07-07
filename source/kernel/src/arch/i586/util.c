@@ -54,11 +54,11 @@ void util_panic(const char *fmt,...) {
 	/* enter video-mode 0x2 to be sure that the user can see the panic :) */
 	/* actually it may fail depending on what caused the panic. this may make it more difficult
 	 * to find the real reason for a failure. so it might be a good idea to turn it off during
-	 * kernel-debugging :)  */
-	sVM86Regs vmregs;
+	 * kernel-debugging :) */
+	/*sVM86Regs vmregs;
 	memclear(&vmregs,sizeof(vmregs));
 	vmregs.ax = 0x2;
-	vm86_int(0x10,&vmregs,NULL,0);
+	vm86_int(0x10,&vmregs,NULL,0);*/
 	vid_clearScreen();
 
 	/* disable interrupts so that nothing fancy can happen */

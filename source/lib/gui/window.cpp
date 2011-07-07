@@ -117,7 +117,7 @@ namespace gui {
 	}
 
 	void Window::onMouseReleased(const MouseEvent &e) {
-		if(_style != STYLE_POPUP) {
+		if(_style == STYLE_DEFAULT) {
 			bool resizing = _inResizeBottom || _inResizeLeft || _inResizeRight;
 			bool title = _inTitle;
 
@@ -159,7 +159,7 @@ namespace gui {
 	}
 
 	void Window::onMousePressed(const MouseEvent &e) {
-		if(_style != STYLE_POPUP) {
+		if(_style == STYLE_DEFAULT) {
 			if(e.getY() < _titleBarHeight) {
 				_inTitle = true;
 				return;
@@ -366,7 +366,7 @@ namespace gui {
 
 		// now paint controls
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
-			(*it)->repaint();
+			(*it)->paint(*(*it)->getGraphics());
 	}
 
 	void Window::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {

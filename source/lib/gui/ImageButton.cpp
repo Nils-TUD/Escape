@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: button.cpp 965 2011-07-07 10:56:45Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,15 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <gui/application.h>
-#include "desktopwin.h"
+#include <gui/imagebutton.h>
 
-int main(void) {
-	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
-	Shortcut sc2("/etc/calc.bmp","/bin/gtest");
-	gui::Application* app = gui::Application::getInstance();
-	DesktopWin win(app->getScreenWidth(),app->getScreenHeight());
-	win.addShortcut(&sc1);
-	win.addShortcut(&sc2);
-	return app->run();
+namespace gui {
+	void ImageButton::paintBackground(Graphics &g) {
+		gpos_t x = (getWidth() / 2) - (_img->getWidth() / 2);
+		gpos_t y = (getHeight() / 2) - (_img->getHeight() / 2);
+		_img->paint(g,x,y);
+	}
 }

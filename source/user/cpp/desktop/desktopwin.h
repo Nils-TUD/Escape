@@ -23,30 +23,92 @@
 #include <esc/common.h>
 #include <gui/color.h>
 #include <gui/window.h>
+#include <gui/image.h>
+#include <gui/imagebutton.h>
+#include <gui/actionlistener.h>
+#include <map>
 
-class DesktopWin : public gui::Window {
+class Shortcut {
+	friend class DesktopWin;
+
 public:
+	Shortcut(const std::string& icon,const std::string& app)
+		: _icon(icon), _app(app), _btn(NULL) {
+	};
+	Shortcut(const Shortcut &w)
+		: _icon(w._icon), _app(w._app), _btn(new gui::ImageButton(*w._btn)) {
+	};
+	~Shortcut() {
+	};
+
+	Shortcut &operator=(const Shortcut &w) {
+		if(this == &w)
+			return *this;
+		this->_icon = w._icon;
+		this->_app = w._app;
+		this->_btn = new gui::ImageButton(*w._btn);
+		return *this;
+	};
+
+	inline const string& getIcon() const {
+		return _icon;
+	};
+	inline const string& getApp() const {
+		return _app;
+	};
+
+private:
+	inline gui::ImageButton *getButton() const {
+		return _btn;
+	};
+	inline void setButton(gui::ImageButton *btn) {
+		_btn = btn;
+	};
+
+private:
+	std::string _icon;
+	std::string _app;
+	gui::ImageButton *_btn;
+};
+
+class DesktopWin : public gui::Window, public gui::ActionListener {
+public:
+	static const gsize_t PADDING;
+	static const gsize_t ICON_SIZE;
 	static const gui::Color BGCOLOR;
 
 public:
-	DesktopWin(gsize_t width,gsize_t height) : gui::Window("",0,0,width,height,STYLE_DESKTOP) {
+	DesktopWin(gsize_t width,gsize_t height)
+		: gui::Window("",0,0,width,height,STYLE_DESKTOP),
+		  	  _shortcuts(map<gui::ImageButton*,Shortcut*>()) {
+		setTitleBarHeight(0);
 	};
 	virtual ~DesktopWin() {
 	};
 
-	/* overwrite events */
-	virtual void onMouseMoved(const gui::MouseEvent &e);
-	virtual void onMouseReleased(const gui::MouseEvent &e);
-	virtual void onMousePressed(const gui::MouseEvent &e);
-	virtual void onKeyPressed(const gui::KeyEvent &e);
-	virtual void onKeyReleased(const gui::KeyEvent &e);
+	inline void addShortcut(Shortcut* sc) {
+		// do that first for exception-safety
+		gui::Image *img = gui::Image::loadImage(sc->getIcon());
+		gui::ImageButton *btn = new gui::ImageButton(img,
+				PADDING,PADDING + _shortcuts.size() * (ICON_SIZE + PADDING),
+				img->getWidth() + 2,img->getHeight() + 2);
+		sc->setButton(btn);
+		btn->addListener(this);
+		_shortcuts[btn] = sc;
+		add(*btn);
+		repaint();
+	};
 
+	virtual void actionPerformed(UIElement& el);
 	virtual void paint(gui::Graphics &g);
 
 	// no cloning
 private:
 	DesktopWin(const DesktopWin &w);
 	DesktopWin &operator=(const DesktopWin &w);
+
+private:
+	map<gui::ImageButton*,Shortcut*> _shortcuts;
 };
 
 #endif /* DESKTOPWIN_H_ */

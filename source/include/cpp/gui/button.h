@@ -23,10 +23,12 @@
 #include <esc/common.h>
 #include <gui/control.h>
 #include <gui/color.h>
+#include <gui/eventlist.h>
+#include <gui/actionlistener.h>
 #include <string>
 
 namespace gui {
-	class Button : public Control {
+	class Button : public Control, public EventList<ActionListener> {
 	private:
 		static Color BGCOLOR;
 		static Color FGCOLOR;
@@ -65,9 +67,11 @@ namespace gui {
 		virtual void onKeyReleased(const KeyEvent &e);
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
+		virtual void paintBackground(Graphics &g);
 		virtual void paint(Graphics &g);
 
 	private:
+		void notifyListener();
 		void setPressed(bool pressed);
 
 	private:

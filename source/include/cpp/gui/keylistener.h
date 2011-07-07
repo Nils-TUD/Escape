@@ -24,6 +24,8 @@
 #include <gui/event.h>
 
 namespace gui {
+	class UIElement;
+
 	/**
 	 * The abstract class to listen for keyevents
 	 */
@@ -41,18 +43,20 @@ namespace gui {
 		};
 
 		/**
-		 * Abstract method that is called as soon as a key has been pressed
+		 * Is called as soon as a key has been pressed
 		 *
+		 * @param el the ui-element that received this event
 		 * @param e the key-event
 		 */
-		virtual void keyPressed(const KeyEvent &e) = 0;
+		virtual void keyPressed(UIElement& el,const KeyEvent &e) {};
 
 		/**
-		 * Abstract method that is called as soon as a key has been released
+		 * Is called as soon as a key has been released
 		 *
+		 * @param el the ui-element that received this event
 		 * @param e the key-event
 		 */
-		virtual void keyReleased(const KeyEvent &e) = 0;
+		virtual void keyReleased(UIElement& el,const KeyEvent &e) {};
 
 	private:
 		// no copying

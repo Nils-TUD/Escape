@@ -50,8 +50,10 @@ namespace gui {
 	void Button::onKeyPressed(const KeyEvent &e) {
 		uchar keycode = e.getKeyCode();
 		UIElement::onKeyPressed(e);
-		if(keycode == VK_ENTER || keycode == VK_SPACE)
+		if(keycode == VK_ENTER || keycode == VK_SPACE) {
+			notifyListener();
 			setPressed(true);
+		}
 	}
 	void Button::onKeyReleased(const KeyEvent &e) {
 		uchar keycode = e.getKeyCode();
@@ -62,8 +64,10 @@ namespace gui {
 
 	void Button::onMousePressed(const MouseEvent &e) {
 		UIElement::onMousePressed(e);
-		if(!_pressed)
+		if(!_pressed) {
+			notifyListener();
 			setPressed(true);
+		}
 	}
 	void Button::onMouseReleased(const MouseEvent &e) {
 		UIElement::onMouseReleased(e);
@@ -76,9 +80,18 @@ namespace gui {
 		repaint();
 	}
 
-	void Button::paint(Graphics &g) {
+	void Button::notifyListener() {
+		for(vector<ActionListener*>::iterator it = _listener.begin(); it != _listener.end(); ++it)
+			(*it)->actionPerformed(*this);
+	}
+
+	void Button::paintBackground(Graphics &g) {
 		g.setColor(BGCOLOR);
 		g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
+	}
+
+	void Button::paint(Graphics &g) {
+		paintBackground(g);
 
 		g.setColor(LIGHT_BORDER_COLOR);
 		g.drawLine(0,0,getWidth() - 1,0);

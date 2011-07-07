@@ -59,8 +59,9 @@ private:
 };
 
 int main(void) {
-	if(fork() == 0) {
-		gui::Application *app = gui::Application::getInstance();
+	gui::Application *app = gui::Application::getInstance();
+	//if(fork() == 0) {
+	//	gui::Application *app = gui::Application::getInstance();
 		w1 = new gui::Window("Window 1",100,100,200,300);
 		gui::Button b("Click me!!",10,10,120,25);
 		w1->add(b);
@@ -77,9 +78,10 @@ int main(void) {
 		w1->add(*pb);
 		if(startThread(pbThread,NULL) < 0)
 			std::cerr << "[GUITEST] Unable to start thread" << std::endl;
-		return app->run();
-	}
+	//	return app->run();
+	//}
 
+#if 0
 	if(fork() == 0) {
 		gui::Application *app = gui::Application::getInstance();
 		w1 = new MyImgWindow();
@@ -91,7 +93,6 @@ int main(void) {
 		w1 = new gui::Window("Window 3",50,50,100,40);
 		return app->run();
 	}
-#if 1
 	if(fork() == 0) {
 		exec("/bin/guishell",NULL);
 		exit(EXIT_FAILURE);
@@ -100,11 +101,11 @@ int main(void) {
 		exec("/bin/guishell",NULL);
 		exit(EXIT_FAILURE);
 	}
-#endif
 
 	gui::Application *app = gui::Application::getInstance();
 	//w1 = new Window("Window 4",180,90,900,800);
 	w1 = new gui::Window("Window 4",180,90,100,80);
+#endif
 	/*startThread(pbThread);*/
 	return app->run();
 }

@@ -34,31 +34,37 @@ namespace gui {
 				gsize_t pw = w, ph = h, pad;
 				gpos_t cx,cy;
 				size_t lastCol = 0;
+				gsize_t colBytes = bitCount / 8;
 				g.validateParams(x,y,pw,ph);
 				g.setColor(Color(0));
 				g.updateMinMax(x,y);
 				g.updateMinMax(x + pw,y + ph);
 				pad = w % 4;
 				pad = pad ? 4 - pad : 0;
-				data += (h - 1) * (w + pad) * (bitCount / 8);
+				data += (h - 1) * ((w * colBytes) + pad);
 				for(cy = ph - 1; cy >= 0; cy--) {
 					oldData = data;
 					for(cx = 0; cx < w; cx++) {
 						if(cx < pw) {
 							// TODO performance might be improvable
-							size_t col = bitCount <= 8 ? *data : (*(uint32_t*)data) & 0xFFFFFF;
+							size_t col;
+							if(bitCount <= 8)
+								col = *data;
+							else if(bitCount == 16)
+								col = *(uint16_t*)data;
+							else if(bitCount == 24)
+								col = (data[0] | (data[1] << 8) | (data[2] << 16));
+							else
+								col = *(uint32_t*)data;
 							if(col != lastCol) {
 								g.setColor(Color(bitCount <= 8 ? _colorTable[col] : col));
 								lastCol = col;
 							}
 							g.doSetPixel(cx + x,y + (ph - 1 - cy));
 						}
-						if(bitCount <= 8)
-							data++;
-						else
-							data += 3;
+						data += colBytes;
 					}
-					data = oldData - (w + pad) * (bitCount / 8);
+					data = oldData - ((w * colBytes) + pad);
 				}
 			}
 			break;

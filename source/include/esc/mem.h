@@ -34,12 +34,14 @@ typedef struct {
 #define REG_RODATA			1
 #define REG_DATA			2
 #define REG_STACK			3
-#define REG_SHM				4
-#define REG_DEVICE			5
-#define REG_TLS				6
-#define REG_SHLIBTEXT		7
-#define REG_SHLIBDATA		8
-#define REG_DLDATA			9
+#define REG_STACKUP			4
+#define REG_SHM				5
+#define REG_DEVICE			6
+#define REG_TLS				7
+#define REG_SHLIBTEXT		8
+#define REG_SHLIBDATA		9
+#define REG_DLDATA			10
+#define REG_PHYS			11
 
 /* protection-flags */
 #define PROT_READ			1

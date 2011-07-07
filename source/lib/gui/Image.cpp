@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: button.cpp 965 2011-07-07 10:56:45Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,15 +18,25 @@
  */
 
 #include <esc/common.h>
-#include <gui/application.h>
-#include "desktopwin.h"
+#include <gui/image.h>
+#include <gui/bitmapimage.h>
+#include <string.h>
+#include <stdio.h>
 
-int main(void) {
-	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
-	Shortcut sc2("/etc/calc.bmp","/bin/gtest");
-	gui::Application* app = gui::Application::getInstance();
-	DesktopWin win(app->getScreenWidth(),app->getScreenHeight());
-	win.addShortcut(&sc1);
-	win.addShortcut(&sc2);
-	return app->run();
+namespace gui {
+	Image *Image::loadImage(const string& path) {
+		char header[3];
+		FILE *f = fopen(path.c_str(),"r");
+		if(!f)
+			throw img_load_error(path + ": Unable to open");
+		header[0] = fgetc(f);
+		header[1] = fgetc(f);
+		header[2] = '\0';
+		fclose(f);
+		// check header-type
+		if(header[0] == 'B' && header[1] == 'M')
+			return new BitmapImage(path);
+		// unknown image-type
+		throw img_load_error(path + ": Unknown image-type (header " + header + ")");
+	}
 }

@@ -160,9 +160,10 @@ void vdebugf(const char *fmt,va_list ap) {
 	uint pad,flags,precision;
 	bool readFlags;
 	int n;
-	uint u;
+	ulong u,u2;
 	char *s;
 	ullong l;
+	size_t size;
 
 	while(1) {
 		while((c = *fmt++) != '%') {
@@ -218,6 +219,24 @@ void vdebugf(const char *fmt,va_list ap) {
 				debugPad(pad - width,flags);
 			}
 			debugInt(n);
+		}
+		else if(c == 'p') {
+			size = sizeof(uintptr_t);
+			u = va_arg(ap, uintptr_t);
+			flags |= DBG_FFL_PADZEROS;
+			/* 2 hex-digits per byte and a ':' every 2 bytes */
+			pad = size * 2 + size / 2;
+			while(size > 0) {
+				u2 = (u >> (size * 8 - 16)) & 0xFFFF;
+				if(pad > 0) {
+					size_t width = getuwidth(u2,16);
+					debugPad(4 - width,flags);
+				}
+				debugUint(u2,16);
+				size -= 2;
+				if(size > 0)
+					debugChar(':');
+			}
 		}
 		else if(c == 'u' || c == 'o' || c == 'x') {
 			uint base = c == 'o' ? 8 : (c == 'x' ? 16 : 10);

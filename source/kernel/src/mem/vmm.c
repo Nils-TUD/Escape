@@ -1066,8 +1066,8 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 			 * another @ INTERP_TEXT_BEGIN (begin of free area, too). But this is always the
 			 * case since when doing exec(), the process is empty except stacks. */
 			else if(type == REG_SHLIBTEXT) {
-				*flags = RF_SHAREABLE;
-				*pgFlags = PF_DEMANDLOAD | RF_EXECUTABLE;
+				*flags = RF_SHAREABLE | RF_EXECUTABLE;
+				*pgFlags = PF_DEMANDLOAD;
 			}
 			else if(type == REG_DLDATA) {
 				/* its growable to give the dynamic linker the chance to use dynamic memory

@@ -25,7 +25,7 @@
 #include <gui/graphicfactory.h>
 
 namespace gui {
-	Graphics *GraphicFactory::get(Graphics &g,tCoord x,tCoord y) {
+	Graphics *GraphicFactory::get(Graphics &g,gpos_t x,gpos_t y) {
 		switch(g.getColorDepth()) {
 			case 32:
 				return new Graphics32(g,x,y);
@@ -38,7 +38,7 @@ namespace gui {
 		}
 	}
 
-	Graphics *GraphicFactory::get(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp) {
+	Graphics *GraphicFactory::get(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp) {
 		switch(bpp) {
 			case 32:
 				return new Graphics32(x,y,width,height,bpp);

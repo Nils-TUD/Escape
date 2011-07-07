@@ -23,7 +23,6 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/messages.h>
-#include <gui/common.h>
 #include <gui/graphics.h>
 #include <gui/uielement.h>
 #include <gui/application.h>
@@ -44,10 +43,10 @@ namespace gui {
 		static Color TITLE_FGCOLOR;
 		static Color BORDER_COLOR;
 
-		static tWinId NEXT_TMP_ID;
+		static gwinid_t NEXT_TMP_ID;
 
-		static const tSize MIN_WIDTH = 40;
-		static const tSize MIN_HEIGHT = 40;
+		static const gsize_t MIN_WIDTH = 40;
+		static const gsize_t MIN_HEIGHT = 40;
 
 		static const uchar MOUSE_MOVED = 0;
 		static const uchar MOUSE_RELEASED = 1;
@@ -61,13 +60,13 @@ namespace gui {
 		static const uchar STYLE_DESKTOP = 2;
 
 	public:
-		Window(const string &title,tCoord x,tCoord y,tSize width,tSize height,
+		Window(const string &title,gpos_t x,gpos_t y,gsize_t width,gsize_t height,
 				uchar style = STYLE_DEFAULT);
 		Window(const Window &w);
 		virtual ~Window();
 		Window &operator=(const Window &w);
 
-		inline tWinId getId() const {
+		inline gwinid_t getId() const {
 			return _id;
 		};
 		inline uchar getStyle() const {
@@ -79,7 +78,7 @@ namespace gui {
 		inline bool isCreated() const {
 			return _created;
 		};
-		inline tSize getTitleBarHeight() const {
+		inline gsize_t getTitleBarHeight() const {
 			return _titleBarHeight;
 		};
 		inline string getTitle() const {
@@ -98,15 +97,15 @@ namespace gui {
 
 		virtual void paint(Graphics &g);
 		void resize(short width,short height);
-		void resizeTo(tSize width,tSize height);
+		void resizeTo(gsize_t width,gsize_t height);
 		void move(short x,short y);
-		void moveTo(tCoord x,tCoord y);
+		void moveTo(gpos_t x,gpos_t y);
 		void add(Control &c);
 
 	protected:
 		void paintTitle(Graphics &g);
 
-		inline tWinId getWindowId() const {
+		inline gwinid_t getWindowId() const {
 			return _id;
 		};
 
@@ -115,38 +114,38 @@ namespace gui {
 		void passToCtrl(const KeyEvent &e,uchar event);
 		void passToCtrl(const MouseEvent &e,uchar event);
 		void setActive(bool active);
-		void onCreated(tWinId id);
-		void update(tCoord x,tCoord y,tSize width,tSize height);
+		void onCreated(gwinid_t id);
+		void update(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 		void resizeMove(short x,short width,short height);
-		void resizeMoveTo(tCoord x,tSize width,tSize height);
-		inline tCoord getMoveX() const {
+		void resizeMoveTo(gpos_t x,gsize_t width,gsize_t height);
+		inline gpos_t getMoveX() const {
 			return _moveX;
 		};
-		inline tCoord getMoveY() const {
+		inline gpos_t getMoveY() const {
 			return _moveY;
 		};
-		inline tSize getResizeWidth() const {
+		inline gsize_t getResizeWidth() const {
 			return _resizeWidth;
 		};
-		inline tSize getResizeHeight() const {
+		inline gsize_t getResizeHeight() const {
 			return _resizeHeight;
 		};
 
 	private:
-		tWinId _id;
+		gwinid_t _id;
 		bool _created;
 		uchar _style;
 		string _title;
-		tSize _titleBarHeight;
+		gsize_t _titleBarHeight;
 		bool _inTitle;
 		bool _inResizeLeft;
 		bool _inResizeRight;
 		bool _inResizeBottom;
 		bool _isActive;
-		tCoord _moveX;
-		tCoord _moveY;
-		tSize _resizeWidth;
-		tSize _resizeHeight;
+		gpos_t _moveX;
+		gpos_t _moveY;
+		gsize_t _resizeWidth;
+		gsize_t _resizeHeight;
 	protected:
 		int _focus;
 		vector<Control*> _controls;

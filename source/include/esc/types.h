@@ -94,4 +94,9 @@ typedef uintptr_t evobj_t;
 
 typedef uint32_t time_t;
 
+typedef ushort gsize_t;
+typedef short gpos_t;
+typedef uchar gcoldepth_t;
+typedef ushort gwinid_t;
+
 #endif /* TYPES_H_ */

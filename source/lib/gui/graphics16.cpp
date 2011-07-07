@@ -24,12 +24,12 @@
 #include <gui/graphics16.h>
 
 namespace gui {
-	Graphics16::Graphics16(Graphics &g,tCoord x,tCoord y)
+	Graphics16::Graphics16(Graphics &g,gpos_t x,gpos_t y)
 		: Graphics(g,x,y) {
 
 	}
 
-	Graphics16::Graphics16(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp)
+	Graphics16::Graphics16(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp)
 		: Graphics(x,y,width,height,bpp) {
 
 	}
@@ -38,25 +38,25 @@ namespace gui {
 		// nothing to do
 	}
 
-	void Graphics16::doSetPixel(tCoord x,tCoord y) {
+	void Graphics16::doSetPixel(gpos_t x,gpos_t y) {
 		uint16_t *addr = (uint16_t*)(_pixels + ((_offy + y) * _width + (_offx + x)) * 2);
 		*addr = _col;
 	}
 
-	void Graphics16::fillRect(tCoord x,tCoord y,tSize width,tSize height) {
+	void Graphics16::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		validateParams(x,y,width,height);
-		tCoord yend = y + height;
+		gpos_t yend = y + height;
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,yend - 1);
-		tCoord xcur;
-		tCoord xend = x + width;
+		gpos_t xcur;
+		gpos_t xend = x + width;
 		// optimized version for 16bit
 		// This is necessary if we want to have reasonable speed because the simple version
 		// performs too many function-calls (one to a virtual-function and one to memcpy
 		// that the compiler doesn't inline). Additionally the offset into the
 		// memory-region will be calculated many times.
 		// This version is much quicker :)
-		tSize widthadd = _width;
+		gsize_t widthadd = _width;
 		uint16_t *addr;
 		uint16_t *orgaddr = (uint16_t*)(_pixels + (((_offy + y) * _width + (_offx + x)) * 2));
 		for(; y < yend; y++) {

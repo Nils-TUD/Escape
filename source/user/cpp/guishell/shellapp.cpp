@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <esc/messages.h>
 #include <esc/driver.h>
 #include <esc/io.h>

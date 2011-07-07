@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/editable.h>
 #include <esc/keycodes.h>
 
@@ -51,10 +50,10 @@ namespace gui {
 	}
 
 	void Editable::paint(Graphics &g) {
-		tSize cwidth = g.getFont().getWidth();
-		tSize cheight = g.getFont().getHeight();
+		gsize_t cwidth = g.getFont().getWidth();
+		gsize_t cheight = g.getFont().getHeight();
 		int count = getMaxCharNum(g);
-		tCoord ystart = (getHeight() - cheight) / 2;
+		gpos_t ystart = (getHeight() - cheight) / 2;
 		int start = _begin;
 		count = MIN((int)_str.length(),count);
 
@@ -139,7 +138,7 @@ namespace gui {
 		_startSel = true;
 	}
 
-	int Editable::getPosAt(tCoord x) {
+	int Editable::getPosAt(gpos_t x) {
 		int pos = 0;
 		if(x >= getX()) {
 			pos = (x - getX()) / getGraphics()->getFont().getWidth();

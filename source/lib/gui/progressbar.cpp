@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/progressbar.h>
 #include <gui/control.h>
 
@@ -44,7 +43,7 @@ namespace gui {
 		g.drawRect(0,0,getWidth(),getHeight());
 
 		// draw bar
-		tSize barWidth;
+		gsize_t barWidth;
 		if(_position == 0)
 			barWidth = 0;
 		else

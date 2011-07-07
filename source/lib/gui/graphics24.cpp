@@ -23,12 +23,12 @@
 #include <gui/graphics24.h>
 
 namespace gui {
-	Graphics24::Graphics24(Graphics &g,tCoord x,tCoord y)
+	Graphics24::Graphics24(Graphics &g,gpos_t x,gpos_t y)
 		: Graphics(g,x,y) {
 
 	}
 
-	Graphics24::Graphics24(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp)
+	Graphics24::Graphics24(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp)
 		: Graphics(x,y,width,height,bpp) {
 
 	}
@@ -37,7 +37,7 @@ namespace gui {
 		// nothing to do
 	}
 
-	void Graphics24::doSetPixel(tCoord x,tCoord y) {
+	void Graphics24::doSetPixel(gpos_t x,gpos_t y) {
 		uint8_t *col = (uint8_t*)&_col;
 		uint8_t *addr = _pixels + ((_offy + y) * _width + (_offx + x)) * 3;
 		*addr++ = *col++;
@@ -45,13 +45,13 @@ namespace gui {
 		*addr = *col;
 	}
 
-	void Graphics24::fillRect(tCoord x,tCoord y,tSize width,tSize height) {
+	void Graphics24::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		validateParams(x,y,width,height);
-		tCoord yend = y + height;
+		gpos_t yend = y + height;
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,yend - 1);
-		tCoord xcur;
-		tCoord xend = x + width;
+		gpos_t xcur;
+		gpos_t xend = x + width;
 		// optimized version for 24bit
 		// This is necessary if we want to have reasonable speed because the simple version
 		// performs too many function-calls (one to a virtual-function and one to memcpy
@@ -59,7 +59,7 @@ namespace gui {
 		// memory-region will be calculated many times.
 		// This version is much quicker :)
 		uint8_t *col = (uint8_t*)&_col;
-		tSize widthadd = _width * 3;
+		gsize_t widthadd = _width * 3;
 		uint8_t *addr;
 		uint8_t *orgaddr = _pixels + (((_offy + y) * _width + (_offx + x)) * 3);
 		for(; y < yend; y++) {

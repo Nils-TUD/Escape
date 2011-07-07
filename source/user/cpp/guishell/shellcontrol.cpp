@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <esc/debug.h>
 #include <esc/driver.h>
 #include <gui/color.h>
@@ -67,8 +66,8 @@ void ShellControl::paint(Graphics &g) {
 }
 
 void ShellControl::clearRows(Graphics &g,size_t start,size_t count) {
-	tSize cheight = g.getFont().getHeight();
-	tCoord y = TEXTSTARTY + start * (cheight + PADDING);
+	gsize_t cheight = g.getFont().getHeight();
+	gpos_t y = TEXTSTARTY + start * (cheight + PADDING);
 	// overwrite with background
 	g.setColor(BGCOLOR);
 	count = MIN(getLineCount() - start,count);
@@ -166,7 +165,7 @@ bool ShellControl::setCursor() {
 void ShellControl::paintRows(Graphics &g,size_t start,size_t count) {
 	size_t cwidth = g.getFont().getWidth();
 	size_t cheight = g.getFont().getHeight();
-	tCoord y = TEXTSTARTY + start * (cheight + PADDING);
+	gpos_t y = TEXTSTARTY + start * (cheight + PADDING);
 	char *buf = _vt->buffer + (_vt->firstVisLine + start) * _vt->cols * 2;
 	count = MIN(count,_vt->rows - start);
 
@@ -185,10 +184,10 @@ void ShellControl::paintRows(Graphics &g,size_t start,size_t count) {
 	}
 }
 
-void ShellControl::paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,tCoord y) {
+void ShellControl::paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,gpos_t y) {
 	uchar lastCol = 0xFF;
 	// paint char by char because the color might change
-	tCoord x = TEXTSTARTX;
+	gpos_t x = TEXTSTARTX;
 	for(size_t j = 0; j < _vt->cols; j++) {
 		char c = *buf++;
 		uchar col = *buf++;

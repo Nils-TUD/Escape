@@ -21,7 +21,6 @@
 #define CONTROL_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/uielement.h>
 
 namespace gui {
@@ -31,7 +30,7 @@ namespace gui {
 		friend class Window;
 
 	public:
-		Control(tCoord x,tCoord y,tSize width,tSize height)
+		Control(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: UIElement(x,y,width,height), _w(NULL) {
 		};
 		Control(const Control &c)
@@ -51,7 +50,7 @@ namespace gui {
 		virtual void onFocusLost();
 
 	protected:
-		tWinId getWindowId() const;
+		gwinid_t getWindowId() const;
 
 	private:
 		void setWindow(Window *w);

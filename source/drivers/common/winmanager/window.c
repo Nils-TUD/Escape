@@ -30,12 +30,12 @@
 #include <string.h>
 #include "window.h"
 
-static void win_repaint(sRectangle *r,sWindow *win,tCoord z);
-static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY);
-static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id);
-static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,tCoord z,sRectangle *r);
-static void win_clearRegion(uint8_t *mem,tCoord x,tCoord y,tSize width,tSize height);
-static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
+static void win_repaint(sRectangle *r,sWindow *win,gpos_t z);
+static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY);
+static void win_sendRepaint(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id);
+static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r);
+static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 static int vesa;
 static int drvId;
@@ -49,7 +49,7 @@ static sWindow windows[WINDOW_COUNT];
 
 bool win_init(int sid) {
 	msgid_t mid;
-	tWinId i;
+	gwinid_t i;
 
 	drvId = sid;
 
@@ -88,23 +88,23 @@ void win_setEnabled(bool en) {
 		error("Unable to enable/disable vesa");
 }
 
-tCoord win_getScreenWidth(void) {
+gpos_t win_getScreenWidth(void) {
 	return vesaInfo.width;
 }
 
-tCoord win_getScreenHeight(void) {
+gpos_t win_getScreenHeight(void) {
 	return vesaInfo.height;
 }
 
-void win_setCursor(tCoord x,tCoord y,uint cursor) {
+void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
 	msg.args.arg3 = cursor;
 	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
-tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,inode_t owner,uint style) {
-	tWinId i;
+gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style) {
+	gwinid_t i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNSED) {
 			windows[i].id = i;
@@ -127,15 +127,15 @@ void win_updateScreen(void) {
 	win_notifyVesa(0,0,vesaInfo.width,vesaInfo.height);
 }
 
-void win_destroyWinsOf(inode_t cid,tCoord mouseX,tCoord mouseY) {
-	tWinId id;
+void win_destroyWinsOf(inode_t cid,gpos_t mouseX,gpos_t mouseY) {
+	gwinid_t id;
 	for(id = 0; id < WINDOW_COUNT; id++) {
 		if(windows[id].id != WINID_UNSED && windows[id].owner == cid)
 			win_destroy(id,mouseX,mouseY);
 	}
 }
 
-void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY) {
+void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	sRectangle *old;
 	/* mark unused */
 	windows[id].id = WINID_UNSED;
@@ -151,7 +151,7 @@ void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY) {
 
 	/* set highest window active */
 	if(activeWindow == id) {
-		tWinId i,winId = WINID_UNSED;
+		gwinid_t i,winId = WINID_UNSED;
 		int maxz = -1;
 		sWindow *w = windows;
 		for(i = 0; i < WINDOW_COUNT; i++) {
@@ -166,20 +166,20 @@ void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY) {
 	}
 }
 
-sWindow *win_get(tWinId id) {
+sWindow *win_get(gwinid_t id) {
 	if(id >= WINDOW_COUNT || windows[id].id == WINID_UNSED)
 		return NULL;
 	return windows + id;
 }
 
-bool win_exists(tWinId id) {
+bool win_exists(gwinid_t id) {
 	return id < WINDOW_COUNT && windows[id].id != WINID_UNSED;
 }
 
-sWindow *win_getAt(tCoord x,tCoord y) {
-	tWinId i;
-	tCoord maxz = -1;
-	tWinId winId = WINDOW_COUNT;
+sWindow *win_getAt(gpos_t x,gpos_t y) {
+	gwinid_t i;
+	gpos_t maxz = -1;
+	gwinid_t winId = WINDOW_COUNT;
 	sWindow *w = windows;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(w->id != WINID_UNSED && w->z > maxz &&
@@ -201,10 +201,10 @@ sWindow *win_getActive(void) {
 	return NULL;
 }
 
-void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
-	tWinId i;
-	tCoord curz = windows[id].z;
-	tCoord maxz = 0;
+void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
+	gwinid_t i;
+	gpos_t curz = windows[id].z;
+	gpos_t maxz = 0;
 	sWindow *w = windows;
 	if(id != WINDOW_COUNT) {
 		for(i = 0; i < WINDOW_COUNT; i++) {
@@ -239,7 +239,7 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
 	}
 }
 
-void win_previewResize(tCoord x,tCoord y,tSize width,tSize height) {
+void win_previewResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
 	msg.args.arg3 = width;
@@ -248,7 +248,7 @@ void win_previewResize(tCoord x,tCoord y,tSize width,tSize height) {
 	send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
 }
 
-void win_previewMove(tWinId window,tCoord x,tCoord y) {
+void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
 	sWindow *w = windows + window;
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
@@ -258,12 +258,12 @@ void win_previewMove(tWinId window,tCoord x,tCoord y) {
 	send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
 }
 
-void win_resize(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
+void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	if(x != windows[window].x || y != windows[window].y)
 		win_moveTo(window,x,y,width,height);
 	else {
-		tSize oldWidth = windows[window].width;
-		tSize oldHeight = windows[window].height;
+		gsize_t oldWidth = windows[window].width;
+		gsize_t oldHeight = windows[window].height;
 		windows[window].width = width;
 		windows[window].height = height;
 
@@ -292,7 +292,7 @@ void win_resize(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
 	}
 }
 
-void win_moveTo(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
+void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	size_t i,count;
 	sRectangle **rects;
 	sRectangle *old = (sRectangle*)malloc(sizeof(sRectangle));
@@ -335,7 +335,7 @@ void win_moveTo(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
 	win_repaint(new,windows + window,windows[window].z);
 }
 
-void win_update(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
+void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sWindow *win = windows + window;
 	sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
 	r->x = win->x + x;
@@ -346,7 +346,7 @@ void win_update(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
 	win_repaint(r,win,win->z);
 }
 
-static void win_repaint(sRectangle *r,sWindow *win,tCoord z) {
+static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 	sRectangle *rect;
 	sSLNode *n;
 	sSLList *list = sll_create();
@@ -371,7 +371,7 @@ static void win_repaint(sRectangle *r,sWindow *win,tCoord z) {
 	sll_destroy(list,true);
 }
 
-static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) {
+static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY) {
 	int aWin = getClient(drvId,windows[id].owner);
 	if(aWin >= 0) {
 		msg.args.arg1 = id;
@@ -383,7 +383,7 @@ static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) 
 	}
 }
 
-static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id) {
+static void win_sendRepaint(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id) {
 	int aWin = getClient(drvId,windows[id].owner);
 	if(aWin >= 0) {
 		if(x - windows[id].x < 0) {
@@ -400,7 +400,7 @@ static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id
 	}
 }
 
-static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,tCoord z,sRectangle *r) {
+static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r) {
 	sRectangle **rects;
 	sRectangle wr;
 	sRectangle *inter;
@@ -456,9 +456,9 @@ static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,tCoord z,
 	sll_append(list,r);
 }
 
-static void win_clearRegion(uint8_t *mem,tCoord x,tCoord y,tSize width,tSize height) {
-	tCoord ysave = y;
-	tCoord maxy;
+static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	gpos_t ysave = y;
+	gpos_t maxy;
 	size_t count;
 	if(x < 0) {
 		if(-x > width)
@@ -481,7 +481,7 @@ static void win_clearRegion(uint8_t *mem,tCoord x,tCoord y,tSize width,tSize hei
 	win_notifyVesa(x,ysave,width,height);
 }
 
-static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
+static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	if(x < 0) {
 		width += x;
 		x = 0;
@@ -497,7 +497,7 @@ static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
 #if DEBUGGING
 
 void win_dbg_print(void) {
-	tWinId i;
+	gwinid_t i;
 	sWindow *w = windows;
 	printf("Windows:\n");
 	for(i = 0; i < WINDOW_COUNT; i++) {

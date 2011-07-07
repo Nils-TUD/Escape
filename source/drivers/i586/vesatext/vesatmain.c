@@ -47,8 +47,6 @@
 #define PIXEL_SET(c,x,y)				\
 	((font8x16)[(c) * FONT_HEIGHT + (y)] & (1 << (FONT_WIDTH - (x) - 1)))
 
-typedef ushort tSize;
-typedef ushort tCoord;
 typedef uint32_t tColor;
 
 /* the colors */
@@ -75,8 +73,8 @@ typedef uint8_t *(*fSetPixel)(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);
 
 static int vesa_setMode(void);
 static int vesa_init(void);
-static void vesa_drawStr(tCoord col,tCoord row,const char *str,size_t len);
-static void vesa_drawChar(tCoord col,tCoord row,uint8_t c,uint8_t color);
+static void vesa_drawStr(gpos_t col,gpos_t row,const char *str,size_t len);
+static void vesa_drawChar(gpos_t col,gpos_t row,uint8_t c,uint8_t color);
 static void vesa_drawCharLoop16(uint8_t *vid,uint8_t c,uint8_t cf1,uint8_t cf2,
 		uint8_t cf3,uint8_t cb1,uint8_t cb2,uint8_t cb3);
 static void vesa_drawCharLoop24(uint8_t *vid,uint8_t c,uint8_t cf1,uint8_t cf2,
@@ -86,8 +84,8 @@ static void vesa_drawCharLoop32(uint8_t *vid,uint8_t c,uint8_t cf1,uint8_t cf2,
 static uint8_t *vesa_setPixel16(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);
 static uint8_t *vesa_setPixel24(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);
 static uint8_t *vesa_setPixel32(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);
-static void vesa_setCursor(tCoord col,tCoord row);
-static void vesa_drawCursor(tCoord col,tCoord row,uint8_t color);
+static void vesa_setCursor(gpos_t col,gpos_t row);
+static void vesa_drawCursor(gpos_t col,gpos_t row,uint8_t color);
 
 static uint8_t colors[][3] = {
 	/* BLACK   */ {0x00,0x00,0x00},
@@ -283,7 +281,7 @@ static int vesa_init(void) {
 	return 0;
 }
 
-static void vesa_drawStr(tCoord col,tCoord row,const char *str,size_t len) {
+static void vesa_drawStr(gpos_t col,gpos_t row,const char *str,size_t len) {
 	while(len-- > 0) {
 		char c = *str++;
 		char color = *str++;
@@ -297,9 +295,9 @@ static void vesa_drawStr(tCoord col,tCoord row,const char *str,size_t len) {
 	}
 }
 
-static void vesa_drawChar(tCoord col,tCoord row,uint8_t c,uint8_t color) {
-	tCoord y;
-	tSize rx = minfo->xResolution;
+static void vesa_drawChar(gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
+	gpos_t y;
+	gsize_t rx = minfo->xResolution;
 	size_t pxSize = minfo->bitsPerPixel / 8;
 	uint8_t *vid;
 	/* don't print the same again ;) */
@@ -344,7 +342,7 @@ static void vesa_drawCharLoop16(uint8_t *vid,uint8_t c,uint8_t cf1,uint8_t cf2,u
 		uint8_t cb1,uint8_t cb2,uint8_t cb3) {
 	int x,y;
 	uint8_t *vidwork;
-	tSize rx = minfo->xResolution;
+	gsize_t rx = minfo->xResolution;
 	uint8_t rms = minfo->redMaskSize;
 	uint8_t gms = minfo->greenMaskSize;
 	uint8_t bms = minfo->blueMaskSize;
@@ -383,7 +381,7 @@ static void vesa_drawCharLoop24(uint8_t *vid,uint8_t c,uint8_t cf1,uint8_t cf2,u
 		uint8_t cb1,uint8_t cb2,uint8_t cb3) {
 	int x,y;
 	uint8_t *vidwork;
-	tSize rx = minfo->xResolution;
+	gsize_t rx = minfo->xResolution;
 	uint8_t rms = minfo->redMaskSize;
 	uint8_t gms = minfo->greenMaskSize;
 	uint8_t bms = minfo->blueMaskSize;
@@ -424,7 +422,7 @@ static void vesa_drawCharLoop32(uint8_t *vid,uint8_t c,uint8_t cf1,uint8_t cf2,u
 		uint8_t cb1,uint8_t cb2,uint8_t cb3) {
 	int x,y;
 	uint8_t *vidwork;
-	tSize rx = minfo->xResolution;
+	gsize_t rx = minfo->xResolution;
 	uint8_t rms = minfo->redMaskSize;
 	uint8_t gms = minfo->greenMaskSize;
 	uint8_t bms = minfo->blueMaskSize;
@@ -494,7 +492,7 @@ static uint8_t *vesa_setPixel32(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b) 
 	return vidwork + 4;
 }
 
-static void vesa_setCursor(tCoord col,tCoord row) {
+static void vesa_setCursor(gpos_t col,gpos_t row) {
 	if(lastCol < cols && lastRow < rows)
 		vesa_drawCursor(lastCol,lastRow,BLACK);
 	vesa_drawCursor(col,row,WHITE);
@@ -502,11 +500,11 @@ static void vesa_setCursor(tCoord col,tCoord row) {
 	lastRow = row;
 }
 
-static void vesa_drawCursor(tCoord col,tCoord row,uint8_t color) {
-	tSize xres = minfo->xResolution;
-	tSize pxSize = minfo->bitsPerPixel / 8;
+static void vesa_drawCursor(gpos_t col,gpos_t row,uint8_t color) {
+	gsize_t xres = minfo->xResolution;
+	gsize_t pxSize = minfo->bitsPerPixel / 8;
 	fSetPixel pxFunc = setPixel[pxSize];
-	tCoord x,y = FONT_HEIGHT + PAD - 1;
+	gpos_t x,y = FONT_HEIGHT + PAD - 1;
 	uint8_t *vid = video +
 			row * (FONT_HEIGHT + PAD * 2) * xres * pxSize +
 			col * (FONT_WIDTH + PAD * 2) * pxSize;

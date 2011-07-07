@@ -34,8 +34,8 @@
 #include "keyboard.h"
 
 static sMsg msg;
-static tSize screenWidth;
-static tSize screenHeight;
+static gsize_t screenWidth;
+static gsize_t screenHeight;
 
 int main(void) {
 	int drvId;
@@ -63,11 +63,11 @@ int main(void) {
 		else {
 			switch(mid) {
 				case MSG_WIN_CREATE: {
-					tCoord x = (tCoord)(msg.args.arg1 >> 16);
-					tCoord y = (tCoord)(msg.args.arg1 & 0xFFFF);
-					tSize width = (tSize)(msg.args.arg2 >> 16);
-					tSize height = (tSize)(msg.args.arg2 & 0xFFFF);
-					tWinId tmpWinId = (tWinId)msg.args.arg3;
+					gpos_t x = (gpos_t)(msg.args.arg1 >> 16);
+					gpos_t y = (gpos_t)(msg.args.arg1 & 0xFFFF);
+					gsize_t width = (gsize_t)(msg.args.arg2 >> 16);
+					gsize_t height = (gsize_t)(msg.args.arg2 & 0xFFFF);
+					gwinid_t tmpWinId = (gwinid_t)msg.args.arg3;
 					uint style = msg.args.arg4;
 					msg.args.arg1 = tmpWinId;
 					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style);
@@ -78,16 +78,16 @@ int main(void) {
 				break;
 
 				case MSG_WIN_DESTROY: {
-					tWinId wid = (tWinId)msg.args.arg1;
+					gwinid_t wid = (gwinid_t)msg.args.arg1;
 					if(win_exists(wid))
 						win_destroy(wid,mouse_getX(),mouse_getY());
 				}
 				break;
 
 				case MSG_WIN_MOVE: {
-					tWinId wid = (tWinId)msg.args.arg1;
-					tCoord x = (tCoord)msg.args.arg2;
-					tCoord y = (tCoord)msg.args.arg3;
+					gwinid_t wid = (gwinid_t)msg.args.arg1;
+					gpos_t x = (gpos_t)msg.args.arg2;
+					gpos_t y = (gpos_t)msg.args.arg3;
 					bool finish = (bool)msg.args.arg4;
 					sWindow *win = win_get(wid);
 					if(win_isEnabled() && win && x < screenWidth && y < screenHeight) {
@@ -100,11 +100,11 @@ int main(void) {
 				break;
 
 				case MSG_WIN_RESIZE: {
-					tWinId wid = (tWinId)msg.args.arg1;
-					tCoord x = (tCoord)msg.args.arg2;
-					tCoord y = (tCoord)msg.args.arg3;
-					tSize width = (tSize)msg.args.arg4;
-					tSize height = (tSize)msg.args.arg5;
+					gwinid_t wid = (gwinid_t)msg.args.arg1;
+					gpos_t x = (gpos_t)msg.args.arg2;
+					gpos_t y = (gpos_t)msg.args.arg3;
+					gsize_t width = (gsize_t)msg.args.arg4;
+					gsize_t height = (gsize_t)msg.args.arg5;
 					bool finish = (bool)msg.args.arg6;
 					if(win_isEnabled() && win_exists(wid)) {
 						if(finish)
@@ -116,11 +116,11 @@ int main(void) {
 				break;
 
 				case MSG_WIN_UPDATE: {
-					tWinId wid = (tWinId)msg.args.arg1;
-					tCoord x = (tCoord)msg.args.arg2;
-					tCoord y = (tCoord)msg.args.arg3;
-					tSize width = (tSize)msg.args.arg4;
-					tSize height = (tSize)msg.args.arg5;
+					gwinid_t wid = (gwinid_t)msg.args.arg1;
+					gpos_t x = (gpos_t)msg.args.arg2;
+					gpos_t y = (gpos_t)msg.args.arg3;
+					gsize_t width = (gsize_t)msg.args.arg4;
+					gsize_t height = (gsize_t)msg.args.arg5;
 					sWindow *win = win_get(wid);
 					if(win_isEnabled() && win != NULL && x + width > x && y + height > y &&
 						x + width <= win->width && y + height <= win->height) {

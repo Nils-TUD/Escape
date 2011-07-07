@@ -33,19 +33,16 @@
 #define WIN_STYLE_POPUP					1
 #define WIN_STYLE_DESKTOP				2
 
-typedef ushort tSize;
-typedef short tCoord;
 typedef uint32_t tColor;
-typedef ushort tWinId;
 
 /* a window */
 typedef struct {
-	tCoord x;
-	tCoord y;
-	tCoord z;
-	tSize width;
-	tSize height;
-	tWinId id;
+	gpos_t x;
+	gpos_t y;
+	gpos_t z;
+	gsize_t width;
+	gsize_t height;
+	gwinid_t id;
 	tid_t owner;
 	uint style;
 } sWindow;
@@ -73,12 +70,12 @@ void win_setEnabled(bool en);
 /**
  * @return the screen-width
  */
-tCoord win_getScreenWidth(void);
+gpos_t win_getScreenWidth(void);
 
 /**
  * @return the screen-height
  */
-tCoord win_getScreenHeight(void);
+gpos_t win_getScreenHeight(void);
 
 /**
  * Sets the cursor at given position (writes to vesa)
@@ -87,7 +84,7 @@ tCoord win_getScreenHeight(void);
  * @param y the y-coordinate
  * @param cursor the cursor to use
  */
-void win_setCursor(tCoord x,tCoord y,uint cursor);
+void win_setCursor(gpos_t x,gpos_t y,uint cursor);
 
 /**
  * Creates a new window from given create-message
@@ -100,7 +97,7 @@ void win_setCursor(tCoord x,tCoord y,uint cursor);
  * @param style style-attributes
  * @return the window-id or WINID_UNUSED if no slot is free
  */
-tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,inode_t owner,uint style);
+gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style);
 
 /**
  * Updates the whole screen
@@ -114,7 +111,7 @@ void win_updateScreen(void);
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
  */
-void win_destroyWinsOf(inode_t cid,tCoord mouseX,tCoord mouseY);
+void win_destroyWinsOf(inode_t cid,gpos_t mouseX,gpos_t mouseY);
 
 /**
  * Destroys the given window
@@ -123,19 +120,19 @@ void win_destroyWinsOf(inode_t cid,tCoord mouseX,tCoord mouseY);
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
  */
-void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY);
+void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY);
 
 /**
  * @param id the window-id
  * @return the window with given id or NULL
  */
-sWindow *win_get(tWinId id);
+sWindow *win_get(gwinid_t id);
 
 /**
  * @param id the window-id
  * @return whether the window with given id exists
  */
-bool win_exists(tWinId id);
+bool win_exists(gwinid_t id);
 
 /**
  * Determines the window at given position
@@ -144,7 +141,7 @@ bool win_exists(tWinId id);
  * @param y the y-coordinate
  * @return the window or NULL
  */
-sWindow *win_getAt(tCoord x,tCoord y);
+sWindow *win_getAt(gpos_t x,gpos_t y);
 
 /**
  * @return the currently active window; NULL if no one is active
@@ -160,7 +157,7 @@ sWindow *win_getActive(void);
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
  */
-void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY);
+void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY);
 
 /**
  * Shows a preview for the given resize-operation
@@ -170,7 +167,7 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY);
  * @param width the new width
  * @param height the new height
  */
-void win_previewResize(tCoord x,tCoord y,tSize width,tSize height);
+void win_previewResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 /**
  * Shows a preview for the given move-operation
@@ -179,7 +176,7 @@ void win_previewResize(tCoord x,tCoord y,tSize width,tSize height);
  * @param x the x-coordinate
  * @param y the y-coordinate
  */
-void win_previewMove(tWinId window,tCoord x,tCoord y);
+void win_previewMove(gwinid_t window,gpos_t x,gpos_t y);
 
 /**
  * Resizes the window to the given size
@@ -190,7 +187,7 @@ void win_previewMove(tWinId window,tCoord x,tCoord y);
  * @param width the new width
  * @param height the new height
  */
-void win_resize(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
+void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 /**
  * Moves the given window to given position and optionally changes the size
@@ -201,7 +198,7 @@ void win_resize(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
  * @param width the new width
  * @param height the new height
  */
-void win_moveTo(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
+void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 /**
  * Sends update-events to the given window to update the given area
@@ -212,7 +209,7 @@ void win_moveTo(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
  * @param width the width
  * @param height the height
  */
-void win_update(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
+void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 #if DEBUGGING
 

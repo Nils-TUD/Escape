@@ -21,13 +21,12 @@
 #define GRAPHICFACTORY_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 
 namespace gui {
 	class GraphicFactory {
 	public:
-		static Graphics *get(Graphics &g,tCoord x,tCoord y);
-		static Graphics *get(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
+		static Graphics *get(Graphics &g,gpos_t x,gpos_t y);
+		static Graphics *get(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp);
 
 	private:
 		// no instantation

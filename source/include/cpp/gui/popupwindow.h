@@ -21,13 +21,12 @@
 #define POPUPWINDOW_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/window.h>
 
 namespace gui {
 	class PopupWindow : public Window {
 	public:
-		PopupWindow(tCoord x,tCoord y,tSize width,tSize height)
+		PopupWindow(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Window("",x,y,width,height,STYLE_POPUP) {
 		};
 		PopupWindow(const PopupWindow &w)
@@ -43,7 +42,7 @@ namespace gui {
 			return *this;
 		};
 
-		virtual void close(tCoord x,tCoord y) = 0;
+		virtual void close(gpos_t x,gpos_t y) = 0;
 	};
 }
 

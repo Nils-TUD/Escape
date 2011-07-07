@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/font.h>
 
 namespace gui {

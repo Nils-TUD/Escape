@@ -176,14 +176,14 @@ typedef struct {
 
 /* the data read from the mouse */
 typedef struct {
-	short x;
-	short y;
+	gpos_t x;
+	gpos_t y;
 	uchar buttons;
 } sMouseData;
 
 typedef struct {
-	ushort width;					/* x-resolution */
-	ushort height;					/* y-resolution */
+	gsize_t width;					/* x-resolution */
+	gsize_t height;					/* y-resolution */
 	uchar bitsPerPixel;				/* Bits per pixel                  */
 	uchar redMaskSize;				/* Size of direct color red mask   */
 	uchar redFieldPosition;			/* Bit posn of lsb of red mask     */

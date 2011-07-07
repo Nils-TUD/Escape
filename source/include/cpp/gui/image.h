@@ -21,7 +21,6 @@
 #define IMAGE_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/graphics.h>
 #include <exception>
 
@@ -45,10 +44,10 @@ namespace gui {
 		Image() {};
 		virtual ~Image() {};
 
-		virtual tSize getWidth() const = 0;
-		virtual tSize getHeight() const = 0;
+		virtual gsize_t getWidth() const = 0;
+		virtual gsize_t getHeight() const = 0;
 
-		virtual void paint(Graphics &g,tCoord x,tCoord y) = 0;
+		virtual void paint(Graphics &g,gpos_t x,gpos_t y) = 0;
 	};
 }
 

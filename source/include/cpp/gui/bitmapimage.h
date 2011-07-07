@@ -21,7 +21,6 @@
 #define BITMAP_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/image.h>
 #include <gui/graphics.h>
 #include <string>
@@ -104,13 +103,13 @@ namespace gui {
 			return *this;
 		};
 
-		inline tSize getWidth() const {
+		inline gsize_t getWidth() const {
 			return _infoHeader->width;
 		};
-		inline tSize getHeight() const {
+		inline gsize_t getHeight() const {
 			return _infoHeader->height;
 		};
-		void paint(Graphics &g,tCoord x,tCoord y);
+		void paint(Graphics &g,gpos_t x,gpos_t y);
 
 	private:
 		inline void clone(const BitmapImage &img) {

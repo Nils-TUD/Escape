@@ -21,7 +21,6 @@
 #define COMBOBOX_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/control.h>
 #include <gui/graphics.h>
 #include <gui/popupwindow.h>
@@ -48,7 +47,7 @@ namespace gui {
 			static const int PADDING = 4;
 
 		public:
-			ItemWindow(ComboBox *cb,tCoord x,tCoord y,tSize width,tSize height)
+			ItemWindow(ComboBox *cb,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 				: PopupWindow(x,y,width,height), _cb(cb), _highlighted(cb->_selected) {
 			};
 			virtual ~ItemWindow() {
@@ -56,7 +55,7 @@ namespace gui {
 
 			void onMouseMoved(const MouseEvent &e);
 			void onMouseReleased(const MouseEvent &e);
-			void close(tCoord x,tCoord y);
+			void close(gpos_t x,gpos_t y);
 			void paint(Graphics &g);
 
 		private:
@@ -65,7 +64,7 @@ namespace gui {
 			ItemWindow &operator=(const ItemWindow &w);
 
 			void closeImpl();
-			int getItemAt(tCoord x,tCoord y);
+			int getItemAt(gpos_t x,gpos_t y);
 
 		private:
 			ComboBox *_cb;
@@ -73,7 +72,7 @@ namespace gui {
 		};
 
 	public:
-		ComboBox(tCoord x,tCoord y,tSize width,tSize height)
+		ComboBox(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _items(vector<string>()), _selected(-1),
 				_pressed(false), _win(NULL) {
 		};

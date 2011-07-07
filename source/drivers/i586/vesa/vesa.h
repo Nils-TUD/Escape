@@ -22,10 +22,8 @@
 
 #include <esc/common.h>
 
-typedef ushort tSize;
-typedef short tCoord;
 typedef uint32_t tColor;
 
-typedef void (*fSetPixel)(tCoord x,tCoord y,tColor color);
+typedef void (*fSetPixel)(gpos_t x,gpos_t y,tColor color);
 
 #endif /* VESA_H_ */

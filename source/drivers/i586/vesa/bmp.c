@@ -25,10 +25,10 @@
 #include "bmp.h"
 #include "vesa.h"
 
-void bmp_draw(sBitmap *bmp,tCoord x,tCoord y,fSetPixel func) {
+void bmp_draw(sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
 	uint8_t *data = (uint8_t*)bmp->data;
-	tSize w = bmp->infoHeader->width, h = bmp->infoHeader->height;
-	tCoord cx,cy;
+	gsize_t w = bmp->infoHeader->width, h = bmp->infoHeader->height;
+	gpos_t cx,cy;
 	/* we assume RGB 24bit here */
 	assert(bmp->infoHeader->compression == BI_RGB);
 	assert(bmp->infoHeader->bitCount == 24);

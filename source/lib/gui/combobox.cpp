@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/combobox.h>
 #include <gui/control.h>
 #include <gui/color.h>
@@ -34,14 +33,14 @@ namespace gui {
 	const Color ComboBox::ItemWindow::SEL_BGCOLOR = Color(0,0,0xFF);
 	const Color ComboBox::ItemWindow::SEL_FGCOLOR = Color(0xFF,0xFF,0xFF);
 
-	void ComboBox::ItemWindow::close(tCoord x,tCoord y) {
+	void ComboBox::ItemWindow::close(gpos_t x,gpos_t y) {
 		// just do this here if we will not receive a mouse-click for the combobox-button
 		// anyway
-		tCoord cbx = _cb->getX(), wx = _cb->getWindow().getX();
-		tCoord cby = _cb->getY(), wy = _cb->getWindow().getY();
-		tSize cbw = _cb->getWidth();
-		tSize cbh = _cb->getHeight();
-		tSize tbh = _cb->getWindow().getTitleBarHeight();
+		gpos_t cbx = _cb->getX(), wx = _cb->getWindow().getX();
+		gpos_t cby = _cb->getY(), wy = _cb->getWindow().getY();
+		gsize_t cbw = _cb->getWidth();
+		gsize_t cbh = _cb->getHeight();
+		gsize_t tbh = _cb->getWindow().getTitleBarHeight();
 		if(!(x >= wx + cbx + cbw - cbh && x < wx + cbx + cbw &&
 			y >= wy + cby + tbh && y < wy + cby + tbh + cbh)) {
 			closeImpl();
@@ -57,8 +56,8 @@ namespace gui {
 		g.drawRect(0,0,getWidth(),getHeight());
 
 		g.setColor(ITEM_FGCOLOR);
-		tSize itemHeight = g.getFont().getHeight();
-		tCoord y = 0;
+		gsize_t itemHeight = g.getFont().getHeight();
+		gpos_t y = 0;
 		for(vector<string>::iterator it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
 			if(_highlighted == (int)std::distance(_cb->_items.begin(),it)) {
 				g.setColor(SEL_BGCOLOR);
@@ -85,7 +84,7 @@ namespace gui {
 		closeImpl();
 	}
 
-	int ComboBox::ItemWindow::getItemAt(tCoord x,tCoord y) {
+	int ComboBox::ItemWindow::getItemAt(gpos_t x,gpos_t y) {
 		UNUSED(x);
 		return y / (getGraphics()->getFont().getHeight() + PADDING * 2);
 	}
@@ -110,14 +109,14 @@ namespace gui {
 	}
 
 	void ComboBox::paint(Graphics &g) {
-		tSize btnWidth = getHeight();
+		gsize_t btnWidth = getHeight();
 		// paint item
 		g.setColor(ITEM_BGCOLOR);
 		g.fillRect(1,1,getWidth() - btnWidth - 2,getHeight() - 2);
 		g.setColor(ITEM_FGCOLOR);
 		g.drawRect(0,0,getWidth() - btnWidth,getHeight());
 		if(_selected >= 0) {
-			tCoord ystart = (getHeight() - g.getFont().getHeight()) / 2;
+			gpos_t ystart = (getHeight() - g.getFont().getHeight()) / 2;
 			g.drawString(2,ystart,_items[_selected]);
 		}
 

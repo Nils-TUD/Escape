@@ -24,7 +24,6 @@
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/mem.h>
-#include <gui/common.h>
 #include <gui/application.h>
 #include <gui/font.h>
 #include <gui/color.h>
@@ -53,7 +52,7 @@ namespace gui {
 		 * @param x the x-coordinate of the control
 		 * @param y the y-coordinate of the control
 		 */
-		Graphics(Graphics &g,tCoord x,tCoord y);
+		Graphics(Graphics &g,gpos_t x,gpos_t y);
 
 		/**
 		 * Constructor for windows
@@ -64,7 +63,7 @@ namespace gui {
 		 * @param height height of the window
 		 * @param bpp the used color-depth
 		 */
-		Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
+		Graphics(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp);
 
 		/**
 		 * Destructor
@@ -81,7 +80,7 @@ namespace gui {
 		/**
 		 * @return the color-depth
 		 */
-		inline tColDepth getColorDepth() const {
+		inline gcoldepth_t getColorDepth() const {
 			return _bpp;
 		};
 
@@ -108,7 +107,7 @@ namespace gui {
 		 * @param x the x-coordinate
 		 * @param y the y-coordinate
 		 */
-		inline void setPixel(tCoord x,tCoord y) {
+		inline void setPixel(gpos_t x,gpos_t y) {
 			x %= _width;
 			y %= _height;
 			updateMinMax(x,y);
@@ -123,7 +122,7 @@ namespace gui {
 		 * @param height the number of lines to move
 		 * @param up amount to move up / down
 		 */
-		virtual void moveLines(tCoord y,tSize height,int up);
+		virtual void moveLines(gpos_t y,gsize_t height,int up);
 
 		/**
 		 * Draws the given character at given position
@@ -132,7 +131,7 @@ namespace gui {
 		 * @param y the y-coordinate
 		 * @param c the character
 		 */
-		virtual void drawChar(tCoord x,tCoord y,char c);
+		virtual void drawChar(gpos_t x,gpos_t y,char c);
 
 		/**
 		 * Draws the given string at the given position. Note that the position is the top
@@ -142,7 +141,7 @@ namespace gui {
 		 * @param y the y-coordinate
 		 * @param str the string
 		 */
-		virtual void drawString(tCoord x,tCoord y,const string &str);
+		virtual void drawString(gpos_t x,gpos_t y,const string &str);
 
 		/**
 		 * Draws the given part of the given string at the given position. Note that the
@@ -154,7 +153,7 @@ namespace gui {
 		 * @param start the start-position in the string
 		 * @param count the number of characters
 		 */
-		virtual void drawString(tCoord x,tCoord y,const string &str,size_t start,size_t count);
+		virtual void drawString(gpos_t x,gpos_t y,const string &str,size_t start,size_t count);
 
 		/**
 		 * Draws a line from (x0,y0) to (xn,yn)
@@ -164,7 +163,7 @@ namespace gui {
 		 * @param xn last x-coordinate
 		 * @param yn last y-coordinate
 		 */
-		virtual void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
+		virtual void drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn);
 
 		/**
 		 * Draws a vertical line (optimized compared to drawLine)
@@ -173,7 +172,7 @@ namespace gui {
 		 * @param y1 the first y-coordinate
 		 * @param y2 the second y-coordinate
 		 */
-		virtual void drawVertLine(tCoord x,tCoord y1,tCoord y2);
+		virtual void drawVertLine(gpos_t x,gpos_t y1,gpos_t y2);
 
 		/**
 		 * Draws a horizontal line (optimized compared to drawLine)
@@ -182,7 +181,7 @@ namespace gui {
 		 * @param x1 the first x-coordinate
 		 * @param x2 the second x-coordinate
 		 */
-		virtual void drawHorLine(tCoord y,tCoord x1,tCoord x2);
+		virtual void drawHorLine(gpos_t y,gpos_t x1,gpos_t x2);
 
 		/**
 		 * Draws a rectangle
@@ -192,7 +191,7 @@ namespace gui {
 		 * @param width the width
 		 * @param height the height
 		 */
-		virtual void drawRect(tCoord x,tCoord y,tSize width,tSize height);
+		virtual void drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 
 		/**
@@ -203,7 +202,7 @@ namespace gui {
 		 * @param width the width
 		 * @param height the height
 		 */
-		virtual void fillRect(tCoord x,tCoord y,tSize width,tSize height);
+		virtual void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 	private:
 		// prevent the compiler from generating copy-constructor and assignment-operator
@@ -215,11 +214,11 @@ namespace gui {
 		/**
 		 * Sets a pixel (without check)
 		 */
-		virtual void doSetPixel(tCoord x,tCoord y) = 0;
+		virtual void doSetPixel(gpos_t x,gpos_t y) = 0;
 		/**
 		 * Adds the given position to the dirty region
 		 */
-		inline void updateMinMax(tCoord x,tCoord y) {
+		inline void updateMinMax(gpos_t x,gpos_t y) {
 			if(x > _maxx)
 				_maxx = x;
 			if(x < _minx)
@@ -232,31 +231,31 @@ namespace gui {
 		/**
 		 * Sets the coordinates for this control / window
 		 */
-		void moveTo(tCoord x,tCoord y);
+		void moveTo(gpos_t x,gpos_t y);
 		/**
 		 * Sets the dimensions for this control / window
 		 */
-		void resizeTo(tSize width,tSize height);
+		void resizeTo(gsize_t width,gsize_t height);
 		/**
 		 * Requests an update for the dirty region
 		 */
-		void requestUpdate(tWinId winid);
+		void requestUpdate(gwinid_t winid);
 		/**
 		 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
 		 */
-		void update(tCoord x,tCoord y,tSize width,tSize height);
+		void update(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 		/**
 		 * Notifies vesa that the given region has changed
 		 */
-		void notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
+		void notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 		/**
 		 * Validates the given position
 		 */
-		void validatePos(tCoord &x,tCoord &y);
+		void validatePos(gpos_t &x,gpos_t &y);
 		/**
 		 * Validates the given parameters
 		 */
-		void validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height);
+		void validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height);
 
 	private:
 		/**
@@ -266,19 +265,19 @@ namespace gui {
 
 	protected:
 		// for controls: the offset of the control in the window (otherwise 0)
-		tCoord _offx,_offy;
+		gpos_t _offx,_offy;
 		// the position of the window on the screen
-		tCoord _x,_y;
+		gpos_t _x,_y;
 		// size of the window
-		tSize _width;
-		tSize _height;
+		gsize_t _width;
+		gsize_t _height;
 		// used color-depth
-		tColDepth _bpp;
+		gcoldepth_t _bpp;
 		// current color
 		Color::color_type _col;
 		Color _colInst;
 		// dirty region
-		tCoord _minx,_miny,_maxx,_maxy;
+		gpos_t _minx,_miny,_maxx,_maxy;
 		// buffer for this window; controls use this, too (don't have their own)
 		uint8_t *_pixels;
 		// current font

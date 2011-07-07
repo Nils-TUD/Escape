@@ -21,13 +21,12 @@
 #define FONT_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <string>
 
 namespace gui {
 	class Font {
-		static const tSize charWidth = 8;
-		static const tSize charHeight = 16;
+		static const gsize_t charWidth = 8;
+		static const gsize_t charHeight = 16;
 
 	public:
 		Font() {
@@ -43,16 +42,16 @@ namespace gui {
 			return *this;
 		};
 
-		inline tSize getWidth() {
+		inline gsize_t getWidth() {
 			return charWidth;
 		};
-		inline tSize getHeight() {
+		inline gsize_t getHeight() {
 			return charHeight;
 		};
-		inline tSize getStringWidth(const std::string& str) {
+		inline gsize_t getStringWidth(const std::string& str) {
 			return str.length() * charWidth;
 		};
-		inline bool isPixelSet(char c,tCoord x,tCoord y) {
+		inline bool isPixelSet(char c,gpos_t x,gpos_t y) {
 			return _font[(uchar)c * charHeight + y] & (1 << (charWidth - x - 1));
 		};
 

@@ -21,7 +21,6 @@
 #define EDITABLE_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/control.h>
 #include <string>
 
@@ -44,7 +43,7 @@ namespace gui {
 		static const Color CURSOR_COLOR;
 
 	public:
-		Editable(tCoord x,tCoord y,tSize width,tSize height)
+		Editable(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(string()) {
 		};
@@ -74,7 +73,7 @@ namespace gui {
 		virtual void onKeyPressed(const KeyEvent &e);
 
 	private:
-		int getPosAt(tCoord x);
+		int getPosAt(gpos_t x);
 		void moveCursor(int amount);
 		bool moveCursorTo(size_t pos);
 		void clearSelection();

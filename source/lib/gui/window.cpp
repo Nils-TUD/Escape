@@ -36,9 +36,9 @@ namespace gui {
 	Color Window::TITLE_FGCOLOR = Color(0xFF,0xFF,0xFF);
 	Color Window::BORDER_COLOR = Color(0x77,0x77,0x77);
 
-	tWinId Window::NEXT_TMP_ID = 0xFFFF;
+	gwinid_t Window::NEXT_TMP_ID = 0xFFFF;
 
-	Window::Window(const string &title,tCoord x,tCoord y,tSize width,tSize height,uchar style)
+	Window::Window(const string &title,gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style)
 		: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_title(title), _titleBarHeight(20), _inTitle(false), _inResizeLeft(false),
@@ -236,8 +236,8 @@ namespace gui {
 			return;
 		}
 
-		tCoord x = e.getX();
-		tCoord y = e.getY();
+		gpos_t x = e.getX();
+		gpos_t y = e.getY();
 		y -= _titleBarHeight;
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 			Control *c = *it;
@@ -269,7 +269,7 @@ namespace gui {
 		resizeTo(_resizeWidth + width,_resizeHeight + height);
 	}
 
-	void Window::resizeTo(tSize width,tSize height) {
+	void Window::resizeTo(gsize_t width,gsize_t height) {
 		resizeMoveTo(_moveX,width,height);
 	}
 
@@ -278,13 +278,13 @@ namespace gui {
 			resizeMoveTo(_moveX + x,_resizeWidth + width,_resizeHeight + height);
 	}
 
-	void Window::resizeMoveTo(tCoord x,tSize width,tSize height) {
+	void Window::resizeMoveTo(gpos_t x,gsize_t width,gsize_t height) {
 		// no resize until we're created
 		if(!_created)
 			return;
 
-		tSize screenWidth = Application::getInstance()->getScreenWidth();
-		tSize screenHeight = Application::getInstance()->getScreenHeight();
+		gsize_t screenWidth = Application::getInstance()->getScreenWidth();
+		gsize_t screenHeight = Application::getInstance()->getScreenHeight();
 		width = MIN(screenWidth,width);
 		height = MIN(screenHeight,height);
 		if(_moveX != x || width != _resizeWidth || height != _resizeHeight) {
@@ -296,14 +296,14 @@ namespace gui {
 	}
 
 	void Window::move(short x,short y) {
-		tSize screenWidth = Application::getInstance()->getScreenWidth();
-		tSize screenHeight = Application::getInstance()->getScreenHeight();
+		gsize_t screenWidth = Application::getInstance()->getScreenWidth();
+		gsize_t screenHeight = Application::getInstance()->getScreenHeight();
 		x = MIN(screenWidth - 1,_moveX + x);
 		y = MAX(0,MIN(screenHeight - 1,_moveY + y));
 		moveTo(x,y);
 	}
 
-	void Window::moveTo(tCoord x,tCoord y) {
+	void Window::moveTo(gpos_t x,gpos_t y) {
 		// no move until we're created
 		if(!_created)
 			return;
@@ -331,9 +331,9 @@ namespace gui {
 
 		// draw cross
 		g.setColor(BORDER_COLOR);
-		const tSize boxPad = 2;
-		const tSize crossPad = 2;
-		tSize cboxSize = _titleBarHeight - boxPad * 2;
+		const gsize_t boxPad = 2;
+		const gsize_t crossPad = 2;
+		gsize_t cboxSize = _titleBarHeight - boxPad * 2;
 		g.drawRect(getWidth() - cboxSize - boxPad,boxPad,cboxSize,cboxSize);
 		g.drawLine(getWidth() - cboxSize - boxPad + crossPad,boxPad + crossPad,
 				getWidth() - boxPad - crossPad,_titleBarHeight - boxPad - crossPad);
@@ -367,7 +367,7 @@ namespace gui {
 			(*it)->repaint();
 	}
 
-	void Window::update(tCoord x,tCoord y,tSize width,tSize height) {
+	void Window::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		if(_g)
 			_g->update(x,y,width,height);
 	}
@@ -385,7 +385,7 @@ namespace gui {
 		}
 	}
 
-	void Window::onCreated(tWinId id) {
+	void Window::onCreated(gwinid_t id) {
 		_id = id;
 		_created = true;
 		repaint();

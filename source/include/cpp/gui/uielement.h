@@ -22,7 +22,6 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
-#include <gui/common.h>
 #include <gui/graphics.h>
 #include <gui/event.h>
 #include <gui/mouselistener.h>
@@ -36,7 +35,7 @@ namespace gui {
 		friend class Control;
 
 	public:
-		UIElement(tCoord x,tCoord y,tSize width,tSize height)
+		UIElement(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: _g(NULL), _x(x), _y(y), _width(width), _height(height), _mlist(NULL),
 			_klist(NULL) {
 		};
@@ -51,16 +50,16 @@ namespace gui {
 		};
 		UIElement &operator=(const UIElement &e);
 
-		inline tCoord getX() const {
+		inline gpos_t getX() const {
 			return _x;
 		};
-		inline tCoord getY() const {
+		inline gpos_t getY() const {
 			return _y;
 		};
-		inline tSize getWidth() const {
+		inline gsize_t getWidth() const {
 			return _width;
 		};
-		inline tSize getHeight() const {
+		inline gsize_t getHeight() const {
 			return _height;
 		};
 
@@ -85,19 +84,19 @@ namespace gui {
 		void requestUpdate();
 
 	protected:
-		inline void setX(tCoord x) {
+		inline void setX(gpos_t x) {
 			_x = x;
 		};
-		inline void setY(tCoord y) {
+		inline void setY(gpos_t y) {
 			_y = y;
 		};
-		inline void setWidth(tSize width) {
+		inline void setWidth(gsize_t width) {
 			_width = width;
 		};
-		inline void setHeight(tSize height) {
+		inline void setHeight(gsize_t height) {
 			_height = height;
 		};
-		virtual tWinId getWindowId() const = 0;
+		virtual gwinid_t getWindowId() const = 0;
 
 	private:
 		void notifyListener(const MouseEvent &e);
@@ -105,10 +104,10 @@ namespace gui {
 
 	private:
 		Graphics *_g;
-		tCoord _x;
-		tCoord _y;
-		tSize _width;
-		tSize _height;
+		gpos_t _x;
+		gpos_t _y;
+		gsize_t _width;
+		gsize_t _height;
 		vector<MouseListener*> *_mlist;
 		vector<KeyListener*> *_klist;
 	};

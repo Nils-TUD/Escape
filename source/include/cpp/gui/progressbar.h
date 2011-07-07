@@ -21,7 +21,6 @@
 #define PROGRESSBAR_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/control.h>
 #include <gui/color.h>
 #include <string>
@@ -35,10 +34,10 @@ namespace gui {
 		static Color BORDER_COLOR;
 
 	public:
-		ProgressBar(tCoord x,tCoord y,tSize width,tSize height)
+		ProgressBar(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _position(0), _text("") {
 		};
-		ProgressBar(const std::string &text,tCoord x,tCoord y,tSize width,tSize height)
+		ProgressBar(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _position(0), _text(text) {
 		};
 		ProgressBar(const ProgressBar &b)

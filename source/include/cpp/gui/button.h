@@ -21,7 +21,6 @@
 #define BUTTON_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/control.h>
 #include <gui/color.h>
 #include <string>
@@ -35,10 +34,10 @@ namespace gui {
 		static Color DARK_BORDER_COLOR;
 
 	public:
-		Button(tCoord x,tCoord y,tSize width,tSize height)
+		Button(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _pressed(false), _text(string()) {
 		};
-		Button(const string &text,tCoord x,tCoord y,tSize width,tSize height)
+		Button(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
 		};
 		Button(const Button &b)

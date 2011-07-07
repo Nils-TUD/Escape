@@ -22,7 +22,6 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
-#include <gui/common.h>
 #include <vector>
 
 namespace gui {
@@ -48,10 +47,10 @@ namespace gui {
 		inline const sVESAInfo *getVesaInfo() const {
 			return &_vesaInfo;
 		};
-		inline tSize getScreenWidth() const {
+		inline gsize_t getScreenWidth() const {
 			return _vesaInfo.width;
 		};
-		inline tSize getScreenHeight() const {
+		inline gsize_t getScreenHeight() const {
 			return _vesaInfo.height;
 		};
 		inline uchar getColorDepth() const {
@@ -78,12 +77,12 @@ namespace gui {
 		inline void *getVesaMem() const {
 			return _vesaMem;
 		};
-		void passToWindow(tWinId win,tCoord x,tCoord y,short movedX,short movedY,uchar buttons);
-		void closePopups(tWinId id,tCoord x,tCoord y);
-		void requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height);
+		void passToWindow(gwinid_t win,gpos_t x,gpos_t y,short movedX,short movedY,uchar buttons);
+		void closePopups(gwinid_t id,gpos_t x,gpos_t y);
+		void requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 		void addWindow(Window *win);
 		void removeWindow(Window *win);
-		Window *getWindowById(tWinId id);
+		Window *getWindowById(gwinid_t id);
 		void moveWindow(Window *win,bool finish);
 		void resizeWindow(Window *win,bool finish);
 

@@ -56,34 +56,34 @@
 static void vesa_doUpdate(void);
 static int vesa_setMode(void);
 static int vesa_init(void);
-static void vesa_update(tCoord x,tCoord y,tSize width,tSize height);
+static void vesa_update(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 static void vesa_handlePreviewIntersec(sRectangle *curRec,sRectangle *intersec,size_t i,
-		tSize xres,tSize yres);
-static void vesa_setPixel16(tCoord x,tCoord y,tColor col);
-static void vesa_setPixel24(tCoord x,tCoord y,tColor col);
-static void vesa_setPixel32(tCoord x,tCoord y,tColor col);
-static void vesa_setPreview(sRectangle *rect,tSize thickness);
-static void vesa_setCursor(tCoord x,tCoord y);
-static void vesa_clearRegion(tCoord x,tCoord y,tSize w,tSize h);
-static void vesa_copyRegion(uint8_t *src,uint8_t *dst,tSize width,tSize height,tCoord x1,tCoord y1,
-		tCoord x2,tCoord y2,tSize w1,tSize w2,tSize h1);
+		gsize_t xres,gsize_t yres);
+static void vesa_setPixel16(gpos_t x,gpos_t y,tColor col);
+static void vesa_setPixel24(gpos_t x,gpos_t y,tColor col);
+static void vesa_setPixel32(gpos_t x,gpos_t y,tColor col);
+static void vesa_setPreview(sRectangle *rect,gsize_t thickness);
+static void vesa_setCursor(gpos_t x,gpos_t y);
+static void vesa_clearRegion(gpos_t x,gpos_t y,gsize_t w,gsize_t h);
+static void vesa_copyRegion(uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,gpos_t x1,gpos_t y1,
+		gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1);
 
 static sSLList *dirtyRects;
-static tCoord newCurX,newCurY;
+static gpos_t newCurX,newCurY;
 static bool updCursor = false;
 static bool setPreview;
 static sRectangle newPreview;
-static tSize newThickness;
+static gsize_t newThickness;
 
 static sVbeModeInfo *minfo = NULL;
 static void *video;
 static void *shmem;
 static uint8_t *cursorCopy;
 static sRectangle previewRect;
-static tSize previewThickness;
+static gsize_t previewThickness;
 static uint8_t *previewRectCopies[4];
-static tCoord lastX = 0;
-static tCoord lastY = 0;
+static gpos_t lastX = 0;
+static gpos_t lastY = 0;
 static sMsg msg;
 static uint8_t curCursor = CURSOR_DEFAULT;
 static sBitmap *cursor[6];
@@ -142,10 +142,10 @@ int main(void) {
 			reqc++;
 			switch(mid) {
 				case MSG_VESA_UPDATE: {
-					tCoord x = (tCoord)msg.args.arg1;
-					tCoord y = (tCoord)msg.args.arg2;
-					tSize width = (tSize)msg.args.arg3;
-					tSize height = (tSize)msg.args.arg4;
+					gpos_t x = (gpos_t)msg.args.arg1;
+					gpos_t y = (gpos_t)msg.args.arg2;
+					gsize_t width = (gsize_t)msg.args.arg3;
+					gsize_t height = (gsize_t)msg.args.arg4;
 					if(enabled &&
 							x >= 0 && y >= 0 && x < minfo->xResolution && y < minfo->yResolution &&
 							x + width <= minfo->xResolution && y + height <= minfo->yResolution &&
@@ -183,11 +183,11 @@ int main(void) {
 				case MSG_VESA_PREVIEWRECT: {
 					if(enabled) {
 						setPreview = true;
-						newPreview.x = (tCoord)msg.args.arg1;
-						newPreview.y = (tCoord)msg.args.arg2;
-						newPreview.width = (tSize)msg.args.arg3;
-						newPreview.height = (tSize)msg.args.arg4;
-						newThickness = (tSize)msg.args.arg5;
+						newPreview.x = (gpos_t)msg.args.arg1;
+						newPreview.y = (gpos_t)msg.args.arg2;
+						newPreview.width = (gsize_t)msg.args.arg3;
+						newPreview.height = (gsize_t)msg.args.arg4;
+						newThickness = (gsize_t)msg.args.arg5;
 					}
 				}
 				break;
@@ -199,8 +199,8 @@ int main(void) {
 				break;
 
 				case MSG_VESA_CURSOR: {
-					newCurX = (tCoord)msg.args.arg1;
-					newCurY = (tCoord)msg.args.arg2;
+					newCurX = (gpos_t)msg.args.arg1;
+					newCurY = (gpos_t)msg.args.arg2;
 					curCursor = ((uint8_t)msg.args.arg3) % 6;
 					updCursor = true;
 				}
@@ -291,8 +291,8 @@ static int vesa_setMode(void) {
 }
 
 static int vesa_init(void) {
-	tSize curWidth = cursor[curCursor]->infoHeader->width;
-	tSize curHeight = cursor[curCursor]->infoHeader->height;
+	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
+	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
 	shmem = createSharedMem("vesa",minfo->xResolution *
 			minfo->yResolution * (minfo->bitsPerPixel / 8));
 	if(shmem == NULL)
@@ -307,14 +307,14 @@ static int vesa_init(void) {
 	return 0;
 }
 
-static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
+static void vesa_update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sRectangle upRec,curRec,intersec;
-	tCoord y1,y2;
-	tSize xres = minfo->xResolution;
-	tSize yres = minfo->yResolution;
-	tSize pxSize = minfo->bitsPerPixel / 8;
-	tSize curWidth = cursor[curCursor]->infoHeader->width;
-	tSize curHeight = cursor[curCursor]->infoHeader->height;
+	gpos_t y1,y2;
+	gsize_t xres = minfo->xResolution;
+	gsize_t yres = minfo->yResolution;
+	gsize_t pxSize = minfo->bitsPerPixel / 8;
+	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
+	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
 	size_t count;
 	uint8_t *src,*dst;
 	y1 = y;
@@ -375,15 +375,15 @@ static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
 }
 
 static void vesa_handlePreviewIntersec(sRectangle *curRec,sRectangle *intersec,size_t i,
-		tSize xres,tSize yres) {
+		gsize_t xres,gsize_t yres) {
 	vesa_copyRegion(shmem,previewRectCopies[i],intersec->width,intersec->height,
 		intersec->x,intersec->y,intersec->x - curRec->x,intersec->y - curRec->y,
 		xres,curRec->width,yres);
 	vesa_clearRegion(curRec->x,curRec->y,curRec->width,curRec->height);
 }
 
-static void vesa_setPixel16(tCoord x,tCoord y,tColor col) {
-	tSize xres = minfo->xResolution;
+static void vesa_setPixel16(gpos_t x,gpos_t y,tColor col) {
+	gsize_t xres = minfo->xResolution;
 	if(x >= xres || y >= minfo->yResolution)
 		return;
 	uint16_t *data = (uint16_t*)((uintptr_t)video + (y * xres + x) * 2);
@@ -396,8 +396,8 @@ static void vesa_setPixel16(tCoord x,tCoord y,tColor col) {
 	*data = val;
 }
 
-static void vesa_setPixel24(tCoord x,tCoord y,tColor col) {
-	tSize xres = minfo->xResolution;
+static void vesa_setPixel24(gpos_t x,gpos_t y,tColor col) {
+	gsize_t xres = minfo->xResolution;
 	if(x >= xres || y >= minfo->yResolution)
 		return;
 	uint8_t *data = (uint8_t*)video + (y * xres + x) * 3;
@@ -412,8 +412,8 @@ static void vesa_setPixel24(tCoord x,tCoord y,tColor col) {
 	data[0] = val & 0xFF;
 }
 
-static void vesa_setPixel32(tCoord x,tCoord y,tColor col) {
-	tSize xres = minfo->xResolution;
+static void vesa_setPixel32(gpos_t x,gpos_t y,tColor col) {
+	gsize_t xres = minfo->xResolution;
 	if(x >= xres || y >= minfo->yResolution)
 		return;
 	uint8_t *data = (uint8_t*)video + (y * xres + x) * 4;
@@ -426,10 +426,10 @@ static void vesa_setPixel32(tCoord x,tCoord y,tColor col) {
 	*((uint32_t*)data) = val;
 }
 
-static void vesa_setPreview(sRectangle *rect,tSize thickness) {
-	tSize xres = minfo->xResolution;
-	tSize yres = minfo->yResolution;
-	tSize pxSize = minfo->bitsPerPixel / 8;
+static void vesa_setPreview(sRectangle *rect,gsize_t thickness) {
+	gsize_t xres = minfo->xResolution;
+	gsize_t yres = minfo->yResolution;
+	gsize_t pxSize = minfo->bitsPerPixel / 8;
 
 	if(previewRectCopies[0]) {
 		/* copy old content back */
@@ -475,7 +475,7 @@ static void vesa_setPreview(sRectangle *rect,tSize thickness) {
 		}
 
 		if(rect->x < 0) {
-			rect->width += rect->x;
+			rect->width = MAX(0,rect->width + rect->x);
 			rect->x = 0;
 		}
 		if(rect->x > xres)
@@ -519,17 +519,17 @@ static void vesa_setPreview(sRectangle *rect,tSize thickness) {
 	previewThickness = thickness;
 }
 
-static void vesa_setCursor(tCoord x,tCoord y) {
-	tSize curWidth = cursor[curCursor]->infoHeader->width;
-	tSize curHeight = cursor[curCursor]->infoHeader->height;
-	tSize xres = minfo->xResolution;
-	tSize yres = minfo->yResolution;
+static void vesa_setCursor(gpos_t x,gpos_t y) {
+	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
+	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
+	gsize_t xres = minfo->xResolution;
+	gsize_t yres = minfo->yResolution;
 	/* validate position */
 	x = MIN(x,xres - 1);
 	y = MIN(y,yres - 1);
 
 	if(lastX != x || lastY != y) {
-		tSize upHeight = MIN(curHeight,yres - lastY);
+		gsize_t upHeight = MIN(curHeight,yres - lastY);
 		/* copy old content back */
 		vesa_copyRegion(cursorCopy,video,curWidth,upHeight,0,0,lastX,lastY,curWidth,xres,curHeight);
 		/* save content */
@@ -541,11 +541,11 @@ static void vesa_setCursor(tCoord x,tCoord y) {
 	lastY = y;
 }
 
-static void vesa_clearRegion(tCoord x,tCoord y,tSize w,tSize h) {
-	tSize xres = minfo->xResolution;
-	tSize yres = minfo->yResolution;
-	tCoord maxy = MIN(yres,y + h);
-	tSize pxSize = minfo->bitsPerPixel / 8;
+static void vesa_clearRegion(gpos_t x,gpos_t y,gsize_t w,gsize_t h) {
+	gsize_t xres = minfo->xResolution;
+	gsize_t yres = minfo->yResolution;
+	gpos_t maxy = MIN(yres,y + h);
+	gsize_t pxSize = minfo->bitsPerPixel / 8;
 	size_t count = MIN(xres - x,w) * pxSize;
 	size_t dstInc = xres * pxSize;
 	uint8_t *dst = (uint8_t*)video + (y * xres + x) * pxSize;
@@ -556,10 +556,10 @@ static void vesa_clearRegion(tCoord x,tCoord y,tSize w,tSize h) {
 	}
 }
 
-static void vesa_copyRegion(uint8_t *src,uint8_t *dst,tSize width,tSize height,tCoord x1,tCoord y1,
-		tCoord x2,tCoord y2,tSize w1,tSize w2,tSize h1) {
-	tCoord maxy = MIN(h1,y1 + height);
-	tSize pxSize = minfo->bitsPerPixel / 8;
+static void vesa_copyRegion(uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,gpos_t x1,gpos_t y1,
+		gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1) {
+	gpos_t maxy = MIN(h1,y1 + height);
+	gsize_t pxSize = minfo->bitsPerPixel / 8;
 	size_t count = MIN(w2 - x2,MIN(w1 - x1,width)) * pxSize;
 	size_t srcInc = w1 * pxSize;
 	size_t dstInc = w2 * pxSize;

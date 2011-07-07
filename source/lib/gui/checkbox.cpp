@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/checkbox.h>
 #include <gui/control.h>
 
@@ -67,8 +66,8 @@ namespace gui {
 	}
 
 	void Checkbox::paint(Graphics &g) {
-		tSize cheight = g.getFont().getHeight();
-		tSize boxSize = getHeight();
+		gsize_t cheight = g.getFont().getHeight();
+		gsize_t boxSize = getHeight();
 
 		g.setColor(BGCOLOR);
 		g.fillRect(0,0,getWidth(),getHeight());

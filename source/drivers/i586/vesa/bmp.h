@@ -90,7 +90,7 @@ typedef struct {
  * @param y the y-coordinate
  * @param func the function to set a pixel
  */
-void bmp_draw(sBitmap *bmp,tCoord x,tCoord y,fSetPixel func);
+void bmp_draw(sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func);
 
 /**
  * Loads a bitmap from given file

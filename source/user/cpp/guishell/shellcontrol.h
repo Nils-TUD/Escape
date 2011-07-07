@@ -21,7 +21,6 @@
 #define SHELLCONTROL_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/control.h>
 #include <esc/arch/i586/ports.h>
 #include <esc/debug.h>
@@ -54,7 +53,7 @@ private:
 	static const Color CURSOR_COLOR;
 
 public:
-	ShellControl(int sid,tCoord x,tCoord y,tSize width,tSize height) :
+	ShellControl(int sid,gpos_t x,gpos_t y,gsize_t width,gsize_t height) :
 		Control(x,y,width,height), _lastCol(0), _lastRow(0), _vt(NULL) {
 		int speakerFd;
 		sVTSize size;
@@ -114,7 +113,7 @@ public:
 private:
 	void clearRows(Graphics &g,size_t start,size_t count);
 	void paintRows(Graphics &g,size_t start,size_t count);
-	void paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,tCoord y);
+	void paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,gpos_t y);
 	void update();
 	bool setCursor();
 	inline size_t getLineCount() const {

@@ -21,7 +21,6 @@
 #define EVENT_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <esc/keycodes.h>
 #include <ctype.h>
 #include <ostream>
@@ -40,7 +39,7 @@ namespace gui {
 		static const uchar BUTTON3_MASK	= 0x4;
 
 	public:
-		MouseEvent(uchar type,short movedx,short movedy,tCoord x,tCoord y,uchar buttons)
+		MouseEvent(uchar type,short movedx,short movedy,gpos_t x,gpos_t y,uchar buttons)
 			: _type(type), _movedx(movedx), _movedy(movedy), _x(x), _y(y), _buttons(buttons) {
 		};
 		MouseEvent(const MouseEvent &e)
@@ -64,10 +63,10 @@ namespace gui {
 		inline uchar getType() const {
 			return _type;
 		};
-		inline tCoord getX() const {
+		inline gpos_t getX() const {
 			return _x;
 		};
-		inline tCoord getY() const {
+		inline gpos_t getY() const {
 			return _y;
 		};
 		inline short getXMovement() const {
@@ -90,8 +89,8 @@ namespace gui {
 		uchar _type;
 		short _movedx;
 		short _movedy;
-		tCoord _x;
-		tCoord _y;
+		gpos_t _x;
+		gpos_t _y;
 		uchar _buttons;
 	};
 

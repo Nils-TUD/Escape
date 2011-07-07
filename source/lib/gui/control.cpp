@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/control.h>
 #include <gui/window.h>
 #include <gui/graphicfactory.h>
@@ -41,7 +40,7 @@ namespace gui {
 		_g = GraphicFactory::get(*_w->getGraphics(),getX(),getY() + _w->getTitleBarHeight());
 	}
 
-	tWinId Control::getWindowId() const {
+	gwinid_t Control::getWindowId() const {
 		if(_w == NULL)
 			throw std::logic_error("No window yet");
 		return _w->getId();

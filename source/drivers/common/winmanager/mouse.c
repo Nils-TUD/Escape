@@ -18,8 +18,8 @@ static void handleMouseMessage(int drvId,sMouseData *mdata);
 
 static sMsg msg;
 static uchar buttons = 0;
-static tCoord curX = 0;
-static tCoord curY = 0;
+static gpos_t curX = 0;
+static gpos_t curY = 0;
 static uchar cursor = CURSOR_DEFAULT;
 static sMouseData mouseData[MOUSE_DATA_BUF_SIZE];
 static sWindow *mouseWin = NULL;
@@ -50,16 +50,16 @@ int mouse_start(void *drvIdPtr) {
 	return 0;
 }
 
-tCoord mouse_getX(void) {
+gpos_t mouse_getX(void) {
 	return curX;
 }
 
-tCoord mouse_getY(void) {
+gpos_t mouse_getY(void) {
 	return curY;
 }
 
 static void handleMouseMessage(int drvId,sMouseData *mdata) {
-	tCoord oldx = curX,oldy = curY;
+	gpos_t oldx = curX,oldy = curY;
 	bool btnChanged = false;
 	sWindow *w;
 	curX = MAX(0,MIN(win_getScreenWidth() - 1,curX + mdata->x));

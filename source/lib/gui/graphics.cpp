@@ -29,14 +29,14 @@
 #include <string.h>
 
 namespace gui {
-	Graphics::Graphics(Graphics &g,tCoord x,tCoord y)
+	Graphics::Graphics(Graphics &g,gpos_t x,gpos_t y)
 		: _offx(x), _offy(y), _x(0), _y(0), _width(g._width), _height(g._height),
 			_bpp(g._bpp), _col(0), _colInst(Color(0)), _minx(0),_miny(0), _maxx(_width - 1),
 			_maxy(_height - 1), _pixels(NULL), _font(Font()), _owner(&g) {
 		_pixels = g._pixels;
 	}
 
-	Graphics::Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp)
+	Graphics::Graphics(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp)
 		: _offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp),
 			_col(0), _colInst(Color(0)), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),
 			_pixels(NULL), _font(Font()), _owner(NULL) {
@@ -70,12 +70,12 @@ namespace gui {
 		}
 	}
 
-	void Graphics::moveLines(tCoord y,tSize height,int up) {
-		tCoord x = 0;
-		tSize width = _width;
+	void Graphics::moveLines(gpos_t y,gsize_t height,int up) {
+		gpos_t x = 0;
+		gsize_t width = _width;
 		validateParams(x,y,width,height);
-		tCoord starty = _offy + y;
-		tSize psize = _bpp / 8;
+		gpos_t starty = _offy + y;
+		gsize_t psize = _bpp / 8;
 		if(up > 0) {
 			if(y < up)
 				up = y;
@@ -91,13 +91,13 @@ namespace gui {
 		updateMinMax(_width - 1,y + height - up - 1);
 	}
 
-	void Graphics::drawChar(tCoord x,tCoord y,char c) {
-		tSize width = _font.getWidth();
-		tSize height = _font.getHeight();
+	void Graphics::drawChar(gpos_t x,gpos_t y,char c) {
+		gsize_t width = _font.getWidth();
+		gsize_t height = _font.getHeight();
 		validateParams(x,y,width,height);
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,y + height - 1);
-		tCoord cx,cy;
+		gpos_t cx,cy;
 		for(cy = 0; cy < height; cy++) {
 			for(cx = 0; cx < width; cx++) {
 				if(_font.isPixelSet(c,cx,cy))
@@ -106,11 +106,11 @@ namespace gui {
 		}
 	}
 
-	void Graphics::drawString(tCoord x,tCoord y,const string &str) {
+	void Graphics::drawString(gpos_t x,gpos_t y,const string &str) {
 		drawString(x,y,str,0,str.length());
 	}
 
-	void Graphics::drawString(tCoord x,tCoord y,const string &str,size_t start,size_t count) {
+	void Graphics::drawString(gpos_t x,gpos_t y,const string &str,size_t start,size_t count) {
 		size_t charWidth = _font.getWidth();
 		size_t end = start + MIN(str.length(),count);
 		for(size_t i = start; i < end; i++) {
@@ -119,12 +119,12 @@ namespace gui {
 		}
 	}
 
-	void Graphics::drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn) {
+	void Graphics::drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn) {
 		int	dx,	dy,	d;
 		int incrE, incrNE;	/*Increments for move to E	& NE*/
-		tCoord x,y;			/*Start & current pixel*/
+		gpos_t x,y;			/*Start & current pixel*/
 		int incx, incy;
-		tCoord *px, *py;
+		gpos_t *px, *py;
 
 		// TODO later we should calculate with sin&cos the end-position in bounds so that
 		// the line will just be shorter and doesn't change the angle
@@ -179,7 +179,7 @@ namespace gui {
 		}
 	}
 
-	void Graphics::drawVertLine(tCoord x,tCoord y1,tCoord y2) {
+	void Graphics::drawVertLine(gpos_t x,gpos_t y1,gpos_t y2) {
 		validatePos(x,y1);
 		validatePos(x,y2);
 		updateMinMax(x,y1);
@@ -190,7 +190,7 @@ namespace gui {
 			doSetPixel(x,y1);
 	}
 
-	void Graphics::drawHorLine(tCoord y,tCoord x1,tCoord x2) {
+	void Graphics::drawHorLine(gpos_t y,gpos_t x1,gpos_t x2) {
 		validatePos(x1,y);
 		validatePos(x2,y);
 		updateMinMax(x1,y);
@@ -201,7 +201,7 @@ namespace gui {
 			doSetPixel(x1,y);
 	}
 
-	void Graphics::drawRect(tCoord x,tCoord y,tSize width,tSize height) {
+	void Graphics::drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		// top
 		drawHorLine(y,x,x + width - 1);
 		// right
@@ -212,20 +212,20 @@ namespace gui {
 		drawVertLine(x,y,y + height - 1);
 	}
 
-	void Graphics::fillRect(tCoord x,tCoord y,tSize width,tSize height) {
+	void Graphics::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		validateParams(x,y,width,height);
-		tCoord yend = y + height;
+		gpos_t yend = y + height;
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,yend - 1);
-		tCoord xcur;
-		tCoord xend = x + width;
+		gpos_t xcur;
+		gpos_t xend = x + width;
 		for(; y < yend; y++) {
 			for(xcur = x; xcur < xend; xcur++)
 				doSetPixel(xcur,y);
 		}
 	}
 
-	void Graphics::requestUpdate(tWinId winid) {
+	void Graphics::requestUpdate(gwinid_t winid) {
 		Window *w = Application::getInstance()->getWindowById(winid);
 		if(w->isCreated()) {
 			// if we are the active (=top) window, we can update directly
@@ -250,7 +250,7 @@ namespace gui {
 		_maxy = 0;
 	}
 
-	void Graphics::update(tCoord x,tCoord y,tSize width,tSize height) {
+	void Graphics::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		// only the owner notifies vesa
 		if(_owner != NULL) {
 			_owner->update(_owner->_x + x,_owner->_y + y,width,height);
@@ -260,8 +260,8 @@ namespace gui {
 		validateParams(x,y,width,height);
 		// is there anything to update?
 		if(width > 0 || height > 0) {
-			tSize screenWidth = Application::getInstance()->getScreenWidth();
-			tSize screenHeight = Application::getInstance()->getScreenHeight();
+			gsize_t screenWidth = Application::getInstance()->getScreenWidth();
+			gsize_t screenHeight = Application::getInstance()->getScreenHeight();
 			if(_x + x >= screenWidth || _y + y >= screenHeight)
 				return;
 			if(_x < 0 && _x + x < 0) {
@@ -272,7 +272,7 @@ namespace gui {
 			height = MIN(screenHeight - (y + _y),MIN(_height - y,height));
 			void *vesaMem = Application::getInstance()->getVesaMem();
 			uint8_t *src,*dst;
-			tCoord endy = y + height;
+			gpos_t endy = y + height;
 			size_t psize = _bpp / 8;
 			size_t count = width * psize;
 			size_t srcAdd = _width * psize;
@@ -290,7 +290,7 @@ namespace gui {
 		}
 	}
 
-	void Graphics::notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
+	void Graphics::notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		int vesaFd = Application::getInstance()->getVesaFd();
 		sMsg msg;
 		if(x < 0) {
@@ -305,14 +305,14 @@ namespace gui {
 			cerr << "Unable to send update-request to VESA" << endl;
 	}
 
-	void Graphics::moveTo(tCoord x,tCoord y) {
-		tSize screenWidth = Application::getInstance()->getScreenWidth();
-		tSize screenHeight = Application::getInstance()->getScreenHeight();
+	void Graphics::moveTo(gpos_t x,gpos_t y) {
+		gsize_t screenWidth = Application::getInstance()->getScreenWidth();
+		gsize_t screenHeight = Application::getInstance()->getScreenHeight();
 		_x = MIN(screenWidth - 1,x);
 		_y = MIN(screenHeight - 1,y);
 	}
 
-	void Graphics::resizeTo(tSize width,tSize height) {
+	void Graphics::resizeTo(gsize_t width,gsize_t height) {
 		if(_width != width || _height != height) {
 			_width = width;
 			_height = height;
@@ -325,14 +325,14 @@ namespace gui {
 		}
 	}
 
-	void Graphics::validatePos(tCoord &x,tCoord &y) {
+	void Graphics::validatePos(gpos_t &x,gpos_t &y) {
 		if(x >= _width - _offx)
 			x = _width - _offx - 1;
 		if(y >= _height - _offy)
 			y = _height - _offy - 1;
 	}
 
-	void Graphics::validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height) {
+	void Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height) {
 		if(_offx + x + width > _width)
 			width = MAX(0,(int)_width - x - _offx);
 		if(_offy + y + height > _height)

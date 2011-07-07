@@ -21,7 +21,6 @@
 #define SHELLAPP_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/application.h>
 #include <esc/ringbuffer.h>
 #include <esc/dir.h>

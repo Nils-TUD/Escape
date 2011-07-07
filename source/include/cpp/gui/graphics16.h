@@ -21,7 +21,6 @@
 #define GRAPHICS16_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/graphics.h>
 #include <gui/color.h>
 #include <gui/font.h>
@@ -32,14 +31,14 @@ namespace gui {
 	 */
 	class Graphics16 : public Graphics {
 	public:
-		Graphics16(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
-		Graphics16(Graphics &g,tCoord x,tCoord y);
+		Graphics16(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp);
+		Graphics16(Graphics &g,gpos_t x,gpos_t y);
 		virtual ~Graphics16();
 
-		void fillRect(tCoord x,tCoord y,tSize width,tSize height);
+		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 	protected:
-		void doSetPixel(tCoord x,tCoord y);
+		void doSetPixel(gpos_t x,gpos_t y);
 	};
 }
 

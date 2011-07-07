@@ -19,21 +19,20 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <gui/common.h>
 #include <gui/bitmapimage.h>
 #include <rawfile.h>
 
 namespace gui {
-	void BitmapImage::paint(Graphics &g,tCoord x,tCoord y) {
+	void BitmapImage::paint(Graphics &g,gpos_t x,gpos_t y) {
 		if(_data == NULL)
 			return;
 		switch(_infoHeader->compression) {
 			case BI_RGB: {
 				size_t bitCount = _infoHeader->bitCount;
 				uint8_t *oldData,*data = _data;
-				tSize w = _infoHeader->width, h = _infoHeader->height;
-				tSize pw = w, ph = h, pad;
-				tCoord cx,cy;
+				gsize_t w = _infoHeader->width, h = _infoHeader->height;
+				gsize_t pw = w, ph = h, pad;
+				gpos_t cx,cy;
 				size_t lastCol = 0;
 				g.validateParams(x,y,pw,ph);
 				g.setColor(Color(0));

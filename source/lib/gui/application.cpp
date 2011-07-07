@@ -81,8 +81,8 @@ namespace gui {
 	void Application::handleMessage(msgid_t mid,sMsg *msg) {
 		switch(mid) {
 			case MSG_WIN_CREATE_RESP: {
-				tWinId tmpId = msg->args.arg1;
-				tWinId id = msg->args.arg2;
+				gwinid_t tmpId = msg->args.arg1;
+				gwinid_t id = msg->args.arg2;
 				// notify the window that it has been created
 				Window *w = getWindowById(tmpId);
 				if(w)
@@ -91,12 +91,12 @@ namespace gui {
 			break;
 
 			case MSG_WIN_MOUSE_EV: {
-				tCoord x = (tCoord)msg->args.arg1;
-				tCoord y = (tCoord)msg->args.arg2;
+				gpos_t x = (gpos_t)msg->args.arg1;
+				gpos_t y = (gpos_t)msg->args.arg2;
 				short movedX = (short)msg->args.arg3;
 				short movedY = (short)msg->args.arg4;
 				uchar buttons = (uchar)msg->args.arg5;
-				tWinId win = (tWinId)msg->args.arg6;
+				gwinid_t win = (gwinid_t)msg->args.arg6;
 				passToWindow(win,x,y,movedX,movedY,buttons);
 			}
 			break;
@@ -104,7 +104,7 @@ namespace gui {
 			case MSG_WIN_KEYBOARD_EV: {
 				uchar keycode = (uchar)msg->args.arg1;
 				bool isBreak = (bool)msg->args.arg2;
-				tWinId win = (tWinId)msg->args.arg3;
+				gwinid_t win = (gwinid_t)msg->args.arg3;
 				char character = (char)msg->args.arg4;
 				uchar modifier = (uchar)msg->args.arg5;
 				Window *w = getWindowById(win);
@@ -122,11 +122,11 @@ namespace gui {
 			break;
 
 			case MSG_WIN_UPDATE_EV: {
-				tCoord x = (tCoord)msg->args.arg1;
-				tCoord y = (tCoord)msg->args.arg2;
-				tSize width = (tSize)msg->args.arg3;
-				tSize height = (tSize)msg->args.arg4;
-				tWinId win = (tWinId)msg->args.arg5;
+				gpos_t x = (gpos_t)msg->args.arg1;
+				gpos_t y = (gpos_t)msg->args.arg2;
+				gsize_t width = (gsize_t)msg->args.arg3;
+				gsize_t height = (gsize_t)msg->args.arg4;
+				gwinid_t win = (gwinid_t)msg->args.arg5;
 				Window *w = getWindowById(win);
 				if(w) {
 					if(x + width > w->getWidth())
@@ -139,10 +139,10 @@ namespace gui {
 			break;
 
 			case MSG_WIN_SET_ACTIVE: {
-				tWinId win = (tWinId)msg->args.arg1;
+				gwinid_t win = (gwinid_t)msg->args.arg1;
 				bool isActive = (bool)msg->args.arg2;
-				tCoord mouseX = (tCoord)msg->args.arg3;
-				tCoord mouseY = (tCoord)msg->args.arg4;
+				gpos_t mouseX = (gpos_t)msg->args.arg3;
+				gpos_t mouseY = (gpos_t)msg->args.arg4;
 				Window *w = getWindowById(win);
 				if(w) {
 					w->setActive(isActive);
@@ -154,7 +154,7 @@ namespace gui {
 		}
 	}
 
-	void Application::passToWindow(tWinId win,tCoord x,tCoord y,short movedX,short movedY,
+	void Application::passToWindow(gwinid_t win,gpos_t x,gpos_t y,short movedX,short movedY,
 			uchar buttons) {
 		bool moved,released,pressed;
 
@@ -166,8 +166,8 @@ namespace gui {
 
 		Window *w = getWindowById(win);
 		if(w) {
-			tCoord nx = MAX(0,MIN(_vesaInfo.width - 1,x - w->getX()));
-			tCoord ny = MAX(0,MIN(_vesaInfo.height - 1,y - w->getY()));
+			gpos_t nx = MAX(0,MIN(_vesaInfo.width - 1,x - w->getX()));
+			gpos_t ny = MAX(0,MIN(_vesaInfo.height - 1,y - w->getY()));
 
 			if(released) {
 				MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,nx,ny,_mouseBtns);
@@ -184,7 +184,7 @@ namespace gui {
 		}
 	}
 
-	void Application::closePopups(tWinId id,tCoord x,tCoord y) {
+	void Application::closePopups(gwinid_t id,gpos_t x,gpos_t y) {
 		for(vector<Window*>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
 			Window *pw = *it;
 			if(pw->getId() != id && pw->getStyle() == Window::STYLE_POPUP) {
@@ -194,7 +194,7 @@ namespace gui {
 		}
 	}
 
-	void Application::requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height) {
+	void Application::requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		Window *w = getWindowById(id);
 		if(x < 0)
 			x = 0;
@@ -253,7 +253,7 @@ namespace gui {
 			error("Unable to resize window");
 	}
 
-	Window *Application::getWindowById(tWinId id) {
+	Window *Application::getWindowById(gwinid_t id) {
 		for(vector<Window*>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
 			if((*it)->getId() == id)
 				return *it;

@@ -21,7 +21,6 @@
 #define CHECKBOX_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/control.h>
 #include <gui/color.h>
 #include <string>
@@ -38,10 +37,10 @@ namespace gui {
 		static const uint TEXT_PADDING = 4;
 
 	public:
-		Checkbox(tCoord x,tCoord y,tSize width,tSize height)
+		Checkbox(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _checked(false), _text(string()) {
 		};
-		Checkbox(const string &text,tCoord x,tCoord y,tSize width,tSize height)
+		Checkbox(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _checked(false), _text(text) {
 		};
 		Checkbox(const Checkbox &b)

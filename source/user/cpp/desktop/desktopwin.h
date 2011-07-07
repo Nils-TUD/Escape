@@ -21,7 +21,6 @@
 #define DESKTOPWIN_H_
 
 #include <esc/common.h>
-#include <gui/common.h>
 #include <gui/color.h>
 #include <gui/window.h>
 
@@ -30,7 +29,7 @@ public:
 	static const gui::Color BGCOLOR;
 
 public:
-	DesktopWin(gui::tSize width,gui::tSize height) : gui::Window("",0,0,width,height,STYLE_DESKTOP) {
+	DesktopWin(gsize_t width,gsize_t height) : gui::Window("",0,0,width,height,STYLE_DESKTOP) {
 	};
 	virtual ~DesktopWin() {
 	};

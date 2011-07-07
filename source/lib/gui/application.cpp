@@ -220,6 +220,7 @@ namespace gui {
 		_msg.args.arg2 = (win->getWidth() << 16) | win->getHeight();
 		_msg.args.arg3 = win->getId();
 		_msg.args.arg4 = win->getStyle();
+		_msg.args.arg5 = win->getTitleBarHeight();
 		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.args)) < 0) {
 			_windows.erase_first(win);
 			throw app_error("Unable to announce window to window-manager");

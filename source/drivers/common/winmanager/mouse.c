@@ -101,8 +101,9 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 		w = mouseWin ? mouseWin : win_getAt(curX,curY);
 		cursor = CURSOR_DEFAULT;
 		if(w && w->style != WIN_STYLE_POPUP && w->style != WIN_STYLE_DESKTOP) {
-			bool left = curX < w->x + CURSOR_RESIZE_WIDTH;
-			bool right = curX >= w->x + w->width - CURSOR_RESIZE_WIDTH;
+			gsize_t tbh = w->titleBarHeight;
+			bool left = curY >= w->y + tbh && curX < w->x + CURSOR_RESIZE_WIDTH;
+			bool right = curY >= w->y + tbh && curX >= w->x + w->width - CURSOR_RESIZE_WIDTH;
 			bool bottom = curY >= w->y + w->height - CURSOR_RESIZE_WIDTH;
 			if(left && bottom)
 				cursor = CURSOR_RESIZE_BL;

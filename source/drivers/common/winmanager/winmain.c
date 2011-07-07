@@ -69,8 +69,9 @@ int main(void) {
 					gsize_t height = (gsize_t)(msg.args.arg2 & 0xFFFF);
 					gwinid_t tmpWinId = (gwinid_t)msg.args.arg3;
 					uint style = msg.args.arg4;
+					gsize_t titleBarHeight = msg.args.arg5;
 					msg.args.arg1 = tmpWinId;
-					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style);
+					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style,titleBarHeight);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
 					if(style == WIN_STYLE_POPUP)
 						win_setActive(msg.args.arg2,false,mouse_getX(),mouse_getY());

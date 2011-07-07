@@ -37,6 +37,7 @@
 #include "bmp.h"
 #include <vbe/vbe.h>
 
+#define CURSOR_LEFT_OFF					10
 #define CURSOR_DEFAULT_FILE				"/etc/cursor_def.bmp"
 #define CURSOR_RESIZE_L_FILE			"/etc/cursor_resl.bmp"
 #define CURSOR_RESIZE_BR_FILE			"/etc/cursor_resbr.bmp"
@@ -70,6 +71,7 @@ static void vesa_copyRegion(uint8_t *src,uint8_t *dst,gsize_t width,gsize_t heig
 
 static sSLList *dirtyRects;
 static gpos_t newCurX,newCurY;
+static uint8_t newCursor;
 static bool updCursor = false;
 static bool setPreview;
 static sRectangle newPreview;
@@ -201,7 +203,7 @@ int main(void) {
 				case MSG_VESA_CURSOR: {
 					newCurX = (gpos_t)msg.args.arg1;
 					newCurY = (gpos_t)msg.args.arg2;
-					curCursor = ((uint8_t)msg.args.arg3) % 6;
+					newCursor = ((uint8_t)msg.args.arg3) % 6;
 					updCursor = true;
 				}
 				break;
@@ -264,6 +266,8 @@ static void vesa_doUpdate(void) {
 	}
 
 	if(updCursor) {
+		if(newCursor == CURSOR_RESIZE_L || newCursor == CURSOR_RESIZE_BL)
+			newCurX -= CURSOR_LEFT_OFF;
 		vesa_setCursor(newCurX,newCurY);
 		updCursor = false;
 	}
@@ -520,8 +524,8 @@ static void vesa_setPreview(sRectangle *rect,gsize_t thickness) {
 }
 
 static void vesa_setCursor(gpos_t x,gpos_t y) {
-	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
-	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
+	gsize_t curWidth = cursor[newCursor]->infoHeader->width;
+	gsize_t curHeight = cursor[newCursor]->infoHeader->height;
 	gsize_t xres = minfo->xResolution;
 	gsize_t yres = minfo->yResolution;
 	/* validate position */
@@ -536,9 +540,10 @@ static void vesa_setCursor(gpos_t x,gpos_t y) {
 		vesa_copyRegion(shmem,cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth,yres);
 	}
 
-	bmp_draw(cursor[curCursor],x,y,setPixel[minfo->bitsPerPixel / 8]);
+	bmp_draw(cursor[newCursor],x,y,setPixel[minfo->bitsPerPixel / 8]);
 	lastX = x;
 	lastY = y;
+	curCursor = newCursor;
 }
 
 static void vesa_clearRegion(gpos_t x,gpos_t y,gsize_t w,gsize_t h) {

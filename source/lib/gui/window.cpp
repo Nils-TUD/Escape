@@ -166,10 +166,12 @@ namespace gui {
 			}
 			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
 				_inResizeBottom = true;
-			if(e.getX() < CURSOR_RESIZE_WIDTH)
-				_inResizeLeft = true;
-			else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
-				_inResizeRight = true;
+			if(e.getY() >= _titleBarHeight) {
+				if(e.getX() < CURSOR_RESIZE_WIDTH)
+					_inResizeLeft = true;
+				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
+					_inResizeRight = true;
+			}
 		}
 		passToCtrl(e,MOUSE_PRESSED);
 	}

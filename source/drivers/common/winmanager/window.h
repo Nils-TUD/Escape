@@ -45,6 +45,7 @@ typedef struct {
 	gwinid_t id;
 	tid_t owner;
 	uint style;
+	gsize_t titleBarHeight;
 } sWindow;
 
 /**
@@ -95,9 +96,11 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor);
  * @param height the height
  * @param owner the owner-id
  * @param style style-attributes
+ * @param titleBarHeight the height of the titlebar of that window
  * @return the window-id or WINID_UNUSED if no slot is free
  */
-gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style);
+gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
+		gsize_t titleBarHeight);
 
 /**
  * Updates the whole screen

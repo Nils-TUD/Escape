@@ -103,7 +103,8 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
-gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style) {
+gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
+		gsize_t titleBarHeight) {
 	gwinid_t i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNSED) {
@@ -116,6 +117,7 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 			windows[i].height = height;
 			windows[i].owner = owner;
 			windows[i].style = style;
+			windows[i].titleBarHeight = titleBarHeight;
 			return i;
 		}
 	}

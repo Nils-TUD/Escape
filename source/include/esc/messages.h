@@ -36,7 +36,7 @@
 #define CURSOR_RESIZE_VERT			3
 #define CURSOR_RESIZE_BL			4
 #define CURSOR_RESIZE_R				5
-#define CURSOR_RESIZE_WIDTH			10
+#define CURSOR_RESIZE_WIDTH			6
 
 /* the possible km-events to listen to; KE_EV_PRESSED, KE_EV_RELEASED and KE_EV_KEYCODE,
  * KE_EV_CHARACTER are mutually exclusive, each */

@@ -5,7 +5,8 @@
 #include <esc/common.h>
 #include "../../syscalls.h"
 
-int doSyscall7(uint syscallNo,uint arg1,uint arg2,uint arg3,uint arg4,uint arg5,uint arg6,uint arg7) {
+int doSyscall7(ulong syscallNo,ulong arg1,ulong arg2,ulong arg3,ulong arg4,ulong arg5,
+		ulong arg6,ulong arg7) {
 	int res;
 	__asm__ __volatile__ (
 		"movl	%2,%%ecx\n"
@@ -32,7 +33,7 @@ int doSyscall7(uint syscallNo,uint arg1,uint arg2,uint arg3,uint arg4,uint arg5,
 	return res;
 }
 
-int doSyscall(uint syscallNo,uint arg1,uint arg2,uint arg3) {
+int doSyscall(ulong syscallNo,ulong arg1,ulong arg2,ulong arg3) {
 	int res;
 	__asm__ __volatile__ (
 		"movl	%2,%%ecx\n"

@@ -27,6 +27,7 @@
 #include <esc/io.h>
 #include <esc/mem.h>
 #include <algorithm>
+#include <iostream>
 #include <stdio.h>
 
 namespace gui {
@@ -38,22 +39,22 @@ namespace gui {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)
-			error("Unable to open window-manager");
+			throw app_error("Unable to open window-manager");
 
 		_vesaFd = open("/dev/vesa",IO_MSGS);
 		if(_vesaFd < 0)
-			error("Unable to open vesa");
+			throw app_error("Unable to open vesa");
 
 		_vesaMem = joinSharedMem("vesa");
 		if(_vesaMem == NULL)
-			error("Unable to open shared memory");
+			throw app_error("Unable to open shared memory");
 
 		// request screen infos from vesa
 		if(send(_vesaFd,MSG_VESA_GETMODE,&_msg,sizeof(_msg.args)) < 0)
-			error("Unable to send get-mode-request to vesa");
+			throw app_error("Unable to send get-mode-request to vesa");
 		if(RETRY(receive(_vesaFd,&mid,&_msg,sizeof(_msg))) < 0 || mid != MSG_VESA_GETMODE_RESP ||
 				_msg.data.arg1 != 0) {
-			error("Unable to read the get-mode-response from vesa");
+			throw app_error("Unable to read the get-mode-response from vesa");
 		}
 
 		// store it
@@ -74,7 +75,7 @@ namespace gui {
 	void Application::doEvents() {
 		msgid_t mid;
 		if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
-			error("Read from window-manager failed");
+			throw app_error("Read from window-manager failed");
 		handleMessage(mid,&_msg);
 	}
 
@@ -159,7 +160,6 @@ namespace gui {
 		bool moved,released,pressed;
 
 		moved = movedX || movedY;
-		// TODO this is not correct
 		released = _mouseBtns && !buttons;
 		pressed = !_mouseBtns && buttons;
 		_mouseBtns = buttons;
@@ -210,7 +210,7 @@ namespace gui {
 		_msg.args.arg4 = width;
 		_msg.args.arg5 = height;
 		if(send(_winFd,MSG_WIN_UPDATE,&_msg,sizeof(_msg.args)) < 0)
-			error("Unable to request win-update");
+			throw app_error("Unable to request win-update");
 	}
 
 	void Application::addWindow(Window *win) {
@@ -220,8 +220,10 @@ namespace gui {
 		_msg.args.arg2 = (win->getWidth() << 16) | win->getHeight();
 		_msg.args.arg3 = win->getId();
 		_msg.args.arg4 = win->getStyle();
-		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.args)) < 0)
-			error("Unable to announce window to window-manager");
+		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.args)) < 0) {
+			_windows.erase_first(win);
+			throw app_error("Unable to announce window to window-manager");
+		}
 	}
 
 	void Application::removeWindow(Window *win) {
@@ -229,7 +231,7 @@ namespace gui {
 			// let window-manager destroy our window
 			_msg.args.arg1 = win->getId();
 			if(send(_winFd,MSG_WIN_DESTROY,&_msg,sizeof(_msg.args)) < 0)
-				error("Unable to destroy window");
+				throw app_error("Unable to destroy window");
 		}
 	}
 
@@ -239,7 +241,7 @@ namespace gui {
 		_msg.args.arg3 = win->getMoveY();
 		_msg.args.arg4 = finish;
 		if(send(_winFd,MSG_WIN_MOVE,&_msg,sizeof(_msg.args)) < 0)
-			error("Unable to move window");
+			throw app_error("Unable to move window");
 	}
 
 	void Application::resizeWindow(Window *win,bool finish) {
@@ -250,7 +252,7 @@ namespace gui {
 		_msg.args.arg5 = win->getResizeHeight();
 		_msg.args.arg6 = finish;
 		if(send(_winFd,MSG_WIN_RESIZE,&_msg,sizeof(_msg.args)) < 0)
-			error("Unable to resize window");
+			throw app_error("Unable to resize window");
 	}
 
 	Window *Application::getWindowById(gwinid_t id) {

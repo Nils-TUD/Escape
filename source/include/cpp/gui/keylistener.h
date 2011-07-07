@@ -24,14 +24,34 @@
 #include <gui/event.h>
 
 namespace gui {
+	/**
+	 * The abstract class to listen for keyevents
+	 */
 	class KeyListener {
 	public:
+		/**
+		 * Empty constructor
+		 */
 		KeyListener() {
 		};
+		/**
+		 * Destructor
+		 */
 		virtual ~KeyListener() {
 		};
 
+		/**
+		 * Abstract method that is called as soon as a key has been pressed
+		 *
+		 * @param e the key-event
+		 */
 		virtual void keyPressed(const KeyEvent &e) = 0;
+
+		/**
+		 * Abstract method that is called as soon as a key has been released
+		 *
+		 * @param e the key-event
+		 */
 		virtual void keyReleased(const KeyEvent &e) = 0;
 
 	private:

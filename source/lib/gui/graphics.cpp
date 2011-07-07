@@ -270,7 +270,7 @@ namespace gui {
 			}
 			width = MIN(screenWidth - (x + _x),MIN(_width - x,width));
 			height = MIN(screenHeight - (y + _y),MIN(_height - y,height));
-			void *vesaMem = Application::getInstance()->getVesaMem();
+			void *vesaMem = Application::getInstance()->getScreenMem();
 			uint8_t *src,*dst;
 			gpos_t endy = y + height;
 			size_t psize = _bpp / 8;

@@ -26,33 +26,69 @@
 namespace gui {
 	class Window;
 
+	/**
+	 * The abstract base class for all controls
+	 */
 	class Control : public UIElement {
 		friend class Window;
 
 	public:
+		/**
+		 * Constructor
+		 *
+		 * @param x the x-position
+		 * @param y the y-position
+		 * @param width the width
+		 * @param height the height
+		 */
 		Control(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: UIElement(x,y,width,height), _w(NULL) {
 		};
+		/**
+		 * Copy-constructor
+		 *
+		 * @param c the control to copy
+		 */
 		Control(const Control &c)
 			: UIElement(c), _w(NULL) {
 			// don't assign the window; the user has to do it manually
 		};
+		/**
+		 * Destructor
+		 */
 		virtual ~Control() {
-
 		};
+		/**
+		 * Assignment operator
+		 */
 		Control &operator=(const Control &c);
 
+		/**
+		 * @return the window-instance this control belongs to
+		 */
 		inline Window &getWindow() const {
 			return *_w;
 		};
 
+		/**
+		 * Is called as soon as this control received the focus
+		 */
 		virtual void onFocusGained();
+		/**
+		 * Is called as soon as this control lost the focus
+		 */
 		virtual void onFocusLost();
 
 	protected:
+		/**
+		 * @return the id of the window this control belongs to
+		 */
 		gwinid_t getWindowId() const;
 
 	private:
+		/**
+		 * Sets the window-instance (used by Window)
+		 */
 		void setWindow(Window *w);
 
 	private:

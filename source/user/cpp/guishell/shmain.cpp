@@ -122,6 +122,8 @@ int main(int argc,char **argv) {
 	long pid = getpid();
 	sendRecvMsgData(fin,MSG_VT_SHELLPID,&pid,sizeof(long));
 
+	/* TODO better run the shell in a separate process; this way we don't have to clone the
+	 * gui-stuff too when creating childs, which might be quite large. */
 	shellMain();
 	Application::getInstance()->exit();
 	gt->stop();

@@ -69,7 +69,7 @@ namespace gui {
 			return _inst;
 		};
 
-	protected:
+	private:
 		static Application *_inst;
 
 	public:
@@ -93,16 +93,16 @@ namespace gui {
 		};
 
 		/**
-		 * Stops the event-loop
-		 */
-		void exit();
-
-		/**
 		 * Starts the message-loop
 		 */
 		int run();
 
-	protected:
+		/**
+		 * Stops the message-loop
+		 */
+		void exit();
+
+	private:
 		/**
 		 * Constructor. Protected because its a singleton
 		 */
@@ -111,11 +111,6 @@ namespace gui {
 		 * Destructor. Closes the connection to vesa and the window-manager
 		 */
 		virtual ~Application();
-
-		/**
-		 * Receives a message from the window-manager and calls handleMessage()
-		 */
-		virtual void doEvents();
 		/**
 		 * Handles the given message
 		 *
@@ -199,10 +194,9 @@ namespace gui {
 		void passToWindow(gwinid_t win,gpos_t x,gpos_t y,short movedX,short movedY,uchar buttons);
 		void closePopups(gwinid_t id,gpos_t x,gpos_t y);
 
-	protected:
+	private:
 		int _winFd;
 		sMsg _msg;
-	private:
 		bool _run;
 		uchar _mouseBtns;
 		int _vesaFd;

@@ -51,10 +51,12 @@
 							".\x17" \
 							"3\x17"
 
+static void vterm_buildTitle(sVTerm *vt);
+
 bool vterm_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
 	size_t i,len;
 	uchar color;
-	char *ptr,*s;
+	char *ptr;
 	vt->cols = vidSize->width;
 	vt->rows = vidSize->height;
 
@@ -113,28 +115,12 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
 	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
 	ptr = vt->buffer;
 	color = (vt->background << 4) | vt->foreground;
-	for(i = 0, len = vt->rows * HISTORY_SIZE * vt->cols * 2; i < len; i += 4) {
-		*ptr++ = ' ';
-		*ptr++ = color;
+	for(i = 0, len = vt->rows * HISTORY_SIZE * vt->cols * 2; i < len; i += 2) {
 		*ptr++ = ' ';
 		*ptr++ = color;
 	}
 
-	/* build title bar */
-	ptr = vt->titleBar;
-	s = vt->name;
-	for(i = 0; *s; i++) {
-		*ptr++ = *s++;
-		*ptr++ = TITLE_BAR_COLOR;
-	}
-	for(; i < vt->cols; i++) {
-		*ptr++ = ' ';
-		*ptr++ = TITLE_BAR_COLOR;
-	}
-	len = strlen(OS_TITLE);
-	i = (((vt->cols * 2) / 2) - (len / 2)) & ~0x1;
-	ptr = vt->titleBar;
-	memcpy(ptr + i,OS_TITLE,len);
+	vterm_buildTitle(vt);
 	return true;
 }
 
@@ -143,6 +129,78 @@ void vterm_destroy(sVTerm *vt) {
 	free(vt->buffer);
 	free(vt->titleBar);
 	free(vt->rlBuffer);
+}
+
+bool vterm_resize(sVTerm *vt,size_t cols,size_t rows) {
+	if(vt->cols != cols || vt->rows != rows) {
+		size_t c,r,color;
+		size_t ccols = MIN(cols,vt->cols);
+		char *buf,*oldBuf,*old = vt->buffer;
+		char *oldTitle = vt->titleBar;
+		vt->buffer = (char*)malloc(rows * HISTORY_SIZE * cols * 2);
+		if(vt->buffer == NULL) {
+			vt->buffer = old;
+			return false;
+		}
+		vt->titleBar = (char*)malloc(cols * 2);
+		if(vt->titleBar == NULL) {
+			vt->titleBar = oldTitle;
+			vt->buffer = old;
+			return false;
+		}
+
+		buf = vt->buffer;
+		color = (vt->background << 4) | vt->foreground;
+		r = 0;
+		if(rows > vt->rows) {
+			size_t limit = (rows - vt->rows) * HISTORY_SIZE;
+			for(; r < limit; r++) {
+				for(c = 0; c < cols; c++) {
+					*buf++ = ' ';
+					*buf++ = color;
+				}
+			}
+			oldBuf = old;
+		}
+		else
+			oldBuf = old + (vt->rows - rows) * HISTORY_SIZE * vt->cols * 2;
+		for(; r < rows * HISTORY_SIZE; r++) {
+			memcpy(buf,oldBuf,ccols * 2);
+			buf += ccols * 2;
+			oldBuf += vt->cols * 2;
+			for(c = ccols; c < cols; c++) {
+				*buf++ = ' ';
+				*buf++ = color;
+			}
+		}
+
+		if(vt->rows * HISTORY_SIZE - vt->firstLine >= rows * HISTORY_SIZE)
+			vt->firstLine = 0;
+		else
+			vt->firstLine = rows * HISTORY_SIZE - (vt->rows * HISTORY_SIZE - vt->firstLine);
+		vt->firstLine += vt->rows - rows;
+		if(vt->rows * HISTORY_SIZE - vt->currLine >= rows * HISTORY_SIZE)
+			vt->currLine = 0;
+		else
+			vt->currLine = rows * HISTORY_SIZE - (vt->rows * HISTORY_SIZE - vt->currLine);
+		vt->currLine += vt->rows - rows;
+		if(vt->rows * HISTORY_SIZE - vt->firstVisLine >= rows * HISTORY_SIZE)
+			vt->firstVisLine = 0;
+		else
+			vt->firstVisLine = rows * HISTORY_SIZE - (vt->rows * HISTORY_SIZE - vt->firstVisLine);
+		vt->firstVisLine += vt->rows - rows;
+
+		/* TODO update screenbackup */
+		vt->col = MIN(vt->col,cols - 1);
+		vt->row = MIN(rows - 1,rows - (vt->rows - vt->row));
+		vt->cols = cols;
+		vt->rows = rows;
+		vterm_buildTitle(vt);
+		free(old);
+		free(oldTitle);
+		return true;
+	}
+	return false;
 }
 
 int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
@@ -218,10 +276,10 @@ int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 }
 
 void vterm_scroll(sVTerm *vt,int lines) {
-	ushort old = vt->firstVisLine;
+	size_t old = vt->firstVisLine;
 	if(lines > 0) {
 		/* ensure that we don't scroll above the first line with content */
-		vt->firstVisLine = MAX(vt->firstLine,(int)vt->firstVisLine - lines);
+		vt->firstVisLine = MAX((int)vt->firstLine,(int)vt->firstVisLine - lines);
 	}
 	else {
 		/* ensure that we don't scroll behind the last line */
@@ -236,15 +294,33 @@ void vterm_markScrDirty(sVTerm *vt) {
 	vterm_markDirty(vt,0,vt->cols * vt->rows * 2);
 }
 
-void vterm_markDirty(sVTerm *vt,ushort start,size_t length) {
+void vterm_markDirty(sVTerm *vt,size_t start,size_t length) {
 	if(vt->upLength == 0) {
 		vt->upStart = start;
 		vt->upLength = length;
 	}
 	else {
-		ushort oldstart = vt->upStart;
+		size_t oldstart = vt->upStart;
 		if(start < oldstart)
 			vt->upStart = start;
 		vt->upLength = MAX(oldstart + vt->upLength,start + length) - vt->upStart;
 	}
+}
+
+static void vterm_buildTitle(sVTerm *vt) {
+	size_t i,len;
+	char *ptr = vt->titleBar;
+	char *s = vt->name;
+	for(i = 0; *s; i++) {
+		*ptr++ = *s++;
+		*ptr++ = TITLE_BAR_COLOR;
+	}
+	for(; i < vt->cols; i++) {
+		*ptr++ = ' ';
+		*ptr++ = TITLE_BAR_COLOR;
+	}
+	len = strlen(OS_TITLE);
+	i = (((vt->cols * 2) / 2) - (len / 2)) & ~0x1;
+	ptr = vt->titleBar;
+	memcpy(ptr + i,OS_TITLE,len);
 }

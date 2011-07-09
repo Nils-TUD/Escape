@@ -73,16 +73,13 @@ namespace gui {
 	}
 
 	int Application::run() {
-		while(_run)
-			doEvents();
-		return EXIT_SUCCESS;
-	}
-
-	void Application::doEvents() {
 		msgid_t mid;
-		if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
-			throw app_error("Read from window-manager failed");
-		handleMessage(mid,&_msg);
+		while(_run) {
+			if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
+				throw app_error("Read from window-manager failed");
+			handleMessage(mid,&_msg);
+		}
+		return EXIT_SUCCESS;
 	}
 
 	void Application::handleMessage(msgid_t mid,sMsg *msg) {

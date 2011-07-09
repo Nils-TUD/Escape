@@ -204,9 +204,7 @@ static void vterm_newLine(sVTerm *vt) {
 
 	/* clear last line */
 	dst = vt->buffer + (vt->currLine + vt->row - 1) * vt->cols * 2;
-	for(i = 0; i < vt->cols * 2; i += 4) {
-		*dst++ = 0x20;
-		*dst++ = (vt->defBackground << 4) | vt->defForeground;
+	for(i = 0; i < vt->cols * 2; i += 2) {
 		*dst++ = 0x20;
 		*dst++ = (vt->defBackground << 4) | vt->defForeground;
 	}
@@ -251,13 +249,13 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 
 	switch(cmd) {
 		case ESCC_MOVE_LEFT:
-			vt->col = MAX(0,vt->col - n1);
+			vt->col = MIN(vt->cols - 1,vt->col - n1);
 			break;
 		case ESCC_MOVE_RIGHT:
 			vt->col = MIN(vt->cols - 1,vt->col + n1);
 			break;
 		case ESCC_MOVE_UP:
-			vt->row = MAX(1,vt->row - n1);
+			vt->row = MAX(1,MAX(vt->rows - 1,vt->row - n1));
 			break;
 		case ESCC_MOVE_DOWN:
 			vt->row = MIN(vt->rows - 1,vt->row + n1);
@@ -285,8 +283,8 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 				vt->col = MIN(vt->cols - 1,vt->col + n1);
 			break;
 		case ESCC_GOTO_XY:
-			vt->col = MAX(0,MIN(vt->cols - 1,n1));
-			vt->row = MAX(0,MIN(vt->rows - 2,n2)) + 1;
+			vt->col = MIN(vt->cols - 1,(size_t)n1);
+			vt->row = MIN(vt->rows - 2,(size_t)n2) + 1;
 			break;
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)

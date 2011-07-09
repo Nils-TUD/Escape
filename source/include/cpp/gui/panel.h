@@ -84,6 +84,7 @@ namespace gui {
 			_bgColor = bg;
 		};
 
+		virtual void resizeTo(gsize_t width,gsize_t height);
 		virtual void moveTo(gpos_t x,gpos_t y);
 
 		/**

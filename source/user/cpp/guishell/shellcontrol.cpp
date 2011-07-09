@@ -68,6 +68,14 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 	unlocku(_lock);
 }
 
+void ShellControl::resizeTo(gsize_t width,gsize_t height) {
+	Control::resizeTo(width,height);
+	locku(_lock);
+	vterm_resize(_vt,getCols(),getRows());
+	unlocku(_lock);
+	repaint();
+}
+
 void ShellControl::sendEOF() {
 	locku(_lock);
 	vterm_handleKey(_vt,VK_D,STATE_CTRL,'d');
@@ -98,9 +106,9 @@ void ShellControl::update() {
 	Graphics *g = getGraphics();
 
 	if(_vt->upScroll > 0) {
+		size_t lineHeight = g->getFont().getHeight() + PADDING;
 		// move lines up
 		if(_vt->upScroll < _vt->rows) {
-			size_t lineHeight = g->getFont().getHeight() + PADDING;
 			size_t scrollPixel = _vt->upScroll * lineHeight;
 			g->moveLines(TEXTSTARTX,TEXTSTARTY + scrollPixel + lineHeight,
 					getWidth(),getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,scrollPixel);
@@ -123,6 +131,12 @@ void ShellControl::update() {
 			clearRows(*g,0,_vt->rows);
 			paintRows(*g,0,_vt->rows);
 		}
+
+		// fill the bg of the left few pixels at the bottom that are not affected
+		g->setColor(BGCOLOR);
+		gpos_t start = TEXTSTARTY + _vt->rows * lineHeight;
+		g->fillRect(0,start,getWidth(),getHeight() - start);
+
 		changed = true;
 	}
 	else if(_vt->upScroll < 0) {
@@ -204,7 +218,7 @@ void ShellControl::paintRows(Graphics &g,size_t start,size_t count) {
 }
 
 void ShellControl::paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,gpos_t y) {
-	uchar lastCol = 0xFF;
+	size_t lastCol = -1;
 	// paint char by char because the color might change
 	gpos_t x = TEXTSTARTX;
 	for(size_t j = 0; j < _vt->cols; j++) {

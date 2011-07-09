@@ -58,6 +58,7 @@ public:
 	ShellControl &operator=(const ShellControl &e);
 
 	virtual void onKeyPressed(const KeyEvent &e);
+	virtual void resizeTo(gsize_t width,gsize_t height);
 
 	inline gsize_t getCols() const {
 		return (getWidth() - TEXTSTARTX * 2) / getGraphics()->getFont().getWidth();
@@ -82,8 +83,8 @@ private:
 	bool setCursor();
 
 	tULock *_lock;
-	ushort _lastCol;
-	ushort _lastRow;
+	size_t _lastCol;
+	size_t _lastRow;
 	sVTerm *_vt;
 };
 

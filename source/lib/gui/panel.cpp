@@ -41,6 +41,16 @@ namespace gui {
 		_focus = NULL;
 	}
 
+	void Panel::resizeTo(gsize_t width,gsize_t height) {
+		Control::resizeTo(width,height);
+
+		/* TODO temporary!! */
+		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
+			Control *c = *it;
+			c->resizeTo(width,height);
+		}
+	}
+
 	void Panel::moveTo(gpos_t x,gpos_t y) {
 		Control::moveTo(x,y);
 

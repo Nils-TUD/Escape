@@ -56,11 +56,11 @@ struct sVTerm {
 	/* function-pointers */
 	fSetCursor setCursor;
 	/* number of cols/rows on the screen */
-	uchar cols;
-	uchar rows;
+	size_t cols;
+	size_t rows;
 	/* position (on the current page) */
-	uchar col;
-	uchar row;
+	size_t col;
+	size_t row;
 	/* colors */
 	uchar defForeground;
 	uchar defBackground;
@@ -72,15 +72,15 @@ struct sVTerm {
 	int video;
 	int speaker;
 	/* the first line with content */
-	ushort firstLine;
+	size_t firstLine;
 	/* the line where row+col starts */
-	ushort currLine;
+	size_t currLine;
 	/* the first visible line */
-	ushort firstVisLine;
+	size_t firstVisLine;
 	/* a range that should be updated */
-	ushort upStart;
-	ushort upLength;
-	short upScroll;
+	size_t upStart;
+	size_t upLength;
+	ssize_t upScroll;
 	/* whether entered characters should be echo'd to screen */
 	uchar echo;
 	/* whether the vterm should read until a newline occurrs */
@@ -93,8 +93,8 @@ struct sVTerm {
 	uchar printToCom1;
 	/* a backup of the screen; initially NULL */
 	char *screenBackup;
-	ushort backupCol;
-	ushort backupRow;
+	size_t backupCol;
+	size_t backupRow;
 	/* the buffer for the input-stream */
 	uchar inbufEOF;
 	sRingBuf *inbuf;
@@ -104,7 +104,7 @@ struct sVTerm {
 	int escapePos;
 	char escapeBuf[MAX_ESCC_LENGTH];
 	/* readline-buffer */
-	uchar rlStartCol;
+	size_t rlStartCol;
 	size_t rlBufSize;
 	size_t rlBufPos;
 	char *rlBuffer;
@@ -176,7 +176,7 @@ void vterm_markScrDirty(sVTerm *vt);
  * @param start the start-position
  * @param length the number of bytes
  */
-void vterm_markDirty(sVTerm *vt,ushort start,size_t length);
+void vterm_markDirty(sVTerm *vt,size_t start,size_t length);
 
 /**
  * Releases resources
@@ -184,6 +184,16 @@ void vterm_markDirty(sVTerm *vt,ushort start,size_t length);
  * @param vt the vterm
  */
 void vterm_destroy(sVTerm *vt);
+
+/**
+ * Resizes the size of the terminal to <cols> x <rows>.
+ *
+ * @param vt the terminal
+ * @param cols the number of columns
+ * @param rows the number of rows
+ * @return true if it has changed something
+ */
+bool vterm_resize(sVTerm *vt,size_t cols,size_t rows);
 
 #ifdef __cplusplus
 }

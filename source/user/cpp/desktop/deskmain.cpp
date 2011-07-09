@@ -19,7 +19,11 @@
 
 #include <esc/common.h>
 #include <gui/application.h>
+#include <esc/thread.h>
+#include <esc/proc.h>
 #include "desktopwin.h"
+
+static int childWaitThread(void *arg);
 
 int main(void) {
 	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
@@ -28,5 +32,14 @@ int main(void) {
 	DesktopWin win(app->getScreenWidth(),app->getScreenHeight());
 	win.addShortcut(&sc1);
 	win.addShortcut(&sc2);
+	if(startThread(childWaitThread,NULL) < 0)
+		error("Unable to start thread");
 	return app->run();
+}
+
+static int childWaitThread(void *arg) {
+	UNUSED(arg);
+	while(1)
+		waitChild(NULL);
+	return 0;
 }

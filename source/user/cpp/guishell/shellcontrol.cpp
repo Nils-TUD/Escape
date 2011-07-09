@@ -53,12 +53,35 @@ const Color ShellControl::BGCOLOR = Color(0xFF,0xFF,0xFF);
 const Color ShellControl::FGCOLOR = Color(0x0,0x0,0x0);
 const Color ShellControl::CURSOR_COLOR = Color(0x0,0x0,0x0);
 
+void ShellControl::onKeyPressed(const KeyEvent &e) {
+	Control::onKeyPressed(e);
+	uchar modifier = 0;
+	if(e.isAltDown())
+		modifier |= STATE_ALT;
+	if(e.isShiftDown())
+		modifier |= STATE_SHIFT;
+	if(e.isCtrlDown())
+		modifier |= STATE_CTRL;
+	locku(_lock);
+	vterm_handleKey(_vt,e.getKeyCode(),modifier,e.getCharacter());
+	update();
+	unlocku(_lock);
+}
+
+void ShellControl::sendEOF() {
+	locku(_lock);
+	vterm_handleKey(_vt,VK_D,STATE_CTRL,'d');
+	unlocku(_lock);
+}
+
 void ShellControl::paint(Graphics &g) {
 	// fill bg
 	g.setColor(BGCOLOR);
 	g.fillRect(0,0,getWidth(),getHeight());
 
+	locku(_lock);
 	paintRows(g,0,_vt->rows);
+	unlocku(_lock);
 }
 
 void ShellControl::clearRows(Graphics &g,size_t start,size_t count) {
@@ -66,7 +89,7 @@ void ShellControl::clearRows(Graphics &g,size_t start,size_t count) {
 	gpos_t y = TEXTSTARTY + start * (cheight + PADDING);
 	// overwrite with background
 	g.setColor(BGCOLOR);
-	count = MIN(getLineCount() - start,count);
+	count = MIN(getRows() - start,count);
 	g.fillRect(TEXTSTARTX,y,getWidth() - TEXTSTARTX * 2,count * (cheight + PADDING) + 2);
 }
 

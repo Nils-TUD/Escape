@@ -150,7 +150,6 @@ int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
 			vt->shellPid = *(long*)data;
-			fflush(stdout);
 			break;
 		case MSG_VT_ENABLE:
 			cfg->enabled = true;

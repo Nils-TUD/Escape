@@ -34,7 +34,7 @@ namespace gui {
 	Application *Application::_inst = NULL;
 
 	Application::Application()
-			: _winFd(-1), _msg(sMsg()), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
+			: _winFd(-1), _msg(sMsg()), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
 			  _vesaInfo(sVESAInfo()), _windows(vector<Window*>()) {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
@@ -62,12 +62,18 @@ namespace gui {
 	}
 
 	Application::~Application() {
+		while(_windows.size() > 0)
+			removeWindow(*_windows.begin());
 		close(_vesaFd);
 		close(_winFd);
 	}
 
+	void Application::exit() {
+		_run = false;
+	}
+
 	int Application::run() {
-		while(true)
+		while(_run)
 			doEvents();
 		return EXIT_SUCCESS;
 	}

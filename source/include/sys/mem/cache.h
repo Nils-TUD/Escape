@@ -31,4 +31,16 @@ size_t cache_getOccMem(void);
 size_t cache_getUsedMem(void);
 void cache_print(void);
 
+
+#if DEBUGGING
+
+/**
+ * Enables/disables "allocate and free" prints
+ *
+ * @param enabled the new value
+ */
+void cache_dbg_setAaFEnabled(bool enabled);
+
+#endif
+
 #endif /* CACHE_H_ */

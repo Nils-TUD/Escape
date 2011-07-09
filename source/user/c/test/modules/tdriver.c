@@ -25,6 +25,7 @@
 #include <esc/thread.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
 #include <time.h>
 #include "tdriver.h"
 
@@ -38,20 +39,27 @@ typedef struct {
 	void *data;
 } sTestRequest;
 
+static volatile int clientCount;
 static int respId = 1;
 static sMsg msg;
 static int id;
 
+static int clientThread(void *arg);
 static int getRequests(void *arg);
 static int handleRequest(void *arg);
 static void printffl(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
-	vprintf(fmt,ap);
 	lockg(MY_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
+	vprintf(fmt,ap);
 	fflush(stdout);
 	unlockg(MY_LOCK);
 	va_end(ap);
+}
+
+static void sigUsr1(int sig) {
+	UNUSED(sig);
+	/* ignore */
 }
 
 int mod_driver(int argc,char *argv[]) {
@@ -60,30 +68,8 @@ int mod_driver(int argc,char *argv[]) {
 	UNUSED(argv);
 
 	for(i = 0; i < 10; i++) {
-		if(fork() == 0) {
-			char buf[12] = {0};
-			srand(time(NULL) * i);
-			int fd;
-			do {
-				fd = open("/dev/bla",IO_READ | IO_WRITE);
-				if(fd < 0)
-					sleep(20);
-			}
-			while(fd < 0);
-			printffl("[%d] Reading...\n",getpid());
-			if(RETRY(read(fd,buf,sizeof(buf))) < 0)
-				error("read");
-			printffl("[%d] Got: '%s'\n",getpid(),buf);
-			for(i = 0; i < sizeof(buf) - 1; i++)
-				buf[i] = (rand() % ('z' - 'a')) + 'a';
-			buf[i] = '\0';
-			printffl("[%d] Writing '%s'...\n",getpid(),buf);
-			if(write(fd,buf,sizeof(buf)) < 0)
-				error("write");
-			printffl("[%d] Closing...\n",getpid());
-			close(fd);
-			return EXIT_SUCCESS;
-		}
+		if(startThread(clientThread,NULL) < 0)
+			error("Unable to start thread");
 	}
 
 	id = regDriver("bla",DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE);
@@ -99,10 +85,41 @@ int mod_driver(int argc,char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
+static int clientThread(void *arg) {
+	UNUSED(arg);
+	size_t i;
+	char buf[12] = {0};
+	srand(time(NULL) * gettid());
+	int fd;
+	do {
+		fd = open("/dev/bla",IO_READ | IO_WRITE);
+		if(fd < 0)
+			sleep(20);
+	}
+	while(fd < 0);
+	printffl("[%d] Reading...\n",gettid());
+	if(RETRY(read(fd,buf,sizeof(buf))) < 0)
+		error("read");
+	printffl("[%d] Got: '%s'\n",gettid(),buf);
+	for(i = 0; i < sizeof(buf) - 1; i++)
+		buf[i] = (rand() % ('z' - 'a')) + 'a';
+	buf[i] = '\0';
+	printffl("[%d] Writing '%s'...\n",gettid(),buf);
+	if(write(fd,buf,sizeof(buf)) < 0)
+		error("write");
+	printffl("[%d] Closing...\n",gettid());
+	close(fd);
+	return EXIT_SUCCESS;
+}
+
 static int getRequests(void *arg) {
 	UNUSED(arg);
 	msgid_t mid;
-	while(true) {
+	int tid;
+	clientCount = 0;
+	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+		error("Unable to announce signal-handler");
+	do {
 		int cfd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(cfd < 0)
 			printe("[TEST] Unable to get work");
@@ -117,10 +134,14 @@ static int getRequests(void *arg) {
 				req->data = malloc(msg.args.arg2);
 				RETRY(receive(cfd,NULL,req->data,msg.args.arg2));
 			}
-			if(startThread(handleRequest,req) < 0)
+			if((tid = startThread(handleRequest,req)) < 0)
 				error("Unable to start thread");
+			if(clientCount == 0)
+				join(tid);
 		}
 	}
+	while(clientCount > 0);
+	printffl("No clients anymore, giving up :(\n");
 	return 0;
 }
 
@@ -132,6 +153,7 @@ static int handleRequest(void *arg) {
 			printffl("--[%d,%d] Open: flags=%d\n",gettid(),req->fd,req->msg.args.arg1);
 			req->msg.args.arg1 = 0;
 			send(req->fd,MSG_DRV_OPEN_RESP,&req->msg,sizeof(req->msg.args));
+			clientCount++;
 			break;
 		case MSG_DRV_READ:
 			printffl("--[%d,%d] Read: offset=%u, count=%u\n",gettid(),req->fd,
@@ -150,6 +172,9 @@ static int handleRequest(void *arg) {
 			break;
 		case MSG_DRV_CLOSE:
 			printffl("--[%d,%d] Close\n",gettid(),req->fd);
+			clientCount--;
+			if(sendSignalTo(getpid(),SIG_USR1) < 0)
+				error("Unable to send signal to driver-thread");
 			break;
 		default:
 			printffl("--[%d,%d] Unknown command\n",gettid(),req->fd);

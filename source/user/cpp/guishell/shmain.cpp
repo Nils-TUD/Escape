@@ -33,7 +33,7 @@
 #include <shell/history.h>
 
 #include "shellcontrol.h"
-#include "shellapp.h"
+#include "guiterm.h"
 
 #define GUI_SHELL_LOCK		0x4129927
 #define MAX_VTERM_NAME_LEN	10
@@ -42,19 +42,17 @@
 
 using namespace gui;
 
+static int guiThread(void *arg);
+static int termThread(void *arg);
+static int shellMain(void);
+
+static tULock vtLock;
 static char *drvName;
-static int childPid = -1;
+static GUITerm *gt;
 
-/**
- * The shell-Thread
- */
-static int shell_main(void);
-
-static void childKiller(void *) {
-	if(childPid >= 0) {
-		if(sendSignalTo(childPid,SIG_KILL) < 0)
-			printe("[GUISH] Unable to kill child %d",childPid);
-	}
+static void sigUsr1(int sig) {
+	UNUSED(sig);
+	/* do nothing */
 }
 
 int main(int argc,char **argv) {
@@ -94,31 +92,10 @@ int main(int argc,char **argv) {
 	// set term as env-variable
 	setenv("TERM",drvName);
 
-	// the child handles the GUI
-	if((childPid = fork()) == 0) {
-		// re-register driver
-		sid = regDriver(drvName,DRV_READ | DRV_WRITE);
-		unlockg(GUI_SHELL_LOCK);
-		if(sid < 0)
-			error("Unable to re-register driver %s",drvName);
-		delete drvName;
-
-		// now start GUI
-		Font font;
-		ShellApplication *app = new ShellApplication(sid);
-		Window w("Shell",100,100,font.getWidth() * DEF_COLS + 2,font.getHeight() * DEF_ROWS + 4);
-		Panel& root = w.getRootPanel();
-		ShellControl *sh = new ShellControl(sid,0,0,root.getWidth(),root.getHeight());
-		app->setShellControl(sh);
-		root.add(*sh);
-		return app->run();
-	}
-
-	/* before exiting, kill our child */
-	atexit(&childKiller);
+	if(startThread(guiThread,NULL) < 0)
+		error("Unable to start GUI-thread");
 
 	// wait until the driver is announced
-	delete drvName;
 	char *drvPath = new char[MAX_PATH_LEN + 1];
 	snprintf(drvPath,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
 	int fin;
@@ -139,16 +116,54 @@ int main(int argc,char **argv) {
 		error("Unable to redirect STDOUT to %d",fout);
 	if(redirFd(STDERR_FILENO,fout) < 0)
 		error("Unable to redirect STDERR to %d",fout);
-	delete drvPath;
+	delete[] drvPath;
 
 	/* give vterm our pid */
 	long pid = getpid();
 	sendRecvMsgData(fin,MSG_VT_SHELLPID,&pid,sizeof(long));
 
-	return shell_main();
+	shellMain();
+	Application::getInstance()->exit();
+	gt->stop();
+	if(sendSignalTo(getpid(),SIG_USR1) < 0)
+		printe("Unable to send SIG_USR1 to myself");
+	return EXIT_SUCCESS;
 }
 
-static int shell_main(void) {
+static int guiThread(void *arg) {
+	UNUSED(arg);
+	// re-register driver
+	int sid = regDriver(drvName,DRV_READ | DRV_WRITE);
+	unlockg(GUI_SHELL_LOCK);
+	if(sid < 0)
+		error("Unable to re-register driver %s",drvName);
+	delete[] drvName;
+
+	// now start GUI
+	Application *app = Application::getInstance();
+	Font font;
+	Window w("Shell",100,100,font.getWidth() * DEF_COLS + 2,font.getHeight() * DEF_ROWS + 4);
+	Panel& root = w.getRootPanel();
+	ShellControl *sh = new ShellControl(&vtLock,0,0,root.getWidth(),root.getHeight());
+	gt = new GUITerm(&vtLock,sid,sh);
+	if(startThread(termThread,gt) < 0)
+		error("Unable to start term-thread");
+	root.add(*sh);
+	w.setFocus(sh);
+	int res = app->run();
+	sh->sendEOF();
+	return res;
+}
+
+static int termThread(void *arg) {
+	UNUSED(arg);
+	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+		error("Unable to set signal-handler");
+	gt->run();
+	return 0;
+}
+
+static int shellMain(void) {
 	printf("\033[co;9]Welcome to Escape v0.3!\033[co]\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
@@ -157,10 +172,9 @@ static int shell_main(void) {
 	/* TODO temporary */
 	setenv("USER","hrniels");
 
-	char *buffer;
 	while(1) {
 		// create buffer (history will free it)
-		buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
+		char *buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
 		if(buffer == NULL)
 			error("Not enough memory");
 

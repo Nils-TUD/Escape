@@ -126,9 +126,7 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 	w = mouseWin ? mouseWin : win_getActive();
 	if(w) {
 		int aWin = getClient(drvId,w->owner);
-		if(aWin < 0)
-			printe("[WINM] Unable to get client %d",w->owner);
-		else {
+		if(aWin >= 0) {
 			msg.args.arg1 = curX;
 			msg.args.arg2 = curY;
 			msg.args.arg3 = mdata->x;

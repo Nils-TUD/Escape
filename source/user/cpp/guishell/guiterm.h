@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: shellapp.h 969 2011-07-09 08:57:25Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,51 +17,51 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SHELLAPP_H_
-#define SHELLAPP_H_
+#ifndef GTERM_H_
+#define GTERM_H_
 
 #include <esc/common.h>
-#include <gui/application.h>
-#include <esc/ringbuffer.h>
-#include <esc/dir.h>
+#include <vterm/vtctrl.h>
+
 #include "shellcontrol.h"
 
-// the min-size of the buffer before we pass it to the shell-control
-#define UPDATE_BUF_SIZE		256
-// the total size of the buffer
-#define READ_BUF_SIZE		512
+class GUITerm {
+private:
+	/**
+	 * The min-size of the buffer before we pass it to the shell-control
+	 */
+	static const size_t UPDATE_BUF_SIZE	= 256;
+	/**
+	 * The total size of the buffer
+	 */
+	static const size_t READ_BUF_SIZE	= 512;
 
-using namespace gui;
-
-class ShellApplication : public Application {
 public:
-	ShellApplication(int sid);
-	virtual ~ShellApplication();
+	GUITerm(tULock *lock,int sid,ShellControl *sh);
+	virtual ~GUITerm();
 
-	void setShellControl(ShellControl *sh) {
-		_sh = sh;
+	void run();
+	void stop() {
+		_run = false;
 	};
 
-protected:
-	void doEvents();
-
 private:
-	/* no cloning */
-	ShellApplication(const ShellApplication &app);
-	ShellApplication &operator=(const ShellApplication &app);
+	// no cloning
+	GUITerm(const GUITerm& gt);
+	GUITerm& operator=(const GUITerm& gt);
 
-	void putIn(char *s,size_t len);
-	void handleKbMsg();
-	void handleKeycode();
-	void driverMain();
+	void read(int fd,sMsg *msg);
+	void write(int fd,sMsg *msg);
 
 private:
 	int _sid;
-	sWaitObject _waits[2];
+	volatile bool _run;
+	sVTerm *_vt;
 	ShellControl *_sh;
+	tULock *_lock;
 	sVTermCfg _cfg;
-	char *rbuffer;
-	size_t rbufPos;
+	char *_rbuffer;
+	size_t _rbufPos;
 };
 
-#endif /* SHELLAPP_H_ */
+#endif /* GTERM_H_ */

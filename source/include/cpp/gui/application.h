@@ -93,6 +93,11 @@ namespace gui {
 		};
 
 		/**
+		 * Stops the event-loop
+		 */
+		void exit();
+
+		/**
 		 * Starts the message-loop
 		 */
 		int run();
@@ -198,6 +203,7 @@ namespace gui {
 		int _winFd;
 		sMsg _msg;
 	private:
+		bool _run;
 		uchar _mouseBtns;
 		int _vesaFd;
 		void *_vesaMem;

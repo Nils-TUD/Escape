@@ -30,6 +30,7 @@
 #include <string.h>
 #include "window.h"
 
+static gwinid_t win_getTop(void);
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z);
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY);
 static void win_sendRepaint(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id);
@@ -111,8 +112,15 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 			windows[i].id = i;
 			windows[i].x = x;
 			windows[i].y = y;
-			/* TODO determine z */
-			windows[i].z = (style == WIN_STYLE_DESKTOP) ? 0 : i;
+			if(style == WIN_STYLE_DESKTOP)
+				windows[i].z = 0;
+			else {
+				gwinid_t top = win_getTop();
+				if(top != WINID_UNSED)
+					windows[i].z = windows[top].z + 1;
+				else
+					windows[i].z = 1;
+			}
 			windows[i].width = width;
 			windows[i].height = height;
 			windows[i].owner = owner;
@@ -153,18 +161,9 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 
 	/* set highest window active */
 	if(activeWindow == id) {
-		gwinid_t i,winId = WINID_UNSED;
-		int maxz = -1;
-		sWindow *w = windows;
-		for(i = 0; i < WINDOW_COUNT; i++) {
-			if(w->id != WINID_UNSED && w->z > maxz) {
-				winId = i;
-				maxz = w->z;
-			}
-			w++;
-		}
-		if(i != WINID_UNSED)
-			win_setActive(i,false,mouseX,mouseY);
+		gwinid_t winId = win_getTop();
+		if(winId != WINID_UNSED)
+			win_setActive(winId,false,mouseX,mouseY);
 	}
 }
 
@@ -346,6 +345,20 @@ void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 	r->height = height;
 	r->window = win->id;
 	win_repaint(r,win,win->z);
+}
+
+static gwinid_t win_getTop(void) {
+	gwinid_t i,winId = WINID_UNSED;
+	int maxz = -1;
+	sWindow *w = windows;
+	for(i = 0; i < WINDOW_COUNT; i++) {
+		if(w->id != WINID_UNSED && w->z > maxz) {
+			winId = i;
+			maxz = w->z;
+		}
+		w++;
+	}
+	return winId;
 }
 
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {

@@ -22,20 +22,18 @@
 
 #include <esc/common.h>
 #include <gui/control.h>
-#include <esc/debug.h>
-#include <esc/ringbuffer.h>
 #include <esc/esccodes.h>
+#include <esc/thread.h>
 #include <stdlib.h>
-#include <iostream>
 
 #include <vterm/vtctrl.h>
 
 using namespace gui;
 
-class ShellApplication;
+class GUITerm;
 
 class ShellControl : public Control {
-	friend class ShellApplication;
+	friend class GUITerm;
 
 private:
 	static Color COLORS[16];
@@ -49,68 +47,41 @@ private:
 	static const Color CURSOR_COLOR;
 
 public:
-	ShellControl(int sid,gpos_t x,gpos_t y,gsize_t width,gsize_t height) :
-		Control(x,y,width,height), _lastCol(0), _lastRow(0), _vt(NULL) {
-		int speakerFd;
-		sVTSize size;
-		Font font;
-		size.width = (width - TEXTSTARTX * 2) / font.getWidth();
-		size.height = (height - TEXTSTARTY * 2) / (font.getHeight() + PADDING);
-
-		// open speaker
-		speakerFd = open("/dev/speaker",IO_MSGS);
-		if(speakerFd < 0)
-			error("Unable to open '/dev/speaker'");
-
-		_vt = (sVTerm*)malloc(sizeof(sVTerm));
-		if(!_vt)
-			error("Not enough mem for vterm");
-		_vt->index = 0;
-		_vt->sid = sid;
-		_vt->defForeground = BLACK;
-		_vt->defBackground = WHITE;
-		if(getenvto(_vt->name,sizeof(_vt->name),"TERM") < 0)
-			error("Unable to get env-var TERM");
-		if(!vterm_init(_vt,&size,-1,speakerFd))
-			error("Unable to init vterm");
-		_vt->active = true;
+	ShellControl(tULock *lock,gpos_t x,gpos_t y,gsize_t width,gsize_t height) :
+		Control(x,y,width,height), _lock(lock), _lastCol(0), _lastRow(0), _vt(NULL) {
 	};
 	virtual ~ShellControl() {
-		vterm_destroy(_vt);
-		free(_vt);
 	};
 
 	// no cloning
 	ShellControl(const ShellControl &e);
 	ShellControl &operator=(const ShellControl &e);
 
-	virtual void paint(Graphics &g);
-	inline bool getReadLine() const {
-		return _vt->readLine;
+	virtual void onKeyPressed(const KeyEvent &e);
+
+	inline gsize_t getCols() const {
+		return (getWidth() - TEXTSTARTX * 2) / getGraphics()->getFont().getWidth();
 	};
-	inline bool getEcho() const {
-		return _vt->echo;
-	};
-	inline bool getNavigation() const {
-		return _vt->navigation;
+	inline gsize_t getRows() const {
+		return (getHeight() - TEXTSTARTY * 2) / (getGraphics()->getFont().getHeight() + PADDING);
 	};
 
+	void sendEOF();
+
+	virtual void paint(Graphics &g);
+
 private:
+	inline void setVTerm(sVTerm *vt) {
+		_vt = vt;
+	};
+
 	void clearRows(Graphics &g,size_t start,size_t count);
 	void paintRows(Graphics &g,size_t start,size_t count);
 	void paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,gpos_t y);
 	void update();
 	bool setCursor();
-	inline size_t getLineCount() const {
-		return (getHeight() / (getGraphics()->getFont().getHeight() + PADDING));
-	};
-	inline sRingBuf *getInBuf() {
-		return _vt->inbuf;
-	};
-	inline sVTerm *getVTerm() {
-		return _vt;
-	};
 
+	tULock *_lock;
 	ushort _lastCol;
 	ushort _lastRow;
 	sVTerm *_vt;

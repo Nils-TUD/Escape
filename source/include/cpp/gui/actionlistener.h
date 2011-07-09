@@ -20,9 +20,20 @@ namespace gui {
 		ActionListener() {
 		};
 		/**
+		 * Copy-constructor
+		 */
+		ActionListener(const ActionListener &l) {
+		};
+		/**
 		 * Destructor
 		 */
 		virtual ~ActionListener() {
+		};
+		/**
+		 * Assignment-operator
+		 */
+		ActionListener &operator=(const ActionListener &l) {
+			return *this;
 		};
 
 		/**
@@ -31,11 +42,6 @@ namespace gui {
 		 * @param el the ui-element that received this event
 		 */
 		virtual void actionPerformed(UIElement& el) = 0;
-
-	private:
-		// no copying
-		ActionListener(const ActionListener &l);
-		ActionListener &operator=(const ActionListener &l);
 	};
 }
 

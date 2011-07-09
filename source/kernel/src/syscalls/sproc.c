@@ -195,8 +195,6 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 
 	if(state != NULL && !paging_isRangeUserWritable((uintptr_t)state,sizeof(sExitState)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!proc_hasChild(t->proc->pid))
-		SYSC_ERROR(stack,ERR_NO_CHILD);
 
 	/* check if there is another thread waiting */
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {

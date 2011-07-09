@@ -37,10 +37,12 @@
 #include <list>
 
 namespace gui {
-	class WindowTitleBar : public Panel {
+	class WindowTitleBar : public Panel, public ActionListener {
 		friend class Window;
 
 	private:
+		static const char *CLOSE_IMG;
+
 		static Color TITLE_ACTIVE_BGCOLOR;
 		static Color TITLE_INACTIVE_BGCOLOR;
 		static Color TITLE_FGCOLOR;
@@ -66,6 +68,8 @@ namespace gui {
 			_title = title;
 			repaint();
 		};
+
+		virtual void actionPerformed(UIElement& el);
 
 		virtual void resizeTo(gsize_t width,gsize_t height);
 		virtual void paint(Graphics& g);
@@ -188,6 +192,12 @@ namespace gui {
 		inline Control *getFocus() {
 			return _body.getFocus();
 		};
+		/**
+		 * Sets the focus on the given control.
+		 *
+		 * @param c the control
+		 */
+		void setFocus(Control *c);
 		/**
 		 * @return the height of the title-bar
 		 */

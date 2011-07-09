@@ -309,6 +309,7 @@ void thread_kill(sThread *t) {
 	sll_removeFirstWith(t->proc->threads,t);
 
 	/* remove from all modules we may be announced */
+	sig_removeHandlerFor(t->tid);
 	ev_removeThread(t->tid);
 	sched_removeThread(t);
 	timer_removeThread(t->tid);

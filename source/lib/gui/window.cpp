@@ -31,38 +31,46 @@
 #include <ostream>
 
 namespace gui {
+	const char *WindowTitleBar::CLOSE_IMG = "/etc/close.bmp";
 	Color WindowTitleBar::TITLE_ACTIVE_BGCOLOR = Color(0,0,0xFF);
 	Color WindowTitleBar::TITLE_INACTIVE_BGCOLOR = Color(0,0,0x80);
 	Color WindowTitleBar::TITLE_FGCOLOR = Color(0xFF,0xFF,0xFF);
 
 	WindowTitleBar::WindowTitleBar(const string& title,gpos_t x,gpos_t y,
 			gsize_t width,gsize_t height)
-		: Panel(x,y,width,height), _title(title) {
+		: Panel(x,y,width,height), ActionListener(), _title(title) {
 	}
 	WindowTitleBar::~WindowTitleBar() {
 		delete _imgs[0];
 		delete _btns[0];
 	}
 	WindowTitleBar::WindowTitleBar(const WindowTitleBar& wtb)
-		: Panel(wtb), _title(wtb._title) {
+		: Panel(wtb), ActionListener(wtb), _title(wtb._title) {
 	}
 	WindowTitleBar& WindowTitleBar::operator=(const WindowTitleBar& wtb) {
 		if(this == &wtb)
 			return *this;
 		Panel::operator =(wtb);
+		ActionListener::operator =(wtb);
 		_title = wtb._title;
 		return *this;
 	}
 
 	void WindowTitleBar::init() {
-		_imgs[0] = Image::loadImage("/etc/close.bmp");
+		_imgs[0] = Image::loadImage(CLOSE_IMG);
 		_btns[0] = new ImageButton(_imgs[0],getWidth() - getHeight(),0,getHeight(),getHeight(),false);
+		_btns[0]->addListener(this);
 		add(*_btns[0]);
 	}
 
 	void WindowTitleBar::resizeTo(gsize_t width,gsize_t height) {
 		Panel::resizeTo(width,height);
 		_btns[0]->moveTo(getWidth() - getHeight(),0);
+	}
+
+	void WindowTitleBar::actionPerformed(UIElement& el) {
+		UNUSED(el);
+		Application::getInstance()->exit();
 	}
 
 	void WindowTitleBar::paint(Graphics& g) {
@@ -215,10 +223,8 @@ namespace gui {
 
 	void Window::onMousePressed(const MouseEvent &e) {
 		if(_style == STYLE_DEFAULT) {
-			if(e.getY() < _header.getHeight()) {
+			if(e.getY() < _header.getHeight())
 				_inTitle = true;
-				return;
-			}
 			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
 				_inResizeBottom = true;
 			if(e.getY() >= _header.getHeight()) {
@@ -316,6 +322,18 @@ namespace gui {
 				focus->onFocusLost();
 			if(newFocus)
 				newFocus->onFocusGained();
+		}
+	}
+
+	void Window::setFocus(Control *c) {
+		if(find(_body._controls.begin(),_body._controls.end(),c) != _body._controls.end()) {
+			Control *old = getFocus();
+			if(old != c) {
+				if(old)
+					old->onFocusLost();
+				if(c)
+					c->onFocusGained();
+			}
 		}
 	}
 

@@ -73,10 +73,9 @@ void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 					}
 					return;
 				case VK_D:
-					if(vt->readLine) {
-						vt->inbufEOF = true;
+					vt->inbufEOF = true;
+					if(vt->readLine)
 						vterm_rlFlushBuf(vt);
-					}
 					if(rb_length(vt->inbuf) == 0)
 						fcntl(vt->sid,F_SETDATA,true);
 					return;

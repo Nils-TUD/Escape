@@ -73,7 +73,7 @@ int main(void) {
 					msg.args.arg1 = tmpWinId;
 					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style,titleBarHeight);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
-					if(style == WIN_STYLE_POPUP)
+					if(style != WIN_STYLE_DESKTOP)
 						win_setActive(msg.args.arg2,false,mouse_getX(),mouse_getY());
 				}
 				break;

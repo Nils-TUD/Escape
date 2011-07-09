@@ -87,9 +87,7 @@ static void handleKbMessage(sWindow *active,uchar keycode,bool isBreak,uchar mod
 	msg.args.arg4 = c;
 	msg.args.arg5 = modifier;
 	aWin = getClient(drvId,active->owner);
-	if(aWin < 0)
-		printe("[WINM] Unable to get client %d",active->owner);
-	else {
+	if(aWin >= 0) {
 		send(aWin,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg.args));
 		close(aWin);
 	}

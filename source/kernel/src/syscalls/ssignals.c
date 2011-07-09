@@ -86,7 +86,7 @@ int sysc_sendSignalTo(sIntrptStackFrame *stack) {
 		sig_addSignal(signal);
 
 	/* choose another thread if we've killed ourself */
-	if(thread_getById(tid) == NULL)
+	if(thread_getById(tid) == NULL || (t->proc->flags & P_ZOMBIE))
 		thread_switch();
 
 	SYSC_RET1(stack,0);

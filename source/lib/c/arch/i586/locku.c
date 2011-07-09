@@ -27,7 +27,11 @@ void locku(tULock *l) {
 		"	xor	%%eax,%%eax;"		/* clear eax */
 		"	lock;"					/* lock next instruction */
 		"	cmpxchg %%ecx,(%0);"	/* compare l with eax; if equal exchange ecx with l */
-		"	jnz		lockuLoop;"		/* try again if not equal */
+		"	jz		done;"
+		"	call	yield;"			/* if its locked, do a yield to give other threads the chance
+										to run and to release the lock */
+		"	jmp		lockuLoop;"		/* try again */
+		"done:"
 		: : "D" (l)
 	);
 }

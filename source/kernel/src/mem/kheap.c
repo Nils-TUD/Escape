@@ -26,10 +26,6 @@
 #include <assert.h>
 #include <string.h>
 
-#if DEBUGGING
-#define DEBUG_ALLOC_N_FREE		0
-#endif
-
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
 
@@ -76,10 +72,6 @@ static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
 /* currently occupied memory */
 static size_t memUsage = 0;
 static size_t pages = 0;
-
-#if DEBUGGING
-static bool aafEnabled = false;
-#endif
 
 void *kheap_alloc(size_t size) {
 	ulong *begin;
@@ -138,21 +130,6 @@ void *kheap_alloc(size_t size) {
 		narea->next = usableList;
 		usableList = narea;
 	}
-
-#if DEBUG_ALLOC_N_FREE
-	if(aafEnabled) {
-		sFuncCall *trace = util_getKernelStackTrace();
-		size_t i = 0;
-		vid_printf("[A] %Px %zd ",area->address,area->size);
-		while(trace->addr != 0 && i++ < 10) {
-			vid_printf("%Px",trace->addr);
-			trace++;
-			if(trace->addr)
-				vid_printf(" ");
-		}
-		vid_printf("\n");
-	}
-#endif
 
 	/* insert in occupied-map */
 	list = occupiedMap + kheap_getHash(area->address);
@@ -231,21 +208,6 @@ void kheap_free(void *addr) {
 		oprev->next = area->next;
 	else
 		occupiedMap[kheap_getHash(begin)] = area->next;
-
-#if DEBUG_ALLOC_N_FREE
-	if(aafEnabled) {
-		sFuncCall *trace = util_getKernelStackTrace();
-		size_t i = 0;
-		vid_printf("[F] %Px %zd ",addr,area->size);
-		while(trace->addr != 0 && i++ < 10) {
-			vid_printf("%Px",trace->addr);
-			trace++;
-			if(trace->addr)
-				vid_printf(" ");
-		}
-		vid_printf("\n");
-	}
-#endif
 
 	/* see what we have to merge */
 	if(prev && next) {
@@ -521,11 +483,3 @@ static size_t kheap_getHash(void *addr) {
 	/* note that we can use & (a-1) since OCC_MAP_SIZE = 2^x */
 	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
 }
-
-#if DEBUGGING
-
-void kheap_dbg_setAaFEnabled(bool enabled) {
-	aafEnabled = enabled;
-}
-
-#endif

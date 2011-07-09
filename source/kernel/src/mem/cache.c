@@ -24,9 +24,14 @@
 #include <sys/video.h>
 #include <string.h>
 
+#if DEBUGGING
+#define DEBUG_ALLOC_N_FREE	0
+#endif
+
 #define GUARD_MAGIC			0xCAFEBABE
 #define MIN_OBJ_COUNT		8
 #define SIZE_THRESHOLD		128
+#define HEAP_THRESHOLD		512
 
 typedef struct {
 	size_t objSize;
@@ -54,7 +59,12 @@ static sCache caches[] = {
 	{16384,0,0,NULL},
 };
 
+#if DEBUGGING
+static bool aafEnabled = false;
+#endif
+
 void *cache_alloc(size_t size) {
+	void *res;
 	if(size == 0)
 		return NULL;
 
@@ -62,12 +72,31 @@ void *cache_alloc(size_t size) {
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
 		size_t objSize = caches[i].objSize;
 		if(objSize >= size) {
-			if((objSize - size) >= SIZE_THRESHOLD)
-				return kheap_alloc(size);
-			return cache_get(caches + i,i);
+			if((objSize - size) >= SIZE_THRESHOLD) {
+				res = kheap_alloc(size);
+				goto done;
+			}
+			res = cache_get(caches + i,i);
+			goto done;
 		}
 	}
-	return kheap_alloc(size);
+	res = kheap_alloc(size);
+
+done:
+#if DEBUG_ALLOC_N_FREE
+	if(aafEnabled) {
+		sFuncCall *trace = util_getKernelStackTrace();
+		vid_printf("\n[A] %Px %zd ",res,size);
+		for(i = 0; trace->addr != 0 && i < 7; i++) {
+			vid_printf("%Px",trace->addr);
+			trace++;
+			if(trace->addr)
+				vid_printf(" ");
+		}
+		vid_printf("\n");
+	}
+#endif
+	return res;
 }
 
 void *cache_calloc(size_t num,size_t size) {
@@ -101,6 +130,21 @@ void *cache_realloc(void *p,size_t size) {
 void cache_free(void *p) {
 	if(p == NULL)
 		return;
+
+#if DEBUG_ALLOC_N_FREE
+	if(aafEnabled) {
+		sFuncCall *trace = util_getKernelStackTrace();
+		size_t i = 0;
+		vid_printf("\n[F] %Px 0 ",p);
+		while(trace->addr != 0 && i++ < 7) {
+			vid_printf("%Px",trace->addr);
+			trace++;
+			if(trace->addr)
+				vid_printf(" ");
+		}
+		vid_printf("\n");
+	}
+#endif
 
 	sCache *c;
 	ulong *area = (ulong*)p - 2;
@@ -167,7 +211,7 @@ static void *cache_get(sCache *c,size_t i) {
 		pages += pageCount;
 		/* if the remaining space is big enough (it won't bring advantages to add dozens e.g. 8
 		 * byte large areas to the heap), add it to the fallback-heap */
-		if(rem > SIZE_THRESHOLD)
+		if(rem >= HEAP_THRESHOLD)
 			kheap_addMemory((uintptr_t)space + bytes - rem,rem);
 
 		c->totalObjs += objs;
@@ -190,3 +234,11 @@ static void *cache_get(sCache *c,size_t i) {
 	c->freeObjs--;
 	return area + 2;
 }
+
+#if DEBUGGING
+
+void cache_dbg_setAaFEnabled(bool enabled) {
+	aafEnabled = enabled;
+}
+
+#endif

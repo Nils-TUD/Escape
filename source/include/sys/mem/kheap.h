@@ -115,16 +115,4 @@ uintptr_t kheap_allocSpace(size_t count);
  */
 void kheap_print(void);
 
-
-#if DEBUGGING
-
-/**
- * Enables/disables "allocate and free" prints
- *
- * @param enabled the new value
- */
-void kheap_dbg_setAaFEnabled(bool enabled);
-
-#endif
-
 #endif /* KHEAP_H_ */

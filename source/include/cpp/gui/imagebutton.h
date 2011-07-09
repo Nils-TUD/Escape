@@ -12,11 +12,11 @@
 namespace gui {
 	class ImageButton : public Button {
 	public:
-		ImageButton(Image* img,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Button(x,y,width,height), _img(img) {
+		ImageButton(Image* img,gpos_t x,gpos_t y,gsize_t width,gsize_t height,bool border = true)
+			: Button(x,y,width,height), _img(img), _border(border) {
 		};
 		ImageButton(const ImageButton &b)
-			: Button(b), _img(b._img) {
+			: Button(b), _img(b._img), _border(b._border) {
 		};
 		virtual ~ImageButton() {
 		};
@@ -24,7 +24,8 @@ namespace gui {
 			if(this == &b)
 				return *this;
 			Button::operator =(b);
-			this->_img = b._img;
+			_img = b._img;
+			_border = b._border;
 			return *this;
 		}
 
@@ -32,10 +33,12 @@ namespace gui {
 			return _img;
 		};
 
+		virtual void paintBorder(Graphics &g);
 		virtual void paintBackground(Graphics &g);
 
 	private:
 		Image *_img;
+		bool _border;
 	};
 }
 

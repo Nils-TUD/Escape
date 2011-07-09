@@ -40,10 +40,12 @@ namespace gui {
 	}
 
 	void Checkbox::onFocusGained() {
+		Control::onFocusGained();
 		_focused = true;
 		repaint();
 	}
 	void Checkbox::onFocusLost() {
+		Control::onFocusLost();
 		_focused = false;
 		repaint();
 	}

@@ -22,8 +22,7 @@
 
 #include <esc/common.h>
 #include <gui/graphics.h>
-#include <gui/color.h>
-#include <gui/font.h>
+#include <gui/graphicsbuffer.h>
 
 namespace gui {
 	/**
@@ -31,9 +30,11 @@ namespace gui {
 	 */
 	class Graphics24 : public Graphics {
 	public:
-		Graphics24(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp);
-		Graphics24(Graphics &g,gpos_t x,gpos_t y);
-		virtual ~Graphics24();
+		Graphics24(GraphicsBuffer *buf,gpos_t x,gpos_t y)
+			: Graphics(buf,x,y) {
+		};
+		virtual ~Graphics24() {
+		};
 
 		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 

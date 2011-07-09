@@ -18,27 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/debug.h>
-#include <gui/graphics.h>
 #include <gui/graphics32.h>
 
 namespace gui {
-	Graphics32::Graphics32(Graphics &g,gpos_t x,gpos_t y)
-		: Graphics(g,x,y) {
-
-	}
-
-	Graphics32::Graphics32(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp)
-		: Graphics(x,y,width,height,bpp) {
-
-	}
-
-	Graphics32::~Graphics32() {
-		// nothing to do
-	}
-
 	void Graphics32::doSetPixel(gpos_t x,gpos_t y) {
-		uint32_t *addr = (uint32_t*)(_pixels + ((_offy + y) * _width + (_offx + x)) * 4);
+		gsize_t bwidth = _buf->getWidth();
+		uint32_t *addr = (uint32_t*)(_buf->getBuffer() + ((_offy + y) * bwidth + (_offx + x)) * 4);
 		*addr = _col;
 	}
 
@@ -49,15 +34,17 @@ namespace gui {
 		updateMinMax(x + width - 1,yend - 1);
 		gpos_t xcur;
 		gpos_t xend = x + width;
+		gsize_t bwidth = _buf->getWidth();
+		uint8_t *pixels = _buf->getBuffer();
 		// optimized version for 16bit
 		// This is necessary if we want to have reasonable speed because the simple version
 		// performs too many function-calls (one to a virtual-function and one to memcpy
 		// that the compiler doesn't inline). Additionally the offset into the
 		// memory-region will be calculated many times.
 		// This version is much quicker :)
-		gsize_t widthadd = _width;
+		gsize_t widthadd = bwidth;
 		uint32_t *addr;
-		uint32_t *orgaddr = (uint32_t*)(_pixels + (((_offy + y) * _width + (_offx + x)) * 4));
+		uint32_t *orgaddr = (uint32_t*)(pixels + (((_offy + y) * bwidth + (_offx + x)) * 4));
 		for(; y < yend; y++) {
 			addr = orgaddr;
 			for(xcur = x; xcur < xend; xcur++)

@@ -29,27 +29,14 @@ namespace gui {
 	class GraphicFactory {
 	public:
 		/**
-		 * Returns a graphics-instance that uses g as nested graphics-object, i.e. this method
-		 * is intended for controls that use the graphics-object from the window.
+		 * Returns a graphics-instance that uses buf as buffer.
 		 *
-		 * @param g the graphics-object of the window
+		 * @param buf the graphics-buffer to use
 		 * @param x the x-position of the control
 		 * @param y the y-position of the control
 		 * @return the graphics-object
 		 */
-		static Graphics *get(Graphics &g,gpos_t x,gpos_t y);
-
-		/**
-		 * Returns a graphics-instance for a window
-		 *
-		 * @param x the x-position of the window
-		 * @param y the y-position of the window
-		 * @param width the width of the window
-		 * @param height the height of the window
-		 * @param bpp the color-depth
-		 * @return the graphics-object
-		 */
-		static Graphics *get(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp);
+		static Graphics *get(GraphicsBuffer *buf,gpos_t x,gpos_t y);
 
 	private:
 		// no instantation

@@ -29,66 +29,42 @@
 #include <string.h>
 
 namespace gui {
-	Graphics::Graphics(Graphics &g,gpos_t x,gpos_t y)
-		: _offx(x), _offy(y), _x(0), _y(0), _width(g._width), _height(g._height),
-			_bpp(g._bpp), _col(0), _colInst(Color(0)), _minx(0),_miny(0), _maxx(_width - 1),
-			_maxy(_height - 1), _pixels(NULL), _font(Font()), _owner(&g) {
-		_pixels = g._pixels;
-	}
-
-	Graphics::Graphics(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp)
-		: _offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp),
-			_col(0), _colInst(Color(0)), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),
-			_pixels(NULL), _font(Font()), _owner(NULL) {
-		allocBuffer();
-	}
-
-	Graphics::~Graphics() {
-		if(_owner == NULL)
-			delete _pixels;
-	}
-
-	void Graphics::allocBuffer() {
-		switch(_bpp) {
-			case 32:
-				_pixels = (uint8_t*)calloc(_width * _height,4);
-				break;
-			case 24:
-				_pixels = (uint8_t*)calloc(_width * _height,3);
-				break;
-			case 16:
-				_pixels = (uint8_t*)calloc(_width * _height,2);
-				break;
-			default:
-				cerr << "Unsupported color-depth: " << _bpp << endl;
-				exit(EXIT_FAILURE);
-				break;
-		}
-		if(!_pixels) {
-			cerr << "Not enough memory" << endl;
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	void Graphics::moveLines(gpos_t y,gsize_t height,int up) {
-		gpos_t x = 0;
-		gsize_t width = _width;
+	void Graphics::moveLines(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
+		gsize_t bwidth = _buf->getWidth();
+		gsize_t bheight = _buf->getHeight();
+		gsize_t psize = _buf->getColorDepth() / 8;
+		gsize_t wsize = width * psize;
+		gsize_t bwsize = bwidth * psize;
+		uint8_t *pixels = _buf->getBuffer();
 		validateParams(x,y,width,height);
+		gpos_t startx = _offx + x;
 		gpos_t starty = _offy + y;
-		gsize_t psize = _bpp / 8;
 		if(up > 0) {
 			if(y < up)
 				up = y;
 		}
 		else {
-			if(y + height - up > _height)
-				up = -(_height - (height + y));
+			if(y + height - up > bheight)
+				up = -(bheight - (height + y));
 		}
-		memmove(_pixels + ((starty - up) * _width) * psize,
-				_pixels + (starty * _width) * psize,
-				height * _width * psize);
-		updateMinMax(0,y - up);
-		updateMinMax(_width - 1,y + height - up - 1);
+
+		pixels += startx * psize;
+		if(up > 0) {
+			for(gsize_t i = 0; i < height; i++) {
+				memcpy(pixels + (starty + i - up) * bwsize,
+					pixels + (starty + i) * bwsize,
+					wsize);
+			}
+		}
+		else {
+			for(gsize_t i = 0; i < height; i++) {
+				memcpy(pixels + (starty + height - 1 - i - up) * bwsize,
+					pixels + (starty + height - 1 - i) * bwsize,
+					wsize);
+			}
+		}
+		updateMinMax(x,y - up);
+		updateMinMax(width - 1,y + height - up - 1);
 	}
 
 	void Graphics::drawChar(gpos_t x,gpos_t y,char c) {
@@ -225,117 +201,35 @@ namespace gui {
 		}
 	}
 
-	void Graphics::requestUpdate(gwinid_t winid) {
-		Window *w = Application::getInstance()->getWindowById(winid);
-		if(w->isCreated()) {
-			// if we are the active (=top) window, we can update directly
-			if(w->isActive()) {
-				if(_owner != NULL)
-					_owner->update(_offx + _minx,_offy + _miny,_maxx - _minx + 1,_maxy - _miny + 1);
-				else
-					update(_offx + _minx,_offy + _miny,_maxx - _minx + 1,_maxy - _miny + 1);
-			}
-			else {
-				// notify winmanager that we want to repaint this area; after a while we'll get multiple
-				// (ok, maybe just one) update-events with specific areas to update
-				Application::getInstance()->requestWinUpdate(winid,_offx + _minx,_offy + _miny,
-						_maxx - _minx + 1,_maxy - _miny + 1);
-			}
-		}
-
+	void Graphics::requestUpdate() {
+		_buf->requestUpdate(_offx + _minx,_offy + _miny,_maxx - _minx + 1,_maxy - _miny + 1);
 		// reset region
-		_minx = _width - 1;
+		_minx = _buf->getWidth() - 1;
 		_maxx = 0;
-		_miny = _height - 1;
+		_miny = _buf->getHeight() - 1;
 		_maxy = 0;
 	}
 
 	void Graphics::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		// only the owner notifies vesa
-		if(_owner != NULL) {
-			_owner->update(_owner->_x + x,_owner->_y + y,width,height);
-			return;
-		}
-
 		validateParams(x,y,width,height);
-		// is there anything to update?
-		if(width > 0 || height > 0) {
-			gsize_t screenWidth = Application::getInstance()->getScreenWidth();
-			gsize_t screenHeight = Application::getInstance()->getScreenHeight();
-			if(_x + x >= screenWidth || _y + y >= screenHeight)
-				return;
-			if(_x < 0 && _x + x < 0) {
-				width += _x + x;
-				x = -_x;
-			}
-			width = MIN(screenWidth - (x + _x),MIN(_width - x,width));
-			height = MIN(screenHeight - (y + _y),MIN(_height - y,height));
-			void *vesaMem = Application::getInstance()->getScreenMem();
-			uint8_t *src,*dst;
-			gpos_t endy = y + height;
-			size_t psize = _bpp / 8;
-			size_t count = width * psize;
-			size_t srcAdd = _width * psize;
-			size_t dstAdd = screenWidth * psize;
-			src = _pixels + (y * _width + x) * psize;
-			dst = (uint8_t*)vesaMem + ((_y + y) * screenWidth + (_x + x)) * psize;
-			while(y < endy) {
-				memcpy(dst,src,count);
-				src += srcAdd;
-				dst += dstAdd;
-				y++;
-			}
-
-			notifyVesa(_x + x,_y + endy - height,width,height);
-		}
-	}
-
-	void Graphics::notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		int vesaFd = Application::getInstance()->getVesaFd();
-		sMsg msg;
-		if(x < 0) {
-			width += x;
-			x = 0;
-		}
-		msg.args.arg1 = x;
-		msg.args.arg2 = y;
-		msg.args.arg3 = width;
-		msg.args.arg4 = height;
-		if(send(vesaFd,MSG_VESA_UPDATE,&msg,sizeof(msg.args)) < 0)
-			cerr << "Unable to send update-request to VESA" << endl;
-	}
-
-	void Graphics::moveTo(gpos_t x,gpos_t y) {
-		gsize_t screenWidth = Application::getInstance()->getScreenWidth();
-		gsize_t screenHeight = Application::getInstance()->getScreenHeight();
-		_x = MIN(screenWidth - 1,x);
-		_y = MIN(screenHeight - 1,y);
-	}
-
-	void Graphics::resizeTo(gsize_t width,gsize_t height) {
-		if(_width != width || _height != height) {
-			_width = width;
-			_height = height;
-			if(_owner == NULL) {
-				delete [] _pixels;
-				allocBuffer();
-			}
-			else
-				_pixels = _owner->_pixels;
-		}
+		_buf->update(x,y,width,height);
 	}
 
 	void Graphics::validatePos(gpos_t &x,gpos_t &y) {
-		if(x >= _width - _offx)
-			x = _width - _offx - 1;
-		if(y >= _height - _offy)
-			y = _height - _offy - 1;
+		gsize_t bwidth = _buf->getWidth();
+		gsize_t bheight = _buf->getHeight();
+		if(x >= bwidth - _offx)
+			x = bwidth - _offx - 1;
+		if(y >= bheight - _offy)
+			y = bheight - _offy - 1;
 	}
 
 	void Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height) {
-		if(_offx + x + width > _width)
-			width = MAX(0,(int)_width - x - _offx);
-		if(_offy + y + height > _height)
-			height = MAX(0,(int)_height - y - _offy);
+		gsize_t bwidth = _buf->getWidth();
+		gsize_t bheight = _buf->getHeight();
+		if(_offx + x + width > bwidth)
+			width = MAX(0,(int)bwidth - x - _offx);
+		if(_offy + y + height > bheight)
+			height = MAX(0,(int)bheight - y - _offy);
 	}
 }

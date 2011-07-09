@@ -102,10 +102,12 @@ namespace gui {
 	}
 
 	void Editable::onFocusGained() {
+		Control::onFocusGained();
 		_focused = true;
 		repaint();
 	}
 	void Editable::onFocusLost() {
+		Control::onFocusLost();
 		_focused = false;
 		repaint();
 	}

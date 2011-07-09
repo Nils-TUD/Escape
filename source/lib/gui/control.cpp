@@ -28,28 +28,37 @@ namespace gui {
 		if(this == &c)
 			return *this;
 		UIElement::operator=(c);
-		// don't assign the window; the user has to do it manually
-		_w = NULL;
 		return *this;
 	}
 
-	void Control::setWindow(Window *w) {
-		_w = w;
+	void Control::setParent(UIElement *e) {
+		_parent = e;
 		// we share the memory with the window, so that a control simply paints to that memory
 		// and just the window writes this memory to vesa
-		_g = GraphicFactory::get(*_w->getGraphics(),getX(),getY() + _w->getTitleBarHeight());
+		_g = GraphicFactory::get(e->getGraphics()->getBuffer(),getWindowX(),getWindowY());
 	}
 
-	gwinid_t Control::getWindowId() const {
-		if(_w == NULL)
-			throw std::logic_error("No window yet");
-		return _w->getId();
+	void Control::resizeTo(gsize_t width,gsize_t height) {
+		_width = width;
+		_height = height;
+		getParent()->repaint();
+	}
+
+	void Control::moveTo(gpos_t x,gpos_t y) {
+		_x = x;
+		_y = y;
+		_g->setXOff(getWindowX());
+		_g->setYOff(getWindowY());
 	}
 
 	void Control::onFocusGained() {
-		// do nothing by default
+		Panel *p = dynamic_cast<Panel*>(getParent());
+		if(p)
+			p->setFocus(this);
 	}
 	void Control::onFocusLost() {
-		// do nothing by default
+		Panel *p = dynamic_cast<Panel*>(getParent());
+		if(p)
+			p->setFocus(NULL);
 	}
 }

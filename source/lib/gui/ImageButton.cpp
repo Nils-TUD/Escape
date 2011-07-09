@@ -21,6 +21,11 @@
 #include <gui/imagebutton.h>
 
 namespace gui {
+	void ImageButton::paintBorder(Graphics &g) {
+		if(_border)
+			Button::paintBorder(g);
+	}
+
 	void ImageButton::paintBackground(Graphics &g) {
 		gpos_t x = (getWidth() / 2) - (_img->getWidth() / 2);
 		gpos_t y = (getHeight() / 2) - (_img->getHeight() / 2);

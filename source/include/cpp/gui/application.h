@@ -22,12 +22,12 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <gui/graphicsbuffer.h>
 #include <exception>
 #include <vector>
 
 namespace gui {
 	class Window;
-	class Graphics;
 	class Color;
 
 	/**
@@ -55,7 +55,7 @@ namespace gui {
 	 */
 	class Application {
 		friend class Window;
-		friend class Graphics;
+		friend class GraphicsBuffer;
 		friend class Color;
 
 	public:

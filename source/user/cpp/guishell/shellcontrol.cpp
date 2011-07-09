@@ -51,16 +51,12 @@ Color ShellControl::COLORS[16] = {
 
 const Color ShellControl::BGCOLOR = Color(0xFF,0xFF,0xFF);
 const Color ShellControl::FGCOLOR = Color(0x0,0x0,0x0);
-const Color ShellControl::BORDER_COLOR = Color(0x0,0x0,0x0);
 const Color ShellControl::CURSOR_COLOR = Color(0x0,0x0,0x0);
 
 void ShellControl::paint(Graphics &g) {
 	// fill bg
 	g.setColor(BGCOLOR);
-	g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
-	// draw border
-	g.setColor(BORDER_COLOR);
-	g.drawRect(0,0,getWidth(),getHeight());
+	g.fillRect(0,0,getWidth(),getHeight());
 
 	paintRows(g,0,_vt->rows);
 }
@@ -83,8 +79,8 @@ void ShellControl::update() {
 		if(_vt->upScroll < _vt->rows) {
 			size_t lineHeight = g->getFont().getHeight() + PADDING;
 			size_t scrollPixel = _vt->upScroll * lineHeight;
-			g->moveLines(TEXTSTARTY + scrollPixel + lineHeight,
-					getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,scrollPixel);
+			g->moveLines(TEXTSTARTX,TEXTSTARTY + scrollPixel + lineHeight,
+					getWidth(),getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,scrollPixel);
 		}
 		// (re-)paint rows below
 		if(_vt->rows >= _vt->upScroll) {
@@ -111,8 +107,8 @@ void ShellControl::update() {
 		if(-_vt->upScroll < _vt->rows) {
 			size_t lineHeight = g->getFont().getHeight() + PADDING;
 			size_t scrollPixel = -_vt->upScroll * lineHeight;
-			g->moveLines(TEXTSTARTY + lineHeight,
-					getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,-scrollPixel);
+			g->moveLines(TEXTSTARTX,TEXTSTARTY + lineHeight,
+					getWidth(),getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,-scrollPixel);
 		}
 		// repaint first lines (not title-bar)
 		clearRows(*g,1,-_vt->upScroll);

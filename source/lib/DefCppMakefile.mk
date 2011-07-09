@@ -25,7 +25,13 @@ all: $(BUILDDIRS) $(STLIB) $(DYNLIB)
 
 $(STLIB): $(COBJS)
 	@echo "	" AR $(STLIB)
+ifneq ($(ADDSTLIB),)
+	@ar x $(ADDSTLIB) || true
+	@ar rcs $(STLIB) $(COBJS) *.o
+	@rm -f *.o
+else
 	@ar rcs $(STLIB) $(COBJS)
+endif
 	@$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB): $(CPICOBJS)

@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <gui/uielement.h>
 #include <gui/graphics.h>
+#include <gui/window.h>
 
 namespace gui {
 	UIElement &UIElement::operator=(const UIElement &e) {
@@ -29,11 +30,50 @@ namespace gui {
 		_klist = e._klist;
 		_mlist = e._mlist;
 		_g = NULL;
+		_parent = e._parent;
 		_x = e._x;
 		_y = e._y;
 		_width = e._width;
 		_height = e._height;
 		return *this;
+	}
+
+	Window *UIElement::getWindow() {
+		UIElement *p = _parent;
+		// if its the window itself
+		if(!p)
+			return reinterpret_cast<Window*>(this);
+		// otherwise go up until we've found the window
+		while(p->_parent)
+			p = p->_parent;
+		return reinterpret_cast<Window*>(p);
+	}
+
+	gpos_t UIElement::getWindowX() const {
+		if(_parent) {
+			if(_parent->_parent)
+				return _parent->getWindowX() + _x;
+			return _x;
+		}
+		return 0;
+	}
+	gpos_t UIElement::getScreenX() const {
+		if(_parent)
+			return _parent->getScreenX() + _x;
+		return _x;
+	}
+	gpos_t UIElement::getWindowY() const {
+		if(_parent) {
+			if(_parent->_parent)
+				return _parent->getWindowY() + _y;
+			return _y;
+		}
+		return 0;
+	}
+	gpos_t UIElement::getScreenY() const {
+		if(_parent)
+			return _parent->getScreenY() + _y;
+		return _y;
 	}
 
 	void UIElement::addMouseListener(MouseListener *l) {
@@ -110,13 +150,13 @@ namespace gui {
 
 	void UIElement::requestUpdate() {
 		if(_g)
-			_g->requestUpdate(getWindowId());
+			_g->requestUpdate();
 	}
 
 	void UIElement::repaint() {
-		if(_g) {
+		if(_g && _enableRepaint) {
 			paint(*_g);
-			_g->requestUpdate(getWindowId());
+			_g->requestUpdate();
 		}
 	}
 }

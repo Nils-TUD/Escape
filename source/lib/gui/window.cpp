@@ -22,6 +22,7 @@
 #include <gui/uielement.h>
 #include <gui/color.h>
 #include <gui/graphicfactory.h>
+#include <gui/imagebutton.h>
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
@@ -30,42 +31,84 @@
 #include <ostream>
 
 namespace gui {
-	Color Window::BGCOLOR = Color(0x88,0x88,0x88);
-	Color Window::TITLE_ACTIVE_BGCOLOR = Color(0,0,0xFF);
-	Color Window::TITLE_INACTIVE_BGCOLOR = Color(0,0,0x80);
-	Color Window::TITLE_FGCOLOR = Color(0xFF,0xFF,0xFF);
-	Color Window::BORDER_COLOR = Color(0x77,0x77,0x77);
+	Color WindowTitleBar::TITLE_ACTIVE_BGCOLOR = Color(0,0,0xFF);
+	Color WindowTitleBar::TITLE_INACTIVE_BGCOLOR = Color(0,0,0x80);
+	Color WindowTitleBar::TITLE_FGCOLOR = Color(0xFF,0xFF,0xFF);
 
+	WindowTitleBar::WindowTitleBar(const string& title,gpos_t x,gpos_t y,
+			gsize_t width,gsize_t height)
+		: Panel(x,y,width,height), _title(title) {
+	}
+	WindowTitleBar::~WindowTitleBar() {
+		delete _imgs[0];
+		delete _btns[0];
+	}
+	WindowTitleBar::WindowTitleBar(const WindowTitleBar& wtb)
+		: Panel(wtb), _title(wtb._title) {
+	}
+	WindowTitleBar& WindowTitleBar::operator=(const WindowTitleBar& wtb) {
+		if(this == &wtb)
+			return *this;
+		Panel::operator =(wtb);
+		_title = wtb._title;
+		return *this;
+	}
+
+	void WindowTitleBar::init() {
+		_imgs[0] = Image::loadImage("/etc/close.bmp");
+		_btns[0] = new ImageButton(_imgs[0],getWidth() - getHeight(),0,getHeight(),getHeight(),false);
+		add(*_btns[0]);
+	}
+
+	void WindowTitleBar::resizeTo(gsize_t width,gsize_t height) {
+		Panel::resizeTo(width,height);
+		_btns[0]->moveTo(getWidth() - getHeight(),0);
+	}
+
+	void WindowTitleBar::paint(Graphics& g) {
+		if(getWindow()->isActive())
+			setBGColor(TITLE_ACTIVE_BGCOLOR);
+		else
+			setBGColor(TITLE_INACTIVE_BGCOLOR);
+		Panel::paint(g);
+
+		g.setColor(TITLE_FGCOLOR);
+		g.drawString(5,(getHeight() - g.getFont().getHeight()) / 2,_title);
+	}
+
+
+	Color Window::BGCOLOR = Color(0x88,0x88,0x88);
+	Color Window::BORDER_COLOR = Color(0x55,0x55,0x55);
 	gwinid_t Window::NEXT_TMP_ID = 0xFFFF;
 
 	Window::Window(const string &title,gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style)
 		: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
-			_title(title), _titleBarHeight(20), _inTitle(false), _inResizeLeft(false),
-			_inResizeRight(false), _inResizeBottom(false), _isActive(false), _moveX(x), _moveY(y),
-			_resizeWidth(width), _resizeHeight(height), _focus(-1), _controls(vector<Control*>()) {
+			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
+			_isActive(false), _moveX(x), _moveY(y), _resizeWidth(getWidth()), _resizeHeight(getHeight()),
+			_gbuf(NULL), _header(WindowTitleBar(title,1,1,getWidth() - 2,HEADER_SIZE)),
+			_body(Panel(1,HEADER_SIZE,getWidth() - 2,getHeight() - HEADER_SIZE - 1)),
+			_tabCtrls(list<Control*>()), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
 
 	Window::Window(const Window &w)
-		: UIElement(w), _id(NEXT_TMP_ID--), _created(false), _style(w._style), _title(w._title),
-			_titleBarHeight(w._titleBarHeight), _inTitle(w._inTitle), _inResizeLeft(false),
-			_inResizeRight(false), _inResizeBottom(false), _isActive(false), _moveX(0),
-			_moveY(0), _resizeWidth(0), _resizeHeight(0), _focus(w._focus), _controls(w._controls) {
+		: UIElement(w), _id(NEXT_TMP_ID--), _created(false), _style(w._style),
+			_inTitle(w._inTitle), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
+			_isActive(false), _moveX(0), _moveY(0), _resizeWidth(0), _resizeHeight(0),
+			_gbuf(NULL), _header(w._header), _body(w._body), _tabCtrls(w._tabCtrls), _tabIt(w._tabIt) {
 		init();
 	}
 
 	Window::~Window() {
-		// no delete of _g here, since UIElement does it for us
 		// remove us from app
 		Application::getInstance()->removeWindow(this);
+		delete _gbuf;
 	}
 
 	Window &Window::operator=(const Window &w) {
 		UIElement::operator=(w);
-		_title = w._title;
 		_style = w._style;
-		_titleBarHeight = w._titleBarHeight;
 		_inTitle = w._inTitle;
 		_inResizeLeft = w._inResizeLeft;
 		_inResizeRight = w._inResizeRight;
@@ -75,8 +118,11 @@ namespace gui {
 		_moveY = w._moveY;
 		_resizeWidth = w._resizeWidth;
 		_resizeHeight = w._resizeHeight;
-		_focus = w._focus;
-		_controls = w._controls;
+		_gbuf = NULL;
+		_header = w._header;
+		_body = w._body;
+		_tabCtrls = w._tabCtrls;
+		_tabIt = w._tabIt;
 		_id = NEXT_TMP_ID--;
 		_created = false;
 		init();
@@ -84,11 +130,17 @@ namespace gui {
 	}
 
 	void Window::init() {
-		_g = GraphicFactory::get(getX(),getY(),getWidth(),getHeight(),
-				Application::getInstance()->getColorDepth());
+		Application *app = Application::getInstance();
+		_gbuf = new GraphicsBuffer(this,getX(),getY(),getWidth(),getHeight(),app->getColorDepth());
+		_g = GraphicFactory::get(_gbuf,0,0);
 		// add us to app; we'll receive a "created"-event as soon as the window
 		// manager knows about us
-		Application::getInstance()->addWindow(this);
+		app->addWindow(this);
+		_header._g = GraphicFactory::get(_gbuf,1,1);
+		_header._parent = this;
+		_header.init();
+		_body._g = GraphicFactory::get(_gbuf,1,getTitleBarHeight());
+		_body._parent = this;
 	}
 
 	void Window::onMouseMoved(const MouseEvent &e) {
@@ -96,9 +148,10 @@ namespace gui {
 		// the delay between window-movement and cursor-movement may be too
 		// big so that we "loose" the window
 		if(_inTitle) {
-			if(e.isButton1Down())
+			if(e.isButton1Down()) {
 				move(e.getXMovement(),e.getYMovement());
-			return;
+				return;
+			}
 		}
 		if(_inResizeLeft) {
 			if(e.isButton1Down()) {
@@ -113,7 +166,7 @@ namespace gui {
 				resize(_inResizeRight ? e.getXMovement() : 0,_inResizeBottom ? e.getYMovement() : 0);
 			return;
 		}
-		passToCtrl(e,MOUSE_MOVED);
+		passToCtrl(e,MouseEvent::MOUSE_MOVED);
 	}
 
 	void Window::onMouseReleased(const MouseEvent &e) {
@@ -129,10 +182,10 @@ namespace gui {
 			// finish resize-operation
 			if(_moveX != getX() || _resizeWidth != getWidth() || _resizeHeight != getHeight()) {
 				if(resizing) {
-					_g->moveTo(_moveX,_moveY);
-					_g->resizeTo(_resizeWidth,_resizeHeight);
-					for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
-						(*it)->getGraphics()->resizeTo(_resizeWidth,_resizeHeight);
+					_gbuf->moveTo(_moveX,_moveY);
+					_gbuf->resizeTo(_resizeWidth,_resizeHeight);
+					_header.resizeTo(_resizeWidth - 2,_header.getHeight());
+					_body.resizeTo(_resizeWidth - 2,_resizeHeight - _header.getHeight() - 1);
 					// when resizing left, its both a resize and move
 					setX(_moveX);
 					setY(_moveY);
@@ -145,43 +198,45 @@ namespace gui {
 
 			// finish move-operation
 			if(_moveX != getX() || _moveY != getY()) {
-				_g->moveTo(_moveX,_moveY);
-				setX(_g->_x);
-				setY(_g->_y);
-				Application::getInstance()->moveWindow(this,true);
+				if(title) {
+					_gbuf->moveTo(_moveX,_moveY);
+					setX(_moveX);
+					setY(_moveY);
+					Application::getInstance()->moveWindow(this,true);
+				}
 			}
 
 			// don't pass the event to controls in this case
 			if(title || resizing)
 				return;
 		}
-		passToCtrl(e,MOUSE_RELEASED);
+		passToCtrl(e,MouseEvent::MOUSE_RELEASED);
 	}
 
 	void Window::onMousePressed(const MouseEvent &e) {
 		if(_style == STYLE_DEFAULT) {
-			if(e.getY() < _titleBarHeight) {
+			if(e.getY() < _header.getHeight()) {
 				_inTitle = true;
 				return;
 			}
 			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
 				_inResizeBottom = true;
-			if(e.getY() >= _titleBarHeight) {
+			if(e.getY() >= _header.getHeight()) {
 				if(e.getX() < CURSOR_RESIZE_WIDTH)
 					_inResizeLeft = true;
 				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
 					_inResizeRight = true;
 			}
 		}
-		passToCtrl(e,MOUSE_PRESSED);
+		passToCtrl(e,MouseEvent::MOUSE_PRESSED);
 	}
 
 	void Window::onKeyPressed(const KeyEvent &e) {
-		passToCtrl(e,KEY_PRESSED);
+		passToCtrl(e,KeyEvent::KEY_PRESSED);
 	}
 
 	void Window::onKeyReleased(const KeyEvent &e) {
-		passToCtrl(e,KEY_RELEASED);
+		passToCtrl(e,KeyEvent::KEY_RELEASED);
 	}
 
 	void Window::passToCtrl(const KeyEvent &e,uchar event) {
@@ -190,31 +245,41 @@ namespace gui {
 			return;
 
 		// handle focus-change
-		if(event == KEY_RELEASED && e.getKeyCode() == VK_TAB) {
-			int old = _focus;
-			if(_focus == -1)
-				_focus = 0;
-			else if(e.isShiftDown())
-				_focus = (_focus - 1) % _controls.size();
-			else
-				_focus = (_focus + 1) % _controls.size();
+		if(event == KeyEvent::KEY_RELEASED && e.getKeyCode() == VK_TAB) {
+			if(_tabCtrls.size() > 0) {
+				Control *oldFocus = getFocus();
+				if(_tabIt == _tabCtrls.end())
+					_tabIt = _tabCtrls.begin();
 
-			if(old != _focus) {
-				if(old >= 0)
-					_controls[old]->onFocusLost();
-				_controls[_focus]->onFocusGained();
+				if(e.isShiftDown()) {
+					if(_tabIt == _tabCtrls.begin())
+						_tabIt = _tabCtrls.end();
+					_tabIt--;
+				}
+				else {
+					_tabIt++;
+					if(_tabIt == _tabCtrls.end())
+						_tabIt = _tabCtrls.begin();
+				}
+
+				if(*_tabIt != oldFocus) {
+					if(oldFocus)
+						oldFocus->onFocusLost();
+					(*_tabIt)->onFocusGained();
+				}
 			}
 			return;
 		}
 
 		// pass event to focused control
-		if(_focus != -1) {
+		Control *focus = getFocus();
+		if(focus) {
 			switch(event) {
-				case KEY_PRESSED:
-					_controls[_focus]->onKeyPressed(e);
+				case KeyEvent::KEY_PRESSED:
+					focus->onKeyPressed(e);
 					break;
-				case KEY_RELEASED:
-					_controls[_focus]->onKeyReleased(e);
+				case KeyEvent::KEY_RELEASED:
+					focus->onKeyReleased(e);
 					break;
 			}
 		}
@@ -227,40 +292,36 @@ namespace gui {
 
 		/* if a control is focused and we get a moved or released event we have to pass this
 		 * event to the focused control. otherwise the control wouldn't know of them */
-		if(event == MOUSE_MOVED) {
-			if(_focus >= 0)
-				_controls[_focus]->onMouseMoved(e);
+		Control *focus = getFocus();
+		if(event == MouseEvent::MOUSE_MOVED) {
+			if(focus)
+				focus->onMouseMoved(e);
 			return;
 		}
-		else if(event == MOUSE_RELEASED) {
-			if(_focus >= 0)
-				_controls[_focus]->onMouseReleased(e);
+		if(event == MouseEvent::MOUSE_RELEASED) {
+			if(focus)
+				focus->onMouseReleased(e);
 			return;
 		}
 
-		gpos_t x = e.getX();
-		gpos_t y = e.getY();
-		y -= _titleBarHeight;
-		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
-			Control *c = *it;
-			if(x >= c->getX() && x < c->getX() + c->getWidth() &&
-				y >= c->getY() && y < c->getY() + c->getHeight()) {
-				/* change focus */
-				if(_focus < 0 || c != _controls[_focus]) {
-					if(_focus >= 0)
-						_controls[_focus]->onFocusLost();
-					c->onFocusGained();
-					_focus = distance(_controls.begin(),it);
-				}
-				c->onMousePressed(e);
-				return;
-			}
-		}
+		if(e.getY() < _header.getHeight())
+			_header.onMousePressed(e);
+		else
+			_body.onMousePressed(e);
 
-		// if we're here the user has not clicked on a control, so set the focus to "nothing"
-		if(_focus >= 0)
-			_controls[_focus]->onFocusLost();
-		_focus = -1;
+		// handle focus-change
+		Control *newFocus = getFocus();
+		if(newFocus != focus) {
+			if(focus)
+				focus->onFocusLost();
+			if(newFocus)
+				newFocus->onFocusGained();
+		}
+	}
+
+	void Window::appendTabCtrl(Control &c) {
+		_tabCtrls.push_back(&c);
+		_tabIt = _tabCtrls.end();
 	}
 
 	void Window::resize(short width,short height) {
@@ -318,29 +379,12 @@ namespace gui {
 	}
 
 	void Window::paintTitle(Graphics &g) {
+		UNUSED(g);
 		// no repaint until we're created and popups have no title-bar
 		if(!_created || _style == STYLE_POPUP)
 			return;
 
-		// paint titlebar
-		if(_isActive)
-			g.setColor(TITLE_ACTIVE_BGCOLOR);
-		else
-			g.setColor(TITLE_INACTIVE_BGCOLOR);
-		g.fillRect(1,1,getWidth() - 2,_titleBarHeight - 1);
-		g.setColor(TITLE_FGCOLOR);
-		g.drawString(5,(_titleBarHeight - g.getFont().getHeight()) / 2,_title);
-
-		// draw cross
-		g.setColor(BORDER_COLOR);
-		const gsize_t boxPad = 2;
-		const gsize_t crossPad = 2;
-		gsize_t cboxSize = _titleBarHeight - boxPad * 2;
-		g.drawRect(getWidth() - cboxSize - boxPad,boxPad,cboxSize,cboxSize);
-		g.drawLine(getWidth() - cboxSize - boxPad + crossPad,boxPad + crossPad,
-				getWidth() - boxPad - crossPad,_titleBarHeight - boxPad - crossPad);
-		g.drawLine(getWidth() - boxPad - crossPad,boxPad + crossPad,
-				getWidth() - cboxSize - boxPad + crossPad,_titleBarHeight - boxPad - crossPad);
+		_header.paint(*_header.getGraphics());
 	}
 
 	void Window::paint(Graphics &g) {
@@ -349,24 +393,12 @@ namespace gui {
 			return;
 
 		paintTitle(g);
-		// fill bg
-		g.setColor(BGCOLOR);
-		g.fillRect(0,_titleBarHeight,getWidth(),getHeight());
 
 		// draw border
 		g.setColor(BORDER_COLOR);
-		g.drawLine(0,_titleBarHeight,getWidth(),_titleBarHeight);
 		g.drawRect(0,0,getWidth(),getHeight());
 
-		// first, focus a control, if not already done
-		if(_focus == -1 && _controls.size() > 0) {
-			_focus = 0;
-			_controls[_focus]->onFocusGained();
-		}
-
-		// now paint controls
-		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
-			(*it)->paint(*(*it)->getGraphics());
+		_body.paint(*_body.getGraphics());
 	}
 
 	void Window::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
@@ -374,16 +406,10 @@ namespace gui {
 			_g->update(x,y,width,height);
 	}
 
-	void Window::add(Control &c) {
-		_controls.push_back(&c);
-		c.setWindow(this);
-	}
-
 	void Window::setActive(bool active) {
 		if(active != _isActive) {
 			_isActive = active;
-			paintTitle(*_g);
-			requestUpdate();
+			_header.repaint();
 		}
 	}
 

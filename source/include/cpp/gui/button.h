@@ -68,6 +68,7 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 		virtual void paintBackground(Graphics &g);
+		virtual void paintBorder(Graphics &g);
 		virtual void paint(Graphics &g);
 
 	private:

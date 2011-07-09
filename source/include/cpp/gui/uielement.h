@@ -34,8 +34,8 @@ namespace gui {
 	 * a graphics object and has callback-methods for events.
 	 */
 	class UIElement {
-		// window and control need to access _g
 		friend class Window;
+		friend class Panel;
 		friend class Control;
 
 	public:
@@ -48,8 +48,8 @@ namespace gui {
 		 * @param height the height
 		 */
 		UIElement(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: _g(NULL), _x(x), _y(y), _width(width), _height(height), _mlist(NULL),
-			_klist(NULL) {
+			: _g(NULL), _parent(NULL), _x(x), _y(y), _width(width), _height(height), _mlist(NULL),
+			  _klist(NULL), _enableRepaint(true) {
 		};
 		/**
 		 * Copy-constructor
@@ -57,8 +57,8 @@ namespace gui {
 		 * @param e the ui-element to copy
 		 */
 		UIElement(const UIElement &e)
-			: _g(NULL), _x(e._x), _y(e._y), _width(e._width), _height(e._height),
-			_mlist(e._mlist), _klist(e._klist) {
+			: _g(NULL), _parent(NULL), _x(e._x), _y(e._y), _width(e._width), _height(e._height),
+			_mlist(e._mlist), _klist(e._klist), _enableRepaint(e._enableRepaint) {
 		}
 		/**
 		 * Destructor. Free's the memory
@@ -74,17 +74,33 @@ namespace gui {
 		UIElement &operator=(const UIElement &e);
 
 		/**
-		 * @return the x-position of this element
+		 * @return the x-position of this element relative to the parent
 		 */
 		inline gpos_t getX() const {
 			return _x;
 		};
 		/**
-		 * @return the y-position of this element
+		 * @return the x-position in the window
+		 */
+		gpos_t getWindowX() const;
+		/**
+		 * @return the x-position on the screen
+		 */
+		gpos_t getScreenX() const;
+		/**
+		 * @return the y-position of this element relative to the parent
 		 */
 		inline gpos_t getY() const {
 			return _y;
 		};
+		/**
+		 * @return the y-position in the window
+		 */
+		gpos_t getWindowY() const;
+		/**
+		 * @return the y-position on the screen
+		 */
+		gpos_t getScreenY() const;
 		/**
 		 * @return the width of this element
 		 */
@@ -103,6 +119,17 @@ namespace gui {
 		 */
 		inline Graphics *getGraphics() const {
 			return _g;
+		};
+
+		/**
+		 * @return the window this ui-element belongs to
+		 */
+		Window *getWindow();
+		/**
+		 * @return the parent-element (may be NULL if not added to a panel yet or its a window)
+		 */
+		inline UIElement *getParent() {
+			return _parent;
 		};
 
 		/**
@@ -143,9 +170,20 @@ namespace gui {
 		virtual void onKeyReleased(const KeyEvent &e);
 
 		/**
-		 * Repaints the control, i.e. calls paint() and requests vesa to update this region
+		 * Resizes the ui-element to width and height
+		 *
+		 * @param width the new width
+		 * @param height the new height
 		 */
-		virtual void repaint();
+		virtual void resizeTo(gsize_t width,gsize_t height) = 0;
+		/**
+		 * Moves the ui-element to x,y.
+		 *
+		 * @param x the new x-position
+		 * @param y the new y-position
+		 */
+		virtual void moveTo(gpos_t x,gpos_t y) = 0;
+
 		/**
 		 * Paints the control
 		 *
@@ -153,9 +191,29 @@ namespace gui {
 		 */
 		virtual void paint(Graphics &g) = 0;
 		/**
+		 * Repaints the control, i.e. calls paint() and requests vesa to update this region
+		 */
+		virtual void repaint();
+		/**
 		 * Requests vesa to update the dirty region
 		 */
 		void requestUpdate();
+
+		/**
+		 * @return whether calls of repaint() actually perform a repaint
+		 */
+		inline bool isRepaintEnabled() const {
+			return _enableRepaint;
+		};
+		/**
+		 * Sets whether calls of repaint() actually perform a repaint. That is, by setting it to
+		 * false, calls of repaint() are ignored.
+		 *
+		 * @param en the new value
+		 */
+		inline void setRepaintEnabled(bool en) {
+			_enableRepaint = en;
+		};
 
 	protected:
 		/**
@@ -190,24 +248,31 @@ namespace gui {
 		inline void setHeight(gsize_t height) {
 			_height = height;
 		};
-		/**
-		 * @return the id of the window this ui-element belongs to
-		 */
-		virtual gwinid_t getWindowId() const = 0;
 
 	private:
+		/**
+		 * Sets the parent of this control (used by Panel)
+		 *
+		 * @param e the parent
+		 */
+		virtual void setParent(UIElement *e) {
+			_parent = e;
+		};
+
 		// only used internally
 		void notifyListener(const MouseEvent &e);
 		void notifyListener(const KeyEvent &e);
 
 	private:
 		Graphics *_g;
+		UIElement *_parent;
 		gpos_t _x;
 		gpos_t _y;
 		gsize_t _width;
 		gsize_t _height;
 		vector<MouseListener*> *_mlist;
 		vector<KeyListener*> *_klist;
+		bool _enableRepaint;
 	};
 }
 

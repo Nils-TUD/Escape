@@ -37,6 +37,8 @@
 
 #define GUI_SHELL_LOCK		0x4129927
 #define MAX_VTERM_NAME_LEN	10
+#define DEF_COLS			80
+#define DEF_ROWS			30
 
 using namespace gui;
 
@@ -102,10 +104,13 @@ int main(int argc,char **argv) {
 		delete drvName;
 
 		// now start GUI
-		ShellControl *sh = new ShellControl(sid,0,0,700,480);
-		ShellApplication *app = new ShellApplication(sid,sh);
-		Window w("Shell",100,100,700,500);
-		w.add(*sh);
+		Font font;
+		ShellApplication *app = new ShellApplication(sid);
+		Window w("Shell",100,100,font.getWidth() * DEF_COLS + 2,font.getHeight() * DEF_ROWS + 4);
+		Panel& root = w.getRootPanel();
+		ShellControl *sh = new ShellControl(sid,0,0,root.getWidth(),root.getHeight());
+		app->setShellControl(sh);
+		root.add(*sh);
 		return app->run();
 	}
 

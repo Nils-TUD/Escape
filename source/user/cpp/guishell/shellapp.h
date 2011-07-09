@@ -35,8 +35,12 @@ using namespace gui;
 
 class ShellApplication : public Application {
 public:
-	ShellApplication(int sid,ShellControl *sh);
+	ShellApplication(int sid);
 	virtual ~ShellApplication();
+
+	void setShellControl(ShellControl *sh) {
+		_sh = sh;
+	};
 
 protected:
 	void doEvents();

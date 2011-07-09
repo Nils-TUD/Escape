@@ -25,27 +25,14 @@
 #include <gui/graphicfactory.h>
 
 namespace gui {
-	Graphics *GraphicFactory::get(Graphics &g,gpos_t x,gpos_t y) {
-		switch(g.getColorDepth()) {
+	Graphics *GraphicFactory::get(GraphicsBuffer *buf,gpos_t x,gpos_t y) {
+		switch(buf->getColorDepth()) {
 			case 32:
-				return new Graphics32(g,x,y);
+				return new Graphics32(buf,x,y);
 			case 24:
-				return new Graphics24(g,x,y);
+				return new Graphics24(buf,x,y);
 			case 16:
-				return new Graphics16(g,x,y);
-			default:
-				return NULL;
-		}
-	}
-
-	Graphics *GraphicFactory::get(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp) {
-		switch(bpp) {
-			case 32:
-				return new Graphics32(x,y,width,height,bpp);
-			case 24:
-				return new Graphics24(x,y,width,height,bpp);
-			case 16:
-				return new Graphics16(x,y,width,height,bpp);
+				return new Graphics16(buf,x,y);
 			default:
 				return NULL;
 		}

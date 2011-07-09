@@ -18,28 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/debug.h>
-#include <gui/graphics.h>
 #include <gui/graphics24.h>
 
 namespace gui {
-	Graphics24::Graphics24(Graphics &g,gpos_t x,gpos_t y)
-		: Graphics(g,x,y) {
-
-	}
-
-	Graphics24::Graphics24(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp)
-		: Graphics(x,y,width,height,bpp) {
-
-	}
-
-	Graphics24::~Graphics24() {
-		// nothing to do
-	}
-
 	void Graphics24::doSetPixel(gpos_t x,gpos_t y) {
 		uint8_t *col = (uint8_t*)&_col;
-		uint8_t *addr = _pixels + ((_offy + y) * _width + (_offx + x)) * 3;
+		uint8_t *addr = _buf->getBuffer() + ((_offy + y) * _buf->getWidth() + (_offx + x)) * 3;
 		*addr++ = *col++;
 		*addr++ = *col++;
 		*addr = *col;
@@ -52,6 +36,8 @@ namespace gui {
 		updateMinMax(x + width - 1,yend - 1);
 		gpos_t xcur;
 		gpos_t xend = x + width;
+		gsize_t bwidth = _buf->getWidth();
+		uint8_t *pixels = _buf->getBuffer();
 		// optimized version for 24bit
 		// This is necessary if we want to have reasonable speed because the simple version
 		// performs too many function-calls (one to a virtual-function and one to memcpy
@@ -59,9 +45,9 @@ namespace gui {
 		// memory-region will be calculated many times.
 		// This version is much quicker :)
 		uint8_t *col = (uint8_t*)&_col;
-		gsize_t widthadd = _width * 3;
+		gsize_t widthadd = bwidth * 3;
 		uint8_t *addr;
-		uint8_t *orgaddr = _pixels + (((_offy + y) * _width + (_offx + x)) * 3);
+		uint8_t *orgaddr = pixels + (((_offy + y) * bwidth + (_offx + x)) * 3);
 		for(; y < yend; y++) {
 			addr = orgaddr;
 			for(xcur = x; xcur < xend; xcur++) {

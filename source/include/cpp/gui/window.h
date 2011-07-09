@@ -24,27 +24,71 @@
 #include <esc/io.h>
 #include <esc/messages.h>
 #include <gui/graphics.h>
+#include <gui/graphicsbuffer.h>
 #include <gui/uielement.h>
 #include <gui/application.h>
+#include <gui/button.h>
+#include <gui/image.h>
 #include <gui/control.h>
+#include <gui/panel.h>
 #include <gui/color.h>
 #include <string>
 #include <ostream>
-#include <vector>
+#include <list>
 
 namespace gui {
+	class WindowTitleBar : public Panel {
+		friend class Window;
+
+	private:
+		static Color TITLE_ACTIVE_BGCOLOR;
+		static Color TITLE_INACTIVE_BGCOLOR;
+		static Color TITLE_FGCOLOR;
+
+	public:
+		WindowTitleBar(const string& title,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		virtual ~WindowTitleBar();
+		WindowTitleBar(const WindowTitleBar& wtb);
+		WindowTitleBar& operator=(const WindowTitleBar& wtb);
+
+		/**
+		 * @return the title (a copy)
+		 */
+		inline string getTitle() const {
+			return _title;
+		};
+		/**
+		 * Sets the title and requests a repaint
+		 *
+		 * @param title the new title
+		 */
+		inline void setTitle(const string &title) {
+			_title = title;
+			repaint();
+		};
+
+		virtual void resizeTo(gsize_t width,gsize_t height);
+		virtual void paint(Graphics& g);
+
+	private:
+		void init();
+
+	private:
+		string _title;
+		Image *_imgs[1];
+		Button *_btns[1];
+	};
+
 	/**
 	 * Represents a window in the GUI.
 	 */
 	class Window : public UIElement {
 		friend class Application;
+		friend class Panel;
 
 	private:
 		// colors
 		static Color BGCOLOR;
-		static Color TITLE_ACTIVE_BGCOLOR;
-		static Color TITLE_INACTIVE_BGCOLOR;
-		static Color TITLE_FGCOLOR;
 		static Color BORDER_COLOR;
 
 		// used for creation
@@ -54,12 +98,7 @@ namespace gui {
 		static const gsize_t MIN_WIDTH = 40;
 		static const gsize_t MIN_HEIGHT = 40;
 
-		// the events
-		static const uchar MOUSE_MOVED = 0;
-		static const uchar MOUSE_RELEASED = 1;
-		static const uchar MOUSE_PRESSED = 2;
-		static const uchar KEY_RELEASED = 3;
-		static const uchar KEY_PRESSED = 4;
+		static const gsize_t HEADER_SIZE = 20;
 
 	public:
 		/**
@@ -130,16 +169,10 @@ namespace gui {
 			return _created;
 		};
 		/**
-		 * @return the height of the title-bar
-		 */
-		inline gsize_t getTitleBarHeight() const {
-			return _titleBarHeight;
-		};
-		/**
 		 * @return the title (a copy)
 		 */
 		inline string getTitle() const {
-			return _title;
+			return _header.getTitle();
 		};
 		/**
 		 * Sets the title and requests a repaint
@@ -147,8 +180,26 @@ namespace gui {
 		 * @param title the new title
 		 */
 		inline void setTitle(const string &title) {
-			_title = title;
-			repaint();
+			_header.setTitle(title);
+		};
+		/**
+		 * @return the focused control (NULL if none)
+		 */
+		inline Control *getFocus() {
+			return _body.getFocus();
+		};
+		/**
+		 * @return the height of the title-bar
+		 */
+		inline gsize_t getTitleBarHeight() const {
+			return _header.getHeight();
+		};
+
+		/**
+		 * @return the root-panel to which you can add controls
+		 */
+		inline Panel &getRootPanel() {
+			return _body;
 		};
 
 		/**
@@ -161,6 +212,13 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onKeyPressed(const KeyEvent &e);
 		virtual void onKeyReleased(const KeyEvent &e);
+
+		/**
+		 * Adds the given control as tab-control to this window
+		 *
+		 * @param c the control
+		 */
+		void appendTabCtrl(Control &c);
 
 		/**
 		 * Paints the whole window
@@ -181,7 +239,7 @@ namespace gui {
 		 * @param width the new width
 		 * @param height the new height
 		 */
-		void resizeTo(gsize_t width,gsize_t height);
+		virtual void resizeTo(gsize_t width,gsize_t height);
 		/**
 		 * Moves the window by x any y
 		 *
@@ -195,13 +253,7 @@ namespace gui {
 		 * @param x the new x-position
 		 * @param y the new y-position
 		 */
-		void moveTo(gpos_t x,gpos_t y);
-		/**
-		 * Adds the given control to this window
-		 *
-		 * @param c the control
-		 */
-		void add(Control &c);
+		virtual void moveTo(gpos_t x,gpos_t y);
 
 	protected:
 		/**
@@ -212,18 +264,13 @@ namespace gui {
 		void paintTitle(Graphics &g);
 
 		/**
-		 * @return the id of the window this ui-element belongs to
+		 * @return the window the ui-element belongs to (this)
 		 */
-		inline gwinid_t getWindowId() const {
-			return _id;
+		virtual Window *getWindow() {
+			return this;
 		};
-		/**
-		 * Sets the height of the title-bar
-		 *
-		 * @param height the new value
-		 */
-		inline void setTitleBarHeight(gsize_t height) {
-			_titleBarHeight = height;
+		virtual const Window *getWindow() const {
+			return this;
 		};
 
 	private:
@@ -285,8 +332,6 @@ namespace gui {
 		gwinid_t _id;
 		bool _created;
 		uchar _style;
-		string _title;
-		gsize_t _titleBarHeight;
 		bool _inTitle;
 		bool _inResizeLeft;
 		bool _inResizeRight;
@@ -296,9 +341,12 @@ namespace gui {
 		gpos_t _moveY;
 		gsize_t _resizeWidth;
 		gsize_t _resizeHeight;
+		GraphicsBuffer *_gbuf;
 	protected:
-		int _focus;
-		vector<Control*> _controls;
+		WindowTitleBar _header;
+		Panel _body;
+		list<Control*> _tabCtrls;
+		list<Control*>::iterator _tabIt;
 	};
 
 	/**

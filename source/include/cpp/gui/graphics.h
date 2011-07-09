@@ -21,16 +21,9 @@
 #define GRAPHICS_H_
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/proc.h>
-#include <esc/mem.h>
-#include <gui/application.h>
+#include <gui/graphicsbuffer.h>
 #include <gui/font.h>
 #include <gui/color.h>
-#include <esc/messages.h>
-#include <stdlib.h>
-#include <string>
-#include <ostream>
 
 namespace gui {
 	/**
@@ -46,42 +39,28 @@ namespace gui {
 
 	public:
 		/**
-		 * Constructor for controls
+		 * Constructor
 		 *
-		 * @param g the graphics-object of the window
-		 * @param x the x-coordinate of the control
-		 * @param y the y-coordinate of the control
+		 * @param buf the graphics-buffer for the window
+		 * @param x the x-offset to the window
+		 * @param y the y-offset to the window
 		 */
-		Graphics(Graphics &g,gpos_t x,gpos_t y);
-
-		/**
-		 * Constructor for windows
-		 *
-		 * @param x the x-coordinate of the window
-		 * @param y the y-coordinate of the window
-		 * @param width width of the window
-		 * @param height height of the window
-		 * @param bpp the used color-depth
-		 */
-		Graphics(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp);
-
+		Graphics(GraphicsBuffer *buf,gpos_t x,gpos_t y)
+			: _buf(buf), _offx(x), _offy(y), _col(0), _colInst(Color(0)),
+			  _minx(0),_miny(0), _maxx(buf->getWidth() - 1), _maxy(buf->getHeight() - 1),
+			  _font(Font()) {
+		};
 		/**
 		 * Destructor
 		 */
-		virtual ~Graphics();
+		virtual ~Graphics() {
+		};
 
 		/**
 		 * @return the current font
 		 */
 		inline Font getFont() const {
 			return _font;
-		};
-
-		/**
-		 * @return the color-depth
-		 */
-		inline gcoldepth_t getColorDepth() const {
-			return _bpp;
 		};
 
 		/**
@@ -108,21 +87,23 @@ namespace gui {
 		 * @param y the y-coordinate
 		 */
 		inline void setPixel(gpos_t x,gpos_t y) {
-			x %= _width;
-			y %= _height;
+			x = MAX(0,MIN(_buf->getWidth() - 1,x));
+			y = MAX(0,MIN(_buf->getHeight() - 1,y));
 			updateMinMax(x,y);
 			doSetPixel(x,y);
 		};
 
 		/**
-		 * Moves <height> lines at <y> up by <up> lines. If up is negative, it moves them
-		 * down
+		 * Moves <height> lines of <width> pixels at <x>,<y> up by <up> lines.
+		 * If up is negative, it moves them down.
 		 *
+		 * @param x the x-coordinate where to start
 		 * @param y the y-coordinate where to start
+		 * @param weight the width of a line
 		 * @param height the number of lines to move
 		 * @param up amount to move up / down
 		 */
-		virtual void moveLines(gpos_t y,gsize_t height,int up);
+		virtual void moveLines(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up);
 
 		/**
 		 * Draws the given character at given position
@@ -193,7 +174,6 @@ namespace gui {
 		 */
 		virtual void drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
-
 		/**
 		 * Fills a rectangle
 		 *
@@ -229,25 +209,13 @@ namespace gui {
 				_miny = y;
 		};
 		/**
-		 * Sets the coordinates for this control / window
-		 */
-		void moveTo(gpos_t x,gpos_t y);
-		/**
-		 * Sets the dimensions for this control / window
-		 */
-		void resizeTo(gsize_t width,gsize_t height);
-		/**
 		 * Requests an update for the dirty region
 		 */
-		void requestUpdate(gwinid_t winid);
+		void requestUpdate();
 		/**
 		 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
 		 */
 		void update(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
-		/**
-		 * Notifies vesa that the given region has changed
-		 */
-		void notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 		/**
 		 * Validates the given position
 		 */
@@ -259,27 +227,50 @@ namespace gui {
 
 	private:
 		/**
-		 * Allocates _pixels
+		 * @return the graphics-buffer
 		 */
-		void allocBuffer();
+		inline GraphicsBuffer* getBuffer() const {
+			return _buf;
+		};
+		/**
+		 * @return the x-offset of the control in the window
+		 */
+		inline gpos_t getXOff() const {
+			return _offx;
+		};
+		/**
+		 * Sets the x-offset of the control in the window
+		 *
+		 * @param x the new value
+		 */
+		inline void setXOff(gpos_t x) {
+			_offx = x;
+		};
+		/**
+		 * @return the y-offset of the control in the window
+		 */
+		inline gpos_t getYOff() const {
+			return _offy;
+		};
+		/**
+		 * Sets the y-offset of the control in the window
+		 *
+		 * @param y the new value
+		 */
+		inline void setYOff(gpos_t y) {
+			_offy = y;
+		};
 
 	protected:
-		// for controls: the offset of the control in the window (otherwise 0)
-		gpos_t _offx,_offy;
-		// the position of the window on the screen
-		gpos_t _x,_y;
-		// size of the window
-		gsize_t _width;
-		gsize_t _height;
-		// used color-depth
-		gcoldepth_t _bpp;
+		GraphicsBuffer *_buf;
+		// the offset of the control in the window (otherwise 0)
+		gpos_t _offx;
+		gpos_t _offy;
 		// current color
 		Color::color_type _col;
 		Color _colInst;
 		// dirty region
 		gpos_t _minx,_miny,_maxx,_maxy;
-		// buffer for this window; controls use this, too (don't have their own)
-		uint8_t *_pixels;
 		// current font
 		Font _font;
 		// for controls: the graphics-instance of the window

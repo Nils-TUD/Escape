@@ -39,10 +39,12 @@ namespace gui {
 	}
 
 	void Button::onFocusGained() {
+		Control::onFocusGained();
 		_focused = true;
 		repaint();
 	}
 	void Button::onFocusLost() {
+		Control::onFocusLost();
 		_focused = false;
 		repaint();
 	}
@@ -90,9 +92,7 @@ namespace gui {
 		g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
 	}
 
-	void Button::paint(Graphics &g) {
-		paintBackground(g);
-
+	void Button::paintBorder(Graphics &g) {
 		g.setColor(LIGHT_BORDER_COLOR);
 		g.drawLine(0,0,getWidth() - 1,0);
 		if(_focused)
@@ -108,6 +108,11 @@ namespace gui {
 		g.drawLine(0,getHeight() - 1,getWidth() - 1,getHeight() - 1);
 		if(_focused)
 			g.drawLine(0,getHeight() - 2,getWidth() - 1,getHeight() - 2);
+	}
+
+	void Button::paint(Graphics &g) {
+		paintBackground(g);
+		paintBorder(g);
 
 		g.setColor(FGCOLOR);
 		if(_pressed) {

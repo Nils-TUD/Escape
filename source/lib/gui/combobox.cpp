@@ -36,11 +36,11 @@ namespace gui {
 	void ComboBox::ItemWindow::close(gpos_t x,gpos_t y) {
 		// just do this here if we will not receive a mouse-click for the combobox-button
 		// anyway
-		gpos_t cbx = _cb->getX(), wx = _cb->getWindow().getX();
-		gpos_t cby = _cb->getY(), wy = _cb->getWindow().getY();
+		gpos_t cbx = _cb->getX(), wx = _cb->getWindow()->getX();
+		gpos_t cby = _cb->getY(), wy = _cb->getWindow()->getY();
 		gsize_t cbw = _cb->getWidth();
 		gsize_t cbh = _cb->getHeight();
-		gsize_t tbh = _cb->getWindow().getTitleBarHeight();
+		gsize_t tbh = _cb->getWindow()->getTitleBarHeight();
 		if(!(x >= wx + cbx + cbw - cbh && x < wx + cbx + cbw &&
 			y >= wy + cby + tbh && y < wy + cby + tbh + cbh)) {
 			closeImpl();
@@ -148,9 +148,9 @@ namespace gui {
 				_win = NULL;
 			}
 			else {
-				Window &w = getWindow();
-				_win = new ItemWindow(this,w.getX() + getX(),
-						w.getY() + w.getTitleBarHeight() + getY() + getHeight(),getWidth(),
+				const Window *w = getWindow();
+				_win = new ItemWindow(this,w->getX() + getX(),
+						w->getY() + w->getTitleBarHeight() + getY() + getHeight(),getWidth(),
 						_items.size() * (getGraphics()->getFont().getHeight() + ItemWindow::PADDING * 2));
 			}
 		}

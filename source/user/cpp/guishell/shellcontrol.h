@@ -22,7 +22,6 @@
 
 #include <esc/common.h>
 #include <gui/control.h>
-#include <esc/arch/i586/ports.h>
 #include <esc/debug.h>
 #include <esc/ringbuffer.h>
 #include <esc/esccodes.h>
@@ -41,15 +40,12 @@ class ShellControl : public Control {
 private:
 	static Color COLORS[16];
 
-	static const size_t COLUMNS = 80;
-	static const size_t ROWS = 25;
 	static const size_t PADDING = 3;
-	static const size_t TEXTSTARTX = 2;
-	static const size_t TEXTSTARTY = 2;
+	static const size_t TEXTSTARTX = 3;
+	static const size_t TEXTSTARTY = 3;
 	static const size_t CURSOR_WIDTH = 2;
 	static const Color BGCOLOR;
 	static const Color FGCOLOR;
-	static const Color BORDER_COLOR;
 	static const Color CURSOR_COLOR;
 
 public:
@@ -58,8 +54,8 @@ public:
 		int speakerFd;
 		sVTSize size;
 		Font font;
-		size.width = (width - 4) / font.getWidth();
-		size.height = (height - 4) / (font.getHeight() + PADDING);
+		size.width = (width - TEXTSTARTX * 2) / font.getWidth();
+		size.height = (height - TEXTSTARTY * 2) / (font.getHeight() + PADDING);
 
 		// open speaker
 		speakerFd = open("/dev/speaker",IO_MSGS);
@@ -78,21 +74,10 @@ public:
 		if(!vterm_init(_vt,&size,-1,speakerFd))
 			error("Unable to init vterm");
 		_vt->active = true;
-
-		// request ports for qemu and bochs
-		if(requestIOPort(0xe9) < 0)
-			std::cerr << "Unable to request io-port 0xe9" << std::endl;
-		if(requestIOPort(0x3f8) < 0)
-			std::cerr << "Unable to request io-port 0x3f8" << std::endl;
-		if(requestIOPort(0x3fd) < 0)
-			std::cerr << "Unable to request io-port 0x3fd" << std::endl;
 	};
 	virtual ~ShellControl() {
 		vterm_destroy(_vt);
 		free(_vt);
-		releaseIOPort(0xe9);
-		releaseIOPort(0x3f8);
-		releaseIOPort(0x3fd);
 	};
 
 	// no cloning

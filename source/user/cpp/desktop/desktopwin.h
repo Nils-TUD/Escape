@@ -81,7 +81,9 @@ public:
 	DesktopWin(gsize_t width,gsize_t height)
 		: gui::Window("",0,0,width,height,STYLE_DESKTOP),
 		  	  _shortcuts(map<gui::ImageButton*,Shortcut*>()) {
-		setTitleBarHeight(0);
+		// TODO thats not good. perhaps provide a opportunity to disable the header?
+		_header.resizeTo(_header.getWidth(),0);
+		_body.moveTo(0,0);
 	};
 	virtual ~DesktopWin() {
 	};
@@ -95,7 +97,7 @@ public:
 		sc->setButton(btn);
 		btn->addListener(this);
 		_shortcuts[btn] = sc;
-		add(*btn);
+		getRootPanel().add(*btn);
 		repaint();
 	};
 

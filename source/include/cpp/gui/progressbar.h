@@ -28,14 +28,18 @@
 namespace gui {
 	class ProgressBar : public Control {
 	private:
-		static Color BGCOLOR;
-		static Color BARCOLOR;
-		static Color FGCOLOR;
-		static Color BORDER_COLOR;
+		static const Color BGCOLOR;
+		static const Color BARCOLOR;
+		static const Color FGCOLOR;
+		static const Color BORDER_COLOR;
+		static const gsize_t PADDING	= 2;
 
 	public:
+		ProgressBar(const std::string &text)
+			: Control(0,0,0,0), _position(0), _text(text) {
+		};
 		ProgressBar(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _position(0), _text("") {
+			: Control(x,y,width,height), _position(0), _text(string()) {
 		};
 		ProgressBar(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _position(0), _text(text) {
@@ -63,6 +67,8 @@ namespace gui {
 			repaint();
 		};
 
+		virtual gsize_t getPreferredWidth() const;
+		virtual gsize_t getPreferredHeight() const;
 		virtual void paint(Graphics &g);
 
 	private:

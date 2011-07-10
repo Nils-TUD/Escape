@@ -31,9 +31,10 @@ namespace gui {
 		static const uchar DIR_LEFT;
 		static const uchar DIR_RIGHT;
 
-		static const uint PADDING = 3;
-		static const uint CURSOR_WIDTH = 2;
-		static const uint CURSOR_OVERLAP = 2;
+		static const gsize_t PADDING		= 3;
+		static const gsize_t CURSOR_WIDTH	= 2;
+		static const gsize_t CURSOR_OVERLAP	= 2;
+		static const gsize_t DEF_WIDTH		= 100;
 
 		static const Color BGCOLOR;
 		static const Color FGCOLOR;
@@ -43,6 +44,10 @@ namespace gui {
 		static const Color CURSOR_COLOR;
 
 	public:
+		Editable()
+			: Control(0,0,0,0), _cursor(0), _begin(0), _focused(false), _selecting(false),
+			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(string()) {
+		};
 		Editable(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(string()) {
@@ -64,13 +69,15 @@ namespace gui {
 			repaint();
 		};
 
-		virtual void paint(Graphics &g);
+		virtual gsize_t getPreferredWidth() const;
+		virtual gsize_t getPreferredHeight() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onMouseMoved(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onKeyPressed(const KeyEvent &e);
+		virtual void paint(Graphics &g);
 
 	private:
 		int getPosAt(gpos_t x);

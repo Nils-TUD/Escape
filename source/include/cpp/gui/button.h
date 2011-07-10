@@ -30,12 +30,16 @@
 namespace gui {
 	class Button : public Control, public EventList<ActionListener> {
 	private:
-		static Color BGCOLOR;
-		static Color FGCOLOR;
-		static Color LIGHT_BORDER_COLOR;
-		static Color DARK_BORDER_COLOR;
+		static const gsize_t BORDERSIZE;
+		static const Color BGCOLOR;
+		static const Color FGCOLOR;
+		static const Color LIGHT_BORDER_COLOR;
+		static const Color DARK_BORDER_COLOR;
 
 	public:
+		Button(const string &text)
+			: Control(0,0,0,0), _focused(false), _pressed(false), _text(text) {
+		};
 		Button(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _pressed(false), _text(string()) {
 		};
@@ -61,6 +65,8 @@ namespace gui {
 			repaint();
 		};
 
+		virtual gsize_t getPreferredWidth() const;
+		virtual gsize_t getPreferredHeight() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onKeyPressed(const KeyEvent &e);

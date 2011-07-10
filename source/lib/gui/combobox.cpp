@@ -61,7 +61,8 @@ namespace gui {
 		for(vector<string>::iterator it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
 			if(_highlighted == (int)std::distance(_cb->_items.begin(),it)) {
 				g.setColor(SEL_BGCOLOR);
-				g.fillRect(1,y + 1,getWidth() - 2,itemHeight + PADDING * 2 - 2);
+				g.fillRect(SELPAD,y + SELPAD,
+						getWidth() - SELPAD * 2,itemHeight + PADDING * 2 - SELPAD * 2);
 				g.setColor(SEL_FGCOLOR);
 			}
 			g.drawString(PADDING,y + PADDING,*it);
@@ -108,6 +109,24 @@ namespace gui {
 		return *this;
 	}
 
+	gsize_t ComboBox::getPreferredWidth() const {
+		gsize_t max = 0;
+		const Font& f = getGraphics()->getFont();
+		for(vector<string>::const_iterator it = _items.begin(); it != _items.end(); ++it) {
+			gsize_t width = f.getStringWidth(*it);
+			if(width > max)
+				max = width;
+			if(max > MAX_WIDTH) {
+				max = MAX_WIDTH;
+				break;
+			}
+		}
+		return max + getGraphics()->getFont().getHeight() + ARROW_PAD;
+	}
+	gsize_t ComboBox::getPreferredHeight() const {
+		return getGraphics()->getFont().getHeight() + PADDING * 2;
+	}
+
 	void ComboBox::paint(Graphics &g) {
 		gsize_t btnWidth = getHeight();
 		// paint item
@@ -127,20 +146,19 @@ namespace gui {
 		g.drawRect(getWidth() - btnWidth + 1,0,btnWidth - 1,getHeight());
 
 		// paint cross
-		size_t arrowPad = 4;
 		size_t pressedPad = _pressed ? 1 : 0;
 		g.setColor(BTN_ARROWCOLOR);
-		g.drawLine(getWidth() - btnWidth + arrowPad,arrowPad + pressedPad,
-				getWidth() - arrowPad,arrowPad + pressedPad);
-		g.drawLine(getWidth() - btnWidth + arrowPad,arrowPad + pressedPad,
-				getWidth() - btnWidth / 2,getHeight() - arrowPad + pressedPad);
-		g.drawLine(getWidth() - arrowPad,arrowPad + pressedPad,
-				getWidth() - btnWidth / 2,getHeight() - arrowPad + pressedPad);
+		g.drawLine(getWidth() - btnWidth + ARROW_PAD,ARROW_PAD + pressedPad,
+				getWidth() - ARROW_PAD,ARROW_PAD + pressedPad);
+		g.drawLine(getWidth() - btnWidth + ARROW_PAD,ARROW_PAD + pressedPad,
+				getWidth() - btnWidth / 2,getHeight() - ARROW_PAD + pressedPad);
+		g.drawLine(getWidth() - ARROW_PAD,ARROW_PAD + pressedPad,
+				getWidth() - btnWidth / 2,getHeight() - ARROW_PAD + pressedPad);
 	}
 
 	void ComboBox::onMousePressed(const MouseEvent &e) {
 		UIElement::onMousePressed(e);
-		if(e.getX() >= getX() + getWidth() - getHeight() && !_pressed) {
+		if(!_pressed) {
 			_pressed = true;
 			repaint();
 			if(_win) {

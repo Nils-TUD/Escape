@@ -42,17 +42,19 @@
 
 using namespace gui;
 
-static int guiThread(void *arg);
+static int guiProc(void);
 static int termThread(void *arg);
 static int shellMain(void);
 
 static tULock vtLock;
 static char *drvName;
 static GUITerm *gt;
+static int childPid;
 
 static void sigUsr1(int sig) {
 	UNUSED(sig);
-	/* do nothing */
+	Application::getInstance()->exit();
+	gt->stop();
 }
 
 int main(int argc,char **argv) {
@@ -92,8 +94,12 @@ int main(int argc,char **argv) {
 	// set term as env-variable
 	setenv("TERM",drvName);
 
-	if(startThread(guiThread,NULL) < 0)
-		error("Unable to start GUI-thread");
+	// start the gui and the driver in a separate process. this way, the forks the shell performs
+	// are cheaper because its address-space is smaller.
+	if((childPid = fork()) == 0)
+		return guiProc();
+	else if(childPid < 0)
+		error("fork failed");
 
 	// wait until the driver is announced
 	char *drvPath = new char[MAX_PATH_LEN + 1];
@@ -118,28 +124,28 @@ int main(int argc,char **argv) {
 		error("Unable to redirect STDERR to %d",fout);
 	delete[] drvPath;
 
-	/* give vterm our pid */
+	// give vterm our pid
 	long pid = getpid();
 	sendRecvMsgData(fin,MSG_VT_SHELLPID,&pid,sizeof(long));
 
-	/* TODO better run the shell in a separate process; this way we don't have to clone the
-	 * gui-stuff too when creating childs, which might be quite large. */
 	shellMain();
-	Application::getInstance()->exit();
-	gt->stop();
-	if(sendSignalTo(getpid(),SIG_USR1) < 0)
-		printe("Unable to send SIG_USR1 to myself");
+
+	// notify the child that we're done
+	if(sendSignalTo(childPid,SIG_USR1) < 0)
+		printe("Unable to send SIG_USR1 to child");
 	return EXIT_SUCCESS;
 }
 
-static int guiThread(void *arg) {
-	UNUSED(arg);
+static int guiProc(void) {
 	// re-register driver
 	int sid = regDriver(drvName,DRV_READ | DRV_WRITE);
 	unlockg(GUI_SHELL_LOCK);
 	if(sid < 0)
 		error("Unable to re-register driver %s",drvName);
 	delete[] drvName;
+
+	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+		error("Unable to set signal-handler");
 
 	// now start GUI
 	Application *app = Application::getInstance();
@@ -150,7 +156,8 @@ static int guiThread(void *arg) {
 	gt = new GUITerm(&vtLock,sid,sh);
 	if(startThread(termThread,gt) < 0)
 		error("Unable to start term-thread");
-	root.add(*sh);
+	root.setLayout(new BorderLayout());
+	root.add(*sh,BorderLayout::CENTER);
 	w.setFocus(sh);
 	int res = app->run();
 	sh->sendEOF();

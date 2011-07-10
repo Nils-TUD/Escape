@@ -26,6 +26,7 @@
 #include <gui/checkbox.h>
 #include <gui/progressbar.h>
 #include <gui/bitmapimage.h>
+#include <gui/borderlayout.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/messages.h>
@@ -33,27 +34,31 @@
 #include <esc/thread.h>
 #include <iostream>
 
+using namespace gui;
+
 static int pbThread(void *arg);
 
 static volatile bool run = true;
 
 int main(void) {
-	gui::Application *app = gui::Application::getInstance();
-	gui::Window w1("Window 1",100,100,200,300);
-	gui::Panel& root = w1.getRootPanel();
-	gui::Button b("Click me!!",10,10,120,25);
-	root.add(b);
-	gui::Editable e(10,40,200,25);
-	root.add(e);
-	gui::ComboBox cb(10,80,100,25);
+	Application *app = Application::getInstance();
+	Window w1("Window 1",100,100,200,300);
+	Panel& root = w1.getRootPanel();
+	root.setLayout(new BorderLayout());
+
+	Button b("Click me!!");
+	root.add(b,BorderLayout::WEST);
+	Editable e;
+	root.add(e,BorderLayout::EAST);
+	ComboBox cb;
 	cb.addItem("Test item");
 	cb.addItem("Foo bar");
 	cb.addItem("abc 123");
-	root.add(cb);
-	gui::Checkbox check("Meine Checkbox",10,120,200,20);
-	root.add(check);
-	gui::ProgressBar *pb = new gui::ProgressBar("Progress...",10,160,200,25);
-	root.add(*pb);
+	root.add(cb,BorderLayout::NORTH);
+	Checkbox check("Meine Checkbox");
+	root.add(check,BorderLayout::SOUTH);
+	ProgressBar *pb = new ProgressBar("Progress...");
+	root.add(*pb,BorderLayout::CENTER);
 	w1.appendTabCtrl(b);
 	w1.appendTabCtrl(e);
 	w1.appendTabCtrl(check);
@@ -66,7 +71,7 @@ int main(void) {
 }
 
 static int pbThread(void *arg) {
-	gui::ProgressBar *pb = (gui::ProgressBar*)arg;
+	ProgressBar *pb = (ProgressBar*)arg;
 	bool forward = true;
 	while(run) {
 		/*if(w1->getX() + w1->getWidth() >= Application::getInstance()->getScreenWidth() - 1)

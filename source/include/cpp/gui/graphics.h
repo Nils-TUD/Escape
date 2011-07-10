@@ -59,7 +59,7 @@ namespace gui {
 		/**
 		 * @return the current font
 		 */
-		inline Font getFont() const {
+		inline const Font &getFont() const {
 			return _font;
 		};
 
@@ -223,7 +223,7 @@ namespace gui {
 		/**
 		 * Validates the given parameters
 		 */
-		void validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height);
+		void validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height,bool checkPos);
 
 	private:
 		/**

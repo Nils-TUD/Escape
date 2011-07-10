@@ -23,6 +23,8 @@
 #include <ostream>
 
 namespace gui {
+	const Color Panel::DEF_BGCOLOR = Color(0x88,0x88,0x88);
+
 	void Panel::onMousePressed(const MouseEvent &e) {
 		// MouseEvent::MOUSE_PRESSED
 		gpos_t x = e.getX() - getX();
@@ -43,12 +45,8 @@ namespace gui {
 
 	void Panel::resizeTo(gsize_t width,gsize_t height) {
 		Control::resizeTo(width,height);
-
-		/* TODO temporary!! */
-		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
-			Control *c = *it;
-			c->resizeTo(width,height);
-		}
+		if(_layout)
+			_layout->rearrange();
 	}
 
 	void Panel::moveTo(gpos_t x,gpos_t y) {
@@ -74,9 +72,13 @@ namespace gui {
 		}
 	}
 
-	void Panel::add(Control &c) {
+	void Panel::add(Control &c,Layout::pos_type pos) {
 		_controls.push_back(&c);
 		c.setParent(this);
+		if(_layout) {
+			_layout->add(&c,pos);
+			_layout->rearrange();
+		}
 	}
 
 	ostream &operator<<(ostream &s,const Panel &p) {

@@ -22,11 +22,12 @@
 #include <gui/control.h>
 
 namespace gui {
-	Color Checkbox::FGCOLOR = Color(0xFF,0xFF,0xFF);
-	Color Checkbox::BGCOLOR = Color(0x88,0x88,0x88);
-	Color Checkbox::LIGHT_BOX_COLOR = Color(0x60,0x60,0x60);
-	Color Checkbox::DARK_BOX_COLOR = Color(0x20,0x20,0x20);
-	Color Checkbox::BOX_BGCOLOR = Color(0xFF,0xFF,0xFF);
+	const Color Checkbox::FGCOLOR = Color(0xFF,0xFF,0xFF);
+	const Color Checkbox::BGCOLOR = Color(0x88,0x88,0x88);
+	const Color Checkbox::LIGHT_BOX_COLOR = Color(0x60,0x60,0x60);
+	const Color Checkbox::DARK_BOX_COLOR = Color(0x20,0x20,0x20);
+	const Color Checkbox::BOX_BGCOLOR = Color(0xFF,0xFF,0xFF);
+	const gsize_t Checkbox::CROSS_SIZE = 10;
 
 	Checkbox &Checkbox::operator=(const Checkbox &b) {
 		// ignore self-assignments
@@ -37,6 +38,13 @@ namespace gui {
 		_checked = b._checked;
 		_text = b._text;
 		return *this;
+	}
+
+	gsize_t Checkbox::getPreferredWidth() const {
+		return getGraphics()->getFont().getStringWidth(_text) + CROSS_SIZE + CROSS_PADDING * 2;
+	}
+	gsize_t Checkbox::getPreferredHeight() const {
+		return max(getGraphics()->getFont().getHeight(),CROSS_SIZE) + CROSS_PADDING * 2;
 	}
 
 	void Checkbox::onFocusGained() {

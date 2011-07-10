@@ -36,12 +36,14 @@ class ShellControl : public Control {
 	friend class GUITerm;
 
 private:
-	static Color COLORS[16];
+	static const Color COLORS[16];
 
-	static const size_t PADDING = 3;
-	static const size_t TEXTSTARTX = 3;
-	static const size_t TEXTSTARTY = 3;
-	static const size_t CURSOR_WIDTH = 2;
+	static const gsize_t PADDING		= 3;
+	static const gsize_t TEXTSTARTX		= 3;
+	static const gsize_t TEXTSTARTY		= 3;
+	static const gsize_t CURSOR_WIDTH	= 2;
+	static const gsize_t DEF_WIDTH		= 600;
+	static const gsize_t DEF_HEIGHT		= 400;
 	static const Color BGCOLOR;
 	static const Color FGCOLOR;
 	static const Color CURSOR_COLOR;
@@ -69,6 +71,8 @@ public:
 
 	void sendEOF();
 
+	virtual gsize_t getPreferredWidth() const;
+	virtual gsize_t getPreferredHeight() const;
 	virtual void paint(Graphics &g);
 
 private:

@@ -42,16 +42,16 @@ namespace gui {
 			return *this;
 		};
 
-		inline gsize_t getWidth() {
+		inline gsize_t getWidth() const {
 			return charWidth;
 		};
-		inline gsize_t getHeight() {
+		inline gsize_t getHeight() const {
 			return charHeight;
 		};
-		inline gsize_t getStringWidth(const std::string& str) {
+		inline gsize_t getStringWidth(const std::string& str) const {
 			return str.length() * charWidth;
 		};
-		inline bool isPixelSet(char c,gpos_t x,gpos_t y) {
+		inline bool isPixelSet(char c,gpos_t x,gpos_t y) const {
 			return _font[(uchar)c * charHeight + y] & (1 << (charWidth - x - 1));
 		};
 

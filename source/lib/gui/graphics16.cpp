@@ -28,7 +28,10 @@ namespace gui {
 	}
 
 	void Graphics16::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		validateParams(x,y,width,height);
+		validateParams(x,y,width,height,true);
+		if(width == 0 || height == 0)
+			return;
+
 		gpos_t yend = y + height;
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,yend - 1);

@@ -24,14 +24,15 @@
 #include <gui/uielement.h>
 
 namespace gui {
-	class Window;
 	class Panel;
+	class BorderLayout;
 
 	/**
 	 * The abstract base class for all controls
 	 */
 	class Control : public UIElement {
 		friend class Panel;
+		friend class BorderLayout;
 
 	public:
 		/**
@@ -63,9 +64,6 @@ namespace gui {
 		 */
 		Control &operator=(const Control &c);
 
-		virtual void resizeTo(gsize_t width,gsize_t height);
-		virtual void moveTo(gpos_t x,gpos_t y);
-
 		/**
 		 * Is called as soon as this control received the focus
 		 */
@@ -74,6 +72,22 @@ namespace gui {
 		 * Is called as soon as this control lost the focus
 		 */
 		virtual void onFocusLost();
+
+	protected:
+		/**
+		 * Resizes the ui-element to width and height
+		 *
+		 * @param width the new width
+		 * @param height the new height
+		 */
+		virtual void resizeTo(gsize_t width,gsize_t height);
+		/**
+		 * Moves the ui-element to x,y.
+		 *
+		 * @param x the new x-position
+		 * @param y the new y-position
+		 */
+		virtual void moveTo(gpos_t x,gpos_t y);
 
 	private:
 		/**

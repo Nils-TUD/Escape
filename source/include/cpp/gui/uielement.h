@@ -115,6 +115,32 @@ namespace gui {
 		};
 
 		/**
+		 * @return the preferred width of this ui-element, e.g. the minimum required width to be
+		 * 	able to display the whole content
+		 */
+		virtual gsize_t getPreferredWidth() const = 0;
+		/**
+		 * @return the preferred height of this ui-element, e.g. the minimum required height to be
+		 * 	able to display the whole content
+		 */
+		virtual gsize_t getPreferredHeight() const = 0;
+
+		/**
+		 * Paints the control
+		 *
+		 * @param g the graphics-object
+		 */
+		virtual void paint(Graphics &g) = 0;
+		/**
+		 * Repaints the control, i.e. calls paint() and requests vesa to update this region
+		 */
+		virtual void repaint();
+		/**
+		 * Requests vesa to update the dirty region
+		 */
+		void requestUpdate();
+
+		/**
 		 * @return the graphics-object
 		 */
 		inline Graphics *getGraphics() const {
@@ -168,36 +194,6 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onKeyPressed(const KeyEvent &e);
 		virtual void onKeyReleased(const KeyEvent &e);
-
-		/**
-		 * Resizes the ui-element to width and height
-		 *
-		 * @param width the new width
-		 * @param height the new height
-		 */
-		virtual void resizeTo(gsize_t width,gsize_t height) = 0;
-		/**
-		 * Moves the ui-element to x,y.
-		 *
-		 * @param x the new x-position
-		 * @param y the new y-position
-		 */
-		virtual void moveTo(gpos_t x,gpos_t y) = 0;
-
-		/**
-		 * Paints the control
-		 *
-		 * @param g the graphics-object
-		 */
-		virtual void paint(Graphics &g) = 0;
-		/**
-		 * Repaints the control, i.e. calls paint() and requests vesa to update this region
-		 */
-		virtual void repaint();
-		/**
-		 * Requests vesa to update the dirty region
-		 */
-		void requestUpdate();
 
 		/**
 		 * @return whether calls of repaint() actually perform a repaint

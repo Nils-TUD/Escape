@@ -22,10 +22,11 @@
 #include <gui/control.h>
 
 namespace gui {
-	Color Button::FGCOLOR = Color(0xFF,0xFF,0xFF);
-	Color Button::BGCOLOR = Color(0x80,0x80,0x80);
-	Color Button::LIGHT_BORDER_COLOR = Color(0x60,0x60,0x60);
-	Color Button::DARK_BORDER_COLOR = Color(0x20,0x20,0x20);
+	const gsize_t Button::BORDERSIZE = 4;
+	const Color Button::FGCOLOR = Color(0xFF,0xFF,0xFF);
+	const Color Button::BGCOLOR = Color(0x80,0x80,0x80);
+	const Color Button::LIGHT_BORDER_COLOR = Color(0x60,0x60,0x60);
+	const Color Button::DARK_BORDER_COLOR = Color(0x20,0x20,0x20);
 
 	Button &Button::operator=(const Button &b) {
 		// ignore self-assignments
@@ -36,6 +37,13 @@ namespace gui {
 		_pressed = b._pressed;
 		_text = b._text;
 		return *this;
+	}
+
+	gsize_t Button::getPreferredWidth() const {
+		return getGraphics()->getFont().getStringWidth(_text) + BORDERSIZE * 2;
+	}
+	gsize_t Button::getPreferredHeight() const {
+		return getGraphics()->getFont().getHeight() + BORDERSIZE * 2;
 	}
 
 	void Button::onFocusGained() {

@@ -26,6 +26,7 @@
 #include <gui/graphics.h>
 #include <gui/graphicsbuffer.h>
 #include <gui/uielement.h>
+#include <gui/borderlayout.h>
 #include <gui/application.h>
 #include <gui/button.h>
 #include <gui/image.h>
@@ -71,7 +72,6 @@ namespace gui {
 
 		virtual void actionPerformed(UIElement& el);
 
-		virtual void resizeTo(gsize_t width,gsize_t height);
 		virtual void paint(Graphics& g);
 
 	private:
@@ -81,6 +81,7 @@ namespace gui {
 		string _title;
 		Image *_imgs[1];
 		Button *_btns[1];
+		BorderLayout *_blayout;
 	};
 
 	/**
@@ -120,7 +121,18 @@ namespace gui {
 
 	public:
 		/**
-		 * Constructor
+		 * Creates a new window without titlebar
+		 *
+		 * @param title the window-title
+		 * @param x the x-position
+		 * @param y the y-position
+		 * @param width the width
+		 * @param height the height
+		 * @param style the window-style (STYLE_*)
+		 */
+		Window(gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style = STYLE_DEFAULT);
+		/**
+		 * Creates a new window with titlebar, that displays <title>
 		 *
 		 * @param title the window-title
 		 * @param x the x-position
@@ -176,7 +188,9 @@ namespace gui {
 		 * @return the title (a copy)
 		 */
 		inline string getTitle() const {
-			return _header.getTitle();
+			if(!_header)
+				throw logic_error("This window has no title");
+			return _header->getTitle();
 		};
 		/**
 		 * Sets the title and requests a repaint
@@ -184,7 +198,9 @@ namespace gui {
 		 * @param title the new title
 		 */
 		inline void setTitle(const string &title) {
-			_header.setTitle(title);
+			if(!_header)
+				throw logic_error("This window has no title");
+			_header->setTitle(title);
 		};
 		/**
 		 * @return the focused control (NULL if none)
@@ -202,7 +218,7 @@ namespace gui {
 		 * @return the height of the title-bar
 		 */
 		inline gsize_t getTitleBarHeight() const {
-			return _header.getHeight();
+			return _header ? _header->getHeight() : 0;
 		};
 
 		/**
@@ -210,6 +226,17 @@ namespace gui {
 		 */
 		inline Panel &getRootPanel() {
 			return _body;
+		};
+
+		virtual gsize_t getPreferredWidth() const {
+			if(_header)
+				return max(_header->getPreferredWidth(),_body.getPreferredWidth()) + 2;
+			return _body.getPreferredWidth() + 2;
+		};
+		virtual gsize_t getPreferredHeight() const {
+			if(_header)
+				return _header->getPreferredHeight() + _body.getPreferredHeight() + 2;
+			return _body.getPreferredHeight();
 		};
 
 		/**
@@ -236,34 +263,6 @@ namespace gui {
 		 * @param g the graphics-object
 		 */
 		virtual void paint(Graphics &g);
-		/**
-		 * Resizes the window by width and height.
-		 *
-		 * @param width the width to add to the current one
-		 * @param height the height to add to the current one
-		 */
-		void resize(short width,short height);
-		/**
-		 * Resizes the window to width and height
-		 *
-		 * @param width the new width
-		 * @param height the new height
-		 */
-		virtual void resizeTo(gsize_t width,gsize_t height);
-		/**
-		 * Moves the window by x any y
-		 *
-		 * @param x the amount to add to the current x-position
-		 * @param y the amount to add to the current y-position
-		 */
-		void move(short x,short y);
-		/**
-		 * Moves the window to x,y.
-		 *
-		 * @param x the new x-position
-		 * @param y the new y-position
-		 */
-		virtual void moveTo(gpos_t x,gpos_t y);
 
 	protected:
 		/**
@@ -335,6 +334,10 @@ namespace gui {
 		void init();
 		void passToCtrl(const KeyEvent &e,uchar event);
 		void passToCtrl(const MouseEvent &e,uchar event);
+		void resize(short width,short height);
+		void resizeTo(gsize_t width,gsize_t height);
+		void move(short x,short y);
+		void moveTo(gpos_t x,gpos_t y);
 		void resizeMove(short x,short width,short height);
 		void resizeMoveTo(gpos_t x,gsize_t width,gsize_t height);
 
@@ -353,7 +356,7 @@ namespace gui {
 		gsize_t _resizeHeight;
 		GraphicsBuffer *_gbuf;
 	protected:
-		WindowTitleBar _header;
+		WindowTitleBar *_header;
 		Panel _body;
 		list<Control*> _tabCtrls;
 		list<Control*>::iterator _tabIt;

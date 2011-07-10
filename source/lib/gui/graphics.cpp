@@ -36,7 +36,10 @@ namespace gui {
 		gsize_t wsize = width * psize;
 		gsize_t bwsize = bwidth * psize;
 		uint8_t *pixels = _buf->getBuffer();
-		validateParams(x,y,width,height);
+		validateParams(x,y,width,height,true);
+		if(width == 0 || height == 0)
+			return;
+
 		gpos_t startx = _offx + x;
 		gpos_t starty = _offy + y;
 		if(up > 0) {
@@ -70,7 +73,7 @@ namespace gui {
 	void Graphics::drawChar(gpos_t x,gpos_t y,char c) {
 		gsize_t width = _font.getWidth();
 		gsize_t height = _font.getHeight();
-		validateParams(x,y,width,height);
+		validateParams(x,y,width,height,true);
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,y + height - 1);
 		gpos_t cx,cy;
@@ -145,9 +148,8 @@ namespace gui {
 
 		for(x = x0; x != xn; x += incx) {
 			doSetPixel(*px,*py);
-			if(d < 0) {
+			if(d < 0)
 				d += incrE;
-			}
 			else {
 				d += incrNE;
 				y += incy;
@@ -156,6 +158,10 @@ namespace gui {
 	}
 
 	void Graphics::drawVertLine(gpos_t x,gpos_t y1,gpos_t y2) {
+		if(y1 < 0)
+			y1 = 0;
+		if(y2 < 0)
+			y2 = 0;
 		validatePos(x,y1);
 		validatePos(x,y2);
 		updateMinMax(x,y1);
@@ -167,6 +173,10 @@ namespace gui {
 	}
 
 	void Graphics::drawHorLine(gpos_t y,gpos_t x1,gpos_t x2) {
+		if(x1 < 0)
+			x1 = 0;
+		if(x2 < 0)
+			x2 = 0;
 		validatePos(x1,y);
 		validatePos(x2,y);
 		updateMinMax(x1,y);
@@ -178,6 +188,9 @@ namespace gui {
 	}
 
 	void Graphics::drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+		if(width == 0 || height == 0)
+			return;
+
 		// top
 		drawHorLine(y,x,x + width - 1);
 		// right
@@ -189,7 +202,10 @@ namespace gui {
 	}
 
 	void Graphics::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		validateParams(x,y,width,height);
+		validateParams(x,y,width,height,true);
+		if(width == 0 || height == 0)
+			return;
+
 		gpos_t yend = y + height;
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,yend - 1);
@@ -211,22 +227,32 @@ namespace gui {
 	}
 
 	void Graphics::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		validateParams(x,y,width,height);
+		validateParams(x,y,width,height,false);
 		_buf->update(x,y,width,height);
 	}
 
 	void Graphics::validatePos(gpos_t &x,gpos_t &y) {
 		gsize_t bwidth = _buf->getWidth();
 		gsize_t bheight = _buf->getHeight();
+		if(x < 0)
+			x = 0;
+		if(y < 0)
+			y = 0;
 		if(x >= bwidth - _offx)
 			x = bwidth - _offx - 1;
 		if(y >= bheight - _offy)
 			y = bheight - _offy - 1;
 	}
 
-	void Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height) {
+	void Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height,bool checkPos) {
 		gsize_t bwidth = _buf->getWidth();
 		gsize_t bheight = _buf->getHeight();
+		if(checkPos) {
+			if(x < 0)
+				x = 0;
+			if(y < 0)
+				y = 0;
+		}
 		if(_offx + x + width > bwidth)
 			width = MAX(0,(int)bwidth - x - _offx);
 		if(_offy + y + height > bheight)

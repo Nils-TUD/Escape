@@ -30,7 +30,7 @@
 
 using namespace gui;
 
-Color ShellControl::COLORS[16] = {
+const Color ShellControl::COLORS[16] = {
 	Color(0,0,0),
 	Color(0,0,168),
 	Color(0,168,0),
@@ -80,6 +80,13 @@ void ShellControl::sendEOF() {
 	locku(_lock);
 	vterm_handleKey(_vt,VK_D,STATE_CTRL,'d');
 	unlocku(_lock);
+}
+
+gsize_t ShellControl::getPreferredWidth() const {
+	return DEF_WIDTH;
+}
+gsize_t ShellControl::getPreferredHeight() const {
+	return DEF_HEIGHT;
 }
 
 void ShellControl::paint(Graphics &g) {

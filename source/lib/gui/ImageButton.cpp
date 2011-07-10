@@ -21,6 +21,13 @@
 #include <gui/imagebutton.h>
 
 namespace gui {
+	gsize_t ImageButton::getPreferredWidth() const {
+		return _img->getWidth() + PADDING * 2;
+	}
+	gsize_t ImageButton::getPreferredHeight() const {
+		return _img->getHeight() + PADDING * 2;
+	}
+
 	void ImageButton::paintBorder(Graphics &g) {
 		if(_border)
 			Button::paintBorder(g);

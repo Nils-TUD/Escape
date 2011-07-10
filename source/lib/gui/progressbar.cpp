@@ -22,10 +22,10 @@
 #include <gui/control.h>
 
 namespace gui {
-	Color ProgressBar::FGCOLOR = Color(0xFF,0xFF,0xFF);
-	Color ProgressBar::BGCOLOR = Color(0x80,0x80,0x80);
-	Color ProgressBar::BARCOLOR = Color(0,0,0xFF);
-	Color ProgressBar::BORDER_COLOR = Color(0x20,0x20,0x20);
+	const Color ProgressBar::FGCOLOR = Color(0xFF,0xFF,0xFF);
+	const Color ProgressBar::BGCOLOR = Color(0x80,0x80,0x80);
+	const Color ProgressBar::BARCOLOR = Color(0,0,0xFF);
+	const Color ProgressBar::BORDER_COLOR = Color(0x20,0x20,0x20);
 
 	ProgressBar &ProgressBar::operator=(const ProgressBar &b) {
 		// ignore self-assignments
@@ -35,6 +35,13 @@ namespace gui {
 		_position = b._position;
 		_text = b._text;
 		return *this;
+	}
+
+	gsize_t ProgressBar::getPreferredWidth() const {
+		return getGraphics()->getFont().getStringWidth(_text) + PADDING * 2;
+	}
+	gsize_t ProgressBar::getPreferredHeight() const {
+		return getGraphics()->getFont().getHeight() + PADDING * 2;
 	}
 
 	void ProgressBar::paint(Graphics &g) {

@@ -35,7 +35,7 @@ namespace gui {
 				gpos_t cx,cy;
 				size_t lastCol = 0;
 				gsize_t colBytes = bitCount / 8;
-				g.validateParams(x,y,pw,ph);
+				g.validateParams(x,y,pw,ph,true);
 				g.setColor(Color(0));
 				g.updateMinMax(x,y);
 				g.updateMinMax(x + pw,y + ph);

@@ -41,7 +41,6 @@ namespace gui {
 	void Control::resizeTo(gsize_t width,gsize_t height) {
 		_width = width;
 		_height = height;
-		getParent()->repaint();
 	}
 
 	void Control::moveTo(gpos_t x,gpos_t y) {

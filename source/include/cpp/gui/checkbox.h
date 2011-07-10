@@ -28,15 +28,19 @@
 namespace gui {
 	class Checkbox : public Control {
 	private:
-		static Color FGCOLOR;
-		static Color BGCOLOR;
-		static Color LIGHT_BOX_COLOR;
-		static Color DARK_BOX_COLOR;
-		static Color BOX_BGCOLOR;
-		static const uint CROSS_PADDING = 2;
-		static const uint TEXT_PADDING = 4;
+		static const Color FGCOLOR;
+		static const Color BGCOLOR;
+		static const Color LIGHT_BOX_COLOR;
+		static const Color DARK_BOX_COLOR;
+		static const Color BOX_BGCOLOR;
+		static const gsize_t CROSS_SIZE;
+		static const gsize_t CROSS_PADDING	= 4;
+		static const gsize_t TEXT_PADDING	= 4;
 
 	public:
+		Checkbox(const string &text)
+			: Control(0,0,0,0), _focused(false), _checked(false), _text(text) {
+		};
 		Checkbox(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _checked(false), _text(string()) {
 		};
@@ -62,6 +66,8 @@ namespace gui {
 			repaint();
 		};
 
+		virtual gsize_t getPreferredWidth() const;
+		virtual gsize_t getPreferredHeight() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onKeyReleased(const KeyEvent &e);

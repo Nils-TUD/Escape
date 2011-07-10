@@ -38,14 +38,15 @@ namespace gui {
 
 	WindowTitleBar::WindowTitleBar(const string& title,gpos_t x,gpos_t y,
 			gsize_t width,gsize_t height)
-		: Panel(x,y,width,height), ActionListener(), _title(title) {
+		: Panel(x,y,width,height), ActionListener(), _title(title), _blayout(NULL) {
 	}
 	WindowTitleBar::~WindowTitleBar() {
+		delete _blayout;
 		delete _imgs[0];
 		delete _btns[0];
 	}
 	WindowTitleBar::WindowTitleBar(const WindowTitleBar& wtb)
-		: Panel(wtb), ActionListener(wtb), _title(wtb._title) {
+		: Panel(wtb), ActionListener(wtb), _title(wtb._title), _blayout(wtb._blayout) {
 	}
 	WindowTitleBar& WindowTitleBar::operator=(const WindowTitleBar& wtb) {
 		if(this == &wtb)
@@ -53,19 +54,17 @@ namespace gui {
 		Panel::operator =(wtb);
 		ActionListener::operator =(wtb);
 		_title = wtb._title;
+		_blayout = wtb._blayout;
 		return *this;
 	}
 
 	void WindowTitleBar::init() {
+		_blayout = new BorderLayout();
+		setLayout(_blayout);
 		_imgs[0] = Image::loadImage(CLOSE_IMG);
 		_btns[0] = new ImageButton(_imgs[0],getWidth() - getHeight(),0,getHeight(),getHeight(),false);
 		_btns[0]->addListener(this);
-		add(*_btns[0]);
-	}
-
-	void WindowTitleBar::resizeTo(gsize_t width,gsize_t height) {
-		Panel::resizeTo(width,height);
-		_btns[0]->moveTo(getWidth() - getHeight(),0);
+		add(*_btns[0],BorderLayout::EAST);
 	}
 
 	void WindowTitleBar::actionPerformed(UIElement& el) {
@@ -89,12 +88,22 @@ namespace gui {
 	Color Window::BORDER_COLOR = Color(0x55,0x55,0x55);
 	gwinid_t Window::NEXT_TMP_ID = 0xFFFF;
 
+	Window::Window(gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style)
+		: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
+			_id(NEXT_TMP_ID--), _created(false), _style(style),
+			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
+			_isActive(false), _moveX(x), _moveY(y), _resizeWidth(getWidth()), _resizeHeight(getHeight()),
+			_gbuf(NULL), _header(NULL),
+			_body(Panel(1,1,getWidth() - 2,getHeight() - 2)),
+			_tabCtrls(list<Control*>()), _tabIt(_tabCtrls.begin()) {
+		init();
+	}
 	Window::Window(const string &title,gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style)
 		: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
 			_isActive(false), _moveX(x), _moveY(y), _resizeWidth(getWidth()), _resizeHeight(getHeight()),
-			_gbuf(NULL), _header(WindowTitleBar(title,1,1,getWidth() - 2,HEADER_SIZE)),
+			_gbuf(NULL), _header(new WindowTitleBar(title,1,1,getWidth() - 2,HEADER_SIZE)),
 			_body(Panel(1,HEADER_SIZE,getWidth() - 2,getHeight() - HEADER_SIZE - 1)),
 			_tabCtrls(list<Control*>()), _tabIt(_tabCtrls.begin()) {
 		init();
@@ -111,6 +120,7 @@ namespace gui {
 	Window::~Window() {
 		// remove us from app
 		Application::getInstance()->removeWindow(this);
+		delete _header;
 		delete _gbuf;
 	}
 
@@ -144,10 +154,12 @@ namespace gui {
 		// add us to app; we'll receive a "created"-event as soon as the window
 		// manager knows about us
 		app->addWindow(this);
-		_header._g = GraphicFactory::get(_gbuf,1,1);
-		_header._parent = this;
-		_header.init();
-		_body._g = GraphicFactory::get(_gbuf,1,getTitleBarHeight());
+		if(_header) {
+			_header->_g = GraphicFactory::get(_gbuf,1,1);
+			_header->_parent = this;
+			_header->init();
+		}
+		_body._g = GraphicFactory::get(_gbuf,1,_header ? _header->getHeight() : 1);
 		_body._parent = this;
 	}
 
@@ -192,8 +204,12 @@ namespace gui {
 				if(resizing) {
 					_gbuf->moveTo(_moveX,_moveY);
 					_gbuf->resizeTo(_resizeWidth,_resizeHeight);
-					_header.resizeTo(_resizeWidth - 2,_header.getHeight());
-					_body.resizeTo(_resizeWidth - 2,_resizeHeight - _header.getHeight() - 1);
+					if(_header) {
+						_header->resizeTo(_resizeWidth - 2,_header->getHeight());
+						_body.resizeTo(_resizeWidth - 2,_resizeHeight - _header->getHeight() - 1);
+					}
+					else
+						_body.resizeTo(_resizeWidth - 2,_resizeHeight - 2);
 					// when resizing left, its both a resize and move
 					setX(_moveX);
 					setY(_moveY);
@@ -223,11 +239,11 @@ namespace gui {
 
 	void Window::onMousePressed(const MouseEvent &e) {
 		if(_style == STYLE_DEFAULT) {
-			if(e.getY() < _header.getHeight())
+			if(_header && e.getY() < _header->getHeight())
 				_inTitle = true;
 			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
 				_inResizeBottom = true;
-			if(e.getY() >= _header.getHeight()) {
+			if(!_header || e.getY() >= _header->getHeight()) {
 				if(e.getX() < CURSOR_RESIZE_WIDTH)
 					_inResizeLeft = true;
 				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
@@ -310,8 +326,8 @@ namespace gui {
 			return;
 		}
 
-		if(e.getY() < _header.getHeight())
-			_header.onMousePressed(e);
+		if(_header && e.getY() < _header->getHeight())
+			_header->onMousePressed(e);
 		else
 			_body.onMousePressed(e);
 
@@ -399,10 +415,10 @@ namespace gui {
 	void Window::paintTitle(Graphics &g) {
 		UNUSED(g);
 		// no repaint until we're created and popups have no title-bar
-		if(!_created || _style == STYLE_POPUP)
+		if(!_created || _style == STYLE_POPUP || !_header)
 			return;
 
-		_header.paint(*_header.getGraphics());
+		_header->paint(*_header->getGraphics());
 	}
 
 	void Window::paint(Graphics &g) {
@@ -427,7 +443,8 @@ namespace gui {
 	void Window::setActive(bool active) {
 		if(active != _isActive) {
 			_isActive = active;
-			_header.repaint();
+			if(_header)
+				_header->repaint();
 		}
 	}
 

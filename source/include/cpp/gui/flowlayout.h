@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BORDERLAYOUT_H_
-#define BORDERLAYOUT_H_
+#ifndef FLOWLAYOUT_H_
+#define FLOWLAYOUT_H_
 
 #include <esc/common.h>
 #include <gui/layout.h>
@@ -26,34 +26,24 @@
 
 namespace gui {
 	/**
-	 * The borderlayout provides 5 positions for controls: north, east, south, west and center.
-	 * Each position may be empty. The controls at north and south will receive the complete
-	 * width offered by the panel for which the layout is used and their preferred height.
-	 * The west and east will receive the remaining height and the their preferred width. The
-	 * control at center receives the remaining space.
+	 * The borderlayout aligns all controls either on the left, centered or on the right. The
+	 * width of all controls will be equal to the maximum preferred width of all controls and
+	 * the height analogously.
 	 */
-	class BorderLayout : public Layout {
+	class FlowLayout : public Layout {
 	public:
 		/**
-		 * The north-position: receive full width and preferred height
+		 * The left-position: align all controls on the left
 		 */
-		static const pos_type NORTH		= 0;
+		static const int LEFT			= 0;
 		/**
-		 * The east-position: receive remaining height and preferred width
+		 * The center-position: align all controls horizontally centered
 		 */
-		static const pos_type EAST		= 1;
+		static const int CENTER			= 1;
 		/**
-		 * The south-position: receive full width and preferred height
+		 * The right-position: align all controls on the right
 		 */
-		static const pos_type SOUTH		= 2;
-		/**
-		 * The west-position: receive remaining height and preferred width
-		 */
-		static const pos_type WEST		= 3;
-		/**
-		 * The center-position: receive remaining width and height
-		 */
-		static const pos_type CENTER	= 4;
+		static const int RIGHT			= 2;
 
 	private:
 		static const gsize_t DEF_GAP	= 2;
@@ -62,17 +52,16 @@ namespace gui {
 		/**
 		 * Constructor
 		 *
+		 * @param pos the alignment of the controls (LEFT, CENTER, RIGHT)
 		 * @param gap the gap between the controls (default 2)
 		 */
-		BorderLayout(gsize_t gap = DEF_GAP)
-			: _gap(gap), _p(NULL) {
-			for(size_t i = 0; i < 5; i++)
-				_ctrls[i] = NULL;
+		FlowLayout(int pos,gsize_t gap = DEF_GAP)
+			: _pos(pos), _gap(gap), _p(NULL), _ctrls(vector<Control*>()) {
 		};
 		/**
 		 * Destructor
 		 */
-		virtual ~BorderLayout() {
+		virtual ~FlowLayout() {
 		};
 
 		virtual void add(Panel *p,Control *c,pos_type pos);
@@ -84,10 +73,15 @@ namespace gui {
 		virtual void rearrange();
 
 	private:
+		gsize_t getMaxWidth() const;
+		gsize_t getMaxHeight() const;
+
+	private:
+		int _pos;
 		gsize_t _gap;
 		Panel *_p;
-		Control *_ctrls[5];
+		vector<Control*> _ctrls;
 	};
 }
 
-#endif /* BORDERLAYOUT_H_ */
+#endif /* FLOWLAYOUT_H_ */

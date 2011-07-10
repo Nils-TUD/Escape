@@ -27,7 +27,7 @@ namespace gui {
 	const Color Checkbox::LIGHT_BOX_COLOR = Color(0x60,0x60,0x60);
 	const Color Checkbox::DARK_BOX_COLOR = Color(0x20,0x20,0x20);
 	const Color Checkbox::BOX_BGCOLOR = Color(0xFF,0xFF,0xFF);
-	const gsize_t Checkbox::CROSS_SIZE = 10;
+	const gsize_t Checkbox::CROSS_SIZE = 24;
 
 	Checkbox &Checkbox::operator=(const Checkbox &b) {
 		// ignore self-assignments
@@ -41,10 +41,10 @@ namespace gui {
 	}
 
 	gsize_t Checkbox::getPreferredWidth() const {
-		return getGraphics()->getFont().getStringWidth(_text) + CROSS_SIZE + CROSS_PADDING * 2;
+		return getGraphics()->getFont().getStringWidth(_text) + TEXT_PADDING + CROSS_SIZE;
 	}
 	gsize_t Checkbox::getPreferredHeight() const {
-		return max(getGraphics()->getFont().getHeight(),CROSS_SIZE) + CROSS_PADDING * 2;
+		return max(getGraphics()->getFont().getHeight(),CROSS_SIZE) + 2;
 	}
 
 	void Checkbox::onFocusGained() {

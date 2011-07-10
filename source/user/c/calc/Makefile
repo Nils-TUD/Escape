@@ -6,6 +6,7 @@ SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
+LIBDEPS += $(BUILD)/libc.a $(BUILD)/libg.a $(BUILD)/libm.a
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 ifeq ($(LINKTYPE),static)
 	CFLAGS += -static -Wl,-Bstatic
@@ -29,9 +30,9 @@ GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
 all:	$(BUILDDIRS) $(BISONGEN) $(LEXGEN) $(BIN)
 
-$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(GENOBJ) $(ADDLIBS)
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(GENOBJ) $(LIBDEPS)
 		@echo "	" LINKING $(BIN)
-		$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(GENOBJ) $(ADDLIBS);
+		$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(GENOBJ);
 
 $(LEXGEN):	$(LEXSRC)
 		flex -o $(LEXGEN) --nounistd < $(LEXSRC)

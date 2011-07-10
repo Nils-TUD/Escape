@@ -29,7 +29,7 @@
 
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
-#define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
+#define DEBUG_ALLOC_N_FREE_PID	27	/* -1 = all */
 #endif
 
 #define GUARD_MAGIC				0xDEADBEEF

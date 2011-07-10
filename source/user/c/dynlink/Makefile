@@ -7,6 +7,7 @@ SUBDIRS = $(shell find . -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDL) -name "*.d")
 
+LIBDEPS += $(BUILD)/libc.a $(BUILD)/libg.a $(BUILD)/libm.a
 CFLAGS = -static -Wl,-Bstatic -nostartfiles $(CDEFFLAGS) $(ADDFLAGS)
 
 # sources
@@ -23,7 +24,7 @@ START = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASTART))
 
 all:	$(BUILDDIRS) $(BIN)
 
-$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(LDCONF) $(COBJ) $(START)
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(LDCONF) $(COBJ) $(START) $(LIBDEPS)
 	@echo "	" LINKING $(BIN)
 	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(START) $(COBJ)
 

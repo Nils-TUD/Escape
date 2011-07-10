@@ -76,7 +76,7 @@ namespace gui {
 		_controls.push_back(&c);
 		c.setParent(this);
 		if(_layout) {
-			_layout->add(&c,pos);
+			_layout->add(this,&c,pos);
 			_layout->rearrange();
 		}
 	}

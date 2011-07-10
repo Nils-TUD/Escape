@@ -4,6 +4,7 @@ BIN = $(BUILD)/user_$(NAME).bin
 MAP = $(BUILD)/user_$(NAME).map
 DEPS = $(wildcard $(BUILDL)/*.d)
 
+LIBDEPS += $(BUILD)/libc.a $(BUILD)/libg.a $(BUILD)/libm.a
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 ifeq ($(LINKTYPE),static)
 	CFLAGS += -static -Wl,-Bstatic
@@ -21,7 +22,7 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 all:	$(BUILDL) $(BIN) $(MAP)
 
-$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ADDLIBS)
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(LIBDEPS)
 	@echo "	" LINKING $(BIN)
 	@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
 

@@ -36,7 +36,7 @@ namespace gui {
 		gsize_t wsize = width * psize;
 		gsize_t bwsize = bwidth * psize;
 		uint8_t *pixels = _buf->getBuffer();
-		validateParams(x,y,width,height,true);
+		validateParams(x,y,width,height);
 		if(width == 0 || height == 0)
 			return;
 
@@ -73,7 +73,10 @@ namespace gui {
 	void Graphics::drawChar(gpos_t x,gpos_t y,char c) {
 		gsize_t width = _font.getWidth();
 		gsize_t height = _font.getHeight();
-		validateParams(x,y,width,height,true);
+		validateParams(x,y,width,height);
+		if(width == 0 || height == 0)
+			return;
+
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,y + height - 1);
 		gpos_t cx,cy;
@@ -105,10 +108,8 @@ namespace gui {
 		int incx, incy;
 		gpos_t *px, *py;
 
-		// TODO later we should calculate with sin&cos the end-position in bounds so that
-		// the line will just be shorter and doesn't change the angle
-		validatePos(x0,y0);
-		validatePos(xn,yn);
+		if(!validateLine(x0,y0,xn,yn))
+			return;
 		updateMinMax(x0,y0);
 		updateMinMax(xn,yn);
 
@@ -158,12 +159,8 @@ namespace gui {
 	}
 
 	void Graphics::drawVertLine(gpos_t x,gpos_t y1,gpos_t y2) {
-		if(y1 < 0)
-			y1 = 0;
-		if(y2 < 0)
-			y2 = 0;
-		validatePos(x,y1);
-		validatePos(x,y2);
+		if(!validateLine(x,y1,x,y2))
+			return;
 		updateMinMax(x,y1);
 		updateMinMax(x,y2);
 		if(y1 > y2)
@@ -173,12 +170,8 @@ namespace gui {
 	}
 
 	void Graphics::drawHorLine(gpos_t y,gpos_t x1,gpos_t x2) {
-		if(x1 < 0)
-			x1 = 0;
-		if(x2 < 0)
-			x2 = 0;
-		validatePos(x1,y);
-		validatePos(x2,y);
+		if(!validateLine(x1,y,x2,y))
+			return;
 		updateMinMax(x1,y);
 		updateMinMax(x2,y);
 		if(x1 > x2)
@@ -202,7 +195,7 @@ namespace gui {
 	}
 
 	void Graphics::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		validateParams(x,y,width,height,true);
+		validateParams(x,y,width,height);
 		if(width == 0 || height == 0)
 			return;
 
@@ -218,7 +211,15 @@ namespace gui {
 	}
 
 	void Graphics::requestUpdate() {
-		_buf->requestUpdate(_offx + _minx,_offy + _miny,_maxx - _minx + 1,_maxy - _miny + 1);
+		gpos_t x = _minx;
+		gpos_t y = _miny;
+		gsize_t width = _maxx - _minx + 1;
+		gsize_t height = _maxy - _miny + 1;
+		validateParams(x,y,width,height);
+		if(width == 0 || height == 0)
+			return;
+
+		_buf->requestUpdate(_offx + x,_offy + y,width,height);
 		// reset region
 		_minx = _buf->getWidth() - 1;
 		_maxx = 0;
@@ -227,31 +228,68 @@ namespace gui {
 	}
 
 	void Graphics::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		validateParams(x,y,width,height,false);
+		validateParams(x,y,width,height);
+		if(width == 0 || height == 0)
+			return;
+
 		_buf->update(x,y,width,height);
 	}
 
-	void Graphics::validatePos(gpos_t &x,gpos_t &y) {
+	bool Graphics::validateLine(gpos_t &x1,gpos_t &y1,gpos_t &x2,gpos_t &y2) {
+		bool p1 = validatePoint(x1,y1);
+		bool p2 = validatePoint(x2,y2);
+		// TODO later we should calculate with sin&cos the end-position in bounds so that
+		// the line will just be shorter and doesn't change the angle
+		if(!p1 && !p2)
+			return false;
+		return true;
+	}
+
+	bool Graphics::validatePoint(gpos_t &x,gpos_t &y) {
+		bool res = true;
 		gsize_t bwidth = _buf->getWidth();
 		gsize_t bheight = _buf->getHeight();
 		if(x < 0)
 			x = 0;
 		if(y < 0)
 			y = 0;
+		if(_offy + y < 0) {
+			y = -_offy;
+			res = false;
+		}
+		if(_offx + x < 0) {
+			x = -_offx;
+			res = false;
+		}
 		if(x >= bwidth - _offx)
 			x = bwidth - _offx - 1;
 		if(y >= bheight - _offy)
 			y = bheight - _offy - 1;
+		return res;
 	}
 
-	void Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height,bool checkPos) {
+	void Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height) {
 		gsize_t bwidth = _buf->getWidth();
 		gsize_t bheight = _buf->getHeight();
-		if(checkPos) {
-			if(x < 0)
-				x = 0;
-			if(y < 0)
-				y = 0;
+		if(x < 0)
+			x = 0;
+		if(y < 0)
+			y = 0;
+		if(_offy + y < 0) {
+			if(height < -(_offy + y)) {
+				height = 0;
+				return;
+			}
+			height += _offy + y;
+			y = -_offy;
+		}
+		if(_offx + x < 0) {
+			if(width < -(_offx + x)) {
+				width = 0;
+				return;
+			}
+			width += _offx + x;
+			x = -_offx;
 		}
 		if(_offx + x + width > bwidth)
 			width = MAX(0,(int)bwidth - x - _offx);

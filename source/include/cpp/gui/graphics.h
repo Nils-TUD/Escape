@@ -217,13 +217,17 @@ namespace gui {
 		 */
 		void update(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 		/**
-		 * Validates the given position
+		 * Validates the given line
 		 */
-		void validatePos(gpos_t &x,gpos_t &y);
+		bool validateLine(gpos_t &x1,gpos_t &y1,gpos_t &x2,gpos_t &y2);
+		/**
+		 * Validates the given point
+		 */
+		bool validatePoint(gpos_t &x,gpos_t &y);
 		/**
 		 * Validates the given parameters
 		 */
-		void validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height,bool checkPos);
+		void validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height);
 
 	private:
 		/**

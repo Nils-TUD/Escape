@@ -20,12 +20,12 @@ CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 
 all:	$(BUILDDIRS) $(STLIB) $(DYNLIB)
 
-$(STLIB): $(COBJ)
+$(STLIB): $(COBJ) $(LIBDEPS)
 	@echo "	" AR $(STLIB)
 	@$(AR) rcs $(STLIB) $(COBJ)
 	@$(ROOT)/tools/linklib.sh $(STLIB)
 
-$(DYNLIB):	$(CPICOBJS)
+$(DYNLIB):	$(CPICOBJS) $(LIBDEPS)
 	@echo "	" LINKING $(DYNLIB)
 	@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) \
 		$(CPICOBJS) $(ADDLIBS)

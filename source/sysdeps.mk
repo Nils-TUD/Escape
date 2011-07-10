@@ -5,10 +5,3 @@ ifeq ($(ARCH),i586)
 else
 	DEP_DEFLIBS =
 endif
-ifeq ($(LINKTYPE),static)
-	DEP_DEFLIBS += $(wildcard $(DIST)/$(ARCH)/$(TARGET)/lib/lib*.a)
-else
-	DEP_DEFLIBS += $(filter-out $(DIST)/$(ARCH)/$(TARGET)/lib/libshlibtest.so \
-		$(DIST)/$(ARCH)/$(TARGET)/lib/libshlibtest2.so, \
-		$(wildcard $(DIST)/$(ARCH)/$(TARGET)/lib/lib*.so))
-endif

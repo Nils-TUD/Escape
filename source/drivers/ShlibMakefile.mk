@@ -6,6 +6,7 @@ SUBDIRS = $(shell find . -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDL) -name "*.d")
 
+LIBDEPS += $(BUILD)/libc.a $(BUILD)/libg.a $(BUILD)/libm.a
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 ifeq ($(LINKTYPE),static)
 	CFLAGS += -static -Wl,-Bstatic
@@ -24,7 +25,7 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 all:	$(BUILDDIRS) $(APPCPY) $(BIN) $(MAP)
 
-$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ADDLIBS)
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(LIBDEPS)
 	@echo "	" LINKING $(BIN)
 	@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
 

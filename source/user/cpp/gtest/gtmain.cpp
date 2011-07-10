@@ -27,6 +27,7 @@
 #include <gui/progressbar.h>
 #include <gui/bitmapimage.h>
 #include <gui/borderlayout.h>
+#include <gui/flowlayout.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/messages.h>
@@ -36,38 +37,118 @@
 
 using namespace gui;
 
+static void win1(void);
+static void win2(void);
+static void win3(void);
+static void win4(void);
 static int pbThread(void *arg);
 
 static volatile bool run = true;
 
 int main(void) {
 	Application *app = Application::getInstance();
-	Window w1("Window 1",100,100,200,300);
-	Panel& root = w1.getRootPanel();
-	root.setLayout(new BorderLayout());
-
-	Button b("Click me!!");
-	root.add(b,BorderLayout::WEST);
-	Editable e;
-	root.add(e,BorderLayout::EAST);
-	ComboBox cb;
-	cb.addItem("Test item");
-	cb.addItem("Foo bar");
-	cb.addItem("abc 123");
-	root.add(cb,BorderLayout::NORTH);
-	Checkbox check("Meine Checkbox");
-	root.add(check,BorderLayout::SOUTH);
-	ProgressBar *pb = new ProgressBar("Progress...");
-	root.add(*pb,BorderLayout::CENTER);
-	w1.appendTabCtrl(b);
-	w1.appendTabCtrl(e);
-	w1.appendTabCtrl(check);
-	if(startThread(pbThread,pb) < 0)
-		std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+	win1();
+	win2();
+	win3();
+	win4();
 	int res = app->run();
 	run = false;
 	join(0);
 	return res;
+}
+
+static void win1(void) {
+	Window *w1 = new Window("Window 1",100,100,300,200);
+	Panel& root = w1->getRootPanel();
+	root.setLayout(new BorderLayout());
+
+	Button *b = new Button("Click me!!");
+	root.add(*b,BorderLayout::WEST);
+	Editable *e = new Editable();
+	root.add(*e,BorderLayout::EAST);
+	ComboBox *cb = new ComboBox();
+	cb->addItem("Test item");
+	cb->addItem("Foo bar");
+	cb->addItem("abc 123");
+	root.add(*cb,BorderLayout::NORTH);
+	Checkbox *check = new Checkbox("My Checkbox");
+	root.add(*check,BorderLayout::SOUTH);
+	ProgressBar *pb = new ProgressBar("Progress...");
+	root.add(*pb,BorderLayout::CENTER);
+	w1->appendTabCtrl(*b);
+	w1->appendTabCtrl(*e);
+	w1->appendTabCtrl(*check);
+	if(startThread(pbThread,pb) < 0)
+		std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+}
+
+static void win2(void) {
+	Window *w2 = new Window("Window 2",450,150,400,100);
+	Panel& root = w2->getRootPanel();
+	root.setLayout(new FlowLayout(FlowLayout::LEFT,5));
+
+	Button *b = new Button("Try it!");
+	root.add(*b);
+	Editable *e = new Editable();
+	root.add(*e);
+	ComboBox *cb = new ComboBox();
+	cb->addItem("Huhu!");
+	cb->addItem("Foo bar");
+	cb->addItem("abc 123");
+	root.add(*cb);
+	Checkbox *check = new Checkbox("My Checkbox");
+	root.add(*check);
+	ProgressBar *pb = new ProgressBar("Running");
+	root.add(*pb);
+	w2->appendTabCtrl(*b);
+	w2->appendTabCtrl(*e);
+	w2->appendTabCtrl(*check);
+}
+
+static void win3(void) {
+	Window *w3 = new Window("Window 3",450,350,400,100);
+	Panel& root = w3->getRootPanel();
+	root.setLayout(new FlowLayout(FlowLayout::CENTER,1));
+
+	Button *b = new Button("Try it!");
+	root.add(*b);
+	Editable *e = new Editable();
+	root.add(*e);
+	ComboBox *cb = new ComboBox();
+	cb->addItem("Huhu!");
+	cb->addItem("Foo bar");
+	cb->addItem("abc 123");
+	root.add(*cb);
+	Checkbox *check = new Checkbox("My Checkbox");
+	root.add(*check);
+	ProgressBar *pb = new ProgressBar("Running");
+	root.add(*pb);
+	w3->appendTabCtrl(*b);
+	w3->appendTabCtrl(*e);
+	w3->appendTabCtrl(*check);
+}
+
+static void win4(void) {
+	Window *w3 = new Window("Window 4",750,350,400,100);
+	Panel& root = w3->getRootPanel();
+	root.setLayout(new FlowLayout(FlowLayout::RIGHT,10));
+
+	Button *b = new Button("Try it!");
+	root.add(*b);
+	Editable *e = new Editable();
+	root.add(*e);
+	ComboBox *cb = new ComboBox();
+	cb->addItem("Huhu!");
+	cb->addItem("Foo bar");
+	cb->addItem("abc 123");
+	root.add(*cb);
+	Checkbox *check = new Checkbox("My Checkbox");
+	root.add(*check);
+	ProgressBar *pb = new ProgressBar("Running");
+	root.add(*pb);
+	w3->appendTabCtrl(*b);
+	w3->appendTabCtrl(*e);
+	w3->appendTabCtrl(*check);
 }
 
 static int pbThread(void *arg) {

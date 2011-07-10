@@ -26,6 +26,7 @@
 namespace gui {
 	class Panel;
 	class BorderLayout;
+	class FlowLayout;
 
 	/**
 	 * The abstract base class for all controls
@@ -33,6 +34,7 @@ namespace gui {
 	class Control : public UIElement {
 		friend class Panel;
 		friend class BorderLayout;
+		friend class FlowLayout;
 
 	public:
 		/**

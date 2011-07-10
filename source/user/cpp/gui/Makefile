@@ -1,4 +1,5 @@
 NAME=gui
+LIBDEPS += $(BUILD)/libgui.a
 ifeq ($(LINKTYPE),static)
 	ADDLIBS += $(BUILD)/libgui.a
 else

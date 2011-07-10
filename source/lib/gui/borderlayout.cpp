@@ -20,25 +20,16 @@
 #include <esc/common.h>
 #include <gui/borderlayout.h>
 #include <gui/panel.h>
+#include <assert.h>
 
 namespace gui {
-	void BorderLayout::add(Control *c,pos_type pos) {
-		if(pos >= (pos_type)ARRAY_SIZE(_ctrls))
-			throw logic_error("Invalid position");
-		if(_p == NULL) {
-			_p = dynamic_cast<Panel*>(c->getParent());
-			if(_p == NULL)
-				throw logic_error("Parent is no panel");
-		}
-		else if(_p != c->getParent())
-			throw logic_error("Controls does not belong to same panel");
-
+	void BorderLayout::add(Panel *p,Control *c,pos_type pos) {
+		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && (_p == NULL || p == _p));
+		_p = p;
 		_ctrls[pos] = c;
 	}
-	void BorderLayout::remove(Control *c,pos_type pos) {
-		UNUSED(c);
-		if(pos >= (pos_type)ARRAY_SIZE(_ctrls))
-			throw logic_error("Invalid position");
+	void BorderLayout::remove(Panel *p,Control *c,pos_type pos) {
+		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && _p == p && _ctrls[pos] == c);
 		_ctrls[pos] = NULL;
 	}
 

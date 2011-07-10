@@ -24,6 +24,7 @@
 
 namespace gui {
 	class Control;
+	class Panel;
 
 	/**
 	 * The interface for all layouts. Layouts are used to auto-position and -size the controls on
@@ -48,17 +49,19 @@ namespace gui {
 		/**
 		 * Adds the given control to the layout
 		 *
+		 * @param p the panel of the control
 		 * @param c the control
 		 * @param pos specifies the position (layout-implementation-dependend)
 		 */
-		virtual void add(Control *c,pos_type pos) = 0;
+		virtual void add(Panel *p,Control *c,pos_type pos) = 0;
 		/**
 		 * Removes the given control/position from the layout
 		 *
+		 * @param p the panel of the control
 		 * @param c the control
 		 * @param pos specifies the position (layout-implementation-dependend)
 		 */
-		virtual void remove(Control *c,pos_type pos) = 0;
+		virtual void remove(Panel *p,Control *c,pos_type pos) = 0;
 
 		/**
 		 * @return the total preferred width of this layout

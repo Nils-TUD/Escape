@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: thread.cpp 965 2011-07-07 10:56:45Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -19,15 +19,28 @@
 
 #include "thread.h"
 
+void thread::clone(const thread& t) {
+	_tid = t._tid;
+	_pid = t._pid;
+	_procName = t._procName;
+	_state = t._state;
+	_stackPages = t._stackPages;
+	_schedCount = t._schedCount;
+	_syscalls = t._syscalls;
+	_ucycles = t._ucycles;
+	_kcycles = t._kcycles;
+}
+
 std::istream& operator >>(std::istream& is,thread& t) {
 	std::istream::size_type unlimited = std::numeric_limits<streamsize>::max();
-	is.ignore(unlimited,'\n');	// tid
-	is.ignore(unlimited,'\n');	// pid
-	is.ignore(unlimited,'\n');	// procname
-	is.ignore(unlimited,'\n');	// state
-	is.ignore(unlimited,'\n');	// stack
-	is.ignore(unlimited,'\n');	// schedcount
-	is.ignore(unlimited,'\n');	// syscalls
+	is.ignore(unlimited,' ') >> t._tid;
+	is.ignore(unlimited,' ') >> t._pid;
+	is.ignore(unlimited,' ') >> t._procName;
+	is.ignore(unlimited,' ') >> std::ws;
+	t._state = is.get() - '0';
+	is.ignore(unlimited,' ') >> t._stackPages;
+	is.ignore(unlimited,' ') >> t._schedCount;
+	is.ignore(unlimited,' ') >> t._syscalls;
 	is.setf(istream::hex);
 	is.ignore(unlimited,' ') >> t._ucycles;
 	is.ignore(unlimited,' ') >> t._kcycles;

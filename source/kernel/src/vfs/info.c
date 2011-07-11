@@ -198,8 +198,7 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 ssize_t vfs_info_threadReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
-	return vfsrw_readHelper(pid,node,buffer,offset,count,
-			17 * 8 + 6 * 10 + 2 * 16 + 1,vfs_info_threadReadCallback);
+	return vfsrw_readHelper(pid,node,buffer,offset,count,0,vfs_info_threadReadCallback);
 }
 
 static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
@@ -207,9 +206,9 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 	sStringBuffer buf;
 	size_t i;
 	ulong stackPages = 0;
-	buf.dynamic = false;
-	buf.str = *(char**)buffer;
-	buf.size = 17 * 8 + 6 * 10 + 2 * 16 + 1;
+	buf.dynamic = true;
+	buf.str = NULL;
+	buf.size = 0;
 	buf.len = 0;
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		if(t->stackRegions[i] >= 0) {
@@ -223,6 +222,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		&buf,
 		"%-16s%u\n"
 		"%-16s%u\n"
+		"%-16s%s\n"
 		"%-16s%u\n"
 		"%-16s%zu\n"
 		"%-16s%zu\n"
@@ -232,6 +232,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		,
 		"Tid:",t->tid,
 		"Pid:",t->proc->pid,
+		"ProcName:",t->proc->command,
 		"State:",t->state,
 		"StackPages:",stackPages,
 		"SchedCount:",t->stats.schedCount,
@@ -239,6 +240,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"UCPUCycles:",t->stats.ucycleCount.val64,
 		"KCPUCycles:",t->stats.kcycleCount.val64
 	);
+	*buffer = buf.str;
 	*dataSize = buf.len;
 }
 

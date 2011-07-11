@@ -37,22 +37,6 @@ public:
 	typedef size_t size_type;
 	typedef unsigned long long cycle_type;
 
-private:
-	pid_type _pid;
-	pid_type _ppid;
-	uid_type _uid;
-	gid_type _gid;
-	size_type _pages;
-	size_type _ownFrames;
-	size_type _sharedFrames;
-	size_type _swapped;
-	mutable size_type _input;
-	mutable size_type _output;
-	mutable cycle_type _ucycles;
-	mutable cycle_type _kcycles;
-	std::vector<thread*> _threads;
-	std::string _cmd;
-
 public:
 	process()
 		: _pid(0), _ppid(0), _uid(0), _gid(0), _pages(0), _ownFrames(0), _sharedFrames(0),
@@ -85,52 +69,68 @@ public:
 	~process() {
 	}
 
-	pid_type pid() const {
+	inline pid_type pid() const {
 		return _pid;
-	}
-	pid_type ppid() const {
+	};
+	inline pid_type ppid() const {
 		return _ppid;
-	}
-	uid_type uid() const {
+	};
+	inline uid_type uid() const {
 		return _uid;
-	}
-	gid_type gid() const {
+	};
+	inline gid_type gid() const {
 		return _gid;
-	}
-	size_type pages() const {
+	};
+	inline size_type pages() const {
 		return _pages;
-	}
-	size_type ownFrames() const {
+	};
+	inline size_type ownFrames() const {
 		return _ownFrames;
-	}
-	size_type sharedFrames() const {
+	};
+	inline size_type sharedFrames() const {
 		return _sharedFrames;
-	}
-	size_type swapped() const {
+	};
+	inline size_type swapped() const {
 		return _swapped;
-	}
-	cycle_type totalCycles() const {
+	};
+	inline cycle_type totalCycles() const {
 		return userCycles() + kernelCycles();
-	}
+	};
 	cycle_type userCycles() const;
 	cycle_type kernelCycles() const;
-	size_type input() const {
+	inline size_type input() const {
 		return _input;
-	}
-	size_type output() const {
+	};
+	inline size_type output() const {
 		return _output;
-	}
-	const std::vector<thread*>& threads() const {
+	};
+	inline const std::vector<thread*>& threads() const {
 		return _threads;
-	}
-	void add_thread(thread* t) {
+	};
+	inline void add_thread(thread* t) {
 		_threads.push_back(t);
 		// we need to refresh that afterwards
 		_ucycles = _kcycles = -1;
-	}
-	const std::string& command() const {
+	};
+	inline const std::string& command() const {
 		return _cmd;
-	}
+	};
+
+private:
+	pid_type _pid;
+	pid_type _ppid;
+	uid_type _uid;
+	gid_type _gid;
+	size_type _pages;
+	size_type _ownFrames;
+	size_type _sharedFrames;
+	size_type _swapped;
+	mutable size_type _input;
+	mutable size_type _output;
+	mutable cycle_type _ucycles;
+	mutable cycle_type _kcycles;
+	std::vector<thread*> _threads;
+	std::string _cmd;
 };
 
 std::istream& operator >>(std::istream& is,process& p);

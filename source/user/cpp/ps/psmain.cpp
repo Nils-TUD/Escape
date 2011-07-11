@@ -52,8 +52,8 @@ struct sort {
 };
 
 static bool compareProcs(const process* a,const process* b);
-static vector<process*> getProcs();
-static process* getProc(const char* name);
+static vector<process*> getProcs(bool own,uid_t uid);
+static process* getProc(const char* name,bool own,uid_t uid);
 
 static struct sort sorts[] = {
 	{sort::PID,"pid"},
@@ -64,22 +64,14 @@ static struct sort sorts[] = {
 	{sort::KCPU,"kcpu"},
 	{sort::NAME,"name"},
 };
-static const char *states[] = {
-	"Ill ",
-	"Run ",
-	"Rdy ",
-	"Blk ",
-	"Zom "
-};
 static int sortcol = sort::PID;
 static size_t pageSize;
 
 static void usage(const char *name) {
 	size_t i;
-	cerr << "Usage: " << name <<" [-t][-n <count>][-s <sort>]" << '\n';
-	cerr << "	-t			: Print threads, too" << '\n';
-	cerr << "	-n <count>	: Print first <count> processes" << '\n';
-	cerr << "	-s <sort>	: Sort by ";
+	cerr << "Usage: " << name <<" [-u][-s <sort>]" << '\n';
+	cerr << "	-u		Print only the processes with my uid\n";
+	cerr << "	-s		Sort by ";
 	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
 		cerr << "'" << sorts[i].name << "'";
 		if(i < ARRAY_SIZE(sorts) - 1)
@@ -91,14 +83,13 @@ static void usage(const char *name) {
 
 int main(int argc,char **argv) {
 	string ssort("pid");
-	size_t numProcs = 0;
 	pageSize = getConf(CONF_PAGE_SIZE);
-	bool printThreads = false;
+	bool own = false;
 
 	// parse args
 	cmdargs args(argc,argv,cmdargs::NO_FREE);
 	try {
-		args.parse("s=s n=d t",&ssort,&numProcs,&printThreads);
+		args.parse("s=s u",&ssort,&own);
 		if(args.is_help())
 			usage(argv[0]);
 	}
@@ -115,20 +106,19 @@ int main(int argc,char **argv) {
 		}
 	}
 
-	vector<process*> procs = getProcs();
-	if(numProcs == 0 || numProcs > procs.size())
-		numProcs = procs.size();
+	uid_t uid = own ? getuid() : 0;
+	vector<process*> procs = getProcs(own,uid);
 
 	// determine max-values (we want to have a min-width here :))
 	process::pid_type maxPid = 10;
 	process::pid_type maxPpid = 100;
 	process::uid_type maxUid = 100;
 	process::gid_type maxGid = 100;
-	process::size_type maxPmem = 100;
-	process::size_type maxShmem = 1000;
-	process::size_type maxSmem = 100;
-	process::size_type maxInput = 100;
-	process::size_type maxOutput = 100;
+	process::size_type maxPmem = (10 * pageSize) / 1024;
+	process::size_type maxShmem = (100 * pageSize) / 1024;
+	process::size_type maxSmem = (10 * pageSize) / 1024;
+	process::size_type maxInput = 10 * 1024;
+	process::size_type maxOutput = 10 * 1024;
 	process::cycle_type totalCycles = 0;
 	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
 		process *p = *it;
@@ -150,15 +140,7 @@ int main(int argc,char **argv) {
 			maxInput = p->input();
 		if(p->output() > maxOutput)
 			maxOutput = p->output();
-		if(printThreads) {
-			const vector<thread*>& threads = p->threads();
-			for(vector<thread*>::const_iterator tit = threads.begin(); tit != threads.end(); ++tit) {
-				thread *t = *tit;
-				if(t->tid() > maxPpid)
-					maxPpid = t->tid();
-			}
-		}
-		totalCycles += (*it)->userCycles() + (*it)->kernelCycles();
+		totalCycles += p->userCycles() + p->kernelCycles();
 	}
 	maxPid = count_digits(maxPid,10);
 	maxPpid = count_digits(maxPpid,10);
@@ -190,16 +172,15 @@ int main(int argc,char **argv) {
 	cout << setw((streamsize)maxSmem + 2) << right << "SMEM";
 	cout << setw((streamsize)maxInput + 2) << right << "IN";
 	cout << setw((streamsize)maxOutput + 2) << right << "OUT";
-	cout << " STATE  %CPU (USER,KERNEL) COMMAND" << '\n';
+	cout << "   CPU (USER,KERNEL) COMMAND" << '\n';
 
 	// calc with to the process-command
 	size_t width2cmd = maxPid + maxPpid + maxGid + maxUid + maxPmem + maxShmem + maxSmem +
 			maxInput + maxOutput;
-	width2cmd += 2 * 5 + 3 + SSTRLEN(" STATE  %CPU (USER,KERNEL) ");
+	width2cmd += 2 * 5 + 4 + SSTRLEN("  CPU (USER,KERNEL) ");
 
 	// print processes (and threads)
-	vector<process*>::const_iterator end = procs.begin() + numProcs;
-	for(vector<process*>::const_iterator it = procs.begin(); it != end; ++it) {
+	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
 		process *p = *it;
 		process::cycle_type procCycles;
 		int userPercent = 0;
@@ -225,37 +206,10 @@ int main(int argc,char **argv) {
 		cout << setw((streamsize)maxSmem) << (p->swapped() * pageSize) / 1024 << "K ";
 		cout << setw((streamsize)maxInput) << p->input() / 1024 << "K ";
 		cout << setw((streamsize)maxOutput) << p->output() / 1024 << "K ";
-		cout << "-     ";
 		cout << setw(4) << setprecision(1) << cyclePercent << "% (";
 		cout << setw(3) << userPercent << "%,";
 		cout << setw(3) << kernelPercent << "%)   ";
 		cout << cmd << '\n';
-
-		if(printThreads) {
-			const vector<thread*>& threads = p->threads();
-			for(vector<thread*>::const_iterator tit = threads.begin(); tit != threads.end(); ++tit) {
-				thread *t = *tit;
-				process::cycle_type threadCycles = t->userCycles() + t->kernelCycles();
-				float tcyclePercent = 0;
-				if(threadCycles != 0)
-					tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
-				int tuserPercent = 0;
-				if(t->userCycles() != 0)
-					tuserPercent = (int)(100. / (threadCycles / (double)t->userCycles()));
-				int tkernelPercent = 0;
-				if(t->kernelCycles() != 0)
-					tkernelPercent = (int)(100. / (threadCycles / (double)t->kernelCycles()));
-
-				cout << " " << ((tit + 1 != threads.end()) ? '\xC3' : '\xC0') << '\xC4';
-				cout << setw(maxPpid) << t->tid();
-				cout << setw((streamsize)maxPmem + maxGid + maxUid + maxShmem + maxSmem + maxInput +
-						maxOutput + 2 * 5 + 2) << "";
-				cout << setw(5) << states[t->state()];
-				cout << setw(6) << setprecision(1) << tcyclePercent << "% (";
-				cout << setw(3) << tuserPercent << "%,";
-				cout << setw(3) << tkernelPercent << "%)" << '\n';
-			}
-		}
 	}
 
 	return EXIT_SUCCESS;
@@ -289,13 +243,15 @@ static bool compareProcs(const process* a,const process* b) {
 	return false;
 }
 
-static vector<process*> getProcs() {
+static vector<process*> getProcs(bool own,uid_t uid) {
 	vector<process*> procs;
 	file dir("/system/processes");
 	vector<sDirEntry> files = dir.list_files(false);
 	for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
 		try {
-			procs.push_back(getProc(it->name));
+			process *p = getProc(it->name,own,uid);
+			if(p)
+				procs.push_back(p);
 		}
 		catch(const io_exception& e) {
 			cerr << "Unable to read process with pid " << it->name << ": " << e.what() << endl;
@@ -304,12 +260,17 @@ static vector<process*> getProcs() {
 	return procs;
 }
 
-static process* getProc(const char* name) {
+static process* getProc(const char* name,bool own,uid_t uid) {
 	string ppath = string("/system/processes/") + name + "/info";
 	ifstream is(ppath.c_str());
 	process* p = new process();
 	is >> *p;
 	is.close();
+
+	if(own && p->uid() != uid) {
+		delete p;
+		return NULL;
+	}
 
 	file dir(string("/system/processes/") + name + "/threads");
 	vector<sDirEntry> files = dir.list_files(false);

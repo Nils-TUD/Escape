@@ -27,74 +27,32 @@ class thread {
 	friend std::istream& operator >>(std::istream& is,thread& t);
 
 public:
-	typedef process::pid_type pid_type;
-	typedef tid_t tid_type;
-	typedef unsigned char state_type;
-	typedef process::size_type size_type;
 	typedef process::cycle_type cycle_type;
 
 private:
-	tid_type _tid;
-	pid_type _pid;
-	state_type _state;
-	size_type _stackPages;
-	size_type _schedCount;
-	size_type _syscalls;
 	cycle_type _ucycles;
 	cycle_type _kcycles;
 
 public:
 	thread()
-		: _tid(0), _pid(0), _state(0), _stackPages(0), _schedCount(0), _syscalls(0),
-		  _ucycles(0), _kcycles(0) {
+		: _ucycles(0), _kcycles(0) {
 	}
 	thread(const thread& t)
-		: _tid(t._tid), _pid(t._pid), _state(t._state), _stackPages(t._stackPages),
-		  _schedCount(t._schedCount), _syscalls(t._syscalls),
-		  _ucycles(t._ucycles), _kcycles(t._kcycles) {
+		: _ucycles(t._ucycles), _kcycles(t._kcycles) {
 	}
 	thread& operator =(const thread& t) {
-		clone(t);
+		_ucycles = t._ucycles;
+		_kcycles = t._kcycles;
 		return *this;
 	}
 	~thread() {
 	}
 
-	tid_type tid() const {
-		return _tid;
-	}
-	tid_type pid() const {
-		return _pid;
-	}
-	state_type state() const {
-		return _state;
-	}
-	size_type stackPages() const {
-		return _stackPages;
-	}
-	size_type schedCount() const {
-		return _schedCount;
-	}
-	size_type syscalls() const {
-		return _syscalls;
-	}
 	cycle_type userCycles() const {
 		return _ucycles;
 	}
 	cycle_type kernelCycles() const {
 		return _kcycles;
-	}
-
-private:
-	void clone(const thread& t) {
-		_tid = t._tid;
-		_pid = t._pid;
-		_state = t._state;
-		_stackPages = t._stackPages;
-		_schedCount = t._schedCount;
-		_syscalls = t._syscalls;
-		_ucycles = t._ucycles;
-		_kcycles = t._kcycles;
 	}
 };
 

@@ -29,7 +29,7 @@
 #include <string.h>
 
 namespace gui {
-	void Graphics::moveLines(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
+	void Graphics::moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
 		gsize_t bwidth = _buf->getWidth();
 		gsize_t bheight = _buf->getHeight();
 		gsize_t psize = _buf->getColorDepth() / 8;
@@ -46,8 +46,8 @@ namespace gui {
 				up = y;
 		}
 		else {
-			if(y + height - up > bheight)
-				up = -(bheight - (height + y));
+			if(starty + height - up > bheight)
+				up = -(bheight - (height + starty));
 		}
 
 		pixels += startx * psize;
@@ -67,6 +67,36 @@ namespace gui {
 		}
 		updateMinMax(x,y - up);
 		updateMinMax(width - 1,y + height - up - 1);
+	}
+
+	void Graphics::moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left) {
+		gsize_t bwidth = _buf->getWidth();
+		gsize_t psize = _buf->getColorDepth() / 8;
+		gsize_t wsize = width * psize;
+		gsize_t bwsize = bwidth * psize;
+		uint8_t *pixels = _buf->getBuffer();
+		if(!validateParams(x,y,width,height))
+			return;
+
+		gpos_t startx = _offx + x;
+		gpos_t starty = _offy + y;
+		if(left > 0) {
+			if(x < left)
+				left = x;
+		}
+		else {
+			if(startx + width - left > bwidth)
+				left = -(bwidth - (width + startx));
+		}
+
+		pixels += startx * psize;
+		for(gsize_t i = 0; i < height; i++) {
+			memmove(pixels + (starty + i) * bwsize - left * psize,
+				pixels + (starty + i) * bwsize,
+				wsize);
+		}
+		updateMinMax(x - left,y);
+		updateMinMax(x + width - left - 1,height - 1);
 	}
 
 	void Graphics::drawChar(gpos_t x,gpos_t y,char c) {
@@ -159,6 +189,7 @@ namespace gui {
 				y += incy;
 			}
 		}
+		doSetPixel(*px,*py);
 	}
 
 	void Graphics::drawVertLine(gpos_t x,gpos_t y1,gpos_t y2) {
@@ -168,7 +199,7 @@ namespace gui {
 		updateMinMax(x,y2);
 		if(y1 > y2)
 			std::swap(y1,y2);
-		for(; y1 < y2; y1++)
+		for(; y1 <= y2; y1++)
 			doSetPixel(x,y1);
 	}
 
@@ -179,7 +210,7 @@ namespace gui {
 		updateMinMax(x2,y);
 		if(x1 > x2)
 			std::swap(x1,x2);
-		for(; x1 < x2; x1++)
+		for(; x1 <= x2; x1++)
 			doSetPixel(x1,y);
 	}
 
@@ -258,8 +289,14 @@ namespace gui {
 
 		// TODO later we should calculate with sin&cos the end-position in bounds so that
 		// the line will just be shorter and doesn't change the angle
-		int p1 = validatePoint(x1,y1);
-		int p2 = validatePoint(x2,y2);
+
+		// ensure that none of the params reference the same variable. otherwise we can't detect
+		// that lines are not visible in all cases (because the first one will detect it but also
+		// change the variable and therefore the second won't detect it so that one point will be
+		// considered visible)
+		gpos_t xx1 = x1, xx2 = x2, yy1 = y1, yy2 = y2;
+		int p1 = validatePoint(xx1,yy1);
+		int p2 = validatePoint(xx2,yy2);
 		if((p1 & OUT_LEFT) && (p2 & OUT_LEFT))
 			return false;
 		if((p1 & OUT_TOP) && (p2 & OUT_TOP))
@@ -268,6 +305,11 @@ namespace gui {
 			return false;
 		if((p1 & OUT_BOTTOM) && (p2 & OUT_BOTTOM))
 			return false;
+		// update the values (they're only needed when true is returned)
+		x1 = xx1;
+		x2 = xx2;
+		y1 = yy1;
+		y2 = yy2;
 		return true;
 	}
 

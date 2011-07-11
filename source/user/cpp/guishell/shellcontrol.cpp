@@ -117,7 +117,7 @@ void ShellControl::update() {
 		// move lines up
 		if(_vt->upScroll < _vt->rows) {
 			size_t scrollPixel = _vt->upScroll * lineHeight;
-			g->moveLines(TEXTSTARTX,TEXTSTARTY + scrollPixel + lineHeight,
+			g->moveRows(TEXTSTARTX,TEXTSTARTY + scrollPixel + lineHeight,
 					getWidth(),getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,scrollPixel);
 		}
 		// (re-)paint rows below
@@ -151,7 +151,7 @@ void ShellControl::update() {
 		if(-_vt->upScroll < _vt->rows) {
 			size_t lineHeight = g->getFont().getHeight() + PADDING;
 			size_t scrollPixel = -_vt->upScroll * lineHeight;
-			g->moveLines(TEXTSTARTX,TEXTSTARTY + lineHeight,
+			g->moveRows(TEXTSTARTX,TEXTSTARTY + lineHeight,
 					getWidth(),getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,-scrollPixel);
 		}
 		// repaint first lines (not title-bar)

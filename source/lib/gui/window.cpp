@@ -250,20 +250,17 @@ namespace gui {
 		if(_style == STYLE_DEFAULT) {
 			if(_header && e.getY() < _header->getHeight())
 				_inTitle = true;
-			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH) {
+			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
 				_inResizeBottom = true;
-				return;
-			}
 			if(!_header || e.getY() >= _header->getHeight()) {
-				if(e.getX() < CURSOR_RESIZE_WIDTH) {
+				if(e.getX() < CURSOR_RESIZE_WIDTH)
 					_inResizeLeft = true;
-					return;
-				}
-				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH) {
+				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
 					_inResizeRight = true;
-					return;
-				}
 			}
+			// don't pass the event to a control
+			if(_inResizeBottom || _inResizeLeft || _inResizeRight)
+				return;
 		}
 		passToCtrl(e,MouseEvent::MOUSE_PRESSED);
 	}

@@ -74,6 +74,7 @@ namespace gui {
 		};
 
 		virtual void paint(Graphics &g);
+		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 	protected:
 		virtual void resizeTo(gsize_t width,gsize_t height);
@@ -114,6 +115,7 @@ namespace gui {
 		};
 
 	private:
+		void scrollBy(short mx,short my);
 		virtual void setFocus(Control *c) {
 			if(c)
 				_focus = FOCUS_CTRL;
@@ -123,6 +125,7 @@ namespace gui {
 		};
 
 	private:
+		void paintBars(Graphics &g);
 		gpos_t getBarPos(gsize_t ctrlSize,gsize_t viewable,gpos_t ctrlPos);
 		gsize_t getBarSize(gsize_t ctrlSize,gsize_t viewable);
 

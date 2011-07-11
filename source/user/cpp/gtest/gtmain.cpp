@@ -56,7 +56,7 @@ int main(void) {
 	win5();
 	int res = app->run();
 	run = false;
-	join(0);
+	/*join(0);*/
 	return res;
 }
 
@@ -87,8 +87,8 @@ static void win1(void) {
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->layout();
-	if(startThread(pbThread,pb) < 0)
-		std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+	/*if(startThread(pbThread,pb) < 0)
+		std::cerr << "[GUITEST] Unable to start thread" << std::endl;*/
 }
 
 static void win2(void) {

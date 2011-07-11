@@ -165,4 +165,30 @@ namespace gui {
 			_g->requestUpdate();
 		}
 	}
+
+	void UIElement::paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+		// save old rectangle
+		gpos_t gx = g.getMinX(), gy = g.getMinY();
+		gsize_t gw = g.getWidth(), gh = g.getHeight();
+
+		// change g to cover only the rectangle to repaint
+		g.setMinOff(g.getX() + x,g.getY() + y);
+		g.setSize(_x,_y,x + width,y + height,_parent->getContentWidth(),_parent->getContentHeight());
+
+		// now let the ui-element paint it; this does not make sense if the rectangle is empty
+		if(g.getWidth() != 0 && g.getHeight() != 0)
+			paint(g);
+
+		// restore old rectangle
+		g.setMinOff(gx,gy);
+		g.setWidth(gw);
+		g.setHeight(gh);
+	}
+
+	void UIElement::repaintRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+		if(_g) {
+			paintRect(*_g,x,y,width,height);
+			_g->requestUpdate();
+		}
+	}
 }

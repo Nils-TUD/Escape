@@ -271,7 +271,10 @@ bool rectIntersect(sRectangle *r1,sRectangle *r2,sRectangle *intersect) {
 
 	/* if all points of r2 are in r1, r2 is the intersection */
 	if(p1in && p2in && p3in && p4in) {
-		memcpy(intersect,r2,sizeof(sRectangle));
+		intersect->x = r2->x;
+		intersect->y = r2->y;
+		intersect->width = r2->width;
+		intersect->height = r2->height;
 		return true;
 	}
 
@@ -285,7 +288,10 @@ bool rectIntersect(sRectangle *r1,sRectangle *r2,sRectangle *intersect) {
 
 		/* first check if all points of r1 are in r2 */
 		if(op1in && op2in && op3in && op4in) {
-			memcpy(intersect,r1,sizeof(sRectangle));
+			intersect->x = r1->x;
+			intersect->y = r1->y;
+			intersect->width = r1->width;
+			intersect->height = r1->height;
 			return true;
 		}
 

@@ -9,6 +9,7 @@
 #include <gui/control.h>
 #include <gui/event.h>
 #include <gui/layout.h>
+#include <esc/rect.h>
 #include <vector>
 
 namespace gui {
@@ -129,11 +130,11 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 
 		/**
-		 * Paints the panel
-		 *
-		 * @param g the graphics-object
+		 * Overwrite the paint-methods
 		 */
 		virtual void paint(Graphics &g);
+		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+
 		/**
 		 * Adds the given control to this panel
 		 *
@@ -173,6 +174,7 @@ namespace gui {
 		Color _bgColor;
 		vector<Control*> _controls;
 		Layout *_layout;
+		sRectangle _updateRect;
 	};
 
 	ostream &operator<<(ostream &s,const Panel &p);

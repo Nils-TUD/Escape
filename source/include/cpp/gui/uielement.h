@@ -165,11 +165,28 @@ namespace gui {
 		 */
 		virtual void paint(Graphics &g) = 0;
 		/**
-		 * Repaints the control, i.e. calls paint() and requests vesa to update this region
+		 * Repaints the control, i.e. calls paint() and requests an update of this region
 		 */
-		virtual void repaint();
+		void repaint();
+
 		/**
-		 * Requests vesa to update the dirty region
+		 * Paints the given rectangle of the control
+		 *
+		 * @param g the graphics-object
+		 * @param x the x-position relative to this control of the rectangle
+		 * @param y the y-position relative to this control of the rectangle
+		 * @param width the width of the rectangle
+		 * @param height the height of the rectangle
+		 */
+		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		/**
+		 * Repaints the given rectangle of the control, i.e. calls paintRect() and requests an
+		 * update of this rectangle.
+		 */
+		void repaintRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+
+		/**
+		 * Requests an update of the dirty region
 		 */
 		void requestUpdate();
 

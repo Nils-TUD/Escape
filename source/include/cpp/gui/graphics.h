@@ -102,16 +102,28 @@ namespace gui {
 		};
 
 		/**
-		 * Moves <height> lines of <width> pixels at <x>,<y> up by <up> lines.
-		 * If up is negative, it moves them down.
+		 * Moves <height> rows of <width> pixels at <x>,<y> up by <up> rows.
+		 * If <up> is negative, it moves them down.
 		 *
 		 * @param x the x-coordinate where to start
 		 * @param y the y-coordinate where to start
-		 * @param weight the width of a line
-		 * @param height the number of lines to move
+		 * @param width the width of a row
+		 * @param height the number of rows to move
 		 * @param up amount to move up / down
 		 */
-		virtual void moveLines(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up);
+		virtual void moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up);
+
+		/**
+		 * Moves <width> cols of <height> pixels at <x>,<y> left by <left> cols.
+		 * If <left> is negative, it moves them right.
+		 *
+		 * @param x the x-coordinate where to start
+		 * @param y the y-coordinate where to start
+		 * @param width the number of cols to move
+		 * @param height the height of a col
+		 * @param left amount to move left / right
+		 */
+		virtual void moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left);
 
 		/**
 		 * Draws the given character at given position
@@ -192,11 +204,31 @@ namespace gui {
 		 */
 		virtual void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
-	private:
-		// prevent the compiler from generating copy-constructor and assignment-operator
-		// by declaring them with out definition
-		Graphics(const Graphics &g);
-		Graphics &operator=(const Graphics &g);
+		/**
+		 * @return the x-offset of the control in the window
+		 */
+		inline gpos_t getX() const {
+			return _offx;
+		};
+		/**
+		 * @return the y-offset of the control in the window
+		 */
+		inline gpos_t getY() const {
+			return _offy;
+		};
+
+		/**
+		 * @return the width of the paintable area
+		 */
+		inline gsize_t getWidth() const {
+			return _width;
+		};
+		/**
+		 * @return the height of the paintable area
+		 */
+		inline gsize_t getHeight() const {
+			return _height;
+		};
 
 	protected:
 		/**
@@ -255,6 +287,18 @@ namespace gui {
 			_offy = y;
 		};
 		/**
+		 * @return the minimum x-offset in the window at which we can draw
+		 */
+		inline gpos_t getMinX() const {
+			return _minoffx;
+		};
+		/**
+		 * @return the minimum y-offset in the window at which we can draw
+		 */
+		inline gpos_t getMinY() const {
+			return _minoffy;
+		};
+		/**
 		 * Sets the minimum offset in the window, i.e. the beginning where we can draw
 		 *
 		 * @param x the x-offset
@@ -265,7 +309,23 @@ namespace gui {
 			_minoffy = y;
 		};
 		/**
-		 * Sets the size of the control
+		 * Sets the width of the paint-area (unchecked!)
+		 *
+		 * @param width the new value
+		 */
+		inline void setWidth(gsize_t width) {
+			_width = width;
+		};
+		/**
+		 * Sets the height of the paint-area (unchecked!)
+		 *
+		 * @param height the new value
+		 */
+		inline void setHeight(gsize_t height) {
+			_height = height;
+		};
+		/**
+		 * Sets the size of the control (checked)
 		 *
 		 * @param x the x-position of the control relative to the parent
 		 * @param y the y-position of the control relative to the parent
@@ -278,6 +338,10 @@ namespace gui {
 
 		// used internally
 		gsize_t getDim(gpos_t off,gsize_t size,gsize_t max);
+
+		// no cloning
+		Graphics(const Graphics &g);
+		Graphics &operator=(const Graphics &g);
 
 	protected:
 		GraphicsBuffer *_buf;

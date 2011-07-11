@@ -92,8 +92,29 @@ namespace gui {
 		// now paint controls
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 			Control *c = *it;
-			c->paint(*c->getGraphics());
+			if(_updateRect.width) {
+				sRectangle ctrlRect,inter;
+				ctrlRect.x = c->getX();
+				ctrlRect.y = c->getY();
+				ctrlRect.width = c->getWidth();
+				ctrlRect.height = c->getHeight();
+				if(rectIntersect(&_updateRect,&ctrlRect,&inter)) {
+					c->paintRect(*c->getGraphics(),
+							inter.x - c->getX(),inter.y - c->getY(),inter.width,inter.height);
+				}
+			}
+			else
+				c->paint(*c->getGraphics());
 		}
+	}
+
+	void Panel::paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+		_updateRect.x = x;
+		_updateRect.y = y;
+		_updateRect.width = width;
+		_updateRect.height = height;
+		UIElement::paintRect(g,x,y,width,height);
+		_updateRect.width = 0;
 	}
 
 	void Panel::add(Control &c,Layout::pos_type pos) {

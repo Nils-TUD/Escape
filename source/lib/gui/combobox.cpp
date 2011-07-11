@@ -167,8 +167,8 @@ namespace gui {
 			}
 			else {
 				const Window *w = getWindow();
-				_win = new ItemWindow(this,w->getX() + getX(),
-						w->getY() + w->getTitleBarHeight() + getY() + getHeight(),getWidth(),
+				_win = new ItemWindow(this,w->getX() + getWindowX(),
+						w->getY() + getWindowY() + getHeight(),getWidth(),
 						_items.size() * (getGraphics()->getFont().getHeight() + ItemWindow::PADDING * 2));
 			}
 		}

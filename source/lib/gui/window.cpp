@@ -357,8 +357,8 @@ namespace gui {
 	}
 
 	void Window::passMouseToCtrl(Control *c,const MouseEvent& e) {
-		gpos_t x = e.getX() - c->getX();
-		gpos_t y = e.getY() - c->getY();
+		gpos_t x = e.getX() - c->getWindowX();
+		gpos_t y = e.getY() - c->getWindowY();
 		MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),x,y,e.getButtonMask());
 		switch(e.getType()) {
 			case MouseEvent::MOUSE_MOVED:

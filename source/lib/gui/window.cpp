@@ -104,7 +104,7 @@ namespace gui {
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
 			_isActive(false), _moveX(x), _moveY(y), _resizeWidth(getWidth()), _resizeHeight(getHeight()),
 			_gbuf(NULL), _header(new WindowTitleBar(title,1,1,getWidth() - 2,HEADER_SIZE)),
-			_body(Panel(1,HEADER_SIZE,getWidth() - 2,getHeight() - HEADER_SIZE - 1)),
+			_body(Panel(1,1 + HEADER_SIZE,getWidth() - 2,getHeight() - HEADER_SIZE - 2)),
 			_tabCtrls(list<Control*>()), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
@@ -150,16 +150,24 @@ namespace gui {
 	void Window::init() {
 		Application *app = Application::getInstance();
 		_gbuf = new GraphicsBuffer(this,getX(),getY(),getWidth(),getHeight(),app->getColorDepth());
-		_g = GraphicFactory::get(_gbuf,0,0);
+		_g = GraphicFactory::get(_gbuf,getWidth(),getHeight());
 		// add us to app; we'll receive a "created"-event as soon as the window
 		// manager knows about us
 		app->addWindow(this);
+		gsize_t y = 1;
+		gsize_t height = getHeight() - 1;
 		if(_header) {
-			_header->_g = GraphicFactory::get(_gbuf,1,1);
+			_header->_g = GraphicFactory::get(_gbuf,getWidth() - 2,_header->getHeight());
+			_header->_g->setOff(1,1);
+			_header->_g->setMinOff(1,1);
 			_header->_parent = this;
 			_header->init();
+			y += _header->getHeight();
+			height -= _header->getHeight();
 		}
-		_body._g = GraphicFactory::get(_gbuf,1,_header ? _header->getHeight() : 1);
+		_body._g = GraphicFactory::get(_gbuf,getWidth() - 2,height);
+		_body._g->setOff(1,y);
+		_body._g->setMinOff(1,y);
 		_body._parent = this;
 	}
 
@@ -204,17 +212,18 @@ namespace gui {
 				if(resizing) {
 					_gbuf->moveTo(_moveX,_moveY);
 					_gbuf->resizeTo(_resizeWidth,_resizeHeight);
-					if(_header) {
-						_header->resizeTo(_resizeWidth - 2,_header->getHeight());
-						_body.resizeTo(_resizeWidth - 2,_resizeHeight - _header->getHeight() - 1);
-					}
-					else
-						_body.resizeTo(_resizeWidth - 2,_resizeHeight - 2);
+					_g->setSize(0,0,_resizeWidth,_resizeHeight,_resizeWidth,_resizeHeight);
 					// when resizing left, its both a resize and move
 					setX(_moveX);
 					setY(_moveY);
 					setWidth(_resizeWidth);
 					setHeight(_resizeHeight);
+					if(_header) {
+						_header->resizeTo(_resizeWidth - 2,_header->getHeight());
+						_body.resizeTo(_resizeWidth - 2,_resizeHeight - _header->getHeight() - 2);
+					}
+					else
+						_body.resizeTo(_resizeWidth - 2,_resizeHeight - 2);
 					Application::getInstance()->resizeWindow(this,true);
 					repaint();
 				}
@@ -241,13 +250,19 @@ namespace gui {
 		if(_style == STYLE_DEFAULT) {
 			if(_header && e.getY() < _header->getHeight())
 				_inTitle = true;
-			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
+			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH) {
 				_inResizeBottom = true;
+				return;
+			}
 			if(!_header || e.getY() >= _header->getHeight()) {
-				if(e.getX() < CURSOR_RESIZE_WIDTH)
+				if(e.getX() < CURSOR_RESIZE_WIDTH) {
 					_inResizeLeft = true;
-				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
+					return;
+				}
+				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH) {
 					_inResizeRight = true;
+					return;
+				}
 			}
 		}
 		passToCtrl(e,MouseEvent::MOUSE_PRESSED);
@@ -317,19 +332,19 @@ namespace gui {
 		Control *focus = getFocus();
 		if(event == MouseEvent::MOUSE_MOVED) {
 			if(focus)
-				focus->onMouseMoved(e);
+				passMouseToCtrl(focus,e);
 			return;
 		}
 		if(event == MouseEvent::MOUSE_RELEASED) {
 			if(focus)
-				focus->onMouseReleased(e);
+				passMouseToCtrl(focus,e);
 			return;
 		}
 
 		if(_header && e.getY() < _header->getHeight())
-			_header->onMousePressed(e);
+			passMouseToCtrl(_header,e);
 		else
-			_body.onMousePressed(e);
+			passMouseToCtrl(&_body,e);
 
 		// handle focus-change
 		Control *newFocus = getFocus();
@@ -338,6 +353,23 @@ namespace gui {
 				focus->onFocusLost();
 			if(newFocus)
 				newFocus->onFocusGained();
+		}
+	}
+
+	void Window::passMouseToCtrl(Control *c,const MouseEvent& e) {
+		gpos_t x = e.getX() - c->getX();
+		gpos_t y = e.getY() - c->getY();
+		MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),x,y,e.getButtonMask());
+		switch(e.getType()) {
+			case MouseEvent::MOUSE_MOVED:
+				c->onMouseMoved(ce);
+				break;
+			case MouseEvent::MOUSE_PRESSED:
+				c->onMousePressed(ce);
+				break;
+			case MouseEvent::MOUSE_RELEASED:
+				c->onMouseReleased(ce);
+				break;
 		}
 	}
 

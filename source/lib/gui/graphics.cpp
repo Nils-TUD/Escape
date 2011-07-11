@@ -36,8 +36,7 @@ namespace gui {
 		gsize_t wsize = width * psize;
 		gsize_t bwsize = bwidth * psize;
 		uint8_t *pixels = _buf->getBuffer();
-		validateParams(x,y,width,height);
-		if(width == 0 || height == 0)
+		if(!validateParams(x,y,width,height))
 			return;
 
 		gpos_t startx = _offx + x;
@@ -71,19 +70,23 @@ namespace gui {
 	}
 
 	void Graphics::drawChar(gpos_t x,gpos_t y,char c) {
+		gpos_t orgx = x;
+		gpos_t orgy = y;
 		gsize_t width = _font.getWidth();
 		gsize_t height = _font.getHeight();
-		validateParams(x,y,width,height);
-		if(width == 0 || height == 0)
+		if(!validateParams(x,y,width,height))
 			return;
 
 		updateMinMax(x,y);
 		updateMinMax(x + width - 1,y + height - 1);
 		gpos_t cx,cy;
-		for(cy = 0; cy < height; cy++) {
-			for(cx = 0; cx < width; cx++) {
+		gpos_t xoff = x - orgx,yoff = y - orgy;
+		gsize_t xend = xoff + width;
+		gsize_t yend = yoff + height;
+		for(cy = yoff; cy < yend; cy++) {
+			for(cx = xoff; cx < xend; cx++) {
 				if(_font.isPixelSet(c,cx,cy))
-					doSetPixel(x + cx,y + cy);
+					doSetPixel(orgx + cx,orgy + cy);
 			}
 		}
 	}
@@ -195,8 +198,7 @@ namespace gui {
 	}
 
 	void Graphics::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		validateParams(x,y,width,height);
-		if(width == 0 || height == 0)
+		if(!validateParams(x,y,width,height))
 			return;
 
 		gpos_t yend = y + height;
@@ -215,85 +217,125 @@ namespace gui {
 		gpos_t y = _miny;
 		gsize_t width = _maxx - _minx + 1;
 		gsize_t height = _maxy - _miny + 1;
-		validateParams(x,y,width,height);
-		if(width == 0 || height == 0)
+		if(!validateParams(x,y,width,height))
 			return;
 
 		_buf->requestUpdate(_offx + x,_offy + y,width,height);
 		// reset region
-		_minx = _buf->getWidth() - 1;
+		_minx = _width - 1;
 		_maxx = 0;
-		_miny = _buf->getHeight() - 1;
+		_miny = _height - 1;
 		_maxy = 0;
 	}
 
 	void Graphics::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		validateParams(x,y,width,height);
-		if(width == 0 || height == 0)
+		if(!validateParams(x,y,width,height))
 			return;
 
 		_buf->update(x,y,width,height);
 	}
 
+	void Graphics::setSize(gpos_t x,gpos_t y,gsize_t width,gsize_t height,
+			gsize_t pwidth,gsize_t pheight) {
+		_width = getDim(x,width,pwidth);
+		_width = getDim(_offx,_width,_buf->getWidth());
+		_height = getDim(y,height,pheight);
+		_height = getDim(_offy,_height,_buf->getHeight());
+	}
+
+	gsize_t Graphics::getDim(gpos_t off,gsize_t size,gsize_t max) {
+		if(off + size > max) {
+			if(off < max)
+				return max - off;
+			return 0;
+		}
+		return size;
+	}
+
 	bool Graphics::validateLine(gpos_t &x1,gpos_t &y1,gpos_t &x2,gpos_t &y2) {
-		bool p1 = validatePoint(x1,y1);
-		bool p2 = validatePoint(x2,y2);
+		if(_width == 0 || _height == 0)
+			return false;
+
 		// TODO later we should calculate with sin&cos the end-position in bounds so that
 		// the line will just be shorter and doesn't change the angle
-		if(!p1 && !p2)
+		int p1 = validatePoint(x1,y1);
+		int p2 = validatePoint(x2,y2);
+		if((p1 & OUT_LEFT) && (p2 & OUT_LEFT))
+			return false;
+		if((p1 & OUT_TOP) && (p2 & OUT_TOP))
+			return false;
+		if((p1 & OUT_RIGHT) && (p2 & OUT_RIGHT))
+			return false;
+		if((p1 & OUT_BOTTOM) && (p2 & OUT_BOTTOM))
 			return false;
 		return true;
 	}
 
-	bool Graphics::validatePoint(gpos_t &x,gpos_t &y) {
-		bool res = true;
-		gsize_t bwidth = _buf->getWidth();
-		gsize_t bheight = _buf->getHeight();
-		if(x < 0)
-			x = 0;
-		if(y < 0)
-			y = 0;
-		if(_offy + y < 0) {
-			y = -_offy;
-			res = false;
+	int Graphics::validatePoint(gpos_t &x,gpos_t &y) {
+		int res = 0;
+		gpos_t minx = _minoffx - _offx;
+		gpos_t miny = _minoffy - _offy;
+		if(x < minx) {
+			x = minx;
+			res |= OUT_LEFT;
+		}
+		if(y < miny) {
+			y = miny;
+			res |= OUT_TOP;
 		}
 		if(_offx + x < 0) {
 			x = -_offx;
-			res = false;
+			res |= OUT_LEFT;
 		}
-		if(x >= bwidth - _offx)
-			x = bwidth - _offx - 1;
-		if(y >= bheight - _offy)
-			y = bheight - _offy - 1;
+		if(_offy + y < 0) {
+			y = -_offy;
+			res |= OUT_TOP;
+		}
+		if(x >= _width) {
+			x = _width - 1;
+			res |= OUT_RIGHT;
+		}
+		if(y >= _height) {
+			y = _height - 1;
+			res |= OUT_BOTTOM;
+		}
 		return res;
 	}
 
-	void Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height) {
-		gsize_t bwidth = _buf->getWidth();
-		gsize_t bheight = _buf->getHeight();
-		if(x < 0)
-			x = 0;
-		if(y < 0)
-			y = 0;
+	bool Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height) {
+		if(_width == 0 || _height == 0)
+			return false;
+
+		gpos_t minx = _minoffx - _offx;
+		gpos_t miny = _minoffy - _offy;
+		if(x < minx) {
+			if(width < minx - x)
+				return false;
+			width -= minx - x;
+			x = minx;
+		}
+		if(y < miny) {
+			if(height < miny - y)
+				return false;
+			height -= miny - y;
+			y = miny;
+		}
 		if(_offy + y < 0) {
-			if(height < -(_offy + y)) {
-				height = 0;
-				return;
-			}
+			if(height < -(_offy + y))
+				return false;
 			height += _offy + y;
 			y = -_offy;
 		}
 		if(_offx + x < 0) {
-			if(width < -(_offx + x)) {
-				width = 0;
-				return;
-			}
+			if(width < -(_offx + x))
+				return false;
 			width += _offx + x;
 			x = -_offx;
 		}
-		if(_offx + x + width > bwidth)
-			width = MAX(0,(int)bwidth - x - _offx);
-		if(_offy + y + height > bheight)
-			height = MAX(0,(int)bheight - y - _offy);
+		if(x + width > _width)
+			width = max(0,(gpos_t)_width - x);
+		if(y + height > _height)
+			height = max(0,(gpos_t)_height - y);
+		return width > 0 && height > 0;
 	}
 }

@@ -34,9 +34,13 @@ namespace gui {
 	}
 
 	gsize_t FlowLayout::getPreferredWidth() const {
+		if(_ctrls.size() == 0)
+			return 0;
 		return getMaxWidth() * _ctrls.size() + _gap * (_ctrls.size() - 1);
 	}
 	gsize_t FlowLayout::getPreferredHeight() const {
+		if(_ctrls.size() == 0)
+			return 0;
 		return getMaxHeight();
 	}
 

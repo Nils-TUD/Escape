@@ -32,6 +32,7 @@ int main(void) {
 	DesktopWin win(app->getScreenWidth(),app->getScreenHeight());
 	win.addShortcut(&sc1);
 	win.addShortcut(&sc2);
+	win.layout();
 	if(startThread(childWaitThread,NULL) < 0)
 		error("Unable to start thread");
 	return app->run();

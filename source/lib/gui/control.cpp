@@ -35,29 +35,46 @@ namespace gui {
 		_parent = e;
 		// we share the memory with the window, so that a control simply paints to that memory
 		// and just the window writes this memory to vesa
-		_g = GraphicFactory::get(e->getGraphics()->getBuffer(),getWindowX(),getWindowY());
+		_g = GraphicFactory::get(e->getGraphics()->getBuffer(),0,0);
+		setRegion();
 	}
 
 	void Control::resizeTo(gsize_t width,gsize_t height) {
 		_width = width;
 		_height = height;
+		setRegion();
 	}
 
 	void Control::moveTo(gpos_t x,gpos_t y) {
 		_x = x;
 		_y = y;
-		_g->setXOff(getWindowX());
-		_g->setYOff(getWindowY());
+		setRegion();
 	}
 
-	void Control::onFocusGained() {
-		Panel *p = dynamic_cast<Panel*>(getParent());
-		if(p)
-			p->setFocus(this);
+	void Control::setRegion() {
+		if(_g) {
+			_g->setOff(getWindowX(),getWindowY());
+			// don't change the min-offset for the header- and body-panel in the window; they're fixed
+			if(_parent->_parent)
+				_g->setMinOff(getParentOffX(_parent),getParentOffY(_parent));
+			_g->setSize(_x,_y,_width,_height,_parent->getContentWidth(),_parent->getContentHeight());
+		}
 	}
-	void Control::onFocusLost() {
-		Panel *p = dynamic_cast<Panel*>(getParent());
-		if(p)
-			p->setFocus(NULL);
+
+	gpos_t Control::getParentOffX(UIElement *c) const {
+		gpos_t x = c->getWindowX();
+		while(c->_parent && c->_parent->_parent) {
+			x = max(x,c->_parent->getWindowX());
+			c = c->_parent;
+		}
+		return x;
+	}
+	gpos_t Control::getParentOffY(UIElement *c) const {
+		gpos_t y = c->getWindowY();
+		while(c->_parent && c->_parent->_parent) {
+			y = max(y,c->_parent->getWindowY());
+			c = c->_parent;
+		}
+		return y;
 	}
 }

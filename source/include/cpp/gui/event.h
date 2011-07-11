@@ -33,15 +33,19 @@ namespace gui {
 		friend std::ostream &operator<<(std::ostream &s,const MouseEvent &e);
 
 	public:
+		typedef uchar event_type;
+		typedef uchar button_type;
+
+	public:
 		// the types
-		static const uchar MOUSE_MOVED		= 0;
-		static const uchar MOUSE_PRESSED	= 1;
-		static const uchar MOUSE_RELEASED	= 2;
+		static const event_type MOUSE_MOVED		= 0;
+		static const event_type MOUSE_PRESSED	= 1;
+		static const event_type MOUSE_RELEASED	= 2;
 
 		// the different buttons
-		static const uchar BUTTON1_MASK	= 0x1;
-		static const uchar BUTTON2_MASK	= 0x2;
-		static const uchar BUTTON3_MASK	= 0x4;
+		static const button_type BUTTON1_MASK	= 0x1;
+		static const button_type BUTTON2_MASK	= 0x2;
+		static const button_type BUTTON3_MASK	= 0x4;
 
 	public:
 		/**
@@ -54,7 +58,7 @@ namespace gui {
 		 * @param y the mouse-y-position
 		 * @param buttons the button-state (BUTTON*)
 		 */
-		MouseEvent(uchar type,short movedx,short movedy,gpos_t x,gpos_t y,uchar buttons)
+		MouseEvent(event_type type,short movedx,short movedy,gpos_t x,gpos_t y,button_type buttons)
 			: _type(type), _movedx(movedx), _movedy(movedy), _x(x), _y(y), _buttons(buttons) {
 		};
 		/**
@@ -88,7 +92,7 @@ namespace gui {
 		/**
 		 * @return the event-type (MOUSE_*)
 		 */
-		inline uchar getType() const {
+		inline event_type getType() const {
 			return _type;
 		};
 		/**
@@ -116,6 +120,12 @@ namespace gui {
 			return _movedy;
 		};
 		/**
+		 * @return the button-mask
+		 */
+		inline button_type getButtonMask() const {
+			return _buttons;
+		};
+		/**
 		 * @return true if button 1 is pressed
 		 */
 		inline bool isButton1Down() const {
@@ -135,12 +145,12 @@ namespace gui {
 		};
 
 	private:
-		uchar _type;
+		event_type _type;
 		short _movedx;
 		short _movedy;
 		gpos_t _x;
 		gpos_t _y;
-		uchar _buttons;
+		button_type _buttons;
 	};
 
 	/**
@@ -150,9 +160,14 @@ namespace gui {
 		friend std::ostream &operator<<(std::ostream &s,const KeyEvent &e);
 
 	public:
+		typedef uchar event_type;
+		typedef uchar keycode_type;
+		typedef uchar modifier_type;
+
+	public:
 		// the event-types
-		static const uchar KEY_PRESSED		= 0;
-		static const uchar KEY_RELEASED		= 1;
+		static const event_type KEY_PRESSED		= 0;
+		static const event_type KEY_RELEASED	= 1;
 
 	public:
 		/**
@@ -163,7 +178,7 @@ namespace gui {
 		 * @param character the character, depending on the set keymap
 		 * @param modifier the enabled modifier
 		 */
-		KeyEvent(uchar type,uchar keycode,char character,uchar modifier)
+		KeyEvent(event_type type,keycode_type keycode,char character,modifier_type modifier)
 			: _type(type), _keycode(keycode), _character(character), _modifier(modifier) {
 		};
 		/**
@@ -195,13 +210,13 @@ namespace gui {
 		/**
 		 * @return the event-type (KEY_*)
 		 */
-		inline uchar getType() const {
+		inline event_type getType() const {
 			return _type;
 		};
 		/**
 		 * @return the keycode
 		 */
-		inline uchar getKeyCode() const {
+		inline keycode_type getKeyCode() const {
 			return _keycode;
 		};
 		/**
@@ -236,10 +251,10 @@ namespace gui {
 		};
 
 	private:
-		uchar _type;
-		uchar _keycode;
+		event_type _type;
+		keycode_type _keycode;
 		char _character;
-		uchar _modifier;
+		modifier_type _modifier;
 	};
 
 	std::ostream &operator<<(std::ostream &s,const MouseEvent &e);

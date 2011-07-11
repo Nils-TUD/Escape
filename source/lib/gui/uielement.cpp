@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <gui/uielement.h>
 #include <gui/graphics.h>
+#include <gui/control.h>
 #include <gui/window.h>
 
 namespace gui {
@@ -110,6 +111,11 @@ namespace gui {
 	}
 	void UIElement::onKeyReleased(const KeyEvent &e) {
 		notifyListener(e);
+	}
+
+	void UIElement::setFocus(Control *c) {
+		UNUSED(c);
+		// by default its ignored
 	}
 
 	void UIElement::notifyListener(const MouseEvent &e) {

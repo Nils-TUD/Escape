@@ -30,8 +30,8 @@ namespace gui {
 	 */
 	class Graphics24 : public Graphics {
 	public:
-		Graphics24(GraphicsBuffer *buf,gpos_t x,gpos_t y)
-			: Graphics(buf,x,y) {
+		Graphics24(GraphicsBuffer *buf,gsize_t width,gsize_t height)
+			: Graphics(buf,width,height) {
 		};
 		virtual ~Graphics24() {
 		};

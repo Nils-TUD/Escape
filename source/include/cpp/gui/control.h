@@ -25,6 +25,7 @@
 
 namespace gui {
 	class Panel;
+	class ScrollPane;
 	class BorderLayout;
 	class FlowLayout;
 
@@ -33,6 +34,7 @@ namespace gui {
 	 */
 	class Control : public UIElement {
 		friend class Panel;
+		friend class ScrollPane;
 		friend class BorderLayout;
 		friend class FlowLayout;
 
@@ -67,13 +69,23 @@ namespace gui {
 		Control &operator=(const Control &c);
 
 		/**
+		 * Does nothing
+		 */
+		virtual void layout() {
+		};
+
+		/**
 		 * Is called as soon as this control received the focus
 		 */
-		virtual void onFocusGained();
+		virtual void onFocusGained() {
+			getParent()->setFocus(this);
+		};
 		/**
 		 * Is called as soon as this control lost the focus
 		 */
-		virtual void onFocusLost();
+		virtual void onFocusLost() {
+			getParent()->setFocus(NULL);
+		};
 
 	protected:
 		/**
@@ -91,14 +103,6 @@ namespace gui {
 		 */
 		virtual void moveTo(gpos_t x,gpos_t y);
 
-	private:
-		/**
-		 * Sets the parent of this control (used by Panel)
-		 *
-		 * @param e the parent
-		 */
-		virtual void setParent(UIElement *e);
-
 		/**
 		 * @return the control that has the focus (not a panel!) or NULL if no one
 		 */
@@ -109,6 +113,22 @@ namespace gui {
 		virtual const Control *getFocus() const {
 			return this;
 		};
+
+		/**
+		 * Sets the parent of this control (used by Panel)
+		 *
+		 * @param e the parent
+		 */
+		virtual void setParent(UIElement *e);
+
+		/**
+		 * Updates the paint-region of this control
+		 */
+		virtual void setRegion();
+
+	private:
+		gpos_t getParentOffX(UIElement *c) const;
+		gpos_t getParentOffY(UIElement *c) const;
 	};
 }
 

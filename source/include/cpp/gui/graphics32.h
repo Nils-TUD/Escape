@@ -30,8 +30,8 @@ namespace gui {
 	 */
 	class Graphics32 : public Graphics {
 	public:
-		Graphics32(GraphicsBuffer *buf,gpos_t x,gpos_t y)
-			: Graphics(buf,x,y) {
+		Graphics32(GraphicsBuffer *buf,gsize_t width,gsize_t height)
+			: Graphics(buf,width,height) {
 		};
 		virtual ~Graphics32() {
 		};

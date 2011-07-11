@@ -26,15 +26,16 @@ namespace gui {
 	const Color Panel::DEF_BGCOLOR = Color(0x88,0x88,0x88);
 
 	void Panel::onMousePressed(const MouseEvent &e) {
-		// MouseEvent::MOUSE_PRESSED
-		gpos_t x = e.getX() - getX();
-		gpos_t y = e.getY() - getY();
+		gpos_t x = e.getX();
+		gpos_t y = e.getY();
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 			Control *c = *it;
 			if(x >= c->getX() && x < c->getX() + c->getWidth() &&
 				y >= c->getY() && y < c->getY() + c->getHeight()) {
+				MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),
+						x - c->getX(),y - c->getY(),e.getButtonMask());
 				_focus = c;
-				c->onMousePressed(e);
+				c->onMousePressed(ce);
 				return;
 			}
 		}
@@ -43,20 +44,43 @@ namespace gui {
 		_focus = NULL;
 	}
 
-	void Panel::resizeTo(gsize_t width,gsize_t height) {
-		Control::resizeTo(width,height);
+	void Panel::layout() {
 		if(_layout)
 			_layout->rearrange();
+		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+			(*it)->layout();
+	}
+
+	void Panel::resizeTo(gsize_t width,gsize_t height) {
+		gpos_t diffw = getWidth() - width;
+		gpos_t diffh = getHeight() - height;
+
+		Control::resizeTo(width,height);
+		if(diffw || diffh) {
+			if(_layout)
+				_layout->rearrange();
+		}
 	}
 
 	void Panel::moveTo(gpos_t x,gpos_t y) {
+		gpos_t diffx = getX() - x;
+		gpos_t diffy = getY() - y;
 		Control::moveTo(x,y);
 
-		x -= getX();
-		y -= getY();
+		// don't move the controls, their position is relative to us. just refresh the paint-region
+		if(diffx || diffy) {
+			for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
+				Control *c = *it;
+				c->setRegion();
+			}
+		}
+	}
+
+	void Panel::setRegion() {
+		Control::setRegion();
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 			Control *c = *it;
-			c->moveTo(x,y);
+			c->setRegion();
 		}
 	}
 
@@ -75,10 +99,8 @@ namespace gui {
 	void Panel::add(Control &c,Layout::pos_type pos) {
 		_controls.push_back(&c);
 		c.setParent(this);
-		if(_layout) {
+		if(_layout)
 			_layout->add(this,&c,pos);
-			_layout->rearrange();
-		}
 	}
 
 	ostream &operator<<(ostream &s,const Panel &p) {

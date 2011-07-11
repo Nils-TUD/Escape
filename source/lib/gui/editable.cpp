@@ -97,8 +97,8 @@ namespace gui {
 
 	int Editable::getPosAt(gpos_t x) {
 		int pos = 0;
-		if(x >= getX()) {
-			pos = (x - getX()) / getGraphics()->getFont().getWidth();
+		if(x >= 0) {
+			pos = x / getGraphics()->getFont().getWidth();
 			if(pos > (int)_str.length())
 				pos = _str.length();
 		}

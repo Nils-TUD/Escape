@@ -13,6 +13,7 @@
 
 namespace gui {
 	class Window;
+	class ScrollPane;
 
 	/**
 	 * A panel is a container for control-elements
@@ -20,6 +21,7 @@ namespace gui {
 	class Panel : public Control {
 		friend class Window;
 		friend class Control;
+		friend class ScrollPane;
 
 	private:
 		static const Color DEF_BGCOLOR;
@@ -80,6 +82,12 @@ namespace gui {
 		};
 
 		/**
+		 * @return the layout (NULL if none)
+		 */
+		inline Layout *getLayout() const {
+			return _layout;
+		};
+		/**
 		 * Sets the used layout for this panel. This is only possible if no controls have been
 		 * added yet.
 		 *
@@ -92,6 +100,11 @@ namespace gui {
 			}
 			_layout = l;
 		};
+
+		/**
+		 * Performs a layout-calculation for this panel and all childs
+		 */
+		virtual void layout();
 
 		/**
 		 * @return the background-color
@@ -132,8 +145,8 @@ namespace gui {
 	protected:
 		virtual void resizeTo(gsize_t width,gsize_t height);
 		virtual void moveTo(gpos_t x,gpos_t y);
+		virtual void setRegion();
 
-	private:
 		/**
 		 * @return the control that has the focus (not a panel!) or NULL if no one
 		 */
@@ -148,8 +161,11 @@ namespace gui {
 			return NULL;
 		};
 
-		void setFocus(Control *c) {
+	private:
+		virtual void setFocus(Control *c) {
 			_focus = c;
+			if(_parent)
+				_parent->setFocus(this);
 		};
 
 	protected:

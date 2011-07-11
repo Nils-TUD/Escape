@@ -29,6 +29,9 @@
 #include <vector>
 
 namespace gui {
+	class Control;
+	class ScrollPane;
+
 	/**
 	 * The abstract base class for all UI-elements (windows, controls). It has a position, a size,
 	 * a graphics object and has callback-methods for events.
@@ -37,6 +40,7 @@ namespace gui {
 		friend class Window;
 		friend class Panel;
 		friend class Control;
+		friend class ScrollPane;
 
 	public:
 		/**
@@ -115,6 +119,29 @@ namespace gui {
 		};
 
 		/**
+		 * @return the width of the content of this ui-element. for normal elements its simply
+		 * 	their width. containers may reduce it if they want to paint other stuff besides
+		 * 	their children.
+		 */
+		virtual gsize_t getContentWidth() const {
+			// we have to use the minimum of our size and the parent's because some containers
+			// above us might restrict the size, while some won't.
+			if(_parent)
+				return min(_parent->getContentWidth(),_width);
+			return _width;
+		};
+		/**
+		 * @return the height of the content of this ui-element. for normal elements its simply
+		 * 	their height. containers may reduce it if they want to paint other stuff besides
+		 * 	their children.
+		 */
+		virtual gsize_t getContentHeight() const {
+			if(_parent)
+				return min(_parent->getContentHeight(),_height);
+			return _height;
+		};
+
+		/**
 		 * @return the preferred width of this ui-element, e.g. the minimum required width to be
 		 * 	able to display the whole content
 		 */
@@ -124,6 +151,12 @@ namespace gui {
 		 * 	able to display the whole content
 		 */
 		virtual gsize_t getPreferredHeight() const = 0;
+
+		/**
+		 * Performs the layout-calculation for this ui-element. This is only used by Window and
+		 * Panel.
+		 */
+		virtual void layout() = 0;
 
 		/**
 		 * Paints the control
@@ -245,7 +278,6 @@ namespace gui {
 			_height = height;
 		};
 
-	private:
 		/**
 		 * Sets the parent of this control (used by Panel)
 		 *
@@ -254,6 +286,14 @@ namespace gui {
 		virtual void setParent(UIElement *e) {
 			_parent = e;
 		};
+
+	private:
+		/**
+		 * Informs the ui-element that the child c currently has the focus
+		 *
+		 * @param c the child-control
+		 */
+		virtual void setFocus(Control *c);
 
 		// only used internally
 		void notifyListener(const MouseEvent &e);

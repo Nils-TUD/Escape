@@ -240,6 +240,16 @@ namespace gui {
 		};
 
 		/**
+		 * Has to be done once after all controls have been added to calculate the layout of the
+		 * controls on all panels.
+		 */
+		virtual void layout() {
+			if(_header)
+				_header->layout();
+			_body.layout();
+		};
+
+		/**
 		 * The event-callbacks
 		 *
 		 * @param e the event
@@ -334,6 +344,7 @@ namespace gui {
 		void init();
 		void passToCtrl(const KeyEvent &e,uchar event);
 		void passToCtrl(const MouseEvent &e,uchar event);
+		void passMouseToCtrl(Control *c,const MouseEvent& e);
 		void resize(short width,short height);
 		void resizeTo(gsize_t width,gsize_t height);
 		void move(short x,short y);

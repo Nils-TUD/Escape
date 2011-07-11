@@ -24,6 +24,7 @@
 #include <gui/graphicsbuffer.h>
 #include <gui/font.h>
 #include <gui/color.h>
+#include <assert.h>
 
 namespace gui {
 	/**
@@ -37,17 +38,24 @@ namespace gui {
 		friend class UIElement;
 		friend class BitmapImage;
 
+	private:
+		static const int OUT_TOP		= 1;
+		static const int OUT_RIGHT		= 2;
+		static const int OUT_BOTTOM		= 4;
+		static const int OUT_LEFT		= 8;
+
 	public:
 		/**
 		 * Constructor
 		 *
 		 * @param buf the graphics-buffer for the window
-		 * @param x the x-offset to the window
-		 * @param y the y-offset to the window
+		 * @param width the width of the control
+		 * @param height the height of the control
 		 */
-		Graphics(GraphicsBuffer *buf,gpos_t x,gpos_t y)
-			: _buf(buf), _offx(x), _offy(y), _col(0), _colInst(Color(0)),
-			  _minx(0),_miny(0), _maxx(buf->getWidth() - 1), _maxy(buf->getHeight() - 1),
+		Graphics(GraphicsBuffer *buf,gsize_t width,gsize_t height)
+			: _buf(buf), _minoffx(0), _minoffy(0), _offx(0), _offy(0), _width(width), _height(height),
+			  _col(0), _colInst(Color(0)),
+			  _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),
 			  _font(Font()) {
 		};
 		/**
@@ -87,8 +95,8 @@ namespace gui {
 		 * @param y the y-coordinate
 		 */
 		inline void setPixel(gpos_t x,gpos_t y) {
-			x = MAX(0,MIN(_buf->getWidth() - 1,x));
-			y = MAX(0,MIN(_buf->getHeight() - 1,y));
+			if(!validatePoint(x,y))
+				return;
 			updateMinMax(x,y);
 			doSetPixel(x,y);
 		};
@@ -223,11 +231,11 @@ namespace gui {
 		/**
 		 * Validates the given point
 		 */
-		bool validatePoint(gpos_t &x,gpos_t &y);
+		int validatePoint(gpos_t &x,gpos_t &y);
 		/**
 		 * Validates the given parameters
 		 */
-		void validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height);
+		bool validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height);
 
 	private:
 		/**
@@ -237,39 +245,51 @@ namespace gui {
 			return _buf;
 		};
 		/**
-		 * @return the x-offset of the control in the window
-		 */
-		inline gpos_t getXOff() const {
-			return _offx;
-		};
-		/**
-		 * Sets the x-offset of the control in the window
+		 * Sets the offset of the control in the window
 		 *
-		 * @param x the new value
+		 * @param x the x-offset
+		 * @param y the y-offset
 		 */
-		inline void setXOff(gpos_t x) {
+		inline void setOff(gpos_t x,gpos_t y) {
 			_offx = x;
-		};
-		/**
-		 * @return the y-offset of the control in the window
-		 */
-		inline gpos_t getYOff() const {
-			return _offy;
-		};
-		/**
-		 * Sets the y-offset of the control in the window
-		 *
-		 * @param y the new value
-		 */
-		inline void setYOff(gpos_t y) {
 			_offy = y;
 		};
+		/**
+		 * Sets the minimum offset in the window, i.e. the beginning where we can draw
+		 *
+		 * @param x the x-offset
+		 * @param y the y-offset
+		 */
+		inline void setMinOff(gpos_t x,gpos_t y) {
+			_minoffx = x;
+			_minoffy = y;
+		};
+		/**
+		 * Sets the size of the control
+		 *
+		 * @param x the x-position of the control relative to the parent
+		 * @param y the y-position of the control relative to the parent
+		 * @param width the new value
+		 * @param height the new value
+		 * @param pwidth the width of the parent. the child can't cross that
+		 * @param pheight the height of the parent. the child can't cross that
+		 */
+		void setSize(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t pwidth,gsize_t pheight);
+
+		// used internally
+		gsize_t getDim(gpos_t off,gsize_t size,gsize_t max);
 
 	protected:
 		GraphicsBuffer *_buf;
-		// the offset of the control in the window (otherwise 0)
+		// the minimum offset in the window, i.e. the beginning where we can draw
+		gpos_t _minoffx;
+		gpos_t _minoffy;
+		// the offset of the control in the window
 		gpos_t _offx;
 		gpos_t _offy;
+		// the size of the control in the window (i.e. the size of the area that can be painted)
+		gsize_t _width;
+		gsize_t _height;
 		// current color
 		Color::color_type _col;
 		Color _colInst;
@@ -277,8 +297,6 @@ namespace gui {
 		gpos_t _minx,_miny,_maxx,_maxy;
 		// current font
 		Font _font;
-		// for controls: the graphics-instance of the window
-		Graphics *_owner;
 	};
 }
 

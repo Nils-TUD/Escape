@@ -28,8 +28,7 @@ namespace gui {
 	}
 
 	void Graphics32::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		validateParams(x,y,width,height);
-		if(width == 0 || height == 0)
+		if(!validateParams(x,y,width,height))
 			return;
 
 		gpos_t yend = y + height;

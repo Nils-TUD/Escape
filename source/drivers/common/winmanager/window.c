@@ -28,7 +28,9 @@
 #include <stdlib.h>
 #include <esc/sllist.h>
 #include <string.h>
+
 #include "window.h"
+#include "listener.h"
 
 static gwinid_t win_getTop(void);
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z);
@@ -37,6 +39,9 @@ static void win_sendRepaint(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwini
 static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r);
 static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+static void win_notifyWinCreate(gwinid_t id,const char *title);
+static void win_notifyWinActive(gwinid_t id);
+static void win_notifyWinDestroy(gwinid_t id);
 
 static int vesa;
 static int drvId;
@@ -105,7 +110,7 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 }
 
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
-		gsize_t titleBarHeight) {
+		gsize_t titleBarHeight,const char *title) {
 	gwinid_t i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNSED) {
@@ -126,6 +131,8 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 			windows[i].owner = owner;
 			windows[i].style = style;
 			windows[i].titleBarHeight = titleBarHeight;
+			if(style != WIN_STYLE_POPUP)
+				win_notifyWinCreate(i,title);
 			return i;
 		}
 	}
@@ -149,6 +156,8 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	sRectangle *old;
 	/* mark unused */
 	windows[id].id = WINID_UNSED;
+	if(windows[id].style != WIN_STYLE_POPUP)
+		win_notifyWinDestroy(id);
 
 	/* repaint window-area */
 	old = (sRectangle*)malloc(sizeof(sRectangle));
@@ -228,6 +237,8 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 		if(activeWindow != WINDOW_COUNT) {
 			sRectangle *new;
 			win_sendActive(activeWindow,true,mouseX,mouseY);
+			if(windows[activeWindow].style != WIN_STYLE_POPUP)
+				win_notifyWinActive(activeWindow);
 
 			if(repaint) {
 				new = (sRectangle*)malloc(sizeof(sRectangle));
@@ -395,7 +406,7 @@ static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY
 		msg.args.arg2 = isActive;
 		msg.args.arg3 = mouseX;
 		msg.args.arg4 = mouseY;
-		send(aWin,MSG_WIN_SET_ACTIVE,&msg,sizeof(msg.args));
+		send(aWin,MSG_WIN_SET_ACTIVE_EV,&msg,sizeof(msg.args));
 		close(aWin);
 	}
 }
@@ -508,6 +519,22 @@ static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	msg.args.arg3 = MIN(vesaInfo.width - x,width);
 	msg.args.arg4 = MIN(vesaInfo.height - y,height);
 	send(vesa,MSG_VESA_UPDATE,&msg,sizeof(msg.args));
+}
+
+static void win_notifyWinCreate(gwinid_t id,const char *title) {
+	msg.str.arg1 = id;
+	strcpy(msg.str.s1,title);
+	listener_notify(MSG_WIN_CREATE_EV,&msg,sizeof(msg.str));
+}
+
+static void win_notifyWinActive(gwinid_t id) {
+	msg.args.arg1 = id;
+	listener_notify(MSG_WIN_ACTIVE_EV,&msg,sizeof(msg.args));
+}
+
+static void win_notifyWinDestroy(gwinid_t id) {
+	msg.args.arg1 = id;
+	listener_notify(MSG_WIN_DESTROY_EV,&msg,sizeof(msg.args));
 }
 
 

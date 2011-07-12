@@ -136,6 +136,12 @@ namespace gui {
 			_layout->add(this,&c,pos);
 	}
 
+	void Panel::remove(Control &c,Layout::pos_type pos) {
+		_controls.erase_first(&c);
+		if(_layout)
+			_layout->remove(this,&c,pos);
+	}
+
 	ostream &operator<<(ostream &s,const Panel &p) {
 		s << "Panel[@" << p.getX() << "," << p.getY();
 		s << " size=" << p.getWidth() << "," << p.getHeight() << "]";

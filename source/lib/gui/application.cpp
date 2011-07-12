@@ -35,7 +35,8 @@ namespace gui {
 
 	Application::Application()
 			: _winFd(-1), _msg(sMsg()), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
-			  _vesaInfo(sVESAInfo()), _windows(vector<Window*>()) {
+			  _vesaInfo(sVESAInfo()), _windows(vector<Window*>()),
+			  _wlisten(std::vector<std::pair<WindowListener*,bool> >()), _listening(false) {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)
@@ -66,6 +67,59 @@ namespace gui {
 			removeWindow(*_windows.begin());
 		close(_vesaFd);
 		close(_winFd);
+	}
+
+	void Application::addWindowListener(WindowListener *l,bool global) {
+		_wlisten.push_back(make_pair(l,global));
+		if(!_listening) {
+			_msg.args.arg1 = MSG_WIN_CREATE_EV;
+			if(send(_winFd,MSG_WIN_ADDLISTENER,&_msg,sizeof(_msg.args)) < 0)
+				throw app_error("Unable to announce create-listener");
+			_msg.args.arg1 = MSG_WIN_DESTROY_EV;
+			if(send(_winFd,MSG_WIN_ADDLISTENER,&_msg,sizeof(_msg.args)) < 0)
+				throw app_error("Unable to announce destroy-listener");
+			_msg.args.arg1 = MSG_WIN_ACTIVE_EV;
+			if(send(_winFd,MSG_WIN_ADDLISTENER,&_msg,sizeof(_msg.args)) < 0)
+				throw app_error("Unable to announce active-listener");
+			_listening = true;
+		}
+	}
+
+	void Application::removeWindowListener(WindowListener *l) {
+		std::vector<std::pair<WindowListener*,bool> >::iterator it;
+		for(it = _wlisten.begin(); it != _wlisten.end(); ++it) {
+			if((*it).first == l) {
+				_wlisten.erase(it);
+				break;
+			}
+		}
+	}
+
+	void Application::notifyCreate(gwinid_t id,const std::string& title) {
+		Window *w = getWindowById(id);
+		std::vector<std::pair<WindowListener*,bool> >::iterator it;
+		for(it = _wlisten.begin(); it != _wlisten.end(); ++it) {
+			if((*it).second || w)
+				(*it).first->onWindowCreated(id,title);
+		}
+	}
+
+	void Application::notifyActive(gwinid_t id) {
+		Window *w = getWindowById(id);
+		std::vector<std::pair<WindowListener*,bool> >::iterator it;
+		for(it = _wlisten.begin(); it != _wlisten.end(); ++it) {
+			if((*it).second || w)
+				(*it).first->onWindowActive(id);
+		}
+	}
+
+	void Application::notifyDestroy(gwinid_t id) {
+		Window *w = getWindowById(id);
+		std::vector<std::pair<WindowListener*,bool> >::iterator it;
+		for(it = _wlisten.begin(); it != _wlisten.end(); ++it) {
+			if((*it).second || w)
+				(*it).first->onWindowDestroyed(id);
+		}
 	}
 
 	void Application::exit() {
@@ -143,17 +197,36 @@ namespace gui {
 			}
 			break;
 
-			case MSG_WIN_SET_ACTIVE: {
+			case MSG_WIN_SET_ACTIVE_EV: {
 				gwinid_t win = (gwinid_t)msg->args.arg1;
 				bool isActive = (bool)msg->args.arg2;
 				gpos_t mouseX = (gpos_t)msg->args.arg3;
 				gpos_t mouseY = (gpos_t)msg->args.arg4;
 				Window *w = getWindowById(win);
 				if(w) {
-					w->setActive(isActive);
+					w->updateActive(isActive);
 					if(isActive)
 						closePopups(w->getId(),mouseX,mouseY);
 				}
+			}
+			break;
+
+			case MSG_WIN_CREATE_EV: {
+				gwinid_t win = (gwinid_t)msg->str.arg1;
+				std::string title(msg->str.s1);
+				notifyCreate(win,title);
+			}
+			break;
+
+			case MSG_WIN_ACTIVE_EV: {
+				gwinid_t win = (gwinid_t)msg->args.arg1;
+				notifyActive(win);
+			}
+			break;
+
+			case MSG_WIN_DESTROY_EV: {
+				gwinid_t win = (gwinid_t)msg->args.arg1;
+				notifyDestroy(win);
 			}
 			break;
 		}
@@ -221,17 +294,29 @@ namespace gui {
 			throw app_error("Unable to request win-update");
 	}
 
+	void Application::requestActiveWindow(gwinid_t wid) {
+		_msg.args.arg1 = wid;
+		if(send(_winFd,MSG_WIN_SET_ACTIVE,&_msg,sizeof(_msg.args)) < 0)
+			throw app_error("Unable to set window to active");
+	}
+
 	void Application::addWindow(Window *win) {
 		_windows.push_back(win);
 
-		_msg.args.arg1 = win->getX();
-		_msg.args.arg2 = win->getY();
-		_msg.args.arg3 = win->getWidth();
-		_msg.args.arg4 = win->getHeight();
-		_msg.args.arg5 = win->getId();
-		_msg.args.arg6 = win->getStyle();
-		_msg.args.arg7 = win->getTitleBarHeight();
-		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.args)) < 0) {
+		_msg.str.arg1 = win->getX();
+		_msg.str.arg2 = win->getY();
+		_msg.str.arg3 = win->getWidth();
+		_msg.str.arg4 = win->getHeight();
+		_msg.str.arg5 = win->getId();
+		_msg.str.arg6 = win->getStyle();
+		_msg.str.arg7 = win->getTitleBarHeight();
+		if(win->hasTitleBar()) {
+			strncpy(_msg.str.s1,win->getTitle().c_str(),sizeof(_msg.str.s1));
+			_msg.str.s1[sizeof(_msg.str.s1) - 1] = '\0';
+		}
+		else
+			_msg.str.s1[0] = '\0';
+		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.str)) < 0) {
 			_windows.erase_first(win);
 			throw app_error("Unable to announce window to window-manager");
 		}

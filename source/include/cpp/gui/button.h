@@ -38,16 +38,18 @@ namespace gui {
 
 	public:
 		Button(const string &text)
-			: Control(0,0,0,0), _focused(false), _pressed(false), _text(text) {
+			: Control(0,0,0,0), _focused(false), _pressed(false), _bgColor(BGCOLOR), _text(text) {
 		};
 		Button(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _focused(false), _pressed(false), _text(string()) {
+			: Control(x,y,width,height), _focused(false), _pressed(false), _bgColor(BGCOLOR),
+			  _text(string()) {
 		};
 		Button(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
+			: Control(x,y,width,height), _focused(false), _pressed(false), _bgColor(BGCOLOR),
+			  _text(text) {
 		};
 		Button(const Button &b)
-			: Control(b), _focused(false), _pressed(b._pressed), _text(b._text) {
+			: Control(b), _focused(false), _pressed(b._pressed), _bgColor(b._bgColor), _text(b._text) {
 		};
 		virtual ~Button() {
 
@@ -62,6 +64,23 @@ namespace gui {
 		};
 		inline void setText(const string &text) {
 			_text = text;
+			repaint();
+		};
+
+		/**
+		 * @return the background-color
+		 */
+		inline Color getBGColor() const {
+			return _bgColor;
+		};
+		/**
+		 * Sets the background-color
+		 *
+		 * @param bg the background-color
+		 */
+		inline void setBGColor(Color bg) {
+			_bgColor = bg;
+			// TODO ?
 			repaint();
 		};
 
@@ -84,6 +103,7 @@ namespace gui {
 	private:
 		bool _focused;
 		bool _pressed;
+		Color _bgColor;
 		string _text;
 	};
 }

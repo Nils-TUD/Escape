@@ -96,7 +96,7 @@ namespace gui {
 	}
 
 	void Button::paintBackground(Graphics &g) {
-		g.setColor(BGCOLOR);
+		g.setColor(_bgColor);
 		g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
 	}
 

@@ -108,7 +108,7 @@
 #define MSG_WIN_CREATE_RESP			301	/* the create-response */
 #define MSG_WIN_MOVE				302	/* moves a window */
 #define MSG_WIN_UPDATE				303	/* requests an update of a window */
-#define MSG_WIN_SET_ACTIVE			304	/* sets the active window */
+#define MSG_WIN_SET_ACTIVE_EV		304	/* sets the active window */
 #define MSG_WIN_DESTROY				305	/* destroys a window */
 #define MSG_WIN_RESIZE				306	/* resizes a window */
 #define MSG_WIN_ENABLE				307	/* enables the window-manager */
@@ -116,6 +116,12 @@
 #define MSG_WIN_UPDATE_EV			309	/* is sent by the window-manager to a window to do an update */
 #define MSG_WIN_MOUSE_EV			310	/* a mouse-event sent by the window-manager */
 #define MSG_WIN_KEYBOARD_EV			311	/* a keyboard-event sent by the window-manager */
+#define MSG_WIN_CREATE_EV			312	/* a window has been created */
+#define MSG_WIN_DESTROY_EV			313	/* a window has been destroyed */
+#define MSG_WIN_ADDLISTENER			314	/* announces a listener for CREATE_EV or DESTROY_EV */
+#define MSG_WIN_REMLISTENER			315	/* removes a listener for CREATE_EV or DESTROY_EV */
+#define MSG_WIN_SET_ACTIVE			316	/* requests that a window is set to the active one */
+#define MSG_WIN_ACTIVE_EV			317	/* a window has been set to active */
 
 #define MSG_POWER_REBOOT			400	/* reboots the system */
 #define MSG_POWER_SHUTDOWN			401	/* shuts the system down */
@@ -244,6 +250,10 @@ typedef union {
 		ulong arg2;
 		ulong arg3;
 		ulong arg4;
+		ulong arg5;
+		ulong arg6;
+		ulong arg7;
+		ulong arg8;
 		char s1[MAX_MSGSTR_LEN];
 		char s2[MAX_MSGSTR_LEN];
 	} str;
@@ -253,6 +263,10 @@ typedef union {
 		ulong arg2;
 		ulong arg3;
 		ulong arg4;
+		ulong arg5;
+		ulong arg6;
+		ulong arg7;
+		ulong arg8;
 		char d[MAX_MSG_SIZE];
 	} data;
 } sMsg;

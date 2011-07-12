@@ -185,6 +185,12 @@ namespace gui {
 			return _created;
 		};
 		/**
+		 * @return whether this window has a title-bar
+		 */
+		inline bool hasTitleBar() const {
+			return _header != NULL;
+		};
+		/**
 		 * @return the title (a copy)
 		 */
 		inline string getTitle() const {
@@ -262,6 +268,15 @@ namespace gui {
 		virtual void onKeyReleased(const KeyEvent &e);
 
 		/**
+		 * Sets whether this window is active. Requests a repaint, if necessary.
+		 *
+		 * @param active the new value
+		 */
+		inline void setActive(bool active) {
+			Application::getInstance()->requestActiveWindow(_id);
+		};
+
+		/**
 		 * Adds the given control as tab-control to this window
 		 *
 		 * @param c the control
@@ -319,18 +334,17 @@ namespace gui {
 			return _resizeHeight;
 		};
 		/**
+		 * Sets whether this window is active. Requests a repaint, if necessary.
+		 *
+		 * @param active the new value
+		 */
+		void updateActive(bool active);
+		/**
 		 * Called by Application when the window has been created successfully
 		 *
 		 * @param id the received window-id
 		 */
 		void onCreated(gwinid_t id);
-		/**
-		 * Sets whether this window is active (used by Application).
-		 * Requests a repaint, if necessary.
-		 *
-		 * @param active the new value
-		 */
-		void setActive(bool active);
 		/**
 		 * Updates the given rectangle (copies from buffer to shared-mem and notifies vesa)
 		 *

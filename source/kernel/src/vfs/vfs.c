@@ -1091,7 +1091,7 @@ void vfs_printGFT(void) {
 				vid_printf("\t\towner: %d (kernel)\n",e->owner);
 			else {
 				sProc *p = proc_getByPid(e->owner);
-				vid_printf("\t\towner: %d:%s\n",p->pid,p->command);
+				vid_printf("\t\towner: %d:%s\n",e->owner,p ? p->command : "???");
 			}
 			if(e->devNo == VFS_DEV_NO) {
 				sVFSNode *n = e->node;

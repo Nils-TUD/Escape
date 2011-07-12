@@ -86,7 +86,7 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 		buttons = mdata->buttons;
 		if(buttons) {
 			w = win_getAt(curX,curY);
-			if(w->style != WIN_STYLE_DESKTOP) {
+			if(w && w->style != WIN_STYLE_DESKTOP) {
 				if(w)
 					win_setActive(w->id,true,curX,curY);
 				else

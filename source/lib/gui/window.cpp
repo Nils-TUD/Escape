@@ -472,7 +472,7 @@ namespace gui {
 			_g->update(x,y,width,height);
 	}
 
-	void Window::setActive(bool active) {
+	void Window::updateActive(bool active) {
 		if(active != _isActive) {
 			_isActive = active;
 			if(_header)

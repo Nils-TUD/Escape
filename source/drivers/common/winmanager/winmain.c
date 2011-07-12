@@ -32,6 +32,7 @@
 #include "window.h"
 #include "mouse.h"
 #include "keyboard.h"
+#include "listener.h"
 
 static sMsg msg;
 static gsize_t screenWidth;
@@ -45,6 +46,7 @@ int main(void) {
 	if(drvId < 0)
 		error("Unable to create driver winmanager");
 
+	listener_init(drvId);
 	if(!win_init(drvId))
 		return EXIT_FAILURE;
 
@@ -63,18 +65,27 @@ int main(void) {
 		else {
 			switch(mid) {
 				case MSG_WIN_CREATE: {
-					gpos_t x = (gpos_t)msg.args.arg1;
-					gpos_t y = (gpos_t)msg.args.arg2;
-					gsize_t width = (gsize_t)msg.args.arg3;
-					gsize_t height = (gsize_t)msg.args.arg4;
-					gwinid_t tmpWinId = (gwinid_t)msg.args.arg5;
-					uint style = msg.args.arg6;
-					gsize_t titleBarHeight = msg.args.arg7;
+					gpos_t x = (gpos_t)msg.str.arg1;
+					gpos_t y = (gpos_t)msg.str.arg2;
+					gsize_t width = (gsize_t)msg.str.arg3;
+					gsize_t height = (gsize_t)msg.str.arg4;
+					gwinid_t tmpWinId = (gwinid_t)msg.str.arg5;
+					uint style = msg.str.arg6;
+					gsize_t titleBarHeight = msg.str.arg7;
 					msg.args.arg1 = tmpWinId;
-					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style,titleBarHeight);
+					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style,
+							titleBarHeight,msg.str.s1);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
 					if(style != WIN_STYLE_DESKTOP)
 						win_setActive(msg.args.arg2,false,mouse_getX(),mouse_getY());
+				}
+				break;
+
+				case MSG_WIN_SET_ACTIVE: {
+					gwinid_t wid = (gwinid_t)msg.args.arg1;
+					sWindow *win = win_get(wid);
+					if(win && win->style != WIN_STYLE_DESKTOP)
+						win_setActive(wid,true,mouse_getX(),mouse_getY());
 				}
 				break;
 
@@ -127,6 +138,22 @@ int main(void) {
 						x + width <= win->width && y + height <= win->height) {
 						win_update(wid,x,y,width,height);
 					}
+				}
+				break;
+
+				case MSG_WIN_ADDLISTENER: {
+					msgid_t msgid = (msgid_t)msg.args.arg1;
+					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
+							msgid == MSG_WIN_ACTIVE_EV)
+						listener_add(getClientId(fd),msgid);
+				}
+				break;
+
+				case MSG_WIN_REMLISTENER: {
+					msgid_t msgid = (msgid_t)msg.args.arg1;
+					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
+							msgid == MSG_WIN_ACTIVE_EV)
+						listener_remove(getClientId(fd),msgid);
 				}
 				break;
 

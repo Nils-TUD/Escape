@@ -162,8 +162,10 @@ static bool startDriver(const char *name,const char *waitDev) {
 	char path[MAX_PATH_LEN + 1] = "/sbin/";
 
 	/* already started? fine */
-	if((fd = open(waitDev,IO_READ)) >= 0)
+	if((fd = open(waitDev,IO_READ)) >= 0) {
+		close(fd);
 		return true;
+	}
 
 	/* start */
 	strcat(path,name);

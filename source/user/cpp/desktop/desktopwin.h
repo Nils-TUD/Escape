@@ -26,7 +26,11 @@
 #include <gui/image.h>
 #include <gui/imagebutton.h>
 #include <gui/actionlistener.h>
+#include <gui/borderlayout.h>
+#include <gui/flowlayout.h>
 #include <map>
+
+using namespace gui;
 
 class Shortcut {
 	friend class DesktopWin;
@@ -36,7 +40,7 @@ public:
 		: _icon(icon), _app(app), _btn(NULL) {
 	};
 	Shortcut(const Shortcut &w)
-		: _icon(w._icon), _app(w._app), _btn(new gui::ImageButton(*w._btn)) {
+		: _icon(w._icon), _app(w._app), _btn(new ImageButton(*w._btn)) {
 	};
 	~Shortcut() {
 	};
@@ -46,7 +50,7 @@ public:
 			return *this;
 		this->_icon = w._icon;
 		this->_app = w._app;
-		this->_btn = new gui::ImageButton(*w._btn);
+		this->_btn = new ImageButton(*w._btn);
 		return *this;
 	};
 
@@ -58,56 +62,70 @@ public:
 	};
 
 private:
-	inline gui::ImageButton *getButton() const {
+	inline ImageButton *getButton() const {
 		return _btn;
 	};
-	inline void setButton(gui::ImageButton *btn) {
+	inline void setButton(ImageButton *btn) {
 		_btn = btn;
 	};
 
 private:
 	std::string _icon;
 	std::string _app;
-	gui::ImageButton *_btn;
+	ImageButton *_btn;
 };
 
-class DesktopWin : public gui::Window, public gui::ActionListener {
+class DesktopWin : public Window, public ActionListener, public WindowListener {
 public:
 	static const gsize_t PADDING;
 	static const gsize_t ICON_SIZE;
-	static const gui::Color BGCOLOR;
+	static const Color BGCOLOR;
 
 public:
 	DesktopWin(gsize_t width,gsize_t height)
-		: gui::Window(0,0,width,height,STYLE_DESKTOP),
-		  	  _shortcuts(map<gui::ImageButton*,Shortcut*>()) {
+		: Window(0,0,width,height,STYLE_DESKTOP), _winPanel(Panel(new FlowLayout(FlowLayout::LEFT))),
+		  _iconPanel(Panel(0,0,width,height)), _active(NULL), _windows(map<gwinid_t,Button*>()),
+		  _shortcuts(map<ImageButton*,Shortcut*>()) {
+		getRootPanel().setLayout(new BorderLayout());
+		getRootPanel().add(_winPanel,BorderLayout::SOUTH);
+		getRootPanel().add(_iconPanel,BorderLayout::CENTER);
+		_iconPanel.setBGColor(BGCOLOR);
+		Application::getInstance()->addWindowListener(this,true);
 	};
 	virtual ~DesktopWin() {
 	};
 
 	inline void addShortcut(Shortcut* sc) {
 		// do that first for exception-safety
-		gui::Image *img = gui::Image::loadImage(sc->getIcon());
-		gui::ImageButton *btn = new gui::ImageButton(img,
+		Image *img = Image::loadImage(sc->getIcon());
+		ImageButton *btn = new ImageButton(img,
 				PADDING,PADDING + _shortcuts.size() * (ICON_SIZE + PADDING),
 				img->getWidth() + 2,img->getHeight() + 2);
 		sc->setButton(btn);
 		btn->addListener(this);
 		_shortcuts[btn] = sc;
-		getRootPanel().add(*btn);
-		repaint();
+		_iconPanel.add(*btn);
+		_iconPanel.repaint();
 	};
 
 	virtual void actionPerformed(UIElement& el);
-	virtual void paint(gui::Graphics &g);
+	virtual void onWindowCreated(gwinid_t id,const std::string& title);
+	virtual void onWindowActive(gwinid_t id);
+	virtual void onWindowDestroyed(gwinid_t id);
 
 	// no cloning
 private:
 	DesktopWin(const DesktopWin &w);
 	DesktopWin &operator=(const DesktopWin &w);
 
+	void init();
+
 private:
-	map<gui::ImageButton*,Shortcut*> _shortcuts;
+	Panel _winPanel;
+	Panel _iconPanel;
+	Button *_active;
+	map<gwinid_t,Button*> _windows;
+	map<ImageButton*,Shortcut*> _shortcuts;
 };
 
 #endif /* DESKTOPWIN_H_ */

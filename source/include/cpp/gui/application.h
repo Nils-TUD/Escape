@@ -23,6 +23,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <gui/graphicsbuffer.h>
+#include <gui/windowlistener.h>
 #include <exception>
 #include <vector>
 
@@ -93,6 +94,30 @@ namespace gui {
 		};
 
 		/**
+		 * @param id the window-id
+		 * @return the window with given id or NULL
+		 */
+		Window *getWindowById(gwinid_t id);
+
+		/**
+		 * Adds the given window-listener to the list
+		 *
+		 * @param l the listener
+		 */
+		void addWindowListener(WindowListener *l,bool global);
+		/**
+		 * Removes the given window-listener listener from the list
+		 *
+		 * @param l the listener
+		 */
+		void removeWindowListener(WindowListener *l);
+
+		/**
+		 * Requests that this window should be the active one
+		 */
+		void requestActiveWindow(gwinid_t wid);
+
+		/**
 		 * Starts the message-loop
 		 */
 		int run();
@@ -124,6 +149,10 @@ namespace gui {
 		Application(const Application &a);
 		Application &operator=(const Application &a);
 
+		void notifyCreate(gwinid_t id,const std::string& title);
+		void notifyActive(gwinid_t id);
+		void notifyDestroy(gwinid_t id);
+
 		/**
 		 * @return the information received from vesa
 		 */
@@ -153,11 +182,6 @@ namespace gui {
 		 * @param height the height
 		 */
 		void requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
-		/**
-		 * @param id the window-id
-		 * @return the window with given id
-		 */
-		Window *getWindowById(gwinid_t id);
 		/**
 		 * Adds the given window to the window-list. Will announce the window at the window-manager
 		 *
@@ -204,6 +228,8 @@ namespace gui {
 		void *_vesaMem;
 		sVESAInfo _vesaInfo;
 		std::vector<Window*> _windows;
+		std::vector<std::pair<WindowListener*,bool> > _wlisten;
+		bool _listening;
 	};
 }
 

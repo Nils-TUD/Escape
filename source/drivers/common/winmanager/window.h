@@ -97,10 +97,11 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor);
  * @param owner the owner-id
  * @param style style-attributes
  * @param titleBarHeight the height of the titlebar of that window
+ * @param title the title of the window
  * @return the window-id or WINID_UNUSED if no slot is free
  */
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
-		gsize_t titleBarHeight);
+		gsize_t titleBarHeight,const char *title);
 
 /**
  * Updates the whole screen

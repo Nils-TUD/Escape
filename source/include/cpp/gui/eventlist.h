@@ -48,7 +48,7 @@ namespace gui {
 		/**
 		 * Adds the given listener to the list
 		 *
-		 * @param l
+		 * @param l the listener
 		 */
 		inline void addListener(T *l) {
 			_listener.push_back(l);
@@ -56,7 +56,7 @@ namespace gui {
 		/**
 		 * Removes the given listener from the list
 		 *
-		 * @param l
+		 * @param l the listener
 		 */
 		inline void removeListener(T *l) {
 			_listener.erase_first(l);

@@ -145,6 +145,14 @@ namespace gui {
 		 */
 		void add(Control &c,Layout::pos_type pos = 0);
 
+		/**
+		 * Removes the given control from this panel
+		 *
+		 * @param c the control
+		 * @param pos the position-specification for the layout
+		 */
+		void remove(Control &c,Layout::pos_type pos = 0);
+
 	protected:
 		virtual void resizeTo(gsize_t width,gsize_t height);
 		virtual void moveTo(gpos_t x,gpos_t y);

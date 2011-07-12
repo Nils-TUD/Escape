@@ -19,36 +19,64 @@
 
 #include <esc/common.h>
 #include <gui/imagebutton.h>
+#include <gui/application.h>
 #include <esc/proc.h>
 #include <stdio.h>
+#include <iostream>
 #include "desktopwin.h"
 
 const gsize_t DesktopWin::PADDING = 10;
 const gsize_t DesktopWin::ICON_SIZE = 30;
-const gui::Color DesktopWin::BGCOLOR = gui::Color(0xd5,0xe6,0xf3);
+const Color DesktopWin::BGCOLOR = Color(0xd5,0xe6,0xf3);
 
-void DesktopWin::actionPerformed(gui::UIElement& el) {
-	gui::ImageButton &btn = dynamic_cast<gui::ImageButton&>(el);
-	map<gui::ImageButton*,Shortcut*>::iterator it = _shortcuts.find(&btn);
-	if(it != _shortcuts.end()) {
-		int pid = fork();
-		if(pid == 0) {
-			const char *args[2] = {NULL,NULL};
-			args[0] = it->second->getApp().c_str();
-			exec(args[0],args);
+void DesktopWin::actionPerformed(UIElement& el) {
+	ImageButton *btn = dynamic_cast<ImageButton*>(&el);
+	if(btn) {
+		map<ImageButton*,Shortcut*>::iterator it = _shortcuts.find(btn);
+		if(it != _shortcuts.end()) {
+			int pid = fork();
+			if(pid == 0) {
+				const char *args[2] = {NULL,NULL};
+				args[0] = it->second->getApp().c_str();
+				exec(args[0],args);
+			}
+			else if(pid < 0)
+				printe("[DESKTOP] Unable to create child-process");
 		}
-		else if(pid < 0)
-			printe("[DESKTOP] Unable to create child-process");
+	}
+	else {
+		for(map<gwinid_t,Button*>::iterator wit = _windows.begin(); wit != _windows.end(); ++wit) {
+			if((*wit).second == &el) {
+				Application::getInstance()->requestActiveWindow((*wit).first);
+				break;
+			}
+		}
 	}
 }
 
-void DesktopWin::paint(gui::Graphics &g) {
-	g.setColor(BGCOLOR);
-	g.fillRect(0,0,getWidth(),getHeight());
-
-	map<gui::ImageButton*,Shortcut*>::iterator it;
-	for(it = _shortcuts.begin(); it != _shortcuts.end(); ++it) {
-		gui::ImageButton *btn = (*it).first;
-		btn->paint(*btn->getGraphics());
-	}
+void DesktopWin::onWindowCreated(gwinid_t id,const std::string& title) {
+	Button *b = new Button(title);
+	b->addListener(this);
+	_windows[id] = b;
+	_winPanel.add(*b);
+	layout();
+	repaint();
+}
+void DesktopWin::onWindowActive(gwinid_t id) {
+	if(_active)
+		_active->setBGColor(Color(0x80,0x80,0x80));
+	_active = _windows[id];
+	if(_active)
+		_active->setBGColor(Color(0xC0,0xC0,0xC0));
+}
+void DesktopWin::onWindowDestroyed(gwinid_t id) {
+	Button *b = _windows[id];
+	b->removeListener(this);
+	_winPanel.remove(*b);
+	if(_active == b)
+		_active = NULL;
+	delete b;
+	_windows.erase(id);
+	layout();
+	repaint();
 }

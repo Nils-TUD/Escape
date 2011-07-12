@@ -225,17 +225,19 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 			win_sendActive(activeWindow,false,mouseX,mouseY);
 
 		activeWindow = id;
-		if(repaint && activeWindow != WINDOW_COUNT) {
+		if(activeWindow != WINDOW_COUNT) {
 			sRectangle *new;
 			win_sendActive(activeWindow,true,mouseX,mouseY);
 
-			new = (sRectangle*)malloc(sizeof(sRectangle));
-			new->x = windows[activeWindow].x;
-			new->y = windows[activeWindow].y;
-			new->width = windows[activeWindow].width;
-			new->height = windows[activeWindow].height;
-			new->window = WINDOW_COUNT;
-			win_repaint(new,windows + activeWindow,windows[activeWindow].z);
+			if(repaint) {
+				new = (sRectangle*)malloc(sizeof(sRectangle));
+				new->x = windows[activeWindow].x;
+				new->y = windows[activeWindow].y;
+				new->width = windows[activeWindow].width;
+				new->height = windows[activeWindow].height;
+				new->window = WINDOW_COUNT;
+				win_repaint(new,windows + activeWindow,windows[activeWindow].z);
+			}
 		}
 	}
 }

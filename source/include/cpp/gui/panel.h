@@ -30,7 +30,7 @@ namespace gui {
 	public:
 		Panel(Layout *layout)
 			: Control(0,0,0,0), _focus(NULL), _bgColor(DEF_BGCOLOR),
-			  _controls(vector<Control*>()), _layout(layout) {
+			  _controls(vector<Control*>()), _layout(layout), _updateRect(sRectangle()) {
 		};
 		/**
 		 * Constructor
@@ -42,7 +42,7 @@ namespace gui {
 		 */
 		Panel(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focus(NULL), _bgColor(DEF_BGCOLOR),
-			  _controls(vector<Control*>()), _layout(NULL) {
+			  _controls(vector<Control*>()), _layout(NULL), _updateRect(sRectangle()) {
 		};
 		/**
 		 * Clones the given panel
@@ -51,7 +51,7 @@ namespace gui {
 		 */
 		Panel(const Panel &p)
 			: Control(p), _focus(p._focus), _bgColor(p._bgColor),
-			  _controls(p._controls), _layout(p._layout) {
+			  _controls(p._controls), _layout(p._layout), _updateRect(p._updateRect) {
 			// TODO clone the controls!
 		};
 		/**
@@ -72,6 +72,7 @@ namespace gui {
 			// TODO clone the controls!
 			_controls = p._controls;
 			_layout = p._layout;
+			_updateRect = p._updateRect;
 			return *this;
 		};
 

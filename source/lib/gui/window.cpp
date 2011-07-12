@@ -265,6 +265,10 @@ namespace gui {
 		passToCtrl(e,MouseEvent::MOUSE_PRESSED);
 	}
 
+	void Window::onMouseWheel(const MouseEvent &e) {
+		passToCtrl(e,MouseEvent::MOUSE_WHEEL);
+	}
+
 	void Window::onKeyPressed(const KeyEvent &e) {
 		passToCtrl(e,KeyEvent::KEY_PRESSED);
 	}
@@ -327,12 +331,7 @@ namespace gui {
 		/* if a control is focused and we get a moved or released event we have to pass this
 		 * event to the focused control. otherwise the control wouldn't know of them */
 		Control *focus = getFocus();
-		if(event == MouseEvent::MOUSE_MOVED) {
-			if(focus)
-				passMouseToCtrl(focus,e);
-			return;
-		}
-		if(event == MouseEvent::MOUSE_RELEASED) {
+		if(event == MouseEvent::MOUSE_MOVED || event == MouseEvent::MOUSE_RELEASED) {
 			if(focus)
 				passMouseToCtrl(focus,e);
 			return;
@@ -356,7 +355,8 @@ namespace gui {
 	void Window::passMouseToCtrl(Control *c,const MouseEvent& e) {
 		gpos_t x = e.getX() - c->getWindowX();
 		gpos_t y = e.getY() - c->getWindowY();
-		MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),x,y,e.getButtonMask());
+		MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
+				x,y,e.getButtonMask());
 		switch(e.getType()) {
 			case MouseEvent::MOUSE_MOVED:
 				c->onMouseMoved(ce);
@@ -366,6 +366,9 @@ namespace gui {
 				break;
 			case MouseEvent::MOUSE_RELEASED:
 				c->onMouseReleased(ce);
+				break;
+			case MouseEvent::MOUSE_WHEEL:
+				c->onMouseWheel(ce);
 				break;
 		}
 	}

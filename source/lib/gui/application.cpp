@@ -99,9 +99,10 @@ namespace gui {
 				gpos_t y = (gpos_t)msg->args.arg2;
 				short movedX = (short)msg->args.arg3;
 				short movedY = (short)msg->args.arg4;
-				uchar buttons = (uchar)msg->args.arg5;
-				gwinid_t win = (gwinid_t)msg->args.arg6;
-				passToWindow(win,x,y,movedX,movedY,buttons);
+				short movedZ = (short)msg->args.arg5;
+				uchar buttons = (uchar)msg->args.arg6;
+				gwinid_t win = (gwinid_t)msg->args.arg7;
+				passToWindow(win,x,y,movedX,movedY,movedZ,buttons);
 			}
 			break;
 
@@ -159,7 +160,7 @@ namespace gui {
 	}
 
 	void Application::passToWindow(gwinid_t win,gpos_t x,gpos_t y,short movedX,short movedY,
-			uchar buttons) {
+			short movedZ,uchar buttons) {
 		bool moved,released,pressed;
 
 		moved = movedX || movedY;
@@ -173,16 +174,20 @@ namespace gui {
 			gpos_t ny = MAX(0,MIN(_vesaInfo.height - 1,y - w->getY()));
 
 			if(released) {
-				MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,nx,ny,_mouseBtns);
+				MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,movedZ,nx,ny,_mouseBtns);
 				w->onMouseReleased(event);
 			}
 			else if(pressed) {
-				MouseEvent event(MouseEvent::MOUSE_PRESSED,movedX,movedY,nx,ny,_mouseBtns);
+				MouseEvent event(MouseEvent::MOUSE_PRESSED,movedX,movedY,movedZ,nx,ny,_mouseBtns);
 				w->onMousePressed(event);
 			}
 			else if(moved) {
-				MouseEvent event(MouseEvent::MOUSE_MOVED,movedX,movedY,nx,ny,_mouseBtns);
+				MouseEvent event(MouseEvent::MOUSE_MOVED,movedX,movedY,movedZ,nx,ny,_mouseBtns);
 				w->onMouseMoved(event);
+			}
+			else if(movedZ) {
+				MouseEvent event(MouseEvent::MOUSE_WHEEL,movedX,movedY,movedZ,nx,ny,_mouseBtns);
+				w->onMouseWheel(event);
 			}
 		}
 	}
@@ -219,11 +224,13 @@ namespace gui {
 	void Application::addWindow(Window *win) {
 		_windows.push_back(win);
 
-		_msg.args.arg1 = (win->getX() << 16) | win->getY();
-		_msg.args.arg2 = (win->getWidth() << 16) | win->getHeight();
-		_msg.args.arg3 = win->getId();
-		_msg.args.arg4 = win->getStyle();
-		_msg.args.arg5 = win->getTitleBarHeight();
+		_msg.args.arg1 = win->getX();
+		_msg.args.arg2 = win->getY();
+		_msg.args.arg3 = win->getWidth();
+		_msg.args.arg4 = win->getHeight();
+		_msg.args.arg5 = win->getId();
+		_msg.args.arg6 = win->getStyle();
+		_msg.args.arg7 = win->getTitleBarHeight();
 		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.args)) < 0) {
 			_windows.erase_first(win);
 			throw app_error("Unable to announce window to window-manager");

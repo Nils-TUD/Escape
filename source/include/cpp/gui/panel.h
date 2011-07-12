@@ -128,6 +128,7 @@ namespace gui {
 		 * @param e the event
 		 */
 		virtual void onMousePressed(const MouseEvent &e);
+		virtual void onMouseWheel(const MouseEvent &e);
 
 		/**
 		 * Overwrite the paint-methods
@@ -163,6 +164,7 @@ namespace gui {
 		};
 
 	private:
+		void passToCtrl(const MouseEvent &e,bool focus);
 		virtual void setFocus(Control *c) {
 			_focus = c;
 			if(_parent)

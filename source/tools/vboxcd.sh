@@ -28,6 +28,8 @@ if [ "$DVDEND" = "" ]; then
 	exit 1
 fi
 
-UUID=`cat $HOME/.VirtualBox/VirtualBox.xml | grep $CDROM | sed -e 's/.*uuid="{\(.*\)}".*/\1/'`
+set -x
+UUID=`cat $HOME/.VirtualBox/VirtualBox.xml | grep 'location="'$CDROM'"' \
+ | sed -e 's/.*uuid="{\(.*\)}".*/\1/'`
 sed --in-place -e $DVDSTART','$DVDEND's/uuid="{.*\?}"/uuid="{'$UUID'}"/' "$MACHINECFG"
 

@@ -63,6 +63,13 @@ namespace gui {
 		 * @param e the mouse-event
 		 */
 		virtual void mouseReleased(UIElement& el,const MouseEvent &e) {};
+		/**
+		 * Is called as soon as the mouse-wheel has been used
+		 *
+		 * @param el the ui-element that received this event
+		 * @param e the mouse-event
+		 */
+		virtual void mouseWheel(UIElement& el,const MouseEvent &e) {};
 
 	private:
 		// no copying

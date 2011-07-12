@@ -242,6 +242,7 @@ namespace gui {
 		virtual void onMouseMoved(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 		virtual void onMousePressed(const MouseEvent &e);
+		virtual void onMouseWheel(const MouseEvent &e);
 		virtual void onKeyPressed(const KeyEvent &e);
 		virtual void onKeyReleased(const KeyEvent &e);
 

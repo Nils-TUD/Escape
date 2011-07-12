@@ -178,6 +178,7 @@ typedef struct {
 typedef struct {
 	gpos_t x;
 	gpos_t y;
+	gpos_t z;
 	uchar buttons;
 } sMouseData;
 
@@ -234,6 +235,8 @@ typedef union {
 		ulong arg4;
 		ulong arg5;
 		ulong arg6;
+		ulong arg7;
+		ulong arg8;
 	} args;
 	/* for messages with a few integer arguments and one or two strings */
 	struct {

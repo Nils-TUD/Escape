@@ -63,13 +63,13 @@ int main(void) {
 		else {
 			switch(mid) {
 				case MSG_WIN_CREATE: {
-					gpos_t x = (gpos_t)(msg.args.arg1 >> 16);
-					gpos_t y = (gpos_t)(msg.args.arg1 & 0xFFFF);
-					gsize_t width = (gsize_t)(msg.args.arg2 >> 16);
-					gsize_t height = (gsize_t)(msg.args.arg2 & 0xFFFF);
-					gwinid_t tmpWinId = (gwinid_t)msg.args.arg3;
-					uint style = msg.args.arg4;
-					gsize_t titleBarHeight = msg.args.arg5;
+					gpos_t x = (gpos_t)msg.args.arg1;
+					gpos_t y = (gpos_t)msg.args.arg2;
+					gsize_t width = (gsize_t)msg.args.arg3;
+					gsize_t height = (gsize_t)msg.args.arg4;
+					gwinid_t tmpWinId = (gwinid_t)msg.args.arg5;
+					uint style = msg.args.arg6;
+					gsize_t titleBarHeight = msg.args.arg7;
 					msg.args.arg1 = tmpWinId;
 					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style,titleBarHeight);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));

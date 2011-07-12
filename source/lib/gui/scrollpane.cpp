@@ -44,10 +44,10 @@ namespace gui {
 
 	void ScrollPane::scrollBy(short mx,short my) {
 		Graphics *g = getGraphics();
-		gsize_t visibley = getHeight() - BAR_SIZE;
-		gsize_t visiblex = getWidth() - BAR_SIZE;
-		if((_focus & FOCUS_HORSB) && mx != 0) {
-			short x = _ctrl->getWidth() / (visiblex / mx);
+		gsize_t visibley = max(0,getHeight() - BAR_SIZE);
+		gsize_t visiblex = max(0,getWidth() - BAR_SIZE);
+		if((_focus & FOCUS_HORSB) && mx != 0 && visiblex != 0) {
+			short x = (short)(_ctrl->getWidth() / ((double)visiblex / mx));
 			int minX = visiblex - _ctrl->getWidth();
 			// scroll left, i.e. move content right
 			if(x < 0 && _ctrl->getX() < 0) {
@@ -74,8 +74,8 @@ namespace gui {
 				}
 			}
 		}
-		else if((_focus & FOCUS_VERTSB) && my != 0) {
-			short y = _ctrl->getHeight() / (visibley / my);
+		else if((_focus & FOCUS_VERTSB) && my != 0 && visibley != 0) {
+			short y = (short)(_ctrl->getHeight() / ((double)visibley / my));
 			int minY = visibley - _ctrl->getHeight();
 			// scroll up, i.e. move content down
 			if(y < 0 && _ctrl->getY() < 0) {
@@ -145,11 +145,23 @@ namespace gui {
 			}
 		}
 		else {
-			MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),
+			MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
 					e.getX() - _ctrl->getX(),e.getY() - _ctrl->getY(),e.getButtonMask());
 			_ctrl->onMousePressed(ce);
 			_focus = FOCUS_CTRL;
 		}
+	}
+	void ScrollPane::onMouseWheel(const MouseEvent &e) {
+		gsize_t visibley = getHeight() - BAR_SIZE;
+		if(getBarSize(_ctrl->getHeight(),visibley) < visibley) {
+			_focus = FOCUS_VERTSB;
+			scrollBy(0,e.getWheelMovement() * SCROLL_FACTOR);
+		}
+		else {
+			_focus = FOCUS_HORSB;
+			scrollBy(e.getWheelMovement() * SCROLL_FACTOR,0);
+		}
+		_focus = 0;
 	}
 
 	void ScrollPane::paint(Graphics &g) {

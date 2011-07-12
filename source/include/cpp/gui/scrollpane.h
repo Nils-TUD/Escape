@@ -32,6 +32,7 @@ namespace gui {
 		static const Color BARCOLOR;
 
 		static const gsize_t BAR_SIZE			= 20;
+		static const gsize_t SCROLL_FACTOR		= 10;
 
 		static const unsigned int FOCUS_CTRL	= 1;
 		static const unsigned int FOCUS_HORSB	= 2;
@@ -68,6 +69,7 @@ namespace gui {
 		virtual void onMouseMoved(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 		virtual void onMousePressed(const MouseEvent &e);
+		virtual void onMouseWheel(const MouseEvent &e);
 
 		virtual void layout() {
 			_ctrl->layout();

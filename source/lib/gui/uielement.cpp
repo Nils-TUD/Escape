@@ -106,6 +106,9 @@ namespace gui {
 	void UIElement::onMousePressed(const MouseEvent &e) {
 		notifyListener(e);
 	}
+	void UIElement::onMouseWheel(const MouseEvent &e) {
+		notifyListener(e);
+	}
 	void UIElement::onKeyPressed(const KeyEvent &e) {
 		notifyListener(e);
 	}
@@ -133,6 +136,9 @@ namespace gui {
 					break;
 				case MouseEvent::MOUSE_RELEASED:
 					l->mouseReleased(*this,e);
+					break;
+				case MouseEvent::MOUSE_WHEEL:
+					l->mouseWheel(*this,e);
 					break;
 			}
 		}

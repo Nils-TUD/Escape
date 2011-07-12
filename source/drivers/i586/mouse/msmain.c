@@ -41,7 +41,9 @@
 #define KBC_CMD_DISABLE_KEYBOARD	0xAD
 #define KBC_CMD_ENABLE_KEYBOARD		0xAE
 #define KBC_CMD_NEXT2MOUSE			0xD4
+#define MOUSE_CMD_SETSAMPLE			0xF3
 #define MOUSE_CMD_STREAMING			0xF4
+#define MOUSE_CMD_GETDEVID			0xF2
 
 /* bits of the status-byte */
 #define KBC_STATUS_DATA_AVAIL		(1 << 0)
@@ -84,6 +86,7 @@ typedef struct {
 	} status;
 	char xcoord;
 	char ycoord;
+	char zcoord;
 } sMousePacket;
 
 static uchar byteNo = 0;
@@ -94,6 +97,7 @@ static sRingBuf *rbuf;
 static sMouseData mdata;
 static sMousePacket packet;
 static bool moving = false;
+static bool wheel = false;
 
 int main(void) {
 	msgid_t mid;
@@ -191,19 +195,29 @@ static void irqHandler(int sig) {
 			break;
 		case 2:
 			packet.ycoord = inByte(IOPORT_KB_DATA);
-			byteNo = 0;
-			/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
-			/* so, simply skip the packet in this case */
-			if(!moving) {
-				/* write the message in our ringbuffer */
-				mdata.x = packet.xcoord;
-				mdata.y = packet.ycoord;
-				mdata.buttons = (packet.status.leftBtn << 2) |
-					(packet.status.rightBtn << 1) |
-					(packet.status.middleBtn << 0);
-				rb_write(ibuf,&mdata);
-			}
+			if(wheel)
+				byteNo++;
+			else
+				byteNo = 0;
 			break;
+		case 3:
+			packet.zcoord = inByte(IOPORT_KB_DATA);
+			byteNo = 0;
+			break;
+	}
+	if(byteNo == 0) {
+		/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
+		/* so, simply skip the packet in this case */
+		if(!moving) {
+			/* write the message in our ringbuffer */
+			mdata.x = packet.xcoord;
+			mdata.y = packet.ycoord;
+			mdata.z = packet.zcoord;
+			mdata.buttons = (packet.status.leftBtn << 2) |
+				(packet.status.rightBtn << 1) |
+				(packet.status.middleBtn << 0);
+			rb_write(ibuf,&mdata);
+		}
 	}
 }
 
@@ -228,6 +242,18 @@ static void kb_init(void) {
 	cmdByte &= ~KBC_CMDBYTE_DISABLE_KB;
 	outByte(IOPORT_KB_DATA,cmdByte);
 	kb_checkCmd();
+
+	/* enable mouse-wheel by setting sample-rate to 200, 100 and 80 and reading the device-id */
+	kb_writeMouse(MOUSE_CMD_SETSAMPLE);
+	kb_writeMouse(200);
+	kb_writeMouse(MOUSE_CMD_SETSAMPLE);
+	kb_writeMouse(100);
+	kb_writeMouse(MOUSE_CMD_SETSAMPLE);
+	kb_writeMouse(80);
+	kb_writeMouse(MOUSE_CMD_GETDEVID);
+	uint8_t id = kb_read();
+	if(id == 3 || id == 4)
+		wheel = true;
 }
 
 static void kb_checkCmd(void) {

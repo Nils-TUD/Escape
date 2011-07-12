@@ -26,22 +26,34 @@ namespace gui {
 	const Color Panel::DEF_BGCOLOR = Color(0x88,0x88,0x88);
 
 	void Panel::onMousePressed(const MouseEvent &e) {
+		passToCtrl(e,true);
+	}
+	void Panel::onMouseWheel(const MouseEvent &e) {
+		passToCtrl(e,false);
+	}
+
+	void Panel::passToCtrl(const MouseEvent &e,bool focus) {
 		gpos_t x = e.getX();
 		gpos_t y = e.getY();
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 			Control *c = *it;
 			if(x >= c->getX() && x < c->getX() + c->getWidth() &&
 				y >= c->getY() && y < c->getY() + c->getHeight()) {
-				MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),
+				MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
 						x - c->getX(),y - c->getY(),e.getButtonMask());
-				_focus = c;
-				c->onMousePressed(ce);
+				if(focus)
+					_focus = c;
+				if(e.getType() == MouseEvent::MOUSE_PRESSED)
+					c->onMousePressed(ce);
+				else
+					c->onMouseWheel(ce);
 				return;
 			}
 		}
 
 		// if we're here the user has not clicked on a control, so set the focus to "nothing"
-		_focus = NULL;
+		if(focus)
+			_focus = NULL;
 	}
 
 	void Panel::layout() {

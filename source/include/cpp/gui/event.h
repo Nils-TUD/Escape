@@ -41,6 +41,7 @@ namespace gui {
 		static const event_type MOUSE_MOVED		= 0;
 		static const event_type MOUSE_PRESSED	= 1;
 		static const event_type MOUSE_RELEASED	= 2;
+		static const event_type MOUSE_WHEEL		= 3;
 
 		// the different buttons
 		static const button_type BUTTON1_MASK	= 0x1;
@@ -58,8 +59,10 @@ namespace gui {
 		 * @param y the mouse-y-position
 		 * @param buttons the button-state (BUTTON*)
 		 */
-		MouseEvent(event_type type,short movedx,short movedy,gpos_t x,gpos_t y,button_type buttons)
-			: _type(type), _movedx(movedx), _movedy(movedy), _x(x), _y(y), _buttons(buttons) {
+		MouseEvent(event_type type,short movedx,short movedy,short movedz,
+				gpos_t x,gpos_t y,button_type buttons)
+			: _type(type), _movedx(movedx), _movedy(movedy), _movedz(movedz), _x(x), _y(y),
+			  _buttons(buttons) {
 		};
 		/**
 		 * Copy-constructor
@@ -67,8 +70,8 @@ namespace gui {
 		 * @param e the event to copy
 		 */
 		MouseEvent(const MouseEvent &e)
-			: _type(e._type), _movedx(e._movedx), _movedy(e._movedy), _x(e._x), _y(e._y),
-			_buttons(e._buttons) {
+			: _type(e._type), _movedx(e._movedx), _movedy(e._movedy), _movedz(e._movedz),
+			  _x(e._x), _y(e._y), _buttons(e._buttons) {
 		};
 		/**
 		 * Destructor
@@ -83,6 +86,7 @@ namespace gui {
 			_type = e._type;
 			_movedx = e._movedx;
 			_movedy = e._movedy;
+			_movedz = e._movedz;
 			_x = e._x;
 			_y = e._y;
 			_buttons = e._buttons;
@@ -120,6 +124,12 @@ namespace gui {
 			return _movedy;
 		};
 		/**
+		 * @return the mousewheel movement
+		 */
+		inline short getWheelMovement() const {
+			return _movedz;
+		};
+		/**
 		 * @return the button-mask
 		 */
 		inline button_type getButtonMask() const {
@@ -148,6 +158,7 @@ namespace gui {
 		event_type _type;
 		short _movedx;
 		short _movedy;
+		short _movedz;
 		gpos_t _x;
 		gpos_t _y;
 		button_type _buttons;

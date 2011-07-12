@@ -191,7 +191,8 @@ namespace gui {
 		void resizeWindow(Window *win,bool finish);
 
 		// only used in Application itself
-		void passToWindow(gwinid_t win,gpos_t x,gpos_t y,short movedX,short movedY,uchar buttons);
+		void passToWindow(gwinid_t win,gpos_t x,gpos_t y,short movedX,short movedY,
+				short movedZ,uchar buttons);
 		void closePopups(gwinid_t id,gpos_t x,gpos_t y);
 
 	private:

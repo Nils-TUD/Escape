@@ -76,7 +76,7 @@ gpos_t mouse_getY(void) {
 static void handleMouseMessage(int drvId,sMouseData *mdata) {
 	gpos_t oldx = curX,oldy = curY;
 	bool btnChanged = false;
-	sWindow *w;
+	sWindow *w,*wheelWin = NULL;
 	curX = MAX(0,MIN(win_getScreenWidth() - 1,curX + mdata->x));
 	curY = MAX(0,MIN(win_getScreenHeight() - 1,curY - mdata->y));
 
@@ -95,6 +95,8 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 			mouseWin = w;
 		}
 	}
+	else if(mdata->z)
+		wheelWin = win_getAt(curX,curY);
 
 	/* if no buttons are pressed, change the cursor if we're at a window-border */
 	if(!buttons) {
@@ -123,7 +125,7 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 		win_setCursor(curX,curY,cursor);
 
 	/* send to window */
-	w = mouseWin ? mouseWin : win_getActive();
+	w = wheelWin ? wheelWin : (mouseWin ? mouseWin : win_getActive());
 	if(w) {
 		int aWin = getClient(drvId,w->owner);
 		if(aWin >= 0) {
@@ -131,8 +133,9 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 			msg.args.arg2 = curY;
 			msg.args.arg3 = mdata->x;
 			msg.args.arg4 = -mdata->y;
-			msg.args.arg5 = mdata->buttons;
-			msg.args.arg6 = w->id;
+			msg.args.arg5 = mdata->z;
+			msg.args.arg6 = mdata->buttons;
+			msg.args.arg7 = w->id;
 			send(aWin,MSG_WIN_MOUSE_EV,&msg,sizeof(msg.args));
 			close(aWin);
 		}

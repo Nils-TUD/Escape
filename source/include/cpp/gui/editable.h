@@ -44,13 +44,8 @@ namespace gui {
 			: Control(x,y,width,height), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(string()) {
 		};
-		Editable(const Editable &e)
-			: Control(e), _cursor(e._cursor), _begin(0), _focused(false), _selecting(false),
-			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(e._str) {
-		};
 		virtual ~Editable() {
 		};
-		Editable &operator=(const Editable &e);
 
 		inline string getText() const {
 			return _str;

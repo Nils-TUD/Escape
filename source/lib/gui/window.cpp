@@ -42,18 +42,6 @@ namespace gui {
 		delete _imgs[0];
 		delete _btns[0];
 	}
-	WindowTitleBar::WindowTitleBar(const WindowTitleBar& wtb)
-		: Panel(wtb), ActionListener(wtb), _title(wtb._title), _blayout(wtb._blayout) {
-	}
-	WindowTitleBar& WindowTitleBar::operator=(const WindowTitleBar& wtb) {
-		if(this == &wtb)
-			return *this;
-		Panel::operator =(wtb);
-		ActionListener::operator =(wtb);
-		_title = wtb._title;
-		_blayout = wtb._blayout;
-		return *this;
-	}
 
 	void WindowTitleBar::init() {
 		_blayout = new BorderLayout();
@@ -100,42 +88,11 @@ namespace gui {
 		init();
 	}
 
-	Window::Window(const Window &w)
-		: UIElement(w), _id(NEXT_TMP_ID--), _created(false), _style(w._style),
-			_inTitle(w._inTitle), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
-			_isActive(false), _moveX(0), _moveY(0), _resizeWidth(0), _resizeHeight(0),
-			_gbuf(NULL), _header(w._header), _body(w._body), _tabCtrls(w._tabCtrls), _tabIt(w._tabIt) {
-		init();
-	}
-
 	Window::~Window() {
 		// remove us from app
 		Application::getInstance()->removeWindow(this);
 		delete _header;
 		delete _gbuf;
-	}
-
-	Window &Window::operator=(const Window &w) {
-		UIElement::operator=(w);
-		_style = w._style;
-		_inTitle = w._inTitle;
-		_inResizeLeft = w._inResizeLeft;
-		_inResizeRight = w._inResizeRight;
-		_inResizeBottom = w._inResizeBottom;
-		_isActive = false;
-		_moveX = w._moveX;
-		_moveY = w._moveY;
-		_resizeWidth = w._resizeWidth;
-		_resizeHeight = w._resizeHeight;
-		_gbuf = NULL;
-		_header = w._header;
-		_body = w._body;
-		_tabCtrls = w._tabCtrls;
-		_tabIt = w._tabIt;
-		_id = NEXT_TMP_ID--;
-		_created = false;
-		init();
-		return *this;
 	}
 
 	void Window::init() {

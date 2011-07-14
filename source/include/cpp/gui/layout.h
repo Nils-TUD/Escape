@@ -77,6 +77,11 @@ namespace gui {
 		 * perform a repaint!
 		 */
 		virtual void rearrange() = 0;
+
+	private:
+		// no cloning
+		Layout(const Layout& bl);
+		Layout& operator=(const Layout& bl);
 	};
 }
 

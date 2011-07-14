@@ -18,19 +18,8 @@ namespace gui {
 		ImageButton(Image *img,gpos_t x,gpos_t y,gsize_t width,gsize_t height,bool border = true)
 			: Button("",x,y,width,height), _img(img), _border(border) {
 		};
-		ImageButton(const ImageButton &b)
-			: Button(b), _img(b._img), _border(b._border) {
-		};
 		virtual ~ImageButton() {
 		};
-		ImageButton &operator=(const ImageButton &b) {
-			if(this == &b)
-				return *this;
-			Button::operator =(b);
-			_img = b._img;
-			_border = b._border;
-			return *this;
-		}
 
 		inline Image *getImage() const {
 			return _img;

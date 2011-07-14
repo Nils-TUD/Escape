@@ -22,17 +22,6 @@
 #include <gui/control.h>
 
 namespace gui {
-	Button &Button::operator=(const Button &b) {
-		// ignore self-assignments
-		if(this == &b)
-			return *this;
-		Control::operator=(b);
-		_focused = false;
-		_pressed = b._pressed;
-		_text = b._text;
-		return *this;
-	}
-
 	gsize_t Button::getMinWidth() const {
 		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
 	}

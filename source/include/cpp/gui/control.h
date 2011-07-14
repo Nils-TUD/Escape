@@ -59,22 +59,10 @@ namespace gui {
 			: UIElement(x,y,width,height) {
 		};
 		/**
-		 * Copy-constructor
-		 *
-		 * @param c the control to copy
-		 */
-		Control(const Control &c)
-			: UIElement(c) {
-		};
-		/**
 		 * Destructor
 		 */
 		virtual ~Control() {
 		};
-		/**
-		 * Assignment operator
-		 */
-		Control &operator=(const Control &c);
 
 		/**
 		 * Does nothing

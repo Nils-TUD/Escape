@@ -69,16 +69,6 @@ namespace gui {
 			  _mlist(NULL), _klist(NULL), _enableRepaint(true) {
 		};
 		/**
-		 * Copy-constructor
-		 *
-		 * @param e the ui-element to copy
-		 */
-		UIElement(const UIElement &e)
-			: _g(NULL), _parent(NULL), _theme(e._theme), _x(e._x), _y(e._y), _width(e._width),
-			  _height(e._height), _prefWidth(e._prefWidth), _prefHeight(e._prefHeight),
-			  _mlist(e._mlist), _klist(e._klist), _enableRepaint(e._enableRepaint) {
-		};
-		/**
 		 * Destructor. Free's the memory
 		 */
 		virtual ~UIElement() {
@@ -86,10 +76,6 @@ namespace gui {
 			delete _klist;
 			delete _g;
 		};
-		/**
-		 * Assignment-operator
-		 */
-		UIElement &operator=(const UIElement &e);
 
 		/**
 		 * @return the x-position of this element relative to the parent
@@ -310,6 +296,26 @@ namespace gui {
 		};
 
 	private:
+		// I've decided to make all ui-elements not-clonable for the following reasons:
+		// 1. I can't think of a real reason why cloning is necessary. Of course, one could argue
+		//    that its sometimes convenient if objects are similar, but is there really a situtation
+		//    in which I can't live without it?
+		// 2. It makes it more complicated and error-prone.
+		// 3. It introduces the problem that objects of various sub-classes need to be clonable
+		//    without knowing their real type. That is, e.g. panels that manage a list of controls
+		//    would need to clone all these controls, but don't know their real-type. Therefore we
+		//    would need an additional method like "virtual UIElement *clone() const", that needs
+		//    to be overwritten by every subclass.
+		// 4. Sometimes its not clear what cloning an ui-element should actually mean. For example,
+		//    lets say I have a panel with a borderlayout that has a button on it at any position.
+		//    Now I'm cloning the button. What should happen? Should the button be put in the same
+		//    slot in the borderlayout? (and overwrite the original) Or be put in another slot? What
+		//    if all slots are in use? -> There is no clear and intuitive way to clone this button.
+		// So, all in all, it doesn't help much and is not required, but would bring a lot of
+		// trouble. Means, better don't allow it at all :)
+		UIElement(const UIElement &e);
+		UIElement &operator=(const UIElement &e);
+
 		/**
 		 * Sets the x-position
 		 *

@@ -47,8 +47,6 @@ namespace gui {
 	public:
 		WindowTitleBar(const string& title,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 		virtual ~WindowTitleBar();
-		WindowTitleBar(const WindowTitleBar& wtb);
-		WindowTitleBar& operator=(const WindowTitleBar& wtb);
 
 		/**
 		 * @return the title (a copy)
@@ -136,21 +134,9 @@ namespace gui {
 		Window(const string &title,gpos_t x,gpos_t y,gsize_t width,gsize_t height,
 				uchar style = STYLE_DEFAULT);
 		/**
-		 * Clones the given window
-		 *
-		 * @param w the window
-		 */
-		Window(const Window &w);
-		/**
 		 * Destructor
 		 */
 		virtual ~Window();
-		/**
-		 * Assignment-operator
-		 *
-		 * @param w the window
-		 */
-		Window &operator=(const Window &w);
 
 		/**
 		 * @return the id of the window

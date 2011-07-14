@@ -55,7 +55,7 @@ namespace gui {
 			void paint(Graphics &g);
 
 		private:
-			// no copying
+			// no cloning
 			ItemWindow(const ItemWindow &w);
 			ItemWindow &operator=(const ItemWindow &w);
 
@@ -76,14 +76,9 @@ namespace gui {
 			: Control(x,y,width,height), _items(vector<string>()), _selected(-1),
 				_pressed(false), _win(NULL) {
 		};
-		ComboBox(const ComboBox &cb)
-			: Control(cb), _items(vector<string>(cb._items)), _selected(cb._selected),
-				_pressed(false), _win(NULL) {
-		};
 		virtual ~ComboBox() {
 			delete _win;
 		};
-		ComboBox &operator=(const ComboBox &cb);
 
 		inline void addItem(const string &s) {
 			_items.push_back(s);

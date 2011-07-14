@@ -48,34 +48,9 @@ namespace gui {
 			  _layout(layout), _updateRect(sRectangle()) {
 		};
 		/**
-		 * Clones the given panel
-		 *
-		 * @param p the panel
-		 */
-		Panel(const Panel &p)
-			: Control(p), _focus(p._focus), _controls(p._controls),
-			  _layout(p._layout), _updateRect(p._updateRect) {
-			// TODO clone the controls!
-		};
-		/**
 		 * Destructor
 		 */
 		virtual ~Panel() {
-		};
-		/**
-		 * Assignment-operator
-		 *
-		 * @param p the panel
-		 */
-		Panel &operator=(const Panel &p) {
-			if(this == &p)
-				return *this;
-			_focus = p._focus;
-			// TODO clone the controls!
-			_controls = p._controls;
-			_layout = p._layout;
-			_updateRect = p._updateRect;
-			return *this;
 		};
 
 		virtual gsize_t getMinWidth() const {

@@ -26,23 +26,6 @@ namespace gui {
 	const uchar Editable::DIR_LEFT = 1;
 	const uchar Editable::DIR_RIGHT = 2;
 
-	Editable &Editable::operator=(const Editable &e) {
-		// ignore self-assigments
-		if(this == &e)
-			return *this;
-		Control::operator=(e);
-		_cursor = e._cursor;
-		_begin = e._begin;
-		_focused = false;
-		_selecting = false;
-		_startSel = false;
-		_selDir = e._selDir;
-		_selStart = e._selStart;
-		_selEnd = e._selEnd;
-		_str = e._str;
-		return *this;
-	}
-
 	gsize_t Editable::getMinWidth() const {
 		return DEF_WIDTH + getTheme().getTextPadding() * 2;
 	}

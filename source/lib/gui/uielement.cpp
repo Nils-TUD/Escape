@@ -24,22 +24,6 @@
 #include <gui/window.h>
 
 namespace gui {
-	UIElement &UIElement::operator=(const UIElement &e) {
-		// ignore self-assignments
-		if(this == &e)
-			return *this;
-		_klist = e._klist;
-		_mlist = e._mlist;
-		_g = NULL;
-		_parent = e._parent;
-		_theme = e._theme;
-		_x = e._x;
-		_y = e._y;
-		_width = e._width;
-		_height = e._height;
-		return *this;
-	}
-
 	Window *UIElement::getWindow() {
 		UIElement *p = _parent;
 		// if its the window itself

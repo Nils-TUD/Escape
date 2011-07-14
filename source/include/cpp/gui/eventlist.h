@@ -43,7 +43,7 @@ namespace gui {
 				return *this;
 			_listener = l._listener;
 			return *this;
-		}
+		};
 
 		/**
 		 * Adds the given listener to the list

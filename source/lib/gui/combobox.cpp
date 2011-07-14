@@ -94,17 +94,6 @@ namespace gui {
 		_cb->repaint();
 	}
 
-	ComboBox &ComboBox::operator=(const ComboBox &cb) {
-		// ignore self-assignments
-		if(this == &cb)
-			return *this;
-		Control::operator=(cb);
-		_items = cb._items;
-		_pressed = cb._pressed;
-		_win = cb._win;
-		return *this;
-	}
-
 	gsize_t ComboBox::getMinWidth() const {
 		gsize_t max = 0;
 		const Font& f = getGraphics()->getFont();

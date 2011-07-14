@@ -24,17 +24,6 @@
 namespace gui {
 	const gsize_t Checkbox::CROSS_SIZE = 24;
 
-	Checkbox &Checkbox::operator=(const Checkbox &b) {
-		// ignore self-assignments
-		if(this == &b)
-			return *this;
-		Control::operator=(b);
-		_focused = false;
-		_checked = b._checked;
-		_text = b._text;
-		return *this;
-	}
-
 	gsize_t Checkbox::getMinWidth() const {
 		return getGraphics()->getFont().getStringWidth(_text) +
 				TEXT_PADDING + CROSS_PADDING + CROSS_SIZE;

@@ -22,16 +22,6 @@
 #include <gui/control.h>
 
 namespace gui {
-	ProgressBar &ProgressBar::operator=(const ProgressBar &b) {
-		// ignore self-assignments
-		if(this == &b)
-			return *this;
-		Control::operator=(b);
-		_position = b._position;
-		_text = b._text;
-		return *this;
-	}
-
 	gsize_t ProgressBar::getMinWidth() const {
 		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
 	}

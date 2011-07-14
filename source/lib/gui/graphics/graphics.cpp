@@ -132,25 +132,25 @@ namespace gui {
 	}
 
 	void Graphics::drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn) {
-		int	dx,	dy,	d;
-		int incrE, incrNE;	/*Increments for move to E	& NE*/
-		gpos_t x,y;			/*Start & current pixel*/
-		int incx, incy;
-		gpos_t *px, *py;
-
-		if(!validateLine(x0,y0,xn,yn))
+		if(_width == 0 || _height == 0)
 			return;
-		updateMinMax(x0,y0);
-		updateMinMax(xn,yn);
+		if(x0 == xn) {
+			drawVertLine(x0,y0,yn);
+			return;
+		}
+		if(y0 == yn) {
+			drawHorLine(y0,x0,xn);
+			return;
+		}
 
 		// default settings
-		x = x0;
-		y = y0;
-		px = &x;
-		py = &y;
-		dx = xn - x0;
-		dy = yn - y0;
-		incx = incy = 1;
+		gpos_t x = x0;
+		gpos_t y = y0;
+		gpos_t *px = &x;
+		gpos_t *py = &y;
+		int dx = xn - x0;
+		int dy = yn - y0;
+		int incx = 1, incy = 1;
 
 		// mirror by x-axis ?
 		if(dx < 0) {
@@ -172,13 +172,17 @@ namespace gui {
 			std::swap(incx,incy);
 		}
 
-		d = 2 * dy - dx;
+		int d = 2 * dy - dx;
 		/*Increments E & NE*/
-		incrE = 2 * dy;
-		incrNE = 2 * (dy - dx);
+		int incrE = 2 * dy;
+		int incrNE = 2 * (dy - dx);
 
+		gpos_t minx = _minoffx - _offx;
+		gpos_t miny = _minoffy - _offy;
+		gpos_t maxx = _width - 1;
+		gpos_t maxy = _height - 1;
 		for(x = x0; x != xn; x += incx) {
-			doSetPixel(*px,*py);
+			setLinePixel(minx,miny,maxx,maxy,*px,*py);
 			if(d < 0)
 				d += incrE;
 			else {
@@ -186,7 +190,9 @@ namespace gui {
 				y += incy;
 			}
 		}
-		doSetPixel(*px,*py);
+		setLinePixel(minx,miny,maxx,maxy,*px,*py);
+		updateMinMax(max(minx,min(maxx,x0)),max(miny,min(maxy,y0)));
+		updateMinMax(max(minx,min(maxx,xn)),max(miny,min(maxy,yn)));
 	}
 
 	void Graphics::drawVertLine(gpos_t x,gpos_t y1,gpos_t y2) {
@@ -284,9 +290,6 @@ namespace gui {
 		if(_width == 0 || _height == 0)
 			return false;
 
-		// TODO later we should calculate with sin&cos the end-position in bounds so that
-		// the line will just be shorter and doesn't change the angle
-
 		// ensure that none of the params reference the same variable. otherwise we can't detect
 		// that lines are not visible in all cases (because the first one will detect it but also
 		// change the variable and therefore the second won't detect it so that one point will be
@@ -302,6 +305,7 @@ namespace gui {
 			return false;
 		if((p1 & OUT_BOTTOM) && (p2 & OUT_BOTTOM))
 			return false;
+
 		// update the values (they're only needed when true is returned)
 		x1 = xx1;
 		x2 = xx2;

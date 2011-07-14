@@ -47,7 +47,7 @@ namespace gui {
 		virtual ~Editable() {
 		};
 
-		inline string getText() const {
+		inline const string &getText() const {
 			return _str;
 		};
 		inline void setText(const string &text) {

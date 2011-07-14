@@ -28,10 +28,10 @@
 namespace gui {
 	class ProgressBar : public Control {
 	public:
-		ProgressBar(const std::string &text)
+		ProgressBar(const string &text)
 			: Control(), _position(0), _text(text) {
 		};
-		ProgressBar(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
+		ProgressBar(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _position(0), _text(text) {
 		};
 		virtual ~ProgressBar() {
@@ -45,10 +45,10 @@ namespace gui {
 			_position = min((size_t)100,pos);
 			repaint();
 		};
-		inline std::string getText() const {
+		inline const string &getText() const {
 			return _text;
 		};
-		inline void setText(const std::string &text) {
+		inline void setText(const string &text) {
 			_text = text;
 			repaint();
 		};
@@ -59,7 +59,7 @@ namespace gui {
 
 	private:
 		size_t _position;
-		std::string _text;
+		string _text;
 	};
 }
 

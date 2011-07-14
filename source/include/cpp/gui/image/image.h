@@ -44,8 +44,10 @@ namespace gui {
 		static Image *loadImage(const string& path);
 
 	public:
-		Image() {};
-		virtual ~Image() {};
+		Image() {
+		};
+		virtual ~Image() {
+		};
 
 		virtual gsize_t getWidth() const = 0;
 		virtual gsize_t getHeight() const = 0;

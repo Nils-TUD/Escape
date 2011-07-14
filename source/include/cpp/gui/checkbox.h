@@ -45,7 +45,7 @@ namespace gui {
 		inline bool isChecked() const {
 			return _checked;
 		};
-		inline string getText() const {
+		inline const string &getText() const {
 			return _text;
 		};
 		inline void setText(const string &text) {

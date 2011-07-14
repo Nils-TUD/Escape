@@ -42,7 +42,7 @@ namespace gui {
 		inline bool isPressed() const {
 			return _pressed;
 		};
-		inline string getText() const {
+		inline const string &getText() const {
 			return _text;
 		};
 		inline void setText(const string &text) {

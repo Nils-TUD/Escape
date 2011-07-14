@@ -308,7 +308,7 @@ namespace gui {
 		//    to be overwritten by every subclass.
 		// 4. Sometimes its not clear what cloning an ui-element should actually mean. For example,
 		//    lets say I have a panel with a borderlayout that has a button on it at any position.
-		//    Now I'm cloning the button. What should happen? Should the button be put in the same
+		//    Now I'm cloning the button. What should happen? Should the clone be put in the same
 		//    slot in the borderlayout? (and overwrite the original) Or be put in another slot? What
 		//    if all slots are in use? -> There is no clear and intuitive way to clone this button.
 		// So, all in all, it doesn't help much and is not required, but would bring a lot of

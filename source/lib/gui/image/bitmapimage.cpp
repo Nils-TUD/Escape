@@ -22,52 +22,114 @@
 #include <rawfile.h>
 
 namespace gui {
+	void BitmapImage::clone(const BitmapImage &img) {
+		size_t headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
+		uint8_t *header = new uint8_t[headerSize];
+		_fileHeader = (sBMFileHeader*)header;
+		_infoHeader = (sBMInfoHeader*)(_fileHeader + 1);
+		_tableSize = img._tableSize;
+		_dataSize = img._dataSize;
+		memcpy(_fileHeader,img._fileHeader,headerSize);
+		_colorTable = new uint32_t[img._tableSize];
+		memcpy(_colorTable,img._colorTable,img._tableSize * sizeof(uint32_t));
+		_data = new uint8_t[img._dataSize];
+		memcpy(_data,img._data,img._dataSize);
+	}
+
+	void BitmapImage::paintRGB(Graphics &g,gpos_t x,gpos_t y) {
+		size_t bitCount = _infoHeader->bitCount;
+		uint8_t *oldData,*data = _data;
+		gsize_t w = _infoHeader->width, h = _infoHeader->height;
+		gsize_t pw = w, ph = h, pad;
+		gpos_t cx,cy;
+		size_t lastCol = 0;
+		gsize_t colBytes = bitCount / 8;
+		if(!g.validateParams(x,y,pw,ph))
+			return;
+		g.setColor(Color(0));
+		g.updateMinMax(x,y);
+		g.updateMinMax(x + pw,y + ph);
+		pad = w % 4;
+		pad = pad ? 4 - pad : 0;
+		data += (h - 1) * ((w * colBytes) + pad);
+
+		if(bitCount <= 8) {
+			for(cy = ph - 1; cy >= 0; cy--) {
+				oldData = data;
+				for(cx = 0; cx < w; cx++) {
+					if(cx < pw) {
+						size_t col = *data;
+						paintPixel8(g,cx + x,y + (ph - 1 - cy),col,lastCol);
+					}
+					data += colBytes;
+				}
+				data = oldData - ((w * colBytes) + pad);
+			}
+		}
+		else if(bitCount == 16) {
+			for(cy = ph - 1; cy >= 0; cy--) {
+				oldData = data;
+				for(cx = 0; cx < w; cx++) {
+					if(cx < pw) {
+						size_t col = *(uint16_t*)data;
+						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
+					}
+					data += colBytes;
+				}
+				data = oldData - ((w * colBytes) + pad);
+			}
+		}
+		else if(bitCount == 24) {
+			for(cy = ph - 1; cy >= 0; cy--) {
+				oldData = data;
+				for(cx = 0; cx < w; cx++) {
+					if(cx < pw) {
+						size_t col = (data[0] | (data[1] << 8) | (data[2] << 16));
+						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
+					}
+					data += colBytes;
+				}
+				data = oldData - ((w * colBytes) + pad);
+			}
+		}
+		else {
+			for(cy = ph - 1; cy >= 0; cy--) {
+				oldData = data;
+				for(cx = 0; cx < w; cx++) {
+					if(cx < pw) {
+						size_t col = *(uint32_t*)data;
+						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
+					}
+					data += colBytes;
+				}
+				data = oldData - ((w * colBytes) + pad);
+			}
+		}
+	}
+
+	void BitmapImage::paintPixel(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol) {
+		if(col != lastCol) {
+			g.setColor(Color(col));
+			lastCol = col;
+		}
+		g.doSetPixel(x,y);
+	}
+
+	void BitmapImage::paintPixel8(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol) {
+		if(col != lastCol) {
+			g.setColor(Color(_colorTable[col]));
+			lastCol = col;
+		}
+		g.doSetPixel(x,y);
+	}
+
 	void BitmapImage::paint(Graphics &g,gpos_t x,gpos_t y) {
 		if(_data == NULL)
 			return;
 		switch(_infoHeader->compression) {
-			case BI_RGB: {
-				size_t bitCount = _infoHeader->bitCount;
-				uint8_t *oldData,*data = _data;
-				gsize_t w = _infoHeader->width, h = _infoHeader->height;
-				gsize_t pw = w, ph = h, pad;
-				gpos_t cx,cy;
-				size_t lastCol = 0;
-				gsize_t colBytes = bitCount / 8;
-				if(!g.validateParams(x,y,pw,ph))
-					return;
-				g.setColor(Color(0));
-				g.updateMinMax(x,y);
-				g.updateMinMax(x + pw,y + ph);
-				pad = w % 4;
-				pad = pad ? 4 - pad : 0;
-				data += (h - 1) * ((w * colBytes) + pad);
-				for(cy = ph - 1; cy >= 0; cy--) {
-					oldData = data;
-					for(cx = 0; cx < w; cx++) {
-						if(cx < pw) {
-							// TODO performance might be improvable
-							size_t col;
-							if(bitCount <= 8)
-								col = *data;
-							else if(bitCount == 16)
-								col = *(uint16_t*)data;
-							else if(bitCount == 24)
-								col = (data[0] | (data[1] << 8) | (data[2] << 16));
-							else
-								col = *(uint32_t*)data;
-							if(col != lastCol) {
-								g.setColor(Color(bitCount <= 8 ? _colorTable[col] : col));
-								lastCol = col;
-							}
-							g.doSetPixel(cx + x,y + (ph - 1 - cy));
-						}
-						data += colBytes;
-					}
-					data = oldData - ((w * colBytes) + pad);
-				}
-			}
-			break;
+			case BI_RGB:
+				paintRGB(g,x,y);
+				break;
 
 			case BI_BITFIELDS:
 				// TODO

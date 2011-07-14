@@ -91,11 +91,14 @@ namespace gui {
 		};
 
 		BitmapImage(const BitmapImage &img)
-			:	_fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL),
-				_tableSize(0), _data(NULL), _dataSize(0) {
+			: Image(img), _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL),
+			  _tableSize(0), _data(NULL), _dataSize(0) {
 			clone(img);
 		};
 		BitmapImage &operator=(const BitmapImage &img) {
+			if(&img == this)
+				return *this;
+			Image::operator=(img);
 			delete[] _fileHeader;
 			delete[] _colorTable;
 			delete[] _data;
@@ -112,22 +115,11 @@ namespace gui {
 		void paint(Graphics &g,gpos_t x,gpos_t y);
 
 	private:
-		inline void clone(const BitmapImage &img) {
-			size_t headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
-			uint8_t *header = new uint8_t[headerSize];
-			_fileHeader = (sBMFileHeader*)header;
-			_infoHeader = (sBMInfoHeader*)(_fileHeader + 1);
-			_tableSize = img._tableSize;
-			_dataSize = img._dataSize;
-			memcpy(_fileHeader,img._fileHeader,headerSize);
-			_colorTable = new uint32_t[img._tableSize];
-			memcpy(_colorTable,img._colorTable,img._tableSize * sizeof(uint32_t));
-			_data = new uint8_t[img._dataSize];
-			memcpy(_data,img._data,img._dataSize);
-		};
-
-	private:
+		void clone(const BitmapImage &img);
 		void loadFromFile(const string &filename);
+		void paintRGB(Graphics &g,gpos_t x,gpos_t y);
+		void paintPixel(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol);
+		void paintPixel8(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol);
 
 		sBMFileHeader *_fileHeader;
 		sBMInfoHeader *_infoHeader;

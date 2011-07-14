@@ -232,6 +232,13 @@ namespace gui {
 
 	protected:
 		/**
+		 * Sets a pixel if in the given bounds
+		 */
+		inline void setLinePixel(gpos_t minx,gpos_t miny,gpos_t maxx,gpos_t maxy,gpos_t x,gpos_t y) {
+			if(x >= minx && y >= miny && x <= maxx && y <= maxy)
+				doSetPixel(x,y);
+		};
+		/**
 		 * Sets a pixel (without check)
 		 */
 		virtual void doSetPixel(gpos_t x,gpos_t y) = 0;

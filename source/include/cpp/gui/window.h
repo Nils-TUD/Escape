@@ -50,7 +50,7 @@ namespace gui {
 		/**
 		 * @return the title (a copy)
 		 */
-		inline string getTitle() const {
+		inline const string &getTitle() const {
 			return _title;
 		};
 		/**
@@ -170,7 +170,7 @@ namespace gui {
 		/**
 		 * @return the title (a copy)
 		 */
-		inline string getTitle() const {
+		inline const string &getTitle() const {
 			if(!_header)
 				throw logic_error("This window has no title");
 			return _header->getTitle();

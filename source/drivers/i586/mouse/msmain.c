@@ -64,6 +64,7 @@
 #define KB_MOUSE_LOCK				0x1
 
 #define INPUT_BUF_SIZE				128
+#define PACK_BUF_SIZE				32
 
 static void irqHandler(int sig);
 static void kb_init(void);
@@ -92,12 +93,11 @@ typedef struct {
 static uchar byteNo = 0;
 static int sid;
 static sMsg msg;
-static sRingBuf *ibuf;
 static sRingBuf *rbuf;
-static sMouseData mdata;
-static sMousePacket packet;
-static bool moving = false;
 static bool wheel = false;
+static sMousePacket packBuf[PACK_BUF_SIZE];
+static size_t packReadPos = 0;
+static size_t packWritePos = 0;
 
 int main(void) {
 	msgid_t mid;
@@ -109,9 +109,8 @@ int main(void) {
 	kb_init();
 
 	/* create input-buffer */
-	ibuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
 	rbuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
-	if(ibuf == NULL || rbuf == NULL)
+	if(rbuf == NULL)
 		error("Unable to create ring-buffers");
 
 	/* reg intrpt-handler */
@@ -127,12 +126,24 @@ int main(void) {
 	while(1) {
 		int fd;
 
-		/* move mouse-packages (we can't access ibuf while doing this) */
-		moving = true;
-		rb_move(rbuf,ibuf,rb_length(ibuf));
-		if(rb_length(rbuf) > 0)
-			fcntl(sid,F_SETDATA,true);
-		moving = false;
+		/* put mouse-packages into rbuf */
+		if(packReadPos != packWritePos) {
+			while(packReadPos != packWritePos) {
+				/* write the message in our ringbuffer */
+				sMousePacket *pack = packBuf + packReadPos;
+				sMouseData mdata;
+				mdata.x = pack->xcoord;
+				mdata.y = pack->ycoord;
+				mdata.z = pack->zcoord;
+				mdata.buttons = (pack->status.leftBtn << 2) |
+					(pack->status.rightBtn << 1) |
+					(pack->status.middleBtn << 0);
+				rb_write(rbuf,&mdata);
+				packReadPos = (packReadPos + 1) % PACK_BUF_SIZE;
+			}
+			if(rb_length(rbuf) > 0)
+				fcntl(sid,F_SETDATA,true);
+		}
 
 		fd = getWork(&sid,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
@@ -167,7 +178,6 @@ int main(void) {
 	}
 
 	/* cleanup */
-	rb_destroy(ibuf);
 	rb_destroy(rbuf);
 	releaseIOPort(IOPORT_KB_CTRL);
 	releaseIOPort(IOPORT_KB_DATA);
@@ -184,41 +194,30 @@ static void irqHandler(int sig) {
 	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
 		return;
 
+	sMousePacket *pack = packBuf + packWritePos;
 	switch(byteNo) {
 		case 0:
-			packet.status.all = inByte(IOPORT_KB_DATA);
+			pack->status.all = inByte(IOPORT_KB_DATA);
 			byteNo++;
 			break;
 		case 1:
-			packet.xcoord = inByte(IOPORT_KB_DATA);
+			pack->xcoord = inByte(IOPORT_KB_DATA);
 			byteNo++;
 			break;
 		case 2:
-			packet.ycoord = inByte(IOPORT_KB_DATA);
+			pack->ycoord = inByte(IOPORT_KB_DATA);
 			if(wheel)
 				byteNo++;
 			else
 				byteNo = 0;
 			break;
 		case 3:
-			packet.zcoord = inByte(IOPORT_KB_DATA);
+			pack->zcoord = inByte(IOPORT_KB_DATA);
 			byteNo = 0;
 			break;
 	}
-	if(byteNo == 0) {
-		/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
-		/* so, simply skip the packet in this case */
-		if(!moving) {
-			/* write the message in our ringbuffer */
-			mdata.x = packet.xcoord;
-			mdata.y = packet.ycoord;
-			mdata.z = packet.zcoord;
-			mdata.buttons = (packet.status.leftBtn << 2) |
-				(packet.status.rightBtn << 1) |
-				(packet.status.middleBtn << 0);
-			rb_write(ibuf,&mdata);
-		}
-	}
+	if(byteNo == 0)
+		packWritePos = (packWritePos + 1) % PACK_BUF_SIZE;
 }
 
 static void kb_init(void) {

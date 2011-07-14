@@ -1,5 +1,5 @@
 /**
- * $Id: shellapp.h 969 2011-07-09 08:57:25Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

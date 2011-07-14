@@ -1,5 +1,5 @@
 /**
- * $Id: graphics.h 965 2011-07-07 10:56:45Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

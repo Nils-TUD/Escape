@@ -18,8 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/debug.h>
-#include <gui/bitmapimage.h>
+#include <gui/image/bitmapimage.h>
 #include <rawfile.h>
 
 namespace gui {

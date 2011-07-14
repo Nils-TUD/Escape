@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <gui/borderlayout.h>
+#include <gui/layout/borderlayout.h>
 #include <gui/panel.h>
 #include <assert.h>
 

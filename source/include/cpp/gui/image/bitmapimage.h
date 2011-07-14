@@ -21,8 +21,8 @@
 #define BITMAP_H_
 
 #include <esc/common.h>
-#include <gui/image.h>
-#include <gui/graphics.h>
+#include <gui/image/image.h>
+#include <gui/graphics/graphics.h>
 #include <string>
 
 namespace gui {

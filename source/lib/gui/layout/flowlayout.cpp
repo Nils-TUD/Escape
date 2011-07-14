@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <gui/flowlayout.h>
+#include <gui/layout/flowlayout.h>
 #include <gui/panel.h>
 #include <assert.h>
 

@@ -17,23 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GRAPHICS24_H_
-#define GRAPHICS24_H_
+#ifndef GRAPHICS32_H_
+#define GRAPHICS32_H_
 
 #include <esc/common.h>
-#include <gui/graphics.h>
-#include <gui/graphicsbuffer.h>
+#include <gui/graphics/graphics.h>
+#include <gui/graphics/graphicsbuffer.h>
 
 namespace gui {
 	/**
-	 * The implementation of graphics for 24bit
+	 * The implementation of graphics for 32bit
 	 */
-	class Graphics24 : public Graphics {
+	class Graphics32 : public Graphics {
 	public:
-		Graphics24(GraphicsBuffer *buf,gsize_t width,gsize_t height)
+		Graphics32(GraphicsBuffer *buf,gsize_t width,gsize_t height)
 			: Graphics(buf,width,height) {
 		};
-		virtual ~Graphics24() {
+		virtual ~Graphics32() {
 		};
 
 		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
@@ -43,4 +43,4 @@ namespace gui {
 	};
 }
 
-#endif /* GRAPHICS24_H_ */
+#endif /* GRAPHICS32_H_ */

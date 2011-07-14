@@ -17,52 +17,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KEYLISTENER_H_
-#define KEYLISTENER_H_
+#ifndef GRAPHICS24_H_
+#define GRAPHICS24_H_
 
 #include <esc/common.h>
-#include <gui/event.h>
+#include <gui/graphics/graphics.h>
+#include <gui/graphics/graphicsbuffer.h>
 
 namespace gui {
-	class UIElement;
-
 	/**
-	 * The abstract class to listen for keyevents
+	 * The implementation of graphics for 24bit
 	 */
-	class KeyListener {
+	class Graphics24 : public Graphics {
 	public:
-		/**
-		 * Empty constructor
-		 */
-		KeyListener() {
+		Graphics24(GraphicsBuffer *buf,gsize_t width,gsize_t height)
+			: Graphics(buf,width,height) {
 		};
-		/**
-		 * Destructor
-		 */
-		virtual ~KeyListener() {
+		virtual ~Graphics24() {
 		};
 
-		/**
-		 * Is called as soon as a key has been pressed
-		 *
-		 * @param el the ui-element that received this event
-		 * @param e the key-event
-		 */
-		virtual void keyPressed(UIElement& el,const KeyEvent &e) {};
+		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
-		/**
-		 * Is called as soon as a key has been released
-		 *
-		 * @param el the ui-element that received this event
-		 * @param e the key-event
-		 */
-		virtual void keyReleased(UIElement& el,const KeyEvent &e) {};
-
-	private:
-		// no copying
-		KeyListener(const KeyListener &l);
-		KeyListener &operator=(const KeyListener &l);
+	protected:
+		void doSetPixel(gpos_t x,gpos_t y);
 	};
 }
 
-#endif /* KEYLISTENER_H_ */
+#endif /* GRAPHICS24_H_ */

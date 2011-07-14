@@ -18,10 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/proc.h>
-#include <esc/debug.h>
-#include <gui/graphics.h>
+#include <gui/graphics/graphics.h>
 #include <gui/window.h>
 #include <algorithm>
 #include <string>

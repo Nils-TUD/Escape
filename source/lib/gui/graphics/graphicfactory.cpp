@@ -17,41 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IMAGE_H_
-#define IMAGE_H_
-
 #include <esc/common.h>
-#include <gui/graphics.h>
-#include <exception>
+#include <gui/graphics/graphics.h>
+#include <gui/graphics/graphics16.h>
+#include <gui/graphics/graphics24.h>
+#include <gui/graphics/graphics32.h>
+#include <gui/graphics/graphicfactory.h>
 
 namespace gui {
-	class img_load_error : public exception {
-	public:
-		img_load_error(const string& str) throw ()
-			: exception(), _str(str) {
+	Graphics *GraphicFactory::get(GraphicsBuffer *buf,gsize_t width,gsize_t height) {
+		switch(buf->getColorDepth()) {
+			case 32:
+				return new Graphics32(buf,width,height);
+			case 24:
+				return new Graphics24(buf,width,height);
+			case 16:
+				return new Graphics16(buf,width,height);
+			default:
+				return NULL;
 		}
-		~img_load_error() throw () {
-		}
-		virtual const char *what() const throw () {
-			return _str.c_str();
-		}
-	private:
-		string _str;
-	};
-
-	class Image {
-	public:
-		static Image *loadImage(const string& path);
-
-	public:
-		Image() {};
-		virtual ~Image() {};
-
-		virtual gsize_t getWidth() const = 0;
-		virtual gsize_t getHeight() const = 0;
-
-		virtual void paint(Graphics &g,gpos_t x,gpos_t y) = 0;
-	};
+	}
 }
-
-#endif /* IMAGE_H_ */

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <gui/font.h>
+#include <gui/graphics/font.h>
 
 namespace gui {
 	char Font::_font[] = {

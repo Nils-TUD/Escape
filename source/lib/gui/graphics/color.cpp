@@ -18,23 +18,26 @@
  */
 
 #include <esc/common.h>
-#include <gui/graphics.h>
-#include <gui/graphics16.h>
-#include <gui/graphics24.h>
-#include <gui/graphics32.h>
-#include <gui/graphicfactory.h>
+#include <gui/graphics/color.h>
+#include <gui/application.h>
 
 namespace gui {
-	Graphics *GraphicFactory::get(GraphicsBuffer *buf,gsize_t width,gsize_t height) {
-		switch(buf->getColorDepth()) {
-			case 32:
-				return new Graphics32(buf,width,height);
-			case 24:
-				return new Graphics24(buf,width,height);
-			case 16:
-				return new Graphics16(buf,width,height);
-			default:
-				return NULL;
-		}
+	Color::color_type Color::toCurMode() const {
+		const sVESAInfo *vesaInfo = Application::getInstance()->getVesaInfo();
+		comp_type red = getRed() >> (8 - vesaInfo->redMaskSize);
+		comp_type green = getGreen() >> (8 - vesaInfo->greenMaskSize);
+		comp_type blue = getBlue() >> (8 - vesaInfo->blueMaskSize);
+		color_type val = (red << vesaInfo->redFieldPosition) |
+				(green << vesaInfo->greenFieldPosition) |
+				(blue << vesaInfo->blueFieldPosition);
+		if(vesaInfo->bitsPerPixel == 32)
+			val |= (color_type)getAlpha() << 24;
+		return val;
+	}
+
+	std::ostream &operator<<(std::ostream &s,const Color &c) {
+		s << "Color[" << c.getRed() << "," << c.getGreen() << "," << c.getBlue();
+		s << "," << c.getAlpha() << "]";
+		return s;
 	}
 }

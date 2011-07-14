@@ -21,7 +21,7 @@
 #define MOUSELISTENER_H_
 
 #include <esc/common.h>
-#include <gui/event.h>
+#include <gui/event/event.h>
 
 namespace gui {
 	class UIElement;

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <gui/graphics16.h>
+#include <gui/graphics/graphics16.h>
 
 namespace gui {
 	void Graphics16::doSetPixel(gpos_t x,gpos_t y) {

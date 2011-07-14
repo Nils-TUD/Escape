@@ -1,5 +1,5 @@
 /**
- * $Id: button.cpp 965 2011-07-07 10:56:45Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,25 +18,20 @@
  */
 
 #include <esc/common.h>
-#include <gui/image.h>
-#include <gui/bitmapimage.h>
-#include <string.h>
-#include <stdio.h>
+#include <gui/event/event.h>
+#include <iomanip>
 
 namespace gui {
-	Image *Image::loadImage(const string& path) {
-		char header[3];
-		FILE *f = fopen(path.c_str(),"r");
-		if(!f)
-			throw img_load_error(path + ": Unable to open");
-		header[0] = fgetc(f);
-		header[1] = fgetc(f);
-		header[2] = '\0';
-		fclose(f);
-		// check header-type
-		if(header[0] == 'B' && header[1] == 'M')
-			return new BitmapImage(path);
-		// unknown image-type
-		throw img_load_error(path + ": Unknown image-type (header " + header + ")");
+	std::ostream &operator<<(std::ostream &s,const MouseEvent &e) {
+		s << "MouseEvent[mx=" << e._movedx << ",my=" << e._movedy;
+		s << ",x=" << e._x << ",y=" << e._y;
+		s << ",buttons=" << std::hex << std::showbase << e._buttons << "]";
+		return s;
+	}
+
+	std::ostream &operator<<(std::ostream &s,const KeyEvent &e) {
+		s << "KeyEvent[keycode=" << e._keycode << ",char=" << e._character;
+		s << ",modifier=" << std::hex << std::showbase << e._modifier << "]";
+		return s;
 	}
 }

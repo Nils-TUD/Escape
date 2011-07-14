@@ -21,9 +21,9 @@
 #define GRAPHICS_H_
 
 #include <esc/common.h>
-#include <gui/graphicsbuffer.h>
-#include <gui/font.h>
-#include <gui/color.h>
+#include <gui/graphics/graphicsbuffer.h>
+#include <gui/graphics/font.h>
+#include <gui/graphics/color.h>
 #include <assert.h>
 
 namespace gui {

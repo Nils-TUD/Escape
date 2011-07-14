@@ -18,8 +18,8 @@
  */
 
 #include <esc/common.h>
+#include <gui/graphics/graphics.h>
 #include <gui/uielement.h>
-#include <gui/graphics.h>
 #include <gui/control.h>
 #include <gui/window.h>
 

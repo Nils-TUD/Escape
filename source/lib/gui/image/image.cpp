@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: button.cpp 965 2011-07-07 10:56:45Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,26 +18,25 @@
  */
 
 #include <esc/common.h>
-#include <gui/color.h>
-#include <gui/application.h>
+#include <gui/image/image.h>
+#include <gui/image/bitmapimage.h>
+#include <string.h>
+#include <stdio.h>
 
 namespace gui {
-	Color::color_type Color::toCurMode() const {
-		const sVESAInfo *vesaInfo = Application::getInstance()->getVesaInfo();
-		comp_type red = getRed() >> (8 - vesaInfo->redMaskSize);
-		comp_type green = getGreen() >> (8 - vesaInfo->greenMaskSize);
-		comp_type blue = getBlue() >> (8 - vesaInfo->blueMaskSize);
-		color_type val = (red << vesaInfo->redFieldPosition) |
-				(green << vesaInfo->greenFieldPosition) |
-				(blue << vesaInfo->blueFieldPosition);
-		if(vesaInfo->bitsPerPixel == 32)
-			val |= (color_type)getAlpha() << 24;
-		return val;
-	}
-
-	std::ostream &operator<<(std::ostream &s,const Color &c) {
-		s << "Color[" << c.getRed() << "," << c.getGreen() << "," << c.getBlue();
-		s << "," << c.getAlpha() << "]";
-		return s;
+	Image *Image::loadImage(const string& path) {
+		char header[3];
+		FILE *f = fopen(path.c_str(),"r");
+		if(!f)
+			throw img_load_error(path + ": Unable to open");
+		header[0] = fgetc(f);
+		header[1] = fgetc(f);
+		header[2] = '\0';
+		fclose(f);
+		// check header-type
+		if(header[0] == 'B' && header[1] == 'M')
+			return new BitmapImage(path);
+		// unknown image-type
+		throw img_load_error(path + ": Unknown image-type (header " + header + ")");
 	}
 }

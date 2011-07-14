@@ -18,10 +18,10 @@
  */
 
 #include <esc/common.h>
+#include <gui/graphics/color.h>
+#include <gui/graphics/graphicfactory.h>
 #include <gui/window.h>
 #include <gui/uielement.h>
-#include <gui/color.h>
-#include <gui/graphicfactory.h>
 #include <gui/imagebutton.h>
 #include <esc/messages.h>
 #include <esc/debug.h>

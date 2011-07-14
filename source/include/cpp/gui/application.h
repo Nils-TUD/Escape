@@ -22,8 +22,8 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
-#include <gui/graphicsbuffer.h>
-#include <gui/windowlistener.h>
+#include <gui/graphics/graphicsbuffer.h>
+#include <gui/event/windowlistener.h>
 #include <gui/theme.h>
 #include <exception>
 #include <vector>

@@ -17,30 +17,52 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GRAPHICS32_H_
-#define GRAPHICS32_H_
+#ifndef KEYLISTENER_H_
+#define KEYLISTENER_H_
 
 #include <esc/common.h>
-#include <gui/graphics.h>
-#include <gui/graphicsbuffer.h>
+#include <gui/event/event.h>
 
 namespace gui {
+	class UIElement;
+
 	/**
-	 * The implementation of graphics for 32bit
+	 * The abstract class to listen for keyevents
 	 */
-	class Graphics32 : public Graphics {
+	class KeyListener {
 	public:
-		Graphics32(GraphicsBuffer *buf,gsize_t width,gsize_t height)
-			: Graphics(buf,width,height) {
+		/**
+		 * Empty constructor
+		 */
+		KeyListener() {
 		};
-		virtual ~Graphics32() {
+		/**
+		 * Destructor
+		 */
+		virtual ~KeyListener() {
 		};
 
-		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		/**
+		 * Is called as soon as a key has been pressed
+		 *
+		 * @param el the ui-element that received this event
+		 * @param e the key-event
+		 */
+		virtual void keyPressed(UIElement& el,const KeyEvent &e) {};
 
-	protected:
-		void doSetPixel(gpos_t x,gpos_t y);
+		/**
+		 * Is called as soon as a key has been released
+		 *
+		 * @param el the ui-element that received this event
+		 * @param e the key-event
+		 */
+		virtual void keyReleased(UIElement& el,const KeyEvent &e) {};
+
+	private:
+		// no copying
+		KeyListener(const KeyListener &l);
+		KeyListener &operator=(const KeyListener &l);
 	};
 }
 
-#endif /* GRAPHICS32_H_ */
+#endif /* KEYLISTENER_H_ */

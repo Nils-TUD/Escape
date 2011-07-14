@@ -6,9 +6,9 @@
 #define PANEL_H_
 
 #include <esc/common.h>
+#include <gui/event/event.h>
+#include <gui/layout/layout.h>
 #include <gui/control.h>
-#include <gui/event.h>
-#include <gui/layout.h>
 #include <esc/rect.h>
 #include <vector>
 

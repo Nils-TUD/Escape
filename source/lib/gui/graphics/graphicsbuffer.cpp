@@ -3,7 +3,7 @@
  */
 
 #include <esc/common.h>
-#include <gui/graphicsbuffer.h>
+#include <gui/graphics/graphicsbuffer.h>
 #include <gui/application.h>
 #include <gui/window.h>
 #include <esc/messages.h>

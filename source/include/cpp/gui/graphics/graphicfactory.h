@@ -17,30 +17,37 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GRAPHICS16_H_
-#define GRAPHICS16_H_
+#ifndef GRAPHICFACTORY_H_
+#define GRAPHICFACTORY_H_
 
 #include <esc/common.h>
-#include <gui/graphics.h>
-#include <gui/graphicsbuffer.h>
+#include <gui/graphics/graphics.h>
+#include <gui/graphics/graphicsbuffer.h>
 
 namespace gui {
 	/**
-	 * The implementation of graphics for 16bit
+	 * A factor for the different graphics-implementations, depending on the color-depth
 	 */
-	class Graphics16 : public Graphics {
+	class GraphicFactory {
 	public:
-		Graphics16(GraphicsBuffer *buf,gsize_t width,gsize_t height)
-			: Graphics(buf,width,height) {
-		};
-		virtual ~Graphics16() {
-		}
+		/**
+		 * Returns a graphics-instance that uses buf as buffer.
+		 *
+		 * @param buf the graphics-buffer to use
+		 * @param width the width of the control
+		 * @param height the height of the control
+		 * @return the graphics-object
+		 */
+		static Graphics *get(GraphicsBuffer *buf,gsize_t width,gsize_t height);
 
-		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
-
-	protected:
-		void doSetPixel(gpos_t x,gpos_t y);
+	private:
+		// no instantation
+		GraphicFactory();
+		~GraphicFactory();
+		// no cloning
+		GraphicFactory(const GraphicFactory &g);
+		GraphicFactory &operator=(const GraphicFactory &g);
 	};
 }
 
-#endif /* GRAPHICS16_H_ */
+#endif /* GRAPHICFACTORY_H_ */

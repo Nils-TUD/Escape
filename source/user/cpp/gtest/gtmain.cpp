@@ -18,6 +18,9 @@
  */
 
 #include <esc/common.h>
+#include <gui/image/bitmapimage.h>
+#include <gui/layout/borderlayout.h>
+#include <gui/layout/flowlayout.h>
 #include <gui/application.h>
 #include <gui/window.h>
 #include <gui/button.h>
@@ -25,9 +28,6 @@
 #include <gui/combobox.h>
 #include <gui/checkbox.h>
 #include <gui/progressbar.h>
-#include <gui/bitmapimage.h>
-#include <gui/borderlayout.h>
-#include <gui/flowlayout.h>
 #include <gui/scrollpane.h>
 #include <esc/proc.h>
 #include <esc/debug.h>

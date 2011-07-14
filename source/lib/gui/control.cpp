@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
+#include <gui/graphics/graphicfactory.h>
 #include <gui/control.h>
 #include <gui/window.h>
-#include <gui/graphicfactory.h>
 
 namespace gui {
 	void Control::setParent(UIElement *e) {

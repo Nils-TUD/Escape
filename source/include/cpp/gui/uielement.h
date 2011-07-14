@@ -22,10 +22,10 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
-#include <gui/graphics.h>
-#include <gui/event.h>
-#include <gui/mouselistener.h>
-#include <gui/keylistener.h>
+#include <gui/graphics/graphics.h>
+#include <gui/event/event.h>
+#include <gui/event/mouselistener.h>
+#include <gui/event/keylistener.h>
 #include <gui/application.h>
 #include <gui/theme.h>
 #include <vector>

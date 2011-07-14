@@ -21,9 +21,8 @@
 #define COMBOBOX_H_
 
 #include <esc/common.h>
-#include <gui/control.h>
-#include <gui/graphics.h>
 #include <gui/popupwindow.h>
+#include <gui/control.h>
 #include <string>
 #include <vector>
 

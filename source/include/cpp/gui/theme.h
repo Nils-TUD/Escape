@@ -21,7 +21,7 @@
 #define THEME_H_
 
 #include <esc/common.h>
-#include <gui/color.h>
+#include <gui/graphics/color.h>
 #include <vector>
 
 namespace gui {
@@ -75,8 +75,7 @@ namespace gui {
 		 * @param def the default theme (NULL if no default should be used)
 		 */
 		Theme(const Theme *def)
-			: _default(def), _present(0), _padding(0), _textPadding(0),
-			  _colors(std::vector<Color>()) {
+			: _default(def), _present(0), _padding(0), _textPadding(0), _colors(NULL) {
 		};
 		/**
 		 * Copy-constructor
@@ -89,6 +88,7 @@ namespace gui {
 		 * Destructor
 		 */
 		~Theme() {
+			delete _colors;
 		};
 
 		/**
@@ -154,7 +154,7 @@ namespace gui {
 		bitmap_type _present;
 		gsize_t _padding;
 		gsize_t _textPadding;
-		std::vector<Color> _colors;
+		std::vector<Color> *_colors;
 	};
 }
 

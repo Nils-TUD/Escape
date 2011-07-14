@@ -21,13 +21,13 @@
 #define DESKTOPWIN_H_
 
 #include <esc/common.h>
-#include <gui/color.h>
+#include <gui/graphics/color.h>
+#include <gui/event/actionlistener.h>
+#include <gui/image/image.h>
+#include <gui/layout/borderlayout.h>
+#include <gui/layout/flowlayout.h>
 #include <gui/window.h>
-#include <gui/image.h>
 #include <gui/imagebutton.h>
-#include <gui/actionlistener.h>
-#include <gui/borderlayout.h>
-#include <gui/flowlayout.h>
 #include <map>
 
 using namespace gui;

@@ -17,21 +17,41 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef IMAGE_H_
+#define IMAGE_H_
+
 #include <esc/common.h>
-#include <gui/event.h>
-#include <iomanip>
+#include <gui/graphics/graphics.h>
+#include <exception>
 
 namespace gui {
-	std::ostream &operator<<(std::ostream &s,const MouseEvent &e) {
-		s << "MouseEvent[mx=" << e._movedx << ",my=" << e._movedy;
-		s << ",x=" << e._x << ",y=" << e._y;
-		s << ",buttons=" << std::hex << std::showbase << e._buttons << "]";
-		return s;
-	}
+	class img_load_error : public exception {
+	public:
+		img_load_error(const string& str) throw ()
+			: exception(), _str(str) {
+		}
+		~img_load_error() throw () {
+		}
+		virtual const char *what() const throw () {
+			return _str.c_str();
+		}
+	private:
+		string _str;
+	};
 
-	std::ostream &operator<<(std::ostream &s,const KeyEvent &e) {
-		s << "KeyEvent[keycode=" << e._keycode << ",char=" << e._character;
-		s << ",modifier=" << std::hex << std::showbase << e._modifier << "]";
-		return s;
-	}
+	class Image {
+	public:
+		static Image *loadImage(const string& path);
+
+	public:
+		Image() {};
+		virtual ~Image() {};
+
+		virtual gsize_t getWidth() const = 0;
+		virtual gsize_t getHeight() const = 0;
+
+		virtual void paint(Graphics &g,gpos_t x,gpos_t y) = 0;
+	};
 }
+
+#endif /* IMAGE_H_ */

@@ -18,18 +18,16 @@
  */
 
 #include <esc/common.h>
-#include <gui/graphics24.h>
+#include <gui/graphics/graphics32.h>
 
 namespace gui {
-	void Graphics24::doSetPixel(gpos_t x,gpos_t y) {
-		uint8_t *col = (uint8_t*)&_col;
-		uint8_t *addr = _buf->getBuffer() + ((_offy + y) * _buf->getWidth() + (_offx + x)) * 3;
-		*addr++ = *col++;
-		*addr++ = *col++;
-		*addr = *col;
+	void Graphics32::doSetPixel(gpos_t x,gpos_t y) {
+		gsize_t bwidth = _buf->getWidth();
+		uint32_t *addr = (uint32_t*)(_buf->getBuffer() + ((_offy + y) * bwidth + (_offx + x)) * 4);
+		*addr = _col;
 	}
 
-	void Graphics24::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	void Graphics32::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		if(!validateParams(x,y,width,height))
 			return;
 
@@ -40,23 +38,19 @@ namespace gui {
 		gpos_t xend = x + width;
 		gsize_t bwidth = _buf->getWidth();
 		uint8_t *pixels = _buf->getBuffer();
-		// optimized version for 24bit
+		// optimized version for 16bit
 		// This is necessary if we want to have reasonable speed because the simple version
 		// performs too many function-calls (one to a virtual-function and one to memcpy
 		// that the compiler doesn't inline). Additionally the offset into the
 		// memory-region will be calculated many times.
 		// This version is much quicker :)
-		uint8_t *col = (uint8_t*)&_col;
-		gsize_t widthadd = bwidth * 3;
-		uint8_t *addr;
-		uint8_t *orgaddr = pixels + (((_offy + y) * bwidth + (_offx + x)) * 3);
+		gsize_t widthadd = bwidth;
+		uint32_t *addr;
+		uint32_t *orgaddr = (uint32_t*)(pixels + (((_offy + y) * bwidth + (_offx + x)) * 4));
 		for(; y < yend; y++) {
 			addr = orgaddr;
-			for(xcur = x; xcur < xend; xcur++) {
-				*addr++ = *col;
-				*addr++ = *(col + 1);
-				*addr++ = *(col + 2);
-			}
+			for(xcur = x; xcur < xend; xcur++)
+				*addr++ = _col;
 			orgaddr += widthadd;
 		}
 	}

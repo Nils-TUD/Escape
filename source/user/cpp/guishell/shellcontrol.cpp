@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
+#include <gui/graphics/color.h>
 #include <esc/debug.h>
 #include <esc/driver.h>
-#include <gui/color.h>
 #include <signal.h>
 #include <errors.h>
 #include "shellcontrol.h"

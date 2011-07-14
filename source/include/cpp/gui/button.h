@@ -21,10 +21,10 @@
 #define BUTTON_H_
 
 #include <esc/common.h>
+#include <gui/graphics/color.h>
+#include <gui/event/eventlist.h>
+#include <gui/event/actionlistener.h>
 #include <gui/control.h>
-#include <gui/color.h>
-#include <gui/eventlist.h>
-#include <gui/actionlistener.h>
 #include <string>
 
 namespace gui {

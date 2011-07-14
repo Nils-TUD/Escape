@@ -6,8 +6,8 @@
 #define IMAGEBUTTON_H_
 
 #include <esc/common.h>
+#include <gui/image/image.h>
 #include <gui/button.h>
-#include <gui/image.h>
 
 namespace gui {
 	class ImageButton : public Button {

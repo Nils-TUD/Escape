@@ -56,15 +56,17 @@ namespace gui {
 
 	const Color& Theme::getColor(colid_type id) const {
 		if(_present & (1 << id))
-			return _colors[id];
+			return (*_colors)[id];
 		if(_default)
 			return _default->getColor(id);
 		throw std::logic_error(std::string("Color with id ") + id + " not set");
 	}
 	void Theme::setColor(colid_type id,const Color& c) {
-		if(id >= _colors.size())
-			_colors.reserve(id + 1);
-		_colors[id] = c;
+		if(_colors == NULL)
+			_colors = new std::vector<Color>();
+		if(id >= _colors->size())
+			_colors->reserve(id + 1);
+		(*_colors)[id] = c;
 		_present |= 1 << id;
 	}
 }

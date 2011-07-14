@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
+#include <gui/graphics/color.h>
 #include <gui/combobox.h>
 #include <gui/control.h>
-#include <gui/color.h>
 #include <iterator>
 
 namespace gui {

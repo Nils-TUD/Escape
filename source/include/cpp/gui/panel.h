@@ -26,7 +26,8 @@ namespace gui {
 
 	public:
 		/**
-		 * Constructor
+		 * Creates an empty panel with given layout. Note that the layout will be owned by the
+		 * panel afterwards. So, it will delete it when the panel is deleted.
 		 *
 		 * @param layout the layout (may be NULL)
 		 */
@@ -35,7 +36,9 @@ namespace gui {
 			  _layout(layout), _updateRect(sRectangle()) {
 		};
 		/**
-		 * Constructor
+		 * Creates an empty panel at given position, with given size and with given layout. Note
+		 * that the layout will be owned by the panel afterwards. So, it will delete it when the
+		 * panel is deleted.
 		 *
 		 * @param x the x-position
 		 * @param y the y-position
@@ -51,6 +54,9 @@ namespace gui {
 		 * Destructor
 		 */
 		virtual ~Panel() {
+			for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+				delete (*it);
+			delete _layout;
 		};
 
 		virtual gsize_t getMinWidth() const {
@@ -100,20 +106,22 @@ namespace gui {
 		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 		/**
-		 * Adds the given control to this panel
+		 * Adds the given control to this panel. That means, the panel will own the control
+		 * afterwards. So, it will delete it when the panel is deleted.
 		 *
 		 * @param c the control
 		 * @param pos the position-specification for the layout
 		 */
-		void add(Control &c,Layout::pos_type pos = 0);
+		void add(Control *c,Layout::pos_type pos = 0);
 
 		/**
-		 * Removes the given control from this panel
+		 * Removes the given control from this panel. That means, the panel will no longer own
+		 * the control afterwards. So, you can add it to a different panel afterwards, for example.
 		 *
 		 * @param c the control
 		 * @param pos the position-specification for the layout
 		 */
-		void remove(Control &c,Layout::pos_type pos = 0);
+		void remove(Control *c,Layout::pos_type pos = 0);
 
 	protected:
 		virtual void resizeTo(gsize_t width,gsize_t height);

@@ -67,22 +67,21 @@ static void win1(void) {
 	root.setLayout(new BorderLayout());
 	Panel *p = new Panel(new BorderLayout());
 	ScrollPane *sp = new ScrollPane(p);
-	root.add(*sp,BorderLayout::CENTER);
+	root.add(sp,BorderLayout::CENTER);
 
 	Button *b = new Button("Click me!!");
-	p->add(*b,BorderLayout::WEST);
+	p->add(b,BorderLayout::WEST);
 	Editable *e = new Editable();
-	p->add(*e,BorderLayout::EAST);
+	p->add(e,BorderLayout::EAST);
 	ComboBox *cb = new ComboBox();
 	cb->addItem("Test item");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
-	p->add(*cb,BorderLayout::NORTH);
+	p->add(cb,BorderLayout::NORTH);
 	Checkbox *check = new Checkbox("My Checkbox");
-	p->add(*check,BorderLayout::SOUTH);
-	ProgressBar *pb = new ProgressBar("Progress...",0,0,200,30);
-	ScrollPane *sp2 = new ScrollPane(pb);
-	p->add(*sp2,BorderLayout::CENTER);
+	p->add(check,BorderLayout::SOUTH);
+	ScrollPane *sp2 = new ScrollPane(new ProgressBar("Progress...",0,0,200,30));
+	p->add(sp2,BorderLayout::CENTER);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
@@ -98,18 +97,18 @@ static void win2(void) {
 	root.setLayout(new FlowLayout(FlowLayout::LEFT,5));
 
 	Button *b = new Button("Try it!");
-	root.add(*b);
+	root.add(b);
 	Editable *e = new Editable();
-	root.add(*e);
+	root.add(e);
 	ComboBox *cb = new ComboBox();
 	cb->addItem("Huhu!");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
-	root.add(*cb);
+	root.add(cb);
 	Checkbox *check = new Checkbox("My Checkbox");
-	root.add(*check);
+	root.add(check);
 	ProgressBar *pb = new ProgressBar("Running");
-	root.add(*pb);
+	root.add(pb);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
@@ -123,18 +122,18 @@ static void win3(void) {
 	root.setLayout(new FlowLayout(FlowLayout::CENTER,1));
 
 	Button *b = new Button("Try it!");
-	root.add(*b);
+	root.add(b);
 	Editable *e = new Editable();
-	root.add(*e);
+	root.add(e);
 	ComboBox *cb = new ComboBox();
 	cb->addItem("Huhu!");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
-	root.add(*cb);
+	root.add(cb);
 	Checkbox *check = new Checkbox("My Checkbox");
-	root.add(*check);
+	root.add(check);
 	ProgressBar *pb = new ProgressBar("Running");
-	root.add(*pb);
+	root.add(pb);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
@@ -149,21 +148,21 @@ static void win4(void) {
 	root.setLayout(new BorderLayout());
 	Panel *p = new Panel(new FlowLayout(FlowLayout::RIGHT,10));
 	ScrollPane *sp = new ScrollPane(p);
-	root.add(*sp,BorderLayout::CENTER);
+	root.add(sp,BorderLayout::CENTER);
 
 	Button *b = new Button("Try it!");
-	p->add(*b);
+	p->add(b);
 	Editable *e = new Editable();
-	p->add(*e);
+	p->add(e);
 	ComboBox *cb = new ComboBox();
 	cb->addItem("Huhu!");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
-	p->add(*cb);
+	p->add(cb);
 	Checkbox *check = new Checkbox("My Checkbox");
-	p->add(*check);
+	p->add(check);
 	ProgressBar *pb = new ProgressBar("Running");
-	p->add(*pb);
+	p->add(pb);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
@@ -178,17 +177,17 @@ static void win5(void) {
 	root.setLayout(new BorderLayout());
 	Panel *p = new Panel(new BorderLayout(10));
 	ScrollPane *sp = new ScrollPane(p);
-	root.add(*sp,BorderLayout::CENTER);
+	root.add(sp,BorderLayout::CENTER);
 
 	Button *b = new Button("Try it!");
-	p->add(*b,BorderLayout::NORTH);
+	p->add(b,BorderLayout::NORTH);
 	Editable *e = new Editable();
-	p->add(*e,BorderLayout::CENTER);
+	p->add(e,BorderLayout::CENTER);
 	ComboBox *cb = new ComboBox();
 	cb->addItem("Huhu!");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
-	p->add(*cb,BorderLayout::SOUTH);
+	p->add(cb,BorderLayout::SOUTH);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);

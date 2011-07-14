@@ -38,18 +38,15 @@ namespace gui {
 		: Panel(x,y,width,height), ActionListener(), _title(title), _blayout(NULL) {
 	}
 	WindowTitleBar::~WindowTitleBar() {
-		delete _blayout;
 		delete _imgs[0];
-		delete _btns[0];
 	}
 
 	void WindowTitleBar::init() {
-		_blayout = new BorderLayout();
-		setLayout(_blayout);
+		setLayout(new BorderLayout());
 		_imgs[0] = Image::loadImage(CLOSE_IMG);
-		_btns[0] = new ImageButton(_imgs[0],false);
-		_btns[0]->addListener(this);
-		add(*_btns[0],BorderLayout::EAST);
+		ImageButton *btn = new ImageButton(_imgs[0],false);
+		btn->addListener(this);
+		add(btn,BorderLayout::EAST);
 	}
 
 	void WindowTitleBar::actionPerformed(UIElement& el) {

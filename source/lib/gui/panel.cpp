@@ -127,19 +127,19 @@ namespace gui {
 		_updateRect.width = 0;
 	}
 
-	void Panel::add(Control &c,Layout::pos_type pos) {
-		_controls.push_back(&c);
-		c.setParent(this);
+	void Panel::add(Control *c,Layout::pos_type pos) {
+		_controls.push_back(c);
+		c->setParent(this);
 		if(_layout)
-			_layout->add(this,&c,pos);
+			_layout->add(this,c,pos);
 	}
 
-	void Panel::remove(Control &c,Layout::pos_type pos) {
-		_controls.erase_first(&c);
-		if(&c == _focus)
+	void Panel::remove(Control *c,Layout::pos_type pos) {
+		_controls.erase_first(c);
+		if(c == _focus)
 			setFocus(NULL);
 		if(_layout)
-			_layout->remove(this,&c,pos);
+			_layout->remove(this,c,pos);
 	}
 
 	ostream &operator<<(ostream &s,const Panel &p) {

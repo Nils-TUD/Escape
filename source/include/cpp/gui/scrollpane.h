@@ -41,6 +41,7 @@ namespace gui {
 			: Control(x,y,width,height), _ctrl(ctrl), _focus(0) {
 		};
 		virtual ~ScrollPane() {
+			delete _ctrl;
 		};
 
 		virtual gsize_t getMinWidth() const {

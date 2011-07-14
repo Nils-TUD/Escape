@@ -31,6 +31,19 @@ const Color DesktopWin::BGCOLOR = Color(0xd5,0xe6,0xf3);
 const Color DesktopWin::ACTIVE_COLOR = Color(0x90,0x90,0x90);
 const gsize_t DesktopWin::TASKBAR_HEIGHT = 24;
 
+DesktopWin::DesktopWin(gsize_t width,gsize_t height)
+	: Window(0,0,width,height,STYLE_DESKTOP),
+	  _winPanel(new Panel(0,0,0,TASKBAR_HEIGHT,new FlowLayout(FlowLayout::LEFT,4))),
+	  _iconPanel(new Panel()), _active(NULL), _windows(map<gwinid_t,Button*>()),
+	  _shortcuts(map<ImageButton*,Shortcut*>()) {
+	getRootPanel().setLayout(new BorderLayout());
+	getRootPanel().getTheme().setPadding(0);
+	getRootPanel().add(_winPanel,BorderLayout::SOUTH);
+	getRootPanel().add(_iconPanel,BorderLayout::CENTER);
+	_iconPanel->getTheme().setColor(Theme::CTRL_BACKGROUND,BGCOLOR);
+	Application::getInstance()->addWindowListener(this,true);
+}
+
 void DesktopWin::actionPerformed(UIElement& el) {
 	ImageButton *btn = dynamic_cast<ImageButton*>(&el);
 	if(btn) {
@@ -60,7 +73,7 @@ void DesktopWin::onWindowCreated(gwinid_t id,const std::string& title) {
 	Button *b = new Button(title);
 	b->addListener(this);
 	_windows[id] = b;
-	_winPanel.add(*b);
+	_winPanel->add(b);
 	// TODO as soon as we can arrange it that the taskbar is always visible, we don't have to
 	// repaint and relayout everything here
 	layout();
@@ -86,7 +99,7 @@ void DesktopWin::onWindowDestroyed(gwinid_t id) {
 	if(it != _windows.end()) {
 		Button *b = (*it).second;
 		b->removeListener(this);
-		_winPanel.remove(*b);
+		_winPanel->remove(b);
 		if(_active == b)
 			_active = NULL;
 		delete b;

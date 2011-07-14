@@ -84,18 +84,7 @@ public:
 	static const gsize_t TASKBAR_HEIGHT;
 
 public:
-	DesktopWin(gsize_t width,gsize_t height)
-		: Window(0,0,width,height,STYLE_DESKTOP),
-		  _winPanel(Panel(0,0,0,TASKBAR_HEIGHT,new FlowLayout(FlowLayout::LEFT,4))),
-		  _iconPanel(Panel()), _active(NULL), _windows(map<gwinid_t,Button*>()),
-		  _shortcuts(map<ImageButton*,Shortcut*>()) {
-		getRootPanel().setLayout(new BorderLayout());
-		getRootPanel().getTheme().setPadding(0);
-		getRootPanel().add(_winPanel,BorderLayout::SOUTH);
-		getRootPanel().add(_iconPanel,BorderLayout::CENTER);
-		_iconPanel.getTheme().setColor(Theme::CTRL_BACKGROUND,BGCOLOR);
-		Application::getInstance()->addWindowListener(this,true);
-	};
+	DesktopWin(gsize_t width,gsize_t height);
 	virtual ~DesktopWin() {
 	};
 
@@ -108,8 +97,8 @@ public:
 		sc->setButton(btn);
 		btn->addListener(this);
 		_shortcuts[btn] = sc;
-		_iconPanel.add(*btn);
-		_iconPanel.repaint();
+		_iconPanel->add(btn);
+		_iconPanel->repaint();
 	};
 
 	virtual void actionPerformed(UIElement& el);
@@ -125,8 +114,8 @@ private:
 	void init();
 
 private:
-	Panel _winPanel;
-	Panel _iconPanel;
+	Panel *_winPanel;
+	Panel *_iconPanel;
 	Button *_active;
 	map<gwinid_t,Button*> _windows;
 	map<ImageButton*,Shortcut*> _shortcuts;

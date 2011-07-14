@@ -36,7 +36,8 @@ namespace gui {
 	Application::Application()
 			: _winFd(-1), _msg(sMsg()), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
 			  _vesaInfo(sVESAInfo()), _windows(vector<Window*>()),
-			  _wlisten(std::vector<std::pair<WindowListener*,bool> >()), _listening(false) {
+			  _wlisten(std::vector<std::pair<WindowListener*,bool> >()), _listening(false),
+			  _defTheme(Theme(NULL)) {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)
@@ -57,6 +58,28 @@ namespace gui {
 				_msg.data.arg1 != 0) {
 			throw app_error("Unable to read the get-mode-response from vesa");
 		}
+
+		// init default theme
+		_defTheme.setColor(Theme::CTRL_BACKGROUND,Color(0x88,0x88,0x88));
+		_defTheme.setColor(Theme::CTRL_FOREGROUND,Color(0xFF,0xFF,0xFF));
+		_defTheme.setColor(Theme::CTRL_BORDER,Color(0x55,0x55,0x55));
+		_defTheme.setColor(Theme::CTRL_LIGHTBORDER,Color(0x70,0x70,0x70));
+		_defTheme.setColor(Theme::CTRL_DARKBORDER,Color(0x20,0x20,0x20));
+		_defTheme.setColor(Theme::CTRL_LIGHTBACK,Color(0x80,0x80,0x80));
+		_defTheme.setColor(Theme::CTRL_DARKBACK,Color(0x60,0x60,0x60));
+		_defTheme.setColor(Theme::BTN_BACKGROUND,Color(0x70,0x70,0x70));
+		_defTheme.setColor(Theme::BTN_FOREGROUND,Color(0xFF,0xFF,0xFF));
+		_defTheme.setColor(Theme::SEL_BACKGROUND,Color(0x00,0x00,0xFF));
+		_defTheme.setColor(Theme::SEL_FOREGROUND,Color(0xFF,0xFF,0xFF));
+		_defTheme.setColor(Theme::TEXT_BACKGROUND,Color(0xFF,0xFF,0xFF));
+		_defTheme.setColor(Theme::TEXT_FOREGROUND,Color(0x00,0x00,0x00));
+		_defTheme.setColor(Theme::WIN_TITLE_ACT_BG,Color(0,0,0xFF));
+		_defTheme.setColor(Theme::WIN_TITLE_ACT_FG,Color(0xFF,0xFF,0xFF));
+		_defTheme.setColor(Theme::WIN_TITLE_INACT_BG,Color(0,0,0x80));
+		_defTheme.setColor(Theme::WIN_TITLE_INACT_FG,Color(0xFF,0xFF,0xFF));
+		_defTheme.setColor(Theme::WIN_BORDER,Color(0x55,0x55,0x55));
+		_defTheme.setPadding(2);
+		_defTheme.setTextPadding(4);
 
 		// store it
 		memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));

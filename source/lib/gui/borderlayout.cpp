@@ -33,7 +33,7 @@ namespace gui {
 		_ctrls[pos] = NULL;
 	}
 
-	gsize_t BorderLayout::getPreferredWidth() const {
+	gsize_t BorderLayout::getMinWidth() const {
 		gsize_t width = 0;
 		if(_ctrls[WEST])
 			width += _ctrls[WEST]->getPreferredWidth();
@@ -48,7 +48,7 @@ namespace gui {
 			width += _ctrls[EAST]->getPreferredWidth();
 		return width;
 	}
-	gsize_t BorderLayout::getPreferredHeight() const {
+	gsize_t BorderLayout::getMinHeight() const {
 		gsize_t height = 0;
 		if(_ctrls[NORTH])
 			height += _ctrls[NORTH]->getPreferredWidth();
@@ -69,10 +69,11 @@ namespace gui {
 			return;
 
 		Control *c;
-		gpos_t x = 0;
-		gpos_t y = 0;
-		gsize_t width = _p->getWidth();
-		gsize_t height = _p->getHeight();
+		gsize_t pad = _p->getTheme().getPadding();
+		gsize_t width = _p->getWidth() - pad * 2;
+		gsize_t height = _p->getHeight() - pad * 2;
+		gpos_t x = pad;
+		gpos_t y = pad;
 		gsize_t rwidth = width;
 		gsize_t rheight = height;
 		if((c = _ctrls[NORTH])) {
@@ -84,7 +85,7 @@ namespace gui {
 		}
 		if((c = _ctrls[SOUTH])) {
 			gsize_t pheight = c->getPreferredHeight();
-			c->moveTo(x,height - pheight);
+			c->moveTo(x,pad + height - pheight);
 			c->resizeTo(width,pheight);
 			rheight -= pheight + _gap;
 		}
@@ -97,7 +98,7 @@ namespace gui {
 		}
 		if((c = _ctrls[EAST])) {
 			gsize_t pwidth = c->getPreferredWidth();
-			c->moveTo(width - pwidth,y);
+			c->moveTo(pad + width - pwidth,y);
 			c->resizeTo(pwidth,rheight);
 			rwidth -= pwidth + _gap;
 		}

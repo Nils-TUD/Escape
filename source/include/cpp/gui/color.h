@@ -21,7 +21,6 @@
 #define COLOR_H_
 
 #include <esc/common.h>
-#include <gui/application.h>
 #include <ostream>
 
 namespace gui {

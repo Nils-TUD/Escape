@@ -22,11 +22,6 @@
 #include <gui/control.h>
 
 namespace gui {
-	const Color Checkbox::FGCOLOR = Color(0xFF,0xFF,0xFF);
-	const Color Checkbox::BGCOLOR = Color(0x88,0x88,0x88);
-	const Color Checkbox::LIGHT_BOX_COLOR = Color(0x60,0x60,0x60);
-	const Color Checkbox::DARK_BOX_COLOR = Color(0x20,0x20,0x20);
-	const Color Checkbox::BOX_BGCOLOR = Color(0xFF,0xFF,0xFF);
 	const gsize_t Checkbox::CROSS_SIZE = 24;
 
 	Checkbox &Checkbox::operator=(const Checkbox &b) {
@@ -40,11 +35,13 @@ namespace gui {
 		return *this;
 	}
 
-	gsize_t Checkbox::getPreferredWidth() const {
-		return getGraphics()->getFont().getStringWidth(_text) + TEXT_PADDING + CROSS_SIZE;
+	gsize_t Checkbox::getMinWidth() const {
+		return getGraphics()->getFont().getStringWidth(_text) +
+				TEXT_PADDING + CROSS_PADDING + CROSS_SIZE;
 	}
-	gsize_t Checkbox::getPreferredHeight() const {
-		return max(getGraphics()->getFont().getHeight(),CROSS_SIZE) + 2;
+	gsize_t Checkbox::getMinHeight() const {
+		gsize_t fheight = getGraphics()->getFont().getHeight();
+		return max((gsize_t)(fheight + getTheme().getTextPadding() * 2),CROSS_SIZE);
 	}
 
 	void Checkbox::onFocusGained() {
@@ -79,29 +76,33 @@ namespace gui {
 		gsize_t cheight = g.getFont().getHeight();
 		gsize_t boxSize = getHeight();
 
-		g.setColor(BGCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
 		g.fillRect(0,0,getWidth(),getHeight());
 
-		g.setColor(BOX_BGCOLOR);
+		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(1,1,boxSize - 2,boxSize - 2);
 
-		g.setColor(LIGHT_BOX_COLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
 		g.drawLine(boxSize - 1,0,boxSize - 1,boxSize - 1);
 		g.drawLine(0,boxSize - 1,boxSize - 1,boxSize - 1);
-		g.setColor(DARK_BOX_COLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
 		g.drawLine(0,0,boxSize - 1,0);
 		g.drawLine(0,0,0,boxSize - 1);
 
 		if(_checked) {
-			g.setColor(DARK_BOX_COLOR);
-			g.drawLine(CROSS_PADDING,CROSS_PADDING,boxSize - CROSS_PADDING,boxSize - CROSS_PADDING);
-			g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING,CROSS_PADDING,boxSize - CROSS_PADDING);
-			g.setColor(LIGHT_BOX_COLOR);
-			g.drawLine(CROSS_PADDING,CROSS_PADDING + 1,boxSize - CROSS_PADDING,boxSize - CROSS_PADDING + 1);
-			g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING + 1,CROSS_PADDING,boxSize - CROSS_PADDING + 1);
+			g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
+			g.drawLine(CROSS_PADDING,CROSS_PADDING,
+					boxSize - CROSS_PADDING,boxSize - CROSS_PADDING);
+			g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING,
+					CROSS_PADDING,boxSize - CROSS_PADDING);
+			g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
+			g.drawLine(CROSS_PADDING,CROSS_PADDING + 1,
+					boxSize - CROSS_PADDING,boxSize - CROSS_PADDING + 1);
+			g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING + 1,
+					CROSS_PADDING,boxSize - CROSS_PADDING + 1);
 		}
 
-		g.setColor(FGCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_FOREGROUND));
 		g.drawString(boxSize + TEXT_PADDING,(boxSize - cheight) / 2 + 1,_text);
 	}
 }

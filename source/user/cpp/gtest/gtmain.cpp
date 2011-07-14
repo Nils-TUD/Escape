@@ -63,6 +63,7 @@ int main(void) {
 static void win1(void) {
 	Window *w = new Window("Window 1",100,100,300,200);
 	Panel& root = w->getRootPanel();
+	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
 	Panel *p = new Panel(new BorderLayout());
 	ScrollPane *sp = new ScrollPane(p);
@@ -79,7 +80,7 @@ static void win1(void) {
 	p->add(*cb,BorderLayout::NORTH);
 	Checkbox *check = new Checkbox("My Checkbox");
 	p->add(*check,BorderLayout::SOUTH);
-	ProgressBar *pb = new ProgressBar("Progress...");
+	ProgressBar *pb = new ProgressBar("Progress...",0,0,200,30);
 	ScrollPane *sp2 = new ScrollPane(pb);
 	p->add(*sp2,BorderLayout::CENTER);
 
@@ -144,6 +145,7 @@ static void win3(void) {
 static void win4(void) {
 	Window *w = new Window("Window 4",150,350,400,100);
 	Panel& root = w->getRootPanel();
+	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
 	Panel *p = new Panel(new FlowLayout(FlowLayout::RIGHT,10));
 	ScrollPane *sp = new ScrollPane(p);
@@ -172,6 +174,7 @@ static void win4(void) {
 static void win5(void) {
 	Window *w = new Window("Window 5",250,450,200,300);
 	Panel& root = w->getRootPanel();
+	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
 	Panel *p = new Panel(new BorderLayout(10));
 	ScrollPane *sp = new ScrollPane(p);

@@ -32,6 +32,7 @@ namespace gui {
 		_mlist = e._mlist;
 		_g = NULL;
 		_parent = e._parent;
+		_theme = e._theme;
 		_x = e._x;
 		_y = e._y;
 		_width = e._width;

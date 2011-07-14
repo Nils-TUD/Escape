@@ -152,6 +152,7 @@ static int guiProc(void) {
 	Font font;
 	Window w("Shell",100,100,font.getWidth() * DEF_COLS + 2,font.getHeight() * DEF_ROWS + 4);
 	Panel& root = w.getRootPanel();
+	root.getTheme().setPadding(0);
 	ShellControl *sh = new ShellControl(&vtLock,0,0,root.getWidth(),root.getHeight());
 	gt = new GUITerm(&vtLock,sid,sh);
 	if(startThread(termThread,gt) < 0)

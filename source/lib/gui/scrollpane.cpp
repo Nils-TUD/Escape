@@ -22,11 +22,6 @@
 #include <gui/panel.h>
 
 namespace gui {
-	const Color ScrollPane::BGCOLOR = Color(0x88,0x88,0x88);
-	const Color ScrollPane::BARBGCOLOR = Color(0x80,0x80,0x80);
-	const Color ScrollPane::SEPCOLOR = Color(0x50,0x50,0x50);
-	const Color ScrollPane::BARCOLOR = Color(0x60,0x60,0x60);
-
 	void ScrollPane::resizeTo(gsize_t width,gsize_t height) {
 		Control::resizeTo(width,height);
 		_ctrl->resizeTo(_ctrl->getPreferredWidth(),_ctrl->getPreferredHeight());
@@ -177,30 +172,30 @@ namespace gui {
 
 		// horizontal scrollbar
 		gpos_t ybarPos = visibley;
-		g.setColor(SEPCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
 		g.drawRect(0,ybarPos,visiblex,BAR_SIZE);
-		g.setColor(BARBGCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBACK));
 		g.fillRect(1,ybarPos + 1,visiblex - 2,BAR_SIZE - 2);
 		if(ctrlw > visiblex) {
-			g.setColor(BARCOLOR);
+			g.setColor(getTheme().getColor(Theme::CTRL_DARKBACK));
 			g.fillRect(getBarPos(ctrlw,visiblex,_ctrl->getX()) + 2,
 					ybarPos + 2,getBarSize(ctrlw,visiblex) - 3,BAR_SIZE - 4);
 		}
 
 		// vertical scrollbar
 		gpos_t xbarPos = visiblex;
-		g.setColor(SEPCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
 		g.drawRect(xbarPos,0,BAR_SIZE,visibley);
-		g.setColor(BARBGCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBACK));
 		g.fillRect(xbarPos + 1,1,BAR_SIZE - 2,visibley - 2);
 		if(ctrlh > visibley) {
-			g.setColor(BARCOLOR);
+			g.setColor(getTheme().getColor(Theme::CTRL_DARKBACK));
 			g.fillRect(xbarPos + 2,getBarPos(ctrlh,visibley,_ctrl->getY()) + 2,
 					BAR_SIZE - 4,getBarSize(ctrlh,visibley) - 3);
 		}
 
 		// corner
-		g.setColor(BGCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
 		g.fillRect(xbarPos,ybarPos,BAR_SIZE,BAR_SIZE);
 	}
 

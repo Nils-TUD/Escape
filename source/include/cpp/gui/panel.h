@@ -24,13 +24,15 @@ namespace gui {
 		friend class Control;
 		friend class ScrollPane;
 
-	private:
-		static const Color DEF_BGCOLOR;
-
 	public:
-		Panel(Layout *layout)
-			: Control(0,0,0,0), _focus(NULL), _bgColor(DEF_BGCOLOR),
-			  _controls(vector<Control*>()), _layout(layout), _updateRect(sRectangle()) {
+		/**
+		 * Constructor
+		 *
+		 * @param layout the layout (may be NULL)
+		 */
+		Panel(Layout *layout = NULL)
+			: Control(), _focus(NULL), _controls(vector<Control*>()),
+			  _layout(layout), _updateRect(sRectangle()) {
 		};
 		/**
 		 * Constructor
@@ -39,10 +41,11 @@ namespace gui {
 		 * @param y the y-position
 		 * @param width the width
 		 * @param height the height
+		 * @param layout the layout (may be NULL)
 		 */
-		Panel(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _focus(NULL), _bgColor(DEF_BGCOLOR),
-			  _controls(vector<Control*>()), _layout(NULL), _updateRect(sRectangle()) {
+		Panel(gpos_t x,gpos_t y,gsize_t width,gsize_t height,Layout *layout = NULL)
+			: Control(x,y,width,height), _focus(NULL), _controls(vector<Control*>()),
+			  _layout(layout), _updateRect(sRectangle()) {
 		};
 		/**
 		 * Clones the given panel
@@ -50,8 +53,8 @@ namespace gui {
 		 * @param p the panel
 		 */
 		Panel(const Panel &p)
-			: Control(p), _focus(p._focus), _bgColor(p._bgColor),
-			  _controls(p._controls), _layout(p._layout), _updateRect(p._updateRect) {
+			: Control(p), _focus(p._focus), _controls(p._controls),
+			  _layout(p._layout), _updateRect(p._updateRect) {
 			// TODO clone the controls!
 		};
 		/**
@@ -68,7 +71,6 @@ namespace gui {
 			if(this == &p)
 				return *this;
 			_focus = p._focus;
-			_bgColor = p._bgColor;
 			// TODO clone the controls!
 			_controls = p._controls;
 			_layout = p._layout;
@@ -76,11 +78,11 @@ namespace gui {
 			return *this;
 		};
 
-		virtual gsize_t getPreferredWidth() const {
-			return _layout ? _layout->getPreferredWidth() : 0;
+		virtual gsize_t getMinWidth() const {
+			return _layout ? _layout->getMinWidth() + getTheme().getPadding() * 2 : 0;
 		};
-		virtual gsize_t getPreferredHeight() const {
-			return _layout ? _layout->getPreferredHeight() : 0;
+		virtual gsize_t getMinHeight() const {
+			return _layout ? _layout->getMinHeight() + getTheme().getPadding() * 2 : 0;
 		};
 
 		/**
@@ -107,21 +109,6 @@ namespace gui {
 		 * Performs a layout-calculation for this panel and all childs
 		 */
 		virtual void layout();
-
-		/**
-		 * @return the background-color
-		 */
-		inline Color getBGColor() const {
-			return _bgColor;
-		};
-		/**
-		 * Sets the background-color
-		 *
-		 * @param bg the background-color
-		 */
-		inline void setBGColor(Color bg) {
-			_bgColor = bg;
-		};
 		
 		/**
 		 * The event-callbacks
@@ -182,7 +169,6 @@ namespace gui {
 
 	protected:
 		Control *_focus;
-		Color _bgColor;
 		vector<Control*> _controls;
 		Layout *_layout;
 		sRectangle _updateRect;

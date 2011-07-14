@@ -22,11 +22,6 @@
 #include <gui/control.h>
 
 namespace gui {
-	const Color ProgressBar::FGCOLOR = Color(0xFF,0xFF,0xFF);
-	const Color ProgressBar::BGCOLOR = Color(0x80,0x80,0x80);
-	const Color ProgressBar::BARCOLOR = Color(0,0,0xFF);
-	const Color ProgressBar::BORDER_COLOR = Color(0x20,0x20,0x20);
-
 	ProgressBar &ProgressBar::operator=(const ProgressBar &b) {
 		// ignore self-assignments
 		if(this == &b)
@@ -37,16 +32,16 @@ namespace gui {
 		return *this;
 	}
 
-	gsize_t ProgressBar::getPreferredWidth() const {
-		return getGraphics()->getFont().getStringWidth(_text) + PADDING * 2;
+	gsize_t ProgressBar::getMinWidth() const {
+		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
 	}
-	gsize_t ProgressBar::getPreferredHeight() const {
-		return getGraphics()->getFont().getHeight() + PADDING * 2;
+	gsize_t ProgressBar::getMinHeight() const {
+		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
 	}
 
 	void ProgressBar::paint(Graphics &g) {
 		// draw border
-		g.setColor(BORDER_COLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
 		g.drawRect(0,0,getWidth(),getHeight());
 
 		// draw bar
@@ -56,15 +51,15 @@ namespace gui {
 		else
 			barWidth = (getWidth() - 2) / (100.0f / _position);
 
-		g.setColor(BARCOLOR);
+		g.setColor(getTheme().getColor(Theme::SEL_BACKGROUND));
 		g.fillRect(1,1,barWidth,getHeight() - 2);
 
 		// draw bg
-		g.setColor(BGCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBACK));
 		g.fillRect(1 + barWidth,1,getWidth() - barWidth - 2,getHeight() - 2);
 
 		// draw text
-		g.setColor(FGCOLOR);
+		g.setColor(getTheme().getColor(Theme::SEL_FOREGROUND));
 		g.drawString((getWidth() - g.getFont().getStringWidth(_text)) / 2 + 1,
 				(getHeight() - g.getFont().getHeight()) / 2 + 1,_text);
 	}

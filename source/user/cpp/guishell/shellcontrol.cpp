@@ -82,10 +82,10 @@ void ShellControl::sendEOF() {
 	unlocku(_lock);
 }
 
-gsize_t ShellControl::getPreferredWidth() const {
+gsize_t ShellControl::getMinWidth() const {
 	return DEF_WIDTH;
 }
-gsize_t ShellControl::getPreferredHeight() const {
+gsize_t ShellControl::getMinHeight() const {
 	return DEF_HEIGHT;
 }
 

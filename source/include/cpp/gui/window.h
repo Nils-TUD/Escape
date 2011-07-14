@@ -44,10 +44,6 @@ namespace gui {
 	private:
 		static const char *CLOSE_IMG;
 
-		static Color TITLE_ACTIVE_BGCOLOR;
-		static Color TITLE_INACTIVE_BGCOLOR;
-		static Color TITLE_FGCOLOR;
-
 	public:
 		WindowTitleBar(const string& title,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 		virtual ~WindowTitleBar();
@@ -92,10 +88,6 @@ namespace gui {
 		friend class Panel;
 
 	private:
-		// colors
-		static Color BGCOLOR;
-		static Color BORDER_COLOR;
-
 		// used for creation
 		static gwinid_t NEXT_TMP_ID;
 
@@ -103,7 +95,7 @@ namespace gui {
 		static const gsize_t MIN_WIDTH = 40;
 		static const gsize_t MIN_HEIGHT = 40;
 
-		static const gsize_t HEADER_SIZE = 20;
+		static const gsize_t HEADER_SIZE = 24;
 
 	public:
 		/**
@@ -234,15 +226,15 @@ namespace gui {
 			return _body;
 		};
 
-		virtual gsize_t getPreferredWidth() const {
+		virtual gsize_t getMinWidth() const {
 			if(_header)
-				return max(_header->getPreferredWidth(),_body.getPreferredWidth()) + 2;
-			return _body.getPreferredWidth() + 2;
+				return max(_header->getMinWidth(),_body.getMinWidth()) + 2;
+			return _body.getMinWidth() + 2;
 		};
-		virtual gsize_t getPreferredHeight() const {
+		virtual gsize_t getMinHeight() const {
 			if(_header)
-				return _header->getPreferredHeight() + _body.getPreferredHeight() + 2;
-			return _body.getPreferredHeight();
+				return _header->getMinHeight() + _body.getMinHeight() + 2;
+			return _body.getMinHeight();
 		};
 
 		/**

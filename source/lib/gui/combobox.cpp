@@ -24,15 +24,6 @@
 #include <iterator>
 
 namespace gui {
-	const Color ComboBox::BORDERCOLOR = Color(0,0,0);
-	const Color ComboBox::ITEM_BGCOLOR = Color(0xFF,0xFF,0xFF);
-	const Color ComboBox::ITEM_FGCOLOR = Color(0,0,0);
-	const Color ComboBox::BTN_BGCOLOR = Color(0x80,0x80,0x80);
-	const Color ComboBox::BTN_ARROWCOLOR = Color(0xFF,0xFF,0xFF);
-
-	const Color ComboBox::ItemWindow::SEL_BGCOLOR = Color(0,0,0xFF);
-	const Color ComboBox::ItemWindow::SEL_FGCOLOR = Color(0xFF,0xFF,0xFF);
-
 	void ComboBox::ItemWindow::close(gpos_t x,gpos_t y) {
 		// just do this here if we will not receive a mouse-click for the combobox-button
 		// anyway
@@ -49,25 +40,30 @@ namespace gui {
 
 	void ComboBox::ItemWindow::paint(Graphics &g) {
 		Window::paint(g);
-		g.setColor(ComboBox::ITEM_BGCOLOR);
+		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(0,0,getWidth(),getHeight());
 
-		g.setColor(ComboBox::BORDERCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
 		g.drawRect(0,0,getWidth(),getHeight());
 
-		g.setColor(ITEM_FGCOLOR);
-		gsize_t itemHeight = g.getFont().getHeight();
+		const Color &tf = getTheme().getColor(Theme::TEXT_FOREGROUND);
+		const Color &sb = getTheme().getColor(Theme::SEL_BACKGROUND);
+		const Color &sf = getTheme().getColor(Theme::SEL_FOREGROUND);
+
 		gpos_t y = 0;
+		gsize_t itemHeight = g.getFont().getHeight();
+		g.setColor(tf);
 		for(vector<string>::iterator it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
 			if(_highlighted == (int)std::distance(_cb->_items.begin(),it)) {
-				g.setColor(SEL_BGCOLOR);
+				g.setColor(sb);
 				g.fillRect(SELPAD,y + SELPAD,
-						getWidth() - SELPAD * 2,itemHeight + PADDING * 2 - SELPAD * 2);
-				g.setColor(SEL_FGCOLOR);
+						getWidth() - SELPAD * 2,
+						itemHeight + getTheme().getTextPadding() * 2 - SELPAD * 2);
+				g.setColor(sf);
 			}
-			g.drawString(PADDING,y + PADDING,*it);
-			g.setColor(ITEM_FGCOLOR);
-			y += itemHeight + PADDING * 2;
+			g.drawString(getTheme().getTextPadding(),y + getTheme().getTextPadding(),*it);
+			g.setColor(tf);
+			y += itemHeight + getTheme().getTextPadding() * 2;
 		}
 	}
 
@@ -87,7 +83,7 @@ namespace gui {
 
 	int ComboBox::ItemWindow::getItemAt(gpos_t x,gpos_t y) {
 		UNUSED(x);
-		return y / (getGraphics()->getFont().getHeight() + PADDING * 2);
+		return y / (getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2);
 	}
 
 	void ComboBox::ItemWindow::closeImpl() {
@@ -109,7 +105,7 @@ namespace gui {
 		return *this;
 	}
 
-	gsize_t ComboBox::getPreferredWidth() const {
+	gsize_t ComboBox::getMinWidth() const {
 		gsize_t max = 0;
 		const Font& f = getGraphics()->getFont();
 		for(vector<string>::const_iterator it = _items.begin(); it != _items.end(); ++it) {
@@ -121,33 +117,33 @@ namespace gui {
 				break;
 			}
 		}
-		return max + getGraphics()->getFont().getHeight() + ARROW_PAD;
+		return max + getTheme().getTextPadding() * 2 + getGraphics()->getFont().getHeight() + ARROW_PAD;
 	}
-	gsize_t ComboBox::getPreferredHeight() const {
-		return getGraphics()->getFont().getHeight() + PADDING * 2;
+	gsize_t ComboBox::getMinHeight() const {
+		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
 	}
 
 	void ComboBox::paint(Graphics &g) {
 		gsize_t btnWidth = getHeight();
 		// paint item
-		g.setColor(ITEM_BGCOLOR);
+		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(1,1,getWidth() - btnWidth - 2,getHeight() - 2);
-		g.setColor(ITEM_FGCOLOR);
+		g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
 		g.drawRect(0,0,getWidth() - btnWidth,getHeight());
 		if(_selected >= 0) {
 			gpos_t ystart = (getHeight() - g.getFont().getHeight()) / 2;
-			g.drawString(2,ystart,_items[_selected]);
+			g.drawString(getTheme().getTextPadding(),ystart,_items[_selected]);
 		}
 
 		// paint button border and bg
-		g.setColor(BTN_BGCOLOR);
+		g.setColor(getTheme().getColor(Theme::BTN_BACKGROUND));
 		g.fillRect(getWidth() - btnWidth + 2,1,btnWidth - 3,getHeight() - 2);
-		g.setColor(BORDERCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
 		g.drawRect(getWidth() - btnWidth + 1,0,btnWidth - 1,getHeight());
 
-		// paint cross
+		// paint triangle
 		size_t pressedPad = _pressed ? 1 : 0;
-		g.setColor(BTN_ARROWCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
 		g.drawLine(getWidth() - btnWidth + ARROW_PAD,ARROW_PAD + pressedPad,
 				getWidth() - ARROW_PAD,ARROW_PAD + pressedPad);
 		g.drawLine(getWidth() - btnWidth + ARROW_PAD,ARROW_PAD + pressedPad,
@@ -166,10 +162,11 @@ namespace gui {
 				_win = NULL;
 			}
 			else {
+				gsize_t pad = Application::getInstance()->getDefaultTheme()->getTextPadding();
+				gsize_t height = _items.size() * (getGraphics()->getFont().getHeight() + pad * 2);
 				const Window *w = getWindow();
 				_win = new ItemWindow(this,w->getX() + getWindowX(),
-						w->getY() + getWindowY() + getHeight(),getWidth(),
-						_items.size() * (getGraphics()->getFont().getHeight() + ItemWindow::PADDING * 2));
+						w->getY() + getWindowY() + getHeight(),getWidth(),height);
 			}
 		}
 	}

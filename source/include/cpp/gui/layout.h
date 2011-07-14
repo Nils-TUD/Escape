@@ -66,11 +66,11 @@ namespace gui {
 		/**
 		 * @return the total preferred width of this layout
 		 */
-		virtual gsize_t getPreferredWidth() const = 0;
+		virtual gsize_t getMinWidth() const = 0;
 		/**
 		 * @return the total preferred height of this layout
 		 */
-		virtual gsize_t getPreferredHeight() const = 0;
+		virtual gsize_t getMinHeight() const = 0;
 
 		/**
 		 * Rearranges the controls, i.e. determines the position and sizes again. Does not

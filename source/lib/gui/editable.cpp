@@ -25,12 +25,6 @@ namespace gui {
 	const uchar Editable::DIR_NONE = 0;
 	const uchar Editable::DIR_LEFT = 1;
 	const uchar Editable::DIR_RIGHT = 2;
-	const Color Editable::BGCOLOR = Color(0xFF,0xFF,0xFF);
-	const Color Editable::FGCOLOR = Color(0,0,0);
-	const Color Editable::SEL_BGCOLOR = Color(0,0,0xFF);
-	const Color Editable::SEL_FGCOLOR = Color(0xFF,0xFF,0xFF);
-	const Color Editable::BORDER_COLOR = Color(0,0,0);
-	const Color Editable::CURSOR_COLOR = Color(0,0,0);
 
 	Editable &Editable::operator=(const Editable &e) {
 		// ignore self-assigments
@@ -49,11 +43,11 @@ namespace gui {
 		return *this;
 	}
 
-	gsize_t Editable::getPreferredWidth() const {
-		return DEF_WIDTH + PADDING * 2;
+	gsize_t Editable::getMinWidth() const {
+		return DEF_WIDTH + getTheme().getTextPadding() * 2;
 	}
-	gsize_t Editable::getPreferredHeight() const {
-		return getGraphics()->getFont().getHeight() + PADDING * 2 + 2;
+	gsize_t Editable::getMinHeight() const {
+		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
 	}
 
 	void Editable::onFocusGained() {
@@ -269,46 +263,47 @@ namespace gui {
 		int start = _begin;
 		count = MIN((int)_str.length(),count);
 
-		g.setColor(BGCOLOR);
+		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
-		g.setColor(BORDER_COLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
 		g.drawRect(0,0,getWidth(),getHeight());
 
+		gsize_t pad = getTheme().getTextPadding();
 		if(_selStart != -1) {
 			int spos;
 			/* selection background */
-			g.setColor(SEL_BGCOLOR);
+			g.setColor(getTheme().getColor(Theme::SEL_BACKGROUND));
 			spos = (start > _selStart ? 0 : (_selStart - start));
-			g.fillRect(PADDING + cwidth * spos,
+			g.fillRect(pad + cwidth * spos,
 					ystart - CURSOR_OVERLAP,
 					cwidth * (MIN(count - spos,MIN(_selEnd - start,_selEnd - _selStart))),
 					cheight + CURSOR_OVERLAP * 2);
 
 			/* part before selection */
 			if(start < _selStart) {
-				g.setColor(FGCOLOR);
-				g.drawString(PADDING,ystart,_str,start,MIN(count,_selStart));
+				g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
+				g.drawString(pad,ystart,_str,start,MIN(count,_selStart));
 			}
 			/* selection */
-			g.setColor(SEL_FGCOLOR);
-			g.drawString(PADDING + cwidth * spos,ystart,_str,MAX(start,_selStart),
+			g.setColor(getTheme().getColor(Theme::SEL_FOREGROUND));
+			g.drawString(pad + cwidth * spos,ystart,_str,MAX(start,_selStart),
 					(MIN(count - spos,MIN(_selEnd - start,_selEnd - _selStart))));
 			/* part behind selection */
 			if(_selEnd < start + count) {
-				g.setColor(FGCOLOR);
+				g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
 				spos = _selEnd - start;
-				g.drawString(PADDING + spos * cwidth,ystart,_str,_selEnd,
+				g.drawString(pad + spos * cwidth,ystart,_str,_selEnd,
 					MIN(count - spos,MIN((int)_str.length() - start,(int)_str.length() - _selEnd)));
 			}
 		}
 		else {
-			g.setColor(FGCOLOR);
-			g.drawString(PADDING,ystart,_str,start,count);
+			g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
+			g.drawString(pad,ystart,_str,start,count);
 		}
 
 		if(_focused) {
-			g.setColor(CURSOR_COLOR);
-			g.fillRect(PADDING + cwidth * (_cursor - start),
+			g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
+			g.fillRect(pad + cwidth * (_cursor - start),
 					ystart - CURSOR_OVERLAP,CURSOR_WIDTH,cheight + CURSOR_OVERLAP * 2);
 		}
 	}

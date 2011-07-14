@@ -32,23 +32,14 @@ namespace gui {
 		friend class ItemWindow;
 
 	private:
-		static const Color BORDERCOLOR;
-		static const Color ITEM_BGCOLOR;
-		static const Color ITEM_FGCOLOR;
-		static const Color BTN_BGCOLOR;
-		static const Color BTN_ARROWCOLOR;
 		static const gsize_t BTN_SIZE	= 20;
 		static const gsize_t ARROW_PAD	= 4;
 		static const gsize_t MAX_WIDTH	= 200;
-		static const gsize_t PADDING	= 4;
 
 		class ItemWindow : public PopupWindow {
 			friend class ComboBox;
 
 		private:
-			static const Color SEL_BGCOLOR;
-			static const Color SEL_FGCOLOR;
-			static const gsize_t PADDING	= 4;
 			static const gsize_t SELPAD		= 2;
 
 		public:
@@ -78,7 +69,7 @@ namespace gui {
 
 	public:
 		ComboBox()
-			: Control(0,0,0,0), _items(vector<string>()), _selected(-1),
+			: Control(), _items(vector<string>()), _selected(-1),
 				_pressed(false), _win(NULL) {
 		};
 		ComboBox(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
@@ -108,8 +99,8 @@ namespace gui {
 			repaint();
 		};
 
-		virtual gsize_t getPreferredWidth() const;
-		virtual gsize_t getPreferredHeight() const;
+		virtual gsize_t getMinWidth() const;
+		virtual gsize_t getMinHeight() const;
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 		virtual void paint(Graphics &g);

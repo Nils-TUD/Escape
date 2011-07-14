@@ -33,12 +33,12 @@ namespace gui {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 
-	gsize_t FlowLayout::getPreferredWidth() const {
+	gsize_t FlowLayout::getMinWidth() const {
 		if(_ctrls.size() == 0)
 			return 0;
 		return getMaxWidth() * _ctrls.size() + _gap * (_ctrls.size() - 1);
 	}
-	gsize_t FlowLayout::getPreferredHeight() const {
+	gsize_t FlowLayout::getMinHeight() const {
 		if(_ctrls.size() == 0)
 			return 0;
 		return getMaxHeight();
@@ -48,10 +48,11 @@ namespace gui {
 		if(!_p || _ctrls.size() == 0)
 			return;
 
-		gpos_t x = 0;
-		gpos_t y = 0;
-		gsize_t width = _p->getWidth();
-		gsize_t height = _p->getHeight();
+		gsize_t pad = _p->getTheme().getPadding();
+		gsize_t width = _p->getWidth() - pad * 2;
+		gsize_t height = _p->getHeight() - pad * 2;
+		gpos_t x = pad;
+		gpos_t y = pad;
 		gsize_t cwidth = getMaxWidth();
 		gsize_t cheight = getMaxHeight();
 		gsize_t totalWidth = cwidth * _ctrls.size() + _gap * (_ctrls.size() - 1);
@@ -59,13 +60,13 @@ namespace gui {
 		y = height / 2 - cheight / 2;
 		switch(_pos) {
 			case LEFT:
-				x = 0;
+				x = pad;
 				break;
 			case CENTER:
 				x = (width / 2) - (totalWidth / 2);
 				break;
 			case RIGHT:
-				x = width - totalWidth;
+				x = pad + width - totalWidth;
 				break;
 		}
 

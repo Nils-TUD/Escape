@@ -32,9 +32,6 @@
 
 namespace gui {
 	const char *WindowTitleBar::CLOSE_IMG = "/etc/close.bmp";
-	Color WindowTitleBar::TITLE_ACTIVE_BGCOLOR = Color(0,0,0xFF);
-	Color WindowTitleBar::TITLE_INACTIVE_BGCOLOR = Color(0,0,0x80);
-	Color WindowTitleBar::TITLE_FGCOLOR = Color(0xFF,0xFF,0xFF);
 
 	WindowTitleBar::WindowTitleBar(const string& title,gpos_t x,gpos_t y,
 			gsize_t width,gsize_t height)
@@ -62,7 +59,7 @@ namespace gui {
 		_blayout = new BorderLayout();
 		setLayout(_blayout);
 		_imgs[0] = Image::loadImage(CLOSE_IMG);
-		_btns[0] = new ImageButton(_imgs[0],getWidth() - getHeight(),0,getHeight(),getHeight(),false);
+		_btns[0] = new ImageButton(_imgs[0],false);
 		_btns[0]->addListener(this);
 		add(*_btns[0],BorderLayout::EAST);
 	}
@@ -73,19 +70,13 @@ namespace gui {
 	}
 
 	void WindowTitleBar::paint(Graphics& g) {
-		if(getWindow()->isActive())
-			setBGColor(TITLE_ACTIVE_BGCOLOR);
-		else
-			setBGColor(TITLE_INACTIVE_BGCOLOR);
 		Panel::paint(g);
 
-		g.setColor(TITLE_FGCOLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_FOREGROUND));
 		g.drawString(5,(getHeight() - g.getFont().getHeight()) / 2,_title);
 	}
 
 
-	Color Window::BGCOLOR = Color(0x88,0x88,0x88);
-	Color Window::BORDER_COLOR = Color(0x55,0x55,0x55);
 	gwinid_t Window::NEXT_TMP_ID = 0xFFFF;
 
 	Window::Window(gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style)
@@ -149,6 +140,7 @@ namespace gui {
 
 	void Window::init() {
 		Application *app = Application::getInstance();
+		getTheme().setPadding(0);
 		_gbuf = new GraphicsBuffer(this,getX(),getY(),getWidth(),getHeight(),app->getColorDepth());
 		_g = GraphicFactory::get(_gbuf,getWidth(),getHeight());
 		// add us to app; we'll receive a "created"-event as soon as the window
@@ -461,7 +453,7 @@ namespace gui {
 		paintTitle(g);
 
 		// draw border
-		g.setColor(BORDER_COLOR);
+		g.setColor(getTheme().getColor(Theme::WIN_BORDER));
 		g.drawRect(0,0,getWidth(),getHeight());
 
 		_body.paint(*_body.getGraphics());
@@ -475,8 +467,22 @@ namespace gui {
 	void Window::updateActive(bool active) {
 		if(active != _isActive) {
 			_isActive = active;
-			if(_header)
+			if(_header) {
+				Theme::colid_type bgid,fgid;
+				if(active) {
+					bgid = Theme::WIN_TITLE_ACT_BG;
+					fgid = Theme::WIN_TITLE_ACT_FG;
+				}
+				else {
+					bgid = Theme::WIN_TITLE_INACT_BG;
+					fgid = Theme::WIN_TITLE_INACT_FG;
+				}
+				const Color &bg = getTheme().getColor(bgid);
+				const Color &fg = getTheme().getColor(fgid);
+				_header->getTheme().setColor(Theme::CTRL_BACKGROUND,bg);
+				_header->getTheme().setColor(Theme::CTRL_FOREGROUND,fg);
 				_header->repaint();
+			}
 		}
 	}
 

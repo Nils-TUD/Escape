@@ -40,7 +40,15 @@ namespace gui {
 
 	public:
 		/**
-		 * Constructor
+		 * Creates an control at position 0,0 and 0x0 pixels large. When using a layout, this
+		 * will determine the actual position and size.
+		 */
+		Control()
+			: UIElement() {
+		};
+		/**
+		 * Constructor that specifies a position and size explicitly. This can be used if no layout
+		 * is used or if a different preferred size than the min size is desired.
 		 *
 		 * @param x the x-position
 		 * @param y the y-position

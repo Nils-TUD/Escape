@@ -24,6 +24,7 @@
 #include <esc/messages.h>
 #include <gui/graphicsbuffer.h>
 #include <gui/windowlistener.h>
+#include <gui/theme.h>
 #include <exception>
 #include <vector>
 
@@ -98,6 +99,13 @@ namespace gui {
 		 * @return the window with given id or NULL
 		 */
 		Window *getWindowById(gwinid_t id);
+
+		/**
+		 * @return the default-theme
+		 */
+		inline const Theme *getDefaultTheme() {
+			return &_defTheme;
+		};
 
 		/**
 		 * Adds the given window-listener to the list
@@ -230,6 +238,7 @@ namespace gui {
 		std::vector<Window*> _windows;
 		std::vector<std::pair<WindowListener*,bool> > _wlisten;
 		bool _listening;
+		Theme _defTheme;
 	};
 }
 

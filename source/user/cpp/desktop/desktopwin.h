@@ -80,16 +80,20 @@ public:
 	static const gsize_t PADDING;
 	static const gsize_t ICON_SIZE;
 	static const Color BGCOLOR;
+	static const Color ACTIVE_COLOR;
+	static const gsize_t TASKBAR_HEIGHT;
 
 public:
 	DesktopWin(gsize_t width,gsize_t height)
-		: Window(0,0,width,height,STYLE_DESKTOP), _winPanel(Panel(new FlowLayout(FlowLayout::LEFT))),
-		  _iconPanel(Panel(0,0,width,height)), _active(NULL), _windows(map<gwinid_t,Button*>()),
+		: Window(0,0,width,height,STYLE_DESKTOP),
+		  _winPanel(Panel(0,0,0,TASKBAR_HEIGHT,new FlowLayout(FlowLayout::LEFT,4))),
+		  _iconPanel(Panel()), _active(NULL), _windows(map<gwinid_t,Button*>()),
 		  _shortcuts(map<ImageButton*,Shortcut*>()) {
 		getRootPanel().setLayout(new BorderLayout());
+		getRootPanel().getTheme().setPadding(0);
 		getRootPanel().add(_winPanel,BorderLayout::SOUTH);
 		getRootPanel().add(_iconPanel,BorderLayout::CENTER);
-		_iconPanel.setBGColor(BGCOLOR);
+		_iconPanel.getTheme().setColor(Theme::CTRL_BACKGROUND,BGCOLOR);
 		Application::getInstance()->addWindowListener(this,true);
 	};
 	virtual ~DesktopWin() {

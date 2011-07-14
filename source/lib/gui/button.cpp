@@ -22,12 +22,6 @@
 #include <gui/control.h>
 
 namespace gui {
-	const gsize_t Button::BORDERSIZE = 4;
-	const Color Button::FGCOLOR = Color(0xFF,0xFF,0xFF);
-	const Color Button::BGCOLOR = Color(0x80,0x80,0x80);
-	const Color Button::LIGHT_BORDER_COLOR = Color(0x60,0x60,0x60);
-	const Color Button::DARK_BORDER_COLOR = Color(0x20,0x20,0x20);
-
 	Button &Button::operator=(const Button &b) {
 		// ignore self-assignments
 		if(this == &b)
@@ -39,11 +33,11 @@ namespace gui {
 		return *this;
 	}
 
-	gsize_t Button::getPreferredWidth() const {
-		return getGraphics()->getFont().getStringWidth(_text) + BORDERSIZE * 2;
+	gsize_t Button::getMinWidth() const {
+		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
 	}
-	gsize_t Button::getPreferredHeight() const {
-		return getGraphics()->getFont().getHeight() + BORDERSIZE * 2;
+	gsize_t Button::getMinHeight() const {
+		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
 	}
 
 	void Button::onFocusGained() {
@@ -96,12 +90,12 @@ namespace gui {
 	}
 
 	void Button::paintBackground(Graphics &g) {
-		g.setColor(_bgColor);
+		g.setColor(getTheme().getColor(Theme::BTN_BACKGROUND));
 		g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
 	}
 
 	void Button::paintBorder(Graphics &g) {
-		g.setColor(LIGHT_BORDER_COLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
 		g.drawLine(0,0,getWidth() - 1,0);
 		if(_focused)
 			g.drawLine(0,1,getWidth() - 1,1);
@@ -109,7 +103,7 @@ namespace gui {
 		if(_focused)
 			g.drawLine(1,0,1,getHeight() - 1);
 
-		g.setColor(DARK_BORDER_COLOR);
+		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
 		g.drawLine(getWidth() - 1,0,getWidth() - 1,getHeight() - 1);
 		if(_focused)
 			g.drawLine(getWidth() - 2,0,getWidth() - 2,getHeight() - 1);
@@ -122,7 +116,7 @@ namespace gui {
 		paintBackground(g);
 		paintBorder(g);
 
-		g.setColor(FGCOLOR);
+		g.setColor(getTheme().getColor(Theme::BTN_FOREGROUND));
 		if(_pressed) {
 			g.drawString((getWidth() - g.getFont().getStringWidth(_text)) / 2 + 1,
 					(getHeight() - g.getFont().getHeight()) / 2 + 1,_text);

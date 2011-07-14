@@ -31,21 +31,13 @@ namespace gui {
 		static const uchar DIR_LEFT;
 		static const uchar DIR_RIGHT;
 
-		static const gsize_t PADDING		= 3;
 		static const gsize_t CURSOR_WIDTH	= 2;
 		static const gsize_t CURSOR_OVERLAP	= 2;
 		static const gsize_t DEF_WIDTH		= 100;
 
-		static const Color BGCOLOR;
-		static const Color FGCOLOR;
-		static const Color SEL_BGCOLOR;
-		static const Color SEL_FGCOLOR;
-		static const Color BORDER_COLOR;
-		static const Color CURSOR_COLOR;
-
 	public:
 		Editable()
-			: Control(0,0,0,0), _cursor(0), _begin(0), _focused(false), _selecting(false),
+			: Control(), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(string()) {
 		};
 		Editable(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
@@ -69,8 +61,8 @@ namespace gui {
 			repaint();
 		};
 
-		virtual gsize_t getPreferredWidth() const;
-		virtual gsize_t getPreferredHeight() const;
+		virtual gsize_t getMinWidth() const;
+		virtual gsize_t getMinHeight() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onMouseMoved(const MouseEvent &e);
@@ -87,7 +79,9 @@ namespace gui {
 		bool changeSelection(int pos,int oldPos,uchar dir);
 		void deleteSelection();
 		inline size_t getMaxCharNum(Graphics &g) {
-			return (getWidth() - PADDING) / g.getFont().getWidth();
+			if(getWidth() < getTheme().getTextPadding() * 2)
+				return 0;
+			return (getWidth() - getTheme().getTextPadding() * 2) / g.getFont().getWidth();
 		};
 
 	private:

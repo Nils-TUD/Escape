@@ -138,11 +138,6 @@ static bool startGUI(void) {
 		exec("/bin/desktop",NULL);
 		error("Unable to start desktop");
 	}
-	/* TODO temporary */
-	if(fork() == 0) {
-		exec("/bin/gtest",NULL);
-		error("Unable to start gui-test");
-	}
 	guiStarted = true;
 	return true;
 }

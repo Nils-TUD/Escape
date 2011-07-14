@@ -23,8 +23,6 @@
 #include <ostream>
 
 namespace gui {
-	const Color Panel::DEF_BGCOLOR = Color(0x88,0x88,0x88);
-
 	void Panel::onMousePressed(const MouseEvent &e) {
 		passToCtrl(e,true);
 	}
@@ -98,7 +96,7 @@ namespace gui {
 
 	void Panel::paint(Graphics &g) {
 		// fill bg
-		g.setColor(_bgColor);
+		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
 		g.fillRect(0,0,getWidth(),getHeight());
 
 		// now paint controls
@@ -138,6 +136,8 @@ namespace gui {
 
 	void Panel::remove(Control &c,Layout::pos_type pos) {
 		_controls.erase_first(&c);
+		if(&c == _focus)
+			setFocus(NULL);
 		if(_layout)
 			_layout->remove(this,&c,pos);
 	}

@@ -26,6 +26,8 @@
 #include <gui/event.h>
 #include <gui/mouselistener.h>
 #include <gui/keylistener.h>
+#include <gui/application.h>
+#include <gui/theme.h>
 #include <vector>
 
 namespace gui {
@@ -44,7 +46,17 @@ namespace gui {
 
 	public:
 		/**
-		 * Constructor
+		 * Creates an ui-element at position 0,0 and 0x0 pixels large. When using a layout, this
+		 * will determine the actual position and size.
+		 */
+		UIElement()
+			: _g(NULL), _parent(NULL), _theme(Theme(Application::getInstance()->getDefaultTheme())),
+			  _x(0), _y(0), _width(0), _height(0), _prefWidth(0), _prefHeight(0), _mlist(NULL),
+			  _klist(NULL), _enableRepaint(true) {
+		};
+		/**
+		 * Constructor that specifies a position and size explicitly. This can be used if no layout
+		 * is used or if a different preferred size than the min size is desired.
 		 *
 		 * @param x the x-position
 		 * @param y the y-position
@@ -52,8 +64,9 @@ namespace gui {
 		 * @param height the height
 		 */
 		UIElement(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: _g(NULL), _parent(NULL), _x(x), _y(y), _width(width), _height(height), _mlist(NULL),
-			  _klist(NULL), _enableRepaint(true) {
+			: _g(NULL), _parent(NULL), _theme(Theme(Application::getInstance()->getDefaultTheme())),
+			  _x(x), _y(y), _width(width), _height(height), _prefWidth(width), _prefHeight(height),
+			  _mlist(NULL), _klist(NULL), _enableRepaint(true) {
 		};
 		/**
 		 * Copy-constructor
@@ -61,9 +74,10 @@ namespace gui {
 		 * @param e the ui-element to copy
 		 */
 		UIElement(const UIElement &e)
-			: _g(NULL), _parent(NULL), _x(e._x), _y(e._y), _width(e._width), _height(e._height),
-			_mlist(e._mlist), _klist(e._klist), _enableRepaint(e._enableRepaint) {
-		}
+			: _g(NULL), _parent(NULL), _theme(e._theme), _x(e._x), _y(e._y), _width(e._width),
+			  _height(e._height), _prefWidth(e._prefWidth), _prefHeight(e._prefHeight),
+			  _mlist(e._mlist), _klist(e._klist), _enableRepaint(e._enableRepaint) {
+		};
 		/**
 		 * Destructor. Free's the memory
 		 */
@@ -142,15 +156,27 @@ namespace gui {
 		};
 
 		/**
-		 * @return the preferred width of this ui-element, e.g. the minimum required width to be
-		 * 	able to display the whole content
+		 * @return the preferred width of this ui-element
 		 */
-		virtual gsize_t getPreferredWidth() const = 0;
+		inline gsize_t getPreferredWidth() const {
+			return _prefWidth ? _prefWidth : getMinWidth();
+		};
 		/**
-		 * @return the preferred height of this ui-element, e.g. the minimum required height to be
-		 * 	able to display the whole content
+		 * @return the preferred height of this ui-element
 		 */
-		virtual gsize_t getPreferredHeight() const = 0;
+		inline gsize_t getPreferredHeight() const {
+			return _prefHeight ? _prefHeight : getMinHeight();
+		};
+
+		/**
+		 * @return the theme of this ui-element
+		 */
+		inline Theme &getTheme() {
+			return _theme;
+		};
+		inline const Theme &getTheme() const {
+			return _theme;
+		};
 
 		/**
 		 * Performs the layout-calculation for this ui-element. This is only used by Window and
@@ -264,6 +290,27 @@ namespace gui {
 
 	protected:
 		/**
+		 * @return the minimum width that the ui-element should have to be displayed in a
+		 * 	reasonable way
+		 */
+		virtual gsize_t getMinWidth() const = 0;
+		/**
+		 * @return the minimum height that the ui-element should have to be displayed in a
+		 * 	reasonable way
+		 */
+		virtual gsize_t getMinHeight() const = 0;
+
+		/**
+		 * Sets the parent of this control (used by Panel)
+		 *
+		 * @param e the parent
+		 */
+		virtual void setParent(UIElement *e) {
+			_parent = e;
+		};
+
+	private:
+		/**
 		 * Sets the x-position
 		 *
 		 * @param x the new position
@@ -297,16 +344,6 @@ namespace gui {
 		};
 
 		/**
-		 * Sets the parent of this control (used by Panel)
-		 *
-		 * @param e the parent
-		 */
-		virtual void setParent(UIElement *e) {
-			_parent = e;
-		};
-
-	private:
-		/**
 		 * Informs the ui-element that the child c currently has the focus
 		 *
 		 * @param c the child-control
@@ -320,10 +357,13 @@ namespace gui {
 	private:
 		Graphics *_g;
 		UIElement *_parent;
+		Theme _theme;
 		gpos_t _x;
 		gpos_t _y;
 		gsize_t _width;
 		gsize_t _height;
+		gsize_t _prefWidth;
+		gsize_t _prefHeight;
 		vector<MouseListener*> *_mlist;
 		vector<KeyListener*> *_klist;
 		bool _enableRepaint;

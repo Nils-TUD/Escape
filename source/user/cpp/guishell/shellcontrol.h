@@ -71,8 +71,8 @@ public:
 
 	void sendEOF();
 
-	virtual gsize_t getPreferredWidth() const;
-	virtual gsize_t getPreferredHeight() const;
+	virtual gsize_t getMinWidth() const;
+	virtual gsize_t getMinHeight() const;
 	virtual void paint(Graphics &g);
 
 private:

@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <gui/color.h>
+#include <gui/application.h>
 
 namespace gui {
 	Color::color_type Color::toCurMode() const {

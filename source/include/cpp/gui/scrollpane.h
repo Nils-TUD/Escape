@@ -26,11 +26,6 @@
 namespace gui {
 	class ScrollPane : public Control {
 	private:
-		static const Color BGCOLOR;
-		static const Color BARBGCOLOR;
-		static const Color SEPCOLOR;
-		static const Color BARCOLOR;
-
 		static const gsize_t BAR_SIZE			= 20;
 		static const gsize_t SCROLL_FACTOR		= 10;
 
@@ -40,7 +35,7 @@ namespace gui {
 
 	public:
 		ScrollPane(Control *ctrl)
-			: Control(0,0,0,0), _ctrl(ctrl), _focus(0) {
+			: Control(), _ctrl(ctrl), _focus(0) {
 		};
 		ScrollPane(Control *ctrl,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _ctrl(ctrl), _focus(0) {
@@ -48,11 +43,11 @@ namespace gui {
 		virtual ~ScrollPane() {
 		};
 
-		virtual gsize_t getPreferredWidth() const {
-			return _ctrl->getPreferredWidth() + BAR_SIZE;
+		virtual gsize_t getMinWidth() const {
+			return _ctrl->getMinWidth() + BAR_SIZE;
 		};
-		virtual gsize_t getPreferredHeight() const {
-			return _ctrl->getPreferredHeight() + BAR_SIZE;
+		virtual gsize_t getMinHeight() const {
+			return _ctrl->getMinHeight() + BAR_SIZE;
 		};
 
 		virtual gsize_t getContentWidth() const {

@@ -28,6 +28,8 @@
 const gsize_t DesktopWin::PADDING = 10;
 const gsize_t DesktopWin::ICON_SIZE = 30;
 const Color DesktopWin::BGCOLOR = Color(0xd5,0xe6,0xf3);
+const Color DesktopWin::ACTIVE_COLOR = Color(0x90,0x90,0x90);
+const gsize_t DesktopWin::TASKBAR_HEIGHT = 24;
 
 void DesktopWin::actionPerformed(UIElement& el) {
 	ImageButton *btn = dynamic_cast<ImageButton*>(&el);
@@ -59,24 +61,37 @@ void DesktopWin::onWindowCreated(gwinid_t id,const std::string& title) {
 	b->addListener(this);
 	_windows[id] = b;
 	_winPanel.add(*b);
+	// TODO as soon as we can arrange it that the taskbar is always visible, we don't have to
+	// repaint and relayout everything here
 	layout();
 	repaint();
 }
 void DesktopWin::onWindowActive(gwinid_t id) {
-	if(_active)
-		_active->setBGColor(Color(0x80,0x80,0x80));
-	_active = _windows[id];
-	if(_active)
-		_active->setBGColor(Color(0xC0,0xC0,0xC0));
+	if(_active) {
+		_active->getTheme().unsetColor(Theme::BTN_BACKGROUND);
+		_active->repaint();
+	}
+	map<gwinid_t,Button*>::iterator it = _windows.find(id);
+	if(it != _windows.end()) {
+		const Theme *def = Application::getInstance()->getDefaultTheme();
+		_active = (*it).second;
+		_active->getTheme().setColor(Theme::BTN_BACKGROUND,def->getColor(Theme::WIN_TITLE_ACT_BG));
+		_active->repaint();
+	}
+	else
+		_active = NULL;
 }
 void DesktopWin::onWindowDestroyed(gwinid_t id) {
-	Button *b = _windows[id];
-	b->removeListener(this);
-	_winPanel.remove(*b);
-	if(_active == b)
-		_active = NULL;
-	delete b;
-	_windows.erase(id);
-	layout();
-	repaint();
+	map<gwinid_t,Button*>::iterator it = _windows.find(id);
+	if(it != _windows.end()) {
+		Button *b = (*it).second;
+		b->removeListener(this);
+		_winPanel.remove(*b);
+		if(_active == b)
+			_active = NULL;
+		delete b;
+		_windows.erase(id);
+		layout();
+		repaint();
+	}
 }

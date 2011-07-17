@@ -126,7 +126,7 @@ bool swap_outUntil(size_t frameCount) {
 	sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
-	if(!enabled || t->tid != IDLE_TID || t->tid == ATA_TID || t->tid == swapper->tid)
+	if(!enabled || !(t->flags & T_IDLE) || t->tid == ATA_TID || t->tid == swapper->tid)
 		return false;
 	do {
 		/* notify swapper-thread */
@@ -156,7 +156,7 @@ void swap_check(void) {
 		if(freeFrm < CRIT_WATER/* || neededFrames < HIGH_WATER*/) {
 			sThread *t = thread_getRunning();
 			/* but its not really helpful to block ata ;) */
-			if(t->tid != ATA_TID && t->tid != IDLE_TID) {
+			if(t->tid != ATA_TID && !(t->flags & T_IDLE)) {
 				ev_wait(t->tid,EVI_SWAP_FREE,0);
 				thread_switchNoSigs();
 			}

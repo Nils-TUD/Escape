@@ -46,7 +46,7 @@
 #include "arch/mmix/taddrspace.h"
 #endif
 
-int main(sBootInfo *bootinfo) {
+uintptr_t bspstart(sBootInfo *bootinfo) {
 	/* init the kernel */
 	boot_init(bootinfo,false);
 
@@ -83,5 +83,10 @@ int main(sBootInfo *bootinfo) {
 	/* stay here */
 	while(1);
 
+	return 0;
+}
+
+uintptr_t apstart(void) {
+	/* not used */
 	return 0;
 }

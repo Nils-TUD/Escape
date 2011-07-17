@@ -34,7 +34,7 @@ static A_ALIGNED(4) uint8_t initloader[] = {
 #endif
 };
 
-int main(const sBootInfo *bootinfo) {
+uintptr_t bspstart(const sBootInfo *bootinfo) {
 	sThread *t;
 	sStartupInfo info;
 

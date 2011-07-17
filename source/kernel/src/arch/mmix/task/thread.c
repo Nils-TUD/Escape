@@ -157,6 +157,8 @@ void thread_switchTo(tid_t tid) {
 		/* mark old process ready, if it should not be blocked, killed or something */
 		if(cur->state == ST_RUNNING)
 			sched_setReady(cur);
+		if(cur->flags & T_IDLE)
+			thread_pushIdle(cur);
 
 		thread_setRunning(t);
 		cur = t;

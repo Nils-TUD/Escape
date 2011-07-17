@@ -42,6 +42,10 @@
 .global cpu_getCR3
 .global cpu_getCR4
 .global cpu_setCR4
+.global cpu_getMSR
+.global cpu_setMSR
+.global klock_aquire
+.global klock_release
 .global fpu_finit
 .global fpu_saveState
 .global fpu_restoreState
@@ -51,33 +55,35 @@
 .global getStackFrameStart
 .global kernelStack
 .global higherhalf
+.global apProtMode
 
 # imports
-.extern main
+.extern bspstart
+.extern apstart
 .extern intrpt_handler
 .extern entryPoint
 
 # general constants
 # TODO better way which uses the defines from paging.h?
-.set PAGE_SIZE,								4096
-.set KERNEL_STACK,						0xFF7FF000
+.set PAGE_SIZE,						4096
+.set KERNEL_STACK,					0xFF7FF000
 .set KERNEL_STACK_PTE,				0xFFFFDFFC
-.set TMP_STACK_SIZE,					PAGE_SIZE
-.set USER_STACK,							0xC0000000
+.set TMP_STACK_SIZE,				PAGE_SIZE
+.set USER_STACK,					0xC0000000
 
 # process save area offsets
-.set STATE_ESP,								0
-.set STATE_EDI,								4
-.set STATE_ESI,								8
-.set STATE_EBP,								12
-.set STATE_EFLAGS,						16
-.set STATE_EBX,								20
+.set STATE_ESP,						0
+.set STATE_EDI,						4
+.set STATE_ESI,						8
+.set STATE_EBP,						12
+.set STATE_EFLAGS,					16
+.set STATE_EBX,						20
 
 # Multiboot constants
-.set MULTIBOOT_PAGE_ALIGN,		1 << 0
-.set MULTIBOOT_MEMORY_INFO,		1 << 1
-.set MULTIBOOT_HEADER_MAGIC,	0x1BADB002
-.set MULTIBOOT_HEADER_FLAGS,	MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
+.set MULTIBOOT_PAGE_ALIGN,			1 << 0
+.set MULTIBOOT_MEMORY_INFO,			1 << 1
+.set MULTIBOOT_HEADER_MAGIC,		0x1BADB002
+.set MULTIBOOT_HEADER_FLAGS,		MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 .set MULTIBOOT_CHECKSUM,			-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 # macro to build a default-isr-handler
@@ -85,8 +91,8 @@
 	.global isr\no
 	isr\no:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
-	pushl	$0														# error-code (no error here)
-	pushl	$\no													# the interrupt-number
+	pushl	$0						# error-code (no error here)
+	pushl	$\no					# the interrupt-number
 	jmp		isrCommon
 .endm
 
@@ -96,7 +102,7 @@
 	isr\no:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	# the error-code has already been pushed
-	pushl	$\no													# the interrupt-number
+	pushl	$\no					# the interrupt-number
 	jmp		isrCommon
 .endm
 
@@ -112,56 +118,82 @@ higherhalf:
 	# from now the CPU will translate automatically every address
 	# by adding the base 0x40000000
 
-	cli																	# disable interrupts during startup
-	mov		$kernelStack,%esp							# set up a new stack for our kernel
+	cli								# disable interrupts during startup
+	mov		$kernelStack,%esp		# set up a new stack for our kernel
 	mov		%esp,%ebp
-	push	%ebp													# push ebp on the stack to ensure that the stack-trace works
+	push	%ebp					# push ebp on the stack to ensure that the stack-trace works
 
-	push	%eax													# push Multiboot Magicnumber onto the stack
-  push	%ebx													# push address of Multiboot-Structure
-  call	main													# jump to our C kernel (returns entry-point)
-	add		$8,%esp												# remove args from stack
+	push	%eax					# push Multiboot Magicnumber onto the stack
+	push	%ebx					# push address of Multiboot-Structure
+	call	bspstart				# jump to our C kernel (returns entry-point)
+	add		$8,%esp					# remove args from stack
 
 	# setup env for first task
-	pushl	$0x23													# ss
-	pushl	$USER_STACK - 4								# esp
-	pushfl															# eflags
+	pushl	$0x23					# ss
+	pushl	$USER_STACK - 4			# esp
+	pushfl							# eflags
 	mov		(%esp),%ecx
-	or		$1 << 9,%ecx									# enable IF-flag
-	and		$~((1 << 12) | (1 << 13)),%ecx	# set IOPL=0 (if CPL <= IOPL the user can change eflags..)
+	or		$1 << 9,%ecx			# enable IF-flag
+	# set IOPL=0 (if CPL <= IOPL the user can change eflags..)
+	and		$~((1 << 12) | (1 << 13)),%ecx
 	mov		%ecx,(%esp)
-	pushl	$0x1B													# cs
-	push	%eax													# eip (entry-point)
-	mov		$0x23,%eax										# set the value for the segment-registers
-	mov		%eax,%ds											# reload segments
+	pushl	$0x1B					# cs
+	push	%eax					# eip (entry-point)
+	mov		$0x23,%eax				# set the value for the segment-registers
+	mov		%eax,%ds				# reload segments
 	mov		%eax,%es
 	mov		%eax,%fs
 	mov		$0x2B,%eax
-	mov		%eax,%gs											# TLS segment
-	iret																# jump to task and switch to user-mode
+	mov		%eax,%gs				# TLS segment
+	iret							# jump to task and switch to user-mode
 
 	# just a simple protection...
 1:
 	jmp		1b
 
+aplock:
+	.long	0
+
+apProtMode:
+	# ensure that the initialization is done by one cpu at a time; this way, we can use one temporary
+	# stack which simplifies it a bit.
+	mov		$1,%ecx
+1:
+	xor		%eax,%eax
+	lock
+	cmpxchg %ecx,(aplock)
+	jnz		1b
+
+	# setup stack
+	mov		$kernelStack,%esp		# set up a new stack for our kernel
+	mov		%esp,%ebp
+	push	%ebp					# push ebp on the stack to ensure that the stack-trace works
+
+	call	apstart
+
+	# wait here
+1:
+	jmp		1b
+
+
 # void gdt_flush(tGDTTable *gdt);
 gdt_flush:
-	mov		4(%esp),%eax									# load gdt-pointer into eax
-	lgdt	(%eax)												# load gdt
+	mov		4(%esp),%eax			# load gdt-pointer into eax
+	lgdt	(%eax)					# load gdt
 
-	mov		$0x10,%eax										# set the value for the segment-registers
-	mov		%eax,%ds											# reload segments
+	mov		$0x10,%eax				# set the value for the segment-registers
+	mov		%eax,%ds				# reload segments
 	mov		%eax,%es
 	mov		%eax,%fs
 	mov		%eax,%gs
 	mov		%eax,%ss
-	ljmp	$0x08,$2f											# reload code-segment via far-jump
+	ljmp	$0x08,$2f				# reload code-segment via far-jump
 2:
-	ret																	# we're done
+	ret								# we're done
 
 # void tss_load(size_t gdtOffset);
 tss_load:
-	ltr		4(%esp)												# load tss
+	ltr		4(%esp)					# load tss
 	ret
 
 # void util_halt(void);
@@ -170,41 +202,41 @@ util_halt:
 
 # void util_outByte(uint16_t port,uint8_t val);
 util_outByte:
-	mov		4(%esp),%dx										# load port
-	mov		8(%esp),%al										# load value
-	out		%al,%dx												# write to port
+	mov		4(%esp),%dx				# load port
+	mov		8(%esp),%al				# load value
+	out		%al,%dx					# write to port
 	ret
 
 # void util_outWord(uint16_t port,uint16_t val);
 util_outWord:
-	mov		4(%esp),%dx										# load port
-	mov		8(%esp),%ax										# load value
-	out		%ax,%dx												# write to port
+	mov		4(%esp),%dx				# load port
+	mov		8(%esp),%ax				# load value
+	out		%ax,%dx					# write to port
 	ret
 
 # void util_outWord(uint16_t port,uint32_t val);
 util_outDWord:
-	mov		4(%esp),%dx										# load port
-	mov		8(%esp),%eax									# load value
-	out		%eax,%dx											# write to port
+	mov		4(%esp),%dx				# load port
+	mov		8(%esp),%eax			# load value
+	out		%eax,%dx				# write to port
 	ret
 
 # uint8_t util_inByte(uint16_t port);
 util_inByte:
-	mov		4(%esp),%dx										# load port
-	in		%dx,%al												# read from port
+	mov		4(%esp),%dx				# load port
+	in		%dx,%al					# read from port
 	ret
 
 # uint16_t util_inByte(uint16_t port);
 util_inWord:
-	mov		4(%esp),%dx										# load port
-	in		%dx,%ax												# read from port
+	mov		4(%esp),%dx				# load port
+	in		%dx,%ax					# read from port
 	ret
 
 # uint32_t util_inByte(uint16_t port);
 util_inDWord:
-	mov		4(%esp),%dx										# load port
-	in		%dx,%eax											# read from port
+	mov		4(%esp),%dx				# load port
+	in		%dx,%eax				# read from port
 	ret
 
 # uintptr_t getStackFrameStart(void);
@@ -215,17 +247,17 @@ getStackFrameStart:
 # bool cpu_cpuidSupported(void);
 cpu_cpuidSupported:
 	pushfl
-	pop		%eax													# load eflags into eax
-	mov		%eax,%ecx											# make copy
-	xor		$0x200000,%eax								# swap cpuid-bit
-	and		$0x200000,%ecx								# isolate cpuid-bit
+	pop		%eax					# load eflags into eax
+	mov		%eax,%ecx				# make copy
+	xor		$0x200000,%eax			# swap cpuid-bit
+	and		$0x200000,%ecx			# isolate cpuid-bit
 	push	%eax
-	popfl																# store eflags
+	popfl							# store eflags
 	pushfl
-	pop		%eax													# load again to eax
-	and		$0x200000,%eax								# isolate cpuid-bit
-	xor		%ecx,%eax											# check whether the bit has been set
-	shr		$21,%eax											# if so, return 1 (cpuid supported)
+	pop		%eax					# load again to eax
+	and		$0x200000,%eax			# isolate cpuid-bit
+	xor		%ecx,%eax				# check whether the bit has been set
+	shr		$21,%eax				# if so, return 1 (cpuid supported)
 	ret
 
 # uint64_t cpu_rdtsc(void);
@@ -265,15 +297,29 @@ cpu_setCR4:
 	mov		%eax,%cr4
 	ret
 
+# uint64_t cpu_getMSR(uint32_t msr)
+cpu_getMSR:
+	mov		4(%esp),%ecx
+	rdmsr
+	ret
+
+# void cpu_setMSR(uint32_t msr,uint64_t value)
+cpu_setMSR:
+	mov		4(%esp),%ecx
+	mov		8(%esp),%eax
+	mov		12(%esp),%edx
+	wrmsr
+	ret
+
 # void cpu_getInfo(uint32_t code,uint32_t *a,uint32_t *b,uint32_t *c,uint32_t *d);
 cpu_getInfo:
 	push	%ebp
 	mov		%esp,%ebp
-	push	%ebx													# save ebx
-	push	%esi													# save esi
-	mov		8(%ebp),%eax									# load code into eax
+	push	%ebx					# save ebx
+	push	%esi					# save esi
+	mov		8(%ebp),%eax			# load code into eax
 	cpuid
-	mov		12(%ebp),%esi									# store result in a,b,c and d
+	mov		12(%ebp),%esi			# store result in a,b,c and d
 	mov		%eax,(%esi)
 	mov		16(%ebp),%esi
 	mov		%ebx,(%esi)
@@ -281,8 +327,8 @@ cpu_getInfo:
 	mov		%ecx,(%esi)
 	mov		24(%ebp),%esi
 	mov		%edx,(%esi)
-	pop		%esi													# restore esi
-	pop		%ebx													# restore ebx
+	pop		%esi					# restore esi
+	pop		%ebx					# restore ebx
 	leave
 	ret
 
@@ -290,16 +336,16 @@ cpu_getInfo:
 cpu_getStrInfo:
 	push	%ebp
 	mov		%esp,%ebp
-	push	%ebx													# save ebx
-	push	%esi													# save esi
-	mov		8(%ebp),%eax									# load code into eax
+	push	%ebx					# save ebx
+	push	%esi					# save esi
+	mov		8(%ebp),%eax			# load code into eax
 	cpuid
-	mov		12(%ebp),%esi									# load res into esi
-	mov		%ebx,0(%esi)									# store result in res
+	mov		12(%ebp),%esi			# load res into esi
+	mov		%ebx,0(%esi)			# store result in res
 	mov		%edx,4(%esi)
 	mov		%ecx,8(%esi)
-	pop		%esi													# restore esi
-	pop		%ebx													# restore ebx
+	pop		%esi					# restore esi
+	pop		%ebx					# restore ebx
 	leave
 	ret
 
@@ -333,16 +379,16 @@ thread_save:
 	mov		%esp,%ebp
 
 	# save register
-	mov		8(%ebp),%eax									# get saveArea
+	mov		8(%ebp),%eax			# get saveArea
 	mov		%ebx,STATE_EBX(%eax)
-	mov		%esp,STATE_ESP(%eax)					# store esp
+	mov		%esp,STATE_ESP(%eax)	# store esp
 	mov		%edi,STATE_EDI(%eax)
 	mov		%esi,STATE_ESI(%eax)
 	mov		%ebp,STATE_EBP(%eax)
-	pushfl															# load eflags
-	popl	STATE_EFLAGS(%eax)						# store
+	pushfl							# load eflags
+	popl	STATE_EFLAGS(%eax)		# store
 
-	mov		$0,%eax												# return 0
+	mov		$0,%eax					# return 0
 	leave
 	ret
 
@@ -351,27 +397,27 @@ thread_resume:
 	push	%ebp
 	mov		%esp,%ebp
 
-	mov		12(%ebp),%eax									# get saveArea
-	mov		 8(%ebp),%edi									# get page-dir
-	mov		16(%ebp),%esi									# get stack-frame
+	mov		12(%ebp),%eax			# get saveArea
+	mov		 8(%ebp),%edi			# get page-dir
+	mov		16(%ebp),%esi			# get stack-frame
 
-	test	%esi,%esi											# if stack-frame is 0 we just have one thread
-	je		1f														# i.e. there can't be another stack-frame anyway
+	test	%esi,%esi				# if stack-frame is 0 we just have one thread
+	je		1f						# i.e. there can't be another stack-frame anyway
 
 	# load new page-dir
-	mov		%edi,%cr3											# set page-dir
+	mov		%edi,%cr3				# set page-dir
 
 	# exchange kernel-stack-frame
 	mov		(KERNEL_STACK_PTE),%ecx
-	and		$0x00000FFF,%ecx							# clear frame-number
+	and		$0x00000FFF,%ecx		# clear frame-number
 	mov		%esi,%edx
 	shl		$12,%edx
-	or		%edx,%ecx											# set new frame-number
-	mov		%ecx,(KERNEL_STACK_PTE)				# store
+	or		%edx,%ecx				# set new frame-number
+	mov		%ecx,(KERNEL_STACK_PTE)	# store
 
 	# load page-dir again
 1:
-	mov		%edi,%cr3											# set page-dir
+	mov		%edi,%cr3				# set page-dir
 
 	# now restore registers
 	mov		STATE_EDI(%eax),%edi
@@ -380,17 +426,17 @@ thread_resume:
 	mov		STATE_ESP(%eax),%esp
 	mov		STATE_EBX(%eax),%ebx
 	pushl	STATE_EFLAGS(%eax)
-	popfl																# load eflags
+	popfl							# load eflags
 
-	mov		$1,%eax												# return 1
+	mov		$1,%eax					# return 1
 	leave
 	ret
 
 # void paging_enable(void);
 paging_enable:
 	mov		%cr0,%eax
-	or		$1 << 31,%eax									# set bit for paging-enabled
-	mov		%eax,%cr0											# now paging is enabled :)
+	or		$1 << 31,%eax			# set bit for paging-enabled
+	mov		%eax,%cr0				# now paging is enabled :)
 	ret
 
 # void paging_flushTLB(void);
@@ -401,8 +447,23 @@ paging_flushTLB:
 
 # void paging_exchangePDir(uintptr_t physAddr);
 paging_exchangePDir:
-	mov		4(%esp),%eax									# load page-dir-address
-	mov		%eax,%cr3											# set page-dir
+	mov		4(%esp),%eax			# load page-dir-address
+	mov		%eax,%cr3				# set page-dir
+	ret
+
+# void klock_aquire(klock_t *l)
+klock_aquire:
+	mov		$1,%ecx
+1:
+	xor		%eax,%eax
+	lock
+	cmpxchg %ecx,4(%esp)
+	jnz		1b
+	ret
+
+# void klock_release(klock_t *l)
+klock_release:
+	movl	$0,4(%esp)
 	ret
 
 # bool intrpt_setEnabled(bool enabled);
@@ -414,9 +475,9 @@ intrpt_setEnabled:
 	pushfl
 	mov		(%esp),%ecx
 	mov		%ecx,%eax
-	and		$1 << 9,%eax									# extract IF-flag
+	and		$1 << 9,%eax			# extract IF-flag
 	shr		$9,%eax
-	or		%eax,%ecx											# set new value
+	or		%eax,%ecx				# set new value
 	mov		%ecx,(%esp)
 	popfl
 	leave
@@ -424,8 +485,8 @@ intrpt_setEnabled:
 
 # void intrpt_loadidt(tIDTPtr *idt);
 intrpt_loadidt:
-	mov		4(%esp),%eax									# load idt-address
-	lidt	(%eax)												# load idt
+	mov		4(%esp),%eax			# load idt-address
+	lidt	(%eax)					# load idt
 	ret
 
 # our ISRs
@@ -483,8 +544,8 @@ BUILD_DEF_ISR 48
 .global isrNull
 	isrNull:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
-	pushl	$0														# error-code (no error here)
-	pushl	$49														# the interrupt-number
+	pushl	$0						# error-code (no error here)
+	pushl	$49						# the interrupt-number
 	jmp		isrCommon
 
 # the ISR for all interrupts
@@ -505,9 +566,9 @@ isrCommon:
 	mov		%eax,%gs
 
 	# call c-routine
-	push	%esp														# stack-frame
+	push	%esp					# stack-frame
 	mov		%esp,%eax
-	push	%eax														# pointer to stack-frame
+	push	%eax					# pointer to stack-frame
 	call	intrpt_handler
 
 	# remove arguments from stack

@@ -27,7 +27,7 @@
 /* general */
 #define MAX_MSG_ARGS				10
 #define MAX_MSG_SIZE				128
-#define MAX_MSGSTR_LEN				64
+#define MAX_MSGSTR_LEN				63
 
 /* cursors */
 #define CURSOR_DEFAULT				0
@@ -254,8 +254,8 @@ typedef union {
 		ulong arg6;
 		ulong arg7;
 		ulong arg8;
-		char s1[MAX_MSGSTR_LEN];
-		char s2[MAX_MSGSTR_LEN];
+		char s1[MAX_MSGSTR_LEN + 1];
+		char s2[MAX_MSGSTR_LEN + 1];
 	} str;
 	/* for messages with a few integer arguments and a data-part */
 	struct {

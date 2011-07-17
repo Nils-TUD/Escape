@@ -28,7 +28,7 @@
 typedef struct {
 	uint32_t modStart;
 	uint32_t modEnd;
-	char *name;					/* may be 0 */
+	char *name;						/* may be 0 */
 	uint32_t reserved;				/* should be ignored */
 } A_PACKED sModule;
 
@@ -71,34 +71,34 @@ typedef struct {
 		uint8_t partition2;			/* sub-partition (0xFF = not used) */
 		uint8_t partition1;			/* top-level partition-number (0xFF = not used) */
 		uint8_t drive;				/* contains the bios drive number as understood by the bios
-								   INT 0x13 low-level disk interface: e.g. 0x00 for the first
-								   floppy disk or 0x80 for the first hard disk */
-	} A_PACKED bootDevice;				/* present if flags[1] is set */
-	char *cmdLine;				/* present if flags[2] is set */
+								   	   INT 0x13 low-level disk interface: e.g. 0x00 for the first
+								   	   floppy disk or 0x80 for the first hard disk */
+	} A_PACKED bootDevice;			/* present if flags[1] is set */
+	char *cmdLine;					/* present if flags[2] is set */
 	uint32_t modsCount;				/* present if flags[3] is set */
-	sModule *modsAddr;			/* present if flags[3] is set */
+	sModule *modsAddr;				/* present if flags[3] is set */
 	union {
 		struct {
 			uint32_t tabSize;
 			uint32_t strSize;
 			uint32_t addr;
 			uint32_t reserved;
-		} A_PACKED aDotOut;				/* present if flags[4] is set */
+		} A_PACKED aDotOut;			/* present if flags[4] is set */
 		struct {
 			uint32_t num;
 			uint32_t size;
 			uint32_t addr;
 			uint32_t shndx;
-		} A_PACKED ELF;					/* present if flags[5] is set */
+		} A_PACKED ELF;				/* present if flags[5] is set */
 	} syms;
-	uint32_t mmapLength;				/* present if flags[6] is set */
-	sMemMap *mmapAddr;			/* present if flags[6] is set */
+	uint32_t mmapLength;			/* present if flags[6] is set */
+	sMemMap *mmapAddr;				/* present if flags[6] is set */
 	uint32_t drivesLength;			/* present if flags[7] is set */
-	sDrive *drivesAddr;			/* present if flags[7] is set */
+	sDrive *drivesAddr;				/* present if flags[7] is set */
 #if 0
 	uint32_t configTable;			/* present if flags[8] is set */
 	char *bootLoaderName;			/* present if flags[9] is set */
-	sAPMTable *apmTable;		/* present if flags[10] is set */
+	sAPMTable *apmTable;			/* present if flags[10] is set */
 #endif
 } A_PACKED sBootInfo;
 

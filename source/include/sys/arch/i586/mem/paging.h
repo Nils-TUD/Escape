@@ -65,6 +65,10 @@
  * 0xC1C00000: +-----------------------------------+     r
  *             |           temp map area           |     e
  * 0xC2800000: +-----------------------------------+     a
+ *             |             APIC area             |     e
+ * 0xC2801000: +-----------------------------------+     a
+ *             |             TSS area              |     e
+ * 0x????????: +-----------------------------------+     a
  *             |                ...                |
  * 0xD0000000: +-----------------------------------+     |      -----
  *             |       VFS global file table       |     |        |
@@ -111,6 +115,13 @@
 #define TEMP_MAP_AREA			(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 #define TEMP_MAP_AREA_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE * 4)
 
+/* for mapping the APIC */
+#define APIC_AREA				(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
+#define APIC_AREA_SIZE			PAGE_SIZE
+
+/* for mapping the TSS's for APs (have to be page-aligned) */
+#define TSS_AREA				(APIC_AREA + APIC_AREA_SIZE)
+
 /* area for global-file-table */
 #define GFT_AREA				0xD0000000
 #define GFT_AREA_SIZE			(4 * M)
@@ -154,6 +165,11 @@
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START && (uintptr_t)(addr) < KERNEL_STACK)
 
 typedef uintptr_t tPageDir;
+
+/**
+ * Activates paging
+ */
+void paging_activate(void);
 
 /**
  * Reserves page-tables for the whole higher-half and inserts them into the page-directory.

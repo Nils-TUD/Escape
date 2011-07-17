@@ -18,10 +18,13 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/vmm.h>
-#include <sys/mem/paging.h>
+#include <sys/arch/i586/task/thread.h>
+#include <sys/arch/i586/mem/paging.h>
+#include <sys/arch/i586/gdt.h>
 #include <sys/task/thread.h>
 #include <sys/task/elf.h>
+#include <sys/mem/vmm.h>
+#include <sys/mem/paging.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <assert.h>
@@ -34,10 +37,10 @@ static uint8_t initloader[] = {
 #endif
 };
 
-int main(sBootInfo *mbp,uint32_t magic) {
+uintptr_t bspstart(sBootInfo *mbp,uint32_t magic) {
 	UNUSED(magic);
-	sStartupInfo info;
 	sThread *t;
+	sStartupInfo info;
 
 	/* init the kernel */
 	boot_init(mbp,true);
@@ -51,4 +54,11 @@ int main(sBootInfo *mbp,uint32_t magic) {
 			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 	assert(t->stackRegions[0] >= 0);
 	return info.progEntry;
+}
+
+void apstart(void) {
+	while(1);
+	gdt_init_ap();
+	paging_activate();
+	thread_initialSwitch();
 }

@@ -171,7 +171,7 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	t = thread_getRunning(); /* thread may have changed */
 	stack[-14] = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
 	uenv_handleSignal();
-	if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+	if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
 		uenv_startSignalHandler(stack);
 	intrpt_leaveKernel(t);
 }
@@ -192,7 +192,7 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = thread_getRunning();
 	uenv_handleSignal();
-	if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+	if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
 		uenv_startSignalHandler(stack);
 	intrpt_leaveKernel(t);
 }

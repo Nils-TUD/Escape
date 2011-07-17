@@ -17,9 +17,10 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 # simulators
-KVM = -enable-kvm
+#KVM = -enable-kvm
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
+QEMUARGS = -net nic,model=ne2k_pci -net user -smp 4 -serial stdio -hda $(HDD) -boot order=d \
+	-vga std -m 32 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
@@ -222,7 +223,7 @@ vbox: all prepareVbox prepareRun
 debug: all prepareQemu prepareRun
 	$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
 	sleep 1;
-	/usr/local/bin/gdbtui --command=gdb.start
+	/usr/bin/gdbtui --command=gdb.start
 
 debugb:	all prepareBochs prepareRun
 	$(BOCHSDBG) -f bochsgdb.cfg -q
@@ -230,7 +231,7 @@ debugb:	all prepareBochs prepareRun
 debugbt:	all prepareBochs prepareRun
 	$(BOCHSDBG) -f bochsgdb.cfg -q &
 	sleep 1;
-	/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
+	/usr/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 debugq: all prepareQemu prepareRun
 	$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &

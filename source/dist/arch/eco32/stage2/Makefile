@@ -41,7 +41,7 @@ $(ELF):	$(COBJ) $(AOBJALL) $(LOBJ) $(LDCONF)
 
 $(MAP): $(ELF)
 	@echo "	" GEN MAP $@
-	@$(NM) -S $(ELF) | $(ROOT)/tools/createmap-mmix.php > $@
+	@$(ROOT)/tools/createmap-$(ARCH) $(ELF) > $@
 
 $(BIN): $(ELF)
 	@echo "	" GEN BIN $@

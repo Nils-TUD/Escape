@@ -101,6 +101,8 @@ typedef int32_t inode_t;
 typedef uint32_t block_t;
 typedef int32_t dev_t;
 
+typedef uint8_t cpuid_t;
+
 typedef uint8_t sig_t;
 
 typedef uint32_t msgid_t;

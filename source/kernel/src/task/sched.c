@@ -65,7 +65,8 @@ void sched_init(void) {
 }
 
 sThread *sched_perform(void) {
-	sThread *t = thread_getRunning();
+	sThread *old = thread_getRunning();
+	sThread *t = old;
 	bool isZombie = t->state == ST_ZOMBIE;
 	if(t->state == ST_RUNNING) {
 		/* put current in the ready-queue */
@@ -85,8 +86,12 @@ sThread *sched_perform(void) {
 			t = thread_getById(INIT_TID);
 		}
 		else {
-			/* otherwise choose the idle-thread */
-			t = thread_getById(IDLE_TID);
+			/* otherwise choose the idle-thread; don't do that if we're already the idle-thread.
+			 * in this case, just keep idling */
+			if(old->flags & T_IDLE)
+				t = old;
+			else
+				t = thread_popIdle();
 		}
 	}
 	else
@@ -97,7 +102,7 @@ sThread *sched_perform(void) {
 
 void sched_setRunning(sThread *t) {
 	assert(t != NULL);
-	if(t->tid == IDLE_TID)
+	if(t->flags & T_IDLE)
 		return;
 
 	switch(t->state) {
@@ -119,7 +124,7 @@ void sched_setRunning(sThread *t) {
 
 void sched_setReady(sThread *t) {
 	assert(t != NULL);
-	if(t->tid == IDLE_TID)
+	if(t->flags & T_IDLE)
 		return;
 	if(sched_setReadyState(t))
 		sched_qAppend(&readyQueue,t);

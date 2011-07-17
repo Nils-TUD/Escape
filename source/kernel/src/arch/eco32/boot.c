@@ -32,6 +32,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/uenv.h>
 #include <sys/task/timer.h>
+#include <sys/task/smp.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/channel.h>
@@ -77,9 +78,14 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	paging_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
+	/* smp */
+	vid_printf("Initializing SMP...");
+	dyna_init();
+	smp_init();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
 	/* vfs */
 	vid_printf("Initializing VFS...");
-	dyna_init();
 	vfs_init();
 	vfs_info_init();
 	vfs_req_init();
@@ -149,7 +155,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 		return 0;
 
 	/* start idle-thread */
-	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
+	if(proc_startThread(0,T_IDLE,NULL) == thread_getRunning()->tid) {
 		thread_idle();
 		util_panic("Idle returned");
 	}
@@ -207,7 +213,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	/* TODO */
 #if 0
 	/* start the swapper-thread. it will never return */
-	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
+	if(proc_startThread(0,0,NULL) == thread_getRunning()->tid) {
 		swap_start();
 		util_panic("Swapper reached this");
 	}

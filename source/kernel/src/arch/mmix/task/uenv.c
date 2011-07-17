@@ -243,7 +243,7 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint64_t *rsp,*ssp;
 	sThread *t = thread_getRunning();
 	/* for idle, there is nothing to do */
-	if(t->tid == IDLE_TID)
+	if(t->flags & T_IDLE)
 		return true;
 
 	sStartupInfo sinfo;

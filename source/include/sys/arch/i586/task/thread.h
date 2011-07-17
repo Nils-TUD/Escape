@@ -23,6 +23,8 @@
 #include <esc/common.h>
 #include <sys/arch/i586/fpu.h>
 
+#define STACK_REG_COUNT		1
+
 /* the thread-state which will be saved for context-switching */
 typedef struct {
 	uint32_t esp;
@@ -53,6 +55,9 @@ typedef struct {
 	sFPUState *fpuState;
 } sThreadArchAttr;
 
-#define STACK_REG_COUNT		1
+/**
+ * Performs the initial switch for APs, because these don't run a thread yet.
+ */
+void thread_initialSwitch(void);
 
 #endif /* I586_THREAD_H_ */

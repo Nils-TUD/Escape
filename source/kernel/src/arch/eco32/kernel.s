@@ -21,7 +21,7 @@
 # Imports / Exports
 #===========================================
 
-	.extern	main
+	.extern	bspstart
 
 	.extern	_ecode
 	.extern	_edata
@@ -152,7 +152,7 @@ start:
 
 	# call main
 	add		$4,$16,$0						# give main the load-progs-array
-	jal		main							# call 'main' function
+	jal		bspstart						# call 'bspstart' function
 
 	# initloader has been loaded, so jump to it
 	add		$30,$0,$2						# main returns the entry-point

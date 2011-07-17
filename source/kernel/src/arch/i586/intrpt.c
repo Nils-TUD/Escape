@@ -366,7 +366,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	t->kstackEnd = stack;
 	intrptCount++;
 
-	if(t->tid == IDLE_TID || stack->eip < KERNEL_START) {
+	if((t->flags & T_IDLE) || stack->eip < KERNEL_START) {
 		cycles = cpu_rdtsc();
 		if(t->stats.ucycleStart > 0)
 			t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
@@ -390,11 +390,11 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	/* handle signal */
 	uenv_handleSignal();
 	/* don't try to deliver the signal if we're idling currently */
-	if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+	if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
 		uenv_startSignalHandler(stack);
 
 	/* kernel-mode ends */
-	if(t->tid == IDLE_TID || stack->eip < KERNEL_START) {
+	if((t->flags & T_IDLE) || stack->eip < KERNEL_START) {
 		t = thread_getRunning();
 		cycles = cpu_rdtsc();
 		if(t->stats.kcycleStart > 0)

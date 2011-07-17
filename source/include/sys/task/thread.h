@@ -42,13 +42,14 @@
 #define INITIAL_STACK_PAGES		1
 
 #define INIT_TID				0
-#define IDLE_TID				1
 #define ATA_TID					3
 
 #define MAX_THREAD_COUNT		8192
 #define INVALID_TID				0xFFFF
 /* use an invalid tid to identify the kernel */
 #define KERNEL_TID				0xFFFE
+
+#define T_IDLE					1
 
 /* the thread states */
 typedef enum {
@@ -68,6 +69,7 @@ typedef enum {
 /* represents a thread */
 typedef struct sThread sThread;
 struct sThread {
+	uint8_t flags;
 	/* thread state. see eThreadState */
 	uint8_t state;
 	/* whether signals should be ignored (while being blocked) */
@@ -140,6 +142,20 @@ sThread *thread_getRunning(void);
  * @param t the thread
  */
 void thread_setRunning(sThread *t);
+
+/**
+ * Pushes the given thread back to the idle-list
+ *
+ * @param t the idle-thread
+ */
+void thread_pushIdle(sThread *t);
+
+/**
+ * Pops an idle-thread from the idle-list
+ *
+ * @return the thread
+ */
+sThread *thread_popIdle(void);
 
 /**
  * Fetches the thread with given id from the internal thread-map
@@ -235,12 +251,14 @@ int thread_finishClone(sThread *t,sThread *nt);
  * @param src the thread to copy
  * @param dst will contain a pointer to the new thread
  * @param p the process the thread should belong to
+ * @param flags the flags for the thread (T_*)
  * @param stackFrame will contain the stack-frame that has been used for the kernel-stack of the
  * 	new thread
  * @param cloneProc whether a process is cloned or just a thread
  * @return 0 on success
  */
-int thread_clone(const sThread *src,sThread **dst,sProc *p,frameno_t *stackFrame,bool cloneProc);
+int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t *stackFrame,
+		bool cloneProc);
 
 /**
  * Clones the architecture-specific attributes of the given thread

@@ -42,6 +42,8 @@
 #define CPUID_VENDOR_RISE			12
 #define CPUID_VENDOR_UNKNOWN		13
 
+#define FEATURE_LAPIC				(1 << 9)
+
 #define VENDOR_STRLEN				12
 
 static const char *vendors[] = {
@@ -123,7 +125,7 @@ static const char *intel6Models[] = {
 };
 
 /* the information about our cpu */
-static sCPU cpu;
+static sCPUInfo cpu;
 
 void cpu_detect(void) {
 	size_t i;
@@ -152,26 +154,32 @@ void cpu_detect(void) {
 	/* fetch some additional infos for known cpus */
 	switch(cpu.vendor) {
 		case CPUID_VENDOR_INTEL: {
-			uint32_t eax,ebx,unused;
-			cpu_getInfo(CPUID_GETFEATURES,&eax,&ebx,&unused,&unused);
+			uint32_t eax,ebx,unused,edx;
+			cpu_getInfo(CPUID_GETFEATURES,&eax,&ebx,&unused,&edx);
 			cpu.model = (eax >> 4) & 0xf;
 			cpu.family = (eax >> 8) & 0xf;
 			cpu.type = (eax >> 12) & 0x3;
 			cpu.brand = ebx & 0xff;
 			cpu.stepping = eax & 0xf;
 			cpu.signature = eax;
+			cpu.features = edx;
 		}
 		break;
 
 		case CPUID_VENDOR_AMD: {
-			uint32_t eax,unused;
-			cpu_getInfo(CPUID_GETFEATURES,&eax,&unused,&unused,&unused);
+			uint32_t eax,unused,edx;
+			cpu_getInfo(CPUID_GETFEATURES,&eax,&unused,&unused,&edx);
 			cpu.model = (eax >> 4) & 0xf;
 			cpu.family = (eax >> 8) & 0xf;
 			cpu.stepping = eax & 0xf;
+			cpu.features = edx;
 		}
 		break;
 	}
+}
+
+bool cpu_hasLocalAPIC(void) {
+	return cpu.features & FEATURE_LAPIC;
 }
 
 void cpu_sprintf(sStringBuffer *buf) {

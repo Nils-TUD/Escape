@@ -34,6 +34,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/task/sched.h>
 #include <sys/task/lock.h>
+#include <sys/task/smp.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <assert.h>
@@ -48,20 +49,33 @@ static void thread_remove(sThread *t);
 /* our threads */
 static sSLList *threads;
 static sThread *tidToThread[MAX_THREAD_COUNT];
-static sThread *cur = NULL;
+static sThread **cur = NULL;
+static sSLList *idleThreads;
 static tid_t nextTid = 0;
 
 /* list of dead threads that should be destroyed */
 static sSLList* deadThreads = NULL;
 
 sThread *thread_init(sProc *p) {
+	cpuid_t maxId = smp_getMaxCPUId();
+	sThread *curThread;
+
 	threads = sll_create();
 	if(!threads)
 		util_panic("Unable to create thread-list");
+	idleThreads = sll_create();
+	if(!idleThreads)
+		util_panic("Unable to create idle-thread-list");
+
+	cur = (sThread**)cache_alloc((maxId + 1) * sizeof(sThread*));
+	if(!cur)
+		util_panic("Unable to allocate current-thread-array");
+	memclear(cur,(maxId + 1) * sizeof(sThread*));
 
 	/* create thread for init */
-	cur = thread_createInitial(p,ST_RUNNING);
-	return cur;
+	curThread = thread_createInitial(p,ST_RUNNING);
+	cur[smp_getCurId()] = curThread;
+	return curThread;
 }
 
 static sThread *thread_createInitial(sProc *p,eThreadState state) {
@@ -70,6 +84,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
+	t->flags = 0;
 	t->state = state;
 	t->events = 0;
 	t->waits = NULL;
@@ -106,11 +121,19 @@ size_t thread_getCount(void) {
 }
 
 sThread *thread_getRunning(void) {
-	return cur;
+	return cur ? cur[smp_getCurId()] : NULL;
 }
 
 void thread_setRunning(sThread *t) {
-	cur = t;
+	cur[smp_getCurId()] = t;
+}
+
+void thread_pushIdle(sThread *t) {
+	sll_append(idleThreads,t);
+}
+
+sThread *thread_popIdle(void) {
+	return sll_removeFirst(idleThreads);
 }
 
 sThread *thread_getById(tid_t tid) {
@@ -124,10 +147,11 @@ void thread_switch(void) {
 }
 
 void thread_switchNoSigs(void) {
+	cpuid_t id = smp_getCurId();
 	/* remember that the current thread wants to ignore signals */
-	cur->ignoreSignals = 1;
+	cur[id]->ignoreSignals = 1;
 	thread_switch();
-	cur->ignoreSignals = 0;
+	cur[id]->ignoreSignals = 0;
 }
 
 void thread_killDead(void) {
@@ -149,7 +173,7 @@ void thread_killDead(void) {
 
 bool thread_setReady(tid_t tid) {
 	sThread *t = thread_getById(tid);
-	vassert(t != NULL && t != cur,"tid=%d, pid=%d, cmd=%s",
+	vassert(t != NULL && t != thread_getRunning(),"tid=%d, pid=%d, cmd=%s",
 			t ? t->tid : 0,t ? t->proc->pid : 0,t ? t->proc->command : "?");
 	if(!t->ignoreSignals) {
 		sched_setReady(t);
@@ -181,10 +205,11 @@ bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {
 }
 
 int thread_extendStack(uintptr_t address) {
-	return vmm_growStackTo(cur,address);
+	return vmm_growStackTo(thread_getRunning(),address);
 }
 
-int thread_clone(const sThread *src,sThread **dst,sProc *p,frameno_t *stackFrame,bool cloneProc) {
+int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t *stackFrame,
+		bool cloneProc) {
 	int err = ERR_NOT_ENOUGH_MEM;
 	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -196,6 +221,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,frameno_t *stackFrame
 		goto errThread;
 	}
 
+	t->flags = flags;
 	t->state = ST_RUNNING;
 	t->events = 0;
 	t->waits = NULL;
@@ -245,17 +271,25 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,frameno_t *stackFrame
 	if(!thread_add(t))
 		goto errArch;
 
+	/* append to idle-list if its an idle-thread */
+	if(flags & T_IDLE) {
+		if(!sll_append(idleThreads,t))
+			goto errAppend;
+	}
+
 	/* clone signal-handler (here because the thread needs to be in the map first) */
 	if(cloneProc)
 		sig_cloneHandler(src->tid,t->tid);
 
 	/* insert in VFS; thread needs to be inserted for it */
 	if(!vfs_createThread(t->tid))
-		goto errAppend;
+		goto errAppendIdle;
 
 	*dst = t;
 	return 0;
 
+errAppendIdle:
+	sll_removeFirstWith(idleThreads,t);
 errAppend:
 	thread_remove(t);
 errArch:
@@ -277,7 +311,7 @@ void thread_kill(sThread *t) {
 	if(t->tid == INIT_TID)
 		util_panic("Can't kill init-thread!");
 	/* we can't destroy the current thread */
-	if(t == cur) {
+	if(t == thread_getRunning()) {
 		/* put it in the dead-thread-queue to destroy it later */
 		if(deadThreads == NULL) {
 			deadThreads = sll_create();
@@ -341,6 +375,7 @@ void thread_print(const sThread *t) {
 		"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE","BLOCKEDSWAP","READYSWAP"
 	};
 	vid_printf("\tThread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
+	vid_printf("\t\tFlags=%#x\n",t->flags);
 	vid_printf("\t\tState=%s\n",states[t->state]);
 	vid_printf("\t\tEvents=");
 	ev_printEvMask(t->events);

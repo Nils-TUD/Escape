@@ -46,6 +46,16 @@
 void gdt_init(void);
 
 /**
+ * Finishes the initialization for the bootstrap processor
+ */
+void gdt_init_bsp(void);
+
+/**
+ * Finishes the initialization for an application processor
+ */
+void gdt_init_ap(void);
+
+/**
  * Initializes the TLS-segment for the given TLS-region
  */
 void gdt_setTLS(uintptr_t tlsAddr,size_t tlsSize);

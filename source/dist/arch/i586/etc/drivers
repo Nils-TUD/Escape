@@ -17,6 +17,7 @@ keyboard
 kmmanager
 	/dev/kmmanager 0550 input
 	/dev/keyevents 0110 input
+ne2k
 vterm
 	/dev/vterm0 0770 vterm0
 	/dev/vterm1 0770 vterm1

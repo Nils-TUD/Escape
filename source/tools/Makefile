@@ -1,4 +1,4 @@
-DIRS = $(filter-out $(wildcard *.*) Makefile,$(wildcard *))
+DIRS = $(filter-out $(wildcard *.*) $(wildcard createmap*) Makefile,$(wildcard *))
 
 .PHONY:  all install clean
 

@@ -33,6 +33,7 @@
 
 extern bool thread_save(sThreadRegs *saveArea);
 extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
+static void thread_doSwitch(sThread *cur,sThread *old);
 
 int thread_initArch(sThread *t) {
 	/* setup kernel-stack for us */
@@ -97,6 +98,12 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	return 0;
 }
 
+void thread_initialSwitch(void) {
+	sThread *cur = sched_perform();
+	thread_setRunning(cur);
+	thread_doSwitch(cur,NULL);
+}
+
 void thread_switchTo(tid_t tid) {
 	sThread *cur = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */
@@ -108,7 +115,6 @@ void thread_switchTo(tid_t tid) {
 		}
 
 		if(!thread_save(&cur->save)) {
-			uintptr_t tlsStart,tlsEnd;
 			sThread *old;
 			sThread *t = thread_getById(tid);
 			vassert(t != NULL,"Thread with tid %d not found",tid);
@@ -116,37 +122,14 @@ void thread_switchTo(tid_t tid) {
 			/* mark old process ready, if it should not be blocked, killed or something */
 			if(cur->state == ST_RUNNING)
 				sched_setReady(cur);
+			if(cur->flags & T_IDLE)
+				thread_pushIdle(cur);
 
 			old = cur;
 			thread_setRunning(t);
 			cur = t;
 
-			/* set used */
-			cur->stats.schedCount++;
-			if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-				vmm_setTimestamp(cur,timer_getTimestamp());
-			sched_setRunning(cur);
-
-			if(old->proc != cur->proc) {
-				/* remove the io-map. it will be set as soon as the process accesses an io-port
-				 * (we'll get an exception) */
-				tss_removeIOMap();
-				tss_setStackPtr(cur->proc->flags & P_VM86);
-				paging_setCur(cur->proc->pagedir);
-			}
-
-			/* set TLS-segment in GDT */
-			if(cur->tlsRegion >= 0) {
-				vmm_getRegRange(cur->proc,cur->tlsRegion,&tlsStart,&tlsEnd);
-				gdt_setTLS(tlsStart,tlsEnd - tlsStart);
-			}
-			else
-				gdt_setTLS(0,0xFFFFFFFF);
-			/* lock the FPU so that we can save the FPU-state for the previous process as soon
-			 * as this one wants to use the FPU */
-			fpu_lockFPU();
-			thread_resume(cur->proc->pagedir,&cur->save,
-					sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
+			thread_doSwitch(cur,old);
 		}
 
 		/* now start kernel-time again */
@@ -155,6 +138,36 @@ void thread_switchTo(tid_t tid) {
 	}
 
 	thread_killDead();
+}
+
+static void thread_doSwitch(sThread *cur,sThread *old) {
+	uintptr_t tlsStart,tlsEnd;
+	/* set used */
+	cur->stats.schedCount++;
+	if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
+		vmm_setTimestamp(cur,timer_getTimestamp());
+	sched_setRunning(cur);
+
+	if(!old || old->proc != cur->proc) {
+		/* remove the io-map. it will be set as soon as the process accesses an io-port
+		 * (we'll get an exception) */
+		tss_removeIOMap();
+		tss_setStackPtr(cur->proc->flags & P_VM86);
+		paging_setCur(cur->proc->pagedir);
+	}
+
+	/* set TLS-segment in GDT */
+	if(cur->tlsRegion >= 0) {
+		vmm_getRegRange(cur->proc,cur->tlsRegion,&tlsStart,&tlsEnd);
+		gdt_setTLS(tlsStart,tlsEnd - tlsStart);
+	}
+	else
+		gdt_setTLS(0,0xFFFFFFFF);
+	/* lock the FPU so that we can save the FPU-state for the previous process as soon
+	 * as this one wants to use the FPU */
+	fpu_lockFPU();
+	thread_resume(cur->proc->pagedir,&cur->save,
+			sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
 }
 
 

@@ -3,6 +3,7 @@ ROOT = ../..
 BUILDK = $(BUILD)/kernel/src
 BIN = $(BUILD)/kernel.bin
 MAP = $(BUILD)/kernel.map
+TRAMP_DUMP = $(BUILD)/kernel_tramp.dump
 LDCONF = arch/$(ARCH)/ld.conf
 LIB = $(ROOT)/lib/basic
 SUBDIRS = $(shell find . -type d | grep -v '\.svn')
@@ -41,7 +42,7 @@ SYMBOLOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(SYMBOLSRC))
 
 .PHONY: all pre clean
 
-all:	$(BIN) $(MAP)
+all:	$(TRAMP_DUMP) $(BIN) $(MAP)
 
 $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) $(AENDOBJ)
 	@echo "	" LINKING $(BIN)
@@ -64,7 +65,7 @@ $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(L
 
 $(MAP): $(BIN)
 	@echo "	" GEN MAP $@
-	@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
+	@$(ROOT)/tools/createmap-$(ARCH) $(BIN) > $@
 
 $(SYMBOLS):
 	@if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
@@ -74,8 +75,14 @@ $(BUILDDIRS):
 		if [ ! -d $$i ]; then mkdir -p $$i; fi \
 	done;
 
+$(TRAMP_DUMP): arch/i586/trampoline.asm
+	@echo "	" NASM $<
+	@nasm -f bin -o $(BUILDK)/arch/i586/trampoline.s.o $<
+	@echo "	" DUMP $<
+	@$(BUILD)/dump $(BUILDK)/arch/i586/trampoline.s.o > $@
+
 $(BUILDK)/%.s.o: %.s
-	@echo "	" AS $<
+	@echo "	" AS $@ $<
 	@$(AS) $(ASFLAGS) -o $@ $<;
 
 $(BUILDK)/%.o:		%.c

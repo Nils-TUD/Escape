@@ -25,7 +25,7 @@
 	.global	_bdata
 	.global	_bbss
 
-	.extern	main
+	.extern	bspstart
 	.extern intrpt_forcedTrap
 	.extern intrpt_dynTrap
 
@@ -96,7 +96,7 @@ start:
 	OR		$1,$0,$0						# pass bootinfo to main
 	SET		$2,$254							# pass pointer to stackBegin, which is set in main
 	SUBU	$3,$254,8						# pass pointer to rss, which is set in main
-	PUSHJ	$0,main							# call 'main' function
+	PUSHJ	$0,bspstart						# call 'bspstart' function
 
 	# setup forced and dynamic trap handlers
 	GETA	$1,forcedTrap

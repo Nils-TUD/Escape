@@ -26,7 +26,7 @@ $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(AOBJ)
 
 $(MAP): $(BIN)
 	@echo "	" GEN MAP $@
-	@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
+	@$(ROOT)/tools/createmap-$(ARCH) $(BIN) > $@
 
 $(BUILDDIRS):
 	@for i in $(BUILDDIRS); do \

@@ -272,10 +272,11 @@ int proc_clone(pid_t newPid,uint8_t flags);
  * Starts a new thread at given entry-point. Will clone the kernel-stack from the current thread
  *
  * @param entryPoint the address where to start
+ * @param flags the thread-flags
  * @param arg the argument
  * @return < 0 if an error occurred or the new tid
  */
-int proc_startThread(uintptr_t entryPoint,const void *arg);
+int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg);
 
 /**
  * Destroys the current thread. If it's the only thread in the process, the complete process will

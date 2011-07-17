@@ -390,7 +390,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	}
 
 	/* clone current thread */
-	if((res = thread_clone(curThread,&nt,p,&dummy,true)) < 0)
+	if((res = thread_clone(curThread,&nt,p,0,&dummy,true)) < 0)
 		goto errorThreadList;
 	if(!sll_append(p->threads,nt)) {
 		res = ERR_NOT_ENOUGH_MEM;
@@ -446,13 +446,13 @@ errorProc:
 	return res;
 }
 
-int proc_startThread(uintptr_t entryPoint,const void *arg) {
+int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	frameno_t stackFrame;
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	sThread *nt;
 	int res;
-	if((res = thread_clone(t,&nt,t->proc,&stackFrame,false)) < 0)
+	if((res = thread_clone(t,&nt,t->proc,flags,&stackFrame,false)) < 0)
 		return res;
 
 	/* append thread */
@@ -462,8 +462,8 @@ int proc_startThread(uintptr_t entryPoint,const void *arg) {
 	}
 
 	/* mark ready (idle is always blocked because we choose it explicitly when no other can run) */
-	if(nt->tid == IDLE_TID)
-		thread_setBlocked(IDLE_TID);
+	if(nt->flags & T_IDLE)
+		thread_setBlocked(nt->tid);
 	else
 		thread_setReady(nt->tid);
 

@@ -210,7 +210,11 @@ void paging_init(void) {
 	pde->exists = true;
 
 	/* now set page-dir and enable paging */
-	paging_exchangePDir((tPageDir)pd);
+	paging_activate();
+}
+
+void paging_activate(void) {
+	paging_exchangePDir(VIRT2PHYS(proc0PD));
 	paging_enable();
 	/* enable global pages (TODO just possible for >= pentium pro (family 6)) */
 	cpu_setCR4(cpu_getCR4() | (1 << 7));

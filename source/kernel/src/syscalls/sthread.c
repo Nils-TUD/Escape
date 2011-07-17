@@ -48,7 +48,7 @@ int sysc_getThreadCount(sIntrptStackFrame *stack) {
 int sysc_startThread(sIntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
-	int res = proc_startThread(entryPoint,arg);
+	int res = proc_startThread(entryPoint,0,arg);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

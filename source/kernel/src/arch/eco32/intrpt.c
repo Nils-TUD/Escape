@@ -115,11 +115,12 @@ static size_t irqCount = 0;
 static uintptr_t pfaddr = 0;
 
 void intrpt_handler(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
+	sThread *t;
 	sInterrupt *intrpt = intrptList + (stack->irqNo & 0x1F);
 	/* note: we have to do that before there is a chance for a kernel-miss (e.g. t->kstackEnd
 	 * might cause one because its on the kernel-heap */
 	pfaddr = cpu_getBadAddr();
+	t = thread_getRunning();
 	t->kstackEnd = stack;
 	irqCount++;
 
@@ -130,9 +131,9 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = thread_getRunning();
-	if(t != NULL && (t->tid == IDLE_TID || (stack->psw & PSW_PUM))) {
+	if(t != NULL && ((t->flags & T_IDLE) || (stack->psw & PSW_PUM))) {
 		uenv_handleSignal();
-		if(t->tid != IDLE_TID && uenv_hasSignalToStart())
+		if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
 			uenv_startSignalHandler(stack);
 	}
 }

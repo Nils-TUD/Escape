@@ -52,7 +52,8 @@ typedef struct {
 	uint16_t brand;
 	uint16_t stepping;
 	uint32_t signature;
-} sCPU;
+	uint32_t features;
+} sCPUInfo;
 
 enum eCPUIdRequests {
 	CPUID_GETVENDORSTRING,
@@ -76,6 +77,11 @@ extern bool cpu_cpuidSupported(void);
  * "Detects" the CPU
  */
 void cpu_detect(void);
+
+/**
+ * @return whether the machine has a local APIC
+ */
+bool cpu_hasLocalAPIC(void);
 
 /**
  * Issue a single request to CPUID
@@ -125,5 +131,17 @@ extern uint32_t cpu_getCR4(void);
  * @param cr4 the new CR4 value
  */
 extern void cpu_setCR4(uint32_t cr4);
+
+/**
+ * @param msr the msr
+ * @return the value of the given model-specific-register
+ */
+extern uint64_t cpu_getMSR(uint32_t msr);
+
+/**
+ * @param msr the msr
+ * @param value the new value
+ */
+extern void cpu_setMSR(uint32_t msr,uint64_t value);
 
 #endif /*I586_CPU_H_*/

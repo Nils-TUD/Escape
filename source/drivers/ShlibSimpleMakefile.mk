@@ -28,7 +28,7 @@ $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(LIBDEPS)
 
 $(MAP): $(BIN)
 	@echo "	" GEN MAP $@
-	@$(NM) -S $(BIN) | $(ROOT)/tools/createmap-mmix.php > $@
+	@$(ROOT)/tools/createmap-$(ARCH) $(BIN) > $@
 
 $(BUILDL):
 	@if [ ! -d $@ ]; then mkdir -p $@; fi

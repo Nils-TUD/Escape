@@ -35,7 +35,7 @@ int sysc_open(sIntrptStackFrame *stack) {
 	file_t file;
 	int fd;
 	int err;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 
 	/* at first make sure that we'll cause no page-fault */
 	if(!sysc_isStringReadable(path))
@@ -73,7 +73,7 @@ int sysc_fcntl(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	uint cmd = SYSC_ARG2(stack);
 	int arg = (int)SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	file_t file;
 	int res;
 
@@ -91,7 +91,7 @@ int sysc_fcntl(sIntrptStackFrame *stack) {
 int sysc_pipe(sIntrptStackFrame *stack) {
 	int *readFd = (int*)SYSC_ARG1(stack);
 	int *writeFd = (int*)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	bool created;
 	sVFSNode *pipeNode;
 	inode_t nodeNo,pipeNodeNo;
@@ -165,7 +165,7 @@ errorRemNode:
 int sysc_stat(sIntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	size_t len;
 	int res;
 
@@ -185,7 +185,7 @@ int sysc_stat(sIntrptStackFrame *stack) {
 int sysc_fstat(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	file_t file;
 	int res;
 
@@ -206,7 +206,7 @@ int sysc_fstat(sIntrptStackFrame *stack) {
 int sysc_chmod(sIntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG1(stack);
 	mode_t mode = (mode_t)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	size_t len;
 	int res;
 
@@ -226,7 +226,7 @@ int sysc_chown(sIntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uid_t uid = (uid_t)SYSC_ARG2(stack);
 	gid_t gid = (gid_t)SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	size_t len;
 	int res;
 
@@ -245,7 +245,7 @@ int sysc_chown(sIntrptStackFrame *stack) {
 int sysc_tell(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	file_t file;
 
 	if(!paging_isRangeUserWritable((uintptr_t)pos,sizeof(off_t)))
@@ -264,7 +264,7 @@ int sysc_seek(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t offset = (off_t)SYSC_ARG2(stack);
 	uint whence = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	file_t file;
 	off_t res;
 
@@ -286,7 +286,7 @@ int sysc_read(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	ssize_t readBytes;
 	file_t file;
 
@@ -312,7 +312,7 @@ int sysc_write(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	const void *buffer = (const void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	ssize_t writtenBytes;
 	file_t file;
 
@@ -339,7 +339,7 @@ int sysc_send(sIntrptStackFrame *stack) {
 	msgid_t id = (msgid_t)SYSC_ARG2(stack);
 	const void *data = (const void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	file_t file;
 	ssize_t res;
 
@@ -364,7 +364,7 @@ int sysc_receive(sIntrptStackFrame *stack) {
 	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);
 	void *data = (void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	file_t file;
 	ssize_t res;
 
@@ -406,7 +406,7 @@ int sysc_redirFd(sIntrptStackFrame *stack) {
 
 int sysc_close(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 
 	/* unassoc fd */
 	file_t fileNo = proc_unassocFd(fd);
@@ -420,7 +420,7 @@ int sysc_close(sIntrptStackFrame *stack) {
 
 int sysc_sync(sIntrptStackFrame *stack) {
 	int res;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	res = vfs_real_sync(p->pid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
@@ -429,7 +429,7 @@ int sysc_sync(sIntrptStackFrame *stack) {
 
 int sysc_link(sIntrptStackFrame *stack) {
 	int res;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	const char *oldPath = (const char*)SYSC_ARG1(stack);
 	const char *newPath = (const char*)SYSC_ARG2(stack);
 	if(!sysc_isStringReadable(oldPath) || !sysc_isStringReadable(newPath))
@@ -443,7 +443,7 @@ int sysc_link(sIntrptStackFrame *stack) {
 
 int sysc_unlink(sIntrptStackFrame *stack) {
 	int res;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -456,7 +456,7 @@ int sysc_unlink(sIntrptStackFrame *stack) {
 
 int sysc_mkdir(sIntrptStackFrame *stack) {
 	int res;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -469,7 +469,7 @@ int sysc_mkdir(sIntrptStackFrame *stack) {
 
 int sysc_rmdir(sIntrptStackFrame *stack) {
 	int res;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -484,7 +484,7 @@ int sysc_mount(sIntrptStackFrame *stack) {
 	char apath[MAX_PATH_LEN + 1];
 	int res;
 	inode_t ino;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	const char *device = (const char*)SYSC_ARG1(stack);
 	const char *path = (const char*)SYSC_ARG2(stack);
 	uint type = (uint)SYSC_ARG3(stack);
@@ -505,7 +505,7 @@ int sysc_unmount(sIntrptStackFrame *stack) {
 	char apath[MAX_PATH_LEN + 1];
 	int res;
 	inode_t ino;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);

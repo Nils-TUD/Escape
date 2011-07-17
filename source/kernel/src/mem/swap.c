@@ -53,14 +53,14 @@ static bool swapping = false;
 static const sProc *swapinProc = NULL;
 static uintptr_t swapinAddr = 0;
 static tid_t swapinTid = INVALID_TID;
-static sThread *swapper = NULL;
+static const sThread *swapper = NULL;
 static size_t neededFrames = HIGH_WATER;
 /* no heap-usage here */
 static uint8_t buffer[PAGE_SIZE];
 
 void swap_start(void) {
 	file_t swapFile = -1;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	inode_t swapIno;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
 	/* if there is no valid swap-dev specified, don't even try... */
@@ -123,7 +123,7 @@ void swap_start(void) {
 
 bool swap_outUntil(size_t frameCount) {
 	size_t free = pmem_getFreeFrames(MM_DEF);
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
 	if(!enabled || !(t->flags & T_IDLE) || t->tid == ATA_TID || t->tid == swapper->tid)
@@ -154,7 +154,7 @@ void swap_check(void) {
 			ev_wakeupThread(swapper->tid,EV_SWAP_WORK);
 		/* if we have VERY few frames left, better block this thread until we have high water */
 		if(freeFrm < CRIT_WATER/* || neededFrames < HIGH_WATER*/) {
-			sThread *t = thread_getRunning();
+			const sThread *t = thread_getRunning();
 			/* but its not really helpful to block ata ;) */
 			if(t->tid != ATA_TID && !(t->flags & T_IDLE)) {
 				ev_wait(t->tid,EVI_SWAP_FREE,0);
@@ -165,7 +165,7 @@ void swap_check(void) {
 }
 
 bool swap_in(const sProc *p,uintptr_t addr) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	if(!enabled)
 		return false;
 	/* wait here until we're alone */
@@ -271,9 +271,9 @@ static void swap_doSwapOut(pid_t pid,file_t file,sRegion *reg,size_t index) {
 
 static void swap_setSuspended(const sSLList *procs,bool blocked) {
 	sSLNode *n,*tn;
-	sProc *p;
-	sThread *cur = thread_getRunning();
-	sThread *t;
+	const sProc *p;
+	const sThread *cur = thread_getRunning();
+	const sThread *t;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		p = (sProc*)n->data;
 		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {

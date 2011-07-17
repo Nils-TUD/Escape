@@ -128,18 +128,18 @@ void thread_setRunning(sThread *t) {
 	cur[smp_getCurId()] = t;
 }
 
+sThread *thread_getById(tid_t tid) {
+	if(tid >= ARRAY_SIZE(tidToThread))
+		return NULL;
+	return tidToThread[tid];
+}
+
 void thread_pushIdle(sThread *t) {
 	sll_append(idleThreads,t);
 }
 
 sThread *thread_popIdle(void) {
 	return sll_removeFirst(idleThreads);
-}
-
-sThread *thread_getById(tid_t tid) {
-	if(tid >= ARRAY_SIZE(tidToThread))
-		return NULL;
-	return tidToThread[tid];
 }
 
 void thread_switch(void) {

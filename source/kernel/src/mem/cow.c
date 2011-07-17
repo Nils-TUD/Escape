@@ -53,7 +53,7 @@ size_t cow_pagefault(uintptr_t address) {
 	frameno_t frameNumber;
 	size_t frmCount;
 	uint flags;
-	sProc *cp = proc_getRunning();
+	const sProc *cp = proc_getRunning();
 
 	/* search through the copy-on-write-list whether there is another one who wants to get
 	 * the frame */

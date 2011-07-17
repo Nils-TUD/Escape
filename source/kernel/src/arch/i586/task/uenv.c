@@ -79,7 +79,7 @@ bool uenv_hasSignalToStart(void) {
 }
 
 void uenv_startSignalHandler(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	fSignal handler;
 	uint32_t *esp = (uint32_t*)stack->uesp;
 
@@ -151,7 +151,7 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	uint32_t *esp;
 	char **argv;
 	size_t totalSize;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	sIntrptStackFrame *frame = t->kstackEnd;
 
 	/*

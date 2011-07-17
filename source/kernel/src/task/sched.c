@@ -295,7 +295,7 @@ static void sched_qAppend(sQueue *q,sThread *t) {
 static void sched_qPrint(sQueue *q) {
 	char name1[12];
 	char name2[12];
-	sThread *t = q->first;
+	const sThread *t = q->first;
 	vid_printf("Queue: first=%s, last=%s\n",
 			q->first ? itoa(name1,sizeof(name1),q->first->tid) : "-",
 			q->last ? itoa(name2,sizeof(name2),q->last->tid) : "-");

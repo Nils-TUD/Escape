@@ -42,13 +42,13 @@
 static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size);
 
 int sysc_getpid(sIntrptStackFrame *stack) {
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->pid);
 }
 
 int sysc_getppid(sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
-	sProc *p;
+	const sProc *p;
 
 	if(!proc_exists(pid))
 		SYSC_ERROR(stack,ERR_INVALID_PID);
@@ -58,7 +58,7 @@ int sysc_getppid(sIntrptStackFrame *stack) {
 }
 
 int sysc_getuid(sIntrptStackFrame *stack) {
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->ruid);
 }
 
@@ -75,7 +75,7 @@ int sysc_setuid(sIntrptStackFrame *stack) {
 }
 
 int sysc_getgid(sIntrptStackFrame *stack) {
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->rgid);
 }
 
@@ -92,7 +92,7 @@ int sysc_setgid(sIntrptStackFrame *stack) {
 }
 
 int sysc_geteuid(sIntrptStackFrame *stack) {
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->euid);
 }
 
@@ -108,7 +108,7 @@ int sysc_seteuid(sIntrptStackFrame *stack) {
 }
 
 int sysc_getegid(sIntrptStackFrame *stack) {
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->egid);
 }
 
@@ -126,8 +126,8 @@ int sysc_setegid(sIntrptStackFrame *stack) {
 int sysc_getgroups(sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	gid_t *list = (gid_t*)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
-	sProcGroups *g = p->groups;
+	const sProc *p = proc_getRunning();
+	const sProcGroups *g = p->groups;
 	size_t groupCount = g ? g->count : 0;
 	if(size == 0)
 		SYSC_RET1(stack,groupCount);
@@ -160,7 +160,7 @@ int sysc_setgroups(sIntrptStackFrame *stack) {
 int sysc_isingroup(sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	gid_t gid = (gid_t)SYSC_ARG2(stack);
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	if(!p)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	SYSC_RET1(stack,groups_contains(p->groups,gid));
@@ -190,8 +190,8 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
 	sSLNode *n;
 	int res;
-	sProc *p = proc_getRunning();
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
+	const sProc *p = t->proc;
 
 	if(state != NULL && !paging_isRangeUserWritable((uintptr_t)state,sizeof(sExitState)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -228,7 +228,7 @@ int sysc_getenvito(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	size_t index = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	ssize_t res;
 
 	const char *name = env_geti(p->pid,index);
@@ -245,7 +245,7 @@ int sysc_getenvto(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	ssize_t res;
 
 	if(!sysc_isStringReadable(name))
@@ -264,7 +264,7 @@ int sysc_getenvto(sIntrptStackFrame *stack) {
 int sysc_setenv(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 
 	if(!sysc_isStringReadable(name) || !sysc_isStringReadable(value))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);

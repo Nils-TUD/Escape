@@ -103,7 +103,7 @@ int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info) {
 }
 
 int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	sVFSNode *n = vfs_node_get(nodeNo);
 	/* root can chmod everything; others can only chmod their own files */
 	if(p->euid != n->uid && p->euid != ROOT_UID)
@@ -113,7 +113,7 @@ int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
 }
 
 int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	sVFSNode *n = vfs_node_get(nodeNo);
 
 	/* root can chown everything; others can only chown their own files */
@@ -175,7 +175,7 @@ char *vfs_node_getPath(inode_t nodeNo) {
 char *vfs_node_absolutize(char *dst,size_t size,const char *src) {
 	if(*src != '/') {
 		size_t len;
-		sProc *p = proc_getRunning();
+		const sProc *p = proc_getRunning();
 		const char *cwd = env_get(p->pid,"CWD");
 		if(cwd) {
 			strncpy(dst,cwd,size);
@@ -202,7 +202,7 @@ char *vfs_node_absolutize(char *dst,size_t size,const char *src) {
 int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint flags) {
 	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = vfs_node_get(0);
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	/* at the beginning, t might be NULL */
 	pid_t pid = t ? t->proc->pid : KERNEL_PID;
 	int pos = 0,err,depth,lastdepth;
@@ -372,7 +372,7 @@ sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,size_t nameLe
 sVFSNode *vfs_node_create(pid_t pid,sVFSNode *parent,char *name) {
 	sVFSNode *node;
 	size_t nameLen = strlen(name);
-	sProc *p = pid != INVALID_PID ? proc_getByPid(pid) : NULL;
+	const sProc *p = pid != INVALID_PID ? proc_getByPid(pid) : NULL;
 	vassert(name != NULL,"name == NULL");
 
 	if(nameLen > MAX_NAME_LEN)

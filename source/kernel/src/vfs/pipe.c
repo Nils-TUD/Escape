@@ -116,7 +116,7 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,void *buffer,o
 	UNUSED(pid);
 	UNUSED(file);
 	size_t byteCount,total;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 	volatile sPipe *vpipe = pipe;
 	sPipeData *data;
@@ -179,7 +179,7 @@ static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,const void *b
 	UNUSED(pid);
 	UNUSED(file);
 	sPipeData *data;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 	volatile sPipe *vpipe = pipe;
 

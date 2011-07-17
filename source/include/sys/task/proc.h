@@ -310,7 +310,7 @@ int proc_getExitState(pid_t ppid,sExitState *state);
  *
  * @param p the process
  */
-void proc_segFault(sProc *p);
+void proc_segFault(const sProc *p);
 
 /**
  * Marks the given process as zombie and notifies the waiting parent thread. As soon as the parent

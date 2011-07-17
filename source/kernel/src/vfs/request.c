@@ -79,7 +79,7 @@ void vfs_req_sendMsg(msgid_t id,sVFSNode *node,const void *data,size_t size) {
 }
 
 sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	sRequest *req = NULL;
 	assert(node != NULL);
 

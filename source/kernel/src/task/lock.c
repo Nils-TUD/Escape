@@ -59,7 +59,7 @@ static bool lock_isLocked(const sLock *l,ushort flags) {
 }
 
 int lock_aquire(pid_t pid,ulong ident,ushort flags) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	ssize_t i = lock_get(pid,ident,true);
 	sLock *l;
 	if(i < 0)

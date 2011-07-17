@@ -36,12 +36,12 @@
 static int sysc_doWait(sWaitObject *uobjects,size_t objCount);
 
 int sysc_gettid(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	SYSC_RET1(stack,t->tid);
 }
 
 int sysc_getThreadCount(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	SYSC_RET1(stack,sll_length(t->proc->threads));
 }
 
@@ -63,7 +63,7 @@ int sysc_exit(sIntrptStackFrame *stack) {
 }
 
 int sysc_getCycles(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	uLongLong cycles;
 	cycles.val64 = t->stats.kcycleCount.val64 + t->stats.ucycleCount.val64;
 	SYSC_SETRET2(stack,cycles.val32.upper);
@@ -72,7 +72,7 @@ int sysc_getCycles(sIntrptStackFrame *stack) {
 
 int sysc_sleep(sIntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	int res;
 	if((res = timer_sleepFor(t->tid,msecs)) < 0)
 		SYSC_ERROR(stack,res);
@@ -110,7 +110,7 @@ int sysc_waitUnlock(sIntrptStackFrame *stack) {
 	size_t objCount = SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	int res;
 
 	if(objCount == 0 ||
@@ -143,7 +143,7 @@ int sysc_lock(sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	ushort flags = (uint)SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 
 	int res = lock_aquire(global ? INVALID_PID : p->pid,ident,flags);
 	if(res < 0)
@@ -154,7 +154,7 @@ int sysc_lock(sIntrptStackFrame *stack) {
 int sysc_unlock(sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 
 	int res = lock_release(global ? INVALID_PID : p->pid,ident);
 	if(res < 0)
@@ -164,9 +164,9 @@ int sysc_unlock(sIntrptStackFrame *stack) {
 
 int sysc_join(sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	if(tid != 0) {
-		sThread *tt = thread_getById(tid);
+		const sThread *tt = thread_getById(tid);
 		/* just threads from the own process */
 		if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -185,8 +185,8 @@ int sysc_join(sIntrptStackFrame *stack) {
 
 int sysc_suspend(sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
-	sThread *tt = thread_getById(tid);
+	const sThread *t = thread_getRunning();
+	const sThread *tt = thread_getById(tid);
 	/* just threads from the own process */
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -197,8 +197,8 @@ int sysc_suspend(sIntrptStackFrame *stack) {
 
 int sysc_resume(sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
-	sThread *tt = thread_getById(tid);
+	const sThread *t = thread_getRunning();
+	const sThread *tt = thread_getById(tid);
 	/* just threads from the own process */
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -208,7 +208,7 @@ int sysc_resume(sIntrptStackFrame *stack) {
 }
 
 static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	int res = ERR_INVALID_ARGS;
 	size_t i;
 	sWaitObject *kobjects = (sWaitObject*)cache_alloc(objCount * sizeof(sWaitObject));

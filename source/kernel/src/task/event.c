@@ -59,7 +59,7 @@ void ev_init(void) {
 }
 
 bool ev_waitsFor(tid_t tid,uint events) {
-	sThread *t = thread_getById(tid);
+	const sThread *t = thread_getById(tid);
 	return t->events & events;
 }
 
@@ -133,7 +133,7 @@ void ev_wakeupm(uint events,evobj_t object) {
 }
 
 bool ev_wakeupThread(tid_t tid,uint events) {
-	sThread *t = thread_getById(tid);
+	const sThread *t = thread_getById(tid);
 	if(t->events & events) {
 		ev_removeThread(tid);
 		return true;

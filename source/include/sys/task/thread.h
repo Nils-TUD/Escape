@@ -144,6 +144,14 @@ sThread *thread_getRunning(void);
 void thread_setRunning(sThread *t);
 
 /**
+ * Fetches the thread with given id from the internal thread-map
+ *
+ * @param tid the thread-id
+ * @return the thread or NULL if not found
+ */
+sThread *thread_getById(tid_t tid);
+
+/**
  * Pushes the given thread back to the idle-list
  *
  * @param t the idle-thread
@@ -156,14 +164,6 @@ void thread_pushIdle(sThread *t);
  * @return the thread
  */
 sThread *thread_popIdle(void);
-
-/**
- * Fetches the thread with given id from the internal thread-map
- *
- * @param tid the thread-id
- * @return the thread or NULL if not found
- */
-sThread *thread_getById(tid_t tid);
 
 /**
  * Performs a thread-switch. That means the current thread will be saved and the first thread

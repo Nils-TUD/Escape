@@ -35,7 +35,7 @@ static sEnvVar *env_getiOf(const sProc *p,size_t *index);
 static sEnvVar *env_getOf(const sProc *p,const char *name);
 
 const char *env_geti(pid_t pid,size_t index) {
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	sEnvVar *var;
 	while(1) {
 		var = env_getiOf(p,&index);
@@ -49,7 +49,7 @@ const char *env_geti(pid_t pid,size_t index) {
 }
 
 const char *env_get(pid_t pid,const char *name) {
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	sEnvVar *var;
 	while(1) {
 		var = env_getOf(p,name);

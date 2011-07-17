@@ -425,7 +425,7 @@ static void intrpt_exFatal(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_exGenProtFault(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_START)
 		vid_unsetPrintFunc();
@@ -475,7 +475,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	if(!vmm_pagefault(pfaddr)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
-			sProc *p = proc_getRunning();
+			const sProc *p = proc_getRunning();
 			vid_setTargets(TARGET_LOG);
 			vid_printf("Page fault for address %p @ %p, process %d\n",pfaddr,stack->eip,p->pid);
 			vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",

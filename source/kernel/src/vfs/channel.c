@@ -197,7 +197,7 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;
 	sMessage *msg;
 	size_t event;

@@ -544,7 +544,7 @@ errVmm:
 int vmm_cloneAll(sProc *dst) {
 	size_t i,j;
 	sVMRegion **regs;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	sProc *src = proc_getRunning();
 	assert(dst && dst->regions == NULL && dst->regSize == 0);
 	/* nothing to do? */

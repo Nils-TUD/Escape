@@ -140,7 +140,7 @@ pid_t proc_getFreePid(void) {
 }
 
 sProc *proc_getRunning(void) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	if(t)
 		return t->proc;
 	/* just needed at the beginning */
@@ -165,7 +165,7 @@ size_t proc_getCount(void) {
 
 file_t proc_fdToFile(int fd) {
 	file_t fileNo;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
@@ -178,8 +178,8 @@ file_t proc_fdToFile(int fd) {
 
 int proc_getFreeFd(void) {
 	int i;
-	sProc *p = proc_getRunning();
-	file_t *fds = p->fileDescs;
+	const sProc *p = proc_getRunning();
+	const file_t *fds = p->fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == -1)
 			return i;
@@ -299,7 +299,7 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 	float dReal = 0;
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
+		const sProc *p = (const sProc*)n->data;
 		ownMem += p->ownFrames;
 		shMem += p->sharedFrames;
 		/* + pagedir, page-table for kstack and kstack */
@@ -315,7 +315,7 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 bool proc_hasChild(pid_t pid) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
+		const sProc *p = (const sProc*)n->data;
 		if(p->parentPid == pid)
 			return true;
 	}
@@ -327,7 +327,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	frameno_t stackFrame,dummy;
 	size_t i;
 	sProc *p;
-	sProc *cur = proc_getRunning();
+	const sProc *cur = proc_getRunning();
 	sThread *curThread = thread_getRunning();
 	sThread *nt;
 	int res = 0;
@@ -448,7 +448,7 @@ errorProc:
 
 int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	frameno_t stackFrame;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	sThread *nt;
 	int res;
@@ -545,7 +545,7 @@ int proc_getExitState(pid_t ppid,sExitState *state) {
 	return ERR_NO_CHILD;
 }
 
-void proc_segFault(sProc *p) {
+void proc_segFault(const sProc *p) {
 	sThread *t = thread_getRunning();
 	sig_addSignalFor(p->pid,SIG_SEGFAULT);
 	if(p->flags & P_ZOMBIE)
@@ -824,7 +824,7 @@ void proc_dbg_startProf(void) {
 	sSLNode *n,*m;
 	sThread *t;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
+		const sProc *p = (const sProc*)n->data;
 		assert(p->pid < PROF_PROC_COUNT);
 		ucycles[p->pid] = 0;
 		kcycles[p->pid] = 0;
@@ -840,7 +840,7 @@ void proc_dbg_stopProf(void) {
 	sSLNode *n,*m;
 	sThread *t;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
+		const sProc *p = (const sProc*)n->data;
 		uLongLong curUcycles;
 		uLongLong curKcycles;
 		assert(p->pid < PROF_PROC_COUNT);

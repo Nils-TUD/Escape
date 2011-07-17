@@ -84,8 +84,8 @@ static void view_requests(void);
 static void view_locks(void);
 static void view_events(void);
 
-static sProc *view_getProc(size_t argc,char **argv);
-static sThread *view_getThread(size_t argc,char **argv);
+static const sProc *view_getProc(size_t argc,char **argv);
+static const sThread *view_getThread(size_t argc,char **argv);
 
 static int err = 0;
 static sLines lines;
@@ -179,7 +179,7 @@ static void view_printc(char c) {
 }
 
 static void view_proc(size_t argc,char **argv) {
-	sProc *p = view_getProc(argc,argv);
+	const sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		proc_print(p);
 }
@@ -193,7 +193,7 @@ static void view_signals(void) {
 	sig_print();
 }
 static void view_thread(size_t argc,char **argv) {
-	sThread *t = view_getThread(argc,argv);
+	const sThread *t = view_getThread(argc,argv);
 	if(t != NULL)
 		thread_print(t);
 }
@@ -219,17 +219,17 @@ static void view_kheap(void) {
 	kheap_print();
 }
 static void view_pdirall(size_t argc,char **argv) {
-	sProc *p = view_getProc(argc,argv);
+	const sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_printPDir(p->pagedir,PD_PART_ALL);
 }
 static void view_pdiruser(size_t argc,char **argv) {
-	sProc *p = view_getProc(argc,argv);
+	const sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_printPDir(p->pagedir,PD_PART_USER);
 }
 static void view_pdirkernel(size_t argc,char **argv) {
-	sProc *p = view_getProc(argc,argv);
+	const sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_printPDir(p->pagedir,PD_PART_KERNEL);
 }
@@ -237,7 +237,7 @@ static void view_regions(size_t argc,char **argv) {
 	if(argc < 3)
 		proc_printAllRegions();
 	else {
-		sProc *p = view_getProc(argc,argv);
+		const sProc *p = view_getProc(argc,argv);
 		if(p != NULL)
 			vmm_print(p);
 	}
@@ -278,8 +278,8 @@ static void view_events(void) {
 	ev_print();
 }
 
-static sProc *view_getProc(size_t argc,char **argv) {
-	sProc *p;
+static const sProc *view_getProc(size_t argc,char **argv) {
+	const sProc *p;
 	if(argc > 2)
 		p = proc_getByPid(atoi(argv[2]));
 	else
@@ -289,8 +289,8 @@ static sProc *view_getProc(size_t argc,char **argv) {
 	return p;
 }
 
-static sThread *view_getThread(size_t argc,char **argv) {
-	sThread *t;
+static const sThread *view_getThread(size_t argc,char **argv) {
+	const sThread *t;
 	if(argc > 2)
 		t = thread_getById(atoi(argv[2]));
 	else

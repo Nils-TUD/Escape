@@ -35,7 +35,7 @@
 int sysc_regDriver(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	uint flags = SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	int fd;
 	file_t res;
 
@@ -64,7 +64,7 @@ int sysc_getClientId(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	file_t file;
 	inode_t id;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 
 	file = proc_fdToFile(fd);
 	if(file < 0)
@@ -79,7 +79,7 @@ int sysc_getClientId(sIntrptStackFrame *stack) {
 int sysc_getClient(sIntrptStackFrame *stack) {
 	int drvFd = (int)SYSC_ARG1(stack);
 	inode_t cid = (inode_t)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 	int fd;
 	file_t file,drvFile;
 	int res;
@@ -119,7 +119,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	void *data = (void*)SYSC_ARG5(stack);
 	size_t size = SYSC_ARG6(stack);
 	uint flags = (uint)SYSC_ARG7(stack);
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	file_t file;
 	inode_t clientNo;
 	int fd;

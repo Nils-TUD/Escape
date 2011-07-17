@@ -91,7 +91,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 }
 
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	sProc *p = t->proc;
 	file_t file;
 	size_t j,loadSeg = 0;

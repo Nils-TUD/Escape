@@ -64,7 +64,7 @@ void log_vfsIsReady(void) {
 	file_t inFile;
 	int in,out,err;
 	char *nameCpy;
-	sProc *p = proc_getRunning();
+	const sProc *p = proc_getRunning();
 
 	/* open log-file */
 	assert(vfs_node_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);

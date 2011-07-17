@@ -59,7 +59,7 @@ int sysc_setSigHandler(sIntrptStackFrame *stack) {
 
 int sysc_ackSignal(sIntrptStackFrame *stack) {
 	int res;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	sig_t signal = sig_ackHandling(t->tid);
 	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
@@ -70,7 +70,7 @@ int sysc_ackSignal(sIntrptStackFrame *stack) {
 int sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	sig_t signal = (sig_t)SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	/* store tid and check via thread_getById() because if the thread is destroyed, we can't access
 	 * it anymore */
 	tid_t tid = t->tid;

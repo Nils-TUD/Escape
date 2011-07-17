@@ -75,7 +75,7 @@ ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 
 ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
 	sRequest *req;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	volatile sVFSNode *n = node;
 	void *data;
 	ssize_t res;

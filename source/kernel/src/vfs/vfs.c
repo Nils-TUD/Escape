@@ -103,7 +103,7 @@ void vfs_init(void) {
 }
 
 int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
-	sProc *p;
+	const sProc *p;
 	uint mode;
 	if(n->name == NULL)
 		return ERR_INVALID_FILE;
@@ -981,14 +981,14 @@ errorName:
 
 void vfs_removeProcess(pid_t pid) {
 	/* remove from /system/processes */
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	vfs_node_destroy(p->threadDir->parent);
 }
 
 bool vfs_createThread(tid_t tid) {
 	char *name;
 	sVFSNode *n,*dir;
-	sThread *t = thread_getById(tid);
+	const sThread *t = thread_getById(tid);
 
 	/* build name */
 	name = (char*)cache_alloc(12);
@@ -1020,7 +1020,7 @@ errorDir:
 }
 
 void vfs_removeThread(tid_t tid) {
-	sThread *t = thread_getById(tid);
+	const sThread *t = thread_getById(tid);
 	sVFSNode *n;
 	char *name;
 
@@ -1090,7 +1090,7 @@ void vfs_printGFT(void) {
 			if(e->owner == KERNEL_PID)
 				vid_printf("\t\towner: %d (kernel)\n",e->owner);
 			else {
-				sProc *p = proc_getByPid(e->owner);
+				const sProc *p = proc_getByPid(e->owner);
 				vid_printf("\t\towner: %d:%s\n",e->owner,p ? p->command : "???");
 			}
 			if(e->devNo == VFS_DEV_NO) {

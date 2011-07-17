@@ -90,7 +90,7 @@ void vfs_real_removeProc(pid_t pid) {
 }
 
 file_t vfs_real_openPath(pid_t pid,uint flags,const char *path) {
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	ssize_t res = ERR_NOT_ENOUGH_MEM;
 	size_t pathLen = strlen(path);
 	sVFSNode *node;
@@ -173,7 +173,7 @@ static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,sF
 
 	/* send msg to fs */
 	if(path) {
-		sProc *p = proc_getByPid(pid);
+		const sProc *p = proc_getByPid(pid);
 		msg.str.arg1 = p->euid;
 		msg.str.arg2 = p->egid;
 		msg.str.arg3 = p->pid;
@@ -349,7 +349,7 @@ void vfs_real_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 
 static int vfs_real_pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
 	int res = ERR_NOT_ENOUGH_MEM;
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	sRequest *req;
 	file_t fs;
 	sVFSNode *node;
@@ -562,7 +562,7 @@ errorChan:
 
 static void vfs_real_releaseFile(pid_t pid,file_t file) {
 	sSLNode *n;
-	sProc *p = proc_getByPid(pid);
+	const sProc *p = proc_getByPid(pid);
 	for(n = sll_begin(p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
 		if(chan->file == file) {

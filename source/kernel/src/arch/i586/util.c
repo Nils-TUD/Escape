@@ -48,7 +48,7 @@ static uint64_t profStart;
 
 void util_panic(const char *fmt,...) {
 	static uint32_t regs[REG_COUNT];
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	va_list ap;
 
 	/* enter video-mode 0x2 to be sure that the user can see the panic :) */
@@ -128,7 +128,7 @@ void util_stopTimer(const char *prefix,...) {
 
 sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
-	sThread *t = thread_getRunning();
+	const sThread *t = thread_getRunning();
 	vmm_getRegRange(t->proc,t->stackRegions[0],&start,&end);
 	return util_getStackTrace((uint32_t*)t->kstackEnd->ebp,start,start,end);
 }

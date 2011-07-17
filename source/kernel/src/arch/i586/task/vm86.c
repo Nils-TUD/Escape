@@ -144,8 +144,8 @@ int vm86_create(void) {
 
 int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t areaCount) {
 	size_t i;
-	sThread *t;
-	sThread *vm86t;
+	const sThread *t;
+	const sThread *vm86t;
 	volatile sVM86Info **volInfo;
 	for(i = 0; i < areaCount; i++) {
 		if((areas[i].type == VM86_MEM_DIRECT &&
@@ -425,8 +425,8 @@ start:
 }
 
 static void vm86_stop(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
-	sThread *ct = thread_getById(caller);
+	const sThread *t = thread_getRunning();
+	const sThread *ct = thread_getById(caller);
 	if(ct != NULL) {
 		vm86_copyRegResult(stack);
 		thread_setReady(caller);

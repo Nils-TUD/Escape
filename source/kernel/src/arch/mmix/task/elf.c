@@ -85,7 +85,7 @@ static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *h
 	size_t j;
 	ssize_t res;
 	uint64_t *stack;
-	vmm_getRegRange(t->proc,t->stackRegions[0],(uintptr_t*)&stack,&end);
+	thread_getStackRange(t,(uintptr_t*)&stack,&end,0);
 	/* make writeable (if copy-on-write is activated, vmm_pagefault() is called to resolve it */
 	paging_isRangeUserWritable((uintptr_t)stack,(uintptr_t)stack + PAGE_SIZE);
 	*stack++ = 0;	/* $0 */

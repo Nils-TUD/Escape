@@ -44,6 +44,13 @@ int thread_initArch(sThread *t) {
 	return 0;
 }
 
+void thread_addInitialStack(sThread *t) {
+	assert(t->tid == INIT_TID);
+	t->stackRegions[0] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+	assert(t->stackRegions[0] >= 0);
+}
+
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
 	if(!cloneProc) {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
@@ -157,10 +164,8 @@ static void thread_doSwitch(sThread *cur,sThread *old) {
 	}
 
 	/* set TLS-segment in GDT */
-	if(cur->tlsRegion >= 0) {
-		vmm_getRegRange(cur->proc,cur->tlsRegion,&tlsStart,&tlsEnd);
+	if(thread_getTLSRange(cur,&tlsStart,&tlsEnd))
 		gdt_setTLS(tlsStart,tlsEnd - tlsStart);
-	}
 	else
 		gdt_setTLS(0,0xFFFFFFFF);
 	/* lock the FPU so that we can save the FPU-state for the previous process as soon

@@ -19,7 +19,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 # simulators
 #KVM = -enable-kvm
 QEMU = qemu
-QEMUARGS = -net nic,model=ne2k_pci -net user -smp 4 -serial stdio -hda $(HDD) -boot order=d \
+QEMUARGS = -net nic,model=ne2k_pci -net user -smp 1 -serial stdio -hda $(HDD) -boot order=d \
 	-vga std -m 32 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20

@@ -69,18 +69,18 @@ typedef enum {
 /* represents a thread */
 typedef struct sThread sThread;
 struct sThread {
-	uint8_t flags;
+	const uint8_t flags;
 	/* thread state. see eThreadState */
 	uint8_t state;
 	/* whether signals should be ignored (while being blocked) */
 	uint8_t ignoreSignals;
 	/* thread id */
-	tid_t tid;
+	const tid_t tid;
 	/* the events the thread waits for (if waiting) */
 	uint events;
 	sWait *waits;
 	/* the process we belong to */
-	sProc *proc;
+	sProc *const proc;
 	/* the stack-region(s) for this thread */
 	vmreg_t stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
@@ -127,6 +127,13 @@ sThread *thread_init(sProc *p);
 int thread_initArch(sThread *t);
 
 /**
+ * Adds a stack to the given initial thread. This is just used for initloader.
+ *
+ * @param t the thread
+ */
+void thread_addInitialStack(sThread *t);
+
+/**
  * @return the number of existing threads
  */
 size_t thread_getCount(void);
@@ -166,6 +173,41 @@ void thread_pushIdle(sThread *t);
 sThread *thread_popIdle(void);
 
 /**
+ * Retrieves the range of the stack with given number.
+ *
+ * @param t the thread
+ * @param start will be set to the start-address (may be NULL)
+ * @param end will be set to the end-address (may be NULL)
+ * @param stackNo the stack-number
+ * @return true if the stack-region exists
+ */
+bool thread_getStackRange(const sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo);
+
+/**
+ * Retrieves the range of the TLS region
+ *
+ * @param t the thread
+ * @param start will be set to the start-address (may be NULL)
+ * @param end will be set to the end-address (may be NULL)
+ * @return true if the TLS-region exists
+ */
+bool thread_getTLSRange(const sThread *t,uintptr_t *start,uintptr_t *end);
+
+/**
+ * @param t the thread
+ * @return the TLS-region number of the given thread (-1 if not existing)
+ */
+vmreg_t thread_getTLSRegion(const sThread *t);
+
+/**
+ * Sets the TLS-region for the given thread
+ *
+ * @param t the thread
+ * @param rno the region-number
+ */
+void thread_setTLSRegion(sThread *t,vmreg_t rno);
+
+/**
  * Performs a thread-switch. That means the current thread will be saved and the first thread
  * will be picked from the ready-queue and resumed.
  */
@@ -192,12 +234,14 @@ void thread_switchTo(tid_t tid);
 void thread_killDead(void);
 
 /**
- * Marks the given thread as ready (if the thread hasn't said that he don't wants to be interrupted)
+ * Marks the given thread as ready
  *
  * @param tid the thread-id
+ * @param isSignal whether the reason for wakeup is a signal; if so, the thread will only be made
+ * 	ready if signals are not ignored currently.
  * @return true if the thread is ready now
  */
-bool thread_setReady(tid_t tid);
+bool thread_setReady(tid_t tid,bool isSignal);
 
 /**
  * Marks the given thread as blocked
@@ -223,6 +267,14 @@ void thread_setSuspended(tid_t tid,bool blocked);
  * @return true if so
  */
 bool thread_hasStackRegion(const sThread *t,vmreg_t regNo);
+
+/**
+ * Removes the regions for this thread. Optionally the stack as well.
+ *
+ * @param t the thread
+ * @param remStack whether to remove the stack
+ */
+void thread_removeRegions(sThread *t,bool remStack);
 
 /**
  * Extends the stack of the current thread so that the given address is accessible. If that
@@ -252,12 +304,11 @@ int thread_finishClone(sThread *t,sThread *nt);
  * @param dst will contain a pointer to the new thread
  * @param p the process the thread should belong to
  * @param flags the flags for the thread (T_*)
- * @param stackFrame will contain the stack-frame that has been used for the kernel-stack of the
- * 	new thread
+ * @param stackFrame the stack-frame to set (0 = allocate new)
  * @param cloneProc whether a process is cloned or just a thread
  * @return 0 on success
  */
-int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t *stackFrame,
+int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
 		bool cloneProc);
 
 /**

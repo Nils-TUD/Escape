@@ -48,11 +48,9 @@ uintptr_t bspstart(sBootInfo *mbp,uint32_t magic) {
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
-	t = thread_getRunning();
 	/* give the process some stack pages */
-	t->stackRegions[0] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-	assert(t->stackRegions[0] >= 0);
+	t = thread_getRunning();
+	thread_addInitialStack(t);
 	return info.progEntry;
 }
 

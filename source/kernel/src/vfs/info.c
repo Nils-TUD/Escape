@@ -211,11 +211,9 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 	buf.size = 0;
 	buf.len = 0;
 	for(i = 0; i < STACK_REG_COUNT; i++) {
-		if(t->stackRegions[i] >= 0) {
-			uintptr_t stackBegin = 0,stackEnd = 0;
-			vmm_getRegRange(t->proc,t->stackRegions[i],&stackBegin,&stackEnd);
+		uintptr_t stackBegin = 0,stackEnd = 0;
+		if(thread_getStackRange(t,&stackBegin,&stackEnd,i))
 			stackPages += (stackEnd - stackBegin) / PAGE_SIZE;
-		}
 	}
 
 	prf_sprintf(

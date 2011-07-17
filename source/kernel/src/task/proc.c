@@ -324,7 +324,7 @@ bool proc_hasChild(pid_t pid) {
 
 int proc_clone(pid_t newPid,uint8_t flags) {
 	assert((flags & P_ZOMBIE) == 0);
-	frameno_t stackFrame,dummy;
+	frameno_t stackFrame;
 	size_t i;
 	sProc *p;
 	const sProc *cur = proc_getRunning();
@@ -390,14 +390,12 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	}
 
 	/* clone current thread */
-	if((res = thread_clone(curThread,&nt,p,0,&dummy,true)) < 0)
+	if((res = thread_clone(curThread,&nt,p,0,stackFrame,true)) < 0)
 		goto errorThreadList;
 	if(!sll_append(p->threads,nt)) {
 		res = ERR_NOT_ENOUGH_MEM;
 		goto errorThread;
 	}
-	/* set kernel-stack-frame; thread_clone() doesn't do it for us */
-	nt->kstackFrame = stackFrame;
 	/* add to processes */
 	if(!proc_add(p)) {
 		res = ERR_NOT_ENOUGH_MEM;
@@ -412,7 +410,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	}
 
 	/* make thread ready */
-	thread_setReady(nt->tid);
+	thread_setReady(nt->tid,false);
 
 #ifdef __eco32__
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
@@ -447,12 +445,11 @@ errorProc:
 }
 
 int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
-	frameno_t stackFrame;
 	const sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	sThread *nt;
 	int res;
-	if((res = thread_clone(t,&nt,t->proc,flags,&stackFrame,false)) < 0)
+	if((res = thread_clone(t,&nt,t->proc,flags,0,false)) < 0)
 		return res;
 
 	/* append thread */
@@ -465,7 +462,7 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	if(nt->flags & T_IDLE)
 		thread_setBlocked(nt->tid);
 	else
-		thread_setReady(nt->tid);
+		thread_setReady(nt->tid,false);
 
 #ifdef __eco32__
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
@@ -515,13 +512,7 @@ void proc_removeRegions(sProc *p,bool remStack) {
 	/* unset TLS-region (and stack-region, if needed) from all threads */
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
-		t->tlsRegion = -1;
-		if(remStack) {
-			for(i = 0; i < STACK_REG_COUNT; i++)
-				t->stackRegions[i] = -1;
-		}
-		/* remove all signal-handler since we've removed the code to handle signals */
-		sig_removeHandlerFor(t->tid);
+		thread_removeRegions(t,remStack);
 	}
 }
 

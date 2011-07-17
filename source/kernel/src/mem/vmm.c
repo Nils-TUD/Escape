@@ -268,11 +268,12 @@ void vmm_swapIn(sRegion *reg,size_t index,frameno_t frameNo) {
 
 void vmm_setTimestamp(const sThread *t,time_t timestamp) {
 	size_t i;
+	size_t tls = thread_getTLSRegion(t);
 	for(i = 0; i < t->proc->regSize; i++) {
 		sVMRegion *vm = REG(t->proc,i);
 		if(vm) {
 			/* for stack and tls: just mark the ones of the given thread used */
-			if((!(vm->reg->flags & RF_TLS) || i == (size_t)t->tlsRegion) &&
+			if((!(vm->reg->flags & RF_TLS) || i == tls) &&
 				(!(vm->reg->flags & RF_STACK) || thread_hasStackRegion(t,i))) {
 				vm->reg->timestamp = timestamp;
 			}
@@ -630,43 +631,35 @@ error:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-int vmm_growStackTo(sThread *t,uintptr_t addr) {
-	size_t i;
-	int res = 0;
+int vmm_growStackTo(sThread *t,vmreg_t reg,uintptr_t addr) {
 	addr &= ~(PAGE_SIZE - 1);
-	for(i = 0; i < STACK_REG_COUNT; i++) {
-		/* if it does not yet exist, report an error */
-		if(t->stackRegions[i] < 0)
+	sVMRegion *vm = REG(t->proc,reg);
+	ssize_t newPages = 0;
+	/* report failure if its outside (upper / lower) of the region */
+	/* note that we assume here that if a thread has multiple stack-regions, they grow towards
+	 * each other */
+	if(vm->reg->flags & RF_GROWS_DOWN) {
+		if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
 			return ERR_NOT_ENOUGH_MEM;
-
-		sVMRegion *vm = REG(t->proc,t->stackRegions[i]);
-		ssize_t newPages = 0;
-		/* report failure if its outside (upper / lower) of the region */
-		/* note that we assume here that if a thread has multiple stack-regions, they grow towards
-		 * each other */
-		if(vm->reg->flags & RF_GROWS_DOWN) {
-			if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
-				return ERR_NOT_ENOUGH_MEM;
-			if(addr < vm->virt)
-				newPages = (vm->virt - addr) / PAGE_SIZE;
-		}
-		else {
-			if(addr < vm->virt)
-				return ERR_NOT_ENOUGH_MEM;
-			if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
-				newPages = ROUNDUP(addr - (vm->virt + ROUNDUP(vm->reg->byteCount) - 1)) / PAGE_SIZE;
-		}
-
-		/* if its too much, try the next one; if there is none that fits, report failure */
-		if(BYTES_2_PAGES(vm->reg->byteCount) + newPages >= MAX_STACK_PAGES - 1)
-			res = ERR_NOT_ENOUGH_MEM;
-		/* no new pages necessary? then its no failure */
-		else if(newPages == 0)
-			return 0;
-		else if(newPages > 0)
-			return vmm_grow(t->proc,t->stackRegions[i],newPages);
+		if(addr < vm->virt)
+			newPages = (vm->virt - addr) / PAGE_SIZE;
 	}
-	return res;
+	else {
+		if(addr < vm->virt)
+			return ERR_NOT_ENOUGH_MEM;
+		if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
+			newPages = ROUNDUP(addr - (vm->virt + ROUNDUP(vm->reg->byteCount) - 1)) / PAGE_SIZE;
+	}
+
+	/* if its too much, try the next one; if there is none that fits, report failure */
+	if(BYTES_2_PAGES(vm->reg->byteCount) + newPages >= MAX_STACK_PAGES - 1)
+		return ERR_NOT_ENOUGH_MEM;
+	/* no new pages necessary? then its no failure */
+	else if(newPages == 0)
+		return 0;
+	else if(newPages > 0)
+		return vmm_grow(t->proc,reg,newPages);
+	return ERR_NOT_ENOUGH_MEM;
 }
 
 ssize_t vmm_grow(sProc *p,vmreg_t reg,ssize_t amount) {

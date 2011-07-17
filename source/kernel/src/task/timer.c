@@ -157,7 +157,7 @@ void timer_intrpt(void) {
 		foundThread = true;
 		tn = n->next;
 		/* wake up thread */
-		thread_setReady(l->tid);
+		thread_setReady(l->tid,false);
 		l->next = freeList;
 		freeList = l;
 		sll_removeNode(listener,n,NULL);

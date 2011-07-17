@@ -68,7 +68,7 @@ void uenv_handleSignal(void) {
 			/* this may fail because perhaps we're involved in a swapping-operation or similar */
 			/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
 			 * about that) */
-			if(thread_setReady(tid))
+			if(thread_setReady(tid,true))
 				thread_switchTo(tid);
 		}
 	}
@@ -183,7 +183,7 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	totalSize += sizeof(uint32_t) * 5;
 
 	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegions[0],NULL,(uintptr_t*)&esp);
+	thread_getStackRange(t,NULL,(uintptr_t*)&esp,0);
 
 	/* extend the stack if necessary */
 	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
@@ -263,7 +263,7 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	 */
 
 	/* get esp */
-	vmm_getRegRange(t->proc,t->stackRegions[0],NULL,(uintptr_t*)&esp);
+	thread_getStackRange(t,NULL,(uintptr_t*)&esp,0);
 
 	/* extend the stack if necessary */
 	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
@@ -304,9 +304,8 @@ static void uenv_setupStack(sIntrptStackFrame *frame,uintptr_t entryPoint) {
 
 static uint32_t *uenv_addArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
-	if(t->tlsRegion >= 0) {
-		uintptr_t tlsStart,tlsEnd;
-		vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
+	uintptr_t tlsStart,tlsEnd;
+	if(thread_getTLSRange(t,&tlsStart,&tlsEnd)) {
 		*esp-- = tlsEnd - tlsStart;
 		*esp-- = tlsStart;
 	}

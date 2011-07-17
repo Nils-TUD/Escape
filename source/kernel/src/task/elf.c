@@ -194,22 +194,23 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 			if(stype < 0)
 				goto failed;
 			if(stype == REG_TLS) {
-				uintptr_t tlsStart,tlsEnd;
-				vmm_getRegRange(p,t->tlsRegion,&tlsStart,&tlsEnd);
-				/* read tdata */
-				if(vfs_seek(p->pid,file,(off_t)pheader.p_offset,SEEK_SET) < 0) {
-					log_printf("[LOADER] Seeking to load segment %d (%Ox) failed\n",
-							loadSeg,pheader.p_offset);
-					goto failed;
+				uintptr_t tlsStart;
+				if(thread_getTLSRange(t,&tlsStart,NULL)) {
+					/* read tdata */
+					if(vfs_seek(p->pid,file,(off_t)pheader.p_offset,SEEK_SET) < 0) {
+						log_printf("[LOADER] Seeking to load segment %d (%Ox) failed\n",
+								loadSeg,pheader.p_offset);
+						goto failed;
+					}
+					if((readRes = vfs_readFile(p->pid,file,(void*)tlsStart,pheader.p_filesz)) < 0) {
+						log_printf("[LOADER] Reading load segment %d failed: %s\n",
+								loadSeg,strerror(readRes));
+						goto failed;
+					}
+					/* clear tbss */
+					paging_zeroToUser((void*)(tlsStart + pheader.p_filesz),
+							pheader.p_memsz - pheader.p_filesz);
 				}
-				if((readRes = vfs_readFile(p->pid,file,(void*)tlsStart,pheader.p_filesz)) < 0) {
-					log_printf("[LOADER] Reading load segment %d failed: %s\n",
-							loadSeg,strerror(readRes));
-					goto failed;
-				}
-				/* clear tbss */
-				paging_zeroToUser((void*)(tlsStart + pheader.p_filesz),
-						pheader.p_memsz - pheader.p_filesz);
 			}
 			loadSeg++;
 		}
@@ -288,6 +289,6 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		return res;
 	}
 	if(stype == REG_TLS)
-		t->tlsRegion = res;
+		thread_setTLSRegion(t,res);
 	return stype;
 }

@@ -94,7 +94,7 @@ int sysc_addRegion(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,rno);
 	/* save tls-region-number */
 	if(type == REG_TLS)
-		t->tlsRegion = rno;
+		thread_setTLSRegion(t,rno);
 	vmm_getRegRange(p,rno,&start,0);
 	SYSC_RET1(stack,start);
 }

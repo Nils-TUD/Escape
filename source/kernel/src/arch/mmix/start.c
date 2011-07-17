@@ -42,12 +42,7 @@ uintptr_t bspstart(const sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss)
 
 	/* give the process some stack pages */
 	t = thread_getRunning();
-	t->stackRegions[0] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP);
-	assert(t->stackRegions[0] >= 0);
-	t->stackRegions[1] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-	assert(t->stackRegions[1] >= 0);
+	thread_addInitialStack(t);
 
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)

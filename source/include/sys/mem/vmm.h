@@ -268,10 +268,11 @@ int vmm_cloneAll(sProc *dst);
  * Grows the stack of the given thread so that <addr> is accessible, if possible
  *
  * @param t the thread
+ * @param reg the region
  * @param addr the address
  * @return 0 on success
  */
-int vmm_growStackTo(sThread *t,uintptr_t addr);
+int vmm_growStackTo(sThread *t,vmreg_t reg,uintptr_t addr);
 
 /**
  * If <amount> is positive, the region will be grown by <amount> pages. If negative it will be

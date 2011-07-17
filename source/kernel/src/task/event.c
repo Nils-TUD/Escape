@@ -68,7 +68,11 @@ bool ev_wait(tid_t tid,size_t evi,evobj_t object) {
 	sWait *w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
-	return ev_doWait(t,evi,object,&t->waits,w) != NULL;
+	if(ev_doWait(t,evi,object,&t->waits,w) != NULL) {
+		thread_setBlocked(tid);
+		return true;
+	}
+	return false;
 }
 
 bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
@@ -80,9 +84,7 @@ bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
 
 	for(i = 0; i < objCount; i++) {
 		uint events = objects[i].events;
-		if(events == 0)
-			sched_setBlocked(t);
-		else {
+		if(events != 0) {
 			for(e = 0; events && e < EV_COUNT; e++) {
 				if(events & (1 << e)) {
 					w = ev_doWait(t,e,objects[i].object,&t->waits,w);
@@ -95,6 +97,7 @@ bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
 			}
 		}
 	}
+	thread_setBlocked(tid);
 	return true;
 }
 
@@ -111,7 +114,7 @@ void ev_wakeup(size_t evi,evobj_t object) {
 				/* all slots in use, so remove this threads and start from the beginning to find
 				 * more. hopefully, this will happen nearly never :) */
 				for(; i > 0; i--)
-					ev_removeThread(tids[i - 1]);
+					thread_setReady(tids[i - 1],false);
 				w = list->begin;
 				continue;
 			}
@@ -119,7 +122,7 @@ void ev_wakeup(size_t evi,evobj_t object) {
 		w = w->next;
 	}
 	for(; i > 0; i--)
-		ev_removeThread(tids[i - 1]);
+		thread_setReady(tids[i - 1],false);
 }
 
 void ev_wakeupm(uint events,evobj_t object) {
@@ -135,7 +138,7 @@ void ev_wakeupm(uint events,evobj_t object) {
 bool ev_wakeupThread(tid_t tid,uint events) {
 	const sThread *t = thread_getById(tid);
 	if(t->events & events) {
-		ev_removeThread(tid);
+		thread_setReady(tid,false);
 		return true;
 	}
 	return false;
@@ -160,14 +163,14 @@ void ev_removeThread(tid_t tid) {
 		}
 		t->waits = NULL;
 		t->events = 0;
-		sched_setReady(t);
 	}
 }
 
-void ev_printEvMask(uint mask) {
+void ev_printEvMask(tid_t tid) {
+	sThread *t = thread_getById(tid);
 	uint e;
 	for(e = 0; e < EV_COUNT; e++) {
-		if(mask & (1 << e))
+		if(t->events & (1 << e))
 			vid_printf("%s ",ev_getName(e));
 	}
 }
@@ -215,7 +218,6 @@ static sWait *ev_doWait(sThread *t,size_t evi,evobj_t object,sWait **begin,sWait
 	else
 		*begin = w;
 	w->tnext = NULL;
-	sched_setBlocked(t);
 	return w;
 }
 

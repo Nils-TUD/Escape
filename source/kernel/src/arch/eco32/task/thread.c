@@ -41,6 +41,13 @@ int thread_initArch(sThread *t) {
 	return 0;
 }
 
+void thread_addInitialStack(sThread *t) {
+	assert(t->tid == INIT_TID);
+	t->stackRegions[0] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+	assert(t->stackRegions[0] >= 0);
+}
+
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
 	UNUSED(src);
 	if(!cloneProc) {

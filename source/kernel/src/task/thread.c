@@ -84,13 +84,14 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
-	t->flags = 0;
+	*(uint8_t*)&t->flags = 0;
+	*(tid_t*)&t->tid = nextTid++;
+	*(sProc**)&t->proc = p;
+
 	t->state = state;
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
-	t->tid = nextTid++;
-	t->proc = p;
 	/* we'll give the thread a stack later */
 	t->kstackEnd = NULL;
 	t->stats.ucycleCount.val64 = 0;
@@ -142,6 +143,30 @@ sThread *thread_popIdle(void) {
 	return sll_removeFirst(idleThreads);
 }
 
+bool thread_getStackRange(const sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
+	if(t->stackRegions[stackNo] >= 0) {
+		vmm_getRegRange(t->proc,t->stackRegions[stackNo],start,end);
+		return true;
+	}
+	return false;
+}
+
+bool thread_getTLSRange(const sThread *t,uintptr_t *start,uintptr_t *end) {
+	if(t->tlsRegion >= 0) {
+		vmm_getRegRange(t->proc,t->tlsRegion,start,end);
+		return true;
+	}
+	return false;
+}
+
+vmreg_t thread_getTLSRegion(const sThread *t) {
+	return t->tlsRegion;
+}
+
+void thread_setTLSRegion(sThread *t,vmreg_t rno) {
+	t->tlsRegion = rno;
+}
+
 void thread_switch(void) {
 	thread_switchTo(sched_perform()->tid);
 }
@@ -171,11 +196,11 @@ void thread_killDead(void) {
 	}
 }
 
-bool thread_setReady(tid_t tid) {
+bool thread_setReady(tid_t tid,bool isSignal) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL && t != thread_getRunning(),"tid=%d, pid=%d, cmd=%s",
 			t ? t->tid : 0,t ? t->proc->pid : 0,t ? t->proc->command : "?");
-	if(!t->ignoreSignals) {
+	if(!isSignal || !t->ignoreSignals) {
 		sched_setReady(t);
 		ev_removeThread(tid);
 	}
@@ -204,24 +229,48 @@ bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {
 	return false;
 }
 
-int thread_extendStack(uintptr_t address) {
-	return vmm_growStackTo(thread_getRunning(),address);
+void thread_removeRegions(sThread *t,bool remStack) {
+	t->tlsRegion = -1;
+	if(remStack) {
+		size_t i;
+		for(i = 0; i < STACK_REG_COUNT; i++)
+			t->stackRegions[i] = -1;
+	}
+	/* remove all signal-handler since we've removed the code to handle signals */
+	sig_removeHandlerFor(t->tid);
 }
 
-int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t *stackFrame,
+int thread_extendStack(uintptr_t address) {
+	sThread *t = thread_getRunning();
+	size_t i;
+	int res = 0;
+	for(i = 0; i < STACK_REG_COUNT; i++) {
+		/* if it does not yet exist, report an error */
+		if(t->stackRegions[i] < 0)
+			return ERR_NOT_ENOUGH_MEM;
+
+		res = vmm_growStackTo(t,t->stackRegions[i],address);
+		if(res >= 0)
+			return res;
+	}
+	return res;
+}
+
+int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
 		bool cloneProc) {
 	int err = ERR_NOT_ENOUGH_MEM;
 	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
-	t->tid = thread_getFreeTid();
+	*(tid_t*)&t->tid = thread_getFreeTid();
 	if(t->tid == INVALID_TID) {
 		err = ERR_NO_FREE_THREADS;
 		goto errThread;
 	}
+	*(uint8_t*)&t->flags = flags;
+	*(sProc**)&t->proc = p;
 
-	t->flags = flags;
 	t->state = ST_RUNNING;
 	t->events = 0;
 	t->waits = NULL;
@@ -233,10 +282,9 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
 	t->kstackEnd = src->kstackEnd;
-	t->proc = p;
 	if(cloneProc) {
 		size_t i;
-		/* proc_clone() sets t->kstackFrame in this case */
+		t->kstackFrame = stackFrame;
 		for(i = 0; i < STACK_REG_COUNT; i++)
 			t->stackRegions[i] = src->stackRegions[i];
 		t->tlsRegion = src->tlsRegion;
@@ -250,7 +298,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 			goto errThread;
 
 		/* add kernel-stack */
-		*stackFrame = t->kstackFrame = pmem_allocate();
+		t->kstackFrame = pmem_allocate();
 		p->ownFrames++;
 		/* add a new tls-region, if its present in the src-thread */
 		t->tlsRegion = -1;
@@ -378,7 +426,7 @@ void thread_print(const sThread *t) {
 	vid_printf("\t\tFlags=%#x\n",t->flags);
 	vid_printf("\t\tState=%s\n",states[t->state]);
 	vid_printf("\t\tEvents=");
-	ev_printEvMask(t->events);
+	ev_printEvMask(t->tid);
 	vid_printf("\n");
 	vid_printf("\t\tKstackFrame=%#Px\n",t->kstackFrame);
 	vid_printf("\t\tTlsRegion=%d, ",t->tlsRegion);

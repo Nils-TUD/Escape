@@ -77,7 +77,7 @@ void util_panic(const char *fmt,...) {
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 	util_printStackTrace(util_getKernelStackTrace());
 
-	if(t != NULL && t->stackRegions[0] >= 0) {
+	if(t != NULL) {
 		util_printStackTrace(util_getUserStackTrace());
 		vid_printf("User-Register:\n");
 		regs[R_EAX] = t->kstackEnd->eax;
@@ -129,8 +129,9 @@ void util_stopTimer(const char *prefix,...) {
 sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
 	const sThread *t = thread_getRunning();
-	vmm_getRegRange(t->proc,t->stackRegions[0],&start,&end);
-	return util_getStackTrace((uint32_t*)t->kstackEnd->ebp,start,start,end);
+	if(thread_getStackRange(t,&start,&end,0))
+		return util_getStackTrace((uint32_t*)t->kstackEnd->ebp,start,start,end);
+	return NULL;
 }
 
 sFuncCall *util_getKernelStackTrace(void) {
@@ -155,8 +156,7 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 	size_t pcount;
 	sFuncCall *calls;
 	frameno_t *frames;
-	if(t->stackRegions[0] >= 0) {
-		vmm_getRegRange(t->proc,t->stackRegions[0],&start,&end);
+	if(thread_getStackRange(t,&start,&end,0)) {
 		pcount = (end - start) / PAGE_SIZE;
 		frames = cache_alloc((pcount + 2) * sizeof(frameno_t));
 		if(frames) {

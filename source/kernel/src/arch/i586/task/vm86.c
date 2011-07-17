@@ -107,8 +107,6 @@ int vm86_create(void) {
 
 	/* remove all regions */
 	proc_removeRegions(p,true);
-	/* unset stack-region, so that we can't access it anymore */
-	t->stackRegions[0] = -1;
 
 	/* Now map the first MiB of physical memory to 0x00000000 and the first 64 KiB to 0x00100000,
 	 * too. Because in real-mode it occurs an address-wraparound at 1 MiB. In VM86-mode it doesn't
@@ -180,7 +178,7 @@ int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* make vm86 ready */
-	thread_setReady(vm86t->tid);
+	thread_setReady(vm86t->tid,false);
 
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
@@ -383,7 +381,7 @@ start:
 	if(pmem_getFreeFrames(MM_DEF) < frameCnt) {
 		vm86Res = ERR_NOT_ENOUGH_MEM;
 		/* make caller ready, block us and do a switch */
-		thread_setReady(caller);
+		thread_setReady(caller,false);
 		thread_setBlocked(thread_getRunning()->tid);
 		thread_switch();
 		goto start;
@@ -429,7 +427,7 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 	const sThread *ct = thread_getById(caller);
 	if(ct != NULL) {
 		vm86_copyRegResult(stack);
-		thread_setReady(caller);
+		thread_setReady(caller,false);
 	}
 	vm86Res = 0;
 

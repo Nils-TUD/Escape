@@ -154,11 +154,11 @@ bool ev_wakeupThread(tid_t tid,uint events);
 void ev_removeThread(tid_t tid);
 
 /**
- * Prints the given event-mask
+ * Prints the event-mask of given thread
  *
- * @param mask the mask
+ * @param tid the thread-id
  */
-void ev_printEvMask(uint mask);
+void ev_printEvMask(tid_t tid);
 
 /**
  * Prints all waiting threads

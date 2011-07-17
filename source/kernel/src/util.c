@@ -52,14 +52,16 @@ void util_srand(uint seed) {
 }
 
 void util_printStackTrace(const sFuncCall *trace) {
-	if(trace->addr < KERNEL_START)
-		vid_printf("User-Stacktrace:\n");
-	else
-		vid_printf("Kernel-Stacktrace:\n");
+	if(trace) {
+		if(trace->addr < KERNEL_START)
+			vid_printf("User-Stacktrace:\n");
+		else
+			vid_printf("Kernel-Stacktrace:\n");
 
-	while(trace->addr != 0) {
-		vid_printf("\t%p -> %p (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
-		trace++;
+		while(trace->addr != 0) {
+			vid_printf("\t%p -> %p (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
+			trace++;
+		}
 	}
 }
 

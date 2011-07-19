@@ -52,7 +52,7 @@ sProcGroups *groups_join(sProcGroups *g);
  * @param gid the group-id
  * @return true if so
  */
-bool groups_contains(sProcGroups *g,gid_t gid);
+bool groups_contains(const sProcGroups *g,gid_t gid);
 
 /**
  * Leaves the given group, i.e. decreases the references. If refCount is 0, it will be free'd.
@@ -66,6 +66,6 @@ void groups_leave(sProcGroups *g);
  *
  * @param g the group-descriptor
  */
-void groups_print(sProcGroups *g);
+void groups_print(const sProcGroups *g);
 
 #endif /* GROUPS_H_ */

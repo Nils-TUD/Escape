@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/task/vm86.h>
+#include <sys/arch/i586/task/ioports.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
@@ -122,10 +123,7 @@ int vm86_create(void) {
 	 * following instructions, too!? By giving the task the permission to perform port I/O
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
-	if(p->ioMap == NULL)
-		p->ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
-	if(p->ioMap != NULL)
-		memclear(p->ioMap,IO_MAP_SIZE / 8);
+	ioports_request(p,0,IO_MAP_SIZE / 8);
 
 	/* give it a name */
 	proc_setCommand(p,"VM86");

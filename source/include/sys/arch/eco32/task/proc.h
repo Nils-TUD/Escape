@@ -26,4 +26,8 @@
 #define FS_PID				3
 #define KEYBOARD_PID		8	/* just for debugging */
 
+typedef struct {
+	uint8_t dummy;
+} sProcArchAttr;
+
 #endif /* ECO32_PROC_H_ */

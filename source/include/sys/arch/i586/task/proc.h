@@ -29,4 +29,9 @@
 /* special process-flag for x86 */
 #define P_VM86				2
 
+typedef struct {
+	/* the io-map (NULL by default) */
+	uint8_t *ioMap;
+} sProcArchAttr;
+
 #endif /* I586_PROC_H_ */

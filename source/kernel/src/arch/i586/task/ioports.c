@@ -26,13 +26,17 @@
 #include <errors.h>
 #include <string.h>
 
+void ioports_init(sProc *p) {
+	p->archAttr.ioMap = NULL;
+}
+
 int ioports_request(sProc *p,uint16_t start,size_t count) {
-	if(p->ioMap == NULL) {
-		p->ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
-		if(p->ioMap == NULL)
+	if(p->archAttr.ioMap == NULL) {
+		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
+		if(p->archAttr.ioMap == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 		/* mark all as disallowed */
-		memset(p->ioMap,0xFF,IO_MAP_SIZE / 8);
+		memset(p->archAttr.ioMap,0xFF,IO_MAP_SIZE / 8);
 	}
 
 	/* 0xF8 .. 0xFF is reserved */
@@ -41,15 +45,28 @@ int ioports_request(sProc *p,uint16_t start,size_t count) {
 
 	/* 0 means allowed */
 	while(count-- > 0) {
-		p->ioMap[start / 8] &= ~(1 << (start % 8));
+		p->archAttr.ioMap[start / 8] &= ~(1 << (start % 8));
 		start++;
 	}
 
 	return 0;
 }
 
+void ioports_setMap(sProc *p) {
+	tss_setIOMap(p->archAttr.ioMap);
+}
+
+bool ioports_handleGPF(sProc *p) {
+	if(p->archAttr.ioMap != NULL && !tss_ioMapPresent()) {
+		/* load it and give the process another try */
+		tss_setIOMap(p->archAttr.ioMap);
+		return true;
+	}
+	return false;
+}
+
 int ioports_release(sProc *p,uint16_t start,size_t count) {
-	if(p->ioMap == NULL)
+	if(p->archAttr.ioMap == NULL)
 		return ERR_IOMAP_NOT_PRESENT;
 
 	/* 0xF8 .. 0xFF is reserved */
@@ -58,11 +75,18 @@ int ioports_release(sProc *p,uint16_t start,size_t count) {
 
 	/* 1 means disallowed */
 	while(count-- > 0) {
-		p->ioMap[start / 8] |= 1 << (start % 8);
+		p->archAttr.ioMap[start / 8] |= 1 << (start % 8);
 		start++;
 	}
 
 	return 0;
+}
+
+void ioports_free(sProc *p) {
+	if(p->archAttr.ioMap != NULL) {
+		cache_free(p->archAttr.ioMap);
+		p->archAttr.ioMap = NULL;
+	}
 }
 
 /* #### TEST/DEBUG FUNCTIONS #### */

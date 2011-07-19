@@ -71,15 +71,8 @@ void proc_init(void) {
 	/* init the first process */
 	sProc *p = &first;
 
-	/* do this first because vfs_createProcess may use the kheap so that the kheap needs paging
-	 * and paging refers to the current process's pagedir */
-	p->pagedir = paging_getCur();
-	/* create nodes in vfs */
-	p->threadDir = vfs_createProcess(0,&vfs_info_procReadHandler);
-	if(p->threadDir == NULL)
-		util_panic("Not enough mem for init process");
-
-	p->pid = 0;
+	*(pid_t*)&p->pid = 0;
+	*(tPageDir*)&p->pagedir = paging_getCur();
 	p->parentPid = 0;
 	p->ruid = ROOT_UID;
 	p->euid = ROOT_UID;
@@ -101,6 +94,10 @@ void proc_init(void) {
 	p->stats.input = 0;
 	p->stats.output = 0;
 	p->command = strdup("initloader");
+	/* create nodes in vfs */
+	p->threadDir = vfs_createProcess(p->pid,&vfs_info_procReadHandler);
+	if(p->threadDir == NULL)
+		util_panic("Not enough mem for init process");
 
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
@@ -346,12 +343,12 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->sharedFrames = 0;
 
 	/* clone page-dir */
-	if((res = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
+	if((res = paging_cloneKernelspace(&stackFrame,(tPageDir*)&p->pagedir)) < 0)
 		goto errorVFS;
 	p->ownFrames = res;
 
 	/* set basic attributes */
-	p->pid = newPid;
+	*(pid_t*)&p->pid = newPid;
 	p->parentPid = cur->pid;
 	p->ruid = cur->ruid;
 	p->euid = cur->euid;
@@ -362,7 +359,6 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->groups = groups_join(cur->groups);
 	p->exitState = NULL;
 	p->sigRetAddr = cur->sigRetAddr;
-	p->ioMap = NULL;
 	p->flags = 0;
 	p->entryPoint = cur->entryPoint;
 	p->fsChans = NULL;
@@ -372,6 +368,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->flags = flags;
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
+
 	/* clone regions */
 	p->regions = NULL;
 	p->regSize = 0;
@@ -402,6 +399,9 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 		goto errorThread;
 	}
 
+	if((res = proc_cloneArch(p,cur) < 0))
+		goto errorAdd;
+
 	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = cur->fileDescs[i];
@@ -427,6 +427,8 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	/* parent */
 	return 0;
 
+errorAdd:
+	proc_remove(p);
 errorThread:
 	thread_kill(nt);
 errorThreadList:
@@ -498,17 +500,12 @@ void proc_destroyThread(int exitCode) {
 }
 
 void proc_removeRegions(sProc *p,bool remStack) {
-	size_t i;
 	sSLNode *n;
 	assert(p);
 	/* remove from shared-memory; do this first because it will remove the region and simply
 	 * assumes that the region still exists. */
 	shm_remProc(p);
-	for(i = 0; i < p->regSize; i++) {
-		sVMRegion *vm = ((sVMRegion**)p->regions)[i];
-		if(vm && (!(vm->reg->flags & RF_STACK) || remStack))
-			vmm_remove(p,i);
-	}
+	vmm_removeAll(p,remStack);
 	/* unset TLS-region (and stack-region, if needed) from all threads */
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
@@ -612,10 +609,7 @@ void proc_terminate(sProc *p,int exitCode,sig_t signal) {
 	proc_removeRegions(p,true);
 	vfs_real_removeProc(p->pid);
 	lock_releaseAll(p->pid);
-	if(p->ioMap != NULL) {
-		cache_free(p->ioMap);
-		p->ioMap = NULL;
-	}
+	proc_terminateArch(p);
 
 	p->flags |= P_ZOMBIE;
 	proc_notifyProcDied(p->parentPid);

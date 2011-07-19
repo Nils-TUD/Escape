@@ -21,6 +21,7 @@
 #include <sys/arch/i586/fpu.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/task/vm86.h>
+#include <sys/arch/i586/task/ioports.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/swap.h>
@@ -430,9 +431,7 @@ static void intrpt_exGenProtFault(sIntrptStackFrame *stack) {
 	if(stack->eip >= KERNEL_START)
 		vid_unsetPrintFunc();
 	/* io-map not loaded yet? */
-	if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
-		/* load it and give the process another try */
-		tss_setIOMap(t->proc->ioMap);
+	if(ioports_handleGPF(t->proc)) {
 		exCount = 0;
 		return;
 	}

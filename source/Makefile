@@ -1,8 +1,8 @@
 # general
-ARCH = i586
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -84,7 +84,7 @@ ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
 	export BUILDTYPE=debug
 else
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 	export BUILDTYPE=release
 endif

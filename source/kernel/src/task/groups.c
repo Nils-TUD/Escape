@@ -47,7 +47,7 @@ sProcGroups *groups_join(sProcGroups *g) {
 	return g;
 }
 
-bool groups_contains(sProcGroups *g,gid_t gid) {
+bool groups_contains(const sProcGroups *g,gid_t gid) {
 	if(g) {
 		size_t i;
 		for(i = 0; i < g->count; i++) {
@@ -67,7 +67,7 @@ void groups_leave(sProcGroups *g) {
 	}
 }
 
-void groups_print(sProcGroups *g) {
+void groups_print(const sProcGroups *g) {
 	if(g) {
 		size_t i;
 		vid_printf("[refs: %u] ",g->refCount);

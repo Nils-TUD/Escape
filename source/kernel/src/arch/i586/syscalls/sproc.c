@@ -41,7 +41,7 @@ int sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 
-	tss_setIOMap(p->ioMap);
+	ioports_setMap(p);
 	SYSC_RET1(stack,0);
 }
 
@@ -60,7 +60,7 @@ int sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 
-	tss_setIOMap(p->ioMap);
+	ioports_setMap(p);
 	SYSC_RET1(stack,0);
 }
 

@@ -442,6 +442,15 @@ bool vmm_pagefault(uintptr_t addr) {
 	return false;
 }
 
+void vmm_removeAll(sProc *p,bool remStack) {
+	size_t i;
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm && (!(vm->reg->flags & RF_STACK) || remStack))
+			vmm_remove(p,i);
+	}
+}
+
 void vmm_remove(sProc *p,vmreg_t reg) {
 	size_t i,c = 0;
 	sVMRegion *vm = REG(p,reg);

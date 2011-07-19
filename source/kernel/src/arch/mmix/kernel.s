@@ -223,7 +223,7 @@ thread_initSave:
 	LDOU	$2,$0,$1
 	STOU	$2,$252,$1
 	SUBU	$1,$1,8
-	BNZ		$1,1b
+	BNN		$1,1b
 	# store data to save-area
 	STOU	$255,$251,0						# store stack-end
 	GET		$0,rBB

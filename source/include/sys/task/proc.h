@@ -75,7 +75,7 @@ typedef struct {
 	/* flags for vm86 and zombie */
 	uint8_t flags;
 	/* process id (2^16 processes should be enough :)) */
-	pid_t pid;
+	const pid_t pid;
 	/* parent process id */
 	pid_t parentPid;
 	/* real, effective and saved user-id */
@@ -89,7 +89,7 @@ typedef struct {
 	/* all groups (may include egid or not) of this process */
 	sProcGroups *groups;
 	/* the physical address for the page-directory of this process */
-	tPageDir pagedir;
+	const tPageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.
 	 * paging-structures are counted, too */
 	ulong ownFrames;
@@ -112,8 +112,8 @@ typedef struct {
 	sExitState *exitState;
 	/* the address of the sigRet "function" */
 	uintptr_t sigRetAddr;
-	/* the io-map (NULL by default) */
-	uint8_t *ioMap;
+	/* architecture-specific attributes */
+	sProcArchAttr archAttr;
 	/* start-command */
 	const char *command;
 	/* threads of this process */
@@ -269,6 +269,15 @@ bool proc_hasChild(pid_t pid);
 int proc_clone(pid_t newPid,uint8_t flags);
 
 /**
+ * Initializes the architecture specific parts of the given process
+ *
+ * @param dst the clone
+ * @param src the parent
+ * @return 0 on success
+ */
+int proc_cloneArch(sProc *dst,const sProc *src);
+
+/**
  * Starts a new thread at given entry-point. Will clone the kernel-stack from the current thread
  *
  * @param entryPoint the address where to start
@@ -321,6 +330,13 @@ void proc_segFault(const sProc *p);
  * @param signal the signal with which it was killed (SIG_COUNT if none)
  */
 void proc_terminate(sProc *p,int exitCode,sig_t signal);
+
+/**
+ * Handles the architecture-specific part of the terminate-operation.
+ *
+ * @param p the process
+ */
+void proc_terminateArch(sProc *p);
 
 /**
  * Kills the given process, that means all structures will be destroyed and the memory free'd.

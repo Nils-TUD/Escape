@@ -238,6 +238,14 @@ vmreg_t vmm_hasBinary(const sProc *p,const sBinDesc *bin);
 bool vmm_pagefault(uintptr_t addr);
 
 /**
+ * Removes all regions of the given process, optionally including stack.
+ *
+ * @param p the process
+ * @param remStack whether to remove the stack too
+ */
+void vmm_removeAll(sProc *p,bool remStack);
+
+/**
  * Removes the given region from the given process
  *
  * @param p the process

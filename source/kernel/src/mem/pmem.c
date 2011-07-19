@@ -23,6 +23,7 @@
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <assert.h>
 #include <string.h>
 #include <errors.h>
@@ -32,12 +33,7 @@
 #define BITMAP_START				((uintptr_t)bitmap - KERNEL_START)
 #define BITMAP_START_FRAME			(BITMAP_START / PAGE_SIZE)
 
-/**
- * Marks the given frame-number as used or not used
- *
- * @param frame the frame-number
- * @param used whether the frame is used
- */
+static void pmem_doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used);
 static void pmem_markUsed(frameno_t frame,bool used);
 
 /* the bitmap for the frames of the lowest few MB
@@ -52,6 +48,7 @@ static size_t freeCont = 0;
 static size_t stackSize = 0;
 static uintptr_t stackBegin = 0;
 static frameno_t *stack = NULL;
+static klock_t lock;
 
 void pmem_init(void) {
 	pmem_initArch(&stackBegin,&stackSize,&bitmap);
@@ -65,15 +62,18 @@ size_t pmem_getStackSize(void) {
 
 size_t pmem_getFreeFrames(uint types) {
 	size_t count = 0;
+	klock_aquire(&lock);
 	if(types & MM_CONT)
 		count += freeCont;
 	if(types & MM_DEF)
 		count += ((uintptr_t)stack - stackBegin) / sizeof(frameno_t);
+	klock_release(&lock);
 	return count;
 }
 
 ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	size_t i,c = 0;
+	klock_aquire(&lock);
 	/* align in physical memory */
 	i = (BITMAP_START_FRAME + align - 1) & ~(align - 1);
 	i -= BITMAP_START_FRAME;
@@ -94,15 +94,18 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 		i -= BITMAP_START_FRAME;
 	}
 
-	if(c != count)
+	if(c != count) {
+		klock_release(&lock);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 
 	/* the bitmap starts managing the memory at itself */
 	i += BITMAP_START_FRAME;
-	pmem_markRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
+	pmem_doMarkRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
 #if DEBUG_ALLOC_N_FREE
 	vid_printf("[AC] %x:%zu\n",i,count);
 #endif
+	klock_release(&lock);
 	return i;
 }
 
@@ -114,6 +117,8 @@ void pmem_freeContiguous(frameno_t first,size_t count) {
 }
 
 frameno_t pmem_allocate(void) {
+	frameno_t res;
+	klock_aquire(&lock);
 	/* no more frames free? */
 	if((uintptr_t)stack == stackBegin)
 		util_panic("Not enough memory :(");
@@ -130,10 +135,13 @@ frameno_t pmem_allocate(void) {
 	}
 	vid_printf("\n");
 #endif
-	return *(--stack);
+	res = *(--stack);
+	klock_release(&lock);
+	return res;
 }
 
 void pmem_free(frameno_t frame) {
+	klock_aquire(&lock);
 #if DEBUG_ALLOC_N_FREE
 	sFuncCall *trace = util_getKernelStackTrace();
 	size_t i = 0;
@@ -147,13 +155,13 @@ void pmem_free(frameno_t frame) {
 	vid_printf("\n");
 #endif
 	pmem_markUsed(frame,false);
+	klock_release(&lock);
 }
 
 void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
-	/* ensure that we start at a page-start */
-	from &= ~(PAGE_SIZE - 1);
-	for(; from < to; from += PAGE_SIZE)
-		pmem_markUsed(from >> PAGE_SIZE_SHIFT,used);
+	klock_aquire(&lock);
+	pmem_doMarkRangeUsed(from,to,used);
+	klock_release(&lock);
 }
 
 void pmem_print(uint types) {
@@ -174,6 +182,13 @@ void pmem_print(uint types) {
 				vid_printf("\n");
 		}
 	}
+}
+
+static void pmem_doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used) {
+	/* ensure that we start at a page-start */
+	from &= ~(PAGE_SIZE - 1);
+	for(; from < to; from += PAGE_SIZE)
+		pmem_markUsed(from >> PAGE_SIZE_SHIFT,used);
 }
 
 static void pmem_markUsed(frameno_t frame,bool used) {

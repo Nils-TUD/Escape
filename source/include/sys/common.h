@@ -24,10 +24,10 @@
 #include <esc/defines.h>
 #include <stddef.h>
 
-/* file-number (in global file table) */
 typedef int file_t;
 typedef int vmreg_t;
 typedef uintptr_t frameno_t;
+typedef unsigned int klock_t;
 
 #ifndef NDEBUG
 #define DEBUGGING 1

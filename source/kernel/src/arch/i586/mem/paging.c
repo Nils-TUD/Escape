@@ -148,7 +148,7 @@ static void paging_printPage(sPTEntry *page);
 
 /* the page-directory for process 0 */
 static sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] A_ALIGNED(PAGE_SIZE);
-/* the page-tables for process 0 (two because our mm-stack may get large if we have a lot physmem) */
+/* the page-tables for process 0 (two because our mm-stack will get large if we have a lot physmem) */
 static sPTEntry proc0PT1[PAGE_SIZE / sizeof(sPTEntry)] A_ALIGNED(PAGE_SIZE);
 static sPTEntry proc0PT2[PAGE_SIZE / sizeof(sPTEntry)] A_ALIGNED(PAGE_SIZE);
 

@@ -21,6 +21,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
+#include <sys/klock.h>
 #include <sys/video.h>
 #include <string.h>
 
@@ -42,6 +43,7 @@ typedef struct {
 
 static void *cache_get(sCache *c,size_t i);
 
+static klock_t lock;
 static size_t pages = 0;
 static sCache caches[] = {
 	{8,0,0,NULL},
@@ -72,10 +74,8 @@ void *cache_alloc(size_t size) {
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
 		size_t objSize = caches[i].objSize;
 		if(objSize >= size) {
-			if((objSize - size) >= SIZE_THRESHOLD) {
-				res = kheap_alloc(size);
-				goto done;
-			}
+			if((objSize - size) >= SIZE_THRESHOLD)
+				break;
 			res = cache_get(caches + i,i);
 			goto done;
 		}
@@ -164,9 +164,11 @@ void cache_free(void *p) {
 
 	/* put on freelist */
 	c = caches + area[0];
+	klock_aquire(&lock);
 	area[0] = (ulong)c->freeList;
 	c->freeList = area;
 	c->freeObjs++;
+	klock_release(&lock);
 }
 
 size_t cache_getPageCount(void) {
@@ -198,6 +200,7 @@ void cache_print(void) {
 
 static void *cache_get(sCache *c,size_t i) {
 	ulong *area;
+	klock_aquire(&lock);
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
@@ -205,8 +208,10 @@ static void *cache_get(sCache *c,size_t i) {
 		size_t j,objs = bytes / totalObjSize;
 		size_t rem = bytes - objs * totalObjSize;
 		ulong *space = (ulong*)kheap_allocSpace(pageCount);
-		if(space == NULL)
+		if(space == NULL) {
+			klock_release(&lock);
 			return NULL;
+		}
 
 		pages += pageCount;
 		/* if the remaining space is big enough (it won't bring advantages to add dozens e.g. 8
@@ -232,6 +237,7 @@ static void *cache_get(sCache *c,size_t i) {
 	area[1] = GUARD_MAGIC;
 	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
 	c->freeObjs--;
+	klock_release(&lock);
 	return area + 2;
 }
 

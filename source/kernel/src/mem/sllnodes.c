@@ -21,6 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/dynarray.h>
 #include <sys/mem/sllnodes.h>
+#include <sys/klock.h>
 #include <esc/sllist.h>
 #include <assert.h>
 
@@ -42,10 +43,12 @@ struct sNode {
 static bool initialized = false;
 static sDynArray nodeArray;
 static sNode *freelist = NULL;
+static klock_t lock;
 
 void *slln_allocNode(size_t size) {
 	sNode *n;
 	assert(sizeof(sNode) == size && offsetof(sSLNode,next) == offsetof(sNode,next));
+	klock_aquire(&lock);
 	if(freelist == NULL) {
 		size_t i,oldCount;
 		if(!initialized) {
@@ -53,8 +56,10 @@ void *slln_allocNode(size_t size) {
 			initialized = true;
 		}
 		oldCount = nodeArray.objCount;
-		if(!dyna_extend(&nodeArray))
+		if(!dyna_extend(&nodeArray)) {
+			klock_release(&lock);
 			return NULL;
+		}
 		for(i = oldCount; i < nodeArray.objCount; i++) {
 			n = dyna_getObj(&nodeArray,i);
 			n->next = freelist;
@@ -63,11 +68,14 @@ void *slln_allocNode(size_t size) {
 	}
 	n = freelist;
 	freelist = freelist->next;
+	klock_release(&lock);
 	return n;
 }
 
 void slln_freeNode(void *o) {
 	sNode *n = (sNode*)o;
+	klock_aquire(&lock);
 	n->next = freelist;
 	freelist = n;
+	klock_release(&lock);
 }

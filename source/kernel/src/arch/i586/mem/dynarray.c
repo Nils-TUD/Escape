@@ -46,35 +46,41 @@ size_t dyna_getTotalPages(void) {
 }
 
 bool dyna_extend(sDynArray *d) {
-	sDynaRegion *reg = d->_regions;
+	sDynaRegion *reg;
+	klock_aquire(&d->lock);
+
+	reg = d->regions;
 	if(reg == NULL) {
-		reg = d->_regions = freeList;
+		reg = d->regions = freeList;
 		if(reg == NULL)
 			util_panic("No free dynamic-array-regions");
 		freeList = freeList->next;
-		reg->addr = d->_areaBegin;
+		reg->addr = d->areaBegin;
 		reg->size = 0;
 		reg->next = NULL;
 	}
 
 	uintptr_t addr = reg->addr + reg->size;
-	if(pmem_getFreeFrames(MM_DEF) == 0 || reg->size >= d->_areaSize)
+	if(pmem_getFreeFrames(MM_DEF) == 0 || reg->size >= d->areaSize) {
+		klock_release(&d->lock);
 		return false;
+	}
 	paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT);
 	memclear((void*)addr,PAGE_SIZE);
 	totalPages++;
 	reg->size += PAGE_SIZE;
 	d->objCount = reg->size / d->objSize;
+	klock_release(&d->lock);
 	return true;
 }
 
 void dyna_destroy(sDynArray *d) {
-	if(d->_regions) {
-		paging_unmap(d->_regions->addr,d->_regions->size / PAGE_SIZE,true);
-		totalPages -= d->_regions->size / PAGE_SIZE;
+	if(d->regions) {
+		paging_unmap(d->regions->addr,d->regions->size / PAGE_SIZE,true);
+		totalPages -= d->regions->size / PAGE_SIZE;
 		/* put region on freelist */
-		d->_regions->next = freeList;
-		freeList = d->_regions;
-		d->_regions = NULL;
+		d->regions->next = freeList;
+		freeList = d->regions;
+		d->regions = NULL;
 	}
 }

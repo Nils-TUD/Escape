@@ -45,46 +45,55 @@ size_t dyna_getTotalPages(void) {
 }
 
 bool dyna_extend(sDynArray *d) {
+	klock_aquire(&d->lock);
+
 	/* we use the begin for the current size here */
-	if(d->_regions == NULL)
-		d->_areaBegin = 0;
+	if(d->regions == NULL)
+		d->areaBegin = 0;
 
 	/* region full? */
-	if(d->_areaBegin + PAGE_SIZE > d->_areaSize)
+	if(d->areaBegin + PAGE_SIZE > d->areaSize) {
+		klock_release(&d->lock);
 		return false;
+	}
 
 	/* allocate new region */
 	sDynaRegion *reg = freeList;
-	if(reg == NULL)
+	if(reg == NULL) {
+		klock_release(&d->lock);
 		return false;
+	}
 	freeList = freeList->next;
 	reg->next = NULL;
 
 	/* append to regions */
-	if(d->_regions == NULL)
-		d->_regions = reg;
+	if(d->regions == NULL)
+		d->regions = reg;
 	else {
-		sDynaRegion *r = d->_regions;
+		sDynaRegion *r = d->regions;
 		while(r->next != NULL)
 			r = r->next;
 		r->next = reg;
 	}
 
 	/* allocate a frame */
-	if(pmem_getFreeFrames(MM_DEF) == 0)
+	if(pmem_getFreeFrames(MM_DEF) == 0) {
+		klock_release(&d->lock);
 		return false;
+	}
 	reg->addr = DIR_MAPPED_SPACE | (pmem_allocate() * PAGE_SIZE);
 	reg->size = PAGE_SIZE;
 	totalPages++;
 	/* clear it and increase total size and number of objects */
 	memclear((void*)reg->addr,PAGE_SIZE);
-	d->_areaBegin += PAGE_SIZE;
+	d->areaBegin += PAGE_SIZE;
 	d->objCount += PAGE_SIZE / d->objSize;
+	klock_release(&d->lock);
 	return true;
 }
 
 void dyna_destroy(sDynArray *d) {
-	sDynaRegion *reg = d->_regions;
+	sDynaRegion *reg = d->regions;
 	while(reg != NULL) {
 		sDynaRegion *next = reg->next;
 		pmem_free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE);
@@ -94,5 +103,5 @@ void dyna_destroy(sDynArray *d) {
 		freeList = reg;
 		reg = next;
 	}
-	d->_regions = NULL;
+	d->regions = NULL;
 }

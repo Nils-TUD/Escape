@@ -21,6 +21,7 @@
 #define DYNARRAY_H_
 
 #include <sys/common.h>
+#include <sys/klock.h>
 
 /* This module is intended to provide a dynamically extending region. That means you have a limited
  * area in virtual-memory, but allocate the pages in it when needed. This way we still have a
@@ -54,17 +55,15 @@ typedef struct sDynaRegion {
 
 /* describes an dyn-array */
 typedef struct {
-	/* public: */
+	klock_t lock;
 	/* number of objects currently avaiable */
 	size_t objCount;
 	size_t objSize;
-
-	/* private: */
 	/* the area in virtual memory; might not be used, depending on the architecture */
-	uintptr_t _areaBegin;
-	size_t _areaSize;
+	uintptr_t areaBegin;
+	size_t areaSize;
 	/* the regions for this array */
-	sDynaRegion *_regions;
+	sDynaRegion *regions;
 } sDynArray;
 
 /**

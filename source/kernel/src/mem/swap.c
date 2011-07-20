@@ -35,6 +35,19 @@
 
 /* TODO we need a way to ask ata for a partition-size */
 #define SWAP_SIZE			(10 * M)
+
+/* TODO we need a different strategie here. to garantee that every memory-request can be served
+ * until the main-memory and swap-partition is completely used, we could introduce the following:
+ * - this module holds a "border" that specifies the amount of main-memory currently required
+ * - EVERY memory allocation announces the number of frames that it needs at first at this module,
+ *   i.e. the border is increased.
+ * - if required, swapping is performed to make sure that enough memory is available. that means,
+ *   this should be done at a place that allows context-switch etc.
+ * - as soon as the memory has been allocated with pmem_allocate the border is decreased.
+ * - the dynamically extending regions and the heap need a fixed size. that means, the border has
+ *   to be set correspondingly to match their needs. this way, they can always simply allocate a
+ *   frame and decrease the border, because the memory is always available.
+ */
 #define HIGH_WATER			70
 #define LOW_WATER			50
 #define CRIT_WATER			20
@@ -251,7 +264,7 @@ static void swap_doSwapOut(pid_t pid,file_t file,sRegion *reg,size_t index) {
 	assert(block != INVALID_BLOCK);
 
 	/* copy to a temporary buffer because we can't use the temp-area when switching threads */
-	frameNo = paging_getFrameNo(first->pagedir,vmreg->virt + index * PAGE_SIZE);
+	frameNo = paging_getFrameNo(&first->pagedir,vmreg->virt + index * PAGE_SIZE);
 	temp = paging_mapToTemp(&frameNo,1);
 	memcpy(buffer,(void*)temp,PAGE_SIZE);
 	paging_unmapFromTemp(1);

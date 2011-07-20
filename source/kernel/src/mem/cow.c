@@ -64,7 +64,7 @@ size_t cow_pagefault(uintptr_t address) {
 	ourCOW = NULL;
 	ourPrevCOW = NULL;
 	foundOther = false;
-	frameNumber = paging_getFrameNo(cp->pagedir,address);
+	frameNumber = paging_getFrameNo(&cp->pagedir,address);
 	ln = NULL;
 	for(n = sll_begin(cowFrames); n != NULL; ln = n, n = n->next) {
 		cow = (sCOW*)n->data;

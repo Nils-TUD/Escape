@@ -390,7 +390,7 @@ static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **
 	buf.size = 0;
 	buf.len = 0;
 	p = proc_getByPid(atoi(node->parent->name));
-	paging_sprintfVirtMem(&buf,p->pagedir);
+	paging_sprintfVirtMem(&buf,&p->pagedir);
 	*buffer = buf.str;
 	*dataSize = buf.len;
 }

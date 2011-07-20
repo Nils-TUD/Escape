@@ -72,7 +72,7 @@ void proc_init(void) {
 	sProc *p = &first;
 
 	*(pid_t*)&p->pid = 0;
-	*(tPageDir*)&p->pagedir = paging_getCur();
+	paging_setFirst(&p->pagedir);
 	p->parentPid = 0;
 	p->ruid = ROOT_UID;
 	p->euid = ROOT_UID;
@@ -300,7 +300,7 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 		ownMem += p->ownFrames;
 		shMem += p->sharedFrames;
 		/* + pagedir, page-table for kstack and kstack */
-		pmem += paging_getPTableCount(p->pagedir) + 3;
+		pmem += paging_getPTableCount(&p->pagedir) + 3;
 		dReal += vmm_getMemUsage(p,&pages);
 	}
 	*paging = pmem * PAGE_SIZE;
@@ -343,7 +343,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->sharedFrames = 0;
 
 	/* clone page-dir */
-	if((res = paging_cloneKernelspace(&stackFrame,(tPageDir*)&p->pagedir)) < 0)
+	if((res = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
 		goto errorVFS;
 	p->ownFrames = res;
 
@@ -438,7 +438,7 @@ errorShm:
 errorRegs:
 	proc_removeRegions(p,true);
 errorPDir:
-	paging_destroyPDir(p->pagedir);
+	paging_destroyPDir(&p->pagedir);
 errorVFS:
 	vfs_removeProcess(newPid);
 errorProc:
@@ -634,7 +634,7 @@ void proc_kill(sProc *p) {
 	}
 
 	/* remove pagedir; TODO we can do that on terminate, too (if we delay it when its the current) */
-	paging_destroyPDir(p->pagedir);
+	paging_destroyPDir(&p->pagedir);
 	sll_destroy(p->threads,false);
 	cache_free((char*)p->command);
 	/* remove from VFS */
@@ -676,7 +676,7 @@ void proc_printAllPDs(uint parts,bool regions) {
 				p->pid,p->command,p->ownFrames,p->sharedFrames,p->swapped);
 		if(regions)
 			vmm_print(p);
-		paging_printPDir(p->pagedir,parts);
+		paging_printPDir(&p->pagedir,parts);
 		vid_printf("\n");
 	}
 }
@@ -685,8 +685,7 @@ void proc_print(const sProc *p) {
 	size_t i;
 	sSLNode *n;
 	vid_printf("Proc %d:\n",p->pid);
-	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#Px\n",
-			p->parentPid,p->command,p->pagedir,p->entryPoint);
+	vid_printf("\tppid=%d, cmd=%s, entry=%#Px\n",p->parentPid,p->command,p->entryPoint);
 	vid_printf("\tOwner: ruid=%u, euid=%u, suid=%u\n",p->ruid,p->euid,p->suid);
 	vid_printf("\tGroup: rgid=%u, egid=%u, sgid=%u\n",p->rgid,p->egid,p->sgid);
 	vid_printf("\tGroups: ");

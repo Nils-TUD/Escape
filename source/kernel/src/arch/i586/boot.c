@@ -146,7 +146,7 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 	vid_printf("Initializing process-management...");
 	ev_init();
 	proc_init();
-	paging_exchangePDir(proc_getRunning()->pagedir);
+	paging_exchangePDir(proc_getRunning()->pagedir.own);
 	sched_init();
 	/* the process and thread-stuff has to be ready, too ... */
 	if(logToVFS)

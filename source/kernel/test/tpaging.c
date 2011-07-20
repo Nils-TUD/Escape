@@ -64,13 +64,13 @@ static void test_paging_foreign(void) {
 	test_assertInt(proc_clone(pid,0),0);
 	child = proc_getByPid(pid);
 
-	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,child->pagedir);
+	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,&child->pagedir);
 	ownFrames = child->ownFrames;
 	sharedFrames = child->sharedFrames;
 	checkMemoryBefore(true);
 
-	paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_unmapFrom(child->pagedir,0,3,true);
+	paging_mapTo(&child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_unmapFrom(&child->pagedir,0,3,true);
 
 	checkMemoryAfter(true);
 	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
@@ -80,15 +80,15 @@ static void test_paging_foreign(void) {
 	else
 		test_caseSucceeded();
 
-	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,child->pagedir);
+	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,&child->pagedir);
 	ownFrames = child->ownFrames;
 	sharedFrames = child->sharedFrames;
 	checkMemoryBefore(true);
 
-	paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_mapTo(child->pagedir,0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_unmapFrom(child->pagedir,0x40000000,1,true);
-	paging_unmapFrom(child->pagedir,0x40000000 + PAGE_SIZE * 1,5,true);
+	paging_mapTo(&child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_mapTo(&child->pagedir,0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_unmapFrom(&child->pagedir,0x40000000,1,true);
+	paging_unmapFrom(&child->pagedir,0x40000000 + PAGE_SIZE * 1,5,true);
 
 	checkMemoryAfter(true);
 	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {

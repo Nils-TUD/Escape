@@ -262,7 +262,7 @@ void vmm_remove(sProc *p,vmreg_t reg);
  * @param dst the destination-process
  * @return the region-number on success or the negative error-code
  */
-vmreg_t vmm_join(const sProc *src,vmreg_t rno,sProc *dst);
+vmreg_t vmm_join(sProc *src,vmreg_t rno,sProc *dst);
 
 /**
  * Clones all regions of the current process into the given one

@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/mmix/mem/addrspace.h>
+#include <sys/task/proc.h>
 #include <sys/mem/paging.h>
 #include <esc/test.h>
 
@@ -37,16 +38,17 @@ sTestModule tModAddrSpace = {
 static sAddressSpace *spaces[ADDR_SPACE_COUNT * 3];
 
 static void test_addrspace(void) {
+	sProc *p = proc_getRunning();
 	/* a trick to ensure that no address-spaces are in use yet: temporary free the first one and
 	 * allocate it again when we're finished */
-	aspace_free(paging_getCur()->addrSpace);
+	aspace_free(p->pagedir.addrSpace);
 	test_basics();
 	test_dupUsage();
 	/* do it twice to ensure that the cleanup is correct */
 	test_dupUsage();
-	paging_getCur()->addrSpace = aspace_alloc();
-	paging_getCur()->rv &= ~0x3F;
-	paging_getCur()->rv |= (paging_getCur()->addrSpace->no << 3);
+	p->pagedir.addrSpace = aspace_alloc();
+	p->pagedir.rv &= ~0x3F;
+	p->pagedir.rv |= (p->pagedir.addrSpace->no << 3);
 }
 
 static void test_basics(void) {

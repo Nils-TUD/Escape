@@ -156,8 +156,6 @@
 
 typedef uintptr_t tPageDir;
 
-extern tPageDir curPDir;
-
 /**
  * Sets the entry with index <index> to the given translation
  */

@@ -221,17 +221,17 @@ static void view_kheap(void) {
 static void view_pdirall(size_t argc,char **argv) {
 	const sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(p->pagedir,PD_PART_ALL);
+		paging_printPDir(&p->pagedir,PD_PART_ALL);
 }
 static void view_pdiruser(size_t argc,char **argv) {
 	const sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(p->pagedir,PD_PART_USER);
+		paging_printPDir(&p->pagedir,PD_PART_USER);
 }
 static void view_pdirkernel(size_t argc,char **argv) {
 	const sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(p->pagedir,PD_PART_KERNEL);
+		paging_printPDir(&p->pagedir,PD_PART_KERNEL);
 }
 static void view_regions(size_t argc,char **argv) {
 	if(argc < 3)

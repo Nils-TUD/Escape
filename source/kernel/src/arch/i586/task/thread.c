@@ -32,7 +32,7 @@
 #include <errors.h>
 
 extern bool thread_save(sThreadRegs *saveArea);
-extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
+extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
 static void thread_doSwitch(sThread *cur,sThread *old);
 
 int thread_initArch(sThread *t) {
@@ -75,7 +75,7 @@ void thread_freeArch(sThread *t) {
 	 * do it for single-thread-processes on a switch for performance-reasons */
 	if(sll_length(t->proc->threads) == 1) {
 		frameno_t stackFrame = ((sThread*)sll_get(t->proc->threads,0))->kstackFrame;
-		paging_mapTo(t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
+		paging_mapTo(&t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	}
 	fpu_freeState(&t->archAttr.fpuState);
@@ -160,7 +160,6 @@ static void thread_doSwitch(sThread *cur,sThread *old) {
 		 * (we'll get an exception) */
 		tss_removeIOMap();
 		tss_setStackPtr(cur->proc->flags & P_VM86);
-		paging_setCur(cur->proc->pagedir);
 	}
 
 	/* set TLS-segment in GDT */
@@ -171,7 +170,7 @@ static void thread_doSwitch(sThread *cur,sThread *old) {
 	/* lock the FPU so that we can save the FPU-state for the previous process as soon
 	 * as this one wants to use the FPU */
 	fpu_lockFPU();
-	thread_resume(cur->proc->pagedir,&cur->save,
+	thread_resume(cur->proc->pagedir.own,&cur->save,
 			sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
 }
 

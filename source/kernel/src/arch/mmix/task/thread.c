@@ -179,9 +179,6 @@ void thread_switchTo(tid_t tid) {
 			vmm_setTimestamp(cur,timer_getTimestamp());
 		sched_setRunning(cur);
 
-		/* set page-dir */
-		paging_setCur(cur->proc->pagedir);
-
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
 		if(cur->archAttr.tempStack != (frameno_t)-1) {

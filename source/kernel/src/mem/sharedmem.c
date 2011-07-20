@@ -162,7 +162,7 @@ int shm_destroy(sProc *p,const char *name) {
 	klock_aquire(&lock);
 	res = shm_doDestroy(p,name);
 	klock_release(&lock);
-	return 0;
+	return res;
 }
 
 int shm_cloneProc(const sProc *parent,sProc *child) {

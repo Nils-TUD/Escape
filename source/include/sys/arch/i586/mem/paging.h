@@ -164,12 +164,17 @@
 /* determines whether the given address is in a shared kernel area */
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START && (uintptr_t)(addr) < KERNEL_STACK)
 
-typedef uintptr_t tPageDir;
+typedef struct {
+	uintptr_t own;
+	uintptr_t other;
+} tPageDir;
 
 /**
  * Activates paging
+ *
+ * @param pageDir the page-directory
  */
-void paging_activate(void);
+void paging_activate(uintptr_t pageDir);
 
 /**
  * Reserves page-tables for the whole higher-half and inserts them into the page-directory.
@@ -188,6 +193,6 @@ void paging_gdtFinished(void);
  *
  * @param physAddr the physical address of the page-directory
  */
-extern void paging_exchangePDir(tPageDir physAddr);
+extern void paging_exchangePDir(uintptr_t physAddr);
 
 #endif /* I586_PAGING_H_ */

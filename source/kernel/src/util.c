@@ -31,10 +31,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-/* the beginning of the kernel-stack */
-extern uintptr_t kernelStack;
-static uint64_t profStart;
-
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
 static uint randa = 1103515245;
 static uint randc = 12345;

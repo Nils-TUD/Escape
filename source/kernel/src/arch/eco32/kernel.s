@@ -36,7 +36,6 @@
 	.extern curPDir
 	.extern otherPDir
 	.extern util_panic
-	.extern paging_setCur
 
 	.global cpu_getBadAddr
 

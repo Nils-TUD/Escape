@@ -89,7 +89,7 @@ typedef struct {
 	/* all groups (may include egid or not) of this process */
 	sProcGroups *groups;
 	/* the physical address for the page-directory of this process */
-	const tPageDir pagedir;
+	tPageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.
 	 * paging-structures are counted, too */
 	ulong ownFrames;

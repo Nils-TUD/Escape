@@ -63,20 +63,19 @@
 #define PAGE_NO(virt)				(((uintptr_t)(virt) & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT)
 #define SEGSIZE(rV,i)				((i) == 0 ? 0 : (((rV) >> (64 - (i) * 4)) & 0xF))
 
-static uint64_t *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create,size_t *createdPts);
-static uint64_t paging_getPTEOf(tPageDir pdir,uintptr_t virt);
-static size_t paging_removePts(tPageDir pdir,uint64_t pageNo,uint64_t c,ulong level,ulong depth);
-static size_t paging_remEmptyPts(tPageDir pdir,uintptr_t virt);
-static void paging_tcRemPT(tPageDir pdir,uintptr_t virt);
+static tPageDir *paging_getPageDir(void);
+static uint64_t *paging_getPTOf(const tPageDir *pdir,uintptr_t virt,bool create,size_t *createdPts);
+static uint64_t paging_getPTEOf(const tPageDir *pdir,uintptr_t virt);
+static size_t paging_removePts(tPageDir *pdir,uint64_t pageNo,uint64_t c,ulong level,ulong depth);
+static size_t paging_remEmptyPts(tPageDir *pdir,uintptr_t virt);
+static void paging_tcRemPT(tPageDir *pdir,uintptr_t virt);
 extern void tc_clear(void);
 extern void tc_update(uint64_t key);
 extern void paging_setrV(uint64_t rv);
 static void paging_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
 static void paging_printPage(uint64_t pte);
 
-/* the current context with the address-space and the value of rV */
-static tPageDir context = NULL;
-static sContext firstCon;
+static tPageDir firstCon;
 
 void paging_init(void) {
 	uintptr_t rootLoc;
@@ -92,17 +91,14 @@ void paging_init(void) {
 	firstCon.addrSpace = aspace_alloc();
 	/* set value for rV: b1 = 2, b2 = 4, b3 = 6, b4 = 0, page-size = 2^13 */
 	firstCon.rv = 0x24600DUL << 40 | (rootLoc & ~DIR_MAPPED_SPACE) | (firstCon.addrSpace->no << 3);
-	context = &firstCon;
 	/* enable paging */
 	paging_setrV(firstCon.rv);
 }
 
-tPageDir paging_getCur(void) {
-	return context;
-}
-
-void paging_setCur(tPageDir pdir) {
-	context = pdir;
+void paging_setFirst(tPageDir *pdir) {
+	pdir->addrSpace = firstCon.addrSpace;
+	pdir->rv = firstCon.rv;
+	pdir->ptables = firstCon.ptables;
 }
 
 /* TODO perhaps we should move isRange*() to vmm? */
@@ -118,6 +114,7 @@ bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
 bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 	uintptr_t end;
 	uint64_t pte,*pt = NULL;
+	tPageDir *cur = paging_getPageDir();
 	/* calc start and end */
 	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	virt &= ~(PAGE_SIZE - 1);
@@ -125,7 +122,7 @@ bool paging_isRangeReadable(uintptr_t virt,size_t count) {
 	while(virt < end) {
 		/* get page-table */
 		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
-			pt = paging_getPTOf(context,virt,true,NULL);
+			pt = paging_getPTOf(cur,virt,true,NULL);
 			if(pt == NULL)
 				return false;
 		}
@@ -155,6 +152,7 @@ bool paging_isRangeUserWritable(uintptr_t virt,size_t count) {
 bool paging_isRangeWritable(uintptr_t virt,size_t count) {
 	uintptr_t end;
 	uint64_t pte,*pt = NULL;
+	tPageDir *cur = paging_getPageDir();
 	/* calc start and end */
 	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	virt &= ~(PAGE_SIZE - 1);
@@ -162,7 +160,7 @@ bool paging_isRangeWritable(uintptr_t virt,size_t count) {
 	while(virt < end) {
 		/* get page-table */
 		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
-			pt = paging_getPTOf(context,virt,true,NULL);
+			pt = paging_getPTOf(cur,virt,true,NULL);
 			if(pt == NULL)
 				return false;
 		}
@@ -194,17 +192,13 @@ void paging_unmapFromTemp(size_t count) {
 
 ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	ssize_t frmCount = 0;
+	tPageDir *cur = paging_getPageDir();
 
 	/* frames needed:
 	 * 	- root location
 	 * 	- kernel stack
 	 */
 	if(pmem_getFreeFrames(MM_CONT) < SEGMENT_COUNT * PTS_PER_SEGMENT || pmem_getFreeFrames(MM_DEF) < 1)
-		return ERR_NOT_ENOUGH_MEM;
-
-	/* allocate context */
-	sContext *con = (sContext*)cache_alloc(sizeof(sContext));
-	if(con == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* allocate root-location */
@@ -216,26 +210,24 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
 	/* init context */
-	con->addrSpace = aspace_alloc();
-	con->ptables = 0;
-	con->rv = context->rv & 0xFFFFFF0000000000;
-	con->rv |= (rootLoc & ~DIR_MAPPED_SPACE) | (con->addrSpace->no << 3);
+	pdir->addrSpace = aspace_alloc();
+	pdir->ptables = 0;
+	pdir->rv = cur->rv & 0xFFFFFF0000000000;
+	pdir->rv |= (rootLoc & ~DIR_MAPPED_SPACE) | (pdir->addrSpace->no << 3);
 
 	/* allocate kernel-stack */
 	*stackFrame = pmem_allocate();
 	frmCount++;
-	*pdir = con;
 	return frmCount;
 }
 
-sAllocStats paging_destroyPDir(tPageDir pdir) {
+sAllocStats paging_destroyPDir(tPageDir *pdir) {
 	sAllocStats stats;
-	assert(pdir != context);
+	assert(pdir != paging_getPageDir());
 	/* don't free kernel-stack-frame; its done in thread_kill() */
 	/* free page-dir */
 	pmem_freeContiguous((pdir->rv >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
 	stats.ptables += SEGMENT_COUNT * PTS_PER_SEGMENT;
-	cache_free(pdir);
 	/* we have to ensure that no tc-entries of the current process are present. otherwise we could
 	 * get the problem that the old process had a page that the new process with this
 	 * address-space-number has not. if the entry of the old one is still in the tc, the new
@@ -245,12 +237,12 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	return stats;
 }
 
-bool paging_isPresent(tPageDir pdir,uintptr_t virt) {
+bool paging_isPresent(const tPageDir *pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
 	return pte & PTE_EXISTS;
 }
 
-frameno_t paging_getFrameNo(tPageDir pdir,uintptr_t virt) {
+frameno_t paging_getFrameNo(const tPageDir *pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
 	assert(pte & PTE_EXISTS);
 	return PTE_FRAMENO(pte);
@@ -270,11 +262,12 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 void paging_copyToUser(void *dst,const void *src,size_t count) {
 	uint64_t pte,*dpt = NULL;
 	ulong dstPageNo = PAGE_NO(dst);
+	tPageDir *cur = paging_getPageDir();
 	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
 	uintptr_t addr = (uintptr_t)dst;
 	while(count > 0) {
 		if(!dpt || (dstPageNo % PT_ENTRY_COUNT) == 0) {
-			dpt = paging_getPTOf(context,addr,false,NULL);
+			dpt = paging_getPTOf(cur,addr,false,NULL);
 			assert(dpt != NULL);
 		}
 		pte = dpt[dstPageNo % PT_ENTRY_COUNT];
@@ -292,11 +285,12 @@ void paging_copyToUser(void *dst,const void *src,size_t count) {
 void paging_zeroToUser(void *dst,size_t count) {
 	uint64_t pte,*dpt = NULL;
 	ulong dstPageNo = PAGE_NO(dst);
+	tPageDir *cur = paging_getPageDir();
 	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
 	uintptr_t addr = (uintptr_t)dst;
 	while(count > 0) {
 		if(!dpt || (dstPageNo % PT_ENTRY_COUNT) == 0) {
-			dpt = paging_getPTOf(context,addr,false,NULL);
+			dpt = paging_getPTOf(cur,addr,false,NULL);
 			assert(dpt != NULL);
 		}
 		pte = dpt[dstPageNo % PT_ENTRY_COUNT];
@@ -310,9 +304,10 @@ void paging_zeroToUser(void *dst,size_t count) {
 	}
 }
 
-sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintptr_t virtDst,
+sAllocStats paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share) {
-	assert(src != dst && (src == context || dst == context));
+	tPageDir *cur = paging_getPageDir();
+	assert(src != dst && (src == cur || dst == cur));
 	sAllocStats stats = {0,0};
 	ulong srcPageNo = PAGE_NO(virtSrc);
 	ulong dstPageNo = PAGE_NO(virtDst);
@@ -367,10 +362,10 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,uintptr_t virtSrc,uintpt
 }
 
 sAllocStats paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
-	return paging_mapTo(context,virt,frames,count,flags);
+	return paging_mapTo(paging_getPageDir(),virt,frames,count,flags);
 }
 
-sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const frameno_t *frames,size_t count,
+sAllocStats paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,size_t count,
 		uint flags) {
 	sAllocStats stats = {0,0};
 	ulong pageNo = PAGE_NO(virt);
@@ -436,10 +431,10 @@ sAllocStats paging_mapTo(tPageDir pdir,uintptr_t virt,const frameno_t *frames,si
 }
 
 sAllocStats paging_unmap(uintptr_t virt,size_t count,bool freeFrames) {
-	return paging_unmapFrom(context,virt,count,freeFrames);
+	return paging_unmapFrom(paging_getPageDir(),virt,count,freeFrames);
 }
 
-sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool freeFrames) {
+sAllocStats paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames) {
 	sAllocStats stats = {0,0};
 	size_t ptables;
 	ulong pageNo = PAGE_NO(virt);
@@ -481,7 +476,11 @@ sAllocStats paging_unmapFrom(tPageDir pdir,uintptr_t virt,size_t count,bool free
 	return stats;
 }
 
-static uint64_t *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create,size_t *createdPts) {
+static tPageDir *paging_getPageDir(void) {
+	return &proc_getRunning()->pagedir;
+}
+
+static uint64_t *paging_getPTOf(const tPageDir *pdir,uintptr_t virt,bool create,size_t *createdPts) {
 	ulong j,i = virt >> 61;
 	ulong size1 = SEGSIZE(pdir->rv,i + 1);
 	ulong size2 = SEGSIZE(pdir->rv,i);
@@ -518,7 +517,7 @@ static uint64_t *paging_getPTOf(tPageDir pdir,uintptr_t virt,bool create,size_t 
 	return (uint64_t*)(DIR_MAPPED_SPACE | (c << 13));
 }
 
-static uint64_t paging_getPTEOf(tPageDir pdir,uintptr_t virt) {
+static uint64_t paging_getPTEOf(const tPageDir *pdir,uintptr_t virt) {
 	uint64_t pte = 0;
 	uint64_t *pt = paging_getPTOf(pdir,virt,false,NULL);
 	if(pt)
@@ -526,7 +525,7 @@ static uint64_t paging_getPTEOf(tPageDir pdir,uintptr_t virt) {
 	return pte;
 }
 
-static size_t paging_removePts(tPageDir pdir,uint64_t pageNo,uint64_t c,ulong level,ulong depth) {
+static size_t paging_removePts(tPageDir *pdir,uint64_t pageNo,uint64_t c,ulong level,ulong depth) {
 	size_t i;
 	bool empty = true;
 	size_t count = 0;
@@ -578,7 +577,7 @@ static size_t paging_removePts(tPageDir pdir,uint64_t pageNo,uint64_t c,ulong le
 	return count;
 }
 
-static size_t paging_remEmptyPts(tPageDir pdir,uintptr_t virt) {
+static size_t paging_remEmptyPts(tPageDir *pdir,uintptr_t virt) {
 	ulong i = virt >> 61;
 	uint64_t pageNo = PAGE_NO(virt);
 	int j = 0;
@@ -591,7 +590,7 @@ static size_t paging_remEmptyPts(tPageDir pdir,uintptr_t virt) {
 	return paging_removePts(pdir,pageNo,c,j,0);
 }
 
-static void paging_tcRemPT(tPageDir pdir,uintptr_t virt) {
+static void paging_tcRemPT(tPageDir *pdir,uintptr_t virt) {
 	size_t i;
 	uint64_t key = (virt & ~(PAGE_SIZE - 1)) | (pdir->addrSpace->no << 3);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
@@ -600,7 +599,7 @@ static void paging_tcRemPT(tPageDir pdir,uintptr_t virt) {
 	}
 }
 
-size_t paging_getPTableCount(tPageDir pdir) {
+size_t paging_getPTableCount(const tPageDir *pdir) {
 	return pdir->ptables;
 }
 
@@ -610,32 +609,21 @@ static void paging_sprintfPrint(char c) {
 	prf_sprintf(strBuf,"%c",c);
 }
 
-void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
+void paging_sprintfVirtMem(sStringBuffer *buf,const tPageDir *pdir) {
 	strBuf = buf;
 	vid_setPrintFunc(paging_sprintfPrint);
 	paging_printPDir(pdir,0);
 	vid_unsetPrintFunc();
 }
 
-#if 0
-void paging_getFrameNos(frameno_t *nos,uintptr_t addr,size_t size) {
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(addr);
-	size_t pcount = BYTES_2_PAGES((addr & (PAGE_SIZE - 1)) + size);
-	while(pcount-- > 0) {
-		*nos++ = pt->frameNumber;
-		pt++;
-	}
-}
-#endif
-
-void paging_printPDir(tPageDir pdir,uint parts) {
+void paging_printPDir(const tPageDir *pdir,uint parts) {
 	UNUSED(parts);
 	size_t i,j;
 	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rv & 0xFFFFFFE000);
 	/* go through all page-tables in the root-location */
 	vid_printf("root-location @ %p [n=%X]:\n",root,(pdir->rv & 0x1FF8) >> 3);
 	for(i = 0; i < SEGMENT_COUNT; i++) {
-		ulong segSize = SEGSIZE(context->rv,i + 1) - SEGSIZE(context->rv,i);
+		ulong segSize = SEGSIZE(pdir->rv,i + 1) - SEGSIZE(pdir->rv,i);
 		uintptr_t addr = (i << 61);
 		vid_printf("segment %zu:\n",i);
 		for(j = 0; j < segSize; j++) {
@@ -689,7 +677,7 @@ static void paging_printPage(uint64_t pte) {
 	}
 }
 
-void paging_printPageOf(tPageDir pdir,uintptr_t virt) {
+void paging_printPageOf(const tPageDir *pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
 	if(pte & PTE_EXISTS) {
 		vid_printf("Page @ %p: ",virt);
@@ -699,7 +687,7 @@ void paging_printPageOf(tPageDir pdir,uintptr_t virt) {
 }
 
 void paging_printCur(uint parts) {
-	paging_printPDir(context,parts);
+	paging_printPDir(paging_getPageDir(),parts);
 }
 
 static size_t paging_dbg_getPageCountOf(uint64_t *pt,size_t level) {
@@ -725,9 +713,10 @@ static size_t paging_dbg_getPageCountOf(uint64_t *pt,size_t level) {
 
 size_t paging_dbg_getPageCount(void) {
 	size_t i,j,count = 0;
-	uintptr_t root = DIR_MAPPED_SPACE | (context->rv & 0xFFFFFFE000);
+	tPageDir *cur = paging_getPageDir();
+	uintptr_t root = DIR_MAPPED_SPACE | (cur->rv & 0xFFFFFFE000);
 	for(i = 0; i < SEGMENT_COUNT; i++) {
-		ulong segSize = SEGSIZE(context->rv,i + 1) - SEGSIZE(context->rv,i);
+		ulong segSize = SEGSIZE(cur->rv,i + 1) - SEGSIZE(cur->rv,i);
 		for(j = 0; j < segSize; j++) {
 			count += paging_dbg_getPageCountOf((uint64_t*)root,j);
 			root += PAGE_SIZE;

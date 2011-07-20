@@ -165,11 +165,11 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 			size_t i;
 			frames[0] = t->kstackFrame;
 			for(i = 0; startCpy < end; i++) {
-				if(!paging_isPresent(t->proc->pagedir,startCpy)) {
+				if(!paging_isPresent(&t->proc->pagedir,startCpy)) {
 					cache_free(frames);
 					return NULL;
 				}
-				frames[i + 1] = paging_getFrameNo(t->proc->pagedir,startCpy);
+				frames[i + 1] = paging_getFrameNo(&t->proc->pagedir,startCpy);
 				startCpy += PAGE_SIZE;
 			}
 			temp = paging_mapToTemp(frames,pcount + 1);

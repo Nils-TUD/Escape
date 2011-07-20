@@ -130,8 +130,6 @@ typedef struct {
 	sAddressSpace *addrSpace;
 	uint64_t rv;
 	ulong ptables;
-} sContext;
-
-typedef sContext *tPageDir;
+} tPageDir;
 
 #endif /* MMIX_PAGING_H_ */

@@ -41,7 +41,7 @@ int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info) {
 	uintptr_t begin,start,end;
 	vmm_getRegRange(t->proc,REG_TEXT,&start,&end);
 	while(start < end) {
-		frameno_t frame = paging_getFrameNo(t->proc->pagedir,start);
+		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,start);
 		size_t amount = MIN(PAGE_SIZE,end - start);
 		begin = DIR_MAPPED_SPACE | frame * PAGE_SIZE;
 		cpu_syncid(begin,begin + amount);

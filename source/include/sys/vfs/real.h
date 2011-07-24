@@ -22,6 +22,7 @@
 
 #include <sys/common.h>
 #include <esc/fsinterface.h>
+#include <sys/task/proc.h>
 
 /**
  * Inits vfs-real
@@ -200,5 +201,12 @@ int vfs_real_sync(pid_t pid);
  * @param devNo the device-number
  */
 void vfs_real_close(pid_t pid,inode_t inodeNo,dev_t devNo);
+
+/**
+ * Prints the FS-channels for the given process
+ *
+ * @param p the process
+ */
+void vfs_real_printFSChans(const sProc *p);
 
 #endif /* VFSREAL_H_ */

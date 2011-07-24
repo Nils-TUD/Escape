@@ -79,8 +79,8 @@ static int _regDriver(const char *name,uint type) {
 static int _changeSize(size_t change) {
 	return doSyscall(SYSCALL_CHGSIZE,change,0,0);
 }
-static int __mapPhysical(uintptr_t addr,size_t count) {
-	return doSyscall(SYSCALL_MAPPHYS,addr,count,0);
+static int __mapPhysical(uintptr_t *addr,size_t count) {
+	return doSyscall(SYSCALL_MAPPHYS,(uintptr_t)addr,count,0);
 }
 static int _write(int fd,void *buffer,size_t count) {
 	return doSyscall(SYSCALL_WRITE,fd,(ulong)buffer,count);
@@ -147,6 +147,30 @@ static void test_syscalls(void) {
 	test_stat();
 }
 
+static void test_segfault(ulong syscallNo,ulong arg1,ulong arg2,ulong arg3) {
+	sExitState state;
+	fflush(stdout);
+	if(fork() == 0) {
+		doSyscall(syscallNo,arg1,arg2,arg3);
+		exit(0);
+	}
+	waitChild(&state);
+	test_assertInt(state.signal,SIG_SEGFAULT);
+}
+
+static void test_segfault6(ulong syscallNo,void *arg1,size_t arg2,void *arg3,void *arg4,void *arg5,
+		size_t arg6) {
+	sExitState state;
+	fflush(stdout);
+	if(fork() == 0) {
+		doSyscall7(syscallNo,(uintptr_t)arg1,arg2,(uintptr_t)arg3,(uintptr_t)arg4,
+				(uintptr_t)arg5,arg6,0);
+		exit(0);
+	}
+	waitChild(&state);
+	test_assertInt(state.signal,SIG_SEGFAULT);
+}
+
 static void test_getppid(void) {
 	test_caseStart("Testing getppid()");
 	test_assertInt(_getppidof(-1),ERR_INVALID_PID);
@@ -163,10 +187,8 @@ static void test_open(void) {
 	longName = (char*)malloc(10000);
 	memset(longName,0x65,9999);
 	longName[9999] = 0;
-	test_assertInt(_open((char*)0,IO_READ),ERR_INVALID_ARGS);
-	test_assertInt(_open((char*)KERNEL_SPACE,IO_READ),ERR_INVALID_ARGS);
-	test_assertInt(_open((char*)HIGH_ADDR,IO_READ),ERR_INVALID_ARGS);
-	test_assertInt(_open((char*)ILLEGAL_ADDR,IO_READ),ERR_INVALID_ARGS);
+	test_segfault(SYSCALL_OPEN,0,IO_READ,0);
+	test_segfault(SYSCALL_OPEN,ILLEGAL_ADDR,IO_READ,0);
 	test_assertInt(_open("abc",0),ERR_INVALID_ARGS);
 	test_assertInt(_open("abc",IO_READ << 4),ERR_INVALID_ARGS);
 	test_assertInt(_open(longName,IO_READ),ERR_INVALID_ARGS);
@@ -188,27 +210,31 @@ static void test_close(void) {
 static void test_read(void) {
 	char toosmallbuf[10];
 	test_caseStart("Testing read()");
-	test_assertInt(_read(0,(void*)ILLEGAL_ADDR,1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)ILLEGAL_ADDR,4 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)ILLEGAL_ADDR,4 * 1024 + 1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)ILLEGAL_ADDR,8 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)ILLEGAL_ADDR,8 * 1024 - 1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)KERNEL_SPACE,1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)KERNEL_SPACE,4 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)KERNEL_SPACE,4 * 1024 + 1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)KERNEL_SPACE,8 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)KERNEL_SPACE,8 * 1024 - 1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)HIGH_ADDR,1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)HIGH_ADDR,4 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)HIGH_ADDR,4 * 1024 + 1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)HIGH_ADDR,8 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)HIGH_ADDR,8 * 1024 - 1),ERR_INVALID_ARGS);
+	int fd = open("/bin/cat",IO_READ);
+	test_assertTrue(fd >= 0);
+	test_segfault(SYSCALL_READ,fd,ILLEGAL_ADDR,1);
+	test_segfault(SYSCALL_READ,fd,ILLEGAL_ADDR,4 * 1024);
+	test_segfault(SYSCALL_READ,fd,ILLEGAL_ADDR,4 * 1024 + 1);
+	test_segfault(SYSCALL_READ,fd,ILLEGAL_ADDR,8 * 1024);
+	test_segfault(SYSCALL_READ,fd,ILLEGAL_ADDR,8 * 1024 + 1);
+	test_segfault(SYSCALL_READ,fd,ILLEGAL_ADDR,8 * 1024 - 1);
+	test_assertInt(_read(fd,(void*)KERNEL_SPACE,1),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)KERNEL_SPACE,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)KERNEL_SPACE,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)KERNEL_SPACE,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)KERNEL_SPACE,8 * 1024 - 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)HIGH_ADDR,1),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)HIGH_ADDR,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)HIGH_ADDR,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)HIGH_ADDR,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(fd,(void*)HIGH_ADDR,8 * 1024 - 1),ERR_INVALID_ARGS);
 	/* this may be successfull if our stack has been resized previously and is now big enough */
-	test_assertInt(_read(0,toosmallbuf,4 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,toosmallbuf,1024),ERR_INVALID_ARGS);
+	test_segfault(SYSCALL_READ,fd,(uintptr_t)toosmallbuf,4 * 1024);
+	test_segfault(SYSCALL_READ,fd,(uintptr_t)toosmallbuf,1024);
 	test_assertInt(_read(-1,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_read(32,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_read(33,toosmallbuf,10),ERR_INVALID_FD);
+	close(fd);
 	test_caseSucceeded();
 }
 
@@ -219,8 +245,8 @@ static void test_regDriver(void) {
 	test_assertInt(_regDriver("abc+-/",0),ERR_INV_DRIVER_NAME);
 	test_assertInt(_regDriver("/",0),ERR_INV_DRIVER_NAME);
 	test_assertInt(_regDriver("",0),ERR_INV_DRIVER_NAME);
-	test_assertInt(_regDriver((char*)KERNEL_SPACE,0),ERR_INVALID_ARGS);
-	test_assertInt(_regDriver((char*)HIGH_ADDR,0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver((char*)KERNEL_SPACE,0),ERR_INV_DRIVER_NAME);
+	test_segfault(SYSCALL_REG,HIGH_ADDR,0,0);
 	test_assertInt(_regDriver("drv",(uint)HIGH_ADDR),ERR_INVALID_ARGS);
 	test_assertInt(_regDriver("drv",DRV_READ | 1234),ERR_INVALID_ARGS);
 	test_caseSucceeded();
@@ -233,37 +259,41 @@ static void test_changeSize(void) {
 }
 
 static void test_mapPhysical(void) {
+	uintptr_t addr = 0x100123;
 	test_caseStart("Testing mapPhysical()");
 	/* try to map kernel */
-	test_assertInt(__mapPhysical(0x100000,10),ERR_INVALID_ARGS);
-	test_assertInt(__mapPhysical(0x100123,4),ERR_INVALID_ARGS);
-	test_assertInt(__mapPhysical(0x100123,1231231231),ERR_INVALID_ARGS);
-	test_assertInt(__mapPhysical(0x100123,-1),ERR_INVALID_ARGS);
-	test_assertInt(__mapPhysical(0x100123,-5),ERR_INVALID_ARGS);
+	test_segfault(SYSCALL_MAPPHYS,0x100123,10,0);
+	test_assertInt(__mapPhysical(&addr,1231231231),ERR_INVALID_ARGS);
+	test_assertInt(__mapPhysical(&addr,0),ERR_INVALID_ARGS);
+	test_assertInt(__mapPhysical(&addr,-5),ERR_INVALID_ARGS);
 	test_caseSucceeded();
 }
 
 static void test_write(void) {
 	char toosmallbuf[10];
 	test_caseStart("Testing write()");
-	test_assertInt(_write(0,(void*)ILLEGAL_ADDR,1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)ILLEGAL_ADDR,4 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)ILLEGAL_ADDR,4 * 1024 + 1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)ILLEGAL_ADDR,8 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)ILLEGAL_ADDR,8 * 1024 - 1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)KERNEL_SPACE,1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)KERNEL_SPACE,4 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)KERNEL_SPACE,4 * 1024 + 1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)KERNEL_SPACE,8 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)KERNEL_SPACE,8 * 1024 - 1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)HIGH_ADDR,1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)HIGH_ADDR,4 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)HIGH_ADDR,4 * 1024 + 1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)HIGH_ADDR,8 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)HIGH_ADDR,8 * 1024 - 1),ERR_INVALID_ARGS);
+	int fd = open("/myfile",IO_READ | IO_WRITE | IO_CREATE | IO_TRUNCATE);
+	test_assertTrue(fd >= 0);
+	test_segfault(SYSCALL_WRITE,fd,ILLEGAL_ADDR,1);
+	test_segfault(SYSCALL_WRITE,fd,ILLEGAL_ADDR,4 * 1024);
+	test_segfault(SYSCALL_WRITE,fd,ILLEGAL_ADDR,4 * 1024 + 1);
+	test_segfault(SYSCALL_WRITE,fd,ILLEGAL_ADDR,8 * 1024);
+	test_segfault(SYSCALL_WRITE,fd,ILLEGAL_ADDR,8 * 1024 - 1);
+	test_assertInt(_write(fd,(void*)KERNEL_SPACE,1),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)KERNEL_SPACE,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)KERNEL_SPACE,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)KERNEL_SPACE,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)KERNEL_SPACE,8 * 1024 - 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)HIGH_ADDR,1),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)HIGH_ADDR,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)HIGH_ADDR,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)HIGH_ADDR,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(fd,(void*)HIGH_ADDR,8 * 1024 - 1),ERR_INVALID_ARGS);
 	test_assertInt(_write(-1,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_write(32,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_write(33,toosmallbuf,10),ERR_INVALID_FD);
+	close(fd);
+	test_assertInt(unlink("/myfile"),0);
 	test_caseSucceeded();
 }
 
@@ -274,38 +304,24 @@ static void test_getWork(void) {
 	sMsg msg;
 	test_caseStart("Testing getWork()");
 	/* test drv-array */
-	test_assertInt(_getWork(NULL,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)ILLEGAL_ADDR,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)ILLEGAL_ADDR,4 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)ILLEGAL_ADDR,4 * 1024 + 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)ILLEGAL_ADDR,8 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)ILLEGAL_ADDR,8 * 1024 - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)KERNEL_SPACE,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)(KERNEL_SPACE - 1),1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)(KERNEL_SPACE - 1),2,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)(KERNEL_SPACE - 1),4 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)(KERNEL_SPACE - 1),4 * 1024 + 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)(KERNEL_SPACE - 1),8 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)(KERNEL_SPACE - 1),8 * 1024 - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)HIGH_ADDR,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_segfault6(SYSCALL_GETWORK,NULL,1,&s,&mid,&msg,sizeof(msg));
+	test_segfault6(SYSCALL_GETWORK,(void*)ILLEGAL_ADDR,1,&s,&mid,&msg,sizeof(msg));
+	test_assertInt(_getWork((void*)KERNEL_SPACE,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_FD);
+	test_segfault6(SYSCALL_GETWORK,(void*)HIGH_ADDR,1,&s,&mid,&msg,sizeof(msg));
 	/* test driver-id */
-	test_assertInt(_getWork(drvs,1,(int*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_segfault6(SYSCALL_GETWORK,drvs,1,(int*)ILLEGAL_ADDR,&mid,&msg,sizeof(msg));
 	test_assertInt(_getWork(drvs,1,(int*)KERNEL_SPACE,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,(int*)(KERNEL_SPACE - 1),&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,1,(int*)HIGH_ADDR,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test drv-array size */
 	test_assertInt(_getWork(drvs,-1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,4 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,(KERNEL_SPACE - 1),&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test message-id */
-	test_assertInt(_getWork(drvs,1,&s,(msgid_t*)0x12345678,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_segfault6(SYSCALL_GETWORK,drvs,1,&s,(msgid_t*)ILLEGAL_ADDR,&msg,sizeof(msg));
 	test_assertInt(_getWork(drvs,1,&s,(msgid_t*)KERNEL_SPACE,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,&s,(msgid_t*)(KERNEL_SPACE - 1),&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,1,&s,(msgid_t*)HIGH_ADDR,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test message */
-	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)0x12345678,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_segfault6(SYSCALL_GETWORK,drvs,1,&s,&mid,(sMsg*)ILLEGAL_ADDR,sizeof(msg));
 	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)KERNEL_SPACE,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)(KERNEL_SPACE - 1),sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)HIGH_ADDR,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_caseSucceeded();
 }
@@ -387,7 +403,6 @@ static void test_setSigHandler(void) {
 
 static void test_sendSignalTo(void) {
 	test_caseStart("Testing sendSignalTo()");
-	test_assertInt(_sendSignalTo(0,-1),ERR_INVALID_SIGNAL);
 	test_assertInt(_sendSignalTo(0,SIG_COUNT),ERR_INVALID_SIGNAL);
 	test_assertInt(_sendSignalTo(0,SIG_INTRPT_ATA1),ERR_INVALID_SIGNAL);
 	test_assertInt(_sendSignalTo(0,SIG_INTRPT_MOUSE),ERR_INVALID_SIGNAL);
@@ -439,14 +454,13 @@ static void test_stat(void) {
 	memset(longPath,0x65,9999);
 	longPath[9999] = 0;
 	test_caseStart("Testing stat()");
-	test_assertInt(_stat(NULL,&info),ERR_INVALID_ARGS);
-	test_assertInt(_stat((const char*)ILLEGAL_ADDR,&info),ERR_INVALID_ARGS);
-	test_assertInt(_stat((const char*)KERNEL_SPACE,&info),ERR_INVALID_ARGS);
-	test_assertInt(_stat((const char*)HIGH_ADDR,&info),ERR_INVALID_ARGS);
+	test_segfault(SYSCALL_STAT,0,(uintptr_t)&info,0);
+	test_segfault(SYSCALL_STAT,ILLEGAL_ADDR,(uintptr_t)&info,0);
+	test_assertInt(_stat((const char*)KERNEL_SPACE,&info),ERR_PATH_NOT_FOUND);
+	test_segfault(SYSCALL_STAT,HIGH_ADDR,(uintptr_t)&info,0);
 	test_assertInt(_stat(longPath,&info),ERR_INVALID_ARGS);
-	test_assertInt(_stat("",&info),ERR_INVALID_ARGS);
-	test_assertInt(_stat("/bin",NULL),ERR_INVALID_ARGS);
-	test_assertInt(_stat("/bin",(sFileInfo*)ILLEGAL_ADDR),ERR_INVALID_ARGS);
+	test_segfault(SYSCALL_STAT,(uintptr_t)"/bin",0,0);
+	test_segfault(SYSCALL_STAT,(uintptr_t)"/bin",ILLEGAL_ADDR,0);
 	test_assertInt(_stat("/bin",(sFileInfo*)KERNEL_SPACE),ERR_INVALID_ARGS);
 	test_assertInt(_stat("/bin",(sFileInfo*)HIGH_ADDR),ERR_INVALID_ARGS);
 	test_caseSucceeded();

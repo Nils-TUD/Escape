@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
+#include <sys/task/env.h>
 #include <sys/syscalls.h>
 #include <sys/syscalls/io.h>
 #include <sys/syscalls/mem.h>
@@ -28,6 +29,7 @@
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls/signals.h>
 #include <esc/syscalls.h>
+#include <string.h>
 #include <assert.h>
 #include <errors.h>
 
@@ -146,23 +148,38 @@ uint sysc_getArgCount(uint sysCallNo) {
 	return syscalls[sysCallNo].argCount;
 }
 
-bool sysc_isStringReadable(const char *str) {
-	uintptr_t addr;
-	size_t rem;
-	/* null is a special case */
-	if(str == NULL)
-		return false;
+bool sysc_isStrInUserSpace(const char *str,size_t *len) {
+	size_t slen = strlen(str);
+	if(len)
+		*len = slen;
+	return paging_isInUserSpace((uintptr_t)str,slen);
+}
 
-	/* check if it is readable */
-	addr = (uintptr_t)str & ~(PAGE_SIZE - 1);
-	rem = (addr + PAGE_SIZE) - (uintptr_t)str;
-	while(paging_isRangeUserReadable(addr,PAGE_SIZE)) {
-		while(rem-- > 0 && *str)
-			str++;
-		if(!*str)
-			return true;
-		addr += PAGE_SIZE;
-		rem = PAGE_SIZE;
+bool sysc_absolutize_path(char *dst,size_t size,const char *src) {
+	size_t len = 0;
+	ssize_t slen = strnlen(src,MAX_PATH_LEN);
+	if(slen < 0 || !paging_isInUserSpace((uintptr_t)src,slen))
+		return false;
+	if(*src != '/') {
+		const sProc *p = proc_getRunning();
+		const char *cwd = env_get(p->pid,"CWD");
+		if(cwd) {
+			strncpy(dst,cwd,size);
+			dst[size - 1] = '\0';
+			len = strlen(dst);
+			if(len < size - 1 && dst[len - 1] != '/') {
+				dst[len++] = '/';
+				dst[len] = '\0';
+			}
+		}
+		else {
+			/* assume '/' */
+			len = 1;
+			dst[0] = '/';
+			dst[1] = '\0';
+		}
 	}
-	return false;
+	strncpy(dst + len,src,size - len);
+	dst[size - 1] = '\0';
+	return true;
 }

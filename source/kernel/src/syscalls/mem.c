@@ -25,6 +25,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/syscalls/mem.h>
 #include <sys/syscalls.h>
+#include <string.h>
 #include <errors.h>
 
 int sysc_changeSize(sIntrptStackFrame *stack) {
@@ -45,7 +46,8 @@ int sysc_changeSize(sIntrptStackFrame *stack) {
 }
 
 int sysc_addRegion(sIntrptStackFrame *stack) {
-	sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
+	sBinDesc binCpy;
+	const sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
 	off_t binOffset = SYSC_ARG2(stack);
 	size_t byteCount = SYSC_ARG3(stack);
 	size_t loadCount = SYSC_ARG4(stack);
@@ -55,9 +57,9 @@ int sysc_addRegion(sIntrptStackFrame *stack) {
 	vmreg_t rno = -1;
 	uintptr_t start;
 
-	/* check bin */
-	if(bin != NULL && !paging_isRangeUserReadable((uintptr_t)bin,sizeof(sBinDesc)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	/* copy the bin-desc, for the case that bin is not accessible */
+	if(bin)
+		memcpy(&binCpy,bin,sizeof(sBinDesc));
 
 	/* check type */
 	switch(type) {
@@ -89,7 +91,7 @@ int sysc_addRegion(sIntrptStackFrame *stack) {
 	}
 
 	/* add region */
-	rno = vmm_add(p,bin,binOffset,byteCount,loadCount,type);
+	rno = vmm_add(p,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type);
 	if(rno < 0)
 		SYSC_ERROR(stack,rno);
 	/* save tls-region-number */
@@ -127,10 +129,9 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
-	uintptr_t addr;
+	uintptr_t addr,physCpy = *phys;
 
-	/* check phys */
-	if(!paging_isRangeUserReadable((uintptr_t)phys,sizeof(uintptr_t)))
+	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* trying to map memory in kernel area? */
@@ -138,69 +139,73 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 	size_t pages = BYTES_2_PAGES(bytes);
 	/* TODO is this ok? */
 	/* TODO I think we should check here whether it is in a used-region, according to multiboot-memmap */
-	if(*phys &&
-			OVERLAPS(*phys,*phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
+	if(physCpy &&
+			OVERLAPS(physCpy,physCpy + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 #endif
 
-	addr = vmm_addPhys(p,phys,bytes,align);
+	addr = vmm_addPhys(p,&physCpy,bytes,align);
 	if(addr == 0)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+	*phys = physCpy;
 	SYSC_RET1(stack,addr);
 }
 
 int sysc_createSharedMem(sIntrptStackFrame *stack) {
-	char *name = (char*)SYSC_ARG1(stack);
+	char namecpy[MAX_SHAREDMEM_NAME + 1];
+	const char *name = (const char*)SYSC_ARG1(stack);
 	size_t byteCount = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	int res;
 
-	if(!sysc_isStringReadable(name) || byteCount == 0)
+	if(byteCount == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	strncpy(namecpy,name,sizeof(namecpy));
+	namecpy[sizeof(namecpy) - 1] = '\0';
 
-	res = shm_create(p,name,BYTES_2_PAGES(byteCount));
+	res = shm_create(p,namecpy,BYTES_2_PAGES(byteCount));
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
 int sysc_joinSharedMem(sIntrptStackFrame *stack) {
-	char *name = (char*)SYSC_ARG1(stack);
+	char namecpy[MAX_SHAREDMEM_NAME + 1];
+	const char *name = (const char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	int res;
 
-	if(!sysc_isStringReadable(name))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	res = shm_join(p,name);
+	strncpy(namecpy,name,sizeof(namecpy));
+	namecpy[sizeof(namecpy) - 1] = '\0';
+	res = shm_join(p,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
 int sysc_leaveSharedMem(sIntrptStackFrame *stack) {
-	char *name = (char*)SYSC_ARG1(stack);
+	char namecpy[MAX_SHAREDMEM_NAME + 1];
+	const char *name = (const char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	int res;
 
-	if(!sysc_isStringReadable(name))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	res = shm_leave(p,name);
+	strncpy(namecpy,name,sizeof(namecpy));
+	namecpy[sizeof(namecpy) - 1] = '\0';
+	res = shm_leave(p,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int sysc_destroySharedMem(sIntrptStackFrame *stack) {
-	char *name = (char*)SYSC_ARG1(stack);
+	char namecpy[MAX_SHAREDMEM_NAME + 1];
+	const char *name = (const char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	int res;
 
-	if(!sysc_isStringReadable(name))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	res = shm_destroy(p,name);
+	strncpy(namecpy,name,sizeof(namecpy));
+	namecpy[sizeof(namecpy) - 1] = '\0';
+	res = shm_destroy(p,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

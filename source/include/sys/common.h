@@ -33,6 +33,9 @@ typedef unsigned int klock_t;
 #define DEBUGGING 1
 #endif
 
+/* indicates that a pointer might point into userspace */
+#define USER
+
 #define K						1024
 #define M						(1024 * K)
 #define G						(1024 * M)

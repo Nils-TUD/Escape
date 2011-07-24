@@ -23,7 +23,6 @@
 
 ssize_t strnlen(const char *str,ssize_t max) {
 	ssize_t len = 0;
-	vassert(str != NULL,"str == NULL");
 	vassert(max >= 0,"max < 0");
 
 	while(*str && len <= max) {

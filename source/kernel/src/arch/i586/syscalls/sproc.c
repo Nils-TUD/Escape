@@ -40,8 +40,6 @@ int sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	err = ioports_request(p,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
-
-	ioports_setMap(p);
 	SYSC_RET1(stack,0);
 }
 
@@ -59,8 +57,6 @@ int sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	err = ioports_release(p,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
-
-	ioports_setMap(p);
 	SYSC_RET1(stack,0);
 }
 
@@ -81,7 +77,7 @@ int sysc_vm86int(sIntrptStackFrame *stack) {
 		if(!paging_isRangeUserReadable((uint32_t)mAreas,sizeof(sVM86Memarea) * mAreaCount))
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
 		for(i = 0; i < mAreaCount; i++) {
-			/* ensure that just something from the real-mode-memory can be copied */
+			/* ensure that only memory from the real-mode-memory can be copied */
 			if(mAreas[i].type == VM86_MEM_DIRECT) {
 				if(mAreas[i].data.direct.dst + mAreas[i].data.direct.size < mAreas[i].data.direct.dst ||
 					mAreas[i].data.direct.dst + mAreas[i].data.direct.size >= (1 * M + 64 * K))

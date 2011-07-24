@@ -207,7 +207,6 @@ bool vfs_shouldBlock(file_t file) {
 }
 
 file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
-	char apath[MAX_PATH_LEN + 1];
 	inode_t nodeNo;
 	file_t file;
 	bool created;
@@ -215,7 +214,6 @@ file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
 	int err;
 
 	/* resolve path */
-	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	err = vfs_node_resolvePath(path,&nodeNo,&created,flags);
 	if(err == ERR_REAL_PATH) {
 		/* unfortunatly we have to check for the process-ids of ata and fs here. because e.g.
@@ -388,10 +386,8 @@ off_t vfs_tell(pid_t pid,file_t file) {
 	return e->position;
 }
 
-int vfs_stat(pid_t pid,const char *path,sFileInfo *info) {
-	char apath[MAX_PATH_LEN + 1];
+int vfs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
 	inode_t nodeNo;
-	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH)
 		res = vfs_real_stat(pid,path,info);
@@ -400,7 +396,7 @@ int vfs_stat(pid_t pid,const char *path,sFileInfo *info) {
 	return res;
 }
 
-int vfs_fstat(pid_t pid,file_t file,sFileInfo *info) {
+int vfs_fstat(pid_t pid,file_t file,USER sFileInfo *info) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	int res;
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
@@ -412,9 +408,7 @@ int vfs_fstat(pid_t pid,file_t file,sFileInfo *info) {
 }
 
 int vfs_chmod(pid_t pid,const char *path,mode_t mode) {
-	char apath[MAX_PATH_LEN + 1];
 	inode_t nodeNo;
-	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH)
 		res = vfs_real_chmod(pid,path,mode);
@@ -424,9 +418,7 @@ int vfs_chmod(pid_t pid,const char *path,mode_t mode) {
 }
 
 int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
-	char apath[MAX_PATH_LEN + 1];
 	inode_t nodeNo;
-	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH)
 		res = vfs_real_chown(pid,path,uid,gid);
@@ -471,7 +463,7 @@ off_t vfs_seek(pid_t pid,file_t file,off_t offset,uint whence) {
 	return e->position;
 }
 
-ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count) {
+ssize_t vfs_readFile(pid_t pid,file_t file,USER void *buffer,size_t count) {
 	ssize_t readBytes;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
@@ -505,7 +497,7 @@ ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count) {
 	return readBytes;
 }
 
-ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count) {
+ssize_t vfs_writeFile(pid_t pid,file_t file,USER const void *buffer,size_t count) {
 	ssize_t writtenBytes;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
@@ -539,7 +531,7 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count) {
 	return writtenBytes;
 }
 
-ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,const void *data,size_t size) {
+ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_t size) {
 	ssize_t err;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	sVFSNode *n;
@@ -566,7 +558,7 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,const void *data,size_t siz
 	return err;
 }
 
-ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size) {
+ssize_t vfs_receiveMsg(pid_t pid,file_t file,USER msgid_t *id,USER void *data,size_t size) {
 	ssize_t err;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	sVFSNode *n;
@@ -624,25 +616,9 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 	oldRes = vfs_node_resolvePath(oldPath,&oldIno,NULL,VFS_READ);
 	newRes = vfs_node_resolvePath(newPath,&newIno,NULL,VFS_WRITE);
 	if(oldRes == ERR_REAL_PATH) {
-		char *absNew,*absOld;
 		if(newRes != ERR_REAL_PATH)
 			return ERR_LINK_DEVICE;
-
-		/* absolutize the paths */
-		absOld = (char*)cache_alloc(MAX_PATH_LEN + 1);
-		if(!absOld)
-			return ERR_NOT_ENOUGH_MEM;
-		absNew = (char*)cache_alloc(MAX_PATH_LEN + 1);
-		if(!absNew) {
-			cache_free(absOld);
-			return ERR_NOT_ENOUGH_MEM;
-		}
-		oldPath = vfs_node_absolutize(absOld,MAX_PATH_LEN + 1,oldPath);
-		newPath = vfs_node_absolutize(absNew,MAX_PATH_LEN + 1,newPath);
-		oldRes = vfs_real_link(pid,oldPath,newPath);
-		cache_free(absOld);
-		cache_free(absNew);
-		return oldRes;
+		return vfs_real_link(pid,oldPath,newPath);
 	}
 	if(oldRes < 0)
 		return oldRes;
@@ -653,8 +629,6 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 
 	/* copy path because we have to change it */
 	len = strlen(newPath);
-	if(len >= MAX_PATH_LEN)
-		return ERR_INVALID_PATH;
 	strcpy(newPathCpy,newPath);
 	/* check whether the directory exists */
 	name = vfs_node_basename((char*)newPathCpy,&len);
@@ -691,11 +665,9 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 }
 
 int vfs_unlink(pid_t pid,const char *path) {
-	char apath[MAX_PATH_LEN + 1];
 	int res;
 	inode_t ino;
 	sVFSNode *n;
-	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	res = vfs_node_resolvePath(path,&ino,NULL,VFS_WRITE | VFS_NOLINKRES);
 	if(res == ERR_REAL_PATH)
 		return vfs_real_unlink(pid,path);
@@ -732,7 +704,6 @@ int vfs_mkdir(pid_t pid,const char *path) {
 	res = vfs_node_resolvePath(pathCpy,&inodeNo,NULL,VFS_WRITE);
 	/* special-case: directories in / should be created in the real fs! */
 	if(res == ERR_REAL_PATH || (res >= 0 && strcmp(pathCpy,"/") == 0)) {
-		path = vfs_node_absolutize(pathCpy,sizeof(pathCpy),path);
 		/* let fs handle the request */
 		return vfs_real_mkdir(pid,path);
 	}
@@ -762,11 +733,9 @@ int vfs_mkdir(pid_t pid,const char *path) {
 }
 
 int vfs_rmdir(pid_t pid,const char *path) {
-	char apath[MAX_PATH_LEN + 1];
 	int res;
 	sVFSNode *node;
 	inode_t inodeNo;
-	path = vfs_node_absolutize(apath,sizeof(apath),path);
 	res = vfs_node_resolvePath(path,&inodeNo,NULL,VFS_WRITE);
 	if(res == ERR_REAL_PATH)
 		return vfs_real_rmdir(pid,path);

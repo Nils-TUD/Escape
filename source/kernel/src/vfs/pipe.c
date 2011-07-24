@@ -111,7 +111,7 @@ static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node) {
 	}
 }
 
-static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,
+static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
@@ -141,14 +141,17 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,void *buffer,o
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
 		byteCount = MIN(data->length - (offset - data->offset),count);
+		/* if the memcpy segfaults, we pretend that we haven't read this package. we don't fire
+		 * the EVI_PIPE_EMPTY in this case, because the pipe isn't empty anyway (at least the last
+		 * package hasn't been read yet). */
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
-		count -= byteCount;
-		total += byteCount;
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
 			cache_free(data);
-			sll_removeIndex(vpipe->list,0);
+			sll_removeFirst(vpipe->list);
 		}
+		count -= byteCount;
+		total += byteCount;
 		pipe->total -= byteCount;
 		offset += byteCount;
 		if(count == 0)
@@ -174,7 +177,7 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,void *buffer,o
 	return total;
 }
 
-static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,
+static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
@@ -203,8 +206,11 @@ static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,const void *b
 		return ERR_NOT_ENOUGH_MEM;
 	data->offset = offset;
 	data->length = count;
-	if(count)
+	if(count) {
+		thread_addHeapAlloc(data);
 		memcpy(data->data,buffer,count);
+		thread_remHeapAlloc(data);
+	}
 
 	/* create list, if necessary */
 	if(pipe->list == NULL) {

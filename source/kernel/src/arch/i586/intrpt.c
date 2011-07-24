@@ -363,8 +363,8 @@ size_t intrpt_getCount(void) {
 void intrpt_handler(sIntrptStackFrame *stack) {
 	uint64_t cycles;
 	sThread *t = thread_getRunning();
-	sInterrupt *intrpt = intrptList + stack->intrptNo;
-	t->kstackEnd = stack;
+	sInterrupt *intrpt;
+	thread_pushIntrptLevel(t,stack);
 	intrptCount++;
 
 	if((t->flags & T_IDLE) || stack->eip < KERNEL_START) {
@@ -381,6 +381,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 	swap_check();
 
+	intrpt = intrptList + stack->intrptNo;
 	if(intrpt->handler)
 		intrpt->handler(stack);
 	else {
@@ -403,6 +404,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		/* user-mode starts here */
 		t->stats.ucycleStart = cycles;
 	}
+	thread_popIntrptLevel(t);
 }
 
 static void intrpt_exFatal(sIntrptStackFrame *stack) {

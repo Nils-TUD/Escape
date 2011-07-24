@@ -513,7 +513,7 @@ void proc_removeRegions(sProc *p,bool remStack) {
 	}
 }
 
-int proc_getExitState(pid_t ppid,sExitState *state) {
+int proc_getExitState(pid_t ppid,USER sExitState *state) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
@@ -521,6 +521,7 @@ int proc_getExitState(pid_t ppid,sExitState *state) {
 			if(p->flags & P_ZOMBIE) {
 				if(state) {
 					if(p->exitState) {
+						/* if the memcpy segfaults, init will get and free the exitstate */
 						memcpy(state,p->exitState,sizeof(sExitState));
 						cache_free(p->exitState);
 						p->exitState = NULL;
@@ -717,6 +718,8 @@ void proc_print(const sProc *p) {
 			}
 		}
 	}
+	vid_printf("\tFS-Channels:\n");
+	vfs_real_printFSChans(p);
 	if(p->threads) {
 		for(n = sll_begin(p->threads); n != NULL; n = n->next)
 			thread_print((sThread*)n->data);
@@ -729,12 +732,12 @@ static void proc_notifyProcDied(pid_t parent) {
 	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
 }
 
-int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
+int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
 	const char *const *arg;
 	char *bufPos;
 	int argc = 0;
 	size_t remaining = EXEC_MAX_ARGSIZE;
-	ssize_t len;
+	size_t len;
 
 	/* alloc space for the arguments */
 	*argBuffer = (char*)cache_alloc(EXEC_MAX_ARGSIZE);
@@ -745,31 +748,25 @@ int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fr
 	/* note that we have to create a copy since we don't know where the args are. Maybe
 	 * they are on the user-stack at the position we want to copy them for the
 	 * new process... */
+	thread_addHeapAlloc(*argBuffer);
 	bufPos = *argBuffer;
 	arg = args;
 	while(1) {
 		/* check if it is a valid pointer */
-		if(fromUser && !paging_isRangeUserReadable((uintptr_t)arg,sizeof(char*))) {
-			cache_free(*argBuffer);
-			return ERR_INVALID_ARGS;
-		}
+		if(fromUser && !paging_isInUserSpace((uintptr_t)arg,sizeof(char*)))
+			goto error;
 		/* end of list? */
 		if(*arg == NULL)
 			break;
 
 		/* check whether the string is readable */
-		if(fromUser && !sysc_isStringReadable(*arg)) {
-			cache_free(*argBuffer);
-			return ERR_INVALID_ARGS;
-		}
-
+		if(fromUser && !sysc_isStrInUserSpace(*arg,&len))
+			goto error;
+		else
+			len = strlen(*arg);
 		/* ensure that the argument is not longer than the left space */
-		len = strnlen(*arg,remaining - 1);
-		if(len == -1) {
-			/* too long */
-			cache_free(*argBuffer);
-			return ERR_INVALID_ARGS;
-		}
+		if(len >= remaining)
+			goto error;
 
 		/* copy to heap */
 		memcpy(bufPos,*arg,len + 1);
@@ -778,9 +775,15 @@ int proc_buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fr
 		arg++;
 		argc++;
 	}
+	thread_remHeapAlloc(*argBuffer);
 	/* store args-size and return argc */
 	*size = EXEC_MAX_ARGSIZE - remaining;
 	return argc;
+
+error:
+	thread_remHeapAlloc(*argBuffer);
+	cache_free(*argBuffer);
+	return ERR_INVALID_ARGS;
 }
 
 static bool proc_add(sProc *p) {

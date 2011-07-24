@@ -27,11 +27,13 @@
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/real.h>
+#include <sys/vfs/request.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/task/sched.h>
 #include <sys/task/lock.h>
 #include <sys/task/smp.h>
@@ -49,7 +51,6 @@ static void thread_remove(sThread *t);
 /* our threads */
 static sSLList *threads;
 static sThread *tidToThread[MAX_THREAD_COUNT];
-static sThread **cur = NULL;
 static sSLList *idleThreads;
 static tid_t nextTid = 0;
 
@@ -57,7 +58,6 @@ static tid_t nextTid = 0;
 static sSLList* deadThreads = NULL;
 
 sThread *thread_init(sProc *p) {
-	cpuid_t maxId = smp_getMaxCPUId();
 	sThread *curThread;
 
 	threads = sll_create();
@@ -67,14 +67,9 @@ sThread *thread_init(sProc *p) {
 	if(!idleThreads)
 		util_panic("Unable to create idle-thread-list");
 
-	cur = (sThread**)cache_alloc((maxId + 1) * sizeof(sThread*));
-	if(!cur)
-		util_panic("Unable to allocate current-thread-array");
-	memclear(cur,(maxId + 1) * sizeof(sThread*));
-
 	/* create thread for init */
 	curThread = thread_createInitial(p,ST_RUNNING);
-	cur[smp_getCurId()] = curThread;
+	thread_setRunning(curThread);
 	return curThread;
 }
 
@@ -92,14 +87,15 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
-	/* we'll give the thread a stack later */
-	t->kstackEnd = NULL;
+	t->intrptLevel = 0;
+	t->cpu = -1;
 	t->stats.ucycleCount.val64 = 0;
 	t->stats.ucycleStart = 0;
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
+	sll_init(&t->heapAllocs,slln_allocNode,slln_freeNode);
 	for(i = 0; i < STACK_REG_COUNT; i++)
 		t->stackRegions[i] = -1;
 	t->tlsRegion = -1;
@@ -117,16 +113,27 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	return t;
 }
 
+sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
+	assert(t->intrptLevel > 0);
+	return t->intrptLevels[t->intrptLevel - 1];
+}
+
+void thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack) {
+	t->intrptLevels[t->intrptLevel++] = stack;
+}
+
+void thread_popIntrptLevel(sThread *t) {
+	assert(t->intrptLevel > 0);
+	t->intrptLevel--;
+}
+
+size_t thread_getIntrptLevel(const sThread *t) {
+	assert(t->intrptLevel > 0);
+	return t->intrptLevel - 1;
+}
+
 size_t thread_getCount(void) {
 	return sll_length(threads);
-}
-
-sThread *thread_getRunning(void) {
-	return cur ? cur[smp_getCurId()] : NULL;
-}
-
-void thread_setRunning(sThread *t) {
-	cur[smp_getCurId()] = t;
 }
 
 sThread *thread_getById(tid_t tid) {
@@ -172,11 +179,11 @@ void thread_switch(void) {
 }
 
 void thread_switchNoSigs(void) {
-	cpuid_t id = smp_getCurId();
+	sThread *t = thread_getRunning();
 	/* remember that the current thread wants to ignore signals */
-	cur[id]->ignoreSignals = 1;
+	t->ignoreSignals = 1;
 	thread_switch();
-	cur[id]->ignoreSignals = 0;
+	t->ignoreSignals = 0;
 }
 
 void thread_killDead(void) {
@@ -256,6 +263,16 @@ int thread_extendStack(uintptr_t address) {
 	return res;
 }
 
+void thread_addHeapAlloc(void *ptr) {
+	sThread *t = thread_getRunning();
+	sll_append(&t->heapAllocs,ptr);
+}
+
+void thread_remHeapAlloc(void *ptr) {
+	sThread *t = thread_getRunning();
+	sll_removeFirstWith(&t->heapAllocs,ptr);
+}
+
 int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
 		bool cloneProc) {
 	int err = ERR_NOT_ENOUGH_MEM;
@@ -275,13 +292,16 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
+	t->cpu = -1;
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
 	t->stats.ucycleCount.val64 = 0;
 	t->stats.ucycleStart = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
-	t->kstackEnd = src->kstackEnd;
+	t->intrptLevel = src->intrptLevel;
+	memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
+	sll_init(&t->heapAllocs,slln_allocNode,slln_freeNode);
 	if(cloneProc) {
 		size_t i;
 		t->kstackFrame = stackFrame;
@@ -356,6 +376,7 @@ errThread:
 }
 
 void thread_kill(sThread *t) {
+	sSLNode *n;
 	if(t->tid == INIT_TID)
 		util_panic("Can't kill init-thread!");
 	/* we can't destroy the current thread */
@@ -390,6 +411,11 @@ void thread_kill(sThread *t) {
 	/* remove from process */
 	sll_removeFirstWith(t->proc->threads,t);
 
+	/* release resources */
+	for(n = sll_begin(&t->heapAllocs); n != NULL; n = n->next)
+		cache_free(n->data);
+	sll_clear(&t->heapAllocs);
+
 	/* remove from all modules we may be announced */
 	sig_removeHandlerFor(t->tid);
 	ev_removeThread(t->tid);
@@ -397,6 +423,7 @@ void thread_kill(sThread *t) {
 	timer_removeThread(t->tid);
 	thread_freeArch(t);
 	vfs_removeThread(t->tid);
+	vfs_req_freeAllOf(t->tid);
 
 	/* notify the process about it */
 	sig_addSignalFor(t->proc->pid,SIG_THREAD_DIED);
@@ -428,6 +455,7 @@ void thread_print(const sThread *t) {
 	vid_printf("\t\tEvents=");
 	ev_printEvMask(t->tid);
 	vid_printf("\n");
+	vid_printf("\t\tLastCPU=%d\n",t->cpu);
 	vid_printf("\t\tKstackFrame=%#Px\n",t->kstackFrame);
 	vid_printf("\t\tTlsRegion=%d, ",t->tlsRegion);
 	for(i = 0; i < STACK_REG_COUNT; i++) {

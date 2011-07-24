@@ -47,11 +47,20 @@ void sysc_handle(sIntrptStackFrame *intrptStack);
 uint sysc_getArgCount(uint sysCallNo);
 
 /**
- * Checks whether the given null-terminated string (in user-space) is readable
- *
- * @param char* the string
- * @return true if so
+ * @param str the string
+ * @param len will be set to the length of the string, if len != NULL
+ * @return whether the given string is in user-space
  */
-bool sysc_isStringReadable(const char *string);
+bool sysc_isStrInUserSpace(const char *str,size_t *len);
+
+/**
+ * Checks the given path and makes it absolute.
+ *
+ * @param dst the destination array
+ * @param size the size of <dst>
+ * @param src the source path to absolutize
+ * @return true if the string is valid
+ */
+bool sysc_absolutize_path(char *dst,size_t size,const char *src);
 
 #endif /* SYSCALLS_H_ */

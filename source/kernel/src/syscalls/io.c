@@ -22,6 +22,7 @@
 #include <sys/vfs/real.h>
 #include <sys/vfs/pipe.h>
 #include <sys/vfs/driver.h>
+#include <sys/vfs/node.h>
 #include <sys/task/thread.h>
 #include <sys/syscalls/io.h>
 #include <sys/syscalls.h>
@@ -29,20 +30,14 @@
 #include <string.h>
 
 int sysc_open(sIntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uint flags = (uint)SYSC_ARG2(stack);
-	ssize_t pathLen;
 	file_t file;
 	int fd;
 	int err;
 	const sProc *p = proc_getRunning();
-
-	/* at first make sure that we'll cause no page-fault */
-	if(!sysc_isStringReadable(path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	pathLen = strnlen(path,MAX_PATH_LEN);
-	if(pathLen == -1)
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check flags */
@@ -51,7 +46,7 @@ int sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* open the path */
-	file = vfs_openPath(p->pid,flags,path);
+	file = vfs_openPath(p->pid,flags,abspath);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
@@ -96,12 +91,12 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 	sVFSNode *pipeNode;
 	inode_t nodeNo,pipeNodeNo;
 	file_t readFile,writeFile;
+	int kreadFd,kwriteFd;
 	int err;
 
-	/* check pointers */
-	if(!paging_isRangeUserWritable((uintptr_t)readFd,sizeof(int)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserWritable((uintptr_t)writeFd,sizeof(int)))
+	/* make sure that the pointers point to userspace */
+	if(!paging_isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
+			!paging_isInUserSpace((uintptr_t)writeFd,sizeof(int)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* resolve pipe-path */
@@ -116,9 +111,9 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 
 	pipeNodeNo = vfs_node_getNo(pipeNode);
 	/* get free fd for reading */
-	*readFd = proc_getFreeFd();
-	if(*readFd < 0) {
-		err = *readFd;
+	kreadFd = proc_getFreeFd();
+	if(kreadFd < 0) {
+		err = kreadFd;
 		goto errorRemNode;
 	}
 	/* open file for reading */
@@ -128,22 +123,27 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 		goto errorRemNode;
 	}
 	/* assoc fd with file */
-	err = proc_assocFd(*readFd,readFile);
+	err = proc_assocFd(kreadFd,readFile);
 	if(err < 0)
 		goto errorCloseReadFile;
 
 	/* get free fd for writing */
-	*writeFd = proc_getFreeFd();
-	if(*writeFd < 0)
+	kwriteFd = proc_getFreeFd();
+	if(kwriteFd < 0)
 		goto errorUnAssocReadFd;
 	/* open file for writing */
 	writeFile = vfs_openFile(p->pid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO);
 	if(writeFile < 0)
 		goto errorUnAssocReadFd;
 	/* assoc fd with file */
-	err = proc_assocFd(*writeFd,writeFile);
+	err = proc_assocFd(kwriteFd,writeFile);
 	if(err < 0)
 		goto errorCloseWriteFile;
+
+	/* now copy the fds to userspace; this might cause a pagefault and might even cause a kill */
+	/* this is no problem because we've associated the fds, so that all resources will be free'd */
+	*readFd = kreadFd;
+	*writeFd = kwriteFd;
 
 	/* yay, we're done! :) */
 	SYSC_RET1(stack,0);
@@ -152,7 +152,7 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 errorCloseWriteFile:
 	vfs_closeFile(p->pid,writeFile);
 errorUnAssocReadFd:
-	proc_unassocFd(*readFd);
+	proc_unassocFd(kreadFd);
 errorCloseReadFile:
 	vfs_closeFile(p->pid,readFile);
 	/* vfs_closeFile() will already remove the node, so we can't do this again! */
@@ -163,20 +163,17 @@ errorRemNode:
 }
 
 int sysc_stat(sIntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	const sProc *p = proc_getRunning();
-	size_t len;
 	int res;
-
-	if(!sysc_isStringReadable(path) || info == NULL ||
-			!paging_isRangeUserWritable((uintptr_t)info,sizeof(sFileInfo)))
+	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	len = strlen(path);
-	if(len == 0 || len >= MAX_PATH_LEN)
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_stat(p->pid,path,info);
+	res = vfs_stat(p->pid,abspath,info);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -188,8 +185,7 @@ int sysc_fstat(sIntrptStackFrame *stack) {
 	const sProc *p = proc_getRunning();
 	file_t file;
 	int res;
-
-	if(info == NULL || !paging_isRangeUserWritable((uintptr_t)info,sizeof(sFileInfo)))
+	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -204,39 +200,31 @@ int sysc_fstat(sIntrptStackFrame *stack) {
 }
 
 int sysc_chmod(sIntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	mode_t mode = (mode_t)SYSC_ARG2(stack);
 	const sProc *p = proc_getRunning();
-	size_t len;
 	int res;
-
-	if(!sysc_isStringReadable(path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	len = strlen(path);
-	if(len == 0 || len >= MAX_PATH_LEN)
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_chmod(p->pid,path,mode);
+	res = vfs_chmod(p->pid,abspath,mode);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 
 int sysc_chown(sIntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uid_t uid = (uid_t)SYSC_ARG2(stack);
 	gid_t gid = (gid_t)SYSC_ARG3(stack);
 	const sProc *p = proc_getRunning();
-	size_t len;
 	int res;
-
-	if(!sysc_isStringReadable(path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	len = strlen(path);
-	if(len == 0 || len >= MAX_PATH_LEN)
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_chown(p->pid,path,uid,gid);
+	res = vfs_chown(p->pid,abspath,uid,gid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -247,8 +235,7 @@ int sysc_tell(sIntrptStackFrame *stack) {
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	const sProc *p = proc_getRunning();
 	file_t file;
-
-	if(!paging_isRangeUserWritable((uintptr_t)pos,sizeof(off_t)))
+	if(!paging_isInUserSpace((uintptr_t)pos,sizeof(off_t)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -291,9 +278,9 @@ int sysc_read(sIntrptStackFrame *stack) {
 	file_t file;
 
 	/* validate count and buffer */
-	if(count <= 0)
+	if(count == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserWritable((uintptr_t)buffer,count))
+	if(!paging_isInUserSpace((uintptr_t)buffer,count))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -317,9 +304,9 @@ int sysc_write(sIntrptStackFrame *stack) {
 	file_t file;
 
 	/* validate count and buffer */
-	if(count <= 0)
+	if(count == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserReadable((uintptr_t)buffer,count))
+	if(!paging_isInUserSpace((uintptr_t)buffer,count))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -342,9 +329,7 @@ int sysc_send(sIntrptStackFrame *stack) {
 	const sProc *p = proc_getRunning();
 	file_t file;
 	ssize_t res;
-
-	/* validate size and data */
-	if(data != NULL && !paging_isRangeUserReadable((uintptr_t)data,size))
+	if(!paging_isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -367,10 +352,7 @@ int sysc_receive(sIntrptStackFrame *stack) {
 	const sProc *p = proc_getRunning();
 	file_t file;
 	ssize_t res;
-
-	/* validate id and data */
-	if((id != NULL && !paging_isRangeUserWritable((uintptr_t)id,sizeof(msgid_t))) ||
-			(data != NULL && !paging_isRangeUserWritable((uintptr_t)data,size)))
+	if(!paging_isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
@@ -428,93 +410,99 @@ int sysc_sync(sIntrptStackFrame *stack) {
 }
 
 int sysc_link(sIntrptStackFrame *stack) {
+	char oldabs[MAX_PATH_LEN + 1];
+	char newabs[MAX_PATH_LEN + 1];
 	int res;
 	const sProc *p = proc_getRunning();
 	const char *oldPath = (const char*)SYSC_ARG1(stack);
 	const char *newPath = (const char*)SYSC_ARG2(stack);
-	if(!sysc_isStringReadable(oldPath) || !sysc_isStringReadable(newPath))
+	if(!sysc_absolutize_path(oldabs,sizeof(oldabs),oldPath))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!sysc_absolutize_path(newabs,sizeof(newabs),newPath))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_link(p->pid,oldPath,newPath);
+	res = vfs_link(p->pid,oldabs,newabs);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int sysc_unlink(sIntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
 	int res;
 	const sProc *p = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(!sysc_isStringReadable(path))
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_unlink(p->pid,path);
+	res = vfs_unlink(p->pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int sysc_mkdir(sIntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
 	int res;
 	const sProc *p = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(!sysc_isStringReadable(path))
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_mkdir(p->pid,path);
+	res = vfs_mkdir(p->pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int sysc_rmdir(sIntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
 	int res;
 	const sProc *p = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(!sysc_isStringReadable(path))
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_rmdir(p->pid,path);
+	res = vfs_rmdir(p->pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int sysc_mount(sIntrptStackFrame *stack) {
-	char apath[MAX_PATH_LEN + 1];
+	char abspath[MAX_PATH_LEN + 1];
+	char absdev[MAX_PATH_LEN + 1];
 	int res;
 	inode_t ino;
 	const sProc *p = proc_getRunning();
 	const char *device = (const char*)SYSC_ARG1(stack);
 	const char *path = (const char*)SYSC_ARG2(stack);
 	uint type = (uint)SYSC_ARG3(stack);
-	if(!sysc_isStringReadable(device) || !sysc_isStringReadable(path))
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	path = vfs_node_absolutize(apath,sizeof(apath),path);
-	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
+	if(!sysc_absolutize_path(absdev,sizeof(absdev),device))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(vfs_node_resolvePath(abspath,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
-	res = vfs_real_mount(p->pid,device,path,type);
+	res = vfs_real_mount(p->pid,absdev,abspath,type);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int sysc_unmount(sIntrptStackFrame *stack) {
-	char apath[MAX_PATH_LEN + 1];
+	char abspath[MAX_PATH_LEN + 1];
 	int res;
 	inode_t ino;
 	const sProc *p = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(!sysc_isStringReadable(path))
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	path = vfs_node_absolutize(apath,sizeof(apath),path);
-	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
+	if(vfs_node_resolvePath(abspath,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
-	res = vfs_real_unmount(p->pid,path);
+	res = vfs_real_unmount(p->pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

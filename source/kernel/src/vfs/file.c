@@ -71,6 +71,7 @@ sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrit
 static void vfs_file_destroy(sVFSNode *n) {
 	sFileContent *con = (sFileContent*)n->data;
 	if(con) {
+		cache_free(con->data);
 		cache_free(con);
 		n->data = NULL;
 	}
@@ -95,7 +96,8 @@ static off_t vfs_file_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,
 	}
 }
 
-ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
+ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
+		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
 	size_t byteCount;
@@ -114,7 +116,7 @@ ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t of
 	return byteCount;
 }
 
-ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,const void *buffer,off_t offset,
+ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,USER const void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(pid);
 	UNUSED(file);
@@ -146,11 +148,12 @@ ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,const void *buffer,off_
 
 	/* all ok? */
 	if(con->data != NULL) {
-		/* copy the data into the cache */
-		memcpy((uint8_t*)con->data + offset,buffer,count);
 		/* set total size and number of used bytes */
 		if(newSize)
 			con->size = newSize;
+		/* copy the data into the cache; this may segfault, which will leave the the state of the
+		 * file as it was before, except that we've increased the buffer-size */
+		memcpy((uint8_t*)con->data + offset,buffer,count);
 		/* we have checked size for overflow. so it is ok here */
 		con->pos = MAX(con->pos,(off_t)(offset + count));
 		return count;

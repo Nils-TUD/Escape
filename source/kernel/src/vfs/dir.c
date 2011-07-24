@@ -85,7 +85,7 @@ static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,u
 	}
 }
 
-static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,
+static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count) {
 	UNUSED(file);
 	size_t byteCount,fsByteCount;
@@ -167,8 +167,10 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,of
 		offset = byteCount;
 	byteCount = MIN(byteCount - offset,count);
 	if(byteCount > 0) {
-		/* simply copy the data to the buffer */
+		/* simply copy the data to the buffer; ensure that we free fsBytes even if memcpy segfaults */
+		thread_addHeapAlloc(fsBytes);
 		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
+		thread_remHeapAlloc(fsBytes);
 	}
 	cache_free(fsBytes);
 	return byteCount;

@@ -52,6 +52,10 @@ static sRequest *reqFreeList;
 static sRequest *reqUsedList;
 static sRequest *reqUsedEnd;
 
+/* TODO if a thread is killed, we have to remove all requests of that thread and all requests that
+ * are associated with a node of that thread, i.e. if it was a driver the device-nodes of that
+ * driver. */
+
 void vfs_req_init(void) {
 	size_t i;
 	/* init requests */
@@ -72,13 +76,13 @@ bool vfs_req_setHandler(msgid_t id,fReqHandler f) {
 	return true;
 }
 
-void vfs_req_sendMsg(msgid_t id,sVFSNode *node,const void *data,size_t size) {
+void vfs_req_sendMsg(msgid_t id,sVFSNode *node,USER const void *data,size_t size) {
 	assert(node != NULL);
 	if(id < HANDLER_COUNT && handler[id])
 		handler[id](node,data,size);
 }
 
-sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size) {
+sRequest *vfs_req_get(sVFSNode *node,USER void *buffer,size_t size) {
 	const sThread *t = thread_getRunning();
 	sRequest *req = NULL;
 	assert(node != NULL);
@@ -159,6 +163,31 @@ void vfs_req_free(sRequest *r) {
 		vfs_req_remove(r);
 		r->next = reqFreeList;
 		reqFreeList = r;
+	}
+}
+
+void vfs_req_freeAllOf(tid_t tid) {
+	sRequest *req = reqUsedList,*p = NULL;
+	while(req != NULL) {
+		if(req->tid == tid) {
+			sRequest *next = req->next;
+			/* move out of used-list */
+			if(p)
+				p->next = next;
+			else
+				reqUsedList = next;
+			if(req == reqUsedEnd)
+				reqUsedEnd = p;
+			/* put on free list */
+			req->next = reqFreeList;
+			reqFreeList = req;
+			/* to next */
+			req = next;
+		}
+		else {
+			p = req;
+			req = req->next;
+		}
 	}
 }
 

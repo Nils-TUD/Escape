@@ -116,15 +116,15 @@ static uintptr_t pfaddr = 0;
 
 void intrpt_handler(sIntrptStackFrame *stack) {
 	sThread *t;
-	sInterrupt *intrpt = intrptList + (stack->irqNo & 0x1F);
-	/* note: we have to do that before there is a chance for a kernel-miss (e.g. t->kstackEnd
-	 * might cause one because its on the kernel-heap */
+	sInterrupt *intrpt;
+	/* note: we have to do that before there is a chance for a kernel-miss */
 	pfaddr = cpu_getBadAddr();
 	t = thread_getRunning();
-	t->kstackEnd = stack;
+	thread_pushIntrptLevel(t,stack);
 	irqCount++;
 
 	/* call handler */
+	intrpt = intrptList + (stack->irqNo & 0x1F);
 	intrpt->handler(stack);
 
 	/* only handle signals, if we come directly from user-mode */
@@ -136,6 +136,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
 			uenv_startSignalHandler(stack);
 	}
+	thread_popIntrptLevel(t);
 }
 
 size_t intrpt_getCount(void) {

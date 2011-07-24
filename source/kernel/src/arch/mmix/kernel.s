@@ -226,16 +226,6 @@ thread_initSave:
 	BNN		$1,1b
 	# store data to save-area
 	STOU	$255,$251,0						# store stack-end
-	GET		$0,rBB
-	STOU	$0,$251,8						# store rBB
-	GET		$0,rWW
-	STOU	$0,$251,16						# store rWW
-	GET		$0,rXX
-	STOU	$0,$251,24						# store rXX
-	GET		$0,rYY
-	STOU	$0,$251,32						# store rYY
-	GET		$0,rZZ
-	STOU	$0,$251,40						# store rZZ
 	# now unsave, to be able to continue with the current stack
 	UNSAVE	0,$255
 	SET		$0,0							# return 0
@@ -251,27 +241,7 @@ thread_doSwitch:
 	# save state of old thread
 	SAVE	$255,0
 	STOU	$255,$250,0						# store stack-end
-	GET		$0,rBB
-	STOU	$0,$250,8						# store rBB
-	GET		$0,rWW
-	STOU	$0,$250,16						# store rWW
-	GET		$0,rXX
-	STOU	$0,$250,24						# store rXX
-	GET		$0,rYY
-	STOU	$0,$250,32						# store rYY
-	GET		$0,rZZ
-	STOU	$0,$250,40						# store rZZ
 	# restore state of new thread
-	LDOU	$0,$251,40
-	PUT		rZZ,$0							# restore rZZ
-	LDOU	$0,$251,32
-	PUT		rYY,$0							# restore rYY
-	LDOU	$0,$251,24
-	PUT		rXX,$0							# restore rXX
-	LDOU	$0,$251,16
-	PUT		rWW,$0							# restore rWW
-	LDOU	$0,$251,8
-	PUT		rBB,$0							# restore rBB
 	LDOU	$0,$252,8						# load rV
 	PUT		rV,$0
 	LDOU	$0,$251,0						# load stackend

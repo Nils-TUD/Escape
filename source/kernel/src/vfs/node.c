@@ -79,7 +79,7 @@ sVFSNode *vfs_node_getFirstChild(const sVFSNode *node) {
 	return vfs_link_resolve(node)->firstChild;
 }
 
-int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info) {
+int vfs_node_getInfo(inode_t nodeNo,USER sFileInfo *info) {
 	sVFSNode *n = vfs_node_get(nodeNo);
 
 	if(n->mode == 0)
@@ -172,35 +172,7 @@ char *vfs_node_getPath(inode_t nodeNo) {
 	return (char*)path;
 }
 
-char *vfs_node_absolutize(char *dst,size_t size,const char *src) {
-	if(*src != '/') {
-		size_t len;
-		const sProc *p = proc_getRunning();
-		const char *cwd = env_get(p->pid,"CWD");
-		if(cwd) {
-			strncpy(dst,cwd,size);
-			dst[size - 1] = '\0';
-			len = strlen(dst);
-			if(len < size - 1 && dst[len - 1] != '/') {
-				dst[len++] = '/';
-				dst[len] = '\0';
-			}
-		}
-		else {
-			/* assume '/' */
-			len = 1;
-			dst[0] = '/';
-			dst[1] = '\0';
-		}
-		strncpy(dst + len,src,size - len);
-		dst[size - 1] = '\0';
-		return dst;
-	}
-	return (char*)src;
-}
-
 int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint flags) {
-	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = vfs_node_get(0);
 	const sThread *t = thread_getRunning();
 	/* at the beginning, t might be NULL */
@@ -210,10 +182,8 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 		*created = false;
 
 	/* no absolute path? */
-	if(*path != '/') {
-		vfs_node_absolutize(apath,sizeof(apath),path);
-		path = apath;
-	}
+	if(*path != '/')
+		return ERR_INVALID_PATH;
 
 	/* skip slashes */
 	while(*path == '/')

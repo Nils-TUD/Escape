@@ -28,6 +28,7 @@
 #include <sys/vfs/real.h>
 #include <sys/vfs/channel.h>
 #include <sys/util.h>
+#include <sys/video.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
@@ -142,16 +143,17 @@ file_t vfs_real_openInode(pid_t pid,uint flags,inode_t ino,dev_t dev) {
 	return vfs_openFile(pid,flags,ino,dev);
 }
 
-int vfs_real_istat(pid_t pid,inode_t ino,dev_t devNo,sFileInfo *info) {
+int vfs_real_istat(pid_t pid,inode_t ino,dev_t devNo,USER sFileInfo *info) {
 	return vfs_real_doStat(pid,NULL,ino,devNo,info);
 }
 
-int vfs_real_stat(pid_t pid,const char *path,sFileInfo *info) {
+int vfs_real_stat(pid_t pid,const char *path,USER sFileInfo *info) {
 	return vfs_real_doStat(pid,path,0,0,info);
 }
 
-static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,sFileInfo *info) {
+static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileInfo *info) {
 	int res = ERR_NOT_ENOUGH_MEM;
+	void *data;
 	size_t pathLen = 0;
 	file_t fs;
 	sRequest *req;
@@ -197,12 +199,20 @@ static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,sF
 		goto error;
 	}
 
+	/* release resources before memcpy */
+	data = req->data;
+	vfs_req_free(req);
+	vfs_real_releaseFile(pid,fs);
+
 	/* copy to info-struct */
-	if(req->data) {
-		memcpy((void*)info,req->data,sizeof(sFileInfo));
-		cache_free(req->data);
+	if(data) {
+		/* writing to info might fail; so make sure that the memory doesn't leak here */
+		thread_addHeapAlloc(data);
+		memcpy((void*)info,data,sizeof(sFileInfo));
+		thread_remHeapAlloc(data);
+		cache_free(data);
 	}
-	res = 0;
+	return 0;
 
 error:
 	vfs_req_free(req);
@@ -210,7 +220,8 @@ error:
 	return res;
 }
 
-ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,void *buffer,off_t offset,size_t count) {
+ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,off_t offset,
+		size_t count) {
 	sRequest *req;
 	ssize_t res;
 	void *data;
@@ -241,20 +252,21 @@ ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,void *buffer,off_t o
 	/* wait for a reply */
 	vfs_real_wait(req);
 
+	/* release resources before memcpy */
 	res = req->count;
 	data = req->data;
-	/* Better release the request before the memcpy so that it can be reused. Because memcpy might
-	 * cause a page-fault which leads to swapping -> thread-switch. */
 	vfs_req_free(req);
 	vfs_real_releaseFile(pid,fs);
 	if(data) {
+		thread_addHeapAlloc(data);
 		memcpy(buffer,data,res);
+		thread_remHeapAlloc(data);
 		cache_free(data);
 	}
 	return res;
 }
 
-ssize_t vfs_real_write(pid_t pid,inode_t inodeNo,dev_t devNo,const void *buffer,off_t offset,
+ssize_t vfs_real_write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
 	ssize_t res = ERR_NOT_ENOUGH_MEM;
@@ -396,34 +408,34 @@ static void vfs_real_wait(sRequest *req) {
 	while((ssize_t)req->count == ERR_DRIVER_DIED);
 }
 
-static void vfs_real_openRespHandler(sVFSNode *node,const void *data,size_t size) {
+static void vfs_real_openRespHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	sMsg *rmsg = (sMsg*)data;
-	sRequest *req;
-	if(!data || size < sizeof(rmsg->args))
-		return;
-
-	/* find the request for the node */
-	req = vfs_req_getByNode(node);
+	inode_t inode = rmsg->args.arg1;
+	dev_t dev = rmsg->args.arg2;
+	sRequest *req = vfs_req_getByNode(node);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
-		req->count = rmsg->args.arg1;
-		req->val1 = rmsg->args.arg2;
+		req->count = inode;
+		req->val1 = dev;
 		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->tid,EV_REQ_REPLY);
 	}
 }
 
-static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size) {
+static void vfs_real_readRespHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	/* find the request for the node */
 	sRequest *req = vfs_req_getByNode(node);
 	if(req != NULL) {
 		/* the first one is the message */
 		if(req->state == REQ_STATE_WAITING) {
 			sMsg *rmsg = (sMsg*)data;
+			ulong res = rmsg->args.arg1;
 			/* an error? */
-			if(!data || size < sizeof(rmsg->args) || (long)rmsg->args.arg1 <= 0) {
+			if((long)res <= 0) {
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
 				req->data = NULL;
@@ -432,7 +444,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
-			req->count = rmsg->args.arg1;
+			req->count = res;
 			req->state = REQ_STATE_WAIT_DATA;
 		}
 		else if(req->state == REQ_STATE_WAIT_DATA) {
@@ -445,8 +457,11 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size
 				else {
 					/* map the buffer we have to copy it to */
 					req->data = cache_alloc(req->count);
-					if(req->data)
+					if(req->data) {
+						thread_addHeapAlloc(req->data);
 						memcpy(req->data,data,req->count);
+						thread_remHeapAlloc(req->data);
+					}
 				}
 			}
 			req->state = REQ_STATE_FINISHED;
@@ -457,39 +472,38 @@ static void vfs_real_readRespHandler(sVFSNode *node,const void *data,size_t size
 	}
 }
 
-static void vfs_real_statRespHandler(sVFSNode *node,const void *data,size_t size) {
+static void vfs_real_statRespHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	sMsg *rmsg = (sMsg*)data;
-	sRequest *req;
-	if(!data || size < sizeof(rmsg->data))
-		return;
-
-	/* find the request for the node */
-	req = vfs_req_getByNode(node);
+	sRequest *req = vfs_req_getByNode(node);
+	ulong res = rmsg->data.arg1;
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
-		req->count = rmsg->data.arg1;
-		req->data = cache_alloc(sizeof(sFileInfo));
-		if(req->data != NULL)
-			memcpy(req->data,rmsg->data.d,sizeof(sFileInfo));
+		req->count = res;
+		if(res == 0) {
+			req->data = cache_alloc(sizeof(sFileInfo));
+			if(req->data != NULL) {
+				thread_addHeapAlloc(req->data);
+				memcpy(req->data,rmsg->data.d,sizeof(sFileInfo));
+				thread_remHeapAlloc(req->data);
+			}
+		}
 		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->tid,EV_REQ_REPLY);
 	}
 }
 
-static void vfs_real_defRespHandler(sVFSNode *node,const void *data,size_t size) {
+static void vfs_real_defRespHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	sMsg *rmsg = (sMsg*)data;
-	sRequest *req;
-	if(!data || size < sizeof(rmsg->args))
-		return;
-
-	/* find the request for the node */
-	req = vfs_req_getByNode(node);
+	sRequest *req = vfs_req_getByNode(node);
+	ulong res = rmsg->data.arg1;
 	if(req != NULL) {
 		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
-		req->count = rmsg->args.arg1;
+		req->count = res;
 		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->tid,EV_REQ_REPLY);
@@ -568,6 +582,17 @@ static void vfs_real_releaseFile(pid_t pid,file_t file) {
 		if(chan->file == file) {
 			chan->active = false;
 			return;
+		}
+	}
+}
+
+void vfs_real_printFSChans(const sProc *p) {
+	sSLNode *n;
+	if(p->fsChans) {
+		for(n = sll_begin(p->fsChans); n != NULL; n = n->next) {
+			sFSChan *chan = (sFSChan*)n->data;
+			vid_printf("\t\t%s (%s)\n",vfs_node_getPath(vfs_node_getNo(chan->node)),
+					chan->active ? "active" : "not active");
 		}
 	}
 }

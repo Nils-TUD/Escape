@@ -33,6 +33,8 @@
 extern bool thread_save(sThreadRegs *saveArea);
 extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
 
+static sThread *cur = NULL;
+
 int thread_initArch(sThread *t) {
 	/* setup kernel-stack for us */
 	frameno_t stackFrame = pmem_allocate();
@@ -70,6 +72,14 @@ void thread_freeArch(sThread *t) {
 	}
 }
 
+sThread *thread_getRunning(void) {
+	return cur;
+}
+
+void thread_setRunning(sThread *t) {
+	cur = t;
+}
+
 int thread_finishClone(sThread *t,sThread *nt) {
 	UNUSED(t);
 	ulong *src;
@@ -95,42 +105,42 @@ int thread_finishClone(sThread *t,sThread *nt) {
 }
 
 void thread_switchTo(tid_t tid) {
-	sThread *cur = thread_getRunning();
+	sThread *ct = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */
-	if(tid != cur->tid) {
-		uint64_t kcstart = cur->stats.kcycleStart;
+	if(tid != ct->tid) {
+		uint64_t kcstart = ct->stats.kcycleStart;
 		if(kcstart > 0) {
 			uint64_t cycles = cpu_rdtsc();
-			cur->stats.kcycleCount.val64 += cycles - kcstart;
+			ct->stats.kcycleCount.val64 += cycles - kcstart;
 		}
 
-		if(!thread_save(&cur->save)) {
+		if(!thread_save(&ct->save)) {
 			sThread *old;
 			sThread *t = thread_getById(tid);
 			vassert(t != NULL,"Thread with tid %d not found",tid);
 
 			/* mark old process ready, if it should not be blocked, killed or something */
-			if(cur->state == ST_RUNNING)
-				sched_setReady(cur);
-			if(cur->flags & T_IDLE)
-				thread_pushIdle(cur);
+			if(ct->state == ST_RUNNING)
+				sched_setReady(ct);
+			if(ct->flags & T_IDLE)
+				thread_pushIdle(ct);
 
-			old = cur;
+			old = ct;
 			thread_setRunning(t);
-			cur = t;
+			ct = t;
 
 			/* set used */
-			cur->stats.schedCount++;
+			ct->stats.schedCount++;
 			if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-				vmm_setTimestamp(cur,timer_getTimestamp());
-			sched_setRunning(cur);
+				vmm_setTimestamp(ct,timer_getTimestamp());
+			sched_setRunning(ct);
 
-			thread_resume(cur->proc->pagedir,&cur->save,cur->kstackFrame);
+			thread_resume(ct->proc->pagedir,&ct->save,ct->kstackFrame);
 		}
 
 		/* now start kernel-time again */
-		cur = thread_getRunning();
-		cur->stats.kcycleStart = cpu_rdtsc();
+		ct = thread_getRunning();
+		ct->stats.kcycleStart = cpu_rdtsc();
 	}
 
 	thread_killDead();

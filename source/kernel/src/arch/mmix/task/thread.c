@@ -79,6 +79,8 @@
 extern int thread_initSave(sThreadRegs *saveArea,void *newStack);
 extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tid_t tid);
 
+static sThread *cur = NULL;
+
 int thread_initArch(sThread *t) {
 	t->kstackFrame = pmem_allocate();
 	t->archAttr.tempStack = -1;
@@ -116,6 +118,8 @@ int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
 			return dst->stackRegions[1];
 		}
 	}
+	memcpy(dst->archAttr.specRegLevels,src->archAttr.specRegLevels,
+			sizeof(sKSpecRegs) * MAX_INTRPT_LEVELS);
 	return 0;
 }
 
@@ -131,6 +135,31 @@ void thread_freeArch(sThread *t) {
 		pmem_free(t->archAttr.tempStack);
 		t->archAttr.tempStack = -1;
 	}
+}
+
+sThread *thread_getRunning(void) {
+	return cur;
+}
+
+void thread_setRunning(sThread *t) {
+	cur = t;
+}
+
+sKSpecRegs *thread_getSpecRegs(void) {
+	sThread *t = thread_getRunning();
+	return t->archAttr.specRegLevels + t->intrptLevel - 1;
+}
+
+void thread_pushSpecRegs(void) {
+	sThread *t = thread_getRunning();
+	sKSpecRegs *sregs = t->archAttr.specRegLevels + t->intrptLevel - 1;
+	cpu_getKSpecials(&sregs->rbb,&sregs->rww,&sregs->rxx,&sregs->ryy,&sregs->rzz);
+}
+
+void thread_popSpecRegs(void) {
+	sThread *t = thread_getRunning();
+	sKSpecRegs *sregs = t->archAttr.specRegLevels + t->intrptLevel - 1;
+	cpu_setKSpecials(sregs->rbb,sregs->rww,sregs->rxx,sregs->ryy,sregs->rzz);
 }
 
 int thread_finishClone(sThread *t,sThread *nt) {
@@ -151,50 +180,50 @@ int thread_finishClone(sThread *t,sThread *nt) {
 }
 
 void thread_switchTo(tid_t tid) {
-	sThread *cur = thread_getRunning();
+	sThread *ct = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */
-	if(tid != cur->tid) {
-		uint64_t kcstart = cur->stats.kcycleStart;
+	if(tid != ct->tid) {
+		uint64_t kcstart = ct->stats.kcycleStart;
 		if(kcstart > 0) {
 			uint64_t cycles = cpu_rdtsc();
-			cur->stats.kcycleCount.val64 += cycles - kcstart;
+			ct->stats.kcycleCount.val64 += cycles - kcstart;
 		}
 
 		sThread *t = thread_getById(tid);
-		sThread *old = cur;
+		sThread *old = ct;
 		vassert(t != NULL,"Thread with tid %d not found",tid);
 
 		/* mark old process ready, if it should not be blocked, killed or something */
-		if(cur->state == ST_RUNNING)
-			sched_setReady(cur);
-		if(cur->flags & T_IDLE)
-			thread_pushIdle(cur);
+		if(ct->state == ST_RUNNING)
+			sched_setReady(ct);
+		if(ct->flags & T_IDLE)
+			thread_pushIdle(ct);
 
 		thread_setRunning(t);
-		cur = t;
+		ct = t;
 
 		/* set used */
-		cur->stats.schedCount++;
+		ct->stats.schedCount++;
 		if(conf_getStr(CONF_SWAP_DEVICE))
-			vmm_setTimestamp(cur,timer_getTimestamp());
-		sched_setRunning(cur);
+			vmm_setTimestamp(ct,timer_getTimestamp());
+		sched_setRunning(ct);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
-		if(cur->archAttr.tempStack != (frameno_t)-1) {
-			memcpy((void*)(DIR_MAPPED_SPACE | cur->kstackFrame * PAGE_SIZE),
-					(void*)(DIR_MAPPED_SPACE | cur->archAttr.tempStack * PAGE_SIZE),
+		if(ct->archAttr.tempStack != (frameno_t)-1) {
+			memcpy((void*)(DIR_MAPPED_SPACE | ct->kstackFrame * PAGE_SIZE),
+					(void*)(DIR_MAPPED_SPACE | ct->archAttr.tempStack * PAGE_SIZE),
 					PAGE_SIZE);
-			pmem_free(cur->archAttr.tempStack);
-			cur->archAttr.tempStack = -1;
+			pmem_free(ct->archAttr.tempStack);
+			ct->archAttr.tempStack = -1;
 		}
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
-		thread_doSwitch(&old->save,&cur->save,cur->proc->pagedir,cur->tid);
+		thread_doSwitch(&old->save,&ct->save,ct->proc->pagedir,ct->tid);
 
 		/* now start kernel-time again */
-		cur = thread_getRunning();
-		cur->stats.kcycleStart = cpu_rdtsc();
+		ct = thread_getRunning();
+		ct->stats.kcycleStart = cpu_rdtsc();
 	}
 
 	thread_killDead();

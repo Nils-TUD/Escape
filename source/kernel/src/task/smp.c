@@ -83,15 +83,8 @@ bool smp_isBSP(void) {
 	return false;
 }
 
-cpuid_t smp_getMaxCPUId(void) {
-	sSLNode *n;
-	cpuid_t id = 0;
-	for(n = sll_begin(cpus); n != NULL; n = n->next) {
-		sCPU *cpu = (sCPU*)n->data;
-		if(cpu->id > id)
-			id = cpu->id;
-	}
-	return id;
+size_t smp_getCPUCount(void) {
+	return cpus->length;
 }
 
 const sSLList *smp_getCPUs(void) {

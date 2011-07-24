@@ -25,6 +25,7 @@
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls.h>
 #include <errors.h>
+#include <string.h>
 
 /* implementable functions */
 #define MAX_GETWORK_DRIVERS			16
@@ -33,6 +34,7 @@
 #define GW_NOBLOCK					1
 
 int sysc_regDriver(sIntrptStackFrame *stack) {
+	char nameCpy[MAX_PATH_LEN + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	uint flags = SYSC_ARG2(stack);
 	const sProc *p = proc_getRunning();
@@ -42,11 +44,11 @@ int sysc_regDriver(sIntrptStackFrame *stack) {
 	/* check flags */
 	if((flags & ~DRV_ALL) != 0 && flags != DRV_FS)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!sysc_isStringReadable(name))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	strncpy(nameCpy,name,sizeof(nameCpy));
+	nameCpy[sizeof(nameCpy) - 1] = '\0';
 
 	/* create driver and open it */
-	res = vfs_createDriver(p->pid,name,flags);
+	res = vfs_createDriver(p->pid,nameCpy,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -112,7 +114,7 @@ int sysc_getClient(sIntrptStackFrame *stack) {
 int sysc_getWork(sIntrptStackFrame *stack) {
 	file_t files[MAX_GETWORK_DRIVERS];
 	sWaitObject waits[MAX_GETWORK_DRIVERS];
-	int *fds = (int*)SYSC_ARG1(stack);
+	const int *fds = (const int*)SYSC_ARG1(stack);
 	size_t fdCount = SYSC_ARG2(stack);
 	int *drv = (int*)SYSC_ARG3(stack);
 	msgid_t *id = (msgid_t*)SYSC_ARG4(stack);
@@ -128,15 +130,13 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	bool inited = false;
 
 	/* validate driver-ids */
-	if(fdCount <= 0 || fdCount > MAX_GETWORK_DRIVERS || fds == NULL ||
-			!paging_isRangeUserReadable((uintptr_t)fds,fdCount * sizeof(int)))
+	if(fdCount == 0 || fdCount > MAX_GETWORK_DRIVERS)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	/* validate id and data */
-	if(!paging_isRangeUserWritable((uintptr_t)id,sizeof(msgid_t)) ||
-			!paging_isRangeUserWritable((uintptr_t)data,size))
+	if(!paging_isInUserSpace((uintptr_t)drv,sizeof(int)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	/* check drv */
-	if(drv != NULL && !paging_isRangeUserWritable((uintptr_t)drv,sizeof(int)))
+	if(!paging_isInUserSpace((uintptr_t)id,sizeof(msgid_t)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!paging_isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* translate to files */

@@ -35,6 +35,7 @@ static sFuncCall frames[1] = {
 };
 
 void util_panic(const char *fmt,...) {
+	sKSpecRegs *sregs = thread_getSpecRegs();
 	sThread *t = thread_getRunning();
 	va_list ap;
 
@@ -51,11 +52,9 @@ void util_panic(const char *fmt,...) {
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 
 	vid_printf("User state:\n");
-	intrpt_printStackFrame(t->kstackEnd);
-	uint64_t rbb,rww,rxx,ryy,rzz;
-	cpu_getKSpecials(&rbb,&rww,&rxx,&ryy,&rzz);
-	vid_printf("\trBB : #%016lx rWW : #%016lx rXX : #%016lx\n",rbb,rww,rxx);
-	vid_printf("\trYY : #%016lx rZZ : #%016lx\n",ryy,rzz);
+	intrpt_printStackFrame(thread_getIntrptStack(t));
+	vid_printf("\trBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
+	vid_printf("\trYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
 
 	/* write into log only */
 	vid_setTargets(TARGET_SCREEN);

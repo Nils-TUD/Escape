@@ -37,6 +37,7 @@
 #define ARGS_MSG_COUNT		256
 
 typedef struct {
+	bool closed;
 	/* a list for sending messages to the driver */
 	sSLList *sendList;
 	/* a list for reading messages from the driver */
@@ -78,6 +79,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	}
 	chan->recvList = NULL;
 	chan->sendList = NULL;
+	chan->closed = false;
 	node->data = chan;
 	return node;
 }
@@ -126,6 +128,8 @@ static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 		 * would have deleted the whole driver-node otherwise */
 		if(sll_length(chan->sendList) == 0)
 			vfs_node_destroy(node);
+		else
+			chan->closed = true;
 	}
 }
 
@@ -139,7 +143,8 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 	return sll_length(chan->sendList) > 0;
 }
 
-ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,const void *data,size_t size) {
+ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const void *data,
+		size_t size) {
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
@@ -173,8 +178,11 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,const void *d
 
 	msg->length = size;
 	msg->id = id;
-	if(data)
+	if(data) {
+		thread_addHeapAlloc(msg);
 		memcpy(msg + 1,data,size);
+		thread_remHeapAlloc(msg);
+	}
 
 	/* append to list */
 	if(!sll_append(*list,msg)) {
@@ -193,7 +201,8 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,const void *d
 	return 0;
 }
 
-ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *data,size_t size) {
+ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,USER void *data,
+		size_t size) {
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
@@ -215,6 +224,9 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *
 	while(sll_length(*list) == 0) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
+		/* if the channel has already been closed, there is no hope of success here */
+		if(chan->closed)
+			return ERR_INVALID_FILE;
 		ev_wait(t->tid,event,(evobj_t)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
@@ -225,23 +237,24 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *
 	}
 
 	/* get first element and copy data to buffer */
-	msg = (sMessage*)sll_removeFirst(*list);
+	msg = (sMessage*)sll_get(*list,0);
 	if(data && msg->length > size) {
+		sll_removeFirst(*list);
 		cache_free(msg);
 		return ERR_INVALID_ARGS;
 	}
 
-	/* the data is behind the message */
-	if(data)
-		memcpy(data,msg + 1,msg->length);
-
 	/*vid_printf("%s received msg %d from %s\n",proc_getByPid(pid)->command,
 					msg->id,node->parent->name);*/
 
-	/* set id, return size and free msg */
+	/* copy data and id; both might segfault, in this case we pretend that we haven't read the msg */
+	if(data)
+		memcpy(data,msg + 1,msg->length);
 	if(id)
 		*id = msg->id;
+
 	res = msg->length;
+	sll_removeFirst(*list);
 	cache_free(msg);
 	if(event == EVI_CLIENT)
 		vfs_server_remMsg(node->parent);

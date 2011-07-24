@@ -11,8 +11,9 @@ LSUBDIRS = $(shell find $(LIB) -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDK)/,$(SUBDIRS)) $(patsubst $(LIB)/%,$(BUILDK)/lib/%,$(LSUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 
-CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D IN_KERNEL=1 #\
- -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/profile.c
+CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D IN_KERNEL=1 \
+ #-D PROFILE=1 -finstrument-functions \
+ -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/arch/$(ARCH)/profile.c
 
 # sources
 ASRC = ./arch/$(ARCH)/kernel.s
@@ -42,9 +43,9 @@ SYMBOLOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(SYMBOLSRC))
 
 .PHONY: all pre clean
 
-all:	$(TRAMP_DUMP) $(BIN) $(MAP)
+all:	$(BUILDDIRS) $(TRAMP_DUMP) $(BIN) $(MAP)
 
-$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) $(AENDOBJ)
+$(BIN):	$(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) $(AENDOBJ)
 	@echo "	" LINKING $(BIN)
 	@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(LAOBJ) $(AENDOBJ) -lgcc;
 	@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
@@ -76,10 +77,12 @@ $(BUILDDIRS):
 	done;
 
 $(TRAMP_DUMP): arch/i586/trampoline.asm
+ifeq ($(ARCH),i586)
 	@echo "	" NASM $<
 	@nasm -f bin -o $(BUILDK)/arch/i586/trampoline.s.o $<
 	@echo "	" DUMP $<
 	@$(BUILD)/dump $(BUILDK)/arch/i586/trampoline.s.o > $@
+endif
 
 $(BUILDK)/%.s.o: %.s
 	@echo "	" AS $@ $<

@@ -118,7 +118,7 @@ void vfs_info_init(void) {
 			vfs_info_statsReadHandler,NULL) != NULL);
 }
 
-ssize_t vfs_info_traceReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_traceReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_traceReadCallback);
@@ -149,7 +149,7 @@ static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_procReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_procReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_procReadCallback);
@@ -195,7 +195,7 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_threadReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_threadReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_threadReadCallback);
@@ -242,7 +242,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 	*dataSize = buf.len;
 }
 
-static ssize_t vfs_info_cpuReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+static ssize_t vfs_info_cpuReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_cpuReadCallback);
@@ -260,7 +260,7 @@ static void vfs_info_cpuReadCallback(sVFSNode *node,size_t *dataSize,void **buff
 	*dataSize = buf.len;
 }
 
-static ssize_t vfs_info_statsReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+static ssize_t vfs_info_statsReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_statsReadCallback);
@@ -295,11 +295,10 @@ static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 	*dataSize = buf.len;
 }
 
-static ssize_t vfs_info_memUsageReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+static ssize_t vfs_info_memUsageReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
-	return vfs_info_readHelper(pid,node,buffer,offset,count,(11 + 10 + 1) * 15 + 1,
-			vfs_info_memUsageReadCallback);
+	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_memUsageReadCallback);
 }
 
 static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
@@ -307,9 +306,9 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	size_t free,total;
 	size_t paging,dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
 	UNUSED(node);
-	buf.dynamic = false;
-	buf.str = *(char**)buffer;
-	buf.size = (11 + 10 + 1) * 15 + 1;
+	buf.dynamic = true;
+	buf.str = NULL;
+	buf.size = 0;
 	buf.len = 0;
 
 	free = pmem_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
@@ -354,10 +353,11 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 		"CacheUsage:",cache_getUsedMem(),
 		"KernelMisc:",(total - free) - (ksize + msize + dataReal + paging + pmem + kheap + cache)
 	);
+	*buffer = buf.str;
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_regionsReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_regionsReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_regionsReadCallback);
@@ -376,7 +376,7 @@ static void vfs_info_regionsReadCallback(sVFSNode *node,size_t *dataSize,void **
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_virtMemReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_virtMemReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_virtMemReadCallback);
@@ -395,28 +395,22 @@ static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **
 	*dataSize = buf.len;
 }
 
-static ssize_t vfs_info_readHelper(pid_t pid,sVFSNode *node,void *buffer,off_t offset,size_t count,
-		size_t dataSize,fReadCallBack callback) {
+static ssize_t vfs_info_readHelper(pid_t pid,sVFSNode *node,USER void *buffer,off_t offset,
+		size_t count,size_t dataSize,fReadCallBack callback) {
 	void *mem = NULL;
-
 	UNUSED(pid);
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");
 
 	/* just if the datasize is known in advance */
 	if(dataSize > 0) {
-		/* can we copy it directly? */
-		if(offset == 0 && count == dataSize)
-			mem = buffer;
 		/* don't waste time in this case */
-		else if(offset >= (off_t)dataSize)
+		if(offset >= (off_t)dataSize)
 			return 0;
 		/* ok, use the heap as temporary storage */
-		else {
-			mem = cache_alloc(dataSize);
-			if(mem == NULL)
-				return 0;
-		}
+		mem = cache_alloc(dataSize);
+		if(mem == NULL)
+			return 0;
 	}
 
 	/* copy values to public struct */
@@ -424,18 +418,18 @@ static ssize_t vfs_info_readHelper(pid_t pid,sVFSNode *node,void *buffer,off_t o
 	if(mem == NULL)
 		return 0;
 
-	/* stored on kheap? */
-	if((uintptr_t)mem != (uintptr_t)buffer) {
-		/* correct vars */
-		if(offset > (off_t)dataSize)
-			offset = dataSize;
-		count = MIN(dataSize - offset,count);
-		/* copy */
-		if(count > 0)
-			memcpy(buffer,(uint8_t*)mem + offset,count);
-		/* free temp storage */
-		cache_free(mem);
+	/* correct vars */
+	if(offset > (off_t)dataSize)
+		offset = dataSize;
+	count = MIN(dataSize - offset,count);
+	/* copy */
+	if(count > 0) {
+		thread_addHeapAlloc(mem);
+		memcpy(buffer,(uint8_t*)mem + offset,count);
+		thread_remHeapAlloc(mem);
 	}
+	/* free temp storage */
+	cache_free(mem);
 
 	return count;
 }

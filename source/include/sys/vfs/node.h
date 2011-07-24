@@ -97,16 +97,6 @@ int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode);
 int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid);
 
 /**
- * Builds an absolute path from <src> into <dst>.
- *
- * @param dst the destination
- * @param size the size of the destination
- * @param src the relative path
- * @return the absolute path, either <dst> or <src>
- */
-char *vfs_node_absolutize(char *dst,size_t size,const char *src);
-
-/**
  * Resolves the given path to a VFS-node
  *
  * @param path the path to resolve

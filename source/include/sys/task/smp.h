@@ -40,7 +40,7 @@ void smp_start(void);
 cpuid_t smp_getBSPId(void);
 bool smp_isBSP(void);
 cpuid_t smp_getCurId(void);
-cpuid_t smp_getMaxCPUId(void);
+size_t smp_getCPUCount(void);
 const sSLList *smp_getCPUs(void);
 
 #endif /* SMP_H_ */

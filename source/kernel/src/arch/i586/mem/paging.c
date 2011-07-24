@@ -254,6 +254,10 @@ void paging_gdtFinished(void) {
 	paging_flushTLB();
 }
 
+bool paging_isInUserSpace(uintptr_t virt,size_t count) {
+	return virt + count <= KERNEL_START && virt + count >= virt;
+}
+
 /* TODO perhaps we should move isRange*() to vmm? */
 
 bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {

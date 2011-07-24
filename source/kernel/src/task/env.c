@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/env.h>
+#include <sys/task/thread.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
@@ -48,7 +49,7 @@ const char *env_geti(pid_t pid,size_t index) {
 	return NULL;
 }
 
-const char *env_get(pid_t pid,const char *name) {
+const char *env_get(pid_t pid,USER const char *name) {
 	const sProc *p = proc_getByPid(pid);
 	sEnvVar *var;
 	while(1) {
@@ -62,56 +63,60 @@ const char *env_get(pid_t pid,const char *name) {
 	return NULL;
 }
 
-bool env_set(pid_t pid,const char *name,const char *value) {
+bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 	sProc *p = proc_getByPid(pid);
 	sEnvVar *var;
+	char *nameCpy,*valueCpy;
+	nameCpy = strdup(name);
+	if(!nameCpy)
+		return false;
+	thread_addHeapAlloc(nameCpy);
+	valueCpy = strdup(value);
+	thread_remHeapAlloc(nameCpy);
+	if(!valueCpy)
+		goto errorNameCpy;
 
 	/* at first we have to look whether the var already exists for the given process */
-	var = env_getOf(p,name);
+	var = env_getOf(p,nameCpy);
 	if(var != NULL) {
 		char *oldVal = var->value;
 		/* set value */
-		var->value = strdup(value);
-		if(var->value == NULL)
-			return false;
+		var->value = valueCpy;
 		/* we don't need the previous value anymore */
 		cache_free(oldVal);
+		cache_free(nameCpy);
 		return true;
 	}
 
 	var = (sEnvVar*)cache_alloc(sizeof(sEnvVar));
 	if(var == NULL)
-		return false;
+		goto errorValCpy;
 
 	/* we haven't appended the new var yet. so if we find it now, its a duplicate */
-	var->dup = env_get(pid,name) != NULL;
-	/* copy name */
-	var->name = strdup(name);
-	if(var->name == NULL)
-		goto errorVar;
-	/* copy value */
-	var->value = strdup(value);
-	if(var->value == NULL)
-		goto errorName;
+	var->dup = env_get(pid,nameCpy) != NULL;
+	/* set name and value */
+	var->name = nameCpy;
+	var->value = valueCpy;
 
 	/* append to list */
 	if(!p->env) {
 		p->env = sll_create();
 		if(!p->env)
-			goto errorVal;
+			goto errorVar;
 	}
 	if(!sll_append(p->env,var))
-		goto errorVal;
+		goto errorList;
 	return true;
 
-errorVal:
+errorList:
 	if(sll_length(p->env) == 0)
 		sll_destroy(p->env,false);
-	cache_free(var->value);
-errorName:
-	cache_free(var->name);
 errorVar:
 	cache_free(var);
+errorValCpy:
+	cache_free(valueCpy);
+errorNameCpy:
+	cache_free(nameCpy);
 	return false;
 }
 
@@ -153,7 +158,7 @@ static sEnvVar *env_getiOf(const sProc *p,size_t *index) {
 	return NULL;
 }
 
-static sEnvVar *env_getOf(const sProc *p,const char *name) {
+static sEnvVar *env_getOf(const sProc *p,USER const char *name) {
 	sSLNode *n;
 	if(!p->env)
 		return NULL;

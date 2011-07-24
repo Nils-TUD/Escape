@@ -123,7 +123,9 @@ int vm86_create(void) {
 	 * following instructions, too!? By giving the task the permission to perform port I/O
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
-	ioports_request(p,0,IO_MAP_SIZE / 8);
+	/* 0xF8 .. 0xFF is reserved */
+	assert(ioports_request(p,0,0xF8) == 0);
+	assert(ioports_request(p,0x100,IO_MAP_SIZE / 8 - 0x100) == 0);
 
 	/* give it a name */
 	proc_setCommand(p,"VM86");
@@ -356,7 +358,7 @@ static void vm86_start(void) {
 	assert(info != NULL);
 
 start:
-	istack = thread_getRunning()->kstackEnd;
+	istack = thread_getIntrptStack(thread_getRunning());
 
 	/* undo the mappings of the previous call */
 	for(i = 0; i < (1024 * K) / PAGE_SIZE; i++) {

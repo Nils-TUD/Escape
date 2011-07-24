@@ -21,6 +21,7 @@
 #define GDT_H_
 
 #include <sys/common.h>
+#include <sys/task/thread.h>
 
 /* the size of the io-map (in bits) */
 #define IO_MAP_SIZE				0xFFFF
@@ -56,16 +57,19 @@ void gdt_init_bsp(void);
 void gdt_init_ap(void);
 
 /**
- * Initializes the TLS-segment for the given TLS-region
+ * @return the current cpu-id
  */
-void gdt_setTLS(uintptr_t tlsAddr,size_t tlsSize);
+cpuid_t gdt_getCPUId(void);
 
 /**
- * Sets the stack-pointer for the TSS
+ * Prepares the run of the given thread, i.e. sets the stack-pointer for interrupts, removes
+ * the I/O map and sets the TLS-register.
  *
- * @param isVM86 whether the current task is a Vm86-task
+ * @param old the old thread (may be NULL)
+ * @param new the thread to run
+ * @return the cpu-id for the new thread
  */
-void tss_setStackPtr(bool isVM86);
+cpuid_t gdt_prepareRun(sThread *old,sThread *new);
 
 /**
  * Checks whether the io-map is set
@@ -79,14 +83,9 @@ bool tss_ioMapPresent(void);
  * into the TSS
  *
  * @param ioMap the io-map to set
+ * @param forceCpy whether to force a copy of the given map (necessary if it has changed)
  */
-void tss_setIOMap(const uint8_t *ioMap);
-
-/**
- * Removes the io-map from the TSS so that an exception will be raised if a user-process
- * access a port
- */
-void tss_removeIOMap(void);
+void tss_setIOMap(const uint8_t *ioMap,bool forceCpy);
 
 /**
  * Prints the GDT

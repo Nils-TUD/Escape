@@ -72,6 +72,15 @@ void paging_init(void);
 void paging_setFirst(tPageDir *pdir);
 
 /**
+ * Checks whether the given range is in user-space
+ *
+ * @param virt the start-address
+ * @param count the number of bytes
+ * @return true if so
+ */
+bool paging_isInUserSpace(uintptr_t virt,size_t count);
+
+/**
  * Checks whether the given address-range is currently readable for the user
  *
  * @param virt the start-address

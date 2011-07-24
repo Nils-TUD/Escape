@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/task/ioports.h>
+#include <sys/task/smp.h>
 #include <sys/task/proc.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
@@ -49,17 +50,14 @@ int ioports_request(sProc *p,uint16_t start,size_t count) {
 		start++;
 	}
 
+	tss_setIOMap(p->archAttr.ioMap,true);
 	return 0;
-}
-
-void ioports_setMap(sProc *p) {
-	tss_setIOMap(p->archAttr.ioMap);
 }
 
 bool ioports_handleGPF(sProc *p) {
 	if(p->archAttr.ioMap != NULL && !tss_ioMapPresent()) {
 		/* load it and give the process another try */
-		tss_setIOMap(p->archAttr.ioMap);
+		tss_setIOMap(p->archAttr.ioMap,false);
 		return true;
 	}
 	return false;
@@ -79,6 +77,7 @@ int ioports_release(sProc *p,uint16_t start,size_t count) {
 		start++;
 	}
 
+	tss_setIOMap(p->archAttr.ioMap,true);
 	return 0;
 }
 

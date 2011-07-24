@@ -37,6 +37,10 @@
  * page is swapped out.
  */
 
+/* TODO actually, we don't need the page-flags, because every architecture should have enough space
+ * in the page-table-entries. That is, for 3/4 flags and the swap-block, if the page is not in
+ * memory. */
+
 static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
 
 sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,

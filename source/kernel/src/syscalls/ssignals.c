@@ -32,7 +32,7 @@ int sysc_setSigHandler(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 
 	/* address should be valid */
-	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isRangeUserReadable((uintptr_t)handler,1))
+	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isInUserSpace((uintptr_t)handler,1))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	if(signal == (sig_t)SIG_RET)

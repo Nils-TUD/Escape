@@ -27,16 +27,7 @@
 #include <sys/mem/paging.h>
 #include <esc/hashmap.h>
 
-#ifdef __i386__
-#include <sys/arch/i586/task/thread.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/task/thread.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/task/thread.h>
-#endif
-
+#define MAX_INTRPT_LEVELS		3
 #define MAX_STACK_PAGES			128
 
 #define INITIAL_STACK_PAGES		1
@@ -50,6 +41,16 @@
 #define KERNEL_TID				0xFFFE
 
 #define T_IDLE					1
+
+#ifdef __i386__
+#include <sys/arch/i586/task/thread.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/thread.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/thread.h>
+#endif
 
 /* the thread states */
 typedef enum {
@@ -79,6 +80,8 @@ struct sThread {
 	/* the events the thread waits for (if waiting) */
 	uint events;
 	sWait *waits;
+	/* the current or last cpu that executed this thread */
+	cpuid_t cpu;
 	/* the process we belong to */
 	sProc *const proc;
 	/* the stack-region(s) for this thread */
@@ -87,12 +90,15 @@ struct sThread {
 	vmreg_t tlsRegion;
 	/* the frame mapped at KERNEL_STACK */
 	frameno_t kstackFrame;
-	/* pointer to the kernel-stack end when entering the kernel */
-	sIntrptStackFrame *kstackEnd;
+	/* stack of pointers to the end of the kernel-stack when entering kernel */
+	sIntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
+	size_t intrptLevel;
 	/* the save-area for registers */
 	sThreadRegs save;
 	/* architecture-specific attributes */
 	sThreadArchAttr archAttr;
+	/* a list with heap-allocations that should be free'd on thread-termination */
+	sSLList heapAllocs;
 	struct {
 		/* number of cpu-cycles the thread has used so far */
 		uint64_t ucycleStart;
@@ -132,6 +138,34 @@ int thread_initArch(sThread *t);
  * @param t the thread
  */
 void thread_addInitialStack(sThread *t);
+
+/**
+ * @return the current interrupt-stack, i.e. the innermost-level
+ *
+ * @param t the thread
+ */
+sIntrptStackFrame *thread_getIntrptStack(const sThread *t);
+
+/**
+ * Pushes the given kernel-stack onto the interrupt-level-stack
+ *
+ * @param t the thread
+ * @param stack the kernel-stack
+ */
+void thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack);
+
+/**
+ * Removes the topmost interrupt-level-stack
+ *
+ * @param t the thread
+ */
+void thread_popIntrptLevel(sThread *t);
+
+/**
+ * @param t the thread
+ * @return the interrupt-level (0 .. MAX_INTRPT_LEVEL - 1)
+ */
+size_t thread_getIntrptLevel(const sThread *t);
 
 /**
  * @return the number of existing threads
@@ -286,6 +320,21 @@ void thread_removeRegions(sThread *t,bool remStack);
  * @return 0 on success
  */
 int thread_extendStack(uintptr_t address);
+
+/**
+ * Adds the given pointer to the heap-allocation-list, which will be free'd if the thread dies
+ * before it is removed.
+ *
+ * @param ptr the pointer to the heap
+ */
+void thread_addHeapAlloc(void *ptr);
+
+/**
+ * Removes the given pointer from the heap-allocation-list
+ *
+ * @param ptr the pointer to the heap
+ */
+void thread_remHeapAlloc(void *ptr);
 
 /**
  * Finishes the clone of a thread

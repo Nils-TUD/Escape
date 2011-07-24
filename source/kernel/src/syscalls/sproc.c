@@ -131,9 +131,9 @@ int sysc_getgroups(sIntrptStackFrame *stack) {
 	size_t groupCount = g ? g->count : 0;
 	if(size == 0)
 		SYSC_RET1(stack,groupCount);
-
-	if(!paging_isRangeUserWritable((uintptr_t)list,sizeof(gid_t) * size))
+	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
 	size = MIN(groupCount,size);
 	if(size > 0)
 		memcpy(list,g->groups,size * sizeof(gid_t));
@@ -145,8 +145,7 @@ int sysc_setgroups(sIntrptStackFrame *stack) {
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	sProcGroups *g;
-
-	if(size > 0 && !paging_isRangeUserReadable((uintptr_t)list,sizeof(gid_t) * size))
+	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	g = groups_alloc(size,list);
@@ -193,7 +192,7 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	const sThread *t = thread_getRunning();
 	const sProc *p = t->proc;
 
-	if(state != NULL && !paging_isRangeUserWritable((uintptr_t)state,sizeof(sExitState)))
+	if(state != NULL && !paging_isInUserSpace((uintptr_t)state,sizeof(sExitState)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check if there is another thread waiting */
@@ -247,8 +246,7 @@ int sysc_getenvto(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG3(stack);
 	const sProc *p = proc_getRunning();
 	ssize_t res;
-
-	if(!sysc_isStringReadable(name))
+	if(!sysc_isStrInUserSpace(name,NULL))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	const char *value = env_get(p->pid,name);
@@ -265,8 +263,7 @@ int sysc_setenv(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
 	const sProc *p = proc_getRunning();
-
-	if(!sysc_isStringReadable(name) || !sysc_isStringReadable(value))
+	if(!sysc_isStrInUserSpace(name,NULL) || !sysc_isStrInUserSpace(value,NULL))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	if(!env_set(p->pid,name,value))
@@ -276,15 +273,16 @@ int sysc_setenv(sIntrptStackFrame *stack) {
 
 int sysc_exec(sIntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
-	char *path = (char*)SYSC_ARG1(stack);
+	const char *path = (const char*)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
 	char *argBuffer;
 	sStartupInfo info;
 	inode_t nodeNo;
 	sProc *p = proc_getRunning();
-	ssize_t pathLen;
 	size_t argSize;
 	int argc,res;
+	if(!sysc_absolutize_path(pathSave,sizeof(pathSave),path))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	argc = 0;
 	argBuffer = NULL;
@@ -294,25 +292,8 @@ int sysc_exec(sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,argc);
 	}
 
-	/* at first make sure that we'll cause no page-fault */
-	if(!sysc_isStringReadable(path)) {
-		cache_free(argBuffer);
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	}
-
-	/* save path (we'll overwrite the process-data) */
-	pathLen = strlen(path);
-	if(pathLen >= MAX_PATH_LEN) {
-		cache_free(argBuffer);
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	}
-	if(*path != '/')
-		path = vfs_node_absolutize(pathSave,sizeof(pathSave),path);
-	else
-		path = memcpy(pathSave,path,pathLen + 1);
-
 	/* resolve path; require a path in real fs */
-	res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
+	res = vfs_node_resolvePath(pathSave,&nodeNo,NULL,VFS_READ);
 	if(res != ERR_REAL_PATH) {
 		cache_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -322,7 +303,7 @@ int sysc_exec(sIntrptStackFrame *stack) {
 	proc_removeRegions(p,false);
 
 	/* load program */
-	if(elf_loadFromFile(path,&info) < 0)
+	if(elf_loadFromFile(pathSave,&info) < 0)
 		goto error;
 
 	/* copy path so that we can identify the process */
@@ -339,7 +320,7 @@ int sysc_exec(sIntrptStackFrame *stack) {
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
-	if(!uenv_setupProc(path,argc,argBuffer,argSize,&info,info.linkerEntry))
+	if(!uenv_setupProc(pathSave,argc,argBuffer,argSize,&info,info.linkerEntry))
 		goto error;
 
 	cache_free(argBuffer);
@@ -355,7 +336,7 @@ error:
 
 static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size) {
 	size_t len;
-	if(size == 0 || !paging_isRangeUserWritable((uintptr_t)dst,size))
+	if(size == 0 || !paging_isInUserSpace((uintptr_t)dst,size))
 		return ERR_INVALID_ARGS;
 
 	/* copy to buffer */

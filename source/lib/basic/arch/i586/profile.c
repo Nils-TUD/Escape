@@ -32,7 +32,8 @@
 	uintptr_t __esp; \
 	tid_t __tid; \
 	GET_REG("esp",__esp); \
-	__tid = (__esp >= KERNEL_STACK - PAGE_SIZE) ? thread_getRunning()->tid : 0; \
+	sThread *__t = thread_getRunning(); \
+	__tid = ((__esp >= KERNEL_STACK - PAGE_SIZE) && __t) ? __t->tid : 0; \
 })
 #	define getCycles()	cpu_rdtsc()
 #else

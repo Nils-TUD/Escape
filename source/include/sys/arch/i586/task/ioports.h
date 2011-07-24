@@ -41,13 +41,6 @@ void ioports_init(sProc *p);
 int ioports_request(sProc *p,uint16_t start,size_t count);
 
 /**
- * Sets the io-map of the given process into the TSS.
- *
- * @param p the process
- */
-void ioports_setMap(sProc *p);
-
-/**
  * Handles a GPF for the given process and checks whether the port-map is already set. If not,
  * it will be set.
  *

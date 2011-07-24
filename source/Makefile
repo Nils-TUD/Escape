@@ -1,8 +1,8 @@
 # general
-ARCH = i586
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -17,10 +17,11 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 # simulators
-#KVM = -enable-kvm
-QEMU = qemu
-QEMUARGS = -net nic,model=ne2k_pci -net user -smp 1 -serial stdio -hda $(HDD) -boot order=d \
-	-vga std -m 32 -localtime
+KVM = -enable-kvm
+QEMU = /home/hrniels/Applications/qemu-0.12.5/i386-softmmu/qemu
+#QEMU = qemu
+#-net nic,model=ne2k_pci -net user 
+QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
@@ -74,7 +75,7 @@ export SUDO=sudo
 #		-finstrument-functions-exclude-file-list=../../../lib/basic/profile.c
 # ADDLIBS = ../../../lib/basic/profile.c
 
-DIRS = tools dist lib drivers user kernel/src kernel/test
+DIRS = tools dist lib drivers user kernel/src# kernel/test
 
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
@@ -83,7 +84,7 @@ ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 	export BUILDTYPE=debug
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
+	export CPPDEFFLAGS=$(CPPWFLAGS) -g -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 	export BUILDTYPE=release
@@ -184,7 +185,7 @@ endif
 
 mmix:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-		-b -s $(BUILD)/kernel.map $(BUILD)/user_less.map
+		-b -s $(BUILD)/kernel.map $(BUILD)/user_dd.map
 
 mmixd:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -p 1234 >/dev/null 2>&1 &

@@ -111,6 +111,13 @@ void vfs_req_remove(sRequest *r);
 void vfs_req_free(sRequest *r);
 
 /**
+ * Free's all requests that are still active for the given thread
+ *
+ * @param tid the thread-id
+ */
+void vfs_req_freeAllOf(tid_t tid);
+
+/**
  * Prints all active requests
  */
 void vfs_req_printAll(void);

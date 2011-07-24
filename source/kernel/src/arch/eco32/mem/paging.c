@@ -146,6 +146,10 @@ void paging_setFirst(tPageDir *pdir) {
 
 /* TODO perhaps we should move isRange*() to vmm? */
 
+bool paging_isInUserSpace(uintptr_t virt,size_t count) {
+	return virt + count <= KERNEL_AREA && virt + count >= virt;
+}
+
 bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
 	/* kernel area? (be carefull with overflows!) */
 	if(virt + count > KERNEL_AREA || virt + count < virt)

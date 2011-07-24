@@ -19,6 +19,7 @@
 
 # exports
 .global gdt_flush
+.global gdt_get
 .global tss_load
 .global util_outByte
 .global util_outWord
@@ -70,6 +71,7 @@
 .set KERNEL_STACK_PTE,				0xFFFFDFFC
 .set TMP_STACK_SIZE,				PAGE_SIZE
 .set USER_STACK,					0xC0000000
+.set KSTACK_CURTHREAD,				0xFF7FFFFC
 
 # process save area offsets
 .set STATE_ESP,						0
@@ -190,6 +192,12 @@ gdt_flush:
 	ljmp	$0x08,$2f				# reload code-segment via far-jump
 2:
 	ret								# we're done
+
+# void gdt_get(sGDTTable *gdt);
+gdt_get:
+	mov		4(%esp),%eax
+	sgdt	(%eax)
+	ret
 
 # void tss_load(size_t gdtOffset);
 tss_load:
@@ -392,14 +400,15 @@ thread_save:
 	leave
 	ret
 
-# bool thread_resume(tPageDir pageDir,sThreadRegs *saveArea,frameno_t kstackFrame);
+# bool thread_resume(sThread *t,tPageDir pageDir,sThreadRegs *saveArea,frameno_t kstackFrame);
 thread_resume:
 	push	%ebp
 	mov		%esp,%ebp
 
-	mov		12(%ebp),%eax			# get saveArea
-	mov		 8(%ebp),%edi			# get page-dir
-	mov		16(%ebp),%esi			# get stack-frame
+	mov		16(%ebp),%eax			# get saveArea
+	mov		12(%ebp),%edi			# get page-dir
+	mov		20(%ebp),%esi			# get stack-frame
+	mov		8(%ebp),%edx			# get thread
 
 	test	%esi,%esi				# if stack-frame is 0 we just have one thread
 	je		1f						# i.e. there can't be another stack-frame anyway
@@ -410,14 +419,14 @@ thread_resume:
 	# exchange kernel-stack-frame
 	mov		(KERNEL_STACK_PTE),%ecx
 	and		$0x00000FFF,%ecx		# clear frame-number
-	mov		%esi,%edx
-	shl		$12,%edx
-	or		%edx,%ecx				# set new frame-number
+	shl		$12,%esi
+	or		%esi,%ecx				# set new frame-number
 	mov		%ecx,(KERNEL_STACK_PTE)	# store
 
 	# load page-dir again
 1:
 	mov		%edi,%cr3				# set page-dir
+	mov		%edx,(KSTACK_CURTHREAD)	# set running thread
 
 	# now restore registers
 	mov		STATE_EDI(%eax),%edi

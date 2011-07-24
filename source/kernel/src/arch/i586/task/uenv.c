@@ -152,7 +152,7 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	char **argv;
 	size_t totalSize;
 	const sThread *t = thread_getRunning();
-	sIntrptStackFrame *frame = t->kstackEnd;
+	sIntrptStackFrame *frame = thread_getIntrptStack(t);
 
 	/*
 	 * Initial stack:
@@ -248,6 +248,7 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *esp;
 	size_t totalSize = 3 * sizeof(uint32_t) + sizeof(void*);
 	sThread *t = thread_getRunning();
+	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
 
 	/*
 	 * Initial stack:
@@ -277,9 +278,9 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	/* add TLS args and entrypoint */
 	esp = uenv_addArgs(t,esp,tentryPoint,true);
 
-	t->kstackEnd->uesp = (uint32_t)esp;
-	t->kstackEnd->ebp = t->kstackEnd->uesp;
-	uenv_setupStack(t->kstackEnd,t->proc->entryPoint);
+	kstack->uesp = (uint32_t)esp;
+	kstack->ebp = kstack->uesp;
+	uenv_setupStack(kstack,t->proc->entryPoint);
 	return true;
 }
 

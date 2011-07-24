@@ -23,6 +23,8 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 
+#define MAX_SHAREDMEM_NAME	15
+
 /**
  * Inits the shared-memory-module
  */

@@ -19,25 +19,31 @@
 
 #include <sys/common.h>
 #include <sys/task/groups.h>
+#include <sys/task/thread.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <string.h>
 
-sProcGroups *groups_alloc(size_t count,const gid_t *groups) {
-	sProcGroups *g = (sProcGroups*)cache_alloc(sizeof(sProcGroups));
-	if(!g)
+sProcGroups *groups_alloc(size_t count,USER const gid_t *groups) {
+	sProcGroups *g;
+	gid_t *grpCpy = NULL;
+	if(count > 0) {
+		grpCpy = (gid_t*)cache_alloc(count * sizeof(gid_t));
+		if(!grpCpy)
+			return NULL;
+		thread_addHeapAlloc(grpCpy);
+		memcpy(grpCpy,groups,count * sizeof(gid_t));
+		thread_remHeapAlloc(grpCpy);
+	}
+
+	g = (sProcGroups*)cache_alloc(sizeof(sProcGroups));
+	if(!g) {
+		cache_free(grpCpy);
 		return NULL;
+	}
 	g->refCount = 1;
 	g->count = count;
-	g->groups = NULL;
-	if(count > 0) {
-		g->groups = (gid_t*)cache_alloc(count * sizeof(gid_t));
-		if(!g->groups) {
-			cache_free(g);
-			return NULL;
-		}
-		memcpy(g->groups,groups,count * sizeof(gid_t));
-	}
+	g->groups = grpCpy;
 	return g;
 }
 

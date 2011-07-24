@@ -248,7 +248,7 @@ static const char *resolve(const char *name,unsigned long long addr) {
 	specialChars(name,resolved,MAX_FUNC_LEN);
 	if(std::string(name).find_first_not_of("0123456789ABCDEFabcdef",0) == std::string::npos) {
 		strcat(resolved,": ");
-		strcat(resolved,sym_resolve(addr));
+		strcat(resolved,sym_resolve(naddr));
 	}
 	else if(addr != 0)
 		snprintf(resolved + strlen(resolved),MAX_FUNC_LEN - strlen(resolved),": #%Lx",addr);

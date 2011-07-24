@@ -78,23 +78,24 @@ void util_panic(const char *fmt,...) {
 	util_printStackTrace(util_getKernelStackTrace());
 
 	if(t != NULL) {
+		sIntrptStackFrame *kstack = thread_getIntrptStack(t);
 		util_printStackTrace(util_getUserStackTrace());
 		vid_printf("User-Register:\n");
-		regs[R_EAX] = t->kstackEnd->eax;
-		regs[R_EBX] = t->kstackEnd->ebx;
-		regs[R_ECX] = t->kstackEnd->ecx;
-		regs[R_EDX] = t->kstackEnd->edx;
-		regs[R_ESI] = t->kstackEnd->esi;
-		regs[R_EDI] = t->kstackEnd->edi;
-		regs[R_ESP] = t->kstackEnd->uesp;
-		regs[R_EBP] = t->kstackEnd->ebp;
-		regs[R_CS] = t->kstackEnd->cs;
-		regs[R_DS] = t->kstackEnd->ds;
-		regs[R_ES] = t->kstackEnd->es;
-		regs[R_FS] = t->kstackEnd->fs;
-		regs[R_GS] = t->kstackEnd->gs;
-		regs[R_SS] = t->kstackEnd->uss;
-		regs[R_EFLAGS] = t->kstackEnd->eflags;
+		regs[R_EAX] = kstack->eax;
+		regs[R_EBX] = kstack->ebx;
+		regs[R_ECX] = kstack->ecx;
+		regs[R_EDX] = kstack->edx;
+		regs[R_ESI] = kstack->esi;
+		regs[R_EDI] = kstack->edi;
+		regs[R_ESP] = kstack->uesp;
+		regs[R_EBP] = kstack->ebp;
+		regs[R_CS] = kstack->cs;
+		regs[R_DS] = kstack->ds;
+		regs[R_ES] = kstack->es;
+		regs[R_FS] = kstack->fs;
+		regs[R_GS] = kstack->gs;
+		regs[R_SS] = kstack->uss;
+		regs[R_EFLAGS] = kstack->eflags;
 		PRINT_REGS(regs,"\t");
 	}
 
@@ -129,8 +130,9 @@ void util_stopTimer(const char *prefix,...) {
 sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
 	const sThread *t = thread_getRunning();
+	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
 	if(thread_getStackRange(t,&start,&end,0))
-		return util_getStackTrace((uint32_t*)t->kstackEnd->ebp,start,start,end);
+		return util_getStackTrace((uint32_t*)kstack->ebp,start,start,end);
 	return NULL;
 }
 
@@ -160,7 +162,7 @@ sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 		pcount = (end - start) / PAGE_SIZE;
 		frames = cache_alloc((pcount + 2) * sizeof(frameno_t));
 		if(frames) {
-			sIntrptStackFrame *istack = t->kstackEnd;
+			sIntrptStackFrame *istack = thread_getIntrptStack(t);
 			uintptr_t temp,startCpy = start;
 			size_t i;
 			frames[0] = t->kstackFrame;

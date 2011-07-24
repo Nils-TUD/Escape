@@ -73,7 +73,8 @@ ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	return res;
 }
 
-ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,size_t count) {
+ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
+		size_t count) {
 	sRequest *req;
 	const sThread *t = thread_getRunning();
 	volatile sVFSNode *n = node;
@@ -113,19 +114,21 @@ ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t off
 
 	/* wait for response */
 	vfs_drv_wait(req);
+
+	/* release resouces before memcpy */
 	res = req->count;
 	data = req->data;
-	/* Better release the request before the memcpy so that it can be reused. Because memcpy might
-	 * cause a page-fault which leads to swapping -> thread-switch. */
 	vfs_req_free(req);
-	if(data) {
+	if(data && res > 0) {
+		thread_addHeapAlloc(data);
 		memcpy(buffer,data,res);
+		thread_remHeapAlloc(data);
 		cache_free(data);
 	}
 	return res;
 }
 
-ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,off_t offset,
+ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
 	ssize_t res;
@@ -162,7 +165,7 @@ ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,of
 }
 
 void vfs_drv_close(pid_t pid,file_t file,sVFSNode *node) {
-	/* if the driver doesn't implement open, stop here */
+	/* if the driver doesn't implement close, stop here */
 	if(!vfs_server_supports(node->parent,DRV_CLOSE))
 		return;
 
@@ -170,32 +173,30 @@ void vfs_drv_close(pid_t pid,file_t file,sVFSNode *node) {
 }
 
 static void vfs_drv_wait(sRequest *req) {
-	/* repeat until it succeded or the driver died */
+	/* repeat until it succeeded or the driver died */
 	volatile sRequest *r = req;
 	do
 		vfs_req_waitForReply(req,false);
 	while((ssize_t)r->count == ERR_INTERRUPTED);
 }
 
-static void vfs_drv_openReqHandler(sVFSNode *node,const void *data,size_t size) {
+static void vfs_drv_openReqHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	sMsg *rmsg = (sMsg*)data;
-	sRequest *req;
-	if(!data || size < sizeof(rmsg->args))
-		return;
-
-	/* find the request for the node */
-	req = vfs_req_getByNode(node);
+	ulong res = rmsg->args.arg1;
+	sRequest *req = vfs_req_getByNode(node);
 	if(req != NULL) {
 		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
-		req->count = rmsg->args.arg1;
+		req->count = res;
 		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->tid,EV_REQ_REPLY);
 	}
 }
 
-static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size) {
+static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	/* find the request for the node */
 	sRequest *req = vfs_req_getByNode(node);
 	if(req != NULL) {
@@ -203,16 +204,12 @@ static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size) 
 		/* the first one is the message */
 		if(req->state == REQ_STATE_WAITING) {
 			sMsg *rmsg = (sMsg*)data;
+			ulong res = rmsg->args.arg1;
+			ulong readable = rmsg->args.arg2;
 			/* an error? */
-			if(!data || size < sizeof(rmsg->args) || (long)rmsg->args.arg1 <= 0) {
-				if(data && size >= sizeof(rmsg->args)) {
-					vfs_server_setReadable(drv,rmsg->args.arg2);
-					req->count = rmsg->args.arg1;
-				}
-				else {
-					vfs_server_setReadable(drv,true);
-					req->count = 0;
-				}
+			if((long)res <= 0) {
+				vfs_server_setReadable(drv,readable);
+				req->count = res;
 				req->state = REQ_STATE_FINISHED;
 				vfs_req_remove(req);
 				ev_wakeupThread(req->tid,EV_REQ_REPLY);
@@ -221,8 +218,8 @@ static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size) 
 			/* otherwise we'll receive the data with the next msg */
 			/* set whether data is readable; do this here because a thread-switch may cause
 			 * the driver to set that data is readable although arg2 was 0 here (= no data) */
-			vfs_server_setReadable(drv,rmsg->args.arg2);
-			req->count = MIN(req->dsize,rmsg->args.arg1);
+			vfs_server_setReadable(drv,readable);
+			req->count = MIN(req->dsize,res);
 			req->state = REQ_STATE_WAIT_DATA;
 		}
 		else if(req->state == REQ_STATE_WAIT_DATA) {
@@ -230,8 +227,11 @@ static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size) 
 			if(data) {
 				/* map the buffer we have to copy it to */
 				req->data = cache_alloc(req->count);
-				if(req->data)
+				if(req->data) {
+					thread_addHeapAlloc(req->data);
 					memcpy(req->data,data,req->count);
+					thread_remHeapAlloc(req->data);
+				}
 			}
 			req->state = REQ_STATE_FINISHED;
 			vfs_req_remove(req);
@@ -241,18 +241,15 @@ static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size) 
 	}
 }
 
-static void vfs_drv_writeReqHandler(sVFSNode *node,const void *data,size_t size) {
+static void vfs_drv_writeReqHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	sMsg *rmsg = (sMsg*)data;
-	sRequest *req;
-	if(!data || size < sizeof(rmsg->args))
-		return;
-
-	/* find the request for the node */
-	req = vfs_req_getByNode(node);
+	ulong res = rmsg->args.arg1;
+	sRequest *req = vfs_req_getByNode(node);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
-		req->count = rmsg->args.arg1;
+		req->count = res;
 		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->tid,EV_REQ_REPLY);

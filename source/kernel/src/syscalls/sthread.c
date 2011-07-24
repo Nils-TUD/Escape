@@ -33,6 +33,8 @@
 #include <string.h>
 #include <errors.h>
 
+#define MAX_WAIT_OBJECTS		32
+
 static int sysc_doWait(sWaitObject *uobjects,size_t objCount);
 
 int sysc_gettid(sIntrptStackFrame *stack) {
@@ -95,8 +97,9 @@ int sysc_wait(sIntrptStackFrame *stack) {
 	size_t objCount = SYSC_ARG2(stack);
 	int res;
 
-	if(objCount == 0 ||
-			!paging_isRangeUserReadable((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
+	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	res = sysc_doWait(uobjects,objCount);
@@ -113,8 +116,9 @@ int sysc_waitUnlock(sIntrptStackFrame *stack) {
 	const sProc *p = proc_getRunning();
 	int res;
 
-	if(objCount == 0 ||
-			!paging_isRangeUserReadable((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
+	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* release the lock */
@@ -207,73 +211,63 @@ int sysc_resume(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static int sysc_doWait(sWaitObject *uobjects,size_t objCount) {
+static int sysc_doWait(USER sWaitObject *uobjects,size_t objCount) {
+	sWaitObject kobjects[MAX_WAIT_OBJECTS];
+	file_t objFiles[MAX_WAIT_OBJECTS];
 	const sThread *t = thread_getRunning();
-	int res = ERR_INVALID_ARGS;
 	size_t i;
-	sWaitObject *kobjects = (sWaitObject*)cache_alloc(objCount * sizeof(sWaitObject));
-	if(kobjects == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-	memcpy(kobjects,uobjects,objCount * sizeof(sWaitObject));
 
 	/* copy to kobjects and check */
 	for(i = 0; i < objCount; i++) {
+		kobjects[i].events = uobjects[i].events;
 		if(kobjects[i].events & ~(EV_USER_WAIT_MASK))
-			goto error;
+			return ERR_INVALID_ARGS;
 		if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* translate fd to node-number */
-			file_t file = proc_fdToFile((int)kobjects[i].object);
-			if(file < 0)
-				goto error;
+			objFiles[i] = proc_fdToFile((int)uobjects[i].object);
+			if(objFiles[i] < 0)
+				return ERR_INVALID_ARGS;
 			/* check flags */
 			if(kobjects[i].events & EV_CLIENT) {
 				if(kobjects[i].events & ~(EV_CLIENT))
-					goto error;
+					return ERR_INVALID_ARGS;
 			}
 			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
-				goto error;
-			kobjects[i].object = (evobj_t)vfs_getVNode(file);
+				return ERR_INVALID_ARGS;
+			kobjects[i].object = (evobj_t)vfs_getVNode(objFiles[i]);
 			if(!kobjects[i].object)
-				goto error;
+				return ERR_INVALID_ARGS;
 		}
+		else
+			kobjects[i].object = uobjects[i].object;
 	}
 
 	while(true) {
 		/* check whether we can wait */
 		for(i = 0; i < objCount; i++) {
 			if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-				file_t file = proc_fdToFile((int)uobjects[i].object);
+				file_t file = objFiles[i];
 				if((kobjects[i].events & EV_CLIENT) && vfs_hasWork(t->proc->pid,&file,1))
-					goto done;
+					return 0;
 				else if((kobjects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(t->proc->pid,file))
-					goto done;
+					return 0;
 				else if((kobjects[i].events & EV_DATA_READABLE) && vfs_hasData(t->proc->pid,file))
-					goto done;
+					return 0;
 			}
 		}
 
 		/* wait */
-		if(!ev_waitObjects(t->tid,kobjects,objCount)) {
-			res = ERR_NOT_ENOUGH_MEM;
-			goto error;
-		}
+		if(!ev_waitObjects(t->tid,kobjects,objCount))
+			return ERR_NOT_ENOUGH_MEM;
 		thread_switch();
-		if(sig_hasSignalFor(t->tid)) {
-			res = ERR_INTERRUPTED;
-			goto error;
-		}
+		if(sig_hasSignalFor(t->tid))
+			return ERR_INTERRUPTED;
 		/* if we're waiting for other events, too, we have to wake up */
 		for(i = 0; i < objCount; i++) {
 			if((kobjects[i].events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
-				goto done;
+				return 0;
 		}
 	}
-
-done:
-	cache_free(kobjects);
+	/* never reached */
 	return 0;
-
-error:
-	cache_free(kobjects);
-	return res;
 }

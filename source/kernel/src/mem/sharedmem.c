@@ -30,8 +30,6 @@
 #include <assert.h>
 #include <errors.h>
 
-#define MAX_SHAREDMEM_NAME	15
-
 typedef struct {
 	sSLList *users;
 	char name[MAX_SHAREDMEM_NAME + 1];

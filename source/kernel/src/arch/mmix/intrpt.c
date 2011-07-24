@@ -79,7 +79,7 @@ typedef struct {
 void intrpt_forcedTrap(sIntrptStackFrame *stack);
 void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo);
 
-static void intrpt_enterKernel(sThread *t);
+static void intrpt_enterKernel(sThread *t,sIntrptStackFrame *stack);
 static void intrpt_leaveKernel(sThread *t);
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo);
@@ -161,26 +161,30 @@ size_t intrpt_getCount(void) {
 
 void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
-	t->kstackEnd = stack;
-	intrpt_enterKernel(t);
+	intrpt_enterKernel(t,stack);
+	/* calculate offset of registers on the stack */
 	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
 	begin -= *begin;
 	t->stats.syscalls++;
 	sysc_handle(begin);
+
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
-	t = thread_getRunning(); /* thread may have changed */
+	t = thread_getRunning(); /* thread might have changed */
 	stack[-14] = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
-	uenv_handleSignal();
-	if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
-		uenv_startSignalHandler(stack);
+
+	/* only handle signals, if we come directly from user-mode */
+	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0) {
+		uenv_handleSignal();
+		if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
+			uenv_startSignalHandler(stack);
+	}
 	intrpt_leaveKernel(t);
 }
 
 void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	sInterrupt *intrpt;
 	sThread *t = thread_getRunning();
-	t->kstackEnd = stack;
-	intrpt_enterKernel(t);
+	intrpt_enterKernel(t,stack);
 	irqCount++;
 
 	/* call handler */
@@ -188,17 +192,19 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	intrpt->handler(stack,irqNo);
 
 	/* only handle signals, if we come directly from user-mode */
-	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
-	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = thread_getRunning();
-	uenv_handleSignal();
-	if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
-		uenv_startSignalHandler(stack);
+	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0) {
+		uenv_handleSignal();
+		if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
+			uenv_startSignalHandler(stack);
+	}
 	intrpt_leaveKernel(t);
 }
 
-static void intrpt_enterKernel(sThread *t) {
+static void intrpt_enterKernel(sThread *t,sIntrptStackFrame *stack) {
 	uint64_t cycles = cpu_rdtsc();
+	thread_pushIntrptLevel(t,stack);
+	thread_pushSpecRegs();
 	if(t->stats.ucycleStart > 0)
 		t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
 	/* kernel-mode starts here */
@@ -206,6 +212,8 @@ static void intrpt_enterKernel(sThread *t) {
 }
 
 static void intrpt_leaveKernel(sThread *t) {
+	thread_popSpecRegs();
+	thread_popIntrptLevel(t);
 	/* kernel-mode ends */
 	uint64_t cycles = cpu_rdtsc();
 	if(t->stats.kcycleStart > 0)
@@ -244,11 +252,11 @@ static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
 	if(!vmm_pagefault(pfaddr)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
-			uint64_t rbb,rww,rxx,ryy,rzz;
 			sProc *p = proc_getRunning();
-			cpu_getKSpecials(&rbb,&rww,&rxx,&ryy,&rzz);
+			sKSpecRegs *sregs = thread_getSpecRegs();
 			vid_setTargets(TARGET_LOG);
-			vid_printf("proc %d: %s for address %p @ %p\n",p->pid,intrptList[irqNo].name,pfaddr,rww);
+			vid_printf("proc %d: %s for address %p @ %p\n",p->pid,intrptList[irqNo].name,
+					pfaddr,sregs->rww);
 			vid_setTargets(TARGET_LOG | TARGET_SCREEN);
 			proc_segFault(p);
 		}

@@ -86,7 +86,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	size_t i;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	ulong *dst = (ulong*)paging_mapToTemp(&nt->kstackFrame,1);
+	ulong *dst = (ulong*)(DIR_MAPPED_SPACE | (nt->kstackFrame * PAGE_SIZE));
 
 	if(thread_save(&nt->save)) {
 		/* child */
@@ -99,7 +99,6 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	for(i = 0; i < PT_ENTRY_COUNT; i++)
 		*dst++ = *src++;
 
-	paging_unmapFromTemp(1);
 	/* parent */
 	return 0;
 }

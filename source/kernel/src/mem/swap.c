@@ -200,7 +200,6 @@ bool swap_in(const sProc *p,uintptr_t addr) {
 static void swap_doSwapin(pid_t pid,file_t file,const sProc *p,uintptr_t addr) {
 	vmreg_t rno = vmm_getRegionOf(p,addr);
 	sVMRegion *vmreg = vmm_getRegion(p,rno);
-	uintptr_t temp;
 	frameno_t frame;
 	ulong block;
 	size_t index;
@@ -233,9 +232,7 @@ static void swap_doSwapin(pid_t pid,file_t file,const sProc *p,uintptr_t addr) {
 	if(pmem_getFreeFrames(MM_DEF) == 0)
 		util_panic("No free frame to swap in");
 	frame = pmem_allocate();
-	temp = paging_mapToTemp(&frame,1);
-	memcpy((void*)temp,buffer,PAGE_SIZE);
-	paging_unmapFromTemp(1);
+	paging_copyToFrame(frame,buffer);
 
 	/* mark as not-swapped and map into all affected processes */
 	vmm_swapIn(vmreg->reg,index,frame);
@@ -251,7 +248,6 @@ static void swap_doSwapOut(pid_t pid,file_t file,sRegion *reg,size_t index) {
 	sVMRegion *vmreg;
 	frameno_t frameNo;
 	ulong block;
-	uintptr_t temp;
 	sProc *first = (sProc*)sll_get(reg->procs,0);
 
 	swap_setSuspended(reg->procs,true);
@@ -265,9 +261,7 @@ static void swap_doSwapOut(pid_t pid,file_t file,sRegion *reg,size_t index) {
 
 	/* copy to a temporary buffer because we can't use the temp-area when switching threads */
 	frameNo = paging_getFrameNo(&first->pagedir,vmreg->virt + index * PAGE_SIZE);
-	temp = paging_mapToTemp(&frameNo,1);
-	memcpy(buffer,(void*)temp,PAGE_SIZE);
-	paging_unmapFromTemp(1);
+	paging_copyFromFrame(frameNo,buffer);
 
 	/* mark as swapped and unmap from processes */
 	reg_setSwapBlock(reg,index,block);

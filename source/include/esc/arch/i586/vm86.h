@@ -26,8 +26,11 @@
 extern "C" {
 #endif
 
-#define VM86_MEM_DIRECT		0
-#define VM86_MEM_PTR		1
+/* bidirectional: write information to vm86 and read the produced result */
+#define VM86_MEM_BIDIR		0
+
+/* unidirectional: just read information produced by vm86 */
+#define VM86_MEM_UNIDIR		1
 
 typedef struct {
 	uint16_t ax;
@@ -43,33 +46,30 @@ typedef struct {
 typedef struct {
 	uchar type;
 	union {
-		/* copy it directly to a place in the process-space (dst) */
+		/* copy <src> in your process to <dst> in vm86-task before start and the other way around
+		 * when finished */
 		struct {
 			void *src;
 			uintptr_t dst;
 			size_t size;
-		} direct;
-		/* copy result from *<srcPtr> (a pointer to a real-mode-address) to the process space */
+		} bidir;
+		/* specify the source-address in vm86-task and the destination in your process. this way,
+		 * the result produced by vm86 is copied from *<srcPtr> to <result>. */
 		struct {
 			void **srcPtr;
 			uintptr_t result;
 			size_t size;
-		} ptr;
+		} unidir;
 	} data;
 } sVM86Memarea;
 
-#define VM86_PAGE_SIZE		4096
-#define VM86_ADDR(src,dst)	(((uintptr_t)(dst) & ~(VM86_PAGE_SIZE - 1)) | \
-		((uintptr_t)(src) & (VM86_PAGE_SIZE - 1)))
-#define VM86_OFF(src,dst)	(VM86_ADDR(src,dst) & 0xFFFF)
-#define VM86_SEG(src,dst)	((VM86_ADDR(src,dst) & 0xF0000) >> 4)
+#define VM86_OFF(addr)		((addr) & 0xFFFF)
+#define VM86_SEG(addr)		(((addr) & 0xF0000) >> 4)
 
 /**
- * Performs a VM86-interrupt. That means a VM86-task is created as a child-process, the
- * registers are set correspondingly and the tasks starts at the handler for the given interrupt.
- * As soon as the interrupt is finished the result is copied into the registers.
- * You can also specify memory-areas which will be mapped at the requested real-mode-address,
- * so that it can be read to it and written from it.
+ * Performs a VM86-interrupt. That means the VM86-task is notified and started to perform
+ * the given interrupt in vm86-mode. As soon as the interrupt is finished the result is copied into
+ * the registers. You can also specify memory-areas to exchange data with vm86.
  *
  * @param regs the registers
  * @param areas the memareas (may be NULL)

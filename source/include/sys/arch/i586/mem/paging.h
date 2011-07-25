@@ -195,4 +195,21 @@ void paging_gdtFinished(void);
  */
 extern void paging_exchangePDir(uintptr_t physAddr);
 
+/**
+ * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you
+ * can access it. Please use paging_unmapFromTemp() as soon as you're finished!
+ *
+ * @param frames the frame-numbers
+ * @param count the number of frames
+ * @return the virtual start-address
+ */
+uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count);
+
+/**
+ * Unmaps the temporary mappings
+ *
+ * @param count the number of pages
+ */
+void paging_unmapFromTemp(size_t count);
+
 #endif /* I586_PAGING_H_ */

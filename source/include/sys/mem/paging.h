@@ -81,23 +81,6 @@ void paging_setFirst(tPageDir *pdir);
 bool paging_isInUserSpace(uintptr_t virt,size_t count);
 
 /**
- * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you
- * can access it. Please use paging_unmapFromTemp() as soon as you're finished!
- *
- * @param frames the frame-numbers
- * @param count the number of frames
- * @return the virtual start-address
- */
-uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count);
-
-/**
- * Unmaps the temporary mappings
- *
- * @param count the number of pages
- */
-void paging_unmapFromTemp(size_t count);
-
-/**
  * Clones the kernel-space of the current page-dir into a new one.
  *
  * @param stackFrame will be set to the used kernel-stackframe
@@ -143,6 +126,22 @@ frameno_t paging_getFrameNo(const tPageDir *pdir,uintptr_t virt);
  * @return the frame-number
  */
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags);
+
+/**
+ * Copies the memory (size=PAGE_SIZE) from <src> into the given frame.
+ *
+ * @param frame the destination-frame
+ * @param src the source (in the current address-space, readable)
+ */
+void paging_copyToFrame(frameno_t frame,const void *src);
+
+/**
+ * Copies the memory (size=PAGE_SIZE) from the given frame to <dst>
+ *
+ * @param frame the source-frame
+ * @param dst the destination (in the current address-space, writable)
+ */
+void paging_copyFromFrame(frameno_t frame,void *dst);
 
 /**
  * Copies <count> bytes from <src> to <dst> in user-space.

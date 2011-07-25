@@ -147,18 +147,18 @@ static int vbe_loadInfo(void) {
 	sVM86Regs regs;
 	sVM86Memarea areas[2];
 	regs.ax = 0x4F00;
-	regs.es = VM86_SEG(&vbeInfo,VM86_DATA_ADDR);
-	regs.di = VM86_OFF(&vbeInfo,VM86_DATA_ADDR);
-	areas[0].type = VM86_MEM_DIRECT;
-	areas[0].data.direct.dst = VM86_DATA_ADDR;
-	areas[0].data.direct.src = &vbeInfo;
-	areas[0].data.direct.size = sizeof(sVbeInfo);
-	areas[1].type = VM86_MEM_PTR;
-	areas[1].data.ptr.srcPtr = (void**)&vbeInfo.videoModesPtr;
-	areas[1].data.ptr.result = (uintptr_t)malloc(MAX_MODE_COUNT * sizeof(uint));
-	if(areas[1].data.ptr.result == 0)
+	regs.es = VM86_SEG(VM86_DATA_ADDR);
+	regs.di = VM86_OFF(VM86_DATA_ADDR);
+	areas[0].type = VM86_MEM_BIDIR;
+	areas[0].data.bidir.dst = VM86_DATA_ADDR;
+	areas[0].data.bidir.src = &vbeInfo;
+	areas[0].data.bidir.size = sizeof(sVbeInfo);
+	areas[1].type = VM86_MEM_UNIDIR;
+	areas[1].data.unidir.srcPtr = (void**)&vbeInfo.videoModesPtr;
+	areas[1].data.unidir.result = (uintptr_t)malloc(MAX_MODE_COUNT * sizeof(uint));
+	if(areas[1].data.unidir.result == 0)
 		return VBEERR_GETINFO_FAILED;
-	areas[1].data.ptr.size = MAX_MODE_COUNT * sizeof(uint);
+	areas[1].data.unidir.size = MAX_MODE_COUNT * sizeof(uint);
 	memcpy(vbeInfo.signature,"VBE2",4);
 	if((res = vm86int(0x10,&regs,areas,2)) < 0)
 		return res;
@@ -166,7 +166,7 @@ static int vbe_loadInfo(void) {
 		return VBEERR_UNSUPPORTED;
 	if((regs.ax & 0xFF00) != 0)
 		return VBEERR_GETINFO_FAILED;
-	vbeInfo.videoModesPtr = (uint16_t*)areas[1].data.ptr.result;
+	vbeInfo.videoModesPtr = (uint16_t*)areas[1].data.unidir.result;
 	/* TODO */
 	vbeInfo.oemString = 0;
 	return 0;
@@ -180,12 +180,12 @@ static bool vbe_loadModeInfo(sVbeModeInfo *info,uint mode) {
 		return false;
 	regs.ax = 0x4F01;
 	regs.cx = mode;
-	regs.es = VM86_SEG(info,VM86_DATA_ADDR);
-	regs.di = VM86_OFF(info,VM86_DATA_ADDR);
-	area.type = VM86_MEM_DIRECT;
-	area.data.direct.dst = VM86_DATA_ADDR;
-	area.data.direct.src = info;
-	area.data.direct.size = sizeof(sVbeModeInfo);
+	regs.es = VM86_SEG(VM86_DATA_ADDR);
+	regs.di = VM86_OFF(VM86_DATA_ADDR);
+	area.type = VM86_MEM_BIDIR;
+	area.data.bidir.dst = VM86_DATA_ADDR;
+	area.data.bidir.src = info;
+	area.data.bidir.size = sizeof(sVbeModeInfo);
 	if(vm86int(0x10,&regs,&area,1) < 0)
 		return false;
 	if(regs.ax != 0x4F)

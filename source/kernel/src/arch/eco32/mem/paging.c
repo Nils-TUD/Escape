@@ -148,20 +148,6 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= KERNEL_AREA && virt + count >= virt;
 }
 
-uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {
-	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE);
-	/* if its only one frame, we can access it over the directly mapped space */
-	if(count == 1)
-		return (*frames * PAGE_SIZE) | DIR_MAPPED_SPACE;
-	paging_map(TEMP_MAP_AREA,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-	return TEMP_MAP_AREA;
-}
-
-void paging_unmapFromTemp(size_t count) {
-	if(count > 1)
-		paging_unmap(TEMP_MAP_AREA,count,false);
-}
-
 ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	frameno_t pdirFrame;
 	ssize_t frmCount = 0;

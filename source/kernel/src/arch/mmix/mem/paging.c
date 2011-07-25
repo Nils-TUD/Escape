@@ -105,18 +105,6 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= DIR_MAPPED_SPACE && virt + count >= virt;
 }
 
-uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {
-	/* TODO */
-	if(count > 1)
-		util_panic("Not possible with MMIX");
-	return (*frames * PAGE_SIZE) | DIR_MAPPED_SPACE;
-}
-
-void paging_unmapFromTemp(size_t count) {
-	UNUSED(count);
-	/* nothing to do */
-}
-
 ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	ssize_t frmCount = 0;
 	tPageDir *cur = paging_getPageDir();

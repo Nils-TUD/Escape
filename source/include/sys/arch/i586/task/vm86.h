@@ -23,33 +23,40 @@
 #include <sys/common.h>
 #include <sys/intrpt.h>
 
-#define VM86_MEM_DIRECT		0
-#define VM86_MEM_PTR		1
+/* bidirectional: write information to vm86 and read the produced result */
+#define VM86_MEM_BIDIR		0
+
+/* unidirectional: just read information produced by vm86 */
+#define VM86_MEM_UNIDIR		1
 
 typedef struct {
 	uint16_t ax;
 	uint16_t bx;
 	uint16_t cx;
 	uint16_t dx;
-    uint16_t si;
-    uint16_t di;
-    uint16_t ds;
-    uint16_t es;
+	uint16_t si;
+	uint16_t di;
+	uint16_t ds;
+	uint16_t es;
 } sVM86Regs;
 
 typedef struct {
 	uchar type;
 	union {
+		/* copy <src> in your process to <dst> in vm86-task before start and the other way around
+		 * when finished */
 		struct {
 			void *src;
 			uintptr_t dst;
 			size_t size;
-		} direct;
+		} bidir;
+		/* specify the source-address in vm86-task and the destination in your process. this way,
+		 * the result produced by vm86 is copied from *<srcPtr> to <result>. */
 		struct {
 			void **srcPtr;
 			uintptr_t result;
 			size_t size;
-		} ptr;
+		} unidir;
 	} data;
 } sVM86Memarea;
 
@@ -58,6 +65,7 @@ typedef struct {
 	sVM86Regs regs;
 	sVM86Memarea *areas;
 	size_t areaCount;
+	void **copies;
 } sVM86Info;
 
 /**

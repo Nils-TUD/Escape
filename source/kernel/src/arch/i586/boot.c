@@ -237,7 +237,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	}
 
 	/* start all APs */
-	smp_start();
+	/*smp_start();*/
 
 	loadedMods = true;
 	for(i = 0; i < mb->modsCount; i++) {

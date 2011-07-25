@@ -259,13 +259,13 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 }
 
 uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {
-	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE);
-	paging_map(TEMP_MAP_AREA,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-	return TEMP_MAP_AREA;
+	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE - 1);
+	paging_map(TEMP_MAP_AREA + PAGE_SIZE,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	return TEMP_MAP_AREA + PAGE_SIZE;
 }
 
 void paging_unmapFromTemp(size_t count) {
-	paging_unmap(TEMP_MAP_AREA,count,false);
+	paging_unmap(TEMP_MAP_AREA + PAGE_SIZE,count,false);
 }
 
 ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
@@ -289,7 +289,8 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
 	pd = (sPDEntry*)PAGE_DIR_AREA;
-	npd = (sPDEntry*)paging_mapToTemp(&pdirFrame,1);
+	paging_map(TEMP_MAP_AREA,&pdirFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	npd = (sPDEntry*)TEMP_MAP_AREA;
 
 	/* clear user-space page-tables */
 	memclear(npd,ADDR_TO_PDINDEX(KERNEL_START) * sizeof(sPDEntry));
@@ -326,7 +327,7 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	pt->exists = true;
 	frmCount++;
 
-	paging_unmapFromTemp(1);
+	paging_unmap(TEMP_MAP_AREA,1,false);
 
 	/* one final flush to ensure everything is correct */
 	paging_flushTLB();
@@ -374,10 +375,22 @@ frameno_t paging_getFrameNo(const tPageDir *pdir,uintptr_t virt) {
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	UNUSED(regFlags);
 	frameno_t frame = pmem_allocate();
-	uintptr_t temp = paging_mapToTemp(&frame,1);
-	memcpy((void*)temp,buffer,loadCount);
-	paging_unmapFromTemp(1);
+	paging_map(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
+	paging_unmap(TEMP_MAP_AREA,1,false);
 	return frame;
+}
+
+void paging_copyToFrame(frameno_t frame,const void *src) {
+	paging_map(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	memcpy((void*)TEMP_MAP_AREA,src,PAGE_SIZE);
+	paging_unmap(TEMP_MAP_AREA,1,false);
+}
+
+void paging_copyFromFrame(frameno_t frame,void *dst) {
+	paging_map(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	memcpy(dst,(void*)TEMP_MAP_AREA,PAGE_SIZE);
+	paging_unmap(TEMP_MAP_AREA,1,false);
 }
 
 void paging_copyToUser(void *dst,const void *src,size_t count) {

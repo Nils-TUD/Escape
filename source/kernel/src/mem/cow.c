@@ -96,12 +96,8 @@ size_t cow_pagefault(uintptr_t address) {
 	frmCount++;
 
 	/* copy? */
-	if(foundOther) {
-		/* map the frame and copy it */
-		uintptr_t temp = paging_mapToTemp(&frameNumber,1);
-		memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)temp,PAGE_SIZE);
-		paging_unmapFromTemp(1);
-	}
+	if(foundOther)
+		paging_copyFromFrame(frameNumber,(void*)(address & ~(PAGE_SIZE - 1)));
 	klock_release(&lock);
 	return frmCount;
 }

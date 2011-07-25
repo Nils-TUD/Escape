@@ -104,7 +104,7 @@ sAllocStats paging_destroyPDir(tPageDir *pdir);
  * @param virt the virtual address
  * @return true if so
  */
-bool paging_isPresent(const tPageDir *pdir,uintptr_t virt);
+bool paging_isPresent(tPageDir *pdir,uintptr_t virt);
 
 /**
  * Returns the frame-number of the given virtual address in the given pagedir. Assumes that
@@ -114,7 +114,7 @@ bool paging_isPresent(const tPageDir *pdir,uintptr_t virt);
  * @param virt the virtual address
  * @return the frame-number of the given virtual address
  */
-frameno_t paging_getFrameNo(const tPageDir *pdir,uintptr_t virt);
+frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt);
 
 /**
  * Finishes the demand-loading-process by copying <loadCount> bytes from <buffer> into a new
@@ -241,7 +241,7 @@ sAllocStats paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool fre
  * @param pdir the page-directory
  * @return the number of present page-tables
  */
-size_t paging_getPTableCount(const tPageDir *pdir);
+size_t paging_getPTableCount(tPageDir *pdir);
 
 /**
  * Prints the user-part of the given page-directory to the given buffer
@@ -249,7 +249,7 @@ size_t paging_getPTableCount(const tPageDir *pdir);
  * @param buffer the buffer
  * @param pdir the page-directory
  */
-void paging_sprintfVirtMem(sStringBuffer *buf,const tPageDir *pdir);
+void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir);
 
 /**
  * Prints the given parts of the current page-directory
@@ -264,7 +264,7 @@ void paging_printCur(uint parts);
  * @param pdir the page-directory
  * @param parts the parts to print
  */
-void paging_printPDir(const tPageDir *pdir,uint parts);
+void paging_printPDir(tPageDir *pdir,uint parts);
 
 /**
  * Counts the number of pages that are currently present in the given page-directory
@@ -280,6 +280,6 @@ size_t paging_dbg_getPageCount(void);
  * @param pdir the page-directory
  * @param virt the virtual address
  */
-void paging_printPageOf(const tPageDir *pdir,uintptr_t virt);
+void paging_printPageOf(tPageDir *pdir,uintptr_t virt);
 
 #endif /*PAGING_H_*/

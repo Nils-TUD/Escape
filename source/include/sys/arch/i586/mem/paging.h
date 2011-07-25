@@ -165,6 +165,7 @@
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START && (uintptr_t)(addr) < KERNEL_STACK)
 
 typedef struct {
+	klock_t lock;
 	uintptr_t own;
 	uintptr_t other;
 } tPageDir;

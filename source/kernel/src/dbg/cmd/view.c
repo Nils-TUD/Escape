@@ -84,7 +84,7 @@ static void view_requests(void);
 static void view_locks(void);
 static void view_events(void);
 
-static const sProc *view_getProc(size_t argc,char **argv);
+static sProc *view_getProc(size_t argc,char **argv);
 static const sThread *view_getThread(size_t argc,char **argv);
 
 static int err = 0;
@@ -219,17 +219,17 @@ static void view_kheap(void) {
 	kheap_print();
 }
 static void view_pdirall(size_t argc,char **argv) {
-	const sProc *p = view_getProc(argc,argv);
+	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_printPDir(&p->pagedir,PD_PART_ALL);
 }
 static void view_pdiruser(size_t argc,char **argv) {
-	const sProc *p = view_getProc(argc,argv);
+	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_printPDir(&p->pagedir,PD_PART_USER);
 }
 static void view_pdirkernel(size_t argc,char **argv) {
-	const sProc *p = view_getProc(argc,argv);
+	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		paging_printPDir(&p->pagedir,PD_PART_KERNEL);
 }
@@ -278,8 +278,8 @@ static void view_events(void) {
 	ev_print();
 }
 
-static const sProc *view_getProc(size_t argc,char **argv) {
-	const sProc *p;
+static sProc *view_getProc(size_t argc,char **argv) {
+	sProc *p;
 	if(argc > 2)
 		p = proc_getByPid(atoi(argv[2]));
 	else

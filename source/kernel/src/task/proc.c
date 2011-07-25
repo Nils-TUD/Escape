@@ -296,7 +296,7 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 	float dReal = 0;
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		const sProc *p = (const sProc*)n->data;
+		sProc *p = (sProc*)n->data;
 		ownMem += p->ownFrames;
 		shMem += p->sharedFrames;
 		/* + pagedir, page-table for kstack and kstack */

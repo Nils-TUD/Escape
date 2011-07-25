@@ -384,7 +384,7 @@ ssize_t vfs_info_virtMemReadHandler(pid_t pid,file_t file,sVFSNode *node,USER vo
 
 static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
-	const sProc *p;
+	sProc *p;
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;

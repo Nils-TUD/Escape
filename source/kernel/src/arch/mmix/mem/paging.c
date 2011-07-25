@@ -101,85 +101,8 @@ void paging_setFirst(tPageDir *pdir) {
 	pdir->ptables = firstCon.ptables;
 }
 
-/* TODO perhaps we should move isRange*() to vmm? */
-
 bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= DIR_MAPPED_SPACE && virt + count >= virt;
-}
-
-bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
-	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > DIR_MAPPED_SPACE || virt + count < virt)
-		return false;
-
-	return paging_isRangeReadable(virt,count);
-}
-
-bool paging_isRangeReadable(uintptr_t virt,size_t count) {
-	uintptr_t end;
-	uint64_t pte,*pt = NULL;
-	tPageDir *cur = paging_getPageDir();
-	/* calc start and end */
-	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	virt &= ~(PAGE_SIZE - 1);
-	ulong pageNo = PAGE_NO(virt);
-	while(virt < end) {
-		/* get page-table */
-		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
-			pt = paging_getPTOf(cur,virt,true,NULL);
-			if(pt == NULL)
-				return false;
-		}
-
-		pte = pt[pageNo % PT_ENTRY_COUNT];
-		if(!(pte & PTE_EXISTS))
-			return false;
-		if(!(pte & PTE_READABLE)) {
-			/* we have to handle the page-fault here */
-			if(!vmm_pagefault(virt))
-				return false;
-		}
-		virt += PAGE_SIZE;
-		pageNo++;
-	}
-	return true;
-}
-
-bool paging_isRangeUserWritable(uintptr_t virt,size_t count) {
-	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > DIR_MAPPED_SPACE || virt + count < virt)
-		return false;
-
-	return paging_isRangeWritable(virt,count);
-}
-
-bool paging_isRangeWritable(uintptr_t virt,size_t count) {
-	uintptr_t end;
-	uint64_t pte,*pt = NULL;
-	tPageDir *cur = paging_getPageDir();
-	/* calc start and end */
-	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	virt &= ~(PAGE_SIZE - 1);
-	ulong pageNo = PAGE_NO(virt);
-	while(virt < end) {
-		/* get page-table */
-		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
-			pt = paging_getPTOf(cur,virt,true,NULL);
-			if(pt == NULL)
-				return false;
-		}
-
-		pte = pt[pageNo % PT_ENTRY_COUNT];
-		if(!(pte & PTE_EXISTS))
-			return false;
-		if((pte & (PTE_READABLE | PTE_WRITABLE)) != (PTE_READABLE | PTE_WRITABLE)) {
-			if(!vmm_pagefault(virt))
-				return false;
-		}
-		virt += PAGE_SIZE;
-		pageNo++;
-	}
-	return true;
 }
 
 uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {

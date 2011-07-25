@@ -131,11 +131,8 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = thread_getRunning();
-	if(t != NULL && ((t->flags & T_IDLE) || (stack->psw & PSW_PUM))) {
-		uenv_handleSignal();
-		if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
-			uenv_startSignalHandler(stack);
-	}
+	if(t != NULL && ((t->flags & T_IDLE) || (stack->psw & PSW_PUM)))
+		uenv_handleSignal(stack);
 	thread_popIntrptLevel(t);
 }
 

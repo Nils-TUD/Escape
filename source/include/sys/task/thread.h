@@ -52,6 +52,8 @@
 #include <sys/arch/mmix/task/thread.h>
 #endif
 
+typedef void (*fTermCallback)(void);
+
 /* the thread states */
 typedef enum {
 	ST_UNUSED = 0,
@@ -73,15 +75,17 @@ struct sThread {
 	const uint8_t flags;
 	/* thread state. see eThreadState */
 	uint8_t state;
+	/* the current or last cpu that executed this thread */
+	cpuid_t cpu;
 	/* whether signals should be ignored (while being blocked) */
 	uint8_t ignoreSignals;
+	/* stores whether a signal should be handled by this thread */
+	sig_t signal;
 	/* thread id */
 	const tid_t tid;
 	/* the events the thread waits for (if waiting) */
 	uint events;
 	sWait *waits;
-	/* the current or last cpu that executed this thread */
-	cpuid_t cpu;
 	/* the process we belong to */
 	sProc *const proc;
 	/* the stack-region(s) for this thread */
@@ -98,7 +102,9 @@ struct sThread {
 	/* architecture-specific attributes */
 	sThreadArchAttr archAttr;
 	/* a list with heap-allocations that should be free'd on thread-termination */
-	sSLList heapAllocs;
+	sSLList termHeapAllocs;
+	/* a list of callbacks that should be called on thread-termination */
+	sSLList termCallbacks;
 	struct {
 		/* number of cpu-cycles the thread has used so far */
 		uint64_t ucycleStart;
@@ -138,6 +144,26 @@ int thread_initArch(sThread *t);
  * @param t the thread
  */
 void thread_addInitialStack(sThread *t);
+
+/**
+ * Adds the given signal to the given thread
+ *
+ * @param t the thread
+ */
+void thread_setSignal(sThread *t,sig_t sig);
+
+/**
+ * @param t the thread
+ * @return the signal to handle or SIG_COUNT if none
+ */
+sig_t thread_getSignal(const sThread *t);
+
+/**
+ * Removes the signal from the given thread
+ *
+ * @param t the thread
+ */
+void thread_unsetSignal(sThread *t);
 
 /**
  * @return the current interrupt-stack, i.e. the innermost-level
@@ -322,7 +348,7 @@ void thread_removeRegions(sThread *t,bool remStack);
 int thread_extendStack(uintptr_t address);
 
 /**
- * Adds the given pointer to the heap-allocation-list, which will be free'd if the thread dies
+ * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies
  * before it is removed.
  *
  * @param ptr the pointer to the heap
@@ -330,11 +356,25 @@ int thread_extendStack(uintptr_t address);
 void thread_addHeapAlloc(void *ptr);
 
 /**
- * Removes the given pointer from the heap-allocation-list
+ * Removes the given pointer from the term-heap-allocation-list
  *
  * @param ptr the pointer to the heap
  */
 void thread_remHeapAlloc(void *ptr);
+
+/**
+ * Adds the given callback to the term-callback-list, which will be called if the thread dies.
+ *
+ * @param cb the callback
+ */
+void thread_addCallback(fTermCallback cb);
+
+/**
+ * Removes the given callback from the term-callback-list.
+ *
+ * @param cb the callback
+ */
+void thread_remCallback(fTermCallback cb);
 
 /**
  * Finishes the clone of a thread

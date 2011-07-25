@@ -81,46 +81,6 @@ void paging_setFirst(tPageDir *pdir);
 bool paging_isInUserSpace(uintptr_t virt,size_t count);
 
 /**
- * Checks whether the given address-range is currently readable for the user
- *
- * @param virt the start-address
- * @param count the number of bytes
- * @return true if so
- */
-bool paging_isRangeUserReadable(uintptr_t virt,size_t count);
-
-/**
- * Checks whether the given address-range is currently readable
- *
- * @param virt the start-address
- * @param count the number of bytes
- * @return true if so
- */
-bool paging_isRangeReadable(uintptr_t virt,size_t count);
-
-/**
- * Checks whether the given address-range is currently writable for the user.
- * Note that the function handles copy-on-write if necessary. So you can be sure that you
- * can write to the page(s) after calling the function.
- *
- * @param virt the start-address
- * @param count the number of bytes
- * @return true if so
- */
-bool paging_isRangeUserWritable(uintptr_t virt,size_t count);
-
-/**
- * Checks whether the given address-range is currently writable.
- * Note that the function handles copy-on-write if necessary. So you can be sure that you
- * can write to the page(s) after calling the function.
- *
- * @param virt the start-address
- * @param count the number of bytes
- * @return true if so
- */
-bool paging_isRangeWritable(uintptr_t virt,size_t count);
-
-/**
  * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you
  * can access it. Please use paging_unmapFromTemp() as soon as you're finished!
  *

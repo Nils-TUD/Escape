@@ -390,10 +390,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	}
 
 	/* handle signal */
-	uenv_handleSignal();
-	/* don't try to deliver the signal if we're idling currently */
-	if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
-		uenv_startSignalHandler(stack);
+	uenv_handleSignal(stack);
 
 	/* kernel-mode ends */
 	if((t->flags & T_IDLE) || stack->eip < KERNEL_START) {
@@ -519,23 +516,14 @@ static void intrpt_irqIgnore(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_syscall(sIntrptStackFrame *stack) {
-	uint argCount,ebxSave,sysCallNo;
+	uint ebxSave,sysCallNo;
 	sThread *t = thread_getRunning();
 	if(t->proc->flags & P_VM86)
 		util_panic("VM86-task wants to perform a syscall!?");
 	t->stats.syscalls++;
 
 	sysCallNo = SYSC_NUMBER(stack);
-	argCount = sysc_getArgCount(sysCallNo);
 	ebxSave = stack->ebx;
-	/* handle copy-on-write (the first 2 args are passed in registers) */
-	if(sysc_getArgCount(sysCallNo) > 2) {
-		/* if the arguments are not mapped, return an error */
-		if(!paging_isRangeUserWritable((uintptr_t)stack->uesp,sizeof(uint) * (argCount - 2))) {
-			SYSC_SETERROR(stack,ERR_INVALID_ARGS);
-			return;
-		}
-	}
 	sysc_handle(stack);
 
 	/* set error-code (not for ackSignal) */

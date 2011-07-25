@@ -28,21 +28,7 @@
  * Checks whether a signal should be handled. If so, it will be stored for later finishing and a
  * thread-switch is done, if necessary.
  */
-void uenv_handleSignal(void);
-
-/**
- * @return true if a signal-handling should be started. if so, uenv_startSignalHandler() should be
- * 	called
- */
-bool uenv_hasSignalToStart(void);
-
-/**
- * Delivers the signal to the user-process, i.e. it arranges things so that the signal-handler is
- * called.
- *
- * @param stack the interrupt-stack-frame
- */
-void uenv_startSignalHandler(sIntrptStackFrame *stack);
+void uenv_handleSignal(sIntrptStackFrame *stack);
 
 /**
  * Finishes the signal-handling-process

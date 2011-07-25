@@ -35,101 +35,27 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-/* storage for "delayed" signal handling */
-typedef struct {
-	uint8_t active;
-	tid_t tid;
-	sig_t sig;
-} sSignalData;
-
+static void uenv_startSignalHandler(sThread *t,sig_t sig);
 static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
-/* temporary storage for signal-handling */
-static sSignalData signalData;
-
-void uenv_handleSignal(void) {
+void uenv_handleSignal(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	tid_t tid;
 	sig_t sig;
-	/* don't do anything, if we should already handle a signal */
-	if(signalData.active == 1)
-		return;
+	sThread *t = thread_getRunning();
+	if((sig = thread_getSignal(t)) != SIG_COUNT)
+		uenv_startSignalHandler(t,sig);
 
 	if(sig_hasSignal(&sig,&tid)) {
-		signalData.active = 1;
-		signalData.sig = sig;
-		signalData.tid = tid;
-
-		/* a small trick: we store the signal to handle and manipulate the user-stack
-		 * and so on later. if the thread is currently running everything is fine. we return
-		 * from here and intrpt_handleSignalFinish() will be called.
-		 * if the target-thread is not running we switch to him now. the thread is somewhere
-		 * in the kernel but he will leave the kernel IN EVERY CASE at the end of the interrupt-
-		 * handler. So if we do the signal-stuff at the end we'll get there and will
-		 * manipulate the user-stack.
-		 * This is simpler than mapping the user-stack and kernel-stack of the other thread
-		 * in the current page-dir and so on :)
-		 */
-		if(thread_getRunning()->tid != tid) {
-			/* ensure that the thread is ready */
-			/* this may fail because perhaps we're involved in a swapping-operation or similar */
-			/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
-			 * about that) */
-			if(thread_setReady(tid,true))
-				thread_switchTo(tid);
+		if(t->tid == tid)
+			uenv_startSignalHandler(t,sig);
+		else if(thread_setReady(tid,true)) {
+			t = thread_getById(tid);
+			thread_setSignal(t,sig);
+			thread_switchTo(tid);
 		}
 	}
-}
-
-bool uenv_hasSignalToStart(void) {
-	return signalData.active;
-}
-
-void uenv_startSignalHandler(sIntrptStackFrame *stack) {
-	UNUSED(stack);
-	sThread *t = thread_getRunning();
-	sIntrptStackFrame *curStack = thread_getIntrptStack(t);
-	fSignal handler;
-	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
-	sKSpecRegs *sregs;
-	/* rBB,rWW,rXX,rYY,rZZ + rJ + signal + handler */
-	const ulong count = 5 + 1 + 1 + 1;
-
-	/* release signal-data */
-	signalData.active = 0;
-
-	/* if the thread_switchTo() wasn't successfull it means that we have tried to switch to
-	 * multiple threads during idle. So we ignore it and try to give the signal later to the thread */
-	if(t->tid != signalData.tid)
-		return;
-
-	/* extend the stack, if necessary */
-	if(thread_extendStack((uintptr_t)(sp - count)) < 0) {
-		proc_segFault(t->proc);
-		return;
-	}
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)(sp - count),count * sizeof(uint64_t));
-
-	/* thread_extendStack() and paging_isRangeUserWritable() may cause a thread-switch. therefore
-	 * we may have delivered another signal in the meanwhile... */
-	if(t->tid != signalData.tid)
-		return;
-
-	handler = sig_startHandling(signalData.tid,signalData.sig);
-
-	/* backup rBB, rWW, rXX, rYY and rZZ */
-	sregs = thread_getSpecRegs();
-	memcpy(sp - 5,sregs,sizeof(sKSpecRegs));
-	sp -= 6;
-	*sp-- = curStack[-9];			/* rJ */
-	*sp-- = (uintptr_t)handler;
-	*sp = signalData.sig;
-	curStack[-15] = (uint64_t)sp;	/* $254 */
-
-	/* jump to sigRetAddr for setup and finish-code */
-	sregs->rww = t->proc->sigRetAddr;
-	sregs->rxx = 1UL << 63;
 }
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
@@ -139,10 +65,6 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	uint64_t *regs;
 	uint64_t *sp = (uint64_t*)(curStack[-15]);	/* $254 */
 	sKSpecRegs *sregs;
-	/* rBB,rWW,rXX,rYY,rZZ + rJ + signal + handler */
-	const ulong count = 5 + 1 + 1 + 1;
-	if(!paging_isRangeUserReadable((uintptr_t)sp,count * sizeof(uint64_t)))
-		return ERR_INVALID_ARGS;
 
 	/* restore rBB, rWW, rXX, rYY and rZZ */
 	sp += 2;
@@ -167,9 +89,9 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 		const sStartupInfo *info,uintptr_t entryPoint) {
 	UNUSED(path);
+	UNUSED(argsSize);
 	uint64_t *ssp,*rsp;
 	char **argv;
-	size_t totalSize;
 	sThread *t = thread_getRunning();
 
 	/*
@@ -189,25 +111,10 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	 * $6 = TLSSize (0 if not present)
 	 */
 
-	/* we need to know the total number of bytes we'll store on the stack */
-	totalSize = sizeof(void*);
-	if(argc > 0) {
-		/* first round the size of the arguments up. then we need argc+1 pointer */
-		totalSize += (argsSize + sizeof(uint64_t) - 1) & ~(sizeof(uint64_t) - 1);
-		totalSize += sizeof(void*) * (argc + 1);
-	}
-
 	/* get register-stack */
 	thread_getStackRange(t,(uintptr_t*)&rsp,NULL,0);
 	/* get software-stack */
 	thread_getStackRange(t,NULL,(uintptr_t*)&ssp,1);
-
-	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)ssp - totalSize) < 0)
-		return false;
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)ssp - totalSize,totalSize);
-	/* register stack is already writeable (done by ELF-loader) */
 
 	/* copy arguments on the user-stack (8byte space) */
 	ssp--;
@@ -326,11 +233,6 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	thread_getStackRange(t,(uintptr_t*)&rsp,NULL,0);
 	/* get software-stack */
 	thread_getStackRange(t,NULL,(uintptr_t*)&ssp,1);
-	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)ssp - 8) < 0)
-		return false;
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)ssp - 8,8);
 
 	/* store location to UNSAVE from and the thread-argument */
 	*--ssp = sinfo.stackBegin;
@@ -347,6 +249,29 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	frame[rsOff] = (uintptr_t)rsp + (oldrS & (PAGE_SIZE - 1));	/* rS */
 	frame[rsOff - 1] = (uintptr_t)rsp;							/* rO */
 	return true;
+}
+
+static void uenv_startSignalHandler(sThread *t,sig_t sig) {
+	sIntrptStackFrame *curStack = thread_getIntrptStack(t);
+	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
+	sKSpecRegs *sregs;
+	fSignal handler;
+
+	thread_unsetSignal(t);
+	handler = sig_startHandling(t->tid,sig);
+
+	/* backup rBB, rWW, rXX, rYY and rZZ */
+	sregs = thread_getSpecRegs();
+	memcpy(sp - 5,sregs,sizeof(sKSpecRegs));
+	sp -= 6;
+	*sp-- = curStack[-9];			/* rJ */
+	*sp-- = (uintptr_t)handler;
+	*sp = sig;
+	curStack[-15] = (uint64_t)sp;	/* $254 */
+
+	/* jump to sigRetAddr for setup and finish-code */
+	sregs->rww = t->proc->sigRetAddr;
+	sregs->rxx = 1UL << 63;
 }
 
 static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,

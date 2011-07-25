@@ -1,8 +1,8 @@
 # general
-ARCH = mmix
-GCCVER = 4.6.0
+ARCH = i586
+GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-release)
+BUILDDIR = $(abspath build/$(ARCH)-debug)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
@@ -18,8 +18,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 # simulators
 KVM = -enable-kvm
-QEMU = /home/hrniels/Applications/qemu-0.12.5/i386-softmmu/qemu
-#QEMU = qemu
+QEMU = qemu
 #-net nic,model=ne2k_pci -net user 
 QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs

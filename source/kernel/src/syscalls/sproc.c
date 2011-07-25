@@ -319,10 +319,11 @@ int sysc_exec(sIntrptStackFrame *stack) {
 	/* make process ready */
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
+	thread_addHeapAlloc(argBuffer);
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
 	if(!uenv_setupProc(pathSave,argc,argBuffer,argSize,&info,info.linkerEntry))
 		goto error;
-
+	thread_remHeapAlloc(argBuffer);
 	cache_free(argBuffer);
 	SYSC_RET1(stack,0);
 

@@ -68,16 +68,17 @@ static void vm86_pushw(sIntrptStackFrame *stack,uint16_t word);
 static void vm86_pushl(sIntrptStackFrame *stack,uint32_t l);
 static void vm86_start(void);
 static void vm86_stop(sIntrptStackFrame *stack);
+static void vm86_finish(void);
 static void vm86_copyRegResult(sIntrptStackFrame* stack);
-static void vm86_copyPtrResult(const sVM86Memarea *areas,size_t areaCount);
-static sVM86Info *vm86_createInfo(uint16_t interrupt,const sVM86Regs *regs,
-		const sVM86Memarea *areas,size_t areaCount);
-static void vm86_destroyInfo(sVM86Info *i);
+static void vm86_copyPtrResult(void);
+static bool vm86_copyInfo(uint16_t interrupt,USER const sVM86Regs *regs,
+		USER const sVM86Memarea *areas,size_t areaCount);
+static void vm86_clearInfo(void);
 
 static frameno_t frameNos[(1024 * K) / PAGE_SIZE];
 static tid_t vm86Tid = INVALID_TID;
-static tid_t caller = INVALID_TID;
-static sVM86Info *info = NULL;
+static volatile tid_t caller = INVALID_TID;
+static sVM86Info info;
 static int vm86Res = -1;
 
 int vm86_create(void) {
@@ -140,11 +141,10 @@ int vm86_create(void) {
 	return 0;
 }
 
-int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t areaCount) {
+int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *areas,size_t areaCount) {
 	size_t i;
 	const sThread *t;
 	const sThread *vm86t;
-	volatile sVM86Info **volInfo;
 	for(i = 0; i < areaCount; i++) {
 		if((areas[i].type == VM86_MEM_DIRECT &&
 				BYTES_2_PAGES(areas[i].data.direct.size) > VM86_MAX_MEMPAGES) ||
@@ -163,8 +163,7 @@ int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t
 		return ERR_NO_VM86_TASK;
 
 	/* if the vm86-task is active, wait here */
-	volInfo = (volatile sVM86Info **)&info;
-	while(*volInfo != NULL) {
+	while(caller != INVALID_TID) {
 		/* TODO we have a problem if the process that currently uses vm86 gets killed... */
 		/* because we'll never get notified that we can use vm86 */
 		ev_wait(t->tid,EVI_VM86_READY,0);
@@ -173,8 +172,7 @@ int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t
 
 	/* store information in calling process */
 	caller = t->tid;
-	info = vm86_createInfo(interrupt,regs,areas,areaCount);
-	if(info == NULL)
+	if(!vm86_copyInfo(interrupt,regs,areas,areaCount))
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* make vm86 ready */
@@ -187,15 +185,14 @@ int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *areas,size_t
 
 	/* everything is finished :) */
 	if(vm86Res == 0) {
-		memcpy(regs,&info->regs,sizeof(sVM86Regs));
-		vm86_copyPtrResult(areas,areaCount);
+		thread_addCallback(vm86_finish);
+		memcpy(regs,&info.regs,sizeof(sVM86Regs));
+		vm86_copyPtrResult();
+		thread_remCallback(vm86_finish);
 	}
 
 	/* mark as done */
-	vm86_destroyInfo(info);
-	info = NULL;
-	caller = INVALID_TID;
-	ev_wakeup(EVI_VM86_READY,0);
+	vm86_finish();
 	return vm86Res;
 }
 
@@ -355,7 +352,6 @@ static void vm86_start(void) {
 	size_t i,j,frameCnt;
 	sIntrptStackFrame *istack;
 	assert(caller != INVALID_TID);
-	assert(info != NULL);
 
 start:
 	istack = thread_getIntrptStack(thread_getRunning());
@@ -370,9 +366,9 @@ start:
 
 	/* count the number of needed frames */
 	frameCnt = 0;
-	for(i = 0; i < info->areaCount; i++) {
-		if(info->areas[i].type == VM86_MEM_DIRECT)
-			frameCnt += BYTES_2_PAGES(info->areas[i].data.direct.size);
+	for(i = 0; i < info.areaCount; i++) {
+		if(info.areas[i].type == VM86_MEM_DIRECT)
+			frameCnt += BYTES_2_PAGES(info.areas[i].data.direct.size);
 	}
 
 	/* if there is not enough mem, stop here */
@@ -389,13 +385,13 @@ start:
 
 	/* map the specified areas to the frames of the parent, so that the BIOS can write
 	 * it directly to the buffer of the calling process */
-	for(i = 0; i < info->areaCount; i++) {
-		if(info->areas[i].type == VM86_MEM_DIRECT) {
-			uintptr_t start = info->areas[i].data.direct.dst / PAGE_SIZE;
-			size_t pages = BYTES_2_PAGES(info->areas[i].data.direct.size);
+	for(i = 0; i < info.areaCount; i++) {
+		if(info.areas[i].type == VM86_MEM_DIRECT) {
+			uintptr_t start = info.areas[i].data.direct.dst / PAGE_SIZE;
+			size_t pages = BYTES_2_PAGES(info.areas[i].data.direct.size);
 			for(j = 0; j < pages; j++)
 				frameNos[start + j] = pmem_allocate();
-			paging_map(info->areas[i].data.direct.dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
+			paging_map(info.areas[i].data.direct.dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
 		}
 	}
 
@@ -406,20 +402,20 @@ start:
 	istack->eflags |= 1 << 17;
 	/* set entrypoint */
 	ivt = (uint32_t*)0;
-	istack->eip = ivt[info->interrupt] & 0xFFFF;
-	istack->cs = ivt[info->interrupt] >> 16;
+	istack->eip = ivt[info.interrupt] & 0xFFFF;
+	istack->cs = ivt[info.interrupt] >> 16;
 	/* segment registers */
-	istack->vm86ds = info->regs.ds;
-	istack->vm86es = info->regs.es;
+	istack->vm86ds = info.regs.ds;
+	istack->vm86es = info.regs.es;
 	istack->vm86fs = 0;
 	istack->vm86gs = 0;
 	/* general purpose registers */
-	istack->eax = info->regs.ax;
-	istack->ebx = info->regs.bx;
-	istack->ecx = info->regs.cx;
-	istack->edx = info->regs.dx;
-	istack->esi = info->regs.si;
-	istack->edi = info->regs.di;
+	istack->eax = info.regs.ax;
+	istack->ebx = info.regs.bx;
+	istack->ecx = info.regs.cx;
+	istack->edx = info.regs.dx;
+	istack->esi = info.regs.si;
+	istack->edi = info.regs.di;
 }
 
 static void vm86_stop(sIntrptStackFrame *stack) {
@@ -439,73 +435,74 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 	vm86_start();
 }
 
-static void vm86_copyRegResult(sIntrptStackFrame *stack) {
-	info->regs.ax = stack->eax;
-	info->regs.bx = stack->ebx;
-	info->regs.cx = stack->ecx;
-	info->regs.dx = stack->edx;
-	info->regs.si = stack->esi;
-	info->regs.di = stack->edi;
-	info->regs.ds = stack->vm86ds;
-	info->regs.es = stack->vm86es;
+static void vm86_finish(void) {
+	vm86_clearInfo();
+	caller = INVALID_TID;
+	ev_wakeup(EVI_VM86_READY,0);
 }
 
-static void vm86_copyPtrResult(const sVM86Memarea *areas,size_t areaCount) {
+static void vm86_copyRegResult(sIntrptStackFrame *stack) {
+	info.regs.ax = stack->eax;
+	info.regs.bx = stack->ebx;
+	info.regs.cx = stack->ecx;
+	info.regs.dx = stack->edx;
+	info.regs.si = stack->esi;
+	info.regs.di = stack->edi;
+	info.regs.ds = stack->vm86ds;
+	info.regs.es = stack->vm86es;
+}
+
+static void vm86_copyPtrResult(void) {
 	size_t i;
-	for(i = 0; i < areaCount; i++) {
-		if(areas[i].type == VM86_MEM_PTR) {
-			uintptr_t rmAddr = *(uintptr_t*)areas[i].data.ptr.srcPtr;
+	for(i = 0; i < info.areaCount; i++) {
+		if(info.areas[i].type == VM86_MEM_PTR) {
+			uintptr_t rmAddr = *(uintptr_t*)info.areas[i].data.ptr.srcPtr;
 			uintptr_t virt = ((rmAddr & 0xFFFF0000) >> 12) | (rmAddr & 0xFFFF);
-			if(virt + areas[i].data.ptr.size > virt &&
-					virt + areas[i].data.ptr.size <= 1 * M + 64 * K) {
+			if(virt + info.areas[i].data.ptr.size > virt &&
+					virt + info.areas[i].data.ptr.size <= 1 * M + 64 * K) {
 				if(frameNos[virt / PAGE_SIZE] != virt / PAGE_SIZE) {
-					size_t pcount = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.ptr.size);
+					size_t pcount = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) +
+							info.areas[i].data.ptr.size);
 					uintptr_t temp = paging_mapToTemp(frameNos + virt / PAGE_SIZE,pcount);
-					memcpy((void*)areas[i].data.ptr.result,
+					memcpy((void*)info.areas[i].data.ptr.result,
 							(void*)(temp + (virt & (PAGE_SIZE - 1))),
-							areas[i].data.ptr.size);
+							info.areas[i].data.ptr.size);
 					paging_unmapFromTemp(pcount);
 				}
 				else {
 					/* note that the first MiB is mapped to 0xC0000000, too */
-					memcpy((void*)areas[i].data.ptr.result,
-							(void*)(virt | KERNEL_START),areas[i].data.ptr.size);
+					memcpy((void*)info.areas[i].data.ptr.result,
+							(void*)(virt | KERNEL_START),info.areas[i].data.ptr.size);
 				}
 			}
 		}
 		else {
-			uintptr_t start = areas[i].data.direct.dst / PAGE_SIZE;
-			uintptr_t virt = (uintptr_t)areas[i].data.direct.src;
-			size_t pages = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.direct.size);
+			uintptr_t start = info.areas[i].data.direct.dst / PAGE_SIZE;
+			uintptr_t virt = (uintptr_t)info.areas[i].data.direct.src;
+			size_t pages = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + info.areas[i].data.direct.size);
 			uintptr_t temp = paging_mapToTemp(frameNos + start,pages);
 			memcpy((void*)virt,(void*)(temp + (virt & (PAGE_SIZE - 1))),
-					areas[i].data.direct.size);
+					info.areas[i].data.direct.size);
 			paging_unmapFromTemp(pages);
 		}
 	}
 }
 
-static sVM86Info *vm86_createInfo(uint16_t interrupt,const sVM86Regs *regs,
-		const sVM86Memarea *areas,size_t areaCount) {
-	sVM86Info *i = (sVM86Info*)cache_alloc(sizeof(sVM86Info));
-	if(i == NULL)
-		return NULL;
-	i->interrupt = interrupt;
-	memcpy(&i->regs,regs,sizeof(sVM86Regs));
-	i->areas = NULL;
-	i->areaCount = areaCount;
+static bool vm86_copyInfo(uint16_t interrupt,USER const sVM86Regs *regs,
+		USER const sVM86Memarea *areas,size_t areaCount) {
+	info.interrupt = interrupt;
+	memcpy(&info.regs,regs,sizeof(sVM86Regs));
+	info.areas = NULL;
+	info.areaCount = areaCount;
 	if(areaCount) {
-		i->areas = (sVM86Memarea*)cache_alloc(areaCount * sizeof(sVM86Memarea));
-		if(i->areas == NULL) {
-			cache_free(i);
-			return NULL;
-		}
-		memcpy(i->areas,areas,areaCount * sizeof(sVM86Memarea));
+		info.areas = (sVM86Memarea*)cache_alloc(areaCount * sizeof(sVM86Memarea));
+		if(info.areas == NULL)
+			return false;
+		memcpy(info.areas,areas,areaCount * sizeof(sVM86Memarea));
 	}
-	return i;
+	return true;
 }
 
-static void vm86_destroyInfo(sVM86Info *i) {
-	cache_free(i->areas);
-	cache_free(i);
+static void vm86_clearInfo(void) {
+	cache_free(info.areas);
 }

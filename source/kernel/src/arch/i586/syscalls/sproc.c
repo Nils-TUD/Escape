@@ -68,13 +68,11 @@ int sysc_vm86int(sIntrptStackFrame *stack) {
 	int res;
 
 	/* check args */
-	if(regs == NULL)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserWritable((uint32_t)regs,sizeof(sVM86Regs)))
+	if(!paging_isInUserSpace((uint32_t)regs,sizeof(sVM86Regs)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(mAreas != NULL) {
 		size_t i;
-		if(!paging_isRangeUserReadable((uint32_t)mAreas,sizeof(sVM86Memarea) * mAreaCount))
+		if(!paging_isInUserSpace((uint32_t)mAreas,sizeof(sVM86Memarea) * mAreaCount))
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
 		for(i = 0; i < mAreaCount; i++) {
 			/* ensure that only memory from the real-mode-memory can be copied */
@@ -82,15 +80,15 @@ int sysc_vm86int(sIntrptStackFrame *stack) {
 				if(mAreas[i].data.direct.dst + mAreas[i].data.direct.size < mAreas[i].data.direct.dst ||
 					mAreas[i].data.direct.dst + mAreas[i].data.direct.size >= (1 * M + 64 * K))
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
-				if(!paging_isRangeUserWritable((uint32_t)mAreas[i].data.direct.src,
+				if(!paging_isInUserSpace((uint32_t)mAreas[i].data.direct.src,
 						mAreas[i].data.direct.size)) {
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
 				}
 			}
 			else {
-				if(!paging_isRangeUserReadable((uint32_t)mAreas[i].data.ptr.srcPtr,sizeof(void*)))
+				if(!paging_isInUserSpace((uint32_t)mAreas[i].data.ptr.srcPtr,sizeof(void*)))
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
-				if(!paging_isRangeUserWritable(mAreas[i].data.ptr.result,mAreas[i].data.ptr.size))
+				if(!paging_isInUserSpace(mAreas[i].data.ptr.result,mAreas[i].data.ptr.size))
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
 			}
 		}

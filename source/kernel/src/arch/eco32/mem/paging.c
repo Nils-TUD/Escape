@@ -144,73 +144,8 @@ void paging_setFirst(tPageDir *pdir) {
 	*pdir = curPDir;
 }
 
-/* TODO perhaps we should move isRange*() to vmm? */
-
 bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= KERNEL_AREA && virt + count >= virt;
-}
-
-bool paging_isRangeUserReadable(uintptr_t virt,size_t count) {
-	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > KERNEL_AREA || virt + count < virt)
-		return false;
-
-	return paging_isRangeReadable(virt,count);
-}
-
-bool paging_isRangeReadable(uintptr_t virt,size_t count) {
-	sPTEntry *pt;
-	sPDEntry *pd;
-	uintptr_t end;
-	/* calc start and end pt */
-	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	virt &= ~(PAGE_SIZE - 1);
-	pt = (sPTEntry*)ADDR_TO_MAPPED(virt);
-	while(virt < end) {
-		/* check page-table first */
-		pd = (sPDEntry*)PAGE_DIR_DIRMAP + ADDR_TO_PDINDEX(virt);
-		if(!pd->present || !pt->exists)
-			return false;
-		if(!pt->present) {
-			/* we have tp handle the page-fault here */
-			if(!vmm_pagefault(virt))
-				return false;
-		}
-		virt += PAGE_SIZE;
-		pt++;
-	}
-	return true;
-}
-
-bool paging_isRangeUserWritable(uintptr_t virt,size_t count) {
-	/* kernel area? (be carefull with overflows!) */
-	if(virt + count > KERNEL_AREA || virt + count < virt)
-		return false;
-
-	return paging_isRangeWritable(virt,count);
-}
-
-bool paging_isRangeWritable(uintptr_t virt,size_t count) {
-	sPTEntry *pt;
-	sPDEntry *pd;
-	uintptr_t end;
-	/* calc start and end pt */
-	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	virt &= ~(PAGE_SIZE - 1);
-	pt = (sPTEntry*)ADDR_TO_MAPPED(virt);
-	while(virt < end) {
-		/* check page-table first */
-		pd = (sPDEntry*)PAGE_DIR_DIRMAP + ADDR_TO_PDINDEX(virt);
-		if(!pd->present || !pt->exists)
-			return false;
-		if(!pt->present || !pt->writable) {
-			if(!vmm_pagefault(virt))
-				return false;
-		}
-		virt += PAGE_SIZE;
-		pt++;
-	}
-	return true;
 }
 
 uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {

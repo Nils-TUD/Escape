@@ -173,11 +173,8 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	stack[-14] = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
 
 	/* only handle signals, if we come directly from user-mode */
-	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0) {
-		uenv_handleSignal();
-		if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
-			uenv_startSignalHandler(stack);
-	}
+	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0)
+		uenv_handleSignal(stack);
 	intrpt_leaveKernel(t);
 }
 
@@ -193,11 +190,8 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 
 	/* only handle signals, if we come directly from user-mode */
 	t = thread_getRunning();
-	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0) {
-		uenv_handleSignal();
-		if(!(t->flags & T_IDLE) && uenv_hasSignalToStart())
-			uenv_startSignalHandler(stack);
-	}
+	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0)
+		uenv_handleSignal(stack);
 	intrpt_leaveKernel(t);
 }
 

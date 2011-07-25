@@ -87,6 +87,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
+	t->signal = SIG_COUNT;
 	t->intrptLevel = 0;
 	t->cpu = -1;
 	t->stats.ucycleCount.val64 = 0;
@@ -95,7 +96,8 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->stats.kcycleStart = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
-	sll_init(&t->heapAllocs,slln_allocNode,slln_freeNode);
+	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
+	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
 	for(i = 0; i < STACK_REG_COUNT; i++)
 		t->stackRegions[i] = -1;
 	t->tlsRegion = -1;
@@ -111,6 +113,18 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 		util_panic("Unable to put first thread in vfs");
 
 	return t;
+}
+
+void thread_setSignal(sThread *t,sig_t sig) {
+	t->signal = sig;
+}
+
+sig_t thread_getSignal(const sThread *t) {
+	return t->signal;
+}
+
+void thread_unsetSignal(sThread *t) {
+	t->signal = SIG_COUNT;
 }
 
 sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
@@ -265,12 +279,22 @@ int thread_extendStack(uintptr_t address) {
 
 void thread_addHeapAlloc(void *ptr) {
 	sThread *t = thread_getRunning();
-	sll_append(&t->heapAllocs,ptr);
+	sll_append(&t->termHeapAllocs,ptr);
 }
 
 void thread_remHeapAlloc(void *ptr) {
 	sThread *t = thread_getRunning();
-	sll_removeFirstWith(&t->heapAllocs,ptr);
+	sll_removeFirstWith(&t->termHeapAllocs,ptr);
+}
+
+void thread_addCallback(fTermCallback cb) {
+	sThread *t = thread_getRunning();
+	sll_append(&t->termCallbacks,cb);
+}
+
+void thread_remCallback(fTermCallback cb) {
+	sThread *t = thread_getRunning();
+	sll_removeFirstWith(&t->termCallbacks,cb);
 }
 
 int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
@@ -292,6 +316,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
+	t->signal = SIG_COUNT;
 	t->cpu = -1;
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
@@ -301,7 +326,8 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 	t->stats.syscalls = 0;
 	t->intrptLevel = src->intrptLevel;
 	memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
-	sll_init(&t->heapAllocs,slln_allocNode,slln_freeNode);
+	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
+	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
 	if(cloneProc) {
 		size_t i;
 		t->kstackFrame = stackFrame;
@@ -412,9 +438,14 @@ void thread_kill(sThread *t) {
 	sll_removeFirstWith(t->proc->threads,t);
 
 	/* release resources */
-	for(n = sll_begin(&t->heapAllocs); n != NULL; n = n->next)
+	for(n = sll_begin(&t->termHeapAllocs); n != NULL; n = n->next)
 		cache_free(n->data);
-	sll_clear(&t->heapAllocs);
+	sll_clear(&t->termHeapAllocs);
+	for(n = sll_begin(&t->termCallbacks); n != NULL; n = n->next) {
+		fTermCallback cb = (fTermCallback)n->data;
+		cb();
+	}
+	sll_clear(&t->termCallbacks);
 
 	/* remove from all modules we may be announced */
 	sig_removeHandlerFor(t->tid);

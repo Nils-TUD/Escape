@@ -101,7 +101,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	sFileInfo finfo;
 	sBinDesc bindesc;
 	ssize_t readRes;
-	int res;
+	int res,fd;
 
 	file = vfs_real_openPath(p->pid,VFS_READ,path);
 	if(file < 0) {
@@ -216,9 +216,17 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 		}
 	}
 
-	if(elf_finishFromFile(file,&eheader,info) < 0)
-		return ERR_INVALID_ELF_BIN;
-
+	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
+	fd = proc_getFreeFd();
+	if(fd < 0)
+		goto failed;
+	if((res = proc_assocFd(fd,file)) < 0)
+		goto failed;
+	if(elf_finishFromFile(file,&eheader,info) < 0) {
+		assert(proc_unassocFd(fd) >= 0);
+		goto failed;
+	}
+	assert(proc_unassocFd(fd) >= 0);
 	vfs_closeFile(p->pid,file);
 	return 0;
 

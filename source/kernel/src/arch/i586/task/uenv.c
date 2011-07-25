@@ -28,108 +28,31 @@
 #include <errors.h>
 #include <assert.h>
 
-/* storage for "delayed" signal handling */
-typedef struct {
-	uint8_t active;
-	tid_t tid;
-	sig_t sig;
-} sSignalData;
-
-static void uenv_setupStack(sIntrptStackFrame *frame,uintptr_t entryPoint);
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig);
+static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint);
 static uint32_t *uenv_addArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 
-/* temporary storage for signal-handling */
-static sSignalData signalData;
-
-void uenv_handleSignal(void) {
+void uenv_handleSignal(sIntrptStackFrame *stack) {
 	tid_t tid;
 	sig_t sig;
-	/* don't do anything, if we should already handle a signal */
-	if(signalData.active == 1)
-		return;
+	sThread *t = thread_getRunning();
+	if((sig = thread_getSignal(t)) != SIG_COUNT)
+		uenv_startSignalHandler(t,stack,sig);
 
 	if(sig_hasSignal(&sig,&tid)) {
-		signalData.active = 1;
-		signalData.sig = sig;
-		signalData.tid = tid;
-
-		/* a small trick: we store the signal to handle and manipulate the user-stack
-		 * and so on later. if the thread is currently running everything is fine. we return
-		 * from here and intrpt_handleSignalFinish() will be called.
-		 * if the target-thread is not running we switch to him now. the thread is somewhere
-		 * in the kernel but he will leave the kernel IN EVERY CASE at the end of the interrupt-
-		 * handler. So if we do the signal-stuff at the end we'll get there and will
-		 * manipulate the user-stack.
-		 * This is simpler than mapping the user-stack and kernel-stack of the other thread
-		 * in the current page-dir and so on :)
-		 */
-		if(thread_getRunning()->tid != tid) {
-			/* ensure that the thread is ready */
-			/* this may fail because perhaps we're involved in a swapping-operation or similar */
-			/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
-			 * about that) */
-			if(thread_setReady(tid,true))
-				thread_switchTo(tid);
+		if(t->tid == tid)
+			uenv_startSignalHandler(t,stack,sig);
+		else if(thread_setReady(tid,true)) {
+			t = thread_getById(tid);
+			thread_setSignal(t,sig);
+			thread_switchTo(tid);
 		}
 	}
-}
-
-bool uenv_hasSignalToStart(void) {
-	return signalData.active;
-}
-
-void uenv_startSignalHandler(sIntrptStackFrame *stack) {
-	const sThread *t = thread_getRunning();
-	fSignal handler;
-	uint32_t *esp = (uint32_t*)stack->uesp;
-
-	/* release signal-data */
-	signalData.active = 0;
-
-	/* if the thread_switchTo() wasn't successfull it means that we have tried to switch to
-	 * multiple threads during idle. So we ignore it and try to give the signal later to the thread */
-	if(t->tid != signalData.tid)
-		return;
-
-	/* extend the stack, if necessary */
-	if(thread_extendStack((uintptr_t)(esp - 11)) < 0) {
-		proc_segFault(t->proc);
-		return;
-	}
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)(esp - 11),10 * sizeof(uint32_t));
-
-	/* thread_extendStack() and paging_isRangeUserWritable() may cause a thread-switch. therefore
-	 * we may have delivered another signal in the meanwhile... */
-	if(t->tid != signalData.tid)
-		return;
-
-	handler = sig_startHandling(signalData.tid,signalData.sig);
-	/* the ret-instruction of sigRet() should go to the old eip */
-	*--esp = stack->eip;
-	/* save regs */
-	*--esp = stack->eflags;
-	*--esp = stack->eax;
-	*--esp = stack->ebx;
-	*--esp = stack->ecx;
-	*--esp = stack->edx;
-	*--esp = stack->edi;
-	*--esp = stack->esi;
-	/* signal-number as arguments */
-	*--esp = signalData.sig;
-	/* sigRet will remove the argument, restore the register,
-	 * acknoledge the signal and return to eip */
-	*--esp = t->proc->sigRetAddr;
-	stack->eip = (uintptr_t)handler;
-	stack->uesp = (uint32_t)esp;
 }
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	UNUSED(signal);
 	uint32_t *esp = (uint32_t*)stack->uesp;
-	if(!paging_isRangeUserReadable((uintptr_t)esp,sizeof(uint32_t) * 9))
-		return ERR_INVALID_ARGS;
-
 	/* remove arg */
 	esp += 1;
 	/* restore regs */
@@ -185,12 +108,6 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	/* get esp */
 	thread_getStackRange(t,NULL,(uintptr_t*)&esp,0);
 
-	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
-		return false;
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)esp - totalSize,totalSize);
-
 	/* copy arguments on the user-stack (4byte space) */
 	esp--;
 	argv = NULL;
@@ -240,13 +157,12 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 
 	frame->uesp = (uint32_t)esp;
 	frame->ebp = frame->uesp;
-	uenv_setupStack(frame,entryPoint);
+	uenv_setupRegs(frame,entryPoint);
 	return true;
 }
 
 bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *esp;
-	size_t totalSize = 3 * sizeof(uint32_t) + sizeof(void*);
 	sThread *t = thread_getRunning();
 	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
 
@@ -266,12 +182,6 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	/* get esp */
 	thread_getStackRange(t,NULL,(uintptr_t*)&esp,0);
 
-	/* extend the stack if necessary */
-	if(thread_extendStack((uintptr_t)esp - totalSize) < 0)
-		return false;
-	/* will handle copy-on-write */
-	paging_isRangeUserWritable((uintptr_t)esp - totalSize,totalSize);
-
 	/* put arg on stack */
 	esp--;
 	*esp-- = (uintptr_t)arg;
@@ -280,11 +190,36 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 
 	kstack->uesp = (uint32_t)esp;
 	kstack->ebp = kstack->uesp;
-	uenv_setupStack(kstack,t->proc->entryPoint);
+	uenv_setupRegs(kstack,t->proc->entryPoint);
 	return true;
 }
 
-static void uenv_setupStack(sIntrptStackFrame *frame,uintptr_t entryPoint) {
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig) {
+	fSignal handler;
+	uint32_t *esp = (uint32_t*)stack->uesp;
+
+	thread_unsetSignal(t);
+	handler = sig_startHandling(t->tid,sig);
+	/* the ret-instruction of sigRet() should go to the old eip */
+	*--esp = stack->eip;
+	/* save regs */
+	*--esp = stack->eflags;
+	*--esp = stack->eax;
+	*--esp = stack->ebx;
+	*--esp = stack->ecx;
+	*--esp = stack->edx;
+	*--esp = stack->edi;
+	*--esp = stack->esi;
+	/* signal-number as arguments */
+	*--esp = sig;
+	/* sigRet will remove the argument, restore the register,
+	 * acknoledge the signal and return to eip */
+	*--esp = t->proc->sigRetAddr;
+	stack->eip = (uintptr_t)handler;
+	stack->uesp = (uint32_t)esp;
+}
+
+static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint) {
 	/* user-mode segments */
 	frame->cs = SEGSEL_GDTI_UCODE | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
 	frame->ds = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;

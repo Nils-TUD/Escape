@@ -58,36 +58,39 @@ int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info
 	sElfSHeader *secHeaders = (sElfSHeader*)cache_alloc(headerSize);
 	if(secHeaders == NULL) {
 		log_printf("[LOADER] Unable to allocate memory for ELF-header (%zu bytes)\n",headerSize);
-		return ERR_NOT_ENOUGH_MEM;
+		goto error;
 	}
 
 	if(vfs_seek(t->proc->pid,file,eheader->e_shoff,SEEK_SET) < 0) {
 		log_printf("[LOADER] Unable to seek to ELF-header\n");
-		return ERR_INVALID_ELF_BIN;
+		goto error;
 	}
 
 	if((readRes = vfs_readFile(t->proc->pid,file,secHeaders,headerSize)) != headerSize) {
 		log_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(readRes));
-		cache_free(secHeaders);
-		return ERR_INVALID_ELF_BIN;
+		goto error;
 	}
 
+	/* elf_finish might segfault */
+	thread_addHeapAlloc(secHeaders);
 	res = elf_finish(t,eheader,secHeaders,file,info);
+	thread_remHeapAlloc(secHeaders);
 	cache_free(secHeaders);
 	return res;
+
+error:
+	cache_free(secHeaders);
+	return ERR_INVALID_ELF_BIN;
 }
 
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
 		file_t file,sStartupInfo *info) {
 	/* build register-stack */
-	uintptr_t end;
 	int globalNum = 0;
 	size_t j;
 	ssize_t res;
 	uint64_t *stack;
-	thread_getStackRange(t,(uintptr_t*)&stack,&end,0);
-	/* make writeable (if copy-on-write is activated, vmm_pagefault() is called to resolve it */
-	paging_isRangeUserWritable((uintptr_t)stack,(uintptr_t)stack + PAGE_SIZE);
+	thread_getStackRange(t,(uintptr_t*)&stack,NULL,0);
 	*stack++ = 0;	/* $0 */
 	*stack++ = 0;	/* $1 */
 	*stack++ = 0;	/* $2 */

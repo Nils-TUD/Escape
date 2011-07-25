@@ -190,8 +190,10 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 				util_panic("Building args for boot-module %s failed: %d",p->command,argc);
 			/* no dynamic linking here */
 			p->entryPoint = sinfo.progEntry;
+			thread_addHeapAlloc(argBuffer);
 			if(!uenv_setupProc(p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
 				util_panic("Unable to setup user-stack for boot module %s",p->command);
+			thread_remHeapAlloc(argBuffer);
 			cache_free(argBuffer);
 			/* we don't want to continue the loop ;) */
 			return 0;

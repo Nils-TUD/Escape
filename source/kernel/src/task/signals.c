@@ -23,6 +23,7 @@
 #include <sys/task/signals.h>
 #include <sys/mem/cache.h>
 #include <sys/util.h>
+#include <sys/klock.h>
 #include <sys/video.h>
 #include <errors.h>
 #include <assert.h>
@@ -48,6 +49,7 @@ static void sig_remove(sSigThread *t,sig_t sig);
 static void sig_unset(sSigThread *t,sig_t sig);
 static sSigThread *sig_getThread(tid_t tid,bool create);
 
+static klock_t lock;
 static size_t pendingSignals = 0;
 static sSLList *sigThreads = NULL;
 
@@ -67,74 +69,98 @@ bool sig_canSend(sig_t signal) {
 }
 
 int sig_setHandler(tid_t tid,sig_t signal,fSignal func) {
-	sSigThread *t = sig_getThread(tid,true);
+	sSigThread *t;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
-	if(!t)
+	klock_aquire(&lock);
+	t = sig_getThread(tid,true);
+	if(!t) {
+		klock_release(&lock);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 	/* set / replace handler */
 	/* note that we discard not yet delivered signals here.. */
 	t->signals[signal].handler = func;
 	sig_unset(t,signal);
+	klock_release(&lock);
 	return 0;
 }
 
 void sig_unsetHandler(tid_t tid,sig_t signal) {
-	sSigThread *t = sig_getThread(tid,false);
+	sSigThread *t;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
-	if(!t)
-		return;
-	t->signals[signal].handler = NULL;
-	sig_unset(t,signal);
+	klock_aquire(&lock);
+	t = sig_getThread(tid,false);
+	if(t) {
+		t->signals[signal].handler = NULL;
+		sig_unset(t,signal);
+	}
+	klock_release(&lock);
 }
 
 void sig_removeHandlerFor(tid_t tid) {
 	size_t i;
-	sSigThread *t = sig_getThread(tid,false);
-	if(!t)
-		return;
-	for(i = 0; i < SIG_COUNT; i++)
-		sig_unset(t,i);
-	sll_removeFirstWith(sigThreads,t);
-	cache_free(t);
+	sSigThread *t;
+	klock_aquire(&lock);
+	t = sig_getThread(tid,false);
+	if(t) {
+		for(i = 0; i < SIG_COUNT; i++)
+			sig_unset(t,i);
+		sll_removeFirstWith(sigThreads,t);
+		cache_free(t);
+	}
+	klock_release(&lock);
 }
 
 void sig_cloneHandler(tid_t parent,tid_t child) {
 	size_t i;
-	sSigThread *p = sig_getThread(parent,false);
+	sSigThread *p;
 	sSigThread *c;
-	if(!p)
-		return;
-	c = sig_getThread(child,true);
-	c->signalsPending = 0;
-	for(i = 0; i < SIG_COUNT; i++) {
-		c->signals[i].handler = p->signals[i].handler;
-		c->signals[i].pending = 0;
+	klock_aquire(&lock);
+	p = sig_getThread(parent,false);
+	if(p) {
+		c = sig_getThread(child,true);
+		if(c) {
+			c->signalsPending = 0;
+			for(i = 0; i < SIG_COUNT; i++) {
+				c->signals[i].handler = p->signals[i].handler;
+				c->signals[i].pending = 0;
+			}
+		}
 	}
+	klock_release(&lock);
 }
 
 bool sig_hasSignal(sig_t *sig,tid_t *tid) {
 	sSLNode *n;
-	if(pendingSignals == 0)
-		return false;
-	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
-		sSigThread *st = (sSigThread*)n->data;
-		if(st->signalsPending && st->signal == 0 && !st->thread->ignoreSignals) {
-			size_t i;
-			for(i = 0; i < SIG_COUNT; i++) {
-				if(st->signals[i].pending) {
-					*sig = i;
-					*tid = st->thread->tid;
-					return true;
+	klock_aquire(&lock);
+	if(pendingSignals > 0) {
+		for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
+			sSigThread *st = (sSigThread*)n->data;
+			if(st->signalsPending && st->signal == 0 && !st->thread->ignoreSignals) {
+				size_t i;
+				for(i = 0; i < SIG_COUNT; i++) {
+					if(st->signals[i].pending) {
+						*sig = i;
+						*tid = st->thread->tid;
+						klock_release(&lock);
+						return true;
+					}
 				}
 			}
 		}
 	}
+	klock_release(&lock);
 	return false;
 }
 
 bool sig_hasSignalFor(tid_t tid) {
-	sSigThread *st = sig_getThread(tid,false);
-	return st && st->signalsPending && !st->signal && !st->thread->ignoreSignals;
+	sSigThread *st;
+	bool res;
+	klock_aquire(&lock);
+	st = sig_getThread(tid,false);
+	res = st && st->signalsPending && !st->signal && !st->thread->ignoreSignals;
+	klock_release(&lock);
+	return res;
 }
 
 void sig_addSignalFor(pid_t pid,sig_t signal) {
@@ -143,6 +169,7 @@ void sig_addSignalFor(pid_t pid,sig_t signal) {
 	bool sent = false;
 	assert(p != NULL);
 	assert(sig_canSend(signal));
+	klock_aquire(&lock);
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		sSigThread *st = sig_getThread(t->tid,false);
@@ -152,6 +179,7 @@ void sig_addSignalFor(pid_t pid,sig_t signal) {
 			sent = true;
 		}
 	}
+	klock_release(&lock);
 	/* no handler and fatal? terminate proc! */
 	if(!sent && sig_isFatal(signal))
 		proc_terminate(p,1,signal);
@@ -160,6 +188,7 @@ void sig_addSignalFor(pid_t pid,sig_t signal) {
 bool sig_addSignal(sig_t signal) {
 	sSLNode *n;
 	bool res = false;
+	klock_aquire(&lock);
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
 		sSigThread *st = (sSigThread*)n->data;
 		if(st->signals[signal].handler && st->signals[signal].handler != SIG_IGN) {
@@ -167,28 +196,36 @@ bool sig_addSignal(sig_t signal) {
 			res = true;
 		}
 	}
+	klock_release(&lock);
 	return res;
 }
 
 fSignal sig_startHandling(tid_t tid,sig_t signal) {
-	sSigThread *t = sig_getThread(tid,false);
-	assert(t != NULL);
+	sSigThread *t;
+	fSignal handler;
+	klock_aquire(&lock);
+	t = sig_getThread(tid,false);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
+	assert(t != NULL);
 	assert(t->signals[signal].pending > 0);
-
 	sig_remove(t,signal);
 	t->signal = signal;
-	return t->signals[signal].handler;
+	handler = t->signals[signal].handler;
+	klock_release(&lock);
+	return handler;
 }
 
 sig_t sig_ackHandling(tid_t tid) {
 	sig_t res;
-	sSigThread *t = sig_getThread(tid,false);
+	sSigThread *t;
+	klock_aquire(&lock);
+	t = sig_getThread(tid,false);
 	assert(t != NULL);
 	vassert(t->signal != 0,"No signal handling");
 	vassert(sig_canHandle(t->signal),"Unable to handle signal %d",t->signal);
 	res = t->signal;
 	t->signal = 0;
+	klock_release(&lock);
 	return res;
 }
 

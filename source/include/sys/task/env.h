@@ -20,48 +20,53 @@
 #ifndef ENV_H_
 #define ENV_H_
 
-#include <esc/common.h>
+#include <sys/common.h>
+#include <sys/task/proc.h>
 
 /**
- * Returns the env-variable with given index
+ * Copies the env-variable-name with given index to <dst>
  *
- * @param pid the process-id
+ * @param p the process
  * @param index the index
- * @return the env-variable-name or NULL if there is none
+ * @param dst the destination-string
+ * @param size the size of dst
+ * @return true if existing and successfully copied
  */
-const char *env_geti(pid_t pid,size_t index);
+bool env_geti(sProc *p,size_t index,char *dst,size_t size);
 
 /**
- * Returns the env-variable with given name
+ * Copies the env-variable-value with given name to <dst>
  *
- * @param pid the process-id
+ * @param p the process
  * @param name the variable-name
- * @return the variable-value or NULL if not found
+ * @param dst the destination-string
+ * @param size the size of dst
+ * @return true if existing and successfully copied
  */
-const char *env_get(pid_t pid,const char *name);
+bool env_get(sProc *p,const char *name,char *dst,size_t size);
 
 /**
  * Sets <name> to <value>
  *
- * @param pid the process-id
+ * @param p the process
  * @param name the variable-name
  * @param value the (new) value
  * @return true if successfull
  */
-bool env_set(pid_t pid,const char *name,const char *value);
+bool env_set(sProc *p,const char *name,const char *value);
 
 /**
  * Removes all env-variables for given process
  *
- * @param pid the process-id
+ * @param p the process
  */
-void env_removeFor(pid_t pid);
+void env_removeFor(sProc *p);
 
 /**
  * Prints all env-vars of given process
  *
- * @param pid the process-id
+ * @param p the process
  */
-void env_printAllOf(pid_t pid);
+void env_printAllOf(sProc *p);
 
 #endif /* ENV_H_ */

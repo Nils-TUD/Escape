@@ -121,7 +121,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	void *data = (void*)SYSC_ARG5(stack);
 	size_t size = SYSC_ARG6(stack);
 	uint flags = (uint)SYSC_ARG7(stack);
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	file_t file;
 	inode_t clientNo;
 	int fd;
@@ -165,7 +165,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 		}
 
 		/* otherwise wait for a client (accept signals) */
-		ev_waitObjects(t->tid,waits,fdCount);
+		ev_waitObjects(t,waits,fdCount);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);

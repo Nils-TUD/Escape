@@ -148,7 +148,7 @@ int vm86_create(void) {
 
 int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *areas,size_t areaCount) {
 	size_t i;
-	const sThread *t;
+	sThread *t;
 	const sThread *vm86t;
 	for(i = 0; i < areaCount; i++) {
 		if((areas[i].type == VM86_MEM_BIDIR &&
@@ -171,7 +171,7 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 	while(caller != INVALID_TID) {
 		/* TODO we have a problem if the process that currently uses vm86 gets killed... */
 		/* because we'll never get notified that we can use vm86 */
-		ev_wait(t->tid,EVI_VM86_READY,0);
+		ev_wait(t,EVI_VM86_READY,0);
 		thread_switchNoSigs();
 	}
 

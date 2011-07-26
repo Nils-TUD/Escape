@@ -421,7 +421,7 @@ static void vfs_real_openRespHandler(sVFSNode *node,USER const void *data,size_t
 		req->val1 = dev;
 		vfs_req_remove(req);
 		/* the thread can continue now */
-		ev_wakeupThread(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->thread,EV_REQ_REPLY);
 	}
 }
 
@@ -440,7 +440,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,USER const void *data,size_t
 				req->state = REQ_STATE_FINISHED;
 				req->data = NULL;
 				vfs_req_remove(req);
-				ev_wakeupThread(req->tid,EV_REQ_REPLY);
+				ev_wakeupThread(req->thread,EV_REQ_REPLY);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
@@ -467,7 +467,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,USER const void *data,size_t
 			req->state = REQ_STATE_FINISHED;
 			vfs_req_remove(req);
 			/* the thread can continue now */
-			ev_wakeupThread(req->tid,EV_REQ_REPLY);
+			ev_wakeupThread(req->thread,EV_REQ_REPLY);
 		}
 	}
 }
@@ -491,7 +491,7 @@ static void vfs_real_statRespHandler(sVFSNode *node,USER const void *data,size_t
 		}
 		vfs_req_remove(req);
 		/* the thread can continue now */
-		ev_wakeupThread(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->thread,EV_REQ_REPLY);
 	}
 }
 
@@ -506,7 +506,7 @@ static void vfs_real_defRespHandler(sVFSNode *node,USER const void *data,size_t 
 		req->count = res;
 		vfs_req_remove(req);
 		/* the thread can continue now */
-		ev_wakeupThread(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->thread,EV_REQ_REPLY);
 	}
 }
 

@@ -39,8 +39,6 @@
 #include <errors.h>
 #include <string.h>
 
-static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size);
-
 int sysc_getpid(sIntrptStackFrame *stack) {
 	const sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->pid);
@@ -127,16 +125,10 @@ int sysc_getgroups(sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	gid_t *list = (gid_t*)SYSC_ARG2(stack);
 	const sProc *p = proc_getRunning();
-	const sProcGroups *g = p->groups;
-	size_t groupCount = g ? g->count : 0;
-	if(size == 0)
-		SYSC_RET1(stack,groupCount);
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	size = MIN(groupCount,size);
-	if(size > 0)
-		memcpy(list,g->groups,size * sizeof(gid_t));
+	size = groups_get(p,list,size);
 	SYSC_RET1(stack,size);
 }
 
@@ -144,15 +136,11 @@ int sysc_setgroups(sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
-	sProcGroups *g;
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	g = groups_alloc(size,list);
-	if(!g)
+	if(!groups_set(p,size,list))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-	groups_leave(p->groups);
-	p->groups = g;
 	SYSC_RET1(stack,0);
 }
 
@@ -162,7 +150,7 @@ int sysc_isingroup(sIntrptStackFrame *stack) {
 	const sProc *p = proc_getByPid(pid);
 	if(!p)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	SYSC_RET1(stack,groups_contains(p->groups,gid));
+	SYSC_RET1(stack,groups_contains(p,gid));
 }
 
 int sysc_fork(sIntrptStackFrame *stack) {
@@ -189,7 +177,7 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
 	sSLNode *n;
 	int res;
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	const sProc *p = t->proc;
 
 	if(state != NULL && !paging_isInUserSpace((uintptr_t)state,sizeof(sExitState)))
@@ -198,7 +186,7 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	/* check if there is another thread waiting */
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *ot = (sThread*)n->data;
-		if(ev_waitsFor(ot->tid,EV_CHILD_DIED))
+		if(ev_waitsFor(ot,EV_CHILD_DIED))
 			SYSC_ERROR(stack,ERR_THREAD_WAITING);
 	}
 
@@ -206,10 +194,10 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	res = proc_getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		ev_wait(t->tid,EVI_CHILD_DIED,(evobj_t)p);
+		ev_wait(t,EVI_CHILD_DIED,(evobj_t)p);
 		thread_switch();
 		/* stop waiting for event; maybe we have been waked up for another reason */
-		ev_removeThread(t->tid);
+		ev_removeThread(t);
 		/* don't continue here if we were interrupted by a signal */
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);
@@ -227,46 +215,38 @@ int sysc_getenvito(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	size_t index = SYSC_ARG3(stack);
-	const sProc *p = proc_getRunning();
-	ssize_t res;
+	sProc *p = proc_getRunning();
+	if(size == 0 || !paging_isInUserSpace((uintptr_t)buffer,size))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	const char *name = env_geti(p->pid,index);
-	if(name == NULL)
+	if(!env_geti(p,index,buffer,size))
 		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
-
-	res = sysc_copyEnv(name,buffer,size);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RET1(stack,0);
 }
 
 int sysc_getenvto(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
-	const sProc *p = proc_getRunning();
-	ssize_t res;
+	sProc *p = proc_getRunning();
 	if(!sysc_isStrInUserSpace(name,NULL))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(size == 0 || !paging_isInUserSpace((uintptr_t)buffer,size))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	const char *value = env_get(p->pid,name);
-	if(value == NULL)
+	if(!env_get(p,name,buffer,size))
 		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
-
-	res = sysc_copyEnv(value,buffer,size);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RET1(stack,0);
 }
 
 int sysc_setenv(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
-	const sProc *p = proc_getRunning();
+	sProc *p = proc_getRunning();
 	if(!sysc_isStrInUserSpace(name,NULL) || !sysc_isStrInUserSpace(value,NULL))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!env_set(p->pid,name,value))
+	if(!env_set(p,name,value))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	SYSC_RET1(stack,0);
 }
@@ -333,17 +313,4 @@ error:
 	thread_switch();
 	util_panic("We should not reach this!");
 	SYSC_ERROR(stack,res);
-}
-
-static ssize_t sysc_copyEnv(const char *src,char *dst,size_t size) {
-	size_t len;
-	if(size == 0 || !paging_isInUserSpace((uintptr_t)dst,size))
-		return ERR_INVALID_ARGS;
-
-	/* copy to buffer */
-	len = strlen(src);
-	len = MIN(len,size - 1);
-	strncpy(dst,src,len);
-	dst[len] = '\0';
-	return len;
 }

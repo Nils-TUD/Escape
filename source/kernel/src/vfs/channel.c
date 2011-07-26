@@ -206,7 +206,7 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 	UNUSED(pid);
 	UNUSED(file);
 	sSLList **list;
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;
 	sMessage *msg;
 	size_t event;
@@ -227,7 +227,7 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 		/* if the channel has already been closed, there is no hope of success here */
 		if(chan->closed)
 			return ERR_INVALID_FILE;
-		ev_wait(t->tid,event,(evobj_t)node);
+		ev_wait(t,event,(evobj_t)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;

@@ -136,10 +136,11 @@ int sysc_waitUnlock(sIntrptStackFrame *stack) {
 int sysc_notify(sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	uint events = SYSC_ARG2(stack);
+	sThread *t = thread_getById(tid);
 
-	if((events & ~EV_USER_NOTIFY_MASK) != 0)
+	if((events & ~EV_USER_NOTIFY_MASK) != 0 || t == NULL)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	ev_wakeupThread(tid,events);
+	ev_wakeupThread(t,events);
 	SYSC_RET1(stack,0);
 }
 
@@ -168,7 +169,7 @@ int sysc_unlock(sIntrptStackFrame *stack) {
 
 int sysc_join(sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	if(tid != 0) {
 		const sThread *tt = thread_getById(tid);
 		/* just threads from the own process */
@@ -178,7 +179,7 @@ int sysc_join(sIntrptStackFrame *stack) {
 
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
 	do {
-		ev_wait(t->tid,EVI_THREAD_DIED,(evobj_t)t->proc);
+		ev_wait(t,EVI_THREAD_DIED,(evobj_t)t->proc);
 		thread_switchNoSigs();
 	}
 	while((tid == 0 && sll_length(t->proc->threads) > 1) ||
@@ -214,7 +215,7 @@ int sysc_resume(sIntrptStackFrame *stack) {
 static int sysc_doWait(USER sWaitObject *uobjects,size_t objCount) {
 	sWaitObject kobjects[MAX_WAIT_OBJECTS];
 	file_t objFiles[MAX_WAIT_OBJECTS];
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	size_t i;
 
 	/* copy to kobjects and check */
@@ -257,7 +258,7 @@ static int sysc_doWait(USER sWaitObject *uobjects,size_t objCount) {
 		}
 
 		/* wait */
-		if(!ev_waitObjects(t->tid,kobjects,objCount))
+		if(!ev_waitObjects(t,kobjects,objCount))
 			return ERR_NOT_ENOUGH_MEM;
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))

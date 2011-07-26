@@ -22,20 +22,17 @@
 #include <sys/task/sched.h>
 #include <sys/mem/kheap.h>
 #include <sys/util.h>
+#include <sys/klock.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
 
 /**
- * The scheduling-algorithm is very simple atm. Basically it is round-robin.
- * That means a thread-switch puts the current thread at the end of the ready-queue and makes
- * the first in the ready-queue the new running thread.
- * Additionally we can block threads so that they lie on the blocked-queue until they
- * are unblocked by the kernel.
- * There is one special thing: threads that have been waked up because of an event or because
- * the timer noticed that the thread no longer wants to sleep, will be put at the beginning
- * of the ready-queue so that they will be chosen on the next resched.
+ * We're using round-robin here atm. That means a thread-switch puts the current thread at the end
+ * of the ready-queue and makes the first in the ready-queue the new running thread.
+ * Additionally we can block threads so that they lie on the blocked-queue until they are unblocked
+ * by the kernel.
  *
  * Each thread has a prev- and next-pointer with which we build two double-linked list: one
  * ready-queue and one blocked-queue. For both we store the beginning and end.
@@ -56,6 +53,7 @@ static void sched_qDequeueThread(sQueue *q,sThread *t);
 static void sched_qAppend(sQueue *q,sThread *t);
 static void sched_qPrint(sQueue *q);
 
+static klock_t lock;
 static sQueue readyQueue;
 static sQueue blockedQueue;
 
@@ -67,36 +65,27 @@ void sched_init(void) {
 sThread *sched_perform(void) {
 	sThread *old = thread_getRunning();
 	sThread *t = old;
-	bool isZombie = t->state == ST_ZOMBIE;
+	klock_aquire(&lock);
 	if(t->state == ST_RUNNING) {
 		/* put current in the ready-queue */
-		sched_setReady(t);
+		if(!(t->flags & T_IDLE) && sched_setReadyState(t))
+			sched_qAppend(&readyQueue,t);
 	}
 
 	/* get new thread */
 	t = sched_qDequeue(&readyQueue);
-
 	if(t == NULL) {
-		if(isZombie) {
-			/* If the current thread should be destroyed the process may be destroyed, too. That means
-			 * that the kernel-stack would be free'd. So if we idle with that kernel-stack we have a
-			 * problem...
-			 * Therefore we choose the other thread of init to be sure (this may not be destroyed).
-			 */
-			t = thread_getById(INIT_TID);
-		}
-		else {
-			/* otherwise choose the idle-thread; don't do that if we're already the idle-thread.
-			 * in this case, just keep idling */
-			if(old->flags & T_IDLE)
-				t = old;
-			else
-				t = thread_popIdle();
-		}
+		/*  choose the idle-thread; don't do that if we're already the idle-thread.
+		 * in this case, just keep idling */
+		if(old->flags & T_IDLE)
+			t = old;
+		else
+			t = thread_popIdle();
 	}
 	else
 		t->state = ST_RUNNING;
 
+	klock_release(&lock);
 	return t;
 }
 
@@ -105,9 +94,10 @@ void sched_setRunning(sThread *t) {
 	if(t->flags & T_IDLE)
 		return;
 
+	klock_aquire(&lock);
 	switch(t->state) {
 		case ST_RUNNING:
-			return;
+			break;
 		case ST_READY:
 			sched_qDequeueThread(&readyQueue,t);
 			break;
@@ -120,14 +110,18 @@ void sched_setRunning(sThread *t) {
 	}
 
 	t->state = ST_RUNNING;
+	klock_release(&lock);
 }
 
 void sched_setReady(sThread *t) {
 	assert(t != NULL);
 	if(t->flags & T_IDLE)
 		return;
+
+	klock_aquire(&lock);
 	if(sched_setReadyState(t))
 		sched_qAppend(&readyQueue,t);
+	klock_release(&lock);
 }
 
 static bool sched_setReadyState(sThread *t) {
@@ -153,13 +147,15 @@ static bool sched_setReadyState(sThread *t) {
 
 void sched_setBlocked(sThread *t) {
 	assert(t != NULL);
-
+	klock_aquire(&lock);
 	switch(t->state) {
 		case ST_BLOCKED:
 		case ST_BLOCKED_SUSP:
+			klock_release(&lock);
 			return;
 		case ST_READY_SUSP:
 			t->state = ST_BLOCKED_SUSP;
+			klock_release(&lock);
 			return;
 		case ST_READY:
 			sched_qDequeueThread(&readyQueue,t);
@@ -174,11 +170,13 @@ void sched_setBlocked(sThread *t) {
 
 	/* insert in blocked-list */
 	sched_qAppend(&blockedQueue,t);
+	klock_release(&lock);
 }
 
 void sched_setSuspended(sThread *t,bool blocked) {
 	assert(t != NULL);
 
+	klock_aquire(&lock);
 	if(blocked) {
 		switch(t->state) {
 			/* already suspended, so ignore it */
@@ -225,9 +223,11 @@ void sched_setSuspended(sThread *t,bool blocked) {
 				break;
 		}
 	}
+	klock_release(&lock);
 }
 
 void sched_removeThread(sThread *t) {
+	klock_aquire(&lock);
 	switch(t->state) {
 		case ST_RUNNING:
 		case ST_ZOMBIE:
@@ -243,6 +243,7 @@ void sched_removeThread(sThread *t) {
 			vassert(false,"Invalid state for removeThread (%d)",t->state);
 			break;
 	}
+	klock_release(&lock);
 }
 
 void sched_print(void) {

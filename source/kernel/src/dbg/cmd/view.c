@@ -179,7 +179,7 @@ static void view_printc(char c) {
 }
 
 static void view_proc(size_t argc,char **argv) {
-	const sProc *p = view_getProc(argc,argv);
+	sProc *p = view_getProc(argc,argv);
 	if(p != NULL)
 		proc_print(p);
 }

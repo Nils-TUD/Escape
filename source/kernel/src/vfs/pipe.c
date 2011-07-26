@@ -116,7 +116,7 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 	UNUSED(pid);
 	UNUSED(file);
 	size_t byteCount,total;
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 	volatile sPipe *vpipe = pipe;
 	sPipeData *data;
@@ -124,7 +124,7 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 	/* wait until data is available */
 	/* don't cache the list here, because the pointer changes if the list is NULL */
 	while(sll_length(vpipe->list) == 0) {
-		ev_wait(t->tid,EVI_PIPE_FULL,(evobj_t)node);
+		ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
@@ -161,7 +161,7 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
 			ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
-			ev_wait(t->tid,EVI_PIPE_FULL,(evobj_t)node);
+			ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back..
 			 */
@@ -182,14 +182,14 @@ static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,USER const vo
 	UNUSED(pid);
 	UNUSED(file);
 	sPipeData *data;
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 	volatile sPipe *vpipe = pipe;
 
 	/* wait while our node is full */
 	if(count) {
 		while((vpipe->total + count) >= MAX_VFS_FILE_SIZE) {
-			ev_wait(t->tid,EVI_PIPE_EMPTY,(evobj_t)node);
+			ev_wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
 			thread_switchNoSigs();
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */

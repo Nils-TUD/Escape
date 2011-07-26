@@ -23,6 +23,7 @@
 #include <sys/task/event.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
@@ -47,23 +48,33 @@ static ssize_t lock_get(pid_t pid,ulong ident,bool free);
 
 static size_t lockCount = 0;
 static sLock *locks = NULL;
+/* I think, in this case its better to use a single global lock instead of locking an sLock
+ * structure individually. Because when we're searching for a lock, we would have to do a lot
+ * of aquires and releases. Additionally, this module isn't used that extensively, so that it
+ * doesn't hurt to reduce the amount of parallelity a bit, IMO. */
+static klock_t klock;
 
 /* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
 
 static bool lock_isLocked(const sLock *l,ushort flags) {
+	bool res = false;
 	if((flags & LOCK_EXCLUSIVE) && (l->readRefs > 0 || l->writer != INVALID_TID))
-		return true;
-	if(!(flags & LOCK_EXCLUSIVE) && l->writer != INVALID_TID)
-		return true;
-	return false;
+		res = true;
+	else if(!(flags & LOCK_EXCLUSIVE) && l->writer != INVALID_TID)
+		res = true;
+	return res;
 }
 
 int lock_aquire(pid_t pid,ulong ident,ushort flags) {
-	const sThread *t = thread_getRunning();
-	ssize_t i = lock_get(pid,ident,true);
+	sThread *t = thread_getRunning();
+	ssize_t i;
 	sLock *l;
-	if(i < 0)
+	klock_aquire(&klock);
+	i = lock_get(pid,ident,true);
+	if(i < 0) {
+		klock_release(&klock);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 
 	/* note that we have to use the index here since locks can change if another threads reallocates
 	 * it in the meanwhile */
@@ -75,8 +86,12 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 		assert(l->writer != t->tid);
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
-			ev_wait(t->tid,event,(evobj_t)ident);
+			klock_release(&klock);
+
+			ev_wait(t,event,(evobj_t)ident);
 			thread_switchNoSigs();
+
+			klock_aquire(&klock);
 			locks[i].waitCount--;
 		}
 		l = locks + i;
@@ -95,14 +110,20 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 		l->writer = t->tid;
 	else
 		l->readRefs++;
+	klock_release(&klock);
 	return 0;
 }
 
 int lock_release(pid_t pid,ulong ident) {
-	ssize_t i = lock_get(pid,ident,false);
-	sLock *l = locks + i;
-	if(i < 0)
+	ssize_t i;
+	sLock *l;
+	klock_aquire(&klock);
+	i = lock_get(pid,ident,false);
+	l = locks + i;
+	if(i < 0) {
+		klock_release(&klock);
 		return ERR_LOCK_NOT_FOUND;
+	}
 
 	/* unlock */
 	if(l->flags & LOCK_EXCLUSIVE) {
@@ -128,15 +149,18 @@ int lock_release(pid_t pid,ulong ident) {
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
 	else if(l->readRefs == 0 && !(l->flags & LOCK_KEEP))
 		l->flags = 0;
+	klock_release(&klock);
 	return 0;
 }
 
 void lock_releaseAll(pid_t pid) {
 	size_t i;
+	klock_aquire(&klock);
 	for(i = 0; i < lockCount; i++) {
 		if(locks[i].flags && locks[i].pid == pid)
 			locks[i].flags = 0;
 	}
+	klock_release(&klock);
 }
 
 void lock_print(void) {

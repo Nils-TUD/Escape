@@ -22,6 +22,7 @@
 #include <sys/task/env.h>
 #include <sys/task/thread.h>
 #include <sys/mem/cache.h>
+#include <sys/klock.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <string.h>
@@ -32,39 +33,58 @@ typedef struct {
 	char *value;
 } sEnvVar;
 
+static bool env_exists(const sProc *p,const char *name);
 static sEnvVar *env_getiOf(const sProc *p,size_t *index);
 static sEnvVar *env_getOf(const sProc *p,const char *name);
 
-const char *env_geti(pid_t pid,size_t index) {
-	const sProc *p = proc_getByPid(pid);
+bool env_geti(sProc *p,size_t index,USER char *dst,size_t size) {
 	sEnvVar *var;
 	while(1) {
+		klock_aquire(p->locks + PLOCK_ENV);
 		var = env_getiOf(p,&index);
-		if(var != NULL)
-			return var->name;
+		if(var != NULL) {
+			if(dst) {
+				thread_addLock(p->locks + PLOCK_ENV);
+				strncpy(dst,var->name,size);
+				dst[size - 1] = '\0';
+				thread_remLock(p->locks + PLOCK_ENV);
+			}
+			klock_release(p->locks + PLOCK_ENV);
+			return true;
+		}
+		klock_release(p->locks + PLOCK_ENV);
 		if(p->pid == 0)
 			break;
 		p = proc_getByPid(p->parentPid);
 	}
-	return NULL;
+	return false;
 }
 
-const char *env_get(pid_t pid,USER const char *name) {
-	const sProc *p = proc_getByPid(pid);
+bool env_get(sProc *p,USER const char *name,USER char *dst,size_t size) {
 	sEnvVar *var;
 	while(1) {
+		klock_aquire(p->locks + PLOCK_ENV);
+		thread_addLock(p->locks + PLOCK_ENV);
 		var = env_getOf(p,name);
-		if(var != NULL)
-			return var->value;
+		if(var != NULL) {
+			if(dst) {
+				strncpy(dst,var->value,size);
+				dst[size - 1] = '\0';
+			}
+			thread_remLock(p->locks + PLOCK_ENV);
+			klock_release(p->locks + PLOCK_ENV);
+			return true;
+		}
+		thread_remLock(p->locks + PLOCK_ENV);
+		klock_release(p->locks + PLOCK_ENV);
 		if(p->pid == 0)
 			break;
 		p = proc_getByPid(p->parentPid);
 	}
-	return NULL;
+	return false;
 }
 
-bool env_set(pid_t pid,USER const char *name,USER const char *value) {
-	sProc *p = proc_getByPid(pid);
+bool env_set(sProc *p,USER const char *name,USER const char *value) {
 	sEnvVar *var;
 	char *nameCpy,*valueCpy;
 	nameCpy = strdup(name);
@@ -77,6 +97,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 		goto errorNameCpy;
 
 	/* at first we have to look whether the var already exists for the given process */
+	klock_aquire(p->locks + PLOCK_ENV);
 	var = env_getOf(p,nameCpy);
 	if(var != NULL) {
 		char *oldVal = var->value;
@@ -85,6 +106,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 		/* we don't need the previous value anymore */
 		cache_free(oldVal);
 		cache_free(nameCpy);
+		klock_release(p->locks + PLOCK_ENV);
 		return true;
 	}
 
@@ -93,7 +115,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 		goto errorValCpy;
 
 	/* we haven't appended the new var yet. so if we find it now, its a duplicate */
-	var->dup = env_get(pid,nameCpy) != NULL;
+	var->dup = env_exists(p,nameCpy);
 	/* set name and value */
 	var->name = nameCpy;
 	var->value = valueCpy;
@@ -106,6 +128,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 	}
 	if(!sll_append(p->env,var))
 		goto errorList;
+	klock_release(p->locks + PLOCK_ENV);
 	return true;
 
 errorList:
@@ -115,13 +138,14 @@ errorVar:
 	cache_free(var);
 errorValCpy:
 	cache_free(valueCpy);
+	klock_release(p->locks + PLOCK_ENV);
 errorNameCpy:
 	cache_free(nameCpy);
 	return false;
 }
 
-void env_removeFor(pid_t pid) {
-	sProc *p = proc_getByPid(pid);
+void env_removeFor(sProc *p) {
+	klock_aquire(p->locks + PLOCK_ENV);
 	if(p->env) {
 		sSLNode *n;
 		for(n = sll_begin(p->env); n != NULL; n = n->next) {
@@ -133,16 +157,32 @@ void env_removeFor(pid_t pid) {
 		sll_destroy(p->env,false);
 		p->env = NULL;
 	}
+	klock_release(p->locks + PLOCK_ENV);
 }
 
-void env_printAllOf(pid_t pid) {
+void env_printAllOf(sProc *p) {
+	char name[64];
+	char value[64];
 	size_t i;
 	for(i = 0; ; i++) {
-		const char *name = env_geti(pid,i);
-		if(!name)
+		if(!env_geti(p,i,name,sizeof(name)))
 			break;
-		vid_printf("\t\t'%s' = '%s'\n",name,env_get(pid,name));
+		env_get(p,name,value,sizeof(value));
+		vid_printf("\t\t'%s' = '%s'\n",name,value);
 	}
+}
+
+static bool env_exists(const sProc *p,const char *name) {
+	sEnvVar *var;
+	while(1) {
+		var = env_getOf(p,name);
+		if(var != NULL)
+			return true;
+		if(p->pid == 0)
+			break;
+		p = proc_getByPid(p->parentPid);
+	}
+	return false;
 }
 
 static sEnvVar *env_getiOf(const sProc *p,size_t *index) {

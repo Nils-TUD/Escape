@@ -805,7 +805,7 @@ static bool vmm_demandLoad(sVMRegion *vm,ulong *flags,uintptr_t addr) {
 	/* if another thread already loads it, wait here until he's done */
 	if(*flags & PF_LOADINPROGRESS) {
 		do {
-			ev_wait(t->tid,EVI_VMM_DONE,(evobj_t)vm->reg);
+			ev_wait(t,EVI_VMM_DONE,(evobj_t)vm->reg);
 			thread_switchNoSigs();
 		}
 		while(*flags & PF_LOADINPROGRESS);

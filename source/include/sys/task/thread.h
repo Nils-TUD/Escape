@@ -22,7 +22,6 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
-#include <sys/task/event.h>
 #include <sys/task/signals.h>
 #include <sys/mem/paging.h>
 #include <esc/hashmap.h>
@@ -53,6 +52,15 @@
 #endif
 
 typedef void (*fTermCallback)(void);
+
+typedef struct sWait {
+	tid_t tid;
+	ushort evi;
+	evobj_t object;
+	struct sWait *prev;
+	struct sWait *next;
+	struct sWait *tnext;
+} sWait;
 
 /* the thread states */
 typedef enum {
@@ -105,6 +113,8 @@ struct sThread {
 	sSLList termHeapAllocs;
 	/* a list of callbacks that should be called on thread-termination */
 	sSLList termCallbacks;
+	/* a list of locks that should be released on thread-termination */
+	sSLList termLocks;
 	struct {
 		/* number of cpu-cycles the thread has used so far */
 		uint64_t ucycleStart;
@@ -346,6 +356,20 @@ void thread_removeRegions(sThread *t,bool remStack);
  * @return 0 on success
  */
 int thread_extendStack(uintptr_t address);
+
+/**
+ * Adds the given lock to the term-lock-list
+ *
+ * @param lock the lock
+ */
+void thread_addLock(klock_t *lock);
+
+/**
+ * Removes the given lock from the term-lock-list
+ *
+ * @param lock the lock
+ */
+void thread_remLock(klock_t *lock);
 
 /**
  * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies

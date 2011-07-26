@@ -76,7 +76,7 @@ ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	volatile sVFSNode *n = node;
 	void *data;
 	ssize_t res;
@@ -89,7 +89,7 @@ ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_
 	if(!vfs_server_isReadable(n->parent)) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
-		ev_wait(t->tid,EVI_DATA_READABLE,(evobj_t)node);
+		ev_wait(t,EVI_DATA_READABLE,(evobj_t)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
@@ -191,7 +191,7 @@ static void vfs_drv_openReqHandler(sVFSNode *node,USER const void *data,size_t s
 		req->count = res;
 		vfs_req_remove(req);
 		/* the thread can continue now */
-		ev_wakeupThread(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->thread,EV_REQ_REPLY);
 	}
 }
 
@@ -212,7 +212,7 @@ static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t s
 				req->count = res;
 				req->state = REQ_STATE_FINISHED;
 				vfs_req_remove(req);
-				ev_wakeupThread(req->tid,EV_REQ_REPLY);
+				ev_wakeupThread(req->thread,EV_REQ_REPLY);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
@@ -236,7 +236,7 @@ static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t s
 			req->state = REQ_STATE_FINISHED;
 			vfs_req_remove(req);
 			/* the thread can continue now */
-			ev_wakeupThread(req->tid,EV_REQ_REPLY);
+			ev_wakeupThread(req->thread,EV_REQ_REPLY);
 		}
 	}
 }
@@ -252,6 +252,6 @@ static void vfs_drv_writeReqHandler(sVFSNode *node,USER const void *data,size_t 
 		req->count = res;
 		vfs_req_remove(req);
 		/* the thread can continue now */
-		ev_wakeupThread(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->thread,EV_REQ_REPLY);
 	}
 }

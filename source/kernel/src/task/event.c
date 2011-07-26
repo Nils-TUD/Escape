@@ -58,26 +58,23 @@ void ev_init(void) {
 	}
 }
 
-bool ev_waitsFor(tid_t tid,uint events) {
-	const sThread *t = thread_getById(tid);
+bool ev_waitsFor(sThread *t,uint events) {
 	return t->events & events;
 }
 
-bool ev_wait(tid_t tid,size_t evi,evobj_t object) {
-	sThread *t = thread_getById(tid);
+bool ev_wait(sThread *t,size_t evi,evobj_t object) {
 	sWait *w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
 	if(ev_doWait(t,evi,object,&t->waits,w) != NULL) {
-		thread_setBlocked(tid);
+		thread_setBlocked(t->tid);
 		return true;
 	}
 	return false;
 }
 
-bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
+bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 	size_t i,e;
-	sThread *t = thread_getById(tid);
 	sWait *w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -89,7 +86,7 @@ bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
 				if(events & (1 << e)) {
 					w = ev_doWait(t,e,objects[i].object,&t->waits,w);
 					if(w == NULL) {
-						ev_removeThread(tid);
+						ev_removeThread(t);
 						return false;
 					}
 					events &= ~(1 << e);
@@ -97,7 +94,7 @@ bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount) {
 			}
 		}
 	}
-	thread_setBlocked(tid);
+	thread_setBlocked(t->tid);
 	return true;
 }
 
@@ -135,17 +132,15 @@ void ev_wakeupm(uint events,evobj_t object) {
 	}
 }
 
-bool ev_wakeupThread(tid_t tid,uint events) {
-	const sThread *t = thread_getById(tid);
+bool ev_wakeupThread(sThread *t,uint events) {
 	if(t->events & events) {
-		thread_setReady(tid,false);
+		thread_setReady(t->tid,false);
 		return true;
 	}
 	return false;
 }
 
-void ev_removeThread(tid_t tid) {
-	sThread *t = thread_getById(tid);
+void ev_removeThread(sThread *t) {
 	if(t->events) {
 		sWait *w = t->waits;
 		while(w != NULL) {
@@ -166,8 +161,7 @@ void ev_removeThread(tid_t tid) {
 	}
 }
 
-void ev_printEvMask(tid_t tid) {
-	sThread *t = thread_getById(tid);
+void ev_printEvMask(const sThread *t) {
 	uint e;
 	for(e = 0; e < EV_COUNT; e++) {
 		if(t->events & (1 << e))

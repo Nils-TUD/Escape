@@ -65,15 +65,15 @@ static bool enabled = false;
 static bool swapping = false;
 static const sProc *swapinProc = NULL;
 static uintptr_t swapinAddr = 0;
-static tid_t swapinTid = INVALID_TID;
-static const sThread *swapper = NULL;
+static sThread *swapinThread = NULL;
+static sThread *swapper = NULL;
 static size_t neededFrames = HIGH_WATER;
 /* no heap-usage here */
 static uint8_t buffer[PAGE_SIZE];
 
 void swap_start(void) {
 	file_t swapFile = -1;
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	inode_t swapIno;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
 	/* if there is no valid swap-dev specified, don't even try... */
@@ -119,7 +119,7 @@ void swap_start(void) {
 		if(swapinProc != NULL) {
 			swapping = true;
 			swap_doSwapin(swapper->proc->pid,swapFile,swapinProc,swapinAddr);
-			ev_wakeupThread(swapinTid,EV_SWAP_DONE);
+			ev_wakeupThread(swapinThread,EV_SWAP_DONE);
 			swapinProc = NULL;
 			swapping = false;
 		}
@@ -127,7 +127,7 @@ void swap_start(void) {
 		if(pmem_getFreeFrames(MM_DEF) >= LOW_WATER && neededFrames == HIGH_WATER) {
 			/* we may receive new work now */
 			ev_wakeup(EVI_SWAP_FREE,0);
-			ev_wait(swapper->tid,EVI_SWAP_WORK,0);
+			ev_wait(swapper,EVI_SWAP_WORK,0);
 			thread_switch();
 		}
 	}
@@ -136,7 +136,7 @@ void swap_start(void) {
 
 bool swap_outUntil(size_t frameCount) {
 	size_t free = pmem_getFreeFrames(MM_DEF);
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
 	if(!enabled || !(t->flags & T_IDLE) || t->tid == ATA_TID || t->tid == swapper->tid)
@@ -144,9 +144,9 @@ bool swap_outUntil(size_t frameCount) {
 	do {
 		/* notify swapper-thread */
 		if(!swapping)
-			ev_wakeupThread(swapper->tid,EV_SWAP_WORK);
+			ev_wakeupThread(swapper,EV_SWAP_WORK);
 		neededFrames += frameCount - free;
-		ev_wait(t->tid,EVI_SWAP_FREE,(evobj_t)(frameCount - free));
+		ev_wait(t,EVI_SWAP_FREE,(evobj_t)(frameCount - free));
 		thread_switchNoSigs();
 		/* TODO report error if swap-space is full or nothing left to swap */
 		free = pmem_getFreeFrames(MM_DEF);
@@ -164,13 +164,13 @@ void swap_check(void) {
 	if(freeFrm < LOW_WATER/* || neededFrames < HIGH_WATER*/) {
 		/* notify swapper-thread */
 		if(/*freeFrm < LOW_WATER && */!swapping)
-			ev_wakeupThread(swapper->tid,EV_SWAP_WORK);
+			ev_wakeupThread(swapper,EV_SWAP_WORK);
 		/* if we have VERY few frames left, better block this thread until we have high water */
 		if(freeFrm < CRIT_WATER/* || neededFrames < HIGH_WATER*/) {
-			const sThread *t = thread_getRunning();
+			sThread *t = thread_getRunning();
 			/* but its not really helpful to block ata ;) */
 			if(t->tid != ATA_TID && !(t->flags & T_IDLE)) {
-				ev_wait(t->tid,EVI_SWAP_FREE,0);
+				ev_wait(t,EVI_SWAP_FREE,0);
 				thread_switchNoSigs();
 			}
 		}
@@ -178,21 +178,21 @@ void swap_check(void) {
 }
 
 bool swap_in(const sProc *p,uintptr_t addr) {
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	if(!enabled)
 		return false;
 	/* wait here until we're alone */
 	while(swapping || swapinProc) {
-		ev_wait(t->tid,EVI_SWAP_FREE,0);
+		ev_wait(t,EVI_SWAP_FREE,0);
 		thread_switchNoSigs();
 	}
 
 	/* give the swapper work */
 	swapinProc = p;
 	swapinAddr = addr;
-	swapinTid = t->tid;
-	ev_wait(t->tid,EVI_SWAP_DONE,0);
-	ev_wakeupThread(swapper->tid,EV_SWAP_WORK);
+	swapinThread = t;
+	ev_wait(t,EVI_SWAP_DONE,0);
+	ev_wakeupThread(swapper,EV_SWAP_WORK);
 	thread_switchNoSigs();
 	return true;
 }

@@ -83,7 +83,7 @@ void vfs_req_sendMsg(msgid_t id,sVFSNode *node,USER const void *data,size_t size
 }
 
 sRequest *vfs_req_get(sVFSNode *node,USER void *buffer,size_t size) {
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	sRequest *req = NULL;
 	assert(node != NULL);
 
@@ -93,7 +93,7 @@ sRequest *vfs_req_get(sVFSNode *node,USER void *buffer,size_t size) {
 	req = reqFreeList;
 	reqFreeList = req->next;
 
-	req->tid = t->tid;
+	req->thread = t;
 	req->node = node;
 	req->state = REQ_STATE_WAITING;
 	req->val1 = 0;
@@ -112,7 +112,7 @@ sRequest *vfs_req_get(sVFSNode *node,USER void *buffer,size_t size) {
 
 void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 	/* wait */
-	ev_wait(req->tid,EVI_REQ_REPLY,(evobj_t)req->node);
+	ev_wait(req->thread,EVI_REQ_REPLY,(evobj_t)req->node);
 	if(allowSigs)
 		thread_switch();
 	else
@@ -121,21 +121,18 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 	 * a signal (if allowSigs is true) */
 	if(req->state != REQ_STATE_FINISHED) {
 		/* indicate an error */
-		req->count = (allowSigs && sig_hasSignalFor(req->tid)) ? ERR_INTERRUPTED : ERR_DRIVER_DIED;
+		if(allowSigs && sig_hasSignalFor(req->thread->tid))
+			req->count = ERR_INTERRUPTED;
+		else
+			req->count = ERR_DRIVER_DIED;
 	}
 }
 
 sRequest *vfs_req_getByNode(const sVFSNode *node) {
 	sRequest *req = reqUsedList;
 	while(req != NULL) {
-		if(req->node == node) {
-			/* the thread may have been terminated... */
-			if(thread_getById(req->tid) == NULL) {
-				vfs_req_free(req);
-				return NULL;
-			}
+		if(req->node == node)
 			return req;
-		}
 		req = req->next;
 	}
 	return NULL;
@@ -166,10 +163,10 @@ void vfs_req_free(sRequest *r) {
 	}
 }
 
-void vfs_req_freeAllOf(tid_t tid) {
+void vfs_req_freeAllOf(sThread *t) {
 	sRequest *req = reqUsedList,*p = NULL;
 	while(req != NULL) {
-		if(req->tid == tid) {
+		if(req->thread == t) {
 			sRequest *next = req->next;
 			/* move out of used-list */
 			if(p)
@@ -202,7 +199,7 @@ void vfs_req_printAll(void) {
 
 void vfs_req_print(sRequest *r) {
 	vid_printf("\tRequest with %p (%s):\n",r->node,vfs_node_getPath(vfs_node_getNo(r->node)));
-	vid_printf("\t\ttid: %d\n",r->tid);
+	vid_printf("\t\ttid: %d\n",r->thread->tid);
 	vid_printf("\t\tstate: %u\n",r->state);
 	vid_printf("\t\tval1: %u\n",r->val1);
 	vid_printf("\t\tval2: %u\n",r->val2);

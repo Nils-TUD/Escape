@@ -93,6 +93,7 @@ void proc_init(void) {
 	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
+	memclear(p->locks,sizeof(p->locks));
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(p->pid,&vfs_info_procReadHandler);
@@ -350,13 +351,15 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	/* set basic attributes */
 	*(pid_t*)&p->pid = newPid;
 	p->parentPid = cur->pid;
+	memclear(p->locks,sizeof(p->locks));
 	p->ruid = cur->ruid;
 	p->euid = cur->euid;
 	p->suid = cur->suid;
 	p->rgid = cur->rgid;
 	p->egid = cur->egid;
 	p->sgid = cur->sgid;
-	p->groups = groups_join(cur->groups);
+	p->groups = NULL;
+	groups_join(p,cur);
 	p->exitState = NULL;
 	p->sigRetAddr = cur->sigRetAddr;
 	p->flags = 0;
@@ -604,9 +607,8 @@ void proc_terminate(sProc *p,int exitCode,sig_t signal) {
 	}
 
 	/* remove other stuff */
-	groups_leave(p->groups);
-	p->groups = NULL;
-	env_removeFor(p->pid);
+	groups_leave(p);
+	env_removeFor(p);
 	proc_removeRegions(p,true);
 	vfs_real_removeProc(p->pid);
 	lock_releaseAll(p->pid);
@@ -682,7 +684,7 @@ void proc_printAllPDs(uint parts,bool regions) {
 	}
 }
 
-void proc_print(const sProc *p) {
+void proc_print(sProc *p) {
 	size_t i;
 	sSLNode *n;
 	vid_printf("Proc %d:\n",p->pid);
@@ -690,7 +692,7 @@ void proc_print(const sProc *p) {
 	vid_printf("\tOwner: ruid=%u, euid=%u, suid=%u\n",p->ruid,p->euid,p->suid);
 	vid_printf("\tGroup: rgid=%u, egid=%u, sgid=%u\n",p->rgid,p->egid,p->sgid);
 	vid_printf("\tGroups: ");
-	groups_print(p->groups);
+	groups_print(p);
 	vid_printf("\n");
 	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",
 			p->ownFrames,p->sharedFrames,p->swapped);
@@ -704,7 +706,7 @@ void proc_print(const sProc *p) {
 	vid_printf("\tRegions:\n");
 	vmm_printShort(p);
 	vid_printf("\tEnvironment:\n");
-	env_printAllOf(p->pid);
+	env_printAllOf(p);
 	vid_printf("\tFileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {

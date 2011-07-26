@@ -21,51 +21,59 @@
 #define GROUPS_H_
 
 #include <sys/common.h>
-
-typedef struct {
-	int refCount;
-	size_t count;
-	gid_t *groups;
-} sProcGroups;
+#include <sys/task/proc.h>
 
 /**
- * Allocates a new group-descriptor with <groups> (<count> groups)
+ * Allocates a new group-descriptor with <groups> (<count> groups) and assigns it to the given
+ * process.
  *
+ * @param p the process
  * @param count the number of groups
  * @param groups the groups-array (will be copied)
- * @return the new group-descriptor or NULL if failed
+ * @return true if successfull
  */
-sProcGroups *groups_alloc(size_t count,const gid_t *groups);
+bool groups_set(sProc *p,size_t count,USER const gid_t *groups);
 
 /**
- * Joins the given group, i.e. increases the references
+ * Lets process <dst> join the groups of process <src>.
  *
- * @param g the group (may be NULL)
- * @return the group
+ * @param dst the dest-process
+ * @param src the src-process
  */
-sProcGroups *groups_join(sProcGroups *g);
+void groups_join(sProc *dst,const sProc *src);
 
 /**
- * Checks whether the groups <g> contain <gid>.
+ * Copies the group-ids from the given process into the given list. If <size> is 0, the number
+ * of groups is returned
  *
- * @param g the groups (may be NULL)
+ * @param p the process
+ * @param list the destination list
+ * @param size the size of the list
+ * @return the number of copied groups
+ */
+size_t groups_get(const sProc *p,gid_t *list,size_t size);
+
+/**
+ * Checks whether the groups of process <p> contain <gid>.
+ *
+ * @param p the process
  * @param gid the group-id
  * @return true if so
  */
-bool groups_contains(const sProcGroups *g,gid_t gid);
+bool groups_contains(const sProc *p,gid_t gid);
 
 /**
- * Leaves the given group, i.e. decreases the references. If refCount is 0, it will be free'd.
+ * Lets the given process leave its groups
  *
- * @param g the group (may be NULL)
+ * @param p the process
  */
-void groups_leave(sProcGroups *g);
+void groups_leave(sProc *p);
 
 /**
- * Prints the given group-descriptor
+ * Prints the groups of the given process
  *
- * @param g the group-descriptor
+ * @param p the process
  */
-void groups_print(const sProcGroups *g);
+void groups_print(const sProc *p);
 
 #endif /* GROUPS_H_ */

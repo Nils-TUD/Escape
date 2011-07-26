@@ -161,11 +161,8 @@ bool sysc_absolutize_path(char *dst,size_t size,const char *src) {
 	if(slen < 0 || !paging_isInUserSpace((uintptr_t)src,slen))
 		return false;
 	if(*src != '/') {
-		const sProc *p = proc_getRunning();
-		const char *cwd = env_get(p->pid,"CWD");
-		if(cwd) {
-			strncpy(dst,cwd,size);
-			dst[size - 1] = '\0';
+		sProc *p = proc_getRunning();
+		if(env_get(p,"CWD",dst,size)) {
 			len = strlen(dst);
 			if(len < size - 1 && dst[len - 1] != '/') {
 				dst[len++] = '/';

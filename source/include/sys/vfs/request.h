@@ -21,6 +21,7 @@
 #define VFSREQ_H_
 
 #include <sys/common.h>
+#include <sys/task/thread.h>
 
 /* the states of a request */
 #define REQ_STATE_WAITING		0
@@ -29,7 +30,7 @@
 
 /* an entry in the request-list */
 typedef struct sRequest {
-	tid_t tid;
+	sThread *thread;
 	sVFSNode *node;
 	uint8_t state;
 	ulong val1;
@@ -115,7 +116,7 @@ void vfs_req_free(sRequest *r);
  *
  * @param tid the thread-id
  */
-void vfs_req_freeAllOf(tid_t tid);
+void vfs_req_freeAllOf(sThread *t);
 
 /**
  * Prints all active requests

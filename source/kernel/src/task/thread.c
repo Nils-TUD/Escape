@@ -37,6 +37,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/lock.h>
 #include <sys/task/smp.h>
+#include <sys/klock.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <assert.h>
@@ -98,6 +99,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->stats.syscalls = 0;
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
 	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
+	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
 	for(i = 0; i < STACK_REG_COUNT; i++)
 		t->stackRegions[i] = -1;
 	t->tlsRegion = -1;
@@ -223,7 +225,7 @@ bool thread_setReady(tid_t tid,bool isSignal) {
 			t ? t->tid : 0,t ? t->proc->pid : 0,t ? t->proc->command : "?");
 	if(!isSignal || !t->ignoreSignals) {
 		sched_setReady(t);
-		ev_removeThread(tid);
+		ev_removeThread(t);
 	}
 	return t->state == ST_READY;
 }
@@ -277,6 +279,16 @@ int thread_extendStack(uintptr_t address) {
 	return res;
 }
 
+void thread_addLock(klock_t *lock) {
+	sThread *t = thread_getRunning();
+	sll_append(&t->termLocks,lock);
+}
+
+void thread_remLock(klock_t *lock) {
+	sThread *t = thread_getRunning();
+	sll_removeFirstWith(&t->termLocks,lock);
+}
+
 void thread_addHeapAlloc(void *ptr) {
 	sThread *t = thread_getRunning();
 	sll_append(&t->termHeapAllocs,ptr);
@@ -328,6 +340,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 	memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
 	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
+	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
 	if(cloneProc) {
 		size_t i;
 		t->kstackFrame = stackFrame;
@@ -416,7 +429,7 @@ void thread_kill(sThread *t) {
 		if(!sll_append(deadThreads,t))
 			util_panic("Not enough mem to append dead thread");
 		/* remove from event-system */
-		ev_removeThread(t->tid);
+		ev_removeThread(t);
 		/* remove from scheduler and ensure that he don't picks us again */
 		sched_removeThread(t);
 		/* remove from timer, too, so that we don't get waked up again */
@@ -438,6 +451,9 @@ void thread_kill(sThread *t) {
 	sll_removeFirstWith(t->proc->threads,t);
 
 	/* release resources */
+	for(n = sll_begin(&t->termLocks); n != NULL; n = n->next)
+		klock_release((klock_t*)n->data);
+	sll_clear(&t->termLocks);
 	for(n = sll_begin(&t->termHeapAllocs); n != NULL; n = n->next)
 		cache_free(n->data);
 	sll_clear(&t->termHeapAllocs);
@@ -449,12 +465,12 @@ void thread_kill(sThread *t) {
 
 	/* remove from all modules we may be announced */
 	sig_removeHandlerFor(t->tid);
-	ev_removeThread(t->tid);
+	ev_removeThread(t);
 	sched_removeThread(t);
 	timer_removeThread(t->tid);
 	thread_freeArch(t);
 	vfs_removeThread(t->tid);
-	vfs_req_freeAllOf(t->tid);
+	vfs_req_freeAllOf(t);
 
 	/* notify the process about it */
 	sig_addSignalFor(t->proc->pid,SIG_THREAD_DIED);
@@ -484,7 +500,7 @@ void thread_print(const sThread *t) {
 	vid_printf("\t\tFlags=%#x\n",t->flags);
 	vid_printf("\t\tState=%s\n",states[t->state]);
 	vid_printf("\t\tEvents=");
-	ev_printEvMask(t->tid);
+	ev_printEvMask(t);
 	vid_printf("\n");
 	vid_printf("\t\tLastCPU=%d\n",t->cpu);
 	vid_printf("\t\tKstackFrame=%#Px\n",t->kstackFrame);

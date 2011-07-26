@@ -24,7 +24,6 @@
 #include <sys/mem/region.h>
 #include <sys/mem/paging.h>
 #include <sys/task/elf.h>
-#include <sys/task/groups.h>
 #include <sys/vfs/node.h>
 #include <sys/intrpt.h>
 
@@ -51,6 +50,16 @@
 
 /* process flags */
 #define P_ZOMBIE			1
+
+#define PLOCK_COUNT			1
+#define PLOCK_ENV			0
+
+typedef struct {
+	klock_t lock;
+	int refCount;
+	size_t count;
+	gid_t *groups;
+} sProcGroups;
 
 typedef struct {
 	pid_t pid;
@@ -120,6 +129,8 @@ typedef struct {
 	sSLList *threads;
 	/* the directory-node in the VFS of this process */
 	sVFSNode *threadDir;
+	/* locks for this process */
+	klock_t locks[PLOCK_COUNT];
 	struct {
 		/* I/O stats */
 		ulong input;
@@ -382,7 +393,7 @@ void proc_printAllPDs(uint parts,bool regions);
  *
  * @param p the pointer to the process
  */
-void proc_print(const sProc *p);
+void proc_print(sProc *p);
 
 
 #if DEBUGGING

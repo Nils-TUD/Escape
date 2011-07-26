@@ -21,6 +21,7 @@
 #define EVENT_H_
 
 #include <sys/common.h>
+#include <sys/task/thread.h>
 
 typedef struct {
 	/* the events to wait for */
@@ -28,15 +29,6 @@ typedef struct {
 	/* the object (0 = ignore) */
 	evobj_t object;
 } sWaitObject;
-
-typedef struct sWait {
-	tid_t tid;
-	ushort evi;
-	evobj_t object;
-	struct sWait *prev;
-	struct sWait *next;
-	struct sWait *tnext;
-} sWait;
 
 /* the event-indices */
 #define EVI_CLIENT				0
@@ -94,31 +86,31 @@ void ev_init(void);
 /**
  * Checks whether the given threads waits for the given events
  *
- * @param tid the thread-id
+ * @param t the thread
  * @param events the event-mask (not index!)
  * @return true if so
  */
-bool ev_waitsFor(tid_t tid,uint events);
+bool ev_waitsFor(sThread *t,uint events);
 
 /**
  * Lets <tid> wait for the given event and object
  *
- * @param tid the thread-id
+ * @param t the thread
  * @param evi the event-index(!)
  * @param object the object (0 = ignore)
  * @return true if successfull
  */
-bool ev_wait(tid_t tid,size_t evi,evobj_t object);
+bool ev_wait(sThread *t,size_t evi,evobj_t object);
 
 /**
  * Lets <tid> wait for the given objects
  *
- * @param tid the thread-id
+ * @param t the thread
  * @param objects the objects to wait for
  * @param objCount the number of objects
  * @return true if successfull
  */
-bool ev_waitObjects(tid_t tid,const sWaitObject *objects,size_t objCount);
+bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount);
 
 /**
  * Wakes up all threads that wait for given event and object
@@ -140,25 +132,25 @@ void ev_wakeupm(uint events,evobj_t object);
  * Wakes up the thread <tid> for given events. That means, if it does not wait for them, it is
  * not waked up.
  *
- * @param tid the thread-id
+ * @param t the thread
  * @param events the event-mask (not index!)
  * @return true if waked up
  */
-bool ev_wakeupThread(tid_t tid,uint events);
+bool ev_wakeupThread(sThread *t,uint events);
 
 /**
  * Removes the given thread from the event-system. Note that it will set it to the ready-state!
  *
- * @param tid the thread-id
+ * @param t the thread
  */
-void ev_removeThread(tid_t tid);
+void ev_removeThread(sThread *t);
 
 /**
  * Prints the event-mask of given thread
  *
- * @param tid the thread-id
+ * @param t the thread
  */
-void ev_printEvMask(tid_t tid);
+void ev_printEvMask(const sThread *t);
 
 /**
  * Prints all waiting threads

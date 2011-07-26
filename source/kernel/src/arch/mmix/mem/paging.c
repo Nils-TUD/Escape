@@ -152,12 +152,12 @@ sAllocStats paging_destroyPDir(tPageDir *pdir) {
 	return stats;
 }
 
-bool paging_isPresent(const tPageDir *pdir,uintptr_t virt) {
+bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
 	return pte & PTE_EXISTS;
 }
 
-frameno_t paging_getFrameNo(const tPageDir *pdir,uintptr_t virt) {
+frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
 	assert(pte & PTE_EXISTS);
 	return PTE_FRAMENO(pte);
@@ -172,6 +172,14 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	if(regFlags & RF_EXECUTABLE)
 		cpu_syncid(addr,addr + loadCount);
 	return frame;
+}
+
+void paging_copyToFrame(frameno_t frame,const void *src) {
+	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),src,PAGE_SIZE);
+}
+
+void paging_copyFromFrame(frameno_t frame,void *dst) {
+	memcpy(dst,(void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),PAGE_SIZE);
 }
 
 void paging_copyToUser(void *dst,const void *src,size_t count) {
@@ -514,7 +522,7 @@ static void paging_tcRemPT(tPageDir *pdir,uintptr_t virt) {
 	}
 }
 
-size_t paging_getPTableCount(const tPageDir *pdir) {
+size_t paging_getPTableCount(tPageDir *pdir) {
 	return pdir->ptables;
 }
 
@@ -524,14 +532,14 @@ static void paging_sprintfPrint(char c) {
 	prf_sprintf(strBuf,"%c",c);
 }
 
-void paging_sprintfVirtMem(sStringBuffer *buf,const tPageDir *pdir) {
+void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 	strBuf = buf;
 	vid_setPrintFunc(paging_sprintfPrint);
 	paging_printPDir(pdir,0);
 	vid_unsetPrintFunc();
 }
 
-void paging_printPDir(const tPageDir *pdir,uint parts) {
+void paging_printPDir(tPageDir *pdir,uint parts) {
 	UNUSED(parts);
 	size_t i,j;
 	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rv & 0xFFFFFFE000);
@@ -592,7 +600,7 @@ static void paging_printPage(uint64_t pte) {
 	}
 }
 
-void paging_printPageOf(const tPageDir *pdir,uintptr_t virt) {
+void paging_printPageOf(tPageDir *pdir,uintptr_t virt) {
 	uint64_t pte = paging_getPTEOf(pdir,virt);
 	if(pte & PTE_EXISTS) {
 		vid_printf("Page @ %p: ",virt);

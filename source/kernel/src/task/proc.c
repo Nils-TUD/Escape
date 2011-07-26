@@ -413,7 +413,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	}
 
 	/* make thread ready */
-	thread_setReady(nt->tid,false);
+	ev_unblock(nt);
 
 #ifdef __eco32__
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
@@ -465,9 +465,9 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 
 	/* mark ready (idle is always blocked because we choose it explicitly when no other can run) */
 	if(nt->flags & T_IDLE)
-		thread_setBlocked(nt->tid);
+		ev_block(nt);
 	else
-		thread_setReady(nt->tid,false);
+		ev_unblock(nt);
 
 #ifdef __eco32__
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);

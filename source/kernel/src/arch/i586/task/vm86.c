@@ -137,7 +137,7 @@ int vm86_create(void) {
 	proc_setCommand(p,"VM86");
 
 	/* block us; we get waked up as soon as someone wants to use us */
-	thread_setBlocked(t->tid);
+	ev_block(t);
 	thread_switch();
 
 	/* ok, we're back again... */
@@ -149,7 +149,7 @@ int vm86_create(void) {
 int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *areas,size_t areaCount) {
 	size_t i;
 	sThread *t;
-	const sThread *vm86t;
+	sThread *vm86t;
 	for(i = 0; i < areaCount; i++) {
 		if((areas[i].type == VM86_MEM_BIDIR &&
 				BYTES_2_PAGES(areas[i].data.bidir.size) > VM86_MAX_MEMPAGES) ||
@@ -181,11 +181,11 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* make vm86 ready */
-	thread_setReady(vm86t->tid,false);
+	ev_unblock(vm86t);
 
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
-	thread_setBlocked(thread_getRunning()->tid);
+	ev_block(thread_getRunning());
 	thread_switch();
 
 	/* everything is finished :) */
@@ -392,17 +392,17 @@ static void vm86_start(void) {
 }
 
 static void vm86_stop(sIntrptStackFrame *stack) {
-	const sThread *t = thread_getRunning();
-	const sThread *ct = thread_getById(caller);
+	sThread *t = thread_getRunning();
+	sThread *ct = thread_getById(caller);
 	vm86Res = 0;
 	if(ct != NULL) {
 		vm86_copyRegResult(stack);
 		vm86Res = vm86_storePtrResult();
-		thread_setReady(caller,false);
+		ev_unblock(ct);
 	}
 
 	/* block us and do a switch */
-	thread_setBlocked(t->tid);
+	ev_block(t);
 	thread_switch();
 
 	/* lets start with a new request :) */

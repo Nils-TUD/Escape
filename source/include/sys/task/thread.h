@@ -156,11 +156,12 @@ int thread_initArch(sThread *t);
 void thread_addInitialStack(sThread *t);
 
 /**
- * Adds the given signal to the given thread
+ * Sets the given signal to the given thread
  *
  * @param t the thread
+ * @return true if successfull
  */
-void thread_setSignal(sThread *t,sig_t sig);
+bool thread_setSignal(sThread *t,sig_t sig);
 
 /**
  * @param t the thread
@@ -304,30 +305,32 @@ void thread_switchTo(tid_t tid);
 void thread_killDead(void);
 
 /**
- * Marks the given thread as ready
+ * Blocks the given thread. ONLY CALLED by event.
  *
- * @param tid the thread-id
- * @param isSignal whether the reason for wakeup is a signal; if so, the thread will only be made
- * 	ready if signals are not ignored currently.
- * @return true if the thread is ready now
+ * @param t the thread
  */
-bool thread_setReady(tid_t tid,bool isSignal);
+void thread_block(sThread *t);
 
 /**
- * Marks the given thread as blocked
+ * Unblocks the given thread. ONLY CALLED by event.
  *
- * @param tid the thread-id
- * @return true if the thread is blocked now
+ * @param t the thread
  */
-bool thread_setBlocked(tid_t tid);
+void thread_unblock(sThread *t);
 
 /**
- * Marks the given thread as suspended or not-suspended
+ * Suspends the given thread. ONLY CALLED by event.
  *
- * @param tid the thread-id
- * @param blocked whether to suspend or "unsuspend" the thread
+ * @param t the thread
  */
-void thread_setSuspended(tid_t tid,bool blocked);
+void thread_suspend(sThread *t);
+
+/**
+ * Resumes the given thread. ONLY CALLED by event.
+ *
+ * @param t the thread
+ */
+void thread_unsuspend(sThread *t);
 
 /**
  * Checks whether the given thread has the given region-number for stack

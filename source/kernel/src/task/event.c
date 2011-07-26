@@ -23,6 +23,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/thread.h>
 #include <esc/sllist.h>
+#include <sys/klock.h>
 #include <sys/video.h>
 #include <assert.h>
 
@@ -34,11 +35,13 @@ typedef struct {
 	sWait *last;
 } sWaitList;
 
+static void ev_doRemoveThread(sThread *t);
 static sWait *ev_doWait(sThread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev);
 static sWait *ev_allocWait(void);
 static void ev_freeWait(sWait *w);
 static const char *ev_getName(size_t evi);
 
+static klock_t lock;
 static sWait waits[MAX_WAIT_COUNT];
 static sWait *waitFree;
 static sWaitList evlists[EV_COUNT];
@@ -58,24 +61,43 @@ void ev_init(void) {
 	}
 }
 
-bool ev_waitsFor(sThread *t,uint events) {
-	return t->events & events;
+void ev_block(sThread *t) {
+	thread_block(t);
+}
+
+void ev_unblock(sThread *t) {
+	ev_removeThread(t);
+	thread_unblock(t);
+}
+
+void ev_suspend(sThread *t) {
+	thread_suspend(t);
+}
+
+void ev_unsuspend(sThread *t) {
+	thread_unsuspend(t);
 }
 
 bool ev_wait(sThread *t,size_t evi,evobj_t object) {
-	sWait *w = t->waits;
+	bool res = false;
+	sWait *w;
+	klock_aquire(&lock);
+	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
 	if(ev_doWait(t,evi,object,&t->waits,w) != NULL) {
-		thread_setBlocked(t->tid);
-		return true;
+		thread_block(t);
+		res = true;
 	}
-	return false;
+	klock_release(&lock);
+	return res;
 }
 
 bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 	size_t i,e;
-	sWait *w = t->waits;
+	sWait *w;
+	klock_aquire(&lock);
+	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
 
@@ -86,7 +108,8 @@ bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 				if(events & (1 << e)) {
 					w = ev_doWait(t,e,objects[i].object,&t->waits,w);
 					if(w == NULL) {
-						ev_removeThread(t);
+						ev_doRemoveThread(t);
+						klock_release(&lock);
 						return false;
 					}
 					events &= ~(1 << e);
@@ -94,32 +117,42 @@ bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 			}
 		}
 	}
-	thread_setBlocked(t->tid);
+	thread_block(t);
+	klock_release(&lock);
 	return true;
 }
 
 void ev_wakeup(size_t evi,evobj_t object) {
 	tid_t tids[MAX_WAKEUPS];
 	sWaitList *list = evlists + evi;
-	sWait *w = list->begin;
+	sWait *w;
 	size_t i = 0;
+	klock_aquire(&lock);
+	w = list->begin;
 	while(w != NULL) {
 		if(w->object == 0 || w->object == object) {
-			if(i < MAX_WAKEUPS)
+			if(i < MAX_WAKEUPS && (i == 0 || tids[i - 1] != w->tid))
 				tids[i++] = w->tid;
 			else {
 				/* all slots in use, so remove this threads and start from the beginning to find
 				 * more. hopefully, this will happen nearly never :) */
-				for(; i > 0; i--)
-					thread_setReady(tids[i - 1],false);
+				for(; i > 0; i--) {
+					sThread *t = thread_getById(tids[i - 1]);
+					ev_doRemoveThread(t);
+					thread_unblock(t);
+				}
 				w = list->begin;
 				continue;
 			}
 		}
 		w = w->next;
 	}
-	for(; i > 0; i--)
-		thread_setReady(tids[i - 1],false);
+	for(; i > 0; i--) {
+		sThread *t = thread_getById(tids[i - 1]);
+		ev_doRemoveThread(t);
+		thread_unblock(t);
+	}
+	klock_release(&lock);
 }
 
 void ev_wakeupm(uint events,evobj_t object) {
@@ -133,14 +166,54 @@ void ev_wakeupm(uint events,evobj_t object) {
 }
 
 bool ev_wakeupThread(sThread *t,uint events) {
+	bool res = false;
+	klock_aquire(&lock);
 	if(t->events & events) {
-		thread_setReady(t->tid,false);
-		return true;
+		ev_doRemoveThread(t);
+		thread_unblock(t);
+		res = true;
 	}
-	return false;
+	klock_release(&lock);
+	return res;
 }
 
 void ev_removeThread(sThread *t) {
+	klock_aquire(&lock);
+	ev_doRemoveThread(t);
+	klock_release(&lock);
+}
+
+void ev_printEvMask(const sThread *t) {
+	uint e;
+	for(e = 0; e < EV_COUNT; e++) {
+		if(t->events & (1 << e))
+			vid_printf("%s ",ev_getName(e));
+	}
+}
+
+void ev_print(void) {
+	size_t e;
+	klock_aquire(&lock);
+	vid_printf("Eventlists:\n");
+	for(e = 0; e < EV_COUNT; e++) {
+		sWaitList *list = evlists + e;
+		sWait *w = list->begin;
+		vid_printf("\t%s:\n",ev_getName(e));
+		while(w != NULL) {
+			sThread *t = thread_getById(w->tid);
+			vid_printf("\t\tthread=%d (%d:%s), object=%x",
+					t->tid,t->proc->pid,t->proc->command,w->object);
+			inode_t nodeNo = vfs_node_getNo((sVFSNode*)w->object);
+			if(vfs_node_isValid(nodeNo))
+				vid_printf("(%s)",vfs_node_getPath(nodeNo));
+			vid_printf("\n");
+			w = w->next;
+		}
+	}
+	klock_release(&lock);
+}
+
+static void ev_doRemoveThread(sThread *t) {
 	if(t->events) {
 		sWait *w = t->waits;
 		while(w != NULL) {
@@ -158,34 +231,6 @@ void ev_removeThread(sThread *t) {
 		}
 		t->waits = NULL;
 		t->events = 0;
-	}
-}
-
-void ev_printEvMask(const sThread *t) {
-	uint e;
-	for(e = 0; e < EV_COUNT; e++) {
-		if(t->events & (1 << e))
-			vid_printf("%s ",ev_getName(e));
-	}
-}
-
-void ev_print(void) {
-	size_t e;
-	vid_printf("Eventlists:\n");
-	for(e = 0; e < EV_COUNT; e++) {
-		sWaitList *list = evlists + e;
-		sWait *w = list->begin;
-		vid_printf("\t%s:\n",ev_getName(e));
-		while(w != NULL) {
-			sThread *t = thread_getById(w->tid);
-			vid_printf("\t\tthread=%d (%d:%s), object=%x",
-					t->tid,t->proc->pid,t->proc->command,w->object);
-			inode_t nodeNo = vfs_node_getNo((sVFSNode*)w->object);
-			if(vfs_node_isValid(nodeNo))
-				vid_printf("(%s)",vfs_node_getPath(nodeNo));
-			vid_printf("\n");
-			w = w->next;
-		}
 	}
 }
 

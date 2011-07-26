@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
+#include <sys/task/event.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <esc/sllist.h>
@@ -109,7 +110,7 @@ int timer_sleepFor(tid_t tid,time_t msecs) {
 		nl->time -= l->time;
 
 	/* put process to sleep */
-	thread_setBlocked(tid);
+	ev_block(thread_getById(tid));
 	return 0;
 }
 
@@ -157,7 +158,7 @@ void timer_intrpt(void) {
 		foundThread = true;
 		tn = n->next;
 		/* wake up thread */
-		thread_setReady(l->tid,false);
+		ev_unblock(thread_getById(l->tid));
 		l->next = freeList;
 		freeList = l;
 		sll_removeNode(listener,n,NULL);

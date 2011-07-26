@@ -84,13 +84,32 @@ typedef struct {
 void ev_init(void);
 
 /**
- * Checks whether the given threads waits for the given events
+ * Blocks the given thread
  *
  * @param t the thread
- * @param events the event-mask (not index!)
- * @return true if so
  */
-bool ev_waitsFor(sThread *t,uint events);
+void ev_block(sThread *t);
+
+/**
+ * Unblocks the given thread
+ *
+ * @param t the thread
+ */
+void ev_unblock(sThread *t);
+
+/**
+ * Suspends the given thread
+ *
+ * @param t the thread
+ */
+void ev_suspend(sThread *t);
+
+/**
+ * Resumes the given thread
+ *
+ * @param t the thread
+ */
+void ev_unsuspend(sThread *t);
 
 /**
  * Lets <tid> wait for the given event and object

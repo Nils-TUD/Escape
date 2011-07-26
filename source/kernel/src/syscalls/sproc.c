@@ -175,20 +175,12 @@ int sysc_fork(sIntrptStackFrame *stack) {
 
 int sysc_waitChild(sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
-	sSLNode *n;
 	int res;
 	sThread *t = thread_getRunning();
-	const sProc *p = t->proc;
+	sProc *p = t->proc;
 
 	if(state != NULL && !paging_isInUserSpace((uintptr_t)state,sizeof(sExitState)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	/* check if there is another thread waiting */
-	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-		sThread *ot = (sThread*)n->data;
-		if(ev_waitsFor(ot,EV_CHILD_DIED))
-			SYSC_ERROR(stack,ERR_THREAD_WAITING);
-	}
 
 	/* check if there is already a dead child-proc */
 	res = proc_getExitState(p->pid,state);
@@ -207,8 +199,12 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	}
 
 	/* finally kill the process */
-	proc_kill(proc_getByPid(res));
-	SYSC_RET1(stack,0);
+	p = proc_getByPid(res);
+	if(p) {
+		proc_kill(p);
+		SYSC_RET1(stack,0);
+	}
+	SYSC_ERROR(stack,ERR_INVALID_PID);
 }
 
 int sysc_getenvito(sIntrptStackFrame *stack) {

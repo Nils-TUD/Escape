@@ -80,7 +80,7 @@ void swap_start(void) {
 	if(dev == NULL || vfs_node_resolvePath(dev,&swapIno,NULL,0) < 0) {
 		while(1) {
 			/* wait for ever */
-			thread_setBlocked(t->tid);
+			ev_block(t);
 			thread_switchNoSigs();
 		}
 	}
@@ -280,13 +280,17 @@ static void swap_setSuspended(const sSLList *procs,bool blocked) {
 	sSLNode *n,*tn;
 	const sProc *p;
 	const sThread *cur = thread_getRunning();
-	const sThread *t;
+	sThread *t;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		p = (sProc*)n->data;
 		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 			t = (sThread*)tn->data;
-			if(t->tid != cur->tid)
-				thread_setSuspended(t->tid,blocked);
+			if(t->tid != cur->tid) {
+				if(blocked)
+					ev_suspend(t);
+				else
+					ev_unsuspend(t);
+			}
 		}
 	}
 }

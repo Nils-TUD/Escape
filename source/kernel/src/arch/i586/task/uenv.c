@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/task/uenv.h>
+#include <sys/task/event.h>
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
@@ -42,10 +43,12 @@ void uenv_handleSignal(sIntrptStackFrame *stack) {
 	if(sig_hasSignal(&sig,&tid)) {
 		if(t->tid == tid)
 			uenv_startSignalHandler(t,stack,sig);
-		else if(thread_setReady(tid,true)) {
+		else {
 			t = thread_getById(tid);
-			thread_setSignal(t,sig);
-			thread_switchTo(tid);
+			if(thread_setSignal(t,sig)) {
+				ev_unblock(t);
+				thread_switchTo(tid);
+			}
 		}
 	}
 }

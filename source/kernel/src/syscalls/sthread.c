@@ -191,24 +191,22 @@ int sysc_join(sIntrptStackFrame *stack) {
 int sysc_suspend(sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	const sThread *t = thread_getRunning();
-	const sThread *tt = thread_getById(tid);
+	sThread *tt = thread_getById(tid);
 	/* just threads from the own process */
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	/* suspend it */
-	thread_setSuspended(tt->tid,true);
+	ev_suspend(tt);
 	SYSC_RET1(stack,0);
 }
 
 int sysc_resume(sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	const sThread *t = thread_getRunning();
-	const sThread *tt = thread_getById(tid);
+	sThread *tt = thread_getById(tid);
 	/* just threads from the own process */
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	/* resume it */
-	thread_setSuspended(tt->tid,false);
+	ev_unsuspend(tt);
 	SYSC_RET1(stack,0);
 }
 

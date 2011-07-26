@@ -117,8 +117,13 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	return t;
 }
 
-void thread_setSignal(sThread *t,sig_t sig) {
-	t->signal = sig;
+bool thread_setSignal(sThread *t,sig_t sig) {
+	assert(t->signal == SIG_COUNT);
+	if(!t->ignoreSignals) {
+		t->signal = sig;
+		return true;
+	}
+	return false;
 }
 
 sig_t thread_getSignal(const sThread *t) {
@@ -219,28 +224,24 @@ void thread_killDead(void) {
 	}
 }
 
-bool thread_setReady(tid_t tid,bool isSignal) {
-	sThread *t = thread_getById(tid);
-	vassert(t != NULL && t != thread_getRunning(),"tid=%d, pid=%d, cmd=%s",
-			t ? t->tid : 0,t ? t->proc->pid : 0,t ? t->proc->command : "?");
-	if(!isSignal || !t->ignoreSignals) {
-		sched_setReady(t);
-		ev_removeThread(t);
-	}
-	return t->state == ST_READY;
-}
-
-bool thread_setBlocked(tid_t tid) {
-	sThread *t = thread_getById(tid);
+void thread_block(sThread *t) {
 	assert(t != NULL);
 	sched_setBlocked(t);
-	return t->state == ST_BLOCKED;
 }
 
-void thread_setSuspended(tid_t tid,bool blocked) {
-	sThread *t = thread_getById(tid);
+void thread_unblock(sThread *t) {
+	assert(t != NULL && t != thread_getRunning());
+	sched_setReady(t);
+}
+
+void thread_suspend(sThread *t) {
 	assert(t != NULL);
-	sched_setSuspended(t,blocked);
+	sched_setSuspended(t,true);
+}
+
+void thread_unsuspend(sThread *t) {
+	assert(t != NULL);
+	sched_setSuspended(t,false);
 }
 
 bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {

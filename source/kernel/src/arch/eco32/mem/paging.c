@@ -235,7 +235,7 @@ sAllocStats paging_destroyPDir(tPageDir *pdir) {
 	return stats;
 }
 
-bool paging_isPresent(const tPageDir *pdir,uintptr_t virt) {
+bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPTEntry *pt;
 	sPDEntry *pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir) + ADDR_TO_PDINDEX(virt);
@@ -245,7 +245,7 @@ bool paging_isPresent(const tPageDir *pdir,uintptr_t virt) {
 	return pt->present && pt->exists;
 }
 
-frameno_t paging_getFrameNo(const tPageDir *pdir,uintptr_t virt) {
+frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	assert(pt->present && pt->exists);
@@ -257,6 +257,14 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	frameno_t frame = pmem_allocate();
 	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),buffer,loadCount);
 	return frame;
+}
+
+void paging_copyToFrame(frameno_t frame,const void *src) {
+	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),src,PAGE_SIZE);
+}
+
+void paging_copyFromFrame(frameno_t frame,void *dst) {
+	memcpy(dst,(void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),PAGE_SIZE);
 }
 
 void paging_copyToUser(void *dst,const void *src,size_t count) {
@@ -444,7 +452,7 @@ static size_t paging_remEmptyPt(tPageDir *pdir,uintptr_t ptables,size_t pti) {
 	return 1;
 }
 
-size_t paging_getPTableCount(const tPageDir *pdir) {
+size_t paging_getPTableCount(tPageDir *pdir) {
 	size_t i,count = 0;
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
@@ -454,7 +462,7 @@ size_t paging_getPTableCount(const tPageDir *pdir) {
 	return count;
 }
 
-void paging_sprintfVirtMem(sStringBuffer *buf,const tPageDir *pdir) {
+void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 	size_t i,j;
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir);
@@ -538,7 +546,7 @@ size_t paging_dbg_getPageCount(void) {
 	return count;
 }
 
-void paging_printPageOf(const tPageDir *pdir,uintptr_t virt) {
+void paging_printPageOf(tPageDir *pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(pdir);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
@@ -553,7 +561,7 @@ void paging_printCur(uint parts) {
 	paging_printPDir(&curPDir,parts);
 }
 
-void paging_printPDir(const tPageDir *pdir,uint parts) {
+void paging_printPDir(tPageDir *pdir,uint parts) {
 	size_t i;
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir);

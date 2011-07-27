@@ -25,6 +25,8 @@
 #ifdef __i386__
 void klock_aquire(klock_t *l);
 void klock_release(klock_t *l);
+#define klock_aquire(l)		(void)(l)
+#define klock_release(l)	(void)(l)
 #endif
 /* eco32 and mmix do not support smp */
 #ifdef __eco32__

@@ -438,11 +438,13 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc);
 
 /**
- * Kills the given thread. If it is the current one it will be stored for later deletion.
+ * Kills the given thread
  *
  * @param t the thread
+ * @return true if it has been deleted; false if it was the current one and the deletion should
+ * 	be delayed
  */
-void thread_kill(sThread *t);
+bool thread_kill(sThread *t);
 
 /**
  * Frees the architecture-specific attributes of the given thread

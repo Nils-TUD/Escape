@@ -226,7 +226,7 @@ void thread_switchTo(tid_t tid) {
 		ct->stats.kcycleStart = cpu_rdtsc();
 	}
 
-	thread_killDead();
+	proc_killDeadThread();
 }
 
 

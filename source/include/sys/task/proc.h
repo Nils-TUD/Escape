@@ -305,7 +305,7 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg);
  *
  * @param exitCode the exit-code
  */
-void proc_destroyThread(int exitCode);
+void proc_exit(int exitCode);
 
 /**
  * Removes all regions from the given process
@@ -331,6 +331,11 @@ int proc_getExitState(pid_t ppid,sExitState *state);
  * @param p the process
  */
 void proc_segFault(const sProc *p);
+
+/**
+ * Kills the thread that could not been killed because it was the current thread.
+ */
+void proc_killDeadThread(void);
 
 /**
  * Marks the given process as zombie and notifies the waiting parent thread. As soon as the parent

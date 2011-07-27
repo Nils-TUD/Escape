@@ -55,9 +55,6 @@ static sThread *tidToThread[MAX_THREAD_COUNT];
 static sSLList *idleThreads;
 static tid_t nextTid = 0;
 
-/* list of dead threads that should be destroyed */
-static sSLList* deadThreads = NULL;
-
 sThread *thread_init(sProc *p) {
 	sThread *curThread;
 
@@ -171,6 +168,38 @@ sThread *thread_popIdle(void) {
 	return sll_removeFirst(idleThreads);
 }
 
+void thread_switch(void) {
+	thread_switchTo(sched_perform()->tid);
+}
+
+void thread_switchNoSigs(void) {
+	sThread *t = thread_getRunning();
+	/* remember that the current thread wants to ignore signals */
+	t->ignoreSignals = 1;
+	thread_switch();
+	t->ignoreSignals = 0;
+}
+
+void thread_block(sThread *t) {
+	assert(t != NULL);
+	sched_setBlocked(t);
+}
+
+void thread_unblock(sThread *t) {
+	assert(t != NULL && t != thread_getRunning());
+	sched_setReady(t);
+}
+
+void thread_suspend(sThread *t) {
+	assert(t != NULL);
+	sched_setSuspended(t,true);
+}
+
+void thread_unsuspend(sThread *t) {
+	assert(t != NULL);
+	sched_setSuspended(t,false);
+}
+
 bool thread_getStackRange(const sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
 	if(t->stackRegions[stackNo] >= 0) {
 		vmm_getRegRange(t->proc,t->stackRegions[stackNo],start,end);
@@ -193,55 +222,6 @@ vmreg_t thread_getTLSRegion(const sThread *t) {
 
 void thread_setTLSRegion(sThread *t,vmreg_t rno) {
 	t->tlsRegion = rno;
-}
-
-void thread_switch(void) {
-	thread_switchTo(sched_perform()->tid);
-}
-
-void thread_switchNoSigs(void) {
-	sThread *t = thread_getRunning();
-	/* remember that the current thread wants to ignore signals */
-	t->ignoreSignals = 1;
-	thread_switch();
-	t->ignoreSignals = 0;
-}
-
-void thread_killDead(void) {
-	/* destroy threads, if there are any */
-	if(deadThreads != NULL) {
-		sSLNode *n;
-		sThread *t;
-		for(n = sll_begin(deadThreads); n != NULL; n = n->next) {
-			/* we want to destroy the stacks here because if the whole process is destroyed
-			 * the proc-module doesn't kill the running thread anyway so there will never
-			 * be the case that we should destroy a single thread later */
-			t = (sThread*)n->data;
-			thread_kill(t);
-		}
-		sll_destroy(deadThreads,false);
-		deadThreads = NULL;
-	}
-}
-
-void thread_block(sThread *t) {
-	assert(t != NULL);
-	sched_setBlocked(t);
-}
-
-void thread_unblock(sThread *t) {
-	assert(t != NULL && t != thread_getRunning());
-	sched_setReady(t);
-}
-
-void thread_suspend(sThread *t) {
-	assert(t != NULL);
-	sched_setSuspended(t,true);
-}
-
-void thread_unsuspend(sThread *t) {
-	assert(t != NULL);
-	sched_setSuspended(t,false);
 }
 
 bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {
@@ -350,16 +330,8 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 		t->tlsRegion = src->tlsRegion;
 	}
 	else {
-		/* no swapping here because we don't want to make a thread-switch */
-		/* TODO */
-		size_t neededFrms = 0;/*paging_countFramesForMap(
-			t->ustackBegin - t->ustackPages * PAGE_SIZE,INITIAL_STACK_PAGES);*/
-		if(pmem_getFreeFrames(MM_DEF) < 1 + neededFrms)
-			goto errThread;
-
 		/* add kernel-stack */
 		t->kstackFrame = pmem_allocate();
-		p->ownFrames++;
 		/* add a new tls-region, if its present in the src-thread */
 		t->tlsRegion = -1;
 		if(src->tlsRegion >= 0) {
@@ -380,10 +352,8 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 		goto errArch;
 
 	/* append to idle-list if its an idle-thread */
-	if(flags & T_IDLE) {
-		if(!sll_append(idleThreads,t))
-			goto errAppend;
-	}
+	if(flags & T_IDLE)
+		thread_pushIdle(t);
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
 	if(cloneProc)
@@ -397,7 +367,9 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 	return 0;
 
 errAppendIdle:
-	sll_removeFirstWith(idleThreads,t);
+	sig_removeHandlerFor(t->tid);
+	if(flags & T_IDLE)
+		sll_removeFirstWith(idleThreads,t);
 errAppend:
 	thread_remove(t);
 errArch:
@@ -406,29 +378,19 @@ errClone:
 	if(t->tlsRegion >= 0)
 		vmm_remove(p,t->tlsRegion);
 errStack:
-	if(!cloneProc) {
+	if(!cloneProc)
 		pmem_free(t->kstackFrame);
-		p->ownFrames--;
-	}
 errThread:
 	cache_free(t);
 	return err;
 }
 
-void thread_kill(sThread *t) {
+bool thread_kill(sThread *t) {
 	sSLNode *n;
 	if(t->tid == INIT_TID)
 		util_panic("Can't kill init-thread!");
 	/* we can't destroy the current thread */
 	if(t == thread_getRunning()) {
-		/* put it in the dead-thread-queue to destroy it later */
-		if(deadThreads == NULL) {
-			deadThreads = sll_create();
-			if(deadThreads == NULL)
-				util_panic("Not enough mem for dead thread-list");
-		}
-		if(!sll_append(deadThreads,t))
-			util_panic("Not enough mem to append dead thread");
 		/* remove from event-system */
 		ev_removeThread(t);
 		/* remove from scheduler and ensure that he don't picks us again */
@@ -436,7 +398,7 @@ void thread_kill(sThread *t) {
 		/* remove from timer, too, so that we don't get waked up again */
 		timer_removeThread(t->tid);
 		t->state = ST_ZOMBIE;
-		return;
+		return false;
 	}
 
 	/* remove tls */
@@ -446,10 +408,6 @@ void thread_kill(sThread *t) {
 	}
 	/* free kernel-stack */
 	pmem_free(t->kstackFrame);
-	t->proc->ownFrames--;
-
-	/* remove from process */
-	sll_removeFirstWith(t->proc->threads,t);
 
 	/* release resources */
 	for(n = sll_begin(&t->termLocks); n != NULL; n = n->next)
@@ -480,6 +438,7 @@ void thread_kill(sThread *t) {
 	/* finally, destroy thread */
 	thread_remove(t);
 	cache_free(t);
+	return true;
 }
 
 void thread_printAll(void) {

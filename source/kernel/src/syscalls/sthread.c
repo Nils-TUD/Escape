@@ -58,7 +58,7 @@ int sysc_startThread(sIntrptStackFrame *stack) {
 
 int sysc_exit(sIntrptStackFrame *stack) {
 	int exitCode = (int)SYSC_ARG1(stack);
-	proc_destroyThread(exitCode);
+	proc_exit(exitCode);
 	thread_switch();
 	util_panic("We shouldn't get here...");
 	SYSC_RET1(stack,0);

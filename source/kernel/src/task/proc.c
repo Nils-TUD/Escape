@@ -51,6 +51,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
+static void proc_killThread(sThread *t);
 static void proc_notifyProcDied(pid_t parent);
 static bool proc_add(sProc *p);
 static void proc_remove(sProc *p);
@@ -64,6 +65,7 @@ static sProc first;
 static sSLList *procs;
 static sProc *pidToProc[MAX_PROC_COUNT];
 static pid_t nextPid = 1;
+static sThread *deadThread;
 
 void proc_init(void) {
 	size_t i;
@@ -433,7 +435,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 errorAdd:
 	proc_remove(p);
 errorThread:
-	thread_kill(nt);
+	proc_killThread(nt);
 errorThreadList:
 	cache_free(p->threads);
 errorShm:
@@ -450,16 +452,19 @@ errorProc:
 }
 
 int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
-	const sProc *p = proc_getRunning();
+	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	sThread *nt;
 	int res;
 	if((res = thread_clone(t,&nt,t->proc,flags,0,false)) < 0)
 		return res;
 
+	/* for the kernel-stack */
+	p->ownFrames++;
+
 	/* append thread */
 	if(!sll_append(p->threads,nt)) {
-		thread_kill(nt);
+		proc_killThread(nt);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -479,7 +484,7 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	res = thread_finishClone(t,nt);
 	if(res == 1) {
 		if(!uenv_setupThread(arg,entryPoint)) {
-			thread_kill(nt);
+			proc_killThread(nt);
 			/* do a switch here because we can't continue */
 			thread_switch();
 			/* never reached */
@@ -490,16 +495,13 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	return nt->tid;
 }
 
-void proc_destroyThread(int exitCode) {
-	sProc *cur = proc_getRunning();
-	/* last thread? */
-	if(sll_length(cur->threads) == 1)
-		proc_terminate(cur,exitCode,SIG_COUNT);
-	else {
-		/* just destroy the thread */
-		sThread *t = thread_getRunning();
-		thread_kill(t);
-	}
+void proc_exit(int exitCode) {
+	sThread *t = thread_getRunning();
+	sProc *p = t->proc;
+	if(sll_length(p->threads) == 1)
+		proc_terminate(p,exitCode,SIG_COUNT);
+	else
+		proc_killThread(t);
 }
 
 void proc_removeRegions(sProc *p,bool remStack) {
@@ -545,6 +547,13 @@ void proc_segFault(const sProc *p) {
 	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
 	 * we might get in an endless-loop */
 	sig_unsetHandler(t->tid,SIG_SEGFAULT);
+}
+
+void proc_killDeadThread(void) {
+	if(deadThread) {
+		proc_killThread(deadThread);
+		deadThread = NULL;
+	}
 }
 
 void proc_terminate(sProc *p,int exitCode,sig_t signal) {
@@ -598,14 +607,6 @@ void proc_terminate(sProc *p,int exitCode,sig_t signal) {
 		}
 	}
 
-	/* remove all threads */
-	for(tn = sll_begin(p->threads); tn != NULL; ) {
-		sThread *t = (sThread*)tn->data;
-		tmpn = tn->next;
-		thread_kill(t);
-		tn = tmpn;
-	}
-
 	/* remove other stuff */
 	groups_leave(p);
 	env_removeFor(p);
@@ -613,6 +614,14 @@ void proc_terminate(sProc *p,int exitCode,sig_t signal) {
 	vfs_real_removeProc(p->pid);
 	lock_releaseAll(p->pid);
 	proc_terminateArch(p);
+
+	/* remove all threads */
+	for(tn = sll_begin(p->threads); tn != NULL; ) {
+		sThread *t = (sThread*)tn->data;
+		tmpn = tn->next;
+		proc_killThread(t);
+		tn = tmpn;
+	}
 
 	p->flags |= P_ZOMBIE;
 	proc_notifyProcDied(p->parentPid);
@@ -729,11 +738,6 @@ void proc_print(sProc *p) {
 	vid_printf("\n");
 }
 
-static void proc_notifyProcDied(pid_t parent) {
-	sig_addSignalFor(parent,SIG_CHILD_TERM);
-	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
-}
-
 int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
 	const char *const *arg;
 	char *bufPos;
@@ -786,6 +790,21 @@ error:
 	thread_remHeapAlloc(*argBuffer);
 	cache_free(*argBuffer);
 	return ERR_INVALID_ARGS;
+}
+
+static void proc_notifyProcDied(pid_t parent) {
+	sig_addSignalFor(parent,SIG_CHILD_TERM);
+	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
+}
+
+static void proc_killThread(sThread *t) {
+	sProc *p = t->proc;
+	if(thread_kill(t)) {
+		p->ownFrames--;
+		sll_removeFirstWith(p->threads,t);
+	}
+	else
+		deadThread = t;
 }
 
 static bool proc_add(sProc *p) {

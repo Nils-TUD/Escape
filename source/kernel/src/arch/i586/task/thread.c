@@ -76,10 +76,11 @@ void thread_freeArch(sThread *t) {
 		vmm_remove(t->proc,t->stackRegions[0]);
 		t->stackRegions[0] = -1;
 	}
-	/* if there is just one thread left we have to map his kernel-stack again because we won't
+	/* if there will be just one thread left we have to map his kernel-stack again because we won't
 	 * do it for single-thread-processes on a switch for performance-reasons */
-	if(sll_length(t->proc->threads) == 1) {
-		frameno_t stackFrame = ((sThread*)sll_get(t->proc->threads,0))->kstackFrame;
+	if(sll_length(t->proc->threads) == 2) {
+		size_t i = sll_indexOf(t->proc->threads,t);
+		frameno_t stackFrame = ((sThread*)sll_get(t->proc->threads,i == 1 ? 0 : 1))->kstackFrame;
 		paging_mapTo(&t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	}
@@ -167,7 +168,7 @@ void thread_switchTo(tid_t tid) {
 		cur->stats.kcycleStart = cpu_rdtsc();
 	}
 
-	thread_killDead();
+	proc_killDeadThread();
 }
 
 static void thread_doSwitch(sThread *cur,sThread *old) {

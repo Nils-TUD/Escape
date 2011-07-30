@@ -127,6 +127,8 @@ int vm86_create(void) {
 	/* FIXME but there has to be a better way.. */
 	if(p->archAttr.ioMap == NULL)
 		p->archAttr.ioMap = (uint8_t*)kheap_alloc(IO_MAP_SIZE / 8);
+	/* note that we HAVE TO request all ports (even the reserved ones); otherwise it doesn't work
+	 * everywhere (e.g. my notebook needs it) */
 	if(p->archAttr.ioMap != NULL)
 		memset(p->archAttr.ioMap,0x00,IO_MAP_SIZE / 8);
 

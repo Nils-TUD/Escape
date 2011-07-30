@@ -32,14 +32,9 @@
 
 /* This is mostly borrowed from doc/vbecore.pdf */
 
-#define VM86_ADDR_RM2PM(addr)				((((uintptr_t)(addr) & 0xFFFF0000) >> 12) | \
-		((uintptr_t)(addr) & 0xFFFF))
 #define ABS(x)								((x) > 0 ? (x) : -(x))
-
 #define VM86_DATA_ADDR						0x80000
-
 #define MAX_MODE_COUNT						256
-
 /* for setting a mode: (VBE v2.0+) use linear (flat) frame buffer */
 #define VBE_MODE_SET_LFB					0x4000
 

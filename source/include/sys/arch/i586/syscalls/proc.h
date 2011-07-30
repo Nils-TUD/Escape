@@ -22,35 +22,9 @@
 
 #include <sys/intrpt.h>
 
-/**
- * Requests some IO-ports
- *
- * @param uint16_t start-port
- * @param size_t number of ports
- * @return int 0 if successfull or a negative error-code
- */
 int sysc_requestIOPorts(sIntrptStackFrame *stack);
-
-/**
- * Releases some IO-ports
- *
- * @param uint16_t start-port
- * @param size_t number of ports
- * @return int 0 if successfull or a negative error-code
- */
 int sysc_releaseIOPorts(sIntrptStackFrame *stack);
-
-/**
- * Performs a VM86-interrupt. That means a VM86-task is created as a child-process, the
- * registers are set correspondingly and the tasks starts at the handler for the given interrupt.
- * As soon as the interrupt is finished the result is copied into the registers
- *
- * @param uint16_t the interrupt-number
- * @param sVM86Regs* the registers
- * @param sVM86Memarea* the memareas (may be NULL)
- * @param size_t mem-area count
- * @return int 0 on success
- */
+int sysc_vm86start(sIntrptStackFrame *stack);
 int sysc_vm86int(sIntrptStackFrame *stack);
 
 #endif /* I586_SYSCALLS_PROC_H_ */

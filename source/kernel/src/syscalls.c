@@ -124,6 +124,7 @@ static sSyscall syscalls[] = {
 	/* 76 */	{sysc_requestIOPorts,		2},
 	/* 77 */	{sysc_releaseIOPorts,		2},
 	/* 78 */	{sysc_vm86int,				4},
+	/* 79 */	{sysc_vm86start,			0},
 #endif
 };
 
@@ -138,7 +139,7 @@ void sysc_handle(sIntrptStackFrame *stack) {
 	res = syscalls[sysCallNo].handler(stack);
 	/* don't do that for acksig because this might overwrite a register or
 	 * something, which is not possible in all cases. */
-	if(sysCallNo != SYSCALL_ACKSIG)
+	if(sysCallNo != SYSCALL_ACKSIG && sysCallNo != SYSCALL_VM86START)
 		SYSC_SETERROR(stack,res);
 }
 

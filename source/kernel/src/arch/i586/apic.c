@@ -79,7 +79,9 @@ void apic_init(void) {
 }
 
 cpuid_t apic_getId(void) {
-	return apic_read(APIC_REG_APICID);
+	if(enabled)
+		return apic_read(APIC_REG_APICID);
+	return 0;
 }
 
 bool apic_isAvailable(void) {

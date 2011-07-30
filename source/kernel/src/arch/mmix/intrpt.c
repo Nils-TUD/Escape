@@ -248,10 +248,8 @@ static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
 		if(thread_extendStack(pfaddr) < 0) {
 			sProc *p = proc_getRunning();
 			sKSpecRegs *sregs = thread_getSpecRegs();
-			vid_setTargets(TARGET_LOG);
 			vid_printf("proc %d: %s for address %p @ %p\n",p->pid,intrptList[irqNo].name,
 					pfaddr,sregs->rww);
-			vid_setTargets(TARGET_LOG | TARGET_SCREEN);
 			proc_segFault(p);
 		}
 	}

@@ -25,6 +25,7 @@
 #include <sys/mem/paging.h>
 #include <sys/task/proc.h>
 #include <sys/syscalls.h>
+#include <assert.h>
 #include <errors.h>
 
 int sysc_requestIOPorts(sIntrptStackFrame *stack) {
@@ -60,44 +61,41 @@ int sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
+int sysc_vm86start(sIntrptStackFrame *stack) {
+	UNUSED(stack);
+	assert(vm86_create() == 0);
+	/* don't change any registers on the stack here */
+	return 0;
+}
+
 int sysc_vm86int(sIntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	sVM86Regs *regs = (sVM86Regs*)SYSC_ARG2(stack);
-	sVM86Memarea *mAreas = (sVM86Memarea*)SYSC_ARG3(stack);
-	size_t mAreaCount = (size_t)SYSC_ARG4(stack);
+	sVM86Memarea *mArea = (sVM86Memarea*)SYSC_ARG3(stack);
 	int res;
 
 	/* check args */
-	if(!paging_isInUserSpace((uint32_t)regs,sizeof(sVM86Regs)))
+	if(!paging_isInUserSpace((uintptr_t)regs,sizeof(sVM86Regs)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(mAreas != NULL) {
-		size_t i;
-		if(!paging_isInUserSpace((uint32_t)mAreas,sizeof(sVM86Memarea) * mAreaCount))
+	if(mArea != NULL) {
+		size_t j;
+		if(!paging_isInUserSpace((uintptr_t)mArea,sizeof(sVM86Memarea)))
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
-		for(i = 0; i < mAreaCount; i++) {
-			/* ensure that only memory from the real-mode-memory can be copied */
-			if(mAreas[i].type == VM86_MEM_BIDIR) {
-				if(mAreas[i].data.bidir.dst + mAreas[i].data.bidir.size < mAreas[i].data.bidir.dst ||
-					mAreas[i].data.bidir.dst + mAreas[i].data.bidir.size >= (1 * M + 64 * K))
-					SYSC_ERROR(stack,ERR_INVALID_ARGS);
-				if(!paging_isInUserSpace((uint32_t)mAreas[i].data.bidir.src,
-						mAreas[i].data.bidir.size)) {
-					SYSC_ERROR(stack,ERR_INVALID_ARGS);
-				}
-			}
-			else {
-				if(!paging_isInUserSpace((uint32_t)mAreas[i].data.unidir.srcPtr,sizeof(void*)))
-					SYSC_ERROR(stack,ERR_INVALID_ARGS);
-				if(!paging_isInUserSpace(mAreas[i].data.unidir.result,mAreas[i].data.unidir.size))
-					SYSC_ERROR(stack,ERR_INVALID_ARGS);
-			}
+		/* ensure that only memory from the real-mode-memory can be copied */
+		if(mArea->dst + mArea->size < mArea->dst || mArea->dst + mArea->size >= (1 * M + 64 * K))
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		if(!paging_isInUserSpace((uintptr_t)mArea->src,mArea->size))
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		for(j = 0; j < mArea->ptrCount; j++) {
+			if(mArea->ptr[j].offset + sizeof(uintptr_t) > mArea->size)
+				SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			if(!paging_isInUserSpace(mArea->ptr[j].result,mArea->ptr[j].size))
+				SYSC_ERROR(stack,ERR_INVALID_ARGS);
 		}
 	}
-	else
-		mAreaCount = 0;
 
 	/* do vm86-interrupt */
-	res = vm86_int(interrupt,regs,mAreas,mAreaCount);
+	res = vm86_int(interrupt,regs,mArea);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

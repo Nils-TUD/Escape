@@ -30,9 +30,13 @@ _start:
 	mov		$SYSCALL_LOADMODS,%eax
 	int		$SYSCALL_IRQ
 
+	# load vm86-task
+	mov		$SYSCALL_VM86START,%eax
+	int		$SYSCALL_IRQ
+
 	# now replace with init
 	mov		$progName,%ecx						# set path
-	mov		$args,%edx								# set arguments
+	mov		$args,%edx							# set arguments
 	mov		$SYSCALL_EXEC,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
 

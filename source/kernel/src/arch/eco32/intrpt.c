@@ -178,9 +178,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
 			sProc *p = proc_getRunning();
-			vid_setTargets(TARGET_LOG);
 			vid_printf("proc %d, page fault for address %p @ %p\n",p->pid,pfaddr,stack->r[30]);
-			vid_setTargets(TARGET_LOG | TARGET_SCREEN);
 			proc_segFault(p);
 		}
 	}

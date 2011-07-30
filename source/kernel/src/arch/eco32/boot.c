@@ -41,6 +41,7 @@
 #include <sys/vfs/real.h>
 #include <sys/vfs/info.h>
 #include <sys/log.h>
+#include <sys/config.h>
 #include <sys/boot.h>
 #include <sys/video.h>
 #include <sys/util.h>
@@ -56,6 +57,8 @@ static sLoadProg progs[MAX_PROG_COUNT];
 static sBootInfo info;
 
 void boot_init(const sBootInfo *binfo,bool logToVFS) {
+	int argc;
+	const char **argv;
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
 	 * shortly */
 	memcpy(&info,binfo,sizeof(sBootInfo));
@@ -63,6 +66,10 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	memcpy((void*)info.progs,binfo->progs,sizeof(sLoadProg) * binfo->progCount);
 
 	vid_init();
+
+	/* parse the boot parameter */
+	argv = boot_parseArgs(binfo->progs[0].command,&argc);
+	conf_parseBootParams(argc,argv);
 
 #if DEBUGGING
 	boot_print();
@@ -221,6 +228,9 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	}
 #endif
 
+	/* if not requested otherwise, from now on, print only to log */
+	if(!conf_get(CONF_LOG2SCR))
+		vid_setTargets(TARGET_LOG);
 	return 0;
 }
 

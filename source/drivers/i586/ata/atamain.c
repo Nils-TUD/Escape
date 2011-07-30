@@ -35,13 +35,16 @@
 #include "device.h"
 #include "partition.h"
 
-#define MAX_RW_SIZE	4096
+#define MAX_RW_SIZE		4096
+#define RETRY_COUNT		3
 
 typedef struct {
 	uint device;
 	uint partition;
 } sId2Fd;
 
+static ulong handleRead(sATADevice *device,sPartition *part,uint offset,uint count);
+static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint offset,uint count);
 static sId2Fd *getDriver(int sid);
 static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
@@ -108,21 +111,7 @@ int main(int argc,char **argv) {
 				case MSG_DRV_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
-					msg.args.arg1 = 0;
-					/* we have to check whether it is at least one sector. otherwise ATA can't
-					 * handle the request */
-					if(offset + count <= part->size * device->secSize && offset + count > offset) {
-						uint rcount = (count + device->secSize - 1) & ~(device->secSize - 1);
-						if(rcount <= MAX_RW_SIZE) {
-							ATA_PR2("Reading %d bytes @ %x from device %d",
-									rcount,offset,device->id);
-							if(device->rwHandler(device,OP_READ,buffer,
-									offset / device->secSize + part->start,
-									device->secSize,rcount / device->secSize)) {
-								msg.data.arg1 = count;
-							}
-						}
-					}
+					msg.args.arg1 = handleRead(device,part,offset,count);
 					msg.args.arg2 = true;
 					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1 > 0)
@@ -133,20 +122,7 @@ int main(int argc,char **argv) {
 				case MSG_DRV_WRITE: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
-					msg.args.arg1 = 0;
-					if(offset + count <= part->size * device->secSize && offset + count > offset) {
-						if(count <= MAX_RW_SIZE) {
-							if(RETRY(receive(fd,&mid,buffer,count)) > 0) {
-								ATA_PR2("Writing %d bytes @ %x to device %d",
-										count,offset,device->id);
-								if(device->rwHandler(device,OP_WRITE,buffer,
-										offset / device->secSize + part->start,
-										device->secSize,count / device->secSize)) {
-									msg.args.arg1 = count;
-								}
-							}
-						}
-					}
+					msg.args.arg1 = handleWrite(device,part,fd,offset,count);
 					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
@@ -169,6 +145,54 @@ int main(int argc,char **argv) {
 	for(i = 0; i < drvCount; i++)
 		close(drivers[i]);
 	return EXIT_SUCCESS;
+}
+
+static ulong handleRead(sATADevice *device,sPartition *part,uint offset,uint count) {
+	/* we have to check whether it is at least one sector. otherwise ATA can't
+	 * handle the request */
+	if(offset + count <= part->size * device->secSize && offset + count > offset) {
+		uint rcount = (count + device->secSize - 1) & ~(device->secSize - 1);
+		if(rcount <= MAX_RW_SIZE) {
+			size_t i;
+			ATA_PR2("Reading %d bytes @ %x from device %d",
+					rcount,offset,device->id);
+			for(i = 0; i < RETRY_COUNT; i++) {
+				if(i > 0)
+					ATA_LOG("Read failed; retry %zu",i);
+				if(device->rwHandler(device,OP_READ,buffer,
+						offset / device->secSize + part->start,
+						device->secSize,rcount / device->secSize)) {
+					return count;
+				}
+			}
+			ATA_LOG("Giving up after %zu retries",i);
+		}
+	}
+	return 0;
+}
+
+static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint offset,uint count) {
+	msgid_t mid;
+	if(offset + count <= part->size * device->secSize && offset + count > offset) {
+		if(count <= MAX_RW_SIZE) {
+			if(RETRY(receive(fd,&mid,buffer,count)) > 0) {
+				size_t i;
+				ATA_PR2("Writing %d bytes @ %x to device %d",
+						count,offset,device->id);
+				for(i = 0; i < RETRY_COUNT; i++) {
+					if(i > 0)
+						ATA_LOG("Write failed; retry %zu",i);
+					if(device->rwHandler(device,OP_WRITE,buffer,
+							offset / device->secSize + part->start,
+							device->secSize,count / device->secSize)) {
+						return count;
+					}
+				}
+				ATA_LOG("Giving up after %zu retries",i);
+			}
+		}
+	}
+	return 0;
 }
 
 static void initDrives(void) {

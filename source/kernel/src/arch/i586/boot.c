@@ -299,8 +299,9 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 		util_panic("Swapper reached this");
 	}
 
-	/* create the vm86-task */
-	assert(vm86_create() == 0);
+	/* if not requested otherwise, from now on, print only to log */
+	if(!conf_get(CONF_LOG2SCR))
+		vid_setTargets(TARGET_LOG);
 	return 0;
 }
 

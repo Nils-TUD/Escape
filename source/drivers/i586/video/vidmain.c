@@ -50,16 +50,8 @@ typedef struct {
 	uint no;
 } sVidMode;
 
-/**
- * Sets the video-mode
- */
-static void vid_setMode(void);
-/**
- * Sets the cursor to given position
- *
- * @param row the row
- * @param col the col
- */
+static uint16_t vid_getMode(void);
+static int vid_setMode(void);
 static void vid_setCursor(uint row,uint col);
 
 static sVidMode modes[] = {
@@ -90,6 +82,7 @@ int main(void) {
 		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
 	/* clear screen */
+	modes[0].no = vid_getMode();
 	vid_setMode();
 	memclear(videoData,mode->cols * mode->rows * 2);
 
@@ -114,7 +107,8 @@ int main(void) {
 				break;
 
 				case MSG_VID_SETMODE: {
-					vid_setMode();
+					msg.args.arg1 = vid_setMode();
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
@@ -150,12 +144,20 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void vid_setMode(void) {
+static uint16_t vid_getMode(void) {
+	sVM86Regs regs;
+	memclear(&regs,sizeof(regs));
+	regs.ax = 0x0F00;
+	if(vm86int(0x10,&regs,NULL) < 0)
+		printe("Getting current vga-mode failed");
+	return regs.ax & 0xFF;
+}
+
+static int vid_setMode(void) {
 	sVM86Regs regs;
 	memclear(&regs,sizeof(regs));
 	regs.ax = mode->no;
-	if(vm86int(0x10,&regs,NULL,0) < 0)
-		printe("Switch to text-mode failed");
+	return vm86int(0x10,&regs,NULL);
 }
 
 static void vid_setCursor(uint row,uint col) {

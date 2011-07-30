@@ -81,11 +81,6 @@ int main(void) {
 				}
 				break;
 
-				case MSG_VID_SETMODE: {
-					/* ignored */
-				}
-				break;
-
 				case MSG_VID_SETCURSOR: {
 					sVTPos *pos = (sVTPos*)msg.data.d;
 					pos->col = MIN(pos->col,COLS - 1);
@@ -103,6 +98,8 @@ int main(void) {
 				}
 				break;
 
+				/* set-mode is not supported */
+				case MSG_VID_SETMODE:
 				default:
 					msg.args.arg1 = ERR_UNSUPPORTED_OP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

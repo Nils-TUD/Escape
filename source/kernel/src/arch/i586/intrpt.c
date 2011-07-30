@@ -474,7 +474,6 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
 			const sProc *p = proc_getRunning();
-			vid_setTargets(TARGET_LOG);
 			vid_printf("Page fault for address %p @ %p, process %d\n",pfaddr,stack->eip,p->pid);
 			vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
 					(stack->errorCode & 0x1) ?
@@ -483,7 +482,6 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 					(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
 					(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
 					(stack->errorCode & 0x16) ? "instruction-fetch" : "");
-			vid_setTargets(TARGET_LOG | TARGET_SCREEN);
 			proc_segFault(p);
 		}
 	}
@@ -527,7 +525,7 @@ static void intrpt_syscall(sIntrptStackFrame *stack) {
 	sysc_handle(stack);
 
 	/* set error-code (not for ackSignal) */
-	if(sysCallNo != SYSCALL_ACKSIG) {
+	if(sysCallNo != SYSCALL_ACKSIG && sysCallNo != SYSCALL_VM86START) {
 		stack->ecx = stack->ebx;
 		stack->ebx = ebxSave;
 	}

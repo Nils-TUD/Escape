@@ -254,10 +254,12 @@ int main(void) {
 
 static void kbStartDbgConsole(void) {
 	/* switch to vga-text-mode */
-	sVM86Regs vmregs;
-	memclear(&vmregs,sizeof(vmregs));
-	vmregs.ax = 0x2;
-	vm86int(0x10,&vmregs,NULL,0);
+	int fd = open("/dev/video",IO_MSGS);
+	if(fd >= 0) {
+		send(fd,MSG_VID_SETMODE,NULL,0);
+		RETRY(receive(fd,NULL,NULL,0));
+		close(fd);
+	}
 
 	/* start debugger */
 	debug();
@@ -265,9 +267,9 @@ static void kbStartDbgConsole(void) {
 	/* restore video-mode */
 	/* TODO this is not perfect since it causes problems when we're in GUI-mode.
 	 * But its for debugging, so its ok, I think :) */
-	int fd = open("/dev/vterm0",IO_WRITE);
+	fd = open("/dev/vterm0",IO_MSGS);
 	if(fd >= 0) {
-		sendRecvMsgData(fd,MSG_VT_ENABLE,NULL,0);
+		send(fd,MSG_VT_ENABLE,NULL,0);
 		close(fd);
 	}
 }

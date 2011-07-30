@@ -43,6 +43,7 @@
 #include <sys/vfs/info.h>
 #include <sys/vfs/info.h>
 #include <sys/log.h>
+#include <sys/config.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/video.h>
@@ -59,6 +60,9 @@ static int bootState = 0;
 static int bootFinished = 1;
 
 void boot_init(const sBootInfo *binfo,bool logToVFS) {
+	int argc;
+	const char **argv;
+
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
 	 * shortly */
 	memcpy(&info,binfo,sizeof(sBootInfo));
@@ -68,6 +72,10 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	bootFinished = (info.progCount - 1) * 2 + 1;
 
 	vid_init();
+
+	/* parse the boot parameter */
+	argv = boot_parseArgs(binfo->progs[0].command,&argc);
+	conf_parseBootParams(argc,argv);
 
 #if DEBUGGING
 	boot_print();
@@ -238,6 +246,11 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	}
 #endif
 
+	if(bootState == bootFinished) {
+		/* if not requested otherwise, from now on, print only to log */
+		if(!conf_get(CONF_LOG2SCR))
+			vid_setTargets(TARGET_LOG);
+	}
 	return bootState == bootFinished ? 0 : 1;
 }
 

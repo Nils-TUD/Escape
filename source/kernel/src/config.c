@@ -32,7 +32,9 @@
 static void conf_set(const char *name,const char *value);
 
 static uchar bootVidMode;
-static uchar doLog = true;
+static bool lineByLine = false;
+static bool doLog = true;
+static bool log2scr = false;
 static char swapDev[MAX_BPVAL_LEN + 1] = "";
 
 void conf_parseBootParams(int argc,const char *const *argv) {
@@ -89,6 +91,12 @@ long conf_get(uint id) {
 		case CONF_PAGE_SIZE:
 			res = PAGE_SIZE;
 			break;
+		case CONF_LINEBYLINE:
+			res = lineByLine;
+			break;
+		case CONF_LOG2SCR:
+			res = log2scr;
+			break;
 		default:
 			res = ERR_INVALID_ARGS;
 			break;
@@ -107,4 +115,8 @@ static void conf_set(const char *name,const char *value) {
 		strcpy(swapDev,value);
 	else if(strcmp(name,"nolog") == 0)
 		doLog = false;
+	else if(strcmp(name,"linebyline") == 0)
+		lineByLine = true;
+	else if(strcmp(name,"log2scr") == 0)
+		log2scr = true;
 }

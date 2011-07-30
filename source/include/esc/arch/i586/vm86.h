@@ -26,12 +26,6 @@
 extern "C" {
 #endif
 
-/* bidirectional: write information to vm86 and read the produced result */
-#define VM86_MEM_BIDIR		0
-
-/* unidirectional: just read information produced by vm86 */
-#define VM86_MEM_UNIDIR		1
-
 typedef struct {
 	uint16_t ax;
 	uint16_t bx;
@@ -44,23 +38,22 @@ typedef struct {
 } sVM86Regs;
 
 typedef struct {
-	uchar type;
-	union {
-		/* copy <src> in your process to <dst> in vm86-task before start and the other way around
-		 * when finished */
-		struct {
-			void *src;
-			uintptr_t dst;
-			size_t size;
-		} bidir;
-		/* specify the source-address in vm86-task and the destination in your process. this way,
-		 * the result produced by vm86 is copied from *<srcPtr> to <result>. */
-		struct {
-			void **srcPtr;
-			uintptr_t result;
-			size_t size;
-		} unidir;
-	} data;
+	uintptr_t offset;	/* the offset to <dst> */
+	uintptr_t result;	/* the address in your address-space where to copy the data */
+	size_t size;		/* the size of the data */
+} sVM86AreaPtr;
+
+typedef struct {
+	/* copy <src> in your process to <dst> in vm86-task before start and the other way around
+	 * when finished */
+	void *src;
+	uintptr_t dst;
+	size_t size;
+	/* optionally, <ptrCount> pointers to <dst> which are copied to your address-space, that is
+	 * if the result produced by the bios (at <dst>) contains pointers to other areas, you can
+	 * copy the data in these areas to your address-space as well. */
+	sVM86AreaPtr *ptr;
+	size_t ptrCount;
 } sVM86Memarea;
 
 #define VM86_OFF(addr)		((addr) & 0xFFFF)
@@ -69,14 +62,13 @@ typedef struct {
 /**
  * Performs a VM86-interrupt. That means the VM86-task is notified and started to perform
  * the given interrupt in vm86-mode. As soon as the interrupt is finished the result is copied into
- * the registers. You can also specify memory-areas to exchange data with vm86.
+ * the registers. You can also specify a memory-area to exchange data with vm86.
  *
  * @param regs the registers
- * @param areas the memareas (may be NULL)
- * @param areaCount mem-area count
+ * @param area the memarea (may be NULL)
  * @return 0 on success
  */
-int vm86int(uint16_t interrupt,sVM86Regs *regs,sVM86Memarea *areas,size_t areaCount);
+int vm86int(uint16_t interrupt,sVM86Regs *regs,sVM86Memarea *area);
 
 #ifdef __cplusplus
 }

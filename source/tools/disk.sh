@@ -64,20 +64,20 @@ buildMenuLst() {
 	echo "timeout 3" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "title \"$OSTITLE - VESA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
-	if [ "`echo $BUILD | grep '/release'`" != "" ]; then
+	if [ "`echo $BUILD | grep $ARCH'-release'`" != "" ]; then
 		echo "kernel /boot/$BINNAME videomode=vesa swapdev=/dev/hda3 nolog" >> $DISKMOUNT/boot/grub/menu.lst;
 	else
 		echo "kernel /boot/$BINNAME videomode=vesa swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	fi
-	echo "kernel /boot/$BINNAME videomode=vesa swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/pci /dev/pci" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /system/devices/ata" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/cmos /dev/cmos" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /dev/fs /dev/hda1 ext2" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
+	
 	echo "title \"$OSTITLE - VGA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
-	if [ "`echo $BUILD | grep '/release'`" != "" ]; then
+	if [ "`echo $BUILD | grep $ARCH'-release'`" != "" ]; then
 		echo "kernel /boot/$BINNAME videomode=vga swapdev=/dev/hda3 nolog" >> $DISKMOUNT/boot/grub/menu.lst;
 	else
 		echo "kernel /boot/$BINNAME videomode=vga swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;

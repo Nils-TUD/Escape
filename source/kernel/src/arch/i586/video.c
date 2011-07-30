@@ -19,6 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/serial.h>
+#include <sys/dbg/kb.h>
+#include <sys/config.h>
 #include <sys/util.h>
 #include <sys/log.h>
 #include <sys/printf.h>
@@ -81,6 +83,8 @@ void vid_putchar(char c) {
 	char *video;
 	/* do an explicit newline if necessary */
 	if(col >= VID_COLS) {
+		if(conf_get(CONF_LINEBYLINE))
+			kb_get(NULL,KEV_PRESS,true);
 		row++;
 		col = 0;
 	}
@@ -89,6 +93,8 @@ void vid_putchar(char c) {
 
 
 	if(c == '\n') {
+		if(conf_get(CONF_LINEBYLINE))
+			kb_get(NULL,KEV_PRESS,true);
 		row++;
 		col = 0;
 	}

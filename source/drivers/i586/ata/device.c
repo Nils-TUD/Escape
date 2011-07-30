@@ -49,7 +49,7 @@ void device_init(sATADevice *device) {
 	 * it doesn't work there. no idea why yet :/ */
 	/* note that in each word the bytes are in little endian order */
 	if(strstr(device->info.modelNo,"STTSocpr")) {
-		ATA_LOG("Device %d: Detected TSSTcorp-device. Disabling DMA");
+		ATA_LOG("Device %d: Detected TSSTcorp-device. Disabling DMA",device->id);
 		device->info.capabilities.DMA = 0;
 	}
 

@@ -29,6 +29,8 @@
 #define CONF_SWAP_DEVICE		4
 #define CONF_LOG				5
 #define CONF_PAGE_SIZE			6
+#define CONF_LINEBYLINE			7
+#define CONF_LOG2SCR			8
 
 #define CONF_VIDMODE_VGATEXT	0
 #define CONF_VIDMODE_VESATEXT	1

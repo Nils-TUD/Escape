@@ -615,6 +615,14 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 	sPDEntry *pdirAddr;
 	klock_aquire(&pdir->lock);
 	ptables = paging_getPTables(pdir->own);
+	/* note that we release the lock here because prf_sprintf() might cause the cache-module to
+	 * allocate more memory and use paging to map it. therefore, we would cause a deadlock if
+	 * we use don't release it here.
+	 * I think, in this case we can do it without lock because the only things that could happen
+	 * are a delivery of wrong information to the user and a segfault, which would kill the
+	 * process. Of course, only the process that is reading the information could cause these
+	 * problems. Therefore, its not really a bad thing. */
+	klock_release(&pdir->lock);
 	pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_START); i++) {
 		if(pdirAddr[i].present) {
@@ -636,7 +644,6 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 			}
 		}
 	}
-	klock_release(&pdir->lock);
 }
 
 static tPageDir *paging_getPageDir(void) {
@@ -719,6 +726,7 @@ void paging_printPageOf(tPageDir *pdir,uintptr_t virt) {
 	sPDEntry *pdirAddr;
 	klock_aquire(&pdir->lock);
 	ptables = paging_getPTables(pdir->own);
+	klock_release(&pdir->lock);
 	pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
 		sPTEntry *page = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
@@ -726,7 +734,6 @@ void paging_printPageOf(tPageDir *pdir,uintptr_t virt) {
 		paging_printPage(page);
 		vid_printf("\n");
 	}
-	klock_release(&pdir->lock);
 }
 
 void paging_printCur(uint parts) {
@@ -739,6 +746,7 @@ void paging_printPDir(tPageDir *pdir,uint parts) {
 	sPDEntry *pdirAddr;
 	klock_aquire(&pdir->lock);
 	ptables = paging_getPTables(pdir->own);
+	klock_release(&pdir->lock);
 	pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	vid_printf("page-dir @ %p:\n",pdirAddr);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
@@ -760,7 +768,6 @@ void paging_printPDir(tPageDir *pdir,uint parts) {
 		}
 	}
 	vid_printf("\n");
-	klock_release(&pdir->lock);
 }
 
 static void paging_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) {

@@ -57,17 +57,17 @@ int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
 	sElfSHeader *secHeaders = (sElfSHeader*)cache_alloc(headerSize);
 	if(secHeaders == NULL) {
-		log_printf("[LOADER] Unable to allocate memory for ELF-header (%zu bytes)\n",headerSize);
+		vid_printf("[LOADER] Unable to allocate memory for ELF-header (%zu bytes)\n",headerSize);
 		goto error;
 	}
 
 	if(vfs_seek(t->proc->pid,file,eheader->e_shoff,SEEK_SET) < 0) {
-		log_printf("[LOADER] Unable to seek to ELF-header\n");
+		vid_printf("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
 	}
 
 	if((readRes = vfs_readFile(t->proc->pid,file,secHeaders,headerSize)) != headerSize) {
-		log_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(readRes));
+		vid_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(readRes));
 		goto error;
 	}
 
@@ -111,12 +111,12 @@ static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *h
 			/* append global registers */
 			if(file >= 0) {
 				if((res = vfs_seek(t->proc->pid,file,sheader->sh_offset,SEEK_SET)) < 0) {
-					log_printf("[LOADER] Unable to seek to reg-section: %s\n",strerror(res));
+					vid_printf("[LOADER] Unable to seek to reg-section: %s\n",strerror(res));
 					return res;
 				}
 				if((res = vfs_readFile(t->proc->pid,file,stack,sheader->sh_size)) !=
 						(ssize_t)sheader->sh_size) {
-					log_printf("[LOADER] Unable to read reg-section: %s\n",strerror(res));
+					vid_printf("[LOADER] Unable to read reg-section: %s\n",strerror(res));
 					return res;
 				}
 			}

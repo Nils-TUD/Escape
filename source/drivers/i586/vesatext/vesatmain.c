@@ -169,11 +169,13 @@ int main(void) {
 				break;
 
 				case MSG_VID_SETMODE: {
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
 					if(minfo) {
-						vbe_setMode(minfo->modeNo);
+						msg.args.arg1 = vbe_setMode(minfo->modeNo);
 						/* force refresh on next update */
 						memclear(content,rows * cols * 2);
 					}
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
@@ -226,7 +228,7 @@ static int vesa_setMode(void) {
 				return errno;
 			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
 			rows = minfo->yResolution / (FONT_HEIGHT + PAD * 2);
-			if(vbe_setMode(mode))
+			if(vbe_setMode(mode) == 0)
 				return vesa_init();
 			minfo = NULL;
 			return ERR_VESA_SETMODE_FAILED;

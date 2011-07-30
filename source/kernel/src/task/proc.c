@@ -569,12 +569,10 @@ void proc_terminate(sProc *p,int exitCode,sig_t signal) {
 
 	/* print information to log */
 	if(signal != SIG_COUNT) {
-		vid_setTargets(TARGET_LOG);
 		vid_printf("Process %d:%s terminated by signal %d\n",p->pid,p->command,signal);
 #if DEBUGGING
 		proc_print(p);
 #endif
-		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	}
 
 	/* store exit-conditions */

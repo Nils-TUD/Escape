@@ -194,6 +194,7 @@ int main(void) {
 						/* always use the active one here */
 						vt = vterm_getActive();
 						send(vt->video,MSG_VID_SETMODE,NULL,0);
+						RETRY(receive(vt->video,NULL,NULL,0));
 						vterm_markScrDirty(vt);
 					}
 					vterm_update(vt);

@@ -207,7 +207,7 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 			textreg->binFile = vfs_real_openInode(t->proc->pid,VFS_READ,textreg->reg->binary.ino,
 					textreg->reg->binary.dev);
 			if(textreg->binFile < 0) {
-				log_printf("[LOADER] Unable to open path '%s': %s\n",t->proc->command,
+				vid_printf("[LOADER] Unable to open path '%s': %s\n",t->proc->command,
 						strerror(textreg->binFile));
 				return false;
 			}
@@ -215,14 +215,14 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 
 		/* seek to header */
 		if(vfs_seek(t->proc->pid,textreg->binFile,0,SEEK_SET) < 0) {
-			log_printf("[LOADER] Unable to seek to header of '%s'\n",t->proc->command);
+			vid_printf("[LOADER] Unable to seek to header of '%s'\n",t->proc->command);
 			return false;
 		}
 
 		/* read the header */
 		if((res = vfs_readFile(t->proc->pid,textreg->binFile,&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
-			log_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",
+			vid_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 					t->proc->command,strerror(res));
 			return false;
 		}

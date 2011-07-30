@@ -115,9 +115,9 @@ uint vbe_getMode(void);
  * Sets the given mode
  *
  * @param mode the mode-number
- * @return true on success
+ * @return 0 on success
  */
-bool vbe_setMode(uint mode);
+int vbe_setMode(uint mode);
 
 #ifdef __cplusplus
 }

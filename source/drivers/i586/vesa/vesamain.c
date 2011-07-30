@@ -285,7 +285,7 @@ static int vesa_setMode(void) {
 			fflush(stdout);
 			if(video == NULL)
 				return errno;
-			if(vbe_setMode(mode))
+			if(vbe_setMode(mode) == 0)
 				return vesa_init();
 			minfo = NULL;
 			return ERR_VESA_SETMODE_FAILED;

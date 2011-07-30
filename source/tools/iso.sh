@@ -29,10 +29,10 @@ if [ "$ARCH" = "i586" ]; then
 	if [ "$1" = "test" ]; then
 		echo "kernel /boot/escape_test.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 	else
-		if [ "`echo $BUILD | grep '/release'`" != "" ]; then
+		if [ "`echo $BUILD | grep $ARCH'-release'`" != "" ]; then
 			echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
 		else
-			echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 " >> $TMPDIR/boot/grub/menu.lst;
+			echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 		fi
 	fi
 	echo 'module /sbin/pci /dev/pci' >> $TMPDIR/boot/grub/menu.lst;
@@ -40,14 +40,15 @@ if [ "$ARCH" = "i586" ]; then
 	echo 'module /sbin/cmos /dev/cmos' >> $TMPDIR/boot/grub/menu.lst;
 	echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 	echo '' >> $TMPDIR/boot/grub/menu.lst;
+	
 	echo "title $OSTITLE - VGA-text" >> $TMPDIR/boot/grub/menu.lst;
 	if [ "$1" = "test" ]; then
 		echo "kernel /boot/escape_test.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 	else
-		if [ "`echo $BUILD | grep '/release'`" != "" ]; then
+		if [ "`echo $BUILD | grep $ARCH'-release'`" != "" ]; then
 			echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
 		else
-			echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 " >> $TMPDIR/boot/grub/menu.lst;
+			echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 		fi
 	fi
 	echo 'module /sbin/pci /dev/pci' >> $TMPDIR/boot/grub/menu.lst;

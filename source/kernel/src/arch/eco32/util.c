@@ -67,7 +67,7 @@ void util_panic(const char *fmt,...) {
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
 	vid_setTargets(TARGET_LOG);
-	vmm_print(t->proc);
+	vmm_print(t->proc->pid);
 	paging_printCur(PD_PART_USER);
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("Done\n\nPress any key to start debugger");
@@ -87,7 +87,7 @@ sFuncCall *util_getKernelStackTrace(void) {
 	return frames;
 }
 
-sFuncCall *util_getUserStackTraceOf(const sThread *t) {
+sFuncCall *util_getUserStackTraceOf(sThread *t) {
 	UNUSED(t);
 	return frames;
 }

@@ -83,6 +83,8 @@ struct sThread {
 	const uint8_t flags;
 	/* thread state. see eThreadState */
 	uint8_t state;
+	/* to lock the attributes of the thread */
+	klock_t lock;
 	/* the current or last cpu that executed this thread */
 	cpuid_t cpu;
 	/* whether signals should be ignored (while being blocked) */
@@ -252,7 +254,7 @@ sThread *thread_popIdle(void);
  * @param stackNo the stack-number
  * @return true if the stack-region exists
  */
-bool thread_getStackRange(const sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo);
+bool thread_getStackRange(sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo);
 
 /**
  * Retrieves the range of the TLS region
@@ -262,7 +264,7 @@ bool thread_getStackRange(const sThread *t,uintptr_t *start,uintptr_t *end,size_
  * @param end will be set to the end-address (may be NULL)
  * @return true if the TLS-region exists
  */
-bool thread_getTLSRange(const sThread *t,uintptr_t *start,uintptr_t *end);
+bool thread_getTLSRange(sThread *t,uintptr_t *start,uintptr_t *end);
 
 /**
  * @param t the thread
@@ -424,7 +426,7 @@ int thread_finishClone(sThread *t,sThread *nt);
  * @param cloneProc whether a process is cloned or just a thread
  * @return 0 on success
  */
-int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
+int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
 		bool cloneProc);
 
 /**

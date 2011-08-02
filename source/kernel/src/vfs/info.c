@@ -125,7 +125,7 @@ ssize_t vfs_info_traceReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void
 }
 
 static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	const sThread *t = thread_getById(atoi(node->parent->name));
+	sThread *t = thread_getById(atoi(node->parent->name));
 	sFuncCall *call;
 	sStringBuffer buf;
 	UNUSED(dataSize);
@@ -163,7 +163,7 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	vmm_getMemUsage(p,&pages);
+	vmm_getMemUsage(p->pid,&pages);
 
 	prf_sprintf(
 		&buf,
@@ -202,7 +202,7 @@ ssize_t vfs_info_threadReadHandler(pid_t pid,file_t file,sVFSNode *node,USER voi
 }
 
 static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	const sThread *t = thread_getById(atoi(node->parent->name));
+	sThread *t = thread_getById(atoi(node->parent->name));
 	sStringBuffer buf;
 	size_t i;
 	ulong stackPages = 0;
@@ -371,7 +371,7 @@ static void vfs_info_regionsReadCallback(sVFSNode *node,size_t *dataSize,void **
 	buf.size = 0;
 	buf.len = 0;
 	p = proc_getByPid(atoi(node->parent->name));
-	vmm_sprintfRegions(&buf,p);
+	vmm_sprintfRegions(&buf,p->pid);
 	*buffer = buf.str;
 	*dataSize = buf.len;
 }

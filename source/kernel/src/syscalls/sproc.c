@@ -46,12 +46,10 @@ int sysc_getpid(sIntrptStackFrame *stack) {
 
 int sysc_getppid(sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
-	const sProc *p;
+	const sProc *p = proc_getByPid(pid);
 
-	if(!proc_exists(pid))
+	if(!p)
 		SYSC_ERROR(stack,ERR_INVALID_PID);
-
-	p = proc_getByPid(pid);
 	SYSC_RET1(stack,p->parentPid);
 }
 
@@ -128,7 +126,7 @@ int sysc_getgroups(sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	size = groups_get(p,list,size);
+	size = groups_get(p->pid,list,size);
 	SYSC_RET1(stack,size);
 }
 
@@ -139,7 +137,7 @@ int sysc_setgroups(sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!groups_set(p,size,list))
+	if(!groups_set(p->pid,size,list))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	SYSC_RET1(stack,0);
 }
@@ -150,7 +148,7 @@ int sysc_isingroup(sIntrptStackFrame *stack) {
 	const sProc *p = proc_getByPid(pid);
 	if(!p)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	SYSC_RET1(stack,groups_contains(p,gid));
+	SYSC_RET1(stack,groups_contains(p->pid,gid));
 }
 
 int sysc_fork(sIntrptStackFrame *stack) {
@@ -215,7 +213,7 @@ int sysc_getenvito(sIntrptStackFrame *stack) {
 	if(size == 0 || !paging_isInUserSpace((uintptr_t)buffer,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!env_geti(p,index,buffer,size))
+	if(!env_geti(p->pid,index,buffer,size))
 		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
 	SYSC_RET1(stack,0);
 }
@@ -230,7 +228,7 @@ int sysc_getenvto(sIntrptStackFrame *stack) {
 	if(size == 0 || !paging_isInUserSpace((uintptr_t)buffer,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!env_get(p,name,buffer,size))
+	if(!env_get(p->pid,name,buffer,size))
 		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
 	SYSC_RET1(stack,0);
 }
@@ -242,7 +240,7 @@ int sysc_setenv(sIntrptStackFrame *stack) {
 	if(!sysc_isStrInUserSpace(name,NULL) || !sysc_isStrInUserSpace(value,NULL))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!env_set(p,name,value))
+	if(!env_set(p->pid,name,value))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	SYSC_RET1(stack,0);
 }

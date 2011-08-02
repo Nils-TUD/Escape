@@ -51,8 +51,11 @@
 /* process flags */
 #define P_ZOMBIE			1
 
-#define PLOCK_COUNT			1
+#define PLOCK_COUNT			4
 #define PLOCK_ENV			0
+#define PLOCK_REGIONS		1
+#define PLOCK_FDS			2
+#define PLOCK_MISC			3
 
 typedef struct {
 	klock_t lock;
@@ -173,12 +176,11 @@ sProc *proc_getRunning(void);
 sProc *proc_getByPid(pid_t pid);
 
 /**
- * Checks whether the process with given id exists
+ * Releases the given process, i.e. unlocks it.
  *
- * @param pid the process-id
- * @return true if so
+ * @param p the process
  */
-bool proc_exists(pid_t pid);
+void proc_release(sProc *p);
 
 /**
  * @return the number of existing processes
@@ -194,20 +196,12 @@ size_t proc_getCount(void);
 file_t proc_fdToFile(int fd);
 
 /**
- * Searches for a free file-descriptor
+ * Associates a free file-descriptor with the given file-number
  *
- * @return the file-descriptor or the error-code (< 0)
- */
-int proc_getFreeFd(void);
-
-/**
- * Associates the given file-descriptor with the given file-number
- *
- * @param fd the file-descriptor
  * @param fileNo the file-number
- * @return 0 on success
+ * @return the file-descriptor on success
  */
-int proc_assocFd(int fd,file_t fileNo);
+int proc_assocFd(file_t fileNo);
 
 /**
  * Duplicates the given file-descriptor
@@ -259,14 +253,6 @@ sRegion *proc_getLRURegion(void);
  * @param dataReal will point to the number of really used bytes (considers sharing)
  */
 void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *dataReal);
-
-/**
- * Determines whether the given process has a child
- *
- * @param pid the process-id
- * @return true if it has a child
- */
-bool proc_hasChild(pid_t pid);
 
 /**
  * Clones the current process into the given one, gives the new process a clone of the current

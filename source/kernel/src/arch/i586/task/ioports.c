@@ -27,11 +27,13 @@
 #include <errors.h>
 #include <string.h>
 
-void ioports_init(sProc *p) {
+void ioports_init(pid_t pid) {
+	sProc *p = proc_getByPid(pid);
 	p->archAttr.ioMap = NULL;
 }
 
-int ioports_request(sProc *p,uint16_t start,size_t count) {
+int ioports_request(pid_t pid,uint16_t start,size_t count) {
+	sProc *p = proc_getByPid(pid);
 	if(p->archAttr.ioMap == NULL) {
 		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
 		if(p->archAttr.ioMap == NULL)
@@ -54,7 +56,8 @@ int ioports_request(sProc *p,uint16_t start,size_t count) {
 	return 0;
 }
 
-bool ioports_handleGPF(sProc *p) {
+bool ioports_handleGPF(pid_t pid) {
+	sProc *p = proc_getByPid(pid);
 	if(p->archAttr.ioMap != NULL && !tss_ioMapPresent()) {
 		/* load it and give the process another try */
 		tss_setIOMap(p->archAttr.ioMap,false);
@@ -63,7 +66,8 @@ bool ioports_handleGPF(sProc *p) {
 	return false;
 }
 
-int ioports_release(sProc *p,uint16_t start,size_t count) {
+int ioports_release(pid_t pid,uint16_t start,size_t count) {
+	sProc *p = proc_getByPid(pid);
 	if(p->archAttr.ioMap == NULL)
 		return ERR_IOMAP_NOT_PRESENT;
 
@@ -81,7 +85,8 @@ int ioports_release(sProc *p,uint16_t start,size_t count) {
 	return 0;
 }
 
-void ioports_free(sProc *p) {
+void ioports_free(pid_t pid) {
+	sProc *p = proc_getByPid(pid);
 	if(p->archAttr.ioMap != NULL) {
 		cache_free(p->archAttr.ioMap);
 		p->archAttr.ioMap = NULL;

@@ -87,7 +87,7 @@ sFuncCall *util_getUserStackTrace(void);
  * @param t the thread
  * @return the first function-call (for util_printStackTrace()) or NULL if failed
  */
-sFuncCall *util_getUserStackTraceOf(const sThread *t);
+sFuncCall *util_getUserStackTraceOf(sThread *t);
 
 /**
  * Builds the kernel-stack-trace of the given thread

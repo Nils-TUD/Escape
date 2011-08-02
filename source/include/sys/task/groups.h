@@ -27,53 +27,53 @@
  * Allocates a new group-descriptor with <groups> (<count> groups) and assigns it to the given
  * process.
  *
- * @param p the process
+ * @param pid the process-id
  * @param count the number of groups
  * @param groups the groups-array (will be copied)
  * @return true if successfull
  */
-bool groups_set(sProc *p,size_t count,USER const gid_t *groups);
+bool groups_set(pid_t pid,size_t count,USER const gid_t *groups);
 
 /**
  * Lets process <dst> join the groups of process <src>.
  *
- * @param dst the dest-process
- * @param src the src-process
+ * @param dstId the dest-process-id
+ * @param srcId the src-process-id
  */
-void groups_join(sProc *dst,const sProc *src);
+void groups_join(pid_t dstId,pid_t srcId);
 
 /**
  * Copies the group-ids from the given process into the given list. If <size> is 0, the number
  * of groups is returned
  *
- * @param p the process
+ * @param pid the process-id
  * @param list the destination list
  * @param size the size of the list
  * @return the number of copied groups
  */
-size_t groups_get(const sProc *p,gid_t *list,size_t size);
+size_t groups_get(pid_t pid,gid_t *list,size_t size);
 
 /**
  * Checks whether the groups of process <p> contain <gid>.
  *
- * @param p the process
+ * @param pid the process-id
  * @param gid the group-id
  * @return true if so
  */
-bool groups_contains(const sProc *p,gid_t gid);
+bool groups_contains(pid_t pid,gid_t gid);
 
 /**
  * Lets the given process leave its groups
  *
- * @param p the process
+ * @param pid the process-id
  */
-void groups_leave(sProc *p);
+void groups_leave(pid_t pid);
 
 /**
  * Prints the groups of the given process
  *
- * @param p the process
+ * @param pid the process-id
  */
-void groups_print(const sProc *p);
+void groups_print(pid_t pid);
 
 #endif /* GROUPS_H_ */

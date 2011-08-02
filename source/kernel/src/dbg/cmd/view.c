@@ -239,7 +239,7 @@ static void view_regions(size_t argc,char **argv) {
 	else {
 		const sProc *p = view_getProc(argc,argv);
 		if(p != NULL)
-			vmm_print(p);
+			vmm_print(p->pid);
 	}
 }
 static void view_pmem(void) {

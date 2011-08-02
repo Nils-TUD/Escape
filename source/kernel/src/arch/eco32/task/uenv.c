@@ -32,8 +32,7 @@
 #define KEYBOARD_IEN		0x02
 
 static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig);
-static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
-		bool newThread);
+static void uenv_addArgs(sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,bool newThread);
 
 void uenv_handleSignal(sIntrptStackFrame *stack) {
 	tid_t tid;
@@ -194,7 +193,7 @@ static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t si
 	stack->r[31] = t->proc->sigRetAddr;
 }
 
-static void uenv_addArgs(const sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
+static void uenv_addArgs(sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
 		bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	uintptr_t tlsStart,tlsEnd;

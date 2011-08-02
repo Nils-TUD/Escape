@@ -77,8 +77,6 @@ int sysc_sendSignalTo(sIntrptStackFrame *stack) {
 
 	if(!sig_canSend(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
-	if(pid != INVALID_PID && !proc_exists(pid))
-		SYSC_ERROR(stack,ERR_INVALID_PID);
 
 	if(pid != INVALID_PID)
 		sig_addSignalFor(pid,signal);

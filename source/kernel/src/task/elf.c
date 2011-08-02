@@ -91,7 +91,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 }
 
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
 	file_t file;
 	size_t j,loadSeg = 0;
@@ -217,10 +217,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	}
 
 	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
-	fd = proc_getFreeFd();
-	if(fd < 0)
-		goto failed;
-	if((res = proc_assocFd(fd,file)) < 0)
+	if((fd = proc_assocFd(file)) < 0)
 		goto failed;
 	if(elf_finishFromFile(file,&eheader,info) < 0) {
 		assert(proc_unassocFd(fd) >= 0);
@@ -292,7 +289,7 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 	if(stype == REG_TLS)
 		bindesc = NULL;
 	/* add the region */
-	if((res = vmm_add(t->proc,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype)) < 0) {
+	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(res));
 		return res;
 	}

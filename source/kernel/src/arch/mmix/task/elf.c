@@ -39,7 +39,7 @@ int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info) {
 
 	/* at first, SYNCID the text-region */
 	uintptr_t begin,start,end;
-	vmm_getRegRange(t->proc,REG_TEXT,&start,&end);
+	vmm_getRegRange(t->proc->pid,REG_TEXT,&start,&end);
 	while(start < end) {
 		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,start);
 		size_t amount = MIN(PAGE_SIZE,end - start);

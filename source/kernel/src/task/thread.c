@@ -54,6 +54,7 @@ static sSLList *threads;
 static sThread *tidToThread[MAX_THREAD_COUNT];
 static sSLList *idleThreads;
 static tid_t nextTid = 0;
+static klock_t lock;
 
 sThread *thread_init(sProc *p) {
 	sThread *curThread;
@@ -82,6 +83,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	*(sProc**)&t->proc = p;
 
 	t->state = state;
+	t->lock = 0;
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
@@ -115,12 +117,14 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 }
 
 bool thread_setSignal(sThread *t,sig_t sig) {
-	assert(t->signal == SIG_COUNT);
-	if(!t->ignoreSignals) {
+	bool res = false;
+	klock_aquire(&t->lock);
+	if(!t->ignoreSignals && t->signal == SIG_COUNT) {
 		t->signal = sig;
-		return true;
+		res = true;
 	}
-	return false;
+	klock_release(&t->lock);
+	return res;
 }
 
 sig_t thread_getSignal(const sThread *t) {
@@ -137,11 +141,12 @@ sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
 }
 
 void thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack) {
+	assert(t == thread_getRunning());
 	t->intrptLevels[t->intrptLevel++] = stack;
 }
 
 void thread_popIntrptLevel(sThread *t) {
-	assert(t->intrptLevel > 0);
+	assert(t == thread_getRunning() && t->intrptLevel > 0);
 	t->intrptLevel--;
 }
 
@@ -151,7 +156,11 @@ size_t thread_getIntrptLevel(const sThread *t) {
 }
 
 size_t thread_getCount(void) {
-	return sll_length(threads);
+	size_t len;
+	klock_aquire(&lock);
+	len = sll_length(threads);
+	klock_release(&lock);
+	return len;
 }
 
 sThread *thread_getById(tid_t tid) {
@@ -161,11 +170,17 @@ sThread *thread_getById(tid_t tid) {
 }
 
 void thread_pushIdle(sThread *t) {
+	klock_aquire(&lock);
 	sll_append(idleThreads,t);
+	klock_release(&lock);
 }
 
 sThread *thread_popIdle(void) {
-	return sll_removeFirst(idleThreads);
+	sThread *t;
+	klock_aquire(&lock);
+	t = sll_removeFirst(idleThreads);
+	klock_release(&lock);
+	return t;
 }
 
 void thread_switch(void) {
@@ -200,20 +215,22 @@ void thread_unsuspend(sThread *t) {
 	sched_setSuspended(t,false);
 }
 
-bool thread_getStackRange(const sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
-	if(t->stackRegions[stackNo] >= 0) {
-		vmm_getRegRange(t->proc,t->stackRegions[stackNo],start,end);
-		return true;
-	}
-	return false;
+bool thread_getStackRange(sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
+	bool res = false;
+	klock_aquire(&t->lock);
+	if(t->stackRegions[stackNo] >= 0)
+		res = vmm_getRegRange(t->proc->pid,t->stackRegions[stackNo],start,end);
+	klock_release(&t->lock);
+	return res;
 }
 
-bool thread_getTLSRange(const sThread *t,uintptr_t *start,uintptr_t *end) {
-	if(t->tlsRegion >= 0) {
-		vmm_getRegRange(t->proc,t->tlsRegion,start,end);
-		return true;
-	}
-	return false;
+bool thread_getTLSRange(sThread *t,uintptr_t *start,uintptr_t *end) {
+	bool res = false;
+	klock_aquire(&t->lock);
+	if(t->tlsRegion >= 0)
+		res = vmm_getRegRange(t->proc->pid,t->tlsRegion,start,end);
+	klock_release(&t->lock);
+	return res;
 }
 
 vmreg_t thread_getTLSRegion(const sThread *t) {
@@ -221,7 +238,9 @@ vmreg_t thread_getTLSRegion(const sThread *t) {
 }
 
 void thread_setTLSRegion(sThread *t,vmreg_t rno) {
+	klock_aquire(&t->lock);
 	t->tlsRegion = rno;
+	klock_release(&t->lock);
 }
 
 bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {
@@ -234,6 +253,7 @@ bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {
 }
 
 void thread_removeRegions(sThread *t,bool remStack) {
+	klock_aquire(&t->lock);
 	t->tlsRegion = -1;
 	if(remStack) {
 		size_t i;
@@ -242,6 +262,7 @@ void thread_removeRegions(sThread *t,bool remStack) {
 	}
 	/* remove all signal-handler since we've removed the code to handle signals */
 	sig_removeHandlerFor(t->tid);
+	klock_release(&t->lock);
 }
 
 int thread_extendStack(uintptr_t address) {
@@ -265,9 +286,9 @@ void thread_addLock(klock_t *lock) {
 	sll_append(&t->termLocks,lock);
 }
 
-void thread_remLock(klock_t *lock) {
+void thread_remLock(klock_t *l) {
 	sThread *t = thread_getRunning();
-	sll_removeFirstWith(&t->termLocks,lock);
+	sll_removeFirstWith(&t->termLocks,l);
 }
 
 void thread_addHeapAlloc(void *ptr) {
@@ -290,13 +311,14 @@ void thread_remCallback(fTermCallback cb) {
 	sll_removeFirstWith(&t->termCallbacks,cb);
 }
 
-int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
+int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
 		bool cloneProc) {
 	int err = ERR_NOT_ENOUGH_MEM;
 	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
+	klock_aquire(&src->lock);
 	*(tid_t*)&t->tid = thread_getFreeTid();
 	if(t->tid == INVALID_TID) {
 		err = ERR_NO_FREE_THREADS;
@@ -306,6 +328,7 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 	*(sProc**)&t->proc = p;
 
 	t->state = ST_RUNNING;
+	t->lock = 0;
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
@@ -336,8 +359,8 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 		t->tlsRegion = -1;
 		if(src->tlsRegion >= 0) {
 			uintptr_t tlsStart,tlsEnd;
-			vmm_getRegRange(src->proc,src->tlsRegion,&tlsStart,&tlsEnd);
-			t->tlsRegion = vmm_add(p,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS);
+			vmm_getRegRange(src->proc->pid,src->tlsRegion,&tlsStart,&tlsEnd);
+			t->tlsRegion = vmm_add(p->pid,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS);
 			if(t->tlsRegion < 0)
 				goto errStack;
 		}
@@ -364,24 +387,25 @@ int thread_clone(const sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno
 		goto errAppendIdle;
 
 	*dst = t;
+	klock_release(&src->lock);
 	return 0;
 
 errAppendIdle:
 	sig_removeHandlerFor(t->tid);
 	if(flags & T_IDLE)
 		sll_removeFirstWith(idleThreads,t);
-errAppend:
 	thread_remove(t);
 errArch:
 	thread_freeArch(t);
 errClone:
 	if(t->tlsRegion >= 0)
-		vmm_remove(p,t->tlsRegion);
+		vmm_remove(p->pid,t->tlsRegion);
 errStack:
 	if(!cloneProc)
 		pmem_free(t->kstackFrame);
 errThread:
 	cache_free(t);
+	klock_release(&src->lock);
 	return err;
 }
 
@@ -403,7 +427,7 @@ bool thread_kill(sThread *t) {
 
 	/* remove tls */
 	if(t->tlsRegion >= 0) {
-		vmm_remove(t->proc,t->tlsRegion);
+		vmm_remove(t->proc->pid,t->tlsRegion);
 		t->tlsRegion = -1;
 	}
 	/* free kernel-stack */
@@ -479,7 +503,7 @@ void thread_print(const sThread *t) {
 		vid_printf("\t\t\t%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
 		calls++;
 	}
-	calls = util_getUserStackTraceOf(t);
+	calls = util_getUserStackTraceOf((sThread*)t);
 	if(calls) {
 		vid_printf("\t\tUser-trace:\n");
 		while(calls->addr != 0) {
@@ -492,24 +516,35 @@ void thread_print(const sThread *t) {
 
 static tid_t thread_getFreeTid(void) {
 	size_t count = 0;
+	tid_t res = INVALID_TID;
+	klock_aquire(&lock);
 	while(count < MAX_THREAD_COUNT) {
 		if(nextTid >= MAX_THREAD_COUNT)
 			nextTid = 0;
-		if(tidToThread[nextTid++] == NULL)
-			return nextTid - 1;
+		if(tidToThread[nextTid++] == NULL) {
+			res = nextTid - 1;
+			break;
+		}
 		count++;
 	}
-	return INVALID_TID;
+	klock_release(&lock);
+	return res;
 }
 
 static bool thread_add(sThread *t) {
-	if(!sll_append(threads,t))
-		return false;
-	tidToThread[t->tid] = t;
-	return true;
+	bool res = false;
+	klock_aquire(&lock);
+	if(sll_append(threads,t)) {
+		tidToThread[t->tid] = t;
+		res = true;
+	}
+	klock_release(&lock);
+	return res;
 }
 
 static void thread_remove(sThread *t) {
+	klock_aquire(&lock);
 	sll_removeFirstWith(threads,t);
 	tidToThread[t->tid] = NULL;
+	klock_release(&lock);
 }

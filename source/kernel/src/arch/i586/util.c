@@ -111,7 +111,7 @@ void util_panic(const char *fmt,...) {
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
 	vid_setTargets(TARGET_LOG);
-	vmm_print(t->proc);
+	vmm_print(t->proc->pid);
 	paging_printCur(PD_PART_USER);
 	vid_setTargets(TARGET_SCREEN);
 	vid_printf("Done\n\nPress any key to start debugger");
@@ -137,7 +137,7 @@ void util_stopTimer(const char *prefix,...) {
 
 sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
 	if(thread_getStackRange(t,&start,&end,0))
 		return util_getStackTrace((uint32_t*)kstack->ebp,start,start,end);
@@ -161,7 +161,7 @@ sFuncCall *util_getKernelStackTrace(void) {
 	return util_getStackTrace(ebp,start,start,end);
 }
 
-sFuncCall *util_getUserStackTraceOf(const sThread *t) {
+sFuncCall *util_getUserStackTraceOf(sThread *t) {
 	uintptr_t start,end;
 	size_t pcount;
 	sFuncCall *calls;

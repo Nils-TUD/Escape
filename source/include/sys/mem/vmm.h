@@ -63,14 +63,14 @@ void vmm_init(void);
  * Adds a region for physical memory mapped into the virtual memory (e.g. for vga text-mode or DMA).
  * Please use this function instead of vmm_add() because this one maps the pages!
  *
- * @param p the process
+ * @param pid the process-id
  * @param phys a pointer to the physical memory to map; if *phys is 0, the function allocates
  * 	contiguous physical memory itself and stores the address in *phys
  * @param bCount the number of bytes to map
  * @param align the alignment for the allocated physical-memory (just if *phys = 0)
  * @return the virtual address or 0 if failed
  */
-uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align);
+uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align);
 
 /**
  * Adds a region of given type to the given process. Note that you can't add regions in arbitrary
@@ -83,7 +83,7 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align);
  *
  * Note: Please use vmm_addPhys() when adding a region that maps physical memory!
  *
- * @param p the process
+ * @param pid the process-id
  * @param bin the binary (may be NULL; in this case no demand-loading is supported)
  * @param binOffset the offset in the binary from where to load the region (ignored if bin is NULL)
  * @param bCount the number of bytes
@@ -91,18 +91,18 @@ uintptr_t vmm_addPhys(sProc *p,uintptr_t *phys,size_t bCount,size_t align);
  * @param type the type of region
  * @return the region-number on success or a negative error-code
  */
-vmreg_t vmm_add(sProc *p,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type);
+vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type);
 
 /**
  * Changes the protection-settings of the given region. This is not possible for TLS-, stack-
  * and nofree-regions.
  *
- * @param p the process
+ * @param pid the process-id
  * @param rno the region-number
  * @param flags the new flags (RF_WRITABLE or 0)
  * @return 0 on success
  */
-int vmm_setRegProt(sProc *p,vmreg_t rno,ulong flags);
+int vmm_setRegProt(pid_t pid,vmreg_t rno,ulong flags);
 
 /**
  * Swaps the page at given index in given region out. I.e. it marks the page as swapped in the
@@ -135,10 +135,10 @@ void vmm_setTimestamp(const sThread *t,time_t timestamp);
 /**
  * Returns the least recently used region of the given process that contains swappable pages
  *
- * @param p the process
+ * @param pid the process-id
  * @return the LRU region (may be NULL)
  */
-sRegion *vmm_getLRURegion(const sProc *p);
+sRegion *vmm_getLRURegion(pid_t pid);
 
 /**
  * Returns a random page-index in the given region that may be swapped out
@@ -151,19 +151,19 @@ size_t vmm_getPgIdxForSwap(const sRegion *reg);
 /**
  * Tests whether the region with given number exists
  *
- * @param p the process
+ * @param pid the process-id
  * @param reg the region-number
  * @return true if so
  */
-bool vmm_exists(const sProc *p,vmreg_t reg);
+bool vmm_exists(pid_t pid,vmreg_t reg);
 
 /**
  * Searches for the dynamic-link-data-region (growable)
  *
- * @param p the process
+ * @param pid the process-id
  * @return the region-number of -1 if not found
  */
-vmreg_t vmm_getDLDataReg(const sProc *p);
+vmreg_t vmm_getDLDataReg(pid_t pid);
 
 /**
  * This is a helper-function for determining the real memory-usage of all processes. It counts
@@ -172,32 +172,25 @@ vmreg_t vmm_getDLDataReg(const sProc *p);
  * This way, we don't count shared regions multiple times (at the end the division sums up to
  * one usage of the region).
  *
- * @param p the process
+ * @param pid the process-id
  * @param pages will point to the number of pages (size of virtual-memory)
  * @return the number of used frames for this process
  */
-float vmm_getMemUsage(const sProc *p,size_t *pages);
+float vmm_getMemUsage(pid_t pid,size_t *pages);
 
 /**
- * @param p the process
- * @param rno the region-number
- * @return a linked list with all processes that use the given region
- */
-sSLList *vmm_getUsersOf(const sProc *p,vmreg_t rno);
-
-/**
- * @param p the process
+ * @param pid the process-id
  * @param rno the region-number
  * @return the vm-region with given number
  */
-sVMRegion *vmm_getRegion(const sProc *p,vmreg_t rno);
+sVMRegion *vmm_getRegion(pid_t pid,vmreg_t rno);
 
 /**
- * @param p the process
+ * @param pid the process-id
  * @param addr the virtual address
  * @return the region-number to which the given virtual address belongs
  */
-vmreg_t vmm_getRegionOf(const sProc *p,uintptr_t addr);
+vmreg_t vmm_getRegionOf(pid_t pid,uintptr_t addr);
 
 /**
  * Determines the vm-region-number of the given region for the given process
@@ -206,27 +199,28 @@ vmreg_t vmm_getRegionOf(const sProc *p,uintptr_t addr);
  * @param reg the region
  * @return the vm-region-number or -1 if not found
  */
-vmreg_t vmm_getRNoByRegion(const sProc *p,const sRegion *reg);
+vmreg_t vmm_getRNoByRegion(pid_t pid,const sRegion *reg);
 
 /**
  * Queries the start- and end-address of a region
  *
- * @param p the process
+ * @param pid the process-id
  * @param reg the region-number
  * @param start will be set to the start-address
  * @param end will be set to the end-address (exclusive; i.e. 0x1000 means 0xfff is the last
  *  accessible byte)
+ * @return true if the region exists
  */
-void vmm_getRegRange(const sProc *p,vmreg_t reg,uintptr_t *start,uintptr_t *end);
+bool vmm_getRegRange(pid_t pid,vmreg_t reg,uintptr_t *start,uintptr_t *end);
 
 /**
  * Checks whether the given process has the given binary as text-region
  *
- * @param p the process
+ * @param pid the process-id
  * @param bin the binary
  * @return the region-number if so or -1
  */
-vmreg_t vmm_hasBinary(const sProc *p,const sBinDesc *bin);
+vmreg_t vmm_hasBinary(pid_t pid,const sBinDesc *bin);
 
 /**
  * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
@@ -240,37 +234,37 @@ bool vmm_pagefault(uintptr_t addr);
 /**
  * Removes all regions of the given process, optionally including stack.
  *
- * @param p the process
+ * @param pid the process-id
  * @param remStack whether to remove the stack too
  */
-void vmm_removeAll(sProc *p,bool remStack);
+void vmm_removeAll(pid_t pid,bool remStack);
 
 /**
  * Removes the given region from the given process
  *
- * @param p the process
+ * @param pid the process-id
  * @param reg the region-number
  */
-void vmm_remove(sProc *p,vmreg_t reg);
+void vmm_remove(pid_t pid,vmreg_t reg);
 
 /**
  * Joins process <dst> to the region <rno> of process <src>. This can just be used for shared-
  * memory!
  *
- * @param src the source-process
+ * @param srcId the source-process
  * @param rno the region-number in the source-process
- * @param dst the destination-process
+ * @param dstId the destination-process
  * @return the region-number on success or the negative error-code
  */
-vmreg_t vmm_join(sProc *src,vmreg_t rno,sProc *dst);
+vmreg_t vmm_join(pid_t srcId,vmreg_t rno,pid_t dstId);
 
 /**
  * Clones all regions of the current process into the given one
  *
- * @param dst the destination-process
+ * @param pid the destination-process-id
  * @return 0 on success
  */
-int vmm_cloneAll(sProc *dst);
+int vmm_cloneAll(pid_t pid);
 
 /**
  * Grows the stack of the given thread so that <addr> is accessible, if possible
@@ -286,33 +280,33 @@ int vmm_growStackTo(sThread *t,vmreg_t reg,uintptr_t addr);
  * If <amount> is positive, the region will be grown by <amount> pages. If negative it will be
  * shrinked. If 0 it returns the current offset to the region-beginning, in pages.
  *
- * @param p the process
+ * @param pid the process-id
  * @param reg the region-number
  * @param amount the number of pages to add/remove
  * @return the old offset to the region-beginning, in pages
  */
-ssize_t vmm_grow(sProc *p,vmreg_t reg,ssize_t amount);
+ssize_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount);
 
 /**
  * Prints information about all regions in the given process to the given buffer
  *
  * @param buf the buffer
- * @param p the process
+ * @param pid the process-id
  */
-void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p);
+void vmm_sprintfRegions(sStringBuffer *buf,pid_t pid);
 
 /**
  * Prints a short version of the regions of given process
  *
- * @param p the process
+ * @param pid the process-id
  */
-void vmm_printShort(const sProc *p);
+void vmm_printShort(pid_t pid);
 
 /**
  * Prints all regions of the given process
  *
- * @param p the process
+ * @param pid the process-id
  */
-void vmm_print(const sProc *p);
+void vmm_print(pid_t pid);
 
 #endif /* REGUSE_H_ */

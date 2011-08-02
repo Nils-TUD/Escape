@@ -39,6 +39,7 @@
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/real.h>
+#include <sys/klock.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>
@@ -66,6 +67,7 @@ static sSLList *procs;
 static sProc *pidToProc[MAX_PROC_COUNT];
 static pid_t nextPid = 1;
 static sThread *deadThread;
+static klock_t lock;
 
 void proc_init(void) {
 	size_t i;
@@ -121,22 +123,29 @@ void proc_init(void) {
 }
 
 void proc_setCommand(sProc *p,const char *cmd) {
+	klock_aquire(p->locks + PLOCK_MISC);
 	if(p->command)
 		cache_free((char*)p->command);
 	p->command = strdup(cmd);
+	klock_release(p->locks + PLOCK_MISC);
 }
 
 pid_t proc_getFreePid(void) {
 	size_t count = 0;
+	pid_t res = INVALID_PID;
+	klock_aquire(&lock);
 	while(count < MAX_PROC_COUNT) {
 		/* 0 is always present */
 		if(nextPid >= MAX_PROC_COUNT)
 			nextPid = 1;
-		if(pidToProc[nextPid++] == NULL)
-			return nextPid - 1;
+		if(pidToProc[nextPid++] == NULL) {
+			res = nextPid - 1;
+			break;
+		}
 		count++;
 	}
-	return INVALID_PID;
+	klock_release(&lock);
+	return res;
 }
 
 sProc *proc_getRunning(void) {
@@ -153,101 +162,103 @@ sProc *proc_getByPid(pid_t pid) {
 	return pidToProc[pid];
 }
 
-bool proc_exists(pid_t pid) {
-	if(pid >= MAX_PROC_COUNT)
-		return false;
-	return pidToProc[pid] != NULL;
+void proc_release(sProc *p) {
+
 }
 
 size_t proc_getCount(void) {
-	return sll_length(procs);
+	size_t res;
+	klock_aquire(&lock);
+	res = sll_length(procs);
+	klock_release(&lock);
+	return res;
 }
 
 file_t proc_fdToFile(int fd) {
 	file_t fileNo;
-	const sProc *p = proc_getRunning();
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	fileNo = p->fileDescs[fd];
-	if(fileNo == -1)
-		return ERR_INVALID_FD;
-
-	return fileNo;
-}
-
-int proc_getFreeFd(void) {
-	int i;
-	const sProc *p = proc_getRunning();
-	const file_t *fds = p->fileDescs;
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(fds[i] == -1)
-			return i;
-	}
-
-	return ERR_MAX_PROC_FDS;
-}
-
-int proc_assocFd(int fd,file_t fileNo) {
 	sProc *p = proc_getRunning();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
-	if(p->fileDescs[fd] != -1)
-		return ERR_INVALID_FD;
+	klock_aquire(p->locks + PLOCK_FDS);
+	fileNo = p->fileDescs[fd];
+	if(fileNo == -1)
+		fileNo = ERR_INVALID_FD;
+	klock_release(p->locks + PLOCK_FDS);
+	return fileNo;
+}
 
-	p->fileDescs[fd] = fileNo;
-	return 0;
+int proc_assocFd(file_t fileNo) {
+	sProc *p = proc_getRunning();
+	const file_t *fds = p->fileDescs;
+	int i,fd = ERR_MAX_PROC_FDS;
+	klock_aquire(p->locks + PLOCK_FDS);
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(fds[i] == -1) {
+			fd = i;
+			break;
+		}
+	}
+	if(fd >= 0)
+		p->fileDescs[fd] = fileNo;
+	klock_release(p->locks + PLOCK_FDS);
+	return fd;
 }
 
 int proc_dupFd(int fd) {
 	file_t f;
-	int nfd;
-	int err;
+	int err,i,nfd = ERR_INVALID_FD;
 	sProc *p = proc_getRunning();
+	const file_t *fds = p->fileDescs;
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
+	klock_aquire(p->locks + PLOCK_FDS);
 	f = p->fileDescs[fd];
-	if(f == -1)
-		return ERR_INVALID_FD;
-
-	nfd = proc_getFreeFd();
-	if(nfd < 0)
-		return nfd;
-
-	/* increase references */
-	if((err = vfs_incRefs(f)) < 0)
-		return err;
-
-	p->fileDescs[nfd] = f;
+	if(f >= 0) {
+		nfd = ERR_MAX_PROC_FDS;
+		for(i = 0; i < MAX_FD_COUNT; i++) {
+			if(fds[i] == -1) {
+				nfd = i;
+				break;
+			}
+		}
+		if(nfd >= 0) {
+			/* increase references */
+			if((err = vfs_incRefs(f)) >= 0)
+				p->fileDescs[nfd] = f;
+			else
+				nfd = err;
+		}
+	}
+	klock_release(p->locks + PLOCK_FDS);
 	return nfd;
 }
 
 int proc_redirFd(int src,int dst) {
 	file_t fSrc,fDst;
-	int err;
+	int err = ERR_INVALID_FD;
 	sProc *p = proc_getRunning();
 
 	/* check fds */
 	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
+	klock_aquire(p->locks + PLOCK_FDS);
 	fSrc = p->fileDescs[src];
 	fDst = p->fileDescs[dst];
-	if(fSrc == -1 || fDst == -1)
-		return ERR_INVALID_FD;
+	if(fSrc >= 0 && fDst >= 0) {
+		if((err = vfs_incRefs(fDst)) == 0) {
+			/* we have to close the source because no one else will do it anymore... */
+			vfs_closeFile(p->pid,fSrc);
 
-	if((err = vfs_incRefs(fDst)) < 0)
-		return err;
-
-	/* we have to close the source because no one else will do it anymore... */
-	vfs_closeFile(p->pid,fSrc);
-
-	/* now redirect src to dst */
-	p->fileDescs[src] = fDst;
-	return 0;
+			/* now redirect src to dst */
+			p->fileDescs[src] = fDst;
+		}
+	}
+	klock_release(p->locks + PLOCK_FDS);
+	return err;
 }
 
 file_t proc_unassocFd(int fd) {
@@ -256,41 +267,49 @@ file_t proc_unassocFd(int fd) {
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
+	klock_aquire(p->locks + PLOCK_FDS);
 	fileNo = p->fileDescs[fd];
-	if(fileNo == -1)
-		return ERR_INVALID_FD;
-
-	p->fileDescs[fd] = -1;
+	if(fileNo >= 0)
+		p->fileDescs[fd] = -1;
+	else
+		fileNo = ERR_INVALID_FD;
+	klock_release(p->locks + PLOCK_FDS);
 	return fileNo;
 }
 
 sProc *proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno) {
 	sSLNode *n;
+	sProc *res = NULL;
+	klock_aquire(&lock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
-		vmreg_t res = vmm_hasBinary(p,bin);
-		if(res != -1) {
-			*rno = res;
-			return p;
+		vmreg_t regno = vmm_hasBinary(p->pid,bin);
+		if(regno != -1) {
+			*rno = regno;
+			res = p;
+			break;
 		}
 	}
-	return NULL;
+	klock_release(&lock);
+	return res;
 }
 
 sRegion *proc_getLRURegion(void) {
 	time_t ts = (time_t)ULONG_MAX;
 	sRegion *lru = NULL;
 	sSLNode *n;
+	klock_aquire(&lock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		if(p->pid != DISK_PID) {
-			sRegion *reg = vmm_getLRURegion(p);
+			sRegion *reg = vmm_getLRURegion(p->pid);
 			if(reg && reg->timestamp < ts) {
 				ts = reg->timestamp;
 				lru = reg;
 			}
 		}
 	}
+	klock_release(&lock);
 	return lru;
 }
 
@@ -298,28 +317,20 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 	size_t pages,pmem = 0,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
+	klock_aquire(&lock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		ownMem += p->ownFrames;
 		shMem += p->sharedFrames;
 		/* + pagedir, page-table for kstack and kstack */
 		pmem += paging_getPTableCount(&p->pagedir) + 3;
-		dReal += vmm_getMemUsage(p,&pages);
+		dReal += vmm_getMemUsage(p->pid,&pages);
 	}
+	klock_release(&lock);
 	*paging = pmem * PAGE_SIZE;
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
 	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;
-}
-
-bool proc_hasChild(pid_t pid) {
-	sSLNode *n;
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		const sProc *p = (const sProc*)n->data;
-		if(p->parentPid == pid)
-			return true;
-	}
-	return false;
 }
 
 int proc_clone(pid_t newPid,uint8_t flags) {
@@ -360,8 +371,6 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->rgid = cur->rgid;
 	p->egid = cur->egid;
 	p->sgid = cur->sgid;
-	p->groups = NULL;
-	groups_join(p,cur);
 	p->exitState = NULL;
 	p->sigRetAddr = cur->sigRetAddr;
 	p->flags = 0;
@@ -371,17 +380,33 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->stats.input = 0;
 	p->stats.output = 0;
 	p->flags = flags;
+	klock_aquire(cur->locks + PLOCK_MISC);
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
+	if(p->command == NULL) {
+		res = ERR_NOT_ENOUGH_MEM;
+		goto errorPdir;
+	}
+	klock_release(cur->locks + PLOCK_MISC);
+
+	/* add to processes */
+	if(!proc_add(p)) {
+		res = ERR_NOT_ENOUGH_MEM;
+		goto errorCmd;
+	}
+
+	/* join group of parent (can't be done before proc_add()) */
+	p->groups = NULL;
+	groups_join(p->pid,cur->pid);
 
 	/* clone regions */
 	p->regions = NULL;
 	p->regSize = 0;
-	if((res = vmm_cloneAll(p)) < 0)
-		goto errorPDir;
+	if((res = vmm_cloneAll(p->pid)) < 0)
+		goto errorAdd;
 
 	/* clone shared-memory-regions */
-	if((res = shm_cloneProc(cur,p)) < 0)
+	if((res = shm_cloneProc(cur->pid,p->pid)) < 0)
 		goto errorRegs;
 
 	/* create thread-list */
@@ -398,21 +423,18 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 		res = ERR_NOT_ENOUGH_MEM;
 		goto errorThread;
 	}
-	/* add to processes */
-	if(!proc_add(p)) {
-		res = ERR_NOT_ENOUGH_MEM;
-		goto errorThread;
-	}
 
 	if((res = proc_cloneArch(p,cur) < 0))
-		goto errorAdd;
+		goto errorThread;
 
 	/* inherit file-descriptors */
+	klock_aquire(cur->locks + PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = cur->fileDescs[i];
 		if(p->fileDescs[i] != -1)
 			vfs_incRefs(p->fileDescs[i]);
 	}
+	klock_release(cur->locks + PLOCK_FDS);
 
 	/* make thread ready */
 	ev_unblock(nt);
@@ -432,17 +454,20 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	/* parent */
 	return 0;
 
-errorAdd:
-	proc_remove(p);
 errorThread:
 	proc_killThread(nt);
 errorThreadList:
 	cache_free(p->threads);
 errorShm:
-	shm_remProc(p);
+	shm_remProc(p->pid);
 errorRegs:
 	proc_removeRegions(p,true);
-errorPDir:
+errorAdd:
+	groups_leave(p->pid);
+	proc_remove(p);
+errorCmd:
+	cache_free(p->command);
+errorPdir:
 	paging_destroyPDir(&p->pagedir);
 errorVFS:
 	vfs_removeProcess(newPid);
@@ -509,8 +534,8 @@ void proc_removeRegions(sProc *p,bool remStack) {
 	assert(p);
 	/* remove from shared-memory; do this first because it will remove the region and simply
 	 * assumes that the region still exists. */
-	shm_remProc(p);
-	vmm_removeAll(p,remStack);
+	shm_remProc(p->pid);
+	vmm_removeAll(p->pid,remStack);
 	/* unset TLS-region (and stack-region, if needed) from all threads */
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
@@ -606,8 +631,8 @@ void proc_terminate(sProc *p,int exitCode,sig_t signal) {
 	}
 
 	/* remove other stuff */
-	groups_leave(p);
-	env_removeFor(p);
+	groups_leave(p->pid);
+	env_removeFor(p->pid);
 	proc_removeRegions(p,true);
 	vfs_real_removeProc(p->pid);
 	lock_releaseAll(p->pid);
@@ -673,7 +698,7 @@ void proc_printAllRegions(void) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
-		vmm_print(p);
+		vmm_print(p->pid);
 		vid_printf("\n");
 	}
 }
@@ -685,7 +710,7 @@ void proc_printAllPDs(uint parts,bool regions) {
 		vid_printf("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
 				p->pid,p->command,p->ownFrames,p->sharedFrames,p->swapped);
 		if(regions)
-			vmm_print(p);
+			vmm_print(p->pid);
 		paging_printPDir(&p->pagedir,parts);
 		vid_printf("\n");
 	}
@@ -699,7 +724,7 @@ void proc_print(sProc *p) {
 	vid_printf("\tOwner: ruid=%u, euid=%u, suid=%u\n",p->ruid,p->euid,p->suid);
 	vid_printf("\tGroup: rgid=%u, egid=%u, sgid=%u\n",p->rgid,p->egid,p->sgid);
 	vid_printf("\tGroups: ");
-	groups_print(p);
+	groups_print(p->pid);
 	vid_printf("\n");
 	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",
 			p->ownFrames,p->sharedFrames,p->swapped);
@@ -711,9 +736,9 @@ void proc_print(sProc *p) {
 				p->exitState->ucycleCount,p->exitState->kcycleCount);
 	}
 	vid_printf("\tRegions:\n");
-	vmm_printShort(p);
+	vmm_printShort(p->pid);
 	vid_printf("\tEnvironment:\n");
-	env_printAllOf(p);
+	env_printAllOf(p->pid);
 	vid_printf("\tFileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {

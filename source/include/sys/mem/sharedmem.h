@@ -33,57 +33,57 @@ void shm_init(void);
 /**
  * Creates a shared-memory with given name and page-count
  *
- * @param p the process
+ * @param pid the process-id
  * @param name the name
  * @param pageCount the number of pages
  * @return the start-page on success
  */
-ssize_t shm_create(sProc *p,const char *name,size_t pageCount);
+ssize_t shm_create(pid_t pid,const char *name,size_t pageCount);
 
 /**
  * Joins the shared-memory with given name
  *
- * @param p the process
+ * @param pid the process-id
  * @param name the name
  * @return the start-page on success
  */
-ssize_t shm_join(sProc *p,const char *name);
+ssize_t shm_join(pid_t pid,const char *name);
 
 /**
  * Leaves the shared-memory with given name.
  *
- * @param p the process
+ * @param pid the process-id
  * @param name the name
  * @return 0 on success
  */
-int shm_leave(sProc *p,const char *name);
+int shm_leave(pid_t pid,const char *name);
 
 /**
  * Destroys the shared-memory with given name. Unmaps the pages for all joined processes and
  * the owner.
  *
- * @param p the process
+ * @param pid the process-id
  * @param name the name
  * @return 0 on success
  */
-int shm_destroy(sProc *p,const char *name);
+int shm_destroy(pid_t pid,const char *name);
 
 /**
  * Joins all shared-memory areas with <child> that have been created by <parent> or which <parent>
  * has joined. Assumes that the regions have already been cloned.
  *
- * @param parent the parent-process
- * @param child the child-process
+ * @param parent the parent-process-id
+ * @param child the child-process-id
  * @return 0 on success
  */
-int shm_cloneProc(const sProc *parent,sProc *child);
+int shm_cloneProc(pid_t parent,pid_t child);
 
 /**
  * Removes the process from all shared-memory stuff
  *
- * @param p the process
+ * @param pid the process-id
  */
-void shm_remProc(sProc *p);
+void shm_remProc(pid_t pid);
 
 /**
  * Prints all shared-memory regions

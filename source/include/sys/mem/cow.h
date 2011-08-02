@@ -40,21 +40,21 @@ size_t cow_pagefault(uintptr_t address);
 /**
  * Adds the given frame and process to the cow-list.
  *
- * @param p the process
+ * @param pid the process-id
  * @param frameNo the frame-number
  * @return true if successfull
  */
-bool cow_add(const sProc *p,frameno_t frameNo);
+bool cow_add(pid_t pid,frameno_t frameNo);
 
 /**
  * Removes the given process and frame from the cow-list
  *
- * @param p the process
+ * @param pid the process-id
  * @param frameNo the frame-number
  * @param foundOther will be set to true if another process still uses the frame
  * @return the number of frames to remove from <p>
  */
-size_t cow_remove(const sProc *p,frameno_t frameNo,bool *foundOther);
+size_t cow_remove(pid_t pid,frameno_t frameNo,bool *foundOther);
 
 /**
  * Note that this is intended for debugging or similar only! (not very efficient)

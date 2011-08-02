@@ -125,7 +125,7 @@ int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
 		if(uid != (uid_t)-1 && uid != n->uid && uid != p->euid)
 			return ERR_NO_PERM;
 		/* users can change the group only to a group they're a member of */
-		if(gid != (gid_t)-1 && gid != n->gid && gid != p->egid && !groups_contains(p,gid))
+		if(gid != (gid_t)-1 && gid != n->gid && gid != p->egid && !groups_contains(p->pid,gid))
 			return ERR_NO_PERM;
 	}
 

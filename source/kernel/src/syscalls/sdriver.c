@@ -53,12 +53,9 @@ int sysc_regDriver(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with it */
-	fd = proc_getFreeFd();
+	fd = proc_assocFd(res);
 	if(fd < 0)
 		SYSC_ERROR(stack,fd);
-	res = proc_assocFd(fd,res);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,fd);
 }
 
@@ -84,17 +81,11 @@ int sysc_getClient(sIntrptStackFrame *stack) {
 	const sProc *p = proc_getRunning();
 	int fd;
 	file_t file,drvFile;
-	int res;
 
 	/* get driver-file */
 	drvFile = proc_fdToFile(drvFd);
 	if(drvFile < 0)
 		SYSC_ERROR(stack,drvFile);
-
-	/* we need a file-desc */
-	fd = proc_getFreeFd();
-	if(fd < 0)
-		SYSC_ERROR(stack,fd);
 
 	/* open client */
 	file = vfs_openClient(p->pid,drvFile,cid);
@@ -102,11 +93,10 @@ int sysc_getClient(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	/* associate fd with file */
-	res = proc_assocFd(fd,file);
-	if(res < 0) {
-		/* we have already opened the file */
+	fd = proc_assocFd(file);
+	if(fd < 0) {
 		vfs_closeFile(p->pid,file);
-		SYSC_ERROR(stack,res);
+		SYSC_ERROR(stack,fd);
 	}
 	SYSC_RET1(stack,fd);
 }
@@ -173,11 +163,6 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	if(clientNo < 0)
 		SYSC_ERROR(stack,clientNo);
 
-	/* get fd for communication with the client */
-	fd = proc_getFreeFd();
-	if(fd < 0)
-		SYSC_ERROR(stack,fd);
-
 	/* open file */
 	file = vfs_openFile(t->proc->pid,VFS_MSGS | VFS_DRIVER,clientNo,VFS_DEV_NO);
 	if(file < 0)
@@ -191,10 +176,10 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	}
 
 	/* assoc with fd */
-	res = proc_assocFd(fd,file);
-	if(res < 0) {
+	fd = proc_assocFd(file);
+	if(fd < 0) {
 		vfs_closeFile(t->proc->pid,file);
-		SYSC_ERROR(stack,res);
+		SYSC_ERROR(stack,fd);
 	}
 
 	if(drv)

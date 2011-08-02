@@ -23,10 +23,10 @@
 
 int proc_cloneArch(sProc *dst,const sProc *src) {
 	UNUSED(src);
-	ioports_init(dst);
+	ioports_init(dst->pid);
 	return 0;
 }
 
 void proc_terminateArch(sProc *p) {
-	ioports_free(p);
+	ioports_free(p->pid);
 }

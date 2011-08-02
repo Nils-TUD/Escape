@@ -165,24 +165,25 @@ bool sig_hasSignalFor(tid_t tid) {
 
 void sig_addSignalFor(pid_t pid,sig_t signal) {
 	sProc *p = proc_getByPid(pid);
-	sSLNode *n;
-	bool sent = false;
-	assert(p != NULL);
-	assert(sig_canSend(signal));
-	klock_aquire(&lock);
-	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-		sThread *t = (sThread*)n->data;
-		sSigThread *st = sig_getThread(t->tid,false);
-		if(st && st->signals[signal].handler) {
-			if(st->signals[signal].handler != SIG_IGN)
-				sig_add(st,signal);
-			sent = true;
+	if(p) {
+		sSLNode *n;
+		bool sent = false;
+		assert(sig_canSend(signal));
+		klock_aquire(&lock);
+		for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+			sThread *t = (sThread*)n->data;
+			sSigThread *st = sig_getThread(t->tid,false);
+			if(st && st->signals[signal].handler) {
+				if(st->signals[signal].handler != SIG_IGN)
+					sig_add(st,signal);
+				sent = true;
+			}
 		}
+		klock_release(&lock);
+		/* no handler and fatal? terminate proc! */
+		if(!sent && sig_isFatal(signal))
+			proc_terminate(p,1,signal);
 	}
-	klock_release(&lock);
-	/* no handler and fatal? terminate proc! */
-	if(!sent && sig_isFatal(signal))
-		proc_terminate(p,1,signal);
 }
 
 bool sig_addSignal(sig_t signal) {

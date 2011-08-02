@@ -62,7 +62,6 @@ void log_vfsIsReady(void) {
 	inode_t inodeNo;
 	sVFSNode *logNode;
 	file_t inFile;
-	int in,out,err;
 	char *nameCpy;
 	const sProc *p = proc_getRunning();
 
@@ -80,12 +79,9 @@ void log_vfsIsReady(void) {
 	 * create new ones (for the vterm of the shell) */
 	assert(vfs_node_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
 	assert((inFile = vfs_openFile(p->pid,VFS_READ,inodeNo,VFS_DEV_NO)) >= 0);
-	in = proc_getFreeFd();
-	assert(in == 0 && proc_assocFd(in,inFile) == 0);
-	out = proc_getFreeFd();
-	assert(out == 1 && proc_assocFd(out,logFile) == 0);
-	err = proc_getFreeFd();
-	assert(err == 2 && proc_assocFd(err,logFile) == 0);
+	assert(proc_assocFd(inFile) == 0);
+	assert(proc_assocFd(logFile) == 1);
+	assert(proc_assocFd(logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
 	vfsIsReady = true;

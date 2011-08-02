@@ -34,13 +34,13 @@ int sysc_changeSize(sIntrptStackFrame *stack) {
 	ssize_t oldEnd;
 	vmreg_t rno = RNO_DATA;
 	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
-	if(!vmm_exists(p,rno)) {
+	if(!vmm_exists(p->pid,rno)) {
 		/* if so, grow that region instead */
-		rno = vmm_getDLDataReg(p);
+		rno = vmm_getDLDataReg(p->pid);
 		if(rno == -1)
 			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	}
-	if((oldEnd = vmm_grow(p,rno,count)) < 0)
+	if((oldEnd = vmm_grow(p->pid,rno,count)) < 0)
 		SYSC_ERROR(stack,oldEnd);
 	SYSC_RET1(stack,oldEnd);
 }
@@ -86,18 +86,18 @@ int sysc_addRegion(sIntrptStackFrame *stack) {
 
 	/* check if the region-type does already exist */
 	if(rno >= 0) {
-		if(vmm_exists(p,rno))
+		if(vmm_exists(p->pid,rno))
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 
 	/* add region */
-	rno = vmm_add(p,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type);
+	rno = vmm_add(p->pid,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type);
 	if(rno < 0)
 		SYSC_ERROR(stack,rno);
 	/* save tls-region-number */
 	if(type == REG_TLS)
 		thread_setTLSRegion(t,rno);
-	vmm_getRegRange(p,rno,&start,0);
+	vmm_getRegRange(p->pid,rno,&start,0);
 	SYSC_RET1(stack,start);
 }
 
@@ -114,11 +114,11 @@ int sysc_setRegProt(sIntrptStackFrame *stack) {
 	if(prot & PROT_WRITE)
 		flags |= RF_WRITABLE;
 
-	rno = vmm_getRegionOf(p,addr);
+	rno = vmm_getRegionOf(p->pid,addr);
 	if(rno < 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vmm_setRegProt(p,rno,flags);
+	res = vmm_setRegProt(p->pid,rno,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -144,7 +144,7 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 #endif
 
-	addr = vmm_addPhys(p,&physCpy,bytes,align);
+	addr = vmm_addPhys(p->pid,&physCpy,bytes,align);
 	if(addr == 0)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	*phys = physCpy;
@@ -163,7 +163,7 @@ int sysc_createSharedMem(sIntrptStackFrame *stack) {
 	strncpy(namecpy,name,sizeof(namecpy));
 	namecpy[sizeof(namecpy) - 1] = '\0';
 
-	res = shm_create(p,namecpy,BYTES_2_PAGES(byteCount));
+	res = shm_create(p->pid,namecpy,BYTES_2_PAGES(byteCount));
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res * PAGE_SIZE);
@@ -177,7 +177,7 @@ int sysc_joinSharedMem(sIntrptStackFrame *stack) {
 
 	strncpy(namecpy,name,sizeof(namecpy));
 	namecpy[sizeof(namecpy) - 1] = '\0';
-	res = shm_join(p,namecpy);
+	res = shm_join(p->pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res * PAGE_SIZE);
@@ -191,7 +191,7 @@ int sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 
 	strncpy(namecpy,name,sizeof(namecpy));
 	namecpy[sizeof(namecpy) - 1] = '\0';
-	res = shm_leave(p,namecpy);
+	res = shm_leave(p->pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -205,7 +205,7 @@ int sysc_destroySharedMem(sIntrptStackFrame *stack) {
 
 	strncpy(namecpy,name,sizeof(namecpy));
 	namecpy[sizeof(namecpy) - 1] = '\0';
-	res = shm_destroy(p,namecpy);
+	res = shm_destroy(p->pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

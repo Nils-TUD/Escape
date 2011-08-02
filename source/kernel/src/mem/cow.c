@@ -31,7 +31,7 @@
 
 typedef struct {
 	frameno_t frameNumber;
-	const sProc *proc;
+	pid_t pid;
 } sCOW;
 
 /**
@@ -56,6 +56,7 @@ size_t cow_pagefault(uintptr_t address) {
 	size_t frmCount;
 	uint flags;
 	sProc *cp = proc_getRunning();
+	pid_t pid = cp->pid;
 
 	/* search through the copy-on-write-list whether there is another one who wants to get
 	 * the frame */
@@ -69,7 +70,7 @@ size_t cow_pagefault(uintptr_t address) {
 	for(n = sll_begin(cowFrames); n != NULL; ln = n, n = n->next) {
 		cow = (sCOW*)n->data;
 		if(cow->frameNumber == frameNumber) {
-			if(cow->proc == cp) {
+			if(cow->pid == pid) {
 				ourCOW = n;
 				ourPrevCOW = ln;
 			}
@@ -82,7 +83,7 @@ size_t cow_pagefault(uintptr_t address) {
 	}
 
 	/* should never happen */
-	vassert(ourCOW != NULL,"No COW entry for process %d and address 0x%x",cp->pid,address);
+	vassert(ourCOW != NULL,"No COW entry for process %d and address 0x%x",pid,address);
 
 	/* remove our from list and adjust pte */
 	cache_free(ourCOW->data);
@@ -102,13 +103,13 @@ size_t cow_pagefault(uintptr_t address) {
 	return frmCount;
 }
 
-bool cow_add(const sProc *p,frameno_t frameNo) {
+bool cow_add(pid_t pid,frameno_t frameNo) {
 	sCOW *cc;
 	cc = (sCOW*)cache_alloc(sizeof(sCOW));
 	if(cc == NULL)
 		return false;
 	cc->frameNumber = frameNo;
-	cc->proc = p;
+	cc->pid = pid;
 	klock_aquire(&lock);
 	if(!sll_append(cowFrames,cc)) {
 		klock_release(&lock);
@@ -119,7 +120,7 @@ bool cow_add(const sProc *p,frameno_t frameNo) {
 	return true;
 }
 
-size_t cow_remove(const sProc *p,frameno_t frameNo,bool *foundOther) {
+size_t cow_remove(pid_t pid,frameno_t frameNo,bool *foundOther) {
 	sSLNode *n,*tn,*ln;
 	sCOW *cow;
 	size_t frmCount = 0;
@@ -131,7 +132,7 @@ size_t cow_remove(const sProc *p,frameno_t frameNo,bool *foundOther) {
 	*foundOther = false;
 	for(n = sll_begin(cowFrames); n != NULL; ) {
 		cow = (sCOW*)n->data;
-		if(cow->proc == p && cow->frameNumber == frameNo) {
+		if(cow->pid == pid && cow->frameNumber == frameNo) {
 			/* remove from COW-list */
 			tn = n->next;
 			frmCount++;
@@ -151,7 +152,7 @@ size_t cow_remove(const sProc *p,frameno_t frameNo,bool *foundOther) {
 		ln = n;
 		n = n->next;
 	}
-	vassert(foundOwn,"For frameNo %#x and proc %d",frameNo,p->pid);
+	vassert(foundOwn,"For frameNo %#x and proc %d",frameNo,pid);
 	klock_release(&lock);
 	return frmCount;
 }
@@ -187,6 +188,7 @@ void cow_print(void) {
 	vid_printf("COW-Frames: (%zu frames)\n",cow_getFrmCount());
 	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
 		cow = (sCOW*)n->data;
-		vid_printf("\tframe=0x%x, proc=%d (%s)\n",cow->frameNumber,cow->proc->pid,cow->proc->command);
+		vid_printf("\tframe=0x%x, proc=%d (%s)\n",cow->frameNumber,cow->pid,
+				proc_getByPid(cow->pid)->command);
 	}
 }

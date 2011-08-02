@@ -31,7 +31,7 @@
 
 static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig);
 static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint);
-static uint32_t *uenv_addArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
+static uint32_t *uenv_addArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 
 void uenv_handleSignal(sIntrptStackFrame *stack) {
 	tid_t tid;
@@ -77,7 +77,7 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	uint32_t *esp;
 	char **argv;
 	size_t totalSize;
-	const sThread *t = thread_getRunning();
+	sThread *t = thread_getRunning();
 	sIntrptStackFrame *frame = thread_getIntrptStack(t);
 
 	/*
@@ -147,14 +147,15 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
 	 * so that he can load it including all shared libraries */
 	if(info->linkerEntry != info->progEntry) {
-		file_t file;
-		int fd = proc_getFreeFd();
-		if(fd < 0)
-			return false;
-		file = vfs_real_openPath(t->proc->pid,VFS_READ,path);
+		int fd;
+		file_t file = vfs_real_openPath(t->proc->pid,VFS_READ,path);
 		if(file < 0)
 			return false;
-		assert(proc_assocFd(fd,file) == 0);
+		fd = proc_assocFd(file);
+		if(fd < 0) {
+			vfs_closeFile(t->proc->pid,file);
+			return false;
+		}
 		*--esp = fd;
 	}
 
@@ -241,7 +242,7 @@ static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint) {
 	frame->edi = 0;
 }
 
-static uint32_t *uenv_addArgs(const sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
+static uint32_t *uenv_addArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	uintptr_t tlsStart,tlsEnd;
 	if(thread_getTLSRange(t,&tlsStart,&tlsEnd)) {

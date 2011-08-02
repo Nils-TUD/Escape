@@ -35,7 +35,6 @@ int sysc_open(sIntrptStackFrame *stack) {
 	uint flags = (uint)SYSC_ARG2(stack);
 	file_t file;
 	int fd;
-	int err;
 	const sProc *p = proc_getRunning();
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -50,17 +49,12 @@ int sysc_open(sIntrptStackFrame *stack) {
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
-	/* get free fd */
-	fd = proc_getFreeFd();
+	/* assoc fd with file */
+	fd = proc_assocFd(file);
 	if(fd < 0) {
 		vfs_closeFile(p->pid,file);
 		SYSC_ERROR(stack,fd);
 	}
-
-	/* assoc fd with file */
-	err = proc_assocFd(fd,file);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,fd);
 }
 
@@ -110,12 +104,6 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 
 	pipeNodeNo = vfs_node_getNo(pipeNode);
-	/* get free fd for reading */
-	kreadFd = proc_getFreeFd();
-	if(kreadFd < 0) {
-		err = kreadFd;
-		goto errorRemNode;
-	}
 	/* open file for reading */
 	readFile = vfs_openFile(p->pid,VFS_READ,pipeNodeNo,VFS_DEV_NO);
 	if(readFile < 0) {
@@ -123,22 +111,22 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 		goto errorRemNode;
 	}
 	/* assoc fd with file */
-	err = proc_assocFd(kreadFd,readFile);
-	if(err < 0)
+	kreadFd = proc_assocFd(readFile);
+	if(kreadFd < 0) {
+		err = kreadFd;
 		goto errorCloseReadFile;
+	}
 
-	/* get free fd for writing */
-	kwriteFd = proc_getFreeFd();
-	if(kwriteFd < 0)
-		goto errorUnAssocReadFd;
 	/* open file for writing */
 	writeFile = vfs_openFile(p->pid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO);
 	if(writeFile < 0)
 		goto errorUnAssocReadFd;
 	/* assoc fd with file */
-	err = proc_assocFd(kwriteFd,writeFile);
-	if(err < 0)
+	kwriteFd = proc_assocFd(writeFile);
+	if(kwriteFd < 0) {
+		err = kwriteFd;
 		goto errorCloseWriteFile;
+	}
 
 	/* now copy the fds to userspace; this might cause a pagefault and might even cause a kill */
 	/* this is no problem because we've associated the fds, so that all resources will be free'd */

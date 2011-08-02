@@ -198,8 +198,8 @@ bool swap_in(const sProc *p,uintptr_t addr) {
 }
 
 static void swap_doSwapin(pid_t pid,file_t file,const sProc *p,uintptr_t addr) {
-	vmreg_t rno = vmm_getRegionOf(p,addr);
-	sVMRegion *vmreg = vmm_getRegion(p,rno);
+	vmreg_t rno = vmm_getRegionOf(p->pid,addr);
+	sVMRegion *vmreg = vmm_getRegion(p->pid,rno);
 	frameno_t frame;
 	ulong block;
 	size_t index;
@@ -251,8 +251,8 @@ static void swap_doSwapOut(pid_t pid,file_t file,sRegion *reg,size_t index) {
 	sProc *first = (sProc*)sll_get(reg->procs,0);
 
 	swap_setSuspended(reg->procs,true);
-	rno = vmm_getRNoByRegion(first,reg);
-	vmreg = vmm_getRegion(first,rno);
+	rno = vmm_getRNoByRegion(first->pid,reg);
+	vmreg = vmm_getRegion(first->pid,rno);
 	block = swmap_alloc();
 	vid_printf("Swapout free=%zu %zx:%zu (first=%p %s:%d) to blk %ld...",
 			pmem_getFreeFrames(MM_DEF),reg,index,vmreg->virt + index * PAGE_SIZE,

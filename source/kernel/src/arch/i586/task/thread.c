@@ -51,7 +51,7 @@ int thread_initArch(sThread *t) {
 
 void thread_addInitialStack(sThread *t) {
 	assert(t->tid == INIT_TID);
-	t->stackRegions[0] = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+	t->stackRegions[0] = vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 	assert(t->stackRegions[0] >= 0);
 }
@@ -62,7 +62,7 @@ int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
 			return ERR_NOT_ENOUGH_MEM;
 
 		/* add a new stack-region */
-		dst->stackRegions[0] = vmm_add(dst->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 		if(dst->stackRegions[0] < 0)
 			return dst->stackRegions[0];
@@ -73,7 +73,7 @@ int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
 
 void thread_freeArch(sThread *t) {
 	if(t->stackRegions[0] >= 0) {
-		vmm_remove(t->proc,t->stackRegions[0]);
+		vmm_remove(t->proc->pid,t->stackRegions[0]);
 		t->stackRegions[0] = -1;
 	}
 	/* if there will be just one thread left we have to map his kernel-stack again because we won't

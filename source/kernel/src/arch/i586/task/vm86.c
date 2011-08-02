@@ -126,7 +126,7 @@ int vm86_create(void) {
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
 	if(p->archAttr.ioMap == NULL)
-		p->archAttr.ioMap = (uint8_t*)kheap_alloc(IO_MAP_SIZE / 8);
+		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
 	/* note that we HAVE TO request all ports (even the reserved ones); otherwise it doesn't work
 	 * everywhere (e.g. my notebook needs it) */
 	if(p->archAttr.ioMap != NULL)
@@ -345,14 +345,13 @@ static void vm86_pushl(sIntrptStackFrame *stack,uint32_t l) {
 }
 
 static void vm86_start(void) {
-	size_t i;
 	volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
 	sIntrptStackFrame *istack;
 	assert(caller != INVALID_TID);
 
 	istack = thread_getIntrptStack(thread_getRunning());
 
-	/* copy the direct-areas to vm86; important: don't let the bios overwrite itself. therefore
+	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
 	if(info.area) {
 		paging_map(info.area->dst,NULL,BYTES_2_PAGES(info.area->size),PG_PRESENT | PG_WRITABLE);

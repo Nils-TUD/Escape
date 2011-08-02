@@ -38,7 +38,7 @@ int sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	err = ioports_request(p,start,count);
+	err = ioports_request(p->pid,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);
@@ -55,7 +55,7 @@ int sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	p = proc_getRunning();
-	err = ioports_release(p,start,count);
+	err = ioports_release(p->pid,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);

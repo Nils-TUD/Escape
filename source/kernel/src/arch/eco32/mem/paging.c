@@ -153,15 +153,12 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	ssize_t frmCount = 0;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
-	sProc *p;
-	sThread *curThread = thread_getRunning();
 
 	/* frames needed:
 	 * 	- page directory
 	 * 	- kernel-stack page-table
 	 * 	- kernel stack
 	 */
-	p = curThread->proc;
 	if(pmem_getFreeFrames(MM_DEF) < 3)
 		return ERR_NOT_ENOUGH_MEM;
 

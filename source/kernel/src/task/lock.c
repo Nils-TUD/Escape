@@ -54,8 +54,6 @@ static sLock *locks = NULL;
  * doesn't hurt to reduce the amount of parallelity a bit, IMO. */
 static klock_t klock;
 
-/* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
-
 static bool lock_isLocked(const sLock *l,ushort flags) {
 	bool res = false;
 	if((flags & LOCK_EXCLUSIVE) && (l->readRefs > 0 || l->writer != INVALID_TID))

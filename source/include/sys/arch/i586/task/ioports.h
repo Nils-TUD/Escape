@@ -26,45 +26,45 @@
 /**
  * Inits the IO-map for the given process
  *
- * @param p the process
+ * @param pid the process-id
  */
-void ioports_init(sProc *p);
+void ioports_init(pid_t pid);
 
 /**
  * Requests some IO-ports for the given process. Will not replace the IO-Map in TSS!
  *
- * @param p the process
+ * @param pid the process-id
  * @param start the start-port
  * @param count the number of ports
  * @return the error-code or 0
  */
-int ioports_request(sProc *p,uint16_t start,size_t count);
+int ioports_request(pid_t pid,uint16_t start,size_t count);
 
 /**
  * Handles a GPF for the given process and checks whether the port-map is already set. If not,
  * it will be set.
  *
- * @param p the process
+ * @param pid the process-id
  * @return true if the io-map was not present and is present now
  */
-bool ioports_handleGPF(sProc *p);
+bool ioports_handleGPF(pid_t pid);
 
 /**
  * Releases some IO-ports for the given process. Will not replace the IO-Map in TSS!
  *
- * @param p the process
+ * @param pid the process-id
  * @param start the start-port
  * @param count the number of ports
  * @return the error-code or 0
  */
-int ioports_release(sProc *p,uint16_t start,size_t count);
+int ioports_release(pid_t pid,uint16_t start,size_t count);
 
 /**
  * Free's the io-ports of the given process
  *
- * @param p the process
+ * @param pid the process-id
  */
-void ioports_free(sProc *p);
+void ioports_free(pid_t pid);
 
 
 #if DEBUGGING

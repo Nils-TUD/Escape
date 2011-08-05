@@ -27,24 +27,26 @@
 #include <errors.h>
 #include <string.h>
 
-void ioports_init(pid_t pid) {
-	sProc *p = proc_getByPid(pid);
+void ioports_init(sProc *p) {
 	p->archAttr.ioMap = NULL;
 }
 
 int ioports_request(pid_t pid,uint16_t start,size_t count) {
-	sProc *p = proc_getByPid(pid);
-	if(p->archAttr.ioMap == NULL) {
-		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
-		if(p->archAttr.ioMap == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-		/* mark all as disallowed */
-		memset(p->archAttr.ioMap,0xFF,IO_MAP_SIZE / 8);
-	}
-
+	sProc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return ERR_IOMAP_RESERVED;
+
+	p = proc_request(pid,PLOCK_PORTS);
+	if(p->archAttr.ioMap == NULL) {
+		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
+		if(p->archAttr.ioMap == NULL) {
+			proc_release(p,PLOCK_PORTS);
+			return ERR_NOT_ENOUGH_MEM;
+		}
+		/* mark all as disallowed */
+		memset(p->archAttr.ioMap,0xFF,IO_MAP_SIZE / 8);
+	}
 
 	/* 0 means allowed */
 	while(count-- > 0) {
@@ -53,27 +55,33 @@ int ioports_request(pid_t pid,uint16_t start,size_t count) {
 	}
 
 	tss_setIOMap(p->archAttr.ioMap,true);
+	proc_release(p,PLOCK_PORTS);
 	return 0;
 }
 
 bool ioports_handleGPF(pid_t pid) {
-	sProc *p = proc_getByPid(pid);
+	bool res = false;
+	sProc *p = proc_request(pid,PLOCK_PORTS);
 	if(p->archAttr.ioMap != NULL && !tss_ioMapPresent()) {
 		/* load it and give the process another try */
 		tss_setIOMap(p->archAttr.ioMap,false);
-		return true;
+		res = true;
 	}
-	return false;
+	proc_release(p,PLOCK_PORTS);
+	return res;
 }
 
 int ioports_release(pid_t pid,uint16_t start,size_t count) {
-	sProc *p = proc_getByPid(pid);
-	if(p->archAttr.ioMap == NULL)
-		return ERR_IOMAP_NOT_PRESENT;
-
+	sProc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return ERR_IOMAP_RESERVED;
+
+	p = proc_request(pid,PLOCK_PORTS);
+	if(p->archAttr.ioMap == NULL) {
+		proc_release(p,PLOCK_PORTS);
+		return ERR_IOMAP_NOT_PRESENT;
+	}
 
 	/* 1 means disallowed */
 	while(count-- > 0) {
@@ -82,11 +90,11 @@ int ioports_release(pid_t pid,uint16_t start,size_t count) {
 	}
 
 	tss_setIOMap(p->archAttr.ioMap,true);
+	proc_release(p,PLOCK_PORTS);
 	return 0;
 }
 
-void ioports_free(pid_t pid) {
-	sProc *p = proc_getByPid(pid);
+void ioports_free(sProc *p) {
 	if(p->archAttr.ioMap != NULL) {
 		cache_free(p->archAttr.ioMap);
 		p->archAttr.ioMap = NULL;

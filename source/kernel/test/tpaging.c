@@ -97,7 +97,7 @@ static void test_paging_foreign(void) {
 	}
 	else
 		test_caseSucceeded();
-	proc_kill(child);
+	proc_kill(child->pid);
 }
 
 static bool test_paging_cycle(uintptr_t addr,size_t count) {

@@ -46,15 +46,17 @@ typedef struct {
 } sBinDesc;
 
 typedef struct {
-	ulong flags;				/* flags that specify the attributes of this region */
-	sBinDesc binary;		/* the source-binary (for demand-paging) */
-	off_t binOffset;	/* offset in the binary */
+	ulong flags;		/* flags that specify the attributes of this region */
+	const sBinDesc binary;	/* the source-binary (for demand-paging) */
+	const off_t binOffset;	/* offset in the binary */
+	const size_t loadCount;	/* number of bytes to load from disk (the rest is zero'ed) */
 	size_t byteCount;		/* number of bytes */
-	size_t loadCount;		/* number of bytes to load from disk (the rest is zero'ed) */
 	time_t timestamp;		/* timestamp of last usage (for swapping) */
 	size_t pfSize;			/* size of pageFlags */
 	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
 	sSLList *procs;			/* linked list of processes that use this region */
+	klock_t lock;			/* lock for the procs-field (all others can't change or belong to
+	 	 	 	 	 	 	   exactly 1 process, which is locked anyway) */
 } sRegion;
 
 /**
@@ -91,7 +93,7 @@ size_t reg_presentPageCount(const sRegion *reg);
  * @param reg the region
  * @return the number of references of the given region
  */
-size_t reg_refCount(const sRegion *reg);
+size_t reg_refCount(sRegion *reg);
 
 /**
  * Returns the swap-block in which the page with given index is stored
@@ -158,7 +160,7 @@ sRegion *reg_clone(const void *p,const sRegion *reg);
  * @param reg the region
  * @param virt the virtual-address at which the region is mapped
  */
-void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt);
+void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt);
 
 /**
  * Prints the flags of the given region
@@ -173,6 +175,6 @@ void reg_printFlags(const sRegion *reg);
  * @param reg the region
  * @param virt the virtual-address at which the region is mapped
  */
-void reg_print(const sRegion *reg,uintptr_t virt);
+void reg_print(sRegion *reg,uintptr_t virt);
 
 #endif /* REGION_H_ */

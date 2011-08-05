@@ -22,6 +22,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/region.h>
 #include <sys/mem/swapmap.h>
+#include <sys/klock.h>
 #include <sys/video.h>
 #include <string.h>
 #include <assert.h>
@@ -46,7 +47,13 @@ static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
 sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,
 		ulong pgFlags,ulong flags) {
 	size_t i,pageCount;
+	sBinDesc *rbin;
 	sRegion *reg;
+	/* a region can never be shareable AND growable. this way, we don't need to lock every region-
+	 * access. because either its growable, then there is only one process that uses the region,
+	 * whose region-stuff is locked anyway. or its shareable, then byteCount, pfSize and pageFlags
+	 * can't change. */
+	assert((flags & (RF_SHAREABLE | RF_GROWABLE)) != (RF_SHAREABLE | RF_GROWABLE));
 	assert(pgFlags == PF_DEMANDLOAD || pgFlags == 0);
 
 	reg = (sRegion*)cache_alloc(sizeof(sRegion));
@@ -55,22 +62,24 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 	reg->procs = sll_create();
 	if(reg->procs == NULL)
 		goto errReg;
+	rbin = (sBinDesc*)&reg->binary;
 	if(bin != NULL && bin->ino) {
-		reg->binary.ino = bin->ino;
-		reg->binary.dev = bin->dev;
-		reg->binary.modifytime = bin->modifytime;
-		reg->binOffset = binOffset;
+		rbin->ino = bin->ino;
+		rbin->dev = bin->dev;
+		rbin->modifytime = bin->modifytime;
+		*(off_t*)&reg->binOffset = binOffset;
 	}
 	else {
-		reg->binary.ino = 0;
-		reg->binary.dev = 0;
-		reg->binary.modifytime = 0;
-		reg->binOffset = 0;
+		rbin->ino = 0;
+		rbin->dev = 0;
+		rbin->modifytime = 0;
+		*(off_t*)&reg->binOffset = 0;
 	}
+	*(size_t*)&reg->loadCount = lCount;
 	reg->flags = flags;
 	reg->byteCount = bCount;
-	reg->loadCount = lCount;
 	reg->timestamp = 0;
+	reg->lock = 0;
 	pageCount = BYTES_2_PAGES(bCount);
 	/* if we have no pages, create the page-array with 1; using 0 will fail and this may actually
 	 * happen for data-regions of zero-size. We want to be able to increase their size, so they
@@ -92,7 +101,6 @@ errReg:
 
 void reg_destroy(sRegion *reg) {
 	size_t i,pcount = BYTES_2_PAGES(reg->byteCount);
-	assert(reg != NULL);
 	/* first free the swapped out blocks */
 	for(i = 0; i < pcount; i++) {
 		if(reg->pageFlags[i] & PF_SWAPPED)
@@ -123,25 +131,22 @@ void reg_setSwapBlock(sRegion *reg,size_t pageIndex,ulong swapBlock) {
 	reg->pageFlags[pageIndex] |= swapBlock << PF_BITCOUNT;
 }
 
-size_t reg_refCount(const sRegion *reg) {
-	assert(reg != NULL);
+size_t reg_refCount(sRegion *reg) {
 	return sll_length(reg->procs);
 }
 
 bool reg_addTo(sRegion *reg,const void *p) {
-	assert(reg != NULL);
 	assert(sll_length(reg->procs) == 0 || (reg->flags & RF_SHAREABLE));
 	return sll_append(reg->procs,(void*)p);
 }
 
 bool reg_remFrom(sRegion *reg,const void *p) {
-	assert(reg != NULL);
 	return sll_removeFirstWith(reg->procs,(void*)p);
 }
 
 bool reg_grow(sRegion *reg,ssize_t amount) {
 	size_t count = BYTES_2_PAGES(reg->byteCount);
-	assert(reg != NULL && (reg->flags & RF_GROWABLE));
+	assert((reg->flags & RF_GROWABLE));
 	if(amount > 0) {
 		ssize_t i;
 		ulong *pf = (ulong*)cache_realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(ulong));
@@ -178,7 +183,7 @@ bool reg_grow(sRegion *reg,ssize_t amount) {
 
 sRegion *reg_clone(const void *p,const sRegion *reg) {
 	sRegion *clone;
-	assert(reg != NULL && !(reg->flags & RF_SHAREABLE));
+	assert(!(reg->flags & RF_SHAREABLE));
 	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,0,reg->flags);
 	if(clone) {
 		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize * sizeof(ulong));
@@ -187,7 +192,7 @@ sRegion *reg_clone(const void *p,const sRegion *reg) {
 	return clone;
 }
 
-void reg_sprintf(sStringBuffer *buf,const sRegion *reg,uintptr_t virt) {
+void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt) {
 	size_t i,x;
 	sSLNode *n;
 	prf_sprintf(buf,"\tSize: %zu bytes\n",reg->byteCount);
@@ -227,7 +232,7 @@ void reg_printFlags(const sRegion *reg) {
 	}
 }
 
-void reg_print(const sRegion *reg,uintptr_t virt) {
+void reg_print(sRegion *reg,uintptr_t virt) {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.len = 0;

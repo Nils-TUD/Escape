@@ -26,9 +26,9 @@
 /**
  * Inits the IO-map for the given process
  *
- * @param pid the process-id
+ * @param p the process
  */
-void ioports_init(pid_t pid);
+void ioports_init(sProc *p);
 
 /**
  * Requests some IO-ports for the given process. Will not replace the IO-Map in TSS!
@@ -62,9 +62,9 @@ int ioports_release(pid_t pid,uint16_t start,size_t count);
 /**
  * Free's the io-ports of the given process
  *
- * @param pid the process-id
+ * @param p the process
  */
-void ioports_free(pid_t pid);
+void ioports_free(sProc *p);
 
 
 #if DEBUGGING

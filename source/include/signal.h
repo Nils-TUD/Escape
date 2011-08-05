@@ -22,35 +22,34 @@
 
 #include <esc/common.h>
 
-#define SIG_COUNT			20
+#define SIG_COUNT			19
 
 /* special signal-handler-addresses */
 #define SIG_IGN				((fSignal)-3)			/* ignore signal */
 #define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
-#define SIG_ERR				-1						/* indicates an error */
+#define SIG_ERR				((fSignal)-1)			/* error-return */
 
 /* the signals */
 #define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
-#define SIG_KILL			0
-#define SIG_TERM			1
-#define SIG_ILL_INSTR		2
-#define SIG_SEGFAULT		3
-#define SIG_PROC_DIED		4
-#define SIG_THREAD_DIED		5
-#define SIG_PIPE_CLOSED		6
-#define SIG_CHILD_TERM		7
-#define SIG_INTRPT			8
-#define SIG_INTRPT_TIMER	9
-#define SIG_INTRPT_KB		10
-#define SIG_INTRPT_COM1		11
-#define SIG_INTRPT_COM2		12
-#define SIG_INTRPT_FLOPPY	13
-#define SIG_INTRPT_CMOS		14
-#define SIG_INTRPT_ATA1		15
-#define SIG_INTRPT_ATA2		16
-#define SIG_INTRPT_MOUSE	17
-#define SIG_USR1			18
-#define SIG_USR2			19
+#define SIG_KILL			0						/* kills a proc; not catchable */
+#define SIG_TERM			1						/* terminates a proc; catchable */
+#define SIG_ILL_INSTR		2						/* TODO atm unused */
+#define SIG_SEGFAULT		3						/* TODO atm unused */
+#define SIG_PROC_DIED		4						/* TODO remove */
+#define SIG_PIPE_CLOSED		5						/* sent to the pipe-writer when reader died */
+#define SIG_CHILD_TERM		6						/* sent to parent-proc */
+#define SIG_INTRPT			7						/* used to interrupt a process; used by shell */
+#define SIG_INTRPT_TIMER	8						/* timer-interrupt */
+#define SIG_INTRPT_KB		9						/* keyboard-interrupt */
+#define SIG_INTRPT_COM1		10						/* com1-interrupt */
+#define SIG_INTRPT_COM2		11						/* com2-interrupt */
+#define SIG_INTRPT_FLOPPY	12						/* floppy-interrupt */
+#define SIG_INTRPT_CMOS		13						/* cmos-interrupt */
+#define SIG_INTRPT_ATA1		14						/* ata1-interrupt */
+#define SIG_INTRPT_ATA2		15						/* ata2-interrupt */
+#define SIG_INTRPT_MOUSE	16						/* mouse-interrupt */
+#define SIG_USR1			17						/* can be used for everything */
+#define SIG_USR2			18						/* can be used for everything */
 
 /* standarg signal-names */
 #define SIGABRT				SIG_KILL

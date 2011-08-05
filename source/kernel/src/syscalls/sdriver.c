@@ -37,7 +37,7 @@ int sysc_regDriver(sIntrptStackFrame *stack) {
 	char nameCpy[MAX_PATH_LEN + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	uint flags = SYSC_ARG2(stack);
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	int fd;
 	file_t res;
 
@@ -48,7 +48,7 @@ int sysc_regDriver(sIntrptStackFrame *stack) {
 	nameCpy[sizeof(nameCpy) - 1] = '\0';
 
 	/* create driver and open it */
-	res = vfs_createDriver(p->pid,nameCpy,flags);
+	res = vfs_createDriver(pid,nameCpy,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -63,13 +63,13 @@ int sysc_getClientId(sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	file_t file;
 	inode_t id;
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 
 	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
-	id = vfs_getClientId(p->pid,file);
+	id = vfs_getClientId(pid,file);
 	if(id < 0)
 		SYSC_ERROR(stack,id);
 	SYSC_RET1(stack,id);
@@ -78,7 +78,7 @@ int sysc_getClientId(sIntrptStackFrame *stack) {
 int sysc_getClient(sIntrptStackFrame *stack) {
 	int drvFd = (int)SYSC_ARG1(stack);
 	inode_t cid = (inode_t)SYSC_ARG2(stack);
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	int fd;
 	file_t file,drvFile;
 
@@ -88,14 +88,14 @@ int sysc_getClient(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,drvFile);
 
 	/* open client */
-	file = vfs_openClient(p->pid,drvFile,cid);
+	file = vfs_openClient(pid,drvFile,cid);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* associate fd with file */
 	fd = proc_assocFd(file);
 	if(fd < 0) {
-		vfs_closeFile(p->pid,file);
+		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);
 	}
 	SYSC_RET1(stack,fd);
@@ -112,6 +112,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	size_t size = SYSC_ARG6(stack);
 	uint flags = (uint)SYSC_ARG7(stack);
 	sThread *t = thread_getRunning();
+	pid_t pid = t->proc->pid;
 	file_t file;
 	inode_t clientNo;
 	int fd;
@@ -138,7 +139,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 
 	/* open a client */
 	while(1) {
-		clientNo = vfs_getClient(t->proc->pid,files,fdCount,&index);
+		clientNo = vfs_getClient(pid,files,fdCount,&index);
 		if(clientNo != ERR_NO_CLIENT_WAITING)
 			break;
 
@@ -164,21 +165,21 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,clientNo);
 
 	/* open file */
-	file = vfs_openFile(t->proc->pid,VFS_MSGS | VFS_DRIVER,clientNo,VFS_DEV_NO);
+	file = vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,clientNo,VFS_DEV_NO);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* receive a message */
-	res = vfs_receiveMsg(t->proc->pid,file,id,data,size);
+	res = vfs_receiveMsg(pid,file,id,data,size);
 	if(res < 0) {
-		vfs_closeFile(t->proc->pid,file);
+		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,res);
 	}
 
 	/* assoc with fd */
 	fd = proc_assocFd(file);
 	if(fd < 0) {
-		vfs_closeFile(t->proc->pid,file);
+		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);
 	}
 

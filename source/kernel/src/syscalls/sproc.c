@@ -40,27 +40,27 @@
 #include <string.h>
 
 int sysc_getpid(sIntrptStackFrame *stack) {
-	const sProc *p = proc_getRunning();
-	SYSC_RET1(stack,p->pid);
+	pid_t pid = proc_getRunning();
+	SYSC_RET1(stack,pid);
 }
 
 int sysc_getppid(sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
-	const sProc *p = proc_getByPid(pid);
-
+	sProc *p = proc_getByPid(pid);
 	if(!p)
 		SYSC_ERROR(stack,ERR_INVALID_PID);
+
 	SYSC_RET1(stack,p->parentPid);
 }
 
 int sysc_getuid(sIntrptStackFrame *stack) {
-	const sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	SYSC_RET1(stack,p->ruid);
 }
 
 int sysc_setuid(sIntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	if(p->euid != ROOT_UID)
 		SYSC_ERROR(stack,ERR_NO_PERM);
 
@@ -71,13 +71,13 @@ int sysc_setuid(sIntrptStackFrame *stack) {
 }
 
 int sysc_getgid(sIntrptStackFrame *stack) {
-	const sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	SYSC_RET1(stack,p->rgid);
 }
 
 int sysc_setgid(sIntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	if(p->euid != ROOT_UID)
 		SYSC_ERROR(stack,ERR_NO_PERM);
 
@@ -88,13 +88,13 @@ int sysc_setgid(sIntrptStackFrame *stack) {
 }
 
 int sysc_geteuid(sIntrptStackFrame *stack) {
-	const sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	SYSC_RET1(stack,p->euid);
 }
 
 int sysc_seteuid(sIntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	/* if not root, it has to be either ruid, euid or suid */
 	if(p->euid != ROOT_UID && uid != p->ruid && uid != p->euid && uid != p->suid)
 		SYSC_ERROR(stack,ERR_NO_PERM);
@@ -104,13 +104,13 @@ int sysc_seteuid(sIntrptStackFrame *stack) {
 }
 
 int sysc_getegid(sIntrptStackFrame *stack) {
-	const sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	SYSC_RET1(stack,p->egid);
 }
 
 int sysc_setegid(sIntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	/* if not root, it has to be either rgid, egid or sgid */
 	if(p->euid != ROOT_UID && gid != p->rgid && gid != p->egid && gid != p->sgid)
 		SYSC_ERROR(stack,ERR_NO_PERM);
@@ -122,22 +122,22 @@ int sysc_setegid(sIntrptStackFrame *stack) {
 int sysc_getgroups(sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	gid_t *list = (gid_t*)SYSC_ARG2(stack);
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	size = groups_get(p->pid,list,size);
+	size = groups_get(pid,list,size);
 	SYSC_RET1(stack,size);
 }
 
 int sysc_setgroups(sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!groups_set(p->pid,size,list))
+	if(!groups_set(pid,size,list))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	SYSC_RET1(stack,0);
 }
@@ -145,10 +145,7 @@ int sysc_setgroups(sIntrptStackFrame *stack) {
 int sysc_isingroup(sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	gid_t gid = (gid_t)SYSC_ARG2(stack);
-	const sProc *p = proc_getByPid(pid);
-	if(!p)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	SYSC_RET1(stack,groups_contains(p->pid,gid));
+	SYSC_RET1(stack,groups_contains(pid,gid));
 }
 
 int sysc_fork(sIntrptStackFrame *stack) {
@@ -197,11 +194,8 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	}
 
 	/* finally kill the process */
-	p = proc_getByPid(res);
-	if(p) {
-		proc_kill(p);
+	if(proc_kill(res))
 		SYSC_RET1(stack,0);
-	}
 	SYSC_ERROR(stack,ERR_INVALID_PID);
 }
 
@@ -209,11 +203,11 @@ int sysc_getenvito(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	size_t index = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	if(size == 0 || !paging_isInUserSpace((uintptr_t)buffer,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!env_geti(p->pid,index,buffer,size))
+	if(!env_geti(pid,index,buffer,size))
 		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
 	SYSC_RET1(stack,0);
 }
@@ -222,13 +216,13 @@ int sysc_getenvto(sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	if(!sysc_isStrInUserSpace(name,NULL))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(size == 0 || !paging_isInUserSpace((uintptr_t)buffer,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!env_get(p->pid,name,buffer,size))
+	if(!env_get(pid,name,buffer,size))
 		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
 	SYSC_RET1(stack,0);
 }
@@ -236,11 +230,11 @@ int sysc_getenvto(sIntrptStackFrame *stack) {
 int sysc_setenv(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	if(!sysc_isStrInUserSpace(name,NULL) || !sysc_isStrInUserSpace(value,NULL))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(!env_set(p->pid,name,value))
+	if(!env_set(pid,name,value))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	SYSC_RET1(stack,0);
 }
@@ -249,62 +243,18 @@ int sysc_exec(sIntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
-	char *argBuffer;
-	sStartupInfo info;
 	inode_t nodeNo;
-	sProc *p = proc_getRunning();
-	size_t argSize;
-	int argc,res;
+	int res;
 	if(!sysc_absolutize_path(pathSave,sizeof(pathSave),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	argc = 0;
-	argBuffer = NULL;
-	if(args != NULL) {
-		argc = proc_buildArgs(args,&argBuffer,&argSize,true);
-		if(argc < 0)
-			SYSC_ERROR(stack,argc);
-	}
-
 	/* resolve path; require a path in real fs */
 	res = vfs_node_resolvePath(pathSave,&nodeNo,NULL,VFS_READ);
-	if(res != ERR_REAL_PATH) {
-		cache_free(argBuffer);
+	if(res != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	}
 
-	/* remove all except stack */
-	proc_removeRegions(p,false);
-
-	/* load program */
-	if(elf_loadFromFile(pathSave,&info) < 0)
-		goto error;
-
-	/* copy path so that we can identify the process */
-	proc_setCommand(p,pathSave);
-
-#ifdef __eco32__
-	debugf("EXEC: proc %d:%s\n",p->pid,p->command);
-#endif
-#ifdef __mmix__
-	debugf("EXEC: proc %d:%s\n",p->pid,p->command);
-#endif
-
-	/* make process ready */
-	/* the entry-point is the one of the process, since threads don't start with the dl again */
-	p->entryPoint = info.progEntry;
-	thread_addHeapAlloc(argBuffer);
-	/* for starting use the linker-entry, which will be progEntry if no dl is present */
-	if(!uenv_setupProc(pathSave,argc,argBuffer,argSize,&info,info.linkerEntry))
-		goto error;
-	thread_remHeapAlloc(argBuffer);
-	cache_free(argBuffer);
-	SYSC_RET1(stack,0);
-
-error:
-	cache_free(argBuffer);
-	proc_terminate(p,res,SIG_COUNT);
-	thread_switch();
-	util_panic("We should not reach this!");
-	SYSC_ERROR(stack,res);
+	res = proc_exec(pathSave,args,NULL,0);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
 }

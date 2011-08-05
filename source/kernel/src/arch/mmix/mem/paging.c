@@ -105,8 +105,7 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= DIR_MAPPED_SPACE && virt + count >= virt;
 }
 
-ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
-	ssize_t frmCount = 0;
+int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	tPageDir *cur = paging_getPageDir();
 
 	/* frames needed:
@@ -119,7 +118,6 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	/* allocate root-location */
 	uintptr_t rootLoc;
 	ssize_t res = pmem_allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1);
-	frmCount += SEGMENT_COUNT * PTS_PER_SEGMENT;
 	rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	/* clear */
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
@@ -132,8 +130,7 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 
 	/* allocate kernel-stack */
 	*stackFrame = pmem_allocate();
-	frmCount++;
-	return frmCount;
+	return 0;
 }
 
 sAllocStats paging_destroyPDir(tPageDir *pdir) {
@@ -400,7 +397,7 @@ sAllocStats paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool fre
 }
 
 static tPageDir *paging_getPageDir(void) {
-	return &proc_getRunning()->pagedir;
+	return proc_getPageDir();
 }
 
 static uint64_t *paging_getPTOf(const tPageDir *pdir,uintptr_t virt,bool create,size_t *createdPts) {

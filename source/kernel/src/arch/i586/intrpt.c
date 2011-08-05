@@ -473,8 +473,8 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	if(!vmm_pagefault(pfaddr)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
-			const sProc *p = proc_getRunning();
-			vid_printf("Page fault for address %p @ %p, process %d\n",pfaddr,stack->eip,p->pid);
+			pid_t pid = proc_getRunning();
+			vid_printf("Page fault for address %p @ %p, process %d\n",pfaddr,stack->eip,pid);
 			vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
 					(stack->errorCode & 0x1) ?
 						"page-level protection violation" : "not-present page",
@@ -482,7 +482,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 					(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
 					(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
 					(stack->errorCode & 0x16) ? "instruction-fetch" : "");
-			proc_segFault(p);
+			proc_segFault();
 		}
 	}
 }

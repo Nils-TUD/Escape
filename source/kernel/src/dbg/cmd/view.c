@@ -237,7 +237,7 @@ static void view_regions(size_t argc,char **argv) {
 	if(argc < 3)
 		proc_printAllRegions();
 	else {
-		const sProc *p = view_getProc(argc,argv);
+		sProc *p = view_getProc(argc,argv);
 		if(p != NULL)
 			vmm_print(p->pid);
 	}
@@ -283,7 +283,7 @@ static sProc *view_getProc(size_t argc,char **argv) {
 	if(argc > 2)
 		p = proc_getByPid(atoi(argv[2]));
 	else
-		p = proc_getRunning();
+		p = proc_getByPid(proc_getRunning());
 	if(p == NULL)
 		vid_printf("Unable to find process '%s'\n",argv[2]);
 	return p;

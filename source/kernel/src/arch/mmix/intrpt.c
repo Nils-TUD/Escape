@@ -246,11 +246,11 @@ static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
 	if(!vmm_pagefault(pfaddr)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
-			sProc *p = proc_getRunning();
+			pid_t pid = proc_getRunning();
 			sKSpecRegs *sregs = thread_getSpecRegs();
-			vid_printf("proc %d: %s for address %p @ %p\n",p->pid,intrptList[irqNo].name,
+			vid_printf("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
 					pfaddr,sregs->rww);
-			proc_segFault(p);
+			proc_segFault();
 		}
 	}
 }

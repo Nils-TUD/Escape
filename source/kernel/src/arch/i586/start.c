@@ -57,6 +57,6 @@ uintptr_t bspstart(sBootInfo *mbp,uint32_t magic) {
 void apstart(void) {
 	while(1);
 	gdt_init_ap();
-	paging_activate(proc_getRunning()->pagedir.own);
+	/*paging_activate(proc_getRunning()->pagedir.own);*/
 	thread_initialSwitch();
 }

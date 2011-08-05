@@ -85,9 +85,9 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count);
  *
  * @param stackFrame will be set to the used kernel-stackframe
  * @param pdir will be set to the page-directory address (physical)
- * @return the number of allocated frames
+ * @return 0 on success
  */
-ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir);
+int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir);
 
 /**
  * Destroys the given page-directory (not the current!)

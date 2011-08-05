@@ -43,7 +43,6 @@ typedef struct {
 	sig_t signal;
 } sSigThread;
 
-static bool sig_isFatal(sig_t sig);
 static void sig_add(sSigThread *t,sig_t sig);
 static void sig_remove(sSigThread *t,sig_t sig);
 static void sig_unset(sSigThread *t,sig_t sig);
@@ -66,6 +65,11 @@ bool sig_canHandle(sig_t signal) {
 
 bool sig_canSend(sig_t signal) {
 	return signal < SIG_INTRPT_TIMER || (signal >= SIG_USR1 && signal < SIG_COUNT);
+}
+
+bool sig_isFatal(sig_t sig) {
+	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT ||
+		sig == SIG_PIPE_CLOSED;
 }
 
 int sig_setHandler(tid_t tid,sig_t signal,fSignal func) {
@@ -163,27 +167,19 @@ bool sig_hasSignalFor(tid_t tid) {
 	return res;
 }
 
-void sig_addSignalFor(pid_t pid,sig_t signal) {
-	sProc *p = proc_getByPid(pid);
-	if(p) {
-		sSLNode *n;
-		bool sent = false;
-		assert(sig_canSend(signal));
-		klock_aquire(&lock);
-		for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-			sThread *t = (sThread*)n->data;
-			sSigThread *st = sig_getThread(t->tid,false);
-			if(st && st->signals[signal].handler) {
-				if(st->signals[signal].handler != SIG_IGN)
-					sig_add(st,signal);
-				sent = true;
-			}
-		}
-		klock_release(&lock);
-		/* no handler and fatal? terminate proc! */
-		if(!sent && sig_isFatal(signal))
-			proc_terminate(p,1,signal);
+bool sig_addSignalFor(tid_t tid,sig_t signal) {
+	sSigThread *st;
+	bool res = false;
+	assert(sig_canSend(signal));
+	klock_aquire(&lock);
+	st = sig_getThread(tid,false);
+	if(st && st->signals[signal].handler) {
+		if(st->signals[signal].handler != SIG_IGN)
+			sig_add(st,signal);
+		res = true;
 	}
+	klock_release(&lock);
+	return res;
 }
 
 bool sig_addSignal(sig_t signal) {
@@ -237,7 +233,6 @@ const char *sig_dbg_getName(sig_t signal) {
 		"SIG_ILL_INSTR",
 		"SIG_SEGFAULT",
 		"SIG_PROC_DIED",
-		"SIG_THREAD_DIED",
 		"SIG_PIPE_CLOSED",
 		"SIG_CHILD_TERM",
 		"SIG_INTRPT",
@@ -283,11 +278,6 @@ size_t sig_dbg_getHandlerCount(void) {
 		}
 	}
 	return c;
-}
-
-static bool sig_isFatal(sig_t sig) {
-	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT ||
-		sig == SIG_PIPE_CLOSED;
 }
 
 static void sig_add(sSigThread *t,sig_t sig) {

@@ -31,14 +31,14 @@
 int sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	int err;
 
 	/* check range */
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	err = ioports_request(p->pid,start,count);
+	err = ioports_request(pid,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);
@@ -47,15 +47,14 @@ int sysc_requestIOPorts(sIntrptStackFrame *stack) {
 int sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
-	sProc *p;
+	pid_t pid = proc_getRunning();
 	int err;
 
 	/* check range */
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	p = proc_getRunning();
-	err = ioports_release(p->pid,start,count);
+	err = ioports_release(pid,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);

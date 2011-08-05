@@ -156,41 +156,46 @@ ssize_t vfs_info_procReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void 
 }
 
 static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	const sProc *p = proc_getByPid(atoi(node->parent->name));
+	pid_t pid = atoi(node->parent->name);
 	sStringBuffer buf;
-	size_t pages;
+	size_t pages,own,shared,swapped;
+	sProc *p;
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	vmm_getMemUsage(p->pid,&pages);
+	vmm_getMemUsage(pid,&pages);
+	proc_getMemUsageOf(pid,&own,&shared,&swapped);
 
-	prf_sprintf(
-		&buf,
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%s\n"
-		"%-16s%zu\n"
-		"%-16s%lu\n"
-		"%-16s%lu\n"
-		"%-16s%lu\n"
-		"%-16s%lu\n"
-		"%-16s%lu\n"
-		,
-		"Pid:",p->pid,
-		"ParentPid:",p->parentPid,
-		"Uid:",p->euid,
-		"Gid:",p->egid,
-		"Command:",p->command,
-		"Pages:",pages,
-		"OwnFrames:",p->ownFrames,
-		"SharedFrames:",p->sharedFrames,
-		"Swapped:",p->swapped,
-		"Read:",p->stats.input,
-		"Write:",p->stats.output
-	);
+	p = proc_getByPid(pid);
+	if(p) {
+		prf_sprintf(
+			&buf,
+			"%-16s%u\n"
+			"%-16s%u\n"
+			"%-16s%u\n"
+			"%-16s%u\n"
+			"%-16s%s\n"
+			"%-16s%zu\n"
+			"%-16s%lu\n"
+			"%-16s%lu\n"
+			"%-16s%lu\n"
+			"%-16s%lu\n"
+			"%-16s%lu\n"
+			,
+			"Pid:",p->pid,
+			"ParentPid:",p->parentPid,
+			"Uid:",p->euid,
+			"Gid:",p->egid,
+			"Command:",p->command,
+			"Pages:",pages,
+			"OwnFrames:",own,
+			"SharedFrames:",shared,
+			"Swapped:",swapped,
+			"Read:",p->stats.input,
+			"Write:",p->stats.output
+		);
+	}
 	*buffer = buf.str;
 	*dataSize = buf.len;
 }

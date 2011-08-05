@@ -22,7 +22,7 @@
 
 #include <sys/common.h>
 
-#define SIG_COUNT			20
+#define SIG_COUNT			19
 
 #define SIG_IGN				((fSignal)-3)			/* ignore signal */
 #define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
@@ -35,21 +35,20 @@
 #define SIG_ILL_INSTR		2						/* TODO atm unused */
 #define SIG_SEGFAULT		3						/* TODO atm unused */
 #define SIG_PROC_DIED		4						/* TODO remove */
-#define SIG_THREAD_DIED		5						/* sent to the proc in which the thread died */
-#define SIG_PIPE_CLOSED		6						/* sent to the pipe-writer when reader died */
-#define SIG_CHILD_TERM		7						/* sent to parent-proc */
-#define SIG_INTRPT			8						/* used to interrupt a process; used by shell */
-#define SIG_INTRPT_TIMER	9						/* timer-interrupt */
-#define SIG_INTRPT_KB		10						/* keyboard-interrupt */
-#define SIG_INTRPT_COM1		11						/* com1-interrupt */
-#define SIG_INTRPT_COM2		12						/* com2-interrupt */
-#define SIG_INTRPT_FLOPPY	13						/* floppy-interrupt */
-#define SIG_INTRPT_CMOS		14						/* cmos-interrupt */
-#define SIG_INTRPT_ATA1		15						/* ata1-interrupt */
-#define SIG_INTRPT_ATA2		16						/* ata2-interrupt */
-#define SIG_INTRPT_MOUSE	17						/* mouse-interrupt */
-#define SIG_USR1			18						/* can be used for everything */
-#define SIG_USR2			19						/* can be used for everything */
+#define SIG_PIPE_CLOSED		5						/* sent to the pipe-writer when reader died */
+#define SIG_CHILD_TERM		6						/* sent to parent-proc */
+#define SIG_INTRPT			7						/* used to interrupt a process; used by shell */
+#define SIG_INTRPT_TIMER	8						/* timer-interrupt */
+#define SIG_INTRPT_KB		9						/* keyboard-interrupt */
+#define SIG_INTRPT_COM1		10						/* com1-interrupt */
+#define SIG_INTRPT_COM2		11						/* com2-interrupt */
+#define SIG_INTRPT_FLOPPY	12						/* floppy-interrupt */
+#define SIG_INTRPT_CMOS		13						/* cmos-interrupt */
+#define SIG_INTRPT_ATA1		14						/* ata1-interrupt */
+#define SIG_INTRPT_ATA2		15						/* ata2-interrupt */
+#define SIG_INTRPT_MOUSE	16						/* mouse-interrupt */
+#define SIG_USR1			17						/* can be used for everything */
+#define SIG_USR2			18						/* can be used for everything */
 
 /* signal-handler-signature */
 typedef void (*fSignal)(int);
@@ -74,6 +73,12 @@ bool sig_canHandle(sig_t signal);
  * @return true if so
  */
 bool sig_canSend(sig_t signal);
+
+/**
+ * @param sig the signal
+ * @return whether the given signal is a fatal one, i.e. should kill the process
+ */
+bool sig_isFatal(sig_t sig);
 
 /**
  * Sets the given signal-handler for <signal>
@@ -127,14 +132,13 @@ bool sig_hasSignal(sig_t *sig,tid_t *tid);
 bool sig_hasSignalFor(tid_t tid);
 
 /**
- * Adds the given signal for the given process
+ * Adds the given signal for the given thread
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param signal the signal
- * @return true if we should directly switch to the process (handle the signal) or false
- * 	if the process is active and we should do this later
+ * @return true if the signal has been added
  */
-void sig_addSignalFor(pid_t pid,sig_t signal);
+bool sig_addSignalFor(tid_t tid,sig_t signal);
 
 /**
  * Adds the given signal to all threads that have announced a handler for it

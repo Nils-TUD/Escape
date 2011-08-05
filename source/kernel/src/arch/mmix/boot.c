@@ -90,6 +90,7 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	vid_printf("Initializing paging...");
 	aspace_init();
 	paging_init();
+	proc_preinit();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* smp */
@@ -183,33 +184,15 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			util_panic("No free process-slots");
 
 		if(proc_clone(pid,0)) {
-			sStartupInfo sinfo;
-			size_t argSize = 0;
-			char *argBuffer = NULL;
-			sProc *p = proc_getRunning();
+			int res,argc;
 			/* parse args */
-			int argc;
 			const char **argv = boot_parseArgs(progs[i].command,&argc);
 			if(argc < 2)
-				util_panic("Invalid arguments for boot-module: %s\n",progs[i].command);
-			/* remove regions (except stack) */
-			proc_removeRegions(p,false);
-			/* now load module */
-			proc_setCommand(p,argv[0]);
-			memcpy((char*)p->command,argv[0],strlen(argv[0]) + 1);
-			if(elf_loadFromMem((const void*)progs[i].start,progs[i].size,&sinfo) < 0)
-				util_panic("Loading boot-module %s failed",p->command);
-			/* build args */
-			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);
-			if(argc < 0)
-				util_panic("Building args for boot-module %s failed: %d",p->command,argc);
-			/* no dynamic linking here */
-			p->entryPoint = sinfo.progEntry;
-			thread_addHeapAlloc(argBuffer);
-			if(!uenv_setupProc(p->command,argc,argBuffer,argSize,&sinfo,sinfo.progEntry))
-				util_panic("Unable to setup user-stack for boot module %s",p->command);
-			thread_remHeapAlloc(argBuffer);
-			cache_free(argBuffer);
+				util_panic("Invalid arguments for boot-module: %s\n",progs[i].path);
+			/* exec */
+			res = proc_exec(progs[i].path,argv,(void*)progs[i].start,progs[i].size);
+			if(res < 0)
+				util_panic("Unable to exec boot-program %s: %d\n",progs[i].path,res);
 			/* we don't want to continue ;) */
 			return 0;
 		}

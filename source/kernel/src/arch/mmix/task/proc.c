@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
+#include <sys/mem/paging.h>
 
 int proc_cloneArch(sProc *dst,const sProc *src) {
 	UNUSED(dst);
@@ -28,4 +29,9 @@ int proc_cloneArch(sProc *dst,const sProc *src) {
 
 void proc_terminateArch(sProc *p) {
 	UNUSED(p);
+}
+
+size_t proc_getKMemUsageOf(sProc *p) {
+	/* root-directory, 1 kernelstack for each thread */
+	return sll_length(p->threads) + SEGMENT_COUNT * PTS_PER_SEGMENT;
 }

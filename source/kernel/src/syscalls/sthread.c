@@ -113,7 +113,7 @@ int sysc_waitUnlock(sIntrptStackFrame *stack) {
 	size_t objCount = SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	int res;
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
@@ -122,7 +122,7 @@ int sysc_waitUnlock(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* release the lock */
-	res = lock_release(global ? INVALID_PID : p->pid,ident);
+	res = lock_release(global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -148,9 +148,9 @@ int sysc_lock(sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	ushort flags = (uint)SYSC_ARG3(stack);
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 
-	int res = lock_aquire(global ? INVALID_PID : p->pid,ident,flags);
+	int res = lock_aquire(global ? INVALID_PID : pid,ident,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -159,9 +159,9 @@ int sysc_lock(sIntrptStackFrame *stack) {
 int sysc_unlock(sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 
-	int res = lock_release(global ? INVALID_PID : p->pid,ident);
+	int res = lock_release(global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

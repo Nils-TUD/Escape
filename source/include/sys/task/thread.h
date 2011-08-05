@@ -365,16 +365,16 @@ int thread_extendStack(uintptr_t address);
 /**
  * Adds the given lock to the term-lock-list
  *
- * @param lock the lock
+ * @param l the lock
  */
-void thread_addLock(klock_t *lock);
+void thread_addLock(klock_t *l);
 
 /**
  * Removes the given lock from the term-lock-list
  *
- * @param lock the lock
+ * @param l the lock
  */
-void thread_remLock(klock_t *lock);
+void thread_remLock(klock_t *l);
 
 /**
  * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies

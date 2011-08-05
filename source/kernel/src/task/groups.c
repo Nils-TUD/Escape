@@ -57,22 +57,17 @@ bool groups_set(pid_t pid,size_t count,USER const gid_t *groups) {
 		return false;
 	}
 	p->groups = g;
-	proc_release(p);
 	return true;
 }
 
-void groups_join(pid_t dstId,pid_t srcId) {
-	sProcGroups *g = groups_getByPid(srcId);
-	sProc *dst = proc_getByPid(dstId);
-	if(!dst)
-		return;
+void groups_join(sProc *dst,sProc *src) {
+	sProcGroups *g = src->groups;
 	dst->groups = g;
 	if(g) {
 		klock_aquire(&g->lock);
 		g->refCount++;
 		klock_release(&g->lock);
 	}
-	proc_release(dst);
 }
 
 size_t groups_get(pid_t pid,USER gid_t *list,size_t size) {
@@ -114,7 +109,6 @@ void groups_leave(pid_t pid) {
 		klock_release(&g->lock);
 	}
 	p->groups = NULL;
-	proc_release(p);
 }
 
 void groups_print(pid_t pid) {
@@ -130,11 +124,8 @@ void groups_print(pid_t pid) {
 }
 
 static sProcGroups *groups_getByPid(pid_t pid) {
-	sProcGroups *g;
 	sProc *p = proc_getByPid(pid);
 	if(!p)
 		return NULL;
-	g = p->groups;
-	proc_release(p);
-	return g;
+	return p->groups;
 }

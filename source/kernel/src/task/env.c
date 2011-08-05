@@ -40,7 +40,7 @@ static sEnvVar *env_getOf(const sProc *p,const char *name);
 bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 	sEnvVar *var;
 	while(1) {
-		sProc *p = proc_getByPid(pid);
+		sProc *p = proc_request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
 		var = env_getiOf(p,&index);
@@ -51,15 +51,15 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 				dst[size - 1] = '\0';
 				thread_remLock(p->locks + PLOCK_ENV);
 			}
-			proc_release(p);
+			proc_release(p,PLOCK_ENV);
 			return true;
 		}
 		if(p->pid == 0) {
-			proc_release(p);
+			proc_release(p,PLOCK_ENV);
 			break;
 		}
 		pid = p->parentPid;
-		proc_release(p);
+		proc_release(p,PLOCK_ENV);
 	}
 	return false;
 }
@@ -67,7 +67,7 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 	sEnvVar *var;
 	while(1) {
-		sProc *p = proc_getByPid(pid);
+		sProc *p = proc_request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
 		thread_addLock(p->locks + PLOCK_ENV);
@@ -78,16 +78,16 @@ bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 				dst[size - 1] = '\0';
 			}
 			thread_remLock(p->locks + PLOCK_ENV);
-			proc_release(p);
+			proc_release(p,PLOCK_ENV);
 			return true;
 		}
 		thread_remLock(p->locks + PLOCK_ENV);
 		if(p->pid == 0) {
-			proc_release(p);
+			proc_release(p,PLOCK_ENV);
 			break;
 		}
 		pid = p->parentPid;
-		proc_release(p);
+		proc_release(p,PLOCK_ENV);
 	}
 	return false;
 }
@@ -106,7 +106,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 		goto errorNameCpy;
 
 	/* at first we have to look whether the var already exists for the given process */
-	p = proc_getByPid(pid);
+	p = proc_request(pid,PLOCK_ENV);
 	if(!p)
 		goto errorValCpy;
 	var = env_getOf(p,nameCpy);
@@ -117,7 +117,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 		/* we don't need the previous value anymore */
 		cache_free(oldVal);
 		cache_free(nameCpy);
-		proc_release(p);
+		proc_release(p,PLOCK_ENV);
 		return true;
 	}
 
@@ -139,7 +139,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 	}
 	if(!sll_append(p->env,var))
 		goto errorList;
-	proc_release(p);
+	proc_release(p,PLOCK_ENV);
 	return true;
 
 errorList:
@@ -148,7 +148,7 @@ errorList:
 errorVar:
 	cache_free(var);
 errorProc:
-	proc_release(p);
+	proc_release(p,PLOCK_ENV);
 errorValCpy:
 	cache_free(valueCpy);
 errorNameCpy:
@@ -157,7 +157,7 @@ errorNameCpy:
 }
 
 void env_removeFor(pid_t pid) {
-	sProc *p = proc_getByPid(pid);
+	sProc *p = proc_request(pid,PLOCK_ENV);
 	if(p) {
 		if(p->env) {
 			sSLNode *n;
@@ -170,7 +170,7 @@ void env_removeFor(pid_t pid) {
 			sll_destroy(p->env,false);
 			p->env = NULL;
 		}
-		proc_release(p);
+		proc_release(p,PLOCK_ENV);
 	}
 }
 

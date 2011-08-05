@@ -38,7 +38,7 @@ sTestModule tModAddrSpace = {
 static sAddressSpace *spaces[ADDR_SPACE_COUNT * 3];
 
 static void test_addrspace(void) {
-	sProc *p = proc_getRunning();
+	sProc *p = proc_getByPid(proc_getRunning());
 	/* a trick to ensure that no address-spaces are in use yet: temporary free the first one and
 	 * allocate it again when we're finished */
 	aspace_free(p->pagedir.addrSpace);

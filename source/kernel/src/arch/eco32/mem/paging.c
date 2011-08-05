@@ -148,9 +148,8 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= KERNEL_AREA && virt + count >= virt;
 }
 
-ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
+int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	frameno_t pdirFrame;
-	ssize_t frmCount = 0;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
 
@@ -164,7 +163,6 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 
 	/* we need a new page-directory */
 	pdirFrame = pmem_allocate();
-	frmCount++;
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
 	pd = (sPDEntry*)PAGE_DIR_DIRMAP;
@@ -193,7 +191,6 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	tpd->present = true;
 	tpd->writable = true;
 	tpd->exists = true;
-	frmCount++;
 	/* clear the page-table */
 	otherPDir = 0;
 	pt = (sPTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAPPED_SPACE);
@@ -205,11 +202,10 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	pt->present = true;
 	pt->writable = true;
 	pt->exists = true;
-	frmCount++;
 
 	*stackFrame = pt->frameNumber;
 	*pdir = DIR_MAPPED_SPACE | (pdirFrame << PAGE_SIZE_SHIFT);
-	return frmCount;
+	return 0;
 }
 
 sAllocStats paging_destroyPDir(tPageDir *pdir) {

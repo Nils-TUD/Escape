@@ -33,7 +33,7 @@ static sScreenBackup backup;
 static char buffer[512];
 
 int cons_cmd_file(size_t argc,char **argv) {
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	file_t file = -1;
 	ssize_t i,count;
 	int res;
@@ -51,12 +51,12 @@ int cons_cmd_file(size_t argc,char **argv) {
 	if((res = lines_create(&lines)) < 0)
 		goto error;
 
-	file = vfs_openPath(p->pid,VFS_READ,argv[1]);
+	file = vfs_openPath(pid,VFS_READ,argv[1]);
 	if(file < 0) {
 		res = file;
 		goto error;
 	}
-	while((count = vfs_readFile(p->pid,file,buffer,sizeof(buffer))) > 0) {
+	while((count = vfs_readFile(pid,file,buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(i = 0; i < count; i++) {
 			if(buffer[i] == '\n') {
@@ -70,7 +70,7 @@ int cons_cmd_file(size_t argc,char **argv) {
 		}
 	}
 	lines_end(&lines);
-	vfs_closeFile(p->pid,file);
+	vfs_closeFile(pid,file);
 	file = -1;
 
 	/* now display lines */
@@ -81,7 +81,7 @@ error:
 	/* clean up */
 	lines_destroy(&lines);
 	if(file >= 0)
-		vfs_closeFile(p->pid,file);
+		vfs_closeFile(pid,file);
 
 	vid_restore(backup.screen,backup.row,backup.col);
 	return res;

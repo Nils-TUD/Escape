@@ -166,6 +166,16 @@ bool vmm_exists(pid_t pid,vmreg_t reg);
 vmreg_t vmm_getDLDataReg(pid_t pid);
 
 /**
+ * Sets the given pointers to the corresponding number of frames for the given process
+ *
+ * @param pid the process-id
+ * @param own will be set to the number of own frames
+ * @param shared will be set to the number of shared frames
+ * @param swapped will be set to the number of swapped frames
+ */
+void vmm_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped);
+
+/**
  * This is a helper-function for determining the real memory-usage of all processes. It counts
  * the number of present frames in all regions of the given process and divides them for each
  * region by the number of region-users. It does not count cow-pages!
@@ -259,22 +269,22 @@ void vmm_remove(pid_t pid,vmreg_t reg);
 vmreg_t vmm_join(pid_t srcId,vmreg_t rno,pid_t dstId);
 
 /**
- * Clones all regions of the current process into the given one
+ * Clones all regions of the current process into the destination-process
  *
- * @param pid the destination-process-id
+ * @param dstId the destination-process-id
  * @return 0 on success
  */
-int vmm_cloneAll(pid_t pid);
+int vmm_cloneAll(pid_t dstId);
 
 /**
  * Grows the stack of the given thread so that <addr> is accessible, if possible
  *
- * @param t the thread
+ * @param pid the process-id
  * @param reg the region
  * @param addr the address
  * @return 0 on success
  */
-int vmm_growStackTo(sThread *t,vmreg_t reg,uintptr_t addr);
+int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr);
 
 /**
  * If <amount> is positive, the region will be grown by <amount> pages. If negative it will be

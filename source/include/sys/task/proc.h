@@ -51,11 +51,12 @@
 /* process flags */
 #define P_ZOMBIE			1
 
-#define PLOCK_COUNT			4
+#define PLOCK_COUNT			5
 #define PLOCK_ENV			0
 #define PLOCK_REGIONS		1
 #define PLOCK_FDS			2
-#define PLOCK_MISC			3
+#define PLOCK_PORTS			3
+#define PLOCK_PROG			4	/* clone, exec, threads */
 
 typedef struct {
 	klock_t lock;
@@ -145,9 +146,19 @@ typedef struct {
 typedef enum {CHG_DATA,CHG_STACK} eChgArea;
 
 /**
+ * Inits the page-directory
+ */
+void proc_preinit(void);
+
+/**
  * Initializes the process-management
  */
 void proc_init(void);
+
+/**
+ * @return the page-dir of the current process (or the first one)
+ */
+tPageDir *proc_getPageDir(void);
 
 /**
  * Sets the command of <p> to <cmd> and frees the current command-string, if necessary
@@ -165,22 +176,34 @@ void proc_setCommand(sProc *p,const char *cmd);
 pid_t proc_getFreePid(void);
 
 /**
- * @return the running process
+ * @return the pid of the running process
  */
-sProc *proc_getRunning(void);
+pid_t proc_getRunning(void);
 
 /**
+ * Returns the process with given id WITHOUT aquiring a lock.
+ *
  * @param pid the pid of the process
  * @return the process with given pid
  */
 sProc *proc_getByPid(pid_t pid);
 
 /**
- * Releases the given process, i.e. unlocks it.
+ * Requests the process with given id and given lock.
+ *
+ * @param pid the process-id
+ * @param l the lock: PLOCK_*
+ * @return the process
+ */
+sProc *proc_request(pid_t pid,size_t l);
+
+/**
+ * Releases the lock of given process.
  *
  * @param p the process
+ * @param l the lock: PLOCK_*
  */
-void proc_release(sProc *p);
+void proc_release(sProc *p,size_t l);
 
 /**
  * @return the number of existing processes
@@ -233,9 +256,9 @@ file_t proc_unassocFd(int fd);
  *
  * @param bin the binary
  * @param rno will be set to the region-number if found
- * @return the process with the binary or NULL if not found
+ * @return the process-id with the binary or INVALID_PID if not found
  */
-sProc *proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno);
+pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno);
 
 /**
  * Determines the least recently used region of all processes
@@ -243,6 +266,22 @@ sProc *proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno);
  * @return the region (may be NULL)
  */
 sRegion *proc_getLRURegion(void);
+
+/**
+ * Determines the memory-usage for the given process
+ *
+ * @param pid the process-id
+ * @param own will be set to the number of own frames
+ * @param shared will be set to the number of shared frames
+ * @param swapped will be set to the number of swapped frames
+ */
+void proc_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped);
+
+/**
+ * @param p the process
+ * @return the number of frames that is used by the given process in the kernel-space
+ */
+size_t proc_getKMemUsageOf(sProc *p);
 
 /**
  * Determines the mem-usage of all processes
@@ -253,6 +292,14 @@ sRegion *proc_getLRURegion(void);
  * @param dataReal will point to the number of really used bytes (considers sharing)
  */
 void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *dataReal);
+
+/**
+ * Adds the given signal to the given process. If necessary, the process is killed.
+ *
+ * @param pid the process-id
+ * @param signal the signal
+ */
+void proc_addSignalFor(pid_t pid,sig_t signal);
 
 /**
  * Clones the current process into the given one, gives the new process a clone of the current
@@ -285,6 +332,17 @@ int proc_cloneArch(sProc *dst,const sProc *src);
 int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg);
 
 /**
+ * Executes the given program, i.e. removes all regions except the stacks and loads the new one.
+ *
+ * @param path the path to the program
+ * @param args the arguments
+ * @param code if the program is already in memory, the location of it (used for boot-modules)
+ * @param size if code != NULL, the size of the program in memory
+ * @return 0 on success
+ */
+int proc_exec(const char *path,const char *const *args,const void *code,size_t size);
+
+/**
  * Destroys the current thread. If it's the only thread in the process, the complete process will
  * destroyed.
  * Note that the actual deletion will be done later!
@@ -296,10 +354,10 @@ void proc_exit(int exitCode);
 /**
  * Removes all regions from the given process
  *
- * @param p the process
+ * @param pid the process-id
  * @param remStack whether the stack should be removed too
  */
-void proc_removeRegions(sProc *p,bool remStack);
+void proc_removeRegions(pid_t pid,bool remStack);
 
 /**
  * Stores the exit-state of the first terminated child-process of <ppid> into <state>
@@ -311,12 +369,10 @@ void proc_removeRegions(sProc *p,bool remStack);
 int proc_getExitState(pid_t ppid,sExitState *state);
 
 /**
- * Sends a SIG_SEGFAULT signal to the given process and performs a thread-switch if the process
+ * Sends a SIG_SEGFAULT signal to the current process and performs a thread-switch if the process
  * has been terminated.
- *
- * @param p the process
  */
-void proc_segFault(const sProc *p);
+void proc_segFault(void);
 
 /**
  * Kills the thread that could not been killed because it was the current thread.
@@ -327,11 +383,11 @@ void proc_killDeadThread(void);
  * Marks the given process as zombie and notifies the waiting parent thread. As soon as the parent
  * thread fetches the exit-state we'll kill the process
  *
- * @param p the process
+ * @param pid the process-id
  * @param exitCode the exit-code to store
  * @param signal the signal with which it was killed (SIG_COUNT if none)
  */
-void proc_terminate(sProc *p,int exitCode,sig_t signal);
+void proc_terminate(pid_t pid,int exitCode,sig_t signal);
 
 /**
  * Handles the architecture-specific part of the terminate-operation.
@@ -344,9 +400,10 @@ void proc_terminateArch(sProc *p);
  * Kills the given process, that means all structures will be destroyed and the memory free'd.
  * This is not possible with the current process!
  *
- * @param p the process
+ * @param pid the process-id
+ * @return true if successfull
  */
-void proc_kill(sProc *p);
+bool proc_kill(pid_t pid);
 
 /**
  * Copies the arguments (for exec) in <args> to <*argBuffer> and takes care that everything

@@ -113,6 +113,8 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 		return 0;
 
 	p = proc_getByPid(pid);
+	if(p == NULL)
+		return ERR_INVALID_PID;
 	/* root is (nearly) allmighty as well */
 	if(p->euid == ROOT_UID) {
 		/* root has exec-permission if at least one has exec-permission */

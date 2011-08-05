@@ -29,3 +29,8 @@ int proc_cloneArch(sProc *dst,const sProc *src) {
 void proc_terminateArch(sProc *p) {
 	UNUSED(p);
 }
+
+size_t proc_getKMemUsageOf(sProc *p) {
+	/* 1 pagedir, 1 page-table for kernel-stack, 1 kernelstack for each thread */
+	return sll_length(p->threads) + 2;
+}

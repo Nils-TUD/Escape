@@ -23,10 +23,15 @@
 
 int proc_cloneArch(sProc *dst,const sProc *src) {
 	UNUSED(src);
-	ioports_init(dst->pid);
+	ioports_init(dst);
 	return 0;
 }
 
 void proc_terminateArch(sProc *p) {
-	ioports_free(p->pid);
+	ioports_free(p);
+}
+
+size_t proc_getKMemUsageOf(sProc *p) {
+	/* 1 pagedir, 1 page-table for kernel-stack, 1 kernelstack for each thread */
+	return sll_length(p->threads) + 2;
 }

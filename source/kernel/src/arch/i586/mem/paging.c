@@ -270,10 +270,9 @@ void paging_unmapFromTemp(size_t count) {
 	paging_unmap(TEMP_MAP_AREA + PAGE_SIZE,count,false);
 }
 
-ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
+int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	uintptr_t kstackAddr;
 	frameno_t pdirFrame;
-	ssize_t frmCount = 0;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
 	tPageDir *cur = paging_getPageDir();
@@ -281,7 +280,6 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 
 	/* we need a new page-directory */
 	pdirFrame = pmem_allocate();
-	frmCount++;
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
 	pd = (sPDEntry*)PAGE_DIR_AREA;
@@ -307,7 +305,6 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	tpd->present = true;
 	tpd->writable = true;
 	tpd->exists = true;
-	frmCount++;
 	/* clear the page-table */
 	kstackAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
 			KERNEL_STACK & ~(PT_ENTRY_COUNT * PAGE_SIZE - 1));
@@ -321,7 +318,6 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	pt->present = true;
 	pt->writable = true;
 	pt->exists = true;
-	frmCount++;
 
 	paging_doUnmapFrom(cur,TEMP_MAP_AREA,1,false);
 
@@ -331,7 +327,7 @@ ssize_t paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	pdir->own = pdirFrame << PAGE_SIZE_SHIFT;
 	pdir->other = 0;
 	klock_release(&cur->lock);
-	return frmCount;
+	return 0;
 }
 
 sAllocStats paging_destroyPDir(tPageDir *pdir) {
@@ -647,7 +643,7 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 }
 
 static tPageDir *paging_getPageDir(void) {
-	return &proc_getRunning()->pagedir;
+	return proc_getPageDir();
 }
 
 static uintptr_t paging_getPTables(uintptr_t pdir) {

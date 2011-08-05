@@ -35,7 +35,7 @@ static int cons_cmd_ls_read(pid_t pid,file_t file,sDirEntry *e);
 static sScreenBackup backup;
 
 int cons_cmd_ls(size_t argc,char **argv) {
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	sLines lines;
 	sStringBuffer buf;
 	file_t file;
@@ -51,12 +51,12 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	/* create lines and redirect prints */
 	if((res = lines_create(&lines)) < 0)
 		return res;
-	file = vfs_openPath(p->pid,VFS_READ,argv[1]);
+	file = vfs_openPath(pid,VFS_READ,argv[1]);
 	if(file < 0) {
 		res = file;
 		goto errorLines;
 	}
-	while((res = cons_cmd_ls_read(p->pid,file,&e)) > 0) {
+	while((res = cons_cmd_ls_read(pid,file,&e)) > 0) {
 		buf.dynamic = true;
 		buf.len = 0;
 		buf.size = 0;
@@ -69,7 +69,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 		if((res = lines_newline(&lines)) < 0)
 			goto errorFile;
 	}
-	vfs_closeFile(p->pid,file);
+	vfs_closeFile(pid,file);
 	if(res < 0)
 		goto errorLines;
 	lines_end(&lines);
@@ -82,7 +82,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	return 0;
 
 errorFile:
-	vfs_closeFile(p->pid,file);
+	vfs_closeFile(pid,file);
 errorLines:
 	lines_destroy(&lines);
 	return res;

@@ -109,7 +109,7 @@ int vm86_create(void) {
 	vm86Tid = t->tid;
 
 	/* remove all regions */
-	proc_removeRegions(p,true);
+	proc_removeRegions(p->pid,true);
 
 	/* Now map the first MiB of physical memory to 0x00000000 and the first 64 KiB to 0x00100000,
 	 * too. Because in real-mode it occurs an address-wraparound at 1 MiB. In VM86-mode it doesn't

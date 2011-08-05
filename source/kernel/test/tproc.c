@@ -57,8 +57,8 @@ static void test_proc(void) {
 		test_assertTrue(proc_clone(newPid,0) >= 0);
 		tprintf("Destroying process\n",newPid);
 		/* both are necessary */
-		proc_terminate(proc_getByPid(newPid),0,0);
-		proc_kill(proc_getByPid(newPid));
+		proc_terminate(newPid,0,0);
+		proc_kill(newPid);
 	}
 	checkMemoryAfter(false);
 	test_caseSucceeded();

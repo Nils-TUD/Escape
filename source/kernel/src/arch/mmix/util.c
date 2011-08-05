@@ -83,7 +83,7 @@ sFuncCall *util_getKernelStackTrace(void) {
 	return frames;
 }
 
-sFuncCall *util_getUserStackTraceOf(const sThread *t) {
+sFuncCall *util_getUserStackTraceOf(sThread *t) {
 	UNUSED(t);
 	return frames;
 }

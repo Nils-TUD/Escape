@@ -274,16 +274,16 @@ int thread_extendStack(uintptr_t address) {
 		if(t->stackRegions[i] < 0)
 			return ERR_NOT_ENOUGH_MEM;
 
-		res = vmm_growStackTo(t,t->stackRegions[i],address);
+		res = vmm_growStackTo(t->proc->pid,t->stackRegions[i],address);
 		if(res >= 0)
 			return res;
 	}
 	return res;
 }
 
-void thread_addLock(klock_t *lock) {
+void thread_addLock(klock_t *l) {
 	sThread *t = thread_getRunning();
-	sll_append(&t->termLocks,lock);
+	sll_append(&t->termLocks,l);
 }
 
 void thread_remLock(klock_t *l) {
@@ -456,7 +456,6 @@ bool thread_kill(sThread *t) {
 	vfs_req_freeAllOf(t);
 
 	/* notify the process about it */
-	sig_addSignalFor(t->proc->pid,SIG_THREAD_DIED);
 	ev_wakeup(EVI_THREAD_DIED,(evobj_t)t->proc);
 
 	/* finally, destroy thread */

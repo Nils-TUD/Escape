@@ -98,6 +98,7 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 	/* init video and serial-ports */
 	vid_init();
 	ser_init();
+	proc_preinit();
 
 	vid_printf("GDT exchanged, paging enabled, video initialized");
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
@@ -146,7 +147,7 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 	vid_printf("Initializing process-management...");
 	ev_init();
 	proc_init();
-	paging_exchangePDir(proc_getRunning()->pagedir.own);
+	paging_exchangePDir(proc_getPageDir()->own);
 	sched_init();
 	/* the process and thread-stuff has to be ready, too ... */
 	if(logToVFS)
@@ -253,28 +254,10 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			util_panic("No free process-slots");
 
 		if(proc_clone(pid,0)) {
-			sStartupInfo info;
-			size_t argSize = 0;
-			char *argBuffer = NULL;
-			sProc *p = proc_getRunning();
-			/* remove regions (except stack) */
-			proc_removeRegions(p,false);
-			/* now load module */
-			proc_setCommand(p,argv[0]);
-			if(elf_loadFromMem((void*)mod->modStart,mod->modEnd - mod->modStart,&info) < 0)
-				util_panic("Loading multiboot-module %s failed",p->command);
-			/* build args */
-			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);
-			if(argc < 0)
-				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
-			/* no dynamic linking here */
-			p->entryPoint = info.progEntry;
-			thread_addHeapAlloc(argBuffer);
-			if(!uenv_setupProc(p->command,argc,argBuffer,argSize,&info,info.progEntry))
-				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
-			thread_remHeapAlloc(argBuffer);
-			cache_free(argBuffer);
-			/* we don't want to continue the loop ;) */
+			int res = proc_exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
+			if(res < 0)
+				util_panic("Unable to exec boot-program %s: %d\n",argv[0],res);
+			/* we don't want to continue ;) */
 			return 0;
 		}
 

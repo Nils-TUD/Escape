@@ -63,7 +63,7 @@ void log_vfsIsReady(void) {
 	sVFSNode *logNode;
 	file_t inFile;
 	char *nameCpy;
-	const sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 
 	/* open log-file */
 	assert(vfs_node_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
@@ -78,7 +78,7 @@ void log_vfsIsReady(void) {
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
 	 * create new ones (for the vterm of the shell) */
 	assert(vfs_node_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
-	assert((inFile = vfs_openFile(p->pid,VFS_READ,inodeNo,VFS_DEV_NO)) >= 0);
+	assert((inFile = vfs_openFile(pid,VFS_READ,inodeNo,VFS_DEV_NO)) >= 0);
 	assert(proc_assocFd(inFile) == 0);
 	assert(proc_assocFd(logFile) == 1);
 	assert(proc_assocFd(logFile) == 2);

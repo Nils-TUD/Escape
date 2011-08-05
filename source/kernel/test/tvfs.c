@@ -53,15 +53,15 @@ static void test_vfs_createDriver(void) {
 	test_assertTrue(f1 >= 0);
 	f2 = vfs_createDriver(0,"test2",0);
 	test_assertTrue(f2 >= 0);
-	test_assertInt(vfs_createDriver(1,"test",0),ERR_DRIVER_EXISTS);
-	test_assertInt(vfs_createDriver(1,"",0),ERR_INV_DRIVER_NAME);
-	test_assertInt(vfs_createDriver(1,"abc.def",0),ERR_INV_DRIVER_NAME);
-	f3 = vfs_createDriver(1,"test3",0);
+	test_assertInt(vfs_createDriver(0,"test",0),ERR_DRIVER_EXISTS);
+	test_assertInt(vfs_createDriver(0,"",0),ERR_INV_DRIVER_NAME);
+	test_assertInt(vfs_createDriver(0,"abc.def",0),ERR_INV_DRIVER_NAME);
+	f3 = vfs_createDriver(0,"test3",0);
 	test_assertTrue(f3 >= 0);
 
-	vfs_closeFile(KERNEL_PID,f1);
-	vfs_closeFile(KERNEL_PID,f2);
-	vfs_closeFile(KERNEL_PID,f3);
+	vfs_closeFile(0,f1);
+	vfs_closeFile(0,f2);
+	vfs_closeFile(0,f3);
 
 	checkMemoryAfter(false);
 	test_caseSucceeded();

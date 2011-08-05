@@ -194,7 +194,7 @@ static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,USER const vo
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
 			if(vpipe->noReader) {
-				sig_addSignalFor(pid,SIG_PIPE_CLOSED);
+				proc_addSignalFor(pid,SIG_PIPE_CLOSED);
 				return ERR_EOF;
 			}
 		}

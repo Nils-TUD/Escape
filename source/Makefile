@@ -74,7 +74,7 @@ export SUDO=sudo
 #		-finstrument-functions-exclude-file-list=../../../lib/basic/profile.c
 # ADDLIBS = ../../../lib/basic/profile.c
 
-DIRS = tools dist lib drivers user kernel/src# kernel/test
+DIRS = tools dist lib drivers user kernel/src kernel/test
 
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))

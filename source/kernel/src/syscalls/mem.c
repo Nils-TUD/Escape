@@ -30,17 +30,17 @@
 
 int sysc_changeSize(sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	ssize_t oldEnd;
 	vmreg_t rno = RNO_DATA;
 	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
-	if(!vmm_exists(p->pid,rno)) {
+	if(!vmm_exists(pid,rno)) {
 		/* if so, grow that region instead */
-		rno = vmm_getDLDataReg(p->pid);
+		rno = vmm_getDLDataReg(pid);
 		if(rno == -1)
 			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	}
-	if((oldEnd = vmm_grow(p->pid,rno,count)) < 0)
+	if((oldEnd = vmm_grow(pid,rno,count)) < 0)
 		SYSC_ERROR(stack,oldEnd);
 	SYSC_RET1(stack,oldEnd);
 }
@@ -53,7 +53,7 @@ int sysc_addRegion(sIntrptStackFrame *stack) {
 	size_t loadCount = SYSC_ARG4(stack);
 	uint type = SYSC_ARG5(stack);
 	sThread *t = thread_getRunning();
-	sProc *p = t->proc;
+	pid_t pid = t->proc->pid;
 	vmreg_t rno = -1;
 	uintptr_t start;
 
@@ -86,23 +86,23 @@ int sysc_addRegion(sIntrptStackFrame *stack) {
 
 	/* check if the region-type does already exist */
 	if(rno >= 0) {
-		if(vmm_exists(p->pid,rno))
+		if(vmm_exists(pid,rno))
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 
 	/* add region */
-	rno = vmm_add(p->pid,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type);
+	rno = vmm_add(pid,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type);
 	if(rno < 0)
 		SYSC_ERROR(stack,rno);
 	/* save tls-region-number */
 	if(type == REG_TLS)
 		thread_setTLSRegion(t,rno);
-	vmm_getRegRange(p->pid,rno,&start,0);
+	vmm_getRegRange(pid,rno,&start,0);
 	SYSC_RET1(stack,start);
 }
 
 int sysc_setRegProt(sIntrptStackFrame *stack) {
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	uintptr_t addr = SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 	ulong flags = 0;
@@ -114,11 +114,11 @@ int sysc_setRegProt(sIntrptStackFrame *stack) {
 	if(prot & PROT_WRITE)
 		flags |= RF_WRITABLE;
 
-	rno = vmm_getRegionOf(p->pid,addr);
+	rno = vmm_getRegionOf(pid,addr);
 	if(rno < 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vmm_setRegProt(p->pid,rno,flags);
+	res = vmm_setRegProt(pid,rno,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -128,7 +128,7 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	uintptr_t addr,physCpy = *phys;
 
 	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
@@ -144,7 +144,7 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 #endif
 
-	addr = vmm_addPhys(p->pid,&physCpy,bytes,align);
+	addr = vmm_addPhys(pid,&physCpy,bytes,align);
 	if(addr == 0)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	*phys = physCpy;
@@ -155,7 +155,7 @@ int sysc_createSharedMem(sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	size_t byteCount = SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	int res;
 
 	if(byteCount == 0)
@@ -163,7 +163,7 @@ int sysc_createSharedMem(sIntrptStackFrame *stack) {
 	strncpy(namecpy,name,sizeof(namecpy));
 	namecpy[sizeof(namecpy) - 1] = '\0';
 
-	res = shm_create(p->pid,namecpy,BYTES_2_PAGES(byteCount));
+	res = shm_create(pid,namecpy,BYTES_2_PAGES(byteCount));
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res * PAGE_SIZE);
@@ -172,12 +172,12 @@ int sysc_createSharedMem(sIntrptStackFrame *stack) {
 int sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	int res;
 
 	strncpy(namecpy,name,sizeof(namecpy));
 	namecpy[sizeof(namecpy) - 1] = '\0';
-	res = shm_join(p->pid,namecpy);
+	res = shm_join(pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res * PAGE_SIZE);
@@ -186,12 +186,12 @@ int sysc_joinSharedMem(sIntrptStackFrame *stack) {
 int sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	int res;
 
 	strncpy(namecpy,name,sizeof(namecpy));
 	namecpy[sizeof(namecpy) - 1] = '\0';
-	res = shm_leave(p->pid,namecpy);
+	res = shm_leave(pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -200,12 +200,12 @@ int sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 int sysc_destroySharedMem(sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	pid_t pid = proc_getRunning();
 	int res;
 
 	strncpy(namecpy,name,sizeof(namecpy));
 	namecpy[sizeof(namecpy) - 1] = '\0';
-	res = shm_destroy(p->pid,namecpy);
+	res = shm_destroy(pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

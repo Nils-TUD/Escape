@@ -25,6 +25,7 @@
 #include <sys/task/thread.h>
 #include <sys/vfs/vfs.h>
 #include <sys/cpu.h>
+#include <sys/video.h>
 #include <sys/log.h>
 #include <string.h>
 #include <errors.h>

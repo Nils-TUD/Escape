@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/task/smp.h>
 #include <sys/video.h>
 #include <sys/util.h>
@@ -27,20 +28,18 @@
 #include <string.h>
 
 static bool enabled;
-static sSLList *cpus;
+static sSLList cpus;
 
 void smp_init(void) {
 	sSLNode *n;
-	cpus = sll_create();
-	if(!cpus)
-		util_panic("Unable to create linked list for CPUs");
+	sll_init(&cpus,slln_allocNode,slln_freeNode);
 
 	enabled = smp_init_arch();
 	if(!enabled)
 		smp_addCPU(true,0);
 
 	vid_printf("\nFound CPUs:\n");
-	for(n = sll_begin(cpus); n != NULL; n = n->next) {
+	for(n = sll_begin(&cpus); n != NULL; n = n->next) {
 		sCPU *cpu = (sCPU*)n->data;
 		vid_printf("\t%s %x\n",cpu->bootstrap ? "BSP" : "AP",cpu->id);
 	}
@@ -56,13 +55,13 @@ void smp_addCPU(bool bootstrap,uint8_t id) {
 		util_panic("Unable to allocate mem for CPU");
 	cpu->bootstrap = bootstrap;
 	cpu->id = id;
-	if(!sll_append(cpus,cpu))
+	if(!sll_append(&cpus,cpu))
 		util_panic("Unable to append CPU");
 }
 
 cpuid_t smp_getBSPId(void) {
 	sSLNode *n;
-	for(n = sll_begin(cpus); n != NULL; n = n->next) {
+	for(n = sll_begin(&cpus); n != NULL; n = n->next) {
 		sCPU *cpu = (sCPU*)n->data;
 		if(cpu->bootstrap)
 			return cpu->id;
@@ -74,7 +73,7 @@ cpuid_t smp_getBSPId(void) {
 bool smp_isBSP(void) {
 	cpuid_t cur = smp_getCurId();
 	sSLNode *n;
-	for(n = sll_begin(cpus); n != NULL; n = n->next) {
+	for(n = sll_begin(&cpus); n != NULL; n = n->next) {
 		sCPU *cpu = (sCPU*)n->data;
 		if(cpu->id == cur)
 			return cpu->bootstrap;
@@ -84,9 +83,9 @@ bool smp_isBSP(void) {
 }
 
 size_t smp_getCPUCount(void) {
-	return cpus->length;
+	return cpus.length;
 }
 
 const sSLList *smp_getCPUs(void) {
-	return cpus;
+	return &cpus;
 }

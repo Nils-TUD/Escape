@@ -32,10 +32,12 @@ void cow_init(void);
  * Handles a pagefault for given address. Assumes that the pagefault was caused by a write access
  * to a copy-on-write page!
  *
+ * @param pid the process-id of the current process (locked)
  * @param address the address
+ * @param frameNumber the frame for that address
  * @return the number of frames that should be added to the current process
  */
-size_t cow_pagefault(uintptr_t address);
+size_t cow_pagefault(pid_t pid,uintptr_t address,frameno_t frameNumber);
 
 /**
  * Adds the given frame and process to the cow-list.

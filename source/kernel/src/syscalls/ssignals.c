@@ -79,7 +79,7 @@ int sysc_sendSignalTo(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
 
 	if(pid != INVALID_PID)
-		sig_addSignalFor(pid,signal);
+		proc_addSignalFor(pid,signal);
 	else
 		sig_addSignal(signal);
 

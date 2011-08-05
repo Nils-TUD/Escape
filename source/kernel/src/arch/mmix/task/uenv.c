@@ -28,6 +28,7 @@
 #include <sys/boot.h>
 #include <sys/log.h>
 #include <sys/cpu.h>
+#include <sys/video.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>

@@ -191,7 +191,7 @@ void timer_print(void) {
 	sSLNode *n = sll_begin(listener);
 	sTimerListener *l;
 	if(n != NULL) {
-		vid_printf("Timer-Listener: cur=%s\n",proc_getRunning()->command);
+		vid_printf("Timer-Listener: cur=%s\n",proc_getByPid(proc_getRunning())->command);
 		time = 0;
 		for(; n != NULL; n = n->next) {
 			l = (sTimerListener*)n->data;

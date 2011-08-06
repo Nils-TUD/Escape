@@ -215,7 +215,7 @@ static void intrpt_irqIgnore(sIntrptStackFrame *stack);
 static void intrpt_syscall(sIntrptStackFrame *stack);
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t pfaddr);
 
-static sInterrupt intrptList[] = {
+static const sInterrupt intrptList[] = {
 	/* 0x00: EX_DIVIDE_BY_ZERO */		{intrpt_exFatal,"Divide by zero",0},
 	/* 0x01: EX_SINGLE_STEP */			{intrpt_exFatal,"Single step",0},
 	/* 0x02: EX_NONMASKABLE */			{intrpt_exFatal,"Non maskable",0},

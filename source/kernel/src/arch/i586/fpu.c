@@ -19,32 +19,20 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/fpu.h>
+#include <sys/task/smp.h>
+#include <sys/task/thread.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <sys/cpu.h>
+#include <sys/util.h>
 #include <string.h>
 
-/**
- * finit instruction
- */
 extern void fpu_finit(void);
-
-/**
- * Saves the state to the given sFPUState-structure
- *
- * @param state the state
- */
 extern void fpu_saveState(sFPUState *state);
-
-/**
- * Restore the state to the given sFPUState-structure
- *
- * @param state the state to write to
- */
 extern void fpu_restoreState(sFPUState *state);
 
 /* current FPU state-memory */
-static sFPUState **curFPUState = NULL;
+static sFPUState ***curStates = NULL;
 
 void fpu_init(void) {
 	uint32_t cr0 = cpu_getCR0();
@@ -53,6 +41,11 @@ void fpu_init(void) {
 	/* disable emulate */
 	cr0 &= ~CR0_EMULATE;
 	cpu_setCR0(cr0);
+
+	/* allocate a state-pointer for each cpu */
+	curStates = (sFPUState***)cache_calloc(smp_getCPUCount(),sizeof(sFPUState**));
+	if(!curStates)
+		util_panic("Unable to allocate memory for FPU-states");
 
 	/* TODO check whether we have a FPU */
 	/* set the OSFXSR bit
@@ -63,32 +56,34 @@ void fpu_init(void) {
 
 void fpu_lockFPU(void) {
 	/* set the task-switched-bit in CR0. as soon as a process uses any FPU instruction
-	 * we'll get a EX_CO_PROC_NA and call fpu_handle() */
+	 * we'll get a EX_CO_PROC_NA and call fpu_handleCoProcNA() */
 	cpu_setCR0(cpu_getCR0() | CR0_TASK_SWITCHED);
 }
 
 void fpu_handleCoProcNA(sFPUState **state) {
-	if(curFPUState != state) {
+	sThread *t = thread_getRunning();
+	sFPUState **current = curStates[t->cpu];
+	if(current != state) {
 		/* if any process has used the FPU in the past */
-		if(curFPUState != NULL) {
+		if(current != NULL) {
 			/* do we have to allocate space for the state? */
-			if(*curFPUState == NULL) {
-				*curFPUState = (sFPUState*)cache_alloc(sizeof(sFPUState));
+			if(*current == NULL) {
+				*current = (sFPUState*)cache_alloc(sizeof(sFPUState));
 				/* if we can't save the state, don't unlock the FPU for another process */
 				/* TODO ok? */
-				if(*curFPUState == NULL)
+				if(*current == NULL)
 					return;
 			}
 			/* unlock FPU (necessary here because otherwise fpu_saveState would cause a #NM) */
 			cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
 			/* save state */
-			fpu_saveState(*curFPUState);
+			fpu_saveState(*current);
 		}
 		else
 			cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
 
 		/* init FPU for new process */
-		curFPUState = state;
+		curStates[t->cpu] = state;
 		if(*state != NULL)
 			fpu_restoreState(*state);
 		else
@@ -111,11 +106,16 @@ void fpu_cloneState(sFPUState **dst,const sFPUState *src) {
 }
 
 void fpu_freeState(sFPUState **state) {
+	size_t i,n;
 	if(*state != NULL)
 		cache_free(*state);
 	*state = NULL;
 	/* we have to unset the current state because maybe the next created process gets
 	 * the same slot, so that the pointer is the same. */
-	if(state == curFPUState)
-		curFPUState = NULL;
+	for(i = 0, n = smp_getCPUCount(); i < n; i++) {
+		if(curStates[i] == state) {
+			curStates[i] = NULL;
+			break;
+		}
+	}
 }

@@ -122,16 +122,16 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 	cpu_detect();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	/* fpu */
-	vid_printf("Initializing FPU...");
-	fpu_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
 	/* smp */
 	vid_printf("Initializing SMP...");
 	dyna_init();
 	smp_init();
 	gdt_init_bsp();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* fpu */
+	vid_printf("Initializing FPU...");
+	fpu_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* vfs */

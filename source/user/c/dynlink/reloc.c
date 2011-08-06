@@ -19,11 +19,14 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/thread.h>
 #include <string.h>
 #include "reloc.h"
 #include "loader.h"
 #include "setup.h"
 #include "lookup.h"
+
+#define RELOC_LOCK	0x6612AACC
 
 static void load_relocLib(sSharedLib *l);
 static void load_adjustCopyGotEntry(const char *name,uintptr_t copyAddr);
@@ -51,6 +54,9 @@ static void load_relocLib(sSharedLib *l) {
 		load_relocLib(dl);
 	}
 
+	/* we can't relocate the same region multiple times in parallel, because the region-protection
+	 * is changed for all processes that use that region */
+	lockg(RELOC_LOCK,LOCK_EXCLUSIVE);
 	/* make text writable because we may have to change something in it */
 	if(setRegProt(l->loadAddr ? l->loadAddr : TEXT_BEGIN,PROT_READ | PROT_WRITE) < 0)
 		load_error("Unable to make text (@ %p) of %s writable",l->loadAddr,l->name);
@@ -143,9 +149,11 @@ static void load_relocLib(sSharedLib *l) {
 	}
 
 	/* make text non-writable again */
-	if(setRegProt(l->loadAddr ? l->loadAddr : TEXT_BEGIN,PROT_READ) < 0)
+	if(setRegProt(l->loadAddr ? l->loadAddr : TEXT_BEGIN,PROT_READ) < 0) {
 		load_error("Unable to make text (@ %x) of %s non-writable",
 				l->loadAddr ? l->loadAddr : TEXT_BEGIN,l->name);
+	}
+	unlockg(RELOC_LOCK);
 
 	/* adjust addresses in PLT-jumps */
 	if(l->jmprel) {

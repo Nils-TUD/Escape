@@ -4,11 +4,12 @@ SUBDIRS = $(shell find . -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDL) -name "*.d")
 STLIB = $(BUILD)/lib$(NAME).a
-
 ifneq ($(LINKTYPE),static)
 	DYNLIBNAME = lib$(NAME).so
 	DYNLIB = $(BUILD)/$(DYNLIBNAME)
 endif
+STMAP = $(STLIB).map
+DYNMAP = $(DYNLIB).map
 
 CFLAGS = $(CPPDEFFLAGS) $(ADDFLAGS)
 
@@ -21,17 +22,11 @@ CPICOBJS = $(patsubst %.cpp,$(BUILDL)/%_pic.o,$(CSRC))
 
 .PHONY:		all clean
 
-all: $(BUILDDIRS) $(STLIB) $(DYNLIB)
+all: $(BUILDDIRS) $(STLIB) $(DYNLIB) $(STMAP) $(DYNMAP)
 
 $(STLIB): $(COBJS)
 	@echo "	" AR $(STLIB)
-ifneq ($(ADDSTLIB),)
-	@ar x $(ADDSTLIB) || true
-	@ar rcs $(STLIB) $(COBJS) *.o
-	@rm -f *.o
-else
 	@ar rcs $(STLIB) $(COBJS)
-endif
 	@$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB): $(CPICOBJS)
@@ -39,6 +34,14 @@ $(DYNLIB): $(CPICOBJS)
 	@$(CPPC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) \
 		$(CPICOBJS) $(ADDLIBS)
 	@$(ROOT)/tools/linklib.sh $(DYNLIB)
+
+$(STMAP): $(STLIB)
+	@echo "	" GEN MAP $@
+	@$(ROOT)/tools/createmap-$(ARCH) $< > $@
+
+$(DYNMAP): $(DYNLIB)
+	@echo "	" GEN MAP $@
+	@$(ROOT)/tools/createmap-$(ARCH) $< > $@
 
 $(BUILDDIRS):
 	@for i in $(BUILDDIRS); do \

@@ -28,7 +28,8 @@ all:	$(BUILDDIRS) $(BIN) $(MAP)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(LIBDEPS)
 	@echo "	" LINKING $(BIN)
-	@$(CPPC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
+	@$(CPPC) $(CFLAGS) -o $(BIN) $(COBJ) \
+		-L$(ROOT)/../toolchain/$(ARCH)/lib -lstdc++ -lsupc++ $(ADDLIBS);
 
 $(MAP): $(BIN)
 	@echo "	" GEN MAP $@

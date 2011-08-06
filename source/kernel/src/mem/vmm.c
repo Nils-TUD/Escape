@@ -239,10 +239,10 @@ int vmm_setRegProt(pid_t pid,vmreg_t rno,ulong flags) {
 			uint mapFlags = PG_KEEPFRM;
 			if(!(vmreg->reg->pageFlags[i] & (PF_DEMANDLOAD | PF_LOADINPROGRESS | PF_SWAPPED)))
 				mapFlags |= PG_PRESENT;
+			if(vmreg->reg->flags & RF_EXECUTABLE)
+				mapFlags |= PG_EXECUTABLE;
 			if(flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
-			if(flags & RF_EXECUTABLE)
-				mapFlags |= PG_EXECUTABLE;
 			paging_mapTo(&mp->pagedir,mpreg->virt + i * PAGE_SIZE,NULL,1,mapFlags);
 		}
 	}
@@ -513,12 +513,8 @@ bool vmm_pagefault(uintptr_t addr) {
 	vm = REG(p,rno);
 	flags = vm->reg->pageFlags + (addr - vm->virt) / PAGE_SIZE;
 	addr &= ~(PAGE_SIZE - 1);
-	if(*flags & PF_DEMANDLOAD) {
-		if(vmm_demandLoad(p,vm,flags,addr)) {
-			*flags &= ~PF_DEMANDLOAD;
-			res = true;
-		}
-	}
+	if(*flags & PF_DEMANDLOAD)
+		res = vmm_demandLoad(p,vm,flags,addr);
 	else if(*flags & PF_SWAPPED)
 		res = swap_in(p,addr);
 	else if(*flags & PF_COPYONWRITE) {
@@ -981,7 +977,6 @@ static bool vmm_demandLoad(sProc *p,sVMRegion *vm,ulong *flags,uintptr_t addr) {
 	/* if another thread already loads it, wait here until he's done */
 	if(*flags & PF_LOADINPROGRESS) {
 		proc_release(p,PLOCK_REGIONS);
-		/* note that we keep the regions-lock during context-switch! */
 		do {
 			ev_wait(t,EVI_VMM_DONE,(evobj_t)vm->reg);
 			thread_switchNoSigs();
@@ -1007,7 +1002,7 @@ static bool vmm_demandLoad(sProc *p,sVMRegion *vm,ulong *flags,uintptr_t addr) {
 	}
 
 	/* wakeup all waiting processes */
-	*flags &= ~PF_LOADINPROGRESS;
+	*flags &= ~(PF_LOADINPROGRESS | PF_DEMANDLOAD);
 	ev_wakeup(EVI_VMM_DONE,(evobj_t)vm->reg);
 	return res;
 }

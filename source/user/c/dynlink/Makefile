@@ -41,7 +41,7 @@ $(BUILDL)/%.s.o:	%.s
 	@echo "	" CPP $<
 	@$(CPP) -MD -MT $@ -MF $@.d $< > $@.tmp
 	@echo "	" AS $<
-	#@$(AS) $(ASFLAGS) --defsym CALLTRACE_PID=10 -o $@ $@.tmp
+	#@$(AS) $(ASFLAGS) --defsym CALLTRACE_PID=24 -o $@ $@.tmp
 	@$(AS) $(ASFLAGS) -o $@ $@.tmp
 	@rm -f $@.tmp
 

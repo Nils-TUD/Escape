@@ -17,7 +17,7 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 # simulators
-KVM = -enable-kvm
+#KVM = -enable-kvm
 QEMU = qemu
 #-net nic,model=ne2k_pci -net user 
 QEMUARGS = -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
@@ -29,9 +29,9 @@ GIMMIX = /home/hrniels/mmix/gimmix-escape
 GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
-# whether to link drivers and user-apps statically or dynamically
+# whether to link drivers and user-apps statically or dynamically (static | dynamic)
 export LINKTYPE = static
-# if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (and libgcc_eh)
+# if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (static | dynamic)
 export LIBGCC = dynamic
 
 # various variables, that are used in many makefiles and shellscripts

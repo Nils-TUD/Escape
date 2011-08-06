@@ -213,6 +213,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack);
 static void intrpt_irqTimer(sIntrptStackFrame *stack);
 static void intrpt_irqIgnore(sIntrptStackFrame *stack);
 static void intrpt_syscall(sIntrptStackFrame *stack);
+static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t pfaddr);
 
 static sInterrupt intrptList[] = {
 	/* 0x00: EX_DIVIDE_BY_ZERO */		{intrpt_exFatal,"Divide by zero",0},
@@ -456,7 +457,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 		vid_unsetPrintFunc();
 
 #if DEBUG_PAGEFAULTS
-	if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
+	if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()) {
 		exCount++;
 		if(exCount >= MAX_EX_COUNT)
 			util_panic("%d page-faults at the same address of the same process",exCount);
@@ -464,24 +465,15 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	else
 		exCount = 0;
 	lastPFAddr = pfaddr;
-	lastPFProc = proc_getRunning()->pid;
-	vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-			stack->eip,proc_getRunning()->pid);
+	lastPFProc = proc_getRunning();
+	intrpt_printPFInfo(stack,pfaddr);
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
 	if(!vmm_pagefault(pfaddr)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
-			pid_t pid = proc_getRunning();
-			vid_printf("Page fault for address %p @ %p, process %d\n",pfaddr,stack->eip,pid);
-			vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
-					(stack->errorCode & 0x1) ?
-						"page-level protection violation" : "not-present page",
-					(stack->errorCode & 0x2) ? "write" : "read",
-					(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
-					(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
-					(stack->errorCode & 0x16) ? "instruction-fetch" : "");
+			intrpt_printPFInfo(stack,pfaddr);
 			proc_segFault();
 		}
 	}
@@ -529,6 +521,18 @@ static void intrpt_syscall(sIntrptStackFrame *stack) {
 		stack->ecx = stack->ebx;
 		stack->ebx = ebxSave;
 	}
+}
+
+static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t addr) {
+	pid_t pid = proc_getRunning();
+	vid_printf("Page fault for address %p @ %p, process %d\n",addr,stack->eip,pid);
+	vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
+			(stack->errorCode & 0x1) ?
+				"page-level protection violation" : "not-present page",
+			(stack->errorCode & 0x2) ? "write" : "read",
+			(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
+			(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
+			(stack->errorCode & 0x16) ? "instruction-fetch" : "");
 }
 
 static void intrpt_initPic(void) {

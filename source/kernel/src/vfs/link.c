@@ -24,7 +24,7 @@
 #include <sys/task/proc.h>
 
 sVFSNode *vfs_link_create(pid_t pid,sVFSNode *parent,char *name,const sVFSNode *target) {
-	sVFSNode *child = vfs_node_create(pid,parent,name);
+	sVFSNode *child = vfs_node_create(pid,name);
 	if(child == NULL)
 		return NULL;
 	child->read = NULL;
@@ -34,6 +34,7 @@ sVFSNode *vfs_link_create(pid_t pid,sVFSNode *parent,char *name,const sVFSNode *
 	child->close = NULL;
 	child->mode = S_IFLNK | (target->mode & MODE_PERM);
 	child->data = (void*)target;
+	vfs_node_append(parent,child);
 	return child;
 }
 

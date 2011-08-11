@@ -44,18 +44,40 @@ bool vfs_node_isValid(inode_t nodeNo);
 inode_t vfs_node_getNo(const sVFSNode *node);
 
 /**
+ * Requests the node with given number, i.e. locks it.
+ *
+ * @param nodeNo the node-number
+ * @return the node
+ */
+sVFSNode *vfs_node_request(inode_t nodeNo);
+
+/**
+ * Releases the given node, i.e. unlocks it.
+ *
+ * @param node the node
+ */
+void vfs_node_release(sVFSNode *node);
+
+/**
  * @param nodeNo the node-number
  * @return the node for given index
  */
 sVFSNode *vfs_node_get(inode_t nodeNo);
 
 /**
- * Fetches the first child from given nodes (taking care for links)
+ * 'Opens' the given directory, i.e. locks it, and returns the first child.
  *
- * @param node the node
- * @return the first child
+ * @param dir the directory
+ * @return the first child-node
  */
-sVFSNode *vfs_node_getFirstChild(const sVFSNode *node);
+sVFSNode *vfs_node_openDir(sVFSNode *dir);
+
+/**
+ * 'Closes' the given directory, i.e. releases the lock.
+ *
+ * @param dir the directory
+ */
+void vfs_node_closeDir(sVFSNode *dir);
 
 /**
  * Determines the path for the given node. Note that static memory will be used for that!
@@ -129,23 +151,29 @@ void vfs_node_dirname(char *path,size_t len);
 /**
  * Finds the child-node with name <name>
  *
- * @param node the parent-node
+ * @param nodeNo the parent-node
  * @param name the name
  * @param nameLen the length of the name
  * @return the node or NULL
  */
-sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,size_t nameLen);
+sVFSNode *vfs_node_findInDir(inode_t nodeNo,const char *name,size_t nameLen);
 
 /**
- * Creates and appends a (incomplete) node
+ * Creates a (incomplete) node without appending it
  *
  * @param pid the process-id
- * @param parent the parent-node
- * @param prev the previous node
  * @param name the node-name
  * @return the node
  */
-sVFSNode *vfs_node_create(pid_t pid,sVFSNode *parent,char *name);
+sVFSNode *vfs_node_create(pid_t pid,char *name);
+
+/**
+ * Appends the given node to <parent>.
+ *
+ * @param parent the parent-node (locked)
+ * @param node the node to append
+ */
+void vfs_node_append(sVFSNode *parent,sVFSNode *node);
 
 /**
  * Removes the given node including all child-nodes from the parent-node and free's all

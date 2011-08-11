@@ -38,6 +38,7 @@
 
 typedef struct {
 	bool closed;
+	klock_t lock;
 	/* a list for sending messages to the driver */
 	sSLList *sendList;
 	/* a list for reading messages from the driver */
@@ -59,7 +60,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	char *name = vfs_node_getId(pid);
 	if(!name)
 		return NULL;
-	node = vfs_node_create(pid,parent,name);
+	node = vfs_node_create(pid,name);
 	if(node == NULL) {
 		cache_free(name);
 		return NULL;
@@ -81,6 +82,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	chan->sendList = NULL;
 	chan->closed = false;
 	node->data = chan;
+	vfs_node_append(parent,node);
 	return node;
 }
 

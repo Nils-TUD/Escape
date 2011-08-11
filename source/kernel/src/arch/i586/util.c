@@ -195,7 +195,9 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 }
 
 sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
-	uint32_t ebp = t->save.ebp;
+	/* for the current, we can't use the ebp from the context-switch. instead we have to use the
+	 * value on the interrupt-stack */
+	uint32_t ebp = t == thread_getRunning() ? thread_getIntrptStack(t)->ebp : t->save.ebp;
 	uintptr_t temp = paging_mapToTemp(&t->kstackFrame,1);
 	sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,KERNEL_STACK,temp,temp + PAGE_SIZE);
 	paging_unmapFromTemp(1);

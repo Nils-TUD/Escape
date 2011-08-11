@@ -57,7 +57,7 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	char *name = vfs_node_getId(pid);
 	if(!name)
 		return NULL;
-	node = vfs_node_create(pid,parent,name);
+	node = vfs_node_create(pid,name);
 	if(node == NULL) {
 		cache_free(name);
 		return NULL;
@@ -79,6 +79,7 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	pipe->total = 0;
 	pipe->list = NULL;
 	node->data = pipe;
+	vfs_node_append(parent,node);
 	return node;
 }
 

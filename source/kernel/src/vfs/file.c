@@ -43,7 +43,7 @@ static off_t vfs_file_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,
 
 sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrite write) {
 	sVFSNode *node;
-	node = vfs_node_create(pid,parent,name);
+	node = vfs_node_create(pid,name);
 	if(node == NULL)
 		return NULL;
 
@@ -65,6 +65,7 @@ sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrit
 		con->pos = 0;
 		node->data = con;
 	}
+	vfs_node_append(parent,node);
 	return node;
 }
 

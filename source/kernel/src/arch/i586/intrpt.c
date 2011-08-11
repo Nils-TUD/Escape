@@ -364,7 +364,7 @@ size_t intrpt_getCount(void) {
 void intrpt_handler(sIntrptStackFrame *stack) {
 	uint64_t cycles;
 	sThread *t = thread_getRunning();
-	sInterrupt *intrpt;
+	const sInterrupt *intrpt;
 	thread_pushIntrptLevel(t,stack);
 	intrptCount++;
 
@@ -480,7 +480,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_irqTimer(sIntrptStackFrame *stack) {
-	sInterrupt *intrpt = intrptList + stack->intrptNo;
+	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
 	intrpt_eoi(stack->intrptNo);
@@ -488,7 +488,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_irqIgnore(sIntrptStackFrame *stack) {
-	sInterrupt *intrpt = intrptList + stack->intrptNo;
+	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
 	intrpt_eoi(stack->intrptNo);

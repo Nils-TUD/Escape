@@ -222,7 +222,7 @@ int proc_assocFd(file_t fileNo) {
 
 int proc_dupFd(int fd) {
 	file_t f;
-	int err,i,nfd = ERR_INVALID_FD;
+	int i,nfd = ERR_INVALID_FD;
 	sProc *p = proc_request(proc_getRunning(),PLOCK_FDS);
 	const file_t *fds = p->fileDescs;
 	/* check fd */
@@ -236,16 +236,12 @@ int proc_dupFd(int fd) {
 		nfd = ERR_MAX_PROC_FDS;
 		for(i = 0; i < MAX_FD_COUNT; i++) {
 			if(fds[i] == -1) {
+				/* increase references */
 				nfd = i;
+				vfs_incRefs(f);
+				p->fileDescs[nfd] = f;
 				break;
 			}
-		}
-		if(nfd >= 0) {
-			/* increase references */
-			if((err = vfs_incRefs(f)) >= 0)
-				p->fileDescs[nfd] = f;
-			else
-				nfd = err;
 		}
 	}
 	proc_release(p,PLOCK_FDS);
@@ -265,13 +261,12 @@ int proc_redirFd(int src,int dst) {
 	fSrc = p->fileDescs[src];
 	fDst = p->fileDescs[dst];
 	if(fSrc >= 0 && fDst >= 0) {
-		if((err = vfs_incRefs(fDst)) == 0) {
-			/* we have to close the source because no one else will do it anymore... */
-			vfs_closeFile(p->pid,fSrc);
-
-			/* now redirect src to dst */
-			p->fileDescs[src] = fDst;
-		}
+		vfs_incRefs(fDst);
+		/* we have to close the source because no one else will do it anymore... */
+		vfs_closeFile(p->pid,fSrc);
+		/* now redirect src to dst */
+		p->fileDescs[src] = fDst;
+		err = 0;
 	}
 	proc_release(p,PLOCK_FDS);
 	return err;

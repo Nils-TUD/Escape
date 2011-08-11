@@ -47,11 +47,11 @@ typedef struct {
 
 static void vfs_server_close(pid_t pid,file_t file,sVFSNode *node);
 static void vfs_server_destroy(sVFSNode *node);
-static void vfs_server_wakeupClients(const sVFSNode *node,uint events);
+static void vfs_server_wakeupClients(sVFSNode *node,uint events);
 
 sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 	sServer *srv;
-	sVFSNode *node = vfs_node_create(pid,parent,name);
+	sVFSNode *node = vfs_node_create(pid,name);
 	if(node == NULL)
 		return NULL;
 
@@ -72,6 +72,7 @@ sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 	srv->lastClient = NULL;
 	srv->msgCount = 0;
 	node->data = srv;
+	vfs_node_append(parent,node);
 	return node;
 }
 
@@ -150,56 +151,62 @@ sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {
 	 * served client and continue from the next one. */
 
 	/* search for a slot that needs work */
+	n = vfs_node_openDir(node);
 	last = srv->lastClient;
-	if(last == NULL)
-		n = vfs_node_getFirstChild(node);
-	else if(last->next == NULL) {
-		/* if we have checked all clients in this driver, give the other drivers
-		 * a chance (if there are any others) */
-		srv->lastClient = NULL;
-		*retry = true;
-		return NULL;
+	if(last != NULL) {
+		if(last->next == NULL) {
+			vfs_node_closeDir(node);
+			/* if we have checked all clients in this driver, give the other drivers
+			 * a chance (if there are any others) */
+			srv->lastClient = NULL;
+			*retry = true;
+			return NULL;
+		}
+		else
+			n = last->next;
 	}
-	else
-		n = last->next;
 
 searchBegin:
 	while(n != NULL && n != last) {
 		/* data available? */
 		if(vfs_chan_hasWork(n)) {
+			vfs_node_closeDir(node);
 			*cont = false;
 			srv->lastClient = n;
 			return n;
 		}
 		n = n->next;
 	}
+	vfs_node_closeDir(node);
 	/* if we have looked through all nodes and the last one has a message again, we have to
 	 * store it because we'll not check it again */
 	if(last && n == last && vfs_chan_hasWork(n))
 		return n;
 	if(srv->lastClient) {
-		n = vfs_node_getFirstChild(node);
+		n = vfs_node_openDir(node);
 		srv->lastClient = NULL;
 		goto searchBegin;
 	}
 	return NULL;
 }
 
-void vfs_server_print(const sVFSNode *n) {
+void vfs_server_print(sVFSNode *n) {
 	sServer *srv = (sServer*)n->data;
-	sVFSNode *chan = vfs_node_getFirstChild(n);
+	sVFSNode *chan = vfs_node_openDir(n);
 	vid_printf("\t%s (%s):\n",n->name,srv->isEmpty ? "empty" : "full");
 	while(chan != NULL) {
 		vfs_chan_print(chan);
 		chan = chan->next;
 	}
+	vfs_node_closeDir(n);
 	vid_printf("\n");
 }
 
-static void vfs_server_wakeupClients(const sVFSNode *node,uint events) {
-	node = vfs_node_getFirstChild(node);
-	while(node != NULL) {
-		ev_wakeupm(events,(evobj_t)node);
-		node = node->next;
+static void vfs_server_wakeupClients(sVFSNode *node,uint events) {
+	sVFSNode *n = vfs_node_openDir(node);
+	while(n != NULL) {
+		ev_wakeupm(events,(evobj_t)n);
+		n = n->next;
 	}
+	vfs_node_closeDir(node);
 }

@@ -83,18 +83,19 @@ typedef void (*fClose)(pid_t pid,file_t file,sVFSNode *node);
 typedef void (*fDestroy)(sVFSNode *n);
 
 struct sVFSNode {
-	char *name;
-	size_t nameLen;
+	klock_t lock;
+	const char *const name;
+	const size_t nameLen;
 	/* number of open files for this node */
 	ushort refCount;
 	/* the owner of this node */
-	pid_t owner;
+	const pid_t owner;
 	uid_t uid;
 	gid_t gid;
 	/* 0 means unused; stores permissions and the type of node */
 	uint mode;
 	/* for the vfs-structure */
-	sVFSNode *parent;
+	sVFSNode *const parent;
 	sVFSNode *prev;
 	sVFSNode *next;
 	sVFSNode *firstChild;
@@ -134,9 +135,22 @@ bool vfs_isDriver(file_t file);
  * Increases the references of the given file
  *
  * @param file the file
- * @return 0 on success
  */
-int vfs_incRefs(file_t file);
+void vfs_incRefs(file_t file);
+
+/**
+ * Increments the number of usages of the given file
+ *
+ * @param file the file
+ */
+void vfs_incUsages(file_t file);
+
+/**
+ * Decrements the number of usages of the given file
+ *
+ * @param file the file
+ */
+void vfs_decUsages(file_t file);
 
 /**
  * @param file the file-number

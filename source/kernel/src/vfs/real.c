@@ -230,7 +230,7 @@ ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,of
 	if(fs < 0)
 		return fs;
 
-	/* get request; maybe we have to wait */
+	/* get request */
 	req = vfs_req_get(node,buffer,0);
 	if(!req) {
 		vfs_real_releaseFile(pid,fs);
@@ -514,7 +514,7 @@ static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 	int err;
 	sSLNode *n;
 	sFSChan *chan;
-	sVFSNode *child;
+	sVFSNode *child,*fsnode;
 	inode_t nodeNo;
 	sProc *p = proc_getByPid(pid);
 	if(!p->fsChans) {
@@ -545,11 +545,13 @@ static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 		goto errorChan;
 
 	/* create usage-node */
-	chan->node = vfs_node_get(nodeNo);
-	child = vfs_chan_create(pid,chan->node);
+	fsnode = vfs_node_request(nodeNo);
+	if(!fsnode)
+		goto errorChan;
+	child = vfs_chan_create(pid,fsnode);
 	if(child == NULL) {
 		err = ERR_NOT_ENOUGH_MEM;
-		goto errorChan;
+		goto errorNode;
 	}
 	chan->node = child;
 	nodeNo = vfs_node_getNo(child);
@@ -557,18 +559,21 @@ static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 	/* open file */
 	err = vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,nodeNo,VFS_DEV_NO);
 	if(err < 0)
-		goto errorNode;
+		goto errorChild;
 	chan->file = err;
 	if(!sll_append(p->fsChans,chan))
 		goto errorClose;
 	if(node)
 		*node = chan->node;
+	vfs_node_release(fsnode);
 	return chan->file;
 
 errorClose:
 	vfs_closeFile(pid,chan->file);
-errorNode:
+errorChild:
 	vfs_node_destroy(child);
+errorNode:
+	vfs_node_release(fsnode);
 errorChan:
 	cache_free(chan);
 	return err;

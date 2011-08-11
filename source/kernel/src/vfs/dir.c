@@ -46,7 +46,7 @@ static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,u
 
 sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	sVFSNode *target;
-	sVFSNode *node = vfs_node_create(pid,parent,name);
+	sVFSNode *node = vfs_node_create(pid,name);
 	if(node == NULL)
 		return NULL;
 	if(vfs_link_create(pid,node,(char*)".",node) == NULL) {
@@ -66,6 +66,7 @@ sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	node->seek = vfs_dir_seek;
 	node->destroy = NULL;
 	node->close = NULL;
+	vfs_node_append(parent,node);
 	return node;
 }
 
@@ -95,7 +96,7 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 	assert(buffer != NULL);
 
 	/* we need the number of bytes first */
-	n = vfs_node_getFirstChild(node);
+	n = vfs_node_openDir(node);
 	byteCount = 0;
 	fsByteCount = 0;
 	while(n != NULL) {
@@ -104,6 +105,7 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 			byteCount += sizeof(sVFSDirEntry) + n->nameLen;
 		n = n->next;
 	}
+	vfs_node_closeDir(node);
 
 	/* the root-directory is distributed on the fs-driver and the kernel */
 	/* therefore we have to read it from the fs-driver, too */
@@ -143,7 +145,7 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 			size_t len;
 			sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
 			fsBytes = fsBytesDup;
-			n = vfs_node_getFirstChild(node);
+			n = vfs_node_openDir(node);
 			while(n != NULL) {
 				if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
 						(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
@@ -160,6 +162,7 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 				dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
 				n = n->next;
 			}
+			vfs_node_closeDir(node);
 		}
 	}
 

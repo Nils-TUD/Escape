@@ -28,6 +28,7 @@
 #include <sys/syscalls.h>
 #include <errors.h>
 #include <string.h>
+#include <assert.h>
 
 int sysc_open(sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
@@ -82,7 +83,7 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 	int *writeFd = (int*)SYSC_ARG2(stack);
 	pid_t pid = proc_getRunning();
 	bool created;
-	sVFSNode *pipeNode;
+	sVFSNode *node,*pipeNode;
 	inode_t nodeNo,pipeNodeNo;
 	file_t readFile,writeFile;
 	int kreadFd,kwriteFd;
@@ -99,7 +100,9 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,err);
 
 	/* create pipe */
-	pipeNode = vfs_pipe_create(pid,vfs_node_get(nodeNo));
+	node = vfs_node_request(nodeNo);
+	pipeNode = vfs_pipe_create(pid,node);
+	vfs_node_release(node);
 	if(pipeNode == NULL)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 

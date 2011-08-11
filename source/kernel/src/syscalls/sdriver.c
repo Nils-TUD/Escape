@@ -120,7 +120,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	ssize_t res;
 	bool inited = false;
 
-	/* validate driver-ids */
+	/* validate pointers */
 	if(fdCount == 0 || fdCount > MAX_GETWORK_DRIVERS)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(!paging_isInUserSpace((uintptr_t)drv,sizeof(int)))

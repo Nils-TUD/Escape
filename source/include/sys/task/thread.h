@@ -117,6 +117,8 @@ struct sThread {
 	sSLList termCallbacks;
 	/* a list of locks that should be released on thread-termination */
 	sSLList termLocks;
+	/* a list of file-usages that should be decremented on thread-termination */
+	sSLList termUsages;
 	struct {
 		/* number of cpu-cycles the thread has used so far */
 		uint64_t ucycleStart;
@@ -404,6 +406,20 @@ void thread_addCallback(fTermCallback cb);
  * @param cb the callback
  */
 void thread_remCallback(fTermCallback cb);
+
+/**
+ * Adds the given file to the file-usage-list. The file-usages will be decreased if the thread dies.
+ *
+ * @param file the file
+ */
+void thread_addFileUsage(file_t file);
+
+/**
+ * Removes the given file from the file-usage-list.
+ *
+ * @param file the file
+ */
+void thread_remFileUsage(file_t file);
 
 /**
  * Finishes the clone of a thread

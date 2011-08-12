@@ -35,7 +35,8 @@
 
 #define MAX_WAIT_OBJECTS		32
 
-static int sysc_doWait(sWaitObject *uobjects,size_t objCount);
+static int sysc_doWait(const sWaitObject *uobjects,size_t objCount);
+static int sysc_doWaitLoop(const sWaitObject *uobjects,size_t objCount,const file_t *objFiles);
 
 int sysc_gettid(sIntrptStackFrame *stack) {
 	const sThread *t = thread_getRunning();
@@ -210,9 +211,36 @@ int sysc_resume(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static int sysc_doWait(USER sWaitObject *uobjects,size_t objCount) {
-	sWaitObject kobjects[MAX_WAIT_OBJECTS];
+static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount) {
 	file_t objFiles[MAX_WAIT_OBJECTS];
+	size_t i;
+	int res;
+	/* first request the files from the file-descriptors */
+	for(i = 0; i < objCount; i++) {
+		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+			/* translate fd to node-number */
+			objFiles[i] = proc_reqFile((int)uobjects[i].object);
+			if(objFiles[i] < 0) {
+				for(; i > 0; i--)
+					proc_relFile(objFiles[i - 1]);
+				return ERR_INVALID_ARGS;
+			}
+		}
+	}
+
+	/* now wait */
+	res = sysc_doWaitLoop(uobjects,objCount,objFiles);
+
+	/* release them */
+	for(i = 0; i < objCount; i++) {
+		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
+			proc_relFile(objFiles[i]);
+	}
+	return res;
+}
+
+static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,const file_t *objFiles) {
+	sWaitObject kobjects[MAX_WAIT_OBJECTS];
 	sThread *t = thread_getRunning();
 	size_t i;
 
@@ -222,10 +250,6 @@ static int sysc_doWait(USER sWaitObject *uobjects,size_t objCount) {
 		if(kobjects[i].events & ~(EV_USER_WAIT_MASK))
 			return ERR_INVALID_ARGS;
 		if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-			/* translate fd to node-number */
-			objFiles[i] = proc_fdToFile((int)uobjects[i].object);
-			if(objFiles[i] < 0)
-				return ERR_INVALID_ARGS;
 			/* check flags */
 			if(kobjects[i].events & EV_CLIENT) {
 				if(kobjects[i].events & ~(EV_CLIENT))

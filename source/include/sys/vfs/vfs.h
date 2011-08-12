@@ -159,16 +159,6 @@ void vfs_decUsages(file_t file);
 sVFSNode *vfs_getVNode(file_t file);
 
 /**
- * Determines the node-number and device-number for the given file
- *
- * @param file the file
- * @param ino will be set to the inode-number
- * @param dev will be set to the devive-number
- * @return 0 on success
- */
-int vfs_getFileId(file_t file,inode_t *ino,dev_t *dev);
-
-/**
  * Manipulates the given file, depending on the command
  *
  * @param pid the process-id
@@ -324,8 +314,9 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size)
  *
  * @param pid the process-id
  * @param file the file
+ * @return true if the file has really been closed
  */
-void vfs_closeFile(pid_t pid,file_t file);
+bool vfs_closeFile(pid_t pid,file_t file);
 
 /**
  * Creates a link @ <newPath> to <oldPath>
@@ -472,6 +463,13 @@ void vfs_printGFT(void);
  * Prints all messages of all drivers
  */
 void vfs_printMsgs(void);
+
+/**
+ * Prints information to the given file
+ *
+ * @param file the file
+ */
+void vfs_printFile(file_t file);
 
 /**
  * @return the number of entries in the global file table

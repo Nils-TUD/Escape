@@ -30,7 +30,7 @@ typedef struct {
 
 static sScanCodeEntry scanCode2KeyCode[] = {
 	/* 00 */	{0,				0},
-	/* 01 */	{0,				0},
+	/* 01 */	{VK_ESC,		0},
 	/* 02 */	{VK_1,			0},
 	/* 03 */	{VK_2,			0},
 	/* 04 */	{VK_3,			0},

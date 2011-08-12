@@ -65,11 +65,12 @@ int sysc_getClientId(sIntrptStackFrame *stack) {
 	inode_t id;
 	pid_t pid = proc_getRunning();
 
-	file = proc_fdToFile(fd);
+	file = proc_reqFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	id = vfs_getClientId(pid,file);
+	proc_relFile(file);
 	if(id < 0)
 		SYSC_ERROR(stack,id);
 	SYSC_RET1(stack,id);
@@ -83,12 +84,13 @@ int sysc_getClient(sIntrptStackFrame *stack) {
 	file_t file,drvFile;
 
 	/* get driver-file */
-	drvFile = proc_fdToFile(drvFd);
+	drvFile = proc_reqFile(drvFd);
 	if(drvFile < 0)
 		SYSC_ERROR(stack,drvFile);
 
 	/* open client */
 	file = vfs_openClient(pid,drvFile,cid);
+	proc_relFile(drvFile);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
@@ -132,9 +134,12 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 
 	/* translate to files */
 	for(i = 0; i < fdCount; i++) {
-		files[i] = proc_fdToFile(fds[i]);
-		if(files[i] < 0)
+		files[i] = proc_reqFile(fds[i]);
+		if(files[i] < 0) {
+			for(; i > 0; i--)
+				proc_relFile(files[i - 1]);
 			SYSC_ERROR(stack,files[i]);
+		}
 	}
 
 	/* open a client */
@@ -145,7 +150,7 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 
 		/* if we shouldn't block, stop here */
 		if(flags & GW_NOBLOCK)
-			SYSC_ERROR(stack,clientNo);
+			break;
 
 		if(!inited) {
 			for(i = 0; i < fdCount; i++) {
@@ -158,9 +163,15 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 		/* otherwise wait for a client (accept signals) */
 		ev_waitObjects(t,waits,fdCount);
 		thread_switch();
-		if(sig_hasSignalFor(t->tid))
-			SYSC_ERROR(stack,ERR_INTERRUPTED);
+		if(sig_hasSignalFor(t->tid)) {
+			clientNo = ERR_INTERRUPTED;
+			break;
+		}
 	}
+	/* release files */
+	for(i = 0; i < fdCount; i++)
+		proc_relFile(files[i]);
+
 	if(clientNo < 0)
 		SYSC_ERROR(stack,clientNo);
 

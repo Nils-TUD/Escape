@@ -69,13 +69,8 @@ typedef struct sGFTEntry {
 	struct sGFTEntry *next;
 } sGFTEntry;
 
-/**
- * Searches for a free file for the given flags and node-number
- */
+static bool vfs_doCloseFile(pid_t pid,file_t file,sGFTEntry *e);
 static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n);
-/**
- * Releases the given file
- */
 static void vfs_releaseFile(sGFTEntry *e);
 
 /* global file table (expands dynamically) */
@@ -173,19 +168,16 @@ void vfs_decUsages(file_t file) {
 	klock_aquire(&e->lock);
 	assert(e->usageCount > 0);
 	e->usageCount--;
+	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
+	 * previously because of our usage */
+	if(e->usageCount == 0 && e->refCount == 0)
+		vfs_doCloseFile(proc_getRunning(),file,e);
 	klock_release(&e->lock);
 }
 
 sVFSNode *vfs_getVNode(file_t file) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	return e->node;
-}
-
-int vfs_getFileId(file_t file,inode_t *ino,dev_t *dev) {
-	sGFTEntry *e = vfs_getGFTEntry(file);
-	*ino = e->nodeNo;
-	*dev = e->devNo;
-	return 0;
 }
 
 int vfs_fcntl(pid_t pid,file_t file,uint cmd,int arg) {
@@ -623,10 +615,16 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,USER msgid_t *id,USER void *data,si
 	return err;
 }
 
-void vfs_closeFile(pid_t pid,file_t file) {
+bool vfs_closeFile(pid_t pid,file_t file) {
+	bool res;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	klock_aquire(&e->lock);
+	res = vfs_doCloseFile(pid,file,e);
+	klock_release(&e->lock);
+	return res;
+}
 
+static bool vfs_doCloseFile(pid_t pid,file_t file,sGFTEntry *e) {
 	/* decrement references; it may be already zero if we have closed the file previously but
 	 * couldn't free it because there was still a user of it. */
 	if(e->refCount > 0)
@@ -652,9 +650,10 @@ void vfs_closeFile(pid_t pid,file_t file) {
 			/* mark unused */
 			e->flags = 0;
 			vfs_releaseFile(e);
+			return true;
 		}
 	}
-	klock_release(&e->lock);
+	return false;
 }
 
 bool vfs_hasMsg(pid_t pid,file_t file) {
@@ -1144,6 +1143,16 @@ void vfs_printMsgs(void) {
 		drv = drv->next;
 	}
 	vfs_node_closeDir(devNode);
+}
+
+void vfs_printFile(file_t file) {
+	sGFTEntry *e = vfs_getGFTEntry(file);
+	vid_printf("%3d [ %2u refs, %2u uses (%u:%u",file,e->refCount,e->usageCount,e->devNo,e->nodeNo);
+	if(e->devNo == VFS_DEV_NO && vfs_node_isValid(e->nodeNo))
+		vid_printf(":%s)",vfs_node_getPath(e->nodeNo));
+	else
+		vid_printf(")");
+	vid_printf(" ]");
 }
 
 void vfs_printGFT(void) {

@@ -190,7 +190,7 @@ size_t proc_getCount(void) {
 	return res;
 }
 
-file_t proc_fdToFile(int fd) {
+file_t proc_reqFile(int fd) {
 	file_t fileNo;
 	sProc *p;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
@@ -200,8 +200,17 @@ file_t proc_fdToFile(int fd) {
 	fileNo = p->fileDescs[fd];
 	if(fileNo == -1)
 		fileNo = ERR_INVALID_FD;
+	else {
+		vfs_incUsages(fileNo);
+		thread_addFileUsage(fileNo);
+	}
 	proc_release(p,PLOCK_FDS);
 	return fileNo;
+}
+
+void proc_relFile(file_t file) {
+	thread_remFileUsage(file);
+	vfs_decUsages(file);
 }
 
 int proc_assocFd(file_t fileNo) {
@@ -366,8 +375,11 @@ void proc_addSignalFor(pid_t pid,sig_t signal) {
 		}
 		proc_release(p,PLOCK_PROG);
 		/* no handler and fatal? terminate proc! */
-		if(!sent && sig_isFatal(signal))
+		if(!sent && sig_isFatal(signal)) {
 			proc_terminate(pid,1,signal);
+			if(pid == proc_getRunning())
+				thread_switch();
+		}
 	}
 }
 
@@ -696,8 +708,6 @@ int proc_getExitState(pid_t ppid,USER sExitState *state) {
 void proc_segFault(void) {
 	sThread *t = thread_getRunning();
 	proc_addSignalFor(t->proc->pid,SIG_SEGFAULT);
-	if(t->proc->flags & P_ZOMBIE)
-		thread_switch();
 	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
 	 * we might get in an endless-loop */
 	sig_unsetHandler(t->tid,SIG_SEGFAULT);
@@ -771,7 +781,9 @@ static void proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
 	klock_aquire(p->locks + PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {
-			vfs_closeFile(p->pid,p->fileDescs[i]);
+			vfs_incUsages(p->fileDescs[i]);
+			if(!vfs_closeFile(p->pid,p->fileDescs[i]))
+				vfs_decUsages(p->fileDescs[i]);
 			p->fileDescs[i] = -1;
 		}
 	}
@@ -902,14 +914,9 @@ void proc_print(sProc *p) {
 	vid_printf("\tFileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {
-			inode_t ino;
-			dev_t dev;
-			if(vfs_getFileId(p->fileDescs[i],&ino,&dev) == 0) {
-				vid_printf("\t\t%d : %d",i,p->fileDescs[i]);
-				if(dev == VFS_DEV_NO && vfs_node_isValid(ino))
-					vid_printf(" (%s)",vfs_node_getPath(ino));
-				vid_printf("\n");
-			}
+			vid_printf("\t\t%-2d: ",i);
+			vfs_printFile(p->fileDescs[i]);
+			vid_printf("\n");
 		}
 	}
 	vid_printf("\tFS-Channels:\n");

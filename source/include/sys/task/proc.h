@@ -211,12 +211,19 @@ void proc_release(sProc *p,size_t l);
 size_t proc_getCount(void);
 
 /**
- * Returns the file-number for the given file-descriptor
+ * Requests the file for the given file-descriptor and increments the usage-count
  *
  * @param fd the file-descriptor
- * @return the file-number or < 0 if the fd is invalid
+ * @return the file or < 0 if the fd is invalid
  */
-file_t proc_fdToFile(int fd);
+file_t proc_reqFile(int fd);
+
+/**
+ * Releases the given file, i.e. decrements the usage-count
+ *
+ * @param file the file
+ */
+void proc_relFile(file_t file);
 
 /**
  * Associates a free file-descriptor with the given file-number

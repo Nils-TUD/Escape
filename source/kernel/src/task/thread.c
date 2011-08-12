@@ -99,6 +99,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
 	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
+	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
 	for(i = 0; i < STACK_REG_COUNT; i++)
 		t->stackRegions[i] = -1;
 	t->tlsRegion = -1;
@@ -311,6 +312,16 @@ void thread_remCallback(fTermCallback cb) {
 	sll_removeFirstWith(&t->termCallbacks,cb);
 }
 
+void thread_addFileUsage(file_t file) {
+	sThread *t = thread_getRunning();
+	sll_append(&t->termUsages,(void*)file);
+}
+
+void thread_remFileUsage(file_t file) {
+	sThread *t = thread_getRunning();
+	sll_removeFirstWith(&t->termUsages,(void*)file);
+}
+
 int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
 		bool cloneProc) {
 	int err = ERR_NOT_ENOUGH_MEM;
@@ -345,6 +356,7 @@ int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t sta
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
 	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
+	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
 	if(cloneProc) {
 		size_t i;
 		t->kstackFrame = stackFrame;
@@ -445,6 +457,9 @@ bool thread_kill(sThread *t) {
 		cb();
 	}
 	sll_clear(&t->termCallbacks);
+	for(n = sll_begin(&t->termUsages); n != NULL; n = n->next)
+		vfs_decUsages((file_t)n->data);
+	sll_clear(&t->termUsages);
 
 	/* remove from all modules we may be announced */
 	sig_removeHandlerFor(t->tid);

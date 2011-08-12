@@ -70,10 +70,6 @@ int sysc_ackSignal(sIntrptStackFrame *stack) {
 int sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	sig_t signal = (sig_t)SYSC_ARG2(stack);
-	const sThread *t = thread_getRunning();
-	/* store tid and check via thread_getById() because if the thread is destroyed, we can't access
-	 * it anymore */
-	tid_t tid = t->tid;
 
 	if(!sig_canSend(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
@@ -82,10 +78,5 @@ int sysc_sendSignalTo(sIntrptStackFrame *stack) {
 		proc_addSignalFor(pid,signal);
 	else
 		sig_addSignal(signal);
-
-	/* choose another thread if we've killed ourself */
-	if(thread_getById(tid) == NULL || (t->proc->flags & P_ZOMBIE))
-		thread_switch();
-
 	SYSC_RET1(stack,0);
 }

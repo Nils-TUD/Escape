@@ -211,7 +211,7 @@ static void intrpt_exGenProtFault(sIntrptStackFrame *stack);
 static void intrpt_exCoProcNA(sIntrptStackFrame *stack);
 static void intrpt_exPageFault(sIntrptStackFrame *stack);
 static void intrpt_irqTimer(sIntrptStackFrame *stack);
-static void intrpt_irqIgnore(sIntrptStackFrame *stack);
+static void intrpt_irqDefault(sIntrptStackFrame *stack);
 static void intrpt_syscall(sIntrptStackFrame *stack);
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t pfaddr);
 
@@ -249,21 +249,21 @@ static const sInterrupt intrptList[] = {
 	/* 0x1E: -- */						{NULL,"Unknown",0},
 	/* 0x1F: -- */						{NULL,"Unknown",0},
 	/* 0x20: IRQ_TIMER */				{intrpt_irqTimer,"Timer",SIG_INTRPT_TIMER},
-	/* 0x21: IRQ_KEYBOARD */			{intrpt_irqIgnore,"Keyboard",SIG_INTRPT_KB},
+	/* 0x21: IRQ_KEYBOARD */			{intrpt_irqDefault,"Keyboard",SIG_INTRPT_KB},
 	/* 0x22: -- */						{NULL,"Unknown",0},
-	/* 0x23: IRQ_COM2 */				{intrpt_irqIgnore,"COM2",SIG_INTRPT_COM2},
-	/* 0x24: IRQ_COM1 */				{intrpt_irqIgnore,"COM1",SIG_INTRPT_COM1},
+	/* 0x23: IRQ_COM2 */				{intrpt_irqDefault,"COM2",SIG_INTRPT_COM2},
+	/* 0x24: IRQ_COM1 */				{intrpt_irqDefault,"COM1",SIG_INTRPT_COM1},
 	/* 0x25: -- */						{NULL,"Unknown",0},
-	/* 0x26: IRQ_FLOPPY */				{intrpt_irqIgnore,"Floppy",SIG_INTRPT_FLOPPY},
+	/* 0x26: IRQ_FLOPPY */				{intrpt_irqDefault,"Floppy",SIG_INTRPT_FLOPPY},
 	/* 0x27: -- */						{NULL,"Unknown",0},
-	/* 0x28: IRQ_CMOS_RTC */			{intrpt_irqIgnore,"CMOS",SIG_INTRPT_CMOS},
+	/* 0x28: IRQ_CMOS_RTC */			{intrpt_irqDefault,"CMOS",SIG_INTRPT_CMOS},
 	/* 0x29: -- */						{NULL,"Unknown",0},
 	/* 0x2A: -- */						{NULL,"Unknown",0},
 	/* 0x2B: -- */						{NULL,"Unknown",0},
-	/* 0x2C: IRQ_MOUSE */				{intrpt_irqIgnore,"Mouse",SIG_INTRPT_MOUSE},
+	/* 0x2C: IRQ_MOUSE */				{intrpt_irqDefault,"Mouse",SIG_INTRPT_MOUSE},
 	/* 0x2D: -- */						{NULL,"Unknown",0},
-	/* 0x2C: IRQ_ATA1 */				{intrpt_irqIgnore,"ATA1",SIG_INTRPT_ATA1},
-	/* 0x2C: IRQ_ATA2 */				{intrpt_irqIgnore,"ATA2",SIG_INTRPT_ATA2},
+	/* 0x2C: IRQ_ATA1 */				{intrpt_irqDefault,"ATA1",SIG_INTRPT_ATA1},
+	/* 0x2C: IRQ_ATA2 */				{intrpt_irqDefault,"ATA2",SIG_INTRPT_ATA2},
 	/* 0x30: syscall */					{intrpt_syscall,"Systemcall",0},
 };
 
@@ -487,7 +487,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack) {
 	timer_intrpt();
 }
 
-static void intrpt_irqIgnore(sIntrptStackFrame *stack) {
+static void intrpt_irqDefault(sIntrptStackFrame *stack) {
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);

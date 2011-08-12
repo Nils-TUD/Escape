@@ -107,7 +107,12 @@ sVFSNode *vfs_node_openDir(sVFSNode *dir) {
 }
 
 void vfs_node_closeDir(sVFSNode *dir) {
-	klock_release(&dir->lock);
+	sVFSNode *parent;
+	if(!S_ISLNK(dir->mode))
+		parent = dir;
+	else
+		parent = vfs_link_resolve(dir);
+	klock_release(&parent->lock);
 }
 
 int vfs_node_getInfo(inode_t nodeNo,USER sFileInfo *info) {

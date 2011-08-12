@@ -49,6 +49,8 @@ sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	sVFSNode *node = vfs_node_create(pid,name);
 	if(node == NULL)
 		return NULL;
+
+	node->mode = DIR_DEF_MODE;
 	if(vfs_link_create(pid,node,(char*)".",node) == NULL) {
 		vfs_node_destroy(node);
 		return NULL;
@@ -60,7 +62,6 @@ sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 		return NULL;
 	}
 
-	node->mode = DIR_DEF_MODE;
 	node->read = vfs_dir_read;
 	node->write = NULL;
 	node->seek = vfs_dir_seek;

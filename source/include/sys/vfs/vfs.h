@@ -187,6 +187,16 @@ bool vfs_shouldBlock(file_t file);
 file_t vfs_openPath(pid_t pid,ushort flags,const char *path);
 
 /**
+ * Creates a pipe and opens one file for reading and one file for writing.
+ *
+ * @param pid the process-id
+ * @param readFile will be set to the file for reading
+ * @param writeFile will be set to the file for writing
+ * @return 0 on success
+ */
+int vfs_openPipe(pid_t pid,file_t *readFile,file_t *writeFile);
+
+/**
  * Opens the file with given number and given flags. That means it walks through the global
  * file table and searches for a free entry or an entry for that file.
  * Note that multiple processs may read from the same file simultaneously but NOT write!
@@ -318,6 +328,33 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size)
 bool vfs_closeFile(pid_t pid,file_t file);
 
 /**
+ * Mounts <device> at <path> with given type.
+ *
+ * @param pid the process-id
+ * @param device the device to mount
+ * @param path the path to mount the device at
+ * @param type the type of file-system to use
+ * @return 0 on success
+ */
+int vfs_mount(pid_t pid,const char *device,const char *path,uint type);
+
+/**
+ * Unmounts the given path
+ *
+ * @param pid the process-id
+ * @param path the path
+ * @return 0 on success
+ */
+int vfs_unmount(pid_t pid,const char *path);
+
+/**
+ * Writes all cached blocks to disk.
+ *
+ * @param pid the process-id
+ */
+int vfs_sync(pid_t pid);
+
+/**
  * Creates a link @ <newPath> to <oldPath>
  *
  * @param pid the process-id
@@ -407,13 +444,12 @@ inode_t vfs_getClientId(pid_t pid,file_t file);
 file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId);
 
 /**
- * Creates a process-node with given pid and handler-function
+ * Creates a process-node with given pid
  *
  * @param pid the process-id
- * @param handler the read-handler
  * @return the process-directory-node on success
  */
-inode_t vfs_createProcess(pid_t pid,fRead handler);
+inode_t vfs_createProcess(pid_t pid);
 
 /**
  * Removes all occurrences of the given process from VFS

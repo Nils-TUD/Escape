@@ -47,17 +47,6 @@ void vfs_real_removeProc(pid_t pid);
 file_t vfs_real_openPath(pid_t pid,uint flags,const char *path);
 
 /**
- * Opens the given inode+devno with given flags for given process
- *
- * @param pid the process-id
- * @param flags read / write
- * @param ino the inode-number
- * @param dev the dev-number
- * @return 0 on success or the error-code
- */
-file_t vfs_real_openInode(pid_t pid,uint flags,inode_t ino,dev_t dev);
-
-/**
  * Retrieves information about the given (real!) path
  *
  * @param pid the process-id

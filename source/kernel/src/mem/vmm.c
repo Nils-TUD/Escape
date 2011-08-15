@@ -1016,7 +1016,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	uint mapFlags;
 
 	if(vm->binFile < 0) {
-		vm->binFile = vfs_real_openInode(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
+		vm->binFile = vfs_openFile(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
 		if(vm->binFile < 0) {
 			err = vm->binFile;
 			goto error;

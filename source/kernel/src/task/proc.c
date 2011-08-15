@@ -107,7 +107,7 @@ void proc_init(void) {
 	memclear(p->locks,sizeof(p->locks));
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
-	p->threadDir = vfs_createProcess(p->pid,&vfs_info_procReadHandler);
+	p->threadDir = vfs_createProcess(p->pid);
 	if(p->threadDir < 0)
 		util_panic("Not enough mem for init process");
 
@@ -401,7 +401,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 		goto errorCur;
 	}
 	/* first create the VFS node (we may not have enough mem) */
-	p->threadDir = vfs_createProcess(newPid,&vfs_info_procReadHandler);
+	p->threadDir = vfs_createProcess(newPid);
 	if(p->threadDir < 0) {
 		res = p->threadDir;
 		goto errorProc;
@@ -590,6 +590,15 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	if(p->pid != 0 && sll_length(p->threads) > 1) {
 		proc_release(p,PLOCK_PROG);
 		return ERR_INVALID_ARGS;
+	}
+
+	if(!code) {
+		/* resolve path; require a path in real fs */
+		inode_t nodeNo;
+		if(vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ) != ERR_REAL_PATH) {
+			proc_release(p,PLOCK_PROG);
+			return ERR_INVALID_ARGS;
+		}
 	}
 
 	argc = 0;
@@ -793,7 +802,6 @@ static void proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
 	groups_leave(p->pid);
 	env_removeFor(p->pid);
 	proc_doRemoveRegions(p,true);
-	vfs_real_removeProc(p->pid);
 	lock_releaseAll(p->pid);
 	proc_terminateArch(p);
 

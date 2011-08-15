@@ -83,53 +83,34 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 	int *readFd = (int*)SYSC_ARG1(stack);
 	int *writeFd = (int*)SYSC_ARG2(stack);
 	pid_t pid = proc_getRunning();
-	bool created;
-	sVFSNode *node,*pipeNode;
-	inode_t nodeNo,pipeNodeNo;
 	file_t readFile,writeFile;
 	int kreadFd,kwriteFd;
-	int err;
+	int res;
 
 	/* make sure that the pointers point to userspace */
 	if(!paging_isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
 			!paging_isInUserSpace((uintptr_t)writeFd,sizeof(int)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* resolve pipe-path */
-	err = vfs_node_resolvePath("/system/pipe",&nodeNo,&created,VFS_READ);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
+	res = vfs_openPipe(pid,&readFile,&writeFile);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 
-	/* create pipe */
-	node = vfs_node_request(nodeNo);
-	pipeNode = vfs_pipe_create(pid,node);
-	vfs_node_release(node);
-	if(pipeNode == NULL)
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-
-	pipeNodeNo = vfs_node_getNo(pipeNode);
-	/* open file for reading */
-	readFile = vfs_openFile(pid,VFS_READ,pipeNodeNo,VFS_DEV_NO);
-	if(readFile < 0) {
-		err = readFile;
-		goto errorRemNode;
-	}
-	/* assoc fd with file */
+	/* assoc fd with read-file */
 	kreadFd = proc_assocFd(readFile);
 	if(kreadFd < 0) {
-		err = kreadFd;
-		goto errorCloseReadFile;
+		vfs_closeFile(pid,readFile);
+		vfs_closeFile(pid,writeFile);
+		SYSC_ERROR(stack,kreadFd);
 	}
 
-	/* open file for writing */
-	writeFile = vfs_openFile(pid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO);
-	if(writeFile < 0)
-		goto errorUnAssocReadFd;
-	/* assoc fd with file */
+	/* assoc fd with write-file */
 	kwriteFd = proc_assocFd(writeFile);
 	if(kwriteFd < 0) {
-		err = kwriteFd;
-		goto errorCloseWriteFile;
+		proc_unassocFd(kreadFd);
+		vfs_closeFile(pid,readFile);
+		vfs_closeFile(pid,writeFile);
+		SYSC_ERROR(stack,kwriteFd);
 	}
 
 	/* now copy the fds to userspace; this might cause a pagefault and might even cause a kill */
@@ -138,20 +119,7 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 	*writeFd = kwriteFd;
 
 	/* yay, we're done! :) */
-	SYSC_RET1(stack,0);
-
-	/* error-handling */
-errorCloseWriteFile:
-	vfs_closeFile(pid,writeFile);
-errorUnAssocReadFd:
-	proc_unassocFd(kreadFd);
-errorCloseReadFile:
-	vfs_closeFile(pid,readFile);
-	/* vfs_closeFile() will already remove the node, so we can't do this again! */
-	SYSC_ERROR(stack,err);
-errorRemNode:
-	vfs_node_destroy(pipeNode);
-	SYSC_ERROR(stack,err);
+	SYSC_RET1(stack,res);
 }
 
 int sysc_stat(sIntrptStackFrame *stack) {
@@ -405,7 +373,7 @@ int sysc_close(sIntrptStackFrame *stack) {
 int sysc_sync(sIntrptStackFrame *stack) {
 	int res;
 	pid_t pid = proc_getRunning();
-	res = vfs_real_sync(pid);
+	res = vfs_sync(pid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -475,7 +443,6 @@ int sysc_mount(sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	char absdev[MAX_PATH_LEN + 1];
 	int res;
-	inode_t ino;
 	pid_t pid = proc_getRunning();
 	const char *device = (const char*)SYSC_ARG1(stack);
 	const char *path = (const char*)SYSC_ARG2(stack);
@@ -484,10 +451,8 @@ int sysc_mount(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(!sysc_absolutize_path(absdev,sizeof(absdev),device))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(vfs_node_resolvePath(abspath,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
-		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
-	res = vfs_real_mount(pid,absdev,abspath,type);
+	res = vfs_mount(pid,absdev,abspath,type);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -496,15 +461,12 @@ int sysc_mount(sIntrptStackFrame *stack) {
 int sysc_unmount(sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
-	inode_t ino;
 	pid_t pid = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(vfs_node_resolvePath(abspath,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
-		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
-	res = vfs_real_unmount(pid,abspath);
+	res = vfs_unmount(pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

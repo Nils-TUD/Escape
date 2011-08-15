@@ -205,7 +205,7 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 		ssize_t res;
 		sElfEHeader ehd;
 		if(textreg->binFile < 0) {
-			textreg->binFile = vfs_real_openInode(t->proc->pid,VFS_READ,textreg->reg->binary.ino,
+			textreg->binFile = vfs_openFile(t->proc->pid,VFS_READ,textreg->reg->binary.ino,
 					textreg->reg->binary.dev);
 			if(textreg->binFile < 0) {
 				vid_printf("[LOADER] Unable to open path '%s': %s\n",t->proc->command,

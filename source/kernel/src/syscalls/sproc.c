@@ -244,14 +244,8 @@ int sysc_exec(sIntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
-	inode_t nodeNo;
 	int res;
 	if(!sysc_absolutize_path(pathSave,sizeof(pathSave),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	/* resolve path; require a path in real fs */
-	res = vfs_node_resolvePath(pathSave,&nodeNo,NULL,VFS_READ);
-	if(res != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	res = proc_exec(pathSave,args,NULL,0);

@@ -468,7 +468,6 @@ bool thread_kill(sThread *t) {
 	timer_removeThread(t->tid);
 	thread_freeArch(t);
 	vfs_removeThread(t->tid);
-	vfs_req_freeAllOf(t);
 
 	/* notify the process about it */
 	ev_wakeup(EVI_THREAD_DIED,(evobj_t)t->proc);

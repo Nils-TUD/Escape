@@ -287,6 +287,41 @@ file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
 	return file;
 }
 
+int vfs_openPipe(pid_t pid,file_t *readFile,file_t *writeFile) {
+	sVFSNode *node,*pipeNode;
+	inode_t nodeNo,pipeNodeNo;
+	int err;
+
+	/* resolve pipe-path */
+	err = vfs_node_resolvePath("/system/pipe",&nodeNo,NULL,VFS_READ);
+	if(err < 0)
+		return err;
+
+	/* create pipe */
+	node = vfs_node_request(nodeNo);
+	pipeNode = vfs_pipe_create(pid,node);
+	vfs_node_release(node);
+	if(pipeNode == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+
+	pipeNodeNo = vfs_node_getNo(pipeNode);
+	/* open file for reading */
+	*readFile = vfs_openFile(pid,VFS_READ,pipeNodeNo,VFS_DEV_NO);
+	if(*readFile < 0) {
+		vfs_node_destroy(pipeNode);
+		return *readFile;
+	}
+
+	/* open file for writing */
+	*writeFile = vfs_openFile(pid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO);
+	if(*writeFile < 0) {
+		/* closeFile removes the pipenode, too */
+		vfs_closeFile(pid,*readFile);
+		return *writeFile;
+	}
+	return 0;
+}
+
 file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
 	sGFTEntry *e;
 	sVFSNode *n = NULL;
@@ -682,7 +717,7 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount) {
 			sGFTEntry *e = vfs_getGFTEntry(file);
 			if(e->devNo != VFS_DEV_NO)
 				return ERR_INVALID_ARGS;
-			objects[i].object = e->node;
+			objects[i].object = (evobj_t)e->node;
 		}
 	}
 
@@ -834,6 +869,24 @@ file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId) {
 
 	/* open file */
 	return vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
+}
+
+int vfs_mount(pid_t pid,const char *device,const char *path,uint type) {
+	inode_t ino;
+	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
+		return ERR_MOUNT_VIRT_PATH;
+	return vfs_real_mount(pid,device,path,type);
+}
+
+int vfs_unmount(pid_t pid,const char *path) {
+	inode_t ino;
+	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
+		return ERR_MOUNT_VIRT_PATH;
+	return vfs_real_unmount(pid,path);
+}
+
+int vfs_sync(pid_t pid) {
+	return vfs_real_sync(pid);
 }
 
 int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
@@ -1068,7 +1121,7 @@ errorDir:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-inode_t vfs_createProcess(pid_t pid,fRead handler) {
+inode_t vfs_createProcess(pid_t pid) {
 	char *name;
 	sVFSNode *proc = procsNode;
 	sVFSNode *n;
@@ -1104,7 +1157,7 @@ inode_t vfs_createProcess(pid_t pid,fRead handler) {
 	if(!dir)
 		goto errorName;
 	/* create process-info-node */
-	n = vfs_file_create(KERNEL_PID,dir,(char*)"info",handler,NULL);
+	n = vfs_file_create(KERNEL_PID,dir,(char*)"info",vfs_info_procReadHandler,NULL);
 	if(n == NULL)
 		goto errorDir;
 
@@ -1139,6 +1192,7 @@ void vfs_removeProcess(pid_t pid) {
 	const sProc *p = proc_getByPid(pid);
 	sVFSNode *node = vfs_node_get(p->threadDir);
 	vfs_node_destroy(node->parent);
+	vfs_real_removeProc(pid);
 }
 
 bool vfs_createThread(tid_t tid) {
@@ -1182,7 +1236,7 @@ errorDir:
 }
 
 void vfs_removeThread(tid_t tid) {
-	const sThread *t = thread_getById(tid);
+	sThread *t = thread_getById(tid);
 	sVFSNode *n,*dir;
 	char *name;
 
@@ -1203,8 +1257,8 @@ void vfs_removeThread(tid_t tid) {
 		}
 		n = n->next;
 	}
-
 	cache_free(name);
+	vfs_req_freeAllOf(t);
 }
 
 size_t vfs_dbg_getGFTEntryCount(void) {

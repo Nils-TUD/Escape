@@ -103,7 +103,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	ssize_t readRes;
 	int res,fd;
 
-	file = vfs_real_openPath(p->pid,VFS_READ,path);
+	file = vfs_openPath(p->pid,VFS_READ,path);
 	if(file < 0) {
 		vid_printf("[LOADER] Unable to open path '%s': %s\n",path,strerror(file));
 		return ERR_INVALID_ELF_BIN;

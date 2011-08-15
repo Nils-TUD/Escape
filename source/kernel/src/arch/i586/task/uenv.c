@@ -149,7 +149,7 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	 * so that he can load it including all shared libraries */
 	if(info->linkerEntry != info->progEntry) {
 		int fd;
-		file_t file = vfs_real_openPath(t->proc->pid,VFS_READ,path);
+		file_t file = vfs_openPath(t->proc->pid,VFS_READ,path);
 		if(file < 0)
 			return false;
 		fd = proc_assocFd(file);

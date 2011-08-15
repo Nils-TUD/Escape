@@ -137,12 +137,6 @@ error:
 	return res;
 }
 
-file_t vfs_real_openInode(pid_t pid,uint flags,inode_t ino,dev_t dev) {
-	/* TODO maybe we should send an open-msg to fs, too, but in a different form? */
-	/* open the file */
-	return vfs_openFile(pid,flags,ino,dev);
-}
-
 int vfs_real_istat(pid_t pid,inode_t ino,dev_t devNo,USER sFileInfo *info) {
 	return vfs_real_doStat(pid,NULL,ino,devNo,info);
 }

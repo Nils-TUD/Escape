@@ -44,7 +44,7 @@ typedef struct {
 } sSyscall;
 
 /* our syscalls */
-static sSyscall syscalls[] = {
+static const sSyscall syscalls[] = {
 	/* 0 */		{sysc_getpid,				0},
 	/* 1 */		{sysc_getppid,				1},
 	/* 2 */ 	{sysc_debugc,				1},

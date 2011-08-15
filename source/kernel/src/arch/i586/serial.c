@@ -20,17 +20,19 @@
 #include <sys/common.h>
 #include <sys/arch/i586/serial.h>
 #include <sys/util.h>
+#include <sys/klock.h>
 #include <assert.h>
 
 static int ser_isTransmitEmpty(uint16_t port);
 static void ser_initPort(uint16_t port);
 
-static uint16_t ports[] = {
+static const uint16_t ports[] = {
 	/* COM1 */	0x3F8,
 	/* COM2 */	0x2E8,
 	/* COM3 */	0x2F8,
 	/* COM4 */	0x3E8
 };
+static klock_t lock;
 
 void ser_init(void) {
 	ser_initPort(ports[SER_COM1]);
@@ -40,8 +42,10 @@ void ser_out(uint16_t port,uint8_t byte) {
 	uint16_t ioport;
 	assert(port < ARRAY_SIZE(ports));
 	ioport = ports[port];
+	klock_aquire(&lock);
 	while(ser_isTransmitEmpty(ioport) == 0);
 	util_outByte(ioport,byte);
+	klock_release(&lock);
 }
 
 static int ser_isTransmitEmpty(uint16_t port) {

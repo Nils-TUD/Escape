@@ -31,6 +31,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <string.h>
 #include <assert.h>
 #include <errors.h>
@@ -81,6 +82,7 @@ static tid_t vm86Tid = INVALID_TID;
 static volatile tid_t caller = INVALID_TID;
 static sVM86Info info;
 static int vm86Res = -1;
+static klock_t lock;
 
 int vm86_create(void) {
 	sProc *p;
@@ -160,17 +162,23 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 		return ERR_NO_VM86_TASK;
 
 	/* if the vm86-task is active, wait here */
+	klock_aquire(&lock);
 	while(caller != INVALID_TID) {
 		/* TODO we have a problem if the process that currently uses vm86 gets killed... */
 		/* because we'll never get notified that we can use vm86 */
 		ev_wait(t,EVI_VM86_READY,0);
+		klock_release(&lock);
 		thread_switchNoSigs();
+		klock_aquire(&lock);
 	}
 
 	/* store information in calling process */
 	caller = t->tid;
-	if(!vm86_copyInfo(interrupt,regs,area))
+	klock_release(&lock);
+	if(!vm86_copyInfo(interrupt,regs,area)) {
+		vm86_finish();
 		return ERR_NOT_ENOUGH_MEM;
+	}
 
 	/* make vm86 ready */
 	ev_unblock(vm86t);

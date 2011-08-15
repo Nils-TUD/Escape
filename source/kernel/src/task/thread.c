@@ -119,12 +119,10 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 
 bool thread_setSignal(sThread *t,sig_t sig) {
 	bool res = false;
-	klock_aquire(&t->lock);
 	if(!t->ignoreSignals && t->signal == SIG_COUNT) {
 		t->signal = sig;
 		res = true;
 	}
-	klock_release(&t->lock);
 	return res;
 }
 
@@ -218,19 +216,15 @@ void thread_unsuspend(sThread *t) {
 
 bool thread_getStackRange(sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
 	bool res = false;
-	klock_aquire(&t->lock);
 	if(t->stackRegions[stackNo] >= 0)
 		res = vmm_getRegRange(t->proc->pid,t->stackRegions[stackNo],start,end);
-	klock_release(&t->lock);
 	return res;
 }
 
 bool thread_getTLSRange(sThread *t,uintptr_t *start,uintptr_t *end) {
 	bool res = false;
-	klock_aquire(&t->lock);
 	if(t->tlsRegion >= 0)
 		res = vmm_getRegRange(t->proc->pid,t->tlsRegion,start,end);
-	klock_release(&t->lock);
 	return res;
 }
 
@@ -239,9 +233,7 @@ vmreg_t thread_getTLSRegion(const sThread *t) {
 }
 
 void thread_setTLSRegion(sThread *t,vmreg_t rno) {
-	klock_aquire(&t->lock);
 	t->tlsRegion = rno;
-	klock_release(&t->lock);
 }
 
 bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {

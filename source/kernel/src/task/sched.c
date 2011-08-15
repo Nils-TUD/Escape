@@ -75,7 +75,7 @@ sThread *sched_perform(void) {
 	/* get new thread */
 	t = sched_qDequeue(&readyQueue);
 	if(t == NULL) {
-		/*  choose the idle-thread; don't do that if we're already the idle-thread.
+		/* choose the idle-thread; don't do that if we're already the idle-thread.
 		 * in this case, just keep idling */
 		if(old->flags & T_IDLE)
 			t = old;

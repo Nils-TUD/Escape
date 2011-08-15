@@ -26,6 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/vfs/real.h>
 #include <sys/vfs/node.h>
+#include <sys/klock.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>
@@ -34,19 +35,30 @@ static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t si
 static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint);
 static uint32_t *uenv_addArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 
+static klock_t sigLock;
+
 void uenv_handleSignal(sIntrptStackFrame *stack) {
 	tid_t tid;
 	sig_t sig;
 	sThread *t = thread_getRunning();
-	if((sig = thread_getSignal(t)) != SIG_COUNT)
+	klock_aquire(&sigLock);
+	if((sig = thread_getSignal(t)) != SIG_COUNT) {
 		uenv_startSignalHandler(t,stack,sig);
+		klock_release(&sigLock);
+		return;
+	}
+	klock_release(&sigLock);
 
 	if(sig_hasSignal(&sig,&tid)) {
-		if(t->tid == tid)
+		klock_aquire(&sigLock);
+		if(t->tid == tid) {
 			uenv_startSignalHandler(t,stack,sig);
+			klock_release(&sigLock);
+		}
 		else {
 			t = thread_getById(tid);
 			if(thread_setSignal(t,sig)) {
+				klock_release(&sigLock);
 				ev_unblock(t);
 				thread_switchTo(tid);
 			}

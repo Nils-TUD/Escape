@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/cache.h>
 #include <sys/printf.h>
+#include <sys/klock.h>
 #include <esc/width.h>
 #include <stdarg.h>
 #include <string.h>
@@ -51,6 +52,7 @@ static void prf_aprintc(char c);
 static char hexCharsBig[] = "0123456789ABCDEF";
 static char hexCharsSmall[] = "0123456789abcdef";
 static sStringBuffer *curbuf = NULL;
+static klock_t bufLock;
 
 void prf_sprintf(sStringBuffer *buf,const char *fmt,...) {
 	va_list ap;
@@ -64,10 +66,12 @@ void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 	env.print = prf_aprintc;
 	env.escape = NULL;
 	env.pipePad = NULL;
+	klock_aquire(&bufLock);
 	curbuf = buf;
 	prf_vprintf(&env,fmt,ap);
 	/* terminate */
 	prf_aprintc('\0');
+	klock_release(&bufLock);
 }
 
 static void prf_aprintc(char c) {

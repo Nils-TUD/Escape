@@ -26,6 +26,7 @@
 #include <sys/intrpt.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <sys/util.h>
 #include <sys/log.h>
 #include <stdarg.h>
@@ -35,11 +36,14 @@
 static uint randa = 1103515245;
 static uint randc = 12345;
 static uint lastRand = 0;
+static klock_t lock;
 
 int util_rand(void) {
 	int res;
+	klock_aquire(&lock);
 	lastRand = randa * lastRand + randc;
 	res = (int)((uint)(lastRand / 65536) % 32768);
+	klock_release(&lock);
 	return res;
 }
 

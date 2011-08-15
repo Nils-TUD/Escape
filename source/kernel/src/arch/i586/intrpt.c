@@ -26,12 +26,14 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/cache.h>
 #include <sys/task/signals.h>
 #include <sys/task/proc.h>
 #include <sys/task/elf.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
 #include <sys/task/uenv.h>
+#include <sys/task/smp.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
 #include <sys/dbg/kb.h>
@@ -270,7 +272,7 @@ static const sInterrupt intrptList[] = {
 /* total number of interrupts */
 static size_t intrptCount = 0;
 
-static uintptr_t pfaddr = 0;
+static uintptr_t *pfAddrs;
 /* stuff to count exceptions */
 static size_t exCount = 0;
 static uint32_t lastEx = 0xFFFFFFFF;
@@ -284,6 +286,11 @@ static sIDTEntry idt[IDT_COUNT];
 
 void intrpt_init(void) {
 	size_t i;
+
+	pfAddrs = cache_alloc(smp_getCPUCount() * sizeof(uintptr_t));
+	if(pfAddrs == NULL)
+		util_panic("Unable to alloc memory for pagefault-addresses");
+
 	/* setup the idt-pointer */
 	sIDTPtr idtPtr;
 	idtPtr.address = (uintptr_t)idt;
@@ -378,7 +385,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 	/* we need to save the page-fault address here because swapping may cause other ones */
 	if(stack->intrptNo == EX_PAGE_FAULT)
-		pfaddr = cpu_getCR2();
+		pfAddrs[t->cpu] = cpu_getCR2();
 
 	swap_check();
 
@@ -452,28 +459,30 @@ static void intrpt_exCoProcNA(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_exPageFault(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
+	uintptr_t addr = pfAddrs[t->cpu];
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_START)
 		vid_unsetPrintFunc();
 
 #if DEBUG_PAGEFAULTS
-	if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()) {
+	if(addr == lastPFAddr && lastPFProc == proc_getRunning()) {
 		exCount++;
 		if(exCount >= MAX_EX_COUNT)
 			util_panic("%d page-faults at the same address of the same process",exCount);
 	}
 	else
 		exCount = 0;
-	lastPFAddr = pfaddr;
+	lastPFAddr = addr;
 	lastPFProc = proc_getRunning();
-	intrpt_printPFInfo(stack,pfaddr);
+	intrpt_printPFInfo(stack,addr);
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!vmm_pagefault(pfaddr)) {
+	if(!vmm_pagefault(addr)) {
 		/* ok, now lets check if the thread wants more stack-pages */
-		if(thread_extendStack(pfaddr) < 0) {
-			intrpt_printPFInfo(stack,pfaddr);
+		if(thread_extendStack(addr) < 0) {
+			intrpt_printPFInfo(stack,addr);
 			proc_segFault();
 		}
 	}

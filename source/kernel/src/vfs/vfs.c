@@ -101,6 +101,11 @@ void vfs_init(void) {
 	procsNode = vfs_dir_create(KERNEL_PID,sys,(char*)"processes");
 	vfs_dir_create(KERNEL_PID,sys,(char*)"devices");
 	devNode = vfs_dir_create(KERNEL_PID,root,(char*)"dev");
+
+	vfs_info_init();
+	vfs_req_init();
+	vfs_drv_init();
+	vfs_real_init();
 }
 
 int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {

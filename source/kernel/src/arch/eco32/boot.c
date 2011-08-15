@@ -95,10 +95,6 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	/* vfs */
 	vid_printf("Initializing VFS...");
 	vfs_init();
-	vfs_info_init();
-	vfs_req_init();
-	vfs_drv_init();
-	vfs_real_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* processes */

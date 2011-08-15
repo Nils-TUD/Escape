@@ -79,6 +79,7 @@ static sGFTEntry *gftFreeList;
 static sVFSNode *procsNode;
 static sVFSNode *devNode;
 static klock_t gftLock;
+static klock_t waitLock;
 
 void vfs_init(void) {
 	sVFSNode *root,*sys;
@@ -175,11 +176,6 @@ void vfs_decUsages(file_t file) {
 	klock_release(&e->lock);
 }
 
-sVFSNode *vfs_getVNode(file_t file) {
-	sGFTEntry *e = vfs_getGFTEntry(file);
-	return e->node;
-}
-
 int vfs_fcntl(pid_t pid,file_t file,uint cmd,int arg) {
 	UNUSED(pid);
 	sGFTEntry *e = vfs_getGFTEntry(file);
@@ -196,9 +192,14 @@ int vfs_fcntl(pid_t pid,file_t file,uint cmd,int arg) {
 			return 0;
 		case F_SETDATA: {
 			sVFSNode *n = e->node;
+			int res = 0;
+			klock_aquire(&waitLock);
 			if(e->devNo != VFS_DEV_NO || !IS_DRIVER(n->mode))
-				return ERR_INVALID_ARGS;
-			return vfs_server_setReadable(n,(bool)arg);
+				res = ERR_INVALID_ARGS;
+			else
+				res = vfs_server_setReadable(n,(bool)arg);
+			klock_release(&waitLock);
+			return res;
 		}
 	}
 	return ERR_INVALID_ARGS;
@@ -583,7 +584,9 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_
 	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
+	klock_aquire(&waitLock);
 	err = vfs_chan_send(pid,file,n,id,data,size);
+	klock_release(&waitLock);
 
 	if(err == 0 && pid != KERNEL_PID) {
 		sProc *p = proc_getByPid(pid);
@@ -656,46 +659,79 @@ static bool vfs_doCloseFile(pid_t pid,file_t file,sGFTEntry *e) {
 	return false;
 }
 
-bool vfs_hasMsg(pid_t pid,file_t file) {
-	UNUSED(pid);
-	sGFTEntry *e = vfs_getGFTEntry(file);
-	sVFSNode *n;
-	if(e->devNo != VFS_DEV_NO)
-		return false;
-	n = e->node;
-	return IS_CHANNEL(n->mode) && vfs_chan_hasReply(n);
+static bool vfs_hasMsg(sVFSNode *node) {
+	return IS_CHANNEL(node->mode) && vfs_chan_hasReply(node);
 }
 
-bool vfs_hasData(pid_t pid,file_t file) {
-	UNUSED(pid);
-	sGFTEntry *e = vfs_getGFTEntry(file);
-	sVFSNode *n;
-	if(e->devNo != VFS_DEV_NO)
-		return false;
-	n = e->node;
-	return IS_DRIVER(n->parent->mode) && vfs_server_isReadable(n->parent);
+static bool vfs_hasData(sVFSNode *node) {
+	return IS_DRIVER(node->parent->mode) && vfs_server_isReadable(node->parent);
 }
 
-bool vfs_hasWork(pid_t pid,const file_t *files,size_t count) {
-	UNUSED(pid);
+static bool vfs_hasWork(sVFSNode *node) {
+	return IS_DRIVER(node->mode) && vfs_server_hasWork(node);
+}
+
+int vfs_waitFor(sWaitObject *objects,size_t objCount) {
+	sThread *t = thread_getRunning();
 	size_t i;
-	for(i = 0; i < count; i++) {
-		sGFTEntry *e = vfs_getGFTEntry(files[i]);
-		sVFSNode *node = e->node;
-		if(e->devNo != VFS_DEV_NO)
-			continue;
 
-		if(!IS_DRIVER(node->mode))
-			continue;
-
-		if(vfs_server_hasWork(node))
-			return true;
+	/* transform the files into vfs-nodes */
+	for(i = 0; i < objCount; i++) {
+		if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+			file_t file = (file_t)objects[i].object;
+			sGFTEntry *e = vfs_getGFTEntry(file);
+			if(e->devNo != VFS_DEV_NO)
+				return ERR_INVALID_ARGS;
+			objects[i].object = e->node;
+		}
 	}
-	return false;
+
+	while(true) {
+		/* we have to lock this region to ensure that if we've found out that we can sleep, no one
+		 * sends us an event before we've finished the ev_waitObjects(). otherwise, it would be
+		 * possible that we never wake up again, because we have missed the event and get no other
+		 * one. */
+		klock_aquire(&waitLock);
+		/* check whether we can wait */
+		for(i = 0; i < objCount; i++) {
+			if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+				sVFSNode *n = (sVFSNode*)objects[i].object;
+				if((objects[i].events & EV_CLIENT) && vfs_hasWork(n)) {
+					klock_release(&waitLock);
+					return 0;
+				}
+				else if((objects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(n)) {
+					klock_release(&waitLock);
+					return 0;
+				}
+				else if((objects[i].events & EV_DATA_READABLE) && vfs_hasData(n)) {
+					klock_release(&waitLock);
+					return 0;
+				}
+			}
+		}
+
+		/* wait */
+		if(!ev_waitObjects(t,objects,objCount)) {
+			klock_release(&waitLock);
+			return ERR_NOT_ENOUGH_MEM;
+		}
+		klock_release(&waitLock);
+
+		thread_switch();
+		if(sig_hasSignalFor(t->tid))
+			return ERR_INTERRUPTED;
+		/* if we're waiting for other events, too, we have to wake up */
+		for(i = 0; i < objCount; i++) {
+			if((objects[i].events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
+				return 0;
+		}
+	}
+	/* never reached */
+	return 0;
 }
 
-inode_t vfs_getClient(pid_t pid,const file_t *files,size_t count,size_t *index) {
-	UNUSED(pid);
+static inode_t vfs_doGetClient(const file_t *files,size_t count,size_t *index) {
 	sVFSNode *match = NULL;
 	size_t i;
 	bool retry,cont = true;
@@ -729,6 +765,49 @@ inode_t vfs_getClient(pid_t pid,const file_t *files,size_t count,size_t *index) 
 	return ERR_NO_CLIENT_WAITING;
 }
 
+inode_t vfs_getClient(const file_t *files,size_t count,size_t *index,uint flags) {
+	sWaitObject waits[MAX_GETWORK_DRIVERS];
+	sThread *t = thread_getRunning();
+	bool inited = false;
+	inode_t clientNo;
+	while(true) {
+		klock_aquire(&waitLock);
+		clientNo = vfs_doGetClient(files,count,index);
+		if(clientNo != ERR_NO_CLIENT_WAITING) {
+			klock_release(&waitLock);
+			break;
+		}
+
+		/* if we shouldn't block, stop here */
+		if(flags & GW_NOBLOCK) {
+			klock_release(&waitLock);
+			break;
+		}
+
+		/* build wait-objects */
+		if(!inited) {
+			size_t i;
+			for(i = 0; i < count; i++) {
+				sGFTEntry *e = vfs_getGFTEntry(files[i]);
+				waits[i].events = EV_CLIENT;
+				waits[i].object = (evobj_t)e->node;
+			}
+			inited = true;
+		}
+
+		/* wait for a client (accept signals) */
+		ev_waitObjects(t,waits,count);
+		klock_release(&waitLock);
+
+		thread_switch();
+		if(sig_hasSignalFor(t->tid)) {
+			clientNo = ERR_INTERRUPTED;
+			break;
+		}
+	}
+	return clientNo;
+}
+
 inode_t vfs_getClientId(pid_t pid,file_t file) {
 	UNUSED(pid);
 	sGFTEntry *e = vfs_getGFTEntry(file);
@@ -743,7 +822,6 @@ file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId) {
 	sVFSNode *n;
 
 	/* search for the client */
-	/* TODO lock the node */
 	n = vfs_node_openDir(e->node);
 	while(n != NULL) {
 		if(vfs_node_getNo(n) == clientId)
@@ -990,16 +1068,17 @@ errorDir:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-sVFSNode *vfs_createProcess(pid_t pid,fRead handler) {
+inode_t vfs_createProcess(pid_t pid,fRead handler) {
 	char *name;
 	sVFSNode *proc = procsNode;
 	sVFSNode *n;
 	sVFSNode *dir,*tdir;
+	int res = ERR_NOT_ENOUGH_MEM;
 
 	/* build name */
 	name = (char*)cache_alloc(12);
 	if(name == NULL)
-		return NULL;
+		return ERR_NOT_ENOUGH_MEM;
 
 	itoa(name,12,pid);
 
@@ -1009,6 +1088,7 @@ sVFSNode *vfs_createProcess(pid_t pid,fRead handler) {
 		/* entry already existing? */
 		if(strcmp(n->name,name) == 0) {
 			vfs_node_closeDir(proc);
+			res = ERR_FILE_EXISTS;
 			goto errorName;
 		}
 		n = n->next;
@@ -1044,20 +1124,21 @@ sVFSNode *vfs_createProcess(pid_t pid,fRead handler) {
 		goto errorDir;
 
 	vfs_node_release(dir);
-	return tdir;
+	return vfs_node_getNo(tdir);
 
 errorDir:
 	vfs_node_release(dir);
 	vfs_node_destroy(dir);
 errorName:
 	cache_free(name);
-	return NULL;
+	return res;
 }
 
 void vfs_removeProcess(pid_t pid) {
 	/* remove from /system/processes */
 	const sProc *p = proc_getByPid(pid);
-	vfs_node_destroy(p->threadDir->parent);
+	sVFSNode *node = vfs_node_get(p->threadDir);
+	vfs_node_destroy(node->parent);
 }
 
 bool vfs_createThread(tid_t tid) {
@@ -1072,7 +1153,8 @@ bool vfs_createThread(tid_t tid) {
 	itoa(name,12,tid);
 
 	/* create dir */
-	dir = vfs_dir_create(KERNEL_PID,t->proc->threadDir,name);
+	n = vfs_node_get(t->proc->threadDir);
+	dir = vfs_dir_create(KERNEL_PID,n,name);
 	if(dir == NULL)
 		goto errorDir;
 
@@ -1101,7 +1183,7 @@ errorDir:
 
 void vfs_removeThread(tid_t tid) {
 	const sThread *t = thread_getById(tid);
-	sVFSNode *n;
+	sVFSNode *n,*dir;
 	char *name;
 
 	/* build name */
@@ -1111,10 +1193,11 @@ void vfs_removeThread(tid_t tid) {
 	itoa(name,12,tid);
 
 	/* search for thread-node and remove it */
-	n = vfs_node_openDir(t->proc->threadDir);
+	dir = vfs_node_get(t->proc->threadDir);
+	n = vfs_node_openDir(dir);
 	while(n != NULL) {
 		if(strcmp(n->name,name) == 0) {
-			vfs_node_closeDir(t->proc->threadDir);
+			vfs_node_closeDir(dir);
 			vfs_node_destroy(n);
 			break;
 		}

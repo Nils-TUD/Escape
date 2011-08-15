@@ -27,6 +27,7 @@
 #include <sys/task/timer.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
+#include <sys/vfs/vfs.h>
 #include <sys/syscalls/thread.h>
 #include <sys/syscalls.h>
 #include <sys/util.h>
@@ -241,7 +242,6 @@ static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount) {
 
 static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,const file_t *objFiles) {
 	sWaitObject kobjects[MAX_WAIT_OBJECTS];
-	sThread *t = thread_getRunning();
 	size_t i;
 
 	/* copy to kobjects and check */
@@ -257,40 +257,10 @@ static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,cons
 			}
 			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
 				return ERR_INVALID_ARGS;
-			kobjects[i].object = (evobj_t)vfs_getVNode(objFiles[i]);
-			if(!kobjects[i].object)
-				return ERR_INVALID_ARGS;
+			kobjects[i].object = objFiles[i];
 		}
 		else
 			kobjects[i].object = uobjects[i].object;
 	}
-
-	while(true) {
-		/* check whether we can wait */
-		for(i = 0; i < objCount; i++) {
-			if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-				file_t file = objFiles[i];
-				if((kobjects[i].events & EV_CLIENT) && vfs_hasWork(t->proc->pid,&file,1))
-					return 0;
-				else if((kobjects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(t->proc->pid,file))
-					return 0;
-				else if((kobjects[i].events & EV_DATA_READABLE) && vfs_hasData(t->proc->pid,file))
-					return 0;
-			}
-		}
-
-		/* wait */
-		if(!ev_waitObjects(t,kobjects,objCount))
-			return ERR_NOT_ENOUGH_MEM;
-		thread_switch();
-		if(sig_hasSignalFor(t->tid))
-			return ERR_INTERRUPTED;
-		/* if we're waiting for other events, too, we have to wake up */
-		for(i = 0; i < objCount; i++) {
-			if((kobjects[i].events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
-				return 0;
-		}
-	}
-	/* never reached */
-	return 0;
+	return vfs_waitFor(kobjects,objCount);
 }

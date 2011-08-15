@@ -22,16 +22,14 @@
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
+#include <sys/vfs/vfs.h>
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls.h>
 #include <errors.h>
 #include <string.h>
 
 /* implementable functions */
-#define MAX_GETWORK_DRIVERS			16
 #define DRV_ALL						(DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE)
-
-#define GW_NOBLOCK					1
 
 int sysc_regDriver(sIntrptStackFrame *stack) {
 	char nameCpy[MAX_PATH_LEN + 1];
@@ -105,7 +103,6 @@ int sysc_getClient(sIntrptStackFrame *stack) {
 
 int sysc_getWork(sIntrptStackFrame *stack) {
 	file_t files[MAX_GETWORK_DRIVERS];
-	sWaitObject waits[MAX_GETWORK_DRIVERS];
 	const int *fds = (const int*)SYSC_ARG1(stack);
 	size_t fdCount = SYSC_ARG2(stack);
 	int *drv = (int*)SYSC_ARG3(stack);
@@ -120,7 +117,6 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	int fd;
 	size_t i,index;
 	ssize_t res;
-	bool inited = false;
 
 	/* validate pointers */
 	if(fdCount == 0 || fdCount > MAX_GETWORK_DRIVERS)
@@ -143,31 +139,8 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 	}
 
 	/* open a client */
-	while(1) {
-		clientNo = vfs_getClient(pid,files,fdCount,&index);
-		if(clientNo != ERR_NO_CLIENT_WAITING)
-			break;
+	clientNo = vfs_getClient(files,fdCount,&index,flags);
 
-		/* if we shouldn't block, stop here */
-		if(flags & GW_NOBLOCK)
-			break;
-
-		if(!inited) {
-			for(i = 0; i < fdCount; i++) {
-				waits[i].events = EV_CLIENT;
-				waits[i].object = (evobj_t)vfs_getVNode(files[i]);
-			}
-			inited = true;
-		}
-
-		/* otherwise wait for a client (accept signals) */
-		ev_waitObjects(t,waits,fdCount);
-		thread_switch();
-		if(sig_hasSignalFor(t->tid)) {
-			clientNo = ERR_INTERRUPTED;
-			break;
-		}
-	}
 	/* release files */
 	for(i = 0; i < fdCount; i++)
 		proc_relFile(files[i]);

@@ -24,7 +24,6 @@
 #include <sys/mem/region.h>
 #include <sys/mem/paging.h>
 #include <sys/task/elf.h>
-#include <sys/vfs/node.h>
 #include <sys/intrpt.h>
 
 #ifdef __i386__
@@ -131,8 +130,8 @@ typedef struct {
 	const char *command;
 	/* threads of this process */
 	sSLList *threads;
-	/* the directory-node in the VFS of this process */
-	sVFSNode *threadDir;
+	/* the directory-node-number in the VFS of this process */
+	inode_t threadDir;
 	/* locks for this process */
 	klock_t locks[PLOCK_COUNT];
 	struct {

@@ -27,6 +27,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
+#include <sys/vfs/vfs.h>
 #include <sys/cpu.h>
 #include <sys/intrpt.h>
 #include <sys/ksymbols.h>

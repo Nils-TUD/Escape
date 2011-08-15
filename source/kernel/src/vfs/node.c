@@ -289,12 +289,12 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 		n = n->next;
 	}
 
-	/* Note: this means that no one can create (additional) virtual nodes in the root-directory,
-	 * which is intended. The existing virtual nodes in the root-directory, of course, hide
-	 * possibly existing directory-entries in the real filesystem with the same name. */
 	err = 0;
 	if(n == NULL) {
 		/* not existing file/dir in root-directory means that we should ask fs */
+		/* Note: this means that no one can create (additional) virtual nodes in the root-directory,
+		 * which is intended. The existing virtual nodes in the root-directory, of course, hide
+		 * possibly existing directory-entries in the real filesystem with the same name. */
 		if(depth == 0)
 			err = ERR_REAL_PATH;
 		/* should we create a default-file? */

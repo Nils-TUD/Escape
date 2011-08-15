@@ -33,6 +33,7 @@
 #include <sys/syscalls/proc.h>
 #include <sys/syscalls.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
 #include <sys/vfs/real.h>
 #include <sys/util.h>
 #include <sys/debug.h>

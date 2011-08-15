@@ -29,6 +29,7 @@
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls/signals.h>
 #include <esc/syscalls.h>
+#include <esc/fsinterface.h>
 #include <string.h>
 #include <assert.h>
 #include <errors.h>

@@ -28,6 +28,7 @@
 #include <sys/mem/swap.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/vmm.h>
+#include <sys/vfs/node.h>
 #include <sys/video.h>
 #include <sys/config.h>
 #include <string.h>

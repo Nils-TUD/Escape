@@ -21,10 +21,12 @@
 #define VFS_H_
 
 #include <sys/common.h>
+#include <sys/task/event.h>
 #include <esc/sllist.h>
 #include <esc/fsinterface.h>
 
 #define MAX_VFS_FILE_SIZE			(64 * K)
+#define MAX_GETWORK_DRIVERS			16
 
 /* some additional types for the kernel */
 #define MODE_TYPE_CHANNEL			0x0010000
@@ -54,6 +56,9 @@
 #define SEEK_SET					0
 #define SEEK_CUR					1
 #define SEEK_END					2
+
+/* getWork-flags */
+#define GW_NOBLOCK					1
 
 /* GFT flags */
 enum {
@@ -151,12 +156,6 @@ void vfs_incUsages(file_t file);
  * @param file the file
  */
 void vfs_decUsages(file_t file);
-
-/**
- * @param file the file-number
- * @return the virtual node associated with the given file or NULL if failed
- */
-sVFSNode *vfs_getVNode(file_t file);
 
 /**
  * Manipulates the given file, depending on the command
@@ -366,43 +365,27 @@ int vfs_rmdir(pid_t pid,const char *path);
 file_t vfs_createDriver(pid_t pid,const char *name,uint flags);
 
 /**
- * Checks whether the file has a receivable message
+ * Waits for the given wait-objects, whereas the objects are expected to be of type file_t.
+ * First, the function checks whether we can wait, i.e. if the event to wait for has already
+ * arrived. If not, we wait until one of the events arrived.
  *
- * @param pid the process-id
- * @param file the file
- * @return true if so
+ * @param objects the array of wait-objects (will be changed; files -> nodes)
+ * @param objCount the number of wait-objects
+ * @return 0 on success
  */
-bool vfs_hasMsg(pid_t pid,file_t file);
+int vfs_waitFor(sWaitObject *objects,size_t objCount);
 
 /**
- * Checks whether the file can be read (driver has data to read)
+ * For drivers: Looks whether a client wants to be served and return the node-number. If
+ * necessary and if GW_NOBLOCK is not used, the function waits until a client wants to be served.
  *
- * @param pid the process-id
- * @param file the file
- * @return true if so
- */
-bool vfs_hasData(pid_t pid,file_t file);
-
-/**
- * For drivers: Checks whether the files have waiting clients
- *
- * @param pid the driver-process-id
- * @param files an array of files to check for clients
- * @param count the number of files
- * @return true if there is any client that needs to be served
- */
-bool vfs_hasWork(pid_t pid,const file_t *files,size_t count);
-
-/**
- * For drivers: Looks whether a client wants to be served and return the node-number
- *
- * @param pid the driver-process-id
  * @param files an array of files to check for clients
  * @param count the number of files
  * @param index will be set to the index in <files> from which the client was chosen
+ * @param flags the flags (GW_*)
  * @return the error-code or the node-number of the client
  */
-file_t vfs_getClient(pid_t pid,const file_t *files,size_t count,size_t *index);
+inode_t vfs_getClient(const file_t *files,size_t count,size_t *index,uint flags);
 
 /***
  * Fetches the client-id from the given file
@@ -430,7 +413,7 @@ file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId);
  * @param handler the read-handler
  * @return the process-directory-node on success
  */
-sVFSNode *vfs_createProcess(pid_t pid,fRead handler);
+inode_t vfs_createProcess(pid_t pid,fRead handler);
 
 /**
  * Removes all occurrences of the given process from VFS

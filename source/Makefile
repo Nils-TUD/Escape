@@ -17,7 +17,7 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 # simulators
-#KVM = -enable-kvm
+KVM = -enable-kvm
 QEMU = qemu
 #-net nic,model=ne2k_pci -net user 
 QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime

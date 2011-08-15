@@ -108,7 +108,7 @@ void proc_init(void) {
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(p->pid,&vfs_info_procReadHandler);
-	if(p->threadDir == NULL)
+	if(p->threadDir < 0)
 		util_panic("Not enough mem for init process");
 
 	/* init fds */
@@ -402,8 +402,8 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	}
 	/* first create the VFS node (we may not have enough mem) */
 	p->threadDir = vfs_createProcess(newPid,&vfs_info_procReadHandler);
-	if(p->threadDir == NULL) {
-		res = ERR_NOT_ENOUGH_MEM;
+	if(p->threadDir < 0) {
+		res = p->threadDir;
 		goto errorProc;
 	}
 

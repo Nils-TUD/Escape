@@ -25,6 +25,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/real.h>
+#include <sys/vfs/node.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>

@@ -258,7 +258,7 @@ static void vesa_doUpdate(void) {
 		vesa_update(r->x,r->y,r->width,r->height);
 		free(r);
 	}
-	sll_clear(dirtyRects);
+	sll_clear(dirtyRects,false);
 
 	if(setPreview) {
 		vesa_setPreview(&newPreview,newThickness);

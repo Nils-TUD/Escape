@@ -27,6 +27,7 @@
 #include <sys/vfs/request.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
@@ -51,6 +52,7 @@ static sRequest requests[REQ_COUNT];
 static sRequest *reqFreeList;
 static sRequest *reqUsedList;
 static sRequest *reqUsedEnd;
+static klock_t lock;
 
 /* TODO if a thread is killed, we have to remove all requests of that thread and all requests that
  * are associated with a node of that thread, i.e. if it was a driver the device-nodes of that
@@ -69,11 +71,9 @@ void vfs_req_init(void) {
 	reqUsedEnd = NULL;
 }
 
-bool vfs_req_setHandler(msgid_t id,fReqHandler f) {
-	if(id >= HANDLER_COUNT || handler[id] != NULL)
-		return false;
+void vfs_req_setHandler(msgid_t id,fReqHandler f) {
+	assert(id < HANDLER_COUNT && handler[id] == NULL);
 	handler[id] = f;
-	return true;
 }
 
 void vfs_req_sendMsg(msgid_t id,sVFSNode *node,USER const void *data,size_t size) {
@@ -87,26 +87,27 @@ sRequest *vfs_req_get(sVFSNode *node,USER void *buffer,size_t size) {
 	sRequest *req = NULL;
 	assert(node != NULL);
 
-	if(reqFreeList == NULL)
-		return NULL;
+	klock_aquire(&lock);
+	if(reqFreeList != NULL) {
+		req = reqFreeList;
+		reqFreeList = req->next;
 
-	req = reqFreeList;
-	reqFreeList = req->next;
-
-	req->thread = t;
-	req->node = node;
-	req->state = REQ_STATE_WAITING;
-	req->val1 = 0;
-	req->val2 = 0;
-	req->data = buffer;
-	req->dsize = size;
-	req->count = 0;
-	req->next = NULL;
-	if(!reqUsedEnd)
-		reqUsedList = req;
-	else
-		reqUsedEnd->next = req;
-	reqUsedEnd = req;
+		req->thread = t;
+		req->node = node;
+		req->state = REQ_STATE_WAITING;
+		req->val1 = 0;
+		req->val2 = 0;
+		req->data = buffer;
+		req->dsize = size;
+		req->count = 0;
+		req->next = NULL;
+		if(!reqUsedEnd)
+			reqUsedList = req;
+		else
+			reqUsedEnd->next = req;
+		reqUsedEnd = req;
+	}
+	klock_release(&lock);
 	return req;
 }
 
@@ -129,17 +130,24 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 }
 
 sRequest *vfs_req_getByNode(const sVFSNode *node) {
-	sRequest *req = reqUsedList;
+	sRequest *req,*res = NULL;
+	klock_aquire(&lock);
+	req = reqUsedList;
 	while(req != NULL) {
-		if(req->node == node)
-			return req;
+		if(req->node == node) {
+			res = req;
+			break;
+		}
 		req = req->next;
 	}
-	return NULL;
+	klock_release(&lock);
+	return res;
 }
 
 void vfs_req_remove(sRequest *r) {
-	sRequest *req = reqUsedList,*p = NULL;
+	sRequest *req,*p = NULL;
+	klock_aquire(&lock);
+	req = reqUsedList;
 	while(req != NULL) {
 		if(req == r) {
 			if(p)
@@ -148,23 +156,28 @@ void vfs_req_remove(sRequest *r) {
 				reqUsedList = req->next;
 			if(req == reqUsedEnd)
 				reqUsedEnd = p;
-			return;
+			break;
 		}
 		p = req;
 		req = req->next;
 	}
+	klock_release(&lock);
 }
 
 void vfs_req_free(sRequest *r) {
 	if(r) {
 		vfs_req_remove(r);
+		klock_aquire(&lock);
 		r->next = reqFreeList;
 		reqFreeList = r;
+		klock_release(&lock);
 	}
 }
 
 void vfs_req_freeAllOf(sThread *t) {
-	sRequest *req = reqUsedList,*p = NULL;
+	sRequest *req,*p = NULL;
+	klock_aquire(&lock);
+	req = reqUsedList;
 	while(req != NULL) {
 		if(req->thread == t) {
 			sRequest *next = req->next;
@@ -186,15 +199,19 @@ void vfs_req_freeAllOf(sThread *t) {
 			req = req->next;
 		}
 	}
+	klock_release(&lock);
 }
 
 void vfs_req_printAll(void) {
 	vid_printf("Active requests:\n");
-	sRequest *req = reqUsedList;
+	sRequest *req;
+	klock_aquire(&lock);
+	req = reqUsedList;
 	while(req != NULL) {
 		vfs_req_print(req);
 		req = req->next;
 	}
+	klock_release(&lock);
 }
 
 void vfs_req_print(sRequest *r) {

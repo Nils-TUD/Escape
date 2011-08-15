@@ -117,7 +117,7 @@ typedef struct {
 	/* file descriptors: indices of the global file table */
 	file_t fileDescs[MAX_FD_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
-	sSLList *fsChans;
+	sSLList fsChans;
 	/* environment-variables of this process */
 	sSLList *env;
 	/* for the waiting parent */

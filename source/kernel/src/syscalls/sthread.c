@@ -262,5 +262,5 @@ static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,cons
 		else
 			kobjects[i].object = uobjects[i].object;
 	}
-	return vfs_waitFor(kobjects,objCount);
+	return vfs_waitFor(kobjects,objCount,true);
 }

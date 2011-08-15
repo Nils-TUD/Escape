@@ -29,6 +29,7 @@
 #include <sys/vfs/server.h>
 #include <sys/vfs/driver.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <string.h>
@@ -81,6 +82,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	chan->recvList = NULL;
 	chan->sendList = NULL;
 	chan->closed = false;
+	chan->lock = 0;
 	node->data = chan;
 	vfs_node_append(parent,node);
 	return node;
@@ -170,9 +172,6 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const vo
 	else
 		list = &(chan->sendList);
 
-	if(*list == NULL)
-		*list = sll_create();
-
 	/* create message and copy data to it */
 	sMessage *msg = (sMessage*)cache_alloc(sizeof(sMessage) + size);
 	if(msg == NULL)
@@ -186,11 +185,17 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const vo
 		thread_remHeapAlloc(msg);
 	}
 
+	klock_aquire(&chan->lock);
+	if(*list == NULL)
+		*list = sll_create();
+
 	/* append to list */
 	if(!sll_append(*list,msg)) {
+		klock_release(&chan->lock);
 		cache_free(msg);
 		return ERR_NOT_ENOUGH_MEM;
 	}
+	klock_release(&chan->lock);
 
 	/* notify the driver */
 	if(list == &(chan->sendList)) {
@@ -223,25 +228,36 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 		event = EVI_RECEIVED_MSG;
 		list = &chan->recvList;
 	}
+
+	klock_aquire(&chan->lock);
 	while(sll_length(*list) == 0) {
-		if(!vfs_shouldBlock(file))
+		if(!vfs_shouldBlock(file)) {
+			klock_release(&chan->lock);
 			return ERR_WOULD_BLOCK;
+		}
 		/* if the channel has already been closed, there is no hope of success here */
-		if(chan->closed)
+		if(chan->closed) {
+			klock_release(&chan->lock);
 			return ERR_INVALID_FILE;
+		}
 		ev_wait(t,event,(evobj_t)node);
+		klock_release(&chan->lock);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
 		/* if we waked up and there is no message, the driver probably died */
-		if(event == EVI_RECEIVED_MSG && sll_length(*list) == 0)
+		klock_aquire(&chan->lock);
+		if(event == EVI_RECEIVED_MSG && sll_length(*list) == 0) {
+			klock_release(&chan->lock);
 			return ERR_DRIVER_DIED;
+		}
 	}
 
 	/* get first element and copy data to buffer */
 	msg = (sMessage*)sll_get(*list,0);
 	if(data && msg->length > size) {
 		sll_removeFirst(*list);
+		klock_release(&chan->lock);
 		cache_free(msg);
 		return ERR_INVALID_ARGS;
 	}
@@ -250,13 +266,16 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 					msg->id,node->parent->name);*/
 
 	/* copy data and id; both might segfault, in this case we pretend that we haven't read the msg */
+	thread_addLock(&chan->lock);
 	if(data)
 		memcpy(data,msg + 1,msg->length);
 	if(id)
 		*id = msg->id;
+	thread_remLock(&chan->lock);
 
 	res = msg->length;
 	sll_removeFirst(*list);
+	klock_release(&chan->lock);
 	cache_free(msg);
 	if(event == EVI_CLIENT)
 		vfs_server_remMsg(node->parent);

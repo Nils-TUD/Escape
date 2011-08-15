@@ -54,9 +54,8 @@ void vfs_req_init(void);
  *
  * @param id the message-id
  * @param f the handler-function
- * @return true if successfull
  */
-bool vfs_req_setHandler(msgid_t id,fReqHandler f);
+void vfs_req_setHandler(msgid_t id,fReqHandler f);
 
 /**
  * Sends the given message to the appropriate handler

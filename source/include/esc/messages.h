@@ -231,44 +231,51 @@ typedef struct {
 	sPCIBar bars[6];
 } sPCIDevice;
 
-/* the message we're using for communication */
+/* for messages with integer arguments only */
+typedef struct {
+	ulong arg1;
+	ulong arg2;
+	ulong arg3;
+	ulong arg4;
+	ulong arg5;
+	ulong arg6;
+	ulong arg7;
+	ulong arg8;
+} sArgsMsg;
+
+/* for messages with a few integer arguments and one or two strings */
+typedef struct {
+	ulong arg1;
+	ulong arg2;
+	ulong arg3;
+	ulong arg4;
+	ulong arg5;
+	ulong arg6;
+	ulong arg7;
+	ulong arg8;
+	char s1[MAX_MSGSTR_LEN + 1];
+	char s2[MAX_MSGSTR_LEN + 1];
+} sStrMsg;
+
+/* for messages with a few integer arguments and a data-part */
+typedef struct {
+	ulong arg1;
+	ulong arg2;
+	ulong arg3;
+	ulong arg4;
+	ulong arg5;
+	ulong arg6;
+	ulong arg7;
+	ulong arg8;
+	char d[MAX_MSG_SIZE];
+} sDataMsg;
+
+/* the message we're using for communication; most of the time its nice to have all message-types
+ * in one union to be able to use all of them (one after another, of course) */
 typedef union {
-	/* for messages with integer arguments only */
-	struct {
-		ulong arg1;
-		ulong arg2;
-		ulong arg3;
-		ulong arg4;
-		ulong arg5;
-		ulong arg6;
-		ulong arg7;
-		ulong arg8;
-	} args;
-	/* for messages with a few integer arguments and one or two strings */
-	struct {
-		ulong arg1;
-		ulong arg2;
-		ulong arg3;
-		ulong arg4;
-		ulong arg5;
-		ulong arg6;
-		ulong arg7;
-		ulong arg8;
-		char s1[MAX_MSGSTR_LEN + 1];
-		char s2[MAX_MSGSTR_LEN + 1];
-	} str;
-	/* for messages with a few integer arguments and a data-part */
-	struct {
-		ulong arg1;
-		ulong arg2;
-		ulong arg3;
-		ulong arg4;
-		ulong arg5;
-		ulong arg6;
-		ulong arg7;
-		ulong arg8;
-		char d[MAX_MSG_SIZE];
-	} data;
+	sArgsMsg args;
+	sStrMsg str;
+	sDataMsg data;
 } sMsg;
 
 #endif /* MESSAGES_H_ */

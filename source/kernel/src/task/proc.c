@@ -100,7 +100,7 @@ void proc_init(void) {
 	p->sigRetAddr = 0;
 	p->flags = 0;
 	p->entryPoint = 0;
-	p->fsChans = NULL;
+	sll_init(&p->fsChans,slln_allocNode,slln_freeNode);
 	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
@@ -425,7 +425,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->sigRetAddr = cur->sigRetAddr;
 	p->flags = 0;
 	p->entryPoint = cur->entryPoint;
-	p->fsChans = NULL;
+	sll_init(&p->fsChans,slln_allocNode,slln_freeNode);
 	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
@@ -733,7 +733,7 @@ void proc_killDeadThread(void) {
 			sll_removeFirstWith(t->proc->threads,t);
 			proc_release(p,PLOCK_PROG);
 		}
-		sll_clear(&deadThreads);
+		sll_clear(&deadThreads,false);
 	}
 	klock_release(&lock);
 }

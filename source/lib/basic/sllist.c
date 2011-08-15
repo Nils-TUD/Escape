@@ -110,22 +110,30 @@ sSLList *sll_clone(const sSLList *list) {
 }
 
 void sll_destroy(sSLList *list,bool freeData) {
-	/* free nodes */
-	sList *l = (sList*)list;
-	sNode *nn,*n;
 	if(list == NULL)
 		return;
+	sll_clear(list,freeData);
+	heapfree(list);
+}
 
-	n = l->first;
+void sll_clear(sSLList *list,bool freeData) {
+	sList *l = (sList*)list;
+	sNode *m,*n = (sNode*)l->first;
+	vassert(list != NULL,"list == NULL");
+
+	/* free all nodes */
 	while(n != NULL) {
-		nn = n->next;
+		m = n->next;
 		if(freeData)
 			heapfree((void*)n->data);
 		l->ffree(n);
-		n = nn;
+		n = m;
 	}
-	/* free list */
-	heapfree(list);
+
+	/* adjust list-properties */
+	l->length = 0;
+	l->first = NULL;
+	l->last = NULL;
 }
 
 sSLNode *sll_begin(const sSLList *list) {
@@ -227,25 +235,6 @@ bool sll_insertAfter(sSLList *list,sSLNode *prev,const void *data) {
 	l->length++;
 
 	return true;
-}
-
-void sll_clear(sSLList *list) {
-	sList *l = (sList*)list;
-	sNode *m,*n = (sNode*)l->first;
-
-	vassert(list != NULL,"list == NULL");
-
-	/* free all nodes */
-	while(n != NULL) {
-		m = n->next;
-		l->ffree(n);
-		n = m;
-	}
-
-	/* adjust list-properties */
-	l->length = 0;
-	l->first = NULL;
-	l->last = NULL;
 }
 
 void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {

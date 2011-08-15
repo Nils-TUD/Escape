@@ -37,8 +37,6 @@ static void vfs_drv_openReqHandler(sVFSNode *node,const void *data,size_t size);
 static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size);
 static void vfs_drv_writeReqHandler(sVFSNode *node,const void *data,size_t size);
 
-static sMsg msg;
-
 void vfs_drv_init(void) {
 	vfs_req_setHandler(MSG_DRV_OPEN_RESP,vfs_drv_openReqHandler);
 	vfs_req_setHandler(MSG_DRV_READ_RESP,vfs_drv_readReqHandler);
@@ -48,6 +46,7 @@ void vfs_drv_init(void) {
 ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	ssize_t res;
 	sRequest *req;
+	sArgsMsg msg;
 
 	/* if the driver doesn't implement open, its ok */
 	if(!vfs_server_supports(node->parent,DRV_OPEN))
@@ -59,8 +58,8 @@ ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* send msg to driver */
-	msg.args.arg1 = flags;
-	res = vfs_sendMsg(pid,file,MSG_DRV_OPEN,&msg,sizeof(msg.args));
+	msg.arg1 = flags;
+	res = vfs_sendMsg(pid,file,MSG_DRV_OPEN,&msg,sizeof(msg));
 	if(res < 0) {
 		vfs_req_free(req);
 		return res;
@@ -76,27 +75,21 @@ ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
-	sThread *t = thread_getRunning();
-	volatile sVFSNode *n = node;
 	void *data;
 	ssize_t res;
+	sArgsMsg msg;
+	sWaitObject obj;
 
 	/* if the driver doesn't implement open, its an error */
 	if(!vfs_server_supports(node->parent,DRV_READ))
 		return ERR_UNSUPPORTED_OP;
 
-	/* wait until data is readable */
-	if(!vfs_server_isReadable(n->parent)) {
-		if(!vfs_shouldBlock(file))
-			return ERR_WOULD_BLOCK;
-		ev_wait(t,EVI_DATA_READABLE,(evobj_t)node);
-		thread_switch();
-		if(sig_hasSignalFor(t->tid))
-			return ERR_INTERRUPTED;
-		/* if we waked up and got no signal, the driver probably died */
-		if(!vfs_server_isReadable(n->parent))
-			return ERR_DRIVER_DIED;
-	}
+	/* wait until there is data available, if necessary */
+	obj.events = EV_DATA_READABLE;
+	obj.object = file;
+	res = vfs_waitFor(&obj,1,vfs_shouldBlock(file));
+	if(res < 0)
+		return res;
 
 	/* get request */
 	req = vfs_req_get(node,NULL,count);
@@ -104,9 +97,9 @@ ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* send msg to driver */
-	msg.args.arg1 = offset;
-	msg.args.arg2 = count;
-	res = vfs_sendMsg(pid,file,MSG_DRV_READ,&msg,sizeof(msg.args));
+	msg.arg1 = offset;
+	msg.arg2 = count;
+	res = vfs_sendMsg(pid,file,MSG_DRV_READ,&msg,sizeof(msg));
 	if(res < 0) {
 		vfs_req_free(req);
 		return res;
@@ -132,6 +125,7 @@ ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buff
 		size_t count) {
 	sRequest *req;
 	ssize_t res;
+	sArgsMsg msg;
 
 	/* if the driver doesn't implement open, its an error */
 	if(!vfs_server_supports(node->parent,DRV_WRITE))
@@ -143,9 +137,9 @@ ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buff
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* send msg to driver */
-	msg.args.arg1 = offset;
-	msg.args.arg2 = count;
-	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,&msg,sizeof(msg.args));
+	msg.arg1 = offset;
+	msg.arg2 = count;
+	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,&msg,sizeof(msg));
 	if(res < 0) {
 		vfs_req_free(req);
 		return res;
@@ -169,7 +163,7 @@ void vfs_drv_close(pid_t pid,file_t file,sVFSNode *node) {
 	if(!vfs_server_supports(node->parent,DRV_CLOSE))
 		return;
 
-	vfs_sendMsg(pid,file,MSG_DRV_CLOSE,&msg,sizeof(msg.args));
+	vfs_sendMsg(pid,file,MSG_DRV_CLOSE,NULL,0);
 }
 
 static void vfs_drv_wait(sRequest *req) {

@@ -29,6 +29,7 @@
 #include <sys/vfs/channel.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
@@ -59,7 +60,7 @@ static void vfs_real_defRespHandler(sVFSNode *node,const void *data,size_t size)
 static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node);
 static void vfs_real_releaseFile(pid_t pid,file_t file);
 
-static sMsg msg;
+static klock_t fsChanLock;
 
 void vfs_real_init(void) {
 	vfs_req_setHandler(MSG_FS_OPEN_RESP,vfs_real_openRespHandler);
@@ -79,15 +80,12 @@ void vfs_real_init(void) {
 
 void vfs_real_removeProc(pid_t pid) {
 	sProc *p = proc_getByPid(pid);
-	if(p->fsChans) {
-		sSLNode *n;
-		for(n = sll_begin(p->fsChans); n != NULL; n = n->next) {
-			sFSChan *chan = (sFSChan*)n->data;
-			vfs_closeFile(pid,chan->file);
-		}
-		sll_destroy(p->fsChans,true);
-		p->fsChans = NULL;
+	sSLNode *n;
+	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
+		sFSChan *chan = (sFSChan*)n->data;
+		vfs_closeFile(pid,chan->file);
 	}
+	sll_clear(&p->fsChans,true);
 }
 
 file_t vfs_real_openPath(pid_t pid,uint flags,const char *path) {
@@ -97,6 +95,7 @@ file_t vfs_real_openPath(pid_t pid,uint flags,const char *path) {
 	sVFSNode *node;
 	file_t fs;
 	sRequest *req;
+	sStrMsg msg;
 
 	if(pathLen > MAX_MSGSTR_LEN)
 		return ERR_INVALID_ARGS;
@@ -110,12 +109,12 @@ file_t vfs_real_openPath(pid_t pid,uint flags,const char *path) {
 		goto error;
 
 	/* send msg to fs */
-	msg.str.arg1 = flags;
-	msg.str.arg2 = p->euid;
-	msg.str.arg3 = p->egid;
-	msg.str.arg4 = p->pid;
-	memcpy(msg.str.s1,path,pathLen + 1);
-	res = vfs_sendMsg(pid,fs,MSG_FS_OPEN,&msg,sizeof(msg.str));
+	msg.arg1 = flags;
+	msg.arg2 = p->euid;
+	msg.arg3 = p->egid;
+	msg.arg4 = p->pid;
+	memcpy(msg.s1,path,pathLen + 1);
+	res = vfs_sendMsg(pid,fs,MSG_FS_OPEN,&msg,sizeof(msg));
 	if(res < 0)
 		goto error;
 
@@ -169,17 +168,19 @@ static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,US
 
 	/* send msg to fs */
 	if(path) {
+		sStrMsg msg;
 		const sProc *p = proc_getByPid(pid);
-		msg.str.arg1 = p->euid;
-		msg.str.arg2 = p->egid;
-		msg.str.arg3 = p->pid;
-		memcpy(msg.str.s1,path,pathLen + 1);
-		res = vfs_sendMsg(pid,fs,MSG_FS_STAT,&msg,sizeof(msg.str));
+		msg.arg1 = p->euid;
+		msg.arg2 = p->egid;
+		msg.arg3 = p->pid;
+		memcpy(msg.s1,path,pathLen + 1);
+		res = vfs_sendMsg(pid,fs,MSG_FS_STAT,&msg,sizeof(msg));
 	}
 	else {
-		msg.args.arg1 = ino;
-		msg.args.arg2 = devNo;
-		res = vfs_sendMsg(pid,fs,MSG_FS_ISTAT,&msg,sizeof(msg.args));
+		sArgsMsg msg;
+		msg.arg1 = ino;
+		msg.arg2 = devNo;
+		res = vfs_sendMsg(pid,fs,MSG_FS_ISTAT,&msg,sizeof(msg));
 	}
 	if(res < 0)
 		goto error;
@@ -220,6 +221,7 @@ ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,of
 	ssize_t res;
 	void *data;
 	sVFSNode *node;
+	sArgsMsg msg;
 	file_t fs = vfs_real_requestFile(pid,&node);
 	if(fs < 0)
 		return fs;
@@ -232,11 +234,11 @@ ssize_t vfs_real_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,of
 	}
 
 	/* send msg to fs */
-	msg.args.arg1 = inodeNo;
-	msg.args.arg2 = devNo;
-	msg.args.arg3 = offset;
-	msg.args.arg4 = count;
-	res = vfs_sendMsg(pid,fs,MSG_FS_READ,&msg,sizeof(msg.args));
+	msg.arg1 = inodeNo;
+	msg.arg2 = devNo;
+	msg.arg3 = offset;
+	msg.arg4 = count;
+	res = vfs_sendMsg(pid,fs,MSG_FS_READ,&msg,sizeof(msg));
 	if(res < 0) {
 		vfs_req_free(req);
 		vfs_real_releaseFile(pid,fs);
@@ -265,6 +267,7 @@ ssize_t vfs_real_write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *bu
 	sRequest *req;
 	ssize_t res = ERR_NOT_ENOUGH_MEM;
 	sVFSNode *node;
+	sArgsMsg msg;
 	file_t fs = vfs_real_requestFile(pid,&node);
 	if(fs < 0)
 		return fs;
@@ -275,11 +278,11 @@ ssize_t vfs_real_write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *bu
 		goto error;
 
 	/* send msg first */
-	msg.data.arg1 = inodeNo;
-	msg.args.arg2 = devNo;
-	msg.args.arg3 = offset;
-	msg.args.arg4 = count;
-	res = vfs_sendMsg(pid,fs,MSG_FS_WRITE,&msg,sizeof(msg.data));
+	msg.arg1 = inodeNo;
+	msg.arg2 = devNo;
+	msg.arg3 = offset;
+	msg.arg4 = count;
+	res = vfs_sendMsg(pid,fs,MSG_FS_WRITE,&msg,sizeof(msg));
 	if(res < 0)
 		goto error;
 	/* now send data */
@@ -335,20 +338,21 @@ int vfs_real_sync(pid_t pid) {
 	file_t fs = vfs_real_requestFile(pid,NULL);
 	if(fs < 0)
 		return fs;
-	res = vfs_sendMsg(pid,fs,MSG_FS_SYNC,&msg,sizeof(msg.args));
+	res = vfs_sendMsg(pid,fs,MSG_FS_SYNC,NULL,0);
 	vfs_real_releaseFile(pid,fs);
 	return res;
 }
 
 void vfs_real_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
+	sArgsMsg msg;
 	file_t fs = vfs_real_requestFile(pid,NULL);
 	if(fs < 0)
 		return;
 
 	/* write message to fs */
-	msg.args.arg1 = inodeNo;
-	msg.args.arg2 = devNo;
-	vfs_sendMsg(pid,fs,MSG_FS_CLOSE,&msg,sizeof(msg.args));
+	msg.arg1 = inodeNo;
+	msg.arg2 = devNo;
+	vfs_sendMsg(pid,fs,MSG_FS_CLOSE,&msg,sizeof(msg));
 	/* no response necessary, therefore no wait, too */
 	vfs_real_releaseFile(pid,fs);
 }
@@ -359,6 +363,7 @@ static int vfs_real_pathReqHandler(pid_t pid,const char *path1,const char *path2
 	sRequest *req;
 	file_t fs;
 	sVFSNode *node;
+	sStrMsg msg;
 
 	if(strlen(path1) > MAX_MSGSTR_LEN)
 		return ERR_INVALID_ARGS;
@@ -375,14 +380,14 @@ static int vfs_real_pathReqHandler(pid_t pid,const char *path1,const char *path2
 		goto error;
 
 	/* send msg */
-	strcpy(msg.str.s1,path1);
+	strcpy(msg.s1,path1);
 	if(path2)
-		strcpy(msg.str.s2,path2);
-	msg.str.arg1 = arg1;
-	msg.str.arg2 = p->euid;
-	msg.str.arg3 = p->egid;
-	msg.str.arg4 = p->pid;
-	res = vfs_sendMsg(pid,fs,cmd,&msg,sizeof(msg.str));
+		strcpy(msg.s2,path2);
+	msg.arg1 = arg1;
+	msg.arg2 = p->euid;
+	msg.arg3 = p->egid;
+	msg.arg4 = p->pid;
+	res = vfs_sendMsg(pid,fs,cmd,&msg,sizeof(msg));
 	if(res < 0)
 		goto error;
 
@@ -511,22 +516,19 @@ static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 	sVFSNode *child,*fsnode;
 	inode_t nodeNo;
 	sProc *p = proc_getByPid(pid);
-	if(!p->fsChans) {
-		p->fsChans = sll_create();
-		if(!p->fsChans)
-			return ERR_NOT_ENOUGH_MEM;
-	}
-
 	/* check if there's a free channel */
-	for(n = sll_begin(p->fsChans); n != NULL; n = n->next) {
+	klock_aquire(&fsChanLock);
+	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		chan = (sFSChan*)n->data;
 		if(!chan->active) {
 			if(node)
 				*node = chan->node;
 			chan->active = true;
+			klock_release(&fsChanLock);
 			return chan->file;
 		}
 	}
+	klock_release(&fsChanLock);
 
 	chan = (sFSChan*)cache_alloc(sizeof(sFSChan));
 	if(!chan)
@@ -555,8 +557,12 @@ static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 	if(err < 0)
 		goto errorChild;
 	chan->file = err;
-	if(!sll_append(p->fsChans,chan))
+	klock_aquire(&fsChanLock);
+	if(!sll_append(&p->fsChans,chan)) {
+		klock_release(&fsChanLock);
 		goto errorClose;
+	}
+	klock_release(&fsChanLock);
 	if(node)
 		*node = chan->node;
 	vfs_node_release(fsnode);
@@ -576,22 +582,24 @@ errorChan:
 static void vfs_real_releaseFile(pid_t pid,file_t file) {
 	sSLNode *n;
 	const sProc *p = proc_getByPid(pid);
-	for(n = sll_begin(p->fsChans); n != NULL; n = n->next) {
+	klock_aquire(&fsChanLock);
+	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
 		if(chan->file == file) {
 			chan->active = false;
-			return;
+			break;
 		}
 	}
+	klock_release(&fsChanLock);
 }
 
 void vfs_real_printFSChans(const sProc *p) {
 	sSLNode *n;
-	if(p->fsChans) {
-		for(n = sll_begin(p->fsChans); n != NULL; n = n->next) {
-			sFSChan *chan = (sFSChan*)n->data;
-			vid_printf("\t\t%s (%s)\n",vfs_node_getPath(vfs_node_getNo(chan->node)),
-					chan->active ? "active" : "not active");
-		}
+	klock_aquire(&fsChanLock);
+	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
+		sFSChan *chan = (sFSChan*)n->data;
+		vid_printf("\t\t%s (%s)\n",vfs_node_getPath(vfs_node_getNo(chan->node)),
+				chan->active ? "active" : "not active");
 	}
+	klock_release(&fsChanLock);
 }

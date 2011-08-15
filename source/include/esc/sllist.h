@@ -96,8 +96,10 @@ void sll_destroy(sSLList *list,bool freeData);
  * Removes all elements from the list
  *
  * @param list the list
+ * @param freeData whether the data of the nodes should be free'd. Requires that they are allocated
+ * 	on the heap
  */
-void sll_clear(sSLList *list);
+void sll_clear(sSLList *list,bool freeData);
 
 /**
  * @param list the list

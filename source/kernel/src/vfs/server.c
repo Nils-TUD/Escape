@@ -26,6 +26,7 @@
 #include <sys/vfs/channel.h>
 #include <sys/vfs/server.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <assert.h>
@@ -35,6 +36,7 @@
 #define DRV_IS_FS(funcs)			((funcs) == DRV_FS)
 
 typedef struct {
+	klock_t lock;
 	/* whether there is data to read or not */
 	bool isEmpty;
 	/* implemented functions */
@@ -67,6 +69,7 @@ sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 		vfs_node_destroy(node);
 		return NULL;
 	}
+	srv->lock = 0;
 	srv->funcs = flags;
 	srv->isEmpty = true;
 	srv->lastClient = NULL;
@@ -95,8 +98,10 @@ static void vfs_server_destroy(sVFSNode *node) {
 
 void vfs_server_clientRemoved(sVFSNode *node,const sVFSNode *client) {
 	sServer *srv = (sServer*)node->data;
+	klock_aquire(&srv->lock);
 	if(srv->lastClient == client)
 		srv->lastClient = NULL;
+	klock_release(&srv->lock);
 }
 
 bool vfs_server_accepts(const sVFSNode *node,uint id) {
@@ -120,22 +125,28 @@ int vfs_server_setReadable(sVFSNode *node,bool readable) {
 	sServer *srv = (sServer*)node->data;
 	if(!DRV_IMPL(srv->funcs,DRV_READ))
 		return ERR_UNSUPPORTED_OP;
+	klock_aquire(&srv->lock);
 	bool wasEmpty = srv->isEmpty;
 	srv->isEmpty = !readable;
 	if(wasEmpty && readable)
 		vfs_server_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE);
+	klock_release(&srv->lock);
 	return 0;
 }
 
 void vfs_server_addMsg(sVFSNode *node) {
 	sServer *srv = (sServer*)node->data;
+	klock_aquire(&srv->lock);
 	srv->msgCount++;
+	klock_release(&srv->lock);
 }
 
 void vfs_server_remMsg(sVFSNode *node) {
 	sServer *srv = (sServer*)node->data;
+	klock_aquire(&srv->lock);
 	assert(srv->msgCount > 0);
 	srv->msgCount--;
+	klock_release(&srv->lock);
 }
 
 bool vfs_server_hasWork(sVFSNode *node) {
@@ -151,6 +162,7 @@ sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {
 	 * served client and continue from the next one. */
 
 	/* search for a slot that needs work */
+	klock_aquire(&srv->lock);
 	n = vfs_node_openDir(node);
 	last = srv->lastClient;
 	if(last != NULL) {
@@ -159,6 +171,7 @@ sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {
 			/* if we have checked all clients in this driver, give the other drivers
 			 * a chance (if there are any others) */
 			srv->lastClient = NULL;
+			klock_release(&srv->lock);
 			*retry = true;
 			return NULL;
 		}
@@ -173,6 +186,7 @@ searchBegin:
 			vfs_node_closeDir(node);
 			*cont = false;
 			srv->lastClient = n;
+			klock_release(&srv->lock);
 			return n;
 		}
 		n = n->next;
@@ -180,13 +194,16 @@ searchBegin:
 	vfs_node_closeDir(node);
 	/* if we have looked through all nodes and the last one has a message again, we have to
 	 * store it because we'll not check it again */
-	if(last && n == last && vfs_chan_hasWork(n))
+	if(last && n == last && vfs_chan_hasWork(n)) {
+		klock_release(&srv->lock);
 		return n;
+	}
 	if(srv->lastClient) {
 		n = vfs_node_openDir(node);
 		srv->lastClient = NULL;
 		goto searchBegin;
 	}
+	klock_release(&srv->lock);
 	return NULL;
 }
 

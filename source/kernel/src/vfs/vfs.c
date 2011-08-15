@@ -711,7 +711,7 @@ static bool vfs_hasWork(sVFSNode *node) {
 	return IS_DRIVER(node->mode) && vfs_server_hasWork(node);
 }
 
-int vfs_waitFor(sWaitObject *objects,size_t objCount) {
+int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block) {
 	sThread *t = thread_getRunning();
 	size_t i;
 
@@ -749,6 +749,11 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount) {
 					return 0;
 				}
 			}
+		}
+
+		if(!block) {
+			klock_release(&waitLock);
+			return ERR_WOULD_BLOCK;
 		}
 
 		/* wait */

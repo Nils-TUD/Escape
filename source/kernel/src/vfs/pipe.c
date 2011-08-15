@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/cache.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
@@ -26,16 +27,18 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/pipe.h>
+#include <sys/klock.h>
 #include <string.h>
 #include <assert.h>
 #include <errors.h>
 
 typedef struct {
+	klock_t lock;
 	uint8_t noReader;
 	/* total number of bytes available */
 	size_t total;
 	/* a list with sPipeData */
-	sSLList *list;
+	sSLList list;
 } sPipe;
 
 typedef struct {
@@ -77,7 +80,8 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	}
 	pipe->noReader = false;
 	pipe->total = 0;
-	pipe->list = NULL;
+	pipe->lock = 0;
+	sll_init(&pipe->list,slln_allocNode,slln_freeNode);
 	node->data = pipe;
 	vfs_node_append(parent,node);
 	return node;
@@ -85,10 +89,8 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 
 static void vfs_pipe_destroy(sVFSNode *n) {
 	sPipe *pipe = (sPipe*)n->data;
-	if(pipe) {
-		sll_destroy(pipe->list,true);
-		pipe->list = NULL;
-	}
+	if(pipe)
+		sll_clear(&pipe->list,true);
 }
 
 static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node) {
@@ -119,25 +121,28 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 	size_t byteCount,total;
 	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
-	volatile sPipe *vpipe = pipe;
 	sPipeData *data;
 
 	/* wait until data is available */
-	/* don't cache the list here, because the pointer changes if the list is NULL */
-	while(sll_length(vpipe->list) == 0) {
+	klock_aquire(&pipe->lock);
+	while(sll_length(&pipe->list) == 0) {
 		ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
+		klock_release(&pipe->lock);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
+		klock_aquire(&pipe->lock);
 	}
 
-	data = sll_get(vpipe->list,0);
+	data = sll_get(&pipe->list,0);
 	/* empty message indicates EOF */
-	if(data->length == 0)
+	if(data->length == 0) {
+		klock_release(&pipe->lock);
 		return 0;
+	}
 
 	total = 0;
-	while(1) {
+	while(true) {
 		/* copy */
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
@@ -145,11 +150,13 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 		/* if the memcpy segfaults, we pretend that we haven't read this package. we don't fire
 		 * the EVI_PIPE_EMPTY in this case, because the pipe isn't empty anyway (at least the last
 		 * package hasn't been read yet). */
+		thread_addLock(&pipe->lock);
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
+		thread_remLock(&pipe->lock);
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
 			cache_free(data);
-			sll_removeFirst(vpipe->list);
+			sll_removeFirst(&pipe->list);
 		}
 		count -= byteCount;
 		total += byteCount;
@@ -158,7 +165,7 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 		if(count == 0)
 			break;
 		/* wait until data is available */
-		while(sll_length(vpipe->list) == 0) {
+		while(sll_length(&pipe->list) == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
 			ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
@@ -166,13 +173,16 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back..
 			 */
+			klock_release(&pipe->lock);
 			thread_switchNoSigs();
+			klock_aquire(&pipe->lock);
 		}
-		data = sll_get(vpipe->list,0);
+		data = sll_get(&pipe->list,0);
 		/* keep the empty one for the next transfer */
 		if(data->length == 0)
 			break;
 	}
+	klock_release(&pipe->lock);
 	/* wakeup all threads that wait for writing in this node */
 	ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 	return total;
@@ -185,20 +195,27 @@ static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,USER const vo
 	sPipeData *data;
 	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
-	volatile sPipe *vpipe = pipe;
+
+	/* Note that the size-check doesn't ensure that the total pipe-size can't be larger than the
+	 * maximum. Its not really critical here, I think. Therefore its enough for making sure that
+	 * we don't write all the time without reading most of the data. */
 
 	/* wait while our node is full */
 	if(count) {
-		while((vpipe->total + count) >= MAX_VFS_FILE_SIZE) {
+		klock_aquire(&pipe->lock);
+		while((pipe->total + count) >= MAX_VFS_FILE_SIZE) {
 			ev_wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
+			klock_release(&pipe->lock);
 			thread_switchNoSigs();
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
-			if(vpipe->noReader) {
+			klock_aquire(&pipe->lock);
+			if(pipe->noReader) {
 				proc_addSignalFor(pid,SIG_PIPE_CLOSED);
 				return ERR_EOF;
 			}
 		}
+		klock_release(&pipe->lock);
 	}
 
 	/* build pipe-data */
@@ -213,21 +230,15 @@ static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,USER const vo
 		thread_remHeapAlloc(data);
 	}
 
-	/* create list, if necessary */
-	if(pipe->list == NULL) {
-		pipe->list = sll_create();
-		if(pipe->list == NULL) {
-			cache_free(data);
-			return ERR_NOT_ENOUGH_MEM;
-		}
-	}
-
 	/* append */
-	if(!sll_append(pipe->list,data)) {
+	klock_aquire(&pipe->lock);
+	if(!sll_append(&pipe->list,data)) {
+		klock_release(&pipe->lock);
 		cache_free(data);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	pipe->total += count;
+	klock_release(&pipe->lock);
 	ev_wakeup(EVI_PIPE_FULL,(evobj_t)node);
 	return count;
 }

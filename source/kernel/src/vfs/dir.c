@@ -92,12 +92,12 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 	UNUSED(file);
 	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
-	sVFSNode *n;
+	sVFSNode *n,*firstChild;
 	assert(node != NULL);
 	assert(buffer != NULL);
 
 	/* we need the number of bytes first */
-	n = vfs_node_openDir(node);
+	firstChild = n = vfs_node_openDir(node);
 	byteCount = 0;
 	fsByteCount = 0;
 	while(n != NULL) {
@@ -106,7 +106,8 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 			byteCount += sizeof(sVFSDirEntry) + n->nameLen;
 		n = n->next;
 	}
-	vfs_node_closeDir(node);
+	/* no close here, we iterate over the directory again afterwards. in the meantime, it can't
+	 * be changed */
 
 	/* the root-directory is distributed on the fs-driver and the kernel */
 	/* therefore we have to read it from the fs-driver, too */
@@ -146,7 +147,7 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 			size_t len;
 			sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
 			fsBytes = fsBytesDup;
-			n = vfs_node_openDir(node);
+			n = firstChild;
 			while(n != NULL) {
 				if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
 						(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
@@ -163,9 +164,9 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 				dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
 				n = n->next;
 			}
-			vfs_node_closeDir(node);
 		}
 	}
+	vfs_node_closeDir(node);
 
 	if(offset > (off_t)byteCount)
 		offset = byteCount;

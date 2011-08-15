@@ -448,18 +448,18 @@ bool thread_kill(sThread *t) {
 	/* release resources */
 	for(n = sll_begin(&t->termLocks); n != NULL; n = n->next)
 		klock_release((klock_t*)n->data);
-	sll_clear(&t->termLocks);
+	sll_clear(&t->termLocks,false);
 	for(n = sll_begin(&t->termHeapAllocs); n != NULL; n = n->next)
 		cache_free(n->data);
-	sll_clear(&t->termHeapAllocs);
+	sll_clear(&t->termHeapAllocs,false);
 	for(n = sll_begin(&t->termCallbacks); n != NULL; n = n->next) {
 		fTermCallback cb = (fTermCallback)n->data;
 		cb();
 	}
-	sll_clear(&t->termCallbacks);
+	sll_clear(&t->termCallbacks,false);
 	for(n = sll_begin(&t->termUsages); n != NULL; n = n->next)
 		vfs_decUsages((file_t)n->data);
-	sll_clear(&t->termUsages);
+	sll_clear(&t->termUsages,false);
 
 	/* remove from all modules we may be announced */
 	sig_removeHandlerFor(t->tid);

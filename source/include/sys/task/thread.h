@@ -102,8 +102,6 @@ struct sThread {
 	vmreg_t stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
 	vmreg_t tlsRegion;
-	/* the frame mapped at KERNEL_STACK */
-	frameno_t kstackFrame;
 	/* stack of pointers to the end of the kernel-stack when entering kernel */
 	sIntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
 	size_t intrptLevel;
@@ -431,6 +429,16 @@ void thread_remFileUsage(file_t file);
 int thread_finishClone(sThread *t,sThread *nt);
 
 /**
+ * Performs the finish-operations after the thread nt has been started, but before it runs.
+ *
+ * @param t the running thread
+ * @param tn the started thread
+ * @param arg the argument
+ * @param entryPoint the entry-point of the thread (in kernel or in user-space)
+ */
+void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint);
+
+/**
  * Clones <src> to <dst>. That means a new thread will be created and <src> will be copied to the
  * new one.
  *
@@ -438,12 +446,10 @@ int thread_finishClone(sThread *t,sThread *nt);
  * @param dst will contain a pointer to the new thread
  * @param p the process the thread should belong to
  * @param flags the flags for the thread (T_*)
- * @param stackFrame the stack-frame to set (0 = allocate new)
  * @param cloneProc whether a process is cloned or just a thread
  * @return 0 on success
  */
-int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
-		bool cloneProc);
+int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc);
 
 /**
  * Clones the architecture-specific attributes of the given thread
@@ -453,7 +459,7 @@ int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t sta
  * @param cloneProc whether a process is cloned or just a thread
  * @return 0 on success
  */
-int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc);
+int thread_createArch(const sThread *src,sThread *dst,bool cloneProc);
 
 /**
  * Kills the given thread

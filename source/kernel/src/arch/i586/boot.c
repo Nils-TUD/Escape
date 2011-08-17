@@ -217,25 +217,6 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	if(loadedMods)
 		return 0;
 
-	/* start an idle-thread for each cpu */
-	sSLNode *n;
-	const sSLList *cpus = smp_getCPUs();
-	for(n = sll_begin(cpus); n != NULL; n = n->next) {
-		if(proc_startThread(0,T_IDLE,NULL) == thread_getRunning()->tid) {
-			if(!smp_isBSP()) {
-				/* unlock the trampoline */
-				uintptr_t tramp = TRAMPOLINE_ADDR;
-				*(uint32_t*)((tramp | KERNEL_START) + 6) = 0;
-			}
-			/* now start idling */
-			thread_idle();
-			util_panic("Idle returned");
-		}
-	}
-
-	/* start all APs */
-	/*smp_start();*/
-
 	loadedMods = true;
 	for(i = 0; i < mb->modsCount; i++) {
 		/* parse args */
@@ -273,10 +254,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	}
 
 	/* start the swapper-thread. it will never return */
-	if(proc_startThread(0,0,NULL) == thread_getRunning()->tid) {
-		swap_start();
-		util_panic("Swapper reached this");
-	}
+	proc_startThread((uintptr_t)&swap_start,0,NULL);
 
 	/* if not requested otherwise, from now on, print only to log */
 	if(!conf_get(CONF_LOG2SCR))

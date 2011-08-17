@@ -24,6 +24,16 @@
 #include <sys/intrpt.h>
 #include <sys/task/elf.h>
 
+#ifdef __i386__
+#include <sys/arch/i586/task/uenv.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/uenv.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/uenv.h>
+#endif
+
 /**
  * Checks whether a signal should be handled. If so, it will be stored for later finishing and a
  * thread-switch is done, if necessary.
@@ -52,14 +62,5 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal);
  */
 bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 		const sStartupInfo *info,uintptr_t entryPoint);
-
-/**
- * Setups the user-environment for the given interrupt-stack, when starting the current thread
- *
- * @param frame the interrupt-stack-frame
- * @param arg the thread-argument
- * @param tentryPoint the entry-point
- */
-bool uenv_setupThread(const void *arg,uintptr_t tentryPoint);
 
 #endif /* UENV_H_ */

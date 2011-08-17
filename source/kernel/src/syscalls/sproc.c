@@ -150,6 +150,7 @@ int sysc_isingroup(sIntrptStackFrame *stack) {
 }
 
 int sysc_fork(sIntrptStackFrame *stack) {
+	/* TODO that doesn't work */
 	pid_t newPid = proc_getFreePid();
 	int res;
 

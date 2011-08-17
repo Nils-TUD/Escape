@@ -17,37 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_THREAD_H_
-#define MMIX_THREAD_H_
+#ifndef ECO32_UENV_H_
+#define ECO32_UENV_H_
 
-#include <esc/common.h>
+#include <sys/common.h>
 
-/* the thread-state which will be saved for context-switching */
-typedef struct {
-	uintptr_t stackEnd;
-} sThreadRegs;
+/**
+ * Setups the user-environment when starting the current thread
+ *
+ * @param arg the thread-argument
+ * @param tentryPoint the entry-point
+ * @return the stack-pointer
+ */
+uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint);
 
-typedef struct {
-	uint64_t rbb;
-	uint64_t rww;
-	uint64_t rxx;
-	uint64_t ryy;
-	uint64_t rzz;
-} sKSpecRegs;
-
-typedef struct {
-	/* the frame mapped at KERNEL_STACK */
-	frameno_t kstackFrame;
-	/* use as a temporary kernel-stack for cloning */
-	frameno_t tempStack;
-	/* when handling a signal, we have to backup these registers */
-	sKSpecRegs specRegLevels[MAX_INTRPT_LEVELS];
-} sThreadArchAttr;
-
-#define STACK_REG_COUNT		2
-
-sKSpecRegs *thread_getSpecRegs(void);
-void thread_pushSpecRegs(void);
-void thread_popSpecRegs(void);
-
-#endif /* MMIX_THREAD_H_ */
+#endif /* ECO32_UENV_H_ */

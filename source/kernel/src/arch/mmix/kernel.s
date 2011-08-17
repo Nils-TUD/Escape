@@ -47,30 +47,47 @@
 	.global cpu_getKSpecials
 	.global cpu_setKSpecials
 
+	.global thread_startup
 	.global thread_idle
 	.global thread_initSave
 	.global	thread_doSwitch
+
+	.global stackCopy
+	.global stackCopySize
 
 #===========================================
 # Constants
 #===========================================
 
 	.set	PAGE_SIZE,0x2000
-	.set	PAGE_SIZE_SHIFT,13
 	.set	STACK_SIZE,PAGE_SIZE
-	.set	PTE_MAP_ADDR,0x80000000
-	.set	DIR_MAP_START,0xC0000000
-	.set	KERNEL_HEAP,0x80800000
-	.set	KERNEL_STACK,0x84400FFC			% our kernel-stack (the top)
-
-.section .text
-_bcode:
 
 #===========================================
 # Start
 #===========================================
 
+.section .text
+_bcode:
+
 start:
+	# copy the current stack to stackCopy
+	GETA	$1,stackCopy
+	SET		$2,$0
+	SET		$3,$2
+	ANDNL	$3,#1FFF
+	GETA	$4,stackCopySize
+	SUBU	$5,$2,$3
+	ADDU	$5,$5,8
+	STOU	$5,$4,0
+1:
+	LDOU	$4,$3,0
+	STOU	$4,$1,0
+	ADDU	$1,$1,8
+	ADDU	$3,$3,8
+2:
+	CMP		$4,$2,$3
+	BNN		$4,1b
+
 	# establish the register-stack
 	UNSAVE	0,$0
 	# set rSS; we need it when cloning in the test-kernel, for example
@@ -188,6 +205,35 @@ dynamicTrap:
 #===========================================
 # Thread
 #===========================================
+
+thread_startup:
+	# $254+0  = proc entry-point
+	# $254+8  = argument
+	# $254+16 = thread entry-point
+	LDOU	$0,$254,16
+	SETH	$3,#8000
+	CMPU	$4,$0,$3
+	BN		$4,2f
+	# stay in kernel
+	PUSHGO	$0,$0,0
+1:
+	JMP		1b
+
+2:
+	# setup user-env
+	LDOU	$2,$254,8
+	LDOU	$3,$254,16
+	PUSHJ	$1,uenv_setupThread				# call uenv_setupThread(arg,entryPoint)
+	LDOU	$0,$254,0						# proc entry-point
+	SET		$254,$1							# set fp and sp
+	SET		$253,$1
+
+	# go to user mode (initloader)
+	PUT		rWW,$0							# entry-point
+	SETH	$0,#8000
+	PUT		rXX,$0							# skip to rWW
+	NEG		$255,0,1						# set rK = -1
+	RESUME	1
 
 # void thread_idle(void)
 thread_idle:
@@ -386,3 +432,12 @@ _bdata:
 
 .section .bss
 _bbss:
+
+# one page for the stack-copy; this is used for starting threads (to give them their initial
+# kernelstack)
+stackCopy:
+	OCTA	0
+	LOC		@+8192-8*3
+	OCTA	0
+stackCopySize:
+	OCTA	0

@@ -78,8 +78,8 @@
  *             |             sll nodes             |     |        |
  * 0xD2800000: +-----------------------------------+     |      -----
  *             |                ...                |     |
- * 0xFF7FF000: +-----------------------------------+     |      -----
- *             |            kernel-stack           |     |        |
+ * 0xFF400000: +-----------------------------------+     |      -----
+ *             |           kernel-stacks           |     |        |
  * 0xFF800000: +-----------------------------------+     |
  *             |     temp mapped page-tables       |     |    not shared page-tables (3)
  * 0xFFC00000: +-----------------------------------+     |
@@ -109,7 +109,8 @@
 /* needed for building a new page-dir */
 #define PAGE_DIR_TMP_AREA		(TMPMAP_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 /* our kernel-stack */
-#define KERNEL_STACK			(TMPMAP_PTS_START - PAGE_SIZE)
+#define KERNEL_STACK_AREA		(TMPMAP_PTS_START - PAGE_SIZE * PT_ENTRY_COUNT)
+#define KERNEL_STACK_AREA_SIZE	(PAGE_SIZE * PT_ENTRY_COUNT)
 
 /* for mapping some pages of foreign processes */
 #define TEMP_MAP_AREA			(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
@@ -162,7 +163,8 @@
 		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 
 /* determines whether the given address is in a shared kernel area */
-#define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START && (uintptr_t)(addr) < KERNEL_STACK)
+#define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START && \
+								(uintptr_t)(addr) < KERNEL_STACK_AREA)
 
 typedef struct {
 	klock_t lock;
@@ -195,6 +197,14 @@ void paging_gdtFinished(void);
  * @param physAddr the physical address of the page-directory
  */
 extern void paging_exchangePDir(uintptr_t physAddr);
+
+/**
+ * Creates a kernel-stack at an unused address.
+ *
+ * @param pdir the page-directory
+ * @return the used address
+ */
+uintptr_t paging_createKernelStack(tPageDir *pdir);
 
 /**
  * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you

@@ -76,13 +76,16 @@
  * are rS and rO, which can't be set directly.
  */
 
+extern void thread_startup(void);
 extern int thread_initSave(sThreadRegs *saveArea,void *newStack);
 extern int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tid_t tid);
 
+extern void *stackCopy;
+extern uint64_t stackCopySize;
 static sThread *cur = NULL;
 
 int thread_initArch(sThread *t) {
-	t->kstackFrame = pmem_allocate();
+	t->archAttr.kstackFrame = pmem_allocate();
 	t->archAttr.tempStack = -1;
 	return 0;
 }
@@ -97,17 +100,22 @@ void thread_addInitialStack(sThread *t) {
 	assert(t->stackRegions[1] >= 0);
 }
 
-int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
+int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 	UNUSED(src);
+	dst->archAttr.kstackFrame = pmem_allocate();
 	if(!cloneProc) {
-		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES * 2)
+		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES * 2) {
+			pmem_free(dst->archAttr.kstackFrame);
 			return ERR_NOT_ENOUGH_MEM;
+		}
 
 		/* add a new stack-region for the register-stack */
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP);
-		if(dst->stackRegions[0] < 0)
+		if(dst->stackRegions[0] < 0) {
+			pmem_free(dst->archAttr.kstackFrame);
 			return dst->stackRegions[0];
+		}
 		/* add a new stack-region for the software-stack */
 		dst->stackRegions[1] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
@@ -115,6 +123,7 @@ int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
 			/* remove register-stack */
 			vmm_remove(dst->proc->pid,dst->stackRegions[0]);
 			dst->stackRegions[0] = -1;
+			pmem_free(dst->archAttr.kstackFrame);
 			return dst->stackRegions[1];
 		}
 	}
@@ -135,6 +144,7 @@ void thread_freeArch(sThread *t) {
 		pmem_free(t->archAttr.tempStack);
 		t->archAttr.tempStack = -1;
 	}
+	pmem_free(t->archAttr.kstackFrame);
 }
 
 sThread *thread_getRunning(void) {
@@ -172,11 +182,33 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
 		/* switch stacks */
-		frameno_t kstack = t->kstackFrame;
-		t->kstackFrame = nt->kstackFrame;
-		nt->kstackFrame = kstack;
+		frameno_t kstack = t->archAttr.kstackFrame;
+		t->archAttr.kstackFrame = nt->archAttr.kstackFrame;
+		nt->archAttr.kstackFrame = kstack;
 	}
 	return res;
+}
+
+void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+	UNUSED(t);
+	/* copy stack of kernel-start */
+	uint64_t *ssp,*rsp = (uint64_t*)(DIR_MAPPED_SPACE | (nt->archAttr.kstackFrame * PAGE_SIZE));
+	uintptr_t start = (uintptr_t)rsp;
+	memcpy(rsp,&stackCopy,stackCopySize);
+	rsp += stackCopySize / sizeof(uint64_t) - 1;
+	rsp[-8] = (uint64_t)&thread_startup;							/* rJ = startup-code */
+	/* store stack-end for UNSAVE */
+	nt->save.stackEnd = (uintptr_t)rsp;
+	/* put arguments for the startup-code on the software-stack */
+	ssp = (uint64_t*)(start + PAGE_SIZE - sizeof(uint64_t));
+	*ssp-- = entryPoint;
+	*ssp-- = (uint64_t)arg;
+	*ssp = nt->proc->entryPoint;
+	/* set sp and fp */
+	rsp[-(13 + 1)] = (uint64_t)ssp;									/* $254 */
+	rsp[-(13 + 2)] = (uint64_t)ssp;									/* $253 */
+	/* no tempstack here */
+	nt->archAttr.tempStack = -1;
 }
 
 void thread_switchTo(tid_t tid) {
@@ -211,7 +243,7 @@ void thread_switchTo(tid_t tid) {
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
 		if(ct->archAttr.tempStack != (frameno_t)-1) {
-			memcpy((void*)(DIR_MAPPED_SPACE | ct->kstackFrame * PAGE_SIZE),
+			memcpy((void*)(DIR_MAPPED_SPACE | ct->archAttr.kstackFrame * PAGE_SIZE),
 					(void*)(DIR_MAPPED_SPACE | ct->archAttr.tempStack * PAGE_SIZE),
 					PAGE_SIZE);
 			pmem_free(ct->archAttr.tempStack);

@@ -170,7 +170,7 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
 	t = thread_getRunning(); /* thread might have changed */
-	stack[-14] = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
+	stack[-14] = DIR_MAPPED_SPACE | (t->archAttr.kstackFrame * PAGE_SIZE);
 
 	/* only handle signals, if we come directly from user-mode */
 	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0)

@@ -62,6 +62,19 @@ void gdt_init_ap(void);
 cpuid_t gdt_getCPUId(void);
 
 /**
+ * @return the currently running thread
+ */
+sThread *gdt_getRunning(void);
+
+/**
+ * Sets the running thread for the given CPU
+ *
+ * @param id the cpu-id
+ * @param t the thread
+ */
+void gdt_setRunning(cpuid_t id,sThread *t);
+
+/**
  * Prepares the run of the given thread, i.e. sets the stack-pointer for interrupts, removes
  * the I/O map and sets the TLS-register.
  *

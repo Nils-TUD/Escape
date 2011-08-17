@@ -46,6 +46,6 @@ uintptr_t bspstart(const sBootInfo *bootinfo) {
 	t = thread_getRunning();
 	thread_addInitialStack(t);
 	/* we have to set the kernel-stack for the first process */
-	tlb_set(0,KERNEL_STACK,(t->kstackFrame * PAGE_SIZE) | 0x3);
+	tlb_set(0,KERNEL_STACK,(t->archAttr.kstackFrame * PAGE_SIZE) | 0x3);
 	return info.progEntry;
 }

@@ -39,7 +39,8 @@ typedef struct {
 } sThreadRegs;
 
 typedef struct {
-	char dummy;	/* empty struct not allowed */
+	/* the frame mapped at KERNEL_STACK */
+	frameno_t kstackFrame;
 } sThreadArchAttr;
 
 #define STACK_REG_COUNT		1

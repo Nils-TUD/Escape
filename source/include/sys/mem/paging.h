@@ -83,19 +83,17 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count);
 /**
  * Clones the kernel-space of the current page-dir into a new one.
  *
- * @param stackFrame will be set to the used kernel-stackframe
  * @param pdir will be set to the page-directory address (physical)
  * @return 0 on success
  */
-int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir);
+int paging_cloneKernelspace(tPageDir *pdir);
 
 /**
  * Destroys the given page-directory (not the current!)
  *
  * @param pdir the page-dir
- * @return the number of free'd frames and ptables
  */
-sAllocStats paging_destroyPDir(tPageDir *pdir);
+void paging_destroyPDir(tPageDir *pdir);
 
 /**
  * Determines whether the given page is present

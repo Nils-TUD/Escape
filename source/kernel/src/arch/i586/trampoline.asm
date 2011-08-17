@@ -23,6 +23,7 @@
 trampolineStart:
 	jmp		begin
 
+; 0xC0007002
 apStartAddr:
 	dd		0
 

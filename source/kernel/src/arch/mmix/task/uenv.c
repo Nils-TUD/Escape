@@ -157,13 +157,9 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	return true;
 }
 
-bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
+uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint64_t *rsp,*ssp;
 	sThread *t = thread_getRunning();
-	/* for idle, there is nothing to do */
-	if(t->flags & T_IDLE)
-		return true;
-
 	sStartupInfo sinfo;
 	sinfo.progEntry = t->proc->entryPoint;
 	sinfo.linkerEntry = 0;
@@ -244,15 +240,7 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 
 	/* add TLS args and entrypoint */
 	uenv_addArgs(t,&sinfo,rsp,ssp,t->proc->entryPoint,tentryPoint,true);
-
-	/* change rS and rO in the save-area, to set the correct values for the new thread */
-	uint64_t *frame = thread_getIntrptStack(t);
-	int rg = frame[-1] >> 56;
-	size_t rsOff = -(13 + (255 - rg) + 2);
-	uint64_t oldrS = frame[rsOff];
-	frame[rsOff] = (uintptr_t)rsp + (oldrS & (PAGE_SIZE - 1));	/* rS */
-	frame[rsOff - 1] = (uintptr_t)rsp;							/* rO */
-	return true;
+	return ssp;
 }
 
 static void uenv_startSignalHandler(sThread *t,sig_t sig) {
@@ -294,17 +282,19 @@ static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint6
 	}
 	rsp[4] = thread ? tentry : 0;
 
-	/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
-	uint64_t *frame = thread_getIntrptStack(t);
-	frame[-(12 + 2 + 1)] = (uint64_t)ssp;
-	frame[-(12 + 2 + 2)] = (uint64_t)ssp;
+	if(!thread) {
+		/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
+		uint64_t *frame = thread_getIntrptStack(t);
+		frame[-(12 + 2 + 1)] = (uint64_t)ssp;
+		frame[-(12 + 2 + 2)] = (uint64_t)ssp;
+
+		/* setup start */
+		sregs = thread_getSpecRegs();
+		sregs->rww = entry;
+		sregs->rxx = 1UL << 63;
+	}
 	/* set them in the stack to unsave from in user-space */
 	int rg = *(uint64_t*)info->stackBegin >> 56;
 	rsp[6 + (255 - rg)] = (uint64_t)ssp;
 	rsp[6 + (255 - rg) + 1] = (uint64_t)ssp;
-
-	/* setup start */
-	sregs = thread_getSpecRegs();
-	sregs->rww = entry;
-	sregs->rxx = 1UL << 63;
 }

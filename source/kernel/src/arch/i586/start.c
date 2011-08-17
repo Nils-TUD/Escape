@@ -23,11 +23,17 @@
 #include <sys/arch/i586/gdt.h>
 #include <sys/task/thread.h>
 #include <sys/task/elf.h>
+#include <sys/task/smp.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <assert.h>
+
+/* make gcc happy */
+void bspstart(sBootInfo *mbp);
+uintptr_t smpstart(void);
+void apstart(void);
 
 static uint8_t initloader[] = {
 #if DEBUGGING
@@ -37,13 +43,36 @@ static uint8_t initloader[] = {
 #endif
 };
 
-uintptr_t bspstart(sBootInfo *mbp,uint32_t magic) {
-	UNUSED(magic);
+void bspstart(sBootInfo *mbp) {
+	/* init the kernel */
+	boot_init(mbp,true);
+}
+
+uintptr_t smpstart(void) {
 	sThread *t;
 	sStartupInfo info;
 
-	/* init the kernel */
-	boot_init(mbp,true);
+	/* start an idle-thread for each cpu */
+	sSLNode *n;
+	const sSLList *cpus = smp_getCPUs();
+	for(n = sll_begin(cpus); n != NULL; n = n->next) {
+		proc_startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
+#if 0
+		if(proc_startThread(thread_idle,T_IDLE,NULL) == thread_getRunning()->tid) {
+			if(!smp_isBSP()) {
+				/* unlock the trampoline */
+				uintptr_t tramp = TRAMPOLINE_ADDR;
+				*(uint32_t*)((tramp | KERNEL_START) + 6) = 0;
+			}
+			/* now start idling */
+			thread_idle();
+			util_panic("Idle returned");
+		}
+#endif
+	}
+
+	/* start all APs */
+	smp_start();
 
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
@@ -56,7 +85,10 @@ uintptr_t bspstart(sBootInfo *mbp,uint32_t magic) {
 
 void apstart(void) {
 	while(1);
+	sProc *p = proc_getByPid(0);
+	paging_activate(p->pagedir.own);
 	gdt_init_ap();
-	/*paging_activate(proc_getRunning()->pagedir.own);*/
+
+	boot_print();
 	thread_initialSwitch();
 }

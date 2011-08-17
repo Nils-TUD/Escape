@@ -48,6 +48,6 @@ uintptr_t bspstart(const sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss)
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
 	*stackBegin = info.stackBegin;
-	*rss = DIR_MAPPED_SPACE | (t->kstackFrame * PAGE_SIZE);
+	*rss = DIR_MAPPED_SPACE | (t->archAttr.kstackFrame * PAGE_SIZE);
 	return info.progEntry;
 }

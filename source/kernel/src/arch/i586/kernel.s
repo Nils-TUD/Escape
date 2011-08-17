@@ -53,6 +53,7 @@
 .global thread_idle
 .global thread_save
 .global thread_resume
+.global thread_startup
 .global getStackFrameStart
 .global kernelStack
 .global higherhalf
@@ -61,8 +62,10 @@
 # imports
 .extern bspstart
 .extern apstart
+.extern smpstart
 .extern intrpt_handler
 .extern entryPoint
+.extern uenv_setupThread
 
 # general constants
 # TODO better way which uses the defines from paging.h?
@@ -71,6 +74,7 @@
 .set KERNEL_STACK_PTE,				0xFFFFDFFC
 .set TMP_STACK_SIZE,				PAGE_SIZE
 .set USER_STACK,					0xC0000000
+.set KERNEL_START,					0xC0000000
 .set KSTACK_CURTHREAD,				0xFF7FFFFC
 
 # process save area offsets
@@ -130,9 +134,36 @@ higherhalf:
 	call	bspstart				# jump to our C kernel (returns entry-point)
 	add		$8,%esp					# remove args from stack
 
+	# now use the kernel-stack of the first thread and start smp
+	mov		$KSTACK_CURTHREAD,%esp
+	sub		$4,%esp
+	mov		%esp,%ebp
+	push	%ebp
+	call	smpstart
+	# entrypoint is in eax
+	mov		$USER_STACK - 4,%ecx	# user stackpointer
+	jmp		3f
+
 	# setup env for first task
+thread_startup:
+	mov		4(%esp),%eax			# load entry-point
+	cmp		$KERNEL_START,%eax
+	jb		2f
+	# stay in kernel
+	call	*%eax
+1:
+	jmp		1b
+
+	# setup user-env
+2:
+	call	uenv_setupThread		# call uenv_setupThread(arg,entryPoint)
+	mov		%eax,%ecx				# user-stackpointer
+	mov		8(%esp),%eax			# entryPoint
+
+	# go to user-mode
+3:
 	pushl	$0x23					# ss
-	pushl	$USER_STACK - 4			# esp
+	pushl	%ecx					# esp
 	pushfl							# eflags
 	mov		(%esp),%ecx
 	or		$1 << 9,%ecx			# enable IF-flag
@@ -148,10 +179,6 @@ higherhalf:
 	mov		$0x2B,%eax
 	mov		%eax,%gs				# TLS segment
 	iret							# jump to task and switch to user-mode
-
-	# just a simple protection...
-1:
-	jmp		1b
 
 aplock:
 	.long	0
@@ -400,33 +427,15 @@ thread_save:
 	leave
 	ret
 
-# bool thread_resume(sThread *t,tPageDir pageDir,sThreadRegs *saveArea,frameno_t kstackFrame);
+# bool thread_resume(tPageDir pageDir,sThreadRegs *saveArea);
 thread_resume:
 	push	%ebp
 	mov		%esp,%ebp
 
-	mov		16(%ebp),%eax			# get saveArea
-	mov		12(%ebp),%edi			# get page-dir
-	mov		20(%ebp),%esi			# get stack-frame
-	mov		8(%ebp),%edx			# get thread
+	mov		8(%ebp),%edi			# get page-dir
+	mov		12(%ebp),%eax			# get saveArea
 
-	test	%esi,%esi				# if stack-frame is 0 we just have one thread
-	je		1f						# i.e. there can't be another stack-frame anyway
-
-	# load new page-dir
 	mov		%edi,%cr3				# set page-dir
-
-	# exchange kernel-stack-frame
-	mov		(KERNEL_STACK_PTE),%ecx
-	and		$0x00000FFF,%ecx		# clear frame-number
-	shl		$12,%esi
-	or		%esi,%ecx				# set new frame-number
-	mov		%ecx,(KERNEL_STACK_PTE)	# store
-
-	# load page-dir again
-1:
-	mov		%edi,%cr3				# set page-dir
-	mov		%edx,(KSTACK_CURTHREAD)	# set running thread
 
 	# now restore registers
 	mov		STATE_EDI(%eax),%edi

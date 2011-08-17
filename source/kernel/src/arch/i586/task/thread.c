@@ -33,18 +33,15 @@
 
 #define KSTACK_CURTHREAD_ADDR	(KERNEL_STACK + PAGE_SIZE - sizeof(int))
 
+extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
-extern bool thread_resume(sThread *t,uintptr_t pageDir,const sThreadRegs *saveArea,
-		frameno_t kstackFrame);
+extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea);
 static void thread_doSwitch(sThread *cur,sThread *old);
 
 static bool threadSet = false;
 
 int thread_initArch(sThread *t) {
-	/* setup kernel-stack for us */
-	frameno_t stackFrame = pmem_allocate();
-	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-	t->kstackFrame = stackFrame;
+	t->archAttr.kernelStack = paging_createKernelStack(&t->proc->pagedir);
 	t->archAttr.fpuState = NULL;
 	return 0;
 }
@@ -56,16 +53,27 @@ void thread_addInitialStack(sThread *t) {
 	assert(t->stackRegions[0] >= 0);
 }
 
-int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
-	if(!cloneProc) {
+int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
+	if(cloneProc) {
+		/* map the kernel-stack at the same address */
+		paging_mapTo(&dst->proc->pagedir,src->archAttr.kernelStack,NULL,1,
+				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+		dst->archAttr.kernelStack = src->archAttr.kernelStack;
+	}
+	else {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
 			return ERR_NOT_ENOUGH_MEM;
+
+		/* map the kernel-stack at a free address */
+		dst->archAttr.kernelStack = paging_createKernelStack(&dst->proc->pagedir);
 
 		/* add a new stack-region */
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-		if(dst->stackRegions[0] < 0)
+		if(dst->stackRegions[0] < 0) {
+			paging_unmapFrom(&dst->proc->pagedir,dst->archAttr.kernelStack,1,true);
 			return dst->stackRegions[0];
+		}
 	}
 	fpu_cloneState(&(dst->archAttr.fpuState),src->archAttr.fpuState);
 	return 0;
@@ -76,14 +84,7 @@ void thread_freeArch(sThread *t) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
 		t->stackRegions[0] = -1;
 	}
-	/* if there will be just one thread left we have to map his kernel-stack again because we won't
-	 * do it for single-thread-processes on a switch for performance-reasons */
-	if(sll_length(t->proc->threads) == 2) {
-		size_t i = sll_indexOf(t->proc->threads,t);
-		frameno_t stackFrame = ((sThread*)sll_get(t->proc->threads,i == 1 ? 0 : 1))->kstackFrame;
-		paging_mapTo(&t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
-				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-	}
+	paging_unmapFrom(&t->proc->pagedir,t->archAttr.kernelStack,1,true);
 	fpu_freeState(&t->archAttr.fpuState);
 }
 
@@ -93,7 +94,8 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	size_t i;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	ulong *dst = (ulong*)paging_mapToTemp(&nt->kstackFrame,1);
+	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
+	ulong *dst = (ulong*)paging_mapToTemp(&frame,1);
 
 	if(thread_save(&nt->save)) {
 		/* child */
@@ -102,7 +104,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 
 	/* now copy the stack */
 	/* copy manually to prevent a function-call (otherwise we would change the stack) */
-	src = (ulong*)KERNEL_STACK;
+	src = (ulong*)t->archAttr.kernelStack;
 	for(i = 0; i < PT_ENTRY_COUNT; i++)
 		*dst++ = *src++;
 
@@ -111,12 +113,34 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	return 0;
 }
 
+void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+	/* setup kernel-stack */
+	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
+	ulong *dst = (ulong*)paging_mapToTemp(&frame,1);
+	uint32_t sp = nt->archAttr.kernelStack + PAGE_SIZE - sizeof(int) * 6;
+	dst += PT_ENTRY_COUNT - 1;
+	*--dst = nt->proc->entryPoint;
+	*--dst = entryPoint;
+	*--dst = (ulong)arg;
+	*--dst = (ulong)&thread_startup;
+	*--dst = sp;
+	paging_unmapFromTemp(1);
+
+	/* prepare registers for the first thread_resume() */
+	nt->save.ebp = sp;
+	nt->save.esp = sp;
+	nt->save.ebx = 0;
+	nt->save.edi = 0;
+	nt->save.esi = 0;
+	nt->save.eflags = t->save.eflags;
+}
+
 sThread *thread_getRunning(void) {
-	return threadSet ? *(sThread**)KSTACK_CURTHREAD_ADDR : NULL;
+	return threadSet ? gdt_getRunning() : NULL;
 }
 
 void thread_setRunning(sThread *t) {
-	*(sThread**)KSTACK_CURTHREAD_ADDR = t;
+	gdt_setRunning(gdt_getCPUId(),t);
 	threadSet = true;
 }
 
@@ -159,8 +183,7 @@ void thread_switchTo(tid_t tid) {
 			/* lock the FPU so that we can save the FPU-state for the previous process as soon
 			 * as this one wants to use the FPU */
 			fpu_lockFPU();
-			thread_resume(cur,cur->proc->pagedir.own,&cur->save,
-					sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
+			thread_resume(cur->proc->pagedir.own,&cur->save);
 		}
 
 		/* now start kernel-time again */

@@ -321,7 +321,7 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 		/* the first section with type == PROGBITS and addr != 0 should be .MMIX.reg_contents */
 		if(sheader.sh_type == SHT_PROGBITS && sheader.sh_addr < prog->start && sheader.sh_addr != 0) {
 			/* give the kernel the bootinfo in $0 */
-			*(uint64_t*)loadAddr = &bootinfo;
+			*(uint64_t*)loadAddr = (uint64_t)&bootinfo;
 			loadAddr += 8;
 			/* set rL to 1 */
 			*(uint64_t*)loadAddr = 1;

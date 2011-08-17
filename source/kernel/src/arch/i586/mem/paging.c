@@ -229,7 +229,7 @@ void paging_mapKernelSpace(void) {
 	sPDEntry *pde;
 	/* insert all page-tables for 0xC0800000 .. 0xFF3FFFFF into the page dir */
 	addr = KERNEL_START + (PAGE_SIZE * PT_ENTRY_COUNT * 2);
-	end = KERNEL_STACK;
+	end = KERNEL_STACK_AREA;
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
 		/* get frame and insert into page-dir */
@@ -270,11 +270,10 @@ void paging_unmapFromTemp(size_t count) {
 	paging_unmap(TEMP_MAP_AREA + PAGE_SIZE,count,false);
 }
 
-int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
+int paging_cloneKernelspace(tPageDir *pdir) {
 	uintptr_t kstackAddr;
 	frameno_t pdirFrame;
 	sPDEntry *pd,*npd,*tpd;
-	sPTEntry *pt;
 	tPageDir *cur = paging_getPageDir();
 	klock_aquire(&cur->lock);
 
@@ -300,24 +299,15 @@ int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
-	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
+	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
 	tpd->ptFrameNo = pmem_allocate();
 	tpd->present = true;
 	tpd->writable = true;
 	tpd->exists = true;
 	/* clear the page-table */
-	kstackAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
-			KERNEL_STACK & ~(PT_ENTRY_COUNT * PAGE_SIZE - 1));
+	kstackAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,KERNEL_STACK_AREA);
 	FLUSHADDR(kstackAddr);
 	memclear((void*)kstackAddr,PAGE_SIZE);
-
-	/* create stack-page */
-	pt = (sPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));
-	pt->frameNumber = pmem_allocate();
-	*stackFrame = pt->frameNumber;
-	pt->present = true;
-	pt->writable = true;
-	pt->exists = true;
 
 	paging_doUnmapFrom(cur,TEMP_MAP_AREA,1,false);
 
@@ -330,26 +320,47 @@ int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	return 0;
 }
 
-sAllocStats paging_destroyPDir(tPageDir *pdir) {
-	sAllocStats stats;
+uintptr_t paging_createKernelStack(tPageDir *pdir) {
+	uintptr_t addr,ptables;
+	size_t i;
+	sPTEntry *pt;
+	sPDEntry *pd;
+	klock_aquire(&pdir->lock);
+	addr = 0;
+	ptables = paging_getPTables(pdir->own);
+	pd = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
+	/* the page-table isn't present for the initial process */
+	if(pd->exists) {
+		pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,KERNEL_STACK_AREA);
+		for(i = PT_ENTRY_COUNT; i > 0; i--) {
+			if(!pt[i - 1].exists) {
+				addr = KERNEL_STACK_AREA + (i - 1) * PAGE_SIZE;
+				break;
+			}
+		}
+	}
+	else
+		addr = KERNEL_STACK_AREA + (PT_ENTRY_COUNT - 1) * PAGE_SIZE;
+	assert(addr != 0);
+	paging_doMapTo(pdir,addr,NULL,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	klock_release(&pdir->lock);
+	return addr;
+}
+
+void paging_destroyPDir(tPageDir *pdir) {
 	uintptr_t ptables;
 	sPDEntry *pde;
 	assert(pdir != paging_getPageDir());
 	klock_aquire(&pdir->lock);
 	ptables = paging_getPTables(pdir->own);
-	/* remove kernel-stack (don't free the frame; its done in thread_kill()) */
-	stats = paging_doUnmapFrom(pdir,KERNEL_STACK,1,false);
 	/* free page-table for kernel-stack */
-	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK);
+	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
 	pde->present = false;
 	pde->exists = false;
 	pmem_free(pde->ptFrameNo);
-	stats.ptables++;
 	/* free page-dir */
 	pmem_free(pdir->own >> PAGE_SIZE_SHIFT);
-	stats.ptables++;
 	klock_release(&pdir->lock);
-	return stats;
 }
 
 bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {

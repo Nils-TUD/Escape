@@ -24,6 +24,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <sys/util.h>
 #include <string.h>
 
@@ -84,6 +85,8 @@ static sMPFloatPtr *smp_find(void);
 static sMPFloatPtr *smp_findIn(uintptr_t start,size_t length);
 extern void apProtMode(void);
 
+static klock_t lock;
+static volatile size_t seenAPs = 0;
 static uint8_t trampoline[] = {
 #if DEBUGGING
 #	include "../../../../../build/i586-debug/kernel_tramp.dump"
@@ -105,12 +108,23 @@ bool smp_init_arch(void) {
 	return false;
 }
 
+void smp_apIsRunning(void) {
+	klock_aquire(&lock);
+	seenAPs++;
+	klock_release(&lock);
+}
+
 void smp_start(void) {
 	if(smp_isEnabled()) {
+		size_t total,i;
 		/* TODO thats not completely correct, according to the MP specification */
 		/* we have to wait, check if apic is an 82489DX, ... */
 
 		apic_sendInitIPI();
+
+		/* simulate a delay of > 10ms; TODO we should use a timer for that */
+		for(i = 0; i < 1000000; i++)
+			;
 
 		uintptr_t dest = TRAMPOLINE_ADDR;
 		memcpy((void*)(dest | KERNEL_START),trampoline,ARRAY_SIZE(trampoline));
@@ -118,7 +132,21 @@ void smp_start(void) {
 		*(uint32_t*)((dest | KERNEL_START) + 2) = (uint32_t)&apProtMode;
 
 		apic_sendStartupIPI(dest);
+
+		/* wait until all APs are running */
+		/*total = smp_getCPUCount() - 1;
+		while(seenAPs != total)
+			;*/
 	}
+
+	/* We needed the area 0x0 .. 0x00400000 because in the first phase the GDT was setup so that
+	 * the stuff at 0xC0000000 has been mapped to 0x00000000. Therefore, after enabling paging
+	 * (the GDT is still the same) we have to map 0x00000000 to our kernel-stuff so that we can
+	 * still access the kernel (because segmentation translates 0xC0000000 to 0x00000000 before
+	 * it passes it to the MMU).
+	 * Now our GDT is setup in the "right" way, so that 0xC0000000 will arrive at the MMU.
+	 * Therefore we can unmap the 0x0 area. */
+	paging_gdtFinished();
 }
 
 cpuid_t smp_getCurId(void) {

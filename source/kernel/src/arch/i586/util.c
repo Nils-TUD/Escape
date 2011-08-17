@@ -148,11 +148,13 @@ sFuncCall *util_getUserStackTrace(void) {
 sFuncCall *util_getKernelStackTrace(void) {
 	uintptr_t start,end;
 	uint32_t* ebp = (uint32_t*)getStackFrameStart();
+	sThread *t = thread_getRunning();
 
 	/* determine the stack-bounds; we have a temp stack at the beginning */
-	if((uintptr_t)ebp >= KERNEL_STACK && (uintptr_t)ebp < KERNEL_STACK + PAGE_SIZE) {
-		start = KERNEL_STACK;
-		end = KERNEL_STACK + PAGE_SIZE;
+	if((uintptr_t)ebp >= t->archAttr.kernelStack &&
+			(uintptr_t)ebp < t->archAttr.kernelStack + PAGE_SIZE) {
+		start = t->archAttr.kernelStack;
+		end = t->archAttr.kernelStack + PAGE_SIZE;
 	}
 	else {
 		start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
@@ -174,7 +176,7 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 			sIntrptStackFrame *istack = thread_getIntrptStack(t);
 			uintptr_t temp,startCpy = start;
 			size_t i;
-			frames[0] = t->kstackFrame;
+			frames[0] = paging_getFrameNo(&t->proc->pagedir,t->archAttr.kernelStack);
 			for(i = 0; startCpy < end; i++) {
 				if(!paging_isPresent(&t->proc->pagedir,startCpy)) {
 					cache_free(frames);
@@ -199,8 +201,9 @@ sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
 	/* for the current, we can't use the ebp from the context-switch. instead we have to use the
 	 * value on the interrupt-stack */
 	uint32_t ebp = t == thread_getRunning() ? thread_getIntrptStack(t)->ebp : t->save.ebp;
-	uintptr_t temp = paging_mapToTemp(&t->kstackFrame,1);
-	sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,KERNEL_STACK,temp,temp + PAGE_SIZE);
+	frameno_t frame = paging_getFrameNo(&t->proc->pagedir,t->archAttr.kernelStack);
+	uintptr_t temp = paging_mapToTemp(&frame,1);
+	sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,t->archAttr.kernelStack,temp,temp + PAGE_SIZE);
 	paging_unmapFromTemp(1);
 	return calls;
 }

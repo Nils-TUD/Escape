@@ -135,12 +135,14 @@ void thread_unsetSignal(sThread *t) {
 }
 
 sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
-	assert(t->intrptLevel > 0);
-	return t->intrptLevels[t->intrptLevel - 1];
+	if(t->intrptLevel > 0)
+		return t->intrptLevels[t->intrptLevel - 1];
+	return NULL;
 }
 
 void thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack) {
 	assert(t == thread_getRunning());
+	assert(t->intrptLevel < MAX_INTRPT_LEVELS);
 	t->intrptLevels[t->intrptLevel++] = stack;
 }
 
@@ -314,8 +316,7 @@ void thread_remFileUsage(file_t file) {
 	sll_removeFirstWith(&t->termUsages,(void*)file);
 }
 
-int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t stackFrame,
-		bool cloneProc) {
+int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc) {
 	int err = ERR_NOT_ENOUGH_MEM;
 	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -343,22 +344,23 @@ int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t sta
 	t->stats.ucycleStart = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
-	t->intrptLevel = src->intrptLevel;
-	memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
+	if(cloneProc) {
+		t->intrptLevel = src->intrptLevel;
+		memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
+	}
+	else
+		t->intrptLevel = 0;
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
 	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
 	if(cloneProc) {
 		size_t i;
-		t->kstackFrame = stackFrame;
 		for(i = 0; i < STACK_REG_COUNT; i++)
 			t->stackRegions[i] = src->stackRegions[i];
 		t->tlsRegion = src->tlsRegion;
 	}
 	else {
-		/* add kernel-stack */
-		t->kstackFrame = pmem_allocate();
 		/* add a new tls-region, if its present in the src-thread */
 		t->tlsRegion = -1;
 		if(src->tlsRegion >= 0) {
@@ -366,12 +368,12 @@ int thread_clone(sThread *src,sThread **dst,sProc *p,uint8_t flags,frameno_t sta
 			vmm_getRegRange(src->proc->pid,src->tlsRegion,&tlsStart,&tlsEnd);
 			t->tlsRegion = vmm_add(p->pid,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS);
 			if(t->tlsRegion < 0)
-				goto errStack;
+				goto errThread;
 		}
 	}
 
 	/* clone architecture-specific stuff */
-	if((err = thread_cloneArch(src,t,cloneProc)) < 0)
+	if((err = thread_createArch(src,t,cloneProc)) < 0)
 		goto errClone;
 
 	/* insert into thread-list */
@@ -404,9 +406,6 @@ errArch:
 errClone:
 	if(t->tlsRegion >= 0)
 		vmm_remove(p->pid,t->tlsRegion);
-errStack:
-	if(!cloneProc)
-		pmem_free(t->kstackFrame);
 errThread:
 	cache_free(t);
 	klock_release(&src->lock);
@@ -434,8 +433,6 @@ bool thread_kill(sThread *t) {
 		vmm_remove(t->proc->pid,t->tlsRegion);
 		t->tlsRegion = -1;
 	}
-	/* free kernel-stack */
-	pmem_free(t->kstackFrame);
 
 	/* release resources */
 	for(n = sll_begin(&t->termLocks); n != NULL; n = n->next)
@@ -492,7 +489,6 @@ void thread_print(const sThread *t) {
 	ev_printEvMask(t);
 	vid_printf("\n");
 	vid_printf("\t\tLastCPU=%d\n",t->cpu);
-	vid_printf("\t\tKstackFrame=%#Px\n",t->kstackFrame);
 	vid_printf("\t\tTlsRegion=%d, ",t->tlsRegion);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		vid_printf("stackRegion%zu=%d",i,t->stackRegions[i]);

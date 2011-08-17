@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <errors.h>
 
+extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
 extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
 
@@ -38,8 +39,8 @@ static sThread *cur = NULL;
 int thread_initArch(sThread *t) {
 	/* setup kernel-stack for us */
 	frameno_t stackFrame = pmem_allocate();
-	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-	t->kstackFrame = stackFrame;
+	paging_mapTo(&t->proc->pagedir,KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	t->archAttr.kstackFrame = stackFrame;
 	return 0;
 }
 
@@ -50,17 +51,23 @@ void thread_addInitialStack(sThread *t) {
 	assert(t->stackRegions[0] >= 0);
 }
 
-int thread_cloneArch(const sThread *src,sThread *dst,bool cloneProc) {
+int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 	UNUSED(src);
-	if(!cloneProc) {
+	if(cloneProc)
+		thread_initArch(dst);
+	else {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
 			return ERR_NOT_ENOUGH_MEM;
+
+		dst->archAttr.kstackFrame = pmem_allocate();
 
 		/* add a new stack-region */
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-		if(dst->stackRegions[0] < 0)
+		if(dst->stackRegions[0] < 0) {
+			pmem_free(dst->archAttr.kstackFrame);
 			return dst->stackRegions[0];
+		}
 	}
 	return 0;
 }
@@ -70,6 +77,7 @@ void thread_freeArch(sThread *t) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
 		t->stackRegions[0] = -1;
 	}
+	pmem_free(t->archAttr.kstackFrame);
 }
 
 sThread *thread_getRunning(void) {
@@ -86,7 +94,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	size_t i;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	ulong *dst = (ulong*)(DIR_MAPPED_SPACE | (nt->kstackFrame * PAGE_SIZE));
+	ulong *dst = (ulong*)(DIR_MAPPED_SPACE | (nt->archAttr.kstackFrame * PAGE_SIZE));
 
 	if(thread_save(&nt->save)) {
 		/* child */
@@ -101,6 +109,23 @@ int thread_finishClone(sThread *t,sThread *nt) {
 
 	/* parent */
 	return 0;
+}
+
+void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+	UNUSED(t);
+	/* prepare registers for the first thread_resume() */
+	nt->save.r16 = nt->proc->entryPoint;
+	nt->save.r17 = entryPoint;
+	nt->save.r18 = (uint32_t)arg;
+	nt->save.r19 = 0;
+	nt->save.r20 = 0;
+	nt->save.r21 = 0;
+	nt->save.r22 = 0;
+	nt->save.r23 = 0;
+	nt->save.r25 = 0;
+	nt->save.r29 = KERNEL_STACK + PAGE_SIZE - sizeof(int);
+	nt->save.r30 = 0;
+	nt->save.r31 = (uint32_t)&thread_startup;
 }
 
 void thread_switchTo(tid_t tid) {
@@ -134,7 +159,7 @@ void thread_switchTo(tid_t tid) {
 				vmm_setTimestamp(ct,timer_getTimestamp());
 			sched_setRunning(ct);
 
-			thread_resume(ct->proc->pagedir,&ct->save,ct->kstackFrame);
+			thread_resume(ct->proc->pagedir,&ct->save,ct->archAttr.kstackFrame);
 		}
 
 		/* now start kernel-time again */

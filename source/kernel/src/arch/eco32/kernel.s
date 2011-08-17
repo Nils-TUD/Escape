@@ -49,6 +49,7 @@
 
 	.global intrpt_setMask
 
+	.global thread_startup
 	.global thread_idle
 	.global	thread_save
 	.global thread_resume
@@ -407,6 +408,33 @@ tlb_removeExit:
 #===========================================
 # Threads
 #===========================================
+
+thread_startup:
+	# $16 = process entry-point
+	# $17 = thread entry-point
+	# $18 = argument
+	add		$8,$0,DIR_MAP_START
+	bltu	$17,$8,2f
+	# stay in kernel
+	jalr	$17
+1:
+	j		1b
+
+2:
+	# setup user-env
+	sub		$29,$29,0x20
+	add		$4,$0,$18
+	add		$5,$0,$17
+	jal		uenv_setupThread		# call uenv_setupThread(arg,entryPoint)
+
+	# go to user-mode
+	add		$29,$0,$2				# user-stackpointer
+	add		$30,$0,$16				# start here
+	mvfs	$8,FS_PSW
+	# enable interrupts and user-mode
+	or		$8,$8,PINTRPT_FLAG | PUSER_MODE_FLAG
+	mvts	$8,FS_PSW
+	rfx
 
 # void thread_idle(void)
 thread_idle:

@@ -159,10 +159,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 		return 0;
 
 	/* start idle-thread */
-	if(proc_startThread(0,T_IDLE,NULL) == thread_getRunning()->tid) {
-		thread_idle();
-		util_panic("Idle returned");
-	}
+	proc_startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 
 	loadedMods = true;
 	for(i = 1; i < info.progCount; i++) {
@@ -201,10 +198,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	/* TODO */
 #if 0
 	/* start the swapper-thread. it will never return */
-	if(proc_startThread(0,0,NULL) == thread_getRunning()->tid) {
-		swap_start();
-		util_panic("Swapper reached this");
-	}
+	proc_startThread((uintptr_t)&swap_start,0,NULL);
 #endif
 
 	/* if not requested otherwise, from now on, print only to log */

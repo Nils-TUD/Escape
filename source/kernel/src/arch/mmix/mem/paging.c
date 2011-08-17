@@ -105,7 +105,7 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= DIR_MAPPED_SPACE && virt + count >= virt;
 }
 
-int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
+int paging_cloneKernelspace(tPageDir *pdir) {
 	tPageDir *cur = paging_getPageDir();
 
 	/* frames needed:
@@ -127,26 +127,19 @@ int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	pdir->ptables = 0;
 	pdir->rv = cur->rv & 0xFFFFFF0000000000;
 	pdir->rv |= (rootLoc & ~DIR_MAPPED_SPACE) | (pdir->addrSpace->no << 3);
-
-	/* allocate kernel-stack */
-	*stackFrame = pmem_allocate();
 	return 0;
 }
 
-sAllocStats paging_destroyPDir(tPageDir *pdir) {
-	sAllocStats stats;
+void paging_destroyPDir(tPageDir *pdir) {
 	assert(pdir != paging_getPageDir());
-	/* don't free kernel-stack-frame; its done in thread_kill() */
 	/* free page-dir */
 	pmem_freeContiguous((pdir->rv >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
-	stats.ptables += SEGMENT_COUNT * PTS_PER_SEGMENT;
 	/* we have to ensure that no tc-entries of the current process are present. otherwise we could
 	 * get the problem that the old process had a page that the new process with this
 	 * address-space-number has not. if the entry of the old one is still in the tc, the new
 	 * process could access it and write to that frame (which might be used for a different
 	 * purpose now) */
 	tc_clear();
-	return stats;
 }
 
 bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {

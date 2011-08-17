@@ -51,18 +51,18 @@ void uenv_handleSignal(sIntrptStackFrame *stack) {
 
 	if(sig_hasSignal(&sig,&tid)) {
 		klock_aquire(&sigLock);
-		if(t->tid == tid) {
+		if(t->tid == tid)
 			uenv_startSignalHandler(t,stack,sig);
-			klock_release(&sigLock);
-		}
 		else {
 			t = thread_getById(tid);
 			if(thread_setSignal(t,sig)) {
 				klock_release(&sigLock);
 				ev_unblock(t);
 				thread_switchTo(tid);
+				return;
 			}
 		}
+		klock_release(&sigLock);
 	}
 }
 
@@ -178,10 +178,9 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	return true;
 }
 
-bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
+uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *esp;
 	sThread *t = thread_getRunning();
-	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
 
 	/*
 	 * Initial stack:
@@ -203,12 +202,7 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	esp--;
 	*esp-- = (uintptr_t)arg;
 	/* add TLS args and entrypoint */
-	esp = uenv_addArgs(t,esp,tentryPoint,true);
-
-	kstack->uesp = (uint32_t)esp;
-	kstack->ebp = kstack->uesp;
-	uenv_setupRegs(kstack,t->proc->entryPoint);
-	return true;
+	return uenv_addArgs(t,esp,tentryPoint,true);
 }
 
 static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig) {

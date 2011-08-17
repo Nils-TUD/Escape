@@ -148,7 +148,7 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= KERNEL_AREA && virt + count >= virt;
 }
 
-int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
+int paging_cloneKernelspace(tPageDir *pdir) {
 	frameno_t pdirFrame;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
@@ -196,36 +196,22 @@ int paging_cloneKernelspace(frameno_t *stackFrame,tPageDir *pdir) {
 	pt = (sPTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAPPED_SPACE);
 	memclear(pt,PAGE_SIZE);
 
-	/* create stack-page */
-	pt += ADDR_TO_PTINDEX(KERNEL_STACK);
-	pt->frameNumber = pmem_allocate();
-	pt->present = true;
-	pt->writable = true;
-	pt->exists = true;
-
-	*stackFrame = pt->frameNumber;
 	*pdir = DIR_MAPPED_SPACE | (pdirFrame << PAGE_SIZE_SHIFT);
 	return 0;
 }
 
-sAllocStats paging_destroyPDir(tPageDir *pdir) {
-	sAllocStats stats;
+void paging_destroyPDir(tPageDir *pdir) {
 	sPDEntry *pde;
 	assert(*pdir != curPDir);
-	/* remove kernel-stack (don't free the frame; its done in thread_kill()) */
-	stats = paging_unmapFrom(pdir,KERNEL_STACK,1,false);
 	/* free page-table for kernel-stack */
 	pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir) + ADDR_TO_PDINDEX(KERNEL_STACK);
 	pde->present = false;
 	pde->exists = false;
 	pmem_free(pde->ptFrameNo);
-	stats.ptables++;
 	/* free page-dir */
 	pmem_free((*pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT);
-	stats.ptables++;
 	/* ensure that we don't use it again */
 	otherPDir = 0;
-	return stats;
 }
 
 bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {

@@ -51,6 +51,7 @@ typedef struct {
 } sThreadRegs;
 
 typedef struct {
+	uintptr_t kernelStack;
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
 } sThreadArchAttr;

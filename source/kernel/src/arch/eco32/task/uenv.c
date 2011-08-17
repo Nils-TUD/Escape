@@ -32,7 +32,7 @@
 #define KEYBOARD_IEN		0x02
 
 static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig);
-static void uenv_addArgs(sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,bool newThread);
+static uint32_t *uenv_addArgs(sThread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread);
 
 void uenv_handleSignal(sIntrptStackFrame *stack) {
 	tid_t tid;
@@ -89,11 +89,12 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	 * +------------------+
 	 * |       argc       |
 	 * +------------------+
-	 *
-	 * Registers:
-	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
-	 * $5 = TLSStart (0 if not present)
-	 * $6 = TLSSize (0 if not present)
+	 * |     TLSStart     |  (0 if not present)
+	 * +------------------+
+	 * |     TLSSize      |  (0 if not present)
+	 * +------------------+
+	 * |    EntryPoint    |  (0 for initial thread, thread-entrypoint for others)
+	 * +------------------+
 	 */
 
 	/* get esp */
@@ -127,10 +128,10 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 
 	/* store argc and argv */
 	*sp-- = (uintptr_t)argv;
-	*sp = argc;
+	*sp-- = argc;
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
-	uenv_addArgs(t,frame,info->progEntry,false);
+	sp = uenv_addArgs(t,sp,info->progEntry,false);
 
 	/* set entry-point and stack-pointer */
 	frame->r[29] = (uint32_t)sp;
@@ -138,21 +139,21 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	return true;
 }
 
-bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
+uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *sp;
 	sThread *t = thread_getRunning();
-	sIntrptStackFrame *frame = thread_getIntrptStack(t);
 
 	/*
 	 * Initial stack:
 	 * +------------------+  <- top
 	 * |       arg        |
 	 * +------------------+
-	 *
-	 * Registers:
-	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
-	 * $5 = TLSStart (0 if not present)
-	 * $6 = TLSSize (0 if not present)
+	 * |     TLSStart     |  (0 if not present)
+	 * +------------------+
+	 * |     TLSSize      |  (0 if not present)
+	 * +------------------+
+	 * |    EntryPoint    |  (0 for initial thread, thread-entrypoint for others)
+	 * +------------------+
 	 */
 
 	/* get esp */
@@ -162,12 +163,7 @@ bool uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	/* put arg on stack */
 	*sp-- = (uintptr_t)arg;
 	/* add TLS args and entrypoint */
-	uenv_addArgs(t,frame,tentryPoint,true);
-
-	/* set entry-point and stack-pointer */
-	frame->r[29] = (uint32_t)sp;
-	frame->r[30] = t->proc->entryPoint - 4; /* we'll skip the trap-instruction for syscalls */
-	return true;
+	return uenv_addArgs(t,sp,tentryPoint,true);
 }
 
 static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig) {
@@ -193,19 +189,19 @@ static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t si
 	stack->r[31] = t->proc->sigRetAddr;
 }
 
-static void uenv_addArgs(sThread *t,sIntrptStackFrame *frame,uintptr_t tentryPoint,
-		bool newThread) {
+static uint32_t *uenv_addArgs(sThread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	uintptr_t tlsStart,tlsEnd;
 	if(thread_getTLSRange(t,&tlsStart,&tlsEnd)) {
-		frame->r[5] = tlsStart;
-		frame->r[6] = tlsEnd - tlsStart;
+		*sp-- = tlsStart;
+		*sp-- = tlsEnd - tlsStart;
 	}
 	else {
 		/* no tls */
-		frame->r[5] = 0;
-		frame->r[6] = 0;
+		*sp-- = 0;
+		*sp-- = 0;
 	}
 
-	frame->r[4] = newThread ? tentryPoint : 0;
+	*sp = newThread ? tentryPoint : 0;
+	return sp;
 }

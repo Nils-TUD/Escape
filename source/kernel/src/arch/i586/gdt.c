@@ -31,7 +31,7 @@
 
 /* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data, tls
  * and one entry for our TSS */
-#define GDT_ENTRY_COUNT 7
+#define GDT_ENTRY_COUNT 8
 
 /* == for the access-field == */
 
@@ -234,25 +234,19 @@ void gdt_init(void) {
 
 	/* tss (leave a bit space for the vm86-segment-registers that will be present at the stack-top
 	 * in vm86-mode. This way we can have the same interrupt-stack for all processes) */
-	bsptss.esp0 = KERNEL_STACK + PAGE_SIZE - (1 + 5) * sizeof(int);
+	bsptss.esp0 = KERNEL_STACK_AREA + PT_ENTRY_COUNT * PAGE_SIZE - (1 + 5) * sizeof(int);
 	bsptss.ss0 = 0x10;
 	/* init io-map */
 	bsptss.ioMapOffset = IO_MAP_OFFSET_INVALID;
 	bsptss.ioMapEnd = 0xFF;
 	gdt_set_tss_desc(bspgdt,6,(uintptr_t)&bsptss,sizeof(sTSS) - 1);
 
+	/* for the current thread */
+	gdt_set_desc(bspgdt,7,0,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
+
 	/* now load GDT and TSS */
 	gdt_flush(&gdtTable);
 	tss_load(6 * sizeof(sGDTDesc));
-
-	/* We needed the area 0x0 .. 0x00400000 because in the first phase the GDT was setup so that
-	 * the stuff at 0xC0000000 has been mapped to 0x00000000. Therefore, after enabling paging
-	 * (the GDT is still the same) we have to map 0x00000000 to our kernel-stuff so that we can
-	 * still access the kernel (because segmentation translates 0xC0000000 to 0x00000000 before
-	 * it passes it to the MMU).
-	 * Now our GDT is setup in the "right" way, so that 0xC0000000 will arrive at the MMU.
-	 * Therefore we can unmap the 0x0 area. */
-	paging_gdtFinished();
 }
 
 void gdt_init_bsp(void) {
@@ -292,7 +286,7 @@ void gdt_init_ap(void) {
 	alltss[i] = tss;
 	paging_map((uintptr_t)tss,NULL,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy(tss,&bsptss,sizeof(sTSS));
-	tss->esp0 = KERNEL_STACK + PAGE_SIZE - (1 + 5) * sizeof(int);
+	tss->esp0 = KERNEL_STACK_AREA + PT_ENTRY_COUNT * PAGE_SIZE - (1 + 5) * sizeof(int);
 	tss->ioMapOffset = IO_MAP_OFFSET_INVALID;
 	tss->ioMapEnd = 0xFF;
 
@@ -316,6 +310,21 @@ cpuid_t gdt_getCPUId(void) {
 	return -1;
 }
 
+sThread *gdt_getRunning(void) {
+	sGDTTable tbl;
+	sGDTDesc *gdt;
+	gdt_get(&tbl);
+	gdt = (sGDTDesc*)tbl.offset;
+	uintptr_t addr = (gdt[7].addrHigh << 24) | (gdt[7].addrMiddle << 16) | gdt[7].addrLow;
+	return (sThread*)addr;
+}
+
+void gdt_setRunning(cpuid_t id,sThread *t) {
+	/* store the thread-pointer into an unused slot of the gdt */
+	sGDTDesc *gdt = (sGDTDesc*)allgdts[id].offset;
+	gdt_set_desc(gdt,7,(uintptr_t)t,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
+}
+
 cpuid_t gdt_prepareRun(sThread *old,sThread *new) {
 	uintptr_t tlsEnd;
 	cpuid_t id = gdt_getCPUId();
@@ -327,15 +336,15 @@ cpuid_t gdt_prepareRun(sThread *old,sThread *new) {
 				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);
 	}
-	if(!old || old->proc != new->proc) {
-		/* VM86-tasks should start at the beginning because the segment-registers are saved on the
-		 * stack first (not in protected mode) */
-		if(new->proc->flags & P_VM86)
-			alltss[id]->esp0 = KERNEL_STACK + PAGE_SIZE - 2 * sizeof(int);
-		else
-			alltss[id]->esp0 = KERNEL_STACK + PAGE_SIZE - (1 + 5) * sizeof(int);
+	/* VM86-tasks should start at the beginning because the segment-registers are saved on the
+	 * stack first (not in protected mode) */
+	if(new->proc->flags & P_VM86)
+		alltss[id]->esp0 = new->archAttr.kernelStack + PAGE_SIZE - 2 * sizeof(int);
+	else
+		alltss[id]->esp0 = new->archAttr.kernelStack + PAGE_SIZE - (1 + 5) * sizeof(int);
+	if(!old || old->proc != new->proc)
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
-	}
+	gdt_setRunning(id,new);
 	return id;
 }
 

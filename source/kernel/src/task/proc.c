@@ -385,7 +385,6 @@ void proc_addSignalFor(pid_t pid,sig_t signal) {
 
 int proc_clone(pid_t newPid,uint8_t flags) {
 	assert((flags & P_ZOMBIE) == 0);
-	frameno_t stackFrame;
 	size_t i;
 	sProc *p;
 	sProc *cur = proc_request(proc_getRunning(),PLOCK_PROG);
@@ -408,7 +407,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	}
 
 	/* clone page-dir */
-	if((res = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
+	if((res = paging_cloneKernelspace(&p->pagedir)) < 0)
 		goto errorVFS;
 
 	/* set basic attributes */
@@ -465,7 +464,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	}
 
 	/* clone current thread */
-	if((res = thread_clone(curThread,&nt,p,0,stackFrame,true)) < 0)
+	if((res = thread_create(curThread,&nt,p,0,true)) < 0)
 		goto errorThreadList;
 	if(!sll_append(p->threads,nt)) {
 		res = ERR_NOT_ENOUGH_MEM;
@@ -488,7 +487,8 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	ev_unblock(nt);
 
 #ifdef __eco32__
-	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
+	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,
+			nt->archAttr.kstackFrame);
 #endif
 #ifdef __mmix__
 	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
@@ -535,7 +535,7 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	if(!p)
 		return ERR_INVALID_PID;
 
-	if((res = thread_clone(t,&nt,p,flags,0,false)) < 0) {
+	if((res = thread_create(t,&nt,p,flags,false)) < 0) {
 		proc_release(p,PLOCK_PROG);
 		return res;
 	}
@@ -554,25 +554,14 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 		ev_unblock(nt);
 
 #ifdef __eco32__
-	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,nt->kstackFrame);
+	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,
+			nt->archAttr.kstackFrame);
 #endif
 #ifdef __mmix__
 	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
 #endif
 
-	res = thread_finishClone(t,nt);
-	if(res == 1) {
-		/* TODO PLOCK_PROG ? */
-		/* new thread */
-		if(!uenv_setupThread(arg,entryPoint)) {
-			proc_killThread(nt);
-			/* do a switch here because we can't continue */
-			thread_switch();
-			/* never reached */
-			return ERR_NOT_ENOUGH_MEM;
-		}
-	}
-	/* old thread */
+	thread_finishThreadStart(t,nt,arg,entryPoint);
 	proc_release(p,PLOCK_PROG);
 	return nt->tid;
 }

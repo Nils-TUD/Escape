@@ -169,13 +169,6 @@ tPageDir *proc_getPageDir(void);
 void proc_setCommand(sProc *p,const char *cmd);
 
 /**
- * Searches for a free pid and returns it or 0 if there is no free process-slot
- *
- * @return the pid or 0
- */
-pid_t proc_getFreePid(void);
-
-/**
  * @return the pid of the running process
  */
 pid_t proc_getRunning(void);
@@ -309,15 +302,13 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 void proc_addSignalFor(pid_t pid,sig_t signal);
 
 /**
- * Clones the current process into the given one, gives the new process a clone of the current
- * thread and saves this thread in proc_clone() so that it will start there on thread_resume().
- * The function returns -1 if there is not enough memory.
+ * Clones the current process, gives the new process a clone of the current thread and saves this
+ * thread in proc_clone() so that it will start there on thread_resume().
  *
- * @param newPid the target-pid
  * @param flags the flags to set for the process (e.g. P_VM86)
- * @return -1 if an error occurred, 0 for parent, 1 for child
+ * @return < 0 if an error occurred, the child-pid for parent, 0 for child
  */
-int proc_clone(pid_t newPid,uint8_t flags);
+int proc_clone(uint8_t flags);
 
 /**
  * Initializes the architecture specific parts of the given process

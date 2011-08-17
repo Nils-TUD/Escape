@@ -151,8 +151,8 @@ size_t boot_getUsableMemCount(void) {
 int boot_loadModules(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	size_t i;
-	pid_t pid;
 	inode_t nodeNo;
+	pid_t child;
 
 	/* it's not good to do this twice.. */
 	if(loadedMods)
@@ -170,17 +170,15 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			util_panic("Invalid arguments for boot-module: %s\n",progs[i].command);
 
 		/* clone proc */
-		pid = proc_getFreePid();
-		if(pid == INVALID_PID)
-			util_panic("No free process-slots");
-
-		if(proc_clone(pid,0)) {
+		if((child = proc_clone(0)) == 0) {
 			int res = proc_exec(progs[i].command,argv,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
 				util_panic("Unable to exec boot-program %s: %d\n",progs[i].command,res);
 			/* we don't want to continue ;) */
 			return 0;
 		}
+		else if(child < 0)
+			util_panic("Unable to clone process for boot-program %s: %d\n",progs[i].command,child);
 
 		/* wait until the driver is registered */
 		vid_printf("Loading '%s'...\n",argv[0]);

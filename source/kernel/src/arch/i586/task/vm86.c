@@ -87,23 +87,18 @@ static klock_t lock;
 int vm86_create(void) {
 	sProc *p;
 	sThread *t;
-	pid_t pid;
 	size_t i,frameCount;
 	int res;
-
-	pid = proc_getFreePid();
-	if(pid == INVALID_PID)
-		return ERR_NO_FREE_PROCS;
 
 	/* create child */
 	/* Note that it is really necessary to set whether we're a VM86-task or not BEFORE we get
 	 * chosen by the scheduler the first time. Otherwise the scheduler can't set the right
 	 * value for tss.esp0 and we will get a wrong stack-layout on the next interrupt */
-	res = proc_clone(pid,P_VM86);
+	res = proc_clone(P_VM86);
 	if(res < 0)
 		return res;
 	/* parent */
-	if(res == 0)
+	if(res != 0)
 		return 0;
 
 	t = thread_getRunning();

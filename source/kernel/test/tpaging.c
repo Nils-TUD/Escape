@@ -60,8 +60,8 @@ static void test_paging(void) {
 static void test_paging_foreign(void) {
 	size_t ownFrames, sharedFrames;
 	sProc *child;
-	pid_t pid = proc_getFreePid();
-	test_assertInt(proc_clone(pid,0),0);
+	pid_t pid = proc_clone(0);
+	test_assertTrue(pid > 0);
 	child = proc_getByPid(pid);
 
 	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,&child->pagedir);

@@ -57,6 +57,7 @@ static void proc_doRemoveRegions(sProc *p,bool remStack);
 static void proc_doTerminate(sProc *p,int exitCode,sig_t signal);
 static void proc_killThread(sThread *t);
 static void proc_notifyProcDied(pid_t parent);
+static pid_t proc_getFreePid(void);
 static bool proc_add(sProc *p);
 static void proc_remove(sProc *p);
 
@@ -141,24 +142,6 @@ void proc_setCommand(sProc *p,const char *cmd) {
 	if(p->command)
 		cache_free((char*)p->command);
 	p->command = strdup(cmd);
-}
-
-pid_t proc_getFreePid(void) {
-	size_t count = 0;
-	pid_t res = INVALID_PID;
-	klock_aquire(&lock);
-	while(count < MAX_PROC_COUNT) {
-		/* 0 is always present */
-		if(nextPid >= MAX_PROC_COUNT)
-			nextPid = 1;
-		if(pidToProc[nextPid++] == NULL) {
-			res = nextPid - 1;
-			break;
-		}
-		count++;
-	}
-	klock_release(&lock);
-	return res;
 }
 
 pid_t proc_getRunning(void) {
@@ -383,9 +366,10 @@ void proc_addSignalFor(pid_t pid,sig_t signal) {
 	}
 }
 
-int proc_clone(pid_t newPid,uint8_t flags) {
+int proc_clone(uint8_t flags) {
 	assert((flags & P_ZOMBIE) == 0);
 	size_t i;
+	int newPid;
 	sProc *p;
 	sProc *cur = proc_request(proc_getRunning(),PLOCK_PROG);
 	sThread *curThread = thread_getRunning();
@@ -399,19 +383,12 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 		res = ERR_NOT_ENOUGH_MEM;
 		goto errorCur;
 	}
-	/* first create the VFS node (we may not have enough mem) */
-	p->threadDir = vfs_createProcess(newPid);
-	if(p->threadDir < 0) {
-		res = p->threadDir;
-		goto errorProc;
-	}
 
 	/* clone page-dir */
 	if((res = paging_cloneKernelspace(&p->pagedir)) < 0)
-		goto errorVFS;
+		goto errorProc;
 
 	/* set basic attributes */
-	*(pid_t*)&p->pid = newPid;
 	p->parentPid = cur->pid;
 	memclear(p->locks,sizeof(p->locks));
 	p->ruid = cur->ruid;
@@ -436,10 +413,29 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 		goto errorPdir;
 	}
 
+	/* determine pid; ensure that nobody can get this pid, too */
+	klock_aquire(&lock);
+	newPid = proc_getFreePid();
+	if(newPid < 0) {
+		klock_release(&lock);
+		res = newPid;
+		goto errorCmd;
+	}
+
 	/* add to processes */
+	*(pid_t*)&p->pid = newPid;
 	if(!proc_add(p)) {
+		klock_release(&lock);
 		res = ERR_NOT_ENOUGH_MEM;
 		goto errorCmd;
+	}
+	klock_release(&lock);
+
+	/* create the VFS node */
+	p->threadDir = vfs_createProcess(p->pid);
+	if(p->threadDir < 0) {
+		res = p->threadDir;
+		goto errorAdd;
 	}
 
 	/* join group of parent */
@@ -450,7 +446,7 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	p->regions = NULL;
 	p->regSize = 0;
 	if((res = vmm_cloneAll(p->pid)) < 0)
-		goto errorAdd;
+		goto errorVFS;
 
 	/* clone shared-memory-regions */
 	if((res = shm_cloneProc(cur->pid,p->pid)) < 0)
@@ -497,11 +493,11 @@ int proc_clone(pid_t newPid,uint8_t flags) {
 	res = thread_finishClone(curThread,nt);
 	if(res == 1) {
 		/* child */
-		return 1;
+		return 0;
 	}
 	/* parent */
 	proc_release(cur,PLOCK_PROG);
-	return 0;
+	return p->pid;
 
 errorThread:
 	proc_killThread(nt);
@@ -511,15 +507,15 @@ errorShm:
 	shm_remProc(p->pid);
 errorRegs:
 	proc_doRemoveRegions(p,true);
-errorAdd:
+errorVFS:
 	groups_leave(p->pid);
+	vfs_removeProcess(p->pid);
+errorAdd:
 	proc_remove(p);
 errorCmd:
 	cache_free((void*)p->command);
 errorPdir:
 	paging_destroyPDir(&p->pagedir);
-errorVFS:
-	vfs_removeProcess(newPid);
 errorProc:
 	cache_free(p);
 errorCur:
@@ -995,15 +991,25 @@ static void proc_killThread(sThread *t) {
 	}
 }
 
+static pid_t proc_getFreePid(void) {
+	size_t count = 0;
+	while(count < MAX_PROC_COUNT) {
+		/* 0 is always present */
+		if(nextPid >= MAX_PROC_COUNT)
+			nextPid = 1;
+		if(pidToProc[nextPid++] == NULL)
+			return nextPid - 1;
+		count++;
+	}
+	return INVALID_PID;
+}
+
 static bool proc_add(sProc *p) {
-	bool res = false;
-	klock_aquire(&lock);
 	if(sll_append(procs,p)) {
 		pidToProc[p->pid] = p;
-		res = true;
+		return true;
 	}
-	klock_release(&lock);
-	return res;
+	return false;
 }
 
 static void proc_remove(sProc *p) {

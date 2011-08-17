@@ -158,7 +158,7 @@ size_t boot_getUsableMemCount(void) {
 int boot_loadModules(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	size_t i;
-	pid_t pid;
+	pid_t child;
 
 	/* it's not good to do this twice.. */
 	if(bootState == bootFinished)
@@ -172,11 +172,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	else if((bootState % 2) == 1) {
 		i = (bootState / 2) + 1;
 		/* clone proc */
-		pid = proc_getFreePid();
-		if(pid == INVALID_PID)
-			util_panic("No free process-slots");
-
-		if(proc_clone(pid,0)) {
+		if((child = proc_clone(0)) == 0) {
 			int res,argc;
 			/* parse args */
 			const char **argv = boot_parseArgs(progs[i].command,&argc);
@@ -189,6 +185,8 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			/* we don't want to continue ;) */
 			return 0;
 		}
+		else if(child < 0)
+			util_panic("Unable to clone process for boot-program %s: %d\n",progs[i].comman,child);
 
 		bootState++;
 	}

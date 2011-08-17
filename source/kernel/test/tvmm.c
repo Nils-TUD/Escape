@@ -79,8 +79,8 @@ static void test_1(void) {
 	vmm_remove(pid,rno3);
 	checkMemoryAfter(true);
 
-	cpid = proc_getFreePid();
-	test_assertInt(proc_clone(cpid,0),0);
+	cpid = proc_clone(0);
+	test_assertTrue(cpid > 0);
 	clone = proc_getByPid(cpid);
 
 	checkMemoryBefore(true);

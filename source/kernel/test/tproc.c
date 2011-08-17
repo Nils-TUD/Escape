@@ -52,13 +52,14 @@ static void test_proc(void) {
 	/* test process clone & destroy */
 	test_init("Cloning and destroying processes");
 	for(x = 0; x < 5; x++) {
-		pid_t newPid = proc_getFreePid();
-		tprintf("Cloning process to pid=%d\n",newPid);
-		test_assertTrue(proc_clone(newPid,0) >= 0);
-		tprintf("Destroying process\n",newPid);
+		pid_t pid;
+		tprintf("Cloning process\n");
+		pid = proc_clone(0);
+		test_assertTrue(pid > 0);
+		tprintf("Destroying process\n");
 		/* both are necessary */
-		proc_terminate(newPid,0,0);
-		proc_kill(newPid);
+		proc_terminate(pid,0,0);
+		proc_kill(pid);
 	}
 	checkMemoryAfter(false);
 	test_caseSucceeded();

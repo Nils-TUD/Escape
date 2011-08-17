@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/swapmap.h>
+#include <sys/mem/paging.h>
 #include <sys/boot.h>
 #include <sys/video.h>
 
@@ -54,6 +55,10 @@ void apstart(void);
 void bspstart(sBootInfo *bootinfo) {
 	/* init the kernel */
 	boot_init(bootinfo,false);
+	/* TODO find a better solution */
+#ifdef __i386__
+	paging_gdtFinished();
+#endif
 
 	/* start tests */
 	/* swapmap (needed for swapmap tests) */

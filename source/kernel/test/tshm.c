@@ -61,10 +61,10 @@ static void test_2(void) {
 	vmreg_t reg1,reg2;
 	test_caseStart("Testing shm_join() & shm_leave() & shm_remProc()");
 
-	pid1 = proc_getFreePid();
-	test_assertInt(proc_clone(pid1,0),0);
-	pid2 = proc_getFreePid();
-	test_assertInt(proc_clone(pid2,0),0);
+	pid1 = proc_clone(0);
+	test_assertTrue(pid1 > 0);
+	pid2 = proc_clone(0);
+	test_assertTrue(pid2 > 0);
 
 	/* create dummy-regions to force vmm to extend the regions-array. this way we can check
 	 * whether all memory is freed correctly */

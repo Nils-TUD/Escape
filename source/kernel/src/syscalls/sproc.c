@@ -150,24 +150,11 @@ int sysc_isingroup(sIntrptStackFrame *stack) {
 }
 
 int sysc_fork(sIntrptStackFrame *stack) {
-	/* TODO that doesn't work */
-	pid_t newPid = proc_getFreePid();
-	int res;
-
-	/* no free slot? */
-	if(newPid == INVALID_PID)
-		SYSC_ERROR(stack,ERR_NO_FREE_PROCS);
-
-	res = proc_clone(newPid,0);
-
+	int res = proc_clone(0);
 	/* error? */
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	/* child? */
-	if(res == 1)
-		SYSC_RET1(stack,0);
-	/* parent */
-	SYSC_RET1(stack,newPid);
+	SYSC_RET1(stack,res);
 }
 
 int sysc_waitChild(sIntrptStackFrame *stack) {

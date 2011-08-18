@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/task/ioports.h>
+#include <sys/arch/i586/ports.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
@@ -29,7 +30,6 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
-#include <sys/util.h>
 #include <sys/video.h>
 #include <sys/klock.h>
 #include <string.h>
@@ -290,26 +290,26 @@ void vm86_handleGPF(sIntrptStackFrame *stack) {
 		case X86OP_OUTW:
 			DBGVM86("[VM86] outw (0x%x -> 0x%x)\n",stack->eax,stack->edx);
 			if(data32)
-				util_outDWord(stack->edx,stack->eax);
+				ports_outDWord(stack->edx,stack->eax);
 			else
-				util_outWord(stack->edx,stack->eax);
+				ports_outWord(stack->edx,stack->eax);
 			stack->eip++;
 			break;
 		case X86OP_OUTB:
 			DBGVM86("[VM86] outb (0x%x -> 0x%x)\n",stack->eax,stack->edx);
-			util_outByte(stack->edx,stack->eax);
+			ports_outByte(stack->edx,stack->eax);
 			stack->eip++;
 			break;
 		case X86OP_INW:
 			if(data32)
-				stack->eax = util_inDWord(stack->edx);
+				stack->eax = ports_inDWord(stack->edx);
 			else
-				stack->eax = util_inWord(stack->edx);
+				stack->eax = ports_inWord(stack->edx);
 			DBGVM86("[VM86] inw (0x%x <- 0x%x)\n",stack->eax,stack->edx);
 			stack->eip++;
 			break;
 		case X86OP_INB:
-			stack->eax = (stack->eax & 0xFF00) + util_inByte(stack->edx);
+			stack->eax = (stack->eax & 0xFF00) + ports_inByte(stack->edx);
 			DBGVM86("[VM86] inb (0x%x <- 0x%x)\n",stack->eax,stack->edx);
 			stack->eip++;
 			break;

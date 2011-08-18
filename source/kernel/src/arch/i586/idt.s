@@ -17,26 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_UTIL_H_
-#define I586_UTIL_H_
+.global idt_load
 
-#include <esc/common.h>
-
-/**
- * @return the address of the stack-frame-start
- */
-extern uintptr_t util_getStackFrameStart(void);
-
-/**
- * Starts the timer
- */
-void util_startTimer(void);
-
-/**
- * Stops the timer and displays "<prefix>: <instructions>"
- *
- * @param prefix the prefix to display
- */
-void util_stopTimer(const char *prefix,...);
-
-#endif /* I586_UTIL_H_ */
+# void idt_load(tIDTPtr *idt);
+idt_load:
+	mov		4(%esp),%eax			# load idt-address
+	lidt	(%eax)					# load idt
+	ret

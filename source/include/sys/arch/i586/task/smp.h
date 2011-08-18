@@ -22,6 +22,6 @@
 
 #include <sys/common.h>
 
-#define TRAMPOLINE_ADDR		0x7000
+void smp_apIsRunning(void);
 
 #endif /* I586_SMP_H_ */

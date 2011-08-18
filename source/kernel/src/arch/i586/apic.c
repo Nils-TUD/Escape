@@ -31,6 +31,7 @@
 #define APIC_REG_SPURINT		0xF0
 #define APIC_REG_ICR_LOW		0x300
 #define APIC_REG_ICR_HIGH		0x310
+#define APIC_REG_TASK_PRIO		0x80
 
 #define SPURINT_APIC_EN			(1 << 8)
 
@@ -80,7 +81,7 @@ void apic_init(void) {
 
 cpuid_t apic_getId(void) {
 	if(enabled)
-		return apic_read(APIC_REG_APICID);
+		return apic_read(APIC_REG_APICID) >> 24;
 	return 0;
 }
 
@@ -89,6 +90,8 @@ bool apic_isAvailable(void) {
 }
 
 void apic_enable(void) {
+	/* accept all interrupts */
+    apic_write(APIC_REG_TASK_PRIO,0);
 	apic_write(APIC_REG_SPURINT,SPURINT_APIC_EN);
 }
 

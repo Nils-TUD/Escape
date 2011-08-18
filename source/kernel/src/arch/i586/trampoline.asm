@@ -56,7 +56,7 @@ protMode:
 ; our GDT for the setup-process
 gdt:
 	; GDT size
-	dw		gdtEntries - gdtEntriesEnd - 1
+	dw		gdtEntriesEnd - gdtEntries - 1
 	; Pointer to entries
 	dd		gdtEntries
 

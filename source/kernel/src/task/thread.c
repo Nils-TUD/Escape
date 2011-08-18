@@ -185,7 +185,10 @@ sThread *thread_popIdle(void) {
 }
 
 void thread_switch(void) {
-	thread_switchTo(sched_perform()->tid);
+	sThread *t = thread_getRunning();
+	if(t->state == ST_RUNNING)
+		sched_setReady(t);
+	thread_switchTo(sched_perform(t)->tid);
 }
 
 void thread_switchNoSigs(void) {

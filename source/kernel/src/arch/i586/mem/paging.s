@@ -17,26 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_UTIL_H_
-#define I586_UTIL_H_
+.global paging_enable
+.global paging_flushTLB
+.global paging_exchangePDir
 
-#include <esc/common.h>
+# void paging_enable(void);
+paging_enable:
+	mov		%cr0,%eax
+	or		$1 << 31,%eax			# set bit for paging-enabled
+	mov		%eax,%cr0				# now paging is enabled :)
+	ret
 
-/**
- * @return the address of the stack-frame-start
- */
-extern uintptr_t util_getStackFrameStart(void);
+# void paging_flushTLB(void);
+paging_flushTLB:
+	mov		%cr3,%eax
+	mov		%eax,%cr3
+	ret
 
-/**
- * Starts the timer
- */
-void util_startTimer(void);
-
-/**
- * Stops the timer and displays "<prefix>: <instructions>"
- *
- * @param prefix the prefix to display
- */
-void util_stopTimer(const char *prefix,...);
-
-#endif /* I586_UTIL_H_ */
+# void paging_exchangePDir(uintptr_t physAddr);
+paging_exchangePDir:
+	mov		4(%esp),%eax			# load page-dir-address
+	mov		%eax,%cr3				# set page-dir
+	ret

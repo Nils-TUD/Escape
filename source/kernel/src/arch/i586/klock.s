@@ -17,26 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_UTIL_H_
-#define I586_UTIL_H_
+.global klock_aquire
+.global klock_release
 
-#include <esc/common.h>
+# void klock_aquire(klock_t *l)
+klock_aquire:
+	mov		4(%esp),%edx
+	mov		$1,%ecx
+1:
+	xor		%eax,%eax
+	lock
+	cmpxchg %ecx,(%edx)
+	jnz		1b
+	ret
 
-/**
- * @return the address of the stack-frame-start
- */
-extern uintptr_t util_getStackFrameStart(void);
-
-/**
- * Starts the timer
- */
-void util_startTimer(void);
-
-/**
- * Stops the timer and displays "<prefix>: <instructions>"
- *
- * @param prefix the prefix to display
- */
-void util_stopTimer(const char *prefix,...);
-
-#endif /* I586_UTIL_H_ */
+# void klock_release(klock_t *l)
+klock_release:
+	mov		4(%esp),%eax
+	movl	$0,(%eax)
+	ret

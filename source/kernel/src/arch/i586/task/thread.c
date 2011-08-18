@@ -36,7 +36,6 @@
 extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
 extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea);
-static void thread_doSwitch(sThread *cur,sThread *old);
 
 static bool threadSet = false;
 
@@ -145,44 +144,48 @@ void thread_setRunning(sThread *t) {
 }
 
 void thread_initialSwitch(void) {
-	/* TODO */
-	/*sThread *cur = sched_perform();
-	thread_doSwitch(cur,NULL);*/
+	sThread *cur = sched_perform(NULL);
+	cur->stats.schedCount++;
+	if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
+		vmm_setTimestamp(cur,timer_getTimestamp());
+	sched_setRunning(cur);
+	cur->cpu = gdt_prepareRun(NULL,cur);
+	fpu_lockFPU();
+	thread_resume(cur->proc->pagedir.own,&cur->save);
 }
 
 void thread_switchTo(tid_t tid) {
 	sThread *cur = thread_getRunning();
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {
+		sThread *old;
+		sThread *t = thread_getById(tid);
 		uint64_t kcstart = cur->stats.kcycleStart;
 		if(kcstart > 0) {
 			uint64_t cycles = cpu_rdtsc();
 			cur->stats.kcycleCount.val64 += cycles - kcstart;
 		}
 
-		if(!thread_save(&cur->save)) {
-			sThread *old;
-			sThread *t = thread_getById(tid);
-			vassert(t != NULL,"Thread with tid %d not found",tid);
+		/* mark old process ready, if it should not be blocked, killed or something */
+		if(cur->state == ST_RUNNING)
+			sched_setReady(cur);
+		if(cur->flags & T_IDLE)
+			thread_pushIdle(cur);
 
-			/* mark old process ready, if it should not be blocked, killed or something */
-			if(cur->state == ST_RUNNING)
-				sched_setReady(cur);
-			if(cur->flags & T_IDLE)
-				thread_pushIdle(cur);
+		old = cur;
+		cur = t;
 
-			old = cur;
-			cur = t;
-
-			/* set used */
-			cur->stats.schedCount++;
-			if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-				vmm_setTimestamp(cur,timer_getTimestamp());
-			sched_setRunning(cur);
-			cur->cpu = gdt_prepareRun(old,cur);
-			/* lock the FPU so that we can save the FPU-state for the previous process as soon
-			 * as this one wants to use the FPU */
-			fpu_lockFPU();
+		/* set used */
+		cur->stats.schedCount++;
+		if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
+			vmm_setTimestamp(cur,timer_getTimestamp());
+		sched_setRunning(cur);
+		cur->cpu = gdt_prepareRun(old,cur);
+		/* lock the FPU so that we can save the FPU-state for the previous process as soon
+		 * as this one wants to use the FPU */
+		fpu_lockFPU();
+		if(!thread_save(&old->save)) {
+			/* old thread */
 			thread_resume(cur->proc->pagedir.own,&cur->save);
 		}
 
@@ -193,11 +196,6 @@ void thread_switchTo(tid_t tid) {
 
 	proc_killDeadThread();
 }
-
-static void thread_doSwitch(sThread *cur,sThread *old) {
-
-}
-
 
 #if DEBUGGING
 

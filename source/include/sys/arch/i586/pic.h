@@ -17,26 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_UTIL_H_
-#define I586_UTIL_H_
+#ifndef PIC_H_
+#define PIC_H_
 
-#include <esc/common.h>
-
-/**
- * @return the address of the stack-frame-start
- */
-extern uintptr_t util_getStackFrameStart(void);
+#include <sys/common.h>
 
 /**
- * Starts the timer
+ * Inits the PIC
  */
-void util_startTimer(void);
+void pic_init(void);
 
 /**
- * Stops the timer and displays "<prefix>: <instructions>"
- *
- * @param prefix the prefix to display
+ * Sends an EOI for the given interrupt-number
  */
-void util_stopTimer(const char *prefix,...);
+void pic_eoi(uint32_t intrptNo);
 
-#endif /* I586_UTIL_H_ */
+#endif /* PIC_H_ */

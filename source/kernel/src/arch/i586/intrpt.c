@@ -18,101 +18,31 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/fpu.h>
-#include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/task/ioports.h>
-#include <sys/mem/paging.h>
-#include <sys/mem/kheap.h>
-#include <sys/mem/swap.h>
-#include <sys/mem/vmm.h>
-#include <sys/mem/cache.h>
-#include <sys/task/signals.h>
-#include <sys/task/proc.h>
-#include <sys/task/elf.h>
-#include <sys/task/sched.h>
-#include <sys/task/timer.h>
-#include <sys/task/uenv.h>
-#include <sys/task/smp.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/real.h>
+#include <sys/arch/i586/pic.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
+#include <sys/mem/cache.h>
+#include <sys/mem/swap.h>
+#include <sys/mem/vmm.h>
+#include <sys/task/signals.h>
+#include <sys/task/smp.h>
+#include <sys/task/thread.h>
+#include <sys/task/uenv.h>
+#include <sys/task/timer.h>
+#include <sys/syscalls.h>
 #include <sys/cpu.h>
 #include <sys/intrpt.h>
 #include <sys/util.h>
-#include <sys/syscalls.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
 #include <esc/keycodes.h>
 #include <esc/syscalls.h>
-#include <assert.h>
-#include <string.h>
-#include <errors.h>
 
 #define DEBUG_PAGEFAULTS		0
 
-#define IDT_COUNT				256
-/* the privilege level */
-#define IDT_DPL_KERNEL			0
-#define IDT_DPL_USER			3
-/* reserved by intel */
-#define IDT_INTEL_RES1			2
-#define IDT_INTEL_RES2			15
-/* the code-selector */
-#define IDT_CODE_SEL			0x8
-
-/* I/O ports for PICs */
-#define PIC_MASTER				0x20				/* base-port for master PIC */
-#define PIC_SLAVE				0xA0				/* base-port for slave PIC */
-#define PIC_MASTER_CMD			PIC_MASTER			/* command-port for master PIC */
-#define PIC_MASTER_DATA			(PIC_MASTER + 1)	/* data-port for master PIC */
-#define PIC_SLAVE_CMD			PIC_SLAVE			/* command-port for slave PIC */
-#define PIC_SLAVE_DATA			(PIC_SLAVE + 1)		/* data-port for slave PIC */
-
-#define PIC_EOI					0x20				/* end of interrupt */
-
-/* flags in Initialization Command Word 1 (ICW1) */
-#define ICW1_NEED_ICW4			0x01				/* ICW4 needed */
-#define ICW1_SINGLE				0x02				/* Single (not cascade) mode */
-#define ICW1_INTERVAL4			0x04				/* Call address interval 4 (instead of 8) */
-#define ICW1_LEVEL				0x08				/* Level triggered (not edge) mode */
-#define ICW1_INIT				0x10				/* Initialization - required! */
-
-/* flags in Initialization Command Word 4 (ICW4) */
-#define ICW4_8086				0x01				/* 8086/88 (instead of MCS-80/85) mode */
-#define ICW4_AUTO				0x02				/* Auto (instead of normal) EOI */
-#define ICW4_BUF_SLAVE			0x08				/* Buffered mode/slave */
-#define ICW4_BUF_MASTER			0x0C				/* Buffered mode/master */
-#define ICW4_SFNM				0x10				/* Special fully nested */
-
 /* maximum number of a exception in a row */
 #define MAX_EX_COUNT			10
-
-/* the maximum length of messages (for interrupt-listeners) */
-#define MSG_MAX_LEN				8
-
-/* represents an IDT-entry */
-typedef struct {
-	/* The address[0..15] of the ISR */
-	uint16_t offsetLow;
-	/* Code selector that the ISR will use */
-	uint16_t selector;
-	/* these bits are fix: 0.1110.0000.0000b */
-	uint16_t fix		: 13,
-	/* the privilege level, 00 = ring0, 01 = ring1, 10 = ring2, 11 = ring3 */
-	dpl			: 2,
-	/* If Present is not set to 1, an exception will occur */
-	present		: 1;
-	/* The address[16..31] of the ISR */
-	uint16_t	offsetHigh;
-} A_PACKED sIDTEntry;
-
-/* represents an IDT-pointer */
-typedef struct {
-	uint16_t size;
-	uint32_t address;
-} A_PACKED sIDTPtr;
 
 typedef void (*fIntrptHandler)(sIntrptStackFrame *stack);
 typedef struct {
@@ -120,90 +50,6 @@ typedef struct {
 	const char *name;
 	sig_t signal;
 } sInterrupt;
-
-/* isr prototype */
-typedef void (*fISR)(void);
-
-/**
- * Assembler routine to load an IDT
- */
-extern void intrpt_loadidt(sIDTPtr *idt);
-
-/**
- * Our ISRs
- */
-extern void isr0(void);
-extern void isr1(void);
-extern void isr2(void);
-extern void isr3(void);
-extern void isr4(void);
-extern void isr5(void);
-extern void isr6(void);
-extern void isr7(void);
-extern void isr8(void);
-extern void isr9(void);
-extern void isr10(void);
-extern void isr11(void);
-extern void isr12(void);
-extern void isr13(void);
-extern void isr14(void);
-extern void isr15(void);
-extern void isr16(void);
-extern void isr17(void);
-extern void isr18(void);
-extern void isr19(void);
-extern void isr20(void);
-extern void isr21(void);
-extern void isr22(void);
-extern void isr23(void);
-extern void isr24(void);
-extern void isr25(void);
-extern void isr26(void);
-extern void isr27(void);
-extern void isr28(void);
-extern void isr29(void);
-extern void isr30(void);
-extern void isr31(void);
-extern void isr32(void);
-extern void isr33(void);
-extern void isr34(void);
-extern void isr35(void);
-extern void isr36(void);
-extern void isr37(void);
-extern void isr38(void);
-extern void isr39(void);
-extern void isr40(void);
-extern void isr41(void);
-extern void isr42(void);
-extern void isr43(void);
-extern void isr44(void);
-extern void isr45(void);
-extern void isr46(void);
-extern void isr47(void);
-extern void isr48(void);
-/* the handler for a other interrupts */
-extern void isrNull(void);
-
-/**
- * Inits the programmable interrupt controller
- */
-static void intrpt_initPic(void);
-
-/**
- * Sets the IDT-entry for the given interrupt
- *
- * @param number the interrupt-number
- * @param handler the ISR
- * @param dpl the privilege-level
- */
-static void intrpt_setIDT(size_t number,fISR handler,uint8_t dpl);
-
-/**
- * Sends EOI to the PIC, if necessary
- *
- * @param intrptNo the interrupt-number
- */
-static void intrpt_eoi(uint32_t intrptNo);
 
 /**
  * The exception and interrupt-handlers
@@ -281,87 +127,10 @@ static uintptr_t lastPFAddr = ~(uintptr_t)0;
 static pid_t lastPFProc = INVALID_PID;
 #endif
 
-/* the interrupt descriptor table */
-static sIDTEntry idt[IDT_COUNT];
-
 void intrpt_init(void) {
-	size_t i;
-
 	pfAddrs = cache_alloc(smp_getCPUCount() * sizeof(uintptr_t));
 	if(pfAddrs == NULL)
 		util_panic("Unable to alloc memory for pagefault-addresses");
-
-	/* setup the idt-pointer */
-	sIDTPtr idtPtr;
-	idtPtr.address = (uintptr_t)idt;
-	idtPtr.size = sizeof(idt) - 1;
-
-	/* setup the idt */
-
-	/* exceptions */
-	intrpt_setIDT(0,isr0,IDT_DPL_KERNEL);
-	intrpt_setIDT(1,isr1,IDT_DPL_KERNEL);
-	intrpt_setIDT(2,isr2,IDT_DPL_KERNEL);
-	intrpt_setIDT(3,isr3,IDT_DPL_KERNEL);
-	intrpt_setIDT(4,isr4,IDT_DPL_KERNEL);
-	intrpt_setIDT(5,isr5,IDT_DPL_KERNEL);
-	intrpt_setIDT(6,isr6,IDT_DPL_KERNEL);
-	intrpt_setIDT(7,isr7,IDT_DPL_KERNEL);
-	intrpt_setIDT(8,isr8,IDT_DPL_KERNEL);
-	intrpt_setIDT(9,isr9,IDT_DPL_KERNEL);
-	intrpt_setIDT(10,isr10,IDT_DPL_KERNEL);
-	intrpt_setIDT(11,isr11,IDT_DPL_KERNEL);
-	intrpt_setIDT(12,isr12,IDT_DPL_KERNEL);
-	intrpt_setIDT(13,isr13,IDT_DPL_KERNEL);
-	intrpt_setIDT(14,isr14,IDT_DPL_KERNEL);
-	intrpt_setIDT(15,isr15,IDT_DPL_KERNEL);
-	intrpt_setIDT(16,isr16,IDT_DPL_KERNEL);
-	intrpt_setIDT(17,isr17,IDT_DPL_KERNEL);
-	intrpt_setIDT(18,isr18,IDT_DPL_KERNEL);
-	intrpt_setIDT(19,isr19,IDT_DPL_KERNEL);
-	intrpt_setIDT(20,isr20,IDT_DPL_KERNEL);
-	intrpt_setIDT(21,isr21,IDT_DPL_KERNEL);
-	intrpt_setIDT(22,isr22,IDT_DPL_KERNEL);
-	intrpt_setIDT(23,isr23,IDT_DPL_KERNEL);
-	intrpt_setIDT(24,isr24,IDT_DPL_KERNEL);
-	intrpt_setIDT(25,isr25,IDT_DPL_KERNEL);
-	intrpt_setIDT(26,isr26,IDT_DPL_KERNEL);
-	intrpt_setIDT(27,isr27,IDT_DPL_KERNEL);
-	intrpt_setIDT(28,isr28,IDT_DPL_KERNEL);
-	intrpt_setIDT(29,isr29,IDT_DPL_KERNEL);
-	intrpt_setIDT(30,isr30,IDT_DPL_KERNEL);
-	intrpt_setIDT(31,isr31,IDT_DPL_KERNEL);
-	intrpt_setIDT(32,isr32,IDT_DPL_KERNEL);
-
-	/* hardware-interrupts */
-	intrpt_setIDT(33,isr33,IDT_DPL_KERNEL);
-	intrpt_setIDT(34,isr34,IDT_DPL_KERNEL);
-	intrpt_setIDT(35,isr35,IDT_DPL_KERNEL);
-	intrpt_setIDT(36,isr36,IDT_DPL_KERNEL);
-	intrpt_setIDT(37,isr37,IDT_DPL_KERNEL);
-	intrpt_setIDT(38,isr38,IDT_DPL_KERNEL);
-	intrpt_setIDT(39,isr39,IDT_DPL_KERNEL);
-	intrpt_setIDT(40,isr40,IDT_DPL_KERNEL);
-	intrpt_setIDT(41,isr41,IDT_DPL_KERNEL);
-	intrpt_setIDT(42,isr42,IDT_DPL_KERNEL);
-	intrpt_setIDT(43,isr43,IDT_DPL_KERNEL);
-	intrpt_setIDT(44,isr44,IDT_DPL_KERNEL);
-	intrpt_setIDT(45,isr45,IDT_DPL_KERNEL);
-	intrpt_setIDT(46,isr46,IDT_DPL_KERNEL);
-	intrpt_setIDT(47,isr47,IDT_DPL_KERNEL);
-
-	/* syscall */
-	intrpt_setIDT(48,isr48,IDT_DPL_USER);
-
-	/* all other interrupts */
-	for(i = 49; i < 256; i++)
-		intrpt_setIDT(i,isrNull,IDT_DPL_KERNEL);
-
-	/* now we can use our idt */
-	intrpt_loadidt(&idtPtr);
-
-	/* now init the PIC */
-	intrpt_initPic();
 }
 
 size_t intrpt_getCount(void) {
@@ -492,7 +261,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack) {
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
-	intrpt_eoi(stack->intrptNo);
+	pic_eoi(stack->intrptNo);
 	timer_intrpt();
 }
 
@@ -500,7 +269,7 @@ static void intrpt_irqDefault(sIntrptStackFrame *stack) {
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
-	intrpt_eoi(stack->intrptNo);
+	pic_eoi(stack->intrptNo);
 #if DEBUGGING
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
 	/* (with a present keyboard-driver we would steal him the scancodes) */
@@ -542,48 +311,6 @@ static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t addr) {
 			(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
 			(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
 			(stack->errorCode & 0x16) ? "instruction-fetch" : "");
-}
-
-static void intrpt_initPic(void) {
-	/* starts the initialization. we want to send a ICW4 */
-	util_outByte(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	util_outByte(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	/* remap the irqs to 0x20 and 0x28 */
-	util_outByte(PIC_MASTER_DATA,IRQ_MASTER_BASE);
-	util_outByte(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
-	/* continue */
-	util_outByte(PIC_MASTER_DATA,4);
-	util_outByte(PIC_SLAVE_DATA,2);
-
-	/* we want to use 8086 mode */
-	util_outByte(PIC_MASTER_DATA,ICW4_8086);
-	util_outByte(PIC_SLAVE_DATA,ICW4_8086);
-
-	/* enable all interrupts (set masks to 0) */
-	util_outByte(PIC_MASTER_DATA,0x00);
-	util_outByte(PIC_SLAVE_DATA,0x00);
-}
-
-static void intrpt_setIDT(size_t number,fISR handler,uint8_t dpl) {
-	idt[number].fix = 0xE00;
-	idt[number].dpl = dpl;
-	idt[number].present = number != IDT_INTEL_RES1 && number != IDT_INTEL_RES2;
-	idt[number].selector = IDT_CODE_SEL;
-	idt[number].offsetHigh = ((uintptr_t)handler >> 16) & 0xFFFF;
-	idt[number].offsetLow = (uintptr_t)handler & 0xFFFF;
-}
-
-static void intrpt_eoi(uint32_t intrptNo) {
-	/* do we have to send EOI? */
-	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
-	    if(intrptNo >= IRQ_SLAVE_BASE) {
-	    	/* notify the slave */
-	        util_outByte(PIC_SLAVE_CMD,PIC_EOI);
-	    }
-
-	    /* notify the master */
-	    util_outByte(PIC_MASTER_CMD,PIC_EOI);
-    }
 }
 
 #if DEBUGGING

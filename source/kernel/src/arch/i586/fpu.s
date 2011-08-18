@@ -17,26 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_UTIL_H_
-#define I586_UTIL_H_
+.global fpu_finit
+.global fpu_saveState
+.global fpu_restoreState
 
-#include <esc/common.h>
+# void fpu_finit(void);
+fpu_finit:
+	finit
+	ret
 
-/**
- * @return the address of the stack-frame-start
- */
-extern uintptr_t util_getStackFrameStart(void);
+# void fpu_saveState(sFPUState *state);
+fpu_saveState:
+	mov			4(%esp),%eax
+	fsave		(%eax)
+	ret
 
-/**
- * Starts the timer
- */
-void util_startTimer(void);
-
-/**
- * Stops the timer and displays "<prefix>: <instructions>"
- *
- * @param prefix the prefix to display
- */
-void util_stopTimer(const char *prefix,...);
-
-#endif /* I586_UTIL_H_ */
+# void fpu_restoreState(sFPUState *state);
+fpu_restoreState:
+	mov			4(%esp),%eax
+	frstor	(%eax)
+	ret

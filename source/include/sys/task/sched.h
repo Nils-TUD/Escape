@@ -35,9 +35,10 @@ void sched_init(void);
 /**
  * Performs the scheduling. That means it picks the next thread to run and returns it
  *
+ * @param old the current thread
  * @return the thread to run
  */
-sThread *sched_perform(void);
+sThread *sched_perform(sThread *old);
 
 /**
  * Chooses the given thread for running (removes it from a list, if necessary, and changes the state)

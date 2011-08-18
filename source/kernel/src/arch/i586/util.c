@@ -147,7 +147,7 @@ sFuncCall *util_getUserStackTrace(void) {
 
 sFuncCall *util_getKernelStackTrace(void) {
 	uintptr_t start,end;
-	uint32_t* ebp = (uint32_t*)getStackFrameStart();
+	uint32_t* ebp = (uint32_t*)util_getStackFrameStart();
 	sThread *t = thread_getRunning();
 
 	/* determine the stack-bounds; we have a temp stack at the beginning */

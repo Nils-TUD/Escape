@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
+#include <sys/arch/i586/ports.h>
 #include <sys/task/timer.h>
-#include <sys/util.h>
 
 #define TIMER_BASE_FREQUENCY	1193182
 #define IOPORT_TIMER_CTRL		0x43
@@ -46,8 +46,8 @@
 void timer_arch_init(void) {
 	/* change timer divisor */
 	uint freq = TIMER_BASE_FREQUENCY / TIMER_FREQUENCY;
-	util_outByte(IOPORT_TIMER_CTRL,TIMER_CTRL_CNT0 | TIMER_CTRL_RWLOHI |
+	ports_outByte(IOPORT_TIMER_CTRL,TIMER_CTRL_CNT0 | TIMER_CTRL_RWLOHI |
 			TIMER_CTRL_MODE2 | TIMER_CTRL_CNTBIN16);
-	util_outByte(IOPORT_TIMER_CNTDIV,freq & 0xFF);
-	util_outByte(IOPORT_TIMER_CNTDIV,freq >> 8);
+	ports_outByte(IOPORT_TIMER_CNTDIV,freq & 0xFF);
+	ports_outByte(IOPORT_TIMER_CNTDIV,freq >> 8);
 }

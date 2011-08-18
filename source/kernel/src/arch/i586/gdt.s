@@ -17,26 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_UTIL_H_
-#define I586_UTIL_H_
+.global tss_load
+.global gdt_flush
+.global gdt_get
 
-#include <esc/common.h>
+# void tss_load(size_t gdtOffset);
+tss_load:
+	ltr		4(%esp)					# load tss
+	ret
 
-/**
- * @return the address of the stack-frame-start
- */
-extern uintptr_t util_getStackFrameStart(void);
+# void gdt_flush(tGDTTable *gdt);
+gdt_flush:
+	mov		4(%esp),%eax			# load gdt-pointer into eax
+	lgdt	(%eax)					# load gdt
 
-/**
- * Starts the timer
- */
-void util_startTimer(void);
+	mov		$0x10,%eax				# set the value for the segment-registers
+	mov		%eax,%ds				# reload segments
+	mov		%eax,%es
+	mov		%eax,%fs
+	mov		%eax,%gs
+	mov		%eax,%ss
+	ljmp	$0x08,$2f				# reload code-segment via far-jump
+2:
+	ret								# we're done
 
-/**
- * Stops the timer and displays "<prefix>: <instructions>"
- *
- * @param prefix the prefix to display
- */
-void util_stopTimer(const char *prefix,...);
-
-#endif /* I586_UTIL_H_ */
+# void gdt_get(sGDTTable *gdt);
+gdt_get:
+	mov		4(%esp),%eax
+	sgdt	(%eax)
+	ret

@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/serial.h>
-#include <sys/util.h>
+#include <sys/arch/i586/ports.h>
 #include <sys/klock.h>
 #include <assert.h>
 
@@ -44,20 +44,20 @@ void ser_out(uint16_t port,uint8_t byte) {
 	ioport = ports[port];
 	klock_aquire(&lock);
 	while(ser_isTransmitEmpty(ioport) == 0);
-	util_outByte(ioport,byte);
+	ports_outByte(ioport,byte);
 	klock_release(&lock);
 }
 
 static int ser_isTransmitEmpty(uint16_t port) {
-	return util_inByte(port + 5) & 0x20;
+	return ports_inByte(port + 5) & 0x20;
 }
 
 static void ser_initPort(uint16_t port) {
-	util_outByte(port + 1, 0x00);	/* Disable all interrupts */
-	util_outByte(port + 3, 0x80);	/* Enable DLAB (set baud rate divisor) */
-	util_outByte(port + 0, 0x03);	/* Set divisor to 3 (lo byte) 38400 baud */
-	util_outByte(port + 1, 0x00);	/*                  (hi byte) */
-	util_outByte(port + 3, 0x03);	/* 8 bits, no parity, one stop bit */
-	util_outByte(port + 2, 0xC7);	/* Enable FIFO, clear them, with 14-byte threshold */
-	util_outByte(port + 4, 0x0B);	/* IRQs enabled, RTS/DSR set */
+	ports_outByte(port + 1, 0x00);	/* Disable all interrupts */
+	ports_outByte(port + 3, 0x80);	/* Enable DLAB (set baud rate divisor) */
+	ports_outByte(port + 0, 0x03);	/* Set divisor to 3 (lo byte) 38400 baud */
+	ports_outByte(port + 1, 0x00);	/*                  (hi byte) */
+	ports_outByte(port + 3, 0x03);	/* 8 bits, no parity, one stop bit */
+	ports_outByte(port + 2, 0xC7);	/* Enable FIFO, clear them, with 14-byte threshold */
+	ports_outByte(port + 4, 0x0B);	/* IRQs enabled, RTS/DSR set */
 }

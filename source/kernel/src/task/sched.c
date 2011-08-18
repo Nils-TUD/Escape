@@ -62,22 +62,15 @@ void sched_init(void) {
 	sched_qInit(&blockedQueue);
 }
 
-sThread *sched_perform(void) {
-	sThread *old = thread_getRunning();
-	sThread *t = old;
+sThread *sched_perform(sThread *old) {
+	sThread *t;
 	klock_aquire(&lock);
-	if(t->state == ST_RUNNING) {
-		/* put current in the ready-queue */
-		if(!(t->flags & T_IDLE) && sched_setReadyState(t))
-			sched_qAppend(&readyQueue,t);
-	}
-
 	/* get new thread */
 	t = sched_qDequeue(&readyQueue);
 	if(t == NULL) {
 		/* choose the idle-thread; don't do that if we're already the idle-thread.
 		 * in this case, just keep idling */
-		if(old->flags & T_IDLE)
+		if(old && old->flags & T_IDLE)
 			t = old;
 		else
 			t = thread_popIdle();

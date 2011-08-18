@@ -152,7 +152,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	size_t i;
 	inode_t nodeNo;
-	pid_t child;
+	int child;
 
 	/* it's not good to do this twice.. */
 	if(loadedMods)

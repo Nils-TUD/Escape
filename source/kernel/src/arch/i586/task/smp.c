@@ -28,6 +28,8 @@
 #include <sys/util.h>
 #include <string.h>
 
+#define TRAMPOLINE_ADDR		0x7000
+
 /* bios data area contains address of EBDA and the base memory size */
 #define BDA_EBDA			0x40E	/* TODO not always available? */
 #define BDA_MEMSIZE			0x413
@@ -134,9 +136,9 @@ void smp_start(void) {
 		apic_sendStartupIPI(dest);
 
 		/* wait until all APs are running */
-		/*total = smp_getCPUCount() - 1;
+		total = smp_getCPUCount() - 1;
 		while(seenAPs != total)
-			;*/
+			;
 	}
 
 	/* We needed the area 0x0 .. 0x00400000 because in the first phase the GDT was setup so that

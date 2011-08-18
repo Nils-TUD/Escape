@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
+#include <sys/arch/i586/ports.h>
 #include <sys/dbg/kb.h>
-#include <sys/util.h>
 #include <esc/keycodes.h>
 
 #define IOPORT_KB_DATA				0x60
@@ -167,11 +167,11 @@ static uint8_t set = 0;
 uint8_t kb_getKeyCode(uint8_t *flags) {
 	uint8_t scanCode,keycode;
 	sScanCodeEntry *e;
-	uint8_t status = util_inByte(IOPORT_KB_CTRL);
+	uint8_t status = ports_inByte(IOPORT_KB_CTRL);
 	if(!(status & STATUS_OUTBUF_FULL))
 		return VK_NOKEY;
 
-	scanCode = util_inByte(IOPORT_KB_DATA);
+	scanCode = ports_inByte(IOPORT_KB_DATA);
 	/* extended code-start? */
 	if(scanCode == 0xE0) {
 		set = 1;

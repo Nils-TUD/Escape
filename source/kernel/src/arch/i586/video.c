@@ -19,10 +19,11 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/serial.h>
+#include <sys/arch/i586/ports.h>
 #include <sys/dbg/kb.h>
 #include <sys/config.h>
-#include <sys/util.h>
 #include <sys/log.h>
+#include <sys/util.h>
 #include <sys/printf.h>
 #include <sys/video.h>
 #include <esc/esccodes.h>
@@ -165,8 +166,8 @@ static void vid_handleColorCode(const char **str) {
 }
 
 static void vid_removeBIOSCursor(void) {
-	util_outByte(0x3D4,14);
-	util_outByte(0x3D5,0x07);
-	util_outByte(0x3D4,15);
-	util_outByte(0x3D5,0xd0);
+	ports_outByte(0x3D4,14);
+	ports_outByte(0x3D5,0x07);
+	ports_outByte(0x3D4,15);
+	ports_outByte(0x3D5,0xd0);
 }

@@ -271,10 +271,18 @@ void gdt_init_bsp(void) {
 void gdt_init_ap(void) {
 	size_t i = 0;
 	sGDTDesc *apgdt;
-	sGDTTable *gdttbl = gdt_getFreeGDT();
-	sTSS *tss = gdt_getFreeTSS(&i);
+	sGDTTable *gdttbl;
+	sTSS *tss;
+	sGDTTable tmpTable;
+	/* use the GDT of the BSP temporary. this way, we can access the heap and build our own gdt */
+	tmpTable.offset = (uintptr_t)bspgdt;
+	tmpTable.size = GDT_ENTRY_COUNT * sizeof(sGDTDesc) - 1;
+	gdt_flush(&tmpTable);
 
-	/* create gdt (copy from first one) */
+	gdttbl = gdt_getFreeGDT();
+	tss = gdt_getFreeTSS(&i);
+
+	/* create GDT (copy from first one) */
 	apgdt = (sGDTDesc*)cache_alloc(GDT_ENTRY_COUNT * sizeof(sGDTDesc));
 	if(!apgdt)
 		util_panic("Unable to allocate GDT for AP");
@@ -282,9 +290,10 @@ void gdt_init_ap(void) {
 	gdttbl->size = GDT_ENTRY_COUNT * sizeof(sGDTDesc) - 1;
 	memcpy(apgdt,bspgdt,GDT_ENTRY_COUNT * sizeof(sGDTDesc));
 
-	/* create tss (copy from first one) */
+	/* create TSS (copy from first one) */
 	alltss[i] = tss;
-	paging_map((uintptr_t)tss,NULL,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	paging_map((uintptr_t)tss,NULL,BYTES_2_PAGES(sizeof(sTSS)),
+			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy(tss,&bsptss,sizeof(sTSS));
 	tss->esp0 = KERNEL_STACK_AREA + PT_ENTRY_COUNT * PAGE_SIZE - (1 + 5) * sizeof(int);
 	tss->ioMapOffset = IO_MAP_OFFSET_INVALID;
@@ -293,7 +302,7 @@ void gdt_init_ap(void) {
 	/* put tss in our gdt */
 	gdt_set_tss_desc(apgdt,6,(uintptr_t)tss,sizeof(sTSS) - 1);
 
-	/* now load GDT and TSS */
+	/* now load our GDT and TSS */
 	gdt_flush(gdttbl);
 	tss_load(6 * sizeof(sGDTDesc));
 }
@@ -394,7 +403,7 @@ static sTSS *gdt_getFreeTSS(size_t *index) {
 	for(i = 0; i < count; i++) {
 		if(alltss[i] == NULL) {
 			*index = i;
-			return (sTSS*)(TSS_AREA + i * PAGE_SIZE);
+			return (sTSS*)(TSS_AREA + i * BYTES_2_PAGES(sizeof(sTSS)) * PAGE_SIZE);
 		}
 	}
 	return NULL;

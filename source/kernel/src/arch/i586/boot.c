@@ -21,6 +21,8 @@
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/serial.h>
+#include <sys/arch/i586/idt.h>
+#include <sys/arch/i586/pic.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
@@ -157,9 +159,11 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 	shm_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	/* idt */
-	vid_printf("Initializing IDT...");
+	/* interrupt-handling */
+	vid_printf("Initializing interrupt-handling...");
 	intrpt_init();
+	pic_init();
+	idt_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* timer */
@@ -209,7 +213,7 @@ size_t boot_getUsableMemCount(void) {
 int boot_loadModules(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	size_t i;
-	pid_t child;
+	int child;
 	inode_t nodeNo;
 	sModule *mod = mb->modsAddr;
 

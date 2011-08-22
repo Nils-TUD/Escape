@@ -47,8 +47,9 @@ void uenv_handleSignal(sIntrptStackFrame *stack) {
 		else {
 			t = thread_getById(tid);
 			if(thread_setSignal(t,sig)) {
+				/* TODO prepending it would be better */
 				ev_unblock(t);
-				thread_switchTo(tid);
+				thread_switch();
 			}
 		}
 	}

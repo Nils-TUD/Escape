@@ -33,6 +33,7 @@
 #define TAB_WIDTH			4
 
 extern void logByte(char c);
+static void vid_putchar(char c);
 static void vid_move(void);
 static void vid_copyScrToScr(void *dst,const void *src,size_t rows);
 static void vid_copyScrToMem(void *dst,const void *src,size_t rows);
@@ -81,7 +82,25 @@ void vid_unsetPrintFunc(void) {
 	printFunc = vid_putchar;
 }
 
-void vid_putchar(char c) {
+void vid_printf(const char *fmt,...) {
+	va_list ap;
+	va_start(ap,fmt);
+	vid_vprintf(fmt,ap);
+	va_end(ap);
+}
+
+void vid_vprintf(const char *fmt,va_list ap) {
+	sPrintEnv env;
+	env.print = printFunc;
+	env.escape = vid_handleColorCode;
+	env.pipePad = vid_handlePipePad;
+	if(targets & TARGET_SCREEN)
+		prf_vprintf(&env,fmt,ap);
+	if(targets & TARGET_LOG)
+		log_vprintf(fmt,ap);
+}
+
+static void vid_putchar(char c) {
 	size_t i;
 	uint64_t *video;
 	/* do an explicit newline if necessary */
@@ -111,24 +130,6 @@ void vid_putchar(char c) {
 		*video = color << 8 | c;
 		col++;
 	}
-}
-
-void vid_printf(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	vid_vprintf(fmt,ap);
-	va_end(ap);
-}
-
-void vid_vprintf(const char *fmt,va_list ap) {
-	sPrintEnv env;
-	env.print = printFunc;
-	env.escape = vid_handleColorCode;
-	env.pipePad = vid_handlePipePad;
-	if(targets & TARGET_SCREEN)
-		prf_vprintf(&env,fmt,ap);
-	if(targets & TARGET_LOG)
-		log_vprintf(fmt,ap);
 }
 
 static void vid_move(void) {

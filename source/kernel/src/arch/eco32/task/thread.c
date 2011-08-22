@@ -128,36 +128,31 @@ void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t e
 	nt->save.r31 = (uint32_t)&thread_startup;
 }
 
-void thread_switchTo(tid_t tid) {
-	sThread *ct = thread_getRunning();
+void thread_doSwitch(void) {
+	sThread *old = thread_getRunning();
+	sThread *new = sched_perform(old);
 	/* finish kernel-time here since we're switching the process */
-	if(tid != ct->tid) {
-		uint64_t kcstart = ct->stats.kcycleStart;
+	if(new->tid != old->tid) {
+		uint64_t kcstart = old->stats.kcycleStart;
 		if(kcstart > 0) {
 			uint64_t cycles = cpu_rdtsc();
-			ct->stats.kcycleCount.val64 += cycles - kcstart;
+			old->stats.kcycleCount.val64 += cycles - kcstart;
 		}
 
-		if(!thread_save(&ct->save)) {
-			sThread *old;
-			sThread *t = thread_getById(tid);
-			vassert(t != NULL,"Thread with tid %d not found",tid);
-
-			old = ct;
-			thread_setRunning(t);
-			ct = t;
+		if(!thread_save(&old->save)) {
+			thread_setRunning(new);
 
 			/* set used */
-			ct->stats.schedCount++;
+			new->stats.schedCount++;
 			if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-				vmm_setTimestamp(ct,timer_getTimestamp());
+				vmm_setTimestamp(new,timer_getTimestamp());
 
-			thread_resume(ct->proc->pagedir,&ct->save,ct->archAttr.kstackFrame);
+			thread_resume(new->proc->pagedir,&new->save,new->archAttr.kstackFrame);
 		}
 
 		/* now start kernel-time again */
-		ct = thread_getRunning();
-		ct->stats.kcycleStart = cpu_rdtsc();
+		new = thread_getRunning();
+		new->stats.kcycleStart = cpu_rdtsc();
 	}
 
 	proc_killDeadThread();

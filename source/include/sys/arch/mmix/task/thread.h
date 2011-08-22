@@ -50,4 +50,9 @@ sKSpecRegs *thread_getSpecRegs(void);
 void thread_pushSpecRegs(void);
 void thread_popSpecRegs(void);
 
+/**
+ * Performs a thread-switch
+ */
+void thread_doSwitch(void);
+
 #endif /* MMIX_THREAD_H_ */

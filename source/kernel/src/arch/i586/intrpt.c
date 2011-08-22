@@ -21,6 +21,7 @@
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/task/ioports.h>
 #include <sys/arch/i586/pic.h>
+#include <sys/arch/i586/apic.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <sys/mem/cache.h>

@@ -28,3 +28,14 @@ bool smp_init_arch(void) {
 cpuid_t smp_getCurId(void) {
 	return 0;
 }
+
+sThread *smp_getThreadOf(cpuid_t id) {
+	UNUSED(id);
+	return thread_getRunning();
+}
+
+void smp_sendIPI(cpuid_t id,uint8_t vector) {
+	UNUSED(id);
+	UNUSED(vector);
+	/* ignored */
+}

@@ -186,7 +186,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			return 0;
 		}
 		else if(child < 0)
-			util_panic("Unable to clone process for boot-program %s: %d\n",progs[i].comman,child);
+			util_panic("Unable to clone process for boot-program %s: %d\n",progs[i].command,child);
 
 		bootState++;
 	}

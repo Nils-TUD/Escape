@@ -50,7 +50,7 @@
 	.global thread_startup
 	.global thread_idle
 	.global thread_initSave
-	.global	thread_doSwitch
+	.global	thread_doSwitchTo
 
 	.global stackCopy
 	.global stackCopySize
@@ -277,8 +277,8 @@ thread_initSave:
 	SET		$0,0							# return 0
 	POP		1,0
 
-# int thread_doSwitch(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tid_t tid)
-thread_doSwitch:
+# int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tid_t tid)
+thread_doSwitchTo:
 	PUT		rF,$3							# just for backtracing: put the thread-id in rF
 	SET		$250,$0							# save $0, SAVE will set rL to 0
 	SET		$251,$1

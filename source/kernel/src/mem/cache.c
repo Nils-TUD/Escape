@@ -23,6 +23,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/klock.h>
 #include <sys/log.h>
+#include <sys/video.h>
 #include <string.h>
 
 #if DEBUGGING

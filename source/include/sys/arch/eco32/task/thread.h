@@ -45,4 +45,9 @@ typedef struct {
 
 #define STACK_REG_COUNT		1
 
+/**
+ * Performs a thread-switch
+ */
+void thread_doSwitch(void);
+
 #endif /* ECO32_THREAD_H_ */

@@ -38,7 +38,7 @@
 void bspstart(sBootInfo *mbp);
 uintptr_t smpstart(void);
 void apstart(void);
-static void idleStart(void);
+static void idlestart(void);
 extern klock_t aplock;
 
 static uint8_t initloader[] = {
@@ -61,7 +61,7 @@ uintptr_t smpstart(void) {
 
 	/* start an idle-thread for each cpu */
 	for(i = 0; i < total; i++)
-		proc_startThread((uintptr_t)&idleStart,T_IDLE,NULL);
+		proc_startThread((uintptr_t)&idlestart,T_IDLE,NULL);
 
 	/* start all APs */
 	smp_start();
@@ -81,12 +81,11 @@ void apstart(void) {
 	gdt_init_ap();
 	idt_init();
 	apic_enable();
-	vid_printf("%d: I am running! :)\n",gdt_getCPUId());
 	smp_apIsRunning();
 	thread_initialSwitch();
 }
 
-static void idleStart(void) {
+static void idlestart(void) {
 	if(!smp_isBSP()) {
 		/* unlock the trampoline */
 		klock_release(&aplock);

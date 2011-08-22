@@ -30,7 +30,7 @@ if [ "$ARCH" = "i586" ]; then
 		echo "kernel /boot/escape_test.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 	else
 		if [ "`echo $BUILD | grep $ARCH'-release'`" != "" ]; then
-			echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
+			echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 		else
 			echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 		fi
@@ -46,7 +46,7 @@ if [ "$ARCH" = "i586" ]; then
 		echo "kernel /boot/escape_test.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 	else
 		if [ "`echo $BUILD | grep $ARCH'-release'`" != "" ]; then
-			echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
+			echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 		else
 			echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3" >> $TMPDIR/boot/grub/menu.lst;
 		fi

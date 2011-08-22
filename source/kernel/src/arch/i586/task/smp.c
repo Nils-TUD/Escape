@@ -20,6 +20,8 @@
 #include <sys/common.h>
 #include <sys/arch/i586/cpu.h>
 #include <sys/arch/i586/apic.h>
+#include <sys/arch/i586/gdt.h>
+#include <sys/arch/i586/ioapic.h>
 #include <sys/task/smp.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
@@ -82,13 +84,47 @@ typedef struct {
 	uint32_t reserved[2];
 } A_PACKED sMPConfProc;
 
+typedef struct {
+	uint8_t type;
+	uint8_t ioAPICId;
+	uint8_t ioAPICVersion;
+	uint8_t enabled : 1,
+			: 7;
+	uint32_t baseAddr;
+} A_PACKED sMPConfIOAPIC;
+
+typedef struct {
+	uint8_t type;
+	uint8_t intrptType;
+	uint16_t : 12,
+		triggerMode : 2,
+		polarity : 2;
+	uint8_t srcBusId;
+	uint8_t srcBusIRQ;
+	uint8_t dstIOAPICId;
+	uint8_t dstIOAPICInt;
+} A_PACKED sMPConfIOIntrptEntry;
+
+typedef struct {
+	uint8_t type;
+	uint8_t intrptType;
+	uint16_t : 12,
+		triggerMode : 2,
+		polarity : 2;
+	uint8_t srcBusId;
+	uint8_t srcBusIRQ;
+	uint8_t dstLAPICId;
+	uint8_t dstLAPICInt;
+} A_PACKED sMPConfLocalIntrptEntry;
+
 static void smp_parseConfTable(sMPConfTableHeader *tbl);
 static sMPFloatPtr *smp_find(void);
 static sMPFloatPtr *smp_findIn(uintptr_t start,size_t length);
 extern void apProtMode(void);
 
-static klock_t lock;
+static klock_t smpLock;
 static volatile size_t seenAPs = 0;
+static cpuid_t *log2Phys;
 static uint8_t trampoline[] = {
 #if DEBUGGING
 #	include "../../../../../build/i586-debug/kernel_tramp.dump"
@@ -102,18 +138,44 @@ bool smp_init_arch(void) {
 	if(apic_isAvailable()) {
 		sMPFloatPtr *mpf = smp_find();
 		if(mpf) {
-			smp_parseConfTable((sMPConfTableHeader*)(KERNEL_START | mpf->mpConfigTable));
+			cpuid_t id;
 			apic_enable();
+			smp_parseConfTable((sMPConfTableHeader*)(KERNEL_START | mpf->mpConfigTable));
+
+			/* from now on, we'll use the logical-id as far as possible; but remember the physical
+			 * one for IPIs, e.g. */
+			id = apic_getId();
+			log2Phys = (cpuid_t*)cache_alloc(smp_getCPUCount() * sizeof(cpuid_t));
+			log2Phys[0] = id;
+			smp_setId(id,0);
 			return true;
 		}
 	}
 	return false;
 }
 
+sThread *smp_getThreadOf(cpuid_t id) {
+	return gdt_getRunningOn(id);
+}
+
+cpuid_t smp_getPhysId(cpuid_t logId) {
+	return log2Phys[logId];
+}
+
+void smp_sendIPI(cpuid_t id,uint8_t vector) {
+	apic_sendIPITo(smp_getPhysId(id),vector);
+}
+
 void smp_apIsRunning(void) {
-	klock_aquire(&lock);
+	cpuid_t phys,log;
+	klock_aquire(&smpLock);
+	phys = apic_getId();
+	log = gdt_getCPUId();
+	log2Phys[log] = phys;
+	smp_setId(phys,log);
+	smp_setReady(log);
 	seenAPs++;
-	klock_release(&lock);
+	klock_release(&smpLock);
 }
 
 void smp_start(void) {
@@ -125,7 +187,7 @@ void smp_start(void) {
 		apic_sendInitIPI();
 
 		/* simulate a delay of > 10ms; TODO we should use a timer for that */
-		for(i = 0; i < 1000000; i++)
+		for(i = 0; i < 10000000; i++)
 			;
 
 		uintptr_t dest = TRAMPOLINE_ADDR;
@@ -149,15 +211,18 @@ void smp_start(void) {
 	 * Now our GDT is setup in the "right" way, so that 0xC0000000 will arrive at the MMU.
 	 * Therefore we can unmap the 0x0 area. */
 	paging_gdtFinished();
+	smp_setReady(0);
 }
 
 cpuid_t smp_getCurId(void) {
-	return apic_getId();
+	return gdt_getCPUId();
 }
 
 static void smp_parseConfTable(sMPConfTableHeader *tbl) {
 	size_t i;
 	sMPConfProc *proc;
+	sMPConfIOAPIC *ioapic;
+	sMPConfIOIntrptEntry *ioint;
 
 	if(tbl->signature != MPC_SIGNATURE)
 		util_panic("MP Config Table has invalid signature\n");
@@ -169,16 +234,22 @@ static void smp_parseConfTable(sMPConfTableHeader *tbl) {
 				proc = (sMPConfProc*)ptr;
 				/* cpu usable? */
 				if(proc->cpuFlags & 0x1)
-					smp_addCPU((proc->cpuFlags & 0x2) ? true : false,proc->localAPICId);
+					smp_addCPU((proc->cpuFlags & 0x2) ? true : false,proc->localAPICId,false);
 				ptr += MPCTE_LEN_PROC;
 				break;
 			case MPCTE_TYPE_BUS:
 				ptr += MPCTE_LEN_BUS;
 				break;
 			case MPCTE_TYPE_IOAPIC:
+				ioapic = (sMPConfIOAPIC*)ptr;
+				if(ioapic->enabled)
+					ioapic_add(ioapic->ioAPICId,ioapic->ioAPICVersion,ioapic->baseAddr);
 				ptr += MPCTE_LEN_IOAPIC;
 				break;
 			case MPCTE_TYPE_IOIRQ:
+				ioint = (sMPConfIOIntrptEntry*)ptr;
+				ioapic_setRedirection(ioint->dstIOAPICId,ioint->srcBusIRQ,ioint->dstIOAPICInt,
+						ioint->intrptType,ioint->polarity,ioint->triggerMode);
 				ptr += MPCTE_LEN_IOIRQ;
 				break;
 			case MPCTE_TYPE_LIRQ:

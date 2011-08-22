@@ -48,7 +48,7 @@ static size_t freeCont = 0;
 static size_t stackSize = 0;
 static uintptr_t stackBegin = 0;
 static frameno_t *stack = NULL;
-static klock_t lock;
+static klock_t pmemLock;
 
 void pmem_init(void) {
 	pmem_initArch(&stackBegin,&stackSize,&bitmap);
@@ -62,18 +62,18 @@ size_t pmem_getStackSize(void) {
 
 size_t pmem_getFreeFrames(uint types) {
 	size_t count = 0;
-	klock_aquire(&lock);
+	klock_aquire(&pmemLock);
 	if(types & MM_CONT)
 		count += freeCont;
 	if(types & MM_DEF)
 		count += ((uintptr_t)stack - stackBegin) / sizeof(frameno_t);
-	klock_release(&lock);
+	klock_release(&pmemLock);
 	return count;
 }
 
 ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	size_t i,c = 0;
-	klock_aquire(&lock);
+	klock_aquire(&pmemLock);
 	/* align in physical memory */
 	i = (BITMAP_START_FRAME + align - 1) & ~(align - 1);
 	i -= BITMAP_START_FRAME;
@@ -95,7 +95,7 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	}
 
 	if(c != count) {
-		klock_release(&lock);
+		klock_release(&pmemLock);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -105,7 +105,7 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 #if DEBUG_ALLOC_N_FREE
 	vid_printf("[AC] %x:%zu\n",i,count);
 #endif
-	klock_release(&lock);
+	klock_release(&pmemLock);
 	return i;
 }
 
@@ -118,7 +118,7 @@ void pmem_freeContiguous(frameno_t first,size_t count) {
 
 frameno_t pmem_allocate(void) {
 	frameno_t res;
-	klock_aquire(&lock);
+	klock_aquire(&pmemLock);
 	/* no more frames free? */
 	if((uintptr_t)stack == stackBegin)
 		util_panic("Not enough memory :(");
@@ -136,12 +136,12 @@ frameno_t pmem_allocate(void) {
 	vid_printf("\n");
 #endif
 	res = *(--stack);
-	klock_release(&lock);
+	klock_release(&pmemLock);
 	return res;
 }
 
 void pmem_free(frameno_t frame) {
-	klock_aquire(&lock);
+	klock_aquire(&pmemLock);
 #if DEBUG_ALLOC_N_FREE
 	sFuncCall *trace = util_getKernelStackTrace();
 	size_t i = 0;
@@ -155,13 +155,13 @@ void pmem_free(frameno_t frame) {
 	vid_printf("\n");
 #endif
 	pmem_markUsed(frame,false);
-	klock_release(&lock);
+	klock_release(&pmemLock);
 }
 
 void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
-	klock_aquire(&lock);
+	klock_aquire(&pmemLock);
 	pmem_doMarkRangeUsed(from,to,used);
-	klock_release(&lock);
+	klock_release(&pmemLock);
 }
 
 void pmem_print(uint types) {

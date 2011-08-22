@@ -44,7 +44,7 @@ static time_t elapsedMsecs = 0;
 static time_t lastResched = 0;
 static size_t timerIntrpts = 0;
 
-static klock_t lock;
+static klock_t timerLock;
 static sTimerListener listenObjs[LISTENER_COUNT];
 static sTimerListener *freeList;
 
@@ -78,10 +78,10 @@ int timer_sleepFor(tid_t tid,time_t msecs) {
 	time_t msecDiff;
 	sSLNode *n,*p;
 	sTimerListener *nl,*l;
-	klock_aquire(&lock);
+	klock_aquire(&timerLock);
 	l = freeList;
 	if(l == 0) {
-		klock_release(&lock);
+		klock_release(&timerLock);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -108,7 +108,7 @@ int timer_sleepFor(tid_t tid,time_t msecs) {
 	if(!sll_insertAfter(listener,p,l)) {
 		l->next = freeList;
 		freeList = l;
-		klock_release(&lock);
+		klock_release(&timerLock);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -118,14 +118,14 @@ int timer_sleepFor(tid_t tid,time_t msecs) {
 
 	/* put process to sleep */
 	ev_block(thread_getById(tid));
-	klock_release(&lock);
+	klock_release(&timerLock);
 	return 0;
 }
 
 void timer_removeThread(tid_t tid) {
 	sSLNode *n,*p;
 	sTimerListener *l,*nl;
-	klock_aquire(&lock);
+	klock_aquire(&timerLock);
 	p = NULL;
 	for(n = sll_begin(listener); n != NULL; p = n, n = n->next) {
 		l = (sTimerListener*)n->data;
@@ -142,7 +142,7 @@ void timer_removeThread(tid_t tid) {
 			break;
 		}
 	}
-	klock_release(&lock);
+	klock_release(&timerLock);
 }
 
 void timer_intrpt(void) {
@@ -151,7 +151,7 @@ void timer_intrpt(void) {
 	sTimerListener *l;
 	time_t timeInc = 1000 / TIMER_FREQUENCY;
 
-	klock_aquire(&lock);
+	klock_aquire(&timerLock);
 	timerIntrpts++;
 	elapsedMsecs += timeInc;
 
@@ -179,11 +179,11 @@ void timer_intrpt(void) {
 	/* if a process has been waked up or the time-slice is over, reschedule */
 	if(foundThread || (elapsedMsecs - lastResched) >= PROC_TIMESLICE) {
 		lastResched = elapsedMsecs;
-		klock_release(&lock);
+		klock_release(&timerLock);
 		thread_switch();
 	}
 	else
-		klock_release(&lock);
+		klock_release(&timerLock);
 }
 
 void timer_print(void) {

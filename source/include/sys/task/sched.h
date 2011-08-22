@@ -41,13 +41,6 @@ void sched_init(void);
 sThread *sched_perform(sThread *old);
 
 /**
- * Chooses the given thread for running (removes it from a list, if necessary, and changes the state)
- *
- * @param t the thread
- */
-void sched_setRunning(sThread *t);
-
-/**
  * Enqueues the given thread on the ready-queue and sets the state to ST_READY
  *
  * @param t the thread

@@ -81,8 +81,10 @@ typedef enum {
 typedef struct sThread sThread;
 struct sThread {
 	const uint8_t flags;
-	/* thread state. see eThreadState */
+	/* the current thread state. see eThreadState */
 	uint8_t state;
+	/* the next state it will receive on context-switch */
+	uint8_t newState;
 	/* to lock the attributes of the thread */
 	klock_t lock;
 	/* the current or last cpu that executed this thread */

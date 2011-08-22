@@ -32,6 +32,7 @@
 #define APIC_REG_ICR_LOW		0x300
 #define APIC_REG_ICR_HIGH		0x310
 #define APIC_REG_TASK_PRIO		0x80
+#define APIC_REG_EOI			0xB0
 
 #define SPURINT_APIC_EN			(1 << 8)
 
@@ -90,30 +91,38 @@ bool apic_isAvailable(void) {
 }
 
 void apic_enable(void) {
-	/* accept all interrupts */
-    apic_write(APIC_REG_TASK_PRIO,0);
 	apic_write(APIC_REG_SPURINT,SPURINT_APIC_EN);
+}
+
+void apic_sendIPITo(cpuid_t id,uint8_t vector) {
+	apic_write(APIC_REG_ICR_HIGH,id << 24);
+	apic_write(APIC_REG_ICR_LOW,ICR_DESTSHORT_NO | ICR_LEVEL_ASSERT |
+			ICR_DEST_PHYS | ICR_DELMODE_FIXED | vector);
 }
 
 void apic_sendInitIPI(void) {
 	apic_write(APIC_REG_ICR_HIGH,0);
-	apic_write(APIC_REG_ICR_LOW,ICR_DESTSHORT_NOTSELF | ICR_TRIGMODE_EDGE | ICR_LEVEL_ASSERT |
-			ICR_DELSTAT_IDLE | ICR_DEST_PHYS | ICR_DELMODE_INIT);
+	apic_write(APIC_REG_ICR_LOW,ICR_DESTSHORT_NOTSELF | ICR_LEVEL_ASSERT |
+			ICR_DEST_PHYS | ICR_DELMODE_INIT);
 }
 
 void apic_sendStartupIPI(uintptr_t startAddr) {
 	apic_write(APIC_REG_ICR_HIGH,0);
-	apic_write(APIC_REG_ICR_LOW,((startAddr / PAGE_SIZE) & 0xFF) |
-			ICR_DESTSHORT_NOTSELF | ICR_TRIGMODE_EDGE | ICR_LEVEL_ASSERT | ICR_DELSTAT_IDLE |
-			ICR_DEST_PHYS | ICR_DELMODE_STARTUP);
+	apic_write(APIC_REG_ICR_LOW,ICR_DESTSHORT_NOTSELF | ICR_LEVEL_ASSERT |
+			ICR_DEST_PHYS | ICR_DELMODE_STARTUP | ((startAddr / PAGE_SIZE) & 0xFF));
+}
+
+void apic_eoi(void) {
+	apic_write(APIC_REG_EOI,0);
 }
 
 static uint32_t apic_read(uint32_t reg) {
 	assert(enabled);
-	return *(uint32_t*)(APIC_AREA + reg);
+	/* volatile is necessary to enforce dword-accesses */
+	return *(volatile uint32_t*)(APIC_AREA + reg);
 }
 
 static void apic_write(uint32_t reg,uint32_t value) {
 	assert(enabled);
-	*(uint32_t*)(APIC_AREA + reg) = value;
+	*(volatile uint32_t*)(APIC_AREA + reg) = value;
 }

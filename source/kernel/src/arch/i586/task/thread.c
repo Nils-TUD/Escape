@@ -26,6 +26,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/video.h>
+#include <sys/klock.h>
 #include <sys/config.h>
 #include <sys/cpu.h>
 #include <assert.h>
@@ -35,8 +36,9 @@
 
 extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
-extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea);
+extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock);
 
+static klock_t switchLock;
 static bool threadSet = false;
 
 int thread_initArch(sThread *t) {
@@ -148,51 +150,46 @@ void thread_initialSwitch(void) {
 	cur->stats.schedCount++;
 	if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
 		vmm_setTimestamp(cur,timer_getTimestamp());
-	sched_setRunning(cur);
 	cur->cpu = gdt_prepareRun(NULL,cur);
 	fpu_lockFPU();
-	thread_resume(cur->proc->pagedir.own,&cur->save);
+	klock_aquire(&switchLock);
+	thread_resume(cur->proc->pagedir.own,&cur->save,&switchLock);
 }
 
-void thread_switchTo(tid_t tid) {
-	sThread *cur = thread_getRunning();
+void thread_doSwitch(void) {
+	sThread *old = thread_getRunning();
+	sThread *new;
+	/* lock this, because sched_perform() may make us ready and we can't be chosen by another CPU
+	 * until we've really switched the thread (kernelstack, ...) */
+	klock_aquire(&switchLock);
+	new = sched_perform(old);
 	/* finish kernel-time here since we're switching the process */
-	if(tid != cur->tid) {
-		sThread *old;
-		sThread *t = thread_getById(tid);
-		uint64_t kcstart = cur->stats.kcycleStart;
+	if(new->tid != old->tid) {
+		uint64_t kcstart = old->stats.kcycleStart;
 		if(kcstart > 0) {
 			uint64_t cycles = cpu_rdtsc();
-			cur->stats.kcycleCount.val64 += cycles - kcstart;
+			old->stats.kcycleCount.val64 += cycles - kcstart;
 		}
 
-		/* mark old process ready, if it should not be blocked, killed or something */
-		if(cur->state == ST_RUNNING)
-			sched_setReady(cur);
-		if(cur->flags & T_IDLE)
-			thread_pushIdle(cur);
-
-		old = cur;
-		cur = t;
-
 		/* set used */
-		cur->stats.schedCount++;
+		new->stats.schedCount++;
 		if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-			vmm_setTimestamp(cur,timer_getTimestamp());
-		sched_setRunning(cur);
-		cur->cpu = gdt_prepareRun(old,cur);
+			vmm_setTimestamp(new,timer_getTimestamp());
+		new->cpu = gdt_prepareRun(old,new);
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		fpu_lockFPU();
 		if(!thread_save(&old->save)) {
 			/* old thread */
-			thread_resume(cur->proc->pagedir.own,&cur->save);
+			thread_resume(new->proc->pagedir.own,&new->save,&switchLock);
 		}
 
 		/* now start kernel-time again */
-		cur = thread_getRunning();
-		cur->stats.kcycleStart = cpu_rdtsc();
+		new = thread_getRunning();
+		new->stats.kcycleStart = cpu_rdtsc();
 	}
+	else
+		klock_release(&switchLock);
 
 	proc_killDeadThread();
 }

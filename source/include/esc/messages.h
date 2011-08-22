@@ -70,27 +70,27 @@
 #define MSG_DEF_RESPONSE			18
 
 /* requests to driver */
-#define MSG_DRV_OPEN				0
-#define MSG_DRV_READ				1
-#define MSG_DRV_WRITE				2
-#define MSG_DRV_CLOSE				3
+#define MSG_DRV_OPEN				50
+#define MSG_DRV_READ				51
+#define MSG_DRV_WRITE				52
+#define MSG_DRV_CLOSE				53
 
 /* requests to fs */
-#define MSG_FS_OPEN					4
-#define MSG_FS_READ					5
-#define MSG_FS_WRITE				6
-#define MSG_FS_CLOSE				7
-#define MSG_FS_STAT					8
-#define MSG_FS_SYNC					9
-#define MSG_FS_LINK					10
-#define MSG_FS_UNLINK				11
-#define MSG_FS_MKDIR				12
-#define MSG_FS_RMDIR				13
-#define MSG_FS_MOUNT				14
-#define MSG_FS_UNMOUNT				15
-#define MSG_FS_ISTAT				16
-#define MSG_FS_CHMOD				17
-#define MSG_FS_CHOWN				18
+#define MSG_FS_OPEN					54
+#define MSG_FS_READ					55
+#define MSG_FS_WRITE				56
+#define MSG_FS_CLOSE				57
+#define MSG_FS_STAT					58
+#define MSG_FS_SYNC					59
+#define MSG_FS_LINK					60
+#define MSG_FS_UNLINK				61
+#define MSG_FS_MKDIR				62
+#define MSG_FS_RMDIR				63
+#define MSG_FS_MOUNT				64
+#define MSG_FS_UNMOUNT				65
+#define MSG_FS_ISTAT				66
+#define MSG_FS_CHMOD				67
+#define MSG_FS_CHOWN				68
 
 /* == Other messages == */
 #define MSG_SPEAKER_BEEP			100	/* performs a beep */

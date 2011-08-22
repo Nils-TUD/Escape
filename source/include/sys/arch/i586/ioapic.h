@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.global util_halt
-.global util_getStackFrameStart
+#ifndef IOAPIC_H_
+#define IOAPIC_H_
 
-# void util_halt(void);
-util_halt:
-	hlt
+#include <sys/common.h>
 
-# uintptr_t util_getStackFrameStart(void);
-util_getStackFrameStart:
-	mov		%ebp,%eax
-	ret
+void ioapic_add(uint8_t id,uint8_t version,uintptr_t addr);
+void ioapic_setRedirection(uint8_t dstApic,uint8_t srcIRQ,uint8_t dstInt,uint8_t type,
+		uint8_t polarity,uint8_t triggerMode);
+void ioapic_print(void);
+
+#endif /* IOAPIC_H_ */

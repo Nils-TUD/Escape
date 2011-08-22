@@ -47,23 +47,22 @@ void uenv_handleSignal(sIntrptStackFrame *stack) {
 		klock_release(&sigLock);
 		return;
 	}
-	klock_release(&sigLock);
 
 	if(sig_hasSignal(&sig,&tid)) {
-		klock_aquire(&sigLock);
 		if(t->tid == tid)
 			uenv_startSignalHandler(t,stack,sig);
 		else {
 			t = thread_getById(tid);
+			/* TODO prepend it to the ready-list instead of appending */
 			if(thread_setSignal(t,sig)) {
-				klock_release(&sigLock);
 				ev_unblock(t);
-				thread_switchTo(tid);
+				klock_release(&sigLock);
+				thread_switch();
 				return;
 			}
 		}
-		klock_release(&sigLock);
 	}
+	klock_release(&sigLock);
 }
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {

@@ -28,7 +28,11 @@ klock_aquire:
 	xor		%eax,%eax
 	lock
 	cmpxchg %ecx,(%edx)
-	jnz		1b
+	jz		2f
+	# improves the performance and lowers the power-consumption of spinlocks
+	pause
+	jmp		1b
+2:
 	ret
 
 # void klock_release(klock_t *l)

@@ -18,6 +18,7 @@
  */
 
 .global intrpt_setEnabled
+.extern apic_eoi
 .extern intrpt_handler
 
 # macro to build a default-isr-handler
@@ -107,13 +108,27 @@ BUILD_DEF_ISR 45
 BUILD_DEF_ISR 46
 BUILD_DEF_ISR 47
 BUILD_DEF_ISR 48
+BUILD_DEF_ISR 49
+
+# flush TLB
+.global isr50
+	isr50:
+	pusha
+	mov		%cr3,%eax
+	mov		%eax,%cr3
+	call	apic_eoi
+	popa
+	iret
+
+BUILD_DEF_ISR 51
+BUILD_DEF_ISR 52
 
 # our null-handler for all other interrupts
 .global isrNull
 	isrNull:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	pushl	$0						# error-code (no error here)
-	pushl	$49						# the interrupt-number
+	pushl	$53						# the interrupt-number
 	jmp		isrCommon
 
 # the ISR for all interrupts

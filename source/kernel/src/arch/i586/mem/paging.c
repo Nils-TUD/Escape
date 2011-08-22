@@ -27,6 +27,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
+#include <sys/task/smp.h>
 #include <sys/intrpt.h>
 #include <sys/cpu.h>
 #include <sys/util.h>
@@ -156,6 +157,7 @@ static sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] A_ALIGNED(PAGE_SIZE);
 /* the page-tables for process 0 (two because our mm-stack will get large if we have a lot physmem) */
 static sPTEntry proc0PT1[PAGE_SIZE / sizeof(sPTEntry)] A_ALIGNED(PAGE_SIZE);
 static sPTEntry proc0PT2[PAGE_SIZE / sizeof(sPTEntry)] A_ALIGNED(PAGE_SIZE);
+static klock_t tmpAreaLock;
 
 void paging_init(void) {
 	sPDEntry *pd,*pde;
@@ -280,6 +282,9 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	/* we need a new page-directory */
 	pdirFrame = pmem_allocate();
 
+	/* the temp-area is located in a shared pagetable */
+	klock_aquire(&tmpAreaLock);
+
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
 	pd = (sPDEntry*)PAGE_DIR_AREA;
 	paging_doMapTo(cur,TEMP_MAP_AREA,&pdirFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
@@ -310,6 +315,7 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	memclear((void*)kstackAddr,PAGE_SIZE);
 
 	paging_doUnmapFrom(cur,TEMP_MAP_AREA,1,false);
+	klock_release(&tmpAreaLock);
 
 	/* one final flush to ensure everything is correct */
 	paging_flushTLB();
@@ -397,9 +403,11 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	tPageDir *pdir = paging_getPageDir();
 	klock_aquire(&pdir->lock);
 	frameno_t frame = pmem_allocate();
+	klock_aquire(&tmpAreaLock);
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
+	klock_release(&tmpAreaLock);
 	klock_release(&pdir->lock);
 	return frame;
 }
@@ -407,18 +415,22 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 void paging_copyToFrame(frameno_t frame,const void *src) {
 	tPageDir *pdir = paging_getPageDir();
 	klock_aquire(&pdir->lock);
+	klock_aquire(&tmpAreaLock);
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,src,PAGE_SIZE);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
+	klock_release(&tmpAreaLock);
 	klock_release(&pdir->lock);
 }
 
 void paging_copyFromFrame(frameno_t frame,void *dst) {
 	tPageDir *pdir = paging_getPageDir();
 	klock_aquire(&pdir->lock);
+	klock_aquire(&tmpAreaLock);
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy(dst,(void*)TEMP_MAP_AREA,PAGE_SIZE);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
+	klock_release(&tmpAreaLock);
 	klock_release(&pdir->lock);
 }
 
@@ -546,6 +558,7 @@ static sAllocStats paging_doMapTo(tPageDir *pdir,uintptr_t virt,const frameno_t 
 		virt += PAGE_SIZE;
 	}
 
+	smp_flushTLB(pdir);
 	return stats;
 }
 
@@ -598,6 +611,7 @@ static sAllocStats paging_doUnmapFrom(tPageDir *pdir,uintptr_t virt,size_t count
 	/* check if the last changed pagetable is empty */
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_START)
 		stats.ptables += paging_remEmptyPt(ptables,pti);
+	smp_flushTLB(pdir);
 	return stats;
 }
 
@@ -662,8 +676,8 @@ static uintptr_t paging_getPTables(uintptr_t pdir) {
 	sPDEntry *pde;
 	if(pdir == cur->own)
 		return MAPPED_PTS_START;
-	if(pdir == cur->other)
-		return TMPMAP_PTS_START;
+	/* TODO if(pdir == cur->other)
+		return TMPMAP_PTS_START;*/
 	/* map page-tables to other area*/
 	pde = ((sPDEntry*)PAGE_DIR_AREA) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
 	pde->present = true;

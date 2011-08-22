@@ -22,6 +22,7 @@
 #include <sys/dbg/cmd/view.h>
 #ifdef __i386__
 #include <sys/arch/i586/gdt.h>
+#include <sys/arch/i586/ioapic.h>
 #endif
 #include <sys/task/proc.h>
 #include <sys/task/sched.h>
@@ -29,6 +30,8 @@
 #include <sys/task/thread.h>
 #include <sys/task/lock.h>
 #include <sys/task/event.h>
+#include <sys/task/timer.h>
+#include <sys/task/smp.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/request.h>
@@ -39,7 +42,6 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/sharedmem.h>
 #include <sys/mem/vmm.h>
-#include <sys/task/timer.h>
 #include <sys/boot.h>
 #include <sys/cpu.h>
 #include <string.h>
@@ -77,12 +79,14 @@ static void view_shm(void);
 static void view_cpu(void);
 #ifdef __i386__
 static void view_gdt(void);
+static void view_ioapic(void);
 #endif
 static void view_timer(void);
 static void view_boot(void);
 static void view_requests(void);
 static void view_locks(void);
 static void view_events(void);
+static void view_smp(void);
 
 static sProc *view_getProc(size_t argc,char **argv);
 static const sThread *view_getThread(size_t argc,char **argv);
@@ -114,12 +118,14 @@ static sView views[] = {
 	{"cpu",(fView)view_cpu},
 #ifdef __i386__
 	{"gdt",(fView)view_gdt},
+	{"ioapic",(fView)view_ioapic},
 #endif
 	{"timer",(fView)view_timer},
 	{"boot",(fView)view_boot},
 	{"requests",(fView)view_requests},
 	{"locks",(fView)view_locks},
 	{"events",(fView)view_events},
+	{"smp",(fView)view_smp},
 };
 
 int cons_cmd_view(size_t argc,char **argv) {
@@ -261,6 +267,9 @@ static void view_cpu(void) {
 static void view_gdt(void) {
 	gdt_print();
 }
+static void view_ioapic(void) {
+	ioapic_print();
+}
 #endif
 static void view_timer(void) {
 	timer_print();
@@ -276,6 +285,9 @@ static void view_locks(void) {
 }
 static void view_events(void) {
 	ev_print();
+}
+static void view_smp(void) {
+	smp_print();
 }
 
 static sProc *view_getProc(size_t argc,char **argv) {

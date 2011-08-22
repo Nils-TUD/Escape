@@ -211,11 +211,13 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt) {
 	prf_sprintf(buf,"\n");
 	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(reg->byteCount));
 	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {
-		prf_sprintf(buf,"\t\t%d: (%p) (swblk %d) %c%c%c\n",i,virt + i * PAGE_SIZE,
+		prf_sprintf(buf,"\t\t%d: (%p) (swblk %d) %c%c%c%c (%x)\n",i,virt + i * PAGE_SIZE,
 				(reg->pageFlags[i] & PF_SWAPPED) ? reg_getSwapBlock(reg,i) : 0,
-				reg->pageFlags[i] & PF_COPYONWRITE ? 'c' : '-',
-				reg->pageFlags[i] & PF_DEMANDLOAD ? 'l' : '-',
-				reg->pageFlags[i] & PF_SWAPPED ? 's' : '-');
+				(reg->pageFlags[i] & PF_COPYONWRITE) ? 'c' : '-',
+				(reg->pageFlags[i] & PF_DEMANDLOAD) ? 'l' : '-',
+				(reg->pageFlags[i] & PF_LOADINPROGRESS) ? 'L' : '-',
+				(reg->pageFlags[i] & PF_SWAPPED) ? 's' : '-',
+			   reg->pageFlags[i]);
 	}
 }
 

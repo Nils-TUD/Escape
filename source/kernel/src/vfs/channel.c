@@ -137,6 +137,16 @@ static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 	}
 }
 
+void vfs_chan_lock(sVFSNode *node) {
+	sChannel *chan = (sChannel*)node->data;
+	klock_aquire(&chan->lock);
+}
+
+void vfs_chan_unlock(sVFSNode *node) {
+	sChannel *chan = (sChannel*)node->data;
+	klock_release(&chan->lock);
+}
+
 bool vfs_chan_hasReply(const sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
 	return sll_length(chan->recvList) > 0;
@@ -185,17 +195,14 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const vo
 		thread_remHeapAlloc(msg);
 	}
 
-	klock_aquire(&chan->lock);
 	if(*list == NULL)
 		*list = sll_create();
 
 	/* append to list */
 	if(!sll_append(*list,msg)) {
-		klock_release(&chan->lock);
 		cache_free(msg);
 		return ERR_NOT_ENOUGH_MEM;
 	}
-	klock_release(&chan->lock);
 
 	/* notify the driver */
 	if(list == &(chan->sendList)) {

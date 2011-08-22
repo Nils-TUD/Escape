@@ -68,16 +68,18 @@ sVFSNode *vfs_node_get(inode_t nodeNo);
  * 'Opens' the given directory, i.e. locks it, and returns the first child.
  *
  * @param dir the directory
+ * @param locked whether the directory should be locked
  * @return the first child-node
  */
-sVFSNode *vfs_node_openDir(sVFSNode *dir);
+sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked);
 
 /**
  * 'Closes' the given directory, i.e. releases the lock.
  *
  * @param dir the directory
+ * @param locked whether the directory is locked
  */
-void vfs_node_closeDir(sVFSNode *dir);
+void vfs_node_closeDir(sVFSNode *dir,bool locked);
 
 /**
  * Determines the path for the given node. Note that static memory will be used for that!

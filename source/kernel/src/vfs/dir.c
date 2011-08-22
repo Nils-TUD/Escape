@@ -97,7 +97,7 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 	assert(buffer != NULL);
 
 	/* we need the number of bytes first */
-	firstChild = n = vfs_node_openDir(node);
+	firstChild = n = vfs_node_openDir(node,true);
 	byteCount = 0;
 	fsByteCount = 0;
 	while(n != NULL) {
@@ -166,7 +166,7 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 			}
 		}
 	}
-	vfs_node_closeDir(node);
+	vfs_node_closeDir(node,true);
 
 	if(offset > (off_t)byteCount)
 		offset = byteCount;

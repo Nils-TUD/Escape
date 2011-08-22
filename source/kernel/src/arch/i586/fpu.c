@@ -51,7 +51,9 @@ void fpu_init(void) {
 	/* set the OSFXSR bit
 	cpu_setCR4(cpu_getCR4() | 0x200);*/
 	/* init the fpu */
-	fpu_finit();
+	__asm__ volatile (
+		"finit"
+	);
 }
 
 void fpu_lockFPU(void) {
@@ -77,17 +79,25 @@ void fpu_handleCoProcNA(sFPUState **state) {
 			/* unlock FPU (necessary here because otherwise fpu_saveState would cause a #NM) */
 			cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
 			/* save state */
-			fpu_saveState(*current);
+			__asm__ volatile (
+				"fsave %0" : : "m" (**current)
+			);
 		}
 		else
 			cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
 
 		/* init FPU for new process */
 		curStates[t->cpu] = state;
-		if(*state != NULL)
-			fpu_restoreState(*state);
-		else
-			fpu_finit();
+		if(*state != NULL) {
+			__asm__ volatile (
+				"frstor %0" : : "m" (**state)
+			);
+		}
+		else {
+			__asm__ volatile (
+				"finit"
+			);
+		}
 	}
 	/* just unlock */
 	else
@@ -113,9 +123,7 @@ void fpu_freeState(sFPUState **state) {
 	/* we have to unset the current state because maybe the next created process gets
 	 * the same slot, so that the pointer is the same. */
 	for(i = 0, n = smp_getCPUCount(); i < n; i++) {
-		if(curStates[i] == state) {
+		if(curStates[i] == state)
 			curStates[i] = NULL;
-			break;
-		}
 	}
 }

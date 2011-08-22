@@ -90,13 +90,6 @@ void vid_setPrintFunc(fPrintc func);
 void vid_unsetPrintFunc(void);
 
 /**
- * Prints the given character to the current position on the screen
- *
- * @param c the character
- */
-void vid_putchar(char c);
-
-/**
  * Formatted output to the video-screen
  *
  * @param fmt the format

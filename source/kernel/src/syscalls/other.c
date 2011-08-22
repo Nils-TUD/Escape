@@ -39,7 +39,7 @@ int sysc_loadMods(sIntrptStackFrame *stack) {
 
 int sysc_debugc(sIntrptStackFrame *stack) {
 	char c = (char)SYSC_ARG1(stack);
-	vid_putchar(c);
+	vid_printf("%c",c);
 	log_printf("%c",c);
 	SYSC_RET1(stack,0);
 }

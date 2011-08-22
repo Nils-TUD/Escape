@@ -51,6 +51,12 @@ void intrpt_init(void);
 size_t intrpt_getCount(void);
 
 /**
+ * @param irq the interrupt-number
+ * @return the vector for the given interrupt
+ */
+uint8_t intrpt_getVectorFor(uint8_t irq);
+
+/**
  * Handles an interrupt
  *
  * @param number the interrupt-number

@@ -84,9 +84,9 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 		assert(l->writer != t->tid);
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
+			ev_wait(t,event,(evobj_t)ident);
 			klock_release(&klock);
 
-			ev_wait(t,event,(evobj_t)ident);
 			thread_switchNoSigs();
 
 			klock_aquire(&klock);

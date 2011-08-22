@@ -36,14 +36,14 @@
 static uint randa = 1103515245;
 static uint randc = 12345;
 static uint lastRand = 0;
-static klock_t lock;
+static klock_t randLock;
 
 int util_rand(void) {
 	int res;
-	klock_aquire(&lock);
+	klock_aquire(&randLock);
 	lastRand = randa * lastRand + randc;
 	res = (int)((uint)(lastRand / 65536) % 32768);
-	klock_release(&lock);
+	klock_release(&randLock);
 	return res;
 }
 

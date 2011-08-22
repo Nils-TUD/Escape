@@ -53,57 +53,58 @@ static void sched_qDequeueThread(sQueue *q,sThread *t);
 static void sched_qAppend(sQueue *q,sThread *t);
 static void sched_qPrint(sQueue *q);
 
-static klock_t lock;
+static klock_t schedLock;
 static sQueue readyQueue;
-static sQueue blockedQueue;
 
 void sched_init(void) {
 	sched_qInit(&readyQueue);
-	sched_qInit(&blockedQueue);
 }
 
 sThread *sched_perform(sThread *old) {
 	sThread *t;
-	klock_aquire(&lock);
+	klock_aquire(&schedLock);
+	/* give the old thread a new state */
+	if(old) {
+		if(old->flags & T_IDLE)
+			thread_pushIdle(old);
+		else {
+			assert(old->state == ST_RUNNING || old->state == ST_ZOMBIE);
+			/* we have to check for a signal here, because otherwise we might miss it */
+			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
+			if(sig_hasSignalFor(old->tid)) {
+				klock_release(&schedLock);
+				return old;
+			}
+			switch(old->newState) {
+				case ST_READY:
+					old->state = ST_READY;
+					sched_qAppend(&readyQueue,old);
+					break;
+				case ST_BLOCKED:
+					old->state = ST_BLOCKED;
+					break;
+				case ST_ZOMBIE:
+					break;
+				default:
+					util_panic("Unexpected new state (%d)\n",old->newState);
+					break;
+			}
+		}
+	}
+
 	/* get new thread */
 	t = sched_qDequeue(&readyQueue);
 	if(t == NULL) {
-		/* choose the idle-thread; don't do that if we're already the idle-thread.
-		 * in this case, just keep idling */
-		if(old && old->flags & T_IDLE)
-			t = old;
-		else
-			t = thread_popIdle();
+		/* choose an idle-thread */
+		t = thread_popIdle();
 	}
-	else
+	else {
 		t->state = ST_RUNNING;
-
-	klock_release(&lock);
-	return t;
-}
-
-void sched_setRunning(sThread *t) {
-	assert(t != NULL);
-	if(t->flags & T_IDLE)
-		return;
-
-	klock_aquire(&lock);
-	switch(t->state) {
-		case ST_RUNNING:
-			break;
-		case ST_READY:
-			sched_qDequeueThread(&readyQueue,t);
-			break;
-		case ST_BLOCKED:
-			sched_qDequeueThread(&blockedQueue,t);
-			break;
-		default:
-			vassert(false,"Invalid state for setRunning (%d)",t->state);
-			break;
+		t->newState = ST_READY;
 	}
 
-	t->state = ST_RUNNING;
-	klock_release(&lock);
+	klock_release(&schedLock);
+	return t;
 }
 
 void sched_setReady(sThread *t) {
@@ -111,10 +112,14 @@ void sched_setReady(sThread *t) {
 	if(t->flags & T_IDLE)
 		return;
 
-	klock_aquire(&lock);
-	if(sched_setReadyState(t))
-		sched_qAppend(&readyQueue,t);
-	klock_release(&lock);
+	klock_aquire(&schedLock);
+	if(t->state == ST_RUNNING)
+		t->newState = ST_READY;
+	else {
+		if(sched_setReadyState(t))
+			sched_qAppend(&readyQueue,t);
+	}
+	klock_release(&schedLock);
 }
 
 static bool sched_setReadyState(sThread *t) {
@@ -126,9 +131,6 @@ static bool sched_setReadyState(sThread *t) {
 			t->state = ST_READY_SUSP;
 			return false;
 		case ST_BLOCKED:
-			sched_qDequeueThread(&blockedQueue,t);
-			break;
-		case ST_RUNNING:
 			break;
 		default:
 			vassert(false,"Invalid state for setReady (%d)",t->state);
@@ -140,36 +142,32 @@ static bool sched_setReadyState(sThread *t) {
 
 void sched_setBlocked(sThread *t) {
 	assert(t != NULL);
-	klock_aquire(&lock);
+	klock_aquire(&schedLock);
 	switch(t->state) {
 		case ST_BLOCKED:
 		case ST_BLOCKED_SUSP:
-			klock_release(&lock);
-			return;
+			break;
 		case ST_READY_SUSP:
 			t->state = ST_BLOCKED_SUSP;
-			klock_release(&lock);
-			return;
-		case ST_READY:
-			sched_qDequeueThread(&readyQueue,t);
 			break;
 		case ST_RUNNING:
+			t->newState = ST_BLOCKED;
+			break;
+		case ST_READY:
+			t->state = ST_BLOCKED;
+			sched_qDequeueThread(&readyQueue,t);
 			break;
 		default:
 			vassert(false,"Invalid state for setBlocked (%d)",t->state);
 			break;
 	}
-	t->state = ST_BLOCKED;
-
-	/* insert in blocked-list */
-	sched_qAppend(&blockedQueue,t);
-	klock_release(&lock);
+	klock_release(&schedLock);
 }
 
 void sched_setSuspended(sThread *t,bool blocked) {
 	assert(t != NULL);
 
-	klock_aquire(&lock);
+	klock_aquire(&schedLock);
 	if(blocked) {
 		switch(t->state) {
 			/* already suspended, so ignore it */
@@ -186,7 +184,6 @@ void sched_setSuspended(sThread *t,bool blocked) {
 			case ST_READY:
 				t->state = ST_READY_SUSP;
 				sched_qDequeueThread(&readyQueue,t);
-				sched_qAppend(&blockedQueue,t);
 				break;
 			default:
 				vassert(false,"Thread %d has invalid state for suspending (%d)",t->tid,t->state);
@@ -208,7 +205,6 @@ void sched_setSuspended(sThread *t,bool blocked) {
 				break;
 			case ST_READY_SUSP:
 				t->state = ST_READY;
-				sched_qDequeueThread(&blockedQueue,t);
 				sched_qAppend(&readyQueue,t);
 				break;
 			default:
@@ -216,34 +212,32 @@ void sched_setSuspended(sThread *t,bool blocked) {
 				break;
 		}
 	}
-	klock_release(&lock);
+	klock_release(&schedLock);
 }
 
 void sched_removeThread(sThread *t) {
-	klock_aquire(&lock);
+	klock_aquire(&schedLock);
 	switch(t->state) {
 		case ST_RUNNING:
 		case ST_ZOMBIE:
+		case ST_BLOCKED:
 			break;
 		case ST_READY:
 			sched_qDequeueThread(&readyQueue,t);
-			break;
-		case ST_BLOCKED:
-			sched_qDequeueThread(&blockedQueue,t);
 			break;
 		default:
 			/* TODO threads can die during swap, right? */
 			vassert(false,"Invalid state for removeThread (%d)",t->state);
 			break;
 	}
-	klock_release(&lock);
+	t->state = ST_ZOMBIE;
+	t->newState = ST_ZOMBIE;
+	klock_release(&schedLock);
 }
 
 void sched_print(void) {
 	vid_printf("Ready-");
 	sched_qPrint(&readyQueue);
-	vid_printf("Blocked-");
-	sched_qPrint(&blockedQueue);
 	vid_printf("\n");
 }
 

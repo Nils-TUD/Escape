@@ -206,6 +206,7 @@ static sTSS **alltss;
 
 /* I/O maps for all TSSs; just to remember the last set I/O map */
 static const uint8_t **ioMaps;
+static size_t cpuCount;
 
 void gdt_init(void) {
 	sGDTTable gdtTable;
@@ -250,14 +251,14 @@ void gdt_init(void) {
 }
 
 void gdt_init_bsp(void) {
-	size_t count = smp_getCPUCount();
-	allgdts = cache_calloc(count,sizeof(sGDTTable));
+	cpuCount = smp_getCPUCount();
+	allgdts = cache_calloc(cpuCount,sizeof(sGDTTable));
 	if(!allgdts)
 		util_panic("Unable to allocate GDT-Tables for APs");
-	alltss = cache_calloc(count,sizeof(sTSS*));
+	alltss = cache_calloc(cpuCount,sizeof(sTSS*));
 	if(!alltss)
 		util_panic("Unable to allocate TSS-pointers for APs");
-	ioMaps = cache_calloc(count,sizeof(uint8_t*));
+	ioMaps = cache_calloc(cpuCount,sizeof(uint8_t*));
 	if(!ioMaps)
 		util_panic("Unable to allocate IO-Map-Pointers for APs");
 
@@ -310,13 +311,18 @@ void gdt_init_ap(void) {
 cpuid_t gdt_getCPUId(void) {
 	sGDTTable tbl;
 	gdt_get(&tbl);
-	size_t i,count = smp_getCPUCount();
-	for(i = 0; i < count; i++) {
+	size_t i;
+	for(i = 0; i < cpuCount; i++) {
 		if(allgdts[i].offset == tbl.offset)
 			return i;
 	}
 	/* never reached */
 	return -1;
+}
+
+sThread *gdt_getRunningOn(cpuid_t id) {
+	sGDTDesc *gdt = (sGDTDesc*)allgdts[id].offset;
+	return (sThread*)((gdt[7].addrHigh << 24) | (gdt[7].addrMiddle << 16) | gdt[7].addrLow);
 }
 
 sThread *gdt_getRunning(void) {
@@ -367,6 +373,14 @@ void tss_setIOMap(const uint8_t *ioMap,bool forceCpy) {
 	alltss[t->cpu]->ioMapOffset = IO_MAP_OFFSET;
 	if(forceCpy || ioMap != ioMaps[t->cpu])
 		memcpy(alltss[t->cpu]->ioMap,ioMap,IO_MAP_SIZE / 8);
+	/* remove the map from other cpus; we have to copy it again because it has changed */
+	if(forceCpy) {
+		size_t i;
+		for(i = 0; i < cpuCount; i++) {
+			if(i != t->cpu && ioMaps[i] == ioMap)
+				ioMaps[i] = NULL;
+		}
+	}
 	ioMaps[t->cpu] = ioMap;
 }
 
@@ -390,8 +404,8 @@ static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t
 }
 
 static sGDTTable *gdt_getFreeGDT(void) {
-	size_t i,count = smp_getCPUCount();
-	for(i = 0; i < count; i++) {
+	size_t i;
+	for(i = 0; i < cpuCount; i++) {
 		if(allgdts[i].offset == 0)
 			return allgdts + i;
 	}
@@ -399,8 +413,8 @@ static sGDTTable *gdt_getFreeGDT(void) {
 }
 
 static sTSS *gdt_getFreeTSS(size_t *index) {
-	size_t i,count = smp_getCPUCount();
-	for(i = 0; i < count; i++) {
+	size_t i;
+	for(i = 0; i < cpuCount; i++) {
 		if(alltss[i] == NULL) {
 			*index = i;
 			return (sTSS*)(TSS_AREA + i * BYTES_2_PAGES(sizeof(sTSS)) * PAGE_SIZE);

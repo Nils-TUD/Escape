@@ -32,7 +32,7 @@ static const uint16_t ports[] = {
 	/* COM3 */	0x2F8,
 	/* COM4 */	0x3E8
 };
-static klock_t lock;
+static klock_t serialLock;
 
 void ser_init(void) {
 	ser_initPort(ports[SER_COM1]);
@@ -42,10 +42,10 @@ void ser_out(uint16_t port,uint8_t byte) {
 	uint16_t ioport;
 	assert(port < ARRAY_SIZE(ports));
 	ioport = ports[port];
-	klock_aquire(&lock);
+	klock_aquire(&serialLock);
 	while(ser_isTransmitEmpty(ioport) == 0);
 	ports_outByte(ioport,byte);
-	klock_release(&lock);
+	klock_release(&serialLock);
 }
 
 static int ser_isTransmitEmpty(uint16_t port) {

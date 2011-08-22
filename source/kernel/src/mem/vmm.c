@@ -564,7 +564,8 @@ static void vmm_doRemove(sProc *p,vmreg_t reg) {
 		for(i = 0; i < pcount; i++) {
 			sAllocStats stats;
 			bool freeFrame = !(vm->reg->flags & RF_NOFREE);
-			assert(!(vm->reg->pageFlags[i] & PF_LOADINPROGRESS));
+			vassert(!(vm->reg->pageFlags[i] & PF_LOADINPROGRESS),
+				"Flags of region @ %p, page %d: %x",vm->virt,i,vm->reg->pageFlags[i]);
 			if(vm->reg->pageFlags[i] & PF_COPYONWRITE) {
 				bool foundOther;
 				frameno_t frameNo = paging_getFrameNo(&p->pagedir,virt);
@@ -682,7 +683,6 @@ errProc:
 
 int vmm_cloneAll(pid_t dstId) {
 	size_t i,j;
-	sVMRegion **regs;
 	sThread *t = thread_getRunning();
 	sProc *dst = proc_request(dstId,PLOCK_REGIONS);
 	sProc *src = proc_request(proc_getRunning(),PLOCK_REGIONS);
@@ -693,10 +693,11 @@ int vmm_cloneAll(pid_t dstId) {
 
 	if(src->regSize > 0) {
 		/* create array */
-		regs = (sVMRegion **)cache_calloc(src->regSize,sizeof(sVMRegion*));
-		if(regs == NULL)
-			goto errorRel;
+		dst->regions = cache_calloc(src->regSize,sizeof(sVMRegion*));
+		if(dst->regions == NULL)
+			goto error;
 
+		dst->regSize = src->regSize;
 		for(i = 0; i < src->regSize; i++) {
 			sVMRegion *vm = REG(src,i);
 			/* just clone the stack-region of the current thread */
@@ -721,7 +722,7 @@ int vmm_cloneAll(pid_t dstId) {
 						goto error;
 					}
 				}
-				regs[i] = nvm;
+				REG(dst,i) = nvm;
 				/* now copy the pages */
 				pageCount = BYTES_2_PAGES(nvm->reg->byteCount);
 				stats = paging_clonePages(&src->pagedir,&dst->pagedir,vm->virt,nvm->virt,pageCount,
@@ -733,6 +734,10 @@ int vmm_cloneAll(pid_t dstId) {
 				else {
 					uintptr_t virt = nvm->virt;
 					for(j = 0; j < pageCount; j++) {
+						/* remove that flag, because it is possible that a page is currently
+						 * demand-loaded. since we've cloned that region, we have to do that again
+						 * for ourself, if necessary. */
+						nvm->reg->pageFlags[j] &= ~PF_LOADINPROGRESS;
 						/* not when demand-load or swapping is outstanding since we've not loaded it
 						 * from disk yet */
 						if(!(vm->reg->pageFlags[j] & (PF_DEMANDLOAD | PF_SWAPPED))) {
@@ -761,19 +766,12 @@ int vmm_cloneAll(pid_t dstId) {
 				klock_release(&vm->reg->lock);
 			}
 		}
-		dst->regions = regs;
-		dst->regSize = src->regSize;
 	}
 	proc_release(src,PLOCK_REGIONS);
 	proc_release(dst,PLOCK_REGIONS);
 	return 0;
 
 error:
-	/* remove the regions that have already been added */
-	/* set them first, because vmm_remove() uses them */
-	dst->regions = regs;
-	dst->regSize = src->regSize;
-errorRel:
 	proc_release(src,PLOCK_REGIONS);
 	proc_release(dst,PLOCK_REGIONS);
 	/* Note that vmm_remove() will undo the cow just for the child; but thats ok since
@@ -832,7 +830,7 @@ ssize_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount) {
 		return ERR_INVALID_PID;
 
 	vm = REG(p,reg);
-	klock_release(&vm->reg->lock);
+	klock_aquire(&vm->reg->lock);
 	assert(reg >= 0 && reg < (vmreg_t)p->regSize && vm != NULL);
 	assert((vm->reg->flags & RF_GROWABLE) && !(vm->reg->flags & RF_SHAREABLE));
 
@@ -974,24 +972,40 @@ static bool vmm_demandLoad(sProc *p,sVMRegion *vm,ulong *flags,uintptr_t addr) {
 		res = true;
 	zeroCount = MIN(PAGE_SIZE,vm->reg->byteCount - (addr - vm->virt)) - loadCount;
 
-	/* if another thread already loads it, wait here until he's done */
-	if(*flags & PF_LOADINPROGRESS) {
-		proc_release(p,PLOCK_REGIONS);
-		do {
-			ev_wait(t,EVI_VMM_DONE,(evobj_t)vm->reg);
-			thread_switchNoSigs();
-		}
-		while(*flags & PF_LOADINPROGRESS);
-		p = proc_request(p->pid,PLOCK_REGIONS);
-		return (*flags & PF_DEMANDLOAD) == 0;
+	klock_aquire(&vm->reg->lock);
+	/* check if we should still demand-load this page (may have changed in the meantime) */
+	if(!(*flags & PF_DEMANDLOAD)) {
+		klock_release(&vm->reg->lock);
+		return true;
 	}
 
-	/* load from file */
+	/* if another thread already loads it, wait here until he's done */
+	if(*flags & PF_LOADINPROGRESS) {
+		do {
+			ev_wait(t,EVI_VMM_DONE,(evobj_t)vm->reg);
+			klock_release(&vm->reg->lock);
+			proc_release(p,PLOCK_REGIONS);
+
+			thread_switchNoSigs();
+
+			p = proc_request(p->pid,PLOCK_REGIONS);
+			klock_aquire(&vm->reg->lock);
+		}
+		while(*flags & PF_LOADINPROGRESS);
+		res = (*flags & PF_DEMANDLOAD) == 0;
+		klock_release(&vm->reg->lock);
+		return res;
+	}
+
 	*flags |= PF_LOADINPROGRESS;
+	klock_release(&vm->reg->lock);
+
+	/* load from file */
 	if(loadCount)
 		res = vmm_loadFromFile(p,vm,addr,loadCount);
 
 	/* zero the rest, if necessary */
+	klock_aquire(&vm->reg->lock);
 	if(res && zeroCount) {
 		assert(!(vm->reg->flags & RF_SHAREABLE));
 		if(!loadCount) {
@@ -1004,6 +1018,7 @@ static bool vmm_demandLoad(sProc *p,sVMRegion *vm,ulong *flags,uintptr_t addr) {
 	/* wakeup all waiting processes */
 	*flags &= ~(PF_LOADINPROGRESS | PF_DEMANDLOAD);
 	ev_wakeup(EVI_VMM_DONE,(evobj_t)vm->reg);
+	klock_release(&vm->reg->lock);
 	return res;
 }
 

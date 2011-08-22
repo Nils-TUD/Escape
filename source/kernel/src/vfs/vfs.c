@@ -624,9 +624,15 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_
 	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
+	/* note the lock-order here! vfs-driver does it in the this order, so do we. note also that we
+	 * don't lock the channel for driver-messages, because vfs-driver has already done that. */
+	if(!IS_DRIVER_MSG(id))
+		vfs_chan_lock(n);
 	klock_aquire(&waitLock);
 	err = vfs_chan_send(pid,file,n,id,data,size);
 	klock_release(&waitLock);
+	if(!IS_DRIVER_MSG(id))
+		vfs_chan_unlock(n);
 
 	if(err == 0 && pid != KERNEL_PID) {
 		sProc *p = proc_getByPid(pid);
@@ -867,13 +873,13 @@ file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId) {
 	sVFSNode *n;
 
 	/* search for the client */
-	n = vfs_node_openDir(e->node);
+	n = vfs_node_openDir(e->node,true);
 	while(n != NULL) {
 		if(vfs_node_getNo(n) == clientId)
 			break;
 		n = n->next;
 	}
-	vfs_node_closeDir(e->node);
+	vfs_node_closeDir(e->node,true);
 	if(n == NULL)
 		return ERR_PATH_NOT_FOUND;
 
@@ -1095,11 +1101,11 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags) {
 	if((len = strlen(name)) == 0 || !isalnumstr(name))
 		return ERR_INV_DRIVER_NAME;
 
-	n = vfs_node_openDir(drv);
+	n = vfs_node_openDir(drv,true);
 	while(n != NULL) {
 		/* entry already existing? */
 		if(strcmp(n->name,name) == 0) {
-			vfs_node_closeDir(drv);
+			vfs_node_closeDir(drv,true);
 			return ERR_DRIVER_EXISTS;
 		}
 		n = n->next;
@@ -1119,7 +1125,7 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags) {
 	res = vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,vfs_node_getNo(srv),VFS_DEV_NO);
 	if(res < 0)
 		goto errorServer;
-	vfs_node_closeDir(drv);
+	vfs_node_closeDir(drv,true);
 	return res;
 
 errorServer:
@@ -1127,7 +1133,7 @@ errorServer:
 errorName:
 	cache_free(hname);
 errorDir:
-	vfs_node_closeDir(drv);
+	vfs_node_closeDir(drv,true);
 	return ERR_NOT_ENOUGH_MEM;
 }
 
@@ -1146,17 +1152,17 @@ inode_t vfs_createProcess(pid_t pid) {
 	itoa(name,12,pid);
 
 	/* go to last entry */
-	n = vfs_node_openDir(proc);
+	n = vfs_node_openDir(proc,true);
 	while(n != NULL) {
 		/* entry already existing? */
 		if(strcmp(n->name,name) == 0) {
-			vfs_node_closeDir(proc);
+			vfs_node_closeDir(proc,true);
 			res = ERR_FILE_EXISTS;
 			goto errorName;
 		}
 		n = n->next;
 	}
-	vfs_node_closeDir(proc);
+	vfs_node_closeDir(proc,true);
 
 	/* create dir */
 	dir = vfs_dir_create(KERNEL_PID,proc,name);
@@ -1258,10 +1264,10 @@ void vfs_removeThread(tid_t tid) {
 
 	/* search for thread-node and remove it */
 	dir = vfs_node_get(t->proc->threadDir);
-	n = vfs_node_openDir(dir);
+	n = vfs_node_openDir(dir,true);
 	while(n != NULL) {
 		if(strcmp(n->name,name) == 0) {
-			vfs_node_closeDir(dir);
+			vfs_node_closeDir(dir,true);
 			vfs_node_destroy(n);
 			break;
 		}
@@ -1282,14 +1288,14 @@ size_t vfs_dbg_getGFTEntryCount(void) {
 }
 
 void vfs_printMsgs(void) {
-	sVFSNode *drv = vfs_node_openDir(devNode);
+	sVFSNode *drv = vfs_node_openDir(devNode,true);
 	vid_printf("Messages:\n");
 	while(drv != NULL) {
 		if(IS_DRIVER(drv->mode))
 			vfs_server_print(drv);
 		drv = drv->next;
 	}
-	vfs_node_closeDir(devNode);
+	vfs_node_closeDir(devNode,true);
 }
 
 void vfs_printFile(file_t file) {

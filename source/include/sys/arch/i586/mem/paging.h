@@ -66,7 +66,7 @@
  *             |           temp map area           |     e
  * 0xC1C00000: +-----------------------------------+     a
  *             |             APIC area             |     e
- * 0xC1C01000: +-----------------------------------+     a
+ * 0xC1C09000: +-----------------------------------+     a
  *             |             TSS area              |     e
  * 0x????????: +-----------------------------------+     a
  *             |                ...                |
@@ -118,7 +118,7 @@
 
 /* for mapping the APIC */
 #define APIC_AREA				(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
-#define APIC_AREA_SIZE			PAGE_SIZE
+#define APIC_AREA_SIZE			(PAGE_SIZE * 9)
 
 /* for mapping the TSS's for APs (have to be page-aligned) */
 #define TSS_AREA				(APIC_AREA + APIC_AREA_SIZE)

@@ -33,6 +33,20 @@
 sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent);
 
 /**
+ * Locks the given channel. This is only intended for sending messages to this channel.
+ *
+ * @param node the channel-node
+ */
+void vfs_chan_lock(sVFSNode *node);
+
+/**
+ * Unlocks the given channel
+ *
+ * @param node the channel-node
+ */
+void vfs_chan_unlock(sVFSNode *node);
+
+/**
  * Checks whether the given channel has a reply for the client
  *
  * @param node the channel-node
@@ -49,7 +63,7 @@ bool vfs_chan_hasReply(const sVFSNode *node);
 bool vfs_chan_hasWork(const sVFSNode *node);
 
 /**
- * Sends the given message to the channel
+ * Sends the given message to the channel (UNLOCKED!)
  *
  * @param pid the process-id
  * @param file the file
@@ -62,7 +76,7 @@ bool vfs_chan_hasWork(const sVFSNode *node);
 ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,const void *data,size_t size);
 
 /**
- * Receives a message from the channel
+ * Receives a message from the channel (LOCKED!)
  *
  * @param pid the process-id
  * @param file the file

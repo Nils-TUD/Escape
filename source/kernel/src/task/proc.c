@@ -71,7 +71,7 @@ static sSLList *procs;
 static sProc *pidToProc[MAX_PROC_COUNT];
 static pid_t nextPid = 1;
 static sSLList deadThreads;
-static klock_t lock;
+static klock_t procLock;
 
 void proc_preinit(void) {
 	paging_setFirst(&first.pagedir);
@@ -167,9 +167,9 @@ void proc_release(sProc *p,size_t l) {
 
 size_t proc_getCount(void) {
 	size_t res;
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	res = sll_length(procs);
-	klock_release(&lock);
+	klock_release(&procLock);
 	return res;
 }
 
@@ -283,7 +283,7 @@ file_t proc_unassocFd(int fd) {
 pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno) {
 	sSLNode *n;
 	pid_t res = INVALID_PID;
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		vmreg_t regno = vmm_hasBinary(p->pid,bin);
@@ -293,7 +293,7 @@ pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno) {
 			break;
 		}
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 	return res;
 }
 
@@ -301,7 +301,7 @@ sRegion *proc_getLRURegion(void) {
 	time_t ts = (time_t)ULONG_MAX;
 	sRegion *lru = NULL;
 	sSLNode *n;
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		if(p->pid != DISK_PID) {
@@ -312,7 +312,7 @@ sRegion *proc_getLRURegion(void) {
 			}
 		}
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 	return lru;
 }
 
@@ -328,7 +328,7 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 	size_t pages,pmem = 0,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		size_t pown,psh,pswap;
 		sProc *p = (sProc*)n->data;
@@ -337,7 +337,7 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 		shMem += psh;
 		dReal += vmm_getMemUsage(p->pid,&pages);
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 	*paging = pmem * PAGE_SIZE;
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
@@ -414,10 +414,10 @@ int proc_clone(uint8_t flags) {
 	}
 
 	/* determine pid; ensure that nobody can get this pid, too */
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	newPid = proc_getFreePid();
 	if(newPid < 0) {
-		klock_release(&lock);
+		klock_release(&procLock);
 		res = newPid;
 		goto errorCmd;
 	}
@@ -425,11 +425,11 @@ int proc_clone(uint8_t flags) {
 	/* add to processes */
 	*(pid_t*)&p->pid = newPid;
 	if(!proc_add(p)) {
-		klock_release(&lock);
+		klock_release(&procLock);
 		res = ERR_NOT_ENOUGH_MEM;
 		goto errorCmd;
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 
 	/* create the VFS node */
 	p->threadDir = vfs_createProcess(p->pid);
@@ -479,7 +479,12 @@ int proc_clone(uint8_t flags) {
 	}
 	proc_release(cur,PLOCK_FDS);
 
-	/* make thread ready */
+	res = thread_finishClone(curThread,nt);
+	if(res == 1) {
+		/* child */
+		return 0;
+	}
+	/* parent */
 	ev_unblock(nt);
 
 #ifdef __eco32__
@@ -490,12 +495,6 @@ int proc_clone(uint8_t flags) {
 	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
 #endif
 
-	res = thread_finishClone(curThread,nt);
-	if(res == 1) {
-		/* child */
-		return 0;
-	}
-	/* parent */
 	proc_release(cur,PLOCK_PROG);
 	return p->pid;
 
@@ -543,6 +542,8 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
+	thread_finishThreadStart(t,nt,arg,entryPoint);
+
 	/* mark ready (idle is always blocked because we choose it explicitly when no other can run) */
 	if(nt->flags & T_IDLE)
 		ev_block(nt);
@@ -557,7 +558,6 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
 #endif
 
-	thread_finishThreadStart(t,nt,arg,entryPoint);
 	proc_release(p,PLOCK_PROG);
 	return nt->tid;
 }
@@ -708,7 +708,7 @@ void proc_segFault(void) {
 }
 
 void proc_killDeadThread(void) {
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	if(sll_length(&deadThreads) > 0) {
 		sSLNode *n;
 		for(n = sll_begin(&deadThreads); n != NULL; n = n->next) {
@@ -720,7 +720,7 @@ void proc_killDeadThread(void) {
 		}
 		sll_clear(&deadThreads,false);
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 }
 
 void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
@@ -811,7 +811,7 @@ bool proc_kill(pid_t pid) {
 	vassert(p->pid != proc_getRunning(),"We can't kill the current process!");
 
 	/* give childs the ppid 0 */
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *cp = (sProc*)n->data;
 		if(cp->parentPid == p->pid) {
@@ -822,7 +822,7 @@ bool proc_kill(pid_t pid) {
 				proc_notifyProcDied(0);
 		}
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 
 	/* remove pagedir; TODO we can do that on terminate, too (if we delay it when its the current) */
 	paging_destroyPDir(&p->pagedir);
@@ -845,28 +845,28 @@ bool proc_kill(pid_t pid) {
 
 void proc_printAll(void) {
 	sSLNode *n;
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		proc_print(p);
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 }
 
 void proc_printAllRegions(void) {
 	sSLNode *n;
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		vmm_print(p->pid);
 		vid_printf("\n");
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 }
 
 void proc_printAllPDs(uint parts,bool regions) {
 	sSLNode *n;
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		size_t own,shared,swapped;
@@ -878,7 +878,7 @@ void proc_printAllPDs(uint parts,bool regions) {
 		paging_printPDir(&p->pagedir,parts);
 		vid_printf("\n");
 	}
-	klock_release(&lock);
+	klock_release(&procLock);
 }
 
 void proc_print(sProc *p) {
@@ -985,9 +985,9 @@ static void proc_killThread(sThread *t) {
 	if(thread_kill(t))
 		sll_removeFirstWith(p->threads,t);
 	else {
-		klock_aquire(&lock);
+		klock_aquire(&procLock);
 		assert(sll_append(&deadThreads,t));
-		klock_release(&lock);
+		klock_release(&procLock);
 	}
 }
 
@@ -1013,10 +1013,10 @@ static bool proc_add(sProc *p) {
 }
 
 static void proc_remove(sProc *p) {
-	klock_aquire(&lock);
+	klock_aquire(&procLock);
 	sll_removeFirstWith(procs,p);
 	pidToProc[p->pid] = NULL;
-	klock_release(&lock);
+	klock_release(&procLock);
 }
 
 

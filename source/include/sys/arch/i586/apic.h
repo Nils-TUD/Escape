@@ -29,7 +29,9 @@ cpuid_t apic_getId(void);
 bool apic_isAvailable(void);
 void apic_enable(void);
 
+void apic_sendIPITo(cpuid_t id,uint8_t vector);
 void apic_sendInitIPI(void);
 void apic_sendStartupIPI(uintptr_t startAddr);
+void apic_eoi(void);
 
 #endif /* APIC_H_ */

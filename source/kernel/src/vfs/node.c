@@ -96,23 +96,25 @@ static sVFSNode *vfs_node_openDirOf(inode_t nodeNo) {
 	return NULL;
 }
 
-sVFSNode *vfs_node_openDir(sVFSNode *dir) {
+sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked) {
 	sVFSNode *parent;
 	if(!S_ISLNK(dir->mode))
 		parent = dir;
 	else
 		parent = vfs_link_resolve(dir);
-	klock_aquire(&parent->lock);
+	if(locked)
+		klock_aquire(&parent->lock);
 	return parent->firstChild;
 }
 
-void vfs_node_closeDir(sVFSNode *dir) {
+void vfs_node_closeDir(sVFSNode *dir,bool locked) {
 	sVFSNode *parent;
 	if(!S_ISLNK(dir->mode))
 		parent = dir;
 	else
 		parent = vfs_link_resolve(dir);
-	klock_release(&parent->lock);
+	if(locked)
+		klock_release(&parent->lock);
 }
 
 int vfs_node_getInfo(inode_t nodeNo,USER sFileInfo *info) {
@@ -243,7 +245,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 	depth = 0;
 	lastdepth = -1;
 	dir = n;
-	n = vfs_node_openDir(dir);
+	n = vfs_node_openDir(dir,true);
 	while(n != NULL) {
 		/* go to next '/' and check for invalid chars */
 		if(depth != lastdepth) {
@@ -280,9 +282,9 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 				break;
 
 			/* move to childs of this node */
-			vfs_node_closeDir(dir);
+			vfs_node_closeDir(dir,true);
 			dir = n;
-			n = vfs_node_openDir(dir);
+			n = vfs_node_openDir(dir,true);
 			depth++;
 			continue;
 		}
@@ -312,7 +314,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 		*nodeNo = vfs_node_getNo(n);
 	}
 done:
-	vfs_node_closeDir(dir);
+	vfs_node_closeDir(dir,true);
 	return err;
 }
 
@@ -358,7 +360,7 @@ sVFSNode *vfs_node_findInDir(inode_t nodeNo,const char *name,size_t nameLen) {
 		}
 		n = n->next;
 	}
-	vfs_node_closeDir(vfs_node_get(nodeNo));
+	vfs_node_closeDir(vfs_node_get(nodeNo),true);
 	return res;
 }
 
@@ -415,18 +417,21 @@ void vfs_node_destroy(sVFSNode *n) {
 		child = tn;
 	}
 
+	/* aquire both locks before n->destroy(). we can't destroy the node-data without lock because
+	 * otherwise one could access it before the node is removed from the tree */
+	klock_aquire(&n->lock);
+	if(n->parent)
+		klock_aquire(&n->parent->lock);
+
 	/* let the node clean up */
 	if(n->destroy)
 		n->destroy(n);
 
-	klock_aquire(&n->lock);
 	/* free name */
 	if(IS_ON_HEAP(n->name))
 		cache_free((void*)n->name);
 
 	/* remove from parent and release (attention: maybe its not yet in the tree) */
-	if(n->parent)
-		klock_aquire(&n->parent->lock);
 	if(n->prev)
 		n->prev->next = n->next;
 	else if(n->parent)
@@ -435,9 +440,9 @@ void vfs_node_destroy(sVFSNode *n) {
 		n->next->prev = n->prev;
 	else if(n->parent)
 		n->parent->lastChild = n->prev;
+
 	if(n->parent)
 		klock_release(&n->parent->lock);
-
 	klock_release(&n->lock);
 	vfs_node_releaseNode(n);
 }
@@ -554,7 +559,7 @@ static void vfs_node_releaseNode(sVFSNode *node) {
 
 static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
 	size_t i;
-	sVFSNode *n = vfs_node_openDir(parent);
+	sVFSNode *n = vfs_node_openDir(parent,true);
 	while(n != NULL) {
 		for(i = 0;i < level;i++)
 			vid_printf(" |");
@@ -564,5 +569,5 @@ static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
 			vfs_node_dbg_doPrintTree(level + 1,n);
 		n = n->next;
 	}
-	vfs_node_closeDir(parent);
+	vfs_node_closeDir(parent,true);
 }

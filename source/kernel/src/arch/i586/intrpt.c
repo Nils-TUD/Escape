@@ -61,6 +61,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack);
 static void intrpt_irqTimer(sIntrptStackFrame *stack);
 static void intrpt_irqDefault(sIntrptStackFrame *stack);
 static void intrpt_syscall(sIntrptStackFrame *stack);
+static void intrpt_ipiWork(sIntrptStackFrame *stack);
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t pfaddr);
 
 static const sInterrupt intrptList[] = {
@@ -113,6 +114,10 @@ static const sInterrupt intrptList[] = {
 	/* 0x2C: IRQ_ATA1 */				{intrpt_irqDefault,"ATA1",SIG_INTRPT_ATA1},
 	/* 0x2C: IRQ_ATA2 */				{intrpt_irqDefault,"ATA2",SIG_INTRPT_ATA2},
 	/* 0x30: syscall */					{intrpt_syscall,"Systemcall",0},
+	/* 0x31: IPI_WORK */				{intrpt_ipiWork,"Work IPI",0},
+	/* 0x32: IPI_FLUSH_TLB */			{intrpt_exFatal,"Flush TLB IPI",0},	/* not handled here */
+	/* 0x33: IPI_WAIT */				{intrpt_exFatal,"",0},
+	/* 0x34: IPI_HALT */				{intrpt_exFatal,"",0},
 };
 
 /* total number of interrupts */
@@ -135,6 +140,10 @@ void intrpt_init(void) {
 
 size_t intrpt_getCount(void) {
 	return intrptCount;
+}
+
+uint8_t intrpt_getVectorFor(uint8_t irq) {
+	return irq + 0x20;
 }
 
 void intrpt_handler(sIntrptStackFrame *stack) {
@@ -299,6 +308,20 @@ static void intrpt_syscall(sIntrptStackFrame *stack) {
 		stack->ecx = stack->ebx;
 		stack->ebx = ebxSave;
 	}
+}
+
+static void intrpt_ipiWork(sIntrptStackFrame *stack) {
+	UNUSED(stack);
+	sThread *t = thread_getRunning();
+	apic_eoi();
+	/* if we have been waked up, but are not idling anymore, wakeup another cpu */
+	/* this may happen if we're about to switch to a non-idle-thread and have idled previously,
+	 * while smp_wakeupCPU() was called. */
+	if(!(t->flags & T_IDLE))
+		smp_wakeupCPU();
+	/* otherwise switch to non-idle-thread (if there is any) */
+	else
+		thread_switch();
 }
 
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t addr) {

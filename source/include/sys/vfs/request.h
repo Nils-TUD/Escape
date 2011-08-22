@@ -30,6 +30,7 @@
 
 /* an entry in the request-list */
 typedef struct sRequest {
+	klock_t lock;
 	sThread *thread;
 	sVFSNode *node;
 	uint8_t state;
@@ -73,7 +74,7 @@ void vfs_req_sendMsg(msgid_t id,sVFSNode *node,const void *data,size_t size);
  * @param node the vfs-node over which the request is handled
  * @param buffer optional, the buffer (stored in data)
  * @param size optional, the buffer-size (stored in dsize)
- * @return the request or NULL if not enough mem
+ * @return the request (locked!) or NULL if not enough mem
  */
 sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size);
 
@@ -83,7 +84,7 @@ sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size);
  * case req->count will be ERR_DRIVER_DIED. Please check in this case if you are affected and
  * retry the request if not.
  *
- * @param req the request
+ * @param req the request (locked)
  * @param allowSigs whether the thread should be interruptable by signals
  */
 void vfs_req_waitForReply(sRequest *req,bool allowSigs);
@@ -92,19 +93,27 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs);
  * Searches for the request of the given node
  *
  * @param node the vfs-node over which the request is handled
- * @return the request or NULL
+ * @return the request (locked!) or NULL
  */
 sRequest *vfs_req_getByNode(const sVFSNode *node);
 
 /**
- * Removes the request from the queue (so that it can't receive a msg anymore), but does not free it
+ * Releases the given request
+ *
+ * @param r the request
+ */
+void vfs_req_release(sRequest *r);
+
+/**
+ * Releases and removes the request from the queue (so that it can't receive a msg anymore), but
+ * does not free it
  *
  * @param r the request
  */
 void vfs_req_remove(sRequest *r);
 
 /**
- * Removes the request from the queue and free's it
+ * Releases and removes the request from the queue and free's it
  *
  * @param r the request
  */

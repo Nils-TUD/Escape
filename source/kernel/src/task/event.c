@@ -43,7 +43,7 @@ static sWait *ev_allocWait(void);
 static void ev_freeWait(sWait *w);
 static const char *ev_getName(size_t evi);
 
-static klock_t lock;
+static klock_t evLock;
 static sWait waits[MAX_WAIT_COUNT];
 static sWait *waitFree;
 static sWaitList evlists[EV_COUNT];
@@ -83,7 +83,7 @@ void ev_unsuspend(sThread *t) {
 bool ev_wait(sThread *t,size_t evi,evobj_t object) {
 	bool res = false;
 	sWait *w;
-	klock_aquire(&lock);
+	klock_aquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -91,14 +91,14 @@ bool ev_wait(sThread *t,size_t evi,evobj_t object) {
 		thread_block(t);
 		res = true;
 	}
-	klock_release(&lock);
+	klock_release(&evLock);
 	return res;
 }
 
 bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 	size_t i,e;
 	sWait *w;
-	klock_aquire(&lock);
+	klock_aquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -111,7 +111,7 @@ bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 					w = ev_doWait(t,e,objects[i].object,&t->waits,w);
 					if(w == NULL) {
 						ev_doRemoveThread(t);
-						klock_release(&lock);
+						klock_release(&evLock);
 						return false;
 					}
 					events &= ~(1 << e);
@@ -120,7 +120,7 @@ bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 		}
 	}
 	thread_block(t);
-	klock_release(&lock);
+	klock_release(&evLock);
 	return true;
 }
 
@@ -129,7 +129,7 @@ void ev_wakeup(size_t evi,evobj_t object) {
 	sWaitList *list = evlists + evi;
 	sWait *w;
 	size_t i = 0;
-	klock_aquire(&lock);
+	klock_aquire(&evLock);
 	w = list->begin;
 	while(w != NULL) {
 		if(w->object == 0 || w->object == object) {
@@ -154,7 +154,7 @@ void ev_wakeup(size_t evi,evobj_t object) {
 		ev_doRemoveThread(t);
 		thread_unblock(t);
 	}
-	klock_release(&lock);
+	klock_release(&evLock);
 }
 
 void ev_wakeupm(uint events,evobj_t object) {
@@ -169,20 +169,20 @@ void ev_wakeupm(uint events,evobj_t object) {
 
 bool ev_wakeupThread(sThread *t,uint events) {
 	bool res = false;
-	klock_aquire(&lock);
+	klock_aquire(&evLock);
 	if(t->events & events) {
 		ev_doRemoveThread(t);
 		thread_unblock(t);
 		res = true;
 	}
-	klock_release(&lock);
+	klock_release(&evLock);
 	return res;
 }
 
 void ev_removeThread(sThread *t) {
-	klock_aquire(&lock);
+	klock_aquire(&evLock);
 	ev_doRemoveThread(t);
-	klock_release(&lock);
+	klock_release(&evLock);
 }
 
 void ev_printEvMask(const sThread *t) {
@@ -195,7 +195,7 @@ void ev_printEvMask(const sThread *t) {
 
 void ev_print(void) {
 	size_t e;
-	klock_aquire(&lock);
+	klock_aquire(&evLock);
 	vid_printf("Eventlists:\n");
 	for(e = 0; e < EV_COUNT; e++) {
 		sWaitList *list = evlists + e;
@@ -212,7 +212,7 @@ void ev_print(void) {
 			w = w->next;
 		}
 	}
-	klock_release(&lock);
+	klock_release(&evLock);
 }
 
 static void ev_doRemoveThread(sThread *t) {

@@ -21,7 +21,13 @@
 #define SMP_H_
 
 #include <sys/common.h>
+#include <sys/task/thread.h>
 #include <esc/sllist.h>
+
+#define IPI_WORK		0x31
+#define IPI_FLUSH_TLB	0x32
+#define IPI_WAIT		0x33
+#define IPI_HALT		0x34
 
 #ifdef __i386__
 #include <sys/arch/i586/task/smp.h>
@@ -30,17 +36,25 @@
 typedef struct {
 	uint8_t id;
 	uint8_t bootstrap;
+	uint8_t ready;
 } sCPU;
 
 void smp_init(void);
 bool smp_init_arch(void);
 bool smp_isEnabled(void);
-void smp_addCPU(bool bootstrap,uint8_t id);
+sThread *smp_getThreadOf(cpuid_t id);
+void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready);
+void smp_setReady(cpuid_t id);
+void smp_flushTLB(tPageDir *pdir);
+void smp_wakeupCPU(void);
+void smp_sendIPI(cpuid_t id,uint8_t vector);
+void smp_setId(cpuid_t old,cpuid_t new);
 void smp_start(void);
 cpuid_t smp_getBSPId(void);
 bool smp_isBSP(void);
 cpuid_t smp_getCurId(void);
 size_t smp_getCPUCount(void);
 const sSLList *smp_getCPUs(void);
+void smp_print(void);
 
 #endif /* SMP_H_ */

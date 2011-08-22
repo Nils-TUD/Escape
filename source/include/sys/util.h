@@ -45,11 +45,6 @@ typedef struct {
 #define MAX_STACK_DEPTH 100
 
 /**
- * Assembler routine to halt the processor
- */
-extern void util_halt(void);
-
-/**
  * PANIC: Displays the given message and halts
  *
  * @param fmt the format of the message to display

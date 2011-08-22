@@ -19,6 +19,8 @@ foreach($matches[0] as $k => $v) {
 	if(!isset($allocs[$addr]))
 		$allocs[$addr] = array(0,0,'');
 	if($matches[TYPE][$k] == 'A') {
+		if($allocs[$addr][0] > 0)
+			echo "ALREADY ALLOCATED!\n";
 		$allocs[$addr][0]++;
 		$allocs[$addr][1] = $matches[SIZE][$k];
 		$allocs[$addr][2] = $matches[CALLERNAME][$k];
@@ -27,8 +29,8 @@ foreach($matches[0] as $k => $v) {
 		$allocs[$addr][0]--;
 }
 
-foreach($allocs as $addr => $open) {
+/*foreach($allocs as $addr => $open) {
 	if($open[0] != 0)
 		echo $addr.' => '.$open[0].' (size='.$open[1].', caller='.strtolower($open[2]).')'."\n";
-}
+}*/
 ?>

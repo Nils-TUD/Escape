@@ -43,12 +43,12 @@ struct sNode {
 static bool initialized = false;
 static sDynArray nodeArray;
 static sNode *freelist = NULL;
-static klock_t lock;
+static klock_t sllnLock;
 
 void *slln_allocNode(size_t size) {
 	sNode *n;
 	assert(sizeof(sNode) == size && offsetof(sSLNode,next) == offsetof(sNode,next));
-	klock_aquire(&lock);
+	klock_aquire(&sllnLock);
 	if(freelist == NULL) {
 		size_t i,oldCount;
 		if(!initialized) {
@@ -57,7 +57,7 @@ void *slln_allocNode(size_t size) {
 		}
 		oldCount = nodeArray.objCount;
 		if(!dyna_extend(&nodeArray)) {
-			klock_release(&lock);
+			klock_release(&sllnLock);
 			return NULL;
 		}
 		for(i = oldCount; i < nodeArray.objCount; i++) {
@@ -68,14 +68,14 @@ void *slln_allocNode(size_t size) {
 	}
 	n = freelist;
 	freelist = freelist->next;
-	klock_release(&lock);
+	klock_release(&sllnLock);
 	return n;
 }
 
 void slln_freeNode(void *o) {
 	sNode *n = (sNode*)o;
-	klock_aquire(&lock);
+	klock_aquire(&sllnLock);
 	n->next = freelist;
 	freelist = n;
-	klock_release(&lock);
+	klock_release(&sllnLock);
 }

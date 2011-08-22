@@ -22,7 +22,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/klock.h>
-#include <sys/video.h>
+#include <sys/log.h>
 #include <string.h>
 
 #if DEBUGGING
@@ -35,7 +35,7 @@
 #define HEAP_THRESHOLD		512
 
 typedef struct {
-	size_t objSize;
+	const size_t objSize;
 	size_t totalObjs;
 	size_t freeObjs;
 	void *freeList;
@@ -43,7 +43,7 @@ typedef struct {
 
 static void *cache_get(sCache *c,size_t i);
 
-static klock_t lock;
+static klock_t cacheLock;
 static size_t pages = 0;
 static sCache caches[] = {
 	{8,0,0,NULL},
@@ -62,7 +62,7 @@ static sCache caches[] = {
 };
 
 #if DEBUGGING
-static bool aafEnabled = false;
+static bool aafEnabled = true;
 #endif
 
 void *cache_alloc(size_t size) {
@@ -85,15 +85,17 @@ void *cache_alloc(size_t size) {
 done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
+		klock_aquire(&cacheLock);
 		sFuncCall *trace = util_getKernelStackTrace();
-		vid_printf("\n[A] %Px %zd ",res,size);
+		log_printf("\n[A] %Px %zd ",res,size);
 		for(i = 0; trace->addr != 0 && i < 7; i++) {
-			vid_printf("%Px",trace->addr);
+			log_printf("%Px",trace->addr);
 			trace++;
 			if(trace->addr)
-				vid_printf(" ");
+				log_printf(" ");
 		}
-		vid_printf("\n");
+		log_printf("\n");
+		klock_release(&cacheLock);
 	}
 #endif
 	return res;
@@ -133,16 +135,18 @@ void cache_free(void *p) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
+		klock_aquire(&cacheLock);
 		sFuncCall *trace = util_getKernelStackTrace();
 		size_t i = 0;
-		vid_printf("\n[F] %Px 0 ",p);
+		log_printf("\n[F] %Px 0 ",p);
 		while(trace->addr != 0 && i++ < 7) {
-			vid_printf("%Px",trace->addr);
+			log_printf("%Px",trace->addr);
 			trace++;
 			if(trace->addr)
-				vid_printf(" ");
+				log_printf(" ");
 		}
-		vid_printf("\n");
+		log_printf("\n");
+		klock_release(&cacheLock);
 	}
 #endif
 
@@ -164,11 +168,11 @@ void cache_free(void *p) {
 
 	/* put on freelist */
 	c = caches + area[0];
-	klock_aquire(&lock);
+	klock_aquire(&cacheLock);
 	area[0] = (ulong)c->freeList;
 	c->freeList = area;
 	c->freeObjs++;
-	klock_release(&lock);
+	klock_release(&cacheLock);
 }
 
 size_t cache_getPageCount(void) {
@@ -200,7 +204,7 @@ void cache_print(void) {
 
 static void *cache_get(sCache *c,size_t i) {
 	ulong *area;
-	klock_aquire(&lock);
+	klock_aquire(&cacheLock);
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
@@ -209,7 +213,7 @@ static void *cache_get(sCache *c,size_t i) {
 		size_t rem = bytes - objs * totalObjSize;
 		ulong *space = (ulong*)kheap_allocSpace(pageCount);
 		if(space == NULL) {
-			klock_release(&lock);
+			klock_release(&cacheLock);
 			return NULL;
 		}
 
@@ -237,7 +241,7 @@ static void *cache_get(sCache *c,size_t i) {
 	area[1] = GUARD_MAGIC;
 	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
 	c->freeObjs--;
-	klock_release(&lock);
+	klock_release(&cacheLock);
 	return area + 2;
 }
 

@@ -58,6 +58,7 @@ void util_panic(const char *fmt,...) {
 	/* actually it may fail depending on what caused the panic. this may make it more difficult
 	 * to find the real reason for a failure. so it might be a good idea to turn it off during
 	 * kernel-debugging :) */
+#if 0
 	file_t file = vfs_openPath(KERNEL_PID,VFS_MSGS,"/dev/video");
 	if(file >= 0) {
 		ssize_t res;
@@ -69,9 +70,7 @@ void util_panic(const char *fmt,...) {
 		vfs_closeFile(KERNEL_PID,file);
 	}
 	vid_clearScreen();
-
-	/* disable interrupts so that nothing fancy can happen */
-	intrpt_setEnabled(false);
+#endif
 
 	/* print message */
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
@@ -147,8 +146,9 @@ sFuncCall *util_getUserStackTrace(void) {
 
 sFuncCall *util_getKernelStackTrace(void) {
 	uintptr_t start,end;
-	uint32_t* ebp = (uint32_t*)util_getStackFrameStart();
+	uint32_t* ebp;
 	sThread *t = thread_getRunning();
+	__asm__ volatile ("mov %%ebp,%0" : "=a" (ebp) : );
 
 	/* determine the stack-bounds; we have a temp stack at the beginning */
 	if((uintptr_t)ebp >= t->archAttr.kernelStack &&
@@ -160,7 +160,6 @@ sFuncCall *util_getKernelStackTrace(void) {
 		start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
 		end = (uintptr_t)&kernelStack;
 	}
-
 	return util_getStackTrace(ebp,start,start,end);
 }
 
@@ -198,14 +197,17 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 }
 
 sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
-	/* for the current, we can't use the ebp from the context-switch. instead we have to use the
-	 * value on the interrupt-stack */
-	uint32_t ebp = t == thread_getRunning() ? thread_getIntrptStack(t)->ebp : t->save.ebp;
-	frameno_t frame = paging_getFrameNo(&t->proc->pagedir,t->archAttr.kernelStack);
-	uintptr_t temp = paging_mapToTemp(&frame,1);
-	sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,t->archAttr.kernelStack,temp,temp + PAGE_SIZE);
-	paging_unmapFromTemp(1);
-	return calls;
+	sThread *run = thread_getRunning();
+	if(run == t)
+		return util_getKernelStackTrace();
+	else {
+		uint32_t ebp = t->save.ebp;
+		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,t->archAttr.kernelStack);
+		uintptr_t temp = paging_mapToTemp(&frame,1);
+		sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,t->archAttr.kernelStack,temp,temp + PAGE_SIZE);
+		paging_unmapFromTemp(1);
+		return calls;
+	}
 }
 
 static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
@@ -214,6 +216,7 @@ static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t ms
 	bool isKernel = (uintptr_t)ebp >= KERNEL_START;
 	sFuncCall *frame = &frames[0];
 	sSymbol *sym;
+	uint32_t *oldebp;
 
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
 		if(ebp == NULL)
@@ -236,8 +239,12 @@ static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t ms
 			frame->funcAddr = frame->addr;
 			frame->funcName = "Unknown";
 		}
-		ebp = (uint32_t*)*ebp;
 		frame++;
+		/* detect loops */
+		oldebp = ebp;
+		ebp = (uint32_t*)*ebp;
+		if(ebp == oldebp)
+			break;
 	}
 
 	/* terminate */

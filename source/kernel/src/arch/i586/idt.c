@@ -107,10 +107,13 @@ extern void isr45(void);
 extern void isr46(void);
 extern void isr47(void);
 extern void isr48(void);
+extern void isr49(void);
+extern void isr50(void);
+extern void isr51(void);
+extern void isr52(void);
 /* the handler for a other interrupts */
 extern void isrNull(void);
 
-extern void idt_load(sIDTPtr *idt);
 static void idt_set(size_t number,fISR handler,uint8_t dpl);
 
 /* the interrupt descriptor table */
@@ -180,13 +183,18 @@ void idt_init(void) {
 
 	/* syscall */
 	idt_set(48,isr48,IDT_DPL_USER);
+	/* IPIs */
+	idt_set(49,isr49,IDT_DPL_KERNEL);
+	idt_set(50,isr50,IDT_DPL_KERNEL);
+	idt_set(51,isr51,IDT_DPL_KERNEL);
+	idt_set(52,isr52,IDT_DPL_KERNEL);
 
 	/* all other interrupts */
-	for(i = 49; i < 256; i++)
+	for(i = 53; i < 256; i++)
 		idt_set(i,isrNull,IDT_DPL_KERNEL);
 
 	/* now we can use our idt */
-	idt_load(&idtPtr);
+	__asm__ volatile ("lidt %0" : : "m" (idtPtr));
 }
 
 static void idt_set(size_t number,fISR handler,uint8_t dpl) {

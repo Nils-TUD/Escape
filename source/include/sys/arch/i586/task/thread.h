@@ -61,4 +61,9 @@ typedef struct {
  */
 void thread_initialSwitch(void);
 
+/**
+ * Performs a thread-switch
+ */
+void thread_doSwitch(void);
+
 #endif /* I586_THREAD_H_ */

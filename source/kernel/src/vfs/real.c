@@ -418,9 +418,9 @@ static void vfs_real_openRespHandler(sVFSNode *node,USER const void *data,size_t
 		req->state = REQ_STATE_FINISHED;
 		req->count = inode;
 		req->val1 = dev;
-		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->thread,EV_REQ_REPLY);
+		vfs_req_remove(req);
 	}
 }
 
@@ -438,13 +438,14 @@ static void vfs_real_readRespHandler(sVFSNode *node,USER const void *data,size_t
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
 				req->data = NULL;
-				vfs_req_remove(req);
 				ev_wakeupThread(req->thread,EV_REQ_REPLY);
+				vfs_req_remove(req);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
 			req->count = res;
 			req->state = REQ_STATE_WAIT_DATA;
+			vfs_req_release(req);
 		}
 		else if(req->state == REQ_STATE_WAIT_DATA) {
 			/* ok, it's the data */
@@ -464,10 +465,12 @@ static void vfs_real_readRespHandler(sVFSNode *node,USER const void *data,size_t
 				}
 			}
 			req->state = REQ_STATE_FINISHED;
-			vfs_req_remove(req);
 			/* the thread can continue now */
 			ev_wakeupThread(req->thread,EV_REQ_REPLY);
+			vfs_req_remove(req);
 		}
+		else
+			vfs_req_release(req);
 	}
 }
 
@@ -488,9 +491,9 @@ static void vfs_real_statRespHandler(sVFSNode *node,USER const void *data,size_t
 				thread_remHeapAlloc(req->data);
 			}
 		}
-		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->thread,EV_REQ_REPLY);
+		vfs_req_remove(req);
 	}
 }
 
@@ -503,9 +506,9 @@ static void vfs_real_defRespHandler(sVFSNode *node,USER const void *data,size_t 
 		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
 		req->count = res;
-		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->thread,EV_REQ_REPLY);
+		vfs_req_remove(req);
 	}
 }
 

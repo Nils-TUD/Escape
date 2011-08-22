@@ -62,6 +62,12 @@ void gdt_init_ap(void);
 cpuid_t gdt_getCPUId(void);
 
 /**
+ * @param id the cpu-id
+ * @return the thread that the given CPU is running
+ */
+sThread *gdt_getRunningOn(cpuid_t id);
+
+/**
  * @return the currently running thread
  */
 sThread *gdt_getRunning(void);

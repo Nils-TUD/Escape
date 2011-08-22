@@ -225,12 +225,6 @@ void thread_switchTo(tid_t tid) {
 		sThread *old = ct;
 		vassert(t != NULL,"Thread with tid %d not found",tid);
 
-		/* mark old process ready, if it should not be blocked, killed or something */
-		if(ct->state == ST_RUNNING)
-			sched_setReady(ct);
-		if(ct->flags & T_IDLE)
-			thread_pushIdle(ct);
-
 		thread_setRunning(t);
 		ct = t;
 
@@ -238,7 +232,6 @@ void thread_switchTo(tid_t tid) {
 		ct->stats.schedCount++;
 		if(conf_getStr(CONF_SWAP_DEVICE))
 			vmm_setTimestamp(ct,timer_getTimestamp());
-		sched_setRunning(ct);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */

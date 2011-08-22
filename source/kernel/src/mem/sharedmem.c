@@ -67,7 +67,7 @@ static sShMemUser *shm_getUser(const sShMem *mem,pid_t pid);
 
 /* list with all shared memories */
 static sSLList *shareList = NULL;
-static klock_t lock;
+static klock_t shmLock;
 
 void shm_init(void) {
 	shareList = sll_create();
@@ -82,9 +82,9 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	/* checks */
 	if(strlen(name) > MAX_SHAREDMEM_NAME)
 		return ERR_SHARED_MEM_NAME;
-	klock_aquire(&lock);
+	klock_aquire(&shmLock);
 	if(shm_get(name) != NULL) {
-		klock_release(&lock);
+		klock_release(&shmLock);
 		return ERR_SHARED_MEM_EXISTS;
 	}
 
@@ -104,7 +104,7 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	if(!sll_append(shareList,mem))
 		goto errVmm;
 	vmm_getRegRange(pid,reg,&start,NULL);
-	klock_release(&lock);
+	klock_release(&shmLock);
 	return start / PAGE_SIZE;
 
 errVmm:
@@ -114,7 +114,7 @@ errUList:
 errMem:
 	cache_free(mem);
 errLock:
-	klock_release(&lock);
+	klock_release(&shmLock);
 	return ERR_NOT_ENOUGH_MEM;
 }
 
@@ -123,68 +123,68 @@ ssize_t shm_join(pid_t pid,const char *name) {
 	vmreg_t reg;
 	sShMemUser *owner;
 	sShMem *mem;
-	klock_aquire(&lock);
+	klock_aquire(&shmLock);
 
 	mem = shm_get(name);
 	if(mem == NULL || shm_getUser(mem,pid) != NULL) {
-		klock_release(&lock);
+		klock_release(&shmLock);
 		return ERR_SHARED_MEM_INVALID;
 	}
 
 	owner = (sShMemUser*)sll_get(mem->users,0);
 	reg = vmm_join(owner->pid,owner->region,pid);
 	if(reg < 0) {
-		klock_release(&lock);
+		klock_release(&shmLock);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	if(!shm_addUser(mem,pid,reg)) {
 		vmm_remove(pid,reg);
-		klock_release(&lock);
+		klock_release(&shmLock);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	vmm_getRegRange(pid,reg,&start,NULL);
-	klock_release(&lock);
+	klock_release(&shmLock);
 	return start / PAGE_SIZE;
 }
 
 int shm_leave(pid_t pid,const char *name) {
 	int res;
-	klock_aquire(&lock);
+	klock_aquire(&shmLock);
 	res = shm_doLeave(pid,name);
-	klock_release(&lock);
+	klock_release(&shmLock);
 	return res;
 }
 
 int shm_destroy(pid_t pid,const char *name) {
 	int res;
-	klock_aquire(&lock);
+	klock_aquire(&shmLock);
 	res = shm_doDestroy(pid,name);
-	klock_release(&lock);
+	klock_release(&shmLock);
 	return res;
 }
 
 int shm_cloneProc(pid_t parent,pid_t child) {
 	sSLNode *n;
-	klock_aquire(&lock);
+	klock_aquire(&shmLock);
 	for(n = sll_begin(shareList); n != NULL; n = n->next) {
 		sShMem *mem = (sShMem*)n->data;
 		sShMemUser *user = shm_getUser(mem,parent);
 		if(user) {
 			if(!shm_addUser(mem,child,user->region)) {
-				klock_release(&lock);
+				klock_release(&shmLock);
 				/* remove all already created entries */
 				shm_remProc(child);
 				return ERR_NOT_ENOUGH_MEM;
 			}
 		}
 	}
-	klock_release(&lock);
+	klock_release(&shmLock);
 	return 0;
 }
 
 void shm_remProc(pid_t pid) {
 	sSLNode *n,*t;
-	klock_aquire(&lock);
+	klock_aquire(&shmLock);
 	for(n = sll_begin(shareList); n != NULL; ) {
 		sShMem *mem = (sShMem*)n->data;
 		if(shm_isOwn(mem,pid)) {
@@ -199,7 +199,7 @@ void shm_remProc(pid_t pid) {
 			n = n->next;
 		}
 	}
-	klock_release(&lock);
+	klock_release(&shmLock);
 }
 
 void shm_print(void) {

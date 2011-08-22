@@ -22,6 +22,7 @@
 #include <sys/vfs/driver.h>
 #include <sys/vfs/request.h>
 #include <sys/vfs/server.h>
+#include <sys/vfs/channel.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
@@ -52,14 +53,21 @@ ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	if(!vfs_server_supports(node->parent,DRV_OPEN))
 		return 0;
 
+	/* we have to ensure that the position of our request and the position of the message we're
+	 * going to send is the same. i.e. we have to prevent that somebody else sends a message
+	 * to this channel in the meanwhile */
+	vfs_chan_lock(node);
 	/* get request */
 	req = vfs_req_get(node,NULL,0);
-	if(!req)
+	if(!req) {
+		vfs_chan_unlock(node);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 
 	/* send msg to driver */
 	msg.arg1 = flags;
 	res = vfs_sendMsg(pid,file,MSG_DRV_OPEN,&msg,sizeof(msg));
+	vfs_chan_unlock(node);
 	if(res < 0) {
 		vfs_req_free(req);
 		return res;
@@ -92,14 +100,18 @@ ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_
 		return res;
 
 	/* get request */
+	vfs_chan_lock(node);
 	req = vfs_req_get(node,NULL,count);
-	if(!req)
+	if(!req) {
+		vfs_chan_unlock(node);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 
 	/* send msg to driver */
 	msg.arg1 = offset;
 	msg.arg2 = count;
 	res = vfs_sendMsg(pid,file,MSG_DRV_READ,&msg,sizeof(msg));
+	vfs_chan_unlock(node);
 	if(res < 0) {
 		vfs_req_free(req);
 		return res;
@@ -132,9 +144,12 @@ ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buff
 		return ERR_UNSUPPORTED_OP;
 
 	/* get request */
+	vfs_chan_lock(node);
 	req = vfs_req_get(node,NULL,0);
-	if(!req)
+	if(!req) {
+		vfs_chan_unlock(node);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 
 	/* send msg to driver */
 	msg.arg1 = offset;
@@ -142,10 +157,12 @@ ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buff
 	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,&msg,sizeof(msg));
 	if(res < 0) {
 		vfs_req_free(req);
+		vfs_chan_unlock(node);
 		return res;
 	}
 	/* now send data */
 	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,buffer,count);
+	vfs_chan_unlock(node);
 	if(res < 0) {
 		vfs_req_free(req);
 		return res;
@@ -163,7 +180,9 @@ void vfs_drv_close(pid_t pid,file_t file,sVFSNode *node) {
 	if(!vfs_server_supports(node->parent,DRV_CLOSE))
 		return;
 
+	vfs_chan_lock(node);
 	vfs_sendMsg(pid,file,MSG_DRV_CLOSE,NULL,0);
+	vfs_chan_unlock(node);
 }
 
 static void vfs_drv_wait(sRequest *req) {
@@ -183,9 +202,9 @@ static void vfs_drv_openReqHandler(sVFSNode *node,USER const void *data,size_t s
 		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
 		req->count = res;
-		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->thread,EV_REQ_REPLY);
+		vfs_req_remove(req);
 	}
 }
 
@@ -205,8 +224,8 @@ static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t s
 				vfs_server_setReadable(drv,readable);
 				req->count = res;
 				req->state = REQ_STATE_FINISHED;
-				vfs_req_remove(req);
 				ev_wakeupThread(req->thread,EV_REQ_REPLY);
+				vfs_req_remove(req);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
@@ -215,6 +234,7 @@ static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t s
 			vfs_server_setReadable(drv,readable);
 			req->count = MIN(req->dsize,res);
 			req->state = REQ_STATE_WAIT_DATA;
+			vfs_req_release(req);
 		}
 		else if(req->state == REQ_STATE_WAIT_DATA) {
 			/* ok, it's the data */
@@ -228,9 +248,9 @@ static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t s
 				}
 			}
 			req->state = REQ_STATE_FINISHED;
-			vfs_req_remove(req);
 			/* the thread can continue now */
 			ev_wakeupThread(req->thread,EV_REQ_REPLY);
+			vfs_req_remove(req);
 		}
 	}
 }
@@ -244,8 +264,8 @@ static void vfs_drv_writeReqHandler(sVFSNode *node,USER const void *data,size_t 
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
 		req->count = res;
-		vfs_req_remove(req);
 		/* the thread can continue now */
 		ev_wakeupThread(req->thread,EV_REQ_REPLY);
+		vfs_req_remove(req);
 	}
 }

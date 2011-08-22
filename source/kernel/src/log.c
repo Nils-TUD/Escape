@@ -53,7 +53,7 @@ static uint col = 0;
 static bool logToSer = true;
 static file_t logFile;
 static bool vfsIsReady = false;
-static klock_t lock;
+static klock_t logLock;
 static sPrintEnv env = {
 	.print = log_printc,
 	.escape = log_escape,
@@ -86,7 +86,7 @@ void log_vfsIsReady(void) {
 	assert(proc_assocFd(logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
-	vfsIsReady = true;
+	/* TODO vfsIsReady = true;*/
 	/* don't write that again to COM1 */
 	logToSer = false;
 	log_flush();
@@ -101,16 +101,16 @@ void log_printf(const char *fmt,...) {
 }
 
 void log_vprintf(const char *fmt,va_list ap) {
+	/* lock it all, to make the debug-output more readable */
+	klock_aquire(&logLock);
 	prf_vprintf(&env,fmt,ap);
-	klock_aquire(&lock);
 	log_flush();
-	klock_release(&lock);
+	klock_release(&logLock);
 }
 
 static void log_printc(char c) {
 	if(conf_get(CONF_LOG) && !vfsIsReady)
 		log_writeChar(c);
-	klock_aquire(&lock);
 	if(bufPos >= BUF_SIZE)
 		log_flush();
 	if(bufPos < BUF_SIZE) {
@@ -123,7 +123,6 @@ static void log_printc(char c) {
 			case '\t':
 				col = (col + (TAB_WIDTH - col % TAB_WIDTH)) % VID_COLS;
 				if(col == 0) {
-					klock_release(&lock);
 					log_printc(' ');
 					return;
 				}
@@ -131,14 +130,12 @@ static void log_printc(char c) {
 			default:
 				col = (col + 1) % VID_COLS;
 				if(col == 0) {
-					klock_release(&lock);
 					log_printc('\n');
 					return;
 				}
 				break;
 		}
 	}
-	klock_release(&lock);
 }
 
 static uchar log_pipePad(void) {

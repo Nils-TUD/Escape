@@ -23,6 +23,7 @@
 #include <sys/dbg/kb.h>
 #include <sys/config.h>
 #include <sys/log.h>
+#include <sys/klock.h>
 #include <sys/util.h>
 #include <sys/printf.h>
 #include <sys/video.h>
@@ -33,6 +34,7 @@
 #define VIDEO_BASE			0xC00B8000
 #define TAB_WIDTH			4
 
+static void vid_putchar(char c);
 static void vid_move(void);
 static uchar vid_handlePipePad(void);
 static void vid_handleColorCode(const char **str);
@@ -43,6 +45,7 @@ static ushort col = 0;
 static ushort row = 0;
 static uchar color = 0;
 static uint targets = TARGET_SCREEN | TARGET_LOG;
+static klock_t vidLock;
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
@@ -57,9 +60,11 @@ void vid_backup(char *buffer,ushort *r,ushort *c) {
 }
 
 void vid_restore(const char *buffer,ushort r,ushort c) {
+	klock_aquire(&vidLock);
 	memcpy((void*)VIDEO_BASE,buffer,VID_ROWS * VID_COLS * 2);
 	row = r;
 	col = c;
+	klock_release(&vidLock);
 }
 
 void vid_setTargets(uint ntargets) {
@@ -67,8 +72,10 @@ void vid_setTargets(uint ntargets) {
 }
 
 void vid_clearScreen(void) {
+	klock_aquire(&vidLock);
 	memclear((void*)VIDEO_BASE,VID_COLS * 2 * VID_ROWS);
 	col = row = 0;
+	klock_release(&vidLock);
 }
 
 void vid_setPrintFunc(fPrintc func) {
@@ -79,7 +86,28 @@ void vid_unsetPrintFunc(void) {
 	printFunc = vid_putchar;
 }
 
-void vid_putchar(char c) {
+void vid_printf(const char *fmt,...) {
+	va_list ap;
+	va_start(ap,fmt);
+	vid_vprintf(fmt,ap);
+	va_end(ap);
+}
+
+void vid_vprintf(const char *fmt,va_list ap) {
+	sPrintEnv env;
+	env.print = printFunc;
+	env.escape = vid_handleColorCode;
+	env.pipePad = vid_handlePipePad;
+	if(targets & TARGET_SCREEN) {
+		klock_aquire(&vidLock);
+		prf_vprintf(&env,fmt,ap);
+		klock_release(&vidLock);
+	}
+	if(targets & TARGET_LOG)
+		log_vprintf(fmt,ap);
+}
+
+static void vid_putchar(char c) {
 	size_t i;
 	char *video;
 	/* do an explicit newline if necessary */
@@ -115,27 +143,6 @@ void vid_putchar(char c) {
 	}
 }
 
-void vid_printf(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	vid_vprintf(fmt,ap);
-	va_end(ap);
-}
-
-void vid_vprintf(const char *fmt,va_list ap) {
-	sPrintEnv env;
-	env.print = printFunc;
-	env.escape = vid_handleColorCode;
-	env.pipePad = vid_handlePipePad;
-	if(targets & TARGET_SCREEN)
-		prf_vprintf(&env,fmt,ap);
-	if(targets & TARGET_LOG)
-		log_vprintf(fmt,ap);
-}
-
-/**
- * Moves all lines one line up, if necessary
- */
 static void vid_move(void) {
 	/* last line? */
 	if(row >= VID_ROWS) {

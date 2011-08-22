@@ -65,7 +65,7 @@ buildMenuLst() {
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "title \"$OSTITLE - VESA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
 	if [ "`echo $BUILD | grep $ARCH'-release'`" != "" ]; then
-		echo "kernel /boot/$BINNAME videomode=vesa swapdev=/dev/hda3 nolog" >> $DISKMOUNT/boot/grub/menu.lst;
+		echo "kernel /boot/$BINNAME videomode=vesa swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	else
 		echo "kernel /boot/$BINNAME videomode=vesa swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	fi
@@ -78,7 +78,7 @@ buildMenuLst() {
 	
 	echo "title \"$OSTITLE - VGA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
 	if [ "`echo $BUILD | grep $ARCH'-release'`" != "" ]; then
-		echo "kernel /boot/$BINNAME videomode=vga swapdev=/dev/hda3 nolog" >> $DISKMOUNT/boot/grub/menu.lst;
+		echo "kernel /boot/$BINNAME videomode=vga swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	else
 		echo "kernel /boot/$BINNAME videomode=vga swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	fi

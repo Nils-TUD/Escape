@@ -26,6 +26,7 @@
 #include <sys/task/thread.h>
 #include <sys/syscalls/io.h>
 #include <sys/syscalls.h>
+#include <esc/messages.h>
 #include <errors.h>
 #include <string.h>
 #include <assert.h>
@@ -295,6 +296,9 @@ int sysc_send(sIntrptStackFrame *stack) {
 	file_t file;
 	ssize_t res;
 	if(!paging_isInUserSpace((uintptr_t)data,size))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	/* can't be sent by user-programs */
+	if(IS_DRIVER_MSG(id))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */

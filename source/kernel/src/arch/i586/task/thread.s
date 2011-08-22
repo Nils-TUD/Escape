@@ -55,13 +55,14 @@ thread_save:
 	leave
 	ret
 
-# bool thread_resume(tPageDir pageDir,sThreadRegs *saveArea);
+# bool thread_resume(tPageDir pageDir,sThreadRegs *saveArea,klock_t lock);
 thread_resume:
 	push	%ebp
 	mov		%esp,%ebp
 
 	mov		8(%ebp),%edi			# get page-dir
 	mov		12(%ebp),%eax			# get saveArea
+	mov		16(%ebp),%edx			# get lock
 
 	mov		%edi,%cr3				# set page-dir
 
@@ -73,6 +74,7 @@ thread_resume:
 	mov		STATE_EBX(%eax),%ebx
 	pushl	STATE_EFLAGS(%eax)
 	popfl							# load eflags
+	movl	$0,(%edx)				# unlock now; the old thread can be used
 
 	mov		$1,%eax					# return 1
 	leave

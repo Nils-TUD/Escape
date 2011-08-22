@@ -44,7 +44,7 @@
 #include <string.h>
 #include <errors.h>
 
-static sThread *thread_createInitial(sProc *p,eThreadState state);
+static sThread *thread_createInitial(sProc *p);
 static tid_t thread_getFreeTid(void);
 static bool thread_add(sThread *t);
 static void thread_remove(sThread *t);
@@ -54,7 +54,7 @@ static sSLList *threads;
 static sThread *tidToThread[MAX_THREAD_COUNT];
 static sSLList *idleThreads;
 static tid_t nextTid = 0;
-static klock_t lock;
+static klock_t threadLock;
 
 sThread *thread_init(sProc *p) {
 	sThread *curThread;
@@ -67,12 +67,12 @@ sThread *thread_init(sProc *p) {
 		util_panic("Unable to create idle-thread-list");
 
 	/* create thread for init */
-	curThread = thread_createInitial(p,ST_RUNNING);
+	curThread = thread_createInitial(p);
 	thread_setRunning(curThread);
 	return curThread;
 }
 
-static sThread *thread_createInitial(sProc *p,eThreadState state) {
+static sThread *thread_createInitial(sProc *p) {
 	size_t i;
 	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -82,7 +82,8 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	*(tid_t*)&t->tid = nextTid++;
 	*(sProc**)&t->proc = p;
 
-	t->state = state;
+	t->state = ST_RUNNING;
+	t->newState = ST_READY;
 	t->lock = 0;
 	t->events = 0;
 	t->waits = NULL;
@@ -158,9 +159,9 @@ size_t thread_getIntrptLevel(const sThread *t) {
 
 size_t thread_getCount(void) {
 	size_t len;
-	klock_aquire(&lock);
+	klock_aquire(&threadLock);
 	len = sll_length(threads);
-	klock_release(&lock);
+	klock_release(&threadLock);
 	return len;
 }
 
@@ -171,24 +172,22 @@ sThread *thread_getById(tid_t tid) {
 }
 
 void thread_pushIdle(sThread *t) {
-	klock_aquire(&lock);
+	/* TODO move to sched */
+	klock_aquire(&threadLock);
 	sll_append(idleThreads,t);
-	klock_release(&lock);
+	klock_release(&threadLock);
 }
 
 sThread *thread_popIdle(void) {
 	sThread *t;
-	klock_aquire(&lock);
+	klock_aquire(&threadLock);
 	t = sll_removeFirst(idleThreads);
-	klock_release(&lock);
+	klock_release(&threadLock);
 	return t;
 }
 
 void thread_switch(void) {
-	sThread *t = thread_getRunning();
-	if(t->state == ST_RUNNING)
-		sched_setReady(t);
-	thread_switchTo(sched_perform(t)->tid);
+	thread_doSwitch();
 }
 
 void thread_switchNoSigs(void) {
@@ -207,6 +206,9 @@ void thread_block(sThread *t) {
 void thread_unblock(sThread *t) {
 	assert(t != NULL && t != thread_getRunning());
 	sched_setReady(t);
+	/* TODO */
+	/* check if there are idling CPUs that could run this thread; if so, wake one up */
+	smp_wakeupCPU();
 }
 
 void thread_suspend(sThread *t) {
@@ -217,6 +219,9 @@ void thread_suspend(sThread *t) {
 void thread_unsuspend(sThread *t) {
 	assert(t != NULL);
 	sched_setSuspended(t,false);
+	/* TODO */
+	if(t->state == ST_READY)
+		smp_wakeupCPU();
 }
 
 bool thread_getStackRange(sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
@@ -334,7 +339,8 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 	*(uint8_t*)&t->flags = flags;
 	*(sProc**)&t->proc = p;
 
-	t->state = ST_RUNNING;
+	t->state = ST_BLOCKED;
+	t->newState = ST_READY;
 	t->lock = 0;
 	t->events = 0;
 	t->waits = NULL;
@@ -427,7 +433,8 @@ bool thread_kill(sThread *t) {
 		sched_removeThread(t);
 		/* remove from timer, too, so that we don't get waked up again */
 		timer_removeThread(t->tid);
-		t->state = ST_ZOMBIE;
+		/* remove signal-handler, so that we can't get signals anymore */
+		sig_removeHandlerFor(t->tid);
 		return false;
 	}
 
@@ -454,7 +461,6 @@ bool thread_kill(sThread *t) {
 	sll_clear(&t->termUsages,false);
 
 	/* remove from all modules we may be announced */
-	sig_removeHandlerFor(t->tid);
 	ev_removeThread(t);
 	sched_removeThread(t);
 	timer_removeThread(t->tid);
@@ -521,7 +527,7 @@ void thread_print(const sThread *t) {
 static tid_t thread_getFreeTid(void) {
 	size_t count = 0;
 	tid_t res = INVALID_TID;
-	klock_aquire(&lock);
+	klock_aquire(&threadLock);
 	while(count < MAX_THREAD_COUNT) {
 		if(nextTid >= MAX_THREAD_COUNT)
 			nextTid = 0;
@@ -531,24 +537,24 @@ static tid_t thread_getFreeTid(void) {
 		}
 		count++;
 	}
-	klock_release(&lock);
+	klock_release(&threadLock);
 	return res;
 }
 
 static bool thread_add(sThread *t) {
 	bool res = false;
-	klock_aquire(&lock);
+	klock_aquire(&threadLock);
 	if(sll_append(threads,t)) {
 		tidToThread[t->tid] = t;
 		res = true;
 	}
-	klock_release(&lock);
+	klock_release(&threadLock);
 	return res;
 }
 
 static void thread_remove(sThread *t) {
-	klock_aquire(&lock);
+	klock_aquire(&threadLock);
 	sll_removeFirstWith(threads,t);
 	tidToThread[t->tid] = NULL;
-	klock_release(&lock);
+	klock_release(&threadLock);
 }

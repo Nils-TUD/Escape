@@ -23,11 +23,6 @@
 #include <esc/common.h>
 
 /**
- * @return the address of the stack-frame-start
- */
-extern uintptr_t util_getStackFrameStart(void);
-
-/**
  * Starts the timer
  */
 void util_startTimer(void);

@@ -33,6 +33,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/groups.h>
 #include <sys/task/event.h>
+#include <sys/task/lock.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/dynarray.h>
@@ -717,7 +718,7 @@ static bool vfs_hasWork(sVFSNode *node) {
 	return IS_DRIVER(node->mode) && vfs_server_hasWork(node);
 }
 
-int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block) {
+int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block,pid_t pid,ulong ident) {
 	sThread *t = thread_getRunning();
 	size_t i;
 
@@ -742,18 +743,12 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block) {
 		for(i = 0; i < objCount; i++) {
 			if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 				sVFSNode *n = (sVFSNode*)objects[i].object;
-				if((objects[i].events & EV_CLIENT) && vfs_hasWork(n)) {
-					klock_release(&waitLock);
-					return 0;
-				}
-				else if((objects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(n)) {
-					klock_release(&waitLock);
-					return 0;
-				}
-				else if((objects[i].events & EV_DATA_READABLE) && vfs_hasData(n)) {
-					klock_release(&waitLock);
-					return 0;
-				}
+				if((objects[i].events & EV_CLIENT) && vfs_hasWork(n))
+					goto noWait;
+				else if((objects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(n))
+					goto noWait;
+				else if((objects[i].events & EV_DATA_READABLE) && vfs_hasData(n))
+					goto noWait;
 			}
 		}
 
@@ -767,6 +762,8 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block) {
 			klock_release(&waitLock);
 			return ERR_NOT_ENOUGH_MEM;
 		}
+		if(pid != KERNEL_PID)
+			lock_release(pid,ident);
 		klock_release(&waitLock);
 
 		thread_switch();
@@ -778,7 +775,11 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block) {
 				return 0;
 		}
 	}
-	/* never reached */
+
+noWait:
+	if(pid != KERNEL_PID)
+		lock_release(pid,ident);
+	klock_release(&waitLock);
 	return 0;
 }
 

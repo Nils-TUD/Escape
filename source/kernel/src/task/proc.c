@@ -72,6 +72,7 @@ static sProc *pidToProc[MAX_PROC_COUNT];
 static pid_t nextPid = 1;
 static sSLList deadThreads;
 static klock_t procLock;
+static klock_t deadLock;
 
 void proc_preinit(void) {
 	paging_setFirst(&first.pagedir);
@@ -510,7 +511,9 @@ errorVFS:
 	groups_leave(p->pid);
 	vfs_removeProcess(p->pid);
 errorAdd:
+	klock_aquire(&procLock);
 	proc_remove(p);
+	klock_release(&procLock);
 errorCmd:
 	cache_free((void*)p->command);
 errorPdir:
@@ -642,6 +645,22 @@ errorNoRel:
 	return 0;
 }
 
+void proc_join(tid_t tid) {
+	sThread *t = thread_getRunning();
+	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
+	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
+	while((tid == 0 && sll_length(t->proc->threads) > 1) ||
+			(tid != 0 && thread_getById(tid) != NULL)) {
+		ev_wait(t,EVI_THREAD_DIED,(evobj_t)t->proc);
+		proc_release(p,PLOCK_PROG);
+
+		thread_switchNoSigs();
+
+		proc_request(t->proc->pid,PLOCK_PROG);
+	}
+	proc_release(p,PLOCK_PROG);
+}
+
 void proc_exit(int exitCode) {
 	sThread *t = thread_getRunning();
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
@@ -708,19 +727,22 @@ void proc_segFault(void) {
 }
 
 void proc_killDeadThread(void) {
-	klock_aquire(&procLock);
+	klock_aquire(&deadLock);
 	if(sll_length(&deadThreads) > 0) {
 		sSLNode *n;
 		for(n = sll_begin(&deadThreads); n != NULL; n = n->next) {
 			sThread *t = (sThread*)n->data;
 			sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 			thread_kill(t);
-			sll_removeFirstWith(t->proc->threads,t);
+			/* now mark it as zombie; even if we release the process-lock, we still have the
+			 * procLock, so that nobody can really kill it until we've released that. */
+			p->flags |= P_ZOMBIE;
+			sll_removeFirstWith(p->threads,t);
 			proc_release(p,PLOCK_PROG);
 		}
 		sll_clear(&deadThreads,false);
 	}
-	klock_release(&procLock);
+	klock_release(&deadLock);
 }
 
 void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
@@ -797,21 +819,24 @@ static void proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
 		proc_killThread(t);
 		tn = tmpn;
 	}
-
-	p->flags |= P_ZOMBIE;
 }
 
 bool proc_kill(pid_t pid) {
 	sSLNode *n;
-	sProc *p = proc_getByPid(pid);
-	if(!p)
+	sProc *p;
+
+	/* lock the whole function to prevent that we kill that process twice */
+	klock_aquire(&procLock);
+	p = proc_getByPid(pid);
+	if(!p) {
+		klock_release(&procLock);
 		return false;
+	}
 
 	vassert(p->pid != 0,"You can't kill the initial process");
 	vassert(p->pid != proc_getRunning(),"We can't kill the current process!");
 
 	/* give childs the ppid 0 */
-	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *cp = (sProc*)n->data;
 		if(cp->parentPid == p->pid) {
@@ -822,7 +847,6 @@ bool proc_kill(pid_t pid) {
 				proc_notifyProcDied(0);
 		}
 	}
-	klock_release(&procLock);
 
 	/* remove pagedir; TODO we can do that on terminate, too (if we delay it when its the current) */
 	paging_destroyPDir(&p->pagedir);
@@ -840,6 +864,7 @@ bool proc_kill(pid_t pid) {
 	/* remove and free */
 	proc_remove(p);
 	cache_free(p);
+	klock_release(&procLock);
 	return true;
 }
 
@@ -893,7 +918,7 @@ void proc_print(sProc *p) {
 	vid_printf("\n");
 	proc_getMemUsageOf(p->pid,&own,&shared,&swapped);
 	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swapped);
-	if(p->flags & P_ZOMBIE) {
+	if(p->exitState) {
 		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
 		vid_printf("\t\town=%lu, shared=%lu, swap=%lu\n",
 				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
@@ -985,9 +1010,9 @@ static void proc_killThread(sThread *t) {
 	if(thread_kill(t))
 		sll_removeFirstWith(p->threads,t);
 	else {
-		klock_aquire(&procLock);
+		klock_aquire(&deadLock);
 		assert(sll_append(&deadThreads,t));
-		klock_release(&procLock);
+		klock_release(&deadLock);
 	}
 }
 
@@ -1013,10 +1038,8 @@ static bool proc_add(sProc *p) {
 }
 
 static void proc_remove(sProc *p) {
-	klock_aquire(&procLock);
 	sll_removeFirstWith(procs,p);
 	pidToProc[p->pid] = NULL;
-	klock_release(&procLock);
 }
 
 

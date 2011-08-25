@@ -72,6 +72,11 @@ void ev_unblock(sThread *t) {
 	thread_unblock(t);
 }
 
+void ev_unblockQuick(sThread *t) {
+	ev_removeThread(t);
+	thread_unblockQuick(t);
+}
+
 void ev_suspend(sThread *t) {
 	thread_suspend(t);
 }

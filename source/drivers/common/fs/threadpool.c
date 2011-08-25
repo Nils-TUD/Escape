@@ -22,8 +22,10 @@
 #include <esc/thread.h>
 #include <esc/sllist.h>
 #include <esc/io.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "threadpool.h"
 
 #define RT_STATE_IDLE		0
@@ -77,6 +79,7 @@ bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,
 			if(threads[i].state == RT_STATE_IDLE) {
 				sFSRequest *req = (sFSRequest*)malloc(sizeof(sFSRequest));
 				if(!req) {
+					printe("Unable to handle request");
 					tpool_unlock(STATE_LOCK);
 					return false;
 				}
@@ -99,12 +102,10 @@ bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,
 }
 
 static int tpool_idle(sReqThread *t) {
+	/* wait until we have work */
+	wait(EV_USER1,0);
 	while(run) {
-		/* wait until we have work */
-		while(run && t->state == RT_STATE_IDLE)
-			wait(EV_USER1,0);
-		if(!run)
-			break;
+		assert(t->state == RT_STATE_HASWORK);
 
 		/* handle request */
 		t->state = RT_STATE_BUSY;
@@ -120,7 +121,9 @@ static int tpool_idle(sReqThread *t) {
 		tpool_lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
 		t->state = RT_STATE_IDLE;
 		notify(acceptTid,EV_USER2);
-		tpool_unlock(STATE_LOCK);
+		/* we have to use waitUnlock here to ensure that we don't miss the notify from the
+		 * accept thread */
+		waitUnlock(EV_USER1,0,STATE_LOCK);
 	}
 	return 0;
 }

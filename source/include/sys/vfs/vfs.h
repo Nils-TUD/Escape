@@ -405,14 +405,18 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags);
  * Waits for the given wait-objects, whereas the objects are expected to be of type file_t.
  * First, the function checks whether we can wait, i.e. if the event to wait for has already
  * arrived. If not, we wait until one of the events arrived.
+ * If <pid> != KERNEL_PID, it calls lock_release(pid,ident) before going to sleep (this is used
+ * for waitUnlock).
  *
  * @param objects the array of wait-objects (will be changed; files -> nodes)
  * @param objCount the number of wait-objects
  * @param block whether we should wait if necessary (otherwise it will be checked only whether
  *  we can wait and if so, ERR_WOULD_BLOCKED is returned. if not, 0 is returned.)
+ * @param pid the process-id for lock_release (KERNEL_PID = don't call it)
+ * @param ident the ident for lock_release
  * @return 0 on success
  */
-int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block);
+int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block,pid_t pid,ulong ident);
 
 /**
  * For drivers: Looks whether a client wants to be served and return the node-number. If

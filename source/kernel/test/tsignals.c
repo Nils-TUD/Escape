@@ -66,64 +66,68 @@ static void test_canHandle(void) {
 }
 
 static void test_setHandler(void) {
-	sThread *t = thread_getRunning();
+	sThread *t1 = thread_getRunning();
+	sThread *t2 = thread_getById(1);
 	sig_t sig = 0xFF;
-	pid_t tid = 0x1337;
+	fSignal handler;
 
 	test_caseStart("Testing sig_setHandler()");
-	sig_setHandler(t->tid,SIG_INTRPT_ATA1,(fSignal)0x123);
+	test_assertInt(sig_setHandler(t2->tid,SIG_INTRPT_ATA1,(fSignal)0x123),0);
 	test_caseSucceeded();
 
 	test_caseStart("Adding and handling a signal");
-	sig_addSignal(SIG_INTRPT_ATA1);
-	test_assertTrue(sig_hasSignal(&sig,&tid));
-	test_assertTrue(tid == t->tid && sig == SIG_INTRPT_ATA1);
-	sig_startHandling(tid,sig);
-	sig_ackHandling(tid);
-	test_assertFalse(sig_hasSignal(&sig,&tid));
+	test_assertTrue(sig_addSignal(SIG_INTRPT_ATA1));
+	test_assertTrue(sig_hasSignalFor(t2->tid));
+	test_assertInt(sig_checkAndStart(t2->tid,&sig,&handler),SIG_CHECK_CUR);
+	test_assertTrue(sig == SIG_INTRPT_ATA1);
+	test_assertTrue(handler == (fSignal)0x123);
+	test_assertTrue(sig_ackHandling(t2->tid) == SIG_INTRPT_ATA1);
+	test_assertFalse(sig_hasSignalFor(t2->tid));
 	test_caseSucceeded();
 
 	test_caseStart("Adding nested signals");
-	sig_addSignal(SIG_INTRPT_ATA1);
-	test_assertTrue(sig_hasSignal(&sig,&tid));
-	test_assertTrue(tid == t->tid && sig == SIG_INTRPT_ATA1);
-	sig_startHandling(tid,sig);
-	sig_addSignal(SIG_INTRPT_ATA1);
-	sig_ackHandling(tid);
-	test_assertTrue(sig_hasSignal(&sig,&tid));
-	test_assertTrue(tid == t->tid && sig == SIG_INTRPT_ATA1);
-	sig_startHandling(tid,sig);
-	sig_ackHandling(tid);
-	test_assertFalse(sig_hasSignal(&sig,&tid));
+	test_assertTrue(sig_addSignal(SIG_INTRPT_ATA1));
+	test_assertTrue(sig_hasSignalFor(t2->tid));
+	test_assertInt(sig_checkAndStart(t2->tid,&sig,&handler),SIG_CHECK_CUR);
+	test_assertTrue(sig == SIG_INTRPT_ATA1);
+	test_assertTrue(handler == (fSignal)0x123);
+	test_assertTrue(sig_addSignal(SIG_INTRPT_ATA1));
+	test_assertTrue(sig_ackHandling(t2->tid) == SIG_INTRPT_ATA1);
+	test_assertTrue(sig_hasSignalFor(t2->tid));
+	test_assertInt(sig_checkAndStart(t2->tid,&sig,&handler),SIG_CHECK_CUR);
+	test_assertTrue(sig == SIG_INTRPT_ATA1);
+	test_assertTrue(handler == (fSignal)0x123);
+	test_assertTrue(sig_ackHandling(t2->tid) == SIG_INTRPT_ATA1);
+	test_assertFalse(sig_hasSignalFor(t2->tid));
 	test_caseSucceeded();
 
 	test_caseStart("Adding signal for process");
-	sig_setHandler(t->tid,SIG_TERM,(fSignal)0x456);
-	proc_addSignalFor(t->proc->pid,SIG_TERM);
-	test_assertTrue(sig_hasSignal(&sig,&tid));
-	test_assertTrue(tid == t->tid && sig == SIG_TERM);
-	sig_startHandling(tid,sig);
-	sig_ackHandling(tid);
-	test_assertFalse(sig_hasSignal(&sig,&tid));
+	test_assertInt(sig_setHandler(t1->tid,SIG_TERM,(fSignal)0x456),0);
+	proc_addSignalFor(t1->proc->pid,SIG_TERM);
+	test_assertTrue(sig_hasSignalFor(t1->tid));
+	test_assertInt(sig_checkAndStart(t1->tid,&sig,&handler),SIG_CHECK_CUR);
+	test_assertTrue(sig == SIG_TERM);
+	test_assertTrue(handler == (fSignal)0x456);
+	test_assertTrue(sig_ackHandling(t1->tid) == sig);
+	test_assertFalse(sig_hasSignalFor(t1->tid));
 	test_caseSucceeded();
 
 	test_caseStart("Testing sig_unsetHandler()");
 	test_assertSize(sig_dbg_getHandlerCount(),2);
-	sig_unsetHandler(t->tid,SIG_INTRPT_ATA1);
-	sig_unsetHandler(t->tid,SIG_TERM);
+	sig_unsetHandler(t2->tid,SIG_INTRPT_ATA1);
+	sig_unsetHandler(t1->tid,SIG_TERM);
 	test_assertSize(sig_dbg_getHandlerCount(),0);
 	test_caseSucceeded();
 
 	test_caseStart("Testing sig_removeHandlerFor()");
-	sig_setHandler(0,SIG_TERM,(fSignal)0x456);
-	sig_setHandler(0,SIG_SEGFAULT,(fSignal)0x456);
-	sig_setHandler(0,SIG_INTRPT_ATA1,(fSignal)0x456);
-	test_assertTrue(thread_getById(1) != NULL);
-	if(thread_getById(1) != NULL) {
-		sig_setHandler(1,SIG_INTRPT_ATA1,(fSignal)0x1337);
-		sig_setHandler(1,SIG_INTRPT_COM1,(fSignal)0x1337);
-		sig_removeHandlerFor(1);
-	}
+	test_assertInt(sig_setHandler(t1->tid,SIG_TERM,(fSignal)0x456),0);
+	test_assertInt(sig_setHandler(t1->tid,SIG_SEGFAULT,(fSignal)0x456),0);
+	test_assertInt(sig_setHandler(t1->tid,SIG_INTRPT_ATA1,(fSignal)0x456),0);
+	test_assertInt(sig_setHandler(t2->tid,SIG_INTRPT_ATA1,(fSignal)0x1337),0);
+	test_assertInt(sig_setHandler(t2->tid,SIG_INTRPT_COM1,(fSignal)0x1337),0);
+	sig_removeHandlerFor(t2->tid);
 	test_assertSize(sig_dbg_getHandlerCount(),3);
+	sig_removeHandlerFor(t1->tid);
+	test_assertSize(sig_dbg_getHandlerCount(),0);
 	test_caseSucceeded();
 }

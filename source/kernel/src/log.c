@@ -86,7 +86,7 @@ void log_vfsIsReady(void) {
 	assert(proc_assocFd(logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
-	/* TODO vfsIsReady = true;*/
+	vfsIsReady = true;
 	/* don't write that again to COM1 */
 	logToSer = false;
 	log_flush();

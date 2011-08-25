@@ -33,6 +33,13 @@
 void sched_init(void);
 
 /**
+ * Adds the given thread as an idle-thread to the scheduler
+ *
+ * @param t the thread
+ */
+void sched_addIdleThread(sThread *t);
+
+/**
  * Performs the scheduling. That means it picks the next thread to run and returns it
  *
  * @param old the current thread
@@ -41,11 +48,20 @@ void sched_init(void);
 sThread *sched_perform(sThread *old);
 
 /**
- * Enqueues the given thread on the ready-queue and sets the state to ST_READY
+ * Appends the given thread on the ready-queue and sets the state to ST_READY
  *
  * @param t the thread
+ * @return true if successfull (i.e. if the thread is ready now and wasn't previously)
  */
-void sched_setReady(sThread *t);
+bool sched_setReady(sThread *t);
+
+/**
+ * Puts the given thread to the beginning of the ready-queue
+ *
+ * @param t the thread
+ * @return true if successfull (i.e. if the thread is ready now and wasn't previously)
+ */
+bool sched_setReadyQuick(sThread *t);
 
 /**
  * Sets the thread in the blocked-state

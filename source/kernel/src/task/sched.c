@@ -21,6 +21,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
 #include <sys/mem/kheap.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/util.h>
 #include <sys/klock.h>
 #include <sys/video.h>
@@ -51,13 +52,22 @@ static void sched_qInit(sQueue *q);
 static sThread *sched_qDequeue(sQueue *q);
 static void sched_qDequeueThread(sQueue *q,sThread *t);
 static void sched_qAppend(sQueue *q,sThread *t);
+static void sched_qPrepend(sQueue *q,sThread *t);
 static void sched_qPrint(sQueue *q);
 
 static klock_t schedLock;
 static sQueue readyQueue;
+static sSLList idleThreads;
 
 void sched_init(void) {
 	sched_qInit(&readyQueue);
+	sll_init(&idleThreads,slln_allocNode,slln_freeNode);
+}
+
+void sched_addIdleThread(sThread *t) {
+	klock_aquire(&schedLock);
+	sll_append(&idleThreads,t);
+	klock_release(&schedLock);
 }
 
 sThread *sched_perform(sThread *old) {
@@ -65,14 +75,18 @@ sThread *sched_perform(sThread *old) {
 	klock_aquire(&schedLock);
 	/* give the old thread a new state */
 	if(old) {
+		/* TODO it would be better to keep the idle-thread if we should idle again */
 		if(old->flags & T_IDLE)
-			thread_pushIdle(old);
+			sll_append(&idleThreads,old);
 		else {
-			assert(old->state == ST_RUNNING || old->state == ST_ZOMBIE);
+			vassert(old->state == ST_RUNNING || old->state == ST_ZOMBIE,"State %d",old->state);
 			/* we have to check for a signal here, because otherwise we might miss it */
 			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
-			if(sig_hasSignalFor(old->tid)) {
+			if(old->state != ST_ZOMBIE && sig_hasSignalFor(old->tid)) {
+				/* we have to reset the newstate in this case and remove us from event */
+				old->newState = ST_READY;
 				klock_release(&schedLock);
+				/*ev_removeThread(old);*/
 				return old;
 			}
 			switch(old->newState) {
@@ -96,7 +110,7 @@ sThread *sched_perform(sThread *old) {
 	t = sched_qDequeue(&readyQueue);
 	if(t == NULL) {
 		/* choose an idle-thread */
-		t = thread_popIdle();
+		t = sll_removeFirst(&idleThreads);
 	}
 	else {
 		t->state = ST_RUNNING;
@@ -107,19 +121,50 @@ sThread *sched_perform(sThread *old) {
 	return t;
 }
 
-void sched_setReady(sThread *t) {
+bool sched_setReady(sThread *t) {
+	bool res = false;
 	assert(t != NULL);
 	if(t->flags & T_IDLE)
-		return;
+		return false;
 
 	klock_aquire(&schedLock);
-	if(t->state == ST_RUNNING)
+	if(t->state == ST_RUNNING) {
+		res = t->newState != ST_READY;
 		t->newState = ST_READY;
+	}
 	else {
-		if(sched_setReadyState(t))
+		if(sched_setReadyState(t)) {
 			sched_qAppend(&readyQueue,t);
+			res = true;
+		}
 	}
 	klock_release(&schedLock);
+	return res;
+}
+
+bool sched_setReadyQuick(sThread *t) {
+	bool res = false;
+	assert(t != NULL);
+	if(t->flags & T_IDLE)
+		return false;
+
+	klock_aquire(&schedLock);
+	if(t->state == ST_RUNNING) {
+		res = t->newState != ST_READY;
+		t->newState = ST_READY;
+	}
+	else {
+		if(t->state == ST_READY) {
+			sched_qDequeueThread(&readyQueue,t);
+			sched_qPrepend(&readyQueue,t);
+		}
+		else if(sched_setReadyState(t)) {
+			sched_qPrepend(&readyQueue,t);
+			res = true;
+		}
+	}
+	klock_release(&schedLock);
+	return res;
 }
 
 static bool sched_setReadyState(sThread *t) {
@@ -278,6 +323,16 @@ static void sched_qAppend(sQueue *q,sThread *t) {
 	else
 		q->first = t;
 	q->last = t;
+}
+
+static void sched_qPrepend(sQueue *q,sThread *t) {
+	t->prev = NULL;
+	t->next = q->first;
+	if(q->first)
+		q->first->prev = t;
+	else
+		q->last = t;
+	q->first = t;
 }
 
 static void sched_qPrint(sQueue *q) {

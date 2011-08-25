@@ -164,6 +164,12 @@ sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {
 	/* because it can't be called twice because the waitLock in vfs prevents it. and nothing of the
 	 * server-data that is used here can be changed during this procedure. */
 	n = vfs_node_openDir(node,true);
+	/* if there are no messages at all, stop right now */
+	if(srv->msgCount == 0) {
+		vfs_node_closeDir(node,true);
+		return NULL;
+	}
+
 	last = srv->lastClient;
 	if(last != NULL) {
 		if(last->next == NULL) {

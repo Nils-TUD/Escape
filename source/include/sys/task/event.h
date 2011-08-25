@@ -98,6 +98,13 @@ void ev_block(sThread *t);
 void ev_unblock(sThread *t);
 
 /**
+ * Unblocks the given thread and puts it to the beginning of the ready-list
+ *
+ * @param t the thread
+ */
+void ev_unblockQuick(sThread *t);
+
+/**
  * Suspends the given thread
  *
  * @param t the thread

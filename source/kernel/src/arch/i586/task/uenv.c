@@ -31,43 +31,29 @@
 #include <errors.h>
 #include <assert.h>
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig);
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler);
 static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint);
 static uint32_t *uenv_addArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 
-static klock_t sigLock;
-
 void uenv_handleSignal(sIntrptStackFrame *stack) {
-	tid_t tid;
 	sig_t sig;
+	fSignal handler;
 	sThread *t = thread_getRunning();
-	klock_aquire(&sigLock);
-	if((sig = thread_getSignal(t)) != SIG_COUNT) {
-		uenv_startSignalHandler(t,stack,sig);
-		klock_release(&sigLock);
-		return;
-	}
-
-	if(sig_hasSignal(&sig,&tid)) {
-		if(t->tid == tid)
-			uenv_startSignalHandler(t,stack,sig);
-		else {
-			t = thread_getById(tid);
-			/* TODO prepend it to the ready-list instead of appending */
-			if(thread_setSignal(t,sig)) {
-				ev_unblock(t);
-				klock_release(&sigLock);
-				thread_switch();
-				return;
-			}
-		}
-	}
-	klock_release(&sigLock);
+	int res = sig_checkAndStart(t->tid,&sig,&handler);
+	if(res == SIG_CHECK_CUR)
+		uenv_startSignalHandler(t,stack,sig,handler);
+	else if(res == SIG_CHECK_OTHER)
+		thread_switch();
 }
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	UNUSED(signal);
 	uint32_t *esp = (uint32_t*)stack->uesp;
+	if(!paging_isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
+		proc_segFault();
+		/* never reached */
+		assert(false);
+	}
 	/* remove arg */
 	esp += 1;
 	/* restore regs */
@@ -204,12 +190,13 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return uenv_addArgs(t,esp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig) {
-	fSignal handler;
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
-
-	thread_unsetSignal(t);
-	handler = sig_startHandling(t->tid,sig);
+	if(!paging_isInUserSpace((uintptr_t)(esp - 10),10 * sizeof(uint32_t))) {
+		proc_segFault();
+		/* never reached */
+		assert(false);
+	}
 	/* the ret-instruction of sigRet() should go to the old eip */
 	*--esp = stack->eip;
 	/* save regs */

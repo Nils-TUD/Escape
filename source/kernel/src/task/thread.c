@@ -52,7 +52,6 @@ static void thread_remove(sThread *t);
 /* our threads */
 static sSLList *threads;
 static sThread *tidToThread[MAX_THREAD_COUNT];
-static sSLList *idleThreads;
 static tid_t nextTid = 0;
 static klock_t threadLock;
 
@@ -62,9 +61,6 @@ sThread *thread_init(sProc *p) {
 	threads = sll_create();
 	if(!threads)
 		util_panic("Unable to create thread-list");
-	idleThreads = sll_create();
-	if(!idleThreads)
-		util_panic("Unable to create idle-thread-list");
 
 	/* create thread for init */
 	curThread = thread_createInitial(p);
@@ -88,7 +84,7 @@ static sThread *thread_createInitial(sProc *p) {
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
-	t->signal = SIG_COUNT;
+	t->signals = NULL;
 	t->intrptLevel = 0;
 	t->cpu = -1;
 	t->stats.ucycleCount.val64 = 0;
@@ -116,23 +112,6 @@ static sThread *thread_createInitial(sProc *p) {
 		util_panic("Unable to put first thread in vfs");
 
 	return t;
-}
-
-bool thread_setSignal(sThread *t,sig_t sig) {
-	bool res = false;
-	if(!t->ignoreSignals && t->signal == SIG_COUNT) {
-		t->signal = sig;
-		res = true;
-	}
-	return res;
-}
-
-sig_t thread_getSignal(const sThread *t) {
-	return t->signal;
-}
-
-void thread_unsetSignal(sThread *t) {
-	t->signal = SIG_COUNT;
 }
 
 sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
@@ -171,21 +150,6 @@ sThread *thread_getById(tid_t tid) {
 	return tidToThread[tid];
 }
 
-void thread_pushIdle(sThread *t) {
-	/* TODO move to sched */
-	klock_aquire(&threadLock);
-	sll_append(idleThreads,t);
-	klock_release(&threadLock);
-}
-
-sThread *thread_popIdle(void) {
-	sThread *t;
-	klock_aquire(&threadLock);
-	t = sll_removeFirst(idleThreads);
-	klock_release(&threadLock);
-	return t;
-}
-
 void thread_switch(void) {
 	thread_doSwitch();
 }
@@ -205,10 +169,14 @@ void thread_block(sThread *t) {
 
 void thread_unblock(sThread *t) {
 	assert(t != NULL && t != thread_getRunning());
-	sched_setReady(t);
-	/* TODO */
 	/* check if there are idling CPUs that could run this thread; if so, wake one up */
-	smp_wakeupCPU();
+	if(sched_setReady(t))
+		smp_wakeupCPU();
+}
+
+void thread_unblockQuick(sThread *t) {
+	if(sched_setReadyQuick(t))
+		smp_wakeupCPU();
 }
 
 void thread_suspend(sThread *t) {
@@ -345,7 +313,7 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
-	t->signal = SIG_COUNT;
+	t->signals = NULL;
 	t->cpu = -1;
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
@@ -391,7 +359,7 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 
 	/* append to idle-list if its an idle-thread */
 	if(flags & T_IDLE)
-		thread_pushIdle(t);
+		sched_addIdleThread(t);
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
 	if(cloneProc)
@@ -407,8 +375,6 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 
 errAppendIdle:
 	sig_removeHandlerFor(t->tid);
-	if(flags & T_IDLE)
-		sll_removeFirstWith(idleThreads,t);
 	thread_remove(t);
 errArch:
 	thread_freeArch(t);

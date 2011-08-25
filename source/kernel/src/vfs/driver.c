@@ -95,7 +95,7 @@ ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_
 	/* wait until there is data available, if necessary */
 	obj.events = EV_DATA_READABLE;
 	obj.object = file;
-	res = vfs_waitFor(&obj,1,vfs_shouldBlock(file));
+	res = vfs_waitFor(&obj,1,vfs_shouldBlock(file),KERNEL_PID,0);
 	if(res < 0)
 		return res;
 

@@ -341,6 +341,13 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg);
 int proc_exec(const char *path,const char *const *args,const void *code,size_t size);
 
 /**
+ * Waits until the thread with given thread-id or all other threads of the process are terminated.
+ *
+ * @param tid the thread to wait for (0 = all other threads)
+ */
+void proc_join(tid_t tid);
+
+/**
  * Destroys the current thread. If it's the only thread in the process, the complete process will
  * destroyed.
  * Note that the actual deletion will be done later!

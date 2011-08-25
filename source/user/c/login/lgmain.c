@@ -28,6 +28,7 @@
 #include <string.h>
 #include <error.h>
 
+#define SKIP_LOGIN			0
 #define SHELL_PATH			"/bin/shell"
 #define MAX_VTERM_NAME_LEN	10
 
@@ -77,6 +78,10 @@ int main(int argc,char **argv) {
 	printf("Please login to get a shell.\n\n");
 
 	while(1) {
+#if SKIP_LOGIN
+		strcpy(un,"hrniels");
+		strcpy(pw,"test");
+#else
 		printf("Username: ");
 		fgetl(un,sizeof(un),stdin);
 		sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_ECHO,NULL,0);
@@ -84,6 +89,7 @@ int main(int argc,char **argv) {
 		fgetl(pw,sizeof(pw),stdin);
 		sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
 		putchar('\n');
+#endif
 
 		/* re-read users */
 		user_free(userList);

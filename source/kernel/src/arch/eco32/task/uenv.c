@@ -31,28 +31,18 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig);
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler);
 static uint32_t *uenv_addArgs(sThread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread);
 
 void uenv_handleSignal(sIntrptStackFrame *stack) {
-	tid_t tid;
 	sig_t sig;
+	fSignal handler;
 	sThread *t = thread_getRunning();
-	if((sig = thread_getSignal(t)) != SIG_COUNT)
-		uenv_startSignalHandler(t,stack,sig);
-
-	if(sig_hasSignal(&sig,&tid)) {
-		if(t->tid == tid)
-			uenv_startSignalHandler(t,stack,sig);
-		else {
-			t = thread_getById(tid);
-			if(thread_setSignal(t,sig)) {
-				/* TODO prepending it would be better */
-				ev_unblock(t);
-				thread_switch();
-			}
-		}
-	}
+	int res = sig_checkAndStart(t->tid,&sig,&handler);
+	if(res == SIG_CHECK_CUR)
+		uenv_startSignalHandler(t,stack,sig,handler);
+	else if(res == SIG_CHECK_OTHER)
+		thread_switch();
 }
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
@@ -167,17 +157,18 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return uenv_addArgs(t,sp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig) {
-	fSignal handler;
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
+	if(!paging_isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
+		proc_segFault();
+		/* never reached */
+		assert(false);
+	}
 
 	/* if we've not entered the kernel by a trap, we have to decrease $30, because when returning
 	 * from the signal, we'll always enter it by a trap, so that $30 will be increased */
 	if(stack->irqNo != 20)
 		stack->r[30] -= 4;
-
-	thread_unsetSignal(t);
-	handler = sig_startHandling(t->tid,sig);
 
 	memcpy(sp - REG_COUNT,stack->r,REG_COUNT * sizeof(uint32_t));
 	/* signal-number as arguments */

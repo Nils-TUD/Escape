@@ -39,6 +39,7 @@
 #include "modules/sigclone.h"
 #include "modules/fsreads.h"
 #include "modules/ooc.h"
+#include "modules/highcpu.h"
 
 #define NAME_LEN 10
 
@@ -65,6 +66,7 @@ static sTestModule modules[] = {
 	{"sigclone",mod_sigclone},
 	{"fsreads",mod_fsreads},
 	{"ooc",mod_ooc},
+	{"highcpu",mod_highcpu},
 };
 
 int main(int argc,char *argv[]) {

@@ -158,6 +158,7 @@ static sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] A_ALIGNED(PAGE_SIZE);
 static sPTEntry proc0PT1[PAGE_SIZE / sizeof(sPTEntry)] A_ALIGNED(PAGE_SIZE);
 static sPTEntry proc0PT2[PAGE_SIZE / sizeof(sPTEntry)] A_ALIGNED(PAGE_SIZE);
 static klock_t tmpAreaLock;
+static klock_t tmpMapLock;
 
 void paging_init(void) {
 	sPDEntry *pd,*pde;
@@ -264,12 +265,14 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 
 uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {
 	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE - 1);
+	klock_aquire(&tmpMapLock);
 	paging_map(TEMP_MAP_AREA + PAGE_SIZE,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	return TEMP_MAP_AREA + PAGE_SIZE;
 }
 
 void paging_unmapFromTemp(size_t count) {
 	paging_unmap(TEMP_MAP_AREA + PAGE_SIZE,count,false);
+	klock_release(&tmpMapLock);
 }
 
 int paging_cloneKernelspace(tPageDir *pdir) {
@@ -389,8 +392,11 @@ frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 	uintptr_t ptables;
 	frameno_t res;
 	sPTEntry *pt;
+	sPDEntry *pde;
 	klock_aquire(&pdir->lock);
 	ptables = paging_getPTables(pdir->own);
+	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(virt);
+	assert(pde->present && pde->exists);
 	pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	assert(pt->present && pt->exists);
 	res = pt->frameNumber;

@@ -91,8 +91,8 @@ struct sThread {
 	cpuid_t cpu;
 	/* whether signals should be ignored (while being blocked) */
 	uint8_t ignoreSignals;
-	/* stores whether a signal should be handled by this thread */
-	sig_t signal;
+	/* the signal-data, managed by the signals-module */
+	sSignals *signals;
 	/* thread id */
 	const tid_t tid;
 	/* the events the thread waits for (if waiting) */
@@ -158,27 +158,6 @@ int thread_initArch(sThread *t);
  * @param t the thread
  */
 void thread_addInitialStack(sThread *t);
-
-/**
- * Sets the given signal to the given thread
- *
- * @param t the thread
- * @return true if successfull
- */
-bool thread_setSignal(sThread *t,sig_t sig);
-
-/**
- * @param t the thread
- * @return the signal to handle or SIG_COUNT if none
- */
-sig_t thread_getSignal(const sThread *t);
-
-/**
- * Removes the signal from the given thread
- *
- * @param t the thread
- */
-void thread_unsetSignal(sThread *t);
 
 /**
  * @return the current interrupt-stack, i.e. the innermost-level
@@ -321,6 +300,13 @@ void thread_block(sThread *t);
  * @param t the thread
  */
 void thread_unblock(sThread *t);
+
+/**
+ * Unblocks the given thread and puts it to the beginning of the ready-list. ONLY CALLED by event.
+ *
+ * @param t the thread
+ */
+void thread_unblockQuick(sThread *t);
 
 /**
  * Suspends the given thread. ONLY CALLED by event.

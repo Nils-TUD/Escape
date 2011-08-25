@@ -21,6 +21,7 @@
 #define SIGNALS_H_
 
 #include <sys/common.h>
+#include <esc/sllist.h>
 
 #define SIG_COUNT			19
 
@@ -50,8 +51,23 @@
 #define SIG_USR1			17						/* can be used for everything */
 #define SIG_USR2			18						/* can be used for everything */
 
+#define SIG_CHECK_CUR		0
+#define SIG_CHECK_OTHER		1
+#define SIG_CHECK_NO		2
+
 /* signal-handler-signature */
 typedef void (*fSignal)(int);
+
+typedef struct {
+	/* list of pending signals */
+	sSLList pending;
+	/* signal handler */
+	fSignal handler[SIG_COUNT];
+	/* the signal that the thread is currently handling (if > 0) */
+	sig_t currentSignal;
+	/* the signal that the thread should handle now */
+	sig_t deliveredSignal;
+} sSignals;
 
 /**
  * Initializes the signal-handling
@@ -114,22 +130,24 @@ void sig_removeHandlerFor(tid_t tid);
 void sig_cloneHandler(tid_t parent,tid_t child);
 
 /**
- * Checks whether there is any signal to handle. If so <sig> and <tid> will be set
- * to the signal to handle.
- *
- * @param sig the signal (will be set on success)
- * @param tid the thread-id (will be set on success)
- * @return true if there is a signal
- */
-bool sig_hasSignal(sig_t *sig,tid_t *tid);
-
-/**
  * Checks whether <tid> has a signal
  *
  * @param tid the thread-id
  * @return true if so
  */
 bool sig_hasSignalFor(tid_t tid);
+
+/**
+ * Checks whether a signal should be handled. If the current thread has a signal, it returns
+ * SIG_CHECK_CUR and sets *sig and *handler correspondingly. If another thread has a signal, it
+ * delivers it and returns SIG_CHECK_OTHER. Otherwise, it returns SIG_CHECK_NO.
+ *
+ * @param tid the thread-id of the current thread
+ * @param sig will be set to the signal to handle, if the current thread has a signal
+ * @param handler will be set to the handler, if the current thread has a signal
+ * @return SIG_CHECK_* the result
+ */
+int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler);
 
 /**
  * Adds the given signal for the given thread
@@ -147,16 +165,6 @@ bool sig_addSignalFor(tid_t tid,sig_t signal);
  * @return whether the signal has been delivered to somebody
  */
 bool sig_addSignal(sig_t signal);
-
-/**
- * Starts handling the given signal. That means the signal will be marked as "active" until
- * sig_ackHandling() will be called.
- *
- * @param tid the thread-id
- * @param signal the signal
- * @return the handler-function
- */
-fSignal sig_startHandling(tid_t tid,sig_t signal);
 
 /**
  * Acknoledges the current signal with given thread (marks handling as finished)

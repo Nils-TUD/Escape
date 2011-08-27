@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/cache.h>
+#include <sys/mem/vmm.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
 #include <sys/task/proc.h>
@@ -225,6 +226,7 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 	sMessage *msg;
 	size_t event;
 	ssize_t res;
+	sProc *p;
 
 	/* wait until a message arrives */
 	if(vfs_isDriver(file)) {
@@ -264,21 +266,29 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 	msg = (sMessage*)sll_get(*list,0);
 	if(data && msg->length > size) {
 		sll_removeFirst(*list);
-		klock_release(&chan->lock);
-		cache_free(msg);
-		return ERR_INVALID_ARGS;
+		goto invArgs;
 	}
 
 	/*vid_printf("%s received msg %d from %s\n",proc_getByPid(pid)->command,
 					msg->id,node->parent->name);*/
 
-	/* copy data and id; both might segfault, in this case we pretend that we haven't read the msg */
-	thread_addLock(&chan->lock);
-	if(data)
+	/* copy data and id */
+	p = proc_request(proc_getRunning(),PLOCK_REGIONS);
+	if(data) {
+		if(!vmm_makeCopySafe(p,data,msg->length)) {
+			proc_release(p,PLOCK_REGIONS);
+			goto invArgs;
+		}
 		memcpy(data,msg + 1,msg->length);
-	if(id)
+	}
+	if(id) {
+		if(!vmm_makeCopySafe(p,id,sizeof(msgid_t))) {
+			proc_release(p,PLOCK_REGIONS);
+			goto invArgs;
+		}
 		*id = msg->id;
-	thread_remLock(&chan->lock);
+	}
+	proc_release(p,PLOCK_REGIONS);
 
 	res = msg->length;
 	sll_removeFirst(*list);
@@ -287,6 +297,11 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 	if(event == EVI_CLIENT)
 		vfs_server_remMsg(node->parent);
 	return res;
+
+invArgs:
+	klock_release(&chan->lock);
+	cache_free(msg);
+	return ERR_INVALID_ARGS;
 }
 
 void vfs_chan_print(const sVFSNode *n) {

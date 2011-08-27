@@ -703,8 +703,13 @@ int proc_getExitState(pid_t ppid,USER sExitState *state) {
 			if(p->flags & P_ZOMBIE) {
 				if(state) {
 					if(p->exitState) {
-						/* if the memcpy segfaults, init will get and free the exitstate */
+						sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
+						if(!vmm_makeCopySafe(cur,state,sizeof(sExitState))) {
+							proc_release(cur,PLOCK_REGIONS);
+							return ERR_INVALID_ARGS;
+						}
 						memcpy(state,p->exitState,sizeof(sExitState));
+						proc_release(cur,PLOCK_REGIONS);
 						cache_free(p->exitState);
 						p->exitState = NULL;
 					}

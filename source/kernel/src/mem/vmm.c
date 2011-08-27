@@ -44,6 +44,8 @@
 #define REG(p,i)			(((sVMRegion**)(p)->regions)[(i)])
 #define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
+static vmreg_t vmm_doGetRegionOf(sProc *p,uintptr_t addr);
+static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm);
 static void vmm_doRemove(sProc *p,vmreg_t reg);
 static bool vmm_demandLoad(sProc *p,sVMRegion *vm,ulong *flags,uintptr_t addr);
 static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCount);
@@ -432,17 +434,20 @@ vmreg_t vmm_getRegionOf(pid_t pid,uintptr_t addr) {
 	vmreg_t res = -1;
 	sProc *p = proc_request(pid,PLOCK_REGIONS);
 	if(p) {
-		size_t i;
-		for(i = 0; i < p->regSize; i++) {
-			sVMRegion *vm = REG(p,i);
-			if(vm && addr >= vm->virt && addr < vm->virt + ROUNDUP(vm->reg->byteCount)) {
-				res = i;
-				break;
-			}
-		}
+		res = vmm_doGetRegionOf(p,addr);
 		proc_release(p,PLOCK_REGIONS);
 	}
 	return res;
+}
+
+static vmreg_t vmm_doGetRegionOf(sProc *p,uintptr_t addr) {
+	size_t i;
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm && addr >= vm->virt && addr < vm->virt + ROUNDUP(vm->reg->byteCount))
+			return i;
+	}
+	return -1;
 }
 
 vmreg_t vmm_getRNoByRegion(pid_t pid,const sRegion *reg) {
@@ -499,19 +504,57 @@ vmreg_t vmm_hasBinary(pid_t pid,const sBinDesc *bin) {
 	return res;
 }
 
+bool vmm_makeCopySafe(sProc *p,USER void *dst,size_t size) {
+	ulong *flags;
+	sVMRegion *vm;
+	uintptr_t addr = (uintptr_t)dst;
+	uintptr_t end = addr + size;
+	vmreg_t rno;
+	/* if its in kernel, its ok */
+	if((uintptr_t)dst >= KERNEL_START)
+		return true;
+
+	rno = vmm_doGetRegionOf(p,addr);
+	if(rno < 0)
+		return false;
+	vm = REG(p,rno);
+	while(addr < end) {
+		/* out of region? */
+		if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
+			return false;
+		/* copy-on-write still enabled? so resolve it */
+		flags = vm->reg->pageFlags + (addr - vm->virt) / PAGE_SIZE;
+		if(*flags & (PF_DEMANDLOAD | PF_SWAPPED | PF_COPYONWRITE)) {
+			if(!vmm_doPagefault(addr,p,vm))
+				return false;
+		}
+		addr += PAGE_SIZE;
+	}
+	return true;
+}
+
 bool vmm_pagefault(uintptr_t addr) {
 	sProc *p;
 	sVMRegion *vm;
-	ulong *flags;
 	bool res = false;
 	pid_t pid = proc_getRunning();
-	vmreg_t rno = vmm_getRegionOf(pid,addr);
-	if(rno < 0)
-		return false;
+	vmreg_t rno;
 
 	p = proc_request(pid,PLOCK_REGIONS);
+	rno = vmm_doGetRegionOf(p,addr);
+	if(rno < 0) {
+		proc_release(p,PLOCK_REGIONS);
+		return false;
+	}
 	vm = REG(p,rno);
-	flags = vm->reg->pageFlags + (addr - vm->virt) / PAGE_SIZE;
+	res = vmm_doPagefault(addr,p,vm);
+	proc_release(p,PLOCK_REGIONS);
+	return res;
+}
+
+static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm) {
+	bool res = false;
+	ulong *flags = vm->reg->pageFlags + (addr - vm->virt) / PAGE_SIZE;
 	addr &= ~(PAGE_SIZE - 1);
 	if(*flags & PF_DEMANDLOAD)
 		res = vmm_demandLoad(p,vm,flags,addr);
@@ -525,7 +568,6 @@ bool vmm_pagefault(uintptr_t addr) {
 		*flags &= ~PF_COPYONWRITE;
 		res = true;
 	}
-	proc_release(p,PLOCK_REGIONS);
 	return res;
 }
 

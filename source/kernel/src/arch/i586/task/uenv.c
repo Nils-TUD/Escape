@@ -77,6 +77,7 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	size_t totalSize;
 	sThread *t = thread_getRunning();
 	sIntrptStackFrame *frame = thread_getIntrptStack(t);
+	sProc *p;
 
 	/*
 	 * Initial stack:
@@ -108,6 +109,16 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 
 	/* get esp */
 	thread_getStackRange(t,NULL,(uintptr_t*)&esp,0);
+	/* ensure that we can copy to that region */
+	p = proc_request(t->proc->pid,PLOCK_REGIONS);
+	if(!vmm_makeCopySafe(p,esp - totalSize / sizeof(uint32_t),totalSize)) {
+		proc_release(p,PLOCK_REGIONS);
+		return false;
+	}
+	/* in this case its uncritical, because this process can't change anyway because it is not
+	 * even running yet and thus, can't start other threads to manipulate itself. and not releasing
+	 * it would cause problems in uenv_addArgs() */
+	proc_release(p,PLOCK_REGIONS);
 
 	/* copy arguments on the user-stack (4byte space) */
 	esp--;
@@ -147,11 +158,14 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	if(info->linkerEntry != info->progEntry) {
 		int fd;
 		file_t file = vfs_openPath(t->proc->pid,VFS_READ,path);
-		if(file < 0)
+		if(file < 0) {
+			proc_release(p,PLOCK_REGIONS);
 			return false;
+		}
 		fd = proc_assocFd(file);
 		if(fd < 0) {
 			vfs_closeFile(t->proc->pid,file);
+			proc_release(p,PLOCK_REGIONS);
 			return false;
 		}
 		*--esp = fd;
@@ -192,7 +206,8 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 
 static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
-	if(!paging_isInUserSpace((uintptr_t)(esp - 10),10 * sizeof(uint32_t))) {
+	sProc *p = proc_request(t->proc->pid,PLOCK_REGIONS);
+	if(!vmm_makeCopySafe(p,esp - 10,10 * sizeof(uint32_t))) {
 		proc_segFault();
 		/* never reached */
 		assert(false);
@@ -214,6 +229,7 @@ static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t si
 	*--esp = t->proc->sigRetAddr;
 	stack->eip = (uintptr_t)handler;
 	stack->uesp = (uint32_t)esp;
+	proc_release(p,PLOCK_REGIONS);
 }
 
 static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint) {

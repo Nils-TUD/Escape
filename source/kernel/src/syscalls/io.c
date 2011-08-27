@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/vmm.h>
 #include <sys/vfs/real.h>
 #include <sys/vfs/pipe.h>
 #include <sys/vfs/driver.h>
@@ -87,6 +88,7 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 	file_t readFile,writeFile;
 	int kreadFd,kwriteFd;
 	int res;
+	sProc *p;
 
 	/* make sure that the pointers point to userspace */
 	if(!paging_isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
@@ -114,10 +116,19 @@ int sysc_pipe(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,kwriteFd);
 	}
 
-	/* now copy the fds to userspace; this might cause a pagefault and might even cause a kill */
-	/* this is no problem because we've associated the fds, so that all resources will be free'd */
+	/* now copy the fds to userspace; ensure that this is safe */
+	p = proc_request(pid,PLOCK_REGIONS);
+	if(!vmm_makeCopySafe(p,readFd,sizeof(int)) || !vmm_makeCopySafe(p,writeFd,sizeof(int))) {
+		proc_release(p,PLOCK_REGIONS);
+		proc_unassocFd(kwriteFd);
+		proc_unassocFd(kreadFd);
+		vfs_closeFile(pid,readFile);
+		vfs_closeFile(pid,writeFile);
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	}
 	*readFd = kreadFd;
 	*writeFd = kwriteFd;
+	proc_release(p,PLOCK_REGIONS);
 
 	/* yay, we're done! :) */
 	SYSC_RET1(stack,res);
@@ -197,6 +208,7 @@ int sysc_tell(sIntrptStackFrame *stack) {
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	pid_t pid = proc_getRunning();
 	file_t file;
+	sProc *p;
 	if(!paging_isInUserSpace((uintptr_t)pos,sizeof(off_t)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
@@ -205,7 +217,14 @@ int sysc_tell(sIntrptStackFrame *stack) {
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
+	p = proc_request(pid,PLOCK_REGIONS);
+	if(!vmm_makeCopySafe(p,pos,sizeof(off_t))) {
+		proc_release(p,PLOCK_REGIONS);
+		proc_relFile(file);
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	}
 	*pos = vfs_tell(pid,file);
+	proc_release(p,PLOCK_REGIONS);
 	proc_relFile(file);
 	SYSC_RET1(stack,0);
 }

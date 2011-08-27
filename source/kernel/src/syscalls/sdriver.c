@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/vmm.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
@@ -167,7 +168,14 @@ int sysc_getWork(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,fd);
 	}
 
-	if(drv)
+	if(drv) {
+		sProc *p = proc_request(pid,PLOCK_REGIONS);
+		if(!vmm_makeCopySafe(p,drv,sizeof(int))) {
+			proc_release(p,PLOCK_REGIONS);
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		}
 		*drv = fds[index];
+		proc_release(p,PLOCK_REGIONS);
+	}
 	SYSC_RET1(stack,fd);
 }

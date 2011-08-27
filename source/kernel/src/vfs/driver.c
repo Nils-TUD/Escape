@@ -25,6 +25,7 @@
 #include <sys/vfs/channel.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/vmm.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
 #include <sys/task/signals.h>
@@ -125,9 +126,14 @@ ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_
 	data = req->data;
 	vfs_req_free(req);
 	if(data && res > 0) {
-		thread_addHeapAlloc(data);
+		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
+		if(!vmm_makeCopySafe(p,buffer,res)) {
+			proc_release(p,PLOCK_REGIONS);
+			cache_free(data);
+			return ERR_INVALID_ARGS;
+		}
 		memcpy(buffer,data,res);
-		thread_remHeapAlloc(data);
+		proc_release(p,PLOCK_REGIONS);
 		cache_free(data);
 	}
 	return res;

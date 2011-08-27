@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/sllnodes.h>
+#include <sys/mem/vmm.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
@@ -122,6 +123,7 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 	sPipeData *data;
+	sProc *p;
 
 	/* wait until data is available */
 	klock_aquire(&pipe->lock);
@@ -147,12 +149,14 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
 		byteCount = MIN(data->length - (offset - data->offset),count);
-		/* if the memcpy segfaults, we pretend that we haven't read this package. we don't fire
-		 * the EVI_PIPE_EMPTY in this case, because the pipe isn't empty anyway (at least the last
-		 * package hasn't been read yet). */
-		thread_addLock(&pipe->lock);
+		p = proc_request(t->proc->pid,PLOCK_REGIONS);
+		if(!vmm_makeCopySafe(p,(uint8_t*)buffer + total,byteCount)) {
+			proc_release(p,PLOCK_REGIONS);
+			klock_release(&pipe->lock);
+			return ERR_INVALID_ARGS;
+		}
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
-		thread_remLock(&pipe->lock);
+		proc_release(p,PLOCK_REGIONS);
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
 			cache_free(data);

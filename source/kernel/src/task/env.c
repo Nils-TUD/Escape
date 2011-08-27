@@ -22,6 +22,7 @@
 #include <sys/task/env.h>
 #include <sys/task/thread.h>
 #include <sys/mem/cache.h>
+#include <sys/mem/vmm.h>
 #include <sys/klock.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
@@ -45,14 +46,18 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 			return false;
 		var = env_getiOf(p,&index);
 		if(var != NULL) {
+			bool res = true;
 			if(dst) {
-				thread_addLock(p->locks + PLOCK_ENV);
-				strncpy(dst,var->name,size);
-				dst[size - 1] = '\0';
-				thread_remLock(p->locks + PLOCK_ENV);
+				sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
+				res = vmm_makeCopySafe(cur,dst,size);
+				if(res) {
+					strncpy(dst,var->name,size);
+					dst[size - 1] = '\0';
+				}
+				proc_release(cur,PLOCK_REGIONS);
 			}
 			proc_release(p,PLOCK_ENV);
-			return true;
+			return res;
 		}
 		if(p->pid == 0) {
 			proc_release(p,PLOCK_ENV);
@@ -73,13 +78,19 @@ bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 		thread_addLock(p->locks + PLOCK_ENV);
 		var = env_getOf(p,name);
 		if(var != NULL) {
+			bool res = true;
 			if(dst) {
-				strncpy(dst,var->value,size);
-				dst[size - 1] = '\0';
+				sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
+				res = vmm_makeCopySafe(cur,dst,size);
+				if(res) {
+					strncpy(dst,var->value,size);
+					dst[size - 1] = '\0';
+				}
+				proc_release(cur,PLOCK_REGIONS);
 			}
 			thread_remLock(p->locks + PLOCK_ENV);
 			proc_release(p,PLOCK_ENV);
-			return true;
+			return res;
 		}
 		thread_remLock(p->locks + PLOCK_ENV);
 		if(p->pid == 0) {

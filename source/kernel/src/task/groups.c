@@ -21,6 +21,7 @@
 #include <sys/task/groups.h>
 #include <sys/task/thread.h>
 #include <sys/mem/cache.h>
+#include <sys/mem/vmm.h>
 #include <sys/klock.h>
 #include <sys/video.h>
 #include <string.h>
@@ -75,8 +76,14 @@ size_t groups_get(pid_t pid,USER gid_t *list,size_t size) {
 	if(size == 0)
 		return g ? g->count : 0;
 	if(g) {
+		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
 		size = MIN(g->count,size);
+		if(!vmm_makeCopySafe(p,list,size)) {
+			proc_release(p,PLOCK_REGIONS);
+			return 0;
+		}
 		memcpy(list,g->groups,size);
+		proc_release(p,PLOCK_REGIONS);
 		return size;
 	}
 	return 0;

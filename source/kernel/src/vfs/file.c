@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
+#include <sys/mem/vmm.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/file.h>
@@ -112,8 +113,13 @@ ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off
 			offset = con->pos;
 		byteCount = MIN((size_t)(con->pos - offset),count);
 		if(byteCount > 0) {
-			/* simply copy the data to the buffer */
+			sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
+			if(!vmm_makeCopySafe(p,buffer,byteCount)) {
+				proc_release(p,PLOCK_REGIONS);
+				return ERR_INVALID_ARGS;
+			}
 			memcpy(buffer,(uint8_t*)con->data + offset,byteCount);
+			proc_release(p,PLOCK_REGIONS);
 		}
 	}
 	klock_release(&con->lock);

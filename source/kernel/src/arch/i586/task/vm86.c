@@ -185,10 +185,11 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 
 	/* everything is finished :) */
 	if(vm86Res == 0) {
-		thread_addCallback(vm86_finish);
-		memcpy(regs,&info.regs,sizeof(sVM86Regs));
+		sProc *p = proc_request(t->proc->pid,PLOCK_REGIONS);
+		if(vmm_makeCopySafe(p,regs,sizeof(sVM86Regs)))
+			memcpy(regs,&info.regs,sizeof(sVM86Regs));
+		proc_release(p,PLOCK_REGIONS);
 		vm86_copyAreaResult();
-		thread_remCallback(vm86_finish);
 	}
 
 	/* mark as done */
@@ -444,8 +445,14 @@ static void vm86_copyAreaResult(void) {
 	size_t i;
 	if(info.area) {
 		memcpy(info.area->src,info.copies[0],info.area->size);
-		for(i = 0; i < info.area->ptrCount; i++)
-			memcpy((void*)info.area->ptr[i].result,info.copies[i + 1],info.area->ptr[i].size);
+		if(info.area->ptrCount > 0) {
+			sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
+			for(i = 0; i < info.area->ptrCount; i++) {
+				if(vmm_makeCopySafe(p,(void*)info.area->ptr[i].result,info.area->ptr[i].size))
+					memcpy((void*)info.area->ptr[i].result,info.copies[i + 1],info.area->ptr[i].size);
+			}
+			proc_release(p,PLOCK_REGIONS);
+		}
 	}
 }
 

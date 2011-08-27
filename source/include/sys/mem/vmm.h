@@ -233,6 +233,20 @@ bool vmm_getRegRange(pid_t pid,vmreg_t reg,uintptr_t *start,uintptr_t *end);
 vmreg_t vmm_hasBinary(pid_t pid,const sBinDesc *bin);
 
 /**
+ * Ensures that <size> bytes from <src> to <dst> can be copied. That means, copy-on-write,
+ * demand-loading and so on are handled, if necessary. This way its safe to copy to a page that
+ * still has copy-on-write enabled, because some architectures allow it to write to readonly-pages
+ * in kernel-mode.
+ * NOTE: The function assumes that the region-lock of the current process is held!
+ *
+ * @param p the current process (locked)
+ * @param dst the destination-address (in user-space)
+ * @param size the number of bytes to copy
+ * @return true if successfull
+ */
+bool vmm_makeCopySafe(sProc *p,USER void *dst,size_t size);
+
+/**
  * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
  * it on demand, handles copy-on-write or swapping.
  *

@@ -36,6 +36,7 @@
 #include <sys/printf.h>
 #include <assert.h>
 #include <string.h>
+#include <errors.h>
 
 /* callback function for the default read-handler */
 typedef void (*fReadCallBack)(sVFSNode *node,size_t *dataSize,void **buffer);
@@ -429,9 +430,14 @@ static ssize_t vfs_info_readHelper(pid_t pid,sVFSNode *node,USER void *buffer,of
 	count = MIN(dataSize - offset,count);
 	/* copy */
 	if(count > 0) {
-		thread_addHeapAlloc(mem);
+		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
+		if(!vmm_makeCopySafe(p,buffer,count)) {
+			proc_release(p,PLOCK_REGIONS);
+			cache_free(mem);
+			return ERR_INVALID_ARGS;
+		}
 		memcpy(buffer,(uint8_t*)mem + offset,count);
-		thread_remHeapAlloc(mem);
+		proc_release(p,PLOCK_REGIONS);
 	}
 	/* free temp storage */
 	cache_free(mem);

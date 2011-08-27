@@ -96,7 +96,7 @@ int sysc_yield(sIntrptStackFrame *stack) {
 }
 
 int sysc_wait(sIntrptStackFrame *stack) {
-	sWaitObject *uobjects = (sWaitObject*)SYSC_ARG1(stack);
+	const sWaitObject *uobjects = (const sWaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	int res;
 
@@ -112,7 +112,7 @@ int sysc_wait(sIntrptStackFrame *stack) {
 }
 
 int sysc_waitUnlock(sIntrptStackFrame *stack) {
-	sWaitObject *uobjects = (sWaitObject*)SYSC_ARG1(stack);
+	const sWaitObject *uobjects = (const sWaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);

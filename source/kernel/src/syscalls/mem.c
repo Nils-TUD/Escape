@@ -130,6 +130,7 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 	size_t align = SYSC_ARG3(stack);
 	pid_t pid = proc_getRunning();
 	uintptr_t addr,physCpy = *phys;
+	sProc *p;
 
 	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -147,7 +148,14 @@ int sysc_mapPhysical(sIntrptStackFrame *stack) {
 	addr = vmm_addPhys(pid,&physCpy,bytes,align);
 	if(addr == 0)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+
+	p = proc_request(pid,PLOCK_REGIONS);
+	if(!vmm_makeCopySafe(p,phys,sizeof(uintptr_t))) {
+		proc_release(p,PLOCK_REGIONS);
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	}
 	*phys = physCpy;
+	proc_release(p,PLOCK_REGIONS);
 	SYSC_RET1(stack,addr);
 }
 

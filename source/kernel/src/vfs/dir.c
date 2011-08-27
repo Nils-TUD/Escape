@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
+#include <sys/mem/vmm.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/dir.h>
@@ -31,6 +32,7 @@
 #include <esc/endian.h>
 #include <assert.h>
 #include <string.h>
+#include <errors.h>
 
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {
@@ -172,10 +174,14 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 		offset = byteCount;
 	byteCount = MIN(byteCount - offset,count);
 	if(byteCount > 0) {
-		/* simply copy the data to the buffer; ensure that we free fsBytes even if memcpy segfaults */
-		thread_addHeapAlloc(fsBytes);
+		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
+		if(!vmm_makeCopySafe(p,(uint8_t*)fsBytes + offset,byteCount)) {
+			proc_release(p,PLOCK_REGIONS);
+			cache_free(fsBytes);
+			return ERR_INVALID_ARGS;
+		}
 		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
-		thread_remHeapAlloc(fsBytes);
+		proc_release(p,PLOCK_REGIONS);
 	}
 	cache_free(fsBytes);
 	return byteCount;

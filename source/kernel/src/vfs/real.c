@@ -22,6 +22,7 @@
 #include <sys/task/event.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/vmm.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/request.h>
@@ -201,10 +202,14 @@ static int vfs_real_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,US
 
 	/* copy to info-struct */
 	if(data) {
-		/* writing to info might fail; so make sure that the memory doesn't leak here */
-		thread_addHeapAlloc(data);
+		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
+		if(!vmm_makeCopySafe(p,info,sizeof(sFileInfo))) {
+			proc_release(p,PLOCK_REGIONS);
+			cache_free(data);
+			return ERR_INVALID_ARGS;
+		}
 		memcpy((void*)info,data,sizeof(sFileInfo));
-		thread_remHeapAlloc(data);
+		proc_release(p,PLOCK_REGIONS);
 		cache_free(data);
 	}
 	return 0;

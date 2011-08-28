@@ -64,6 +64,7 @@
 #define PAGE_SIZE				((size_t)(8 * K))
 #define PAGE_SIZE_SHIFT			13
 
+#define BITMAP_START			((uintptr_t)bitmap - KERNEL_START)
 #define BITMAP_PAGE_COUNT		((6 * M) / PAGE_SIZE)
 /* the end is not important here, since the mm-stack lies in physical memory and we will simply
  * use as much as we need, without the possibility to overwrite anything */

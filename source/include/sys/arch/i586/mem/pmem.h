@@ -62,6 +62,7 @@
 #define PAGE_SIZE				(4 * K)
 #define PAGE_SIZE_SHIFT			12
 
+#define BITMAP_START			((uintptr_t)bitmap - KERNEL_AREA)
 #define BITMAP_PAGE_COUNT		((2 * M) / PAGE_SIZE)
 #define PMEM_END				KERNEL_HEAP_START
 

@@ -511,7 +511,7 @@ bool vmm_makeCopySafe(sProc *p,USER void *dst,size_t size) {
 	uintptr_t end = addr + size;
 	vmreg_t rno;
 	/* if its in kernel, its ok */
-	if((uintptr_t)dst >= KERNEL_START)
+	if((uintptr_t)dst >= KERNEL_AREA)
 		return true;
 
 	rno = vmm_doGetRegionOf(p,addr);

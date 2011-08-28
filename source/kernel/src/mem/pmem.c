@@ -30,7 +30,6 @@
 
 #define DEBUG_ALLOC_N_FREE			0
 #define BITS_PER_BMWORD				(sizeof(tBitmap) * 8)
-#define BITMAP_START				((uintptr_t)bitmap - KERNEL_START)
 #define BITMAP_START_FRAME			(BITMAP_START / PAGE_SIZE)
 
 static void pmem_doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used);

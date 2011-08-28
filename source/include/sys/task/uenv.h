@@ -23,6 +23,7 @@
 #include <esc/common.h>
 #include <sys/intrpt.h>
 #include <sys/task/elf.h>
+#include <sys/task/thread.h>
 
 #ifdef __i386__
 #include <sys/arch/i586/task/uenv.h>
@@ -37,8 +38,11 @@
 /**
  * Checks whether a signal should be handled. If so, it will be stored for later finishing and a
  * thread-switch is done, if necessary.
+ *
+ * @param t the current thread
+ * @param stack the interrupt-stack-frame
  */
-void uenv_handleSignal(sIntrptStackFrame *stack);
+void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack);
 
 /**
  * Finishes the signal-handling-process

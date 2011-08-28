@@ -44,7 +44,7 @@ void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	/* the first usable frame in the bitmap is behind the mm-stack */
 	*bitmap = (tBitmap*)(*stackBegin + (*stackSize + 1) * PAGE_SIZE);
 	*bitmap = (tBitmap*)(((uintptr_t)*bitmap + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-	bitmapStart = (uintptr_t)*bitmap - KERNEL_START;
+	bitmapStart = (uintptr_t)*bitmap - KERNEL_AREA;
 	/* mark all free */
 	memset(*bitmap,0xFF,BITMAP_PAGE_COUNT / 8);
 }

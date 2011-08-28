@@ -132,7 +132,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = thread_getRunning();
 	if(t != NULL && ((t->flags & T_IDLE) || (stack->psw & PSW_PUM)))
-		uenv_handleSignal(stack);
+		uenv_handleSignal(t,stack);
 	thread_popIntrptLevel(t);
 }
 

@@ -81,7 +81,7 @@
 
 /* beginning of the kernel-code */
 #define KERNEL_START			((uintptr_t)0xC0000000)
-/* beginning of the kernel-data-structures */
+/* beginning of the kernel-area */
 #define KERNEL_AREA				((uintptr_t)0x80000000)
 #define DIR_MAPPED_SPACE		((uintptr_t)0xC0000000)
 

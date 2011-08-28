@@ -140,7 +140,7 @@ bool smp_init_arch(void) {
 		if(mpf) {
 			cpuid_t id;
 			apic_enable();
-			smp_parseConfTable((sMPConfTableHeader*)(KERNEL_START | mpf->mpConfigTable));
+			smp_parseConfTable((sMPConfTableHeader*)(KERNEL_AREA | mpf->mpConfigTable));
 
 			/* from now on, we'll use the logical-id as far as possible; but remember the physical
 			 * one for IPIs, e.g. */
@@ -191,9 +191,9 @@ void smp_start(void) {
 			;
 
 		uintptr_t dest = TRAMPOLINE_ADDR;
-		memcpy((void*)(dest | KERNEL_START),trampoline,ARRAY_SIZE(trampoline));
+		memcpy((void*)(dest | KERNEL_AREA),trampoline,ARRAY_SIZE(trampoline));
 		/* give the trampoline the start-address */
-		*(uint32_t*)((dest | KERNEL_START) + 2) = (uint32_t)&apProtMode;
+		*(uint32_t*)((dest | KERNEL_AREA) + 2) = (uint32_t)&apProtMode;
 
 		apic_sendStartupIPI(dest);
 
@@ -265,15 +265,15 @@ static void smp_parseConfTable(sMPConfTableHeader *tbl) {
 static sMPFloatPtr *smp_find(void) {
 	sMPFloatPtr *res = NULL;
 	/* first kb of extended bios data area (EBDA) */
-	uint16_t ebda = *(uint16_t*)(KERNEL_START | BDA_EBDA);
-	if((res = smp_findIn(KERNEL_START | ebda * 16,1024)))
+	uint16_t ebda = *(uint16_t*)(KERNEL_AREA | BDA_EBDA);
+	if((res = smp_findIn(KERNEL_AREA | ebda * 16,1024)))
 		return res;
 	/* last kb of base memory */
-	uint16_t memSize = *(uint16_t*)(KERNEL_START | BDA_MEMSIZE);
-	if((res = smp_findIn(KERNEL_START | (memSize - 1) * 1024,1024)))
+	uint16_t memSize = *(uint16_t*)(KERNEL_AREA | BDA_MEMSIZE);
+	if((res = smp_findIn(KERNEL_AREA | (memSize - 1) * 1024,1024)))
 		return res;
 	/* bios rom address space */
-	if((res = smp_findIn(KERNEL_START | BIOS_ROM_AREA,0x10000)))
+	if((res = smp_findIn(KERNEL_AREA | BIOS_ROM_AREA,0x10000)))
 		return res;
 	return NULL;
 }

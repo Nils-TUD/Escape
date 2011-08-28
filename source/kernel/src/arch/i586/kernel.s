@@ -35,7 +35,7 @@
 .set PAGE_SIZE,						4096
 .set TMP_STACK_SIZE,				PAGE_SIZE
 .set USER_STACK,					0xC0000000
-.set KERNEL_START,					0xC0000000
+.set KERNEL_AREA,					0xC0000000
 .set KSTACK_CURTHREAD,				0xFF7FFFFC
 
 # Multiboot constants
@@ -80,7 +80,7 @@ higherhalf:
 	# setup env for first task
 thread_startup:
 	mov		4(%esp),%eax			# load entry-point
-	cmp		$KERNEL_START,%eax
+	cmp		$KERNEL_AREA,%eax
 	jb		2f
 	# stay in kernel
 	call	*%eax

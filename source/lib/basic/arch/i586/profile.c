@@ -20,6 +20,7 @@
 #include <assert.h>
 #ifdef IN_KERNEL
 #	include <esc/arch/i586/register.h>
+#	include <esc/arch/i586/ports.h>
 #	include <sys/task/thread.h>
 #	include <sys/mem/paging.h>
 #	include <sys/ksymbols.h>
@@ -28,13 +29,17 @@
 #	include <sys/util.h>
 #	define outb			ports_outByte
 #	define inb			ports_inByte
+#if 0
 #	define gettid()		({ \
 	uintptr_t __esp; \
 	tid_t __tid; \
 	GET_REG("esp",__esp); \
 	sThread *__t = thread_getRunning(); \
-	__tid = ((__esp >= KERNEL_STACK - PAGE_SIZE) && __t) ? __t->tid : 0; \
+	__tid = ((__esp >= KERNEL_STACK_AREA) && __t) ? __t->tid : 0; \
 })
+#else
+#	define gettid()		0
+#endif
 #	define getCycles()	cpu_rdtsc()
 #else
 #	include <esc/arch/i586/ports.h>

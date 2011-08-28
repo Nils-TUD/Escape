@@ -41,10 +41,9 @@ static void uenv_startSignalHandler(sThread *t,sig_t sig,fSignal handler);
 static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
-void uenv_handleSignal(sIntrptStackFrame *stack) {
+void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
 	sig_t sig;
 	fSignal handler;
-	sThread *t = thread_getRunning();
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,sig,handler);

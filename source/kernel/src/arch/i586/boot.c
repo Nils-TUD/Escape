@@ -78,18 +78,18 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 
 	/* save the multiboot-structure
 	 * (change to 0xC...0 since we get the address at 0x0...0 from GRUB) */
-	mb = (sBootInfo*)((uintptr_t)mbp | KERNEL_START);
+	mb = (sBootInfo*)((uintptr_t)mbp | KERNEL_AREA);
 
 	/* change the address of the pointers in the structure, too */
-	mb->cmdLine = (char*)((uintptr_t)mb->cmdLine | KERNEL_START);
-	mb->modsAddr = (sModule*)((uintptr_t)mb->modsAddr | KERNEL_START);
-	mb->mmapAddr = (sMemMap*)((uintptr_t)mb->mmapAddr | KERNEL_START);
-	mb->drivesAddr = (sDrive*)((uintptr_t)mb->drivesAddr | KERNEL_START);
+	mb->cmdLine = (char*)((uintptr_t)mb->cmdLine | KERNEL_AREA);
+	mb->modsAddr = (sModule*)((uintptr_t)mb->modsAddr | KERNEL_AREA);
+	mb->mmapAddr = (sMemMap*)((uintptr_t)mb->mmapAddr | KERNEL_AREA);
+	mb->drivesAddr = (sDrive*)((uintptr_t)mb->drivesAddr | KERNEL_AREA);
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
-		mod->modStart |= KERNEL_START;
-		mod->modEnd |= KERNEL_START;
-		mod->name = (char*)((uintptr_t)mod->name | KERNEL_START);
+		mod->modStart |= KERNEL_AREA;
+		mod->modEnd |= KERNEL_AREA;
+		mod->name = (char*)((uintptr_t)mod->name | KERNEL_AREA);
 		mod++;
 	}
 
@@ -187,7 +187,7 @@ const sBootInfo *boot_getInfo(void) {
 }
 
 size_t boot_getKernelSize(void) {
-	uintptr_t start = (uintptr_t)&KernelStart | KERNEL_START;
+	uintptr_t start = (uintptr_t)&KernelStart | KERNEL_AREA;
 	uintptr_t end = mb->modsAddr[0].modStart;
 	return end - start;
 }

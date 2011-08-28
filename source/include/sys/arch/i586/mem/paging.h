@@ -87,10 +87,10 @@
  * 0xFFFFFFFF: +-----------------------------------+   -----    -----
  */
 
+/* the virtual address of the kernel */
+#define KERNEL_START			((uintptr_t)0xC0000000 + KERNEL_P_ADDR)
 /* the virtual address of the kernel-area */
-#define KERNEL_START			((uintptr_t)0xC0000000)
-/* the virtual address of the kernel itself */
-#define KERNEL_V_ADDR			(KERNEL_START + KERNEL_P_ADDR)
+#define KERNEL_AREA				((uintptr_t)0xC0000000)
 
 /* the number of entries in a page-directory or page-table */
 #define PT_ENTRY_COUNT			(PAGE_SIZE / 4)
@@ -100,7 +100,7 @@
 /* the start of the temporary mapped page-tables area */
 #define TMPMAP_PTS_START		(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the start of the kernel-heap */
-#define KERNEL_HEAP_START		(KERNEL_START + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
+#define KERNEL_HEAP_START		(KERNEL_AREA + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
 /* the size of the kernel-heap (4 MiB) */
 #define KERNEL_HEAP_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE /* * 4 */)
 
@@ -152,7 +152,7 @@
 
 /* free area for shared memory, tls, shared libraries, ... */
 #define FREE_AREA_BEGIN			0xA0000000
-#define FREE_AREA_END			KERNEL_START
+#define FREE_AREA_END			KERNEL_AREA
 
 /* the stack-area grows downwards from the free area to data, text and so on */
 #define STACK_AREA_GROWS_DOWN	1
@@ -163,7 +163,7 @@
 		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 
 /* determines whether the given address is in a shared kernel area */
-#define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START && \
+#define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_AREA && \
 								(uintptr_t)(addr) < KERNEL_STACK_AREA)
 
 typedef struct {

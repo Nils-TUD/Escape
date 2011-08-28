@@ -73,6 +73,7 @@
 
 /* beginning of the kernel-code */
 #define KERNEL_START			((uintptr_t)0x8000000000000000)
+#define KERNEL_AREA				KERNEL_START
 #define DIR_MAPPED_SPACE		((uintptr_t)0x8000000000000000)
 
 /* number of used segments */

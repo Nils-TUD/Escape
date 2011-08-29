@@ -133,6 +133,10 @@ static uint8_t trampoline[] = {
 #endif
 };
 
+extern volatile uint waiting;
+extern volatile uint waitlock;
+extern volatile uint halting;
+
 bool smp_init_arch(void) {
 	apic_init();
 	if(apic_isAvailable()) {
@@ -160,6 +164,47 @@ sThread *smp_getThreadOf(cpuid_t id) {
 
 cpuid_t smp_getPhysId(cpuid_t logId) {
 	return log2Phys[logId];
+}
+
+void smp_pauseOthers(void) {
+	sCPU **cpus = smp_getCPUs();
+	size_t i,count,cpuCount = smp_getCPUCount();
+	cpuid_t cur = smp_getCurId();
+	waiting = 0;
+	waitlock = 1;
+	count = 0;
+	for(i = 0; i < cpuCount; i++) {
+		if(i != cur && cpus[i]->ready) {
+			smp_sendIPI(i,IPI_WAIT);
+			count++;
+		}
+	}
+	/* wait until all CPUs are paused */
+	while(waiting < count)
+		;
+}
+
+void smp_resumeOthers(void) {
+	waitlock = 0;
+}
+
+void smp_haltOthers(void) {
+	sCPU **cpus = smp_getCPUs();
+	size_t i,count,cpuCount = smp_getCPUCount();
+	cpuid_t cur = smp_getCurId();
+	halting = 0;
+	count = 0;
+	for(i = 0; i < cpuCount; i++) {
+		if(i != cur && cpus[i]->ready) {
+			/* prevent that we want to halt/pause this one again */
+			cpus[i]->ready = false;
+			smp_sendIPI(i,IPI_HALT);
+			count++;
+		}
+	}
+	/* wait until all CPUs are halted */
+	while(halting < count)
+		;
 }
 
 void smp_sendIPI(cpuid_t id,uint8_t vector) {

@@ -61,7 +61,7 @@ void smp_start(void);
 bool smp_isBSP(void);
 cpuid_t smp_getCurId(void);
 size_t smp_getCPUCount(void);
-const sCPU *const *smp_getCPUs(void);
+sCPU **smp_getCPUs(void);
 void smp_print(void);
 
 #endif /* SMP_H_ */

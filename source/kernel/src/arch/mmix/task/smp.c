@@ -34,6 +34,18 @@ sThread *smp_getThreadOf(cpuid_t id) {
 	return thread_getRunning();
 }
 
+void smp_pauseOthers(void) {
+	/* nothing to do */
+}
+
+void smp_resumeOthers(void) {
+	/* nothing to do */
+}
+
+void smp_haltOthers(void) {
+	/* nothing to do */
+}
+
 void smp_sendIPI(cpuid_t id,uint8_t vector) {
 	UNUSED(id);
 	UNUSED(vector);

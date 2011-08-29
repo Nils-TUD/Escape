@@ -426,7 +426,7 @@ static sTSS *gdt_getFreeTSS(size_t *index) {
 void gdt_print(void) {
 	size_t i;
 	size_t count = smp_getCPUCount();
-	const sCPU *const *cpus = smp_getCPUs();
+	sCPU **cpus = smp_getCPUs();
 	vid_printf("GDTs:\n");
 	for(i = 0; i < count; i++) {
 		sGDTDesc *gdt = (sGDTDesc*)allgdts[cpus[i]->id].offset;

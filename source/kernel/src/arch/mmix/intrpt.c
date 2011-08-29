@@ -282,11 +282,17 @@ static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo) {
 }
 
 static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
+	bool res;
 	UNUSED(stack);
 	UNUSED(irqNo);
 	sig_addSignal(SIG_INTRPT_TIMER);
-	timer_intrpt();
+	res = timer_intrpt();
 	timer_ackIntrpt();
+	if(res) {
+		sThread *t = thread_getRunning();
+		if(thread_getIntrptLevel(t) == 0)
+			thread_switch();
+	}
 }
 
 static void intrpt_irqDisk(sIntrptStackFrame *stack,int irqNo) {

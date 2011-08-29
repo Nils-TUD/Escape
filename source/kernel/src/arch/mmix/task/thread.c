@@ -216,18 +216,15 @@ void thread_doSwitch(void) {
 	sThread *new = sched_perform(old);
 	/* finish kernel-time here since we're switching the process */
 	if(new->tid != old->tid) {
-		uint64_t kcstart = old->stats.kcycleStart;
-		if(kcstart > 0) {
-			uint64_t cycles = cpu_rdtsc();
-			old->stats.kcycleCount.val64 += cycles - kcstart;
-		}
+		time_t timestamp = timer_getTimestamp();
+		old->stats.runtime += timestamp - old->stats.lastSched;
+		new->stats.lastSched = timestamp;
+		new->stats.schedCount++;
 
 		thread_setRunning(new);
 
-		/* set used */
-		new->stats.schedCount++;
 		if(conf_getStr(CONF_SWAP_DEVICE))
-			vmm_setTimestamp(new,timer_getTimestamp());
+			vmm_setTimestamp(new,timestamp);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
@@ -241,10 +238,6 @@ void thread_doSwitch(void) {
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
 		thread_doSwitchTo(&old->save,&new->save,new->proc->pagedir,new->tid);
-
-		/* now start kernel-time again */
-		new = thread_getRunning();
-		new->stats.kcycleStart = cpu_rdtsc();
 	}
 
 	proc_killDeadThread();

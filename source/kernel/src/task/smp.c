@@ -30,10 +30,6 @@
 
 static sCPU *smp_getCPUById(cpuid_t id);
 
-extern volatile uint waiting;
-extern volatile uint waitlock;
-extern volatile uint halting;
-
 static bool enabled;
 static sSLList cpuList;
 static sCPU **cpus;
@@ -95,45 +91,6 @@ void smp_schedule(cpuid_t id,time_t timestamp) {
 	cpus[id]->lastSched = timestamp;
 }
 
-void smp_pauseOthers(void) {
-	size_t i,count;
-	cpuid_t cur = smp_getCurId();
-	waiting = 0;
-	waitlock = 1;
-	count = 0;
-	for(i = 0; i < cpuCount; i++) {
-		if(i != cur && cpus[i]->ready) {
-			smp_sendIPI(i,IPI_WAIT);
-			count++;
-		}
-	}
-	/* wait until all CPUs are paused */
-	while(waiting < count)
-		;
-}
-
-void smp_resumeOthers(void) {
-	waitlock = 0;
-}
-
-void smp_haltOthers(void) {
-	size_t i,count;
-	cpuid_t cur = smp_getCurId();
-	halting = 0;
-	count = 0;
-	for(i = 0; i < cpuCount; i++) {
-		if(i != cur && cpus[i]->ready) {
-			/* prevent that we want to halt/pause this one again */
-			cpus[i]->ready = false;
-			smp_sendIPI(i,IPI_HALT);
-			count++;
-		}
-	}
-	/* wait until all CPUs are halted */
-	while(halting < count)
-		;
-}
-
 void smp_wakeupCPU(void) {
 	size_t i;
 	cpuid_t cur = smp_getCurId();
@@ -174,7 +131,7 @@ size_t smp_getCPUCount(void) {
 	return cpuCount;
 }
 
-const sCPU *const *smp_getCPUs(void) {
+sCPU **smp_getCPUs(void) {
 	return cpus;
 }
 

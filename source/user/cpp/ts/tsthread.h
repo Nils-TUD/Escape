@@ -31,16 +31,17 @@ public:
 	typedef unsigned char state_type;
 	typedef size_t size_type;
 	typedef unsigned long long cycle_type;
+	typedef time_t time_type;
 
 public:
 	thread()
 		: _tid(0), _pid(0), _procName(std::string()), _state(0), _stackPages(0),
-		  _schedCount(0), _syscalls(0), _ucycles(0), _kcycles(0) {
+		  _schedCount(0), _syscalls(0), _cycles(0), _runtime(0) {
 	}
 	thread(const thread& t)
 		: _tid(t._tid), _pid(t._pid), _procName(t._procName), _state(t._state),
 		  _stackPages(t._stackPages), _schedCount(t._schedCount), _syscalls(t._syscalls),
-		  _ucycles(t._ucycles), _kcycles(t._kcycles) {
+		  _cycles(t._cycles), _runtime(t._runtime) {
 	}
 	thread& operator =(const thread& t) {
 		clone(t);
@@ -70,11 +71,11 @@ public:
 	inline size_type syscalls() const {
 		return _syscalls;
 	};
-	inline cycle_type userCycles() const {
-		return _ucycles;
+	inline cycle_type cycles() const {
+		return _cycles;
 	};
-	inline cycle_type kernelCycles() const {
-		return _kcycles;
+	inline time_type runtime() const {
+		return _runtime;
 	};
 
 private:
@@ -88,8 +89,8 @@ private:
 	size_type _stackPages;
 	size_type _schedCount;
 	size_type _syscalls;
-	cycle_type _ucycles;
-	cycle_type _kcycles;
+	cycle_type _cycles;
+	time_type _runtime;
 };
 
 std::istream& operator >>(std::istream& is,thread& t);

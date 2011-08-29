@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include "thread.h"
+#include "tsthread.h"
 
 void thread::clone(const thread& t) {
 	_tid = t._tid;
@@ -27,8 +27,8 @@ void thread::clone(const thread& t) {
 	_stackPages = t._stackPages;
 	_schedCount = t._schedCount;
 	_syscalls = t._syscalls;
-	_ucycles = t._ucycles;
-	_kcycles = t._kcycles;
+	_cycles = t._cycles;
+	_runtime = t._runtime;
 }
 
 std::istream& operator >>(std::istream& is,thread& t) {
@@ -41,8 +41,8 @@ std::istream& operator >>(std::istream& is,thread& t) {
 	is.ignore(unlimited,' ') >> t._stackPages;
 	is.ignore(unlimited,' ') >> t._schedCount;
 	is.ignore(unlimited,' ') >> t._syscalls;
+	is.ignore(unlimited,' ') >> t._runtime;
 	is.setf(istream::hex);
-	is.ignore(unlimited,' ') >> t._ucycles;
-	is.ignore(unlimited,' ') >> t._kcycles;
+	is.ignore(unlimited,' ') >> t._cycles;
 	return is;
 }

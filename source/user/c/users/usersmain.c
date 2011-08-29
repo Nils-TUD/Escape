@@ -119,8 +119,7 @@ static void addUser(const char *name,const char *home) {
 	if(!g)
 		error("malloc");
 	g->gid = group_getFreeGid(groupList);
-	strncpy(g->name,name,sizeof(g->name) - 1);
-	g->name[sizeof(g->name) - 1] = '\0';
+	strnzcpy(g->name,name,sizeof(g->name));
 	g->userCount = 1;
 	g->users = (uid_t*)malloc(sizeof(uid_t) * 1);
 	if(!g->users)
@@ -133,10 +132,8 @@ static void addUser(const char *name,const char *home) {
 		error("malloc");
 	u->gid = g->gid;
 	u->uid = user_getFreeUid(userList);
-	strncpy(u->name,name,sizeof(u->name) - 1);
-	u->name[sizeof(u->name) - 1] = '\0';
-	strncpy(u->home,home,sizeof(u->home) - 1);
-	u->home[sizeof(u->home) - 1] = '\0';
+	strnzcpy(u->name,name,sizeof(u->name));
+	strnzcpy(u->home,home,sizeof(u->home));
 	g->users[0] = u->uid;
 	readPassword(u);
 	user_append(userList,u);
@@ -158,8 +155,7 @@ static void changeName(const char *old,const char *new) {
 	if(user_getByName(userList,new) != NULL)
 		error("A user with name '%s' does already exist",new);
 
-	strncpy(u->name,new,sizeof(u->name) - 1);
-	u->name[sizeof(u->name) - 1] = '\0';
+	strnzcpy(u->name,new,sizeof(u->name));
 
 	if(user_writeToFile(userList,USERS_PATH) < 0)
 		error("Unable to write users back to file");
@@ -173,8 +169,7 @@ static void changeHome(const char *name,const char *home) {
 	if(uid != ROOT_UID && u->uid != uid)
 		error("Only root can do that!");
 
-	strncpy(u->home,home,sizeof(u->home) - 1);
-	u->home[sizeof(u->home) - 1] = '\0';
+	strnzcpy(u->home,home,sizeof(u->home));
 
 	if(user_writeToFile(userList,USERS_PATH) < 0)
 		error("Unable to write users back to file");

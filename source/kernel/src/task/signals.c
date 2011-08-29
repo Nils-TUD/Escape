@@ -31,6 +31,7 @@
 #include <errors.h>
 #include <assert.h>
 
+#define SIGNAL_COUNT	2048
 #define MAX_SIG_RECV	16
 
 static bool sig_add(sSignals *s,sig_t sig);
@@ -40,9 +41,20 @@ static sSignals *sig_getThread(tid_t tid,bool create);
 static klock_t sigLock;
 static size_t pendingSignals = 0;
 static sSLList sigThreads;
+static sPendingSig signals[SIGNAL_COUNT];
+static sPendingSig *freelist;
 
 void sig_init(void) {
+	size_t i;
 	sll_init(&sigThreads,slln_allocNode,slln_freeNode);
+
+	/* init signal-freelist */
+	signals->next = NULL;
+	freelist = signals;
+	for(i = 1; i < SIGNAL_COUNT; i++) {
+		signals[i].next = freelist;
+		freelist = signals + i;
+	}
 }
 
 bool sig_canHandle(sig_t signal) {
@@ -94,7 +106,8 @@ void sig_removeHandlerFor(tid_t tid) {
 	s = sig_getThread(tid,false);
 	if(s) {
 		sThread *t = thread_getById(tid);
-		pendingSignals -= sll_length(&s->pending);
+		/* remove all pending */
+		sig_removePending(s,0);
 		sll_removeFirstWith(&sigThreads,t);
 		cache_free(s);
 		t->signals = NULL;
@@ -120,7 +133,7 @@ bool sig_hasSignalFor(tid_t tid) {
 	bool res = false;
 	klock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
-	if(s && !s->currentSignal && (s->deliveredSignal || sll_length(&s->pending) > 0)) {
+	if(s && !s->currentSignal && (s->deliveredSignal || s->pending.count > 0)) {
 		sThread *t = thread_getById(tid);
 		res = !t->ignoreSignals;
 	}
@@ -147,19 +160,27 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
 		for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 			t = (sThread*)n->data;
 			s = t->signals;
-			if(!s->deliveredSignal && !s->currentSignal && sll_length(&s->pending) > 0) {
-				sig_t psig = (sig_t)sll_removeFirst(&s->pending);
+			if(!s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
+				sPendingSig *psig = s->pending.first;
 				if(t->tid == tid) {
-					*handler = s->handler[psig];
-					*sig = psig;
-					s->currentSignal = psig;
+					*handler = s->handler[psig->sig];
+					*sig = psig->sig;
+					s->currentSignal = psig->sig;
 					res = SIG_CHECK_CUR;
 				}
 				else {
-					s->deliveredSignal = psig;
+					s->deliveredSignal = psig->sig;
 					res = SIG_CHECK_OTHER;
 				}
+				/* remove signal */
+				s->pending.first = psig->next;
+				if(s->pending.last == psig)
+					s->pending.last = NULL;
+				s->pending.count--;
 				pendingSignals--;
+				/* put on freelist */
+				psig->next = freelist;
+				freelist = psig;
 				break;
 			}
 		}
@@ -246,7 +267,7 @@ void sig_print(void) {
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
-		vid_printf("\tpending: %zu\n",sll_length(&t->signals->pending));
+		vid_printf("\tpending: %zu\n",t->signals->pending.count);
 		vid_printf("\tdeliver: %d\n",t->signals->deliveredSignal);
 		vid_printf("\tcurrent: %d\n",t->signals->currentSignal);
 		for(i = 0; i < SIG_COUNT; i++) {
@@ -270,30 +291,43 @@ size_t sig_dbg_getHandlerCount(void) {
 }
 
 static bool sig_add(sSignals *s,sig_t sig) {
-	if(sll_append(&s->pending,(void*)sig)) {
-		pendingSignals++;
-		return true;
-	}
-	return false;
+	sPendingSig *psig = freelist;
+	if(psig == NULL)
+		return false;
+
+	/* remove from freelist */
+	freelist = freelist->next;
+	/* set properties */
+	psig->sig = sig;
+	psig->next = NULL;
+	/* append */
+	if(s->pending.last)
+		s->pending.last->next = psig;
+	else
+		s->pending.first = psig;
+	s->pending.last = psig;
+	s->pending.count++;
+	pendingSignals++;
+	return true;
 }
 
 static void sig_removePending(sSignals *s,sig_t sig) {
-	sSLNode *n,*p;
+	sPendingSig *ps,*pps;
 	if(s->deliveredSignal == sig)
 		s->deliveredSignal = 0;
-	p = NULL;
-	for(n = sll_begin(&s->pending); n != NULL; ) {
-		sig_t psig = (sig_t)n->data;
-		if(psig == sig) {
-			sSLNode *next = n->next;
-			sll_removeNode(&s->pending,n,p);
+	pps = NULL;
+	for(ps = s->pending.first; ps != NULL; ) {
+		if(sig == 0 || ps->sig == sig) {
+			sPendingSig *tps = ps->next;
+			ps->next = freelist;
+			freelist = ps;
+			ps = tps;
 			assert(pendingSignals > 0);
 			pendingSignals--;
-			n = next;
 		}
 		else {
-			p = n;
-			n = n->next;
+			pps = ps;
+			ps = ps->next;
 		}
 	}
 }
@@ -306,7 +340,6 @@ static sSignals *sig_getThread(tid_t tid,bool create) {
 		t->signals = (sSignals*)cache_calloc(1,sizeof(sSignals));
 		if(!t->signals)
 			return NULL;
-		sll_init(&t->signals->pending,slln_allocNode,slln_freeNode);
 		if(!sll_append(&sigThreads,t)) {
 			cache_free(t->signals);
 			t->signals = NULL;

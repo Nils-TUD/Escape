@@ -32,11 +32,11 @@
 #include <sys/arch/mmix/task/timer.h>
 #endif
 
-/* timer frequency => time-slice = 5ms */
-#define TIMER_FREQUENCY			200
+/* time-slice = 5ms */
+#define TIMER_FREQUENCY_DIV		200
 
 /* the time that we give one process (60ms) */
-#define PROC_TIMESLICE			((1000 / TIMER_FREQUENCY) * 12)
+#define PROC_TIMESLICE			((1000 / TIMER_FREQUENCY_DIV) * 12)
 
 /**
  * Initializes the timer
@@ -71,8 +71,10 @@ void timer_removeThread(tid_t tid);
 
 /**
  * Handles a timer-interrupt
+ *
+ * @return true if we should perform a thread-switch
  */
-void timer_intrpt(void);
+bool timer_intrpt(void);
 
 /**
  * Prints the timer-queue

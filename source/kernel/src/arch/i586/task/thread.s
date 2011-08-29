@@ -20,6 +20,7 @@
 .global thread_idle
 .global thread_save
 .global thread_resume
+.extern klock_release
 
 # process save area offsets
 .set STATE_ESP,						0
@@ -74,7 +75,11 @@ thread_resume:
 	mov		STATE_EBX(%eax),%ebx
 	pushl	STATE_EFLAGS(%eax)
 	popfl							# load eflags
-	movl	$0,(%edx)				# unlock now; the old thread can be used
+
+	# unlock now; the old thread can be used
+	pushl	%edx
+	call	klock_release
+	add		$4,%esp
 
 	mov		$1,%eax					# return 1
 	leave

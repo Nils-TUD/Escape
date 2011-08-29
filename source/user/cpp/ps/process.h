@@ -36,17 +36,18 @@ public:
 	typedef gid_t gid_type;
 	typedef size_t size_type;
 	typedef unsigned long long cycle_type;
+	typedef time_t time_type;
 
 public:
 	process()
 		: _pid(0), _ppid(0), _uid(0), _gid(0), _pages(0), _ownFrames(0), _sharedFrames(0),
-		  _swapped(0), _input(0), _output(0), _ucycles(-1), _kcycles(-1),
+		  _swapped(0), _input(0), _output(0), _cycles(-1), _runtime(-1),
 		  _threads(std::vector<thread*>()), _cmd(std::string()) {
 	}
 	process(const process& p)
 		: _pid(p._pid), _ppid(p._ppid), _uid(p._uid), _gid(p._gid), _pages(p._pages),
 		  _ownFrames(p._ownFrames), _sharedFrames(p._sharedFrames), _swapped(p._swapped),
-		  _input(p._input), _output(p._output), _ucycles(p._ucycles), _kcycles(p._kcycles),
+		  _input(p._input), _output(p._output), _cycles(p._cycles), _runtime(p._runtime),
 		  _threads(p._threads), _cmd(p._cmd) {
 	}
 	process& operator =(const process& p) {
@@ -58,8 +59,8 @@ public:
 		_ownFrames = p._ownFrames;
 		_sharedFrames = p._sharedFrames;
 		_swapped = p._swapped;
-		_ucycles = p._ucycles;
-		_kcycles = p._kcycles;
+		_cycles = p._cycles;
+		_runtime = p._runtime;
 		_threads = p._threads;
 		_input = p._input;
 		_output = p._output;
@@ -93,11 +94,8 @@ public:
 	inline size_type swapped() const {
 		return _swapped;
 	};
-	inline cycle_type totalCycles() const {
-		return userCycles() + kernelCycles();
-	};
-	cycle_type userCycles() const;
-	cycle_type kernelCycles() const;
+	cycle_type cycles() const;
+	cycle_type runtime() const;
 	inline size_type input() const {
 		return _input;
 	};
@@ -110,7 +108,8 @@ public:
 	inline void add_thread(thread* t) {
 		_threads.push_back(t);
 		// we need to refresh that afterwards
-		_ucycles = _kcycles = -1;
+		_cycles = -1;
+		_runtime = -1;
 	};
 	inline const std::string& command() const {
 		return _cmd;
@@ -127,8 +126,8 @@ private:
 	size_type _swapped;
 	mutable size_type _input;
 	mutable size_type _output;
-	mutable cycle_type _ucycles;
-	mutable cycle_type _kcycles;
+	mutable cycle_type _cycles;
+	mutable time_type _runtime;
 	std::vector<thread*> _threads;
 	std::string _cmd;
 };

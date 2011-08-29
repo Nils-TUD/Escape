@@ -17,9 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.global intrpt_setEnabled
+.global waiting
+.global waitlock
+.global halting
 .extern apic_eoi
 .extern intrpt_handler
+
+waiting:
+	.long	0
+waitlock:
+	.long	0
+halting:
+	.long	0
 
 # macro to build a default-isr-handler
 .macro BUILD_DEF_ISR no
@@ -40,23 +49,6 @@
 	pushl	$\no					# the interrupt-number
 	jmp		isrCommon
 .endm
-
-# bool intrpt_setEnabled(bool enabled);
-intrpt_setEnabled:
-	push	%ebp
-	mov		%esp,%ebp
-	mov		8(%esp),%eax
-	shl		$9,%eax
-	pushfl
-	mov		(%esp),%ecx
-	mov		%ecx,%eax
-	and		$1 << 9,%eax			# extract IF-flag
-	shr		$9,%eax
-	or		%eax,%ecx				# set new value
-	mov		%ecx,(%esp)
-	popfl
-	leave
-	ret
 
 # our ISRs
 BUILD_DEF_ISR 0
@@ -110,7 +102,7 @@ BUILD_DEF_ISR 47
 BUILD_DEF_ISR 48
 BUILD_DEF_ISR 49
 
-# flush TLB
+# IPI: flush TLB
 .global isr50
 	isr50:
 	pusha
@@ -120,8 +112,34 @@ BUILD_DEF_ISR 49
 	popa
 	iret
 
-BUILD_DEF_ISR 51
-BUILD_DEF_ISR 52
+# IPI: wait
+.global isr51
+	isr51:
+	pusha
+	# tell the CPU that requested the wait that we're waiting
+	lock
+	add		$1,(waiting)
+	# now wait until its unlocked
+1:
+	mov		(waitlock),%eax
+	test	%eax,%eax
+	jz		2f
+	pause
+	jmp		1b
+2:	popa
+	iret
+
+# IPI: halt
+.global isr52
+	isr52:
+	# tell the CPU that requested the wait that we're halting
+	lock
+	add		$1,(halting)
+	# now hlt here with interrupts disabled
+1:
+	hlt
+	# not reached
+	jmp		1b
 
 # our null-handler for all other interrupts
 .global isrNull

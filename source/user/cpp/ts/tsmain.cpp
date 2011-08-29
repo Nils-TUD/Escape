@@ -31,7 +31,7 @@
 #include <cmdargs.h>
 #include <file.h>
 
-#include "thread.h"
+#include "tsthread.h"
 
 #define MIN_WIDTH_FOR_UIDGID	90
 
@@ -42,8 +42,8 @@ struct sort {
 	const static int NAME	= 2;
 	const static int STACK	= 3;
 	const static int STATE	= 4;
-	const static int UCPU	= 5;
-	const static int KCPU	= 6;
+	const static int CPU	= 5;
+	const static int TIME	= 6;
 
 	int type;
 	string name;
@@ -57,8 +57,8 @@ static struct sort sorts[] = {
 	{sort::NAME,"proc"},
 	{sort::STACK,"stack"},
 	{sort::STATE,"state"},
-	{sort::UCPU,"ucpu"},
-	{sort::KCPU,"kcpu"},
+	{sort::CPU,"cpu"},
+	{sort::TIME,"time"},
 };
 static const char *states[] = {
 	"ILL",
@@ -117,6 +117,7 @@ int main(int argc,char **argv) {
 	thread::size_type maxStack = 10000;
 	thread::size_type maxScheds = 10000;
 	thread::size_type maxSyscalls = 1000;
+	thread::time_type maxRuntime = 100;
 	thread::cycle_type totalCycles = 0;
 	for(vector<thread*>::const_iterator it = threads.begin(); it != threads.end(); ++it) {
 		thread *t = *it;
@@ -128,13 +129,16 @@ int main(int argc,char **argv) {
 			maxScheds = t->schedCount();
 		if(t->syscalls() > maxSyscalls)
 			maxSyscalls = t->syscalls();
-		totalCycles += t->userCycles() + t->kernelCycles();
+		if(t->runtime() > maxRuntime)
+			maxRuntime = t->runtime();
+		totalCycles += t->cycles();
 	}
 	maxTid = count_digits(maxTid,10);
 	// display in KiB, its in pages
 	maxStack = count_digits((maxStack * pageSize) / 1024,10);
 	maxScheds = count_digits(maxScheds,10);
 	maxSyscalls = count_digits(maxSyscalls,10);
+	maxRuntime = count_digits(maxRuntime / (1000 * 60),10);
 
 	// sort
 	std::sort(threads.begin(),threads.end(),compareThreads);
@@ -146,32 +150,30 @@ int main(int argc,char **argv) {
 	cout << setw(maxStack + 1) << "STACK";
 	cout << setw(maxScheds + 1) << "SCHED";
 	cout << setw(maxSyscalls + 1) << "SYSC";
-	cout << "    CPU (USER,KERNEL) PROCESS" << '\n';
+	cout << setw(maxRuntime + 8) << "TIME";
+	cout << "    CPU PROCESS" << '\n';
 
 	// print threads
 	for(vector<thread*>::const_iterator it = threads.begin(); it != threads.end(); ++it) {
 		thread *t = *it;
-		thread::cycle_type threadCycles;
-		int userPercent = 0;
-		int kernelPercent = 0;
 		float cyclePercent = 0;
-
-		threadCycles = t->userCycles() + t->kernelCycles();
-		if(threadCycles != 0)
-			cyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
-		if(t->userCycles() != 0)
-			userPercent = (int)(100. / (threadCycles / (double)t->userCycles()));
-		if(t->kernelCycles() != 0)
-			kernelPercent = (int)(100. / (threadCycles / (double)t->kernelCycles()));
+		if(t->cycles() != 0)
+			cyclePercent = (float)(100. / (totalCycles / (double)t->cycles()));
 
 		cout << setw(maxTid) << t->tid() << " ";
 		cout << setw(5) << states[t->state()] << " ";
 		cout << setw(maxStack - 1) << (t->stackPages() * pageSize) / 1024 << "K ";
 		cout << setw(maxScheds) << t->schedCount() << " ";
 		cout << setw(maxSyscalls) << t->syscalls() << " ";
-		cout << setw(5) << setprecision(1) << cyclePercent << "% (";
-		cout << setw(3) << userPercent << "%,";
-		cout << setw(3) << kernelPercent << "%)   ";
+		time_t time = t->runtime();
+		cout << setw(maxRuntime) << time / (1000 * 60) << ":";
+		time %= 1000 * 60;
+		cout << setfillobj('0');
+		cout << setw(2) << time / 1000 << ".";
+		time %= 1000;
+		cout << setw(3) << time << " ";
+		cout << setfillobj(' ');
+		cout << setw(5) << setprecision(1) << cyclePercent << "% ";
 		cout << t->pid() << ':' << t->procName() << '\n';
 	}
 
@@ -189,12 +191,12 @@ static bool compareThreads(const thread* a,const thread* b) {
 		case sort::STATE:
 			// descending
 			return b->state() < a->state();
-		case sort::UCPU:
+		case sort::CPU:
 			// descending
-			return b->userCycles() < a->userCycles();
-		case sort::KCPU:
+			return b->cycles() < a->cycles();
+		case sort::TIME:
 			// descending
-			return b->kernelCycles() < a->kernelCycles();
+			return b->runtime() < a->runtime();
 		case sort::NAME:
 			// ascending
 			return a->procName() < b->procName();

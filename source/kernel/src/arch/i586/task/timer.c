@@ -23,12 +23,12 @@
 
 #define TIMER_BASE_FREQUENCY	1193182
 #define IOPORT_TIMER_CTRL		0x43
-#define IOPORT_TIMER_CNTDIV		0x40
+#define IOPORT_TIMER_CHAN0DIV	0x40
 
 /* counter to select */
-#define TIMER_CTRL_CNT0			0x00
-#define TIMER_CTRL_CNT1			0x40
-#define TIMER_CTRL_CNT2			0x80
+#define TIMER_CTRL_CHAN0		0x00
+#define TIMER_CTRL_CHAN1		0x40
+#define TIMER_CTRL_CHAN2		0x80
 /* read/write mode */
 #define TIMER_CTRL_RWLO			0x10	/* low byte only */
 #define TIMER_CTRL_RWHI			0x20	/* high byte only */
@@ -45,9 +45,9 @@
 
 void timer_arch_init(void) {
 	/* change timer divisor */
-	uint freq = TIMER_BASE_FREQUENCY / TIMER_FREQUENCY;
-	ports_outByte(IOPORT_TIMER_CTRL,TIMER_CTRL_CNT0 | TIMER_CTRL_RWLOHI |
+	uint freq = TIMER_BASE_FREQUENCY / TIMER_FREQUENCY_DIV;
+	ports_outByte(IOPORT_TIMER_CTRL,TIMER_CTRL_CHAN0 | TIMER_CTRL_RWLOHI |
 			TIMER_CTRL_MODE2 | TIMER_CTRL_CNTBIN16);
-	ports_outByte(IOPORT_TIMER_CNTDIV,freq & 0xFF);
-	ports_outByte(IOPORT_TIMER_CNTDIV,freq >> 8);
+	ports_outByte(IOPORT_TIMER_CHAN0DIV,freq & 0xFF);
+	ports_outByte(IOPORT_TIMER_CHAN0DIV,freq >> 8);
 }

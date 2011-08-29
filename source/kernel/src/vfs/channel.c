@@ -251,7 +251,9 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 		}
 		ev_wait(t,event,(evobj_t)node);
 		klock_release(&chan->lock);
+
 		thread_switch();
+
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
 		/* if we waked up and there is no message, the driver probably died */

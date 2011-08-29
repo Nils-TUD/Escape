@@ -178,7 +178,6 @@ bool sysc_absolutize_path(char *dst,size_t size,const char *src) {
 			dst[1] = '\0';
 		}
 	}
-	strncpy(dst + len,src,size - len);
-	dst[size - 1] = '\0';
+	strnzcpy(dst + len,src,size - len);
 	return true;
 }

@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
+#include <sys/task/smp.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/util.h>
@@ -76,8 +77,10 @@ sThread *sched_perform(sThread *old) {
 	/* give the old thread a new state */
 	if(old) {
 		/* TODO it would be better to keep the idle-thread if we should idle again */
-		if(old->flags & T_IDLE)
+		if(old->flags & T_IDLE) {
 			sll_append(&idleThreads,old);
+			old->state = ST_BLOCKED;
+		}
 		else {
 			vassert(old->state == ST_RUNNING || old->state == ST_ZOMBIE,"State %d",old->state);
 			/* we have to check for a signal here, because otherwise we might miss it */
@@ -90,6 +93,7 @@ sThread *sched_perform(sThread *old) {
 				return old;
 			}
 			switch(old->newState) {
+				case ST_UNUSED:
 				case ST_READY:
 					old->state = ST_READY;
 					sched_qAppend(&readyQueue,old);
@@ -111,11 +115,16 @@ sThread *sched_perform(sThread *old) {
 	if(t == NULL) {
 		/* choose an idle-thread */
 		t = sll_removeFirst(&idleThreads);
+		t->state = ST_RUNNING;
 	}
 	else {
 		t->state = ST_RUNNING;
-		t->newState = ST_READY;
+		t->newState = ST_UNUSED;
 	}
+
+	/* if there is another thread ready, check if we have another cpu that we can start for it */
+	if(readyQueue.first)
+		smp_wakeupCPU();
 
 	klock_release(&schedLock);
 	return t;

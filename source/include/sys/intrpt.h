@@ -33,14 +33,6 @@
 #endif
 
 /**
- * Enables / disables the interrupts
- *
- * @param enabled the new value
- * @return the old value
- */
-bool intrpt_setEnabled(bool enabled);
-
-/**
  * Initializes the interrupts
  */
 void intrpt_init(void);

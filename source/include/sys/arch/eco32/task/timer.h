@@ -32,4 +32,9 @@ void timer_arch_init(void);
  */
 void timer_ackIntrpt(void);
 
+/**
+ * @return the elapsed milliseconds since the last timer-interrupt
+ */
+time_t timer_getTimeSinceIRQ(void);
+
 #endif /* ECO32_TIMER_H_ */

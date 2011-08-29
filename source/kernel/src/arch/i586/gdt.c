@@ -425,13 +425,12 @@ static sTSS *gdt_getFreeTSS(size_t *index) {
 
 void gdt_print(void) {
 	size_t i;
-	sSLNode *n;
-	const sSLList *cpus = smp_getCPUs();
+	size_t count = smp_getCPUCount();
+	const sCPU *const *cpus = smp_getCPUs();
 	vid_printf("GDTs:\n");
-	for(n = sll_begin(cpus); n != NULL; n = n->next) {
-		const sCPU *cpu = (const sCPU*)n->data;
-		sGDTDesc *gdt = (sGDTDesc*)allgdts[cpu->id].offset;
-		vid_printf("\tGDT of CPU %d\n",cpu->id);
+	for(i = 0; i < count; i++) {
+		sGDTDesc *gdt = (sGDTDesc*)allgdts[cpus[i]->id].offset;
+		vid_printf("\tGDT of CPU %d\n",cpus[i]->id);
 		if(gdt) {
 			for(i = 0;i < GDT_ENTRY_COUNT; i++) {
 				vid_printf("\t\t%d: address=%02x%02x:%04x, size=%02x%04x, access=%02x\n",

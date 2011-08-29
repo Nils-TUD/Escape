@@ -24,10 +24,11 @@
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/klock.h>
-#include <esc/sllist.h>
 #include <errors.h>
 
 #define LISTENER_COUNT		1024
+/* reset the cpu-usage every 5sec */
+#define CPU_USAGE_SLICE		5000
 
 /* an entry in the listener-list */
 typedef struct sTimerListener {
@@ -37,16 +38,17 @@ typedef struct sTimerListener {
 	struct sTimerListener *next;
 } sTimerListener;
 
-/* processes that should be waked up to a specified time */
-static sSLList *listener = NULL;
 /* total elapsed milliseconds */
 static time_t elapsedMsecs = 0;
 static time_t lastResched = 0;
+static time_t lastRuntimeUpdate = 0;
 static size_t timerIntrpts = 0;
 
 static klock_t timerLock;
 static sTimerListener listenObjs[LISTENER_COUNT];
 static sTimerListener *freeList;
+/* processes that should be waked up to a specified time */
+static sTimerListener *listener = NULL;
 
 void timer_init(void) {
 	size_t i;
@@ -59,11 +61,6 @@ void timer_init(void) {
 		listenObjs[i].next = freeList;
 		freeList = listenObjs + i;
 	}
-
-	/* init list */
-	listener = sll_create();
-	if(listener == NULL)
-		util_panic("Not enough mem for timer-listener");
 }
 
 size_t timer_getIntrptCount(void) {
@@ -76,8 +73,7 @@ time_t timer_getTimestamp(void) {
 
 int timer_sleepFor(tid_t tid,time_t msecs) {
 	time_t msecDiff;
-	sSLNode *n,*p;
-	sTimerListener *nl,*l;
+	sTimerListener *p,*nl,*l;
 	klock_aquire(&timerLock);
 	l = freeList;
 	if(l == 0) {
@@ -91,26 +87,19 @@ int timer_sleepFor(tid_t tid,time_t msecs) {
 	l->tid = tid;
 	msecDiff = 0;
 	p = NULL;
-	for(n = sll_begin(listener); n != NULL; p = n, n = n->next) {
-		nl = (sTimerListener*)n->data;
+	for(nl = listener; nl != NULL; p = nl, nl = nl->next) {
 		if(msecDiff + nl->time > msecs)
 			break;
 		msecDiff += nl->time;
 	}
 
 	l->time = msecs - msecDiff;
-	/* store pointer to next data before inserting */
-	if(n)
-		nl = (sTimerListener*)n->data;
-	else
-		nl = NULL;
 	/* insert entry */
-	if(!sll_insertAfter(listener,p,l)) {
-		l->next = freeList;
-		freeList = l;
-		klock_release(&timerLock);
-		return ERR_NOT_ENOUGH_MEM;
-	}
+	l->next = nl;
+	if(p)
+		p->next = l;
+	else
+		listener = l;
 
 	/* now change time of next one */
 	if(nl)
@@ -123,19 +112,20 @@ int timer_sleepFor(tid_t tid,time_t msecs) {
 }
 
 void timer_removeThread(tid_t tid) {
-	sSLNode *n,*p;
-	sTimerListener *l,*nl;
+	sTimerListener *l,*p;
 	klock_aquire(&timerLock);
 	p = NULL;
-	for(n = sll_begin(listener); n != NULL; p = n, n = n->next) {
-		l = (sTimerListener*)n->data;
+	for(l = listener; l != NULL; p = l, l = l->next) {
 		if(l->tid == tid) {
 			/* increase time of next */
-			if(n->next) {
-				nl = (sTimerListener*)n->next->data;
-				nl->time += l->time;
-			}
-			sll_removeNode(listener,n,p);
+			if(l->next)
+				l->next->time += l->time;
+			/* remove from list */
+			if(p)
+				p->next = l->next;
+			else
+				listener = l->next;
+			/* put on freelist */
 			l->next = freeList;
 			freeList = l;
 			/* it's not possible to be in the list twice */
@@ -145,19 +135,22 @@ void timer_removeThread(tid_t tid) {
 	klock_release(&timerLock);
 }
 
-void timer_intrpt(void) {
-	bool foundThread = false;
-	sSLNode *n,*tn;
-	sTimerListener *l;
-	time_t timeInc = 1000 / TIMER_FREQUENCY;
+bool timer_intrpt(void) {
+	bool res,foundThread = false;
+	sTimerListener *l,*tl;
+	time_t timeInc = 1000 / TIMER_FREQUENCY_DIV;
 
 	klock_aquire(&timerLock);
 	timerIntrpts++;
 	elapsedMsecs += timeInc;
 
+	if((elapsedMsecs - lastRuntimeUpdate) >= CPU_USAGE_SLICE) {
+		thread_updateRuntimes();
+		lastRuntimeUpdate = elapsedMsecs;
+	}
+
 	/* look if there are threads to wakeup */
-	for(n = sll_begin(listener); n != NULL; ) {
-		l = (sTimerListener*)n->data;
+	for(l = listener; l != NULL; ) {
 		/* stop if we have to continue waiting for this one */
 		/* note that multiple listeners may have l->time = 0 */
 		if(l->time > timeInc) {
@@ -167,37 +160,38 @@ void timer_intrpt(void) {
 
 		timeInc -= l->time;
 		foundThread = true;
-		tn = n->next;
-		/* wake up thread */
-		ev_unblock(thread_getById(l->tid));
+		/* wake up thread; thread_unblock() is enough here, because we are never waiting for events
+		 * in this case. this saves us from having to disable interrupts in the event-module as
+		 * well */
+		thread_unblock(thread_getById(l->tid));
+		/* remove from list */
+		listener = l->next;
+		tl = l->next;
+		/* put on freelist */
 		l->next = freeList;
 		freeList = l;
-		sll_removeNode(listener,n,NULL);
-		n = tn;
+		/* to next */
+		l = tl;
 	}
 
 	/* if a process has been waked up or the time-slice is over, reschedule */
+	res = false;
 	if(foundThread || (elapsedMsecs - lastResched) >= PROC_TIMESLICE) {
 		lastResched = elapsedMsecs;
-		klock_release(&timerLock);
-		thread_switch();
+		res = true;
 	}
-	else
-		klock_release(&timerLock);
+	klock_release(&timerLock);
+	return res;
 }
 
 void timer_print(void) {
 	time_t time;
-	sSLNode *n = sll_begin(listener);
 	sTimerListener *l;
-	if(n != NULL) {
-		vid_printf("Timer-Listener: cur=%s\n",proc_getByPid(proc_getRunning())->command);
-		time = 0;
-		for(; n != NULL; n = n->next) {
-			l = (sTimerListener*)n->data;
-			time += l->time;
-			vid_printf("	diff=%d ms, rem=%d ms, tid=%d (%s)\n",l->time,time,l->tid,
-					thread_getById(l->tid)->proc->command);
-		}
+	vid_printf("Timer-Listener:\n");
+	time = 0;
+	for(l = listener; l != NULL; l = l->next) {
+		time += l->time;
+		vid_printf("	diff=%d ms, rem=%d ms, tid=%d (%s)\n",l->time,time,l->tid,
+				thread_getById(l->tid)->proc->command);
 	}
 }

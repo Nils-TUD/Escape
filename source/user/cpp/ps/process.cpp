@@ -20,21 +20,21 @@
 #include "process.h"
 #include "thread.h"
 
-process::cycle_type process::userCycles() const {
-	if((long long)_ucycles == -1) {
-		_ucycles = 0;
+process::cycle_type process::cycles() const {
+	if(_cycles == (cycle_type)-1) {
+		_cycles = 0;
 		for(std::vector<thread*>::const_iterator it = _threads.begin(); it != _threads.end(); ++it)
-			_ucycles += (*it)->userCycles();
+			_cycles += (*it)->cycles();
 	}
-	return _ucycles;
+	return _cycles;
 }
-process::cycle_type process::kernelCycles() const {
-	if((long long)_kcycles == -1) {
-		_kcycles = 0;
+process::cycle_type process::runtime() const {
+	if(_runtime == (time_type)-1) {
+		_runtime = 0;
 		for(std::vector<thread*>::const_iterator it = _threads.begin(); it != _threads.end(); ++it)
-			_kcycles += (*it)->kernelCycles();
+			_runtime += (*it)->runtime();
 	}
-	return _kcycles;
+	return _runtime;
 }
 
 std::istream& operator >>(std::istream& is,process& p) {

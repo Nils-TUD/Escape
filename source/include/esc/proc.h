@@ -40,10 +40,8 @@ typedef struct {
 	size_t ownFrames;
 	size_t sharedFrames;
 	size_t swapped;
-	/* cycle-count */
-	uLongLong ucycleCount;
-	uLongLong kcycleCount;
 	/* other stats */
+	time_t runtime;
 	uint schedCount;
 	uint syscalls;
 } sExitState;

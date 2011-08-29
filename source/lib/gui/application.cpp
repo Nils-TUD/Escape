@@ -333,10 +333,8 @@ namespace gui {
 		_msg.str.arg5 = win->getId();
 		_msg.str.arg6 = win->getStyle();
 		_msg.str.arg7 = win->getTitleBarHeight();
-		if(win->hasTitleBar()) {
-			strncpy(_msg.str.s1,win->getTitle().c_str(),sizeof(_msg.str.s1));
-			_msg.str.s1[sizeof(_msg.str.s1) - 1] = '\0';
-		}
+		if(win->hasTitleBar())
+			strnzcpy(_msg.str.s1,win->getTitle().c_str(),sizeof(_msg.str.s1));
 		else
 			_msg.str.s1[0] = '\0';
 		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.str)) < 0) {

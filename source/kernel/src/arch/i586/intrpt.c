@@ -148,25 +148,17 @@ uint8_t intrpt_getVectorFor(uint8_t irq) {
 }
 
 void intrpt_handler(sIntrptStackFrame *stack) {
-	uint64_t cycles;
 	sThread *t = thread_getRunning();
 	const sInterrupt *intrpt;
-	thread_pushIntrptLevel(t,stack);
+	size_t level = thread_pushIntrptLevel(t,stack);
 	intrptCount++;
-
-	if((t->flags & T_IDLE) || stack->eip < KERNEL_AREA) {
-		cycles = cpu_rdtsc();
-		if(t->stats.ucycleStart > 0)
-			t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
-		/* kernel-mode starts here */
-		t->stats.kcycleStart = cycles;
-	}
 
 	/* we need to save the page-fault address here because swapping may cause other ones */
 	if(stack->intrptNo == EX_PAGE_FAULT)
 		pfAddrs[t->cpu] = cpu_getCR2();
 
-	swap_check();
+	if(level == 1)
+		swap_check();
 
 	intrpt = intrptList + stack->intrptNo;
 	if(intrpt->handler)
@@ -178,16 +170,9 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 	/* handle signal */
 	t = thread_getRunning();
-	uenv_handleSignal(t,stack);
+	if(level == 1)
+		uenv_handleSignal(t,stack);
 
-	/* kernel-mode ends */
-	if((t->flags & T_IDLE) || stack->eip < KERNEL_AREA) {
-		cycles = cpu_rdtsc();
-		if(t->stats.kcycleStart > 0)
-			t->stats.kcycleCount.val64 += cycles - t->stats.kcycleStart;
-		/* user-mode starts here */
-		t->stats.ucycleStart = cycles;
-	}
 	thread_popIntrptLevel(t);
 }
 
@@ -268,11 +253,17 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_irqTimer(sIntrptStackFrame *stack) {
+	bool res;
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
+	res = timer_intrpt();
 	pic_eoi(stack->intrptNo);
-	timer_intrpt();
+	if(res) {
+		sThread *t = thread_getRunning();
+		if(thread_getIntrptLevel(t) == 0)
+			thread_switch();
+	}
 }
 
 static void intrpt_irqDefault(sIntrptStackFrame *stack) {

@@ -21,6 +21,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
+#include <sys/task/smp.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/fpu.h>
 #include <sys/mem/vmm.h>
@@ -93,6 +94,9 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	UNUSED(t);
 	ulong *src;
 	size_t i;
+	/* ensure that we won't get interrupted */
+	klock_t lock = 0;
+	klock_aquire(&lock);
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
 	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
@@ -110,6 +114,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 		*dst++ = *src++;
 
 	paging_unmapFromTemp(1);
+	klock_release(&lock);
 	/* parent */
 	return 0;
 }
@@ -146,13 +151,14 @@ void thread_setRunning(sThread *t) {
 }
 
 void thread_initialSwitch(void) {
-	sThread *cur = sched_perform(NULL);
+	sThread *cur;
+	klock_aquire(&switchLock);
+	cur = sched_perform(NULL);
 	cur->stats.schedCount++;
 	if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
 		vmm_setTimestamp(cur,timer_getTimestamp());
 	cur->cpu = gdt_prepareRun(NULL,cur);
 	fpu_lockFPU();
-	klock_aquire(&switchLock);
 	thread_resume(cur->proc->pagedir.own,&cur->save,&switchLock);
 }
 
@@ -165,17 +171,24 @@ void thread_doSwitch(void) {
 	new = sched_perform(old);
 	/* finish kernel-time here since we're switching the process */
 	if(new->tid != old->tid) {
-		uint64_t kcstart = old->stats.kcycleStart;
-		if(kcstart > 0) {
-			uint64_t cycles = cpu_rdtsc();
-			old->stats.kcycleCount.val64 += cycles - kcstart;
-		}
-
-		/* set used */
+		/* update stats */
+		uint64_t cycles = cpu_rdtsc();
+		time_t timestamp = timer_getTimestamp();
+		old->stats.runtime += timestamp - old->stats.lastSched;
+		old->stats.curCycleCount += cycles - old->stats.cycleStart;
+		new->stats.lastSched = timestamp;
 		new->stats.schedCount++;
+
 		if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-			vmm_setTimestamp(new,timer_getTimestamp());
+			vmm_setTimestamp(new,timestamp);
 		new->cpu = gdt_prepareRun(old,new);
+
+		/* some stats for SMP */
+		if(!(old->flags & T_IDLE))
+			smp_unschedule(old->cpu,timestamp);
+		if(!(new->flags & T_IDLE))
+			smp_schedule(new->cpu,timestamp);
+
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		fpu_lockFPU();
@@ -186,7 +199,7 @@ void thread_doSwitch(void) {
 
 		/* now start kernel-time again */
 		new = thread_getRunning();
-		new->stats.kcycleStart = cpu_rdtsc();
+		new->stats.cycleStart = cpu_rdtsc();
 	}
 	else
 		klock_release(&switchLock);

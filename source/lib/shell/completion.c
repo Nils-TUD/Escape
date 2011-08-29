@@ -96,8 +96,7 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 			cmd = (sShellCmd*)malloc(sizeof(sShellCmd));
 			cmd->func = NULL;
 			cmd->mode = S_IFREG | S_IXOTH;
-			strncpy(cmd->name,vname,MAX_CMDNAME_LEN);
-			cmd->name[MAX_CMDNAME_LEN] = '\0';
+			strnzcpy(cmd->name,vname,sizeof(cmd->name));
 			cmd->nameLen = strlen(cmd->name);
 			cmd->type = cmd->name[0] == '$' ? TYPE_VARIABLE : TYPE_FUNCTION;
 			cmd->complStart = -1;
@@ -331,8 +330,7 @@ static sDirCache *compl_getCache(const char *path) {
 		cmd->mode = 0;
 		cmd->complStart = 0;
 		cmd->func = NULL;
-		strncpy(cmd->name,e.name,MAX_CMDNAME_LEN);
-		cmd->name[MAX_CMDNAME_LEN] = '\0';
+		strnzcpy(cmd->name,e.name,sizeof(cmd->name));
 		cmd->nameLen = strlen(cmd->name);
 	}
 	closedir(d);

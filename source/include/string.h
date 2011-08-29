@@ -166,6 +166,17 @@ char *strcpy(char *to,const char *from);
 char *strncpy(char *to,const char *from,size_t count);
 
 /**
+ * Copies at most <count> characters of <from> to the string <to>. It stops when either <from> is
+ * over or count has reached 1. In every case, the string in <to> is null-terminated.
+ *
+ * @param to the target
+ * @param from the source
+ * @param size the size of the target
+ * @return the target string
+ */
+char *strnzcpy(char *to,const char *from,size_t size);
+
+/**
  * The strcat() function concatenates str2 onto the end of str1, and returns str1.
  *
  * @param str1 the string to append to

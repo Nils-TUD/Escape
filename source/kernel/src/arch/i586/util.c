@@ -21,6 +21,7 @@
 #include <esc/arch/i586/register.h>
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/task/proc.h>
+#include <sys/task/smp.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <sys/mem/pmem.h>
@@ -54,11 +55,13 @@ void util_panic(const char *fmt,...) {
 	const sThread *t = thread_getRunning();
 	va_list ap;
 
+	/* at first, halt the other CPUs */
+	smp_haltOthers();
+
 	/* enter vga-mode to be sure that the user can see the panic :) */
 	/* actually it may fail depending on what caused the panic. this may make it more difficult
 	 * to find the real reason for a failure. so it might be a good idea to turn it off during
 	 * kernel-debugging :) */
-#if 0
 	file_t file = vfs_openPath(KERNEL_PID,VFS_MSGS,"/dev/video");
 	if(file >= 0) {
 		ssize_t res;
@@ -70,7 +73,6 @@ void util_panic(const char *fmt,...) {
 		vfs_closeFile(KERNEL_PID,file);
 	}
 	vid_clearScreen();
-#endif
 
 	/* print message */
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);

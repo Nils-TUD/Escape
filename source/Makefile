@@ -17,10 +17,10 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 # simulators
-#KVM = -enable-kvm
+KVM = -enable-kvm
 QEMU = qemu
 #-net nic,model=ne2k_pci -net user 
-QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
+QEMUARGS = -smp 4 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = /home/hrniels/Applications/eco32-0.20
 ECOSIM = $(ECO32)/build/bin/sim
@@ -74,7 +74,7 @@ export SUDO=sudo
 #		-finstrument-functions-exclude-file-list=../../../lib/basic/profile.c
 # ADDLIBS = ../../../lib/basic/profile.c
 
-DIRS = tools dist lib drivers user kernel/src# kernel/test
+DIRS = tools dist lib drivers user kernel/src kernel/test
 
 # build flags, depending on build-type
 ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))

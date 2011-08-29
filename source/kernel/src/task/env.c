@@ -50,10 +50,8 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 			if(dst) {
 				sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
 				res = vmm_makeCopySafe(cur,dst,size);
-				if(res) {
-					strncpy(dst,var->name,size);
-					dst[size - 1] = '\0';
-				}
+				if(res)
+					strnzcpy(dst,var->name,size);
 				proc_release(cur,PLOCK_REGIONS);
 			}
 			proc_release(p,PLOCK_ENV);
@@ -82,10 +80,8 @@ bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 			if(dst) {
 				sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
 				res = vmm_makeCopySafe(cur,dst,size);
-				if(res) {
-					strncpy(dst,var->value,size);
-					dst[size - 1] = '\0';
-				}
+				if(res)
+					strnzcpy(dst,var->value,size);
 				proc_release(cur,PLOCK_REGIONS);
 			}
 			thread_remLock(p->locks + PLOCK_ENV);

@@ -150,8 +150,7 @@ static void addGroup(const char *name) {
 	if(!g)
 		error("malloc");
 	g->gid = group_getFreeGid(groupList);
-	strncpy(g->name,name,sizeof(g->name) - 1);
-	g->name[sizeof(g->name) - 1] = '\0';
+	strnzcpy(g->name,name,sizeof(g->name));
 	g->userCount = 0;
 	g->users = NULL;
 	group_append(groupList,g);
@@ -168,8 +167,7 @@ static void changeName(const char *old,const char *new) {
 	if(uid != ROOT_UID)
 		error("Only root can do that!");
 
-	strncpy(g->name,new,sizeof(g->name) - 1);
-	g->name[sizeof(g->name) - 1] = '\0';
+	strnzcpy(g->name,new,sizeof(g->name));
 
 	if(group_writeToFile(groupList,GROUPS_PATH) < 0)
 		error("Unable to write groups back to file");

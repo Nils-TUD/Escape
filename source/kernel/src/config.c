@@ -50,10 +50,8 @@ void conf_parseBootParams(int argc,const char *const *argv) {
 			continue;
 		strncpy(name,argv[i],eq);
 		name[eq] = '\0';
-		if(eq != (ssize_t)len) {
-			strncpy(value,argv[i] + eq + 1,len - eq - 1);
-			value[len - eq - 1] = '\0';
-		}
+		if(eq != (ssize_t)len)
+			strnzcpy(value,argv[i] + eq + 1,sizeof(value));
 		else
 			value[0] = '\0';
 		conf_set(name,value);
@@ -77,7 +75,7 @@ long conf_get(uint id) {
 			res = bootVidMode;
 			break;
 		case CONF_TIMER_FREQ:
-			res = TIMER_FREQUENCY;
+			res = TIMER_FREQUENCY_DIV;
 			break;
 		case CONF_MAX_PROCS:
 			res = MAX_PROC_COUNT;

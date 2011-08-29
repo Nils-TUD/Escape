@@ -37,6 +37,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/lock.h>
 #include <sys/task/smp.h>
+#include <sys/cpu.h>
 #include <sys/klock.h>
 #include <sys/util.h>
 #include <sys/video.h>
@@ -87,14 +88,14 @@ static sThread *thread_createInitial(sProc *p) {
 	t->signals = NULL;
 	t->intrptLevel = 0;
 	t->cpu = -1;
-	t->stats.ucycleCount.val64 = 0;
-	t->stats.ucycleStart = 0;
-	t->stats.kcycleCount.val64 = 0;
-	t->stats.kcycleStart = 0;
+	t->stats.runtime = 0;
+	t->stats.curCycleCount = 0;
+	t->stats.lastCycleCount = 0;
+	t->stats.cycleStart = 0;
+	t->stats.lastSched = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
-	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
 	for(i = 0; i < STACK_REG_COUNT; i++)
@@ -120,10 +121,11 @@ sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
 	return NULL;
 }
 
-void thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack) {
+size_t thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack) {
 	assert(t == thread_getRunning());
 	assert(t->intrptLevel < MAX_INTRPT_LEVELS);
 	t->intrptLevels[t->intrptLevel++] = stack;
+	return t->intrptLevel;
 }
 
 void thread_popIntrptLevel(sThread *t) {
@@ -168,15 +170,12 @@ void thread_block(sThread *t) {
 }
 
 void thread_unblock(sThread *t) {
-	assert(t != NULL && t != thread_getRunning());
-	/* check if there are idling CPUs that could run this thread; if so, wake one up */
-	if(sched_setReady(t))
-		smp_wakeupCPU();
+	assert(t != NULL);
+	sched_setReady(t);
 }
 
 void thread_unblockQuick(sThread *t) {
-	if(sched_setReadyQuick(t))
-		smp_wakeupCPU();
+	sched_setReadyQuick(t);
 }
 
 void thread_suspend(sThread *t) {
@@ -187,9 +186,6 @@ void thread_suspend(sThread *t) {
 void thread_unsuspend(sThread *t) {
 	assert(t != NULL);
 	sched_setSuspended(t,false);
-	/* TODO */
-	if(t->state == ST_READY)
-		smp_wakeupCPU();
 }
 
 bool thread_getStackRange(sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
@@ -252,6 +248,33 @@ int thread_extendStack(uintptr_t address) {
 	return res;
 }
 
+time_t thread_getRuntime(const sThread *t) {
+	if(t->state == ST_RUNNING) {
+		time_t ts = timer_getTimestamp();
+		return t->stats.runtime + (ts - t->stats.lastSched);
+	}
+	return t->stats.runtime;
+}
+
+uint64_t thread_getCycles(const sThread *t) {
+	if(t->state == ST_RUNNING) {
+		uint64_t cycles = cpu_rdtsc();
+		return t->stats.lastCycleCount + (cycles - t->stats.cycleStart);
+	}
+	return t->stats.lastCycleCount;
+}
+
+void thread_updateRuntimes(void) {
+	sSLNode *n;
+	klock_aquire(&threadLock);
+	for(n = sll_begin(threads); n != NULL; n = n->next) {
+		sThread *t = (sThread*)n->data;
+		t->stats.lastCycleCount = t->stats.curCycleCount;
+		t->stats.curCycleCount = 0;
+	}
+	klock_release(&threadLock);
+}
+
 void thread_addLock(klock_t *l) {
 	sThread *t = thread_getRunning();
 	sll_append(&t->termLocks,l);
@@ -270,16 +293,6 @@ void thread_addHeapAlloc(void *ptr) {
 void thread_remHeapAlloc(void *ptr) {
 	sThread *t = thread_getRunning();
 	sll_removeFirstWith(&t->termHeapAllocs,ptr);
-}
-
-void thread_addCallback(fTermCallback cb) {
-	sThread *t = thread_getRunning();
-	sll_append(&t->termCallbacks,cb);
-}
-
-void thread_remCallback(fTermCallback cb) {
-	sThread *t = thread_getRunning();
-	sll_removeFirstWith(&t->termCallbacks,cb);
 }
 
 void thread_addFileUsage(file_t file) {
@@ -315,10 +328,11 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 	t->ignoreSignals = 0;
 	t->signals = NULL;
 	t->cpu = -1;
-	t->stats.kcycleCount.val64 = 0;
-	t->stats.kcycleStart = 0;
-	t->stats.ucycleCount.val64 = 0;
-	t->stats.ucycleStart = 0;
+	t->stats.runtime = 0;
+	t->stats.curCycleCount = 0;
+	t->stats.lastCycleCount = 0;
+	t->stats.cycleStart = 0;
+	t->stats.lastSched = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
 	if(cloneProc) {
@@ -328,7 +342,6 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 	else
 		t->intrptLevel = 0;
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
-	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
 	if(cloneProc) {
@@ -417,11 +430,6 @@ bool thread_kill(sThread *t) {
 	for(n = sll_begin(&t->termHeapAllocs); n != NULL; n = n->next)
 		cache_free(n->data);
 	sll_clear(&t->termHeapAllocs,false);
-	for(n = sll_begin(&t->termCallbacks); n != NULL; n = n->next) {
-		fTermCallback cb = (fTermCallback)n->data;
-		cb();
-	}
-	sll_clear(&t->termCallbacks,false);
 	for(n = sll_begin(&t->termUsages); n != NULL; n = n->next)
 		vfs_decUsages((file_t)n->data);
 	sll_clear(&t->termUsages,false);
@@ -471,8 +479,10 @@ void thread_print(const sThread *t) {
 			vid_printf(", ");
 	}
 	vid_printf("\n");
-	vid_printf("\t\tUCycleCount = %#016Lx\n",t->stats.ucycleCount.val64);
-	vid_printf("\t\tKCycleCount = %#016Lx\n",t->stats.kcycleCount.val64);
+	vid_printf("\t\tRuntime = %ums\n",thread_getRuntime(t));
+	vid_printf("\t\tLastSched = %u\n",t->stats.lastSched);
+	vid_printf("\t\tCurCycleCount = %Lu\n",t->stats.curCycleCount);
+	vid_printf("\t\tLastCycleCount = %Lu\n",t->stats.lastCycleCount);
 	vid_printf("\t\tKernel-trace:\n");
 	calls = util_getKernelStackTraceOf(t);
 	while(calls->addr != 0) {

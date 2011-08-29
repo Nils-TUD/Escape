@@ -58,9 +58,20 @@
 /* signal-handler-signature */
 typedef void (*fSignal)(int);
 
+typedef struct sPendingSig {
+	sig_t sig;
+	struct sPendingSig *next;
+} sPendingSig;
+
+typedef struct {
+	sPendingSig *first;
+	sPendingSig *last;
+	size_t count;
+} sPendingQueue;
+
 typedef struct {
 	/* list of pending signals */
-	sSLList pending;
+	sPendingQueue pending;
 	/* signal handler */
 	fSignal handler[SIG_COUNT];
 	/* the signal that the thread is currently handling (if > 0) */

@@ -70,7 +70,7 @@ int sysc_exit(sIntrptStackFrame *stack) {
 int sysc_getCycles(sIntrptStackFrame *stack) {
 	const sThread *t = thread_getRunning();
 	uLongLong cycles;
-	cycles.val64 = t->stats.kcycleCount.val64 + t->stats.ucycleCount.val64;
+	cycles.val64 = t->stats.curCycleCount;
 	SYSC_SETRET2(stack,cycles.val32.upper);
 	SYSC_RET1(stack,cycles.val32.lower);
 }

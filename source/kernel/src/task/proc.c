@@ -54,8 +54,8 @@
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
 static void proc_doRemoveRegions(sProc *p,bool remStack);
-static void proc_doTerminate(sProc *p,int exitCode,sig_t signal);
-static void proc_killThread(sThread *t);
+static bool proc_doTerminate(sProc *p,int exitCode,sig_t signal);
+static bool proc_killThread(sThread *t);
 static void proc_notifyProcDied(pid_t parent);
 static pid_t proc_getFreePid(void);
 static bool proc_add(sProc *p);
@@ -665,9 +665,12 @@ void proc_exit(int exitCode) {
 	sThread *t = thread_getRunning();
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	if(sll_length(p->threads) == 1) {
-		proc_doTerminate(p,exitCode,SIG_COUNT);
+		bool isTerminated = proc_doTerminate(p,exitCode,SIG_COUNT);
 		proc_release(p,PLOCK_PROG);
-		proc_notifyProcDied(p->parentPid);
+		if(isTerminated) {
+			p->flags |= P_ZOMBIE;
+			proc_notifyProcDied(p->parentPid);
+		}
 	}
 	else {
 		proc_killThread(t);
@@ -744,6 +747,7 @@ void proc_killDeadThread(void) {
 			p->flags |= P_ZOMBIE;
 			sll_removeFirstWith(p->threads,t);
 			proc_release(p,PLOCK_PROG);
+			proc_notifyProcDied(p->parentPid);
 		}
 		sll_clear(&deadThreads,false);
 	}
@@ -751,6 +755,7 @@ void proc_killDeadThread(void) {
 }
 
 void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
+	bool isTerminated;
 	sProc *p = proc_request(pid,PLOCK_PROG);
 	/* if its already a zombie and we don't want to kill ourself, kill the process */
 	if((p->flags & P_ZOMBIE) && pid != proc_getRunning()) {
@@ -758,14 +763,18 @@ void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
 		proc_kill(pid);
 		return;
 	}
-	proc_doTerminate(p,exitCode,signal);
+	isTerminated = proc_doTerminate(p,exitCode,signal);
 	proc_release(p,PLOCK_PROG);
-	proc_notifyProcDied(p->parentPid);
+	if(isTerminated) {
+		p->flags |= P_ZOMBIE;
+		proc_notifyProcDied(p->parentPid);
+	}
 }
 
-static void proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
+static bool proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
 	sSLNode *tn,*tmpn;
 	size_t i;
+	bool isTerminated;
 	vassert(p->pid != 0,"You can't terminate the initial process");
 
 	/* print information to log */
@@ -782,14 +791,12 @@ static void proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
 		p->exitState->pid = p->pid;
 		p->exitState->exitCode = exitCode;
 		p->exitState->signal = signal;
-		p->exitState->ucycleCount.val64 = 0;
-		p->exitState->kcycleCount.val64 = 0;
+		p->exitState->runtime = 0;
 		p->exitState->schedCount = 0;
 		p->exitState->syscalls = 0;
 		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 			sThread *t = (sThread*)tn->data;
-			p->exitState->ucycleCount.val64 += t->stats.ucycleCount.val64;
-			p->exitState->kcycleCount.val64 += t->stats.kcycleCount.val64;
+			p->exitState->runtime += t->stats.runtime;
 			p->exitState->schedCount += t->stats.schedCount;
 			p->exitState->syscalls += t->stats.syscalls;
 		}
@@ -818,12 +825,14 @@ static void proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
 	proc_terminateArch(p);
 
 	/* remove all threads */
+	isTerminated = false;
 	for(tn = sll_begin(p->threads); tn != NULL; ) {
 		sThread *t = (sThread*)tn->data;
 		tmpn = tn->next;
-		proc_killThread(t);
+		isTerminated |= proc_killThread(t);
 		tn = tmpn;
 	}
+	return isTerminated;
 }
 
 bool proc_kill(pid_t pid) {
@@ -927,8 +936,7 @@ void proc_print(sProc *p) {
 		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
 		vid_printf("\t\town=%lu, shared=%lu, swap=%lu\n",
 				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
-		vid_printf("\t\tucycles=%#016Lx, kcycles=%#016Lx\n",
-				p->exitState->ucycleCount,p->exitState->kcycleCount);
+		vid_printf("\t\truntime=%ums\n",p->exitState->runtime);
 	}
 	vid_printf("\tRegions:\n");
 	vmm_printShort(p->pid);
@@ -1010,14 +1018,17 @@ static void proc_notifyProcDied(pid_t parent) {
 	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
 }
 
-static void proc_killThread(sThread *t) {
+static bool proc_killThread(sThread *t) {
 	sProc *p = t->proc;
-	if(thread_kill(t))
+	if(thread_kill(t)) {
 		sll_removeFirstWith(p->threads,t);
+		return true;
+	}
 	else {
 		klock_aquire(&deadLock);
 		assert(sll_append(&deadThreads,t));
 		klock_release(&deadLock);
+		return false;
 	}
 }
 
@@ -1053,8 +1064,7 @@ static void proc_remove(sProc *p) {
 
 #define PROF_PROC_COUNT		128
 
-static uint64_t ucycles[PROF_PROC_COUNT];
-static uint64_t kcycles[PROF_PROC_COUNT];
+static time_t proctimes[PROF_PROC_COUNT];
 
 void proc_dbg_startProf(void) {
 	sSLNode *n,*m;
@@ -1062,12 +1072,10 @@ void proc_dbg_startProf(void) {
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		const sProc *p = (const sProc*)n->data;
 		assert(p->pid < PROF_PROC_COUNT);
-		ucycles[p->pid] = 0;
-		kcycles[p->pid] = 0;
+		proctimes[p->pid] = 0;
 		for(m = sll_begin(p->threads); m != NULL; m = m->next) {
 			t = (sThread*)m->data;
-			ucycles[p->pid] += t->stats.ucycleCount.val64;
-			kcycles[p->pid] += t->stats.kcycleCount.val64;
+			proctimes[p->pid] += t->stats.runtime;
 		}
 	}
 }
@@ -1077,22 +1085,15 @@ void proc_dbg_stopProf(void) {
 	sThread *t;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		const sProc *p = (const sProc*)n->data;
-		uLongLong curUcycles;
-		uLongLong curKcycles;
+		time_t curtime = 0;
 		assert(p->pid < PROF_PROC_COUNT);
-		curUcycles.val64 = 0;
-		curKcycles.val64 = 0;
 		for(m = sll_begin(p->threads); m != NULL; m = m->next) {
 			t = (sThread*)m->data;
-			curUcycles.val64 += t->stats.ucycleCount.val64;
-			curKcycles.val64 += t->stats.kcycleCount.val64;
+			curtime += t->stats.runtime;
 		}
-		curUcycles.val64 -= ucycles[p->pid];
-		curKcycles.val64 -= kcycles[p->pid];
-		if(curUcycles.val64 > 0 || curKcycles.val64 > 0) {
-			vid_printf("Process %3d (%18s): u=%016Lx k=%016Lx\n",
-				p->pid,p->command,curUcycles.val64,curKcycles.val64);
-		}
+		curtime -= proctimes[p->pid];
+		if(curtime > 0)
+			vid_printf("Process %3d (%18s): t=%08x\n",p->pid,p->command,curtime);
 	}
 }
 

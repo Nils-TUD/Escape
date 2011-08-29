@@ -168,8 +168,7 @@ int sysc_createSharedMem(sIntrptStackFrame *stack) {
 
 	if(byteCount == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	strncpy(namecpy,name,sizeof(namecpy));
-	namecpy[sizeof(namecpy) - 1] = '\0';
+	strnzcpy(namecpy,name,sizeof(namecpy));
 
 	res = shm_create(pid,namecpy,BYTES_2_PAGES(byteCount));
 	if(res < 0)
@@ -183,8 +182,7 @@ int sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	pid_t pid = proc_getRunning();
 	int res;
 
-	strncpy(namecpy,name,sizeof(namecpy));
-	namecpy[sizeof(namecpy) - 1] = '\0';
+	strnzcpy(namecpy,name,sizeof(namecpy));
 	res = shm_join(pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
@@ -197,8 +195,7 @@ int sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 	pid_t pid = proc_getRunning();
 	int res;
 
-	strncpy(namecpy,name,sizeof(namecpy));
-	namecpy[sizeof(namecpy) - 1] = '\0';
+	strnzcpy(namecpy,name,sizeof(namecpy));
 	res = shm_leave(pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
@@ -211,8 +208,7 @@ int sysc_destroySharedMem(sIntrptStackFrame *stack) {
 	pid_t pid = proc_getRunning();
 	int res;
 
-	strncpy(namecpy,name,sizeof(namecpy));
-	namecpy[sizeof(namecpy) - 1] = '\0';
+	strnzcpy(namecpy,name,sizeof(namecpy));
 	res = shm_destroy(pid,namecpy);
 	if(res < 0)
 		SYSC_ERROR(stack,res);

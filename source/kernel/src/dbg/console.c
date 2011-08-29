@@ -25,6 +25,7 @@
 #include <sys/dbg/cmd/ls.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/cache.h>
+#include <sys/task/smp.h>
 #include <sys/video.h>
 #include <esc/keycodes.h>
 #include <string.h>
@@ -68,6 +69,9 @@ void cons_start(void) {
 	int res;
 	sCommand *cmd;
 	char **argv;
+
+	/* first, pause all other CPUs to ensure that we're alone */
+	smp_pauseOthers();
 
 	vid_setTargets(TARGET_SCREEN);
 	vid_backup(backup.screen,&backup.row,&backup.col);
@@ -119,6 +123,9 @@ void cons_start(void) {
 		cache_free(history[i]);
 	vid_restore(backup.screen,backup.row,backup.col);
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+
+	/* now let the other CPUs continue */
+	smp_resumeOthers();
 }
 
 void cons_setLogEnabled(bool enabled) {

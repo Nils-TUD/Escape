@@ -37,6 +37,9 @@ typedef struct {
 	uint8_t id;
 	uint8_t bootstrap;
 	uint8_t ready;
+	size_t schedCount;
+	time_t runtime;
+	time_t lastSched;
 } sCPU;
 
 void smp_init(void);
@@ -45,16 +48,20 @@ bool smp_isEnabled(void);
 sThread *smp_getThreadOf(cpuid_t id);
 void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready);
 void smp_setReady(cpuid_t id);
-void smp_flushTLB(tPageDir *pdir);
+void smp_unschedule(cpuid_t id,time_t timestamp);
+void smp_schedule(cpuid_t id,time_t timestamp);
+void smp_pauseOthers(void);
+void smp_resumeOthers(void);
+void smp_haltOthers(void);
 void smp_wakeupCPU(void);
+void smp_flushTLB(tPageDir *pdir);
 void smp_sendIPI(cpuid_t id,uint8_t vector);
 void smp_setId(cpuid_t old,cpuid_t new);
 void smp_start(void);
-cpuid_t smp_getBSPId(void);
 bool smp_isBSP(void);
 cpuid_t smp_getCurId(void);
 size_t smp_getCPUCount(void);
-const sSLList *smp_getCPUs(void);
+const sCPU *const *smp_getCPUs(void);
 void smp_print(void);
 
 #endif /* SMP_H_ */

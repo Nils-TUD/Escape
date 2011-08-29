@@ -113,13 +113,21 @@ struct sThread {
 	sThreadArchAttr archAttr;
 	/* a list with heap-allocations that should be free'd on thread-termination */
 	sSLList termHeapAllocs;
-	/* a list of callbacks that should be called on thread-termination */
-	sSLList termCallbacks;
 	/* a list of locks that should be released on thread-termination */
 	sSLList termLocks;
 	/* a list of file-usages that should be decremented on thread-termination */
 	sSLList termUsages;
 	struct {
+		/* number of milliseconds of runtime this thread has got so far */
+		time_t runtime;
+		/* timestamp of last scheduling */
+		time_t lastSched;
+		/* executed cycles in this second */
+		uint64_t curCycleCount;
+		uint64_t cycleStart;
+		/* executed cycles in the previous second */
+		uint64_t lastCycleCount;
+
 		/* number of cpu-cycles the thread has used so far */
 		uint64_t ucycleStart;
 		uLongLong ucycleCount;
@@ -171,8 +179,9 @@ sIntrptStackFrame *thread_getIntrptStack(const sThread *t);
  *
  * @param t the thread
  * @param stack the kernel-stack
+ * @return the current level
  */
-void thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack);
+size_t thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack);
 
 /**
  * Removes the topmost interrupt-level-stack
@@ -351,6 +360,23 @@ void thread_removeRegions(sThread *t,bool remStack);
 int thread_extendStack(uintptr_t address);
 
 /**
+ * @param thread the thread
+ * @return the runtime of the given thread
+ */
+time_t thread_getRuntime(const sThread *t);
+
+/**
+ * @param thread the thread
+ * @return the cycles of the given thread
+ */
+uint64_t thread_getCycles(const sThread *t);
+
+/**
+ * Updates the runtime-percentage of all threads
+ */
+void thread_updateRuntimes(void);
+
+/**
  * Adds the given lock to the term-lock-list
  *
  * @param l the lock
@@ -378,20 +404,6 @@ void thread_addHeapAlloc(void *ptr);
  * @param ptr the pointer to the heap
  */
 void thread_remHeapAlloc(void *ptr);
-
-/**
- * Adds the given callback to the term-callback-list, which will be called if the thread dies.
- *
- * @param cb the callback
- */
-void thread_addCallback(fTermCallback cb);
-
-/**
- * Removes the given callback from the term-callback-list.
- *
- * @param cb the callback
- */
-void thread_remCallback(fTermCallback cb);
 
 /**
  * Adds the given file to the file-usage-list. The file-usages will be decreased if the thread dies.

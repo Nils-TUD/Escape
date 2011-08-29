@@ -92,9 +92,8 @@ int main(int argc,char **argv) {
 		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
 		if(state.signal != SIG_COUNT)
 			printf("It was terminated by signal %d\n",state.signal);
-		printf("User-Cycles:	%Lx\n",state.ucycleCount.val64);
-		printf("Kernel-Cycles:	%Lx\n",state.kcycleCount.val64);
-		printf("Time:			%u ms\n",ms);
+		printf("Total time:		%u ms\n",ms);
+		printf("Runtime:		%u ms\n",state.runtime);
 		printf("Own mem:		%lu KiB\n",state.ownFrames * 4);
 		printf("Shared mem:		%lu KiB\n",state.sharedFrames * 4);
 		printf("Swap mem:		%lu KiB\n",state.swapped * 4);

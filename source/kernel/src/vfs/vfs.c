@@ -1116,8 +1116,7 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags) {
 	hname = (char*)cache_alloc(len + 1);
 	if(hname == NULL)
 		goto errorDir;
-	strncpy(hname,name,len);
-	hname[len] = '\0';
+	strnzcpy(hname,name,len + 1);
 
 	/* create node */
 	srv = vfs_server_create(pid,drv,hname,flags);

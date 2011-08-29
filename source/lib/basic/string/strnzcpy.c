@@ -17,19 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include "thread.h"
+#include <stddef.h>
+#include <assert.h>
+#include <string.h>
 
-std::istream& operator >>(std::istream& is,thread& t) {
-	std::istream::size_type unlimited = std::numeric_limits<streamsize>::max();
-	is.ignore(unlimited,'\n');	// tid
-	is.ignore(unlimited,'\n');	// pid
-	is.ignore(unlimited,'\n');	// procname
-	is.ignore(unlimited,'\n');	// state
-	is.ignore(unlimited,'\n');	// stack
-	is.ignore(unlimited,'\n');	// schedcount
-	is.ignore(unlimited,'\n');	// syscalls
-	is.ignore(unlimited,' ') >> t._runtime;
-	is.setf(istream::hex);
-	is.ignore(unlimited,' ') >> t._cycles;
-	return is;
+char *strnzcpy(char *to,const char *from,size_t size) {
+	char *res = to;
+
+	vassert(from != NULL,"from == NULL");
+	vassert(to != NULL,"to == NULL");
+
+	/* copy source string */
+	while(*from && size > 1) {
+		*to++ = *from++;
+		size--;
+	}
+	/* terminate */
+	*to = '\0';
+	return res;
 }

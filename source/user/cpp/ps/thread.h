@@ -28,31 +28,32 @@ class thread {
 
 public:
 	typedef process::cycle_type cycle_type;
+	typedef process::time_type time_type;
 
 private:
-	cycle_type _ucycles;
-	cycle_type _kcycles;
+	cycle_type _cycles;
+	time_type _runtime;
 
 public:
 	thread()
-		: _ucycles(0), _kcycles(0) {
+		: _cycles(0), _runtime(0) {
 	}
 	thread(const thread& t)
-		: _ucycles(t._ucycles), _kcycles(t._kcycles) {
+		: _cycles(t._cycles), _runtime(t._runtime) {
 	}
 	thread& operator =(const thread& t) {
-		_ucycles = t._ucycles;
-		_kcycles = t._kcycles;
+		_cycles = t._cycles;
+		_runtime = t._runtime;
 		return *this;
 	}
 	~thread() {
 	}
 
-	cycle_type userCycles() const {
-		return _ucycles;
+	cycle_type cycles() const {
+		return _cycles;
 	}
-	cycle_type kernelCycles() const {
-		return _kcycles;
+	cycle_type runtime() const {
+		return _runtime;
 	}
 };
 

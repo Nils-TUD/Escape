@@ -43,9 +43,8 @@ struct sort {
 	const static int PPID	= 1;
 	const static int MEM	= 2;
 	const static int CPU	= 3;
-	const static int UCPU	= 4;
-	const static int KCPU	= 5;
-	const static int NAME	= 6;
+	const static int TIME	= 4;
+	const static int NAME	= 5;
 
 	int type;
 	string name;
@@ -60,8 +59,7 @@ static struct sort sorts[] = {
 	{sort::PPID,"ppid"},
 	{sort::MEM,"mem"},
 	{sort::CPU,"cpu"},
-	{sort::UCPU,"ucpu"},
-	{sort::KCPU,"kcpu"},
+	{sort::TIME,"time"},
 	{sort::NAME,"name"},
 };
 static int sortcol = sort::PID;
@@ -119,6 +117,7 @@ int main(int argc,char **argv) {
 	process::size_type maxSmem = (10 * pageSize) / 1024;
 	process::size_type maxInput = 10 * 1024;
 	process::size_type maxOutput = 10 * 1024;
+	process::size_type maxRuntime = 100;
 	process::cycle_type totalCycles = 0;
 	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
 		process *p = *it;
@@ -140,7 +139,9 @@ int main(int argc,char **argv) {
 			maxInput = p->input();
 		if(p->output() > maxOutput)
 			maxOutput = p->output();
-		totalCycles += p->userCycles() + p->kernelCycles();
+		if(p->runtime() > maxRuntime)
+			maxRuntime = p->runtime();
+		totalCycles += p->cycles();
 	}
 	maxPid = count_digits(maxPid,10);
 	maxPpid = count_digits(maxPpid,10);
@@ -153,6 +154,7 @@ int main(int argc,char **argv) {
 	// display in KiB, its in bytes
 	maxInput = count_digits(maxInput / 1024,10);
 	maxOutput = count_digits(maxOutput / 1024,10);
+	maxRuntime = count_digits(maxRuntime / (1000 * 60),10);
 
 	// sort
 	std::sort(procs.begin(),procs.end(),compareProcs);
@@ -172,28 +174,20 @@ int main(int argc,char **argv) {
 	cout << setw((streamsize)maxSmem + 2) << right << "SMEM";
 	cout << setw((streamsize)maxInput + 2) << right << "IN";
 	cout << setw((streamsize)maxOutput + 2) << right << "OUT";
-	cout << "   CPU (USER,KERNEL) COMMAND" << '\n';
+	cout << setw((streamsize)maxRuntime + 8) << right << "TIME";
+	cout << "   CPU COMMAND" << '\n';
 
 	// calc with to the process-command
 	size_t width2cmd = maxPid + maxPpid + maxGid + maxUid + maxPmem + maxShmem + maxSmem +
-			maxInput + maxOutput;
-	width2cmd += 2 * 5 + 4 + SSTRLEN("  CPU (USER,KERNEL) ");
+			maxInput + maxOutput + maxRuntime;
+	width2cmd += 2 * 5 + 4 + SSTRLEN("  CPU ");
 
 	// print processes (and threads)
 	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
 		process *p = *it;
-		process::cycle_type procCycles;
-		int userPercent = 0;
-		int kernelPercent = 0;
 		float cyclePercent = 0;
-
-		procCycles = p->userCycles() + p->kernelCycles();
-		if(procCycles != 0)
-			cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
-		if(p->userCycles() != 0)
-			userPercent = (int)(100. / (procCycles / (double)p->userCycles()));
-		if(p->kernelCycles() != 0)
-			kernelPercent = (int)(100. / (procCycles / (double)p->kernelCycles()));
+		if(p->cycles() != 0)
+			cyclePercent = (float)(100. / (totalCycles / (double)p->cycles()));
 		size_t cmdwidth = min(consSize.width - width2cmd,p->command().length());
 		string cmd = p->command().substr(0,cmdwidth);
 
@@ -206,9 +200,15 @@ int main(int argc,char **argv) {
 		cout << setw((streamsize)maxSmem) << (p->swapped() * pageSize) / 1024 << "K ";
 		cout << setw((streamsize)maxInput) << p->input() / 1024 << "K ";
 		cout << setw((streamsize)maxOutput) << p->output() / 1024 << "K ";
-		cout << setw(4) << setprecision(1) << cyclePercent << "% (";
-		cout << setw(3) << userPercent << "%,";
-		cout << setw(3) << kernelPercent << "%)   ";
+		time_t time = p->runtime();
+		cout << setw(maxRuntime) << time / (1000 * 60) << ":";
+		time %= 1000 * 60;
+		cout << setfillobj('0');
+		cout << setw(2) << time / 1000 << ".";
+		time %= 1000;
+		cout << setw(3) << time << " ";
+		cout << setfillobj(' ');
+		cout << setw(4) << setprecision(1) << cyclePercent << "% ";
 		cout << cmd << '\n';
 	}
 
@@ -228,13 +228,10 @@ static bool compareProcs(const process* a,const process* b) {
 			return b->pages() < a->pages();
 		case sort::CPU:
 			// descending
-			return b->totalCycles() < a->totalCycles();
-		case sort::UCPU:
+			return b->cycles() < a->cycles();
+		case sort::TIME:
 			// descending
-			return b->userCycles() < a->userCycles();
-		case sort::KCPU:
-			// descending
-			return b->kernelCycles() < a->kernelCycles();
+			return b->runtime() < a->runtime();
 		case sort::NAME:
 			// ascending
 			return a->command() < b->command();

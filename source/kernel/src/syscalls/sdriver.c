@@ -43,8 +43,7 @@ int sysc_regDriver(sIntrptStackFrame *stack) {
 	/* check flags */
 	if((flags & ~DRV_ALL) != 0 && flags != DRV_FS)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	strncpy(nameCpy,name,sizeof(nameCpy));
-	nameCpy[sizeof(nameCpy) - 1] = '\0';
+	strnzcpy(nameCpy,name,sizeof(nameCpy));
 
 	/* create driver and open it */
 	res = vfs_createDriver(pid,nameCpy,flags);

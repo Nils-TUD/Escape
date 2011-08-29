@@ -482,12 +482,10 @@ static void printRelocTable(sElfRel *rel,size_t relCount) {
 		if(symIndex != 0) {
 			sElfSym *sym = dynsyms + symIndex;
 			const char *symName = dynstrtbl + sym->st_name;
-			size_t len = 0;
-			if(symName) {
-				len = MIN(strlen(symName),MAX_SYM_LEN - 1);
-				strncpy(symcopy,symName,len);
-			}
-			symcopy[len] = '\0';
+			if(symName)
+				strnzcpy(symcopy,symName,sizeof(symcopy));
+			else
+				symcopy[0] = '\0';
 			printf(" %08x   %-25s",sym->st_value,symcopy);
 		}
 		printf("\n");

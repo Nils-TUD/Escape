@@ -75,10 +75,8 @@ typedef struct {
 	ulong ownFrames;
 	ulong sharedFrames;
 	ulong swapped;
-	/* cycle-count */
-	uLongLong ucycleCount;
-	uLongLong kcycleCount;
 	/* other stats */
+	time_t runtime;
 	ulong schedCount;
 	ulong syscalls;
 } sExitState;

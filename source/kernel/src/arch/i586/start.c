@@ -77,17 +77,21 @@ uintptr_t smpstart(void) {
 
 void apstart(void) {
 	sProc *p = proc_getByPid(0);
+	/* at first, activate paging and setup the GDT, so that we don't need the "GDT-trick" anymore */
 	paging_activate(p->pagedir.own);
 	gdt_init_ap();
+	/* setup IDT for this cpu and enable its local APIC */
 	idt_init();
 	apic_enable();
+	/* notify the BSP that we're running */
 	smp_apIsRunning();
+	/* choose a thread to run */
 	thread_initialSwitch();
 }
 
 static void idlestart(void) {
 	if(!smp_isBSP()) {
-		/* unlock the trampoline */
+		/* unlock the temporary kernel-stack, so that other CPUs can use it */
 		klock_release(&aplock);
 	}
 	thread_idle();

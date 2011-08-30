@@ -31,7 +31,7 @@
 void timer_arch_init(void) {
 	uint *regs = (uint*)TIMER_BASE;
 	/* set frequency */
-	regs[TIMER_DIVISOR] = TIMER_FREQUENCY_DIV;
+	regs[TIMER_DIVISOR] = 1000 / TIMER_FREQUENCY_DIV;
 	/* enable timer */
 	regs[TIMER_CTRL] = TIMER_IEN;
 }

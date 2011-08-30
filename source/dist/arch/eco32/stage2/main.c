@@ -244,7 +244,7 @@ static inode_t namei(char *path,sExt2Inode *ino) {
 
 static uintptr_t copyToMem(sExt2Inode *ino,size_t offset,size_t count,uintptr_t dest) {
 	block_t blk;
-	size_t offInBlk,amount;
+	size_t offInBlk,amount,i = 0;
 	while(count > 0) {
 		blk = getBlock(ino,offset);
 
@@ -256,7 +256,8 @@ static uintptr_t copyToMem(sExt2Inode *ino,size_t offset,size_t count,uintptr_t 
 		offset += amount;
 		dest += amount;
 		/* printing a loading-'status' lowers the subjective wait-time ^^ */
-		debugChar('.');
+		if((i++ % 10) == 0)
+			debugChar('.');
 	}
 	return dest;
 }

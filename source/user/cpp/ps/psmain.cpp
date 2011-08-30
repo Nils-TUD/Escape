@@ -76,6 +76,20 @@ static void usage(const char *name) {
 			cerr << ", ";
 	}
 	cerr << '\n';
+	cerr << '\n';
+	cerr << "Explanation of the displayed information:\n";
+	cerr << "ID:		The process id\n";
+	cerr << "PID:	The process id of the parent process\n";
+	cerr << "UID:	The user id\n";
+	cerr << "GID:	The group id\n";
+	cerr << "PMEM:	The amount of physical memory the process uses on its own (not shared)\n";
+	cerr << "SHMEM:	The amount of physical memory the process shares with other processes\n";
+	cerr << "SMEM:	The amount of physical memory that is currently swapped out\n";
+	cerr << "IN:		The amount of data read from other processes (read,receive)\n";
+	cerr << "OUT:	The amount of data written to other processes (write,send)\n";
+	cerr << "TIME:	The CPU time used by the process so far in minutes:seconds.milliseconds\n";
+	cerr << "CPU:	The CPU usage in the last second in percent\n";
+	cerr << "NAME:	The name of the process\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -175,7 +189,7 @@ int main(int argc,char **argv) {
 	cout << setw((streamsize)maxInput + 2) << right << "IN";
 	cout << setw((streamsize)maxOutput + 2) << right << "OUT";
 	cout << setw((streamsize)maxRuntime + 8) << right << "TIME";
-	cout << "   CPU COMMAND" << '\n';
+	cout << "   CPU NAME" << '\n';
 
 	// calc with to the process-command
 	size_t width2cmd = maxPid + maxPpid + maxGid + maxUid + maxPmem + maxShmem + maxSmem +

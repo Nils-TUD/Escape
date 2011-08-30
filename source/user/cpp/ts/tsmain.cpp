@@ -83,6 +83,16 @@ static void usage(const char *name) {
 			cerr << ", ";
 	}
 	cerr << '\n';
+	cerr << '\n';
+	cerr << "Explanation of the displayed information:\n";
+	cerr << "ID:		The thread id\n";
+	cerr << "STATE:	The thread state (RUN,RDY,BLK,ZOM,SUS)\n";
+	cerr << "STACK:	The amount of physical memory used for the stack\n";
+	cerr << "SCHED:	The number of times the thread has been scheduled\n";
+	cerr << "SYSC:	The number of system-calls the thread has executed\n";
+	cerr << "TIME:	The CPU time used by the thread so far in minutes:seconds.milliseconds\n";
+	cerr << "CPU:	The CPU usage in the last second in percent\n";
+	cerr << "PROC:	The name of the process the thread belongs to\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -151,7 +161,7 @@ int main(int argc,char **argv) {
 	cout << setw(maxScheds + 1) << "SCHED";
 	cout << setw(maxSyscalls + 1) << "SYSC";
 	cout << setw(maxRuntime + 8) << "TIME";
-	cout << "    CPU PROCESS" << '\n';
+	cout << "    CPU PROC" << '\n';
 
 	// print threads
 	for(vector<thread*>::const_iterator it = threads.begin(); it != threads.end(); ++it) {

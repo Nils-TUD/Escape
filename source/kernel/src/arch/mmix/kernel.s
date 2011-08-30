@@ -109,10 +109,13 @@ start:
 	SETH	$1,#8006
 	STCO	#2,$1,0
 
+	# detect the CPU speed for runtime-measurements
+	PUSHJ	$1,detectCPUSpeed
+
 	# call main
-	OR		$1,$0,$0						# pass bootinfo to main
-	SET		$2,$254							# pass pointer to stackBegin, which is set in main
-	SUBU	$3,$254,8						# pass pointer to rss, which is set in main
+	OR		$2,$0,$0						# pass bootinfo to main
+	SET		$3,$254							# pass pointer to stackBegin, which is set in main
+	SUBU	$4,$254,8						# pass pointer to rss, which is set in main
 	PUSHJ	$0,bspstart						# call 'bspstart' function
 
 	# setup forced and dynamic trap handlers
@@ -136,6 +139,36 @@ start:
 	# just to be sure
 loop:
 	JMP		loop
+
+# uint64_t detectCPUSpeed(void)
+detectCPUSpeed:
+	# set dynamic-trap address
+	GETA	$0,tempDynTrap
+	PUT		rTT,$0
+	SETH	$0,#8001
+	SETL	$1,100
+	STOU	$1,$0,8							# divisor = 100 => 100ms measurement
+	STCO	#2,$0,0							# enable timer
+	SET		$1,0							# no interrupts seen yet
+	# enable timer-interrupt
+	SETH	$0,#0010
+	PUT		rK,$0
+	GET		$2,rC
+	# wait for interrupt
+1:
+	BZ		$1,1b
+	# now calculate the speed
+	GET		$3,rC
+	# speed = (after - before) * 10
+	SUBU	$0,$3,$2
+	MUL		$0,$0,10
+	POP		1,0
+
+tempDynTrap:
+	ADDU	$1,$1,1
+	# disable interrupts
+	SETH	$255,0
+	RESUME	1
 
 #===========================================
 # Traps

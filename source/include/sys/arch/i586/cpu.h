@@ -79,11 +79,6 @@ extern bool cpu_cpuidSupported(void);
 void cpu_detect(void);
 
 /**
- * @return the speed of the CPU in Hz
- */
-uint64_t cpu_getSpeed(void);
-
-/**
  * @return whether the machine has a local APIC
  */
 bool cpu_hasLocalAPIC(void);

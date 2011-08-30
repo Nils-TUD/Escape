@@ -59,7 +59,7 @@ void timer_arch_init(void) {
 	ports_outByte(IOPORT_TIMER_CHAN0DIV,freq >> 8);
 }
 
-time_t timer_cyclesToTime(uint64_t cycles) {
+uint64_t timer_cyclesToTime(uint64_t cycles) {
 	return cycles / (cpu_getSpeed() / 1000000);
 }
 

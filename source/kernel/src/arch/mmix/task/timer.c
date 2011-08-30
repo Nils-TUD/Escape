@@ -31,7 +31,7 @@
 void timer_arch_init(void) {
 	ulong *regs = (ulong*)TIMER_BASE;
 	/* set frequency */
-	regs[TIMER_DIVISOR] = TIMER_FREQUENCY_DIV;
+	regs[TIMER_DIVISOR] = 1000 / TIMER_FREQUENCY_DIV;
 	/* enable timer */
 	regs[TIMER_CTRL] = TIMER_IEN;
 }
@@ -40,4 +40,8 @@ void timer_ackIntrpt(void) {
 	ulong *regs = (ulong*)TIMER_BASE;
 	/* remove expired-flag */
 	regs[TIMER_CTRL] = TIMER_IEN;
+}
+
+uint64_t timer_cyclesToTime(uint64_t cycles) {
+	return cycles / (cpu_getSpeed() / 1000000);
 }

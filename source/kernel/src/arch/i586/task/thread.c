@@ -142,6 +142,16 @@ void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t e
 	nt->save.eflags = 0;
 }
 
+uint64_t thread_getRuntime(const sThread *t) {
+	if(t->state == ST_RUNNING) {
+		/* if the thread is running, we must take the time since the last scheduling of that thread
+		 * into account. this is especially a problem with idle-threads */
+		uint64_t cycles = cpu_rdtsc();
+		return (t->stats.runtime + timer_cyclesToTime(cycles - t->stats.cycleStart));
+	}
+	return t->stats.runtime;
+}
+
 sThread *thread_getRunning(void) {
 	return threadSet ? gdt_getRunning() : NULL;
 }

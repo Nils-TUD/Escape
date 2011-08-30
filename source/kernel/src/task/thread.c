@@ -247,16 +247,6 @@ int thread_extendStack(uintptr_t address) {
 	return res;
 }
 
-uint64_t thread_getRuntime(const sThread *t) {
-	if(t->state == ST_RUNNING) {
-		/* if the thread is running, we must take the time since the last scheduling of that thread
-		 * into account. this is especially a problem with idle-threads */
-		uint64_t cycles = cpu_rdtsc();
-		return (t->stats.runtime + timer_cyclesToTime(cycles - t->stats.cycleStart));
-	}
-	return t->stats.runtime;
-}
-
 uint64_t thread_getCycles(const sThread *t) {
 	return t->stats.lastCycleCount;
 }

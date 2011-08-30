@@ -125,12 +125,6 @@ struct sThread {
 		uint64_t cycleStart;
 		/* executed cycles in the previous second */
 		uint64_t lastCycleCount;
-
-		/* number of cpu-cycles the thread has used so far */
-		uint64_t ucycleStart;
-		uLongLong ucycleCount;
-		uint64_t kcycleStart;
-		uLongLong kcycleCount;
 		/* the number of times we got chosen so far */
 		ulong schedCount;
 		ulong syscalls;

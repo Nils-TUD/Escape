@@ -65,6 +65,13 @@
 const char *cpu_getSpecialName(int rno);
 
 /**
+ * Sets the given CPU-speed (no, the hardware is not changed ;))
+ *
+ * @param hz the CPU-speed in Hz
+ */
+void cpu_setSpeed(uint64_t hz);
+
+/**
  * Sets rbb, rww, rxx, ryy and rzz to the current values of rBB, rWW, rXX, rYY and rZZ,
  * respectively.
  *

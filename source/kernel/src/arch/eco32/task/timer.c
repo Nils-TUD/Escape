@@ -41,3 +41,8 @@ void timer_ackIntrpt(void) {
 	/* remove expired-flag */
 	regs[TIMER_CTRL] = TIMER_IEN;
 }
+
+uint64_t timer_cyclesToTime(uint64_t cycles) {
+	/* can't be implemented (not used anyway) */
+	return cycles;
+}

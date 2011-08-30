@@ -196,24 +196,13 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 }
 
 static void intrpt_enterKernel(sThread *t,sIntrptStackFrame *stack) {
-	uint64_t cycles = cpu_rdtsc();
 	thread_pushIntrptLevel(t,stack);
 	thread_pushSpecRegs();
-	if(t->stats.ucycleStart > 0)
-		t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
-	/* kernel-mode starts here */
-	t->stats.kcycleStart = cycles;
 }
 
 static void intrpt_leaveKernel(sThread *t) {
 	thread_popSpecRegs();
 	thread_popIntrptLevel(t);
-	/* kernel-mode ends */
-	uint64_t cycles = cpu_rdtsc();
-	if(t->stats.kcycleStart > 0)
-		t->stats.kcycleCount.val64 += cycles - t->stats.kcycleStart;
-	/* user-mode starts here */
-	t->stats.ucycleStart = cycles;
 }
 
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {

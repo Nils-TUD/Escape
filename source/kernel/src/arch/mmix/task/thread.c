@@ -211,14 +211,26 @@ void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t e
 	nt->archAttr.tempStack = -1;
 }
 
+uint64_t thread_getRuntime(const sThread *t) {
+	if(t->state == ST_RUNNING) {
+		/* if the thread is running, we must take the time since the last scheduling of that thread
+		 * into account. this is especially a problem with idle-threads */
+		uint64_t cycles = cpu_rdtsc();
+		return (t->stats.runtime + timer_cyclesToTime(cycles - t->stats.cycleStart));
+	}
+	return t->stats.runtime;
+}
+
 void thread_doSwitch(void) {
 	sThread *old = thread_getRunning();
 	sThread *new = sched_perform(old);
 	/* finish kernel-time here since we're switching the process */
 	if(new->tid != old->tid) {
+		uint64_t cycles = cpu_rdtsc();
 		time_t timestamp = timer_getTimestamp();
-		old->stats.runtime += timestamp - old->stats.lastSched;
-		new->stats.lastSched = timestamp;
+		assert(old->stats.cycleStart != 0);
+		old->stats.runtime += timer_cyclesToTime(cycles - old->stats.cycleStart);
+		old->stats.curCycleCount += cycles - old->stats.cycleStart;
 		new->stats.schedCount++;
 
 		thread_setRunning(new);
@@ -237,6 +249,7 @@ void thread_doSwitch(void) {
 		}
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
+		new->stats.cycleStart = cpu_rdtsc();
 		thread_doSwitchTo(&old->save,&new->save,new->proc->pagedir,new->tid);
 	}
 

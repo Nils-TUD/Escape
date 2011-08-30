@@ -313,10 +313,9 @@ static bool sig_add(sSignals *s,sig_t sig) {
 }
 
 static void sig_removePending(sSignals *s,sig_t sig) {
-	sPendingSig *ps,*pps;
+	sPendingSig *ps;
 	if(s->deliveredSignal == sig)
 		s->deliveredSignal = 0;
-	pps = NULL;
 	for(ps = s->pending.first; ps != NULL; ) {
 		if(sig == 0 || ps->sig == sig) {
 			sPendingSig *tps = ps->next;
@@ -326,10 +325,8 @@ static void sig_removePending(sSignals *s,sig_t sig) {
 			assert(pendingSignals > 0);
 			pendingSignals--;
 		}
-		else {
-			pps = ps;
+		else
 			ps = ps->next;
-		}
 	}
 }
 

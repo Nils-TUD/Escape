@@ -128,14 +128,19 @@ void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t e
 	nt->save.r31 = (uint32_t)&thread_startup;
 }
 
+uint64_t thread_getRuntime(const sThread *t) {
+	return t->stats.runtime;
+}
+
 void thread_doSwitch(void) {
 	sThread *old = thread_getRunning();
 	sThread *new = sched_perform(old);
 	/* finish kernel-time here since we're switching the process */
 	if(new->tid != old->tid) {
+		/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-
+		 * measurement */
 		time_t timestamp = timer_getTimestamp();
-		old->stats.runtime += timestamp - old->stats.lastSched;
-		new->stats.lastSched = timestamp;
+		old->stats.runtime += timestamp - old->stats.cycleStart;
 		new->stats.schedCount++;
 
 		if(!thread_save(&old->save)) {
@@ -144,6 +149,7 @@ void thread_doSwitch(void) {
 			if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
 				vmm_setTimestamp(new,timestamp);
 
+			new->stats.cycleStart = timestamp;
 			thread_resume(new->proc->pagedir,&new->save,new->archAttr.kstackFrame);
 		}
 	}

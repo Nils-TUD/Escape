@@ -29,6 +29,11 @@ uint64_t cpu_rdtsc(void) {
 	return 0;
 }
 
+uint64_t cpu_getSpeed(void) {
+	/* not available */
+	return 0;
+}
+
 void cpu_sprintf(sStringBuffer *buf) {
 	prf_sprintf(buf,"%-12s%s\n","Vendor:","THM");
 	prf_sprintf(buf,"%-12s%s\n","Model:","ECO32");

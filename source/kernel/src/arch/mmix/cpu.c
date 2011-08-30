@@ -60,6 +60,16 @@ static const char *specialRegs[] = {
 	/* 20 */	"rSS"
 };
 
+static uint64_t cpuHz;
+
+uint64_t cpu_getSpeed(void) {
+	return cpuHz;
+}
+
+void cpu_setSpeed(uint64_t hz) {
+	cpuHz = hz;
+}
+
 const char *cpu_getSpecialName(int rno) {
 	if(rno >= (int)ARRAY_SIZE(specialRegs))
 		return "??";
@@ -68,6 +78,7 @@ const char *cpu_getSpecialName(int rno) {
 
 void cpu_sprintf(sStringBuffer *buf) {
 	uint64_t rn = cpu_getSpecial(rN);
+	prf_sprintf(buf,"%-12s%lu Mhz\n","Speed:",cpuHz / 1000000);
 	prf_sprintf(buf,"%-12s%s\n","Vendor:","THM");
 	prf_sprintf(buf,"%-12s%s\n","Model:","GIMMIX");
 	prf_sprintf(buf,"%-12s%d.%d.%d\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);

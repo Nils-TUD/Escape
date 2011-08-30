@@ -22,6 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/elf.h>
 #include <sys/mem/vmm.h>
+#include <sys/cpu.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <assert.h>
@@ -34,10 +35,11 @@ static A_ALIGNED(8) uint8_t initloader[] = {
 #endif
 };
 
-uintptr_t bspstart(const sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
+uintptr_t bspstart(uint64_t cpuHz,const sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	sThread *t;
 	sStartupInfo info;
 
+	cpu_setSpeed(cpuHz);
 	boot_init(bootinfo,true);
 
 	/* give the process some stack pages */

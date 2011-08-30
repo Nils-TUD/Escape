@@ -39,6 +39,11 @@
 uint64_t cpu_rdtsc(void);
 
 /**
+ * @return the speed of the CPU in Hz
+ */
+uint64_t cpu_getSpeed(void);
+
+/**
  * Prints information about the used CPU into the given string-buffer
  *
  * @param buf the string-buffer

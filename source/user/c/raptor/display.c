@@ -128,9 +128,9 @@ void displ_update(void) {
 	displ_drawObjects();
 	displ_drawScore();
 	if(seek(video,WIDTH * 2,SEEK_SET) < 0)
-		fprintf(stderr,"Seek to %d failed\n",WIDTH * 2);
+		printe("Seek to %d failed",WIDTH * 2);
 	if(write(video,buffer,WIDTH * HEIGHT * 2) < 0)
-		fprintf(stderr,"Write to video-driver failed\n");
+		printe("Write to video-driver failed");
 }
 
 static void displ_drawScore(void) {

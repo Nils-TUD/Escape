@@ -31,7 +31,7 @@ public:
 	typedef unsigned char state_type;
 	typedef size_t size_type;
 	typedef unsigned long long cycle_type;
-	typedef time_t time_type;
+	typedef unsigned long long time_type;
 
 public:
 	thread()

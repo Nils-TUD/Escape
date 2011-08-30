@@ -28,6 +28,7 @@
 #include <sys/task/smp.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/cpu.h>
 #include <sys/klock.h>
 #include <sys/video.h>
 #include <sys/boot.h>
@@ -83,6 +84,8 @@ void apstart(void) {
 	/* setup IDT for this cpu and enable its local APIC */
 	idt_init();
 	apic_enable();
+	/* detect our CPU */
+	cpu_detect();
 	/* notify the BSP that we're running */
 	smp_apIsRunning();
 	/* choose a thread to run */

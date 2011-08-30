@@ -138,7 +138,7 @@ int main(int argc,char **argv) {
 	maxStack = count_digits((maxStack * pageSize) / 1024,10);
 	maxScheds = count_digits(maxScheds,10);
 	maxSyscalls = count_digits(maxSyscalls,10);
-	maxRuntime = count_digits(maxRuntime / (1000 * 60),10);
+	maxRuntime = count_digits(maxRuntime / (1000000 * 60),10);
 
 	// sort
 	std::sort(threads.begin(),threads.end(),compareThreads);
@@ -165,7 +165,7 @@ int main(int argc,char **argv) {
 		cout << setw(maxStack - 1) << (t->stackPages() * pageSize) / 1024 << "K ";
 		cout << setw(maxScheds) << t->schedCount() << " ";
 		cout << setw(maxSyscalls) << t->syscalls() << " ";
-		time_t time = t->runtime();
+		thread::time_type time = t->runtime() / 1000;
 		cout << setw(maxRuntime) << time / (1000 * 60) << ":";
 		time %= 1000 * 60;
 		cout << setfillobj('0');

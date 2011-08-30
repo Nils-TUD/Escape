@@ -119,16 +119,16 @@ void boot_init(sBootInfo *mbp,bool logToVFS) {
 	paging_mapKernelSpace();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	/* cpu */
-	vid_printf("Detecting CPU...");
-	cpu_detect();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
 	/* smp */
 	vid_printf("Initializing SMP...");
 	dyna_init();
 	smp_init();
 	gdt_init_bsp();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* cpu */
+	vid_printf("Detecting CPU...");
+	cpu_detect();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* fpu */

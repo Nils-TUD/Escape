@@ -20,6 +20,11 @@
 #include <sys/common.h>
 #include <sys/arch/i586/ports.h>
 #include <sys/task/timer.h>
+#include <sys/cpu.h>
+
+#define TOLERANCE				1000000
+#define MEASURE_COUNT			10
+#define REQUIRED_MATCHES		5
 
 #define TIMER_BASE_FREQUENCY	1193182
 #define IOPORT_TIMER_CTRL		0x43
@@ -43,6 +48,8 @@
 #define TIMER_CTRL_CNTBIN16		0x00	/* binary 16 bit */
 #define TIMER_CTRL_CNTBCD		0x01	/* BCD */
 
+static uint64_t timer_determineSpeed(int instrCount);
+
 void timer_arch_init(void) {
 	/* change timer divisor */
 	uint freq = TIMER_BASE_FREQUENCY / TIMER_FREQUENCY_DIV;
@@ -50,4 +57,67 @@ void timer_arch_init(void) {
 			TIMER_CTRL_MODE2 | TIMER_CTRL_CNTBIN16);
 	ports_outByte(IOPORT_TIMER_CHAN0DIV,freq & 0xFF);
 	ports_outByte(IOPORT_TIMER_CHAN0DIV,freq >> 8);
+}
+
+time_t timer_cyclesToTime(uint64_t cycles) {
+	return cycles / (cpu_getSpeed() / 1000000);
+}
+
+uint64_t timer_detectCPUSpeed(void) {
+	int i,j;
+	int bestMatches = -1;
+	uint64_t bestHz = 0;
+	for(i = 1; i <= MEASURE_COUNT; i++) {
+		bool found = true;
+		uint64_t ref = timer_determineSpeed(0x1000 * i * 10);
+		/* no tick at all? */
+		if(ref == 0)
+			continue;
+
+		for(j = 0; j < REQUIRED_MATCHES; j++) {
+			uint64_t hz = timer_determineSpeed(0x1000 * i * 10);
+			/* not in tolerance? */
+			if(((ref - hz) > 0 && (ref - hz) > TOLERANCE) ||
+				((hz - ref) > 0 && (hz - ref) > TOLERANCE)) {
+				found = false;
+				break;
+			}
+		}
+		if(found)
+			return ref;
+		/* store our best result */
+		if(j > bestMatches) {
+			bestMatches = j;
+			bestHz = ref;
+		}
+	}
+	/* ok give up and use the best result so far */
+	return bestHz;
+}
+
+static uint64_t timer_determineSpeed(int instrCount) {
+	uint64_t before,after;
+	uint32_t left;
+	volatile int i;
+	/* set PIT channel 0 to single-shot mode */
+	ports_outByte(IOPORT_TIMER_CTRL,TIMER_CTRL_CHAN0 | TIMER_CTRL_RWLOHI |
+			TIMER_CTRL_MODE2 | TIMER_CTRL_CNTBIN16);
+	/* set reload-value to 65535 */
+	ports_outByte(IOPORT_TIMER_CHAN0DIV,0xFF);
+	ports_outByte(IOPORT_TIMER_CHAN0DIV,0xFF);
+
+	/* now spend some time and measure the number of cycles */
+	before = cpu_rdtsc();
+	for(i = instrCount; i > 0; i--)
+		;
+	after = cpu_rdtsc();
+
+	/* read current count */
+	ports_outByte(IOPORT_TIMER_CTRL,TIMER_CTRL_CHAN0);
+	left = ports_inByte(IOPORT_TIMER_CHAN0DIV);
+	left |= ports_inByte(IOPORT_TIMER_CHAN0DIV) << 8;
+	/* if there was no tick at all, we have to increase instrCount */
+	if(left == 0xFFFF)
+		return 0;
+	return (after - before) * (TIMER_BASE_FREQUENCY / (0xFFFF - left));
 }

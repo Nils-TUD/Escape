@@ -27,4 +27,11 @@
  */
 void timer_arch_init(void);
 
+/**
+ * Detects the CPU-speed
+ *
+ * @return the speed in Hz
+ */
+uint64_t timer_detectCPUSpeed(void);
+
 #endif /* I586_TIMER_H_ */

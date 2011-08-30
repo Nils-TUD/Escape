@@ -87,12 +87,11 @@ static sThread *thread_createInitial(sProc *p) {
 	t->ignoreSignals = 0;
 	t->signals = NULL;
 	t->intrptLevel = 0;
-	t->cpu = -1;
+	t->cpu = 0;
 	t->stats.runtime = 0;
 	t->stats.curCycleCount = 0;
 	t->stats.lastCycleCount = 0;
-	t->stats.cycleStart = 0;
-	t->stats.lastSched = 0;
+	t->stats.cycleStart = cpu_rdtsc();
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
@@ -248,28 +247,33 @@ int thread_extendStack(uintptr_t address) {
 	return res;
 }
 
-time_t thread_getRuntime(const sThread *t) {
+uint64_t thread_getRuntime(const sThread *t) {
 	if(t->state == ST_RUNNING) {
-		time_t ts = timer_getTimestamp();
-		return t->stats.runtime + (ts - t->stats.lastSched);
+		/* if the thread is running, we must take the time since the last scheduling of that thread
+		 * into account. this is especially a problem with idle-threads */
+		uint64_t cycles = cpu_rdtsc();
+		return (t->stats.runtime + timer_cyclesToTime(cycles - t->stats.cycleStart));
 	}
 	return t->stats.runtime;
 }
 
 uint64_t thread_getCycles(const sThread *t) {
-	if(t->state == ST_RUNNING) {
-		uint64_t cycles = cpu_rdtsc();
-		return t->stats.lastCycleCount + (cycles - t->stats.cycleStart);
-	}
 	return t->stats.lastCycleCount;
 }
 
 void thread_updateRuntimes(void) {
 	sSLNode *n;
+	uint64_t cyclesPerSec = cpu_getSpeed();
 	klock_aquire(&threadLock);
 	for(n = sll_begin(threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
-		t->stats.lastCycleCount = t->stats.curCycleCount;
+		if(t->state == ST_RUNNING) {
+			/* we want to measure the last second only */
+			uint64_t cycles = cpu_rdtsc() - t->stats.cycleStart;
+			t->stats.lastCycleCount = t->stats.curCycleCount + MIN(cyclesPerSec,cycles);
+		}
+		else
+			t->stats.lastCycleCount = t->stats.curCycleCount;
 		t->stats.curCycleCount = 0;
 	}
 	klock_release(&threadLock);
@@ -327,12 +331,11 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 	t->waits = NULL;
 	t->ignoreSignals = 0;
 	t->signals = NULL;
-	t->cpu = -1;
+	t->cpu = 0;
 	t->stats.runtime = 0;
 	t->stats.curCycleCount = 0;
 	t->stats.lastCycleCount = 0;
 	t->stats.cycleStart = 0;
-	t->stats.lastSched = 0;
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
 	if(cloneProc) {
@@ -479,10 +482,10 @@ void thread_print(const sThread *t) {
 			vid_printf(", ");
 	}
 	vid_printf("\n");
-	vid_printf("\t\tRuntime = %ums\n",thread_getRuntime(t));
-	vid_printf("\t\tLastSched = %u\n",t->stats.lastSched);
+	vid_printf("\t\tRuntime = %Lums\n",thread_getRuntime(t));
 	vid_printf("\t\tCurCycleCount = %Lu\n",t->stats.curCycleCount);
 	vid_printf("\t\tLastCycleCount = %Lu\n",t->stats.lastCycleCount);
+	vid_printf("\t\tcycleStart = %Lu\n",t->stats.cycleStart);
 	vid_printf("\t\tKernel-trace:\n");
 	calls = util_getKernelStackTraceOf(t);
 	while(calls->addr != 0) {

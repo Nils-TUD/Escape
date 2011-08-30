@@ -18,7 +18,10 @@
  */
 
 #include <sys/common.h>
+#include <sys/arch/i586/task/timer.h>
 #include <sys/mem/kheap.h>
+#include <sys/mem/cache.h>
+#include <sys/task/smp.h>
 #include <sys/cpu.h>
 #include <sys/printf.h>
 #include <sys/video.h>
@@ -45,6 +48,8 @@
 #define FEATURE_LAPIC				(1 << 9)
 
 #define VENDOR_STRLEN				12
+
+static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu);
 
 static const char *vendors[] = {
 	"AMDisbetter!",	/* early engineering samples of AMD K5 processor */
@@ -125,80 +130,108 @@ static const char *intel6Models[] = {
 };
 
 /* the information about our cpu */
-static sCPUInfo cpu;
+static sCPUInfo *cpus;
+static uint64_t cpuHz;
 
 void cpu_detect(void) {
 	size_t i;
-	/* get vendor-string */
 	char vendor[VENDOR_STRLEN + 1];
+	cpuid_t id = smp_getCurId();
+	if(cpus == NULL) {
+		cpus = (sCPUInfo*)cache_alloc(sizeof(sCPUInfo) * smp_getCPUCount());
+		if(!cpus)
+			util_panic("Not enough mem for CPU-infos");
+
+		/* detect the speed just once */
+		cpuHz = timer_detectCPUSpeed();
+	}
+
+	/* get vendor-string */
 	cpu_getStrInfo(CPUID_GETVENDORSTRING,vendor);
 	vendor[VENDOR_STRLEN] = '\0';
 
 	/* check which one it is */
-	cpu.vendor = CPUID_VENDOR_UNKNOWN;
+	cpus[id].vendor = CPUID_VENDOR_UNKNOWN;
 	for(i = 0; i < ARRAY_SIZE(vendors) - 1; i++) {
 		if(strcmp(vendors[i],vendor) == 0) {
-			cpu.vendor = i;
+			cpus[id].vendor = i;
 			break;
 		}
 	}
 
 	/* set default values */
-	cpu.model = 0;
-	cpu.family = 0;
-	cpu.type = 0;
-	cpu.brand = 0;
-	cpu.stepping = 0;
-	cpu.signature = 0;
+	cpus[id].model = 0;
+	cpus[id].family = 0;
+	cpus[id].type = 0;
+	cpus[id].brand = 0;
+	cpus[id].stepping = 0;
+	cpus[id].signature = 0;
 
 	/* fetch some additional infos for known cpus */
-	switch(cpu.vendor) {
+	switch(cpus[id].vendor) {
 		case CPUID_VENDOR_INTEL: {
 			uint32_t eax,ebx,unused,edx;
 			cpu_getInfo(CPUID_GETFEATURES,&eax,&ebx,&unused,&edx);
-			cpu.model = (eax >> 4) & 0xf;
-			cpu.family = (eax >> 8) & 0xf;
-			cpu.type = (eax >> 12) & 0x3;
-			cpu.brand = ebx & 0xff;
-			cpu.stepping = eax & 0xf;
-			cpu.signature = eax;
-			cpu.features = edx;
+			cpus[id].model = (eax >> 4) & 0xf;
+			cpus[id].family = (eax >> 8) & 0xf;
+			cpus[id].type = (eax >> 12) & 0x3;
+			cpus[id].brand = ebx & 0xff;
+			cpus[id].stepping = eax & 0xf;
+			cpus[id].signature = eax;
+			cpus[id].features = edx;
 		}
 		break;
 
 		case CPUID_VENDOR_AMD: {
 			uint32_t eax,unused,edx;
 			cpu_getInfo(CPUID_GETFEATURES,&eax,&unused,&unused,&edx);
-			cpu.model = (eax >> 4) & 0xf;
-			cpu.family = (eax >> 8) & 0xf;
-			cpu.stepping = eax & 0xf;
-			cpu.features = edx;
+			cpus[id].model = (eax >> 4) & 0xf;
+			cpus[id].family = (eax >> 8) & 0xf;
+			cpus[id].stepping = eax & 0xf;
+			cpus[id].features = edx;
 		}
 		break;
 	}
 }
 
+uint64_t cpu_getSpeed(void) {
+	return cpuHz;
+}
+
 bool cpu_hasLocalAPIC(void) {
-	return cpu.features & FEATURE_LAPIC;
+	/* don't use the cpus-array here, since it is called before cpu_detect() */
+	uint32_t unused,edx;
+	cpu_getInfo(CPUID_GETFEATURES,&unused,&unused,&unused,&edx);
+	return (edx & FEATURE_LAPIC) ? true : false;
 }
 
 void cpu_sprintf(sStringBuffer *buf) {
+	sCPU **smpCPUs = smp_getCPUs();
+	size_t i,count = smp_getCPUCount();
+	for(i = 0; i < count; i++) {
+		prf_sprintf(buf,"CPU %d:\n",smpCPUs[i]->id);
+		cpu_doSprintf(buf,cpus + i);
+	}
+}
+
+static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu) {
 	size_t size;
-	prf_sprintf(buf,"%-12s%s\n","Vendor:",vendors[cpu.vendor]);
-	switch(cpu.vendor) {
+	prf_sprintf(buf,"\t%-12s%Lu Mhz\n","Speed:",cpuHz / 1000000);
+	prf_sprintf(buf,"\t%-12s%s\n","Vendor:",vendors[cpu->vendor]);
+	switch(cpu->vendor) {
 		case CPUID_VENDOR_INTEL: {
 			const char **models = NULL;
-			if(cpu.type < ARRAY_SIZE(intelTypes))
-				prf_sprintf(buf,"%-12s%s\n","Type:",intelTypes[cpu.type]);
+			if(cpu->type < ARRAY_SIZE(intelTypes))
+				prf_sprintf(buf,"\t%-12s%s\n","Type:",intelTypes[cpu->type]);
 			else
-				prf_sprintf(buf,"%-12s%d\n","Type:",cpu.type);
+				prf_sprintf(buf,"\t%-12s%d\n","Type:",cpu->type);
 
-			if(cpu.family < ARRAY_SIZE(intelFamilies))
-				prf_sprintf(buf,"%-12s%s\n","Family:",intelFamilies[cpu.family]);
+			if(cpu->family < ARRAY_SIZE(intelFamilies))
+				prf_sprintf(buf,"\t%-12s%s\n","Family:",intelFamilies[cpu->family]);
 			else
-				prf_sprintf(buf,"%-12s%d\n","Family:",cpu.family);
+				prf_sprintf(buf,"\t%-12s%d\n","Family:",cpu->family);
 
-			switch(cpu.family) {
+			switch(cpu->family) {
 				case 4:
 					models = intel4Models;
 					size = ARRAY_SIZE(intel4Models);
@@ -212,32 +245,32 @@ void cpu_sprintf(sStringBuffer *buf) {
 					size = ARRAY_SIZE(intel6Models);
 					break;
 			}
-			if(models != NULL && cpu.model < size)
-				prf_sprintf(buf,"%-12s%s\n","Model:",models[cpu.model]);
+			if(models != NULL && cpu->model < size)
+				prf_sprintf(buf,"\t%-12s%s\n","Model:",models[cpu->model]);
 			else
-				prf_sprintf(buf,"%-12s%d\n","Model:",cpu.model);
-			prf_sprintf(buf,"%-12s%d\n","Brand:",cpu.brand);
-			prf_sprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
-			prf_sprintf(buf,"%-12s%08x\n","Signature:",cpu.signature);
+				prf_sprintf(buf,"\t%-12s%d\n","Model:",cpu->model);
+			prf_sprintf(buf,"\t%-12s%d\n","Brand:",cpu->brand);
+			prf_sprintf(buf,"\t%-12s%d\n","Stepping:",cpu->stepping);
+			prf_sprintf(buf,"\t%-12s%08x\n","Signature:",cpu->signature);
 		}
 		break;
 
 		case CPUID_VENDOR_AMD:
-			prf_sprintf(buf,"%-12s%d\n","Family:",cpu.family);
-			prf_sprintf(buf,"%-12s","Model:");
-			switch(cpu.family) {
+			prf_sprintf(buf,"\t%-12s%d\n","Family:",cpu->family);
+			prf_sprintf(buf,"\t%-12s","Model:");
+			switch(cpu->family) {
 				case 4:
-					prf_sprintf(buf,"%s%d\n","486 Model",cpu.model);
+					prf_sprintf(buf,"%s%d\n","486 Model",cpu->model);
 					break;
 				case 5:
-				switch(cpu.model) {
+				switch(cpu->model) {
 					case 0:
 					case 1:
 					case 2:
 					case 3:
 					case 6:
 					case 7:
-						prf_sprintf(buf,"%s%d\n","K6 Model",cpu.model);
+						prf_sprintf(buf,"%s%d\n","K6 Model",cpu->model);
 						break;
 					case 8:
 						prf_sprintf(buf,"%s\n","K6-2 Model 8");
@@ -246,16 +279,16 @@ void cpu_sprintf(sStringBuffer *buf) {
 						prf_sprintf(buf,"%s\n","K6-III Model 9");
 						break;
 					default:
-						prf_sprintf(buf,"%s%d\n","K5/K6 Model",cpu.model);
+						prf_sprintf(buf,"%s%d\n","K5/K6 Model",cpu->model);
 						break;
 				}
 				break;
 				case 6:
-				switch(cpu.model) {
+				switch(cpu->model) {
 					case 1:
 					case 2:
 					case 4:
-						prf_sprintf(buf,"%s%d\n","Athlon Model ",cpu.model);
+						prf_sprintf(buf,"%s%d\n","Athlon Model ",cpu->model);
 						break;
 					case 3:
 						prf_sprintf(buf,"%s\n","Duron Model 3");
@@ -267,21 +300,21 @@ void cpu_sprintf(sStringBuffer *buf) {
 						prf_sprintf(buf,"%s\n","Mobile Duron Model 7");
 						break;
 					default:
-						prf_sprintf(buf,"%s%d\n","Duron/Athlon Model ",cpu.model);
+						prf_sprintf(buf,"%s%d\n","Duron/Athlon Model ",cpu->model);
 						break;
 				}
 				break;
 			}
-			prf_sprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
+			prf_sprintf(buf,"\t%-12s%d\n","Stepping:",cpu->stepping);
 			break;
 
 		default:
-			prf_sprintf(buf,"%-12s%d\n","Model:",cpu.model);
-			prf_sprintf(buf,"%-12s%d\n","Type:",cpu.type);
-			prf_sprintf(buf,"%-12s%d\n","Family:",cpu.family);
-			prf_sprintf(buf,"%-12s%d\n","Brand:",cpu.brand);
-			prf_sprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
-			prf_sprintf(buf,"%-12s%08x\n","Signature:",cpu.signature);
+			prf_sprintf(buf,"\t%-12s%d\n","Model:",cpu->model);
+			prf_sprintf(buf,"\t%-12s%d\n","Type:",cpu->type);
+			prf_sprintf(buf,"\t%-12s%d\n","Family:",cpu->family);
+			prf_sprintf(buf,"\t%-12s%d\n","Brand:",cpu->brand);
+			prf_sprintf(buf,"\t%-12s%d\n","Stepping:",cpu->stepping);
+			prf_sprintf(buf,"\t%-12s%08x\n","Signature:",cpu->signature);
 			break;
 	}
 }

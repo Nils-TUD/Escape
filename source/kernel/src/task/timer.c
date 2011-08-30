@@ -27,8 +27,8 @@
 #include <errors.h>
 
 #define LISTENER_COUNT		1024
-/* reset the cpu-usage every 5sec */
-#define CPU_USAGE_SLICE		5000
+/* reset the cpu-usage every 1sec */
+#define CPU_USAGE_SLICE		1000
 
 /* an entry in the listener-list */
 typedef struct sTimerListener {

@@ -59,7 +59,7 @@ int main(void) {
 			ssize_t res = RETRY(read(keymap,&kmdata,sizeof(kmdata)));
 			if(res < 0) {
 				if(res != ERR_WOULD_BLOCK)
-					qerror("Unable to read from keymap");
+					qerror("Unable to read from keymap: %d",res);
 			}
 			else if(res > 0)
 				game_handleKey(kmdata.keycode,kmdata.modifier,kmdata.isBreak,kmdata.character);

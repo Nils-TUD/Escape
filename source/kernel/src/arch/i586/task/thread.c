@@ -120,6 +120,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 }
 
 void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+	UNUSED(t);
 	/* setup kernel-stack */
 	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
 	ulong *dst = (ulong*)paging_mapToTemp(&frame,1);
@@ -138,7 +139,7 @@ void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t e
 	nt->save.ebx = 0;
 	nt->save.edi = 0;
 	nt->save.esi = 0;
-	nt->save.eflags = t->save.eflags;
+	nt->save.eflags = 0;
 }
 
 sThread *thread_getRunning(void) {
@@ -159,6 +160,7 @@ void thread_initialSwitch(void) {
 		vmm_setTimestamp(cur,timer_getTimestamp());
 	cur->cpu = gdt_prepareRun(NULL,cur);
 	fpu_lockFPU();
+	cur->stats.cycleStart = cpu_rdtsc();
 	thread_resume(cur->proc->pagedir.own,&cur->save,&switchLock);
 }
 
@@ -169,14 +171,13 @@ void thread_doSwitch(void) {
 	 * until we've really switched the thread (kernelstack, ...) */
 	klock_aquire(&switchLock);
 	new = sched_perform(old);
-	/* finish kernel-time here since we're switching the process */
 	if(new->tid != old->tid) {
 		/* update stats */
 		uint64_t cycles = cpu_rdtsc();
 		time_t timestamp = timer_getTimestamp();
-		old->stats.runtime += timestamp - old->stats.lastSched;
+		assert(old->stats.cycleStart != 0);
+		old->stats.runtime += timer_cyclesToTime(cycles - old->stats.cycleStart);
 		old->stats.curCycleCount += cycles - old->stats.cycleStart;
-		new->stats.lastSched = timestamp;
 		new->stats.schedCount++;
 
 		if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
@@ -194,12 +195,9 @@ void thread_doSwitch(void) {
 		fpu_lockFPU();
 		if(!thread_save(&old->save)) {
 			/* old thread */
+			new->stats.cycleStart = cpu_rdtsc();
 			thread_resume(new->proc->pagedir.own,&new->save,&switchLock);
 		}
-
-		/* now start kernel-time again */
-		new = thread_getRunning();
-		new->stats.cycleStart = cpu_rdtsc();
 	}
 	else
 		klock_release(&switchLock);

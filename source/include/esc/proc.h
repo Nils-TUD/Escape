@@ -41,7 +41,7 @@ typedef struct {
 	size_t sharedFrames;
 	size_t swapped;
 	/* other stats */
-	time_t runtime;
+	uint64_t runtime;
 	uint schedCount;
 	uint syscalls;
 } sExitState;

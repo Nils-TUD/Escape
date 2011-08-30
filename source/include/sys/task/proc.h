@@ -76,7 +76,7 @@ typedef struct {
 	ulong sharedFrames;
 	ulong swapped;
 	/* other stats */
-	time_t runtime;
+	uint64_t runtime;
 	ulong schedCount;
 	ulong syscalls;
 } sExitState;

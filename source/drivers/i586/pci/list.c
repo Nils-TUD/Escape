@@ -41,6 +41,13 @@
 
 #define BAR_OFFSET					0x10
 
+#define BAR_ADDR_IO_MASK			0xFFFFFFFC
+#define BAR_ADDR_MEM_MASK			0xFFFFFFF0
+
+#define BAR_ADDR_SPACE				0x01
+#define BAR_ADDR_SPACE_IO			0x01
+#define BAR_ADDR_SPACE_MEM			0x00
+
 static void list_detect(void);
 static void list_createVFSEntry(sPCIDevice *device);
 static sPCIDeviceInfo *pci_getDevice(sPCIDevice *dev);
@@ -211,7 +218,15 @@ static void pci_fillBar(sPCIDevice *dev,size_t i) {
 	/* to get the size, we set all bits and read it back to see what bits are still set */
 	pci_write(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4,0xFFFFFFF0 | bar->type);
 	bar->size = pci_read(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4);
-	bar->size = (~bar->size | 0xF) + 1;
+	if(bar->size == 0 || bar->size == 0xFFFFFFFF)
+		bar->size = 0;
+	else {
+		if((bar->size & BAR_ADDR_SPACE) == BAR_ADDR_SPACE_MEM)
+			bar->size &= BAR_ADDR_MEM_MASK;
+		else
+			bar->size &= BAR_ADDR_IO_MASK;
+		bar->size &= ~(bar->size - 1);
+	}
 	pci_write(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4,barValue);
 }
 

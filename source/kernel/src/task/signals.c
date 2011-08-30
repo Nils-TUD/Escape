@@ -147,6 +147,7 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
 	int res = SIG_CHECK_NO;
 	klock_aquire(&sigLock);
 	s = t->signals;
+	assert(t->ignoreSignals == 0);
 	if(s && s->deliveredSignal && !s->currentSignal) {
 		*handler = s->handler[s->deliveredSignal];
 		*sig = s->deliveredSignal;
@@ -160,7 +161,7 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
 		for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 			t = (sThread*)n->data;
 			s = t->signals;
-			if(!s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
+			if(!t->ignoreSignals && !s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
 				sPendingSig *psig = s->pending.first;
 				if(t->tid == tid) {
 					*handler = s->handler[psig->sig];

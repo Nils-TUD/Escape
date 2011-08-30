@@ -118,10 +118,8 @@ struct sThread {
 	/* a list of file-usages that should be decremented on thread-termination */
 	sSLList termUsages;
 	struct {
-		/* number of milliseconds of runtime this thread has got so far */
-		time_t runtime;
-		/* timestamp of last scheduling */
-		time_t lastSched;
+		/* number of microseconds of runtime this thread has got so far */
+		uint64_t runtime;
 		/* executed cycles in this second */
 		uint64_t curCycleCount;
 		uint64_t cycleStart;
@@ -363,7 +361,7 @@ int thread_extendStack(uintptr_t address);
  * @param thread the thread
  * @return the runtime of the given thread
  */
-time_t thread_getRuntime(const sThread *t);
+uint64_t thread_getRuntime(const sThread *t);
 
 /**
  * @param thread the thread

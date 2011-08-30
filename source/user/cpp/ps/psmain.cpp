@@ -154,7 +154,7 @@ int main(int argc,char **argv) {
 	// display in KiB, its in bytes
 	maxInput = count_digits(maxInput / 1024,10);
 	maxOutput = count_digits(maxOutput / 1024,10);
-	maxRuntime = count_digits(maxRuntime / (1000 * 60),10);
+	maxRuntime = count_digits(maxRuntime / (1000000 * 60),10);
 
 	// sort
 	std::sort(procs.begin(),procs.end(),compareProcs);
@@ -200,7 +200,7 @@ int main(int argc,char **argv) {
 		cout << setw((streamsize)maxSmem) << (p->swapped() * pageSize) / 1024 << "K ";
 		cout << setw((streamsize)maxInput) << p->input() / 1024 << "K ";
 		cout << setw((streamsize)maxOutput) << p->output() / 1024 << "K ";
-		time_t time = p->runtime();
+		process::time_type time = p->runtime() / 1000;
 		cout << setw(maxRuntime) << time / (1000 * 60) << ":";
 		time %= 1000 * 60;
 		cout << setfillobj('0');

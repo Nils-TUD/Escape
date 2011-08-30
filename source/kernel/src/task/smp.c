@@ -40,8 +40,10 @@ void smp_init(void) {
 
 	cpuCount = 0;
 	enabled = smp_init_arch();
-	if(!enabled)
+	if(!enabled) {
 		smp_addCPU(true,0,true);
+		smp_setId(0,0);
+	}
 
 	vid_printf("%zu CPUs found",cpuCount);
 }

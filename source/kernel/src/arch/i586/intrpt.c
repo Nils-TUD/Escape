@@ -271,7 +271,6 @@ static void intrpt_irqDefault(sIntrptStackFrame *stack) {
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
 	pic_eoi(stack->intrptNo);
-#if DEBUGGING
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
 	/* (with a present keyboard-driver we would steal him the scancodes) */
 	/* this way, we can debug the system in the startup-phase without affecting timings
@@ -281,7 +280,6 @@ static void intrpt_irqDefault(sIntrptStackFrame *stack) {
 		if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
 			cons_start();
 	}
-#endif
 }
 
 static void intrpt_syscall(sIntrptStackFrame *stack) {

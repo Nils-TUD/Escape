@@ -70,7 +70,7 @@ typedef enum {
 
 typedef uint8_t *(*fSetPixel)(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);
 
-static int vesa_setMode(void);
+static int vesa_determineMode(void);
 static int vesa_init(void);
 static void vesa_drawStr(gpos_t col,gpos_t row,const char *str,size_t len);
 static void vesa_drawChar(gpos_t col,gpos_t row,uint8_t c,uint8_t color);
@@ -132,7 +132,6 @@ int main(void) {
 	/* load available modes etc. */
 	vbe_init();
 
-	/* TODO maybe we should provide close to restore the old mode? */
 	id = regDriver("vesatext",DRV_OPEN | DRV_WRITE);
 	if(id < 0)
 		error("Unable to register driver 'vesatext'");
@@ -143,10 +142,11 @@ int main(void) {
 			printe("[VESAT] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DRV_OPEN:
-					msg.args.arg1 = vesa_setMode();
+				case MSG_DRV_OPEN: {
+					msg.args.arg1 = vesa_determineMode();
 					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-					break;
+				}
+				break;
 
 				case MSG_DRV_WRITE: {
 					uint offset = msg.args.arg1;
@@ -209,9 +209,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static int vesa_setMode(void) {
+static int vesa_determineMode(void) {
 	uint mode;
-	/* already done? */
 	if(minfo)
 		return 0;
 
@@ -228,10 +227,7 @@ static int vesa_setMode(void) {
 				return errno;
 			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
 			rows = minfo->yResolution / (FONT_HEIGHT + PAD * 2);
-			if(vbe_setMode(mode) == 0)
-				return vesa_init();
-			minfo = NULL;
-			return ERR_VESA_SETMODE_FAILED;
+			return vesa_init();
 		}
 	}
 	return ERR_VESA_MODE_NOT_FOUND;

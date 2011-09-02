@@ -1,3 +1,7 @@
+video
+	/dev/video 0770 output
+vesatext
+	/dev/vesatext 0770 output
 zero
 	/dev/zero 0666 root
 random
@@ -6,18 +10,11 @@ null
 	/dev/null 0666 root
 speaker
 	/dev/speaker 0110 audio
-powermng
-	/dev/powermng 0110 root
-video
-	/dev/video 0770 output
-vesatext
-	/dev/vesatext 0770 output
 keyboard
 	/dev/keyboard 0440 input
 kmmanager
 	/dev/kmmanager 0550 input
 	/dev/keyevents 0110 input
-ne2k
 vterm
 	/dev/vterm0 0770 vterm0
 	/dev/vterm1 0770 vterm1

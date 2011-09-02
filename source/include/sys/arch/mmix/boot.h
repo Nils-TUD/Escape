@@ -49,7 +49,21 @@ typedef struct {
 #define BL_FS_ID	2
 #define BL_RTC_ID	3
 
-void boot_init(const sBootInfo *binfo,bool logToVFS);
+/**
+ * Performs the architecture-dependend stuff at the beginning of the boot-process
+ *
+ * @param info the boot-information
+ */
+void boot_arch_start(sBootInfo *info);
+
+/**
+ * @return the multiboot-info-structure
+ */
 const sBootInfo *boot_getInfo(void);
+
+/**
+ * The boot-tasks to load
+ */
+const sBootTaskList bootTaskList;
 
 #endif /* MMIX_BOOT_H_ */

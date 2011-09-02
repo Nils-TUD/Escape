@@ -103,16 +103,20 @@ typedef struct {
 } A_PACKED sBootInfo;
 
 /**
- * Inits the multi-boot infos
+ * Performs the architecture-dependend stuff at the beginning of the boot-process
  *
- * @param mbp the pointer to the multi-boot-structure
- * @param whether to log to VFS as well
+ * @param info the boot-information
  */
-void boot_init(sBootInfo *mbp,bool logToVFS);
+void boot_arch_start(sBootInfo *info);
 
 /**
  * @return the multiboot-info-structure
  */
 const sBootInfo *boot_getInfo(void);
+
+/**
+ * The boot-tasks to load
+ */
+const sBootTaskList bootTaskList;
 
 #endif /* I586_BOOT_H_ */

@@ -27,6 +27,20 @@
 
 static bool atapi_request(sATADevice *device,void *cmd,void *buffer,size_t bufSize);
 
+void atapi_softReset(sATADevice *device) {
+	int i = 1000000;
+	ctrl_outb(device->ctrl,ATA_REG_DRIVE_SELECT,((device->id & SLAVE_BIT) << 4) | 0xA0);
+	ctrl_wait(device->ctrl);
+	ctrl_outb(device->ctrl,ATA_REG_COMMAND,COMMAND_ATAPI_RESET);
+	while((ctrl_inb(device->ctrl,ATA_REG_STATUS) & CMD_ST_BUSY) && i--)
+		ctrl_wait(device->ctrl);
+	ctrl_outb(device->ctrl,ATA_REG_DRIVE_SELECT,(device->id << 4) | 0xA0);
+	i = 1000000;
+	while((ctrl_inb(device->ctrl,ATA_REG_CONTROL) & CMD_ST_BUSY) && i--)
+		ctrl_wait(device->ctrl);
+	ctrl_wait(device->ctrl);
+}
+
 bool atapi_read(sATADevice *device,uint op,void *buffer,uint64_t lba,size_t secSize,
 		size_t secCount) {
 	UNUSED(secSize);

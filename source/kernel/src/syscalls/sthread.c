@@ -36,9 +36,10 @@
 
 #define MAX_WAIT_OBJECTS		32
 
-static int sysc_doWait(const sWaitObject *uobjects,size_t objCount,pid_t pid,ulong ident);
-static int sysc_doWaitLoop(const sWaitObject *uobjects,size_t objCount,const file_t *objFiles,
+static int sysc_doWait(const sWaitObject *uobjects,size_t objCount,time_t maxWaitTime,
 		pid_t pid,ulong ident);
+static int sysc_doWaitLoop(const sWaitObject *uobjects,size_t objCount,const file_t *objFiles,
+		time_t maxWaitTime,pid_t pid,ulong ident);
 
 int sysc_gettid(sIntrptStackFrame *stack) {
 	const sThread *t = thread_getRunning();
@@ -75,11 +76,20 @@ int sysc_getCycles(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,cycles.val32.lower);
 }
 
+int sysc_alarm(sIntrptStackFrame *stack) {
+	time_t msecs = SYSC_ARG1(stack);
+	const sThread *t = thread_getRunning();
+	int res;
+	if((res = timer_sleepFor(t->tid,msecs,false)) < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,0);
+}
+
 int sysc_sleep(sIntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	const sThread *t = thread_getRunning();
 	int res;
-	if((res = timer_sleepFor(t->tid,msecs)) < 0)
+	if((res = timer_sleepFor(t->tid,msecs,true)) < 0)
 		SYSC_ERROR(stack,res);
 	thread_switch();
 	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
@@ -98,6 +108,7 @@ int sysc_yield(sIntrptStackFrame *stack) {
 int sysc_wait(sIntrptStackFrame *stack) {
 	const sWaitObject *uobjects = (const sWaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
+	time_t maxWaitTime = SYSC_ARG3(stack);
 	int res;
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
@@ -105,7 +116,7 @@ int sysc_wait(sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = sysc_doWait(uobjects,objCount,KERNEL_PID,0);
+	res = sysc_doWait(uobjects,objCount,maxWaitTime,KERNEL_PID,0);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -125,7 +136,7 @@ int sysc_waitUnlock(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* wait and release the lock before going to sleep */
-	res = sysc_doWait(uobjects,objCount,global ? INVALID_PID : pid,ident);
+	res = sysc_doWait(uobjects,objCount,0,global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -201,7 +212,8 @@ int sysc_resume(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount,pid_t pid,ulong ident) {
+static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount,time_t maxWaitTime,
+		pid_t pid,ulong ident) {
 	file_t objFiles[MAX_WAIT_OBJECTS];
 	size_t i;
 	int res;
@@ -219,7 +231,7 @@ static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount,pid_t pi
 	}
 
 	/* now wait */
-	res = sysc_doWaitLoop(uobjects,objCount,objFiles,pid,ident);
+	res = sysc_doWaitLoop(uobjects,objCount,objFiles,maxWaitTime,pid,ident);
 
 	/* release them */
 	for(i = 0; i < objCount; i++) {
@@ -230,7 +242,7 @@ static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount,pid_t pi
 }
 
 static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,const file_t *objFiles,
-		pid_t pid,ulong ident) {
+		time_t maxWaitTime,pid_t pid,ulong ident) {
 	sWaitObject kobjects[MAX_WAIT_OBJECTS];
 	size_t i;
 
@@ -252,5 +264,5 @@ static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,cons
 		else
 			kobjects[i].object = uobjects[i].object;
 	}
-	return vfs_waitFor(kobjects,objCount,true,pid,ident);
+	return vfs_waitFor(kobjects,objCount,maxWaitTime,true,pid,ident);
 }

@@ -29,6 +29,7 @@
 extern "C" {
 #endif
 
+#define VTERM_COUNT			6
 #define TAB_WIDTH			4
 #define HISTORY_SIZE		12
 #define INPUT_BUF_SIZE		512

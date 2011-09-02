@@ -34,11 +34,11 @@ static A_ALIGNED(4) uint8_t initloader[] = {
 #endif
 };
 
-uintptr_t bspstart(const sBootInfo *bootinfo) {
+uintptr_t bspstart(sBootInfo *bootinfo) {
 	sThread *t;
 	sStartupInfo info;
 
-	boot_init(bootinfo,true);
+	boot_start(bootinfo);
 
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)

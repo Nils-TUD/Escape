@@ -69,9 +69,10 @@ sVFSNode *vfs_node_get(inode_t nodeNo);
  *
  * @param dir the directory
  * @param locked whether the directory should be locked
+ * @param isValid will be set to true or false depending on whether the node is still valid
  * @return the first child-node
  */
-sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked);
+sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked,bool *isValid);
 
 /**
  * 'Closes' the given directory, i.e. releases the lock.
@@ -88,7 +89,7 @@ void vfs_node_closeDir(sVFSNode *dir,bool locked);
  * @param nodeNo the node-number
  * @return the path
  */
-char *vfs_node_getPath(inode_t nodeNo);
+const char *vfs_node_getPath(inode_t nodeNo);
 
 /**
  * Retrieves information about the given node

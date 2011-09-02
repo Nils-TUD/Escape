@@ -37,7 +37,6 @@
 
 static void setCursor(uint row,uint col);
 static void copy(uint offset,size_t count);
-static void clearScreen(void);
 
 /* our state */
 static uint64_t *videoData;
@@ -56,8 +55,6 @@ int main(void) {
 	videoData = (uint64_t*)mapPhysical(VIDEO_MEM,MAX_COLS * ROWS * 8);
 	if(videoData == NULL)
 		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
-
-	clearScreen();
 
 	/* wait for messages */
 	while(1) {
@@ -133,16 +130,6 @@ static void copy(uint offset,size_t count) {
 			*screen++ = (d >> 8) | (d & 0xFF) << 8;
 			count -= 2;
 		}
-		screen += MAX_COLS - COLS;
-	}
-}
-
-static void clearScreen(void) {
-	size_t x,y;
-	uint64_t *screen = videoData;
-	for(y = 0; y < ROWS; y++) {
-		for(x = 0; x < COLS; x++)
-			*screen++ = 0;
 		screen += MAX_COLS - COLS;
 	}
 }

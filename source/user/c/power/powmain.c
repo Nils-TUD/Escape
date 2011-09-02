@@ -27,8 +27,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define POWER_DRV		"/dev/powermng"
-
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s -r|-s\n",name);
 	exit(EXIT_FAILURE);
@@ -48,13 +46,13 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	fd = open(POWER_DRV,IO_MSGS);
+	fd = open("/dev/init",IO_MSGS);
 	if(fd < 0)
-		error("Unable to open '%s'",POWER_DRV);
+		error("Unable to open '%s'","/dev/init");
 	if(reboot)
-		send(fd,MSG_POWER_REBOOT,&msg,sizeof(msg.args));
+		send(fd,MSG_INIT_REBOOT,&msg,sizeof(msg.args));
 	else if(shutdown)
-		send(fd,MSG_POWER_SHUTDOWN,&msg,sizeof(msg.args));
+		send(fd,MSG_INIT_SHUTDOWN,&msg,sizeof(msg.args));
 	close(fd);
 	return EXIT_SUCCESS;
 }

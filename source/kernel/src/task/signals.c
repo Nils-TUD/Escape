@@ -196,7 +196,6 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
 bool sig_addSignalFor(tid_t tid,sig_t signal) {
 	sSignals *s;
 	bool res = false;
-	assert(sig_canSend(signal));
 	klock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	if(s && s->handler[signal]) {

@@ -17,38 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVER_H_
-#define DRIVER_H_
+#ifndef DRIVERPROCESS_H_
+#define DRIVERPROCESS_H_
 
 #include <esc/common.h>
 #include <usergroup/group.h>
 #include <string>
 #include <vector>
 #include <ostream>
+#include "process.h"
 
-class load_error : public std::exception {
-public:
-	explicit load_error(const std::string& error)
-		: _msg(error) {
-	}
-	virtual ~load_error() throw () {
-	}
-
-	virtual const char* what() const throw () {
-		return _msg.c_str();
-	}
-private:
-	std::string _msg;
-};
-
-class device {
-	friend std::istream& operator >>(std::istream& is,device& dev);
+class Device {
+	friend std::istream& operator >>(std::istream& is,Device& dev);
 	typedef unsigned int perm_type;
 
 public:
-	device(): _name(std::string()), _perms(perm_type()), _group(std::string()) {
+	Device(): _name(std::string()), _perms(perm_type()), _group(std::string()) {
 	}
-	~device() {
+	~Device() {
 	}
 
 	const std::string& name() const {
@@ -67,8 +53,8 @@ private:
 	std::string _group;
 };
 
-class driver {
-	friend std::istream& operator >>(std::istream& is,driver& drv);
+class DriverProcess : public Process {
+	friend std::istream& operator >>(std::istream& is,DriverProcess& drv);
 
 public:
 	static const int MAX_WAIT_RETRIES	= 1000;
@@ -78,26 +64,26 @@ private:
 	static sGroup *groupList;
 
 public:
-	driver() : _name(std::string()), _devices(std::vector<device>()) {
-	}
-	~driver() {
-	}
+	DriverProcess()
+		: Process(), _devices(std::vector<Device>()) {
+	};
+	virtual ~DriverProcess() {
+	};
 
-	const std::string& name() const {
-		return _name;
-	}
-	const std::vector<device>& devices() const {
+	virtual bool isKillable() const {
+		return name() != "video";
+	};
+	const std::vector<Device>& devices() const {
 		return _devices;
-	}
-	void load();
+	};
+	virtual void load();
 
 private:
-	std::string _name;
-	std::vector<device> _devices;
+	std::vector<Device> _devices;
 };
 
-std::istream& operator >>(std::istream& is,device& dev);
-std::istream& operator >>(std::istream& is,driver& drv);
-std::ostream& operator <<(std::ostream& os,const driver& drv);
+std::istream& operator >>(std::istream& is,Device& dev);
+std::istream& operator >>(std::istream& is,DriverProcess& drv);
+std::ostream& operator <<(std::ostream& os,const DriverProcess& drv);
 
-#endif /* DRIVER_H_ */
+#endif /* DRIVERPROCESS_H_ */

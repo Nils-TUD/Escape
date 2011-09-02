@@ -53,7 +53,7 @@ void rectAdd(sRectangle *r1,sRectangle *r2);
 bool rectContains(sRectangle *r,int x,int y);
 
 /**
- * Splits <r1> by <r2> and creates an array of rectangles that are parts of <r1> and not
+ * Substracts <r2> from <r1> and creates an array of rectangles that are parts of <r1> and not
  * part of <r2>. For example:
  * +---------+ <- r1
  * |         |
@@ -77,12 +77,12 @@ bool rectContains(sRectangle *r,int x,int y);
  * @param rectCount will be set to the number of created rects
  * @return the rectangle array, allocated on the heap; NULL if rectCount = 0
  */
-sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,size_t *rectCount) A_CHECKRET;
+sRectangle **rectSubstract(sRectangle *r1,sRectangle *r2,size_t *rectCount) A_CHECKRET;
 
 /**
  * Frees the given rectangles
  *
- * @param rects the rectangles created by rectSplit (may be NULL)
+ * @param rects the rectangles created by rectSubstract (may be NULL)
  * @param count the number of rectangles
  */
 void rectFree(sRectangle **rects,size_t count);

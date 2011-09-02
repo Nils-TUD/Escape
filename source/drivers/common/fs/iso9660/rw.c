@@ -41,7 +41,7 @@ bool iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount) {
 	}
 	res = RETRY(read(fd,buffer,secCount * ATAPI_SECTOR_SIZE));
 	if(res != (ssize_t)secCount * ATAPI_SECTOR_SIZE) {
-		printe("Unable to read %d sectors @ %x",secCount,lba * ATAPI_SECTOR_SIZE);
+		printe("Unable to read %d sectors @ %x: %zd",secCount,lba * ATAPI_SECTOR_SIZE,res);
 		return false;
 	}
 

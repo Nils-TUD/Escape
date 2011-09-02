@@ -22,6 +22,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/task/smp.h>
+#include <sys/log.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <esc/sllist.h>
@@ -45,7 +46,7 @@ void smp_init(void) {
 		smp_setId(0,0);
 	}
 
-	vid_printf("%zu CPUs found",cpuCount);
+	log_printf("%zu CPUs found",cpuCount);
 }
 
 bool smp_isEnabled(void) {

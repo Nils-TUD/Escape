@@ -125,6 +125,7 @@
 
 #define MSG_POWER_REBOOT			400	/* reboots the system */
 #define MSG_POWER_SHUTDOWN			401	/* shuts the system down */
+#define MSG_POWER_IAMALIVE			402	/* tells the power-manager that a process is alive */
 
 #define MSG_VID_SETCURSOR			500	/* expects sVTPos */
 #define MSG_VID_GETSIZE				501	/* writes into sVTSize */
@@ -155,6 +156,11 @@
 #define MSG_PCI_GET_BY_CLASS		900	/* searches for a pci device with given class */
 #define MSG_PCI_GET_BY_ID			901	/* searches for a pci device with given id */
 #define MSG_PCI_DEVICE_RESP			902
+
+#define MSG_INIT_REBOOT				1000 /* requests a reboot */
+#define MSG_INIT_SHUTDOWN			1001 /* requests a shutdown */
+#define MSG_INIT_IAMALIVE			1002 /* tells init that the shutdown-request has been received
+											and that you promise to terminate as soon as possible */
 
 #define IS_DRIVER_MSG(id)			((id) == MSG_DRV_OPEN || \
 									 (id) == MSG_DRV_READ || \

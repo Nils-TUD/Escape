@@ -18,53 +18,25 @@
 #
 
 # the IRQ for syscalls
-.set SYSCALL_IRQ,						0x30
+.set SYSCALL_IRQ,							0x30
 
-# macros for the different syscall-types (void / ret-value, arg-count, error-handling)
+# macros for the different syscall-types, depending on the argument-number
 
-.macro SYSC_VOID_0ARGS name syscno
-.global \name
-.type \name, @function
-\name:
-	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
-	ret
-.endm
-
-.macro SYSC_VOID_1ARGS name syscno
-.global \name
-.type \name, @function
-\name:
-	mov		$\syscno,%eax					# set syscall-number
-	mov		4(%esp),%ecx					# set arg1
-	int		$SYSCALL_IRQ
-	ret
-.endm
-
-.macro SYSC_RET_0ARGS name syscno
-.global \name
-.type \name, @function
-\name:
-	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
-	ret													# return-value is in eax
-.endm
-
-.macro SYSC_RET_0ARGS_ERR name syscno
+.macro SYSC_0ARGS name syscno
 .global \name
 .type \name, @function
 \name:
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
 	test	%ecx,%ecx
-	jz		1f										# no-error?
+	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax							# return error-code
+	mov		%ecx,%eax						# return error-code
 1:
 	ret
 .endm
 
-.macro SYSC_RET_1ARGS_ERR name syscno
+.macro SYSC_1ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -72,14 +44,14 @@
 	mov		4(%esp),%ecx					# set arg1
 	int		$SYSCALL_IRQ
 	test	%ecx,%ecx
-	jz		1f										# no-error?
+	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax							# return error-code
+	mov		%ecx,%eax						# return error-code
 1:
 	ret
 .endm
 
-.macro SYSC_RET_2ARGS_ERR name syscno
+.macro SYSC_2ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -88,14 +60,14 @@
 	mov		8(%esp),%edx					# set arg2
 	int		$SYSCALL_IRQ
 	test	%ecx,%ecx
-	jz		1f										# no-error?
+	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax							# return error-code
+	mov		%ecx,%eax						# return error-code
 1:
 	ret
 .endm
 
-.macro SYSC_RET_3ARGS_ERR name syscno
+.macro SYSC_3ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -103,42 +75,20 @@
 	mov		%esp,%ebp
 	mov		8(%ebp),%ecx					# set arg1
 	mov		12(%ebp),%edx					# set arg2
-	pushl	16(%ebp)							# push arg3
+	pushl	16(%ebp)						# push arg3
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
-	add		$4,%esp								# remove arg3
+	add		$4,%esp							# remove arg3
 	test	%ecx,%ecx
-	jz		1f										# no-error?
+	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax							# return error-code
-1:
-	leave
-	ret
-.endm
-
-.macro SYSC_RET_4ARGS_ERR name syscno
-.global \name
-.type \name, @function
-\name:
-	push	%ebp
-	mov		%esp,%ebp
-	mov		8(%ebp),%ecx					# set arg1
-	mov		12(%ebp),%edx					# set arg2
-	pushl	20(%ebp)							# push arg4
-	pushl	16(%ebp)							# push arg3
-	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
-	add		$8,%esp								# remove arg3 and arg4
-	test	%ecx,%ecx
-	jz		1f										# no-error?
-	STORE_ERRNO
-	mov		%ecx,%eax							# return error-code
+	mov		%ecx,%eax						# return error-code
 1:
 	leave
 	ret
 .endm
 
-.macro SYSC_RET_5ARGS_ERR name syscno
+.macro SYSC_4ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -146,22 +96,21 @@
 	mov		%esp,%ebp
 	mov		8(%ebp),%ecx					# set arg1
 	mov		12(%ebp),%edx					# set arg2
-	pushl	24(%ebp)							# push arg5
-	pushl	20(%ebp)							# push arg4
-	pushl	16(%ebp)							# push arg3
+	pushl	20(%ebp)						# push arg4
+	pushl	16(%ebp)						# push arg3
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
-	add		$12,%esp							# remove arg3, arg4 and arg5
+	add		$8,%esp							# remove arg3 and arg4
 	test	%ecx,%ecx
-	jz		1f										# no-error?
+	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax							# return error-code
+	mov		%ecx,%eax						# return error-code
 1:
 	leave
 	ret
 .endm
 
-.macro SYSC_RET_7ARGS_ERR name syscno
+.macro SYSC_5ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -169,18 +118,41 @@
 	mov		%esp,%ebp
 	mov		8(%ebp),%ecx					# set arg1
 	mov		12(%ebp),%edx					# set arg2
-	pushl	32(%ebp)							# push arg7
-	pushl	28(%ebp)							# push arg6
-	pushl	24(%ebp)							# push arg5
-	pushl	20(%ebp)							# push arg4
-	pushl	16(%ebp)							# push arg3
+	pushl	24(%ebp)						# push arg5
+	pushl	20(%ebp)						# push arg4
+	pushl	16(%ebp)						# push arg3
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
-	add		$20,%esp							# remove args
+	add		$12,%esp						# remove arg3, arg4 and arg5
 	test	%ecx,%ecx
-	jz		1f										# no-error?
+	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax							# return error-code
+	mov		%ecx,%eax						# return error-code
+1:
+	leave
+	ret
+.endm
+
+.macro SYSC_7ARGS name syscno
+.global \name
+.type \name, @function
+\name:
+	push	%ebp
+	mov		%esp,%ebp
+	mov		8(%ebp),%ecx					# set arg1
+	mov		12(%ebp),%edx					# set arg2
+	pushl	32(%ebp)						# push arg7
+	pushl	28(%ebp)						# push arg6
+	pushl	24(%ebp)						# push arg5
+	pushl	20(%ebp)						# push arg4
+	pushl	16(%ebp)						# push arg3
+	mov		$\syscno,%eax					# set syscall-number
+	int		$SYSCALL_IRQ
+	add		$20,%esp						# remove args
+	test	%ecx,%ecx
+	jz		1f								# no-error?
+	STORE_ERRNO
+	mov		%ecx,%eax						# return error-code
 1:
 	leave
 	ret

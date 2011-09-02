@@ -45,6 +45,14 @@ typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eC
 void vid_init(void);
 
 /**
+ * Moves the cursor to the given position
+ *
+ * @param r the row
+ * @param c the column
+ */
+void vid_goto(ushort r,ushort c);
+
+/**
  * Backups the screen to the given buffer. Assumes (!) that the buffer is large enough to contain
  * VID_COLS * VID_ROWS * 2 bytes!
  *

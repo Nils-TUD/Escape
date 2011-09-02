@@ -79,7 +79,7 @@ $syscalls = array(
 	array("getCycles","SYSCALL_GETCYCLES"),
 	array("yield","SYSCALL_YIELD"),
 	array("sleep","SYSCALL_SLEEP"),
-	array("waitm","SYSCALL_WAIT"),
+	array("waitmUntil","SYSCALL_WAIT"),
 	array("_waitUnlock","SYSCALL_WAITUNLOCK"),
 	array("notify","SYSCALL_NOTIFY"),
 	array("_lock","SYSCALL_LOCK"),

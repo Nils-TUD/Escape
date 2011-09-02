@@ -126,7 +126,8 @@ BUILD_DEF_ISR 49
 	jz		2f
 	pause
 	jmp		1b
-2:	popa
+2:	call	apic_eoi
+	popa
 	iret
 
 # IPI: halt

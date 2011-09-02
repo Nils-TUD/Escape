@@ -35,9 +35,8 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-/* TODO alignment problem on eco32. see less */
-static int figncase = false;
-static int freverse = false;
+static bool figncase = false;
+static bool freverse = false;
 
 int main(int argc,char *argv[]) {
 	istream *in = &cin;

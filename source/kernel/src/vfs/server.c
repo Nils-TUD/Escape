@@ -36,7 +36,6 @@
 #define DRV_IS_FS(funcs)			((funcs) == DRV_FS)
 
 typedef struct {
-	klock_t lock;
 	/* whether there is data to read or not */
 	bool isEmpty;
 	/* implemented functions */
@@ -69,7 +68,6 @@ sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 		vfs_node_destroy(node);
 		return NULL;
 	}
-	srv->lock = 0;
 	srv->funcs = flags;
 	srv->isEmpty = true;
 	srv->lastClient = NULL;
@@ -134,17 +132,17 @@ int vfs_server_setReadable(sVFSNode *node,bool readable) {
 
 void vfs_server_addMsg(sVFSNode *node) {
 	sServer *srv = (sServer*)node->data;
-	klock_aquire(&srv->lock);
+	klock_aquire(&node->lock);
 	srv->msgCount++;
-	klock_release(&srv->lock);
+	klock_release(&node->lock);
 }
 
 void vfs_server_remMsg(sVFSNode *node) {
 	sServer *srv = (sServer*)node->data;
-	klock_aquire(&srv->lock);
+	klock_aquire(&node->lock);
 	assert(srv->msgCount > 0);
 	srv->msgCount--;
-	klock_release(&srv->lock);
+	klock_release(&node->lock);
 }
 
 bool vfs_server_hasWork(sVFSNode *node) {
@@ -155,6 +153,7 @@ bool vfs_server_hasWork(sVFSNode *node) {
 sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {
 	sServer *srv = (sServer*)node->data;
 	sVFSNode *n,*last;
+	bool isValid;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every
 	 * process that requests something should be served at some time. therefore we store the last
 	 * served client and continue from the next one. */
@@ -163,9 +162,9 @@ sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {
 	/* we don't need to lock the server-data here; the node with vfs_node_openDir() is sufficient */
 	/* because it can't be called twice because the waitLock in vfs prevents it. and nothing of the
 	 * server-data that is used here can be changed during this procedure. */
-	n = vfs_node_openDir(node,true);
-	/* if there are no messages at all, stop right now */
-	if(srv->msgCount == 0) {
+	n = vfs_node_openDir(node,true,&isValid);
+	/* if there are no messages at all or the node is invalid, stop right now */
+	if(!isValid || srv->msgCount == 0) {
 		vfs_node_closeDir(node,true);
 		return NULL;
 	}
@@ -201,7 +200,11 @@ searchBegin:
 	if(last && n == last && vfs_chan_hasWork(n))
 		return n;
 	if(srv->lastClient) {
-		n = vfs_node_openDir(node,true);
+		n = vfs_node_openDir(node,true,&isValid);
+		if(!isValid) {
+			vfs_node_closeDir(node,true);
+			return NULL;
+		}
 		srv->lastClient = NULL;
 		goto searchBegin;
 	}
@@ -209,22 +212,28 @@ searchBegin:
 }
 
 void vfs_server_print(sVFSNode *n) {
+	bool isValid;
 	sServer *srv = (sServer*)n->data;
-	sVFSNode *chan = vfs_node_openDir(n,true);
-	vid_printf("\t%s (%s):\n",n->name,srv->isEmpty ? "empty" : "full");
-	while(chan != NULL) {
-		vfs_chan_print(chan);
-		chan = chan->next;
+	sVFSNode *chan = vfs_node_openDir(n,true,&isValid);
+	if(isValid) {
+		vid_printf("\t%s (%s):\n",n->name,srv->isEmpty ? "empty" : "full");
+		while(chan != NULL) {
+			vfs_chan_print(chan);
+			chan = chan->next;
+		}
+		vid_printf("\n");
 	}
 	vfs_node_closeDir(n,true);
-	vid_printf("\n");
 }
 
 static void vfs_server_wakeupClients(sVFSNode *node,uint events,bool locked) {
-	sVFSNode *n = vfs_node_openDir(node,locked);
-	while(n != NULL) {
-		ev_wakeupm(events,(evobj_t)n);
-		n = n->next;
+	bool isValid;
+	sVFSNode *n = vfs_node_openDir(node,locked,&isValid);
+	if(isValid) {
+		while(n != NULL) {
+			ev_wakeupm(events,(evobj_t)n);
+			n = n->next;
+		}
 	}
 	vfs_node_closeDir(node,locked);
 }

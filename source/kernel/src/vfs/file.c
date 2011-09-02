@@ -33,7 +33,6 @@
 #define VFS_INITIAL_WRITECACHE		128
 
 typedef struct {
-	klock_t lock;
 	/* size of the buffer */
 	size_t size;
 	/* currently used size */
@@ -63,7 +62,6 @@ sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrit
 			vfs_node_destroy(node);
 			return NULL;
 		}
-		con->lock = 0;
 		con->data = NULL;
 		con->size = 0;
 		con->pos = 0;
@@ -107,7 +105,11 @@ ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off
 	UNUSED(file);
 	size_t byteCount = 0;
 	sFileContent *con = (sFileContent*)node->data;
-	klock_aquire(&con->lock);
+	klock_aquire(&node->lock);
+	if(node->name == NULL) {
+		klock_release(&node->lock);
+		return ERR_NODE_DESTROYED;
+	}
 	if(con->data != NULL) {
 		if(offset > con->pos)
 			offset = con->pos;
@@ -115,6 +117,7 @@ ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off
 		if(byteCount > 0) {
 			sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
 			if(!vmm_makeCopySafe(p,buffer,byteCount)) {
+				klock_release(&node->lock);
 				proc_release(p,PLOCK_REGIONS);
 				return ERR_INVALID_ARGS;
 			}
@@ -122,7 +125,7 @@ ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off
 			proc_release(p,PLOCK_REGIONS);
 		}
 	}
-	klock_release(&con->lock);
+	klock_release(&node->lock);
 	return byteCount;
 }
 
@@ -133,15 +136,19 @@ ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,USER const void *buffer
 	void *oldData;
 	size_t newSize = 0;
 	sFileContent *con = (sFileContent*)n->data;
-	klock_aquire(&con->lock);
+	klock_aquire(&n->lock);
 	oldData = con->data;
+	if(n->name == NULL) {
+		klock_release(&n->lock);
+		return ERR_NODE_DESTROYED;
+	}
 
 	/* need to create cache? */
 	if(con->data == NULL) {
 		newSize = MAX(count,VFS_INITIAL_WRITECACHE);
 		/* check for overflow */
 		if(newSize > MAX_VFS_FILE_SIZE) {
-			klock_release(&con->lock);
+			klock_release(&n->lock);
 			return ERR_NOT_ENOUGH_MEM;
 		}
 
@@ -154,7 +161,7 @@ ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,USER const void *buffer
 		/* ensure that we allocate enough memory */
 		newSize = MAX(offset + count,con->size * 2);
 		if(newSize > MAX_VFS_FILE_SIZE) {
-			klock_release(&con->lock);
+			klock_release(&n->lock);
 			return ERR_NOT_ENOUGH_MEM;
 		}
 
@@ -165,7 +172,7 @@ ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,USER const void *buffer
 	if(con->data == NULL) {
 		/* don't throw the data away, use the old version */
 		con->data = oldData;
-		klock_release(&con->lock);
+		klock_release(&n->lock);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -174,11 +181,11 @@ ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,USER const void *buffer
 		con->size = newSize;
 	/* copy the data into the cache; this may segfault, which will leave the the state of the
 	 * file as it was before, except that we've increased the buffer-size */
-	thread_addLock(&con->lock);
+	thread_addLock(&n->lock);
 	memcpy((uint8_t*)con->data + offset,buffer,count);
-	thread_remLock(&con->lock);
+	thread_remLock(&n->lock);
 	/* we have checked size for overflow. so it is ok here */
 	con->pos = MAX(con->pos,(off_t)(offset + count));
-	klock_release(&con->lock);
+	klock_release(&n->lock);
 	return count;
 }

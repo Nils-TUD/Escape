@@ -39,7 +39,8 @@ int sysc_loadMods(sIntrptStackFrame *stack) {
 
 int sysc_debugc(sIntrptStackFrame *stack) {
 	char c = (char)SYSC_ARG1(stack);
-	log_printf("%c",c);
+	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+	vid_printf("%c",c);
 	SYSC_RET1(stack,0);
 }
 

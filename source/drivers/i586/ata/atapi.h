@@ -23,6 +23,8 @@
 #include <esc/common.h>
 #include "device.h"
 
+void atapi_softReset(sATADevice *device);
+
 /**
  * Reads from an ATAPI-device
  *

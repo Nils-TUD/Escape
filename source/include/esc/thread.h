@@ -85,6 +85,14 @@ uint64_t getCycles(void);
 void yield(void);
 
 /**
+ * Notifies the thread in <msecs> milliseconds via signal (SIG_ALARM).
+ *
+ * @param msecs the number of milliseconds
+ * @return 0 on success
+ */
+int alarm(time_t msecs);
+
+/**
  * Puts the current thread to sleep for <msecs> milliseconds. If interrupted, ERR_INTERRUPTED
  * is returned.
  *
@@ -105,6 +113,16 @@ int sleep(time_t msecs);
 int waitm(sWaitObject *objects,size_t objCount);
 
 /**
+ * The same as waitm(), but waits at most <max> milliseconds.
+ *
+ * @param objects the objects to wait for
+ * @param objCount the number of objects
+ * @param max the maximum number of milliseconds to wait (0 = unlimited)
+ * @return 0 on success and a negative error-code if failed
+ */
+int waitmUntil(sWaitObject *objects,size_t objCount,time_t max);
+
+/**
  * Does the same as waitm(), but waits for only one object
  *
  * @param events the events to wait for
@@ -112,6 +130,16 @@ int waitm(sWaitObject *objects,size_t objCount);
  * @return 0 on success and a negative error-code if failed
  */
 int wait(uint events,evobj_t object);
+
+/**
+ * The same as wait(), but waits at most <max> milliseconds.
+ *
+ * @param events the events to wait for
+ * @param object the object to wait for
+ * @param max the maximum number of milliseconds to wait (0 = unlimited)
+ * @return 0 on success and a negative error-code if failed
+ */
+int waitUntil(uint events,evobj_t object,time_t max);
 
 /**
  * Notifies the given thread about the given events. If it was waiting for them, it will be

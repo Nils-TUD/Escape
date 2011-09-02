@@ -29,6 +29,4 @@
 #define DEBUGGING 1
 #endif
 
-#define VTERM_COUNT		6
-
 #endif /*ESC_COMMON_H_*/

@@ -27,6 +27,7 @@ int sysc_getThreadCount(sIntrptStackFrame *stack);
 int sysc_startThread(sIntrptStackFrame *stack);
 int sysc_exit(sIntrptStackFrame *stack);
 int sysc_getCycles(sIntrptStackFrame *stack);
+int sysc_alarm(sIntrptStackFrame *stack);
 int sysc_sleep(sIntrptStackFrame *stack);
 int sysc_yield(sIntrptStackFrame *stack);
 int sysc_wait(sIntrptStackFrame *stack);

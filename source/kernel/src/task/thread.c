@@ -397,8 +397,8 @@ bool thread_kill(sThread *t) {
 	sSLNode *n;
 	if(t->tid == INIT_TID)
 		util_panic("Can't kill init-thread!");
-	/* we can't destroy the current thread */
-	if(t == thread_getRunning()) {
+	/* we can't destroy a running thread */
+	if(t->state == ST_RUNNING) {
 		/* remove from event-system */
 		ev_removeThread(t);
 		/* remove from scheduler and ensure that he don't picks us again */

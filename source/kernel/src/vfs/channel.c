@@ -40,7 +40,6 @@
 
 typedef struct {
 	bool closed;
-	klock_t lock;
 	/* a list for sending messages to the driver */
 	sSLList *sendList;
 	/* a list for reading messages from the driver */
@@ -83,7 +82,6 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	chan->recvList = NULL;
 	chan->sendList = NULL;
 	chan->closed = false;
-	chan->lock = 0;
 	node->data = chan;
 	vfs_node_append(parent,node);
 	return node;
@@ -121,7 +119,9 @@ static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,
 
 static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
-	if(node->refCount == 0) {
+	if(node->name == NULL)
+		vfs_node_destroy(node);
+	else if(node->refCount == 0) {
 		/* notify the driver, if it is one */
 		vfs_drv_close(pid,file,node);
 
@@ -139,13 +139,11 @@ static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 }
 
 void vfs_chan_lock(sVFSNode *node) {
-	sChannel *chan = (sChannel*)node->data;
-	klock_aquire(&chan->lock);
+	klock_aquire(&node->lock);
 }
 
 void vfs_chan_unlock(sVFSNode *node) {
-	sChannel *chan = (sChannel*)node->data;
-	klock_release(&chan->lock);
+	klock_release(&node->lock);
 }
 
 bool vfs_chan_hasReply(const sVFSNode *node) {
@@ -164,6 +162,8 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const vo
 	UNUSED(file);
 	sSLList **list;
 	sChannel *chan = (sChannel*)n->data;
+	if(n->name == NULL)
+		return ERR_NODE_DESTROYED;
 
 	/*vid_printf("%d:%s sent msg %d with %d bytes to %s\n",pid,proc_getByPid(pid)->command,id,size,
 			vfs_isDriver(file) ? n->name : n->parent->name);*/
@@ -228,7 +228,14 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 	ssize_t res;
 	sProc *p;
 
-	/* wait until a message arrives */
+	klock_aquire(&node->lock);
+	/* node destroyed? */
+	if(node->name == NULL) {
+		klock_release(&node->lock);
+		return ERR_NODE_DESTROYED;
+	}
+
+	/* determine list and event to use */
 	if(vfs_isDriver(file)) {
 		event = EVI_CLIENT;
 		list = &chan->sendList;
@@ -238,29 +245,29 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 		list = &chan->recvList;
 	}
 
-	klock_aquire(&chan->lock);
+	/* wait until a message arrives */
 	while(sll_length(*list) == 0) {
 		if(!vfs_shouldBlock(file)) {
-			klock_release(&chan->lock);
+			klock_release(&node->lock);
 			return ERR_WOULD_BLOCK;
 		}
 		/* if the channel has already been closed, there is no hope of success here */
 		if(chan->closed) {
-			klock_release(&chan->lock);
+			klock_release(&node->lock);
 			return ERR_INVALID_FILE;
 		}
 		ev_wait(t,event,(evobj_t)node);
-		klock_release(&chan->lock);
+		klock_release(&node->lock);
 
 		thread_switch();
 
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
 		/* if we waked up and there is no message, the driver probably died */
-		klock_aquire(&chan->lock);
-		if(event == EVI_RECEIVED_MSG && sll_length(*list) == 0) {
-			klock_release(&chan->lock);
-			return ERR_DRIVER_DIED;
+		klock_aquire(&node->lock);
+		if(node->name == NULL) {
+			klock_release(&node->lock);
+			return ERR_NODE_DESTROYED;
 		}
 	}
 
@@ -294,14 +301,14 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 
 	res = msg->length;
 	sll_removeFirst(*list);
-	klock_release(&chan->lock);
-	cache_free(msg);
 	if(event == EVI_CLIENT)
 		vfs_server_remMsg(node->parent);
+	klock_release(&node->lock);
+	cache_free(msg);
 	return res;
 
 invArgs:
-	klock_release(&chan->lock);
+	klock_release(&node->lock);
 	cache_free(msg);
 	return ERR_INVALID_ARGS;
 }

@@ -52,7 +52,7 @@ static uint8_t initloader[] = {
 
 void bspstart(sBootInfo *mbp) {
 	/* init the kernel */
-	boot_init(mbp,true);
+	boot_start(mbp);
 }
 
 uintptr_t smpstart(void) {

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: vidmain.c 1001 2011-07-30 18:56:36Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -51,7 +51,7 @@ typedef struct {
 } sVidMode;
 
 static uint16_t vid_getMode(void);
-static int vid_setMode(void);
+static int vid_setMode(bool clear);
 static void vid_setCursor(uint row,uint col);
 
 static sVidMode modes[] = {
@@ -81,10 +81,9 @@ int main(void) {
 	if(requestIOPorts(CURSOR_PORT_INDEX,2) < 0)
 		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
-	/* clear screen */
+	/* get video-mode and remember it */
 	modes[0].no = vid_getMode();
-	vid_setMode();
-	memclear(videoData,mode->cols * mode->rows * 2);
+	vid_setMode(false);
 
 	/* wait for messages */
 	while(1) {
@@ -107,7 +106,7 @@ int main(void) {
 				break;
 
 				case MSG_VID_SETMODE: {
-					msg.args.arg1 = vid_setMode();
+					msg.args.arg1 = vid_setMode(true);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
@@ -153,10 +152,13 @@ static uint16_t vid_getMode(void) {
 	return regs.ax & 0xFF;
 }
 
-static int vid_setMode(void) {
+static int vid_setMode(bool clear) {
 	sVM86Regs regs;
 	memclear(&regs,sizeof(regs));
 	regs.ax = mode->no;
+	/* don't clear the screen */
+	if(!clear)
+		regs.ax |= 0x80;
 	return vm86int(0x10,&regs,NULL);
 }
 

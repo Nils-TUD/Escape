@@ -79,11 +79,22 @@ void *getThreadVal(uint key) {
 	return NULL;
 }
 
+int waitm(sWaitObject *objects,size_t objCount) {
+	return waitmUntil(objects,objCount,0);
+}
+
 int wait(uint events,evobj_t object) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;
-	return waitm(&obj,1);
+	return waitmUntil(&obj,1,0);
+}
+
+int waitUntil(uint events,evobj_t object,time_t max) {
+	sWaitObject obj;
+	obj.events = events;
+	obj.object = object;
+	return waitmUntil(&obj,1,max);
 }
 
 int lock(uint ident,uint flags) {

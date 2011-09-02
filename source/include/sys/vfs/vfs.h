@@ -410,13 +410,15 @@ file_t vfs_createDriver(pid_t pid,const char *name,uint flags);
  *
  * @param objects the array of wait-objects (will be changed; files -> nodes)
  * @param objCount the number of wait-objects
+ * @param maxWaitTime the maximum time to wait (in milliseconds)
  * @param block whether we should wait if necessary (otherwise it will be checked only whether
  *  we can wait and if so, ERR_WOULD_BLOCKED is returned. if not, 0 is returned.)
  * @param pid the process-id for lock_release (KERNEL_PID = don't call it)
  * @param ident the ident for lock_release
  * @return 0 on success
  */
-int vfs_waitFor(sWaitObject *objects,size_t objCount,bool block,pid_t pid,ulong ident);
+int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
+		pid_t pid,ulong ident);
 
 /**
  * For drivers: Looks whether a client wants to be served and return the node-number. If

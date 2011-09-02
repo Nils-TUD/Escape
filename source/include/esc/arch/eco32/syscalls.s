@@ -17,36 +17,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-# macros for the different syscall-types (void / ret-value, arg-count, error-handling)
+# macros for the different syscall-types, depending on the argument-number
 
-.macro SYSC_VOID_0ARGS name syscno
-.global \name
-.type \name, @function
-\name:
-	add		$2,$0,\syscno					# set syscall-number
-	trap
-	jr		$31
-.endm
-
-.macro SYSC_VOID_1ARGS name syscno
-.global \name
-.type \name, @function
-\name:
-	add		$2,$0,\syscno					# set syscall-number
-	trap
-	jr		$31
-.endm
-
-.macro SYSC_RET_0ARGS name syscno
-.global \name
-.type \name, @function
-\name:
-	add		$2,$0,\syscno					# set syscall-number
-	trap
-	jr		$31
-.endm
-
-.macro SYSC_RET_0ARGS_ERR name syscno
+.macro SYSC_0ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -60,7 +33,7 @@
 	jr		$31
 .endm
 
-.macro SYSC_RET_1ARGS_ERR name syscno
+.macro SYSC_1ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -74,7 +47,7 @@
 	jr		$31
 .endm
 
-.macro SYSC_RET_2ARGS_ERR name syscno
+.macro SYSC_2ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -88,7 +61,7 @@
 	jr		$31
 .endm
 
-.macro SYSC_RET_3ARGS_ERR name syscno
+.macro SYSC_3ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -102,7 +75,7 @@
 	jr		$31
 .endm
 
-.macro SYSC_RET_4ARGS_ERR name syscno
+.macro SYSC_4ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -116,7 +89,7 @@
 	jr		$31
 .endm
 
-.macro SYSC_RET_5ARGS_ERR name syscno
+.macro SYSC_5ARGS name syscno
 .global \name
 .type \name, @function
 \name:
@@ -131,7 +104,7 @@
 	jr		$31
 .endm
 
-.macro SYSC_RET_7ARGS_ERR name syscno
+.macro SYSC_7ARGS name syscno
 .global \name
 .type \name, @function
 \name:

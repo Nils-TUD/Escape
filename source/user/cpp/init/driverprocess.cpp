@@ -24,32 +24,34 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <iostream>
-#include "idriver.h"
 
-sGroup *driver::groupList = NULL;
+#include "initerror.h"
+#include "driverprocess.h"
 
-void driver::load() {
+sGroup *DriverProcess::groupList = NULL;
+
+void DriverProcess::load() {
 	// load groups from file, if not already done
 	if(groupList == NULL) {
 		size_t count;
 		groupList = group_parseFromFile(GROUPS_PATH,&count);
 		if(!groupList)
-			throw load_error("Unable to load groups from file");
+			throw init_error("Unable to load groups from file");
 	}
 
 	// now load the driver
-	std::string path = string("/sbin/") + _name;
-	int child = fork();
-	if(child == 0) {
+	std::string path = string("/sbin/") + name();
+	_pid = fork();
+	if(_pid == 0) {
 		exec(path.c_str(),NULL);
 		cerr << "Exec of '" << path << "' failed" << endl;
 		exit(EXIT_FAILURE);
 	}
-	else if(child < 0)
-		throw load_error("fork failed");
+	else if(_pid < 0)
+		throw init_error("fork failed");
 
 	// wait for all specified devices
-	for(std::vector<device>::const_iterator it = _devices.begin(); it != _devices.end(); ++it) {
+	for(std::vector<Device>::const_iterator it = _devices.begin(); it != _devices.end(); ++it) {
 		sFileInfo info;
 		sGroup *g;
 		int res;
@@ -61,41 +63,41 @@ void driver::load() {
 		}
 		while(j++ < MAX_WAIT_RETRIES && res < 0);
 		if(res < 0)
-			throw load_error(string("Max retried reached while waiting for '") + it->name() + "'");
+			throw init_error(string("Max retried reached while waiting for '") + it->name() + "'");
 
 		// set permissions
 		if(chmod(it->name().c_str(),it->permissions()) < 0)
-			throw load_error(string("Unable to set permissions for '") + it->name() + "'");
+			throw init_error(string("Unable to set permissions for '") + it->name() + "'");
 		// set group
 		g = group_getByName(groupList,it->group().c_str());
 		if(!g)
-			throw load_error(string("Unable to find group '") + it->group() + "'");
+			throw init_error(string("Unable to find group '") + it->group() + "'");
 		if(chown(it->name().c_str(),-1,g->gid) < 0)
-			throw load_error(string("Unable to set group for '") + it->name() + "'");
+			throw init_error(string("Unable to set group for '") + it->name() + "'");
 	}
 }
 
-std::istream& operator >>(std::istream& is,device& dev) {
+std::istream& operator >>(std::istream& is,Device& dev) {
 	is >> dev._name;
 	is >> std::oct >> dev._perms;
 	is >> dev._group;
 	return is;
 }
 
-std::istream& operator >>(std::istream& is,driver& drv) {
+std::istream& operator >>(std::istream& is,DriverProcess& drv) {
 	is >> drv._name;
 	while(is.peek() == '\t') {
-		device dev;
+		Device dev;
 		is >> dev;
 		drv._devices.push_back(dev);
 	}
 	return is;
 }
 
-std::ostream& operator <<(std::ostream& os,const driver& drv) {
+std::ostream& operator <<(std::ostream& os,const DriverProcess& drv) {
 	os << drv.name() << '\n';
-	const std::vector<device>& devs = drv.devices();
-	for(std::vector<device>::const_iterator it = devs.begin(); it != devs.end(); ++it) {
+	const std::vector<Device>& devs = drv.devices();
+	for(std::vector<Device>::const_iterator it = devs.begin(); it != devs.end(); ++it) {
 		os << '\t' << it->name() << ' ';
 		os << std::oct << it->permissions() << ' ' << it->group() << '\n';
 	}

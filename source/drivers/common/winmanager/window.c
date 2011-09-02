@@ -329,7 +329,7 @@ void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 	new->height = windows[window].height = height;
 
 	/* clear old position */
-	rects = rectSplit(old,new,&count);
+	rects = rectSubstract(old,new,&count);
 	if(count > 0) {
 		/* if there is an intersection, use the splitted parts */
 		for(i = 0; i < count; i++) {
@@ -447,7 +447,7 @@ static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t 
 		wr.width = w->width;
 		wr.height = w->height;
 		/* split r by the rectangle */
-		rects = rectSplit(r,&wr,&count);
+		rects = rectSubstract(r,&wr,&count);
 
 		/* the window has to repaint the intersection, if there is any */
 		inter = (sRectangle*)malloc(sizeof(sRectangle));

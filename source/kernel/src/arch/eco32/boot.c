@@ -52,11 +52,35 @@
 
 static const char **boot_parseArgs(const char *line,int *argc);
 
+static const sBootTask tasks[] = {
+	{"Initializing physical memory-management...",pmem_init},
+	{"Initializing paging...",paging_init},
+	{"Preinit processes...",proc_preinit},
+	{"Initializing dynarray...",dyna_init},
+	{"Initializing SMP...",smp_init},
+	{"Initializing VFS...",vfs_init},
+	{"Initializing event system...",ev_init},
+	{"Initializing processes...",proc_init},
+	{"Initializing scheduler...",sched_init},
+#ifndef TESTING
+	{"Start logging to VFS...",log_vfsIsReady},
+#endif
+	{"Initializing virtual memory-management...",vmm_init},
+	{"Initializing copy-on-write...",cow_init},
+	{"Initializing shared memory...",shm_init},
+	{"Initializing timer...",timer_init},
+	{"Initializing signal handling...",sig_init},
+};
+const sBootTaskList bootTaskList = {
+	.tasks = tasks,
+	.count = ARRAY_SIZE(tasks)
+};
+
 static bool loadedMods = false;
 static sLoadProg progs[MAX_PROG_COUNT];
 static sBootInfo info;
 
-void boot_init(const sBootInfo *binfo,bool logToVFS) {
+void boot_arch_start(sBootInfo *binfo) {
 	int argc;
 	const char **argv;
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
@@ -70,64 +94,6 @@ void boot_init(const sBootInfo *binfo,bool logToVFS) {
 	/* parse the boot parameter */
 	argv = boot_parseArgs(binfo->progs[0].command,&argc);
 	conf_parseBootParams(argc,argv);
-
-#if DEBUGGING
-	boot_print();
-#endif
-
-	/* mm */
-	vid_printf("Initializing physical memory-management...");
-	pmem_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* paging */
-	vid_printf("Initializing paging...");
-	paging_init();
-	proc_preinit();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* smp */
-	vid_printf("Initializing SMP...");
-	dyna_init();
-	smp_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* vfs */
-	vid_printf("Initializing VFS...");
-	vfs_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* processes */
-	vid_printf("Initializing process-management...");
-	ev_init();
-	proc_init();
-	sched_init();
-	/* the process and thread-stuff has to be ready, too ... */
-	if(logToVFS)
-		log_vfsIsReady();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* vmm */
-	vid_printf("Initializing virtual memory management...");
-	vmm_init();
-	cow_init();
-	shm_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* timer */
-	vid_printf("Initializing timer...");
-	timer_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* signals */
-	vid_printf("Initializing signal-handling...");
-	sig_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-#if DEBUGGING
-	vid_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
-			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
-#endif
 }
 
 const sBootInfo *boot_getInfo(void) {
@@ -181,14 +147,13 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 			util_panic("Unable to clone process for boot-program %s: %d\n",progs[i].command,child);
 
 		/* wait until the driver is registered */
-		vid_printf("Loading '%s'...\n",argv[0]);
 		/* don't create a pipe- or driver-usage-node here */
 		while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
 			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
 			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
-			timer_sleepFor(thread_getRunning()->tid,20);
+			timer_sleepFor(thread_getRunning()->tid,20,true);
 			thread_switch();
 		}
 	}

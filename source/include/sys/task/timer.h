@@ -64,9 +64,11 @@ time_t timer_getTimestamp(void);
  *
  * @param tid the thread-id
  * @param msecs the number of milliseconds to wait
+ * @param block whether to block the thread or not (if so, it will be waked up, otherwise it gets
+ *  SIG_ALARM)
  * @return 0 on success
  */
-int timer_sleepFor(tid_t tid,time_t msecs);
+int timer_sleepFor(tid_t tid,time_t msecs,bool block);
 
 /**
  * Removes the given thread from the timer

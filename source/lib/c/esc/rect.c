@@ -35,7 +35,7 @@ bool rectContains(sRectangle *r,int x,int y) {
 		y >= r->y && y < r->y + r->height;
 }
 
-sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,size_t *rectCount) {
+sRectangle **rectSubstract(sRectangle *r1,sRectangle *r2,size_t *rectCount) {
 	size_t i,orgCount,count = 0;
 	sRectangle **res;
 	bool other = false;

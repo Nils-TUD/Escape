@@ -53,16 +53,27 @@ void device_init(sATADevice *device) {
 		device->info.capabilities.DMA = 0;
 	}
 
-	/* if it is present, read the partition-table */
 	device->present = 1;
 	if(!device->info.general.isATAPI) {
 		device->secSize = ATA_SEC_SIZE;
 		device->rwHandler = ata_readWrite;
 		ATA_LOG("Device %d is an ATA-device",device->id);
+		/* read the partition-table */
 		if(!ata_readWrite(device,OP_READ,buffer,0,device->secSize,1)) {
-			device->present = 0;
-			ATA_LOG("Device %d: Unable to read partition-table!",device->id);
-			return;
+			if(device->ctrl->useDma && device->info.capabilities.DMA) {
+				ATA_LOG("Device %d: Reading the partition table with DMA failed. Disabling DMA.",
+						device->id);
+				device->info.capabilities.DMA = 0;
+			}
+			else {
+				ATA_LOG("Device %d: Reading the partition table with PIO failed. Retrying.",
+						device->id);
+			}
+			if(!ata_readWrite(device,OP_READ,buffer,0,device->secSize,1)) {
+				device->present = 0;
+				ATA_LOG("Device %d: Unable to read partition-table! Disabling device",device->id);
+				return;
+			}
 		}
 
 		/* copy partitions to mem */
@@ -70,13 +81,31 @@ void device_init(sATADevice *device) {
 		part_fillPartitions(device->partTable,buffer);
 	}
 	else {
+		size_t cap;
 		device->secSize = ATAPI_SEC_SIZE;
 		device->rwHandler = atapi_read;
 		/* pretend that the cd has 1 partition */
 		device->partTable[0].present = 1;
 		device->partTable[0].start = 0;
-		device->partTable[0].size = atapi_getCapacity(device);
+		cap = atapi_getCapacity(device);
 		ATA_LOG("Device %d is an ATAPI-device",device->id);
+		if(cap == 0) {
+			if(device->ctrl->useDma && device->info.capabilities.DMA) {
+				ATA_LOG("Device %d: Reading the capacity with DMA failed. Disabling DMA.",device->id);
+				device->info.capabilities.DMA = 0;
+				atapi_softReset(device);
+			}
+			else {
+				ATA_LOG("Device %d: Reading the capacity with PIO failed. Retrying.",device->id);
+			}
+			cap = atapi_getCapacity(device);
+			if(cap == 0) {
+				ATA_LOG("Device %d: Reading the capacity failed again. Disabling device.",device->id);
+				device->present = 0;
+				return;
+			}
+		}
+		device->partTable[0].size = cap;
 	}
 
 	if(device->ctrl->useDma && device->info.capabilities.DMA) {
@@ -90,6 +119,7 @@ void device_init(sATADevice *device) {
 static bool device_identify(sATADevice *device,uint cmd) {
 	uint8_t status;
 	uint16_t *data;
+	time_t timeout;
 	sATAController *ctrl = device->ctrl;
 
 	ATA_PR2("Selecting device %d",device->id);
@@ -121,10 +151,12 @@ static bool device_identify(sATADevice *device,uint cmd) {
 		}
 		/* wait a bit */
 		ctrl_wait(ctrl);
+
 		/* wait until ready (or error) */
-		res = ctrl_waitUntil(ctrl,ATA_WAIT_TIMEOUT,ATA_WAIT_SLEEPTIME,CMD_ST_DRQ,CMD_ST_BUSY);
+		timeout = cmd == COMMAND_IDENTIFY_PACKET ? ATAPI_WAIT_TIMEOUT : ATA_WAIT_TIMEOUT;
+		res = ctrl_waitUntil(ctrl,timeout,ATA_WAIT_SLEEPTIME,CMD_ST_DRQ,CMD_ST_BUSY);
 		if(res == -1) {
-			ATA_LOG("Device %d: Timeout reached, assuming its not present",device->id);
+			ATA_LOG("Device %d: Timeout reached while waiting for device getting ready",device->id);
 			return false;
 		}
 		if(res != 0) {
@@ -132,10 +164,21 @@ static bool device_identify(sATADevice *device,uint cmd) {
 			return false;
 		}
 
+		/* device is ready, read data */
 		ATA_PR2("Reading information about device");
-		/* device ready */
 		data = (uint16_t*)&device->info;
 		ctrl_inwords(ctrl,ATA_REG_DATA,data,256);
+
+		/* wait until DRQ and BUSY bits are unset */
+		res = ctrl_waitUntil(ctrl,ATA_WAIT_TIMEOUT,ATA_WAIT_SLEEPTIME,0,CMD_ST_DRQ | CMD_ST_BUSY);
+		if(res == -1) {
+			ATA_LOG("Device %d: Timeout reached while waiting for DRQ bit to clear",device->id);
+			return false;
+		}
+		if(res != 0) {
+			ATA_LOG("Device %d: Error %#x. Assuming its not present",device->id,res);
+			return false;
+		}
 
 		/* we don't support CHS atm */
 		if(device->info.capabilities.LBA == 0) {

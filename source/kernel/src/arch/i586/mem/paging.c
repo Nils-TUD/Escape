@@ -157,8 +157,8 @@ static sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] A_ALIGNED(PAGE_SIZE);
 /* the page-tables for process 0 (two because our mm-stack will get large if we have a lot physmem) */
 static sPTEntry proc0PT1[PAGE_SIZE / sizeof(sPTEntry)] A_ALIGNED(PAGE_SIZE);
 static sPTEntry proc0PT2[PAGE_SIZE / sizeof(sPTEntry)] A_ALIGNED(PAGE_SIZE);
-static klock_t tmpAreaLock;
 static klock_t tmpMapLock;
+static klock_t pagingLock;
 
 void paging_init(void) {
 	sPDEntry *pd,*pde;
@@ -265,6 +265,7 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 
 uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {
 	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE - 1);
+	/* the temp-map-area is shared */
 	klock_aquire(&tmpMapLock);
 	paging_map(TEMP_MAP_AREA + PAGE_SIZE,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	return TEMP_MAP_AREA + PAGE_SIZE;
@@ -280,13 +281,10 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	frameno_t pdirFrame;
 	sPDEntry *pd,*npd,*tpd;
 	tPageDir *cur = paging_getPageDir();
-	klock_aquire(&cur->lock);
+	klock_aquire(&pagingLock);
 
 	/* we need a new page-directory */
 	pdirFrame = pmem_allocate();
-
-	/* the temp-area is located in a shared pagetable */
-	klock_aquire(&tmpAreaLock);
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
 	pd = (sPDEntry*)PAGE_DIR_AREA;
@@ -318,14 +316,12 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	memclear((void*)kstackAddr,PAGE_SIZE);
 
 	paging_doUnmapFrom(cur,TEMP_MAP_AREA,1,false);
-	klock_release(&tmpAreaLock);
 
 	/* one final flush to ensure everything is correct */
 	paging_flushTLB();
-	pdir->lock = 0;
 	pdir->own = pdirFrame << PAGE_SIZE_SHIFT;
 	pdir->other = 0;
-	klock_release(&cur->lock);
+	klock_release(&pagingLock);
 	return 0;
 }
 
@@ -334,7 +330,7 @@ uintptr_t paging_createKernelStack(tPageDir *pdir) {
 	size_t i;
 	sPTEntry *pt;
 	sPDEntry *pd;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	addr = 0;
 	ptables = paging_getPTables(pdir->own);
 	pd = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
@@ -352,7 +348,7 @@ uintptr_t paging_createKernelStack(tPageDir *pdir) {
 		addr = KERNEL_STACK_AREA + (PT_ENTRY_COUNT - 1) * PAGE_SIZE;
 	assert(addr != 0);
 	paging_doMapTo(pdir,addr,NULL,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	return addr;
 }
 
@@ -360,7 +356,7 @@ void paging_destroyPDir(tPageDir *pdir) {
 	uintptr_t ptables;
 	sPDEntry *pde;
 	assert(pdir != paging_getPageDir());
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	ptables = paging_getPTables(pdir->own);
 	/* free page-table for kernel-stack */
 	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
@@ -369,7 +365,7 @@ void paging_destroyPDir(tPageDir *pdir) {
 	pmem_free(pde->ptFrameNo);
 	/* free page-dir */
 	pmem_free(pdir->own >> PAGE_SIZE_SHIFT);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 }
 
 bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {
@@ -377,14 +373,14 @@ bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {
 	sPTEntry *pt;
 	sPDEntry *pde;
 	bool res = false;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	ptables = paging_getPTables(pdir->own);
 	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(virt);
 	if(pde->present && pde->exists) {
 		pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 		res = pt->present && pt->exists;
 	}
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	return res;
 }
 
@@ -393,51 +389,45 @@ frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 	frameno_t res;
 	sPTEntry *pt;
 	sPDEntry *pde;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	ptables = paging_getPTables(pdir->own);
 	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(virt);
 	assert(pde->present && pde->exists);
 	pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	assert(pt->present && pt->exists);
 	res = pt->frameNumber;
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	return res;
 }
 
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	UNUSED(regFlags);
 	tPageDir *pdir = paging_getPageDir();
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	frameno_t frame = pmem_allocate();
-	klock_aquire(&tmpAreaLock);
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
-	klock_release(&tmpAreaLock);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	return frame;
 }
 
 void paging_copyToFrame(frameno_t frame,const void *src) {
 	tPageDir *pdir = paging_getPageDir();
-	klock_aquire(&pdir->lock);
-	klock_aquire(&tmpAreaLock);
+	klock_aquire(&pagingLock);
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,src,PAGE_SIZE);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
-	klock_release(&tmpAreaLock);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 }
 
 void paging_copyFromFrame(frameno_t frame,void *dst) {
 	tPageDir *pdir = paging_getPageDir();
-	klock_aquire(&pdir->lock);
-	klock_aquire(&tmpAreaLock);
+	klock_aquire(&pagingLock);
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy(dst,(void*)TEMP_MAP_AREA,PAGE_SIZE);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
-	klock_release(&tmpAreaLock);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 }
 
 void paging_copyToUser(void *dst,const void *src,size_t count) {
@@ -453,8 +443,7 @@ sAllocStats paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uint
 	sAllocStats stats = {0,0};
 	uintptr_t srctables;
 	tPageDir *cur = paging_getPageDir();
-	klock_aquire(&src->lock);
-	klock_aquire(&dst->lock);
+	klock_aquire(&pagingLock);
 	srctables = paging_getPTables(src->own);
 	assert(src != dst && (src == cur || dst == cur));
 	while(count-- > 0) {
@@ -485,8 +474,7 @@ sAllocStats paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uint
 		virtSrc += PAGE_SIZE;
 		virtDst += PAGE_SIZE;
 	}
-	klock_release(&dst->lock);
-	klock_release(&src->lock);
+	klock_release(&pagingLock);
 	return stats;
 }
 
@@ -497,9 +485,9 @@ sAllocStats paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint 
 sAllocStats paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,size_t count,
 		uint flags) {
 	sAllocStats stats;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	stats = paging_doMapTo(pdir,virt,frames,count,flags);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	return stats;
 }
 
@@ -574,9 +562,9 @@ sAllocStats paging_unmap(uintptr_t virt,size_t count,bool freeFrames) {
 
 sAllocStats paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames) {
 	sAllocStats stats;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	stats = paging_doUnmapFrom(pdir,virt,count,freeFrames);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	return stats;
 }
 
@@ -625,14 +613,14 @@ size_t paging_getPTableCount(tPageDir *pdir) {
 	size_t i,count = 0;
 	uintptr_t ptables;
 	sPDEntry *pdirAddr;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	ptables = paging_getPTables(pdir->own);
 	pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
 		if(pdirAddr[i].present)
 			count++;
 	}
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	return count;
 }
 
@@ -640,7 +628,7 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 	size_t i,j;
 	uintptr_t ptables;
 	sPDEntry *pdirAddr;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	ptables = paging_getPTables(pdir->own);
 	/* note that we release the lock here because prf_sprintf() might cause the cache-module to
 	 * allocate more memory and use paging to map it. therefore, we would cause a deadlock if
@@ -649,7 +637,7 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 	 * are a delivery of wrong information to the user and a segfault, which would kill the
 	 * process. Of course, only the process that is reading the information could cause these
 	 * problems. Therefore, its not really a bad thing. */
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
 		if(pdirAddr[i].present) {
@@ -682,9 +670,9 @@ static uintptr_t paging_getPTables(uintptr_t pdir) {
 	sPDEntry *pde;
 	if(pdir == cur->own)
 		return MAPPED_PTS_START;
-	/* TODO if(pdir == cur->other)
-		return TMPMAP_PTS_START;*/
-	/* map page-tables to other area*/
+	if(pdir == cur->other)
+		return TMPMAP_PTS_START;
+	/* map page-tables to other area */
 	pde = ((sPDEntry*)PAGE_DIR_AREA) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
 	pde->present = true;
 	pde->exists = true;
@@ -751,9 +739,9 @@ size_t paging_dbg_getPageCount(void) {
 void paging_printPageOf(tPageDir *pdir,uintptr_t virt) {
 	uintptr_t ptables;
 	sPDEntry *pdirAddr;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	ptables = paging_getPTables(pdir->own);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
 		sPTEntry *page = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
@@ -771,9 +759,9 @@ void paging_printPDir(tPageDir *pdir,uint parts) {
 	size_t i;
 	uintptr_t ptables;
 	sPDEntry *pdirAddr;
-	klock_aquire(&pdir->lock);
+	klock_aquire(&pagingLock);
 	ptables = paging_getPTables(pdir->own);
-	klock_release(&pdir->lock);
+	klock_release(&pagingLock);
 	pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	vid_printf("page-dir @ %p:\n",pdirAddr);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {

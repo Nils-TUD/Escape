@@ -159,21 +159,21 @@ size_t cow_getFrmCount(void) {
 	frameno_t *frames;
 	klock_aquire(&cowLock);
 	frames = (frameno_t*)cache_calloc(sll_length(cowFrames),sizeof(frameno_t));
-	if(!frames)
-		return 0;
-	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
-		sCOW *cow = (sCOW*)n->data;
-		bool found = false;
-		for(i = 0; i < count; i++) {
-			if(frames[i] == cow->frameNumber) {
-				found = true;
-				break;
+	if(frames) {
+		for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
+			sCOW *cow = (sCOW*)n->data;
+			bool found = false;
+			for(i = 0; i < count; i++) {
+				if(frames[i] == cow->frameNumber) {
+					found = true;
+					break;
+				}
 			}
+			if(!found)
+				frames[count++] = cow->frameNumber;
 		}
-		if(!found)
-			frames[count++] = cow->frameNumber;
+		cache_free(frames);
 	}
-	cache_free(frames);
 	klock_release(&cowLock);
 	return count;
 }

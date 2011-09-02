@@ -26,6 +26,7 @@
 #include <sys/video.h>
 #include <esc/esccodes.h>
 #include <string.h>
+#include <assert.h>
 #include <stdarg.h>
 
 #define VIDEO_BASE			0x8005000000000000
@@ -51,6 +52,12 @@ static ulong targets = TARGET_SCREEN | TARGET_LOG;
 void vid_init(void) {
 	vid_clearScreen();
 	color = (BLACK << 4) | WHITE;
+}
+
+void vid_goto(ushort r,ushort c) {
+	assert(r < VID_ROWS && c < VID_COLS);
+	col = c;
+	row = r;
 }
 
 void vid_backup(char *buffer,ushort *r,ushort *c) {
@@ -127,7 +134,7 @@ static void vid_putchar(char c) {
 			vid_putchar(' ');
 	}
 	else {
-		*video = color << 8 | c;
+		*video = color << 8 | (unsigned char)c;
 		col++;
 	}
 }

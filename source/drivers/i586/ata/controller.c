@@ -157,9 +157,9 @@ void ctrl_outb(sATAController *ctrl,uint16_t reg,uint8_t value) {
 }
 
 void ctrl_outwords(sATAController *ctrl,uint16_t reg,const uint16_t *buf,size_t count) {
-	/* TODO according to the wiki, we shouldn't use that because the device needs a small delay
-	 * between the words */
-	outWordStr(ctrl->portBase + reg,buf,count);
+	size_t i;
+	for(i = 0; i < count; i++)
+		outWord(ctrl->portBase + reg,buf[i]);
 }
 
 uint8_t ctrl_inb(sATAController *ctrl,uint16_t reg) {
@@ -167,7 +167,9 @@ uint8_t ctrl_inb(sATAController *ctrl,uint16_t reg) {
 }
 
 void ctrl_inwords(sATAController *ctrl,uint16_t reg,uint16_t *buf,size_t count) {
-	inWordStr(ctrl->portBase + reg,buf,count);
+	size_t i;
+	for(i = 0; i < count; i++)
+		buf[i] = inWord(ctrl->portBase + reg);
 }
 
 void ctrl_softReset(sATAController *ctrl) {

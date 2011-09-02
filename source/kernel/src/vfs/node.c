@@ -80,7 +80,7 @@ sVFSNode *vfs_node_get(inode_t nodeNo) {
 	return (sVFSNode*)dyna_getObj(&nodeArray,nodeNo);
 }
 
-static sVFSNode *vfs_node_openDirOf(inode_t nodeNo) {
+static sVFSNode *vfs_node_openDirOf(inode_t nodeNo,bool *isValid) {
 	sVFSNode *dir = vfs_node_request(nodeNo);
 	sVFSNode *parent;
 	if(dir) {
@@ -90,13 +90,14 @@ static sVFSNode *vfs_node_openDirOf(inode_t nodeNo) {
 			parent = vfs_link_resolve(dir);
 			vfs_node_release(dir);
 			klock_aquire(&parent->lock);
+			*isValid = parent->name != NULL;
 		}
 		return parent->firstChild;
 	}
 	return NULL;
 }
 
-sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked) {
+sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked,bool *isValid) {
 	sVFSNode *parent;
 	if(!S_ISLNK(dir->mode))
 		parent = dir;
@@ -104,6 +105,7 @@ sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked) {
 		parent = vfs_link_resolve(dir);
 	if(locked)
 		klock_aquire(&parent->lock);
+	*isValid = parent->name != NULL;
 	return parent->firstChild;
 }
 
@@ -184,14 +186,13 @@ int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
 	return res;
 }
 
-char *vfs_node_getPath(inode_t nodeNo) {
+const char *vfs_node_getPath(inode_t nodeNo) {
 	static char path[MAX_PATH_LEN];
 	size_t nlen,len = 0,total = 0;
 	sVFSNode *node = vfs_node_get(nodeNo);
 	sVFSNode *n = node;
-	assert(vfs_node_isValid(nodeNo));
-	/* the root-node of the whole vfs has no path */
-	vassert(n->parent != NULL,"node->parent == NULL");
+	if(n->name == NULL)
+		return "<destroyed>";
 
 	while(n->parent != NULL) {
 		/* name + slash */
@@ -225,6 +226,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 	/* at the beginning, t might be NULL */
 	pid_t pid = t ? t->proc->pid : KERNEL_PID;
 	int pos = 0,err,depth,lastdepth;
+	bool isValid;
 	if(created)
 		*created = false;
 
@@ -245,50 +247,56 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 	depth = 0;
 	lastdepth = -1;
 	dir = n;
-	n = vfs_node_openDir(dir,true);
-	while(n != NULL) {
-		/* go to next '/' and check for invalid chars */
-		if(depth != lastdepth) {
-			char c;
-			/* check if we can access this directory */
-			if((err = vfs_hasAccess(pid,dir,VFS_EXEC)) < 0)
-				goto done;
+	n = vfs_node_openDir(dir,true,&isValid);
+	if(isValid) {
+		while(n != NULL) {
+			/* go to next '/' and check for invalid chars */
+			if(depth != lastdepth) {
+				char c;
+				/* check if we can access this directory */
+				if((err = vfs_hasAccess(pid,dir,VFS_EXEC)) < 0)
+					goto done;
 
-			pos = 0;
-			while((c = path[pos]) && c != '/') {
-				if((c != ' ' && isspace(c)) || !isprint(c)) {
-					err = ERR_INVALID_PATH;
+				pos = 0;
+				while((c = path[pos]) && c != '/') {
+					if((c != ' ' && isspace(c)) || !isprint(c)) {
+						err = ERR_INVALID_PATH;
+						goto done;
+					}
+					pos++;
+				}
+				lastdepth = depth;
+			}
+
+			if((int)n->nameLen == pos && strncmp(n->name,path,pos) == 0) {
+				path += pos;
+				/* finished? */
+				if(!*path)
+					break;
+
+				/* skip slashes */
+				while(*path == '/')
+					path++;
+				/* "/" at the end is optional */
+				if(!*path)
+					break;
+
+				if(IS_DRIVER(n->mode))
+					break;
+
+				/* move to childs of this node */
+				vfs_node_closeDir(dir,true);
+				dir = n;
+				n = vfs_node_openDir(dir,true,&isValid);
+				if(!isValid) {
+					err = ERR_NODE_DESTROYED;
 					goto done;
 				}
-				pos++;
+				depth++;
+				continue;
 			}
-			lastdepth = depth;
+			n = n->next;
 		}
-
-		if((int)n->nameLen == pos && strncmp(n->name,path,pos) == 0) {
-			path += pos;
-			/* finished? */
-			if(!*path)
-				break;
-
-			/* skip slashes */
-			while(*path == '/')
-				path++;
-			/* "/" at the end is optional */
-			if(!*path)
-				break;
-
-			if(IS_DRIVER(n->mode))
-				break;
-
-			/* move to childs of this node */
-			vfs_node_closeDir(dir,true);
-			dir = n;
-			n = vfs_node_openDir(dir,true);
-			depth++;
-			continue;
-		}
-		n = n->next;
 	}
 
 	err = 0;
@@ -351,14 +359,17 @@ void vfs_node_dirname(char *path,size_t len) {
 }
 
 sVFSNode *vfs_node_findInDir(inode_t nodeNo,const char *name,size_t nameLen) {
+	bool isValid;
 	sVFSNode *res = NULL;
-	sVFSNode *n = vfs_node_openDirOf(nodeNo);
-	while(n != NULL) {
-		if(n->nameLen == nameLen && strncmp(n->name,name,nameLen) == 0) {
-			res = n;
-			break;
+	sVFSNode *n = vfs_node_openDirOf(nodeNo,&isValid);
+	if(isValid) {
+		while(n != NULL) {
+			if(n->nameLen == nameLen && strncmp(n->name,name,nameLen) == 0) {
+				res = n;
+				break;
+			}
+			n = n->next;
 		}
-		n = n->next;
 	}
 	vfs_node_closeDir(vfs_node_get(nodeNo),true);
 	return res;
@@ -408,6 +419,7 @@ void vfs_node_append(sVFSNode *parent,sVFSNode *node) {
 
 void vfs_node_destroy(sVFSNode *n) {
 	/* remove childs */
+	sVFSNode *parent;
 	sVFSNode *tn;
 	sVFSNode *child;
 	child = n->firstChild;
@@ -420,31 +432,45 @@ void vfs_node_destroy(sVFSNode *n) {
 	/* aquire both locks before n->destroy(). we can't destroy the node-data without lock because
 	 * otherwise one could access it before the node is removed from the tree */
 	klock_aquire(&n->lock);
-	if(n->parent)
-		klock_aquire(&n->parent->lock);
+	parent = n->parent;
+	if(parent)
+		klock_aquire(&parent->lock);
 
-	/* let the node clean up */
-	if(n->destroy)
-		n->destroy(n);
+	/* take care that we don't destroy the node twice */
+	if(n->name) {
+		/* let the node clean up */
+		if(n->destroy)
+			n->destroy(n);
 
-	/* free name */
-	if(IS_ON_HEAP(n->name))
-		cache_free((void*)n->name);
+		/* free name */
+		if(IS_ON_HEAP(n->name))
+			cache_free((void*)n->name);
+		*(char**)&n->name = NULL;
 
-	/* remove from parent and release (attention: maybe its not yet in the tree) */
-	if(n->prev)
-		n->prev->next = n->next;
-	else if(n->parent)
-		n->parent->firstChild = n->next;
-	if(n->next)
-		n->next->prev = n->prev;
-	else if(n->parent)
-		n->parent->lastChild = n->prev;
+		/* remove from parent and release (attention: maybe its not yet in the tree) */
+		if(n->prev)
+			n->prev->next = n->next;
+		else if(parent)
+			parent->firstChild = n->next;
+		if(n->next)
+			n->next->prev = n->prev;
+		else if(parent)
+			parent->lastChild = n->prev;
+		n->prev = NULL;
+		n->next = NULL;
+		n->firstChild = NULL;
+		n->lastChild = NULL;
+		*(sVFSNode**)&n->parent = NULL;
+	}
 
-	if(n->parent)
-		klock_release(&n->parent->lock);
+	/* if there are no references anymore, we can put the node on the freelist */
+	/* we will check on every access if the node is still alive; if not, we will close the file
+	 * so that the node will be free'd as soon as the last user has closed it */
+	if(n->refCount == 0)
+		vfs_node_releaseNode(n);
+	if(parent)
+		klock_release(&parent->lock);
 	klock_release(&n->lock);
-	vfs_node_releaseNode(n);
 }
 
 char *vfs_node_getId(pid_t pid) {
@@ -559,15 +585,18 @@ static void vfs_node_releaseNode(sVFSNode *node) {
 
 static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
 	size_t i;
-	sVFSNode *n = vfs_node_openDir(parent,true);
-	while(n != NULL) {
-		for(i = 0;i < level;i++)
-			vid_printf(" |");
-		vid_printf("- %s\n",n->name);
-		/* don't recurse for "." and ".." */
-		if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
-			vfs_node_dbg_doPrintTree(level + 1,n);
-		n = n->next;
+	bool isValid;
+	sVFSNode *n = vfs_node_openDir(parent,true,&isValid);
+	if(isValid) {
+		while(n != NULL) {
+			for(i = 0;i < level;i++)
+				vid_printf(" |");
+			vid_printf("- %s\n",n->name);
+			/* don't recurse for "." and ".." */
+			if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
+				vfs_node_dbg_doPrintTree(level + 1,n);
+			n = n->next;
+		}
 	}
 	vfs_node_closeDir(parent,true);
 }

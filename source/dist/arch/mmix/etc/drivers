@@ -1,11 +1,11 @@
+video
+	/dev/video 0770 output
 zero
 	/dev/zero 0666 root
 random
 	/dev/random 0666 root
 null
 	/dev/null 0666 root
-video
-	/dev/video 0770 output
 keyboard
 	/dev/keyboard 0440 input
 kmmanager

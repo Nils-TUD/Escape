@@ -23,6 +23,21 @@
 #include <esc/common.h>
 #include <sys/intrpt.h>
 
+typedef void (*fBootTask)(void);
+typedef struct {
+	const char *name;
+	fBootTask execute;
+} sBootTask;
+
+typedef struct {
+	const sBootTask *tasks;
+	size_t count;
+	size_t moduleCount;
+} sBootTaskList;
+
+#define MAX_ARG_COUNT			8
+#define MAX_ARG_LEN				64
+
 #ifdef __i386__
 #include <sys/arch/i586/boot.h>
 #endif
@@ -32,6 +47,35 @@
 #ifdef __mmix__
 #include <sys/arch/mmix/boot.h>
 #endif
+
+/**
+ * Starts the boot-process
+ *
+ * @param info the boot-information
+ */
+void boot_start(sBootInfo *info);
+
+/**
+ * Displays the given text that should indicate that a task in the boot-process
+ * has just been started
+ *
+ * @param text the text to display
+ */
+void boot_taskStarted(const char *text);
+
+/**
+ * Finishes an item, i.e. updates the progress-bar
+ */
+void boot_taskFinished(void);
+
+/**
+ * Parses the given line into arguments
+ *
+ * @param line the line to parse
+ * @param argc will be set to the number of found arguments
+ * @return the arguments (statically allocated)
+ */
+const char **boot_parseArgs(const char *line,int *argc);
 
 /**
  * @return size of the kernel (in bytes)

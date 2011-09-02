@@ -34,7 +34,6 @@
 #include <errors.h>
 
 typedef struct {
-	klock_t lock;
 	uint8_t noReader;
 	/* total number of bytes available */
 	size_t total;
@@ -81,7 +80,6 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	}
 	pipe->noReader = false;
 	pipe->total = 0;
-	pipe->lock = 0;
 	sll_init(&pipe->list,slln_allocNode,slln_freeNode);
 	node->data = pipe;
 	vfs_node_append(parent,node);
@@ -96,7 +94,7 @@ static void vfs_pipe_destroy(sVFSNode *n) {
 
 static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node) {
 	/* last usage? */
-	if(node->refCount == 0) {
+	if(node->name == NULL || node->refCount == 0) {
 		/* remove pipe-nodes if there are no references anymore */
 		vfs_node_destroy(node);
 	}
@@ -126,20 +124,30 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 	sProc *p;
 
 	/* wait until data is available */
-	klock_aquire(&pipe->lock);
+	klock_aquire(&node->lock);
+	if(node->name == NULL) {
+		klock_release(&node->lock);
+		return ERR_NODE_DESTROYED;
+	}
 	while(sll_length(&pipe->list) == 0) {
 		ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
-		klock_release(&pipe->lock);
+		klock_release(&node->lock);
+
 		thread_switch();
+
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
-		klock_aquire(&pipe->lock);
+		klock_aquire(&node->lock);
+		if(node->name == NULL) {
+			klock_release(&node->lock);
+			return ERR_NODE_DESTROYED;
+		}
 	}
 
 	data = sll_get(&pipe->list,0);
 	/* empty message indicates EOF */
 	if(data->length == 0) {
-		klock_release(&pipe->lock);
+		klock_release(&node->lock);
 		return 0;
 	}
 
@@ -152,7 +160,7 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 		p = proc_request(t->proc->pid,PLOCK_REGIONS);
 		if(!vmm_makeCopySafe(p,(uint8_t*)buffer + total,byteCount)) {
 			proc_release(p,PLOCK_REGIONS);
-			klock_release(&pipe->lock);
+			klock_release(&node->lock);
 			return ERR_INVALID_ARGS;
 		}
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
@@ -174,19 +182,24 @@ static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buf
 			 * we may cause a deadlock here */
 			ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 			ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
+			klock_release(&node->lock);
+
 			/* TODO we can't accept signals here, right? since we've already read something, which
-			 * we have to deliver to the user. the only way I can imagine would be to put it back..
-			 */
-			klock_release(&pipe->lock);
+			 * we have to deliver to the user. the only way I can imagine would be to put it back.. */
 			thread_switchNoSigs();
-			klock_aquire(&pipe->lock);
+
+			klock_aquire(&node->lock);
+			if(node->name == NULL) {
+				klock_release(&node->lock);
+				return ERR_NODE_DESTROYED;
+			}
 		}
 		data = sll_get(&pipe->list,0);
 		/* keep the empty one for the next transfer */
 		if(data->length == 0)
 			break;
 	}
-	klock_release(&pipe->lock);
+	klock_release(&node->lock);
 	/* wakeup all threads that wait for writing in this node */
 	ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 	return total;
@@ -206,20 +219,31 @@ static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,USER const vo
 
 	/* wait while our node is full */
 	if(count) {
-		klock_aquire(&pipe->lock);
+		klock_aquire(&node->lock);
+		if(node->name == NULL) {
+			klock_release(&node->lock);
+			return ERR_NODE_DESTROYED;
+		}
 		while((pipe->total + count) >= MAX_VFS_FILE_SIZE) {
 			ev_wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
-			klock_release(&pipe->lock);
+			klock_release(&node->lock);
+
 			thread_switchNoSigs();
+
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
-			klock_aquire(&pipe->lock);
+			klock_aquire(&node->lock);
+			if(node->name == NULL) {
+				klock_release(&node->lock);
+				return ERR_NODE_DESTROYED;
+			}
 			if(pipe->noReader) {
+				klock_release(&node->lock);
 				proc_addSignalFor(pid,SIG_PIPE_CLOSED);
 				return ERR_EOF;
 			}
 		}
-		klock_release(&pipe->lock);
+		klock_release(&node->lock);
 	}
 
 	/* build pipe-data */
@@ -235,14 +259,19 @@ static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,USER const vo
 	}
 
 	/* append */
-	klock_aquire(&pipe->lock);
+	klock_aquire(&node->lock);
+	if(node->name == NULL) {
+		klock_release(&node->lock);
+		cache_free(data);
+		return ERR_NODE_DESTROYED;
+	}
 	if(!sll_append(&pipe->list,data)) {
-		klock_release(&pipe->lock);
+		klock_release(&node->lock);
 		cache_free(data);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	pipe->total += count;
-	klock_release(&pipe->lock);
+	klock_release(&node->lock);
 	ev_wakeup(EVI_PIPE_FULL,(evobj_t)node);
 	return count;
 }

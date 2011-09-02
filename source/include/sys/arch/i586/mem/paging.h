@@ -167,7 +167,6 @@
 								(uintptr_t)(addr) < KERNEL_STACK_AREA)
 
 typedef struct {
-	klock_t lock;
 	uintptr_t own;
 	uintptr_t other;
 } tPageDir;

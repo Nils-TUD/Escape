@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 
-#define SIG_COUNT			19
+#define SIG_COUNT			20
 
 /* special signal-handler-addresses */
 #define SIG_IGN				((fSignal)-3)			/* ignore signal */
@@ -48,8 +48,9 @@
 #define SIG_INTRPT_ATA1		14						/* ata1-interrupt */
 #define SIG_INTRPT_ATA2		15						/* ata2-interrupt */
 #define SIG_INTRPT_MOUSE	16						/* mouse-interrupt */
-#define SIG_USR1			17						/* can be used for everything */
-#define SIG_USR2			18						/* can be used for everything */
+#define SIG_ALARM			17						/* for alarm() */
+#define SIG_USR1			18						/* can be used for everything */
+#define SIG_USR2			19						/* can be used for everything */
 
 /* standarg signal-names */
 #define SIGABRT				SIG_KILL

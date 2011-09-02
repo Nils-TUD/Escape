@@ -35,6 +35,9 @@ typedef struct sTimerListener {
 	tid_t tid;
 	/* difference to the previous listener */
 	time_t time;
+	/* if true, the thread is blocked during that time. otherwise it can run and will not be waked
+	 * up, but gets a signal (SIG_ALARM) */
+	bool block;
 	struct sTimerListener *next;
 } sTimerListener;
 
@@ -71,7 +74,7 @@ time_t timer_getTimestamp(void) {
 	return elapsedMsecs;
 }
 
-int timer_sleepFor(tid_t tid,time_t msecs) {
+int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
 	time_t msecDiff;
 	sTimerListener *p,*nl,*l;
 	klock_aquire(&timerLock);
@@ -94,6 +97,7 @@ int timer_sleepFor(tid_t tid,time_t msecs) {
 	}
 
 	l->time = msecs - msecDiff;
+	l->block = block;
 	/* insert entry */
 	l->next = nl;
 	if(p)
@@ -106,7 +110,8 @@ int timer_sleepFor(tid_t tid,time_t msecs) {
 		nl->time -= l->time;
 
 	/* put process to sleep */
-	ev_block(thread_getById(tid));
+	if(block)
+		ev_block(thread_getById(tid));
 	klock_release(&timerLock);
 	return 0;
 }
@@ -159,11 +164,13 @@ bool timer_intrpt(void) {
 		}
 
 		timeInc -= l->time;
-		foundThread = true;
-		/* wake up thread; thread_unblock() is enough here, because we are never waiting for events
-		 * in this case. this saves us from having to disable interrupts in the event-module as
-		 * well */
-		thread_unblock(thread_getById(l->tid));
+		/* wake up thread */
+		if(l->block) {
+			ev_unblock(thread_getById(l->tid));
+			foundThread = true;
+		}
+		else
+			sig_addSignalFor(l->tid,SIG_ALARM);
 		/* remove from list */
 		listener = l->next;
 		tl = l->next;
@@ -191,7 +198,7 @@ void timer_print(void) {
 	time = 0;
 	for(l = listener; l != NULL; l = l->next) {
 		time += l->time;
-		vid_printf("	diff=%d ms, rem=%d ms, tid=%d (%s)\n",l->time,time,l->tid,
-				thread_getById(l->tid)->proc->command);
+		vid_printf("	diff=%d ms, rem=%d ms, block=%d, tid=%d (%s)\n",l->time,time,l->tid,
+				l->block,thread_getById(l->tid)->proc->command);
 	}
 }

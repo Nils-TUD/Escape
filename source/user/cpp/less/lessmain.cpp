@@ -48,12 +48,11 @@ static void printStatus(const char *totalStr);
  * non-word-sized entity, _cin will be put to a non-word-aligned address. but the generated code
  * will access a word there. thus, this can't work. it seems to be a bug in the eco32-specific part
  * of ld? */
-/* for now it works when we make sure that the size of all stuff here together is a multiple of 4 */
 
 static ifstream vt;
 static FILE *in;
 static string filename;
-static int seenEOF;
+static bool seenEOF;
 static vector<string> lines;
 static size_t startLine = 0;
 static sVTSize consSize;

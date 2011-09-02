@@ -18,97 +18,110 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <esc/driver.h>
+#include <esc/messages.h>
+#include <signal.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <sstream>
-#include <fstream>
-#include "idriver.h"
+#include <iostream>
+#include "initerror.h"
+#include "processmanager.h"
 
-static void createLogin(int vterm);
+#define SHUTDOWN_TIMEOUT		3000
 
-static int loginShells[VTERM_COUNT];
+static void sigAlarm(int sig);
+static int driverThread(void *arg);
+
+static sMsg msg;
+static ProcessManager pm;
+static bool shuttingDown = false;
+static bool timeout = false;
 
 int main(void) {
-	sExitState state;
-	if(getpid() != 0)
-		error("It's not good to start init twice ;)");
-
-	// wait for fs; we need it for exec
-	int fd;
-	int retries = 0;
-	do {
-		fd = open("/dev/fs",IO_READ | IO_WRITE);
-		if(fd < 0)
-			yield();
-		retries++;
-	}
-	while(fd < 0 && retries < driver::MAX_WAIT_RETRIES);
-	if(fd < 0)
-		error("Unable to open /dev/fs after %d retries",retries);
-	close(fd);
-
-	/* set basic env-vars */
-	if(setenv("CWD","/") < 0)
-		error("Unable to set CWD");
-	if(setenv("PATH","/bin/") < 0)
-		error("Unable to set PATH");
-
-	try {
-		// read drivers from file
-		vector<driver> drivers;
-		ifstream ifs("/etc/drivers");
-		while(!ifs.eof()) {
-			driver drv;
-			ifs >> drv;
-			drivers.push_back(drv);
-		}
-
-		for(vector<driver>::iterator it = drivers.begin(); it != drivers.end(); ++it) {
-			cout << "Loading '/sbin/" << it->name() << "'..." << endl;
-			it->load();
-		}
-	}
-	catch(const load_error& e) {
-		cerr << "Unable to load drivers: " << e.what() << endl;
+	if(getpid() != 0) {
+		cerr << "It's not good to start init twice ;)" << endl;
 		return EXIT_FAILURE;
 	}
 
-	// remove stdin, stdout and stderr. the shell wants to provide them
-	close(STDERR_FILENO);
-	close(STDOUT_FILENO);
-	close(STDIN_FILENO);
+	if(startThread(driverThread,NULL) < 0) {
+		cerr << "Unable to start driver-thread" << endl;
+		return EXIT_FAILURE;
+	}
 
-	// now load the shells
-	for(int i = 0; i < VTERM_COUNT; i++)
-		createLogin(i);
+	try {
+		pm.start();
+	}
+	catch(const init_error& e) {
+		cerr << "Unable to init system: " << e.what() << endl;
+		return EXIT_FAILURE;
+	}
 
-	/* loop and wait forever */
+	// loop and wait forever
 	while(1) {
+		sExitState state;
 		waitChild(&state);
-
-		/* restart the child */
-		for(int i = 0; i < VTERM_COUNT; i++) {
-			if(loginShells[i] == state.pid) {
-				createLogin(i);
-				break;
-			}
-		}
+		if(shuttingDown)
+			pm.died(state.pid);
+		else
+			pm.restart(state.pid);
 	}
 	return EXIT_SUCCESS;
 }
 
-static void createLogin(int vterm) {
-	ostringstream vtermName;
-	vtermName << "vterm" << vterm;
-	string name = vtermName.str();
-	loginShells[vterm] = fork();
-	if(loginShells[vterm] == 0) {
-		const char *args[] = {"/bin/login",NULL,NULL};
-		args[1] = name.c_str();
-		exec(args[0],args);
-		error("Exec of '%s' failed",args[0]);
+static void sigAlarm(int sig) {
+	UNUSED(sig);
+	timeout = true;
+}
+
+static int driverThread(void *arg) {
+	int drv = regDriver("init",0);
+	if(drv < 0)
+		error("Unable to register device 'init'");
+	if(setSigHandler(SIG_ALARM,sigAlarm) < 0)
+		error("Unable to set alarm-handler");
+
+	while(!timeout) {
+		msgid_t mid;
+		int fd = getWork(&drv,1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0) {
+			if(fd != ERR_INTERRUPTED)
+				printe("[INIT] Unable to get work");
+		}
+		else {
+			switch(mid) {
+				case MSG_INIT_REBOOT:
+					if(!shuttingDown) {
+						shuttingDown = true;
+						if(alarm(SHUTDOWN_TIMEOUT) < 0)
+							printe("[INIT] Unable to set alarm");
+						pm.shutdown();
+					}
+					break;
+
+				case MSG_INIT_SHUTDOWN:
+					if(!shuttingDown) {
+						shuttingDown = true;
+						if(alarm(SHUTDOWN_TIMEOUT) < 0)
+							printe("[INIT] Unable to set alarm");
+						pm.shutdown();
+					}
+					break;
+
+				case MSG_INIT_IAMALIVE:
+					if(shuttingDown)
+						pm.setAlive((pid_t)msg.args.arg1);
+					break;
+
+				default:
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					break;
+			}
+			close(fd);
+		}
 	}
+	pm.forceShutdown();
+	close(drv);
+	return 0;
 }

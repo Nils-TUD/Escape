@@ -809,9 +809,9 @@ sleep:
 1:
 	POP		1,0							# return value is in $0
 
-.global waitm
-.type waitm, @function
-waitm:
+.global waitmUntil
+.type waitmUntil, @function
+waitmUntil:
 	SET		$7,0
 	TRAP	0,SYSCALL_WAIT,0
 	BZ		$2,1f						# no-error?

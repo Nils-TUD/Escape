@@ -29,6 +29,7 @@
 #include <sys/video.h>
 #include <esc/esccodes.h>
 #include <string.h>
+#include <assert.h>
 #include <stdarg.h>
 
 #define VIDEO_BASE			0xC00B8000
@@ -51,6 +52,12 @@ void vid_init(void) {
 	vid_removeBIOSCursor();
 	vid_clearScreen();
 	color = (BLACK << 4) | WHITE;
+}
+
+void vid_goto(ushort r,ushort c) {
+	assert(r < VID_ROWS && c < VID_COLS);
+	col = c;
+	row = r;
 }
 
 void vid_backup(char *buffer,ushort *r,ushort *c) {

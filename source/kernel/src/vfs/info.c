@@ -31,6 +31,7 @@
 #include <sys/vfs/file.h>
 #include <sys/vfs/real.h>
 #include <sys/cpu.h>
+#include <sys/klock.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/printf.h>
@@ -126,10 +127,20 @@ ssize_t vfs_info_traceReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void
 }
 
 static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sThread *t = thread_getById(atoi(node->parent->name));
+	UNUSED(dataSize);
+	sThread *t;
 	sFuncCall *call;
 	sStringBuffer buf;
-	UNUSED(dataSize);
+	klock_aquire(&node->lock);
+	if(node->name == NULL) {
+		*dataSize = 0;
+		*buffer = NULL;
+		klock_release(&node->lock);
+		return;
+	}
+	t = thread_getById(atoi(node->parent->name));
+	klock_release(&node->lock);
+
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -157,10 +168,20 @@ ssize_t vfs_info_procReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void 
 }
 
 static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	pid_t pid = atoi(node->parent->name);
+	pid_t pid;
 	sStringBuffer buf;
 	size_t pages,own,shared,swapped;
 	sProc *p;
+	klock_aquire(&node->lock);
+	if(node->name == NULL) {
+		*dataSize = 0;
+		*buffer = NULL;
+		klock_release(&node->lock);
+		return;
+	}
+	pid = atoi(node->parent->name);
+	klock_release(&node->lock);
+
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -208,10 +229,20 @@ ssize_t vfs_info_threadReadHandler(pid_t pid,file_t file,sVFSNode *node,USER voi
 }
 
 static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sThread *t = thread_getById(atoi(node->parent->name));
+	sThread *t;
 	sStringBuffer buf;
 	size_t i;
 	ulong stackPages = 0;
+	klock_aquire(&node->lock);
+	if(node->name == NULL) {
+		*dataSize = 0;
+		*buffer = NULL;
+		klock_release(&node->lock);
+		return;
+	}
+	t = thread_getById(atoi(node->parent->name));
+	klock_release(&node->lock);
+
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -255,8 +286,8 @@ static ssize_t vfs_info_cpuReadHandler(pid_t pid,file_t file,sVFSNode *node,USER
 }
 
 static void vfs_info_cpuReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
 	UNUSED(node);
+	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -273,10 +304,10 @@ static ssize_t vfs_info_statsReadHandler(pid_t pid,file_t file,sVFSNode *node,US
 }
 
 static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
-	uLongLong cycles;
 	UNUSED(dataSize);
 	UNUSED(node);
+	sStringBuffer buf;
+	uLongLong cycles;
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -308,10 +339,10 @@ static ssize_t vfs_info_memUsageReadHandler(pid_t pid,file_t file,sVFSNode *node
 }
 
 static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
+	UNUSED(node);
 	sStringBuffer buf;
 	size_t free,total;
 	size_t paging,dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
-	UNUSED(node);
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -372,11 +403,20 @@ ssize_t vfs_info_regionsReadHandler(pid_t pid,file_t file,sVFSNode *node,USER vo
 static void vfs_info_regionsReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
 	const sProc *p;
+	klock_aquire(&node->lock);
+	if(node->name == NULL) {
+		*dataSize = 0;
+		*buffer = NULL;
+		klock_release(&node->lock);
+		return;
+	}
+	p = proc_getByPid(atoi(node->parent->name));
+	klock_release(&node->lock);
+
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	p = proc_getByPid(atoi(node->parent->name));
 	vmm_sprintfRegions(&buf,p->pid);
 	*buffer = buf.str;
 	*dataSize = buf.len;
@@ -391,11 +431,20 @@ ssize_t vfs_info_virtMemReadHandler(pid_t pid,file_t file,sVFSNode *node,USER vo
 static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
 	sProc *p;
+	klock_aquire(&node->lock);
+	if(node->name == NULL) {
+		*dataSize = 0;
+		*buffer = NULL;
+		klock_release(&node->lock);
+		return;
+	}
+	p = proc_getByPid(atoi(node->parent->name));
+	klock_release(&node->lock);
+
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	p = proc_getByPid(atoi(node->parent->name));
 	paging_sprintfVirtMem(&buf,&p->pagedir);
 	*buffer = buf.str;
 	*dataSize = buf.len;
@@ -403,8 +452,8 @@ static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **
 
 static ssize_t vfs_info_readHelper(pid_t pid,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count,size_t dataSize,fReadCallBack callback) {
-	void *mem = NULL;
 	UNUSED(pid);
+	void *mem = NULL;
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");
 

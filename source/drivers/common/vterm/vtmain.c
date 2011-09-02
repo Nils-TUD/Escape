@@ -57,7 +57,7 @@ int main(void) {
 	char name[MAX_VT_NAME_LEN + 1];
 
 	cfg.readKb = true;
-	cfg.enabled = true;
+	cfg.enabled = false;
 
 	/* reg drivers */
 	for(i = 0; i < VTERM_COUNT; i++) {
@@ -81,9 +81,6 @@ int main(void) {
 	waits[VTERM_COUNT].events = EV_DATA_READABLE;
 	waits[VTERM_COUNT].object = kbFd;
 
-	/* select first vterm */
-	vterm_selectVTerm(0);
-
 	reqc = 0;
 	while(1) {
 		int fd = getWork(drvIds,VTERM_COUNT,&client,&mid,&msg,sizeof(msg),GW_NOBLOCK);
@@ -103,9 +100,9 @@ int main(void) {
 					count /= sizeof(sKmData);
 					while(count-- > 0) {
 						if(!kmsg->isBreak) {
-							vterm_handleKey(vterm_getActive(),kmsg->keycode,
-									kmsg->modifier,kmsg->character);
-							vterm_update(vterm_getActive());
+							sVTerm *vt = vterm_getActive();
+							vterm_handleKey(vt,kmsg->keycode,kmsg->modifier,kmsg->character);
+							vterm_update(vt);
 						}
 						kmsg++;
 					}
@@ -167,9 +164,11 @@ int main(void) {
 
 				case MSG_VT_SELECT: {
 					size_t index = msg.args.arg1;
-					if(index < VTERM_COUNT && vterm_getActive()->index != index) {
-						vterm_selectVTerm(index);
-						vterm_update(vterm_getActive());
+					if(index < VTERM_COUNT) {
+						if(!vterm_getActive() || vterm_getActive()->index != index) {
+							vterm_selectVTerm(index);
+							vterm_update(vterm_getActive());
+						}
 					}
 				}
 				break;
@@ -193,9 +192,11 @@ int main(void) {
 					if(mid == MSG_VT_ENABLE) {
 						/* always use the active one here */
 						vt = vterm_getActive();
-						send(vt->video,MSG_VID_SETMODE,NULL,0);
-						RETRY(receive(vt->video,NULL,NULL,0));
-						vterm_markScrDirty(vt);
+						if(vt) {
+							send(vt->video,MSG_VID_SETMODE,NULL,0);
+							RETRY(receive(vt->video,NULL,NULL,0));
+							vterm_markScrDirty(vt);
+						}
 					}
 					vterm_update(vt);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));

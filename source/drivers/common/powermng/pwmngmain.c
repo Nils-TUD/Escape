@@ -32,16 +32,19 @@
 #include <string.h>
 #include <errors.h>
 
-#define VIDEO_DRIVER				"/dev/video"
+int main(void) {
+	return 0;
+}
 
-#define IOPORT_KB_DATA				0x60
-#define IOPORT_KB_CTRL				0x64
-#define KBC_CMD_RESET				0xFE
+#if 0
+#include "power.h"
 
 #define ARRAY_INC_SIZE				16
 #define PROC_BUFFER_SIZE			512
 #define WAIT_TIMEOUT				1000
 
+static void reboot(void *arg);
+static void shutdown(void *arg);
 static void killProcs(void);
 static int pidCompare(const void *p1,const void *p2);
 static void waitForProc(pid_t pid);
@@ -53,11 +56,7 @@ int main(void) {
 	int id;
 	msgid_t mid;
 	bool run = true;
-
-	if(requestIOPort(IOPORT_KB_DATA) < 0)
-		error("Unable to request io-port %d",IOPORT_KB_DATA);
-	if(requestIOPort(IOPORT_KB_CTRL) < 0)
-		error("Unable to request io-port %d",IOPORT_KB_CTRL);
+	bool shuttingDown = false;
 
 	id = regDriver("powermng",0);
 	if(id < 0)
@@ -71,24 +70,22 @@ int main(void) {
 		else {
 			switch(mid) {
 				case MSG_POWER_REBOOT:
-					killProcs();
-					debugf("Using pulse-reset line of 8042 controller to reset...\n");
-					run = false;
-					/* wait until in-buffer empty */
-					while((inByte(IOPORT_KB_CTRL) & 0x2) != 0);
-					/* command 0xD1 to write the outputport */
-					outByte(IOPORT_KB_CTRL,0xD1);
-					/* wait again until in-buffer empty */
-					while((inByte(IOPORT_KB_CTRL) & 0x2) != 0);
-					/* now set the new output-port for reset */
-					outByte(IOPORT_KB_DATA,0xFE);
+					if(!shuttingDown) {
+						shuttingDown = true;
+						startThread(reboot,NULL);
+					}
 					break;
+
 				case MSG_POWER_SHUTDOWN:
-					killProcs();
-					debugf("System is stopped\n");
-					debugf("You can turn off now\n");
-					/* TODO we should use ACPI later here */
+					if(!shuttingDown) {
+						shuttingDown = true;
+						startThread(shutdown,NULL);
+					}
 					break;
+
+				case MSG_POWER_IAMALIVE:
+					break;
+
 				default:
 					msg.args.arg1 = ERR_UNSUPPORTED_OP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
@@ -99,10 +96,22 @@ int main(void) {
 	}
 
 	/* clean up */
-	releaseIOPort(IOPORT_KB_DATA);
-	releaseIOPort(IOPORT_KB_CTRL);
 	close(id);
 	return EXIT_SUCCESS;
+}
+
+static int reboot(void *arg) {
+	UNUSED(arg);
+	killProcs();
+	reboot_arch();
+	return 0;
+}
+
+static int shutdown(void *arg) {
+	UNUSED(arg);
+	killProcs();
+	shutdown_arch();
+	return 0;
 }
 
 static void killProcs(void) {
@@ -114,10 +123,19 @@ static void killProcs(void) {
 	size_t i,pidSize = ARRAY_INC_SIZE;
 	size_t pidPos = 0;
 
-	/* first set 80x25-video-mode so that the user is able to see the messages */
-	fd = open(VIDEO_DRIVER,IO_READ | IO_WRITE | IO_MSGS);
+	/* disable vterm */
+	fd = open("/dev/vterm0",IO_MSGS);
+	if(fd >= 0) {
+		send(fd,MSG_VT_DISABLE,NULL,0);
+		RETRY(receive(fd,NULL,NULL,0));
+		close(fd);
+	}
+
+	/* switch to vga-text-mode */
+	fd = open("/dev/video",IO_MSGS);
 	if(fd >= 0) {
 		send(fd,MSG_VID_SETMODE,NULL,0);
+		RETRY(receive(fd,NULL,NULL,0));
 		close(fd);
 	}
 
@@ -208,3 +226,4 @@ static void getProcNameOf(pid_t pid,char *name) {
 	);
 	close(fd);
 }
+#endif

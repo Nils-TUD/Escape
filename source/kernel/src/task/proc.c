@@ -686,15 +686,17 @@ void proc_removeRegions(pid_t pid,bool remStack) {
 
 static void proc_doRemoveRegions(sProc *p,bool remStack) {
 	sSLNode *n;
-	/* remove from shared-memory; do this first because it will remove the region and simply
-	 * assumes that the region still exists. */
-	shm_remProc(p->pid);
-	vmm_removeAll(p->pid,remStack);
-	/* unset TLS-region (and stack-region, if needed) from all threads */
+	/* unset TLS-region (and stack-region, if needed) from all threads; do this first because as
+	 * soon as vmm_removeAll is finished, somebody might use the stack-region-number to get the
+	 * region-range, which is not possible anymore, because the region is already gone. */
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		thread_removeRegions(t,remStack);
 	}
+	/* remove from shared-memory; do this first because it will remove the region and simply
+	 * assumes that the region still exists. */
+	shm_remProc(p->pid);
+	vmm_removeAll(p->pid,remStack);
 }
 
 int proc_getExitState(pid_t ppid,USER sExitState *state) {
@@ -742,12 +744,16 @@ void proc_killDeadThread(void) {
 			sThread *t = (sThread*)n->data;
 			sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 			thread_kill(t);
-			/* now mark it as zombie; even if we release the process-lock, we still have the
-			 * procLock, so that nobody can really kill it until we've released that. */
-			p->flags |= P_ZOMBIE;
+			/* now mark it as zombie, if the process has been terminated too */
+			if(p->exitState) {
+				/* even if we release the process-lock, we still have the procLock, so that nobody
+				 * can really kill it until we've released that. */
+				p->flags |= P_ZOMBIE;
+			}
 			sll_removeFirstWith(p->threads,t);
 			proc_release(p,PLOCK_PROG);
-			proc_notifyProcDied(p->parentPid);
+			if(p->exitState)
+				proc_notifyProcDied(p->parentPid);
 		}
 		sll_clear(&deadThreads,false);
 	}
@@ -778,10 +784,11 @@ static bool proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
 	vassert(p->pid != 0,"You can't terminate the initial process");
 
 	/* print information to log */
-	if(signal != SIG_COUNT) {
-		vid_printf("Process %d:%s terminated by signal %d\n",p->pid,p->command,signal);
+	if(signal != SIG_COUNT || exitCode != 0) {
+		vid_printf("Process %d:%s terminated by signal %d, exitCode %d\n",
+				p->pid,p->command,signal,exitCode);
 #if DEBUGGING
-		proc_print(p);
+		/*proc_print(p);*/
 #endif
 	}
 

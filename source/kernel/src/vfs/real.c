@@ -529,6 +529,13 @@ static file_t vfs_real_requestFile(pid_t pid,sVFSNode **node) {
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		chan = (sFSChan*)n->data;
 		if(!chan->active) {
+			if(chan->node->name == NULL) {
+				/* remove channel */
+				sll_removeFirstWith(&p->fsChans,chan);
+				cache_free(chan);
+				klock_release(&fsChanLock);
+				return ERR_NODE_DESTROYED;
+			}
 			if(node)
 				*node = chan->node;
 			chan->active = true;

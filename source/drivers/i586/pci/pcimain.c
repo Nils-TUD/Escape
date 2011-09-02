@@ -76,6 +76,7 @@ int main(void) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
+			close(fd);
 		}
 	}
 

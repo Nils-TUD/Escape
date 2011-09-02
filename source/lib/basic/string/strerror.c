@@ -98,6 +98,7 @@ static const char *msgs[] = {
 	/* -73 (ERR_WOULD_BLOCK) */				"Thread would block",
 	/* -74 (ERR_NO_PERM) */					"No permission",
 	/* -75 (ERR_NO_EXEC_PERM) */			"No execute permission",
+	/* -76 (ERR_NODE_DESTROYED) */			"The node has been destroyed",
 };
 
 char *strerror(int errnum) {

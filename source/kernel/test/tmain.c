@@ -54,7 +54,7 @@ void apstart(void);
 
 void bspstart(sBootInfo *bootinfo) {
 	/* init the kernel */
-	boot_init(bootinfo,false);
+	boot_start(bootinfo);
 	/* TODO find a better solution */
 #ifdef __i386__
 	paging_gdtFinished();

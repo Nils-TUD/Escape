@@ -95,76 +95,79 @@ static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buff
 	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
 	sVFSNode *n,*firstChild;
+	bool isValid;
 	assert(node != NULL);
 	assert(buffer != NULL);
 
 	/* we need the number of bytes first */
-	firstChild = n = vfs_node_openDir(node,true);
+	firstChild = n = vfs_node_openDir(node,true,&isValid);
 	byteCount = 0;
 	fsByteCount = 0;
-	while(n != NULL) {
-		if(node->parent != NULL || ((n->nameLen != 1 || strcmp(n->name,".") != 0)
-				&& (n->nameLen != 2 || strcmp(n->name,"..") != 0)))
-			byteCount += sizeof(sVFSDirEntry) + n->nameLen;
-		n = n->next;
-	}
-	/* no close here, we iterate over the directory again afterwards. in the meantime, it can't
-	 * be changed */
-
-	/* the root-directory is distributed on the fs-driver and the kernel */
-	/* therefore we have to read it from the fs-driver, too */
-	/* but don't do that if we're the kernel (vfsr does not work then) */
-	if(node->parent == NULL && pid != KERNEL_PID) {
-		const size_t bufSize = 1024;
-		size_t c,curSize = bufSize;
-		fsBytes = cache_alloc(bufSize);
-		if(fsBytes != NULL) {
-			file_t rfile = vfs_real_openPath(pid,VFS_READ,"/");
-			if(rfile >= 0) {
-				while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
-					fsByteCount += c;
-					if(c < bufSize)
-						break;
-
-					curSize += bufSize;
-					fsBytesDup = cache_realloc(fsBytes,curSize);
-					if(fsBytesDup == NULL) {
-						byteCount = 0;
-						break;
-					}
-					fsBytes = fsBytesDup;
-				}
-				vfs_closeFile(pid,rfile);
-			}
+	if(isValid) {
+		while(n != NULL) {
+			if(node->parent != NULL || ((n->nameLen != 1 || strcmp(n->name,".") != 0)
+					&& (n->nameLen != 2 || strcmp(n->name,"..") != 0)))
+				byteCount += sizeof(sVFSDirEntry) + n->nameLen;
+			n = n->next;
 		}
-		byteCount += fsByteCount;
-	}
+		/* no close here, we iterate over the directory again afterwards. in the meantime, it can't
+		 * be changed */
 
-	if(byteCount > 0) {
-		/* now allocate mem on the heap and copy all data into it */
-		fsBytesDup = cache_realloc(fsBytes,byteCount);
-		if(fsBytesDup == NULL)
-			byteCount = 0;
-		else {
-			size_t len;
-			sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
-			fsBytes = fsBytesDup;
-			n = firstChild;
-			while(n != NULL) {
-				if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
-						(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
-					n = n->next;
-					continue;
+		/* the root-directory is distributed on the fs-driver and the kernel */
+		/* therefore we have to read it from the fs-driver, too */
+		/* but don't do that if we're the kernel (vfsr does not work then) */
+		if(node->parent == NULL && pid != KERNEL_PID) {
+			const size_t bufSize = 1024;
+			size_t c,curSize = bufSize;
+			fsBytes = cache_alloc(bufSize);
+			if(fsBytes != NULL) {
+				file_t rfile = vfs_real_openPath(pid,VFS_READ,"/");
+				if(rfile >= 0) {
+					while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
+						fsByteCount += c;
+						if(c < bufSize)
+							break;
+
+						curSize += bufSize;
+						fsBytesDup = cache_realloc(fsBytes,curSize);
+						if(fsBytesDup == NULL) {
+							byteCount = 0;
+							break;
+						}
+						fsBytes = fsBytesDup;
+					}
+					vfs_closeFile(pid,rfile);
 				}
-				len = n->nameLen;
-				/* unfortunatly, we have to convert the endianess here, because readdir() expects
-				 * that its encoded in little endian */
-				dirEntry->nodeNo = cputole32(vfs_node_getNo(n));
-				dirEntry->nameLen = cputole16(len);
-				dirEntry->recLen = cputole16(sizeof(sVFSDirEntry) + len);
-				memcpy(dirEntry + 1,n->name,len);
-				dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
-				n = n->next;
+			}
+			byteCount += fsByteCount;
+		}
+
+		if(byteCount > 0) {
+			/* now allocate mem on the heap and copy all data into it */
+			fsBytesDup = cache_realloc(fsBytes,byteCount);
+			if(fsBytesDup == NULL)
+				byteCount = 0;
+			else {
+				size_t len;
+				sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
+				fsBytes = fsBytesDup;
+				n = firstChild;
+				while(n != NULL) {
+					if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
+							(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
+						n = n->next;
+						continue;
+					}
+					len = n->nameLen;
+					/* unfortunatly, we have to convert the endianess here, because readdir() expects
+					 * that its encoded in little endian */
+					dirEntry->nodeNo = cputole32(vfs_node_getNo(n));
+					dirEntry->nameLen = cputole16(len);
+					dirEntry->recLen = cputole16(sizeof(sVFSDirEntry) + len);
+					memcpy(dirEntry + 1,n->name,len);
+					dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
+					n = n->next;
+				}
 			}
 		}
 	}

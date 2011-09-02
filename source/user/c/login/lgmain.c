@@ -47,14 +47,11 @@ int main(int argc,char **argv) {
 	gid_t *groups;
 	size_t groupCount;
 	size_t count;
-	off_t pos;
 	int vterm;
 	int fd;
 
 	if(argc != 2)
 		error("Usage: %s <vterm>",argv[0]);
-	if(tell(STDIN_FILENO,&pos) != ERR_INVALID_FD)
-		error("STDIN already present!? Login not usable");
 
 	/* open stdin */
 	strcat(drvPath,argv[1]);
@@ -62,16 +59,16 @@ int main(int argc,char **argv) {
 	vterm = atoi(argv[1] + 5);
 	/* note: we do always pass IO_MSGS to open because the user might want to request the console
 	 * size or use isatty() or something. */
-	if(open(drvPath,IO_READ | IO_MSGS) < 0)
-		error("Unable to open '%s' for STDIN",drvPath);
+	if((fd = open(drvPath,IO_READ | IO_MSGS)) != STDIN_FILENO)
+		error("Unable to open '%s' for STDIN: Got fd %d",drvPath,fd);
 
 	/* open stdout */
-	if((fd = open(drvPath,IO_WRITE | IO_MSGS)) < 0)
-		error("Unable to open '%s' for STDOUT",drvPath);
+	if((fd = open(drvPath,IO_WRITE | IO_MSGS)) != STDOUT_FILENO)
+		error("Unable to open '%s' for STDOUT: Got fd %d",drvPath,fd);
 
 	/* dup stdout to stderr */
-	if(dupFd(fd) < 0)
-		error("Unable to duplicate STDOUT to STDERR");
+	if((fd = dupFd(fd)) != STDERR_FILENO)
+		error("Unable to duplicate STDOUT to STDERR: Got fd %d",fd);
 
 	printf("\n\n");
 	printf("\033[co;9]Welcome to Escape v0.3, %s\033[co]\n\n",argv[1]);

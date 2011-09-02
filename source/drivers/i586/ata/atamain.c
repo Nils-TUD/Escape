@@ -168,6 +168,8 @@ static ulong handleRead(sATADevice *device,sPartition *part,uint offset,uint cou
 			ATA_LOG("Giving up after %zu retries",i);
 		}
 	}
+	ATA_LOG("Invalid read-request: offset=%u, count=%u, partSize=%u (device %d)",
+			offset,count,part->size * device->secSize,device->id);
 	return 0;
 }
 
@@ -175,23 +177,26 @@ static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint offset,
 	msgid_t mid;
 	if(offset + count <= part->size * device->secSize && offset + count > offset) {
 		if(count <= MAX_RW_SIZE) {
-			if(RETRY(receive(fd,&mid,buffer,count)) > 0) {
-				size_t i;
-				ATA_PR2("Writing %d bytes @ %x to device %d",
-						count,offset,device->id);
-				for(i = 0; i < RETRY_COUNT; i++) {
-					if(i > 0)
-						ATA_LOG("Write failed; retry %zu",i);
-					if(device->rwHandler(device,OP_WRITE,buffer,
-							offset / device->secSize + part->start,
-							device->secSize,count / device->secSize)) {
-						return count;
-					}
+			size_t i;
+			ssize_t res = RETRY(receive(fd,&mid,buffer,count));
+			if(res <= 0)
+				return res;
+
+			ATA_PR2("Writing %d bytes @ %x to device %d",count,offset,device->id);
+			for(i = 0; i < RETRY_COUNT; i++) {
+				if(i > 0)
+					ATA_LOG("Write failed; retry %zu",i);
+				if(device->rwHandler(device,OP_WRITE,buffer,
+						offset / device->secSize + part->start,
+						device->secSize,count / device->secSize)) {
+					return count;
 				}
-				ATA_LOG("Giving up after %zu retries",i);
 			}
+			ATA_LOG("Giving up after %zu retries",i);
 		}
 	}
+	ATA_LOG("Invalid write-request: offset=%u, count=%u, partSize=%u (device %d)",
+			offset,count,part->size * device->secSize,device->id);
 	return 0;
 }
 

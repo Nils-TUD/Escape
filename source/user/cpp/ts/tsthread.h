@@ -26,9 +26,9 @@ class thread {
 	friend std::istream& operator >>(std::istream& is,thread& t);
 
 public:
-	typedef pid_t pid_type;
-	typedef tid_t tid_type;
-	typedef unsigned char state_type;
+	typedef int pid_type;
+	typedef int tid_type;
+	typedef int state_type;
 	typedef size_t size_type;
 	typedef unsigned long long cycle_type;
 	typedef unsigned long long time_type;

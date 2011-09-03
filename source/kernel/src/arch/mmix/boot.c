@@ -34,6 +34,7 @@
 #include <sys/task/uenv.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
+#include <sys/task/terminator.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/channel.h>
@@ -49,11 +50,6 @@
 #include <sys/video.h>
 #include <string.h>
 
-#define MAX_ARG_COUNT			8
-#define MAX_ARG_LEN				64
-
-static const char **boot_parseArgs(const char *line,int *argc);
-
 static const sBootTask tasks[] = {
 	{"Initializing physical memory-management...",pmem_init},
 	{"Initializing address spaces...",aspace_init},
@@ -65,6 +61,7 @@ static const sBootTask tasks[] = {
 	{"Initializing event system...",ev_init},
 	{"Initializing processes...",proc_init},
 	{"Initializing scheduler...",sched_init},
+	{"Initializing terminator...",term_init},
 #ifndef TESTING
 	{"Start logging to VFS...",log_vfsIsReady},
 #endif
@@ -183,6 +180,7 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	/* start the swapper-thread. it will never return */
 	proc_startThread((uintptr_t)&swap_start,0,NULL);
 #endif
+	proc_startThread((uintptr_t)&term_start,0,NULL);
 
 	if(bootState == bootFinished) {
 		/* if not requested otherwise, from now on, print only to log */
@@ -204,29 +202,4 @@ void boot_print(void) {
 		vid_printf("\t%s\n\t\t[%p .. %p]\n",info.progs[i].command,
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}
-}
-
-static const char **boot_parseArgs(const char *line,int *argc) {
-	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
-	static char *args[MAX_ARG_COUNT];
-	size_t i = 0,j = 0;
-	args[0] = argvals[0];
-	while(*line) {
-		if(*line == ' ') {
-			if(args[j][0]) {
-				if(j + 1 >= MAX_ARG_COUNT)
-					break;
-				args[j][i] = '\0';
-				j++;
-				i = 0;
-				args[j] = argvals[j];
-			}
-		}
-		else if(i < MAX_ARG_LEN)
-			args[j][i++] = *line;
-		line++;
-	}
-	*argc = j + 1;
-	args[j][i] = '\0';
-	return (const char**)args;
 }

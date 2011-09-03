@@ -221,6 +221,10 @@ uint64_t thread_getRuntime(const sThread *t) {
 	return t->stats.runtime;
 }
 
+bool thread_isRunning(sThread *t) {
+	return t->state == ST_RUNNING;
+}
+
 void thread_doSwitch(void) {
 	sThread *old = thread_getRunning();
 	sThread *new = sched_perform(old);
@@ -252,8 +256,6 @@ void thread_doSwitch(void) {
 		new->stats.cycleStart = cpu_rdtsc();
 		thread_doSwitchTo(&old->save,&new->save,new->proc->pagedir,new->tid);
 	}
-
-	proc_killDeadThread();
 }
 
 

@@ -17,26 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586MACHINE_H_
-#define I586MACHINE_H_
+#ifndef ECO32MACHINE_H_
+#define ECO32MACHINE_H_
 
 #include <esc/common.h>
-#include "machine.h"
+#include "../../machine.h"
 
-class i586Machine : public Machine {
-private:
-	static const uint16_t PORT_KB_DATA	= 0x60;
-	static const uint16_t PORT_KB_CTRL	= 0x64;
-
+class ECO32Machine : public Machine {
 public:
-	i586Machine()
+	ECO32Machine()
 		: Machine() {
 	};
-	virtual ~i586Machine() {
+	virtual ~ECO32Machine() {
 	};
 
 	virtual void reboot(Progress &pg);
 	virtual void shutdown(Progress &pg);
 };
 
-#endif /* I586MACHINE_H_ */
+#endif /* ECO32MACHINE_H_ */

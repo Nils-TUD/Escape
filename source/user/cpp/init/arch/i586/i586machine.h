@@ -17,14 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef I586MACHINE_H_
+#define I586MACHINE_H_
+
 #include <esc/common.h>
-#include "../initerror.h"
-#include "eco32machine.h"
+#include "../../machine.h"
 
-void ECO32Machine::reboot(Progress &pg) {
-	pg.itemStarting("You can reset the machine now.");
-}
+class i586Machine : public Machine {
+private:
+	static const uint16_t PORT_KB_DATA	= 0x60;
+	static const uint16_t PORT_KB_CTRL	= 0x64;
 
-void ECO32Machine::shutdown(Progress &pg) {
-	pg.itemStarting("You can turn off now.");
-}
+public:
+	i586Machine()
+		: Machine() {
+	};
+	virtual ~i586Machine() {
+	};
+
+	virtual void reboot(Progress &pg);
+	virtual void shutdown(Progress &pg);
+};
+
+#endif /* I586MACHINE_H_ */

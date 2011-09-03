@@ -15,7 +15,8 @@ ifeq ($(LINKTYPE),static)
 endif
 
 # sources
-CSRC = $(shell find . -name "*.cpp")
+CSRC = $(filter-out $(shell find ./arch -name "*.cpp" 2>/dev/null),$(shell find . -name "*.cpp"))
+CSRC += $(shell find ./arch/$(ARCH) -name "*.cpp" 2>/dev/null)
 
 # objects
 COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))

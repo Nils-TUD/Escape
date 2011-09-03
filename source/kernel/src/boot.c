@@ -24,6 +24,8 @@
 #include <sys/log.h>
 #include <sys/video.h>
 
+#define MAX_ARG_COUNT	8
+#define MAX_ARG_LEN		64
 #define KERNEL_PERCENT	40
 #define BAR_HEIGHT		1
 #define BAR_WIDTH		60

@@ -50,12 +50,14 @@ void Progress::itemStarting(const std::string& s) {
 }
 
 void Progress::itemLoaded() {
-	_finished++;
+	if(_finished < _itemCount)
+		_finished++;
 	updateBar();
 }
 
 void Progress::itemTerminated() {
-	_finished--;
+	if(_finished > 0)
+		_finished--;
 	updateBar();
 }
 
@@ -77,6 +79,11 @@ void Progress::updateBar() {
 
 void Progress::paintBar() {
 	if(connect()) {
+		/* clear screen */
+		char *zeros = (char*)calloc(_vtSize.width * _vtSize.height * 2,1);
+		paintTo(zeros,0,0,_vtSize.width * _vtSize.height * 2);
+		free(zeros);
+
 		const char color = 0x07;
 		// top
 		_emptyBar[0] = '\xC9';

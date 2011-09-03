@@ -35,9 +35,6 @@ typedef struct {
 	size_t moduleCount;
 } sBootTaskList;
 
-#define MAX_ARG_COUNT			8
-#define MAX_ARG_LEN				64
-
 #ifdef __i386__
 #include <sys/arch/i586/boot.h>
 #endif

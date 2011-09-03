@@ -23,7 +23,7 @@
 #include <esc/common.h>
 #include <stddef.h>
 
-#define MAX_NAME_LEN		50
+#define MAX_NAME_LEN		52
 #define MAX_PATH_LEN		255
 
 /* file-system-types */

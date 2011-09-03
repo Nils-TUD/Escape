@@ -17,24 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MACHINE_H_
-#define MACHINE_H_
-
 #include <esc/common.h>
-#include "../progress.h"
+#include "machine.h"
+#include "arch/i586/i586machine.h"
+#include "arch/eco32/eco32machine.h"
+#include "arch/mmix/mmixmachine.h"
 
-class Machine {
-public:
-	static Machine *createInstance();
-
-public:
-	Machine() {
-	};
-	virtual ~Machine() {
-	};
-
-	virtual void reboot(Progress &pg) = 0;
-	virtual void shutdown(Progress &pg) = 0;
-};
-
-#endif /* MACHINE_H_ */
+Machine *Machine::createInstance() {
+#ifdef __i386__
+	return new i586Machine();
+#endif
+#ifdef __eco32__
+	return new ECO32Machine();
+#endif
+#ifdef __mmix__
+	return new MMIXMachine();
+#endif
+}

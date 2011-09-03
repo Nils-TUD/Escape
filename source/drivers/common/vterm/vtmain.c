@@ -149,9 +149,11 @@ int main(void) {
 					msg.args.arg1 = 0;
 					if(data) {
 						if(RETRY(receive(fd,&mid,data,c + 1)) >= 0) {
-							data[c] = '\0';
-							vterm_puts(vt,data,c,true);
-							vterm_update(vt);
+							if(cfg.enabled) {
+								data[c] = '\0';
+								vterm_puts(vt,data,c,true);
+								vterm_update(vt);
+							}
 							msg.args.arg1 = c;
 						}
 						free(data);

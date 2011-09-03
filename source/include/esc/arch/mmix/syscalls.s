@@ -797,6 +797,18 @@ yield:
 1:
 	POP		1,0							# return value is in $0
 
+.global alarm
+.type alarm, @function
+alarm:
+	SET		$7,0
+	TRAP	0,SYSCALL_ALARM,0
+	BZ		$2,1f						# no-error?
+	GETA	$3,errno
+	STTU	$2,$3,0
+	SET		$0,$2
+1:
+	POP		1,0							# return value is in $0
+
 .global sleep
 .type sleep, @function
 sleep:

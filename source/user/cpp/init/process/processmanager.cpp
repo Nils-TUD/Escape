@@ -35,7 +35,7 @@
 #include "processmanager.h"
 #include "driverprocess.h"
 #include "loginprocess.h"
-#include "../machine/machine.h"
+#include "../machine.h"
 #include "../initerror.h"
 #include "../progress.h"
 

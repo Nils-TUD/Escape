@@ -17,20 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include "machine.h"
-#include "i586machine.h"
-#include "eco32machine.h"
-#include "mmixmachine.h"
+#ifndef MMIXMACHINE_H_
+#define MMIXMACHINE_H_
 
-Machine *Machine::createInstance() {
-#ifdef __i386__
-	return new i586Machine();
-#endif
-#ifdef __eco32__
-	return new ECO32Machine();
-#endif
-#ifdef __mmix__
-	return new MMIXMachine();
-#endif
-}
+#include <esc/common.h>
+#include "../../machine.h"
+
+class MMIXMachine : public Machine {
+public:
+	MMIXMachine()
+		: Machine() {
+	};
+	virtual ~MMIXMachine() {
+	};
+
+	virtual void reboot(Progress &pg);
+	virtual void shutdown(Progress &pg);
+};
+
+#endif /* MMIXMACHINE_H_ */

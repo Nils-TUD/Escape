@@ -17,22 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIXMACHINE_H_
-#define MMIXMACHINE_H_
-
 #include <esc/common.h>
-#include "machine.h"
+#include "../../initerror.h"
+#include "eco32machine.h"
 
-class MMIXMachine : public Machine {
-public:
-	MMIXMachine()
-		: Machine() {
-	};
-	virtual ~MMIXMachine() {
-	};
+void ECO32Machine::reboot(Progress &pg) {
+	pg.itemStarting("You can reset the machine now.");
+}
 
-	virtual void reboot(Progress &pg);
-	virtual void shutdown(Progress &pg);
-};
-
-#endif /* MMIXMACHINE_H_ */
+void ECO32Machine::shutdown(Progress &pg) {
+	pg.itemStarting("You can turn off now.");
+}

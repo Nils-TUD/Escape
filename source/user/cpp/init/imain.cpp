@@ -25,8 +25,9 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <iostream>
-#include "initerror.h"
+
 #include "process/processmanager.h"
+#include "initerror.h"
 
 #define SHUTDOWN_TIMEOUT		3000
 #define STATE_RUN				0
@@ -37,8 +38,7 @@ static void sigAlarm(int sig);
 static int driverThread(void *arg);
 
 static ProcessManager pm;
-static bool shuttingDown = false;
-static bool timeout = false;
+static int timeout = false;
 static int state = STATE_RUN;
 
 int main(void) {
@@ -78,6 +78,7 @@ static void sigAlarm(int sig) {
 }
 
 static int driverThread(void *arg) {
+	UNUSED(arg);
 	int drv = regDriver("init",0);
 	if(drv < 0)
 		error("Unable to register device 'init'");

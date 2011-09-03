@@ -189,7 +189,12 @@ typedef struct {
 } A_PACKED sFPUState;
 
 /**
- * Inits the FPU
+ * Performs basic initialization of the FPU (finit, ...)
+ */
+void fpu_preinit(void);
+
+/**
+ * Inits the FPU for usage of processes
  */
 void fpu_init(void);
 

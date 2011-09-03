@@ -129,6 +129,7 @@ void boot_arch_start(sBootInfo *info) {
 	/* init basic modules */
 	vid_init();
 	ser_init();
+	fpu_preinit();
 }
 
 const sBootInfo *boot_getInfo(void) {

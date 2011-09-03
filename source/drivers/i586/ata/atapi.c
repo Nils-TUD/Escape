@@ -25,7 +25,7 @@
 #include "ata.h"
 #include "atapi.h"
 
-static bool atapi_request(sATADevice *device,void *cmd,void *buffer,size_t bufSize);
+static bool atapi_request(sATADevice *device,uint8_t *cmd,void *buffer,size_t bufSize);
 
 void atapi_softReset(sATADevice *device) {
 	int i = 1000000;
@@ -78,7 +78,7 @@ size_t atapi_getCapacity(sATADevice *device) {
 	return (resp[0] << 24) | (resp[1] << 16) | (resp[2] << 8) | (resp[3] << 0);
 }
 
-static bool atapi_request(sATADevice *device,void *cmd,void *buffer,size_t bufSize) {
+static bool atapi_request(sATADevice *device,uint8_t *cmd,void *buffer,size_t bufSize) {
 	int res;
 	size_t size;
 	sATAController *ctrl = device->ctrl;

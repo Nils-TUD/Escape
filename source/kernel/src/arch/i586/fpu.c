@@ -34,18 +34,13 @@ extern void fpu_restoreState(sFPUState *state);
 /* current FPU state-memory */
 static sFPUState ***curStates = NULL;
 
-void fpu_init(void) {
+void fpu_preinit(void) {
 	uint32_t cr0 = cpu_getCR0();
 	/* enable coprocessor monitoring */
 	cr0 |= CR0_MONITOR_COPROC;
 	/* disable emulate */
 	cr0 &= ~CR0_EMULATE;
 	cpu_setCR0(cr0);
-
-	/* allocate a state-pointer for each cpu */
-	curStates = (sFPUState***)cache_calloc(smp_getCPUCount(),sizeof(sFPUState**));
-	if(!curStates)
-		util_panic("Unable to allocate memory for FPU-states");
 
 	/* TODO check whether we have a FPU */
 	/* set the OSFXSR bit
@@ -54,6 +49,13 @@ void fpu_init(void) {
 	__asm__ volatile (
 		"finit"
 	);
+}
+
+void fpu_init(void) {
+	/* allocate a state-pointer for each cpu */
+	curStates = (sFPUState***)cache_calloc(smp_getCPUCount(),sizeof(sFPUState**));
+	if(!curStates)
+		util_panic("Unable to allocate memory for FPU-states");
 }
 
 void fpu_lockFPU(void) {

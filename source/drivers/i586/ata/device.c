@@ -82,22 +82,18 @@ void device_init(sATADevice *device) {
 	}
 	else {
 		size_t cap;
+		/* disable DMA for reading the capacity; this seems to be necessary for vbox and some
+		 * of my real machines */
+		bool dma = device->info.capabilities.DMA;
+		device->info.capabilities.DMA = 0;
 		device->secSize = ATAPI_SEC_SIZE;
 		device->rwHandler = atapi_read;
 		/* pretend that the cd has 1 partition */
 		device->partTable[0].present = 1;
 		device->partTable[0].start = 0;
 		cap = atapi_getCapacity(device);
-		ATA_LOG("Device %d is an ATAPI-device",device->id);
+		device->info.capabilities.DMA = dma;
 		if(cap == 0) {
-			if(device->ctrl->useDma && device->info.capabilities.DMA) {
-				ATA_LOG("Device %d: Reading the capacity with DMA failed. Disabling DMA.",device->id);
-				device->info.capabilities.DMA = 0;
-				atapi_softReset(device);
-			}
-			else {
-				ATA_LOG("Device %d: Reading the capacity with PIO failed. Retrying.",device->id);
-			}
 			cap = atapi_getCapacity(device);
 			if(cap == 0) {
 				ATA_LOG("Device %d: Reading the capacity failed again. Disabling device.",device->id);
@@ -106,6 +102,7 @@ void device_init(sATADevice *device) {
 			}
 		}
 		device->partTable[0].size = cap;
+		ATA_LOG("Device %d is an ATAPI-device with %zu sectors",device->id,device->partTable[0].size);
 	}
 
 	if(device->ctrl->useDma && device->info.capabilities.DMA) {
@@ -190,8 +187,6 @@ static bool device_identify(sATADevice *device,uint cmd) {
 	}
 }
 
-#if DEBUGGING
-
 void device_dbg_printInfo(sATADevice *device) {
 	size_t i;
 	printf("oldCurCylinderCount = %u\n",device->info.oldCurCylinderCount);
@@ -272,5 +267,3 @@ void device_dbg_printInfo(sATADevice *device) {
 	printf("	writeCache = %u\n",device->info.features.writeCache);
 	printf("\n");
 }
-
-#endif

@@ -35,8 +35,9 @@
 #include "processmanager.h"
 #include "driverprocess.h"
 #include "loginprocess.h"
-#include "initerror.h"
-#include "progress.h"
+#include "../machine/machine.h"
+#include "../initerror.h"
+#include "../progress.h"
 
 void ProcessManager::start() {
 	// TODO this is not exception-safe
@@ -91,8 +92,10 @@ void ProcessManager::setAlive(pid_t pid) {
 	Process *p;
 	locku(&_lock);
 	p = getByPid(pid);
-	if(p)
+	if(p) {
 		p->setAlive();
+		cout << "Process " << pid << " is alive and promised to terminate ASAP" << endl;
+	}
 	unlocku(&_lock);
 }
 
@@ -125,7 +128,7 @@ void ProcessManager::shutdown() {
 	unlocku(&_lock);
 }
 
-void ProcessManager::forceShutdown() {
+void ProcessManager::finalize(int task) {
 	locku(&_lock);
 	_downProg->itemStarting("Timout reached, killing remaining processes...");
 
@@ -150,9 +153,14 @@ void ProcessManager::forceShutdown() {
 				printe("[INIT] Unable to send the kill-signal to %d",p->pid());
 		}
 	}
-
 	_downProg->allTerminated();
-	_downProg->itemStarting("You can turn off now.");
+
+	// ask the machine to reboot/shutdown
+	Machine *m = Machine::createInstance();
+	if(task == TASK_REBOOT)
+		m->reboot(*_downProg);
+	else
+		m->shutdown(*_downProg);
 	unlocku(&_lock);
 }
 

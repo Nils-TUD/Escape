@@ -30,6 +30,7 @@
 #include <sys/klock.h>
 #include <sys/video.h>
 #include <sys/util.h>
+#include <sys/log.h>
 #include <errors.h>
 #include <limits.h>
 #include <string.h>
@@ -1096,7 +1097,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	proc_release(p,PLOCK_REGIONS);
 	err = vfs_readFile(pid,vm->binFile,tempBuf,loadCount);
 	p = proc_request(p->pid,PLOCK_REGIONS);
-	if(err < 0)
+	if(err != (ssize_t)loadCount)
 		goto errorFree;
 
 	/* ensure that a frame is available; note that its easy here since no one else can demand load
@@ -1139,9 +1140,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 errorFree:
 	cache_free(tempBuf);
 error:
-#if DEBUGGING
-	vid_printf("Demandload for proc %s: %s (%d)\n",p->command,strerror(err),err);
-#endif
+	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,p->command,strerror(err),err);
 	return false;
 }
 

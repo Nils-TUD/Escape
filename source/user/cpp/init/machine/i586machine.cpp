@@ -19,33 +19,30 @@
 
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
-#include <esc/debug.h>
+#include "../initerror.h"
+#include "i586machine.h"
 
-#define IOPORT_KB_DATA				0x60
-#define IOPORT_KB_CTRL				0x64
-#define KBC_CMD_RESET				0xFE
+void i586Machine::reboot(Progress &pg) {
+	pg.itemStarting("Resetting using pulse-reset line of 8042 controller...");
 
-void reboot_arch(void) {
-	if(requestIOPort(IOPORT_KB_DATA) < 0)
-		error("Unable to request io-port %d",IOPORT_KB_DATA);
-	if(requestIOPort(IOPORT_KB_CTRL) < 0)
-		error("Unable to request io-port %d",IOPORT_KB_CTRL);
+	if(requestIOPort(PORT_KB_DATA) < 0)
+		throw init_error("Unable to request keyboard data-port");
+	if(requestIOPort(PORT_KB_CTRL) < 0)
+		throw init_error("Unable to request keyboard-control-port");
 
-	debugf("Using pulse-reset line of 8042 controller to reset...\n");
-	/* wait until in-buffer empty */
-	while((inByte(IOPORT_KB_CTRL) & 0x2) != 0)
+	// wait until in-buffer empty
+	while((inByte(PORT_KB_CTRL) & 0x2) != 0)
 		;
-	/* command 0xD1 to write the outputport */
-	outByte(IOPORT_KB_CTRL,0xD1);
-	/* wait again until in-buffer empty */
-	while((inByte(IOPORT_KB_CTRL) & 0x2) != 0)
+	// command 0xD1 to write the outputport
+	outByte(PORT_KB_CTRL,0xD1);
+	// wait again until in-buffer empty
+	while((inByte(PORT_KB_CTRL) & 0x2) != 0)
 		;
-	/* now set the new output-port for reset */
-	outByte(IOPORT_KB_DATA,0xFE);
+	// now set the new output-port for reset
+	outByte(PORT_KB_DATA,0xFE);
 }
 
-void shutdown_arch(void) {
-	debugf("System is stopped\n");
-	debugf("You can turn off now\n");
-	/* TODO we should use ACPI later here */
+void i586Machine::shutdown(Progress &pg) {
+	// TODO we should use ACPI later here
+	pg.itemStarting("You can turn off now.");
 }

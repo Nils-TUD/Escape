@@ -17,12 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef POWER_H_
-#define POWER_H_
+#ifndef MMIXMACHINE_H_
+#define MMIXMACHINE_H_
 
 #include <esc/common.h>
+#include "machine.h"
 
-void reboot_arch(void);
-void shutdown_arch(void);
+class MMIXMachine : public Machine {
+public:
+	MMIXMachine()
+		: Machine() {
+	};
+	virtual ~MMIXMachine() {
+	};
 
-#endif /* POWER_H_ */
+	virtual void reboot(Progress &pg);
+	virtual void shutdown(Progress &pg);
+};
+
+#endif /* MMIXMACHINE_H_ */

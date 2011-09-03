@@ -17,46 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROCESSMANAGER_H_
-#define PROCESSMANAGER_H_
-
 #include <esc/common.h>
-#include <vector>
-#include "process.h"
-#include "progress.h"
+#include <esc/proc.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-class ProcessManager {
-private:
-	static const size_t KERNEL_PERCENT	= 40;
+#include "loginprocess.h"
+#include "../initerror.h"
 
-public:
-	ProcessManager()
-		: _lock(0), _downProg(NULL), _procs(std::vector<Process*>()) {
-	};
-	~ProcessManager() {
-	};
+void LoginProcess::load() {
+	_pid = fork();
+	if(_pid == 0) {
+		const char *args[] = {"/bin/login",NULL,NULL};
+		args[1] = _vterm.c_str();
 
-	void start();
-	void restart(pid_t pid);
-	void shutdown();
-	void setAlive(pid_t pid);
-	void died(pid_t pid);
-	void forceShutdown();
+		/* close stdin,stdout and stderr */
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
 
-private:
-	// no cloning
-	ProcessManager(const ProcessManager& p);
-	ProcessManager &operator=(const ProcessManager& p);
+		exec(args[0],args);
+		error("Exec of '%s' failed",args[0]);
+	}
+	else if(_pid < 0)
+		throw init_error("Fork failed");
+}
 
-	Process *getByPid(pid_t pid);
-	void addRunning();
-	void waitForFS();
-	void setVTermEnabled(bool enabled);
-
-private:
-	tULock _lock;
-	Progress *_downProg;
-	std::vector<Process*> _procs;
-};
-
-#endif /* PROCESSMANAGER_H_ */

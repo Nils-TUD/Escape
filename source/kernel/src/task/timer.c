@@ -198,7 +198,7 @@ void timer_print(void) {
 	time = 0;
 	for(l = listener; l != NULL; l = l->next) {
 		time += l->time;
-		vid_printf("	diff=%d ms, rem=%d ms, block=%d, tid=%d (%s)\n",l->time,time,l->tid,
-				l->block,thread_getById(l->tid)->proc->command);
+		vid_printf("	diff=%d ms, rem=%d ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
+				thread_getById(l->tid)->proc->command,l->block);
 	}
 }

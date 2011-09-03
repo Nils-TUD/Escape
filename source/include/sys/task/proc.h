@@ -285,12 +285,11 @@ size_t proc_getKMemUsageOf(sProc *p);
 /**
  * Determines the mem-usage of all processes
  *
- * @param paging will point to the number of bytes used for paging-structures
  * @param dataShared will point to the number of shared bytes
  * @param dataOwn will point to the number of own bytes
  * @param dataReal will point to the number of really used bytes (considers sharing)
  */
-void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *dataReal);
+void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal);
 
 /**
  * Adds the given signal to the given process. If necessary, the process is killed.

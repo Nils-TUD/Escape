@@ -321,8 +321,8 @@ void proc_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
 	}
 }
 
-void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
-	size_t pages,pmem = 0,ownMem = 0,shMem = 0;
+void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
+	size_t pages,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
 	klock_aquire(&procLock);
@@ -335,7 +335,6 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 		dReal += vmm_getMemUsage(p->pid,&pages);
 	}
 	klock_release(&procLock);
-	*paging = pmem * PAGE_SIZE;
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
 	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;

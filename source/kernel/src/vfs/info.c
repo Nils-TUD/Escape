@@ -342,7 +342,7 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	UNUSED(node);
 	sStringBuffer buf;
 	size_t free,total;
-	size_t paging,dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
+	size_t dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -355,11 +355,9 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	kheap = kheap_getOccupiedMem();
 	cache = cache_getOccMem();
 	pmem = pmem_getStackSize();
-	proc_getMemUsage(&paging,&dataShared,&dataOwn,&dataReal);
+	proc_getMemUsage(&dataShared,&dataOwn,&dataReal);
 	prf_sprintf(
 		&buf,
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
 		"%-11s%10zu\n"
 		"%-11s%10zu\n"
 		"%-11s%10zu\n"
@@ -379,16 +377,14 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 		"Free:",free,
 		"Kernel:",ksize,
 		"Modules:",msize,
-		"UserShared:",dataShared,
-		"UserOwn:",dataOwn,
-		"UserReal:",dataReal,
-		"Paging:",paging,
 		"PhysMem:",pmem,
 		"KHeapSize:",kheap,
 		"KHeapUsage:",kheap_getUsedMem(),
 		"CacheSize:",cache,
 		"CacheUsage:",cache_getUsedMem(),
-		"KernelMisc:",(total - free) - (ksize + msize + dataReal + paging + pmem + kheap + cache)
+		"UserShared:",dataShared,
+		"UserOwn:",dataOwn,
+		"UserReal:",dataReal
 	);
 	*buffer = buf.str;
 	*dataSize = buf.len;

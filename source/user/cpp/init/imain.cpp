@@ -26,17 +26,20 @@
 #include <stdlib.h>
 #include <iostream>
 #include "initerror.h"
-#include "processmanager.h"
+#include "process/processmanager.h"
 
 #define SHUTDOWN_TIMEOUT		3000
+#define STATE_RUN				0
+#define STATE_REBOOT			1
+#define STATE_SHUTDOWN			2
 
 static void sigAlarm(int sig);
 static int driverThread(void *arg);
 
-static sMsg msg;
 static ProcessManager pm;
 static bool shuttingDown = false;
 static bool timeout = false;
+static int state = STATE_RUN;
 
 int main(void) {
 	if(getpid() != 0) {
@@ -59,12 +62,12 @@ int main(void) {
 
 	// loop and wait forever
 	while(1) {
-		sExitState state;
-		waitChild(&state);
-		if(shuttingDown)
-			pm.died(state.pid);
+		sExitState st;
+		waitChild(&st);
+		if(state != STATE_RUN)
+			pm.died(st.pid);
 		else
-			pm.restart(state.pid);
+			pm.restart(st.pid);
 	}
 	return EXIT_SUCCESS;
 }
@@ -83,6 +86,7 @@ static int driverThread(void *arg) {
 
 	while(!timeout) {
 		msgid_t mid;
+		sMsg msg;
 		int fd = getWork(&drv,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != ERR_INTERRUPTED)
@@ -91,8 +95,8 @@ static int driverThread(void *arg) {
 		else {
 			switch(mid) {
 				case MSG_INIT_REBOOT:
-					if(!shuttingDown) {
-						shuttingDown = true;
+					if(state == STATE_RUN) {
+						state = STATE_REBOOT;
 						if(alarm(SHUTDOWN_TIMEOUT) < 0)
 							printe("[INIT] Unable to set alarm");
 						pm.shutdown();
@@ -100,8 +104,8 @@ static int driverThread(void *arg) {
 					break;
 
 				case MSG_INIT_SHUTDOWN:
-					if(!shuttingDown) {
-						shuttingDown = true;
+					if(state == STATE_RUN) {
+						state = STATE_SHUTDOWN;
 						if(alarm(SHUTDOWN_TIMEOUT) < 0)
 							printe("[INIT] Unable to set alarm");
 						pm.shutdown();
@@ -109,7 +113,7 @@ static int driverThread(void *arg) {
 					break;
 
 				case MSG_INIT_IAMALIVE:
-					if(shuttingDown)
+					if(state != STATE_RUN)
 						pm.setAlive((pid_t)msg.args.arg1);
 					break;
 
@@ -121,7 +125,11 @@ static int driverThread(void *arg) {
 			close(fd);
 		}
 	}
-	pm.forceShutdown();
+
+	if(state == STATE_REBOOT)
+		pm.finalize(ProcessManager::TASK_REBOOT);
+	else
+		pm.finalize(ProcessManager::TASK_SHUTDOWN);
 	close(drv);
 	return 0;
 }

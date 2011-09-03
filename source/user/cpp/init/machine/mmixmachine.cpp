@@ -18,28 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "../initerror.h"
+#include "mmixmachine.h"
 
-#include "loginprocess.h"
-#include "initerror.h"
-
-void LoginProcess::load() {
-	_pid = fork();
-	if(_pid == 0) {
-		const char *args[] = {"/bin/login",NULL,NULL};
-		args[1] = _vterm.c_str();
-
-		/* close stdin,stdout and stderr */
-		close(STDIN_FILENO);
-		close(STDOUT_FILENO);
-		close(STDERR_FILENO);
-
-		exec(args[0],args);
-		error("Exec of '%s' failed",args[0]);
-	}
-	else if(_pid < 0)
-		throw init_error("Fork failed");
+void MMIXMachine::reboot(Progress &pg) {
+	pg.itemStarting("You can reset the machine now.");
 }
 
+void MMIXMachine::shutdown(Progress &pg) {
+	pg.itemStarting("You can turn off now.");
+}

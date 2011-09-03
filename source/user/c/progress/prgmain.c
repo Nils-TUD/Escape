@@ -21,13 +21,22 @@
 #include <esc/messages.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+static void sigTerm(int sig) {
+	UNUSED(sig);
+	printf("Got SIGTERM, but I won't terminate :P\n");
+	fflush(stdout);
+}
 
 int main(void) {
 	sVTSize consSize;
 	size_t maxWidth;
 	size_t p,i,j;
+	if(setSigHandler(SIG_TERM,sigTerm) < 0)
+		error("Unable to set term-handler");
 	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
 		error("Unable to get vterm-size");
 	maxWidth = consSize.width - 3;

@@ -21,6 +21,7 @@
 #define PROGRESS_H_
 
 #include <esc/common.h>
+#include <esc/messages.h>
 #include <string>
 
 class Progress {

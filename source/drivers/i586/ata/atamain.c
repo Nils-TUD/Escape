@@ -166,6 +166,7 @@ static ulong handleRead(sATADevice *device,sPartition *part,uint offset,uint cou
 				}
 			}
 			ATA_LOG("Giving up after %zu retries",i);
+			return 0;
 		}
 	}
 	ATA_LOG("Invalid read-request: offset=%u, count=%u, partSize=%u (device %d)",
@@ -193,6 +194,7 @@ static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint offset,
 				}
 			}
 			ATA_LOG("Giving up after %zu retries",i);
+			return 0;
 		}
 	}
 	ATA_LOG("Invalid write-request: offset=%u, count=%u, partSize=%u (device %d)",

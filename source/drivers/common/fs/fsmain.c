@@ -150,6 +150,14 @@ int main(int argc,char *argv[]) {
 
 static void sigTermHndl(int sig) {
 	UNUSED(sig);
+	/* notify init that we're alive and promise to terminate as soon as possible */
+	int fd = open("/dev/init",IO_MSGS);
+	if(fd >= 0) {
+		sArgsMsg msg;
+		msg.arg1 = getpid();
+		send(fd,MSG_INIT_IAMALIVE,&msg,sizeof(msg));
+		close(fd);
+	}
 	run = false;
 }
 

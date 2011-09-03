@@ -25,8 +25,8 @@
 #include <esc/io.h>
 #include <iostream>
 
-#include "initerror.h"
 #include "driverprocess.h"
+#include "../initerror.h"
 
 sGroup *DriverProcess::groupList = NULL;
 

@@ -111,6 +111,7 @@ extern void isr49(void);
 extern void isr50(void);
 extern void isr51(void);
 extern void isr52(void);
+extern void isr53(void);
 /* the handler for a other interrupts */
 extern void isrNull(void);
 
@@ -188,6 +189,7 @@ void idt_init(void) {
 	idt_set(50,isr50,IDT_DPL_KERNEL);
 	idt_set(51,isr51,IDT_DPL_KERNEL);
 	idt_set(52,isr52,IDT_DPL_KERNEL);
+	idt_set(53,isr53,IDT_DPL_KERNEL);
 
 	/* all other interrupts */
 	for(i = 53; i < 256; i++)

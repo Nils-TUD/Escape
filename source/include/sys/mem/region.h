@@ -51,7 +51,7 @@ typedef struct {
 	const off_t binOffset;	/* offset in the binary */
 	const size_t loadCount;	/* number of bytes to load from disk (the rest is zero'ed) */
 	size_t byteCount;		/* number of bytes */
-	time_t timestamp;		/* timestamp of last usage (for swapping) */
+	uint64_t timestamp;		/* timestamp of last usage (for swapping) */
 	size_t pfSize;			/* size of pageFlags */
 	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
 	sSLList *procs;			/* linked list of processes that use this region */

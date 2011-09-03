@@ -49,6 +49,7 @@ typedef struct {
 #define EVI_VMM_DONE			15
 #define EVI_THREAD_DIED			16
 #define EVI_CHILD_DIED			17
+#define EVI_TERMINATION			18
 
 /* the events we can wait for */
 #define EV_NOEVENT				0
@@ -70,7 +71,8 @@ typedef struct {
 #define EV_VMM_DONE				(1 << EVI_VMM_DONE)		/* kernel-intern */
 #define EV_THREAD_DIED			(1 << EVI_THREAD_DIED)	/* kernel-intern */
 #define EV_CHILD_DIED			(1 << EVI_CHILD_DIED)	/* kernel-intern */
-#define EV_COUNT				18
+#define EV_TERMINATION			(1 << EVI_TERMINATION)	/* kernel-intern */
+#define EV_COUNT				19
 
 /* the events a user-thread can wait for */
 #define EV_USER_WAIT_MASK		(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE | \

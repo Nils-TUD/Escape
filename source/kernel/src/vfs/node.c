@@ -359,7 +359,7 @@ void vfs_node_dirname(char *path,size_t len) {
 }
 
 sVFSNode *vfs_node_findInDir(inode_t nodeNo,const char *name,size_t nameLen) {
-	bool isValid;
+	bool isValid = false;
 	sVFSNode *res = NULL;
 	sVFSNode *n = vfs_node_openDirOf(nodeNo,&isValid);
 	if(isValid) {

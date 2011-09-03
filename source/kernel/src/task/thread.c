@@ -23,6 +23,7 @@
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
 #include <sys/task/timer.h>
+#include <sys/task/terminator.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>
@@ -393,23 +394,16 @@ errThread:
 	return err;
 }
 
-bool thread_kill(sThread *t) {
-	sSLNode *n;
-	if(t->tid == INIT_TID)
-		util_panic("Can't kill init-thread!");
-	/* we can't destroy a running thread */
-	if(t->state == ST_RUNNING) {
-		/* remove from event-system */
-		ev_removeThread(t);
-		/* remove from scheduler and ensure that he don't picks us again */
-		sched_removeThread(t);
-		/* remove from timer, too, so that we don't get waked up again */
-		timer_removeThread(t->tid);
-		/* remove signal-handler, so that we can't get signals anymore */
-		sig_removeHandlerFor(t->tid);
-		return false;
-	}
+void thread_terminate(sThread *t) {
+	/* just remove us from scheduler; he will take care that we don't get chosen again. */
+	/* if we are currently running on a different cpu, it will be interrupted and asked to
+	 * terminate the thread */
+	sched_removeThread(t);
+	term_addDead(t);
+}
 
+void thread_kill(sThread *t) {
+	sSLNode *n;
 	/* remove tls */
 	if(t->tlsRegion >= 0) {
 		vmm_remove(t->proc->pid,t->tlsRegion);
@@ -431,6 +425,7 @@ bool thread_kill(sThread *t) {
 	ev_removeThread(t);
 	sched_removeThread(t);
 	timer_removeThread(t->tid);
+	sig_removeHandlerFor(t->tid);
 	thread_freeArch(t);
 	vfs_removeThread(t->tid);
 
@@ -440,7 +435,6 @@ bool thread_kill(sThread *t) {
 	/* finally, destroy thread */
 	thread_remove(t);
 	cache_free(t);
-	return true;
 }
 
 void thread_printAll(void) {

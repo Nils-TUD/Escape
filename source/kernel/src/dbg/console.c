@@ -122,7 +122,7 @@ void cons_start(void) {
 	for(i = 0; i < HISTORY_SIZE; i++)
 		cache_free(history[i]);
 	vid_restore(backup.screen,backup.row,backup.col);
-	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+	vid_setTargets(TARGET_LOG);
 
 	/* now let the other CPUs continue */
 	smp_resumeOthers();

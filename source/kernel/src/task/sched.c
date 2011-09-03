@@ -102,6 +102,7 @@ sThread *sched_perform(sThread *old) {
 					old->state = ST_BLOCKED;
 					break;
 				case ST_ZOMBIE:
+					old->state = ST_ZOMBIE;
 					break;
 				default:
 					util_panic("Unexpected new state (%d)\n",old->newState);
@@ -178,6 +179,8 @@ bool sched_setReadyQuick(sThread *t) {
 
 static bool sched_setReadyState(sThread *t) {
 	switch(t->state) {
+		case ST_ZOMBIE:
+		case ST_ZOMBIE_SUSP:
 		case ST_READY:
 		case ST_READY_SUSP:
 			return false;
@@ -198,6 +201,8 @@ void sched_setBlocked(sThread *t) {
 	assert(t != NULL);
 	klock_aquire(&schedLock);
 	switch(t->state) {
+		case ST_ZOMBIE:
+		case ST_ZOMBIE_SUSP:
 		case ST_BLOCKED:
 		case ST_BLOCKED_SUSP:
 			break;
@@ -273,6 +278,10 @@ void sched_removeThread(sThread *t) {
 	klock_aquire(&schedLock);
 	switch(t->state) {
 		case ST_RUNNING:
+			t->newState = ST_ZOMBIE;
+			smp_killThread(t);
+			klock_release(&schedLock);
+			return;
 		case ST_ZOMBIE:
 		case ST_BLOCKED:
 			break;

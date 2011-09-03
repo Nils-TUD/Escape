@@ -161,6 +161,14 @@ void thread_setRunning(sThread *t) {
 	threadSet = true;
 }
 
+bool thread_isRunning(sThread *t) {
+	bool res;
+	klock_aquire(&switchLock);
+	res = t->state == ST_RUNNING;
+	klock_release(&switchLock);
+	return res;
+}
+
 void thread_initialSwitch(void) {
 	sThread *cur;
 	klock_aquire(&switchLock);
@@ -184,7 +192,7 @@ void thread_doSwitch(void) {
 	if(new->tid != old->tid) {
 		/* update stats */
 		uint64_t cycles = cpu_rdtsc();
-		time_t timestamp = timer_getTimestamp();
+		time_t timestamp = timer_cyclesToTime(cycles);
 		assert(old->stats.cycleStart != 0);
 		old->stats.runtime += timer_cyclesToTime(cycles - old->stats.cycleStart);
 		old->stats.curCycleCount += cycles - old->stats.cycleStart;
@@ -211,8 +219,6 @@ void thread_doSwitch(void) {
 	}
 	else
 		klock_release(&switchLock);
-
-	proc_killDeadThread();
 }
 
 #if DEBUGGING

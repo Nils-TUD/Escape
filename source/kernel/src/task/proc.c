@@ -54,8 +54,8 @@
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
 static void proc_doRemoveRegions(sProc *p,bool remStack);
-static bool proc_doTerminate(sProc *p,int exitCode,sig_t signal);
-static bool proc_killThread(sThread *t);
+static void proc_setExitState(sProc *p,int exitCode,sig_t signal);
+static void proc_destroy(sProc *p);
 static void proc_notifyProcDied(pid_t parent);
 static pid_t proc_getFreePid(void);
 static bool proc_add(sProc *p);
@@ -70,9 +70,7 @@ static sProc first;
 static sSLList *procs;
 static sProc *pidToProc[MAX_PROC_COUNT];
 static pid_t nextPid = 1;
-static sSLList deadThreads;
 static klock_t procLock;
-static klock_t deadLock;
 
 void proc_preinit(void) {
 	paging_setFirst(&first.pagedir);
@@ -81,8 +79,6 @@ void proc_preinit(void) {
 void proc_init(void) {
 	size_t i;
 	
-	sll_init(&deadThreads,slln_allocNode,slln_freeNode);
-
 	/* init the first process */
 	sProc *p = &first;
 
@@ -345,28 +341,6 @@ void proc_getMemUsage(size_t *paging,size_t *dataShared,size_t *dataOwn,size_t *
 	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;
 }
 
-void proc_addSignalFor(pid_t pid,sig_t signal) {
-	sProc *p = proc_request(pid,PLOCK_PROG);
-	if(p) {
-		bool sent = false;
-		sSLNode *n;
-		for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-			sThread *t = (sThread*)n->data;
-			if(sig_addSignalFor(t->tid,signal)) {
-				sent = true;
-				break;
-			}
-		}
-		proc_release(p,PLOCK_PROG);
-		/* no handler and fatal? terminate proc! */
-		if(!sent && sig_isFatal(signal)) {
-			proc_terminate(pid,1,signal);
-			if(pid == proc_getRunning())
-				thread_switch();
-		}
-	}
-}
-
 int proc_clone(uint8_t flags) {
 	assert((flags & P_ZOMBIE) == 0);
 	size_t i;
@@ -469,7 +443,7 @@ int proc_clone(uint8_t flags) {
 	}
 
 	if((res = proc_cloneArch(p,cur) < 0))
-		goto errorThread;
+		goto errorThreadAppend;
 
 	/* inherit file-descriptors */
 	proc_request(cur->pid,PLOCK_FDS);
@@ -499,8 +473,10 @@ int proc_clone(uint8_t flags) {
 	proc_release(cur,PLOCK_PROG);
 	return p->pid;
 
+errorThreadAppend:
+	sll_removeFirstWith(p->threads,nt);
 errorThread:
-	proc_killThread(nt);
+	thread_kill(nt);
 errorThreadList:
 	cache_free(p->threads);
 errorShm:
@@ -540,7 +516,7 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 
 	/* append thread */
 	if(!sll_append(p->threads,nt)) {
-		proc_killThread(nt);
+		thread_kill(nt);
 		proc_release(p,PLOCK_PROG);
 		return ERR_NOT_ENOUGH_MEM;
 	}
@@ -664,39 +640,180 @@ void proc_join(tid_t tid) {
 void proc_exit(int exitCode) {
 	sThread *t = thread_getRunning();
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
-	if(sll_length(p->threads) == 1) {
-		bool isTerminated = proc_doTerminate(p,exitCode,SIG_COUNT);
-		proc_release(p,PLOCK_PROG);
-		if(isTerminated) {
-			p->flags |= P_ZOMBIE;
-			proc_notifyProcDied(p->parentPid);
-		}
-	}
-	else {
-		proc_killThread(t);
+	if(p) {
+		thread_terminate(t);
 		proc_release(p,PLOCK_PROG);
 	}
 }
 
-void proc_removeRegions(pid_t pid,bool remStack) {
+void proc_segFault(void) {
+	sThread *t = thread_getRunning();
+	proc_addSignalFor(t->proc->pid,SIG_SEGFAULT);
+	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
+	 * we might get in an endless-loop */
+	sig_unsetHandler(t->tid,SIG_SEGFAULT);
+}
+
+void proc_addSignalFor(pid_t pid,sig_t signal) {
 	sProc *p = proc_request(pid,PLOCK_PROG);
-	proc_doRemoveRegions(p,remStack);
+	if(p) {
+		bool sent = false;
+		sSLNode *n;
+		/* don't send a signal to process that are dying */
+		if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
+			proc_release(p,PLOCK_PROG);
+			return;
+		}
+
+		for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+			sThread *t = (sThread*)n->data;
+			if(sig_addSignalFor(t->tid,signal)) {
+				sent = true;
+				break;
+			}
+		}
+		proc_release(p,PLOCK_PROG);
+
+		/* no handler and fatal? terminate proc! */
+		if(!sent && sig_isFatal(signal)) {
+			proc_terminate(pid,1,signal);
+			if(pid == proc_getRunning())
+				thread_switch();
+		}
+	}
+}
+
+void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
+	sSLNode *tn;
+	sProc *p = proc_request(pid,PLOCK_PROG);
+	if(!p)
+		return;
+	/* don't terminate processes twice */
+	if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
+		proc_release(p,PLOCK_PROG);
+		return;
+	}
+
+	vassert(pid != 0,"You can't terminate the initial process");
+
+	/* print information to log */
+	if(signal != SIG_COUNT || exitCode != 0) {
+		vid_printf("Process %d:%s terminated by signal %d, exitCode %d\n",
+				p->pid,p->command,signal,exitCode);
+	}
+
+	/* store exit-conditions */
+	proc_setExitState(p,exitCode,signal);
+
+	/* terminate all threads */
+	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+		sThread *t = (sThread*)tn->data;
+		thread_terminate(t);
+	}
+	p->flags |= P_PREZOMBIE;
 	proc_release(p,PLOCK_PROG);
 }
 
-static void proc_doRemoveRegions(sProc *p,bool remStack) {
-	sSLNode *n;
-	/* unset TLS-region (and stack-region, if needed) from all threads; do this first because as
-	 * soon as vmm_removeAll is finished, somebody might use the stack-region-number to get the
-	 * region-range, which is not possible anymore, because the region is already gone. */
-	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-		sThread *t = (sThread*)n->data;
-		thread_removeRegions(t,remStack);
+void proc_killThread(tid_t tid) {
+	sThread *t = thread_getById(tid);
+	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
+	thread_kill(t);
+	sll_removeFirstWith(p->threads,t);
+	if(sll_length(p->threads) == 0) {
+		proc_setExitState(p,0,SIG_COUNT);
+		proc_destroy(p);
 	}
-	/* remove from shared-memory; do this first because it will remove the region and simply
-	 * assumes that the region still exists. */
-	shm_remProc(p->pid);
-	vmm_removeAll(p->pid,remStack);
+	proc_release(p,PLOCK_PROG);
+}
+
+static void proc_setExitState(sProc *p,int exitCode,sig_t signal) {
+	if(p->exitState)
+		return;
+
+	p->exitState = (sExitState*)cache_alloc(sizeof(sExitState));
+	if(p->exitState) {
+		sSLNode *tn;
+		p->exitState->pid = p->pid;
+		p->exitState->exitCode = exitCode;
+		p->exitState->signal = signal;
+		p->exitState->runtime = 0;
+		p->exitState->schedCount = 0;
+		p->exitState->syscalls = 0;
+		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+			sThread *t = (sThread*)tn->data;
+			p->exitState->runtime += t->stats.runtime;
+			p->exitState->schedCount += t->stats.schedCount;
+			p->exitState->syscalls += t->stats.syscalls;
+		}
+		p->exitState->ownFrames = p->ownFrames;
+		p->exitState->sharedFrames = p->sharedFrames;
+		p->exitState->swapped = p->swapped;
+	}
+}
+
+static void proc_destroy(sProc *p) {
+	size_t i;
+
+	/* release file-descriptors */
+	klock_aquire(p->locks + PLOCK_FDS);
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(p->fileDescs[i] != -1) {
+			vfs_incUsages(p->fileDescs[i]);
+			if(!vfs_closeFile(p->pid,p->fileDescs[i]))
+				vfs_decUsages(p->fileDescs[i]);
+			p->fileDescs[i] = -1;
+		}
+	}
+	klock_release(p->locks + PLOCK_FDS);
+
+	/* release resources */
+	groups_leave(p->pid);
+	env_removeFor(p->pid);
+	proc_doRemoveRegions(p,true);
+	paging_destroyPDir(&p->pagedir);
+	lock_releaseAll(p->pid);
+	proc_terminateArch(p);
+	sll_destroy(p->threads,false);
+
+	/* we are a zombie now, so notify parent that he can get our exit-state */
+	p->flags &= ~P_PREZOMBIE;
+	p->flags |= P_ZOMBIE;
+	proc_notifyProcDied(p->parentPid);
+}
+
+void proc_kill(pid_t pid) {
+	sSLNode *n;
+	sProc *p = proc_request(pid,PLOCK_PROG);
+	if(!p)
+		return;
+
+	/* give childs the ppid 0 */
+	for(n = sll_begin(procs); n != NULL; n = n->next) {
+		sProc *cp = (sProc*)n->data;
+		if(cp->parentPid == p->pid) {
+			cp->parentPid = 0;
+			/* if this process has already died, the parent can't wait for it since its dying
+			 * right now. therefore notify init of it */
+			if(cp->flags & P_ZOMBIE)
+				proc_notifyProcDied(0);
+		}
+	}
+
+	/* free the last resources and remove us from vfs */
+	cache_free((char*)p->command);
+	if(p->exitState)
+		cache_free(p->exitState);
+	vfs_removeProcess(p->pid);
+
+	/* remove and free */
+	proc_remove(p);
+	proc_release(p,PLOCK_PROG);
+	cache_free(p);
+}
+
+static void proc_notifyProcDied(pid_t parent) {
+	proc_addSignalFor(parent,SIG_CHILD_TERM);
+	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
 }
 
 int proc_getExitState(pid_t ppid,USER sExitState *state) {
@@ -728,165 +845,25 @@ int proc_getExitState(pid_t ppid,USER sExitState *state) {
 	return ERR_NO_CHILD;
 }
 
-void proc_segFault(void) {
-	sThread *t = thread_getRunning();
-	proc_addSignalFor(t->proc->pid,SIG_SEGFAULT);
-	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
-	 * we might get in an endless-loop */
-	sig_unsetHandler(t->tid,SIG_SEGFAULT);
-}
-
-void proc_killDeadThread(void) {
-	klock_aquire(&deadLock);
-	if(sll_length(&deadThreads) > 0) {
-		sSLNode *n;
-		for(n = sll_begin(&deadThreads); n != NULL; n = n->next) {
-			sThread *t = (sThread*)n->data;
-			sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
-			thread_kill(t);
-			/* now mark it as zombie, if the process has been terminated too */
-			if(p->exitState) {
-				/* even if we release the process-lock, we still have the procLock, so that nobody
-				 * can really kill it until we've released that. */
-				p->flags |= P_ZOMBIE;
-			}
-			sll_removeFirstWith(p->threads,t);
-			proc_release(p,PLOCK_PROG);
-			if(p->exitState)
-				proc_notifyProcDied(p->parentPid);
-		}
-		sll_clear(&deadThreads,false);
-	}
-	klock_release(&deadLock);
-}
-
-void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
-	bool isTerminated;
+void proc_removeRegions(pid_t pid,bool remStack) {
 	sProc *p = proc_request(pid,PLOCK_PROG);
-	/* if its already a zombie and we don't want to kill ourself, kill the process */
-	if((p->flags & P_ZOMBIE) && pid != proc_getRunning()) {
-		proc_release(p,PLOCK_PROG);
-		proc_kill(pid);
-		return;
-	}
-	isTerminated = proc_doTerminate(p,exitCode,signal);
+	proc_doRemoveRegions(p,remStack);
 	proc_release(p,PLOCK_PROG);
-	if(isTerminated) {
-		p->flags |= P_ZOMBIE;
-		proc_notifyProcDied(p->parentPid);
-	}
 }
 
-static bool proc_doTerminate(sProc *p,int exitCode,sig_t signal) {
-	sSLNode *tn,*tmpn;
-	size_t i;
-	bool isTerminated;
-	vassert(p->pid != 0,"You can't terminate the initial process");
-
-	/* print information to log */
-	if(signal != SIG_COUNT || exitCode != 0) {
-		vid_printf("Process %d:%s terminated by signal %d, exitCode %d\n",
-				p->pid,p->command,signal,exitCode);
-#if DEBUGGING
-		/*proc_print(p);*/
-#endif
-	}
-
-	/* store exit-conditions */
-	p->exitState = (sExitState*)cache_alloc(sizeof(sExitState));
-	if(p->exitState) {
-		p->exitState->pid = p->pid;
-		p->exitState->exitCode = exitCode;
-		p->exitState->signal = signal;
-		p->exitState->runtime = 0;
-		p->exitState->schedCount = 0;
-		p->exitState->syscalls = 0;
-		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
-			sThread *t = (sThread*)tn->data;
-			p->exitState->runtime += t->stats.runtime;
-			p->exitState->schedCount += t->stats.schedCount;
-			p->exitState->syscalls += t->stats.syscalls;
-		}
-		p->exitState->ownFrames = p->ownFrames;
-		p->exitState->sharedFrames = p->sharedFrames;
-		p->exitState->swapped = p->swapped;
-	}
-
-	/* release file-descriptors */
-	klock_aquire(p->locks + PLOCK_FDS);
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1) {
-			vfs_incUsages(p->fileDescs[i]);
-			if(!vfs_closeFile(p->pid,p->fileDescs[i]))
-				vfs_decUsages(p->fileDescs[i]);
-			p->fileDescs[i] = -1;
-		}
-	}
-	klock_release(p->locks + PLOCK_FDS);
-
-	/* remove other stuff */
-	groups_leave(p->pid);
-	env_removeFor(p->pid);
-	proc_doRemoveRegions(p,true);
-	lock_releaseAll(p->pid);
-	proc_terminateArch(p);
-
-	/* remove all threads */
-	isTerminated = false;
-	for(tn = sll_begin(p->threads); tn != NULL; ) {
-		sThread *t = (sThread*)tn->data;
-		tmpn = tn->next;
-		isTerminated |= proc_killThread(t);
-		tn = tmpn;
-	}
-	return isTerminated;
-}
-
-bool proc_kill(pid_t pid) {
+static void proc_doRemoveRegions(sProc *p,bool remStack) {
 	sSLNode *n;
-	sProc *p;
-
-	/* lock the whole function to prevent that we kill that process twice */
-	klock_aquire(&procLock);
-	p = proc_getByPid(pid);
-	if(!p) {
-		klock_release(&procLock);
-		return false;
+	/* unset TLS-region (and stack-region, if needed) from all threads; do this first because as
+	 * soon as vmm_removeAll is finished, somebody might use the stack-region-number to get the
+	 * region-range, which is not possible anymore, because the region is already gone. */
+	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+		sThread *t = (sThread*)n->data;
+		thread_removeRegions(t,remStack);
 	}
-
-	vassert(p->pid != 0,"You can't kill the initial process");
-	vassert(p->pid != proc_getRunning(),"We can't kill the current process!");
-
-	/* give childs the ppid 0 */
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *cp = (sProc*)n->data;
-		if(cp->parentPid == p->pid) {
-			cp->parentPid = 0;
-			/* if this process has already died, the parent can't wait for it since its dying
-			 * right now. therefore notify init of it */
-			if(cp->flags & P_ZOMBIE)
-				proc_notifyProcDied(0);
-		}
-	}
-
-	/* remove pagedir; TODO we can do that on terminate, too (if we delay it when its the current) */
-	paging_destroyPDir(&p->pagedir);
-	sll_destroy(p->threads,false);
-	cache_free((char*)p->command);
-	/* remove from VFS */
-	vfs_removeProcess(p->pid);
-	/* notify processes that wait for dying procs */
-	/* TODO sig_addSignal(SIG_PROC_DIED,p->pid);*/
-
-	/* free exit-state, if not already done */
-	if(p->exitState)
-		cache_free(p->exitState);
-
-	/* remove and free */
-	proc_remove(p);
-	cache_free(p);
-	klock_release(&procLock);
-	return true;
+	/* remove from shared-memory; do this first because it will remove the region and simply
+	 * assumes that the region still exists. */
+	shm_remProc(p->pid);
+	vmm_removeAll(p->pid,remStack);
 }
 
 void proc_printAll(void) {
@@ -1018,25 +995,6 @@ error:
 	thread_remHeapAlloc(*argBuffer);
 	cache_free(*argBuffer);
 	return ERR_INVALID_ARGS;
-}
-
-static void proc_notifyProcDied(pid_t parent) {
-	proc_addSignalFor(parent,SIG_CHILD_TERM);
-	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
-}
-
-static bool proc_killThread(sThread *t) {
-	sProc *p = t->proc;
-	if(thread_kill(t)) {
-		sll_removeFirstWith(p->threads,t);
-		return true;
-	}
-	else {
-		klock_aquire(&deadLock);
-		assert(sll_append(&deadThreads,t));
-		klock_release(&deadLock);
-		return false;
-	}
 }
 
 static pid_t proc_getFreePid(void) {

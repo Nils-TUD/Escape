@@ -130,7 +130,7 @@ void vmm_swapIn(sRegion *reg,size_t index,frameno_t frameNo);
  * @param t the thread
  * @param timestamp the timestamp to set
  */
-void vmm_setTimestamp(const sThread *t,time_t timestamp);
+void vmm_setTimestamp(const sThread *t,uint64_t timestamp);
 
 /**
  * Returns the least recently used region of the given process that contains swappable pages

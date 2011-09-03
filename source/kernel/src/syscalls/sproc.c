@@ -183,9 +183,8 @@ int sysc_waitChild(sIntrptStackFrame *stack) {
 	}
 
 	/* finally kill the process */
-	if(proc_kill(res))
-		SYSC_RET1(stack,0);
-	SYSC_ERROR(stack,ERR_INVALID_PID);
+	proc_kill(res);
+	SYSC_RET1(stack,0);
 }
 
 int sysc_getenvito(sIntrptStackFrame *stack) {

@@ -302,7 +302,7 @@ void vmm_swapIn(sRegion *reg,size_t index,frameno_t frameNo) {
 	klock_release(&reg->lock);
 }
 
-void vmm_setTimestamp(const sThread *t,time_t timestamp) {
+void vmm_setTimestamp(const sThread *t,uint64_t timestamp) {
 	size_t i;
 	size_t tls = thread_getTLSRegion(t);
 	for(i = 0; i < t->proc->regSize; i++) {

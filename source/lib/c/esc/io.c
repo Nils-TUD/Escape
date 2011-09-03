@@ -51,7 +51,7 @@ ssize_t sendRecvMsgData(int fd,msgid_t id,const void *data,size_t size) {
 		if((res = send(fd,id,NULL,0)) < 0)
 			return res;
 	}
-	if((res = receive(fd,&mid,&msg,sizeof(msg))) < 0)
+	if((res = RETRY(receive(fd,&mid,&msg,sizeof(msg)))) < 0)
 		return res;
 	return (ssize_t)msg.args.arg1;
 }

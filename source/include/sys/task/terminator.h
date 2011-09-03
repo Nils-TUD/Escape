@@ -17,21 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_PROC_H_
-#define I586_PROC_H_
+#ifndef TERMINATOR_H_
+#define TERMINATOR_H_
 
-#include <esc/common.h>
+#include <sys/common.h>
+#include <sys/task/thread.h>
 
-#define DISK_PID			2
-#define FS_PID				4
-#define KEYBOARD_PID		12	/* just for debugging */
+void term_init(void);
+void term_start(void);
+void term_addDead(sThread *t);
 
-/* special process-flag for x86 */
-#define P_VM86				4
-
-typedef struct {
-	/* the io-map (NULL by default) */
-	uint8_t *ioMap;
-} sProcArchAttr;
-
-#endif /* I586_PROC_H_ */
+#endif /* TERMINATOR_H_ */

@@ -300,6 +300,7 @@ static const char *ev_getName(size_t evi) {
 		"VMM_DONE",
 		"THREAD_DIED",
 		"CHILD_DIED",
+		"TERMINATION",
 	};
 	return names[evi];
 }

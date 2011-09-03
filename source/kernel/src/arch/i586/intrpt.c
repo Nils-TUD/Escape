@@ -63,6 +63,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack);
 static void intrpt_irqDefault(sIntrptStackFrame *stack);
 static void intrpt_syscall(sIntrptStackFrame *stack);
 static void intrpt_ipiWork(sIntrptStackFrame *stack);
+static void intrpt_ipiTerm(sIntrptStackFrame *stack);
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t pfaddr);
 
 static const sInterrupt intrptList[] = {
@@ -116,9 +117,10 @@ static const sInterrupt intrptList[] = {
 	/* 0x2C: IRQ_ATA2 */				{intrpt_irqDefault,"ATA2",SIG_INTRPT_ATA2},
 	/* 0x30: syscall */					{intrpt_syscall,"Systemcall",0},
 	/* 0x31: IPI_WORK */				{intrpt_ipiWork,"Work IPI",0},
-	/* 0x32: IPI_FLUSH_TLB */			{intrpt_exFatal,"Flush TLB IPI",0},	/* not handled here */
-	/* 0x33: IPI_WAIT */				{intrpt_exFatal,"",0},
-	/* 0x34: IPI_HALT */				{intrpt_exFatal,"",0},
+	/* 0x32: IPI_TERM */				{intrpt_ipiTerm,"Term IPI",0},
+	/* 0x33: IPI_FLUSH_TLB */			{intrpt_exFatal,"Flush TLB IPI",0},	/* not handled here */
+	/* 0x34: IPI_WAIT */				{intrpt_exFatal,"",0},
+	/* 0x35: IPI_HALT */				{intrpt_exFatal,"",0},
 };
 
 /* total number of interrupts */
@@ -311,6 +313,14 @@ static void intrpt_ipiWork(sIntrptStackFrame *stack) {
 		smp_wakeupCPU();
 	/* otherwise switch to non-idle-thread (if there is any) */
 	else
+		thread_switch();
+}
+
+static void intrpt_ipiTerm(sIntrptStackFrame *stack) {
+	UNUSED(stack);
+	/* stop running the thread, if it should die */
+	sThread *t = thread_getRunning();
+	if(t->newState == ST_ZOMBIE)
 		thread_switch();
 }
 

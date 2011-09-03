@@ -50,6 +50,7 @@
 
 /* process flags */
 #define P_ZOMBIE			1
+#define P_PREZOMBIE			2
 
 #define PLOCK_COUNT			5
 #define PLOCK_ENV			0
@@ -339,6 +340,14 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg);
 int proc_exec(const char *path,const char *const *args,const void *code,size_t size);
 
 /**
+ * Removes all regions from the given process
+ *
+ * @param pid the process-id
+ * @param remStack whether the stack should be removed too
+ */
+void proc_removeRegions(pid_t pid,bool remStack);
+
+/**
  * Waits until the thread with given thread-id or all other threads of the process are terminated.
  *
  * @param tid the thread to wait for (0 = all other threads)
@@ -355,32 +364,10 @@ void proc_join(tid_t tid);
 void proc_exit(int exitCode);
 
 /**
- * Removes all regions from the given process
- *
- * @param pid the process-id
- * @param remStack whether the stack should be removed too
- */
-void proc_removeRegions(pid_t pid,bool remStack);
-
-/**
- * Stores the exit-state of the first terminated child-process of <ppid> into <state>
- *
- * @param ppid the parent-pid
- * @param state the pointer to the state (may be NULL!)
- * @return the pid on success
- */
-int proc_getExitState(pid_t ppid,sExitState *state);
-
-/**
  * Sends a SIG_SEGFAULT signal to the current process and performs a thread-switch if the process
  * has been terminated.
  */
 void proc_segFault(void);
-
-/**
- * Kills the thread that could not been killed because it was the current thread.
- */
-void proc_killDeadThread(void);
 
 /**
  * Marks the given process as zombie and notifies the waiting parent thread. As soon as the parent
@@ -393,6 +380,23 @@ void proc_killDeadThread(void);
 void proc_terminate(pid_t pid,int exitCode,sig_t signal);
 
 /**
+ * Kills the given thread. If the process has no threads afterwards, it is destroyed.
+ * This is ONLY called by the terminator-module!
+ *
+ * @param tid the thread-id
+ */
+void proc_killThread(tid_t tid);
+
+/**
+ * Stores the exit-state of the first terminated child-process of <ppid> into <state>
+ *
+ * @param ppid the parent-pid
+ * @param state the pointer to the state (may be NULL!)
+ * @return the pid on success
+ */
+int proc_getExitState(pid_t ppid,sExitState *state);
+
+/**
  * Handles the architecture-specific part of the terminate-operation.
  *
  * @param p the process
@@ -400,13 +404,11 @@ void proc_terminate(pid_t pid,int exitCode,sig_t signal);
 void proc_terminateArch(sProc *p);
 
 /**
- * Kills the given process, that means all structures will be destroyed and the memory free'd.
- * This is not possible with the current process!
+ * Kills the given process. This is done after the exit-state has been given to the parent.
  *
  * @param pid the process-id
- * @return true if successfull
  */
-bool proc_kill(pid_t pid);
+void proc_kill(pid_t pid);
 
 /**
  * Copies the arguments (for exec) in <args> to <*argBuffer> and takes care that everything

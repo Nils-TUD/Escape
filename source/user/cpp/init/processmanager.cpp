@@ -131,11 +131,13 @@ void ProcessManager::forceShutdown() {
 
 	// remove all except video (we don't get notified about all terminated processes; just about
 	// our childs)
-	for(vector<Process*>::iterator it = _procs.begin(); it != _procs.end(); ++it) {
+	for(vector<Process*>::iterator it = _procs.begin(); it != _procs.end(); ) {
 		if((*it)->isKillable()) {
 			delete *it;
 			_procs.erase(it);
 		}
+		else
+			++it;
 	}
 
 	// now add all still running processes and kill them

@@ -38,6 +38,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/uenv.h>
 #include <sys/task/smp.h>
+#include <sys/task/terminator.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/request.h>
@@ -70,6 +71,7 @@ static const sBootTask tasks[] = {
 	{"Initializing event system...",ev_init},
 	{"Initializing processes...",proc_init},
 	{"Initializing scheduler...",sched_init},
+	{"Initializing terminator...",term_init},
 #ifndef TESTING
 	{"Start logging to VFS...",log_vfsIsReady},
 #endif
@@ -209,6 +211,8 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 
 	/* start the swapper-thread. it will never return */
 	proc_startThread((uintptr_t)&swap_start,0,NULL);
+	/* start the terminator */
+	proc_startThread((uintptr_t)&term_start,0,NULL);
 
 	/* if not requested otherwise, from now on, print only to log */
 	if(!conf_get(CONF_LOG2SCR))

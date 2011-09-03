@@ -206,6 +206,15 @@ sThread *thread_getRunning(void);
 void thread_setRunning(sThread *t);
 
 /**
+ * Returns whether the given thread is currently running in a safe way, i.e. it will only be
+ * reported that its not running, if the thread-switch is completely finished.
+ *
+ * @param t the thread
+ * @return true if its running
+ */
+bool thread_isRunning(sThread *t);
+
+/**
  * Fetches the thread with given id from the internal thread-map
  *
  * @param tid the thread-id
@@ -454,13 +463,19 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 int thread_createArch(const sThread *src,sThread *dst,bool cloneProc);
 
 /**
- * Kills the given thread
+ * Terminates the given thread. That means, it removes it from scheduler and adds it to the
+ * termination-module.
+ *
+ * @param t the thread (may be the current one or run on a different cpu)
+ */
+void thread_terminate(sThread *t);
+
+/**
+ * Kills the given thread, i.e. releases all resources and destroys it.
  *
  * @param t the thread
- * @return true if it has been deleted; false if it was the current one and the deletion should
- * 	be delayed
  */
-bool thread_kill(sThread *t);
+void thread_kill(sThread *t);
 
 /**
  * Frees the architecture-specific attributes of the given thread

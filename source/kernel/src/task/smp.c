@@ -85,13 +85,27 @@ void smp_setReady(cpuid_t id) {
 	cpus[id]->ready = true;
 }
 
-void smp_unschedule(cpuid_t id,time_t timestamp) {
+void smp_unschedule(cpuid_t id,uint64_t timestamp) {
 	cpus[id]->runtime += timestamp - cpus[id]->lastSched;
 }
 
-void smp_schedule(cpuid_t id,time_t timestamp) {
+void smp_schedule(cpuid_t id,uint64_t timestamp) {
 	cpus[id]->schedCount++;
 	cpus[id]->lastSched = timestamp;
+}
+
+void smp_killThread(sThread *t) {
+	size_t i;
+	cpuid_t cur = smp_getCurId();
+	for(i = 0; i < cpuCount; i++) {
+		if(i != cur && cpus[i]->ready) {
+			sThread *ct = smp_getThreadOf(i);
+			if(ct == t) {
+				smp_sendIPI(i,IPI_TERM);
+				break;
+			}
+		}
+	}
 }
 
 void smp_wakeupCPU(void) {
@@ -144,7 +158,7 @@ void smp_print(void) {
 	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
 		sCPU *cpu = (sCPU*)n->data;
 		sThread *t = smp_getThreadOf(cpu->id);
-		vid_printf("\t%s:%x, running %d(%d:%s), schedCount=%zu, runtime=%u\n",
+		vid_printf("\t%s:%x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n",
 				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->tid,t->proc->pid,t->proc->command,
 				cpu->schedCount,cpu->runtime);
 	}

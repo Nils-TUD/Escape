@@ -25,9 +25,10 @@
 #include <esc/sllist.h>
 
 #define IPI_WORK		0x31
-#define IPI_FLUSH_TLB	0x32
-#define IPI_WAIT		0x33
-#define IPI_HALT		0x34
+#define IPI_TERM		0x32
+#define IPI_FLUSH_TLB	0x33
+#define IPI_WAIT		0x34
+#define IPI_HALT		0x35
 
 #ifdef __i386__
 #include <sys/arch/i586/task/smp.h>
@@ -38,8 +39,8 @@ typedef struct {
 	uint8_t bootstrap;
 	uint8_t ready;
 	size_t schedCount;
-	time_t runtime;
-	time_t lastSched;
+	uint64_t runtime;
+	uint64_t lastSched;
 } sCPU;
 
 void smp_init(void);
@@ -48,11 +49,12 @@ bool smp_isEnabled(void);
 sThread *smp_getThreadOf(cpuid_t id);
 void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready);
 void smp_setReady(cpuid_t id);
-void smp_unschedule(cpuid_t id,time_t timestamp);
-void smp_schedule(cpuid_t id,time_t timestamp);
+void smp_unschedule(cpuid_t id,uint64_t timestamp);
+void smp_schedule(cpuid_t id,uint64_t timestamp);
 void smp_pauseOthers(void);
 void smp_resumeOthers(void);
 void smp_haltOthers(void);
+void smp_killThread(sThread *t);
 void smp_wakeupCPU(void);
 void smp_flushTLB(tPageDir *pdir);
 void smp_sendIPI(cpuid_t id,uint8_t vector);

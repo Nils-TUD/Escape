@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
+#include <string.h>
 
 namespace gui {
 	Application *Application::_inst = NULL;

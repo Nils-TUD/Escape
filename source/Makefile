@@ -1,6 +1,6 @@
 # general
-ARCH = i586
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
@@ -22,15 +22,15 @@ QEMU = qemu
 #-net nic,model=ne2k_pci -net user 
 QEMUARGS = -smp 4 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
-ECO32 = /home/hrniels/Applications/eco32-0.20
+ECO32 = ../eco32
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin
-GIMMIX = /home/hrniels/mmix/gimmix-escape
+GIMMIX = ../gimmix
 GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
 # whether to link drivers and user-apps statically or dynamically (static | dynamic)
-export LINKTYPE = dynamic
+export LINKTYPE = static
 # if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (static | dynamic)
 export LIBGCC = dynamic
 

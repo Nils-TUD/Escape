@@ -187,6 +187,8 @@ static bool device_identify(sATADevice *device,uint cmd) {
 	}
 }
 
+#if DEBUGGING
+
 void device_dbg_printInfo(sATADevice *device) {
 	size_t i;
 	printf("oldCurCylinderCount = %u\n",device->info.oldCurCylinderCount);
@@ -267,3 +269,5 @@ void device_dbg_printInfo(sATADevice *device) {
 	printf("	writeCache = %u\n",device->info.features.writeCache);
 	printf("\n");
 }
+
+#endif

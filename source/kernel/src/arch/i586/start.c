@@ -22,6 +22,7 @@
 #include <sys/arch/i586/mem/paging.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/idt.h>
+#include <sys/arch/i586/fpu.h>
 #include <sys/arch/i586/apic.h>
 #include <sys/task/thread.h>
 #include <sys/task/elf.h>
@@ -84,7 +85,8 @@ void apstart(void) {
 	/* setup IDT for this cpu and enable its local APIC */
 	idt_init();
 	apic_enable();
-	/* detect our CPU */
+	/* init FPU and detect our CPU */
+	fpu_preinit();
 	cpu_detect();
 	/* notify the BSP that we're running */
 	smp_apIsRunning();

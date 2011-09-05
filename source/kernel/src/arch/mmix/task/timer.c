@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/timer.h>
+#include <sys/cpu.h>
 
 #define TIMER_BASE			0x8001000000000000
 

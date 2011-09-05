@@ -1,0 +1,282 @@
+                   # 1 "kernel/resumetrans.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/resumetrans.mms"
+                   %
+                   % resumetrans.mms -- tests RESUME_TRANS with the software-translation knuth lists in mmix-doc.pdf
+                   %
+                   
+                     LOC #00000000
+                     % segmentsizes: 1,0,0,0; pageSize=2^13; r=0x4000; n=16, f=1
+ ...000: 10000d00  RV OCTA #10000D0000004011
+ ...004: 00004011
+                   
+                     LOC #00004000
+0000000000004000:    OCTA #0000000000000017 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000017
+                     LOC #00004008
+ ...008: 00000000    OCTA #0000000000002017 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00002017
+                   
+                   
+                     % stack for unsave
+                     LOC #600000
+0000000000600000:    OCTA #0 % rL
+ ...000: 00000000
+ ...004: 00000000
+ ...008: 00000000    OCTA #0 % $249 = f9
+ ...00c: 00000000
+ ...010: 00000000    OCTA #0 % $250 = fa
+ ...014: 00000000
+ ...018: 00000000    OCTA #0 % $251 = fb
+ ...01c: 00000000
+ ...020: 00000000    OCTA #0 % $252 = fc
+ ...024: 00000000
+ ...028: 00000000    OCTA #0 % $253 = fd
+ ...02c: 00000000
+ ...030: 00000000    OCTA #0 % $254 = fe
+ ...034: 00000000
+ ...038: 00000000    OCTA #0 % $255 = ff
+ ...03c: 00000000
+ ...040: 00000000    OCTA #0 % rB
+ ...044: 00000000
+ ...048: 00000000    OCTA #0 % rD
+ ...04c: 00000000
+ ...050: 00000000    OCTA #0 % rE
+ ...054: 00000000
+ ...058: 00000000    OCTA #0 % rH
+ ...05c: 00000000
+ ...060: 00000000    OCTA #0 % rJ
+ ...064: 00000000
+ ...068: 00000000    OCTA #0 % rM
+ ...06c: 00000000
+ ...070: 00000000    OCTA #0 % rP
+ ...074: 00000000
+ ...078: 00000000    OCTA #0 % rR
+ ...07c: 00000000
+ ...080: 00000000    OCTA #0 % rW
+ ...084: 00000000
+ ...088: 00000000    OCTA #0 % rX
+ ...08c: 00000000
+ ...090: 00000000    OCTA #0 % rY
+ ...094: 00000000
+ ...098: 00000000    OCTA #0 % rZ
+ ...09c: 00000000
+ ...0a0: f9000000  STACK OCTA #F900000000000000 % rG | rA
+ ...0a4: 00000000
+                   
+                   
+($249)             saveLoc IS $249
+($250)             mask IS $250
+($251)             s IS $251
+($252)             virt IS $252
+($253)             base IS $253
+($254)             limit IS $254
+                   
+                   
+                     % forced trap address
+                     LOC #700000
+0000000000700000:  ATRAP GET virt,rYY
+ ...000: fefc001e
+ ...004: fef9001d    GET saveLoc,rXX
+ ...008: 3bf9f920    SLU saveLoc,saveLoc,32
+ ...00c: 3ff9f920    SRU saveLoc,saveLoc,32
+ ...010: 33f9f901    CMPU saveLoc,saveLoc,#01
+ ...014: 4af9xxxx    BNZ saveLoc,1F % no trap 0,0,1?
+ ...018: fc000006    SYNC 6
+ ...01c: fc000000    SYNC 0
+ ...020: f0xxxxxx    JMP Res
+ ...024: 3ff9fc3f  1H SRU saveLoc,virt,63
+ ...028: 42f9xxxx    BZ saveLoc,1F % MSB set?
+ ...02c: fefc001e    GET virt,rYY
+ ...030: 8f00fc00    LDOU $0,virt,0 % load from that address
+ ...034: 00000000    TRAP 0 % quit
+                   
+ ...038: faf90000  1H SAVE saveLoc,0 % save state first
+ ...03c: fe070012    GET $7,rV % $7=(virtual translation register)
+ ...040: 3f01fc3d    SRU $1,virt,61 % $1=i (segment number of virtual address)
+ ...044: 3b010102    SLU $1,$1,2
+ ...048: 34013401    NEG $1,52,$1 % $1=52-4i
+ ...04c: 3e010701    SRU $1,$7,$1 % $1=b[i]<<12
+ ...050: 3b020104    SLU $2,$1,4 % $2=b[i+1]<<12
+ ...054: e300f000    SETL $0,#f000
+ ...058: c8010100    AND $1,$1,$0 % $1=(b[i]<<12) & #f000
+ ...05c: c8020200    AND $2,$2,$0 % $2=(b[i+1]<<12) & #f000
+ ...060: 3b030718    SLU $3,$7,24
+ ...064: 3f030325    SRU $3,$3,37
+ ...068: 3b03030d    SLU $3,$3,13 % $3=(r field of rV)
+ ...06c: e8038000    ORH $3,#8000 % make $3 a physical address
+ ...070: 28fd0103    2ADDU base,$1,$3 % base=address of first page table
+ ...074: 28fe0203    2ADDU limit,$2,$3 % limit=address after last page table
+ ...078: 3ffb0728    SRU s,$7,40
+ ...07c: c9fbfbff    AND s,s,#FF % s=(s field of rV)
+ ...080: 3100fb0d    CMP $0,s,13
+ ...084: 4000xxxx    BN $0,Fail % s must be 13 or more
+ ...088: 3100fb31    CMP $0,s,49
+ ...08c: 4800xxxx    BNN $0,Fail % s must be 48 or less
+ ...090: e0fa8000    SETH mask,#8000
+ ...094: ebfa1ff8    ORL mask,#1ff8 % mask=(sign bit and n field)
+ ...098: e8078000    ORH $7,#8000 % set sign bit for PTP validation below
+ ...09c: ecfce000    ANDNH virt,#e000 % zero out the segment number
+ ...0a0: 3e00fcfb    SRU $0,virt,s % $0=a4a3a2a1a0 (page number of virt)
+ ...0a4: 73010001    ZSZ $1,$0,1 % $1=[page number is zero]
+ ...0a8: 20fefe01    ADD limit,limit,$1 % increase limit if page number is zero
+ ...0ac: e30603ff    SETL $6,#3ff
+                   
+                     % The next part of the routine finds the "digits" of the page number (a4 a3 a2 a1 a0 )1024,
+                     % from right to left:
+ ...0b0: 3005fdfe    CMP $5,base,limit % check if page out of segment-range ($5 is used at 1F)
+ ...0b4: 3f01000a    SRU $1,$0,10 % $1 /= 1024
+ ...0b8: 5201xxxx    PBZ $1,1F % if thats zero, its inside the first PT (in root-location)
+ ...0bc: c8000006    AND $0,$0,$6 % extract page-number in that PT
+ ...0c0: e7fd2000    INCL base,#2000 % to next table in root-location
+                   
+ ...0c4: 3005fdfe    CMP $5,base,limit
+ ...0c8: 3f02010a    SRU $2,$1,10
+ ...0cc: 5202xxxx    PBZ $2,2F % if thats zero, its inside the second PT
+ ...0d0: c8010106    AND $1,$1,$6
+ ...0d4: e7fd2000    INCL base,#2000
+                   
+ ...0d8: 3005fdfe    CMP $5,base,limit
+ ...0dc: 3f03020a    SRU $3,$2,10
+ ...0e0: 5203xxxx    PBZ $3,3F % if thats zero, its inside the third PT
+ ...0e4: c8020206    AND $2,$2,$6
+ ...0e8: e7fd2000    INCL base,#2000
+                   
+ ...0ec: 3005fdfe    CMP $5,base,limit
+ ...0f0: 3f04030a    SRU $4,$3,10
+ ...0f4: 5204xxxx    PBZ $4,4F % if thats zero, its inside the fourth PT
+ ...0f8: c8030306    AND $3,$3,$6
+ ...0fc: e7fd2000    INCL base,#2000
+                   
+                     % Then the process cascades back through PTPs.
+ ...100: 3005fdfe    CMP $5,base,limit
+ ...104: 4805xxxx    BNN $5,Fail
+ ...108: 2c0604fd    8ADDU $6,$4,base % build physical address for PTP (base + pageNo*8)
+ ...10c: 8dfd0600    LDO base,$6,0
+ ...110: c606fd07    XOR $6,base,$7 % get difference to rV
+ ...114: c80606fa    AND $6,$6,mask % just test sign-bit and n
+ ...118: 4a06xxxx    BNZ $6,Fail % if thats not zero, i.e. different, its an error
+                   
+ ...11c: effd1fff    ANDNL base,#1fff % clear 13 lowest bits of base (PTP)
+ ...120: 4805xxxx  4H BNN $5,Fail
+ ...124: 2c0603fd    8ADDU $6,$3,base
+ ...128: 8dfd0600    LDO base,$6,0
+ ...12c: c606fd07    XOR $6,base,$7
+ ...130: c80606fa    AND $6,$6,mask
+ ...134: 4a06xxxx    BNZ $6,Fail
+                   
+ ...138: effd1fff    ANDNL base,#1fff
+ ...13c: 4805xxxx  3H BNN $5,Fail
+ ...140: 2c0602fd    8ADDU $6,$2,base
+ ...144: 8dfd0600    LDO base,$6,0
+ ...148: c606fd07    XOR $6,base,$7
+ ...14c: c80606fa    AND $6,$6,mask
+ ...150: 4a06xxxx    BNZ $6,Fail
+                   
+ ...154: effd1fff    ANDNL base,#1fff
+ ...158: 4805xxxx  2H BNN $5,Fail
+ ...15c: 2c0601fd    8ADDU $6,$1,base
+ ...160: 8dfd0600    LDO base,$6,0
+ ...164: c606fd07    XOR $6,base,$7
+ ...168: c80606fa    AND $6,$6,mask
+ ...16c: 4a06xxxx    BNZ $6,Fail
+                   
+                     % Finally we obtain the PTE and communicate it to the machine. If errors have been
+                     % detected, we set the translation to zero; actually any translation with permission bits
+                     % zero would have the same effect.
+ ...170: effd1fff    ANDNL base,#1fff % remove low 13 bits of PTP
+ ...174: 4805xxxx  1H BNN $5,Fail
+ ...178: 2c0600fd    8ADDU $6,$0,base
+ ...17c: 8dfd0600    LDO base,$6,0 % base=PTE
+ ...180: c606fd07    XOR $6,base,$7 % get difference
+ ...184: cb060607    ANDN $6,$6,#7 % zero last 3 bits (permissions / f in rV)
+ ...188: 3b060633    SLU $6,$6,51 % extract n
+ ...18c: 5206xxxx    PBZ $6,Ready % branch if n matches
+ ...190: e3fd0000  Fail SETL base,0
+ ...194: f61f00fd  Ready PUT rZZ,base
+ ...198: fb0000f9    UNSAVE saveLoc % restore state
+ ...19c: e3ff000f  Res SETL $255,#000F
+ ...1a0: e9ff00ff    ORMH $255,#00FF % set rK
+ ...1a4: f9000001    RESUME 1 % now the machine will digest the translation
+                   
+                   
+                     LOC #1000
+                   
+                     % setup rV
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: e9000000    ORMH $0,RV>>32
+ ...008: ea000000    ORML $0,RV>>16
+ ...00c: eb000000    ORL $0,RV
+ ...010: 8f000000    LDOU $0,$0,0
+ ...014: f6120000    PUT rV,$0
+                   
+                     % setup stack
+ ...018: e0008000    SETH $0,#8000
+ ...01c: e9000000    ORMH $0,STACK>>32
+ ...020: ea000060    ORML $0,STACK>>16
+******************   ORL $0,STACK>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...024: eb0000a0
+ ...028: fb000000    UNSAVE $0
+                   
+                     % setup rT
+ ...02c: e0008000    SETH $0,#8000
+ ...030: e9000000    ORMH $0,ATRAP>>32
+ ...034: ea000070    ORML $0,ATRAP>>16
+******************   ORL $0,ATRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...038: eb000000
+ ...03c: f60d0000    PUT rT,$0
+                   
+                     % set rK to trigger interrupt
+ ...040: e10000fe    SETMH $0,#00FE
+ ...044: f60f0000    PUT rK,$0
+                   
+                     % now go to user-mode (we are at #8000000000001000 atm)
+ ...048: e300000f    SETL $0,#000F
+ ...04c: e90000ff    ORMH $0,#00FF % have to be set in usermode
+ ...050: c1ff0000    SET $255,$0
+ ...054: e3002000    SET $0,#2000
+ ...058: f61c0000    PUT rWW,$0
+ ...05c: e0008000    SETH $0,#8000
+ ...060: f61d0000    PUT rXX,$0
+ ...064: f9000001    RESUME 1
+                   
+                     LOC #2000
+                   
+                     % this instruction will cause a page-fault since #2000 is not in the ITC
+0000000000002000:    SET $0,#1234
+ ...000: e3001234
+ ...004: e30120f8    SET $1,#20F8
+                     % the store will cause another page-fault since #2000 is not in the DTC
+ ...008: af000100    STOU $0,$1,0
+                     % clear itc/dtc
+ ...00c: 00000001    TRAP 0,0,1
+                     % sync to memory (the instruction will cause a page-fault again)
+ ...010: e30120f8    SET $1,#20F8
+                     % this will also cause a page-fault for #2000 again
+ ...014: b9ff0100    SYNCD #FF,$1,0
+                   
+                     % pass the physical address where we wrote to to the trap-handler
+ ...018: e30120f8    SETL $1,#20F8
+ ...01c: e8018000    ORH $1,#8000
+                   
+ ...020: 00010101    TRAP 1,1,1
+
+Symbol table:
+ ATRAP = #0000000000700000 (10)
+ Fail = #0000000000700190 (12)
+ Main = #0000000000001000 (1)
+ RV = #0000000000000000 (2)
+ Ready = #0000000000700194 (13)
+ Res = #000000000070019c (11)
+ STACK = #00000000006000a0 (3)
+ base = $253 (8)
+ limit = $254 (9)
+ mask = $250 (5)
+ s = $251 (6)
+ saveLoc = $249 (4)
+ virt = $252 (7)

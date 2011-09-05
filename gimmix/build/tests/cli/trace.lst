@@ -1,0 +1,26 @@
+                   # 1 "cli/trace.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "cli/trace.mms"
+                   %
+                   % trace.mms -- tests the trace-command
+                   %
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main SETH $0,#1234
+ ...000: e0001234
+ ...004: e9005678    ORMH $0,#5678
+ ...008: ea0090ab    ORML $0,#90AB
+ ...00c: eb00cdef    ORL $0,#CDEF
+ ...010: c0010000    OR $1,$0,$0
+ ...014: e3022000    SETL $2,#2000
+ ...018: 8f010200    LDOU $1,$2,0
+ ...01c: fd000000    SWYM
+ ...020: e8028000    ORH $2,#8000
+ ...024: af010200    STOU $1,$2,0
+ ...028: fd000000    SWYM
+ ...02c: 00000000    TRAP 0,0,0
+
+Symbol table:
+ Main = #0000000000001000 (1)

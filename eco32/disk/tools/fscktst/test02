@@ -1,0 +1,13 @@
+#!/bin/sh
+BUILD=../../../build
+$BUILD/bin/mkdisk disk 120
+$BUILD/bin/mkfs disk '*'
+$BUILD/bin/fspoke disk '*' 4098 b 0
+echo "---------------------"
+echo "-  expected output  -"
+echo "---------------------"
+echo "wrong magic number in super block"
+echo "---------------------"
+echo "-   actual output   -"
+echo "---------------------"
+$BUILD/bin/fsck disk '*'

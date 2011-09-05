@@ -1,0 +1,37 @@
+                   # 1 "user/jump-limits.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/jump-limits.mms"
+                   %
+                   % jump-limits.mms -- tests the limits of jumps and branches
+                   %
+                     LOC #1000
+                   
+0000000000001000:  Main SET $0,0
+ ...000: e3000000
+                   
+                     % maximum possible forward-branch (#1004 -> #41000 = @ + 262140)
+ ...004: 4200xxxx    BZ $0,1F
+                   
+ ...008: e3030044  2H SET $3,#44
+                     % maximum possible forward-jump (#100C -> #4001008 = @ + 67108860)
+ ...00c: f0xxxxxx    JMP 3F
+ ...010: e3040055  4H SET $4,#55
+ ...014: 00000000    TRAP 0
+                   
+                     LOC #41000
+0000000000041000:  1H SET $1,#22
+ ...000: e3010022
+ ...004: c0000000    OR $0,$0,$0
+                     % maximum possible backwards-branch (#41008 -> #1008 = @ - 262144)
+ ...008: 43000000    BZ $0,2B
+                   
+                     LOC #4001008
+0000000004001008:  3H SET $2,#33
+ ...008: e3020033
+ ...00c: c0000000    OR $0,$0,$0
+                     % maximum possible backwards-jump (#4001010 -> #1010 = @ - 67108864)
+ ...010: f1000000    JMP 4B
+
+Symbol table:
+ Main = #0000000000001000 (1)

@@ -1,0 +1,127 @@
+                   # 1 "kernel/resumesec.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/resumesec.mms"
+                   %
+                   % resumesec.mms -- test whether resuming to rW=0 from user-mode can execute a instr in priv-mode
+                   %
+                   
+                     % segmentsizes: 3,3,3,4; pageSize=2^13; r=0x90000; n=256
+                     LOC #4000
+0000000000004000:  RV OCTA #33340D0000090000
+ ...000: 33340d00
+ ...004: 00090000
+                   
+ ...008: xxxxxxxx  CHECKS OCTA CHECK2
+ ...00c: xxxxxxxx
+ ...010: xxxxxxxx    OCTA CHECK3
+ ...014: xxxxxxxx
+ ...018: 00000000    OCTA 0
+ ...01c: 00000000
+                   
+                     LOC #00090008
+0000000000090008:    OCTA #0000000000002001 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...008: 00000000
+ ...00c: 00002001
+                   
+                     % dynamic trap address
+                     LOC #3000
+                   
+0000000000003000:  ATRAP GET $1,rWW
+ ...000: fe01001c
+ ...004: af01fe00    STOU $1,$254,0
+ ...008: fe010010    GET $1,rQ
+ ...00c: af01fe08    STOU $1,$254,8
+ ...010: fe01001d    GET $1,rXX
+ ...014: ec01ffff    ANDNH $1,#FFFF
+ ...018: ed01ff00    ANDNMH $1,#FF00
+ ...01c: ee01ffff    ANDNML $1,#FFFF
+ ...020: ef01ffff    ANDNL $1,#FFFF
+ ...024: af01fe10    STOU $1,$254,16
+ ...028: 23fefe18    ADDU $254,$254,24
+ ...02c: f7100000    PUT rQ,0
+ ...030: 35ff0001    NEG $255,0,1
+ ...034: f40003f5    GETA $0,CHECKS
+ ...038: 8e0000fd    LDOU $0,$0,$253
+ ...03c: 4200xxxx    BZ $0,QUIT
+ ...040: 23fdfd08    ADDU $253,$253,8
+ ...044: f61c0000    PUT rWW,$0
+ ...048: e0008000    SETH $0,#8000
+ ...04c: f61d0000    PUT rXX,$0
+ ...050: f9000001    RESUME 1
+                   
+ ...054: e0fe8000  QUIT SETH $254,#8000
+ ...058: ebfe5000    ORL $254,#5000
+ ...05c: b9fffe00    SYNCD #FF,$254,0
+ ...060: 00000000    TRAP 0,0,0
+                   
+                     LOC #1000
+                   
+                     % first setup basic paging: 0 mapped to 0
+0000000000001000:  Main PUT rG,253
+ ...000: f71300fd
+ ...004: e3fd0000    SET $253,0
+ ...008: e0fe8000    SETH $254,#8000
+ ...00c: ebfe5000    ORL $254,#5000
+ ...010: e3004000    SETL $0,RV
+ ...014: e8008000    ORH $0,#8000
+ ...018: 8f000000    LDOU $0,$0
+ ...01c: f6120000    PUT rV,$0
+                   
+                     % setup rTT
+ ...020: e0008000    SETH $0,#8000
+ ...024: e9000000    ORMH $0,ATRAP>>32
+ ...028: ea000000    ORML $0,ATRAP>>16
+ ...02c: eb003000    ORL $0,ATRAP>>0
+ ...030: f60e0000    PUT rTT,$0
+                   
+                     % to user mode
+ ...034: e3002000    SETL $0,#2000
+ ...038: f61c0000    PUT rWW,$0
+ ...03c: e0008000    SETH $0,#8000
+ ...040: f61d0000    PUT rXX,$0
+ ...044: 35ff0001    NEG $255,0,1 % rK
+ ...048: f9000001    RESUME 1
+                   
+                     LOC #2000
+0000000000002000:  CHECK1 PUT rW,0
+ ...000: f7180000
+ ...004: e0000000    SETH $0,#0000 % resume again
+ ...008: ea008d00    ORML $0,#8D00
+ ...00c: eb000000    ORL $0,#0000 % LDOI $0,$0,0
+ ...010: f6190000    PUT rX,$0
+ ...014: e0008000    SETH $0,#8000 % #8000000000000000
+ ...018: eb001000    ORL $0,#1000
+ ...01c: f61a0000    PUT rY,$0
+ ...020: f71b0000    PUT rZ,0
+ ...024: f9000000    RESUME 0
+                   
+ ...028: f7180000  CHECK2 PUT rW,0
+ ...02c: e0000200    SETH $0,#0200 % resume set
+ ...030: ea000000    ORML $0,#0000 % set $0
+ ...034: f6190000    PUT rX,$0
+ ...038: f71a0012    PUT rY,#12 % to #12
+ ...03c: f9000000    RESUME 0
+                   
+ ...040: f7180000  CHECK3 PUT rW,0
+ ...044: e0000100    SETH $0,#0100 % resume continue
+ ...048: ea00c100    ORML $0,#C100
+ ...04c: eb000000    ORL $0,#0000 % OR $0,$0,0
+ ...050: f6190000    PUT rX,$0
+ ...054: e0008000    SETH $0,#8000 % #8000000000000000
+ ...058: eb001000    ORL $0,#1000
+ ...05c: f61a0000    PUT rY,$0
+ ...060: f71b0000    PUT rZ,0
+ ...064: f9000000    RESUME 0
+                   
+ ...068: 00000000    TRAP 0
+
+Symbol table:
+ ATRAP = #0000000000003000 (6)
+ CHECK1 = #0000000000002000 (8)
+ CHECK2 = #0000000000002028 (3)
+ CHECK3 = #0000000000002040 (5)
+ CHECKS = #0000000000004008 (4)
+ Main = #0000000000001000 (1)
+ QUIT = #0000000000003054 (7)
+ RV = #0000000000004000 (2)

@@ -1,0 +1,151 @@
+
+Hardware
+========
+
+General
+-------
+
+32 bits virtual addresses
+30 bits physical addresses
+32 bits data path width
+32 bits instruction width
+
+32 integer registers
+byte addressable, big endian machine
+
+
+Physical Address Space Utilisation
+----------------------------------
+
+The main memory extends from address 0 to MEMORY_SIZE,
+which has an upper limit of 512 MB. The ROM is located
+at 0x20000000; its size, ROM_SIZE, is at most 256 MB.
+The I/O is memory-mapped and located at 0x30000000; its
+size is again at most 256 MB. The I/O address space is
+divided evenly into 256 devices; each device may occupy
+up to 1 MB of address space.
+
+
+Machine Data Types
+------------------
+
+word    32 bits
+half    16 bits
+byte     8 bits
+
+
+Paging
+------
+
+4 KB page size
+
+
+TLB
+---
+A TLB (translation lookaside buffer) is used to map virtual addresses to
+physical ones. The mapping does not apply to addresses with both high-order
+bits set; these addresses refer to physical memory and are never mapped by
+the TLB. The TLB has 32 entries, each of which can be used to map a virtual
+page number to a physical frame number. More than one page can be mapped to
+the same physical frame ('aliasing'). It is a severe programming error,
+however, to have more than one entry for the same virtual page number in
+the TLB. The result of a translation under these circumstances is undefined.
+Whenever an address translation takes place, all entries in the TLB are
+searched in parallel ('fully associative memory'). Therefore a given page
+number need not to be placed into a specific location in the TLB, any
+location will do. If no entry matches the page number, the processor takes
+an exception (see below).
+
+TLB Entries
+-----------
+A TLB entry consists of two parts: the key (also called 'input' or 'EntryHi')
+and the value (also called 'output' or 'EntryLo'). The key consists of the
+upper 20 bits of the page number of a virtual address; the lower 12 bits are
+zero and not stored in the entry. The key is used to locate an entry in the
+TLB during an address translation. The only way to make sure that an entry
+does not match any virtual address is to set both high-order bits of the
+address; such an address is never mapped by the TLB (see above). The value
+consists of the frame address and two flags. The low-order 12 bits of the
+frame address are always zero; they are not stored in the entry. Furthermore,
+the two most significant bits are always zero because the physical address
+range is 1 GByte.
+
+TLB Registers
+-------------
+Four registers allow programming of the TLB and assist in managing address
+translations of large address spaces in spite of a moderately sized TLB.
+Index:
+  This register specifies the location in the TLB where the next
+  write-by-index or read-by-index instruction will take place.
+  Furthermore, it will hold the index after a TLB search instruction
+  (see below).
+EntryHi:
+  This register holds the input part of a TLB entry, either before
+  writing it or after reading it. Furthermore, any of the TLB-related
+  exceptions (miss, invalid, write) will write the page number in
+  question into this register in order to facilitate a rapid insertion
+  of an appropriate mapping for this page into the TLB.
+EntryLo:
+  This register holds the output part of a TLB entry, either before
+  writing it or after reading it.
+BadAddr:
+  Any of the addres translation exceptions (including the non-TLB related
+  ones such as illegal addresses, but excluding bus address errors) write
+  the offending address into this register. The operating system may find
+  this information useful.
+
+TLB Instructions
+----------------
+Four instructions are used to program the TLB. All four are privileged
+instructions that will cause an exception if executed in user mode.
+tbs (translation buffer search):
+  The Index register is loaded with the address of the TLB entry whose
+  contents match the contents of the EntryHi register. If no TLB entry
+  matches, the high order bit of the Index register is set.
+tbwr (translation buffer write random):
+  This instruction loads a pseudo-randomly specified TLB entry with the
+  contents of the EntryHi and EntryLo registers. A free running counter
+  supplies the pseudo-random index. Entries 0..3 are never written to
+  by this instruction.
+tbri (translation buffer read index):
+  This instruction loads the EntryHi and EntryLo registers with the
+  contents of the TLB entry specified by the contents of the Index
+  register.
+tbwi (translation buffer write index):
+  This instruction loads the specified TLB entry with the contents of
+  the EntryHi and EntryLo registers. The contents of the Index register
+  specify the TLB entry.
+
+TLB Function
+------------
+
+
+Software
+========
+
+C Data Types
+------------
+
+long    32 bits
+int     32 bits
+short   16 bits
+char     8 bits
+
+
+Page Tables
+-----------
+
+2 levels of page tables
+1024 entries per table
+
+topmost 10 bits of virtual address select an entry in the page directory
+this entry points to a page table
+next 10 bits of virtual address select an entry in the page table
+this entry points to a page frame
+least significant 12 bits of virtual address select a byte in the page frame
+
+a single page table occupies exactly one page
+therefore we have 4 bytes per entry
+
+a page table entry has the following parts:
+  20 bits physical page frame address

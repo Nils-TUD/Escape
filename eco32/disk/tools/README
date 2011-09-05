@@ -1,0 +1,90 @@
+
+Tools
+-----
+
+mkdisk: make a physical disk
+Usage: mkdisk <file name> <n>[M]
+       <n>: decimal number of sectors
+       if 'M' appended: megabytes instead of sectors
+       (sector size is always 512 bytes)
+
+mkmboot: make a master boot block
+There is no executable file made by this tool.
+
+mkpart: make partitions on a disk
+Usage: mkpart <disk image file> <configuration file>
+
+shpart: show partitions on a disk
+Usage: shpart <disk image file>
+
+mkboot: make a boot block
+There is no executable file made by this tool.
+
+mkfiles: make a set of test data files
+There is no executable file made by this tool.
+
+mkfs: make a file system on a disk or partition
+Usage: mkfs <disk> <partition or '*'> [<prototype or size>]
+   or: mkfs --sizes
+
+shfs: show a file system on a disk or partition
+Usage: shfs <disk> <partition>
+       <disk> is a disk image file name
+       <partition> is a partition number (or '*' for the whole disk)
+
+fsck: check a file system on a disk or partition
+Usage: fsck <disk> <partition> [-a]
+       <disk> is a disk image file name
+       <partition> is a partition number (or '*' for the whole disk)
+       -a tries to repair a damaged file system automatically
+
+fspoke: poke a byte, halfword, or word into a disk or partition
+Usage: fspoke <disk> <partition> <offset> <width> <value>
+       <disk> is a disk image file name
+       <partition> is a partition number (or '*' for the whole disk)
+       <offset> is a partition or disk relative byte offset
+       <width> is b (byte), h (halfword), or w (word)
+       <value> is the data to be poked at <offset>
+
+fscktst: test the file system check utility
+This 'tool' is only a collection of scripts.
+
+
+Status
+------
+
+mkdisk:  done
+mkmboot: done (master boot not fully tested)
+mkpart:  done (not fully tested)
+shpart:  done
+mkboot:  done (boot not fully tested)
+mkfiles: done
+mkfs:    done
+shfs:    done
+fsck:    incomplete
+fspoke:  done
+fscktst: incomplete
+
+
+Byte order
+----------
+
+For the moment all file system tools use little-endian byte order
+to represent integers. In this way, programs running under Linux
+can access the disk data structures without any conversion.
+(This does not apply to native ECO32 programs: they use big-endian
+integer representation of course.)
+
+All filesystem tools, however, are written in such a way that they
+apply a mapping for the bytes of an integer, which can easily be
+changed to big-endian byte order.
+
+Here is a list of what must be changed:
+
+1. mkpart/mkpart.c   (in 1 place)    [already changed to big-endian]
+2. shpart/shpart.c   (in 1 place)    [already changed to big-endian]
+3. mkfs/mkfs.c       (in 2 places)   [already changed to big-endian]
+4. shfs/shfs.c       (in 1 place)    [already changed to big-endian]
+5. fsck/fsck.c       (in 2 places)   [already changed to big-endian]
+6. fspoke/fspoke.c   (in 3 places)   [already changed to big-endian]
+

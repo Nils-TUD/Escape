@@ -1,0 +1,30 @@
+                   # 1 "user/cswap.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/cswap.mms"
+                   %
+                   % cswap.mms -- tests CSWAP instruction
+                   %
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main PUT rP,#88
+ ...000: f7170088
+ ...004: e3002000    SET $0,#2000
+ ...008: e3010089    SET $1,#89
+ ...00c: af010000    STOU $1,$0,0
+                   
+ ...010: e3022233    SET $2,#2233
+ ...014: 95020000    CSWAP $2,$0,0
+ ...018: fe030017    GET $3,rP
+                   
+ ...01c: e3044455    SET $4,#4455
+ ...020: 95040000    CSWAP $4,$0,0
+ ...024: fe050017    GET $5,rP
+                   
+ ...028: b9080000    SYNCD #8,$0
+                   
+ ...02c: 00000000    TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)

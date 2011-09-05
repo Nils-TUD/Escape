@@ -1,0 +1,20 @@
+\section{Devices}
+
+As indicated previously, all devices in MMIX are memory mapped. That is, each device owns a specific range in the I/O space of the physical memory to provide access to itself. It is used for reading the state of the device, changing the state and urging the device to perform some kind of action. To behave like a hardware implementation, GIMMIX has a configurable \i{tick mechanism}, managed by the timer device, to simulate a delay when accessing devices. It achieves that by defining the number of instructions that can be executed in a tick as `INSTRS_PER_TICK` and thus calling the tick function of the timer every `INSTRS_PER_TICK` instructions. Each device can register callbacks at the timer, that are called after a specific number of ticks. For example when doing a disk operation, reading from terminal or similar. This way, the delay of each operation can be defined in ticks to approximate the delay that would be present in a hardware implementation. This concept has been inherited from the ECO32 project. ECO32 is a simple, but still realistic 32-bit big endian \gls{RISC} processor, designed by Mr. Geisse for research and teaching purposes \citep{eco32}.
+
+To be able to do something useful, GIMMIX already provides a few devices. All of them -- except RAM -- have been taken from ECO32 and have been adjusted to fit the needs of GIMMIX. The following devices are present so far:
+\begin{itemize}
+	\item RAM:\\
+	The RAM device obviously simulates the main memory of GIMMIX. Without going into the details here, it manages the memory in a so called \i{treap}, a combination of a binary tree and a heap \citep{treap}, whereas each node in the tree holds 2048 bytes of the memory. As soon as a memory location is accessed, a node is created, if not already done, and inserted into the tree. This way, GIMMIX can allow large amounts of main memory and will only have to pay for it, if it is actually used. The implementation has been inherited from MMIX-SIM (see \citep[pg. 12]{mmix-sim}).
+	\item ROM:\\
+	The ROM device contains a memory area of constant size, in which a firmware or similar can be integrated. For example, a bootloader that allows the user of the machine to boot from the hard disk.
+	\item Timer:\\
+	As already said, the timer is used internally for the tick machinery. Additionally, it offers the opportunity to raise a timer \glslink{Interrupt}{interrupt} after a specific number of ticks, configureable over device registers (accessible at a specific memory location).
+	\item Terminal:\\
+	The terminal device allows to attach a variable number of terminals to GIMMIX. To achieve that, an instance of xterm\footnote{Xterm is a terminal emulator for the X Window System. \citep{glxterm}} is started for each terminal. Each of them has a \i{receiver}, that reads from xterm every few ticks and notifies about read characters by setting a flag in a device register and optionally by triggering an \glslink{Interrupt}{interrupt}. Analogously, it has a \i{transmitter} that allows the software to write a character to the xterm terminal, which sets a flag and optionally raises an \glslink{Interrupt}{interrupt} as soon as the operation is finished, as well.
+	\item Disk:\\
+	The disk device offers a hard disk for the software by using a disk image file, divided into 512 byte sectors. Disk commands can be started by putting the sector number and sector count into specific device registers and finally setting the start flag and mode (read or write). The read command reads the requested sectors from the disk image into a disk buffer, which can in turn be read by the software when reading from the corresponding memory address range. Consequently, the write command writes the content of the disk buffer to the disk image. Analogously to the terminals, it sets a flag when an operation is finished and optionally raises an \glslink{Interrupt}{interrupt}.
+	\item Output:\\
+	Last but not least, GIMMIX has an output device, that allows the software to write characters to a file. This is intented for debugging purposes only.
+\end{itemize}
+

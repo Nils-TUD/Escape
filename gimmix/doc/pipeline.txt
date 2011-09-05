@@ -1,0 +1,7 @@
+Pipeline:
++--------+--------+----------------+--------+--------+
+|        |        | Float add/conv |        |        |
+| Fetch  | Decode | Float multipli | Memory | Write  |
+|        |        | Float div/sqrt |        |        |
++--------+--------+----------------+--------+--------+
+

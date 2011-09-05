@@ -1,0 +1,33 @@
+                   # 1 "diff/trip-bug.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "diff/trip-bug.mms"
+                   %
+                   % trip-bug.mms -- tests the bug in MMIX-PIPE that bits that have not been triped don't appear in rA
+                   %
+                   
+                     % float overflow
+                     LOC #50
+ ...050: fe010015    GET $1,rA % should be #FF01 because float inexact has not been triped
+                           % is actually #FF00 on MMIX-PIPE
+ ...054: f9000000    RESUME 0
+                   
+                     LOC #1000
+                   
+                   
+                     % enable trips
+0000000000001000:  Main SETL $0,#FF00
+ ...000: e300ff00
+ ...004: f6150000    PUT rA,$0
+                   
+                     % test float overflow
+ ...008: e0007fef    SETH $0,#7FEF
+ ...00c: e900ffff    ORMH $0,#FFFF
+ ...010: ea00ffff    ORML $0,#FFFF
+ ...014: eb00ffff    ORL $0,#FFFF
+ ...018: 04000000    FADD $0,$0,$0
+                   
+ ...01c: 00000000    TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)

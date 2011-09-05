@@ -1,0 +1,124 @@
+                   # 1 "kernel/primegen.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/primegen.mms"
+                   %
+                   % primegen.mms -- test knuths primes programm (slightly modified)
+                   %
+                   
+                     % stack for unsave
+                     LOC #200000
+0000000000200000:    OCTA #0 % rL
+ ...000: 00000000
+ ...004: 00000000
+ ...008: 00000000    OCTA #1000 % $244 = f4
+ ...00c: 00001000
+ ...010: 00000000    OCTA #1 % $245 = f5
+ ...014: 00000001
+ ...018: 00000000    OCTA #1 % $246 = f6
+ ...01c: 00000001
+ ...020: 00000000    OCTA #1 % $247 = f7
+ ...024: 00000001
+ ...028: 00000000    OCTA #1 % $248 = f8
+ ...02c: 00000001
+ ...030: 80000000    OCTA #80000000001001F8 % $249 = f9
+ ...034: 001001f8
+ ...038: 80000000    OCTA #8000000000100000 % $250 = fa
+ ...03c: 00100000
+ ...040: 00000000    OCTA #1 % $251 = fb
+ ...044: 00000001
+ ...048: 00000000    OCTA #1 % $252 = fc
+ ...04c: 00000001
+ ...050: 00000000    OCTA #1 % $253 = fd
+ ...054: 00000001
+ ...058: 00000000    OCTA #1 % $254 = fe
+ ...05c: 00000001
+ ...060: 00000000    OCTA #2 % $255 = ff
+ ...064: 00000002
+ ...068: 00000000    OCTA #0 % rB
+ ...06c: 00000000
+ ...070: 00000000    OCTA #0 % rD
+ ...074: 00000000
+ ...078: 00000000    OCTA #0 % rE
+ ...07c: 00000000
+ ...080: 00000000    OCTA #0 % rH
+ ...084: 00000000
+ ...088: 00000000    OCTA #0 % rJ
+ ...08c: 00000000
+ ...090: 00000000    OCTA #0 % rM
+ ...094: 00000000
+ ...098: 00000000    OCTA #0 % rP
+ ...09c: 00000000
+ ...0a0: 00000000    OCTA #0 % rR
+ ...0a4: 00000000
+ ...0a8: 00000000    OCTA #0 % rW
+ ...0ac: 00000000
+ ...0b0: 00000000    OCTA #0 % rX
+ ...0b4: 00000000
+ ...0b8: 00000000    OCTA #0 % rY
+ ...0bc: 00000000
+ ...0c0: 00000000    OCTA #0 % rZ
+ ...0c4: 00000000
+ ...0c8: f4000000  ADDR OCTA #F400000000000000 % rG | rA
+ ...0cc: 00000000
+                   
+                     % first prime
+                     LOC #100000
+0000000000100000:    WYDE 2
+ ...000: 0002    
+                   
+                     % last prime
+                     LOC #1001F8
+******************   WYDE (1-252)*2
+************ warning: constant doesn't fit in 2 bytes
+ ...1f8: fe0a    
+                   
+                     LOC #1000
+                   
+                     % setup our environment
+0000000000001000:  Main SETH $0,#8000 % access it over the direct mapped space
+ ...000: e0008000
+ ...004: e9000000    ORMH $0,ADDR>>32 % otherwise we would have to setup paging
+ ...008: ea000020    ORML $0,ADDR>>16
+******************   ORL $0,ADDR
+************ warning: YZ field doesn't fit in two bytes
+ ...00c: eb0000c8
+ ...010: fb000000    UNSAVE $0
+ ...014: f0xxxxxx    JMP Gen
+                   
+($244)             DivOff IS $244
+($245)             Offset IS $245
+($248)             Prime IS $248
+($249)             End IS $249
+($250)             Primes IS $250
+                   
+ ...018: 85f5f900  Gen LDW Offset,End,0 % load offset (negative)
+ ...01c: e3f80003    SETL Prime,3 % second prime is 3
+ ...020: a4f8f9f5  1H STW Prime,End,Offset % store prime in current slot
+ ...024: e7f50002    INCL Offset,2 % walk to next slot (we are storing wydes)
+ ...028: 42f5xxxx    BZ Offset,4F % if offset is zero, we are done
+ ...02c: e7f80002  2H INCL Prime,2 % calc next prime
+ ...030: 21f4fa02    ADD DivOff,Primes,2 % start with 3 as divisor
+ ...034: 8500f400  3H LDW $0,DivOff,0 % x = M[$244]
+ ...038: 1c01f800    DIV $1,Prime,$0 % z = Prime / x
+ ...03c: fe020006    GET $2,rR
+ ...040: 4302fffb    BZ $2,2B % if Prime % x == 0, its no prime
+ ...044: e7f40002    INCL DivOff,2 % to next divisor
+ ...048: 5b00fffb    PBNZ $0,3B % if x was not zero, continue
+ ...04c: f1fffff5    JMP 1B % we are done, its a prime, so store it
+ ...050: e3000000  4H SET $0,0
+ ...054: b8fffa00    SYNCD #FF,Primes,$0
+ ...058: e7000100    INCL $0,#100
+ ...05c: b8fffa00    SYNCD #FF,Primes,$0
+                   
+ ...060: 00000000    TRAP 0
+
+Symbol table:
+ ADDR = #00000000002000c8 (2)
+ DivOff = $244 (4)
+ End = $249 (7)
+ Gen = #0000000000001018 (3)
+ Main = #0000000000001000 (1)
+ Offset = $245 (5)
+ Prime = $248 (6)
+ Primes = $250 (8)

@@ -1,0 +1,308 @@
+%
+% sflot.mms -- tests sflot-instruction (generated)
+%
+		LOC		#1000
+
+Main	OR		$0,$0,$0	% dummy
+		PUT		rA,0
+
+		% Put floats in registers
+		SETH	$0,#0000
+		ORMH	$0,#0000
+		ORML	$0,#0000
+		ORL		$0,#0000
+
+		SETH	$1,#0000
+		ORMH	$1,#0000
+		ORML	$1,#0000
+		ORL		$1,#0001
+
+		SETH	$2,#0000
+		ORMH	$2,#0000
+		ORML	$2,#0000
+		ORL		$2,#0002
+
+		SETH	$3,#0000
+		ORMH	$3,#0000
+		ORML	$3,#0000
+		ORL		$3,#002A
+
+		SETH	$4,#7730
+		ORMH	$4,#0FC3
+		ORML	$4,#6170
+		ORL		$4,#1777
+
+		SETH	$5,#0000
+		ORMH	$5,#0000
+		ORML	$5,#17D7
+		ORL		$5,#8400
+
+		SETH	$6,#0000
+		ORMH	$6,#0000
+		ORML	$6,#00A9
+		ORL		$6,#8AC7
+
+		SETH	$7,#7FFF
+		ORMH	$7,#FFFF
+		ORML	$7,#FFFF
+		ORL		$7,#FFFF
+
+		SETH	$8,#8000
+		ORMH	$8,#0000
+		ORML	$8,#0000
+		ORL		$8,#0000
+
+		SETH	$9,#FFFF
+		ORMH	$9,#FFFF
+		ORML	$9,#FFFF
+		ORL		$9,#FFFF
+
+		SETH	$10,#FFFF
+		ORMH	$10,#FFFF
+		ORML	$10,#FFFF
+		ORL		$10,#FFFE
+
+		SETH	$11,#FFFF
+		ORMH	$11,#FFFF
+		ORML	$11,#FFFF
+		ORL		$11,#FF19
+
+		SETH	$12,#FFBF
+		ORMH	$12,#0668
+		ORML	$12,#5A74
+		ORL		$12,#D072
+
+		% Setup location for results
+		SETL	$13,#F000
+
+		% Perform tests
+		% Set rounding mode to NEAR
+		SETML	$14,#0
+		PUT		rA,$14
+
+		SFLOT	$15,$0		% (SFLOT) #0
+		STOU	$15,$13,0		% #F000
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$1		% (SFLOT) #1
+		STOU	$15,$13,0		% #F008
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$2		% (SFLOT) #2
+		STOU	$15,$13,0		% #F010
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$3		% (SFLOT) #2A
+		STOU	$15,$13,0		% #F018
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$4		% (SFLOT) #77300FC361701777
+		STOU	$15,$13,0		% #F020
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$5		% (SFLOT) #17D78400
+		STOU	$15,$13,0		% #F028
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$6		% (SFLOT) #A98AC7
+		STOU	$15,$13,0		% #F030
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$7		% (SFLOT) #7FFFFFFFFFFFFFFF
+		STOU	$15,$13,0		% #F038
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$8		% (SFLOT) #8000000000000000
+		STOU	$15,$13,0		% #F040
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$9		% (SFLOT) #FFFFFFFFFFFFFFFF
+		STOU	$15,$13,0		% #F048
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$10		% (SFLOT) #FFFFFFFFFFFFFFFE
+		STOU	$15,$13,0		% #F050
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$11		% (SFLOT) #FFFFFFFFFFFFFF19
+		STOU	$15,$13,0		% #F058
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$12		% (SFLOT) #FFBF06685A74D072
+		STOU	$15,$13,0		% #F060
+		ADDU	$13,$13,8
+
+		% Set rounding mode to DOWN
+		SETML	$14,#3
+		PUT		rA,$14
+
+		SFLOT	$15,$0		% (SFLOT) #0
+		STOU	$15,$13,0		% #F068
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$1		% (SFLOT) #1
+		STOU	$15,$13,0		% #F070
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$2		% (SFLOT) #2
+		STOU	$15,$13,0		% #F078
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$3		% (SFLOT) #2A
+		STOU	$15,$13,0		% #F080
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$4		% (SFLOT) #77300FC361701777
+		STOU	$15,$13,0		% #F088
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$5		% (SFLOT) #17D78400
+		STOU	$15,$13,0		% #F090
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$6		% (SFLOT) #A98AC7
+		STOU	$15,$13,0		% #F098
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$7		% (SFLOT) #7FFFFFFFFFFFFFFF
+		STOU	$15,$13,0		% #F0A0
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$8		% (SFLOT) #8000000000000000
+		STOU	$15,$13,0		% #F0A8
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$9		% (SFLOT) #FFFFFFFFFFFFFFFF
+		STOU	$15,$13,0		% #F0B0
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$10		% (SFLOT) #FFFFFFFFFFFFFFFE
+		STOU	$15,$13,0		% #F0B8
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$11		% (SFLOT) #FFFFFFFFFFFFFF19
+		STOU	$15,$13,0		% #F0C0
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$12		% (SFLOT) #FFBF06685A74D072
+		STOU	$15,$13,0		% #F0C8
+		ADDU	$13,$13,8
+
+		% Set rounding mode to UP
+		SETML	$14,#2
+		PUT		rA,$14
+
+		SFLOT	$15,$0		% (SFLOT) #0
+		STOU	$15,$13,0		% #F0D0
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$1		% (SFLOT) #1
+		STOU	$15,$13,0		% #F0D8
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$2		% (SFLOT) #2
+		STOU	$15,$13,0		% #F0E0
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$3		% (SFLOT) #2A
+		STOU	$15,$13,0		% #F0E8
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$4		% (SFLOT) #77300FC361701777
+		STOU	$15,$13,0		% #F0F0
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$5		% (SFLOT) #17D78400
+		STOU	$15,$13,0		% #F0F8
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$6		% (SFLOT) #A98AC7
+		STOU	$15,$13,0		% #F100
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$7		% (SFLOT) #7FFFFFFFFFFFFFFF
+		STOU	$15,$13,0		% #F108
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$8		% (SFLOT) #8000000000000000
+		STOU	$15,$13,0		% #F110
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$9		% (SFLOT) #FFFFFFFFFFFFFFFF
+		STOU	$15,$13,0		% #F118
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$10		% (SFLOT) #FFFFFFFFFFFFFFFE
+		STOU	$15,$13,0		% #F120
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$11		% (SFLOT) #FFFFFFFFFFFFFF19
+		STOU	$15,$13,0		% #F128
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$12		% (SFLOT) #FFBF06685A74D072
+		STOU	$15,$13,0		% #F130
+		ADDU	$13,$13,8
+
+		% Set rounding mode to ZERO
+		SETML	$14,#1
+		PUT		rA,$14
+
+		SFLOT	$15,$0		% (SFLOT) #0
+		STOU	$15,$13,0		% #F138
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$1		% (SFLOT) #1
+		STOU	$15,$13,0		% #F140
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$2		% (SFLOT) #2
+		STOU	$15,$13,0		% #F148
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$3		% (SFLOT) #2A
+		STOU	$15,$13,0		% #F150
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$4		% (SFLOT) #77300FC361701777
+		STOU	$15,$13,0		% #F158
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$5		% (SFLOT) #17D78400
+		STOU	$15,$13,0		% #F160
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$6		% (SFLOT) #A98AC7
+		STOU	$15,$13,0		% #F168
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$7		% (SFLOT) #7FFFFFFFFFFFFFFF
+		STOU	$15,$13,0		% #F170
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$8		% (SFLOT) #8000000000000000
+		STOU	$15,$13,0		% #F178
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$9		% (SFLOT) #FFFFFFFFFFFFFFFF
+		STOU	$15,$13,0		% #F180
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$10		% (SFLOT) #FFFFFFFFFFFFFFFE
+		STOU	$15,$13,0		% #F188
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$11		% (SFLOT) #FFFFFFFFFFFFFF19
+		STOU	$15,$13,0		% #F190
+		ADDU	$13,$13,8
+
+		SFLOT	$15,$12		% (SFLOT) #FFBF06685A74D072
+		STOU	$15,$13,0		% #F198
+		ADDU	$13,$13,8
+
+		% Sync memory
+		SETL	$13,#F000
+		SYNCD	#FE,$13
+		ADDU	$13,$13,#FF
+		SYNCD	#A2,$13
+		ADDU	$13,$13,#A3

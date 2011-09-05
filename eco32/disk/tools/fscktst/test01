@@ -1,0 +1,15 @@
+#!/bin/sh
+BUILD=../../../build
+$BUILD/bin/mkdisk disk 120
+$BUILD/bin/mkfs disk '*'
+mv disk aux
+dd if=aux of=disk bs=4096 count=3
+rm aux
+echo "---------------------"
+echo "-  expected output  -"
+echo "---------------------"
+echo "disk/partition size is less than 4 blocks"
+echo "---------------------"
+echo "-   actual output   -"
+echo "---------------------"
+$BUILD/bin/fsck disk '*'

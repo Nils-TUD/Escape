@@ -1,0 +1,15 @@
+tr e
+s 5
+p $0
+ou
+p $0
+ou 2
+p $0
+ov 2
+p $0
+s
+p $0
+ou
+p $0
+c
+q

@@ -1,0 +1,389 @@
+                   # 1 "manual/signal.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "manual/signal.mms"
+                   %
+                   % signal.mms -- shows how a signal could be handled
+                   %
+                   
+                     % syscalls
+(0000000000000001) ESIG IS 1
+(0000000000000002) PHELLO IS 2
+                   
+                     % kernel stack
+                     LOC #7000
+0000000000007000:  KSTACK OCTA 0
+ ...000: 00000000
+ ...004: 00000000
+                   
+                   
+                     % kernel data-area
+                     LOC #6000
+                   
+                     % segmentsizes: 1,0,0,0; pageSize=2^13; r=0x2000; n=0
+0000000000006000:  RV OCTA #10000D0000020000
+ ...000: 10000d00
+ ...004: 00020000
+                   
+                     LOC #00020000
+0000000000020000:    OCTA #0000000000000007 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000007
+                     LOC #00020008
+ ...008: 00000000    OCTA #0000000000002007 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00002007
+                     LOC #00020010
+ ...010: 00000000    OCTA #0000000000004007 % PTE 2 (#0000000000004000 .. #0000000000005FFF)
+ ...014: 00004007
+                   
+ ...018: 00000000  SREGS OCTA 0
+ ...01c: 00000000
+ ...020: 00000000    OCTA 0
+ ...024: 00000000
+ ...028: 00000000    OCTA 0
+ ...02c: 00000000
+ ...030: 00000000    OCTA 0
+ ...034: 00000000
+ ...038: 00000000    OCTA 0
+ ...03c: 00000000
+                   
+ ...040: 48656c6c  HELLO BYTE "Hello World!",#d,#a,0
+ ...044: 6f20576f
+ ...048: 726c6421
+ ...04c: 0d0a00  
+                   
+                   
+                     % startup
+                     LOC #1000
+0000000000001000:  Main GETA $0,RV
+ ...000: f4001400
+ ...004: 8f000000    LDOU $0,$0,0
+ ...008: f6120000    PUT rV,$0
+                   
+ ...00c: f400xxxx    GETA $0,FTRAP
+ ...010: f60d0000    PUT rT,$0
+ ...014: f400xxxx    GETA $0,DTRAP
+ ...018: f60e0000    PUT rTT,$0
+                   
+ ...01c: f40017f9    GETA $0,KSTACK
+ ...020: f6200000    PUT rSS,$0
+                   
+                     % enable terminal-interrupts
+ ...024: e0008002    SETH $0,#8002
+ ...028: b5030000    STCO #3,$0,0
+                   
+                     % go to USER
+ ...02c: f400xxxx    GETA $0,USER
+ ...030: ec008000    ANDNH $0,#8000
+ ...034: f61c0000    PUT rWW,$0
+ ...038: e0008000    SETH $0,#8000
+ ...03c: f61d0000    PUT rXX,$0
+ ...040: 35ff0001    NEG $255,0,1 % rK
+ ...044: f9000001    RESUME 1
+                   
+                   
+                     % dynamic trap handler
+ ...048: faff0001  DTRAP SAVE $255,1
+ ...04c: fe000010    GET $0,rQ
+ ...050: f7100000    PUT rQ,0
+ ...054: e0008002    SETH $0,#8002
+ ...058: 8f000008    LDOU $0,$0,8 % load char to stop device from sending interrupts
+ ...05c: f4007bef    GETA $0,SREGS
+ ...060: 8f010020    LDOU $1,$0,32
+ ...064: 4a01xxxx    BNZ $1,1F % blocked? then continue
+ ...068: fe01001c    GET $1,rWW
+ ...06c: af010000    STOU $1,$0,0 % SREGS[0] = rWW
+ ...070: fe01001d    GET $1,rXX
+ ...074: af010008    STOU $1,$0,8 % SREGS[1] = rXX
+ ...078: fe01001e    GET $1,rYY
+ ...07c: af010010    STOU $1,$0,16 % SREGS[2] = rYY
+ ...080: fe01001f    GET $1,rZZ
+ ...084: af010018    STOU $1,$0,24 % SREGS[3] = rZZ
+ ...088: b5010020    STCO #1,$0,32 % block signal
+                     % set rWW to address of sighandler-entry
+ ...08c: f400xxxx    GETA $0,SIGHE
+ ...090: ec008000    ANDNH $0,#8000
+ ...094: f61c0000    PUT rWW,$0
+ ...098: fb0100ff  1H UNSAVE 1,$255
+ ...09c: 35ff0001    NEG $255,0,1 % rK
+ ...0a0: f9000001    RESUME 1
+                   
+                   
+                     % trap handler
+ ...0a4: faff0001  FTRAP SAVE $255,1
+ ...0a8: fe01001d    GET $1,rXX
+ ...0ac: c90101ff    AND $1,$1,#FF % Z-field specifies the syscall
+ ...0b0: 33020101    CMPU $2,$1,ESIG
+ ...0b4: 4202xxxx    BZ $2,1F % end-signal?
+ ...0b8: 33020102    CMPU $2,$1,PHELLO
+ ...0bc: 4202xxxx    BZ $2,2F % print hello?
+                   
+                     % restore special-register
+ ...0c0: f4007bd6  1H GETA $0,SREGS
+ ...0c4: 8f010000    LDOU $1,$0,0
+ ...0c8: f61c0001    PUT rWW,$1 % rWW = SREGS[0]
+ ...0cc: 8f010008    LDOU $1,$0,8
+ ...0d0: f61d0001    PUT rXX,$1 % rXX = SREGS[1]
+ ...0d4: 8f010010    LDOU $1,$0,16
+ ...0d8: f61e0001    PUT rYY,$1 % rYY = SREGS[2]
+ ...0dc: 8f010018    LDOU $1,$0,24
+ ...0e0: f61f0001    PUT rZZ,$1 % rZZ = SREGS[3]
+ ...0e4: b5000020    STCO #0,$0,32 % unblock signal
+ ...0e8: f0xxxxxx    JMP 3F
+                   
+                     % just for testing
+ ...0ec: e3010000  2H SET $1,0
+ ...0f0: f4027bd4    GETA $2,HELLO
+ ...0f4: f200xxxx    PUSHJ $0,io:puts % io:puts(0,HELLO)
+                   
+ ...0f8: fb0100ff  3H UNSAVE 1,$255
+ ...0fc: 35ff0001    NEG $255,0,1 % rK
+ ...100: f9000001    RESUME 1
+                   
+                   # 1 "manual/io.mmi" 1
+                   %
+                   % some io-functions
+                   %
+                   
+                   % terminal 0 rcvr ctrl: #8002000000000000
+                   % terminal 0 rcvr data: #8002000000000008
+                   % terminal 0 xmtr ctrl: #8002000000000010
+                   % terminal 0 xmtr data: #8002000000000018
+                   % terminal 1 rcvr ctrl: #8002000100000000
+                   % terminal 1 rcvr data: #8002000100000008
+                   % terminal 1 xmtr ctrl: #8002000100000010
+                   % terminal 1 xmtr data: #8002000100000018
+                   
+                     PREFIX io:
+                   
+ ...104: 30313233  hexch BYTE "0123456789ABCDEF",0
+ ...108: 34353637
+ ...10c: 38394142
+ ...110: 43444546
+ ...114: 00      
+                     LOC @+(4-@)&3
+ ...118: 6e616e00  nan BYTE "nan",0
+ ...11c: 696e6600  inf BYTE "inf",0
+                   
+                   % void putf(octa term,octa f)
+ ...120: fe020004  putf GET $2,:rJ % save rJ
+ ...124: 4801xxxx    BNN $1,1F % f >= 0?
+ ...128: c1040000    SET $4,$0
+ ...12c: e305002d    SET $5,'-'
+ ...130: f203xxxx    PUSHJ $3,putc % putc(term,'-')
+ ...134: ec018000    ANDNH $1,#8000 % f = -f
+ ...138: e0037ff0  1H SETH $3,#7FF0
+ ...13c: c8040103    AND $4,$1,$3 % check exponent
+ ...140: 32050403    CMPU $5,$4,$3
+ ...144: 4a05xxxx    BNZ $5,3F % if not #7FF, its no nan and no inf
+ ...148: 35030001    NEG $3,0,1
+ ...14c: ec03fff0    ANDNH $3,#FFF0 % fraction-mask
+ ...150: c8040103    AND $4,$1,$3
+ ...154: 4a04xxxx    BNZ $4,2F % if fraction not zero, its nan
+ ...158: c1040000    SET $4,$0
+ ...15c: f505fff0    GETA $5,inf
+ ...160: f203xxxx    PUSHJ $3,puts % puts(term,"inf")
+ ...164: f0xxxxxx    JMP 6F
+ ...168: c1040000  2H SET $4,$0
+ ...16c: f505ffeb    GETA $5,nan
+ ...170: f203xxxx    PUSHJ $3,puts % puts(term,"nan")
+ ...174: f0xxxxxx    JMP 6F
+ ...178: c1040000  3H SET $4,$0
+ ...17c: c1050100    SET $5,$1
+ ...180: f203xxxx    PUSHJ $3,_putfn % _putfn(term,f)
+ ...184: c1040000    SET $4,$0
+ ...188: e305002e    SET $5,'.'
+ ...18c: f203xxxx    PUSHJ $3,putc % putc(term,'.')
+ ...190: e0044024    SETH $4,#4024 % 10.0
+ ...194: 17030101    FINT $3,:ROUND_OFF,$1
+ ...198: 06010103    FSUB $1,$1,$3 % f -= (int)f
+                     % multiply it with 10 until the fraction is gone
+ ...19c: 17030101    FINT $3,:ROUND_OFF,$1
+ ...1a0: 32030103  4H CMPU $3,$1,$3
+ ...1a4: 4203xxxx    BZ $3,5F % if fraction == 0, we are done
+ ...1a8: 10010104    FMUL $1,$1,$4 % f *= 10
+ ...1ac: 17030101    FINT $3,:ROUND_OFF,$1
+ ...1b0: 4b03fffc    BNZ $3,4B % if its still zero, print the 0
+ ...1b4: c1060000    SET $6,$0
+ ...1b8: e3070030    SET $7,'0'
+ ...1bc: f205xxxx    PUSHJ $5,putc % putc(term,'0')
+ ...1c0: f1fffff8    JMP 4B
+ ...1c4: c1040000  5H SET $4,$0
+ ...1c8: c1050100    SET $5,$1
+ ...1cc: f203xxxx    PUSHJ $3,_putfn % finally, print it
+ ...1d0: f6040002  6H PUT :rJ,$2 % restore rJ
+ ...1d4: f8000000    POP 0,0
+                   
+                   % void _putfn(octa term,octa f)
+ ...1d8: fe020004  _putfn GET $2,:rJ
+ ...1dc: 17010101    FINT $1,:ROUND_OFF,$1 % f = (int)f
+ ...1e0: e0034024    SETH $3,#4024 % 10.0
+ ...1e4: 01040103    FCMP $4,$1,$3
+ ...1e8: 4004xxxx    BN $4,1F % if g < 10, stop recursion
+ ...1ec: 14060103    FDIV $6,$1,$3 % g = f / 10
+ ...1f0: c1050000    SET $5,$0
+ ...1f4: f304fff9    PUSHJ $4,_putfn % _putfn(g)
+ ...1f8: 16050103  1H FREM $5,$1,$3 % x = f % 10
+ ...1fc: 4805xxxx    BNN $5,2F % its negative if its >= 5, (-5, -4, ...)
+ ...200: 04050305    FADD $5,$3,$5 % so, x = 10 + x
+ ...204: c1040000  2H SET $4,$0
+ ...208: 05050005    FIX $5,$5
+ ...20c: 23050530    ADDU $5,$5,'0' % x += '0'
+ ...210: f203xxxx    PUSHJ $3,putc % putc(term,x)
+ ...214: f6040002    PUT :rJ,$2 % restore rJ
+ ...218: f8000000    POP 0,0
+                   
+                   % void putn(octa term,octa n)
+ ...21c: fe020004  putn GET $2,:rJ % save rJ
+ ...220: 5801xxxx    PBNN $1,1F % n < 0?
+ ...224: c0040000    OR $4,$0,$0
+ ...228: e305002d    SET $5,'-'
+ ...22c: f203xxxx    PUSHJ $3,putc % putc(term,'-')
+ ...230: 34010001    NEG $1,0,$1 % n = -n
+ ...234: 3303010a  1H CMPU $3,$1,10
+ ...238: 5003xxxx    PBN $3,1F % n >= 10?
+ ...23c: c0040000    OR $4,$0,$0
+ ...240: 1d05010a    DIV $5,$1,10 % t = n / 10
+ ...244: fe010006    GET $1,:rR % n = n % 10
+ ...248: f303fff5    PUSHJ $3,putn % putn(term,t)
+ ...24c: c0040000  1H OR $4,$0,$0
+ ...250: c0050101    OR $5,$1,$1
+ ...254: 23050530    ADDU $5,$5,48 % char + '0'
+ ...258: f203xxxx    PUSHJ $3,putc % putc(term,n)
+ ...25c: f6040002    PUT :rJ,$2 % restore rJ
+ ...260: f8000000    POP 0,0
+                   
+                   % void putu(octa term,octa u,octa base)
+ ...264: fe030004  putu GET $3,:rJ % save rJ
+ ...268: 32040102    CMPU $4,$1,$2
+ ...26c: 5004xxxx    PBN $4,1F % n >= base?
+ ...270: c0050000    OR $5,$0,$0
+ ...274: 1e060102    DIVU $6,$1,$2 % t = n / base
+ ...278: c0070202    OR $7,$2,$2
+ ...27c: fe010006    GET $1,:rR % n = n % base
+ ...280: f304fff9    PUSHJ $4,putu % putu(term,t,base)
+ ...284: c0050000  1H OR $5,$0,$0
+ ...288: f506ff9f    GETA $6,hexch
+ ...28c: 82060601    LDBU $6,$6,$1
+ ...290: f204xxxx    PUSHJ $4,putc % putc(term,hexch[n])
+ ...294: f6040003    PUT :rJ,$3 % restore rJ
+ ...298: f8000000    POP 0,0
+                   
+                   % octa gets(octa term,char *dst,octa max)
+ ...29c: fe030004  gets GET $3,:rJ % save rJ
+ ...2a0: 23040100    ADDU $4,$1,0
+ ...2a4: 31050201  1H CMP $5,$2,1
+ ...2a8: 4c05xxxx    BNP $5,2F % if(max <= 1) goto 1F
+ ...2ac: 23060000    ADDU $6,$0,0
+ ...2b0: f205xxxx    PUSHJ $5,getc % call getc(term)
+ ...2b4: 23070000    ADDU $7,$0,0
+ ...2b8: 23080500    ADDU $8,$5,0
+ ...2bc: f206xxxx    PUSHJ $6,putc % call putc(term,c)
+ ...2c0: 3106050d    CMP $6,$5,#0D % c == \n?
+ ...2c4: 4206xxxx    BZ $6,1F % if so, stop
+ ...2c8: a3050100    STBU $5,$1,0 % otherwise, store char
+ ...2cc: 23010101    ADDU $1,$1,1 % to next
+ ...2d0: 25020201    SUB $2,$2,1 % max--
+ ...2d4: f1fffff4    JMP 1B
+ ...2d8: 23060000  2H ADDU $6,$0,0
+ ...2dc: e307000d    SET $7,#0D
+ ...2e0: f205xxxx    PUSHJ $5,putc % call putc(term,'\n')
+ ...2e4: 23060000  1H ADDU $6,$0,0
+ ...2e8: e307000a    SET $7,#0A
+ ...2ec: f205xxxx    PUSHJ $5,putc % call putc(term,'\r')
+ ...2f0: a30a0100    STBU $10,$1,0 % null-termination
+ ...2f4: 26000104    SUBU $0,$1,$4 % determine length
+ ...2f8: f6040003    PUT :rJ,$3 % restore rJ
+ ...2fc: f8010000    POP 1,0 % return length
+                   
+                   % octa getc(octa term)
+ ...300: e0018002  getc SETH $1,#8002 % base address: #8002000000000000
+ ...304: 39000020    SL $0,$0,32 % or in terminal-number
+ ...308: c0010100    OR $1,$1,$0 % -> #8002000100000000 for term 1, e.g.
+ ...30c: 8f020100  1H LDOU $2,$1,#0 % read ctrl-reg
+ ...310: c9020201    AND $2,$2,#1 % extract RDY-bit
+ ...314: 5302fffe    PBZ $2,1B % wait until its set
+ ...318: 8f000108    LDOU $0,$1,#8 % load char
+ ...31c: f8010000    POP 1,0 % return it
+                   
+                   % void puts(octa term,char *string)
+ ...320: fe020004  puts GET $2,:rJ % save rJ
+ ...324: 83050100  1H LDBU $5,$1,0 % load char from string
+ ...328: 4205xxxx    BZ $5,2F % if its 0, we are done
+ ...32c: 23040000    ADDU $4,$0,0
+ ...330: f203xxxx    PUSHJ $3,putc % call putc(c)
+ ...334: 23010101    ADDU $1,$1,1 % to next char
+ ...338: f1fffffb    JMP 1B
+ ...33c: f6040002  2H PUT :rJ,$2 % restore rJ
+ ...340: f8000000    POP 0,0
+                   
+                   % void putc(octa term,octa character)
+ ...344: e0028002  putc SETH $2,#8002 % base address: #8002000000000000
+ ...348: 39000020    SL $0,$0,32 % or in terminal-number
+ ...34c: c0020200    OR $2,$2,$0 % -> #8002000100000000 for term 1, e.g.
+ ...350: 8f030210  1H LDOU $3,$2,#10 % read ctrl-reg
+ ...354: c9030301    AND $3,$3,#1 % exract RDY-bit
+ ...358: 5303fffe    PBZ $3,1B % wait until its set
+ ...35c: af010218    STOU $1,$2,#18 % write char
+ ...360: f8000000    POP 0,0
+                   
+                   % void oputs(char *string)
+ ...364: fe010004  oputs GET $1,:rJ % save rJ
+ ...368: 83030000  1H LDBU $3,$0,0 % load char from string
+ ...36c: 4203xxxx    BZ $3,2F % if its 0, we are done
+ ...370: f202xxxx    PUSHJ $2,oputc % call oputc(c)
+ ...374: 23000001    ADDU $0,$0,1 % to next char
+ ...378: f1fffffc    JMP 1B
+ ...37c: f6040001  2H PUT :rJ,$1 % restore rJ
+ ...380: f8000000    POP 0,0
+                   
+                   % void oputc(octa character)
+ ...384: e0018004  oputc SETH $1,#8004 % base address: #8004000000000000
+ ...388: af000100    STOU $0,$1,0 % write char
+ ...38c: f8000000    POP 0,0
+                   
+                     PREFIX :
+                   # 123 "manual/signal.mms" 2
+                   
+                   
+                     % user code
+                     LOC #2000
+0000000000002000:  USER JMP USER
+ ...000: f0000000
+                   
+                     % signal-handler entry
+ ...004: faff0000  SIGHE SAVE $255,0
+ ...008: f2ffxxxx    PUSHJ $255,SIGH
+ ...00c: fb0000ff    UNSAVE 0,$255
+ ...010: 00000001    TRAP 0,0,ESIG
+                   
+                     % the real signal-handler
+ ...014: 00000002  SIGH TRAP 0,0,PHELLO
+ ...018: f8000000    POP 0,0
+
+Symbol table:
+ DTRAP = #0000000000001048 (9)
+ ESIG = #0000000000000001 (2)
+ FTRAP = #00000000000010a4 (8)
+ HELLO = #0000000000020040 (7)
+ KSTACK = #0000000000007000 (4)
+ Main = #0000000000001000 (1)
+ PHELLO = #0000000000000002 (3)
+ RV = #0000000000006000 (5)
+ SIGH = #0000000000002014 (27)
+ SIGHE = #0000000000002004 (11)
+ SREGS = #0000000000020018 (6)
+ USER = #0000000000002000 (10)
+ io:_putfn = #00000000000011d8 (19)
+ io:getc = #0000000000001300 (23)
+ io:gets = #000000000000129c (22)
+ io:hexch = #0000000000001104 (14)
+ io:inf = #000000000000111c (16)
+ io:nan = #0000000000001118 (15)
+ io:oputc = #0000000000001384 (25)
+ io:oputs = #0000000000001364 (24)
+ io:putc = #0000000000001344 (18)
+ io:putf = #0000000000001120 (17)
+ io:putn = #000000000000121c (20)
+ io:puts = #0000000000001320 (12)
+ io:putu = #0000000000001264 (21)

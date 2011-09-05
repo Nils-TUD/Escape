@@ -1,0 +1,99 @@
+                   # 1 "kernel/paging4.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/paging4.mms"
+                   %
+                   % paging4.mms -- test exception because of invalid rV in kernel-mode
+                   %
+                   
+                     LOC #8000
+                     % segmentsizes: 0,0,0,0; pageSize=2^13; r=0x90000; n=0
+0000000000008000:  RV1 OCTA #00000D0000090000
+ ...000: 00000d00
+ ...004: 00090000
+                     % segmentsizes: 3,2,1,0; pageSize=2^13; r=0xA0000; n=0
+ ...008: 32100d00  RV2 OCTA #32100D00000A0000
+ ...00c: 000a0000
+                   
+                     % for RV1
+                     LOC #00090000
+0000000000090000:    OCTA #0000000000000007 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000007
+                     LOC #00090008
+ ...008: 00000000    OCTA #0000000000000007 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00000007
+                   
+                     % for RV2
+                     LOC #000A6008
+00000000000a6008:    OCTA #0000000000000007 % PTE 1024 (#0000080000000000 .. #0000080000001FFF)
+ ...008: 00000000
+ ...00c: 00000007
+                   
+                     LOC #1000
+                   
+                     % set RV1
+0000000000001000:  Main SETL $0,RV1
+ ...000: e3008000
+ ...004: e8008000    ORH $0,#8000
+ ...008: 8f000000    LDOU $0,$0
+ ...00c: f6120000    PUT rV,$0
+                   
+ ...010: e3002000    SET $0,#2000
+ ...014: af000000    STOU $0,$0,0 % #0000000000002000
+ ...018: fc000000    SYNC 0 % required because of the mmmix-bug
+ ...01c: fe020010    GET $2,rQ
+ ...020: f7100000    PUT rQ,0
+                   
+                     % set RV2
+ ...024: e3008008    SETL $0,RV2
+ ...028: e8008000    ORH $0,#8000
+ ...02c: 8f000000    LDOU $0,$0
+ ...030: f6120000    PUT rV,$0
+                   
+ ...034: e1000800    SETMH $0,#0800
+ ...038: af000000    STOU $0,$0,0 % #0000080000000000
+ ...03c: fc000000    SYNC 0 % required because of the mmmix-bug
+ ...040: fe030010    GET $3,rQ
+ ...044: f7100000    PUT rQ,0
+                   
+ ...048: e0002000    SETH $0,#2000
+ ...04c: af000000    STOU $0,$0,0 % #2000000000000000
+ ...050: fc000000    SYNC 0 % required because of the mmmix-bug
+ ...054: fe040010    GET $4,rQ
+ ...058: f7100000    PUT rQ,0
+                   
+ ...05c: e0002000    SETH $0,#2000
+ ...060: eb002000    ORL $0,#2000
+ ...064: af000000    STOU $0,$0,0 % #2000000000002000
+ ...068: fc000000    SYNC 0 % required because of the mmmix-bug
+ ...06c: fe050010    GET $5,rQ
+ ...070: f7100000    PUT rQ,0
+                   
+ ...074: e0002000    SETH $0,#2000
+ ...078: e900ffff    ORMH $0,#FFFF
+ ...07c: ea00ffff    ORML $0,#FFFF
+ ...080: eb00ffff    ORL $0,#FFFF
+ ...084: af000000    STOU $0,$0,0 % #2000FFFFFFFFFFFF
+ ...088: fc000000    SYNC 0 % required because of the mmmix-bug
+ ...08c: fe060010    GET $6,rQ
+ ...090: f7100000    PUT rQ,0
+                   
+ ...094: e0004000    SETH $0,#4000
+ ...098: af000000    STOU $0,$0,0 % #4000000000000000
+ ...09c: fc000000    SYNC 0 % required because of the mmmix-bug
+ ...0a0: fe070010    GET $7,rQ
+ ...0a4: f7100000    PUT rQ,0
+                   
+ ...0a8: e0006000    SETH $0,#6000
+ ...0ac: af000000    STOU $0,$0,0 % #6000000000000000
+ ...0b0: fc000000    SYNC 0 % required because of the mmmix-bug
+ ...0b4: fe080010    GET $8,rQ
+ ...0b8: f7100000    PUT rQ,0
+                   
+ ...0bc: 00000000    TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)
+ RV1 = #0000000000008000 (2)
+ RV2 = #0000000000008008 (3)

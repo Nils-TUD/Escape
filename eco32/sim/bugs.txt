@@ -1,0 +1,8 @@
+- causing a tlb-miss in cli changes the state: tlb-bad-address
+- the keyboard-callback in dspkbd has to check whether the last scancode has already been read. if
+  not, it can't move the pointer forward
+- the timer does not reset its registers on timerReset
+- one has to specify the alpha-value in dspkbd for the case that the window-manager (or whatever)
+  supports it (otherwise everything is transparent ^^)
+- the positioning with XCreateWindow does not work for some window-managers (is ignored). one has
+  to use XMoveWindow afterwards.

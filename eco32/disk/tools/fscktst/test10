@@ -1,0 +1,12 @@
+#!/bin/sh
+BUILD=../../../build
+$BUILD/bin/mkdisk disk 120
+$BUILD/bin/mkfs disk '*'
+echo "---------------------"
+echo "-  expected output  -"
+echo "---------------------"
+echo "START HERE TO DEVELOP A NEW TEST"
+echo "---------------------"
+echo "-   actual output   -"
+echo "---------------------"
+$BUILD/bin/fsck disk '*'

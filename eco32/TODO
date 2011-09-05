@@ -1,0 +1,13 @@
+
+Things To Do
+------------
+
+1) sim & fpga:
+   proper placement of disk buffer(s)
+
+2) lcc:
+   Handle floating point operations more gracefully.
+
+3) eos32/lib/src/stdio.c and eos32/kernel/klib.c:
+   Allow more formatting options in vprintf().
+

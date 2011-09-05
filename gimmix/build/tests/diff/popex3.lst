@@ -1,0 +1,255 @@
+                   # 1 "diff/popex3.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "diff/popex3.mms"
+                   %
+                   % popex.mms -- test exception during pop; let it fail first, handle the exception but jump to
+                   % signal-handler first before resuming the pop
+                   %
+                   
+                     % segmentsizes: 3,3,3,4; pageSize=2^13; r=0x90000; n=256
+                     LOC #8000
+0000000000008000:  RV OCTA #33340D0000090800
+ ...000: 33340d00
+ ...004: 00090800
+                   
+                     % -- PTEs to be able to execute the code --
+                     LOC #00090000
+0000000000090000:    OCTA #0000000000000801 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000801
+                     LOC #00090008
+ ...008: 00000000    OCTA #0000000000002801 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00002801
+                     LOC #00090010
+ ...010: 00000000    OCTA #0000000000004801 % PTE 2 (#0000000000004000 .. #0000000000005FFF)
+ ...014: 00004801
+                     % -- PTEs to be able to access the stack --
+                     LOC #00096000
+0000000000096000:    OCTA #0000000000600807 % PTE 0 (#6000000000000000 .. #6000000000001FFF)
+ ...000: 00000000
+ ...004: 00600807
+                     LOC #00096008
+ ...008: 00000000    OCTA #0000000000602807 % PTE 1 (#6000000000002000 .. #6000000000003FFF)
+ ...00c: 00602807
+                     LOC #00096010
+ ...010: 00000000    OCTA #0000000000604807 % PTE 2 (#6000000000004000 .. #6000000000005FFF)
+ ...014: 00604807
+                   
+                   
+                     % stack for unsave
+                     LOC #603808
+0000000000603808:    OCTA #0 % rL
+ ...808: 00000000
+ ...80c: 00000000
+ ...810: 00000000    OCTA #0 % $250 = fa
+ ...814: 00000000
+ ...818: 00000000    OCTA #0 % $251 = fb
+ ...81c: 00000000
+ ...820: 00000000    OCTA #0 % $252 = fc
+ ...824: 00000000
+ ...828: 00000000    OCTA #0 % $253 = fd
+ ...82c: 00000000
+ ...830: 00000000    OCTA #0 % $254 = fe
+ ...834: 00000000
+ ...838: 00000000    OCTA #0 % $255 = ff
+ ...83c: 00000000
+ ...840: 00000000    OCTA #0 % rB
+ ...844: 00000000
+ ...848: 00000000    OCTA #0 % rD
+ ...84c: 00000000
+ ...850: 00000000    OCTA #0 % rE
+ ...854: 00000000
+ ...858: 00000000    OCTA #0 % rH
+ ...85c: 00000000
+ ...860: 00000000    OCTA #0 % rJ
+ ...864: 00000000
+ ...868: 00000000    OCTA #0 % rM
+ ...86c: 00000000
+ ...870: 00000000    OCTA #0 % rP
+ ...874: 00000000
+ ...878: 00000000    OCTA #0 % rR
+ ...87c: 00000000
+ ...880: 00000000    OCTA #0 % rW
+ ...884: 00000000
+ ...888: 00000000    OCTA #0 % rX
+ ...88c: 00000000
+ ...890: 00000000    OCTA #0 % rY
+ ...894: 00000000
+ ...898: 00000000    OCTA #0 % rZ
+ ...89c: 00000000
+ ...8a0: fa000000  ADDR OCTA #FA00000000000000 % rG | rA
+ ...8a4: 00000000
+                   
+                   
+                     % dynamic trap address
+                     LOC #800000
+0000000000800000:  SREGS OCTA 0
+ ...000: 00000000
+ ...004: 00000000
+ ...008: 00000000    OCTA 0
+ ...00c: 00000000
+ ...010: 00000000    OCTA 0
+ ...014: 00000000
+ ...018: 00000000    OCTA 0
+ ...01c: 00000000
+ ...020: 00000000    OCTA 0
+ ...024: 00000000
+                   
+ ...028: e2fa0009  DTRAP SETML $250,#0009
+ ...02c: ebfa6008    ORL $250,#6008
+ ...030: e8fa8000    ORH $250,#8000
+ ...034: e2fb0060    SETML $251,#0060
+ ...038: ebfb2807    ORL $251,#2807
+ ...03c: affbfa00    STOU $251,$250,0 % set rwx in PTE
+ ...040: fc000006    SYNC 6 % clear TCs
+                   
+ ...044: f5faffef    GETA $250,SREGS
+ ...048: fefb001c    GET $251,rWW
+ ...04c: affbfa00    STOU $251,$250,0 % SREGS[0] = rWW
+ ...050: fefb001d    GET $251,rXX
+ ...054: affbfa08    STOU $251,$250,8 % SREGS[1] = rXX
+ ...058: fefb001e    GET $251,rYY
+ ...05c: affbfa10    STOU $251,$250,16 % SREGS[2] = rYY
+ ...060: fefb001f    GET $251,rZZ
+ ...064: affbfa18    STOU $251,$250,24 % SREGS[3] = rZZ
+                   
+ ...068: e3fa2200    SETL $250,#2200
+ ...06c: f61c00fa    PUT rWW,$250 % set rWW to address of sighandler-entry
+ ...070: e0fa8000    SETH $250,#8000
+ ...074: f61d00fa    PUT rXX,$250 % skip to #2200
+ ...078: fefa0010    GET $250,rQ
+ ...07c: f7100000    PUT rQ,0 % clear rQ
+ ...080: 35ff0001    NEG $255,0,1 % set rK
+ ...084: f9000001    RESUME 1
+                   
+                   
+                     % forced trap address
+ ...088: fefb001d  FTRAP GET $251,rXX
+ ...08c: c9fbfbff    AND $251,$251,#FF % Z-field specifies the syscall
+ ...090: 33fcfb01    CMPU $252,$251,1
+ ...094: 42fcxxxx    BZ $252,1F % end-signal?
+                   
+ ...098: e2fa0009    SETML $250,#0009
+ ...09c: ebfa6008    ORL $250,#6008
+ ...0a0: e8fa8000    ORH $250,#8000
+ ...0a4: b500fa00    STCO 0,$250,0 % make PTE invalid
+ ...0a8: fc000006    SYNC 6 % clear TCs
+ ...0ac: f0xxxxxx    JMP 2F
+                   
+ ...0b0: f5faffd4  1H GETA $250,SREGS
+ ...0b4: 8ffbfa00    LDOU $251,$250,0
+ ...0b8: f61c00fb    PUT rWW,$251 % rWW = SREGS[0]
+ ...0bc: 8ffbfa08    LDOU $251,$250,8
+ ...0c0: f61d00fb    PUT rXX,$251 % rXX = SREGS[1]
+ ...0c4: 8ffbfa10    LDOU $251,$250,16
+ ...0c8: f61e00fb    PUT rYY,$251 % rYY = SREGS[2]
+ ...0cc: 8ffbfa18    LDOU $251,$250,24
+ ...0d0: f61f00fb    PUT rZZ,$251 % rZZ = SREGS[3]
+                   
+ ...0d4: 35ff0001  2H NEG $255,0,1 % set rK
+ ...0d8: f9000001    RESUME 1
+                   
+                   
+                     LOC #1000
+                     % first setup basic paging
+0000000000001000:  Main SETL $0,RV
+ ...000: e3008000
+ ...004: e8008000    ORH $0,#8000
+ ...008: 8f000000    LDOU $0,$0
+ ...00c: f6120000    PUT rV,$0
+                   
+                     % setup stack
+ ...010: e0006000    SETH $0,#6000
+******************   ORL $0,ADDR
+************ warning: YZ field doesn't fit in two bytes
+ ...014: eb0038a0
+ ...018: fb000000    UNSAVE $0
+                   
+                     % setup rTT
+ ...01c: e0008000    SETH $0,#8000
+ ...020: e9000000    ORMH $0,DTRAP>>32
+ ...024: ea000080    ORML $0,DTRAP>>16
+******************   ORL $0,DTRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...028: eb000028
+ ...02c: f60e0000    PUT rTT,$0
+                     % setup rT
+ ...030: e0008000    SETH $0,#8000
+ ...034: e9000000    ORMH $0,FTRAP>>32
+ ...038: ea000080    ORML $0,FTRAP>>16
+******************   ORL $0,FTRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...03c: eb000088
+ ...040: f60d0000    PUT rT,$0
+                   
+                     % now go to user-mode
+ ...044: e3002000    SET $0,#2000
+ ...048: f61c0000    PUT rWW,$0
+ ...04c: e0008000    SETH $0,#8000
+ ...050: f61d0000    PUT rXX,$0
+ ...054: 35ff0001    NEG $255,0,1 % set rK
+ ...058: f9000001    RESUME 1
+                   
+                   
+                     LOC #2000
+0000000000002000:    SET $24,#11
+ ...000: e3180011
+ ...004: e3190022    SET $25,#22
+ ...008: e31a0033    SET $26,#33
+ ...00c: e31b0044    SET $27,#44
+ ...010: e3f40055    SET $244,#55
+ ...014: e3f50066    SET $245,#66
+ ...018: e3f60077    SET $246,#77
+ ...01c: e3f70088    SET $247,#88
+ ...020: e3f80099    SET $248,#99
+ ...024: f2f9xxxx    PUSHJ $249,F1
+                   
+                     % we should reach this and $240..$248 should still have the values above
+                     % $249 should be the return-value of F2, i.e. #2038
+ ...028: 00000000    TRAP 0,0,0
+                   
+ ...02c: fe000004  F1 GET $0,rJ
+ ...030: e3f81234    SET $248,#1234 % cause some stores on the stack
+ ...034: f2f9xxxx    PUSHJ $249,F2
+ ...038: f6040000    PUT rJ,$0
+ ...03c: c100f900    SET $0,$249
+ ...040: f8010000    POP 1,0
+                   
+ ...044: fe1e0004  F2 GET $30,rJ
+ ...048: e3281234    SET $40,#1234
+ ...04c: f229xxxx    PUSHJ $41,F3
+ ...050: f604001e    PUT rJ,$30 % here rL=3
+ ...054: c1001e00    SET $0,$30
+ ...058: f8010000    POP 1,0 % this fails somewhere in the middle, but will be resumed
+                            % after the exception and the signal has been handled.
+                            % now rL=1, because of one return-value
+                   
+ ...05c: e3231234  F3 SET $35,#1234 % cause more stores
+ ...060: 00000002    TRAP 0,0,2 % make a part of the stack unreadable & unwritable
+ ...064: f7130024    PUT rG,36
+ ...068: f8000000    POP 0,0
+                   
+                     % signal-handler entry
+                     LOC #2200
+ ...200: fefa0004  SIGHE GET $250,rJ
+ ...204: f2faxxxx    PUSHJ $250,SIGH
+ ...208: f60400fa    PUT rJ,$250
+ ...20c: 00000001    TRAP 0,0,1 % finish signal-handling; i.e. return to ordinary execution
+                   
+                     % the real signal-handler
+ ...210: e3f00099  SIGH SET $240,#99 % cause some stores on the stack
+ ...214: f8000000    POP 0,0
+
+Symbol table:
+ ADDR = #00000000006038a0 (3)
+ DTRAP = #0000000000800028 (5)
+ F1 = #000000000000202c (7)
+ F2 = #0000000000002044 (8)
+ F3 = #000000000000205c (9)
+ FTRAP = #0000000000800088 (6)
+ Main = #0000000000001000 (1)
+ RV = #0000000000008000 (2)
+ SIGH = #0000000000002210 (11)
+ SIGHE = #0000000000002200 (10)
+ SREGS = #0000000000800000 (4)

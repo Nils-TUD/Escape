@@ -1,0 +1,5 @@
+./bootblk
+15 64
+d--755 1 1
+data      ---644 3 1 ../conf/small.proto
+$

@@ -1,0 +1,280 @@
+                   # 1 "kernel/exceptions2.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/exceptions2.mms"
+                   %
+                   % exceptions2.mms -- test exceptions in kernel-mode
+                   %
+                   
+                     % segmentsizes: 3,3,3,4; pageSize=2^13; r=0x90000; n=256
+                     LOC #8000
+0000000000008000:  RV OCTA #33340D0000090800
+ ...000: 33340d00
+ ...004: 00090800
+                     % segmentsizes: 0,0,0,0; pageSize=2^1; r=0x90000; n=256
+ ...008: 00000100  RVI OCTA #0000010000090800
+ ...00c: 00090800
+                     % segmentsizes: 0,0,0,0; pageSize=2^13; r=0x90000; n=256; f=2
+ ...010: 00000d00  RVI2 OCTA #00000D0000090802
+ ...014: 00090802
+                   
+                     % -- PTEs to be able to execute the code --
+                     LOC #00090000
+0000000000090000:    OCTA #0000000000000801 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000801
+                     LOC #00090008
+ ...008: 00000000    OCTA #0000000000002801 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00002801
+                     LOC #00090010
+ ...010: 00000000    OCTA #0000000000004801 % PTE 2 (#0000000000004000 .. #0000000000005FFF)
+ ...014: 00004801
+                     % -- PTEs to be able to access the stack --
+                     LOC #00096000
+0000000000096000:    OCTA #0000000000600807 % PTE 0 (#6000000000000000 .. #6000000000001FFF)
+ ...000: 00000000
+ ...004: 00600807
+                   
+                     % -- PTPs and PTEs for testing exceptions --
+                     % n does not match in PTP1
+                     LOC #00092008
+0000000000092008:    OCTA #8000000000400400 % PTP1 0 (#0000000000800000 .. #0000000000FFFFFF)
+ ...008: 80000000
+ ...00c: 00400400
+                     LOC #00400000
+0000000000400000:    OCTA #0000000000202807 % PTE 0 (#0000000000800000 .. #0000000000801FFF)
+ ...000: 00000000
+ ...004: 00202807
+                     % n does not match in PTE
+                     LOC #00092010
+0000000000092010:    OCTA #8000000000402800 % PTP1 1 (#0000000001000000 .. #00000000017FFFFF)
+ ...010: 80000000
+ ...014: 00402800
+                     LOC #00402000
+0000000000402000:    OCTA #0000000000204407 % PTE 0 (#0000000001000000 .. #0000000001001FFF)
+ ...000: 00000000
+ ...004: 00204407
+                     % PTE not readable
+                     LOC #00090018
+0000000000090018:    OCTA #0000000000206803 % PTE 3 (#0000000000006000 .. #0000000000007FFF)
+ ...018: 00000000
+ ...01c: 00206803
+                     % PTE not writable
+                     LOC #00090020
+ ...020: 00000000    OCTA #0000000000208805 % PTE 4 (#0000000000008000 .. #0000000000009FFF)
+ ...024: 00208805
+                   
+                   
+                     % stack for unsave
+                     LOC #600000
+0000000000600000:    OCTA #0 % rL
+ ...000: 00000000
+ ...004: 00000000
+ ...008: 00000000    OCTA #0 % $250 = fa
+ ...00c: 00000000
+ ...010: 00000000    OCTA #0 % $251 = fb
+ ...014: 00000000
+ ...018: 00000000    OCTA #0 % $252 = fc
+ ...01c: 00000000
+ ...020: 00000000    OCTA #0 % $253 = fd
+ ...024: 00000000
+ ...028: 00000000    OCTA #0 % $254 = fe
+ ...02c: 00000000
+ ...030: 00000000    OCTA #0 % $255 = ff
+ ...034: 00000000
+ ...038: 00000000    OCTA #0 % rB
+ ...03c: 00000000
+ ...040: 00000000    OCTA #0 % rD
+ ...044: 00000000
+ ...048: 00000000    OCTA #0 % rE
+ ...04c: 00000000
+ ...050: 00000000    OCTA #0 % rH
+ ...054: 00000000
+ ...058: 00000000    OCTA #0 % rJ
+ ...05c: 00000000
+ ...060: 00000000    OCTA #0 % rM
+ ...064: 00000000
+ ...068: 00000000    OCTA #0 % rP
+ ...06c: 00000000
+ ...070: 00000000    OCTA #0 % rR
+ ...074: 00000000
+ ...078: 00000000    OCTA #0 % rW
+ ...07c: 00000000
+ ...080: 00000000    OCTA #0 % rX
+ ...084: 00000000
+ ...088: 00000000    OCTA #0 % rY
+ ...08c: 00000000
+ ...090: 00000000    OCTA #0 % rZ
+ ...094: 00000000
+ ...098: fa000000  ADDR OCTA #FA00000000000000 % rG | rA
+ ...09c: 00000000
+                   
+                   
+                     LOC #1000
+                   
+                     % first setup basic paging: 0 mapped to 0
+0000000000001000:  Main SETL $0,RV
+ ...000: e3008000
+ ...004: e8008000    ORH $0,#8000
+ ...008: 8f000000    LDOU $0,$0
+ ...00c: f6120000    PUT rV,$0
+                   
+                     % setup our environment
+ ...010: e0006000    SETH $0,#6000
+******************   ORL $0,ADDR
+************ warning: YZ field doesn't fit in two bytes
+ ...014: eb000098
+ ...018: fb000000    UNSAVE $0
+                   
+                   
+                     % 1. use a special-register >= 32 with put
+ ...01c: f7210000    PUT 33,#0
+ ...020: fe040010    GET $4,rQ
+ ...024: f7100000    PUT rQ,0
+                   
+                     % 2. write to readonly registers
+ ...028: f7080000    PUT rC,#0
+ ...02c: fe050010    GET $5,rQ
+ ...030: f7100000    PUT rQ,0
+                   
+ ...034: f7090000    PUT rN,#0
+ ...038: fe060010    GET $6,rQ
+ ...03c: f7100000    PUT rQ,0
+                   
+ ...040: f70a0000    PUT rO,#0
+ ...044: fe070010    GET $7,rQ
+ ...048: f7100000    PUT rQ,0
+                   
+ ...04c: f70b0000    PUT rS,#0
+ ...050: fe080010    GET $8,rQ
+ ...054: f7100000    PUT rQ,0
+                   
+                     % 3. use a special-register >= 32 with get
+ ...058: fe090021    GET $9,33
+ ...05c: fe0a0010    GET $10,rQ
+ ...060: f7100000    PUT rQ,0
+                   
+                     % 4. put illegal value in rA
+ ...064: e2000004    SETML $0,#0004
+ ...068: f6150000    PUT rA,$0
+ ...06c: fe0b0010    GET $11,rQ
+ ...070: f7100000    PUT rQ,0
+                   
+ ...074: e000ffff    SETH $0,#FFFF
+ ...078: f6150000    PUT rA,$0
+ ...07c: fe0c0010    GET $12,rQ
+ ...080: f7100000    PUT rQ,0
+                   
+                     % 5. put illegal value in rG
+ ...084: f7130000    PUT rG,0
+ ...088: fe0d0010    GET $13,rQ
+ ...08c: f7100000    PUT rQ,0
+                   
+ ...090: f713001f    PUT rG,31
+ ...094: fe0e0010    GET $14,rQ
+ ...098: f7100000    PUT rQ,0
+                   
+ ...09c: f7130100    PUT rG,256
+ ...0a0: fe0f0010    GET $15,rQ
+ ...0a4: f7100000    PUT rQ,0
+                   
+ ...0a8: f71301f4    PUT rG,500
+ ...0ac: fe100010    GET $16,rQ
+ ...0b0: f7100000    PUT rQ,0
+                   
+                     % 6. save with a wrong target-register
+ ...0b4: fa000000    SAVE $0,0 % illegal because $0 < rG
+ ...0b8: fe120010    GET $18,rQ
+ ...0bc: f7100000    PUT rQ,0
+                   
+ ...0c0: fa010000    SAVE $1,0 % illegal because $1 < rG
+ ...0c4: fe130010    GET $19,rQ
+ ...0c8: f7100000    PUT rQ,0
+                   
+ ...0cc: faf90000    SAVE $249,0 % illegal because $249 < rG
+ ...0d0: fe140010    GET $20,rQ
+ ...0d4: f7100000    PUT rQ,0
+                   
+                     % 7. access page where n does not match in PTP1
+ ...0d8: e2000080    SETML $0,#0080
+ ...0dc: eb000000    ORL $0,#0000
+ ...0e0: e3160001    SET $22,1
+ ...0e4: 8f160000    LDOU $22,$0,0 % #800000
+ ...0e8: fe170010    GET $23,rQ
+ ...0ec: f7100000    PUT rQ,0
+                   
+                     % 8. access page where n does not match in PTE
+ ...0f0: e2000100    SETML $0,#0100
+ ...0f4: eb000000    ORL $0,#0000
+ ...0f8: e3180001    SET $24,1
+ ...0fc: 8f180000    LDOU $24,$0,0 % #1000000
+ ...100: fe190010    GET $25,rQ
+ ...104: f7100000    PUT rQ,0
+                   
+                     % 9. load from writeonly page
+ ...108: e3006000    SETL $0,#6000
+ ...10c: e31a0001    SET $26,1
+ ...110: 8f1a0000    LDOU $26,$0,0 % #6000
+ ...114: fe1b0010    GET $27,rQ
+ ...118: f7100000    PUT rQ,0
+                   
+                     % 10. write to readonly page
+ ...11c: e3008000    SETL $0,#8000
+ ...120: af000000    STOU $0,$0,0 % #8000
+ ...124: e0008000    SETH $0,#8000
+ ...128: ea000020    ORML $0,#0020
+ ...12c: eb008000    ORL $0,#8000
+ ...130: 8f1c0000    LDOU $28,$0,0
+ ...134: fe1d0010    GET $29,rQ
+ ...138: f7100000    PUT rQ,0
+                   
+                     % 11. use an invalid sync-command
+ ...13c: fc000008    SYNC 8
+ ...140: fe1e0010    GET $30,rQ
+ ...144: f7100000    PUT rQ,0
+                   
+                     % 12. use an invalid RESUME-code
+ ...148: f9000002    RESUME 2
+ ...14c: fe1f0010    GET $31,rQ
+ ...150: f7100000    PUT rQ,0
+                   
+                     % 13. use an invalid rV (s invalid)
+ ...154: e3008008    SETL $0,RVI
+ ...158: e8008000    ORH $0,#8000
+ ...15c: 8f000000    LDOU $0,$0
+ ...160: f6120000    PUT rV,$0
+                   
+ ...164: e3000000    SET $0,0
+ ...168: 8f000000    LDOU $0,$0,0 % will raise a r-exception, because rV is invalid
+ ...16c: fe200010    GET $32,rQ
+ ...170: f7100000    PUT rQ,0
+                   
+ ...174: e3020000    SET $2,0
+ ...178: af020200    STOU $2,$2,0 % will raise a w-exception, because rV is invalid
+ ...17c: fe210010    GET $33,rQ
+ ...180: f7100000    PUT rQ,0
+                   
+                     % 13. use an invalid rV (f invalid)
+ ...184: e3008010    SETL $0,RVI2
+ ...188: e8008000    ORH $0,#8000
+ ...18c: 8f000000    LDOU $0,$0
+ ...190: f6120000    PUT rV,$0
+                   
+ ...194: e3000000    SET $0,0
+ ...198: 8f000000    LDOU $0,$0,0 % will raise a r-exception, because rV is invalid
+ ...19c: fe220010    GET $34,rQ
+ ...1a0: f7100000    PUT rQ,0
+                   
+ ...1a4: e3020000    SET $2,0
+ ...1a8: af020200    STOU $2,$2,0 % will raise a w-exception, because rV is invalid
+ ...1ac: fe230010    GET $35,rQ
+ ...1b0: f7100000    PUT rQ,0
+                   
+ ...1b4: 00000000    TRAP 0
+
+Symbol table:
+ ADDR = #0000000000600098 (5)
+ Main = #0000000000001000 (1)
+ RV = #0000000000008000 (2)
+ RVI = #0000000000008008 (3)
+ RVI2 = #0000000000008010 (4)

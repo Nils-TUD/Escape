@@ -1,0 +1,475 @@
+                   # 1 "manual/string-test.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "manual/string-test.mms"
+                   %
+                   % string-test.mms -- tests str:compare
+                   %
+                   
+                     LOC #0
+                   
+ ...000: 203c3e20  SEP BYTE " <> ",0
+ ...004: 00      
+ ...005:   202d3e  RES BYTE " -> ",0
+ ...008: 2000    
+ ...00a:     0d0a  CRLF BYTE #d,#a,0
+ ...00c: 00      
+ ...00d:   616263  S1 BYTE "abc",0
+ ...010: 00      
+ ...011:   646566  S2 BYTE "def",0
+ ...014: 00      
+ ...015:   00      S3 BYTE 0
+ ...016:     6100  S4 BYTE "a",0
+ ...018: 616200    S5 BYTE "ab",0
+ ...01b:       41  S6 BYTE "ABC",0
+ ...01c: 424300  
+                   
+ ...020: 00000000  STRS OCTA S1,S2,S3,S4,S5,S6
+ ...024: 0000000d
+ ...028: 00000000
+ ...02c: 00000011
+ ...030: 00000000
+ ...034: 00000015
+ ...038: 00000000
+ ...03c: 00000016
+ ...040: 00000000
+ ...044: 00000018
+ ...048: 00000000
+ ...04c: 0000001b
+                   
+                     LOC #1000
+                   
+($000)             strs IS $0
+($001)             i IS $1
+($002)             j IS $2
+                   
+0000000000001000:  Main SETL strs,STRS
+ ...000: e3000020
+ ...004: e8008000    ORH strs,#8000
+ ...008: e3010000    SET i,0
+ ...00c: e3020000    SET j,0
+                   
+                     % print strs[i] " <> " strs[j] " -> "
+ ...010: 8e050001  L1 LDOU $5,strs,i
+ ...014: f204xxxx    PUSHJ $4,putmsg
+ ...018: e3050000    SETL $5,SEP
+ ...01c: f204xxxx    PUSHJ $4,putmsg
+ ...020: 8e050002    LDOU $5,strs,j
+ ...024: f204xxxx    PUSHJ $4,putmsg
+ ...028: e3050005    SETL $5,RES
+ ...02c: f204xxxx    PUSHJ $4,putmsg
+                   
+                     % compare strs[i] with strs[j]
+ ...030: 8e050001    LDOU $5,strs,i
+ ...034: e8058000    ORH $5,#8000
+ ...038: 8e060002    LDOU $6,strs,j
+ ...03c: e8068000    ORH $6,#8000
+ ...040: f204xxxx    PUSHJ $4,str:compare
+                   
+                     % print result
+ ...044: e3050000    SET $5,0
+ ...048: c1060400    SET $6,$4
+ ...04c: f204xxxx    PUSHJ $4,io:putn
+                   
+                     % print "\r\n"
+ ...050: e304000a    SETL $4,CRLF
+ ...054: f203xxxx    PUSHJ $3,putmsg
+                   
+ ...058: 31030228    CMP $3,j,5*8
+ ...05c: 4203xxxx    BZ $3,1F % if j == 5*8, goto 1F
+ ...060: 23020208    ADDU j,j,8
+ ...064: f1ffffeb    JMP L1
+                   
+ ...068: 31030128  1H CMP $3,i,5*8
+ ...06c: 4203xxxx    BZ $3,_done % if i == 5*8, goto _done
+ ...070: 23010108    ADDU i,i,8
+ ...074: e3020000    SET j,0
+ ...078: f1ffffe6    JMP L1
+                   
+ ...07c: f0000000  _done JMP _done
+                   
+                   % void putmsg(char *msg)
+ ...080: fe010004  putmsg GET $1,rJ
+ ...084: e3030000    SET $3,0
+ ...088: c1040000    SET $4,$0
+ ...08c: e8048000    ORH $4,#8000
+ ...090: f202xxxx    PUSHJ $2,io:puts
+ ...094: f6040001    PUT rJ,$1
+ ...098: f8000000    POP 0,0
+                   
+                   # 1 "manual/string.mmi" 1
+                   %
+                   % some string-functions
+                   %
+                   
+                     PREFIX str:
+                   
+                     LOC @+(4-@)&3
+ ...09c: 6e616e00  nan BYTE "nan",0
+ ...0a0: 696e6600  inf BYTE "inf",0
+                   
+                   % void copy(char *dst,char *src)
+ ...0a4: e3020000  copy SET $2,0
+ ...0a8: 82030102  1H LDBU $3,$1,$2
+ ...0ac: 4203xxxx    BZ $3,1F
+ ...0b0: a2030002    STBU $3,$0,$2
+ ...0b4: 23020201    ADDU $2,$2,1
+ ...0b8: f1fffffc    JMP 1B
+ ...0bc: f8010000  1H POP 1,0
+                   
+                   % octa tofloat(char *str)
+ ...0c0: fe010004  tofloat GET $1,:rJ
+ ...0c4: c1020000    SET $2,$0 % str
+ ...0c8: e3000000    SET $0,0 % res = 0
+ ...0cc: 83040200    LDBU $4,$2,0 % $4 = *str
+ ...0d0: 4204xxxx    BZ $4,2F % if 0, quit
+ ...0d4: 3305042d    CMPU $5,$4,'-'
+ ...0d8: 4a05xxxx    BNZ $5,1F
+ ...0dc: 35030001    NEG $3,0,1 % save that its negative
+ ...0e0: 23020201    ADDU $2,$2,1 % str++
+ ...0e4: c1050200  1H SET $5,$2
+ ...0e8: f506ffed    GETA $6,nan
+ ...0ec: f204xxxx    PUSHJ $4,compare % compare to "nan"
+ ...0f0: 4a04xxxx    BNZ $4,1F
+ ...0f4: e0007ff8    SETH $0,#7FF8 % nan
+ ...0f8: f0xxxxxx    JMP 2F
+ ...0fc: c1050200  1H SET $5,$2
+ ...100: f506ffe8    GETA $6,inf
+ ...104: f204xxxx    PUSHJ $4,compare % compare to "inf"
+ ...108: 4a04xxxx    BNZ $4,1F
+ ...10c: e0007ff0    SETH $0,#7FF0 % inf
+ ...110: f0xxxxxx    JMP 2F
+ ...114: 83050200  1H LDBU $5,$2,0 % $5 = *str
+ ...118: 4205xxxx    BZ $5,2F % if 0, quit
+ ...11c: f204xxxx    PUSHJ $4,_getd % $4 = _getd($5)
+ ...120: 4004xxxx    BN $4,3F % if < 0, its no digit
+ ...124: e0054024    SETH $5,#4024 % 10.0
+ ...128: 10000005    FMUL $0,$0,$5 % res *= 10
+ ...12c: 0a050004    FLOTU $5,$4
+ ...130: 04000005    FADD $0,$0,$5 % res += $4
+ ...134: 23020201    ADDU $2,$2,1 % str++
+ ...138: f1fffff7    JMP 1B
+ ...13c: 83050200  3H LDBU $5,$2,0 % $5 = *str
+ ...140: 3304052e    CMPU $4,$5,'.' % its no digit; check if its '.'
+ ...144: 4a04xxxx    BNZ $4,2F % if not, we are done
+ ...148: e0044024    SETH $4,#4024 % mul = 10.0
+ ...14c: 23020201    ADDU $2,$2,1 % str++
+ ...150: 83060200  4H LDBU $6,$2,0 % $6 = *str
+ ...154: 4206xxxx    BZ $6,2F % if 0, quit
+ ...158: f205xxxx    PUSHJ $5,_getd % $5 = _getd($6)
+ ...15c: 4005xxxx    BN $5,2F % if < 0, its no digit
+ ...160: 0a050005    FLOTU $5,$5
+ ...164: 14050504    FDIV $5,$5,$4 % $5 /= mul
+ ...168: 04000005    FADD $0,$0,$5 % res += $5
+ ...16c: e0054024    SETH $5,#4024 % 10.0
+ ...170: 10040405    FMUL $4,$4,$5 % mul *= 10
+ ...174: 23020201    ADDU $2,$2,1 % str++
+ ...178: f1fffff6    JMP 4B
+ ...17c: 4803xxxx  2H BNN $3,5F % negative?
+ ...180: e8008000    ORH $0,#8000 % '-', so negate the float
+ ...184: f6040001  5H PUT :rJ,$1
+ ...188: f8010000    POP 1,0
+                   
+                   % octa _getd(char x)
+ ...18c: 33010030  _getd CMPU $1,$0,'0'
+ ...190: 4001xxxx    BN $1,1F
+ ...194: 33010039    CMPU $1,$0,'9'
+ ...198: 5c01xxxx    PBNP $1,2F
+ ...19c: 35000001  1H NEG $0,0,1
+ ...1a0: f0xxxxxx    JMP 3F
+ ...1a4: 27000030  2H SUBU $0,$0,'0'
+ ...1a8: f8010000  3H POP 1,0
+                   
+                   % octa touint(char *str,octa base)
+ ...1ac: c1020000  touint SET $2,$0
+ ...1b0: e3000000    SET $0,0
+ ...1b4: 83030200  3H LDBU $3,$2,0
+ ...1b8: 33040300    CMPU $4,$3,0
+ ...1bc: 4204xxxx    BZ $4,1F % if $3 == 0, goto 1F (done)
+ ...1c0: 33040339    CMPU $4,$3,'9'
+ ...1c4: 4404xxxx    BP $4,2F % if $3 > '9', goto 2F
+ ...1c8: 33040330    CMPU $4,$3,'0'
+ ...1cc: 4004xxxx    BN $4,1F % if $3 < '0', goto 1F (error)
+                     % its '0'..'9'
+ ...1d0: 27030330    SUBU $3,$3,'0' % $3 -= '0'
+ ...1d4: f0xxxxxx    JMP 4F
+                     % its > '9'
+ ...1d8: 33040341  2H CMPU $4,$3,'A'
+ ...1dc: 4004xxxx    BN $4,1F % if $3 < 'A', goto 1F (error)
+ ...1e0: 33040346    CMPU $4,$3,'F'
+ ...1e4: 4404xxxx    BP $4,5F % if $3 > 'F', goto 5F
+                     % its 'A'..'F'
+ ...1e8: 27030337    SUBU $3,$3,'A'-10 % $3 -= 'A'-10
+ ...1ec: f0xxxxxx    JMP 4F
+                     % its > 'F'
+ ...1f0: 33040361  5H CMPU $4,$3,'a'
+ ...1f4: 4004xxxx    BN $4,1F % if $3 < 'a', goto 1F (error)
+ ...1f8: 33040366    CMPU $4,$3,'f'
+ ...1fc: 4404xxxx    BP $4,1F % if $3 > 'f', goto 1F (error)
+                     % its 'a'..'f'
+ ...200: 27030357    SUBU $3,$3,'a'-10 % $3 -= 'a'-10
+ ...204: 32040301  4H CMPU $4,$3,$1
+ ...208: 4804xxxx    BNN $4,1F % if $3 >= base, goto 1F (error)
+ ...20c: 1a000001    MULU $0,$0,$1 % $0 *= base
+ ...210: 22000003    ADDU $0,$0,$3 % $0 += $3
+ ...214: 23020201    ADDU $2,$2,1 % str1++
+ ...218: f1ffffe7    JMP 3B
+ ...21c: f8010000  1H POP 1,0
+                   
+                   % octa compare(char *str1,char *str2)
+ ...220: e3020000  compare SET $2,0 % i = 0
+ ...224: f0xxxxxx    JMP 1F
+ ...228: 23020201  3H ADDU $2,$2,1 % i++
+ ...22c: 82030002  1H LDBU $3,$0,$2 % c1 = str[i]
+ ...230: 82040102    LDBU $4,$1,$2 % c2 = str[i]
+ ...234: 32050304    CMPU $5,$3,$4 % compare c1 with c2
+ ...238: 4a05xxxx    BNZ $5,2F % if c1 != c2, goto 2
+ ...23c: 5b03fffb    PBNZ $3,3B % if c1 != 0, goto 3
+ ...240: c1000500  2H SET $0,$5 % return compare-result
+ ...244: f8010000    POP 1,0
+                   
+                     PREFIX :
+                   # 79 "manual/string-test.mms" 2
+                   # 1 "manual/io.mmi" 1
+                   %
+                   % some io-functions
+                   %
+                   
+                   % terminal 0 rcvr ctrl: #8002000000000000
+                   % terminal 0 rcvr data: #8002000000000008
+                   % terminal 0 xmtr ctrl: #8002000000000010
+                   % terminal 0 xmtr data: #8002000000000018
+                   % terminal 1 rcvr ctrl: #8002000100000000
+                   % terminal 1 rcvr data: #8002000100000008
+                   % terminal 1 xmtr ctrl: #8002000100000010
+                   % terminal 1 xmtr data: #8002000100000018
+                   
+                     PREFIX io:
+                   
+ ...248: 30313233  hexch BYTE "0123456789ABCDEF",0
+ ...24c: 34353637
+ ...250: 38394142
+ ...254: 43444546
+ ...258: 00      
+                     LOC @+(4-@)&3
+ ...25c: 6e616e00  nan BYTE "nan",0
+ ...260: 696e6600  inf BYTE "inf",0
+                   
+                   % void putf(octa term,octa f)
+ ...264: fe020004  putf GET $2,:rJ % save rJ
+ ...268: 4801xxxx    BNN $1,1F % f >= 0?
+ ...26c: c1040000    SET $4,$0
+ ...270: e305002d    SET $5,'-'
+ ...274: f203xxxx    PUSHJ $3,putc % putc(term,'-')
+ ...278: ec018000    ANDNH $1,#8000 % f = -f
+ ...27c: e0037ff0  1H SETH $3,#7FF0
+ ...280: c8040103    AND $4,$1,$3 % check exponent
+ ...284: 32050403    CMPU $5,$4,$3
+ ...288: 4a05xxxx    BNZ $5,3F % if not #7FF, its no nan and no inf
+ ...28c: 35030001    NEG $3,0,1
+ ...290: ec03fff0    ANDNH $3,#FFF0 % fraction-mask
+ ...294: c8040103    AND $4,$1,$3
+ ...298: 4a04xxxx    BNZ $4,2F % if fraction not zero, its nan
+ ...29c: c1040000    SET $4,$0
+ ...2a0: f505fff0    GETA $5,inf
+ ...2a4: f203xxxx    PUSHJ $3,puts % puts(term,"inf")
+ ...2a8: f0xxxxxx    JMP 6F
+ ...2ac: c1040000  2H SET $4,$0
+ ...2b0: f505ffeb    GETA $5,nan
+ ...2b4: f203xxxx    PUSHJ $3,puts % puts(term,"nan")
+ ...2b8: f0xxxxxx    JMP 6F
+ ...2bc: c1040000  3H SET $4,$0
+ ...2c0: c1050100    SET $5,$1
+ ...2c4: f203xxxx    PUSHJ $3,_putfn % _putfn(term,f)
+ ...2c8: c1040000    SET $4,$0
+ ...2cc: e305002e    SET $5,'.'
+ ...2d0: f203xxxx    PUSHJ $3,putc % putc(term,'.')
+ ...2d4: e0044024    SETH $4,#4024 % 10.0
+ ...2d8: 17030101    FINT $3,:ROUND_OFF,$1
+ ...2dc: 06010103    FSUB $1,$1,$3 % f -= (int)f
+                     % multiply it with 10 until the fraction is gone
+ ...2e0: 17030101    FINT $3,:ROUND_OFF,$1
+ ...2e4: 32030103  4H CMPU $3,$1,$3
+ ...2e8: 4203xxxx    BZ $3,5F % if fraction == 0, we are done
+ ...2ec: 10010104    FMUL $1,$1,$4 % f *= 10
+ ...2f0: 17030101    FINT $3,:ROUND_OFF,$1
+ ...2f4: 4b03fffc    BNZ $3,4B % if its still zero, print the 0
+ ...2f8: c1060000    SET $6,$0
+ ...2fc: e3070030    SET $7,'0'
+ ...300: f205xxxx    PUSHJ $5,putc % putc(term,'0')
+ ...304: f1fffff8    JMP 4B
+ ...308: c1040000  5H SET $4,$0
+ ...30c: c1050100    SET $5,$1
+ ...310: f203xxxx    PUSHJ $3,_putfn % finally, print it
+ ...314: f6040002  6H PUT :rJ,$2 % restore rJ
+ ...318: f8000000    POP 0,0
+                   
+                   % void _putfn(octa term,octa f)
+ ...31c: fe020004  _putfn GET $2,:rJ
+ ...320: 17010101    FINT $1,:ROUND_OFF,$1 % f = (int)f
+ ...324: e0034024    SETH $3,#4024 % 10.0
+ ...328: 01040103    FCMP $4,$1,$3
+ ...32c: 4004xxxx    BN $4,1F % if g < 10, stop recursion
+ ...330: 14060103    FDIV $6,$1,$3 % g = f / 10
+ ...334: c1050000    SET $5,$0
+ ...338: f304fff9    PUSHJ $4,_putfn % _putfn(g)
+ ...33c: 16050103  1H FREM $5,$1,$3 % x = f % 10
+ ...340: 4805xxxx    BNN $5,2F % its negative if its >= 5, (-5, -4, ...)
+ ...344: 04050305    FADD $5,$3,$5 % so, x = 10 + x
+ ...348: c1040000  2H SET $4,$0
+ ...34c: 05050005    FIX $5,$5
+ ...350: 23050530    ADDU $5,$5,'0' % x += '0'
+ ...354: f203xxxx    PUSHJ $3,putc % putc(term,x)
+ ...358: f6040002    PUT :rJ,$2 % restore rJ
+ ...35c: f8000000    POP 0,0
+                   
+                   % void putn(octa term,octa n)
+ ...360: fe020004  putn GET $2,:rJ % save rJ
+ ...364: 5801xxxx    PBNN $1,1F % n < 0?
+ ...368: c0040000    OR $4,$0,$0
+ ...36c: e305002d    SET $5,'-'
+ ...370: f203xxxx    PUSHJ $3,putc % putc(term,'-')
+ ...374: 34010001    NEG $1,0,$1 % n = -n
+ ...378: 3303010a  1H CMPU $3,$1,10
+ ...37c: 5003xxxx    PBN $3,1F % n >= 10?
+ ...380: c0040000    OR $4,$0,$0
+ ...384: 1d05010a    DIV $5,$1,10 % t = n / 10
+ ...388: fe010006    GET $1,:rR % n = n % 10
+ ...38c: f303fff5    PUSHJ $3,putn % putn(term,t)
+ ...390: c0040000  1H OR $4,$0,$0
+ ...394: c0050101    OR $5,$1,$1
+ ...398: 23050530    ADDU $5,$5,48 % char + '0'
+ ...39c: f203xxxx    PUSHJ $3,putc % putc(term,n)
+ ...3a0: f6040002    PUT :rJ,$2 % restore rJ
+ ...3a4: f8000000    POP 0,0
+                   
+                   % void putu(octa term,octa u,octa base)
+ ...3a8: fe030004  putu GET $3,:rJ % save rJ
+ ...3ac: 32040102    CMPU $4,$1,$2
+ ...3b0: 5004xxxx    PBN $4,1F % n >= base?
+ ...3b4: c0050000    OR $5,$0,$0
+ ...3b8: 1e060102    DIVU $6,$1,$2 % t = n / base
+ ...3bc: c0070202    OR $7,$2,$2
+ ...3c0: fe010006    GET $1,:rR % n = n % base
+ ...3c4: f304fff9    PUSHJ $4,putu % putu(term,t,base)
+ ...3c8: c0050000  1H OR $5,$0,$0
+ ...3cc: f506ff9f    GETA $6,hexch
+ ...3d0: 82060601    LDBU $6,$6,$1
+ ...3d4: f204xxxx    PUSHJ $4,putc % putc(term,hexch[n])
+ ...3d8: f6040003    PUT :rJ,$3 % restore rJ
+ ...3dc: f8000000    POP 0,0
+                   
+                   % octa gets(octa term,char *dst,octa max)
+ ...3e0: fe030004  gets GET $3,:rJ % save rJ
+ ...3e4: 23040100    ADDU $4,$1,0
+ ...3e8: 31050201  1H CMP $5,$2,1
+ ...3ec: 4c05xxxx    BNP $5,2F % if(max <= 1) goto 1F
+ ...3f0: 23060000    ADDU $6,$0,0
+ ...3f4: f205xxxx    PUSHJ $5,getc % call getc(term)
+ ...3f8: 23070000    ADDU $7,$0,0
+ ...3fc: 23080500    ADDU $8,$5,0
+ ...400: f206xxxx    PUSHJ $6,putc % call putc(term,c)
+ ...404: 3106050d    CMP $6,$5,#0D % c == \n?
+ ...408: 4206xxxx    BZ $6,1F % if so, stop
+ ...40c: a3050100    STBU $5,$1,0 % otherwise, store char
+ ...410: 23010101    ADDU $1,$1,1 % to next
+ ...414: 25020201    SUB $2,$2,1 % max--
+ ...418: f1fffff4    JMP 1B
+ ...41c: 23060000  2H ADDU $6,$0,0
+ ...420: e307000d    SET $7,#0D
+ ...424: f205xxxx    PUSHJ $5,putc % call putc(term,'\n')
+ ...428: 23060000  1H ADDU $6,$0,0
+ ...42c: e307000a    SET $7,#0A
+ ...430: f205xxxx    PUSHJ $5,putc % call putc(term,'\r')
+ ...434: a30a0100    STBU $10,$1,0 % null-termination
+ ...438: 26000104    SUBU $0,$1,$4 % determine length
+ ...43c: f6040003    PUT :rJ,$3 % restore rJ
+ ...440: f8010000    POP 1,0 % return length
+                   
+                   % octa getc(octa term)
+ ...444: e0018002  getc SETH $1,#8002 % base address: #8002000000000000
+ ...448: 39000020    SL $0,$0,32 % or in terminal-number
+ ...44c: c0010100    OR $1,$1,$0 % -> #8002000100000000 for term 1, e.g.
+ ...450: 8f020100  1H LDOU $2,$1,#0 % read ctrl-reg
+ ...454: c9020201    AND $2,$2,#1 % extract RDY-bit
+ ...458: 5302fffe    PBZ $2,1B % wait until its set
+ ...45c: 8f000108    LDOU $0,$1,#8 % load char
+ ...460: f8010000    POP 1,0 % return it
+                   
+                   % void puts(octa term,char *string)
+ ...464: fe020004  puts GET $2,:rJ % save rJ
+ ...468: 83050100  1H LDBU $5,$1,0 % load char from string
+ ...46c: 4205xxxx    BZ $5,2F % if its 0, we are done
+ ...470: 23040000    ADDU $4,$0,0
+ ...474: f203xxxx    PUSHJ $3,putc % call putc(c)
+ ...478: 23010101    ADDU $1,$1,1 % to next char
+ ...47c: f1fffffb    JMP 1B
+ ...480: f6040002  2H PUT :rJ,$2 % restore rJ
+ ...484: f8000000    POP 0,0
+                   
+                   % void putc(octa term,octa character)
+ ...488: e0028002  putc SETH $2,#8002 % base address: #8002000000000000
+ ...48c: 39000020    SL $0,$0,32 % or in terminal-number
+ ...490: c0020200    OR $2,$2,$0 % -> #8002000100000000 for term 1, e.g.
+ ...494: 8f030210  1H LDOU $3,$2,#10 % read ctrl-reg
+ ...498: c9030301    AND $3,$3,#1 % exract RDY-bit
+ ...49c: 5303fffe    PBZ $3,1B % wait until its set
+ ...4a0: af010218    STOU $1,$2,#18 % write char
+ ...4a4: f8000000    POP 0,0
+                   
+                   % void oputs(char *string)
+ ...4a8: fe010004  oputs GET $1,:rJ % save rJ
+ ...4ac: 83030000  1H LDBU $3,$0,0 % load char from string
+ ...4b0: 4203xxxx    BZ $3,2F % if its 0, we are done
+ ...4b4: f202xxxx    PUSHJ $2,oputc % call oputc(c)
+ ...4b8: 23000001    ADDU $0,$0,1 % to next char
+ ...4bc: f1fffffc    JMP 1B
+ ...4c0: f6040001  2H PUT :rJ,$1 % restore rJ
+ ...4c4: f8000000    POP 0,0
+                   
+                   % void oputc(octa character)
+ ...4c8: e0018004  oputc SETH $1,#8004 % base address: #8004000000000000
+ ...4cc: af000100    STOU $0,$1,0 % write char
+ ...4d0: f8000000    POP 0,0
+                   
+                     PREFIX :
+                   # 79 "manual/string-test.mms" 2
+
+Symbol table:
+ CRLF = #000000000000000a (4)
+ L1 = #0000000000001010 (15)
+ Main = #0000000000001000 (1)
+ RES = #0000000000000005 (3)
+ S1 = #000000000000000d (5)
+ S2 = #0000000000000011 (6)
+ S3 = #0000000000000015 (7)
+ S4 = #0000000000000016 (8)
+ S5 = #0000000000000018 (9)
+ S6 = #000000000000001b (10)
+ SEP = #0000000000000000 (2)
+ STRS = #0000000000000020 (11)
+ _done = #000000000000107c (19)
+ i = $001 (13)
+ io:_putfn = #000000000000131c (35)
+ io:getc = #0000000000001444 (38)
+ io:gets = #00000000000013e0 (37)
+ io:hexch = #0000000000001248 (30)
+ io:inf = #0000000000001260 (32)
+ io:nan = #000000000000125c (31)
+ io:oputc = #00000000000014c8 (40)
+ io:oputs = #00000000000014a8 (39)
+ io:putc = #0000000000001488 (34)
+ io:putf = #0000000000001264 (33)
+ io:putn = #0000000000001360 (18)
+ io:puts = #0000000000001464 (20)
+ io:putu = #00000000000013a8 (36)
+ j = $002 (14)
+ putmsg = #0000000000001080 (16)
+ str:_getd = #000000000000118c (26)
+ str:compare = #0000000000001220 (17)
+ str:copy = #00000000000010a4 (24)
+ str:inf = #00000000000010a0 (23)
+ str:nan = #000000000000109c (22)
+ str:tofloat = #00000000000010c0 (25)
+ str:touint = #00000000000011ac (27)
+ strs = $000 (12)

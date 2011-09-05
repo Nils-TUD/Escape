@@ -1,0 +1,8 @@
+- CFLAGS has to be organized differently
+- display cause of traps that are triggered by setting a bit in rQ
+- give all modules init, reset and shutdown, even if they are empty?
+- the naming of static functions should be consistent
+- atm its possible to use a program to load something to arbitrary devices (at least theoretically)
+- reset and shutdown-function for cli-commands?
+- show more information when resetting (size of ROM, ...)
+- we should arrange things, so that the build-date (rN) is refreshed

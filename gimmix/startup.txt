@@ -1,0 +1,31 @@
+s
+p f $21
+ov
+st
+s
+str
+s
+p f $21
+ov
+st
+s
+str
+s
+p f $21
+ov
+st
+s
+str
+s
+p f $21
+ov
+st
+s
+str
+s
+p f $21
+ov
+st
+s
+str
+q

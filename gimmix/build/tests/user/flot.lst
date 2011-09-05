@@ -1,0 +1,316 @@
+                   # 1 "user/flot.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/flot.mms"
+                   %
+                   % flot.mms -- tests flot-instruction (generated)
+                   %
+                     LOC #1000
+                   
+0000000000001000:  Main OR $0,$0,$0 % dummy
+ ...000: c0000000
+ ...004: f7150000    PUT rA,0
+                   
+                     % Put floats in registers
+ ...008: e0000000    SETH $0,#0000
+ ...00c: e9000000    ORMH $0,#0000
+ ...010: ea000000    ORML $0,#0000
+ ...014: eb000000    ORL $0,#0000
+                   
+ ...018: e0010000    SETH $1,#0000
+ ...01c: e9010000    ORMH $1,#0000
+ ...020: ea010000    ORML $1,#0000
+ ...024: eb010001    ORL $1,#0001
+                   
+ ...028: e0020000    SETH $2,#0000
+ ...02c: e9020000    ORMH $2,#0000
+ ...030: ea020000    ORML $2,#0000
+ ...034: eb020002    ORL $2,#0002
+                   
+ ...038: e0030000    SETH $3,#0000
+ ...03c: e9030000    ORMH $3,#0000
+ ...040: ea030000    ORML $3,#0000
+ ...044: eb03002a    ORL $3,#002A
+                   
+ ...048: e0047730    SETH $4,#7730
+ ...04c: e9040fc3    ORMH $4,#0FC3
+ ...050: ea046170    ORML $4,#6170
+ ...054: eb041777    ORL $4,#1777
+                   
+ ...058: e0050000    SETH $5,#0000
+ ...05c: e9050000    ORMH $5,#0000
+ ...060: ea0517d7    ORML $5,#17D7
+ ...064: eb058400    ORL $5,#8400
+                   
+ ...068: e0060000    SETH $6,#0000
+ ...06c: e9060000    ORMH $6,#0000
+ ...070: ea0600a9    ORML $6,#00A9
+ ...074: eb068ac7    ORL $6,#8AC7
+                   
+ ...078: e0077fff    SETH $7,#7FFF
+ ...07c: e907ffff    ORMH $7,#FFFF
+ ...080: ea07ffff    ORML $7,#FFFF
+ ...084: eb07ffff    ORL $7,#FFFF
+                   
+ ...088: e0088000    SETH $8,#8000
+ ...08c: e9080000    ORMH $8,#0000
+ ...090: ea080000    ORML $8,#0000
+ ...094: eb080000    ORL $8,#0000
+                   
+ ...098: e009ffff    SETH $9,#FFFF
+ ...09c: e909ffff    ORMH $9,#FFFF
+ ...0a0: ea09ffff    ORML $9,#FFFF
+ ...0a4: eb09ffff    ORL $9,#FFFF
+                   
+ ...0a8: e00affff    SETH $10,#FFFF
+ ...0ac: e90affff    ORMH $10,#FFFF
+ ...0b0: ea0affff    ORML $10,#FFFF
+ ...0b4: eb0afffe    ORL $10,#FFFE
+                   
+ ...0b8: e00bffff    SETH $11,#FFFF
+ ...0bc: e90bffff    ORMH $11,#FFFF
+ ...0c0: ea0bffff    ORML $11,#FFFF
+ ...0c4: eb0bff19    ORL $11,#FF19
+                   
+ ...0c8: e00cffbf    SETH $12,#FFBF
+ ...0cc: e90c0668    ORMH $12,#0668
+ ...0d0: ea0c5a74    ORML $12,#5A74
+ ...0d4: eb0cd072    ORL $12,#D072
+                   
+                     % Setup location for results
+ ...0d8: e30df000    SETL $13,#F000
+                   
+                     % Perform tests
+                     % Set rounding mode to NEAR
+ ...0dc: e20e0000    SETML $14,#0
+ ...0e0: f615000e    PUT rA,$14
+                   
+ ...0e4: 080f0000    FLOT $15,$0 % (FLOT) #0
+ ...0e8: af0f0d00    STOU $15,$13,0 % #F000
+ ...0ec: 230d0d08    ADDU $13,$13,8
+                   
+ ...0f0: 080f0001    FLOT $15,$1 % (FLOT) #1
+ ...0f4: af0f0d00    STOU $15,$13,0 % #F008
+ ...0f8: 230d0d08    ADDU $13,$13,8
+                   
+ ...0fc: 080f0002    FLOT $15,$2 % (FLOT) #2
+ ...100: af0f0d00    STOU $15,$13,0 % #F010
+ ...104: 230d0d08    ADDU $13,$13,8
+                   
+ ...108: 080f0003    FLOT $15,$3 % (FLOT) #2A
+ ...10c: af0f0d00    STOU $15,$13,0 % #F018
+ ...110: 230d0d08    ADDU $13,$13,8
+                   
+ ...114: 080f0004    FLOT $15,$4 % (FLOT) #77300FC361701777
+ ...118: af0f0d00    STOU $15,$13,0 % #F020
+ ...11c: 230d0d08    ADDU $13,$13,8
+                   
+ ...120: 080f0005    FLOT $15,$5 % (FLOT) #17D78400
+ ...124: af0f0d00    STOU $15,$13,0 % #F028
+ ...128: 230d0d08    ADDU $13,$13,8
+                   
+ ...12c: 080f0006    FLOT $15,$6 % (FLOT) #A98AC7
+ ...130: af0f0d00    STOU $15,$13,0 % #F030
+ ...134: 230d0d08    ADDU $13,$13,8
+                   
+ ...138: 080f0007    FLOT $15,$7 % (FLOT) #7FFFFFFFFFFFFFFF
+ ...13c: af0f0d00    STOU $15,$13,0 % #F038
+ ...140: 230d0d08    ADDU $13,$13,8
+                   
+ ...144: 080f0008    FLOT $15,$8 % (FLOT) #8000000000000000
+ ...148: af0f0d00    STOU $15,$13,0 % #F040
+ ...14c: 230d0d08    ADDU $13,$13,8
+                   
+ ...150: 080f0009    FLOT $15,$9 % (FLOT) #FFFFFFFFFFFFFFFF
+ ...154: af0f0d00    STOU $15,$13,0 % #F048
+ ...158: 230d0d08    ADDU $13,$13,8
+                   
+ ...15c: 080f000a    FLOT $15,$10 % (FLOT) #FFFFFFFFFFFFFFFE
+ ...160: af0f0d00    STOU $15,$13,0 % #F050
+ ...164: 230d0d08    ADDU $13,$13,8
+                   
+ ...168: 080f000b    FLOT $15,$11 % (FLOT) #FFFFFFFFFFFFFF19
+ ...16c: af0f0d00    STOU $15,$13,0 % #F058
+ ...170: 230d0d08    ADDU $13,$13,8
+                   
+ ...174: 080f000c    FLOT $15,$12 % (FLOT) #FFBF06685A74D072
+ ...178: af0f0d00    STOU $15,$13,0 % #F060
+ ...17c: 230d0d08    ADDU $13,$13,8
+                   
+                     % Set rounding mode to DOWN
+ ...180: e20e0003    SETML $14,#3
+ ...184: f615000e    PUT rA,$14
+                   
+ ...188: 080f0000    FLOT $15,$0 % (FLOT) #0
+ ...18c: af0f0d00    STOU $15,$13,0 % #F068
+ ...190: 230d0d08    ADDU $13,$13,8
+                   
+ ...194: 080f0001    FLOT $15,$1 % (FLOT) #1
+ ...198: af0f0d00    STOU $15,$13,0 % #F070
+ ...19c: 230d0d08    ADDU $13,$13,8
+                   
+ ...1a0: 080f0002    FLOT $15,$2 % (FLOT) #2
+ ...1a4: af0f0d00    STOU $15,$13,0 % #F078
+ ...1a8: 230d0d08    ADDU $13,$13,8
+                   
+ ...1ac: 080f0003    FLOT $15,$3 % (FLOT) #2A
+ ...1b0: af0f0d00    STOU $15,$13,0 % #F080
+ ...1b4: 230d0d08    ADDU $13,$13,8
+                   
+ ...1b8: 080f0004    FLOT $15,$4 % (FLOT) #77300FC361701777
+ ...1bc: af0f0d00    STOU $15,$13,0 % #F088
+ ...1c0: 230d0d08    ADDU $13,$13,8
+                   
+ ...1c4: 080f0005    FLOT $15,$5 % (FLOT) #17D78400
+ ...1c8: af0f0d00    STOU $15,$13,0 % #F090
+ ...1cc: 230d0d08    ADDU $13,$13,8
+                   
+ ...1d0: 080f0006    FLOT $15,$6 % (FLOT) #A98AC7
+ ...1d4: af0f0d00    STOU $15,$13,0 % #F098
+ ...1d8: 230d0d08    ADDU $13,$13,8
+                   
+ ...1dc: 080f0007    FLOT $15,$7 % (FLOT) #7FFFFFFFFFFFFFFF
+ ...1e0: af0f0d00    STOU $15,$13,0 % #F0A0
+ ...1e4: 230d0d08    ADDU $13,$13,8
+                   
+ ...1e8: 080f0008    FLOT $15,$8 % (FLOT) #8000000000000000
+ ...1ec: af0f0d00    STOU $15,$13,0 % #F0A8
+ ...1f0: 230d0d08    ADDU $13,$13,8
+                   
+ ...1f4: 080f0009    FLOT $15,$9 % (FLOT) #FFFFFFFFFFFFFFFF
+ ...1f8: af0f0d00    STOU $15,$13,0 % #F0B0
+ ...1fc: 230d0d08    ADDU $13,$13,8
+                   
+ ...200: 080f000a    FLOT $15,$10 % (FLOT) #FFFFFFFFFFFFFFFE
+ ...204: af0f0d00    STOU $15,$13,0 % #F0B8
+ ...208: 230d0d08    ADDU $13,$13,8
+                   
+ ...20c: 080f000b    FLOT $15,$11 % (FLOT) #FFFFFFFFFFFFFF19
+ ...210: af0f0d00    STOU $15,$13,0 % #F0C0
+ ...214: 230d0d08    ADDU $13,$13,8
+                   
+ ...218: 080f000c    FLOT $15,$12 % (FLOT) #FFBF06685A74D072
+ ...21c: af0f0d00    STOU $15,$13,0 % #F0C8
+ ...220: 230d0d08    ADDU $13,$13,8
+                   
+                     % Set rounding mode to UP
+ ...224: e20e0002    SETML $14,#2
+ ...228: f615000e    PUT rA,$14
+                   
+ ...22c: 080f0000    FLOT $15,$0 % (FLOT) #0
+ ...230: af0f0d00    STOU $15,$13,0 % #F0D0
+ ...234: 230d0d08    ADDU $13,$13,8
+                   
+ ...238: 080f0001    FLOT $15,$1 % (FLOT) #1
+ ...23c: af0f0d00    STOU $15,$13,0 % #F0D8
+ ...240: 230d0d08    ADDU $13,$13,8
+                   
+ ...244: 080f0002    FLOT $15,$2 % (FLOT) #2
+ ...248: af0f0d00    STOU $15,$13,0 % #F0E0
+ ...24c: 230d0d08    ADDU $13,$13,8
+                   
+ ...250: 080f0003    FLOT $15,$3 % (FLOT) #2A
+ ...254: af0f0d00    STOU $15,$13,0 % #F0E8
+ ...258: 230d0d08    ADDU $13,$13,8
+                   
+ ...25c: 080f0004    FLOT $15,$4 % (FLOT) #77300FC361701777
+ ...260: af0f0d00    STOU $15,$13,0 % #F0F0
+ ...264: 230d0d08    ADDU $13,$13,8
+                   
+ ...268: 080f0005    FLOT $15,$5 % (FLOT) #17D78400
+ ...26c: af0f0d00    STOU $15,$13,0 % #F0F8
+ ...270: 230d0d08    ADDU $13,$13,8
+                   
+ ...274: 080f0006    FLOT $15,$6 % (FLOT) #A98AC7
+ ...278: af0f0d00    STOU $15,$13,0 % #F100
+ ...27c: 230d0d08    ADDU $13,$13,8
+                   
+ ...280: 080f0007    FLOT $15,$7 % (FLOT) #7FFFFFFFFFFFFFFF
+ ...284: af0f0d00    STOU $15,$13,0 % #F108
+ ...288: 230d0d08    ADDU $13,$13,8
+                   
+ ...28c: 080f0008    FLOT $15,$8 % (FLOT) #8000000000000000
+ ...290: af0f0d00    STOU $15,$13,0 % #F110
+ ...294: 230d0d08    ADDU $13,$13,8
+                   
+ ...298: 080f0009    FLOT $15,$9 % (FLOT) #FFFFFFFFFFFFFFFF
+ ...29c: af0f0d00    STOU $15,$13,0 % #F118
+ ...2a0: 230d0d08    ADDU $13,$13,8
+                   
+ ...2a4: 080f000a    FLOT $15,$10 % (FLOT) #FFFFFFFFFFFFFFFE
+ ...2a8: af0f0d00    STOU $15,$13,0 % #F120
+ ...2ac: 230d0d08    ADDU $13,$13,8
+                   
+ ...2b0: 080f000b    FLOT $15,$11 % (FLOT) #FFFFFFFFFFFFFF19
+ ...2b4: af0f0d00    STOU $15,$13,0 % #F128
+ ...2b8: 230d0d08    ADDU $13,$13,8
+                   
+ ...2bc: 080f000c    FLOT $15,$12 % (FLOT) #FFBF06685A74D072
+ ...2c0: af0f0d00    STOU $15,$13,0 % #F130
+ ...2c4: 230d0d08    ADDU $13,$13,8
+                   
+                     % Set rounding mode to ZERO
+ ...2c8: e20e0001    SETML $14,#1
+ ...2cc: f615000e    PUT rA,$14
+                   
+ ...2d0: 080f0000    FLOT $15,$0 % (FLOT) #0
+ ...2d4: af0f0d00    STOU $15,$13,0 % #F138
+ ...2d8: 230d0d08    ADDU $13,$13,8
+                   
+ ...2dc: 080f0001    FLOT $15,$1 % (FLOT) #1
+ ...2e0: af0f0d00    STOU $15,$13,0 % #F140
+ ...2e4: 230d0d08    ADDU $13,$13,8
+                   
+ ...2e8: 080f0002    FLOT $15,$2 % (FLOT) #2
+ ...2ec: af0f0d00    STOU $15,$13,0 % #F148
+ ...2f0: 230d0d08    ADDU $13,$13,8
+                   
+ ...2f4: 080f0003    FLOT $15,$3 % (FLOT) #2A
+ ...2f8: af0f0d00    STOU $15,$13,0 % #F150
+ ...2fc: 230d0d08    ADDU $13,$13,8
+                   
+ ...300: 080f0004    FLOT $15,$4 % (FLOT) #77300FC361701777
+ ...304: af0f0d00    STOU $15,$13,0 % #F158
+ ...308: 230d0d08    ADDU $13,$13,8
+                   
+ ...30c: 080f0005    FLOT $15,$5 % (FLOT) #17D78400
+ ...310: af0f0d00    STOU $15,$13,0 % #F160
+ ...314: 230d0d08    ADDU $13,$13,8
+                   
+ ...318: 080f0006    FLOT $15,$6 % (FLOT) #A98AC7
+ ...31c: af0f0d00    STOU $15,$13,0 % #F168
+ ...320: 230d0d08    ADDU $13,$13,8
+                   
+ ...324: 080f0007    FLOT $15,$7 % (FLOT) #7FFFFFFFFFFFFFFF
+ ...328: af0f0d00    STOU $15,$13,0 % #F170
+ ...32c: 230d0d08    ADDU $13,$13,8
+                   
+ ...330: 080f0008    FLOT $15,$8 % (FLOT) #8000000000000000
+ ...334: af0f0d00    STOU $15,$13,0 % #F178
+ ...338: 230d0d08    ADDU $13,$13,8
+                   
+ ...33c: 080f0009    FLOT $15,$9 % (FLOT) #FFFFFFFFFFFFFFFF
+ ...340: af0f0d00    STOU $15,$13,0 % #F180
+ ...344: 230d0d08    ADDU $13,$13,8
+                   
+ ...348: 080f000a    FLOT $15,$10 % (FLOT) #FFFFFFFFFFFFFFFE
+ ...34c: af0f0d00    STOU $15,$13,0 % #F188
+ ...350: 230d0d08    ADDU $13,$13,8
+                   
+ ...354: 080f000b    FLOT $15,$11 % (FLOT) #FFFFFFFFFFFFFF19
+ ...358: af0f0d00    STOU $15,$13,0 % #F190
+ ...35c: 230d0d08    ADDU $13,$13,8
+                   
+ ...360: 080f000c    FLOT $15,$12 % (FLOT) #FFBF06685A74D072
+ ...364: af0f0d00    STOU $15,$13,0 % #F198
+ ...368: 230d0d08    ADDU $13,$13,8
+                   
+                     % Sync memory
+ ...36c: e30df000    SETL $13,#F000
+ ...370: b9fe0d00    SYNCD #FE,$13
+ ...374: 230d0dff    ADDU $13,$13,#FF
+ ...378: b9a20d00    SYNCD #A2,$13
+ ...37c: 230d0da3    ADDU $13,$13,#A3
+
+Symbol table:
+ Main = #0000000000001000 (1)

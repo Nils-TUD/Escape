@@ -1,0 +1,608 @@
+                   # 1 "manual/disk-ie.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "manual/disk-ie.mms"
+                   %
+                   % disk-ie.mms -- tests the disk-device with interrupts enabled
+                   %
+                   
+                     LOC #0
+ ...000: 57616974  START BYTE "Waiting until disk is ready...",0
+ ...004: 696e6720
+ ...008: 756e7469
+ ...00c: 6c206469
+ ...010: 736b2069
+ ...014: 73207265
+ ...018: 6164792e
+ ...01c: 2e2e00  
+ ...01f:       64  READY BYTE "done",#d,#a,0
+ ...020: 6f6e650d
+ ...024: 0a00    
+ ...026:     4361  CAP BYTE "Capacity: ",0
+ ...028: 70616369
+ ...02c: 74793a20
+ ...030: 00      
+ ...031:   206279  CAPEND BYTE " bytes",#d,#a,0
+ ...034: 7465730d
+ ...038: 0a00    
+ ...03a:     5265  READ1 BYTE "Reading content...",#d,#a,"------",#d,#a,0
+ ...03c: 6164696e
+ ...040: 6720636f
+ ...044: 6e74656e
+ ...048: 742e2e2e
+ ...04c: 0d0a2d2d
+ ...050: 2d2d2d2d
+ ...054: 0d0a00  
+ ...057:       4f  WRITE BYTE "Overwriting content...",#d,#a,0
+ ...058: 76657277
+ ...05c: 72697469
+ ...060: 6e672063
+ ...064: 6f6e7465
+ ...068: 6e742e2e
+ ...06c: 2e0d0a00
+ ...070: 52656164  READ2 BYTE "Reading again...",#d,#a,"------",#d,#a,0
+ ...074: 696e6720
+ ...078: 61676169
+ ...07c: 6e2e2e2e
+ ...080: 0d0a2d2d
+ ...084: 2d2d2d2d
+ ...088: 0d0a00  
+ ...08b:       0d  END BYTE #d,#a,"------",#d,#a,0
+ ...08c: 0a2d2d2d
+ ...090: 2d2d2d0d
+ ...094: 0a00    
+ ...096:     5265  REWIND BYTE "Rewinding content...",#d,#a,0
+ ...098: 77696e64
+ ...09c: 696e6720
+ ...0a0: 636f6e74
+ ...0a4: 656e742e
+ ...0a8: 2e2e0d0a
+ ...0ac: 00      
+                   
+                   
+                     % dynamic traps
+                     LOC #600000
+0000000000600000:  DTRAP GET $254,rQ
+ ...000: fefe0010
+ ...004: f7100000    PUT rQ,0
+ ...008: e3fe0001    SET $254,1
+ ...00c: e0ffffff    SETH $255,#FFFF
+ ...010: e9ffff00    ORMH $255,#FF00
+ ...014: f9000001    RESUME 1
+                   
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main PUT rG,254
+ ...000: f71300fe
+                     % setup rTT
+ ...004: e0008000    SETH $0,#8000
+ ...008: e9000000    ORMH $0,DTRAP>>32
+ ...00c: ea000060    ORML $0,DTRAP>>16
+******************   ORL $0,DTRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...010: eb000000
+ ...014: f60e0000    PUT rTT,$0
+                   
+ ...018: e3010000    SET $1,START
+ ...01c: f200xxxx    PUSHJ $0,putmsg
+                   
+                     % enable interrupts
+ ...020: 35000001    NEG $0,0,1
+ ...024: ed000001    ANDNMH $0,#0001
+ ...028: f60f0000    PUT rK,$0
+                   
+                     % wait until ready-bit is set
+ ...02c: e0008003    SETH $0,#8003
+ ...030: 8f010000  1H LDOU $1,$0,0
+ ...034: c9010120    AND $1,$1,#20
+ ...038: 5301fffe    PBZ $1,1B
+                   
+                     % print ready & capacity
+ ...03c: e301001f    SET $1,READY
+ ...040: f200xxxx    PUSHJ $0,putmsg
+ ...044: e3010026    SET $1,CAP
+ ...048: f200xxxx    PUSHJ $0,putmsg
+                   
+                     % print capacity
+ ...04c: e0008003    SETH $0,#8003
+ ...050: e3010000    SET $1,0
+ ...054: 8f020018    LDOU $2,$0,24
+ ...058: 3b020209    SLU $2,$2,9 % *= sector-size
+ ...05c: e303000a    SET $3,10
+ ...060: f200xxxx    PUSHJ $0,io:putu
+                   
+ ...064: e3010031    SET $1,CAPEND
+ ...068: f200xxxx    PUSHJ $0,putmsg
+ ...06c: e301003a    SET $1,READ1
+ ...070: f200xxxx    PUSHJ $0,putmsg
+                   
+                     % read sector
+ ...074: e3010000    SET $1,0
+ ...078: e302f000    SET $2,#F000
+ ...07c: e8028000    ORH $2,#8000
+ ...080: f200xxxx    PUSHJ $0,readSec
+                   
+                     % print content
+ ...084: e301f000    SET $1,#F000
+ ...088: f200xxxx    PUSHJ $0,putmsg
+ ...08c: e301008b    SET $1,END
+ ...090: f200xxxx    PUSHJ $0,putmsg
+                   
+ ...094: e3010057    SET $1,WRITE
+ ...098: f200xxxx    PUSHJ $0,putmsg
+                   
+                     % backup content
+ ...09c: e301e000    SET $1,#E000
+ ...0a0: e8018000    ORH $1,#8000
+ ...0a4: e302f000    SET $2,#F000
+ ...0a8: e8028000    ORH $2,#8000
+ ...0ac: f200xxxx    PUSHJ $0,str:copy
+                   
+                     % replace content
+ ...0b0: e301f000    SET $1,#F000
+ ...0b4: e8018000    ORH $1,#8000
+ ...0b8: e3020000    SET $2,START
+ ...0bc: e8028000    ORH $2,#8000
+ ...0c0: f200xxxx    PUSHJ $0,str:copy
+                   
+                     % write sector
+ ...0c4: e3010000    SET $1,0
+ ...0c8: e302f000    SET $2,#F000
+ ...0cc: e8028000    ORH $2,#8000
+ ...0d0: f200xxxx    PUSHJ $0,wrtSec
+                   
+                     % print msg READ2
+ ...0d4: e3010070    SET $1,READ2
+ ...0d8: f200xxxx    PUSHJ $0,putmsg
+                   
+                     % read sector
+ ...0dc: e3010000    SET $1,0
+ ...0e0: e302f000    SET $2,#F000
+ ...0e4: e8028000    ORH $2,#8000
+ ...0e8: f200xxxx    PUSHJ $0,readSec
+                   
+                     % print content
+ ...0ec: e301f000    SET $1,#F000
+ ...0f0: f200xxxx    PUSHJ $0,putmsg
+ ...0f4: e301008b    SET $1,END
+ ...0f8: f200xxxx    PUSHJ $0,putmsg
+                   
+ ...0fc: e3010096    SET $1,REWIND
+ ...100: f200xxxx    PUSHJ $0,putmsg
+                   
+                     % write sector
+ ...104: e3010000    SET $1,0
+ ...108: e302e000    SET $2,#E000
+ ...10c: e8028000    ORH $2,#8000
+ ...110: f200xxxx    PUSHJ $0,wrtSec
+                   
+                   
+ ...114: f0000000  loop JMP loop
+                   
+                   % void putmsg(char *msg)
+ ...118: fe010004  putmsg GET $1,rJ
+ ...11c: e3030000    SET $3,0
+ ...120: c1040000    SET $4,$0
+ ...124: e8048000    ORH $4,#8000
+ ...128: f202xxxx    PUSHJ $2,io:puts
+ ...12c: f6040001    PUT rJ,$1
+ ...130: f8000000    POP 0,0
+                   
+                   % void readSec(octa sec,octa *buf)
+ ...134: fe020004  readSec GET $2,rJ % save rJ
+ ...138: e0038003    SETH $3,#8003 % disk-address
+ ...13c: b5010308    STCO 1,$3,#8 % sector-count = 1
+ ...140: af000316    STOU $0,$3,#16 % sector-number = sec
+ ...144: b5030300    STCO #3,$3,#0 % start read-command with interrupts enabled
+ ...148: e3fe0000    SET $254,0 % first, reset our flag-register
+ ...14c: 52fe0000  _waitr PBZ $254,_waitr % wait here until the interrupt-handler sets the flag
+                     % now read one sector from the disk-buffer into buf
+ ...150: e3040000    SET $4,0
+ ...154: e6030008    INCML $3,#0008 % address of disk-buffer
+ ...158: 8e050304  2H LDOU $5,$3,$4
+ ...15c: ae050104    STOU $5,$1,$4
+ ...160: 23040408    ADDU $4,$4,8 % next octa
+ ...164: 33050440    CMPU $5,$4,64 % 64*8 = 512
+ ...168: 5b05fffc    PBNZ $5,2B
+ ...16c: f6040002    PUT rJ,$2 % restore rJ
+ ...170: f8000000    POP 0,0
+                   
+                   % void wrtSec(octa sec,octa *buf)
+ ...174: fe020004  wrtSec GET $2,rJ % save rJ
+ ...178: e0038003    SETH $3,#8003 % disk-address
+                     % first, write it to disk-buffer
+ ...17c: e3040000    SET $4,0
+ ...180: e6030008    INCML $3,#0008 % address of disk-buffer
+ ...184: 8e050104  1H LDOU $5,$1,$4
+ ...188: ae050304    STOU $5,$3,$4
+ ...18c: 23040408    ADDU $4,$4,8 % next octa
+ ...190: 33050440    CMPU $5,$4,64 % 64*8 = 512
+ ...194: 5b05fffc    PBNZ $5,1B
+                     % now, tell the device it should write it to disk
+ ...198: e0038003    SETH $3,#8003 % disk-address
+ ...19c: b5010308    STCO 1,$3,#8 % sector-count = 1
+ ...1a0: af000316    STOU $0,$3,#16 % sector-number = sec
+ ...1a4: b5070300    STCO #7,$3,#0 % start write-command with interrupts enabled
+ ...1a8: e3fe0000    SET $254,0 % first, reset our flag-register
+ ...1ac: 52fe0000  _waitw PBZ $254,_waitw % wait here until the interrupt-handler sets the flag
+ ...1b0: f6040002    PUT rJ,$2 % restore rJ
+ ...1b4: f8000000    POP 0,0
+                   
+                   
+                   # 1 "manual/string.mmi" 1
+                   %
+                   % some string-functions
+                   %
+                   
+                     PREFIX str:
+                   
+                     LOC @+(4-@)&3
+ ...1b8: 6e616e00  nan BYTE "nan",0
+ ...1bc: 696e6600  inf BYTE "inf",0
+                   
+                   % void copy(char *dst,char *src)
+ ...1c0: e3020000  copy SET $2,0
+ ...1c4: 82030102  1H LDBU $3,$1,$2
+ ...1c8: 4203xxxx    BZ $3,1F
+ ...1cc: a2030002    STBU $3,$0,$2
+ ...1d0: 23020201    ADDU $2,$2,1
+ ...1d4: f1fffffc    JMP 1B
+ ...1d8: f8010000  1H POP 1,0
+                   
+                   % octa tofloat(char *str)
+ ...1dc: fe010004  tofloat GET $1,:rJ
+ ...1e0: c1020000    SET $2,$0 % str
+ ...1e4: e3000000    SET $0,0 % res = 0
+ ...1e8: 83040200    LDBU $4,$2,0 % $4 = *str
+ ...1ec: 4204xxxx    BZ $4,2F % if 0, quit
+ ...1f0: 3305042d    CMPU $5,$4,'-'
+ ...1f4: 4a05xxxx    BNZ $5,1F
+ ...1f8: 35030001    NEG $3,0,1 % save that its negative
+ ...1fc: 23020201    ADDU $2,$2,1 % str++
+ ...200: c1050200  1H SET $5,$2
+ ...204: f506ffed    GETA $6,nan
+ ...208: f204xxxx    PUSHJ $4,compare % compare to "nan"
+ ...20c: 4a04xxxx    BNZ $4,1F
+ ...210: e0007ff8    SETH $0,#7FF8 % nan
+ ...214: f0xxxxxx    JMP 2F
+ ...218: c1050200  1H SET $5,$2
+ ...21c: f506ffe8    GETA $6,inf
+ ...220: f204xxxx    PUSHJ $4,compare % compare to "inf"
+ ...224: 4a04xxxx    BNZ $4,1F
+ ...228: e0007ff0    SETH $0,#7FF0 % inf
+ ...22c: f0xxxxxx    JMP 2F
+ ...230: 83050200  1H LDBU $5,$2,0 % $5 = *str
+ ...234: 4205xxxx    BZ $5,2F % if 0, quit
+ ...238: f204xxxx    PUSHJ $4,_getd % $4 = _getd($5)
+ ...23c: 4004xxxx    BN $4,3F % if < 0, its no digit
+ ...240: e0054024    SETH $5,#4024 % 10.0
+ ...244: 10000005    FMUL $0,$0,$5 % res *= 10
+ ...248: 0a050004    FLOTU $5,$4
+ ...24c: 04000005    FADD $0,$0,$5 % res += $4
+ ...250: 23020201    ADDU $2,$2,1 % str++
+ ...254: f1fffff7    JMP 1B
+ ...258: 83050200  3H LDBU $5,$2,0 % $5 = *str
+ ...25c: 3304052e    CMPU $4,$5,'.' % its no digit; check if its '.'
+ ...260: 4a04xxxx    BNZ $4,2F % if not, we are done
+ ...264: e0044024    SETH $4,#4024 % mul = 10.0
+ ...268: 23020201    ADDU $2,$2,1 % str++
+ ...26c: 83060200  4H LDBU $6,$2,0 % $6 = *str
+ ...270: 4206xxxx    BZ $6,2F % if 0, quit
+ ...274: f205xxxx    PUSHJ $5,_getd % $5 = _getd($6)
+ ...278: 4005xxxx    BN $5,2F % if < 0, its no digit
+ ...27c: 0a050005    FLOTU $5,$5
+ ...280: 14050504    FDIV $5,$5,$4 % $5 /= mul
+ ...284: 04000005    FADD $0,$0,$5 % res += $5
+ ...288: e0054024    SETH $5,#4024 % 10.0
+ ...28c: 10040405    FMUL $4,$4,$5 % mul *= 10
+ ...290: 23020201    ADDU $2,$2,1 % str++
+ ...294: f1fffff6    JMP 4B
+ ...298: 4803xxxx  2H BNN $3,5F % negative?
+ ...29c: e8008000    ORH $0,#8000 % '-', so negate the float
+ ...2a0: f6040001  5H PUT :rJ,$1
+ ...2a4: f8010000    POP 1,0
+                   
+                   % octa _getd(char x)
+ ...2a8: 33010030  _getd CMPU $1,$0,'0'
+ ...2ac: 4001xxxx    BN $1,1F
+ ...2b0: 33010039    CMPU $1,$0,'9'
+ ...2b4: 5c01xxxx    PBNP $1,2F
+ ...2b8: 35000001  1H NEG $0,0,1
+ ...2bc: f0xxxxxx    JMP 3F
+ ...2c0: 27000030  2H SUBU $0,$0,'0'
+ ...2c4: f8010000  3H POP 1,0
+                   
+                   % octa touint(char *str,octa base)
+ ...2c8: c1020000  touint SET $2,$0
+ ...2cc: e3000000    SET $0,0
+ ...2d0: 83030200  3H LDBU $3,$2,0
+ ...2d4: 33040300    CMPU $4,$3,0
+ ...2d8: 4204xxxx    BZ $4,1F % if $3 == 0, goto 1F (done)
+ ...2dc: 33040339    CMPU $4,$3,'9'
+ ...2e0: 4404xxxx    BP $4,2F % if $3 > '9', goto 2F
+ ...2e4: 33040330    CMPU $4,$3,'0'
+ ...2e8: 4004xxxx    BN $4,1F % if $3 < '0', goto 1F (error)
+                     % its '0'..'9'
+ ...2ec: 27030330    SUBU $3,$3,'0' % $3 -= '0'
+ ...2f0: f0xxxxxx    JMP 4F
+                     % its > '9'
+ ...2f4: 33040341  2H CMPU $4,$3,'A'
+ ...2f8: 4004xxxx    BN $4,1F % if $3 < 'A', goto 1F (error)
+ ...2fc: 33040346    CMPU $4,$3,'F'
+ ...300: 4404xxxx    BP $4,5F % if $3 > 'F', goto 5F
+                     % its 'A'..'F'
+ ...304: 27030337    SUBU $3,$3,'A'-10 % $3 -= 'A'-10
+ ...308: f0xxxxxx    JMP 4F
+                     % its > 'F'
+ ...30c: 33040361  5H CMPU $4,$3,'a'
+ ...310: 4004xxxx    BN $4,1F % if $3 < 'a', goto 1F (error)
+ ...314: 33040366    CMPU $4,$3,'f'
+ ...318: 4404xxxx    BP $4,1F % if $3 > 'f', goto 1F (error)
+                     % its 'a'..'f'
+ ...31c: 27030357    SUBU $3,$3,'a'-10 % $3 -= 'a'-10
+ ...320: 32040301  4H CMPU $4,$3,$1
+ ...324: 4804xxxx    BNN $4,1F % if $3 >= base, goto 1F (error)
+ ...328: 1a000001    MULU $0,$0,$1 % $0 *= base
+ ...32c: 22000003    ADDU $0,$0,$3 % $0 += $3
+ ...330: 23020201    ADDU $2,$2,1 % str1++
+ ...334: f1ffffe7    JMP 3B
+ ...338: f8010000  1H POP 1,0
+                   
+                   % octa compare(char *str1,char *str2)
+ ...33c: e3020000  compare SET $2,0 % i = 0
+ ...340: f0xxxxxx    JMP 1F
+ ...344: 23020201  3H ADDU $2,$2,1 % i++
+ ...348: 82030002  1H LDBU $3,$0,$2 % c1 = str[i]
+ ...34c: 82040102    LDBU $4,$1,$2 % c2 = str[i]
+ ...350: 32050304    CMPU $5,$3,$4 % compare c1 with c2
+ ...354: 4a05xxxx    BNZ $5,2F % if c1 != c2, goto 2
+ ...358: 5b03fffb    PBNZ $3,3B % if c1 != 0, goto 3
+ ...35c: c1000500  2H SET $0,$5 % return compare-result
+ ...360: f8010000    POP 1,0
+                   
+                     PREFIX :
+                   # 184 "manual/disk-ie.mms" 2
+                   # 1 "manual/io.mmi" 1
+                   %
+                   % some io-functions
+                   %
+                   
+                   % terminal 0 rcvr ctrl: #8002000000000000
+                   % terminal 0 rcvr data: #8002000000000008
+                   % terminal 0 xmtr ctrl: #8002000000000010
+                   % terminal 0 xmtr data: #8002000000000018
+                   % terminal 1 rcvr ctrl: #8002000100000000
+                   % terminal 1 rcvr data: #8002000100000008
+                   % terminal 1 xmtr ctrl: #8002000100000010
+                   % terminal 1 xmtr data: #8002000100000018
+                   
+                     PREFIX io:
+                   
+ ...364: 30313233  hexch BYTE "0123456789ABCDEF",0
+ ...368: 34353637
+ ...36c: 38394142
+ ...370: 43444546
+ ...374: 00      
+                     LOC @+(4-@)&3
+ ...378: 6e616e00  nan BYTE "nan",0
+ ...37c: 696e6600  inf BYTE "inf",0
+                   
+                   % void putf(octa term,octa f)
+ ...380: fe020004  putf GET $2,:rJ % save rJ
+ ...384: 4801xxxx    BNN $1,1F % f >= 0?
+ ...388: c1040000    SET $4,$0
+ ...38c: e305002d    SET $5,'-'
+ ...390: f203xxxx    PUSHJ $3,putc % putc(term,'-')
+ ...394: ec018000    ANDNH $1,#8000 % f = -f
+ ...398: e0037ff0  1H SETH $3,#7FF0
+ ...39c: c8040103    AND $4,$1,$3 % check exponent
+ ...3a0: 32050403    CMPU $5,$4,$3
+ ...3a4: 4a05xxxx    BNZ $5,3F % if not #7FF, its no nan and no inf
+ ...3a8: 35030001    NEG $3,0,1
+ ...3ac: ec03fff0    ANDNH $3,#FFF0 % fraction-mask
+ ...3b0: c8040103    AND $4,$1,$3
+ ...3b4: 4a04xxxx    BNZ $4,2F % if fraction not zero, its nan
+ ...3b8: c1040000    SET $4,$0
+ ...3bc: f505fff0    GETA $5,inf
+ ...3c0: f203xxxx    PUSHJ $3,puts % puts(term,"inf")
+ ...3c4: f0xxxxxx    JMP 6F
+ ...3c8: c1040000  2H SET $4,$0
+ ...3cc: f505ffeb    GETA $5,nan
+ ...3d0: f203xxxx    PUSHJ $3,puts % puts(term,"nan")
+ ...3d4: f0xxxxxx    JMP 6F
+ ...3d8: c1040000  3H SET $4,$0
+ ...3dc: c1050100    SET $5,$1
+ ...3e0: f203xxxx    PUSHJ $3,_putfn % _putfn(term,f)
+ ...3e4: c1040000    SET $4,$0
+ ...3e8: e305002e    SET $5,'.'
+ ...3ec: f203xxxx    PUSHJ $3,putc % putc(term,'.')
+ ...3f0: e0044024    SETH $4,#4024 % 10.0
+ ...3f4: 17030101    FINT $3,:ROUND_OFF,$1
+ ...3f8: 06010103    FSUB $1,$1,$3 % f -= (int)f
+                     % multiply it with 10 until the fraction is gone
+ ...3fc: 17030101    FINT $3,:ROUND_OFF,$1
+ ...400: 32030103  4H CMPU $3,$1,$3
+ ...404: 4203xxxx    BZ $3,5F % if fraction == 0, we are done
+ ...408: 10010104    FMUL $1,$1,$4 % f *= 10
+ ...40c: 17030101    FINT $3,:ROUND_OFF,$1
+ ...410: 4b03fffc    BNZ $3,4B % if its still zero, print the 0
+ ...414: c1060000    SET $6,$0
+ ...418: e3070030    SET $7,'0'
+ ...41c: f205xxxx    PUSHJ $5,putc % putc(term,'0')
+ ...420: f1fffff8    JMP 4B
+ ...424: c1040000  5H SET $4,$0
+ ...428: c1050100    SET $5,$1
+ ...42c: f203xxxx    PUSHJ $3,_putfn % finally, print it
+ ...430: f6040002  6H PUT :rJ,$2 % restore rJ
+ ...434: f8000000    POP 0,0
+                   
+                   % void _putfn(octa term,octa f)
+ ...438: fe020004  _putfn GET $2,:rJ
+ ...43c: 17010101    FINT $1,:ROUND_OFF,$1 % f = (int)f
+ ...440: e0034024    SETH $3,#4024 % 10.0
+ ...444: 01040103    FCMP $4,$1,$3
+ ...448: 4004xxxx    BN $4,1F % if g < 10, stop recursion
+ ...44c: 14060103    FDIV $6,$1,$3 % g = f / 10
+ ...450: c1050000    SET $5,$0
+ ...454: f304fff9    PUSHJ $4,_putfn % _putfn(g)
+ ...458: 16050103  1H FREM $5,$1,$3 % x = f % 10
+ ...45c: 4805xxxx    BNN $5,2F % its negative if its >= 5, (-5, -4, ...)
+ ...460: 04050305    FADD $5,$3,$5 % so, x = 10 + x
+ ...464: c1040000  2H SET $4,$0
+ ...468: 05050005    FIX $5,$5
+ ...46c: 23050530    ADDU $5,$5,'0' % x += '0'
+ ...470: f203xxxx    PUSHJ $3,putc % putc(term,x)
+ ...474: f6040002    PUT :rJ,$2 % restore rJ
+ ...478: f8000000    POP 0,0
+                   
+                   % void putn(octa term,octa n)
+ ...47c: fe020004  putn GET $2,:rJ % save rJ
+ ...480: 5801xxxx    PBNN $1,1F % n < 0?
+ ...484: c0040000    OR $4,$0,$0
+ ...488: e305002d    SET $5,'-'
+ ...48c: f203xxxx    PUSHJ $3,putc % putc(term,'-')
+ ...490: 34010001    NEG $1,0,$1 % n = -n
+ ...494: 3303010a  1H CMPU $3,$1,10
+ ...498: 5003xxxx    PBN $3,1F % n >= 10?
+ ...49c: c0040000    OR $4,$0,$0
+ ...4a0: 1d05010a    DIV $5,$1,10 % t = n / 10
+ ...4a4: fe010006    GET $1,:rR % n = n % 10
+ ...4a8: f303fff5    PUSHJ $3,putn % putn(term,t)
+ ...4ac: c0040000  1H OR $4,$0,$0
+ ...4b0: c0050101    OR $5,$1,$1
+ ...4b4: 23050530    ADDU $5,$5,48 % char + '0'
+ ...4b8: f203xxxx    PUSHJ $3,putc % putc(term,n)
+ ...4bc: f6040002    PUT :rJ,$2 % restore rJ
+ ...4c0: f8000000    POP 0,0
+                   
+                   % void putu(octa term,octa u,octa base)
+ ...4c4: fe030004  putu GET $3,:rJ % save rJ
+ ...4c8: 32040102    CMPU $4,$1,$2
+ ...4cc: 5004xxxx    PBN $4,1F % n >= base?
+ ...4d0: c0050000    OR $5,$0,$0
+ ...4d4: 1e060102    DIVU $6,$1,$2 % t = n / base
+ ...4d8: c0070202    OR $7,$2,$2
+ ...4dc: fe010006    GET $1,:rR % n = n % base
+ ...4e0: f304fff9    PUSHJ $4,putu % putu(term,t,base)
+ ...4e4: c0050000  1H OR $5,$0,$0
+ ...4e8: f506ff9f    GETA $6,hexch
+ ...4ec: 82060601    LDBU $6,$6,$1
+ ...4f0: f204xxxx    PUSHJ $4,putc % putc(term,hexch[n])
+ ...4f4: f6040003    PUT :rJ,$3 % restore rJ
+ ...4f8: f8000000    POP 0,0
+                   
+                   % octa gets(octa term,char *dst,octa max)
+ ...4fc: fe030004  gets GET $3,:rJ % save rJ
+ ...500: 23040100    ADDU $4,$1,0
+ ...504: 31050201  1H CMP $5,$2,1
+ ...508: 4c05xxxx    BNP $5,2F % if(max <= 1) goto 1F
+ ...50c: 23060000    ADDU $6,$0,0
+ ...510: f205xxxx    PUSHJ $5,getc % call getc(term)
+ ...514: 23070000    ADDU $7,$0,0
+ ...518: 23080500    ADDU $8,$5,0
+ ...51c: f206xxxx    PUSHJ $6,putc % call putc(term,c)
+ ...520: 3106050d    CMP $6,$5,#0D % c == \n?
+ ...524: 4206xxxx    BZ $6,1F % if so, stop
+ ...528: a3050100    STBU $5,$1,0 % otherwise, store char
+ ...52c: 23010101    ADDU $1,$1,1 % to next
+ ...530: 25020201    SUB $2,$2,1 % max--
+ ...534: f1fffff4    JMP 1B
+ ...538: 23060000  2H ADDU $6,$0,0
+ ...53c: e307000d    SET $7,#0D
+ ...540: f205xxxx    PUSHJ $5,putc % call putc(term,'\n')
+ ...544: 23060000  1H ADDU $6,$0,0
+ ...548: e307000a    SET $7,#0A
+ ...54c: f205xxxx    PUSHJ $5,putc % call putc(term,'\r')
+ ...550: a30a0100    STBU $10,$1,0 % null-termination
+ ...554: 26000104    SUBU $0,$1,$4 % determine length
+ ...558: f6040003    PUT :rJ,$3 % restore rJ
+ ...55c: f8010000    POP 1,0 % return length
+                   
+                   % octa getc(octa term)
+ ...560: e0018002  getc SETH $1,#8002 % base address: #8002000000000000
+ ...564: 39000020    SL $0,$0,32 % or in terminal-number
+ ...568: c0010100    OR $1,$1,$0 % -> #8002000100000000 for term 1, e.g.
+ ...56c: 8f020100  1H LDOU $2,$1,#0 % read ctrl-reg
+ ...570: c9020201    AND $2,$2,#1 % extract RDY-bit
+ ...574: 5302fffe    PBZ $2,1B % wait until its set
+ ...578: 8f000108    LDOU $0,$1,#8 % load char
+ ...57c: f8010000    POP 1,0 % return it
+                   
+                   % void puts(octa term,char *string)
+ ...580: fe020004  puts GET $2,:rJ % save rJ
+ ...584: 83050100  1H LDBU $5,$1,0 % load char from string
+ ...588: 4205xxxx    BZ $5,2F % if its 0, we are done
+ ...58c: 23040000    ADDU $4,$0,0
+ ...590: f203xxxx    PUSHJ $3,putc % call putc(c)
+ ...594: 23010101    ADDU $1,$1,1 % to next char
+ ...598: f1fffffb    JMP 1B
+ ...59c: f6040002  2H PUT :rJ,$2 % restore rJ
+ ...5a0: f8000000    POP 0,0
+                   
+                   % void putc(octa term,octa character)
+ ...5a4: e0028002  putc SETH $2,#8002 % base address: #8002000000000000
+ ...5a8: 39000020    SL $0,$0,32 % or in terminal-number
+ ...5ac: c0020200    OR $2,$2,$0 % -> #8002000100000000 for term 1, e.g.
+ ...5b0: 8f030210  1H LDOU $3,$2,#10 % read ctrl-reg
+ ...5b4: c9030301    AND $3,$3,#1 % exract RDY-bit
+ ...5b8: 5303fffe    PBZ $3,1B % wait until its set
+ ...5bc: af010218    STOU $1,$2,#18 % write char
+ ...5c0: f8000000    POP 0,0
+                   
+                   % void oputs(char *string)
+ ...5c4: fe010004  oputs GET $1,:rJ % save rJ
+ ...5c8: 83030000  1H LDBU $3,$0,0 % load char from string
+ ...5cc: 4203xxxx    BZ $3,2F % if its 0, we are done
+ ...5d0: f202xxxx    PUSHJ $2,oputc % call oputc(c)
+ ...5d4: 23000001    ADDU $0,$0,1 % to next char
+ ...5d8: f1fffffc    JMP 1B
+ ...5dc: f6040001  2H PUT :rJ,$1 % restore rJ
+ ...5e0: f8000000    POP 0,0
+                   
+                   % void oputc(octa character)
+ ...5e4: e0018004  oputc SETH $1,#8004 % base address: #8004000000000000
+ ...5e8: af000100    STOU $0,$1,0 % write char
+ ...5ec: f8000000    POP 0,0
+                   
+                     PREFIX :
+                   # 184 "manual/disk-ie.mms" 2
+
+Symbol table:
+ CAP = #0000000000000026 (4)
+ CAPEND = #0000000000000031 (5)
+ DTRAP = #0000000000600000 (11)
+ END = #000000000000008b (9)
+ Main = #0000000000001000 (1)
+ READ1 = #000000000000003a (6)
+ READ2 = #0000000000000070 (8)
+ READY = #000000000000001f (3)
+ REWIND = #0000000000000096 (10)
+ START = #0000000000000000 (2)
+ WRITE = #0000000000000057 (7)
+ _waitr = #000000000000114c (19)
+ _waitw = #00000000000011ac (20)
+ io:_putfn = #0000000000001438 (35)
+ io:getc = #0000000000001560 (38)
+ io:gets = #00000000000014fc (37)
+ io:hexch = #0000000000001364 (30)
+ io:inf = #000000000000137c (32)
+ io:nan = #0000000000001378 (31)
+ io:oputc = #00000000000015e4 (40)
+ io:oputs = #00000000000015c4 (39)
+ io:putc = #00000000000015a4 (34)
+ io:putf = #0000000000001380 (33)
+ io:putn = #000000000000147c (36)
+ io:puts = #0000000000001580 (18)
+ io:putu = #00000000000014c4 (13)
+ loop = #0000000000001114 (17)
+ putmsg = #0000000000001118 (12)
+ readSec = #0000000000001134 (14)
+ str:_getd = #00000000000012a8 (26)
+ str:compare = #000000000000133c (25)
+ str:copy = #00000000000011c0 (15)
+ str:inf = #00000000000011bc (23)
+ str:nan = #00000000000011b8 (22)
+ str:tofloat = #00000000000011dc (24)
+ str:touint = #00000000000012c8 (27)
+ wrtSec = #0000000000001174 (16)

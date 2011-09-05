@@ -1,0 +1,113 @@
+                   # 1 "kernel/system.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/system.mms"
+                   %
+                   % system.mms -- tests exception-behaviour of system instructions
+                   %
+                   
+                     LOC #0000
+                     % segmentsizes: 1,3,4,9; pageSize=2^13; r=0x20000; n=0
+ ...000: 13490d00  RV OCTA #13490D0000020000
+ ...004: 00020000
+                   
+                     LOC #20000
+0000000000020000:    OCTA #0000000000000007 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000007
+                     LOC #20008
+ ...008: 00000000    OCTA #0000000000002007 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00002007
+                     LOC #20010
+ ...010: 00000000    OCTA #0000000000004000 % PTE 2 (#0000000000004000 .. #0000000000005FFF)
+ ...014: 00004000
+                   
+                   
+                     LOC #1000
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: 8f000000    LDOU $0,$0,0
+ ...008: f6120000    PUT rV,$0
+                   
+ ...00c: e3002000    SETL $0,#2000
+ ...010: e3014000    SETL $1,#4000
+                   
+                     % LDUNC: should not set rQ
+ ...014: 97090000    LDUNC $9,$0,0
+ ...018: fe0a0010    GET $10,rQ
+ ...01c: f7100000    PUT rQ,0
+                   
+                     % LDUNC: should set rQ
+ ...020: 97090100    LDUNC $9,$1,0
+ ...024: fe0b0010    GET $11,rQ
+ ...028: f7100000    PUT rQ,0
+                   
+                     % STUNC: should not set rQ
+ ...02c: b7000000    STUNC $0,$0,0
+ ...030: fe0c0010    GET $12,rQ
+ ...034: f7100000    PUT rQ,0
+                   
+                     % STUNC: should set rQ
+ ...038: b7000100    STUNC $0,$1,0
+ ...03c: fe0d0010    GET $13,rQ
+ ...040: f7100000    PUT rQ,0
+                   
+                     % PRELD: should not set rQ
+ ...044: 9bff0000    PRELD #FF,$0,0
+ ...048: fe0e0010    GET $14,rQ
+ ...04c: f7100000    PUT rQ,0
+                   
+                     % PRELD: should not set rQ
+ ...050: 9bff0100    PRELD #FF,$1,0
+ ...054: fe0f0010    GET $15,rQ
+ ...058: f7100000    PUT rQ,0
+                   
+                     % PREGO: should not set rQ
+ ...05c: 9dff0000    PREGO #FF,$0,0
+ ...060: fe100010    GET $16,rQ
+ ...064: f7100000    PUT rQ,0
+                   
+                     % PREGO: should not set rQ
+ ...068: 9dff0100    PREGO #FF,$1,0
+ ...06c: fe110010    GET $17,rQ
+ ...070: f7100000    PUT rQ,0
+                   
+                     % PREST: should not set rQ
+ ...074: bbff0000    PREST #FF,$0,0
+ ...078: fe120010    GET $18,rQ
+ ...07c: f7100000    PUT rQ,0
+                   
+                     % PREST: should not set rQ
+ ...080: bbff0100    PREST #FF,$1,0
+ ...084: fe130010    GET $19,rQ
+ ...088: f7100000    PUT rQ,0
+                   
+                     % SYNCD: should not set rQ
+ ...08c: b9ff0000    SYNCD #FF,$0,0
+ ...090: fe140010    GET $20,rQ
+ ...094: f7100000    PUT rQ,0
+                   
+                     % SYNCD: should not set rQ
+ ...098: b9ff0100    SYNCD #FF,$1,0
+ ...09c: fe150010    GET $21,rQ
+ ...0a0: f7100000    PUT rQ,0
+                   
+                     % SYNCID: should not set rQ
+ ...0a4: bdff0000    SYNCID #FF,$0,0
+ ...0a8: fe160010    GET $22,rQ
+ ...0ac: f7100000    PUT rQ,0
+                   
+                     % SYNCID: should not set rQ
+ ...0b0: bdff0100    SYNCID #FF,$1,0
+ ...0b4: fe170010    GET $23,rQ
+ ...0b8: f7100000    PUT rQ,0
+                   
+                     % just to execute them once.. (not really testable here)
+ ...0bc: fc000005    SYNC 5 % flush caches to mem
+ ...0c0: fc000007    SYNC 7 % clear IC and DC
+                   
+ ...0c4: 00000000    TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)
+ RV = #0000000000000000 (2)

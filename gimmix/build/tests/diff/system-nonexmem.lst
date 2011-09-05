@@ -1,0 +1,114 @@
+                   # 1 "diff/system-nonexmem.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "diff/system-nonexmem.mms"
+                   %
+                   % system-nonexmem.mms -- tests exception-behaviour of system instructions using non-existent mem
+                   %
+                   
+                   
+                   % note that this test is here because MMIX-PIPE won't fire that exception
+                   
+                   
+                     LOC #0000
+                     % segmentsizes: 1,3,4,9; pageSize=2^13; r=0x20000; n=0
+ ...000: 13490d00  RV OCTA #13490D0000020000
+ ...004: 00020000
+                   
+                     LOC #20000
+0000000000020000:    OCTA #0000000000000007 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000007
+                     LOC #20008
+ ...008: 00000000    OCTA #0000000000002007 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00002007
+                   
+                   
+                     % dynamic trap address
+                     LOC #600000
+0000000000600000:  DYNTR GET $16,rQ
+ ...000: fe100010
+ ...004: f7100000    PUT rQ,0
+ ...008: e1ff00ff    SETMH $255,#00FF % have to be set in usermode
+ ...00c: f9000001    RESUME 1
+                   
+                   
+                     % forced trap address
+                     LOC #500000
+0000000000500000:  QUIT TRAP 0 % quit
+ ...000: 00000000
+                   
+                   
+                     LOC #1000
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: 8f000000    LDOU $0,$0,0
+ ...008: f6120000    PUT rV,$0
+                   
+ ...00c: e0008fff    SETH $0,#8FFF % not existing memory
+                   
+ ...010: 97090000    LDUNC $9,$0,0
+ ...014: fe0a0010    GET $10,rQ
+ ...018: f7100000    PUT rQ,0
+                   
+ ...01c: b7000000    STUNC $0,$0,0
+ ...020: fe0b0010    GET $11,rQ
+ ...024: f7100000    PUT rQ,0
+                   
+ ...028: 9bff0000    PRELD #FF,$0,0
+ ...02c: fe0c0010    GET $12,rQ
+ ...030: f7100000    PUT rQ,0
+                   
+ ...034: 9dff0000    PREGO #FF,$0,0
+ ...038: fe0d0010    GET $13,rQ
+ ...03c: f7100000    PUT rQ,0
+                   
+ ...040: bbff0000    PREST #FF,$0,0
+ ...044: fe0e0010    GET $14,rQ
+ ...048: f7100000    PUT rQ,0
+                   
+                     % setup rTT
+ ...04c: e0008000    SETH $0,#8000
+ ...050: e9000000    ORMH $0,DYNTR>>32
+ ...054: ea000060    ORML $0,DYNTR>>16
+******************   ORL $0,DYNTR>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...058: eb000000
+ ...05c: f60e0000    PUT rTT,$0
+                   
+                     % setup rT
+ ...060: e0008000    SETH $0,#8000
+ ...064: e9000000    ORMH $0,QUIT>>32
+ ...068: ea000050    ORML $0,QUIT>>16
+******************   ORL $0,QUIT>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...06c: eb000000
+ ...070: f60d0000    PUT rT,$0
+                   
+                     % now go to user-mode
+ ...074: e1ff00ff    SETMH $255,#00FF % have to be set in usermode
+ ...078: e3002000    SET $0,#2000
+ ...07c: f61c0000    PUT rWW,$0
+ ...080: e0008000    SETH $0,#8000
+ ...084: f61d0000    PUT rXX,$0
+ ...088: f9000001    RESUME 1
+                   
+                     LOC #2000
+                   
+0000000000002000:    SET $16,0
+ ...000: e3100000
+                     % raises a privileged-access-exception because we try to access the privileged space
+ ...004: b9ff0000    SYNCD #FF,$0,0
+ ...008: c10f1000    SET $15,$16
+                   
+                     % as well
+ ...00c: e3100000    SET $16,0
+ ...010: bdff0000    SYNCID #FF,$0,0
+                   
+ ...014: 00000001    TRAP 1
+
+Symbol table:
+ DYNTR = #0000000000600000 (3)
+ Main = #0000000000001000 (1)
+ QUIT = #0000000000500000 (4)
+ RV = #0000000000000000 (2)

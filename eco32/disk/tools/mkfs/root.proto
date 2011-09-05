@@ -1,0 +1,135 @@
+./bootblk
+2239 1500
+d--755 1 1
+boot      d--755 2 1
+          hello.bin       ---644 2 1 ../stdalone/hello.bin
+          memsize.bin     ---644 2 1 ../stdalone/memsize.bin
+          onetask.bin     ---644 2 1 ../stdalone/onetask.bin
+          twotasks-1.bin  ---644 2 1 ../stdalone/twotasks-1.bin
+          twotasks-2.bin  ---644 2 1 ../stdalone/twotasks-2.bin
+          wrtmbr.bin      ---644 2 1 ../stdalone/wrtmbr.bin
+          eos32.bin       ---644 2 1 ../eos32/eos32.bin
+          eos32.map       ---644 2 1 ../eos32/eos32.map
+          $
+tst       d--755 2 1
+          ux16            ---755 2 1 ../tests/ux16
+          ux17            ---755 2 1 ../tests/ux17
+          ux18            ---755 2 1 ../tests/ux18
+          ux19            ---755 2 1 ../tests/ux19
+          ux22            ---755 2 1 ../tests/ux22
+          ux23            ---755 2 1 ../tests/ux23
+          ux24            ---755 2 1 ../tests/ux24
+          ux25            ---755 2 1 ../tests/ux25
+          sc00            ---755 2 1 ../tests/sc00
+          sc01            ---755 2 1 ../tests/sc01
+          sc02            ---755 2 1 ../tests/sc02
+          sc03            ---755 2 1 ../tests/sc03
+          sc04            ---755 2 1 ../tests/sc04
+          sc05            ---755 2 1 ../tests/sc05
+          sc06            ---755 2 1 ../tests/sc06
+          sc07            ---755 2 1 ../tests/sc07
+          sc08            ---755 2 1 ../tests/sc08
+          sc09            ---755 2 1 ../tests/sc09
+          sc10            ---755 2 1 ../tests/sc10
+          sc11            ---755 2 1 ../tests/sc11
+          sc12            ---755 2 1 ../tests/sc12
+          sc13            ---755 2 1 ../tests/sc13
+          sc14            ---755 2 1 ../tests/sc14
+          sc15            ---755 2 1 ../tests/sc15
+          sc16            ---755 2 1 ../tests/sc16
+          sc17            ---755 2 1 ../tests/sc17
+          sc18            ---755 2 1 ../tests/sc18
+          sc19            ---755 2 1 ../tests/sc19
+          sc20            ---755 2 1 ../tests/sc20
+          sc21            ---755 2 1 ../tests/sc21
+          sc22            ---755 2 1 ../tests/sc22
+          sc23            ---755 2 1 ../tests/sc23
+          sc24            ---755 2 1 ../tests/sc24
+          sc25            ---755 2 1 ../tests/sc25
+          sc26            ---755 2 1 ../tests/sc26
+          sc27            ---755 2 1 ../tests/sc27
+          sc28            ---755 2 1 ../tests/sc28
+          sc29            ---755 2 1 ../tests/sc29
+          sc30            ---755 2 1 ../tests/sc30
+          sc31            ---755 2 1 ../tests/sc31
+          sc32            ---755 2 1 ../tests/sc32
+          sc33            ---755 2 1 ../tests/sc33
+          sc34            ---755 2 1 ../tests/sc34
+          sc35            ---755 2 1 ../tests/sc35
+          sc36            ---755 2 1 ../tests/sc36
+          sc37            ---755 2 1 ../tests/sc37
+          sc38            ---755 2 1 ../tests/sc38
+          sc39            ---755 2 1 ../tests/sc39
+          sc40            ---755 2 1 ../tests/sc40
+          sc41            ---755 2 1 ../tests/sc41
+          sc42            ---755 2 1 ../tests/sc42
+          sc43            ---755 2 1 ../tests/sc43
+          sc44            ---755 2 1 ../tests/sc44
+          sc45            ---755 2 1 ../tests/sc45
+          sc46            ---755 2 1 ../tests/sc46
+          sc47            ---755 2 1 ../tests/sc47
+          sc48            ---755 2 1 ../tests/sc48
+          sc49            ---755 2 1 ../tests/sc49
+          sc50            ---755 2 1 ../tests/sc50
+          sc51            ---755 2 1 ../tests/sc51
+          sc52            ---755 2 1 ../tests/sc52
+          sc53            ---755 2 1 ../tests/sc53
+          sc54            ---755 2 1 ../tests/sc54
+          sc55            ---755 2 1 ../tests/sc55
+          sc56            ---755 2 1 ../tests/sc56
+          sc57            ---755 2 1 ../tests/sc57
+          sc58            ---755 2 1 ../tests/sc58
+          sc59            ---755 2 1 ../tests/sc59
+          sc59x           ---755 2 1 ../tests/sc59x
+          sc60            ---755 2 1 ../tests/sc60
+          sc61            ---755 2 1 ../tests/sc61
+          sc62            ---755 2 1 ../tests/sc62
+          sc63            ---755 2 1 ../tests/sc63
+          assert          ---755 2 1 ../tests/assert
+          ctype           ---755 2 1 ../tests/ctype
+          eos32           ---755 2 1 ../tests/eos32
+          setjmp          ---755 2 1 ../tests/setjmp
+          signal          ---755 2 1 ../tests/signal
+          stdarg          ---755 2 1 ../tests/stdarg
+          stdio           ---755 2 1 ../tests/stdio
+          stdlib          ---755 2 1 ../tests/stdlib
+          string          ---755 2 1 ../tests/string
+          time            ---755 2 1 ../tests/time
+          init            ---755 2 1 ../tests/init
+          sh              ---755 2 1 ../tests/sh
+          hello           ---755 2 1 ../tests/hello
+          primes          ---755 2 1 ../tests/primes
+          cmdline         ---755 2 1 ../tests/cmdline
+          showenv         ---755 2 1 ../tests/showenv
+          retval          ---755 2 1 ../tests/retval
+          db              ---755 2 1 ../tests/db
+          $
+bin       d--755 2 1
+          #sh              ---755 2 1 ../eos32/sh
+          #hello           ---755 2 1 ../eos32/hello
+          #primes          ---755 2 1 ../eos32/primes
+          #cmdline         ---755 2 1 ../eos32/cmdline
+          #retval          ---755 2 1 ../eos32/retval
+          #db              ---755 2 1 ../eos32/db
+          $
+dev       d--755 2 1
+          console         c--644 2 1 0 0
+          #null            c--644 3 1 0 0
+          #mem             c--644 3 1 0 1
+          #kmem            c--644 3 1 0 2
+          disk-0          b--644 3 1 0 0
+          disk-1          b--644 3 1 0 1
+          disk-2          b--644 3 1 0 2
+          disk-all        b--644 3 1 0 16
+          #ramdisk         b--644 3 1 1 0
+          $
+etc       d--755 2 1
+          $
+lib       d--755 2 1
+          $
+tmp       d--777 2 1
+          $
+usr       d--755 2 1
+          $
+WELCOME   ---644 2 1      ../data/WELCOME
+$

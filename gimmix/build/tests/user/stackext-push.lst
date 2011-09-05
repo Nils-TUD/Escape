@@ -1,0 +1,75 @@
+                   # 1 "user/stackext-push.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/stackext-push.mms"
+                   %
+                   % stackext-push.mms -- test new special register rSS and related changes
+                   %
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main PUT rG,#FE
+ ...000: f71300fe
+                   
+ ...004: e3fcffff    SET $252,#FFFF
+ ...008: f2fdxxxx    PUSHJ $253,F1
+ ...00c: eb024000    ORL $2,#4000
+ ...010: affc0240    STOU $252,$2,64
+ ...014: b9ff0200    SYNCD #FF,$2
+ ...018: 00000000    TRAP 0
+                   
+ ...01c: e3001110  F1 SET $0,#1110
+ ...020: e3011111    SET $1,#1111
+ ...024: fefc0004    GET $252,rJ
+ ...028: f2fdxxxx    PUSHJ $253,F2
+ ...02c: f60400fc    PUT rJ,$252
+ ...030: eb024000    ORL $2,#4000
+ ...034: af000200    STOU $0,$2,0
+ ...038: af010208    STOU $1,$2,8
+ ...03c: f8000000    POP 0,0
+                   
+ ...040: e3002220  F2 SET $0,#2220
+ ...044: e3012222    SET $1,#2222
+ ...048: fefc0004    GET $252,rJ
+ ...04c: f2fdxxxx    PUSHJ $253,F3
+ ...050: f60400fc    PUT rJ,$252
+ ...054: eb024000    ORL $2,#4000
+ ...058: af000210    STOU $0,$2,16
+ ...05c: af010218    STOU $1,$2,24
+ ...060: f8000000    POP 0,0
+                   
+ ...064: e3003330  F3 SET $0,#3330
+ ...068: e3013333    SET $1,#3333
+ ...06c: fefc0004    GET $252,rJ
+ ...070: f2fdxxxx    PUSHJ $253,F4
+ ...074: f60400fc    PUT rJ,$252
+ ...078: eb024000    ORL $2,#4000
+ ...07c: af000220    STOU $0,$2,32
+ ...080: af010228    STOU $1,$2,40
+ ...084: f8000000    POP 0,0
+                   
+ ...088: e3004440  F4 SET $0,#4440
+ ...08c: e3014444    SET $1,#4444
+ ...090: fefc0004    GET $252,rJ
+ ...094: f2fdxxxx    PUSHJ $253,F5
+ ...098: f60400fc    PUT rJ,$252
+ ...09c: eb024000    ORL $2,#4000
+ ...0a0: af000230    STOU $0,$2,48
+ ...0a4: af010238    STOU $1,$2,56
+ ...0a8: f8000000    POP 0,0
+                   
+ ...0ac: fe070004  F5 GET $7,rJ
+ ...0b0: f20axxxx    PUSHJ $10,F6
+ ...0b4: f6040007    PUT rJ,$7
+ ...0b8: f8000000    POP 0,0
+                   
+ ...0bc: f8000000  F6 POP 0,0
+
+Symbol table:
+ F1 = #000000000000101c (2)
+ F2 = #0000000000001040 (3)
+ F3 = #0000000000001064 (4)
+ F4 = #0000000000001088 (5)
+ F5 = #00000000000010ac (6)
+ F6 = #00000000000010bc (7)
+ Main = #0000000000001000 (1)

@@ -1,0 +1,210 @@
+                   # 1 "diff/stackext-save.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "diff/stackext-save.mms"
+                   %
+                   % stackext-save.mms -- test new special register rSS and related changes
+                   %
+                   
+                     LOC #00000000
+                     % segmentsizes: 1,0,0,0; pageSize=2^13; r=0x20000; n=0
+ ...000: 10000d00  RV OCTA #10000D0000020000
+ ...004: 00020000
+                   
+                     LOC #00020000
+0000000000020000:    OCTA #0000000000200007 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00200007
+                     LOC #00020008
+ ...008: 00000000    OCTA #0000000000202007 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00202007
+                     LOC #00020010
+ ...010: 00000000    OCTA #0000000000204000 % PTE 2 (#0000000000004000 .. #0000000000005FFF)
+ ...014: 00204000
+                   
+                   
+                     % stack for unsave
+                     LOC #202008
+0000000000202008:    OCTA #0 % rL
+ ...008: 00000000
+ ...00c: 00000000
+ ...010: 00000000    OCTA #0 % $254 = fe
+ ...014: 00000000
+ ...018: 00000000    OCTA #0 % $255 = ff
+ ...01c: 00000000
+ ...020: 00000000    OCTA #0 % rB
+ ...024: 00000000
+ ...028: 00000000    OCTA #0 % rD
+ ...02c: 00000000
+ ...030: 00000000    OCTA #0 % rE
+ ...034: 00000000
+ ...038: 00000000    OCTA #0 % rH
+ ...03c: 00000000
+ ...040: 00000000    OCTA #0 % rJ
+ ...044: 00000000
+ ...048: 00000000    OCTA #0 % rM
+ ...04c: 00000000
+ ...050: 00000000    OCTA #0 % rP
+ ...054: 00000000
+ ...058: 00000000    OCTA #0 % rR
+ ...05c: 00000000
+ ...060: 00000000    OCTA #0 % rW
+ ...064: 00000000
+ ...068: 00000000    OCTA #0 % rX
+ ...06c: 00000000
+ ...070: 00000000    OCTA #0 % rY
+ ...074: 00000000
+ ...078: 00000000    OCTA #0 % rZ
+ ...07c: 00000000
+ ...080: fe000000  STACK OCTA #FE00000000000000 % rG | rA
+ ...084: 00000000
+                   
+                   
+                     % dynamic trap handler
+                     LOC #400000
+0000000000400000:  DTRAP SAVE $255,1 % save user-state
+ ...000: faff0001
+                   
+                     % to next kernel-stack if we're on the first one
+ ...004: fe00000b    GET $0,rS
+ ...008: e302ffff    SET $2,#FFFF
+ ...00c: c8020002    AND $2,$0,$2
+ ...010: e3010a00    SET $1,#0A00
+ ...014: 30020201    CMP $2,$2,$1
+ ...018: 4402xxxx    BP $2,NONEST % is rS > #...A000, stop nesting
+ ...01c: fe05001c    GET $5,rWW % save some special-registers
+ ...020: fe06001d    GET $6,rXX
+ ...024: fe07001e    GET $7,rYY
+ ...028: fe08001f    GET $8,rZZ
+ ...02c: fe090007    GET $9,rBB
+ ...030: e10000fe    SETMH $0,#00FE % set rK and raise exception
+ ...034: f60f0000    PUT rK,$0
+ ...038: e3040001    SET $4,1
+                   
+ ...03c: e2000002  NONEST SETML $0,#0002
+ ...040: eb000010    ORL $0,#0010
+ ...044: e8008000    ORH $0,#8000
+ ...048: 8f010000    LDOU $1,$0,0 % load pte
+ ...04c: c1010107    OR $1,$1,#7 % give permission
+ ...050: af010000    STOU $1,$0,0 % store pte
+ ...054: e3014007    SET $1,#4007
+ ...058: 99010100    LDVTS $1,$1,0 % update DTC
+ ...05c: fe010010    GET $1,rQ
+ ...060: f7100000    PUT rQ,0 % clear rQ
+                   
+                     % to prev kernel-stack if we were on the first one
+ ...064: 4204xxxx    BZ $4,NOREST
+ ...068: f6070009    PUT rBB,$9 % restore special-registers
+ ...06c: f61f0008    PUT rZZ,$8
+ ...070: f61e0007    PUT rYY,$7
+ ...074: f61d0006    PUT rXX,$6
+ ...078: f61c0005    PUT rWW,$5
+                   
+ ...07c: fb0100ff  NOREST UNSAVE 1,$255 % restore user-state
+ ...080: f9000001    RESUME 1
+                   
+                   
+                     LOC #1000
+                   
+                     % setup paging
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: 8f000000    LDOU $0,$0,0
+ ...008: f6120000    PUT rV,$0
+                   
+                     % setup rS and rO
+******************   SETL $0,STACK
+************ warning: YZ field doesn't fit in two bytes
+ ...00c: e3002080
+ ...010: fb000000    UNSAVE 0,$0
+                   
+                     % setup rSS
+ ...014: e0008000    SETH $0,#8000
+ ...018: ea000020    ORML $0,#0020
+ ...01c: f6200000    PUT rSS,$0
+                   
+                     % setup dynamic-trap address
+ ...020: e0008000    SETH $0,#8000
+ ...024: e9000000    ORMH $0,DTRAP>>32
+ ...028: ea000040    ORML $0,DTRAP>>16
+******************   ORL $0,DTRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...02c: eb000000
+ ...030: f60e0000    PUT rTT,$0
+                   
+ ...034: fc000000    SYNC 0
+ ...038: fe000010    GET $0,rQ
+ ...03c: f7100000    PUT rQ,0
+                   
+                     % enable exceptions
+ ...040: e10000fe    SETMH $0,#00FE
+ ...044: f60f0000    PUT rK,$0
+                   
+ ...048: e3fcffff    SET $252,#FFFF
+ ...04c: f2fdxxxx    PUSHJ $253,F1
+ ...050: e0028000    SETH $2,#8000
+ ...054: eb024000    ORL $2,#4000
+ ...058: affc0240    STOU $252,$2,64
+ ...05c: b9ff0200    SYNCD #FF,$2,0
+ ...060: 00000000    TRAP 0
+                   
+ ...064: e3001110  F1 SET $0,#1110
+ ...068: e3011111    SET $1,#1111
+ ...06c: fefc0004    GET $252,rJ
+ ...070: f2fdxxxx    PUSHJ $253,F2
+ ...074: f60400fc    PUT rJ,$252
+ ...078: e0028000    SETH $2,#8000
+ ...07c: eb024000    ORL $2,#4000
+ ...080: af000200    STOU $0,$2,0
+ ...084: af010208    STOU $1,$2,8
+ ...088: f8000000    POP 0,0
+                   
+ ...08c: e3002220  F2 SET $0,#2220
+ ...090: e3012222    SET $1,#2222
+ ...094: fefc0004    GET $252,rJ
+ ...098: f2fdxxxx    PUSHJ $253,F3
+ ...09c: f60400fc    PUT rJ,$252
+ ...0a0: e0028000    SETH $2,#8000
+ ...0a4: eb024000    ORL $2,#4000
+ ...0a8: af000210    STOU $0,$2,16
+ ...0ac: af010218    STOU $1,$2,24
+ ...0b0: f8000000    POP 0,0
+                   
+ ...0b4: e3003330  F3 SET $0,#3330
+ ...0b8: e3013333    SET $1,#3333
+ ...0bc: fefc0004    GET $252,rJ
+ ...0c0: f2fdxxxx    PUSHJ $253,F4
+ ...0c4: f60400fc    PUT rJ,$252
+ ...0c8: e0028000    SETH $2,#8000
+ ...0cc: eb024000    ORL $2,#4000
+ ...0d0: af000220    STOU $0,$2,32
+ ...0d4: af010228    STOU $1,$2,40
+ ...0d8: f8000000    POP 0,0
+                   
+ ...0dc: e3004440  F4 SET $0,#4440
+ ...0e0: e3014444    SET $1,#4444
+ ...0e4: fefc0004    GET $252,rJ
+ ...0e8: f2fdxxxx    PUSHJ $253,F5
+ ...0ec: f60400fc    PUT rJ,$252
+ ...0f0: e0028000    SETH $2,#8000
+ ...0f4: eb024000    ORL $2,#4000
+ ...0f8: af000230    STOU $0,$2,48
+ ...0fc: af010238    STOU $1,$2,56
+ ...100: f8000000    POP 0,0
+                   
+ ...104: fafe0000  F5 SAVE $254,0
+ ...108: fb0000fe    UNSAVE 0,$254
+ ...10c: f8000000    POP 0,0
+
+Symbol table:
+ DTRAP = #0000000000400000 (4)
+ F1 = #0000000000001064 (7)
+ F2 = #000000000000108c (8)
+ F3 = #00000000000010b4 (9)
+ F4 = #00000000000010dc (10)
+ F5 = #0000000000001104 (11)
+ Main = #0000000000001000 (1)
+ NONEST = #000000000040003c (5)
+ NOREST = #000000000040007c (6)
+ RV = #0000000000000000 (2)
+ STACK = #0000000000202080 (3)

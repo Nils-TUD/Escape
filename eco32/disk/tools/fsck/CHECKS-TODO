@@ -1,0 +1,21 @@
+Assertions and Errors:
+a) Assert: Every data block is either on the free list or is assigned
+   to a single inode.
+b) Error: An inode has nonzero link count, but its inode number does
+   not appear in any directory.
+c) Error: Format of the inode is incorrect (e.g., file type field has
+   illegal value).
+d) Error: Inode number appears in directory, but the inode is free.
+e) Error: Number of free blocks recorded in super block != number of
+   free blocks on disk.
+f) Error: Number of free inodes recorded in super block != number of
+   free inodes on disk.
+g) Assert: Every inode in the free list must be free, i.e. has 0 as
+   its mode.
+h) Assert: An inode with link count n must appear in exactly n
+   directory entries.
+i) Assert: File size as given in the inode must be consistent with
+   the data blocks assigned to the inode.
+j) Assert: The root inode must be a directory.
+k) Assert: Every directory must be reachable.
+l) Assert: Every file must be referenced from some directory.

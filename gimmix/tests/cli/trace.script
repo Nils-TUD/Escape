@@ -1,0 +1,11 @@
+tr p $0
+s 4
+dtr 0
+tr p $[0..2]
+s 3
+dtr 0
+tr p sp[rQ]
+tr e dc
+tr
+s 6
+q

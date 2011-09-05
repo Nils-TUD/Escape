@@ -1,0 +1,51 @@
+                   # 1 "manual/helloworld.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "manual/helloworld.mms"
+                   %
+                   % helloworld.mms -- prints hello world
+                   %
+                   
+                     LOC #1000
+0000000000001000:    JMP Main
+ ...000: f0xxxxxx
+                   
+ ...004: 48656c6c  MSG BYTE "Hello World!",#d,#a,0
+ ...008: 6f20576f
+ ...00c: 726c6421
+ ...010: 0d0a00  
+                   
+ ...014: e3010000  Main SET $1,0
+ ...018: e3021004    SET $2,MSG
+ ...01c: e8028000    ORH $2,#8000
+ ...020: f200xxxx    PUSHJ $0,puts
+                   
+ ...024: f0000000  loop JMP loop
+                   
+                   % void puts(octa term,char *string)
+ ...028: fe020004  puts GET $2,:rJ % save rJ
+ ...02c: 83050100  1H LDBU $5,$1,0 % load char from string
+ ...030: 4205xxxx    BZ $5,2F % if its 0, we are done
+ ...034: 23040000    ADDU $4,$0,0
+ ...038: f203xxxx    PUSHJ $3,putc % call putc(c)
+ ...03c: 23010101    ADDU $1,$1,1 % to next char
+ ...040: f1fffffb    JMP 1B
+ ...044: f6040002  2H PUT :rJ,$2 % restore rJ
+ ...048: f8000000    POP 0,0
+                   
+                   % void putc(octa term,octa character)
+ ...04c: e0028002  putc SETH $2,#8002 % base address: #8002000000000000
+ ...050: 39000020    SL $0,$0,32 % or in terminal-number
+ ...054: c0020200    OR $2,$2,$0 % -> #8002000100000000 for term 1, e.g.
+ ...058: 8f030210  1H LDOU $3,$2,#10 % read ctrl-reg
+ ...05c: c9030301    AND $3,$3,#1 % exract RDY-bit
+ ...060: 5303fffe    PBZ $3,1B % wait until its set
+ ...064: af010218    STOU $1,$2,#18 % write char
+ ...068: f8000000    POP 0,0
+
+Symbol table:
+ MSG = #0000000000001004 (2)
+ Main = #0000000000001014 (1)
+ loop = #0000000000001024 (4)
+ putc = #000000000000104c (5)
+ puts = #0000000000001028 (3)

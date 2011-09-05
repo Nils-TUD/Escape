@@ -1,0 +1,50 @@
+                   # 1 "user/pushpop-rg.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/pushpop-rg.mms"
+                   %
+                   % pushpop-rg.mms -- tests push/pop when changing rG in between
+                   %
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main SET $28,#11
+ ...000: e31c0011
+ ...004: e31d0022    SET $29,#22
+ ...008: e31e0033    SET $30,#33
+ ...00c: e31f0044    SET $31,#44
+ ...010: e3200055    SET $32,#55
+ ...014: e3210066    SET $33,#66
+ ...018: e3220077    SET $34,#77
+ ...01c: e3230088    SET $35,#88
+ ...020: e3fd0099    SET $253,#99
+ ...024: f2fexxxx    PUSHJ $254,F1
+                   
+                     % $28..$35 should still be present; of course, $253 is lost, as is the return-value
+ ...028: fe00000a    GET $0,rO
+ ...02c: fe01000b    GET $1,rS
+ ...030: fe020014    GET $2,rL
+ ...034: 00000000    TRAP 0,0,0
+                   
+ ...038: fe000004  F1 GET $0,rJ % save rJ
+ ...03c: e3f81234    SET $248,#1234 % cause some stores on the stack
+ ...040: f2f9xxxx    PUSHJ $249,F2
+ ...044: f6040000    PUT rJ,$0 % restore rJ and return it
+ ...048: f8010000    POP 1,0
+                   
+ ...04c: fe230004  F2 GET $35,rJ % save rJ (in $X with X < 36)
+ ...050: e3281234    SET $40,#1234
+ ...054: f229xxxx    PUSHJ $41,F3
+ ...058: f6040023    PUT rJ,$35 % restore rJ
+ ...05c: c1002300    SET $0,$35 % return it
+ ...060: f8010000    POP 1,0
+                   
+ ...064: e3231234  F3 SET $35,#1234 % cause more stores
+ ...068: f7130024    PUT rG,36 % now decrease rG
+ ...06c: f8000000    POP 0,0
+
+Symbol table:
+ F1 = #0000000000001038 (2)
+ F2 = #000000000000104c (3)
+ F3 = #0000000000001064 (4)
+ Main = #0000000000001000 (1)

@@ -1,0 +1,234 @@
+                   # 1 "kernel/usagecounter.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/usagecounter.mms"
+                   %
+                   % usagecounter.mms -- tests the usage-counter (rU)
+                   %
+                   
+                     % segmentsizes: 1,0,0,0; pageSize=2^13; r=0x90000; n=0
+                     LOC #8000
+0000000000008000:  RV OCTA #10000D0000090000
+ ...000: 10000d00
+ ...004: 00090000
+                   
+                     % -- PTEs to be able to execute the code --
+                     LOC #00090000
+0000000000090000:    OCTA #0000000000000001 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000001
+                     LOC #00090008
+ ...008: 00000000    OCTA #0000000000002001 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00002001
+                   
+                   
+                     LOC #500000
+0000000000500000:  ATRAP5 GET $255,rXX
+ ...000: feff001d
+ ...004: c9ffff01    AND $255,$255,#1 % 1 means continue, not 1 means stop
+ ...008: 4affxxxx    BNZ $255,1F
+ ...00c: 00000000    TRAP 0
+ ...010: e1ffffff  1H SETMH $255,#FFFF % count instructions at negative addresses, test overflow
+ ...014: eaffffff    ORML $255,#FFFF
+ ...018: ebfffffa    ORL $255,#FFFA
+ ...01c: f61100ff    PUT rU,$255
+ ...020: e3ff0000  2H SET $255,0
+ ...024: c4ffffff    NOR $255,$255,$255 % set rK to -1
+ ...028: f9000001    RESUME 1
+                   
+ ...02c: feff001d  ATRAP4 GET $255,rXX
+ ...030: c9ffff01    AND $255,$255,#1 % 1 means continue, not 1 means go to next
+ ...034: 4affxxxx    BNZ $255,1F
+ ...038: e0ff8000    SETH $255,#8000
+ ...03c: e9ff0000    ORMH $255,ATRAP5>>32
+ ...040: eaff0050    ORML $255,ATRAP5>>16
+******************   ORL $255,ATRAP5>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...044: ebff0000
+ ...048: f60d00ff    PUT rT,$255
+ ...04c: f0xxxxxx    JMP 2F
+ ...050: e1ff8000  1H SETMH $255,#8000 % count instructions at negative addresses
+ ...054: f61100ff    PUT rU,$255
+ ...058: e3ff0000  2H SET $255,0
+ ...05c: c4ffffff    NOR $255,$255,$255 % set rK to -1
+ ...060: f9000001    RESUME 1
+                   
+ ...064: feff001d  ATRAP3 GET $255,rXX
+ ...068: c9ffff01    AND $255,$255,#1 % 1 means continue, not 1 means go to next
+ ...06c: 4affxxxx    BNZ $255,1F
+ ...070: e0ff8000    SETH $255,#8000
+ ...074: e9ff0000    ORMH $255,ATRAP4>>32
+ ...078: eaff0050    ORML $255,ATRAP4>>16
+******************   ORL $255,ATRAP4>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...07c: ebff002c
+ ...080: f60d00ff    PUT rT,$255
+ ...084: f0xxxxxx    JMP 2F
+ ...088: e0ff4040  1H SETH $255,#4040 % 4X = branches
+ ...08c: f61100ff    PUT rU,$255
+ ...090: e3ff0000  2H SET $255,0
+ ...094: c4ffffff    NOR $255,$255,$255 % set rK to -1
+ ...098: f9000001    RESUME 1
+                   
+ ...09c: feff001d  ATRAP2 GET $255,rXX
+ ...0a0: c9ffff01    AND $255,$255,#1 % 1 means continue, not 1 means go to next
+ ...0a4: 4affxxxx    BNZ $255,1F
+ ...0a8: e0ff8000    SETH $255,#8000
+ ...0ac: e9ff0000    ORMH $255,ATRAP3>>32
+ ...0b0: eaff0050    ORML $255,ATRAP3>>16
+******************   ORL $255,ATRAP3>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...0b4: ebff0064
+ ...0b8: f60d00ff    PUT rT,$255
+ ...0bc: f0xxxxxx    JMP 2F
+ ...0c0: e0fff2f3  1H SETH $255,#F2F3 % F2,F3 = pushj,pushjb
+ ...0c4: f61100ff    PUT rU,$255
+ ...0c8: e3ff0000  2H SET $255,0
+ ...0cc: c4ffffff    NOR $255,$255,$255 % set rK to -1
+ ...0d0: f9000001    RESUME 1
+                   
+ ...0d4: feff001d  ATRAP GET $255,rXX
+ ...0d8: c9ffff01    AND $255,$255,#1 % 1 means continue, not 1 means go to next
+ ...0dc: 4affxxxx    BNZ $255,1F
+ ...0e0: e0ff8000    SETH $255,#8000
+ ...0e4: e9ff0000    ORMH $255,ATRAP2>>32
+ ...0e8: eaff0050    ORML $255,ATRAP2>>16
+******************   ORL $255,ATRAP2>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...0ec: ebff009c
+ ...0f0: f60d00ff    PUT rT,$255
+ ...0f4: f0xxxxxx    JMP 2F
+ ...0f8: f7110000  1H PUT rU,0 % simply count all instructions
+ ...0fc: e3ff0000  2H SET $255,0
+ ...100: c4ffffff    NOR $255,$255,$255 % set rK to -1
+ ...104: f9000001    RESUME 1
+                   
+                   
+                     LOC #1000
+                   
+                     % first setup basic paging: 0 mapped to 0
+0000000000001000:  Main SETL $0,RV
+ ...000: e3008000
+ ...004: e8008000    ORH $0,#8000
+ ...008: 8f000000    LDOU $0,$0
+ ...00c: f6120000    PUT rV,$0
+                   
+                     % setup rT
+ ...010: e0008000    SETH $0,#8000
+ ...014: e9000000    ORMH $0,ATRAP>>32
+ ...018: ea000050    ORML $0,ATRAP>>16
+******************   ORL $0,ATRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...01c: eb0000d4
+ ...020: f60d0000    PUT rT,$0
+                   
+                     % now go to user-mode (we are at #8000000000001000 atm)
+ ...024: e3ff0000    SET $255,0
+ ...028: c4ffffff    NOR $255,$255,$255
+ ...02c: e3002000    SET $0,#2000
+ ...030: f61c0000    PUT rWW,$0
+ ...034: e0008000    SETH $0,#8000
+ ...038: f61d0000    PUT rXX,$0
+ ...03c: f9000001    RESUME 1
+                   
+                   
+                     LOC #2000
+                   
+                     % count all
+0000000000002000:    TRAP 1
+ ...000: 00000001
+ ...004: e3010008    SET $1,8
+ ...008: f200xxxx    PUSHJ $0,FIB
+ ...00c: fe010011    GET $1,rU
+                   
+ ...010: 00000001    TRAP 1
+ ...014: e3030004    SET $3,4
+ ...018: f202xxxx    PUSHJ $2,FIB
+ ...01c: fe030011    GET $3,rU
+                   
+ ...020: 00000001    TRAP 1
+ ...024: e3050007    SET $5,7
+ ...028: f204xxxx    PUSHJ $4,FIB
+ ...02c: fe050011    GET $5,rU
+                   
+                     % count pushj
+ ...030: 00000002    TRAP 2
+                   
+ ...034: 00000001    TRAP 1
+ ...038: e3070003    SET $7,3
+ ...03c: f206xxxx    PUSHJ $6,FIB
+ ...040: fe070011    GET $7,rU
+                   
+ ...044: 00000001    TRAP 1
+ ...048: e3090007    SET $9,7
+ ...04c: f208xxxx    PUSHJ $8,FIB
+ ...050: fe090011    GET $9,rU
+                   
+ ...054: 00000001    TRAP 1
+ ...058: e30b0006    SET $11,6
+ ...05c: f20axxxx    PUSHJ $10,FIB
+ ...060: fe0b0011    GET $11,rU
+                   
+                     % count branches
+ ...064: 00000002    TRAP 2
+                   
+ ...068: 00000001    TRAP 1
+ ...06c: e30d0006    SET $13,6
+ ...070: f20cxxxx    PUSHJ $12,FIB
+ ...074: fe0d0011    GET $13,rU
+                   
+ ...078: 00000001    TRAP 1
+ ...07c: e30f0007    SET $15,7
+ ...080: f20exxxx    PUSHJ $14,FIB
+ ...084: fe0f0011    GET $15,rU
+                   
+ ...088: 00000001    TRAP 1
+ ...08c: e3110004    SET $17,4
+ ...090: f210xxxx    PUSHJ $16,FIB
+ ...094: fe110011    GET $17,rU
+                   
+                     % count instructions @ negative addresses
+ ...098: 00000002    TRAP 2
+                   
+ ...09c: 00000001    TRAP 1
+ ...0a0: c0000000    OR $0,$0,$0
+ ...0a4: c0000000    OR $0,$0,$0
+ ...0a8: c0000000    OR $0,$0,$0
+ ...0ac: c0000000    OR $0,$0,$0
+ ...0b0: fe120011    GET $18,rU
+                   
+                     % count instructions @ negative addresses, test overflow
+ ...0b4: 00000002    TRAP 2
+                   
+ ...0b8: 00000001    TRAP 1
+ ...0bc: c0000000    OR $0,$0,$0
+ ...0c0: c0000000    OR $0,$0,$0
+ ...0c4: c0000000    OR $0,$0,$0
+ ...0c8: c0000000    OR $0,$0,$0
+ ...0cc: fe130011    GET $19,rU
+                   
+                     % stop
+ ...0d0: 00000002    TRAP 2
+                   
+                   
+                   % octa FIB(octa n)
+ ...0d4: fe010004  FIB GET $1,rJ % save rJ
+ ...0d8: 33020001    CMPU $2,$0,1 % compare with 1
+ ...0dc: 4c02xxxx    BNP $2,1F % n <= 1? then return n
+ ...0e0: 27040002    SUBU $4,$0,2
+ ...0e4: f303fffc    PUSHJ $3,FIB % $3 = FIB(n - 2)
+ ...0e8: 27140001    SUBU $20,$0,1 % use a higher register to produce stack stores/loads
+ ...0ec: f313fffa    PUSHJ $19,FIB % $19 = FIB(n - 1)
+ ...0f0: 22000313    ADDU $0,$3,$19 % return $3 + $19
+ ...0f4: f6040001  1H PUT rJ,$1 % restore rJ
+ ...0f8: f8010000    POP 1,0
+
+Symbol table:
+ ATRAP = #00000000005000d4 (7)
+ ATRAP2 = #000000000050009c (6)
+ ATRAP3 = #0000000000500064 (5)
+ ATRAP4 = #000000000050002c (4)
+ ATRAP5 = #0000000000500000 (3)
+ FIB = #00000000000020d4 (8)
+ Main = #0000000000001000 (1)
+ RV = #0000000000008000 (2)

@@ -1,0 +1,235 @@
+                   # 1 "user/immround.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/immround.mms"
+                   %
+                   % immrounding.mms -- tests rounding as immediate-value
+                   %
+                   
+                     LOC #0000
+ ...000: 3fffffff    OCTA #3FFFFFFFFFFFFFFB
+ ...004: fffffffb
+ ...008: 3ff66666    OCTA #3FF6666666666666
+ ...00c: 66666666
+ ...010: c0026666    OCTA #C002666666666666
+ ...014: 66666666
+ ...018: 41678bc6    OCTA #41678BC640000000
+ ...01c: 40000000
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main SET $0,#0000
+ ...000: e3000000
+                   
+                     % test FINT
+ ...004: 8f010000    LDOU $1,$0,#0 % #3FFFFFFFFFFFFFFB
+ ...008: 17020101    FINT $2,ROUND_OFF,$1
+ ...00c: 17030201    FINT $3,ROUND_UP,$1
+ ...010: 17040301    FINT $4,ROUND_DOWN,$1
+ ...014: 17050401    FINT $5,ROUND_NEAR,$1
+                   
+ ...018: 8f010008    LDOU $1,$0,#8 % #3FF6666666666666
+ ...01c: 17060101    FINT $6,ROUND_OFF,$1
+ ...020: 17070201    FINT $7,ROUND_UP,$1
+ ...024: 17080301    FINT $8,ROUND_DOWN,$1
+ ...028: 17090401    FINT $9,ROUND_NEAR,$1
+                   
+ ...02c: 8f010010    LDOU $1,$0,#10 % #C002666666666666
+ ...030: 170a0101    FINT $10,ROUND_OFF,$1
+ ...034: 170b0201    FINT $11,ROUND_UP,$1
+ ...038: 170c0301    FINT $12,ROUND_DOWN,$1
+ ...03c: 170d0401    FINT $13,ROUND_NEAR,$1
+                   
+ ...040: 8f010018    LDOU $1,$0,#18 % #41678BC640000000
+ ...044: 170e0101    FINT $14,ROUND_OFF,$1
+ ...048: 170f0201    FINT $15,ROUND_UP,$1
+ ...04c: 17100301    FINT $16,ROUND_DOWN,$1
+ ...050: 17110401    FINT $17,ROUND_NEAR,$1
+                   
+                   
+                     % test FSQRT
+ ...054: 8f010000    LDOU $1,$0,#0 % #3FFFFFFFFFFFFFFB
+ ...058: 15120101    FSQRT $18,ROUND_OFF,$1
+ ...05c: 15130201    FSQRT $19,ROUND_UP,$1
+ ...060: 15140301    FSQRT $20,ROUND_DOWN,$1
+ ...064: 15150401    FSQRT $21,ROUND_NEAR,$1
+                   
+ ...068: 8f010008    LDOU $1,$0,#8 % #3FF6666666666666
+ ...06c: 15160101    FSQRT $22,ROUND_OFF,$1
+ ...070: 15170201    FSQRT $23,ROUND_UP,$1
+ ...074: 15180301    FSQRT $24,ROUND_DOWN,$1
+ ...078: 15190401    FSQRT $25,ROUND_NEAR,$1
+                   
+ ...07c: 8f010010    LDOU $1,$0,#10 % #C002666666666666
+ ...080: 151a0101    FSQRT $26,ROUND_OFF,$1
+ ...084: 151b0201    FSQRT $27,ROUND_UP,$1
+ ...088: 151c0301    FSQRT $28,ROUND_DOWN,$1
+ ...08c: 151d0401    FSQRT $29,ROUND_NEAR,$1
+                   
+ ...090: 8f010018    LDOU $1,$0,#18 % #41678BC640000000
+ ...094: 151e0101    FSQRT $30,ROUND_OFF,$1
+ ...098: 151f0201    FSQRT $31,ROUND_UP,$1
+ ...09c: 15200301    FSQRT $32,ROUND_DOWN,$1
+ ...0a0: 15210401    FSQRT $33,ROUND_NEAR,$1
+                   
+                   
+                     % test FLOT
+ ...0a4: 8f010000    LDOU $1,$0,#0 % #3FFFFFFFFFFFFFFB
+ ...0a8: 08220101    FLOT $34,ROUND_OFF,$1
+ ...0ac: 08230201    FLOT $35,ROUND_UP,$1
+ ...0b0: 08240301    FLOT $36,ROUND_DOWN,$1
+ ...0b4: 08250401    FLOT $37,ROUND_NEAR,$1
+                   
+ ...0b8: 8f010008    LDOU $1,$0,#8 % #3FF6666666666666
+ ...0bc: 08260101    FLOT $38,ROUND_OFF,$1
+ ...0c0: 08270201    FLOT $39,ROUND_UP,$1
+ ...0c4: 08280301    FLOT $40,ROUND_DOWN,$1
+ ...0c8: 08290401    FLOT $41,ROUND_NEAR,$1
+                   
+ ...0cc: 8f010010    LDOU $1,$0,#10 % #C002666666666666
+ ...0d0: 082a0101    FLOT $42,ROUND_OFF,$1
+ ...0d4: 082b0201    FLOT $43,ROUND_UP,$1
+ ...0d8: 082c0301    FLOT $44,ROUND_DOWN,$1
+ ...0dc: 082d0401    FLOT $45,ROUND_NEAR,$1
+                   
+ ...0e0: 8f010018    LDOU $1,$0,#18 % #41678BC640000000
+ ...0e4: 082e0101    FLOT $46,ROUND_OFF,$1
+ ...0e8: 082f0201    FLOT $47,ROUND_UP,$1
+ ...0ec: 08300301    FLOT $48,ROUND_DOWN,$1
+ ...0f0: 08310401    FLOT $49,ROUND_NEAR,$1
+                   
+                   
+                     % test FLOTU
+ ...0f4: 8f010000    LDOU $1,$0,#0 % #3FFFFFFFFFFFFFFB
+ ...0f8: 0a320101    FLOTU $50,ROUND_OFF,$1
+ ...0fc: 0a330201    FLOTU $51,ROUND_UP,$1
+ ...100: 0a340301    FLOTU $52,ROUND_DOWN,$1
+ ...104: 0a350401    FLOTU $53,ROUND_NEAR,$1
+                   
+ ...108: 8f010008    LDOU $1,$0,#8 % #3FF6666666666666
+ ...10c: 0a360101    FLOTU $54,ROUND_OFF,$1
+ ...110: 0a370201    FLOTU $55,ROUND_UP,$1
+ ...114: 0a380301    FLOTU $56,ROUND_DOWN,$1
+ ...118: 0a390401    FLOTU $57,ROUND_NEAR,$1
+                   
+ ...11c: 8f010010    LDOU $1,$0,#10 % #C002666666666666
+ ...120: 0a3a0101    FLOTU $58,ROUND_OFF,$1
+ ...124: 0a3b0201    FLOTU $59,ROUND_UP,$1
+ ...128: 0a3c0301    FLOTU $60,ROUND_DOWN,$1
+ ...12c: 0a3d0401    FLOTU $61,ROUND_NEAR,$1
+                   
+ ...130: 8f010018    LDOU $1,$0,#18 % #41678BC640000000
+ ...134: 0a3e0101    FLOTU $62,ROUND_OFF,$1
+ ...138: 0a3f0201    FLOTU $63,ROUND_UP,$1
+ ...13c: 0a400301    FLOTU $64,ROUND_DOWN,$1
+ ...140: 0a410401    FLOTU $65,ROUND_NEAR,$1
+                   
+                   
+                     % test SFLOT
+ ...144: 8f010000    LDOU $1,$0,#0 % #3FFFFFFFFFFFFFFB
+ ...148: 0c420101    SFLOT $66,ROUND_OFF,$1
+ ...14c: 0c430201    SFLOT $67,ROUND_UP,$1
+ ...150: 0c440301    SFLOT $68,ROUND_DOWN,$1
+ ...154: 0c450401    SFLOT $69,ROUND_NEAR,$1
+                   
+ ...158: 8f010008    LDOU $1,$0,#8 % #3FF6666666666666
+ ...15c: 0c460101    SFLOT $70,ROUND_OFF,$1
+ ...160: 0c470201    SFLOT $71,ROUND_UP,$1
+ ...164: 0c480301    SFLOT $72,ROUND_DOWN,$1
+ ...168: 0c490401    SFLOT $73,ROUND_NEAR,$1
+                   
+ ...16c: 8f010010    LDOU $1,$0,#10 % #C002666666666666
+ ...170: 0c4a0101    SFLOT $74,ROUND_OFF,$1
+ ...174: 0c4b0201    SFLOT $75,ROUND_UP,$1
+ ...178: 0c4c0301    SFLOT $76,ROUND_DOWN,$1
+ ...17c: 0c4d0401    SFLOT $77,ROUND_NEAR,$1
+                   
+ ...180: 8f010018    LDOU $1,$0,#18 % #41678BC640000000
+ ...184: 0c4e0101    SFLOT $78,ROUND_OFF,$1
+ ...188: 0c4f0201    SFLOT $79,ROUND_UP,$1
+ ...18c: 0c500301    SFLOT $80,ROUND_DOWN,$1
+ ...190: 0c510401    SFLOT $81,ROUND_NEAR,$1
+                   
+                   
+                     % test SFLOTU
+ ...194: 8f010000    LDOU $1,$0,#0 % #3FFFFFFFFFFFFFFB
+ ...198: 0e520101    SFLOTU $82,ROUND_OFF,$1
+ ...19c: 0e530201    SFLOTU $83,ROUND_UP,$1
+ ...1a0: 0e540301    SFLOTU $84,ROUND_DOWN,$1
+ ...1a4: 0e550401    SFLOTU $85,ROUND_NEAR,$1
+                   
+ ...1a8: 8f010008    LDOU $1,$0,#8 % #3FF6666666666666
+ ...1ac: 0e560101    SFLOTU $86,ROUND_OFF,$1
+ ...1b0: 0e570201    SFLOTU $87,ROUND_UP,$1
+ ...1b4: 0e580301    SFLOTU $88,ROUND_DOWN,$1
+ ...1b8: 0e590401    SFLOTU $89,ROUND_NEAR,$1
+                   
+ ...1bc: 8f010010    LDOU $1,$0,#10 % #C002666666666666
+ ...1c0: 0e5a0101    SFLOTU $90,ROUND_OFF,$1
+ ...1c4: 0e5b0201    SFLOTU $91,ROUND_UP,$1
+ ...1c8: 0e5c0301    SFLOTU $92,ROUND_DOWN,$1
+ ...1cc: 0e5d0401    SFLOTU $93,ROUND_NEAR,$1
+                   
+ ...1d0: 8f010018    LDOU $1,$0,#18 % #41678BC640000000
+ ...1d4: 0e5e0101    SFLOTU $94,ROUND_OFF,$1
+ ...1d8: 0e5f0201    SFLOTU $95,ROUND_UP,$1
+ ...1dc: 0e600301    SFLOTU $96,ROUND_DOWN,$1
+ ...1e0: 0e610401    SFLOTU $97,ROUND_NEAR,$1
+                   
+                   
+                     % test FIX
+ ...1e4: 8f010000    LDOU $1,$0,#0 % #3FFFFFFFFFFFFFFB
+ ...1e8: 05620101    FIX $98,ROUND_OFF,$1
+ ...1ec: 05630201    FIX $99,ROUND_UP,$1
+ ...1f0: 05640301    FIX $100,ROUND_DOWN,$1
+ ...1f4: 05650401    FIX $101,ROUND_NEAR,$1
+                   
+ ...1f8: 8f010008    LDOU $1,$0,#8 % #3FF6666666666666
+ ...1fc: 05660101    FIX $102,ROUND_OFF,$1
+ ...200: 05670201    FIX $103,ROUND_UP,$1
+ ...204: 05680301    FIX $104,ROUND_DOWN,$1
+ ...208: 05690401    FIX $105,ROUND_NEAR,$1
+                   
+ ...20c: 8f010010    LDOU $1,$0,#10 % #C002666666666666
+ ...210: 056a0101    FIX $106,ROUND_OFF,$1
+ ...214: 056b0201    FIX $107,ROUND_UP,$1
+ ...218: 056c0301    FIX $108,ROUND_DOWN,$1
+ ...21c: 056d0401    FIX $109,ROUND_NEAR,$1
+                   
+ ...220: 8f010018    LDOU $1,$0,#18 % #41678BC640000000
+ ...224: 056e0101    FIX $110,ROUND_OFF,$1
+ ...228: 056f0201    FIX $111,ROUND_UP,$1
+ ...22c: 05700301    FIX $112,ROUND_DOWN,$1
+ ...230: 05710401    FIX $113,ROUND_NEAR,$1
+                   
+                   
+                     % test FIXU
+ ...234: 8f010000    LDOU $1,$0,#0 % #3FFFFFFFFFFFFFFB
+ ...238: 07720101    FIXU $114,ROUND_OFF,$1
+ ...23c: 07730201    FIXU $115,ROUND_UP,$1
+ ...240: 07740301    FIXU $116,ROUND_DOWN,$1
+ ...244: 07750401    FIXU $117,ROUND_NEAR,$1
+                   
+ ...248: 8f010008    LDOU $1,$0,#8 % #3FF6666666666666
+ ...24c: 07760101    FIXU $118,ROUND_OFF,$1
+ ...250: 07770201    FIXU $119,ROUND_UP,$1
+ ...254: 07780301    FIXU $120,ROUND_DOWN,$1
+ ...258: 07790401    FIXU $121,ROUND_NEAR,$1
+                   
+ ...25c: 8f010010    LDOU $1,$0,#10 % #C002666666666666
+ ...260: 077a0101    FIXU $122,ROUND_OFF,$1
+ ...264: 077b0201    FIXU $123,ROUND_UP,$1
+ ...268: 077c0301    FIXU $124,ROUND_DOWN,$1
+ ...26c: 077d0401    FIXU $125,ROUND_NEAR,$1
+                   
+ ...270: 8f010018    LDOU $1,$0,#18 % #41678BC640000000
+ ...274: 077e0101    FIXU $126,ROUND_OFF,$1
+ ...278: 077f0201    FIXU $127,ROUND_UP,$1
+ ...27c: 07800301    FIXU $128,ROUND_DOWN,$1
+ ...280: 07810401    FIXU $129,ROUND_NEAR,$1
+                   
+                   
+ ...284: 00000000    TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)

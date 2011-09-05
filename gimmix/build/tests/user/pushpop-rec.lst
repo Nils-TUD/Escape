@@ -1,0 +1,61 @@
+                   # 1 "user/pushpop-rec.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/pushpop-rec.mms"
+                   %
+                   % pushpop-rec.mms -- tests recursion with push/pop
+                   %
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main PUT rL,0 % discard arguments in mmix/mmmix
+ ...000: f7140000
+                   
+ ...004: e3010000    SET $1,0
+ ...008: f200xxxx    PUSHJ $0,FIB
+                   
+ ...00c: e3020001    SET $2,1
+ ...010: f201xxxx    PUSHJ $1,FIB
+                   
+ ...014: e3030002    SET $3,2
+ ...018: f202xxxx    PUSHJ $2,FIB
+                   
+ ...01c: e3040003    SET $4,3
+ ...020: f203xxxx    PUSHJ $3,FIB
+                   
+ ...024: e3050004    SET $5,4
+ ...028: f204xxxx    PUSHJ $4,FIB
+                   
+ ...02c: e3060005    SET $6,5
+ ...030: f205xxxx    PUSHJ $5,FIB
+                   
+ ...034: e3070006    SET $7,6
+ ...038: f206xxxx    PUSHJ $6,FIB
+                   
+ ...03c: e3080007    SET $8,7
+ ...040: f207xxxx    PUSHJ $7,FIB
+                   
+ ...044: e309000c    SET $9,12
+ ...048: f208xxxx    PUSHJ $8,FIB
+                   
+ ...04c: e30a000f    SET $10,15
+ ...050: f209xxxx    PUSHJ $9,FIB
+                   
+ ...054: 00000000    TRAP 0
+                   
+                   
+                   % octa FIB(octa n)
+ ...058: fe010004  FIB GET $1,rJ % save rJ
+ ...05c: 33020001    CMPU $2,$0,1 % compare with 1
+ ...060: 4c02xxxx    BNP $2,1F % n <= 1? then return n
+ ...064: 27040002    SUBU $4,$0,2
+ ...068: f303fffc    PUSHJ $3,FIB % $3 = FIB(n - 2)
+ ...06c: 27140001    SUBU $20,$0,1 % use a higher register to produce stack stores/loads
+ ...070: f313fffa    PUSHJ $19,FIB % $19 = FIB(n - 1)
+ ...074: 22000313    ADDU $0,$3,$19 % return $3 + $19
+ ...078: f6040001  1H PUT rJ,$1 % restore rJ
+ ...07c: f8010000    POP 1,0
+
+Symbol table:
+ FIB = #0000000000001058 (2)
+ Main = #0000000000001000 (1)

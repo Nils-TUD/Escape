@@ -1,0 +1,12 @@
+#!/bin/sh
+BUILD=../../../build
+$BUILD/bin/mkdisk disk 121
+$BUILD/bin/mkfs disk '*'
+echo "---------------------"
+echo "-  expected output  -"
+echo "---------------------"
+echo "disk/partition size is not a multiple of block size"
+echo "---------------------"
+echo "-   actual output   -"
+echo "---------------------"
+$BUILD/bin/fsck disk '*'

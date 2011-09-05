@@ -1,0 +1,416 @@
+                   # 1 "manual/interrupts.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "manual/interrupts.mms"
+                   %
+                   % interrupts.mms -- tests interrupts (please run it with 4 terminals!)
+                   %
+                   
+                     LOC #0
+ ...000: 57616974  WELC BYTE "Waiting for interrupts...",#d,#a,0
+ ...004: 696e6720
+ ...008: 666f7220
+ ...00c: 696e7465
+ ...010: 72727570
+ ...014: 74732e2e
+ ...018: 2e0d0a00
+ ...01c: 476f7420  MSGT BYTE "Got timer-interrupt: ",0
+ ...020: 74696d65
+ ...024: 722d696e
+ ...028: 74657272
+ ...02c: 7570743a
+ ...030: 2000    
+ ...032:     476f  MSGR0 BYTE "Got terminal 0 receiver-interrupt: ",0
+ ...034: 74207465
+ ...038: 726d696e
+ ...03c: 616c2030
+ ...040: 20726563
+ ...044: 65697665
+ ...048: 722d696e
+ ...04c: 74657272
+ ...050: 7570743a
+ ...054: 2000    
+ ...056:     476f  MSGR1 BYTE "Got terminal 1 receiver-interrupt: ",0
+ ...058: 74207465
+ ...05c: 726d696e
+ ...060: 616c2031
+ ...064: 20726563
+ ...068: 65697665
+ ...06c: 722d696e
+ ...070: 74657272
+ ...074: 7570743a
+ ...078: 2000    
+ ...07a:     476f  MSGR2 BYTE "Got terminal 2 receiver-interrupt: ",0
+ ...07c: 74207465
+ ...080: 726d696e
+ ...084: 616c2032
+ ...088: 20726563
+ ...08c: 65697665
+ ...090: 722d696e
+ ...094: 74657272
+ ...098: 7570743a
+ ...09c: 2000    
+ ...09e:     476f  MSGR3 BYTE "Got terminal 3 receiver-interrupt: ",0
+ ...0a0: 74207465
+ ...0a4: 726d696e
+ ...0a8: 616c2033
+ ...0ac: 20726563
+ ...0b0: 65697665
+ ...0b4: 722d696e
+ ...0b8: 74657272
+ ...0bc: 7570743a
+ ...0c0: 2000    
+ ...0c2:     476f  MSGI BYTE "Got interval-counter-interrupt: ",0
+ ...0c4: 7420696e
+ ...0c8: 74657276
+ ...0cc: 616c2d63
+ ...0d0: 6f756e74
+ ...0d4: 65722d69
+ ...0d8: 6e746572
+ ...0dc: 72757074
+ ...0e0: 3a2000  
+ ...0e3:       47  MSGX BYTE "Got unknown interrupt: ",0
+ ...0e4: 6f742075
+ ...0e8: 6e6b6e6f
+ ...0ec: 776e2069
+ ...0f0: 6e746572
+ ...0f4: 72757074
+ ...0f8: 3a2000  
+ ...0fb:       0d  CRLF BYTE #d,#a,0
+ ...0fc: 0a00    
+                   
+(0000000000000034) IRQT IS #34
+(0000000000000035) IRQR0 IS #35
+(0000000000000037) IRQR1 IS #37
+(0000000000000039) IRQR2 IS #39
+(000000000000003b) IRQR3 IS #3B
+(0000000000000007) IRQI IS #7
+                   
+                     LOC #F000
+                   
+                     % put bit-position of interrupt-reason in $129
+000000000000f000:  DTRAP GET $10,rQ
+ ...000: fe0a0010
+ ...004: 350b0001    NEG $11,0,1
+ ...008: ed0b0001    ANDNMH $11,#0001 % build interrupt-mask (all without privileged-ex)
+ ...00c: c80a0a0b    AND $10,$10,$11
+ ...010: 270b0a01    SUBU $11,$10,1
+ ...014: da0b0b0a    SADD $11,$11,$10 % determine bit-position and put it into $11
+ ...018: e30d00e3    SET $13,MSGX % default: unknown
+ ...01c: 330a0b34    CMPU $10,$11,IRQT % compare to timer
+ ...020: 630d0a1c    CSZ $13,$10,MSGT % set to timer-msg, if its the timer
+ ...024: 330a0b35    CMPU $10,$11,IRQR0 % compare to receiver-0
+ ...028: 630d0a32    CSZ $13,$10,MSGR0 % set to r0-msg, if its the receiver-0
+ ...02c: 330a0b37    CMPU $10,$11,IRQR1 % ...
+ ...030: 630d0a56    CSZ $13,$10,MSGR1
+ ...034: 330a0b39    CMPU $10,$11,IRQR2
+ ...038: 630d0a7a    CSZ $13,$10,MSGR2
+ ...03c: 330a0b3b    CMPU $10,$11,IRQR3
+ ...040: 630d0a9e    CSZ $13,$10,MSGR3
+ ...044: 330a0b07    CMPU $10,$11,IRQI
+ ...048: 630d0ac2    CSZ $13,$10,MSGI
+ ...04c: e80d8000    ORH $13,#8000
+ ...050: fe0e000c    GET $14,rI % restart interval-counter, if necessary
+ ...054: 310f0e00    CMP $15,$14,0
+ ...058: 480fxxxx    BNN $15,1F
+ ...05c: e20f0100    SETML $15,#0100
+ ...060: f60c000f    PUT rI,$15
+ ...064: e30c0000  1H SET $12,0
+ ...068: c10a0b00    SET $10,$11
+ ...06c: f20bxxxx    PUSHJ $11,io:puts % print message
+ ...070: e30c0000    SET $12,0
+ ...074: c10d0a00    SET $13,$10
+ ...078: f20bxxxx    PUSHJ $11,io:putn % print interrupt-number
+ ...07c: e30c0000    SET $12,0
+ ...080: e30d00fb    SET $13,CRLF
+ ...084: e80d8000    ORH $13,#8000
+ ...088: f20bxxxx    PUSHJ $11,io:puts % print \r\n
+                     % resume
+ ...08c: f7100000    PUT rQ,0
+ ...090: 35ff0001    NEG $255,0,1
+ ...094: edff0001    ANDNMH $255,#0001 % set interrupt-mask
+ ...098: f9000001    RESUME 1
+                   
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: e9000000    ORMH $0,DTRAP>>32
+ ...008: ea000000    ORML $0,DTRAP>>16
+ ...00c: eb00f000    ORL $0,DTRAP>>0
+ ...010: f60e0000    PUT rTT,$0
+                   
+                     % write welcome-message
+ ...014: e3010000    SET $1,0
+ ...018: e3020000    SET $2,WELC
+ ...01c: e8028000    ORH $2,#8000
+ ...020: f200xxxx    PUSHJ $0,io:puts
+                   
+                     % enable interrupts
+ ...024: 35000001    NEG $0,0,1
+ ...028: ed000001    ANDNMH $0,#0001
+ ...02c: f60f0000    PUT rK,$0
+                   
+                     % configure interval-counter
+ ...030: e2000100    SETML $0,#0100
+ ...034: f60c0000    PUT rI,$0
+                   
+                     % configure timer
+ ...038: e0008001    SETH $0,#8001
+ ...03c: e3011000    SET $1,#1000
+ ...040: af010008    STOU $1,$0,8 % timer-divisor = #1000
+ ...044: e3010002    SET $1,#2
+ ...048: af010000    STOU $1,$0,0 % enable timer-interrupts
+                   
+                     % configure terminals
+ ...04c: e3010002    SET $1,#2
+ ...050: e0008002    SETH $0,#8002
+ ...054: af010000    STOU $1,$0,0 % enable receiver-interrupts (t0)
+ ...058: e5000001    INCMH $0,#0001
+ ...05c: af010000    STOU $1,$0,0 % enable receiver-interrupts (t1)
+ ...060: e5000001    INCMH $0,#0001
+ ...064: af010000    STOU $1,$0,0 % enable receiver-interrupts (t2)
+ ...068: e5000001    INCMH $0,#0001
+ ...06c: af010000    STOU $1,$0,0 % enable receiver-interrupts (t3)
+                   
+ ...070: f0000000  loop JMP loop
+                   
+                   
+                   # 1 "manual/io.mmi" 1
+                   %
+                   % some io-functions
+                   %
+                   
+                   % terminal 0 rcvr ctrl: #8002000000000000
+                   % terminal 0 rcvr data: #8002000000000008
+                   % terminal 0 xmtr ctrl: #8002000000000010
+                   % terminal 0 xmtr data: #8002000000000018
+                   % terminal 1 rcvr ctrl: #8002000100000000
+                   % terminal 1 rcvr data: #8002000100000008
+                   % terminal 1 xmtr ctrl: #8002000100000010
+                   % terminal 1 xmtr data: #8002000100000018
+                   
+                     PREFIX io:
+                   
+ ...074: 30313233  hexch BYTE "0123456789ABCDEF",0
+ ...078: 34353637
+ ...07c: 38394142
+ ...080: 43444546
+ ...084: 00      
+                     LOC @+(4-@)&3
+ ...088: 6e616e00  nan BYTE "nan",0
+ ...08c: 696e6600  inf BYTE "inf",0
+                   
+                   % void putf(octa term,octa f)
+ ...090: fe020004  putf GET $2,:rJ % save rJ
+ ...094: 4801xxxx    BNN $1,1F % f >= 0?
+ ...098: c1040000    SET $4,$0
+ ...09c: e305002d    SET $5,'-'
+ ...0a0: f203xxxx    PUSHJ $3,putc % putc(term,'-')
+ ...0a4: ec018000    ANDNH $1,#8000 % f = -f
+ ...0a8: e0037ff0  1H SETH $3,#7FF0
+ ...0ac: c8040103    AND $4,$1,$3 % check exponent
+ ...0b0: 32050403    CMPU $5,$4,$3
+ ...0b4: 4a05xxxx    BNZ $5,3F % if not #7FF, its no nan and no inf
+ ...0b8: 35030001    NEG $3,0,1
+ ...0bc: ec03fff0    ANDNH $3,#FFF0 % fraction-mask
+ ...0c0: c8040103    AND $4,$1,$3
+ ...0c4: 4a04xxxx    BNZ $4,2F % if fraction not zero, its nan
+ ...0c8: c1040000    SET $4,$0
+ ...0cc: f505fff0    GETA $5,inf
+ ...0d0: f203xxxx    PUSHJ $3,puts % puts(term,"inf")
+ ...0d4: f0xxxxxx    JMP 6F
+ ...0d8: c1040000  2H SET $4,$0
+ ...0dc: f505ffeb    GETA $5,nan
+ ...0e0: f203xxxx    PUSHJ $3,puts % puts(term,"nan")
+ ...0e4: f0xxxxxx    JMP 6F
+ ...0e8: c1040000  3H SET $4,$0
+ ...0ec: c1050100    SET $5,$1
+ ...0f0: f203xxxx    PUSHJ $3,_putfn % _putfn(term,f)
+ ...0f4: c1040000    SET $4,$0
+ ...0f8: e305002e    SET $5,'.'
+ ...0fc: f203xxxx    PUSHJ $3,putc % putc(term,'.')
+ ...100: e0044024    SETH $4,#4024 % 10.0
+ ...104: 17030101    FINT $3,:ROUND_OFF,$1
+ ...108: 06010103    FSUB $1,$1,$3 % f -= (int)f
+                     % multiply it with 10 until the fraction is gone
+ ...10c: 17030101    FINT $3,:ROUND_OFF,$1
+ ...110: 32030103  4H CMPU $3,$1,$3
+ ...114: 4203xxxx    BZ $3,5F % if fraction == 0, we are done
+ ...118: 10010104    FMUL $1,$1,$4 % f *= 10
+ ...11c: 17030101    FINT $3,:ROUND_OFF,$1
+ ...120: 4b03fffc    BNZ $3,4B % if its still zero, print the 0
+ ...124: c1060000    SET $6,$0
+ ...128: e3070030    SET $7,'0'
+ ...12c: f205xxxx    PUSHJ $5,putc % putc(term,'0')
+ ...130: f1fffff8    JMP 4B
+ ...134: c1040000  5H SET $4,$0
+ ...138: c1050100    SET $5,$1
+ ...13c: f203xxxx    PUSHJ $3,_putfn % finally, print it
+ ...140: f6040002  6H PUT :rJ,$2 % restore rJ
+ ...144: f8000000    POP 0,0
+                   
+                   % void _putfn(octa term,octa f)
+ ...148: fe020004  _putfn GET $2,:rJ
+ ...14c: 17010101    FINT $1,:ROUND_OFF,$1 % f = (int)f
+ ...150: e0034024    SETH $3,#4024 % 10.0
+ ...154: 01040103    FCMP $4,$1,$3
+ ...158: 4004xxxx    BN $4,1F % if g < 10, stop recursion
+ ...15c: 14060103    FDIV $6,$1,$3 % g = f / 10
+ ...160: c1050000    SET $5,$0
+ ...164: f304fff9    PUSHJ $4,_putfn % _putfn(g)
+ ...168: 16050103  1H FREM $5,$1,$3 % x = f % 10
+ ...16c: 4805xxxx    BNN $5,2F % its negative if its >= 5, (-5, -4, ...)
+ ...170: 04050305    FADD $5,$3,$5 % so, x = 10 + x
+ ...174: c1040000  2H SET $4,$0
+ ...178: 05050005    FIX $5,$5
+ ...17c: 23050530    ADDU $5,$5,'0' % x += '0'
+ ...180: f203xxxx    PUSHJ $3,putc % putc(term,x)
+ ...184: f6040002    PUT :rJ,$2 % restore rJ
+ ...188: f8000000    POP 0,0
+                   
+                   % void putn(octa term,octa n)
+ ...18c: fe020004  putn GET $2,:rJ % save rJ
+ ...190: 5801xxxx    PBNN $1,1F % n < 0?
+ ...194: c0040000    OR $4,$0,$0
+ ...198: e305002d    SET $5,'-'
+ ...19c: f203xxxx    PUSHJ $3,putc % putc(term,'-')
+ ...1a0: 34010001    NEG $1,0,$1 % n = -n
+ ...1a4: 3303010a  1H CMPU $3,$1,10
+ ...1a8: 5003xxxx    PBN $3,1F % n >= 10?
+ ...1ac: c0040000    OR $4,$0,$0
+ ...1b0: 1d05010a    DIV $5,$1,10 % t = n / 10
+ ...1b4: fe010006    GET $1,:rR % n = n % 10
+ ...1b8: f303fff5    PUSHJ $3,putn % putn(term,t)
+ ...1bc: c0040000  1H OR $4,$0,$0
+ ...1c0: c0050101    OR $5,$1,$1
+ ...1c4: 23050530    ADDU $5,$5,48 % char + '0'
+ ...1c8: f203xxxx    PUSHJ $3,putc % putc(term,n)
+ ...1cc: f6040002    PUT :rJ,$2 % restore rJ
+ ...1d0: f8000000    POP 0,0
+                   
+                   % void putu(octa term,octa u,octa base)
+ ...1d4: fe030004  putu GET $3,:rJ % save rJ
+ ...1d8: 32040102    CMPU $4,$1,$2
+ ...1dc: 5004xxxx    PBN $4,1F % n >= base?
+ ...1e0: c0050000    OR $5,$0,$0
+ ...1e4: 1e060102    DIVU $6,$1,$2 % t = n / base
+ ...1e8: c0070202    OR $7,$2,$2
+ ...1ec: fe010006    GET $1,:rR % n = n % base
+ ...1f0: f304fff9    PUSHJ $4,putu % putu(term,t,base)
+ ...1f4: c0050000  1H OR $5,$0,$0
+ ...1f8: f506ff9f    GETA $6,hexch
+ ...1fc: 82060601    LDBU $6,$6,$1
+ ...200: f204xxxx    PUSHJ $4,putc % putc(term,hexch[n])
+ ...204: f6040003    PUT :rJ,$3 % restore rJ
+ ...208: f8000000    POP 0,0
+                   
+                   % octa gets(octa term,char *dst,octa max)
+ ...20c: fe030004  gets GET $3,:rJ % save rJ
+ ...210: 23040100    ADDU $4,$1,0
+ ...214: 31050201  1H CMP $5,$2,1
+ ...218: 4c05xxxx    BNP $5,2F % if(max <= 1) goto 1F
+ ...21c: 23060000    ADDU $6,$0,0
+ ...220: f205xxxx    PUSHJ $5,getc % call getc(term)
+ ...224: 23070000    ADDU $7,$0,0
+ ...228: 23080500    ADDU $8,$5,0
+ ...22c: f206xxxx    PUSHJ $6,putc % call putc(term,c)
+ ...230: 3106050d    CMP $6,$5,#0D % c == \n?
+ ...234: 4206xxxx    BZ $6,1F % if so, stop
+ ...238: a3050100    STBU $5,$1,0 % otherwise, store char
+ ...23c: 23010101    ADDU $1,$1,1 % to next
+ ...240: 25020201    SUB $2,$2,1 % max--
+ ...244: f1fffff4    JMP 1B
+ ...248: 23060000  2H ADDU $6,$0,0
+ ...24c: e307000d    SET $7,#0D
+ ...250: f205xxxx    PUSHJ $5,putc % call putc(term,'\n')
+ ...254: 23060000  1H ADDU $6,$0,0
+ ...258: e307000a    SET $7,#0A
+ ...25c: f205xxxx    PUSHJ $5,putc % call putc(term,'\r')
+ ...260: a30a0100    STBU $10,$1,0 % null-termination
+ ...264: 26000104    SUBU $0,$1,$4 % determine length
+ ...268: f6040003    PUT :rJ,$3 % restore rJ
+ ...26c: f8010000    POP 1,0 % return length
+                   
+                   % octa getc(octa term)
+ ...270: e0018002  getc SETH $1,#8002 % base address: #8002000000000000
+ ...274: 39000020    SL $0,$0,32 % or in terminal-number
+ ...278: c0010100    OR $1,$1,$0 % -> #8002000100000000 for term 1, e.g.
+ ...27c: 8f020100  1H LDOU $2,$1,#0 % read ctrl-reg
+ ...280: c9020201    AND $2,$2,#1 % extract RDY-bit
+ ...284: 5302fffe    PBZ $2,1B % wait until its set
+ ...288: 8f000108    LDOU $0,$1,#8 % load char
+ ...28c: f8010000    POP 1,0 % return it
+                   
+                   % void puts(octa term,char *string)
+ ...290: fe020004  puts GET $2,:rJ % save rJ
+ ...294: 83050100  1H LDBU $5,$1,0 % load char from string
+ ...298: 4205xxxx    BZ $5,2F % if its 0, we are done
+ ...29c: 23040000    ADDU $4,$0,0
+ ...2a0: f203xxxx    PUSHJ $3,putc % call putc(c)
+ ...2a4: 23010101    ADDU $1,$1,1 % to next char
+ ...2a8: f1fffffb    JMP 1B
+ ...2ac: f6040002  2H PUT :rJ,$2 % restore rJ
+ ...2b0: f8000000    POP 0,0
+                   
+                   % void putc(octa term,octa character)
+ ...2b4: e0028002  putc SETH $2,#8002 % base address: #8002000000000000
+ ...2b8: 39000020    SL $0,$0,32 % or in terminal-number
+ ...2bc: c0020200    OR $2,$2,$0 % -> #8002000100000000 for term 1, e.g.
+ ...2c0: 8f030210  1H LDOU $3,$2,#10 % read ctrl-reg
+ ...2c4: c9030301    AND $3,$3,#1 % exract RDY-bit
+ ...2c8: 5303fffe    PBZ $3,1B % wait until its set
+ ...2cc: af010218    STOU $1,$2,#18 % write char
+ ...2d0: f8000000    POP 0,0
+                   
+                   % void oputs(char *string)
+ ...2d4: fe010004  oputs GET $1,:rJ % save rJ
+ ...2d8: 83030000  1H LDBU $3,$0,0 % load char from string
+ ...2dc: 4203xxxx    BZ $3,2F % if its 0, we are done
+ ...2e0: f202xxxx    PUSHJ $2,oputc % call oputc(c)
+ ...2e4: 23000001    ADDU $0,$0,1 % to next char
+ ...2e8: f1fffffc    JMP 1B
+ ...2ec: f6040001  2H PUT :rJ,$1 % restore rJ
+ ...2f0: f8000000    POP 0,0
+                   
+                   % void oputc(octa character)
+ ...2f4: e0018004  oputc SETH $1,#8004 % base address: #8004000000000000
+ ...2f8: af000100    STOU $0,$1,0 % write char
+ ...2fc: f8000000    POP 0,0
+                   
+                     PREFIX :
+                   # 112 "manual/interrupts.mms" 2
+
+Symbol table:
+ CRLF = #00000000000000fb (10)
+ DTRAP = #000000000000f000 (17)
+ IRQI = #0000000000000007 (16)
+ IRQR0 = #0000000000000035 (12)
+ IRQR1 = #0000000000000037 (13)
+ IRQR2 = #0000000000000039 (14)
+ IRQR3 = #000000000000003b (15)
+ IRQT = #0000000000000034 (11)
+ MSGI = #00000000000000c2 (8)
+ MSGR0 = #0000000000000032 (4)
+ MSGR1 = #0000000000000056 (5)
+ MSGR2 = #000000000000007a (6)
+ MSGR3 = #000000000000009e (7)
+ MSGT = #000000000000001c (3)
+ MSGX = #00000000000000e3 (9)
+ Main = #0000000000001000 (1)
+ WELC = #0000000000000000 (2)
+ io:_putfn = #0000000000001148 (27)
+ io:getc = #0000000000001270 (30)
+ io:gets = #000000000000120c (29)
+ io:hexch = #0000000000001074 (22)
+ io:inf = #000000000000108c (24)
+ io:nan = #0000000000001088 (23)
+ io:oputc = #00000000000012f4 (32)
+ io:oputs = #00000000000012d4 (31)
+ io:putc = #00000000000012b4 (26)
+ io:putf = #0000000000001090 (25)
+ io:putn = #000000000000118c (19)
+ io:puts = #0000000000001290 (18)
+ io:putu = #00000000000011d4 (28)
+ loop = #0000000000001070 (20)

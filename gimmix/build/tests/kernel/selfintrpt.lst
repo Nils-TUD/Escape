@@ -1,0 +1,54 @@
+                   # 1 "kernel/selfintrpt.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/selfintrpt.mms"
+                   %
+                   % selfintrpt.mms -- tests setting rQ and rK so that a dynamic trap is triggered
+                   %
+                   
+                     % dynamic trap address
+                     LOC #600000
+                   
+                     % don't store rWW because its different in gimmix and mmmix
+0000000000600000:  ATRAP GET $253,rQ
+ ...000: fefd0010
+ ...004: affdfe00    STOU $253,$254,0
+ ...008: fefb001d    GET $251,rXX
+ ...00c: 3ffbfb20    SRU $251,$251,32
+ ...010: affbfe08    STOU $251,$254,8
+ ...014: 21fefe10    ADD $254,$254,16
+ ...018: f7100000    PUT rQ,0
+ ...01c: f9000001    RESUME 1
+                   
+                   
+                     LOC #1000
+                   
+                     % setup rTT
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: e9000000    ORMH $0,ATRAP>>32
+ ...008: ea000060    ORML $0,ATRAP>>16
+******************   ORL $0,ATRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...00c: eb000000
+ ...010: f60e0000    PUT rTT,$0
+                     % setup address for results
+ ...014: f71300fa    PUT rG,250
+ ...018: e0fe8000    SETH $254,#8000
+ ...01c: ebfe4000    ORL $254,#4000
+                   
+ ...020: e1000002    SETMH $0,#2
+ ...024: f6100000    PUT rQ,$0
+ ...028: f60f0000    PUT rK,$0 % raises exception (gimmix will raise an ex here)
+ ...02c: c1000000    OR $0,$0,0 % nop (mmmix will raise an ex here)
+                   
+                     % sync
+ ...030: e0fe8000    SETH $254,#8000
+ ...034: ebfe4000    ORL $254,#4000
+ ...038: b9fffe00    SYNCD #FF,$254,0
+                     % now quit
+ ...03c: 00000000    TRAP 0
+
+Symbol table:
+ ATRAP = #0000000000600000 (2)
+ Main = #0000000000001000 (1)

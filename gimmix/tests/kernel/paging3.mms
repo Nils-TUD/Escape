@@ -1,0 +1,74 @@
+%
+% paging3.mms -- tests paging (generated)
+%
+
+		LOC		#00000000
+		% segmentsizes: 0,0,0,0; pageSize=2^13; r=0x2000; n=5
+RV		OCTA	#00000D0000002028
+
+		LOC		#00002000
+		OCTA	#000000000020002F	% PTE  0    (#0000000000000000 .. #0000000000001FFF)
+
+
+
+
+	
+		LOC		#1000
+
+Main	SETH	$0,#8000
+		ORMH	$0,RV>>32
+		ORML	$0,RV>>16
+		ORL		$0,RV
+		LDOU	$0,$0,0
+		PUT		rV,$0
+
+		SET		$0,#1000
+		SETH	$1,#0000
+		ORMH	$1,#0000
+		ORML	$1,#0000
+		ORL		$1,#0000
+		STOU	$0,$1,0		% store 1000 to 0000000000000000
+		SETH	$1,#8000
+		ORMH	$1,#0000
+		ORML	$1,#0020
+		ORL		$1,#0000
+		LDOU	$2,$1,0		% load from 8000000000200000
+
+		SET		$0,#1001
+		SETH	$1,#2000
+		ORMH	$1,#0000
+		ORML	$1,#0000
+		ORL		$1,#0000
+		STOU	$0,$1,0		% store 1001 to 2000000000000000
+		SETH	$1,#8000
+		ORMH	$1,#0000
+		ORML	$1,#0020
+		ORL		$1,#0000
+		LDOU	$3,$1,0		% load from 8000000000200000
+
+		SET		$0,#1002
+		SETH	$1,#4000
+		ORMH	$1,#0000
+		ORML	$1,#0000
+		ORL		$1,#0000
+		STOU	$0,$1,0		% store 1002 to 4000000000000000
+		SETH	$1,#8000
+		ORMH	$1,#0000
+		ORML	$1,#0020
+		ORL		$1,#0000
+		LDOU	$4,$1,0		% load from 8000000000200000
+
+		SET		$0,#1003
+		SETH	$1,#6000
+		ORMH	$1,#0000
+		ORML	$1,#0000
+		ORL		$1,#0000
+		STOU	$0,$1,0		% store 1003 to 6000000000000000
+		SETH	$1,#8000
+		ORMH	$1,#0000
+		ORML	$1,#0020
+		ORL		$1,#0000
+		LDOU	$5,$1,0		% load from 8000000000200000
+
+		
+		TRAP	0

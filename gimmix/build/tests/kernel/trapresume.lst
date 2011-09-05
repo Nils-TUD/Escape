@@ -1,0 +1,246 @@
+                   # 1 "kernel/trapresume.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/trapresume.mms"
+                   %
+                   % trapresume.mms -- test trap
+                   %
+                   
+                     % dynamic trap address
+                     LOC #600000
+                   
+0000000000600000:    RESUME 1
+ ...000: f9000001
+                   
+                     % forced trap addresses
+                     LOC #500000
+                   
+                     % test special-register-values and simple continue at rWW
+0000000000500000:  ADDR GET $1,rXX
+ ...000: fe01001d
+ ...004: fe02001e    GET $2,rYY
+ ...008: fe03001f    GET $3,rZZ
+ ...00c: fe04001c    GET $4,rWW
+ ...010: fe05000f    GET $5,rK
+ ...014: fe060007    GET $6,rBB
+ ...018: 2107ff00    ADD $7,$255,0
+ ...01c: f9000001    RESUME 1
+                   
+                     % test RESUME_SET
+ ...020: e0080200  ADDR2 SETH $8,#0200
+ ...024: ea080008    ORML $8,#0008 % we cant use a register >= rL
+ ...028: f61d0008    PUT rXX,$8
+ ...02c: f71f00ff    PUT rZZ,#FF % set $8 to #FF
+ ...030: f9000001    RESUME 1
+                   
+                     % test RESUME_SET with arith ex
+ ...034: e0090200  ADDR3 SETH $9,#0200
+ ...038: e9097800    ORMH $9,#7800 % raise arith exceptions 0x78
+ ...03c: ea090009    ORML $9,#0009 % we cant use a register >= rL
+ ...040: f61d0009    PUT rXX,$9
+ ...044: f71f00fe    PUT rZZ,#FE % set $9 to #FE
+ ...048: f9000001    RESUME 1
+                   
+                     % test RESUME_AGAIN
+ ...04c: e00b0000  ADDR4 SETH $11,#0000
+ ...050: ea0b210b    ORML $11,#210B
+ ...054: eb0b0b02    ORL $11,#0B02 % execute ADD $11,$11,2
+ ...058: f61d000b    PUT rXX,$11
+ ...05c: e30b0000    SET $11,0
+ ...060: f9000001    RESUME 1
+                   
+                   
+                     % test RESUME_AGAIN with arith ex
+ ...064: e00c0000  ADDR5 SETH $12,#0000
+ ...068: ea0c1d0c    ORML $12,#1D0C
+ ...06c: eb0c0c00    ORL $12,#0C00 % execute DIV $12,$12,0
+ ...070: f61d000c    PUT rXX,$12
+ ...074: e30c00f1    SET $12,#F1
+ ...078: f9000001    RESUME 1
+                   
+                     % test RESUME_AGAIN illegal instr exception
+ ...07c: fe10001d  ADDR6 GET $16,rXX
+ ...080: fe11001c    GET $17,rWW
+ ...084: e00f0000    SETH $15,#0000
+ ...088: ea0ffa00    ORML $15,#FA00
+ ...08c: eb0f0000    ORL $15,#0000 % execute SAVE $0 (0 < G)
+ ...090: f61d000f    PUT rXX,$15
+                     % this resume causes an illegal instruction exception
+                     % we will jump to rTT (top of file). there we do a resume again which will jump
+                     % to the instruction after the following resume
+ ...094: f9000001    RESUME 1
+                     % so, we will get here. now simply restore rXX and rWW and resume again
+                     % this will succeed so that we get back to the end of the file
+ ...098: f61d0010    PUT rXX,$16 % restore rXX and rWW
+ ...09c: f61c0011    PUT rWW,$17
+ ...0a0: f9000001    RESUME 1
+                   
+                     % test RESUME_CONT with DSS
+ ...0a4: e0100100  ADDR7 SETH $16,#0100
+ ...0a8: ea102110    ORML $16,#2110
+ ...0ac: eb101000    ORL $16,#1000
+ ...0b0: f61d0010    PUT rXX,$16
+ ...0b4: f71e00f9    PUT rYY,#F9
+ ...0b8: f71f0001    PUT rZZ,#01 % execute ADD $16,#F9,#01
+ ...0bc: f9000001    RESUME 1
+                   
+                     % test RESUME_CONT with DS
+ ...0c0: e0110100  ADDR8 SETH $17,#0100
+ ...0c4: ea11e311    ORML $17,#E311
+ ...0c8: eb110000    ORL $17,#0000
+ ...0cc: f61d0011    PUT rXX,$17
+ ...0d0: e311f901    SET $17,#F901
+ ...0d4: f61f0011    PUT rZZ,$17 % execute SETL $17,#F901
+ ...0d8: f9000001    RESUME 1
+                   
+                     % trap-target for RESUME_CONT with Trap
+ ...0dc: e3120001  ADDR10 SET $18,1
+ ...0e0: f9000001    RESUME 1
+                   
+                     % test RESUME_CONT with Trap
+ ...0e4: fe64001d  ADDR9 GET $100,rXX % backup rXX and rWW
+ ...0e8: fe65001c    GET $101,rWW
+ ...0ec: e0120100    SETH $18,#0100
+ ...0f0: ea120001    ORML $18,#0001
+ ...0f4: eb120000    ORL $18,#0000
+ ...0f8: f61d0012    PUT rXX,$18 % execute TRAP 1,0,0
+ ...0fc: e0128000    SETH $18,#8000
+ ...100: e9120000    ORMH $18,ADDR10>>32
+ ...104: ea120050    ORML $18,ADDR10>>16
+******************   ORL $18,ADDR10>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...108: eb1200dc
+ ...10c: f60d0012    PUT rT,$18 % set trap addr to ADDR10
+ ...110: f9000001    RESUME 1
+                     % we will get here after resuming in ADDR10
+                     % so restore the original rXX and rWW and resume again
+ ...114: f61d0064    PUT rXX,$100
+ ...118: f61c0065    PUT rWW,$101
+ ...11c: f9000001    RESUME 1
+                   
+                     LOC #1000
+                   
+                     % test continue at rWW (rX < 0)
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: e9000000    ORMH $0,ADDR>>32
+ ...008: ea000050    ORML $0,ADDR>>16
+******************   ORL $0,ADDR>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...00c: eb000000
+ ...010: f60d0000    PUT rT,$0
+                   
+                     % prepare a values to test
+ ...014: 21ff0104    ADD $255,$1,4
+ ...018: f7040005    PUT rJ,5
+ ...01c: f70f000f    PUT rK,#0F
+ ...020: e3021234    SET $2,#1234
+ ...024: e3035678    SET $3,#5678
+                   
+ ...028: 00010203    TRAP 1,2,3
+ ...02c: 2114ff00    ADD $20,$255,0
+                   
+                     % test RESUME_SET
+ ...030: e0008000    SETH $0,#8000
+ ...034: e9000000    ORMH $0,ADDR2>>32
+ ...038: ea000050    ORML $0,ADDR2>>16
+******************   ORL $0,ADDR2>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...03c: eb000020
+ ...040: f60d0000    PUT rT,$0
+ ...044: 00010203    TRAP 1,2,3
+                   
+                     % test RESUME_SET with arith ex
+ ...048: e0008000    SETH $0,#8000
+ ...04c: e9000000    ORMH $0,ADDR3>>32
+ ...050: ea000050    ORML $0,ADDR3>>16
+******************   ORL $0,ADDR3>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...054: eb000034
+ ...058: f60d0000    PUT rT,$0
+ ...05c: 00010203    TRAP 1,2,3
+ ...060: fe0a0015    GET $10,rA
+                   
+                     % test RESUME_AGAIN
+ ...064: e0008000    SETH $0,#8000
+ ...068: e9000000    ORMH $0,ADDR4>>32
+ ...06c: ea000050    ORML $0,ADDR4>>16
+******************   ORL $0,ADDR4>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...070: eb00004c
+ ...074: f60d0000    PUT rT,$0
+ ...078: 00010203    TRAP 1,2,3
+                   
+                     % test RESUME_AGAIN with arith ex
+ ...07c: e0008000    SETH $0,#8000
+ ...080: e9000000    ORMH $0,ADDR5>>32
+ ...084: ea000050    ORML $0,ADDR5>>16
+******************   ORL $0,ADDR5>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...088: eb000064
+ ...08c: f60d0000    PUT rT,$0
+ ...090: e300ff00    SETL $0,#FF00
+ ...094: f6150000    PUT rA,$0
+ ...098: 00010203    TRAP 1,2,3
+ ...09c: fe0d0015    GET $13,rA
+ ...0a0: fe0e0006    GET $14,rR
+                   
+                     % test RESUME_AGAIN with illegal instr exception
+ ...0a4: e0008000    SETH $0,#8000
+ ...0a8: e9000000    ORMH $0,ADDR6>>32
+ ...0ac: ea000050    ORML $0,ADDR6>>16
+******************   ORL $0,ADDR6>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...0b0: eb00007c
+ ...0b4: f60d0000    PUT rT,$0
+ ...0b8: e0008000    SETH $0,#8000
+ ...0bc: e9006000    ORMH $0,#6000
+ ...0c0: f60e0000    PUT rTT,$0
+ ...0c4: 00010203    TRAP 1,2,3
+ ...0c8: e30f0001    SET $15,1
+                   
+                     % test RESUME_CONT with DSS
+ ...0cc: e0008000    SETH $0,#8000
+ ...0d0: e9000000    ORMH $0,ADDR7>>32
+ ...0d4: ea000050    ORML $0,ADDR7>>16
+******************   ORL $0,ADDR7>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...0d8: eb0000a4
+ ...0dc: f60d0000    PUT rT,$0
+ ...0e0: 00010203    TRAP 1,2,3
+                   
+                     % test RESUME_CONT with DS
+ ...0e4: e0008000    SETH $0,#8000
+ ...0e8: e9000000    ORMH $0,ADDR8>>32
+ ...0ec: ea000050    ORML $0,ADDR8>>16
+******************   ORL $0,ADDR8>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...0f0: eb0000c0
+ ...0f4: f60d0000    PUT rT,$0
+ ...0f8: 00010203    TRAP 1,2,3
+                   
+                     % test RESUME_CONT with Trap
+ ...0fc: e0008000    SETH $0,#8000
+ ...100: e9000000    ORMH $0,ADDR9>>32
+ ...104: ea000050    ORML $0,ADDR9>>16
+******************   ORL $0,ADDR9>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...108: eb0000e4
+ ...10c: f60d0000    PUT rT,$0
+ ...110: 00010203    TRAP 1,2,3
+ ...114: e3130001    SET $19,1
+                   
+ ...118: 00000000    TRAP 0
+
+Symbol table:
+ ADDR = #0000000000500000 (2)
+ ADDR10 = #00000000005000dc (10)
+ ADDR2 = #0000000000500020 (3)
+ ADDR3 = #0000000000500034 (4)
+ ADDR4 = #000000000050004c (5)
+ ADDR5 = #0000000000500064 (6)
+ ADDR6 = #000000000050007c (7)
+ ADDR7 = #00000000005000a4 (8)
+ ADDR8 = #00000000005000c0 (9)
+ ADDR9 = #00000000005000e4 (11)
+ Main = #0000000000001000 (1)

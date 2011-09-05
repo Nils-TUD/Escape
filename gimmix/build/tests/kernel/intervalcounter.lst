@@ -1,0 +1,44 @@
+                   # 1 "kernel/intervalcounter.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/intervalcounter.mms"
+                   %
+                   % intervalcounter.mms -- test the interval counter
+                   %
+                   
+                     % dynamic trap address
+                     LOC #600000
+                   
+0000000000600000:  ATRAP BNZ $253,CONT
+ ...000: 4afdxxxx
+ ...004: 00000000    TRAP 0
+ ...008: 27fdfd01  CONT SUBU $253,$253,1
+ ...00c: fefe0010    GET $254,rQ
+ ...010: 22fcfcfe    ADDU $252,$252,$254
+ ...014: f7100000    PUT rQ,0
+ ...018: f70c0016    PUT rI,#16
+ ...01c: e3ff00ff    SETL $255,#00FF
+ ...020: f9000001    RESUME 1
+                   
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: ea000060    ORML $0,#0060
+ ...008: f60e0000    PUT rTT,$0
+ ...00c: f70f00ff    PUT rK,#FF
+                   
+ ...010: f71300fc    PUT rG,252
+ ...014: e3fc0000    SET $252,0
+ ...018: e3fd0005    SET $253,5
+ ...01c: f70c0016    PUT rI,#16
+                   
+ ...020: e3000000    SET $0,0
+ ...024: 23000001  1H ADDU $0,$0,1
+ ...028: f1ffffff    JMP 1B
+
+Symbol table:
+ ATRAP = #0000000000600000 (3)
+ CONT = #0000000000600008 (2)
+ Main = #0000000000001000 (1)

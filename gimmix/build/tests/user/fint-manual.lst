@@ -1,0 +1,89 @@
+                   # 1 "user/fint-manual.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/fint-manual.mms"
+                   %
+                   % fint-manual.mms -- tests the algo proposed in mmix-doc to calculate FINT
+                   %
+                     LOC #1000
+                   
+                     % Put floats in registers
+0000000000001000:  Main SET $21,#0000 % 0.0
+ ...000: e3150000
+ ...004: f214xxxx    PUSHJ $20,mkint
+ ...008: c1001400    SET $0,$20
+                   
+ ...00c: e0158000    SETH $21,#8000 % -0.0
+ ...010: f214xxxx    PUSHJ $20,mkint
+ ...014: c1011400    SET $1,$20
+                   
+ ...018: e0153ff0    SETH $21,#3FF0 % 1.0
+ ...01c: f214xxxx    PUSHJ $20,mkint
+ ...020: c1021400    SET $2,$20
+                   
+ ...024: e0154000    SETH $21,#4000 % 2.0
+ ...028: f214xxxx    PUSHJ $20,mkint
+ ...02c: c1031400    SET $3,$20
+                   
+ ...030: e015bff8    SETH $21,#BFF8 % -1.5
+ ...034: f214xxxx    PUSHJ $20,mkint
+ ...038: c1041400    SET $4,$20
+                   
+ ...03c: e015c029    SETH $21,#C029
+ ...040: e91584c5    ORMH $21,#84C5
+ ...044: ea15974e    ORML $21,#974E
+ ...048: eb1565bf    ORL $21,#65BF % -12.75932
+ ...04c: f214xxxx    PUSHJ $20,mkint
+ ...050: c1051400    SET $5,$20
+                   
+ ...054: e0154088    SETH $21,#4088
+ ...058: e91548ea    ORMH $21,#48EA
+ ...05c: ea156d26    ORML $21,#6D26
+ ...060: eb157408    ORL $21,#7408 % 777.114466
+ ...064: f214xxxx    PUSHJ $20,mkint
+ ...068: c1061400    SET $6,$20
+                   
+ ...06c: e0157ff0    SETH $21,#7FF0 % +inf
+ ...070: f214xxxx    PUSHJ $20,mkint
+ ...074: c1071400    SET $7,$20
+                   
+ ...078: e015fff0    SETH $21,#FFF0 % -inf
+ ...07c: f214xxxx    PUSHJ $20,mkint
+ ...080: c1081400    SET $8,$20
+                   
+ ...084: e0157ff8    SETH $21,#7FF8 % quiet NaN
+ ...088: f214xxxx    PUSHJ $20,mkint
+ ...08c: c1091400    SET $9,$20
+                   
+ ...090: e0157ff4    SETH $21,#7FF4 % signaling NaN
+ ...094: f214xxxx    PUSHJ $20,mkint
+ ...098: c10a1400    SET $10,$20
+                   
+ ...09c: 00000000    TRAP 0
+                   
+                   % note that the trick is to add 2^52 to the number and substract it again. this way we cut the
+                   % fraction-part because we can't represent a fraction when the number is >= 2^52.
+                   
+                   % octa mkint(double d)
+ ...0a0: e0014330  mkint SETH $1,#4330 % $1 = 2^52
+ ...0a4: c1020000    SET $2,$0 % $2 = $Z
+ ...0a8: ec028000    ANDNH $2,#8000 % $2 = abs($Z)
+ ...0ac: ca030002    ANDN $3,$0,$2 % $3 = signbit($Z)
+ ...0b0: 02040000    FUN $4,$0,$0 % $4 = [$Z is a NaN]
+ ...0b4: 4a04xxxx    BNZ $4,1F % skip ahead if $Z is a NaN
+ ...0b8: 01040201    FCMP $4,$2,$1 % $4 = [abs($Z) > 2^52] - [abs($Z) < 2^52]
+ ...0bc: 69010400    CSNN $1,$4,0 % set $1 = 0 if $4 >= 0
+ ...0c0: c0010301    OR $1,$3,$1 % attach sign of $Z to $1
+ ...0c4: 04020001  1H FADD $2,$0,$1 % $2 = $Z + $1
+ ...0c8: 06000201    FSUB $0,$2,$1 % $X = $2 - $1
+                     % fix: FINT will never change the sign of $Z. therefore we simply set the orignal sign
+                     % again. this fixes the problem that occurs when integerizing -0.0.
+                     % the problem is that (-0.0 + X) - X is not -0.0 but +0.0.
+ ...0cc: e0028000    SETH $2,#8000
+ ...0d0: ca000002    ANDN $0,$0,$2 % $0 = $0 & ~sign($0)
+ ...0d4: c0000003    OR $0,$0,$3 % $0 = $0 | sign($Z)
+ ...0d8: f8010000    POP 1,0
+
+Symbol table:
+ Main = #0000000000001000 (1)
+ mkint = #00000000000010a0 (2)

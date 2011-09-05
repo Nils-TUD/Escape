@@ -1,0 +1,47 @@
+                   # 1 "diff/exceptions2.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "diff/exceptions2.mms"
+                   %
+                   % exceptions2.mms -- test some GIMMIX specific exceptions in kernel-mode
+                   %
+                   
+                     % segmentsizes: 0,0,0,0; pageSize=2^1; r=0x90000; n=256
+                     LOC #8000
+0000000000008000:  RV OCTA #0000010000090800
+ ...000: 00000100
+ ...004: 00090800
+                   
+                     LOC #00090000
+0000000000090000:    OCTA #0000000000000807 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00000807
+                   
+                     LOC #1000
+                   
+                     % these are GIMMIX-specific because of the dynamic-stack-extension-fix
+0000000000001000:  Main SET $0,#1000
+ ...000: e3001000
+ ...004: f6200000    PUT rSS,$0 % will raise a b-exception, because rSS is not in kernel-space
+ ...008: fe010010    GET $1,rQ
+ ...00c: f7100000    PUT rQ,0
+                   
+ ...010: faff0002    SAVE $255,2 % will raise a b-exception, because z > 1
+ ...014: fe020010    GET $2,rQ
+ ...018: f7100000    PUT rQ,0
+                   
+ ...01c: fb0200ff    UNSAVE 2,$255 % will raise a b-exception, because x > 1
+ ...020: fe030010    GET $3,rQ
+ ...024: f7100000    PUT rQ,0
+                   
+                     % try to set invalid bits in rQ (implementation specific)
+ ...028: 35000001    NEG $0,0,1
+ ...02c: f6100000    PUT rQ,$0
+ ...030: fe040010    GET $4,rQ
+ ...034: f7100000    PUT rQ,0
+                   
+ ...038: 00000000    TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)
+ RV = #0000000000008000 (2)

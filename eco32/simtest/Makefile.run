@@ -1,0 +1,60 @@
+#
+# Makefile to run some simulator tests
+#
+
+BUILD = ..
+
+LOGFILE = run.log
+
+DSKNAME = system.disk
+DSKSIZE = 14000
+MBRNAME = mbr.bin
+
+.PHONY:		all clean
+
+all:
+		@echo "Please choose one of the following targets:"
+		@echo "    run-rom00 (test ROM byte order)"
+		@echo "    run-rom01 (one example of each instruction)"
+		@echo "    run-rom02 (terminal output, polled)"
+		@echo "    run-rom03 (terminal echo, polled)"
+		@echo "    run-rom04 (\"Hello, world!\")"
+		@echo "    run-rom05 (\"Hello, world!\", on terminal 1)"
+		@echo "    run-rom06 (crossed echo with two terminals)"
+		@echo "    run-rom07 (string output to output device)"
+		@echo "    run-romboot (ROM bootstrapping disk)"
+		@echo "    clean"
+
+$(DSKNAME):
+		./mkdisk $(DSKNAME) $(DSKSIZE)
+		./wrtmbr $(DSKNAME) $(MBRNAME)
+
+run-rom00:
+		$(BUILD)/bin/sim -i -r rom00.bin
+
+run-rom01:
+		$(BUILD)/bin/sim -i -r rom01.bin
+
+run-rom02:
+		$(BUILD)/bin/sim -i -r rom02.bin -t 1
+
+run-rom03:
+		$(BUILD)/bin/sim -i -r rom03.bin -t 1
+
+run-rom04:
+		$(BUILD)/bin/sim -i -r rom04.bin -t 1
+
+run-rom05:
+		$(BUILD)/bin/sim -i -r rom05.bin -t 2
+
+run-rom06:
+		$(BUILD)/bin/sim -i -r rom06.bin -t 2
+
+run-rom07:
+		$(BUILD)/bin/sim -i -r rom07.bin -o $(LOGFILE)
+
+run-romboot:	$(DSKNAME)
+		$(BUILD)/bin/sim -i -r romboot.bin -t 1 -d $(DSKNAME)
+
+clean:
+		rm -f *~ $(LOGFILE) $(DSKNAME)

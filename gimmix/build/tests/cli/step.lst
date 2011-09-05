@@ -1,0 +1,34 @@
+                   # 1 "cli/step.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "cli/step.mms"
+                   %
+                   % step.mms -- tests stepout and stepover
+                   %
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main PUSHJ $0,F1
+ ...000: f200xxxx
+ ...004: f200xxxx    PUSHJ $0,F2
+ ...008: f200xxxx    PUSHJ $0,F3
+ ...00c: f200xxxx    PUSHJ $0,F1
+ ...010: 00000000    TRAP 0,0,0
+                   
+ ...014: fe000004  F1 GET $0,rJ
+ ...018: f201xxxx    PUSHJ $1,F2
+ ...01c: f6040000    PUT rJ,$0
+ ...020: f8000000    POP 0,0
+                   
+ ...024: fe000004  F2 GET $0,rJ
+ ...028: f201xxxx    PUSHJ $1,F3
+ ...02c: f6040000    PUT rJ,$0
+ ...030: f8000000    POP 0,0
+                   
+ ...034: f8000000  F3 POP 0,0
+
+Symbol table:
+ F1 = #0000000000001014 (2)
+ F2 = #0000000000001024 (3)
+ F3 = #0000000000001034 (4)
+ Main = #0000000000001000 (1)

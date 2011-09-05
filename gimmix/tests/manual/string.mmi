@@ -1,0 +1,131 @@
+%
+% some string-functions
+%
+
+		PREFIX	str:
+
+		LOC	@+(4-@)&3
+nan		BYTE	"nan",0
+inf		BYTE	"inf",0
+
+% void copy(char *dst,char *src)
+copy	SET		$2,0
+1H		LDBU	$3,$1,$2
+		BZ		$3,1F
+		STBU	$3,$0,$2
+		ADDU	$2,$2,1
+		JMP		1B
+1H		POP		1,0
+
+% octa tofloat(char *str)
+tofloat	GET		$1,:rJ
+		SET		$2,$0				% str
+		SET		$0,0				% res = 0
+		LDBU	$4,$2,0				% $4 = *str
+		BZ		$4,2F				% if 0, quit
+		CMPU	$5,$4,'-'
+		BNZ		$5,1F
+		NEG		$3,0,1				% save that its negative
+		ADDU	$2,$2,1				% str++
+1H		SET		$5,$2
+		GETA	$6,nan
+		PUSHJ	$4,compare			% compare to "nan"
+		BNZ		$4,1F
+		SETH	$0,#7FF8			% nan
+		JMP		2F
+1H		SET		$5,$2
+		GETA	$6,inf
+		PUSHJ	$4,compare			% compare to "inf"
+		BNZ		$4,1F
+		SETH	$0,#7FF0			% inf
+		JMP		2F
+1H		LDBU	$5,$2,0				% $5 = *str
+		BZ		$5,2F				% if 0, quit
+		PUSHJ	$4,_getd			% $4 = _getd($5)
+		BN		$4,3F				% if < 0, its no digit
+		SETH	$5,#4024			% 10.0
+		FMUL	$0,$0,$5			% res *= 10
+		FLOTU	$5,$4
+		FADD	$0,$0,$5			% res += $4
+		ADDU	$2,$2,1				% str++
+		JMP		1B
+3H		LDBU	$5,$2,0				% $5 = *str
+		CMPU	$4,$5,'.'			% its no digit; check if its '.'
+		BNZ		$4,2F				% if not, we are done
+		SETH	$4,#4024			% mul = 10.0
+		ADDU	$2,$2,1				% str++
+4H		LDBU	$6,$2,0				% $6 = *str
+		BZ		$6,2F				% if 0, quit
+		PUSHJ	$5,_getd			% $5 = _getd($6)
+		BN		$5,2F				% if < 0, its no digit
+		FLOTU	$5,$5
+		FDIV	$5,$5,$4			% $5 /= mul
+		FADD	$0,$0,$5			% res += $5
+		SETH	$5,#4024			% 10.0
+		FMUL	$4,$4,$5			% mul *= 10
+		ADDU	$2,$2,1				% str++
+		JMP		4B
+2H		BNN		$3,5F				% negative?
+		ORH		$0,#8000			% '-', so negate the float
+5H		PUT		:rJ,$1
+		POP		1,0
+
+% octa _getd(char x)
+_getd	CMPU	$1,$0,'0'
+		BN		$1,1F
+		CMPU	$1,$0,'9'
+		PBNP	$1,2F
+1H		NEG		$0,0,1
+		JMP		3F
+2H		SUBU	$0,$0,'0'
+3H		POP		1,0
+
+% octa touint(char *str,octa base)
+touint	SET		$2,$0
+		SET		$0,0
+3H		LDBU	$3,$2,0
+		CMPU	$4,$3,0
+		BZ		$4,1F				% if $3 == 0, goto 1F (done)
+		CMPU	$4,$3,'9'
+		BP		$4,2F				% if $3 > '9', goto 2F
+		CMPU	$4,$3,'0'
+		BN		$4,1F				% if $3 < '0', goto 1F (error)
+		% its '0'..'9'
+		SUBU	$3,$3,'0'			% $3 -= '0'
+		JMP		4F
+		% its > '9'
+2H		CMPU	$4,$3,'A'
+		BN		$4,1F				% if $3 < 'A', goto 1F (error)
+		CMPU	$4,$3,'F'
+		BP		$4,5F				% if $3 > 'F', goto 5F
+		% its 'A'..'F'
+		SUBU	$3,$3,'A'-10		% $3 -= 'A'-10
+		JMP		4F
+		% its > 'F'
+5H		CMPU	$4,$3,'a'
+		BN		$4,1F				% if $3 < 'a', goto 1F (error)
+		CMPU	$4,$3,'f'
+		BP		$4,1F				% if $3 > 'f', goto 1F (error)
+		% its 'a'..'f'
+		SUBU	$3,$3,'a'-10		% $3 -= 'a'-10
+4H		CMPU	$4,$3,$1
+		BNN		$4,1F				% if $3 >= base, goto 1F (error)
+		MULU	$0,$0,$1			% $0 *= base
+		ADDU	$0,$0,$3			% $0 += $3
+		ADDU	$2,$2,1				% str1++
+		JMP		3B
+1H		POP		1,0
+
+% octa compare(char *str1,char *str2)
+compare	SET		$2,0				% i = 0
+		JMP		1F
+3H		ADDU	$2,$2,1				% i++		
+1H		LDBU	$3,$0,$2			% c1 = str[i]
+		LDBU	$4,$1,$2			% c2 = str[i]
+		CMPU	$5,$3,$4			% compare c1 with c2
+		BNZ		$5,2F				% if c1 != c2, goto 2
+		PBNZ	$3,3B				% if c1 != 0, goto 3
+2H		SET		$0,$5				% return compare-result
+		POP		1,0
+
+		PREFIX	:

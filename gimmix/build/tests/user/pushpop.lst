@@ -1,0 +1,151 @@
+                   # 1 "user/pushpop.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/pushpop.mms"
+                   %
+                   % pushpop.mms -- tests push/pop
+                   %
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main PUT rG,64
+ ...000: f7130040
+ ...004: f7140000    PUT rL,0 % discard arguments in mmix/mmmix
+                   
+                   
+                     % 0 args, 0 preserve, 0 return
+ ...008: f200xxxx    PUSHJ $0,f1
+ ...00c: fe410014    GET $65,rL % 0 return -> hole disappears -> 0
+ ...010: f0xxxxxx    JMP 1F
+                   
+ ...014: fe400014  f1 GET $64,rL % 0 args -> 0
+ ...018: f8000000    POP 0,0
+                   
+                   
+                     % 1 args, 0 preserve, 0 return
+ ...01c: e3010011  1H SET $1,#11
+ ...020: f400xxxx    GETA $0,f2
+ ...024: bf000000    PUSHGO $0,$0,0
+ ...028: fe440014    GET $68,rL % 0 return -> hole disappears -> 0
+ ...02c: f0xxxxxx    JMP 2F
+                   
+ ...030: fe420014  f2 GET $66,rL % 1 arg -> 1
+ ...034: 21430000    ADD $67,$0,0 % #11
+ ...038: f8000000    POP 0,0
+                   
+                   
+                     % 1 args, 1 preserve, 0 return
+ ...03c: e3000010  2H SET $0,#10
+ ...040: e3020012    SET $2,#12
+ ...044: f401xxxx    GETA $1,f3
+ ...048: e3ff0000    SET $255,0
+ ...04c: be0101ff    PUSHGO $1,$1,$255
+ ...050: fe470014    GET $71,rL % 0 return + 1 preserve -> 1
+ ...054: 21480000    ADD $72,$0,0 % #10
+ ...058: f0xxxxxx    JMP 3F
+                   
+ ...05c: fe450014  f3 GET $69,rL % 1 arg -> 1
+ ...060: 21460000    ADD $70,$0,0 % #12
+ ...064: f8000000    POP 0,0
+                   
+                   
+ ...068: fe490014  f4 GET $73,rL % 1 arg -> 1
+ ...06c: 214a0000    ADD $74,$0,0 % #12
+ ...070: e3000013    SET $0,#13
+ ...074: f8010000    POP 1,0
+                   
+                     % 1 args, 1 preserve, 1 return
+ ...078: e3000010  3H SET $0,#10
+ ...07c: e3020012    SET $2,#12
+ ...080: f301fffa    PUSHJ $1,f4
+ ...084: fe4b0014    GET $75,rL % 1 return + 1 preserve -> 2
+ ...088: 214c0000    ADD $76,$0,0 % #10
+ ...08c: 214d0100    ADD $77,$1,0 % #13
+ ...090: f0xxxxxx    JMP 4F
+                   
+                   
+                     % 0 args, 0 preserve, 1 return
+ ...094: f7140000  4H PUT rL,0 % discard regs
+ ...098: f200xxxx    PUSHJ $0,f5
+ ...09c: fe4f0014    GET $79,rL % 1 return + 0 preserve -> 1
+ ...0a0: 21500000    ADD $80,$0,0 % #13
+ ...0a4: f0xxxxxx    JMP 5F
+                   
+ ...0a8: fe4e0014  f5 GET $78,rL % 0 args -> 0
+ ...0ac: e3000013    SET $0,#13
+ ...0b0: f8010000    POP 1,0
+                   
+                   
+                     % 1 args, 0 preserve, 1 return
+ ...0b4: f7140000  5H PUT rL,0 % discard regs
+ ...0b8: e3010012    SET $1,#12
+ ...0bc: f200xxxx    PUSHJ $0,f6
+ ...0c0: fe530014    GET $83,rL % 1 return + 0 preserve -> 1
+ ...0c4: 21540000    ADD $84,$0,0 % #13
+ ...0c8: f0xxxxxx    JMP 6F
+                   
+ ...0cc: fe510014  f6 GET $81,rL % 1 args -> 1
+ ...0d0: 21520000    ADD $82,$0,0 % #12
+ ...0d4: e3000013    SET $0,#13
+ ...0d8: f8010000    POP 1,0
+                   
+                   
+                     % 0 args, 1 preserve, 1 return
+ ...0dc: f7140000  6H PUT rL,0 % discard regs
+ ...0e0: e3000010    SET $0,#10
+ ...0e4: f201xxxx    PUSHJ $1,f7
+ ...0e8: fe560014    GET $86,rL % 1 return + 1 preserve -> 2
+ ...0ec: 21570000    ADD $87,$0,0 % #10
+ ...0f0: 21580100    ADD $88,$1,0 % #13
+ ...0f4: f0xxxxxx    JMP 7F
+                   
+ ...0f8: fe550014  f7 GET $85,rL % 0 args -> 0
+ ...0fc: e3000013    SET $0,#13
+ ...100: f8010000    POP 1,0
+                   
+                   
+                     % 0 args, 1 preserve, 0 return
+ ...104: f7140000  7H PUT rL,0 % discard regs
+ ...108: e3000010    SET $0,#10
+ ...10c: f201xxxx    PUSHJ $1,f8
+ ...110: fe5a0014    GET $90,rL % 0 return + 1 preserve -> 1
+ ...114: 215b0000    ADD $91,$0,0 % #10
+ ...118: f0xxxxxx    JMP 8F
+                   
+ ...11c: fe590014  f8 GET $89,rL % 0 args -> 0
+ ...120: f8000000    POP 0,0
+                   
+                   
+                     % 2 args, 2 preserve, 2 return
+ ...124: f7140000  8H PUT rL,0 % discard regs
+ ...128: e3000010    SET $0,#10
+ ...12c: e3010011    SET $1,#11
+ ...130: e3030012    SET $3,#12
+ ...134: e3040013    SET $4,#13
+ ...138: f202xxxx    PUSHJ $2,f9
+ ...13c: fe5f0014    GET $95,rL % 2 return + 2 preserve -> 4
+ ...140: 21600000    ADD $96,$0,0 % #10
+ ...144: 21610100    ADD $97,$1,0 % #11
+ ...148: 21620200    ADD $98,$2,0 % #13
+ ...14c: 21630300    ADD $99,$3,0 % #12
+ ...150: f0xxxxxx    JMP 9F
+                   
+ ...154: fe5c0014  f9 GET $92,rL % 2 args -> 2
+ ...158: 215d0000    ADD $93,$0,0 % #12
+ ...15c: 215e0100    ADD $94,$1,0 % #13
+ ...160: f8020000    POP 2,0
+                   
+                   
+ ...164: 00000000  9H TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)
+ f1 = #0000000000001014 (2)
+ f2 = #0000000000001030 (3)
+ f3 = #000000000000105c (4)
+ f4 = #0000000000001068 (5)
+ f5 = #00000000000010a8 (6)
+ f6 = #00000000000010cc (7)
+ f7 = #00000000000010f8 (8)
+ f8 = #000000000000111c (9)
+ f9 = #0000000000001154 (10)

@@ -1,0 +1,129 @@
+                   # 1 "diff/storeex-bug.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "diff/storeex-bug.mms"
+                   %
+                   % storeex-bug.mms -- demonstrates that MMIX-PIPE does not provide the value to store in rZZ
+                   %
+                   
+                     % segmentsizes: 3,3,3,4; pageSize=2^13; r=0x90000; n=256
+                     LOC #8000
+0000000000008000:  RV OCTA #33340D0000090800
+ ...000: 33340d00
+ ...004: 00090800
+                   
+                     % PTE to be able to execute the code
+                     LOC #00090008
+0000000000090008:    OCTA #0000000000002801 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...008: 00000000
+ ...00c: 00002801
+                     % PTE not writable
+                     LOC #00090020
+ ...020: 00000000    OCTA #0000000000208804 % PTE 4 (#0000000000008000 .. #0000000000009FFF)
+ ...024: 00208804
+                     % PTE not writable, not readable
+                     LOC #00090028
+ ...028: 00000000    OCTA #000000000020A800 % PTE 5 (#000000000000A000 .. #000000000000BFFF)
+ ...02c: 0020a800
+                   
+                   
+                     % data for writing to M[#8000], M[#A000]
+                     LOC #208000
+0000000000208000:    OCTA #123456789ABCDEF
+ ...000: 01234567
+ ...004: 89abcdef
+                     LOC #20A000
+000000000020a000:    OCTA #123456789ABCDEF
+ ...000: 01234567
+ ...004: 89abcdef
+                   
+                   
+                     % dynamic trap address
+                     LOC #600000
+                   
+0000000000600000:  ATRAP GET $9,rZZ
+ ...000: fe09001f
+ ...004: 230d0d01    ADDU $13,$13,1 % count exceptions
+                     % store rZZ in $10, $11 or $12, respectivly
+ ...008: 4a0axxxx    BNZ $10,1F % if already used, to next
+ ...00c: c10a0900    SET $10,$9 % store rZZ in $10
+ ...010: f0xxxxxx    JMP 3F
+ ...014: 4a0bxxxx  1H BNZ $11,2F % if already used, to next
+ ...018: c10b0900    SET $11,$9
+ ...01c: f0xxxxxx    JMP 3F
+ ...020: c10c0900  2H SET $12,$9
+ ...024: feff0010  3H GET $255,rQ
+ ...028: f7100000    PUT rQ,0 % reset rQ
+ ...02c: feff001d    GET $255,rXX % skip instr
+ ...030: e8ff8000    ORH $255,#8000
+ ...034: f61d00ff    PUT rXX,$255
+ ...038: e3ff000f    SETL $255,#000F
+ ...03c: e9ff00ff    ORMH $255,#00FF % set rK
+ ...040: f9000001    RESUME 1
+                   
+                   
+                     % forced trap address
+                     LOC #500000
+0000000000500000:  QUIT TRAP 0 % quit
+ ...000: 00000000
+                   
+                   
+                     LOC #1000
+                   
+                     % first setup basic paging: 0 mapped to 0
+0000000000001000:  Main SETL $0,RV
+ ...000: e3008000
+ ...004: e8008000    ORH $0,#8000
+ ...008: 8f000000    LDOU $0,$0
+ ...00c: f6120000    PUT rV,$0
+                   
+                     % setup rTT
+ ...010: e0008000    SETH $0,#8000
+ ...014: e9000000    ORMH $0,ATRAP>>32
+ ...018: ea000060    ORML $0,ATRAP>>16
+******************   ORL $0,ATRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...01c: eb000000
+ ...020: f60e0000    PUT rTT,$0
+                     % setup rT
+ ...024: e0008000    SETH $0,#8000
+ ...028: e9000000    ORMH $0,QUIT>>32
+ ...02c: ea000050    ORML $0,QUIT>>16
+******************   ORL $0,QUIT>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...030: eb000000
+ ...034: f60d0000    PUT rT,$0
+                   
+                     % now go to user-mode (we are at #8000000000001000 atm)
+ ...038: e3ff000f    SETL $255,#000F
+ ...03c: e9ff00ff    ORMH $255,#00FF % have to be set in usermode
+ ...040: e3002000    SET $0,#2000
+ ...044: f61c0000    PUT rWW,$0
+ ...048: e0008000    SETH $0,#8000
+ ...04c: f61d0000    PUT rXX,$0
+ ...050: f9000001    RESUME 1
+                   
+                   
+                     LOC #2000
+                   
+                     % write to readonly page; MMIX-PIPE does not provide the value to store in rZZ
+0000000000002000:    SETL $0,#8000
+ ...000: e3008000
+ ...004: e301beaf    SETL $1,#BEAF
+ ...008: af010000    STOU $1,$0,0 % #8000
+                   
+                     % write to readonly page (wyde); MMIX-PIPE does not provide the value to store in rZZ
+ ...00c: e3008001    SETL $0,#8001
+ ...010: a7010000    STWU $1,$0,0
+                   
+                     % write to not-readable, not-writable page (wyde); the same as above
+ ...014: e300a001    SETL $0,#A001
+ ...018: a7010000    STWU $1,$0,0
+                   
+ ...01c: 00000001    TRAP 1
+
+Symbol table:
+ ATRAP = #0000000000600000 (3)
+ Main = #0000000000001000 (1)
+ QUIT = #0000000000500000 (4)
+ RV = #0000000000008000 (2)

@@ -1,0 +1,112 @@
+\BOOKMARK [0][-]{chapter.1}{Introduction}{}
+\BOOKMARK [1][-]{section.1.1}{Current Status}{chapter.1}
+\BOOKMARK [1][-]{section.1.2}{Motivation}{chapter.1}
+\BOOKMARK [0][-]{chapter.2}{The MMIX Architecture}{}
+\BOOKMARK [1][-]{section.2.1}{General Terms and Notations}{chapter.2}
+\BOOKMARK [1][-]{section.2.2}{Instruction Format}{chapter.2}
+\BOOKMARK [1][-]{section.2.3}{Registers}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.3.1}{Special Registers}{section.2.3}
+\BOOKMARK [2][-]{subsection.2.3.2}{Global and Local Registers}{section.2.3}
+\BOOKMARK [1][-]{section.2.4}{Integer Arithmetic}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.4.1}{Addition and Substraction}{section.2.4}
+\BOOKMARK [2][-]{subsection.2.4.2}{Multiplication and Division}{section.2.4}
+\BOOKMARK [1][-]{section.2.5}{Bit Fiddling}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.5.1}{Basic Bit Operations}{section.2.5}
+\BOOKMARK [2][-]{subsection.2.5.2}{Wyde Operations}{section.2.5}
+\BOOKMARK [2][-]{subsection.2.5.3}{Exotic Bit Operations}{section.2.5}
+\BOOKMARK [1][-]{section.2.6}{Comparisons}{chapter.2}
+\BOOKMARK [1][-]{section.2.7}{Branches and Jumps}{chapter.2}
+\BOOKMARK [1][-]{section.2.8}{Memory}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.8.1}{Load Instructions}{section.2.8}
+\BOOKMARK [2][-]{subsection.2.8.2}{Store Instructions}{section.2.8}
+\BOOKMARK [2][-]{subsection.2.8.3}{Virtual and Physical Address Space}{section.2.8}
+\BOOKMARK [3][-]{subsubsection.2.8.3.1}{Address Translation}{subsection.2.8.3}
+\BOOKMARK [3][-]{subsubsection.2.8.3.2}{Translation Caches}{subsection.2.8.3}
+\BOOKMARK [3][-]{subsubsection.2.8.3.3}{Physical Memory Caches}{subsection.2.8.3}
+\BOOKMARK [1][-]{section.2.9}{Floating Point Operations}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.9.1}{Representation of Floating Point Numbers}{section.2.9}
+\BOOKMARK [2][-]{subsection.2.9.2}{Arithmetic}{section.2.9}
+\BOOKMARK [2][-]{subsection.2.9.3}{Comparison}{section.2.9}
+\BOOKMARK [2][-]{subsection.2.9.4}{Neighborhood Comparison}{section.2.9}
+\BOOKMARK [2][-]{subsection.2.9.5}{Conversion between Float and Integer}{section.2.9}
+\BOOKMARK [2][-]{subsection.2.9.6}{Short Floats}{section.2.9}
+\BOOKMARK [1][-]{section.2.10}{Register Stack}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.10.1}{Subroutine Linkage}{section.2.10}
+\BOOKMARK [3][-]{subsubsection.2.10.1.1}{Programmers View}{subsection.2.10.1}
+\BOOKMARK [3][-]{subsubsection.2.10.1.2}{Internal View}{subsection.2.10.1}
+\BOOKMARK [2][-]{subsection.2.10.2}{Saving and Restoring the State}{section.2.10}
+\BOOKMARK [1][-]{section.2.11}{Interrupts and Exceptions}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.11.1}{Triggering of Trips and Traps}{section.2.11}
+\BOOKMARK [3][-]{subsubsection.2.11.1.1}{Triggering Trips}{subsection.2.11.1}
+\BOOKMARK [3][-]{subsubsection.2.11.1.2}{Triggering Traps}{subsection.2.11.1}
+\BOOKMARK [2][-]{subsection.2.11.2}{Handling of Trips and Traps}{section.2.11}
+\BOOKMARK [3][-]{subsubsection.2.11.2.1}{Resuming}{subsection.2.11.2}
+\BOOKMARK [3][-]{subsubsection.2.11.2.2}{Handling Trips}{subsection.2.11.2}
+\BOOKMARK [3][-]{subsubsection.2.11.2.3}{Handling Traps}{subsection.2.11.2}
+\BOOKMARK [2][-]{subsection.2.11.3}{Interruptibility}{section.2.11}
+\BOOKMARK [0][-]{chapter.3}{The Implementation of GIMMIX}{}
+\BOOKMARK [1][-]{section.3.1}{Basic Design Decisions}{chapter.3}
+\BOOKMARK [2][-]{subsection.3.1.1}{No Pipelining}{section.3.1}
+\BOOKMARK [2][-]{subsection.3.1.2}{Uninterruptible Instructions}{section.3.1}
+\BOOKMARK [2][-]{subsection.3.1.3}{Programming Language}{section.3.1}
+\BOOKMARK [2][-]{subsection.3.1.4}{Host Platform}{section.3.1}
+\BOOKMARK [1][-]{section.3.2}{Overview}{chapter.3}
+\BOOKMARK [2][-]{subsection.3.2.1}{Exception}{section.3.2}
+\BOOKMARK [2][-]{subsection.3.2.2}{Event}{section.3.2}
+\BOOKMARK [2][-]{subsection.3.2.3}{Config}{section.3.2}
+\BOOKMARK [1][-]{section.3.3}{Simulator Core}{chapter.3}
+\BOOKMARK [2][-]{subsection.3.3.1}{Structure}{section.3.3}
+\BOOKMARK [2][-]{subsection.3.3.2}{CPU}{section.3.3}
+\BOOKMARK [3][-]{subsubsection.3.3.2.1}{Executing an Instruction}{subsection.3.3.2}
+\BOOKMARK [3][-]{subsubsection.3.3.2.2}{Execution Functions}{subsection.3.3.2}
+\BOOKMARK [3][-]{subsubsection.3.3.2.3}{Arithmetic}{subsection.3.3.2}
+\BOOKMARK [3][-]{subsubsection.3.3.2.4}{Register}{subsection.3.3.2}
+\BOOKMARK [3][-]{subsubsection.3.3.2.5}{Trips and Traps}{subsection.3.3.2}
+\BOOKMARK [2][-]{subsection.3.3.3}{MMU}{section.3.3}
+\BOOKMARK [3][-]{subsubsection.3.3.3.1}{Reading from Memory}{subsection.3.3.3}
+\BOOKMARK [3][-]{subsubsection.3.3.3.2}{Writing to Memory}{subsection.3.3.3}
+\BOOKMARK [3][-]{subsubsection.3.3.3.3}{Address Translation}{subsection.3.3.3}
+\BOOKMARK [3][-]{subsubsection.3.3.3.4}{Translation Cache}{subsection.3.3.3}
+\BOOKMARK [2][-]{subsection.3.3.4}{Cache}{section.3.3}
+\BOOKMARK [3][-]{subsubsection.3.3.4.1}{Organisation}{subsection.3.3.4}
+\BOOKMARK [3][-]{subsubsection.3.3.4.2}{Reading and Writing}{subsection.3.3.4}
+\BOOKMARK [3][-]{subsubsection.3.3.4.3}{Implementation of Caching Instructions}{subsection.3.3.4}
+\BOOKMARK [2][-]{subsection.3.3.5}{Bus}{section.3.3}
+\BOOKMARK [1][-]{section.3.4}{Devices}{chapter.3}
+\BOOKMARK [1][-]{section.3.5}{Command Line Interface}{chapter.3}
+\BOOKMARK [2][-]{subsection.3.5.1}{The Language}{section.3.5}
+\BOOKMARK [2][-]{subsection.3.5.2}{Commands}{section.3.5}
+\BOOKMARK [3][-]{subsubsection.3.5.2.1}{Print and Set}{subsection.3.5.2}
+\BOOKMARK [3][-]{subsubsection.3.5.2.2}{Execution of Instructions}{subsection.3.5.2}
+\BOOKMARK [3][-]{subsubsection.3.5.2.3}{Examining the State}{subsection.3.5.2}
+\BOOKMARK [2][-]{subsection.3.5.3}{Implementation}{section.3.5}
+\BOOKMARK [3][-]{subsubsection.3.5.3.1}{General Structure}{subsection.3.5.3}
+\BOOKMARK [3][-]{subsubsection.3.5.3.2}{Command Infrastructure}{subsection.3.5.3}
+\BOOKMARK [3][-]{subsubsection.3.5.3.3}{Command Implementation}{subsection.3.5.3}
+\BOOKMARK [0][-]{chapter.4}{Test System}{}
+\BOOKMARK [1][-]{section.4.1}{Program Tests}{chapter.4}
+\BOOKMARK [2][-]{subsection.4.1.1}{Test Infrastructure}{section.4.1}
+\BOOKMARK [2][-]{subsection.4.1.2}{Test Programs}{section.4.1}
+\BOOKMARK [3][-]{subsubsection.4.1.2.1}{User Tests}{subsection.4.1.2}
+\BOOKMARK [3][-]{subsubsection.4.1.2.2}{Kernel Tests}{subsection.4.1.2}
+\BOOKMARK [3][-]{subsubsection.4.1.2.3}{Diff Tests}{subsection.4.1.2}
+\BOOKMARK [3][-]{subsubsection.4.1.2.4}{CLI Tests}{subsection.4.1.2}
+\BOOKMARK [2][-]{subsection.4.1.3}{Code Coverage}{section.4.1}
+\BOOKMARK [1][-]{section.4.2}{Unit Tests}{chapter.4}
+\BOOKMARK [0][-]{chapter.5}{Future Possibilities}{}
+\BOOKMARK [1][-]{section.5.1}{Missing Parts for an Operating System Port}{chapter.5}
+\BOOKMARK [2][-]{subsection.5.1.1}{TRAP 0,0,0 halts the Simulator}{section.5.1}
+\BOOKMARK [2][-]{subsection.5.1.2}{Toolchain}{section.5.1}
+\BOOKMARK [2][-]{subsection.5.1.3}{Startup and Tools}{section.5.1}
+\BOOKMARK [1][-]{section.5.2}{Extensions and Enhancements}{chapter.5}
+\BOOKMARK [2][-]{subsection.5.2.1}{More Devices}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.2}{Provide Information about Hardware for Software}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.3}{Working with Symbols in the CLI}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.4}{Interface to GDB}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.5}{Infrastructure for MMIX Programs without OS}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.6}{Acid Test Mode}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.7}{Graphical User Interface}{section.5.2}
+\BOOKMARK [0][-]{section*.2}{Glossary}{}
+\BOOKMARK [0][-]{chapter*.3}{Listings}{}
+\BOOKMARK [0][-]{chapter*.4}{Bibliography}{}
+\BOOKMARK [0][-]{chapter*.5}{Eidesstattliche Erkl\344rung}{}

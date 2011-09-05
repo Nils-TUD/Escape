@@ -1,0 +1,13 @@
+#!/bin/sh
+BUILD=../../../build
+$BUILD/bin/mkdisk disk 120
+$BUILD/bin/mkfs disk '*'
+$BUILD/bin/fspoke disk '*' `expr 4096 + 4` b 14
+echo "---------------------"
+echo "-  expected output  -"
+echo "---------------------"
+echo "file system does not fully utilize available space"
+echo "---------------------"
+echo "-   actual output   -"
+echo "---------------------"
+echo "q" | $BUILD/bin/fsck disk '*'

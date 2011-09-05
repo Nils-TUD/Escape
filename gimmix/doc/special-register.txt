@@ -1,0 +1,42 @@
+Special-Register:		
+=================
+
+rA	arithmetic status register	
+rK	interrupt mask register	
+rQ	interrupt request register	
+		
+rW	where-interrupted register (trip)	
+rX	execution-register (trip)	
+rY	Y operand (trip)	
+rZ	Z operand (trip)	
+rB	bootstrap register (trip)	
+rWW	where-interrupted register (trip)	
+rXX	execution-register (trap)	
+rYY	Y operand (trap)	
+rZZ	Z operand (trap)	
+rBB	bootstrap register (trap)	
+		
+rC	cycle counter	
+rI	interval counter	
+rU	usage counter	
+		
+rD	dividend register	
+rH	himult register	
+		
+rE	epsilon register	
+rF	failure location register	
+rM	multiplex mask register	
+rP	prediction register	
+rT	trap address register	
+		
+rG	global threshold register	
+rL	local threshold register	
+rS	register stack pointer		virtual address where items of the register stack that have been pushed down, but not yet stored in mem, will be stored
+rO	register stack offset		virtual address where local registers ($0 .. $(L – 1)) will be stored
+		
+rJ	return-jump register	
+		
+rN	serial number	
+		
+rV	virtual translation register	
+

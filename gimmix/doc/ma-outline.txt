@@ -1,0 +1,147 @@
+Introduction
+	Motivation
+
+The MMIX Architecture
+	General Terms and Notations
+	Instruction Format
+	Registers
+		Global and Local Registers
+		Special Registers
+			GET,PUT
+	Integer Arithmetic
+		Addition and Substraction
+			ADD,SUB
+			ADDU,SUBU
+			NEG,NEGU
+		Multiplication and Division
+			DIV,MUL
+			DIVU,MULU
+			2ADDU, ...
+	Bit Fiddling
+		Basic Bit Operations
+			AND,OR,NOR,...
+			SL,SR,...
+		Wyde Operations
+			ANDNH,ANDNMH,...
+			INCH,INCMH,...
+			ORH,ORMH,...
+			SETH,SETMH,...
+		Exotic Bit Operations
+			MUX
+			BDIF,...
+			SADD
+			MOR,MXOR
+	Comparisons
+		CMP,CMPU
+		CSEV,CSN,...
+		ZSEV,ZSN,...
+		CSWAP
+	Branches and Jumps
+		BEV,BN,...
+		PBEV,PBN,...
+		JMP
+		GO
+		GETA
+	Memory
+		Load Instructions
+			LDB,LDO,...
+			LDHT
+		Store Instructions
+			STB,STO,...
+			STCO,STHT
+		Virtual and Physical Addresses
+			Address Translation
+			Translation Caches: LDVTS
+			Physical Memory Caches
+				LDUNC,STUNC
+				PRELD,PREST,PREGO
+				SYNCD,SYNCID
+				SYNC
+	Floating Point Computations
+		Representation of FLoating Point Numbers
+		Arithmetic: FADD,FSUB,FDIV,FMUL,FREM,FSQRT
+		Comparison: FCMP,FUN,FEQL
+		Neighborhood Comparison: FCMPE,FUNE,FEQLE
+		Conversion between Float and Integer: FINT,FIX,FIXU,FLOT,FLOTU
+		Short Floats: LDSF,STSF,SFLOT,SFLOTU
+	Register Stack
+		Subroutine Linkage
+			Programmers View
+				PUSHJ/PUSHGO,POP
+			Internal View
+		Saving and Restoring the State
+			SAVE/UNSAVE
+	Interrupts and Exceptions
+		Triggering of Trips and Traps
+			Triggering Trips: TRIP
+			Triggering Traps: TRAP
+		Handling of Trips and Traps
+			Resuming: RESUME, SWYM
+			Handling Trips
+			Handling Traps
+		Interruptibility
+
+The Implementation of GIMMIX
+	Basic Design Decisions
+		No Pipelining
+		Uninterruptible Instructions
+		Programming Language
+		Host Platform
+	Overview
+		Exceptions
+		Events
+		Config
+	Simulator Core
+		Structure
+		CPU
+			Executing an Instruction
+			Execution Functions
+			Arithmetic
+				Integer Arithmetic
+				Floating Point Arithmetic
+			Register
+				Basic Data Structures and Operations
+				Pushing Registers Down
+				Popping Registers
+				Page Faults on the Stack
+				Saving the State
+				Restoring the State
+			Trips/Traps
+		MMU
+			Reading from Memory
+			Writing to Memory
+			Address Translation
+			Translation Cache
+		Cache
+			Organisation
+			Reading and Writing
+		Bus
+	Devices
+		Disk, Output, RAM, ROM, Terminal, Timer
+	Command Line Interface
+		The Language
+		Commands
+			Print and Set
+			Execution of Instructions
+			Examining the State
+		Implementation
+			General Structure
+			Command Infrastructure
+			Command Implementation
+
+Testsystem
+	Program Tests
+		Test Infrastructure
+		Test Programs
+			User Tests
+			Kernel Tests
+			Diff Tests
+			CLI Tests
+		Code Coverage
+	Unit-Tests
+
+Future Possibilities
+	Toolchain: Assembler, Compiler, Linker
+	Startup&Tools: Disk-Creation, Boot-Loader, ...
+	Add an "acid test" mode: Put random values in registers, RAM, ...
+	More devices: Display, Keyboard, ...

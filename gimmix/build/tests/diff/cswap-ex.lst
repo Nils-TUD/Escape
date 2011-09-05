@@ -1,0 +1,193 @@
+                   # 1 "diff/cswap-ex.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "diff/cswap-ex.mms"
+                   %
+                   % cswap-ex.mms -- tests exceptions the CSWAP instruction may raise
+                   %
+                   
+                   
+                   % Note that this test is in diff because of the bug in the CSWAP-implementation of MMMIX
+                   
+                   
+                     % segmentsizes: 1,0,0,0; pageSize=2^13; r=0x90000; n=0
+                     LOC #8000
+0000000000008000:  RV OCTA #10000D0000090000
+ ...000: 10000d00
+ ...004: 00090000
+                   
+                     LOC #00090008
+0000000000090008:    OCTA #0000000000002004 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...008: 00000000
+ ...00c: 00002004
+                     LOC #00090030
+ ...030: 00000000    OCTA #000000000000C006 % PTE 6 (#000000000000C000 .. #000000000000DFFF)
+ ...034: 0000c006
+                   
+                   
+                     % stack for unsave
+                     LOC #C000
+000000000000c000:    OCTA #0 % rL
+ ...000: 00000000
+ ...004: 00000000
+ ...008: 00000000    OCTA #0 % $248
+ ...00c: 00000000
+ ...010: 00000000    OCTA #0 % $249
+ ...014: 00000000
+ ...018: 00000000    OCTA #0 % $250
+ ...01c: 00000000
+ ...020: 00000000    OCTA #0 % $251
+ ...024: 00000000
+ ...028: 00000000    OCTA #0 % $252
+ ...02c: 00000000
+ ...030: 00000000    OCTA #0 % $253
+ ...034: 00000000
+ ...038: 00000000    OCTA #0 % $254
+ ...03c: 00000000
+ ...040: 00000000    OCTA #0 % $255
+ ...044: 00000000
+ ...048: 00000000    OCTA #0 % rB
+ ...04c: 00000000
+ ...050: 00000000    OCTA #0 % rD
+ ...054: 00000000
+ ...058: 00000000    OCTA #0 % rE
+ ...05c: 00000000
+ ...060: 00000000    OCTA #0 % rH
+ ...064: 00000000
+ ...068: 00000000    OCTA #0 % rJ
+ ...06c: 00000000
+ ...070: 00000000    OCTA #0 % rM
+ ...074: 00000000
+ ...078: 00000000    OCTA #0 % rP
+ ...07c: 00000000
+ ...080: 00000000    OCTA #0 % rR
+ ...084: 00000000
+ ...088: 00000000    OCTA #0 % rW
+ ...08c: 00000000
+ ...090: 00000000    OCTA #0 % rX
+ ...094: 00000000
+ ...098: 00000000    OCTA #0 % rY
+ ...09c: 00000000
+ ...0a0: 00000000    OCTA #0 % rZ
+ ...0a4: 00000000
+ ...0a8: f8000000  STACK OCTA #F800000000000000 % rG | rA
+ ...0ac: 00000000
+                   
+                   
+                     LOC #2000
+0000000000002000:  DATA OCTA #89
+ ...000: 00000000
+ ...004: 00000089
+                   
+                   
+                     % dynamic trap address
+                     LOC #4000
+0000000000004000:  DTRAP SETH $248,#8000
+ ...000: e0f88000
+ ...004: eaf80009    ORML $248,#0009
+                     % determine address of PTE by dividing pagefault-address by pagesize/8
+ ...008: fef9001e    GET $249,rYY
+ ...00c: e3fa0400    SET $250,#2000>>3
+ ...010: 1ef9f9fa    DIVU $249,$249,$250
+ ...014: 22f8f8f9    ADDU $248,$248,$249
+                     % set writeable-flag
+ ...018: 8ff9f800    LDOU $249,$248,0
+ ...01c: c1f9f902    OR $249,$249,#2
+ ...020: aff9f800    STOU $249,$248,0
+                     % update DTC
+ ...024: fef9001e    GET $249,rYY
+ ...028: c1f9f906    OR $249,$249,#6
+ ...02c: 99f9f900    LDVTS $249,$249,0
+                     % reset rQ
+ ...030: fef90010    GET $249,rQ
+ ...034: f7100000    PUT rQ,0
+ ...038: e1ff00fe    SETMH $255,#00FE % set rK
+ ...03c: f9000001    RESUME 1
+                   
+                   
+                     LOC #1000
+                     % setup paging
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: eb008000    ORL $0,RV
+ ...008: 8f000000    LDOU $0,$0,0
+ ...00c: f6120000    PUT rV,$0
+                   
+                     % setup stack
+ ...010: e300c0a8    SET $0,STACK
+ ...014: fb000000    UNSAVE 0,$0
+                   
+                     % setup rTT
+ ...018: e0008000    SETH $0,#8000
+ ...01c: eb004000    ORL $0,DTRAP
+ ...020: f60e0000    PUT rTT,$0
+                   
+                     % enable exceptions
+ ...024: e10000fe    SETMH $0,#00FE
+ ...028: f60f0000    PUT rK,$0
+                   
+                     % setup rP and memory-address
+ ...02c: f7170088    PUT rP,#88
+ ...030: e3002000    SET $0,DATA
+                   
+                     % --- store causes exception ---
+                     % first try, not successfull
+ ...034: e3022233    SET $2,#2233
+ ...038: 95020000    CSWAP $2,$0,0
+ ...03c: fe030017    GET $3,rP
+                   
+                     % second try, successfull
+ ...040: e3044455    SET $4,#4455
+ ...044: 95040000    CSWAP $4,$0,0
+ ...048: fe050017    GET $5,rP
+                   
+                   
+                     % --- reg-set causes exception ---
+                     % make stack not-writable
+ ...04c: e301c004    SET $1,#C004
+ ...050: 99010100    LDVTS $1,$1,0
+ ...054: e3014455    SET $1,#4455
+ ...058: f6170001    PUT rP,$1
+ ...05c: e3f70001    SET $247,1
+ ...060: f2f8xxxx    PUSHJ $248,F1
+                   
+                   
+                     % --- reg-set AND store causes exception ---
+                     % make stack not-writable
+ ...064: e301c004    SET $1,#C004
+ ...068: 99010100    LDVTS $1,$1,0
+                     % make data not-writable
+ ...06c: e3012004    SET $1,#2004
+ ...070: 99010100    LDVTS $1,$1,0
+ ...074: f7170000    PUT rP,0
+ ...078: e3f70001    SET $247,1
+ ...07c: f2f8xxxx    PUSHJ $248,F2
+                   
+                   
+ ...080: b9200000    SYNCD #20,$0
+ ...084: 00000000    TRAP 0
+                   
+                     % should succeed
+ ...088: e3002000  F1 SET $0,DATA
+ ...08c: 95060000    CSWAP $6,$0,0 % won't trigger an exception on MMMIX because of the bug
+ ...090: fe010017    GET $1,rP % that rL is not increased and so on
+ ...094: af010008    STOU $1,$0,8
+ ...098: af060010    STOU $6,$0,16
+ ...09c: f8000000    POP 0,0
+                   
+                     % should succeed
+ ...0a0: e3002000  F2 SET $0,DATA
+ ...0a4: 95060000    CSWAP $6,$0,0
+ ...0a8: fe010017    GET $1,rP
+ ...0ac: af010018    STOU $1,$0,24
+ ...0b0: af060020    STOU $6,$0,32
+ ...0b4: f8000000    POP 0,0
+
+Symbol table:
+ DATA = #0000000000002000 (4)
+ DTRAP = #0000000000004000 (5)
+ F1 = #0000000000001088 (6)
+ F2 = #00000000000010a0 (7)
+ Main = #0000000000001000 (1)
+ RV = #0000000000008000 (2)
+ STACK = #000000000000c0a8 (3)

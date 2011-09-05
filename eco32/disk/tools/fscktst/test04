@@ -1,0 +1,13 @@
+#!/bin/sh
+BUILD=../../../build
+$BUILD/bin/mkdisk disk 120
+$BUILD/bin/mkfs disk '*'
+$BUILD/bin/fspoke disk '*' `expr 4096 + 4` b 16
+echo "---------------------"
+echo "-  expected output  -"
+echo "---------------------"
+echo "file system size exceeds disk/partition space"
+echo "---------------------"
+echo "-   actual output   -"
+echo "---------------------"
+$BUILD/bin/fsck disk '*'

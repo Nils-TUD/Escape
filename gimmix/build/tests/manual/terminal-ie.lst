@@ -1,0 +1,170 @@
+                   # 1 "manual/terminal-ie.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "manual/terminal-ie.mms"
+                   %
+                   % terminal-ie.mms -- testing terminal with interrupts enabled (run it with >= 2 terminals)
+                   %
+                   
+                   % terminal 0 rcvr ctrl: #8002000000000000
+                   % terminal 0 rcvr data: #8002000000000008
+                   % terminal 0 xmtr ctrl: #8002000000000010
+                   % terminal 0 xmtr data: #8002000000000018
+                   % terminal 1 rcvr ctrl: #8002000100000000
+                   % terminal 1 rcvr data: #8002000100000008
+                   % terminal 1 xmtr ctrl: #8002000100000010
+                   % terminal 1 xmtr data: #8002000100000018
+                   
+                     LOC #0
+ ...000: 48656c6c  STR1 BYTE "Hello World Term0!",#d,#a,0
+ ...004: 6f20576f
+ ...008: 726c6420
+ ...00c: 5465726d
+ ...010: 30210d0a
+ ...014: 00      
+ ...015:   48656c  STR2 BYTE "Hello World Term1!",#d,#a,0
+ ...018: 6c6f2057
+ ...01c: 6f726c64
+ ...020: 20546572
+ ...024: 6d31210d
+ ...028: 0a00    
+ ...02a:     00    STR3 BYTE 0
+                   
+                   
+                     % dynamic traps
+                     LOC #600000
+0000000000600000:  DTRAP GET $254,rQ
+ ...000: fefe0010
+ ...004: f7100000    PUT rQ,0
+ ...008: e3fe0001    SET $254,1
+ ...00c: e0ffffff    SETH $255,#FFFF
+ ...010: e9ffff00    ORMH $255,#FF00
+ ...014: f9000001    RESUME 1
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main PUT rG,254
+ ...000: f71300fe
+                     % setup rTT
+ ...004: e0008000    SETH $0,#8000
+ ...008: e9000000    ORMH $0,DTRAP>>32
+ ...00c: ea000060    ORML $0,DTRAP>>16
+******************   ORL $0,DTRAP>>0
+************ warning: YZ field doesn't fit in two bytes
+ ...010: eb000000
+ ...014: f60e0000    PUT rTT,$0
+                   
+                     % enable interrupts
+ ...018: 35000001    NEG $0,0,1
+ ...01c: ed000001    ANDNMH $0,#0001
+ ...020: f60f0000    PUT rK,$0
+                   
+                     % set IEN-flag in control-registers of terminals
+ ...024: e0008002    SETH $0,#8002 % terminal 0
+ ...028: 8f010000    LDOU $1,$0,0
+ ...02c: c1010102    OR $1,$1,#2
+ ...030: af010000    STOU $1,$0,0 % receiver
+ ...034: 8f010010    LDOU $1,$0,#10
+ ...038: c1010102    OR $1,$1,#2
+ ...03c: af010010    STOU $1,$0,#10 % transmitter
+ ...040: e9000001    ORMH $0,#0001 % terminal 1
+ ...044: 8f010000    LDOU $1,$0,0
+ ...048: c1010102    OR $1,$1,#2
+ ...04c: af010000    STOU $1,$0,0 % receiver
+ ...050: 8f010010    LDOU $1,$0,#10
+ ...054: c1010102    OR $1,$1,#2
+ ...058: af010010    STOU $1,$0,#10 % transmitter
+                   
+                     % write STR1 to term0
+ ...05c: e3010000    SET $1,0
+ ...060: e3020000    SET $2,STR1
+ ...064: e8028000    ORH $2,#8000
+ ...068: f200xxxx    PUSHJ $0,puts
+                   
+                     % write STR2 to term1
+ ...06c: e3010001    SET $1,1
+ ...070: e3020015    SET $2,STR2
+ ...074: e8028000    ORH $2,#8000
+ ...078: f200xxxx    PUSHJ $0,puts
+                   
+                     % read into STR3 from term0
+ ...07c: e3010000    SET $1,0
+ ...080: e302002a    SET $2,STR3
+ ...084: e8028000    ORH $2,#8000
+ ...088: f200xxxx    PUSHJ $0,gets
+                   
+                     % write STR3 to term1
+ ...08c: e3010001    SET $1,1
+ ...090: e302002a    SET $2,STR3
+ ...094: e8028000    ORH $2,#8000
+ ...098: f200xxxx    PUSHJ $0,puts
+                   
+ ...09c: f0000000  loop JMP loop
+                   
+                   
+                   % octa gets(octa term,char *dst)
+ ...0a0: fe020004  gets GET $2,rJ % save rJ
+ ...0a4: 23030100    ADDU $3,$1,0
+ ...0a8: 23050000  1H ADDU $5,$0,0
+ ...0ac: f204xxxx    PUSHJ $4,getc % call getc(term)
+ ...0b0: 23060000    ADDU $6,$0,0
+ ...0b4: 23070400    ADDU $7,$4,0
+ ...0b8: f205xxxx    PUSHJ $5,putc % call putc(term,c)
+ ...0bc: 3105040d    CMP $5,$4,#0D % c == \n?
+ ...0c0: 4205xxxx    BZ $5,1F % if so, stop
+ ...0c4: a3040100    STBU $4,$1,0 % otherwise, store char
+ ...0c8: 23010101    ADDU $1,$1,1 % to next
+ ...0cc: f1fffff7    JMP 1B
+ ...0d0: a30a0100  1H STBU $10,$1,0 % null-termination
+ ...0d4: 26000103    SUBU $0,$1,$3 % determine length
+ ...0d8: f6040002    PUT rJ,$2 % restore rJ
+ ...0dc: f8010000    POP 1,0 % return length
+                   
+                   % octa getc(octa term)
+ ...0e0: e0018002  getc SETH $1,#8002 % base address: #8002000000000000
+ ...0e4: 39000020    SL $0,$0,32 % or in terminal-number
+ ...0e8: c0010100    OR $1,$1,$0 % -> #8002000100000000 for term 1, e.g.
+ ...0ec: e3fe0000  1H SET $254,0 % first, reset our flag-register
+ ...0f0: 52fe0000  _gcwait PBZ $254,_gcwait % wait here until the interrupt-handler sets the flag
+ ...0f4: 8f020100    LDOU $2,$1,#0 % read ctrl-reg
+ ...0f8: c9020201    AND $2,$2,#1 % extract RDY-bit
+ ...0fc: 4302fffc    BZ $2,1B % try again if its not set
+ ...100: 8f000108    LDOU $0,$1,#8 % load char
+ ...104: f8010000    POP 1,0 % return it
+                   
+                   % void puts(octa term,char *string)
+ ...108: fe020004  puts GET $2,rJ % save rJ
+ ...10c: 83050100  1H LDBU $5,$1,0 % load char from string
+ ...110: 4205xxxx    BZ $5,2F % if its 0, we are done
+ ...114: 23040000    ADDU $4,$0,0
+ ...118: f203xxxx    PUSHJ $3,putc % call putc(c)
+ ...11c: 23010101    ADDU $1,$1,1 % to next char
+ ...120: f1fffffb    JMP 1B
+ ...124: f6040002  2H PUT rJ,$2 % restore rJ
+ ...128: f8000000    POP 0,0
+                   
+                   % void putc(octa term,octa character)
+ ...12c: e0028002  putc SETH $2,#8002 % base address: #8002000000000000
+ ...130: 39000020    SL $0,$0,32 % or in terminal-number
+ ...134: c0020200    OR $2,$2,$0 % -> #8002000100000000 for term 1, e.g.
+ ...138: 8f030210    LDOU $3,$2,#10 % read ctrl-reg
+ ...13c: c9030301    AND $3,$3,#1 % extract RDY-bit
+ ...140: 4a03xxxx    BNZ $3,1F % ready?
+ ...144: e3fe0000    SET $254,0 % first, reset our flag-register
+ ...148: 52fe0000  _pcwait PBZ $254,_pcwait % wait here until the interrupt-handler sets the flag
+ ...14c: af010218  1H STOU $1,$2,#18 % write char
+ ...150: f8000000    POP 0,0
+
+Symbol table:
+ DTRAP = #0000000000600000 (5)
+ Main = #0000000000001000 (1)
+ STR1 = #0000000000000000 (2)
+ STR2 = #0000000000000015 (3)
+ STR3 = #000000000000002a (4)
+ _gcwait = #00000000000010f0 (11)
+ _pcwait = #0000000000001148 (12)
+ getc = #00000000000010e0 (9)
+ gets = #00000000000010a0 (7)
+ loop = #000000000000109c (8)
+ putc = #000000000000112c (10)
+ puts = #0000000000001108 (6)

@@ -1,0 +1,94 @@
+                   # 1 "kernel/ldvts.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "kernel/ldvts.mms"
+                   %
+                   % ldvts.mms -- tests the ldvts instruction
+                   %
+                   
+                     LOC #00000000
+                     % segmentsizes: 1,0,0,0; pageSize=2^13; r=0x2000; n=16
+ ...000: 10000d00  RV OCTA #10000D0000002010
+ ...004: 00002010
+                   
+                     LOC #00002000
+0000000000002000:    OCTA #0000000000200017 % PTE 0 (#0000000000000000 .. #0000000000001FFF)
+ ...000: 00000000
+ ...004: 00200017
+                     LOC #00002008
+ ...008: 00000000    OCTA #0000000000202017 % PTE 1 (#0000000000002000 .. #0000000000003FFF)
+ ...00c: 00202017
+                   
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main SETH $0,#8000
+ ...000: e0008000
+ ...004: e9000000    ORMH $0,RV>>32
+ ...008: ea000000    ORML $0,RV>>16
+ ...00c: eb000000    ORL $0,RV
+ ...010: 8f000000    LDOU $0,$0,0
+ ...014: f6120000    PUT rV,$0
+                   
+ ...018: e2001000    SETML $0,#1000
+ ...01c: f60d0000    PUT rT,$0 % for MMIX-PIPE, because otherwise it will pre-read from 0 when
+                            % the quit-trap is used, which lets the LDVTS for 0 load 1
+                            % instead of the expected 0
+                   
+                     % put #0000 into DTC
+ ...020: e3010000    SET $1,#0
+ ...024: 8f000100    LDOU $0,$1,0
+                     % put #2000 into DTC
+ ...028: e3012000    SET $1,#2000
+ ...02c: 8f000100    LDOU $0,$1,0
+                   
+                     % replace permission bits with 0x7
+ ...030: e3000017    SET $0,#0017
+ ...034: 99040000    LDVTS $4,$0,0
+ ...038: b9070100    SYNCD #7,$1,0 % its required to do a sync first (at least it might be)
+ ...03c: 8f000100    LDOU $0,$1,0 % load should still work
+ ...040: af000100    STOU $0,$1,0 % store should still work
+ ...044: fe050010    GET $5,rQ
+                   
+                     % replace permission bits with 0x1
+ ...048: e3000011    SET $0,#0011
+ ...04c: 99060000    LDVTS $6,$0,0
+ ...050: e3010000    SET $1,#0000
+ ...054: b9070000    SYNCD #7,$0,0
+ ...058: 8f000100    LDOU $0,$1,0 % load should fail
+ ...05c: af000100    STOU $0,$1,0 % store should fail
+ ...060: fe070010    GET $7,rQ
+                   
+                     % remove from DTC
+ ...064: e3002010    SET $0,#2010
+ ...068: 99080000    LDVTS $8,$0,0 % remove it
+ ...06c: 99090000    LDVTS $9,$0,0 % should yield 0
+                   
+                     % not present in DTC
+ ...070: e3004010    SET $0,#4010
+ ...074: 990a0000    LDVTS $10,$0,0 % should yield 0
+                   
+                     % put #0000 and #2000 into DTC
+ ...078: e3010000    SET $1,#0
+ ...07c: 8f000100    LDOU $0,$1,0
+ ...080: e3012000    SET $1,#2000
+ ...084: 8f000100    LDOU $0,$1,0
+                   
+ ...088: e3000017    SET $0,#0017
+ ...08c: 990b0000    LDVTS $11,$0,0 % should yield 2
+ ...090: e3002017    SET $0,#2017
+ ...094: 990c0000    LDVTS $12,$0,0 % should yield 2
+                   
+                     % remove all entries in TCs
+ ...098: fc000006    SYNC 6
+                   
+ ...09c: e3000010    SET $0,#0010
+ ...0a0: 990d0000    LDVTS $13,$0,0 % should yield 0
+ ...0a4: e3002010    SET $0,#2010
+ ...0a8: 990e0000    LDVTS $14,$0,0 % should yield 0
+                   
+ ...0ac: 00000000    TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)
+ RV = #0000000000000000 (2)

@@ -1,0 +1,63 @@
+                   # 1 "user/system.mms"
+                   # 1 "<built-in>"
+                   # 1 "<command-line>"
+                   # 1 "user/system.mms"
+                   %
+                   % system.mms -- tests system instructions
+                   %
+                   
+                     LOC #4000
+0000000000004000:    OCTA #1234567890ABCDEF
+ ...000: 12345678
+ ...004: 90abcdef
+ ...008: fedcba09    OCTA #FEDCBA0987654321
+ ...00c: 87654321
+                   
+                     LOC #1000
+                   
+0000000000001000:  Main SETL $0,#4000
+ ...000: e3004000
+ ...004: e3010000    SETL $1,0
+                   
+                     % test LDUNC
+ ...008: 970a0000    LDUNC $10,$0,0
+ ...00c: 960b0001    LDUNC $11,$0,$1
+ ...010: 970c0008    LDUNC $12,$0,8
+                   
+                     % not really testable; just for decoding and manual step-through
+ ...014: 9a070001    PRELD #7,$0,$1
+ ...018: 9b070008    PRELD #7,$0,8
+                   
+ ...01c: e3025000    SETL $2,#5000
+                   
+                     % test STUNC
+ ...020: b60a0201    STUNC $10,$2,$1
+ ...024: b70c0208    STUNC $12,$2,8
+ ...028: b9200200    SYNCD #20,$2,0 % necessary for MMIX-PIPE
+                   
+ ...02c: e3026000    SETL $2,#6000 % take care that it affects a different cache-block
+                   
+                     % write some data
+ ...030: b70a0200    STUNC $10,$2,0
+ ...034: b70b0008    STUNC $11,$0,8
+                     % use prestore to tell MMIX that it can ignore the current content
+ ...038: bb070200    PREST #7,$2,0
+ ...03c: af0c0200    STOU $12,$2,0
+ ...040: b9070200    SYNCD #7,$2,0
+                   
+                     % not really testable; just for decoding and manual step-through
+ ...044: f4020002    GETA $2,@+8
+ ...048: 9d100200    PREGO #10,$2,0
+                   
+                     % build an instruction, write it to memory, sync data-cache with instr-cache and execute it
+ ...04c: e3030000    SETL $3,#0000
+ ...050: ea03220d    ORML $3,#220D % ADDU $13,$0,$0
+ ...054: f4020003    GETA $2,@+12
+ ...058: ab030200    STTU $3,$2,0
+ ...05c: bd030200    SYNCID #3,$2,0
+ ...060: c80d0000    AND $13,$0,$0 % will be replaced
+                   
+ ...064: 00000000    TRAP 0
+
+Symbol table:
+ Main = #0000000000001000 (1)

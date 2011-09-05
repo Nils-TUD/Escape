@@ -1,6 +1,6 @@
-diff -rcN src_org//binutils/bfd/archures.c src/binutils/bfd/archures.c
-*** src_org//binutils/bfd/archures.c	2009-09-10 13:47:11.000000000 +0200
---- src/binutils/bfd/archures.c	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/archures.c src/binutils//bfd/archures.c
+*** src_org/binutils//bfd/archures.c	2009-09-10 13:47:11.000000000 +0200
+--- src/binutils//bfd/archures.c	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 246,251 ****
 --- 246,253 ----
@@ -32,9 +32,9 @@ diff -rcN src_org//binutils/bfd/archures.c src/binutils/bfd/archures.c
       &bfd_fr30_arch,
       &bfd_frv_arch,
       &bfd_h8300_arch,
-diff -rcN src_org//binutils/bfd/bfd-in2.h src/binutils/bfd/bfd-in2.h
-*** src_org//binutils/bfd/bfd-in2.h	2009-09-10 13:47:11.000000000 +0200
---- src/binutils/bfd/bfd-in2.h	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/bfd-in2.h src/binutils//bfd/bfd-in2.h
+*** src_org/binutils//bfd/bfd-in2.h	2009-09-10 13:47:11.000000000 +0200
+--- src/binutils//bfd/bfd-in2.h	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 1913,1918 ****
 --- 1913,1920 ----
@@ -69,9 +69,9 @@ diff -rcN src_org//binutils/bfd/bfd-in2.h src/binutils/bfd/bfd-in2.h
     BFD_RELOC_24_PCREL,
     BFD_RELOC_16_PCREL,
     BFD_RELOC_12_PCREL,
-diff -rcN src_org//binutils/bfd/config.bfd src/binutils/bfd/config.bfd
-*** src_org//binutils/bfd/config.bfd	2009-08-06 19:38:00.000000000 +0200
---- src/binutils/bfd/config.bfd	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/config.bfd src/binutils//bfd/config.bfd
+*** src_org/binutils//bfd/config.bfd	2009-08-06 19:38:00.000000000 +0200
+--- src/binutils//bfd/config.bfd	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 81,86 ****
 --- 81,87 ----
@@ -95,9 +95,9 @@ diff -rcN src_org//binutils/bfd/config.bfd src/binutils/bfd/config.bfd
     fido-*-elf* )
       targ_defvec=bfd_elf32_m68k_vec
       targ_selvecs="m68kcoff_vec ieee_vec"
-diff -rcN src_org//binutils/bfd/configure src/binutils/bfd/configure
-*** src_org//binutils/bfd/configure	2009-10-16 13:47:47.000000000 +0200
---- src/binutils/bfd/configure	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/configure src/binutils//bfd/configure
+*** src_org/binutils//bfd/configure	2009-10-16 13:47:47.000000000 +0200
+--- src/binutils//bfd/configure	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 14806,14811 ****
 --- 14806,14812 ----
@@ -108,9 +108,9 @@ diff -rcN src_org//binutils/bfd/configure src/binutils/bfd/configure
       bfd_elf32_fr30_vec)		tb="$tb elf32-fr30.lo elf32.lo $elf" ;;
       bfd_elf32_frv_vec)		tb="$tb elf32-frv.lo elf32.lo $elf" ;;
       bfd_elf32_frvfdpic_vec)	tb="$tb elf32-frv.lo elf32.lo $elf" ;;
-diff -rcN src_org//binutils/bfd/configure.in src/binutils/bfd/configure.in
-*** src_org//binutils/bfd/configure.in	2009-10-16 13:47:44.000000000 +0200
---- src/binutils/bfd/configure.in	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/configure.in src/binutils//bfd/configure.in
+*** src_org/binutils//bfd/configure.in	2009-10-16 13:47:44.000000000 +0200
+--- src/binutils//bfd/configure.in	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 694,699 ****
 --- 694,700 ----
@@ -121,9 +121,9 @@ diff -rcN src_org//binutils/bfd/configure.in src/binutils/bfd/configure.in
       bfd_elf32_fr30_vec)		tb="$tb elf32-fr30.lo elf32.lo $elf" ;;
       bfd_elf32_frv_vec)		tb="$tb elf32-frv.lo elf32.lo $elf" ;;
       bfd_elf32_frvfdpic_vec)	tb="$tb elf32-frv.lo elf32.lo $elf" ;;
-diff -rcN src_org//binutils/bfd/cpu-eco32.c src/binutils/bfd/cpu-eco32.c
-*** src_org//binutils/bfd/cpu-eco32.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/bfd/cpu-eco32.c	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/cpu-eco32.c src/binutils//bfd/cpu-eco32.c
+*** src_org/binutils//bfd/cpu-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//bfd/cpu-eco32.c	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,18 ----
@@ -145,9 +145,9 @@ diff -rcN src_org//binutils/bfd/cpu-eco32.c src/binutils/bfd/cpu-eco32.c
 +     bfd_default_scan,
 +     0
 + };
-diff -rcN src_org//binutils/bfd/elf32-eco32.c src/binutils/bfd/elf32-eco32.c
-*** src_org//binutils/bfd/elf32-eco32.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/bfd/elf32-eco32.c	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/elf32-eco32.c src/binutils//bfd/elf32-eco32.c
+*** src_org/binutils//bfd/elf32-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//bfd/elf32-eco32.c	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,425 ----
@@ -576,9 +576,9 @@ diff -rcN src_org//binutils/bfd/elf32-eco32.c src/binutils/bfd/elf32-eco32.c
 + 
 + #include "elf32-target.h"
 + 
-diff -rcN src_org//binutils/bfd/libbfd.h src/binutils/bfd/libbfd.h
-*** src_org//binutils/bfd/libbfd.h	2009-09-02 10:10:55.000000000 +0200
---- src/binutils/bfd/libbfd.h	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/libbfd.h src/binutils//bfd/libbfd.h
+*** src_org/binutils//bfd/libbfd.h	2009-09-02 10:10:55.000000000 +0200
+--- src/binutils//bfd/libbfd.h	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 806,811 ****
 --- 806,812 ----
@@ -589,9 +589,9 @@ diff -rcN src_org//binutils/bfd/libbfd.h src/binutils/bfd/libbfd.h
     "BFD_RELOC_24_PCREL",
     "BFD_RELOC_16_PCREL",
     "BFD_RELOC_12_PCREL",
-diff -rcN src_org//binutils/bfd/Makefile.am src/binutils/bfd/Makefile.am
-*** src_org//binutils/bfd/Makefile.am	2009-10-16 13:47:44.000000000 +0200
---- src/binutils/bfd/Makefile.am	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/Makefile.am src/binutils//bfd/Makefile.am
+*** src_org/binutils//bfd/Makefile.am	2009-10-16 13:47:44.000000000 +0200
+--- src/binutils//bfd/Makefile.am	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 81,86 ****
 --- 81,87 ----
@@ -632,9 +632,9 @@ diff -rcN src_org//binutils/bfd/Makefile.am src/binutils/bfd/Makefile.am
   	elf32-fr30.c \
   	elf32-frv.c \
   	elf32-gen.c \
-diff -rcN src_org//binutils/bfd/Makefile.in src/binutils/bfd/Makefile.in
-*** src_org//binutils/bfd/Makefile.in	2009-10-16 13:47:48.000000000 +0200
---- src/binutils/bfd/Makefile.in	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/Makefile.in src/binutils//bfd/Makefile.in
+*** src_org/binutils//bfd/Makefile.in	2009-10-16 13:47:48.000000000 +0200
+--- src/binutils//bfd/Makefile.in	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 376,381 ****
 --- 376,382 ----
@@ -675,9 +675,9 @@ diff -rcN src_org//binutils/bfd/Makefile.in src/binutils/bfd/Makefile.in
   	elf32-fr30.c \
   	elf32-frv.c \
   	elf32-gen.c \
-diff -rcN src_org//binutils/bfd/reloc.c src/binutils/bfd/reloc.c
-*** src_org//binutils/bfd/reloc.c	2009-09-10 13:47:13.000000000 +0200
---- src/binutils/bfd/reloc.c	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/reloc.c src/binutils//bfd/reloc.c
+*** src_org/binutils//bfd/reloc.c	2009-09-10 13:47:13.000000000 +0200
+--- src/binutils//bfd/reloc.c	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 1664,1669 ****
 --- 1664,1671 ----
@@ -689,9 +689,9 @@ diff -rcN src_org//binutils/bfd/reloc.c src/binutils/bfd/reloc.c
     BFD_RELOC_24_PCREL
   ENUMX
     BFD_RELOC_16_PCREL
-diff -rcN src_org//binutils/bfd/targets.c src/binutils/bfd/targets.c
-*** src_org//binutils/bfd/targets.c	2009-09-10 13:47:13.000000000 +0200
---- src/binutils/bfd/targets.c	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//bfd/targets.c src/binutils//bfd/targets.c
+*** src_org/binutils//bfd/targets.c	2009-09-10 13:47:13.000000000 +0200
+--- src/binutils//bfd/targets.c	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 584,589 ****
 --- 584,590 ----
@@ -712,9 +712,9 @@ diff -rcN src_org//binutils/bfd/targets.c src/binutils/bfd/targets.c
   	&bfd_elf32_fr30_vec,
   	&bfd_elf32_frv_vec,
   	&bfd_elf32_frvfdpic_vec,
-diff -rcN src_org//binutils/config.sub src/binutils/config.sub
-*** src_org//binutils/config.sub	2009-08-17 06:10:29.000000000 +0200
---- src/binutils/config.sub	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//config.sub src/binutils//config.sub
+*** src_org/binutils//config.sub	2009-08-17 06:10:29.000000000 +0200
+--- src/binutils//config.sub	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 249,255 ****
   	| bfin \
@@ -762,9 +762,9 @@ diff -rcN src_org//binutils/config.sub src/binutils/config.sub
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
-diff -rcN src_org//binutils/configure.ac src/binutils/configure.ac
-*** src_org//binutils/configure.ac	2009-10-16 13:52:23.000000000 +0200
---- src/binutils/configure.ac	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//configure.ac src/binutils//configure.ac
+*** src_org/binutils//configure.ac	2009-10-16 13:52:23.000000000 +0200
+--- src/binutils//configure.ac	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 651,656 ****
 --- 651,659 ----
@@ -777,9 +777,9 @@ diff -rcN src_org//binutils/configure.ac src/binutils/configure.ac
     moxie-*-*)
       noconfigdirs="$noconfigdirs ${libgcj}"
       noconfigdirs="$noconfigdirs gprof"
-diff -rcN src_org//binutils/gas/config/tc-eco32.c src/binutils/gas/config/tc-eco32.c
-*** src_org//binutils/gas/config/tc-eco32.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/gas/config/tc-eco32.c	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//gas/config/tc-eco32.c src/binutils//gas/config/tc-eco32.c
+*** src_org/binutils//gas/config/tc-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//gas/config/tc-eco32.c	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,830 ----
@@ -1613,9 +1613,9 @@ diff -rcN src_org//binutils/gas/config/tc-eco32.c src/binutils/gas/config/tc-eco
 +     valueT addr = fixP->fx_where + fixP->fx_frag->fr_address;
 +     return (addr & ~3) + 4;
 + }
-diff -rcN src_org//binutils/gas/config/tc-eco32.h src/binutils/gas/config/tc-eco32.h
-*** src_org//binutils/gas/config/tc-eco32.h	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/gas/config/tc-eco32.h	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//gas/config/tc-eco32.h src/binutils//gas/config/tc-eco32.h
+*** src_org/binutils//gas/config/tc-eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//gas/config/tc-eco32.h	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,48 ----
@@ -1667,9 +1667,9 @@ diff -rcN src_org//binutils/gas/config/tc-eco32.h src/binutils/gas/config/tc-eco
 +  * valueT for the rounded size. */
 + #define md_section_align(segment, size) (size)
 + 
-diff -rcN src_org//binutils/gas/configure.tgt src/binutils/gas/configure.tgt
-*** src_org//binutils/gas/configure.tgt	2009-09-09 10:13:28.000000000 +0200
---- src/binutils/gas/configure.tgt	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//gas/configure.tgt src/binutils//gas/configure.tgt
+*** src_org/binutils//gas/configure.tgt	2009-09-09 10:13:28.000000000 +0200
+--- src/binutils//gas/configure.tgt	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 145,150 ****
 --- 145,151 ----
@@ -1680,9 +1680,9 @@ diff -rcN src_org//binutils/gas/configure.tgt src/binutils/gas/configure.tgt
   
     fr30-*-*)				fmt=elf ;;
     frv-*-*linux*)			fmt=elf em=linux;;
-diff -rcN src_org//binutils/gas/Makefile.am src/binutils/gas/Makefile.am
-*** src_org//binutils/gas/Makefile.am	2009-09-07 11:16:06.000000000 +0200
---- src/binutils/gas/Makefile.am	2011-05-19 21:05:17.000000000 +0200
+diff -rcN src_org/binutils//gas/Makefile.am src/binutils//gas/Makefile.am
+*** src_org/binutils//gas/Makefile.am	2009-09-07 11:16:06.000000000 +0200
+--- src/binutils//gas/Makefile.am	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 50,55 ****
 --- 50,56 ----
@@ -1713,9 +1713,9 @@ diff -rcN src_org//binutils/gas/Makefile.am src/binutils/gas/Makefile.am
   	config/tc-fr30.h \
   	config/tc-frv.h \
   	config/tc-h8300.h \
-diff -rcN src_org//binutils/gas/Makefile.in src/binutils/gas/Makefile.in
-*** src_org//binutils/gas/Makefile.in	2009-09-07 14:09:27.000000000 +0200
---- src/binutils/gas/Makefile.in	2011-05-19 21:08:15.000000000 +0200
+diff -rcN src_org/binutils//gas/Makefile.in src/binutils//gas/Makefile.in
+*** src_org/binutils//gas/Makefile.in	2009-09-07 14:09:27.000000000 +0200
+--- src/binutils//gas/Makefile.in	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 316,321 ****
 --- 316,322 ----
@@ -1779,9 +1779,9 @@ diff -rcN src_org//binutils/gas/Makefile.in src/binutils/gas/Makefile.in
   tc-fr30.o: config/tc-fr30.c
   @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-fr30.o -MD -MP -MF $(DEPDIR)/tc-fr30.Tpo -c -o tc-fr30.o `test -f 'config/tc-fr30.c' || echo '$(srcdir)/'`config/tc-fr30.c
   @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-fr30.Tpo $(DEPDIR)/tc-fr30.Po
-diff -rcN src_org//binutils/include/dis-asm.h src/binutils/include/dis-asm.h
-*** src_org//binutils/include/dis-asm.h	2009-08-06 19:38:03.000000000 +0200
---- src/binutils/include/dis-asm.h	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//include/dis-asm.h src/binutils//include/dis-asm.h
+*** src_org/binutils//include/dis-asm.h	2009-08-06 19:38:03.000000000 +0200
+--- src/binutils//include/dis-asm.h	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 233,238 ****
 --- 233,239 ----
@@ -1792,9 +1792,9 @@ diff -rcN src_org//binutils/include/dis-asm.h src/binutils/include/dis-asm.h
   extern int print_insn_fr30		(bfd_vma, disassemble_info *);
   extern int print_insn_frv		(bfd_vma, disassemble_info *);
   extern int print_insn_h8300		(bfd_vma, disassemble_info *);
-diff -rcN src_org//binutils/include/elf/common.h src/binutils/include/elf/common.h
-*** src_org//binutils/include/elf/common.h	2009-08-09 15:42:26.000000000 +0200
---- src/binutils/include/elf/common.h	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//include/elf/common.h src/binutils//include/elf/common.h
+*** src_org/binutils//include/elf/common.h	2009-08-09 15:42:26.000000000 +0200
+--- src/binutils//include/elf/common.h	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 389,394 ****
 --- 389,397 ----
@@ -1807,9 +1807,9 @@ diff -rcN src_org//binutils/include/elf/common.h src/binutils/include/elf/common
   #define EM_MOXIE                0xFEED  /* Moxie */
   
   /* Old Sunplus S+core7 backend magic number. Written in the absence of an ABI.  */
-diff -rcN src_org//binutils/include/elf/eco32.h src/binutils/include/elf/eco32.h
-*** src_org//binutils/include/elf/eco32.h	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/include/elf/eco32.h	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//include/elf/eco32.h src/binutils//include/elf/eco32.h
+*** src_org/binutils//include/elf/eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//include/elf/eco32.h	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,16 ----
@@ -1829,9 +1829,9 @@ diff -rcN src_org//binutils/include/elf/eco32.h src/binutils/include/elf/eco32.h
 + END_RELOC_NUMBERS (R_ECO32_max)
 + 
 + #endif
-diff -rcN src_org//binutils/include/opcode/eco32.h src/binutils/include/opcode/eco32.h
-*** src_org//binutils/include/opcode/eco32.h	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/include/opcode/eco32.h	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//include/opcode/eco32.h src/binutils//include/opcode/eco32.h
+*** src_org/binutils//include/opcode/eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//include/opcode/eco32.h	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,138 ----
@@ -1973,9 +1973,9 @@ diff -rcN src_org//binutils/include/opcode/eco32.h src/binutils/include/opcode/e
 + 
 + extern struct eco32_opc_info_t eco32_opcodes[NUM_OPS];
 + 
-diff -rcN src_org//binutils/ld/configure.tgt src/binutils/ld/configure.tgt
-*** src_org//binutils/ld/configure.tgt	2009-08-06 19:38:03.000000000 +0200
---- src/binutils/ld/configure.tgt	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//ld/configure.tgt src/binutils//ld/configure.tgt
+*** src_org/binutils//ld/configure.tgt	2009-08-06 19:38:03.000000000 +0200
+--- src/binutils//ld/configure.tgt	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 149,154 ****
 --- 149,155 ----
@@ -1986,9 +1986,9 @@ diff -rcN src_org//binutils/ld/configure.tgt src/binutils/ld/configure.tgt
   fido*-*-elf*)		targ_emul=m68kelf ;;
   fr30-*-*)		targ_emul=elf32fr30
   			;;
-diff -rcN src_org//binutils/ld/emulparams/eco32bin.sh src/binutils/ld/emulparams/eco32bin.sh
-*** src_org//binutils/ld/emulparams/eco32bin.sh	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/ld/emulparams/eco32bin.sh	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//ld/emulparams/eco32bin.sh src/binutils//ld/emulparams/eco32bin.sh
+*** src_org/binutils//ld/emulparams/eco32bin.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//ld/emulparams/eco32bin.sh	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,14 ----
@@ -2006,9 +2006,9 @@ diff -rcN src_org//binutils/ld/emulparams/eco32bin.sh src/binutils/ld/emulparams
 + 
 + DATA_ADDR="ALIGN(${TARGET_PAGE_SIZE})"
 + 
-diff -rcN src_org//binutils/ld/emulparams/elf32eco32.sh src/binutils/ld/emulparams/elf32eco32.sh
-*** src_org//binutils/ld/emulparams/elf32eco32.sh	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/ld/emulparams/elf32eco32.sh	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//ld/emulparams/elf32eco32.sh src/binutils//ld/emulparams/elf32eco32.sh
+*** src_org/binutils//ld/emulparams/elf32eco32.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//ld/emulparams/elf32eco32.sh	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,29 ----
@@ -2041,9 +2041,9 @@ diff -rcN src_org//binutils/ld/emulparams/elf32eco32.sh src/binutils/ld/emulpara
 + # address.
 + EMBEDDED=yes
 + 
-diff -rcN src_org//binutils/ld/Makefile.am src/binutils/ld/Makefile.am
-*** src_org//binutils/ld/Makefile.am	2009-09-01 22:56:51.000000000 +0200
---- src/binutils/ld/Makefile.am	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//ld/Makefile.am src/binutils//ld/Makefile.am
+*** src_org/binutils//ld/Makefile.am	2009-09-01 22:56:51.000000000 +0200
+--- src/binutils//ld/Makefile.am	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 151,156 ****
 --- 151,157 ----
@@ -2088,9 +2088,9 @@ diff -rcN src_org//binutils/ld/Makefile.am src/binutils/ld/Makefile.am
   eelf32xc16x.c: $(srcdir)/emulparams/elf32xc16x.sh \
     $(ELF_DEPS) $(srcdir)/emultempl/needrelax.em \
     $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
-diff -rcN src_org//binutils/ld/Makefile.in src/binutils/ld/Makefile.in
-*** src_org//binutils/ld/Makefile.in	2009-09-07 14:10:24.000000000 +0200
---- src/binutils/ld/Makefile.in	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//ld/Makefile.in src/binutils//ld/Makefile.in
+*** src_org/binutils//ld/Makefile.in	2009-09-07 14:10:24.000000000 +0200
+--- src/binutils//ld/Makefile.in	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 437,442 ****
 --- 437,443 ----
@@ -2135,9 +2135,9 @@ diff -rcN src_org//binutils/ld/Makefile.in src/binutils/ld/Makefile.in
   eelf32xc16x.c: $(srcdir)/emulparams/elf32xc16x.sh \
     $(ELF_DEPS) $(srcdir)/emultempl/needrelax.em \
     $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
-diff -rcN src_org//binutils/ld/scripttempl/eco32bin.sc src/binutils/ld/scripttempl/eco32bin.sc
-*** src_org//binutils/ld/scripttempl/eco32bin.sc	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/ld/scripttempl/eco32bin.sc	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//ld/scripttempl/eco32bin.sc src/binutils//ld/scripttempl/eco32bin.sc
+*** src_org/binutils//ld/scripttempl/eco32bin.sc	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//ld/scripttempl/eco32bin.sc	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,85 ----
@@ -2226,9 +2226,9 @@ diff -rcN src_org//binutils/ld/scripttempl/eco32bin.sc src/binutils/ld/scripttem
 + }
 + EOF
 + 
-diff -rcN src_org//binutils/opcodes/configure src/binutils/opcodes/configure
-*** src_org//binutils/opcodes/configure	2009-09-07 14:08:04.000000000 +0200
---- src/binutils/opcodes/configure	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//opcodes/configure src/binutils//opcodes/configure
+*** src_org/binutils//opcodes/configure	2009-09-07 14:08:04.000000000 +0200
+--- src/binutils//opcodes/configure	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 12291,12296 ****
 --- 12291,12297 ----
@@ -2239,9 +2239,9 @@ diff -rcN src_org//binutils/opcodes/configure src/binutils/opcodes/configure
   	bfd_fr30_arch)          ta="$ta fr30-asm.lo fr30-desc.lo fr30-dis.lo fr30-ibld.lo fr30-opc.lo" using_cgen=yes ;;
   	bfd_frv_arch)           ta="$ta frv-asm.lo frv-desc.lo frv-dis.lo frv-ibld.lo frv-opc.lo" using_cgen=yes ;;
   	bfd_moxie_arch)		ta="$ta moxie-dis.lo moxie-opc.lo" ;;
-diff -rcN src_org//binutils/opcodes/configure.in src/binutils/opcodes/configure.in
-*** src_org//binutils/opcodes/configure.in	2009-09-07 14:07:53.000000000 +0200
---- src/binutils/opcodes/configure.in	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//opcodes/configure.in src/binutils//opcodes/configure.in
+*** src_org/binutils//opcodes/configure.in	2009-09-07 14:07:53.000000000 +0200
+--- src/binutils//opcodes/configure.in	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 230,235 ****
 --- 230,236 ----
@@ -2252,9 +2252,36 @@ diff -rcN src_org//binutils/opcodes/configure.in src/binutils/opcodes/configure.
   	bfd_fr30_arch)          ta="$ta fr30-asm.lo fr30-desc.lo fr30-dis.lo fr30-ibld.lo fr30-opc.lo" using_cgen=yes ;;
   	bfd_frv_arch)           ta="$ta frv-asm.lo frv-desc.lo frv-dis.lo frv-ibld.lo frv-opc.lo" using_cgen=yes ;;
   	bfd_moxie_arch)		ta="$ta moxie-dis.lo moxie-opc.lo" ;;
-diff -rcN src_org//binutils/opcodes/eco32-dis.c src/binutils/opcodes/eco32-dis.c
-*** src_org//binutils/opcodes/eco32-dis.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/opcodes/eco32-dis.c	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//opcodes/disassemble.c src/binutils//opcodes/disassemble.c
+*** src_org/binutils//opcodes/disassemble.c	2009-09-02 09:20:29.000000000 +0200
+--- src/binutils//opcodes/disassemble.c	2011-09-05 17:19:56.000000000 +0200
+***************
+*** 34,39 ****
+--- 34,40 ----
+  #define ARCH_d10v
+  #define ARCH_d30v
+  #define ARCH_dlx
++ #define ARCH_eco32
+  #define ARCH_fr30
+  #define ARCH_frv
+  #define ARCH_h8300
+***************
+*** 167,172 ****
+--- 168,178 ----
+        disassemble = print_insn_dlx;
+        break;
+  #endif
++ #ifdef ARCH_eco32
++     case bfd_arch_eco32:
++       disassemble = print_insn_eco32;  
++       break;
++ #endif
+  #ifdef ARCH_h8300
+      case bfd_arch_h8300:
+        if (bfd_get_mach (abfd) == bfd_mach_h8300h
+diff -rcN src_org/binutils//opcodes/eco32-dis.c src/binutils//opcodes/eco32-dis.c
+*** src_org/binutils//opcodes/eco32-dis.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//opcodes/eco32-dis.c	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,169 ----
@@ -2427,9 +2454,9 @@ diff -rcN src_org//binutils/opcodes/eco32-dis.c src/binutils/opcodes/eco32-dis.c
 + }
 + 
 + 
-diff -rcN src_org//binutils/opcodes/eco32-opc.c src/binutils/opcodes/eco32-opc.c
-*** src_org//binutils/opcodes/eco32-opc.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/opcodes/eco32-opc.c	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//opcodes/eco32-opc.c src/binutils//opcodes/eco32-opc.c
+*** src_org/binutils//opcodes/eco32-opc.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils//opcodes/eco32-opc.c	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 0 ****
 --- 1,74 ----
@@ -2507,9 +2534,9 @@ diff -rcN src_org//binutils/opcodes/eco32-opc.c src/binutils/opcodes/eco32-opc.c
 +     { OP_TBWI, INSN_N, "tbwi", FORMAT_N, 0 }
 + };
 + 
-diff -rcN src_org//binutils/opcodes/Makefile.am src/binutils/opcodes/Makefile.am
-*** src_org//binutils/opcodes/Makefile.am	2009-09-07 14:07:53.000000000 +0200
---- src/binutils/opcodes/Makefile.am	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//opcodes/Makefile.am src/binutils//opcodes/Makefile.am
+*** src_org/binutils//opcodes/Makefile.am	2009-09-07 14:07:53.000000000 +0200
+--- src/binutils//opcodes/Makefile.am	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 96,101 ****
 --- 96,103 ----
@@ -2521,9 +2548,9 @@ diff -rcN src_org//binutils/opcodes/Makefile.am src/binutils/opcodes/Makefile.am
   	fr30-asm.c \
   	fr30-desc.c \
   	fr30-dis.c \
-diff -rcN src_org//binutils/opcodes/Makefile.in src/binutils/opcodes/Makefile.in
-*** src_org//binutils/opcodes/Makefile.in	2009-09-07 14:08:03.000000000 +0200
---- src/binutils/opcodes/Makefile.in	2011-05-19 21:00:40.000000000 +0200
+diff -rcN src_org/binutils//opcodes/Makefile.in src/binutils//opcodes/Makefile.in
+*** src_org/binutils//opcodes/Makefile.in	2009-09-07 14:08:03.000000000 +0200
+--- src/binutils//opcodes/Makefile.in	2011-05-29 17:27:24.000000000 +0200
 ***************
 *** 366,371 ****
 --- 366,373 ----

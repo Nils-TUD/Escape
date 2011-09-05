@@ -6,8 +6,8 @@ SRC=$ROOT/src
 HEADER=$ROOT/../../source/include
 LIBC=$ROOT/../../source/lib/c
 MAKE_ARGS=-j8
-BUILD_BINUTILS=false
-BUILD_GCC=false
+BUILD_BINUTILS=true
+BUILD_GCC=true
 BUILD_CPP=true
 
 GCCCORE_ARCH=gcc-core-4.4.3.tar.bz2
@@ -111,24 +111,7 @@ if $BUILD_CPP; then
 		autoconf
 		cd $ROOT
 		patch -p0 < newlib2.diff
-		SYSCALLS_FILE=$SRC/newlib/newlib/libc/sys/escape/syscalls.S
-		cat $LIBC/arch/eco32/syscalls.s > $SYSCALLS_FILE
-		echo 'SYSC_VOID_1ARGS _exit,SYSCALL_EXIT' >> $SYSCALLS_FILE
-		echo 'SYSC_VOID_1ARGS close,SYSCALL_CLOSE' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_2ARGS_ERR exec,SYSCALL_EXEC' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_0ARGS_ERR fork,SYSCALL_FORK' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_2ARGS_ERR fstat,SYSCALL_FSTAT' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_0ARGS getpid,SYSCALL_PID' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_1ARGS_ERR isatty,SYSCALL_ISTERM' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_3ARGS_ERR sendSignalTo,SYSCALL_SENDSIG' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_2ARGS_ERR _stat,SYSCALL_STAT' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_2ARGS_ERR link,SYSCALL_LINK' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_3ARGS_ERR seek,SYSCALL_SEEK' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_2ARGS_ERR open,SYSCALL_OPEN' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_3ARGS_ERR read,SYSCALL_READ' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_1ARGS_ERR _changeSize,SYSCALL_CHGSIZE' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_1ARGS_ERR unlink,SYSCALL_UNLINK' >> $SYSCALLS_FILE
-		echo 'SYSC_RET_1ARGS_ERR waitChild,SYSCALL_WAITCHILD' >> $SYSCALLS_FILE
+		echo '' > $SRC/newlib/newlib/libc/sys/escape/syscalls.S
 		cd $SRC/newlib/newlib/libc/sys
 		autoconf
 		cd escape

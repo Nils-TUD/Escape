@@ -1,6 +1,6 @@
 # general
-ARCH = mmix
-GCCVER = 4.6.0
+ARCH = eco32
+GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
@@ -47,11 +47,7 @@ export LD = $(abspath $(DIST)/bin/$(TARGET)-ld)
 export AR = $(abspath $(DIST)/bin/$(TARGET)-ar)
 export AS = $(abspath $(DIST)/bin/$(TARGET)-as)
 export READELF = $(abspath $(DIST)/bin/$(TARGET)-readelf)
-ifeq ($(ARCH),eco32)
-export OBJDUMP = /home/hrniels/Applications/gcc/bin/eco32-objdump
-else
 export OBJDUMP = $(abspath $(DIST)/bin/$(TARGET)-objdump)
-endif
 export OBJCOPY = $(abspath $(DIST)/bin/$(TARGET)-objcopy)
 export NM = $(abspath $(DIST)/bin/$(TARGET)-nm)
 export CWFLAGS=-Wall -ansi \

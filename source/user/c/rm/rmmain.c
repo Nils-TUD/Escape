@@ -43,7 +43,7 @@ int main(int argc,const char *argv[]) {
 	args = ca_getfree();
 	while(*args) {
 		if(unlink(*args) < 0)
-			fprintf(stderr,"Unable to remove '%s'\n",*args);
+			printe("Unable to remove '%s'",*args);
 		args++;
 	}
 	return EXIT_SUCCESS;

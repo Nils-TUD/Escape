@@ -43,7 +43,7 @@ int main(int argc,const char *argv[]) {
 	args = ca_getfree();
 	while(*args) {
 		if(mkdir(*args) < 0)
-			fprintf(stderr,"Unable to create directory '%s'\n",*args);
+			printe("Unable to create directory '%s'",*args);
 		args++;
 	}
 	return EXIT_SUCCESS;

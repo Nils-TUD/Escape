@@ -27,12 +27,13 @@
  * Resolves the given path via the directories to the file-id (LBA * blockSize + offset)
  *
  * @param h the iso9660-handle
+ * @param u the user
  * @param path the path
  * @param flags the flags with which to open the file
  * @param dev should be set to the device-number
  * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the id or < 0
  */
-inode_t iso_dir_resolve(sISO9660 *h,const char *path,uint flags,dev_t *dev,bool resLastMnt);
+inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt);
 
 #endif /* PATH_H_ */

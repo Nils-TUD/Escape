@@ -73,6 +73,10 @@ void *iso_init(const char *driver,char **usedDev) {
 		/* just needed if we would have a mount-point on the cd. this can't happen at this point */
 		dev_t dev = 0x1234;
 		inode_t ino;
+		sFSUser u;
+		u.uid = ROOT_UID;
+		u.gid = ROOT_GID;
+		u.pid = getpid();
 		char path[SSTRLEN("/dev/cda1") + 1];
 		for(i = 0; i < 4; i++) {
 			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + i);
@@ -82,7 +86,7 @@ void *iso_init(const char *driver,char **usedDev) {
 			/* try to find our kernel. if we've found it, it's likely that the user wants to
 			 * boot from this device. unfortunatly there doesn't seem to be an easy way
 			 * to find out the real boot-device from GRUB */
-			ino = iso_dir_resolve(iso,"/boot/escape.bin",IO_READ,&dev,false);
+			ino = iso_dir_resolve(iso,&u,"/boot/escape.bin",IO_READ,&dev,false);
 			if(ino >= 0)
 				break;
 
@@ -170,11 +174,12 @@ sFileSystem *iso_getFS(void) {
 }
 
 inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
-	return iso_dir_resolve((sISO9660*)h,path,flags,dev,resLastMnt);
+	return iso_dir_resolve((sISO9660*)h,u,path,flags,dev,resLastMnt);
 }
 
 inode_t iso_open(void *h,sFSUser *u,inode_t ino,uint flags) {
 	UNUSED(h);
+	UNUSED(u);
 	UNUSED(flags);
 	return ino;
 }

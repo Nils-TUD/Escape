@@ -43,7 +43,7 @@ int main(int argc,const char *argv[]) {
 	args = ca_getfree();
 	while(*args) {
 		if(rmdir(*args) < 0)
-			fprintf(stderr,"Unable to remove directory '%s'\n",*args);
+			printe("Unable to remove directory '%s'",*args);
 		args++;
 	}
 	return EXIT_SUCCESS;

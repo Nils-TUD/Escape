@@ -36,7 +36,7 @@
  */
 static bool iso_dir_match(const char *user,const char *disk,size_t userLen,size_t diskLen);
 
-inode_t iso_dir_resolve(sISO9660 *h,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
+inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
 	size_t extLoc,extSize;
 	dev_t mntDev;
 	const char *p = path;
@@ -89,8 +89,7 @@ inode_t iso_dir_resolve(sISO9660 *h,const char *path,uint flags,dev_t *dev,bool 
 					sFSInst *inst = mount_get(mntDev);
 					*dev = mntDev;
 					bcache_release(blk);
-					/* TODO */
-					return inst->fs->resPath(inst->handle,NULL,p,flags,dev,resLastMnt);
+					return inst->fs->resPath(inst->handle,u,p,flags,dev,resLastMnt);
 				}
 				if(!*p)
 					break;

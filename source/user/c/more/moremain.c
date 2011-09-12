@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/cmdargs.h>
 #include <esc/esccodes.h>
 #include <esc/keycodes.h>
@@ -68,9 +69,9 @@ int main(int argc,const char *argv[]) {
 	if(!vt)
 		error("Unable to open '%s'",vtermPath);
 	vtFd = fileno(vt);
-	sendRecvMsgData(vtFd,MSG_VT_DIS_RDLINE,NULL,0);
+	vterm_setReadline(vtFd,false);
 	/* get vterm-size */
-	if(recvMsgData(vtFd,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
+	if(vterm_getSize(vtFd,&consSize) < 0)
 		error("Unable to get vterm-size");
 
 	/* read until vterm is full, ask for continue, and so on */
@@ -95,7 +96,7 @@ int main(int argc,const char *argv[]) {
 		error("Read failed");
 
 	/* clean up */
-	sendRecvMsgData(vtFd,MSG_VT_EN_RDLINE,NULL,0);
+	vterm_setReadline(vtFd,true);
 	if(args[0])
 		fclose(in);
 	fclose(vt);

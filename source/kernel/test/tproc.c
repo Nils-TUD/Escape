@@ -57,8 +57,9 @@ static void test_proc(void) {
 		pid = proc_clone(0);
 		test_assertTrue(pid > 0);
 		tprintf("Destroying process\n");
-		/* both are necessary */
+		/* first terminate it, then free resources and finally remove the process */
 		proc_terminate(pid,0,0);
+		proc_destroy(pid);
 		proc_kill(pid);
 	}
 	checkMemoryAfter(false);

@@ -387,6 +387,16 @@ void proc_terminate(pid_t pid,int exitCode,sig_t signal);
 void proc_killThread(tid_t tid);
 
 /**
+ * Destroys the process with given pid, i.e. all threads are killed immediatly, the exit-state
+ * is stored and all process-resources are free'd. After that, the parent can grab the exit-state.
+ * Note: This function is only used from the unit-tests. By default, the terminator uses
+ * proc_killThread to kill threads, which will destroy the process if no thread is left.
+ *
+ * @param pid the process-id
+ */
+void proc_destroy(pid_t pid);
+
+/**
  * Stores the exit-state of the first terminated child-process of <ppid> into <state>
  *
  * @param ppid the parent-pid

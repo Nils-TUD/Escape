@@ -18,6 +18,8 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
+#include <esc/driver/video.h>
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <esc/thread.h>
@@ -206,14 +208,9 @@ void ProcessManager::setVTermEnabled(bool enabled) {
 		throw init_error("Unable to open vterm0 for enabling it");
 
 	if(enabled) {
-		// select vterm0
-		sArgsMsg msg;
-		msg.arg1 = 0;
-		if(send(fd,MSG_VT_SELECT,&msg,sizeof(msg)) < 0)
+		if(vterm_select(fd,0) < 0)
 			throw init_error("Unable to select vterm0");
-
-		// enable vterm
-		if(send(fd,MSG_VT_ENABLE,NULL,0) < 0)
+		if(vterm_setEnabled(fd,true) < 0)
 			throw init_error("Unable to send enable-msg to vterm");
 	}
 	else {
@@ -221,19 +218,14 @@ void ProcessManager::setVTermEnabled(bool enabled) {
 		int vidFd = open("/dev/video",IO_MSGS);
 		if(vidFd < 0)
 			throw init_error("Unable to open /dev/video");
-		if(send(vidFd,MSG_VID_SETMODE,NULL,0) < 0)
-			throw init_error("Unable to send setmode-msg to video");
-		if(RETRY(receive(vidFd,NULL,NULL,0)) < 0)
+		if(video_setMode(vidFd) < 0)
 			throw init_error("Unable to switch to video");
 		close(vidFd);
 
 		// disable vterm
-		if(send(fd,MSG_VT_DISABLE,NULL,0) < 0)
+		if(vterm_setEnabled(fd,false) < 0)
 			throw init_error("Unable to send disable-msg to vterm");
 	}
-	// receive response
-	if(RETRY(receive(fd,NULL,NULL,0)) < 0)
-		throw init_error("Unable to enable vterm");
 
 	close(fd);
 }

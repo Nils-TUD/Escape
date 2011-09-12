@@ -17,11 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_LIBCTEST_SYSCALLS_H_
-#define I586_LIBCTEST_SYSCALLS_H_
+#ifndef DRIVER_INIT_H_
+#define DRIVER_INIT_H_
 
-#define KERNEL_SPACE		0xC0000000
-#define ILLEGAL_ADDR		0x12345678
-#define HIGH_ADDR			0xFFFFFFFF
+#include <esc/common.h>
 
-#endif /* I586_LIBCTEST_SYSCALLS_H_ */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int init_reboot(void);
+int init_shutdown(void);
+int init_iamalive(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* DRIVER_INIT_H_ */

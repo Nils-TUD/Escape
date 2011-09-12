@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/esccodes.h>
@@ -99,13 +100,13 @@ int main(int argc,char *argv[]) {
 		in = stdin;
 	}
 
-	if(recvMsgData(STDOUT_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
+	if(vterm_getSize(STDOUT_FILENO,&consSize) < 0)
 		error("Unable to get screensize");
 	// one line for the status
 	consSize.height--;
 
 	// backup screen
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
+	vterm_backup(STDOUT_FILENO);
 
 	// create empty line
 	emptyLine.assign(consSize.width,' ');
@@ -119,8 +120,8 @@ int main(int argc,char *argv[]) {
 	readLines(consSize.height);
 
 	// stop readline and navigation
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_NAVI,NULL,0);
+	vterm_setReadline(STDOUT_FILENO,false);
+	vterm_setNavi(STDOUT_FILENO,false);
 
 	refreshScreen();
 
@@ -168,9 +169,9 @@ int main(int argc,char *argv[]) {
 
 static void resetVterm(void) {
 	cout << endl;
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
+	vterm_setReadline(STDOUT_FILENO,true);
+	vterm_setNavi(STDOUT_FILENO,true);
+	vterm_restore(STDOUT_FILENO);
 }
 
 static void scrollDown(long l) {

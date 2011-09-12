@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/io.h>
 #include <esc/thread.h>
 #include <esc/proc.h>
@@ -84,9 +85,8 @@ static void switchTo(size_t index) {
 			/* enable vterm */
 			fd = open("/dev/vterm0",IO_MSGS);
 			if(fd >= 0) {
-				sendRecvMsgData(fd,MSG_VT_ENABLE,NULL,0);
-				msg.args.arg1 = index;
-				send(fd,MSG_VT_SELECT,&msg,sizeof(msg.args));
+				vterm_setEnabled(fd,true);
+				vterm_select(fd,index);
 				close(fd);
 				curTerm = index;
 			}
@@ -96,8 +96,8 @@ static void switchTo(size_t index) {
 		if(startGUI()) {
 			int fd = open("/dev/vterm0",IO_MSGS);
 			if(fd >= 0) {
-				/* diable vterm */
-				sendRecvMsgData(fd,MSG_VT_DISABLE,NULL,0);
+				/* disable vterm */
+				vterm_setEnabled(fd,false);
 				close(fd);
 				/* enable winmanager */
 				fd = open("/dev/winmanager",IO_MSGS);
@@ -113,8 +113,7 @@ static void switchTo(size_t index) {
 		/* select vterm */
 		int fd = open("/dev/vterm0",IO_MSGS);
 		if(fd >= 0) {
-			msg.args.arg1 = index;
-			send(fd,MSG_VT_SELECT,&msg,sizeof(msg.args));
+			vterm_select(fd,index);
 			close(fd);
 			curTerm = index;
 		}

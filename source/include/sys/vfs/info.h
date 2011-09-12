@@ -52,6 +52,12 @@ ssize_t vfs_info_regionsReadHandler(pid_t pid,file_t file,sVFSNode *node,void *b
 		off_t offset,size_t count);
 
 /**
+ * The maps-read-handler
+ */
+ssize_t vfs_info_mapsReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+		off_t offset,size_t count);
+
+/**
  * The virtual-memory-read-handler
  */
 ssize_t vfs_info_virtMemReadHandler(pid_t pid,file_t file,sVFSNode *node,void *buffer,

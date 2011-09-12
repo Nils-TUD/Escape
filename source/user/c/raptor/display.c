@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/video.h>
 #include <esc/io.h>
 #include <esc/conf.h>
 #include <esc/messages.h>
@@ -96,7 +97,7 @@ bool displ_init(void) {
 	}
 
 	/* get screen size */
-	if(recvMsgData(video,MSG_VID_GETSIZE,&ssize,sizeof(sVTSize)) < 0) {
+	if(video_getSize(video,&ssize) < 0) {
 		fprintf(stderr,"Unable to get screensize\n");
 		return false;
 	}

@@ -199,54 +199,6 @@ ssize_t send(int fd,msgid_t id,const void *msg,size_t size);
 ssize_t receive(int fd,msgid_t *id,void *msg,size_t size) A_CHECKRET;
 
 /**
- * Sends the given data in the data-part of the standard-message. Doesn't wait for the response.
- *
- * @param fd the file-descriptor
- * @param id the msg-id
- * @param data the data to send
- * @param size the size of the data (if too big an error will be reported)
- * @return >= 0 on success
- */
-ssize_t sendMsgData(int fd,msgid_t id,const void *data,size_t size);
-
-/**
- * Sends a message with given id and optionally data to the given driver. Afterwards it receives
- * the response and returns the result in msg.args.arg1.
- *
- * @param fd the file-descriptor
- * @param id the message-id
- * @param data the data (NULL = no data)
- * @param size if data is not NULL, the size of data
- * @return the result
- */
-ssize_t sendRecvMsgData(int fd,msgid_t id,const void *data,size_t size);
-
-/**
- * Sends a message with given id and no data to the given driver, receives a message and
- * copies the data-part of size msg.data.arg1 into <data> with at most <size> bytes.
- *
- * @param fd the file-descriptor
- * @param id the msg-id
- * @param data the buffer where to copy the received data to
- * @param size the size of the buffer
- * @return the number of copied bytes on success
- */
-ssize_t recvMsgData(int fd,msgid_t id,void *data,size_t size) A_CHECKRET;
-
-/**
- * The same as recvMsgData, except that it expects <argc> arguments behind <argc>, which are
- * put in the given order into an argument-message. This message is send to the driver.
- *
- * @param fd the file-descriptor
- * @param id the msg-id
- * @param data the buffer where to copy the received data to
- * @param size the size of the buffer
- * @param argc the number of args
- * @return the number of copied bytes on success
- */
-ssize_t vrecvMsgData(int fd,msgid_t id,void *data,size_t size,size_t argc,...) A_CHECKRET;
-
-/**
  * Duplicates the given file-descriptor
  *
  * @param fd the file-descriptor

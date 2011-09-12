@@ -253,7 +253,11 @@ const char *sig_dbg_getName(sig_t signal) {
 		"SIG_INTRPT_FLOPPY",
 		"SIG_INTRPT_CMOS",
 		"SIG_INTRPT_ATA1",
-		"SIG_INTRPT_ATA2"
+		"SIG_INTRPT_ATA2",
+		"SIG_INTRPT_MOUSE",
+		"SIG_ALARM",
+		"SIG_USR1",
+		"SIG_USR2"
 	};
 	if(signal < SIG_COUNT)
 		return names[signal];
@@ -267,12 +271,13 @@ void sig_print(void) {
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
-		vid_printf("\tpending: %zu\n",t->signals->pending.count);
-		vid_printf("\tdeliver: %d\n",t->signals->deliveredSignal);
-		vid_printf("\tcurrent: %d\n",t->signals->currentSignal);
+		vid_printf("\t\tpending: %zu\n",t->signals->pending.count);
+		vid_printf("\t\tdeliver: %d\n",t->signals->deliveredSignal);
+		vid_printf("\t\tcurrent: %d\n",t->signals->currentSignal);
+		vid_printf("\t\thandler:\n");
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(t->signals->handler[i])
-				vid_printf("\t\t%s: handler=%p\n",sig_dbg_getName(i),t->signals->handler[i]);
+				vid_printf("\t\t\t%s: handler=%p\n",sig_dbg_getName(i),t->signals->handler[i]);
 		}
 	}
 }
@@ -312,20 +317,30 @@ static bool sig_add(sSignals *s,sig_t sig) {
 }
 
 static void sig_removePending(sSignals *s,sig_t sig) {
-	sPendingSig *ps;
+	sPendingSig *ps,*prev;
 	if(s->deliveredSignal == sig)
 		s->deliveredSignal = 0;
+	prev = NULL;
 	for(ps = s->pending.first; ps != NULL; ) {
 		if(sig == 0 || ps->sig == sig) {
 			sPendingSig *tps = ps->next;
 			ps->next = freelist;
 			freelist = ps;
 			ps = tps;
-			assert(pendingSignals > 0);
+			assert(pendingSignals > 0 && s->pending.count > 0);
+			if(prev)
+				prev->next = tps;
+			else
+				s->pending.first = tps;
+			if(!tps)
+				s->pending.last = prev;
 			pendingSignals--;
+			s->pending.count--;
 		}
-		else
+		else {
+			prev = ps;
 			ps = ps->next;
+		}
 	}
 }
 

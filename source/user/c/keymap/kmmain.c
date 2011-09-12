@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/keymap.h>
 #include <esc/proc.h>
 #include <esc/messages.h>
 #include <esc/cmdargs.h>
@@ -47,18 +48,11 @@ int main(int argc,const char **argv) {
 	/* set keymap? */
 	if(kmname != NULL) {
 		char path[MAX_PATH_LEN];
-		sMsg msg;
-		size_t len;
-		int fd = open("/dev/kmmanager",IO_MSGS);
-		if(fd < 0)
-			error("Unable to open keymap-manager");
-		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
-		if(sendMsgData(fd,MSG_KM_SET,path,len + 1) < 0 ||
-				RETRY(receive(fd,NULL,&msg,sizeof(msg))) < 0 || (int)msg.args.arg1 < 0)
-			fprintf(stderr,"Setting the keymap '%s' failed\n",kmname);
+		snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
+		if(keymap_set(path) < 0)
+			printe("Setting the keymap '%s' failed",kmname);
 		else
 			printf("Successfully changed keymap to '%s'\n",kmname);
-		close(fd);
 	}
 	/* list all keymaps */
 	else {

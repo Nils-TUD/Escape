@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
+#include <esc/driver/pci.h>
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <stdlib.h>
@@ -99,17 +100,10 @@ static sNe2k ne2k;
 
 int main(void) {
 	sPCIDevice nic;
-	ssize_t res;
-	int fd;
 
 	/* get NIC from pci */
-	fd = open("/dev/pci",IO_MSGS);
-	if(fd < 0)
-		error("Unable to open '/dev/pci'");
-	res = vrecvMsgData(fd,MSG_PCI_GET_BY_CLASS,&nic,sizeof(sPCIDevice),2,NIC_CLASS,NIC_SUBCLASS);
-	if(res < 0)
+	if(pci_getByClass(NIC_CLASS,NIC_SUBCLASS,&nic) < 0)
 		error("Unable to find NIC (d:%d)",NIC_CLASS,NIC_SUBCLASS);
-	close(fd);
 
 	if(nic.deviceId != NE2K_DEVICE_ID || nic.vendorId != NE2K_VENDOR_ID) {
 		error("NIC is no NE2K (found %d.%d.%d: vendor=%hx, device=%hx)",

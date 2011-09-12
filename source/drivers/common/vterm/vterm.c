@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/video.h>
 #include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
@@ -42,11 +43,11 @@
 /**
  * Updates the cursor
  */
-static void vterm_setCursor(sVTerm *vt);
+static void vt_setCursor(sVTerm *vt);
 /**
  * The thread that updates the titlebars every second and puts the date in
  */
-static int vterm_dateThread(void *arg);
+static int vt_dateThread(void *arg);
 
 /* vterms */
 static tULock titleBarLock;
@@ -54,11 +55,11 @@ static sVTerm vterms[VTERM_COUNT];
 static sVTerm *activeVT = NULL;
 static sVTermCfg *config;
 
-sVTerm *vterm_get(size_t index) {
+sVTerm *vt_get(size_t index) {
 	return vterms + index;
 }
 
-bool vterm_initAll(int *ids,sVTermCfg *cfg) {
+bool vt_initAll(int *ids,sVTermCfg *cfg) {
 	int vidFd,speakerFd;
 	sVTSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
@@ -79,7 +80,7 @@ bool vterm_initAll(int *ids,sVTermCfg *cfg) {
 	}
 
 	/* request screensize from video-driver */
-	if(recvMsgData(vidFd,MSG_VID_GETSIZE,&vidSize,sizeof(sVTSize)) < 0) {
+	if(video_getSize(vidFd,&vidSize) < 0) {
 		printe("Getting screensize failed");
 		return false;
 	}
@@ -95,22 +96,22 @@ bool vterm_initAll(int *ids,sVTermCfg *cfg) {
 		vterms[i].defBackground = BLACK;
 		snprintf(name,sizeof(name),"vterm%d",i);
 		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
-		if(!vterm_init(vterms + i,&vidSize,vidFd,speakerFd))
+		if(!vtctrl_init(vterms + i,&vidSize,vidFd,speakerFd))
 			return false;
 
-		vterms[i].setCursor = vterm_setCursor;
+		vterms[i].setCursor = vt_setCursor;
 	}
 
-	if(startThread(vterm_dateThread,NULL) < 0)
+	if(startThread(vt_dateThread,NULL) < 0)
 		error("Unable to start date-thread");
 	return true;
 }
 
-sVTerm *vterm_getActive(void) {
+sVTerm *vt_getActive(void) {
 	return activeVT;
 }
 
-void vterm_selectVTerm(size_t index) {
+void vt_selectVTerm(size_t index) {
 	sVTerm *vt = vterms + index;
 	if(activeVT != NULL)
 		activeVT->active = false;
@@ -118,11 +119,11 @@ void vterm_selectVTerm(size_t index) {
 	activeVT = vt;
 
 	/* refresh screen and write titlebar */
-	vterm_markScrDirty(vt);
-	vterm_setCursor(vt);
+	vtctrl_markScrDirty(vt);
+	vt_setCursor(vt);
 }
 
-void vterm_update(sVTerm *vt) {
+void vt_update(sVTerm *vt) {
 	size_t byteCount;
 	if(!vt->active)
 		return;
@@ -157,7 +158,7 @@ void vterm_update(sVTerm *vt) {
 				printe("[VTERM] Unable to write to video-driver");
 		}
 	}
-	vterm_setCursor(vt);
+	vt_setCursor(vt);
 
 	/* all synchronized now */
 	vt->upStart = 0;
@@ -165,16 +166,16 @@ void vterm_update(sVTerm *vt) {
 	vt->upScroll = 0;
 }
 
-static void vterm_setCursor(sVTerm *vt) {
+static void vt_setCursor(sVTerm *vt) {
 	if(vt->active) {
 		sVTPos pos;
 		pos.col = vt->col;
 		pos.row = vt->row;
-		sendMsgData(vt->video,MSG_VID_SETCURSOR,&pos,sizeof(pos));
+		video_setCursor(vt->video,&pos);
 	}
 }
 
-static int vterm_dateThread(void *arg) {
+static int vt_dateThread(void *arg) {
 	size_t i,j,len;
 	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
 	UNUSED(arg);

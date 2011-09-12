@@ -91,7 +91,8 @@ static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *h
 	size_t j;
 	ssize_t res;
 	uint64_t *stack;
-	thread_getStackRange(t,(uintptr_t*)&stack,NULL,0);
+	if(!thread_getStackRange(t,(uintptr_t*)&stack,NULL,0))
+		return ERR_NOT_ENOUGH_MEM;
 	*stack++ = 0;	/* $0 */
 	*stack++ = 0;	/* $1 */
 	*stack++ = 0;	/* $2 */

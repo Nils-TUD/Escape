@@ -63,7 +63,7 @@
  * The second problem forces us to use a different thread-switch-mechanismn than in ECO32 and i586.
  * Because the old one relies on the opportunity to save the state at any place and resume it later.
  * Since we have to do the SAVE and the RESUME directly after another, we provide the function
- * thread_doSwitch and use it when switching the thread. This is no problem in thread_switchTo()
+ * thread_doSwitchTo and use it when switching the thread. This is no problem in thread_doSwitch()
  * and the initial state can be created by thread_initSave. This one is rather tricky as well. It
  * performs a SAVE at first to write the whole state to memory, copies the register- and software-
  * stack to newStack, writes rWW, ..., rZZ and the end of the stack to saveArea and executes an
@@ -264,11 +264,6 @@ void thread_doSwitch(void) {
 void thread_printState(const sThreadRegs *state) {
 	vid_printf("\tState:\n",state);
 	vid_printf("\t\tStackend = %p\n",state->stackEnd);
-	vid_printf("\t\trBB = %#016lx\n",state->rbb);
-	vid_printf("\t\trWW = %#016lx\n",state->rww);
-	vid_printf("\t\trXX = %#016lx\n",state->rxx);
-	vid_printf("\t\trYY = %#016lx\n",state->ryy);
-	vid_printf("\t\trZZ = %#016lx\n",state->rzz);
 }
 
 #endif

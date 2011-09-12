@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/init.h>
 #include <esc/io.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
@@ -151,13 +152,7 @@ int main(int argc,char *argv[]) {
 static void sigTermHndl(int sig) {
 	UNUSED(sig);
 	/* notify init that we're alive and promise to terminate as soon as possible */
-	int fd = open("/dev/init",IO_MSGS);
-	if(fd >= 0) {
-		sArgsMsg msg;
-		msg.arg1 = getpid();
-		send(fd,MSG_INIT_IAMALIVE,&msg,sizeof(msg));
-		close(fd);
-	}
+	init_iamalive();
 	run = false;
 }
 

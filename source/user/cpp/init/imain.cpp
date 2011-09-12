@@ -38,7 +38,7 @@ static void sigAlarm(int sig);
 static int driverThread(void *arg);
 
 static ProcessManager pm;
-static int timeout = false;
+static volatile int timeout = false;
 static int state = STATE_RUN;
 
 int main(void) {
@@ -64,10 +64,15 @@ int main(void) {
 	while(1) {
 		sExitState st;
 		waitChild(&st);
-		if(state != STATE_RUN)
-			pm.died(st.pid);
-		else
-			pm.restart(st.pid);
+		try {
+			if(state != STATE_RUN)
+				pm.died(st.pid);
+			else
+				pm.restart(st.pid);
+		}
+		catch(const init_error& e) {
+			cerr << "Unable to react on child-death: " << e.what() << endl;
+		}
 	}
 	return EXIT_SUCCESS;
 }

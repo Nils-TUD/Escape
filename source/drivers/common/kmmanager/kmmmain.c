@@ -175,19 +175,19 @@ static void handleKeymap(msgid_t mid,int fd) {
 		break;
 
 		case MSG_KM_SET: {
-			char *str = msg.data.d;
-			str[sizeof(msg.data.d) - 1] = '\0';
+			char *str = msg.str.s1;
+			str[sizeof(msg.str.s1) - 1] = '\0';
 			sKeymapEntry *newMap = km_parse(str);
 			if(!newMap)
-				msg.data.arg1 = ERR_INVALID_KEYMAP;
+				msg.str.arg1 = ERR_INVALID_KEYMAP;
 			else {
-				msg.data.arg1 = 0;
+				msg.str.arg1 = 0;
 				locku(&lck);
 				free(map);
 				map = newMap;
 				unlocku(&lck);
 			}
-			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
+			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.str));
 		}
 		break;
 

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/driver.h>
@@ -126,7 +127,8 @@ int main(int argc,char **argv) {
 
 	// give vterm our pid
 	long pid = getpid();
-	sendRecvMsgData(fin,MSG_VT_SHELLPID,&pid,sizeof(long));
+	if(vterm_setShellPid(fin,pid) < 0)
+		error("Unable to set shell-pid");
 
 	shellMain();
 
@@ -175,7 +177,7 @@ static int termThread(void *arg) {
 }
 
 static int shellMain(void) {
-	printf("\033[co;9]Welcome to Escape v0.3!\033[co]\n");
+	printf("\033[co;9]Welcome to Escape v%s!\033[co]\n",ESCAPE_VERSION);
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");

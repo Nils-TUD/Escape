@@ -63,7 +63,7 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 	if(e.isCtrlDown())
 		modifier |= STATE_CTRL;
 	locku(_lock);
-	vterm_handleKey(_vt,e.getKeyCode(),modifier,e.getCharacter());
+	vtin_handleKey(_vt,e.getKeyCode(),modifier,e.getCharacter());
 	update();
 	unlocku(_lock);
 }
@@ -71,14 +71,14 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 void ShellControl::resizeTo(gsize_t width,gsize_t height) {
 	Control::resizeTo(width,height);
 	locku(_lock);
-	vterm_resize(_vt,getCols(),getRows());
+	vtctrl_resize(_vt,getCols(),getRows());
 	unlocku(_lock);
 	repaint();
 }
 
 void ShellControl::sendEOF() {
 	locku(_lock);
-	vterm_handleKey(_vt,VK_D,STATE_CTRL,'d');
+	vtin_handleKey(_vt,VK_D,STATE_CTRL,'d');
 	unlocku(_lock);
 }
 

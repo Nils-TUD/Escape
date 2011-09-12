@@ -35,29 +35,29 @@
 /**
  * @return the current position in the readline-buffer
  */
-static size_t vterm_rlGetBufPos(sVTerm *vt);
+static size_t vtin_rlGetBufPos(sVTerm *vt);
 
 /**
  * Handles the given keycode for readline
  *
  * @return true if handled
  */
-static bool vterm_rlHandleKeycode(sVTerm *vt,uchar keycode);
+static bool vtin_rlHandleKeycode(sVTerm *vt,uchar keycode);
 
-void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
+void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	if((modifier & STATE_SHIFT) && vt->navigation) {
 		switch(keycode) {
 			case VK_PGUP:
-				vterm_scroll(vt,vt->rows);
+				vtctrl_scroll(vt,vt->rows);
 				return;
 			case VK_PGDOWN:
-				vterm_scroll(vt,-vt->rows);
+				vtctrl_scroll(vt,-vt->rows);
 				return;
 			case VK_UP:
-				vterm_scroll(vt,1);
+				vtctrl_scroll(vt,1);
 				return;
 			case VK_DOWN:
-				vterm_scroll(vt,-1);
+				vtctrl_scroll(vt,-1);
 				return;
 		}
 	}
@@ -75,7 +75,7 @@ void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 				case VK_D:
 					vt->inbufEOF = true;
 					if(vt->readLine)
-						vterm_rlFlushBuf(vt);
+						vtin_rlFlushBuf(vt);
 					if(rb_length(vt->inbuf) == 0)
 						fcntl(vt->sid,F_SETDATA,true);
 					return;
@@ -85,11 +85,11 @@ void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 		/* in reading mode? */
 		if(vt->readLine) {
 			if(vt->echo)
-				vterm_rlHandleKeycode(vt,keycode);
+				vtin_rlHandleKeycode(vt,keycode);
 		}
 	}
 	if(c && vt->readLine)
-		vterm_rlPutchar(vt,c);
+		vtin_rlPutchar(vt,c);
 
 	/* send escape-code when we're not in readline-mode */
 	if(!vt->readLine) {
@@ -106,7 +106,7 @@ void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 		vt->setCursor(vt);
 }
 
-void vterm_rlFlushBuf(sVTerm *vt) {
+void vtin_rlFlushBuf(sVTerm *vt) {
 	size_t i = 0,len = rb_length(vt->inbuf);
 	while(vt->rlBufPos > 0) {
 		rb_write(vt->inbuf,vt->rlBuffer + i);
@@ -118,10 +118,10 @@ void vterm_rlFlushBuf(sVTerm *vt) {
 		fcntl(vt->sid,F_SETDATA,true);
 }
 
-void vterm_rlPutchar(sVTerm *vt,char c) {
+void vtin_rlPutchar(sVTerm *vt,char c) {
 	switch(c) {
 		case '\b': {
-			size_t bufPos = vterm_rlGetBufPos(vt);
+			size_t bufPos = vtin_rlGetBufPos(vt);
 			if(bufPos > 0) {
 				if(vt->echo) {
 					size_t i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2);
@@ -139,7 +139,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 
 				/* overwrite line */
 				/* TODO just refresh the required part */
-				vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
+				vtctrl_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
 			}
 		}
 		break;
@@ -153,7 +153,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 		default: {
 			bool flushed = false;
 			bool moved = false;
-			size_t bufPos = vterm_rlGetBufPos(vt);
+			size_t bufPos = vtin_rlGetBufPos(vt);
 
 			/* increase buffer size? */
 			if(vt->rlBuffer && bufPos >= vt->rlBufSize) {
@@ -179,7 +179,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 			/* TODO later we should allow "multiline-editing" */
 			if(c == '\n' || vt->rlStartCol + vt->rlBufPos >= vt->cols) {
 				flushed = true;
-				vterm_rlFlushBuf(vt);
+				vtin_rlFlushBuf(vt);
 			}
 
 			/* echo character, if required */
@@ -191,7 +191,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 						/* print the end of the buffer again */
 						strncpy(copy,vt->rlBuffer + bufPos,count - 1);
 						copy[count - 1] = '\0';
-						vterm_puts(vt,copy,count - 1,false);
+						vtout_puts(vt,copy,count - 1,false);
 						free(copy);
 
 						/* reset cursor */
@@ -199,7 +199,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 					}
 				}
 				else if(c != EOF)
-					vterm_putchar(vt,c);
+					vtout_putchar(vt,c);
 			}
 			if(flushed)
 				vt->rlStartCol = vt->col;
@@ -208,14 +208,14 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 	}
 }
 
-static size_t vterm_rlGetBufPos(sVTerm *vt) {
+static size_t vtin_rlGetBufPos(sVTerm *vt) {
 	if(vt->echo)
 		return vt->col - vt->rlStartCol;
 	else
 		return vt->rlBufPos;
 }
 
-static bool vterm_rlHandleKeycode(sVTerm *vt,uchar keycode) {
+static bool vtin_rlHandleKeycode(sVTerm *vt,uchar keycode) {
 	bool res = false;
 	switch(keycode) {
 		case VK_LEFT:

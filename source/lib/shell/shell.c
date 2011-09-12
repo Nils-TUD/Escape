@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <usergroup/user.h>
+#include <esc/driver/vterm.h>
 #include <esc/dir.h>
 #include <esc/proc.h>
 #include <esc/io.h>
@@ -122,11 +123,11 @@ int shell_readLine(char *buffer,size_t max) {
 	resetReadLine = false;
 
 	/* disable "readline", enable "echo", enable "navi" (just to be sure) */
-	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0) < 0)
+	if(vterm_setNavi(STDOUT_FILENO,true) < 0)
 		error("Unable to enable navi");
-	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0) < 0)
+	if(vterm_setReadline(STDOUT_FILENO,false) < 0)
 		error("Unable to disable readline");
-	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0) < 0)
+	if(vterm_setEcho(STDOUT_FILENO,true) < 0)
 		error("Unable to enable echo");
 
 	/* ensure that the line is empty */
@@ -149,7 +150,7 @@ int shell_readLine(char *buffer,size_t max) {
 		}
 		/* stop if we were unable to read from stdin */
 		if((c = fgetc(stdin)) == EOF) {
-			if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0) < 0)
+			if(vterm_setReadline(STDOUT_FILENO,true) < 0)
 				error("Unable to reenable readline");
 			return ferror(stdin);
 		}
@@ -202,8 +203,7 @@ int shell_readLine(char *buffer,size_t max) {
 		i++;
 	}
 
-	/* enable "readline" */
-	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0) < 0)
+	if(vterm_setReadline(STDOUT_FILENO,true) < 0)
 		error("Unable to reenable readline");
 
 	buffer[i] = '\0';

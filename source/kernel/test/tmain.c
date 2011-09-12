@@ -55,6 +55,7 @@ void apstart(void);
 void bspstart(sBootInfo *bootinfo) {
 	/* init the kernel */
 	boot_start(bootinfo);
+	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	/* TODO find a better solution */
 #ifdef __i386__
 	paging_gdtFinished();

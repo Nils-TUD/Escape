@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/messages.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
@@ -37,7 +38,7 @@ int main(void) {
 	size_t p,i,j;
 	if(setSigHandler(SIG_TERM,sigTerm) < 0)
 		error("Unable to set term-handler");
-	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
+	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
 		error("Unable to get vterm-size");
 	maxWidth = consSize.width - 3;
 

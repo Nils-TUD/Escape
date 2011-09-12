@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
+#include <esc/driver/pci.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/messages.h>
@@ -50,20 +51,12 @@ static sATAController ctrls[2];
 
 void ctrl_init(bool useDma) {
 	ssize_t i,j;
-	int res;
-	int fd;
 
 	/* get ide-controller from pci */
-	fd = open("/dev/pci",IO_MSGS);
-	if(fd < 0)
-		error("Unable to open '/dev/pci'");
-	res = vrecvMsgData(fd,MSG_PCI_GET_BY_CLASS,&ideCtrl,sizeof(sPCIDevice),2,
-			IDE_CTRL_CLASS,IDE_CTRL_SUBCLASS);
-	if(res < 0)
+	if(pci_getByClass(IDE_CTRL_CLASS,IDE_CTRL_SUBCLASS,&ideCtrl) < 0)
 		error("Unable to find IDE-controller (%d:%d)",IDE_CTRL_CLASS,IDE_CTRL_SUBCLASS);
 	ATA_LOG("Found IDE-controller (%d.%d.%d): vendorId %x, deviceId %x, rev %x",
 			ideCtrl.bus,ideCtrl.dev,ideCtrl.func,ideCtrl.vendorId,ideCtrl.deviceId,ideCtrl.revId);
-	close(fd);
 
 	ctrls[0].id = DEVICE_PRIMARY;
 	ctrls[0].irq = SIG_INTRPT_ATA1;

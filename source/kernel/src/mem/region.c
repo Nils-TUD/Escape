@@ -42,8 +42,6 @@
  * in the page-table-entries. That is, for 3/4 flags and the swap-block, if the page is not in
  * memory. */
 
-static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
-
 sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,
 		ulong pgFlags,ulong flags) {
 	size_t i,pageCount;
@@ -248,7 +246,7 @@ void reg_print(sRegion *reg,uintptr_t virt) {
 	cache_free(buf.str);
 }
 
-static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
+void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 	struct {
 		const char *name;
 		ulong no;

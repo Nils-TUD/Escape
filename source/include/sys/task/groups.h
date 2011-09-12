@@ -43,15 +43,15 @@ bool groups_set(pid_t pid,size_t count,USER const gid_t *groups);
 void groups_join(sProc *dst,sProc *src);
 
 /**
- * Copies the group-ids from the given process into the given list. If <size> is 0, the number
+ * Copies the group-ids from the given process into the given list. If <count> is 0, the number
  * of groups is returned
  *
  * @param pid the process-id
  * @param list the destination list
- * @param size the size of the list
+ * @param count the number of items in the list
  * @return the number of copied groups
  */
-size_t groups_get(pid_t pid,gid_t *list,size_t size);
+size_t groups_get(pid_t pid,gid_t *list,size_t count);
 
 /**
  * Checks whether the groups of process <p> contain <gid>.

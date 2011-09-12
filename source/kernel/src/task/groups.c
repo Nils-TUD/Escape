@@ -71,20 +71,20 @@ void groups_join(sProc *dst,sProc *src) {
 	}
 }
 
-size_t groups_get(pid_t pid,USER gid_t *list,size_t size) {
+size_t groups_get(pid_t pid,USER gid_t *list,size_t count) {
 	sProcGroups *g = groups_getByPid(pid);
-	if(size == 0)
+	if(count == 0)
 		return g ? g->count : 0;
 	if(g) {
 		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
-		size = MIN(g->count,size);
-		if(!vmm_makeCopySafe(p,list,size)) {
+		count = MIN(g->count,count);
+		if(!vmm_makeCopySafe(p,list,count * sizeof(gid_t))) {
 			proc_release(p,PLOCK_REGIONS);
 			return 0;
 		}
-		memcpy(list,g->groups,size);
+		memcpy(list,g->groups,count * sizeof(gid_t));
 		proc_release(p,PLOCK_REGIONS);
-		return size;
+		return count;
 	}
 	return 0;
 }

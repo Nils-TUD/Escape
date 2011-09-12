@@ -25,7 +25,8 @@
 #include <string.h>
 
 /* for i586 and eco32, we need only 3 regions; one for gft, one for vfs-nodes and one for sll-nodes */
-#define DYNA_REG_COUNT	3
+/* but one additional one for the unit-tests doesn't hurt */
+#define DYNA_REG_COUNT	4
 
 static sDynaRegion regions[DYNA_REG_COUNT];
 static sDynaRegion *freeList;

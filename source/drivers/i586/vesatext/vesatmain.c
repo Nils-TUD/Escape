@@ -72,7 +72,7 @@ typedef uint8_t *(*fSetPixel)(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);
 
 static int vesa_determineMode(void);
 static int vesa_init(void);
-static void vesa_drawStr(gpos_t col,gpos_t row,const char *str,size_t len);
+static void vesa_drawChars(gpos_t col,gpos_t row,const uint8_t *str,size_t len);
 static void vesa_drawChar(gpos_t col,gpos_t row,uint8_t c,uint8_t color);
 static void vesa_drawCharLoop16(uint8_t *vid,uint8_t c,uint8_t cf1,uint8_t cf2,
 		uint8_t cf3,uint8_t cb1,uint8_t cb2,uint8_t cb3);
@@ -155,11 +155,11 @@ int main(void) {
 					if(video == NULL || minfo == NULL)
 						msg.args.arg1 = ERR_UNSUPPORTED_OP;
 					else if(offset + count <= (size_t)(rows * cols * 2) && offset + count > offset) {
-						char *str = (char*)malloc(count);
+						uint8_t *str = (uint8_t*)malloc(count);
 						vassert(str,"Unable to alloc mem");
 						msg.args.arg1 = 0;
 						if(RETRY(receive(fd,&mid,str,count)) >= 0) {
-							vesa_drawStr((offset / 2) % cols,(offset / 2) / cols,str,count / 2);
+							vesa_drawChars((offset / 2) % cols,(offset / 2) / cols,str,count / 2);
 							msg.args.arg1 = count;
 						}
 						free(str);
@@ -278,10 +278,10 @@ static int vesa_init(void) {
 	return 0;
 }
 
-static void vesa_drawStr(gpos_t col,gpos_t row,const char *str,size_t len) {
+static void vesa_drawChars(gpos_t col,gpos_t row,const uint8_t *str,size_t len) {
 	while(len-- > 0) {
-		char c = *str++;
-		char color = *str++;
+		uint8_t c = *str++;
+		uint8_t color = *str++;
 		vesa_drawChar(col,row,c,color);
 		if(col >= cols - 1) {
 			row++;

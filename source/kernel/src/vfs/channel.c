@@ -165,8 +165,8 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const vo
 	if(n->name == NULL)
 		return ERR_NODE_DESTROYED;
 
-	/*vid_printf("%d:%s sent msg %d with %d bytes to %s\n",pid,proc_getByPid(pid)->command,id,size,
-			vfs_isDriver(file) ? n->name : n->parent->name);*/
+	/*vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (driver %s)\n",
+			pid,proc_getByPid(pid)->command,id,size,n->name,n,n->parent->name);*/
 
 	/* drivers write to the receive-list (which will be read by other processes) */
 	if(vfs_isDriver(file)) {
@@ -278,8 +278,8 @@ ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,U
 		goto invArgs;
 	}
 
-	/*vid_printf("%s received msg %d from %s\n",proc_getByPid(pid)->command,
-					msg->id,node->parent->name);*/
+	/*vid_printf("%d:%s received msg %d from chan %s:%x\n",
+			pid,proc_getByPid(pid)->command,msg->id,node->name,node);*/
 
 	/* copy data and id */
 	p = proc_request(proc_getRunning(),PLOCK_REGIONS);

@@ -1216,6 +1216,11 @@ inode_t vfs_createProcess(pid_t pid) {
 	if(n == NULL)
 		goto errorDir;
 
+	/* create maps-info-node */
+	n = vfs_file_create(KERNEL_PID,dir,(char*)"maps",vfs_info_mapsReadHandler,NULL);
+	if(n == NULL)
+		goto errorDir;
+
 	/* create threads-dir */
 	tdir = vfs_dir_create(KERNEL_PID,dir,(char*)"threads");
 	if(tdir == NULL)

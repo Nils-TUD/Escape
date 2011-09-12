@@ -44,6 +44,7 @@
 #include <sys/vfs/info.h>
 #include <sys/vfs/info.h>
 #include <sys/log.h>
+#include <sys/cpu.h>
 #include <sys/config.h>
 #include <sys/boot.h>
 #include <sys/util.h>
@@ -94,6 +95,7 @@ void boot_arch_start(sBootInfo *binfo) {
 	bootFinished = (info.progCount - 1) * 2 + 1;
 
 	vid_init();
+	cpu_setSpeed(info.cpuHz);
 
 	/* parse the boot parameter */
 	argv = boot_parseArgs(binfo->progs[0].command,&argc);
@@ -132,6 +134,8 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	if(bootState == 0) {
 		/* start idle-thread */
 		proc_startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
+		/* start termination-thread */
+		proc_startThread((uintptr_t)&term_start,0,NULL);
 		bootState++;
 	}
 	else if((bootState % 2) == 1) {
@@ -180,7 +184,6 @@ int boot_loadModules(sIntrptStackFrame *stack) {
 	/* start the swapper-thread. it will never return */
 	proc_startThread((uintptr_t)&swap_start,0,NULL);
 #endif
-	proc_startThread((uintptr_t)&term_start,0,NULL);
 
 	if(bootState == bootFinished) {
 		/* if not requested otherwise, from now on, print only to log */

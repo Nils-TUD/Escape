@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/io.h>
 #include <esc/cmdargs.h>
 #include <esc/messages.h>
@@ -63,7 +64,7 @@ int main(int argc,char **argv) {
 
 	/* give vterm our pid */
 	pid = getpid();
-	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_SHELLPID,&pid,sizeof(long)) < 0)
+	if(vterm_setShellPid(STDOUT_FILENO,pid) < 0)
 		error("Unable to send pid to vterm");
 
 	/* set vterm as env-variable */

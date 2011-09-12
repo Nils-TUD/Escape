@@ -69,8 +69,8 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	return 0;
 }
 
-bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
-		const sStartupInfo *info,uintptr_t entryPoint) {
+bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo *info,
+		uintptr_t entryPoint,int fd) {
 	uint32_t *esp;
 	char **argv;
 	size_t totalSize;
@@ -152,21 +152,10 @@ bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
 	 * program, not the dynamic-linker */
 	esp = uenv_addArgs(t,esp,info->progEntry,false);
 
-	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
-	 * so that he can load it including all shared libraries */
+	/* if its the dynamic linker, give him the filedescriptor, so that he can load it including
+	 * all shared libraries */
 	if(info->linkerEntry != info->progEntry) {
-		int fd;
-		file_t file = vfs_openPath(t->proc->pid,VFS_READ,path);
-		if(file < 0) {
-			proc_release(p,PLOCK_REGIONS);
-			return false;
-		}
-		fd = proc_assocFd(file);
-		if(fd < 0) {
-			vfs_closeFile(t->proc->pid,file);
-			proc_release(p,PLOCK_REGIONS);
-			return false;
-		}
+		assert(fd != -1);
 		*--esp = fd;
 	}
 

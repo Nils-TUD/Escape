@@ -17,11 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_LIBCTEST_SYSCALLS_H_
-#define MMIX_LIBCTEST_SYSCALLS_H_
+#ifndef DRIVER_KEYMAP_H_
+#define DRIVER_KEYMAP_H_
 
-#define KERNEL_SPACE		0x8000000000000000
-#define ILLEGAL_ADDR		0x1234567890ABCDEF
-#define HIGH_ADDR			0xFFFFFFFFFFFFFFFF
+#include <esc/common.h>
 
-#endif /* MMIX_LIBCTEST_SYSCALLS_H_ */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int keymap_set(const char *map);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* DRIVER_KEYMAP_H_ */

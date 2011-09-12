@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: kbmain.c 1001 2011-07-30 18:56:36Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -20,6 +20,8 @@
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
 #include <esc/arch/i586/vm86.h>
+#include <esc/driver/vterm.h>
+#include <esc/driver/video.h>
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/debug.h>
@@ -256,8 +258,7 @@ static void kbStartDbgConsole(void) {
 	/* switch to vga-text-mode */
 	int fd = open("/dev/video",IO_MSGS);
 	if(fd >= 0) {
-		send(fd,MSG_VID_SETMODE,NULL,0);
-		RETRY(receive(fd,NULL,NULL,0));
+		video_setMode(fd);
 		close(fd);
 	}
 
@@ -269,7 +270,7 @@ static void kbStartDbgConsole(void) {
 	 * But its for debugging, so its ok, I think :) */
 	fd = open("/dev/vterm0",IO_MSGS);
 	if(fd >= 0) {
-		send(fd,MSG_VT_ENABLE,NULL,0);
+		vterm_setEnabled(fd,true);
 		close(fd);
 	}
 }

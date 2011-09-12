@@ -18,10 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/proc.h>
-#include <esc/thread.h>
-#include <esc/messages.h>
+#include <esc/driver/init.h>
 #include <esc/cmdargs.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,10 +32,9 @@ static void usage(const char *name) {
 int main(int argc,const char *argv[]) {
 	bool reboot = false;
 	bool shutdown = false;
-	sMsg msg;
-	int fd;
+	int res;
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);
+	res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);
 	if(res < 0 || (!reboot && !shutdown) || (reboot && shutdown)) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
@@ -46,13 +42,11 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	fd = open("/dev/init",IO_MSGS);
-	if(fd < 0)
-		error("Unable to open '%s'","/dev/init");
 	if(reboot)
-		send(fd,MSG_INIT_REBOOT,&msg,sizeof(msg.args));
+		res = init_reboot();
 	else if(shutdown)
-		send(fd,MSG_INIT_SHUTDOWN,&msg,sizeof(msg.args));
-	close(fd);
+		res = init_shutdown();
+	if(res < 0)
+		printe("%s failed",reboot ? "Reboot" : "Shutdown");
 	return EXIT_SUCCESS;
 }

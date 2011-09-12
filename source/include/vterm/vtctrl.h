@@ -142,7 +142,7 @@ typedef enum {
  * @param speakerFd the file-descriptor for the speaker-driver
  * @return true if successfull
  */
-bool vterm_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd);
+bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd);
 
 /**
  * Handles the control-commands
@@ -153,7 +153,7 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd);
  * @param data the data
  * @return the result
  */
-int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data);
+int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data);
 
 /**
  * Scrolls the screen by <lines> up (positive) or down (negative)
@@ -161,14 +161,14 @@ int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data);
  * @param vt the vterm
  * @param lines the number of lines to move
  */
-void vterm_scroll(sVTerm *vt,int lines);
+void vtctrl_scroll(sVTerm *vt,int lines);
 
 /**
  * Marks the whole screen including title-bar dirty
  *
  * @param vt the vterm
  */
-void vterm_markScrDirty(sVTerm *vt);
+void vtctrl_markScrDirty(sVTerm *vt);
 
 /**
  * Marks the given range as dirty
@@ -177,14 +177,14 @@ void vterm_markScrDirty(sVTerm *vt);
  * @param start the start-position
  * @param length the number of bytes
  */
-void vterm_markDirty(sVTerm *vt,size_t start,size_t length);
+void vtctrl_markDirty(sVTerm *vt,size_t start,size_t length);
 
 /**
  * Releases resources
  *
  * @param vt the vterm
  */
-void vterm_destroy(sVTerm *vt);
+void vtctrl_destroy(sVTerm *vt);
 
 /**
  * Resizes the size of the terminal to <cols> x <rows>.
@@ -194,7 +194,7 @@ void vterm_destroy(sVTerm *vt);
  * @param rows the number of rows
  * @return true if it has changed something
  */
-bool vterm_resize(sVTerm *vt,size_t cols,size_t rows);
+bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows);
 
 #ifdef __cplusplus
 }

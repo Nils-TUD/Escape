@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <vterm/vtout.h>
+#include <esc/driver/vterm.h>
 #include <esc/driver.h>
 #include <esc/thread.h>
 #include <stdlib.h>
@@ -47,7 +48,7 @@ GUITerm::GUITerm(tULock *lock,int sid,ShellControl *sh)
 	_vt->defBackground = WHITE;
 	if(getenvto(_vt->name,sizeof(_vt->name),"TERM") < 0)
 		error("Unable to get env-var TERM");
-	if(!vterm_init(_vt,&size,-1,speakerFd))
+	if(!vtctrl_init(_vt,&size,-1,speakerFd))
 		error("Unable to init vterm");
 	_vt->active = true;
 	_sh->setVTerm(_vt);
@@ -55,7 +56,7 @@ GUITerm::GUITerm(tULock *lock,int sid,ShellControl *sh)
 
 GUITerm::~GUITerm() {
 	delete[] _rbuffer;
-	vterm_destroy(_vt);
+	vtctrl_destroy(_vt);
 	free(_vt);
 }
 
@@ -71,7 +72,7 @@ void GUITerm::run() {
 			if(_rbufPos > 0) {
 				_rbuffer[_rbufPos] = '\0';
 				locku(_lock);
-				vterm_puts(_vt,_rbuffer,_rbufPos,true);
+				vtout_puts(_vt,_rbuffer,_rbufPos,true);
 				_sh->update();
 				unlocku(_lock);
 				_rbufPos = 0;
@@ -103,7 +104,7 @@ void GUITerm::run() {
 				case MSG_VT_RESTORE:
 				case MSG_VT_GETSIZE:
 					locku(_lock);
-					msg.data.arg1 = vterm_ctl(_vt,&_cfg,mid,msg.data.d);
+					msg.data.arg1 = vtctrl_control(_vt,&_cfg,mid,msg.data.d);
 					unlocku(_lock);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
@@ -156,7 +157,7 @@ void GUITerm::write(int fd,sMsg *msg) {
 				if(_rbufPos >= READ_BUF_SIZE) {
 					_rbuffer[_rbufPos] = '\0';
 					locku(_lock);
-					vterm_puts(_vt,_rbuffer,_rbufPos,true);
+					vtout_puts(_vt,_rbuffer,_rbufPos,true);
 					unlocku(_lock);
 					_rbufPos = 0;
 				}

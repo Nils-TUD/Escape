@@ -100,7 +100,7 @@ start:
 	STOU	$2,$1,0
 
 	# bootinfo is in $0
-	LDOU	$254,$0,32						# load kstackbegin from bootinfo
+	LDOU	$254,$0,40						# load kstackbegin from bootinfo
 	INCL	$254,STACK_SIZE
 	SUBU	$254,$254,8						# stack-pointer = kstackbegin + STACK_SIZE - 8
 	OR		$253,$254,$254					# frame-pointer = stack-pointer
@@ -111,11 +111,12 @@ start:
 
 	# detect the CPU speed for runtime-measurements
 	PUSHJ	$1,detectCPUSpeed
+	STOU	$1,$0,0							# store cpu-speed into bootinfo
 
 	# call main
-	OR		$2,$0,$0						# pass bootinfo to main
-	SET		$3,$254							# pass pointer to stackBegin, which is set in main
-	SUBU	$4,$254,8						# pass pointer to rss, which is set in main
+	OR		$1,$0,$0						# pass bootinfo to main
+	SET		$2,$254							# pass pointer to stackBegin, which is set in main
+	SUBU	$3,$254,8						# pass pointer to rss, which is set in main
 	PUSHJ	$0,bspstart						# call 'bspstart' function
 
 	# setup forced and dynamic trap handlers
@@ -202,11 +203,16 @@ dynamicTrap:
 	LDOU	$0,$0,0
 	PUT		rG,$0
 	# setup sp and fp
+	LDOU	$0,$255,0						# load rG|rA
+	SRU		$0,$0,32
+	AND		$0,$0,1							# extract stack-change-bit
+	BZ		$0,1f							# if stack-change-bit is zero, don't setup sw-stack
 	GET		$0,rSS
 	INCL	$0,STACK_SIZE
 	SUBU	$254,$0,8
 	SET		$253,$254
 	SUBU	$254,$254,6*8					# determine irq-number
+1:
 	GET		$0,rQ
 	SUBU	$1,$0,1
 	SADD	$3,$1,$0

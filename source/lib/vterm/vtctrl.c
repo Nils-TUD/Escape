@@ -39,21 +39,11 @@
 #define INITIAL_RLBUF_SIZE	50
 
 #define TITLE_BAR_COLOR		0x17
-#define OS_TITLE			"E\x17" \
-							"s\x17" \
-							"c\x17" \
-							"a\x17" \
-							"p\x17" \
-							"e\x17" \
-							" \x17" \
-							"v\x17" \
-							"0\x17" \
-							".\x17" \
-							"3\x17"
+#define OS_TITLE			"Escape v"ESCAPE_VERSION
 
-static void vterm_buildTitle(sVTerm *vt);
+static void vtctrl_buildTitle(sVTerm *vt);
 
-bool vterm_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
+bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
 	size_t i,len;
 	uchar color;
 	char *ptr;
@@ -120,18 +110,18 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
 		*ptr++ = color;
 	}
 
-	vterm_buildTitle(vt);
+	vtctrl_buildTitle(vt);
 	return true;
 }
 
-void vterm_destroy(sVTerm *vt) {
+void vtctrl_destroy(sVTerm *vt) {
 	rb_destroy(vt->inbuf);
 	free(vt->buffer);
 	free(vt->titleBar);
 	free(vt->rlBuffer);
 }
 
-bool vterm_resize(sVTerm *vt,size_t cols,size_t rows) {
+bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 	if(vt->cols != cols || vt->rows != rows) {
 		size_t c,r,color;
 		size_t ccols = MIN(cols,vt->cols);
@@ -195,7 +185,7 @@ bool vterm_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->row = MIN(rows - 1,rows - (vt->rows - vt->row));
 		vt->cols = cols;
 		vt->rows = rows;
-		vterm_buildTitle(vt);
+		vtctrl_buildTitle(vt);
 		free(old);
 		free(oldTitle);
 		return true;
@@ -203,7 +193,7 @@ bool vterm_resize(sVTerm *vt,size_t cols,size_t rows) {
 	return false;
 }
 
-int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
+int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 	int res = 0;
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
@@ -260,7 +250,7 @@ int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 				vt->screenBackup = NULL;
 				vt->col = vt->backupCol;
 				vt->row = vt->backupRow;
-				vterm_markScrDirty(vt);
+				vtctrl_markScrDirty(vt);
 			}
 			break;
 		case MSG_VT_GETSIZE: {
@@ -275,7 +265,7 @@ int vterm_ctl(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 	return res;
 }
 
-void vterm_scroll(sVTerm *vt,int lines) {
+void vtctrl_scroll(sVTerm *vt,int lines) {
 	size_t old = vt->firstVisLine;
 	if(lines > 0) {
 		/* ensure that we don't scroll above the first line with content */
@@ -290,11 +280,11 @@ void vterm_scroll(sVTerm *vt,int lines) {
 		vt->upScroll -= lines;
 }
 
-void vterm_markScrDirty(sVTerm *vt) {
-	vterm_markDirty(vt,0,vt->cols * vt->rows * 2);
+void vtctrl_markScrDirty(sVTerm *vt) {
+	vtctrl_markDirty(vt,0,vt->cols * vt->rows * 2);
 }
 
-void vterm_markDirty(sVTerm *vt,size_t start,size_t length) {
+void vtctrl_markDirty(sVTerm *vt,size_t start,size_t length) {
 	if(vt->upLength == 0) {
 		vt->upStart = start;
 		vt->upLength = length;
@@ -307,8 +297,8 @@ void vterm_markDirty(sVTerm *vt,size_t start,size_t length) {
 	}
 }
 
-static void vterm_buildTitle(sVTerm *vt) {
-	size_t i,len;
+static void vtctrl_buildTitle(sVTerm *vt) {
+	size_t i,j,len;
 	char *ptr = vt->titleBar;
 	char *s = vt->name;
 	for(i = 0; *s; i++) {
@@ -320,7 +310,10 @@ static void vterm_buildTitle(sVTerm *vt) {
 		*ptr++ = TITLE_BAR_COLOR;
 	}
 	len = strlen(OS_TITLE);
-	i = (((vt->cols * 2) / 2) - (len / 2)) & ~0x1;
+	i = (((vt->cols * 2) / 2) - len) & ~0x1;
 	ptr = vt->titleBar;
-	memcpy(ptr + i,OS_TITLE,len);
+	for(j = 0; j < len; j++) {
+		ptr[i + j * 2] = OS_TITLE[j];
+		ptr[i + j * 2 + 1] = TITLE_BAR_COLOR;
+	}
 }

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/messages.h>
@@ -40,9 +41,9 @@ int main(void) {
 	}
 
 	// disable readline, stop reading from keyboard and stop date-refresh
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDKB,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DISABLE,NULL,0);
+	vterm_setReadline(STDOUT_FILENO,false);
+	vterm_setReadKB(STDOUT_FILENO,false);
+	vterm_setEnabled(STDOUT_FILENO,false);
 
 	// start gui drivers
 	startDriver("vesa","/dev/vesa");
@@ -87,9 +88,9 @@ static void startDriver(const char *name,const char *wait) {
 
 static void quit(const char *msg,...) {
 	va_list ap;
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDKB,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_ENABLE,NULL,0);
+	vterm_setReadline(STDOUT_FILENO,true);
+	vterm_setReadKB(STDOUT_FILENO,true);
+	vterm_setEnabled(STDOUT_FILENO,true);
 	va_start(ap,msg);
 	vprinte(msg,ap);
 	va_end(ap);

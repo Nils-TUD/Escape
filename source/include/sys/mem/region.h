@@ -46,7 +46,7 @@ typedef struct {
 } sBinDesc;
 
 typedef struct {
-	ulong flags;		/* flags that specify the attributes of this region */
+	ulong flags;			/* flags that specify the attributes of this region */
 	const sBinDesc binary;	/* the source-binary (for demand-paging) */
 	const off_t binOffset;	/* offset in the binary */
 	const size_t loadCount;	/* number of bytes to load from disk (the rest is zero'ed) */
@@ -163,6 +163,14 @@ sRegion *reg_clone(const void *p,const sRegion *reg);
 void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt);
 
 /**
+ * Prints the given region
+ *
+ * @param reg the region
+ * @param virt the virtual-address at which the region is mapped
+ */
+void reg_print(sRegion *reg,uintptr_t virt);
+
+/**
  * Prints the flags of the given region
  *
  * @param reg the region
@@ -170,11 +178,11 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt);
 void reg_printFlags(const sRegion *reg);
 
 /**
- * Prints the given region
+ * Prints the flags of the given region into the given buffer
  *
+ * @param buf the buffer
  * @param reg the region
- * @param virt the virtual-address at which the region is mapped
  */
-void reg_print(sRegion *reg,uintptr_t virt);
+void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
 
 #endif /* REGION_H_ */

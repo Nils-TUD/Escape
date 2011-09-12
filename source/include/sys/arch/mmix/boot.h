@@ -36,6 +36,7 @@ typedef struct {
 } sLoadProg;
 
 typedef struct {
+	uint64_t cpuHz;
 	size_t progCount;
 	const sLoadProg *progs;
 	size_t memSize;

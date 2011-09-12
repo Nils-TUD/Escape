@@ -320,6 +320,14 @@ ssize_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount);
 void vmm_sprintfRegions(sStringBuffer *buf,pid_t pid);
 
 /**
+ * Prints information about all mappings of the given process to the given buffer
+ *
+ * @param buf the buffer
+ * @param pid the process-id
+ */
+void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid);
+
+/**
  * Prints a short version of the regions of given process
  *
  * @param pid the process-id

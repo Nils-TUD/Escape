@@ -35,11 +35,10 @@ static A_ALIGNED(8) uint8_t initloader[] = {
 #endif
 };
 
-uintptr_t bspstart(uint64_t cpuHz,sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
+uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	sThread *t;
 	sStartupInfo info;
 
-	cpu_setSpeed(cpuHz);
 	boot_start(bootinfo);
 
 	/* give the process some stack pages */

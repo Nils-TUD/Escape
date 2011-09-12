@@ -119,6 +119,37 @@ static void test_setHandler(void) {
 	test_assertSize(sig_dbg_getHandlerCount(),0);
 	test_caseSucceeded();
 
+	test_caseStart("Testing sig_unsetHandler() with pending signals");
+	test_assertInt(sig_setHandler(t1->tid,SIG_TERM,(fSignal)0x456),0);
+	test_assertTrue(sig_addSignal(SIG_TERM));
+	test_assertTrue(sig_addSignal(SIG_TERM));
+	test_assertTrue(sig_hasSignalFor(t1->tid));
+	sig_unsetHandler(t1->tid,SIG_TERM);
+	test_assertFalse(sig_hasSignalFor(t1->tid));
+	/* try again */
+	test_assertInt(sig_setHandler(t1->tid,SIG_TERM,(fSignal)0x456),0);
+	test_assertTrue(sig_addSignal(SIG_TERM));
+	test_assertTrue(sig_addSignal(SIG_TERM));
+	test_assertTrue(sig_hasSignalFor(t1->tid));
+	sig_unsetHandler(t1->tid,SIG_TERM);
+	test_assertFalse(sig_hasSignalFor(t1->tid));
+	/* try again with checkAndStart */
+	test_assertInt(sig_setHandler(t1->tid,SIG_TERM,(fSignal)0x456),0);
+	test_assertTrue(sig_addSignal(SIG_TERM));
+	test_assertTrue(sig_addSignal(SIG_TERM));
+	test_assertInt(sig_checkAndStart(t2->tid,&sig,&handler),SIG_CHECK_OTHER);
+	test_assertTrue(sig_hasSignalFor(t1->tid));
+	sig_unsetHandler(t1->tid,SIG_TERM);
+	test_assertFalse(sig_hasSignalFor(t1->tid));
+	/* try again */
+	test_assertInt(sig_setHandler(t1->tid,SIG_TERM,(fSignal)0x456),0);
+	test_assertTrue(sig_addSignal(SIG_TERM));
+	test_assertTrue(sig_addSignal(SIG_TERM));
+	test_assertTrue(sig_hasSignalFor(t1->tid));
+	sig_unsetHandler(t1->tid,SIG_TERM);
+	test_assertFalse(sig_hasSignalFor(t1->tid));
+	test_caseSucceeded();
+
 	test_caseStart("Testing sig_removeHandlerFor()");
 	test_assertInt(sig_setHandler(t1->tid,SIG_TERM,(fSignal)0x456),0);
 	test_assertInt(sig_setHandler(t1->tid,SIG_SEGFAULT,(fSignal)0x456),0);

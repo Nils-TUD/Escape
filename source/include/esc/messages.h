@@ -123,10 +123,6 @@
 #define MSG_WIN_SET_ACTIVE			316	/* requests that a window is set to the active one */
 #define MSG_WIN_ACTIVE_EV			317	/* a window has been set to active */
 
-#define MSG_POWER_REBOOT			400	/* reboots the system */
-#define MSG_POWER_SHUTDOWN			401	/* shuts the system down */
-#define MSG_POWER_IAMALIVE			402	/* tells the power-manager that a process is alive */
-
 #define MSG_VID_SETCURSOR			500	/* expects sVTPos */
 #define MSG_VID_GETSIZE				501	/* writes into sVTSize */
 #define MSG_VID_SETMODE				502	/* sets the video-mode */

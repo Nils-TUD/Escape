@@ -35,7 +35,7 @@ extern "C" {
  * @param len the string-length
  * @param resetRead whether readline-stuff should be reset
  */
-void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead);
+void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead);
 
 /**
  * Prints the given character to screen
@@ -43,7 +43,7 @@ void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead);
  * @param vt the vterm
  * @param c the character
  */
-void vterm_putchar(sVTerm *vt,char c);
+void vtout_putchar(sVTerm *vt,char c);
 
 #ifdef __cplusplus
 }

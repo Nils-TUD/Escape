@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <usergroup/user.h>
 #include <usergroup/group.h>
+#include <esc/driver/vterm.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <esc/proc.h>
@@ -71,8 +72,9 @@ int main(int argc,char **argv) {
 		error("Unable to duplicate STDOUT to STDERR: Got fd %d",fd);
 
 	printf("\n\n");
-	printf("\033[co;9]Welcome to Escape v0.3, %s\033[co]\n\n",argv[1]);
-	printf("Please login to get a shell.\n\n");
+	printf("\033[co;9]Welcome to Escape v%s, %s!\033[co]\n\n",ESCAPE_VERSION,argv[1]);
+	printf("Please login to get a shell.\n");
+	printf("Hint: use hrniels/test, jon/doe or root/root ;)\n\n");
 
 	while(1) {
 #if SKIP_LOGIN
@@ -81,10 +83,10 @@ int main(int argc,char **argv) {
 #else
 		printf("Username: ");
 		fgetl(un,sizeof(un),stdin);
-		sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_ECHO,NULL,0);
+		vterm_setEcho(STDOUT_FILENO,false);
 		printf("Password: ");
 		fgetl(pw,sizeof(pw),stdin);
-		sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
+		vterm_setEcho(STDOUT_FILENO,true);
 		putchar('\n');
 #endif
 

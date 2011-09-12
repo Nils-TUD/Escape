@@ -242,10 +242,9 @@ if [ "$1" == "build" ]; then
 	setPerms
 	unmountDisk
 	
-	# ensure that we'll copy all stuff to the disk with 'make all'
-	rm -f $BUILD/*.bin $BUILD/apps/* $BUILD/*.so*
-	# now rebuild and copy it
-	make all
+	# ensure that we'll copy all stuff to the disk in dist/Makefile
+	sleep 1
+	touch $BUILD/kernel.bin
 fi
 
 # copy all files (except programs etc.) to disk

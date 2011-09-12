@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/video.h>
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/debug.h>
@@ -70,7 +71,7 @@ int main(void) {
 	}
 
 	/* init vterms */
-	if(!vterm_initAll(drvIds,&cfg))
+	if(!vt_initAll(drvIds,&cfg))
 		error("Unable to init vterms");
 
 	/* open keyboard */
@@ -100,9 +101,9 @@ int main(void) {
 					count /= sizeof(sKmData);
 					while(count-- > 0) {
 						if(!kmsg->isBreak) {
-							sVTerm *vt = vterm_getActive();
-							vterm_handleKey(vt,kmsg->keycode,kmsg->modifier,kmsg->character);
-							vterm_update(vt);
+							sVTerm *vt = vt_getActive();
+							vtin_handleKey(vt,kmsg->keycode,kmsg->modifier,kmsg->character);
+							vt_update(vt);
 						}
 						kmsg++;
 					}
@@ -151,8 +152,8 @@ int main(void) {
 						if(RETRY(receive(fd,&mid,data,c + 1)) >= 0) {
 							if(cfg.enabled) {
 								data[c] = '\0';
-								vterm_puts(vt,data,c,true);
-								vterm_update(vt);
+								vtout_puts(vt,data,c,true);
+								vt_update(vt);
 							}
 							msg.args.arg1 = c;
 						}
@@ -167,9 +168,9 @@ int main(void) {
 				case MSG_VT_SELECT: {
 					size_t index = msg.args.arg1;
 					if(index < VTERM_COUNT) {
-						if(!vterm_getActive() || vterm_getActive()->index != index) {
-							vterm_selectVTerm(index);
-							vterm_update(vterm_getActive());
+						if(!vt_getActive() || vt_getActive()->index != index) {
+							vt_selectVTerm(index);
+							vt_update(vt_getActive());
 						}
 					}
 				}
@@ -189,18 +190,17 @@ int main(void) {
 				case MSG_VT_BACKUP:
 				case MSG_VT_RESTORE:
 				case MSG_VT_GETSIZE:
-					msg.data.arg1 = vterm_ctl(vt,&cfg,mid,msg.data.d);
+					msg.data.arg1 = vtctrl_control(vt,&cfg,mid,msg.data.d);
 					/* reenable mode, if necessary */
 					if(mid == MSG_VT_ENABLE) {
 						/* always use the active one here */
-						vt = vterm_getActive();
+						vt = vt_getActive();
 						if(vt) {
-							send(vt->video,MSG_VID_SETMODE,NULL,0);
-							RETRY(receive(vt->video,NULL,NULL,0));
-							vterm_markScrDirty(vt);
+							video_setMode(vt->video);
+							vtctrl_markScrDirty(vt);
 						}
 					}
-					vterm_update(vt);
+					vt_update(vt);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
 
@@ -217,7 +217,7 @@ int main(void) {
 	close(kbFd);
 	for(i = 0; i < VTERM_COUNT; i++) {
 		close(drvIds[i]);
-		vterm_destroy(vterm_get(i));
+		vtctrl_destroy(vt_get(i));
 	}
 	return EXIT_SUCCESS;
 }
@@ -226,7 +226,7 @@ static sVTerm *getVTerm(int sid) {
 	size_t i;
 	for(i = 0; i < VTERM_COUNT; i++) {
 		if(drvIds[i] == sid)
-			return vterm_get(i);
+			return vt_get(i);
 	}
 	return NULL;
 }

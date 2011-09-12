@@ -56,15 +56,15 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal);
 /**
  * Setups the user-stack for given interrupt-stack, when starting the current process
  *
- * @param path the executable-path
  * @param argc the argument-count
  * @param args the arguments on after another, allocated on the heap; may be NULL
  * @param argsSize the total number of bytes for the arguments (just the data)
  * @param info startup-info
  * @param entryPoint the entry-point
+ * @param fd the file-descriptor for the executable for the dynamic linker (-1 if not needed)
  * @return true if successfull
  */
-bool uenv_setupProc(const char *path,int argc,const char *args,size_t argsSize,
-		const sStartupInfo *info,uintptr_t entryPoint);
+bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo *info,
+		uintptr_t entryPoint,int fd);
 
 #endif /* UENV_H_ */

@@ -35,12 +35,12 @@ extern "C" {
  * @param modifier the modifiers
  * @param c the character
  */
-void vterm_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
+void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
 
 /**
  * Flushes the readline-buffer
  */
-void vterm_rlFlushBuf(sVTerm *vt);
+void vtin_rlFlushBuf(sVTerm *vt);
 
 /**
  * Puts the given charactern into the readline-buffer and handles everything necessary
@@ -48,7 +48,7 @@ void vterm_rlFlushBuf(sVTerm *vt);
  * @param vt the vterm
  * @param c the character
  */
-void vterm_rlPutchar(sVTerm *vt,char c);
+void vtin_rlPutchar(sVTerm *vt,char c);
 
 #ifdef __cplusplus
 }

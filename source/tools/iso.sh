@@ -80,6 +80,9 @@ for i in $BUILD/user_*.bin ; do
 	cp $i $TMPDIR/bin/`echo $BASE | sed "s/user_\(.*\)/\1/g"`
 done;
 
+# enable setuid-bit
+chmod +s $TMPDIR/bin/{users,groups}
+
 # finally create image and clean up
 genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito \
 	-no-emul-boot -boot-load-size 4 -boot-info-table -o $ISO $TMPDIR

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/io.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
@@ -46,7 +47,7 @@ static int curY = 0;
 static sFileBuffer *buffer;
 
 void displ_init(sFileBuffer *buf) {
-	if(recvMsgData(STDOUT_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
+	if(vterm_getSize(STDOUT_FILENO,&consSize) < 0)
 		error("Unable to get screensize");
 
 	/* one line for status-information :) */
@@ -55,19 +56,19 @@ void displ_init(sFileBuffer *buf) {
 	dirtyCount = consSize.height;
 
 	/* backup screen */
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
+	vterm_backup(STDOUT_FILENO);
 	/* stop readline and navigation */
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_NAVI,NULL,0);
+	vterm_setReadline(STDOUT_FILENO,false);
+	vterm_setNavi(STDOUT_FILENO,false);
 }
 
 void displ_finish(void) {
 	printf("\n");
 	/* ensure that the output is flushed before the vterm restores the old screen */
 	fflush(stdout);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
+	vterm_setReadline(STDOUT_FILENO,true);
+	vterm_setNavi(STDOUT_FILENO,true);
+	vterm_restore(STDOUT_FILENO);
 }
 
 void displ_getCurPos(int *col,int *row) {
@@ -184,12 +185,12 @@ int displ_getSaveFile(char *file,size_t bufSize) {
 	for(i = 0; i < consSize.width; i++)
 		putchar(' ');
 	putchar('\r');
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
+	vterm_setReadline(STDOUT_FILENO,true);
 	printf("\033[co;0;7]Save to file:\033[co] ");
 	if(buffer->filename)
 		printf("\033[si;1]%s\033[si;0]",buffer->filename);
 	res = fgetl(file,bufSize,stdin);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
+	vterm_setReadline(STDOUT_FILENO,false);
 	displ_markDirty(firstLine + consSize.height - 1,1);
 	displ_update();
 	return res ? 0 : EOF;

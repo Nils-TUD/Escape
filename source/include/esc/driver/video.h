@@ -17,32 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef DRIVER_VIDEO_H_
+#define DRIVER_VIDEO_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/test.h>
-#include <stdlib.h>
+#include <esc/messages.h>
 
-#include "tests/theap.h"
-#include "tests/tfileio.h"
-#include "tests/tdir.h"
-#include "tests/tenv.h"
-#include "tests/tfs.h"
-#include "tests/tgroup.h"
-#include "tests/tuser.h"
-#include "tests/trect.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int main(void) {
-	if(getuid() != ROOT_UID)
-		error("Please start this program as root!");
+int video_setCursor(int fd,const sVTPos *pos);
+int video_getSize(int fd,sVTSize *size);
+int video_setMode(int fd);
 
-	test_register(&tModHeap);
-	test_register(&tModFileio);
-	test_register(&tModDir);
-	test_register(&tModEnv);
-	test_register(&tModFs);
-	test_register(&tModGroup);
-	test_register(&tModUser);
-	test_register(&tModRect);
-	test_start();
-	return EXIT_SUCCESS;
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* DRIVER_VIDEO_H_ */

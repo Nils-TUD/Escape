@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
@@ -175,7 +176,7 @@ int main(int argc,char **argv) {
 
 	// get console-size
 	sVTSize consSize;
-	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
+	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
 		error("Unable to determine screensize");
 
 	// print header

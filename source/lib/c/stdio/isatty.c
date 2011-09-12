@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/messages.h>
 #include <stdio.h>
 #include <errno.h>
@@ -25,7 +26,7 @@
 
 int isatty(int fd) {
 	sVTSize consSize;
-	int res = recvMsgData(fd,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) >= 0;
+	int res = vterm_getSize(fd,&consSize) >= 0;
 	/* this is not considered as an error in this case */
 	/* note that we include no-exec-perm here because we assume that we can always send messages
 	 * with stdin when it is connected to a vterm. */

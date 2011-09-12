@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/width.h>
 #include <esc/messages.h>
 #include <iostream>
@@ -135,7 +136,7 @@ int main(int argc,char *argv[]) {
 		path = env::get("CWD");
 
 	// get console-size
-	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
+	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
 		error("Unable to determine screensize");
 
 	/* get entries and sort them */

@@ -30,31 +30,31 @@
  * @param cfg the global config
  * @return true if successfull
  */
-bool vterm_initAll(int *ids,sVTermCfg *cfg);
+bool vt_initAll(int *ids,sVTermCfg *cfg);
 
 /**
  * @param index the index
  * @return the vterm with given index
  */
-sVTerm *vterm_get(size_t index);
+sVTerm *vt_get(size_t index);
 
 /**
  * Selects the given vterminal
  *
  * @param index the index of the vterm
  */
-void vterm_selectVTerm(size_t index);
+void vt_selectVTerm(size_t index);
 
 /**
  * @return the currently active vterm
  */
-sVTerm *vterm_getActive(void);
+sVTerm *vt_getActive(void);
 
 /**
  * Updates the dirty range
  *
  * @param vt the vterm
  */
-void vterm_update(sVTerm *vt);
+void vt_update(sVTerm *vt);
 
 #endif /* VTERM_H_ */

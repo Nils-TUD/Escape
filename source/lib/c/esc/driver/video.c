@@ -17,12 +17,39 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TSYSCALLS_H_
-#define TSYSCALLS_H_
-
 #include <esc/common.h>
-#include <esc/test.h>
+#include <esc/driver/video.h>
+#include <esc/messages.h>
+#include <esc/io.h>
+#include <string.h>
 
-extern sTestModule tModSyscalls;
+int video_setCursor(int fd,const sVTPos *pos) {
+	sDataMsg msg;
+	memcpy(&msg.d,pos,sizeof(sVTPos));
+	return send(fd,MSG_VID_SETCURSOR,&msg,sizeof(msg));
+}
 
-#endif /* TSYSCALLS_H_ */
+int video_getSize(int fd,sVTSize *size) {
+	sDataMsg msg;
+	int res = send(fd,MSG_VID_GETSIZE,NULL,0);
+	if(res < 0)
+		return res;
+	res = RETRY(receive(fd,NULL,&msg,sizeof(msg)));
+	if(res < 0)
+		return res;
+	if(msg.arg1 != sizeof(sVTSize))
+		return msg.arg1;
+	memcpy(size,&msg.d,sizeof(sVTSize));
+	return 0;
+}
+
+int video_setMode(int fd) {
+	sArgsMsg msg;
+	int res = send(fd,MSG_VID_SETMODE,NULL,0);
+	if(res < 0)
+		return res;
+	res = RETRY(receive(fd,NULL,&msg,sizeof(msg)));
+	if(res < 0)
+		return res;
+	return msg.arg1;
+}

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <usergroup/user.h>
 #include <usergroup/group.h>
 #include <esc/messages.h>
@@ -221,14 +222,14 @@ static void deleteUser(const char *name) {
 static void readPassword(sUser *u) {
 	char secondPw[MAX_PW_LEN + 1];
 	/* read in password */
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_ECHO,NULL,0);
+	vterm_setEcho(STDOUT_FILENO,false);
 	printf("Password: ");
 	fgetl(u->pw,sizeof(u->pw),stdin);
 	putchar('\n');
 	printf("Repeat: ");
 	fgetl(secondPw,sizeof(secondPw),stdin);
 	putchar('\n');
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
+	vterm_setEcho(STDOUT_FILENO,true);
 	if(strcmp(u->pw,secondPw) != 0)
 		error("Passwords do not match");
 }

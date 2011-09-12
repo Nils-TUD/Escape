@@ -1,6 +1,6 @@
 # general
-ARCH = eco32
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
@@ -80,7 +80,7 @@ ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
 	export BUILDTYPE=debug
 else
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 	export BUILDTYPE=release
 endif
@@ -180,12 +180,12 @@ endif
 
 mmix:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -i --script=gimmix.start \
-		#-b -s $(BUILD)/kernel.map $(BUILD)/user_dd.map
+		-b -s $(BUILD)/kernel.map $(BUILD)/user_dd.map
 
 mmixd:	all hdd prepareRun
 	$(GIMSIM) -r $(GIMMON) -o log.txt -c -t 1 -d $(HDD) -p 1234 >/dev/null 2>&1 &
 	sleep 1;
-	/opt/mmix/bin/mmix-gdbtui --command=gdb.start --symbols $(BUILD)/driver_fs.bin
+	/opt/mmix/bin/mmix-gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 testm:	all hdd prepareTest
 	$(GIMSIM) -r $(GIMMON) -m 24 -t 1 -d $(HDD) -o log.txt -c -i --script=gimmix.start \

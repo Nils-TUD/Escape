@@ -30,6 +30,9 @@ static sSymbol ksymbols[] = {
 #ifdef __eco32__
 #	include <sys/arch/eco32/ksymbols.h>
 #endif
+#ifdef __mmix__
+#	include <sys/arch/mmix/ksymbols.h>
+#endif
 };
 
 void ksym_print(void) {

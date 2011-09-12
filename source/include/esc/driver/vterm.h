@@ -17,23 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TEST_SYSCALLS_H_
-#define TEST_SYSCALLS_H_
+#ifndef DRIVER_VTERM_H_
+#define DRIVER_VTERM_H_
 
 #include <esc/common.h>
+#include <esc/messages.h>
 
-#ifdef __eco32__
-#include "arch/eco32/syscalls.h"
-#endif
-#ifdef __i386__
-#include "arch/i586/syscalls.h"
-#endif
-#ifdef __mmix__
-#include "arch/mmix/syscalls.h"
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-int doSyscall7(ulong syscallNo,ulong arg1,ulong arg2,ulong arg3,ulong arg4,ulong arg5,
-		ulong arg6,ulong arg7);
-int doSyscall(ulong syscallNo,ulong arg1,ulong arg2,ulong arg3);
+int vterm_setEnabled(int fd,bool enabled);
+int vterm_setEcho(int fd,bool echo);
+int vterm_setReadline(int fd,bool readline);
+int vterm_setReadKB(int fd,bool read);
+int vterm_setNavi(int fd,bool navi);
+int vterm_backup(int fd);
+int vterm_restore(int fd);
+int vterm_setShellPid(int fd,pid_t pid);
+int vterm_getSize(int fd,sVTSize *size);
+int vterm_select(int fd,int vterm);
 
-#endif /* TEST_SYSCALLS_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* DRIVER_VTERM_H_ */

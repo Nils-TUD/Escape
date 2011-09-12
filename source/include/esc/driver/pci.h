@@ -17,32 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef DRIVER_PCI_H_
+#define DRIVER_PCI_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/test.h>
-#include <stdlib.h>
+#include <esc/messages.h>
 
-#include "tests/theap.h"
-#include "tests/tfileio.h"
-#include "tests/tdir.h"
-#include "tests/tenv.h"
-#include "tests/tfs.h"
-#include "tests/tgroup.h"
-#include "tests/tuser.h"
-#include "tests/trect.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int main(void) {
-	if(getuid() != ROOT_UID)
-		error("Please start this program as root!");
+int pci_getByClass(uchar base,uchar sub,sPCIDevice *d);
+int pci_getById(uchar bus,uchar dev,uchar func,sPCIDevice *d);
 
-	test_register(&tModHeap);
-	test_register(&tModFileio);
-	test_register(&tModDir);
-	test_register(&tModEnv);
-	test_register(&tModFs);
-	test_register(&tModGroup);
-	test_register(&tModUser);
-	test_register(&tModRect);
-	test_start();
-	return EXIT_SUCCESS;
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* DRIVER_PCI_H_ */

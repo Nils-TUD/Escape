@@ -56,29 +56,3 @@ clean:
 	@for i in $(DIRS) ; do \
 		$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 	done
-
-#pre-hdd:
-#		@echo "	" UPDATING $(HDD)
-#		@$(ROOT)/tools/disk.sh mountp1
-
-#post-hdd:
-#		@$(ROOT)/tools/disk.sh unmount
-#		@touch $(HDD)
-
-#$(DISKMNT)/boot/kernel.bin:	$(BUILD)/kernel.bin
-#		$(SUDO) cp $< $@
-
-#$(DISKMNT)/boot/kernel_test.bin:	$(BUILD)/kernel_test.bin
-#		$(SUDO) cp $< $@
-
-#$(DISKMNT)/bin/%:	$(BUILD)/user_%.bin
-#		$(SUDO) cp $< $@
-
-#$(DISKMNT)/sbin/%:	$(BUILD)/driver_%.bin
-#		$(SUDO) cp $< $@
-
-#$(DISKMNT)/lib/lib%.so:	$(BUILD)/lib%.so
-#		$(SUDO) cp $< $@
-
-#$(DISKMNT)/lib/libgcc_s.so.1:	$(BUILD_LIBGCC)
-#		$(SUDO) cp $< $@

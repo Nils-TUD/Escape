@@ -35,7 +35,7 @@
  *
  * @param vt the vterm
  */
-static void vterm_newLine(sVTerm *vt);
+static void vtout_newLine(sVTerm *vt);
 
 /**
  * Deletes <count> in front of the current position, if possible
@@ -43,7 +43,7 @@ static void vterm_newLine(sVTerm *vt);
  * @param vt the vterm
  * @param count the number of characters
  */
-static void vterm_delete(sVTerm *vt,size_t count);
+static void vtout_delete(sVTerm *vt,size_t count);
 
 /**
  * Handles an escape-code
@@ -52,11 +52,11 @@ static void vterm_delete(sVTerm *vt,size_t count);
  * @param str the string
  * @return true if something has been done
  */
-static bool vterm_handleEscape(sVTerm *vt,char **str);
+static bool vtout_handleEscape(sVTerm *vt,char **str);
 
 static sMsg msg;
 
-void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
+void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	char c,*start = str;
 
 	/* are we waiting to finish an escape-code? */
@@ -70,15 +70,15 @@ void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 		vt->escapeBuf[vt->escapePos] = '\0';
 
 		/* try it again */
-		if(!vterm_handleEscape(vt,&escPtr)) {
+		if(!vtout_handleEscape(vt,&escPtr)) {
 			/* if no space is left, quit and simply print the code */
 			if(vt->escapePos >= MAX_ESCC_LENGTH - 1) {
 				size_t i;
 				for(i = 0; i < MAX_ESCC_LENGTH; i++) {
 					if(vt->printToRL)
-						vterm_rlPutchar(vt,vt->escapeBuf[i]);
+						vtin_rlPutchar(vt,vt->escapeBuf[i]);
 					else {
-						vterm_putchar(vt,vt->escapeBuf[i]);
+						vtout_putchar(vt,vt->escapeBuf[i]);
 						if(resetRead) {
 							vt->rlBufPos = 0;
 							vt->rlStartCol = vt->col;
@@ -100,7 +100,7 @@ void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 			str++;
 			/* if the escape-code is incomplete, store what we have so far and wait for
 			 * further input */
-			if(!vterm_handleEscape(vt,&str)) {
+			if(!vtout_handleEscape(vt,&str)) {
 				size_t count = MIN(MAX_ESCC_LENGTH,len - (str - start));
 				memcpy(vt->escapeBuf,str,count);
 				vt->escapePos = count;
@@ -109,9 +109,9 @@ void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 			continue;
 		}
 		if(vt->printToRL)
-			vterm_rlPutchar(vt,c);
+			vtin_rlPutchar(vt,c);
 		else {
-			vterm_putchar(vt,c);
+			vtout_putchar(vt,c);
 			if(resetRead) {
 				vt->rlBufPos = 0;
 				vt->rlStartCol = vt->col;
@@ -122,15 +122,15 @@ void vterm_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
-		vterm_scroll(vt,vt->firstVisLine - vt->currLine);
+		vtctrl_scroll(vt,vt->firstVisLine - vt->currLine);
 }
 
-void vterm_putchar(sVTerm *vt,char c) {
+void vtout_putchar(sVTerm *vt,char c) {
 	size_t i;
 
 	/* move all one line up, if necessary */
 	if(vt->row >= vt->rows) {
-		vterm_newLine(vt);
+		vtout_newLine(vt);
 		vt->row--;
 	}
 
@@ -142,7 +142,7 @@ void vterm_putchar(sVTerm *vt,char c) {
 			/* to next line */
 			vt->row++;
 			/* move cursor to line start */
-			vterm_putchar(vt,'\r');
+			vtout_putchar(vt,'\r');
 			break;
 
 		case '\r':
@@ -160,20 +160,20 @@ void vterm_putchar(sVTerm *vt,char c) {
 			break;
 
 		case '\b':
-			vterm_delete(vt,1);
+			vtout_delete(vt,1);
 			break;
 
 		case '\t':
 			i = TAB_WIDTH - vt->col % TAB_WIDTH;
 			while(i-- > 0) {
-				vterm_putchar(vt,' ');
+				vtout_putchar(vt,' ');
 			}
 			break;
 
 		default: {
 			/* do an explicit newline if necessary */
 			if(vt->col >= vt->cols)
-				vterm_putchar(vt,'\n');
+				vtout_putchar(vt,'\n');
 
 			i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
 
@@ -181,14 +181,14 @@ void vterm_putchar(sVTerm *vt,char c) {
 			vt->buffer[i] = c;
 			vt->buffer[i + 1] = (vt->background << 4) | vt->foreground;
 
-			vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,2);
+			vtctrl_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,2);
 			vt->col++;
 		}
 		break;
 	}
 }
 
-static void vterm_newLine(sVTerm *vt) {
+static void vtout_newLine(sVTerm *vt) {
 	char *src,*dst;
 	size_t i,count = (HISTORY_SIZE * vt->rows - vt->firstLine) * vt->cols * 2;
 	/* move one line back */
@@ -213,7 +213,7 @@ static void vterm_newLine(sVTerm *vt) {
 	vt->upScroll++;
 }
 
-static void vterm_delete(sVTerm *vt,size_t count) {
+static void vtout_delete(sVTerm *vt,size_t count) {
 	if((!vt->readLine && vt->col >= count) || (vt->readLine && vt->rlBufPos >= count)) {
 		if(!vt->readLine || vt->echo) {
 			size_t i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
@@ -229,7 +229,7 @@ static void vterm_delete(sVTerm *vt,size_t count) {
 
 		/* overwrite line */
 		/* TODO just refresh the required part */
-		vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
+		vtctrl_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
 	}
 	else {
 		/* beep */
@@ -241,7 +241,7 @@ static void vterm_delete(sVTerm *vt,size_t count) {
 	}
 }
 
-static bool vterm_handleEscape(sVTerm *vt,char **str) {
+static bool vtout_handleEscape(sVTerm *vt,char **str) {
 	int cmd,n1,n2,n3;
 	cmd = escc_get((const char**)str,&n1,&n2,&n3);
 	if(cmd == ESCC_INCOMPLETE)
@@ -271,7 +271,7 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 			vt->printToRL = n1 == 1;
 			break;
 		case ESCC_DEL_FRONT:
-			vterm_delete(vt,n1);
+			vtout_delete(vt,n1);
 			break;
 		case ESCC_DEL_BACK:
 			if(vt->readLine) {

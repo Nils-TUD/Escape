@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/vterm.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/messages.h>
@@ -38,8 +39,8 @@ static time_t time = 0;
 
 int main(void) {
 	/* backup screen and stop vterm to read from keyboard */
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDKB,NULL,0);
+	vterm_backup(STDOUT_FILENO);
+	vterm_setReadKB(STDOUT_FILENO,false);
 
 	keymap = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
 	if(keymap < 0)
@@ -90,6 +91,6 @@ static void qerror(const char *msg,...) {
 static void quit(void) {
 	game_deinit();
 	close(keymap);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
-	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDKB,NULL,0);
+	vterm_setReadKB(STDOUT_FILENO,true);
+	vterm_restore(STDOUT_FILENO);
 }

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: ksymbols.h 965 2011-07-07 10:56:45Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,11 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_LIBCTEST_SYSCALLS_H_
-#define ECO32_LIBCTEST_SYSCALLS_H_
-
-#define KERNEL_SPACE		0x80000000
-#define ILLEGAL_ADDR		0x12345677
-#define HIGH_ADDR			0xFFFFFFFF
-
-#endif /* ECO32_LIBCTEST_SYSCALLS_H_ */
+#if DEBUGGING
+#	if TESTING
+#		include "../../../../build/mmix-debug/kernelt_symbols.txt"
+#	else
+#		include "../../../../build/mmix-debug/kernel_symbols.txt"
+#	endif
+#else
+#	if TESTING
+#		include "../../../../build/mmix-release/kernelt_symbols.txt"
+#	else
+#		include "../../../../build/mmix-release/kernel_symbols.txt"
+#	endif
+#endif

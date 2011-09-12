@@ -968,6 +968,42 @@ void vmm_sprintfRegions(sStringBuffer *buf,pid_t pid) {
 	}
 }
 
+void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
+	sVMRegion *reg;
+	size_t i;
+	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	if(p) {
+		for(i = 0; i < p->regSize; i++) {
+			reg = REG(p,i);
+			if(reg != NULL) {
+				const char *name = "";
+				klock_aquire(&reg->reg->lock);
+				if(i == RNO_TEXT)
+					name = "text";
+				else if(i == RNO_DATA)
+					name = "data";
+				else if(i == RNO_RODATA)
+					name = "rodata";
+				else if(reg->reg->flags & RF_STACK)
+					name = "stack";
+				else if(reg->reg->flags & RF_TLS)
+					name = "tls";
+				else if(reg->reg->flags & RF_NOFREE)
+					name = "phys";
+				prf_sprintf(buf,"%-10s %p - %p (%5zuK) %c%c%c%c",name,reg->virt,
+						reg->virt + reg->reg->byteCount - 1,reg->reg->byteCount / K,
+						(reg->reg->flags & RF_WRITABLE) ? 'w' : '-',
+						(reg->reg->flags & RF_EXECUTABLE) ? 'x' : '-',
+						(reg->reg->flags & RF_GROWABLE) ? 'g' : '-',
+						(reg->reg->flags & RF_SHAREABLE) ? 's' : '-');
+				klock_release(&reg->reg->lock);
+				prf_sprintf(buf,"\n");
+			}
+		}
+		proc_release(p,PLOCK_REGIONS);
+	}
+}
+
 void vmm_printShort(pid_t pid) {
 	sVMRegion *reg;
 	size_t i;
@@ -977,7 +1013,7 @@ void vmm_printShort(pid_t pid) {
 			reg = REG(p,i);
 			if(reg != NULL) {
 				klock_aquire(&reg->reg->lock);
-				vid_printf("\t\t%p .. %p (%5zuK): ",reg->virt,reg->virt + reg->reg->byteCount - 1,
+				vid_printf("\t\t%p - %p (%5zuK): ",reg->virt,reg->virt + reg->reg->byteCount - 1,
 						reg->reg->byteCount / K);
 				reg_printFlags(reg->reg);
 				klock_release(&reg->reg->lock);

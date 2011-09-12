@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/video.h>
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <stdlib.h>
@@ -124,16 +125,12 @@ void Progress::paintTo(const void *data,int x,int y,size_t size) {
 }
 
 bool Progress::connect() {
-	sMsg msg;
 	if(_fd >= 0)
 		return true;
 	_fd = open("/dev/video",IO_WRITE | IO_MSGS);
 	if(_fd < 0)
 		return false;
-	if(send(_fd,MSG_VID_GETSIZE,NULL,0) < 0)
-		error("Unable to send getsize-message to video-driver");
-	if(RETRY(receive(_fd,NULL,&msg,sizeof(msg))) < 0)
+	if(video_getSize(_fd,&_vtSize) < 0)
 		error("Unable to receive size of screen");
-	memcpy(&_vtSize,&msg.data.d,sizeof(sVTSize));
 	return true;
 }

@@ -55,7 +55,7 @@
 
 static void proc_doRemoveRegions(sProc *p,bool remStack);
 static void proc_setExitState(sProc *p,int exitCode,sig_t signal);
-static void proc_destroy(sProc *p);
+static void proc_doDestroy(sProc *p);
 static void proc_notifyProcDied(pid_t parent);
 static pid_t proc_getFreePid(void);
 static bool proc_add(sProc *p);
@@ -545,7 +545,7 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	sStartupInfo info;
 	sProc *p = proc_request(proc_getRunning(),PLOCK_PROG);
 	size_t argSize;
-	int argc;
+	int argc,fd = -1;
 	if(!p)
 		return ERR_INVALID_PID;
 	/* we can't do an exec if we have multiple threads (init can do that, because the threads are
@@ -568,8 +568,10 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	argBuffer = NULL;
 	if(args != NULL) {
 		argc = proc_buildArgs(args,&argBuffer,&argSize,!code);
-		if(argc < 0)
+		if(argc < 0) {
+			proc_release(p,PLOCK_PROG);
 			return argc;
+		}
 	}
 
 	/* remove all except stack */
@@ -585,6 +587,20 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 		if(elf_loadFromFile(path,&info) < 0)
 			goto errorNoRel;
 	}
+
+	/* if its the dynamic linker, we need to give it the file-descriptor for the program to load */
+	/* we need to do this here without lock, because vfs_openPath will perform a context-switch */
+	if(info.linkerEntry != info.progEntry) {
+		file_t file = vfs_openPath(p->pid,VFS_READ,path);
+		if(file < 0)
+			goto errorNoRel;
+		fd = proc_assocFd(file);
+		if(fd < 0) {
+			vfs_closeFile(p->pid,file);
+			goto errorNoRel;
+		}
+	}
+
 	p = proc_request(p->pid,PLOCK_PROG);
 
 	/* copy path so that we can identify the process */
@@ -602,7 +618,7 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	p->entryPoint = info.progEntry;
 	thread_addHeapAlloc(argBuffer);
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
-	if(!uenv_setupProc(path,argc,argBuffer,argSize,&info,info.linkerEntry))
+	if(!uenv_setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
 		goto error;
 	thread_remHeapAlloc(argBuffer);
 	cache_free(argBuffer);
@@ -720,7 +736,7 @@ void proc_killThread(tid_t tid) {
 	sll_removeFirstWith(p->threads,t);
 	if(sll_length(p->threads) == 0) {
 		proc_setExitState(p,0,SIG_COUNT);
-		proc_destroy(p);
+		proc_doDestroy(p);
 	}
 	proc_release(p,PLOCK_PROG);
 }
@@ -750,7 +766,24 @@ static void proc_setExitState(sProc *p,int exitCode,sig_t signal) {
 	}
 }
 
-static void proc_destroy(sProc *p) {
+void proc_destroy(pid_t pid) {
+	sSLNode *n;
+	sProc *p = proc_request(pid,PLOCK_PROG);
+	if(!p)
+		return;
+	for(n = sll_begin(p->threads); n != NULL; ) {
+		sSLNode *next = n->next;
+		sThread *t = (sThread*)n->data;
+		thread_kill(t);
+		sll_removeFirstWith(p->threads,t);
+		n = next;
+	}
+	proc_setExitState(p,0,SIG_COUNT);
+	proc_doDestroy(p);
+	proc_release(p,PLOCK_PROG);
+}
+
+static void proc_doDestroy(sProc *p) {
 	size_t i;
 
 	/* release file-descriptors */

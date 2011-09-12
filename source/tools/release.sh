@@ -37,6 +37,7 @@ for i in "$DESTSRC"/source/vmware/*; do
 	fi
 done
 rm -f "$DESTSRC/source/"{license.php,log.txt,.project,.cproject,gstlfilt.pl}
+rm -f "$DESTSRC/eco32/"{.project,.cproject} "$DESTSRC/gimmix/"{.project,.cproject}
 rm -Rf "$DESTSRC/source/user/d" "$DESTSRC/source/lib/d"
 echo "done"
 
@@ -52,9 +53,7 @@ cd $OLDDIR
 rm -Rf "$DESTSRC"
 echo "done"
 
-exit 0
-
-for i in i586 eco32 mmix; do
+for i in eco32 mmix i586; do
 	echo -n "Switching to $i..."
 	if [ "$i" = "i586" ]; then
 		./switch.sh $i release --dynamic > /dev/null 2>&1

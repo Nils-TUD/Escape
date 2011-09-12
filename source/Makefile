@@ -1,6 +1,6 @@
 # general
-ARCH = mmix
-GCCVER = 4.6.0
+ARCH = i586
+GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
@@ -19,9 +19,8 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 # simulators
 KVM = -enable-kvm
 QEMU = qemu
-#-net nic,model=ne2k_pci -net user 
+#-net nic,model=ne2k_pci -net user
 QEMUARGS = -smp 4 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
-BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 ECO32 = ../eco32
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin
@@ -30,7 +29,7 @@ GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
 # whether to link drivers and user-apps statically or dynamically (static | dynamic)
-export LINKTYPE = static
+export LINKTYPE = dynamic
 # if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (static | dynamic)
 export LIBGCC = dynamic
 
@@ -98,7 +97,6 @@ endif
 	dis qemu bochs debug debugu debugm debugt test clean updatehdd
 
 all: $(BUILD)
-	@[ -f $(HDD) ] || $(MAKE) createhdd;
 	@for i in $(DIRS); do \
 		$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 	done
@@ -107,6 +105,7 @@ $(BUILD):
 	[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
 hdd:
+	@[ -f $(HDD) ] || $(MAKE) createhdd;
 	$(MAKE) -C dist hdd
 
 cd:
@@ -220,14 +219,6 @@ debug: all prepareQemu prepareRun
 	$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
 	sleep 1;
 	/usr/bin/gdbtui --command=gdb.start
-
-debugb:	all prepareBochs prepareRun
-	$(BOCHSDBG) -f bochsgdb.cfg -q
-
-debugbt:	all prepareBochs prepareRun
-	$(BOCHSDBG) -f bochsgdb.cfg -q &
-	sleep 1;
-	/usr/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 debugq: all prepareQemu prepareRun
 	$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &

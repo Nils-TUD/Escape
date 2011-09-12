@@ -12,8 +12,8 @@ VBHDDTMP = $(BUILDDIR)/vbhd.bin
 VBHDD = $(BUILDDIR)/vbhd.vdi
 VMDISK = $(abspath vmware/vmwarehddimg.vmdk)
 VBOXOSTITLE = Escape v0.1
-BINNAME = kernel.bin
-BIN = $(BUILDDIR)/$(BINNAME)
+KERNELNAME = kernel.bin
+KERNEL = $(BUILDDIR)/$(KERNELNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 # simulators
@@ -29,7 +29,7 @@ GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
 # whether to link drivers and user-apps statically or dynamically (static | dynamic)
-export LINKTYPE = dynamic
+export LINKTYPE = static
 # if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (static | dynamic)
 export LIBGCC = dynamic
 
@@ -165,14 +165,14 @@ swapbl:
 
 dis:
 ifeq ($(APP),)
-	$(OBJDUMP) -dSC $(BIN) | less
+	$(OBJDUMP) -dSC $(KERNEL) | less
 else
 	$(OBJDUMP) -dSC $(BUILD)/$(APP) | less
 endif
 
 elf:
 ifeq ($(APP),)
-	$(READELF) -a -W $(BIN) | less
+	$(READELF) -a -W $(KERNEL) | less
 else
 	$(READELF) -a -W $(BUILD)/$(APP) | less
 endif

@@ -31,7 +31,7 @@ echo "done"
 
 echo -n "Removing unnecessary files and folders..."
 rm -Rf "$DESTSRC/doc" "$DESTSRC/cross/eco32/"{binutils-2.19.diff,gcc-4.4.0.diff}
-rm -Rf "$DESTSRC"/source/{build,.csettings,.settings,disk,diskmnt,tools/release.sh}
+rm -Rf "$DESTSRC"/source/{build,.csettings,.settings,tools/release.sh}
 for i in "$DESTSRC"/source/vmware/*; do
 	if [ "$i" != "$DESTSRC/source/vmware/escape.vmx" ]; then
 		rm -f "$i"

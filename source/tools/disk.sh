@@ -1,7 +1,7 @@
 #!/bin/bash
 ROOT=$(dirname $(dirname $(readlink -f $0)))
 HDD=$BUILD/hd.img
-DISKMOUNT=$ROOT/diskmnt
+DISKMOUNT=$ROOT/disk
 TMPFILE=$BUILD/disktmp
 BINNAME=kernel.bin
 OSTITLE="Escape v0.3"

@@ -2,7 +2,7 @@
 
 SVNURL="http://hs1.whm-webhosting.de/usvn/svn/OS/trunk"
 SVNOFF="/home/hrniels/escape"
-LICENSE=LICENSE
+LICENSE=../LICENSE
 
 if [ $# -lt 2 ]; then
 	echo "Usage: $0 <targetDir> <version> [--offline]" 1>&2
@@ -10,8 +10,9 @@ if [ $# -lt 2 ]; then
 fi
 
 DEST="$1"
-DESTSRC="$DEST/src"
 VERSION="$2"
+SRCDIR="escape-$VERSION"
+DESTSRC="$DEST/$SRCDIR"
 
 if [ ! -d "$DEST" ]; then
 	echo "'$DEST' is no directory" 1>&2
@@ -43,15 +44,20 @@ echo "done"
 
 echo -n "Creating source-zip..."
 OLDDIR=`pwd`
-cd $DESTSRC
-rm -f "../escape-src-complete-$VERSION.zip"
-zip --quiet -r "../escape-src-complete-$VERSION.zip" .
-rm -Rf eco32 gimmix
-rm -f "../escape-src-$VERSION.zip"
-zip --quiet -r "../escape-src-$VERSION.zip" .
+cd $DEST
+rm -f "escape-src-complete-$VERSION.tar.bz2"
+tar -jcvf "escape-src-complete-$VERSION.tar.bz2" $SRCDIR > /dev/null
+rm -Rf $SRCDIR/eco32 $SRCDIR/gimmix
+
+rm -f "escape-src-$VERSION.tar.bz2"
+tar -jcvf "escape-src-$VERSION.tar.bz2" $SRCDIR > /dev/null
+rm -Rf $SRCDIR
 cd $OLDDIR
-rm -Rf "$DESTSRC"
 echo "done"
+
+# build directory to compress
+mkdir $DEST/$SRCDIR
+cp $LICENSE $DEST/$SRCDIR
 
 for i in eco32 mmix i586; do
 	echo -n "Switching to $i..."
@@ -64,23 +70,35 @@ for i in eco32 mmix i586; do
 	
 	echo -n "Building disk, cd and vmdk-disk..."
 	make createhdd > /dev/null
-	cp build/$i-release/hd.img "$DEST/escape-$i-hdd.img"
+	cp build/$i-release/hd.img "$DEST/$SRCDIR/escape-$i-hd.img"
 	if [ "$i" = "i586" ]; then
 		make createcd > /dev/null 2>&1
-		cp build/$i-release/cd.iso "$DEST/escape-$i-cd.iso"
-		qemu-img convert -f raw build/$i-release/hd.img -O vmdk "$DEST/escape-$i-hdd.vmdk" >/dev/null 2>&1
+		cp build/$i-release/cd.iso "$DEST/$SRCDIR/escape-$i-cd.iso"
+		qemu-img convert -f raw build/$i-release/hd.img -O vmdk \
+			"$DEST/$SRCDIR/escape-$i-hd.vmdk" >/dev/null 2>&1
+	fi
+	echo "done"
+
+	OLDDIR=`pwd`
+	cd $DEST
+	
+	echo -n "Zipping disk and cd..."
+	rm -f "escape-$i-hd-$VERSION.tar.bz2"
+	tar -jcvf "escape-$i-hd-$VERSION.tar.bz2" $SRCDIR/{escape-$i-hd.img,LICENSE} > /dev/null
+	rm -f "$SRCDIR/escape-$i-hd.img"
+	if [ "$i" = "i586" ]; then
+		rm -f "escape-$i-cd-$VERSION.tar.bz2"
+		tar -jcvf "escape-$i-cd-$VERSION.tar.bz2" $SRCDIR/{escape-$i-cd.iso,LICENSE} > /dev/null
+		rm -f "$SRCDIR/escape-$i-cd.iso"
+		
+		rm -f "escape-$i-vmdk-$VERSION.tar.bz2"
+		tar -jcvf "escape-$i-vmdk-$VERSION.tar.bz2" $SRCDIR/{escape-$i-hd.vmdk,LICENSE} > /dev/null
+		rm -f "$SRCDIR/escape-$i-hd.vmdk"
 	fi
 	echo "done"
 	
-	echo -n "Zipping disk and cd..."
-	zip --quiet -j "$DEST/escape-$i-hdd-$VERSION.zip" "$DEST/escape-$i-hdd.img" "$LICENSE"
-	rm -f "$DEST/escape-$i-hdd.img"
-	if [ "$i" = "i586" ]; then
-		zip --quiet -j "$DEST/escape-$i-cd-$VERSION.zip" "$DEST/escape-$i-cd.iso" "$LICENSE"
-		rm -f "$DEST/escape-$i-cd.iso"
-		zip --quiet -j "$DEST/escape-$i-vmdk-$VERSION.zip" "$DEST/escape-$i-hdd.vmdk" "$LICENSE"
-		rm -f "$DEST/escape-$i-hdd.vmdk"
-	fi
-	echo "done"
+	cd $OLDDIR
 done
+
+rm -Rf $DEST/$SRCDIR
 

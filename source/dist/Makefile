@@ -1,6 +1,6 @@
 ROOT = ..
 HDD = $(BUILD)/hd.img
-DISKMNT = $(ROOT)/diskmnt
+DISKMNT = $(ROOT)/disk
 CD = $(BUILD)/cd.iso
 SUDO = sudo
 DIRS = arch/$(ARCH)

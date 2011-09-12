@@ -10,7 +10,7 @@ else
 	BINNAME=kernel.bin
 fi
 KERNELBIN=$BUILD/$BINNAME
-TMPDIR=$ROOT/diskmnt
+TMPDIR=$ROOT/disk
 
 rm -Rf $TMPDIR/*
 

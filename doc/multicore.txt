@@ -1,0 +1,33 @@
+- arch
+  - paging
+  - uenv (signals)
+  - vm86?
+  - small things like fpu, gdt, intrpt, ...
+
+- mem
+  - cache
+  - cow
+  - dynarray
+  - kheap?
+  - pmem
+  - region
+  - shm
+  - sllnodes
+  - swap?
+  - swapmap
+  - vmm?
+
+- task
+  - events
+  - locks
+  - procs
+  - sched
+  - signals
+  - threads
+  - timer
+
+- vfs
+  - nodes
+  - requests
+  - files
+

@@ -1,0 +1,37 @@
+                  |  root   |  owner  |
+------------------+---------+---------+
+chmod own files   |    1    |    1    |
+chmod other files |    1    |    0    |
+chown own files   |    1    |    1    |
+  to own group    |    1    |    1    |
+  to other group  |    1    |    0    |
+  to own user     |    1    |    1    |
+  to other user   |    1    |    0    |
+chown other files |    1    |    0    |
+
+                  |  root   |   user  |  group  |  other  |
+------------------+---------+---------+---------+---------+
+read a file       | always  | r for u | r for g | r for o |
+write a file      | always  | w for u | w for g | w for o |
+execute a file    |x for ugo| x for u | x for g | x for o |
+read dir-entries  | always  | r for u | r for g | r for o |
+write dir-entries | always  | w for u | w for g | w for o |
+access dir-entries| always  | x for u | x for g | x for o |
+
+RUID: real user-id. user-id of the process-creator
+EUID: effective user-id. RUID by default. if EUID != 0, it can be changed to RUID, EUID or SUID
+SUID: saved user-id. if setuid is on, user-id of the binary, otherwise RUID
+
+RGID, EGID, SGID: the same
+
+syscalls:
+  getuid: return RUID
+  setuid: set RUID, EUID and SUID to a specified user-id (for root only)
+  geteuid: return EUID
+  seteuid: set EUID to either RUID, EUID or SUID if not root or to the specified one if root
+
+  getgid: return RGID
+  setgid: set RGID, EGID and SGID to a specified group-id (for root only)
+  getegid: return EGID
+  setegid: set EGID to either RGID, EGID or SGID if not root or to the specified one if root
+

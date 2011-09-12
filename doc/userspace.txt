@@ -1,0 +1,30 @@
+Nur C:
++ sauberer; kann man alles selbst machen, da kaum Runtime-Unterstützung notwendig
+- keine Objektorientierung
+- keine richtigen Exceptions
+
+Volles C++:
+- Man wird es nicht so ohne Weiteres schaffen Exceptions zum Laufen zu bringen
+- Man braucht diverse Sachen von anderen (libsupc++, libgcc, libgcc_eh) über die man z.T. keine Kontrolle hat
++ Exceptions
++ Objektorientierung
+
+C++ ohne Exceptions und RTTI:
++ wir brauchen keine Runtime-Support-Libraries wie libsupc++ und libgcc
+- keine Exceptions
+- Man wird sich seine eigene STL schreiben müssen (oder man baut die ustl soweit um, dass es geht)
+
+C++ mit Exception-Makros und ohne RTTI:
++ wir brauchen keine Runtime-Support-Libraries wie libsupc++ und libgcc
++ wir haben zumindest Exceptions, wenn auch mit Einschränkungen
+- Man wird sich seine eigene STL schreiben müssen (oder man baut die ustl soweit um, dass es geht)
+
+D:
++ Wir haben komplette Runtime-Unterstützung und haben auch den Quellcode von allen Sachen
++ Objektorientierung
++ D hat gegenüber C++ auch so einige Vorteile
+- Es wird z.T. langsamer sein, dank höherer Abstraktion
+- Es gibt bisher nicht so gute Tool-Unterstützung (Debugging, IDEs, ...)
+- Die libd kann irgendwie nicht als Shared-Library erstellt werden
+- Die libd ist sehr groß
+- Wir setzen auf tango => fremdes Zeug ;)

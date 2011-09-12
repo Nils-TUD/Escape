@@ -1,0 +1,19 @@
+	0x00000000 - 0x000003FF : Real mode interrupt vector table
+	0x00000400 - 0x000004FF : BIOS data area
+	0x00000500 - 0x00007BFF : Unused
+	0x00007C00 - 0x00007DFF : Floppy boot sector is loaded in here
+	0x00007E00 - 0x0009FFFF : Unused
+	0x000A0000 - 0x000BFFFF : Video RAM video memory
+	0x000B0000 - 0x000B7777 : Monochrome video memory (multiple pages)
+	0x000B8000 - 0x000BFFFF : Color video memory (multiple pages)
+	0x000C0000 - 0x000C7FFF : Video ROM video BIOS
+	0x000C8000 - 0x000EFFFF : BIOS shadow area
+	0x000F0000 - 0x000FFFFF : System BIOS
+
+Important information:
+	- EFLAGS-register:		see intel manual, vol3a, page 66
+	- Control-Registers:	see intel manual, vol3a, page 71
+	- Segment-descriptors:	see intel manual, vol3a, page 101
+	- pt- and pd-entries:	see intel manual, vol3a, page 116
+	- pmode exceptions:		see intel manual, vol3a, page 191
+	- idt-descriptors:		see intel manual, vol3a, page 202

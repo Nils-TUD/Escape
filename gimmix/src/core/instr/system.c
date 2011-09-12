@@ -2,6 +2,7 @@
  * $Id: system.c 239 2011-08-30 18:28:06Z nasmussen $
  */
 
+/* nanosleep */
 #define _POSIX_C_SOURCE 199309L
 #include <time.h>
 
@@ -73,13 +74,13 @@ void cpu_instr_sync(const sInstrArgs *iargs) {
 			break;
 
 		case SYNC_POWERSAVE: {
-			/*struct timespec ts;
+			struct timespec ts;
 			int missing = INSTRS_PER_TICK - cpu_getInstrsSinceTick();
 			ts.tv_sec = 0;
-			ts.tv_nsec = (1000 / INSTRS_PER_TICK) * missing;
+			ts.tv_nsec = (1000000 / INSTRS_PER_TICK) * missing;
 			nanosleep(&ts,NULL);
 			cpu_setInstrsSinceTick(INSTRS_PER_TICK - 1);
-			reg_setSpecial(rC,reg_getSpecial(rC) + missing);*/
+			reg_setSpecial(rC,reg_getSpecial(rC) + missing);
 		}
 		break;
 

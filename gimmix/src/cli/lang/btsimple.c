@@ -106,7 +106,6 @@ void btsimple_print(tTraceId id) {
 				return;
 		}
 
-		mprintf("%% Format: '<funcName>(<args>) [<oldPC> -> <newPC>]'\n");
 		for(; n != NULL; n = n->next) {
 			/* pad */
 			for(x = 0; x < level; x++) {

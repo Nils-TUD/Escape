@@ -108,8 +108,6 @@ void bttree_print(tTraceId id,const char *filename) {
 		return;
 	}
 
-	/* a little help for the user :) */
-	mfprintf(f,"%% Format: '<funcName>(<args>) [<oldPC> -> <newPC>], ic=<InstrCount>'\n");
 	for(n = traces[id].tRoot.next; n != NULL; n = n->next) {
 		/* one step back? */
 		if(!n->isEnter && level > 0)

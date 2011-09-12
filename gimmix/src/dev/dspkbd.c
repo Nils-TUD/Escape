@@ -2,6 +2,8 @@
  * display.c -- display controller simulation
  */
 
+/* nanosleep */
+#define _POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -522,8 +524,12 @@ static void vgaInit(void) {
 	if(pthread_create(&thread,&attr,server,NULL) != 0) {
 		sim_error("cannot start monitor server");
 	}
-	while(!installed) /*sleep(1); */
-		usleep(10000);
+	while(!installed) {
+		struct timespec delay;
+		delay.tv_sec = 0;
+		delay.tv_nsec = 10000000;
+		nanosleep(&delay,&delay);
+	}
 	/* start refresh timer in another thread */
 	refreshRunning = true;
 	pthread_attr_init(&attr);
@@ -534,14 +540,19 @@ static void vgaInit(void) {
 }
 
 static void vgaExit(void) {
+	struct timespec delay;
 	refreshRunning = false;
 	run = false;
-	/*sleep(1);*/
-	usleep(10000);
+	delay.tv_sec = 0;
+	delay.tv_nsec = 10000000;
+	nanosleep(&delay,&delay);
 	XSendEvent(vga.display,vga.win,False,0,(XEvent *)&vga.shutdown);
 	XSync(vga.display,False);
-	while(installed) /*sleep(1);*/
-		usleep(10000);
+	while(installed) {
+		delay.tv_sec = 0;
+		delay.tv_nsec = 10000000;
+		nanosleep(&delay,&delay);
+	}
 }
 
 static void vgaWrite(int x,int y,int r,int g,int b) {

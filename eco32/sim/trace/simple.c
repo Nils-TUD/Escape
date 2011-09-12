@@ -127,7 +127,6 @@ void traceSPrint(tTraceId id) {
 		cPrintf("- Trace is empty -\n");
 	}
 	else {
-		cPrintf("# Format: '<funcName>($4,$5,$6,$7) [<oldPC> -> <newPC>]'\n");
 		for(; n != NULL; n = n->next) {
 			if(level > STACK_LIMIT) {
 				cPrintf("*** Limit reached; stopping here ***\n");

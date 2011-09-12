@@ -28,4 +28,4 @@ $(BUILDL)/%.o:	%.c
 -include $(DEPS)
 
 clean:
-		rm -f $(OBJS) $(DEPS) $(BIN)
+	rm -f $(OBJS) $(DEPS) $(BIN)

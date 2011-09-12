@@ -118,3 +118,12 @@ Besides running a program in GIMMIX, you can execute runtests.sh to run the
 automatized program tests and execute runcov.sh to generate the coverage
 information. Finally, "make test" can be used to run the unit tests.
 
+To make use of the gdb-stub, you need a modified version of gdb for MMIX. Thanks
+to the work of Martin Ruckert, a modified version of gdb 6.4.50 is available.
+You can download it here: http://math.cs.hm.edu/mmix/bin/index.html
+After unpacking it to /opt/mmix, you can do something like:
+$ ./build/gimmix ... -p 1234 &
+$ /opt/mmix/bin/mmix-gdbtui
+(gdb) target remote localhost:1234
+...
+

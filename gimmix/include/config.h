@@ -27,7 +27,7 @@
 #define DATA_TC_SIZE		32					// 0 = no DTC
 
 // misc
-#define INSTRS_PER_TICK		10000				// average execution speed
+#define INSTRS_PER_TICK		10000				// average execution speed (1 tick = 1 millisecond)
 #define DEF_START_ADDR		0x8000000000001000	// PC at the beginning
 
 // RAM
@@ -43,8 +43,6 @@
 #define DISK_START_ADDR		0x0003000000000000
 #define DISK_IRQ			51
 #define DISK_SECTOR_SIZE	512					// sector size in bytes
-//#define DISK_DELAY			10					// seek start/settle + rotational delay
-//#define DISK_SEEK			50					// full disk seek time
 #define DISK_DELAY			2					// seek start/settle + rotational delay
 #define DISK_SEEK			5					// full disk seek time
 #define DISK_STARTUP		1000				// disk startup time (until DISK_READY)
@@ -61,10 +59,8 @@
 #define TERM_START_IRQ		53
 #define TERM_MAX			4					// maximum number of terminals
 #define TERM_DEF_COUNT		0					// default number of terminals
-//#define TERM_RCVR_MSEC		20					// input checking interval
-//#define TERM_XMTR_MSEC		8					// output speed
-#define TERM_RCVR_MSEC		1					// input checking interval
-#define TERM_XMTR_MSEC		1					// output speed
+#define TERM_RCVR_MSEC		5					// input checking interval
+#define TERM_XMTR_MSEC		2					// output speed
 
 // output
 #define OUTPUT_START_ADDR	0x0004000000000000
@@ -75,7 +71,6 @@
 // keyboard
 #define KEYBOARD_START_ADDR	0x0006000000000000
 #define KEYBOARD_IRQ		61
-//#define KEYBOARD_MSEC		20					// input checking interval
 #define KEYBOARD_MSEC		5					// input checking interval
 
 

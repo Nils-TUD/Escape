@@ -143,12 +143,6 @@ void traceTPrint(tTraceId id,char* filename) {
       return;
     }
 
-    /* a little help for the user :) */
-    if(!tracePrintToFile(f,filename,
-    		"# Format: '<funcName>($4,$5,$6,$7) [<oldPC> -> <newPC>], ic=<InstrCount>'\n")) {
-    	return;
-    }
-
 	for(n = traces[id].tRoot.next; n != NULL; n = n->next) {
 		/* one step back? */
 		if(!n->isEnter && level > 0) {

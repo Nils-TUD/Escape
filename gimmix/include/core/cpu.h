@@ -36,7 +36,16 @@ octa cpu_getPC(void);
  */
 void cpu_setPC(octa npc);
 
+/**
+ * @return the number of instructions that have been executed since the last tick
+ */
 int cpu_getInstrsSinceTick(void);
+
+/**
+ * Sets the number of instructions that have been executed since the last tick.
+ *
+ * @param count the new value
+ */
 void cpu_setInstrsSinceTick(int count);
 
 /**

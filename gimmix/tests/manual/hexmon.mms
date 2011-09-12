@@ -117,11 +117,11 @@ cpyloop	LDOU	$3,$0,$2
 		
 		% we have to sync the data- with the instruction-cache
 		OR		$2,$1,$1
-		SYNCD		#FF,$2,0		% first flush to memory; SYNCID will simply remove it
+		SYNCD	#FF,$2,0	% first flush to memory; SYNCID will simply remove it
 		SYNCID	#FF,$2,0
 		ADDU	$2,$2,#FF
 		ADDU	$2,$2,1	
-		SYNCD		#FF,$2,0
+		SYNCD	#FF,$2,0
 		SYNCID	#FF,$2,0
 		
 		GO		$0,$1,0		% finally...lift off

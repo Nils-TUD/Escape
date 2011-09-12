@@ -29,6 +29,7 @@ svn export "$SRC" "$DESTSRC" --force >/dev/null
 echo "done"
 
 echo -n "Removing unnecessary files and folders..."
+rm -Rf "$DESTSRC/doc" "$DESTSRC/cross/eco32/"{binutils-2.19.diff,gcc-4.4.0.diff}
 rm -Rf "$DESTSRC"/source/{build,.csettings,.settings,disk,diskmnt,tools/release.sh}
 for i in "$DESTSRC"/source/vmware/*; do
 	if [ "$i" != "$DESTSRC/source/vmware/escape.vmx" ]; then
@@ -38,17 +39,20 @@ done
 rm -f "$DESTSRC/source/"{license.php,log.txt,.project,.cproject,gstlfilt.pl}
 rm -Rf "$DESTSRC/source/user/d" "$DESTSRC/source/lib/d"
 echo "done"
-exit 0
 
 echo -n "Creating source-zip..."
 OLDDIR=`pwd`
 cd $DESTSRC
+rm -f "../escape-src-complete-$VERSION.zip"
+zip --quiet -r "../escape-src-complete-$VERSION.zip" .
+rm -Rf eco32 gimmix
+rm -f "../escape-src-$VERSION.zip"
 zip --quiet -r "../escape-src-$VERSION.zip" .
 cd $OLDDIR
 rm -Rf "$DESTSRC"
 echo "done"
 
-sudo test
+exit 0
 
 for i in i586 eco32 mmix; do
 	echo -n "Switching to $i..."

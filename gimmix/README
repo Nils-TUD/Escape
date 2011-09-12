@@ -127,3 +127,10 @@ $ /opt/mmix/bin/mmix-gdbtui
 (gdb) target remote localhost:1234
 ...
 
+
+Contact:
+========
+If you have any questions or suggestions, please do not hesitate to write me an
+email:
+Nils Asmussen <nils@script-solution.de>
+

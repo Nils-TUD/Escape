@@ -1,0 +1,64 @@
+\chapter{Future Possibilities}
+
+The current state of the GIMMIX project is, as described in the previous chapters, that the simulator itself including a few basic devices is completely finished. That is, the simulator realizes the entire MMIX architecture. Additionally, a convenient and powerful command line interface exists and the whole system has been tested as much as possible to reach the confidence, that everything works as intended. This final chapter mentions yet missing parts to reach the goal of porting an operating system to MMIX and suggests a few possible enhancements.
+
+\section{Missing Parts for an Operating System Port}
+
+At first, the yet missing tools and changes for developing or porting an operating system for MMIX are listed.
+
+\subsection{\mi{TRAP 0,0,0} halts the Simulator}
+
+To allow automatized tests, the simulator has to be stoppable in some way. Since MMIX-SIM uses a \mi{TRAP} with only zeros as arguments for a quit command, GIMMIX does so as well. Additionally, MMIX-PIPE has been changed, so that it stops for \mi{TRAP 0,0,0}, too. Of course, this is only temporary, because MMIX defines that a \mi{TRAP 0,0,0} terminates a user process. That is, the operating system should handle that trap -- like all others as well -- and the simulator should not stop. Hence, to be able to develop or port an operating system, this "feature" has to be removed or replaced with something else.
+
+\subsection{Toolchain}
+
+Currently, GIMMIX does not provide its own assembler and has no C compiler and linker at all. Instead, it uses the assembler \i{mmixal}, written by Donald Knuth, to produce special MMIX object files. These in turn are converted by a tool to an ASCII file, that specifies which values should be written to which physical memory addresses. GIMMIX interprets this format to load a program into the main memory. Of course, this is only a temporary solution. Later, a ROM should be put into the simulator, which initiates the boot process. Although it is imaginable that programs can still be loaded directly into GIMMIX for testing purposes, these will probably not be specified in that ASCII format, but in a binary format. MMIX-PIPE understands the ASCII format as well and MMIX-SIM is able to load the MMIX object files, which is one of the reasons why GIMMIX uses this solution currently.
+
+As already mentioned, the project uses no C compiler yet. By now, a GNU toolchain (\gls{gcc} cross-compiler, binutils\footnote{GNU binutils is a collection of tools for analyzing binary files, building archives or stripping symbols from a file \citep{binutils}.} and newlib\footnote{Newlib is a small C library, that is intended for embedded systems \citep{newlib}.}) for MMIX\footnote{The GNU toolchain is available at \url{http://www.bitrange.com/mmix}.} is already available due to the efforts of Hans-Peter Nilsson, which could be used in future. Another opportunity would be to build a backend for the lcc\footnote{Lcc is a retarget compiler for ANSI C \citep{lcc}.}, which has already been started in the previous GIMMIX approach, but is not yet finished.
+
+\subsection{Startup and Tools}
+
+Although GIMMIX already provides a ROM and a disk device, tools for disk creation, partitioning, filesystem creation and so on are still missing. The previously mentioned project ECO32 offers tools for such tasks, which could be used for GIMMIX as well.
+
+\section{Extensions and Enhancements}
+
+As mentioned, the simulator is considered complete, but there are of course still imaginable improvements and additional features. These are listed in this section.
+
+\subsection{More Devices}
+
+The currently provided devices are only the basic ones, which have been added primarily to ensure that the device infrastructure is sufficient. Therefore, a few more will have to be added in future. For example, every reasonable operating system will need a screen and a keyboard, instead or additional to the already existing terminals. Furthermore, a real-time clock would be a useful device. A screen and a keyboard are for example present in the ECO32 project and could thus be ported to GIMMIX.
+
+\subsection{Working with Symbols in the CLI}
+
+Since the loading format used in GIMMIX is not considered final, the CLI does not offer the opportunity to use symbols instead of addresses at the moment. That is, for example breakpoints can only be set by specifying virtual or physical addresses, but not via symbols, that have been assigned to virtual addresses. Of course, this would simplify the debugging process.
+
+\subsection{Interface to \protect\gls{GDB}}
+
+As soon as programs for MMIX can be written in C, for example, it would be more convenient to debug such programs in the language they have been written in, instead of having to work with the generated assembly. To do so, GIMMIX could provide an interface for \gls{GDB}, that offers the opportunity to control GIMMIX with \gls{GDB}. Fortunatly, an alpha version of \gls{GDB} for MMIX\footnote{The complete GNU toolchain for MMIX including \gls{GDB} is available at \url{http://math.cs.hm.edu/mmix/examples/MMIXonMMIX/index.html}.} is already available because of the work of Mr. Ruckert. Therefore, as soon as the \gls{GDB} interface in GIMMIX is present, it should be possible to use that version of \gls{GDB} to debug programs running on GIMMIX.
+
+\subsection{Infrastructure for MMIX Programs without OS}
+
+To be able to run all example programs for MMIX -- especially those that are or will be listed in the volumns of the \gls{The Art of Computer Programming} books about MMIX  -- directly in GIMMIX, \ie without an operating system, a few additions to GIMMIX are necessary. These are:
+\begin{itemize}
+	\item Those programs expect a rudimentary operating system, that provides special system calls via forced traps to perform I/O requests. That is, opening a file, reading a file, writing to a file and so on, which can for example be used to write to {\tt stdout} or read from {\tt stdin}. In contrary to GIMMIX, MMIX-SIM and MMIX-PIPE offer these system calls.
+	\item Additionally, mmixal allows it to pre-allocate global registers and initialize them with specific values. This feature is currently not usable, because the ASCII file format does not support that. MMIX-SIM (and MMIX-PIPE, when started in user mode), for example, starts with the instruction \mi{UNSAVE} to establish a part of the user environment, including the requested global registers.
+	\item To allow more interaction with the host platform, MMIX-SIM provides the number of arguments, given to itself, in \dr{0} and a pointer to the first one in \dr{1}. Additionally, feedback can be passed back by putting a value in \dr{255}, which will be returned by the main function of MMIX-SIM.
+\end{itemize}
+These features are not present in GIMMIX at the moment, because it has a different goal than MMIX-SIM and MMIX-PIPE. Nevertheless, it might make sense to provide such facilities as well, \eg requested by a command line argument, to allow the execution of all the programs for MMIX, that require them.
+
+\subsection{Acid Test Mode}
+
+When developing or porting an operating system, a deterministic machine is appreciated in most cases. That means, that the behaviour of the machine is always exactly the same, when the start conditions do not change. This is especially a problem when working with real hardware, because for example the timing of devices varies. Of course, a deterministic behaviour simplifies debugging, since errors are reproducible. But in some cases, it might be helpful to produce non-deterministic behaviour or random start conditions on purpose, to make sure that the OS works correctly in these cases as well or to detect errors, that would not have arisen otherwise. GIMMIX could help by providing an "acid test mode", which initializes registers, main memory and so on with random values, randomizes the timing behaviour of devices or similar.
+
+\subsection{Graphical User Interface}
+
+As already mentioned, a graphical user interface for GIMMIX could be provided. Since the simulator core is completely independent of the current command line interface, it could be easily exchanged with a GUI or both could coexist. A GUI would have the advantage, that many entities of MMIX such as the dynamic registers, special registers, main memory and so on could be displayed simultaneously. Additionally, the disassembly of the previous and next few instructions could be displayed as well. Thus, it would allow a more productive interaction with the simulator.
+
+\subsection{Provide Information about Hardware for Software}
+
+Currently, operating systems for MMIX are very dependent on the particular MMIX implementation they are designed for. Because, the devices, the amount of main memory, the cache configuration and so on, is either not investigatable at all or only with a lot of effort. Therefore, it could make sense to add a kind of "meta-device", that provides that information at specific addresses in the I/O space. This way, the OS could react dynamically on present devices, find out the amount of main memory easily and make more efficient use of caches. Of course, this meta-device should be part of the MMIX specification, so that all MMIX implementations provide it.
+
+\subsection{Mapping of the I/O Space}
+
+Unfortunatly, at the moment MMIX does not allow to map the I/O space via paging. That is, the I/O space can only be accessed in privileged mode by using the directly mapped space. The reason is, that the physical address in a PTE is only 48 bit wyde, which does not include the I/O space. This will be a problem for microkernel operating systems, because it is not possible to implement drivers as user processes. A solution might be to limit the I/O space to range from \haddro{0001}{0000}{0000}{0000} to \haddro{00FF}{FFFF}{FFFF}{FFFF} and extend the width of the physical address in a PTE to 56 bits. This way, the upper 8 bits of a PTE would still remain for the operating system and the I/O space should still be large enough as well. Additionally, the width of a translation in the TCs would have to be extended. These changes would allow the operating system to map pages from the I/O space into the user space, so that user processes can access it.
+

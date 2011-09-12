@@ -1,0 +1,85 @@
+\section{Integer Arithmetic}
+
+Of course, MMIX provides some instructions to perform integer arithmetic. That is, addition, substraction, multiplication, division and some more. For most of these instructions, MMIX has an unsigned and a signed version. The only difference when adding or substracting is, that the signed versions raise arithmetic \glslink{Exception}{exceptions} -- if necessary -- while the others will not. When multiplying or dividing, the rules for signed or unsigned arithmetic have to be considered.
+
+\subsection{Addition and Substraction}
+
+\instrtbl
+	{\mi{ADD|SUB \$X,\$Y,\$Z|Z}}
+	{$\dr{X} \leftarrow s(\dr{Y}) +|- \sdrimm{Z}$}
+\noindent The sum or difference of \dr{Y} and \udrim{Z} is put into \dr{X}. An integer overflow \glslink{Exception}{AE} will be raised if the result is $\ge 2^{63}$ or $< -2^{63}$. \citep[pg. 6]{mmix-doc}
+
+\instrtbl
+	{\mi{ADDU|SUBU \$X,\$Y,\$Z|Z}}
+	{$\dr{X} \leftarrow (\dr{Y} +|- \udrim{Z}) \bmod 2^{64}$}
+\noindent The sum or difference of \dr{Y} and \udrim{Z} is put into \dr{X}. \citep[pg. 6]{mmix-doc}
+
+\instrtbl
+	{\mi{NEG \$X,Y,\$Z|Z}}
+	{$\dr{X} \leftarrow {\tt Y} - \sdrimm{Z}$}
+\noindent MMIX provides a separate instruction for negation to save the programmer from having to put a constant into a register first. This way, \eg \dr{Z} can be negated by saying \mi{NEG \$X,0,\$Z}. It can also be used for building the value $-1$: \mi{NEG \$X,0,1}. The instruction will throw an overflow \glslink{Exception}{AE} if the result is $> 2^{63}-1$. \citep[pg. 6]{mmix-doc}
+
+\instrtbl
+	{\mi{NEGU \$X,Y,\$Z|Z}}
+	{$\dr{X} \leftarrow ({\tt Y} - \udrim{Z}) \bmod 2^{64}$}
+\noindent This instruction has the same effect as \mi{NEG}, but does not raise an \glslink{Exception}{AE}. \citep[pg. 6]{mmix-doc}
+
+\subsection{Multiplication and Division}
+
+The more expensive integer arithmetic operations are multiplication and division. MMIX supports 64-bit signed multiplication and division and 128-bit unsigned multiplication and division. The division instructions perform a division and modulo calculation at once. Additionally it is worth noting that MMIX uses the so called \i{floored division}. This means that division rounds towards negative infinity and that the sign of the modulus is always the same as the sign of the divisor \citep[pg. 2]{divmod}. For example, this differs from the x86 architecture, which uses \i{truncated division} \citep[pg. 560]{ia32-sdmv2a}, that rounds towards zero and gives the modulus the sign of the dividend \citep[pg. 2]{divmod}. The following table illustrates the differences:
+
+\begin{table}[h]
+	\begin{tabular}{| >{\centering}p{19mm} | >{\centering}p{26mm} | >{\centering}p{26mm} | >{\centering}p{26mm} | >{\centering}p{26mm} |}
+		\hline
+		\textbf{Y,Z} &
+		\textbf{$trunc(Y / Z)$} & \textbf{$trunc(Y \% Z)$} &
+		\textbf{$\lfloor Y / Z \rfloor$} & \textbf{$\lfloor Y \% Z \rfloor$}
+		\tabularnewline
+		\hline
+		$+8,+3$ & $+2$ & $+2$ & $+2$ & $+2$
+		\tabularnewline
+		\hline
+		$+8,-3$ & $-2$ & $+2$ & $-3$ & $-1$
+		\tabularnewline
+		\hline
+		$-8,+3$ & $-2$ & $-2$ & $-3$ & $+1$
+		\tabularnewline
+		\hline
+		$-8,-3$ & $+2$ & $-2$ & $+2$ & $-2$
+		\tabularnewline
+		\hline
+	\end{tabular}
+	\caption{Comparison of truncated and floored division \citep[pg. 3]{divmod}}
+\end{table}
+\noindent The differences occur for numbers with different signs only, \ie the unsigned division does behave in the same way regardless of using the floored or truncated algorithm.
+
+\instrtbl
+	{\mi{MUL \$X,\$Y,\$Z|Z}}
+	{$\dr{X} \leftarrow s(\dr{Y}) * \sdrimm{Z}$}
+\noindent The \mi{MUL} instruction sets \dr{X} to the result of the multiplication. It will raise an integer overflow \glslink{Exception}{AE} if the result is $\ge 2^{63}$ or $< -2^{63}$. \citep[pg. 14]{mmix-doc}
+
+\instrtbl
+	{\mi{MULU \$X,\$Y,\$Z|Z}}
+	{$\dr{X} \leftarrow (\dr{Y} * \udrim{Z}) \bmod 2^{64},\quad
+	\sr{H} \leftarrow (\dr{Y} * \udrim{Z}) \gg 64$}
+\noindent This instruction basically does the same as \mi{MUL}, but treats the operands as unsigned and places the upper 64 bit of the result into the special \i{himult register} \sr{H} and does not raise an overflow \glslink{Exception}{AE}. \citep[pg. 14]{mmix-doc}
+
+\instrtbl
+	{\mi{DIV \$X,\$Y,\$Z|Z}}
+	{$\dr{X} \leftarrow \lfloor s(\dr{Y})~/~\sdrimm{Z}\rfloor,\quad
+	\sr{R} \leftarrow s(\dr{Y}) \bmod \sdrimm{Z}$}
+\noindent The instruction \mi{DIV} sets \dr{X} to the result of the division and the \i{remainder register} \sr{R} to the result of the modulo operation. If \sdrim{Z} is zero, a division by zero \glslink{Exception}{AE} will be raised, \dr{X} will be set to zero and \sr{R} will be set to \dr{Y}. An integer overflow \glslink{Exception}{AE} will occur if and only if $-2^{63}$ is divided by $-1$. \citep[pg. 14]{mmix-doc}
+
+\instrtbl
+	{\mi{DIVU \$X,\$Y,\$Z|Z}}
+	{$\dr{X} \leftarrow \lfloor \sr{D}\dr{Y}~/~\udrim{Z}\rfloor,\quad
+	\sr{R} \leftarrow \sr{D}\dr{Y} \bmod \udrim{Z}$}
+\noindent Analogous to \mi{MULU}, \mi{DIVU} prefixes the \i{dividend register} \sr{D} to \dr{Y}, resulting in a 128-bit number, and divides it by \udrim{Z}, using unsigned arithmetic. If $\sr{D} \ge \udrim{Z}$ (this includes the case that \udrim{Z} is zero), \dr{X} will be set to \sr{D} and \sr{R} will be set to \dr{Y}. Additionally, no \glslink{Exception}{AE} is raised. \citep[pg. 14]{mmix-doc}
+
+\medskip
+
+\instrtbl
+	{\mi{2ADDU|4ADDU|8ADDU|16ADDU \$X,\$Y,\$Z|Z}}
+	{$\dr{X} \leftarrow ((2|4|8|16 * \dr{Y}) + \udrim{Z}) \bmod 2^{64}$}
+\noindent As usual, if a number should be divided or multiplied by a power of 2, shifts are much more efficient, which will be described later. MMIX goes even further by providing instructions that multiply a number by 2, 4, 8 or 16 and adding the result to another value. In this way, one can easily e.g. multiply by 3 by saying \mi{2ADDU \$X,\$Y,\$Y}. \citep[pg. 6]{mmix-doc}
+

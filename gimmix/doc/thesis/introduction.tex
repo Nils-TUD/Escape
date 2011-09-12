@@ -1,0 +1,27 @@
+\chapter{Introduction}
+
+This master thesis is about MMIX (pronounced "em-mix") and the implementation of a simulator for it. MMIX is a computer architecture designed by \gls{Donald Knuth} as a successor of MIX, which is used as an abstract machine in \gls{The Art of Computer Programming}. The name has been determined by averaging the identifying numbers of 14 similar machines:
+$$\vbox{\halign{#\hfil\cr
+	(\text{Cray\,I}~+~\text{IBM\,801}~+~\text{RISC\,II}~+~\text{Clipper\,C300}~+~\text{AMD\,29K}~+~\text{Motorola\,88K}\cr
+	~+~\text{IBM\,601}~+~\text{Intel\,i960}~+~\text{Alpha\,21164}~+~\text{POWER\,2}~+~\text{MIPS\,R4000}\cr
+	~+~\text{Hitachi\,SuperH4}~+~\text{StrongARM\,110}~+~\text{Sparc\,64}) / 14\cr
+	= 28126 / 14 = 2009\cr
+}}$$
+The representation of 2009 in roman numerals is MMIX, which is the reason for the name. \citep[pg. 2]{taocpf1} The name MIX has been chosen analogously. Apart from the name, MMIX has not much in common with MIX. MMIX is a 64-bit \glslink{Endianness}{big-endian} binary computer with 8 bits per byte, that has a \gls{RISC} instruction set. On the other hand, MIX is a hybrid binary-decimal computer with 6 bits per byte and a \gls{CISC}-like instruction set \citep{gnumdk}, \citep[pg. 124,125]{taocpv1}.
+
+\section{Current Status}
+
+At the beginning of this project, two simulators for MMIX were already available, called MMIX-SIM and MMIX-PIPE. Both were developed by \gls{Donald Knuth} himself and are published with MMIXware\footnote{It can be downloaded at \url{http://www-cs-faculty.stanford.edu/~uno/mmix-news.html}.}, which contains the simulators, the full documentation and example programs. The simulators have been written with the literate programming system CWEB, also designed by \gls{Donald Knuth}, that is a mixture of \gls{TeX}~and C, from which both compilable C code and documentation can be generated. MMIX-SIM is a simple, instruction-level simulator, that does only support user-programs, \ie no operating system kernel. That is, all user mode instructions are available, but no \glslink{Interrupt}{interrupts} or \glslink{Exception}{exceptions} can be handled, no \glslink{Paging}{paging} is supported and no caches are present. It is an instruction-level simulator in the sense, that each instruction takes exactly one cycle and one can thus step through a program instruction per instruction. Its main goal is to be able to run and analyze example programs published in \gls{The Art of Computer Programming}. \citep[pg. 1]{mmix-sim} On the other hand, MMIX-PIPE is a highly configurable meta-simulator, that supports all features the MMIX architecture has in mind. In contrary to MMIX-SIM, it uses \glslink{Pipelining}{pipelining} and the instructions take an arbitrary and varying number of cycles. Due to the degree of configurability regarding registers, caches, functional units and so on, which is also the reason for the name "meta-simulator", it can for example be utilized to explore what settings are the most suitable ones for building a hardware implementation of MMIX. Furthermore, the user interface of MMIX-PIPE is not designed to analyze a program -- like MMIX-SIM -- but rather the machine it runs on.
+
+\section{Motivation}
+
+The longterm goal of this project is to port an operating system to MMIX. Unfortunatly, neither MMIX-SIM nor MMIX-PIPE are well suited for that task. Because, as just mentioned, MMIX-SIM does not support OS kernels at all and MMIX-PIPE would only appropriate if, for example, one liked to explore what cache-configuration or how many functional units are ideal for a hardware implementation. It does not fit well when one would like to develop, port or debug an operating system for MMIX.
+
+Of course, it would be possible to change MMIX-SIM or MMIX-PIPE to fit our needs. But MMIX-SIM does not implement most of the complicated mechanisms MMIX offers, such as \glslink{Paging}{paging}, \glslink{Interrupt}{interrupt} and \glslink{Exception}{exception} handling or caching. Therefore, it would require many changes to its code, which is quite difficult to understand and especially to adjust or extend. MMIX-PIPE has all these mechanisms, but uses \glslink{Pipelining}{pipelining} and is highly configurable, which increases the complexity of the code by an order of magnitude, compared to MMIX-SIM. Additionally, the implications of the mentioned goals of MMIX-PIPE, do not fit well for this project.
+
+For these reasons, it has been decided to write a new simulator from scratch\footnote{A first approach had already been started a few years ago, but for design reasons it has been decided to start on a green field again.}. This way, the system is easier to understand for people who want to learn how MMIX works, is completely in our control, which makes changes simple, and can be designed so that it perfectly matches with our needs. The conformity to the MMIX architecture specification is ensured by a sophisticated test system, that tries to test every possible case and compares it with MMIX-SIM and MMIX-PIPE.
+
+\medskip
+
+This thesis explains at first the architecture MMIX in general and describes afterwards the implementation of the simulator, called GIMMIX. The name stands for "Gießen Implementation of MMIX", because Gießen is the home town of our university. Both GIMMIX and this thesis are based on the version 20110305 of MMIXware. That means, GIMMIX is implemented to match with the specification of that version, uses MMIX-SIM and MMIX-PIPE published with it and this thesis describes the mentioned version.
+

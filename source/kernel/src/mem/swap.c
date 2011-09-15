@@ -140,6 +140,10 @@ bool swap_outUntil(size_t frameCount) {
 	sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
+
+	/* TODO finish me */
+	return false;
+
 	if(!enabled || !(t->flags & T_IDLE) || t->tid == ATA_TID || t->tid == swapper->tid)
 		return false;
 	do {
@@ -163,6 +167,9 @@ void swap_check(void) {
 
 	freeFrm = pmem_getFreeFrames(MM_DEF);
 	if(freeFrm < LOW_WATER/* || neededFrames < HIGH_WATER*/) {
+		/* TODO finish me */
+		return;
+
 		/* notify swapper-thread */
 		if(/*freeFrm < LOW_WATER && */!swapping)
 			ev_wakeupThread(swapper,EV_SWAP_WORK);

@@ -1133,17 +1133,23 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	proc_release(p,PLOCK_REGIONS);
 	err = vfs_readFile(pid,vm->binFile,tempBuf,loadCount);
 	p = proc_request(p->pid,PLOCK_REGIONS);
-	if(err != (ssize_t)loadCount)
+	if(err != (ssize_t)loadCount) {
+		if(err >= 0)
+			err = ERR_NOT_ENOUGH_MEM;
 		goto errorFree;
+	}
 
 	/* ensure that a frame is available; note that its easy here since no one else can demand load
 	 * this page while we do it */
-	if(!swap_outUntil(1))
+	if(!swap_outUntil(1)) {
+		err = ERR_NOT_ENOUGH_MEM;
 		goto errorFree;
+	}
 	/* after swapping: page not present anymore or demand-load off? there must be something wrong */
 	if(((addr - vm->virt) / PAGE_SIZE) >= BYTES_2_PAGES(vm->reg->byteCount) ||
-			!(vm->reg->pageFlags[(addr - vm->virt) / PAGE_SIZE] & PF_DEMANDLOAD))
+			!(vm->reg->pageFlags[(addr - vm->virt) / PAGE_SIZE] & PF_DEMANDLOAD)) {
 		goto errorFree;
+	}
 
 	/* copy into frame */
 	klock_aquire(&vm->reg->lock);

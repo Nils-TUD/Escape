@@ -33,6 +33,7 @@ extern "C" {
 #define CT_HEX		16
 #define CT_PUNCT	32
 #define CT_CTRL		64
+#define CT_BLANK	128
 
 /**
  * @param c the character
@@ -46,6 +47,12 @@ int isalnum(int c);
  * @return non-zero if its argument is a letter of the alphabet. Otherwise, zero is returned.
  */
 int isalpha(int c);
+
+/**
+ * @param c the character
+ * @return non-zero if its argument is ' ' or '\t'. Otherwise, zero is returned.
+ */
+int isblank(int c);
 
 /**
  * @param c the character

@@ -29,6 +29,7 @@
 static void test_ctype(void);
 static int test_isalnum(int c);
 static int test_isalpha(int c);
+static int test_isblank(int c);
 static int test_iscntrl(int c);
 static int test_isdigit(int c);
 static int test_islower(int c);
@@ -58,6 +59,10 @@ static void test_ctype(void) {
 			test_assertTrue(isalpha(c));
 		else
 			test_assertFalse(isalpha(c));
+		if(test_isblank(c))
+			test_assertTrue(isblank(c));
+		else
+			test_assertFalse(isblank(c));
 		if(test_iscntrl(c))
 			test_assertTrue(iscntrl(c));
 		else
@@ -104,6 +109,9 @@ static int test_isalnum(int c) {
 }
 static int test_isalpha(int c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+static int test_isblank(int c) {
+	return (c == ' ' || c == '\t');
 }
 static int test_iscntrl(int c) {
 	return c < ' ' || c == 0x7F || c == 0xFF;

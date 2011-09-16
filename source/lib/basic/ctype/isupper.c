@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
-extern char ctypetbl[];
+extern uchar ctypetbl[];
 
 int isupper(int c) {
 	return ctypetbl[c] & (CT_UPPER);

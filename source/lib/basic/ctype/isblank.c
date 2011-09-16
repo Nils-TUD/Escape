@@ -22,6 +22,6 @@
 
 extern uchar ctypetbl[];
 
-int isalnum(int c) {
-	return ctypetbl[c] & (CT_NUMERIC | CT_LOWER | CT_UPPER);
+int isblank(int c) {
+	return ctypetbl[c] & (CT_BLANK);
 }

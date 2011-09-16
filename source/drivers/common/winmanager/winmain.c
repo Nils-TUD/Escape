@@ -42,9 +42,9 @@ int main(void) {
 	int drvId;
 	msgid_t mid;
 
-	drvId = regDriver("winmanager",DRV_CLOSE);
+	drvId = createdev("/dev/winmanager",DEV_TYPE_SERVICE,DRV_CLOSE);
 	if(drvId < 0)
-		error("Unable to create driver winmanager");
+		error("Unable to create device winmanager");
 
 	listener_init(drvId);
 	if(!win_init(drvId))

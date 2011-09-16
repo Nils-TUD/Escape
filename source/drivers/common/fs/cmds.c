@@ -405,7 +405,7 @@ static void cmds_mount(int fd,sMsg *msg) {
 	u.uid = msg->str.arg2;
 	u.gid = msg->str.arg3;
 	u.pid = msg->str.arg4;
-	ino = root->fs->resPath(root->handle,&u,path,IO_READ,&devNo,true);
+	ino = root->fs->resPath(root->handle,&u,path,IO_READ,&devNo,false);
 	if(ino < 0)
 		msg->args.arg1 = ino;
 	else {
@@ -420,7 +420,7 @@ static void cmds_mount(int fd,sMsg *msg) {
 			else if(!S_ISDIR(info.mode))
 				msg->args.arg1 = ERR_NO_DIRECTORY;
 			else {
-				int pnt = mount_addMnt(devNo,ino,device,type);
+				int pnt = mount_addMnt(devNo,ino,path,device,type);
 				msg->args.arg1 = pnt < 0 ? pnt : 0;
 			}
 		}

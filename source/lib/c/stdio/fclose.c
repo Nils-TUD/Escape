@@ -27,12 +27,14 @@ int fclose(FILE *stream) {
 	fflush(stream);
 	if(stream->in.fd >= 0)
 		close(stream->in.fd);
-	else
+	else if(stream->out.fd >= 0)
 		close(stream->out.fd);
 	free(stream->in.buffer);
 	free(stream->out.buffer);
-	if(!sll_removeFirstWith(&iostreams,stream))
-		res = -1;
+	if(stream->in.fd >= 0 || stream->out.fd >= 0) {
+		if(!sll_removeFirstWith(&iostreams,stream))
+			res = -1;
+	}
 	free(stream);
 	return res;
 }

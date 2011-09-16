@@ -53,11 +53,11 @@ debug:
 1:
 	POP		1,0							# return value is in $0
 
-.global regDriver
-.type regDriver, @function
-regDriver:
+.global createdev
+.type createdev, @function
+createdev:
 	SET		$7,0						# clear error-code
-	TRAP	0,SYSCALL_REG,0
+	TRAP	0,SYSCALL_CRTDEV,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
 	STTU	$7,$3,0

@@ -32,9 +32,9 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = regDriver("random",DRV_READ);
+	id = createdev("/dev/random",DEV_TYPE_CHAR,DRV_READ);
 	if(id < 0)
-		error("Unable to register driver 'random'");
+		error("Unable to register device 'random'");
 
 	/* random numbers are always available ;) */
 	if(fcntl(id,F_SETDATA,true) < 0)

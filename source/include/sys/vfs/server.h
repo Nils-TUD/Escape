@@ -29,10 +29,11 @@
  * @param pid the process-id to use
  * @param parent the parent-node
  * @param name the node-name
- * @param flags the flags
+ * @param type the device-type
+ * @param ops the supported operations
  * @return the node
  */
-sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags);
+sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint ops);
 
 /**
  * Tells the server that the given client has been removed. This way, it can reset the internal

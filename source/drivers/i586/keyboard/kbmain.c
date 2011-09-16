@@ -187,9 +187,9 @@ int main(void) {
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 
-	id = regDriver("keyboard",DRV_READ);
+	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DRV_READ);
 	if(id < 0)
-		error("Unable to register driver 'keyboard'");
+		error("Unable to register device 'keyboard'");
 
     /* wait for commands */
 	while(1) {

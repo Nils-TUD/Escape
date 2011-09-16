@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-FILE *bcreate(int fd,uint flags,char *buffer,size_t size) {
+FILE *bcreate(int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 	FILE *f = (FILE*)malloc(sizeof(FILE));
 	if(!f)
 		return NULL;
@@ -45,6 +45,7 @@ FILE *bcreate(int fd,uint flags,char *buffer,size_t size) {
 		f->in.pos = 0;
 		f->in.max = buffer ? size : 0;
 		f->in.lck = 0;
+		f->out.dynamic = 0;
 	}
 	else
 		f->in.fd = -1;
@@ -53,13 +54,14 @@ FILE *bcreate(int fd,uint flags,char *buffer,size_t size) {
 		if(buffer)
 			f->out.buffer = buffer;
 		else {
-			f->out.buffer = (char*)malloc(OUT_BUFFER_SIZE + 1);
+			f->out.buffer = (char*)malloc((dynamic ? DYN_BUFFER_SIZE : OUT_BUFFER_SIZE) + 1);
 			if(f->out.buffer == NULL)
 				goto error;
 		}
 		f->out.pos = 0;
-		f->out.max = buffer ? size : OUT_BUFFER_SIZE;
+		f->out.max = buffer ? size : (dynamic ? DYN_BUFFER_SIZE : OUT_BUFFER_SIZE);
 		f->out.lck = 0;
+		f->out.dynamic = dynamic;
 	}
 	else
 		f->out.fd = -1;

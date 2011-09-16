@@ -69,9 +69,9 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 			error("Unable to start thread");
 	}
 
-	id = regDriver("bla",DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE);
+	id = createdev("/dev/bla",DEV_TYPE_BLOCK,DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE);
 	if(id < 0)
-		error("regDriver");
+		error("createdev");
 	fcntl(id,F_SETDATA,true);
 
 	if(startThread(getRequests,NULL) < 0)

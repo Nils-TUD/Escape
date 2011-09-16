@@ -29,7 +29,7 @@
 #define SYSCALL_OPEN			5
 #define SYSCALL_CLOSE			6
 #define SYSCALL_READ			7
-#define SYSCALL_REG				8
+#define SYSCALL_CRTDEV			8
 #define SYSCALL_CHGSIZE			9
 #define SYSCALL_MAPPHYS			10
 #define SYSCALL_WRITE			11

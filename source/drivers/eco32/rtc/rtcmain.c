@@ -43,13 +43,9 @@ int main(void) {
 	if(startThread(refreshThread,NULL) < 0)
 		error("Unable to start RTC-thread");
 
-	id = regDriver("rtc",DRV_READ);
+	id = createdev("/dev/rtc",DEV_TYPE_BLOCK,DRV_READ);
 	if(id < 0)
-		error("Unable to register driver 'rtc'");
-
-	/* there is always data available */
-	if(fcntl(id,F_SETDATA,true) < 0)
-		error("fcntl");
+		error("Unable to register device 'rtc'");
 
 	/* wait for commands */
 	while(1) {

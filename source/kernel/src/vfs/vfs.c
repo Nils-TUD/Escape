@@ -200,7 +200,7 @@ int vfs_fcntl(A_UNUSED pid_t pid,file_t file,uint cmd,int arg) {
 			sVFSNode *n = e->node;
 			int res = 0;
 			klock_aquire(&waitLock);
-			if(e->devNo != VFS_DEV_NO || !IS_DRIVER(n->mode))
+			if(e->devNo != VFS_DEV_NO || !IS_DEVICE(n->mode))
 				res = ERR_INVALID_ARGS;
 			else
 				res = vfs_server_setReadable(n,(bool)arg);
@@ -248,7 +248,7 @@ file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
 			return ERR_INVALID_INODENO;
 
 		/* if its a driver, create the channel-node */
-		if(IS_DRIVER(node->mode)) {
+		if(IS_DEVICE(node->mode)) {
 			sVFSNode *child;
 			/* check if we can access the driver */
 			if((err = vfs_hasAccess(pid,node,flags)) < 0) {
@@ -617,7 +617,7 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 	/* the driver-messages (open, read, write, close) are always allowed */
-	if(!IS_DRIVER_MSG(id) && !(e->flags & VFS_MSGS))
+	if(!IS_DEVICE_MSG(id) && !(e->flags & VFS_MSGS))
 		return ERR_NO_EXEC_PERM;
 
 	/* send the message */
@@ -626,12 +626,12 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_
 		return ERR_UNSUPPORTED_OP;
 	/* note the lock-order here! vfs-driver does it in the this order, so do we. note also that we
 	 * don't lock the channel for driver-messages, because vfs-driver has already done that. */
-	if(!IS_DRIVER_MSG(id))
+	if(!IS_DEVICE_MSG(id))
 		vfs_chan_lock(n);
 	klock_aquire(&waitLock);
 	err = vfs_chan_send(pid,file,n,id,data,size);
 	klock_release(&waitLock);
-	if(!IS_DRIVER_MSG(id))
+	if(!IS_DEVICE_MSG(id))
 		vfs_chan_unlock(n);
 
 	if(err == 0 && pid != KERNEL_PID) {
@@ -708,11 +708,11 @@ static bool vfs_hasMsg(sVFSNode *node) {
 }
 
 static bool vfs_hasData(sVFSNode *node) {
-	return IS_DRIVER(node->parent->mode) && vfs_server_isReadable(node->parent);
+	return IS_DEVICE(node->parent->mode) && vfs_server_isReadable(node->parent);
 }
 
 static bool vfs_hasWork(sVFSNode *node) {
-	return IS_DRIVER(node->mode) && vfs_server_hasWork(node);
+	return IS_DEVICE(node->mode) && vfs_server_hasWork(node);
 }
 
 int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
@@ -810,7 +810,7 @@ static inode_t vfs_doGetClient(const file_t *files,size_t count,size_t *index) {
 			if(e->devNo != VFS_DEV_NO)
 				return ERR_INVALID_FILE;
 
-			if(!IS_DRIVER(node->mode))
+			if(!IS_DEVICE(node->mode))
 				return ERR_NOT_OWN_DRIVER;
 
 			client = vfs_server_getWork(node,&cont,&retry);
@@ -976,7 +976,7 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 	}
 	strcpy(namecpy,name);
 	/* file exists? */
-	if(vfs_node_findInDir(newIno,namecpy,len) != NULL) {
+	if(vfs_node_findInDirOf(newIno,namecpy,len) != NULL) {
 		res = ERR_FILE_EXISTS;
 		goto errorName;
 	}
@@ -1061,7 +1061,7 @@ int vfs_mkdir(pid_t pid,const char *path) {
 		return ERR_NOT_ENOUGH_MEM;
 	strcpy(namecpy,name);
 	/* does it exist? */
-	if(vfs_node_findInDir(inodeNo,namecpy,len) != NULL) {
+	if(vfs_node_findInDirOf(inodeNo,namecpy,len) != NULL) {
 		cache_free(namecpy);
 		return ERR_FILE_EXISTS;
 	}
@@ -1105,57 +1105,62 @@ int vfs_rmdir(pid_t pid,const char *path) {
 	return 0;
 }
 
-file_t vfs_createDriver(pid_t pid,const char *name,uint flags) {
-	sVFSNode *drv = devNode;
-	sVFSNode *n,*srv;
+file_t vfs_createdev(pid_t pid,char *path,uint type,uint ops) {
+	sVFSNode *dir,*srv;
 	size_t len;
-	char *hname;
+	char *name;
 	file_t res;
-	bool isValid;
-	vassert(name != NULL,"name == NULL");
+	inode_t nodeNo;
+	int err;
 
-	/* TODO check permissions */
+	/* get name */
+	len = strlen(path);
+	name = vfs_node_basename(path,&len);
+	name = strdup(name);
+	if(!name)
+		return ERR_NOT_ENOUGH_MEM;
 
-	/* we don't want to have exotic driver-names */
-	if((len = strlen(name)) == 0 || !isalnumstr(name))
-		return ERR_INV_DRIVER_NAME;
+	/* check whether the directory exists */
+	vfs_node_dirname(path,len);
+	err = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
+	/* this includes ERR_REAL_PATH since devices have to be created in the VFS */
+	if(err < 0)
+		goto errorName;
 
-	res = ERR_NODE_DESTROYED;
-	n = vfs_node_openDir(drv,true,&isValid);
-	if(isValid) {
-		while(n != NULL) {
-			/* entry already existing? */
-			if(strcmp(n->name,name) == 0) {
-				vfs_node_closeDir(drv,true);
-				return ERR_DRIVER_EXISTS;
-			}
-			n = n->next;
-		}
+	/* ensure its a directory */
+	dir = vfs_node_request(nodeNo);
+	if(!dir)
+		goto errorName;
+	if(!S_ISDIR(dir->mode))
+		goto errorDir;
 
-		/* copy name to kernel-heap */
-		hname = (char*)cache_alloc(len + 1);
-		if(hname == NULL)
-			goto errorDir;
-		strnzcpy(hname,name,len + 1);
-
-		/* create node */
-		srv = vfs_server_create(pid,drv,hname,flags);
-		if(!srv)
-			goto errorName;
-		res = vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,vfs_node_getNo(srv),VFS_DEV_NO);
-		if(res < 0)
-			goto errorServer;
+	/* check whether the device does already exist */
+	if(vfs_node_findInDir(dir,name,len) != NULL) {
+		err = ERR_DRIVER_EXISTS;
+		goto errorDir;
 	}
-	vfs_node_closeDir(drv,true);
+
+	/* create node */
+	srv = vfs_server_create(pid,dir,name,type,ops);
+	if(!srv) {
+		err = ERR_NOT_ENOUGH_MEM;
+		goto errorDir;
+	}
+	res = vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,vfs_node_getNo(srv),VFS_DEV_NO);
+	if(res < 0) {
+		err = res;
+		goto errDevice;
+	}
+	vfs_node_release(dir);
 	return res;
 
-errorServer:
-	vfs_node_destroy(n);
-errorName:
-	cache_free(hname);
+errDevice:
+	vfs_node_destroy(srv);
 errorDir:
-	vfs_node_closeDir(drv,true);
-	return ERR_NOT_ENOUGH_MEM;
+	vfs_node_release(dir);
+errorName:
+	cache_free(name);
+	return err;
 }
 
 inode_t vfs_createProcess(pid_t pid) {
@@ -1329,7 +1334,7 @@ void vfs_printMsgs(void) {
 	if(isValid) {
 		vid_printf("Messages:\n");
 		while(drv != NULL) {
-			if(IS_DRIVER(drv->mode))
+			if(IS_DEVICE(drv->mode))
 				vfs_server_print(drv);
 			drv = drv->next;
 		}

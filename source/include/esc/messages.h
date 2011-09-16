@@ -158,7 +158,7 @@
 #define MSG_INIT_IAMALIVE			1002 /* tells init that the shutdown-request has been received
 											and that you promise to terminate as soon as possible */
 
-#define IS_DRIVER_MSG(id)			((id) == MSG_DRV_OPEN || \
+#define IS_DEVICE_MSG(id)			((id) == MSG_DRV_OPEN || \
 									 (id) == MSG_DRV_READ || \
 									 (id) == MSG_DRV_WRITE || \
 									 (id) == MSG_DRV_CLOSE)

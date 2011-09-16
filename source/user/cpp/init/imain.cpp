@@ -82,7 +82,7 @@ static void sigAlarm(A_UNUSED int sig) {
 }
 
 static int driverThread(A_UNUSED void *arg) {
-	int drv = regDriver("init",0);
+	int drv = createdev("/dev/init",DEV_TYPE_SERVICE,0);
 	if(drv < 0)
 		error("Unable to register device 'init'");
 	if(setSigHandler(SIG_ALARM,sigAlarm) < 0)

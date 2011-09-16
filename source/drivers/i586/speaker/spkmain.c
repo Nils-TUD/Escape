@@ -62,9 +62,9 @@ int main(void) {
 	int id;
 
 	/* register driver */
-	id = regDriver("speaker",0);
+	id = createdev("/dev/speaker",DEV_TYPE_SERVICE,0);
 	if(id < 0)
-		error("Unable to register driver 'speaker'");
+		error("Unable to register device 'speaker'");
 
 	timerFreq = getConf(CONF_TIMER_FREQ);
 	if(timerFreq < 0)

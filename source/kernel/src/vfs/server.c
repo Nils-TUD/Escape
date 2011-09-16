@@ -33,7 +33,7 @@
 #include <errors.h>
 
 #define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
-#define DRV_IS_FS(funcs)			((funcs) == DRV_FS)
+#define DRV_IS_FS(mode)				(((mode) & MODE_TYPE_DEVMASK) == MODE_TYPE_FSDEV)
 
 typedef struct {
 	/* whether there is data to read or not */
@@ -50,13 +50,25 @@ static void vfs_server_close(pid_t pid,file_t file,sVFSNode *node);
 static void vfs_server_destroy(sVFSNode *node);
 static void vfs_server_wakeupClients(sVFSNode *node,uint events,bool locked);
 
-sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
+sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint ops) {
 	sServer *srv;
 	sVFSNode *node = vfs_node_create(pid,name);
 	if(node == NULL)
 		return NULL;
 
-	node->mode = MODE_TYPE_DRIVER | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+	node->mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+	if(type == DEV_TYPE_BLOCK)
+		node->mode |= MODE_TYPE_BLKDEV;
+	else if(type == DEV_TYPE_CHAR)
+		node->mode |= MODE_TYPE_CHARDEV;
+	else if(type == DEV_TYPE_FILE)
+		node->mode |= MODE_TYPE_FILEDEV;
+	else if(type == DEV_TYPE_SERVICE)
+		node->mode |= MODE_TYPE_SERVDEV;
+	else {
+		assert(type == DEV_TYPE_FS);
+		node->mode |= MODE_TYPE_FSDEV;
+	}
 	node->read = NULL;
 	node->write = NULL;
 	node->seek = NULL;
@@ -68,8 +80,9 @@ sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 		vfs_node_destroy(node);
 		return NULL;
 	}
-	srv->funcs = flags;
-	srv->isEmpty = true;
+	srv->funcs = ops;
+	/* block- and file-devices are none-empty by default, because their data is always available */
+	srv->isEmpty = type != DEV_TYPE_BLOCK && type != DEV_TYPE_FILE;
 	srv->lastClient = NULL;
 	srv->msgCount = 0;
 	node->data = srv;
@@ -101,8 +114,7 @@ void vfs_server_clientRemoved(sVFSNode *node,const sVFSNode *client) {
 }
 
 bool vfs_server_accepts(const sVFSNode *node,uint id) {
-	sServer *srv = (sServer*)node->data;
-	if(DRV_IS_FS(srv->funcs))
+	if(DRV_IS_FS(node->mode))
 		return true;
 	return id == MSG_DRV_OPEN_RESP || id == MSG_DRV_READ_RESP || id == MSG_DRV_WRITE_RESP;
 }

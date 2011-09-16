@@ -53,7 +53,7 @@ static const sSyscall syscalls[] = {
 	/* 5 */ 	{sysc_open,					2},
 	/* 6 */ 	{sysc_close,				1},
 	/* 7 */ 	{sysc_read,					3},
-	/* 8 */		{sysc_regDriver,			2},
+	/* 8 */		{sysc_createdev,			3},
 	/* 9 */		{sysc_changeSize,			1},
 	/* 10 */	{sysc_mapPhysical,			2},
 	/* 11 */	{sysc_write,				3},

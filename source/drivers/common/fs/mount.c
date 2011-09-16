@@ -43,13 +43,19 @@ bool mount_init(void) {
 	return fileSystems != NULL && fsInsts != NULL;
 }
 
+const sFSInst *mount_getFSInst(size_t i) {
+	if(i < sll_length(fsInsts))
+		return (const sFSInst*)sll_get(fsInsts,i);
+	return NULL;
+}
+
 int mount_addFS(sFileSystem *fs) {
 	if(!sll_append(fileSystems,fs))
 		return ERR_NOT_ENOUGH_MEM;
 	return 0;
 }
 
-dev_t mount_addMnt(dev_t dev,inode_t inode,const char *driver,uint type) {
+dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *driver,int type) {
 	size_t i;
 	sFSInst *inst;
 	sFileSystem *fs;
@@ -104,20 +110,28 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *driver,uint type) {
 		}
 		strcpy(inst->driver,usedDev);
 		free(usedDev);
+		if(!sll_append(fsInsts,inst)) {
+			free(inst);
+			return ERR_NOT_ENOUGH_MEM;
+		}
 	}
 	inst->refs++;
-	if(!sll_append(fsInsts,inst)) {
-		free(inst);
-		return ERR_NOT_ENOUGH_MEM;
-	}
 
 	/* build moint-point */
 	mounts[i].dev = dev;
 	mounts[i].inode = inode;
 	mounts[i].mnt = inst;
+	strnzcpy(mounts[i].path,path,sizeof(mounts[i].path));
 	if(dev != ROOT_MNT_DEV && inode != ROOT_MNT_INO)
 		mntPntCount++;
 	return i;
+}
+
+const sMountPoint *mount_getByIndex(size_t i) {
+	assert(i < MOUNT_TABLE_SIZE);
+	if(mounts[i].mnt)
+		return mounts + i;
+	return NULL;
 }
 
 dev_t mount_getByLoc(dev_t dev,inode_t inode) {
@@ -133,7 +147,7 @@ dev_t mount_getByLoc(dev_t dev,inode_t inode) {
 }
 
 int mount_remMnt(dev_t dev,inode_t inode) {
-	size_t i;
+	size_t i,j;
 	/* search mount-point */
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		if(mounts[i].dev == dev && mounts[i].inode == inode)
@@ -142,7 +156,13 @@ int mount_remMnt(dev_t dev,inode_t inode) {
 	if(i >= MOUNT_TABLE_SIZE)
 		return ERR_NO_MNTPNT;
 
-	if(mounts[i].mnt->refs-- == 0) {
+	/* remove all mounts in this mounted device recursively */
+	for(j = 0; j < MOUNT_TABLE_SIZE; j++) {
+		if(mounts[j].mnt && mounts[j].dev == (dev_t)i)
+			mount_remMnt(i,mounts[j].inode);
+	}
+
+	if(--mounts[i].mnt->refs == 0) {
 		/* call deinit to give the fs the chance to write unwritten stuff etc. */
 		mounts[i].mnt->fs->deinit(mounts[i].mnt->handle);
 		/* free fs-instance */

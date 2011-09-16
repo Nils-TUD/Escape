@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include "iobuf.h"
 #include <stdio.h>
+#include <math.h>
 
 int bprintdbl(FILE *f,double d,uint precision) {
 	int c = 0;
@@ -28,19 +29,31 @@ int bprintdbl(FILE *f,double d,uint precision) {
 	/* Note: this is probably not a really good way of converting IEEE754-floating point numbers
 	 * to string. But its simple and should be enough for my purposes :) */
 
-	val = (llong)d;
-	c += bprintl(f,val);
-	d -= val;
-	if(d < 0)
-		d = -d;
-	RETERR(bputc(f,'.'));
-	c++;
-	while(precision-- > 0) {
-		d *= 10;
+	if(isnan(d)) {
+		if(d < 0)
+			c += RETERR(bputc(f,'-'));
+		c += RETERR(bputs(f,"nan"));
+	}
+	else if(isinf(d)) {
+		if(d < 0)
+			c += RETERR(bputc(f,'-'));
+		c += RETERR(bputs(f,"inf"));
+	}
+	else {
 		val = (llong)d;
-		RETERR(bputc(f,(val % 10) + '0'));
+		c += bprintl(f,val);
 		d -= val;
+		if(d < 0)
+			d = -d;
+		RETERR(bputc(f,'.'));
 		c++;
+		while(precision-- > 0) {
+			d *= 10;
+			val = (llong)d;
+			RETERR(bputc(f,(val % 10) + '0'));
+			d -= val;
+			c++;
+		}
 	}
 	return c;
 }

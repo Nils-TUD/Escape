@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
+#include <stdio.h>
 
 #define MAX_MNTNAME_LEN			32
 #define MOUNT_TABLE_SIZE		32
@@ -51,16 +52,18 @@ typedef int (*fFSRmDir)(void *h,sFSUser *u,inode_t dirIno,const char *name);
 typedef int (*fFSChmod)(void *h,sFSUser *u,inode_t ino,mode_t mode);
 typedef int (*fFSChown)(void *h,sFSUser *u,inode_t ino,uid_t uid,gid_t gid);
 typedef void (*fFSSync)(void *h);
+typedef void (*fFSPrint)(FILE *f,void *h);
 
 /* all information about a filesystem */
 typedef struct {
-	uint type;
+	int type;
 	fFSInit init;			/* required */
 	fFSDeinit deinit;		/* required */
 	fFSResPath resPath;		/* required */
 	fFSOpen open;			/* required */
 	fFSClose close;			/* required */
 	fFSStat stat;			/* required */
+	fFSPrint print;			/* required */
 	fFSRead read;			/* optional */
 	fFSWrite write;			/* optional */
 	fFSLink link;			/* optional */
@@ -84,6 +87,7 @@ typedef struct {
 typedef struct {
 	dev_t dev;
 	inode_t inode;
+	char path[MAX_PATH_LEN + 1];
 	sFSInst *mnt;
 } sMountPoint;
 
@@ -93,6 +97,12 @@ typedef struct {
  * @return true if successfull
  */
 bool mount_init(void);
+
+/**
+ * @param i the index
+ * @return the fs-instance with given index or NULL if there is no instance with that index
+ */
+const sFSInst *mount_getFSInst(size_t i);
 
 /**
  * Adds the given file-system (completely initialized!)
@@ -107,11 +117,18 @@ int mount_addFS(sFileSystem *fs);
  *
  * @param dev the device-number of the mount-point
  * @param inode the inode-number of the mount-point
+ * @param path the path of the mount-point
  * @param driver the driver-path
  * @param type the fs-type
  * @return the device-number (mount-point) on success or < 0
  */
-dev_t mount_addMnt(dev_t dev,inode_t inode,const char *driver,uint type);
+dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *driver,int type);
+
+/**
+ * @param i the mount-point
+ * @return the mount-point with index i or NULL if not existing
+ */
+const sMountPoint *mount_getByIndex(size_t i);
 
 /**
  * Determines the moint-point-id for the given location

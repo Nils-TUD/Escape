@@ -347,6 +347,8 @@ typedef struct {
 	sExt2BlockGrp *groups;
 
 	/* caches */
+	size_t icacheHits;
+	size_t icacheMisses;
 	sExt2CInode inodeCache[EXT2_ICACHE_SIZE];
 	sBlockCache blockCache;
 } sExt2;
@@ -427,6 +429,14 @@ size_t ext2_getBlockGroupCount(sExt2 *e);
  * @return true if so
  */
 bool ext2_bgHasBackups(sExt2 *e,block_t i);
+
+/**
+ * Prints statistics and information to the given file
+ *
+ * @param f the file
+ * @param h the handle
+ */
+void ext2_print(FILE *f,void *h);
 
 
 #if DEBUGGING

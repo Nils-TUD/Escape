@@ -24,7 +24,7 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_regDriver(sThread *t,sIntrptStackFrame *stack);
+int sysc_createdev(sThread *t,sIntrptStackFrame *stack);
 int sysc_getClientId(sThread *t,sIntrptStackFrame *stack);
 int sysc_getClient(sThread *t,sIntrptStackFrame *stack);
 int sysc_getWork(sThread *t,sIntrptStackFrame *stack);

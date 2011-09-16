@@ -61,17 +61,13 @@ int main(void) {
 	if(startThread(refreshThread,NULL) < 0)
 		error("Unable to start CMOS-thread");
 
-	id = regDriver("cmos",DRV_READ);
+	id = createdev("/dev/cmos",DEV_TYPE_BLOCK,DRV_READ);
 	if(id < 0)
-		error("Unable to register driver 'cmos'");
+		error("Unable to register device 'cmos'");
 
 	/* give all read- and write-permission */
 	if(chmod("/dev/cmos",S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
 		error("Unable to set permissions for /dev/cmos");
-
-	/* there is always data available */
-	if(fcntl(id,F_SETDATA,true) < 0)
-		error("fcntl");
 
 	/* wait for commands */
 	while(1) {

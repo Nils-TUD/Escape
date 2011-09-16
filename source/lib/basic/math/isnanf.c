@@ -17,39 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MATH_H_
-#define MATH_H_
-
 #include <esc/common.h>
+#include <math.h>
 
-typedef float float_t;
-typedef double double_t;
-
-#define HUGE_VAL	((double)0x7ff0000000000000ULL)
-#define HUGE_VALF	((float)0x7f800000)
-#define HUGE_VALL	HUGE_VAL
-
-#define INFINITY	HUGE_VALF
-#define NAN			((float)0x7FFFFFFF)
-
-#define FP_ILOGB0	(-2147483647 - 1)
-#define FP_ILOGBNAN	(-2147483647 - 1)
-
-enum { FP_NAN, FP_INFINITE, FP_ZERO, FP_SUBNORMAL, FP_NORMAL };
-
-int pow(int a,int b);
-
-double sin(double x);
-double cos(double x);
-double tan(double x);
-
-int isfinite(double x);
-int isfinitef(float x);
-
-int isnan(double x);
-int isnanf(float x);
-
-int isinf(double x);
-int isinff(float x);
-
-#endif /* MATH_H_ */
+int isnanf(float x) {
+	union {
+		float d;
+		uint32_t i;
+	} val;
+	val.d = x;
+	return ((val.i >> 23) & 0xFF) == 0xFF && (val.i & 0x7FFFFF) != 0;
+}

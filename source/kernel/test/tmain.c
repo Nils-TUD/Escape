@@ -31,7 +31,6 @@
 #include "tsched.h"
 #include "tsllist.h"
 #include "tstring.h"
-#include "tvfs.h"
 #include "tvfsnode.h"
 #include "tsignals.h"
 #include "tringbuffer.h"
@@ -83,7 +82,6 @@ void bspstart(sBootInfo *bootinfo) {
 	test_register(&tModSLList);
 	test_register(&tModSched);
 	test_register(&tModString);
-	test_register(&tModVFS);
 	test_register(&tModVFSn);
 	test_register(&tModSignals);
 	test_register(&tModEscCodes);

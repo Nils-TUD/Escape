@@ -226,7 +226,8 @@ static void initDrives(void) {
 					snprintf(name,sizeof(name),"hd%c%d",'a' + device->id,p + 1);
 				else
 					snprintf(name,sizeof(name),"cd%c%d",'a' + device->id,p + 1);
-				drivers[drvCount] = regDriver(name,DRV_READ | DRV_WRITE);
+				strcpy(path + SSTRLEN("/dev/"),name);
+				drivers[drvCount] = createdev(path,DEV_TYPE_BLOCK,DRV_READ | DRV_WRITE);
 				if(drivers[drvCount] < 0) {
 					ATA_LOG("Drive %d, Partition %d: Unable to register driver '%s'",
 							device->id,p + 1,name);
@@ -238,8 +239,6 @@ static void initDrives(void) {
 					strcpy(path + SSTRLEN("/dev/"),name);
 					if(chown(path,-1,GROUP_STORAGE) < 0)
 						ATA_LOG("Unable to set group for '%s'",path);
-					/* we're a block-device, so always data available */
-					fcntl(drivers[drvCount],F_SETDATA,true);
 					createVFSEntry(device,device->partTable + p,name);
 					id2Fd[drvCount].device = device->id;
 					id2Fd[drvCount].partition = p;

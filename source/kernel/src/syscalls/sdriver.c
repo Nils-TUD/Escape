@@ -29,24 +29,26 @@
 #include <errors.h>
 #include <string.h>
 
-/* implementable functions */
-#define DRV_ALL						(DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE)
-
-int sysc_regDriver(sThread *t,sIntrptStackFrame *stack) {
-	char nameCpy[MAX_PATH_LEN + 1];
-	const char *name = (const char*)SYSC_ARG1(stack);
-	uint flags = SYSC_ARG2(stack);
+int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
+	const char *path = (const char*)SYSC_ARG1(stack);
+	uint type = SYSC_ARG2(stack);
+	uint ops = SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
 	int fd;
 	file_t res;
-
-	/* check flags */
-	if((flags & ~DRV_ALL) != 0 && flags != DRV_FS)
+	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	strnzcpy(nameCpy,name,sizeof(nameCpy));
 
-	/* create driver and open it */
-	res = vfs_createDriver(pid,nameCpy,flags);
+	/* check type and ops */
+	if(type != DEV_TYPE_BLOCK && type != DEV_TYPE_CHAR && type != DEV_TYPE_FS &&
+			type != DEV_TYPE_FILE && type != DEV_TYPE_SERVICE)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(type != DEV_TYPE_FS && (ops & ~(DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE)) != 0)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* create device and open it */
+	res = vfs_createdev(pid,abspath,type,ops);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 

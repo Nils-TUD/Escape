@@ -36,7 +36,12 @@
 #define DRV_READ					2
 #define DRV_WRITE					4
 #define DRV_CLOSE					8
-#define DRV_FS						16
+
+#define DEV_TYPE_FS					0
+#define DEV_TYPE_BLOCK				1
+#define DEV_TYPE_CHAR				2
+#define DEV_TYPE_FILE				3
+#define DEV_TYPE_SERVICE			4
 
 #define GW_NOBLOCK					1
 
@@ -45,13 +50,14 @@ extern "C" {
 #endif
 
 /**
- * Registers a driver with given name.
+ * Creates a device at given path.
  *
- * @param name the driver-name. Should be alphanumeric!
- * @param flags what functions do you want to implement (DRV_*) ?
+ * @param path the path
+ * @param type the device-type (DEV_TYPE_*)
+ * @param ops the supported operations (DRV_*)
  * @return the file-desc if successfull, < 0 if an error occurred
  */
-int regDriver(const char *name,uint flags) A_CHECKRET;
+int createdev(const char *path,uint type,uint ops) A_CHECKRET;
 
 /**
  * Fetches the client-id from the given file-descriptor

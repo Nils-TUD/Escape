@@ -320,6 +320,14 @@ ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count)
  */
 time_t iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate);
 
+/**
+ * Prints statistics and information to the given file
+ *
+ * @param f the file
+ * @param h the handle
+ */
+void iso_print(FILE *f,void *h);
+
 #if DEBUGGING
 
 /**

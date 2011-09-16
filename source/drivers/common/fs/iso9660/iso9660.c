@@ -170,6 +170,7 @@ sFileSystem *iso_getFS(void) {
 	fs->chmod = NULL;
 	fs->chown = NULL;
 	fs->sync = NULL;
+	fs->print = iso_print;
 	return fs;
 }
 
@@ -220,6 +221,26 @@ ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count)
 time_t iso_dirDate2Timestamp(A_UNUSED sISO9660 *h,const sISODirDate *ddate) {
 	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);
+}
+
+void iso_print(FILE *f,void *h) {
+	sISO9660 *i = (sISO9660*)h;
+	sISOVolDesc *desc = &i->primary;
+	sISOVolDate *date;
+	fprintf(f,"\tIdentifier: %.5s\n",desc->identifier);
+	fprintf(f,"\tSize: %u bytes\n",desc->data.primary.volSpaceSize.littleEndian * ISO_BLK_SIZE(i));
+	fprintf(f,"\tSystemIdent: %.32s\n",desc->data.primary.systemIdent);
+	fprintf(f,"\tVolumeIdent: %.32s\n",desc->data.primary.volumeIdent);
+	date = &desc->data.primary.created;
+	fprintf(f,"\tCreated: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
+			date->year,date->month,date->day,date->hour,date->minute,date->second);
+	date = &desc->data.primary.modified;
+	fprintf(f,"\tModified: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
+			date->year,date->month,date->day,date->hour,date->minute,date->second);
+	fprintf(f,"\tBlock cache:\n");
+	bcache_printStats(f,&i->blockCache);
+	fprintf(f,"\tDirectory entry cache:\n");
+	iso_dire_print(f,i);
 }
 
 #if DEBUGGING

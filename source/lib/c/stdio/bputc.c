@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include "iobuf.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 int bputc(FILE *f,int c) {
 	sIOBuf *buf = &f->out;
@@ -34,8 +35,19 @@ int bputc(FILE *f,int c) {
 			RETERR(bflush(f));
 	}
 	else {
-		if(buf->pos >= buf->max)
-			return EOF;
+		if(buf->pos >= buf->max) {
+			char *old;
+			if(!buf->dynamic)
+				return EOF;
+
+			old = buf->buffer;
+			buf->buffer = realloc(buf->buffer,buf->max * 2);
+			if(!buf->buffer) {
+				buf->buffer = old;
+				return EOF;
+			}
+			buf->max *= 2;
+		}
 		buf->buffer[buf->pos++] = c;
 	}
 	/* cast to unsigned char and back to int to ensure that chars < 0 (e.g. german umlaute) are

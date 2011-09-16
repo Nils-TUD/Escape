@@ -31,7 +31,7 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = regDriver("null",DRV_READ | DRV_WRITE);
+	id = createdev("/dev/null",DEV_TYPE_CHAR,DRV_READ | DRV_WRITE);
 	if(id < 0)
 		error("Unable to register driver 'null'");
 

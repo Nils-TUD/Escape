@@ -31,9 +31,9 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = regDriver("zero",DRV_READ);
+	id = createdev("/dev/zero",DEV_TYPE_CHAR,DRV_READ);
 	if(id < 0)
-		error("Unable to register driver 'zero'");
+		error("Unable to register device 'zero'");
 
 	/* 0's are always available ;) */
 	if(fcntl(id,F_SETDATA,true) < 0)

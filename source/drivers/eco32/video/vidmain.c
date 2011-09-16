@@ -47,7 +47,7 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = regDriver("video",DRV_WRITE);
+	id = createdev("/dev/video",DEV_TYPE_BLOCK,DRV_WRITE);
 	if(id < 0)
 		error("Unable to register driver 'video'");
 

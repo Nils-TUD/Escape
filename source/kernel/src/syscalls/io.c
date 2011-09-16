@@ -317,7 +317,7 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* can't be sent by user-programs */
-	if(IS_DRIVER_MSG(id))
+	if(IS_DEVICE_MSG(id))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */

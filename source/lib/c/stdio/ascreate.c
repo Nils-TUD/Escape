@@ -18,53 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/sllist.h>
 #include "iobuf.h"
 #include <stdio.h>
-#include <stdlib.h>
 
-FILE *fopen(const char *filename,const char *mode) {
-	char c;
-	int fd;
-	uint flags = 0;
-	FILE *f = NULL;
-
-	/* parse mode */
-	while((c = *mode++)) {
-		switch(c) {
-			case 'r':
-				flags |= IO_READ;
-				break;
-			case 'w':
-				flags |= IO_WRITE | IO_CREATE | IO_TRUNCATE;
-				break;
-			case '+':
-				if(flags & IO_READ)
-					flags |= IO_WRITE;
-				else if(flags & IO_WRITE)
-					flags |= IO_READ;
-				break;
-			case 'a':
-				flags |= IO_APPEND | IO_WRITE;
-				break;
-			case 'm':
-				flags |= IO_MSGS;
-				break;
-		}
-	}
-	if((flags & (IO_READ | IO_WRITE | IO_MSGS)) == 0)
-		return NULL;
-
-	/* open */
-	fd = open(filename,flags);
-	if(fd < 0)
-		return NULL;
-
-	/* create file */
-	if(!(f = bcreate(fd,flags,NULL,0,false)) || !sll_append(&iostreams,f)) {
-		close(fd);
-		free(f);
-		return NULL;
-	}
-	return f;
+FILE *ascreate(void) {
+	return bcreate(-1,IO_WRITE,NULL,0,true);
 }

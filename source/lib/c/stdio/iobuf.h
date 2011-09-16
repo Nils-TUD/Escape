@@ -27,6 +27,7 @@
 #define IN_BUFFER_SIZE		1024
 #define OUT_BUFFER_SIZE		1024
 #define ERR_BUFFER_SIZE		128
+#define DYN_BUFFER_SIZE		128
 
 /* format flags */
 #define FFL_PADRIGHT		1
@@ -76,8 +77,9 @@
 
 typedef struct {
 	int fd;
-	int pos;
-	int max;
+	size_t pos;
+	size_t max;
+	uchar dynamic;
 	char *buffer;
 	tULock lck;
 } sIOBuf;
@@ -113,7 +115,7 @@ int breadn(FILE *f,int *num,size_t length,int c);
 int breads(FILE *f,size_t length,char *str);
 int vbscanf(FILE *f,const char *fmt,va_list ap);
 
-FILE *bcreate(int fd,uint flags,char *buffer,size_t size);
+FILE *bcreate(int fd,uint flags,char *buffer,size_t size,bool dynamic);
 
 extern const char *hexCharsBig;
 extern const char *hexCharsSmall;

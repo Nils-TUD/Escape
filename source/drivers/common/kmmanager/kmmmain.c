@@ -56,7 +56,7 @@ int main(void) {
 
 	events_init();
 
-	ids[0] = regDriver("kmmanager",DRV_READ);
+	ids[0] = createdev("/dev/kmmanager",DEV_TYPE_CHAR,DRV_READ);
 	if(ids[0] < 0)
 		error("Unable to register driver 'kmmanager'");
 
@@ -79,7 +79,7 @@ int main(void) {
 	if(!map)
 		error("Unable to load default keymap");
 
-	ids[1] = regDriver("keyevents",0);
+	ids[1] = createdev("/dev/keyevents",DEV_TYPE_SERVICE,0);
 	if(ids[1] < 0)
 		error("Unable to register driver 'keyevents'");
 

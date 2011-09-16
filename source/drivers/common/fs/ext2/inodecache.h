@@ -68,8 +68,11 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode);
 void ext2_icache_release(const sExt2CInode *inode);
 
 /**
- * Prints inode-cache statistics
+ * Prints statistics and information about the inode-cache into the givne file
+ *
+ * @param f the file
+ * @param e the ext2 handle
  */
-void ext2_icache_printStats(void);
+void ext2_icache_print(FILE *f,sExt2 *e);
 
 #endif /* INODECACHE_H_ */

@@ -132,9 +132,9 @@ int main(void) {
 	/* load available modes etc. */
 	vbe_init();
 
-	id = regDriver("vesatext",DRV_OPEN | DRV_WRITE);
+	id = createdev("/dev/vesatext",DEV_TYPE_BLOCK,DRV_OPEN | DRV_WRITE);
 	if(id < 0)
-		error("Unable to register driver 'vesatext'");
+		error("Unable to register device 'vesatext'");
 
 	while(1) {
 		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);

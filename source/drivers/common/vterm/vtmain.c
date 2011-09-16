@@ -55,15 +55,15 @@ int main(void) {
 	int client;
 	msgid_t mid;
 	sWaitObject waits[VTERM_COUNT + 1];
-	char name[MAX_VT_NAME_LEN + 1];
+	char name[MAX_VT_NAME_LEN + 5 + 1];
 
 	cfg.readKb = true;
 	cfg.enabled = false;
 
 	/* reg drivers */
 	for(i = 0; i < VTERM_COUNT; i++) {
-		snprintf(name,sizeof(name),"vterm%d",i);
-		drvIds[i] = regDriver(name,DRV_READ | DRV_WRITE);
+		snprintf(name,sizeof(name),"/dev/vterm%d",i);
+		drvIds[i] = createdev(name,DEV_TYPE_CHAR,DRV_READ | DRV_WRITE);
 		if(drvIds[i] < 0)
 			error("Unable to register driver '%s'",name);
 		waits[i].events = EV_CLIENT;

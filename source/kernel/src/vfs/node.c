@@ -281,7 +281,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 				if(!*path)
 					break;
 
-				if(IS_DRIVER(n->mode))
+				if(IS_DEVICE(n->mode))
 					break;
 
 				/* move to childs of this node */
@@ -358,7 +358,24 @@ void vfs_node_dirname(char *path,size_t len) {
 	*(p + 1) = '\0';
 }
 
-sVFSNode *vfs_node_findInDir(inode_t nodeNo,const char *name,size_t nameLen) {
+sVFSNode *vfs_node_findInDir(sVFSNode *dir,const char *name,size_t nameLen) {
+	bool isValid = false;
+	sVFSNode *res = NULL;
+	sVFSNode *n = vfs_node_openDir(dir,false,&isValid);
+	if(isValid) {
+		while(n != NULL) {
+			if(n->nameLen == nameLen && strncmp(n->name,name,nameLen) == 0) {
+				res = n;
+				break;
+			}
+			n = n->next;
+		}
+	}
+	vfs_node_closeDir(dir,false);
+	return res;
+}
+
+sVFSNode *vfs_node_findInDirOf(inode_t nodeNo,const char *name,size_t nameLen) {
 	bool isValid = false;
 	sVFSNode *res = NULL;
 	sVFSNode *n = vfs_node_openDirOf(nodeNo,&isValid);

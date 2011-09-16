@@ -34,7 +34,7 @@ int main(void) {
 
 	list_init();
 
-	id = regDriver("pci",0);
+	id = createdev("/dev/pci",DEV_TYPE_SERVICE,0);
 	if(id < 0)
 		error("Unable to register driver 'pci'");
 	if(chmod("/dev/pci",0110) < 0)

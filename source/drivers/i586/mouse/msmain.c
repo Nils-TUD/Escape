@@ -118,9 +118,9 @@ int main(void) {
 		error("Unable to announce interrupt-handler");
 
 	/* reg driver */
-	sid = regDriver("mouse",DRV_READ);
+	sid = createdev("/dev/mouse",DEV_TYPE_CHAR,DRV_READ);
 	if(sid < 0)
-		error("Unable to register driver '%s'","mouse");
+		error("Unable to register device 'mouse'");
 
     /* wait for commands */
 	while(1) {

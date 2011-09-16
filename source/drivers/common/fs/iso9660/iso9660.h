@@ -227,7 +227,7 @@ typedef struct {
 
 /* the iso9660-handle (all information we need when working with it) */
 typedef struct {
-	/* the file-descs for the driver (one for each thread and one for the initial) */
+	/* the file-descs for the device (one for each thread and one for the initial) */
 	int drvFds[REQ_THREAD_COUNT + 1];
 	sISOVolDesc primary;
 	size_t direcNextFree;
@@ -238,11 +238,11 @@ typedef struct {
 /**
  * Inits the ISO9660-filesystem
  *
- * @param driver the driver-name (cdrom = find the device yourself)
- * @param usedDev will be set to the used driver
+ * @param device the device-name (cdrom = find the device yourself)
+ * @param usedDev will be set to the used device
  * @return the handle
  */
-void *iso_init(const char *driver,char **usedDev);
+void *iso_init(const char *device,char **usedDev);
 
 /**
  * Deinits the ISO9660-filesystem
@@ -312,7 +312,7 @@ int iso_stat(void *h,inode_t ino,sFileInfo *info);
 ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count);
 
 /**
- * BUilds a timestamp from the given dir-date
+ * Builds a timestamp from the given dir-date
  *
  * @param h the iso9660-handle
  * @param ddate the dir-date

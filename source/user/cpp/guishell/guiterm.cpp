@@ -81,11 +81,11 @@ void GUITerm::run() {
 		}
 		else {
 			switch(mid) {
-				case MSG_DRV_READ:
+				case MSG_DEV_READ:
 					read(fd,&msg);
 					break;
 
-				case MSG_DRV_WRITE:
+				case MSG_DEV_WRITE:
 					write(fd,&msg);
 					break;
 
@@ -129,9 +129,9 @@ void GUITerm::read(int fd,sMsg *msg) {
 		_vt->inbufEOF = false;
 	msg->args.arg2 = _vt->inbufEOF || rb_length(_vt->inbuf) > 0;
 	unlocku(_lock);
-	send(fd,MSG_DRV_READ_RESP,msg,sizeof(msg->args));
+	send(fd,MSG_DEV_READ_RESP,msg,sizeof(msg->args));
 	if(data) {
-		send(fd,MSG_DRV_READ_RESP,data,count);
+		send(fd,MSG_DEV_READ_RESP,data,count);
 		free(data);
 	}
 }
@@ -165,5 +165,5 @@ void GUITerm::write(int fd,sMsg *msg) {
 		}
 		free(data);
 	}
-	send(fd,MSG_DRV_WRITE_RESP,msg,sizeof(msg->args));
+	send(fd,MSG_DEV_WRITE_RESP,msg,sizeof(msg->args));
 }

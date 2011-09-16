@@ -49,7 +49,7 @@ void events_init(void) {
 	assert(listener);
 }
 
-bool events_send(int driver,sKmData *km) {
+bool events_send(int device,sKmData *km) {
 	sSLNode *n;
 	sMsg msg;
 	bool copied = false;
@@ -62,7 +62,7 @@ bool events_send(int driver,sKmData *km) {
 			/* character/keycode equal? */
 			if(((l->flags & KE_EV_KEYCODE) && l->key == km->keycode) ||
 					((l->flags & KE_EV_CHARACTER) && l->key == km->character)) {
-				int fd = getClient(driver,l->id);
+				int fd = getClient(device,l->id);
 				if(fd >= 0) {
 					if(!copied) {
 						memcpy(&msg.data.d,km,sizeof(sKmData));

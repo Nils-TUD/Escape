@@ -20,9 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
-#include <sys/vfs/real.h>
-#include <sys/vfs/pipe.h>
-#include <sys/vfs/driver.h>
+#include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/task/thread.h>
 #include <sys/syscalls/io.h>

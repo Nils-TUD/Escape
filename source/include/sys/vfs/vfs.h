@@ -26,7 +26,7 @@
 #include <esc/fsinterface.h>
 
 #define MAX_VFS_FILE_SIZE			(64 * K)
-#define MAX_GETWORK_DRIVERS			16
+#define MAX_GETWORK_DEVICES			16
 
 /* some additional types for the kernel */
 #define MODE_TYPE_CHANNEL			0x0010000
@@ -44,10 +44,10 @@
 #define IS_DEVICE(mode)				(((mode) & MODE_TYPE_DEVMASK) != 0)
 #define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
 
-#define DRV_OPEN					1
-#define DRV_READ					2
-#define DRV_WRITE					4
-#define DRV_CLOSE					8
+#define DEV_OPEN					1
+#define DEV_READ					2
+#define DEV_WRITE					4
+#define DEV_CLOSE					8
 
 #define DEV_TYPE_FS					0
 #define DEV_TYPE_BLOCK				1
@@ -78,9 +78,9 @@ enum {
 	VFS_TRUNCATE = 8,
 	VFS_APPEND = 16,
 	VFS_NOBLOCK = 32,
-	VFS_MSGS = 64,			/* exchange msgs with a driver */
+	VFS_MSGS = 64,			/* exchange msgs with a device */
 	VFS_NOLINKRES = 128,	/* kernel-intern: don't resolve last link in path */
-	VFS_DRIVER = 256,		/* kernel-intern: whether the file was created for a driver */
+	VFS_DEVICE = 256,		/* kernel-intern: whether the file was created for a device */
 	VFS_EXEC = 512,			/* kernel-intern: for accessing directories */
 };
 
@@ -141,9 +141,9 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags);
 
 /**
  * @param file the file
- * @return true if the file was created for a driver (and not a client of the driver)
+ * @return true if the file was created for a device (and not a client of the device)
  */
-bool vfs_isDriver(file_t file);
+bool vfs_isDevice(file_t file);
 
 /**
  * Increases the references of the given file
@@ -283,7 +283,7 @@ off_t vfs_seek(pid_t pid,file_t file,off_t offset,uint whence);
  * Reads max. count bytes from the given file into the given buffer and returns the number
  * of read bytes.
  *
- * @param pid will be used to check whether the driver writes or a driver-user
+ * @param pid will be used to check whether the device writes or a device-user
  * @param file the file
  * @param buffer the buffer to write to
  * @param count the max. number of bytes to read
@@ -295,7 +295,7 @@ ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count);
  * Writes count bytes from the given buffer into the given file and returns the number of written
  * bytes.
  *
- * @param pid will be used to check whether the driver writes or a driver-user
+ * @param pid will be used to check whether the device writes or a device-user
  * @param file the file
  * @param buffer the buffer to read from
  * @param count the number of bytes to write
@@ -304,7 +304,7 @@ ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count);
 ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count);
 
 /**
- * Sends a message to the corresponding driver
+ * Sends a message to the corresponding device
  *
  * @param pid the sender-process-id
  * @param file the file to send the message to
@@ -316,7 +316,7 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count);
 ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,const void *data,size_t size);
 
 /**
- * Receives a message from the corresponding driver
+ * Receives a message from the corresponding device
  *
  * @param pid the receiver-process-id
  * @param file the file to receive the message from
@@ -431,7 +431,7 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool blo
 		pid_t pid,ulong ident);
 
 /**
- * For drivers: Looks whether a client wants to be served and return the node-number. If
+ * For devices: Looks whether a client wants to be served and return the node-number. If
  * necessary and if GW_NOBLOCK is not used, the function waits until a client wants to be served.
  *
  * @param files an array of files to check for clients
@@ -445,7 +445,7 @@ inode_t vfs_getClient(const file_t *files,size_t count,size_t *index,uint flags)
 /***
  * Fetches the client-id from the given file
  *
- * @param pid the process-id (driver-owner)
+ * @param pid the process-id (device-owner)
  * @param file the file for the client
  * @return the client-id or the error-code
  */
@@ -455,7 +455,7 @@ inode_t vfs_getClientId(pid_t pid,file_t file);
  * Opens a file for the client with given process-id.
  *
  * @param pid the own process-id
- * @param file the file for the driver
+ * @param file the file for the device
  * @param clientId the id of the desired client
  * @return the file or a negative error-code
  */
@@ -497,7 +497,7 @@ void vfs_removeThread(tid_t tid);
 void vfs_printGFT(void);
 
 /**
- * Prints all messages of all drivers
+ * Prints all messages of all devices
  */
 void vfs_printMsgs(void);
 

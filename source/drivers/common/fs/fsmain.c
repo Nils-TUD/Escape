@@ -50,7 +50,7 @@ int main(int argc,char *argv[]) {
 	int id;
 
 	if(argc < 4) {
-		printe("Usage: %s <wait> <driverPath> <fsType>",argv[0]);
+		printe("Usage: %s <wait> <devicePath> <fsType>",argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -75,13 +75,13 @@ int main(int argc,char *argv[]) {
 	if(root == NULL)
 		error("Unable to get root mount-point");
 	cmds_setRoot(rootDev,root);
-	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->driver,argv[3]);
+	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->device,argv[3]);
 	fflush(stdout);
 
-	/* register driver */
+	/* register device */
 	id = createdev("/dev/fs",DEV_TYPE_FS,0);
 	if(id < 0)
-		error("Unable to register driver 'fs'");
+		error("Unable to register device 'fs'");
 
 	/* set permissions to zero; the kernel will open the file to us and won't check them */
 	if(chmod("/dev/fs",0) < 0)

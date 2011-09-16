@@ -269,7 +269,7 @@ static void intrpt_irqDefault(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 		sig_addSignal(intrpt->signal);
 	pic_eoi(stack->intrptNo);
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
-	/* (with a present keyboard-driver we would steal him the scancodes) */
+	/* (with a present keyboard-device we would steal him the scancodes) */
 	/* this way, we can debug the system in the startup-phase without affecting timings
 	 * (before viewing the log ;)) */
 	if(stack->intrptNo == IRQ_KEYBOARD && proc_getByPid(KEYBOARD_PID) == NULL) {

@@ -36,11 +36,11 @@
 #include "../blockcache.h"
 #include "../threadpool.h"
 
-#define MAX_DRIVER_OPEN_RETRIES		1000
+#define MAX_DEVICE_OPEN_RETRIES		1000
 
-static bool iso_setup(const char *driver,sISO9660 *iso);
+static bool iso_setup(const char *device,sISO9660 *iso);
 
-void *iso_init(const char *driver,char **usedDev) {
+void *iso_init(const char *device,char **usedDev) {
 	size_t i;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
 	if(iso == NULL)
@@ -60,10 +60,10 @@ void *iso_init(const char *driver,char **usedDev) {
 	/* no writing here ;) */
 	iso->blockCache.write = NULL;
 
-	/* if the driver is provided, simply use it */
-	if(strcmp(driver,"cdrom") != 0) {
-		if(!iso_setup(driver,iso)) {
-			printe("Unable to find driver '%s'",driver);
+	/* if the device is provided, simply use it */
+	if(strcmp(device,"cdrom") != 0) {
+		if(!iso_setup(device,iso)) {
+			printe("Unable to find device '%s'",device);
 			free(iso);
 			return NULL;
 		}
@@ -100,26 +100,26 @@ void *iso_init(const char *driver,char **usedDev) {
 			return NULL;
 		}
 
-		driver = path;
+		device = path;
 	}
 
-	/* report used driver */
-	*usedDev = malloc(strlen(driver) + 1);
+	/* report used device */
+	*usedDev = malloc(strlen(device) + 1);
 	if(!*usedDev) {
-		printe("Not enough mem for driver-name");
+		printe("Not enough mem for device-name");
 		bcache_destroy(&iso->blockCache);
 		free(iso);
 		return NULL;
 	}
-	strcpy(*usedDev,driver);
+	strcpy(*usedDev,device);
 	return iso;
 }
 
-static bool iso_setup(const char *driver,sISO9660 *iso) {
+static bool iso_setup(const char *device,sISO9660 *iso) {
 	size_t i;
-	/* now open the driver */
+	/* now open the device */
 	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
-		iso->drvFds[i] = open(driver,IO_WRITE | IO_READ);
+		iso->drvFds[i] = open(device,IO_WRITE | IO_READ);
 		if(iso->drvFds[i] < 0)
 			return false;
 	}
@@ -127,7 +127,7 @@ static bool iso_setup(const char *driver,sISO9660 *iso) {
 	/* read volume descriptors */
 	for(i = 0; ; i++) {
 		if(!iso_rw_readSectors(iso,&iso->primary,ISO_VOL_DESC_START + i,1))
-			error("Unable to read volume descriptor from driver");
+			error("Unable to read volume descriptor from device");
 		/* we need just the primary one */
 		if(iso->primary.type == ISO_VOL_TYPE_PRIMARY)
 			break;

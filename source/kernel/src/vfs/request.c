@@ -23,7 +23,7 @@
 #include <sys/task/signals.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
-#include <sys/vfs/real.h>
+#include <sys/vfs/fsmsgs.h>
 #include <sys/vfs/request.h>
 #include <sys/util.h>
 #include <sys/video.h>

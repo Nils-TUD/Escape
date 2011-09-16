@@ -31,9 +31,9 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/null",DEV_TYPE_CHAR,DRV_READ | DRV_WRITE);
+	id = createdev("/dev/null",DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
 	if(id < 0)
-		error("Unable to register driver 'null'");
+		error("Unable to register device 'null'");
 
 	/* /dev/null produces no output, so always available to prevent blocking */
 	if(fcntl(id,F_SETDATA,true) < 0)
@@ -46,18 +46,18 @@ int main(void) {
 			printe("[NULL] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DRV_READ:
+				case MSG_DEV_READ:
 					msg.args.arg1 = 0;
 					msg.args.arg2 = true;
-					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					break;
-				case MSG_DRV_WRITE:
+				case MSG_DEV_WRITE:
 					/* skip the data-message */
 					if(RETRY(receive(fd,NULL,NULL,0)) < 0)
 						printe("[NULL] Unable to skip data-msg");
 					/* write response and pretend that we've written everything */
 					msg.args.arg1 = msg.args.arg2;
-					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 					break;
 				default:
 					msg.args.arg1 = ERR_UNSUPPORTED_OP;

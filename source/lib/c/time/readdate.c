@@ -26,7 +26,7 @@
 int readdate(struct tm *t) {
 	/* open CMOS and read date */
 	int err;
-	int fd = open(TIME_DRIVER,IO_READ);
+	int fd = open(TIME_DEVICE,IO_READ);
 	if(fd < 0)
 		return fd;
 	if((err = RETRY(read(fd,t,sizeof(struct tm)))) < 0) {

@@ -138,8 +138,8 @@ typedef enum {
  *
  * @param vt the vterm
  * @param vidSize the size of the screen
- * @param vidFd the file-descriptor for the video-driver (or whatever you need :))
- * @param speakerFd the file-descriptor for the speaker-driver
+ * @param vidFd the file-descriptor for the video-device (or whatever you need :))
+ * @param speakerFd the file-descriptor for the speaker-device
  * @return true if successfull
  */
 bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd);

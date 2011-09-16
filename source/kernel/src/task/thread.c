@@ -25,10 +25,6 @@
 #include <sys/task/timer.h>
 #include <sys/task/terminator.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/info.h>
-#include <sys/vfs/node.h>
-#include <sys/vfs/real.h>
-#include <sys/vfs/request.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>

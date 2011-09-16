@@ -44,7 +44,7 @@ int main(void) {
 
 	keymap = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
 	if(keymap < 0)
-		qerror("Unable to open keymap-driver");
+		qerror("Unable to open keymap-device");
 
 	if(!game_init()) {
 		quit();

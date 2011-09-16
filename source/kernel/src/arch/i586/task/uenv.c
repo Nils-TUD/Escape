@@ -24,8 +24,6 @@
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
-#include <sys/vfs/real.h>
-#include <sys/vfs/node.h>
 #include <sys/klock.h>
 #include <string.h>
 #include <errors.h>

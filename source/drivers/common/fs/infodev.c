@@ -47,7 +47,7 @@ static int ids[ARRAY_SIZE(infos)];
 int infodev_thread(A_UNUSED void *arg) {
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(infos); i++) {
-		ids[i] = createdev(infos[i].path,DEV_TYPE_FILE,DRV_READ);
+		ids[i] = createdev(infos[i].path,DEV_TYPE_FILE,DEV_READ);
 		if(ids[i] < 0)
 			error("Unable to create file %s",infos[i].path);
 		if(chmod(infos[i].path,0644) < 0)
@@ -67,7 +67,7 @@ int infodev_thread(A_UNUSED void *arg) {
 				printe("[FSINFO] Invalid device-id %d",id);
 			else {
 				switch(mid) {
-					case MSG_DRV_READ: {
+					case MSG_DEV_READ: {
 						size_t total;
 						char *data;
 						off_t offset = msg.args.arg1;
@@ -90,9 +90,9 @@ int infodev_thread(A_UNUSED void *arg) {
 							else
 								msg.args.arg1 = count;
 						}
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+						send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 						if((long)msg.args.arg1 > 0)
-							send(fd,MSG_DRV_READ_RESP,data + offset,msg.args.arg1);
+							send(fd,MSG_DEV_READ_RESP,data + offset,msg.args.arg1);
 						fclose(str);
 					}
 					break;
@@ -125,7 +125,7 @@ static void getMounts(FILE *str) {
 		const sMountPoint *mnt = mount_getByIndex(i);
 		if(mnt) {
 			const char *fs = fslist_getName(mnt->mnt->fs->type);
-			fprintf(str,"%s on %s type %s\n",mnt->mnt->driver,mnt->path,fs);
+			fprintf(str,"%s on %s type %s\n",mnt->mnt->device,mnt->path,fs);
 		}
 	}
 }
@@ -139,7 +139,7 @@ static void getFSInsts(FILE *str) {
 			break;
 
 		fs = fslist_getName(inst->fs->type);
-		fprintf(str,"%s on %s:\n",fs,inst->driver);
+		fprintf(str,"%s on %s:\n",fs,inst->device);
 		fprintf(str,"\tRefs: %u\n",inst->refs);
 		fprintf(str,"\tMounted at: ");
 		for(j = 0; j < MOUNT_TABLE_SIZE; j++) {

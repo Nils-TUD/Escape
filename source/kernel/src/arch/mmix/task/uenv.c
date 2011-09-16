@@ -24,7 +24,6 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/real.h>
 #include <sys/boot.h>
 #include <sys/log.h>
 #include <sys/cpu.h>
@@ -72,7 +71,7 @@ int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,sig_t signal) {
 			regs = (uint64_t*)KEYBOARD_BASE;
 			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 			break;
-		/* not necessary for disk here; the driver will reenable interrupts as soon as a new
+		/* not necessary for disk here; the device will reenable interrupts as soon as a new
 		 * command is started */
 	}
 	return 0;

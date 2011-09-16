@@ -60,12 +60,12 @@ int main(void) {
 	cfg.readKb = true;
 	cfg.enabled = false;
 
-	/* reg drivers */
+	/* reg devices */
 	for(i = 0; i < VTERM_COUNT; i++) {
 		snprintf(name,sizeof(name),"/dev/vterm%d",i);
-		drvIds[i] = createdev(name,DEV_TYPE_CHAR,DRV_READ | DRV_WRITE);
+		drvIds[i] = createdev(name,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
 		if(drvIds[i] < 0)
-			error("Unable to register driver '%s'",name);
+			error("Unable to register device '%s'",name);
 		waits[i].events = EV_CLIENT;
 		waits[i].object = drvIds[i];
 	}
@@ -124,7 +124,7 @@ int main(void) {
 		if(vt != NULL) {
 			reqc++;
 			switch(mid) {
-				case MSG_DRV_READ: {
+				case MSG_DEV_READ: {
 					/* offset is ignored here */
 					size_t count = msg.args.arg2;
 					char *data = (char*)malloc(count);
@@ -134,16 +134,16 @@ int main(void) {
 					if(rb_length(vt->inbuf) == 0)
 						vt->inbufEOF = false;
 					msg.args.arg2 = vt->inbufEOF || rb_length(vt->inbuf) > 0;
-					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(data) {
-						send(fd,MSG_DRV_READ_RESP,data,count);
+						send(fd,MSG_DEV_READ_RESP,data,count);
 						free(data);
 					}
 					else
 						printe("[VTERM] Not enough memory");
 				}
 				break;
-				case MSG_DRV_WRITE: {
+				case MSG_DEV_WRITE: {
 					char *data;
 					size_t c = msg.args.arg2;
 					data = (char*)malloc(c + 1);
@@ -161,7 +161,7 @@ int main(void) {
 					}
 					else
 						printe("[VTERM] Not enough memory");
-					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 

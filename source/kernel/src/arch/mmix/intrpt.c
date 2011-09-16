@@ -250,7 +250,7 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 
 	if(proc_getByPid(KEYBOARD_PID) == NULL) {
 		/* in debug-mode, start the logviewer when the keyboard is not present yet */
-		/* (with a present keyboard-driver we would steal him the scancodes) */
+		/* (with a present keyboard-device we would steal him the scancodes) */
 		/* this way, we can debug the system in the startup-phase without affecting timings
 		 * (before viewing the log ;)) */
 		sKeyEvent ev;
@@ -261,7 +261,7 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call uenv_handleSignal(), which might cause a thread-switch */
 	if(!sig_addSignal(SIG_INTRPT_KB)) {
-		/* if there is no driver that handles the signal, reenable interrupts */
+		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
 }

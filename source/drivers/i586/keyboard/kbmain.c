@@ -187,7 +187,7 @@ int main(void) {
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 
-	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DRV_READ);
+	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DEV_READ);
 	if(id < 0)
 		error("Unable to register device 'keyboard'");
 
@@ -219,7 +219,7 @@ int main(void) {
 		}
 		else {
 			switch(mid) {
-				case MSG_DRV_READ: {
+				case MSG_DEV_READ: {
 					/* offset is ignored here */
 					size_t count = msg.args.arg2 / sizeof(sKbData);
 					sKbData *buffer = (sKbData*)malloc(count * sizeof(sKbData));
@@ -227,9 +227,9 @@ int main(void) {
 					if(buffer)
 						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKbData);
 					msg.args.arg2 = rb_length(rbuf) > 0;
-					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(buffer) {
-						send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKbData));
+						send(fd,MSG_DEV_READ_RESP,buffer,count * sizeof(sKbData));
 						free(buffer);
 					}
 				}

@@ -44,7 +44,7 @@ int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
 	if(type != DEV_TYPE_BLOCK && type != DEV_TYPE_CHAR && type != DEV_TYPE_FS &&
 			type != DEV_TYPE_FILE && type != DEV_TYPE_SERVICE)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(type != DEV_TYPE_FS && (ops & ~(DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE)) != 0)
+	if(type != DEV_TYPE_FS && (ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE)) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* create device and open it */
@@ -83,7 +83,7 @@ int sysc_getClient(sThread *t,sIntrptStackFrame *stack) {
 	int fd;
 	file_t file,drvFile;
 
-	/* get driver-file */
+	/* get file */
 	drvFile = proc_reqFile(drvFd);
 	if(drvFile < 0)
 		SYSC_ERROR(stack,drvFile);
@@ -104,7 +104,7 @@ int sysc_getClient(sThread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
-	file_t files[MAX_GETWORK_DRIVERS];
+	file_t files[MAX_GETWORK_DEVICES];
 	const int *fds = (const int*)SYSC_ARG1(stack);
 	size_t fdCount = SYSC_ARG2(stack);
 	int *drv = (int*)SYSC_ARG3(stack);
@@ -120,7 +120,7 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 	ssize_t res;
 
 	/* validate pointers */
-	if(fdCount == 0 || fdCount > MAX_GETWORK_DRIVERS)
+	if(fdCount == 0 || fdCount > MAX_GETWORK_DEVICES)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(!paging_isInUserSpace((uintptr_t)drv,sizeof(int)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -150,7 +150,7 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,clientNo);
 
 	/* open file */
-	file = vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,clientNo,VFS_DEV_NO);
+	file = vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,clientNo,VFS_DEV_NO);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 

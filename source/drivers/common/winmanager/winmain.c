@@ -42,7 +42,7 @@ int main(void) {
 	int drvId;
 	msgid_t mid;
 
-	drvId = createdev("/dev/winmanager",DEV_TYPE_SERVICE,DRV_CLOSE);
+	drvId = createdev("/dev/winmanager",DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(drvId < 0)
 		error("Unable to create device winmanager");
 
@@ -171,7 +171,7 @@ int main(void) {
 						printe("[WINM] Unable to send signal USR1 to keyboard-thread");
 					break;
 
-				case MSG_DRV_CLOSE:
+				case MSG_DEV_CLOSE:
 					win_destroyWinsOf(getClientId(fd),mouse_getX(),mouse_getY());
 					break;
 

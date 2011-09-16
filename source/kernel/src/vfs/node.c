@@ -21,7 +21,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/info.h>
-#include <sys/vfs/driver.h>
+#include <sys/vfs/devmsgs.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/dir.h>
 #include <sys/vfs/link.h>

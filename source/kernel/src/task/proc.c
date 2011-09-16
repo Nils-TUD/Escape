@@ -37,9 +37,8 @@
 #include <sys/mem/sllnodes.h>
 #include <sys/intrpt.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/info.h>
 #include <sys/vfs/node.h>
-#include <sys/vfs/real.h>
+#include <sys/vfs/fsmsgs.h>
 #include <sys/klock.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>
@@ -971,7 +970,7 @@ void proc_print(sProc *p) {
 		}
 	}
 	vid_printf("\tFS-Channels:\n");
-	vfs_real_printFSChans(p);
+	vfs_fsmsgs_printFSChans(p);
 	if(p->threads) {
 		for(n = sll_begin(p->threads); n != NULL; n = n->next)
 			thread_print((sThread*)n->data);

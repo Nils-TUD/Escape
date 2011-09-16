@@ -30,7 +30,7 @@ time_t timestamp(void) {
 	/* open CMOS and read date */
 	if(timeFd < 0) {
 		/* not already open, so do it */
-		timeFd = open(TIME_DRIVER,IO_READ);
+		timeFd = open(TIME_DEVICE,IO_READ);
 		if(timeFd < 0)
 			return 0;
 	}

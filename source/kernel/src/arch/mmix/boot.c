@@ -37,12 +37,6 @@
 #include <sys/task/terminator.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/channel.h>
-#include <sys/vfs/request.h>
-#include <sys/vfs/driver.h>
-#include <sys/vfs/real.h>
-#include <sys/vfs/info.h>
-#include <sys/vfs/info.h>
 #include <sys/log.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
@@ -164,8 +158,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 		int argc;
 		const char **argv = boot_parseArgs(progs[i].command,&argc);
 
-		/* wait until the driver is registered */
-		/* don't create a pipe- or driver-usage-node here */
+		/* wait until the device is registered */
+		/* don't create a pipe- or channel-node here */
 		while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except

@@ -51,7 +51,7 @@ typedef struct {
 /**
  * Inits all window-stuff
  *
- * @param sid the driver-id
+ * @param sid the device-id
  * @return true on success
  */
 bool win_init(int sid);

@@ -36,7 +36,7 @@ int main(void) {
 
 	id = createdev("/dev/pci",DEV_TYPE_SERVICE,0);
 	if(id < 0)
-		error("Unable to register driver 'pci'");
+		error("Unable to register device 'pci'");
 	if(chmod("/dev/pci",0110) < 0)
 		error("Unable to change permissions of /dev/pci");
 

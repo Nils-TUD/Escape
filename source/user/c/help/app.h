@@ -23,7 +23,7 @@
 #include <esc/common.h>
 
 #define APP_TYPE_USER		0
-#define APP_TYPE_DRIVER		1
+#define APP_TYPE_DEVICE		1
 #define APP_TYPE_FS			2
 
 /* information about an application */

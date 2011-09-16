@@ -20,16 +20,16 @@
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
-#include <sys/vfs/real.h>
+#include <sys/vfs/fsmsgs.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/request.h>
-#include <sys/vfs/driver.h>
+#include <sys/vfs/devmsgs.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/dir.h>
 #include <sys/vfs/link.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/pipe.h>
-#include <sys/vfs/server.h>
+#include <sys/vfs/device.h>
 #include <sys/task/proc.h>
 #include <sys/task/groups.h>
 #include <sys/task/event.h>
@@ -106,8 +106,8 @@ void vfs_init(void) {
 
 	vfs_info_init();
 	vfs_req_init();
-	vfs_drv_init();
-	vfs_real_init();
+	vfs_devmsgs_init();
+	vfs_fsmsgs_init();
 }
 
 int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
@@ -152,9 +152,9 @@ static sGFTEntry *vfs_getGFTEntry(file_t file) {
 	return (sGFTEntry*)dyna_getObj(&gftArray,file);
 }
 
-bool vfs_isDriver(file_t file) {
+bool vfs_isDevice(file_t file) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
-	return e->flags & VFS_DRIVER;
+	return e->flags & VFS_DEVICE;
 }
 
 void vfs_incRefs(file_t file) {
@@ -192,7 +192,7 @@ int vfs_fcntl(A_UNUSED pid_t pid,file_t file,uint cmd,int arg) {
 			return e->flags & VFS_NOBLOCK;
 		case F_SETFL:
 			klock_aquire(&e->lock);
-			e->flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_CREATE | VFS_DRIVER;
+			e->flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_CREATE | VFS_DEVICE;
 			e->flags |= arg & VFS_NOBLOCK;
 			klock_release(&e->lock);
 			return 0;
@@ -203,7 +203,7 @@ int vfs_fcntl(A_UNUSED pid_t pid,file_t file,uint cmd,int arg) {
 			if(e->devNo != VFS_DEV_NO || !IS_DEVICE(n->mode))
 				res = ERR_INVALID_ARGS;
 			else
-				res = vfs_server_setReadable(n,(bool)arg);
+				res = vfs_device_setReadable(n,(bool)arg);
 			klock_release(&waitLock);
 			return res;
 		}
@@ -233,7 +233,7 @@ file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
 			return ERR_PATH_NOT_FOUND;
 
 		/* send msg to fs and wait for reply */
-		file = vfs_real_openPath(pid,flags,path);
+		file = vfs_fsmsgs_openPath(pid,flags,path);
 		if(file < 0)
 			return file;
 	}
@@ -247,10 +247,10 @@ file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
 		if(!node)
 			return ERR_INVALID_INODENO;
 
-		/* if its a driver, create the channel-node */
+		/* if its a device, create the channel-node */
 		if(IS_DEVICE(node->mode)) {
 			sVFSNode *child;
-			/* check if we can access the driver */
+			/* check if we can access the device */
 			if((err = vfs_hasAccess(pid,node,flags)) < 0) {
 				vfs_node_release(node);
 				return err;
@@ -269,13 +269,13 @@ file_t vfs_openPath(pid_t pid,ushort flags,const char *path) {
 		if(file < 0)
 			return file;
 
-		/* if it is a driver, call the driver open-command; no node-request here because we have
+		/* if it is a device, call the device open-command; no node-request here because we have
 		 * a file for it */
 		node = vfs_node_get(nodeNo);
 		if(IS_CHANNEL(node->mode)) {
-			err = vfs_drv_open(pid,file,node,flags);
+			err = vfs_devmsgs_open(pid,file,node,flags);
 			if(err < 0) {
-				/* close removes the driver-usage-node, if it is one */
+				/* close removes the channeldevice-node, if it is one */
 				vfs_closeFile(pid,file);
 				return err;
 			}
@@ -334,7 +334,7 @@ file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
 	file_t f;
 
 	/* cleanup flags */
-	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DRIVER;
+	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE;
 
 	if(devNo == VFS_DEV_NO) {
 		int err;
@@ -385,7 +385,7 @@ file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo) {
 }
 
 static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n) {
-	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DRIVER;
+	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE;
 	file_t i;
 	bool isDrvUse = false;
 	sGFTEntry *e;
@@ -398,7 +398,7 @@ static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,
 		isDrvUse = (n->mode & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
 	}
 
-	/* for drivers it doesn't matter whether we use an existing file or a new one, because it is
+	/* for devices it doesn't matter whether we use an existing file or a new one, because it is
 	 * no problem when multiple threads use it for writing */
 	if(!isDrvUse) {
 		ushort rwFlags = flags & userFlags;
@@ -458,7 +458,7 @@ int vfs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
 	inode_t nodeNo;
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH)
-		res = vfs_real_stat(pid,path,info);
+		res = vfs_fsmsgs_stat(pid,path,info);
 	else if(res == 0)
 		res = vfs_node_getInfo(nodeNo,info);
 	return res;
@@ -470,7 +470,7 @@ int vfs_fstat(pid_t pid,file_t file,USER sFileInfo *info) {
 	if(e->devNo == VFS_DEV_NO)
 		res = vfs_node_getInfo(e->nodeNo,info);
 	else
-		res = vfs_real_istat(pid,e->nodeNo,e->devNo,info);
+		res = vfs_fsmsgs_istat(pid,e->nodeNo,e->devNo,info);
 	return res;
 }
 
@@ -478,7 +478,7 @@ int vfs_chmod(pid_t pid,const char *path,mode_t mode) {
 	inode_t nodeNo;
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH)
-		res = vfs_real_chmod(pid,path,mode);
+		res = vfs_fsmsgs_chmod(pid,path,mode);
 	else if(res == 0)
 		res = vfs_node_chmod(pid,nodeNo,mode);
 	return res;
@@ -488,7 +488,7 @@ int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	inode_t nodeNo;
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH)
-		res = vfs_real_chown(pid,path,uid,gid);
+		res = vfs_fsmsgs_chown(pid,path,uid,gid);
 	else if(res == 0)
 		res = vfs_node_chown(pid,nodeNo,uid,gid);
 	return res;
@@ -498,7 +498,7 @@ off_t vfs_seek(pid_t pid,file_t file,off_t offset,uint whence) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	off_t oldPos,res;
 
-	/* don't lock it during vfs_real_istat(). we don't need it in this case because position is
+	/* don't lock it during vfs_fsmsgs_istat(). we don't need it in this case because position is
 	 * simply set and never restored to oldPos */
 	if(e->devNo == VFS_DEV_NO || whence != SEEK_END)
 		klock_aquire(&e->lock);
@@ -515,13 +515,13 @@ off_t vfs_seek(pid_t pid,file_t file,off_t offset,uint whence) {
 	else {
 		if(whence == SEEK_END) {
 			sFileInfo info;
-			res = vfs_real_istat(pid,e->nodeNo,e->devNo,&info);
+			res = vfs_fsmsgs_istat(pid,e->nodeNo,e->devNo,&info);
 			if(res < 0)
 				return res;
 			/* can't be < 0, therefore it will always be kept */
 			e->position = info.size;
 		}
-		/* since the fs-driver validates the position anyway we can simply set it */
+		/* since the fs-device validates the position anyway we can simply set it */
 		else if(whence == SEEK_SET)
 			e->position = offset;
 		else
@@ -556,8 +556,8 @@ ssize_t vfs_readFile(pid_t pid,file_t file,USER void *buffer,size_t count) {
 		readBytes = n->read(pid,file,n,buffer,e->position,count);
 	}
 	else {
-		/* query the fs-driver to read from the inode */
-		readBytes = vfs_real_read(pid,e->nodeNo,e->devNo,buffer,e->position,count);
+		/* query the fs-device to read from the inode */
+		readBytes = vfs_fsmsgs_read(pid,e->nodeNo,e->devNo,buffer,e->position,count);
 	}
 
 	if(readBytes > 0) {
@@ -591,8 +591,8 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,USER const void *buffer,size_t count
 		writtenBytes = n->write(pid,file,n,buffer,e->position,count);
 	}
 	else {
-		/* query the fs-driver to write to the inode */
-		writtenBytes = vfs_real_write(pid,e->nodeNo,e->devNo,buffer,e->position,count);
+		/* query the fs-device to write to the inode */
+		writtenBytes = vfs_fsmsgs_write(pid,e->nodeNo,e->devNo,buffer,e->position,count);
 	}
 
 	if(writtenBytes > 0) {
@@ -616,7 +616,7 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
-	/* the driver-messages (open, read, write, close) are always allowed */
+	/* the device-messages (open, read, write, close) are always allowed */
 	if(!IS_DEVICE_MSG(id) && !(e->flags & VFS_MSGS))
 		return ERR_NO_EXEC_PERM;
 
@@ -624,8 +624,8 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_
 	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return ERR_UNSUPPORTED_OP;
-	/* note the lock-order here! vfs-driver does it in the this order, so do we. note also that we
-	 * don't lock the channel for driver-messages, because vfs-driver has already done that. */
+	/* note the lock-order here! vfs-device does it in the this order, so do we. note also that we
+	 * don't lock the channel for device-messages, because vfs-device has already done that. */
 	if(!IS_DEVICE_MSG(id))
 		vfs_chan_lock(n);
 	klock_aquire(&waitLock);
@@ -690,9 +690,9 @@ static bool vfs_doCloseFile(pid_t pid,file_t file,sGFTEntry *e) {
 				if(n->close)
 					n->close(pid,file,n);
 			}
-			/* vfs_real_close won't cause a context-switch; therefore we can keep the lock */
+			/* vfs_fsmsgs_close won't cause a context-switch; therefore we can keep the lock */
 			else
-				vfs_real_close(pid,e->nodeNo,e->devNo);
+				vfs_fsmsgs_close(pid,e->nodeNo,e->devNo);
 
 			/* mark unused */
 			e->flags = 0;
@@ -708,11 +708,11 @@ static bool vfs_hasMsg(sVFSNode *node) {
 }
 
 static bool vfs_hasData(sVFSNode *node) {
-	return IS_DEVICE(node->parent->mode) && vfs_server_isReadable(node->parent);
+	return IS_DEVICE(node->parent->mode) && vfs_device_isReadable(node->parent);
 }
 
 static bool vfs_hasWork(sVFSNode *node) {
-	return IS_DEVICE(node->mode) && vfs_server_hasWork(node);
+	return IS_DEVICE(node->mode) && vfs_device_hasWork(node);
 }
 
 int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
@@ -811,9 +811,9 @@ static inode_t vfs_doGetClient(const file_t *files,size_t count,size_t *index) {
 				return ERR_INVALID_FILE;
 
 			if(!IS_DEVICE(node->mode))
-				return ERR_NOT_OWN_DRIVER;
+				return ERR_NOT_OWN_DEVICE;
 
-			client = vfs_server_getWork(node,&cont,&retry);
+			client = vfs_device_getWork(node,&cont,&retry);
 			if(client) {
 				if(index)
 					*index = i;
@@ -833,7 +833,7 @@ static inode_t vfs_doGetClient(const file_t *files,size_t count,size_t *index) {
 }
 
 inode_t vfs_getClient(const file_t *files,size_t count,size_t *index,uint flags) {
-	sWaitObject waits[MAX_GETWORK_DRIVERS];
+	sWaitObject waits[MAX_GETWORK_DEVICES];
 	sThread *t = thread_getRunning();
 	bool inited = false;
 	inode_t clientNo;
@@ -902,25 +902,25 @@ file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId) {
 		return ERR_PATH_NOT_FOUND;
 
 	/* open file */
-	return vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,vfs_node_getNo(n),VFS_DEV_NO);
+	return vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,vfs_node_getNo(n),VFS_DEV_NO);
 }
 
 int vfs_mount(pid_t pid,const char *device,const char *path,uint type) {
 	inode_t ino;
 	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		return ERR_MOUNT_VIRT_PATH;
-	return vfs_real_mount(pid,device,path,type);
+	return vfs_fsmsgs_mount(pid,device,path,type);
 }
 
 int vfs_unmount(pid_t pid,const char *path) {
 	inode_t ino;
 	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		return ERR_MOUNT_VIRT_PATH;
-	return vfs_real_unmount(pid,path);
+	return vfs_fsmsgs_unmount(pid,path);
 }
 
 int vfs_sync(pid_t pid) {
-	return vfs_real_sync(pid);
+	return vfs_fsmsgs_sync(pid);
 }
 
 int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
@@ -936,7 +936,7 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 	if(oldRes == ERR_REAL_PATH) {
 		if(newRes != ERR_REAL_PATH)
 			return ERR_LINK_DEVICE;
-		return vfs_real_link(pid,oldPath,newPath);
+		return vfs_fsmsgs_link(pid,oldPath,newPath);
 	}
 	if(oldRes < 0)
 		return oldRes;
@@ -1008,7 +1008,7 @@ int vfs_unlink(pid_t pid,const char *path) {
 	sVFSNode *n;
 	res = vfs_node_resolvePath(path,&ino,NULL,VFS_WRITE | VFS_NOLINKRES);
 	if(res == ERR_REAL_PATH)
-		return vfs_real_unlink(pid,path);
+		return vfs_fsmsgs_unlink(pid,path);
 	if(res < 0)
 		return ERR_PATH_NOT_FOUND;
 	/* TODO check access-rights */
@@ -1048,7 +1048,7 @@ int vfs_mkdir(pid_t pid,const char *path) {
 	/* special-case: directories in / should be created in the real fs! */
 	if(res == ERR_REAL_PATH || (res >= 0 && strcmp(pathCpy,"/") == 0)) {
 		/* let fs handle the request */
-		return vfs_real_mkdir(pid,path);
+		return vfs_fsmsgs_mkdir(pid,path);
 	}
 	if(res < 0)
 		return res;
@@ -1088,7 +1088,7 @@ int vfs_rmdir(pid_t pid,const char *path) {
 	inode_t inodeNo;
 	res = vfs_node_resolvePath(path,&inodeNo,NULL,VFS_WRITE);
 	if(res == ERR_REAL_PATH)
-		return vfs_real_rmdir(pid,path);
+		return vfs_fsmsgs_rmdir(pid,path);
 	if(res < 0)
 		return ERR_PATH_NOT_FOUND;
 
@@ -1136,17 +1136,17 @@ file_t vfs_createdev(pid_t pid,char *path,uint type,uint ops) {
 
 	/* check whether the device does already exist */
 	if(vfs_node_findInDir(dir,name,len) != NULL) {
-		err = ERR_DRIVER_EXISTS;
+		err = ERR_DEVICE_EXISTS;
 		goto errorDir;
 	}
 
 	/* create node */
-	srv = vfs_server_create(pid,dir,name,type,ops);
+	srv = vfs_device_create(pid,dir,name,type,ops);
 	if(!srv) {
 		err = ERR_NOT_ENOUGH_MEM;
 		goto errorDir;
 	}
-	res = vfs_openFile(pid,VFS_MSGS | VFS_DRIVER,vfs_node_getNo(srv),VFS_DEV_NO);
+	res = vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,vfs_node_getNo(srv),VFS_DEV_NO);
 	if(res < 0) {
 		err = res;
 		goto errDevice;
@@ -1244,7 +1244,7 @@ void vfs_removeProcess(pid_t pid) {
 	const sProc *p = proc_getByPid(pid);
 	sVFSNode *node = vfs_node_get(p->threadDir);
 	vfs_node_destroy(node->parent);
-	vfs_real_removeProc(pid);
+	vfs_fsmsgs_removeProc(pid);
 }
 
 bool vfs_createThread(tid_t tid) {
@@ -1335,7 +1335,7 @@ void vfs_printMsgs(void) {
 		vid_printf("Messages:\n");
 		while(drv != NULL) {
 			if(IS_DEVICE(drv->mode))
-				vfs_server_print(drv);
+				vfs_device_print(drv);
 			drv = drv->next;
 		}
 	}
@@ -1367,8 +1367,8 @@ void vfs_printGFT(void) {
 				vid_printf("WRITE ");
 			if(e->flags & VFS_NOBLOCK)
 				vid_printf("NOBLOCK ");
-			if(e->flags & VFS_DRIVER)
-				vid_printf("DRIVER ");
+			if(e->flags & VFS_DEVICE)
+				vid_printf("DEVICE ");
 			if(e->flags & VFS_MSGS)
 				vid_printf("MSGS ");
 			vid_printf("\n");
@@ -1387,7 +1387,7 @@ void vfs_printGFT(void) {
 				if(n->name == NULL)
 					vid_printf("\t\tFile: <destroyed>\n");
 				else if(IS_CHANNEL(n->mode))
-					vid_printf("\t\tDriver-Usage: %s @ %s\n",n->name,n->parent->name);
+					vid_printf("\t\tChannel: %s @ %s\n",n->name,n->parent->name);
 				else
 					vid_printf("\t\tFile: '%s'\n",vfs_node_getPath(vfs_node_getNo(n)));
 			}

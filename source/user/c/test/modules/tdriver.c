@@ -69,7 +69,7 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 			error("Unable to start thread");
 	}
 
-	id = createdev("/dev/bla",DEV_TYPE_BLOCK,DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE);
+	id = createdev("/dev/bla",DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("createdev");
 	fcntl(id,F_SETDATA,true);
@@ -125,7 +125,7 @@ static int getRequests(A_UNUSED void *arg) {
 			memcpy(&req->msg,&msg,sizeof(msg));
 			req->tid = gettid();
 			req->data = NULL;
-			if(mid == MSG_DRV_WRITE) {
+			if(mid == MSG_DEV_WRITE) {
 				req->data = malloc(msg.args.arg2);
 				RETRY(receive(cfd,NULL,req->data,msg.args.arg2));
 			}
@@ -144,28 +144,28 @@ static int handleRequest(void *arg) {
 	char resp[12];
 	sTestRequest *req = (sTestRequest*)arg;
 	switch(req->mid) {
-		case MSG_DRV_OPEN:
+		case MSG_DEV_OPEN:
 			printffl("--[%d,%d] Open: flags=%d\n",gettid(),req->fd,req->msg.args.arg1);
 			req->msg.args.arg1 = 0;
-			send(req->fd,MSG_DRV_OPEN_RESP,&req->msg,sizeof(req->msg.args));
+			send(req->fd,MSG_DEV_OPEN_RESP,&req->msg,sizeof(req->msg.args));
 			clientCount++;
 			break;
-		case MSG_DRV_READ:
+		case MSG_DEV_READ:
 			printffl("--[%d,%d] Read: offset=%u, count=%u\n",gettid(),req->fd,
 					req->msg.args.arg1,req->msg.args.arg2);
 			req->msg.args.arg1 = req->msg.args.arg2;
 			req->msg.args.arg2 = true;
 			itoa(resp,sizeof(resp),respId++);
-			send(req->fd,MSG_DRV_READ_RESP,&req->msg,sizeof(req->msg.args));
-			send(req->fd,MSG_DRV_READ_RESP,resp,sizeof(resp));
+			send(req->fd,MSG_DEV_READ_RESP,&req->msg,sizeof(req->msg.args));
+			send(req->fd,MSG_DEV_READ_RESP,resp,sizeof(resp));
 			break;
-		case MSG_DRV_WRITE:
+		case MSG_DEV_WRITE:
 			printffl("--[%d,%d] Write: offset=%u, count=%u, data='%s'\n",gettid(),req->fd,
 					req->msg.args.arg1,req->msg.args.arg2,req->data);
 			req->msg.args.arg1 = req->msg.args.arg2;
-			send(req->fd,MSG_DRV_WRITE_RESP,&req->msg,sizeof(req->msg.args));
+			send(req->fd,MSG_DEV_WRITE_RESP,&req->msg,sizeof(req->msg.args));
 			break;
-		case MSG_DRV_CLOSE:
+		case MSG_DEV_CLOSE:
 			printffl("--[%d,%d] Close\n",gettid(),req->fd);
 			clientCount--;
 			if(sendSignalTo(getpid(),SIG_USR1) < 0)

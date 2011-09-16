@@ -55,14 +55,14 @@ int mount_addFS(sFileSystem *fs) {
 	return 0;
 }
 
-dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *driver,int type) {
+dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,int type) {
 	size_t i;
 	sFSInst *inst;
 	sFileSystem *fs;
 	sSLNode *n;
 
 	/* check name */
-	if(strlen(driver) >= MAX_MNTNAME_LEN)
+	if(strlen(device) >= MAX_MNTNAME_LEN)
 		return ERR_INVALID_PATH;
 
 	/* check if the mount-point exists */
@@ -91,7 +91,7 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *driver,i
 	/* look if there is an instance we can use */
 	for(n = sll_begin(fsInsts); n != NULL; n = n->next) {
 		inst = (sFSInst*)n->data;
-		if(inst->fs->type == type && strcmp(inst->driver,driver) == 0)
+		if(inst->fs->type == type && strcmp(inst->device,device) == 0)
 			break;
 	}
 
@@ -103,12 +103,12 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *driver,i
 			return ERR_NOT_ENOUGH_MEM;
 		inst->refs = 0;
 		inst->fs = fs;
-		inst->handle = fs->init(driver,&usedDev);
+		inst->handle = fs->init(device,&usedDev);
 		if(inst->handle == NULL) {
 			free(inst);
 			return ERR_FS_INIT_FAILED;
 		}
-		strcpy(inst->driver,usedDev);
+		strcpy(inst->device,usedDev);
 		free(usedDev);
 		if(!sll_append(fsInsts,inst)) {
 			free(inst);

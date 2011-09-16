@@ -37,8 +37,8 @@
 #include <vterm/vtout.h>
 #include "vterm.h"
 
-#define VGA_DRIVER		"/dev/video"
-#define VESA_DRIVER		"/dev/vesatext"
+#define VGA_DEVICE		"/dev/video"
+#define VESA_DEVICE		"/dev/vesatext"
 
 /**
  * Updates the cursor
@@ -63,23 +63,23 @@ bool vt_initAll(int *ids,sVTermCfg *cfg) {
 	int vidFd,speakerFd;
 	sVTSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
-	const char *driver;
+	const char *device;
 	size_t i;
 
 	config = cfg;
 
-	/* open video-driver */
+	/* open video-device */
 	if(getConf(CONF_BOOT_VIDEOMODE) == CONF_VIDMODE_VESATEXT)
-		driver = VESA_DRIVER;
+		device = VESA_DEVICE;
 	else
-		driver = VGA_DRIVER;
-	vidFd = open(driver,IO_READ | IO_WRITE | IO_MSGS);
+		device = VGA_DEVICE;
+	vidFd = open(device,IO_READ | IO_WRITE | IO_MSGS);
 	if(vidFd < 0) {
-		printe("Unable to open '%s'",driver);
+		printe("Unable to open '%s'",device);
 		return false;
 	}
 
-	/* request screensize from video-driver */
+	/* request screensize from video-device */
 	if(video_getSize(vidFd,&vidSize) < 0) {
 		printe("Getting screensize failed");
 		return false;
@@ -140,9 +140,9 @@ void vt_update(sVTerm *vt) {
 			locku(&titleBarLock);
 			byteCount = MIN(vt->cols * 2 - vt->upStart,vt->upLength);
 			if(seek(vt->video,vt->upStart,SEEK_SET) < 0)
-				printe("[VTERM] Unable to seek in video-driver to %d",vt->upStart);
+				printe("[VTERM] Unable to seek in video-device to %d",vt->upStart);
 			if(write(vt->video,vt->titleBar,byteCount) < 0)
-				printe("[VTERM] Unable to write to video-driver");
+				printe("[VTERM] Unable to write to video-device");
 			vt->upLength -= byteCount;
 			vt->upStart = vt->cols * 2;
 			unlocku(&titleBarLock);
@@ -153,9 +153,9 @@ void vt_update(sVTerm *vt) {
 		if(byteCount > 0) {
 			char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + vt->upStart;
 			if(seek(vt->video,vt->upStart,SEEK_SET) < 0)
-				printe("[VTERM] Unable to seek in video-driver to %d",vt->upStart);
+				printe("[VTERM] Unable to seek in video-device to %d",vt->upStart);
 			if(write(vt->video,startPos,byteCount) < 0)
-				printe("[VTERM] Unable to write to video-driver");
+				printe("[VTERM] Unable to write to video-device");
 		}
 	}
 	vt_setCursor(vt);
@@ -195,9 +195,9 @@ static int vt_dateThread(A_UNUSED void *arg) {
 				}
 				if(vterms[i].active) {
 					if(seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET) < 0)
-						printe("[VTERM] Unable to seek in video-driver");
+						printe("[VTERM] Unable to seek in video-device");
 					if(write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2) < 0)
-						printe("[VTERM] Unable to write to video-driver");
+						printe("[VTERM] Unable to write to video-device");
 				}
 			}
 			unlocku(&titleBarLock);

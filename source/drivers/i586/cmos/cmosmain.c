@@ -61,7 +61,7 @@ int main(void) {
 	if(startThread(refreshThread,NULL) < 0)
 		error("Unable to start CMOS-thread");
 
-	id = createdev("/dev/cmos",DEV_TYPE_BLOCK,DRV_READ);
+	id = createdev("/dev/cmos",DEV_TYPE_BLOCK,DEV_READ);
 	if(id < 0)
 		error("Unable to register device 'cmos'");
 
@@ -76,19 +76,19 @@ int main(void) {
 			printe("[CMOS] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DRV_READ: {
+				case MSG_DEV_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
 					if(offset + count <= offset || offset + count > sizeof(struct tm))
 						msg.args.arg1 = 0;
-					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
 						/* ensure that the refresh-thread doesn't access the date in the
 						 * meanwhile */
 						locku(&dlock);
-						send(fd,MSG_DRV_READ_RESP,(uchar*)&date + offset,count);
+						send(fd,MSG_DEV_READ_RESP,(uchar*)&date + offset,count);
 						unlocku(&dlock);
 					}
 				}

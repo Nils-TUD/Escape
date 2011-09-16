@@ -337,7 +337,7 @@ typedef struct {
 } sExt2CInode;
 
 typedef struct {
-	/* the file-descs for the driver (one for each thread and one for the initial) */
+	/* the file-descs for the device (one for each thread and one for the initial) */
 	int drvFds[REQ_THREAD_COUNT + 1];
 
 	/* superblock and blockgroups of that ext2-fs */
@@ -356,11 +356,11 @@ typedef struct {
 /**
  * Inits the ext2-filesystem
  *
- * @param driver the driver-path
- * @param usedDev will be set to the used driver
+ * @param device the device-path
+ * @param usedDev will be set to the used device
  * @return the ext2-handle
  */
-void *ext2_init(const char *driver,char **usedDev);
+void *ext2_init(const char *device,char **usedDev);
 
 /**
  * Deinits the ext2-filesystem

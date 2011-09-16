@@ -32,8 +32,8 @@
 #define IO_CREATE				4
 #define IO_TRUNCATE				8
 #define IO_APPEND				16
-#define IO_NOBLOCK				32	/* don't block when reading or receiving a msg from drivers */
-#define IO_MSGS					64	/* exchange messages with a driver */
+#define IO_NOBLOCK				32	/* don't block when reading or receiving a msg from devices */
+#define IO_MSGS					64	/* exchange messages with a device */
 
 /* file descriptors for stdin, stdout and stderr */
 #define STDIN_FILENO			0
@@ -176,7 +176,7 @@ ssize_t read(int fd,void *buffer,size_t count) A_CHECKRET;
 ssize_t write(int fd,const void *buffer,size_t count) A_CHECKRET;
 
 /**
- * Sends a message to the driver identified by <fd>.
+ * Sends a message to the device identified by <fd>.
  *
  * @param fd the file-descriptor
  * @param id the msg-id
@@ -187,7 +187,7 @@ ssize_t write(int fd,const void *buffer,size_t count) A_CHECKRET;
 ssize_t send(int fd,msgid_t id,const void *msg,size_t size);
 
 /**
- * Receives a message from the driver identified by <fd>. Blocks if no message is available.
+ * Receives a message from the device identified by <fd>. Blocks if no message is available.
  * You may be interrupted by a signal (ERR_INTERRUPTED)!
  *
  * @param fd the file-descriptor

@@ -55,7 +55,7 @@ static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
 static void ext2_sync(void *h);
 static bool ext2_isPowerOf(uint x,uint y);
 
-void *ext2_init(const char *driver,char **usedDev) {
+void *ext2_init(const char *device,char **usedDev) {
 	size_t i;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
@@ -64,11 +64,11 @@ void *ext2_init(const char *driver,char **usedDev) {
 		e->drvFds[i] = -1;
 	e->blockCache.blockCache = NULL;
 
-	/* open the driver */
+	/* open the device */
 	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
-		e->drvFds[i] = open(driver,IO_WRITE | IO_READ);
+		e->drvFds[i] = open(device,IO_WRITE | IO_READ);
 		if(e->drvFds[i] < 0) {
-			printe("Unable to find driver '%s'",driver);
+			printe("Unable to find device '%s'",device);
 			goto error;
 		}
 	}
@@ -97,13 +97,13 @@ void *ext2_init(const char *driver,char **usedDev) {
 	ext2_icache_init(e);
 	bcache_init(&e->blockCache);
 
-	/* report used driver */
-	*usedDev = malloc(strlen(driver) + 1);
+	/* report used device */
+	*usedDev = malloc(strlen(device) + 1);
 	if(!*usedDev) {
-		printe("Not enough mem for driver-name");
+		printe("Not enough mem for device-name");
 		goto error;
 	}
-	strcpy(*usedDev,driver);
+	strcpy(*usedDev,device);
 	return e;
 
 error:

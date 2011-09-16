@@ -24,57 +24,57 @@
 #include <sys/vfs/node.h>
 
 /**
- * Inits the vfs-driver
+ * Inits the vfs-device
  */
-void vfs_drv_init(void);
+void vfs_devmsgs_init(void);
 
 /**
- * Sends the open-command to the driver and waits for its response
+ * Sends the open-command to the device and waits for its response
  *
  * @param pid the process-id
- * @param file the file for the driver
- * @param node the VFS-node of the driver
+ * @param file the file for the device
+ * @param node the VFS-node of the device
  * @param flags the open-flags
  * @return 0 if successfull
  */
-ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags);
+ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags);
 
 /**
- * Reads <count> bytes at <offset> into <buffer> from the given driver. Note that not all
- * drivers will use the offset. Some may simply ignore it.
+ * Reads <count> bytes at <offset> into <buffer> from the given device. Note that not all
+ * devices will use the offset. Some may simply ignore it.
  *
  * @param pid the process-id
- * @param file the file for the driver
- * @param node the VFS-node of the driver
+ * @param file the file for the device
+ * @param node the VFS-node of the device
  * @param buffer the buffer where to copy the data
  * @param offset the offset from which to read
  * @param count the number of bytes to read
  * @return the number of read bytes or a negative error-code
  */
-ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,size_t count);
+ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,size_t count);
 
 /**
- * Writes <count> bytes to <offset> from <buffer> to the given driver. Note that not all
- * drivers will use the offset. Some may simply ignore it.
+ * Writes <count> bytes to <offset> from <buffer> to the given device. Note that not all
+ * devices will use the offset. Some may simply ignore it.
  *
  * @param pid the process-id
- * @param file the file for the driver
- * @param node the VFS-node of the driver
+ * @param file the file for the device
+ * @param node the VFS-node of the device
  * @param buffer the buffer from which copy the data
  * @param offset the offset to write to
  * @param count the number of bytes to write
  * @return the number of written bytes or a negative error-code
  */
-ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,off_t offset,
+ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,off_t offset,
 		size_t count);
 
 /**
- * Sends the close-command to the given driver
+ * Sends the close-command to the given device
  *
  * @param pid the process-id
- * @param file the file for the driver
- * @param node the VFS-node of the driver
+ * @param file the file for the device
+ * @param node the VFS-node of the device
  */
-void vfs_drv_close(pid_t pid,file_t file,sVFSNode *node);
+void vfs_devmsgs_close(pid_t pid,file_t file,sVFSNode *node);
 
 #endif /* VFSDRV_H_ */

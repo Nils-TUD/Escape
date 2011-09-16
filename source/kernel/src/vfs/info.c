@@ -29,7 +29,7 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/file.h>
-#include <sys/vfs/real.h>
+#include <sys/vfs/fsmsgs.h>
 #include <sys/cpu.h>
 #include <sys/klock.h>
 #include <sys/boot.h>

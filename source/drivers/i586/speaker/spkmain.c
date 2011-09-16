@@ -61,7 +61,7 @@ int main(void) {
 	msgid_t mid;
 	int id;
 
-	/* register driver */
+	/* register device */
 	id = createdev("/dev/speaker",DEV_TYPE_SERVICE,0);
 	if(id < 0)
 		error("Unable to register device 'speaker'");

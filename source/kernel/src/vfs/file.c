@@ -29,7 +29,7 @@
 #include <string.h>
 #include <errors.h>
 
-/* the initial size of the write-cache for driver-usage-nodes */
+/* the initial size of the write-cache for file-nodes */
 #define VFS_INITIAL_WRITECACHE		128
 
 typedef struct {

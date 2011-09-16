@@ -183,8 +183,7 @@ void vfs_decUsages(file_t file) {
 	klock_release(&e->lock);
 }
 
-int vfs_fcntl(pid_t pid,file_t file,uint cmd,int arg) {
-	UNUSED(pid);
+int vfs_fcntl(A_UNUSED pid_t pid,file_t file,uint cmd,int arg) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	switch(cmd) {
 		case F_GETACCESS:
@@ -450,8 +449,7 @@ static void vfs_releaseFile(sGFTEntry *e) {
 	klock_release(&gftLock);
 }
 
-off_t vfs_tell(pid_t pid,file_t file) {
-	UNUSED(pid);
+off_t vfs_tell(A_UNUSED pid_t pid,file_t file) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	return e->position;
 }
@@ -877,8 +875,7 @@ inode_t vfs_getClient(const file_t *files,size_t count,size_t *index,uint flags)
 	return clientNo;
 }
 
-inode_t vfs_getClientId(pid_t pid,file_t file) {
-	UNUSED(pid);
+inode_t vfs_getClientId(A_UNUSED pid_t pid,file_t file) {
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	sVFSNode *n = e->node;
 	if(e->devNo != VFS_DEV_NO || !IS_CHANNEL(n->mode))

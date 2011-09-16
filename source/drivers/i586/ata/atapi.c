@@ -41,9 +41,8 @@ void atapi_softReset(sATADevice *device) {
 	ctrl_wait(device->ctrl);
 }
 
-bool atapi_read(sATADevice *device,uint op,void *buffer,uint64_t lba,size_t secSize,
+bool atapi_read(sATADevice *device,uint op,void *buffer,uint64_t lba,A_UNUSED size_t secSize,
 		size_t secCount) {
-	UNUSED(secSize);
 	uint8_t cmd[] = {SCSI_CMD_READ_SECTORS_EXT,0,0,0,0,0,0,0,0,0,0,0};
 	if(!device->info.features.lba48)
 		cmd[0] = SCSI_CMD_READ_SECTORS;

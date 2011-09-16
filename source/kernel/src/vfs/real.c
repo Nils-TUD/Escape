@@ -412,8 +412,7 @@ static void vfs_real_wait(sRequest *req) {
 	while((ssize_t)req->count == ERR_DRIVER_DIED);
 }
 
-static void vfs_real_openRespHandler(sVFSNode *node,USER const void *data,size_t size) {
-	UNUSED(size);
+static void vfs_real_openRespHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
 	sMsg *rmsg = (sMsg*)data;
 	inode_t inode = rmsg->args.arg1;
 	dev_t dev = rmsg->args.arg2;
@@ -429,8 +428,7 @@ static void vfs_real_openRespHandler(sVFSNode *node,USER const void *data,size_t
 	}
 }
 
-static void vfs_real_readRespHandler(sVFSNode *node,USER const void *data,size_t size) {
-	UNUSED(size);
+static void vfs_real_readRespHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
 	/* find the request for the node */
 	sRequest *req = vfs_req_getByNode(node);
 	if(req != NULL) {
@@ -479,8 +477,7 @@ static void vfs_real_readRespHandler(sVFSNode *node,USER const void *data,size_t
 	}
 }
 
-static void vfs_real_statRespHandler(sVFSNode *node,USER const void *data,size_t size) {
-	UNUSED(size);
+static void vfs_real_statRespHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req = vfs_req_getByNode(node);
 	ulong res = rmsg->data.arg1;
@@ -502,8 +499,7 @@ static void vfs_real_statRespHandler(sVFSNode *node,USER const void *data,size_t
 	}
 }
 
-static void vfs_real_defRespHandler(sVFSNode *node,USER const void *data,size_t size) {
-	UNUSED(size);
+static void vfs_real_defRespHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req = vfs_req_getByNode(node);
 	ulong res = rmsg->data.arg1;

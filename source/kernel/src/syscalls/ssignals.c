@@ -26,10 +26,9 @@
 #include <sys/syscalls.h>
 #include <errors.h>
 
-int sysc_setSigHandler(sIntrptStackFrame *stack) {
+int sysc_setSigHandler(sThread *t,sIntrptStackFrame *stack) {
 	sig_t signal = (sig_t)SYSC_ARG1(stack);
 	fSignal handler = (fSignal)SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
 
 	/* address should be valid */
 	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isInUserSpace((uintptr_t)handler,1))
@@ -57,9 +56,8 @@ int sysc_setSigHandler(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_ackSignal(sIntrptStackFrame *stack) {
+int sysc_ackSignal(sThread *t,sIntrptStackFrame *stack) {
 	int res;
-	const sThread *t = thread_getRunning();
 	sig_t signal = sig_ackHandling(t->tid);
 	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
@@ -67,7 +65,7 @@ int sysc_ackSignal(sIntrptStackFrame *stack) {
 	return 0;
 }
 
-int sysc_sendSignalTo(sIntrptStackFrame *stack) {
+int sysc_sendSignalTo(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	sig_t signal = (sig_t)SYSC_ARG2(stack);
 

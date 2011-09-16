@@ -81,8 +81,7 @@ static void initStdio(void) {
 	stderr->out.pos = 0;
 }
 
-static void deinitStdio(void *dummy) {
-	UNUSED(dummy);
+static void deinitStdio(A_UNUSED void *dummy) {
 	sSLNode *n;
 	for(n = sll_begin(&iostreams); n != NULL; n = n->next)
 		fclose((FILE*)n->data);

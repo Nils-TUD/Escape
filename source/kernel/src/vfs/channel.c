@@ -102,9 +102,8 @@ static void vfs_chan_destroy(sVFSNode *n) {
 	}
 }
 
-static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
-	UNUSED(pid);
-	UNUSED(node);
+static off_t vfs_chan_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t position,
+		off_t offset,uint whence) {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -156,10 +155,8 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 	return sll_length(chan->sendList) > 0;
 }
 
-ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const void *data,
+ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const void *data,
 		size_t size) {
-	UNUSED(pid);
-	UNUSED(file);
 	sSLList **list;
 	sChannel *chan = (sChannel*)n->data;
 	if(n->name == NULL)
@@ -216,10 +213,8 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const vo
 	return 0;
 }
 
-ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,USER void *data,
-		size_t size) {
-	UNUSED(pid);
-	UNUSED(file);
+ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,
+		USER void *data,size_t size) {
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;

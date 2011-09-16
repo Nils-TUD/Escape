@@ -112,8 +112,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static int kbClientThread(void *arg) {
-	UNUSED(arg);
+static int kbClientThread(A_UNUSED void *arg) {
 	static sKmData data;
 	static sKbData kbData[KB_DATA_BUF_SIZE];
 	int kbFd;

@@ -20,11 +20,13 @@
 #ifndef SYSCALLS_DRIVER_H_
 #define SYSCALLS_DRIVER_H_
 
+#include <sys/common.h>
+#include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_regDriver(sIntrptStackFrame *stack);
-int sysc_getClientId(sIntrptStackFrame *stack);
-int sysc_getClient(sIntrptStackFrame *stack);
-int sysc_getWork(sIntrptStackFrame *stack);
+int sysc_regDriver(sThread *t,sIntrptStackFrame *stack);
+int sysc_getClientId(sThread *t,sIntrptStackFrame *stack);
+int sysc_getClient(sThread *t,sIntrptStackFrame *stack);
+int sysc_getWork(sThread *t,sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_DRIVER_H_ */

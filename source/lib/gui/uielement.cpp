@@ -101,8 +101,7 @@ namespace gui {
 		notifyListener(e);
 	}
 
-	void UIElement::setFocus(Control *c) {
-		UNUSED(c);
+	void UIElement::setFocus(A_UNUSED Control *c) {
 		// by default its ignored
 	}
 

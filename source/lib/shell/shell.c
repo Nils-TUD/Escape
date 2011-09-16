@@ -84,11 +84,7 @@ bool shell_prompt(void) {
 	return true;
 }
 
-static void shell_sigIntrpt(int sig) {
-	UNUSED(sig);
-	/* if data is not 1 the source is not vterm so that we should exit now */
-	/* TODO if(data != 1)
-		exit(1);*/
+static void shell_sigIntrpt(A_UNUSED int sig) {
 	lang_setInterrupted();
 	/* ensure that we start a new readline */
 	resetReadLine = true;

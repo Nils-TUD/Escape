@@ -163,8 +163,7 @@ void ext2_icache_release(const sExt2CInode *inode) {
 			inode->inodeNo,inode->writeRef ? IMODE_WRITE : IMODE_READ);*/
 }
 
-static void ext2_icache_aquire(sExt2CInode *inode,uint mode) {
-	UNUSED(mode);
+static void ext2_icache_aquire(sExt2CInode *inode,A_UNUSED uint mode) {
 	inode->refs++;
 	assert(tpool_unlock(ALLOC_LOCK) == 0);
 	assert(tpool_lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);

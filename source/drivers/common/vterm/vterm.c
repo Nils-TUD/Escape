@@ -175,10 +175,9 @@ static void vt_setCursor(sVTerm *vt) {
 	}
 }
 
-static int vt_dateThread(void *arg) {
+static int vt_dateThread(A_UNUSED void *arg) {
 	size_t i,j,len;
 	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
-	UNUSED(arg);
 	while(1) {
 		if(config->enabled) {
 			/* get date and format it */

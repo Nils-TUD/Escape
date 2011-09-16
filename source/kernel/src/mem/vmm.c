@@ -1209,7 +1209,6 @@ static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags) {
 	if(byteCount > (MAX_STACK_PAGES - 1) * PAGE_SIZE)
 		return 0;
 #if STACK_AREA_GROWS_DOWN
-	UNUSED(rflags);
 	uintptr_t end = vmm_getFirstUsableAddr(p,true);
 	for(addr = STACK_AREA_END; addr > end; addr -= MAX_STACK_PAGES * PAGE_SIZE) {
 		if(vmm_isOccupied(p,addr - (MAX_STACK_PAGES - 1) * PAGE_SIZE,addr) == NULL)

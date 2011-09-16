@@ -58,8 +58,7 @@ void _STI_critical_init(void) {
 		dcs_list = &critical_section;
 }
 
-void _STD_critical_term(void *dummy) {
-	UNUSED(dummy);
+void _STD_critical_term(A_UNUSED void *dummy) {
 	if(dcs_list)
 		dcs_list = NULL;
 }

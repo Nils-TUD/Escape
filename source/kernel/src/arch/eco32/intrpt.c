@@ -149,7 +149,7 @@ static void intrpt_defHandler(sIntrptStackFrame *stack) {
 static void intrpt_exTrap(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	t->stats.syscalls++;
-	sysc_handle(stack);
+	sysc_handle(t,stack);
 	/* skip trap-instruction */
 	stack->r[30] += 4;
 }
@@ -184,9 +184,8 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqTimer(sIntrptStackFrame *stack) {
+static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack) {
 	bool res;
-	UNUSED(stack);
 	sig_addSignal(SIG_INTRPT_TIMER);
 	res = timer_intrpt();
 	timer_ackIntrpt();
@@ -197,8 +196,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqKB(sIntrptStackFrame *stack) {
-	UNUSED(stack);
+static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack) {
 	/* we have to disable interrupts until the device has handled the request */
 	/* otherwise we would get into an interrupt loop */
 	uint32_t *kbRegs = (uint32_t*)KEYBOARD_BASE;
@@ -222,8 +220,7 @@ static void intrpt_irqKB(sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqDisk(sIntrptStackFrame *stack) {
-	UNUSED(stack);
+static void intrpt_irqDisk(A_UNUSED sIntrptStackFrame *stack) {
 	/* see interrupt_irqKb() */
 	uint32_t *diskRegs = (uint32_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;

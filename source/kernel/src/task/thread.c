@@ -122,14 +122,13 @@ sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
 }
 
 size_t thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack) {
-	assert(t == thread_getRunning());
 	assert(t->intrptLevel < MAX_INTRPT_LEVELS);
 	t->intrptLevels[t->intrptLevel++] = stack;
 	return t->intrptLevel;
 }
 
 void thread_popIntrptLevel(sThread *t) {
-	assert(t == thread_getRunning() && t->intrptLevel > 0);
+	assert(t->intrptLevel > 0);
 	t->intrptLevel--;
 }
 

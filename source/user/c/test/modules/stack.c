@@ -26,17 +26,15 @@
 static void sigHandler(int sig);
 static void f(int a);
 
-int mod_stack(int argc,char *argv[]) {
-	UNUSED(argc);
-	UNUSED(argv);
+int mod_stack(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	if(setSigHandler(SIG_TERM,sigHandler) < 0)
 		printe("Unable to set sig-handler");
 	f(0);
 	return 0;
 }
 
-static void sigHandler(int sig) {
-	UNUSED(sig);
+static void sigHandler(A_UNUSED int sig) {
+	/* do nothing */
 }
 
 static void f(int a) {

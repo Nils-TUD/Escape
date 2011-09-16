@@ -444,9 +444,7 @@ static void cmds_unmount(int fd,sMsg *msg) {
 	send(fd,MSG_FS_UNMOUNT_RESP,msg,sizeof(msg->args));
 }
 
-static void cmds_sync(int fd,sMsg *msg) {
-	UNUSED(fd);
-	UNUSED(msg);
+static void cmds_sync(A_UNUSED int fd,A_UNUSED sMsg *msg) {
 	size_t i;
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		sFSInst *inst = mount_get(i);
@@ -455,8 +453,7 @@ static void cmds_sync(int fd,sMsg *msg) {
 	}
 }
 
-static void cmds_close(int fd,sMsg *msg) {
-	UNUSED(fd);
+static void cmds_close(A_UNUSED int fd,sMsg *msg) {
 	inode_t ino = msg->args.arg1;
 	dev_t devNo = msg->args.arg2;
 	sFSInst *inst = mount_get(devNo);

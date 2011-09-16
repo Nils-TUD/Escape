@@ -28,11 +28,11 @@ int mod_fork(int argc,char *argv[]) {
 	if(argc > 2)
 		count = atoi(argv[2]);
 	for(i = 0; i < count; i++) {
-		printf("I am %d\n",getpid());
-		if(fork() != 0) {
-			printf("%d quits\n",getpid());
+		int pid = fork();
+		if(pid == 0)
 			break;
-		}
+		if(pid < 0)
+			printe("Fork failed");
 	}
 	return EXIT_SUCCESS;
 }

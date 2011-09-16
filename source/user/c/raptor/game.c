@@ -70,9 +70,7 @@ uint game_getScore(void) {
 	return score;
 }
 
-void game_handleKey(uchar keycode,uchar modifiers,uchar isBreak,char c) {
-	UNUSED(modifiers);
-	UNUSED(c);
+void game_handleKey(uchar keycode,A_UNUSED uchar modifiers,uchar isBreak,A_UNUSED char c) {
 	pressed[keycode] = !isBreak;
 }
 

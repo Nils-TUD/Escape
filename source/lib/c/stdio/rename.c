@@ -21,9 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-int rename(const char *old,const char *newn) {
-	UNUSED(old);
-	UNUSED(newn);
+int rename(A_UNUSED const char *old,A_UNUSED const char *newn) {
 	/* TODO not supported atm */
 	assert(false);
 	return -1;

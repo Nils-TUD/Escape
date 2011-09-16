@@ -21,8 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-char *tmpnam(char *s) {
-	UNUSED(s);
+char *tmpnam(A_UNUSED char *s) {
 	/* TODO to be implemented */
 	assert(false);
 	return NULL;

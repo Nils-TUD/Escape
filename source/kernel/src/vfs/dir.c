@@ -73,9 +73,8 @@ sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	return node;
 }
 
-static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
-	UNUSED(pid);
-	UNUSED(node);
+static off_t vfs_dir_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t position,
+		off_t offset,uint whence) {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -89,9 +88,8 @@ static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,u
 	}
 }
 
-static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
-		size_t count) {
-	UNUSED(file);
+static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
+		off_t offset,size_t count) {
 	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
 	sVFSNode *n,*firstChild;

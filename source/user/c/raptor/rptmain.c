@@ -74,8 +74,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void sigTimer(int sig) {
-	UNUSED(sig);
+static void sigTimer(A_UNUSED int sig) {
 	time++;
 }
 

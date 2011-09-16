@@ -21,11 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-int setvbuf(FILE *stream,char *buf,int mode,size_t size) {
-	UNUSED(stream);
-	UNUSED(buf);
-	UNUSED(mode);
-	UNUSED(size);
+int setvbuf(A_UNUSED FILE *stream,A_UNUSED char *buf,A_UNUSED int mode,A_UNUSED size_t size) {
 	/* TODO to be implemented */
 	assert(false);
 	return -1;

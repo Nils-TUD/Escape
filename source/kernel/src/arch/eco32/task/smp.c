@@ -29,8 +29,7 @@ cpuid_t smp_getCurId(void) {
 	return 0;
 }
 
-sThread *smp_getThreadOf(cpuid_t id) {
-	UNUSED(id);
+sThread *smp_getThreadOf(A_UNUSED cpuid_t id) {
 	return thread_getRunning();
 }
 
@@ -46,8 +45,6 @@ void smp_haltOthers(void) {
 	/* nothing to do */
 }
 
-void smp_sendIPI(cpuid_t id,uint8_t vector) {
-	UNUSED(id);
-	UNUSED(vector);
+void smp_sendIPI(A_UNUSED cpuid_t id,A_UNUSED uint8_t vector) {
 	/* ignored */
 }

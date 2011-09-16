@@ -21,10 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-FILE *freopen(const char *filename,const char *mode,FILE *stream) {
-	UNUSED(filename);
-	UNUSED(mode);
-	UNUSED(stream);
+FILE *freopen(A_UNUSED const char *filename,A_UNUSED const char *mode,A_UNUSED FILE *stream) {
 	/* TODO not supported atm */
 	assert(false);
 	return NULL;

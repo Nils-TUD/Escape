@@ -21,8 +21,7 @@
 #include <sys/arch/i586/task/ioports.h>
 #include <sys/task/proc.h>
 
-int proc_cloneArch(sProc *dst,const sProc *src) {
-	UNUSED(src);
+int proc_cloneArch(sProc *dst,A_UNUSED const sProc *src) {
 	ioports_init(dst);
 	return 0;
 }

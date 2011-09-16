@@ -141,8 +141,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void kbIntrptHandler(int sig) {
-	UNUSED(sig);
+static void kbIntrptHandler(A_UNUSED int sig) {
 	scBuf[scWritePos] = kbRegs[KEYBOARD_DATA];
 	scWritePos = (scWritePos + 1) % SC_BUF_SIZE;
 }

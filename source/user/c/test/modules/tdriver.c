@@ -57,15 +57,12 @@ static void printffl(const char *fmt,...) {
 	va_end(ap);
 }
 
-static void sigUsr1(int sig) {
-	UNUSED(sig);
+static void sigUsr1(A_UNUSED int sig) {
 	/* ignore */
 }
 
-int mod_driver(int argc,char *argv[]) {
+int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
-	UNUSED(argc);
-	UNUSED(argv);
 
 	for(i = 0; i < 10; i++) {
 		if(startThread(clientThread,NULL) < 0)
@@ -85,8 +82,7 @@ int mod_driver(int argc,char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-static int clientThread(void *arg) {
-	UNUSED(arg);
+static int clientThread(A_UNUSED void *arg) {
 	size_t i;
 	char buf[12] = {0};
 	srand(time(NULL) * gettid());
@@ -112,8 +108,7 @@ static int clientThread(void *arg) {
 	return EXIT_SUCCESS;
 }
 
-static int getRequests(void *arg) {
-	UNUSED(arg);
+static int getRequests(A_UNUSED void *arg) {
 	msgid_t mid;
 	int tid;
 	clientCount = 0;

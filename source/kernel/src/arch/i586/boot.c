@@ -160,9 +160,8 @@ size_t boot_getUsableMemCount(void) {
 	return size;
 }
 
-int boot_loadModules(sIntrptStackFrame *stack) {
+int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	char loadingStatus[256];
-	UNUSED(stack);
 	size_t i;
 	int child;
 	inode_t nodeNo;

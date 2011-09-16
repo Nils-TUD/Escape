@@ -60,10 +60,8 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	return 0;
 }
 
-bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo *info,
-		uintptr_t entryPoint,int fd) {
-	UNUSED(argsSize);
-	UNUSED(fd);
+bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sStartupInfo *info,
+		uintptr_t entryPoint,A_UNUSED int fd) {
 	uint32_t *sp;
 	char **argv;
 	sThread *t = thread_getRunning();

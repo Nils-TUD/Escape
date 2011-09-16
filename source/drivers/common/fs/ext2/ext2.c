@@ -245,9 +245,8 @@ static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
 	return ino;
 }
 
-static void ext2_close(void *h,inode_t ino) {
-	UNUSED(h);
-	UNUSED(ino);
+static void ext2_close(A_UNUSED void *h,A_UNUSED inode_t ino) {
+	/* nothing to do */
 }
 
 static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {

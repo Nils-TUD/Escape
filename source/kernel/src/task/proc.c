@@ -380,6 +380,7 @@ int proc_clone(uint8_t flags) {
 	p->stats.input = 0;
 	p->stats.output = 0;
 	p->flags = flags;
+	p->threads = NULL;
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
 	if(p->command == NULL) {
@@ -888,9 +889,12 @@ static void proc_doRemoveRegions(sProc *p,bool remStack) {
 	/* unset TLS-region (and stack-region, if needed) from all threads; do this first because as
 	 * soon as vmm_removeAll is finished, somebody might use the stack-region-number to get the
 	 * region-range, which is not possible anymore, because the region is already gone. */
-	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-		sThread *t = (sThread*)n->data;
-		thread_removeRegions(t,remStack);
+	/* note that p->threads might be NULL here if this is called from a failed vmm_cloneAll() */
+	if(p->threads) {
+		for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+			sThread *t = (sThread*)n->data;
+			thread_removeRegions(t,remStack);
+		}
 	}
 	/* remove from shared-memory; do this first because it will remove the region and simply
 	 * assumes that the region still exists. */

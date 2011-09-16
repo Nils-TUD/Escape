@@ -33,13 +33,11 @@ sASTNode *ast_createConstStrExpr(char *s,bool hasQuotes) {
 	return node;
 }
 
-sValue *ast_execConstStrExpr(sEnv *e,sConstStrExpr *n) {
-	UNUSED(e);
+sValue *ast_execConstStrExpr(A_UNUSED sEnv *e,sConstStrExpr *n) {
 	return val_createStr(n->str);
 }
 
-void ast_printConstStrExpr(sConstStrExpr *s,uint layer) {
-	UNUSED(layer);
+void ast_printConstStrExpr(sConstStrExpr *s,A_UNUSED uint layer) {
 	printf("'%s'",s->str);
 }
 

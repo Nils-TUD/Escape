@@ -111,8 +111,7 @@ size_t boot_getUsableMemCount(void) {
 	return info.memSize;
 }
 
-int boot_loadModules(sIntrptStackFrame *stack) {
-	UNUSED(stack);
+int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	size_t i;
 	inode_t nodeNo;
 	int child;

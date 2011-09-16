@@ -77,9 +77,7 @@ sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
 	return node;
 }
 
-static void vfs_server_close(pid_t pid,file_t file,sVFSNode *node) {
-	UNUSED(pid);
-	UNUSED(file);
+static void vfs_server_close(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node) {
 	vfs_node_destroy(node);
 }
 

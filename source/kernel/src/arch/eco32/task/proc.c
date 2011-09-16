@@ -20,14 +20,12 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 
-int proc_cloneArch(sProc *dst,const sProc *src) {
-	UNUSED(dst);
-	UNUSED(src);
+int proc_cloneArch(A_UNUSED sProc *dst,A_UNUSED const sProc *src) {
 	return 0;
 }
 
-void proc_terminateArch(sProc *p) {
-	UNUSED(p);
+void proc_terminateArch(A_UNUSED sProc *p) {
+	/* nothing to do */
 }
 
 size_t proc_getKMemUsageOf(sProc *p) {

@@ -38,8 +38,7 @@ static int drvId;
 static sMsg msg;
 static sKmData kbData[KB_DATA_BUF_SIZE];
 
-static void sigUsr1(int sig) {
-	UNUSED(sig);
+static void sigUsr1(A_UNUSED int sig) {
 	enabled = !enabled;
 }
 

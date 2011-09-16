@@ -83,14 +83,12 @@ void vfs_info_init(void) {
 			vfs_info_statsReadHandler,NULL) != NULL);
 }
 
-ssize_t vfs_info_traceReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+ssize_t vfs_info_traceReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
-	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_traceReadCallback);
 }
 
 static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	UNUSED(dataSize);
 	sFuncCall *call;
 	sStringBuffer buf;
 	sThread *t = vfs_info_getThread(node,dataSize,buffer);
@@ -116,9 +114,8 @@ static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_procReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+ssize_t vfs_info_procReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
-	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_procReadCallback);
 }
 
@@ -170,9 +167,8 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_threadReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+ssize_t vfs_info_threadReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
-	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_threadReadCallback);
 }
 
@@ -220,14 +216,12 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 	*dataSize = buf.len;
 }
 
-static ssize_t vfs_info_cpuReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+static ssize_t vfs_info_cpuReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
-	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_cpuReadCallback);
 }
 
-static void vfs_info_cpuReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	UNUSED(node);
+static void vfs_info_cpuReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.str = NULL;
@@ -238,15 +232,12 @@ static void vfs_info_cpuReadCallback(sVFSNode *node,size_t *dataSize,void **buff
 	*dataSize = buf.len;
 }
 
-static ssize_t vfs_info_statsReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+static ssize_t vfs_info_statsReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
-	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_statsReadCallback);
 }
 
-static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	UNUSED(dataSize);
-	UNUSED(node);
+static void vfs_info_statsReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
 	uLongLong cycles;
 	buf.dynamic = true;
@@ -273,14 +264,12 @@ static void vfs_info_statsReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 	*dataSize = buf.len;
 }
 
-static ssize_t vfs_info_memUsageReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
-		off_t offset,size_t count) {
-	UNUSED(file);
+static ssize_t vfs_info_memUsageReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,
+		USER void *buffer,off_t offset,size_t count) {
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_memUsageReadCallback);
 }
 
-static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	UNUSED(node);
+static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
 	size_t free,total;
 	size_t dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
@@ -331,9 +320,8 @@ static void vfs_info_memUsageReadCallback(sVFSNode *node,size_t *dataSize,void *
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_regionsReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+ssize_t vfs_info_regionsReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
-	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_regionsReadCallback);
 }
 
@@ -351,9 +339,8 @@ static void vfs_info_regionsReadCallback(sVFSNode *node,size_t *dataSize,void **
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_mapsReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+ssize_t vfs_info_mapsReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
-	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_mapsReadCallback);
 }
 
@@ -371,9 +358,8 @@ static void vfs_info_mapsReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 	*dataSize = buf.len;
 }
 
-ssize_t vfs_info_virtMemReadHandler(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
+ssize_t vfs_info_virtMemReadHandler(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
-	UNUSED(file);
 	return vfs_info_readHelper(pid,node,buffer,offset,count,0,vfs_info_virtMemReadCallback);
 }
 
@@ -433,9 +419,8 @@ static sThread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer
 	return t;
 }
 
-static ssize_t vfs_info_readHelper(pid_t pid,sVFSNode *node,USER void *buffer,off_t offset,
+static ssize_t vfs_info_readHelper(A_UNUSED pid_t pid,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count,size_t dataSize,fReadCallBack callback) {
-	UNUSED(pid);
 	void *mem = NULL;
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");

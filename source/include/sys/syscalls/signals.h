@@ -20,10 +20,12 @@
 #ifndef SYSCALLS_SIGNALS_H_
 #define SYSCALLS_SIGNALS_H_
 
+#include <sys/common.h>
+#include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_setSigHandler(sIntrptStackFrame *stack);
-int sysc_ackSignal(sIntrptStackFrame *stack);
-int sysc_sendSignalTo(sIntrptStackFrame *stack);
+int sysc_setSigHandler(sThread *t,sIntrptStackFrame *stack);
+int sysc_ackSignal(sThread *t,sIntrptStackFrame *stack);
+int sysc_sendSignalTo(sThread *t,sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_SIGNALS_H_ */

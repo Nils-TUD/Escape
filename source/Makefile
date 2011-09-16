@@ -2,7 +2,7 @@
 ARCH = i586
 GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
@@ -20,7 +20,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 KVM = -enable-kvm
 QEMU = qemu
 #-net nic,model=ne2k_pci -net user
-QEMUARGS = -smp 4 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
+QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
 ECO32 = ../eco32
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin

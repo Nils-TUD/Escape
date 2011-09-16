@@ -102,8 +102,7 @@ namespace gui {
 	void ScrollPane::onMouseMoved(const MouseEvent &e) {
 		scrollBy(e.getXMovement(),e.getYMovement());
 	}
-	void ScrollPane::onMouseReleased(const MouseEvent &e) {
-		UNUSED(e);
+	void ScrollPane::onMouseReleased(A_UNUSED const MouseEvent &e) {
 		_focus &= ~(FOCUS_HORSB | FOCUS_VERTSB);
 	}
 	void ScrollPane::onMousePressed(const MouseEvent &e) {

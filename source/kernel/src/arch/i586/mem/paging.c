@@ -400,8 +400,7 @@ frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 	return res;
 }
 
-frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
-	UNUSED(regFlags);
+frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
 	tPageDir *pdir = paging_getPageDir();
 	klock_aquire(&pagingLock);
 	frameno_t frame = pmem_allocate();

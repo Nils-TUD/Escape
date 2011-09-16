@@ -418,8 +418,7 @@ static void ast_termProcsOfCmd(void) {
 	}
 }
 
-static void ast_sigChildHndl(int sig) {
-	UNUSED(sig);
+static void ast_sigChildHndl(A_UNUSED int sig) {
 	sRunningProc *p;
 	sExitState state;
 	int res = waitChild(&state);

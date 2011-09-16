@@ -34,18 +34,15 @@ static tid_t child = -1;
 static size_t parentCount = 0;
 static size_t childCount = 0;
 
-static void timerIRQ(int sig) {
-	UNUSED(sig);
+static void timerIRQ(A_UNUSED int sig) {
 	if(gettid() == parent)
 		parentCount++;
 	else
 		childCount++;
 }
 
-int mod_sigclone(int argc,char *argv[]) {
+int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	int res;
-	UNUSED(argc);
-	UNUSED(argv);
 	parent = gettid();
 	if(setSigHandler(SIG_INTRPT_TIMER,timerIRQ) < 0)
 		error("Unable to set sighandler");

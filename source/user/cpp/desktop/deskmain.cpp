@@ -38,8 +38,7 @@ int main(void) {
 	return app->run();
 }
 
-static int childWaitThread(void *arg) {
-	UNUSED(arg);
+static int childWaitThread(A_UNUSED void *arg) {
 	while(1)
 		waitChild(NULL);
 	return 0;

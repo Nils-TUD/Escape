@@ -28,9 +28,8 @@
 #define THREAD_COUNT	10
 #define LOCK_IDENT		0x11111111
 
-static int myThread(void *arg) {
+static int myThread(A_UNUSED void *arg) {
 	size_t i;
-	UNUSED(arg);
 	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
 	printf("Thread %d starts\n",gettid());
 	fflush(stdout);
@@ -44,9 +43,7 @@ static int myThread(void *arg) {
 	return 0;
 }
 
-int mod_thread(int argc,char *argv[]) {
-	UNUSED(argc);
-	UNUSED(argv);
+int mod_thread(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	int threads[THREAD_COUNT];
 	size_t i;
 	for(i = 0; i < THREAD_COUNT; i++)

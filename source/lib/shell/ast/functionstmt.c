@@ -59,9 +59,8 @@ void ast_printFunctionStmt(sFunctionStmt *n,uint layer) {
 	printf("%*send\n",layer,"");
 }
 
-void ast_destroyFunctionStmt(sFunctionStmt *n) {
+void ast_destroyFunctionStmt(A_UNUSED sFunctionStmt *n) {
 	/* do nothing because we want to keep the function-AST (in the env) */
-	UNUSED(n);
 }
 
 void ast_killFunctionStmt(sFunctionStmt *n) {

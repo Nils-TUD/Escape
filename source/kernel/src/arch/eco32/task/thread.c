@@ -51,8 +51,7 @@ void thread_addInitialStack(sThread *t) {
 	assert(t->stackRegions[0] >= 0);
 }
 
-int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
-	UNUSED(src);
+int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
 	if(cloneProc)
 		thread_initArch(dst);
 	else {
@@ -88,8 +87,7 @@ void thread_setRunning(sThread *t) {
 	cur = t;
 }
 
-int thread_finishClone(sThread *t,sThread *nt) {
-	UNUSED(t);
+int thread_finishClone(A_UNUSED sThread *t,sThread *nt) {
 	ulong *src;
 	size_t i;
 	/* we clone just the current thread. all other threads are ignored */
@@ -111,8 +109,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	return 0;
 }
 
-void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
-	UNUSED(t);
+void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
 	/* prepare registers for the first thread_resume() */
 	nt->save.r16 = nt->proc->entryPoint;
 	nt->save.r17 = entryPoint;

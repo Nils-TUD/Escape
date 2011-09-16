@@ -90,8 +90,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static int refreshThread(void *arg) {
-	UNUSED(arg);
+static int refreshThread(A_UNUSED void *arg) {
 	struct tm *gmt;
 	while(1) {
 		/* ensure that the driver-loop doesn't access the date in the meanwhile */

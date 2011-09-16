@@ -77,13 +77,11 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void sigAlarm(int sig) {
-	UNUSED(sig);
+static void sigAlarm(A_UNUSED int sig) {
 	timeout = true;
 }
 
-static int driverThread(void *arg) {
-	UNUSED(arg);
+static int driverThread(A_UNUSED void *arg) {
 	int drv = regDriver("init",0);
 	if(drv < 0)
 		error("Unable to register device 'init'");

@@ -34,7 +34,7 @@
 # general constants
 .set PAGE_SIZE,						4096
 .set TMP_STACK_SIZE,				PAGE_SIZE
-.set USER_STACK,					0xC0000000
+.set USER_STACK,					0xA0000000
 .set KERNEL_AREA,					0xC0000000
 .set KSTACK_CURTHREAD,				0xFF7FFFFC
 

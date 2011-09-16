@@ -41,8 +41,7 @@ static void uenv_startSignalHandler(sThread *t,sig_t sig,fSignal handler);
 static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
-void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
-	UNUSED(stack);
+void uenv_handleSignal(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 	sig_t sig;
 	fSignal handler;
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
@@ -52,8 +51,7 @@ void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
 		thread_switch();
 }
 
-int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
-	UNUSED(stack);
+int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,sig_t signal) {
 	sThread *t = thread_getRunning();
 	sIntrptStackFrame *curStack = thread_getIntrptStack(t);
 	uint64_t *regs;
@@ -80,10 +78,8 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 	return 0;
 }
 
-bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo *info,
-		uintptr_t entryPoint,int fd) {
-	UNUSED(argsSize);
-	UNUSED(fd);
+bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sStartupInfo *info,
+		uintptr_t entryPoint,A_UNUSED int fd) {
 	uint64_t *ssp,*rsp;
 	char **argv;
 	sThread *t = thread_getRunning();

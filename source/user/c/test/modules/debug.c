@@ -21,9 +21,7 @@
 #include <esc/debug.h>
 #include "debug.h"
 
-int mod_debug(int argc,char *argv[]) {
-	UNUSED(argc);
-	UNUSED(argv);
+int mod_debug(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	debug();
 	return EXIT_SUCCESS;
 }

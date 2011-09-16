@@ -117,8 +117,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void timerIntrptHandler(int sig) {
-	UNUSED(sig);
+static void timerIntrptHandler(A_UNUSED int sig) {
 	if(intrptTarget > 0) {
 		intrptCount += 1000 / timerFreq;
 		if(intrptCount >= intrptTarget) {

@@ -185,9 +185,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void irqHandler(int sig) {
+static void irqHandler(A_UNUSED int sig) {
 	uint8_t status;
-	UNUSED(sig);
 
 	/* check if there is mouse-data */
 	status = inByte(IOPORT_KB_CTRL);

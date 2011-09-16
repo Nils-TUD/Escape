@@ -186,8 +186,7 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static void diskInterrupt(int sig) {
-	UNUSED(sig);
+static void diskInterrupt(A_UNUSED int sig) {
 	/* simply ignore the signal; most important is to interrupt the sleep call */
 }
 

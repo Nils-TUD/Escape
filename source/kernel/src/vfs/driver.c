@@ -221,8 +221,7 @@ static void vfs_drv_wait(sRequest *req) {
 	while((ssize_t)r->count == ERR_INTERRUPTED);
 }
 
-static void vfs_drv_openReqHandler(sVFSNode *node,USER const void *data,size_t size) {
-	UNUSED(size);
+static void vfs_drv_openReqHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
 	sMsg *rmsg = (sMsg*)data;
 	ulong res = rmsg->args.arg1;
 	/* we know that the node is valid here, because vfs_chan_send() has checked it and the node
@@ -238,8 +237,7 @@ static void vfs_drv_openReqHandler(sVFSNode *node,USER const void *data,size_t s
 	}
 }
 
-static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t size) {
-	UNUSED(size);
+static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
 	/* find the request for the node */
 	sRequest *req = vfs_req_getByNode(node);
 	if(req != NULL) {
@@ -285,8 +283,7 @@ static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t s
 	}
 }
 
-static void vfs_drv_writeReqHandler(sVFSNode *node,USER const void *data,size_t size) {
-	UNUSED(size);
+static void vfs_drv_writeReqHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
 	sMsg *rmsg = (sMsg*)data;
 	ulong res = rmsg->args.arg1;
 	sRequest *req = vfs_req_getByNode(node);

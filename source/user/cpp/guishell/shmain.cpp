@@ -52,8 +52,7 @@ static char *drvName;
 static GUITerm *gt;
 static int childPid;
 
-static void sigUsr1(int sig) {
-	UNUSED(sig);
+static void sigUsr1(A_UNUSED int sig) {
 	Application::getInstance()->exit();
 	gt->stop();
 }
@@ -168,8 +167,7 @@ static int guiProc(void) {
 	return res;
 }
 
-static int termThread(void *arg) {
-	UNUSED(arg);
+static int termThread(A_UNUSED void *arg) {
 	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
 		error("Unable to set signal-handler");
 	gt->run();

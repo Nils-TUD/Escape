@@ -275,8 +275,7 @@ static void kbStartDbgConsole(void) {
 	}
 }
 
-static void kbIntrptHandler(int sig) {
-	UNUSED(sig);
+static void kbIntrptHandler(A_UNUSED int sig) {
 	if(!(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
 		return;
 

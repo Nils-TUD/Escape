@@ -91,7 +91,6 @@ void thread_freeArch(sThread *t) {
 }
 
 int thread_finishClone(sThread *t,sThread *nt) {
-	UNUSED(t);
 	ulong *src;
 	size_t i;
 	/* ensure that we won't get interrupted */
@@ -119,8 +118,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	return 0;
 }
 
-void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
-	UNUSED(t);
+void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
 	/* setup kernel-stack */
 	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
 	ulong *dst = (ulong*)paging_mapToTemp(&frame,1);

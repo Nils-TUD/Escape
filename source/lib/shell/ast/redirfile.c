@@ -32,8 +32,7 @@ sASTNode *ast_createRedirFile(sASTNode *expr,uchar type) {
 	return node;
 }
 
-void ast_printRedirFile(sRedirFile *s,uint layer) {
-	UNUSED(layer);
+void ast_printRedirFile(sRedirFile *s,A_UNUSED uint layer) {
 	if(s->expr) {
 		switch(s->type) {
 			case REDIR_INFILE:

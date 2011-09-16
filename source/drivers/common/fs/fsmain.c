@@ -149,8 +149,7 @@ int main(int argc,char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-static void sigTermHndl(int sig) {
-	UNUSED(sig);
+static void sigTermHndl(A_UNUSED int sig) {
 	/* notify init that we're alive and promise to terminate as soon as possible */
 	init_iamalive();
 	run = false;

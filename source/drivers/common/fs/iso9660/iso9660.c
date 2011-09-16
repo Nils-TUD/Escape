@@ -177,16 +177,13 @@ inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bo
 	return iso_dir_resolve((sISO9660*)h,u,path,flags,dev,resLastMnt);
 }
 
-inode_t iso_open(void *h,sFSUser *u,inode_t ino,uint flags) {
-	UNUSED(h);
-	UNUSED(u);
-	UNUSED(flags);
+inode_t iso_open(A_UNUSED void *h,A_UNUSED sFSUser *u,inode_t ino,A_UNUSED uint flags) {
+	/* nothing to do */
 	return ino;
 }
 
-void iso_close(void *h,inode_t ino) {
-	UNUSED(h);
-	UNUSED(ino);
+void iso_close(A_UNUSED void *h,A_UNUSED inode_t ino) {
+	/* nothing to do */
 }
 
 int iso_stat(void *h,inode_t ino,sFileInfo *info) {
@@ -220,8 +217,7 @@ ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count)
 	return iso_file_read((sISO9660*)h,inodeNo,buffer,offset,count);
 }
 
-time_t iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate) {
-	UNUSED(h);
+time_t iso_dirDate2Timestamp(A_UNUSED sISO9660 *h,const sISODirDate *ddate) {
 	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);
 }

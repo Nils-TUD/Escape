@@ -166,7 +166,7 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
 	begin -= *begin;
 	t->stats.syscalls++;
-	sysc_handle(begin);
+	sysc_handle(t,begin);
 
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
 	t = thread_getRunning(); /* thread might have changed */
@@ -205,16 +205,14 @@ static void intrpt_leaveKernel(sThread *t) {
 	thread_popIntrptLevel(t);
 }
 
-static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
-	UNUSED(stack);
+static void intrpt_defHandler(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 	uint64_t rww = cpu_getSpecial(rWW);
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ %p\n",
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 
-static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
-	UNUSED(stack);
+static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 	uintptr_t pfaddr = cpu_getFaultLoc();
 
 #if DEBUG_PAGEFAULTS
@@ -244,9 +242,7 @@ static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
 	}
 }
 
-static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo) {
-	UNUSED(stack);
-	UNUSED(irqNo);
+static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 	/* we have to disable interrupts until the device has handled the request */
 	/* otherwise we would get into an interrupt loop */
 	uint64_t *kbRegs = (uint64_t*)KEYBOARD_BASE;
@@ -270,10 +266,8 @@ static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo) {
 	}
 }
 
-static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
+static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 	bool res;
-	UNUSED(stack);
-	UNUSED(irqNo);
 	sig_addSignal(SIG_INTRPT_TIMER);
 	res = timer_intrpt();
 	timer_ackIntrpt();
@@ -284,9 +278,7 @@ static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
 	}
 }
 
-static void intrpt_irqDisk(sIntrptStackFrame *stack,int irqNo) {
-	UNUSED(stack);
-	UNUSED(irqNo);
+static void intrpt_irqDisk(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 	/* see interrupt_irqKb() */
 	uint64_t *diskRegs = (uint64_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;

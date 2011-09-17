@@ -27,30 +27,29 @@
 #include "mount.h"
 
 static size_t mntPntCount = 0;
-static sSLList *fileSystems = NULL;
-static sSLList *fsInsts = NULL;
+static sSLList fileSystems;
+static sSLList fsInsts;
 static sMountPoint mounts[MOUNT_TABLE_SIZE];
 
-bool mount_init(void) {
+void mount_init(void) {
 	size_t i;
-	fileSystems = sll_create();
-	fsInsts = sll_create();
+	sll_init(&fileSystems,malloc,free);
+	sll_init(&fsInsts,malloc,free);
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		mounts[i].dev = 0;
 		mounts[i].inode = 0;
 		mounts[i].mnt = NULL;
 	}
-	return fileSystems != NULL && fsInsts != NULL;
 }
 
 const sFSInst *mount_getFSInst(size_t i) {
-	if(i < sll_length(fsInsts))
-		return (const sFSInst*)sll_get(fsInsts,i);
+	if(i < sll_length(&fsInsts))
+		return (const sFSInst*)sll_get(&fsInsts,i);
 	return NULL;
 }
 
 int mount_addFS(sFileSystem *fs) {
-	if(!sll_append(fileSystems,fs))
+	if(!sll_append(&fileSystems,fs))
 		return ERR_NOT_ENOUGH_MEM;
 	return 0;
 }
@@ -72,7 +71,7 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,i
 	}
 
 	/* first find the filesystem */
-	for(n = sll_begin(fileSystems); n != NULL; n = n->next) {
+	for(n = sll_begin(&fileSystems); n != NULL; n = n->next) {
 		fs = (sFileSystem*)n->data;
 		if(fs->type == type)
 			break;
@@ -89,7 +88,7 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,i
 		return ERR_NO_MNTPNT;
 
 	/* look if there is an instance we can use */
-	for(n = sll_begin(fsInsts); n != NULL; n = n->next) {
+	for(n = sll_begin(&fsInsts); n != NULL; n = n->next) {
 		inst = (sFSInst*)n->data;
 		if(inst->fs->type == type && strcmp(inst->device,device) == 0)
 			break;
@@ -110,7 +109,7 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,i
 		}
 		strcpy(inst->device,usedDev);
 		free(usedDev);
-		if(!sll_append(fsInsts,inst)) {
+		if(!sll_append(&fsInsts,inst)) {
 			free(inst);
 			return ERR_NOT_ENOUGH_MEM;
 		}
@@ -166,7 +165,7 @@ int mount_remMnt(dev_t dev,inode_t inode) {
 		/* call deinit to give the fs the chance to write unwritten stuff etc. */
 		mounts[i].mnt->fs->deinit(mounts[i].mnt->handle);
 		/* free fs-instance */
-		sll_removeFirstWith(fsInsts,mounts[i].mnt);
+		sll_removeFirstWith(&fsInsts,mounts[i].mnt);
 		free(mounts[i].mnt);
 	}
 	mounts[i].mnt = NULL;

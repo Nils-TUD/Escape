@@ -23,5 +23,6 @@
 #include <esc/common.h>
 
 int infodev_thread(A_UNUSED void *arg);
+void infodev_shutdown(void);
 
 #endif /* INFODEV_H_ */

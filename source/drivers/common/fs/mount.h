@@ -93,10 +93,8 @@ typedef struct {
 
 /**
  * Inits the moint-points
- *
- * @return true if successfull
  */
-bool mount_init(void);
+void mount_init(void);
 
 /**
  * @param i the index

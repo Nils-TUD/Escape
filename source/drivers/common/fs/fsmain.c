@@ -118,7 +118,9 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* clean up */
+	infodev_shutdown();
 	tpool_shutdown();
+	join(0);
 	shutdown();
 	close(id);
 

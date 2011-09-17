@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <signal.h>
 
 #include "mount.h"
 #include "infodev.h"
@@ -34,6 +35,7 @@ typedef struct {
 	fGetData getData;
 } sFSInfo;
 
+static void sigUsr1(A_UNUSED int sig);
 static sFSInfo *getById(int id);
 static void getMounts(FILE *str);
 static void getFSInsts(FILE *str);
@@ -43,9 +45,13 @@ static sFSInfo infos[] = {
 	{"/system/filesystems",getFSInsts},
 };
 static int ids[ARRAY_SIZE(infos)];
+static volatile bool run = true;
 
 int infodev_thread(A_UNUSED void *arg) {
 	size_t i;
+	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+		error("Unable to announce USR1-signal-handler");
+
 	for(i = 0; i < ARRAY_SIZE(infos); i++) {
 		ids[i] = createdev(infos[i].path,DEV_TYPE_FILE,DEV_READ);
 		if(ids[i] < 0)
@@ -54,13 +60,15 @@ int infodev_thread(A_UNUSED void *arg) {
 			error("Unable to chmod %s",infos[i].path);
 	}
 
-	while(1) {
+	while(run) {
 		sMsg msg;
 		int id;
 		msgid_t mid;
 		int fd = getWork(ids,ARRAY_SIZE(ids),&id,&mid,&msg,sizeof(msg),0);
-		if(fd < 0)
-			printe("[FSINFO] Unable to get work");
+		if(fd < 0) {
+			if(fd != ERR_INTERRUPTED)
+				printe("[FSINFO] Unable to get work");
+		}
 		else {
 			sFSInfo *info = getById(id);
 			if(info == NULL)
@@ -106,8 +114,19 @@ int infodev_thread(A_UNUSED void *arg) {
 			close(fd);
 		}
 	}
-	/* never reached */
+
+	for(i = 0; i < ARRAY_SIZE(infos); i++)
+		close(ids[i]);
 	return 0;
+}
+
+void infodev_shutdown(void) {
+	if(sendSignalTo(getpid(),SIG_USR1) < 0)
+		printe("[FS] Unable to send signal to me");
+}
+
+static void sigUsr1(A_UNUSED int sig) {
+	run = false;
 }
 
 static sFSInfo *getById(int id) {

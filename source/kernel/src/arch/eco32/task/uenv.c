@@ -54,14 +54,16 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
 			regs = (uint32_t*)KEYBOARD_BASE;
 			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 			break;
-		/* not necessary for disk here; the device will reenable interrupts as soon as a new
+		/* not necessary for disk here; the driver will reenable interrupts as soon as a new
 		 * command is started */
 	}
 	return 0;
 }
 
-bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sStartupInfo *info,
-		uintptr_t entryPoint,A_UNUSED int fd) {
+bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo *info,
+		uintptr_t entryPoint,int fd) {
+	UNUSED(argsSize);
+	UNUSED(fd);
 	uint32_t *sp;
 	char **argv;
 	sThread *t = thread_getRunning();

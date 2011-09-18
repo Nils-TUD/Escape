@@ -20,8 +20,8 @@
 #include <stddef.h>
 #include <ctype.h>
 
-extern uchar ctypetbl[];
+extern char ctypetbl[];
 
 int isspace(int c) {
-	return ctypetbl[c] & (CT_BLANK | CT_SPACE);
+	return ctypetbl[c] & (CT_SPACE);
 }

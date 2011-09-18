@@ -51,6 +51,10 @@ static void ext2_icache_read(sExt2 *e,sExt2CInode *inode);
  */
 static void ext2_icache_write(sExt2 *e,sExt2CInode *inode);
 
+/* for statistics */
+static uint cacheHits = 0;
+static uint cacheMisses = 0;
+
 void ext2_icache_init(sExt2 *e) {
 	size_t i;
 	sExt2CInode *inode = e->inodeCache;
@@ -60,8 +64,6 @@ void ext2_icache_init(sExt2 *e) {
 		inode->dirty = false;
 		inode++;
 	}
-	e->icacheHits = 0;
-	e->icacheMisses = 0;
 }
 
 void ext2_icache_flush(sExt2 *e) {
@@ -77,6 +79,7 @@ void ext2_icache_flush(sExt2 *e) {
 }
 
 void ext2_icache_markDirty(sExt2CInode *inode) {
+	/*vassert(inode->writeRef > 0,"[%d] Inode %d is read-only",gettid(),inode->inodeNo);*/
 	inode->dirty = true;
 }
 
@@ -94,7 +97,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 	for(inode = startNode; inode < iend; inode++) {
 		if(inode->inodeNo == no) {
 			ext2_icache_aquire(inode,mode);
-			e->icacheHits++;
+			cacheHits++;
 			return inode;
 		}
 	}
@@ -103,7 +106,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 		for(inode = e->inodeCache; inode < startNode; inode++) {
 			if(inode->inodeNo == no) {
 				ext2_icache_aquire(inode,mode);
-				e->icacheHits++;
+				cacheHits++;
 				return inode;
 			}
 		}
@@ -150,40 +153,22 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 		ext2_icache_aquire(inode,mode);
 	}
 
-	e->icacheMisses++;
+	cacheMisses++;
 	return inode;
 }
 
 void ext2_icache_release(const sExt2CInode *inode) {
 	ext2_icache_doRelease((sExt2CInode*)inode,true);
+	/*debugf("[%d] Released %d for %d\n",gettid(),
+			inode->inodeNo,inode->writeRef ? IMODE_WRITE : IMODE_READ);*/
 }
 
-void ext2_icache_print(FILE *f,sExt2 *e) {
-	float hitrate;
-	size_t used = 0,dirty = 0;
-	sExt2CInode *inode,*end = e->inodeCache + EXT2_ICACHE_SIZE;
-	for(inode = e->inodeCache; inode < end; inode++) {
-		if(inode->inodeNo != EXT2_BAD_INO)
-			used++;
-		if(inode->dirty)
-			dirty++;
-	}
-	fprintf(f,"\t\tTotal entries: %u\n",EXT2_ICACHE_SIZE);
-	fprintf(f,"\t\tUsed entries: %u\n",used);
-	fprintf(f,"\t\tDirty entries: %u\n",dirty);
-	fprintf(f,"\t\tHits: %u\n",e->icacheHits);
-	fprintf(f,"\t\tMisses: %u\n",e->icacheMisses);
-	if(e->icacheHits == 0)
-		hitrate = 0;
-	else
-		hitrate = 100.0f / ((float)(e->icacheMisses + e->icacheHits) / e->icacheHits);
-	fprintf(f,"\t\tHitrate: %.3f%%\n",hitrate);
-}
-
-static void ext2_icache_aquire(sExt2CInode *inode,A_UNUSED uint mode) {
+static void ext2_icache_aquire(sExt2CInode *inode,uint mode) {
+	UNUSED(mode);
 	inode->refs++;
 	assert(tpool_unlock(ALLOC_LOCK) == 0);
 	assert(tpool_lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+	/*debugf("[%d] Aquired %d for %d\n",gettid(),inode->inodeNo,mode);*/
 }
 
 static void ext2_icache_doRelease(sExt2CInode *ino,bool unlockAlloc) {
@@ -226,4 +211,9 @@ static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
 			sizeof(sExt2Inode));
 	bcache_markDirty(block);
 	bcache_release(block);
+}
+
+void ext2_icache_printStats(void) {
+	printf("[InodeCache] Hits: %u, Misses: %u; %u %%\n",cacheHits,cacheMisses,
+			(uint)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }

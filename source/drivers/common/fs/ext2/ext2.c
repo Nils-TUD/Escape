@@ -55,7 +55,7 @@ static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
 static void ext2_sync(void *h);
 static bool ext2_isPowerOf(uint x,uint y);
 
-void *ext2_init(const char *device,char **usedDev) {
+void *ext2_init(const char *driver,char **usedDev) {
 	size_t i;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
@@ -64,11 +64,11 @@ void *ext2_init(const char *device,char **usedDev) {
 		e->drvFds[i] = -1;
 	e->blockCache.blockCache = NULL;
 
-	/* open the device */
+	/* open the driver */
 	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
-		e->drvFds[i] = open(device,IO_WRITE | IO_READ);
+		e->drvFds[i] = open(driver,IO_WRITE | IO_READ);
 		if(e->drvFds[i] < 0) {
-			printe("Unable to find device '%s'",device);
+			printe("Unable to find driver '%s'",driver);
 			goto error;
 		}
 	}
@@ -97,13 +97,13 @@ void *ext2_init(const char *device,char **usedDev) {
 	ext2_icache_init(e);
 	bcache_init(&e->blockCache);
 
-	/* report used device */
-	*usedDev = malloc(strlen(device) + 1);
+	/* report used driver */
+	*usedDev = malloc(strlen(driver) + 1);
 	if(!*usedDev) {
-		printe("Not enough mem for device-name");
+		printe("Not enough mem for driver-name");
 		goto error;
 	}
-	strcpy(*usedDev,device);
+	strcpy(*usedDev,driver);
 	return e;
 
 error:
@@ -156,7 +156,6 @@ sFileSystem *ext2_getFS(void) {
 	fs->chmod = ext2_chmod;
 	fs->chown = ext2_chown;
 	fs->sync = ext2_sync;
-	fs->print = ext2_print;
 	return fs;
 }
 
@@ -215,25 +214,6 @@ bool ext2_bgHasBackups(sExt2 *e,block_t i) {
 	return ext2_isPowerOf(i,3) || ext2_isPowerOf(i,5) || ext2_isPowerOf(i,7);
 }
 
-void ext2_print(FILE *f,void *h) {
-	sExt2 *e = (sExt2*)h;
-	fprintf(f,"\tTotal blocks: %u\n",le32tocpu(e->superBlock.blockCount));
-	fprintf(f,"\tTotal inodes: %u\n",le32tocpu(e->superBlock.inodeCount));
-	fprintf(f,"\tFree blocks: %u\n",le32tocpu(e->superBlock.freeBlockCount));
-	fprintf(f,"\tFree inodes: %u\n",le32tocpu(e->superBlock.freeInodeCount));
-	fprintf(f,"\tBlocks per group: %u\n",le32tocpu(e->superBlock.blocksPerGroup));
-	fprintf(f,"\tInodes per group: %u\n",le32tocpu(e->superBlock.inodesPerGroup));
-	fprintf(f,"\tBlocksize: %u\n",EXT2_BLK_SIZE(e));
-	fprintf(f,"\tCapacity: %u bytes\n",le32tocpu(e->superBlock.blockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"\tFree: %u bytes\n",le32tocpu(e->superBlock.freeBlockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"\tMount count: %u\n",le16tocpu(e->superBlock.mountCount));
-	fprintf(f,"\tMax mount count: %u\n",le16tocpu(e->superBlock.maxMountCount));
-	fprintf(f,"\tBlock cache:\n");
-	bcache_printStats(f,&e->blockCache);
-	fprintf(f,"\tInode cache:\n");
-	ext2_icache_print(f,e);
-}
-
 static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,
 		bool resLastMnt) {
 	return ext2_path_resolve((sExt2*)h,u,path,flags,dev,resLastMnt);
@@ -265,8 +245,9 @@ static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
 	return ino;
 }
 
-static void ext2_close(A_UNUSED void *h,A_UNUSED inode_t ino) {
-	/* nothing to do */
+static void ext2_close(void *h,inode_t ino) {
+	UNUSED(h);
+	UNUSED(ino);
 }
 
 static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {

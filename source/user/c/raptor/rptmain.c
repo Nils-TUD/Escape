@@ -44,7 +44,7 @@ int main(void) {
 
 	keymap = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
 	if(keymap < 0)
-		qerror("Unable to open keymap-device");
+		qerror("Unable to open keymap-driver");
 
 	if(!game_init()) {
 		quit();
@@ -74,7 +74,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void sigTimer(A_UNUSED int sig) {
+static void sigTimer(int sig) {
+	UNUSED(sig);
 	time++;
 }
 

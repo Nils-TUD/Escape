@@ -86,7 +86,7 @@ char *app_fromString(const char *definition,sApp *app) {
 			if(strcmp(info.token,"user") == 0)
 				app->type = APP_TYPE_USER;
 			else if(strcmp(info.token,"driver") == 0)
-				app->type = APP_TYPE_DEVICE;
+				app->type = APP_TYPE_DRIVER;
 			else if(strcmp(info.token,"fs") == 0)
 				app->type = APP_TYPE_FS;
 			else

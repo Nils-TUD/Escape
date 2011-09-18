@@ -26,7 +26,7 @@
 /**
  * Inits all vterms
  *
- * @param ids the device-ids
+ * @param ids the driver-ids
  * @param cfg the global config
  * @return true if successfull
  */

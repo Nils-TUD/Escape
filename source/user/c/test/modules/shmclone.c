@@ -24,7 +24,9 @@
 #include <stdio.h>
 #include "shmclone.h"
 
-int mod_shmclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_shmclone(int argc,char *argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
 	void *p1 = createSharedMem("foo",8192);
 	void *p2 = createSharedMem("bar",4096);
 	strcpy(p1,"test1");

@@ -20,34 +20,32 @@
 #ifndef SYSCALLS_IO_H_
 #define SYSCALLS_IO_H_
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_open(sThread *t,sIntrptStackFrame *stack);
-int sysc_fcntl(sThread *t,sIntrptStackFrame *stack);
-int sysc_pipe(sThread *t,sIntrptStackFrame *stack);
-int sysc_tell(sThread *t,sIntrptStackFrame *stack);
-int sysc_eof(sThread *t,sIntrptStackFrame *stack);
-int sysc_seek(sThread *t,sIntrptStackFrame *stack);
-int sysc_read(sThread *t,sIntrptStackFrame *stack);
-int sysc_write(sThread *t,sIntrptStackFrame *stack);
-int sysc_dupFd(sThread *t,sIntrptStackFrame *stack);
-int sysc_redirFd(sThread *t,sIntrptStackFrame *stack);
-int sysc_close(sThread *t,sIntrptStackFrame *stack);
-int sysc_send(sThread *t,sIntrptStackFrame *stack);
-int sysc_receive(sThread *t,sIntrptStackFrame *stack);
-int sysc_stat(sThread *t,sIntrptStackFrame *stack);
-int sysc_fstat(sThread *t,sIntrptStackFrame *stack);
-int sysc_chmod(sThread *t,sIntrptStackFrame *stack);
-int sysc_chown(sThread *t,sIntrptStackFrame *stack);
-int sysc_sync(sThread *t,sIntrptStackFrame *stack);
-int sysc_link(sThread *t,sIntrptStackFrame *stack);
-int sysc_unlink(sThread *t,sIntrptStackFrame *stack);
-int sysc_mkdir(sThread *t,sIntrptStackFrame *stack);
-int sysc_rmdir(sThread *t,sIntrptStackFrame *stack);
-int sysc_mount(sThread *t,sIntrptStackFrame *stack);
-int sysc_unmount(sThread *t,sIntrptStackFrame *stack);
+int sysc_open(sIntrptStackFrame *stack);
+int sysc_fcntl(sIntrptStackFrame *stack);
+int sysc_pipe(sIntrptStackFrame *stack);
+int sysc_tell(sIntrptStackFrame *stack);
+int sysc_eof(sIntrptStackFrame *stack);
+int sysc_seek(sIntrptStackFrame *stack);
+int sysc_read(sIntrptStackFrame *stack);
+int sysc_write(sIntrptStackFrame *stack);
+int sysc_dupFd(sIntrptStackFrame *stack);
+int sysc_redirFd(sIntrptStackFrame *stack);
+int sysc_close(sIntrptStackFrame *stack);
+int sysc_send(sIntrptStackFrame *stack);
+int sysc_receive(sIntrptStackFrame *stack);
+int sysc_stat(sIntrptStackFrame *stack);
+int sysc_fstat(sIntrptStackFrame *stack);
+int sysc_chmod(sIntrptStackFrame *stack);
+int sysc_chown(sIntrptStackFrame *stack);
+int sysc_sync(sIntrptStackFrame *stack);
+int sysc_link(sIntrptStackFrame *stack);
+int sysc_unlink(sIntrptStackFrame *stack);
+int sysc_mkdir(sIntrptStackFrame *stack);
+int sysc_rmdir(sIntrptStackFrame *stack);
+int sysc_mount(sIntrptStackFrame *stack);
+int sysc_unmount(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_IO_H_ */
 

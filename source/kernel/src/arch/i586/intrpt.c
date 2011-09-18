@@ -45,7 +45,7 @@
 /* maximum number of a exception in a row */
 #define MAX_EX_COUNT			10
 
-typedef void (*fIntrptHandler)(sThread *t,sIntrptStackFrame *stack);
+typedef void (*fIntrptHandler)(sIntrptStackFrame *stack);
 typedef struct {
 	fIntrptHandler handler;
 	const char *name;
@@ -55,15 +55,15 @@ typedef struct {
 /**
  * The exception and interrupt-handlers
  */
-static void intrpt_exFatal(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_exGenProtFault(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_exCoProcNA(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_exPageFault(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_irqTimer(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_irqDefault(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_syscall(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_ipiWork(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_ipiTerm(sThread *t,sIntrptStackFrame *stack);
+static void intrpt_exFatal(sIntrptStackFrame *stack);
+static void intrpt_exGenProtFault(sIntrptStackFrame *stack);
+static void intrpt_exCoProcNA(sIntrptStackFrame *stack);
+static void intrpt_exPageFault(sIntrptStackFrame *stack);
+static void intrpt_irqTimer(sIntrptStackFrame *stack);
+static void intrpt_irqDefault(sIntrptStackFrame *stack);
+static void intrpt_syscall(sIntrptStackFrame *stack);
+static void intrpt_ipiWork(sIntrptStackFrame *stack);
+static void intrpt_ipiTerm(sIntrptStackFrame *stack);
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t pfaddr);
 
 static const sInterrupt intrptList[] = {
@@ -164,7 +164,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 	intrpt = intrptList + stack->intrptNo;
 	if(intrpt->handler)
-		intrpt->handler(t,stack);
+		intrpt->handler(stack);
 	else {
 		vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
 				intrpt->name,stack->eip,t->proc->pid,t->proc->command);
@@ -178,7 +178,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	thread_popIntrptLevel(t);
 }
 
-static void intrpt_exFatal(__attribute__((unused)) sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_exFatal(sIntrptStackFrame *stack) {
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
 		exCount++;
@@ -198,7 +198,8 @@ static void intrpt_exFatal(__attribute__((unused)) sThread *t,sIntrptStackFrame 
 	}
 }
 
-static void intrpt_exGenProtFault(sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_exGenProtFault(sIntrptStackFrame *stack) {
+	const sThread *t = thread_getRunning();
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_AREA)
 		vid_unsetPrintFunc();
@@ -217,11 +218,14 @@ static void intrpt_exGenProtFault(sThread *t,sIntrptStackFrame *stack) {
 	util_panic("GPF @ 0x%x",stack->eip);
 }
 
-static void intrpt_exCoProcNA(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+static void intrpt_exCoProcNA(sIntrptStackFrame *stack) {
+	UNUSED(stack);
+	sThread *t = thread_getRunning();
 	fpu_handleCoProcNA(&t->archAttr.fpuState);
 }
 
-static void intrpt_exPageFault(sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_exPageFault(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
 	uintptr_t addr = pfAddrs[t->cpu];
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_AREA)
@@ -250,7 +254,7 @@ static void intrpt_exPageFault(sThread *t,sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqTimer(sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_irqTimer(sIntrptStackFrame *stack) {
 	bool res;
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
@@ -258,18 +262,19 @@ static void intrpt_irqTimer(sThread *t,sIntrptStackFrame *stack) {
 	res = timer_intrpt();
 	pic_eoi(stack->intrptNo);
 	if(res) {
+		sThread *t = thread_getRunning();
 		if(thread_getIntrptLevel(t) == 0)
 			thread_switch();
 	}
 }
 
-static void intrpt_irqDefault(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_irqDefault(sIntrptStackFrame *stack) {
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
 	pic_eoi(stack->intrptNo);
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
-	/* (with a present keyboard-device we would steal him the scancodes) */
+	/* (with a present keyboard-driver we would steal him the scancodes) */
 	/* this way, we can debug the system in the startup-phase without affecting timings
 	 * (before viewing the log ;)) */
 	if(stack->intrptNo == IRQ_KEYBOARD && proc_getByPid(KEYBOARD_PID) == NULL) {
@@ -279,12 +284,27 @@ static void intrpt_irqDefault(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_syscall(sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_syscall(sIntrptStackFrame *stack) {
+	uint ebxSave,sysCallNo;
+	sThread *t = thread_getRunning();
+	if(t->proc->flags & P_VM86)
+		util_panic("VM86-task wants to perform a syscall!?");
 	t->stats.syscalls++;
-	sysc_handle(t,stack);
+
+	sysCallNo = SYSC_NUMBER(stack);
+	ebxSave = stack->ebx;
+	sysc_handle(stack);
+
+	/* set error-code (not for ackSignal) */
+	if(sysCallNo != SYSCALL_ACKSIG && sysCallNo != SYSCALL_VM86START) {
+		stack->ecx = stack->ebx;
+		stack->ebx = ebxSave;
+	}
 }
 
-static void intrpt_ipiWork(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+static void intrpt_ipiWork(sIntrptStackFrame *stack) {
+	UNUSED(stack);
+	sThread *t = thread_getRunning();
 	apic_eoi();
 	/* if we have been waked up, but are not idling anymore, wakeup another cpu */
 	/* this may happen if we're about to switch to a non-idle-thread and have idled previously,
@@ -296,8 +316,10 @@ static void intrpt_ipiWork(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 		thread_switch();
 }
 
-static void intrpt_ipiTerm(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+static void intrpt_ipiTerm(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	/* stop running the thread, if it should die */
+	sThread *t = thread_getRunning();
 	if(t->newState == ST_ZOMBIE)
 		thread_switch();
 }

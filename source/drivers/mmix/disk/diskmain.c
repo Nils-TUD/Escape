@@ -131,7 +131,7 @@ int main(int argc,char **argv) {
 		}
 		else {
 			switch(mid) {
-				case MSG_DEV_READ: {
+				case MSG_DRV_READ: {
 					ulong offset = msg.args.arg1;
 					ulong count = msg.args.arg2;
 					ulong roffset = offset & ~(SECTOR_SIZE - 1);
@@ -146,13 +146,13 @@ int main(int argc,char **argv) {
 						}
 					}
 					msg.args.arg2 = true;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1 > 0)
-						send(fd,MSG_DEV_READ_RESP,buffer,rcount);
+						send(fd,MSG_DRV_READ_RESP,buffer,rcount);
 				}
 				break;
 
-				case MSG_DEV_WRITE: {
+				case MSG_DRV_WRITE: {
 					ulong offset = msg.args.arg1;
 					ulong count = msg.args.arg2;
 					ulong roffset = offset & ~(SECTOR_SIZE - 1);
@@ -168,7 +168,7 @@ int main(int argc,char **argv) {
 							}
 						}
 					}
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 
@@ -186,7 +186,8 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static void diskInterrupt(A_UNUSED int sig) {
+static void diskInterrupt(int sig) {
+	UNUSED(sig);
 	/* simply ignore the signal; most important is to interrupt the sleep call */
 }
 
@@ -274,12 +275,14 @@ static bool diskWait(void) {
 
 static void regDrives(void) {
 	createVFSEntry("hda",false);
-	drvId = createdev("/dev/hda1",DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE);
+	drvId = regDriver("hda1",DRV_READ | DRV_WRITE);
 	if(drvId < 0) {
-		DISK_LOG("Drive 1, Partition 1: Unable to register device 'hda1'");
+		DISK_LOG("Drive 1, Partition 1: Unable to register driver 'hda1'");
 	}
 	else {
-		DISK_LOG("Registered device 'hda1' (device 1, partition 1)");
+		DISK_LOG("Registered driver 'hda1' (device 1, partition 1)");
+		/* we're a block-device, so always data available */
+		fcntl(drvId,F_SETDATA,true);
 		createVFSEntry("hda1",true);
 	}
 }

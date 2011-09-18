@@ -31,12 +31,14 @@ namespace gui {
 	public:
 		Font() {
 		};
-		Font(A_UNUSED const Font &f) {
+		Font(const Font &f) {
+			UNUSED(f);
 		};
 		~Font() {
 		};
 
-		Font &operator=(A_UNUSED const Font &f) {
+		Font &operator=(const Font &f) {
+			UNUSED(f);
 			return *this;
 		};
 

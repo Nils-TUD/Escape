@@ -33,7 +33,8 @@
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
 		file_t file,sStartupInfo *info);
 
-int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info) {
+int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info) {
+	UNUSED(length);
 	sThread *t = thread_getRunning();
 	sElfEHeader *eheader = (sElfEHeader*)code;
 

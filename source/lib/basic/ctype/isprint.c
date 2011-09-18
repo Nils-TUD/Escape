@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
-extern uchar ctypetbl[];
+extern char ctypetbl[];
 
 int isprint(int c) {
 	return (ctypetbl[c] & CT_CTRL) == 0;

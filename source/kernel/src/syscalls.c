@@ -35,7 +35,7 @@
 #include <errors.h>
 
 /* syscall-handlers */
-typedef int (*fSyscall)(sThread *t,sIntrptStackFrame *stack);
+typedef int (*fSyscall)(sIntrptStackFrame *stack);
 
 /* for syscall-definitions */
 typedef struct {
@@ -53,7 +53,7 @@ static const sSyscall syscalls[] = {
 	/* 5 */ 	{sysc_open,					2},
 	/* 6 */ 	{sysc_close,				1},
 	/* 7 */ 	{sysc_read,					3},
-	/* 8 */		{sysc_createdev,			3},
+	/* 8 */		{sysc_regDriver,			2},
 	/* 9 */		{sysc_changeSize,			1},
 	/* 10 */	{sysc_mapPhysical,			2},
 	/* 11 */	{sysc_write,				3},
@@ -130,14 +130,19 @@ static const sSyscall syscalls[] = {
 #endif
 };
 
-void sysc_handle(sThread *t,sIntrptStackFrame *stack) {
+void sysc_handle(sIntrptStackFrame *stack) {
+	int res;
 	uint sysCallNo = SYSC_NUMBER(stack);
 	if(sysCallNo >= ARRAY_SIZE(syscalls)) {
 		SYSC_SETERROR(stack,ERR_INVALID_ARGS);
 		return;
 	}
 
-	syscalls[sysCallNo].handler(t,stack);
+	res = syscalls[sysCallNo].handler(stack);
+	/* don't do that for acksig because this might overwrite a register or
+	 * something, which is not possible in all cases. */
+	if(sysCallNo != SYSCALL_ACKSIG && sysCallNo != SYSCALL_VM86START)
+		SYSC_SETERROR(stack,res);
 }
 
 uint sysc_getArgCount(uint sysCallNo) {

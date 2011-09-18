@@ -31,8 +31,10 @@ __thread int t1;
 __thread int t2;
 __thread int t3 = 12345;
 
-int mod_tls(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_tls(int argc,char *argv[]) {
 	size_t i;
+	UNUSED(argc);
+	UNUSED(argv);
 	if(startThread(otherThread,NULL) < 0)
 		error("Unable to start thread");
 	for(i = 0; i < 4; i++) {
@@ -44,8 +46,9 @@ int mod_tls(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	return 0;
 }
 
-static int otherThread(A_UNUSED void *arg) {
+static int otherThread(void *arg) {
 	size_t i;
+	UNUSED(arg);
 	t1 = 4;
 	t2 = 5;
 	for(i = 0; i < 4; i++) {

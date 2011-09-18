@@ -101,6 +101,7 @@ void thread_addInitialStack(sThread *t) {
 }
 
 int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
+	UNUSED(src);
 	dst->archAttr.kstackFrame = pmem_allocate();
 	if(!cloneProc) {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES * 2) {
@@ -188,7 +189,8 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	return res;
 }
 
-void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+	UNUSED(t);
 	/* copy stack of kernel-start */
 	uint64_t *ssp,*rsp = (uint64_t*)(DIR_MAPPED_SPACE | (nt->archAttr.kstackFrame * PAGE_SIZE));
 	uintptr_t start = (uintptr_t)rsp;

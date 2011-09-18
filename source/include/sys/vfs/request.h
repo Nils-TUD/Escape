@@ -62,7 +62,7 @@ void vfs_req_setHandler(msgid_t id,fReqHandler f);
  * Sends the given message to the appropriate handler
  *
  * @param id the message-id
- * @param node the device-node
+ * @param node the driver-node
  * @param data the message
  * @param size the size of the message
  */
@@ -80,7 +80,7 @@ sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size);
 
 /**
  * Waits for the given request. You may get interrupted even if you don't allow signals since
- * a device can be deregistered which leads to notifying all possibly affected threads. In this
+ * a driver can be deregistered which leads to notifying all possibly affected threads. In this
  * case req->count will be ERR_DRIVER_DIED. Please check in this case if you are affected and
  * retry the request if not.
  *

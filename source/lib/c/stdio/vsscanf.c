@@ -24,7 +24,7 @@
 
 int vsscanf(const char *str,const char *fmt,va_list ap) {
 	int res;
-	FILE *sbuf = bcreate(-1,IO_READ,(char*)str,strlen(str),false);
+	FILE *sbuf = bcreate(-1,IO_READ,(char*)str,strlen(str));
 	if(!sbuf)
 		return EOF;
 	res = vbscanf(sbuf,fmt,ap);

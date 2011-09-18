@@ -43,13 +43,4 @@ double sin(double x);
 double cos(double x);
 double tan(double x);
 
-int isfinite(double x);
-int isfinitef(float x);
-
-int isnan(double x);
-int isnanf(float x);
-
-int isinf(double x);
-int isinff(float x);
-
 #endif /* MATH_H_ */

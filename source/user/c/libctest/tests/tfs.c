@@ -28,7 +28,6 @@
 static void test_fs(void);
 static void test_basics(void);
 static void test_perms(void);
-static void test_rename(void);
 static void test_assertCan(const char *path,uint mode);
 static void test_assertCanNot(const char *path,uint mode,int err);
 static void fs_createFile(const char *name,const char *content);
@@ -41,16 +40,14 @@ sTestModule tModFs = {
 
 static void test_fs(void) {
 	sFileInfo info;
+	/* don't try that on readonly-filesystems */
 	if(stat("/bin",&info) < 0)
 		error("Unable to stat /bin");
-	/* don't try that on readonly-filesystems */
-	if((info.mode & S_IWUSR)) {
-		test_basics();
-		test_perms();
-		test_rename();
-	}
-	else
-		printf("WARNING: Detected readonly filesystem; skipping the test\n\n");
+	if(!(info.mode & S_IWUSR))
+		return;
+
+	test_basics();
+	test_perms();
 }
 
 static void test_basics(void) {
@@ -197,19 +194,6 @@ static void test_perms(void) {
 		test_assertInt(unlink(paths[i].file),0);
 		test_assertInt(rmdir(paths[i].dir),0);
 	}
-
-	test_caseSucceeded();
-}
-
-static void test_rename(void) {
-	test_caseStart("Testing rename()");
-
-	fs_createFile("/newfile","test!");
-	test_assertCan("/newfile",IO_READ);
-	test_assertInt(rename("/newfile","/newerfile"),0);
-	test_assertCanNot("/newfile",IO_READ,ERR_PATH_NOT_FOUND);
-	test_assertInt(unlink("/newerfile"),0);
-	test_assertCanNot("/newerfile",IO_READ,ERR_PATH_NOT_FOUND);
 
 	test_caseSucceeded();
 }

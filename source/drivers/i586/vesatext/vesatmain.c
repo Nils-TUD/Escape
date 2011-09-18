@@ -132,9 +132,9 @@ int main(void) {
 	/* load available modes etc. */
 	vbe_init();
 
-	id = createdev("/dev/vesatext",DEV_TYPE_BLOCK,DEV_OPEN | DEV_WRITE);
+	id = regDriver("vesatext",DRV_OPEN | DRV_WRITE);
 	if(id < 0)
-		error("Unable to register device 'vesatext'");
+		error("Unable to register driver 'vesatext'");
 
 	while(1) {
 		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
@@ -142,13 +142,13 @@ int main(void) {
 			printe("[VESAT] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DEV_OPEN: {
+				case MSG_DRV_OPEN: {
 					msg.args.arg1 = vesa_determineMode();
-					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 
-				case MSG_DEV_WRITE: {
+				case MSG_DRV_WRITE: {
 					uint offset = msg.args.arg1;
 					size_t count = msg.args.arg2;
 					msg.args.arg1 = 0;
@@ -164,7 +164,7 @@ int main(void) {
 						}
 						free(str);
 					}
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 

@@ -31,7 +31,8 @@ sASTNode *ast_createRedirFd(uchar type) {
 	return node;
 }
 
-void ast_printRedirFd(sRedirFd *s,A_UNUSED uint layer) {
+void ast_printRedirFd(sRedirFd *s,uint layer) {
+	UNUSED(layer);
 	switch(s->type) {
 		case REDIR_ERR2OUT:
 			printf(" 2>&1");
@@ -42,6 +43,7 @@ void ast_printRedirFd(sRedirFd *s,A_UNUSED uint layer) {
 	}
 }
 
-void ast_destroyRedirFd(A_UNUSED sRedirFd *n) {
+void ast_destroyRedirFd(sRedirFd *n) {
 	/* nothing to do */
+	UNUSED(n);
 }

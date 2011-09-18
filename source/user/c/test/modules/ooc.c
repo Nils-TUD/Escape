@@ -128,12 +128,15 @@ static void mystring_append(sString *s,char c) {
 	printf("%s: Appending %c to %p\n",__FUNCTION__,c,s);
 }
 
-static void mystring_insert(sMyString *s,A_UNUSED size_t index,char c) {
+static void mystring_insert(sMyString *s,size_t index,char c) {
+	UNUSED(index);
 	ClassMyString *this = (ClassMyString*)s->class;
 	this->append((sString*)s,c);
 }
 
-int mod_ooc(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_ooc(int argc,char *argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
 	sString *str = new(String);
 	String.appends(str,"foo");
 

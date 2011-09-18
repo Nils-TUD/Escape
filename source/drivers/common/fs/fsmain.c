@@ -34,23 +34,36 @@
 #include <string.h>
 #include <assert.h>
 
-#include "fslist.h"
+#include "ext2/ext2.h"
+#include "iso9660/iso9660.h"
 #include "mount.h"
 #include "threadpool.h"
-#include "infodev.h"
 #include "cmds.h"
+
+#define FS_NAME_LEN		12
+
+typedef struct {
+	uint type;
+	char name[FS_NAME_LEN];
+	sFileSystem *(*fGetFS)(void);
+} sFSType;
 
 static void sigTermHndl(int sig);
 static void shutdown(void);
 
 static volatile bool run = true;
+static sFSType types[] = {
+	{FS_TYPE_EXT2,		"ext2",		ext2_getFS},
+	{FS_TYPE_ISO9660,	"iso9660",	iso_getFS},
+};
 static sMsg msg;
 
 int main(int argc,char *argv[]) {
+	size_t i;
 	int id;
 
 	if(argc < 4) {
-		printe("Usage: %s <wait> <devicePath> <fsType>",argv[0]);
+		printe("Usage: %s <wait> <driverPath> <fsType>",argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -59,29 +72,40 @@ int main(int argc,char *argv[]) {
 
 	tpool_init();
 	mount_init();
-	fslist_init();
-	if(startThread(infodev_thread,NULL) < 0)
-		error("Unable to start infodev-thread");
+
+	/* add filesystems */
+	for(i = 0; i < ARRAY_SIZE(types); i++) {
+		sFileSystem *fs = types[i].fGetFS();
+		if(!fs)
+			error("Unable to get %s-filesystem",types[i].name);
+		if(mount_addFS(fs) != 0)
+			error("Unable to add %s-filesystem",types[i].name);
+		printf("[FS] Loaded %s-driver\n",types[i].name);
+	}
 
 	/* create root-fs */
-	int fstype = fslist_getType(argv[3]);
-	if(fstype == -1)
-		error("Unable to find filesystem '%s'",argv[3]);
+	uint fstype = 0;
+	for(i = 0; i < ARRAY_SIZE(types); i++) {
+		if(strcmp(types[i].name,argv[3]) == 0) {
+			fstype = types[i].type;
+			break;
+		}
+	}
 
-	dev_t rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/",argv[2],fstype);
+	dev_t rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,argv[2],fstype);
 	if(rootDev < 0)
 		error("Unable to add root mount-point");
 	sFSInst *root = mount_get(rootDev);
 	if(root == NULL)
 		error("Unable to get root mount-point");
 	cmds_setRoot(rootDev,root);
-	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->device,argv[3]);
+	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->driver,argv[3]);
 	fflush(stdout);
 
-	/* register device */
-	id = createdev("/dev/fs",DEV_TYPE_FS,0);
+	/* register driver */
+	id = regDriver("fs",DRV_FS);
 	if(id < 0)
-		error("Unable to register device 'fs'");
+		error("Unable to register driver 'fs'");
 
 	/* set permissions to zero; the kernel will open the file to us and won't check them */
 	if(chmod("/dev/fs",0) < 0)
@@ -118,16 +142,15 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* clean up */
-	infodev_shutdown();
 	tpool_shutdown();
-	join(0);
 	shutdown();
 	close(id);
 
 	return EXIT_SUCCESS;
 }
 
-static void sigTermHndl(A_UNUSED int sig) {
+static void sigTermHndl(int sig) {
+	UNUSED(sig);
 	/* notify init that we're alive and promise to terminate as soon as possible */
 	init_iamalive();
 	run = false;

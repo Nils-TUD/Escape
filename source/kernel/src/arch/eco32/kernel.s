@@ -145,7 +145,7 @@ start:
 	jal		intrpt_setMask
 
 	# enable keyboard-interrupts to be able to react on F12 for entering the debugging-console before
-	# the keyboard device is running
+	# the keyboard driver is running
 	add		$8,$0,KEYBOARD_BASE
 	add		$9,$0,0x2
 	stw		$9,$8,0

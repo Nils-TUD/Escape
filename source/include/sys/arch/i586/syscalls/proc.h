@@ -20,13 +20,11 @@
 #ifndef I586_SYSCALLS_PROC_H_
 #define I586_SYSCALLS_PROC_H_
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_requestIOPorts(sThread *t,sIntrptStackFrame *stack);
-int sysc_releaseIOPorts(sThread *t,sIntrptStackFrame *stack);
-int sysc_vm86start(sThread *t,sIntrptStackFrame *stack);
-int sysc_vm86int(sThread *t,sIntrptStackFrame *stack);
+int sysc_requestIOPorts(sIntrptStackFrame *stack);
+int sysc_releaseIOPorts(sIntrptStackFrame *stack);
+int sysc_vm86start(sIntrptStackFrame *stack);
+int sysc_vm86int(sIntrptStackFrame *stack);
 
 #endif /* I586_SYSCALLS_PROC_H_ */

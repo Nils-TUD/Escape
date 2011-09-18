@@ -113,8 +113,10 @@ static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node) {
 	}
 }
 
-static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *node,
-		USER void *buffer,off_t offset,size_t count) {
+static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
+		size_t count) {
+	UNUSED(pid);
+	UNUSED(file);
 	size_t byteCount,total;
 	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
@@ -203,8 +205,10 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 	return total;
 }
 
-static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,
-		USER const void *buffer,off_t offset,size_t count) {
+static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buffer,
+		off_t offset,size_t count) {
+	UNUSED(pid);
+	UNUSED(file);
 	sPipeData *data;
 	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;

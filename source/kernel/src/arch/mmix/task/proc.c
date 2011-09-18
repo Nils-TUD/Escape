@@ -21,13 +21,14 @@
 #include <sys/task/proc.h>
 #include <sys/mem/paging.h>
 
-int proc_cloneArch(A_UNUSED sProc *dst,A_UNUSED const sProc *src) {
-	/* nothing to do */
+int proc_cloneArch(sProc *dst,const sProc *src) {
+	UNUSED(dst);
+	UNUSED(src);
 	return 0;
 }
 
-void proc_terminateArch(A_UNUSED sProc *p) {
-	/* nothing to do */
+void proc_terminateArch(sProc *p) {
+	UNUSED(p);
 }
 
 size_t proc_getKMemUsageOf(sProc *p) {

@@ -24,6 +24,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/real.h>
 #include <sys/boot.h>
 #include <sys/log.h>
 #include <sys/cpu.h>
@@ -40,7 +41,8 @@ static void uenv_startSignalHandler(sThread *t,sig_t sig,fSignal handler);
 static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
-void uenv_handleSignal(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	sig_t sig;
 	fSignal handler;
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
@@ -50,7 +52,8 @@ void uenv_handleSignal(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 		thread_switch();
 }
 
-int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,sig_t signal) {
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
+	UNUSED(stack);
 	sThread *t = thread_getRunning();
 	sIntrptStackFrame *curStack = thread_getIntrptStack(t);
 	uint64_t *regs;
@@ -71,14 +74,16 @@ int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,sig_t signal) {
 			regs = (uint64_t*)KEYBOARD_BASE;
 			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 			break;
-		/* not necessary for disk here; the device will reenable interrupts as soon as a new
+		/* not necessary for disk here; the driver will reenable interrupts as soon as a new
 		 * command is started */
 	}
 	return 0;
 }
 
-bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sStartupInfo *info,
-		uintptr_t entryPoint,A_UNUSED int fd) {
+bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo *info,
+		uintptr_t entryPoint,int fd) {
+	UNUSED(argsSize);
+	UNUSED(fd);
 	uint64_t *ssp,*rsp;
 	char **argv;
 	sThread *t = thread_getRunning();

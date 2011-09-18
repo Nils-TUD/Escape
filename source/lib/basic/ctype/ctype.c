@@ -20,13 +20,13 @@
 #include <stddef.h>
 #include <ctype.h>
 
-uchar ctypetbl[] = {
+char ctypetbl[] = {
 	/* 00 .. 03: NUL, SOH, STX, ETX */
 	CT_CTRL, CT_CTRL, CT_CTRL, CT_CTRL,
 	/* 04 .. 07: EOT, ENQ, ACK, \a */
 	CT_CTRL, CT_CTRL, CT_CTRL, CT_CTRL,
 	/* 08 .. 0B: \b, \t, \n, \v */
-	CT_CTRL, CT_CTRL | CT_BLANK, CT_CTRL | CT_SPACE, CT_CTRL | CT_SPACE,
+	CT_CTRL, CT_CTRL | CT_SPACE, CT_CTRL | CT_SPACE, CT_CTRL | CT_SPACE,
 	/* 0C .. 0F: \f, \r, SO, SI */
 	CT_CTRL | CT_SPACE, CT_CTRL | CT_SPACE, CT_CTRL, CT_CTRL,
 	/* 10 .. 13: DLE, DC1, DC2, DC3 */
@@ -38,7 +38,7 @@ uchar ctypetbl[] = {
 	/* 1C .. 1F: FS, GS, RS, US */
 	CT_CTRL, CT_CTRL, CT_CTRL, CT_CTRL,
 	/* 20 .. 23: SP, !, ", # */
-	CT_BLANK, CT_PUNCT, CT_PUNCT, CT_PUNCT,
+	CT_SPACE, CT_PUNCT, CT_PUNCT, CT_PUNCT,
 	/* 24 .. 27: $, %, &, ' */
 	CT_PUNCT, CT_PUNCT, CT_PUNCT, CT_PUNCT,
 	/* 28 .. 2B: (, ), *, + */

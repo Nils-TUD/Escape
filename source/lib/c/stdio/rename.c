@@ -22,8 +22,9 @@
 #include <assert.h>
 
 int rename(const char *old,const char *newn) {
-	int res = link(old,newn);
-	if(res < 0)
-		return res;
-	return unlink(old);
+	UNUSED(old);
+	UNUSED(newn);
+	/* TODO not supported atm */
+	assert(false);
+	return -1;
 }

@@ -31,14 +31,17 @@ sASTNode *ast_createIntExpr(tIntType val) {
 	return node;
 }
 
-sValue *ast_execIntExpr(A_UNUSED sEnv *e,sIntExpr *n) {
+sValue *ast_execIntExpr(sEnv *e,sIntExpr *n) {
+	UNUSED(e);
 	return val_createInt(n->val);
 }
 
-void ast_printIntExpr(sIntExpr *s,A_UNUSED uint layer) {
+void ast_printIntExpr(sIntExpr *s,uint layer) {
+	UNUSED(layer);
 	printf("%d",s->val);
 }
 
-void ast_destroyIntExpr(A_UNUSED sIntExpr *n) {
+void ast_destroyIntExpr(sIntExpr *n) {
 	/* nothing to do */
+	UNUSED(n);
 }

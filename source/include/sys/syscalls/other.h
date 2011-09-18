@@ -20,13 +20,11 @@
 #ifndef SYSCALLS_OTHER_H_
 #define SYSCALLS_OTHER_H_
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_loadMods(sThread *t,sIntrptStackFrame *stack);
-int sysc_debugc(sThread *t,sIntrptStackFrame *stack);
-int sysc_debug(sThread *t,sIntrptStackFrame *stack);
-int sysc_getConf(sThread *t,sIntrptStackFrame *stack);
+int sysc_loadMods(sIntrptStackFrame *stack);
+int sysc_debugc(sIntrptStackFrame *stack);
+int sysc_debug(sIntrptStackFrame *stack);
+int sysc_getConf(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_OTHER_H_ */

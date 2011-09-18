@@ -58,6 +58,7 @@ void tpool_shutdown(void) {
 	run = false;
 	for(i = 0; i < REQ_THREAD_COUNT; i++)
 		notify(threads[i].tid,EV_USER1);
+	join(0);
 }
 
 size_t tpool_tidToId(tid_t tid) {

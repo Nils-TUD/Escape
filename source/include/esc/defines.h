@@ -40,12 +40,14 @@
 	((end1) > (start2) && (end1) <= (end2)) ||			/* end in range */		\
 	((start1) < (start2) && (end1) > (end2)))			/* complete overlapped */
 
+/* for declaring unused parameters */
+#define UNUSED(x)				(void)(x)
+
 /* gcc-attributes */
 #define A_PACKED				__attribute__((packed))
 #define A_ALIGNED(x)			__attribute__((aligned (x)))
 #define A_CHECKRET				__attribute__((__warn_unused_result__))
 #define A_NORETURN				__attribute__((noreturn))
 #define A_INIT					__attribute__((section(".ctors")))
-#define A_UNUSED				__attribute__((unused))
 
 #endif /* DEFINES_H_ */

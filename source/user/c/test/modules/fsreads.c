@@ -30,7 +30,9 @@
 
 static int threadFunc(void *arg);
 
-int mod_fsreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_fsreads(int argc,char *argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
 	size_t i;
 	for(i = 0; i < THREAD_COUNT; i++) {
 		if(startThread(threadFunc,(void*)"/zeros") < 0)

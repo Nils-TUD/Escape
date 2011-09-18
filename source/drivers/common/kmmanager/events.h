@@ -32,11 +32,11 @@ void events_init(void);
  * Sends the given keymap-data to all that listen to the corresponding keycode/character,
  * modifier and pressed/released combination
  *
- * @param device the device-id
+ * @param driver the driver-id
  * @param km the keymap-data
  * @return true if we've sent it to somebody
  */
-bool events_send(int device,sKmData *km);
+bool events_send(int driver,sKmData *km);
 
 /**
  * Adds the given listener

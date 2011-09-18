@@ -20,11 +20,16 @@
 #include <sys/common.h>
 #include <sys/task/elf.h>
 
-int elf_finishFromMem(A_UNUSED const void *code,A_UNUSED size_t length,A_UNUSED sStartupInfo *info) {
+int elf_finishFromMem(const void *code,size_t length,sStartupInfo *info) {
+	UNUSED(code);
+	UNUSED(length);
+	UNUSED(info);
 	return 0;
 }
 
-int elf_finishFromFile(A_UNUSED file_t file,A_UNUSED const sElfEHeader *eheader,
-		A_UNUSED sStartupInfo *info) {
+int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info) {
+	UNUSED(file);
+	UNUSED(eheader);
+	UNUSED(info);
 	return 0;
 }

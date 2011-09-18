@@ -26,7 +26,8 @@
 #include <stdlib.h>
 #include "fault.h"
 
-static void sig_segf(A_UNUSED int sig) {
+static void sig_segf(int sig) {
+	UNUSED(sig);
 	fflush(stdout);
 	if(setSigHandler(SIG_SEGFAULT,SIG_DFL) < 0)
 		error("Unable to unset signal-handler");
@@ -34,9 +35,11 @@ static void sig_segf(A_UNUSED int sig) {
 		error("Unable to commit suicide");
 }
 
-int mod_fault(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_fault(int argc,char *argv[]) {
 	uint *ptr;
 	int fd;
+	UNUSED(argc);
+	UNUSED(argv);
 	if(setSigHandler(SIG_SEGFAULT,sig_segf) < 0)
 		error("Unable to set signal-handler");
 	printf("I am evil ^^\n");

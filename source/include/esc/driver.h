@@ -32,16 +32,11 @@
 #include <esc/arch/mmix/driver.h>
 #endif
 
-#define DEV_OPEN					1
-#define DEV_READ					2
-#define DEV_WRITE					4
-#define DEV_CLOSE					8
-
-#define DEV_TYPE_FS					0
-#define DEV_TYPE_BLOCK				1
-#define DEV_TYPE_CHAR				2
-#define DEV_TYPE_FILE				3
-#define DEV_TYPE_SERVICE			4
+#define DRV_OPEN					1
+#define DRV_READ					2
+#define DRV_WRITE					4
+#define DRV_CLOSE					8
+#define DRV_FS						16
 
 #define GW_NOBLOCK					1
 
@@ -50,14 +45,13 @@ extern "C" {
 #endif
 
 /**
- * Creates a device at given path.
+ * Registers a driver with given name.
  *
- * @param path the path
- * @param type the device-type (DEV_TYPE_*)
- * @param ops the supported operations (DEV_*)
+ * @param name the driver-name. Should be alphanumeric!
+ * @param flags what functions do you want to implement (DRV_*) ?
  * @return the file-desc if successfull, < 0 if an error occurred
  */
-int createdev(const char *path,uint type,uint ops) A_CHECKRET;
+int regDriver(const char *name,uint flags) A_CHECKRET;
 
 /**
  * Fetches the client-id from the given file-descriptor
@@ -70,7 +64,7 @@ inode_t getClientId(int fd);
 /**
  * Opens a file for the client with given client-id.
  *
- * @param fd the file-descriptor for the device
+ * @param fd the file-descriptor for the driver
  * @param cid the client-id
  * @return the file-descriptor or a negative error-code
  */

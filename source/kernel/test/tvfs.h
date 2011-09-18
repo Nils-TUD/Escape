@@ -17,14 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <math.h>
+#ifndef TVFS_H_
+#define TVFS_H_
 
-int isinf(double x) {
-	union {
-		double d;
-		uint64_t i;
-	} val;
-	val.d = x;
-	return (val.i & 0x7FFFFFFFFFFFFFFFULL) == 0x7FF0000000000000ULL;
-}
+#include <esc/test.h>
+
+extern sTestModule tModVFS;
+
+#endif /* TVFS_H_ */

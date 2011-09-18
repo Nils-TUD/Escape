@@ -28,10 +28,10 @@
 #include <assert.h>
 #include <errors.h>
 
-int sysc_requestIOPorts(sThread *t,sIntrptStackFrame *stack) {
+int sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = proc_getRunning();
 	int err;
 
 	/* check range */
@@ -44,10 +44,10 @@ int sysc_requestIOPorts(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_releaseIOPorts(sThread *t,sIntrptStackFrame *stack) {
+int sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = proc_getRunning();
 	int err;
 
 	/* check range */
@@ -60,13 +60,14 @@ int sysc_releaseIOPorts(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_vm86start(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+int sysc_vm86start(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 	assert(vm86_create() == 0);
 	/* don't change any registers on the stack here */
 	return 0;
 }
 
-int sysc_vm86int(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_vm86int(sIntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	sVM86Regs *regs = (sVM86Regs*)SYSC_ARG2(stack);
 	sVM86Memarea *mArea = (sVM86Memarea*)SYSC_ARG3(stack);

@@ -56,9 +56,9 @@ int main(void) {
 
 	events_init();
 
-	ids[0] = createdev("/dev/kmmanager",DEV_TYPE_CHAR,DEV_READ);
+	ids[0] = regDriver("kmmanager",DRV_READ);
 	if(ids[0] < 0)
-		error("Unable to register device 'kmmanager'");
+		error("Unable to register driver 'kmmanager'");
 
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKmData),BUF_SIZE,RB_OVERWRITE);
@@ -79,9 +79,9 @@ int main(void) {
 	if(!map)
 		error("Unable to load default keymap");
 
-	ids[1] = createdev("/dev/keyevents",DEV_TYPE_SERVICE,0);
+	ids[1] = regDriver("keyevents",0);
 	if(ids[1] < 0)
-		error("Unable to register device 'keyevents'");
+		error("Unable to register driver 'keyevents'");
 
 	if(startThread(kbClientThread,NULL) < 0)
 		error("Unable to start thread for reading from kb");
@@ -105,14 +105,15 @@ int main(void) {
 			else if(drv == ids[1])
 				handleKeyevents(mid,fd);
 			else
-				printe("[KM] Unknown device-id %d\n",drv);
+				printe("[KM] Unknown driver-id %d\n",drv);
 			close(fd);
 		}
 	}
 	return EXIT_SUCCESS;
 }
 
-static int kbClientThread(A_UNUSED void *arg) {
+static int kbClientThread(void *arg) {
+	UNUSED(arg);
 	static sKmData data;
 	static sKbData kbData[KB_DATA_BUF_SIZE];
 	int kbFd;
@@ -155,7 +156,7 @@ static int kbClientThread(A_UNUSED void *arg) {
 
 static void handleKeymap(msgid_t mid,int fd) {
 	switch(mid) {
-		case MSG_DEV_READ: {
+		case MSG_DRV_READ: {
 			/* offset is ignored here */
 			size_t count = msg.args.arg2 / sizeof(sKmData);
 			sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
@@ -165,9 +166,9 @@ static void handleKeymap(msgid_t mid,int fd) {
 				msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
 			msg.args.arg2 = rb_length(rbuf) > 0;
 			unlocku(&lck);
-			send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+			send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 			if(buffer) {
-				send(fd,MSG_DEV_READ_RESP,buffer,count * sizeof(sKmData));
+				send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKmData));
 				free(buffer);
 			}
 		}

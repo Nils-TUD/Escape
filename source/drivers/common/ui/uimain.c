@@ -45,7 +45,8 @@ static uchar keys[] = {
 	VK_1,VK_2,VK_3,VK_4,VK_5,VK_6,VK_7
 };
 
-static void childTermHandler(A_UNUSED int sig) {
+static void childTermHandler(int sig) {
+	UNUSED(sig);
 	RETRY(waitChild(NULL));
 }
 

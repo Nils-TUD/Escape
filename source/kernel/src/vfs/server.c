@@ -24,7 +24,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/channel.h>
-#include <sys/vfs/device.h>
+#include <sys/vfs/server.h>
 #include <sys/video.h>
 #include <sys/klock.h>
 #include <esc/messages.h>
@@ -33,135 +33,125 @@
 #include <errors.h>
 
 #define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
-#define DRV_IS_FS(mode)				(((mode) & MODE_TYPE_DEVMASK) == MODE_TYPE_FSDEV)
+#define DRV_IS_FS(funcs)			((funcs) == DRV_FS)
 
 typedef struct {
 	/* whether there is data to read or not */
 	bool isEmpty;
 	/* implemented functions */
 	uint funcs;
-	/* total number of messages in all channels (for the device, not the clients) */
+	/* total number of messages in all channels (for the server, not the clients) */
 	ulong msgCount;
 	/* the last served client */
 	sVFSNode *lastClient;
-} sDevice;
+} sServer;
 
-static void vfs_device_close(pid_t pid,file_t file,sVFSNode *node);
-static void vfs_device_destroy(sVFSNode *node);
-static void vfs_device_wakeupClients(sVFSNode *node,uint events,bool locked);
+static void vfs_server_close(pid_t pid,file_t file,sVFSNode *node);
+static void vfs_server_destroy(sVFSNode *node);
+static void vfs_server_wakeupClients(sVFSNode *node,uint events,bool locked);
 
-sVFSNode *vfs_device_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint ops) {
-	sDevice *dev;
+sVFSNode *vfs_server_create(pid_t pid,sVFSNode *parent,char *name,uint flags) {
+	sServer *srv;
 	sVFSNode *node = vfs_node_create(pid,name);
 	if(node == NULL)
 		return NULL;
 
-	node->mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
-	if(type == DEV_TYPE_BLOCK)
-		node->mode |= MODE_TYPE_BLKDEV;
-	else if(type == DEV_TYPE_CHAR)
-		node->mode |= MODE_TYPE_CHARDEV;
-	else if(type == DEV_TYPE_FILE)
-		node->mode |= MODE_TYPE_FILEDEV;
-	else if(type == DEV_TYPE_SERVICE)
-		node->mode |= MODE_TYPE_SERVDEV;
-	else {
-		assert(type == DEV_TYPE_FS);
-		node->mode |= MODE_TYPE_FSDEV;
-	}
+	node->mode = MODE_TYPE_DRIVER | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
 	node->read = NULL;
 	node->write = NULL;
 	node->seek = NULL;
-	node->close = vfs_device_close;
-	node->destroy = vfs_device_destroy;
+	node->close = vfs_server_close;
+	node->destroy = vfs_server_destroy;
 	node->data = NULL;
-	dev = (sDevice*)cache_alloc(sizeof(sDevice));
-	if(!dev) {
+	srv = (sServer*)cache_alloc(sizeof(sServer));
+	if(!srv) {
 		vfs_node_destroy(node);
 		return NULL;
 	}
-	dev->funcs = ops;
-	/* block- and file-devices are none-empty by default, because their data is always available */
-	dev->isEmpty = type != DEV_TYPE_BLOCK && type != DEV_TYPE_FILE;
-	dev->lastClient = NULL;
-	dev->msgCount = 0;
-	node->data = dev;
+	srv->funcs = flags;
+	srv->isEmpty = true;
+	srv->lastClient = NULL;
+	srv->msgCount = 0;
+	node->data = srv;
 	vfs_node_append(parent,node);
 	return node;
 }
 
-static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node) {
+static void vfs_server_close(pid_t pid,file_t file,sVFSNode *node) {
+	UNUSED(pid);
+	UNUSED(file);
 	vfs_node_destroy(node);
 }
 
-static void vfs_device_destroy(sVFSNode *node) {
+static void vfs_server_destroy(sVFSNode *node) {
 	if(node->data) {
 		/* wakeup all threads that may be waiting for this node so they can check
-		 * whether they are affected by the remove of this device and perform the corresponding
+		 * whether they are affected by the remove of this driver and perform the corresponding
 		 * action */
-		vfs_device_wakeupClients(node,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE,false);
+		vfs_server_wakeupClients(node,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE,false);
 		cache_free(node->data);
 		node->data = NULL;
 	}
 }
 
-void vfs_device_clientRemoved(sVFSNode *node,const sVFSNode *client) {
-	sDevice *dev = (sDevice*)node->data;
+void vfs_server_clientRemoved(sVFSNode *node,const sVFSNode *client) {
+	sServer *srv = (sServer*)node->data;
 	/* we don't have to lock this, because its only called in vfs_chan_destroy(), which can only
-	 * be called when this device-node is locked. i.e. it is not possible during getWork() */
-	if(dev->lastClient == client)
-		dev->lastClient = NULL;
+	 * be called when this server-node is locked. i.e. it is not possible during getWork() */
+	if(srv->lastClient == client)
+		srv->lastClient = NULL;
 }
 
-bool vfs_device_accepts(const sVFSNode *node,uint id) {
-	if(DRV_IS_FS(node->mode))
+bool vfs_server_accepts(const sVFSNode *node,uint id) {
+	sServer *srv = (sServer*)node->data;
+	if(DRV_IS_FS(srv->funcs))
 		return true;
-	return id == MSG_DEV_OPEN_RESP || id == MSG_DEV_READ_RESP || id == MSG_DEV_WRITE_RESP;
+	return id == MSG_DRV_OPEN_RESP || id == MSG_DRV_READ_RESP || id == MSG_DRV_WRITE_RESP;
 }
 
-bool vfs_device_supports(const sVFSNode *node,uint funcs) {
-	sDevice *dev = (sDevice*)node->data;
-	return DRV_IMPL(dev->funcs,funcs);
+bool vfs_server_supports(const sVFSNode *node,uint funcs) {
+	sServer *srv = (sServer*)node->data;
+	return DRV_IMPL(srv->funcs,funcs);
 }
 
-bool vfs_device_isReadable(const sVFSNode *node) {
-	sDevice *dev = (sDevice*)node->data;
-	return !dev->isEmpty;
+bool vfs_server_isReadable(const sVFSNode *node) {
+	sServer *srv = (sServer*)node->data;
+	return !srv->isEmpty;
 }
 
-int vfs_device_setReadable(sVFSNode *node,bool readable) {
-	sDevice *dev = (sDevice*)node->data;
-	if(!DRV_IMPL(dev->funcs,DEV_READ))
+int vfs_server_setReadable(sVFSNode *node,bool readable) {
+	sServer *srv = (sServer*)node->data;
+	if(!DRV_IMPL(srv->funcs,DRV_READ))
 		return ERR_UNSUPPORTED_OP;
-	bool wasEmpty = dev->isEmpty;
-	dev->isEmpty = !readable;
+	bool wasEmpty = srv->isEmpty;
+	srv->isEmpty = !readable;
 	if(wasEmpty && readable)
-		vfs_device_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE,true);
+		vfs_server_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE,true);
 	return 0;
 }
 
-void vfs_device_addMsg(sVFSNode *node) {
-	sDevice *dev = (sDevice*)node->data;
+void vfs_server_addMsg(sVFSNode *node) {
+	sServer *srv = (sServer*)node->data;
 	klock_aquire(&node->lock);
-	dev->msgCount++;
+	srv->msgCount++;
 	klock_release(&node->lock);
 }
 
-void vfs_device_remMsg(sVFSNode *node) {
-	sDevice *dev = (sDevice*)node->data;
+void vfs_server_remMsg(sVFSNode *node) {
+	sServer *srv = (sServer*)node->data;
 	klock_aquire(&node->lock);
-	assert(dev->msgCount > 0);
-	dev->msgCount--;
+	assert(srv->msgCount > 0);
+	srv->msgCount--;
 	klock_release(&node->lock);
 }
 
-bool vfs_device_hasWork(sVFSNode *node) {
-	sDevice *dev = (sDevice*)node->data;
-	return dev->msgCount > 0;
+bool vfs_server_hasWork(sVFSNode *node) {
+	sServer *srv = (sServer*)node->data;
+	return srv->msgCount > 0;
 }
 
-sVFSNode *vfs_device_getWork(sVFSNode *node,bool *cont,bool *retry) {
-	sDevice *dev = (sDevice*)node->data;
+sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {
+	sServer *srv = (sServer*)node->data;
 	sVFSNode *n,*last;
 	bool isValid;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every
@@ -169,23 +159,23 @@ sVFSNode *vfs_device_getWork(sVFSNode *node,bool *cont,bool *retry) {
 	 * served client and continue from the next one. */
 
 	/* search for a slot that needs work */
-	/* we don't need to lock the device-data here; the node with vfs_node_openDir() is sufficient */
+	/* we don't need to lock the server-data here; the node with vfs_node_openDir() is sufficient */
 	/* because it can't be called twice because the waitLock in vfs prevents it. and nothing of the
-	 * device-data that is used here can be changed during this procedure. */
+	 * server-data that is used here can be changed during this procedure. */
 	n = vfs_node_openDir(node,true,&isValid);
 	/* if there are no messages at all or the node is invalid, stop right now */
-	if(!isValid || dev->msgCount == 0) {
+	if(!isValid || srv->msgCount == 0) {
 		vfs_node_closeDir(node,true);
 		return NULL;
 	}
 
-	last = dev->lastClient;
+	last = srv->lastClient;
 	if(last != NULL) {
 		if(last->next == NULL) {
 			vfs_node_closeDir(node,true);
-			/* if we have checked all clients in this device, give the other devices
+			/* if we have checked all clients in this driver, give the other drivers
 			 * a chance (if there are any others) */
-			dev->lastClient = NULL;
+			srv->lastClient = NULL;
 			*retry = true;
 			return NULL;
 		}
@@ -199,7 +189,7 @@ searchBegin:
 		if(vfs_chan_hasWork(n)) {
 			vfs_node_closeDir(node,true);
 			*cont = false;
-			dev->lastClient = n;
+			srv->lastClient = n;
 			return n;
 		}
 		n = n->next;
@@ -209,24 +199,24 @@ searchBegin:
 	 * store it because we'll not check it again */
 	if(last && n == last && vfs_chan_hasWork(n))
 		return n;
-	if(dev->lastClient) {
+	if(srv->lastClient) {
 		n = vfs_node_openDir(node,true,&isValid);
 		if(!isValid) {
 			vfs_node_closeDir(node,true);
 			return NULL;
 		}
-		dev->lastClient = NULL;
+		srv->lastClient = NULL;
 		goto searchBegin;
 	}
 	return NULL;
 }
 
-void vfs_device_print(sVFSNode *n) {
+void vfs_server_print(sVFSNode *n) {
 	bool isValid;
-	sDevice *dev = (sDevice*)n->data;
+	sServer *srv = (sServer*)n->data;
 	sVFSNode *chan = vfs_node_openDir(n,true,&isValid);
 	if(isValid) {
-		vid_printf("\t%s (%s):\n",n->name,dev->isEmpty ? "empty" : "full");
+		vid_printf("\t%s (%s):\n",n->name,srv->isEmpty ? "empty" : "full");
 		while(chan != NULL) {
 			vfs_chan_print(chan);
 			chan = chan->next;
@@ -236,7 +226,7 @@ void vfs_device_print(sVFSNode *n) {
 	vfs_node_closeDir(n,true);
 }
 
-static void vfs_device_wakeupClients(sVFSNode *node,uint events,bool locked) {
+static void vfs_server_wakeupClients(sVFSNode *node,uint events,bool locked) {
 	bool isValid;
 	sVFSNode *n = vfs_node_openDir(node,locked,&isValid);
 	if(isValid) {

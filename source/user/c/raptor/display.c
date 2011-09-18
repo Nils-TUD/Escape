@@ -31,8 +31,8 @@
 #include "objlist.h"
 #include "game.h"
 
-#define VIDEO_DEVICE		"/dev/video"
-#define VESA_DEVICE			"/dev/vesatext"
+#define VIDEO_DRIVER		"/dev/video"
+#define VESA_DRIVER			"/dev/vesatext"
 
 #define SCORE_WIDTH			10
 #define SCORE_HEIGHT		4
@@ -88,11 +88,11 @@ static char *backup = NULL;
 bool displ_init(void) {
 	int vidMode = getConf(CONF_BOOT_VIDEOMODE);
 	if(vidMode == CONF_VIDMODE_VGATEXT)
-		video = open(VIDEO_DEVICE,IO_WRITE | IO_MSGS);
+		video = open(VIDEO_DRIVER,IO_WRITE | IO_MSGS);
 	else
-		video = open(VESA_DEVICE,IO_WRITE | IO_MSGS);
+		video = open(VESA_DRIVER,IO_WRITE | IO_MSGS);
 	if(video < 0) {
-		fprintf(stderr,"Unable to open video-device\n");
+		fprintf(stderr,"Unable to open video-driver\n");
 		return false;
 	}
 
@@ -131,7 +131,7 @@ void displ_update(void) {
 	if(seek(video,WIDTH * 2,SEEK_SET) < 0)
 		printe("Seek to %d failed",WIDTH * 2);
 	if(write(video,buffer,WIDTH * HEIGHT * 2) < 0)
-		printe("Write to video-device failed");
+		printe("Write to video-driver failed");
 }
 
 static void displ_drawScore(void) {

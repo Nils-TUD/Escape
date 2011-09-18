@@ -154,22 +154,12 @@ void vfs_node_dirname(char *path,size_t len);
 /**
  * Finds the child-node with name <name>
  *
- * @param dir the directory (locked)
+ * @param nodeNo the parent-node
  * @param name the name
  * @param nameLen the length of the name
  * @return the node or NULL
  */
-sVFSNode *vfs_node_findInDir(sVFSNode *dir,const char *name,size_t nameLen);
-
-/**
- * Finds the child-node with name <name>
- *
- * @param nodeNo the node-number of the directory
- * @param name the name
- * @param nameLen the length of the name
- * @return the node or NULL
- */
-sVFSNode *vfs_node_findInDirOf(inode_t nodeNo,const char *name,size_t nameLen);
+sVFSNode *vfs_node_findInDir(inode_t nodeNo,const char *name,size_t nameLen);
 
 /**
  * Creates a (incomplete) node without appending it

@@ -68,9 +68,9 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/video",DEV_TYPE_BLOCK,DEV_WRITE);
+	id = regDriver("video",DRV_WRITE);
 	if(id < 0)
-		error("Unable to register device 'video'");
+		error("Unable to register driver 'video'");
 
 	/* map video-memory for our process */
 	videoData = (uint8_t*)mapPhysical(VIDEO_MEM,mode->cols * (mode->rows + 1) * 2);
@@ -93,7 +93,7 @@ int main(void) {
 		else {
 			/* see what we have to do */
 			switch(mid) {
-				case MSG_DEV_WRITE: {
+				case MSG_DRV_WRITE: {
 					uint offset = msg.args.arg1;
 					size_t count = msg.args.arg2;
 					msg.args.arg1 = 0;
@@ -101,7 +101,7 @@ int main(void) {
 						if(RETRY(receive(fd,&mid,videoData + offset,count)) >= 0)
 							msg.args.arg1 = count;
 					}
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 

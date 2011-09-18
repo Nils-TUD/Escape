@@ -52,7 +52,8 @@ static char *drvName;
 static GUITerm *gt;
 static int childPid;
 
-static void sigUsr1(A_UNUSED int sig) {
+static void sigUsr1(int sig) {
+	UNUSED(sig);
 	Application::getInstance()->exit();
 	gt->stop();
 }
@@ -76,14 +77,14 @@ int main(int argc,char **argv) {
 	// use a lock here to ensure that no one uses our guiterm-number
 	lockg(GUI_SHELL_LOCK,LOCK_EXCLUSIVE);
 
-	// announce device; try to find an unused device-name because maybe a user wants
+	// announce driver; try to find an unused driver-name because maybe a user wants
 	// to start us multiple times
 	int sid;
 	size_t no = 0;
 	drvName = new char[MAX_PATH_LEN + 1];
 	do {
-		snprintf(drvName,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
-		sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
+		snprintf(drvName,MAX_PATH_LEN + 1,"guiterm%d",no);
+		sid = regDriver(drvName,DRV_READ | DRV_WRITE);
 		if(sid >= 0)
 			break;
 		no++;
@@ -94,14 +95,14 @@ int main(int argc,char **argv) {
 	// set term as env-variable
 	setenv("TERM",drvName);
 
-	// start the gui and the device in a separate process. this way, the forks the shell performs
+	// start the gui and the driver in a separate process. this way, the forks the shell performs
 	// are cheaper because its address-space is smaller.
 	if((childPid = fork()) == 0)
 		return guiProc();
 	else if(childPid < 0)
 		error("fork failed");
 
-	// wait until the device is announced
+	// wait until the driver is announced
 	char *drvPath = new char[MAX_PATH_LEN + 1];
 	snprintf(drvPath,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
 	int fin;
@@ -112,7 +113,7 @@ int main(int argc,char **argv) {
 	}
 	while(fin < 0);
 
-	// redirect fds so that stdin, stdout and stderr refer to our device
+	// redirect fds so that stdin, stdout and stderr refer to our driver
 	if(redirFd(STDIN_FILENO,fin) < 0)
 		error("Unable to redirect STDIN to %d",fin);
 	int fout = open(drvPath,IO_WRITE | IO_MSGS);
@@ -138,11 +139,11 @@ int main(int argc,char **argv) {
 }
 
 static int guiProc(void) {
-	// re-register device
-	int sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
+	// re-register driver
+	int sid = regDriver(drvName,DRV_READ | DRV_WRITE);
 	unlockg(GUI_SHELL_LOCK);
 	if(sid < 0)
-		error("Unable to re-register device %s",drvName);
+		error("Unable to re-register driver %s",drvName);
 	delete[] drvName;
 
 	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
@@ -167,7 +168,8 @@ static int guiProc(void) {
 	return res;
 }
 
-static int termThread(A_UNUSED void *arg) {
+static int termThread(void *arg) {
+	UNUSED(arg);
 	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
 		error("Unable to set signal-handler");
 	gt->run();

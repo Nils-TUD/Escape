@@ -51,8 +51,6 @@ typedef struct {
 	sCBlock *oldestBlock;
 	sCBlock *freeBlocks;
 	sCBlock *blockCache;
-	size_t hits;
-	size_t misses;
 } sBlockCache;
 
 /**
@@ -112,14 +110,6 @@ sCBlock *bcache_request(sBlockCache *c,block_t blockNo,uint mode);
  */
 void bcache_release(sCBlock *b);
 
-/**
- * Prints statistics about the given blockcache to the given file
- *
- * @param f the file
- * @param c the block-cache
- */
-void bcache_printStats(FILE *f,sBlockCache *c);
-
 #if DEBUGGING
 
 /**
@@ -128,6 +118,11 @@ void bcache_printStats(FILE *f,sBlockCache *c);
  * @param c the block-cache
  */
 void bcache_print(sBlockCache *c);
+
+/**
+ * Prints block-cache statistics
+ */
+void bcache_printStats(void);
 
 #endif
 

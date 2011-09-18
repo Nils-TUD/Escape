@@ -32,7 +32,9 @@ static void pipeReadParent(void);
 static void pipeChild2Child(void);
 static void pipeThrough(void);
 
-int mod_pipe(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_pipe(int argc,char *argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
 	printf("Reading from child...\n");
 	fflush(stdout);
 	pipeReadChild();

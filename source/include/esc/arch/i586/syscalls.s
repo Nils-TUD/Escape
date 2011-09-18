@@ -26,7 +26,6 @@
 .global \name
 .type \name, @function
 \name:
-	xor		%ecx,%ecx						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
 	test	%ecx,%ecx
@@ -41,9 +40,8 @@
 .global \name
 .type \name, @function
 \name:
-	xor		%ecx,%ecx						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	mov		4(%esp),%edx					# set arg1
+	mov		4(%esp),%ecx					# set arg1
 	int		$SYSCALL_IRQ
 	test	%ecx,%ecx
 	jz		1f								# no-error?
@@ -57,20 +55,15 @@
 .global \name
 .type \name, @function
 \name:
-	push	%ebp
-	mov		%esp,%ebp
-	xor		%ecx,%ecx						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	mov		8(%ebp),%edx					# set arg1
-	pushl	12(%ebp)						# push arg2
+	mov		4(%esp),%ecx					# set arg1
+	mov		8(%esp),%edx					# set arg2
 	int		$SYSCALL_IRQ
-	add		$4,%esp							# remove arg2
 	test	%ecx,%ecx
 	jz		1f								# no-error?
 	STORE_ERRNO
 	mov		%ecx,%eax						# return error-code
 1:
-	leave
 	ret
 .endm
 
@@ -80,13 +73,12 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	mov		8(%ebp),%ecx					# set arg1
+	mov		12(%ebp),%edx					# set arg2
 	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
-	add		$8,%esp							# remove arg3 and arg2
+	add		$4,%esp							# remove arg3
 	test	%ecx,%ecx
 	jz		1f								# no-error?
 	STORE_ERRNO
@@ -102,14 +94,13 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	mov		8(%ebp),%ecx					# set arg1
+	mov		12(%ebp),%edx					# set arg2
 	pushl	20(%ebp)						# push arg4
 	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
-	add		$12,%esp						# remove arg2, arg3 and arg4
+	add		$8,%esp							# remove arg3 and arg4
 	test	%ecx,%ecx
 	jz		1f								# no-error?
 	STORE_ERRNO
@@ -125,15 +116,14 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	mov		8(%ebp),%ecx					# set arg1
+	mov		12(%ebp),%edx					# set arg2
 	pushl	24(%ebp)						# push arg5
 	pushl	20(%ebp)						# push arg4
 	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
-	add		$16,%esp						# remove args
+	add		$12,%esp						# remove arg3, arg4 and arg5
 	test	%ecx,%ecx
 	jz		1f								# no-error?
 	STORE_ERRNO
@@ -149,17 +139,16 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	mov		8(%ebp),%ecx					# set arg1
+	mov		12(%ebp),%edx					# set arg2
 	pushl	32(%ebp)						# push arg7
 	pushl	28(%ebp)						# push arg6
 	pushl	24(%ebp)						# push arg5
 	pushl	20(%ebp)						# push arg4
 	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
-	add		$24,%esp						# remove args
+	add		$20,%esp						# remove args
 	test	%ecx,%ecx
 	jz		1f								# no-error?
 	STORE_ERRNO
@@ -184,3 +173,4 @@
 	mov		%ecx,(errno)					# store error-code
 	.endif
 .endm
+

@@ -337,7 +337,7 @@ typedef struct {
 } sExt2CInode;
 
 typedef struct {
-	/* the file-descs for the device (one for each thread and one for the initial) */
+	/* the file-descs for the driver (one for each thread and one for the initial) */
 	int drvFds[REQ_THREAD_COUNT + 1];
 
 	/* superblock and blockgroups of that ext2-fs */
@@ -347,8 +347,6 @@ typedef struct {
 	sExt2BlockGrp *groups;
 
 	/* caches */
-	size_t icacheHits;
-	size_t icacheMisses;
 	sExt2CInode inodeCache[EXT2_ICACHE_SIZE];
 	sBlockCache blockCache;
 } sExt2;
@@ -356,11 +354,11 @@ typedef struct {
 /**
  * Inits the ext2-filesystem
  *
- * @param device the device-path
- * @param usedDev will be set to the used device
+ * @param driver the driver-path
+ * @param usedDev will be set to the used driver
  * @return the ext2-handle
  */
-void *ext2_init(const char *device,char **usedDev);
+void *ext2_init(const char *driver,char **usedDev);
 
 /**
  * Deinits the ext2-filesystem
@@ -429,14 +427,6 @@ size_t ext2_getBlockGroupCount(sExt2 *e);
  * @return true if so
  */
 bool ext2_bgHasBackups(sExt2 *e,block_t i);
-
-/**
- * Prints statistics and information to the given file
- *
- * @param f the file
- * @param h the handle
- */
-void ext2_print(FILE *f,void *h);
 
 
 #if DEBUGGING

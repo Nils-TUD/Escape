@@ -231,7 +231,8 @@ frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 	return pt->frameNumber;
 }
 
-frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
+frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
+	UNUSED(regFlags);
 	frameno_t frame = pmem_allocate();
 	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),buffer,loadCount);
 	return frame;

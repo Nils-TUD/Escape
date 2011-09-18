@@ -25,6 +25,10 @@
 #include <sys/task/timer.h>
 #include <sys/task/terminator.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/info.h>
+#include <sys/vfs/node.h>
+#include <sys/vfs/real.h>
+#include <sys/vfs/request.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
@@ -118,13 +122,14 @@ sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
 }
 
 size_t thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack) {
+	assert(t == thread_getRunning());
 	assert(t->intrptLevel < MAX_INTRPT_LEVELS);
 	t->intrptLevels[t->intrptLevel++] = stack;
 	return t->intrptLevel;
 }
 
 void thread_popIntrptLevel(sThread *t) {
-	assert(t->intrptLevel > 0);
+	assert(t == thread_getRunning() && t->intrptLevel > 0);
 	t->intrptLevel--;
 }
 

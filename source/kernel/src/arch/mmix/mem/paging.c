@@ -529,7 +529,8 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 	vid_unsetPrintFunc();
 }
 
-void paging_printPDir(tPageDir *pdir,A_UNUSED uint parts) {
+void paging_printPDir(tPageDir *pdir,uint parts) {
+	UNUSED(parts);
 	size_t i,j;
 	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rv & 0xFFFFFFE000);
 	/* go through all page-tables in the root-location */

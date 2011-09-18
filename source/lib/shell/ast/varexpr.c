@@ -49,7 +49,8 @@ sValue *ast_execVarExpr(sEnv *e,sVarExpr *n) {
 	return val_createInt(0);
 }
 
-void ast_printVarExpr(sVarExpr *s,A_UNUSED uint layer) {
+void ast_printVarExpr(sVarExpr *s,uint layer) {
+	UNUSED(layer);
 	if(s->index) {
 		printf("%s[",s->name);
 		ast_printTree(s->index,layer);

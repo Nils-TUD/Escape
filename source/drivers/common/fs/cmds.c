@@ -405,7 +405,7 @@ static void cmds_mount(int fd,sMsg *msg) {
 	u.uid = msg->str.arg2;
 	u.gid = msg->str.arg3;
 	u.pid = msg->str.arg4;
-	ino = root->fs->resPath(root->handle,&u,path,IO_READ,&devNo,false);
+	ino = root->fs->resPath(root->handle,&u,path,IO_READ,&devNo,true);
 	if(ino < 0)
 		msg->args.arg1 = ino;
 	else {
@@ -420,7 +420,7 @@ static void cmds_mount(int fd,sMsg *msg) {
 			else if(!S_ISDIR(info.mode))
 				msg->args.arg1 = ERR_NO_DIRECTORY;
 			else {
-				int pnt = mount_addMnt(devNo,ino,path,device,type);
+				int pnt = mount_addMnt(devNo,ino,device,type);
 				msg->args.arg1 = pnt < 0 ? pnt : 0;
 			}
 		}
@@ -444,7 +444,9 @@ static void cmds_unmount(int fd,sMsg *msg) {
 	send(fd,MSG_FS_UNMOUNT_RESP,msg,sizeof(msg->args));
 }
 
-static void cmds_sync(A_UNUSED int fd,A_UNUSED sMsg *msg) {
+static void cmds_sync(int fd,sMsg *msg) {
+	UNUSED(fd);
+	UNUSED(msg);
 	size_t i;
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		sFSInst *inst = mount_get(i);
@@ -453,7 +455,8 @@ static void cmds_sync(A_UNUSED int fd,A_UNUSED sMsg *msg) {
 	}
 }
 
-static void cmds_close(A_UNUSED int fd,sMsg *msg) {
+static void cmds_close(int fd,sMsg *msg) {
+	UNUSED(fd);
 	inode_t ino = msg->args.arg1;
 	dev_t devNo = msg->args.arg2;
 	sFSInst *inst = mount_get(devNo);

@@ -22,6 +22,6 @@
 
 #include <esc/common.h>
 
-#define TIME_DEVICE		"/dev/cmos"
+#define TIME_DRIVER		"/dev/cmos"
 
 #endif /* I586_DRIVER_H_ */

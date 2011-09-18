@@ -32,9 +32,9 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/random",DEV_TYPE_CHAR,DEV_READ);
+	id = regDriver("random",DRV_READ);
 	if(id < 0)
-		error("Unable to register device 'random'");
+		error("Unable to register driver 'random'");
 
 	/* random numbers are always available ;) */
 	if(fcntl(id,F_SETDATA,true) < 0)
@@ -48,7 +48,7 @@ int main(void) {
 			printe("[RAND] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DEV_READ: {
+				case MSG_DRV_READ: {
 					/* offset is ignored here */
 					size_t count = (size_t)msg.args.arg2;
 					uint *data = (uint*)malloc(count);
@@ -61,9 +61,9 @@ int main(void) {
 							*d++ = rand();
 					}
 					msg.args.arg2 = true;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					if(data) {
-						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1 / sizeof(uint));
+						send(fd,MSG_DRV_READ_RESP,data,msg.args.arg1 / sizeof(uint));
 						free(data);
 					}
 				}

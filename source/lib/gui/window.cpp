@@ -49,7 +49,8 @@ namespace gui {
 		add(btn,BorderLayout::EAST);
 	}
 
-	void WindowTitleBar::actionPerformed(A_UNUSED UIElement& el) {
+	void WindowTitleBar::actionPerformed(UIElement& el) {
+		UNUSED(el);
 		Application::getInstance()->exit();
 	}
 
@@ -389,7 +390,8 @@ namespace gui {
 		}
 	}
 
-	void Window::paintTitle(A_UNUSED Graphics &g) {
+	void Window::paintTitle(Graphics &g) {
+		UNUSED(g);
 		// no repaint until we're created and popups have no title-bar
 		if(!_created || _style == STYLE_POPUP || !_header)
 			return;

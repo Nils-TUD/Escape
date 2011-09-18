@@ -104,11 +104,13 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static void sigTimer(A_UNUSED int sig) {
+static void sigTimer(int sig) {
+	UNUSED(sig);
 	ms += 1000 / timerFreq;
 }
 
-static void sigHdlr(A_UNUSED int sig) {
+static void sigHdlr(int sig) {
+	UNUSED(sig);
 	if(waitingPid > 0) {
 		/* send SIG_INTRPT to the child */
 		if(sendSignalTo(waitingPid,SIG_INTRPT) < 0)

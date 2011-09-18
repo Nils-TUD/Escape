@@ -21,7 +21,9 @@
 #include <stdio.h>
 #include "highcpu.h"
 
-int mod_highcpu(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_highcpu(int argc,char *argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
 	volatile int i;
 	while(1) {
 		for(i = 0; i < 10000000; i++)

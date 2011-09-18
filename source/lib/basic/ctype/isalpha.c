@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
-extern uchar ctypetbl[];
+extern char ctypetbl[];
 
 int isalpha(int c) {
 	return ctypetbl[c] & (CT_LOWER | CT_UPPER);

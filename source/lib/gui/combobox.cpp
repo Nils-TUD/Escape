@@ -75,12 +75,14 @@ namespace gui {
 		}
 	}
 
-	void ComboBox::ItemWindow::onMouseReleased(A_UNUSED const MouseEvent &e) {
+	void ComboBox::ItemWindow::onMouseReleased(const MouseEvent &e) {
+		UNUSED(e);
 		_cb->_selected = _highlighted;
 		closeImpl();
 	}
 
-	int ComboBox::ItemWindow::getItemAt(A_UNUSED gpos_t x,gpos_t y) {
+	int ComboBox::ItemWindow::getItemAt(gpos_t x,gpos_t y) {
+		UNUSED(x);
 		return y / (getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2);
 	}
 

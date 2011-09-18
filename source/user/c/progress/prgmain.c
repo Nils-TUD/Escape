@@ -26,7 +26,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static void sigTerm(A_UNUSED int sig) {
+static void sigTerm(int sig) {
+	UNUSED(sig);
 	printf("Got SIGTERM, but I won't terminate :P\n");
 	fflush(stdout);
 }

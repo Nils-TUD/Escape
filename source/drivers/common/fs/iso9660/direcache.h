@@ -40,12 +40,4 @@ void iso_direc_init(sISO9660 *h);
  */
 const sISOCDirEntry *iso_direc_get(sISO9660 *h,inode_t id);
 
-/**
- * Prints information and statistics of the directory-entry-cache to the given file
- *
- * @param f the file
- * @param h the iso9660 handle
- */
-void iso_dire_print(FILE *f,sISO9660 *h);
-
 #endif /* DIRECACHE_H_ */

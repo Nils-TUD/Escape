@@ -20,8 +20,8 @@
 #include <stddef.h>
 #include <ctype.h>
 
-extern uchar ctypetbl[];
+extern char ctypetbl[];
 
 int isgraph(int c) {
-	return (ctypetbl[c] & (CT_CTRL | CT_SPACE | CT_BLANK)) == 0;
+	return (ctypetbl[c] & (CT_CTRL | CT_SPACE)) == 0;
 }

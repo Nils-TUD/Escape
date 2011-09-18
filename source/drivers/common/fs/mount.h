@@ -22,7 +22,6 @@
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
-#include <stdio.h>
 
 #define MAX_MNTNAME_LEN			32
 #define MOUNT_TABLE_SIZE		32
@@ -36,7 +35,7 @@ typedef struct {
 } sFSUser;
 
 /* The handler for the functions of the filesystem */
-typedef void *(*fFSInit)(const char *device,char **usedDev);
+typedef void *(*fFSInit)(const char *driver,char **usedDev);
 typedef void (*fFSDeinit)(void *h);
 typedef inode_t (*fFSResPath)(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,
 		bool resLastMnt);
@@ -52,18 +51,16 @@ typedef int (*fFSRmDir)(void *h,sFSUser *u,inode_t dirIno,const char *name);
 typedef int (*fFSChmod)(void *h,sFSUser *u,inode_t ino,mode_t mode);
 typedef int (*fFSChown)(void *h,sFSUser *u,inode_t ino,uid_t uid,gid_t gid);
 typedef void (*fFSSync)(void *h);
-typedef void (*fFSPrint)(FILE *f,void *h);
 
 /* all information about a filesystem */
 typedef struct {
-	int type;
+	uint type;
 	fFSInit init;			/* required */
 	fFSDeinit deinit;		/* required */
 	fFSResPath resPath;		/* required */
 	fFSOpen open;			/* required */
 	fFSClose close;			/* required */
 	fFSStat stat;			/* required */
-	fFSPrint print;			/* required */
 	fFSRead read;			/* optional */
 	fFSWrite write;			/* optional */
 	fFSLink link;			/* optional */
@@ -78,7 +75,7 @@ typedef struct {
 /* one instance of a filesystem for a specific device */
 typedef struct {
 	void *handle;
-	char device[MAX_MNTNAME_LEN];
+	char driver[MAX_MNTNAME_LEN];
 	sFileSystem *fs;
 	uint refs;
 } sFSInst;
@@ -87,20 +84,15 @@ typedef struct {
 typedef struct {
 	dev_t dev;
 	inode_t inode;
-	char path[MAX_PATH_LEN + 1];
 	sFSInst *mnt;
 } sMountPoint;
 
 /**
  * Inits the moint-points
+ *
+ * @return true if successfull
  */
-void mount_init(void);
-
-/**
- * @param i the index
- * @return the fs-instance with given index or NULL if there is no instance with that index
- */
-const sFSInst *mount_getFSInst(size_t i);
+bool mount_init(void);
 
 /**
  * Adds the given file-system (completely initialized!)
@@ -111,22 +103,15 @@ const sFSInst *mount_getFSInst(size_t i);
 int mount_addFS(sFileSystem *fs);
 
 /**
- * Adds a moint-point @ (dev+inode) to the given device using the given filesystem
+ * Adds a moint-point @ (dev+inode) to the given driver using the given filesystem
  *
  * @param dev the device-number of the mount-point
  * @param inode the inode-number of the mount-point
- * @param path the path of the mount-point
- * @param device the device-path
+ * @param driver the driver-path
  * @param type the fs-type
  * @return the device-number (mount-point) on success or < 0
  */
-dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,int type);
-
-/**
- * @param i the mount-point
- * @return the mount-point with index i or NULL if not existing
- */
-const sMountPoint *mount_getByIndex(size_t i);
+dev_t mount_addMnt(dev_t dev,inode_t inode,const char *driver,uint type);
 
 /**
  * Determines the moint-point-id for the given location

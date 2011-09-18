@@ -24,7 +24,9 @@
 
 #define STEP_SIZE 1024
 
-int mod_mem(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_mem(int argc,char *argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
 	/* actually, the print-statement here is necessary to make the second printf work. because
 	 * fileio will allocate the io-buffer lazy and if we can't use the heap anymore because its full
 	 * we can't create the io-buffer. */

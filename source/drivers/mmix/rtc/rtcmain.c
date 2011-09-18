@@ -43,9 +43,13 @@ int main(void) {
 	if(startThread(refreshThread,NULL) < 0)
 		error("Unable to start RTC-thread");
 
-	id = createdev("/dev/rtc",DEV_TYPE_BLOCK,DEV_READ);
+	id = regDriver("rtc",DRV_READ);
 	if(id < 0)
-		error("Unable to register device 'rtc'");
+		error("Unable to register driver 'rtc'");
+
+	/* there is always data available */
+	if(fcntl(id,F_SETDATA,true) < 0)
+		error("fcntl");
 
 	/* wait for commands */
 	while(1) {
@@ -54,19 +58,19 @@ int main(void) {
 			printe("[RTC] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DEV_READ: {
+				case MSG_DRV_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
 					if(offset + count <= offset || offset + count > sizeof(struct tm))
 						msg.args.arg1 = 0;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
 						/* ensure that the refresh-thread doesn't access the date in the
 						 * meanwhile */
 						locku(&dlock);
-						send(fd,MSG_DEV_READ_RESP,(uchar*)&date + offset,count);
+						send(fd,MSG_DRV_READ_RESP,(uchar*)&date + offset,count);
 						unlocku(&dlock);
 					}
 				}
@@ -86,7 +90,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static int refreshThread(A_UNUSED void *arg) {
+static int refreshThread(void *arg) {
+	UNUSED(arg);
 	struct tm *gmt;
 	while(1) {
 		/* ensure that the driver-loop doesn't access the date in the meanwhile */

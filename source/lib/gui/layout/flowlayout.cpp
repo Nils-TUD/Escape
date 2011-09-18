@@ -28,7 +28,8 @@ namespace gui {
 		_p = p;
 		_ctrls.push_back(c);
 	}
-	void FlowLayout::remove(Panel *p,Control *c,A_UNUSED pos_type pos) {
+	void FlowLayout::remove(Panel *p,Control *c,pos_type pos) {
+		UNUSED(pos);
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 

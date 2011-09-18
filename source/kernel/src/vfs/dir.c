@@ -27,7 +27,7 @@
 #include <sys/vfs/link.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/info.h>
-#include <sys/vfs/fsmsgs.h>
+#include <sys/vfs/real.h>
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <assert.h>
@@ -73,8 +73,9 @@ sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	return node;
 }
 
-static off_t vfs_dir_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t position,
-		off_t offset,uint whence) {
+static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
+	UNUSED(pid);
+	UNUSED(node);
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -88,8 +89,9 @@ static off_t vfs_dir_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posit
 	}
 }
 
-static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
-		off_t offset,size_t count) {
+static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
+		size_t count) {
+	UNUSED(file);
 	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
 	sVFSNode *n,*firstChild;
@@ -111,15 +113,15 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 		/* no close here, we iterate over the directory again afterwards. in the meantime, it can't
 		 * be changed */
 
-		/* the root-directory is distributed on the fs-device and the kernel */
-		/* therefore we have to read it from the fs-device, too */
+		/* the root-directory is distributed on the fs-driver and the kernel */
+		/* therefore we have to read it from the fs-driver, too */
 		/* but don't do that if we're the kernel (vfsr does not work then) */
 		if(node->parent == NULL && pid != KERNEL_PID) {
 			const size_t bufSize = 1024;
 			size_t c,curSize = bufSize;
 			fsBytes = cache_alloc(bufSize);
 			if(fsBytes != NULL) {
-				file_t rfile = vfs_fsmsgs_openPath(pid,VFS_READ,"/");
+				file_t rfile = vfs_real_openPath(pid,VFS_READ,"/");
 				if(rfile >= 0) {
 					while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
 						fsByteCount += c;

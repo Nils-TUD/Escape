@@ -20,32 +20,30 @@
 #ifndef SYSCALLS_PROC_H_
 #define SYSCALLS_PROC_H_
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
 #ifdef __i386__
 #include <sys/arch/i586/syscalls/proc.h>
 #endif
 
-int sysc_getpid(sThread *t,sIntrptStackFrame *stack);
-int sysc_getppid(sThread *t,sIntrptStackFrame *stack);
-int sysc_getuid(sThread *t,sIntrptStackFrame *stack);
-int sysc_setuid(sThread *t,sIntrptStackFrame *stack);
-int sysc_geteuid(sThread *t,sIntrptStackFrame *stack);
-int sysc_seteuid(sThread *t,sIntrptStackFrame *stack);
-int sysc_getgid(sThread *t,sIntrptStackFrame *stack);
-int sysc_setgid(sThread *t,sIntrptStackFrame *stack);
-int sysc_getegid(sThread *t,sIntrptStackFrame *stack);
-int sysc_setegid(sThread *t,sIntrptStackFrame *stack);
-int sysc_getgroups(sThread *t,sIntrptStackFrame *stack);
-int sysc_setgroups(sThread *t,sIntrptStackFrame *stack);
-int sysc_isingroup(sThread *t,sIntrptStackFrame *stack);
-int sysc_fork(sThread *t,sIntrptStackFrame *stack);
-int sysc_waitChild(sThread *t,sIntrptStackFrame *stack);
-int sysc_exec(sThread *t,sIntrptStackFrame *stack);
-int sysc_getenvito(sThread *t,sIntrptStackFrame *stack);
-int sysc_getenvto(sThread *t,sIntrptStackFrame *stack);
-int sysc_setenv(sThread *t,sIntrptStackFrame *stack);
+int sysc_getpid(sIntrptStackFrame *stack);
+int sysc_getppid(sIntrptStackFrame *stack);
+int sysc_getuid(sIntrptStackFrame *stack);
+int sysc_setuid(sIntrptStackFrame *stack);
+int sysc_geteuid(sIntrptStackFrame *stack);
+int sysc_seteuid(sIntrptStackFrame *stack);
+int sysc_getgid(sIntrptStackFrame *stack);
+int sysc_setgid(sIntrptStackFrame *stack);
+int sysc_getegid(sIntrptStackFrame *stack);
+int sysc_setegid(sIntrptStackFrame *stack);
+int sysc_getgroups(sIntrptStackFrame *stack);
+int sysc_setgroups(sIntrptStackFrame *stack);
+int sysc_isingroup(sIntrptStackFrame *stack);
+int sysc_fork(sIntrptStackFrame *stack);
+int sysc_waitChild(sIntrptStackFrame *stack);
+int sysc_exec(sIntrptStackFrame *stack);
+int sysc_getenvito(sIntrptStackFrame *stack);
+int sysc_getenvto(sIntrptStackFrame *stack);
+int sysc_setenv(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_PROC_H_ */

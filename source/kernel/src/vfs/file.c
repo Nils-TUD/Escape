@@ -29,7 +29,7 @@
 #include <string.h>
 #include <errors.h>
 
-/* the initial size of the write-cache for file-nodes */
+/* the initial size of the write-cache for driver-usage-nodes */
 #define VFS_INITIAL_WRITECACHE		128
 
 typedef struct {
@@ -80,7 +80,8 @@ static void vfs_file_destroy(sVFSNode *n) {
 	}
 }
 
-static off_t vfs_file_seek(A_UNUSED pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
+static off_t vfs_file_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
+	UNUSED(pid);
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -98,8 +99,10 @@ static off_t vfs_file_seek(A_UNUSED pid_t pid,sVFSNode *node,off_t position,off_
 	}
 }
 
-ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
-		off_t offset,size_t count) {
+ssize_t vfs_file_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
+		size_t count) {
+	UNUSED(pid);
+	UNUSED(file);
 	size_t byteCount = 0;
 	sFileContent *con = (sFileContent*)node->data;
 	klock_aquire(&node->lock);
@@ -126,8 +129,10 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USE
 	return byteCount;
 }
 
-ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER const void *buffer,
-		off_t offset,size_t count) {
+ssize_t vfs_file_write(pid_t pid,file_t file,sVFSNode *n,USER const void *buffer,off_t offset,
+		size_t count) {
+	UNUSED(pid);
+	UNUSED(file);
 	void *oldData;
 	size_t newSize = 0;
 	sFileContent *con = (sFileContent*)n->data;

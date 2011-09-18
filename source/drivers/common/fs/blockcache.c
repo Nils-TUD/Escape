@@ -28,6 +28,10 @@
 
 #define ALLOC_LOCK	0xF7180000
 
+/* for statistics */
+static uint cacheHits = 0;
+static uint cacheMisses = 0;
+
 /**
  * Aquires the tpool_lock, depending on <mode>, for the given block
  */
@@ -64,8 +68,6 @@ void bcache_init(sBlockCache *c) {
 		c->freeBlocks = bentry;
 		bentry++;
 	}
-	c->hits = 0;
-	c->misses = 0;
 }
 
 void bcache_destroy(sBlockCache *c) {
@@ -151,7 +153,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 				c->usedBlocks = bentry;
 			}
 			bcache_aquire(bentry,mode);
-			c->hits++;
+			cacheHits++;
 			return bentry;
 		}
 		bentry = bentry->next;
@@ -183,7 +185,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 	}
 
 	bcache_aquire(block,mode);
-	c->misses++;
+	cacheMisses++;
 	return block;
 }
 
@@ -226,28 +228,6 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 	return block;
 }
 
-void bcache_printStats(FILE *f,sBlockCache *c) {
-	float hitrate;
-	size_t used = 0,dirty = 0;
-	sCBlock *bentry = c->usedBlocks;
-	while(bentry != NULL) {
-		used++;
-		if(bentry->dirty)
-			dirty++;
-		bentry = bentry->next;
-	}
-	fprintf(f,"\t\tTotal blocks: %u\n",c->blockCacheSize);
-	fprintf(f,"\t\tUsed blocks: %u\n",used);
-	fprintf(f,"\t\tDirty blocks: %u\n",dirty);
-	fprintf(f,"\t\tHits: %u\n",c->hits);
-	fprintf(f,"\t\tMisses: %u\n",c->misses);
-	if(c->hits == 0)
-		hitrate = 0;
-	else
-		hitrate = 100.0f / ((float)(c->misses + c->hits) / c->hits);
-	fprintf(f,"\t\tHitrate: %.3f%%\n",hitrate);
-}
-
 #if DEBUGGING
 
 void bcache_print(sBlockCache *c) {
@@ -262,6 +242,11 @@ void bcache_print(sBlockCache *c) {
 		block = block->next;
 	}
 	printf("\n");
+}
+
+void bcache_printStats(void) {
+	printf("[BlockCache] Hits: %u, Misses: %u; %u %%\n",cacheHits,cacheMisses,
+			(uint)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }
 
 #endif

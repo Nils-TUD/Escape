@@ -21,7 +21,6 @@
 #define SYSCALLS_H_
 
 #include <sys/common.h>
-#include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
 #ifdef __i386__
@@ -37,10 +36,9 @@
 /**
  * Handles the syscall for the given stack
  *
- * @param t the running thread
  * @param intrptStack the pointer to the interrupt-stack
  */
-void sysc_handle(sThread *t,sIntrptStackFrame *intrptStack);
+void sysc_handle(sIntrptStackFrame *intrptStack);
 
 /**
  * @param sysCallNo the syscall-number

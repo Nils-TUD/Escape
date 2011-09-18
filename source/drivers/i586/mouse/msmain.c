@@ -117,10 +117,10 @@ int main(void) {
 	if(setSigHandler(SIG_INTRPT_MOUSE,irqHandler) < 0)
 		error("Unable to announce interrupt-handler");
 
-	/* reg device */
-	sid = createdev("/dev/mouse",DEV_TYPE_CHAR,DEV_READ);
+	/* reg driver */
+	sid = regDriver("mouse",DRV_READ);
 	if(sid < 0)
-		error("Unable to register device 'mouse'");
+		error("Unable to register driver '%s'","mouse");
 
     /* wait for commands */
 	while(1) {
@@ -152,7 +152,7 @@ int main(void) {
 		}
 		else {
 			switch(mid) {
-				case MSG_DEV_READ: {
+				case MSG_DRV_READ: {
 					/* offset is ignored here */
 					size_t count = msg.args.arg2 / sizeof(sMouseData);
 					sMouseData *buffer = (sMouseData*)malloc(count * sizeof(sMouseData));
@@ -160,9 +160,9 @@ int main(void) {
 					if(buffer)
 						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sMouseData);
 					msg.args.arg2 = rb_length(rbuf) > 0;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					if(buffer) {
-						send(fd,MSG_DEV_READ_RESP,buffer,count * sizeof(sMouseData));
+						send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sMouseData));
 						free(buffer);
 					}
 				}
@@ -185,8 +185,9 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void irqHandler(A_UNUSED int sig) {
+static void irqHandler(int sig) {
 	uint8_t status;
+	UNUSED(sig);
 
 	/* check if there is mouse-data */
 	status = inByte(IOPORT_KB_CTRL);

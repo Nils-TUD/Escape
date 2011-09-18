@@ -166,7 +166,7 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
 	begin -= *begin;
 	t->stats.syscalls++;
-	sysc_handle(t,begin);
+	sysc_handle(begin);
 
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
 	t = thread_getRunning(); /* thread might have changed */
@@ -205,14 +205,16 @@ static void intrpt_leaveKernel(sThread *t) {
 	thread_popIntrptLevel(t);
 }
 
-static void intrpt_defHandler(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
+static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
 	uint64_t rww = cpu_getSpecial(rWW);
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ %p\n",
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 
-static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
+static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
 	uintptr_t pfaddr = cpu_getFaultLoc();
 
 #if DEBUG_PAGEFAULTS
@@ -242,7 +244,9 @@ static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 	}
 }
 
-static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
+static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
+	UNUSED(irqNo);
 	/* we have to disable interrupts until the device has handled the request */
 	/* otherwise we would get into an interrupt loop */
 	uint64_t *kbRegs = (uint64_t*)KEYBOARD_BASE;
@@ -250,7 +254,7 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 
 	if(proc_getByPid(KEYBOARD_PID) == NULL) {
 		/* in debug-mode, start the logviewer when the keyboard is not present yet */
-		/* (with a present keyboard-device we would steal him the scancodes) */
+		/* (with a present keyboard-driver we would steal him the scancodes) */
 		/* this way, we can debug the system in the startup-phase without affecting timings
 		 * (before viewing the log ;)) */
 		sKeyEvent ev;
@@ -261,13 +265,15 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call uenv_handleSignal(), which might cause a thread-switch */
 	if(!sig_addSignal(SIG_INTRPT_KB)) {
-		/* if there is no device that handles the signal, reenable interrupts */
+		/* if there is no driver that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
 }
 
-static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
+static void intrpt_irqTimer(sIntrptStackFrame *stack,int irqNo) {
 	bool res;
+	UNUSED(stack);
+	UNUSED(irqNo);
 	sig_addSignal(SIG_INTRPT_TIMER);
 	res = timer_intrpt();
 	timer_ackIntrpt();
@@ -278,7 +284,9 @@ static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo
 	}
 }
 
-static void intrpt_irqDisk(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
+static void intrpt_irqDisk(sIntrptStackFrame *stack,int irqNo) {
+	UNUSED(stack);
+	UNUSED(irqNo);
 	/* see interrupt_irqKb() */
 	uint64_t *diskRegs = (uint64_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;

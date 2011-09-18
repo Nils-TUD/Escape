@@ -31,9 +31,9 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/zero",DEV_TYPE_CHAR,DEV_READ);
+	id = regDriver("zero",DRV_READ);
 	if(id < 0)
-		error("Unable to register device 'zero'");
+		error("Unable to register driver 'zero'");
 
 	/* 0's are always available ;) */
 	if(fcntl(id,F_SETDATA,true) < 0)
@@ -46,7 +46,7 @@ int main(void) {
 			printe("[ZERO] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DEV_READ: {
+				case MSG_DRV_READ: {
 					/* offset is ignored here */
 					size_t count = msg.args.arg2;
 					void *data = calloc(count,1);
@@ -56,9 +56,9 @@ int main(void) {
 					}
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					if(data) {
-						send(fd,MSG_DEV_READ_RESP,data,count);
+						send(fd,MSG_DRV_READ_RESP,data,count);
 						free(data);
 					}
 				}

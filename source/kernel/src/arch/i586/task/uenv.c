@@ -24,6 +24,8 @@
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/vfs/real.h>
+#include <sys/vfs/node.h>
 #include <sys/klock.h>
 #include <string.h>
 #include <errors.h>
@@ -43,7 +45,8 @@ void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
 		thread_switch();
 }
 
-int uenv_finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED sig_t signal) {
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
+	UNUSED(signal);
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	if(!paging_isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
 		proc_segFault();

@@ -74,7 +74,8 @@ void __cyg_profile_func_exit(void *this_fn,void *call_site);
 }
 #endif
 
-void __cyg_profile_func_enter(void *this_fn,A_UNUSED void *call_site) {
+void __cyg_profile_func_enter(void *this_fn,void *call_site) {
+	UNUSED(call_site);
 	if(inProf)
 		return;
 	inProf = true;
@@ -95,7 +96,9 @@ void __cyg_profile_func_enter(void *this_fn,A_UNUSED void *call_site) {
 	inProf = false;
 }
 
-void __cyg_profile_func_exit(A_UNUSED void *this_fn,A_UNUSED void *call_site) {
+void __cyg_profile_func_exit(void *this_fn,void *call_site) {
+	UNUSED(this_fn);
+	UNUSED(call_site);
 	uint64_t now;
 	if(inProf || stackPos <= 0)
 		return;

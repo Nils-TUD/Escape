@@ -22,6 +22,6 @@
 
 #include <esc/common.h>
 
-#define TIME_DEVICE		"/dev/rtc"
+#define TIME_DRIVER		"/dev/rtc"
 
 #endif /* ECO32_DRIVER_H_ */

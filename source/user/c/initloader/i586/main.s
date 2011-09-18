@@ -35,8 +35,8 @@ _start:
 	int		$SYSCALL_IRQ
 
 	# now replace with init
-	mov		$progName,%edx						# arg1: path
-	pushl	$args								# arg2: arguments
+	mov		$progName,%ecx						# set path
+	mov		$args,%edx							# set arguments
 	mov		$SYSCALL_EXEC,%eax					# set syscall-number
 	int		$SYSCALL_IRQ
 
@@ -49,7 +49,7 @@ sigRetFunc:
 	jmp		sigRetFunc
 
 args:
-	.long	progName,0
+	.long			progName,0
 
 progName:
-	.asciz	"/bin/init"
+	.asciz		"/bin/init"

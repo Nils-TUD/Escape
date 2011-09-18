@@ -32,19 +32,20 @@
 #include <sys/video.h>
 #include <errors.h>
 
-int sysc_loadMods(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_loadMods(sIntrptStackFrame *stack) {
 	int res = boot_loadModules(stack);
 	SYSC_RET1(stack,res);
 }
 
-int sysc_debugc(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_debugc(sIntrptStackFrame *stack) {
 	char c = (char)SYSC_ARG1(stack);
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	vid_printf("%c",c);
 	SYSC_RET1(stack,0);
 }
 
-int sysc_debug(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+int sysc_debug(sIntrptStackFrame *stack) {
+	UNUSED(stack);
 #if 0
 	static size_t foo = 0;
 	if(foo == 0) {
@@ -61,7 +62,7 @@ int sysc_debug(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getConf(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_getConf(sIntrptStackFrame *stack) {
 	uint id = SYSC_ARG1(stack);
 	long res = conf_get(id);
 	if(res < 0)

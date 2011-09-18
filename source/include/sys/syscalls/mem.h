@@ -20,21 +20,19 @@
 #ifndef SYSCALLS_MEM_H_
 #define SYSCALLS_MEM_H_
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
 /* protection-flags */
 #define PROT_READ			1
 #define PROT_WRITE			2
 
-int sysc_changeSize(sThread *t,sIntrptStackFrame *stack);
-int sysc_addRegion(sThread *t,sIntrptStackFrame *stack);
-int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack);
-int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack);
-int sysc_createSharedMem(sThread *t,sIntrptStackFrame *stack);
-int sysc_joinSharedMem(sThread *t,sIntrptStackFrame *stack);
-int sysc_leaveSharedMem(sThread *t,sIntrptStackFrame *stack);
-int sysc_destroySharedMem(sThread *t,sIntrptStackFrame *stack);
+int sysc_changeSize(sIntrptStackFrame *stack);
+int sysc_addRegion(sIntrptStackFrame *stack);
+int sysc_setRegProt(sIntrptStackFrame *stack);
+int sysc_mapPhysical(sIntrptStackFrame *stack);
+int sysc_createSharedMem(sIntrptStackFrame *stack);
+int sysc_joinSharedMem(sIntrptStackFrame *stack);
+int sysc_leaveSharedMem(sIntrptStackFrame *stack);
+int sysc_destroySharedMem(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_MEM_H_ */

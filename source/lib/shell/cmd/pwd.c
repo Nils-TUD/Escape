@@ -24,8 +24,12 @@
 #include <stdlib.h>
 #include "pwd.h"
 
-int shell_cmdPwd(A_UNUSED int argc,A_UNUSED char **argv) {
-	char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+int shell_cmdPwd(int argc,char **argv) {
+	char *path;
+	UNUSED(argc);
+	UNUSED(argv);
+
+	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(path == NULL) {
 		printe("Unable to allocate mem");
 		return EXIT_FAILURE;

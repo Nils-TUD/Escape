@@ -48,11 +48,14 @@ static size_t failCount = 0;
 
 static size_t assertCount = 0;
 
-void test_noPrint(A_UNUSED const char *fmt,...) {
+void test_noPrint(const char *fmt,...) {
 	/* do nothing */
+	UNUSED(fmt);
 }
-void test_vnoPrint(A_UNUSED const char *fmt,A_UNUSED va_list ap) {
+void test_vnoPrint(const char *fmt,va_list ap) {
 	/* do nothing */
+	UNUSED(fmt);
+	UNUSED(ap);
 }
 
 void test_caseStart(const char *fmt,...) {

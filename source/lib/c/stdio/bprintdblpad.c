@@ -21,20 +21,13 @@
 #include <esc/width.h>
 #include "iobuf.h"
 #include <stdio.h>
-#include <math.h>
 
 int bprintdblpad(FILE *f,double d,uint pad,uint flags,uint precision) {
 	int count = 0;
 	llong pre = (llong)d;
-	bool nan = isnan(d);
-	bool inf = isinf(d);
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
-		size_t width;
-		if(nan || inf)
-			width = (d < 0 || (flags & (FFL_FORCESIGN | FFL_SPACESIGN))) ? 4 : 3;
-		else
-			width = getllwidth(pre) + precision + 1;
+		size_t width = getllwidth(pre) + precision + 1;
 		if(pre > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
 		if(pad > width)
@@ -43,18 +36,7 @@ int bprintdblpad(FILE *f,double d,uint pad,uint flags,uint precision) {
 	/* print '+' or ' ' instead of '-' */
 	PRINT_SIGNED_PREFIX(count,f,pre,flags);
 	/* print number */
-	if(nan) {
-		if(d < 0)
-			count += RETERR(bputc(f,'-'));
-		count += RETERR(bputs(f,"nan"));
-	}
-	else if(inf) {
-		if(d < 0)
-			count += RETERR(bputc(f,'-'));
-		count += RETERR(bputs(f,"inf"));
-	}
-	else
-		count += RETERR(bprintdbl(f,d,precision));
+	count += RETERR(bprintdbl(f,d,precision));
 	/* pad right */
 	if((flags & FFL_PADRIGHT) && (int)pad > count)
 		count += RETERR(bprintpad(f,pad - count,flags));

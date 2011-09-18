@@ -74,13 +74,3 @@ const sISOCDirEntry *iso_direc_get(sISO9660 *h,inode_t id) {
 	}
 	return (const sISOCDirEntry*)(h->direcache + unused);
 }
-
-void iso_dire_print(FILE *f,sISO9660 *h) {
-	size_t i,freeEntries = 0;
-	for(i = 0; i < ISO_DIRE_CACHE_SIZE; i++) {
-		if(h->direcache[i].id == 0)
-			freeEntries++;
-	}
-	fprintf(f,"\t\tTotal entries: %u\n",ISO_DIRE_CACHE_SIZE);
-	fprintf(f,"\t\tUsed entries: %u\n",ISO_DIRE_CACHE_SIZE - freeEntries);
-}

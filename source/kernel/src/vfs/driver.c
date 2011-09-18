@@ -19,9 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/devmsgs.h>
+#include <sys/vfs/driver.h>
 #include <sys/vfs/request.h>
-#include <sys/vfs/device.h>
+#include <sys/vfs/server.h>
 #include <sys/vfs/channel.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
@@ -34,18 +34,18 @@
 #include <string.h>
 #include <errors.h>
 
-static void vfs_devmsgs_wait(sRequest *req);
-static void vfs_devmsgs_openReqHandler(sVFSNode *node,const void *data,size_t size);
-static void vfs_devmsgs_readReqHandler(sVFSNode *node,const void *data,size_t size);
-static void vfs_devmsgs_writeReqHandler(sVFSNode *node,const void *data,size_t size);
+static void vfs_drv_wait(sRequest *req);
+static void vfs_drv_openReqHandler(sVFSNode *node,const void *data,size_t size);
+static void vfs_drv_readReqHandler(sVFSNode *node,const void *data,size_t size);
+static void vfs_drv_writeReqHandler(sVFSNode *node,const void *data,size_t size);
 
-void vfs_devmsgs_init(void) {
-	vfs_req_setHandler(MSG_DEV_OPEN_RESP,vfs_devmsgs_openReqHandler);
-	vfs_req_setHandler(MSG_DEV_READ_RESP,vfs_devmsgs_readReqHandler);
-	vfs_req_setHandler(MSG_DEV_WRITE_RESP,vfs_devmsgs_writeReqHandler);
+void vfs_drv_init(void) {
+	vfs_req_setHandler(MSG_DRV_OPEN_RESP,vfs_drv_openReqHandler);
+	vfs_req_setHandler(MSG_DRV_READ_RESP,vfs_drv_readReqHandler);
+	vfs_req_setHandler(MSG_DRV_WRITE_RESP,vfs_drv_writeReqHandler);
 }
 
-ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
+ssize_t vfs_drv_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	ssize_t res;
 	sRequest *req;
 	sArgsMsg msg;
@@ -59,7 +59,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 		return ERR_NODE_DESTROYED;
 	}
 	/* if the driver doesn't implement open, its ok */
-	if(!vfs_device_supports(node->parent,DEV_OPEN)) {
+	if(!vfs_server_supports(node->parent,DRV_OPEN)) {
 		vfs_chan_unlock(node);
 		return 0;
 	}
@@ -73,7 +73,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 
 	/* send msg to driver */
 	msg.arg1 = flags;
-	res = vfs_sendMsg(pid,file,MSG_DEV_OPEN,&msg,sizeof(msg));
+	res = vfs_sendMsg(pid,file,MSG_DRV_OPEN,&msg,sizeof(msg));
 	vfs_chan_unlock(node);
 	if(res < 0) {
 		vfs_req_free(req);
@@ -81,13 +81,13 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	}
 
 	/* wait for response */
-	vfs_devmsgs_wait(req);
+	vfs_drv_wait(req);
 	res = (ssize_t)req->count;
 	vfs_req_free(req);
 	return res;
 }
 
-ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
+ssize_t vfs_drv_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
 	void *data;
@@ -100,7 +100,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	if(node->name == NULL)
 		return ERR_NODE_DESTROYED;
 	/* if the driver doesn't implement open, its an error */
-	if(!vfs_device_supports(node->parent,DEV_READ))
+	if(!vfs_server_supports(node->parent,DRV_READ))
 		return ERR_UNSUPPORTED_OP;
 
 	/* wait until there is data available, if necessary */
@@ -125,7 +125,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	/* send msg to driver */
 	msg.arg1 = offset;
 	msg.arg2 = count;
-	res = vfs_sendMsg(pid,file,MSG_DEV_READ,&msg,sizeof(msg));
+	res = vfs_sendMsg(pid,file,MSG_DRV_READ,&msg,sizeof(msg));
 	vfs_chan_unlock(node);
 	if(res < 0) {
 		vfs_req_free(req);
@@ -133,7 +133,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	}
 
 	/* wait for response */
-	vfs_devmsgs_wait(req);
+	vfs_drv_wait(req);
 
 	/* release resouces before memcpy */
 	res = req->count;
@@ -153,7 +153,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	return res;
 }
 
-ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buffer,off_t offset,
+ssize_t vfs_drv_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
 	ssize_t res;
@@ -165,7 +165,7 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 		return ERR_NODE_DESTROYED;
 	}
 	/* if the driver doesn't implement open, its an error */
-	if(!vfs_device_supports(node->parent,DEV_WRITE)) {
+	if(!vfs_server_supports(node->parent,DRV_WRITE)) {
 		vfs_chan_unlock(node);
 		return ERR_UNSUPPORTED_OP;
 	}
@@ -180,14 +180,14 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 	/* send msg to driver */
 	msg.arg1 = offset;
 	msg.arg2 = count;
-	res = vfs_sendMsg(pid,file,MSG_DEV_WRITE,&msg,sizeof(msg));
+	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,&msg,sizeof(msg));
 	if(res < 0) {
 		vfs_req_free(req);
 		vfs_chan_unlock(node);
 		return res;
 	}
 	/* now send data */
-	res = vfs_sendMsg(pid,file,MSG_DEV_WRITE,buffer,count);
+	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,buffer,count);
 	vfs_chan_unlock(node);
 	if(res < 0) {
 		vfs_req_free(req);
@@ -195,25 +195,25 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 	}
 
 	/* wait for response */
-	vfs_devmsgs_wait(req);
+	vfs_drv_wait(req);
 	res = req->count;
 	vfs_req_free(req);
 	return res;
 }
 
-void vfs_devmsgs_close(pid_t pid,file_t file,sVFSNode *node) {
+void vfs_drv_close(pid_t pid,file_t file,sVFSNode *node) {
 	vfs_chan_lock(node);
 	/* if the driver doesn't implement close, stop here */
-	if(node->name == NULL || !vfs_device_supports(node->parent,DEV_CLOSE)) {
+	if(node->name == NULL || !vfs_server_supports(node->parent,DRV_CLOSE)) {
 		vfs_chan_unlock(node);
 		return;
 	}
 
-	vfs_sendMsg(pid,file,MSG_DEV_CLOSE,NULL,0);
+	vfs_sendMsg(pid,file,MSG_DRV_CLOSE,NULL,0);
 	vfs_chan_unlock(node);
 }
 
-static void vfs_devmsgs_wait(sRequest *req) {
+static void vfs_drv_wait(sRequest *req) {
 	/* repeat until it succeeded or the driver died */
 	volatile sRequest *r = req;
 	do
@@ -221,7 +221,8 @@ static void vfs_devmsgs_wait(sRequest *req) {
 	while((ssize_t)r->count == ERR_INTERRUPTED);
 }
 
-static void vfs_devmsgs_openReqHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
+static void vfs_drv_openReqHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	sMsg *rmsg = (sMsg*)data;
 	ulong res = rmsg->args.arg1;
 	/* we know that the node is valid here, because vfs_chan_send() has checked it and the node
@@ -237,7 +238,8 @@ static void vfs_devmsgs_openReqHandler(sVFSNode *node,USER const void *data,A_UN
 	}
 }
 
-static void vfs_devmsgs_readReqHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
+static void vfs_drv_readReqHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	/* find the request for the node */
 	sRequest *req = vfs_req_getByNode(node);
 	if(req != NULL) {
@@ -249,7 +251,7 @@ static void vfs_devmsgs_readReqHandler(sVFSNode *node,USER const void *data,A_UN
 			ulong readable = rmsg->args.arg2;
 			/* an error? */
 			if((long)res <= 0) {
-				vfs_device_setReadable(drv,readable);
+				vfs_server_setReadable(drv,readable);
 				req->count = res;
 				req->state = REQ_STATE_FINISHED;
 				ev_wakeupThread(req->thread,EV_REQ_REPLY);
@@ -259,7 +261,7 @@ static void vfs_devmsgs_readReqHandler(sVFSNode *node,USER const void *data,A_UN
 			/* otherwise we'll receive the data with the next msg */
 			/* set whether data is readable; do this here because a thread-switch may cause
 			 * the driver to set that data is readable although arg2 was 0 here (= no data) */
-			vfs_device_setReadable(drv,readable);
+			vfs_server_setReadable(drv,readable);
 			req->count = MIN(req->dsize,res);
 			req->state = REQ_STATE_WAIT_DATA;
 			vfs_req_release(req);
@@ -283,7 +285,8 @@ static void vfs_devmsgs_readReqHandler(sVFSNode *node,USER const void *data,A_UN
 	}
 }
 
-static void vfs_devmsgs_writeReqHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
+static void vfs_drv_writeReqHandler(sVFSNode *node,USER const void *data,size_t size) {
+	UNUSED(size);
 	sMsg *rmsg = (sMsg*)data;
 	ulong res = rmsg->args.arg1;
 	sRequest *req = vfs_req_getByNode(node);

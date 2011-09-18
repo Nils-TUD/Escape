@@ -710,26 +710,6 @@ int isatty(int fd);
  */
 off_t lseek(int fd,off_t offset,uint whence);
 
-/**
- * Creates a stream that is backed by a dynamically allocated string. That means, you can write
- * to that stream using the ordinary functions fprintf, fputc, ..., and the characters will be
- * stored in a string, that is automatically extended if necessary.
- * When the string is completely filled, you can call asget() to get the buffer and the total
- * length. Please call fclose() to free all resources.
- *
- * @return the created stream
- */
-FILE *ascreate(void);
-
-/**
- * Returns the allocated buffer and its length
- *
- * @param f the stream
- * @param length will be set to the total length
- * @return the buffer
- */
-char *asget(FILE *f,size_t *length);
-
 #ifdef __cplusplus
 }
 #endif

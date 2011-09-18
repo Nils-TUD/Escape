@@ -61,10 +61,10 @@ int main(void) {
 	msgid_t mid;
 	int id;
 
-	/* register device */
-	id = createdev("/dev/speaker",DEV_TYPE_SERVICE,0);
+	/* register driver */
+	id = regDriver("speaker",0);
 	if(id < 0)
-		error("Unable to register device 'speaker'");
+		error("Unable to register driver 'speaker'");
 
 	timerFreq = getConf(CONF_TIMER_FREQ);
 	if(timerFreq < 0)
@@ -117,7 +117,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void timerIntrptHandler(A_UNUSED int sig) {
+static void timerIntrptHandler(int sig) {
+	UNUSED(sig);
 	if(intrptTarget > 0) {
 		intrptCount += 1000 / timerFreq;
 		if(intrptCount >= intrptTarget) {

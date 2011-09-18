@@ -61,19 +61,19 @@
 #define MSG_FS_ISTAT_RESP			11
 #define MSG_FS_CHMOD_RESP			12
 #define MSG_FS_CHOWN_RESP			13
-/* device */
-#define MSG_DEV_OPEN_RESP			14
-#define MSG_DEV_READ_RESP			15
-#define MSG_DEV_WRITE_RESP			16
-#define MSG_DEV_CLOSE_RESP			17
+/* driver */
+#define MSG_DRV_OPEN_RESP			14
+#define MSG_DRV_READ_RESP			15
+#define MSG_DRV_WRITE_RESP			16
+#define MSG_DRV_CLOSE_RESP			17
 /* default response */
 #define MSG_DEF_RESPONSE			18
 
-/* requests to device */
-#define MSG_DEV_OPEN				50
-#define MSG_DEV_READ				51
-#define MSG_DEV_WRITE				52
-#define MSG_DEV_CLOSE				53
+/* requests to driver */
+#define MSG_DRV_OPEN				50
+#define MSG_DRV_READ				51
+#define MSG_DRV_WRITE				52
+#define MSG_DRV_CLOSE				53
 
 /* requests to fs */
 #define MSG_FS_OPEN					54
@@ -158,10 +158,10 @@
 #define MSG_INIT_IAMALIVE			1002 /* tells init that the shutdown-request has been received
 											and that you promise to terminate as soon as possible */
 
-#define IS_DEVICE_MSG(id)			((id) == MSG_DEV_OPEN || \
-									 (id) == MSG_DEV_READ || \
-									 (id) == MSG_DEV_WRITE || \
-									 (id) == MSG_DEV_CLOSE)
+#define IS_DRIVER_MSG(id)			((id) == MSG_DRV_OPEN || \
+									 (id) == MSG_DRV_READ || \
+									 (id) == MSG_DRV_WRITE || \
+									 (id) == MSG_DRV_CLOSE)
 
 /* the data read from the keyboard */
 typedef struct {

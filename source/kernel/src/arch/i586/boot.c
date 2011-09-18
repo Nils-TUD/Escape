@@ -41,6 +41,11 @@
 #include <sys/task/terminator.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/request.h>
+#include <sys/vfs/channel.h>
+#include <sys/vfs/driver.h>
+#include <sys/vfs/real.h>
+#include <sys/vfs/info.h>
 #include <sys/log.h>
 #include <sys/boot.h>
 #include <sys/video.h>
@@ -155,8 +160,9 @@ size_t boot_getUsableMemCount(void) {
 	return size;
 }
 
-int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
+int boot_loadModules(sIntrptStackFrame *stack) {
 	char loadingStatus[256];
+	UNUSED(stack);
 	size_t i;
 	int child;
 	inode_t nodeNo;
@@ -189,8 +195,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 		else if(child < 0)
 			util_panic("Unable to clone process for boot-program %s: %d\n",argv[0],child);
 
-		/* wait until the device is registered */
-		/* don't create a pipe- or channel-node here */
+		/* wait until the driver is registered */
+		/* don't create a pipe- or driver-usage-node here */
 		while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except

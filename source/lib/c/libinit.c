@@ -69,7 +69,8 @@ int __cxa_atexit(void (*f)(void *),void *p,void *d) {
 	return 0;
 }
 
-void __cxa_finalize(A_UNUSED void *d) {
+void __cxa_finalize(void *d) {
+	UNUSED(d);
 	/* if we're the last thread, call the exit-functions */
 	if(getThreadCount() == 1) {
 		ssize_t i;

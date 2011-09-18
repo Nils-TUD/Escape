@@ -36,11 +36,11 @@
 #include "../blockcache.h"
 #include "../threadpool.h"
 
-#define MAX_DEVICE_OPEN_RETRIES		1000
+#define MAX_DRIVER_OPEN_RETRIES		1000
 
-static bool iso_setup(const char *device,sISO9660 *iso);
+static bool iso_setup(const char *driver,sISO9660 *iso);
 
-void *iso_init(const char *device,char **usedDev) {
+void *iso_init(const char *driver,char **usedDev) {
 	size_t i;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
 	if(iso == NULL)
@@ -60,10 +60,10 @@ void *iso_init(const char *device,char **usedDev) {
 	/* no writing here ;) */
 	iso->blockCache.write = NULL;
 
-	/* if the device is provided, simply use it */
-	if(strcmp(device,"cdrom") != 0) {
-		if(!iso_setup(device,iso)) {
-			printe("Unable to find device '%s'",device);
+	/* if the driver is provided, simply use it */
+	if(strcmp(driver,"cdrom") != 0) {
+		if(!iso_setup(driver,iso)) {
+			printe("Unable to find driver '%s'",driver);
 			free(iso);
 			return NULL;
 		}
@@ -100,26 +100,26 @@ void *iso_init(const char *device,char **usedDev) {
 			return NULL;
 		}
 
-		device = path;
+		driver = path;
 	}
 
-	/* report used device */
-	*usedDev = malloc(strlen(device) + 1);
+	/* report used driver */
+	*usedDev = malloc(strlen(driver) + 1);
 	if(!*usedDev) {
-		printe("Not enough mem for device-name");
+		printe("Not enough mem for driver-name");
 		bcache_destroy(&iso->blockCache);
 		free(iso);
 		return NULL;
 	}
-	strcpy(*usedDev,device);
+	strcpy(*usedDev,driver);
 	return iso;
 }
 
-static bool iso_setup(const char *device,sISO9660 *iso) {
+static bool iso_setup(const char *driver,sISO9660 *iso) {
 	size_t i;
-	/* now open the device */
+	/* now open the driver */
 	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
-		iso->drvFds[i] = open(device,IO_WRITE | IO_READ);
+		iso->drvFds[i] = open(driver,IO_WRITE | IO_READ);
 		if(iso->drvFds[i] < 0)
 			return false;
 	}
@@ -127,7 +127,7 @@ static bool iso_setup(const char *device,sISO9660 *iso) {
 	/* read volume descriptors */
 	for(i = 0; ; i++) {
 		if(!iso_rw_readSectors(iso,&iso->primary,ISO_VOL_DESC_START + i,1))
-			error("Unable to read volume descriptor from device");
+			error("Unable to read volume descriptor from driver");
 		/* we need just the primary one */
 		if(iso->primary.type == ISO_VOL_TYPE_PRIMARY)
 			break;
@@ -170,7 +170,6 @@ sFileSystem *iso_getFS(void) {
 	fs->chmod = NULL;
 	fs->chown = NULL;
 	fs->sync = NULL;
-	fs->print = iso_print;
 	return fs;
 }
 
@@ -178,13 +177,16 @@ inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bo
 	return iso_dir_resolve((sISO9660*)h,u,path,flags,dev,resLastMnt);
 }
 
-inode_t iso_open(A_UNUSED void *h,A_UNUSED sFSUser *u,inode_t ino,A_UNUSED uint flags) {
-	/* nothing to do */
+inode_t iso_open(void *h,sFSUser *u,inode_t ino,uint flags) {
+	UNUSED(h);
+	UNUSED(u);
+	UNUSED(flags);
 	return ino;
 }
 
-void iso_close(A_UNUSED void *h,A_UNUSED inode_t ino) {
-	/* nothing to do */
+void iso_close(void *h,inode_t ino) {
+	UNUSED(h);
+	UNUSED(ino);
 }
 
 int iso_stat(void *h,inode_t ino,sFileInfo *info) {
@@ -218,29 +220,10 @@ ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count)
 	return iso_file_read((sISO9660*)h,inodeNo,buffer,offset,count);
 }
 
-time_t iso_dirDate2Timestamp(A_UNUSED sISO9660 *h,const sISODirDate *ddate) {
+time_t iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate) {
+	UNUSED(h);
 	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);
-}
-
-void iso_print(FILE *f,void *h) {
-	sISO9660 *i = (sISO9660*)h;
-	sISOVolDesc *desc = &i->primary;
-	sISOVolDate *date;
-	fprintf(f,"\tIdentifier: %.5s\n",desc->identifier);
-	fprintf(f,"\tSize: %u bytes\n",desc->data.primary.volSpaceSize.littleEndian * ISO_BLK_SIZE(i));
-	fprintf(f,"\tSystemIdent: %.32s\n",desc->data.primary.systemIdent);
-	fprintf(f,"\tVolumeIdent: %.32s\n",desc->data.primary.volumeIdent);
-	date = &desc->data.primary.created;
-	fprintf(f,"\tCreated: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
-			date->year,date->month,date->day,date->hour,date->minute,date->second);
-	date = &desc->data.primary.modified;
-	fprintf(f,"\tModified: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
-			date->year,date->month,date->day,date->hour,date->minute,date->second);
-	fprintf(f,"\tBlock cache:\n");
-	bcache_printStats(f,&i->blockCache);
-	fprintf(f,"\tDirectory entry cache:\n");
-	iso_dire_print(f,i);
 }
 
 #if DEBUGGING

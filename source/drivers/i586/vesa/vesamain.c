@@ -127,9 +127,9 @@ int main(void) {
 		error("Unable to set mode");
 
 	dirtyRects = sll_create();
-	id = createdev("/dev/vesa",DEV_TYPE_SERVICE,0);
+	id = regDriver("vesa",0);
 	if(id < 0)
-		error("Unable to register device 'vesa'");
+		error("Unable to register driver 'vesa'");
 
 	reqc = 0;
 	while(1) {

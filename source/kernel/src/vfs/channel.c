@@ -27,8 +27,8 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/request.h>
 #include <sys/vfs/channel.h>
-#include <sys/vfs/device.h>
-#include <sys/vfs/devmsgs.h>
+#include <sys/vfs/server.h>
+#include <sys/vfs/driver.h>
 #include <sys/video.h>
 #include <sys/klock.h>
 #include <esc/messages.h>
@@ -40,9 +40,9 @@
 
 typedef struct {
 	bool closed;
-	/* a list for sending messages to the device */
+	/* a list for sending messages to the driver */
 	sSLList *sendList;
-	/* a list for reading messages from the device */
+	/* a list for reading messages from the driver */
 	sSLList *recvList;
 } sChannel;
 
@@ -68,8 +68,8 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	}
 
 	node->mode = MODE_TYPE_CHANNEL | S_IRUSR | S_IWUSR;
-	node->read = (fRead)vfs_devmsgs_read;
-	node->write = (fWrite)vfs_devmsgs_write;
+	node->read = (fRead)vfs_drv_read;
+	node->write = (fWrite)vfs_drv_write;
 	node->seek = vfs_chan_seek;
 	node->close = vfs_chan_close;
 	node->destroy = vfs_chan_destroy;
@@ -90,8 +90,8 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 static void vfs_chan_destroy(sVFSNode *n) {
 	sChannel *chan = (sChannel*)n->data;
 	if(chan) {
-		/* we have to reset the last client for the device here */
-		vfs_device_clientRemoved(n->parent,n);
+		/* we have to reset the last client for the driver here */
+		vfs_server_clientRemoved(n->parent,n);
 		/* free send and receive list */
 		if(chan->recvList)
 			sll_destroy(chan->recvList,true);
@@ -102,8 +102,9 @@ static void vfs_chan_destroy(sVFSNode *n) {
 	}
 }
 
-static off_t vfs_chan_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t position,
-		off_t offset,uint whence) {
+static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
+	UNUSED(pid);
+	UNUSED(node);
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -111,7 +112,7 @@ static off_t vfs_chan_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posi
 			return position + offset;
 		default:
 		case SEEK_END:
-			/* not supported for devices */
+			/* not supported for drivers */
 			return ERR_INVALID_ARGS;
 	}
 }
@@ -122,14 +123,14 @@ static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 		vfs_node_destroy(node);
 	else if(node->refCount == 0) {
 		/* notify the driver, if it is one */
-		vfs_devmsgs_close(pid,file,node);
+		vfs_drv_close(pid,file,node);
 
 		/* if there are message for the driver we don't want to throw them away */
 		/* if there are any in the receivelist (and no references of the node) we
 		 * can throw them away because no one will read them anymore
 		 * (it means that the client has already closed the file) */
 		/* note also that we can assume that the driver is still running since we
-		 * would have deleted the whole device-node otherwise */
+		 * would have deleted the whole driver-node otherwise */
 		if(sll_length(chan->sendList) == 0)
 			vfs_node_destroy(node);
 		else
@@ -155,21 +156,23 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 	return sll_length(chan->sendList) > 0;
 }
 
-ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const void *data,
+ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const void *data,
 		size_t size) {
+	UNUSED(pid);
+	UNUSED(file);
 	sSLList **list;
 	sChannel *chan = (sChannel*)n->data;
 	if(n->name == NULL)
 		return ERR_NODE_DESTROYED;
 
-	/*vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (device %s)\n",
+	/*vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (driver %s)\n",
 			pid,proc_getByPid(pid)->command,id,size,n->name,n,n->parent->name);*/
 
-	/* devices write to the receive-list (which will be read by other processes) */
-	if(vfs_isDevice(file)) {
-		/* if it is from a device or fs, don't enqueue it but pass it directly to
+	/* drivers write to the receive-list (which will be read by other processes) */
+	if(vfs_isDriver(file)) {
+		/* if it is from a driver or fs, don't enqueue it but pass it directly to
 		 * the corresponding handler */
-		if(vfs_device_accepts(n->parent,id)) {
+		if(vfs_server_accepts(n->parent,id)) {
 			vfs_req_sendMsg(id,n,data,size);
 			return 0;
 		}
@@ -204,7 +207,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 
 	/* notify the driver */
 	if(list == &(chan->sendList)) {
-		vfs_device_addMsg(n->parent);
+		vfs_server_addMsg(n->parent);
 		ev_wakeup(EVI_CLIENT,(evobj_t)n->parent);
 	}
 	/* notify all threads that wait on this node for a msg */
@@ -213,8 +216,10 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 	return 0;
 }
 
-ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,
-		USER void *data,size_t size) {
+ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,USER void *data,
+		size_t size) {
+	UNUSED(pid);
+	UNUSED(file);
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;
@@ -231,7 +236,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	}
 
 	/* determine list and event to use */
-	if(vfs_isDevice(file)) {
+	if(vfs_isDriver(file)) {
 		event = EVI_CLIENT;
 		list = &chan->sendList;
 	}
@@ -297,7 +302,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	res = msg->length;
 	sll_removeFirst(*list);
 	if(event == EVI_CLIENT)
-		vfs_device_remMsg(node->parent);
+		vfs_server_remMsg(node->parent);
 	klock_release(&node->lock);
 	cache_free(msg);
 	return res;

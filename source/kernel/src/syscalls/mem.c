@@ -28,9 +28,9 @@
 #include <string.h>
 #include <errors.h>
 
-int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
+int sysc_changeSize(sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = proc_getRunning();
 	ssize_t oldEnd;
 	vmreg_t rno = RNO_DATA;
 	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
@@ -45,13 +45,14 @@ int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,oldEnd);
 }
 
-int sysc_addRegion(sThread *t,sIntrptStackFrame *stack) {
+int sysc_addRegion(sIntrptStackFrame *stack) {
 	sBinDesc binCpy;
 	const sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
 	off_t binOffset = SYSC_ARG2(stack);
 	size_t byteCount = SYSC_ARG3(stack);
 	size_t loadCount = SYSC_ARG4(stack);
 	uint type = SYSC_ARG5(stack);
+	sThread *t = thread_getRunning();
 	pid_t pid = t->proc->pid;
 	vmreg_t rno = -1;
 	uintptr_t start;
@@ -100,8 +101,8 @@ int sysc_addRegion(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,start);
 }
 
-int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack) {
-	pid_t pid = t->proc->pid;
+int sysc_setRegProt(sIntrptStackFrame *stack) {
+	pid_t pid = proc_getRunning();
 	uintptr_t addr = SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 	ulong flags = 0;
@@ -123,11 +124,11 @@ int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
+int sysc_mapPhysical(sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = proc_getRunning();
 	uintptr_t addr,physCpy = *phys;
 	sProc *p;
 
@@ -158,11 +159,11 @@ int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-int sysc_createSharedMem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_createSharedMem(sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	size_t byteCount = SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = proc_getRunning();
 	int res;
 
 	if(byteCount == 0)
@@ -175,10 +176,10 @@ int sysc_createSharedMem(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
-int sysc_joinSharedMem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = proc_getRunning();
 	int res;
 
 	strnzcpy(namecpy,name,sizeof(namecpy));
@@ -188,10 +189,10 @@ int sysc_joinSharedMem(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
-int sysc_leaveSharedMem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = proc_getRunning();
 	int res;
 
 	strnzcpy(namecpy,name,sizeof(namecpy));
@@ -201,10 +202,10 @@ int sysc_leaveSharedMem(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_destroySharedMem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_destroySharedMem(sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = proc_getRunning();
 	int res;
 
 	strnzcpy(namecpy,name,sizeof(namecpy));

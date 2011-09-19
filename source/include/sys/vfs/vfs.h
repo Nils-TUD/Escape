@@ -32,17 +32,18 @@
 #define MODE_TYPE_CHANNEL			0x0010000
 #define MODE_TYPE_PIPE				0x0020000
 #define MODE_TYPE_DEVMASK			0x0700000
-#define MODE_TYPE_BLKDEV			0x0100000
-#define MODE_TYPE_CHARDEV			0x0200000
-#define MODE_TYPE_FSDEV				0x0300000
-#define MODE_TYPE_FILEDEV			0x0400000
-#define MODE_TYPE_SERVDEV			0x0500000
+#define MODE_TYPE_BLKDEV			(0x0100000 | S_IFBLK)
+#define MODE_TYPE_CHARDEV			(0x0200000 | S_IFCHR)
+#define MODE_TYPE_FSDEV				(0x0300000 | S_IFFS)
+#define MODE_TYPE_FILEDEV			(0x0400000 | S_IFREG)
+#define MODE_TYPE_SERVDEV			(0x0500000 | S_IFSERV)
 
 /* the device-number of the VFS */
 #define VFS_DEV_NO					((dev_t)0xFF)
 
 #define IS_DEVICE(mode)				(((mode) & MODE_TYPE_DEVMASK) != 0)
 #define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
+#define IS_FS(mode)					(((mode) & MODE_TYPE_DEVMASK) == 0x0300000)
 
 #define DEV_OPEN					1
 #define DEV_READ					2

@@ -26,51 +26,78 @@
 #include "symbols.h"
 #include "elf.h"
 
+typedef struct sSymbolFile {
+	Elf32_Sym *symtab;
+	size_t symcount;
+	char *strtab;
+	struct sSymbolFile *next;
+} sSymbolFile;
+
 static void demangle(char *dst,size_t dstSize,const char *name);
-static void sym_loadShSyms(void);
-static Elf32_Shdr *sym_getSecByName(const char *name);
-static void readat(off_t offset,void *buffer,size_t count);
+static char *sym_loadShSyms(FILE *f,const Elf32_Ehdr *eheader);
+static Elf32_Shdr *sym_getSecByName(FILE *f,const Elf32_Ehdr *eheader,char *syms,const char *name);
+static void readat(FILE *f,off_t offset,void *buffer,size_t count);
 
-static FILE *f;
-static char *shsymbols;
-static Elf32_Sym *symtab;
-static size_t symcount;
-static char *strtab;
-static Elf32_Ehdr eheader;
+static sSymbolFile *files;
+static sSymbolFile *lastFile;
 
-void sym_init(const char *file) {
+void sym_init(void) {
+	files = NULL;
+	lastFile = NULL;
+}
+
+void sym_addFile(const char *file) {
+	Elf32_Ehdr eheader;
 	Elf32_Shdr *sheader;
-	f = fopen(file,"r");
+	char *shsyms;
+	sSymbolFile *sf = (sSymbolFile*)malloc(sizeof(sSymbolFile));
+	FILE *f = fopen(file,"r");
 	if(!f)
 		perror("fopen");
-	readat(0,&eheader,sizeof(Elf32_Ehdr));
-	sym_loadShSyms();
+	readat(f,0,&eheader,sizeof(Elf32_Ehdr));
+	shsyms = sym_loadShSyms(f,&eheader);
 
-	sheader = sym_getSecByName(".symtab");
+	sf->symtab = NULL;
+	sf->symcount = 0;
+	sheader = sym_getSecByName(f,&eheader,shsyms,".symtab");
 	if(sheader) {
-		symtab = (Elf32_Sym*)malloc(sheader->sh_size);
-		if(!symtab)
+		sf->symtab = (Elf32_Sym*)malloc(sheader->sh_size);
+		if(!sf->symtab)
 			perror("malloc");
-		readat(sheader->sh_offset,symtab,sheader->sh_size);
-		symcount = sheader->sh_size / sizeof(Elf32_Sym);
+		readat(f,sheader->sh_offset,sf->symtab,sheader->sh_size);
+		sf->symcount = sheader->sh_size / sizeof(Elf32_Sym);
 	}
-	sheader = sym_getSecByName(".strtab");
+
+	sf->strtab = NULL;
+	sheader = sym_getSecByName(f,&eheader,shsyms,".strtab");
 	if(sheader) {
-		strtab = (char*)malloc(sheader->sh_size);
-		if(!strtab)
+		sf->strtab = (char*)malloc(sheader->sh_size);
+		if(!sf->strtab)
 			perror("malloc");
-		readat(sheader->sh_offset,strtab,sheader->sh_size);
+		readat(f,sheader->sh_offset,sf->strtab,sheader->sh_size);
 	}
+	fclose(f);
+
+	if(lastFile)
+		lastFile->next = sf;
+	else
+		files = sf;
+	sf->next = NULL;
+	lastFile = sf;
 }
 
 const char *sym_resolve(unsigned long addr) {
 	static char symbolName[MAX_FUNC_LEN];
 	static char cleanSymbolName[MAX_FUNC_LEN];
-	for(size_t i = 0; i < symcount; i++) {
-		if(ELF32_ST_TYPE(symtab[i].st_info) == STT_FUNC && symtab[i].st_value == addr) {
-			demangle(symbolName,MAX_FUNC_LEN,strtab + symtab[i].st_name);
-			return symbolName;
+	sSymbolFile *file = files;
+	while(file != NULL) {
+		for(size_t i = 0; i < file->symcount; i++) {
+			if(ELF32_ST_TYPE(file->symtab[i].st_info) == STT_FUNC && file->symtab[i].st_value == addr) {
+				demangle(symbolName,MAX_FUNC_LEN,file->strtab + file->symtab[i].st_name);
+				return symbolName;
+			}
 		}
+		file = file->next;
 	}
 	sprintf(symbolName,"%lu",addr);
 	specialChars(symbolName,cleanSymbolName,sizeof(cleanSymbolName));
@@ -102,30 +129,32 @@ static void demangle(char *dst,size_t dstSize,const char *name) {
 	free(tmp);
 }
 
-static void sym_loadShSyms(void) {
+static char *sym_loadShSyms(FILE *f,const Elf32_Ehdr *eheader) {
 	Elf32_Shdr sheader;
 	unsigned char *datPtr;
-	datPtr = (unsigned char*)(eheader.e_shoff + eheader.e_shstrndx * eheader.e_shentsize);
-	readat((off_t)datPtr,&sheader,sizeof(Elf32_Shdr));
+	char *shsymbols;
+	datPtr = (unsigned char*)(eheader->e_shoff + eheader->e_shstrndx * eheader->e_shentsize);
+	readat(f,(off_t)datPtr,&sheader,sizeof(Elf32_Shdr));
 	shsymbols = (char*)malloc(sheader.sh_size);
 	if(shsymbols == NULL)
 		perror("malloc");
-	readat(sheader.sh_offset,shsymbols,sheader.sh_size);
+	readat(f,sheader.sh_offset,shsymbols,sheader.sh_size);
+	return shsymbols;
 }
 
-static Elf32_Shdr *sym_getSecByName(const char *name) {
+static Elf32_Shdr *sym_getSecByName(FILE *f,const Elf32_Ehdr *eheader,char *syms,const char *name) {
 	static Elf32_Shdr section[1];
 	int i;
-	unsigned char *datPtr = (unsigned char*)eheader.e_shoff;
-	for(i = 0; i < eheader.e_shnum; datPtr += eheader.e_shentsize, i++) {
-		readat((off_t)datPtr,section,sizeof(Elf32_Shdr));
-		if(strcmp(shsymbols + section->sh_name,name) == 0)
+	unsigned char *datPtr = (unsigned char*)eheader->e_shoff;
+	for(i = 0; i < eheader->e_shnum; datPtr += eheader->e_shentsize, i++) {
+		readat(f,(off_t)datPtr,section,sizeof(Elf32_Shdr));
+		if(strcmp(syms + section->sh_name,name) == 0)
 			return section;
 	}
 	return NULL;
 }
 
-static void readat(off_t offset,void *buffer,size_t count) {
+static void readat(FILE *f,off_t offset,void *buffer,size_t count) {
 	if(fseek(f,offset,SEEK_SET) < 0)
 		perror("fseek");
 	if(fread(buffer,1,count,f) != count)

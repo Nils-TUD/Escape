@@ -33,7 +33,6 @@
 #include <errors.h>
 
 #define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
-#define DRV_IS_FS(mode)				(((mode) & MODE_TYPE_DEVMASK) == MODE_TYPE_FSDEV)
 
 typedef struct {
 	/* whether there is data to read or not */
@@ -114,7 +113,7 @@ void vfs_device_clientRemoved(sVFSNode *node,const sVFSNode *client) {
 }
 
 bool vfs_device_accepts(const sVFSNode *node,uint id) {
-	if(DRV_IS_FS(node->mode))
+	if(IS_FS(node->mode))
 		return true;
 	return id == MSG_DEV_OPEN_RESP || id == MSG_DEV_READ_RESP || id == MSG_DEV_WRITE_RESP;
 }

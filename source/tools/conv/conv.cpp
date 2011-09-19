@@ -73,8 +73,8 @@ int main(int argc,char *argv[]) {
 	FILE *f = stdin;
 	int parser = -1;
 
-	if(argc < 3 || argc > 4) {
-		fprintf(stderr,"Usage: %s <format> <input> [<symbolFile>]\n",argv[0]);
+	if(argc < 3) {
+		fprintf(stderr,"Usage: %s <format> <input> [<symbolFile>...]\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -95,8 +95,11 @@ int main(int argc,char *argv[]) {
 		if(!f)
 			perror("fopen");
 	}
-	if(argc > 3)
-		sym_init(argv[3]);
+
+	sym_init();
+	for(int i = 3; i < argc; i++)
+		sym_addFile(argv[i]);
+
 	parsers[parser].parse(f);
 	if(haveFile)
 		fclose(f);
@@ -202,7 +205,7 @@ static void parseMMIX(FILE *f) {
 static sContext *getCurrent(unsigned long tid) {
 	if(tid >= contextSize) {
 		unsigned long oldSize = contextSize;
-		contextSize = contextSize == 0 ? 8 : std::max(contextSize * 2,tid + 1);
+		contextSize = contextSize == 0 ? std::max(8UL,tid + 1) : std::max(contextSize * 2,tid + 1);
 		contexts = (sContext*)realloc(contexts,contextSize * sizeof(sContext));
 		memset(contexts + oldSize,0,(contextSize - oldSize) * sizeof(sContext*));
 	}

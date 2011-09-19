@@ -32,13 +32,13 @@
 
 /* mode masks */
 #define S_IFMT				0170000
-#define S_IFSOCK			0140000
+#define S_IFSERV			0140000
 #define S_IFLNK				0120000
 #define S_IFREG				0100000
 #define S_IFBLK				0060000
 #define S_IFDIR				0040000
 #define S_IFCHR				0020000
-#define S_IFIFO				0010000
+#define S_IFFS				0010000
 #define S_ISUID				0004000
 #define S_ISGID				0002000
 #define S_ISSTICKY			0001000
@@ -57,11 +57,11 @@
 
 #define S_ISDIR(mode) 		(((mode) & S_IFMT) == S_IFDIR)
 #define S_ISREG(mode) 		(((mode) & S_IFMT) == S_IFREG)
-#define S_ISSOCK(mode)		 (((mode) & S_IFMT) == S_IFSOCK)
-#define S_ISLNK(mode)		 (((mode) & S_IFMT) == S_IFLNK)
+#define S_ISLNK(mode)		(((mode) & S_IFMT) == S_IFLNK)
 #define S_ISCHR(mode) 		(((mode) & S_IFMT) == S_IFCHR)
 #define S_ISBLK(mode)		(((mode) & S_IFMT) == S_IFBLK)
-#define S_ISFIFO(mode)		 (((mode) & S_IFMT) == S_IFIFO)
+#define S_ISFS(mode)		(((mode) & S_IFMT) == S_IFFS)
+#define S_ISSERV(mode)		(((mode) & S_IFMT) == S_IFSERV)
 
 #define MODE_READ			(S_IRUSR | S_IRGRP | S_IROTH)
 #define MODE_WRITE			(S_IWUSR | S_IWGRP | S_IWOTH)

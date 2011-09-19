@@ -33,6 +33,7 @@
 #include "mouse.h"
 #include "keyboard.h"
 #include "listener.h"
+#include "infodev.h"
 
 static sMsg msg;
 static gsize_t screenWidth;
@@ -57,6 +58,8 @@ int main(void) {
 		error("Unable to start thread for mouse-handler");
 	if(startThread(keyboard_start,&drvId) < 0)
 		error("Unable to start thread for keyboard-handler");
+	if(startThread(infodev_thread,NULL) < 0)
+		error("Unable to start thread for the infodev");
 
 	while(1) {
 		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);

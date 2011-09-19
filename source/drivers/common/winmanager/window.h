@@ -43,7 +43,7 @@ typedef struct {
 	gsize_t width;
 	gsize_t height;
 	gwinid_t id;
-	tid_t owner;
+	inode_t owner;
 	uint style;
 	gsize_t titleBarHeight;
 } sWindow;

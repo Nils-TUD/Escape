@@ -133,7 +133,7 @@ int vfs_node_getInfo(inode_t nodeNo,USER sFileInfo *info) {
 	info->blockCount = 0;
 	info->blockSize = 512;
 	info->inodeNo = nodeNo;
-	info->linkCount = 0;
+	info->linkCount = 1;
 	info->uid = n->uid;
 	info->gid = n->gid;
 	info->mode = n->mode;

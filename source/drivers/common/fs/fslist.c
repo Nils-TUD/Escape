@@ -48,7 +48,7 @@ void fslist_init(void) {
 			error("Unable to get %s-filesystem",types[i].name);
 		if(mount_addFS(fs) != 0)
 			error("Unable to add %s-filesystem",types[i].name);
-		printf("[FS] Loaded %s-device\n",types[i].name);
+		printf("[FS] Loaded %s-filesystem\n",types[i].name);
 	}
 }
 

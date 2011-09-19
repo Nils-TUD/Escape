@@ -21,6 +21,8 @@
 #define DRIVER_H_
 
 #include <esc/common.h>
+#include <esc/messages.h>
+#include <stdio.h>
 
 #ifdef __i386__
 #include <esc/arch/i586/driver.h>
@@ -44,6 +46,8 @@
 #define DEV_TYPE_SERVICE			4
 
 #define GW_NOBLOCK					1
+
+typedef void (*fGetData)(FILE *str);
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,6 +96,17 @@ int getClient(int fd,inode_t cid) A_CHECKRET;
  * @return the file-descriptor for the communication with the client
  */
 int getWork(int *fds,size_t fdCount,int *drv,msgid_t *mid,void *msg,size_t size,uint flags) A_CHECKRET;
+
+/**
+ * A convenience method which handles the message MSG_DEV_READ for DEV_TYPE_FILE. It extracts
+ * the input-parameters from the message, calls getData() to build the complete file and sends
+ * the requested part to the client.
+ *
+ * @param fd the file-descriptor for the client
+ * @param msg the received message
+ * @param getData the function to build the complete file
+ */
+void handleFileRead(int fd,sMsg *msg,fGetData getData);
 
 #ifdef __cplusplus
 }

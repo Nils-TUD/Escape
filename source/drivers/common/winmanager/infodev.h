@@ -17,14 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYMBOLS_H_
-#define SYMBOLS_H_
+#ifndef INFODEV_H_
+#define INFODEV_H_
 
-#define MAX_FUNC_LEN	255
+#include <esc/common.h>
 
-void sym_init(void);
-void sym_addFile(const char *file);
-const char *sym_resolve(unsigned long addr);
-void specialChars(const char *src,char *dst,size_t dstSize);
+int infodev_thread(A_UNUSED void *arg);
 
-#endif /* SYMBOLS_H_ */
+#endif /* INFODEV_H_ */

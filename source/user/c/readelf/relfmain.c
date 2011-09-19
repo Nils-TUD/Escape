@@ -203,6 +203,10 @@ int main(int argc,char **argv) {
 		error("Unable to open %s",file);
 
 	readat(0,&eheader,sizeof(sElfEHeader));
+	if(memcmp(eheader.e_ident,ELFMAG,sizeof(ELFMAG) - 1) != 0) {
+		fprintf(stderr,"Invalid ELF-magic. This doesn't seem to be an ELF-binary\n");
+		return EXIT_FAILURE;
+	}
 	loadShSyms();
 	if(dyns || rel)
 		loadDynSection();

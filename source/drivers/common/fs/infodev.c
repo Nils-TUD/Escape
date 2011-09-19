@@ -29,7 +29,6 @@
 #include "infodev.h"
 #include "fslist.h"
 
-typedef void (*fGetData)(FILE *str);
 typedef struct {
 	const char *path;
 	fGetData getData;
@@ -48,6 +47,9 @@ static int ids[ARRAY_SIZE(infos)];
 static volatile bool run = true;
 
 int infodev_thread(A_UNUSED void *arg) {
+	sMsg msg;
+	int id;
+	msgid_t mid;
 	size_t i;
 	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
 		error("Unable to announce USR1-signal-handler");
@@ -61,9 +63,6 @@ int infodev_thread(A_UNUSED void *arg) {
 	}
 
 	while(run) {
-		sMsg msg;
-		int id;
-		msgid_t mid;
 		int fd = getWork(ids,ARRAY_SIZE(ids),&id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != ERR_INTERRUPTED)
@@ -75,35 +74,9 @@ int infodev_thread(A_UNUSED void *arg) {
 				printe("[FSINFO] Invalid device-id %d",id);
 			else {
 				switch(mid) {
-					case MSG_DEV_READ: {
-						size_t total;
-						char *data;
-						off_t offset = msg.args.arg1;
-						size_t count = msg.args.arg2;
-						FILE *str;
-						if(offset + (off_t)count < offset)
-							msg.args.arg1 = ERR_INVALID_ARGS;
-						str = ascreate();
-						if(str)
-							info->getData(str);
-						data = asget(str,&total);
-						if(!data)
-							msg.args.arg1 = ERR_NOT_ENOUGH_MEM;
-						else {
-							msg.args.arg1 = 0;
-							if(offset >= (off_t)total)
-								msg.args.arg1 = 0;
-							else if(offset + count > total)
-								msg.args.arg1 = total - offset;
-							else
-								msg.args.arg1 = count;
-						}
-						send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-						if((long)msg.args.arg1 > 0)
-							send(fd,MSG_DEV_READ_RESP,data + offset,msg.args.arg1);
-						fclose(str);
-					}
-					break;
+					case MSG_DEV_READ:
+						handleFileRead(fd,&msg,info->getData);
+						break;
 
 					default:
 						msg.args.arg1 = ERR_UNSUPPORTED_OP;

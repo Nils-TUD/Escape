@@ -76,11 +76,9 @@ static const char *stat_getType(sFileInfo *info) {
 		return "Block-Device";
 	if(S_ISCHR(info->mode))
 		return "Character-Device";
-	if(S_ISFIFO(info->mode))
-		return "FIFO";
-	if(S_ISLNK(info->mode))
-		return "Link";
-	if(S_ISSOCK(info->mode))
-		return "Socket";
+	if(S_ISFS(info->mode))
+		return "Filesystem-Device";
+	if(S_ISSERV(info->mode))
+		return "Service-Device";
 	return "Regular File";
 }

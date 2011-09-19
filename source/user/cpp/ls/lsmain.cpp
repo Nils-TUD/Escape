@@ -85,6 +85,7 @@ private:
 	size_type _rsize;
 };
 
+static void printColor(const lsfile *f);
 static bool compareEntries(const lsfile* a,const lsfile* b);
 static vector<lsfile*> getEntries(const string& path);
 static lsfile* buildFile(const file& f);
@@ -193,15 +194,8 @@ int main(int argc,char *argv[]) {
 				strftime(dateStr,sizeof(dateStr),"%Y-%m-%d %H:%M",date);
 				cout << dateStr << ' ';
 			}
-			if(f->is_dir())
-				cout << "\033[co;9]" << f->name() << "\033[co]";
-			else if(S_ISCHR(f->mode()))
-				cout << "\033[co;14]" << f->name() << "\033[co]";
-			else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
-				cout << "\033[co;2]" << f->name() << "\033[co]";
-			else
-				cout << f->name();
-			cout << '\n';
+			printColor(f);
+			cout << f->name() << "\033[co]" << '\n';
 		}
 		else {
 			/* if the entry does not fit on the line, use next */
@@ -211,14 +205,8 @@ int main(int argc,char *argv[]) {
 			}
 			if(flags & F_INODE)
 				cout << setw(widths[W_INODE]) << f->inode() << ' ';
-			if(f->is_dir())
-				cout << "\033[co;9]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
-			else if(S_ISCHR(f->mode()))
-				cout << "\033[co;14]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
-			else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
-				cout << "\033[co;2]" << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
-			else
-				cout << setw(widths[W_NAME] + 1) << left << f->name();
+			printColor(f);
+			cout << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
 			pos += widths[W_NAME] + widths[W_INODE] + 2;
 		}
 	}
@@ -226,6 +214,15 @@ int main(int argc,char *argv[]) {
 	if(!(flags & F_LONG))
 		cout << '\n';
 	return EXIT_SUCCESS;
+}
+
+static void printColor(const lsfile *f) {
+	if(f->is_dir())
+		cout << "\033[co;9]";
+	else if(S_ISCHR(f->mode()) || S_ISBLK(f->mode()) || S_ISFS(f->mode()) || S_ISSERV(f->mode()))
+		cout << "\033[co;14]";
+	else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
+		cout << "\033[co;2]";
 }
 
 static bool compareEntries(const lsfile* a,const lsfile* b) {
@@ -286,6 +283,12 @@ static void printMode(file::mode_type mode) {
 		cout << 'd';
 	else if(S_ISCHR(mode))
 		cout << 'c';
+	else if(S_ISBLK(mode))
+		cout << 'b';
+	else if(S_ISFS(mode))
+		cout << 'f';
+	else if(S_ISSERV(mode))
+		cout << 's';
 	else
 		cout << '-';
 	printPerm(mode,S_IRUSR,'r');

@@ -72,9 +72,9 @@ int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info
 	}
 
 	/* elf_finish might segfault */
-	thread_addHeapAlloc(secHeaders);
+	thread_addHeapAlloc(t,secHeaders);
 	res = elf_finish(t,eheader,secHeaders,file,info);
-	thread_remHeapAlloc(secHeaders);
+	thread_remHeapAlloc(t,secHeaders);
 	cache_free(secHeaders);
 	return res;
 

@@ -62,6 +62,7 @@ void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 	cpu->ready = ready;
 	cpu->schedCount = 0;
 	cpu->runtime = 0;
+	cpu->thread = NULL;
 	if(!sll_append(&cpuList,cpu))
 		util_panic("Unable to append CPU");
 	cpuCount++;
@@ -85,25 +86,24 @@ void smp_setReady(cpuid_t id) {
 	cpus[id]->ready = true;
 }
 
-void smp_unschedule(cpuid_t id,uint64_t timestamp) {
-	cpus[id]->runtime += timestamp - cpus[id]->lastSched;
-}
-
-void smp_schedule(cpuid_t id,uint64_t timestamp) {
-	cpus[id]->schedCount++;
-	cpus[id]->lastSched = timestamp;
+void smp_schedule(cpuid_t id,sThread *new,uint64_t timestamp) {
+	sCPU *c = cpus[id];
+	if(c->thread && !(c->thread->flags & T_IDLE))
+		c->runtime += timestamp - c->lastSched;
+	if(!(new->flags & T_IDLE)) {
+		c->schedCount++;
+		c->lastSched = timestamp;
+	}
+	c->thread = new;
 }
 
 void smp_killThread(sThread *t) {
 	size_t i;
 	cpuid_t cur = smp_getCurId();
 	for(i = 0; i < cpuCount; i++) {
-		if(i != cur && cpus[i]->ready) {
-			sThread *ct = smp_getThreadOf(i);
-			if(ct == t) {
-				smp_sendIPI(i,IPI_TERM);
-				break;
-			}
+		if(i != cur && cpus[i]->ready && cpus[i]->thread == t) {
+			smp_sendIPI(i,IPI_TERM);
+			break;
 		}
 	}
 }
@@ -112,12 +112,9 @@ void smp_wakeupCPU(void) {
 	size_t i;
 	cpuid_t cur = smp_getCurId();
 	for(i = 0; i < cpuCount; i++) {
-		if(i != cur && cpus[i]->ready) {
-			sThread *t = smp_getThreadOf(i);
-			if(t->flags & T_IDLE) {
-				smp_sendIPI(i,IPI_WORK);
-				break;
-			}
+		if(i != cur && cpus[i]->ready && cpus[i]->thread && (cpus[i]->thread->flags & T_IDLE)) {
+			smp_sendIPI(i,IPI_WORK);
+			break;
 		}
 	}
 }
@@ -157,7 +154,7 @@ void smp_print(void) {
 	vid_printf("CPUs:\n");
 	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
 		sCPU *cpu = (sCPU*)n->data;
-		sThread *t = smp_getThreadOf(cpu->id);
+		sThread *t = cpu->thread;
 		vid_printf("\t%s:%x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n",
 				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->tid,t->proc->pid,t->proc->command,
 				cpu->schedCount,cpu->runtime);

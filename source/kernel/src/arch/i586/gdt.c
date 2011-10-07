@@ -320,11 +320,6 @@ cpuid_t gdt_getCPUId(void) {
 	return -1;
 }
 
-sThread *gdt_getRunningOn(cpuid_t id) {
-	sGDTDesc *gdt = (sGDTDesc*)allgdts[id].offset;
-	return (sThread*)((gdt[7].addrHigh << 24) | (gdt[7].addrMiddle << 16) | gdt[7].addrLow);
-}
-
 sThread *gdt_getRunning(void) {
 	sGDTTable tbl;
 	sGDTDesc *gdt;

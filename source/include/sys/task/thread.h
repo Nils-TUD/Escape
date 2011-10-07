@@ -380,45 +380,51 @@ void thread_updateRuntimes(void);
 /**
  * Adds the given lock to the term-lock-list
  *
+ * @param cur the current thread
  * @param l the lock
  */
-void thread_addLock(klock_t *l);
+void thread_addLock(sThread *cur,klock_t *l);
 
 /**
  * Removes the given lock from the term-lock-list
  *
+ * @param cur the current thread
  * @param l the lock
  */
-void thread_remLock(klock_t *l);
+void thread_remLock(sThread *cur,klock_t *l);
 
 /**
  * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies
  * before it is removed.
  *
+ * @param cur the current thread
  * @param ptr the pointer to the heap
  */
-void thread_addHeapAlloc(void *ptr);
+void thread_addHeapAlloc(sThread *cur,void *ptr);
 
 /**
  * Removes the given pointer from the term-heap-allocation-list
  *
+ * @param cur the current thread
  * @param ptr the pointer to the heap
  */
-void thread_remHeapAlloc(void *ptr);
+void thread_remHeapAlloc(sThread *cur,void *ptr);
 
 /**
  * Adds the given file to the file-usage-list. The file-usages will be decreased if the thread dies.
  *
+ * @param cur the current thread
  * @param file the file
  */
-void thread_addFileUsage(file_t file);
+void thread_addFileUsage(sThread *cur,file_t file);
 
 /**
  * Removes the given file from the file-usage-list.
  *
+ * @param cur the current thread
  * @param file the file
  */
-void thread_remFileUsage(file_t file);
+void thread_remFileUsage(sThread *cur,file_t file);
 
 /**
  * Finishes the clone of a thread

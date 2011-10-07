@@ -130,6 +130,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 		off_t offset,size_t count) {
 	void *oldData;
 	size_t newSize = 0;
+	sThread *t = thread_getRunning();
 	sFileContent *con = (sFileContent*)n->data;
 	klock_aquire(&n->lock);
 	oldData = con->data;
@@ -176,9 +177,9 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 		con->size = newSize;
 	/* copy the data into the cache; this may segfault, which will leave the the state of the
 	 * file as it was before, except that we've increased the buffer-size */
-	thread_addLock(&n->lock);
+	thread_addLock(t,&n->lock);
 	memcpy((uint8_t*)con->data + offset,buffer,count);
-	thread_remLock(&n->lock);
+	thread_remLock(t,&n->lock);
 	/* we have checked size for overflow. so it is ok here */
 	con->pos = MAX(con->pos,(off_t)(offset + count));
 	klock_release(&n->lock);

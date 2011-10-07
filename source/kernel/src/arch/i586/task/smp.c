@@ -158,10 +158,6 @@ bool smp_init_arch(void) {
 	return false;
 }
 
-sThread *smp_getThreadOf(cpuid_t id) {
-	return gdt_getRunningOn(id);
-}
-
 cpuid_t smp_getPhysId(cpuid_t logId) {
 	return log2Phys[logId];
 }

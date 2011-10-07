@@ -118,7 +118,7 @@ void specialChars(const char *src,char *dst,size_t dstSize) {
 }
 
 static void demangle(char *dst,size_t dstSize,const char *name) {
-	size_t tmpSize = 80;
+	size_t tmpSize = 255;
 	char *tmp = (char*)malloc(tmpSize);
 	int status;
 	tmp = abi::__cxa_demangle(name,tmp,&tmpSize,&status);

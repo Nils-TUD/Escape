@@ -39,6 +39,7 @@
 #define ARGS_MSG_COUNT		256
 
 typedef struct {
+	bool used;
 	bool closed;
 	/* a list for sending messages to the device */
 	sSLList *sendList;
@@ -81,6 +82,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	}
 	chan->recvList = NULL;
 	chan->sendList = NULL;
+	chan->used = false;
 	chan->closed = false;
 	node->data = chan;
 	vfs_node_append(parent,node);
@@ -120,21 +122,31 @@ static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
 	if(node->name == NULL)
 		vfs_node_destroy(node);
-	else if(node->refCount == 0) {
-		/* notify the driver, if it is one */
-		vfs_devmsgs_close(pid,file,node);
+	else {
+		if(vfs_isDevice(file))
+			chan->used = false;
 
-		/* if there are message for the driver we don't want to throw them away */
-		/* if there are any in the receivelist (and no references of the node) we
-		 * can throw them away because no one will read them anymore
-		 * (it means that the client has already closed the file) */
-		/* note also that we can assume that the driver is still running since we
-		 * would have deleted the whole device-node otherwise */
-		if(sll_length(chan->sendList) == 0)
-			vfs_node_destroy(node);
-		else
-			chan->closed = true;
+		if(node->refCount == 0) {
+			/* notify the driver, if it is one */
+			vfs_devmsgs_close(pid,file,node);
+
+			/* if there are message for the driver we don't want to throw them away */
+			/* if there are any in the receivelist (and no references of the node) we
+			 * can throw them away because no one will read them anymore
+			 * (it means that the client has already closed the file) */
+			/* note also that we can assume that the driver is still running since we
+			 * would have deleted the whole device-node otherwise */
+			if(sll_length(chan->sendList) == 0)
+				vfs_node_destroy(node);
+			else
+				chan->closed = true;
+		}
 	}
+}
+
+void vfs_chan_setUsed(sVFSNode *node,bool used) {
+	sChannel *chan = (sChannel*)node->data;
+	chan->used = used;
 }
 
 void vfs_chan_lock(sVFSNode *node) {
@@ -152,12 +164,13 @@ bool vfs_chan_hasReply(const sVFSNode *node) {
 
 bool vfs_chan_hasWork(const sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
-	return sll_length(chan->sendList) > 0;
+	return !chan->used && sll_length(chan->sendList) > 0;
 }
 
 ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const void *data,
 		size_t size) {
 	sSLList **list;
+	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)n->data;
 	if(n->name == NULL)
 		return ERR_NODE_DESTROYED;
@@ -188,9 +201,9 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 	msg->length = size;
 	msg->id = id;
 	if(data) {
-		thread_addHeapAlloc(msg);
+		thread_addHeapAlloc(t,msg);
 		memcpy(msg + 1,data,size);
-		thread_remHeapAlloc(msg);
+		thread_remHeapAlloc(t,msg);
 	}
 
 	if(*list == NULL)
@@ -218,6 +231,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;
+	sVFSNode *waitNode;
 	sMessage *msg;
 	size_t event;
 	ssize_t res;
@@ -234,10 +248,12 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	if(vfs_isDevice(file)) {
 		event = EVI_CLIENT;
 		list = &chan->sendList;
+		waitNode = node->parent;
 	}
 	else {
 		event = EVI_RECEIVED_MSG;
 		list = &chan->recvList;
+		waitNode = node;
 	}
 
 	/* wait until a message arrives */
@@ -251,7 +267,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 			klock_release(&node->lock);
 			return ERR_INVALID_FILE;
 		}
-		ev_wait(t,event,(evobj_t)node);
+		ev_wait(t,event,(evobj_t)waitNode);
 		klock_release(&node->lock);
 
 		thread_switch();
@@ -277,7 +293,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 			pid,proc_getByPid(pid)->command,msg->id,node->name,node);*/
 
 	/* copy data and id */
-	p = proc_request(proc_getRunning(),PLOCK_REGIONS);
+	p = proc_request(t->proc->pid,PLOCK_REGIONS);
 	if(data) {
 		if(!vmm_makeCopySafe(p,data,msg->length)) {
 			proc_release(p,PLOCK_REGIONS);

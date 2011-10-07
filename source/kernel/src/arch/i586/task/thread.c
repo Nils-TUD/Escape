@@ -201,10 +201,7 @@ void thread_doSwitch(void) {
 		new->cpu = gdt_prepareRun(old,new);
 
 		/* some stats for SMP */
-		if(!(old->flags & T_IDLE))
-			smp_unschedule(old->cpu,timestamp);
-		if(!(new->flags & T_IDLE))
-			smp_schedule(new->cpu,timestamp);
+		smp_schedule(new->cpu,new,timestamp);
 
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */

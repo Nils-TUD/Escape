@@ -267,12 +267,13 @@ static void vfs_devmsgs_readReqHandler(sVFSNode *node,USER const void *data,A_UN
 		else if(req->state == REQ_STATE_WAIT_DATA) {
 			/* ok, it's the data */
 			if(data) {
-				/* map the buffer we have to copy it to */
+				/* copy it to the heap */
 				req->data = cache_alloc(req->count);
 				if(req->data) {
-					thread_addHeapAlloc(req->data);
+					sThread *t = thread_getRunning();
+					thread_addHeapAlloc(t,req->data);
 					memcpy(req->data,data,req->count);
-					thread_remHeapAlloc(req->data);
+					thread_remHeapAlloc(t,req->data);
 				}
 			}
 			req->state = REQ_STATE_FINISHED;

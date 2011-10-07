@@ -13,7 +13,7 @@ DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D IN_KERNEL=1 \
  #-D PROFILE=1 -finstrument-functions \
- -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/arch/$(ARCH)/profile.c
+ -finstrument-functions-exclude-file-list=ksymbols.c,arch/i586/gdt.c,$(LIB)/arch/$(ARCH)/profile.c
 
 # sources
 ASRC = ./arch/$(ARCH)/kernel.s

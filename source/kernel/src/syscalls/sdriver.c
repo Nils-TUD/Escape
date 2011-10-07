@@ -65,12 +65,12 @@ int sysc_getClientId(sThread *t,sIntrptStackFrame *stack) {
 	inode_t id;
 	pid_t pid = t->proc->pid;
 
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	id = vfs_getClientId(pid,file);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	if(id < 0)
 		SYSC_ERROR(stack,id);
 	SYSC_RET1(stack,id);
@@ -84,13 +84,13 @@ int sysc_getClient(sThread *t,sIntrptStackFrame *stack) {
 	file_t file,drvFile;
 
 	/* get file */
-	drvFile = proc_reqFile(drvFd);
+	drvFile = proc_reqFile(t,drvFd);
 	if(drvFile < 0)
 		SYSC_ERROR(stack,drvFile);
 
 	/* open client */
 	file = vfs_openClient(pid,drvFile,cid);
-	proc_relFile(drvFile);
+	proc_relFile(t,drvFile);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
@@ -131,10 +131,10 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 
 	/* translate to files */
 	for(i = 0; i < fdCount; i++) {
-		files[i] = proc_reqFile(fds[i]);
+		files[i] = proc_reqFile(t,fds[i]);
 		if(files[i] < 0) {
 			for(; i > 0; i--)
-				proc_relFile(files[i - 1]);
+				proc_relFile(t,files[i - 1]);
 			SYSC_ERROR(stack,files[i]);
 		}
 	}
@@ -144,7 +144,7 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 
 	/* release files */
 	for(i = 0; i < fdCount; i++)
-		proc_relFile(files[i]);
+		proc_relFile(t,files[i]);
 
 	if(clientNo < 0)
 		SYSC_ERROR(stack,clientNo);

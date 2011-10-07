@@ -13,7 +13,7 @@ if [ "`VBoxManage showhdinfo \"$2\" | grep -i 'Error'`" != "" ]; then
 	# remove disk
 	VBoxManage closemedium disk "$2"
 	# add disk again
-	VBoxManage openmedium disk "$2"
+	#VBoxManage openmedium disk "$2"
 	# attach to vm
 	VBoxManage modifyvm "$1" --hda "$2"
 fi;

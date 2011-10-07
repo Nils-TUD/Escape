@@ -249,9 +249,9 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *
 	data->offset = offset;
 	data->length = count;
 	if(count) {
-		thread_addHeapAlloc(data);
+		thread_addHeapAlloc(t,data);
 		memcpy(data->data,buffer,count);
-		thread_remHeapAlloc(data);
+		thread_remHeapAlloc(t,data);
 	}
 
 	/* append */

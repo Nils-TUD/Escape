@@ -819,13 +819,17 @@ static inode_t vfs_doGetClient(const file_t *files,size_t count,size_t *index) {
 					*index = i;
 				if(cont)
 					match = client;
-				else
+				else {
+					vfs_chan_setUsed(client,true);
 					return vfs_node_getNo(client);
+				}
 			}
 		}
 		/* if we have a match, use this one */
-		if(match)
+		if(match) {
+			vfs_chan_setUsed(match,true);
 			return vfs_node_getNo(match);
+		}
 		/* if not and we've skipped a client, try another time */
 	}
 	while(retry);

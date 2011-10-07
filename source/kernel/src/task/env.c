@@ -69,26 +69,27 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 
 bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 	sEnvVar *var;
+	sThread *t = thread_getRunning();
 	while(1) {
 		sProc *p = proc_request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
-		thread_addLock(p->locks + PLOCK_ENV);
+		thread_addLock(t,p->locks + PLOCK_ENV);
 		var = env_getOf(p,name);
 		if(var != NULL) {
 			bool res = true;
 			if(dst) {
-				sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
+				sProc *cur = proc_request(t->proc->pid,PLOCK_REGIONS);
 				res = vmm_makeCopySafe(cur,dst,size);
 				if(res)
 					strnzcpy(dst,var->value,size);
 				proc_release(cur,PLOCK_REGIONS);
 			}
-			thread_remLock(p->locks + PLOCK_ENV);
+			thread_remLock(t,p->locks + PLOCK_ENV);
 			proc_release(p,PLOCK_ENV);
 			return res;
 		}
-		thread_remLock(p->locks + PLOCK_ENV);
+		thread_remLock(t,p->locks + PLOCK_ENV);
 		if(p->pid == 0) {
 			proc_release(p,PLOCK_ENV);
 			break;
@@ -103,12 +104,13 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 	sEnvVar *var;
 	sProc *p;
 	char *nameCpy,*valueCpy;
+	sThread *t = thread_getRunning();
 	nameCpy = strdup(name);
 	if(!nameCpy)
 		return false;
-	thread_addHeapAlloc(nameCpy);
+	thread_addHeapAlloc(t,nameCpy);
 	valueCpy = strdup(value);
-	thread_remHeapAlloc(nameCpy);
+	thread_remHeapAlloc(t,nameCpy);
 	if(!valueCpy)
 		goto errorNameCpy;
 

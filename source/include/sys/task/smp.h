@@ -41,16 +41,15 @@ typedef struct {
 	size_t schedCount;
 	uint64_t runtime;
 	uint64_t lastSched;
+	sThread *thread;
 } sCPU;
 
 void smp_init(void);
 bool smp_init_arch(void);
 bool smp_isEnabled(void);
-sThread *smp_getThreadOf(cpuid_t id);
 void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready);
 void smp_setReady(cpuid_t id);
-void smp_unschedule(cpuid_t id,uint64_t timestamp);
-void smp_schedule(cpuid_t id,uint64_t timestamp);
+void smp_schedule(cpuid_t id,sThread *new,uint64_t timestamp);
 void smp_pauseOthers(void);
 void smp_resumeOthers(void);
 void smp_haltOthers(void);

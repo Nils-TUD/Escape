@@ -29,10 +29,6 @@ cpuid_t smp_getCurId(void) {
 	return 0;
 }
 
-sThread *smp_getThreadOf(A_UNUSED cpuid_t id) {
-	return thread_getRunning();
-}
-
 void smp_pauseOthers(void) {
 	/* nothing to do */
 }

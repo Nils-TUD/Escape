@@ -207,7 +207,7 @@ static sContext *getCurrent(unsigned long tid) {
 		unsigned long oldSize = contextSize;
 		contextSize = contextSize == 0 ? std::max(8UL,tid + 1) : std::max(contextSize * 2,tid + 1);
 		contexts = (sContext*)realloc(contexts,contextSize * sizeof(sContext));
-		memset(contexts + oldSize,0,(contextSize - oldSize) * sizeof(sContext*));
+		memset(contexts + oldSize,0,(contextSize - oldSize) * sizeof(sContext));
 	}
 	if(contexts[tid].current == NULL) {
 		contexts[tid].layer = 0;
@@ -244,14 +244,14 @@ static void funcLeave(unsigned long tid,unsigned long long time) {
 }
 
 static const char *resolve(const char *name,unsigned long long addr) {
-	static char resolved[MAX_FUNC_LEN];
+	static char resolved[MAX_FUNC_LEN] = "";
 	unsigned long long naddr;
-	char *end;
-	naddr = strtoull(name,&end,16);
+	naddr = strtoull(name,NULL,16);
 	specialChars(name,resolved,MAX_FUNC_LEN);
 	if(std::string(name).find_first_not_of("0123456789ABCDEFabcdef",0) == std::string::npos) {
-		strcat(resolved,": ");
-		strcat(resolved,sym_resolve(naddr));
+		const char *symname = sym_resolve(naddr);
+		strncat(resolved,": ",std::min((size_t)2,MAX_FUNC_LEN - strlen(resolved)));
+		strncat(resolved,symname,std::min(strlen(symname),MAX_FUNC_LEN - strlen(resolved)));
 	}
 	else if(addr != 0)
 		snprintf(resolved + strlen(resolved),MAX_FUNC_LEN - strlen(resolved),": #%Lx",addr);
@@ -282,7 +282,7 @@ static sFuncCall *append(sFuncCall *cur,const char *name,unsigned long long addr
 	call->child = NULL;
 	call->next = NULL;
 	call->addr = addr;
-	strcpy(call->name,resolve(name,addr));
+	strncpy(call->name,resolve(name,addr),MAX_FUNC_LEN);
 
 	c = cur->child;
 	if(c) {

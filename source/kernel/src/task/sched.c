@@ -33,14 +33,12 @@
 /**
  * We're using round-robin here atm. That means a thread-switch puts the current thread at the end
  * of the ready-queue and makes the first in the ready-queue the new running thread.
- * Additionally we can block threads so that they lie on the blocked-queue until they are unblocked
- * by the kernel.
+ * Additionally we can block threads.
  *
- * Each thread has a prev- and next-pointer with which we build two double-linked list: one
- * ready-queue and one blocked-queue. For both we store the beginning and end.
- * Therefore we can dequeue the first, prepend, append and remove a thread in O(1).
- * Additionally the number of threads is limited by the kernel-heap (i.e. we don't need a static
- * storage of nodes for the linked list; we use the threads itself)
+ * Each thread has a prev- and next-pointer with which we build the ready-queue. To do so, we store
+ * the beginning and end. Therefore we can dequeue the first, prepend, append and remove a thread
+ * in O(1). Additionally the number of threads is limited by the kernel-heap (i.e. we don't need
+ * a static storage of nodes for the linked list; we use the threads itself)
  */
 
 typedef struct {

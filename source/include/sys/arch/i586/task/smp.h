@@ -22,7 +22,6 @@
 
 #include <sys/common.h>
 
-sThread *smp_getThreadOf(cpuid_t id);
 cpuid_t smp_getPhysId(cpuid_t logId);
 void smp_apIsRunning(void);
 

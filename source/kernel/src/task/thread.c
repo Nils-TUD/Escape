@@ -265,34 +265,28 @@ void thread_updateRuntimes(void) {
 	klock_release(&threadLock);
 }
 
-void thread_addLock(klock_t *l) {
-	sThread *t = thread_getRunning();
-	sll_append(&t->termLocks,l);
+void thread_addLock(sThread *cur,klock_t *l) {
+	sll_append(&cur->termLocks,l);
 }
 
-void thread_remLock(klock_t *l) {
-	sThread *t = thread_getRunning();
-	sll_removeFirstWith(&t->termLocks,l);
+void thread_remLock(sThread *cur,klock_t *l) {
+	sll_removeFirstWith(&cur->termLocks,l);
 }
 
-void thread_addHeapAlloc(void *ptr) {
-	sThread *t = thread_getRunning();
-	sll_append(&t->termHeapAllocs,ptr);
+void thread_addHeapAlloc(sThread *cur,void *ptr) {
+	sll_append(&cur->termHeapAllocs,ptr);
 }
 
-void thread_remHeapAlloc(void *ptr) {
-	sThread *t = thread_getRunning();
-	sll_removeFirstWith(&t->termHeapAllocs,ptr);
+void thread_remHeapAlloc(sThread *cur,void *ptr) {
+	sll_removeFirstWith(&cur->termHeapAllocs,ptr);
 }
 
-void thread_addFileUsage(file_t file) {
-	sThread *t = thread_getRunning();
-	sll_append(&t->termUsages,(void*)file);
+void thread_addFileUsage(sThread *cur,file_t file) {
+	sll_append(&cur->termUsages,(void*)file);
 }
 
-void thread_remFileUsage(file_t file) {
-	sThread *t = thread_getRunning();
-	sll_removeFirstWith(&t->termUsages,(void*)file);
+void thread_remFileUsage(sThread *cur,file_t file) {
+	sll_removeFirstWith(&cur->termUsages,(void*)file);
 }
 
 int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc) {

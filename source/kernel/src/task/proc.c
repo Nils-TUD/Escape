@@ -169,26 +169,26 @@ size_t proc_getCount(void) {
 	return res;
 }
 
-file_t proc_reqFile(int fd) {
+file_t proc_reqFile(sThread *cur,int fd) {
 	file_t fileNo;
 	sProc *p;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
-	p = proc_request(proc_getRunning(),PLOCK_FDS);
+	p = proc_request(cur->proc->pid,PLOCK_FDS);
 	fileNo = p->fileDescs[fd];
 	if(fileNo == -1)
 		fileNo = ERR_INVALID_FD;
 	else {
 		vfs_incUsages(fileNo);
-		thread_addFileUsage(fileNo);
+		thread_addFileUsage(cur,fileNo);
 	}
 	proc_release(p,PLOCK_FDS);
 	return fileNo;
 }
 
-void proc_relFile(file_t file) {
-	thread_remFileUsage(file);
+void proc_relFile(sThread *cur,file_t file) {
+	thread_remFileUsage(cur,file);
 	vfs_decUsages(file);
 }
 
@@ -543,7 +543,8 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 int proc_exec(const char *path,const char *const *args,const void *code,size_t size) {
 	char *argBuffer;
 	sStartupInfo info;
-	sProc *p = proc_request(proc_getRunning(),PLOCK_PROG);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	size_t argSize;
 	int argc,fd = -1;
 	if(!p)
@@ -616,11 +617,11 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	/* make process ready */
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
-	thread_addHeapAlloc(argBuffer);
+	thread_addHeapAlloc(t,argBuffer);
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
 	if(!uenv_setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
 		goto error;
-	thread_remHeapAlloc(argBuffer);
+	thread_remHeapAlloc(t,argBuffer);
 	cache_free(argBuffer);
 	proc_release(p,PLOCK_PROG);
 	return 0;
@@ -982,6 +983,7 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 	const char *const *arg;
 	char *bufPos;
 	int argc = 0;
+	sThread *t = thread_getRunning();
 	size_t remaining = EXEC_MAX_ARGSIZE;
 	size_t len;
 
@@ -994,7 +996,7 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 	/* note that we have to create a copy since we don't know where the args are. Maybe
 	 * they are on the user-stack at the position we want to copy them for the
 	 * new process... */
-	thread_addHeapAlloc(*argBuffer);
+	thread_addHeapAlloc(t,*argBuffer);
 	bufPos = *argBuffer;
 	arg = args;
 	while(1) {
@@ -1021,13 +1023,13 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 		arg++;
 		argc++;
 	}
-	thread_remHeapAlloc(*argBuffer);
+	thread_remHeapAlloc(t,*argBuffer);
 	/* store args-size and return argc */
 	*size = EXEC_MAX_ARGSIZE - remaining;
 	return argc;
 
 error:
-	thread_remHeapAlloc(*argBuffer);
+	thread_remHeapAlloc(t,*argBuffer);
 	cache_free(*argBuffer);
 	return ERR_INVALID_ARGS;
 }

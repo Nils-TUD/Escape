@@ -99,13 +99,12 @@ BUILD_DEF_ISR 44
 BUILD_DEF_ISR 45
 BUILD_DEF_ISR 46
 BUILD_DEF_ISR 47
-BUILD_DEF_ISR 48
 BUILD_DEF_ISR 49
 BUILD_DEF_ISR 50
 
 # IPI: flush TLB
 .global isr51
-	isr51:
+isr51:
 	pusha
 	mov		%cr3,%eax
 	mov		%eax,%cr3
@@ -115,7 +114,7 @@ BUILD_DEF_ISR 50
 
 # IPI: wait
 .global isr52
-	isr52:
+isr52:
 	pusha
 	# tell the CPU that requested the wait that we're waiting
 	lock
@@ -133,7 +132,7 @@ BUILD_DEF_ISR 50
 
 # IPI: halt
 .global isr53
-	isr53:
+isr53:
 	# tell the CPU that requested the wait that we're halting
 	lock
 	add		$1,(halting)
@@ -145,11 +144,42 @@ BUILD_DEF_ISR 50
 
 # our null-handler for all other interrupts
 .global isrNull
-	isrNull:
+isrNull:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	pushl	$0						# error-code (no error here)
 	pushl	$53						# the interrupt-number
 	jmp		isrCommon
+
+# syscall
+.global isr48
+isr48:
+	pushl	$0						# error-code (no error here)
+	pushl	$48						# the interrupt-number
+
+	# save registers
+	pusha
+	push	%gs
+	push	%fs
+	push	%ds
+	push	%es
+
+	# call c-routine
+	push	%esp					# stack-frame
+	mov		%esp,%eax
+	push	%eax					# pointer to stack-frame
+	call	intrpt_handler
+	add		$8,%esp
+
+	# restore registers
+	pop		%es
+	pop		%ds
+	pop		%fs
+	pop		%gs
+	popa
+
+	# remove error-code and interrupt-number from stack and return
+	add		$8,%esp
+	iret
 
 # the ISR for all interrupts
 isrCommon:
@@ -173,8 +203,6 @@ isrCommon:
 	mov		%esp,%eax
 	push	%eax					# pointer to stack-frame
 	call	intrpt_handler
-
-	# remove arguments from stack
 	add		$8,%esp
 
 	# restore registers
@@ -184,8 +212,6 @@ isrCommon:
 	pop		%gs
 	popa
 
-	# remove error-code and interrupt-number from stack
+	# remove error-code and interrupt-number from stack and return
 	add		$8,%esp
-
-	# return
 	iret

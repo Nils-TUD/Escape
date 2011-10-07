@@ -259,9 +259,10 @@ ssize_t vfs_fsmsgs_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,
 	vfs_req_free(req);
 	vfs_fsmsgs_releaseFile(pid,fs);
 	if(data) {
-		thread_addHeapAlloc(data);
+		sThread *t = thread_getRunning();
+		thread_addHeapAlloc(t,data);
 		memcpy(buffer,data,res);
-		thread_remHeapAlloc(data);
+		thread_remHeapAlloc(t,data);
 		cache_free(data);
 	}
 	return res;
@@ -461,9 +462,10 @@ static void vfs_fsmsgs_readRespHandler(sVFSNode *node,USER const void *data,A_UN
 					/* map the buffer we have to copy it to */
 					req->data = cache_alloc(req->count);
 					if(req->data) {
-						thread_addHeapAlloc(req->data);
+						sThread *t = thread_getRunning();
+						thread_addHeapAlloc(t,req->data);
 						memcpy(req->data,data,req->count);
-						thread_remHeapAlloc(req->data);
+						thread_remHeapAlloc(t,req->data);
 					}
 				}
 			}
@@ -488,9 +490,10 @@ static void vfs_fsmsgs_statRespHandler(sVFSNode *node,USER const void *data,A_UN
 		if(res == 0) {
 			req->data = cache_alloc(sizeof(sFileInfo));
 			if(req->data != NULL) {
-				thread_addHeapAlloc(req->data);
+				sThread *t = thread_getRunning();
+				thread_addHeapAlloc(t,req->data);
 				memcpy(req->data,rmsg->data.d,sizeof(sFileInfo));
-				thread_remHeapAlloc(req->data);
+				thread_remHeapAlloc(t,req->data);
 			}
 		}
 		/* the thread can continue now */

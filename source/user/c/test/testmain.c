@@ -40,6 +40,8 @@
 #include "modules/fsreads.h"
 #include "modules/ooc.h"
 #include "modules/highcpu.h"
+#include "modules/drvparallel.h"
+#include "modules/pingpong.h"
 
 #define NAME_LEN 10
 
@@ -67,6 +69,8 @@ static sTestModule modules[] = {
 	{"fsreads",mod_fsreads},
 	{"ooc",mod_ooc},
 	{"highcpu",mod_highcpu},
+	{"parallel",mod_drvparallel},
+	{"pingpong",mod_pingpong},
 };
 
 int main(int argc,char *argv[]) {

@@ -33,6 +33,14 @@
 sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent);
 
 /**
+ * Marks the given channel as used/unused.
+ *
+ * @param node the channel-node
+ * @param used whether to mark it used or unused
+ */
+void vfs_chan_setUsed(sVFSNode *node,bool used);
+
+/**
  * Locks the given channel. This is only intended for sending messages to this channel.
  *
  * @param node the channel-node

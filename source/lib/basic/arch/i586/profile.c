@@ -20,7 +20,8 @@
 #include <assert.h>
 #ifdef IN_KERNEL
 #	include <esc/arch/i586/register.h>
-#	include <esc/arch/i586/ports.h>
+#	include <sys/arch/i586/ports.h>
+#	include <sys/arch/i586/gdt.h>
 #	include <sys/task/thread.h>
 #	include <sys/mem/paging.h>
 #	include <sys/ksymbols.h>
@@ -29,13 +30,16 @@
 #	include <sys/util.h>
 #	define outb			ports_outByte
 #	define inb			ports_inByte
-#if 0
+#if 1
 #	define gettid()		({ \
 	uintptr_t __esp; \
 	tid_t __tid; \
 	GET_REG("esp",__esp); \
-	sThread *__t = thread_getRunning(); \
-	__tid = ((__esp >= KERNEL_STACK_AREA) && __t) ? __t->tid : 0; \
+	if(proc_getByPid(1)) { \
+		sThread *__t = gdt_getRunning(); \
+		__tid = ((__esp >= KERNEL_STACK_AREA) && (uintptr_t)__t >= KERNEL_AREA) ? __t->tid : 0; \
+	} \
+	__tid; \
 })
 #else
 #	define gettid()		0

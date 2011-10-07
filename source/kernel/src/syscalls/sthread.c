@@ -36,7 +36,7 @@
 
 #define MAX_WAIT_OBJECTS		32
 
-static int sysc_doWait(const sWaitObject *uobjects,size_t objCount,time_t maxWaitTime,
+static int sysc_doWait(sThread *t,const sWaitObject *uobjects,size_t objCount,time_t maxWaitTime,
 		pid_t pid,ulong ident);
 static int sysc_doWaitLoop(const sWaitObject *uobjects,size_t objCount,const file_t *objFiles,
 		time_t maxWaitTime,pid_t pid,ulong ident);
@@ -100,7 +100,7 @@ int sysc_yield(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_wait(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_wait(sThread *t,sIntrptStackFrame *stack) {
 	const sWaitObject *uobjects = (const sWaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
@@ -111,7 +111,7 @@ int sysc_wait(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = sysc_doWait(uobjects,objCount,maxWaitTime,KERNEL_PID,0);
+	res = sysc_doWait(t,uobjects,objCount,maxWaitTime,KERNEL_PID,0);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -131,7 +131,7 @@ int sysc_waitUnlock(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* wait and release the lock before going to sleep */
-	res = sysc_doWait(uobjects,objCount,0,global ? INVALID_PID : pid,ident);
+	res = sysc_doWait(t,uobjects,objCount,0,global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -204,8 +204,8 @@ int sysc_resume(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount,time_t maxWaitTime,
-		pid_t pid,ulong ident) {
+static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCount,
+		time_t maxWaitTime,pid_t pid,ulong ident) {
 	file_t objFiles[MAX_WAIT_OBJECTS];
 	size_t i;
 	int res;
@@ -213,10 +213,10 @@ static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount,time_t m
 	for(i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* translate fd to node-number */
-			objFiles[i] = proc_reqFile((int)uobjects[i].object);
+			objFiles[i] = proc_reqFile(t,(int)uobjects[i].object);
 			if(objFiles[i] < 0) {
 				for(; i > 0; i--)
-					proc_relFile(objFiles[i - 1]);
+					proc_relFile(t,objFiles[i - 1]);
 				return ERR_INVALID_ARGS;
 			}
 		}
@@ -228,7 +228,7 @@ static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount,time_t m
 	/* release them */
 	for(i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
-			proc_relFile(objFiles[i]);
+			proc_relFile(t,objFiles[i]);
 	}
 	return res;
 }

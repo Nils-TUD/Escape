@@ -68,12 +68,12 @@ int sysc_fcntl(sThread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	/* get file */
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	res = vfs_fcntl(pid,file,cmd,arg);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -159,12 +159,12 @@ int sysc_fstat(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 	/* get info */
 	res = vfs_fstat(pid,file,info);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -211,19 +211,19 @@ int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	p = proc_request(pid,PLOCK_REGIONS);
 	if(!vmm_makeCopySafe(p,pos,sizeof(off_t))) {
 		proc_release(p,PLOCK_REGIONS);
-		proc_relFile(file);
+		proc_relFile(t,file);
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 	*pos = vfs_tell(pid,file);
 	proc_release(p,PLOCK_REGIONS);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	SYSC_RET1(stack,0);
 }
 
@@ -239,12 +239,12 @@ int sysc_seek(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	res = vfs_seek(pid,file,offset,whence);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -265,13 +265,13 @@ int sysc_read(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* read */
 	readBytes = vfs_readFile(pid,file,buffer,count);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	if(readBytes < 0)
 		SYSC_ERROR(stack,readBytes);
 	SYSC_RET1(stack,readBytes);
@@ -292,13 +292,13 @@ int sysc_write(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* read */
 	writtenBytes = vfs_writeFile(pid,file,buffer,count);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	if(writtenBytes < 0)
 		SYSC_ERROR(stack,writtenBytes);
 	SYSC_RET1(stack,writtenBytes);
@@ -319,13 +319,13 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
 	res = vfs_sendMsg(pid,file,id,data,size);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -343,13 +343,13 @@ int sysc_receive(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = proc_reqFile(fd);
+	file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
 	res = vfs_receiveMsg(pid,file,id,data,size);
-	proc_relFile(file);
+	proc_relFile(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -378,16 +378,16 @@ int sysc_close(sThread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
 
-	file_t file = proc_reqFile(fd);
+	file_t file = proc_reqFile(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* close file */
 	proc_unassocFd(fd);
 	if(!vfs_closeFile(pid,file))
-		proc_relFile(file);
+		proc_relFile(t,file);
 	else
-		thread_remFileUsage(file);
+		thread_remFileUsage(t,file);
 	SYSC_RET1(stack,0);
 }
 

@@ -59,6 +59,8 @@
 #define PLOCK_PORTS			3
 #define PLOCK_PROG			4	/* clone, exec, threads */
 
+struct sThread;
+
 typedef struct {
 	klock_t lock;
 	int refCount;
@@ -205,17 +207,19 @@ size_t proc_getCount(void);
 /**
  * Requests the file for the given file-descriptor and increments the usage-count
  *
+ * @param cur the current thread
  * @param fd the file-descriptor
  * @return the file or < 0 if the fd is invalid
  */
-file_t proc_reqFile(int fd);
+file_t proc_reqFile(struct sThread *cur,int fd);
 
 /**
  * Releases the given file, i.e. decrements the usage-count
  *
+ * @param cur the current thread
  * @param file the file
  */
-void proc_relFile(file_t file);
+void proc_relFile(struct sThread *cur,file_t file);
 
 /**
  * Associates a free file-descriptor with the given file-number

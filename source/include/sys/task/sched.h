@@ -43,9 +43,18 @@ void sched_addIdleThread(sThread *t);
  * Performs the scheduling. That means it picks the next thread to run and returns it
  *
  * @param old the current thread
+ * @param runtime the runtime of the current thread in microseconds
  * @return the thread to run
  */
-sThread *sched_perform(sThread *old);
+sThread *sched_perform(sThread *old,uint64_t runtime);
+
+/**
+ * Adjusts the priority of the given thread according to its used timeslice
+ *
+ * @param t the thread
+ * @param threadCount total number of threads
+ */
+void sched_adjustPrio(sThread *t,size_t threadCount);
 
 /**
  * Appends the given thread on the ready-queue and sets the state to ST_READY

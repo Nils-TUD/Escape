@@ -27,8 +27,6 @@
 #include <errors.h>
 
 #define LISTENER_COUNT		1024
-/* reset the cpu-usage every 1sec */
-#define CPU_USAGE_SLICE		1000
 
 /* an entry in the listener-list */
 typedef struct sTimerListener {
@@ -149,7 +147,7 @@ bool timer_intrpt(void) {
 	timerIntrpts++;
 	elapsedMsecs += timeInc;
 
-	if((elapsedMsecs - lastRuntimeUpdate) >= CPU_USAGE_SLICE) {
+	if((elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
 		thread_updateRuntimes();
 		lastRuntimeUpdate = elapsedMsecs;
 	}

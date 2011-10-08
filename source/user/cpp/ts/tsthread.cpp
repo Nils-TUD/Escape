@@ -24,6 +24,7 @@ void thread::clone(const thread& t) {
 	_pid = t._pid;
 	_procName = t._procName;
 	_state = t._state;
+	_prio = t._prio;
 	_stackPages = t._stackPages;
 	_schedCount = t._schedCount;
 	_syscalls = t._syscalls;
@@ -38,6 +39,7 @@ std::istream& operator >>(std::istream& is,thread& t) {
 	is.ignore(unlimited,' ') >> t._procName;
 	is.ignore(unlimited,' ') >> std::ws;
 	t._state = is.get() - '0';
+	is.ignore(unlimited,' ') >> t._prio;
 	is.ignore(unlimited,' ') >> t._stackPages;
 	is.ignore(unlimited,' ') >> t._schedCount;
 	is.ignore(unlimited,' ') >> t._syscalls;

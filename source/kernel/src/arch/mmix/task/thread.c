@@ -224,21 +224,28 @@ bool thread_isRunning(sThread *t) {
 }
 
 void thread_doSwitch(void) {
+	uint64_t cycles,runtime;
 	sThread *old = thread_getRunning();
-	sThread *new = sched_perform(old);
-	/* finish kernel-time here since we're switching the process */
-	if(new->tid != old->tid) {
-		uint64_t cycles = cpu_rdtsc();
-		time_t timestamp = timer_getTimestamp();
-		assert(old->stats.cycleStart != 0);
-		old->stats.runtime += timer_cyclesToTime(cycles - old->stats.cycleStart);
-		old->stats.curCycleCount += cycles - old->stats.cycleStart;
-		new->stats.schedCount++;
+	sThread *new;
 
+	/* update runtime-stats */
+	cycles = cpu_rdtsc();
+	runtime = timer_cyclesToTime(cycles - old->stats.cycleStart);
+	old->stats.runtime += runtime;
+	old->stats.curCycleCount += cycles - old->stats.cycleStart;
+
+	/* choose a new thread to run */
+	new = sched_perform(old,runtime);
+	new->stats.schedCount++;
+
+	/* switch thread */
+	if(new->tid != old->tid) {
 		thread_setRunning(new);
 
-		if(conf_getStr(CONF_SWAP_DEVICE))
+		if(conf_getStr(CONF_SWAP_DEVICE)) {
+			time_t timestamp = timer_getTimestamp();
 			vmm_setTimestamp(new,timestamp);
+		}
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
@@ -254,6 +261,8 @@ void thread_doSwitch(void) {
 		new->stats.cycleStart = cpu_rdtsc();
 		thread_doSwitchTo(&old->save,&new->save,new->proc->pagedir,new->tid);
 	}
+	else
+		new->stats.cycleStart = cpu_rdtsc();
 }
 
 

@@ -25,6 +25,7 @@ std::istream& operator >>(std::istream& is,thread& t) {
 	is.ignore(unlimited,'\n');	// pid
 	is.ignore(unlimited,'\n');	// procname
 	is.ignore(unlimited,'\n');	// state
+	is.ignore(unlimited,'\n');	// prio
 	is.ignore(unlimited,'\n');	// stack
 	is.ignore(unlimited,'\n');	// schedcount
 	is.ignore(unlimited,'\n');	// syscalls

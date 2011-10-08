@@ -112,7 +112,7 @@ void smp_wakeupCPU(void) {
 	size_t i;
 	cpuid_t cur = smp_getCurId();
 	for(i = 0; i < cpuCount; i++) {
-		if(i != cur && cpus[i]->ready && cpus[i]->thread && (cpus[i]->thread->flags & T_IDLE)) {
+		if(i != cur && cpus[i]->ready && (!cpus[i]->thread || (cpus[i]->thread->flags & T_IDLE))) {
 			smp_sendIPI(i,IPI_WORK);
 			break;
 		}

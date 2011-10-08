@@ -40,8 +40,9 @@ struct sort {
 	const static int NAME	= 2;
 	const static int STACK	= 3;
 	const static int STATE	= 4;
-	const static int CPU	= 5;
-	const static int TIME	= 6;
+	const static int PRIO	= 5;
+	const static int CPU	= 6;
+	const static int TIME	= 7;
 
 	int type;
 	string name;
@@ -55,6 +56,7 @@ static struct sort sorts[] = {
 	{sort::NAME,"proc"},
 	{sort::STACK,"stack"},
 	{sort::STATE,"state"},
+	{sort::PRIO,"prio"},
 	{sort::CPU,"cpu"},
 	{sort::TIME,"time"},
 };
@@ -85,6 +87,7 @@ static void usage(const char *name) {
 	cerr << "Explanation of the displayed information:\n";
 	cerr << "ID:		The thread id\n";
 	cerr << "STATE:	The thread state (RUN,RDY,BLK,ZOM,SUS)\n";
+	cerr << "PRIO:	The thread priority (high means high priority)\n";
 	cerr << "STACK:	The amount of physical memory used for the stack\n";
 	cerr << "SCHED:	The number of times the thread has been scheduled\n";
 	cerr << "SYSC:	The number of system-calls the thread has executed\n";
@@ -155,6 +158,7 @@ int main(int argc,char **argv) {
 	cout << right;
 	cout << setw(maxTid) << "ID";
 	cout << " STATE";
+	cout << " PRIO";
 	cout << setw(maxStack + 1) << "STACK";
 	cout << setw(maxScheds + 1) << "SCHED";
 	cout << setw(maxSyscalls + 1) << "SYSC";
@@ -170,6 +174,7 @@ int main(int argc,char **argv) {
 
 		cout << setw(maxTid) << t->tid() << " ";
 		cout << setw(5) << states[t->state()] << " ";
+		cout << setw(4) << t->prio() << " ";
 		cout << setw(maxStack - 1) << (t->stackPages() * pageSize) / 1024 << "K ";
 		cout << setw(maxScheds) << t->schedCount() << " ";
 		cout << setw(maxSyscalls) << t->syscalls() << " ";
@@ -199,6 +204,9 @@ static bool compareThreads(const thread* a,const thread* b) {
 		case sort::STATE:
 			// descending
 			return b->state() < a->state();
+		case sort::PRIO:
+			// descending
+			return b->prio() < a->prio();
 		case sort::CPU:
 			// descending
 			return b->cycles() < a->cycles();

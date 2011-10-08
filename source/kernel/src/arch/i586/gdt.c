@@ -337,7 +337,7 @@ void gdt_setRunning(cpuid_t id,sThread *t) {
 
 cpuid_t gdt_prepareRun(sThread *old,sThread *new) {
 	uintptr_t tlsEnd;
-	cpuid_t id = gdt_getCPUId();
+	cpuid_t id = old == NULL ? gdt_getCPUId() : old->cpu;
 	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
 	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
 	 * %gs:0xFFFFFFF8 etc. */

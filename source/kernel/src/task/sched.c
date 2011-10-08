@@ -21,6 +21,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
 #include <sys/task/smp.h>
+#include <sys/task/timer.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/util.h>
@@ -55,11 +56,15 @@ static void sched_qPrepend(sQueue *q,sThread *t);
 static void sched_qPrint(sQueue *q);
 
 static klock_t schedLock;
-static sQueue readyQueue;
+static sQueue rdyQueues[MAX_PRIO + 1];
+static size_t rdyCount;
 static sSLList idleThreads;
 
 void sched_init(void) {
-	sched_qInit(&readyQueue);
+	size_t i;
+	rdyCount = 0;
+	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++)
+		sched_qInit(rdyQueues + i);
 	sll_init(&idleThreads,slln_allocNode,slln_freeNode);
 }
 
@@ -69,7 +74,8 @@ void sched_addIdleThread(sThread *t) {
 	klock_release(&schedLock);
 }
 
-sThread *sched_perform(sThread *old) {
+sThread *sched_perform(sThread *old,uint64_t runtime) {
+	ssize_t i;
 	sThread *t;
 	klock_aquire(&schedLock);
 	/* give the old thread a new state */
@@ -90,11 +96,19 @@ sThread *sched_perform(sThread *old) {
 				/*ev_removeThread(old);*/
 				return old;
 			}
+
+			/* decrease timeslice correspondingly */
+			if(runtime > old->stats.timeslice)
+				old->stats.timeslice = 0;
+			else
+				old->stats.timeslice -= runtime;
+
 			switch(old->newState) {
 				case ST_UNUSED:
 				case ST_READY:
 					old->state = ST_READY;
-					sched_qAppend(&readyQueue,old);
+					sched_qAppend(rdyQueues + old->priority,old);
+					rdyCount++;
 					break;
 				case ST_BLOCKED:
 					old->state = ST_BLOCKED;
@@ -110,7 +124,13 @@ sThread *sched_perform(sThread *old) {
 	}
 
 	/* get new thread */
-	t = sched_qDequeue(&readyQueue);
+	for(i = MAX_PRIO; i >= 0; i--) {
+		t = sched_qDequeue(rdyQueues + i);
+		if(t) {
+			rdyCount--;
+			break;
+		}
+	}
 	if(t == NULL) {
 		/* choose an idle-thread */
 		t = sll_removeFirst(&idleThreads);
@@ -122,11 +142,44 @@ sThread *sched_perform(sThread *old) {
 	}
 
 	/* if there is another thread ready, check if we have another cpu that we can start for it */
-	if(readyQueue.first)
+	if(rdyCount > 0)
 		smp_wakeupCPU();
 
 	klock_release(&schedLock);
 	return t;
+}
+
+void sched_adjustPrio(sThread *t,size_t threadCount) {
+	const uint64_t threadSlice = RUNTIME_UPDATE_INTVAL / threadCount;
+	uint64_t runtime;
+	klock_aquire(&schedLock);
+	runtime = RUNTIME_UPDATE_INTVAL * 1000 - t->stats.timeslice;
+	/* if the thread has used a lot of its timeslice, lower its priority */
+	if(runtime >= threadSlice * PRIO_BAD_SLICE) {
+		if(t->priority > 0) {
+			if(t->state == ST_READY)
+				sched_qDequeueThread(rdyQueues + t->priority,t);
+			t->priority--;
+			if(t->state == ST_READY)
+				sched_qAppend(rdyQueues + t->priority,t);
+		}
+		t->prioGoodCnt = 0;
+	}
+	/* otherwise, raise its priority */
+	else if(runtime < threadSlice * PRIO_GOOD_SLICE) {
+		if(t->priority < MAX_PRIO) {
+			if(++t->prioGoodCnt == PRIO_FORGIVE_CNT) {
+				if(t->state == ST_READY)
+					sched_qDequeueThread(rdyQueues + t->priority,t);
+				t->priority++;
+				if(t->state == ST_READY)
+					sched_qAppend(rdyQueues + t->priority,t);
+				t->prioGoodCnt = 0;
+			}
+		}
+	}
+	t->stats.timeslice = RUNTIME_UPDATE_INTVAL * 1000;
+	klock_release(&schedLock);
 }
 
 bool sched_setReady(sThread *t) {
@@ -142,7 +195,8 @@ bool sched_setReady(sThread *t) {
 	}
 	else {
 		if(sched_setReadyState(t)) {
-			sched_qAppend(&readyQueue,t);
+			sched_qAppend(rdyQueues + t->priority,t);
+			rdyCount++;
 			res = true;
 		}
 	}
@@ -163,11 +217,12 @@ bool sched_setReadyQuick(sThread *t) {
 	}
 	else {
 		if(t->state == ST_READY) {
-			sched_qDequeueThread(&readyQueue,t);
-			sched_qPrepend(&readyQueue,t);
+			sched_qDequeueThread(rdyQueues + t->priority,t);
+			sched_qPrepend(rdyQueues + t->priority,t);
 		}
 		else if(sched_setReadyState(t)) {
-			sched_qPrepend(&readyQueue,t);
+			sched_qPrepend(rdyQueues + t->priority,t);
+			rdyCount++;
 			res = true;
 		}
 	}
@@ -212,7 +267,8 @@ void sched_setBlocked(sThread *t) {
 			break;
 		case ST_READY:
 			t->state = ST_BLOCKED;
-			sched_qDequeueThread(&readyQueue,t);
+			sched_qDequeueThread(rdyQueues + t->priority,t);
+			rdyCount--;
 			break;
 		default:
 			vassert(false,"Invalid state for setBlocked (%d)",t->state);
@@ -240,7 +296,8 @@ void sched_setSuspended(sThread *t,bool blocked) {
 				break;
 			case ST_READY:
 				t->state = ST_READY_SUSP;
-				sched_qDequeueThread(&readyQueue,t);
+				sched_qDequeueThread(rdyQueues + t->priority,t);
+				rdyCount--;
 				break;
 			default:
 				vassert(false,"Thread %d has invalid state for suspending (%d)",t->tid,t->state);
@@ -262,7 +319,8 @@ void sched_setSuspended(sThread *t,bool blocked) {
 				break;
 			case ST_READY_SUSP:
 				t->state = ST_READY;
-				sched_qAppend(&readyQueue,t);
+				sched_qAppend(rdyQueues + t->priority,t);
+				rdyCount++;
 				break;
 			default:
 				vassert(false,"Thread %d has invalid state for resuming (%d)",t->tid,t->state);
@@ -284,7 +342,8 @@ void sched_removeThread(sThread *t) {
 		case ST_BLOCKED:
 			break;
 		case ST_READY:
-			sched_qDequeueThread(&readyQueue,t);
+			sched_qDequeueThread(rdyQueues + t->priority,t);
+			rdyCount--;
 			break;
 		default:
 			/* TODO threads can die during swap, right? */
@@ -297,9 +356,13 @@ void sched_removeThread(sThread *t) {
 }
 
 void sched_print(void) {
-	vid_printf("Ready-");
-	sched_qPrint(&readyQueue);
-	vid_printf("\n");
+	size_t i;
+	vid_printf("Ready queues:\n");
+	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++) {
+		vid_printf("\t[%d]:\n",i);
+		sched_qPrint(rdyQueues + i);
+		vid_printf("\n");
+	}
 }
 
 static void sched_qInit(sQueue *q) {
@@ -352,16 +415,9 @@ static void sched_qPrepend(sQueue *q,sThread *t) {
 }
 
 static void sched_qPrint(sQueue *q) {
-	char name1[12];
-	char name2[12];
 	const sThread *t = q->first;
-	vid_printf("Queue: first=%s, last=%s\n",
-			q->first ? itoa(name1,sizeof(name1),q->first->tid) : "-",
-			q->last ? itoa(name2,sizeof(name2),q->last->tid) : "-");
 	while(t != NULL) {
-		vid_printf("\ttid=%d, prev=%s, next=%s\n",
-				t->tid,t->prev ? itoa(name1,sizeof(name1),t->prev->tid) : "-",
-				t->next ? itoa(name2,sizeof(name2),t->next->tid) : "-");
+		vid_printf("\t\t%d:%d:%s\n",t->tid,t->proc->pid,t->proc->command);
 		t = t->next;
 	}
 }

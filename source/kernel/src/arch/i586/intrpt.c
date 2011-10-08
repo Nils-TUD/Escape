@@ -121,6 +121,7 @@ static const sInterrupt intrptList[] = {
 	/* 0x33: IPI_FLUSH_TLB */			{intrpt_exFatal,"Flush TLB IPI",0},	/* not handled here */
 	/* 0x34: IPI_WAIT */				{intrpt_exFatal,"",0},
 	/* 0x35: IPI_HALT */				{intrpt_exFatal,"",0},
+	/* 0x36: isrNull */					{intrpt_exFatal,"",0},
 };
 
 /* total number of interrupts */
@@ -178,7 +179,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	thread_popIntrptLevel(t);
 }
 
-static void intrpt_exFatal(__attribute__((unused)) sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_exFatal(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
 		exCount++;

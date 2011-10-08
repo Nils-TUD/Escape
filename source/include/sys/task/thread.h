@@ -28,8 +28,18 @@
 
 #define MAX_INTRPT_LEVELS		3
 #define MAX_STACK_PAGES			128
-
 #define INITIAL_STACK_PAGES		1
+
+#define MAX_PRIO				4
+#define DEFAULT_PRIO			4
+/* the slices for good/bad behaviours. 1000 means, 100% of the timeslice, 0 = 0% of the timeslice */
+#define PRIO_BAD_SLICE			8000
+#define PRIO_GOOD_SLICE			500
+/* number of times a good-ratio has to be reached in a row to raise the priority again */
+#define PRIO_FORGIVE_CNT		2
+
+/* reset the runtime every 1sec */
+#define RUNTIME_UPDATE_INTVAL	1000
 
 #define INIT_TID				0
 #define ATA_TID					3
@@ -81,6 +91,10 @@ typedef enum {
 typedef struct sThread sThread;
 struct sThread {
 	const uint8_t flags;
+	/* the thread-priority (0..MAX_PRIO) */
+	uint8_t priority;
+	/* a counter used to raise the priority after a certain number of "good behaviours" */
+	uint8_t prioGoodCnt;
 	/* the current thread state. see eThreadState */
 	uint8_t state;
 	/* the next state it will receive on context-switch */
@@ -118,6 +132,7 @@ struct sThread {
 	/* a list of file-usages that should be decremented on thread-termination */
 	sSLList termUsages;
 	struct {
+		uint64_t timeslice;
 		/* number of microseconds of runtime this thread has got so far */
 		uint64_t runtime;
 		/* executed cycles in this second */

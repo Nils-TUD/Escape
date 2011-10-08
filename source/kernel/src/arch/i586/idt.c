@@ -192,7 +192,7 @@ void idt_init(void) {
 	idt_set(53,isr53,IDT_DPL_KERNEL);
 
 	/* all other interrupts */
-	for(i = 53; i < 256; i++)
+	for(i = 54; i < 256; i++)
 		idt_set(i,isrNull,IDT_DPL_KERNEL);
 
 	/* now we can use our idt */

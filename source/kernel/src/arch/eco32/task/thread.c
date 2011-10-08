@@ -135,15 +135,18 @@ bool thread_isRunning(sThread *t) {
 
 void thread_doSwitch(void) {
 	sThread *old = thread_getRunning();
-	sThread *new = sched_perform(old);
-	/* finish kernel-time here since we're switching the process */
-	if(new->tid != old->tid) {
-		/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-
-		 * measurement */
-		time_t timestamp = timer_getTimestamp();
-		old->stats.runtime += (timestamp - old->stats.cycleStart) * 1000;
-		new->stats.schedCount++;
+	sThread *new;
+	/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-
+	 * measurement */
+	time_t timestamp = timer_getTimestamp();
+	uint64_t runtime = (timestamp - old->stats.cycleStart) * 1000;
+	old->stats.runtime += runtime;
 
+	/* choose a new thread to run */
+	new = sched_perform(old,runtime);
+	new->stats.schedCount++;
+
+	if(new->tid != old->tid) {
 		if(!thread_save(&old->save)) {
 			thread_setRunning(new);
 
@@ -154,6 +157,8 @@ void thread_doSwitch(void) {
 			thread_resume(new->proc->pagedir,&new->save,new->archAttr.kstackFrame);
 		}
 	}
+	else
+		new->stats.cycleStart = timestamp;
 }
 
 

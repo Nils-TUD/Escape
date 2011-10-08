@@ -29,17 +29,18 @@ public:
 	typedef int pid_type;
 	typedef int tid_type;
 	typedef int state_type;
+	typedef int prio_type;
 	typedef size_t size_type;
 	typedef unsigned long long cycle_type;
 	typedef unsigned long long time_type;
 
 public:
 	thread()
-		: _tid(0), _pid(0), _procName(std::string()), _state(0), _stackPages(0),
+		: _tid(0), _pid(0), _procName(std::string()), _state(0), _prio(0), _stackPages(0),
 		  _schedCount(0), _syscalls(0), _cycles(0), _runtime(0) {
 	}
 	thread(const thread& t)
-		: _tid(t._tid), _pid(t._pid), _procName(t._procName), _state(t._state),
+		: _tid(t._tid), _pid(t._pid), _procName(t._procName), _state(t._state), _prio(t._prio),
 		  _stackPages(t._stackPages), _schedCount(t._schedCount), _syscalls(t._syscalls),
 		  _cycles(t._cycles), _runtime(t._runtime) {
 	}
@@ -61,6 +62,9 @@ public:
 	};
 	inline state_type state() const {
 		return _state;
+	};
+	inline prio_type prio() const {
+		return _prio;
 	};
 	inline size_type stackPages() const {
 		return _stackPages;
@@ -86,6 +90,7 @@ private:
 	pid_type _pid;
 	std::string _procName;
 	state_type _state;
+	prio_type _prio;
 	size_type _stackPages;
 	size_type _schedCount;
 	size_type _syscalls;

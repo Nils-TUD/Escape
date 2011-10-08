@@ -170,7 +170,7 @@ bool thread_isRunning(sThread *t) {
 void thread_initialSwitch(void) {
 	sThread *cur;
 	klock_aquire(&switchLock);
-	cur = sched_perform(NULL);
+	cur = sched_perform(NULL,0);
 	cur->stats.schedCount++;
 	if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
 		vmm_setTimestamp(cur,timer_getTimestamp());
@@ -181,21 +181,26 @@ void thread_initialSwitch(void) {
 }
 
 void thread_doSwitch(void) {
+	uint64_t cycles,runtime;
 	sThread *old = thread_getRunning();
 	sThread *new;
 	/* lock this, because sched_perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
 	klock_aquire(&switchLock);
-	new = sched_perform(old);
-	if(new->tid != old->tid) {
-		/* update stats */
-		uint64_t cycles = cpu_rdtsc();
-		time_t timestamp = timer_cyclesToTime(cycles);
-		assert(old->stats.cycleStart != 0);
-		old->stats.runtime += timer_cyclesToTime(cycles - old->stats.cycleStart);
-		old->stats.curCycleCount += cycles - old->stats.cycleStart;
-		new->stats.schedCount++;
 
+	/* update runtime-stats */
+	cycles = cpu_rdtsc();
+	runtime = timer_cyclesToTime(cycles - old->stats.cycleStart);
+	old->stats.runtime += runtime;
+	old->stats.curCycleCount += cycles - old->stats.cycleStart;
+
+	/* choose a new thread to run */
+	new = sched_perform(old,runtime);
+	new->stats.schedCount++;
+
+	/* switch thread */
+	if(new->tid != old->tid) {
+		time_t timestamp = timer_cyclesToTime(cycles);
 		if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
 			vmm_setTimestamp(new,timestamp);
 		new->cpu = gdt_prepareRun(old,new);
@@ -212,8 +217,10 @@ void thread_doSwitch(void) {
 			thread_resume(new->proc->pagedir.own,&new->save,&switchLock);
 		}
 	}
-	else
+	else {
+		new->stats.cycleStart = cpu_rdtsc();
 		klock_release(&switchLock);
+	}
 }
 
 #if DEBUGGING

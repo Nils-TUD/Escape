@@ -43,6 +43,7 @@
 #include <errors.h>
 
 static sThread *thread_createInitial(sProc *p);
+static void thread_initProps(sThread *t);
 static tid_t thread_getFreeTid(void);
 static bool thread_add(sThread *t);
 static void thread_remove(sThread *t);
@@ -75,25 +76,8 @@ static sThread *thread_createInitial(sProc *p) {
 	*(uint8_t*)&t->flags = 0;
 	*(tid_t*)&t->tid = nextTid++;
 	*(sProc**)&t->proc = p;
-
+	thread_initProps(t);
 	t->state = ST_RUNNING;
-	t->newState = ST_READY;
-	t->lock = 0;
-	t->events = 0;
-	t->waits = NULL;
-	t->ignoreSignals = 0;
-	t->signals = NULL;
-	t->intrptLevel = 0;
-	t->cpu = 0;
-	t->stats.runtime = 0;
-	t->stats.curCycleCount = 0;
-	t->stats.lastCycleCount = 0;
-	t->stats.cycleStart = cpu_rdtsc();
-	t->stats.schedCount = 0;
-	t->stats.syscalls = 0;
-	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
-	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
-	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
 	for(i = 0; i < STACK_REG_COUNT; i++)
 		t->stackRegions[i] = -1;
 	t->tlsRegion = -1;
@@ -109,6 +93,30 @@ static sThread *thread_createInitial(sProc *p) {
 		util_panic("Unable to put first thread in vfs");
 
 	return t;
+}
+
+static void thread_initProps(sThread *t) {
+	t->state = ST_BLOCKED;
+	t->newState = ST_READY;
+	t->priority = DEFAULT_PRIO;
+	t->prioGoodCnt = 0;
+	t->lock = 0;
+	t->events = 0;
+	t->waits = NULL;
+	t->ignoreSignals = 0;
+	t->signals = NULL;
+	t->intrptLevel = 0;
+	t->cpu = 0;
+	t->stats.timeslice = RUNTIME_UPDATE_INTVAL * 1000;
+	t->stats.runtime = 0;
+	t->stats.curCycleCount = 0;
+	t->stats.lastCycleCount = 0;
+	t->stats.cycleStart = cpu_rdtsc();
+	t->stats.schedCount = 0;
+	t->stats.syscalls = 0;
+	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
+	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
+	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
 }
 
 sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
@@ -249,10 +257,13 @@ uint64_t thread_getCycles(const sThread *t) {
 
 void thread_updateRuntimes(void) {
 	sSLNode *n;
+	size_t threadCount;
 	uint64_t cyclesPerSec = cpu_getSpeed();
 	klock_aquire(&threadLock);
+	threadCount = sll_length(threads);
 	for(n = sll_begin(threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
+		/* update cycle-stats */
 		if(t->state == ST_RUNNING) {
 			/* we want to measure the last second only */
 			uint64_t cycles = cpu_rdtsc() - t->stats.cycleStart;
@@ -261,6 +272,9 @@ void thread_updateRuntimes(void) {
 		else
 			t->stats.lastCycleCount = t->stats.curCycleCount;
 		t->stats.curCycleCount = 0;
+
+		/* raise/lower the priority if necessary */
+		sched_adjustPrio(t,threadCount);
 	}
 	klock_release(&threadLock);
 }
@@ -304,34 +318,14 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 	*(uint8_t*)&t->flags = flags;
 	*(sProc**)&t->proc = p;
 
-	t->state = ST_BLOCKED;
-	t->newState = ST_READY;
-	t->lock = 0;
-	t->events = 0;
-	t->waits = NULL;
-	t->ignoreSignals = 0;
-	t->signals = NULL;
-	t->cpu = 0;
-	t->stats.runtime = 0;
-	t->stats.curCycleCount = 0;
-	t->stats.lastCycleCount = 0;
-	t->stats.cycleStart = 0;
-	t->stats.schedCount = 0;
-	t->stats.syscalls = 0;
-	if(cloneProc) {
-		t->intrptLevel = src->intrptLevel;
-		memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
-	}
-	else
-		t->intrptLevel = 0;
-	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
-	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
-	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
+	thread_initProps(t);
 	if(cloneProc) {
 		size_t i;
 		for(i = 0; i < STACK_REG_COUNT; i++)
 			t->stackRegions[i] = src->stackRegions[i];
 		t->tlsRegion = src->tlsRegion;
+		t->intrptLevel = src->intrptLevel;
+		memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
 	}
 	else {
 		/* add a new tls-region, if its present in the src-thread */

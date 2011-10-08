@@ -147,7 +147,7 @@ isr53:
 isrNull:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	pushl	$0						# error-code (no error here)
-	pushl	$53						# the interrupt-number
+	pushl	$54						# the interrupt-number
 	jmp		isrCommon
 
 # syscall

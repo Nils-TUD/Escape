@@ -18,10 +18,23 @@
  */
 
 #include <esc/common.h>
+#include <esc/thread.h>
 #include <stdio.h>
+#include <string.h>
 #include "highcpu.h"
 
-int mod_highcpu(A_UNUSED int argc,A_UNUSED char *argv[]) {
+static int evilThread(A_UNUSED void *arg);
+
+int mod_highcpu(int argc,char *argv[]) {
+	size_t i,count = argc > 2 ? atoi(argv[2]) : 1;
+	for(i = 0; i < count - 1; i++) {
+		if(startThread(evilThread,NULL) < 0)
+			printe("Unable to start thread");
+	}
+	return evilThread(NULL);
+}
+
+static int evilThread(A_UNUSED void *arg) {
 	volatile int i;
 	while(1) {
 		for(i = 0; i < 10000000; i++)

@@ -27,9 +27,9 @@
  * Inits the super-block; reads it from disk and reads the block-group-descriptor-table
  *
  * @param e the ext2-data
- * @return true if successfull
+ * @return 0 on success
  */
-bool ext2_super_init(sExt2 *e);
+int ext2_super_init(sExt2 *e);
 
 /**
  * Updates the super-block, if it is dirty

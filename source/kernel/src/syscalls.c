@@ -32,7 +32,7 @@
 #include <esc/fsinterface.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 /* syscall-handlers */
 typedef int (*fSyscall)(sThread *t,sIntrptStackFrame *stack);
@@ -133,7 +133,7 @@ static const sSyscall syscalls[] = {
 void sysc_handle(sThread *t,sIntrptStackFrame *stack) {
 	uint sysCallNo = SYSC_NUMBER(stack);
 	if(sysCallNo >= ARRAY_SIZE(syscalls)) {
-		SYSC_SETERROR(stack,ERR_INVALID_ARGS);
+		SYSC_SETERROR(stack,-EINVAL);
 		return;
 	}
 

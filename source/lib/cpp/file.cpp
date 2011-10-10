@@ -80,6 +80,6 @@ namespace std {
 		_parent = string(apath.begin(),apath.begin() + pos + 1);
 		int res = stat(apath.c_str(),&_info);
 		if(res < 0)
-			throw io_exception("stat failed",res);
+			throw io_exception("stat failed",-res);
 	}
 }

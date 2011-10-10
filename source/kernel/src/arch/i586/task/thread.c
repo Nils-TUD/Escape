@@ -31,7 +31,7 @@
 #include <sys/config.h>
 #include <sys/cpu.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
@@ -62,7 +62,7 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 	}
 	else {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 
 		/* map the kernel-stack at a free address */
 		dst->archAttr.kernelStack = paging_createKernelStack(&dst->proc->pagedir);

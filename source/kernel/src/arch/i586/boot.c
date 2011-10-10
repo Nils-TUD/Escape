@@ -47,7 +47,7 @@
 #include <sys/util.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <assert.h>
 

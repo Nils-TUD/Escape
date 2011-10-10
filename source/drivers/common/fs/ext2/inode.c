@@ -23,7 +23,7 @@
 #include <esc/proc.h>
 #include <stdio.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 #include "ext2.h"
 #include "../blockcache.h"
@@ -52,11 +52,11 @@ int ext2_inode_create(sExt2 *e,sFSUser *u,sExt2CInode *dirNode,sExt2CInode **ino
 	/* request inode */
 	inode_t inodeNo = ext2_bm_allocInode(e,dirNode,isDir);
 	if(inodeNo == 0)
-		return ERR_INO_ALLOC;
+		return -ENOSPC;
 	cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
 	if(cnode == NULL) {
 		ext2_bm_freeInode(e,inodeNo,isDir);
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 	}
 
 	/* init inode */
@@ -96,11 +96,11 @@ int ext2_inode_chmod(sExt2 *e,sFSUser *u,inode_t inodeNo,mode_t mode) {
 	mode_t oldMode;
 	sExt2CInode *cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	/* root can chmod everything; others can only chmod their own files */
 	if(u->uid != le16tocpu(cnode->inode.uid) && u->uid != ROOT_UID)
-		return ERR_NO_PERM;
+		return -EPERM;
 
 	oldMode = le16tocpu(cnode->inode.mode);
 	cnode->inode.mode = cputole16((oldMode & ~EXT2_S_PERMS) | (mode & EXT2_S_PERMS));
@@ -114,20 +114,20 @@ int ext2_inode_chown(sExt2 *e,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
 	gid_t oldGid;
 	sExt2CInode *cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	/* root can chown everything; others can only chown their own files */
 	oldUid = le16tocpu(cnode->inode.uid);
 	oldGid = le16tocpu(cnode->inode.gid);
 	if(u->uid != oldUid && u->uid != ROOT_UID)
-		return ERR_NO_PERM;
+		return -EPERM;
 	if(u->uid != ROOT_UID) {
 		/* users can't change the owner */
 		if(uid != (uid_t)-1 && uid != oldUid && uid != u->uid)
-			return ERR_NO_PERM;
+			return -EPERM;
 		/* users can change the group only to a group they're a member of */
 		if(gid != (gid_t)-1 && gid != oldGid && gid != u->gid && !isingroup(u->pid,gid))
-			return ERR_NO_PERM;
+			return -EPERM;
 	}
 
 	if(uid != (uid_t)-1)

@@ -30,7 +30,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdlib.h>
 
 #include <vterm/vtctrl.h>
@@ -163,7 +163,7 @@ static int vtermThread(void *vterm) {
 					break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

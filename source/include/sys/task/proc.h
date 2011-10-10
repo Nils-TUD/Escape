@@ -250,7 +250,7 @@ int proc_redirFd(int src,int dst);
  * Releases the given file-descriptor (marks it unused)
  *
  * @param fd the file-descriptor
- * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
+ * @return the file-number that was associated with the fd (or -EBADF)
  */
 file_t proc_unassocFd(int fd);
 

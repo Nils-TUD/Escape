@@ -24,7 +24,7 @@
 #include <sys/task/proc.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 
 void ioports_init(sProc *p) {
@@ -35,14 +35,14 @@ int ioports_request(pid_t pid,uint16_t start,size_t count) {
 	sProc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
-		return ERR_IOMAP_RESERVED;
+		return -EINVAL;
 
 	p = proc_request(pid,PLOCK_PORTS);
 	if(p->archAttr.ioMap == NULL) {
 		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
 		if(p->archAttr.ioMap == NULL) {
 			proc_release(p,PLOCK_PORTS);
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		}
 		/* mark all as disallowed */
 		memset(p->archAttr.ioMap,0xFF,IO_MAP_SIZE / 8);
@@ -75,12 +75,12 @@ int ioports_release(pid_t pid,uint16_t start,size_t count) {
 	sProc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
-		return ERR_IOMAP_RESERVED;
+		return -EINVAL;
 
 	p = proc_request(pid,PLOCK_PORTS);
 	if(p->archAttr.ioMap == NULL) {
 		proc_release(p,PLOCK_PORTS);
-		return ERR_IOMAP_NOT_PRESENT;
+		return -EINVAL;
 	}
 
 	/* 1 means disallowed */

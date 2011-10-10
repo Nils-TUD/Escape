@@ -26,7 +26,7 @@
 #include <sys/syscalls/io.h>
 #include <sys/syscalls.h>
 #include <esc/messages.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <assert.h>
 
@@ -38,12 +38,12 @@ int sysc_open(sThread *t,sIntrptStackFrame *stack) {
 	int fd;
 	pid_t pid = t->proc->pid;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* check flags */
 	flags &= VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | VFS_APPEND | VFS_NOBLOCK;
 	if((flags & (VFS_READ | VFS_WRITE | VFS_MSGS)) == 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 
 	/* open the path */
 	file = vfs_openPath(pid,flags,abspath);
@@ -91,7 +91,7 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 	/* make sure that the pointers point to userspace */
 	if(!paging_isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
 			!paging_isInUserSpace((uintptr_t)writeFd,sizeof(int)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_openPipe(pid,&readFile,&writeFile);
 	if(res < 0)
@@ -122,7 +122,7 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 		proc_unassocFd(kreadFd);
 		vfs_closeFile(pid,readFile);
 		vfs_closeFile(pid,writeFile);
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	}
 	*readFd = kreadFd;
 	*writeFd = kwriteFd;
@@ -139,9 +139,9 @@ int sysc_stat(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	int res;
 	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_stat(pid,abspath,info);
 	if(res < 0)
@@ -156,7 +156,7 @@ int sysc_fstat(sThread *t,sIntrptStackFrame *stack) {
 	file_t file;
 	int res;
 	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	file = proc_reqFile(t,fd);
@@ -177,7 +177,7 @@ int sysc_chmod(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	int res;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_chmod(pid,abspath,mode);
 	if(res < 0)
@@ -193,7 +193,7 @@ int sysc_chown(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	int res;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_chown(pid,abspath,uid,gid);
 	if(res < 0)
@@ -208,7 +208,7 @@ int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
 	file_t file;
 	sProc *p;
 	if(!paging_isInUserSpace((uintptr_t)pos,sizeof(off_t)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	file = proc_reqFile(t,fd);
@@ -219,7 +219,7 @@ int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
 	if(!vmm_makeCopySafe(p,pos,sizeof(off_t))) {
 		proc_release(p,PLOCK_REGIONS);
 		proc_relFile(t,file);
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	}
 	*pos = vfs_tell(pid,file);
 	proc_release(p,PLOCK_REGIONS);
@@ -236,7 +236,7 @@ int sysc_seek(sThread *t,sIntrptStackFrame *stack) {
 	off_t res;
 
 	if(whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 
 	/* get file */
 	file = proc_reqFile(t,fd);
@@ -260,9 +260,9 @@ int sysc_read(sThread *t,sIntrptStackFrame *stack) {
 
 	/* validate count and buffer */
 	if(count == 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	if(!paging_isInUserSpace((uintptr_t)buffer,count))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	file = proc_reqFile(t,fd);
@@ -287,9 +287,9 @@ int sysc_write(sThread *t,sIntrptStackFrame *stack) {
 
 	/* validate count and buffer */
 	if(count == 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	if(!paging_isInUserSpace((uintptr_t)buffer,count))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	file = proc_reqFile(t,fd);
@@ -313,10 +313,10 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 	file_t file;
 	ssize_t res;
 	if(!paging_isInUserSpace((uintptr_t)data,size))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	/* can't be sent by user-programs */
 	if(IS_DEVICE_MSG(id))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EPERM);
 
 	/* get file */
 	file = proc_reqFile(t,fd);
@@ -340,7 +340,7 @@ int sysc_receive(sThread *t,sIntrptStackFrame *stack) {
 	file_t file;
 	ssize_t res;
 	if(!paging_isInUserSpace((uintptr_t)data,size))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	file = proc_reqFile(t,fd);
@@ -408,9 +408,9 @@ int sysc_link(sThread *t,sIntrptStackFrame *stack) {
 	const char *oldPath = (const char*)SYSC_ARG1(stack);
 	const char *newPath = (const char*)SYSC_ARG2(stack);
 	if(!sysc_absolutize_path(oldabs,sizeof(oldabs),oldPath))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	if(!sysc_absolutize_path(newabs,sizeof(newabs),newPath))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_link(pid,oldabs,newabs);
 	if(res < 0)
@@ -424,7 +424,7 @@ int sysc_unlink(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_unlink(pid,abspath);
 	if(res < 0)
@@ -438,7 +438,7 @@ int sysc_mkdir(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = proc_getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_mkdir(pid,abspath);
 	if(res < 0)
@@ -452,7 +452,7 @@ int sysc_rmdir(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_rmdir(pid,abspath);
 	if(res < 0)
@@ -469,9 +469,9 @@ int sysc_mount(sThread *t,sIntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG2(stack);
 	uint type = (uint)SYSC_ARG3(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	if(!sysc_absolutize_path(absdev,sizeof(absdev),device))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_mount(pid,absdev,abspath,type);
 	if(res < 0)
@@ -485,7 +485,7 @@ int sysc_unmount(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_unmount(pid,abspath);
 	if(res < 0)

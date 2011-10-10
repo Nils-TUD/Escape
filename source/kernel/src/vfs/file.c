@@ -27,7 +27,7 @@
 #include <sys/vfs/node.h>
 #include <sys/klock.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 /* the initial size of the write-cache for file-nodes */
 #define VFS_INITIAL_WRITECACHE		128
@@ -105,7 +105,7 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USE
 	klock_aquire(&node->lock);
 	if(node->name == NULL) {
 		klock_release(&node->lock);
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	}
 	if(con->data != NULL) {
 		if(offset > con->pos)
@@ -116,7 +116,7 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USE
 			if(!vmm_makeCopySafe(p,buffer,byteCount)) {
 				klock_release(&node->lock);
 				proc_release(p,PLOCK_REGIONS);
-				return ERR_INVALID_ARGS;
+				return -EFAULT;
 			}
 			memcpy(buffer,(uint8_t*)con->data + offset,byteCount);
 			proc_release(p,PLOCK_REGIONS);
@@ -136,7 +136,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 	oldData = con->data;
 	if(n->name == NULL) {
 		klock_release(&n->lock);
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	}
 
 	/* need to create cache? */
@@ -145,7 +145,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 		/* check for overflow */
 		if(newSize > MAX_VFS_FILE_SIZE) {
 			klock_release(&n->lock);
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		}
 
 		con->data = cache_alloc(newSize);
@@ -158,7 +158,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 		newSize = MAX(offset + count,con->size * 2);
 		if(newSize > MAX_VFS_FILE_SIZE) {
 			klock_release(&n->lock);
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		}
 
 		con->data = cache_realloc(con->data,newSize);
@@ -169,7 +169,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 		/* don't throw the data away, use the old version */
 		con->data = oldData;
 		klock_release(&n->lock);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* set total size and number of used bytes */

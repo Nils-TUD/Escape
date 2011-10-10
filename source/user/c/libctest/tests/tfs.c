@@ -68,8 +68,8 @@ static void test_basics(void) {
 	test_assertInt(memcmp(&info1,&info2,sizeof(sFileInfo)),0);
 	test_assertUInt(info1.linkCount,2);
 	test_assertInt(unlink("/newdir/file1"),0);
-	test_assertInt(rmdir("/newdir"),ERR_DIR_NOT_EMPTY);
-	test_assertInt(stat("/newdir/file1",&info1),ERR_PATH_NOT_FOUND);
+	test_assertInt(rmdir("/newdir"),-ENOTEMPTY);
+	test_assertInt(stat("/newdir/file1",&info1),-ENOENT);
 	test_assertInt(stat("/newdir/file2",&info2),0);
 	test_assertUInt(info2.linkCount,1);
 	test_assertInt(unlink("/newdir/file2"),0);
@@ -109,8 +109,8 @@ static void test_perms(void) {
 		test_assertInt(seteuid(0),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCanNot(paths[i].dir,IO_READ,ERR_NO_READ_PERM);
-		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+		test_assertCanNot(paths[i].dir,IO_READ,-EACCES);
+		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
 
 		/* give group read-perm */
 		test_assertInt(seteuid(0),0);
@@ -118,7 +118,7 @@ static void test_perms(void) {
 		test_assertInt(seteuid(2),0);
 
 		test_assertCan(paths[i].dir,IO_READ);
-		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
 
 		/* neither owner nor group */
 		test_assertInt(seteuid(0),0);
@@ -126,8 +126,8 @@ static void test_perms(void) {
 		test_assertInt(setegid(2),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCanNot(paths[i].dir,IO_READ,ERR_NO_READ_PERM);
-		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
+		test_assertCanNot(paths[i].dir,IO_READ,-EACCES);
+		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
 
 		/* give others read+write perm */
 		test_assertInt(seteuid(0),0);
@@ -160,9 +160,9 @@ static void test_perms(void) {
 		test_assertInt(seteuid(0),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCanNot(paths[i].dir,IO_READ,ERR_NO_READ_PERM);
-		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
-		test_assertInt(stat(paths[i].file,&info),ERR_NO_EXEC_PERM);
+		test_assertCanNot(paths[i].dir,IO_READ,-EACCES);
+		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertInt(stat(paths[i].file,&info),-EACCES);
 
 		/* give group read-perm */
 		test_assertInt(seteuid(0),0);
@@ -170,8 +170,8 @@ static void test_perms(void) {
 		test_assertInt(seteuid(2),0);
 
 		test_assertCan(paths[i].dir,IO_READ);
-		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
-		test_assertInt(stat(paths[i].file,&info),ERR_NO_EXEC_PERM);
+		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertInt(stat(paths[i].file,&info),-EACCES);
 
 		/* neither owner nor group */
 		test_assertInt(seteuid(0),0);
@@ -179,9 +179,9 @@ static void test_perms(void) {
 		test_assertInt(setegid(2),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCanNot(paths[i].dir,IO_READ,ERR_NO_READ_PERM);
-		test_assertCanNot(paths[i].dir,IO_WRITE,ERR_NO_WRITE_PERM);
-		test_assertInt(stat(paths[i].file,&info),ERR_NO_EXEC_PERM);
+		test_assertCanNot(paths[i].dir,IO_READ,-EACCES);
+		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertInt(stat(paths[i].file,&info),-EACCES);
 
 		/* give others read+write perm */
 		test_assertInt(seteuid(0),0);
@@ -207,9 +207,9 @@ static void test_rename(void) {
 	fs_createFile("/newfile","test!");
 	test_assertCan("/newfile",IO_READ);
 	test_assertInt(rename("/newfile","/newerfile"),0);
-	test_assertCanNot("/newfile",IO_READ,ERR_PATH_NOT_FOUND);
+	test_assertCanNot("/newfile",IO_READ,-ENOENT);
 	test_assertInt(unlink("/newerfile"),0);
-	test_assertCanNot("/newerfile",IO_READ,ERR_PATH_NOT_FOUND);
+	test_assertCanNot("/newerfile",IO_READ,-ENOENT);
 
 	test_caseSucceeded();
 }

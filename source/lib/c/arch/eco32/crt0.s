@@ -57,6 +57,7 @@ _start:
 	# it returns the entrypoint; 0 if we're the initial thread
 	beq		$2,$0,initialThread
 	# we're an additional thread, so call the desired function
+	ldw		$4,$29,32
 	jalr	$2
 	j		threadExit
 

@@ -27,7 +27,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/video.h>
 #include <esc/keycodes.h>
-#include <errors.h>
+#include <errno.h>
 
 static sScreenBackup backup;
 static char buffer[512];
@@ -61,7 +61,7 @@ int cons_cmd_file(size_t argc,char **argv) {
 		for(i = 0; i < count; i++) {
 			if(buffer[i] == '\n') {
 				if(lines_newline(&lines) < 0) {
-					res = ERR_NOT_ENOUGH_MEM;
+					res = -ENOMEM;
 					goto error;
 				}
 			}

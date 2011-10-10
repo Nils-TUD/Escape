@@ -93,7 +93,7 @@ void yield(void);
 int alarm(time_t msecs);
 
 /**
- * Puts the current thread to sleep for <msecs> milliseconds. If interrupted, ERR_INTERRUPTED
+ * Puts the current thread to sleep for <msecs> milliseconds. If interrupted, -EINTR
  * is returned.
  *
  * @param msecs the number of milliseconds to wait

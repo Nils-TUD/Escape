@@ -33,7 +33,7 @@ void load_error(const char *fmt,...) {
 	va_start(ap,fmt);
 	printe("[%d] Error: ",getpid());
 	vprinte(fmt,ap);
-	if(errno < 0)
+	if(errno != 0)
 		printe(": %s",strerror(errno));
 	printe("\n");
 	va_end(ap);

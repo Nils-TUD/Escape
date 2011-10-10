@@ -22,7 +22,7 @@
 #include <esc/debug.h>
 #include <esc/driver.h>
 #include <signal.h>
-#include <errors.h>
+#include <errno.h>
 #include "shellcontrol.h"
 
 #include <vterm/vtin.h>
@@ -62,24 +62,18 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 		modifier |= STATE_SHIFT;
 	if(e.isCtrlDown())
 		modifier |= STATE_CTRL;
-	locku(_lock);
 	vtin_handleKey(_vt,e.getKeyCode(),modifier,e.getCharacter());
 	update();
-	unlocku(_lock);
 }
 
 void ShellControl::resizeTo(gsize_t width,gsize_t height) {
 	Control::resizeTo(width,height);
-	locku(_lock);
 	vtctrl_resize(_vt,getCols(),getRows());
-	unlocku(_lock);
 	repaint();
 }
 
 void ShellControl::sendEOF() {
-	locku(_lock);
 	vtin_handleKey(_vt,VK_D,STATE_CTRL,'d');
-	unlocku(_lock);
 }
 
 gsize_t ShellControl::getMinWidth() const {
@@ -94,9 +88,9 @@ void ShellControl::paint(Graphics &g) {
 	g.setColor(BGCOLOR);
 	g.fillRect(0,0,getWidth(),getHeight());
 
-	locku(_lock);
+	locku(&_vt->lock);
 	paintRows(g,0,_vt->rows);
-	unlocku(_lock);
+	unlocku(&_vt->lock);
 }
 
 void ShellControl::clearRows(Graphics &g,size_t start,size_t count) {
@@ -112,6 +106,7 @@ void ShellControl::update() {
 	bool changed = false;
 	Graphics *g = getGraphics();
 
+	locku(&_vt->lock);
 	if(_vt->upScroll > 0) {
 		size_t lineHeight = g->getFont().getHeight() + PADDING;
 		// move lines up
@@ -175,6 +170,7 @@ void ShellControl::update() {
 	_vt->upStart = 0;
 	_vt->upLength = 0;
 	_vt->upScroll = 0;
+	unlocku(&_vt->lock);
 }
 
 bool ShellControl::setCursor() {

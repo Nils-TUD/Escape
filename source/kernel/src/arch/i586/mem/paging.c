@@ -37,7 +37,7 @@
 #include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 /* to shift a flag down to the first bit */
 #define PG_PRESENT_SHIFT	0

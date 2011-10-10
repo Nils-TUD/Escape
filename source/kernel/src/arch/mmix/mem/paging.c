@@ -30,7 +30,7 @@
 #include <sys/printf.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 /*
  * PTE:
@@ -113,7 +113,7 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	 * 	- kernel stack
 	 */
 	if(pmem_getFreeFrames(MM_CONT) < SEGMENT_COUNT * PTS_PER_SEGMENT || pmem_getFreeFrames(MM_DEF) < 1)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	/* allocate root-location */
 	uintptr_t rootLoc;

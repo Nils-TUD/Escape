@@ -26,7 +26,7 @@
 #include <esc/debug.h>
 #include <esc/messages.h>
 #include <signal.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -88,7 +88,7 @@ int main(int argc,char **argv) {
 		int drvFd;
 		int fd = getWork(devices,drvCount,&drvFd,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
-			if(fd != ERR_INTERRUPTED)
+			if(fd != -EINTR)
 				printe("[ATA] Unable to get client");
 		}
 		else {
@@ -128,7 +128,7 @@ int main(int argc,char **argv) {
 				break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

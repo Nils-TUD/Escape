@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 #include <ctype.h>
 #include <string.h>
 #include "file.h"
@@ -44,7 +44,7 @@ ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size
 	/* at first we need the direntry */
 	e = iso_direc_get(h,inodeNo);
 	if(e == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	/* nothing left to read? */
 	if(offset >= (off_t)e->entry.extentSize.littleEndian)
@@ -67,7 +67,7 @@ ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size
 		/* read block */
 		blk = bcache_request(&h->blockCache,startBlock + i,BMODE_READ);
 		if(blk == NULL)
-			return ERR_BLO_REQ_FAILED;
+			return -ENOBUFS;
 
 		if(buffer != NULL) {
 			/* copy the requested part */

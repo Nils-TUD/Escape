@@ -28,7 +28,8 @@
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno
-	stw		$11,$8,0						# store to errno
+	sub		$9,$0,$11
+	stw		$9,$8,0							# store to errno
 	add		$2,$11,$0						# return error-code
 1:
 	jr		$31
@@ -43,7 +44,8 @@
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno
-	stw		$11,$8,0						# store to errno
+	sub		$9,$0,$11
+	stw		$9,$8,0							# store to errno
 	add		$2,$11,$0						# return error-code
 1:
 	jr		$31
@@ -58,7 +60,8 @@
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno
-	stw		$11,$8,0						# store to errno
+	sub		$9,$0,$11
+	stw		$9,$8,0							# store to errno
 	add		$2,$11,$0						# return error-code
 1:
 	jr		$31
@@ -73,7 +76,8 @@
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno
-	stw		$11,$8,0						# store to errno
+	sub		$9,$0,$11
+	stw		$9,$8,0							# store to errno
 	add		$2,$11,$0						# return error-code
 1:
 	jr		$31
@@ -88,7 +92,8 @@
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno
-	stw		$11,$8,0						# store to errno
+	sub		$9,$0,$11
+	stw		$9,$8,0							# store to errno
 	add		$2,$11,$0						# return error-code
 1:
 	jr		$31
@@ -104,7 +109,8 @@
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno
-	stw		$11,$8,0						# store to errno
+	sub		$9,$0,$11
+	stw		$9,$8,0							# store to errno
 	add		$2,$11,$0						# return error-code
 1:
 	jr		$31
@@ -122,7 +128,8 @@
 	trap
 	beq		$11,$0,1f
 	add		$8,$0,errno
-	stw		$11,$8,0						# store to errno
+	sub		$9,$0,$11
+	stw		$9,$8,0							# store to errno
 	add		$2,$11,$0						# return error-code
 1:
 	jr		$31

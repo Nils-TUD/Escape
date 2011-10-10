@@ -6,7 +6,7 @@ $syscalls = array(
 	array("debug","SYSCALL_DEBUG"),
 
 	# driver
-	array("regDriver","SYSCALL_REG"),
+	array("createdev","SYSCALL_CRTDEV"),
 	array("getClientId","SYSCALL_GETCLIENTID"),
 	array("getClient","SYSCALL_GETCLIENTPROC"),
 	array("getWork","SYSCALL_GETWORK"),
@@ -98,7 +98,8 @@ foreach($syscalls as $sc) {
 	echo "	TRAP	0,".$sc[1].",0\n";
 	echo "	BZ		$7,1f						# no-error?\n";
 	echo "	GETA	$3,errno\n";
-	echo "	STTU	$7,$3,0\n";
+	echo "	NEG		$1,0,$7\n";
+	echo "	STTU	$1,$3,0\n";
 	echo "	SET		$0,$7\n";
 	echo "1:\n";
 	echo "	POP		1,0							# return value is in $0\n";

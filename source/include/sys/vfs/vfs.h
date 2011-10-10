@@ -192,7 +192,7 @@ bool vfs_shouldBlock(file_t file);
  * @param pid the process-id with which the file should be opened
  * @param flags whether it is a virtual or real file and whether you want to read or write
  * @param path the path
- * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
+ * @return the file if successfull or < 0
  */
 file_t vfs_openPath(pid_t pid,ushort flags,const char *path);
 
@@ -215,7 +215,7 @@ int vfs_openPipe(pid_t pid,file_t *readFile,file_t *writeFile);
  * @param flags whether it is a virtual or real file and whether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
  * @param devNo the device-number
- * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
+ * @return the file if successfull or < 0
  */
 file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo);
 
@@ -423,7 +423,7 @@ file_t vfs_createdev(pid_t pid,char *path,uint type,uint ops);
  * @param objCount the number of wait-objects
  * @param maxWaitTime the maximum time to wait (in milliseconds)
  * @param block whether we should wait if necessary (otherwise it will be checked only whether
- *  we can wait and if so, ERR_WOULD_BLOCKED is returned. if not, 0 is returned.)
+ *  we can wait and if so, -EWOULDBLOCK is returned. if not, 0 is returned.)
  * @param pid the process-id for lock_release (KERNEL_PID = don't call it)
  * @param ident the ident for lock_release
  * @return 0 on success

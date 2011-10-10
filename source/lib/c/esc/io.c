@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/messages.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <stdarg.h>
 

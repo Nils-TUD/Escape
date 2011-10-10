@@ -23,7 +23,7 @@
 #include "tvfsnode.h"
 #include <esc/test.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 static void test_vfsn(void);
 static void test_vfs_node_resolvePath(void);

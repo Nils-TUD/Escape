@@ -28,7 +28,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 #include "game.h"
 
 static int kmMngThread(void *arg);

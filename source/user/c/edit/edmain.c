@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <limits.h>
-#include <error.h>
+#include <errno.h>
 
 #include "buffer.h"
 #include "display.h"

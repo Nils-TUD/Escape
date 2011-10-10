@@ -358,9 +358,10 @@ typedef struct {
  *
  * @param device the device-path
  * @param usedDev will be set to the used device
+ * @param errcode will be set to the occurred error, if NULL is returned
  * @return the ext2-handle
  */
-void *ext2_init(const char *device,char **usedDev);
+void *ext2_init(const char *device,char **usedDev,int *errcode);
 
 /**
  * Deinits the ext2-filesystem

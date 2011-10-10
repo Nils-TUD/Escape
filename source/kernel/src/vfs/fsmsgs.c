@@ -34,7 +34,7 @@
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 #define FS_PATH				"/dev/fs"
 
@@ -91,7 +91,7 @@ void vfs_fsmsgs_removeProc(pid_t pid) {
 
 file_t vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path) {
 	const sProc *p = proc_getByPid(pid);
-	ssize_t res = ERR_NOT_ENOUGH_MEM;
+	ssize_t res = -ENOMEM;
 	size_t pathLen = strlen(path);
 	sVFSNode *node;
 	file_t fs;
@@ -99,7 +99,7 @@ file_t vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path) {
 	sStrMsg msg;
 
 	if(pathLen > MAX_MSGSTR_LEN)
-		return ERR_INVALID_ARGS;
+		return -ENAMETOOLONG;
 	fs = vfs_fsmsgs_requestFile(pid,&node);
 	if(fs < 0)
 		return fs;
@@ -146,7 +146,7 @@ int vfs_fsmsgs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
 }
 
 static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileInfo *info) {
-	int res = ERR_NOT_ENOUGH_MEM;
+	int res = -ENOMEM;
 	void *data;
 	size_t pathLen = 0;
 	file_t fs;
@@ -156,7 +156,7 @@ static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,
 	if(path) {
 		pathLen = strlen(path);
 		if(pathLen > MAX_MSGSTR_LEN)
-			return ERR_INVALID_ARGS;
+			return -ENAMETOOLONG;
 	}
 	fs = vfs_fsmsgs_requestFile(pid,&node);
 	if(fs < 0)
@@ -206,7 +206,7 @@ static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,
 		if(!vmm_makeCopySafe(p,info,sizeof(sFileInfo))) {
 			proc_release(p,PLOCK_REGIONS);
 			cache_free(data);
-			return ERR_INVALID_ARGS;
+			return -EFAULT;
 		}
 		memcpy((void*)info,data,sizeof(sFileInfo));
 		proc_release(p,PLOCK_REGIONS);
@@ -235,7 +235,7 @@ ssize_t vfs_fsmsgs_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,
 	req = vfs_req_get(node,buffer,0);
 	if(!req) {
 		vfs_fsmsgs_releaseFile(pid,fs);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* send msg to fs */
@@ -271,7 +271,7 @@ ssize_t vfs_fsmsgs_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,
 ssize_t vfs_fsmsgs_write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *buffer,off_t offset,
 		size_t count) {
 	sRequest *req;
-	ssize_t res = ERR_NOT_ENOUGH_MEM;
+	ssize_t res = -ENOMEM;
 	sVFSNode *node;
 	sArgsMsg msg;
 	file_t fs = vfs_fsmsgs_requestFile(pid,&node);
@@ -364,7 +364,7 @@ void vfs_fsmsgs_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 }
 
 static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
-	int res = ERR_NOT_ENOUGH_MEM;
+	int res = -ENOMEM;
 	const sProc *p = proc_getByPid(pid);
 	sRequest *req;
 	file_t fs;
@@ -372,9 +372,9 @@ static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *pat
 	sStrMsg msg;
 
 	if(strlen(path1) > MAX_MSGSTR_LEN)
-		return ERR_INVALID_ARGS;
+		return -ENAMETOOLONG;
 	if(path2 && strlen(path2) > MAX_MSGSTR_LEN)
-		return ERR_INVALID_ARGS;
+		return -ENAMETOOLONG;
 
 	fs = vfs_fsmsgs_requestFile(pid,&node);
 	if(fs < 0)
@@ -410,7 +410,7 @@ error:
 static void vfs_fsmsgs_wait(sRequest *req) {
 	do
 		vfs_req_waitForReply(req,false);
-	while((ssize_t)req->count == ERR_DRIVER_DIED);
+	while((ssize_t)req->count == -EDESTROYED);
 }
 
 static void vfs_fsmsgs_openRespHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {
@@ -533,7 +533,7 @@ static file_t vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node) {
 				sll_removeFirstWith(&p->fsChans,chan);
 				cache_free(chan);
 				klock_release(&fsChanLock);
-				return ERR_NODE_DESTROYED;
+				return -EDESTROYED;
 			}
 			if(node)
 				*node = chan->node;
@@ -546,7 +546,7 @@ static file_t vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node) {
 
 	chan = (sFSChan*)cache_alloc(sizeof(sFSChan));
 	if(!chan)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	chan->active = true;
 
 	/* resolve path to fs */
@@ -560,7 +560,7 @@ static file_t vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node) {
 		goto errorChan;
 	child = vfs_chan_create(pid,fsnode);
 	if(child == NULL) {
-		err = ERR_NOT_ENOUGH_MEM;
+		err = -ENOMEM;
 		goto errorNode;
 	}
 	chan->node = child;

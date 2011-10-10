@@ -26,7 +26,7 @@
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 #define DIRE_SIZE		(sizeof(sDirEntry) - (MAX_NAME_LEN + 1))
 
@@ -104,7 +104,7 @@ static int cons_cmd_ls_read(pid_t pid,file_t file,sDirEntry *e) {
 	len = e->nameLen;
 	/* ensure that the name is short enough */
 	if(len >= MAX_NAME_LEN)
-		return ERR_INVALID_FILE;
+		return -ENAMETOOLONG;
 
 	/* now read the name */
 	if((res = vfs_readFile(pid,file,e->name,len)) < 0)

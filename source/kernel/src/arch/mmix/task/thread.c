@@ -29,7 +29,7 @@
 #include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 /*
  * A few words to cloning and thread-switching on MMIX...
@@ -105,7 +105,7 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 	if(!cloneProc) {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES * 2) {
 			pmem_free(dst->archAttr.kstackFrame);
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		}
 
 		/* add a new stack-region for the register-stack */
@@ -174,7 +174,7 @@ void thread_popSpecRegs(void) {
 int thread_finishClone(sThread *t,sThread *nt) {
 	int res;
 	if(pmem_getFreeFrames(MM_DEF) < 1)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	nt->archAttr.tempStack = pmem_allocate();
 	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->archAttr.tempStack * PAGE_SIZE)));

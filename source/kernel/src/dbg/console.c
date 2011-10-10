@@ -112,7 +112,7 @@ void cons_start(void) {
 			if(cmd) {
 				res = cmd->exec(argc,argv);
 				if(res != 0)
-					vid_printf("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(res),res);
+					vid_printf("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(-res),res);
 			}
 			else
 				vid_printf("Unknown command '%s'\n",argv[0]);

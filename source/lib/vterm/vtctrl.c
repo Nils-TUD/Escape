@@ -27,7 +27,7 @@
 #include <esc/ringbuffer.h>
 #include <esc/conf.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -54,6 +54,7 @@ bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
 	vt->setCursor = NULL;
 
 	/* init state */
+	vt->lock = 0;
 	vt->col = 0;
 	vt->row = vt->rows - 1;
 	vt->upStart = 0;

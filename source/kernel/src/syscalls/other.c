@@ -30,7 +30,7 @@
 #include <sys/log.h>
 #include <sys/config.h>
 #include <sys/video.h>
-#include <errors.h>
+#include <errno.h>
 
 int sysc_loadMods(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	int res = boot_loadModules(stack);

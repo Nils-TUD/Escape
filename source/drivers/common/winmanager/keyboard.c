@@ -59,7 +59,7 @@ int keyboard_start(void *drvIdPtr) {
 
 		ssize_t count = RETRY(read(km,kbData,sizeof(kbData)));
 		if(count < 0) {
-			if(count != ERR_INTERRUPTED)
+			if(count != -EINTR)
 				printe("[WINM] Unable to read from kmmanager");
 		}
 		else {

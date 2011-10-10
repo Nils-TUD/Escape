@@ -26,7 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/klock.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <assert.h>
 
 static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler);

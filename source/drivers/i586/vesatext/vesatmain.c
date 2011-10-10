@@ -25,7 +25,7 @@
 #include <esc/mem.h>
 #include <esc/rect.h>
 #include <esc/messages.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -153,7 +153,7 @@ int main(void) {
 					size_t count = msg.args.arg2;
 					msg.args.arg1 = 0;
 					if(video == NULL || minfo == NULL)
-						msg.args.arg1 = ERR_UNSUPPORTED_OP;
+						msg.args.arg1 = -ENOTSUP;
 					else if(offset + count <= (size_t)(rows * cols * 2) && offset + count > offset) {
 						uint8_t *str = (uint8_t*)malloc(count);
 						vassert(str,"Unable to alloc mem");
@@ -169,7 +169,7 @@ int main(void) {
 				break;
 
 				case MSG_VID_SETMODE: {
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					if(minfo) {
 						msg.args.arg1 = vbe_setMode(minfo->modeNo);
 						/* force refresh on next update */
@@ -197,7 +197,7 @@ int main(void) {
 				break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
@@ -224,13 +224,13 @@ static int vesa_determineMode(void) {
 					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
 			fflush(stdout);
 			if(video == NULL)
-				return errno;
+				return -errno;
 			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
 			rows = minfo->yResolution / (FONT_HEIGHT + PAD * 2);
 			return vesa_init();
 		}
 	}
-	return ERR_VESA_MODE_NOT_FOUND;
+	return -ENOENT;
 }
 
 static int vesa_init(void) {
@@ -238,7 +238,7 @@ static int vesa_init(void) {
 	if(content == NULL) {
 		content = (uint8_t*)malloc(cols * rows * 2);
 		if(content == NULL)
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		for(y = 0; y < rows; y++) {
 			for(x = 0; x < cols; x++) {
 				content[y * cols * 2 + x * 2] = ' ';
@@ -254,7 +254,7 @@ static int vesa_init(void) {
 		whOnBlCache = (uint8_t*)malloc((FONT_WIDTH + PAD * 2) * (FONT_HEIGHT + PAD * 2) *
 				(minfo->bitsPerPixel / 8) * FONT_COUNT);
 		if(whOnBlCache == NULL)
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		cc = whOnBlCache;
 		for(i = 0; i < FONT_COUNT; i++) {
 			for(y = 0; y < FONT_HEIGHT + PAD * 2; y++) {

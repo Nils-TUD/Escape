@@ -27,7 +27,7 @@
 #include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 #define LOCK_USED		4
 
@@ -71,7 +71,7 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 	i = lock_get(pid,ident,true);
 	if(i < 0) {
 		klock_release(&klock);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* note that we have to use the index here since locks can change if another threads reallocates
@@ -120,7 +120,7 @@ int lock_release(pid_t pid,ulong ident) {
 	l = locks + i;
 	if(i < 0) {
 		klock_release(&klock);
-		return ERR_LOCK_NOT_FOUND;
+		return -ENOENT;
 	}
 
 	/* unlock */
@@ -193,7 +193,7 @@ static ssize_t lock_get(pid_t pid,ulong ident,bool free) {
 		nlocks = cache_realloc(locks,lockCount * sizeof(sLock));
 		if(nlocks == NULL) {
 			lockCount = oldCount;
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		}
 		locks = nlocks;
 		memclear(locks + oldCount,(lockCount - oldCount) * sizeof(sLock));

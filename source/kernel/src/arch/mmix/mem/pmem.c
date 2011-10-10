@@ -25,7 +25,7 @@
 #include <sys/video.h>
 #include <assert.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 static uintptr_t bitmapStart;
 

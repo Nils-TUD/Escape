@@ -21,7 +21,7 @@
 #include <esc/debug.h>
 #include <esc/endian.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
 
@@ -146,7 +146,7 @@ ssize_t ext2_file_read(sExt2 *e,inode_t inodeNo,void *buffer,off_t offset,size_t
 	/* at first we need the inode */
 	cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	/* read */
 	res = ext2_file_readIno(e,cnode,buffer,offset,count);
@@ -189,7 +189,7 @@ ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,off_t o
 			block_t block = ext2_inode_getDataBlock(e,cnode,startBlock + i);
 			sCBlock *tmpBuffer = bcache_request(&e->blockCache,block,BMODE_READ);
 			if(tmpBuffer == NULL)
-				return ERR_BLO_REQ_FAILED;
+				return -ENOBUFS;
 
 			/* copy the requested part */
 			c = MIN(leftBytes,blockSize - offset);
@@ -212,7 +212,7 @@ ssize_t ext2_file_write(sExt2 *e,inode_t inodeNo,const void *buffer,off_t offset
 	/* at first we need the inode */
 	sExt2CInode *cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	/* write to it */
 	count = ext2_file_writeIno(e,cnode,buffer,offset,count);
@@ -244,7 +244,7 @@ ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,off_t 
 		block_t block = ext2_inode_reqDataBlock(e,cnode,startBlock + i);
 		/* error (e.g. no free block) ? */
 		if(block == 0)
-			return ERR_BLO_REQ_FAILED;
+			return -ENOSPC;
 
 		c = MIN(leftBytes,blockSize - offset);
 
@@ -254,7 +254,7 @@ ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,off_t 
 		else
 			tmpBuffer = bcache_create(&e->blockCache,block);
 		if(tmpBuffer == NULL)
-			return 0;
+			return -ENOBUFS;
 		/* we can write it to disk later :) */
 		memcpy((uint8_t*)tmpBuffer->buffer + offset,bufWork,c);
 		bcache_markDirty(tmpBuffer);

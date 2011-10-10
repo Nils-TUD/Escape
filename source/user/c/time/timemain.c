@@ -26,7 +26,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 static void sigTimer(int sig);
 static void sigHdlr(int sig);
@@ -81,7 +81,7 @@ int main(int argc,char **argv) {
 		int res;
 		while(1) {
 			res = waitChild(&state);
-			if(res != ERR_INTERRUPTED)
+			if(res != -EINTR)
 				break;
 		}
 		if(res < 0)

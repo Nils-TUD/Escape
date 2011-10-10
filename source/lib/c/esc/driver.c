@@ -21,7 +21,7 @@
 #include <esc/driver.h>
 #include <esc/messages.h>
 #include <stdio.h>
-#include <errors.h>
+#include <errno.h>
 
 void handleFileRead(int fd,sMsg *msg,fGetData getData) {
 	size_t total;
@@ -30,13 +30,13 @@ void handleFileRead(int fd,sMsg *msg,fGetData getData) {
 	size_t count = msg->args.arg2;
 	FILE *str;
 	if(offset + (off_t)count < offset)
-		msg->args.arg1 = ERR_INVALID_ARGS;
+		msg->args.arg1 = -EINVAL;
 	str = ascreate();
 	if(str)
 		getData(str);
 	data = asget(str,&total);
 	if(!data)
-		msg->args.arg1 = ERR_NOT_ENOUGH_MEM;
+		msg->args.arg1 = -ENOMEM;
 	else {
 		msg->args.arg1 = 0;
 		if(offset >= (off_t)total)

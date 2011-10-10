@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <esc/endian.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdlib.h>
 
 #include "ext2.h"
@@ -46,7 +46,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 
 	cnode = ext2_icache_request(e,EXT2_ROOT_INO,IMODE_READ);
 	if(cnode == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	pos = strchri(p,'/');
 	while(*p) {
@@ -62,7 +62,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 			ext2_icache_release(cnode);
 			cnode = ext2_icache_request(e,res,IMODE_READ);
 			if(cnode == NULL)
-				return ERR_INO_REQ_FAILED;
+				return -ENOBUFS;
 
 			/* skip slashes */
 			while(*p == '/')
@@ -86,7 +86,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 			pos = strchri(p,'/');
 			if((le16tocpu(cnode->inode.mode) & EXT2_S_IFDIR) == 0) {
 				ext2_icache_release(cnode);
-				return ERR_NO_DIRECTORY;
+				return -ENOTDIR;
 			}
 		}
 		/* no match? */
@@ -99,7 +99,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 				ext2_icache_release(cnode);
 				cnode = ext2_icache_request(e,res,IMODE_WRITE);
 				if(cnode == NULL)
-					return ERR_PATH_NOT_FOUND;
+					return -ENOENT;
 				/* ensure that there is no '/' in the name */
 				if(slash)
 					*slash = '\0';
@@ -111,7 +111,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 			}
 			else {
 				ext2_icache_release(cnode);
-				return ERR_PATH_NOT_FOUND;
+				return -ENOENT;
 			}
 		}
 	}
@@ -120,5 +120,5 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 	ext2_icache_release(cnode);
 	if(res != EXT2_BAD_INO)
 		return res;
-	return ERR_PATH_NOT_FOUND;
+	return -ENOENT;
 }

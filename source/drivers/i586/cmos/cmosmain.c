@@ -25,7 +25,7 @@
 #include <esc/io.h>
 #include <esc/thread.h>
 #include <stdio.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -95,7 +95,7 @@ int main(void) {
 				break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

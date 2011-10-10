@@ -24,7 +24,7 @@
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/klock.h>
-#include <errors.h>
+#include <errno.h>
 
 #define LISTENER_COUNT		1024
 
@@ -79,7 +79,7 @@ int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
 	l = freeList;
 	if(l == 0) {
 		klock_release(&timerLock);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* remove from freelist */

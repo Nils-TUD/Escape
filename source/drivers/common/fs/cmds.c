@@ -103,12 +103,12 @@ static void cmds_open(int fd,sMsg *msg) {
 	if(no >= 0) {
 		inst = mount_get(devNo);
 		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
+			msg->args.arg1 = -ENOENT;
 		else
 			msg->args.arg1 = inst->fs->open(inst->handle,&u,no,flags);
 	}
 	else
-		msg->args.arg1 = ERR_PATH_NOT_FOUND;
+		msg->args.arg1 = -ENOENT;
 	msg->args.arg2 = devNo;
 	send(fd,MSG_FS_OPEN_RESP,msg,sizeof(msg->args));
 }
@@ -128,7 +128,7 @@ static void cmds_stat(int fd,sMsg *msg) {
 	else {
 		inst = mount_get(devNo);
 		if(inst == NULL)
-			msg->data.arg1 = ERR_NO_MNTPNT;
+			msg->data.arg1 = -ENOENT;
 		else
 			msg->data.arg1 = inst->fs->stat(inst->handle,no,info);
 	}
@@ -141,7 +141,7 @@ static void cmds_istat(int fd,sMsg *msg) {
 	sFileInfo *info = (sFileInfo*)&(msg->data.d);
 	sFSInst *inst = mount_get(devNo);
 	if(inst == NULL)
-		msg->data.arg1 = ERR_NO_MNTPNT;
+		msg->data.arg1 = -ENOENT;
 	else
 		msg->data.arg1 = inst->fs->stat(inst->handle,ino,info);
 	send(fd,MSG_FS_STAT_RESP,msg,sizeof(msg->data));
@@ -163,9 +163,11 @@ static void cmds_chmod(int fd,sMsg *msg) {
 	else {
 		inst = mount_get(devNo);
 		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
+			msg->args.arg1 = -ENOENT;
+		else if(inst->fs->readonly)
+			msg->args.arg1 = -EROFS;
 		else if(inst->fs->chmod == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
+			msg->args.arg1 = -ENOTSUP;
 		else
 			msg->args.arg1 = inst->fs->chmod(inst->handle,&u,ino,mode);
 	}
@@ -189,9 +191,11 @@ static void cmds_chown(int fd,sMsg *msg) {
 	else {
 		inst = mount_get(devNo);
 		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
+			msg->args.arg1 = -ENOENT;
+		else if(inst->fs->readonly)
+			msg->args.arg1 = -EROFS;
 		else if(inst->fs->chown == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
+			msg->args.arg1 = -ENOTSUP;
 		else
 			msg->args.arg1 = inst->fs->chown(inst->handle,&u,ino,uid,gid);
 	}
@@ -206,13 +210,13 @@ static void cmds_read(int fd,sMsg *msg) {
 	sFSInst *inst = mount_get(devNo);
 	void *buffer = NULL;
 	if(inst == NULL)
-		msg->args.arg1 = ERR_NO_MNTPNT;
+		msg->args.arg1 = -ENOENT;
 	else if(inst->fs->read == NULL)
-		msg->args.arg1 = ERR_UNSUPPORTED_OP;
+		msg->args.arg1 = -ENOTSUP;
 	else {
 		buffer = malloc(count);
 		if(buffer == NULL)
-			msg->args.arg1 = ERR_NOT_ENOUGH_MEM;
+			msg->args.arg1 = -ENOMEM;
 		else
 			msg->args.arg1 = inst->fs->read(inst->handle,ino,buffer,offset,count);
 	}
@@ -231,9 +235,11 @@ static void cmds_write(int fd,sMsg *msg,void *data) {
 	size_t count = msg->args.arg4;
 	sFSInst *inst = mount_get(devNo);
 	if(inst == NULL)
-		msg->args.arg1 = ERR_NO_MNTPNT;
+		msg->args.arg1 = -ENOENT;
+	else if(inst->fs->readonly)
+		msg->args.arg1 = -EROFS;
 	else if(inst->fs->write == NULL)
-		msg->args.arg1 = ERR_UNSUPPORTED_OP;
+		msg->args.arg1 = -ENOTSUP;
 	/* write to file */
 	else
 		msg->args.arg1 = inst->fs->write(inst->handle,ino,data,offset,count);
@@ -256,7 +262,7 @@ static void cmds_link(int fd,sMsg *msg) {
 	if(dstIno < 0)
 		msg->args.arg1 = dstIno;
 	else if(inst == NULL)
-		msg->args.arg1 = ERR_NO_MNTPNT;
+		msg->args.arg1 = -ENOENT;
 	else {
 		/* split path and name */
 		char *name,backup;
@@ -271,9 +277,11 @@ static void cmds_link(int fd,sMsg *msg) {
 		if(dirIno < 0)
 			msg->args.arg1 = dirIno;
 		else if(newDev != oldDev)
-			msg->args.arg1 = ERR_LINK_DEVICE;
+			msg->args.arg1 = -EXDEV;
+		else if(inst->fs->readonly)
+			msg->args.arg1 = -EROFS;
 		else if(inst->fs->link == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
+			msg->args.arg1 = -ENOTSUP;
 		else {
 			*name = backup;
 			msg->args.arg1 = inst->fs->link(inst->handle,&u,dstIno,dirIno,name);
@@ -310,9 +318,11 @@ static void cmds_unlink(int fd,sMsg *msg) {
 		vassert(dirIno >= 0,"Subdir found, but parent not!?");
 		inst = mount_get(devNo);
 		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
+			msg->args.arg1 = -ENOENT;
+		else if(inst->fs->readonly)
+			msg->args.arg1 = -EROFS;
 		else if(inst->fs->unlink == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
+			msg->args.arg1 = -ENOTSUP;
 		else {
 			*name = backup;
 			msg->args.arg1 = inst->fs->unlink(inst->handle,&u,dirIno,name);
@@ -347,9 +357,11 @@ static void cmds_mkdir(int fd,sMsg *msg) {
 	else {
 		inst = mount_get(devNo);
 		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
+			msg->args.arg1 = -ENOENT;
+		else if(inst->fs->readonly)
+			msg->args.arg1 = -EROFS;
 		else if(inst->fs->mkdir == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
+			msg->args.arg1 = -ENOTSUP;
 		else {
 			*name = backup;
 			msg->args.arg1 = inst->fs->mkdir(inst->handle,&u,dirIno,name);
@@ -384,9 +396,11 @@ static void cmds_rmdir(int fd,sMsg *msg) {
 	else {
 		inst = mount_get(devNo);
 		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
+			msg->args.arg1 = -ENOENT;
+		else if(inst->fs->readonly)
+			msg->args.arg1 = -EROFS;
 		else if(inst->fs->rmdir == NULL)
-			msg->args.arg1 = ERR_UNSUPPORTED_OP;
+			msg->args.arg1 = -ENOTSUP;
 		else {
 			*name = backup;
 			msg->args.arg1 = inst->fs->rmdir(inst->handle,&u,dirIno,name);
@@ -411,14 +425,14 @@ static void cmds_mount(int fd,sMsg *msg) {
 	else {
 		sFSInst *inst = mount_get(devNo);
 		if(inst == NULL)
-			msg->args.arg1 = ERR_NO_MNTPNT;
+			msg->args.arg1 = -ENOENT;
 		else {
 			sFileInfo info;
 			int res = inst->fs->stat(inst->handle,ino,&info);
 			if(res < 0)
 				msg->args.arg1 = res;
 			else if(!S_ISDIR(info.mode))
-				msg->args.arg1 = ERR_NO_DIRECTORY;
+				msg->args.arg1 = -ENOTDIR;
 			else {
 				int pnt = mount_addMnt(devNo,ino,path,device,type);
 				msg->args.arg1 = pnt < 0 ? pnt : 0;

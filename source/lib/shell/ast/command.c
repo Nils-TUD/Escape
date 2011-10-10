@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 #include "../mem.h"
 #include "../exec/running.h"
 #include "../exec/value.h"
@@ -387,7 +387,7 @@ static int ast_waitForCmd() {
 	else {
 		while(curWaitCount > 0) {
 			res = wait(EV_NOEVENT,0);
-			if(res == ERR_INTERRUPTED) {
+			if(res == -EINTR) {
 				if(lang_isInterrupted()) {
 					ast_termProcsOfCmd();
 					break;

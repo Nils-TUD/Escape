@@ -27,9 +27,9 @@
  * Inits the block-groups, i.e. reads them from disk and stores them in the given ext2-handle
  *
  * @param e the ext2-handle
- * @return true on success
+ * @return 0 on success
  */
-bool ext2_bg_init(sExt2 *e);
+int ext2_bg_init(sExt2 *e);
 
 /**
  * Destroys the blockgroups

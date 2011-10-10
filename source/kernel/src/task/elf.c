@@ -29,7 +29,7 @@
 #include <sys/util.h>
 #include <sys/video.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <assert.h>
 
 #define ELF_TYPE_PROG		0
@@ -53,7 +53,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 	if(memcmp(eheader->e_ident,ELFMAG,4) != 0) {
 		vid_printf("[LOADER] Invalid magic-number '%02x%02x%02x%02x'\n",
 				eheader->e_ident[0],eheader->e_ident[1],eheader->e_ident[2],eheader->e_ident[3]);
-		return ERR_INVALID_ELF_BIN;
+		return -ENOEXEC;
 	}
 
 	/* load the LOAD segments. */
@@ -63,16 +63,16 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 		/* check if all stuff is in the binary */
 		if((uintptr_t)pheader + sizeof(sElfPHeader) >= (uintptr_t)code + length) {
 			vid_printf("[LOADER] Unexpected end; pheader %d not finished\n",j);
-			return ERR_INVALID_ELF_BIN;
+			return -ENOEXEC;
 		}
 
 		if(pheader->p_type == PT_LOAD) {
 			if(pheader->p_vaddr + pheader->p_filesz >= (uintptr_t)code + length) {
 				vid_printf("[LOADER] Unexpected end; load segment %d not finished\n",loadSegNo);
-				return ERR_INVALID_ELF_BIN;
+				return -ENOEXEC;
 			}
 			if(elf_addSegment(NULL,pheader,loadSegNo,ELF_TYPE_PROG) < 0)
-				return ERR_INVALID_ELF_BIN;
+				return -ENOEXEC;
 			/* copy the data and zero the rest, if necessary */
 			paging_copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
 					pheader->p_filesz);
@@ -83,7 +83,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 	}
 
 	if(elf_finishFromMem(code,length,info) < 0)
-		return ERR_INVALID_ELF_BIN;
+		return -ENOEXEC;
 
 	info->linkerEntry = info->progEntry = eheader->e_entry;
 	return 0;
@@ -104,13 +104,13 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 
 	file = vfs_openPath(p->pid,VFS_READ,path);
 	if(file < 0) {
-		vid_printf("[LOADER] Unable to open path '%s': %s\n",path,strerror(file));
-		return ERR_INVALID_ELF_BIN;
+		vid_printf("[LOADER] Unable to open path '%s': %s\n",path,strerror(-file));
+		return -ENOEXEC;
 	}
 
 	/* fill bindesc */
 	if((res = vfs_fstat(p->pid,file,&finfo)) < 0) {
-		vid_printf("[LOADER] Unable to stat '%s': %s\n",path,strerror(res));
+		vid_printf("[LOADER] Unable to stat '%s': %s\n",path,strerror(-res));
 		goto failed;
 	}
 	bindesc.ino = finfo.inodeNo;
@@ -125,7 +125,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 
 	/* first read the header */
 	if((readRes = vfs_readFile(p->pid,file,&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
-		vid_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(readRes));
+		vid_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(-readRes));
 		goto failed;
 	}
 
@@ -153,7 +153,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 		/* read pheader */
 		if((readRes = vfs_readFile(p->pid,file,&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
 			vid_printf("[LOADER] Reading program-header %d of '%s' failed: %s\n",
-					j,path,strerror(readRes));
+					j,path,strerror(-readRes));
 			goto failed;
 		}
 
@@ -203,7 +203,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 					}
 					if((readRes = vfs_readFile(p->pid,file,(void*)tlsStart,pheader.p_filesz)) < 0) {
 						vid_printf("[LOADER] Reading load segment %d failed: %s\n",
-								loadSeg,strerror(readRes));
+								loadSeg,strerror(-readRes));
 						goto failed;
 					}
 					/* clear tbss */
@@ -228,7 +228,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 
 failed:
 	vfs_closeFile(p->pid,file);
-	return ERR_INVALID_ELF_BIN;
+	return -ENOEXEC;
 }
 
 static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
@@ -241,13 +241,13 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		/* dynamic linker has a special entrypoint */
 		if(type == ELF_TYPE_INTERP && pheader->p_vaddr != INTERP_TEXT_BEGIN) {
 			vid_printf("[LOADER] Dynamic linker text does not start at %p\n",INTERP_TEXT_BEGIN);
-			return ERR_INVALID_ELF_BIN;
+			return -ENOEXEC;
 		}
 		if(pheader->p_flags != (PF_X | PF_R) ||
 			(type == ELF_TYPE_PROG && pheader->p_vaddr != TEXT_BEGIN)) {
 			vid_printf("[LOADER] Text does not start at %p or flags are invalid (%x)\n",
 					TEXT_BEGIN,pheader->p_flags);
-			return ERR_INVALID_ELF_BIN;
+			return -ENOEXEC;
 		}
 		stype = type == ELF_TYPE_INTERP ? REG_SHLIBTEXT : REG_TEXT;
 	}
@@ -255,7 +255,7 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		/* not allowed for the dynamic linker */
 		if(type == ELF_TYPE_INTERP) {
 			vid_printf("[LOADER] TLS segment not allowed for dynamic linker\n");
-			return ERR_INVALID_ELF_BIN;
+			return -ENOEXEC;
 		}
 		stype = REG_TLS;
 		/* we need the thread-control-block at the end */
@@ -265,7 +265,7 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		/* not allowed for the dynamic linker */
 		if(type == ELF_TYPE_INTERP) {
 			vid_printf("[LOADER] Readonly-data segment not allowed for dynamic linker\n");
-			return ERR_INVALID_ELF_BIN;
+			return -ENOEXEC;
 		}
 		stype = REG_RODATA;
 	}
@@ -274,14 +274,14 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 	else {
 		vid_printf("[LOADER] Unrecognized load segment (no=%d, type=%x, flags=%x)\n",
 				loadSegNo,pheader->p_type,pheader->p_flags);
-		return ERR_INVALID_ELF_BIN;
+		return -ENOEXEC;
 	}
 
 	/* check if the sizes are valid */
 	if(pheader->p_filesz > memsz) {
 		vid_printf("[LOADER] Number of bytes in file (%zx) more than number of bytes in mem (%zx)\n",
 				pheader->p_filesz,memsz);
-		return ERR_INVALID_ELF_BIN;
+		return -ENOEXEC;
 	}
 
 	/* tls needs no binary */
@@ -289,7 +289,7 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		bindesc = NULL;
 	/* add the region */
 	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype)) < 0) {
-		vid_printf("[LOADER] Unable to add region: %s\n",strerror(res));
+		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
 		return res;
 	}
 	if(stype == REG_TLS)

@@ -28,7 +28,7 @@
 #include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 typedef struct {
 	sSLList *users;
@@ -81,11 +81,11 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 
 	/* checks */
 	if(strlen(name) > MAX_SHAREDMEM_NAME)
-		return ERR_SHARED_MEM_NAME;
+		return -ENAMETOOLONG;
 	klock_aquire(&shmLock);
 	if(shm_get(name) != NULL) {
 		klock_release(&shmLock);
-		return ERR_SHARED_MEM_EXISTS;
+		return -EEXIST;
 	}
 
 	/* create entry */
@@ -115,7 +115,7 @@ errMem:
 	cache_free(mem);
 errLock:
 	klock_release(&shmLock);
-	return ERR_NOT_ENOUGH_MEM;
+	return -ENOMEM;
 }
 
 ssize_t shm_join(pid_t pid,const char *name) {
@@ -128,19 +128,19 @@ ssize_t shm_join(pid_t pid,const char *name) {
 	mem = shm_get(name);
 	if(mem == NULL || shm_getUser(mem,pid) != NULL) {
 		klock_release(&shmLock);
-		return ERR_SHARED_MEM_INVALID;
+		return -ENOENT;
 	}
 
 	owner = (sShMemUser*)sll_get(mem->users,0);
 	reg = vmm_join(owner->pid,owner->region,pid);
 	if(reg < 0) {
 		klock_release(&shmLock);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 	if(!shm_addUser(mem,pid,reg)) {
 		vmm_remove(pid,reg);
 		klock_release(&shmLock);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 	vmm_getRegRange(pid,reg,&start,NULL);
 	klock_release(&shmLock);
@@ -174,7 +174,7 @@ int shm_cloneProc(pid_t parent,pid_t child) {
 				klock_release(&shmLock);
 				/* remove all already created entries */
 				shm_remProc(child);
-				return ERR_NOT_ENOUGH_MEM;
+				return -ENOMEM;
 			}
 		}
 	}
@@ -224,10 +224,10 @@ static int shm_doLeave(pid_t pid,const char *name) {
 
 	mem = shm_get(name);
 	if(mem == NULL)
-		return ERR_SHARED_MEM_INVALID;
+		return -ENOENT;
 	user = shm_getUser(mem,pid);
 	if(user == NULL || shm_isOwn(mem,pid))
-		return ERR_SHARED_MEM_INVALID;
+		return -EPERM;
 
 	sll_removeFirstWith(mem->users,user);
 	vmm_remove(pid,user->region);
@@ -241,9 +241,9 @@ static int shm_doDestroy(pid_t pid,const char *name) {
 
 	mem = shm_get(name);
 	if(mem == NULL)
-		return ERR_SHARED_MEM_INVALID;
+		return -ENOENT;
 	if(!shm_isOwn(mem,pid))
-		return ERR_SHARED_MEM_INVALID;
+		return -EPERM;
 
 	/* unmap it from the processes. otherwise we might reuse the frames which would
 	 * lead to unpredictable results. so its better to unmap them which may cause a page-fault

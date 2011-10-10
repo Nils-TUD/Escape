@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <assert.h>
 
@@ -91,7 +91,7 @@ int main(int argc,char *argv[]) {
 	while(true) {
 		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
 		if(fd < 0) {
-			if(fd != ERR_INTERRUPTED) {
+			if(fd != -EINTR) {
 				/* no requests anymore and we should shutdown? */
 				if(!run)
 					break;
@@ -110,7 +110,7 @@ int main(int argc,char *argv[]) {
 			}
 
 			if(!cmds_execute(mid,fd,&msg,data)) {
-				msg.args.arg1 = ERR_UNSUPPORTED_OP;
+				msg.args.arg1 = -ENOTSUP;
 				send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				close(fd);
 			}

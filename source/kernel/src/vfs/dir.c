@@ -32,7 +32,7 @@
 #include <esc/endian.h>
 #include <assert.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {
@@ -179,7 +179,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 		if(!vmm_makeCopySafe(p,(uint8_t*)fsBytes + offset,byteCount)) {
 			proc_release(p,PLOCK_REGIONS);
 			cache_free(fsBytes);
-			return ERR_INVALID_ARGS;
+			return -EFAULT;
 		}
 		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
 		proc_release(p,PLOCK_REGIONS);

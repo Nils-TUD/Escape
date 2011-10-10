@@ -179,8 +179,10 @@
 	# now access symbol and store errno
 	mov		errno@GOT(%eax),%eax
 	mov		%ecx,(%eax)
+	negl	(%eax)
 	.else
 	# otherwise access errno directly
 	mov		%ecx,(errno)					# store error-code
+	negl	(errno)
 	.endif
 .endm

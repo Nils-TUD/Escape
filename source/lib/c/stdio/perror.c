@@ -20,11 +20,11 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <string.h>
-#include <error.h>
+#include <errno.h>
 
 void perror(const char *prefix) {
 	fprintf(stderr,prefix);
-	if(errno < 0) {
+	if(errno != 0) {
 		char *msg = strerror(errno);
 		fprintf(stderr,": %s",msg);
 	}

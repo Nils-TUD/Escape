@@ -45,7 +45,7 @@
 #include <sys/boot.h>
 #include <sys/cpu.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 #define MAX_VIEWNAME_LEN	16
 
@@ -165,7 +165,7 @@ int cons_cmd_view(size_t argc,char **argv) {
 		}
 	}
 	if(i == ARRAY_SIZE(views))
-		return ERR_INVALID_ARGS;
+		return -EINVAL;
 
 	/* view the lines */
 	vid_backup(backup.screen,&backup.row,&backup.col);

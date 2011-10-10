@@ -29,7 +29,7 @@
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <stdio.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -210,7 +210,7 @@ int main(void) {
 
 				case MSG_VESA_GETMODE: {
 					sVESAInfo *info = (sVESAInfo*)malloc(sizeof(sVESAInfo));
-					msg.data.arg1 = ERR_NOT_ENOUGH_MEM;
+					msg.data.arg1 = -ENOMEM;
 					if(info) {
 						msg.data.arg1 = 0;
 						info->width = minfo->xResolution;
@@ -237,7 +237,7 @@ int main(void) {
 					break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
@@ -278,20 +278,21 @@ static int vesa_setMode(void) {
 	if(mode != 0) {
 		minfo = vbe_getModeInfo(mode);
 		if(minfo) {
+			int res;
 			video = mapPhysical(minfo->physBasePtr,minfo->xResolution *
 					minfo->yResolution * (minfo->bitsPerPixel / 8));
 			printf("[VESA] Setting (%x) %4d x %4d x %2d\n",mode,
 					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
 			fflush(stdout);
 			if(video == NULL)
-				return errno;
-			if(vbe_setMode(mode) == 0)
+				return -errno;
+			if((res = vbe_setMode(mode)) == 0)
 				return vesa_init();
 			minfo = NULL;
-			return ERR_VESA_SETMODE_FAILED;
+			return res;
 		}
 	}
-	return ERR_VESA_MODE_NOT_FOUND;
+	return -ENOENT;
 }
 
 static int vesa_init(void) {
@@ -300,11 +301,11 @@ static int vesa_init(void) {
 	shmem = createSharedMem("vesa",minfo->xResolution *
 			minfo->yResolution * (minfo->bitsPerPixel / 8));
 	if(shmem == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	cursorCopy = (uint8_t*)malloc(curWidth * curHeight * (minfo->bitsPerPixel / 8));
 	if(cursorCopy == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	/* black screen */
 	memclear(video,minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8));

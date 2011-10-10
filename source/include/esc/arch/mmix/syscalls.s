@@ -24,7 +24,8 @@ getConf:
 	TRAP	0,SYSCALL_GETCONF,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -36,7 +37,8 @@ debugChar:
 	TRAP	0,SYSCALL_DEBUGCHAR,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -48,7 +50,8 @@ debug:
 	TRAP	0,SYSCALL_DEBUG,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -60,7 +63,8 @@ createdev:
 	TRAP	0,SYSCALL_CRTDEV,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -72,7 +76,8 @@ getClientId:
 	TRAP	0,SYSCALL_GETCLIENTID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -84,7 +89,8 @@ getClient:
 	TRAP	0,SYSCALL_GETCLIENTPROC,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -96,7 +102,8 @@ getWork:
 	TRAP	0,SYSCALL_GETWORK,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -108,7 +115,8 @@ open:
 	TRAP	0,SYSCALL_OPEN,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -120,7 +128,8 @@ pipe:
 	TRAP	0,SYSCALL_PIPE,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -132,7 +141,8 @@ stat:
 	TRAP	0,SYSCALL_STAT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -144,7 +154,8 @@ fstat:
 	TRAP	0,SYSCALL_FSTAT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -156,7 +167,8 @@ chmod:
 	TRAP	0,SYSCALL_CHMOD,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -168,7 +180,8 @@ chown:
 	TRAP	0,SYSCALL_CHOWN,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -180,7 +193,8 @@ tell:
 	TRAP	0,SYSCALL_TELL,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -192,7 +206,8 @@ fcntl:
 	TRAP	0,SYSCALL_FCNTL,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -204,7 +219,8 @@ seek:
 	TRAP	0,SYSCALL_SEEK,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -216,7 +232,8 @@ read:
 	TRAP	0,SYSCALL_READ,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -228,7 +245,8 @@ write:
 	TRAP	0,SYSCALL_WRITE,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -240,7 +258,8 @@ send:
 	TRAP	0,SYSCALL_SEND,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -252,7 +271,8 @@ receive:
 	TRAP	0,SYSCALL_RECEIVE,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -264,7 +284,8 @@ dupFd:
 	TRAP	0,SYSCALL_DUPFD,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -276,7 +297,8 @@ redirFd:
 	TRAP	0,SYSCALL_REDIRFD,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -288,7 +310,8 @@ link:
 	TRAP	0,SYSCALL_LINK,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -300,7 +323,8 @@ unlink:
 	TRAP	0,SYSCALL_UNLINK,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -312,7 +336,8 @@ mkdir:
 	TRAP	0,SYSCALL_MKDIR,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -324,7 +349,8 @@ rmdir:
 	TRAP	0,SYSCALL_RMDIR,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -336,7 +362,8 @@ mount:
 	TRAP	0,SYSCALL_MOUNT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -348,7 +375,8 @@ unmount:
 	TRAP	0,SYSCALL_UNMOUNT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -360,7 +388,8 @@ sync:
 	TRAP	0,SYSCALL_SYNC,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -372,7 +401,8 @@ close:
 	TRAP	0,SYSCALL_CLOSE,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -384,7 +414,8 @@ _changeSize:
 	TRAP	0,SYSCALL_CHGSIZE,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -396,7 +427,8 @@ _addRegion:
 	TRAP	0,SYSCALL_ADDREGION,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -408,7 +440,8 @@ setRegProt:
 	TRAP	0,SYSCALL_SETREGPROT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -420,7 +453,8 @@ _mapPhysical:
 	TRAP	0,SYSCALL_MAPPHYS,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -432,7 +466,8 @@ _createSharedMem:
 	TRAP	0,SYSCALL_CREATESHMEM,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -444,7 +479,8 @@ _joinSharedMem:
 	TRAP	0,SYSCALL_JOINSHMEM,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -456,7 +492,8 @@ leaveSharedMem:
 	TRAP	0,SYSCALL_LEAVESHMEM,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -468,7 +505,8 @@ destroySharedMem:
 	TRAP	0,SYSCALL_DESTROYSHMEM,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -480,7 +518,8 @@ getpid:
 	TRAP	0,SYSCALL_PID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -492,7 +531,8 @@ getppidof:
 	TRAP	0,SYSCALL_PPID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -504,7 +544,8 @@ getuid:
 	TRAP	0,SYSCALL_GETUID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -516,7 +557,8 @@ setuid:
 	TRAP	0,SYSCALL_SETUID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -528,7 +570,8 @@ geteuid:
 	TRAP	0,SYSCALL_GETEUID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -540,7 +583,8 @@ seteuid:
 	TRAP	0,SYSCALL_SETEUID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -552,7 +596,8 @@ getgid:
 	TRAP	0,SYSCALL_GETGID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -564,7 +609,8 @@ setgid:
 	TRAP	0,SYSCALL_SETGID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -576,7 +622,8 @@ getegid:
 	TRAP	0,SYSCALL_GETEGID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -588,7 +635,8 @@ setegid:
 	TRAP	0,SYSCALL_SETEGID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -600,7 +648,8 @@ getgroups:
 	TRAP	0,SYSCALL_GETGROUPS,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -612,7 +661,8 @@ setgroups:
 	TRAP	0,SYSCALL_SETGROUPS,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -624,7 +674,8 @@ isingroup:
 	TRAP	0,SYSCALL_ISINGROUP,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -636,7 +687,8 @@ fork:
 	TRAP	0,SYSCALL_FORK,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -648,7 +700,8 @@ exec:
 	TRAP	0,SYSCALL_EXEC,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -660,7 +713,8 @@ waitChild:
 	TRAP	0,SYSCALL_WAITCHILD,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -672,7 +726,8 @@ getenvito:
 	TRAP	0,SYSCALL_GETENVITO,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -684,7 +739,8 @@ getenvto:
 	TRAP	0,SYSCALL_GETENVTO,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -696,7 +752,8 @@ setenv:
 	TRAP	0,SYSCALL_SETENV,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -708,7 +765,8 @@ setSigHandler:
 	TRAP	0,SYSCALL_SETSIGH,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -720,7 +778,8 @@ sendSignalTo:
 	TRAP	0,SYSCALL_SENDSIG,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -732,7 +791,8 @@ gettid:
 	TRAP	0,SYSCALL_GETTID,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -744,7 +804,8 @@ getThreadCount:
 	TRAP	0,SYSCALL_GETTHREADCNT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -756,7 +817,8 @@ _startThread:
 	TRAP	0,SYSCALL_STARTTHREAD,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -768,7 +830,8 @@ _exit:
 	TRAP	0,SYSCALL_EXIT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -780,7 +843,8 @@ getCycles:
 	TRAP	0,SYSCALL_GETCYCLES,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -792,7 +856,8 @@ yield:
 	TRAP	0,SYSCALL_YIELD,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -804,7 +869,8 @@ alarm:
 	TRAP	0,SYSCALL_ALARM,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -816,7 +882,8 @@ sleep:
 	TRAP	0,SYSCALL_SLEEP,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -828,7 +895,8 @@ waitmUntil:
 	TRAP	0,SYSCALL_WAIT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -840,7 +908,8 @@ _waitUnlock:
 	TRAP	0,SYSCALL_WAITUNLOCK,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -852,7 +921,8 @@ notify:
 	TRAP	0,SYSCALL_NOTIFY,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -864,7 +934,8 @@ _lock:
 	TRAP	0,SYSCALL_LOCK,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -876,7 +947,8 @@ _unlock:
 	TRAP	0,SYSCALL_UNLOCK,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -888,7 +960,8 @@ join:
 	TRAP	0,SYSCALL_JOIN,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -900,7 +973,8 @@ suspend:
 	TRAP	0,SYSCALL_SUSPEND,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0
@@ -912,7 +986,8 @@ resume:
 	TRAP	0,SYSCALL_RESUME,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
-	STTU	$7,$3,0
+	NEG		$1,0,$7
+	STTU	$1,$3,0
 	SET		$0,$7
 1:
 	POP		1,0							# return value is in $0

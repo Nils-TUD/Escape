@@ -21,7 +21,7 @@
 #include <sys/mem/cache.h>
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
-#include <errors.h>
+#include <errno.h>
 
 int lines_create(sLines *l) {
 	l->lineCount = 0;
@@ -29,11 +29,11 @@ int lines_create(sLines *l) {
 	l->lineSize = 16;
 	l->lines = (char**)cache_alloc(l->lineSize * sizeof(char*));
 	if(!l->lines)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	l->lines[l->lineCount] = cache_alloc(VID_COLS + 1);
 	if(!l->lines[l->lineCount]) {
 		lines_destroy(l);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 	return 0;
 }
@@ -62,12 +62,12 @@ int lines_newline(sLines *l) {
 		l->lineSize *= 2;
 		l->lines = (char**)cache_realloc(l->lines,l->lineSize * sizeof(char*));
 		if(!l->lines)
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 	}
 	/* allocate new line */
 	l->lines[l->lineCount] = cache_alloc(VID_COLS + 1);
 	if(!l->lines[l->lineCount])
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	return 0;
 }
 

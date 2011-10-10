@@ -30,7 +30,7 @@
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/log.h>
-#include <errors.h>
+#include <errno.h>
 #include <limits.h>
 #include <string.h>
 #include <assert.h>
@@ -144,7 +144,7 @@ vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 	/* get the attributes of the region (depending on type) */
 	p = proc_request(pid,PLOCK_REGIONS);
 	if(!p)
-		return ERR_INVALID_PID;
+		return -ESRCH;
 	if((res = vmm_getAttr(p,type,bCount,&pgFlags,&flags,&virt,&rno)) < 0)
 		goto errProc;
 	/* no demand-loading if the binary isn't present */
@@ -152,7 +152,7 @@ vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 		pgFlags &= ~PF_DEMANDLOAD;
 
 	/* create region */
-	res = ERR_NOT_ENOUGH_MEM;
+	res = -ENOMEM;
 	reg = reg_create(bin,binOffset,bCount,lCount,pgFlags,flags);
 	if(!reg)
 		goto errProc;
@@ -210,12 +210,12 @@ int vmm_setRegProt(pid_t pid,vmreg_t rno,ulong flags) {
 	sSLNode *n;
 	sVMRegion *vmreg;
 	sProc *p;
-	int res = ERR_SETPROT_IMPOSSIBLE;
+	int res = -EPERM;
 	if(!(flags & RF_WRITABLE) && flags != 0)
-		return ERR_INVALID_ARGS;
+		return -EINVAL;
 	p = proc_request(pid,PLOCK_REGIONS);
 	if(!p)
-		return ERR_INVALID_PID;
+		return -ESRCH;
 	vmreg = REG(p,rno);
 	klock_aquire(&vmreg->reg->lock);
 	if(!vmreg || (vmreg->reg->flags & (RF_NOFREE | RF_STACK | RF_TLS)))
@@ -667,7 +667,7 @@ vmreg_t vmm_join(pid_t srcId,vmreg_t rno,pid_t dstId) {
 	sAllocStats stats;
 	size_t pageCount;
 	if(srcId == dstId)
-		return ERR_INVALID_ARGS;
+		return -EINVAL;
 
 	src = proc_request(srcId,PLOCK_REGIONS);
 	dst = proc_request(dstId,PLOCK_REGIONS);
@@ -676,7 +676,7 @@ vmreg_t vmm_join(pid_t srcId,vmreg_t rno,pid_t dstId) {
 			proc_release(dst,PLOCK_REGIONS);
 		if(src)
 			proc_release(src,PLOCK_REGIONS);
-		return ERR_INVALID_PID;
+		return -ESRCH;
 	}
 
 	vm = REG(src,rno);
@@ -720,7 +720,7 @@ errProc:
 	klock_release(&vm->reg->lock);
 	proc_release(dst,PLOCK_REGIONS);
 	proc_release(src,PLOCK_REGIONS);
-	return ERR_NOT_ENOUGH_MEM;
+	return -ENOMEM;
 }
 
 int vmm_cloneAll(pid_t dstId) {
@@ -823,14 +823,14 @@ error:
 	 * exists and therefore its correct. */
 	proc_removeRegions(dstId,true);
 	/* no need to free regs, since vmm_remove has already done it */
-	return ERR_NOT_ENOUGH_MEM;
+	return -ENOMEM;
 }
 
 int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr) {
 	sProc *p = proc_request(pid,PLOCK_REGIONS);
 	sVMRegion *vm = REG(p,reg);
 	ssize_t newPages = 0;
-	int res = ERR_NOT_ENOUGH_MEM;
+	int res = -ENOMEM;
 	addr &= ~(PAGE_SIZE - 1);
 	/* report failure if its outside (upper / lower) of the region */
 	/* note that we assume here that if a thread has multiple stack-regions, they grow towards
@@ -851,7 +851,7 @@ int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr) {
 	if(res == 0) {
 		/* if its too much, try the next one; if there is none that fits, report failure */
 		if(BYTES_2_PAGES(vm->reg->byteCount) + newPages >= MAX_STACK_PAGES - 1)
-			res = ERR_NOT_ENOUGH_MEM;
+			res = -ENOMEM;
 		/* no new pages necessary? then its no failure */
 		else if(newPages > 0) {
 			proc_release(p,PLOCK_REGIONS);
@@ -864,12 +864,12 @@ int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr) {
 
 ssize_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount) {
 	size_t oldSize;
-	ssize_t res = ERR_NOT_ENOUGH_MEM;
+	ssize_t res = -ENOMEM;
 	uintptr_t oldVirt,virt;
 	sVMRegion *vm;
 	sProc *p = proc_request(pid,PLOCK_REGIONS);
 	if(!p)
-		return ERR_INVALID_PID;
+		return -ESRCH;
 
 	vm = REG(p,reg);
 	klock_aquire(&vm->reg->lock);
@@ -1125,7 +1125,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	 * threads. */
 	tempBuf = cache_alloc(PAGE_SIZE);
 	if(tempBuf == NULL) {
-		err = ERR_NOT_ENOUGH_MEM;
+		err = -ENOMEM;
 		goto error;
 	}
 	/* unlock during context-switch */
@@ -1134,14 +1134,14 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	p = proc_request(p->pid,PLOCK_REGIONS);
 	if(err != (ssize_t)loadCount) {
 		if(err >= 0)
-			err = ERR_NOT_ENOUGH_MEM;
+			err = -ENOMEM;
 		goto errorFree;
 	}
 
 	/* ensure that a frame is available; note that its easy here since no one else can demand load
 	 * this page while we do it */
 	if(!swap_outUntil(1)) {
-		err = ERR_NOT_ENOUGH_MEM;
+		err = -ENOMEM;
 		goto errorFree;
 	}
 	/* after swapping: page not present anymore or demand-load off? there must be something wrong */
@@ -1181,7 +1181,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 errorFree:
 	cache_free(tempBuf);
 error:
-	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,p->command,strerror(err),err);
+	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,p->command,strerror(-err),err);
 	return false;
 }
 
@@ -1317,7 +1317,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 				*flags |= RF_GROWS_DOWN;
 			*virt = vmm_findFreeStack(p,bCount,*flags);
 			if(*virt == 0)
-				return ERR_NOT_ENOUGH_MEM;
+				return -ENOMEM;
 			break;
 
 		case REG_SHLIBTEXT:
@@ -1355,7 +1355,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 			}
 			*virt = vmm_findFreeAddr(p,bCount);
 			if(*virt == 0)
-				return ERR_NOT_ENOUGH_MEM;
+				return -ENOMEM;
 			break;
 		default:
 			assert(false);
@@ -1366,7 +1366,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 		size_t count = MAX(4,*rno + 1);
 		void *nr = cache_realloc(p->regions,count * sizeof(sVMRegion*));
 		if(!nr)
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		memclear((sVMRegion**)nr + p->regSize,(count - p->regSize) * sizeof(sVMRegion*));
 		p->regions = nr;
 		p->regSize = count;
@@ -1394,7 +1394,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 		case REG_SHM:
 			*rno = vmm_findRegIndex(p,false);
 			if(*rno < 0)
-				return ERR_NOT_ENOUGH_MEM;
+				return -ENOMEM;
 			break;
 	}
 	return 0;

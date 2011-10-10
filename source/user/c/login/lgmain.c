@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <error.h>
+#include <errno.h>
 
 #define SKIP_LOGIN			0
 #define SHELL_PATH			"/bin/shell"

@@ -40,7 +40,7 @@
 #include <sys/video.h>
 #include <assert.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 static sThread *thread_createInitial(sProc *p);
 static void thread_initProps(sThread *t);
@@ -242,7 +242,7 @@ int thread_extendStack(uintptr_t address) {
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		/* if it does not yet exist, report an error */
 		if(t->stackRegions[i] < 0)
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 
 		res = vmm_growStackTo(t->proc->pid,t->stackRegions[i],address);
 		if(res >= 0)
@@ -304,15 +304,15 @@ void thread_remFileUsage(sThread *cur,file_t file) {
 }
 
 int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc) {
-	int err = ERR_NOT_ENOUGH_MEM;
+	int err = -ENOMEM;
 	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	klock_aquire(&src->lock);
 	*(tid_t*)&t->tid = thread_getFreeTid();
 	if(t->tid == INVALID_TID) {
-		err = ERR_NO_FREE_THREADS;
+		err = -ENOTHREADS;
 		goto errThread;
 	}
 	*(uint8_t*)&t->flags = flags;

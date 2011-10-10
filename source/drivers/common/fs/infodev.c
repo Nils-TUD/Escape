@@ -65,7 +65,7 @@ int infodev_thread(A_UNUSED void *arg) {
 	while(run) {
 		int fd = getWork(ids,ARRAY_SIZE(ids),&id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
-			if(fd != ERR_INTERRUPTED)
+			if(fd != -EINTR)
 				printe("[FSINFO] Unable to get work");
 		}
 		else {
@@ -79,7 +79,7 @@ int infodev_thread(A_UNUSED void *arg) {
 						break;
 
 					default:
-						msg.args.arg1 = ERR_UNSUPPORTED_OP;
+						msg.args.arg1 = -ENOTSUP;
 						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 						break;
 				}

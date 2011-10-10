@@ -26,7 +26,7 @@
 #include <sys/task/proc.h>
 #include <sys/syscalls.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 int sysc_requestIOPorts(sThread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
@@ -36,7 +36,7 @@ int sysc_requestIOPorts(sThread *t,sIntrptStackFrame *stack) {
 
 	/* check range */
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 
 	err = ioports_request(pid,start,count);
 	if(err < 0)
@@ -52,7 +52,7 @@ int sysc_releaseIOPorts(sThread *t,sIntrptStackFrame *stack) {
 
 	/* check range */
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 
 	err = ioports_release(pid,start,count);
 	if(err < 0)
@@ -74,21 +74,21 @@ int sysc_vm86int(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 
 	/* check args */
 	if(!paging_isInUserSpace((uintptr_t)regs,sizeof(sVM86Regs)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	if(mArea != NULL) {
 		size_t j;
 		if(!paging_isInUserSpace((uintptr_t)mArea,sizeof(sVM86Memarea)))
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			SYSC_ERROR(stack,-EFAULT);
 		/* ensure that only memory from the real-mode-memory can be copied */
 		if(mArea->dst + mArea->size < mArea->dst || mArea->dst + mArea->size >= (1 * M + 64 * K))
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			SYSC_ERROR(stack,-EFAULT);
 		if(!paging_isInUserSpace((uintptr_t)mArea->src,mArea->size))
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			SYSC_ERROR(stack,-EFAULT);
 		for(j = 0; j < mArea->ptrCount; j++) {
 			if(mArea->ptr[j].offset + sizeof(uintptr_t) > mArea->size)
-				SYSC_ERROR(stack,ERR_INVALID_ARGS);
+				SYSC_ERROR(stack,-EINVAL);
 			if(!paging_isInUserSpace(mArea->ptr[j].result,mArea->ptr[j].size))
-				SYSC_ERROR(stack,ERR_INVALID_ARGS);
+				SYSC_ERROR(stack,-EFAULT);
 		}
 	}
 

@@ -21,7 +21,7 @@
 #include <esc/thread.h>
 #include <esc/debug.h>
 #include <signal.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdlib.h>
 
 #define MAX_EXIT_FUNCS		32
@@ -73,7 +73,7 @@ int __cxa_atexit(void (*f)(void *),void *p,void *d) {
 	locku(&exitLock);
 	if(exitFuncCount >= MAX_EXIT_FUNCS) {
 		unlocku(&exitLock);
-		return ERR_MAX_EXIT_FUNCS;
+		return -ENOMEM;
 	}
 
 	exitFuncs[exitFuncCount].f = f;

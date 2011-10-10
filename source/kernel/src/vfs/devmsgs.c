@@ -32,7 +32,7 @@
 #include <esc/sllist.h>
 #include <esc/messages.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 static void vfs_devmsgs_wait(sRequest *req);
 static void vfs_devmsgs_openReqHandler(sVFSNode *node,const void *data,size_t size);
@@ -56,7 +56,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	vfs_chan_lock(node);
 	if(node->name == NULL) {
 		vfs_chan_unlock(node);
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	}
 	/* if the driver doesn't implement open, its ok */
 	if(!vfs_device_supports(node->parent,DEV_OPEN)) {
@@ -68,7 +68,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	req = vfs_req_get(node,NULL,0);
 	if(!req) {
 		vfs_chan_unlock(node);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* send msg to driver */
@@ -98,10 +98,10 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	/* in this case we don't have to lock the node, I think. we have to check it after vfs_waitFor
 	 * again anyway */
 	if(node->name == NULL)
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	/* if the driver doesn't implement open, its an error */
 	if(!vfs_device_supports(node->parent,DEV_READ))
-		return ERR_UNSUPPORTED_OP;
+		return -ENOTSUP;
 
 	/* wait until there is data available, if necessary */
 	obj.events = EV_DATA_READABLE;
@@ -114,12 +114,12 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	vfs_chan_lock(node);
 	if(node->name == NULL) {
 		vfs_chan_unlock(node);
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	}
 	req = vfs_req_get(node,NULL,count);
 	if(!req) {
 		vfs_chan_unlock(node);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* send msg to driver */
@@ -144,7 +144,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		if(!vmm_makeCopySafe(p,buffer,res)) {
 			proc_release(p,PLOCK_REGIONS);
 			cache_free(data);
-			return ERR_INVALID_ARGS;
+			return -EFAULT;
 		}
 		memcpy(buffer,data,res);
 		proc_release(p,PLOCK_REGIONS);
@@ -162,19 +162,19 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 	vfs_chan_lock(node);
 	if(node->name == NULL) {
 		vfs_chan_unlock(node);
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	}
 	/* if the driver doesn't implement open, its an error */
 	if(!vfs_device_supports(node->parent,DEV_WRITE)) {
 		vfs_chan_unlock(node);
-		return ERR_UNSUPPORTED_OP;
+		return -ENOTSUP;
 	}
 
 	/* get request */
 	req = vfs_req_get(node,NULL,0);
 	if(!req) {
 		vfs_chan_unlock(node);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* send msg to driver */
@@ -218,7 +218,7 @@ static void vfs_devmsgs_wait(sRequest *req) {
 	volatile sRequest *r = req;
 	do
 		vfs_req_waitForReply(req,false);
-	while((ssize_t)r->count == ERR_INTERRUPTED);
+	while((ssize_t)r->count == -EINTR);
 }
 
 static void vfs_devmsgs_openReqHandler(sVFSNode *node,USER const void *data,A_UNUSED size_t size) {

@@ -22,7 +22,7 @@
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdlib.h>
 
 static sMsg msg;
@@ -60,7 +60,7 @@ int main(void) {
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 					break;
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

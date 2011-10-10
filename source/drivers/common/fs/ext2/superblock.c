@@ -31,28 +31,29 @@
 #include "inodecache.h"
 #include "superblock.h"
 
-bool ext2_super_init(sExt2 *e) {
+int ext2_super_init(sExt2 *e) {
+	int res;
 	e->sbDirty = false;
 	/* read sector-based because we need the super-block to be able to read block-based */
-	if(!ext2_rw_readSectors(e,&(e->superBlock),EXT2_SUPERBLOCK_SECNO,2)) {
+	if((res = ext2_rw_readSectors(e,&(e->superBlock),EXT2_SUPERBLOCK_SECNO,2)) < 0) {
 		printe("Unable to read super-block");
-		return false;
+		return res;
 	}
 
 	/* check magic-number */
 	if(le16tocpu(e->superBlock.magic) != EXT2_SUPER_MAGIC) {
 		printe("Invalid super-magic: Got %x, expected %x",
 				le16tocpu(e->superBlock.magic),EXT2_SUPER_MAGIC);
-		return false;
+		return -EINVAL;
 	}
 
 	/* check features */
 	/* TODO mount readonly if an unsupported feature is present in featureRoCompat */
 	if(le32tocpu(e->superBlock.featureInCompat) || le32tocpu(e->superBlock.featureRoCompat)) {
 		printe("Unable to use filesystem: Incompatible features");
-		return false;
+		return -ENOTSUP;
 	}
-	return true;
+	return 0;
 }
 
 void ext2_super_update(sExt2 *e) {
@@ -66,7 +67,7 @@ void ext2_super_update(sExt2 *e) {
 	/* update main superblock; sector-based because we want to update the super-block without
 	 * anything else (this would happen if the superblock is in the block 0 together with
 	 * the bootrecord) */
-	if(!ext2_rw_writeSectors(e,&(e->superBlock),EXT2_SUPERBLOCK_SECNO,2)) {
+	if(ext2_rw_writeSectors(e,&(e->superBlock),EXT2_SUPERBLOCK_SECNO,2) != 0) {
 		printe("Unable to update superblock in blockgroup 0");
 		goto done;
 	}
@@ -76,7 +77,7 @@ void ext2_super_update(sExt2 *e) {
 	count = ext2_getBlockGroupCount(e);
 	for(i = 1; i < count; i++) {
 		if(ext2_bgHasBackups(e,i)) {
-			if(!ext2_rw_writeBlocks(e,&(e->superBlock),bno,1)) {
+			if(ext2_rw_writeBlocks(e,&(e->superBlock),bno,1) != 0) {
 				printe("Unable to update superblock in blockgroup %d",i);
 				goto done;
 			}

@@ -240,9 +240,10 @@ typedef struct {
  *
  * @param device the device-name (cdrom = find the device yourself)
  * @param usedDev will be set to the used device
+ * @param error will be set to the occurred error, if NULL is returned
  * @return the handle
  */
-void *iso_init(const char *device,char **usedDev);
+void *iso_init(const char *device,char **usedDev,int *errcode);
 
 /**
  * Deinits the ISO9660-filesystem

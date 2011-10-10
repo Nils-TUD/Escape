@@ -22,7 +22,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/config.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -96,7 +96,7 @@ long conf_get(uint id) {
 			res = log2scr;
 			break;
 		default:
-			res = ERR_INVALID_ARGS;
+			res = -EINVAL;
 			break;
 	}
 	return res;

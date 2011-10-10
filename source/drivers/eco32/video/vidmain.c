@@ -27,7 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 
 #define VIDEO_MEM				0x30100000
 
@@ -98,7 +98,7 @@ int main(void) {
 				/* set-mode is not supported */
 				case MSG_VID_SETMODE:
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

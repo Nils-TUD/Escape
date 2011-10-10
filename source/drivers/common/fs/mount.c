@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/fsinterface.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <esc/sllist.h>
 #include <stdlib.h>
@@ -50,7 +50,7 @@ const sFSInst *mount_getFSInst(size_t i) {
 
 int mount_addFS(sFileSystem *fs) {
 	if(!sll_append(&fileSystems,fs))
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	return 0;
 }
 
@@ -62,12 +62,12 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,i
 
 	/* check name */
 	if(strlen(device) >= MAX_MNTNAME_LEN)
-		return ERR_INVALID_PATH;
+		return -ENAMETOOLONG;
 
 	/* check if the mount-point exists */
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		if(mounts[i].dev == dev && mounts[i].inode == inode)
-			return ERR_MNTPNT_EXISTS;
+			return -EEXIST;
 	}
 
 	/* first find the filesystem */
@@ -77,7 +77,7 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,i
 			break;
 	}
 	if(n == NULL)
-		return ERR_DEV_NOT_FOUND;
+		return -ENXIO;
 
 	/* find mount-slot */
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
@@ -85,7 +85,7 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,i
 			break;
 	}
 	if(i >= MOUNT_TABLE_SIZE)
-		return ERR_NO_MNTPNT;
+		return -ENOMEM;
 
 	/* look if there is an instance we can use */
 	for(n = sll_begin(&fsInsts); n != NULL; n = n->next) {
@@ -96,22 +96,23 @@ dev_t mount_addMnt(dev_t dev,inode_t inode,const char *path,const char *device,i
 
 	/* if not, create a new one */
 	if(n == NULL) {
+		int errcode;
 		char *usedDev;
 		inst = (sFSInst*)malloc(sizeof(sFSInst));
 		if(inst == NULL)
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		inst->refs = 0;
 		inst->fs = fs;
-		inst->handle = fs->init(device,&usedDev);
+		inst->handle = fs->init(device,&usedDev,&errcode);
 		if(inst->handle == NULL) {
 			free(inst);
-			return ERR_FS_INIT_FAILED;
+			return errcode;
 		}
 		strcpy(inst->device,usedDev);
 		free(usedDev);
 		if(!sll_append(&fsInsts,inst)) {
 			free(inst);
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 		}
 	}
 	inst->refs++;
@@ -142,7 +143,7 @@ dev_t mount_getByLoc(dev_t dev,inode_t inode) {
 		if(mounts[i].mnt)
 			x++;
 	}
-	return ERR_NO_MNTPNT;
+	return -ENXIO;
 }
 
 int mount_remMnt(dev_t dev,inode_t inode) {
@@ -153,7 +154,7 @@ int mount_remMnt(dev_t dev,inode_t inode) {
 			break;
 	}
 	if(i >= MOUNT_TABLE_SIZE)
-		return ERR_NO_MNTPNT;
+		return -ENXIO;
 
 	/* remove all mounts in this mounted device recursively */
 	for(j = 0; j < MOUNT_TABLE_SIZE; j++) {
@@ -181,7 +182,7 @@ dev_t mount_getDevByHandle(void *h) {
 		if(mounts[i].mnt->handle == h)
 			return i;
 	}
-	return ERR_NO_MNTPNT;
+	return -ENXIO;
 }
 
 sFSInst *mount_get(dev_t dev) {

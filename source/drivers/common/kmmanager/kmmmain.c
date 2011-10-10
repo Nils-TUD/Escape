@@ -26,7 +26,7 @@
 #include <esc/messages.h>
 #include <esc/keycodes.h>
 #include <stdio.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdlib.h>
 #include "keymap.h"
 #include "events.h"
@@ -95,7 +95,7 @@ int main(void) {
 	while(1) {
 		int fd = getWork(ids,2,&drv,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
-			if(fd != ERR_NO_CLIENT_WAITING)
+			if(fd != -ENOCLIENT)
 				printe("[KM] Unable to get client");
 			waitm(waits,ARRAY_SIZE(waits));
 		}
@@ -177,7 +177,7 @@ static void handleKeymap(msgid_t mid,int fd) {
 			str[sizeof(msg.str.s1) - 1] = '\0';
 			sKeymapEntry *newMap = km_parse(str);
 			if(!newMap)
-				msg.str.arg1 = ERR_INVALID_KEYMAP;
+				msg.str.arg1 = -EINVAL;
 			else {
 				msg.str.arg1 = 0;
 				locku(&lck);
@@ -190,7 +190,7 @@ static void handleKeymap(msgid_t mid,int fd) {
 		break;
 
 		default:
-			msg.args.arg1 = ERR_UNSUPPORTED_OP;
+			msg.args.arg1 = -ENOTSUP;
 			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 			break;
 	}
@@ -222,7 +222,7 @@ static void handleKeyevents(msgid_t mid,int fd) {
 		break;
 
 		default:
-			msg.args.arg1 = ERR_UNSUPPORTED_OP;
+			msg.args.arg1 = -ENOTSUP;
 			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 			break;
 	}

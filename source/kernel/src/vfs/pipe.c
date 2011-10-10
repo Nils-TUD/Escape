@@ -31,7 +31,7 @@
 #include <sys/klock.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 typedef struct {
 	uint8_t noReader;
@@ -125,7 +125,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 	klock_aquire(&node->lock);
 	if(node->name == NULL) {
 		klock_release(&node->lock);
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	}
 	while(sll_length(&pipe->list) == 0) {
 		ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
@@ -134,11 +134,11 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 		thread_switch();
 
 		if(sig_hasSignalFor(t->tid))
-			return ERR_INTERRUPTED;
+			return -EINTR;
 		klock_aquire(&node->lock);
 		if(node->name == NULL) {
 			klock_release(&node->lock);
-			return ERR_NODE_DESTROYED;
+			return -EDESTROYED;
 		}
 	}
 
@@ -159,7 +159,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 		if(!vmm_makeCopySafe(p,(uint8_t*)buffer + total,byteCount)) {
 			proc_release(p,PLOCK_REGIONS);
 			klock_release(&node->lock);
-			return ERR_INVALID_ARGS;
+			return -EFAULT;
 		}
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
 		proc_release(p,PLOCK_REGIONS);
@@ -189,7 +189,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 			klock_aquire(&node->lock);
 			if(node->name == NULL) {
 				klock_release(&node->lock);
-				return ERR_NODE_DESTROYED;
+				return -EDESTROYED;
 			}
 		}
 		data = sll_get(&pipe->list,0);
@@ -218,7 +218,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *
 		klock_aquire(&node->lock);
 		if(node->name == NULL) {
 			klock_release(&node->lock);
-			return ERR_NODE_DESTROYED;
+			return -EDESTROYED;
 		}
 		while((pipe->total + count) >= MAX_VFS_FILE_SIZE) {
 			ev_wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
@@ -231,12 +231,12 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *
 			klock_aquire(&node->lock);
 			if(node->name == NULL) {
 				klock_release(&node->lock);
-				return ERR_NODE_DESTROYED;
+				return -EDESTROYED;
 			}
 			if(pipe->noReader) {
 				klock_release(&node->lock);
 				proc_addSignalFor(pid,SIG_PIPE_CLOSED);
-				return ERR_EOF;
+				return -EPIPE;
 			}
 		}
 		klock_release(&node->lock);
@@ -245,7 +245,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *
 	/* build pipe-data */
 	data = (sPipeData*)cache_alloc(sizeof(sPipeData) + count);
 	if(data == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	data->offset = offset;
 	data->length = count;
 	if(count) {
@@ -259,12 +259,12 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *
 	if(node->name == NULL) {
 		klock_release(&node->lock);
 		cache_free(data);
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	}
 	if(!sll_append(&pipe->list,data)) {
 		klock_release(&node->lock);
 		cache_free(data);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 	pipe->total += count;
 	klock_release(&node->lock);

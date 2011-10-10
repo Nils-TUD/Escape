@@ -24,7 +24,7 @@
 #include <sys/mem/paging.h>
 #include <sys/syscalls/signals.h>
 #include <sys/syscalls.h>
-#include <errors.h>
+#include <errno.h>
 
 int sysc_setSigHandler(sThread *t,sIntrptStackFrame *stack) {
 	sig_t signal = (sig_t)SYSC_ARG1(stack);
@@ -32,18 +32,18 @@ int sysc_setSigHandler(sThread *t,sIntrptStackFrame *stack) {
 
 	/* address should be valid */
 	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isInUserSpace((uintptr_t)handler,1))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	if(signal == (sig_t)SIG_RET)
 		t->proc->sigRetAddr = (uintptr_t)handler;
 	else {
 		/* no signal-ret-address known yet? */
 		if(t->proc->sigRetAddr == 0)
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			SYSC_ERROR(stack,-EINVAL);
 
 		/* check signal */
 		if(!sig_canHandle(signal))
-			SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+			SYSC_ERROR(stack,-EINVAL);
 
 		if(handler == SIG_DFL)
 			sig_unsetHandler(t->tid,signal);
@@ -70,7 +70,7 @@ int sysc_sendSignalTo(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	sig_t signal = (sig_t)SYSC_ARG2(stack);
 
 	if(!sig_canSend(signal))
-		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+		SYSC_ERROR(stack,-EINVAL);
 
 	if(pid != INVALID_PID)
 		proc_addSignalFor(pid,signal);

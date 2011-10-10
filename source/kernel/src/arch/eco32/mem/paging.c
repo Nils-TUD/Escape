@@ -28,7 +28,7 @@
 #include <sys/printf.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 /* to shift a flag down to the first bit */
 #define PG_PRESENT_SHIFT			0
@@ -159,7 +159,7 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	 * 	- kernel stack
 	 */
 	if(pmem_getFreeFrames(MM_DEF) < 3)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	/* we need a new page-directory */
 	pdirFrame = pmem_allocate();

@@ -23,7 +23,7 @@
 #include <esc/common.h>
 #include <esc/fsinterface.h>
 #include <stdarg.h>
-#include <errors.h>
+#include <errno.h>
 
 /* IO flags */
 #define IO_ACCESSMODE	   		3
@@ -57,7 +57,7 @@
 		do { \
 			__err = (expr); \
 		} \
-		while(__err == ERR_INTERRUPTED); \
+		while(__err == -EINTR); \
 		__err; \
 	})
 
@@ -155,7 +155,7 @@ off_t seek(int fd,off_t offset,uint whence) A_CHECKRET;
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the
- * actual read number of bytes. You may be interrupted by a signal (ERR_INTERRUPTED)!
+ * actual read number of bytes. You may be interrupted by a signal (-EINTR)!
  *
  * @param fd the file-descriptor
  * @param buffer the buffer to fill
@@ -188,7 +188,7 @@ ssize_t send(int fd,msgid_t id,const void *msg,size_t size);
 
 /**
  * Receives a message from the device identified by <fd>. Blocks if no message is available.
- * You may be interrupted by a signal (ERR_INTERRUPTED)!
+ * You may be interrupted by a signal (-EINTR)!
  *
  * @param fd the file-descriptor
  * @param id will be set to the msg-id (may be NULL to skip the message)

@@ -30,9 +30,9 @@
  * @param buffer the buffer
  * @param lba the start-sector
  * @param secCount the number of sectors
- * @return true if successfull
+ * @return 0 if successfull
  */
-bool ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount);
+int ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount);
 
 /**
  * Reads <blockCount> blocks at <start> into the given buffer
@@ -41,9 +41,9 @@ bool ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount);
  * @param buffer the buffer
  * @param start the start-block
  * @param blockCount the number of blocks
- * @return true if successfull
+ * @return 0 if successfull
  */
-bool ext2_rw_readBlocks(sExt2 *e,void *buffer,block_t start,size_t blockCount);
+int ext2_rw_readBlocks(sExt2 *e,void *buffer,block_t start,size_t blockCount);
 
 /**
  * Writes <secCount> sectors at <lba> from the given buffer
@@ -52,9 +52,9 @@ bool ext2_rw_readBlocks(sExt2 *e,void *buffer,block_t start,size_t blockCount);
  * @param buffer the buffer
  * @param lba the start-sector
  * @param secCount the number of sectors
- * @return true if successfull
+ * @return 0 if successfull
  */
-bool ext2_rw_writeSectors(sExt2 *e,const void *buffer,uint64_t lba,size_t secCount);
+int ext2_rw_writeSectors(sExt2 *e,const void *buffer,uint64_t lba,size_t secCount);
 
 /**
  * Writes <blockCount> blocks at <start> from the given buffer
@@ -63,8 +63,8 @@ bool ext2_rw_writeSectors(sExt2 *e,const void *buffer,uint64_t lba,size_t secCou
  * @param buffer the buffer
  * @param start the start-block
  * @param blockCount the number of blocks
- * @return true if successfull
+ * @return 0 if successfull
  */
-bool ext2_rw_writeBlocks(sExt2 *e,const void *buffer,block_t start,size_t blockCount);
+int ext2_rw_writeBlocks(sExt2 *e,const void *buffer,block_t start,size_t blockCount);
 
 #endif /* REQUEST_H_ */

@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 
 #include "sigclone.h"
 
@@ -60,7 +60,7 @@ int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	do {
 		res = waitChild(NULL);
 	}
-	while(res == ERR_INTERRUPTED);
+	while(res == -EINTR);
 	printf("Parent got %d\n",parentCount);
 	return 0;
 }

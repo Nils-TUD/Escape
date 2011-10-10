@@ -34,7 +34,7 @@
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 #define ARGS_MSG_COUNT		256
 
@@ -114,7 +114,7 @@ static off_t vfs_chan_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posi
 		default:
 		case SEEK_END:
 			/* not supported for devices */
-			return ERR_INVALID_ARGS;
+			return -ESPIPE;
 	}
 }
 
@@ -173,7 +173,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)n->data;
 	if(n->name == NULL)
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 
 	/*vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (device %s)\n",
 			pid,proc_getByPid(pid)->command,id,size,n->name,n,n->parent->name);*/
@@ -196,7 +196,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 	/* create message and copy data to it */
 	sMessage *msg = (sMessage*)cache_alloc(sizeof(sMessage) + size);
 	if(msg == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	msg->length = size;
 	msg->id = id;
@@ -212,7 +212,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 	/* append to list */
 	if(!sll_append(*list,msg)) {
 		cache_free(msg);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* notify the driver */
@@ -241,7 +241,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	/* node destroyed? */
 	if(node->name == NULL) {
 		klock_release(&node->lock);
-		return ERR_NODE_DESTROYED;
+		return -EDESTROYED;
 	}
 
 	/* determine list and event to use */
@@ -260,12 +260,12 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	while(sll_length(*list) == 0) {
 		if(!vfs_shouldBlock(file)) {
 			klock_release(&node->lock);
-			return ERR_WOULD_BLOCK;
+			return -EWOULDBLOCK;
 		}
 		/* if the channel has already been closed, there is no hope of success here */
 		if(chan->closed) {
 			klock_release(&node->lock);
-			return ERR_INVALID_FILE;
+			return -EDESTROYED;
 		}
 		ev_wait(t,event,(evobj_t)waitNode);
 		klock_release(&node->lock);
@@ -273,12 +273,12 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 		thread_switch();
 
 		if(sig_hasSignalFor(t->tid))
-			return ERR_INTERRUPTED;
+			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
 		klock_aquire(&node->lock);
 		if(node->name == NULL) {
 			klock_release(&node->lock);
-			return ERR_NODE_DESTROYED;
+			return -EDESTROYED;
 		}
 	}
 
@@ -286,6 +286,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	msg = (sMessage*)sll_get(*list,0);
 	if(data && msg->length > size) {
 		sll_removeFirst(*list);
+		res = -EINVAL;
 		goto invArgs;
 	}
 
@@ -297,6 +298,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	if(data) {
 		if(!vmm_makeCopySafe(p,data,msg->length)) {
 			proc_release(p,PLOCK_REGIONS);
+			res = -EFAULT;
 			goto invArgs;
 		}
 		memcpy(data,msg + 1,msg->length);
@@ -304,6 +306,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	if(id) {
 		if(!vmm_makeCopySafe(p,id,sizeof(msgid_t))) {
 			proc_release(p,PLOCK_REGIONS);
+			res = -EFAULT;
 			goto invArgs;
 		}
 		*id = msg->id;
@@ -321,7 +324,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 invArgs:
 	klock_release(&node->lock);
 	cache_free(msg);
-	return ERR_INVALID_ARGS;
+	return res;
 }
 
 void vfs_chan_print(const sVFSNode *n) {

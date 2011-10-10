@@ -35,7 +35,7 @@
 #include <sys/video.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 #include <ctype.h>
 
 static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t *nodeNo,
@@ -122,7 +122,7 @@ void vfs_node_closeDir(sVFSNode *dir,bool locked) {
 int vfs_node_getInfo(inode_t nodeNo,USER sFileInfo *info) {
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
-		return ERR_INVALID_INODENO;
+		return -ENOENT;
 
 	/* some infos are not available here */
 	/* TODO needs to be completed */
@@ -147,10 +147,10 @@ int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
 	const sProc *p = proc_getByPid(pid);
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
-		return ERR_INVALID_INODENO;
+		return -ENOENT;
 	/* root can chmod everything; others can only chmod their own files */
 	if(p->euid != n->uid && p->euid != ROOT_UID)
-		res = ERR_NO_PERM;
+		res = -EPERM;
 	else
 		n->mode = (n->mode & ~MODE_PERM) | (mode & MODE_PERM);
 	vfs_node_release(n);
@@ -162,18 +162,18 @@ int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
 	const sProc *p = proc_getByPid(pid);
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
-		return ERR_INVALID_INODENO;
+		return -ENOENT;
 
 	/* root can chown everything; others can only chown their own files */
 	if(p->euid != n->uid && p->euid != ROOT_UID)
-		res = ERR_NO_PERM;
+		res = -EPERM;
 	else if(p->euid != ROOT_UID) {
 		/* users can't change the owner */
 		if(uid != (uid_t)-1 && uid != n->uid && uid != p->euid)
-			res = ERR_NO_PERM;
+			res = -EPERM;
 		/* users can change the group only to a group they're a member of */
 		else if(gid != (gid_t)-1 && gid != n->gid && gid != p->egid && !groups_contains(p->pid,gid))
-			res = ERR_NO_PERM;
+			res = -EPERM;
 	}
 
 	if(res == 0) {
@@ -232,7 +232,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 
 	/* no absolute path? */
 	if(*path != '/')
-		return ERR_INVALID_PATH;
+		return -EINVAL;
 
 	/* skip slashes */
 	while(*path == '/')
@@ -260,7 +260,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 				pos = 0;
 				while((c = path[pos]) && c != '/') {
 					if((c != ' ' && isspace(c)) || !isprint(c)) {
-						err = ERR_INVALID_PATH;
+						err = -EINVAL;
 						goto done;
 					}
 					pos++;
@@ -289,7 +289,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 				dir = n;
 				n = vfs_node_openDir(dir,true,&isValid);
 				if(!isValid) {
-					err = ERR_NODE_DESTROYED;
+					err = -EDESTROYED;
 					goto done;
 				}
 				depth++;
@@ -306,12 +306,12 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 		 * which is intended. The existing virtual nodes in the root-directory, of course, hide
 		 * possibly existing directory-entries in the real filesystem with the same name. */
 		if(depth == 0)
-			err = ERR_REAL_PATH;
+			err = -EREALPATH;
 		/* should we create a default-file? */
 		else if((flags & VFS_CREATE) && S_ISDIR(dir->mode))
 			err = vfs_node_createFile(pid,path,dir,nodeNo,created);
 		else
-			err = ERR_PATH_NOT_FOUND;
+			err = -ENOENT;
 	}
 	else {
 		/* resolve link */
@@ -545,7 +545,7 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 	if(nextSlash) {
 		/* if there is still a slash in the path, we can't create the file */
 		if(*(nextSlash + 1) != '\0')
-			return ERR_INVALID_PATH;
+			return -EINVAL;
 		*nextSlash = '\0';
 		nameLen = nextSlash - path;
 	}
@@ -554,12 +554,12 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 	/* copy the name because vfs_file_create() will store the pointer */
 	nameCpy = cache_alloc(nameLen + 1);
 	if(nameCpy == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	memcpy(nameCpy,path,nameLen + 1);
 	/* now create the node and pass the node-number back */
 	if((child = vfs_file_create(pid,dir,nameCpy,vfs_file_read,vfs_file_write)) == NULL) {
 		cache_free(nameCpy);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 	if(created)
 		*created = true;

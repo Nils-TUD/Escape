@@ -28,7 +28,7 @@
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
@@ -56,7 +56,7 @@ int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
 		thread_initArch(dst);
 	else {
 		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
-			return ERR_NOT_ENOUGH_MEM;
+			return -ENOMEM;
 
 		dst->archAttr.kstackFrame = pmem_allocate();
 

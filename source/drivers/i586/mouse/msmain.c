@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 
 /* io ports */
 #define IOPORT_KB_CTRL				0x64
@@ -147,7 +147,7 @@ int main(void) {
 
 		fd = getWork(&sid,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
-			if(fd != ERR_INTERRUPTED)
+			if(fd != -EINTR)
 				printe("[MOUSE] Unable to get work");
 		}
 		else {
@@ -169,7 +169,7 @@ int main(void) {
 				break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

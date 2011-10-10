@@ -174,7 +174,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 	if(doRead) {
 		/* we need always a write-tpool_lock because we have to read the content into it */
 		bcache_aquire(block,BMODE_WRITE);
-		if(!c->read(c->handle,block->buffer,blockNo,1)) {
+		if(c->read(c->handle,block->buffer,blockNo,1) != 0) {
 			block->blockNo = 0;
 			bcache_doRelease(block,true);
 			return NULL;

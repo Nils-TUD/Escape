@@ -32,7 +32,7 @@
 #include <sys/syscalls.h>
 #include <sys/util.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 #define MAX_WAIT_OBJECTS		32
 
@@ -91,7 +91,7 @@ int sysc_sleep(sThread *t,sIntrptStackFrame *stack) {
 	 * and the sleep-time was not over yet. */
 	timer_removeThread(t->tid);
 	if(sig_hasSignalFor(t->tid))
-		SYSC_ERROR(stack,ERR_INTERRUPTED);
+		SYSC_ERROR(stack,-EINTR);
 	SYSC_RET1(stack,0);
 }
 
@@ -107,9 +107,9 @@ int sysc_wait(sThread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = sysc_doWait(t,uobjects,objCount,maxWaitTime,KERNEL_PID,0);
 	if(res < 0)
@@ -126,9 +126,9 @@ int sysc_waitUnlock(sThread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* wait and release the lock before going to sleep */
 	res = sysc_doWait(t,uobjects,objCount,0,global ? INVALID_PID : pid,ident);
@@ -143,7 +143,7 @@ int sysc_notify(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	sThread *nt = thread_getById(tid);
 
 	if((events & ~EV_USER_NOTIFY_MASK) != 0 || nt == NULL)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	ev_wakeupThread(nt,events);
 	SYSC_RET1(stack,0);
 }
@@ -177,7 +177,7 @@ int sysc_join(sThread *t,sIntrptStackFrame *stack) {
 		const sThread *tt = thread_getById(tid);
 		/* just threads from the own process */
 		if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			SYSC_ERROR(stack,-EINVAL);
 	}
 
 	proc_join(tid);
@@ -189,7 +189,7 @@ int sysc_suspend(sThread *t,sIntrptStackFrame *stack) {
 	sThread *tt = thread_getById(tid);
 	/* just threads from the own process */
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	ev_suspend(tt);
 	SYSC_RET1(stack,0);
 }
@@ -199,7 +199,7 @@ int sysc_resume(sThread *t,sIntrptStackFrame *stack) {
 	sThread *tt = thread_getById(tid);
 	/* just threads from the own process */
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	ev_unsuspend(tt);
 	SYSC_RET1(stack,0);
 }
@@ -217,7 +217,7 @@ static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCou
 			if(objFiles[i] < 0) {
 				for(; i > 0; i--)
 					proc_relFile(t,objFiles[i - 1]);
-				return ERR_INVALID_ARGS;
+				return objFiles[i];
 			}
 		}
 	}
@@ -242,15 +242,15 @@ static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,cons
 	for(i = 0; i < objCount; i++) {
 		kobjects[i].events = uobjects[i].events;
 		if(kobjects[i].events & ~(EV_USER_WAIT_MASK))
-			return ERR_INVALID_ARGS;
+			return -EINVAL;
 		if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* check flags */
 			if(kobjects[i].events & EV_CLIENT) {
 				if(kobjects[i].events & ~(EV_CLIENT))
-					return ERR_INVALID_ARGS;
+					return -EINVAL;
 			}
 			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
-				return ERR_INVALID_ARGS;
+				return -EINVAL;
 			kobjects[i].object = objFiles[i];
 		}
 		else

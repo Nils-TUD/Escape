@@ -24,7 +24,7 @@
 #include <esc/sllist.h>
 #include <esc/esccodes.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <assert.h>
 #include "events.h"
@@ -81,7 +81,7 @@ bool events_send(int device,sKmData *km) {
 int events_add(inode_t id,uchar flags,uchar key,uchar modifier) {
 	sEventListener *l;
 	if(events_find(id,flags,key,modifier) != NULL)
-		return ERR_LISTENER_EXISTS;
+		return -EEXIST;
 
 	l = (sEventListener*)malloc(sizeof(sEventListener));
 	l->id = id;
@@ -90,7 +90,7 @@ int events_add(inode_t id,uchar flags,uchar key,uchar modifier) {
 	l->modifier = modifier;
 	if(!sll_append(listener,l)) {
 		free(l);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 	return 0;
 }

@@ -49,8 +49,8 @@ private:
 	static const Color CURSOR_COLOR;
 
 public:
-	ShellControl(tULock *lock,gpos_t x,gpos_t y,gsize_t width,gsize_t height) :
-		Control(x,y,width,height), _lock(lock), _lastCol(0), _lastRow(0), _vt(NULL) {
+	ShellControl(gpos_t x,gpos_t y,gsize_t width,gsize_t height) :
+		Control(x,y,width,height), _lastCol(0), _lastRow(0), _vt(NULL) {
 	};
 	virtual ~ShellControl() {
 	};
@@ -86,7 +86,6 @@ private:
 	void update();
 	bool setCursor();
 
-	tULock *_lock;
 	size_t _lastCol;
 	size_t _lastRow;
 	sVTerm *_vt;

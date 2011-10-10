@@ -47,8 +47,9 @@
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
-#include <errors.h>
+#include <errno.h>
 
+#define DEBUG_CREATIONS					0
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
@@ -173,12 +174,12 @@ file_t proc_reqFile(sThread *cur,int fd) {
 	file_t fileNo;
 	sProc *p;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
+		return -EBADF;
 
 	p = proc_request(cur->proc->pid,PLOCK_FDS);
 	fileNo = p->fileDescs[fd];
 	if(fileNo == -1)
-		fileNo = ERR_INVALID_FD;
+		fileNo = -EBADF;
 	else {
 		vfs_incUsages(fileNo);
 		thread_addFileUsage(cur,fileNo);
@@ -195,7 +196,7 @@ void proc_relFile(sThread *cur,file_t file) {
 int proc_assocFd(file_t fileNo) {
 	sProc *p = proc_request(proc_getRunning(),PLOCK_FDS);
 	const file_t *fds = p->fileDescs;
-	int i,fd = ERR_MAX_PROC_FDS;
+	int i,fd = -EMFILE;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == -1) {
 			fd = i;
@@ -210,18 +211,18 @@ int proc_assocFd(file_t fileNo) {
 
 int proc_dupFd(int fd) {
 	file_t f;
-	int i,nfd = ERR_INVALID_FD;
+	int i,nfd = -EBADF;
 	sProc *p = proc_request(proc_getRunning(),PLOCK_FDS);
 	const file_t *fds = p->fileDescs;
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT) {
 		proc_release(p,PLOCK_FDS);
-		return ERR_INVALID_FD;
+		return -EBADF;
 	}
 
 	f = p->fileDescs[fd];
 	if(f >= 0) {
-		nfd = ERR_MAX_PROC_FDS;
+		nfd = -EMFILE;
 		for(i = 0; i < MAX_FD_COUNT; i++) {
 			if(fds[i] == -1) {
 				/* increase references */
@@ -238,12 +239,12 @@ int proc_dupFd(int fd) {
 
 int proc_redirFd(int src,int dst) {
 	file_t fSrc,fDst;
-	int err = ERR_INVALID_FD;
+	int err = -EBADF;
 	sProc *p;
 
 	/* check fds */
 	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
+		return -EBADF;
 
 	p = proc_request(proc_getRunning(),PLOCK_FDS);
 	fSrc = p->fileDescs[src];
@@ -264,14 +265,14 @@ file_t proc_unassocFd(int fd) {
 	file_t fileNo;
 	sProc *p;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
+		return -EBADF;
 
 	p = proc_request(proc_getRunning(),PLOCK_FDS);
 	fileNo = p->fileDescs[fd];
 	if(fileNo >= 0)
 		p->fileDescs[fd] = -1;
 	else
-		fileNo = ERR_INVALID_FD;
+		fileNo = -EBADF;
 	proc_release(p,PLOCK_FDS);
 	return fileNo;
 }
@@ -349,11 +350,11 @@ int proc_clone(uint8_t flags) {
 	sThread *nt;
 	int res = 0;
 	if(!cur)
-		return ERR_INVALID_PID;
+		return -ESRCH;
 
 	p = (sProc*)cache_alloc(sizeof(sProc));
 	if(!p) {
-		res = ERR_NOT_ENOUGH_MEM;
+		res = -ENOMEM;
 		goto errorCur;
 	}
 
@@ -383,7 +384,7 @@ int proc_clone(uint8_t flags) {
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
 	if(p->command == NULL) {
-		res = ERR_NOT_ENOUGH_MEM;
+		res = -ENOMEM;
 		goto errorPdir;
 	}
 
@@ -392,7 +393,7 @@ int proc_clone(uint8_t flags) {
 	newPid = proc_getFreePid();
 	if(newPid < 0) {
 		klock_release(&procLock);
-		res = newPid;
+		res = -ENOPROCS;
 		goto errorCmd;
 	}
 
@@ -400,7 +401,7 @@ int proc_clone(uint8_t flags) {
 	*(pid_t*)&p->pid = newPid;
 	if(!proc_add(p)) {
 		klock_release(&procLock);
-		res = ERR_NOT_ENOUGH_MEM;
+		res = -ENOMEM;
 		goto errorCmd;
 	}
 	klock_release(&procLock);
@@ -429,7 +430,7 @@ int proc_clone(uint8_t flags) {
 	/* create thread-list */
 	p->threads = sll_create();
 	if(p->threads == NULL) {
-		res = ERR_NOT_ENOUGH_MEM;
+		res = -ENOMEM;
 		goto errorShm;
 	}
 
@@ -437,7 +438,7 @@ int proc_clone(uint8_t flags) {
 	if((res = thread_create(curThread,&nt,p,0,true)) < 0)
 		goto errorThreadList;
 	if(!sll_append(p->threads,nt)) {
-		res = ERR_NOT_ENOUGH_MEM;
+		res = -ENOMEM;
 		goto errorThread;
 	}
 
@@ -461,12 +462,14 @@ int proc_clone(uint8_t flags) {
 	/* parent */
 	ev_unblock(nt);
 
+#if DEBUG_CREATIONS
 #ifdef __eco32__
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,
 			nt->archAttr.kstackFrame);
 #endif
 #ifdef __mmix__
 	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
+#endif
 #endif
 
 	proc_release(cur,PLOCK_PROG);
@@ -506,7 +509,7 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	sThread *nt;
 	int res;
 	if(!p)
-		return ERR_INVALID_PID;
+		return -ESRCH;
 
 	if((res = thread_create(t,&nt,p,flags,false)) < 0) {
 		proc_release(p,PLOCK_PROG);
@@ -517,7 +520,7 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	if(!sll_append(p->threads,nt)) {
 		thread_kill(nt);
 		proc_release(p,PLOCK_PROG);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	thread_finishThreadStart(t,nt,arg,entryPoint);
@@ -528,12 +531,14 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	else
 		ev_unblock(nt);
 
+#if DEBUG_CREATIONS
 #ifdef __eco32__
 	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,
 			nt->archAttr.kstackFrame);
 #endif
 #ifdef __mmix__
 	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
+#endif
 #endif
 
 	proc_release(p,PLOCK_PROG);
@@ -548,20 +553,20 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	size_t argSize;
 	int argc,fd = -1;
 	if(!p)
-		return ERR_INVALID_PID;
+		return -ESRCH;
 	/* we can't do an exec if we have multiple threads (init can do that, because the threads are
 	 * "kernel-threads") */
 	if(p->pid != 0 && sll_length(p->threads) > 1) {
 		proc_release(p,PLOCK_PROG);
-		return ERR_INVALID_ARGS;
+		return -EINVAL;
 	}
 
 	if(!code) {
 		/* resolve path; require a path in real fs */
 		inode_t nodeNo;
-		if(vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ) != ERR_REAL_PATH) {
+		if(vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ) != -EREALPATH) {
 			proc_release(p,PLOCK_PROG);
-			return ERR_INVALID_ARGS;
+			return -EINVAL;
 		}
 	}
 
@@ -607,11 +612,13 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	/* copy path so that we can identify the process */
 	proc_setCommand(p,path);
 
+#if DEBUG_CREATIONS
 #ifdef __eco32__
 	debugf("EXEC: proc %d:%s\n",p->pid,p->command);
 #endif
 #ifdef __mmix__
 	debugf("EXEC: proc %d:%s\n",p->pid,p->command);
+#endif
 #endif
 
 	/* make process ready */
@@ -861,7 +868,7 @@ int proc_getExitState(pid_t ppid,USER sExitState *state) {
 						sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
 						if(!vmm_makeCopySafe(cur,state,sizeof(sExitState))) {
 							proc_release(cur,PLOCK_REGIONS);
-							return ERR_INVALID_ARGS;
+							return -EFAULT;
 						}
 						memcpy(state,p->exitState,sizeof(sExitState));
 						proc_release(cur,PLOCK_REGIONS);
@@ -875,7 +882,7 @@ int proc_getExitState(pid_t ppid,USER sExitState *state) {
 			proc_release(p,PLOCK_PROG);
 		}
 	}
-	return ERR_NO_CHILD;
+	return -ECHILD;
 }
 
 void proc_removeRegions(pid_t pid,bool remStack) {
@@ -990,7 +997,7 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 	/* alloc space for the arguments */
 	*argBuffer = (char*)cache_alloc(EXEC_MAX_ARGSIZE);
 	if(*argBuffer == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	/* count args and copy them on the kernel-heap */
 	/* note that we have to create a copy since we don't know where the args are. Maybe
@@ -1031,7 +1038,7 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 error:
 	thread_remHeapAlloc(t,*argBuffer);
 	cache_free(*argBuffer);
-	return ERR_INVALID_ARGS;
+	return -EFAULT;
 }
 
 static pid_t proc_getFreePid(void) {

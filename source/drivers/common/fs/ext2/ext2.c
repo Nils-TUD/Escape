@@ -23,7 +23,7 @@
 #include <esc/debug.h>
 #include <esc/dir.h>
 #include <esc/endian.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,11 +55,14 @@ static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
 static void ext2_sync(void *h);
 static bool ext2_isPowerOf(uint x,uint y);
 
-void *ext2_init(const char *device,char **usedDev) {
+void *ext2_init(const char *device,char **usedDev,int *errcode) {
+	int res;
 	size_t i;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
-	if(e == NULL)
+	if(e == NULL) {
+		*errcode = -ENOMEM;
 		return NULL;
+	}
 	for(i = 0; i <= REQ_THREAD_COUNT; i++)
 		e->drvFds[i] = -1;
 	e->blockCache.blockCache = NULL;
@@ -69,12 +72,15 @@ void *ext2_init(const char *device,char **usedDev) {
 		e->drvFds[i] = open(device,IO_WRITE | IO_READ);
 		if(e->drvFds[i] < 0) {
 			printe("Unable to find device '%s'",device);
-			goto error;
+			*errcode = e->drvFds[i];
+			goto failed;
 		}
 	}
 
-	if(!ext2_super_init(e))
-		goto error;
+	if((res = ext2_super_init(e)) < 0) {
+		*errcode = res;
+		goto failed;
+	}
 
 	/* Note: we don't need it in ext2_super_init() and we can't use EXT2_BLK_SIZE() without
 	 * super-block! */
@@ -90,8 +96,10 @@ void *ext2_init(const char *device,char **usedDev) {
 	e->blockCache.write = (fWriteBlocks)ext2_rw_writeBlocks;
 
 	/* init block-groups */
-	if(!ext2_bg_init(e))
-		goto error;
+	if((res = ext2_bg_init(e)) < 0) {
+		*errcode = res;
+		goto failed;
+	}
 
 	/* init caches */
 	ext2_icache_init(e);
@@ -101,12 +109,13 @@ void *ext2_init(const char *device,char **usedDev) {
 	*usedDev = malloc(strlen(device) + 1);
 	if(!*usedDev) {
 		printe("Not enough mem for device-name");
-		goto error;
+		*errcode = -ENOMEM;
+		goto failed;
 	}
 	strcpy(*usedDev,device);
 	return e;
 
-error:
+failed:
 	if(e->blockCache.blockCache)
 		bcache_destroy(&e->blockCache);
 	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
@@ -141,6 +150,8 @@ sFileSystem *ext2_getFS(void) {
 	if(!fs)
 		return NULL;
 	fs->type = FS_TYPE_EXT2;
+	/* TODO later it should depend on not-supported features, the device and similar stuff */
+	fs->readonly = false;
 	fs->init = ext2_init;
 	fs->deinit = ext2_deinit;
 	fs->resPath = ext2_resPath;
@@ -166,7 +177,7 @@ int ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
 	if(u->uid == ROOT_UID) {
 		/* root has exec-permission if at least one has exec-permission */
 		if(perms & MODE_EXEC)
-			return (mode & MODE_EXEC) ? 0 : ERR_NO_EXEC_PERM;
+			return (mode & MODE_EXEC) ? 0 : -EACCES;
 		/* root can read and write in all cases */
 		return 0;
 	}
@@ -179,11 +190,11 @@ int ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
 		mask = mode & 0x7;
 
 	if((perms & MODE_READ) && !(mask & MODE_READ))
-		return ERR_NO_READ_PERM;
+		return -EACCES;
 	if((perms & MODE_WRITE) && !(mask & MODE_WRITE))
-		return ERR_NO_WRITE_PERM;
+		return -EACCES;
 	if((perms & MODE_EXEC) && !(mask & MODE_EXEC))
-		return ERR_NO_EXEC_PERM;
+		return -EACCES;
 	return 0;
 }
 
@@ -273,7 +284,7 @@ static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
 	sExt2 *e = (sExt2*)h;
 	const sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
 	if(cnode == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	info->accesstime = le32tocpu(cnode->inode.accesstime);
 	info->modifytime = le32tocpu(cnode->inode.modifytime);
@@ -314,9 +325,9 @@ static int ext2_link(void *h,sFSUser *u,inode_t dstIno,inode_t dirIno,const char
 	dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	ino = ext2_icache_request(e,dstIno,IMODE_WRITE);
 	if(dir == NULL || ino == NULL)
-		res = ERR_INO_REQ_FAILED;
+		res = -ENOBUFS;
 	else if(S_ISDIR(le16tocpu(ino->inode.mode)))
-		res = ERR_IS_DIR;
+		res = -EISDIR;
 	else
 		res = ext2_link_create(e,u,dir,ino,name);
 	ext2_icache_release(dir);
@@ -329,7 +340,7 @@ static int ext2_unlink(void *h,sFSUser *u,inode_t dirIno,const char *name) {
 	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	res = ext2_link_delete(e,u,NULL,dir,name,false);
 	ext2_icache_release(dir);
@@ -341,7 +352,7 @@ static int ext2_mkdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
 	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 	res = ext2_dir_create(e,u,dir,name);
 	ext2_icache_release(dir);
 	return res;
@@ -352,9 +363,9 @@ static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
 	int res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 	if(!S_ISDIR(le16tocpu(dir->inode.mode)))
-		return ERR_NO_DIRECTORY;
+		return -ENOTDIR;
 	res = ext2_dir_delete(e,u,dir,name);
 	ext2_icache_release(dir);
 	return res;

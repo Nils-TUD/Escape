@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <cmdargs.h>
 #include <esc/test.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <iostream>
 #include "tcmdargs.h"

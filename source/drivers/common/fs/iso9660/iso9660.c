@@ -23,7 +23,7 @@
 #include <esc/proc.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <time.h>
 
@@ -38,13 +38,16 @@
 
 #define MAX_DEVICE_OPEN_RETRIES		1000
 
-static bool iso_setup(const char *device,sISO9660 *iso);
+static int iso_setup(const char *device,sISO9660 *iso);
 
-void *iso_init(const char *device,char **usedDev) {
+void *iso_init(const char *device,char **usedDev,int *errcode) {
+	int res;
 	size_t i;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
-	if(iso == NULL)
+	if(iso == NULL) {
+		*errcode = -ENOMEM;
 		return NULL;
+	}
 
 	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++)
 		iso->drvFds[i] = -1;
@@ -62,9 +65,10 @@ void *iso_init(const char *device,char **usedDev) {
 
 	/* if the device is provided, simply use it */
 	if(strcmp(device,"cdrom") != 0) {
-		if(!iso_setup(device,iso)) {
+		if((res = iso_setup(device,iso)) < 0) {
 			printe("Unable to find device '%s'",device);
 			free(iso);
+			*errcode = res;
 			return NULL;
 		}
 	}
@@ -80,7 +84,7 @@ void *iso_init(const char *device,char **usedDev) {
 		char path[SSTRLEN("/dev/cda1") + 1];
 		for(i = 0; i < 4; i++) {
 			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + i);
-			if(!iso_setup(path,iso))
+			if(iso_setup(path,iso) < 0)
 				continue;
 
 			/* try to find our kernel. if we've found it, it's likely that the user wants to
@@ -97,6 +101,7 @@ void *iso_init(const char *device,char **usedDev) {
 		/* not found? */
 		if(i >= 4) {
 			free(iso);
+			*errcode = -ENXIO;
 			return NULL;
 		}
 
@@ -109,24 +114,25 @@ void *iso_init(const char *device,char **usedDev) {
 		printe("Not enough mem for device-name");
 		bcache_destroy(&iso->blockCache);
 		free(iso);
+		*errcode = -ENOMEM;
 		return NULL;
 	}
 	strcpy(*usedDev,device);
 	return iso;
 }
 
-static bool iso_setup(const char *device,sISO9660 *iso) {
+static int iso_setup(const char *device,sISO9660 *iso) {
 	size_t i;
 	/* now open the device */
 	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
 		iso->drvFds[i] = open(device,IO_WRITE | IO_READ);
 		if(iso->drvFds[i] < 0)
-			return false;
+			return iso->drvFds[i];
 	}
 
 	/* read volume descriptors */
 	for(i = 0; ; i++) {
-		if(!iso_rw_readSectors(iso,&iso->primary,ISO_VOL_DESC_START + i,1))
+		if(iso_rw_readSectors(iso,&iso->primary,ISO_VOL_DESC_START + i,1) != 0)
 			error("Unable to read volume descriptor from device");
 		/* we need just the primary one */
 		if(iso->primary.type == ISO_VOL_TYPE_PRIMARY)
@@ -137,7 +143,7 @@ static bool iso_setup(const char *device,sISO9660 *iso) {
 
 	iso_direc_init(iso);
 	bcache_init(&iso->blockCache);
-	return true;
+	return 0;
 }
 
 void iso_deinit(void *h) {
@@ -155,6 +161,7 @@ sFileSystem *iso_getFS(void) {
 	if(!fs)
 		return NULL;
 	fs->type = FS_TYPE_ISO9660;
+	fs->readonly = true;
 	fs->init = iso_init;
 	fs->deinit = iso_deinit;
 	fs->resPath = iso_resPath;
@@ -192,7 +199,7 @@ int iso_stat(void *h,inode_t ino,sFileInfo *info) {
 	sISO9660 *i = (sISO9660*)h;
 	const sISOCDirEntry *e = iso_direc_get(i,ino);
 	if(e == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	ts = iso_dirDate2Timestamp(i,&e->entry.created);
 	info->accesstime = ts;
@@ -250,7 +257,7 @@ void iso_dbg_printPathTbl(sISO9660 *h) {
 	size_t secCount = (tblSize + ATAPI_SECTOR_SIZE - 1) / ATAPI_SECTOR_SIZE;
 	sISOPathTblEntry *pe = malloc((tblSize + ATAPI_SECTOR_SIZE - 1) & ~(ATAPI_SECTOR_SIZE - 1));
 	sISOPathTblEntry *start = pe;
-	if(!iso_rw_readSectors(h,pe,h->primary.data.primary.lPathTblLoc,secCount)) {
+	if(iso_rw_readSectors(h,pe,h->primary.data.primary.lPathTblLoc,secCount) != 0) {
 		free(start);
 		return;
 	}
@@ -275,7 +282,7 @@ void iso_dbg_printTree(sISO9660 *h,size_t extLoc,size_t extSize,size_t layer) {
 	sISODirEntry *content = (sISODirEntry*)malloc(extSize);
 	if(content == NULL)
 		return;
-	if(!iso_rw_readSectors(h,content,extLoc,extSize / ATAPI_SECTOR_SIZE))
+	if(iso_rw_readSectors(h,content,extLoc,extSize / ATAPI_SECTOR_SIZE) != 0)
 		return;
 
 	e = content;

@@ -37,7 +37,7 @@ private:
 	static const size_t READ_BUF_SIZE	= 512;
 
 public:
-	GUITerm(tULock *lock,int sid,ShellControl *sh);
+	GUITerm(int sid,ShellControl *sh);
 	virtual ~GUITerm();
 
 	void run();
@@ -58,7 +58,6 @@ private:
 	volatile bool _run;
 	sVTerm *_vt;
 	ShellControl *_sh;
-	tULock *_lock;
 	sVTermCfg _cfg;
 	char *_rbuffer;
 	size_t _rbufPos;

@@ -36,7 +36,7 @@ typedef struct {
 } sFSUser;
 
 /* The handler for the functions of the filesystem */
-typedef void *(*fFSInit)(const char *device,char **usedDev);
+typedef void *(*fFSInit)(const char *device,char **usedDev,int *errcode);
 typedef void (*fFSDeinit)(void *h);
 typedef inode_t (*fFSResPath)(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,
 		bool resLastMnt);
@@ -57,6 +57,7 @@ typedef void (*fFSPrint)(FILE *f,void *h);
 /* all information about a filesystem */
 typedef struct {
 	int type;
+	bool readonly;
 	fFSInit init;			/* required */
 	fFSDeinit deinit;		/* required */
 	fFSResPath resPath;		/* required */

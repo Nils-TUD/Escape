@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <errors.h>
+#include <errno.h>
 
 #include <shell/shell.h>
 #include <shell/history.h>
@@ -96,7 +96,7 @@ int shell_executeCmd(char *line,bool isFile) {
 	if(isFile) {
 		curStream = fopen(line,"r");
 		if(curStream == NULL)
-			return errno;
+			return -errno;
 		filename = line;
 	}
 	else

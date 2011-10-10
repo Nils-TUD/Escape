@@ -26,8 +26,8 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <errors.h>
-#include <error.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #define SECTOR_SIZE			512
 #define START_SECTOR		64		/* part 0 */
@@ -126,7 +126,7 @@ int main(int argc,char **argv) {
 	while(1) {
 		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
-			if(fd != ERR_INTERRUPTED)
+			if(fd != -EINTR)
 				printe("[DISK] Unable to get client");
 		}
 		else {
@@ -173,7 +173,7 @@ int main(int argc,char **argv) {
 				break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

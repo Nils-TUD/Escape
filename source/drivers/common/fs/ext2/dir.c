@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/endian.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <assert.h>
 
@@ -68,7 +68,7 @@ inode_t ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,size_t nameLen)
 	int res;
 	sExt2DirEntry *buffer = (sExt2DirEntry*)malloc(size);
 	if(buffer == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 
 	/* read the directory */
 	if((res = ext2_file_readIno(e,dir,buffer,0,size)) < 0) {
@@ -97,7 +97,7 @@ inode_t ext2_dir_findIn(sExt2DirEntry *buffer,size_t bufSize,const char *name,si
 		rem -= le16tocpu(entry->recLen);
 		entry = (sExt2DirEntry*)((uintptr_t)entry + le16tocpu(entry->recLen));
 	}
-	return ERR_PATH_NOT_FOUND;
+	return -ENOENT;
 }
 
 int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
@@ -118,12 +118,12 @@ int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
 	/* get inode of directory to delete */
 	delIno = ext2_icache_request(e,ino,IMODE_WRITE);
 	if(delIno == NULL)
-		return ERR_INO_REQ_FAILED;
+		return -ENOBUFS;
 
 	/* read the directory */
 	buffer = (sExt2DirEntry*)malloc(size);
 	if(buffer == NULL) {
-		res = ERR_NOT_ENOUGH_MEM;
+		res = -ENOMEM;
 		goto error;
 	}
 	if((res = ext2_file_readIno(e,delIno,buffer,0,size)) < 0)
@@ -137,7 +137,7 @@ int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
 		if(namelen != 1 && namelen != 2 &&
 				strncmp(entry->name,".",namelen) != 0 &&
 				strncmp(entry->name,"..",namelen) != 0) {
-			res = ERR_DIR_NOT_EMPTY;
+			res = -ENOTEMPTY;
 			goto error;
 		}
 

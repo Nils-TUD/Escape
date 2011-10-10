@@ -19,16 +19,17 @@
 
 #include <esc/common.h>
 #include <vterm/vtout.h>
+#include <vterm/vtin.h>
 #include <esc/driver/vterm.h>
 #include <esc/driver.h>
 #include <esc/thread.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <errors.h>
+#include <errno.h>
 #include "guiterm.h"
 
-GUITerm::GUITerm(tULock *lock,int sid,ShellControl *sh)
-	: _sid(sid), _run(true), _vt(NULL), _sh(sh), _lock(lock), _cfg(sVTermCfg()),
+GUITerm::GUITerm(int sid,ShellControl *sh)
+	: _sid(sid), _run(true), _vt(NULL), _sh(sh), _cfg(sVTermCfg()),
 	  _rbuffer(new char[READ_BUF_SIZE]), _rbufPos(0) {
 	sVTSize size;
 	size.width = sh->getCols();
@@ -66,15 +67,13 @@ void GUITerm::run() {
 	while(_run) {
 		int fd = getWork(&_sid,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
-			if(fd != ERR_NO_CLIENT_WAITING)
+			if(fd != -ENOCLIENT)
 				printe("[GUISH] Unable to get client");
 			// append the buffer now to reduce delays
 			if(_rbufPos > 0) {
 				_rbuffer[_rbufPos] = '\0';
-				locku(_lock);
 				vtout_puts(_vt,_rbuffer,_rbufPos,true);
 				_sh->update();
-				unlocku(_lock);
 				_rbufPos = 0;
 			}
 			wait(EV_CLIENT,_sid);
@@ -103,15 +102,11 @@ void GUITerm::run() {
 				case MSG_VT_BACKUP:
 				case MSG_VT_RESTORE:
 				case MSG_VT_GETSIZE:
-					locku(_lock);
 					msg.data.arg1 = vtctrl_control(_vt,&_cfg,mid,msg.data.d);
-					unlocku(_lock);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
 			}
-			locku(_lock);
 			_sh->update();
-			unlocku(_lock);
 			close(fd);
 		}
 	}
@@ -121,14 +116,9 @@ void GUITerm::read(int fd,sMsg *msg) {
 	// offset is ignored here
 	size_t count = msg->args.arg2;
 	char *data = (char*)malloc(count);
-	msg->args.arg1 = 0;
-	locku(_lock);
-	if(data)
-		msg->args.arg1 = rb_readn(_vt->inbuf,data,count);
-	if(rb_length(_vt->inbuf) == 0)
-		_vt->inbufEOF = false;
-	msg->args.arg2 = _vt->inbufEOF || rb_length(_vt->inbuf) > 0;
-	unlocku(_lock);
+	bool avail;
+	msg->args.arg1 = vtin_gets(_vt,data,count,&avail);
+	msg->args.arg2 = avail;
 	send(fd,MSG_DEV_READ_RESP,msg,sizeof(msg->args));
 	if(data) {
 		send(fd,MSG_DEV_READ_RESP,data,count);
@@ -156,9 +146,7 @@ void GUITerm::write(int fd,sMsg *msg) {
 				dataWork += amount;
 				if(_rbufPos >= READ_BUF_SIZE) {
 					_rbuffer[_rbufPos] = '\0';
-					locku(_lock);
 					vtout_puts(_vt,_rbuffer,_rbufPos,true);
-					unlocku(_lock);
 					_rbufPos = 0;
 				}
 			}

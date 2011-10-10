@@ -29,7 +29,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 
 /* the physical memory of the 80x25 device */
 #define VIDEO_MEM				0xB8000
@@ -129,7 +129,7 @@ int main(void) {
 				break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

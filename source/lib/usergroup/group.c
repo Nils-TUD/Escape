@@ -218,7 +218,7 @@ int group_writeToFile(const sGroup *g,const char *path) {
 	int res;
 	FILE *f = fopen(path,"w");
 	if(!f)
-		return errno;
+		return -errno;
 	res = group_write(g,f);
 	fclose(f);
 	return res;

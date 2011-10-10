@@ -26,7 +26,7 @@
 #include <sys/syscalls/mem.h>
 #include <sys/syscalls.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
@@ -38,7 +38,7 @@ int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
 		/* if so, grow that region instead */
 		rno = vmm_getDLDataReg(pid);
 		if(rno == -1)
-			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+			SYSC_ERROR(stack,-ENOMEM);
 	}
 	if((oldEnd = vmm_grow(pid,rno,count)) < 0)
 		SYSC_ERROR(stack,oldEnd);
@@ -79,14 +79,14 @@ int sysc_addRegion(sThread *t,sIntrptStackFrame *stack) {
 			/* the user can't create a new stack here */
 			break;
 		default:
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			SYSC_ERROR(stack,-EPERM);
 			break;
 	}
 
 	/* check if the region-type does already exist */
 	if(rno >= 0) {
 		if(vmm_exists(pid,rno))
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			SYSC_ERROR(stack,-EEXIST);
 	}
 
 	/* add region */
@@ -109,13 +109,13 @@ int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	if(!(prot & (PROT_WRITE | PROT_READ)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	if(prot & PROT_WRITE)
 		flags |= RF_WRITABLE;
 
 	rno = vmm_getRegionOf(pid,addr);
 	if(rno < 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-ENXIO);
 
 	res = vmm_setRegProt(pid,rno,flags);
 	if(res < 0)
@@ -132,7 +132,7 @@ int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
 	sProc *p;
 
 	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* trying to map memory in kernel area? */
 #ifdef __i386__
@@ -141,17 +141,17 @@ int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
 	/* TODO I think we should check here whether it is in a used-region, according to multiboot-memmap */
 	if(physCpy &&
 			OVERLAPS(physCpy,physCpy + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 #endif
 
 	addr = vmm_addPhys(pid,&physCpy,bytes,align);
 	if(addr == 0)
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+		SYSC_ERROR(stack,-ENOMEM);
 
 	p = proc_request(pid,PLOCK_REGIONS);
 	if(!vmm_makeCopySafe(p,phys,sizeof(uintptr_t))) {
 		proc_release(p,PLOCK_REGIONS);
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	}
 	*phys = physCpy;
 	proc_release(p,PLOCK_REGIONS);
@@ -166,7 +166,7 @@ int sysc_createSharedMem(sThread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	if(byteCount == 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	strnzcpy(namecpy,name,sizeof(namecpy));
 
 	res = shm_create(pid,namecpy,BYTES_2_PAGES(byteCount));

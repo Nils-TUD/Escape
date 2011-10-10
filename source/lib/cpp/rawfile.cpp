@@ -35,7 +35,7 @@ namespace std {
 			flags |= IO_TRUNCATE;
 		_fd = ::open(filename.c_str(),flags);
 		if(_fd < 0)
-			throw io_exception("Unable to open",_fd);
+			throw io_exception("Unable to open",-_fd);
 		_mode = mode;
 	}
 	void rawfile::use(int fd) {
@@ -48,14 +48,14 @@ namespace std {
 			throw io_exception("File not opened",0);
 		int res;
 		if((res = ::seek(_fd,offset,whence)) < 0)
-			throw io_exception("Unable to seek",res);
+			throw io_exception("Unable to seek",-res);
 	}
 	rawfile::size_type rawfile::read(void *data,size_type size,size_type count) {
 		if(_fd < 0 || !(_mode & READ))
 			throw io_exception("File not opened for reading",0);
 		int res = RETRY(::read(_fd,data,size * count));
 		if(res < 0)
-			throw io_exception("Unable to read",res);
+			throw io_exception("Unable to read",-res);
 		return (size_type)res / size;
 	}
 	rawfile::size_type rawfile::write(const void *data,size_type size,size_type count) {
@@ -63,7 +63,7 @@ namespace std {
 			throw io_exception("File not opened for writing",0);
 		int res = ::write(_fd,data,size * count);
 		if(res < 0)
-			throw io_exception("Unable to write",res);
+			throw io_exception("Unable to write",-res);
 		return (size_type)res / size;
 	}
 	void rawfile::close() {

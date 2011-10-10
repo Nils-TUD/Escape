@@ -24,7 +24,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <assert.h>
 
 #define KEYBOARD_BASE		0xF0200000

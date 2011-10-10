@@ -21,14 +21,49 @@
 #define ERRNO_H_
 
 #include <esc/common.h>
-#include <errors.h>
+
+/* error-codes */
+#define EACCES						1	/* Permission denied */
+#define EBADF						2	/* Bad file descriptor */
+#define EBUSY						3	/* Device or resource busy */
+#define ECHILD						4	/* No child processes */
+#define EEXIST						5	/* File exists */
+#define EFAULT						6	/* Bad address */
+#define EINTR						7	/* Interrupted function */
+#define EINVAL						8	/* Invalid argument */
+#define EISDIR						9	/* Is a directory */
+#define EMFILE						10	/* Too many open files */
+#define ENOENT						11	/* No such file or directory */
+#define ENOSYS						12	/* Function not supported */
+#define ENOTDIR						13	/* Not a directory */
+#define ENOTEMPTY					14	/* Directory not empty */
+#define ENOTSUP						15	/* Not supported */
+#define EPERM						16	/* Operation not permitted */
+#define EROFS						17	/* Read-only file system */
+#define ESPIPE						18	/* Invalid seek */
+#define EWOULDBLOCK					19	/* Operation would block */
+#define ENOMEM						20	/* Not enough space */
+#define ENOBUFS						21	/* No buffer space available */
+#define ENOSPC						22	/* No space left on device */
+#define EXDEV						23	/* Cross-device link */
+#define ENAMETOOLONG				24	/* Filename too long */
+#define ENXIO						25	/* No such device or address */
+#define ESRCH						26	/* No such process */
+#define ENOEXEC						27	/* Execution file format error */
+#define ENFILE						28	/* Too many files open in system */
+#define ENOCLIENT					29	/* No client waiting to be served */
+#define EDESTROYED					30	/* Something existed previously, but has been destroyed */
+#define ENOPROCS					31	/* No more process-slots available */
+#define ENOTHREADS					32	/* No more thread-slots available */
+#define EPIPE						33	/* Broken pipe */
+#if IN_KERNEL
+#define EREALPATH					34	/* Indicates that a path is unknown to the kernel and should
+											therefore be passed to fs */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* needed for flex */
-#define EINTR	ERR_INTERRUPTED
 
 /**
  * The last error-code

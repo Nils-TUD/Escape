@@ -25,7 +25,7 @@
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>
-#include <error.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -243,7 +243,7 @@ void abort(void);
 
 /**
  * Displays an error-message according to given format and arguments and appends ': <errmsg>' if
- * errno is < 0. After that exit(EXIT_FAILURE) is called.
+ * errno is != 0. After that exit(EXIT_FAILURE) is called.
  *
  * @param fmt the error-message-format
  */

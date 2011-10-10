@@ -93,7 +93,7 @@ static int driverThread(A_UNUSED void *arg) {
 		sMsg msg;
 		int fd = getWork(&drv,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
-			if(fd != ERR_INTERRUPTED)
+			if(fd != -EINTR)
 				printe("[INIT] Unable to get work");
 		}
 		else {
@@ -122,7 +122,7 @@ static int driverThread(A_UNUSED void *arg) {
 					break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

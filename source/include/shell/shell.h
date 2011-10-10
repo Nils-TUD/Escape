@@ -24,7 +24,6 @@
 #include <stdio.h>
 
 #define MAX_ARG_COUNT		10
-#define ERR_CMD_NOT_FOUND	-100
 
 #define MAX_CMDNAME_LEN		30
 #define MAX_CMD_LEN			70

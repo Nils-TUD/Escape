@@ -34,7 +34,7 @@
 #include <sys/klock.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 #define X86OP_INT			0xCD
 #define X86OP_IRET			0xCF
@@ -146,15 +146,15 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 	sThread *t;
 	sThread *vm86t;
 	if(area && BYTES_2_PAGES(area->size) > VM86_MAX_MEMPAGES)
-		return ERR_INVALID_ARGS;
+		return -EINVAL;
 	if(interrupt >= VM86_IVT_SIZE)
-		return ERR_INVALID_ARGS;
+		return -EINVAL;
 	t = thread_getRunning();
 
 	/* check whether there still is a vm86-task */
 	vm86t = thread_getById(vm86Tid);
 	if(vm86t == NULL || !(vm86t->proc->flags & P_VM86))
-		return ERR_NO_VM86_TASK;
+		return -ESRCH;
 
 	/* if the vm86-task is active, wait here */
 	klock_aquire(&vm86Lock);
@@ -172,7 +172,7 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 	klock_release(&vm86Lock);
 	if(!vm86_copyInfo(interrupt,regs,area)) {
 		vm86_finish();
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* make vm86 ready */

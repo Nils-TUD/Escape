@@ -30,7 +30,7 @@
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 #define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
 
@@ -131,7 +131,7 @@ bool vfs_device_isReadable(const sVFSNode *node) {
 int vfs_device_setReadable(sVFSNode *node,bool readable) {
 	sDevice *dev = (sDevice*)node->data;
 	if(!DRV_IMPL(dev->funcs,DEV_READ))
-		return ERR_UNSUPPORTED_OP;
+		return -ENOTSUP;
 	bool wasEmpty = dev->isEmpty;
 	dev->isEmpty = !readable;
 	if(wasEmpty && readable)

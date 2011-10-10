@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <errors.h>
+#include <errno.h>
 #include <assert.h>
 
 #define MAX_ERR_LEN			64
@@ -103,7 +103,7 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	/* create free args list */
 	freeArgs = sll_create();
 	if(freeArgs == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	for(i = 1; i < argc; i++)
 		sll_append(freeArgs,(void*)i);
 
@@ -185,7 +185,7 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	/* create free-args-array */
 	freeArgsArray = (const char**)malloc((sll_length(freeArgs) + 1) * sizeof(char*));
 	if(freeArgsArray == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	for(i = 0, n = sll_begin(freeArgs); n != NULL; n = n->next,i++)
 		freeArgsArray[i] = argv[(size_t)n->data];
 	freeArgsArray[i] = NULL;

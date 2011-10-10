@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <string.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 #include "iso9660.h"
 #include "rw.h"
 #include "dir.h"
@@ -58,7 +58,7 @@ inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t
 		i = 0;
 		blk = bcache_request(&h->blockCache,extLoc,BMODE_READ);
 		if(blk == NULL)
-			return ERR_BLO_REQ_FAILED;
+			return -ENOBUFS;
 
 		e = (const sISODirEntry*)blk->buffer;
 		while((uintptr_t)e < (uintptr_t)blk->buffer + blockSize) {
@@ -67,7 +67,7 @@ inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t
 				bcache_release(blk);
 				blk = bcache_request(&h->blockCache,extLoc + ++i,BMODE_READ);
 				if(blk == NULL)
-					return ERR_BLO_REQ_FAILED;
+					return -ENOBUFS;
 				e = (const sISODirEntry*)blk->buffer;
 				continue;
 			}
@@ -98,7 +98,7 @@ inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t
 				pos = strchri(p,'/');
 				if((e->flags & ISO_FILEFL_DIR) == 0) {
 					bcache_release(blk);
-					return ERR_NO_DIRECTORY;
+					return -ENOTDIR;
 				}
 				extLoc = e->extentLoc.littleEndian;
 				extSize = e->extentSize.littleEndian;
@@ -110,8 +110,8 @@ inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t
 		if((uintptr_t)e >= (uintptr_t)blk->buffer + blockSize || e->length == 0) {
 			bcache_release(blk);
 			if(flags & IO_CREATE)
-				return ERR_UNSUPPORTED_OP;
-			return ERR_PATH_NOT_FOUND;
+				return -EROFS;
+			return -ENOENT;
 		}
 		res = GET_INODENO(extLoc + i,blockSize,(uintptr_t)e - (uintptr_t)blk->buffer);
 		bcache_release(blk);

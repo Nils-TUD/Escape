@@ -28,7 +28,7 @@
 #include <sys/video.h>
 #include <sys/log.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
 		file_t file,sStartupInfo *info);
@@ -67,7 +67,7 @@ int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info
 	}
 
 	if((readRes = vfs_readFile(t->proc->pid,file,secHeaders,headerSize)) != headerSize) {
-		vid_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(readRes));
+		vid_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(-readRes));
 		goto error;
 	}
 
@@ -80,7 +80,7 @@ int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info
 
 error:
 	cache_free(secHeaders);
-	return ERR_INVALID_ELF_BIN;
+	return -ENOEXEC;
 }
 
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
@@ -91,7 +91,7 @@ static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *h
 	ssize_t res;
 	uint64_t *stack;
 	if(!thread_getStackRange(t,(uintptr_t*)&stack,NULL,0))
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	*stack++ = 0;	/* $0 */
 	*stack++ = 0;	/* $1 */
 	*stack++ = 0;	/* $2 */
@@ -112,12 +112,12 @@ static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *h
 			/* append global registers */
 			if(file >= 0) {
 				if((res = vfs_seek(t->proc->pid,file,sheader->sh_offset,SEEK_SET)) < 0) {
-					vid_printf("[LOADER] Unable to seek to reg-section: %s\n",strerror(res));
+					vid_printf("[LOADER] Unable to seek to reg-section: %s\n",strerror(-res));
 					return res;
 				}
 				if((res = vfs_readFile(t->proc->pid,file,stack,sheader->sh_size)) !=
 						(ssize_t)sheader->sh_size) {
-					vid_printf("[LOADER] Unable to read reg-section: %s\n",strerror(res));
+					vid_printf("[LOADER] Unable to read reg-section: %s\n",strerror(-res));
 					return res;
 				}
 			}

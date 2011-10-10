@@ -32,7 +32,7 @@
 #include <esc/messages.h>
 #include <string.h>
 #include <assert.h>
-#include <errors.h>
+#include <errno.h>
 
 /* A small note to this: we can use one channel (identified by the node) in parallel because
  * we expect all drivers to handle the requests in FIFO order. That means, if we order the
@@ -128,9 +128,9 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 	if(req->state != REQ_STATE_FINISHED) {
 		/* indicate an error */
 		if(allowSigs && sig_hasSignalFor(req->thread->tid))
-			req->count = ERR_INTERRUPTED;
+			req->count = -EINTR;
 		else
-			req->count = ERR_DRIVER_DIED;
+			req->count = -EDESTROYED;
 	}
 }
 

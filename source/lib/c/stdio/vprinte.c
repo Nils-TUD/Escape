@@ -21,12 +21,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include <error.h>
+#include <errno.h>
 
 int vprinte(const char *prefix,va_list ap) {
 	char *msg;
 	vfprintf(stderr,prefix,ap);
-	if(errno < 0) {
+	if(errno != 0) {
 		msg = strerror(errno);
 		fprintf(stderr,": %s",msg);
 	}

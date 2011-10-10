@@ -81,7 +81,7 @@ sRequest *vfs_req_get(sVFSNode *node,void *buffer,size_t size);
 /**
  * Waits for the given request. You may get interrupted even if you don't allow signals since
  * a device can be deregistered which leads to notifying all possibly affected threads. In this
- * case req->count will be ERR_DRIVER_DIED. Please check in this case if you are affected and
+ * case req->count will be -EDESTROYED. Please check in this case if you are affected and
  * retry the request if not.
  *
  * @param req the request (locked)

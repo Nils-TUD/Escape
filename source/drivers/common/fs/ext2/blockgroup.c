@@ -30,21 +30,22 @@
 #include "blockgroup.h"
 #include "rw.h"
 
-bool ext2_bg_init(sExt2 *e) {
+int ext2_bg_init(sExt2 *e) {
 	/* read block-group-descriptors */
+	int res;
 	size_t bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
 	e->groupsDirty = false;
 	e->groups = (sExt2BlockGrp*)malloc(bcount * EXT2_BLK_SIZE(e));
 	if(e->groups == NULL) {
 		printe("Unable to allocate memory for blockgroups");
-		return false;
+		return -ENOMEM;
 	}
-	if(!ext2_rw_readBlocks(e,e->groups,le32tocpu(e->superBlock.firstDataBlock) + 1,bcount)) {
+	if((res = ext2_rw_readBlocks(e,e->groups,le32tocpu(e->superBlock.firstDataBlock) + 1,bcount)) < 0) {
 		free(e->groups);
 		printe("Unable to read group-table");
-		return false;
+		return res;
 	}
-	return true;
+	return 0;
 }
 
 void ext2_bg_destroy(sExt2 *e) {
@@ -61,7 +62,7 @@ void ext2_bg_update(sExt2 *e) {
 	bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
 
 	/* update main block-group-descriptor-table */
-	if(!ext2_rw_writeBlocks(e,e->groups,le32tocpu(e->superBlock.firstDataBlock) + 1,bcount)) {
+	if(ext2_rw_writeBlocks(e,e->groups,le32tocpu(e->superBlock.firstDataBlock) + 1,bcount) != 0) {
 		printe("Unable to update block-group-descriptor-table in blockgroup 0");
 		goto done;
 	}
@@ -71,7 +72,7 @@ void ext2_bg_update(sExt2 *e) {
 	count = ext2_getBlockGroupCount(e);
 	for(i = 1; i < count; i++) {
 		if(ext2_bgHasBackups(e,i)) {
-			if(!ext2_rw_writeBlocks(e,e->groups,bno,bcount)) {
+			if(ext2_rw_writeBlocks(e,e->groups,bno,bcount) != 0) {
 				printe("Unable to update block-group-descriptor-table in blockgroup %d",i);
 				goto done;
 			}

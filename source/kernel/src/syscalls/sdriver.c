@@ -26,7 +26,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 
 int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
@@ -38,14 +38,14 @@ int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
 	int fd;
 	file_t res;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* check type and ops */
 	if(type != DEV_TYPE_BLOCK && type != DEV_TYPE_CHAR && type != DEV_TYPE_FS &&
 			type != DEV_TYPE_FILE && type != DEV_TYPE_SERVICE)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	if(type != DEV_TYPE_FS && (ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE)) != 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 
 	/* create device and open it */
 	res = vfs_createdev(pid,abspath,type,ops);
@@ -121,13 +121,13 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 
 	/* validate pointers */
 	if(fdCount == 0 || fdCount > MAX_GETWORK_DEVICES)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EINVAL);
 	if(!paging_isInUserSpace((uintptr_t)drv,sizeof(int)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	if(!paging_isInUserSpace((uintptr_t)id,sizeof(msgid_t)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 	if(!paging_isInUserSpace((uintptr_t)data,size))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* translate to files */
 	for(i = 0; i < fdCount; i++) {
@@ -172,7 +172,7 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 		sProc *p = proc_request(pid,PLOCK_REGIONS);
 		if(!vmm_makeCopySafe(p,drv,sizeof(int))) {
 			proc_release(p,PLOCK_REGIONS);
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			SYSC_ERROR(stack,-EFAULT);
 		}
 		*drv = fds[index];
 		proc_release(p,PLOCK_REGIONS);

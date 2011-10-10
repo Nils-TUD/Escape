@@ -47,7 +47,6 @@ static int guiProc(void);
 static int termThread(void *arg);
 static int shellMain(void);
 
-static tULock vtLock;
 static char *drvName;
 static GUITerm *gt;
 static int childPid;
@@ -154,8 +153,8 @@ static int guiProc(void) {
 	Window w("Shell",100,100,font.getWidth() * DEF_COLS + 2,font.getHeight() * DEF_ROWS + 4);
 	Panel& root = w.getRootPanel();
 	root.getTheme().setPadding(0);
-	ShellControl *sh = new ShellControl(&vtLock,0,0,root.getWidth(),root.getHeight());
-	gt = new GUITerm(&vtLock,sid,sh);
+	ShellControl *sh = new ShellControl(0,0,root.getWidth(),root.getHeight());
+	gt = new GUITerm(sid,sh);
 	if(startThread(termThread,gt) < 0)
 		error("Unable to start term-thread");
 	root.setLayout(new BorderLayout());

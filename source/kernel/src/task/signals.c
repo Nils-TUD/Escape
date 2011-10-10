@@ -28,7 +28,7 @@
 #include <sys/klock.h>
 #include <sys/video.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <assert.h>
 
 #define SIGNAL_COUNT	2048
@@ -78,7 +78,7 @@ int sig_setHandler(tid_t tid,sig_t signal,fSignal func) {
 	s = sig_getThread(tid,true);
 	if(!s) {
 		klock_release(&sigLock);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 	/* set / replace handler */
 	/* note that we discard not yet delivered signals here.. */

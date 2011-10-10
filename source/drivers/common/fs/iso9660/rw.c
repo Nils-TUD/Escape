@@ -24,26 +24,27 @@
 #include "iso9660.h"
 #include "rw.h"
 
-bool iso_rw_readBlocks(sISO9660 *h,void *buffer,block_t start,size_t blockCount) {
+int iso_rw_readBlocks(sISO9660 *h,void *buffer,block_t start,size_t blockCount) {
 	return iso_rw_readSectors(h,buffer,ISO_BLKS_TO_SECS(h,start),ISO_BLKS_TO_SECS(h,blockCount));
 }
 
-bool iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount) {
+int iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount) {
 	ssize_t res;
+	off_t off;
 #if REQ_THREAD_COUNT > 0
 	int fd = h->drvFds[tpool_tidToId(gettid())];
 #else
 	int fd = h->drvFds[0];
 #endif
-	if(seek(fd,lba * ATAPI_SECTOR_SIZE,SEEK_SET) < 0) {
+	if((off = seek(fd,lba * ATAPI_SECTOR_SIZE,SEEK_SET)) < 0) {
 		printe("Unable to seek to %x",lba * ATAPI_SECTOR_SIZE);
-		return false;
+		return off;
 	}
 	res = RETRY(read(fd,buffer,secCount * ATAPI_SECTOR_SIZE));
 	if(res != (ssize_t)secCount * ATAPI_SECTOR_SIZE) {
 		printe("Unable to read %d sectors @ %x: %zd",secCount,lba * ATAPI_SECTOR_SIZE,res);
-		return false;
+		return res;
 	}
 
-	return true;
+	return 0;
 }

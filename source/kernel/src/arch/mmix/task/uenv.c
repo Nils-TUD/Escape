@@ -29,7 +29,7 @@
 #include <sys/cpu.h>
 #include <sys/video.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 #include <assert.h>
 
 #define KEYBOARD_BASE		0x8006000000000000
@@ -190,7 +190,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 					textreg->reg->binary.dev);
 			if(textreg->binFile < 0) {
 				vid_printf("[LOADER] Unable to open path '%s': %s\n",t->proc->command,
-						strerror(textreg->binFile));
+						strerror(-textreg->binFile));
 				return false;
 			}
 		}
@@ -205,7 +205,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 		if((res = vfs_readFile(t->proc->pid,textreg->binFile,&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
 			vid_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",
-					t->proc->command,strerror(res));
+					t->proc->command,strerror(-res));
 			return false;
 		}
 

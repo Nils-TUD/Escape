@@ -37,7 +37,7 @@
 #include <sys/log.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -69,7 +69,7 @@ void util_panic(const char *fmt,...) {
 		do {
 			res = vfs_receiveMsg(KERNEL_PID,file,NULL,NULL,0);
 		}
-		while(res == ERR_INTERRUPTED);
+		while(res == -EINTR);
 		vfs_closeFile(KERNEL_PID,file);
 	}
 	vid_clearScreen();

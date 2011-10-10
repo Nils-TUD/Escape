@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <errors.h>
+#include <errno.h>
 
 #include "speed.h"
 

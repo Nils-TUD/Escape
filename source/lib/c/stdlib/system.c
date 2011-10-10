@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/io.h>
-#include <errors.h>
+#include <errno.h>
 #include <stdlib.h>
 
 int system(const char *cmd) {

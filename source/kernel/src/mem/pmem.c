@@ -26,7 +26,7 @@
 #include <sys/klock.h>
 #include <assert.h>
 #include <string.h>
-#include <errors.h>
+#include <errno.h>
 
 #define DEBUG_ALLOC_N_FREE			0
 #define BITS_PER_BMWORD				(sizeof(tBitmap) * 8)
@@ -95,7 +95,7 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 
 	if(c != count) {
 		klock_release(&pmemLock);
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	}
 
 	/* the bitmap starts managing the memory at itself */

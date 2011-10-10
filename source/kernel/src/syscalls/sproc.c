@@ -36,7 +36,7 @@
 #include <sys/vfs/node.h>
 #include <sys/util.h>
 #include <sys/debug.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 
 int sysc_getpid(sThread *t,sIntrptStackFrame *stack) {
@@ -47,7 +47,7 @@ int sysc_getppid(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	sProc *p = proc_getByPid(pid);
 	if(!p)
-		SYSC_ERROR(stack,ERR_INVALID_PID);
+		SYSC_ERROR(stack,-ESRCH);
 
 	SYSC_RET1(stack,p->parentPid);
 }
@@ -60,7 +60,7 @@ int sysc_setuid(sThread *t,sIntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
 	sProc *p = t->proc;
 	if(p->euid != ROOT_UID)
-		SYSC_ERROR(stack,ERR_NO_PERM);
+		SYSC_ERROR(stack,-EPERM);
 
 	p->ruid = uid;
 	p->euid = uid;
@@ -76,7 +76,7 @@ int sysc_setgid(sThread *t,sIntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
 	sProc *p = t->proc;
 	if(p->euid != ROOT_UID)
-		SYSC_ERROR(stack,ERR_NO_PERM);
+		SYSC_ERROR(stack,-EPERM);
 
 	p->rgid = gid;
 	p->egid = gid;
@@ -93,7 +93,7 @@ int sysc_seteuid(sThread *t,sIntrptStackFrame *stack) {
 	sProc *p = t->proc;
 	/* if not root, it has to be either ruid, euid or suid */
 	if(p->euid != ROOT_UID && uid != p->ruid && uid != p->euid && uid != p->suid)
-		SYSC_ERROR(stack,ERR_NO_PERM);
+		SYSC_ERROR(stack,-EPERM);
 
 	p->euid = uid;
 	SYSC_RET1(stack,0);
@@ -108,7 +108,7 @@ int sysc_setegid(sThread *t,sIntrptStackFrame *stack) {
 	sProc *p = t->proc;
 	/* if not root, it has to be either rgid, egid or sgid */
 	if(p->euid != ROOT_UID && gid != p->rgid && gid != p->egid && gid != p->sgid)
-		SYSC_ERROR(stack,ERR_NO_PERM);
+		SYSC_ERROR(stack,-EPERM);
 
 	p->egid = gid;
 	SYSC_RET1(stack,0);
@@ -119,7 +119,7 @@ int sysc_getgroups(sThread *t,sIntrptStackFrame *stack) {
 	gid_t *list = (gid_t*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	size = groups_get(pid,list,size);
 	SYSC_RET1(stack,size);
@@ -130,10 +130,10 @@ int sysc_setgroups(sThread *t,sIntrptStackFrame *stack) {
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	if(!groups_set(pid,size,list))
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+		SYSC_ERROR(stack,-ENOMEM);
 	SYSC_RET1(stack,0);
 }
 
@@ -157,7 +157,7 @@ int sysc_waitChild(sThread *t,sIntrptStackFrame *stack) {
 	sProc *p = t->proc;
 
 	if(state != NULL && !paging_isInUserSpace((uintptr_t)state,sizeof(sExitState)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	/* check if there is already a dead child-proc */
 	res = proc_getExitState(p->pid,state);
@@ -169,7 +169,7 @@ int sysc_waitChild(sThread *t,sIntrptStackFrame *stack) {
 		ev_removeThread(t);
 		/* don't continue here if we were interrupted by a signal */
 		if(sig_hasSignalFor(t->tid))
-			SYSC_ERROR(stack,ERR_INTERRUPTED);
+			SYSC_ERROR(stack,-EINTR);
 		res = proc_getExitState(p->pid,state);
 		if(res < 0)
 			SYSC_ERROR(stack,res);
@@ -185,11 +185,13 @@ int sysc_getenvito(sThread *t,sIntrptStackFrame *stack) {
 	size_t size = SYSC_ARG2(stack);
 	size_t index = SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
-	if(size == 0 || !paging_isInUserSpace((uintptr_t)buffer,size))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(size == 0)
+		SYSC_ERROR(stack,-EINVAL);
+	if(!paging_isInUserSpace((uintptr_t)buffer,size))
+		SYSC_ERROR(stack,-EFAULT);
 
 	if(!env_geti(pid,index,buffer,size))
-		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
+		SYSC_ERROR(stack,-ENOENT);
 	SYSC_RET1(stack,0);
 }
 
@@ -199,12 +201,14 @@ int sysc_getenvto(sThread *t,sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
 	if(!sysc_isStrInUserSpace(name,NULL))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(size == 0 || !paging_isInUserSpace((uintptr_t)buffer,size))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
+	if(size == 0)
+		SYSC_ERROR(stack,-EINVAL);
+	if(!paging_isInUserSpace((uintptr_t)buffer,size))
+		SYSC_ERROR(stack,-EFAULT);
 
 	if(!env_get(pid,name,buffer,size))
-		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
+		SYSC_ERROR(stack,-ENOENT);
 	SYSC_RET1(stack,0);
 }
 
@@ -213,10 +217,10 @@ int sysc_setenv(sThread *t,sIntrptStackFrame *stack) {
 	const char *value = (const char*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
 	if(!sysc_isStrInUserSpace(name,NULL) || !sysc_isStrInUserSpace(value,NULL))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	if(!env_set(pid,name,value))
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+		SYSC_ERROR(stack,-ENOMEM);
 	SYSC_RET1(stack,0);
 }
 
@@ -226,7 +230,7 @@ int sysc_exec(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
 	int res;
 	if(!sysc_absolutize_path(pathSave,sizeof(pathSave),path))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		SYSC_ERROR(stack,-EFAULT);
 
 	res = proc_exec(pathSave,args,NULL,0);
 	if(res < 0)

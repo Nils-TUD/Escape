@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
-#include <errors.h>
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -53,7 +53,7 @@ int ext2_link_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,sExt2CInode *cnode,con
 	/* read directory-entries */
 	buf = malloc(dirSize + tlen);
 	if(buf == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	if((res = ext2_file_readIno(e,dir,buf,0,dirSize)) != dirSize) {
 		free(buf);
 		return res;
@@ -62,7 +62,7 @@ int ext2_link_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,sExt2CInode *cnode,con
 	/* check if the entry exists */
 	if(ext2_dir_findIn((sExt2DirEntry*)buf,dirSize,name,len) >= 0) {
 		free(buf);
-		return ERR_FILE_EXISTS;
+		return -EEXIST;
 	}
 
 	/* search for a place for our entry */
@@ -123,7 +123,7 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 	/* read directory-entries */
 	buf = malloc(dirSize);
 	if(buf == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		return -ENOMEM;
 	if((res = ext2_file_readIno(e,dir,buf,0,dirSize)) != dirSize) {
 		free(buf);
 		return res;
@@ -144,14 +144,14 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 				cnode = ext2_icache_request(e,ino,IMODE_WRITE);
 				if(cnode == NULL) {
 					free(buf);
-					return ERR_INO_REQ_FAILED;
+					return -ENOBUFS;
 				}
 			}
 			if(!delDir && S_ISDIR(le16tocpu(cnode->inode.mode))) {
 				if(cnode != pdir && cnode != dir)
 					ext2_icache_release(cnode);
 				free(buf);
-				return ERR_IS_DIR;
+				return -EISDIR;
 			}
 			/* if we have a previous one, simply increase its length */
 			if(prev != NULL)
@@ -170,7 +170,7 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 	/* no match? */
 	if(ino == -1) {
 		free(buf);
-		return ERR_PATH_NOT_FOUND;
+		return -ENOENT;
 	}
 
 	/* write it back */

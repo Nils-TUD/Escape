@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <errors.h>
+#include <errno.h>
 
 #define PIC_FREQUENCY				1193180
 #define IOPORT_PIT_SPEAKER			0x42
@@ -81,7 +81,7 @@ int main(void) {
 	while(1) {
 		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
-			if(fd != ERR_INTERRUPTED)
+			if(fd != -EINTR)
 				printe("[SPK] Unable to get work");
 		}
 		else {
@@ -101,7 +101,7 @@ int main(void) {
 				break;
 
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

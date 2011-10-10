@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <errors.h>
+#include <errno.h>
 
 static sMsg msg;
 
@@ -69,7 +69,7 @@ int main(void) {
 				}
 				break;
 				default:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}

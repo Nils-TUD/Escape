@@ -154,7 +154,7 @@ int shell_readLine(char *buffer,size_t max) {
 			continue;
 		cmd = freadesc(stdin,&n1,&n2,&n3);
 		/* skip other escape-codes */
-		if(cmd != ESCC_KEYCODE)
+		if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 			continue;
 
 		if(n3 != 0 || (n1 != '\t' && n1 != '\n' && !isprint(n1))) {

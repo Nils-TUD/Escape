@@ -22,6 +22,7 @@
 #include <esc/driver.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
+#include <esc/esccodes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -31,7 +32,7 @@
 
 #define KB_DATA_BUF_SIZE	128
 
-static void handleKbMessage(sWindow *active,uchar keycode,bool isBreak,uchar modifier,char c);
+static void handleKbMessage(sWindow *active,uchar keycode,uchar modifier,char c);
 
 static volatile bool enabled = false;
 static int drvId;
@@ -69,7 +70,7 @@ int keyboard_start(void *drvIdPtr) {
 			sKmData *kbd = kbData;
 			count /= sizeof(sKmData);
 			while(count-- > 0) {
-				handleKbMessage(active,kbd->keycode,kbd->isBreak,kbd->modifier,kbd->character);
+				handleKbMessage(active,kbd->keycode,kbd->modifier,kbd->character);
 				kbd++;
 			}
 		}
@@ -78,10 +79,10 @@ int keyboard_start(void *drvIdPtr) {
 	return 0;
 }
 
-static void handleKbMessage(sWindow *active,uchar keycode,bool isBreak,uchar modifier,char c) {
+static void handleKbMessage(sWindow *active,uchar keycode,uchar modifier,char c) {
 	int aWin;
 	msg.args.arg1 = keycode;
-	msg.args.arg2 = isBreak;
+	msg.args.arg2 = (modifier & STATE_BREAK) ? 1 : 0;
 	msg.args.arg3 = active->id;
 	msg.args.arg4 = c;
 	msg.args.arg5 = modifier;

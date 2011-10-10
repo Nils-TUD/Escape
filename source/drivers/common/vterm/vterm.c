@@ -40,17 +40,12 @@
 #define VGA_DEVICE		"/dev/video"
 #define VESA_DEVICE		"/dev/vesatext"
 
-/**
- * Updates the cursor
- */
+static void vt_doUpdate(sVTerm *vt);
 static void vt_setCursor(sVTerm *vt);
-/**
- * The thread that updates the titlebars every second and puts the date in
- */
 static int vt_dateThread(void *arg);
 
 /* vterms */
-static tULock titleBarLock;
+static tULock vtLock;
 static sVTerm vterms[VTERM_COUNT];
 static sVTerm *activeVT = NULL;
 static sVTermCfg *config;
@@ -112,22 +107,45 @@ sVTerm *vt_getActive(void) {
 }
 
 void vt_selectVTerm(size_t index) {
-	sVTerm *vt = vterms + index;
-	if(activeVT != NULL)
-		activeVT->active = false;
-	vt->active = true;
-	activeVT = vt;
+	locku(&vtLock);
+	if(!activeVT || activeVT->index != index) {
+		sVTerm *vt = vterms + index;
+		if(activeVT != NULL)
+			activeVT->active = false;
+		vt->active = true;
+		activeVT = vt;
 
-	/* refresh screen and write titlebar */
-	vtctrl_markScrDirty(vt);
-	vt_setCursor(vt);
+		/* refresh screen and write titlebar */
+		locku(&vt->lock);
+		vtctrl_markScrDirty(vt);
+		vt_setCursor(vt);
+		vt_doUpdate(vt);
+		unlocku(&vt->lock);
+	}
+	unlocku(&vtLock);
+}
+
+void vt_enable(void) {
+	sVTerm* vt = vt_getActive();
+	if(vt) {
+		locku(&vt->lock);
+		video_setMode(vt->video);
+		vtctrl_markScrDirty(vt);
+		unlocku(&vt->lock);
+	}
 }
 
 void vt_update(sVTerm *vt) {
-	size_t byteCount;
 	if(!vt->active)
 		return;
 
+	locku(&vt->lock);
+	vt_doUpdate(vt);
+	unlocku(&vt->lock);
+}
+
+static void vt_doUpdate(sVTerm *vt) {
+	size_t byteCount;
 	/* if we should scroll, mark the whole screen (without title) as dirty */
 	if(vt->upScroll != 0) {
 		vt->upStart = MIN(vt->upStart,vt->cols * 2);
@@ -137,7 +155,6 @@ void vt_update(sVTerm *vt) {
 	if(vt->upLength > 0) {
 		/* update title-bar? */
 		if(vt->upStart < vt->cols * 2) {
-			locku(&titleBarLock);
 			byteCount = MIN(vt->cols * 2 - vt->upStart,vt->upLength);
 			if(seek(vt->video,vt->upStart,SEEK_SET) < 0)
 				printe("[VTERM] Unable to seek in video-device to %d",vt->upStart);
@@ -145,7 +162,6 @@ void vt_update(sVTerm *vt) {
 				printe("[VTERM] Unable to write to video-device");
 			vt->upLength -= byteCount;
 			vt->upStart = vt->cols * 2;
-			unlocku(&titleBarLock);
 		}
 
 		/* refresh the rest */
@@ -185,10 +201,11 @@ static int vt_dateThread(A_UNUSED void *arg) {
 			struct tm *date = gmtime(&now);
 			len = strftime(dateStr,sizeof(dateStr),"%a, %d. %b %Y, %H:%M:%S",date);
 
-			/* update all vterm-title-bars; use a lock to prevent race-conditions */
-			locku(&titleBarLock);
+			/* update all vterm-title-bars */
 			for(i = 0; i < VTERM_COUNT; i++) {
-				char *title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
+				char *title;
+				locku(&vterms[i].lock);
+				title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
 				for(j = 0; j < len; j++) {
 					*title++ = dateStr[j];
 					*title++ = LIGHTGRAY | (BLUE << 4);
@@ -199,8 +216,8 @@ static int vt_dateThread(A_UNUSED void *arg) {
 					if(write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2) < 0)
 						printe("[VTERM] Unable to write to video-device");
 				}
+				unlocku(&vterms[i].lock);
 			}
-			unlocku(&titleBarLock);
 		}
 
 		/* wait a second */

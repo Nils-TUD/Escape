@@ -34,16 +34,15 @@ typedef struct {
 	void *d;
 } sGlobalObj;
 
-void __libc_init(void);
-
-static tULock exitLock = 0;
-static size_t exitFuncCount = 0;
-static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
-
 /**
- * Some assembler-instructions to tell the kernel that we've handled a signal
+ * Assembler routines
  */
+extern int _startThread(fThreadEntry entryPoint,void *arg);
 extern void sigRetFunc(void);
+/**
+ * Inits the c-library
+ */
+void __libc_init(void);
 /**
  * Will be called by gcc at the beginning for every global object to register the
  * destructor of the object
@@ -53,6 +52,22 @@ int __cxa_atexit(void (*f)(void *),void *p,void *d);
  * We'll call this function in exit() to call all destructors registered by *atexit()
  */
 void __cxa_finalize(void *d);
+
+static tULock threadLock = 0;
+static size_t threadCount = 1;
+static tULock exitLock = 0;
+static size_t exitFuncCount = 0;
+static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
+
+int startThread(fThreadEntry entryPoint,void *arg) {
+	int res;
+	locku(&threadLock);
+	res = _startThread(entryPoint,arg);
+	if(res >= 0)
+		threadCount++;
+	unlocku(&threadLock);
+	return res;
+}
 
 int __cxa_atexit(void (*f)(void *),void *p,void *d) {
 	locku(&exitLock);
@@ -70,12 +85,14 @@ int __cxa_atexit(void (*f)(void *),void *p,void *d) {
 }
 
 void __cxa_finalize(A_UNUSED void *d) {
+	locku(&threadLock);
 	/* if we're the last thread, call the exit-functions */
-	if(getThreadCount() == 1) {
+	if(--threadCount == 0) {
 		ssize_t i;
 		for(i = exitFuncCount - 1; i >= 0; i--)
 			exitFuncs[i].f(exitFuncs[i].p);
 	}
+	unlocku(&threadLock);
 }
 
 void __libc_init(void) {

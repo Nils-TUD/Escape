@@ -33,8 +33,6 @@
 #include <assert.h>
 #include <errors.h>
 
-#define KSTACK_CURTHREAD_ADDR	(KERNEL_STACK + PAGE_SIZE - sizeof(int))
-
 extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
 extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock);

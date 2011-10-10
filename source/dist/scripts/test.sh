@@ -22,7 +22,7 @@ if ('a' == 'a') then
 	#cat f5.txt | wc &;
 	#echo "bla" | wc &;
 	#cat file.txt > test.txt;
-	echo ($a + 2) hier > "test.txt" 1>&2;
+	echo ($a + 2) hier > "/test.txt" 1>&2;
 	echo hier bin ich; echo ich nicht :P;
 	echo "mein kleiner string
 			bla
@@ -32,11 +32,11 @@ multiline
 singlequote
 string :P';
 	echo "huhu, ich bin der penner!!! a + b";
-	echo "abc ($a + `cat 'file.txt' | wc -c`) und mehr";
+	echo "abc ($a + `cat '/file.txt' | wc -c`) und mehr";
 fi;
 
 for ($x := 0; $x < 5; $x := $x + 1) do
-	cat bigfile | grep "test" | wc;
+	cat /file.txt | grep "test" | wc;
 done;
 
 while ($x > 0) do

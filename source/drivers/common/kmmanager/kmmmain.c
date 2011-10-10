@@ -132,7 +132,6 @@ static int kbClientThread(A_UNUSED void *arg) {
 			bool readable = false;
 			count /= sizeof(sKbData);
 			while(count-- > 0) {
-				data.isBreak = kbd->isBreak;
 				data.keycode = kbd->keycode;
 				/* use the lock while we're using map, rbuf and the events */
 				locku(&lck);

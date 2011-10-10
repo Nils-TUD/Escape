@@ -122,6 +122,8 @@ void vtctrl_destroy(sVTerm *vt) {
 }
 
 bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
+	bool res = false;
+	locku(&vt->lock);
 	if(vt->cols != cols || vt->rows != rows) {
 		size_t c,r,color;
 		size_t ccols = MIN(cols,vt->cols);
@@ -130,12 +132,14 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->buffer = (char*)malloc(rows * HISTORY_SIZE * cols * 2);
 		if(vt->buffer == NULL) {
 			vt->buffer = old;
+			unlocku(&vt->lock);
 			return false;
 		}
 		vt->titleBar = (char*)malloc(cols * 2);
 		if(vt->titleBar == NULL) {
 			vt->titleBar = oldTitle;
 			vt->buffer = old;
+			unlocku(&vt->lock);
 			return false;
 		}
 
@@ -188,13 +192,15 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vtctrl_buildTitle(vt);
 		free(old);
 		free(oldTitle);
-		return true;
+		res = true;
 	}
-	return false;
+	unlocku(&vt->lock);
+	return res;
 }
 
 int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 	int res = 0;
+	locku(&vt->lock);
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
 			vt->shellPid = *(long*)data;
@@ -262,11 +268,13 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 		}
 		break;
 	}
+	unlocku(&vt->lock);
 	return res;
 }
 
 void vtctrl_scroll(sVTerm *vt,int lines) {
-	size_t old = vt->firstVisLine;
+	size_t old;
+	old = vt->firstVisLine;
 	if(lines > 0) {
 		/* ensure that we don't scroll above the first line with content */
 		vt->firstVisLine = MAX((int)vt->firstLine,(int)vt->firstVisLine - lines);

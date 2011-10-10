@@ -172,11 +172,9 @@ typedef struct {
 } sKbData;
 
 typedef struct {
-	/* whether the key was released */
-	uchar isBreak;
 	/* the keycode (see keycodes.h) */
 	uchar keycode;
-	/* modifiers (STATE_CTRL, STATE_SHIFT, STATE_ALT) */
+	/* modifiers (STATE_CTRL, STATE_SHIFT, STATE_ALT, STATE_BREAK) */
 	uchar modifier;
 	/* the character, translated by the current keymap */
 	char character;

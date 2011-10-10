@@ -22,6 +22,7 @@
 #include <esc/driver.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
+#include <esc/esccodes.h>
 #include <stdlib.h>
 #include <errors.h>
 #include <string.h>
@@ -57,8 +58,8 @@ bool events_send(int device,sKmData *km) {
 		sEventListener *l = (sEventListener*)n->data;
 		/* modifiers equal and pressed/released? */
 		if(l->modifier == km->modifier &&
-			(((l->flags & KE_EV_RELEASED) && km->isBreak) ||
-				((l->flags & KE_EV_PRESSED) && !km->isBreak))) {
+			(((l->flags & KE_EV_RELEASED) && (km->modifier & STATE_BREAK)) ||
+				((l->flags & KE_EV_PRESSED) && !(km->modifier & STATE_BREAK)))) {
 			/* character/keycode equal? */
 			if(((l->flags & KE_EV_KEYCODE) && l->key == km->keycode) ||
 					((l->flags & KE_EV_CHARACTER) && l->key == km->character)) {

@@ -38,12 +38,18 @@ extern "C" {
 void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
 
 /**
- * Flushes the readline-buffer
+ * Reads <count> characters from the given vterm into the given buffer.
+ *
+ * @param vt the vterm
+ * @param buffer the buffer to write to (may be NULL)
+ * @param count the number of chars to read
+ * @param avail will be set to true if there is more input available
+ * @return the number of read characters
  */
-void vtin_rlFlushBuf(sVTerm *vt);
+size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,bool *avail);
 
 /**
- * Puts the given charactern into the readline-buffer and handles everything necessary
+ * Puts the given charactern into the readline-buffer and handles everything necessary (unlocked)
  *
  * @param vt the vterm
  * @param c the character

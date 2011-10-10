@@ -38,7 +38,7 @@ extern "C" {
 void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead);
 
 /**
- * Prints the given character to screen
+ * Prints the given character to screen (unlocked)
  *
  * @param vt the vterm
  * @param c the character

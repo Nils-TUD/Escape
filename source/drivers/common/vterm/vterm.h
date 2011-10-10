@@ -46,6 +46,11 @@ sVTerm *vt_get(size_t index);
 void vt_selectVTerm(size_t index);
 
 /**
+ * Enables the vterm and marks the screen of the active one dirty
+ */
+void vt_enable(void);
+
+/**
  * @return the currently active vterm
  */
 sVTerm *vt_getActive(void);

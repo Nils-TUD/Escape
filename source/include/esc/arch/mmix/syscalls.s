@@ -749,9 +749,9 @@ getThreadCount:
 1:
 	POP		1,0							# return value is in $0
 
-.global startThread
-.type startThread, @function
-startThread:
+.global _startThread
+.type _startThread, @function
+_startThread:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_STARTTHREAD,0
 	BZ		$7,1f						# no-error?

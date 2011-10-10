@@ -74,7 +74,7 @@ $syscalls = array(
 	# thread
 	array("gettid","SYSCALL_GETTID"),
 	array("getThreadCount","SYSCALL_GETTHREADCNT"),
-	array("startThread","SYSCALL_STARTTHREAD"),
+	array("_startThread","SYSCALL_STARTTHREAD"),
 	array("_exit","SYSCALL_EXIT"),
 	array("getCycles","SYSCALL_GETCYCLES"),
 	array("yield","SYSCALL_YIELD"),

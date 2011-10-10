@@ -32,90 +32,94 @@
 
 #define RLBUF_INCR			20
 
-/**
- * @return the current position in the readline-buffer
- */
+static void vtin_rlFlushBuf(sVTerm *vt);
 static size_t vtin_rlGetBufPos(sVTerm *vt);
-
-/**
- * Handles the given keycode for readline
- *
- * @return true if handled
- */
 static bool vtin_rlHandleKeycode(sVTerm *vt,uchar keycode);
 
 void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
-	if((modifier & STATE_SHIFT) && vt->navigation) {
-		switch(keycode) {
-			case VK_PGUP:
-				vtctrl_scroll(vt,vt->rows);
-				return;
-			case VK_PGDOWN:
-				vtctrl_scroll(vt,-vt->rows);
-				return;
-			case VK_UP:
-				vtctrl_scroll(vt,1);
-				return;
-			case VK_DOWN:
-				vtctrl_scroll(vt,-1);
-				return;
-		}
-	}
-
-	if(c == 0 || (modifier & (STATE_CTRL | STATE_ALT))) {
-		if(modifier & STATE_CTRL) {
+	locku(&vt->lock);
+	if(!(modifier & STATE_BREAK)) {
+		if((modifier & STATE_SHIFT) && vt->navigation) {
 			switch(keycode) {
-				case VK_C:
-					/* send interrupt to shell */
-					if(vt->shellPid) {
-						if(sendSignalTo(vt->shellPid,SIG_INTRPT) < 0)
-							printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
-					}
+				case VK_PGUP:
+					vtctrl_scroll(vt,vt->rows);
+					unlocku(&vt->lock);
 					return;
-				case VK_D:
-					vt->inbufEOF = true;
-					if(vt->readLine)
-						vtin_rlFlushBuf(vt);
-					if(rb_length(vt->inbuf) == 0)
-						fcntl(vt->sid,F_SETDATA,true);
+				case VK_PGDOWN:
+					vtctrl_scroll(vt,-vt->rows);
+					unlocku(&vt->lock);
+					return;
+				case VK_UP:
+					vtctrl_scroll(vt,1);
+					unlocku(&vt->lock);
+					return;
+				case VK_DOWN:
+					vtctrl_scroll(vt,-1);
+					unlocku(&vt->lock);
 					return;
 			}
 		}
 
-		/* in reading mode? */
-		if(vt->readLine) {
-			if(vt->echo)
-				vtin_rlHandleKeycode(vt,keycode);
+		if(c == 0 || (modifier & (STATE_CTRL | STATE_ALT))) {
+			if(modifier & STATE_CTRL) {
+				switch(keycode) {
+					case VK_C:
+						/* send interrupt to shell */
+						if(vt->shellPid) {
+							if(sendSignalTo(vt->shellPid,SIG_INTRPT) < 0)
+								printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
+						}
+						unlocku(&vt->lock);
+						return;
+					case VK_D:
+						vt->inbufEOF = true;
+						if(vt->readLine)
+							vtin_rlFlushBuf(vt);
+						if(rb_length(vt->inbuf) == 0)
+							fcntl(vt->sid,F_SETDATA,true);
+						unlocku(&vt->lock);
+						return;
+				}
+			}
+
+			/* in reading mode? */
+			if(vt->readLine) {
+				if(vt->echo)
+					vtin_rlHandleKeycode(vt,keycode);
+			}
 		}
+		if(c && vt->readLine)
+			vtin_rlPutchar(vt,c);
 	}
-	if(c && vt->readLine)
-		vtin_rlPutchar(vt,c);
 
 	/* send escape-code when we're not in readline-mode */
 	if(!vt->readLine) {
+		char escape[SSTRLEN("\033[kc;123;123;15]") + 1];
 		/* we want to treat the character as unsigned here and extend it to 32bit */
 		uint code = *(uchar*)&c;
 		bool empty = rb_length(vt->inbuf) == 0;
-		char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
 		snprintf(escape,sizeof(escape),"\033[kc;%u;%u;%u]",code,keycode,modifier);
 		rb_writen(vt->inbuf,escape,strlen(escape));
 		if(empty)
 			fcntl(vt->sid,F_SETDATA,true);
 	}
-	if(vt->echo && vt->setCursor)
-		vt->setCursor(vt);
+	if(!(modifier & STATE_BREAK)) {
+		if(vt->echo && vt->setCursor)
+			vt->setCursor(vt);
+	}
+	unlocku(&vt->lock);
 }
 
-void vtin_rlFlushBuf(sVTerm *vt) {
-	size_t i = 0,len = rb_length(vt->inbuf);
-	while(vt->rlBufPos > 0) {
-		rb_write(vt->inbuf,vt->rlBuffer + i);
-		vt->rlBufPos--;
-		i++;
-	}
-
-	if(len == 0)
-		fcntl(vt->sid,F_SETDATA,true);
+size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,bool *avail) {
+	size_t res = 0;
+	locku(&vt->lock);
+	if(buffer)
+		res = rb_readn(vt->inbuf,buffer,count);
+	if(rb_length(vt->inbuf) == 0)
+		vt->inbufEOF = false;
+	*avail = vt->inbufEOF || rb_length(vt->inbuf) > 0;
+	unlocku(&vt->lock);
+	return res;
 }
 
 void vtin_rlPutchar(sVTerm *vt,char c) {
@@ -185,18 +189,11 @@ void vtin_rlPutchar(sVTerm *vt,char c) {
 			/* echo character, if required */
 			if(vt->echo) {
 				if(moved && !flushed) {
-					size_t count = vt->rlBufPos - bufPos + 1;
-					char *copy = (char*)malloc(count * sizeof(char));
-					if(copy != NULL) {
-						/* print the end of the buffer again */
-						strncpy(copy,vt->rlBuffer + bufPos,count - 1);
-						copy[count - 1] = '\0';
-						vtout_puts(vt,copy,count - 1,false);
-						free(copy);
-
-						/* reset cursor */
-						vt->col = vt->rlStartCol + bufPos + 1;
-					}
+					size_t i,count = vt->rlBufPos - bufPos;
+					for(i = 0; i < count; i++)
+						vtout_putchar(vt,vt->rlBuffer[bufPos + i]);
+					/* reset cursor */
+					vt->col = vt->rlStartCol + bufPos + 1;
 				}
 				else if(c != EOF)
 					vtout_putchar(vt,c);
@@ -206,6 +203,18 @@ void vtin_rlPutchar(sVTerm *vt,char c) {
 		}
 		break;
 	}
+}
+
+static void vtin_rlFlushBuf(sVTerm *vt) {
+	size_t i = 0,len = rb_length(vt->inbuf);
+	while(vt->rlBufPos > 0) {
+		rb_write(vt->inbuf,vt->rlBuffer + i);
+		vt->rlBufPos--;
+		i++;
+	}
+
+	if(len == 0)
+		fcntl(vt->sid,F_SETDATA,true);
 }
 
 static size_t vtin_rlGetBufPos(sVTerm *vt) {

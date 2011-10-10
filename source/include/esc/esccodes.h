@@ -46,6 +46,7 @@
 #define STATE_SHIFT				(1 << 0)
 #define STATE_CTRL				(1 << 1)
 #define STATE_ALT				(1 << 2)
+#define STATE_BREAK				(1 << 3)
 
 #ifdef __cplusplus
 extern "C" {

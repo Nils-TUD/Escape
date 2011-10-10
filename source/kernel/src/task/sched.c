@@ -127,6 +127,13 @@ sThread *sched_perform(sThread *old,uint64_t runtime) {
 	for(i = MAX_PRIO; i >= 0; i--) {
 		t = sched_qDequeue(rdyQueues + i);
 		if(t) {
+			/* if its the old thread again and we have more ready threads, don't take this one again.
+			 * because we assume that thread_switch() has been called for a reason. therefore, it
+			 * should be better to take a thread with a lower priority than taking the same again */
+			if(rdyCount > 1 && t == old) {
+				sched_qAppend(rdyQueues + i,t);
+				continue;
+			}
 			rdyCount--;
 			break;
 		}

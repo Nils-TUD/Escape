@@ -32,7 +32,7 @@ void game_deinit(void);
 
 uint game_getScore(void);
 
-void game_handleKey(uchar keycode,uchar modifiers,uchar isBreak,char c);
+void game_handleKey(uchar keycode,uchar modifiers,A_UNUSED char c);
 
 bool game_tick(time_t time);
 

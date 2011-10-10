@@ -24,6 +24,7 @@
 #include <esc/ringbuffer.h>
 #include <esc/esccodes.h>
 #include <esc/messages.h>
+#include <esc/thread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +55,8 @@ struct sVTerm {
 	uchar index;
 	int sid;
 	char name[MAX_VT_NAME_LEN + 1];
+	/* to lock this vterm */
+	tULock lock;
 	/* function-pointers */
 	fSetCursor setCursor;
 	/* number of cols/rows on the screen */
@@ -156,7 +159,7 @@ bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd);
 int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data);
 
 /**
- * Scrolls the screen by <lines> up (positive) or down (negative)
+ * Scrolls the screen by <lines> up (positive) or down (negative) (unlocked)
  *
  * @param vt the vterm
  * @param lines the number of lines to move
@@ -164,14 +167,14 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data);
 void vtctrl_scroll(sVTerm *vt,int lines);
 
 /**
- * Marks the whole screen including title-bar dirty
+ * Marks the whole screen including title-bar dirty (unlocked)
  *
  * @param vt the vterm
  */
 void vtctrl_markScrDirty(sVTerm *vt);
 
 /**
- * Marks the given range as dirty
+ * Marks the given range as dirty (unlocked)
  *
  * @param vt the vterm
  * @param start the start-position
@@ -180,7 +183,7 @@ void vtctrl_markScrDirty(sVTerm *vt);
 void vtctrl_markDirty(sVTerm *vt,size_t start,size_t length);
 
 /**
- * Releases resources
+ * Releases resources (unlocked)
  *
  * @param vt the vterm
  */

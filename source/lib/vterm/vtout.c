@@ -30,34 +30,14 @@
 #include <vterm/vtin.h>
 #include <vterm/vtctrl.h>
 
-/**
- * Inserts a new line
- *
- * @param vt the vterm
- */
 static void vtout_newLine(sVTerm *vt);
-
-/**
- * Deletes <count> in front of the current position, if possible
- *
- * @param vt the vterm
- * @param count the number of characters
- */
 static void vtout_delete(sVTerm *vt,size_t count);
-
-/**
- * Handles an escape-code
- *
- * @param vt the vterm
- * @param str the string
- * @return true if something has been done
- */
+static void vtout_beep(sVTerm *vt);
 static bool vtout_handleEscape(sVTerm *vt,char **str);
-
-static sMsg msg;
 
 void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	char c,*start = str;
+	locku(&vt->lock);
 
 	/* are we waiting to finish an escape-code? */
 	if(vt->escapePos >= 0) {
@@ -87,8 +67,10 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 				}
 			}
 			/* otherwise try again next time */
-			else
+			else {
+				unlocku(&vt->lock);
 				return;
+			}
 		}
 		/* skip escape-code */
 		str += (escPtr - vt->escapeBuf) - oldLen;
@@ -123,6 +105,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
 		vtctrl_scroll(vt,vt->firstVisLine - vt->currLine);
+	unlocku(&vt->lock);
 }
 
 void vtout_putchar(sVTerm *vt,char c) {
@@ -151,12 +134,8 @@ void vtout_putchar(sVTerm *vt,char c) {
 			break;
 
 		case '\a':
-			/* beep */
-			if(vt->speaker >= 0) {
-				msg.args.arg1 = 1000;
-				msg.args.arg2 = 60;
-				send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
-			}
+			if(vt->speaker >= 0)
+				vtout_beep(vt);
 			break;
 
 		case '\b':
@@ -232,13 +211,16 @@ static void vtout_delete(sVTerm *vt,size_t count) {
 		vtctrl_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
 	}
 	else {
-		/* beep */
-		if(vt->speaker >= 0) {
-			msg.args.arg1 = 1000;
-			msg.args.arg2 = 60;
-			send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
-		}
+		if(vt->speaker >= 0)
+			vtout_beep(vt);
 	}
+}
+
+static void vtout_beep(sVTerm *vt) {
+	sArgsMsg msg;
+	msg.arg1 = 1000;
+	msg.arg2 = 60;
+	send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg));
 }
 
 static bool vtout_handleEscape(sVTerm *vt,char **str) {

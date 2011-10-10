@@ -264,7 +264,7 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 }
 
 uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count) {
-	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE - 1);
+	assert(frames != NULL && count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE - 1);
 	/* the temp-map-area is shared */
 	klock_aquire(&tmpMapLock);
 	paging_map(TEMP_MAP_AREA + PAGE_SIZE,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);

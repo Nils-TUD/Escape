@@ -27,9 +27,9 @@
 
 static int otherThread(void *arg);
 
-/*__thread*/ int t1;
-/*__thread*/ int t2;
-/*__thread*/ int t3 = 12345;
+__thread int t1;
+__thread int t2;
+__thread int t3 = 12345;
 
 int mod_tls(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;

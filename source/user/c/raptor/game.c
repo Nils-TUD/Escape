@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/conf.h>
 #include <esc/keycodes.h>
+#include <esc/esccodes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -70,8 +71,8 @@ uint game_getScore(void) {
 	return score;
 }
 
-void game_handleKey(uchar keycode,A_UNUSED uchar modifiers,uchar isBreak,A_UNUSED char c) {
-	pressed[keycode] = !isBreak;
+void game_handleKey(uchar keycode,uchar modifiers,A_UNUSED char c) {
+	pressed[keycode] = !(modifiers & STATE_BREAK);
 }
 
 bool game_tick(time_t gtime) {

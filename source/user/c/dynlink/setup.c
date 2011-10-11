@@ -52,13 +52,14 @@ uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 }
 
 uintptr_t load_setupProg(int binFd) {
+	sSharedLib *prog;
 	uintptr_t entryPoint;
 	libs = sll_create();
 	if(!libs)
 		load_error("Not enough mem!");
 
 	/* create entry for program */
-	sSharedLib *prog = (sSharedLib*)malloc(sizeof(sSharedLib));
+	prog = (sSharedLib*)malloc(sizeof(sSharedLib));
 	if(!prog)
 		load_error("Not enough mem!");
 	prog->isDSO = false;

@@ -309,9 +309,9 @@ void gdt_init_ap(void) {
 }
 
 cpuid_t gdt_getCPUId(void) {
+	size_t i;
 	sGDTTable tbl;
 	gdt_get(&tbl);
-	size_t i;
 	for(i = 0; i < cpuCount; i++) {
 		if(allgdts[i].offset == tbl.offset)
 			return i;
@@ -325,8 +325,7 @@ sThread *gdt_getRunning(void) {
 	sGDTDesc *gdt;
 	gdt_get(&tbl);
 	gdt = (sGDTDesc*)tbl.offset;
-	uintptr_t addr = (gdt[7].addrHigh << 24) | (gdt[7].addrMiddle << 16) | gdt[7].addrLow;
-	return (sThread*)addr;
+	return (sThread*)((gdt[7].addrHigh << 24) | (gdt[7].addrMiddle << 16) | gdt[7].addrLow);
 }
 
 void gdt_setRunning(cpuid_t id,sThread *t) {

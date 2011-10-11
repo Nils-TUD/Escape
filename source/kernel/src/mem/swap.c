@@ -96,10 +96,10 @@ void swap_start(void) {
 	while(1) {
 		/* swapping out is more important than swapping in to prevent that we run out of memory */
 		if(pmem_getFreeFrames(MM_DEF) < LOW_WATER || neededFrames > HIGH_WATER) {
-			vid_printf("Starting to swap out (%zu free frames; %zu needed)\n",
-					pmem_getFreeFrames(MM_DEF),neededFrames);
 			size_t count = 0;
 			swapping = true;
+			vid_printf("Starting to swap out (%zu free frames; %zu needed)\n",
+					pmem_getFreeFrames(MM_DEF),neededFrames);
 			while(count < MAX_SWAP_AT_ONCE && pmem_getFreeFrames(MM_DEF) < neededFrames) {
 				size_t index = 0,free;
 				sRegion *reg = swap_findVictim(&index);

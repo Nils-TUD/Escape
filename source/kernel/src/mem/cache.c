@@ -67,11 +67,11 @@ static bool aafEnabled = true;
 #endif
 
 void *cache_alloc(size_t size) {
+	size_t i;
 	void *res;
 	if(size == 0)
 		return NULL;
 
-	size_t i;
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
 		size_t objSize = caches[i].objSize;
 		if(objSize >= size) {
@@ -110,19 +110,22 @@ void *cache_calloc(size_t num,size_t size) {
 }
 
 void *cache_realloc(void *p,size_t size) {
+	ulong *area;
+	size_t objSize;
+	void *res;
 	if(p == NULL)
 		return cache_alloc(size);
 
-	ulong *area = (ulong*)p - 2;
+	area = (ulong*)p - 2;
 	/* if the guard is not ours, perhaps it has been allocated on the fallback-heap */
 	if(area[1] != GUARD_MAGIC)
 		return kheap_realloc(p,size);
 
 	assert(area[0] < ARRAY_SIZE(caches));
-	size_t objSize = caches[area[0]].objSize;
+	objSize = caches[area[0]].objSize;
 	if(objSize >= size)
 		return p;
-	void *res = cache_alloc(size);
+	res = cache_alloc(size);
 	if(res) {
 		memcpy(res,p,objSize);
 		cache_free(p);
@@ -131,6 +134,9 @@ void *cache_realloc(void *p,size_t size) {
 }
 
 void cache_free(void *p) {
+	sCache *c;
+	ulong *area = (ulong*)p - 2;
+	size_t objSize;
 	if(p == NULL)
 		return;
 
@@ -151,9 +157,6 @@ void cache_free(void *p) {
 	}
 #endif
 
-	sCache *c;
-	ulong *area = (ulong*)p - 2;
-
 	/* if the guard is not ours, perhaps it has been allocated on the fallback-heap */
 	if(area[1] != GUARD_MAGIC) {
 		kheap_free(p);
@@ -162,7 +165,7 @@ void cache_free(void *p) {
 
 	/* check whether objSize is within the existing sizes */
 	assert(area[0] < ARRAY_SIZE(caches));
-	size_t objSize = caches[area[0]].objSize;
+	objSize = caches[area[0]].objSize;
 	assert(objSize >= caches[0].objSize && objSize <= caches[ARRAY_SIZE(caches) - 1].objSize);
 	/* check guard */
 	assert(area[(objSize / sizeof(ulong)) + 2] == GUARD_MAGIC);

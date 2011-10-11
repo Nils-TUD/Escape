@@ -389,46 +389,46 @@ static void vesa_handlePreviewIntersec(sRectangle *curRec,sRectangle *intersec,s
 
 static void vesa_setPixel16(gpos_t x,gpos_t y,tColor col) {
 	gsize_t xres = minfo->xResolution;
-	if(x >= xres || y >= minfo->yResolution)
-		return;
-	uint16_t *data = (uint16_t*)((uintptr_t)video + (y * xres + x) * 2);
-	uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
-	uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
-	uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
-	uint16_t val = (red << minfo->redFieldPosition) |
-			(green << minfo->greenFieldPosition) |
-			(blue << minfo->blueFieldPosition);
-	*data = val;
+	if(x < xres && y < minfo->yResolution) {
+		uint16_t *data = (uint16_t*)((uintptr_t)video + (y * xres + x) * 2);
+		uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
+		uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
+		uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+		uint16_t val = (red << minfo->redFieldPosition) |
+				(green << minfo->greenFieldPosition) |
+				(blue << minfo->blueFieldPosition);
+		*data = val;
+	}
 }
 
 static void vesa_setPixel24(gpos_t x,gpos_t y,tColor col) {
 	gsize_t xres = minfo->xResolution;
-	if(x >= xres || y >= minfo->yResolution)
-		return;
-	uint8_t *data = (uint8_t*)video + (y * xres + x) * 3;
-	uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
-	uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
-	uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
-	uint32_t val = (red << minfo->redFieldPosition) |
-			(green << minfo->greenFieldPosition) |
-			(blue << minfo->blueFieldPosition);
-	data[2] = val >> 16;
-	data[1] = val >> 8;
-	data[0] = val & 0xFF;
+	if(x < xres && y < minfo->yResolution) {
+		uint8_t *data = (uint8_t*)video + (y * xres + x) * 3;
+		uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
+		uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
+		uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+		uint32_t val = (red << minfo->redFieldPosition) |
+				(green << minfo->greenFieldPosition) |
+				(blue << minfo->blueFieldPosition);
+		data[2] = val >> 16;
+		data[1] = val >> 8;
+		data[0] = val & 0xFF;
+	}
 }
 
 static void vesa_setPixel32(gpos_t x,gpos_t y,tColor col) {
 	gsize_t xres = minfo->xResolution;
-	if(x >= xres || y >= minfo->yResolution)
-		return;
-	uint8_t *data = (uint8_t*)video + (y * xres + x) * 4;
-	uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
-	uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
-	uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
-	uint32_t val = (red << minfo->redFieldPosition) |
-			(green << minfo->greenFieldPosition) |
-			(blue << minfo->blueFieldPosition);
-	*((uint32_t*)data) = val;
+	if(x < xres && y < minfo->yResolution) {
+		uint8_t *data = (uint8_t*)video + (y * xres + x) * 4;
+		uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
+		uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
+		uint8_t blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+		uint32_t val = (red << minfo->redFieldPosition) |
+				(green << minfo->greenFieldPosition) |
+				(blue << minfo->blueFieldPosition);
+		*((uint32_t*)data) = val;
+	}
 }
 
 static void vesa_setPreview(sRectangle *rect,gsize_t thickness) {

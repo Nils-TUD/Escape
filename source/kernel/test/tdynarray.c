@@ -38,10 +38,10 @@ sTestModule tModDynArray = {
 };
 
 static void test_dynarray(void) {
-	test_caseStart("Test various functions");
-
 	size_t i,j;
 	sDynArray da;
+	test_caseStart("Test various functions");
+
 	checkMemoryBefore(true);
 	dyna_start(&da,sizeof(uint),REGION_START,REGION_SIZE);
 

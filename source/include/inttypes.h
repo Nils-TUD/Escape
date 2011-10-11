@@ -17,19 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/esccodes.h>
-#include "iobuf.h"
-#include <stdio.h>
+#ifndef INTTYPES_H_
+#define INTTYPES_H_
 
-int freadesc(FILE *f,int *n1,int *n2,int *n3) {
-	size_t i;
-	char ec,escape[MAX_ESCC_LENGTH];
-	const char *escPtr = (const char*)escape;
-	for(i = 0; i < MAX_ESCC_LENGTH - 1 && (ec = RETERR(bgetc(f))) != ']'; i++)
-		escape[i] = ec;
-	if(i < MAX_ESCC_LENGTH - 1 && ec == ']')
-		escape[i] = ec;
-	escape[i + 1] = '\0';
-	return escc_get(&escPtr,n1,n2,n3);
-}
+#include <esc/common.h>
+
+#endif /* INTTYPES_H_ */

@@ -31,13 +31,15 @@
 static int threadFunc(void *arg);
 
 int mod_fsreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
+	sDirEntry e;
+	DIR *dir;
 	size_t i;
 	for(i = 0; i < THREAD_COUNT; i++) {
 		if(startThread(threadFunc,(void*)"/zeros") < 0)
 			error("Unable to start thread");
 	}
-	sDirEntry e;
-	DIR *dir = opendir("/bin");
+
+	dir = opendir("/bin");
 	for(i = 0; i < THREAD_COUNT; i++) {
 		char *path;
 		if(!readdir(dir,&e))

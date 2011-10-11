@@ -187,13 +187,14 @@ int main(void) {
 
 static void irqHandler(A_UNUSED int sig) {
 	uint8_t status;
+	sMousePacket *pack;
 
 	/* check if there is mouse-data */
 	status = inByte(IOPORT_KB_CTRL);
 	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
 		return;
 
-	sMousePacket *pack = packBuf + packWritePos;
+	pack = packBuf + packWritePos;
 	switch(byteNo) {
 		case 0:
 			pack->status.all = inByte(IOPORT_KB_DATA);
@@ -220,7 +221,7 @@ static void irqHandler(A_UNUSED int sig) {
 }
 
 static void kb_init(void) {
-	uint8_t cmdByte;
+	uint8_t id,cmdByte;
 	/* activate mouse */
 	outByte(IOPORT_KB_CTRL,KBC_CMD_ENABLE_MOUSE);
 	kb_checkCmd();
@@ -249,7 +250,7 @@ static void kb_init(void) {
 	kb_writeMouse(MOUSE_CMD_SETSAMPLE);
 	kb_writeMouse(80);
 	kb_writeMouse(MOUSE_CMD_GETDEVID);
-	uint8_t id = kb_read();
+	id = kb_read();
 	if(id == 3 || id == 4)
 		wheel = true;
 }

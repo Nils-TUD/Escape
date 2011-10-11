@@ -188,8 +188,8 @@ static void pipeThrough(void) {
 		child = fork();
 		if(child == 0) {
 			/* child */
-			close(fd[2]);
 			const char *args[] = {"/bin/wc",NULL};
+			close(fd[2]);
 			redirFd(STDOUT_FILENO,fd[3]);
 			redirFd(STDIN_FILENO,fd[0]);
 			exec(args[0],args);

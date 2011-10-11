@@ -48,6 +48,10 @@ static sMsg msg;
 
 int main(int argc,char *argv[]) {
 	int id;
+	dev_t rootDev;
+	sFSInst *root;
+	msgid_t mid;
+	int fstype;
 
 	if(argc < 4) {
 		printe("Usage: %s <wait> <devicePath> <fsType>",argv[0]);
@@ -64,14 +68,14 @@ int main(int argc,char *argv[]) {
 		error("Unable to start infodev-thread");
 
 	/* create root-fs */
-	int fstype = fslist_getType(argv[3]);
+	fstype = fslist_getType(argv[3]);
 	if(fstype == -1)
 		error("Unable to find filesystem '%s'",argv[3]);
 
-	dev_t rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/",argv[2],fstype);
+	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/",argv[2],fstype);
 	if(rootDev < 0)
 		error("Unable to add root mount-point");
-	sFSInst *root = mount_get(rootDev);
+	root = mount_get(rootDev);
 	if(root == NULL)
 		error("Unable to get root mount-point");
 	cmds_setRoot(rootDev,root);
@@ -87,7 +91,6 @@ int main(int argc,char *argv[]) {
 	if(chmod("/dev/fs",0) < 0)
 		error("Unable to set permissions for /dev/fs");
 
-	msgid_t mid;
 	while(true) {
 		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
 		if(fd < 0) {

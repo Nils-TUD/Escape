@@ -85,8 +85,8 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 static int clientThread(A_UNUSED void *arg) {
 	size_t i;
 	char buf[12] = {0};
-	srand(time(NULL) * gettid());
 	int fd;
+	srand(time(NULL) * gettid());
 	do {
 		fd = open("/dev/bla",IO_READ | IO_WRITE);
 		if(fd < 0)

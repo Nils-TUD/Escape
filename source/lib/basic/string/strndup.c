@@ -28,9 +28,10 @@
 #endif
 
 char *strndup(const char *s,size_t n) {
+	char *res;
 	size_t len = strlen(s);
 	len = MIN(len,n);
-	char *res = (char*)malloc(len + 1);
+	res = (char*)malloc(len + 1);
 	if(res) {
 		strncpy(res,s,len);
 		res[len] = '\0';

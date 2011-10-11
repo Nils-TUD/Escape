@@ -173,8 +173,8 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 		if(shcmd[0]->type == TYPE_BUILTIN || shcmd[0]->type == TYPE_FUNCTION) {
 			/* redirect fds and make a copy of stdin and stdout because we want to keep them :) */
 			/* (no fork here) */
-			pid = 0;
 			int fdout = -1,fdin = -1,fderr = -1;
+			pid = 0;
 			if(redirFdesc->type == REDIR_OUT2ERR) {
 				fdout = dupFd(STDOUT_FILENO);
 				redirFd(STDOUT_FILENO,STDERR_FILENO);
@@ -200,9 +200,10 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			if(shcmd[0]->type == TYPE_BUILTIN)
 				res = shcmd[0]->func(cmd->exprCount,cmd->exprs);
 			else {
+				sFunctionStmt *stmt;
 				sValue *func = env_get(e,shcmd[0]->name);
 				assert(func);
-				sFunctionStmt *stmt = (sFunctionStmt*)val_getFunc(func);
+				stmt = (sFunctionStmt*)val_getFunc(func);
 				res = ast_callFunction(stmt,cmd->exprCount,(const char**)cmd->exprs);
 			}
 

@@ -125,9 +125,10 @@ static void list_createVFSEntry(sPCIDevice *device) {
 	sPCIDeviceInfo *pdev;
 	sPCIClassCode *pclass;
 	char path[MAX_PATH_LEN];
+	FILE *f;
 	snprintf(path,sizeof(path),"/system/devices/pci/%u.%u.%u",
 			device->bus,device->dev,device->func);
-	FILE *f = fopen(path,"w");
+	f = fopen(path,"w");
 	if(f == NULL)
 		error("Unable to open '%s'",path);
 	pven = pci_getVendor(device);

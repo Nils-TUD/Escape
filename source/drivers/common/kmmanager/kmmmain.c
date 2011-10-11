@@ -173,9 +173,10 @@ static void handleKeymap(msgid_t mid,int fd) {
 		break;
 
 		case MSG_KM_SET: {
+			sKeymapEntry *newMap;
 			char *str = msg.str.s1;
 			str[sizeof(msg.str.s1) - 1] = '\0';
-			sKeymapEntry *newMap = km_parse(str);
+			newMap = km_parse(str);
 			if(!newMap)
 				msg.str.arg1 = -EINVAL;
 			else {

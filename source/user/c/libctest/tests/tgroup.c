@@ -43,8 +43,9 @@ static void test_basics(void) {
 	test_caseStart("Testing basics");
 
 	{
+		sGroup *g;
 		oldFree = heapspace();
-		sGroup *g = group_parse("0:root:0",&count);
+		g = group_parse("0:root:0",&count);
 		test_assertTrue(g != NULL);
 		test_assertSize(count,1);
 		if(g) {
@@ -59,8 +60,9 @@ static void test_basics(void) {
 	}
 
 	{
+		sGroup *g;
 		oldFree = heapspace();
-		sGroup *g = group_parse("0:root\n",&count);
+		g = group_parse("0:root\n",&count);
 		test_assertTrue(g != NULL);
 		test_assertSize(count,1);
 		if(g) {
@@ -74,8 +76,9 @@ static void test_basics(void) {
 	}
 
 	{
+		sGroup *g;
 		oldFree = heapspace();
-		sGroup *g = group_parse("0:root:",&count);
+		g = group_parse("0:root:",&count);
 		test_assertTrue(g != NULL);
 		test_assertSize(count,1);
 		if(g) {
@@ -89,8 +92,9 @@ static void test_basics(void) {
 	}
 
 	{
+		sGroup *g;
 		oldFree = heapspace();
-		sGroup *g = group_parse("2444:a:100:200",&count);
+		g = group_parse("2444:a:100:200",&count);
 		test_assertTrue(g != NULL);
 		test_assertSize(count,1);
 		if(g) {
@@ -106,10 +110,11 @@ static void test_basics(void) {
 	}
 
 	{
+		sGroup *g,*res;
 		oldFree = heapspace();
-		sGroup *res = group_parse("1:a:1:2\n\n2:b:4",&count);
+		res = group_parse("1:a:1:2\n\n2:b:4",&count);
 		test_assertSize(count,2);
-		sGroup *g = res;
+		g = res;
 		test_assertTrue(g != NULL);
 		if(g) {
 			test_assertUInt(g->gid,1);
@@ -144,8 +149,9 @@ static void test_errors(void) {
 	test_caseStart("Testing errors");
 
 	for(i = 0; i < ARRAY_SIZE(errors); i++) {
+		sGroup *g;
 		oldFree = heapspace();
-		sGroup *g = group_parse(errors[i],&count);
+		g = group_parse(errors[i],&count);
 		test_assertTrue(g == NULL);
 		test_assertSize(heapspace(),oldFree);
 	}

@@ -62,11 +62,13 @@ void boot_taskStarted(const char *text) {
 }
 
 void boot_taskFinished(void) {
-	finished++;
 	const uint width = BAR_WIDTH - 3;
-	size_t total = bootTaskList.count + bootTaskList.moduleCount;
-	uint percent = KERNEL_PERCENT * ((float)finished / total);
-	uint filled = percent == 0 ? 0 : (uint)(width / (100.0 / percent));
+	size_t total;
+	uint percent,filled;
+	finished++;
+	total = bootTaskList.count + bootTaskList.moduleCount;
+	percent = KERNEL_PERCENT * ((float)finished / total);
+	filled = percent == 0 ? 0 : (uint)(width / (100.0 / percent));
 	vid_goto(BAR_PADY + 1,BAR_PADX + 1);
 	if(filled)
 		vid_printf("\033[co;0;7]%*s\033[co]",filled," ");

@@ -43,8 +43,9 @@ static void test_basics(void) {
 	test_caseStart("Testing basics");
 
 	{
+		sUser *u;
 		oldFree = heapspace();
-		sUser *u = user_parse("0:0:root:root:/root",&count);
+		u = user_parse("0:0:root:root:/root",&count);
 		test_assertTrue(u != NULL);
 		test_assertSize(count,1);
 		if(u) {
@@ -60,8 +61,9 @@ static void test_basics(void) {
 	}
 
 	{
+		sUser *u;
 		oldFree = heapspace();
-		sUser *u = user_parse("122:444:a:b:c",&count);
+		u = user_parse("122:444:a:b:c",&count);
 		test_assertTrue(u != NULL);
 		test_assertSize(count,1);
 		if(u) {
@@ -77,9 +79,10 @@ static void test_basics(void) {
 	}
 
 	{
+		sUser *u,*res;
 		oldFree = heapspace();
-		sUser *res = user_parse("122:4:a:b:c\n\n4:10:test:1:/test",&count);
-		sUser *u = res;
+		res = user_parse("122:4:a:b:c\n\n4:10:test:1:/test",&count);
+		u = res;
 		test_assertTrue(u != NULL);
 		test_assertSize(count,2);
 		if(u) {
@@ -105,9 +108,10 @@ static void test_basics(void) {
 	}
 
 	{
+		sUser *u,*res;
 		oldFree = heapspace();
-		sUser *res = user_parse("0:0:root:root:/root\n1:1:hrniels:test:/home/hrniels\n",&count);
-		sUser *u = res;
+		res = user_parse("0:0:root:root:/root\n1:1:hrniels:test:/home/hrniels\n",&count);
+		u = res;
 		test_assertTrue(u != NULL);
 		test_assertSize(count,2);
 		if(u) {
@@ -152,8 +156,9 @@ static void test_errors(void) {
 	test_caseStart("Testing errors");
 
 	for(i = 0; i < ARRAY_SIZE(errors); i++) {
+		sUser *u;
 		oldFree = heapspace();
-		sUser *u = user_parse(errors[i],&count);
+		u = user_parse(errors[i],&count);
 		test_assertTrue(u == NULL);
 		test_assertSize(heapspace(),oldFree);
 	}

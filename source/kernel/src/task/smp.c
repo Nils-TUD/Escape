@@ -69,8 +69,9 @@ void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 }
 
 void smp_setId(cpuid_t old,cpuid_t new) {
+	sCPU *cpu;
 	assert(new < cpuCount);
-	sCPU *cpu = smp_getCPUById(old);
+	cpu = smp_getCPUById(old);
 	if(cpu)
 		cpu->id = new;
 	if(!cpus) {

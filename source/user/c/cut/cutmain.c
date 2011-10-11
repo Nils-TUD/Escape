@@ -47,6 +47,7 @@ int main(int argc,const char **argv) {
 	int first = 1,last = -1;
 	char *fields = NULL;
 	char *delim = (char*)"\t";
+	const char **args;
 
 	int res = ca_parse(argc,argv,0,"f=s* d=s",&fields,&delim);
 	if(res < 0) {
@@ -58,7 +59,7 @@ int main(int argc,const char **argv) {
 
 	parseFields(fields,&first,&last);
 
-	const char **args = ca_getfree();
+	args = ca_getfree();
 	if(args[0] == NULL) {
 		while(fgetl(line,sizeof(line),stdin))
 			printFields(line,delim,first,last);

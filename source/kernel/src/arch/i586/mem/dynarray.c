@@ -48,6 +48,7 @@ size_t dyna_getTotalPages(void) {
 
 bool dyna_extend(sDynArray *d) {
 	sDynaRegion *reg;
+	uintptr_t addr;
 	klock_aquire(&d->lock);
 
 	reg = d->regions;
@@ -61,7 +62,7 @@ bool dyna_extend(sDynArray *d) {
 		reg->next = NULL;
 	}
 
-	uintptr_t addr = reg->addr + reg->size;
+	addr = reg->addr + reg->size;
 	if(pmem_getFreeFrames(MM_DEF) == 0 || reg->size >= d->areaSize) {
 		klock_release(&d->lock);
 		return false;

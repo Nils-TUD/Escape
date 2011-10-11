@@ -170,8 +170,9 @@ ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,off_t o
 		return 0;
 
 	if(buffer != NULL) {
-		size_t blockSize,blockCount;
+		size_t c,i,leftBytes,blockSize,blockCount;
 		block_t startBlock;
+		uint8_t *bufWork;
 		/* adjust count */
 		if((int32_t)(offset + count) < 0 || (int32_t)(offset + count) >= inoSize)
 			count = inoSize - offset;
@@ -182,8 +183,8 @@ ssize_t ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,off_t o
 		blockCount = (offset + count + blockSize - 1) / blockSize;
 
 		/* use the offset in the first block; after the first one the offset is 0 anyway */
-		size_t c,i,leftBytes = count;
-		uint8_t *bufWork = (uint8_t*)buffer;
+		leftBytes = count;
+		bufWork = (uint8_t*)buffer;
 		for(i = 0; i < blockCount; i++) {
 			/* request block */
 			block_t block = ext2_inode_getDataBlock(e,cnode,startBlock + i);

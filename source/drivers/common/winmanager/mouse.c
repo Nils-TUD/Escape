@@ -50,10 +50,11 @@ int mouse_start(void *drvIdPtr) {
 		if(count < 0)
 			printe("[WINM] Unable to read from mouse");
 		else {
+			sMouseData *msd;
 			if(!win_isEnabled())
 				continue;
 
-			sMouseData *msd = mouseData;
+			msd = mouseData;
 			count /= sizeof(sMouseData);
 			while(count-- > 0) {
 				handleMouseMessage(drvId,msd);

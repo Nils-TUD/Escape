@@ -129,10 +129,11 @@ bool vfs_device_isReadable(const sVFSNode *node) {
 }
 
 int vfs_device_setReadable(sVFSNode *node,bool readable) {
+	bool wasEmpty;
 	sDevice *dev = (sDevice*)node->data;
 	if(!DRV_IMPL(dev->funcs,DEV_READ))
 		return -ENOTSUP;
-	bool wasEmpty = dev->isEmpty;
+	wasEmpty = dev->isEmpty;
 	dev->isEmpty = !readable;
 	if(wasEmpty && readable)
 		vfs_device_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE,true);

@@ -341,7 +341,6 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 }
 
 int proc_clone(uint8_t flags) {
-	assert((flags & P_ZOMBIE) == 0);
 	size_t i;
 	int newPid;
 	sProc *p;
@@ -349,6 +348,7 @@ int proc_clone(uint8_t flags) {
 	sThread *curThread = thread_getRunning();
 	sThread *nt;
 	int res = 0;
+	assert((flags & P_ZOMBIE) == 0);
 	if(!cur)
 		return -ESRCH;
 

@@ -45,6 +45,7 @@ static ulong words = 0;
 int main(int argc,const char *argv[]) {
 	uint flags = 0;
 	bool flines = false,fwords = false,fbytes = false;
+	const char **args;
 
 	int res = ca_parse(argc,argv,0,"w c l",&fwords,&fbytes,&flines);
 	if(res < 0) {
@@ -58,7 +59,7 @@ int main(int argc,const char *argv[]) {
 	else
 		flags = (flines ? WC_LINES : 0) | (fwords ? WC_WORDS : 0) | (fbytes ? WC_BYTES : 0);
 
-	const char **args = ca_getfree();
+	args = ca_getfree();
 	if(!*args)
 		countFile(stdin);
 	else {

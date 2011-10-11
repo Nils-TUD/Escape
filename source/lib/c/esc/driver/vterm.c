@@ -54,9 +54,10 @@ int vterm_restore(int fd) {
 }
 
 int vterm_setShellPid(int fd,pid_t pid) {
+	int res;
 	sDataMsg msg;
 	memcpy(&msg.d,&pid,sizeof(pid_t));
-	int res = send(fd,MSG_VT_SHELLPID,&msg,sizeof(msg));
+	res = send(fd,MSG_VT_SHELLPID,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	res = RETRY(receive(fd,NULL,&msg,sizeof(msg)));

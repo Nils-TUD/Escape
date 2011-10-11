@@ -75,13 +75,13 @@ void *iso_init(const char *device,char **usedDev,int *errcode) {
 	/* otherwise try all possible ATAPI-drives */
 	else {
 		/* just needed if we would have a mount-point on the cd. this can't happen at this point */
+		char path[SSTRLEN("/dev/cda1") + 1];
 		dev_t dev = 0x1234;
 		inode_t ino;
 		sFSUser u;
 		u.uid = ROOT_UID;
 		u.gid = ROOT_GID;
 		u.pid = getpid();
-		char path[SSTRLEN("/dev/cda1") + 1];
 		for(i = 0; i < 4; i++) {
 			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + i);
 			if(iso_setup(path,iso) < 0)

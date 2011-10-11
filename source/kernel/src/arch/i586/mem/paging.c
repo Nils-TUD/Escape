@@ -401,9 +401,10 @@ frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 }
 
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
+	frameno_t frame;
 	tPageDir *pdir = paging_getPageDir();
 	klock_aquire(&pagingLock);
-	frameno_t frame = pmem_allocate();
+	frame = pmem_allocate();
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);

@@ -68,21 +68,23 @@ int main(int argc,const char *argv[]) {
 			error("Unable to open '%s'",outFile);
 	}
 
-	size_t result;
-	void *buffer = malloc(bs);
-	ullong limit = (ullong)count * bs;
-	while(run && (!count || total < limit)) {
-		if((result = fread(buffer,1,bs,in)) == 0)
-			break;
-		if(fwrite(buffer,1,bs,out) == 0)
-			break;
-		total += result;
+	{
+		size_t result;
+		void *buffer = malloc(bs);
+		ullong limit = (ullong)count * bs;
+		while(run && (!count || total < limit)) {
+			if((result = fread(buffer,1,bs,in)) == 0)
+				break;
+			if(fwrite(buffer,1,bs,out) == 0)
+				break;
+			total += result;
+		}
+		if(ferror(in))
+			error("Read failed");
+		if(ferror(out))
+			error("Write failed");
+		free(buffer);
 	}
-	if(ferror(in))
-		error("Read failed");
-	if(ferror(out))
-		error("Write failed");
-	free(buffer);
 
 	printf("Wrote %Lu bytes in %.3lf packages, each %zu bytes long\n",
 			total,total / (double)bs,bs);

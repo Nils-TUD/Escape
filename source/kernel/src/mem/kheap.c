@@ -421,13 +421,14 @@ void kheap_print(void) {
 }
 
 static bool kheap_doAddMemory(uintptr_t addr,size_t size) {
+	sMemArea *area;
 	if(freeList == NULL) {
 		if(!kheap_loadNewAreas())
 			return false;
 	}
 
 	/* take one area from the freelist and put the memory in it */
-	sMemArea *area = freeList;
+	area = freeList;
 	freeList = freeList->next;
 	area->address = (void*)addr;
 	area->size = size;

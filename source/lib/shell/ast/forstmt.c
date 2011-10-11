@@ -36,8 +36,9 @@ sASTNode *ast_createForStmt(sASTNode *initExpr,sASTNode *condExpr,sASTNode *incE
 
 sValue *ast_execForStmt(sEnv *e,sForStmt *n) {
 	/* execute init-statement */
+	sValue *cond;
 	val_destroy(ast_execute(e,n->initExpr));
-	sValue *cond = ast_execute(e,n->condExpr);
+	cond = ast_execute(e,n->condExpr);
 	while(val_isTrue(cond)) {
 		/* execute body */
 		val_destroy(ast_execute(e,n->stmtList));

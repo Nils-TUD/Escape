@@ -46,44 +46,44 @@ static void displ_drawBar(void);
 static void displ_restoreBackup(void);
 static void displ_setBackup(void);
 
-static char airplane[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar airplane[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
 	0xDA, 0x07, 0xC4, 0x07, 0xBF, 0x07,
 	0xB3, 0x07, 0xDB, 0x07, 0xB3, 0x07,
 	0xD4, 0x07, 0xCD, 0x07, 0xBE, 0x07
 };
 
-static char explo1[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar explo1[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
 	0xDA, 0x07, 0xC4, 0x07, 0xBF, 0x07,
 	0xB3, 0x07, 0xB2, 0x0E, 0xB3, 0x07,
 	0xD4, 0x07, 0xCD, 0x07, 0xBE, 0x07
 };
 
-static char explo2[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar explo2[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
 	0xB0, 0x0E, 0xB0, 0x0E, 0xB0, 0x0E,
 	0xB0, 0x0E, 0xB0, 0x0E, 0xB0, 0x0E,
 	0xB0, 0x0E, 0xB0, 0x0E, 0xB0, 0x0E
 };
 
-static char explo3[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar explo3[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
 	0xB1, 0x06, 0xB1, 0x06, 0xB1, 0x06,
 	0xB1, 0x06, 0xB1, 0x06, 0xB1, 0x06,
 	0xB1, 0x06, 0xB1, 0x06, 0xB1, 0x06
 };
 
-static char explo4[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar explo4[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
 	0xB0, 0x08, 0xB0, 0x08, 0xB0, 0x08,
 	0xB0, 0x08, 0xB0, 0x08, 0xB0, 0x08,
 	0xB0, 0x08, 0xB0, 0x08, 0xB0, 0x08
 };
 
-static char bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
+static const uchar bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
 	0x04, 0x04
 };
 
 sVTSize ssize;
 static int video;
-static char *buffer = NULL;
-static char *backup = NULL;
+static uchar *buffer = NULL;
+static uchar *backup = NULL;
 
 bool displ_init(void) {
 	int vidMode = getConf(CONF_BOOT_VIDEOMODE);
@@ -103,12 +103,12 @@ bool displ_init(void) {
 	}
 	/* first line is the title */
 	HEIGHT--;
-	buffer = (char*)malloc(WIDTH * HEIGHT * 2);
+	buffer = (uchar*)malloc(WIDTH * HEIGHT * 2);
 	if(!buffer) {
 		fprintf(stderr,"Unable to alloc mem for buffer\n");
 		return false;
 	}
-	backup = (char*)malloc(WIDTH * HEIGHT * 2);
+	backup = (uchar*)malloc(WIDTH * HEIGHT * 2);
 	if(!backup) {
 		fprintf(stderr,"Unable to alloc mem for backup\n");
 		return false;
@@ -146,7 +146,7 @@ static void displ_drawObjects(void) {
 	int y;
 	sSLNode *n;
 	sObject *o;
-	char *src;
+	uchar *src;
 	sSLList *objects = objlist_get();
 	for(n = sll_begin(objects); n != NULL; n = n->next) {
 		o = (sObject*)n->data;

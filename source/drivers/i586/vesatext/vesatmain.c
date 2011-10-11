@@ -65,7 +65,7 @@ typedef enum {
 	/* 12 */ LIGHTRED,
 	/* 13 */ LIGHTMARGENTA,
 	/* 14 */ LIGHTORANGE,
-	/* 15 */ LIGHTWHITE,
+	/* 15 */ LIGHTWHITE
 } eColor;
 
 typedef uint8_t *(*fSetPixel)(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);

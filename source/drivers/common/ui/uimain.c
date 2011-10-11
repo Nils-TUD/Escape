@@ -52,11 +52,12 @@ static void childTermHandler(A_UNUSED int sig) {
 int main(void) {
 	msgid_t mid;
 	size_t i;
+	int fd;
 	if(setSigHandler(SIG_CHILD_TERM,&childTermHandler) < 0)
 		error("Unable to set SIG_CHILD_TERM-handler");
 
 	/* announce listener */
-	int fd = open("/dev/keyevents",IO_MSGS);
+	fd = open("/dev/keyevents",IO_MSGS);
 	if(fd < 0)
 		error("[UI] Unable to open '/dev/keyevents'");
 	for(i = 0; i < ARRAY_SIZE(keys); i++)

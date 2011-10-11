@@ -54,6 +54,7 @@ void util_panic(const char *fmt,...) {
 	static uint32_t regs[REG_COUNT];
 	const sThread *t = thread_getRunning();
 	va_list ap;
+	file_t file;
 
 	/* at first, halt the other CPUs */
 	smp_haltOthers();
@@ -62,7 +63,7 @@ void util_panic(const char *fmt,...) {
 	/* actually it may fail depending on what caused the panic. this may make it more difficult
 	 * to find the real reason for a failure. so it might be a good idea to turn it off during
 	 * kernel-debugging :) */
-	file_t file = vfs_openPath(KERNEL_PID,VFS_MSGS,"/dev/video");
+	file = vfs_openPath(KERNEL_PID,VFS_MSGS,"/dev/video");
 	if(file >= 0) {
 		ssize_t res;
 		vfs_sendMsg(KERNEL_PID,file,MSG_VID_SETMODE,NULL,0);

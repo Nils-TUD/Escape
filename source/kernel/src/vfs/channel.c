@@ -172,6 +172,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)n->data;
+	sMessage *msg;
 	if(n->name == NULL)
 		return -EDESTROYED;
 
@@ -194,7 +195,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 		list = &(chan->sendList);
 
 	/* create message and copy data to it */
-	sMessage *msg = (sMessage*)cache_alloc(sizeof(sMessage) + size);
+	msg = (sMessage*)cache_alloc(sizeof(sMessage) + size);
 	if(msg == NULL)
 		return -ENOMEM;
 
@@ -330,7 +331,9 @@ invArgs:
 void vfs_chan_print(const sVFSNode *n) {
 	size_t i;
 	sChannel *chan = (sChannel*)n->data;
-	sSLList *lists[] = {chan->sendList,chan->recvList};
+	sSLList *lists[] = {NULL,NULL};
+	lists[0] = chan->sendList;
+	lists[1] = chan->recvList;
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
 		size_t j,count = sll_length(lists[i]);
 		vid_printf("\t\tChannel %s %s: (%zu)\n",n->name,i ? "recvs" : "sends",count);

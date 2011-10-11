@@ -89,15 +89,16 @@ void thread_freeArch(sThread *t) {
 }
 
 int thread_finishClone(sThread *t,sThread *nt) {
-	ulong *src;
+	ulong *src,*dst;
 	size_t i;
+	frameno_t frame;
 	/* ensure that we won't get interrupted */
 	klock_t lock = 0;
 	klock_aquire(&lock);
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
-	ulong *dst = (ulong*)paging_mapToTemp(&frame,1);
+	frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
+	dst = (ulong*)paging_mapToTemp(&frame,1);
 
 	if(thread_save(&nt->save)) {
 		/* child */

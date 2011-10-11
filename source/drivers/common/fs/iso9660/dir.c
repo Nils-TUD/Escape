@@ -120,12 +120,13 @@ inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t
 }
 
 static bool iso_dir_match(const char *user,const char *disk,size_t userLen,size_t diskLen) {
+	size_t rpos;
 	if(*disk == ISO_FILENAME_THIS)
 		return userLen == 1 && strcmp(user,".") == 0;
 	if(*disk == ISO_FILENAME_PARENT)
 		return userLen == 2 && strcmp(user,"..") == 0;
 	/* don't compare volume sequence no */
-	size_t rpos = MIN(diskLen,(size_t)strchri(disk,';'));
+	rpos = MIN(diskLen,(size_t)strchri(disk,';'));
 	if(disk[rpos] != ';')
 		return userLen == diskLen && strncasecmp(disk,user,userLen) == 0;
 	return userLen == rpos && strncasecmp(disk,user,userLen) == 0;

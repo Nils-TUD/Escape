@@ -262,6 +262,7 @@ static void loadDynSection(void) {
 			break;
 	}
 	if(i != eheader.e_phnum) {
+		sElfSHeader *strtabSec,*dynSymSec;
 		/* load it */
 		dynOff = pheader.p_offset;
 		dyn = (sElfDyn*)malloc(pheader.p_filesz);
@@ -270,14 +271,14 @@ static void loadDynSection(void) {
 		readat(pheader.p_offset,dyn,pheader.p_filesz);
 
 		/* load dyn strings */
-		sElfSHeader *strtabSec = getSecByName(".dynstr");
+		strtabSec = getSecByName(".dynstr");
 		dynstrtbl = (char*)malloc(strtabSec->sh_size);
 		if(!dynstrtbl)
 			error("Not enough mem for dyn-strings!");
 		readat(strtabSec->sh_offset,dynstrtbl,strtabSec->sh_size);
 
 		/* load dyn syms */
-		sElfSHeader *dynSymSec = getSecByName(".dynsym");
+		dynSymSec = getSecByName(".dynsym");
 		if(dynSymSec == NULL)
 			error("No dyn-sym-section!?");
 		dynsyms = (sElfSym*)malloc(dynSymSec->sh_size);

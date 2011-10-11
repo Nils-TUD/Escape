@@ -423,8 +423,8 @@ static file_t vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,
 
 	/* if there is no free slot anymore, extend our dyn-array */
 	if(gftFreeList == NULL) {
-		i = gftArray.objCount;
 		file_t j;
+		i = gftArray.objCount;
 		if(!dyna_extend(&gftArray))
 			return -ENFILE;
 		/* put all except i on the freelist */

@@ -34,25 +34,25 @@
  * it does basically cost nothing :) */
 
 /* has to match the node of the sll */
-typedef struct sNode sNode;
-struct sNode {
-	sNode *next;
+typedef struct sListNode sListNode;
+struct sListNode {
+	sListNode *next;
 	const void *data;
 };
 
 static bool initialized = false;
 static sDynArray nodeArray;
-static sNode *freelist = NULL;
+static sListNode *freelist = NULL;
 static klock_t sllnLock;
 
 void *slln_allocNode(size_t size) {
-	sNode *n;
-	assert(sizeof(sNode) == size && offsetof(sSLNode,next) == offsetof(sNode,next));
+	sListNode *n;
+	assert(sizeof(sListNode) == size && offsetof(sSLNode,next) == offsetof(sListNode,next));
 	klock_aquire(&sllnLock);
 	if(freelist == NULL) {
 		size_t i,oldCount;
 		if(!initialized) {
-			dyna_start(&nodeArray,sizeof(sNode),SLLNODE_AREA,SLLNODE_AREA_SIZE);
+			dyna_start(&nodeArray,sizeof(sListNode),SLLNODE_AREA,SLLNODE_AREA_SIZE);
 			initialized = true;
 		}
 		oldCount = nodeArray.objCount;
@@ -73,7 +73,7 @@ void *slln_allocNode(size_t size) {
 }
 
 void slln_freeNode(void *o) {
-	sNode *n = (sNode*)o;
+	sListNode *n = (sListNode*)o;
 	klock_aquire(&sllnLock);
 	n->next = freelist;
 	freelist = n;

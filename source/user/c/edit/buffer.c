@@ -75,8 +75,9 @@ sFileBuffer *buf_get(void) {
 }
 
 void buf_insertAt(int col,int row,char c) {
+	sLine *line;
 	assert(row >= 0 && row < (int)sll_length(buf.lines));
-	sLine *line = (sLine*)sll_get(buf.lines,row);
+	line = (sLine*)sll_get(buf.lines,row);
 	assert(col >= 0 && col <= (int)line->length);
 	if(line->length >= line->size - 1) {
 		line->size *= 2;
@@ -91,9 +92,10 @@ void buf_insertAt(int col,int row,char c) {
 }
 
 void buf_newLine(int col,int row) {
+	sLine *cur,*line;
 	assert(row < (int)sll_length(buf.lines));
-	sLine *cur = sll_get(buf.lines,row);
-	sLine *line = buf_createLine();
+	cur = sll_get(buf.lines,row);
+	line = buf_createLine();
 	if(col < (int)cur->length) {
 		size_t i,moveLen = cur->length - col;
 		/* append to next and remove from current */
@@ -117,9 +119,10 @@ void buf_newLine(int col,int row) {
 }
 
 void buf_moveToPrevLine(int row) {
+	sLine *cur,*prev;
 	assert(row > 0 && row < (int)sll_length(buf.lines));
-	sLine *cur = sll_get(buf.lines,row);
-	sLine *prev = sll_get(buf.lines,row - 1);
+	cur = sll_get(buf.lines,row);
+	prev = sll_get(buf.lines,row - 1);
 	/* append to prev */
 	if(prev->size - prev->length <= cur->length) {
 		prev->size += cur->length;
@@ -136,8 +139,9 @@ void buf_moveToPrevLine(int row) {
 }
 
 void buf_removeCur(int col,int row) {
+	sLine *line;
 	assert(row >= 0 && row < (int)sll_length(buf.lines));
-	sLine *line = (sLine*)sll_get(buf.lines,row);
+	line = (sLine*)sll_get(buf.lines,row);
 	assert(col >= 0 && col <= (int)line->length);
 	col++;
 	if(col > (int)line->length)

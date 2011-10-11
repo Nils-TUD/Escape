@@ -79,10 +79,10 @@ static void client(void) {
 static void server(void) {
 	sIPCMsg msg;
 	msgid_t mid;
-	int dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
+	int fd,dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
 	if(dev < 0)
 		error("Unable to create device");
-	int fd = getWork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
+	fd = getWork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
 	while(1) {
 		if(send(fd,0,&msg,sizeof(msg)) < 0)
 			printe("Message-sending failed");

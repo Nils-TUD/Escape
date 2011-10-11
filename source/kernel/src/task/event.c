@@ -207,10 +207,11 @@ void ev_print(void) {
 		sWait *w = list->begin;
 		vid_printf("\t%s:\n",ev_getName(e));
 		while(w != NULL) {
+			inode_t nodeNo;
 			sThread *t = thread_getById(w->tid);
 			vid_printf("\t\tthread=%d (%d:%s), object=%x",
 					t->tid,t->proc->pid,t->proc->command,w->object);
-			inode_t nodeNo = vfs_node_getNo((sVFSNode*)w->object);
+			nodeNo = vfs_node_getNo((sVFSNode*)w->object);
 			if(vfs_node_isValid(nodeNo))
 				vid_printf("(%s)",vfs_node_getPath(nodeNo));
 			vid_printf("\n");

@@ -63,6 +63,7 @@ int main(int argc,char **argv) {
 	size_t i;
 	msgid_t mid;
 	bool useDma = true;
+	FILE *f;
 
 	if(argc < 2) {
 		printe("Usage: %s <wait> [nodma]",argv[0]);
@@ -81,7 +82,7 @@ int main(int argc,char **argv) {
 	fflush(stdout);
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that all ata-devices are registered */
-	FILE *f = fopen("/system/devices/ata","w");
+	f = fopen("/system/devices/ata","w");
 	fclose(f);
 
 	while(1) {

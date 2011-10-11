@@ -231,12 +231,11 @@ void smp_start(void) {
 		for(i = 0; i < 10000000; i++)
 			;
 
-		uintptr_t dest = TRAMPOLINE_ADDR;
-		memcpy((void*)(dest | KERNEL_AREA),trampoline,ARRAY_SIZE(trampoline));
+		memcpy((void*)(TRAMPOLINE_ADDR | KERNEL_AREA),trampoline,ARRAY_SIZE(trampoline));
 		/* give the trampoline the start-address */
-		*(uint32_t*)((dest | KERNEL_AREA) + 2) = (uint32_t)&apProtMode;
+		*(uint32_t*)((TRAMPOLINE_ADDR | KERNEL_AREA) + 2) = (uint32_t)&apProtMode;
 
-		apic_sendStartupIPI(dest);
+		apic_sendStartupIPI(TRAMPOLINE_ADDR);
 
 		/* wait until all APs are running */
 		total = smp_getCPUCount() - 1;
@@ -264,11 +263,12 @@ static void smp_parseConfTable(sMPConfTableHeader *tbl) {
 	sMPConfProc *proc;
 	sMPConfIOAPIC *ioapic;
 	sMPConfIOIntrptEntry *ioint;
+	uint8_t *ptr;
 
 	if(tbl->signature != MPC_SIGNATURE)
 		util_panic("MP Config Table has invalid signature\n");
 
-	uint8_t *ptr = (uint8_t*)tbl + sizeof(sMPConfTableHeader);
+	ptr = (uint8_t*)tbl + sizeof(sMPConfTableHeader);
 	for(i = 0; i < tbl->entryCount; i++) {
 		switch(*ptr) {
 			case MPCTE_TYPE_PROC:
@@ -305,12 +305,13 @@ static void smp_parseConfTable(sMPConfTableHeader *tbl) {
 
 static sMPFloatPtr *smp_find(void) {
 	sMPFloatPtr *res = NULL;
+	uint16_t memSize;
 	/* first kb of extended bios data area (EBDA) */
 	uint16_t ebda = *(uint16_t*)(KERNEL_AREA | BDA_EBDA);
 	if((res = smp_findIn(KERNEL_AREA | ebda * 16,1024)))
 		return res;
 	/* last kb of base memory */
-	uint16_t memSize = *(uint16_t*)(KERNEL_AREA | BDA_MEMSIZE);
+	memSize = *(uint16_t*)(KERNEL_AREA | BDA_MEMSIZE);
 	if((res = smp_findIn(KERNEL_AREA | (memSize - 1) * 1024,1024)))
 		return res;
 	/* bios rom address space */

@@ -45,9 +45,10 @@ sValue *ast_execFunctionStmt(sEnv *e,sFunctionStmt *n) {
 }
 
 int ast_callFunction(sFunctionStmt *n,int argc,const char **argv) {
+	sValue *v;
 	sEnv *ne = env_create(n->env);
 	env_addArgs(ne,argc,argv);
-	sValue *v = ast_execute(ne,n->stmts);
+	v = ast_execute(ne,n->stmts);
 	val_destroy(v);
 	env_destroy(ne);
 	return 0;

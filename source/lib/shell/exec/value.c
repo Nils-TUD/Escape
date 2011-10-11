@@ -131,9 +131,9 @@ tIntType val_len(const sValue *v) {
 }
 
 sValue *val_sub(const sValue *v,sValue *start,sValue *count) {
-	assert(v->type != VAL_TYPE_FUNC);
 	tIntType istart = start ? val_getInt(start) : 0;
 	tIntType icount = count ? val_getInt(count) : 0;
+	assert(v->type != VAL_TYPE_FUNC);
 	switch(v->type) {
 		case VAL_TYPE_INT:
 		case VAL_TYPE_STR: {
@@ -200,9 +200,9 @@ sValue *val_toa(const sValue *v) {
 	switch(v->type) {
 		case VAL_TYPE_INT:
 		case VAL_TYPE_STR: {
-			res = val_createArray(NULL);
 			char *str = val_getStr(v);
 			char *tok = strtok(str," \n\t\r");
+			res = val_createArray(NULL);
 			while(tok != NULL) {
 				sValue *tokVal = val_createStr(tok);
 				val_append(res,tokVal);

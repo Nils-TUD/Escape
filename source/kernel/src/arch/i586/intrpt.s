@@ -20,6 +20,7 @@
 .global waiting
 .global waitlock
 .global halting
+.global flushed
 .extern apic_eoi
 .extern intrpt_handler
 
@@ -28,6 +29,8 @@ waiting:
 waitlock:
 	.long	0
 halting:
+	.long	0
+flushed:
 	.long	0
 
 # macro to build a default-isr-handler
@@ -106,6 +109,7 @@ BUILD_DEF_ISR 50
 .global isr51
 isr51:
 	pusha
+	# flush TLB
 	mov		%cr3,%eax
 	mov		%eax,%cr3
 	call	apic_eoi
@@ -133,7 +137,7 @@ isr52:
 # IPI: halt
 .global isr53
 isr53:
-	# tell the CPU that requested the wait that we're halting
+	# tell the CPU that requested the halt that we're halting
 	lock
 	add		$1,(halting)
 	# now hlt here with interrupts disabled
@@ -142,12 +146,27 @@ isr53:
 	# not reached
 	jmp		1b
 
+# IPI: flush TLB ack
+.global isr54
+isr54:
+	pusha
+	# flush TLB
+	mov		%cr3,%eax
+	mov		%eax,%cr3
+	# tell the CPU that requested the flush that we've flushed our TLB
+	lock
+	add		$1,(flushed)
+	# continue
+	call	apic_eoi
+	popa
+	iret
+
 # our null-handler for all other interrupts
 .global isrNull
 isrNull:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	pushl	$0						# error-code (no error here)
-	pushl	$54						# the interrupt-number
+	pushl	$55						# the interrupt-number
 	jmp		isrCommon
 
 # syscall

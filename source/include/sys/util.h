@@ -100,6 +100,13 @@ sFuncCall *util_getKernelStackTraceOf(const sThread *t);
 sFuncCall *util_getKernelStackTrace(void);
 
 /**
+ * Prints a short version of the given stack-trace
+ *
+ * @param trace the first function-call (NULL-terminated)
+ */
+void util_printStackTraceShort(const sFuncCall *trace);
+
+/**
  * Prints the given stack-trace
  *
  * @param trace the first function-call (NULL-terminated)

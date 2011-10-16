@@ -99,8 +99,6 @@ struct sThread {
 	uint8_t state;
 	/* the next state it will receive on context-switch */
 	uint8_t newState;
-	/* to lock the attributes of the thread */
-	klock_t lock;
 	/* the current or last cpu that executed this thread */
 	cpuid_t cpu;
 	/* whether signals should be ignored (while being blocked) */
@@ -131,6 +129,11 @@ struct sThread {
 	sSLList termLocks;
 	/* a list of file-usages that should be decremented on thread-termination */
 	sSLList termUsages;
+	/* a list of callbacks that should be called on thread-termination */
+	sSLList termCallbacks;
+	/* a list of currently requested frames, i.e. frames that are not free anymore, but were
+	 * reserved for this thread and have not yet been used */
+	sSLList reqFrames;
 	struct {
 		uint64_t timeslice;
 		/* number of microseconds of runtime this thread has got so far */
@@ -393,6 +396,33 @@ uint64_t thread_getCycles(const sThread *t);
 void thread_updateRuntimes(void);
 
 /**
+ * Reserves <count> frames for the current thread (cur). That means, it swaps in memory, if
+ * necessary, allocates that frames and stores them in the thread. You can get them later with
+ * thread_getFrame(). You can free not needed frames with thread_discardFrames().
+ *
+ * @param cur the current thread
+ * @param count the number of frames to reserve
+ */
+void thread_reserveFrames(sThread *cur,size_t count);
+
+/**
+ * Removes one frame from the collection of frames of the given thread. This will always succeed,
+ * because the function assumes that you have called thread_reserveFrames() previously.
+ *
+ * @param cur the current thread
+ * @return the frame
+ */
+frameno_t thread_getFrame(sThread *cur);
+
+/**
+ * Free's all frames that the given thread has still reserved. This should be done after an
+ * operation that needed more frames to ensure that reserved but not needed frames are free'd.
+ *
+ * @param cur the current thread
+ */
+void thread_discardFrames(sThread *cur);
+
+/**
  * Adds the given lock to the term-lock-list
  *
  * @param cur the current thread
@@ -442,6 +472,22 @@ void thread_addFileUsage(sThread *cur,file_t file);
 void thread_remFileUsage(sThread *cur,file_t file);
 
 /**
+ * Adds the given callback to the callback-list. These will be called on thread-termination.
+ *
+ * @param cur the current thread
+ * @param callback the callback
+ */
+void thread_addCallback(sThread *cur,void (*callback)(void));
+
+/**
+ * Removes the given callback from the callback-list.
+ *
+ * @param cur the current thread
+ * @param callback the callback
+ */
+void thread_remCallback(sThread *cur,void (*callback)(void));
+
+/**
  * Finishes the clone of a thread
  *
  * @param t the original thread
@@ -472,6 +518,11 @@ void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t e
  * @return 0 on success
  */
 int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc);
+
+/**
+ * Determines the number of necessary frames to start a new thread
+ */
+size_t thread_getThreadFrmCnt(void);
 
 /**
  * Clones the architecture-specific attributes of the given thread

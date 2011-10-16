@@ -24,11 +24,12 @@
 #include <sys/task/thread.h>
 #include <esc/sllist.h>
 
-#define IPI_WORK		0x31
-#define IPI_TERM		0x32
-#define IPI_FLUSH_TLB	0x33
-#define IPI_WAIT		0x34
-#define IPI_HALT		0x35
+#define IPI_WORK			0x31
+#define IPI_TERM			0x32
+#define IPI_FLUSH_TLB		0x33
+#define IPI_WAIT			0x34
+#define IPI_HALT			0x35
+#define IPI_FLUSH_TLB_ACK	0x36
 
 #ifdef __i386__
 #include <sys/arch/i586/task/smp.h>
@@ -53,6 +54,7 @@ void smp_schedule(cpuid_t id,sThread *new,uint64_t timestamp);
 void smp_pauseOthers(void);
 void smp_resumeOthers(void);
 void smp_haltOthers(void);
+void smp_ensureTLBFlushed(void);
 void smp_killThread(sThread *t);
 void smp_wakeupCPU(void);
 void smp_flushTLB(tPageDir *pdir);

@@ -48,11 +48,10 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 		if(var != NULL) {
 			bool res = true;
 			if(dst) {
-				sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
-				res = vmm_makeCopySafe(cur,dst,size);
-				if(res)
-					strnzcpy(dst,var->name,size);
-				proc_release(cur,PLOCK_REGIONS);
+				sThread *t = thread_getRunning();
+				thread_addLock(t,p->locks + PLOCK_ENV);
+				strnzcpy(dst,var->name,size);
+				thread_remLock(t,p->locks + PLOCK_ENV);
 			}
 			proc_release(p,PLOCK_ENV);
 			return res;
@@ -77,17 +76,11 @@ bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 		thread_addLock(t,p->locks + PLOCK_ENV);
 		var = env_getOf(p,name);
 		if(var != NULL) {
-			bool res = true;
-			if(dst) {
-				sProc *cur = proc_request(t->proc->pid,PLOCK_REGIONS);
-				res = vmm_makeCopySafe(cur,dst,size);
-				if(res)
-					strnzcpy(dst,var->value,size);
-				proc_release(cur,PLOCK_REGIONS);
-			}
+			if(dst)
+				strnzcpy(dst,var->value,size);
 			thread_remLock(t,p->locks + PLOCK_ENV);
 			proc_release(p,PLOCK_ENV);
-			return res;
+			return true;
 		}
 		thread_remLock(t,p->locks + PLOCK_ENV);
 		if(p->pid == 0) {

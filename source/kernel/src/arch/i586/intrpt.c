@@ -121,7 +121,8 @@ static const sInterrupt intrptList[] = {
 	/* 0x33: IPI_FLUSH_TLB */			{intrpt_exFatal,"Flush TLB IPI",0},	/* not handled here */
 	/* 0x34: IPI_WAIT */				{intrpt_exFatal,"",0},
 	/* 0x35: IPI_HALT */				{intrpt_exFatal,"",0},
-	/* 0x36: isrNull */					{intrpt_exFatal,"",0},
+	/* 0x36: IPI_FLUSH_TLB */			{intrpt_exFatal,"",0},
+	/* 0x37: isrNull */					{intrpt_exFatal,"",0},
 };
 
 /* total number of interrupts */
@@ -160,9 +161,6 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	if(stack->intrptNo == EX_PAGE_FAULT)
 		pfAddrs[t->cpu] = cpu_getCR2();
 
-	if(level == 1)
-		swap_check();
-
 	intrpt = intrptList + stack->intrptNo;
 	if(intrpt->handler)
 		intrpt->handler(t,stack);
@@ -180,6 +178,8 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_exFatal(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+	vid_printf("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
+			t->proc->pid,t->proc->command);
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
 		exCount++;
@@ -242,11 +242,12 @@ static void intrpt_exPageFault(sThread *t,sIntrptStackFrame *stack) {
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!vmm_pagefault(addr)) {
+	if(!vmm_pagefault(addr,stack->errorCode & 0x2)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(addr) < 0) {
 			intrpt_printPFInfo(stack,addr);
-			proc_segFault();
+			/* TODO proc_segFault();*/
+			util_panic("Process segfaulted");
 		}
 	}
 }

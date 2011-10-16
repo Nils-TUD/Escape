@@ -224,7 +224,7 @@ searchBegin:
 void vfs_device_print(sVFSNode *n) {
 	bool isValid;
 	sDevice *dev = (sDevice*)n->data;
-	sVFSNode *chan = vfs_node_openDir(n,true,&isValid);
+	sVFSNode *chan = vfs_node_openDir(n,false,&isValid);
 	if(isValid) {
 		vid_printf("\t%s (%s):\n",n->name,dev->isEmpty ? "empty" : "full");
 		while(chan != NULL) {
@@ -233,7 +233,7 @@ void vfs_device_print(sVFSNode *n) {
 		}
 		vid_printf("\n");
 	}
-	vfs_node_closeDir(n,true);
+	vfs_node_closeDir(n,false);
 }
 
 static void vfs_device_wakeupClients(sVFSNode *node,uint events,bool locked) {

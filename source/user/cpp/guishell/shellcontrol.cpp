@@ -180,6 +180,7 @@ bool ShellControl::setCursor() {
 		size_t cheight = g->getFont().getHeight();
 		uint8_t *buf = (uint8_t*)_vt->buffer + ((_vt->firstVisLine + _lastRow) *
 				_vt->cols + _lastCol) * 2;
+		assert(buf[1] >> 4 < ARRAY_SIZE(COLORS));
 		// clear old cursor
 		g->setColor(COLORS[buf[1] >> 4]);
 		g->fillRect(TEXTSTARTX + _lastCol * cwidth,

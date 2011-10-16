@@ -21,67 +21,85 @@
 #include <sys/mem/swapmap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
+#include <sys/klock.h>
 #include <sys/video.h>
 #include <assert.h>
 
-/* The idea is:
- * We us a bitmap to store which block is free and which is used. Additionally we store the block-
- * number in which a page-content is in the region-flags. This way we simply look in the region-
- * flags to see in which block it is and load the content from there.
- * We don't swap out COW-pages, so that we know that a block is just used by exactly one region.
- * I.e. as soon as a region is removed all blocks in the swapmap are marked as free.
- */
+/* we need to maintain a reference-count here, because if we clone a process and a not-shareable
+ * region contains swapped out pages, multiple regions will a share block. because we have to give
+ * the child-process the content at that point of time, i.e. we can't demand-load it from disk in
+ * this case. that means, both regions have to load this page from the swap-block. */
 
-static uint8_t *bitmap = NULL;
+typedef struct sSwapBlock {
+	uint refCount;
+	struct sSwapBlock *next;
+} sSwapBlock;
+
 static size_t totalBlocks = 0;
 static size_t freeBlocks = 0;
-static ulong nextBlock = 0;
+static sSwapBlock *swapBlocks = NULL;
+static sSwapBlock *freeList = NULL;
+static klock_t swmapLock;
 
 void swmap_init(size_t swapSize) {
+	size_t i;
 	totalBlocks = swapSize / PAGE_SIZE;
 	freeBlocks = totalBlocks;
-	bitmap = cache_calloc(totalBlocks / 8,1);
-	if(bitmap == NULL)
-		util_panic("Unable to allocate swap-bitmap");
+	swapBlocks = cache_alloc(totalBlocks * sizeof(sSwapBlock));
+	if(swapBlocks == NULL)
+		util_panic("Unable to allocate swap-blocks");
+
+	/* build freelist */
+	freeList = swapBlocks + 0;
+	swapBlocks[0].refCount = 0;
+	swapBlocks[0].next = NULL;
+	for(i = 1; i < totalBlocks; i++) {
+		swapBlocks[i].next = freeList;
+		swapBlocks[i].refCount = 0;
+		freeList = swapBlocks + i;
+	}
 }
 
 ulong swmap_alloc(void) {
-	ulong i;
-begin:
-	for(i = nextBlock; i < totalBlocks; ) {
-		size_t idx = i / 8;
-		/* skip this byte if its completly used */
-		if(bitmap[idx] == 0xFF)
-			i += 8 - (i % 8);
-		else {
-			uint32_t bit = 1 << (i % 8);
-			if(!(bitmap[idx] & bit)) {
-				/* mark used */
-				bitmap[idx] |= bit;
-				freeBlocks--;
-				nextBlock = i + 1;
-				return i;
-			}
-			i++;
-		}
+	sSwapBlock *block;
+	klock_aquire(&swmapLock);
+	if(!freeList) {
+		klock_release(&swmapLock);
+		return INVALID_BLOCK;
 	}
-	if(nextBlock != 0) {
-		nextBlock = 0;
-		goto begin;
-	}
-	return INVALID_BLOCK;
+	block = freeList;
+	freeList = freeList->next;
+	block->refCount = 1;
+	freeBlocks--;
+	klock_release(&swmapLock);
+	return block - swapBlocks;
+}
+
+void swmap_incRefs(ulong block) {
+	klock_aquire(&swmapLock);
+	assert(block < totalBlocks && swapBlocks[block].refCount > 0);
+	swapBlocks[block].refCount++;
+	klock_release(&swmapLock);
 }
 
 bool swmap_isUsed(ulong block) {
+	bool res;
+	klock_aquire(&swmapLock);
 	assert(block < totalBlocks);
-	return bitmap[block / 8] & (1 << (block % 8));
+	res = swapBlocks[block].refCount > 0;
+	klock_release(&swmapLock);
+	return res;
 }
 
 void swmap_free(ulong block) {
+	klock_aquire(&swmapLock);
 	assert(block < totalBlocks);
-	bitmap[block / 8] &= ~(1 << (block % 8));
-	nextBlock = block;
-	freeBlocks++;
+	if(--swapBlocks[block].refCount == 0) {
+		swapBlocks[block].next = freeList;
+		freeList = swapBlocks + block;
+		freeBlocks++;
+	}
+	klock_release(&swmapLock);
 }
 
 size_t swmap_freeSpace(void) {

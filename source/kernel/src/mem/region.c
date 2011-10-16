@@ -25,6 +25,7 @@
 #include <sys/klock.h>
 #include <sys/video.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
 /**
@@ -37,6 +38,10 @@
  * swapped, demand-load or demand-zero. Additionally the page-flags store the swap-block if a
  * page is swapped out.
  */
+
+/* TODO perhaps we should count how often a page was swapped out and in? based on this, we could
+ * make a better decision for finding a victim */
+/* TODO or should we count how often a region has been used instead/additionally? */
 
 /* TODO actually, we don't need the page-flags, because every architecture should have enough space
  * in the page-table-entries. That is, for 3/4 flags and the swap-block, if the page is not in
@@ -109,12 +114,15 @@ void reg_destroy(sRegion *reg) {
 	cache_free(reg);
 }
 
-size_t reg_presentPageCount(const sRegion *reg) {
+size_t reg_pageCount(const sRegion *reg,size_t *swapped) {
 	size_t i,c = 0,pcount = BYTES_2_PAGES(reg->byteCount);
 	assert(reg != NULL);
+	*swapped = 0;
 	for(i = 0; i < pcount; i++) {
-		if((reg->pageFlags[i] & (PF_DEMANDLOAD | PF_LOADINPROGRESS)) == 0)
+		if((reg->pageFlags[i] & (PF_DEMANDLOAD | PF_SWAPPED)) == 0)
 			c++;
+		if(reg->pageFlags[i] & PF_SWAPPED)
+			(*swapped)++;
 	}
 	return c;
 }
@@ -142,14 +150,15 @@ bool reg_remFrom(sRegion *reg,const void *p) {
 	return sll_removeFirstWith(reg->procs,(void*)p);
 }
 
-bool reg_grow(sRegion *reg,ssize_t amount) {
+ssize_t reg_grow(sRegion *reg,ssize_t amount) {
 	size_t count = BYTES_2_PAGES(reg->byteCount);
+	ssize_t res = 0;
 	assert((reg->flags & RF_GROWABLE));
 	if(amount > 0) {
 		ssize_t i;
 		ulong *pf = (ulong*)cache_realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(ulong));
 		if(pf == NULL)
-			return false;
+			return -ENOMEM;
 		reg->pfSize += amount;
 		if(reg->flags & RF_GROWS_DOWN) {
 			memmove(pf + amount,pf,count * sizeof(ulong));
@@ -166,17 +175,19 @@ bool reg_grow(sRegion *reg,ssize_t amount) {
 	else {
 		size_t i;
 		if(reg->byteCount < (size_t)-amount * PAGE_SIZE)
-			return false;
+			return -ENOMEM;
 		/* free swapped pages */
 		for(i = count + amount; i < count; i++) {
-			if(reg->pageFlags[i] & PF_SWAPPED)
+			if(reg->pageFlags[i] & PF_SWAPPED) {
 				swmap_free(reg_getSwapBlock(reg,i));
+				res++;
+			}
 		}
 		if(reg->flags & RF_GROWS_DOWN)
 			memmove(reg->pageFlags,reg->pageFlags + -amount,(count + amount) * sizeof(ulong));
 		reg->byteCount -= -amount * PAGE_SIZE;
 	}
-	return true;
+	return res;
 }
 
 sRegion *reg_clone(const void *p,const sRegion *reg) {
@@ -184,6 +195,12 @@ sRegion *reg_clone(const void *p,const sRegion *reg) {
 	assert(!(reg->flags & RF_SHAREABLE));
 	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,0,reg->flags);
 	if(clone) {
+		/* increment references to swap-blocks */
+		size_t i,count = BYTES_2_PAGES(reg->byteCount);
+		for(i = 0; i < count; i++) {
+			if(reg->pageFlags[i] & PF_SWAPPED)
+				swmap_incRefs(reg_getSwapBlock(reg,i));
+		}
 		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize * sizeof(ulong));
 		reg_addTo(clone,p);
 	}
@@ -209,11 +226,10 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt) {
 	prf_sprintf(buf,"\n");
 	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(reg->byteCount));
 	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {
-		prf_sprintf(buf,"\t\t%d: (%p) (swblk %d) %c%c%c%c (%x)\n",i,virt + i * PAGE_SIZE,
+		prf_sprintf(buf,"\t\t%d: (%p) (swblk %d) %c%c%c (%x)\n",i,virt + i * PAGE_SIZE,
 				(reg->pageFlags[i] & PF_SWAPPED) ? reg_getSwapBlock(reg,i) : 0,
 				(reg->pageFlags[i] & PF_COPYONWRITE) ? 'c' : '-',
 				(reg->pageFlags[i] & PF_DEMANDLOAD) ? 'l' : '-',
-				(reg->pageFlags[i] & PF_LOADINPROGRESS) ? 'L' : '-',
 				(reg->pageFlags[i] & PF_SWAPPED) ? 's' : '-',
 			   reg->pageFlags[i]);
 	}

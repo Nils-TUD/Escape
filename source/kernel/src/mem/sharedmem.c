@@ -24,7 +24,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/mutex.h>
 #include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
@@ -67,7 +67,7 @@ static sShMemUser *shm_getUser(const sShMem *mem,pid_t pid);
 
 /* list with all shared memories */
 static sSLList *shareList = NULL;
-static klock_t shmLock;
+static mutex_t shmLock;
 
 void shm_init(void) {
 	shareList = sll_create();
@@ -78,13 +78,19 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	sShMem *mem;
 	uintptr_t start;
 	vmreg_t reg;
+	sThread *t = thread_getRunning();
 
 	/* checks */
 	if(strlen(name) > MAX_SHAREDMEM_NAME)
 		return -ENAMETOOLONG;
-	klock_aquire(&shmLock);
+
+	/* first, reserve memory (swapping) */
+	thread_reserveFrames(t,pageCount);
+
+	mutex_aquire(&shmLock);
 	if(shm_get(name) != NULL) {
-		klock_release(&shmLock);
+		mutex_release(&shmLock);
+		thread_discardFrames(t);
 		return -EEXIST;
 	}
 
@@ -103,8 +109,9 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 		goto errVmm;
 	if(!sll_append(shareList,mem))
 		goto errVmm;
-	vmm_getRegRange(pid,reg,&start,NULL);
-	klock_release(&shmLock);
+	vmm_getRegRange(pid,reg,&start,NULL,true);
+	mutex_release(&shmLock);
+	thread_discardFrames(t);
 	return start / PAGE_SIZE;
 
 errVmm:
@@ -114,7 +121,8 @@ errUList:
 errMem:
 	cache_free(mem);
 errLock:
-	klock_release(&shmLock);
+	mutex_release(&shmLock);
+	thread_discardFrames(t);
 	return -ENOMEM;
 }
 
@@ -123,68 +131,68 @@ ssize_t shm_join(pid_t pid,const char *name) {
 	vmreg_t reg;
 	sShMemUser *owner;
 	sShMem *mem;
-	klock_aquire(&shmLock);
+	mutex_aquire(&shmLock);
 
 	mem = shm_get(name);
 	if(mem == NULL || shm_getUser(mem,pid) != NULL) {
-		klock_release(&shmLock);
+		mutex_release(&shmLock);
 		return -ENOENT;
 	}
 
 	owner = (sShMemUser*)sll_get(mem->users,0);
 	reg = vmm_join(owner->pid,owner->region,pid);
 	if(reg < 0) {
-		klock_release(&shmLock);
+		mutex_release(&shmLock);
 		return -ENOMEM;
 	}
 	if(!shm_addUser(mem,pid,reg)) {
 		vmm_remove(pid,reg);
-		klock_release(&shmLock);
+		mutex_release(&shmLock);
 		return -ENOMEM;
 	}
-	vmm_getRegRange(pid,reg,&start,NULL);
-	klock_release(&shmLock);
+	vmm_getRegRange(pid,reg,&start,NULL,true);
+	mutex_release(&shmLock);
 	return start / PAGE_SIZE;
 }
 
 int shm_leave(pid_t pid,const char *name) {
 	int res;
-	klock_aquire(&shmLock);
+	mutex_aquire(&shmLock);
 	res = shm_doLeave(pid,name);
-	klock_release(&shmLock);
+	mutex_release(&shmLock);
 	return res;
 }
 
 int shm_destroy(pid_t pid,const char *name) {
 	int res;
-	klock_aquire(&shmLock);
+	mutex_aquire(&shmLock);
 	res = shm_doDestroy(pid,name);
-	klock_release(&shmLock);
+	mutex_release(&shmLock);
 	return res;
 }
 
 int shm_cloneProc(pid_t parent,pid_t child) {
 	sSLNode *n;
-	klock_aquire(&shmLock);
+	mutex_aquire(&shmLock);
 	for(n = sll_begin(shareList); n != NULL; n = n->next) {
 		sShMem *mem = (sShMem*)n->data;
 		sShMemUser *user = shm_getUser(mem,parent);
 		if(user) {
 			if(!shm_addUser(mem,child,user->region)) {
-				klock_release(&shmLock);
+				mutex_release(&shmLock);
 				/* remove all already created entries */
 				shm_remProc(child);
 				return -ENOMEM;
 			}
 		}
 	}
-	klock_release(&shmLock);
+	mutex_release(&shmLock);
 	return 0;
 }
 
 void shm_remProc(pid_t pid) {
 	sSLNode *n,*t;
-	klock_aquire(&shmLock);
+	mutex_aquire(&shmLock);
 	for(n = sll_begin(shareList); n != NULL; ) {
 		sShMem *mem = (sShMem*)n->data;
 		if(shm_isOwn(mem,pid)) {
@@ -199,7 +207,7 @@ void shm_remProc(pid_t pid) {
 			n = n->next;
 		}
 	}
-	klock_release(&shmLock);
+	mutex_release(&shmLock);
 }
 
 void shm_print(void) {

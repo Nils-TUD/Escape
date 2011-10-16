@@ -34,32 +34,32 @@
 
 #define DEBUG_PAGEFAULTS		0
 
-#define TRAP_POWER_FAILURE		0	// power failure
-#define TRAP_MEMORY_PARITY		1	// memory parity error
-#define TRAP_NONEX_MEMORY		2	// non-existent memory
-#define TRAP_REBOOT				3	// reboot
-#define TRAP_INTERVAL			7	// interval-counter reached zero
+#define TRAP_POWER_FAILURE		0	/* power failure */
+#define TRAP_MEMORY_PARITY		1	/* memory parity error */
+#define TRAP_NONEX_MEMORY		2	/* non-existent memory */
+#define TRAP_REBOOT				3	/* reboot */
+#define TRAP_INTERVAL			7	/* interval-counter reached zero */
 
-#define TRAP_PRIVILEGED_PC		32	// p: comes from a privileged (negative) virt addr
-#define TRAP_SEC_VIOLATION		33	// s: violates security
-#define TRAP_BREAKS_RULES		34	// b: breaks the rules of MMIX
-#define TRAP_PRIV_INSTR			35	// k: is privileged, for use by the "kernel" only
-#define TRAP_PRIV_ACCESS		36	// n: refers to a negative virtual address
-#define TRAP_PROT_EXEC			37	// x: appears in a page without execute permission
-#define TRAP_PROT_WRITE			38	// w: tries to store to a page without write perm
-#define TRAP_PROT_READ			39	// r: tries to load from a page without read perm
+#define TRAP_PRIVILEGED_PC		32	/* p: comes from a privileged (negative) virt addr */
+#define TRAP_SEC_VIOLATION		33	/* s: violates security */
+#define TRAP_BREAKS_RULES		34	/* b: breaks the rules of MMIX */
+#define TRAP_PRIV_INSTR			35	/* k: is privileged, for use by the "kernel" only */
+#define TRAP_PRIV_ACCESS		36	/* n: refers to a negative virtual address */
+#define TRAP_PROT_EXEC			37	/* x: appears in a page without execute permission */
+#define TRAP_PROT_WRITE			38	/* w: tries to store to a page without write perm */
+#define TRAP_PROT_READ			39	/* r: tries to load from a page without read perm */
 
-#define TRAP_DISK				51	// disk interrupt
-#define TRAP_TIMER				52	// timer interrupt
-#define TRAP_TTY0_XMTR			53	// terminal 0 transmitter interrupt
-#define TRAP_TTY0_RCVR			54	// terminal 0 transmitter interrupt
-#define TRAP_TTY1_XMTR			55	// terminal 1 transmitter interrupt
-#define TRAP_TTY1_RCVR			56	// terminal 1 transmitter interrupt
-#define TRAP_TTY2_XMTR			57	// terminal 2 transmitter interrupt
-#define TRAP_TTY2_RCVR			58	// terminal 2 transmitter interrupt
-#define TRAP_TTY3_XMTR			59	// terminal 3 transmitter interrupt
-#define TRAP_TTY3_RCVR			60	// terminal 3 transmitter interrupt
-#define TRAP_KEYBOARD			61	// keyboard interrupt
+#define TRAP_DISK				51	/* disk interrupt */
+#define TRAP_TIMER				52	/* timer interrupt */
+#define TRAP_TTY0_XMTR			53	/* terminal 0 transmitter interrupt */
+#define TRAP_TTY0_RCVR			54	/* terminal 0 transmitter interrupt */
+#define TRAP_TTY1_XMTR			55	/* terminal 1 transmitter interrupt */
+#define TRAP_TTY1_RCVR			56	/* terminal 1 transmitter interrupt */
+#define TRAP_TTY2_XMTR			57	/* terminal 2 transmitter interrupt */
+#define TRAP_TTY2_RCVR			58	/* terminal 2 transmitter interrupt */
+#define TRAP_TTY3_XMTR			59	/* terminal 3 transmitter interrupt */
+#define TRAP_TTY3_RCVR			60	/* terminal 3 transmitter interrupt */
+#define TRAP_KEYBOARD			61	/* keyboard interrupt */
 
 #define KEYBOARD_BASE			0x8006000000000000
 #define KEYBOARD_CTRL			0
@@ -230,7 +230,7 @@ static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!vmm_pagefault(pfaddr)) {
+	if(!vmm_pagefault(pfaddr,irqNo == TRAP_PROT_WRITE)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
 			pid_t pid = proc_getRunning();

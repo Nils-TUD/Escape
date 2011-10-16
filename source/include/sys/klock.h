@@ -21,10 +21,33 @@
 #define KLOCK_H_
 
 #include <sys/common.h>
+#include <sys/util.h>
+#include <sys/log.h>
 
 #ifdef __i386__
-void klock_aquire(klock_t *l);
-void klock_release(klock_t *l);
+static A_INLINE void klock_aquire(klock_t *l) {
+	__asm__ (
+		"mov	$1,%%ecx;"
+		"1:"
+		"	xor		%%eax,%%eax;"
+		"	lock	cmpxchg %%ecx,(%0);"
+		"	jz		2f;"
+		/* improves the performance and lowers the power-consumption of spinlocks */
+		"	pause;"
+		"	jmp		1b;"
+		"2:;"
+		/* outputs */
+		:
+		/* inputs */
+		: "D" (l)
+		/* eax, ecx and cc will be clobbered; we need memory as well because *l is changed */
+		: "eax", "ecx", "cc", "memory"
+	);
+}
+
+static A_INLINE void klock_release(klock_t *l) {
+	*l = 0;
+}
 #endif
 /* eco32 and mmix do not support smp */
 #ifdef __eco32__

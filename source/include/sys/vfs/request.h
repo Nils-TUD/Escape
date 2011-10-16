@@ -28,20 +28,6 @@
 #define REQ_STATE_WAIT_DATA		1
 #define REQ_STATE_FINISHED		2
 
-/* an entry in the request-list */
-typedef struct sRequest {
-	klock_t lock;
-	sThread *thread;
-	sVFSNode *node;
-	uint8_t state;
-	ulong val1;
-	ulong val2;
-	size_t count;
-	void *data;
-	size_t dsize;
-	struct sRequest *next;
-} sRequest;
-
 /* a request-handler */
 typedef void (*fReqHandler)(sVFSNode *node,const void *data,size_t size);
 

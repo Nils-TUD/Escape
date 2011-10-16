@@ -20,57 +20,39 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
-#include <sys/task/sched.h>
 #include <sys/task/event.h>
-#include <sys/mem/paging.h>
-#include <sys/mem/sharedmem.h>
-#include <sys/mem/kheap.h>
 #include <sys/mem/swap.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/sllnodes.h>
+#include <sys/mem/cache.h>
 #include <sys/vfs/node.h>
 #include <sys/video.h>
 #include <sys/config.h>
+#include <sys/klock.h>
 #include <string.h>
 #include <assert.h>
 
+typedef struct {
+	uintptr_t addr;
+	sThread *thread;
+} sSwapInJob;
+
+/* TODO we can't swap out contiguous allocated frames, right? because we would need exactly this
+ * frame again when swapping in. */
+
 /* TODO we need a way to ask ata for a partition-size */
 #define SWAP_SIZE			(10 * M)
-
-/* TODO we need a different strategie here. to garantee that every memory-request can be served
- * until the main-memory and swap-partition is completely used, we could introduce the following:
- * - this module holds a "border" that specifies the amount of main-memory currently required
- * - EVERY memory allocation announces the number of frames that it needs at first at this module,
- *   i.e. the border is increased.
- * - if required, swapping is performed to make sure that enough memory is available. that means,
- *   this should be done at a place that allows context-switch etc.
- * - as soon as the memory has been allocated with pmem_allocate the border is decreased.
- * - the dynamically extending regions and the heap need a fixed size. that means, the border has
- *   to be set correspondingly to match their needs. this way, they can always simply allocate a
- *   frame and decrease the border, because the memory is always available.
- */
-#define HIGH_WATER			70
-#define LOW_WATER			50
-#define CRIT_WATER			20
-
 #define MAX_SWAP_AT_ONCE	10
-
-#define vid_printf(...)
-
-static void swap_doSwapin(pid_t pid,file_t file,const sProc *p,uintptr_t addr);
-static void swap_doSwapOut(pid_t pid,file_t file,sRegion *reg,size_t index);
-static void swap_setSuspended(const sSLList *procs,bool blocked);
-static sRegion *swap_findVictim(size_t *index);
 
 static bool enabled = false;
 static bool swapping = false;
-static const sProc *swapinProc = NULL;
-static uintptr_t swapinAddr = 0;
-static sThread *swapinThread = NULL;
 static sThread *swapper = NULL;
-static size_t neededFrames = HIGH_WATER;
-/* no heap-usage here */
-static uint8_t buffer[PAGE_SIZE];
+/* TODO calculate that from the available memory */
+static size_t kframes = 1000;
+static size_t uframes = 0;
+static klock_t swapLock;
+static sSLList swapInJobs;
 
 void swap_start(void) {
 	file_t swapFile = -1;
@@ -86,7 +68,10 @@ void swap_start(void) {
 		}
 	}
 
+	/* don't lock that, it might increase the kheap-size */
 	swmap_init(SWAP_SIZE);
+	klock_aquire(&swapLock);
+	sll_init(&swapInJobs,slln_allocNode,slln_freeNode);
 	swapper = t;
 	swapFile = vfs_openPath(swapper->proc->pid,VFS_READ | VFS_WRITE,dev);
 	assert(swapFile >= 0);
@@ -94,219 +79,132 @@ void swap_start(void) {
 
 	/* start main-loop; wait for work */
 	while(1) {
-		/* swapping out is more important than swapping in to prevent that we run out of memory */
-		if(pmem_getFreeFrames(MM_DEF) < LOW_WATER || neededFrames > HIGH_WATER) {
-			size_t count = 0;
+		size_t free = pmem_getFreeFrames(MM_DEF);
+		/* swapping out is more important than swapping in */
+		if((free - kframes) < uframes) {
+			size_t amount = MIN(MAX_SWAP_AT_ONCE,uframes - (free - kframes));
 			swapping = true;
-			vid_printf("Starting to swap out (%zu free frames; %zu needed)\n",
-					pmem_getFreeFrames(MM_DEF),neededFrames);
-			while(count < MAX_SWAP_AT_ONCE && pmem_getFreeFrames(MM_DEF) < neededFrames) {
-				size_t index = 0,free;
-				sRegion *reg = swap_findVictim(&index);
-				if(reg == NULL)
-					util_panic("No process to swap out");
-				swap_doSwapOut(swapper->proc->pid,swapFile,reg,index);
-				/* notify the threads that require the currently available frame-count */
-				free = pmem_getFreeFrames(MM_DEF);
-				if(free > HIGH_WATER)
-					ev_wakeup(EVI_SWAP_FREE,(evobj_t)(free - HIGH_WATER));
-				count++;
-			}
-			/* if we've reached the needed frame-count, reset it */
-			if(pmem_getFreeFrames(MM_DEF) >= neededFrames)
-				neededFrames = HIGH_WATER;
+			klock_release(&swapLock);
+
+			vmm_swapOut(swapper->proc->pid,swapFile,amount);
+
+			klock_aquire(&swapLock);
 			swapping = false;
+			ev_wakeup(EVI_SWAP_FREE,0);
 		}
-		if(swapinProc != NULL) {
+
+		/* handle swap-in-jobs */
+		while(sll_length(&swapInJobs) > 0) {
+			sSwapInJob *job = (sSwapInJob*)sll_removeFirst(&swapInJobs);
 			swapping = true;
-			swap_doSwapin(swapper->proc->pid,swapFile,swapinProc,swapinAddr);
-			ev_wakeupThread(swapinThread,EV_SWAP_DONE);
-			swapinProc = NULL;
+			klock_release(&swapLock);
+
+			vmm_swapIn(swapper->proc->pid,swapFile,job->thread,job->addr);
+
+			klock_aquire(&swapLock);
+			ev_unblock(job->thread);
 			swapping = false;
 		}
 
-		if(pmem_getFreeFrames(MM_DEF) >= LOW_WATER && neededFrames == HIGH_WATER) {
+		if(pmem_getFreeFrames(MM_DEF) - kframes >= uframes) {
 			/* we may receive new work now */
-			ev_wakeup(EVI_SWAP_FREE,0);
 			ev_wait(swapper,EVI_SWAP_WORK,0);
+			klock_release(&swapLock);
 			thread_switch();
+			klock_aquire(&swapLock);
 		}
 	}
 	vfs_closeFile(swapper->proc->pid,swapFile);
+	klock_release(&swapLock);
 }
 
-bool swap_outUntil(size_t frameCount) {
-	size_t free = pmem_getFreeFrames(MM_DEF);
-	sThread *t = thread_getRunning();
-	if(free >= frameCount)
-		return true;
+void swap_reserve(size_t frameCount) {
+	size_t free;
+	sThread *t;
+	klock_aquire(&swapLock);
+	free = pmem_getFreeFrames(MM_DEF);
+	uframes += frameCount;
+	if(free >= frameCount && free - frameCount >= kframes) {
+		klock_release(&swapLock);
+		return;
+	}
 
-	/* TODO finish me */
-	return false;
+	/* swapping disabled or invalid thread? */
+	t = thread_getRunning();
+	if(!enabled || t->tid == ATA_TID || t->tid == swapper->tid)
+		util_panic("Out of memory");
 
-	if(!enabled || !(t->flags & T_IDLE) || t->tid == ATA_TID || t->tid == swapper->tid)
-		return false;
 	do {
 		/* notify swapper-thread */
 		if(!swapping)
 			ev_wakeupThread(swapper,EV_SWAP_WORK);
-		neededFrames += frameCount - free;
-		ev_wait(t,EVI_SWAP_FREE,(evobj_t)(frameCount - free));
+		ev_wait(t,EVI_SWAP_FREE,0);
+		klock_release(&swapLock);
 		thread_switchNoSigs();
-		/* TODO report error if swap-space is full or nothing left to swap */
+		klock_aquire(&swapLock);
 		free = pmem_getFreeFrames(MM_DEF);
 	}
-	while(free < frameCount);
-	return true;
+	while(free - kframes < frameCount);
+	klock_release(&swapLock);
 }
 
-void swap_check(void) {
-	size_t freeFrm;
-	if(!enabled)
-		return;
-
-	freeFrm = pmem_getFreeFrames(MM_DEF);
-	if(freeFrm < LOW_WATER/* || neededFrames < HIGH_WATER*/) {
-		/* TODO finish me */
-		return;
-
-		/* notify swapper-thread */
-		if(/*freeFrm < LOW_WATER && */!swapping)
-			ev_wakeupThread(swapper,EV_SWAP_WORK);
-		/* if we have VERY few frames left, better block this thread until we have high water */
-		if(freeFrm < CRIT_WATER/* || neededFrames < HIGH_WATER*/) {
-			sThread *t = thread_getRunning();
-			/* but its not really helpful to block ata ;) */
-			if(t->tid != ATA_TID && !(t->flags & T_IDLE)) {
-				ev_wait(t,EVI_SWAP_FREE,0);
-				thread_switchNoSigs();
-			}
+frameno_t swap_allocate(bool critical) {
+	frameno_t frm = 0;
+	klock_aquire(&swapLock);
+	if(critical) {
+		if(kframes == 0)
+			util_panic("Not enough kernel-memory");
+		frm = pmem_allocate();
+		kframes--;
+	}
+	else {
+		size_t free = pmem_getFreeFrames(MM_DEF);
+		if(free > kframes) {
+			assert(uframes > 0);
+			frm = pmem_allocate();
+			uframes--;
 		}
 	}
+	klock_release(&swapLock);
+	return frm;
 }
 
-bool swap_in(const sProc *p,uintptr_t addr) {
-	sThread *t = thread_getRunning();
+void swap_free(frameno_t frame,bool critical) {
+	klock_aquire(&swapLock);
+	if(critical)
+		kframes++;
+	pmem_free(frame);
+	klock_release(&swapLock);
+}
+
+bool swap_in(uintptr_t addr) {
+	sThread *t;
+	sSwapInJob *job;
 	if(!enabled)
 		return false;
-	/* wait here until we're alone */
-	while(swapping || swapinProc) {
-		ev_wait(t,EVI_SWAP_FREE,0);
-		thread_switchNoSigs();
-	}
 
-	/* give the swapper work */
-	swapinProc = p;
-	swapinAddr = addr;
-	swapinThread = t;
-	ev_wait(t,EVI_SWAP_DONE,0);
-	ev_wakeupThread(swapper,EV_SWAP_WORK);
+	/* create and append a new swap-in-job */
+	t = thread_getRunning();
+	klock_aquire(&swapLock);
+	job = cache_alloc(sizeof(sSwapInJob));
+	if(!job) {
+		klock_release(&swapLock);
+		return false;
+	}
+	job->addr = addr;
+	job->thread = t;
+	if(!sll_append(&swapInJobs,job)) {
+		cache_free(job);
+		klock_release(&swapLock);
+		return false;
+	}
+	/* notify the swapper, if necessary */
+	if(!swapping)
+		ev_wakeupThread(swapper,EV_SWAP_WORK);
+	/* wait until its done */
+	ev_block(t);
+	klock_release(&swapLock);
 	thread_switchNoSigs();
+	cache_free(job);
 	return true;
-}
-
-static void swap_doSwapin(pid_t pid,file_t file,const sProc *p,uintptr_t addr) {
-	vmreg_t rno = vmm_getRegionOf(p->pid,addr);
-	sVMRegion *vmreg = vmm_getRegion(p->pid,rno);
-	frameno_t frame;
-	ulong block;
-	size_t index;
-	addr &= ~(PAGE_SIZE - 1);
-
-	index = (addr - vmreg->virt) / PAGE_SIZE;
-	swap_setSuspended(vmreg->reg->procs,true);
-
-	/* not swapped anymore? so probably another process has already swapped it in */
-	/* this may actually happen if we want to swap a page of one process in but can't because
-	 * we're swapping out for example. if another process that shares the page with the first
-	 * one wants to swap this page in, too, it will wait as well. When we're done with
-	 * swapping out, one of the processes swaps in. Then the second one wants to swap in
-	 * the same page but doesn't find it in the swapmap since it has already been swapped in */
-	if(!(vmreg->reg->pageFlags[index] & PF_SWAPPED)) {
-		swap_setSuspended(vmreg->reg->procs,false);
-		return;
-	}
-
-	block = reg_getSwapBlock(vmreg->reg,index);
-
-	vid_printf("Swapin %zx:%zu (first=%p %s:%d) from blk %ld...",
-			vmreg->reg,index,addr,p->command,p->pid,block);
-
-	/* read into buffer */
-	assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
-	assert(vfs_readFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
-
-	/* copy into a new frame */
-	if(pmem_getFreeFrames(MM_DEF) == 0)
-		util_panic("No free frame to swap in");
-	frame = pmem_allocate();
-	paging_copyToFrame(frame,buffer);
-
-	/* mark as not-swapped and map into all affected processes */
-	vmm_swapIn(vmreg->reg,index,frame);
-	/* free swap-block */
-	swmap_free(block);
-
-	vid_printf("Done\n");
-	swap_setSuspended(vmreg->reg->procs,false);
-}
-
-static void swap_doSwapOut(pid_t pid,file_t file,sRegion *reg,size_t index) {
-	vmreg_t rno;
-	sVMRegion *vmreg;
-	frameno_t frameNo;
-	ulong block;
-	sProc *first = (sProc*)sll_get(reg->procs,0);
-
-	swap_setSuspended(reg->procs,true);
-	rno = vmm_getRNoByRegion(first->pid,reg);
-	vmreg = vmm_getRegion(first->pid,rno);
-	block = swmap_alloc();
-	vid_printf("Swapout free=%zu %zx:%zu (first=%p %s:%d) to blk %ld...",
-			pmem_getFreeFrames(MM_DEF),reg,index,vmreg->virt + index * PAGE_SIZE,
-			first->command,first->pid,block);
-	assert(block != INVALID_BLOCK);
-
-	/* copy to a temporary buffer because we can't use the temp-area when switching threads */
-	frameNo = paging_getFrameNo(&first->pagedir,vmreg->virt + index * PAGE_SIZE);
-	paging_copyFromFrame(frameNo,buffer);
-
-	/* mark as swapped and unmap from processes */
-	reg_setSwapBlock(reg,index,block);
-	vmm_swapOut(reg,index);
-	pmem_free(frameNo);
-
-	/* write out on disk */
-	assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
-	assert(vfs_writeFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
-
-	vid_printf("Done\n");
-	swap_setSuspended(reg->procs,false);
-}
-
-static void swap_setSuspended(const sSLList *procs,bool blocked) {
-	sSLNode *n,*tn;
-	const sProc *p;
-	const sThread *cur = thread_getRunning();
-	sThread *t;
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		p = (sProc*)n->data;
-		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
-			t = (sThread*)tn->data;
-			if(t->tid != cur->tid) {
-				if(blocked)
-					ev_suspend(t);
-				else
-					ev_unsuspend(t);
-			}
-		}
-	}
-}
-
-static sRegion *swap_findVictim(size_t *index) {
-	sRegion *reg = proc_getLRURegion();
-	if(reg == NULL)
-		return NULL;
-	*index = vmm_getPgIdxForSwap(reg);
-	return reg;
 }

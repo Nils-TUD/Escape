@@ -63,10 +63,6 @@ bool dyna_extend(sDynArray *d) {
 	}
 
 	addr = reg->addr + reg->size;
-	if(pmem_getFreeFrames(MM_DEF) == 0 || reg->size >= d->areaSize) {
-		klock_release(&d->lock);
-		return false;
-	}
 	paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT);
 	memclear((void*)addr,PAGE_SIZE);
 	totalPages++;

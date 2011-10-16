@@ -86,7 +86,6 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 	file_t readFile,writeFile;
 	int kreadFd,kwriteFd;
 	int res;
-	sProc *p;
 
 	/* make sure that the pointers point to userspace */
 	if(!paging_isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
@@ -114,19 +113,10 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,kwriteFd);
 	}
 
-	/* now copy the fds to userspace; ensure that this is safe */
-	p = proc_request(pid,PLOCK_REGIONS);
-	if(!vmm_makeCopySafe(p,readFd,sizeof(int)) || !vmm_makeCopySafe(p,writeFd,sizeof(int))) {
-		proc_release(p,PLOCK_REGIONS);
-		proc_unassocFd(kwriteFd);
-		proc_unassocFd(kreadFd);
-		vfs_closeFile(pid,readFile);
-		vfs_closeFile(pid,writeFile);
-		SYSC_ERROR(stack,-EFAULT);
-	}
+	/* now copy the fds to userspace; this may fail, but we have file-descriptors for the files,
+	 * so the resources will be free'd in any case. */
 	*readFd = kreadFd;
 	*writeFd = kwriteFd;
-	proc_release(p,PLOCK_REGIONS);
 
 	/* yay, we're done! :) */
 	SYSC_RET1(stack,res);
@@ -206,7 +196,6 @@ int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
 	file_t file;
-	sProc *p;
 	if(!paging_isInUserSpace((uintptr_t)pos,sizeof(off_t)))
 		SYSC_ERROR(stack,-EFAULT);
 
@@ -215,14 +204,8 @@ int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
-	p = proc_request(pid,PLOCK_REGIONS);
-	if(!vmm_makeCopySafe(p,pos,sizeof(off_t))) {
-		proc_release(p,PLOCK_REGIONS);
-		proc_relFile(t,file);
-		SYSC_ERROR(stack,-EFAULT);
-	}
+	/* this may fail, but we're requested the file, so it will be released on our termination */
 	*pos = vfs_tell(pid,file);
-	proc_release(p,PLOCK_REGIONS);
 	proc_relFile(t,file);
 	SYSC_RET1(stack,0);
 }
@@ -324,7 +307,7 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
-	res = vfs_sendMsg(pid,file,id,data,size);
+	res = vfs_sendMsg(pid,file,id,data,size,NULL,0,NULL,0);
 	proc_relFile(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);

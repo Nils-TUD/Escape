@@ -81,7 +81,7 @@ static sGFTEntry *gftFreeList;
 static sVFSNode *procsNode;
 static sVFSNode *devNode;
 static klock_t gftLock;
-static klock_t waitLock;
+klock_t waitLock;
 
 void vfs_init(void) {
 	sVFSNode *root,*sys;
@@ -609,7 +609,8 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,USER const void *buffer,size_t count
 	return writtenBytes;
 }
 
-ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_t size) {
+ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size_t size1,
+		USER const void *data2,size_t size2,sRequest **req,size_t reqSize) {
 	ssize_t err;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	sVFSNode *n;
@@ -624,20 +625,11 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data,size_
 	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return -ENOTSUP;
-	/* note the lock-order here! vfs-device does it in the this order, so do we. note also that we
-	 * don't lock the channel for device-messages, because vfs-device has already done that. */
-	if(!IS_DEVICE_MSG(id))
-		vfs_chan_lock(n);
-	klock_aquire(&waitLock);
-	err = vfs_chan_send(pid,file,n,id,data,size);
-	klock_release(&waitLock);
-	if(!IS_DEVICE_MSG(id))
-		vfs_chan_unlock(n);
-
+	err = vfs_chan_send(pid,file,n,id,data1,size1,data2,size2,req,reqSize);
 	if(err == 0 && pid != KERNEL_PID) {
 		sProc *p = proc_getByPid(pid);
 		/* no lock; same reason as above */
-		p->stats.output += size;
+		p->stats.output += size1 + size2;
 	}
 	return err;
 }
@@ -1334,7 +1326,7 @@ size_t vfs_dbg_getGFTEntryCount(void) {
 
 void vfs_printMsgs(void) {
 	bool isValid;
-	sVFSNode *drv = vfs_node_openDir(devNode,true,&isValid);
+	sVFSNode *drv = vfs_node_openDir(devNode,false,&isValid);
 	if(isValid) {
 		vid_printf("Messages:\n");
 		while(drv != NULL) {
@@ -1343,7 +1335,7 @@ void vfs_printMsgs(void) {
 			drv = drv->next;
 		}
 	}
-	vfs_node_closeDir(devNode,true);
+	vfs_node_closeDir(devNode,false);
 }
 
 void vfs_printFile(file_t file) {

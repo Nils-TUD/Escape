@@ -287,12 +287,19 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 	/* tls needs no binary */
 	if(stype == REG_TLS)
 		bindesc = NULL;
+
+	/* regions without binary will not be demand-loaded */
+	if(bindesc == NULL)
+		thread_reserveFrames(t,BYTES_2_PAGES(memsz));
+
 	/* add the region */
 	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
+		thread_discardFrames(t);
 		return res;
 	}
 	if(stype == REG_TLS)
 		thread_setTLSRegion(t,res);
+	thread_discardFrames(t);
 	return stype;
 }

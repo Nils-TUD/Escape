@@ -40,6 +40,13 @@ void swmap_init(size_t swapSize);
 ulong swmap_alloc(void);
 
 /**
+ * Increases the references of the given block
+ *
+ * @param the block-number
+ */
+void swmap_incRefs(ulong block);
+
+/**
  * @param block the block-number
  * @return true if the given block is used
  */

@@ -23,6 +23,9 @@
 #include <sys/common.h>
 #include <sys/printf.h>
 
+/* Determines whether the CPU can write to pages marked read-only */
+#define CR0_WRITE_PROTECT			(1 << 16)
+
 /* Enables the native (internal) mechanism for reporting x87 FPU errors when set;
  * enables the PC-style x87 FPU error reporting mechanism when clear. */
 #define CR0_NUMERIC_ERROR			(1 << 5)

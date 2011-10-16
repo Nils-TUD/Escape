@@ -21,6 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/swap.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/util.h>
@@ -109,7 +110,7 @@ void paging_init(void) {
 	sPDEntry *pd,*pde;
 
 	/* set page-dir of first process */
-	curPDir = (tPageDir)(pmem_allocate() * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	curPDir = (tPageDir)(swap_allocate(true) * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	pd = (sPDEntry*)curPDir;
 	/* clear */
 	memclear(pd,PAGE_SIZE);
@@ -127,7 +128,7 @@ void paging_init(void) {
 	pde = pd + ADDR_TO_PDINDEX(KERNEL_HEAP_START);
 	while(addr < end) {
 		/* get frame and insert into page-dir */
-		frameno_t frame = pmem_allocate();
+		frameno_t frame = swap_allocate(true);
 		pde->ptFrameNo = frame;
 		pde->present = true;
 		pde->writable = true;
@@ -153,16 +154,8 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
 
-	/* frames needed:
-	 * 	- page directory
-	 * 	- kernel-stack page-table
-	 * 	- kernel stack
-	 */
-	if(pmem_getFreeFrames(MM_DEF) < 3)
-		return -ENOMEM;
-
 	/* we need a new page-directory */
-	pdirFrame = pmem_allocate();
+	pdirFrame = swap_allocate(true);
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
 	pd = (sPDEntry*)PAGE_DIR_DIRMAP;
@@ -187,7 +180,7 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
 	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
-	tpd->ptFrameNo = pmem_allocate();
+	tpd->ptFrameNo = swap_allocate(true);
 	tpd->present = true;
 	tpd->writable = true;
 	tpd->exists = true;
@@ -207,9 +200,9 @@ void paging_destroyPDir(tPageDir *pdir) {
 	pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir) + ADDR_TO_PDINDEX(KERNEL_STACK);
 	pde->present = false;
 	pde->exists = false;
-	pmem_free(pde->ptFrameNo);
+	swap_free(pde->ptFrameNo,true);
 	/* free page-dir */
-	pmem_free((*pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT);
+	swap_free((*pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT,true);
 	/* ensure that we don't use it again */
 	otherPDir = 0;
 }
@@ -224,6 +217,14 @@ bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {
 	return pt->present && pt->exists;
 }
 
+uintptr_t paging_getAccess(frameno_t frame) {
+	return frame * PAGE_SIZE | DIR_MAPPED_SPACE;
+}
+
+void paging_removeAccess(void) {
+	/* nothing to do */
+}
+
 frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
@@ -232,7 +233,8 @@ frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
 }
 
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
-	frameno_t frame = pmem_allocate();
+	sThread *t = thread_getRunning();
+	frameno_t frame = thread_getFrame(t);
 	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),buffer,loadCount);
 	return frame;
 }
@@ -313,6 +315,7 @@ sAllocStats paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,s
 	sAllocStats stats = {0,0};
 	uintptr_t ptables = paging_getPTables(pdir);
 	uintptr_t pdirAddr = PAGE_DIR_DIRMAP_OF(*pdir);
+	sThread *t = thread_getRunning();
 	sPDEntry *pde;
 	sPTEntry *pte;
 
@@ -322,7 +325,7 @@ sAllocStats paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,s
 		/* page table not present? */
 		if(!pde->present) {
 			/* get new frame for page-table */
-			pde->ptFrameNo = pmem_allocate();
+			pde->ptFrameNo = swap_allocate(true);
 			pde->present = true;
 			pde->exists = true;
 			/* writable because we want to be able to change PTE's in the PTE-area */
@@ -344,7 +347,10 @@ sAllocStats paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,s
 		/* set frame-number */
 		if(!(flags & PG_KEEPFRM) && (flags & PG_PRESENT)) {
 			if(frames == NULL) {
-				pte->frameNumber = pmem_allocate();
+				if(virt >= KERNEL_AREA)
+					pte->frameNumber = swap_allocate(true);
+				else
+					pte->frameNumber = thread_getFrame(t);
 				stats.frames++;
 			}
 			else {
@@ -389,7 +395,7 @@ sAllocStats paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool fre
 		if(pte->present) {
 			pte->present = false;
 			if(freeFrames) {
-				pmem_free(pte->frameNumber);
+				swap_free(pte->frameNumber,false);
 				stats.frames++;
 			}
 		}
@@ -422,7 +428,7 @@ static size_t paging_remEmptyPt(tPageDir *pdir,uintptr_t ptables,size_t pti) {
 	pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir) + pti;
 	pde->present = false;
 	pde->exists = false;
-	pmem_free(pde->ptFrameNo);
+	swap_free(pde->ptFrameNo,true);
 	if(ptables == MAPPED_PTS_START)
 		paging_flushPageTable(virt,ptables);
 	else

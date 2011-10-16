@@ -33,6 +33,7 @@ int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	ssize_t oldEnd;
 	vmreg_t rno = RNO_DATA;
+
 	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
 	if(!vmm_exists(pid,rno)) {
 		/* if so, grow that region instead */
@@ -40,7 +41,14 @@ int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
 		if(rno == -1)
 			SYSC_ERROR(stack,-ENOMEM);
 	}
-	if((oldEnd = vmm_grow(pid,rno,count)) < 0)
+
+	if(count > 0)
+		thread_reserveFrames(t,count);
+	oldEnd = vmm_grow(pid,rno,count);
+	if(count > 0)
+		thread_discardFrames(t);
+
+	if(oldEnd < 0)
 		SYSC_ERROR(stack,oldEnd);
 	SYSC_RET1(stack,oldEnd);
 }
@@ -96,7 +104,7 @@ int sysc_addRegion(sThread *t,sIntrptStackFrame *stack) {
 	/* save tls-region-number */
 	if(type == REG_TLS)
 		thread_setTLSRegion(t,rno);
-	vmm_getRegRange(pid,rno,&start,0);
+	vmm_getRegRange(pid,rno,&start,0,true);
 	SYSC_RET1(stack,start);
 }
 
@@ -105,7 +113,6 @@ int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack) {
 	uintptr_t addr = SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 	ulong flags = 0;
-	vmreg_t rno;
 	int res;
 
 	if(!(prot & (PROT_WRITE | PROT_READ)))
@@ -113,11 +120,7 @@ int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack) {
 	if(prot & PROT_WRITE)
 		flags |= RF_WRITABLE;
 
-	rno = vmm_getRegionOf(pid,addr);
-	if(rno < 0)
-		SYSC_ERROR(stack,-ENXIO);
-
-	res = vmm_setRegProt(pid,rno,flags);
+	res = vmm_setRegProt(pid,addr,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -129,7 +132,6 @@ int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
 	size_t align = SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
 	uintptr_t addr,physCpy = *phys;
-	sProc *p;
 
 	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -147,14 +149,7 @@ int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
 	addr = vmm_addPhys(pid,&physCpy,bytes,align);
 	if(addr == 0)
 		SYSC_ERROR(stack,-ENOMEM);
-
-	p = proc_request(pid,PLOCK_REGIONS);
-	if(!vmm_makeCopySafe(p,phys,sizeof(uintptr_t))) {
-		proc_release(p,PLOCK_REGIONS);
-		SYSC_ERROR(stack,-EFAULT);
-	}
 	*phys = physCpy;
-	proc_release(p,PLOCK_REGIONS);
 	SYSC_RET1(stack,addr);
 }
 

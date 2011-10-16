@@ -47,11 +47,13 @@
 #define REG_DLDATA			10
 #define REG_PHYS			11
 
-typedef struct {
+typedef struct sVMRegion {
 	sRegion *reg;
 	uintptr_t virt;
+	sProc *proc;
 	/* file for the binary (valid if >= 0) */
 	file_t binFile;
+	struct sVMRegion *next;
 } sVMRegion;
 
 /**
@@ -94,35 +96,34 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align);
 vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type);
 
 /**
- * Changes the protection-settings of the given region. This is not possible for TLS-, stack-
+ * Changes the protection-settings of the region @ <addr>. This is not possible for TLS-, stack-
  * and nofree-regions.
  *
  * @param pid the process-id
- * @param rno the region-number
+ * @param addr the virtual address
  * @param flags the new flags (RF_WRITABLE or 0)
  * @return 0 on success
  */
-int vmm_setRegProt(pid_t pid,vmreg_t rno,ulong flags);
+int vmm_setRegProt(pid_t pid,uintptr_t addr,ulong flags);
 
 /**
- * Swaps the page at given index in given region out. I.e. it marks the page as swapped in the
- * region and unmaps it from all affected processes.
- * Does NOT free the frame!
+ * Swaps <count> pages out. It searches for the best suited page to swap out.
  *
- * @param reg the region
- * @param index the page-index in the region
+ * @param pid the process-id for writing the page-content to <file>
+ * @param file the file to write to
+ * @param count the number of pages to swap out
  */
-void vmm_swapOut(sRegion *reg,size_t index);
+void vmm_swapOut(pid_t pid,file_t file,size_t count);
 
 /**
- * Swaps the page at given index in given region in. I.e. it marks the page as not-swapped in
- * the region and maps it with given frame-number for all affected processes.
+ * Swaps the page at given address of the given process in.
  *
- * @param reg tje region
- * @param index the page-index in the region
- * @param frameNo the frame-number
+ * @param pid the process-id for writing the page-content to <file>
+ * @param file the file to write to
+ * @param t the thread that wants to swap the page in (and has reserved the frame to do so)
+ * @param addr the address of the page to swap in
  */
-void vmm_swapIn(sRegion *reg,size_t index,frameno_t frameNo);
+void vmm_swapIn(pid_t pid,file_t file,sThread *t,uintptr_t addr);
 
 /**
  * Sets the timestamp for all regions that are used by the given thread
@@ -131,22 +132,6 @@ void vmm_swapIn(sRegion *reg,size_t index,frameno_t frameNo);
  * @param timestamp the timestamp to set
  */
 void vmm_setTimestamp(const sThread *t,uint64_t timestamp);
-
-/**
- * Returns the least recently used region of the given process that contains swappable pages
- *
- * @param pid the process-id
- * @return the LRU region (may be NULL)
- */
-sRegion *vmm_getLRURegion(pid_t pid);
-
-/**
- * Returns a random page-index in the given region that may be swapped out
- *
- * @param reg the region
- * @return the page-index (-1 if failed)
- */
-size_t vmm_getPgIdxForSwap(const sRegion *reg);
 
 /**
  * Tests whether the region with given number exists
@@ -196,22 +181,6 @@ float vmm_getMemUsage(pid_t pid,size_t *pages);
 sVMRegion *vmm_getRegion(pid_t pid,vmreg_t rno);
 
 /**
- * @param pid the process-id
- * @param addr the virtual address
- * @return the region-number to which the given virtual address belongs
- */
-vmreg_t vmm_getRegionOf(pid_t pid,uintptr_t addr);
-
-/**
- * Determines the vm-region-number of the given region for the given process
- *
- * @param p the process
- * @param reg the region
- * @return the vm-region-number or -1 if not found
- */
-vmreg_t vmm_getRNoByRegion(pid_t pid,const sRegion *reg);
-
-/**
  * Queries the start- and end-address of a region
  *
  * @param pid the process-id
@@ -219,9 +188,10 @@ vmreg_t vmm_getRNoByRegion(pid_t pid,const sRegion *reg);
  * @param start will be set to the start-address
  * @param end will be set to the end-address (exclusive; i.e. 0x1000 means 0xfff is the last
  *  accessible byte)
+ * @param locked whether to lock the regions of the given process during the operation
  * @return true if the region exists
  */
-bool vmm_getRegRange(pid_t pid,vmreg_t reg,uintptr_t *start,uintptr_t *end);
+bool vmm_getRegRange(pid_t pid,vmreg_t reg,uintptr_t *start,uintptr_t *end,bool locked);
 
 /**
  * Checks whether the given process has the given binary as text-region
@@ -233,27 +203,14 @@ bool vmm_getRegRange(pid_t pid,vmreg_t reg,uintptr_t *start,uintptr_t *end);
 vmreg_t vmm_hasBinary(pid_t pid,const sBinDesc *bin);
 
 /**
- * Ensures that <size> bytes from <src> to <dst> can be copied. That means, copy-on-write,
- * demand-loading and so on are handled, if necessary. This way its safe to copy to a page that
- * still has copy-on-write enabled, because some architectures allow it to write to readonly-pages
- * in kernel-mode.
- * NOTE: The function assumes that the region-lock of the current process is held!
- *
- * @param p the current process (locked)
- * @param dst the destination-address (in user-space)
- * @param size the number of bytes to copy
- * @return true if successfull
- */
-bool vmm_makeCopySafe(sProc *p,USER void *dst,size_t size);
-
-/**
  * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
  * it on demand, handles copy-on-write or swapping.
  *
  * @param addr the address that caused the page-fault
+ * @param write whether its a write-access
  * @return true if successfull
  */
-bool vmm_pagefault(uintptr_t addr);
+bool vmm_pagefault(uintptr_t addr,bool write);
 
 /**
  * Removes all regions of the given process, optionally including stack.

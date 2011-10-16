@@ -168,14 +168,7 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,fd);
 	}
 
-	if(drv) {
-		sProc *p = proc_request(pid,PLOCK_REGIONS);
-		if(!vmm_makeCopySafe(p,drv,sizeof(int))) {
-			proc_release(p,PLOCK_REGIONS);
-			SYSC_ERROR(stack,-EFAULT);
-		}
+	if(drv)
 		*drv = fds[index];
-		proc_release(p,PLOCK_REGIONS);
-	}
 	SYSC_RET1(stack,fd);
 }

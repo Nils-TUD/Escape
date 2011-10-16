@@ -112,14 +112,10 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USE
 			offset = con->pos;
 		byteCount = MIN((size_t)(con->pos - offset),count);
 		if(byteCount > 0) {
-			sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
-			if(!vmm_makeCopySafe(p,buffer,byteCount)) {
-				klock_release(&node->lock);
-				proc_release(p,PLOCK_REGIONS);
-				return -EFAULT;
-			}
+			sThread *t = thread_getRunning();
+			thread_addLock(t,&node->lock);
 			memcpy(buffer,(uint8_t*)con->data + offset,byteCount);
-			proc_release(p,PLOCK_REGIONS);
+			thread_remLock(t,&node->lock);
 		}
 	}
 	klock_release(&node->lock);

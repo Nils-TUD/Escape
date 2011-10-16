@@ -17,34 +17,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef MUTEX_H_
+#define MUTEX_H_
+
 #include <sys/common.h>
-#include <sys/task/smp.h>
 
-bool smp_init_arch(void) {
-	/* mmix does not support SMP */
-	return false;
-}
+typedef uint mutex_t;
 
-cpuid_t smp_getCurId(void) {
-	return 0;
-}
+/**
+ * Aquires the given mutex. It won't use busy-waiting here, but suspend the thread when the mutex
+ * is not available.
+ *
+ * @param m the mutex
+ */
+void mutex_aquire(mutex_t *m);
 
-void smp_pauseOthers(void) {
-	/* nothing to do */
-}
+/**
+ * Tries to aquire the given mutex. If its locked, it does not block, but return false.
+ *
+ * @param m the mutex
+ * @return true if the mutex has been aquired
+ */
+bool mutex_tryAquire(mutex_t *m);
 
-void smp_resumeOthers(void) {
-	/* nothing to do */
-}
+/**
+ * Releases the given mutex
+ *
+ * @param m the mutex
+ */
+void mutex_release(mutex_t *m);
 
-void smp_haltOthers(void) {
-	/* nothing to do */
-}
-
-void smp_ensureTLBFlushed(void) {
-	/* nothing to do */
-}
-
-void smp_sendIPI(A_UNUSED cpuid_t id,A_UNUSED uint8_t vector) {
-	/* ignored */
-}
+#endif /* MUTEX_H_ */

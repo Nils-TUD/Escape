@@ -119,7 +119,6 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 	sThread *t = thread_getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 	sPipeData *data;
-	sProc *p;
 
 	/* wait until data is available */
 	klock_aquire(&node->lock);
@@ -155,14 +154,9 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
 		byteCount = MIN(data->length - (offset - data->offset),count);
-		p = proc_request(t->proc->pid,PLOCK_REGIONS);
-		if(!vmm_makeCopySafe(p,(uint8_t*)buffer + total,byteCount)) {
-			proc_release(p,PLOCK_REGIONS);
-			klock_release(&node->lock);
-			return -EFAULT;
-		}
+		thread_addLock(t,&node->lock);
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
-		proc_release(p,PLOCK_REGIONS);
+		thread_remLock(t,&node->lock);
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
 			cache_free(data);

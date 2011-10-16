@@ -41,6 +41,10 @@ void smp_haltOthers(void) {
 	/* nothing to do */
 }
 
+void smp_ensureTLBFlushed(void) {
+	/* nothing to do */
+}
+
 void smp_sendIPI(A_UNUSED cpuid_t id,A_UNUSED uint8_t vector) {
 	/* ignored */
 }

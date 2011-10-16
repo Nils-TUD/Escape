@@ -29,7 +29,7 @@
 #include <sys/video.h>
 #include <assert.h>
 
-#define MAX_WAIT_COUNT		1024
+#define MAX_WAIT_COUNT		2048
 #define MAX_WAKEUPS			8
 
 typedef struct {
@@ -200,7 +200,6 @@ void ev_printEvMask(const sThread *t) {
 
 void ev_print(void) {
 	size_t e;
-	klock_aquire(&evLock);
 	vid_printf("Eventlists:\n");
 	for(e = 0; e < EV_COUNT; e++) {
 		sWaitList *list = evlists + e;
@@ -218,7 +217,6 @@ void ev_print(void) {
 			w = w->next;
 		}
 	}
-	klock_release(&evLock);
 }
 
 static void ev_doRemoveThread(sThread *t) {
@@ -287,6 +285,7 @@ static const char *ev_getName(size_t evi) {
 		"RECEIVED_MSG",
 		"REQ_REPLY",
 		"DATA_READABLE",
+		"MUTEX",
 		"PIPE_FULL",
 		"PIPE_EMPTY",
 		"UNLOCK_SH",

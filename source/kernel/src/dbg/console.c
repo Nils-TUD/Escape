@@ -23,6 +23,7 @@
 #include <sys/dbg/cmd/view.h>
 #include <sys/dbg/cmd/log.h>
 #include <sys/dbg/cmd/ls.h>
+#include <sys/dbg/cmd/mem.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/cache.h>
 #include <sys/task/smp.h>
@@ -62,6 +63,7 @@ static sCommand commands[] = {
 	{"view",cons_cmd_view},
 	{"log",cons_cmd_log},
 	{"ls",cons_cmd_ls},
+	{"mem",cons_cmd_mem},
 };
 
 void cons_start(void) {

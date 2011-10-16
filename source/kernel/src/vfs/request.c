@@ -219,13 +219,11 @@ void vfs_req_freeAllOf(sThread *t) {
 void vfs_req_printAll(void) {
 	sRequest *req;
 	vid_printf("Active requests:\n");
-	klock_aquire(&reqLock);
 	req = reqUsedList;
 	while(req != NULL) {
 		vfs_req_print(req);
 		req = req->next;
 	}
-	klock_release(&reqLock);
 }
 
 void vfs_req_print(sRequest *r) {

@@ -40,6 +40,7 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/fsmsgs.h>
 #include <sys/klock.h>
+#include <sys/mutex.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>
@@ -70,7 +71,7 @@ static sProc first;
 static sSLList *procs;
 static sProc *pidToProc[MAX_PROC_COUNT];
 static pid_t nextPid = 1;
-static klock_t procLock;
+static mutex_t procLock;
 
 void proc_preinit(void) {
 	paging_setFirst(&first.pagedir);
@@ -154,20 +155,22 @@ sProc *proc_getByPid(pid_t pid) {
 
 sProc *proc_request(pid_t pid,size_t l) {
 	sProc *p = proc_getByPid(pid);
-	klock_aquire(p->locks + l);
+	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
+		mutex_aquire(p->locks + l);
+	else
+		klock_aquire(p->locks + l);
 	return p;
 }
 
 void proc_release(sProc *p,size_t l) {
-	klock_release(p->locks + l);
+	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
+		mutex_release(p->locks + l);
+	else
+		klock_release(p->locks + l);
 }
 
 size_t proc_getCount(void) {
-	size_t res;
-	klock_aquire(&procLock);
-	res = sll_length(procs);
-	klock_release(&procLock);
-	return res;
+	return sll_length(procs);
 }
 
 file_t proc_reqFile(sThread *cur,int fd) {
@@ -280,7 +283,7 @@ file_t proc_unassocFd(int fd) {
 pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno) {
 	sSLNode *n;
 	pid_t res = INVALID_PID;
-	klock_aquire(&procLock);
+	mutex_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		vmreg_t regno = vmm_hasBinary(p->pid,bin);
@@ -290,27 +293,8 @@ pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno) {
 			break;
 		}
 	}
-	klock_release(&procLock);
+	mutex_release(&procLock);
 	return res;
-}
-
-sRegion *proc_getLRURegion(void) {
-	time_t ts = (time_t)ULONG_MAX;
-	sRegion *lru = NULL;
-	sSLNode *n;
-	klock_aquire(&procLock);
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
-		if(p->pid != DISK_PID) {
-			sRegion *reg = vmm_getLRURegion(p->pid);
-			if(reg && reg->timestamp < ts) {
-				ts = reg->timestamp;
-				lru = reg;
-			}
-		}
-	}
-	klock_release(&procLock);
-	return lru;
 }
 
 void proc_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
@@ -325,7 +309,7 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 	size_t pages,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
-	klock_aquire(&procLock);
+	mutex_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		size_t pown,psh,pswap;
 		sProc *p = (sProc*)n->data;
@@ -334,7 +318,7 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 		shMem += psh;
 		dReal += vmm_getMemUsage(p->pid,&pages);
 	}
-	klock_release(&procLock);
+	mutex_release(&procLock);
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
 	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;
@@ -342,15 +326,15 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 
 int proc_clone(uint8_t flags) {
 	size_t i;
-	int newPid;
-	sProc *p;
-	sProc *cur = proc_request(proc_getRunning(),PLOCK_PROG);
-	sThread *curThread = thread_getRunning();
-	sThread *nt;
-	int res = 0;
+	int newPid,res = 0;
+	sProc *p,*cur;
+	sThread *nt,*curThread = thread_getRunning();
 	assert((flags & P_ZOMBIE) == 0);
-	if(!cur)
-		return -ESRCH;
+	cur = proc_request(curThread->proc->pid,PLOCK_PROG);
+	if(!cur) {
+		res = -ESRCH;
+		goto errorReqProc;
+	}
 
 	p = (sProc*)cache_alloc(sizeof(sProc));
 	if(!p) {
@@ -389,10 +373,10 @@ int proc_clone(uint8_t flags) {
 	}
 
 	/* determine pid; ensure that nobody can get this pid, too */
-	klock_aquire(&procLock);
+	mutex_aquire(&procLock);
 	newPid = proc_getFreePid();
 	if(newPid < 0) {
-		klock_release(&procLock);
+		mutex_release(&procLock);
 		res = -ENOPROCS;
 		goto errorCmd;
 	}
@@ -400,11 +384,11 @@ int proc_clone(uint8_t flags) {
 	/* add to processes */
 	*(pid_t*)&p->pid = newPid;
 	if(!proc_add(p)) {
-		klock_release(&procLock);
+		mutex_release(&procLock);
 		res = -ENOMEM;
 		goto errorCmd;
 	}
-	klock_release(&procLock);
+	mutex_release(&procLock);
 
 	/* create the VFS node */
 	p->threadDir = vfs_createProcess(p->pid);
@@ -473,6 +457,8 @@ int proc_clone(uint8_t flags) {
 #endif
 
 	proc_release(cur,PLOCK_PROG);
+	/* if we had reserved too many, free them now */
+	thread_discardFrames(curThread);
 	return p->pid;
 
 errorThreadAppend:
@@ -489,9 +475,7 @@ errorVFS:
 	groups_leave(p->pid);
 	vfs_removeProcess(p->pid);
 errorAdd:
-	klock_aquire(&procLock);
 	proc_remove(p);
-	klock_release(&procLock);
 errorCmd:
 	cache_free((void*)p->command);
 errorPdir:
@@ -500,27 +484,38 @@ errorProc:
 	cache_free(p);
 errorCur:
 	proc_release(cur,PLOCK_PROG);
+errorReqProc:
 	return res;
 }
 
 int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
-	sProc *p = proc_request(proc_getRunning(),PLOCK_PROG);
+	uintptr_t tlsStart,tlsEnd;
+	size_t pageCount;
 	sThread *t = thread_getRunning();
+	sProc *p;
 	sThread *nt;
 	int res;
-	if(!p)
-		return -ESRCH;
 
-	if((res = thread_create(t,&nt,p,flags,false)) < 0) {
-		proc_release(p,PLOCK_PROG);
-		return res;
+	/* reserve frames for new stack- and tls-region */
+	pageCount = thread_getThreadFrmCnt();
+	if(thread_getTLSRange(t,&tlsStart,&tlsEnd))
+		pageCount += BYTES_2_PAGES(tlsEnd - tlsStart);
+	thread_reserveFrames(t,pageCount);
+
+	p = proc_request(t->proc->pid,PLOCK_PROG);
+	if(!p) {
+		res = -ESRCH;
+		goto errorReqProc;
 	}
+
+	if((res = thread_create(t,&nt,p,flags,false)) < 0)
+		goto error;
 
 	/* append thread */
 	if(!sll_append(p->threads,nt)) {
 		thread_kill(nt);
-		proc_release(p,PLOCK_PROG);
-		return -ENOMEM;
+		res = -ENOMEM;
+		goto error;
 	}
 
 	thread_finishThreadStart(t,nt,arg,entryPoint);
@@ -542,7 +537,14 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 #endif
 
 	proc_release(p,PLOCK_PROG);
+	thread_discardFrames(t);
 	return nt->tid;
+
+error:
+	proc_release(p,PLOCK_PROG);
+errorReqProc:
+	thread_discardFrames(t);
+	return res;
 }
 
 int proc_exec(const char *path,const char *const *args,const void *code,size_t size) {
@@ -584,14 +586,13 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	proc_doRemoveRegions(p,false);
 
 	/* load program */
-	proc_release(p,PLOCK_PROG);
 	if(code) {
 		if(elf_loadFromMem(code,size,&info) < 0)
-			goto errorNoRel;
+			goto error;
 	}
 	else {
 		if(elf_loadFromFile(path,&info) < 0)
-			goto errorNoRel;
+			goto error;
 	}
 
 	/* if its the dynamic linker, we need to give it the file-descriptor for the program to load */
@@ -599,15 +600,13 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	if(info.linkerEntry != info.progEntry) {
 		file_t file = vfs_openPath(p->pid,VFS_READ,path);
 		if(file < 0)
-			goto errorNoRel;
+			goto error;
 		fd = proc_assocFd(file);
 		if(fd < 0) {
 			vfs_closeFile(p->pid,file);
-			goto errorNoRel;
+			goto error;
 		}
 	}
-
-	p = proc_request(p->pid,PLOCK_PROG);
 
 	/* copy path so that we can identify the process */
 	proc_setCommand(p,path);
@@ -624,13 +623,13 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	/* make process ready */
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
+	proc_release(p,PLOCK_PROG);
 	thread_addHeapAlloc(t,argBuffer);
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
 	if(!uenv_setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
-		goto error;
+		goto errorNoRel;
 	thread_remHeapAlloc(t,argBuffer);
 	cache_free(argBuffer);
-	proc_release(p,PLOCK_PROG);
 	return 0;
 
 error:
@@ -858,6 +857,7 @@ static void proc_notifyProcDied(pid_t parent) {
 
 int proc_getExitState(pid_t ppid,USER sExitState *state) {
 	sSLNode *n;
+	/* TODO lock? */
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		if(p->parentPid == ppid) {
@@ -865,15 +865,15 @@ int proc_getExitState(pid_t ppid,USER sExitState *state) {
 			if(p->flags & P_ZOMBIE) {
 				if(state) {
 					if(p->exitState) {
-						sProc *cur = proc_request(proc_getRunning(),PLOCK_REGIONS);
-						if(!vmm_makeCopySafe(cur,state,sizeof(sExitState))) {
-							proc_release(cur,PLOCK_REGIONS);
-							return -EFAULT;
-						}
-						memcpy(state,p->exitState,sizeof(sExitState));
-						proc_release(cur,PLOCK_REGIONS);
+						/* copy it to stack first, because the memcpy to state may fail. this way
+						 * we don't get into trouble with the hold mutex (PLOCK_PROG) */
+						sExitState tmpState;
+						memcpy(&tmpState,p->exitState,sizeof(sExitState));
 						cache_free(p->exitState);
 						p->exitState = NULL;
+						proc_release(p,PLOCK_PROG);
+						memcpy(state,&tmpState,sizeof(sExitState));
+						return p->pid;
 					}
 				}
 				proc_release(p,PLOCK_PROG);
@@ -911,28 +911,23 @@ static void proc_doRemoveRegions(sProc *p,bool remStack) {
 
 void proc_printAll(void) {
 	sSLNode *n;
-	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		proc_print(p);
 	}
-	klock_release(&procLock);
 }
 
 void proc_printAllRegions(void) {
 	sSLNode *n;
-	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		vmm_print(p->pid);
 		vid_printf("\n");
 	}
-	klock_release(&procLock);
 }
 
 void proc_printAllPDs(uint parts,bool regions) {
 	sSLNode *n;
-	klock_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		size_t own,shared,swapped;
@@ -944,7 +939,6 @@ void proc_printAllPDs(uint parts,bool regions) {
 		paging_printPDir(&p->pagedir,parts);
 		vid_printf("\n");
 	}
-	klock_release(&procLock);
 }
 
 void proc_print(sProc *p) {
@@ -1063,8 +1057,10 @@ static bool proc_add(sProc *p) {
 }
 
 static void proc_remove(sProc *p) {
+	mutex_aquire(&procLock);
 	sll_removeFirstWith(procs,p);
 	pidToProc[p->pid] = NULL;
+	mutex_release(&procLock);
 }
 
 

@@ -174,7 +174,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!vmm_pagefault(pfaddr)) {
+	if(!vmm_pagefault(pfaddr,stack->irqNo == EXC_TLB_WRITE)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
 			pid_t pid = proc_getRunning();

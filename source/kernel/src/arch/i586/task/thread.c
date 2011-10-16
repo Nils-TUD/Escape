@@ -53,6 +53,10 @@ void thread_addInitialStack(sThread *t) {
 	assert(t->stackRegions[0] >= 0);
 }
 
+size_t thread_getThreadFrmCnt(void) {
+	return INITIAL_STACK_PAGES;
+}
+
 int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 	if(cloneProc) {
 		/* map the kernel-stack at the same address */
@@ -61,9 +65,6 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 		dst->archAttr.kernelStack = src->archAttr.kernelStack;
 	}
 	else {
-		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
-			return -ENOMEM;
-
 		/* map the kernel-stack at a free address */
 		dst->archAttr.kernelStack = paging_createKernelStack(&dst->proc->pagedir);
 

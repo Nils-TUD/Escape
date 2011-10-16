@@ -115,6 +115,21 @@ bool paging_isPresent(tPageDir *pdir,uintptr_t virt);
 frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt);
 
 /**
+ * Ensures that the content of the given frame can be accessed and returns the address to do so.
+ * Please use paging_removeAccess() to free resources. Note that you can't access two frames
+ * in parallel.
+ *
+ * @param frame the frame-number
+ * @return the address
+ */
+uintptr_t paging_getAccess(frameno_t frame);
+
+/**
+ * Removes the access that has been provided by the last paging_getAccess() call
+ */
+void paging_removeAccess(void);
+
+/**
  * Finishes the demand-loading-process by copying <loadCount> bytes from <buffer> into a new
  * frame and returning the frame-number
  *

@@ -34,6 +34,7 @@
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 
 #define ARGS_MSG_COUNT		256
@@ -55,6 +56,8 @@ typedef struct {
 static void vfs_chan_destroy(sVFSNode *n);
 static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node);
+
+extern klock_t waitLock;
 
 sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	sChannel *chan;
@@ -149,14 +152,6 @@ void vfs_chan_setUsed(sVFSNode *node,bool used) {
 	chan->used = used;
 }
 
-void vfs_chan_lock(sVFSNode *node) {
-	klock_aquire(&node->lock);
-}
-
-void vfs_chan_unlock(sVFSNode *node) {
-	klock_release(&node->lock);
-}
-
 bool vfs_chan_hasReply(const sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
 	return sll_length(chan->recvList) > 0;
@@ -167,24 +162,24 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 	return !chan->used && sll_length(chan->sendList) > 0;
 }
 
-ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER const void *data,
-		size_t size) {
+ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
+		USER const void *data1,size_t size1,USER const void *data2,size_t size2,
+		sRequest **req,size_t reqSize) {
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)n->data;
-	sMessage *msg;
-	if(n->name == NULL)
-		return -EDESTROYED;
+	sMessage *msg1,*msg2 = NULL;
 
 	/*vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (device %s)\n",
 			pid,proc_getByPid(pid)->command,id,size,n->name,n,n->parent->name);*/
 
 	/* devices write to the receive-list (which will be read by other processes) */
 	if(vfs_isDevice(file)) {
+		assert(data2 == NULL && size2 == 0);
 		/* if it is from a device or fs, don't enqueue it but pass it directly to
 		 * the corresponding handler */
 		if(vfs_device_accepts(n->parent,id)) {
-			vfs_req_sendMsg(id,n,data,size);
+			vfs_req_sendMsg(id,n,data1,size1);
 			return 0;
 		}
 
@@ -195,36 +190,84 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,USER
 		list = &(chan->sendList);
 
 	/* create message and copy data to it */
-	msg = (sMessage*)cache_alloc(sizeof(sMessage) + size);
-	if(msg == NULL)
+	msg1 = (sMessage*)cache_alloc(sizeof(sMessage) + size1);
+	if(msg1 == NULL)
 		return -ENOMEM;
 
-	msg->length = size;
-	msg->id = id;
-	if(data) {
-		thread_addHeapAlloc(t,msg);
-		memcpy(msg + 1,data,size);
-		thread_remHeapAlloc(t,msg);
+	msg1->length = size1;
+	msg1->id = id;
+	if(data1) {
+		thread_addHeapAlloc(t,msg1);
+		memcpy(msg1 + 1,data1,size1);
+		thread_remHeapAlloc(t,msg1);
 	}
 
+	if(data2) {
+		msg2 = (sMessage*)cache_alloc(sizeof(sMessage) + size2);
+		if(msg2 == NULL)
+			return -ENOMEM;
+
+		msg2->length = size2;
+		msg2->id = id;
+		thread_addHeapAlloc(t,msg1);
+		thread_addHeapAlloc(t,msg2);
+		memcpy(msg2 + 1,data2,size2);
+		thread_remHeapAlloc(t,msg2);
+		thread_remHeapAlloc(t,msg1);
+	}
+
+	klock_aquire(&n->lock);
+	if(n->name == NULL) {
+		klock_release(&n->lock);
+		return -EDESTROYED;
+	}
+
+	/* create request, if desired; note that we ensure this way that the request-position
+	 * corresponds to the message-position in the channel */
+	if(req) {
+		*req = vfs_req_get(n,NULL,reqSize);
+		if(!*req) {
+			klock_release(&n->lock);
+			return -ENOMEM;
+		}
+	}
+
+	/* note that we do that here, because memcpy can fail because the page is swapped out for
+	 * example. we can't hold the lock during that operation */
+	klock_aquire(&waitLock);
 	if(*list == NULL)
 		*list = sll_create();
 
 	/* append to list */
-	if(!sll_append(*list,msg)) {
-		cache_free(msg);
-		return -ENOMEM;
-	}
+	if(!sll_append(*list,msg1))
+		goto error;
+	if(msg2 && !sll_append(*list,msg2))
+		goto errorRem;
 
 	/* notify the driver */
 	if(list == &(chan->sendList)) {
 		vfs_device_addMsg(n->parent);
+		if(msg2)
+			vfs_device_addMsg(n->parent);
 		ev_wakeup(EVI_CLIENT,(evobj_t)n->parent);
 	}
 	/* notify all threads that wait on this node for a msg */
 	else
 		ev_wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
+	klock_release(&waitLock);
+	klock_release(&n->lock);
 	return 0;
+
+errorRem:
+	sll_removeFirstWith(*list,msg1);
+error:
+	klock_release(&waitLock);
+	if(req)
+		vfs_req_free(*req);
+	klock_release(&n->lock);
+	cache_free(msg1);
+	cache_free(msg2);
+	return -ENOMEM;
 }
 
 ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,
@@ -236,7 +279,6 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	sMessage *msg;
 	size_t event;
 	ssize_t res;
-	sProc *p;
 
 	klock_aquire(&node->lock);
 	/* node destroyed? */
@@ -284,46 +326,27 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	}
 
 	/* get first element and copy data to buffer */
-	msg = (sMessage*)sll_get(*list,0);
+	msg = (sMessage*)sll_removeFirst(*list);
+	if(event == EVI_CLIENT)
+		vfs_device_remMsg(node->parent);
+	klock_release(&node->lock);
 	if(data && msg->length > size) {
-		sll_removeFirst(*list);
-		res = -EINVAL;
-		goto invArgs;
+		cache_free(msg);
+		return -EINVAL;
 	}
 
 	/*vid_printf("%d:%s received msg %d from chan %s:%x\n",
 			pid,proc_getByPid(pid)->command,msg->id,node->name,node);*/
 
-	/* copy data and id */
-	p = proc_request(t->proc->pid,PLOCK_REGIONS);
-	if(data) {
-		if(!vmm_makeCopySafe(p,data,msg->length)) {
-			proc_release(p,PLOCK_REGIONS);
-			res = -EFAULT;
-			goto invArgs;
-		}
+	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
+	thread_addHeapAlloc(t,msg);
+	if(data)
 		memcpy(data,msg + 1,msg->length);
-	}
-	if(id) {
-		if(!vmm_makeCopySafe(p,id,sizeof(msgid_t))) {
-			proc_release(p,PLOCK_REGIONS);
-			res = -EFAULT;
-			goto invArgs;
-		}
+	if(id)
 		*id = msg->id;
-	}
-	proc_release(p,PLOCK_REGIONS);
+	thread_remHeapAlloc(t,msg);
 
 	res = msg->length;
-	sll_removeFirst(*list);
-	if(event == EVI_CLIENT)
-		vfs_device_remMsg(node->parent);
-	klock_release(&node->lock);
-	cache_free(msg);
-	return res;
-
-invArgs:
-	klock_release(&node->lock);
 	cache_free(msg);
 	return res;
 }

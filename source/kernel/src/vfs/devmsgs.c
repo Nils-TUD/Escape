@@ -50,35 +50,17 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	sRequest *req;
 	sArgsMsg msg;
 
-	/* we have to ensure that the position of our request and the position of the message we're
-	 * going to send is the same. i.e. we have to prevent that somebody else sends a message
-	 * to this channel in the meanwhile */
-	vfs_chan_lock(node);
-	if(node->name == NULL) {
-		vfs_chan_unlock(node);
+	if(node->name == NULL)
 		return -EDESTROYED;
-	}
 	/* if the driver doesn't implement open, its ok */
-	if(!vfs_device_supports(node->parent,DEV_OPEN)) {
-		vfs_chan_unlock(node);
+	if(!vfs_device_supports(node->parent,DEV_OPEN))
 		return 0;
-	}
-
-	/* get request */
-	req = vfs_req_get(node,NULL,0);
-	if(!req) {
-		vfs_chan_unlock(node);
-		return -ENOMEM;
-	}
 
 	/* send msg to driver */
 	msg.arg1 = flags;
-	res = vfs_sendMsg(pid,file,MSG_DEV_OPEN,&msg,sizeof(msg));
-	vfs_chan_unlock(node);
-	if(res < 0) {
-		vfs_req_free(req);
+	res = vfs_sendMsg(pid,file,MSG_DEV_OPEN,&msg,sizeof(msg),NULL,0,&req,0);
+	if(res < 0)
 		return res;
-	}
 
 	/* wait for response */
 	vfs_devmsgs_wait(req);
@@ -95,8 +77,6 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	sArgsMsg msg;
 	sWaitObject obj;
 
-	/* in this case we don't have to lock the node, I think. we have to check it after vfs_waitFor
-	 * again anyway */
 	if(node->name == NULL)
 		return -EDESTROYED;
 	/* if the driver doesn't implement open, its an error */
@@ -110,27 +90,12 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	if(res < 0)
 		return res;
 
-	/* get request */
-	vfs_chan_lock(node);
-	if(node->name == NULL) {
-		vfs_chan_unlock(node);
-		return -EDESTROYED;
-	}
-	req = vfs_req_get(node,NULL,count);
-	if(!req) {
-		vfs_chan_unlock(node);
-		return -ENOMEM;
-	}
-
 	/* send msg to driver */
 	msg.arg1 = offset;
 	msg.arg2 = count;
-	res = vfs_sendMsg(pid,file,MSG_DEV_READ,&msg,sizeof(msg));
-	vfs_chan_unlock(node);
-	if(res < 0) {
-		vfs_req_free(req);
+	res = vfs_sendMsg(pid,file,MSG_DEV_READ,&msg,sizeof(msg),NULL,0,&req,count);
+	if(res < 0)
 		return res;
-	}
 
 	/* wait for response */
 	vfs_devmsgs_wait(req);
@@ -140,14 +105,10 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	data = req->data;
 	vfs_req_free(req);
 	if(data && res > 0) {
-		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
-		if(!vmm_makeCopySafe(p,buffer,res)) {
-			proc_release(p,PLOCK_REGIONS);
-			cache_free(data);
-			return -EFAULT;
-		}
+		sThread *t = thread_getRunning();
+		thread_addHeapAlloc(t,data);
 		memcpy(buffer,data,res);
-		proc_release(p,PLOCK_REGIONS);
+		thread_remHeapAlloc(t,data);
 		cache_free(data);
 	}
 	return res;
@@ -159,40 +120,18 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 	ssize_t res;
 	sArgsMsg msg;
 
-	vfs_chan_lock(node);
-	if(node->name == NULL) {
-		vfs_chan_unlock(node);
+	if(node->name == NULL)
 		return -EDESTROYED;
-	}
 	/* if the driver doesn't implement open, its an error */
-	if(!vfs_device_supports(node->parent,DEV_WRITE)) {
-		vfs_chan_unlock(node);
+	if(!vfs_device_supports(node->parent,DEV_WRITE))
 		return -ENOTSUP;
-	}
 
-	/* get request */
-	req = vfs_req_get(node,NULL,0);
-	if(!req) {
-		vfs_chan_unlock(node);
-		return -ENOMEM;
-	}
-
-	/* send msg to driver */
+	/* send msg and data to driver */
 	msg.arg1 = offset;
 	msg.arg2 = count;
-	res = vfs_sendMsg(pid,file,MSG_DEV_WRITE,&msg,sizeof(msg));
-	if(res < 0) {
-		vfs_req_free(req);
-		vfs_chan_unlock(node);
+	res = vfs_sendMsg(pid,file,MSG_DEV_WRITE,&msg,sizeof(msg),buffer,count,&req,0);
+	if(res < 0)
 		return res;
-	}
-	/* now send data */
-	res = vfs_sendMsg(pid,file,MSG_DEV_WRITE,buffer,count);
-	vfs_chan_unlock(node);
-	if(res < 0) {
-		vfs_req_free(req);
-		return res;
-	}
 
 	/* wait for response */
 	vfs_devmsgs_wait(req);
@@ -202,15 +141,11 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 }
 
 void vfs_devmsgs_close(pid_t pid,file_t file,sVFSNode *node) {
-	vfs_chan_lock(node);
 	/* if the driver doesn't implement close, stop here */
-	if(node->name == NULL || !vfs_device_supports(node->parent,DEV_CLOSE)) {
-		vfs_chan_unlock(node);
+	if(node->name == NULL || !vfs_device_supports(node->parent,DEV_CLOSE))
 		return;
-	}
 
-	vfs_sendMsg(pid,file,MSG_DEV_CLOSE,NULL,0);
-	vfs_chan_unlock(node);
+	vfs_sendMsg(pid,file,MSG_DEV_CLOSE,NULL,0,NULL,0,NULL,0);
 }
 
 static void vfs_devmsgs_wait(sRequest *req) {

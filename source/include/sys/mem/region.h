@@ -22,13 +22,28 @@
 
 #include <sys/common.h>
 #include <sys/printf.h>
+#include <sys/mutex.h>
 #include <esc/sllist.h>
 
-#define PF_BITCOUNT			4	/* number of bits occupied by real flags */
+#define PF_BITCOUNT			3		/* number of bits occupied by real flags */
+/* TODO */
+#if 0
+#define PF_COPYONWRITE		1UL
+#define PF_DEMANDLOAD		2UL
+#define PF_SWAPPED			4UL
+
+#define RF_GROWABLE			1UL
+#define RF_SHAREABLE		2UL
+#define RF_WRITABLE			4UL
+#define RF_EXECUTABLE		8UL
+#define RF_STACK			16UL	/* means, grows downwards, and is used to find a free stack-address */
+#define RF_NOFREE			32UL	/* means that the memory should not be free'd on release */
+#define RF_TLS				64UL	/* needed to distinguish TLS-regions from others on delete */
+#define RF_GROWS_DOWN		128UL
+#endif
 #define PF_COPYONWRITE		1
 #define PF_DEMANDLOAD		2
 #define PF_SWAPPED			4
-#define PF_LOADINPROGRESS	8
 
 #define RF_GROWABLE			1
 #define RF_SHAREABLE		2
@@ -55,7 +70,7 @@ typedef struct {
 	size_t pfSize;			/* size of pageFlags */
 	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
 	sSLList *procs;			/* linked list of processes that use this region */
-	klock_t lock;			/* lock for the procs-field (all others can't change or belong to
+	mutex_t lock;			/* lock for the procs-field (all others can't change or belong to
 	 	 	 	 	 	 	   exactly 1 process, which is locked anyway) */
 } sRegion;
 
@@ -82,12 +97,13 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 void reg_destroy(sRegion *reg);
 
 /**
- * Counts the number of present pages in the given region
+ * Counts the number of present and swapped out pages in the given region
  *
  * @param reg the region
+ * @param swapped will be set to the number of swapped out pages
  * @return the number of present pages
  */
-size_t reg_presentPageCount(const sRegion *reg);
+size_t reg_pageCount(const sRegion *reg,size_t *swapped);
 
 /**
  * @param reg the region
@@ -137,9 +153,9 @@ bool reg_remFrom(sRegion *reg,const void *p);
  *
  * @param reg the region
  * @param amount the number of pages
- * @return true if successfull
+ * @return the number of free'd swapped pages or a negative error-code
  */
-bool reg_grow(sRegion *reg,ssize_t amount);
+ssize_t reg_grow(sRegion *reg,ssize_t amount);
 
 /**
  * Clones the given region for the given process. That means it copies the attributes from the

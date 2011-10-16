@@ -166,9 +166,11 @@
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_AREA && \
 								(uintptr_t)(addr) < KERNEL_STACK_AREA)
 
-typedef struct {
+typedef struct tPageDir {
+	uint64_t lastChange;
 	uintptr_t own;
-	uintptr_t other;
+	struct tPageDir *other;
+	uint64_t otherUpdate;
 } tPageDir;
 
 /**

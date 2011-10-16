@@ -23,6 +23,7 @@
 #include <sys/task/timer.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/swap.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
 #include <sys/video.h>
@@ -85,7 +86,7 @@ extern uint64_t stackCopySize;
 static sThread *cur = NULL;
 
 int thread_initArch(sThread *t) {
-	t->archAttr.kstackFrame = pmem_allocate();
+	t->archAttr.kstackFrame = swap_allocate(true);
 	t->archAttr.tempStack = -1;
 	return 0;
 }
@@ -100,19 +101,18 @@ void thread_addInitialStack(sThread *t) {
 	assert(t->stackRegions[1] >= 0);
 }
 
-int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
-	dst->archAttr.kstackFrame = pmem_allocate();
-	if(!cloneProc) {
-		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES * 2) {
-			pmem_free(dst->archAttr.kstackFrame);
-			return -ENOMEM;
-		}
+size_t thread_getThreadFrmCnt(void) {
+	return INITIAL_STACK_PAGES * 2;
+}
 
+int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
+	dst->archAttr.kstackFrame = swap_allocate(true);
+	if(!cloneProc) {
 		/* add a new stack-region for the register-stack */
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP);
 		if(dst->stackRegions[0] < 0) {
-			pmem_free(dst->archAttr.kstackFrame);
+			swap_free(dst->archAttr.kstackFrame,true);
 			return dst->stackRegions[0];
 		}
 		/* add a new stack-region for the software-stack */
@@ -122,7 +122,7 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 			/* remove register-stack */
 			vmm_remove(dst->proc->pid,dst->stackRegions[0]);
 			dst->stackRegions[0] = -1;
-			pmem_free(dst->archAttr.kstackFrame);
+			swap_free(dst->archAttr.kstackFrame,true);
 			return dst->stackRegions[1];
 		}
 	}
@@ -140,10 +140,10 @@ void thread_freeArch(sThread *t) {
 		}
 	}
 	if(t->archAttr.tempStack != (frameno_t)-1) {
-		pmem_free(t->archAttr.tempStack);
+		swap_free(t->archAttr.tempStack,true);
 		t->archAttr.tempStack = -1;
 	}
-	pmem_free(t->archAttr.kstackFrame);
+	swap_free(t->archAttr.kstackFrame,true);
 }
 
 sThread *thread_getRunning(void) {
@@ -173,10 +173,7 @@ void thread_popSpecRegs(void) {
 
 int thread_finishClone(sThread *t,sThread *nt) {
 	int res;
-	if(pmem_getFreeFrames(MM_DEF) < 1)
-		return -ENOMEM;
-
-	nt->archAttr.tempStack = pmem_allocate();
+	nt->archAttr.tempStack = swap_allocate(true);
 	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->archAttr.tempStack * PAGE_SIZE)));
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
@@ -253,7 +250,7 @@ void thread_doSwitch(void) {
 			memcpy((void*)(DIR_MAPPED_SPACE | new->archAttr.kstackFrame * PAGE_SIZE),
 					(void*)(DIR_MAPPED_SPACE | new->archAttr.tempStack * PAGE_SIZE),
 					PAGE_SIZE);
-			pmem_free(new->archAttr.tempStack);
+			swap_free(new->archAttr.tempStack,true);
 			new->archAttr.tempStack = -1;
 		}
 

@@ -175,14 +175,10 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 		offset = byteCount;
 	byteCount = MIN(byteCount - offset,count);
 	if(byteCount > 0) {
-		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
-		if(!vmm_makeCopySafe(p,(uint8_t*)fsBytes + offset,byteCount)) {
-			proc_release(p,PLOCK_REGIONS);
-			cache_free(fsBytes);
-			return -EFAULT;
-		}
+		sThread *t = thread_getRunning();
+		thread_addHeapAlloc(t,fsBytes);
 		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
-		proc_release(p,PLOCK_REGIONS);
+		thread_remHeapAlloc(t,fsBytes);
 	}
 	cache_free(fsBytes);
 	return byteCount;

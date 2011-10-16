@@ -51,6 +51,7 @@
 /* process flags */
 #define P_ZOMBIE			1
 #define P_PREZOMBIE			2
+#define P_BOOT				4
 
 #define PLOCK_COUNT			5
 #define PLOCK_ENV			0
@@ -262,13 +263,6 @@ file_t proc_unassocFd(int fd);
  * @return the process-id with the binary or INVALID_PID if not found
  */
 pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno);
-
-/**
- * Determines the least recently used region of all processes
- *
- * @return the region (may be NULL)
- */
-sRegion *proc_getLRURegion(void);
 
 /**
  * Determines the memory-usage for the given process

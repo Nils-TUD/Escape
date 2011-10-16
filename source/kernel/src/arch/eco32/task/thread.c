@@ -23,6 +23,7 @@
 #include <sys/task/timer.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/swap.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
 #include <sys/video.h>
@@ -38,7 +39,7 @@ static sThread *cur = NULL;
 
 int thread_initArch(sThread *t) {
 	/* setup kernel-stack for us */
-	frameno_t stackFrame = pmem_allocate();
+	frameno_t stackFrame = swap_allocate(true);
 	paging_mapTo(&t->proc->pagedir,KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	t->archAttr.kstackFrame = stackFrame;
 	return 0;
@@ -51,20 +52,25 @@ void thread_addInitialStack(sThread *t) {
 	assert(t->stackRegions[0] >= 0);
 }
 
-int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
-	if(cloneProc)
-		thread_initArch(dst);
-	else {
-		if(pmem_getFreeFrames(MM_DEF) < INITIAL_STACK_PAGES)
-			return -ENOMEM;
+size_t thread_getThreadFrmCnt(void) {
+	return INITIAL_STACK_PAGES;
+}
 
-		dst->archAttr.kstackFrame = pmem_allocate();
+int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
+	if(cloneProc) {
+		frameno_t stackFrame = swap_allocate(true);
+		paging_mapTo(&dst->proc->pagedir,KERNEL_STACK,&stackFrame,1,
+				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+		dst->archAttr.kstackFrame = stackFrame;
+	}
+	else {
+		dst->archAttr.kstackFrame = swap_allocate(true);
 
 		/* add a new stack-region */
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 		if(dst->stackRegions[0] < 0) {
-			pmem_free(dst->archAttr.kstackFrame);
+			swap_free(dst->archAttr.kstackFrame,true);
 			return dst->stackRegions[0];
 		}
 	}
@@ -76,7 +82,7 @@ void thread_freeArch(sThread *t) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
 		t->stackRegions[0] = -1;
 	}
-	pmem_free(t->archAttr.kstackFrame);
+	swap_free(t->archAttr.kstackFrame,true);
 }
 
 sThread *thread_getRunning(void) {

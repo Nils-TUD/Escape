@@ -44,7 +44,9 @@ uintptr_t bspstart(sBootInfo *bootinfo) {
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
 	t = thread_getRunning();
+	thread_reserveFrames(t,INITIAL_STACK_PAGES);
 	thread_addInitialStack(t);
+	thread_discardFrames(t);
 	/* we have to set the kernel-stack for the first process */
 	tlb_set(0,KERNEL_STACK,(t->archAttr.kstackFrame * PAGE_SIZE) | 0x3);
 	return info.progEntry;

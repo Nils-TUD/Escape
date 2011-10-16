@@ -125,6 +125,20 @@ struct sVFSNode {
 	void *data;
 };
 
+/* an entry in the request-list */
+typedef struct sRequest {
+	klock_t lock;
+	sThread *thread;
+	sVFSNode *node;
+	uint8_t state;
+	ulong val1;
+	ulong val2;
+	size_t count;
+	void *data;
+	size_t dsize;
+	struct sRequest *next;
+} sRequest;
+
 /**
  * Initializes the virtual file system
  */
@@ -310,11 +324,16 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count);
  * @param pid the sender-process-id
  * @param file the file to send the message to
  * @param id the message-id
- * @param data the message
- * @param size the message-size
+ * @param data1 the message-data
+ * @param size1 the data-size
+ * @param data2 for the device-messages: a second message (NULL = no second one)
+ * @param size2 the size of the second message
+ * @param req if not NULL, a request will be created and stored here
+ * @param reqSize the size to pass to the created request
  * @return 0 on success
  */
-ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,const void *data,size_t size);
+ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size_t size1,
+		USER const void *data2,size_t size2,sRequest **req,size_t reqSize);
 
 /**
  * Receives a message from the corresponding device

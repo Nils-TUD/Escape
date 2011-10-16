@@ -179,7 +179,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 		strcat(loadingStatus,"...");
 		boot_taskStarted(loadingStatus);
 
-		if((child = proc_clone(0)) == 0) {
+		if((child = proc_clone(P_BOOT)) == 0) {
 			int res = proc_exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
 			if(res < 0)
 				util_panic("Unable to exec boot-program %s: %d\n",argv[0],res);

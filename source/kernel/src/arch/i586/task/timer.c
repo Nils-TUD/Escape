@@ -60,6 +60,7 @@ void timer_arch_init(void) {
 }
 
 uint64_t timer_cyclesToTime(uint64_t cycles) {
+	/* TODO calculate cpu_getSpeed() / 1000000 just once (64-bit division...) */
 	return cycles / (cpu_getSpeed() / 1000000);
 }
 

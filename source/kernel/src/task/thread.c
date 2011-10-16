@@ -100,7 +100,6 @@ static void thread_initProps(sThread *t) {
 	t->newState = ST_READY;
 	t->priority = DEFAULT_PRIO;
 	t->prioGoodCnt = 0;
-	t->lock = 0;
 	t->events = 0;
 	t->waits = NULL;
 	t->ignoreSignals = 0;
@@ -117,6 +116,8 @@ static void thread_initProps(sThread *t) {
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
 	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
+	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
+	sll_init(&t->reqFrames,slln_allocNode,slln_freeNode);
 }
 
 sIntrptStackFrame *thread_getIntrptStack(const sThread *t) {
@@ -194,14 +195,14 @@ void thread_unsuspend(sThread *t) {
 bool thread_getStackRange(sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
 	bool res = false;
 	if(t->stackRegions[stackNo] >= 0)
-		res = vmm_getRegRange(t->proc->pid,t->stackRegions[stackNo],start,end);
+		res = vmm_getRegRange(t->proc->pid,t->stackRegions[stackNo],start,end,false);
 	return res;
 }
 
 bool thread_getTLSRange(sThread *t,uintptr_t *start,uintptr_t *end) {
 	bool res = false;
 	if(t->tlsRegion >= 0)
-		res = vmm_getRegRange(t->proc->pid,t->tlsRegion,start,end);
+		res = vmm_getRegRange(t->proc->pid,t->tlsRegion,start,end,false);
 	return res;
 }
 
@@ -223,7 +224,6 @@ bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {
 }
 
 void thread_removeRegions(sThread *t,bool remStack) {
-	klock_aquire(&t->lock);
 	t->tlsRegion = -1;
 	if(remStack) {
 		size_t i;
@@ -232,7 +232,6 @@ void thread_removeRegions(sThread *t,bool remStack) {
 	}
 	/* remove all signal-handler since we've removed the code to handle signals */
 	sig_removeHandlerFor(t->tid);
-	klock_release(&t->lock);
 }
 
 int thread_extendStack(uintptr_t address) {
@@ -303,13 +302,46 @@ void thread_remFileUsage(sThread *cur,file_t file) {
 	sll_removeFirstWith(&cur->termUsages,(void*)file);
 }
 
+void thread_addCallback(sThread *cur,void (*callback)(void)) {
+	sll_append(&cur->termCallbacks,(void*)callback);
+}
+
+void thread_remCallback(sThread *cur,void (*callback)(void)) {
+	sll_removeFirstWith(&cur->termCallbacks,(void*)callback);
+}
+
+void thread_reserveFrames(sThread *cur,size_t count) {
+	while(count > 0) {
+		size_t i;
+		swap_reserve(count);
+		for(i = count; i > 0; i--) {
+			frameno_t frm = swap_allocate(false);
+			if(!frm)
+				break;
+			sll_append(&cur->reqFrames,(void*)frm);
+			count--;
+		}
+	}
+}
+
+frameno_t thread_getFrame(sThread *cur) {
+	frameno_t frm = (frameno_t)sll_removeFirst(&cur->reqFrames);
+	assert(frm != 0);
+	return frm;
+}
+
+void thread_discardFrames(sThread *cur) {
+	frameno_t frm;
+	while((frm = (frameno_t)sll_removeFirst(&cur->reqFrames)) != 0)
+		swap_free(frm,false);
+}
+
 int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc) {
 	int err = -ENOMEM;
 	sThread *t = (sThread*)cache_alloc(sizeof(sThread));
 	if(t == NULL)
 		return -ENOMEM;
 
-	klock_aquire(&src->lock);
 	*(tid_t*)&t->tid = thread_getFreeTid();
 	if(t->tid == INVALID_TID) {
 		err = -ENOTHREADS;
@@ -332,7 +364,7 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 		t->tlsRegion = -1;
 		if(src->tlsRegion >= 0) {
 			uintptr_t tlsStart,tlsEnd;
-			vmm_getRegRange(src->proc->pid,src->tlsRegion,&tlsStart,&tlsEnd);
+			vmm_getRegRange(src->proc->pid,src->tlsRegion,&tlsStart,&tlsEnd,false);
 			t->tlsRegion = vmm_add(p->pid,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS);
 			if(t->tlsRegion < 0)
 				goto errThread;
@@ -360,7 +392,6 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 		goto errAppendIdle;
 
 	*dst = t;
-	klock_release(&src->lock);
 	return 0;
 
 errAppendIdle:
@@ -373,7 +404,6 @@ errClone:
 		vmm_remove(p->pid,t->tlsRegion);
 errThread:
 	cache_free(t);
-	klock_release(&src->lock);
 	return err;
 }
 
@@ -403,6 +433,11 @@ void thread_kill(sThread *t) {
 	for(n = sll_begin(&t->termUsages); n != NULL; n = n->next)
 		vfs_decUsages((file_t)n->data);
 	sll_clear(&t->termUsages,false);
+	for(n = sll_begin(&t->termCallbacks); n != NULL; n = n->next) {
+		void (*callback)(void) = (void (*)(void))n->data;
+		callback();
+	}
+	sll_clear(&t->termCallbacks,false);
 
 	/* remove from all modules we may be announced */
 	ev_removeThread(t);

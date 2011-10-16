@@ -115,7 +115,7 @@ file_t vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path) {
 	msg.arg3 = p->egid;
 	msg.arg4 = p->pid;
 	memcpy(msg.s1,path,pathLen + 1);
-	res = vfs_sendMsg(pid,fs,MSG_FS_OPEN,&msg,sizeof(msg));
+	res = vfs_sendMsg(pid,fs,MSG_FS_OPEN,&msg,sizeof(msg),NULL,0,NULL,0);
 	if(res < 0)
 		goto error;
 
@@ -175,13 +175,13 @@ static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,
 		msg.arg2 = p->egid;
 		msg.arg3 = p->pid;
 		memcpy(msg.s1,path,pathLen + 1);
-		res = vfs_sendMsg(pid,fs,MSG_FS_STAT,&msg,sizeof(msg));
+		res = vfs_sendMsg(pid,fs,MSG_FS_STAT,&msg,sizeof(msg),NULL,0,NULL,0);
 	}
 	else {
 		sArgsMsg msg;
 		msg.arg1 = ino;
 		msg.arg2 = devNo;
-		res = vfs_sendMsg(pid,fs,MSG_FS_ISTAT,&msg,sizeof(msg));
+		res = vfs_sendMsg(pid,fs,MSG_FS_ISTAT,&msg,sizeof(msg),NULL,0,NULL,0);
 	}
 	if(res < 0)
 		goto error;
@@ -202,14 +202,10 @@ static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,
 
 	/* copy to info-struct */
 	if(data) {
-		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
-		if(!vmm_makeCopySafe(p,info,sizeof(sFileInfo))) {
-			proc_release(p,PLOCK_REGIONS);
-			cache_free(data);
-			return -EFAULT;
-		}
+		sThread *t = thread_getRunning();
+		thread_addHeapAlloc(t,data);
 		memcpy((void*)info,data,sizeof(sFileInfo));
-		proc_release(p,PLOCK_REGIONS);
+		thread_remHeapAlloc(t,data);
 		cache_free(data);
 	}
 	return 0;
@@ -243,7 +239,7 @@ ssize_t vfs_fsmsgs_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,
 	msg.arg2 = devNo;
 	msg.arg3 = offset;
 	msg.arg4 = count;
-	res = vfs_sendMsg(pid,fs,MSG_FS_READ,&msg,sizeof(msg));
+	res = vfs_sendMsg(pid,fs,MSG_FS_READ,&msg,sizeof(msg),NULL,0,NULL,0);
 	if(res < 0) {
 		vfs_req_free(req);
 		vfs_fsmsgs_releaseFile(pid,fs);
@@ -283,18 +279,12 @@ ssize_t vfs_fsmsgs_write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *
 	if(!req)
 		goto error;
 
-	/* send msg first */
+	/* send msg and data */
 	msg.arg1 = inodeNo;
 	msg.arg2 = devNo;
 	msg.arg3 = offset;
 	msg.arg4 = count;
-	res = vfs_sendMsg(pid,fs,MSG_FS_WRITE,&msg,sizeof(msg));
-	if(res < 0)
-		goto error;
-	/* now send data */
-	res = vfs_sendMsg(pid,fs,MSG_FS_WRITE,buffer,count);
-	if(res < 0)
-		goto error;
+	res = vfs_sendMsg(pid,fs,MSG_FS_WRITE,&msg,sizeof(msg),buffer,count,NULL,0);
 
 	/* wait for a reply */
 	vfs_fsmsgs_wait(req);
@@ -344,7 +334,7 @@ int vfs_fsmsgs_sync(pid_t pid) {
 	file_t fs = vfs_fsmsgs_requestFile(pid,NULL);
 	if(fs < 0)
 		return fs;
-	res = vfs_sendMsg(pid,fs,MSG_FS_SYNC,NULL,0);
+	res = vfs_sendMsg(pid,fs,MSG_FS_SYNC,NULL,0,NULL,0,NULL,0);
 	vfs_fsmsgs_releaseFile(pid,fs);
 	return res;
 }
@@ -358,7 +348,7 @@ void vfs_fsmsgs_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 	/* write message to fs */
 	msg.arg1 = inodeNo;
 	msg.arg2 = devNo;
-	vfs_sendMsg(pid,fs,MSG_FS_CLOSE,&msg,sizeof(msg));
+	vfs_sendMsg(pid,fs,MSG_FS_CLOSE,&msg,sizeof(msg),NULL,0,NULL,0);
 	/* no response necessary, therefore no wait, too */
 	vfs_fsmsgs_releaseFile(pid,fs);
 }
@@ -393,7 +383,7 @@ static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *pat
 	msg.arg2 = p->euid;
 	msg.arg3 = p->egid;
 	msg.arg4 = p->pid;
-	res = vfs_sendMsg(pid,fs,cmd,&msg,sizeof(msg));
+	res = vfs_sendMsg(pid,fs,cmd,&msg,sizeof(msg),NULL,0,NULL,0);
 	if(res < 0)
 		goto error;
 

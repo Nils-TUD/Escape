@@ -48,7 +48,25 @@ int util_rand(void) {
 }
 
 void util_srand(uint seed) {
+	klock_aquire(&randLock);
 	lastRand = seed;
+	klock_release(&randLock);
+}
+
+void util_printStackTraceShort(const sFuncCall *trace) {
+	if(trace) {
+		size_t i;
+		for(i = 0; trace->addr != 0 && i < 5; i++) {
+			sSymbol *sym = ksym_getSymbolAt(trace->addr);
+			if(sym->address)
+				log_printf("%s",sym->funcName);
+			else
+				log_printf("%Px",trace->addr);
+			trace++;
+			if(trace->addr)
+				log_printf(" ");
+		}
+	}
 }
 
 void util_printStackTrace(const sFuncCall *trace) {

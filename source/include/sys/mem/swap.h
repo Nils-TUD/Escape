@@ -29,25 +29,36 @@
 void swap_start(void);
 
 /**
- * Swaps the page with given address for the given process in
+ * Swaps the page with given address for the current process in
  *
- * @param p the process
  * @param addr the address of the page
  * @return true if successfull
  */
-bool swap_in(const sProc *p,uintptr_t addr);
+bool swap_in(uintptr_t addr);
 
 /**
- * Swaps out frames until at least <frameCount> frames are free
+ * Swaps out frames until at least <frameCount> frames are available.
+ * Panics if its not possible to make that frames available (swapping disabled, partition full, ...)
  *
  * @param frameCount the number of frames you need
- * @return true if successfull. May fail if swap-space is full or nothing left to swap
  */
-bool swap_outUntil(size_t frameCount);
+void swap_reserve(size_t frameCount);
 
 /**
- * Checks whether there we should swap something out
+ * Allocates one frame. Assumes that it is available. You should announce it with swap_reserve()
+ * first!
+ *
+ * @param critical whether to allocate critical memory
+ * @return the frame-number or 0 if no free frame is available
  */
-void swap_check(void);
+frameno_t swap_allocate(bool critical);
+
+/**
+ * Frees the given frame
+ *
+ * @param frame the frame-number
+ * @param critical whether this frame has been used for critical memory
+ */
+void swap_free(frameno_t frame,bool critical);
 
 #endif /* SWAP_H_ */

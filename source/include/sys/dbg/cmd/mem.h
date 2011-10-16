@@ -17,26 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.global klock_aquire
-.global klock_release
+#ifndef MEM_H_
+#define MEM_H_
 
-# void klock_aquire(klock_t *l)
-klock_aquire:
-	mov		4(%esp),%edx
-	mov		$1,%ecx
-1:
-	xor		%eax,%eax
-	lock
-	cmpxchg %ecx,(%edx)
-	jz		2f
-	# improves the performance and lowers the power-consumption of spinlocks
-	pause
-	jmp		1b
-2:
-	ret
+#include <sys/common.h>
 
-# void klock_release(klock_t *l)
-klock_release:
-	mov		4(%esp),%eax
-	movl	$0,(%eax)
-	ret
+/**
+ * Displays the content of physical or virtual memory
+ *
+ * @param argc the number of args
+ * @param argv the arguments
+ * @return 0 on success
+ */
+int cons_cmd_mem(size_t argc,char **argv);
+
+#endif /* MEM_H_ */

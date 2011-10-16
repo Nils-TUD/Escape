@@ -41,20 +41,6 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent);
 void vfs_chan_setUsed(sVFSNode *node,bool used);
 
 /**
- * Locks the given channel. This is only intended for sending messages to this channel.
- *
- * @param node the channel-node
- */
-void vfs_chan_lock(sVFSNode *node);
-
-/**
- * Unlocks the given channel
- *
- * @param node the channel-node
- */
-void vfs_chan_unlock(sVFSNode *node);
-
-/**
  * Checks whether the given channel has a reply for the client
  *
  * @param node the channel-node
@@ -77,11 +63,17 @@ bool vfs_chan_hasWork(const sVFSNode *node);
  * @param file the file
  * @param n the channel-node
  * @param id the message-id
- * @param data the message-data
- * @param size the data-size
+ * @param data1 the message-data
+ * @param size1 the data-size
+ * @param data2 for the device-messages: a second message (NULL = no second one)
+ * @param size2 the size of the second message
+ * @param req if not NULL, a request will be created and stored here
+ * @param reqSize the size to pass to the created request
  * @return 0 on success
  */
-ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,const void *data,size_t size);
+ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,
+		USER const void *data1,size_t size1,USER const void *data2,size_t size2,
+		sRequest **req,size_t reqSize);
 
 /**
  * Receives a message from the channel (LOCKED!)

@@ -134,7 +134,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	else if((bootState % 2) == 1) {
 		i = (bootState / 2) + 1;
 		/* clone proc */
-		if((child = proc_clone(0)) == 0) {
+		if((child = proc_clone(P_BOOT)) == 0) {
 			int res,argc;
 			/* parse args */
 			const char **argv = boot_parseArgs(progs[i].command,&argc);

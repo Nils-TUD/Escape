@@ -87,14 +87,8 @@ done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
 		klock_aquire(&cacheLock);
-		sFuncCall *trace = util_getKernelStackTrace();
 		log_printf("\n[A] %Px %zd ",res,size);
-		for(i = 0; trace->addr != 0 && i < 7; i++) {
-			log_printf("%Px",trace->addr);
-			trace++;
-			if(trace->addr)
-				log_printf(" ");
-		}
+		util_printStackTraceShort(util_getKernelStackTrace());
 		log_printf("\n");
 		klock_release(&cacheLock);
 	}
@@ -143,15 +137,8 @@ void cache_free(void *p) {
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
 		klock_aquire(&cacheLock);
-		sFuncCall *trace = util_getKernelStackTrace();
-		size_t i = 0;
 		log_printf("\n[F] %Px 0 ",p);
-		while(trace->addr != 0 && i++ < 7) {
-			log_printf("%Px",trace->addr);
-			trace++;
-			if(trace->addr)
-				log_printf(" ");
-		}
+		util_printStackTraceShort(util_getKernelStackTrace());
 		log_printf("\n");
 		klock_release(&cacheLock);
 	}

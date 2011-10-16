@@ -35,21 +35,22 @@ typedef struct {
 #define EVI_RECEIVED_MSG		1
 #define EVI_REQ_REPLY			2
 #define EVI_DATA_READABLE		3
-#define EVI_PIPE_FULL			4
-#define EVI_PIPE_EMPTY			5
-#define EVI_UNLOCK_SH			6
-#define EVI_UNLOCK_EX			7
-#define EVI_REQ_FREE			8
-#define EVI_USER1				9
-#define EVI_USER2				10
-#define EVI_VM86_READY			11
-#define EVI_SWAP_DONE			12
-#define EVI_SWAP_WORK			13
-#define EVI_SWAP_FREE			14
-#define EVI_VMM_DONE			15
-#define EVI_THREAD_DIED			16
-#define EVI_CHILD_DIED			17
-#define EVI_TERMINATION			18
+#define EVI_MUTEX				4
+#define EVI_PIPE_FULL			5
+#define EVI_PIPE_EMPTY			6
+#define EVI_UNLOCK_SH			7
+#define EVI_UNLOCK_EX			8
+#define EVI_REQ_FREE			9
+#define EVI_USER1				10
+#define EVI_USER2				11
+#define EVI_VM86_READY			12
+#define EVI_SWAP_DONE			13
+#define EVI_SWAP_WORK			14
+#define EVI_SWAP_FREE			15
+#define EVI_VMM_DONE			16
+#define EVI_THREAD_DIED			17
+#define EVI_CHILD_DIED			18
+#define EVI_TERMINATION			19
 
 /* the events we can wait for */
 #define EV_NOEVENT				0
@@ -57,6 +58,7 @@ typedef struct {
 #define EV_RECEIVED_MSG			(1 << EVI_RECEIVED_MSG)
 #define EV_REQ_REPLY			(1 << EVI_REQ_REPLY)	/* kernel-intern */
 #define EV_DATA_READABLE		(1 << EVI_DATA_READABLE)
+#define EV_MUTEX				(1 << EVI_MUTEX)		/* kernel-intern */
 #define EV_PIPE_FULL			(1 << EVI_PIPE_FULL)	/* kernel-intern */
 #define EV_PIPE_EMPTY			(1 << EVI_PIPE_EMPTY)	/* kernel-intern */
 #define EV_UNLOCK_SH			(1 << EVI_UNLOCK_SH)	/* kernel-intern */
@@ -72,7 +74,7 @@ typedef struct {
 #define EV_THREAD_DIED			(1 << EVI_THREAD_DIED)	/* kernel-intern */
 #define EV_CHILD_DIED			(1 << EVI_CHILD_DIED)	/* kernel-intern */
 #define EV_TERMINATION			(1 << EVI_TERMINATION)	/* kernel-intern */
-#define EV_COUNT				19
+#define EV_COUNT				20
 
 /* the events a user-thread can wait for */
 #define EV_USER_WAIT_MASK		(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE | \

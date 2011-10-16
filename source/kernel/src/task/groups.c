@@ -77,14 +77,8 @@ size_t groups_get(pid_t pid,USER gid_t *list,size_t count) {
 	if(count == 0)
 		return g ? g->count : 0;
 	if(g) {
-		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
 		count = MIN(g->count,count);
-		if(!vmm_makeCopySafe(p,list,count * sizeof(gid_t))) {
-			proc_release(p,PLOCK_REGIONS);
-			return 0;
-		}
 		memcpy(list,g->groups,count * sizeof(gid_t));
-		proc_release(p,PLOCK_REGIONS);
 		return count;
 	}
 	return 0;

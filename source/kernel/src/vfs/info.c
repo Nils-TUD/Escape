@@ -449,14 +449,10 @@ static ssize_t vfs_info_readHelper(A_UNUSED pid_t pid,sVFSNode *node,USER void *
 	count = MIN(dataSize - offset,count);
 	/* copy */
 	if(count > 0) {
-		sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
-		if(!vmm_makeCopySafe(p,buffer,count)) {
-			proc_release(p,PLOCK_REGIONS);
-			cache_free(mem);
-			return -EFAULT;
-		}
+		sThread *t = thread_getRunning();
+		thread_addHeapAlloc(t,mem);
 		memcpy(buffer,(uint8_t*)mem + offset,count);
-		proc_release(p,PLOCK_REGIONS);
+		thread_remHeapAlloc(t,mem);
 	}
 	/* free temp storage */
 	cache_free(mem);

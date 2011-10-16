@@ -27,7 +27,7 @@
 #define KEYBOARD_PID		12	/* just for debugging */
 
 /* special process-flag for x86 */
-#define P_VM86				4
+#define P_VM86				8
 
 typedef struct {
 	/* the io-map (NULL by default) */

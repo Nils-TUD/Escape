@@ -47,5 +47,6 @@
 #define A_NORETURN				__attribute__((noreturn))
 #define A_INIT					__attribute__((section(".ctors")))
 #define A_UNUSED				__attribute__((unused))
+#define A_INLINE				__attribute__((inline))
 
 #endif /* DEFINES_H_ */

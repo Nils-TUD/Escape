@@ -136,6 +136,7 @@ static uint8_t trampoline[] = {
 extern volatile uint waiting;
 extern volatile uint waitlock;
 extern volatile uint halting;
+extern volatile uint flushed;
 
 bool smp_init_arch(void) {
 	apic_init();
@@ -177,7 +178,7 @@ void smp_pauseOthers(void) {
 	}
 	/* wait until all CPUs are paused */
 	while(waiting < count)
-		;
+		__asm__ ("pause");
 }
 
 void smp_resumeOthers(void) {
@@ -200,7 +201,24 @@ void smp_haltOthers(void) {
 	}
 	/* wait until all CPUs are halted */
 	while(halting < count)
-		;
+		__asm__ ("pause");
+}
+
+void smp_ensureTLBFlushed(void) {
+	sCPU **cpus = smp_getCPUs();
+	size_t i,count,cpuCount = smp_getCPUCount();;
+	cpuid_t cur = smp_getCurId();
+	flushed = 0;
+	count = 0;
+	for(i = 0; i < cpuCount; i++) {
+		if(i != cur && cpus[i]->ready) {
+			smp_sendIPI(i,IPI_FLUSH_TLB_ACK);
+			count++;
+		}
+	}
+	/* wait until all CPUs have flushed their TLB */
+	while(halting == 0 && flushed < count)
+		__asm__ ("pause");
 }
 
 void smp_sendIPI(cpuid_t id,uint8_t vector) {

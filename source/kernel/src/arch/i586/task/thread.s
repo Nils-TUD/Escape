@@ -77,9 +77,7 @@ thread_resume:
 	popfl							# load eflags
 
 	# unlock now; the old thread can be used
-	pushl	%edx
-	call	klock_release
-	add		$4,%esp
+	movl	$0,(%edx)
 
 	mov		$1,%eax					# return 1
 	leave

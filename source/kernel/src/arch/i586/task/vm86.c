@@ -180,16 +180,15 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
-	ev_block(thread_getRunning());
+	ev_block(t);
 	thread_switch();
 
 	/* everything is finished :) */
 	if(vm86Res == 0) {
-		sProc *p = proc_request(t->proc->pid,PLOCK_REGIONS);
-		if(vmm_makeCopySafe(p,regs,sizeof(sVM86Regs)))
-			memcpy(regs,&info.regs,sizeof(sVM86Regs));
-		proc_release(p,PLOCK_REGIONS);
+		thread_addCallback(t,vm86_finish);
+		memcpy(regs,&info.regs,sizeof(sVM86Regs));
 		vm86_copyAreaResult();
+		thread_remCallback(t,vm86_finish);
 	}
 
 	/* mark as done */
@@ -351,15 +350,18 @@ static void vm86_pushl(sIntrptStackFrame *stack,uint32_t l) {
 static void vm86_start(void) {
 	volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
 	sIntrptStackFrame *istack;
+	sThread *t = thread_getRunning();
 	assert(caller != INVALID_TID);
 
-	istack = thread_getIntrptStack(thread_getRunning());
+	istack = thread_getIntrptStack(t);
 
 	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
 	if(info.area) {
+		thread_reserveFrames(t,BYTES_2_PAGES(info.area->size));
 		paging_map(info.area->dst,NULL,BYTES_2_PAGES(info.area->size),PG_PRESENT | PG_WRITABLE);
 		memcpy((void*)info.area->dst,info.copies[0],info.area->size);
+		thread_discardFrames(t);
 	}
 
 	/* set stack-pointer (in an unsed area) */
@@ -446,12 +448,8 @@ static void vm86_copyAreaResult(void) {
 	if(info.area) {
 		memcpy(info.area->src,info.copies[0],info.area->size);
 		if(info.area->ptrCount > 0) {
-			sProc *p = proc_request(proc_getRunning(),PLOCK_REGIONS);
-			for(i = 0; i < info.area->ptrCount; i++) {
-				if(vmm_makeCopySafe(p,(void*)info.area->ptr[i].result,info.area->ptr[i].size))
-					memcpy((void*)info.area->ptr[i].result,info.copies[i + 1],info.area->ptr[i].size);
-			}
-			proc_release(p,PLOCK_REGIONS);
+			for(i = 0; i < info.area->ptrCount; i++)
+				memcpy((void*)info.area->ptr[i].result,info.copies[i + 1],info.area->ptr[i].size);
 		}
 	}
 }

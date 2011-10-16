@@ -21,6 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/dynarray.h>
+#include <sys/mem/swap.h>
 #include <sys/util.h>
 #include <string.h>
 
@@ -77,11 +78,7 @@ bool dyna_extend(sDynArray *d) {
 	}
 
 	/* allocate a frame */
-	if(pmem_getFreeFrames(MM_DEF) == 0) {
-		klock_release(&d->lock);
-		return false;
-	}
-	reg->addr = DIR_MAPPED_SPACE | (pmem_allocate() * PAGE_SIZE);
+	reg->addr = DIR_MAPPED_SPACE | (swap_allocate(true) * PAGE_SIZE);
 	reg->size = PAGE_SIZE;
 	totalPages++;
 	/* clear it and increase total size and number of objects */
@@ -96,7 +93,7 @@ void dyna_destroy(sDynArray *d) {
 	sDynaRegion *reg = d->regions;
 	while(reg != NULL) {
 		sDynaRegion *next = reg->next;
-		pmem_free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE);
+		swap_free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE,true);
 		totalPages--;
 		/* put region on freelist */
 		reg->next = freeList;

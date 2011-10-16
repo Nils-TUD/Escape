@@ -122,8 +122,9 @@ void vmm_swapOut(pid_t pid,file_t file,size_t count);
  * @param file the file to write to
  * @param t the thread that wants to swap the page in (and has reserved the frame to do so)
  * @param addr the address of the page to swap in
+ * @return true on success
  */
-void vmm_swapIn(pid_t pid,file_t file,sThread *t,uintptr_t addr);
+bool vmm_swapIn(pid_t pid,file_t file,sThread *t,uintptr_t addr);
 
 /**
  * Sets the timestamp for all regions that are used by the given thread

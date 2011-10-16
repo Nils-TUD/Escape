@@ -21,7 +21,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/log.h>
 #include <sys/video.h>
 #include <string.h>
@@ -86,11 +86,11 @@ void *cache_alloc(size_t size) {
 done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		klock_aquire(&cacheLock);
+		spinlock_aquire(&cacheLock);
 		log_printf("\n[A] %Px %zd ",res,size);
 		util_printStackTraceShort(util_getKernelStackTrace());
 		log_printf("\n");
-		klock_release(&cacheLock);
+		spinlock_release(&cacheLock);
 	}
 #endif
 	return res;
@@ -136,11 +136,11 @@ void cache_free(void *p) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		klock_aquire(&cacheLock);
+		spinlock_aquire(&cacheLock);
 		log_printf("\n[F] %Px 0 ",p);
 		util_printStackTraceShort(util_getKernelStackTrace());
 		log_printf("\n");
-		klock_release(&cacheLock);
+		spinlock_release(&cacheLock);
 	}
 #endif
 
@@ -159,11 +159,11 @@ void cache_free(void *p) {
 
 	/* put on freelist */
 	c = caches + area[0];
-	klock_aquire(&cacheLock);
+	spinlock_aquire(&cacheLock);
 	area[0] = (ulong)c->freeList;
 	c->freeList = area;
 	c->freeObjs++;
-	klock_release(&cacheLock);
+	spinlock_release(&cacheLock);
 }
 
 size_t cache_getPageCount(void) {
@@ -195,7 +195,7 @@ void cache_print(void) {
 
 static void *cache_get(sCache *c,size_t i) {
 	ulong *area;
-	klock_aquire(&cacheLock);
+	spinlock_aquire(&cacheLock);
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
@@ -204,7 +204,7 @@ static void *cache_get(sCache *c,size_t i) {
 		size_t rem = bytes - objs * totalObjSize;
 		ulong *space = (ulong*)kheap_allocSpace(pageCount);
 		if(space == NULL) {
-			klock_release(&cacheLock);
+			spinlock_release(&cacheLock);
 			return NULL;
 		}
 
@@ -232,7 +232,7 @@ static void *cache_get(sCache *c,size_t i) {
 	area[1] = GUARD_MAGIC;
 	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
 	c->freeObjs--;
-	klock_release(&cacheLock);
+	spinlock_release(&cacheLock);
 	return area + 2;
 }
 

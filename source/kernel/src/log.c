@@ -25,7 +25,7 @@
 #include <sys/video.h>
 #include <sys/printf.h>
 #include <sys/log.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/config.h>
 #include <esc/esccodes.h>
 #include <stdarg.h>
@@ -102,10 +102,10 @@ void log_printf(const char *fmt,...) {
 
 void log_vprintf(const char *fmt,va_list ap) {
 	/* lock it all, to make the debug-output more readable */
-	klock_aquire(&logLock);
+	spinlock_aquire(&logLock);
 	prf_vprintf(&env,fmt,ap);
 	log_flush();
-	klock_release(&logLock);
+	spinlock_release(&logLock);
 }
 
 static void log_printc(char c) {

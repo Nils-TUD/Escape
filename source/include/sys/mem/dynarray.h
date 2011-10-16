@@ -21,7 +21,7 @@
 #define DYNARRAY_H_
 
 #include <sys/common.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 
 /* This module is intended to provide a dynamically extending region. That means you have a limited
  * area in virtual-memory, but allocate the pages in it when needed. This way we still have a

@@ -25,7 +25,7 @@
 #include <sys/log.h>
 
 #ifdef __i386__
-static A_INLINE void klock_aquire(klock_t *l) {
+static A_INLINE void spinlock_aquire(klock_t *l) {
 	__asm__ (
 		"mov	$1,%%ecx;"
 		"1:"
@@ -45,18 +45,18 @@ static A_INLINE void klock_aquire(klock_t *l) {
 	);
 }
 
-static A_INLINE void klock_release(klock_t *l) {
+static A_INLINE void spinlock_release(klock_t *l) {
 	*l = 0;
 }
 #endif
 /* eco32 and mmix do not support smp */
 #ifdef __eco32__
-#define klock_aquire(l)			(void)(l)
-#define klock_release(l)		(void)(l)
+#define spinlock_aquire(l)			(void)(l)
+#define spinlock_release(l)		(void)(l)
 #endif
 #ifdef __mmix__
-#define klock_aquire(l)			(void)(l)
-#define klock_release(l)		(void)(l)
+#define spinlock_aquire(l)			(void)(l)
+#define spinlock_release(l)		(void)(l)
 #endif
 
 #endif /* KLOCK_H_ */

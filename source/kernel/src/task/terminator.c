@@ -23,7 +23,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
 #include <sys/mem/sllnodes.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <esc/sllist.h>
 #include <assert.h>
 
@@ -36,33 +36,33 @@ void term_init(void) {
 
 void term_start(void) {
 	sThread *t = thread_getRunning();
-	klock_aquire(&termLock);
+	spinlock_aquire(&termLock);
 	while(1) {
 		if(sll_length(&deadThreads) == 0) {
 			ev_wait(t,EVI_TERMINATION,0);
-			klock_release(&termLock);
+			spinlock_release(&termLock);
 
 			thread_switch();
 
-			klock_aquire(&termLock);
+			spinlock_aquire(&termLock);
 		}
 
 		while(sll_length(&deadThreads) > 0) {
 			sThread *dt = (sThread*)sll_removeFirst(&deadThreads);
 			/* release the lock while we're killing the thread; the process-module may use us
 			 * in this time to add another thread */
-			klock_release(&termLock);
+			spinlock_release(&termLock);
 			while(thread_isRunning(dt))
 				thread_switch();
 			proc_killThread(dt->tid);
-			klock_aquire(&termLock);
+			spinlock_aquire(&termLock);
 		}
 	}
 }
 
 void term_addDead(sThread *t) {
-	klock_aquire(&termLock);
+	spinlock_aquire(&termLock);
 	assert(sll_append(&deadThreads,t));
 	ev_wakeup(EVI_TERMINATION,0);
-	klock_release(&termLock);
+	spinlock_release(&termLock);
 }

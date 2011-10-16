@@ -31,7 +31,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -157,19 +157,19 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 		return -ESRCH;
 
 	/* if the vm86-task is active, wait here */
-	klock_aquire(&vm86Lock);
+	spinlock_aquire(&vm86Lock);
 	while(caller != INVALID_TID) {
 		/* TODO we have a problem if the process that currently uses vm86 gets killed... */
 		/* because we'll never get notified that we can use vm86 */
 		ev_wait(t,EVI_VM86_READY,0);
-		klock_release(&vm86Lock);
+		spinlock_release(&vm86Lock);
 		thread_switchNoSigs();
-		klock_aquire(&vm86Lock);
+		spinlock_aquire(&vm86Lock);
 	}
 
 	/* store information in calling process */
 	caller = t->tid;
-	klock_release(&vm86Lock);
+	spinlock_release(&vm86Lock);
 	if(!vm86_copyInfo(interrupt,regs,area)) {
 		vm86_finish();
 		return -ENOMEM;

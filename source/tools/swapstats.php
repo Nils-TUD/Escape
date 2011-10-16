@@ -7,42 +7,41 @@ if($argc < 2) {
 $n = $argc == 3 ? $argv[2] : 20;
 $swapped = array();
 $matches = array();
-$content = implode('',file($argv[1]));
+$content = file_get_contents($argv[1]);
 preg_match_all(
-	'/Swap(in|out) ([0-9a-f]+):(\d+) \(first=([a-f0-9:]+) (.*?):(\d+)\) (from|to) blk (\d+)/',
+	'/(IN|OUT): (\d+) of region ([0-9a-f]+) \(block (\d+)\)/',
 	$content,
 	$matches
 );
 
 foreach($matches[0] as $k => $v) {
 	$type = $matches[1][$k];
-	$reg = $matches[2][$k];
-	$index = $matches[3][$k];
-	$virt = $matches[4][$k];
-	$pname = $matches[5][$k];
-	$pid = $matches[6][$k];
-	if($type == 'out') {
-		if(!isset($swapped[$reg.':'.$index]))
-			$swapped[$reg.':'.$index] = array(1,$virt,$pname,$pid);
-		else {
-			$c = $swapped[$reg.':'.$index][0];
-			$swapped[$reg.':'.$index] = array($c + 1,$virt,$pname,$pid);
-		}
-	}
+	$index = $matches[2][$k];
+	$reg = $matches[3][$k];
+	$block = $matches[4][$k];
+	if(!isset($swapped[$reg.':'.$index]))
+		$swapped[$reg.':'.$index] = array(0,0);
+	if($type == 'OUT')
+		$swapped[$reg.':'.$index][0]++;
+	else
+		$swapped[$reg.':'.$index][1]++;
 }
 
 function compare($a,$b) {
-	return $b[0] - $a[0];
+	return ($b[0] + $b[1]) - ($a[0] + $a[1]);
 }
-usort($swapped,"compare");
+uasort($swapped,"compare");
 
 echo "Top $n:\n";
 $i = 0;
-$total = 0;
+$in = 0;
+$out = 0;
 foreach($swapped as $k => $v) {
 	if($i++ < $n)
-		echo $v[0].' '.$v[1].':'.$v[2].':'.$v[3]."\n";
-	$total += $v[0];
+		echo $k.': '.$v[0].' '.$v[1]."\n";
+	$out += $v[0];
+	$in += $v[1];
 }
-echo "Avg: ".($total / count($swapped))."\n";
+echo "Outs: ".$out."\n";
+echo "Ins: ".$in."\n";
 ?>

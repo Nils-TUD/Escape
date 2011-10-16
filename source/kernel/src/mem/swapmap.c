@@ -21,7 +21,7 @@
 #include <sys/mem/swapmap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <assert.h>
 
@@ -62,44 +62,44 @@ void swmap_init(size_t swapSize) {
 
 ulong swmap_alloc(void) {
 	sSwapBlock *block;
-	klock_aquire(&swmapLock);
+	spinlock_aquire(&swmapLock);
 	if(!freeList) {
-		klock_release(&swmapLock);
+		spinlock_release(&swmapLock);
 		return INVALID_BLOCK;
 	}
 	block = freeList;
 	freeList = freeList->next;
 	block->refCount = 1;
 	freeBlocks--;
-	klock_release(&swmapLock);
+	spinlock_release(&swmapLock);
 	return block - swapBlocks;
 }
 
 void swmap_incRefs(ulong block) {
-	klock_aquire(&swmapLock);
+	spinlock_aquire(&swmapLock);
 	assert(block < totalBlocks && swapBlocks[block].refCount > 0);
 	swapBlocks[block].refCount++;
-	klock_release(&swmapLock);
+	spinlock_release(&swmapLock);
 }
 
 bool swmap_isUsed(ulong block) {
 	bool res;
-	klock_aquire(&swmapLock);
+	spinlock_aquire(&swmapLock);
 	assert(block < totalBlocks);
 	res = swapBlocks[block].refCount > 0;
-	klock_release(&swmapLock);
+	spinlock_release(&swmapLock);
 	return res;
 }
 
 void swmap_free(ulong block) {
-	klock_aquire(&swmapLock);
+	spinlock_aquire(&swmapLock);
 	assert(block < totalBlocks);
 	if(--swapBlocks[block].refCount == 0) {
 		swapBlocks[block].next = freeList;
 		freeList = swapBlocks + block;
 		freeBlocks++;
 	}
-	klock_release(&swmapLock);
+	spinlock_release(&swmapLock);
 }
 
 size_t swmap_freeSpace(void) {
@@ -107,21 +107,18 @@ size_t swmap_freeSpace(void) {
 }
 
 void swmap_print(void) {
-	/* TODO sSwMapArea *a = used;
-	vid_printf("SwapMap:\n");
-	while(a != NULL) {
-		if(!a->free) {
-			sSLNode *n;
-			vid_printf("\t%04u-%04u: ",a->block,a->block + a->size - 1);
-			for(n = sll_begin(a->procs); n != NULL; n = n->next) {
-				vid_printf("%d",((sProc*)n->data)->pid);
-				if(n->next)
-					vid_printf(",");
-			}
-			vid_printf(" (%p - %p)\n",a->virt,a->virt + a->size * PAGE_SIZE - 1);
+	size_t i,c = 0;
+	vid_printf("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / K);
+	vid_printf("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / K);
+	vid_printf("Used:");
+	for(i = 0; i < totalBlocks; i++) {
+		sSwapBlock *block = swapBlocks + i;
+		if(block->refCount > 0) {
+			if(c % 8 == 0)
+				vid_printf("\n ");
+			vid_printf("%5u[%u] ",i,block->refCount);
+			c++;
 		}
-		else
-			vid_printf("\t%04u-%04u: free\n",a->block,a->block + a->size - 1);
-		a = a->next;
-	}*/
+	}
+	vid_printf("\n");
 }

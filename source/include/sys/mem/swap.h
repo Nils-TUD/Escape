@@ -24,7 +24,18 @@
 #include <sys/task/proc.h>
 
 /**
+ * Inits the swap-system
+ */
+void swap_init(void);
+
+/**
+ * @return true if swapping is enabled
+ */
+bool swap_isEnabled(void);
+
+/**
  * Starts the swapping-system. This HAS TO be done with the swapping-thread!
+ * Assumes that swapping is enabled.
  */
 void swap_start(void);
 
@@ -60,5 +71,10 @@ frameno_t swap_allocate(bool critical);
  * @param critical whether this frame has been used for critical memory
  */
 void swap_free(frameno_t frame,bool critical);
+
+/**
+ * Prints information about the swapping-module
+ */
+void swap_print(void);
 
 #endif /* SWAP_H_ */

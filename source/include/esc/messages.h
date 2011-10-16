@@ -158,6 +158,8 @@
 #define MSG_INIT_IAMALIVE			1002 /* tells init that the shutdown-request has been received
 											and that you promise to terminate as soon as possible */
 
+#define MSG_DISK_GETSIZE			1100 /* get the size of a device */
+
 #define IS_DEVICE_MSG(id)			((id) == MSG_DEV_OPEN || \
 									 (id) == MSG_DEV_READ || \
 									 (id) == MSG_DEV_WRITE || \

@@ -23,7 +23,7 @@
 #include <sys/mem/cow.h>
 #include <sys/task/proc.h>
 #include <sys/util.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <assert.h>
@@ -57,7 +57,7 @@ size_t cow_pagefault(pid_t pid,uintptr_t address,frameno_t frameNumber) {
 
 	/* search through the copy-on-write-list whether there is another one who wants to get
 	 * the frame */
-	klock_aquire(&cowLock);
+	spinlock_aquire(&cowLock);
 	frmCount = 0;
 	ourCOW = NULL;
 	ourPrevCOW = NULL;
@@ -95,7 +95,7 @@ size_t cow_pagefault(pid_t pid,uintptr_t address,frameno_t frameNumber) {
 	/* copy? */
 	if(foundOther)
 		paging_copyFromFrame(frameNumber,(void*)(address & ~(PAGE_SIZE - 1)));
-	klock_release(&cowLock);
+	spinlock_release(&cowLock);
 	return frmCount;
 }
 
@@ -106,13 +106,13 @@ bool cow_add(pid_t pid,frameno_t frameNo) {
 		return false;
 	cc->frameNumber = frameNo;
 	cc->pid = pid;
-	klock_aquire(&cowLock);
+	spinlock_aquire(&cowLock);
 	if(!sll_append(cowFrames,cc)) {
-		klock_release(&cowLock);
+		spinlock_release(&cowLock);
 		cache_free(cc);
 		return false;
 	}
-	klock_release(&cowLock);
+	spinlock_release(&cowLock);
 	return true;
 }
 
@@ -123,7 +123,7 @@ size_t cow_remove(pid_t pid,frameno_t frameNo,bool *foundOther) {
 	bool foundOwn = false;
 
 	/* search for the frame in the COW-list */
-	klock_aquire(&cowLock);
+	spinlock_aquire(&cowLock);
 	ln = NULL;
 	*foundOther = false;
 	for(n = sll_begin(cowFrames); n != NULL; ) {
@@ -149,7 +149,7 @@ size_t cow_remove(pid_t pid,frameno_t frameNo,bool *foundOther) {
 		n = n->next;
 	}
 	vassert(foundOwn,"For frameNo %#x and proc %d",frameNo,pid);
-	klock_release(&cowLock);
+	spinlock_release(&cowLock);
 	return frmCount;
 }
 
@@ -157,7 +157,7 @@ size_t cow_getFrmCount(void) {
 	sSLNode *n;
 	size_t i,count = 0;
 	frameno_t *frames;
-	klock_aquire(&cowLock);
+	spinlock_aquire(&cowLock);
 	frames = (frameno_t*)cache_calloc(sll_length(cowFrames),sizeof(frameno_t));
 	if(frames) {
 		for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
@@ -174,7 +174,7 @@ size_t cow_getFrmCount(void) {
 		}
 		cache_free(frames);
 	}
-	klock_release(&cowLock);
+	spinlock_release(&cowLock);
 	return count;
 }
 

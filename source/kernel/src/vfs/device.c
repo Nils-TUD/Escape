@@ -26,7 +26,7 @@
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <assert.h>
@@ -142,17 +142,17 @@ int vfs_device_setReadable(sVFSNode *node,bool readable) {
 
 void vfs_device_addMsg(sVFSNode *node) {
 	sDevice *dev = (sDevice*)node->data;
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	dev->msgCount++;
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 }
 
 void vfs_device_remMsg(sVFSNode *node) {
 	sDevice *dev = (sDevice*)node->data;
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	assert(dev->msgCount > 0);
 	dev->msgCount--;
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 }
 
 bool vfs_device_hasWork(sVFSNode *node) {

@@ -25,7 +25,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/util.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <assert.h>
@@ -69,15 +69,15 @@ void sched_init(void) {
 }
 
 void sched_addIdleThread(sThread *t) {
-	klock_aquire(&schedLock);
+	spinlock_aquire(&schedLock);
 	sll_append(&idleThreads,t);
-	klock_release(&schedLock);
+	spinlock_release(&schedLock);
 }
 
 sThread *sched_perform(sThread *old,uint64_t runtime) {
 	ssize_t i;
 	sThread *t;
-	klock_aquire(&schedLock);
+	spinlock_aquire(&schedLock);
 	/* give the old thread a new state */
 	if(old) {
 		/* TODO it would be better to keep the idle-thread if we should idle again */
@@ -92,7 +92,7 @@ sThread *sched_perform(sThread *old,uint64_t runtime) {
 			if(old->state != ST_ZOMBIE && sig_hasSignalFor(old->tid)) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->newState = ST_READY;
-				klock_release(&schedLock);
+				spinlock_release(&schedLock);
 				/*ev_removeThread(old);*/
 				return old;
 			}
@@ -152,14 +152,14 @@ sThread *sched_perform(sThread *old,uint64_t runtime) {
 	if(rdyCount > 0)
 		smp_wakeupCPU();
 
-	klock_release(&schedLock);
+	spinlock_release(&schedLock);
 	return t;
 }
 
 void sched_adjustPrio(sThread *t,size_t threadCount) {
 	const uint64_t threadSlice = RUNTIME_UPDATE_INTVAL / threadCount;
 	uint64_t runtime;
-	klock_aquire(&schedLock);
+	spinlock_aquire(&schedLock);
 	runtime = RUNTIME_UPDATE_INTVAL * 1000 - t->stats.timeslice;
 	/* if the thread has used a lot of its timeslice, lower its priority */
 	if(runtime >= threadSlice * PRIO_BAD_SLICE) {
@@ -186,7 +186,7 @@ void sched_adjustPrio(sThread *t,size_t threadCount) {
 		}
 	}
 	t->stats.timeslice = RUNTIME_UPDATE_INTVAL * 1000;
-	klock_release(&schedLock);
+	spinlock_release(&schedLock);
 }
 
 bool sched_setReady(sThread *t) {
@@ -195,7 +195,7 @@ bool sched_setReady(sThread *t) {
 	if(t->flags & T_IDLE)
 		return false;
 
-	klock_aquire(&schedLock);
+	spinlock_aquire(&schedLock);
 	if(t->state == ST_RUNNING) {
 		res = t->newState != ST_READY;
 		t->newState = ST_READY;
@@ -207,7 +207,7 @@ bool sched_setReady(sThread *t) {
 			res = true;
 		}
 	}
-	klock_release(&schedLock);
+	spinlock_release(&schedLock);
 	return res;
 }
 
@@ -217,7 +217,7 @@ bool sched_setReadyQuick(sThread *t) {
 	if(t->flags & T_IDLE)
 		return false;
 
-	klock_aquire(&schedLock);
+	spinlock_aquire(&schedLock);
 	if(t->state == ST_RUNNING) {
 		res = t->newState != ST_READY;
 		t->newState = ST_READY;
@@ -233,7 +233,7 @@ bool sched_setReadyQuick(sThread *t) {
 			res = true;
 		}
 	}
-	klock_release(&schedLock);
+	spinlock_release(&schedLock);
 	return res;
 }
 
@@ -259,7 +259,7 @@ static bool sched_setReadyState(sThread *t) {
 
 void sched_setBlocked(sThread *t) {
 	assert(t != NULL);
-	klock_aquire(&schedLock);
+	spinlock_aquire(&schedLock);
 	switch(t->state) {
 		case ST_ZOMBIE:
 		case ST_ZOMBIE_SUSP:
@@ -281,13 +281,13 @@ void sched_setBlocked(sThread *t) {
 			vassert(false,"Invalid state for setBlocked (%d)",t->state);
 			break;
 	}
-	klock_release(&schedLock);
+	spinlock_release(&schedLock);
 }
 
 void sched_setSuspended(sThread *t,bool blocked) {
 	assert(t != NULL);
 
-	klock_aquire(&schedLock);
+	spinlock_aquire(&schedLock);
 	if(blocked) {
 		switch(t->state) {
 			/* already suspended, so ignore it */
@@ -334,16 +334,16 @@ void sched_setSuspended(sThread *t,bool blocked) {
 				break;
 		}
 	}
-	klock_release(&schedLock);
+	spinlock_release(&schedLock);
 }
 
 void sched_removeThread(sThread *t) {
-	klock_aquire(&schedLock);
+	spinlock_aquire(&schedLock);
 	switch(t->state) {
 		case ST_RUNNING:
 			t->newState = ST_ZOMBIE;
 			smp_killThread(t);
-			klock_release(&schedLock);
+			spinlock_release(&schedLock);
 			return;
 		case ST_ZOMBIE:
 		case ST_BLOCKED:
@@ -359,7 +359,7 @@ void sched_removeThread(sThread *t) {
 	}
 	t->state = ST_ZOMBIE;
 	t->newState = ST_ZOMBIE;
-	klock_release(&schedLock);
+	spinlock_release(&schedLock);
 }
 
 void sched_print(void) {

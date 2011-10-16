@@ -46,7 +46,7 @@ size_t dyna_getTotalPages(void) {
 }
 
 bool dyna_extend(sDynArray *d) {
-	klock_aquire(&d->lock);
+	spinlock_aquire(&d->lock);
 
 	/* we use the begin for the current size here */
 	if(d->regions == NULL)
@@ -54,14 +54,14 @@ bool dyna_extend(sDynArray *d) {
 
 	/* region full? */
 	if(d->areaBegin + PAGE_SIZE > d->areaSize) {
-		klock_release(&d->lock);
+		spinlock_release(&d->lock);
 		return false;
 	}
 
 	/* allocate new region */
 	sDynaRegion *reg = freeList;
 	if(reg == NULL) {
-		klock_release(&d->lock);
+		spinlock_release(&d->lock);
 		return false;
 	}
 	freeList = freeList->next;
@@ -85,7 +85,7 @@ bool dyna_extend(sDynArray *d) {
 	memclear((void*)reg->addr,PAGE_SIZE);
 	d->areaBegin += PAGE_SIZE;
 	d->objCount += PAGE_SIZE / d->objSize;
-	klock_release(&d->lock);
+	spinlock_release(&d->lock);
 	return true;
 }
 

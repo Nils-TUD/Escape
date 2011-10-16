@@ -30,7 +30,7 @@
 #include <sys/vfs/device.h>
 #include <sys/vfs/devmsgs.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <string.h>
@@ -216,9 +216,9 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
 		thread_remHeapAlloc(t,msg1);
 	}
 
-	klock_aquire(&n->lock);
+	spinlock_aquire(&n->lock);
 	if(n->name == NULL) {
-		klock_release(&n->lock);
+		spinlock_release(&n->lock);
 		return -EDESTROYED;
 	}
 
@@ -227,14 +227,14 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
 	if(req) {
 		*req = vfs_req_get(n,NULL,reqSize);
 		if(!*req) {
-			klock_release(&n->lock);
+			spinlock_release(&n->lock);
 			return -ENOMEM;
 		}
 	}
 
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
-	klock_aquire(&waitLock);
+	spinlock_aquire(&waitLock);
 	if(*list == NULL)
 		*list = sll_create();
 
@@ -254,17 +254,17 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
 	/* notify all threads that wait on this node for a msg */
 	else
 		ev_wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
-	klock_release(&waitLock);
-	klock_release(&n->lock);
+	spinlock_release(&waitLock);
+	spinlock_release(&n->lock);
 	return 0;
 
 errorRem:
 	sll_removeFirstWith(*list,msg1);
 error:
-	klock_release(&waitLock);
+	spinlock_release(&waitLock);
 	if(req)
 		vfs_req_free(*req);
-	klock_release(&n->lock);
+	spinlock_release(&n->lock);
 	cache_free(msg1);
 	cache_free(msg2);
 	return -ENOMEM;
@@ -280,10 +280,10 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	size_t event;
 	ssize_t res;
 
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	/* node destroyed? */
 	if(node->name == NULL) {
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		return -EDESTROYED;
 	}
 
@@ -302,25 +302,25 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	/* wait until a message arrives */
 	while(sll_length(*list) == 0) {
 		if(!vfs_shouldBlock(file)) {
-			klock_release(&node->lock);
+			spinlock_release(&node->lock);
 			return -EWOULDBLOCK;
 		}
 		/* if the channel has already been closed, there is no hope of success here */
 		if(chan->closed) {
-			klock_release(&node->lock);
+			spinlock_release(&node->lock);
 			return -EDESTROYED;
 		}
 		ev_wait(t,event,(evobj_t)waitNode);
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 
 		thread_switch();
 
 		if(sig_hasSignalFor(t->tid))
 			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
-		klock_aquire(&node->lock);
+		spinlock_aquire(&node->lock);
 		if(node->name == NULL) {
-			klock_release(&node->lock);
+			spinlock_release(&node->lock);
 			return -EDESTROYED;
 		}
 	}
@@ -329,7 +329,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	msg = (sMessage*)sll_removeFirst(*list);
 	if(event == EVI_CLIENT)
 		vfs_device_remMsg(node->parent);
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 	if(data && msg->length > size) {
 		cache_free(msg);
 		return -EINVAL;

@@ -28,7 +28,7 @@
 #include <sys/task/event.h>
 #include <sys/task/smp.h>
 #include <sys/vfs/vfs.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/log.h>
@@ -340,24 +340,24 @@ void vmm_swapOut(pid_t pid,file_t file,size_t count) {
 	}
 }
 
-void vmm_swapIn(pid_t pid,file_t file,sThread *t,uintptr_t addr) {
+bool vmm_swapIn(pid_t pid,file_t file,sThread *t,uintptr_t addr) {
 	sVMRegion *vmreg;
 	frameno_t frame;
 	ulong block;
 	size_t index;
 	vmreg_t rno = vmm_getRegionOf(t->proc,addr);
 	if(rno == -1)
-		return;
+		return false;
 	vmreg = REG(t->proc,rno);
 	if(!vmreg)
-		return;
+		return false;
 
 	addr &= ~(PAGE_SIZE - 1);
 	index = (addr - vmreg->virt) / PAGE_SIZE;
 
 	/* not swapped anymore? so probably another process has already swapped it in */
 	if(!(vmreg->reg->pageFlags[index] & PF_SWAPPED))
-		return;
+		return false;
 
 	block = reg_getSwapBlock(vmreg->reg,index);
 
@@ -387,6 +387,7 @@ void vmm_swapIn(pid_t pid,file_t file,sThread *t,uintptr_t addr) {
 	vmm_setSwappedIn(vmreg->reg,index,frame);
 	/* free swap-block */
 	swmap_free(block);
+	return true;
 }
 
 void vmm_setTimestamp(const sThread *t,uint64_t timestamp) {

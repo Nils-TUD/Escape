@@ -27,7 +27,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/config.h>
 #include <sys/cpu.h>
 #include <assert.h>
@@ -95,7 +95,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	frameno_t frame;
 	/* ensure that we won't get interrupted */
 	klock_t lock = 0;
-	klock_aquire(&lock);
+	spinlock_aquire(&lock);
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
 	frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
@@ -113,7 +113,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 		*dst++ = *src++;
 
 	paging_unmapFromTemp(1);
-	klock_release(&lock);
+	spinlock_release(&lock);
 	/* parent */
 	return 0;
 }
@@ -161,15 +161,15 @@ void thread_setRunning(sThread *t) {
 
 bool thread_isRunning(sThread *t) {
 	bool res;
-	klock_aquire(&switchLock);
+	spinlock_aquire(&switchLock);
 	res = t->state == ST_RUNNING;
-	klock_release(&switchLock);
+	spinlock_release(&switchLock);
 	return res;
 }
 
 void thread_initialSwitch(void) {
 	sThread *cur;
-	klock_aquire(&switchLock);
+	spinlock_aquire(&switchLock);
 	cur = sched_perform(NULL,0);
 	cur->stats.schedCount++;
 	if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
@@ -186,7 +186,7 @@ void thread_doSwitch(void) {
 	sThread *new;
 	/* lock this, because sched_perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
-	klock_aquire(&switchLock);
+	spinlock_aquire(&switchLock);
 
 	/* update runtime-stats */
 	cycles = cpu_rdtsc();
@@ -219,7 +219,7 @@ void thread_doSwitch(void) {
 	}
 	else {
 		new->stats.cycleStart = cpu_rdtsc();
-		klock_release(&switchLock);
+		spinlock_release(&switchLock);
 	}
 }
 

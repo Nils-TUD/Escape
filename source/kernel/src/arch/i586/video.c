@@ -23,7 +23,7 @@
 #include <sys/dbg/kb.h>
 #include <sys/config.h>
 #include <sys/log.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/util.h>
 #include <sys/printf.h>
 #include <sys/video.h>
@@ -67,11 +67,11 @@ void vid_backup(char *buffer,ushort *r,ushort *c) {
 }
 
 void vid_restore(const char *buffer,ushort r,ushort c) {
-	klock_aquire(&vidLock);
+	spinlock_aquire(&vidLock);
 	memcpy((void*)VIDEO_BASE,buffer,VID_ROWS * VID_COLS * 2);
 	row = r;
 	col = c;
-	klock_release(&vidLock);
+	spinlock_release(&vidLock);
 }
 
 void vid_setTargets(uint ntargets) {
@@ -79,10 +79,10 @@ void vid_setTargets(uint ntargets) {
 }
 
 void vid_clearScreen(void) {
-	klock_aquire(&vidLock);
+	spinlock_aquire(&vidLock);
 	memclear((void*)VIDEO_BASE,VID_COLS * 2 * VID_ROWS);
 	col = row = 0;
-	klock_release(&vidLock);
+	spinlock_release(&vidLock);
 }
 
 void vid_setPrintFunc(fPrintc func) {
@@ -106,9 +106,9 @@ void vid_vprintf(const char *fmt,va_list ap) {
 	env.escape = vid_handleColorCode;
 	env.pipePad = vid_handlePipePad;
 	if(targets & TARGET_SCREEN) {
-		klock_aquire(&vidLock);
+		spinlock_aquire(&vidLock);
 		prf_vprintf(&env,fmt,ap);
-		klock_release(&vidLock);
+		spinlock_release(&vidLock);
 	}
 	if(targets & TARGET_LOG)
 		log_vprintf(fmt,ap);

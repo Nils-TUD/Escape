@@ -25,7 +25,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <esc/sllist.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <assert.h>
 
@@ -88,7 +88,7 @@ void ev_unsuspend(sThread *t) {
 bool ev_wait(sThread *t,size_t evi,evobj_t object) {
 	bool res = false;
 	sWait *w;
-	klock_aquire(&evLock);
+	spinlock_aquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -96,14 +96,14 @@ bool ev_wait(sThread *t,size_t evi,evobj_t object) {
 		thread_block(t);
 		res = true;
 	}
-	klock_release(&evLock);
+	spinlock_release(&evLock);
 	return res;
 }
 
 bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 	size_t i,e;
 	sWait *w;
-	klock_aquire(&evLock);
+	spinlock_aquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -116,7 +116,7 @@ bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 					w = ev_doWait(t,e,objects[i].object,&t->waits,w);
 					if(w == NULL) {
 						ev_doRemoveThread(t);
-						klock_release(&evLock);
+						spinlock_release(&evLock);
 						return false;
 					}
 					events &= ~(1 << e);
@@ -125,7 +125,7 @@ bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 		}
 	}
 	thread_block(t);
-	klock_release(&evLock);
+	spinlock_release(&evLock);
 	return true;
 }
 
@@ -134,7 +134,7 @@ void ev_wakeup(size_t evi,evobj_t object) {
 	sWaitList *list = evlists + evi;
 	sWait *w;
 	size_t i = 0;
-	klock_aquire(&evLock);
+	spinlock_aquire(&evLock);
 	w = list->begin;
 	while(w != NULL) {
 		if(w->object == 0 || w->object == object) {
@@ -159,7 +159,7 @@ void ev_wakeup(size_t evi,evobj_t object) {
 		ev_doRemoveThread(t);
 		thread_unblock(t);
 	}
-	klock_release(&evLock);
+	spinlock_release(&evLock);
 }
 
 void ev_wakeupm(uint events,evobj_t object) {
@@ -174,20 +174,20 @@ void ev_wakeupm(uint events,evobj_t object) {
 
 bool ev_wakeupThread(sThread *t,uint events) {
 	bool res = false;
-	klock_aquire(&evLock);
+	spinlock_aquire(&evLock);
 	if(t->events & events) {
 		ev_doRemoveThread(t);
 		thread_unblock(t);
 		res = true;
 	}
-	klock_release(&evLock);
+	spinlock_release(&evLock);
 	return res;
 }
 
 void ev_removeThread(sThread *t) {
-	klock_aquire(&evLock);
+	spinlock_aquire(&evLock);
 	ev_doRemoveThread(t);
-	klock_release(&evLock);
+	spinlock_release(&evLock);
 }
 
 void ev_printEvMask(const sThread *t) {

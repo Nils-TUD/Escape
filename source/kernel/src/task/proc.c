@@ -39,7 +39,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/fsmsgs.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/mutex.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>
@@ -158,7 +158,7 @@ sProc *proc_request(pid_t pid,size_t l) {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
 		mutex_aquire(p->locks + l);
 	else
-		klock_aquire(p->locks + l);
+		spinlock_aquire(p->locks + l);
 	return p;
 }
 
@@ -166,7 +166,7 @@ void proc_release(sProc *p,size_t l) {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
 		mutex_release(p->locks + l);
 	else
-		klock_release(p->locks + l);
+		spinlock_release(p->locks + l);
 }
 
 size_t proc_getCount(void) {
@@ -794,7 +794,7 @@ static void proc_doDestroy(sProc *p) {
 	size_t i;
 
 	/* release file-descriptors */
-	klock_aquire(p->locks + PLOCK_FDS);
+	spinlock_aquire(p->locks + PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {
 			vfs_incUsages(p->fileDescs[i]);
@@ -803,7 +803,7 @@ static void proc_doDestroy(sProc *p) {
 			p->fileDescs[i] = -1;
 		}
 	}
-	klock_release(p->locks + PLOCK_FDS);
+	spinlock_release(p->locks + PLOCK_FDS);
 
 	/* release resources */
 	groups_leave(p->pid);

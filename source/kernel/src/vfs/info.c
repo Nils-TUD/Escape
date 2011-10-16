@@ -31,7 +31,7 @@
 #include <sys/vfs/file.h>
 #include <sys/vfs/fsmsgs.h>
 #include <sys/cpu.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/printf.h>
@@ -381,43 +381,43 @@ static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **
 
 static sProc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sProc *p;
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		return NULL;
 	}
 	p = proc_getByPid(atoi(node->parent->name));
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 	return p;
 }
 
 static pid_t vfs_info_getPid(sVFSNode *node,size_t *dataSize,void **buffer) {
 	pid_t pid;
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		return INVALID_PID;
 	}
 	pid = atoi(node->parent->name);
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 	return pid;
 }
 
 static sThread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sThread *t;
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		return NULL;
 	}
 	t = thread_getById(atoi(node->parent->name));
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 	return t;
 }
 

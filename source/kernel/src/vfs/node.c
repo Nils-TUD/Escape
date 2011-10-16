@@ -65,15 +65,15 @@ inode_t vfs_node_getNo(const sVFSNode *node) {
 
 sVFSNode *vfs_node_request(inode_t nodeNo) {
 	sVFSNode *n = (sVFSNode*)dyna_getObj(&nodeArray,nodeNo);
-	klock_aquire(&n->lock);
+	spinlock_aquire(&n->lock);
 	if(n->name)
 		return n;
-	klock_release(&n->lock);
+	spinlock_release(&n->lock);
 	return NULL;
 }
 
 void vfs_node_release(sVFSNode *node) {
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 }
 
 sVFSNode *vfs_node_get(inode_t nodeNo) {
@@ -89,7 +89,7 @@ static sVFSNode *vfs_node_openDirOf(inode_t nodeNo,bool *isValid) {
 		else {
 			parent = vfs_link_resolve(dir);
 			vfs_node_release(dir);
-			klock_aquire(&parent->lock);
+			spinlock_aquire(&parent->lock);
 			*isValid = parent->name != NULL;
 		}
 		return parent->firstChild;
@@ -104,7 +104,7 @@ sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked,bool *isValid) {
 	else
 		parent = vfs_link_resolve(dir);
 	if(locked)
-		klock_aquire(&parent->lock);
+		spinlock_aquire(&parent->lock);
 	*isValid = parent->name != NULL;
 	return parent->firstChild;
 }
@@ -116,7 +116,7 @@ void vfs_node_closeDir(sVFSNode *dir,bool locked) {
 	else
 		parent = vfs_link_resolve(dir);
 	if(locked)
-		klock_release(&parent->lock);
+		spinlock_release(&parent->lock);
 }
 
 int vfs_node_getInfo(inode_t nodeNo,USER sFileInfo *info) {
@@ -448,10 +448,10 @@ void vfs_node_destroy(sVFSNode *n) {
 
 	/* aquire both locks before n->destroy(). we can't destroy the node-data without lock because
 	 * otherwise one could access it before the node is removed from the tree */
-	klock_aquire(&n->lock);
+	spinlock_aquire(&n->lock);
 	parent = n->parent;
 	if(parent)
-		klock_aquire(&parent->lock);
+		spinlock_aquire(&parent->lock);
 
 	/* take care that we don't destroy the node twice */
 	if(n->name) {
@@ -486,8 +486,8 @@ void vfs_node_destroy(sVFSNode *n) {
 	if(n->refCount == 0)
 		vfs_node_releaseNode(n);
 	if(parent)
-		klock_release(&parent->lock);
-	klock_release(&n->lock);
+		spinlock_release(&parent->lock);
+	spinlock_release(&n->lock);
 }
 
 char *vfs_node_getId(pid_t pid) {
@@ -505,9 +505,9 @@ char *vfs_node_getId(pid_t pid) {
 	itoa(name,size,pid);
 	len = strlen(name);
 	*(name + len) = '.';
-	klock_aquire(&nodesLock);
+	spinlock_aquire(&nodesLock);
 	id = nextUsageId++;
-	klock_release(&nodesLock);
+	spinlock_release(&nodesLock);
 	itoa(name + len + 1,size - (len + 1),id);
 	return name;
 }
@@ -569,7 +569,7 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 
 static sVFSNode *vfs_node_requestNode(void) {
 	sVFSNode *node = NULL;
-	klock_aquire(&nodesLock);
+	spinlock_aquire(&nodesLock);
 	if(freeList == NULL) {
 		size_t i,oldCount = nodeArray.objCount;
 		if(!dyna_extend(&nodeArray))
@@ -584,7 +584,7 @@ static sVFSNode *vfs_node_requestNode(void) {
 
 	node = freeList;
 	freeList = freeList->next;
-	klock_release(&nodesLock);
+	spinlock_release(&nodesLock);
 	return node;
 }
 
@@ -594,10 +594,10 @@ static void vfs_node_releaseNode(sVFSNode *node) {
 	*(char**)&node->name = NULL;
 	*(size_t*)&node->nameLen = 0;
 	*(pid_t*)&node->owner = INVALID_PID;
-	klock_aquire(&nodesLock);
+	spinlock_aquire(&nodesLock);
 	node->next = freeList;
 	freeList = node;
-	klock_release(&nodesLock);
+	spinlock_release(&nodesLock);
 }
 
 static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {

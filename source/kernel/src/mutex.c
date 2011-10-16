@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/event.h>
 #include <sys/mutex.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/log.h>
 #include <sys/util.h>
 
@@ -30,7 +30,7 @@ static klock_t mutexLock;
 #define util_printStackTraceShort(...)
 
 void mutex_aquire(mutex_t *m) {
-	klock_aquire(&mutexLock);
+	spinlock_aquire(&mutexLock);
 	if(*m & 1) {
 		sThread *t = thread_getRunning();
 		*m += 2;
@@ -39,9 +39,9 @@ void mutex_aquire(mutex_t *m) {
 		log_printf("\n");
 		do {
 			ev_wait(t,EVI_MUTEX,(evobj_t)m);
-			klock_release(&mutexLock);
+			spinlock_release(&mutexLock);
 			thread_switchNoSigs();
-			klock_aquire(&mutexLock);
+			spinlock_aquire(&mutexLock);
 		}
 		while(*m & 1);
 		log_printf("[%d] Waked up\n",t->tid);
@@ -51,12 +51,12 @@ void mutex_aquire(mutex_t *m) {
 	util_printStackTraceShort(util_getKernelStackTrace());
 	log_printf("\n");
 	*m |= 1;
-	klock_release(&mutexLock);
+	spinlock_release(&mutexLock);
 }
 
 bool mutex_tryAquire(mutex_t *m) {
 	bool res = false;
-	klock_aquire(&mutexLock);
+	spinlock_aquire(&mutexLock);
 	if(!(*m & 1)) {
 		log_printf("[%d] L %#x ",thread_getRunning()->tid,m);
 		util_printStackTraceShort(util_getKernelStackTrace());
@@ -64,12 +64,12 @@ bool mutex_tryAquire(mutex_t *m) {
 		*m |= 1;
 		res = true;
 	}
-	klock_release(&mutexLock);
+	spinlock_release(&mutexLock);
 	return res;
 }
 
 void mutex_release(mutex_t *m) {
-	klock_aquire(&mutexLock);
+	spinlock_aquire(&mutexLock);
 	*m &= ~1;
 	log_printf("[%d] U %#x ",thread_getRunning()->tid,m);
 	if(*m > 0) {
@@ -78,5 +78,5 @@ void mutex_release(mutex_t *m) {
 	}
 	util_printStackTraceShort(util_getKernelStackTrace());
 	log_printf("\n");
-	klock_release(&mutexLock);
+	spinlock_release(&mutexLock);
 }

@@ -26,7 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/util.h>
 #include <string.h>
 
@@ -227,14 +227,14 @@ void smp_sendIPI(cpuid_t id,uint8_t vector) {
 
 void smp_apIsRunning(void) {
 	cpuid_t phys,log;
-	klock_aquire(&smpLock);
+	spinlock_aquire(&smpLock);
 	phys = apic_getId();
 	log = gdt_getCPUId();
 	log2Phys[log] = phys;
 	smp_setId(phys,log);
 	smp_setReady(log);
 	seenAPs++;
-	klock_release(&smpLock);
+	spinlock_release(&smpLock);
 }
 
 void smp_start(void) {

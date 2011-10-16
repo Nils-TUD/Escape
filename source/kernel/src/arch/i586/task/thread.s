@@ -20,7 +20,7 @@
 .global thread_idle
 .global thread_save
 .global thread_resume
-.extern klock_release
+.extern spinlock_release
 
 # process save area offsets
 .set STATE_ESP,						0

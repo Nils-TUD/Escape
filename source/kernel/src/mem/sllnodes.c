@@ -21,7 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/dynarray.h>
 #include <sys/mem/sllnodes.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <esc/sllist.h>
 #include <assert.h>
 
@@ -48,7 +48,7 @@ static klock_t sllnLock;
 void *slln_allocNode(size_t size) {
 	sListNode *n;
 	assert(sizeof(sListNode) == size && offsetof(sSLNode,next) == offsetof(sListNode,next));
-	klock_aquire(&sllnLock);
+	spinlock_aquire(&sllnLock);
 	if(freelist == NULL) {
 		size_t i,oldCount;
 		if(!initialized) {
@@ -57,7 +57,7 @@ void *slln_allocNode(size_t size) {
 		}
 		oldCount = nodeArray.objCount;
 		if(!dyna_extend(&nodeArray)) {
-			klock_release(&sllnLock);
+			spinlock_release(&sllnLock);
 			return NULL;
 		}
 		for(i = oldCount; i < nodeArray.objCount; i++) {
@@ -68,14 +68,14 @@ void *slln_allocNode(size_t size) {
 	}
 	n = freelist;
 	freelist = freelist->next;
-	klock_release(&sllnLock);
+	spinlock_release(&sllnLock);
 	return n;
 }
 
 void slln_freeNode(void *o) {
 	sListNode *n = (sListNode*)o;
-	klock_aquire(&sllnLock);
+	spinlock_aquire(&sllnLock);
 	n->next = freelist;
 	freelist = n;
-	klock_release(&sllnLock);
+	spinlock_release(&sllnLock);
 }

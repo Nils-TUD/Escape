@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/cache.h>
 #include <sys/printf.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <esc/width.h>
 #include <stdarg.h>
 #include <string.h>
@@ -66,12 +66,12 @@ void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 	env.print = prf_aprintc;
 	env.escape = NULL;
 	env.pipePad = NULL;
-	klock_aquire(&bufLock);
+	spinlock_aquire(&bufLock);
 	curbuf = buf;
 	prf_vprintf(&env,fmt,ap);
 	/* terminate */
 	prf_aprintc('\0');
-	klock_release(&bufLock);
+	spinlock_release(&bufLock);
 }
 
 static void prf_aprintc(char c) {

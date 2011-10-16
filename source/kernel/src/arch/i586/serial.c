@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/arch/i586/serial.h>
 #include <sys/arch/i586/ports.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <assert.h>
 
 static int ser_isTransmitEmpty(uint16_t port);
@@ -42,10 +42,10 @@ void ser_out(uint16_t port,uint8_t byte) {
 	uint16_t ioport;
 	assert(port < ARRAY_SIZE(ports));
 	ioport = ports[port];
-	klock_aquire(&serialLock);
+	spinlock_aquire(&serialLock);
 	while(ser_isTransmitEmpty(ioport) == 0);
 	ports_outByte(ioport,byte);
-	klock_release(&serialLock);
+	spinlock_release(&serialLock);
 }
 
 static int ser_isTransmitEmpty(uint16_t port) {

@@ -28,7 +28,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/pipe.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -121,22 +121,22 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 	sPipeData *data;
 
 	/* wait until data is available */
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		return -EDESTROYED;
 	}
 	while(sll_length(&pipe->list) == 0) {
 		ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 
 		thread_switch();
 
 		if(sig_hasSignalFor(t->tid))
 			return -EINTR;
-		klock_aquire(&node->lock);
+		spinlock_aquire(&node->lock);
 		if(node->name == NULL) {
-			klock_release(&node->lock);
+			spinlock_release(&node->lock);
 			return -EDESTROYED;
 		}
 	}
@@ -144,7 +144,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 	data = sll_get(&pipe->list,0);
 	/* empty message indicates EOF */
 	if(data->length == 0) {
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		return 0;
 	}
 
@@ -174,15 +174,15 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 			 * we may cause a deadlock here */
 			ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 			ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
-			klock_release(&node->lock);
+			spinlock_release(&node->lock);
 
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back.. */
 			thread_switchNoSigs();
 
-			klock_aquire(&node->lock);
+			spinlock_aquire(&node->lock);
 			if(node->name == NULL) {
-				klock_release(&node->lock);
+				spinlock_release(&node->lock);
 				return -EDESTROYED;
 			}
 		}
@@ -191,7 +191,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 		if(data->length == 0)
 			break;
 	}
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 	/* wakeup all threads that wait for writing in this node */
 	ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 	return total;
@@ -209,31 +209,31 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *
 
 	/* wait while our node is full */
 	if(count) {
-		klock_aquire(&node->lock);
+		spinlock_aquire(&node->lock);
 		if(node->name == NULL) {
-			klock_release(&node->lock);
+			spinlock_release(&node->lock);
 			return -EDESTROYED;
 		}
 		while((pipe->total + count) >= MAX_VFS_FILE_SIZE) {
 			ev_wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
-			klock_release(&node->lock);
+			spinlock_release(&node->lock);
 
 			thread_switchNoSigs();
 
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
-			klock_aquire(&node->lock);
+			spinlock_aquire(&node->lock);
 			if(node->name == NULL) {
-				klock_release(&node->lock);
+				spinlock_release(&node->lock);
 				return -EDESTROYED;
 			}
 			if(pipe->noReader) {
-				klock_release(&node->lock);
+				spinlock_release(&node->lock);
 				proc_addSignalFor(pid,SIG_PIPE_CLOSED);
 				return -EPIPE;
 			}
 		}
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 	}
 
 	/* build pipe-data */
@@ -249,19 +249,19 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *
 	}
 
 	/* append */
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		cache_free(data);
 		return -EDESTROYED;
 	}
 	if(!sll_append(&pipe->list,data)) {
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		cache_free(data);
 		return -ENOMEM;
 	}
 	pipe->total += count;
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 	ev_wakeup(EVI_PIPE_FULL,(evobj_t)node);
 	return count;
 }

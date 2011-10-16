@@ -25,7 +25,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/node.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <string.h>
 #include <errno.h>
 
@@ -102,9 +102,9 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USE
 		off_t offset,size_t count) {
 	size_t byteCount = 0;
 	sFileContent *con = (sFileContent*)node->data;
-	klock_aquire(&node->lock);
+	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
-		klock_release(&node->lock);
+		spinlock_release(&node->lock);
 		return -EDESTROYED;
 	}
 	if(con->data != NULL) {
@@ -118,7 +118,7 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USE
 			thread_remLock(t,&node->lock);
 		}
 	}
-	klock_release(&node->lock);
+	spinlock_release(&node->lock);
 	return byteCount;
 }
 
@@ -128,10 +128,10 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 	size_t newSize = 0;
 	sThread *t = thread_getRunning();
 	sFileContent *con = (sFileContent*)n->data;
-	klock_aquire(&n->lock);
+	spinlock_aquire(&n->lock);
 	oldData = con->data;
 	if(n->name == NULL) {
-		klock_release(&n->lock);
+		spinlock_release(&n->lock);
 		return -EDESTROYED;
 	}
 
@@ -140,7 +140,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 		newSize = MAX(count,VFS_INITIAL_WRITECACHE);
 		/* check for overflow */
 		if(newSize > MAX_VFS_FILE_SIZE) {
-			klock_release(&n->lock);
+			spinlock_release(&n->lock);
 			return -ENOMEM;
 		}
 
@@ -153,7 +153,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 		/* ensure that we allocate enough memory */
 		newSize = MAX(offset + count,con->size * 2);
 		if(newSize > MAX_VFS_FILE_SIZE) {
-			klock_release(&n->lock);
+			spinlock_release(&n->lock);
 			return -ENOMEM;
 		}
 
@@ -164,7 +164,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 	if(con->data == NULL) {
 		/* don't throw the data away, use the old version */
 		con->data = oldData;
-		klock_release(&n->lock);
+		spinlock_release(&n->lock);
 		return -ENOMEM;
 	}
 
@@ -178,6 +178,6 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER 
 	thread_remLock(t,&n->lock);
 	/* we have checked size for overflow. so it is ok here */
 	con->pos = MAX(con->pos,(off_t)(offset + count));
-	klock_release(&n->lock);
+	spinlock_release(&n->lock);
 	return count;
 }

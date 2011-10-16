@@ -24,7 +24,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>

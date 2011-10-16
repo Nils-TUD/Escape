@@ -49,7 +49,7 @@ size_t dyna_getTotalPages(void) {
 bool dyna_extend(sDynArray *d) {
 	sDynaRegion *reg;
 	uintptr_t addr;
-	klock_aquire(&d->lock);
+	spinlock_aquire(&d->lock);
 
 	reg = d->regions;
 	if(reg == NULL) {
@@ -68,7 +68,7 @@ bool dyna_extend(sDynArray *d) {
 	totalPages++;
 	reg->size += PAGE_SIZE;
 	d->objCount = reg->size / d->objSize;
-	klock_release(&d->lock);
+	spinlock_release(&d->lock);
 	return true;
 }
 

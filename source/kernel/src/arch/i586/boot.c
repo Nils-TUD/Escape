@@ -71,6 +71,7 @@ static const sBootTask tasks[] = {
 	{"Start logging to VFS...",log_vfsIsReady},
 #endif
 	{"Initializing virtual memory-management...",vmm_init},
+	{"Initializing swapping...",swap_init},
 	{"Initializing copy-on-write...",cow_init},
 	{"Initializing shared memory...",shm_init},
 	{"Initializing interrupts...",intrpt_init},
@@ -205,7 +206,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	}
 
 	/* start the swapper-thread. it will never return */
-	proc_startThread((uintptr_t)&swap_start,0,NULL);
+	if(swap_isEnabled())
+		proc_startThread((uintptr_t)&swap_start,0,NULL);
 	/* start the terminator */
 	proc_startThread((uintptr_t)&term_start,0,NULL);
 

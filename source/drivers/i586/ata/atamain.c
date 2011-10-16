@@ -128,6 +128,12 @@ int main(int argc,char **argv) {
 				}
 				break;
 
+				case MSG_DISK_GETSIZE: {
+					msg.args.arg1 = part->size * ataDev->secSize;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

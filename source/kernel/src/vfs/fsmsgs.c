@@ -30,7 +30,7 @@
 #include <sys/vfs/channel.h>
 #include <sys/util.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
@@ -514,7 +514,7 @@ static file_t vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node) {
 	inode_t nodeNo;
 	sProc *p = proc_getByPid(pid);
 	/* check if there's a free channel */
-	klock_aquire(&fsChanLock);
+	spinlock_aquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		chan = (sFSChan*)n->data;
 		if(!chan->active) {
@@ -522,17 +522,17 @@ static file_t vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node) {
 				/* remove channel */
 				sll_removeFirstWith(&p->fsChans,chan);
 				cache_free(chan);
-				klock_release(&fsChanLock);
+				spinlock_release(&fsChanLock);
 				return -EDESTROYED;
 			}
 			if(node)
 				*node = chan->node;
 			chan->active = true;
-			klock_release(&fsChanLock);
+			spinlock_release(&fsChanLock);
 			return chan->file;
 		}
 	}
-	klock_release(&fsChanLock);
+	spinlock_release(&fsChanLock);
 
 	chan = (sFSChan*)cache_alloc(sizeof(sFSChan));
 	if(!chan)
@@ -561,12 +561,12 @@ static file_t vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node) {
 	if(err < 0)
 		goto errorChild;
 	chan->file = err;
-	klock_aquire(&fsChanLock);
+	spinlock_aquire(&fsChanLock);
 	if(!sll_append(&p->fsChans,chan)) {
-		klock_release(&fsChanLock);
+		spinlock_release(&fsChanLock);
 		goto errorClose;
 	}
-	klock_release(&fsChanLock);
+	spinlock_release(&fsChanLock);
 	if(node)
 		*node = chan->node;
 	vfs_node_release(fsnode);
@@ -586,7 +586,7 @@ errorChan:
 static void vfs_fsmsgs_releaseFile(pid_t pid,file_t file) {
 	sSLNode *n;
 	const sProc *p = proc_getByPid(pid);
-	klock_aquire(&fsChanLock);
+	spinlock_aquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
 		if(chan->file == file) {
@@ -594,16 +594,16 @@ static void vfs_fsmsgs_releaseFile(pid_t pid,file_t file) {
 			break;
 		}
 	}
-	klock_release(&fsChanLock);
+	spinlock_release(&fsChanLock);
 }
 
 void vfs_fsmsgs_printFSChans(const sProc *p) {
 	sSLNode *n;
-	klock_aquire(&fsChanLock);
+	spinlock_aquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
 		vid_printf("\t\t%s (%s)\n",vfs_node_getPath(vfs_node_getNo(chan->node)),
 				chan->active ? "active" : "not active");
 	}
-	klock_release(&fsChanLock);
+	spinlock_release(&fsChanLock);
 }

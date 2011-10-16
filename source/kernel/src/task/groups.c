@@ -22,7 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>
 
@@ -66,9 +66,9 @@ void groups_join(sProc *dst,sProc *src) {
 	sProcGroups *g = src->groups;
 	dst->groups = g;
 	if(g) {
-		klock_aquire(&g->lock);
+		spinlock_aquire(&g->lock);
 		g->refCount++;
-		klock_release(&g->lock);
+		spinlock_release(&g->lock);
 	}
 }
 
@@ -103,12 +103,12 @@ void groups_leave(pid_t pid) {
 		return;
 	g = p->groups;
 	if(g) {
-		klock_aquire(&g->lock);
+		spinlock_aquire(&g->lock);
 		if(--g->refCount == 0) {
 			cache_free(g->groups);
 			cache_free(g);
 		}
-		klock_release(&g->lock);
+		spinlock_release(&g->lock);
 	}
 	p->groups = NULL;
 }

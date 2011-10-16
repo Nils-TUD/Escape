@@ -23,7 +23,7 @@
 #include <sys/task/event.h>
 #include <sys/video.h>
 #include <sys/util.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <errno.h>
 
 #define LISTENER_COUNT		1024
@@ -75,10 +75,10 @@ time_t timer_getTimestamp(void) {
 int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
 	time_t msecDiff;
 	sTimerListener *p,*nl,*l;
-	klock_aquire(&timerLock);
+	spinlock_aquire(&timerLock);
 	l = freeList;
 	if(l == 0) {
-		klock_release(&timerLock);
+		spinlock_release(&timerLock);
 		return -ENOMEM;
 	}
 
@@ -110,13 +110,13 @@ int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
 	/* put process to sleep */
 	if(block)
 		ev_block(thread_getById(tid));
-	klock_release(&timerLock);
+	spinlock_release(&timerLock);
 	return 0;
 }
 
 void timer_removeThread(tid_t tid) {
 	sTimerListener *l,*p;
-	klock_aquire(&timerLock);
+	spinlock_aquire(&timerLock);
 	p = NULL;
 	for(l = listener; l != NULL; p = l, l = l->next) {
 		if(l->tid == tid) {
@@ -135,7 +135,7 @@ void timer_removeThread(tid_t tid) {
 			break;
 		}
 	}
-	klock_release(&timerLock);
+	spinlock_release(&timerLock);
 }
 
 bool timer_intrpt(void) {
@@ -143,7 +143,7 @@ bool timer_intrpt(void) {
 	sTimerListener *l,*tl;
 	time_t timeInc = 1000 / TIMER_FREQUENCY_DIV;
 
-	klock_aquire(&timerLock);
+	spinlock_aquire(&timerLock);
 	timerIntrpts++;
 	elapsedMsecs += timeInc;
 
@@ -185,7 +185,7 @@ bool timer_intrpt(void) {
 		lastResched = elapsedMsecs;
 		res = true;
 	}
-	klock_release(&timerLock);
+	spinlock_release(&timerLock);
 	return res;
 }
 

@@ -32,7 +32,7 @@ void dyna_start(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize)
 void *dyna_getObj(sDynArray *d,size_t index) {
 	void *res = NULL;
 	sDynaRegion *reg;
-	klock_aquire(&d->lock);
+	spinlock_aquire(&d->lock);
 	reg = d->regions;
 	/* note that we're using the index here to prevent that an object reaches out of a region */
 	while(reg != NULL) {
@@ -44,7 +44,7 @@ void *dyna_getObj(sDynArray *d,size_t index) {
 		index -= objsInReg;
 		reg = reg->next;
 	}
-	klock_release(&d->lock);
+	spinlock_release(&d->lock);
 	return res;
 }
 
@@ -52,7 +52,7 @@ ssize_t dyna_getIndex(sDynArray *d,const void *obj) {
 	ssize_t res = -1;
 	size_t index = 0;
 	sDynaRegion *reg;
-	klock_aquire(&d->lock);
+	spinlock_aquire(&d->lock);
 	reg = d->regions;
 	while(reg != NULL) {
 		if((uintptr_t)obj >= reg->addr && (uintptr_t)obj < reg->addr + reg->size) {
@@ -62,6 +62,6 @@ ssize_t dyna_getIndex(sDynArray *d,const void *obj) {
 		index += reg->size / d->objSize;
 		reg = reg->next;
 	}
-	klock_release(&d->lock);
+	spinlock_release(&d->lock);
 	return res;
 }

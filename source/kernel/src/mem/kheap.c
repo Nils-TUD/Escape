@@ -21,7 +21,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <assert.h>
@@ -68,7 +68,7 @@ void *kheap_alloc(size_t size) {
 	/* align and we need 3 ulongs for the guards */
 	size = ALIGN(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
-	klock_aquire(&kheapLock);
+	spinlock_aquire(&kheapLock);
 
 	/* find a suitable area */
 	prev = NULL;
@@ -83,7 +83,7 @@ void *kheap_alloc(size_t size) {
 	/* no area found? */
 	if(area == NULL) {
 		if(!kheap_loadNewSpace(size)) {
-			klock_release(&kheapLock);
+			spinlock_release(&kheapLock);
 			return NULL;
 		}
 		/* we can assume that it fits */
@@ -104,7 +104,7 @@ void *kheap_alloc(size_t size) {
 		if(freeList == NULL) {
 			if(!kheap_loadNewAreas()) {
 				/* TODO we may have changed something... */
-				klock_release(&kheapLock);
+				spinlock_release(&kheapLock);
 				return NULL;
 			}
 		}
@@ -130,7 +130,7 @@ void *kheap_alloc(size_t size) {
 	begin[0] = size - sizeof(ulong) * 3;
 	begin[1] = GUARD_MAGIC;
 	begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-	klock_release(&kheapLock);
+	spinlock_release(&kheapLock);
 	return begin + 2;
 }
 
@@ -156,7 +156,7 @@ void kheap_free(void *addr) {
 	assert(begin[1] == GUARD_MAGIC);
 	assert(begin[begin[0] / sizeof(ulong) + 2] == GUARD_MAGIC);
 
-	klock_aquire(&kheapLock);
+	spinlock_aquire(&kheapLock);
 
 	/* find the area with given address */
 	oprev = NULL;
@@ -170,7 +170,7 @@ void kheap_free(void *addr) {
 
 	/* area not found? */
 	if(area == NULL) {
-		klock_release(&kheapLock);
+		spinlock_release(&kheapLock);
 		return;
 	}
 
@@ -254,7 +254,7 @@ void kheap_free(void *addr) {
 		area->next = usableList;
 		usableList = area;
 	}
-	klock_release(&kheapLock);
+	spinlock_release(&kheapLock);
 }
 
 void *kheap_realloc(void *addr,size_t size) {
@@ -266,7 +266,7 @@ void *kheap_realloc(void *addr,size_t size) {
 
 	begin = (ulong*)addr - 2;
 
-	klock_aquire(&kheapLock);
+	spinlock_aquire(&kheapLock);
 
 	/* find the area with given address */
 	area = occupiedMap[kheap_getHash(begin)];
@@ -278,7 +278,7 @@ void *kheap_realloc(void *addr,size_t size) {
 
 	/* area not found? */
 	if(area == NULL) {
-		klock_release(&kheapLock);
+		spinlock_release(&kheapLock);
 		return NULL;
 	}
 
@@ -287,7 +287,7 @@ void *kheap_realloc(void *addr,size_t size) {
 
 	/* ignore shrinks */
 	if(size < area->size) {
-		klock_release(&kheapLock);
+		spinlock_release(&kheapLock);
 		return addr;
 	}
 
@@ -321,7 +321,7 @@ void *kheap_realloc(void *addr,size_t size) {
 				begin[0] = size - sizeof(ulong) * 3;
 				begin[1] = GUARD_MAGIC;
 				begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-				klock_release(&kheapLock);
+				spinlock_release(&kheapLock);
 				return begin + 2;
 			}
 
@@ -331,7 +331,7 @@ void *kheap_realloc(void *addr,size_t size) {
 		prev = a;
 		a = a->next;
 	}
-	klock_release(&kheapLock);
+	spinlock_release(&kheapLock);
 
 	/* the areas are not big enough, so allocate a new one */
 	a = (sMemArea*)kheap_alloc(size);
@@ -346,9 +346,9 @@ void *kheap_realloc(void *addr,size_t size) {
 
 bool kheap_addMemory(uintptr_t addr,size_t size) {
 	bool res;
-	klock_aquire(&kheapLock);
+	spinlock_aquire(&kheapLock);
 	res = kheap_doAddMemory(addr,size);
-	klock_release(&kheapLock);
+	spinlock_release(&kheapLock);
 	return res;
 }
 

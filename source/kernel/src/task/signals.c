@@ -25,7 +25,7 @@
 #include <sys/mem/sllnodes.h>
 #include <sys/mem/cache.h>
 #include <sys/util.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>
 #include <errno.h>
@@ -74,35 +74,35 @@ bool sig_isFatal(sig_t sig) {
 int sig_setHandler(tid_t tid,sig_t signal,fSignal func) {
 	sSignals *s;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,true);
 	if(!s) {
-		klock_release(&sigLock);
+		spinlock_release(&sigLock);
 		return -ENOMEM;
 	}
 	/* set / replace handler */
 	/* note that we discard not yet delivered signals here.. */
 	s->handler[signal] = func;
 	sig_removePending(s,signal);
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 	return 0;
 }
 
 void sig_unsetHandler(tid_t tid,sig_t signal) {
 	sSignals *s;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	if(s) {
 		s->handler[signal] = NULL;
 		sig_removePending(s,signal);
 	}
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 }
 
 void sig_removeHandlerFor(tid_t tid) {
 	sSignals *s;
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	if(s) {
 		sThread *t = thread_getById(tid);
@@ -112,32 +112,32 @@ void sig_removeHandlerFor(tid_t tid) {
 		cache_free(s);
 		t->signals = NULL;
 	}
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 }
 
 void sig_cloneHandler(tid_t parent,tid_t child) {
 	sSignals *p;
 	sSignals *c;
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	p = sig_getThread(parent,false);
 	if(p) {
 		c = sig_getThread(child,true);
 		if(c)
 			memcpy(c->handler,p->handler,sizeof(p->handler));
 	}
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 }
 
 bool sig_hasSignalFor(tid_t tid) {
 	sSignals *s;
 	bool res = false;
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	if(s && !s->currentSignal && (s->deliveredSignal || s->pending.count > 0)) {
 		sThread *t = thread_getById(tid);
 		res = !t->ignoreSignals;
 	}
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 	return res;
 }
 
@@ -145,7 +145,7 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
 	sThread *t = thread_getById(tid);
 	sSignals *s;
 	int res = SIG_CHECK_NO;
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	s = t->signals;
 	assert(t->ignoreSignals == 0);
 	if(s && s->deliveredSignal && !s->currentSignal) {
@@ -186,7 +186,7 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
 			}
 		}
 	}
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 	/* without locking because the scheduler calls sig_hasSignalFor() */
 	if(res == SIG_CHECK_OTHER)
 		ev_unblockQuick(t);
@@ -196,21 +196,21 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
 bool sig_addSignalFor(tid_t tid,sig_t signal) {
 	sSignals *s;
 	bool res = false;
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	if(s && s->handler[signal]) {
 		if(s->handler[signal] != SIG_IGN)
 			sig_add(s,signal);
 		res = true;
 	}
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 	return res;
 }
 
 bool sig_addSignal(sig_t signal) {
 	sSLNode *n;
 	bool res = false;
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		if(t->signals->handler[signal] && t->signals->handler[signal] != SIG_IGN) {
@@ -218,21 +218,21 @@ bool sig_addSignal(sig_t signal) {
 			res = true;
 		}
 	}
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 	return res;
 }
 
 sig_t sig_ackHandling(tid_t tid) {
 	sig_t res;
 	sSignals *s;
-	klock_aquire(&sigLock);
+	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	assert(s != NULL);
 	vassert(s->currentSignal != 0,"No signal handling");
 	vassert(sig_canHandle(s->currentSignal),"Unable to handle signal %d",s->currentSignal);
 	res = s->currentSignal;
 	s->currentSignal = 0;
-	klock_release(&sigLock);
+	spinlock_release(&sigLock);
 	return res;
 }
 

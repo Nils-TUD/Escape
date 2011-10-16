@@ -23,7 +23,7 @@
 #include <sys/task/event.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
@@ -67,10 +67,10 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 	sThread *t = thread_getRunning();
 	ssize_t i;
 	sLock *l;
-	klock_aquire(&klock);
+	spinlock_aquire(&klock);
 	i = lock_get(pid,ident,true);
 	if(i < 0) {
-		klock_release(&klock);
+		spinlock_release(&klock);
 		return -ENOMEM;
 	}
 
@@ -85,11 +85,11 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
 			ev_wait(t,event,(evobj_t)ident);
-			klock_release(&klock);
+			spinlock_release(&klock);
 
 			thread_switchNoSigs();
 
-			klock_aquire(&klock);
+			spinlock_aquire(&klock);
 			locks[i].waitCount--;
 		}
 		l = locks + i;
@@ -108,18 +108,18 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 		l->writer = t->tid;
 	else
 		l->readRefs++;
-	klock_release(&klock);
+	spinlock_release(&klock);
 	return 0;
 }
 
 int lock_release(pid_t pid,ulong ident) {
 	ssize_t i;
 	sLock *l;
-	klock_aquire(&klock);
+	spinlock_aquire(&klock);
 	i = lock_get(pid,ident,false);
 	l = locks + i;
 	if(i < 0) {
-		klock_release(&klock);
+		spinlock_release(&klock);
 		return -ENOENT;
 	}
 
@@ -147,18 +147,18 @@ int lock_release(pid_t pid,ulong ident) {
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
 	else if(l->readRefs == 0 && !(l->flags & LOCK_KEEP))
 		l->flags = 0;
-	klock_release(&klock);
+	spinlock_release(&klock);
 	return 0;
 }
 
 void lock_releaseAll(pid_t pid) {
 	size_t i;
-	klock_aquire(&klock);
+	spinlock_aquire(&klock);
 	for(i = 0; i < lockCount; i++) {
 		if(locks[i].flags && locks[i].pid == pid)
 			locks[i].flags = 0;
 	}
-	klock_release(&klock);
+	spinlock_release(&klock);
 }
 
 void lock_print(void) {

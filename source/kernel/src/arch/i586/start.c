@@ -30,7 +30,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/cpu.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <sys/boot.h>
 #include <sys/util.h>
@@ -99,7 +99,7 @@ void apstart(void) {
 static void idlestart(void) {
 	if(!smp_isBSP()) {
 		/* unlock the temporary kernel-stack, so that other CPUs can use it */
-		klock_release(&aplock);
+		spinlock_release(&aplock);
 	}
 	thread_idle();
 }

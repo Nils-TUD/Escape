@@ -35,7 +35,7 @@
 #include <sys/task/lock.h>
 #include <sys/task/smp.h>
 #include <sys/cpu.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <assert.h>
@@ -144,9 +144,9 @@ size_t thread_getIntrptLevel(const sThread *t) {
 
 size_t thread_getCount(void) {
 	size_t len;
-	klock_aquire(&threadLock);
+	spinlock_aquire(&threadLock);
 	len = sll_length(threads);
-	klock_release(&threadLock);
+	spinlock_release(&threadLock);
 	return len;
 }
 
@@ -258,7 +258,7 @@ void thread_updateRuntimes(void) {
 	sSLNode *n;
 	size_t threadCount;
 	uint64_t cyclesPerSec = cpu_getSpeed();
-	klock_aquire(&threadLock);
+	spinlock_aquire(&threadLock);
 	threadCount = sll_length(threads);
 	for(n = sll_begin(threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
@@ -275,7 +275,7 @@ void thread_updateRuntimes(void) {
 		/* raise/lower the priority if necessary */
 		sched_adjustPrio(t,threadCount);
 	}
-	klock_release(&threadLock);
+	spinlock_release(&threadLock);
 }
 
 void thread_addLock(sThread *cur,klock_t *l) {
@@ -425,7 +425,7 @@ void thread_kill(sThread *t) {
 
 	/* release resources */
 	for(n = sll_begin(&t->termLocks); n != NULL; n = n->next)
-		klock_release((klock_t*)n->data);
+		spinlock_release((klock_t*)n->data);
 	sll_clear(&t->termLocks,false);
 	for(n = sll_begin(&t->termHeapAllocs); n != NULL; n = n->next)
 		cache_free(n->data);
@@ -508,7 +508,7 @@ void thread_print(const sThread *t) {
 static tid_t thread_getFreeTid(void) {
 	size_t count = 0;
 	tid_t res = INVALID_TID;
-	klock_aquire(&threadLock);
+	spinlock_aquire(&threadLock);
 	while(count < MAX_THREAD_COUNT) {
 		if(nextTid >= MAX_THREAD_COUNT)
 			nextTid = 0;
@@ -518,24 +518,24 @@ static tid_t thread_getFreeTid(void) {
 		}
 		count++;
 	}
-	klock_release(&threadLock);
+	spinlock_release(&threadLock);
 	return res;
 }
 
 static bool thread_add(sThread *t) {
 	bool res = false;
-	klock_aquire(&threadLock);
+	spinlock_aquire(&threadLock);
 	if(sll_append(threads,t)) {
 		tidToThread[t->tid] = t;
 		res = true;
 	}
-	klock_release(&threadLock);
+	spinlock_release(&threadLock);
 	return res;
 }
 
 static void thread_remove(sThread *t) {
-	klock_aquire(&threadLock);
+	spinlock_aquire(&threadLock);
 	sll_removeFirstWith(threads,t);
 	tidToThread[t->tid] = NULL;
-	klock_release(&threadLock);
+	spinlock_release(&threadLock);
 }

@@ -26,7 +26,7 @@
 #include <sys/intrpt.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/util.h>
 #include <sys/log.h>
 #include <stdarg.h>
@@ -40,17 +40,17 @@ static klock_t randLock;
 
 int util_rand(void) {
 	int res;
-	klock_aquire(&randLock);
+	spinlock_aquire(&randLock);
 	lastRand = randa * lastRand + randc;
 	res = (int)((uint)(lastRand / 65536) % 32768);
-	klock_release(&randLock);
+	spinlock_release(&randLock);
 	return res;
 }
 
 void util_srand(uint seed) {
-	klock_aquire(&randLock);
+	spinlock_aquire(&randLock);
 	lastRand = seed;
-	klock_release(&randLock);
+	spinlock_release(&randLock);
 }
 
 void util_printStackTraceShort(const sFuncCall *trace) {

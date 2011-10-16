@@ -23,7 +23,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
-#include <sys/klock.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <string.h>

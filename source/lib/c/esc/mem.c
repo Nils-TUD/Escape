@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/mem.h>
+#include <errno.h>
 
 /* the assembler-routine */
 extern ssize_t _changeSize(ssize_t count);
@@ -28,12 +29,11 @@ extern intptr_t _addRegion(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,
 extern intptr_t _createSharedMem(const char *name,size_t byteCount);
 extern intptr_t _joinSharedMem(const char *name);
 
-/* just a convenience for the user because the return-value is negative if an error occurred */
+/* just a convenience for the user which sets errno if the return-value is zero (not enough mem) */
 void *changeSize(ssize_t count) {
-	ssize_t addr = _changeSize(count);
-	/* FIXME workaround until we have TLS */
-	if(addr >= -200 && addr < 0)
-		return NULL;
+	size_t addr = _changeSize(count);
+	if(addr == 0)
+		errno = -ENOMEM;
 	return (void*)addr;
 }
 

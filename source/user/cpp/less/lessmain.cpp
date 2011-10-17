@@ -33,6 +33,7 @@
 #include <fstream>
 #include <sstream>
 #include <env.h>
+#include "linecontainer.h"
 
 #define TAB_WIDTH			4
 
@@ -54,7 +55,7 @@ static ifstream vt;
 static FILE *in;
 static string filename;
 static bool seenEOF;
-static vector<string> lines;
+static LineContainer *lines;
 static size_t startLine = 0;
 static sVTSize consSize;
 static string emptyLine;
@@ -104,6 +105,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to get screensize");
 	// one line for the status
 	consSize.height--;
+	lines = new LineContainer(consSize.width);
 
 	// backup screen
 	vterm_backup(STDOUT_FILENO);
@@ -130,7 +132,7 @@ int main(int argc,char *argv[]) {
 		if(c == '\033') {
 			istream::esc_type n1,n2,n3;
 			istream::esc_type cmd = vt.getesc(n1,n2,n3);
-			if(cmd != ESCC_KEYCODE)
+			if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 				continue;
 			switch(n2) {
 				case VK_Q:
@@ -182,15 +184,15 @@ static void scrollDown(long l) {
 		else
 			startLine = 0;
 	}
-	else if(lines.size() >= consSize.height)
+	else if(lines->size() >= consSize.height)
 		startLine += l;
 
-	if(l == 0 || startLine > lines.size() - consSize.height) {
+	if(l == 0 || startLine > lines->size() - consSize.height) {
 		readLines(l == 0 ? 0 : startLine + consSize.height);
-		if(lines.size() < consSize.height)
+		if(lines->size() < consSize.height)
 			startLine = 0;
-		else if(l == 0 || startLine > lines.size() - consSize.height)
-			startLine = lines.size() - consSize.height;
+		else if(l == 0 || startLine > lines->size() - consSize.height)
+			startLine = lines->size() - consSize.height;
 	}
 
 	if(oldStart != startLine)
@@ -198,19 +200,18 @@ static void scrollDown(long l) {
 }
 
 static void refreshScreen(void) {
-	vector<string>::const_iterator begin = lines.begin() + startLine;
-	vector<string>::const_iterator end = begin + min(lines.size(),(size_t)consSize.height);
-	size_t i = 0;
+	size_t j = 0;
+	LineContainer::size_type end = startLine + min(lines->size(),(size_t)consSize.height);
 	// walk to the top of the screen
 	cout << "\033[mh]";
-	for(vector<string>::const_iterator it = begin; it != end; ++it ,++i) {
-		cout << *it;
-		if(i < consSize.height - 1)
+	for(LineContainer::size_type i = startLine; i < end; ++i, ++j) {
+		cout << lines->get(i);
+		if(j < consSize.height - 1)
 			cout << '\n';
 	}
-	for(; i < consSize.height; ++i) {
+	for(; j < consSize.height; ++j) {
 		cout << emptyLine;
-		if(i < consSize.height - 1)
+		if(j < consSize.height - 1)
 			cout << '\n';
 	}
 	printStatus(seenEOF ? NULL : "?");
@@ -219,10 +220,10 @@ static void refreshScreen(void) {
 
 static void printStatus(const char *totalStr) {
 	ostringstream lineStr;
-	size_t end = min(lines.size(),(size_t)consSize.height);
+	size_t end = min(lines->size(),(size_t)consSize.height);
 	lineStr << "Lines " << (startLine + 1) << "-" << (startLine + end) << " / ";
 	if(!totalStr)
-		lineStr << lines.size();
+		lineStr << lines->size();
 	else
 		lineStr << totalStr;
 	cout << "\033[co;0;7]";
@@ -241,15 +242,14 @@ static void readLines(size_t end) {
 
 	// read
 	char c = 0;
-	while(c != EOF && (end == 0 || lines.size() < end)) {
+	while(c != EOF && (end == 0 || lines->size() < end)) {
 		int len = 0;
 		line.clear();
 		while((c = fgetc(in)) != EOF && c != '\n') {
 			if(len < lineLen)
 				append(line,len,c);
 		}
-		line.resize((line.length() - len) + lineLen,' ');
-		lines.push_back(string(line));
+		lines->append(line.c_str());
 
 		// check whether the user has pressed a key
 		if(lineCount++ % 100 == 0) {
@@ -259,7 +259,7 @@ static void readLines(size_t end) {
 				if(vtc == '\033') {
 					istream::esc_type n1,n2,n3;
 					istream::esc_type cmd = vt.getesc(n1,n2,n3);
-					if(cmd != ESCC_KEYCODE)
+					if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 						continue;
 					if(n2 == VK_S) {
 						vt.clear();

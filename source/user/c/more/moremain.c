@@ -109,7 +109,7 @@ static void waitForKeyPress(FILE *vt) {
 		if(c == '\033') {
 			int n1,n2,n3;
 			int cmd = freadesc(vt,&n1,&n2,&n3);
-			if(cmd == ESCC_KEYCODE) {
+			if(cmd == ESCC_KEYCODE && !(n3 & STATE_BREAK)) {
 				if(n2 == VK_SPACE)
 					break;
 				if(n2 == VK_Q) {

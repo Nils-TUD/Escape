@@ -55,7 +55,7 @@ static vmreg_t vmm_getRegionOf(sProc *p,uintptr_t addr);
 static vmreg_t vmm_getRNoByRegion(sProc *p,const sRegion *reg);
 static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm,bool write);
 static void vmm_doRemove(sProc *p,vmreg_t reg);
-static ssize_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount);
+static size_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount);
 static void vmm_unsetRegion(sProc *p,vmreg_t rno);
 static bool vmm_demandLoad(sProc *p,sVMRegion *vm,uintptr_t addr);
 static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCount);
@@ -894,7 +894,7 @@ int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr) {
 				proc_release(p,PLOCK_REGIONS);
 				return -ENOMEM;
 			}
-			res = vmm_doGrow(p,reg,newPages);
+			res = vmm_doGrow(p,reg,newPages) != 0 ? 0 : -ENOMEM;
 			thread_discardFrames(t);
 		}
 	}
@@ -902,8 +902,8 @@ int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr) {
 	return res;
 }
 
-ssize_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount) {
-	ssize_t res;
+size_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount) {
+	size_t res;
 	sProc *p = proc_request(pid,PLOCK_REGIONS);
 	if(!p)
 		return -ESRCH;
@@ -912,7 +912,7 @@ ssize_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount) {
 	return res;
 }
 
-static ssize_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
+static size_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
 	size_t oldSize;
 	ssize_t res = -ENOMEM;
 	uintptr_t oldVirt,virt;
@@ -926,7 +926,7 @@ static ssize_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
 	if((vm->reg->flags & RF_STACK) &&
 			BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1) {
 		mutex_release(&vm->reg->lock);
-		return -ENOMEM;
+		return 0;
 	}
 
 	/* resize region */
@@ -939,20 +939,20 @@ static ssize_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
 			if(vm->reg->flags & RF_GROWS_DOWN) {
 				if(vmm_isOccupied(p,oldVirt - amount * PAGE_SIZE,oldVirt)) {
 					mutex_release(&vm->reg->lock);
-					return -ENOMEM;
+					return 0;
 				}
 			}
 			else {
 				uintptr_t end = oldVirt + ROUNDUP(vm->reg->byteCount);
 				if(vmm_isOccupied(p,end,end + amount * PAGE_SIZE)) {
 					mutex_release(&vm->reg->lock);
-					return -ENOMEM;
+					return 0;
 				}
 			}
 		}
 		if((res = reg_grow(vm->reg,amount)) < 0) {
 			mutex_release(&vm->reg->lock);
-			return res;
+			return 0;
 		}
 
 		/* map / unmap pages */
@@ -972,7 +972,7 @@ static ssize_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
 				if(vm->reg->flags & RF_GROWS_DOWN)
 					vm->virt += amount * PAGE_SIZE;
 				mutex_release(&vm->reg->lock);
-				return res;
+				return 0;
 			}
 			p->ownFrames += pts + amount;
 		}
@@ -989,7 +989,7 @@ static ssize_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
 		}
 	}
 
-	res = ((vm->reg->flags & RF_GROWS_DOWN) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;
+	res = (vm->reg->flags & RF_GROWS_DOWN) ? oldVirt : oldVirt + ROUNDUP(oldSize);
 	mutex_release(&vm->reg->lock);
 	return res;
 }

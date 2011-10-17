@@ -265,9 +265,9 @@ int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr);
  * @param pid the process-id
  * @param reg the region-number
  * @param amount the number of pages to add/remove
- * @return the old offset to the region-beginning, in pages
+ * @return the old region-end or 0 if failed
  */
-ssize_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount);
+size_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount);
 
 /**
  * Prints information about all regions in the given process to the given buffer

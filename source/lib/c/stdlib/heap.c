@@ -385,7 +385,7 @@ static bool loadNewSpace(size_t size) {
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
 	freeList = freeList->next;
-	area->address = (void*)((uintptr_t)oldEnd * pageSize);
+	area->address = oldEnd;
 	area->size = pageSize * count;
 	/* put area in the usable-list */
 	area->next = usableList;
@@ -408,7 +408,7 @@ static bool loadNewAreas(void) {
 
 	/* determine start- and end-address */
 	pageCount++;
-	area = (sMemArea*)((uintptr_t)oldEnd * pageSize);
+	area = (sMemArea*)oldEnd;
 	end = area + (pageSize / sizeof(sMemArea));
 
 	/* put all areas in the freelist */

@@ -280,6 +280,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 	buf.size = 0;
 	buf.len = 0;
 
+	/* TODO change that (kframes, swapping, ...) */
 	free = pmem_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
 	total = boot_getUsableMemCount();
 	ksize = boot_getKernelSize();

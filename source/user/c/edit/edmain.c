@@ -52,7 +52,7 @@ int main(int argc,char *argv[]) {
 		if(c == '\033') {
 			/* just accept keycode-escapecodes */
 			cmd = freadesc(stdin,&n1,&n2,&n3);
-			if(cmd != ESCC_KEYCODE)
+			if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 				continue;
 
 			/* insert a char? */

@@ -31,7 +31,7 @@
 int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
-	ssize_t oldEnd;
+	size_t oldEnd;
 	vmreg_t rno = RNO_DATA;
 
 	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
@@ -47,9 +47,6 @@ int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
 	oldEnd = vmm_grow(pid,rno,count);
 	if(count > 0)
 		thread_discardFrames(t);
-
-	if(oldEnd < 0)
-		SYSC_ERROR(stack,oldEnd);
 	SYSC_RET1(stack,oldEnd);
 }
 

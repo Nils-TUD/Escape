@@ -54,11 +54,6 @@
 #define PD_PART_PTBLS			8
 #define PD_PART_TEMPMAP			16
 
-typedef struct {
-	size_t ptables;
-	size_t frames;
-} sAllocStats;
-
 /**
  * Inits the paging. Sets up the page-dir and page-tables for the kernel and enables paging
  */
@@ -177,11 +172,9 @@ void paging_zeroToUser(void *dst,size_t count);
 
 /**
  * Clones <count> pages at <virtSrc> to <virtDst> from <src> into <dst>. That means
- * the flags are copied. If <share> is true, the frames will be copied as well. Otherwise new
- * frames will be allocated if the page in <src> is present. Additionally, if <share> is false
- * all present pages will be marked as not-writable and share the frame in the cloned pagedir
- * so that they can be copied on write-access. Note that either <src> or <dst> has to be the
- * current page-dir!
+ * the flags and frames are copied. Additionally, if <share> is false all present pages will
+ * be marked as not-writable and share the frame in the cloned pagedir so that they can be
+ * copied on write-access. Note that either <src> or <dst> has to be the current page-dir!
  *
  * @param src the source-pagedir
  * @param dst the destination-pagedir
@@ -189,9 +182,9 @@ void paging_zeroToUser(void *dst,size_t count);
  * @param virtDst the virtual destination address
  * @param count the number of pages to copy
  * @param share whether to share the frames
- * @return the number of mapped frames (not necessarily new allocated), and allocated ptables
+ * @return the number of allocated ptables or a negative error-code if it failed
  */
-sAllocStats paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,
+ssize_t paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share);
 
 /**
@@ -204,9 +197,9 @@ sAllocStats paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uint
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
- * @return the number of allocated frames and page-tables
+ * @return the number of allocated page-tables or a negative error-code if it failed
  */
-sAllocStats paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
+ssize_t paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
 
 /**
  * Maps <count> pages starting at <virt> to the given frames in the given page-directory.
@@ -219,9 +212,9 @@ sAllocStats paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint 
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
- * @return the number of allocated frames and page-tables
+ * @return the number of allocated page-tables or a negative error-code if it failed
  */
-sAllocStats paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
+ssize_t paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the CURRENT page-directory.
@@ -231,9 +224,9 @@ sAllocStats paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,s
  * @param virt the virtual start-address
  * @param count the number of pages to unmap
  * @param freeFrames whether the frames should be free'd and not just unmapped
- * @return the number of free'd frames and ptables
+ * @return the number of free'd ptables
  */
-sAllocStats paging_unmap(uintptr_t virt,size_t count,bool freeFrames);
+size_t paging_unmap(uintptr_t virt,size_t count,bool freeFrames);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the given page-directory.
@@ -244,9 +237,9 @@ sAllocStats paging_unmap(uintptr_t virt,size_t count,bool freeFrames);
  * @param virt the virtual start-address
  * @param count the number of pages to unmap
  * @param freeFrames whether the frames should be free'd and not just unmapped
- * @return the number of free'd frames and ptables
+ * @return the number of free'd ptables
  */
-sAllocStats paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames);
+size_t paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames);
 
 /**
  * Determines the number of page-tables (in the user-area) in the given page-directory

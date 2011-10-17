@@ -294,7 +294,7 @@ static const char *ev_getName(size_t evi) {
 		"USER1",
 		"USER2",
 		"VM86_READY",
-		"SWAP_DONE",
+		"SWAP_JOB",
 		"SWAP_WORK",
 		"SWAP_FREE",
 		"VMM_DONE",

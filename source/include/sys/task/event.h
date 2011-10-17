@@ -44,7 +44,7 @@ typedef struct {
 #define EVI_USER1				10
 #define EVI_USER2				11
 #define EVI_VM86_READY			12
-#define EVI_SWAP_DONE			13
+#define EVI_SWAP_JOB			13
 #define EVI_SWAP_WORK			14
 #define EVI_SWAP_FREE			15
 #define EVI_VMM_DONE			16
@@ -67,7 +67,7 @@ typedef struct {
 #define EV_USER1				(1 << EVI_USER1)
 #define EV_USER2				(1 << EVI_USER2)
 #define EV_VM86_READY			(1 << EVI_VM86_READY)	/* kernel-intern */
-#define EV_SWAP_DONE			(1 << EVI_SWAP_DONE)	/* kernel-intern */
+#define EV_SWAP_JOB				(1 << EVI_SWAP_JOB)		/* kernel-intern */
 #define EV_SWAP_WORK			(1 << EVI_SWAP_WORK)	/* kernel-intern */
 #define EV_SWAP_FREE			(1 << EVI_SWAP_FREE)	/* kernel-intern */
 #define EV_VMM_DONE				(1 << EVI_VMM_DONE)		/* kernel-intern */

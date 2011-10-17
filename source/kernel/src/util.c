@@ -53,20 +53,25 @@ void util_srand(uint seed) {
 	spinlock_release(&randLock);
 }
 
-void util_printStackTraceShort(const sFuncCall *trace) {
+void util_printEventTrace(const sFuncCall *trace,const char *fmt,...) {
+	va_list ap;
+	va_start(ap,fmt);
+	vid_vprintf(fmt,ap);
+	va_end(ap);
 	if(trace) {
 		size_t i;
 		for(i = 0; trace->addr != 0 && i < 5; i++) {
 			sSymbol *sym = ksym_getSymbolAt(trace->addr);
 			if(sym->address)
-				log_printf("%s",sym->funcName);
+				vid_printf("%s",sym->funcName);
 			else
-				log_printf("%Px",trace->addr);
+				vid_printf("%Px",trace->addr);
 			trace++;
 			if(trace->addr)
-				log_printf(" ");
+				vid_printf(" ");
 		}
 	}
+	vid_printf("\n");
 }
 
 void util_printStackTrace(const sFuncCall *trace) {

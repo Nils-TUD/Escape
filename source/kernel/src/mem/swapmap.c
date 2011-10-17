@@ -41,13 +41,13 @@ static sSwapBlock *swapBlocks = NULL;
 static sSwapBlock *freeList = NULL;
 static klock_t swmapLock;
 
-void swmap_init(size_t swapSize) {
+bool swmap_init(size_t swapSize) {
 	size_t i;
 	totalBlocks = swapSize / PAGE_SIZE;
 	freeBlocks = totalBlocks;
 	swapBlocks = cache_alloc(totalBlocks * sizeof(sSwapBlock));
 	if(swapBlocks == NULL)
-		util_panic("Unable to allocate swap-blocks");
+		return false;
 
 	/* build freelist */
 	freeList = swapBlocks + 0;
@@ -58,6 +58,7 @@ void swmap_init(size_t swapSize) {
 		swapBlocks[i].refCount = 0;
 		freeList = swapBlocks + i;
 	}
+	return true;
 }
 
 ulong swmap_alloc(void) {

@@ -169,7 +169,7 @@ static void test_contiguous_align(void) {
 static void test_mm_allocate(void) {
 	ssize_t i = 0;
 	while(i < FRAME_COUNT) {
-		frames[i] = pmem_allocate();
+		frames[i] = pmem_allocate(true);
 		i++;
 	}
 }
@@ -177,7 +177,7 @@ static void test_mm_allocate(void) {
 static void test_mm_free(void) {
 	ssize_t i = FRAME_COUNT - 1;
 	while(i >= 0) {
-		pmem_free(frames[i]);
+		pmem_free(frames[i],true);
 		i--;
 	}
 }

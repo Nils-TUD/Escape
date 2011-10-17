@@ -572,8 +572,10 @@ static sVFSNode *vfs_node_requestNode(void) {
 	spinlock_aquire(&nodesLock);
 	if(freeList == NULL) {
 		size_t i,oldCount = nodeArray.objCount;
-		if(!dyna_extend(&nodeArray))
-			util_panic("No free VFS-nodes");
+		if(!dyna_extend(&nodeArray)) {
+			spinlock_release(&nodesLock);
+			return NULL;
+		}
 		freeList = vfs_node_get(oldCount);
 		for(i = oldCount; i < nodeArray.objCount - 1; i++) {
 			node = vfs_node_get(i);

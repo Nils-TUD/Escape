@@ -73,7 +73,8 @@ uintptr_t smpstart(void) {
 		util_panic("Unable to load initloader");
 	/* give the process some stack pages */
 	t = thread_getRunning();
-	thread_reserveFrames(t,INITIAL_STACK_PAGES);
+	if(!thread_reserveFrames(t,INITIAL_STACK_PAGES))
+		util_panic("Not enough mem for initloader-stack");
 	thread_addInitialStack(t);
 	thread_discardFrames(t);
 	return info.progEntry;

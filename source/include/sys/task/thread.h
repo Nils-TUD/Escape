@@ -402,8 +402,9 @@ void thread_updateRuntimes(void);
  *
  * @param cur the current thread
  * @param count the number of frames to reserve
+ * @return true on success
  */
-void thread_reserveFrames(sThread *cur,size_t count);
+bool thread_reserveFrames(sThread *cur,size_t count);
 
 /**
  * Removes one frame from the collection of frames of the given thread. This will always succeed,

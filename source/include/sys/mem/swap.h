@@ -45,7 +45,7 @@ void swap_start(void);
  * @param addr the address of the page
  * @return true if successfull
  */
-bool swap_in(uintptr_t addr);
+bool pmem_swapIn(uintptr_t addr);
 
 /**
  * Swaps out frames until at least <frameCount> frames are available.
@@ -53,16 +53,16 @@ bool swap_in(uintptr_t addr);
  *
  * @param frameCount the number of frames you need
  */
-void swap_reserve(size_t frameCount);
+void pmem_reserve(size_t frameCount);
 
 /**
- * Allocates one frame. Assumes that it is available. You should announce it with swap_reserve()
+ * Allocates one frame. Assumes that it is available. You should announce it with pmem_reserve()
  * first!
  *
  * @param critical whether to allocate critical memory
  * @return the frame-number or 0 if no free frame is available
  */
-frameno_t swap_allocate(bool critical);
+frameno_t pmem_allocate(bool critical);
 
 /**
  * Frees the given frame
@@ -70,7 +70,7 @@ frameno_t swap_allocate(bool critical);
  * @param frame the frame-number
  * @param critical whether this frame has been used for critical memory
  */
-void swap_free(frameno_t frame,bool critical);
+void pmem_free(frameno_t frame,bool critical);
 
 /**
  * Prints information about the swapping-module

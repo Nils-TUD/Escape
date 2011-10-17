@@ -293,8 +293,9 @@ void gdt_init_ap(void) {
 
 	/* create TSS (copy from first one) */
 	alltss[i] = tss;
-	paging_map((uintptr_t)tss,NULL,BYTES_2_PAGES(sizeof(sTSS)),
-			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	if(paging_map((uintptr_t)tss,NULL,BYTES_2_PAGES(sizeof(sTSS)),
+			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
+		util_panic("Unable to map memory for TSS");
 	memcpy(tss,&bsptss,sizeof(sTSS));
 	tss->esp0 = KERNEL_STACK_AREA + PT_ENTRY_COUNT * PAGE_SIZE - (1 + 5) * sizeof(int);
 	tss->ioMapOffset = IO_MAP_OFFSET_INVALID;

@@ -42,7 +42,6 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/sharedmem.h>
 #include <sys/mem/vmm.h>
-#include <sys/mem/swap.h>
 #include <sys/mem/swapmap.h>
 #include <sys/boot.h>
 #include <sys/cpu.h>
@@ -78,7 +77,6 @@ static void view_pmem(void);
 static void view_pmemcont(void);
 static void view_pmemstack(void);
 static void view_shm(void);
-static void view_swap(void);
 static void view_swapmap(void);
 static void view_cpu(void);
 #ifdef __i386__
@@ -119,7 +117,6 @@ static sView views[] = {
 	{"pmemcont",(fView)view_pmemcont},
 	{"pmemstack",(fView)view_pmemstack},
 	{"shm",(fView)view_shm},
-	{"swap",(fView)view_swap},
 	{"swapmap",(fView)view_swapmap},
 	{"cpu",(fView)view_cpu},
 #ifdef __i386__
@@ -255,19 +252,16 @@ static void view_regions(size_t argc,char **argv) {
 	}
 }
 static void view_pmem(void) {
-	pmem_print(MM_DEF | MM_CONT);
+	pmem_print();
 }
 static void view_pmemcont(void) {
-	pmem_print(MM_CONT);
+	pmem_printCont();
 }
 static void view_pmemstack(void) {
-	pmem_print(MM_DEF);
+	pmem_printStack();
 }
 static void view_shm(void) {
 	shm_print();
-}
-static void view_swap(void) {
-	swap_print();
 }
 static void view_swapmap(void) {
 	swmap_print();

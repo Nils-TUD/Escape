@@ -92,23 +92,25 @@ void util_panic(const char *fmt,...) {
 	if(t != NULL) {
 		sIntrptStackFrame *kstack = thread_getIntrptStack(t);
 		util_printStackTrace(util_getUserStackTrace());
-		vid_printf("User-Register:\n");
-		regs[R_EAX] = kstack->eax;
-		regs[R_EBX] = kstack->ebx;
-		regs[R_ECX] = kstack->ecx;
-		regs[R_EDX] = kstack->edx;
-		regs[R_ESI] = kstack->esi;
-		regs[R_EDI] = kstack->edi;
-		regs[R_ESP] = kstack->uesp;
-		regs[R_EBP] = kstack->ebp;
-		regs[R_CS] = kstack->cs;
-		regs[R_DS] = kstack->ds;
-		regs[R_ES] = kstack->es;
-		regs[R_FS] = kstack->fs;
-		regs[R_GS] = kstack->gs;
-		regs[R_SS] = kstack->uss;
-		regs[R_EFLAGS] = kstack->eflags;
-		PRINT_REGS(regs,"\t");
+		if(kstack) {
+			vid_printf("User-Register:\n");
+			regs[R_EAX] = kstack->eax;
+			regs[R_EBX] = kstack->ebx;
+			regs[R_ECX] = kstack->ecx;
+			regs[R_EDX] = kstack->edx;
+			regs[R_ESI] = kstack->esi;
+			regs[R_EDI] = kstack->edi;
+			regs[R_ESP] = kstack->uesp;
+			regs[R_EBP] = kstack->ebp;
+			regs[R_CS] = kstack->cs;
+			regs[R_DS] = kstack->ds;
+			regs[R_ES] = kstack->es;
+			regs[R_FS] = kstack->fs;
+			regs[R_GS] = kstack->gs;
+			regs[R_SS] = kstack->uss;
+			regs[R_EFLAGS] = kstack->eflags;
+			PRINT_REGS(regs,"\t");
+		}
 	}
 
 	/* write into log only */
@@ -143,8 +145,10 @@ sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
 	sThread *t = thread_getRunning();
 	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
-	if(thread_getStackRange(t,&start,&end,0))
-		return util_getStackTrace((uint32_t*)kstack->ebp,start,start,end);
+	if(kstack) {
+		if(thread_getStackRange(t,&start,&end,0))
+			return util_getStackTrace((uint32_t*)kstack->ebp,start,start,end);
+	}
 	return NULL;
 }
 

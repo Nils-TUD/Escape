@@ -28,7 +28,6 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
-#include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/task/sched.h>
@@ -310,18 +309,20 @@ void thread_remCallback(sThread *cur,void (*callback)(void)) {
 	sll_removeFirstWith(&cur->termCallbacks,(void*)callback);
 }
 
-void thread_reserveFrames(sThread *cur,size_t count) {
+bool thread_reserveFrames(sThread *cur,size_t count) {
 	while(count > 0) {
 		size_t i;
-		swap_reserve(count);
+		if(!pmem_reserve(count))
+			return false;
 		for(i = count; i > 0; i--) {
-			frameno_t frm = swap_allocate(false);
+			frameno_t frm = pmem_allocate(false);
 			if(!frm)
 				break;
 			sll_append(&cur->reqFrames,(void*)frm);
 			count--;
 		}
 	}
+	return true;
 }
 
 frameno_t thread_getFrame(sThread *cur) {
@@ -333,7 +334,7 @@ frameno_t thread_getFrame(sThread *cur) {
 void thread_discardFrames(sThread *cur) {
 	frameno_t frm;
 	while((frm = (frameno_t)sll_removeFirst(&cur->reqFrames)) != 0)
-		swap_free(frm,false);
+		pmem_free(frm,false);
 }
 
 int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc) {

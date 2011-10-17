@@ -175,6 +175,14 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 		return -ENOMEM;
 	}
 
+	/* reserve frames for vm86-thread */
+	if(info.area) {
+		if(!thread_reserveFrames(vm86t,BYTES_2_PAGES(info.area->size))) {
+			vm86_finish();
+			return -ENOMEM;
+		}
+	}
+
 	/* make vm86 ready */
 	ev_unblock(vm86t);
 
@@ -358,10 +366,10 @@ static void vm86_start(void) {
 	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
 	if(info.area) {
-		thread_reserveFrames(t,BYTES_2_PAGES(info.area->size));
-		paging_map(info.area->dst,NULL,BYTES_2_PAGES(info.area->size),PG_PRESENT | PG_WRITABLE);
+		/* can't fail */
+		assert(paging_map(info.area->dst,NULL,BYTES_2_PAGES(info.area->size),
+				PG_PRESENT | PG_WRITABLE) >= 0);
 		memcpy((void*)info.area->dst,info.copies[0],info.area->size);
-		thread_discardFrames(t);
 	}
 
 	/* set stack-pointer (in an unsed area) */
@@ -406,6 +414,8 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 }
 
 static void vm86_finish(void) {
+	if(info.area)
+		thread_discardFrames(thread_getById(vm86Tid));
 	vm86_clearInfo();
 	caller = INVALID_TID;
 	ev_wakeup(EVI_VM86_READY,0);
@@ -438,7 +448,7 @@ static int vm86_storeAreaResult(void) {
 		paging_unmap(info.area->dst,pages,true);
 		for(i = 0; i < pages; i++)
 			frameNos[start + i] = start + i;
-		paging_map(info.area->dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
+		assert(paging_map(info.area->dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE) == 0);
 	}
 	return 0;
 }

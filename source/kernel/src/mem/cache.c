@@ -87,9 +87,7 @@ done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
 		spinlock_aquire(&cacheLock);
-		log_printf("\n[A] %Px %zd ",res,size);
-		util_printStackTraceShort(util_getKernelStackTrace());
-		log_printf("\n");
+		util_printEventTrace(util_getKernelStackTrace(),"\n[A] %Px %zu ",res,size);
 		spinlock_release(&cacheLock);
 	}
 #endif
@@ -137,9 +135,7 @@ void cache_free(void *p) {
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
 		spinlock_aquire(&cacheLock);
-		log_printf("\n[F] %Px 0 ",p);
-		util_printStackTraceShort(util_getKernelStackTrace());
-		log_printf("\n");
+		util_printEventTrace(util_getKernelStackTrace(),"\n[F] %Px 0 ",p);
 		spinlock_release(&cacheLock);
 	}
 #endif

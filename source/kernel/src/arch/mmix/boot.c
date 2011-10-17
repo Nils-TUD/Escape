@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
 #include <sys/mem/sharedmem.h>
@@ -175,7 +174,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	/* TODO */
 #if 0
 	/* start the swapper-thread. it will never return */
-	proc_startThread((uintptr_t)&swap_start,0,NULL);
+	if(pmem_canSwap())
+		proc_startThread((uintptr_t)&pmem_swapper,0,NULL);
 #endif
 
 	if(bootState == bootFinished) {

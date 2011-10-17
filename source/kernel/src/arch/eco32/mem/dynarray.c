@@ -48,13 +48,12 @@ size_t dyna_getTotalPages(void) {
 
 bool dyna_extend(sDynArray *d) {
 	sDynaRegion *reg;
-	spinlock_aquire(&d->lock);
 
 	reg = d->regions;
 	if(reg == NULL) {
 		reg = d->regions = freeList;
 		if(reg == NULL)
-			util_panic("No free dynamic-array-regions");
+			return false;
 		freeList = freeList->next;
 		reg->addr = d->areaBegin;
 		reg->size = 0;
@@ -62,12 +61,15 @@ bool dyna_extend(sDynArray *d) {
 	}
 
 	uintptr_t addr = reg->addr + reg->size;
-	paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT);
+	if(paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT) < 0) {
+		reg->next = freeList;
+		freeList = reg;
+		return false;
+	}
 	memclear((void*)addr,PAGE_SIZE);
 	totalPages++;
 	reg->size += PAGE_SIZE;
 	d->objCount = reg->size / d->objSize;
-	spinlock_release(&d->lock);
 	return true;
 }
 

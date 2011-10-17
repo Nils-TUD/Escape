@@ -20,39 +20,106 @@
 #include <sys/common.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/sllnodes.h>
+#include <sys/mem/swapmap.h>
+#include <sys/mem/vmm.h>
+#include <sys/task/thread.h>
+#include <sys/task/event.h>
+#include <sys/vfs/vfs.h>
+#include <sys/config.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>
+#include <esc/messages.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
 
-#define DEBUG_ALLOC_N_FREE			0
+#define util_printEventTrace(...)
+
 #define BITS_PER_BMWORD				(sizeof(tBitmap) * 8)
 #define BITMAP_START_FRAME			(BITMAP_START / PAGE_SIZE)
 
+#define KERNEL_MEM_PERCENT			20
+#define KERNEL_MEM_MIN				750
+#define MAX_SWAP_AT_ONCE			10
+#define SWAPIN_JOB_COUNT			64
+
+typedef struct sSwapInJob {
+	uintptr_t addr;
+	sThread *thread;
+	struct sSwapInJob *next;
+} sSwapInJob;
+
+static size_t pmem_getFreeDef(void);
 static void pmem_doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used);
 static void pmem_markUsed(frameno_t frame,bool used);
+static void pmem_appendJob(sSwapInJob *job);
+static sSwapInJob *pmem_getJob(void);
+static void pmem_freeJob(sSwapInJob *job);
 
-/* the bitmap for the frames of the lowest few MB
- * 0 = free, 1 = used
- */
+/* the bitmap for the frames of the lowest few MB; 0 = free, 1 = used */
 static tBitmap *bitmap;
 static size_t freeCont = 0;
 
 /* We use a stack for the remaining memory
- * TODO Currently we don't free the frames for the stack
- */
+ * TODO Currently we don't free the frames for the stack */
 static size_t stackSize = 0;
 static uintptr_t stackBegin = 0;
 static frameno_t *stack = NULL;
-static klock_t pmemLock;
+static klock_t contLock;
+static klock_t defLock;
+static bool initializing;
+
+/* for swapping */
+static size_t swappedOut = 0;
+static size_t swappedIn = 0;
+static bool swapEnabled = false;
+static bool swapping = false;
+static sThread *swapper = NULL;
+static size_t kframes = 0;
+static size_t uframes = 0;
+/* swap-in jobs */
+static sSwapInJob siJobs[SWAPIN_JOB_COUNT];
+static sSwapInJob *siFreelist;
+static sSwapInJob *siJobList = NULL;
+static sSwapInJob *siJobEnd = NULL;
+static size_t jobWaiters = 0;
 
 void pmem_init(void) {
+	size_t i,free;
+	initializing = true;
 	pmem_initArch(&stackBegin,&stackSize,&bitmap);
 	stack = (frameno_t*)stackBegin;
 	pmem_markAvailable();
+	initializing = false;
+
+	/* test whether a swap-device is present */
+	if(conf_getStr(CONF_SWAP_DEVICE) != NULL) {
+		/* build freelist */
+		siFreelist = siJobs + 0;
+		siJobs[0].next = NULL;
+		for(i = 1; i < SWAPIN_JOB_COUNT; i++) {
+			siJobs[i].next = siFreelist;
+			siFreelist = siJobs + i;
+		}
+
+		/* determine kernel-memory-size */
+		free = pmem_getFreeDef();
+		kframes = free / (100 / KERNEL_MEM_PERCENT);
+		if(kframes < KERNEL_MEM_MIN)
+			kframes = KERNEL_MEM_MIN;
+		if(kframes > free / 2) {
+			log_printf("Warning: Detected VERY small number of free frames\n");
+			log_printf("         (%zu total, using %zu for kernel)\n",free,kframes);
+		}
+		swapEnabled = true;
+	}
+}
+
+bool pmem_canSwap(void) {
+	return swapEnabled;
 }
 
 size_t pmem_getStackSize(void) {
@@ -60,19 +127,18 @@ size_t pmem_getStackSize(void) {
 }
 
 size_t pmem_getFreeFrames(uint types) {
+	/* no lock; just intended for debugging and information */
 	size_t count = 0;
-	spinlock_aquire(&pmemLock);
 	if(types & MM_CONT)
 		count += freeCont;
 	if(types & MM_DEF)
-		count += ((uintptr_t)stack - stackBegin) / sizeof(frameno_t);
-	spinlock_release(&pmemLock);
+		count += pmem_getFreeDef();
 	return count;
 }
 
 ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	size_t i,c = 0;
-	spinlock_aquire(&pmemLock);
+	spinlock_aquire(&contLock);
 	/* align in physical memory */
 	i = (BITMAP_START_FRAME + align - 1) & ~(align - 1);
 	i -= BITMAP_START_FRAME;
@@ -94,93 +160,247 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	}
 
 	if(c != count) {
-		spinlock_release(&pmemLock);
+		spinlock_release(&contLock);
 		return -ENOMEM;
 	}
 
 	/* the bitmap starts managing the memory at itself */
 	i += BITMAP_START_FRAME;
 	pmem_doMarkRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
-#if DEBUG_ALLOC_N_FREE
-	vid_printf("[AC] %x:%zu\n",i,count);
-#endif
-	spinlock_release(&pmemLock);
+	util_printEventTrace(util_getKernelStackTrace(),"[AC] %x:%zu ",i,count);
+	spinlock_release(&contLock);
 	return i;
 }
 
 void pmem_freeContiguous(frameno_t first,size_t count) {
-#if DEBUG_ALLOC_N_FREE
-	vid_printf("[FC] %x:%zu\n",first,count);
-#endif
-	pmem_markRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
+	spinlock_aquire(&contLock);
+	util_printEventTrace(util_getKernelStackTrace(),"[FC] %x:%zu ",first,count);
+	pmem_doMarkRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
+	spinlock_release(&contLock);
 }
 
-frameno_t pmem_allocate(void) {
-	frameno_t res;
-	spinlock_aquire(&pmemLock);
-	/* no more frames free? */
-	if((uintptr_t)stack == stackBegin)
-		util_panic("Not enough memory :(");
-
-#if DEBUG_ALLOC_N_FREE
-	sFuncCall *trace = util_getKernelStackTrace();
-	size_t i = 0;
-	vid_printf("[A] %x ",*(stack - 1));
-	while(trace->addr != 0 && i++ < 10) {
-		vid_printf("%x",trace->addr);
-		trace++;
-		if(trace->addr)
-			vid_printf(" ");
+bool pmem_reserve(size_t frameCount) {
+	size_t free;
+	sThread *t;
+	spinlock_aquire(&defLock);
+	free = pmem_getFreeDef();
+	uframes += frameCount;
+	/* enough user-memory available? */
+	if(free >= frameCount && free - frameCount >= kframes) {
+		spinlock_release(&defLock);
+		return true;
 	}
-	vid_printf("\n");
-#endif
-	res = *(--stack);
-	spinlock_release(&pmemLock);
-	return res;
+
+	/* swapping not possible? */
+	t = thread_getRunning();
+	if(!swapEnabled || t->tid == ATA_TID || t->tid == swapper->tid) {
+		spinlock_release(&defLock);
+		return false;
+	}
+
+	/* wait until we have <frameCount> frames free */
+	do {
+		/* notify swapper-thread */
+		if(!swapping)
+			ev_wakeupThread(swapper,EV_SWAP_WORK);
+		ev_wait(t,EVI_SWAP_FREE,0);
+		spinlock_release(&defLock);
+		thread_switchNoSigs();
+		spinlock_aquire(&defLock);
+		free = pmem_getFreeDef();
+	}
+	while(free - kframes < frameCount);
+	spinlock_release(&defLock);
+	return true;
 }
 
-void pmem_free(frameno_t frame) {
-	spinlock_aquire(&pmemLock);
-#if DEBUG_ALLOC_N_FREE
-	sFuncCall *trace = util_getKernelStackTrace();
-	size_t i = 0;
-	vid_printf("[F] %x ",frame);
-	while(trace->addr != 0 && i++ < 10) {
-		vid_printf("%x",trace->addr);
-		trace++;
-		if(trace->addr)
-			vid_printf(" ");
+frameno_t pmem_allocate(bool critical) {
+	frameno_t frm = 0;
+	spinlock_aquire(&defLock);
+	util_printEventTrace(util_getKernelStackTrace(),"[A] %x ",*(stack - 1));
+	if(swapEnabled && critical) {
+		/* return 0 otherwise */
+		if(kframes > 0) {
+			frm = *(--stack);
+			kframes--;
+		}
 	}
-	vid_printf("\n");
-#endif
+	else {
+		size_t free = pmem_getFreeDef();
+		if(free > kframes) {
+			assert(critical || uframes > 0);
+			frm = *(--stack);
+			if(!critical)
+				uframes--;
+		}
+	}
+	spinlock_release(&defLock);
+	return frm;
+}
+
+void pmem_free(frameno_t frame,bool critical) {
+	spinlock_aquire(&defLock);
+	util_printEventTrace(util_getKernelStackTrace(),"[F] %x ",frame);
+	if(swapEnabled && critical)
+		kframes++;
 	pmem_markUsed(frame,false);
-	spinlock_release(&pmemLock);
+	spinlock_release(&defLock);
+}
+
+bool pmem_swapIn(uintptr_t addr) {
+	sThread *t;
+	sSwapInJob *job;
+	if(!swapEnabled)
+		return false;
+
+	/* get a free job */
+	t = thread_getRunning();
+	spinlock_aquire(&defLock);
+	do {
+		job = siFreelist;
+		if(job == NULL) {
+			ev_wait(t,EVI_SWAP_JOB,0);
+			jobWaiters++;
+			spinlock_release(&defLock);
+			thread_switchNoSigs();
+			spinlock_aquire(&defLock);
+			jobWaiters--;
+		}
+	}
+	while(job == NULL);
+	siFreelist = siFreelist->next;
+
+	/* append the job */
+	job->addr = addr;
+	job->thread = t;
+	pmem_appendJob(job);
+
+	/* notify the swapper, if necessary */
+	if(!swapping)
+		ev_wakeupThread(swapper,EV_SWAP_WORK);
+	/* wait until its done */
+	ev_block(t);
+	spinlock_release(&defLock);
+	thread_switchNoSigs();
+	return true;
+}
+
+void pmem_swapper(void) {
+	size_t free;
+	file_t swapFile;
+	pid_t pid;
+	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
+	swapper = thread_getRunning();
+	pid = swapper->proc->pid;
+	assert(swapEnabled);
+
+	/* open device */
+	swapFile = vfs_openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,dev);
+	if(swapFile < 0) {
+		log_printf("Unable to open swap-device '%s'\n",dev);
+		swapEnabled = false;
+	}
+	else {
+		/* get device-size and init swap-map */
+		sArgsMsg msg;
+		assert(vfs_sendMsg(pid,swapFile,MSG_DISK_GETSIZE,NULL,0,NULL,0,NULL,0) >= 0);
+		assert(vfs_receiveMsg(pid,swapFile,NULL,&msg,sizeof(msg)) >= 0);
+		if(!swmap_init(msg.arg1)) {
+			swapEnabled = false;
+			vfs_closeFile(pid,swapFile);
+		}
+	}
+
+	/* start main-loop; wait for work */
+	spinlock_aquire(&defLock);
+	while(1) {
+		sSwapInJob *job;
+		free = pmem_getFreeDef();
+		/* swapping out is more important than swapping in */
+		if((free - kframes) < uframes) {
+			size_t amount = MIN(MAX_SWAP_AT_ONCE,uframes - (free - kframes));
+			swapping = true;
+			spinlock_release(&defLock);
+
+			vmm_swapOut(pid,swapFile,amount);
+			swappedOut += amount;
+
+			spinlock_aquire(&defLock);
+			swapping = false;
+			ev_wakeup(EVI_SWAP_FREE,0);
+		}
+
+		/* handle swap-in-jobs */
+		while((job = pmem_getJob()) != NULL) {
+			swapping = true;
+			spinlock_release(&defLock);
+
+			if(vmm_swapIn(pid,swapFile,job->thread,job->addr))
+				swappedIn++;
+
+			spinlock_aquire(&defLock);
+			ev_unblock(job->thread);
+			pmem_freeJob(job);
+			swapping = false;
+		}
+
+		if(pmem_getFreeDef() - kframes >= uframes) {
+			/* we may receive new work now */
+			ev_wait(swapper,EVI_SWAP_WORK,0);
+			spinlock_release(&defLock);
+			thread_switch();
+			spinlock_aquire(&defLock);
+		}
+	}
+	spinlock_release(&defLock);
 }
 
 void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
-	spinlock_aquire(&pmemLock);
+	assert(initializing);
 	pmem_doMarkRangeUsed(from,to,used);
-	spinlock_release(&pmemLock);
 }
 
-void pmem_print(uint types) {
-	size_t i,pos = BITMAP_START;
+void pmem_print(void) {
+	sSwapInJob *job;
+	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
+	vid_printf("Default: %zu\n",pmem_getFreeDef());
+	vid_printf("Contiguous: %zu\n",freeCont);
+	vid_printf("Swap-Device: %s\n",dev ? dev : "-none-");
+	vid_printf("Swap enabled: %d\n",swapEnabled);
+	vid_printf("KFrames: %zu\n",kframes);
+	vid_printf("UFrames: %zu\n",uframes);
+	vid_printf("Swapped out: %zu\n",swappedOut);
+	vid_printf("Swapped in: %zu\n",swappedIn);
+	vid_printf("\n");
+	vid_printf("Swap-in-jobs:\n");
+	for(job = siJobList; job != NULL; job = job->next) {
+		vid_printf("\tThread %d:%d:%s @ %p\n",job->thread->tid,job->thread->proc->pid,
+				job->thread->proc->command,job->addr);
+	}
+}
+
+void pmem_printStack(void) {
+	size_t i = BITMAP_START;
 	frameno_t *ptr;
-	if(types & MM_CONT) {
-		vid_printf("Bitmap: (frame numbers)\n");
-		for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
-			vid_printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
-			pos += PAGE_SIZE * BITS_PER_BMWORD;
-		}
+	vid_printf("Stack: (frame numbers)\n");
+	for(i = 0,ptr = stack - 1;(uintptr_t)ptr >= stackBegin; i++,ptr--) {
+		vid_printf("0x%08Px, ",*ptr);
+		if(i % 6 == 5)
+			vid_printf("\n");
 	}
-	if(types & MM_DEF) {
-		vid_printf("Stack: (frame numbers)\n");
-		for(i = 0,ptr = stack - 1;(uintptr_t)ptr >= stackBegin; i++,ptr--) {
-			vid_printf("0x%08Px, ",*ptr);
-			if(i % 4 == 3)
-				vid_printf("\n");
-		}
+}
+
+void pmem_printCont(void) {
+	size_t i,pos = BITMAP_START;
+	vid_printf("Bitmap: (frame numbers)\n");
+	for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
+		vid_printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
+		pos += PAGE_SIZE * BITS_PER_BMWORD;
 	}
+}
+
+static size_t pmem_getFreeDef(void) {
+	return ((uintptr_t)stack - stackBegin) / sizeof(frameno_t);
 }
 
 static void pmem_doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used) {
@@ -221,4 +441,31 @@ static void pmem_markUsed(frameno_t frame,bool used) {
 			stack++;
 		}
 	}
+}
+
+static void pmem_appendJob(sSwapInJob *job) {
+	job->next = NULL;
+	if(siJobEnd)
+		siJobEnd->next = job;
+	else
+		siJobList = job;
+	siJobEnd = job;
+}
+
+static sSwapInJob *pmem_getJob(void) {
+	sSwapInJob *res;
+	if(!siJobList)
+		return NULL;
+	res = siJobList;
+	siJobList = siJobList->next;
+	if(!siJobList)
+		siJobEnd = NULL;
+	return res;
+}
+
+static void pmem_freeJob(sSwapInJob *job) {
+	job->next = siFreelist;
+	siFreelist = job;
+	if(jobWaiters > 0)
+		ev_wakeup(EVI_SWAP_JOB,0);
 }

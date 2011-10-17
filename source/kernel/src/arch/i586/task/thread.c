@@ -60,13 +60,16 @@ size_t thread_getThreadFrmCnt(void) {
 int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 	if(cloneProc) {
 		/* map the kernel-stack at the same address */
-		paging_mapTo(&dst->proc->pagedir,src->archAttr.kernelStack,NULL,1,
-				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+		if(paging_mapTo(&dst->proc->pagedir,src->archAttr.kernelStack,NULL,1,
+				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
+			return -ENOMEM;
 		dst->archAttr.kernelStack = src->archAttr.kernelStack;
 	}
 	else {
 		/* map the kernel-stack at a free address */
 		dst->archAttr.kernelStack = paging_createKernelStack(&dst->proc->pagedir);
+		if(dst->archAttr.kernelStack == 0)
+			return -ENOMEM;
 
 		/* add a new stack-region */
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,

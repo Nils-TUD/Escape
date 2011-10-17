@@ -100,11 +100,12 @@ sFuncCall *util_getKernelStackTraceOf(const sThread *t);
 sFuncCall *util_getKernelStackTrace(void);
 
 /**
- * Prints a short version of the given stack-trace
+ * Prints <msg>, followed by a short version of the given stack-trace and a newline.
  *
  * @param trace the first function-call (NULL-terminated)
+ * @param msg the message to print before the trace
  */
-void util_printStackTraceShort(const sFuncCall *trace);
+void util_printEventTrace(const sFuncCall *trace,const char *msg,...);
 
 /**
  * Prints the given stack-trace

@@ -85,7 +85,8 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 		return -ENAMETOOLONG;
 
 	/* first, reserve memory (swapping) */
-	thread_reserveFrames(t,pageCount);
+	if(!thread_reserveFrames(t,pageCount))
+		return -ENOMEM;
 
 	mutex_aquire(&shmLock);
 	if(shm_get(name) != NULL) {

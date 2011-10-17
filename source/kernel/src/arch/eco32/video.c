@@ -212,7 +212,7 @@ static void vid_handleColorCode(const char **str) {
 		}
 		break;
 		default:
-			util_panic("Invalid escape-code ^[%d;%d,%d,%d]",cmd,n1,n2,n3);
+			vassert(false,"Invalid escape-code ^[%d;%d,%d,%d]",cmd,n1,n2,n3);
 			break;
 	}
 }

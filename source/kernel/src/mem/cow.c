@@ -89,6 +89,7 @@ size_t cow_pagefault(pid_t pid,uintptr_t address,frameno_t frameNumber) {
 	flags = PG_PRESENT | PG_WRITABLE;
 	if(!foundOther)
 		flags |= PG_KEEPFRM;
+	/* can't fail, we've already allocated the frame */
 	paging_map(address,NULL,1,flags);
 	frmCount++;
 

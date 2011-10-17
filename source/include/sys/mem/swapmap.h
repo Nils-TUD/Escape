@@ -29,8 +29,9 @@
  * Inits the swap-map
  *
  * @param swapSize the size of the swap-device in bytes
+ * @return true on success
  */
-void swmap_init(size_t swapSize);
+bool swmap_init(size_t swapSize);
 
 /**
  * Allocates 1 block on the swap-device

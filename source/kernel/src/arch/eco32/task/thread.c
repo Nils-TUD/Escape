@@ -23,7 +23,6 @@
 #include <sys/task/timer.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/swap.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
 #include <sys/video.h>
@@ -39,8 +38,14 @@ static sThread *cur = NULL;
 
 int thread_initArch(sThread *t) {
 	/* setup kernel-stack for us */
-	frameno_t stackFrame = swap_allocate(true);
-	paging_mapTo(&t->proc->pagedir,KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	frameno_t stackFrame = pmem_allocate(true);
+	if(stackFrame == 0)
+		return -ENOMEM;
+	if(paging_mapTo(&t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
+			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
+		pmem_free(stackFrame,true);
+		return -ENOMEM;
+	}
 	t->archAttr.kstackFrame = stackFrame;
 	return 0;
 }
@@ -58,19 +63,26 @@ size_t thread_getThreadFrmCnt(void) {
 
 int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
 	if(cloneProc) {
-		frameno_t stackFrame = swap_allocate(true);
-		paging_mapTo(&dst->proc->pagedir,KERNEL_STACK,&stackFrame,1,
-				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+		frameno_t stackFrame = pmem_allocate(true);
+		if(stackFrame == 0)
+			return -ENOMEM;
+		if(paging_mapTo(&dst->proc->pagedir,KERNEL_STACK,&stackFrame,1,
+				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
+			pmem_free(stackFrame,true);
+			return -ENOMEM;
+		}
 		dst->archAttr.kstackFrame = stackFrame;
 	}
 	else {
-		dst->archAttr.kstackFrame = swap_allocate(true);
+		dst->archAttr.kstackFrame = pmem_allocate(true);
+		if(dst->archAttr.kstackFrame == 0)
+			return -ENOMEM;
 
 		/* add a new stack-region */
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 		if(dst->stackRegions[0] < 0) {
-			swap_free(dst->archAttr.kstackFrame,true);
+			pmem_free(dst->archAttr.kstackFrame,true);
 			return dst->stackRegions[0];
 		}
 	}
@@ -82,7 +94,7 @@ void thread_freeArch(sThread *t) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
 		t->stackRegions[0] = -1;
 	}
-	swap_free(t->archAttr.kstackFrame,true);
+	pmem_free(t->archAttr.kstackFrame,true);
 }
 
 sThread *thread_getRunning(void) {

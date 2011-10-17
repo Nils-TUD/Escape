@@ -25,7 +25,6 @@
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/swap.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/signals.h>
 #include <sys/task/smp.h>

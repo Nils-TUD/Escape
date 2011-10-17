@@ -54,6 +54,11 @@ void pmem_init(void);
 void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap);
 
 /**
+ * @return whether we can swap
+ */
+bool pmem_canSwap(void);
+
+/**
  * Marks all memory available/occupied as necessary.
  * This function should not be called by other modules!
  */
@@ -100,26 +105,58 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align);
 void pmem_freeContiguous(frameno_t first,size_t count);
 
 /**
- * Allocates a frame and returns the frame-number
- *
- * @panic if there is no frame left anymore
- * @return the frame-number
+ * Starts the swapping-system. This HAS TO be done with the swapping-thread!
+ * Assumes that swapping is enabled.
  */
-frameno_t pmem_allocate(void);
+void pmem_swapper(void);
 
 /**
- * Frees the given frame. Note that you can free frames allocated with pmem_allocate() and
- * pmem_allocateContiguous() with this function!
+ * Swaps out frames until at least <frameCount> frames are available.
+ * Panics if its not possible to make that frames available (swapping disabled, partition full, ...)
+ *
+ * @param frameCount the number of frames you need
+ * @return true on success
+ */
+bool pmem_reserve(size_t frameCount);
+
+/**
+ * Allocates one frame. Assumes that it is available. You should announce it with pmem_reserve()
+ * first!
+ *
+ * @param critical whether to allocate critical memory
+ * @return the frame-number or 0 if no free frame is available
+ */
+frameno_t pmem_allocate(bool critical);
+
+/**
+ * Frees the given frame
  *
  * @param frame the frame-number
+ * @param critical whether this frame has been used for critical memory
  */
-void pmem_free(frameno_t frame);
+void pmem_free(frameno_t frame,bool critical);
 
 /**
- * Prints all free frames
+ * Swaps the page with given address for the current process in
  *
- * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
+ * @param addr the address of the page
+ * @return true if successfull
  */
-void pmem_print(uint types);
+bool pmem_swapIn(uintptr_t addr);
+
+/**
+ * Prints information about the pmem-module
+ */
+void pmem_print(void);
+
+/**
+ * Prints the free frames on the stack
+ */
+void pmem_printStack(void);
+
+/**
+ * Prints the free contiguous frames
+ */
+void pmem_printCont(void);
 
 #endif /*PMEM_H_*/

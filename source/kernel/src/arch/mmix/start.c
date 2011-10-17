@@ -43,7 +43,8 @@ uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 
 	/* give the process some stack pages */
 	t = thread_getRunning();
-	thread_reserveFrames(t,INITIAL_STACK_PAGES * 2);
+	if(!thread_reserveFrames(t,INITIAL_STACK_PAGES * 2))
+		util_panic("Not enough mem for initloader-stack");
 	thread_addInitialStack(t);
 	thread_discardFrames(t);
 

@@ -56,7 +56,8 @@ static void test_1(void) {
 }
 
 static void test_2(void) {
-	pid_t pid = proc_getRunning();
+	sThread *t = thread_getRunning();
+	pid_t pid = t->proc->pid;
 	pid_t pid1,pid2;
 	vmreg_t reg1,reg2;
 	test_caseStart("Testing shm_join() & shm_leave() & shm_remProc()");
@@ -69,10 +70,12 @@ static void test_2(void) {
 	/* create dummy-regions to force vmm to extend the regions-array. this way we can check
 	 * whether all memory is freed correctly */
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,2);
 	reg1 = vmm_add(pid1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);
 	reg2 = vmm_add(pid2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg2 >= 0);
+	thread_discardFrames(t);
 	test_assertTrue(shm_create(pid,"myshm",3) >= 0);
 	test_assertTrue(shm_join(pid1,"myshm") >= 0);
 	test_assertTrue(shm_join(pid2,"myshm") >= 0);
@@ -84,10 +87,12 @@ static void test_2(void) {
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,2);
 	reg1 = vmm_add(pid1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);
 	reg2 = vmm_add(pid2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg2 >= 0);
+	thread_discardFrames(t);
 	test_assertTrue(shm_create(pid,"myshm",3) >= 0);
 	test_assertTrue(shm_join(pid1,"myshm") >= 0);
 	test_assertTrue(shm_join(pid2,"myshm") >= 0);
@@ -97,10 +102,12 @@ static void test_2(void) {
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,2);
 	reg1 = vmm_add(pid1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);
 	reg2 = vmm_add(pid2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg2 >= 0);
+	thread_discardFrames(t);
 	test_assertTrue(shm_create(pid,"myshm",6) >= 0);
 	test_assertTrue(shm_join(pid1,"myshm") >= 0);
 	test_assertTrue(shm_join(pid2,"myshm") >= 0);

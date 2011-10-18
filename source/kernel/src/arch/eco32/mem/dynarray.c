@@ -49,6 +49,10 @@ size_t dyna_getTotalPages(void) {
 bool dyna_extend(sDynArray *d) {
 	sDynaRegion *reg;
 
+	/* region full? */
+	if(d->areaBegin + d->objCount * d->objSize + PAGE_SIZE > d->areaBegin + d->areaSize)
+		return false;
+
 	reg = d->regions;
 	if(reg == NULL) {
 		reg = d->regions = freeList;

@@ -116,16 +116,16 @@ static void test_3(void) {
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
-	test_assertTrue(reg_grow(reg,10));
+	test_assertInt(reg_grow(reg,10),0);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	for(i = 1; i < 11; i++)
 		test_assertULInt(reg->pageFlags[i],0);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 11);
-	test_assertTrue(reg_grow(reg,-5));
+	test_assertInt(reg_grow(reg,-5),0);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 6);
-	test_assertTrue(reg_grow(reg,-3));
+	test_assertInt(reg_grow(reg,-3),0);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 3);
-	test_assertTrue(reg_grow(reg,-3));
+	test_assertInt(reg_grow(reg,-3),0);
 	test_assertSize(reg->byteCount,0);
 	reg_destroy(reg);
 	checkMemoryAfter(false);
@@ -135,22 +135,22 @@ static void test_3(void) {
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
-	test_assertTrue(reg_grow(reg,10));
+	test_assertInt(reg_grow(reg,10),0);
 	for(i = 0; i < 10; i++)
 		test_assertULInt(reg->pageFlags[i],0);
 	test_assertULInt(reg->pageFlags[10],PF_DEMANDLOAD);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 11);
-	test_assertTrue(reg_grow(reg,-5));
+	test_assertInt(reg_grow(reg,-5),0);
 	for(i = 0; i < 5; i++)
 		test_assertULInt(reg->pageFlags[i],0);
 	test_assertULInt(reg->pageFlags[5],PF_DEMANDLOAD);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 6);
-	test_assertTrue(reg_grow(reg,-3));
+	test_assertInt(reg_grow(reg,-3),0);
 	for(i = 0; i < 2; i++)
 		test_assertULInt(reg->pageFlags[i],0);
 	test_assertULInt(reg->pageFlags[2],PF_DEMANDLOAD);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 3);
-	test_assertTrue(reg_grow(reg,-3));
+	test_assertInt(reg_grow(reg,-3),0);
 	test_assertSize(reg->byteCount,0);
 	reg_destroy(reg);
 	checkMemoryAfter(false);
@@ -160,22 +160,22 @@ static void test_3(void) {
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
-	test_assertTrue(reg_grow(reg,10));
+	test_assertInt(reg_grow(reg,10),0);
 	for(i = 1; i < 10; i++)
 		test_assertULInt(reg->pageFlags[i],0);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 11);
-	test_assertTrue(reg_grow(reg,-5));
+	test_assertInt(reg_grow(reg,-5),0);
 	for(i = 1; i < 5; i++)
 		test_assertULInt(reg->pageFlags[i],0);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 6);
-	test_assertTrue(reg_grow(reg,-3));
+	test_assertInt(reg_grow(reg,-3),0);
 	for(i = 1; i < 2; i++)
 		test_assertULInt(reg->pageFlags[i],0);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
 	test_assertSize(reg->byteCount,PAGE_SIZE * 3);
-	test_assertTrue(reg_grow(reg,-3));
+	test_assertInt(reg_grow(reg,-3),0);
 	test_assertSize(reg->byteCount,0);
 	reg_destroy(reg);
 	checkMemoryAfter(false);

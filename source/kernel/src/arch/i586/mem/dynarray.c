@@ -51,6 +51,12 @@ bool dyna_extend(sDynArray *d) {
 	uintptr_t addr;
 	spinlock_aquire(&d->lock);
 
+	/* region full? */
+	if(d->areaBegin + d->objCount * d->objSize + PAGE_SIZE > d->areaBegin + d->areaSize) {
+		spinlock_release(&d->lock);
+		return false;
+	}
+
 	reg = d->regions;
 	if(reg == NULL) {
 		reg = d->regions = freeList;

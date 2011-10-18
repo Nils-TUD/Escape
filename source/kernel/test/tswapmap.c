@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/cache.h>
 #include <esc/sllist.h>
 #include <esc/test.h>
 
@@ -63,8 +64,8 @@ static void test_swapmap1(void) {
 	test_assertTrue(swmap_isUsed(blocks[2]));
 	test_assertTrue(swmap_isUsed(blocks[3]));
 	test_assertTrue(swmap_isUsed(blocks[4]));
-	test_assertFalse(swmap_isUsed(blocks[4] + 1));
-	test_assertFalse(swmap_isUsed(blocks[4] + 2));
+	test_assertFalse(swmap_isUsed(blocks[4] - 1));
+	test_assertFalse(swmap_isUsed(blocks[4] - 2));
 
 	swmap_free(blocks[0]);
 	swmap_free(blocks[1]);
@@ -148,18 +149,20 @@ static void test_swapmap5(void) {
 }
 
 static void test_swapmap6(void) {
-	ssize_t count;
+	size_t i;
+	size_t total = swmap_freeSpace() / PAGE_SIZE;
+	ulong *blocks = cache_alloc(total * sizeof(ulong));
 	test_doStart("Testing alloc all & free");
 
-	count = 0;
-	while(swmap_freeSpace() > 1 * PAGE_SIZE) {
-		test_assertTrue(swmap_alloc() != INVALID_BLOCK);
-		count++;
+	for(i = 0; i < total; i++) {
+		blocks[i] = swmap_alloc();
+		test_assertTrue(blocks[i] != INVALID_BLOCK);
 	}
-	while(--count >= 0)
-		swmap_free(count);
+	for(i = 0; i < total; i++)
+		swmap_free(blocks[i]);
 
 	test_finish();
+	cache_free(blocks);
 }
 
 static void test_doStart(const char *title) {

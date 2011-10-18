@@ -45,17 +45,21 @@ static void test_vmm(void) {
 static void test_1(void) {
 	vmreg_t rno,rno2,rno3;
 	pid_t cpid;
-	pid_t pid = proc_getRunning();
+	sThread *t = thread_getRunning();
+	pid_t pid = t->proc->pid;
 	sProc *clone;
 	test_caseStart("Testing vmm_add() and vmm_remove()");
 
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,1);
 	rno = vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
 	test_assertInt(rno,RNO_DATA);
 	vmm_remove(pid,rno);
+	thread_discardFrames(t);
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,9);
 	rno = vmm_add(pid,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_TEXT);
 	test_assertInt(rno,RNO_TEXT);
 	rno2 = vmm_add(pid,NULL,0,PAGE_SIZE * 3,PAGE_SIZE * 3,REG_RODATA);
@@ -65,9 +69,11 @@ static void test_1(void) {
 	vmm_remove(pid,rno);
 	vmm_remove(pid,rno2);
 	vmm_remove(pid,rno3);
+	thread_discardFrames(t);
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,8);
 	rno = vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
 	test_assertTrue(rno >= 0);
 	rno2 = vmm_add(pid,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_STACK);
@@ -77,6 +83,7 @@ static void test_1(void) {
 	vmm_remove(pid,rno);
 	vmm_remove(pid,rno2);
 	vmm_remove(pid,rno3);
+	thread_discardFrames(t);
 	checkMemoryAfter(true);
 
 	cpid = proc_clone(0);
@@ -84,12 +91,14 @@ static void test_1(void) {
 	clone = proc_getByPid(cpid);
 
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,4);
 	rno = vmm_add(pid,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_SHM);
 	test_assertTrue(rno >= 0);
 	rno2 = vmm_join(pid,rno,clone->pid);
 	test_assertTrue(rno2 >= 0);
 	vmm_remove(clone->pid,rno2);
 	vmm_remove(pid,rno);
+	thread_discardFrames(t);
 	checkMemoryAfter(true);
 
 	proc_kill(clone->pid);
@@ -100,10 +109,12 @@ static void test_1(void) {
 static void test_2(void) {
 	vmreg_t rno;
 	uintptr_t start,end;
-	pid_t pid = proc_getRunning();
+	sThread *t = thread_getRunning();
+	pid_t pid = t->proc->pid;
 	test_caseStart("Testing vmm_grow()");
 
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,5);
 	rno = vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
 	test_assertTrue(rno >= 0);
 	vmm_getRegRange(pid,rno,&start,&end,true);
@@ -115,9 +126,11 @@ static void test_2(void) {
 	vmm_getRegRange(pid,rno,&start,&end,true);
 	test_assertSSize(vmm_grow(pid,rno,-3),end);
 	vmm_remove(pid,rno);
+	thread_discardFrames(t);
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
+	thread_reserveFrames(t,7);
 	rno = vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
 	test_assertTrue(rno >= 0);
 	vmm_getRegRange(pid,rno,&start,&end,true);
@@ -131,6 +144,7 @@ static void test_2(void) {
 	vmm_getRegRange(pid,rno,&start,&end,true);
 	test_assertSSize(vmm_grow(pid,rno,-1),start);
 	vmm_remove(pid,rno);
+	thread_discardFrames(t);
 	checkMemoryAfter(true);
 
 	test_caseSucceeded();

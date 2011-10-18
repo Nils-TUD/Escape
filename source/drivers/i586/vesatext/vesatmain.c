@@ -501,7 +501,7 @@ static void vesa_drawCursor(gpos_t col,gpos_t row,uint8_t color) {
 	gsize_t xres = minfo->xResolution;
 	gsize_t pxSize = minfo->bitsPerPixel / 8;
 	fSetPixel pxFunc = setPixel[pxSize];
-	gpos_t x,y = FONT_HEIGHT + PAD - 1;
+	gpos_t x,y = FONT_HEIGHT + PAD;
 	uint8_t *vid = video +
 			row * (FONT_HEIGHT + PAD * 2) * xres * pxSize +
 			col * (FONT_WIDTH + PAD * 2) * pxSize;

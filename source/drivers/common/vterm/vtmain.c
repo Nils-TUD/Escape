@@ -115,11 +115,10 @@ static int vtermThread(void *vterm) {
 					msg.args.arg1 = 0;
 					if(data) {
 						if(RETRY(receive(fd,&mid,data,c + 1)) >= 0) {
-							if(cfg.enabled) {
-								data[c] = '\0';
-								vtout_puts(vt,data,c,true);
+							data[c] = '\0';
+							vtout_puts(vt,data,c,true);
+							if(cfg.enabled)
 								vt_update(vt);
-							}
 							msg.args.arg1 = c;
 						}
 						free(data);

@@ -283,7 +283,6 @@ static const char *ev_getName(size_t evi) {
 	static const char *names[] = {
 		"CLIENT",
 		"RECEIVED_MSG",
-		"REQ_REPLY",
 		"DATA_READABLE",
 		"MUTEX",
 		"PIPE_FULL",
@@ -293,7 +292,6 @@ static const char *ev_getName(size_t evi) {
 		"REQ_FREE",
 		"USER1",
 		"USER2",
-		"VM86_READY",
 		"SWAP_JOB",
 		"SWAP_WORK",
 		"SWAP_FREE",

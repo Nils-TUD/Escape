@@ -23,7 +23,7 @@
 #include <sys/common.h>
 #include <esc/sllist.h>
 
-#define SIG_COUNT			20
+#define SIG_COUNT			19
 
 #define SIG_IGN				((fSignal)-3)			/* ignore signal */
 #define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
@@ -34,23 +34,22 @@
 #define SIG_KILL			0						/* kills a proc; not catchable */
 #define SIG_TERM			1						/* terminates a proc; catchable */
 #define SIG_ILL_INSTR		2						/* TODO atm unused */
-#define SIG_SEGFAULT		3						/* TODO atm unused */
-#define SIG_PROC_DIED		4						/* TODO remove */
-#define SIG_PIPE_CLOSED		5						/* sent to the pipe-writer when reader died */
-#define SIG_CHILD_TERM		6						/* sent to parent-proc */
-#define SIG_INTRPT			7						/* used to interrupt a process; used by shell */
-#define SIG_INTRPT_TIMER	8						/* timer-interrupt */
-#define SIG_INTRPT_KB		9						/* keyboard-interrupt */
-#define SIG_INTRPT_COM1		10						/* com1-interrupt */
-#define SIG_INTRPT_COM2		11						/* com2-interrupt */
-#define SIG_INTRPT_FLOPPY	12						/* floppy-interrupt */
-#define SIG_INTRPT_CMOS		13						/* cmos-interrupt */
-#define SIG_INTRPT_ATA1		14						/* ata1-interrupt */
-#define SIG_INTRPT_ATA2		15						/* ata2-interrupt */
-#define SIG_INTRPT_MOUSE	16						/* mouse-interrupt */
-#define SIG_ALARM			17						/* for alarm() */
-#define SIG_USR1			18						/* can be used for everything */
-#define SIG_USR2			19						/* can be used for everything */
+#define SIG_SEGFAULT		3						/* segmentation fault */
+#define SIG_PIPE_CLOSED		4						/* sent to the pipe-writer when reader died */
+#define SIG_CHILD_TERM		5						/* sent to parent-proc */
+#define SIG_INTRPT			6						/* used to interrupt a process; used by shell */
+#define SIG_INTRPT_TIMER	7						/* timer-interrupt */
+#define SIG_INTRPT_KB		8						/* keyboard-interrupt */
+#define SIG_INTRPT_COM1		9						/* com1-interrupt */
+#define SIG_INTRPT_COM2		10						/* com2-interrupt */
+#define SIG_INTRPT_FLOPPY	11						/* floppy-interrupt */
+#define SIG_INTRPT_CMOS		12						/* cmos-interrupt */
+#define SIG_INTRPT_ATA1		13						/* ata1-interrupt */
+#define SIG_INTRPT_ATA2		14						/* ata2-interrupt */
+#define SIG_INTRPT_MOUSE	15						/* mouse-interrupt */
+#define SIG_ALARM			16						/* for alarm() */
+#define SIG_USR1			17						/* can be used for everything */
+#define SIG_USR2			18						/* can be used for everything */
 
 #define SIG_CHECK_CUR		0
 #define SIG_CHECK_OTHER		1

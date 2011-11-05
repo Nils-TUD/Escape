@@ -121,7 +121,7 @@ void GUITerm::read(int fd,sMsg *msg) {
 	msg->args.arg2 = avail;
 	send(fd,MSG_DEV_READ_RESP,msg,sizeof(msg->args));
 	if(data) {
-		send(fd,MSG_DEV_READ_RESP,data,count);
+		send(fd,MSG_DEV_READ_RESP,data,msg->args.arg1);
 		free(data);
 	}
 }

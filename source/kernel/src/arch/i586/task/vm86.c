@@ -31,7 +31,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/video.h>
-#include <sys/spinlock.h>
+#include <sys/mutex.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -82,7 +82,7 @@ static tid_t vm86Tid = INVALID_TID;
 static volatile tid_t caller = INVALID_TID;
 static sVM86Info info;
 static int vm86Res = -1;
-static klock_t vm86Lock;
+static mutex_t vm86Lock;
 
 int vm86_create(void) {
 	sProc *p;
@@ -156,20 +156,10 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 	if(vm86t == NULL || !(vm86t->proc->flags & P_VM86))
 		return -ESRCH;
 
-	/* if the vm86-task is active, wait here */
-	spinlock_aquire(&vm86Lock);
-	while(caller != INVALID_TID) {
-		/* TODO we have a problem if the process that currently uses vm86 gets killed... */
-		/* because we'll never get notified that we can use vm86 */
-		ev_wait(t,EVI_VM86_READY,0);
-		spinlock_release(&vm86Lock);
-		thread_switchNoSigs();
-		spinlock_aquire(&vm86Lock);
-	}
-
+	/* ensure that only one thread at a time can use the vm86-task */
+	mutex_aquire(&vm86Lock);
 	/* store information in calling process */
 	caller = t->tid;
-	spinlock_release(&vm86Lock);
 	if(!vm86_copyInfo(interrupt,regs,area)) {
 		vm86_finish();
 		return -ENOMEM;
@@ -418,7 +408,7 @@ static void vm86_finish(void) {
 		thread_discardFrames(thread_getById(vm86Tid));
 	vm86_clearInfo();
 	caller = INVALID_TID;
-	ev_wakeup(EVI_VM86_READY,0);
+	mutex_release(&vm86Lock);
 }
 
 static void vm86_copyRegResult(sIntrptStackFrame *stack) {

@@ -328,12 +328,10 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count);
  * @param size1 the data-size
  * @param data2 for the device-messages: a second message (NULL = no second one)
  * @param size2 the size of the second message
- * @param req if not NULL, a request will be created and stored here
- * @param reqSize the size to pass to the created request
  * @return 0 on success
  */
 ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size_t size1,
-		USER const void *data2,size_t size2,sRequest **req,size_t reqSize);
+		USER const void *data2,size_t size2);
 
 /**
  * Receives a message from the corresponding device
@@ -342,9 +340,10 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size
  * @param file the file to receive the message from
  * @param id will be set to the fetched msg-id
  * @param data the message to write to
+ * @param forceBlock if set, the function will block regardless of the NOBLOCK-flag in file
  * @return the number of written bytes (or < 0 if an error occurred)
  */
-ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size);
+ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size,bool forceBlock);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count

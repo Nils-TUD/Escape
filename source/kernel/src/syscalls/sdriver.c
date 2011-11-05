@@ -155,7 +155,7 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	/* receive a message */
-	res = vfs_receiveMsg(pid,file,id,data,size);
+	res = vfs_receiveMsg(pid,file,id,data,size,false);
 	if(res < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,res);

@@ -98,7 +98,7 @@ static void vfs_device_destroy(sVFSNode *node) {
 		/* wakeup all threads that may be waiting for this node so they can check
 		 * whether they are affected by the remove of this device and perform the corresponding
 		 * action */
-		vfs_device_wakeupClients(node,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE,false);
+		vfs_device_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE,false);
 		cache_free(node->data);
 		node->data = NULL;
 	}
@@ -113,9 +113,9 @@ void vfs_device_clientRemoved(sVFSNode *node,const sVFSNode *client) {
 }
 
 bool vfs_device_accepts(const sVFSNode *node,uint id) {
-	if(IS_FS(node->mode))
+	if(IS_FS(node->mode) && id != MSG_FS_OPEN_RESP)
 		return true;
-	return id == MSG_DEV_OPEN_RESP || id == MSG_DEV_READ_RESP || id == MSG_DEV_WRITE_RESP;
+	return false;/*id == MSG_DEV_OPEN_RESP || id == MSG_DEV_READ_RESP || id == MSG_DEV_WRITE_RESP;*/
 }
 
 bool vfs_device_supports(const sVFSNode *node,uint funcs) {

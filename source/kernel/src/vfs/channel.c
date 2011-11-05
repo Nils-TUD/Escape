@@ -25,7 +25,6 @@
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
-#include <sys/vfs/request.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
 #include <sys/vfs/devmsgs.h>
@@ -37,7 +36,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#define ARGS_MSG_COUNT		256
+#define PRINT_MSGS			0
 
 typedef struct {
 	bool used;
@@ -163,26 +162,24 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 }
 
 ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
-		USER const void *data1,size_t size1,USER const void *data2,size_t size2,
-		sRequest **req,size_t reqSize) {
+		USER const void *data1,size_t size1,USER const void *data2,size_t size2) {
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)n->data;
 	sMessage *msg1,*msg2 = NULL;
 
-	/*vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (device %s)\n",
-			pid,proc_getByPid(pid)->command,id,size,n->name,n,n->parent->name);*/
+#if PRINT_MSGS
+	vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (device %s)\n",
+			pid,proc_getByPid(pid)->command,id,size1,n->name,n,n->parent->name);
+	if(data2) {
+		vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (device %s)\n",
+				pid,proc_getByPid(pid)->command,id,size2,n->name,n,n->parent->name);
+	}
+#endif
 
 	/* devices write to the receive-list (which will be read by other processes) */
 	if(vfs_isDevice(file)) {
 		assert(data2 == NULL && size2 == 0);
-		/* if it is from a device or fs, don't enqueue it but pass it directly to
-		 * the corresponding handler */
-		if(vfs_device_accepts(n->parent,id)) {
-			vfs_req_sendMsg(id,n,data1,size1);
-			return 0;
-		}
-
 		list = &(chan->recvList);
 	}
 	/* other processes write to the send-list (which will be read by the driver) */
@@ -222,16 +219,6 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
 		return -EDESTROYED;
 	}
 
-	/* create request, if desired; note that we ensure this way that the request-position
-	 * corresponds to the message-position in the channel */
-	if(req) {
-		*req = vfs_req_get(n,NULL,reqSize);
-		if(!*req) {
-			spinlock_release(&n->lock);
-			return -ENOMEM;
-		}
-	}
-
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
 	spinlock_aquire(&waitLock);
@@ -262,8 +249,6 @@ errorRem:
 	sll_removeFirstWith(*list,msg1);
 error:
 	spinlock_release(&waitLock);
-	if(req)
-		vfs_req_free(*req);
 	spinlock_release(&n->lock);
 	cache_free(msg1);
 	cache_free(msg2);
@@ -271,7 +256,7 @@ error:
 }
 
 ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,
-		USER void *data,size_t size) {
+		USER void *data,size_t size,bool block,bool ignoreSigs) {
 	sSLList **list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;
@@ -301,7 +286,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 
 	/* wait until a message arrives */
 	while(sll_length(*list) == 0) {
-		if(!vfs_shouldBlock(file)) {
+		if(!block) {
 			spinlock_release(&node->lock);
 			return -EWOULDBLOCK;
 		}
@@ -313,7 +298,10 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 		ev_wait(t,event,(evobj_t)waitNode);
 		spinlock_release(&node->lock);
 
-		thread_switch();
+		if(ignoreSigs)
+			thread_switchNoSigs();
+		else
+			thread_switch();
 
 		if(sig_hasSignalFor(t->tid))
 			return -EINTR;
@@ -335,8 +323,10 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 		return -EINVAL;
 	}
 
-	/*vid_printf("%d:%s received msg %d from chan %s:%x\n",
-			pid,proc_getByPid(pid)->command,msg->id,node->name,node);*/
+#if PRINT_MSGS
+	vid_printf("%d:%s received msg %d from chan %s:%x\n",
+			pid,proc_getByPid(pid)->command,msg->id,node->name,node);
+#endif
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
 	thread_addHeapAlloc(t,msg);

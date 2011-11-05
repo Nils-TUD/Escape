@@ -66,9 +66,9 @@ void util_panic(const char *fmt,...) {
 	file = vfs_openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/video");
 	if(file >= 0) {
 		ssize_t i,res;
-		vfs_sendMsg(KERNEL_PID,file,MSG_VID_SETMODE,NULL,0,NULL,0,NULL,0);
+		vfs_sendMsg(KERNEL_PID,file,MSG_VID_SETMODE,NULL,0,NULL,0);
 		for(i = 0; i < 10000; i++) {
-			res = vfs_receiveMsg(KERNEL_PID,file,NULL,NULL,0);
+			res = vfs_receiveMsg(KERNEL_PID,file,NULL,NULL,0,false);
 			if(res >= 0)
 				break;
 		}

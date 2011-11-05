@@ -51,11 +51,11 @@ static A_INLINE void spinlock_release(klock_t *l) {
 #endif
 /* eco32 and mmix do not support smp */
 #ifdef __eco32__
-#define spinlock_aquire(l)			(void)(l)
+#define spinlock_aquire(l)		(void)(l)
 #define spinlock_release(l)		(void)(l)
 #endif
 #ifdef __mmix__
-#define spinlock_aquire(l)			(void)(l)
+#define spinlock_aquire(l)		(void)(l)
 #define spinlock_release(l)		(void)(l)
 #endif
 

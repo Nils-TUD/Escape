@@ -22,6 +22,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/smp.h>
 #include <sys/task/timer.h>
+#include <sys/task/event.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/util.h>
@@ -93,7 +94,7 @@ sThread *sched_perform(sThread *old,uint64_t runtime) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->newState = ST_READY;
 				spinlock_release(&schedLock);
-				/*ev_removeThread(old);*/
+				ev_removeThread(old);
 				return old;
 			}
 

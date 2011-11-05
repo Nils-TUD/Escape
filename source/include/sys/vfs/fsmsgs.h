@@ -25,11 +25,6 @@
 #include <sys/task/proc.h>
 
 /**
- * Inits vfs-real
- */
-void vfs_fsmsgs_init(void);
-
-/**
  * Removes the given process (closes fs-communication-file)
  *
  * @param pid the process-id

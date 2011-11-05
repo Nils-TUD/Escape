@@ -307,7 +307,7 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
-	res = vfs_sendMsg(pid,file,id,data,size,NULL,0,NULL,0);
+	res = vfs_sendMsg(pid,file,id,data,size,NULL,0);
 	proc_relFile(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
@@ -331,7 +331,7 @@ int sysc_receive(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
-	res = vfs_receiveMsg(pid,file,id,data,size);
+	res = vfs_receiveMsg(pid,file,id,data,size,false);
 	proc_relFile(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);

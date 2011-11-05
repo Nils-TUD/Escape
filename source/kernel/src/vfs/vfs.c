@@ -22,7 +22,6 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/fsmsgs.h>
 #include <sys/vfs/info.h>
-#include <sys/vfs/request.h>
 #include <sys/vfs/devmsgs.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/dir.h>
@@ -105,9 +104,6 @@ void vfs_init(void) {
 	devNode = vfs_dir_create(KERNEL_PID,root,(char*)"dev");
 
 	vfs_info_init();
-	vfs_req_init();
-	vfs_devmsgs_init();
-	vfs_fsmsgs_init();
 }
 
 int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
@@ -610,7 +606,7 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,USER const void *buffer,size_t count
 }
 
 ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size_t size1,
-		USER const void *data2,size_t size2,sRequest **req,size_t reqSize) {
+		USER const void *data2,size_t size2) {
 	ssize_t err;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	sVFSNode *n;
@@ -625,7 +621,7 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size
 	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return -ENOTSUP;
-	err = vfs_chan_send(pid,file,n,id,data1,size1,data2,size2,req,reqSize);
+	err = vfs_chan_send(pid,file,n,id,data1,size1,data2,size2);
 	if(err == 0 && pid != KERNEL_PID) {
 		sProc *p = proc_getByPid(pid);
 		/* no lock; same reason as above */
@@ -634,7 +630,8 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size
 	return err;
 }
 
-ssize_t vfs_receiveMsg(pid_t pid,file_t file,USER msgid_t *id,USER void *data,size_t size) {
+ssize_t vfs_receiveMsg(pid_t pid,file_t file,USER msgid_t *id,USER void *data,size_t size,
+		bool forceBlock) {
 	ssize_t err;
 	sGFTEntry *e = vfs_getGFTEntry(file);
 	sVFSNode *n;
@@ -646,7 +643,7 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,USER msgid_t *id,USER void *data,si
 	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return -ENOTSUP;
-	err = vfs_chan_receive(pid,file,n,id,data,size);
+	err = vfs_chan_receive(pid,file,n,id,data,size,forceBlock || !(e->flags & VFS_NOBLOCK),forceBlock);
 
 	if(err > 0 && pid != KERNEL_PID) {
 		sProc *p = proc_getByPid(pid);
@@ -1311,7 +1308,6 @@ void vfs_removeThread(tid_t tid) {
 		n = n->next;
 	}
 	cache_free(name);
-	vfs_req_freeAllOf(t);
 }
 
 size_t vfs_dbg_getGFTEntryCount(void) {

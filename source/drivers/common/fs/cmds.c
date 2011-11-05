@@ -223,7 +223,7 @@ static void cmds_read(int fd,sMsg *msg) {
 	send(fd,MSG_FS_READ_RESP,msg,sizeof(msg->args));
 	if(buffer) {
 		if(msg->args.arg1 > 0)
-			send(fd,MSG_FS_READ_RESP,buffer,count);
+			send(fd,MSG_FS_READ_RESP,buffer,msg->args.arg1);
 		free(buffer);
 	}
 }

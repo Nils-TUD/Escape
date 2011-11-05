@@ -65,6 +65,8 @@ struct sVTerm {
 	/* position (on the current page) */
 	size_t col;
 	size_t row;
+	size_t lastCol;
+	size_t lastRow;
 	/* colors */
 	uchar defForeground;
 	uchar defBackground;

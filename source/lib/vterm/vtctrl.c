@@ -57,6 +57,8 @@ bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
 	vt->lock = 0;
 	vt->col = 0;
 	vt->row = vt->rows - 1;
+	vt->lastCol = 0;
+	vt->lastRow = 0;
 	vt->upStart = 0;
 	vt->upLength = 0;
 	vt->upScroll = 0;

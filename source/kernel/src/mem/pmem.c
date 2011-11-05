@@ -303,8 +303,8 @@ void pmem_swapper(void) {
 	else {
 		/* get device-size and init swap-map */
 		sArgsMsg msg;
-		assert(vfs_sendMsg(pid,swapFile,MSG_DISK_GETSIZE,NULL,0,NULL,0,NULL,0) >= 0);
-		assert(vfs_receiveMsg(pid,swapFile,NULL,&msg,sizeof(msg)) >= 0);
+		assert(vfs_sendMsg(pid,swapFile,MSG_DISK_GETSIZE,NULL,0,NULL,0) >= 0);
+		assert(vfs_receiveMsg(pid,swapFile,NULL,&msg,sizeof(msg),false) >= 0);
 		if(!swmap_init(msg.arg1)) {
 			swapEnabled = false;
 			vfs_closeFile(pid,swapFile);

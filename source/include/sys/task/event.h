@@ -33,30 +33,27 @@ typedef struct {
 /* the event-indices */
 #define EVI_CLIENT				0
 #define EVI_RECEIVED_MSG		1
-#define EVI_REQ_REPLY			2
-#define EVI_DATA_READABLE		3
-#define EVI_MUTEX				4
-#define EVI_PIPE_FULL			5
-#define EVI_PIPE_EMPTY			6
-#define EVI_UNLOCK_SH			7
-#define EVI_UNLOCK_EX			8
-#define EVI_REQ_FREE			9
-#define EVI_USER1				10
-#define EVI_USER2				11
-#define EVI_VM86_READY			12
-#define EVI_SWAP_JOB			13
-#define EVI_SWAP_WORK			14
-#define EVI_SWAP_FREE			15
-#define EVI_VMM_DONE			16
-#define EVI_THREAD_DIED			17
-#define EVI_CHILD_DIED			18
-#define EVI_TERMINATION			19
+#define EVI_DATA_READABLE		2
+#define EVI_MUTEX				3
+#define EVI_PIPE_FULL			4
+#define EVI_PIPE_EMPTY			5
+#define EVI_UNLOCK_SH			6
+#define EVI_UNLOCK_EX			7
+#define EVI_REQ_FREE			8
+#define EVI_USER1				9
+#define EVI_USER2				10
+#define EVI_SWAP_JOB			11
+#define EVI_SWAP_WORK			12
+#define EVI_SWAP_FREE			13
+#define EVI_VMM_DONE			14
+#define EVI_THREAD_DIED			15
+#define EVI_CHILD_DIED			16
+#define EVI_TERMINATION			17
 
 /* the events we can wait for */
 #define EV_NOEVENT				0
 #define EV_CLIENT				(1 << EVI_CLIENT)
 #define EV_RECEIVED_MSG			(1 << EVI_RECEIVED_MSG)
-#define EV_REQ_REPLY			(1 << EVI_REQ_REPLY)	/* kernel-intern */
 #define EV_DATA_READABLE		(1 << EVI_DATA_READABLE)
 #define EV_MUTEX				(1 << EVI_MUTEX)		/* kernel-intern */
 #define EV_PIPE_FULL			(1 << EVI_PIPE_FULL)	/* kernel-intern */
@@ -66,7 +63,6 @@ typedef struct {
 #define EV_REQ_FREE				(1 << EVI_REQ_FREE)		/* kernel-intern */
 #define EV_USER1				(1 << EVI_USER1)
 #define EV_USER2				(1 << EVI_USER2)
-#define EV_VM86_READY			(1 << EVI_VM86_READY)	/* kernel-intern */
 #define EV_SWAP_JOB				(1 << EVI_SWAP_JOB)		/* kernel-intern */
 #define EV_SWAP_WORK			(1 << EVI_SWAP_WORK)	/* kernel-intern */
 #define EV_SWAP_FREE			(1 << EVI_SWAP_FREE)	/* kernel-intern */
@@ -74,7 +70,7 @@ typedef struct {
 #define EV_THREAD_DIED			(1 << EVI_THREAD_DIED)	/* kernel-intern */
 #define EV_CHILD_DIED			(1 << EVI_CHILD_DIED)	/* kernel-intern */
 #define EV_TERMINATION			(1 << EVI_TERMINATION)	/* kernel-intern */
-#define EV_COUNT				20
+#define EV_COUNT				18
 
 /* the events a user-thread can wait for */
 #define EV_USER_WAIT_MASK		(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE | \

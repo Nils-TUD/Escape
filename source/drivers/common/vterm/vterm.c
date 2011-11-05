@@ -113,6 +113,8 @@ void vt_selectVTerm(size_t index) {
 		if(activeVT != NULL)
 			activeVT->active = false;
 		vt->active = true;
+		/* force cursor-update */
+		vt->lastCol = vt->cols;
 		activeVT = vt;
 
 		/* refresh screen and write titlebar */
@@ -185,9 +187,13 @@ static void vt_doUpdate(sVTerm *vt) {
 static void vt_setCursor(sVTerm *vt) {
 	if(vt->active) {
 		sVTPos pos;
-		pos.col = vt->col;
-		pos.row = vt->row;
-		video_setCursor(vt->video,&pos);
+		if(vt->col != vt->lastCol || vt->row != vt->lastRow) {
+			pos.col = vt->col;
+			pos.row = vt->row;
+			video_setCursor(vt->video,&pos);
+			vt->lastCol = vt->col;
+			vt->lastRow = vt->row;
+		}
 	}
 }
 

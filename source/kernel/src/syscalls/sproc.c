@@ -151,32 +151,15 @@ int sysc_fork(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_waitChild(sThread *t,sIntrptStackFrame *stack) {
+int sysc_waitChild(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
 	int res;
-	sProc *p = t->proc;
-
 	if(state != NULL && !paging_isInUserSpace((uintptr_t)state,sizeof(sExitState)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	/* check if there is already a dead child-proc */
-	res = proc_getExitState(p->pid,state);
-	if(res < 0) {
-		/* wait for child */
-		ev_wait(t,EVI_CHILD_DIED,(evobj_t)p);
-		thread_switch();
-		/* stop waiting for event; maybe we have been waked up for another reason */
-		ev_removeThread(t);
-		/* don't continue here if we were interrupted by a signal */
-		if(sig_hasSignalFor(t->tid))
-			SYSC_ERROR(stack,-EINTR);
-		res = proc_getExitState(p->pid,state);
-		if(res < 0)
-			SYSC_ERROR(stack,res);
-	}
-
-	/* finally kill the process */
-	proc_kill(res);
+	res = proc_waitChild(state);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 

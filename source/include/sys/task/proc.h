@@ -395,13 +395,12 @@ void proc_killThread(tid_t tid);
 void proc_destroy(pid_t pid);
 
 /**
- * Stores the exit-state of the first terminated child-process of <ppid> into <state>
+ * Waits until a child-process terminated and copies its exit-state to <state>.
  *
- * @param ppid the parent-pid
- * @param state the pointer to the state (may be NULL!)
- * @return the pid on success
+ * @param state the state to write to (if not NULL)
+ * @return 0 on success
  */
-int proc_getExitState(pid_t ppid,sExitState *state);
+int proc_waitChild(USER sExitState *state);
 
 /**
  * Handles the architecture-specific part of the terminate-operation.

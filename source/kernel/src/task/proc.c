@@ -55,6 +55,7 @@
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
 static void proc_doRemoveRegions(sProc *p,bool remStack);
+static int proc_getExitState(pid_t ppid,USER sExitState *state);
 static void proc_setExitState(sProc *p,int exitCode,sig_t signal);
 static void proc_doDestroy(sProc *p);
 static void proc_notifyProcDied(pid_t parent);
@@ -72,6 +73,7 @@ static sSLList *procs;
 static sProc *pidToProc[MAX_PROC_COUNT];
 static pid_t nextPid = 1;
 static mutex_t procLock;
+static mutex_t childLock;
 
 void proc_preinit(void) {
 	paging_setFirst(&first.pagedir);
@@ -748,31 +750,6 @@ void proc_killThread(tid_t tid) {
 	proc_release(p,PLOCK_PROG);
 }
 
-static void proc_setExitState(sProc *p,int exitCode,sig_t signal) {
-	if(p->exitState)
-		return;
-
-	p->exitState = (sExitState*)cache_alloc(sizeof(sExitState));
-	if(p->exitState) {
-		sSLNode *tn;
-		p->exitState->pid = p->pid;
-		p->exitState->exitCode = exitCode;
-		p->exitState->signal = signal;
-		p->exitState->runtime = 0;
-		p->exitState->schedCount = 0;
-		p->exitState->syscalls = 0;
-		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
-			sThread *t = (sThread*)tn->data;
-			p->exitState->runtime += t->stats.runtime;
-			p->exitState->schedCount += t->stats.schedCount;
-			p->exitState->syscalls += t->stats.syscalls;
-		}
-		p->exitState->ownFrames = p->ownFrames;
-		p->exitState->sharedFrames = p->sharedFrames;
-		p->exitState->swapped = p->swapped;
-	}
-}
-
 void proc_destroy(pid_t pid) {
 	sSLNode *n;
 	sProc *p = proc_request(pid,PLOCK_PROG);
@@ -817,7 +794,10 @@ static void proc_doDestroy(sProc *p) {
 	/* we are a zombie now, so notify parent that he can get our exit-state */
 	p->flags &= ~P_PREZOMBIE;
 	p->flags |= P_ZOMBIE;
+	/* ensure that the parent-wakeup doesn't get lost */
+	mutex_aquire(&childLock);
 	proc_notifyProcDied(p->parentPid);
+	mutex_release(&childLock);
 }
 
 void proc_kill(pid_t pid) {
@@ -827,6 +807,8 @@ void proc_kill(pid_t pid) {
 		return;
 
 	/* give childs the ppid 0 */
+	mutex_aquire(&childLock);
+	mutex_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *cp = (sProc*)n->data;
 		if(cp->parentPid == p->pid) {
@@ -837,6 +819,8 @@ void proc_kill(pid_t pid) {
 				proc_notifyProcDied(0);
 		}
 	}
+	mutex_release(&procLock);
+	mutex_release(&childLock);
 
 	/* free the last resources and remove us from vfs */
 	cache_free((char*)p->command);
@@ -855,34 +839,86 @@ static void proc_notifyProcDied(pid_t parent) {
 	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
 }
 
-int proc_getExitState(pid_t ppid,USER sExitState *state) {
+int proc_waitChild(USER sExitState *state) {
+	sThread *t = thread_getRunning();
+	sProc *p = t->proc;
+	int res;
+	/* check if there is already a dead child-proc */
+	mutex_aquire(&childLock);
+	res = proc_getExitState(p->pid,state);
+	if(res < 0) {
+		/* wait for child */
+		ev_wait(t,EVI_CHILD_DIED,(evobj_t)p);
+		mutex_release(&childLock);
+		thread_switch();
+		/* stop waiting for event; maybe we have been waked up for another reason */
+		ev_removeThread(t);
+		/* don't continue here if we were interrupted by a signal */
+		if(sig_hasSignalFor(t->tid))
+			return -EINTR;
+		res = proc_getExitState(p->pid,state);
+		if(res < 0)
+			return res;
+	}
+	else
+		mutex_release(&childLock);
+
+	/* finally kill the process */
+	proc_kill(res);
+	return 0;
+}
+
+static int proc_getExitState(pid_t ppid,USER sExitState *state) {
 	sSLNode *n;
-	/* TODO lock? */
+	mutex_aquire(&procLock);
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
-		if(p->parentPid == ppid) {
+		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
+			/* avoid deadlock; at other places we aquire the PLOCK_PROG first and procLock afterwards */
+			mutex_release(&procLock);
 			p = proc_request(p->pid,PLOCK_PROG);
-			if(p->flags & P_ZOMBIE) {
-				if(state) {
-					if(p->exitState) {
-						/* copy it to stack first, because the memcpy to state may fail. this way
-						 * we don't get into trouble with the hold mutex (PLOCK_PROG) */
-						sExitState tmpState;
-						memcpy(&tmpState,p->exitState,sizeof(sExitState));
-						cache_free(p->exitState);
-						p->exitState = NULL;
-						proc_release(p,PLOCK_PROG);
-						memcpy(state,&tmpState,sizeof(sExitState));
-						return p->pid;
-					}
-				}
+			if(state && p->exitState) {
+				/* copy it to stack first, because the memcpy to state may fail. this way
+				 * we don't get into trouble with the hold mutex (PLOCK_PROG) */
+				sExitState tmpState;
+				memcpy(&tmpState,p->exitState,sizeof(sExitState));
+				cache_free(p->exitState);
+				p->exitState = NULL;
 				proc_release(p,PLOCK_PROG);
+				memcpy(state,&tmpState,sizeof(sExitState));
 				return p->pid;
 			}
 			proc_release(p,PLOCK_PROG);
+			return p->pid;
 		}
 	}
+	mutex_release(&procLock);
 	return -ECHILD;
+}
+
+static void proc_setExitState(sProc *p,int exitCode,sig_t signal) {
+	if(p->exitState)
+		return;
+
+	p->exitState = (sExitState*)cache_alloc(sizeof(sExitState));
+	if(p->exitState) {
+		sSLNode *tn;
+		p->exitState->pid = p->pid;
+		p->exitState->exitCode = exitCode;
+		p->exitState->signal = signal;
+		p->exitState->runtime = 0;
+		p->exitState->schedCount = 0;
+		p->exitState->syscalls = 0;
+		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+			sThread *t = (sThread*)tn->data;
+			p->exitState->runtime += t->stats.runtime;
+			p->exitState->schedCount += t->stats.schedCount;
+			p->exitState->syscalls += t->stats.syscalls;
+		}
+		p->exitState->ownFrames = p->ownFrames;
+		p->exitState->sharedFrames = p->sharedFrames;
+		p->exitState->swapped = p->swapped;
+	}
 }
 
 void proc_removeRegions(pid_t pid,bool remStack) {

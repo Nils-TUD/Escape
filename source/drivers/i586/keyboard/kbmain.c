@@ -229,7 +229,7 @@ int main(void) {
 					msg.args.arg2 = rb_length(rbuf) > 0;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(buffer) {
-						send(fd,MSG_DEV_READ_RESP,buffer,count * sizeof(sKbData));
+						send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);
 						free(buffer);
 					}
 				}

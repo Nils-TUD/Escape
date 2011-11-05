@@ -24,11 +24,6 @@
 #include <sys/vfs/node.h>
 
 /**
- * Inits the vfs-device
- */
-void vfs_devmsgs_init(void);
-
-/**
  * Sends the open-command to the device and waits for its response
  *
  * @param pid the process-id

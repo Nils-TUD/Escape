@@ -34,7 +34,6 @@
 #include <sys/task/smp.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
-#include <sys/vfs/request.h>
 #include <sys/mem/cow.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/kheap.h>
@@ -85,7 +84,6 @@ static void view_ioapic(void);
 #endif
 static void view_timer(void);
 static void view_boot(void);
-static void view_requests(void);
 static void view_locks(void);
 static void view_events(void);
 static void view_smp(void);
@@ -125,7 +123,6 @@ static sView views[] = {
 #endif
 	{"timer",(fView)view_timer},
 	{"boot",(fView)view_boot},
-	{"requests",(fView)view_requests},
 	{"locks",(fView)view_locks},
 	{"events",(fView)view_events},
 	{"smp",(fView)view_smp},
@@ -282,9 +279,6 @@ static void view_timer(void) {
 }
 static void view_boot(void) {
 	boot_print();
-}
-static void view_requests(void) {
-	vfs_req_printAll();
 }
 static void view_locks(void) {
 	lock_print();

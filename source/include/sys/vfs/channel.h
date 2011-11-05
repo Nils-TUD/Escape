@@ -67,13 +67,10 @@ bool vfs_chan_hasWork(const sVFSNode *node);
  * @param size1 the data-size
  * @param data2 for the device-messages: a second message (NULL = no second one)
  * @param size2 the size of the second message
- * @param req if not NULL, a request will be created and stored here
- * @param reqSize the size to pass to the created request
  * @return 0 on success
  */
 ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,
-		USER const void *data1,size_t size1,USER const void *data2,size_t size2,
-		sRequest **req,size_t reqSize);
+		USER const void *data1,size_t size1,USER const void *data2,size_t size2);
 
 /**
  * Receives a message from the channel (LOCKED!)
@@ -84,9 +81,12 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,
  * @param id will be set to the message-id (if not NULL)
  * @param data the buffer to write the message to
  * @param size the size of the buffer
+ * @param block whether to block if no message is available
+ * @param ignoreSigs whether to ignore signals while sleeping
  * @return the number of written bytes on success
  */
-ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *data,size_t size);
+ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *data,
+		size_t size,bool block,bool ignoreSigs);
 
 /**
  * Prints the given channel

@@ -53,6 +53,11 @@ void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	memset(*bitmap,0xFF,BITMAP_PAGE_COUNT / 8);
 }
 
+bool pmem_canMap(uintptr_t addr,size_t size) {
+	/* only the IO-space can be mapped */
+	return addr >= 0x0001000000000000 && addr + size < 0x0100000000000000;
+}
+
 void pmem_markAvailable(void) {
 	const sBootInfo *binfo = boot_getInfo();
 	/* mark bitmap used */

@@ -21,6 +21,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
+#include <sys/task/smp.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/cpu.h>
@@ -242,12 +243,11 @@ void thread_doSwitch(void) {
 
 	/* switch thread */
 	if(new->tid != old->tid) {
+		time_t timestamp = timer_getTimestamp();
 		thread_setRunning(new);
 
-		if(conf_getStr(CONF_SWAP_DEVICE)) {
-			time_t timestamp = timer_getTimestamp();
+		if(conf_getStr(CONF_SWAP_DEVICE))
 			vmm_setTimestamp(new,timestamp);
-		}
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
@@ -260,6 +260,7 @@ void thread_doSwitch(void) {
 		}
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
+		smp_schedule(new->cpu,new,timestamp);
 		new->stats.cycleStart = cpu_rdtsc();
 		thread_doSwitchTo(&old->save,&new->save,new->proc->pagedir,new->tid);
 	}

@@ -21,6 +21,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
+#include <sys/task/smp.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/cpu.h>
@@ -171,6 +172,7 @@ void thread_doSwitch(void) {
 			if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
 				vmm_setTimestamp(new,timestamp);
 
+			smp_schedule(new->cpu,new,timestamp);
 			new->stats.cycleStart = timestamp;
 			thread_resume(new->proc->pagedir,&new->save,new->archAttr.kstackFrame);
 		}

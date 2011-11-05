@@ -133,15 +133,9 @@ int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	/* trying to map memory in kernel area? */
-#ifdef __i386__
-	size_t pages = BYTES_2_PAGES(bytes);
-	/* TODO is this ok? */
-	/* TODO I think we should check here whether it is in a used-region, according to multiboot-memmap */
-	if(physCpy &&
-			OVERLAPS(physCpy,physCpy + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
+	/* ensure that its allowed to map this area (if the address is specified) */
+	if(physCpy && !pmem_canMap(physCpy,bytes))
 		SYSC_ERROR(stack,-EFAULT);
-#endif
 
 	addr = vmm_addPhys(pid,&physCpy,bytes,align);
 	if(addr == 0)

@@ -54,6 +54,15 @@ void pmem_init(void);
 void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap);
 
 /**
+ * Checks whether its allowed to map the given physical address range
+ *
+ * @param addr the start-address
+ * @param size the size of the area
+ * @return true if so
+ */
+bool pmem_canMap(uintptr_t addr,size_t size);
+
+/**
  * @return whether we can swap
  */
 bool pmem_canSwap(void);

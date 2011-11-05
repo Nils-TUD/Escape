@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #define SECTOR_SIZE			512
@@ -147,7 +148,7 @@ int main(int argc,char **argv) {
 					msg.args.arg2 = true;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1 > 0)
-						send(fd,MSG_DEV_READ_RESP,buffer,rcount);
+						send(fd,MSG_DEV_READ_RESP,buffer,msg.data.arg1);
 				}
 				break;
 

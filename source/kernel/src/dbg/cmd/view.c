@@ -91,7 +91,6 @@ static void view_smp(void);
 static sProc *view_getProc(size_t argc,char **argv);
 static const sThread *view_getThread(size_t argc,char **argv);
 
-static int err = 0;
 static sLines lines;
 static sScreenBackup backup;
 static sView views[] = {
@@ -152,13 +151,7 @@ int cons_cmd_view(size_t argc,char **argv) {
 			if((res = lines_create(&lines)) < 0)
 				return res;
 			vid_setPrintFunc(view_printc);
-			err = 0;
 			views[i].func(argc,argv);
-			if(err < 0) {
-				vid_unsetPrintFunc();
-				lines_destroy(&lines);
-				return err;
-			}
 			lines_end(&lines);
 			vid_unsetPrintFunc();
 			break;
@@ -176,10 +169,8 @@ int cons_cmd_view(size_t argc,char **argv) {
 }
 
 static void view_printc(char c) {
-	if(err < 0)
-		return;
 	if(c == '\n')
-		err = lines_newline(&lines);
+		lines_newline(&lines);
 	else
 		lines_append(&lines,c);
 }

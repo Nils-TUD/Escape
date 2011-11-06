@@ -32,10 +32,12 @@
 #include <esc/messages.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	ssize_t res;
 	sArgsMsg msg;
+	msgid_t mid;
 
 	if(node->name == NULL)
 		return -EDESTROYED;
@@ -48,8 +50,10 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	res = vfs_sendMsg(pid,file,MSG_DEV_OPEN,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
 		return res;
-	do
-		res = vfs_receiveMsg(pid,file,NULL,&msg,sizeof(msg),true);
+	do {
+		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
+		assert(mid == MSG_DEV_OPEN_RESP);
+	}
 	while(res == -EINTR);
 	if(res < 0)
 		return res;
@@ -59,6 +63,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count) {
 	ssize_t res;
+	msgid_t mid;
 	sArgsMsg msg;
 	sWaitObject obj;
 
@@ -83,8 +88,10 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		return res;
 
 	/* read response */
-	do
-		res = vfs_receiveMsg(pid,file,NULL,&msg,sizeof(msg),true);
+	do {
+		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
+		assert(mid == MSG_DEV_READ_RESP);
+	}
 	while(res == -EINTR);
 	if(res < 0)
 		return res;
@@ -103,6 +110,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 
 ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buffer,off_t offset,
 		size_t count) {
+	msgid_t mid;
 	ssize_t res;
 	sArgsMsg msg;
 
@@ -120,8 +128,10 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 		return res;
 
 	/* read response */
-	do
-		res = vfs_receiveMsg(pid,file,NULL,&msg,sizeof(msg),true);
+	do {
+		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
+		assert(mid == MSG_DEV_WRITE_RESP);
+	}
 	while(res == -EINTR);
 	if(res < 0)
 		return res;

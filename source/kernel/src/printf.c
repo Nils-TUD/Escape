@@ -75,24 +75,31 @@ void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 }
 
 static void prf_aprintc(char c) {
-	if(curbuf->dynamic) {
-		if(curbuf->str == NULL) {
-			curbuf->size = SPRINTF_INIT_SIZE;
-			curbuf->str = (char*)cache_alloc(SPRINTF_INIT_SIZE * sizeof(char));
+	if(curbuf->size != (size_t)-1) {
+		if(curbuf->dynamic) {
+			if(curbuf->str == NULL) {
+				curbuf->size = SPRINTF_INIT_SIZE;
+				curbuf->str = (char*)cache_alloc(SPRINTF_INIT_SIZE * sizeof(char));
+			}
+			if(curbuf->len >= curbuf->size) {
+				char *dup;
+				curbuf->size *= 2;
+				dup = (char*)cache_realloc(curbuf->str,curbuf->size * sizeof(char));
+				if(!dup) {
+					/* make end visible */
+					curbuf->str[curbuf->len - 1] = 0xBA;
+					curbuf->size = (size_t)-1;
+					return;
+				}
+				else
+					curbuf->str = dup;
+			}
 		}
-		if(curbuf->len >= curbuf->size) {
-			char *dup;
-			curbuf->size *= 2;
-			dup = (char*)cache_realloc(curbuf->str,curbuf->size * sizeof(char));
-			if(!dup)
-				cache_free(curbuf->str);
-			curbuf->str = dup;
+		if(curbuf->str) {
+			curbuf->str[curbuf->len] = c;
+			if(c != '\0')
+				curbuf->len++;
 		}
-	}
-	if(curbuf->str) {
-		curbuf->str[curbuf->len] = c;
-		if(c != '\0')
-			curbuf->len++;
 	}
 }
 

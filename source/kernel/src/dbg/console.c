@@ -165,6 +165,8 @@ void cons_viewLines(const sLines *l) {
 		/* print info-line */
 		buf.len = 0;
 		prf_sprintf(&buf,"Lines %zu..%zu of %zu",start + 1,end,l->lineCount);
+		if(l->lineSize == (size_t)-1)
+			prf_sprintf(&buf," (incomplete)");
 		if(error)
 			vid_printf("\033[co;0;7]Search: \033[co;4;7]%s\033[co;0;7]%|s\033[co]",search,tmp);
 		else

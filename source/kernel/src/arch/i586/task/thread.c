@@ -162,10 +162,15 @@ void thread_setRunning(sThread *t) {
 	threadSet = true;
 }
 
-bool thread_isRunning(sThread *t) {
+bool thread_beginTerm(sThread *t) {
 	bool res;
 	spinlock_aquire(&switchLock);
-	res = t->state == ST_RUNNING;
+	/* at first the thread can't run to do that. if its not running, its important that no mutexes
+	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
+	res = t->state != ST_RUNNING && sll_length(&t->termHeapAllocs) == 0 && t->mutexes == 0;
+	/* ensure that the thread won't be chosen again */
+	if(res)
+		sched_removeThread(t);
 	spinlock_release(&switchLock);
 	return res;
 }

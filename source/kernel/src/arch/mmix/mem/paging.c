@@ -408,7 +408,7 @@ size_t paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFram
 		pte = pt[pageNo % PT_ENTRY_COUNT];
 		if(freeFrames && (pte & (PTE_READABLE | PTE_WRITABLE | PTE_EXECUTABLE))) {
 			if(freeFrames)
-				pmem_free(PTE_FRAMENO(pte),false);
+				pmem_free(PTE_FRAMENO(pte),FRM_KERNEL);
 		}
 		pt[pageNo % PT_ENTRY_COUNT] = 0;
 
@@ -454,7 +454,7 @@ static uint64_t *paging_getPTOf(const tPageDir *pdir,uintptr_t virt,bool create,
 			if(!create)
 				return NULL;
 			/* allocate page-table and clear it */
-			frame = pmem_allocate(true);
+			frame = pmem_allocate(FRM_KERNEL);
 			if(frame == 0)
 				return NULL;
 			*ptpAddr = DIR_MAPPED_SPACE | (frame * PAGE_SIZE);
@@ -504,7 +504,7 @@ static size_t paging_removePts(tPageDir *pdir,uint64_t pageNo,uint64_t c,ulong l
 			}
 			/* free the frame, if the pt is empty */
 			if(empty) {
-				pmem_free(c,true);
+				pmem_free(c,FRM_KERNEL);
 				count++;
 			}
 		}
@@ -523,7 +523,7 @@ static size_t paging_removePts(tPageDir *pdir,uint64_t pageNo,uint64_t c,ulong l
 		if(empty) {
 			/* remove all pages in that page-table from the TCs */
 			paging_tcRemPT(pdir,pageNo * PAGE_SIZE);
-			pmem_free(c,true);
+			pmem_free(c,FRM_KERNEL);
 			count++;
 		}
 	}

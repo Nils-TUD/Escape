@@ -27,7 +27,8 @@
 typedef int file_t;
 typedef int vmreg_t;
 typedef uintptr_t frameno_t;
-typedef unsigned int klock_t;
+typedef uint klock_t;
+typedef uint mutex_t;
 
 #ifndef NDEBUG
 #define DEBUGGING 1

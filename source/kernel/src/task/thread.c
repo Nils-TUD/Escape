@@ -112,6 +112,7 @@ static void thread_initProps(sThread *t) {
 	t->stats.cycleStart = cpu_rdtsc();
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
+	t->mutexes = 0;
 	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
 	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
 	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
@@ -315,7 +316,7 @@ bool thread_reserveFrames(sThread *cur,size_t count) {
 		if(!pmem_reserve(count))
 			return false;
 		for(i = count; i > 0; i--) {
-			frameno_t frm = pmem_allocate(false);
+			frameno_t frm = pmem_allocate(FRM_USER);
 			if(!frm)
 				break;
 			sll_append(&cur->reqFrames,(void*)frm);
@@ -334,7 +335,7 @@ frameno_t thread_getFrame(sThread *cur) {
 void thread_discardFrames(sThread *cur) {
 	frameno_t frm;
 	while((frm = (frameno_t)sll_removeFirst(&cur->reqFrames)) != 0)
-		pmem_free(frm,false);
+		pmem_free(frm,FRM_USER);
 }
 
 int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc) {
@@ -458,48 +459,59 @@ void thread_kill(sThread *t) {
 
 void thread_printAll(void) {
 	sSLNode *n;
-	vid_printf("Threads:\n");
 	for(n = sll_begin(threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		thread_print(t);
 	}
 }
 
+static const char *thread_getStateName(uint8_t state) {
+	static const char *states[] = {
+		"UNUSED","RUN","RDY","BLK","ZOM","BLKSWAP","RDYSWAP"
+	};
+	return states[state];
+}
+
+void thread_printShort(const sThread *t) {
+	vid_printf("%d [state=%s, ev=",t->tid,thread_getStateName(t->state));
+	ev_printEvMask(t);
+	vid_printf(", cpu=%d, time=%Lums]",t->cpu,thread_getRuntime(t));
+}
+
 void thread_print(const sThread *t) {
 	size_t i;
 	sFuncCall *calls;
-	static const char *states[] = {
-		"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE","BLOCKEDSWAP","READYSWAP"
-	};
-	vid_printf("\tThread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
-	vid_printf("\t\tFlags=%#x\n",t->flags);
-	vid_printf("\t\tState=%s\n",states[t->state]);
-	vid_printf("\t\tEvents=");
+	vid_printf("Thread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
+	vid_printf("\tFlags=%#x\n",t->flags);
+	vid_printf("\tState=%s\n",thread_getStateName(t->state));
+	vid_printf("\tEvents=");
 	ev_printEvMask(t);
 	vid_printf("\n");
-	vid_printf("\t\tLastCPU=%d\n",t->cpu);
-	vid_printf("\t\tTlsRegion=%d, ",t->tlsRegion);
+	vid_printf("\tLastCPU=%d\n",t->cpu);
+	vid_printf("\tTlsRegion=%d, ",t->tlsRegion);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		vid_printf("stackRegion%zu=%d",i,t->stackRegions[i]);
 		if(i < STACK_REG_COUNT - 1)
 			vid_printf(", ");
 	}
 	vid_printf("\n");
-	vid_printf("\t\tRuntime = %Lums\n",thread_getRuntime(t));
-	vid_printf("\t\tCurCycleCount = %Lu\n",t->stats.curCycleCount);
-	vid_printf("\t\tLastCycleCount = %Lu\n",t->stats.lastCycleCount);
-	vid_printf("\t\tcycleStart = %Lu\n",t->stats.cycleStart);
-	vid_printf("\t\tKernel-trace:\n");
+	vid_printf("\tRuntime = %Lums\n",thread_getRuntime(t));
+	vid_printf("\tScheduled = %u\n",t->stats.schedCount);
+	vid_printf("\tSyscalls = %u\n",t->stats.syscalls);
+	vid_printf("\tCurCycleCount = %Lu\n",t->stats.curCycleCount);
+	vid_printf("\tLastCycleCount = %Lu\n",t->stats.lastCycleCount);
+	vid_printf("\tcycleStart = %Lu\n",t->stats.cycleStart);
+	vid_printf("\tKernel-trace:\n");
 	calls = util_getKernelStackTraceOf(t);
 	while(calls->addr != 0) {
-		vid_printf("\t\t\t%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+		vid_printf("\t\t%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
 		calls++;
 	}
 	calls = util_getUserStackTraceOf((sThread*)t);
 	if(calls) {
-		vid_printf("\t\tUser-trace:\n");
+		vid_printf("\tUser-trace:\n");
 		while(calls->addr != 0) {
-			vid_printf("\t\t\t%p -> %p (%s)\n",
+			vid_printf("\t\t%p -> %p (%s)\n",
 					(calls + 1)->addr,calls->funcAddr,calls->funcName);
 			calls++;
 		}

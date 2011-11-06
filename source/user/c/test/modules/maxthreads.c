@@ -17,26 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/kheap.h>
-#include <sys/mem/paging.h>
-#include <sys/mem/pmem.h>
+#include <esc/common.h>
+#include <esc/thread.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "maxthreads.h"
 
-uintptr_t kheap_allocAreas(void) {
-	frameno_t frame = pmem_allocate(FRM_CRIT);
-	if(frame == 0)
-		return 0;
-	return DIR_MAPPED_SPACE | (frame * PAGE_SIZE);
+static int threadEntry(A_UNUSED void *arg);
+
+int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
+	while(true) {
+		if(startThread(threadEntry,NULL) < 0) {
+			printe("Unable to start thread");
+			break;
+		}
+	}
+	wait(EV_NOEVENT,0);
+	return EXIT_SUCCESS;
 }
 
-uintptr_t kheap_allocSpace(size_t count) {
-	ssize_t res;
-	/* if its just one page, take a frame from the pmem-stack */
-	if(count == 1)
-		return kheap_allocAreas();
-	/* otherwise we have to use contiguous physical memory */
-	res = pmem_allocateContiguous(count,1);
-	if(res < 0)
-		return 0;
-	return DIR_MAPPED_SPACE | (res * PAGE_SIZE);
+static int threadEntry(A_UNUSED void *arg) {
+	wait(EV_NOEVENT,0);
+	return 0;
 }

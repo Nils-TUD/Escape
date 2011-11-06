@@ -42,6 +42,7 @@
 #include "modules/highcpu.h"
 #include "modules/drvparallel.h"
 #include "modules/pingpong.h"
+#include "modules/maxthreads.h"
 
 #define NAME_LEN 10
 
@@ -71,6 +72,7 @@ static sTestModule modules[] = {
 	{"highcpu",mod_highcpu},
 	{"parallel",mod_drvparallel},
 	{"pingpong",mod_pingpong},
+	{"maxthreads",mod_maxthreads},
 };
 
 int main(int argc,char *argv[]) {

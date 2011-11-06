@@ -66,8 +66,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 			lines_appendStr(&lines,buf.str);
 			cache_free(buf.str);
 		}
-		if((res = lines_newline(&lines)) < 0)
-			goto errorFile;
+		lines_newline(&lines);
 	}
 	vfs_closeFile(pid,file);
 	if(res < 0)
@@ -81,8 +80,6 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	vid_restore(backup.screen,backup.row,backup.col);
 	return 0;
 
-errorFile:
-	vfs_closeFile(pid,file);
 errorLines:
 	lines_destroy(&lines);
 	return res;

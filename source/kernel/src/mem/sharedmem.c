@@ -88,9 +88,9 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	if(!thread_reserveFrames(t,pageCount))
 		return -ENOMEM;
 
-	mutex_aquire(&shmLock);
+	mutex_aquire(t,&shmLock);
 	if(shm_get(name) != NULL) {
-		mutex_release(&shmLock);
+		mutex_release(t,&shmLock);
 		thread_discardFrames(t);
 		return -EEXIST;
 	}
@@ -111,7 +111,7 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	if(!sll_append(shareList,mem))
 		goto errVmm;
 	vmm_getRegRange(pid,reg,&start,NULL,true);
-	mutex_release(&shmLock);
+	mutex_release(t,&shmLock);
 	thread_discardFrames(t);
 	return start / PAGE_SIZE;
 
@@ -122,7 +122,7 @@ errUList:
 errMem:
 	cache_free(mem);
 errLock:
-	mutex_release(&shmLock);
+	mutex_release(t,&shmLock);
 	thread_discardFrames(t);
 	return -ENOMEM;
 }
@@ -132,74 +132,79 @@ ssize_t shm_join(pid_t pid,const char *name) {
 	vmreg_t reg;
 	sShMemUser *owner;
 	sShMem *mem;
-	mutex_aquire(&shmLock);
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&shmLock);
 
 	mem = shm_get(name);
 	if(mem == NULL || shm_getUser(mem,pid) != NULL) {
-		mutex_release(&shmLock);
+		mutex_release(t,&shmLock);
 		return -ENOENT;
 	}
 
 	owner = (sShMemUser*)sll_get(mem->users,0);
 	reg = vmm_join(owner->pid,owner->region,pid);
 	if(reg < 0) {
-		mutex_release(&shmLock);
+		mutex_release(t,&shmLock);
 		return -ENOMEM;
 	}
 	if(!shm_addUser(mem,pid,reg)) {
 		vmm_remove(pid,reg);
-		mutex_release(&shmLock);
+		mutex_release(t,&shmLock);
 		return -ENOMEM;
 	}
 	vmm_getRegRange(pid,reg,&start,NULL,true);
-	mutex_release(&shmLock);
+	mutex_release(t,&shmLock);
 	return start / PAGE_SIZE;
 }
 
 int shm_leave(pid_t pid,const char *name) {
 	int res;
-	mutex_aquire(&shmLock);
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&shmLock);
 	res = shm_doLeave(pid,name);
-	mutex_release(&shmLock);
+	mutex_release(t,&shmLock);
 	return res;
 }
 
 int shm_destroy(pid_t pid,const char *name) {
 	int res;
-	mutex_aquire(&shmLock);
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&shmLock);
 	res = shm_doDestroy(pid,name);
-	mutex_release(&shmLock);
+	mutex_release(t,&shmLock);
 	return res;
 }
 
 int shm_cloneProc(pid_t parent,pid_t child) {
 	sSLNode *n;
-	mutex_aquire(&shmLock);
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&shmLock);
 	for(n = sll_begin(shareList); n != NULL; n = n->next) {
 		sShMem *mem = (sShMem*)n->data;
 		sShMemUser *user = shm_getUser(mem,parent);
 		if(user) {
 			if(!shm_addUser(mem,child,user->region)) {
-				mutex_release(&shmLock);
+				mutex_release(t,&shmLock);
 				/* remove all already created entries */
 				shm_remProc(child);
 				return -ENOMEM;
 			}
 		}
 	}
-	mutex_release(&shmLock);
+	mutex_release(t,&shmLock);
 	return 0;
 }
 
 void shm_remProc(pid_t pid) {
-	sSLNode *n,*t;
-	mutex_aquire(&shmLock);
+	sSLNode *n,*tn;
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&shmLock);
 	for(n = sll_begin(shareList); n != NULL; ) {
 		sShMem *mem = (sShMem*)n->data;
 		if(shm_isOwn(mem,pid)) {
-			t = n->next;
+			tn = n->next;
 			shm_doDestroy(pid,mem->name);
-			n = t;
+			n = tn;
 		}
 		else {
 			sShMemUser *user = shm_getUser(mem,pid);
@@ -208,7 +213,7 @@ void shm_remProc(pid_t pid) {
 			n = n->next;
 		}
 	}
-	mutex_release(&shmLock);
+	mutex_release(t,&shmLock);
 }
 
 void shm_print(void) {

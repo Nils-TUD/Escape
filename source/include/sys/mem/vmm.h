@@ -154,12 +154,12 @@ vmreg_t vmm_getDLDataReg(pid_t pid);
 /**
  * Sets the given pointers to the corresponding number of frames for the given process
  *
- * @param pid the process-id
+ * @param p the process (region-locked)
  * @param own will be set to the number of own frames
  * @param shared will be set to the number of shared frames
  * @param swapped will be set to the number of swapped frames
  */
-void vmm_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped);
+void vmm_getMemUsageOf(sProc *p,size_t *own,size_t *shared,size_t *swapped);
 
 /**
  * This is a helper-function for determining the real memory-usage of all processes. It counts

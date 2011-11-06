@@ -101,6 +101,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	sBinDesc bindesc;
 	ssize_t readRes;
 	int res,fd;
+	char *interpName;
 
 	file = vfs_openPath(p->pid,VFS_READ,path);
 	if(file < 0) {
@@ -158,7 +159,6 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 		}
 
 		if(pheader.p_type == PT_INTERP) {
-			char *interpName;
 			/* has to be the first segment and is not allowed for the dynamic linker */
 			if(loadSeg > 0 || type != ELF_TYPE_PROG) {
 				vid_printf("[LOADER] PT_INTERP segment is not first or we're loading the dynlinker\n");
@@ -170,19 +170,19 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				vid_printf("[LOADER] Allocating memory for dynamic linker name failed\n");
 				goto failed;
 			}
+			thread_addHeapAlloc(t,interpName);
 			if(vfs_seek(p->pid,file,pheader.p_offset,SEEK_SET) < 0) {
 				vid_printf("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
-				cache_free(interpName);
-				goto failed;
+				goto failedInterpName;
 			}
 			if(vfs_readFile(p->pid,file,interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
 				vid_printf("[LOADER] Reading dynlinker name failed\n");
-				cache_free(interpName);
-				goto failed;
+				goto failedInterpName;
 			}
 			vfs_closeFile(p->pid,file);
 			/* now load him and stop loading the 'real' program */
 			res = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,info);
+			thread_remHeapAlloc(t,interpName);
 			cache_free(interpName);
 			return res;
 		}
@@ -226,6 +226,9 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	vfs_closeFile(p->pid,file);
 	return 0;
 
+failedInterpName:
+	thread_remHeapAlloc(t,interpName);
+	cache_free(interpName);
 failed:
 	vfs_closeFile(p->pid,file);
 	return -ENOEXEC;

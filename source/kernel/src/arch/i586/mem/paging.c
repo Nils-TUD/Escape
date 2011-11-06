@@ -249,7 +249,7 @@ void paging_mapKernelSpace(void) {
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
 		/* get frame and insert into page-dir */
-		frameno_t frame = pmem_allocate(true);
+		frameno_t frame = pmem_allocate(FRM_KERNEL);
 		if(frame == 0)
 			util_panic("Not enough kernel-memory");
 		pde->ptFrameNo = frame;
@@ -299,12 +299,15 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	spinlock_aquire(&pagingLock);
 
 	/* allocate frames */
-	pdirFrame = pmem_allocate(true);
-	if(pdirFrame == 0)
+	pdirFrame = pmem_allocate(FRM_KERNEL);
+	if(pdirFrame == 0) {
+		spinlock_release(&pagingLock);
 		return -ENOMEM;
-	stackPtFrame = pmem_allocate(true);
+	}
+	stackPtFrame = pmem_allocate(FRM_KERNEL);
 	if(stackPtFrame == 0) {
-		pmem_free(pdirFrame,true);
+		pmem_free(pdirFrame,FRM_KERNEL);
+		spinlock_release(&pagingLock);
 		return -ENOMEM;
 	}
 
@@ -387,9 +390,9 @@ void paging_destroyPDir(tPageDir *pdir) {
 	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
 	pde->present = false;
 	pde->exists = false;
-	pmem_free(pde->ptFrameNo,true);
+	pmem_free(pde->ptFrameNo,FRM_KERNEL);
 	/* free page-dir */
-	pmem_free(pdir->own >> PAGE_SIZE_SHIFT,true);
+	pmem_free(pdir->own >> PAGE_SIZE_SHIFT,FRM_KERNEL);
 	spinlock_release(&pagingLock);
 }
 
@@ -439,7 +442,6 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlag
 	sThread *t = thread_getRunning();
 	spinlock_aquire(&pagingLock);
 	frame = thread_getFrame(t);
-	/* TODO we should disable paging and copy directly in physical space */
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
@@ -564,7 +566,7 @@ static ssize_t paging_doMapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *fra
 		/* page table not present? */
 		if(!pde->present) {
 			/* get new frame for page-table */
-			pde->ptFrameNo = pmem_allocate(true);
+			pde->ptFrameNo = pmem_allocate(FRM_KERNEL);
 			if(pde->ptFrameNo == 0)
 				goto error;
 			pde->present = true;
@@ -594,7 +596,7 @@ static ssize_t paging_doMapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *fra
 		if(!(flags & PG_KEEPFRM) && (flags & PG_PRESENT)) {
 			if(frames == NULL) {
 				if(virt >= KERNEL_AREA) {
-					pte->frameNumber = pmem_allocate(true);
+					pte->frameNumber = pmem_allocate(virt < KERNEL_STACK_AREA ? FRM_CRIT : FRM_KERNEL);
 					if(pte->frameNumber == 0)
 						goto error;
 				}
@@ -660,8 +662,14 @@ static size_t paging_doUnmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool
 		if(pte->present) {
 			pte->present = false;
 			if(freeFrames) {
-				/* if its in user-space, its not critical */
-				pmem_free(pte->frameNumber,virt >= KERNEL_AREA);
+				if(virt >= KERNEL_AREA) {
+					if(virt < KERNEL_STACK_AREA)
+						pmem_free(pte->frameNumber,FRM_CRIT);
+					else
+						pmem_free(pte->frameNumber,FRM_KERNEL);
+				}
+				else
+					pmem_free(pte->frameNumber,FRM_USER);
 			}
 		}
 		pte->exists = false;
@@ -774,7 +782,7 @@ static size_t paging_remEmptyPt(uintptr_t ptables,size_t pti) {
 	pde = (sPDEntry*)PAGEDIR(ptables) + pti;
 	pde->present = false;
 	pde->exists = false;
-	pmem_free(pde->ptFrameNo,true);
+	pmem_free(pde->ptFrameNo,FRM_KERNEL);
 	if(ptables == MAPPED_PTS_START)
 		paging_flushPageTable(virt,ptables);
 	else

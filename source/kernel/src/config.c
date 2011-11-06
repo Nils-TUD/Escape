@@ -21,6 +21,7 @@
 #include <sys/task/timer.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
+#include <sys/task/smp.h>
 #include <sys/config.h>
 #include <errno.h>
 #include <string.h>
@@ -94,6 +95,9 @@ long conf_get(uint id) {
 			break;
 		case CONF_LOG2SCR:
 			res = log2scr;
+			break;
+		case CONF_CPU_COUNT:
+			res = smp_getCPUCount();
 			break;
 		default:
 			res = -EINVAL;

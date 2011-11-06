@@ -55,7 +55,7 @@ static vmreg_t vmm_getRegionOf(sProc *p,uintptr_t addr);
 static vmreg_t vmm_getRNoByRegion(sProc *p,const sRegion *reg);
 static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm,bool write);
 static void vmm_doRemove(sProc *p,vmreg_t reg);
-static size_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount);
+static size_t vmm_doGrow(sThread *t,sProc *p,vmreg_t reg,ssize_t amount);
 static void vmm_unsetRegion(sProc *p,vmreg_t rno);
 static bool vmm_demandLoad(sProc *p,sVMRegion *vm,uintptr_t addr);
 static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCount);
@@ -84,16 +84,18 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align) {
 	sVMRegion *vm;
 	ssize_t res;
 	sProc *p;
+	sThread *t = thread_getRunning();
 	size_t i,pages = BYTES_2_PAGES(bCount);
 	frameno_t *frames = (frameno_t*)cache_alloc(sizeof(frameno_t) * pages);
 	if(frames == NULL)
 		return 0;
 
 	/* if *phys is not set yet, we should allocate physical contiguous memory */
+	thread_addHeapAlloc(t,frames);
 	if(*phys == 0) {
 		ssize_t first = pmem_allocateContiguous(pages,align / PAGE_SIZE);
 		if(first < 0)
-			return 0;
+			goto error;
 		for(i = 0; i < pages; i++)
 			frames[i] = first + i;
 	}
@@ -110,25 +112,17 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align) {
 	if(reg < 0) {
 		if(!*phys)
 			pmem_freeContiguous(frames[0],pages);
-		cache_free(frames);
-		return 0;
+		goto error;
 	}
 
 	/* map memory */
-	p = proc_request(pid,PLOCK_REGIONS);
-	if(!p) {
-		vmm_remove(pid,reg);
-		cache_free(frames);
-		return 0;
-	}
+	p = proc_request(t,pid,PLOCK_REGIONS);
+	if(!p)
+		goto errorRem;
 	vm = REG(p,reg);
 	res = paging_mapTo(&p->pagedir,vm->virt,frames,pages,PG_PRESENT | PG_WRITABLE);
-	if(res < 0) {
-		proc_release(p,PLOCK_REGIONS);
-		vmm_remove(pid,reg);
-		cache_free(frames);
-		return 0;
-	}
+	if(res < 0)
+		goto errorRel;
 	if(*phys) {
 		/* the page-tables are ours, the pages may be used by others, too */
 		p->ownFrames += res;
@@ -139,9 +133,19 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align) {
 		p->ownFrames += res;
 		*phys = frames[0] * PAGE_SIZE;
 	}
-	proc_release(p,PLOCK_REGIONS);
+	proc_release(t,p,PLOCK_REGIONS);
+	thread_remHeapAlloc(t,frames);
 	cache_free(frames);
 	return vm->virt;
+
+errorRel:
+	proc_release(t,p,PLOCK_REGIONS);
+errorRem:
+	vmm_remove(pid,reg);
+error:
+	thread_remHeapAlloc(t,frames);
+	cache_free(frames);
+	return 0;
 }
 
 vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type) {
@@ -152,6 +156,7 @@ vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 	uintptr_t virt;
 	ulong pgFlags,flags;
 	sProc *p;
+	sThread *t = thread_getRunning();
 
 	/* for text and shared-library-text: try to find another process with that text */
 	if(bin && (type == REG_TEXT || type == REG_SHLIBTEXT)) {
@@ -162,7 +167,7 @@ vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 	}
 
 	/* get the attributes of the region (depending on type) */
-	p = proc_request(pid,PLOCK_REGIONS);
+	p = proc_request(t,pid,PLOCK_REGIONS);
 	if(!p)
 		return -ESRCH;
 	if((res = vmm_getAttr(p,type,bCount,&pgFlags,&flags,&virt,&rno)) < 0)
@@ -208,7 +213,7 @@ vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 			p->ownFrames += pageCount;
 		p->ownFrames += pts;
 	}
-	proc_release(p,PLOCK_REGIONS);
+	proc_release(t,p,PLOCK_REGIONS);
 
 #if DISABLE_DEMLOAD
 	if(type != REG_DEVICE && type != REG_PHYS) {
@@ -227,7 +232,7 @@ errAdd:
 errReg:
 	reg_destroy(reg);
 errProc:
-	proc_release(p,PLOCK_REGIONS);
+	proc_release(t,p,PLOCK_REGIONS);
 	return res;
 }
 
@@ -237,19 +242,20 @@ int vmm_setRegProt(pid_t pid,uintptr_t addr,ulong flags) {
 	sVMRegion *vmreg;
 	vmreg_t rno;
 	sProc *p;
+	sThread *t = thread_getRunning();
 	int res = -EPERM;
 	if(!(flags & RF_WRITABLE) && flags != 0)
 		return -EINVAL;
-	p = proc_request(pid,PLOCK_REGIONS);
+	p = proc_request(t,pid,PLOCK_REGIONS);
 	if(!p)
 		return -ESRCH;
 	rno = vmm_getRegionOf(p,addr);
 	if(rno == -1) {
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 		return -ENXIO;
 	}
 	vmreg = REG(p,rno);
-	mutex_aquire(&vmreg->reg->lock);
+	mutex_aquire(t,&vmreg->reg->lock);
 	if(!vmreg || (vmreg->reg->flags & (RF_NOFREE | RF_STACK | RF_TLS)))
 		goto error;
 	/* check if COW is enabled for a page */
@@ -283,12 +289,13 @@ int vmm_setRegProt(pid_t pid,uintptr_t addr,ulong flags) {
 	}
 	res = 0;
 error:
-	mutex_release(&vmreg->reg->lock);
-	proc_release(p,PLOCK_REGIONS);
+	mutex_release(t,&vmreg->reg->lock);
+	proc_release(t,p,PLOCK_REGIONS);
 	return res;
 }
 
 void vmm_swapOut(pid_t pid,file_t file,size_t count) {
+	sThread *t = thread_getRunning();
 	while(count > 0) {
 		sRegion *reg = vmm_getLRURegion();
 		if(reg == NULL)
@@ -341,7 +348,7 @@ void vmm_swapOut(pid_t pid,file_t file,size_t count) {
 
 			/* copy to a temporary buffer because we can't use the temp-area when switching threads */
 			paging_copyFromFrame(frameNo,buffer);
-			pmem_free(frameNo,false);
+			pmem_free(frameNo,FRM_USER);
 
 			/* write out on disk */
 			assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
@@ -349,7 +356,7 @@ void vmm_swapOut(pid_t pid,file_t file,size_t count) {
 
 			count--;
 		}
-		mutex_release(&reg->lock);
+		mutex_release(t,&reg->lock);
 	}
 }
 
@@ -419,18 +426,20 @@ void vmm_setTimestamp(const sThread *t,uint64_t timestamp) {
 }
 
 bool vmm_exists(pid_t pid,vmreg_t reg) {
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	bool res = false;
 	if(p) {
 		res = reg >= 0 && reg < (vmreg_t)p->regSize && REG(p,reg);
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 	}
 	return res;
 }
 
 vmreg_t vmm_getDLDataReg(pid_t pid) {
 	vmreg_t res = -1;
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	if(p) {
 		size_t i;
 		for(i = 0; i < p->regSize; i++) {
@@ -441,23 +450,22 @@ vmreg_t vmm_getDLDataReg(pid_t pid) {
 				break;
 			}
 		}
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 	}
 	return res;
 }
 
-void vmm_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+void vmm_getMemUsageOf(sProc *p,size_t *own,size_t *shared,size_t *swapped) {
 	*own = p->ownFrames;
 	*shared = p->sharedFrames;
 	*swapped = p->swapped;
-	proc_release(p,PLOCK_REGIONS);
 }
 
 float vmm_getMemUsage(pid_t pid,size_t *pages) {
 	size_t i;
 	float rpages = 0;
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	*pages = 0;
 	if(p) {
 		for(i = 0; i < p->regSize; i++) {
@@ -473,7 +481,7 @@ float vmm_getMemUsage(pid_t pid,size_t *pages) {
 				rpages += (float)count / reg_refCount(vm->reg);
 			}
 		}
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 	}
 	return rpages;
 }
@@ -486,7 +494,8 @@ sVMRegion *vmm_getRegion(pid_t pid,vmreg_t rno) {
 
 bool vmm_getRegRange(pid_t pid,vmreg_t reg,uintptr_t *start,uintptr_t *end,bool locked) {
 	bool res = false;
-	sProc *p = locked ? proc_request(pid,PLOCK_REGIONS) : proc_getByPid(pid);
+	sThread *t = thread_getRunning();
+	sProc *p = locked ? proc_request(t,pid,PLOCK_REGIONS) : proc_getByPid(pid);
 	if(p) {
 		sVMRegion *vm = REG(p,reg);
 		assert(reg >= 0 && reg < (vmreg_t)p->regSize);
@@ -498,14 +507,15 @@ bool vmm_getRegRange(pid_t pid,vmreg_t reg,uintptr_t *start,uintptr_t *end,bool 
 			res = true;
 		}
 		if(locked)
-			proc_release(p,PLOCK_REGIONS);
+			proc_release(t,p,PLOCK_REGIONS);
 	}
 	return res;
 }
 
 vmreg_t vmm_hasBinary(pid_t pid,const sBinDesc *bin) {
 	vmreg_t res = -1;
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	if(!p)
 		return -1;
 	if(p->regSize > 0 && p->regions) {
@@ -521,7 +531,7 @@ vmreg_t vmm_hasBinary(pid_t pid,const sBinDesc *bin) {
 			}
 		}
 	}
-	proc_release(p,PLOCK_REGIONS);
+	proc_release(t,p,PLOCK_REGIONS);
 	return res;
 }
 
@@ -536,16 +546,16 @@ bool vmm_pagefault(uintptr_t addr,bool write) {
 	if(!thread_reserveFrames(t,1))
 		return false;
 
-	p = proc_request(t->proc->pid,PLOCK_REGIONS);
+	p = proc_request(t,t->proc->pid,PLOCK_REGIONS);
 	rno = vmm_getRegionOf(p,addr);
 	if(rno < 0) {
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 		thread_discardFrames(t);
 		return false;
 	}
 	vm = REG(p,rno);
 	res = vmm_doPagefault(addr,p,vm,write);
-	proc_release(p,PLOCK_REGIONS);
+	proc_release(t,p,PLOCK_REGIONS);
 	thread_discardFrames(t);
 	return res;
 }
@@ -553,7 +563,8 @@ bool vmm_pagefault(uintptr_t addr,bool write) {
 static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm,bool write) {
 	bool res = false;
 	ulong *flags;
-	mutex_aquire(&vm->reg->lock);
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&vm->reg->lock);
 	flags = vm->reg->pageFlags + (addr - vm->virt) / PAGE_SIZE;
 	addr &= ~(PAGE_SIZE - 1);
 	if(*flags & PF_DEMANDLOAD) {
@@ -580,28 +591,30 @@ static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm,bool write) {
 		 * has already been handled. */
 		res = !write || (vm->reg->flags & RF_WRITABLE);
 	}
-	mutex_release(&vm->reg->lock);
+	mutex_release(t,&vm->reg->lock);
 	return res;
 }
 
 void vmm_removeAll(pid_t pid,bool remStack) {
 	size_t i;
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	if(p) {
 		for(i = 0; i < p->regSize; i++) {
 			sVMRegion *vm = REG(p,i);
 			if(vm && (!(vm->reg->flags & RF_STACK) || remStack))
 				vmm_doRemove(p,i);
 		}
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 	}
 }
 
 void vmm_remove(pid_t pid,vmreg_t reg) {
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	if(p) {
 		vmm_doRemove(p,reg);
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 	}
 }
 
@@ -609,7 +622,8 @@ static void vmm_doRemove(sProc *p,vmreg_t reg) {
 	size_t i = 0;
 	sVMRegion *vm = REG(p,reg);
 	size_t pcount;
-	mutex_aquire(&vm->reg->lock);
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&vm->reg->lock);
 	pcount = BYTES_2_PAGES(vm->reg->byteCount);
 	assert(p && reg < (vmreg_t)p->regSize && vm != NULL);
 	assert(reg_remFrom(vm->reg,p));
@@ -643,7 +657,7 @@ static void vmm_doRemove(sProc *p,vmreg_t reg) {
 			virt += PAGE_SIZE;
 		}
 		/* now destroy region */
-		mutex_release(&vm->reg->lock);
+		mutex_release(t,&vm->reg->lock);
 		reg_destroy(vm->reg);
 	}
 	else {
@@ -656,7 +670,7 @@ static void vmm_doRemove(sProc *p,vmreg_t reg) {
 		p->sharedFrames -= reg_pageCount(vm->reg,&swapped);
 		p->ownFrames -= pts;
 		p->swapped -= swapped;
-		mutex_release(&vm->reg->lock);
+		mutex_release(t,&vm->reg->lock);
 	}
 	vmm_free(vm,p);
 	vmm_unsetRegion(p,reg);
@@ -687,21 +701,22 @@ vmreg_t vmm_join(pid_t srcId,vmreg_t rno,pid_t dstId) {
 	vmreg_t nrno;
 	ssize_t res;
 	size_t pageCount,swapped;
+	sThread *t = thread_getRunning();
 	if(srcId == dstId)
 		return -EINVAL;
 
-	src = proc_request(srcId,PLOCK_REGIONS);
-	dst = proc_request(dstId,PLOCK_REGIONS);
+	src = proc_request(t,srcId,PLOCK_REGIONS);
+	dst = proc_request(t,dstId,PLOCK_REGIONS);
 	if(!src || !dst) {
 		if(dst)
-			proc_release(dst,PLOCK_REGIONS);
+			proc_release(t,dst,PLOCK_REGIONS);
 		if(src)
-			proc_release(src,PLOCK_REGIONS);
+			proc_release(t,src,PLOCK_REGIONS);
 		return -ESRCH;
 	}
 
 	vm = REG(src,rno);
-	mutex_aquire(&vm->reg->lock);
+	mutex_aquire(t,&vm->reg->lock);
 	assert(rno >= 0 && rno < (vmreg_t)src->regSize && vm != NULL);
 	assert(vm->reg->flags & RF_SHAREABLE);
 	nvm = vmm_alloc();
@@ -732,9 +747,9 @@ vmreg_t vmm_join(pid_t srcId,vmreg_t rno,pid_t dstId) {
 	dst->sharedFrames += reg_pageCount(vm->reg,&swapped);
 	dst->ownFrames += res;
 	dst->swapped += swapped;
-	mutex_release(&vm->reg->lock);
-	proc_release(dst,PLOCK_REGIONS);
-	proc_release(src,PLOCK_REGIONS);
+	mutex_release(t,&vm->reg->lock);
+	proc_release(t,dst,PLOCK_REGIONS);
+	proc_release(t,src,PLOCK_REGIONS);
 	return nrno;
 
 errMap:
@@ -744,17 +759,17 @@ errRem:
 errVmm:
 	vmm_free(nvm,dst);
 errProc:
-	mutex_release(&vm->reg->lock);
-	proc_release(dst,PLOCK_REGIONS);
-	proc_release(src,PLOCK_REGIONS);
+	mutex_release(t,&vm->reg->lock);
+	proc_release(t,dst,PLOCK_REGIONS);
+	proc_release(t,src,PLOCK_REGIONS);
 	return -ENOMEM;
 }
 
 int vmm_cloneAll(pid_t dstId) {
 	size_t i,j;
 	sThread *t = thread_getRunning();
-	sProc *dst = proc_request(dstId,PLOCK_REGIONS);
-	sProc *src = proc_request(proc_getRunning(),PLOCK_REGIONS);
+	sProc *dst = proc_request(t,dstId,PLOCK_REGIONS);
+	sProc *src = proc_request(t,t->proc->pid,PLOCK_REGIONS);
 	assert(dst->regions == NULL && dst->regSize == 0);
 	dst->swapped = 0;
 	dst->sharedFrames = 0;
@@ -776,7 +791,7 @@ int vmm_cloneAll(pid_t dstId) {
 				size_t pageCount,swapped;
 				if(nvm == NULL)
 					goto error;
-				mutex_aquire(&vm->reg->lock);
+				mutex_aquire(t,&vm->reg->lock);
 				/* better don't share the file; they may have to read in parallel */
 				nvm->binFile = -1;
 				nvm->virt = vm->virt;
@@ -788,7 +803,7 @@ int vmm_cloneAll(pid_t dstId) {
 				else {
 					nvm->reg = reg_clone(dst,vm->reg);
 					if(nvm->reg == NULL) {
-						mutex_release(&vm->reg->lock);
+						mutex_release(t,&vm->reg->lock);
 						goto error;
 					}
 				}
@@ -799,7 +814,7 @@ int vmm_cloneAll(pid_t dstId) {
 				res = paging_clonePages(&src->pagedir,&dst->pagedir,vm->virt,nvm->virt,pageCount,
 						vm->reg->flags & RF_SHAREABLE);
 				if(res < 0) {
-					mutex_release(&vm->reg->lock);
+					mutex_release(t,&vm->reg->lock);
 					goto error;
 				}
 				dst->ownFrames += res;
@@ -823,7 +838,7 @@ int vmm_cloneAll(pid_t dstId) {
 							if(!(vm->reg->pageFlags[j] & PF_COPYONWRITE)) {
 								vm->reg->pageFlags[j] |= PF_COPYONWRITE;
 								if(!cow_add(src->pid,frameNo)) {
-									mutex_release(&vm->reg->lock);
+									mutex_release(t,&vm->reg->lock);
 									goto error;
 								}
 								src->sharedFrames++;
@@ -832,7 +847,7 @@ int vmm_cloneAll(pid_t dstId) {
 							/* do it always for the child */
 							nvm->reg->pageFlags[j] |= PF_COPYONWRITE;
 							if(!cow_add(dst->pid,frameNo)) {
-								mutex_release(&vm->reg->lock);
+								mutex_release(t,&vm->reg->lock);
 								goto error;
 							}
 							dst->sharedFrames++;
@@ -840,17 +855,17 @@ int vmm_cloneAll(pid_t dstId) {
 						virt += PAGE_SIZE;
 					}
 				}
-				mutex_release(&vm->reg->lock);
+				mutex_release(t,&vm->reg->lock);
 			}
 		}
 	}
-	proc_release(src,PLOCK_REGIONS);
-	proc_release(dst,PLOCK_REGIONS);
+	proc_release(t,src,PLOCK_REGIONS);
+	proc_release(t,dst,PLOCK_REGIONS);
 	return 0;
 
 error:
-	proc_release(src,PLOCK_REGIONS);
-	proc_release(dst,PLOCK_REGIONS);
+	proc_release(t,src,PLOCK_REGIONS);
+	proc_release(t,dst,PLOCK_REGIONS);
 	/* Note that vmm_remove() will undo the cow just for the child; but thats ok since
 	 * the parent will get its frame back as soon as it writes to it */
 	/* Note also that we don't restore the old frame-counts; for dst it makes no sense because
@@ -862,7 +877,8 @@ error:
 }
 
 int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr) {
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	sVMRegion *vm = REG(p,reg);
 	ssize_t newPages = 0;
 	int res = -ENOMEM;
@@ -889,43 +905,43 @@ int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr) {
 			res = -ENOMEM;
 		/* new pages necessary? */
 		else if(newPages > 0) {
-			sThread *t = thread_getRunning();
 			if(!thread_reserveFrames(t,newPages)) {
-				proc_release(p,PLOCK_REGIONS);
+				proc_release(t,p,PLOCK_REGIONS);
 				return -ENOMEM;
 			}
-			res = vmm_doGrow(p,reg,newPages) != 0 ? 0 : -ENOMEM;
+			res = vmm_doGrow(t,p,reg,newPages) != 0 ? 0 : -ENOMEM;
 			thread_discardFrames(t);
 		}
 	}
-	proc_release(p,PLOCK_REGIONS);
+	proc_release(t,p,PLOCK_REGIONS);
 	return res;
 }
 
 size_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount) {
 	size_t res;
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	if(!p)
 		return -ESRCH;
-	res = vmm_doGrow(p,reg,amount);
-	proc_release(p,PLOCK_REGIONS);
+	res = vmm_doGrow(t,p,reg,amount);
+	proc_release(t,p,PLOCK_REGIONS);
 	return res;
 }
 
-static size_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
+static size_t vmm_doGrow(sThread *t,sProc *p,vmreg_t reg,ssize_t amount) {
 	size_t oldSize;
 	ssize_t res = -ENOMEM;
 	uintptr_t oldVirt,virt;
 	sVMRegion *vm;
 	vm = REG(p,reg);
-	mutex_aquire(&vm->reg->lock);
+	mutex_aquire(t,&vm->reg->lock);
 	assert(reg >= 0 && reg < (vmreg_t)p->regSize && vm != NULL);
 	assert((vm->reg->flags & RF_GROWABLE) && !(vm->reg->flags & RF_SHAREABLE));
 
 	/* check whether we've reached the max stack-pages */
 	if((vm->reg->flags & RF_STACK) &&
 			BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1) {
-		mutex_release(&vm->reg->lock);
+		mutex_release(t,&vm->reg->lock);
 		return 0;
 	}
 
@@ -938,20 +954,20 @@ static size_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
 		if(amount > 0) {
 			if(vm->reg->flags & RF_GROWS_DOWN) {
 				if(vmm_isOccupied(p,oldVirt - amount * PAGE_SIZE,oldVirt)) {
-					mutex_release(&vm->reg->lock);
+					mutex_release(t,&vm->reg->lock);
 					return 0;
 				}
 			}
 			else {
 				uintptr_t end = oldVirt + ROUNDUP(vm->reg->byteCount);
 				if(vmm_isOccupied(p,end,end + amount * PAGE_SIZE)) {
-					mutex_release(&vm->reg->lock);
+					mutex_release(t,&vm->reg->lock);
 					return 0;
 				}
 			}
 		}
 		if((res = reg_grow(vm->reg,amount)) < 0) {
-			mutex_release(&vm->reg->lock);
+			mutex_release(t,&vm->reg->lock);
 			return 0;
 		}
 
@@ -971,7 +987,7 @@ static size_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
 			if(pts < 0) {
 				if(vm->reg->flags & RF_GROWS_DOWN)
 					vm->virt += amount * PAGE_SIZE;
-				mutex_release(&vm->reg->lock);
+				mutex_release(t,&vm->reg->lock);
 				return 0;
 			}
 			p->ownFrames += pts + amount;
@@ -990,42 +1006,44 @@ static size_t vmm_doGrow(sProc *p,vmreg_t reg,ssize_t amount) {
 	}
 
 	res = (vm->reg->flags & RF_GROWS_DOWN) ? oldVirt : oldVirt + ROUNDUP(oldSize);
-	mutex_release(&vm->reg->lock);
+	mutex_release(t,&vm->reg->lock);
 	return res;
 }
 
 void vmm_sprintfRegions(sStringBuffer *buf,pid_t pid) {
 	size_t i,c = 0;
 	sVMRegion *reg;
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	if(p) {
 		for(i = 0; i < p->regSize; i++) {
 			reg = REG(p,i);
 			if(reg != NULL) {
 				if(c)
 					prf_sprintf(buf,"\n");
-				mutex_aquire(&reg->reg->lock);
+				mutex_aquire(t,&reg->reg->lock);
 				prf_sprintf(buf,"VMRegion %d (%p .. %p):\n",i,reg->virt,
 						reg->virt + reg->reg->byteCount - 1);
 				reg_sprintf(buf,reg->reg,reg->virt);
-				mutex_release(&reg->reg->lock);
+				mutex_release(t,&reg->reg->lock);
 				c++;
 			}
 		}
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 	}
 }
 
 void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
 	sVMRegion *reg;
 	size_t i;
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+	sThread *t = thread_getRunning();
+	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
 	if(p) {
 		for(i = 0; i < p->regSize; i++) {
 			reg = REG(p,i);
 			if(reg != NULL) {
 				const char *name = "";
-				mutex_aquire(&reg->reg->lock);
+				mutex_aquire(t,&reg->reg->lock);
 				if(i == RNO_TEXT)
 					name = "text";
 				else if(i == RNO_DATA)
@@ -1044,11 +1062,11 @@ void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
 						(reg->reg->flags & RF_EXECUTABLE) ? 'x' : '-',
 						(reg->reg->flags & RF_GROWABLE) ? 'g' : '-',
 						(reg->reg->flags & RF_SHAREABLE) ? 's' : '-');
-				mutex_release(&reg->reg->lock);
+				mutex_release(t,&reg->reg->lock);
 				prf_sprintf(buf,"\n");
 			}
 		}
-		proc_release(p,PLOCK_REGIONS);
+		proc_release(t,p,PLOCK_REGIONS);
 	}
 }
 
@@ -1126,6 +1144,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	sSLNode *n;
 	frameno_t frame;
 	uint mapFlags;
+	sThread *t = thread_getRunning();
 
 	if(vm->binFile < 0) {
 		vm->binFile = vfs_openFile(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
@@ -1147,6 +1166,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 		err = -ENOMEM;
 		goto error;
 	}
+	thread_addHeapAlloc(t,tempBuf);
 	err = vfs_readFile(pid,vm->binFile,tempBuf,loadCount);
 	if(err != (ssize_t)loadCount) {
 		if(err >= 0)
@@ -1158,6 +1178,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	frame = paging_demandLoad(tempBuf,loadCount,vm->reg->flags);
 
 	/* free resources not needed anymore */
+	thread_remHeapAlloc(t,tempBuf);
 	cache_free(tempBuf);
 
 	/* map into all pagedirs */
@@ -1182,6 +1203,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	return true;
 
 errorFree:
+	thread_remHeapAlloc(t,tempBuf);
 	cache_free(tempBuf);
 error:
 	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,p->command,strerror(-err),err);
@@ -1192,7 +1214,8 @@ static sRegion *vmm_getLRURegion(void) {
 	sVMRegion *vm;
 	sRegion *lru = NULL;
 	time_t ts = UINT_MAX;
-	mutex_aquire(&regLock);
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&regLock);
 	vm = regions;
 	while(vm != NULL) {
 		/* the disk-driver is not swappable */
@@ -1202,7 +1225,7 @@ static sRegion *vmm_getLRURegion(void) {
 			 * swap out to get more memory. if we want to demand-load something before this operation
 			 * is finished and lock the region for that, the swapper will find this region at this
 			 * place locked. so we have to skip it in this case to be able to continue. */
-			if(mutex_tryAquire(&vm->reg->lock)) {
+			if(mutex_tryAquire(t,&vm->reg->lock)) {
 				pages = BYTES_2_PAGES(vm->reg->byteCount);
 				for(j = 0; j < pages; j++) {
 					if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
@@ -1212,17 +1235,17 @@ static sRegion *vmm_getLRURegion(void) {
 				}
 				if(count > 0) {
 					if(lru)
-						mutex_release(&lru->lock);
+						mutex_release(t,&lru->lock);
 					ts = vm->reg->timestamp;
 					lru = vm->reg;
 				}
 				else
-					mutex_release(&vm->reg->lock);
+					mutex_release(t,&vm->reg->lock);
 			}
 		}
 		vm = vm->next;
 	}
-	mutex_release(&regLock);
+	mutex_release(t,&regLock);
 	return lru;
 }
 
@@ -1402,12 +1425,13 @@ static bool vmm_extendRegions(sProc *p,size_t i) {
 }
 
 static sVMRegion *vmm_alloc(void) {
+	sThread *t = thread_getRunning();
 	sVMRegion *reg = cache_alloc(sizeof(sVMRegion));
 	if(reg) {
-		mutex_aquire(&regLock);
+		mutex_aquire(t,&regLock);
 		reg->next = regions;
 		regions = reg;
-		mutex_release(&regLock);
+		mutex_release(t,&regLock);
 	}
 	return reg;
 }
@@ -1415,7 +1439,8 @@ static sVMRegion *vmm_alloc(void) {
 static void vmm_free(sVMRegion *vm,const sProc *p) {
 	/* remove from linked list */
 	sVMRegion *reg,*prev;
-	mutex_aquire(&regLock);
+	sThread *t = thread_getRunning();
+	mutex_aquire(t,&regLock);
 	prev = NULL;
 	reg = regions;
 	while(reg != NULL) {
@@ -1429,7 +1454,7 @@ static void vmm_free(sVMRegion *vm,const sProc *p) {
 		prev = reg;
 		reg = reg->next;
 	}
-	mutex_release(&regLock);
+	mutex_release(t,&regLock);
 
 	/* close file */
 	if(vm->binFile >= 0) {

@@ -37,6 +37,7 @@
 
 /* set values to support bit-masks of the types */
 typedef enum {MM_CONT = 1,MM_DEF = 2} eMemType;
+typedef enum {FRM_CRIT,FRM_KERNEL,FRM_USER} eFrmType;
 
 /**
  * Initializes the memory-management
@@ -132,18 +133,18 @@ bool pmem_reserve(size_t frameCount);
  * Allocates one frame. Assumes that it is available. You should announce it with pmem_reserve()
  * first!
  *
- * @param critical whether to allocate critical memory
+ * @param type the type of memory (FRM_*)
  * @return the frame-number or 0 if no free frame is available
  */
-frameno_t pmem_allocate(bool critical);
+frameno_t pmem_allocate(eFrmType type);
 
 /**
  * Frees the given frame
  *
  * @param frame the frame-number
- * @param critical whether this frame has been used for critical memory
+ * @param type the type of memory (FRM_*)
  */
-void pmem_free(frameno_t frame,bool critical);
+void pmem_free(frameno_t frame,eFrmType type);
 
 /**
  * Swaps the page with given address for the current process in

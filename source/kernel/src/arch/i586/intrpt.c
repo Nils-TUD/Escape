@@ -203,7 +203,7 @@ static void intrpt_exGenProtFault(sThread *t,sIntrptStackFrame *stack) {
 	if(stack->eip >= KERNEL_AREA)
 		vid_unsetPrintFunc();
 	/* io-map not loaded yet? */
-	if(ioports_handleGPF(t->proc->pid)) {
+	if(ioports_handleGPF(t)) {
 		exCount = 0;
 		return;
 	}
@@ -224,8 +224,10 @@ static void intrpt_exCoProcNA(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 static void intrpt_exPageFault(sThread *t,sIntrptStackFrame *stack) {
 	uintptr_t addr = pfAddrs[t->cpu];
 	/* for exceptions in kernel: ensure that we have the default print-function */
-	if(stack->eip >= KERNEL_AREA)
+	if(stack->eip >= KERNEL_AREA) {
+		vid_setTargets(TARGET_LOG | TARGET_SCREEN);
 		vid_unsetPrintFunc();
+	}
 
 #if DEBUG_PAGEFAULTS
 	if(addr == lastPFAddr && lastPFProc == proc_getRunning()) {

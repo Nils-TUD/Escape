@@ -39,17 +39,23 @@ int lines_create(sLines *l) {
 }
 
 void lines_appendStr(sLines *l,const char *str) {
+	if(l->lineSize == (size_t)-1)
+		return;
 	while(*str)
 		lines_append(l,*str++);
 }
 
 void lines_append(sLines *l,char c) {
+	if(l->lineSize == (size_t)-1)
+		return;
 	if(l->linePos < VID_COLS)
 		l->lines[l->lineCount][l->linePos++] = c;
 }
 
-int lines_newline(sLines *l) {
+void lines_newline(sLines *l) {
 	size_t i;
+	if(l->lineSize == (size_t)-1)
+		return;
 	/* fill up with spaces */
 	for(i = l->linePos; i < VID_COLS; i++)
 		l->lines[l->lineCount][i] = ' ';
@@ -59,16 +65,21 @@ int lines_newline(sLines *l) {
 	l->lineCount++;
 	/* allocate more lines if necessary */
 	if(l->lineCount >= l->lineSize) {
+		char **lines;
 		l->lineSize *= 2;
-		l->lines = (char**)cache_realloc(l->lines,l->lineSize * sizeof(char*));
-		if(!l->lines)
-			return -ENOMEM;
+		lines = (char**)cache_realloc(l->lines,l->lineSize * sizeof(char*));
+		if(!lines) {
+			l->lineSize = (size_t)-1;
+			return;
+		}
+		l->lines = lines;
 	}
 	/* allocate new line */
 	l->lines[l->lineCount] = cache_alloc(VID_COLS + 1);
-	if(!l->lines[l->lineCount])
-		return -ENOMEM;
-	return 0;
+	if(!l->lines[l->lineCount]) {
+		l->lineCount--;
+		l->lineSize = (size_t)-1;
+	}
 }
 
 void lines_end(sLines *l) {

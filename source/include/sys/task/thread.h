@@ -31,7 +31,7 @@
 #define INITIAL_STACK_PAGES		1
 
 #define MAX_PRIO				4
-#define DEFAULT_PRIO			4
+#define DEFAULT_PRIO			3
 /* the slices for good/bad behaviours. 1000 means, 100% of the timeslice, 0 = 0% of the timeslice */
 #define PRIO_BAD_SLICE			8000
 #define PRIO_GOOD_SLICE			500
@@ -123,6 +123,8 @@ struct sThread {
 	sThreadRegs save;
 	/* architecture-specific attributes */
 	sThreadArchAttr archAttr;
+	/* the number of allocated mutexes */
+	uint8_t mutexes;
 	/* a list with heap-allocations that should be free'd on thread-termination */
 	sSLList termHeapAllocs;
 	/* a list of locks that should be released on thread-termination */
@@ -144,8 +146,8 @@ struct sThread {
 		/* executed cycles in the previous second */
 		uint64_t lastCycleCount;
 		/* the number of times we got chosen so far */
-		ulong schedCount;
 		ulong syscalls;
+		ulong schedCount;
 	} stats;
 	/* for the scheduler */
 	sThread *prev;
@@ -224,13 +226,12 @@ sThread *thread_getRunning(void);
 void thread_setRunning(sThread *t);
 
 /**
- * Returns whether the given thread is currently running in a safe way, i.e. it will only be
- * reported that its not running, if the thread-switch is completely finished.
+ * Checks whether the thread can be terminated. If so, it ensures that it won't be scheduled again.
  *
  * @param t the thread
- * @return true if its running
+ * @return true if it can be terminated now
  */
-bool thread_isRunning(sThread *t);
+bool thread_beginTerm(sThread *t);
 
 /**
  * Fetches the thread with given id from the internal thread-map
@@ -561,6 +562,13 @@ void thread_freeArch(sThread *t);
  * Prints all threads
  */
 void thread_printAll(void);
+
+/**
+ * Prints a short info about the given thread
+ *
+ * @param t the thread
+ */
+void thread_printShort(const sThread *t);
 
 /**
  * Prints the given thread

@@ -59,12 +59,8 @@ int cons_cmd_file(size_t argc,char **argv) {
 	while((count = vfs_readFile(pid,file,buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(i = 0; i < count; i++) {
-			if(buffer[i] == '\n') {
-				if(lines_newline(&lines) < 0) {
-					res = -ENOMEM;
-					goto error;
-				}
-			}
+			if(buffer[i] == '\n')
+				lines_newline(&lines);
 			else
 				lines_append(&lines,buffer[i]);
 		}

@@ -192,9 +192,13 @@ void ev_removeThread(sThread *t) {
 
 void ev_printEvMask(const sThread *t) {
 	uint e;
-	for(e = 0; e < EV_COUNT; e++) {
-		if(t->events & (1 << e))
-			vid_printf("%s ",ev_getName(e));
+	if(t->events == 0)
+		vid_printf("-");
+	else {
+		for(e = 0; e < EV_COUNT; e++) {
+			if(t->events & (1 << e))
+				vid_printf("%s ",ev_getName(e));
+		}
 	}
 }
 

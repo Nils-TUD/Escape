@@ -94,6 +94,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 	void *fsBytes = NULL,*fsBytesDup;
 	sVFSNode *n,*firstChild;
 	bool isValid;
+	sThread *t = thread_getRunning();
 	assert(node != NULL);
 	assert(buffer != NULL);
 
@@ -119,7 +120,9 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 			size_t c,curSize = bufSize;
 			fsBytes = cache_alloc(bufSize);
 			if(fsBytes != NULL) {
-				file_t rfile = vfs_fsmsgs_openPath(pid,VFS_READ,"/");
+				file_t rfile;
+				thread_addHeapAlloc(t,fsBytes);
+				rfile = vfs_fsmsgs_openPath(pid,VFS_READ,"/");
 				if(rfile >= 0) {
 					while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
 						fsByteCount += c;
@@ -136,6 +139,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 					}
 					vfs_closeFile(pid,rfile);
 				}
+				thread_remHeapAlloc(t,fsBytes);
 			}
 			byteCount += fsByteCount;
 		}
@@ -149,6 +153,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 				size_t len;
 				sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
 				fsBytes = fsBytesDup;
+				thread_addHeapAlloc(t,fsBytes);
 				n = firstChild;
 				while(n != NULL) {
 					if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
@@ -166,6 +171,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 					dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
 					n = n->next;
 				}
+				thread_remHeapAlloc(t,fsBytes);
 			}
 		}
 	}
@@ -175,7 +181,6 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 		offset = byteCount;
 	byteCount = MIN(byteCount - offset,count);
 	if(byteCount > 0) {
-		sThread *t = thread_getRunning();
 		thread_addHeapAlloc(t,fsBytes);
 		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
 		thread_remHeapAlloc(t,fsBytes);

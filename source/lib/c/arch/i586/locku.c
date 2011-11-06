@@ -19,6 +19,23 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
+#include <esc/conf.h>
+
+typedef void (*fConstr)(void);
+
+static void initLock(void);
+
+/* actually this isn't optimal because the stdio-constructor may run first and uses locku. but it
+ * isn't that bad because at this stage there won't be multiple threads anyway so that the lock
+ * is never hold and the number of cpus doesn't matter */
+fConstr lockConstr[1] A_INIT = {
+	initLock
+};
+static size_t cpuCount;
+
+static void initLock(void) {
+	cpuCount = getConf(CONF_CPU_COUNT) > 1;
+}
 
 void locku(tULock *l) {
 	__asm__ (
@@ -28,11 +45,19 @@ void locku(tULock *l) {
 		"	lock;"					/* lock next instruction */
 		"	cmpxchg %%ecx,(%0);"	/* compare l with eax; if equal exchange ecx with l */
 		"	jz		done;"
-		"	call	yield;"			/* if its locked, do a yield to give other threads the chance
-										to run and to release the lock */
+		"	mov		%1,%%eax;"
+		"	test	%%eax,%%eax;"
+		"	jnz		lockuLoop;"		/* if there are multiple cpus, just sit here and wait */
+		"	call	yield;"			/* with only one cpu, waiting makes no sense because nobody
+									   else can release the lock */
 		"	jmp		lockuLoop;"		/* try again */
 		"done:"
-		: : "D" (l)
+		/* outputs */
+		:
+		/* inputs */
+		: "D" (l), "m" (cpuCount)
+		/* eax, ecx and cc will be clobbered; we need memory as well because *l is changed */
+		: "eax", "ecx", "cc", "memory"
 	);
 }
 

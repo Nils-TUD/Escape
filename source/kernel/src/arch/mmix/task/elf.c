@@ -52,15 +52,16 @@ int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info
 }
 
 int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info) {
-	int res = 0;
+	int res = -ENOEXEC;
 	sThread *t = thread_getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
 	sElfSHeader *secHeaders = (sElfSHeader*)cache_alloc(headerSize);
 	if(secHeaders == NULL) {
 		vid_printf("[LOADER] Unable to allocate memory for ELF-header (%zu bytes)\n",headerSize);
-		goto error;
+		return -ENOEXEC;
 	}
 
+	thread_addHeapAlloc(t,secHeaders);
 	if(vfs_seek(t->proc->pid,file,eheader->e_shoff,SEEK_SET) < 0) {
 		vid_printf("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
@@ -72,15 +73,12 @@ int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info
 	}
 
 	/* elf_finish might segfault */
-	thread_addHeapAlloc(t,secHeaders);
 	res = elf_finish(t,eheader,secHeaders,file,info);
+
+error:
 	thread_remHeapAlloc(t,secHeaders);
 	cache_free(secHeaders);
 	return res;
-
-error:
-	cache_free(secHeaders);
-	return -ENOEXEC;
 }
 
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,

@@ -78,8 +78,9 @@ static size_t swappedIn = 0;
 static bool swapEnabled = false;
 static bool swapping = false;
 static sThread *swapper = NULL;
-static size_t kframes = 0;
-static size_t uframes = 0;
+static size_t cframes = 0;	/* critical frames; for dynarea, cache and heap */
+static size_t kframes = 0;	/* kernel frames: for pagedirs, page-tables, kstacks, ... */
+static size_t uframes = 0;	/* user frames */
 /* swap-in jobs */
 static sSwapInJob siJobs[SWAPIN_JOB_COUNT];
 static sSwapInJob *siFreelist;
@@ -110,9 +111,12 @@ void pmem_init(void) {
 		kframes = free / (100 / KERNEL_MEM_PERCENT);
 		if(kframes < KERNEL_MEM_MIN)
 			kframes = KERNEL_MEM_MIN;
-		if(kframes > free / 2) {
+		cframes = (kframes * 2) / 3;
+		kframes = kframes - cframes;
+		if(cframes + kframes > free / 2) {
 			log_printf("Warning: Detected VERY small number of free frames\n");
-			log_printf("         (%zu total, using %zu for kernel)\n",free,kframes);
+			log_printf("         (%zu total, using %zu for kernel, %zu for critical)\n",
+					free,kframes,cframes);
 		}
 		swapEnabled = true;
 	}
@@ -186,7 +190,7 @@ bool pmem_reserve(size_t frameCount) {
 	free = pmem_getFreeDef();
 	uframes += frameCount;
 	/* enough user-memory available? */
-	if(free >= frameCount && free - frameCount >= kframes) {
+	if(free >= frameCount && free - frameCount >= kframes + cframes) {
 		spinlock_release(&defLock);
 		return true;
 	}
@@ -209,16 +213,27 @@ bool pmem_reserve(size_t frameCount) {
 		spinlock_aquire(&defLock);
 		free = pmem_getFreeDef();
 	}
-	while(free - kframes < frameCount);
+	while(free - (kframes + cframes) < frameCount);
 	spinlock_release(&defLock);
 	return true;
 }
 
-frameno_t pmem_allocate(bool critical) {
+frameno_t pmem_allocate(eFrmType type) {
 	frameno_t frm = 0;
 	spinlock_aquire(&defLock);
 	util_printEventTrace(util_getKernelStackTrace(),"[A] %x ",*(stack - 1));
-	if(swapEnabled && critical) {
+	if(swapEnabled && type == FRM_CRIT) {
+		if(cframes > 0) {
+			frm = *(--stack);
+			cframes--;
+		}
+	}
+	else if(swapEnabled && type == FRM_KERNEL) {
+		/* if there are no kframes anymore, take away a few uframes */
+		if(kframes == 0) {
+			size_t free = pmem_getFreeDef();
+			kframes = (free - cframes) / (100 / KERNEL_MEM_PERCENT);
+		}
 		/* return 0 otherwise */
 		if(kframes > 0) {
 			frm = *(--stack);
@@ -227,10 +242,10 @@ frameno_t pmem_allocate(bool critical) {
 	}
 	else {
 		size_t free = pmem_getFreeDef();
-		if(free > kframes) {
-			assert(critical || uframes > 0);
+		if(free > (kframes + cframes)) {
+			assert(type != FRM_USER || uframes > 0);
 			frm = *(--stack);
-			if(!critical)
+			if(type == FRM_USER)
 				uframes--;
 		}
 	}
@@ -238,11 +253,15 @@ frameno_t pmem_allocate(bool critical) {
 	return frm;
 }
 
-void pmem_free(frameno_t frame,bool critical) {
+void pmem_free(frameno_t frame,eFrmType type) {
 	spinlock_aquire(&defLock);
 	util_printEventTrace(util_getKernelStackTrace(),"[F] %x ",frame);
-	if(swapEnabled && critical)
-		kframes++;
+	if(swapEnabled) {
+		if(type == FRM_CRIT)
+			cframes++;
+		else if(type == FRM_KERNEL)
+			kframes++;
+	}
 	pmem_markUsed(frame,false);
 	spinlock_release(&defLock);
 }
@@ -317,8 +336,8 @@ void pmem_swapper(void) {
 		sSwapInJob *job;
 		free = pmem_getFreeDef();
 		/* swapping out is more important than swapping in */
-		if((free - kframes) < uframes) {
-			size_t amount = MIN(MAX_SWAP_AT_ONCE,uframes - (free - kframes));
+		if((free - (kframes + cframes)) < uframes) {
+			size_t amount = MIN(MAX_SWAP_AT_ONCE,uframes - (free - (kframes + cframes)));
 			swapping = true;
 			spinlock_release(&defLock);
 
@@ -327,8 +346,10 @@ void pmem_swapper(void) {
 
 			spinlock_aquire(&defLock);
 			swapping = false;
-			ev_wakeup(EVI_SWAP_FREE,0);
 		}
+		/* wakeup in every case because its possible that the frames are available now but weren't
+		 * previously */
+		ev_wakeup(EVI_SWAP_FREE,0);
 
 		/* handle swap-in-jobs */
 		while((job = pmem_getJob()) != NULL) {
@@ -344,7 +365,7 @@ void pmem_swapper(void) {
 			swapping = false;
 		}
 
-		if(pmem_getFreeDef() - kframes >= uframes) {
+		if(pmem_getFreeDef() - (kframes + cframes) >= uframes) {
 			/* we may receive new work now */
 			ev_wait(swapper,EVI_SWAP_WORK,0);
 			spinlock_release(&defLock);
@@ -367,6 +388,7 @@ void pmem_print(void) {
 	vid_printf("Contiguous: %zu\n",freeCont);
 	vid_printf("Swap-Device: %s\n",dev ? dev : "-none-");
 	vid_printf("Swap enabled: %d\n",swapEnabled);
+	vid_printf("EFrames: %zu\n",cframes);
 	vid_printf("KFrames: %zu\n",kframes);
 	vid_printf("UFrames: %zu\n",uframes);
 	vid_printf("Swapped out: %zu\n",swappedOut);

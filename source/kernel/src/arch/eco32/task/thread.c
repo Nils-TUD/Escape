@@ -39,12 +39,12 @@ static sThread *cur = NULL;
 
 int thread_initArch(sThread *t) {
 	/* setup kernel-stack for us */
-	frameno_t stackFrame = pmem_allocate(true);
+	frameno_t stackFrame = pmem_allocate(FRM_KERNEL);
 	if(stackFrame == 0)
 		return -ENOMEM;
 	if(paging_mapTo(&t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
-		pmem_free(stackFrame,true);
+		pmem_free(stackFrame,FRM_KERNEL);
 		return -ENOMEM;
 	}
 	t->archAttr.kstackFrame = stackFrame;
@@ -64,18 +64,18 @@ size_t thread_getThreadFrmCnt(void) {
 
 int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
 	if(cloneProc) {
-		frameno_t stackFrame = pmem_allocate(true);
+		frameno_t stackFrame = pmem_allocate(FRM_KERNEL);
 		if(stackFrame == 0)
 			return -ENOMEM;
 		if(paging_mapTo(&dst->proc->pagedir,KERNEL_STACK,&stackFrame,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
-			pmem_free(stackFrame,true);
+			pmem_free(stackFrame,FRM_KERNEL);
 			return -ENOMEM;
 		}
 		dst->archAttr.kstackFrame = stackFrame;
 	}
 	else {
-		dst->archAttr.kstackFrame = pmem_allocate(true);
+		dst->archAttr.kstackFrame = pmem_allocate(FRM_KERNEL);
 		if(dst->archAttr.kstackFrame == 0)
 			return -ENOMEM;
 
@@ -83,7 +83,7 @@ int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 		if(dst->stackRegions[0] < 0) {
-			pmem_free(dst->archAttr.kstackFrame,true);
+			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
 			return dst->stackRegions[0];
 		}
 	}
@@ -95,7 +95,7 @@ void thread_freeArch(sThread *t) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
 		t->stackRegions[0] = -1;
 	}
-	pmem_free(t->archAttr.kstackFrame,true);
+	pmem_free(t->archAttr.kstackFrame,FRM_KERNEL);
 }
 
 sThread *thread_getRunning(void) {
@@ -148,8 +148,14 @@ uint64_t thread_getRuntime(const sThread *t) {
 	return t->stats.runtime;
 }
 
-bool thread_isRunning(sThread *t) {
-	return t->state == ST_RUNNING;
+bool thread_beginTerm(sThread *t) {
+	/* at first the thread can't run to do that. if its not running, its important that no mutexes
+	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
+	bool res = t->state != ST_RUNNING && sll_length(&t->termHeapAllocs) == 0 && t->mutexes == 0;
+	/* ensure that the thread won't be chosen again */
+	if(res)
+		sched_removeThread(t);
+	return res;
 }
 
 void thread_doSwitch(void) {

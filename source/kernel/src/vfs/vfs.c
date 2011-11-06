@@ -1281,16 +1281,13 @@ errorDir:
 }
 
 void vfs_removeThread(tid_t tid) {
+	char name[12];
 	sThread *t = thread_getById(tid);
 	sVFSNode *n,*dir;
-	char *name;
 	bool isValid;
 
 	/* build name */
-	name = (char*)cache_alloc(12);
-	if(name == NULL)
-		return;
-	itoa(name,12,tid);
+	itoa(name,sizeof(name),tid);
 
 	/* search for thread-node and remove it */
 	dir = vfs_node_get(t->proc->threadDir);
@@ -1300,14 +1297,13 @@ void vfs_removeThread(tid_t tid) {
 		return;
 	}
 	while(n != NULL) {
-		if(strcmp(n->name,name) == 0) {
-			vfs_node_closeDir(dir,true);
-			vfs_node_destroy(n);
+		if(strcmp(n->name,name) == 0)
 			break;
-		}
 		n = n->next;
 	}
-	cache_free(name);
+	vfs_node_closeDir(dir,true);
+	if(n)
+		vfs_node_destroy(n);
 }
 
 size_t vfs_dbg_getGFTEntryCount(void) {

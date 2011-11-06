@@ -57,9 +57,8 @@ void lines_append(sLines *l,char c);
  * Adds a new line
  *
  * @param l the lines
- * @return 0 on success
  */
-int lines_newline(sLines *l);
+void lines_newline(sLines *l);
 
 /**
  * Ends the current line. This is intended for finalizing, i.e. you should call it when everything

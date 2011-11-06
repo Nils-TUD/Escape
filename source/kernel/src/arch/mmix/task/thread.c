@@ -86,7 +86,7 @@ extern uint64_t stackCopySize;
 static sThread *cur = NULL;
 
 int thread_initArch(sThread *t) {
-	t->archAttr.kstackFrame = pmem_allocate(true);
+	t->archAttr.kstackFrame = pmem_allocate(FRM_KERNEL);
 	if(t->archAttr.kstackFrame < 0)
 		return -ENOMEM;
 	t->archAttr.tempStack = -1;
@@ -108,7 +108,7 @@ size_t thread_getThreadFrmCnt(void) {
 }
 
 int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
-	dst->archAttr.kstackFrame = pmem_allocate(true);
+	dst->archAttr.kstackFrame = pmem_allocate(FRM_KERNEL);
 	if(dst->archAttr.kstackFrame == 0)
 		return -ENOMEM;
 	if(!cloneProc) {
@@ -116,7 +116,7 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP);
 		if(dst->stackRegions[0] < 0) {
-			pmem_free(dst->archAttr.kstackFrame,true);
+			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
 			return dst->stackRegions[0];
 		}
 		/* add a new stack-region for the software-stack */
@@ -126,7 +126,7 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 			/* remove register-stack */
 			vmm_remove(dst->proc->pid,dst->stackRegions[0]);
 			dst->stackRegions[0] = -1;
-			pmem_free(dst->archAttr.kstackFrame,true);
+			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
 			return dst->stackRegions[1];
 		}
 	}
@@ -144,10 +144,10 @@ void thread_freeArch(sThread *t) {
 		}
 	}
 	if(t->archAttr.tempStack != (frameno_t)-1) {
-		pmem_free(t->archAttr.tempStack,true);
+		pmem_free(t->archAttr.tempStack,FRM_KERNEL);
 		t->archAttr.tempStack = -1;
 	}
-	pmem_free(t->archAttr.kstackFrame,true);
+	pmem_free(t->archAttr.kstackFrame,FRM_KERNEL);
 }
 
 sThread *thread_getRunning(void) {
@@ -177,7 +177,7 @@ void thread_popSpecRegs(void) {
 
 int thread_finishClone(sThread *t,sThread *nt) {
 	int res;
-	nt->archAttr.tempStack = pmem_allocate(true);
+	nt->archAttr.tempStack = pmem_allocate(FRM_KERNEL);
 	if(nt->archAttr.tempStack == 0)
 		return -ENOMEM;
 	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->archAttr.tempStack * PAGE_SIZE)));
@@ -222,8 +222,14 @@ uint64_t thread_getRuntime(const sThread *t) {
 	return t->stats.runtime;
 }
 
-bool thread_isRunning(sThread *t) {
-	return t->state == ST_RUNNING;
+bool thread_beginTerm(sThread *t) {
+	/* at first the thread can't run to do that. if its not running, its important that no mutexes
+	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
+	bool res = t->state != ST_RUNNING && sll_length(&t->termHeapAllocs) == 0 && t->mutexes == 0;
+	/* ensure that the thread won't be chosen again */
+	if(res)
+		sched_removeThread(t);
+	return res;
 }
 
 void thread_doSwitch(void) {
@@ -255,7 +261,7 @@ void thread_doSwitch(void) {
 			memcpy((void*)(DIR_MAPPED_SPACE | new->archAttr.kstackFrame * PAGE_SIZE),
 					(void*)(DIR_MAPPED_SPACE | new->archAttr.tempStack * PAGE_SIZE),
 					PAGE_SIZE);
-			pmem_free(new->archAttr.tempStack,true);
+			pmem_free(new->archAttr.tempStack,FRM_KERNEL);
 			new->archAttr.tempStack = -1;
 		}
 

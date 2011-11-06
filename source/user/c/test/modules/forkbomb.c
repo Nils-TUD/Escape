@@ -25,25 +25,30 @@
 #include <string.h>
 #include "forkbomb.h"
 
-#define MAX_PIDS	2048
+#define MAX_PIDS	8192
 
-int pids[MAX_PIDS];
+static int pids[MAX_PIDS];
 
 int mod_forkbomb(int argc,char *argv[]) {
 	size_t n = argc > 2 ? atoi(argv[2]) : 100;
-	size_t i = 0;
+	ssize_t i = 0;
 	while(1) {
 		pids[i] = fork();
 		/* failed? so send all created child-procs the kill-signal */
 		if(i >= n || pids[i] < 0) {
-			printf("Fork() failed, so kill all childs...\n");
+			if(pids[i] < 0)
+				printe("fork() failed");
+			printf("Kill all childs\n");
 			fflush(stdout);
-			while(i-- > 0) {
-				int res = sendSignalTo(pids[i],SIG_KILL);
-				res = 1;
-				waitChild(NULL);
+			while(i >= 0) {
+				printf("Killing %d...\n",pids[i]);
+				if(pids[i] > 0) {
+					sendSignalTo(pids[i],SIG_KILL);
+					waitChild(NULL);
+				}
+				i--;
 			}
-			printf("Done :)\n");
+			putchar('\n');
 			return 0;
 		}
 		/* the childs break here */
@@ -52,10 +57,11 @@ int mod_forkbomb(int argc,char *argv[]) {
 		i++;
 	}
 
-	/* now stay here until we get killed ^^ */
+	/* now stay here until we get killed ^^
 	printf("Child %d running...\n",getpid());
 	fflush(stdout);
 	while(1)
-		sleep(1000);
+		sleep(1000);*/
+	wait(EV_NOEVENT,0);
 	return 0;
 }

@@ -186,19 +186,21 @@ sProc *proc_getByPid(pid_t pid);
 /**
  * Requests the process with given id and given lock.
  *
+ * @param t the current thread
  * @param pid the process-id
  * @param l the lock: PLOCK_*
  * @return the process
  */
-sProc *proc_request(pid_t pid,size_t l);
+sProc *proc_request(struct sThread *t,pid_t pid,size_t l);
 
 /**
  * Releases the lock of given process.
  *
+ * @param t the current thread
  * @param p the process
  * @param l the lock: PLOCK_*
  */
-void proc_release(sProc *p,size_t l);
+void proc_release(struct sThread *t,sProc *p,size_t l);
 
 /**
  * @return the number of existing processes

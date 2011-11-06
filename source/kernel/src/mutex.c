@@ -23,15 +23,15 @@
 #include <sys/spinlock.h>
 #include <sys/log.h>
 #include <sys/util.h>
+#include <assert.h>
 
 #define util_printEventTrace(...)
 
 static klock_t mutexLock;
 
-void mutex_aquire(mutex_t *m) {
+void mutex_aquire(sThread *t,mutex_t *m) {
 	spinlock_aquire(&mutexLock);
 	if(*m & 1) {
-		sThread *t = thread_getRunning();
 		*m += 2;
 		util_printEventTrace(util_getKernelStackTrace(),"[%d] Waiting for %#x ",t->tid,m);
 		do {
@@ -45,24 +45,28 @@ void mutex_aquire(mutex_t *m) {
 	}
 	util_printEventTrace(util_getKernelStackTrace(),"[%d] L %#x ",thread_getRunning()->tid,m);
 	*m |= 1;
+	t->mutexes++;
 	spinlock_release(&mutexLock);
 }
 
-bool mutex_tryAquire(mutex_t *m) {
+bool mutex_tryAquire(sThread *t,mutex_t *m) {
 	bool res = false;
 	spinlock_aquire(&mutexLock);
 	if(!(*m & 1)) {
 		util_printEventTrace(util_getKernelStackTrace(),"[%d] L %#x ",thread_getRunning()->tid,m);
 		*m |= 1;
+		t->mutexes++;
 		res = true;
 	}
 	spinlock_release(&mutexLock);
 	return res;
 }
 
-void mutex_release(mutex_t *m) {
+void mutex_release(sThread *t,mutex_t *m) {
 	spinlock_aquire(&mutexLock);
+	assert(t->mutexes > 0);
 	*m &= ~1;
+	t->mutexes--;
 	if(*m > 0)
 		ev_wakeup(EVI_MUTEX,(evobj_t)m);
 	util_printEventTrace(util_getKernelStackTrace(),"[%d] U %#x %s ",thread_getRunning()->tid,m,

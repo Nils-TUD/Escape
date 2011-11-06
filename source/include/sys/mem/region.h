@@ -22,7 +22,6 @@
 
 #include <sys/common.h>
 #include <sys/printf.h>
-#include <sys/mutex.h>
 #include <esc/sllist.h>
 
 #define PF_BITCOUNT			3		/* number of bits occupied by real flags */

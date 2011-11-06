@@ -62,7 +62,7 @@ bool dyna_extend(sDynArray *d) {
 		return false;
 
 	/* allocate a frame */
-	frame = pmem_allocate(true);
+	frame = pmem_allocate(FRM_CRIT);
 	if(frame == 0)
 		return false;
 
@@ -93,7 +93,7 @@ void dyna_destroy(sDynArray *d) {
 	sDynaRegion *reg = d->regions;
 	while(reg != NULL) {
 		sDynaRegion *next = reg->next;
-		pmem_free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE,true);
+		pmem_free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE,FRM_CRIT);
 		totalPages--;
 		/* put region on freelist */
 		reg->next = freeList;

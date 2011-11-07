@@ -50,6 +50,8 @@
 
 static uint64_t timer_determineSpeed(int instrCount);
 
+static uint64_t cpuMhz;
+
 void timer_arch_init(void) {
 	/* change timer divisor */
 	uint freq = TIMER_BASE_FREQUENCY / TIMER_FREQUENCY_DIV;
@@ -60,8 +62,7 @@ void timer_arch_init(void) {
 }
 
 uint64_t timer_cyclesToTime(uint64_t cycles) {
-	/* TODO calculate cpu_getSpeed() / 1000000 just once (64-bit division...) */
-	return cycles / (cpu_getSpeed() / 1000000);
+	return cycles / cpuMhz;
 }
 
 uint64_t timer_detectCPUSpeed(void) {
@@ -84,8 +85,10 @@ uint64_t timer_detectCPUSpeed(void) {
 				break;
 			}
 		}
-		if(found)
-			return ref;
+		if(found) {
+			bestHz = ref;
+			break;
+		}
 		/* store our best result */
 		if(j > bestMatches) {
 			bestMatches = j;
@@ -93,6 +96,7 @@ uint64_t timer_detectCPUSpeed(void) {
 		}
 	}
 	/* ok give up and use the best result so far */
+	cpuMhz = bestHz / 1000000;
 	return bestHz;
 }
 

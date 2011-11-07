@@ -62,7 +62,7 @@ int main(void) {
 					}
 					msg.args.arg2 = true;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(data) {
+					if(msg.args.arg1) {
 						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1 / sizeof(uint));
 						free(data);
 					}

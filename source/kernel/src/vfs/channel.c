@@ -169,10 +169,10 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
 	sMessage *msg1,*msg2 = NULL;
 
 #if PRINT_MSGS
-	vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (device %s)\n",
+	vid_printf("%d:%s -> %d (%d b) chan %s:%x (%s)\n",
 			pid,proc_getByPid(pid)->command,id,size1,n->name,n,n->parent->name);
 	if(data2) {
-		vid_printf("%d:%s sent msg %d with %d bytes over chan %s:%x (device %s)\n",
+		vid_printf("%d:%s -> %d (%d b) chan %s:%x (%s)\n",
 				pid,proc_getByPid(pid)->command,id,size2,n->name,n,n->parent->name);
 	}
 #endif
@@ -324,8 +324,8 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	}
 
 #if PRINT_MSGS
-	vid_printf("%d:%s received msg %d from chan %s:%x\n",
-			pid,proc_getByPid(pid)->command,msg->id,node->name,node);
+	vid_printf("%d:%s <- %d (%d b) %s:%x (%s)\n",
+			pid,proc_getByPid(pid)->command,msg->id,msg->length,node->name,node,node->parent->name);
 #endif
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */

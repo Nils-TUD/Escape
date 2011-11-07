@@ -135,7 +135,9 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 							byteCount = 0;
 							break;
 						}
+						thread_remHeapAlloc(t,fsBytes);
 						fsBytes = fsBytesDup;
+						thread_addHeapAlloc(t,fsBytes);
 					}
 					vfs_closeFile(pid,rfile);
 				}

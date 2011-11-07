@@ -165,7 +165,7 @@ static void handleKeymap(msgid_t mid,int fd) {
 			msg.args.arg2 = rb_length(rbuf) > 0;
 			unlocku(&lck);
 			send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-			if(buffer) {
+			if(msg.args.arg1) {
 				send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);
 				free(buffer);
 			}

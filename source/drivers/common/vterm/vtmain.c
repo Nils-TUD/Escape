@@ -100,7 +100,7 @@ static int vtermThread(void *vterm) {
 					msg.args.arg1 = vtin_gets(vt,data,count,&avail);
 					msg.args.arg2 = avail;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(data) {
+					if(msg.args.arg1) {
 						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1);
 						free(data);
 					}

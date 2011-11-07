@@ -161,7 +161,7 @@ int main(void) {
 						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sMouseData);
 					msg.args.arg2 = rb_length(rbuf) > 0;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(buffer) {
+					if(msg.args.arg1) {
 						send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);
 						free(buffer);
 					}

@@ -26,9 +26,8 @@
 
 namespace gui {
 	/**
-	 * The borderlayout aligns all controls either on the left, centered or on the right. The
-	 * width of all controls will be equal to the maximum preferred width of all controls and
-	 * the height analogously.
+	 * The flowlayout puts all controls side by side with their minimum widths and heights.
+	 * The alignment of all controls can be left, center and right.
 	 */
 	class FlowLayout : public Layout {
 	public:

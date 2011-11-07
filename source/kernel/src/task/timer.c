@@ -77,7 +77,7 @@ int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
 	sTimerListener *p,*nl,*l;
 	spinlock_aquire(&timerLock);
 	l = freeList;
-	if(l == 0) {
+	if(l == NULL) {
 		spinlock_release(&timerLock);
 		return -ENOMEM;
 	}
@@ -196,7 +196,7 @@ void timer_print(void) {
 	time = 0;
 	for(l = listener; l != NULL; l = l->next) {
 		time += l->time;
-		vid_printf("	diff=%d ms, rem=%d ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
+		vid_printf("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
 				thread_getById(l->tid)->proc->command,l->block);
 	}
 }

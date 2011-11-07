@@ -57,7 +57,7 @@ int main(void) {
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(data) {
+					if(count) {
 						send(fd,MSG_DEV_READ_RESP,data,count);
 						free(data);
 					}

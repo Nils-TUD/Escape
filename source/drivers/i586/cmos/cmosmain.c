@@ -88,7 +88,7 @@ int main(void) {
 						/* ensure that the refresh-thread doesn't access the date in the
 						 * meanwhile */
 						locku(&dlock);
-						send(fd,MSG_DEV_READ_RESP,(uchar*)&date + offset,count);
+						send(fd,MSG_DEV_READ_RESP,(uchar*)&date + offset,msg.args.arg1);
 						unlocku(&dlock);
 					}
 				}

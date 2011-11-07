@@ -695,7 +695,7 @@ void proc_addSignalFor(pid_t pid,sig_t signal) {
 	if(p) {
 		bool sent = false;
 		sSLNode *n;
-		/* don't send a signal to process that are dying */
+		/* don't send a signal to processes that are dying */
 		if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
 			proc_release(t,p,PLOCK_PROG);
 			return;

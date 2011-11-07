@@ -105,6 +105,9 @@ void ShellControl::clearRows(Graphics &g,size_t start,size_t count) {
 void ShellControl::update() {
 	bool changed = false;
 	Graphics *g = getGraphics();
+	/* if the window isn't created yet, g is NULL */
+	if(g == NULL)
+		return;
 
 	locku(&_vt->lock);
 	if(_vt->upScroll > 0) {

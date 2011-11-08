@@ -49,6 +49,8 @@
 /* use an invalid tid to identify the kernel */
 #define KERNEL_TID				0xFFFE
 
+#define TERM_RESOURCE_CNT		4
+
 #define T_IDLE					1
 
 #ifdef __i386__
@@ -123,16 +125,20 @@ struct sThread {
 	sThreadRegs save;
 	/* architecture-specific attributes */
 	sThreadArchAttr archAttr;
-	/* the number of allocated mutexes */
-	uint8_t mutexes;
+	/* the number of allocated resources (thread can't die until resources=0) */
+	uint8_t resources;
 	/* a list with heap-allocations that should be free'd on thread-termination */
-	sSLList termHeapAllocs;
+	void *termHeapAllocs[TERM_RESOURCE_CNT];
 	/* a list of locks that should be released on thread-termination */
-	sSLList termLocks;
+	klock_t *termLocks[TERM_RESOURCE_CNT];
 	/* a list of file-usages that should be decremented on thread-termination */
-	sSLList termUsages;
+	file_t termUsages[TERM_RESOURCE_CNT];
 	/* a list of callbacks that should be called on thread-termination */
-	sSLList termCallbacks;
+	fTermCallback termCallbacks[TERM_RESOURCE_CNT];
+	uint8_t termHeapCount;
+	uint8_t termLockCount;
+	uint8_t termUsageCount;
+	uint8_t termCallbackCount;
 	/* a list of currently requested frames, i.e. frames that are not free anymore, but were
 	 * reserved for this thread and have not yet been used */
 	sSLList reqFrames;

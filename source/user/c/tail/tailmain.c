@@ -56,7 +56,7 @@ int main(int argc,const char *argv[]) {
 		usage(argv[0]);
 
 	/* open file, if any */
-	args = ca_getfree();
+	args = ca_getFree();
 	if(args[0]) {
 		in = fopen(args[0],"r");
 		if(!in)

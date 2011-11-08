@@ -112,11 +112,11 @@ static void thread_initProps(sThread *t) {
 	t->stats.cycleStart = cpu_rdtsc();
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
-	t->mutexes = 0;
-	sll_init(&t->termHeapAllocs,slln_allocNode,slln_freeNode);
-	sll_init(&t->termLocks,slln_allocNode,slln_freeNode);
-	sll_init(&t->termUsages,slln_allocNode,slln_freeNode);
-	sll_init(&t->termCallbacks,slln_allocNode,slln_freeNode);
+	t->resources = 0;
+	t->termHeapCount = 0;
+	t->termCallbackCount = 0;
+	t->termUsageCount = 0;
+	t->termLockCount = 0;
 	sll_init(&t->reqFrames,slln_allocNode,slln_freeNode);
 }
 
@@ -279,35 +279,43 @@ void thread_updateRuntimes(void) {
 }
 
 void thread_addLock(sThread *cur,klock_t *l) {
-	sll_append(&cur->termLocks,l);
+	assert(cur->termLockCount < TERM_RESOURCE_CNT);
+	cur->termLocks[cur->termLockCount++] = l;
 }
 
-void thread_remLock(sThread *cur,klock_t *l) {
-	sll_removeFirstWith(&cur->termLocks,l);
+void thread_remLock(sThread *cur,A_UNUSED klock_t *l) {
+	assert(cur->termLockCount > 0);
+	cur->termLockCount--;
 }
 
 void thread_addHeapAlloc(sThread *cur,void *ptr) {
-	sll_append(&cur->termHeapAllocs,ptr);
+	assert(cur->termHeapCount < TERM_RESOURCE_CNT);
+	cur->termHeapAllocs[cur->termHeapCount++] = ptr;
 }
 
-void thread_remHeapAlloc(sThread *cur,void *ptr) {
-	sll_removeFirstWith(&cur->termHeapAllocs,ptr);
+void thread_remHeapAlloc(sThread *cur,A_UNUSED void *ptr) {
+	assert(cur->termHeapCount > 0);
+	cur->termHeapCount--;
 }
 
 void thread_addFileUsage(sThread *cur,file_t file) {
-	sll_append(&cur->termUsages,(void*)file);
+	assert(cur->termUsageCount < TERM_RESOURCE_CNT);
+	cur->termUsages[cur->termUsageCount++] = file;
 }
 
-void thread_remFileUsage(sThread *cur,file_t file) {
-	sll_removeFirstWith(&cur->termUsages,(void*)file);
+void thread_remFileUsage(sThread *cur,A_UNUSED file_t file) {
+	assert(cur->termUsageCount > 0);
+	cur->termUsageCount--;
 }
 
-void thread_addCallback(sThread *cur,void (*callback)(void)) {
-	sll_append(&cur->termCallbacks,(void*)callback);
+void thread_addCallback(sThread *cur,fTermCallback callback) {
+	assert(cur->termCallbackCount < TERM_RESOURCE_CNT);
+	cur->termCallbacks[cur->termCallbackCount++] = callback;
 }
 
-void thread_remCallback(sThread *cur,void (*callback)(void)) {
-	sll_removeFirstWith(&cur->termCallbacks,(void*)callback);
+void thread_remCallback(sThread *cur,A_UNUSED fTermCallback callback) {
+	assert(cur->termCallbackCount > 0);
+	cur->termCallbackCount--;
 }
 
 bool thread_reserveFrames(sThread *cur,size_t count) {
@@ -418,7 +426,7 @@ void thread_terminate(sThread *t) {
 }
 
 void thread_kill(sThread *t) {
-	sSLNode *n;
+	size_t i;
 	/* remove tls */
 	if(t->tlsRegion >= 0) {
 		vmm_remove(t->proc->pid,t->tlsRegion);
@@ -426,20 +434,14 @@ void thread_kill(sThread *t) {
 	}
 
 	/* release resources */
-	for(n = sll_begin(&t->termLocks); n != NULL; n = n->next)
-		spinlock_release((klock_t*)n->data);
-	sll_clear(&t->termLocks,false);
-	for(n = sll_begin(&t->termHeapAllocs); n != NULL; n = n->next)
-		cache_free(n->data);
-	sll_clear(&t->termHeapAllocs,false);
-	for(n = sll_begin(&t->termUsages); n != NULL; n = n->next)
-		vfs_decUsages((file_t)n->data);
-	sll_clear(&t->termUsages,false);
-	for(n = sll_begin(&t->termCallbacks); n != NULL; n = n->next) {
-		void (*callback)(void) = (void (*)(void))n->data;
-		callback();
-	}
-	sll_clear(&t->termCallbacks,false);
+	for(i = 0; i < t->termLockCount; i++)
+		spinlock_release(t->termLocks[i]);
+	for(i = 0; i < t->termHeapCount; i++)
+		cache_free(t->termHeapAllocs[i]);
+	for(i = 0; i < t->termUsageCount; i++)
+		vfs_decUsages(t->termUsages[i]);
+	for(i = 0; i < t->termCallbackCount; i++)
+		t->termCallbacks[i]();
 
 	/* remove from all modules we may be announced */
 	ev_removeThread(t);

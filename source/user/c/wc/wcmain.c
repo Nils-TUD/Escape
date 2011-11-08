@@ -59,7 +59,7 @@ int main(int argc,const char *argv[]) {
 	else
 		flags = (flines ? WC_LINES : 0) | (fwords ? WC_WORDS : 0) | (fbytes ? WC_BYTES : 0);
 
-	args = ca_getfree();
+	args = ca_getFree();
 	if(!*args)
 		countFile(stdin);
 	else {

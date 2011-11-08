@@ -40,7 +40,7 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	args = ca_getfree();
+	args = ca_getFree();
 	while(*args) {
 		if(mkdir(*args) < 0)
 			printe("Unable to create directory '%s'",*args);

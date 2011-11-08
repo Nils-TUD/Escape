@@ -161,7 +161,7 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 	return !chan->used && sll_length(chan->sendList) > 0;
 }
 
-ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
+ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		USER const void *data1,size_t size1,USER const void *data2,size_t size2) {
 	sSLList **list;
 	sThread *t = thread_getRunning();
@@ -178,7 +178,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,file_t file,sVFSNode *n,msgid_t id,
 #endif
 
 	/* devices write to the receive-list (which will be read by other processes) */
-	if(vfs_isDevice(file)) {
+	if(flags & VFS_DEVICE) {
 		assert(data2 == NULL && size2 == 0);
 		list = &(chan->recvList);
 	}
@@ -255,7 +255,7 @@ error:
 	return -ENOMEM;
 }
 
-ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgid_t *id,
+ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msgid_t *id,
 		USER void *data,size_t size,bool block,bool ignoreSigs) {
 	sSLList **list;
 	sThread *t = thread_getRunning();
@@ -273,7 +273,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,file_t file,sVFSNode *node,USER msgi
 	}
 
 	/* determine list and event to use */
-	if(vfs_isDevice(file)) {
+	if(flags & VFS_DEVICE) {
 		event = EVI_CLIENT;
 		list = &chan->sendList;
 		waitNode = node->parent;

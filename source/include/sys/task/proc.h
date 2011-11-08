@@ -112,6 +112,7 @@ typedef struct {
 	ulong sharedFrames;
 	/* pages that are in swap */
 	ulong swapped;
+	uintptr_t freeStackAddr;
 	/* the regions */
 	size_t regSize;
 	void *regions;

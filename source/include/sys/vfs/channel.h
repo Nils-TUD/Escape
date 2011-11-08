@@ -57,10 +57,10 @@ bool vfs_chan_hasReply(const sVFSNode *node);
 bool vfs_chan_hasWork(const sVFSNode *node);
 
 /**
- * Sends the given message to the channel (UNLOCKED!)
+ * Sends the given message to the channel
  *
  * @param pid the process-id
- * @param file the file
+ * @param flags the flags of the file
  * @param n the channel-node
  * @param id the message-id
  * @param data1 the message-data
@@ -69,14 +69,14 @@ bool vfs_chan_hasWork(const sVFSNode *node);
  * @param size2 the size of the second message
  * @return 0 on success
  */
-ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,
+ssize_t vfs_chan_send(pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		USER const void *data1,size_t size1,USER const void *data2,size_t size2);
 
 /**
- * Receives a message from the channel (LOCKED!)
+ * Receives a message from the channel
  *
  * @param pid the process-id
- * @param file the file
+ * @param flags the flags of the file
  * @param n the channel-node
  * @param id will be set to the message-id (if not NULL)
  * @param data the buffer to write the message to
@@ -85,7 +85,7 @@ ssize_t vfs_chan_send(pid_t pid,file_t file,sVFSNode *n,msgid_t id,
  * @param ignoreSigs whether to ignore signals while sleeping
  * @return the number of written bytes on success
  */
-ssize_t vfs_chan_receive(pid_t pid,file_t file,sVFSNode *node,msgid_t *id,void *data,
+ssize_t vfs_chan_receive(pid_t pid,ushort flags,sVFSNode *node,msgid_t *id,void *data,
 		size_t size,bool block,bool ignoreSigs);
 
 /**

@@ -656,6 +656,9 @@ static void vmm_doRemove(sProc *p,vmreg_t reg) {
 			p->ownFrames -= pts;
 			virt += PAGE_SIZE;
 		}
+		/* store next free stack-address, if its a stack */
+		if(vm->virt + vm->reg->byteCount > p->freeStackAddr && (vm->reg->flags & RF_STACK))
+			p->freeStackAddr = vm->virt + vm->reg->byteCount;
 		/* now destroy region */
 		mutex_release(t,&vm->reg->lock);
 		reg_destroy(vm->reg);
@@ -1358,9 +1361,15 @@ static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags) {
 		return 0;
 #if STACK_AREA_GROWS_DOWN
 	uintptr_t end = vmm_getFirstUsableAddr(p,true);
-	for(addr = STACK_AREA_END; addr > end; addr -= MAX_STACK_PAGES * PAGE_SIZE) {
-		if(vmm_isOccupied(p,addr - (MAX_STACK_PAGES - 1) * PAGE_SIZE,addr) == NULL)
+	if(p->freeStackAddr != 0)
+		addr = p->freeStackAddr;
+	else
+		addr = STACK_AREA_END;
+	for(; addr > end; addr -= MAX_STACK_PAGES * PAGE_SIZE) {
+		if(vmm_isOccupied(p,addr - (MAX_STACK_PAGES - 1) * PAGE_SIZE,addr) == NULL) {
+			p->freeStackAddr = addr - MAX_STACK_PAGES * PAGE_SIZE;
 			return addr - ROUNDUP(byteCount);
+		}
 	}
 #else
 	for(addr = STACK_AREA_BEGIN; addr < STACK_AREA_END; addr += MAX_STACK_PAGES * PAGE_SIZE) {

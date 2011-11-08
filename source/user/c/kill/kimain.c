@@ -76,7 +76,7 @@ int main(int argc,const char *argv[]) {
 	}
 	else {
 		/* kill processes */
-		const char **args = ca_getfree();
+		const char **args = ca_getFree();
 		while(*args) {
 			pid_t pid = atoi(*args);
 			if(pid > 0) {

@@ -64,7 +64,7 @@ int main(int argc,const char **argv) {
 
 	if(!parseUserGroup(spec,&uid,&gid))
 		error("Invalid specification: '%s'",spec);
-	args = ca_getfree();
+	args = ca_getFree();
 	while(*args) {
 		if(chown(*args,uid,gid) < 0)
 			printe("Unable to set owner/group of '%s' to %u/%u",*args,uid,gid);

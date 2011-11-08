@@ -46,7 +46,7 @@ int main(int argc,const char **argv) {
 		usage(argv[0]);
 
 	imode = parseMode(mode);
-	args = ca_getfree();
+	args = ca_getFree();
 	while(*args) {
 		if(chmod(*args,imode) < 0)
 			printe("Unable to set mode of '%s' to %04o",*args,imode);

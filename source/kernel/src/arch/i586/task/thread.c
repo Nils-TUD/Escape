@@ -35,7 +35,7 @@
 
 extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
-extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock);
+extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock,bool newProc);
 
 static klock_t switchLock;
 static bool threadSet = false;
@@ -154,7 +154,9 @@ uint64_t thread_getRuntime(const sThread *t) {
 }
 
 sThread *thread_getRunning(void) {
-	return threadSet ? gdt_getRunning() : NULL;
+	if(threadSet)
+		return gdt_getRunning();
+	return NULL;
 }
 
 void thread_setRunning(sThread *t) {
@@ -165,9 +167,9 @@ void thread_setRunning(sThread *t) {
 bool thread_beginTerm(sThread *t) {
 	bool res;
 	spinlock_aquire(&switchLock);
-	/* at first the thread can't run to do that. if its not running, its important that no mutexes
+	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	res = t->state != ST_RUNNING && sll_length(&t->termHeapAllocs) == 0 && t->mutexes == 0;
+	res = t->state != ST_RUNNING && t->termHeapCount == 0 && t->resources == 0;
 	/* ensure that the thread won't be chosen again */
 	if(res)
 		sched_removeThread(t);
@@ -185,7 +187,7 @@ void thread_initialSwitch(void) {
 	cur->cpu = gdt_prepareRun(NULL,cur);
 	fpu_lockFPU();
 	cur->stats.cycleStart = cpu_rdtsc();
-	thread_resume(cur->proc->pagedir.own,&cur->save,&switchLock);
+	thread_resume(cur->proc->pagedir.own,&cur->save,&switchLock,true);
 }
 
 void thread_doSwitch(void) {
@@ -222,7 +224,7 @@ void thread_doSwitch(void) {
 		if(!thread_save(&old->save)) {
 			/* old thread */
 			new->stats.cycleStart = cpu_rdtsc();
-			thread_resume(new->proc->pagedir.own,&new->save,&switchLock);
+			thread_resume(new->proc->pagedir.own,&new->save,&switchLock,new->proc != old->proc);
 		}
 	}
 	else {

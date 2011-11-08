@@ -617,11 +617,11 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size
 	if(!IS_DEVICE_MSG(id) && !(e->flags & VFS_MSGS))
 		return -EACCES;
 
-	/* send the message */
 	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return -ENOTSUP;
-	err = vfs_chan_send(pid,file,n,id,data1,size1,data2,size2);
+
+	err = vfs_chan_send(pid,e->flags,n,id,data1,size1,data2,size2);
 	if(err == 0 && pid != KERNEL_PID) {
 		sProc *p = proc_getByPid(pid);
 		/* no lock; same reason as above */
@@ -639,12 +639,12 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,USER msgid_t *id,USER void *data,si
 	if(e->devNo != VFS_DEV_NO)
 		return -EPERM;
 
-	/* receive the message */
 	n = e->node;
 	if(!IS_CHANNEL(n->mode))
 		return -ENOTSUP;
-	err = vfs_chan_receive(pid,file,n,id,data,size,forceBlock || !(e->flags & VFS_NOBLOCK),forceBlock);
 
+	err = vfs_chan_receive(pid,e->flags,n,id,data,size,
+			forceBlock || !(e->flags & VFS_NOBLOCK),forceBlock);
 	if(err > 0 && pid != KERNEL_PID) {
 		sProc *p = proc_getByPid(pid);
 		/* no lock; same reason as above */

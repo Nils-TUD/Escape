@@ -223,9 +223,9 @@ uint64_t thread_getRuntime(const sThread *t) {
 }
 
 bool thread_beginTerm(sThread *t) {
-	/* at first the thread can't run to do that. if its not running, its important that no mutexes
+	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	bool res = t->state != ST_RUNNING && sll_length(&t->termHeapAllocs) == 0 && t->mutexes == 0;
+	bool res = t->state != ST_RUNNING && t->termHeapCount == 0 && t->resources == 0;
 	/* ensure that the thread won't be chosen again */
 	if(res)
 		sched_removeThread(t);

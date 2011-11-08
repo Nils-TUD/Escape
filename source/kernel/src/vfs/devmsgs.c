@@ -38,6 +38,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	ssize_t res;
 	sArgsMsg msg;
 	msgid_t mid;
+	sThread *t = thread_getRunning();
 
 	if(node->name == NULL)
 		return -EDESTROYED;
@@ -50,11 +51,15 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	res = vfs_sendMsg(pid,file,MSG_DEV_OPEN,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
 		return res;
+
+	/* receive response */
+	t->resources++;
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
 		assert(mid == MSG_DEV_OPEN_RESP);
 	}
 	while(res == -EINTR);
+	t->resources--;
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -66,6 +71,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	msgid_t mid;
 	sArgsMsg msg;
 	sWaitObject obj;
+	sThread *t = thread_getRunning();
 
 	if(node->name == NULL)
 		return -EDESTROYED;
@@ -87,12 +93,15 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	if(res < 0)
 		return res;
 
-	/* read response */
+	/* read response and ensure that we don't get killed until we've received both messages
+	 * (otherwise the channel might get in an inconsistent state) */
+	t->resources++;
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
 		assert(mid == MSG_DEV_READ_RESP);
 	}
 	while(res == -EINTR);
+	t->resources--;
 	if(res < 0)
 		return res;
 
@@ -102,9 +111,11 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		return msg.arg1;
 
 	/* read data */
+	t->resources++;
 	do
 		res = vfs_receiveMsg(pid,file,NULL,buffer,count,true);
 	while(res == -EINTR);
+	t->resources--;
 	return res;
 }
 
@@ -113,6 +124,7 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 	msgid_t mid;
 	ssize_t res;
 	sArgsMsg msg;
+	sThread *t = thread_getRunning();
 
 	if(node->name == NULL)
 		return -EDESTROYED;
@@ -128,11 +140,13 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 		return res;
 
 	/* read response */
+	t->resources++;
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
 		assert(mid == MSG_DEV_WRITE_RESP);
 	}
 	while(res == -EINTR);
+	t->resources--;
 	if(res < 0)
 		return res;
 	return msg.arg1;

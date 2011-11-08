@@ -46,7 +46,9 @@ const char *ca_error(int err);
 
 bool ca_hasHelp(void);
 
-const char **ca_getfree(void);
+size_t ca_getFreeCount(void);
+
+const char **ca_getFree(void);
 
 int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...);
 

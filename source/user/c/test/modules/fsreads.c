@@ -30,29 +30,36 @@
 
 static int threadFunc(void *arg);
 
-int mod_fsreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
+int mod_fsreads(int argc,char *argv[]) {
 	sDirEntry e;
 	DIR *dir;
-	size_t i;
+	size_t count = argc >= 3 ? atoi(argv[2]) : 10;
+	size_t i,j;
 	for(i = 0; i < THREAD_COUNT; i++) {
-		if(startThread(threadFunc,(void*)"/zeros") < 0)
+		if(startThread(threadFunc,strdup("/zeros")) < 0)
 			error("Unable to start thread");
 	}
 
-	dir = opendir("/bin");
-	for(i = 0; i < THREAD_COUNT; i++) {
-		char *path;
-		if(!readdir(dir,&e))
-			break;
-		if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
-			continue;
-		path = (char*)malloc(MAX_PATH_LEN);
-		strcpy(path,"/bin/");
-		strcat(path,e.name);
-		if(startThread(threadFunc,(void*)path) < 0)
-			error("Unable to start thread");
+	for(j = 0; j < count; j++) {
+		dir = opendir("/bin");
+		if(!dir)
+			error("Unable to open dir '/bin'");
+		for(i = 0; i < THREAD_COUNT; i++) {
+			char *path;
+			if(!readdir(dir,&e))
+				break;
+			if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+				continue;
+			path = (char*)malloc(MAX_PATH_LEN);
+			if(!path)
+				error("Not enough memory");
+			strcpy(path,"/bin/");
+			strcat(path,e.name);
+			if(startThread(threadFunc,(void*)path) < 0)
+				error("Unable to start thread");
+		}
+		closedir(dir);
 	}
-	closedir(dir);
 	join(0);
 	return 0;
 }
@@ -61,10 +68,13 @@ static int threadFunc(void *arg) {
 	char buffer[BUF_SIZE];
 	FILE *f = fopen((char*)arg,"r");
 	ssize_t count;
-	if(!f)
+	if(!f) {
+		free(arg);
 		error("Unable to open '%s'",(char*)arg);
+	}
 	while((count = fread(buffer,1,BUF_SIZE,f)) > 0)
 		;
 	fclose(f);
+	free(arg);
 	return 0;
 }

@@ -414,6 +414,7 @@ int proc_clone(uint8_t flags) {
 	groups_join(p,cur);
 
 	/* clone regions */
+	p->freeStackAddr = 0;
 	p->regions = NULL;
 	p->regSize = 0;
 	if((res = vmm_cloneAll(p->pid)) < 0)
@@ -703,10 +704,8 @@ void proc_addSignalFor(pid_t pid,sig_t signal) {
 
 		for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 			sThread *pt = (sThread*)n->data;
-			if(sig_addSignalFor(pt->tid,signal)) {
+			if(sig_addSignalFor(pt->tid,signal))
 				sent = true;
-				break;
-			}
 		}
 		proc_release(t,p,PLOCK_PROG);
 

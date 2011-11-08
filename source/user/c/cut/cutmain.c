@@ -59,7 +59,7 @@ int main(int argc,const char **argv) {
 
 	parseFields(fields,&first,&last);
 
-	args = ca_getfree();
+	args = ca_getFree();
 	if(args[0] == NULL) {
 		while(fgetl(line,sizeof(line),stdin))
 			printFields(line,delim,first,last);

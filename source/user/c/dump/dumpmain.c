@@ -95,7 +95,7 @@ int main(int argc,const char *argv[]) {
 			break;
 	}
 
-	args = ca_getfree();
+	args = ca_getFree();
 	if(args[0]) {
 		in = fopen(args[0],"r");
 		if(!in)

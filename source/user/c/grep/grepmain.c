@@ -53,7 +53,7 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	args = ca_getfree();
+	args = ca_getFree();
 	if(args[0]) {
 		in = fopen(args[0],"r");
 		if(!in)

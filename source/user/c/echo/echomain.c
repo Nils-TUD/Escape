@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: edmain.c 1082 2011-10-17 20:43:22Z nasmussen $
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,32 +18,23 @@
  */
 
 #include <esc/common.h>
-#include <esc/thread.h>
-#include <stdlib.h>
+#include <esc/io.h>
 #include <stdio.h>
-#include <signal.h>
-#include "maxthreads.h"
+#include <string.h>
 
-static int threadEntry(A_UNUSED void *arg);
-
-int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	while(true) {
-		if(startThread(threadEntry,NULL) < 0) {
-			printe("Unable to start thread");
-			break;
-		}
+int main(int argc,char *argv[]) {
+	int i = 1;
+	bool nl = true;
+	if(argc > 1 && strcmp(argv[i],"-n") == 0) {
+		nl = false;
+		i++;
 	}
-	sendSignalTo(getpid(),SIG_USR1);
+	for(; i < argc; i++) {
+		fputs(argv[i],stdout);
+		if(i < argc - 1)
+			putchar(' ');
+	}
+	if(nl)
+		putchar('\n');
 	return EXIT_SUCCESS;
-}
-
-static void sigUsr1(A_UNUSED int sig) {
-	/* ignore */
-}
-
-static int threadEntry(A_UNUSED void *arg) {
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
-		error("Unable to set signal-handler");
-	wait(EV_NOEVENT,0);
-	return 0;
 }

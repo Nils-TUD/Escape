@@ -50,6 +50,7 @@ static const char **argv;
 static bool hasHelp = false;
 static sSLList *freeArgs = NULL;
 static const char **freeArgsArray = NULL;
+static size_t freeArgCount = 0;
 
 const char *ca_error(int err) {
 	switch(err) {
@@ -81,7 +82,11 @@ bool ca_hasHelp(void) {
 	return hasHelp;
 }
 
-const char **ca_getfree(void) {
+size_t ca_getFreeCount(void) {
+	return freeArgCount;
+}
+
+const char **ca_getFree(void) {
 	vassert(freeArgsArray != NULL,"Please call ca_parse() first!");
 	return freeArgsArray;
 }
@@ -189,6 +194,7 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	for(i = 0, n = sll_begin(freeArgs); n != NULL; n = n->next,i++)
 		freeArgsArray[i] = argv[(size_t)n->data];
 	freeArgsArray[i] = NULL;
+	freeArgCount = i;
 	sll_destroy(freeArgs,false);
 	return 0;
 }

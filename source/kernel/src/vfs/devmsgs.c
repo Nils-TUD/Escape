@@ -56,7 +56,8 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	t->resources++;
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
-		assert(mid == MSG_DEV_OPEN_RESP);
+		vassert(res < 0 || mid == MSG_DEV_OPEN_RESP,"mid=%u, res=%zd, node=%s:%p",
+				mid,res,vfs_node_getPath(vfs_node_getNo(node)),node);
 	}
 	while(res == -EINTR);
 	t->resources--;
@@ -98,7 +99,8 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	t->resources++;
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
-		assert(mid == MSG_DEV_READ_RESP);
+		vassert(res < 0 || mid == MSG_DEV_READ_RESP,"mid=%u, res=%zd, node=%s:%p",
+				mid,res,vfs_node_getPath(vfs_node_getNo(node)),node);
 	}
 	while(res == -EINTR);
 	t->resources--;
@@ -143,7 +145,8 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 	t->resources++;
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
-		assert(mid == MSG_DEV_WRITE_RESP);
+		vassert(res < 0 || mid == MSG_DEV_WRITE_RESP,"mid=%u, res=%zd, node=%s:%p",
+				mid,res,vfs_node_getPath(vfs_node_getNo(node)),node);
 	}
 	while(res == -EINTR);
 	t->resources--;

@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
 #include <sys/task/proc.h>
@@ -42,9 +43,11 @@ typedef struct {
 	bool used;
 	bool closed;
 	/* a list for sending messages to the device */
-	sSLList *sendList;
+	sSLList sendList;
 	/* a list for reading messages from the device */
-	sSLList *recvList;
+	sSLList recvList;
+	/* a list of waiting clients for receiving a message */
+	sSLList waitList;
 } sChannel;
 
 typedef struct {
@@ -82,8 +85,9 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 		vfs_node_destroy(node);
 		return NULL;
 	}
-	chan->recvList = NULL;
-	chan->sendList = NULL;
+	sll_init(&chan->sendList,slln_allocNode,slln_freeNode);
+	sll_init(&chan->recvList,slln_allocNode,slln_freeNode);
+	sll_init(&chan->waitList,slln_allocNode,slln_freeNode);
 	chan->used = false;
 	chan->closed = false;
 	node->data = chan;
@@ -96,11 +100,10 @@ static void vfs_chan_destroy(sVFSNode *n) {
 	if(chan) {
 		/* we have to reset the last client for the device here */
 		vfs_device_clientRemoved(n->parent,n);
-		/* free send and receive list */
-		if(chan->recvList)
-			sll_destroy(chan->recvList,true);
-		if(chan->sendList)
-			sll_destroy(chan->sendList,true);
+		/* clear send and receive list */
+		sll_clear(&chan->recvList,true);
+		sll_clear(&chan->sendList,true);
+		/* TODO wake up waiting clients */
 		cache_free(chan);
 		n->data = NULL;
 	}
@@ -138,7 +141,7 @@ static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 			 * (it means that the client has already closed the file) */
 			/* note also that we can assume that the driver is still running since we
 			 * would have deleted the whole device-node otherwise */
-			if(sll_length(chan->sendList) == 0)
+			if(sll_length(&chan->sendList) == 0)
 				vfs_node_destroy(node);
 			else
 				chan->closed = true;
@@ -153,38 +156,39 @@ void vfs_chan_setUsed(sVFSNode *node,bool used) {
 
 bool vfs_chan_hasReply(const sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
-	return sll_length(chan->recvList) > 0;
+	return sll_length(&chan->recvList) > 0;
 }
 
 bool vfs_chan_hasWork(const sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
-	return !chan->used && sll_length(chan->sendList) > 0;
+	return !chan->used && sll_length(&chan->sendList) > 0;
 }
 
 ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		USER const void *data1,size_t size1,USER const void *data2,size_t size2) {
-	sSLList **list;
+	sSLList *list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)n->data;
 	sMessage *msg1,*msg2 = NULL;
 
 #if PRINT_MSGS
-	vid_printf("%d:%s -> %d (%d b) chan %s:%x (%s)\n",
-			pid,proc_getByPid(pid)->command,id,size1,n->name,n,n->parent->name);
+	sProc *p = proc_getByPid(pid);
+	vid_printf("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
+			t->tid,pid,p ? p->command : "??",id,size1,n->name,n,n->parent->name);
 	if(data2) {
-		vid_printf("%d:%s -> %d (%d b) chan %s:%x (%s)\n",
-				pid,proc_getByPid(pid)->command,id,size2,n->name,n,n->parent->name);
+		vid_printf("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
+				t->tid,pid,p ? p->command : "??",id,size2,n->name,n,n->parent->name);
 	}
 #endif
 
 	/* devices write to the receive-list (which will be read by other processes) */
 	if(flags & VFS_DEVICE) {
 		assert(data2 == NULL && size2 == 0);
-		list = &(chan->recvList);
+		list = &chan->recvList;
 	}
 	/* other processes write to the send-list (which will be read by the driver) */
 	else
-		list = &(chan->sendList);
+		list = &chan->sendList;
 
 	/* create message and copy data to it */
 	msg1 = (sMessage*)cache_alloc(sizeof(sMessage) + size1);
@@ -222,31 +226,33 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
 	spinlock_aquire(&waitLock);
-	if(*list == NULL)
-		*list = sll_create();
-
 	/* append to list */
-	if(!sll_append(*list,msg1))
+	if(!sll_append(list,msg1))
 		goto error;
-	if(msg2 && !sll_append(*list,msg2))
+	if(msg2 && !sll_append(list,msg2))
 		goto errorRem;
 
 	/* notify the driver */
-	if(list == &(chan->sendList)) {
+	if(list == &chan->sendList) {
 		vfs_device_addMsg(n->parent);
 		if(msg2)
 			vfs_device_addMsg(n->parent);
 		ev_wakeup(EVI_CLIENT,(evobj_t)n->parent);
 	}
-	/* notify all threads that wait on this node for a msg */
-	else
+	else {
+		/* notify the first thread that waits on this node for a msg */
+		sThread *wt = sll_removeFirst(&chan->waitList);
+		if(wt)
+			ev_unblock(wt);
+		/* notify other possible waiters */
 		ev_wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
+	}
 	spinlock_release(&waitLock);
 	spinlock_release(&n->lock);
 	return 0;
 
 errorRem:
-	sll_removeFirstWith(*list,msg1);
+	sll_removeFirstWith(list,msg1);
 error:
 	spinlock_release(&waitLock);
 	spinlock_release(&n->lock);
@@ -257,7 +263,7 @@ error:
 
 ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msgid_t *id,
 		USER void *data,size_t size,bool block,bool ignoreSigs) {
-	sSLList **list;
+	sSLList *list;
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)node->data;
 	sVFSNode *waitNode;
@@ -285,7 +291,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	}
 
 	/* wait until a message arrives */
-	while(sll_length(*list) == 0) {
+	while(sll_length(list) == 0) {
 		if(!block) {
 			spinlock_release(&node->lock);
 			return -EWOULDBLOCK;
@@ -295,7 +301,16 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 			spinlock_release(&node->lock);
 			return -EDESTROYED;
 		}
-		ev_wait(t,event,(evobj_t)waitNode);
+		if(list == &chan->recvList) {
+			/* append us to the waiters and block us */
+			if(!sll_append(&chan->waitList,t)) {
+				spinlock_release(&node->lock);
+				return -ENOMEM;
+			}
+			ev_block(t);
+		}
+		else
+			ev_wait(t,event,(evobj_t)waitNode);
 		spinlock_release(&node->lock);
 
 		if(ignoreSigs)
@@ -314,7 +329,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	}
 
 	/* get first element and copy data to buffer */
-	msg = (sMessage*)sll_removeFirst(*list);
+	msg = (sMessage*)sll_removeFirst(list);
 	if(event == EVI_CLIENT)
 		vfs_device_remMsg(node->parent);
 	spinlock_release(&node->lock);
@@ -324,8 +339,9 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	}
 
 #if PRINT_MSGS
-	vid_printf("%d:%s <- %d (%d b) %s:%x (%s)\n",
-			pid,proc_getByPid(pid)->command,msg->id,msg->length,node->name,node,node->parent->name);
+	sProc *p = proc_getByPid(pid);
+	vid_printf("%d:%d:%s <- %d (%d b) %s:%x (%s)\n",
+			t->tid,pid,p ? p->command : "??",msg->id,msg->length,node->name,node,node->parent->name);
 #endif
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
@@ -345,8 +361,8 @@ void vfs_chan_print(const sVFSNode *n) {
 	size_t i;
 	sChannel *chan = (sChannel*)n->data;
 	sSLList *lists[] = {NULL,NULL};
-	lists[0] = chan->sendList;
-	lists[1] = chan->recvList;
+	lists[0] = &chan->sendList;
+	lists[1] = &chan->recvList;
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
 		size_t j,count = sll_length(lists[i]);
 		vid_printf("\t\tChannel %s %s: (%zu)\n",n->name,i ? "recvs" : "sends",count);

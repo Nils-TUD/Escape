@@ -52,9 +52,11 @@ void term_start(void) {
 			/* release the lock while we're killing the thread; the process-module may use us
 			 * in this time to add another thread */
 			spinlock_release(&termLock);
+
 			while(!thread_beginTerm(dt))
 				thread_switch();
 			proc_killThread(dt->tid);
+
 			spinlock_aquire(&termLock);
 		}
 	}

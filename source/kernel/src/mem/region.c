@@ -22,6 +22,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/region.h>
 #include <sys/mem/swapmap.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>
@@ -62,9 +63,7 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 	reg = (sRegion*)cache_alloc(sizeof(sRegion));
 	if(reg == NULL)
 		return NULL;
-	reg->procs = sll_create();
-	if(reg->procs == NULL)
-		goto errReg;
+	sll_init(&reg->procs,slln_allocNode,slln_freeNode);
 	rbin = (sBinDesc*)&reg->binary;
 	if(bin != NULL && bin->ino) {
 		rbin->ino = bin->ino;
@@ -89,17 +88,14 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 	 * must exist. */
 	reg->pfSize = MAX(1,pageCount);
 	reg->pageFlags = (ulong*)cache_alloc(reg->pfSize * sizeof(ulong));
-	if(reg->pageFlags == NULL)
-		goto errPDirs;
+	if(reg->pageFlags == NULL) {
+		sll_clear(&reg->procs,false);
+		cache_free(reg);
+		return NULL;
+	}
 	for(i = 0; i < pageCount; i++)
 		reg->pageFlags[i] = pgFlags;
 	return reg;
-
-errPDirs:
-	sll_destroy(reg->procs,false);
-errReg:
-	cache_free(reg);
-	return NULL;
 }
 
 void reg_destroy(sRegion *reg) {
@@ -110,7 +106,7 @@ void reg_destroy(sRegion *reg) {
 			swmap_free(reg_getSwapBlock(reg,i));
 	}
 	cache_free(reg->pageFlags);
-	sll_destroy(reg->procs,false);
+	sll_clear(&reg->procs,false);
 	cache_free(reg);
 }
 
@@ -138,16 +134,16 @@ void reg_setSwapBlock(sRegion *reg,size_t pageIndex,ulong swapBlock) {
 }
 
 size_t reg_refCount(sRegion *reg) {
-	return sll_length(reg->procs);
+	return sll_length(&reg->procs);
 }
 
 bool reg_addTo(sRegion *reg,const void *p) {
-	assert(sll_length(reg->procs) == 0 || (reg->flags & RF_SHAREABLE));
-	return sll_append(reg->procs,(void*)p);
+	assert(sll_length(&reg->procs) == 0 || (reg->flags & RF_SHAREABLE));
+	return sll_append(&reg->procs,(void*)p);
 }
 
 bool reg_remFrom(sRegion *reg,const void *p) {
-	return sll_removeFirstWith(reg->procs,(void*)p);
+	return sll_removeFirstWith(&reg->procs,(void*)p);
 }
 
 ssize_t reg_grow(sRegion *reg,ssize_t amount) {
@@ -221,7 +217,7 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt) {
 	}
 	prf_sprintf(buf,"\tTimestamp: %d\n",reg->timestamp);
 	prf_sprintf(buf,"\tProcesses: ");
-	for(n = sll_begin(reg->procs); n != NULL; n = n->next)
+	for(n = sll_begin(&reg->procs); n != NULL; n = n->next)
 		prf_sprintf(buf,"%d ",((sProc*)n->data)->pid);
 	prf_sprintf(buf,"\n");
 	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(reg->byteCount));

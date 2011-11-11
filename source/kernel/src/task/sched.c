@@ -158,12 +158,12 @@ sThread *sched_perform(sThread *old,uint64_t runtime) {
 }
 
 void sched_adjustPrio(sThread *t,size_t threadCount) {
-	const uint64_t threadSlice = RUNTIME_UPDATE_INTVAL / threadCount;
+	const uint64_t threadSlice = (RUNTIME_UPDATE_INTVAL * 1000) / threadCount;
 	uint64_t runtime;
 	spinlock_aquire(&schedLock);
 	runtime = RUNTIME_UPDATE_INTVAL * 1000 - t->stats.timeslice;
 	/* if the thread has used a lot of its timeslice, lower its priority */
-	if(runtime >= threadSlice * PRIO_BAD_SLICE) {
+	if(runtime >= threadSlice * PRIO_BAD_SLICE_MULT) {
 		if(t->priority > 0) {
 			if(t->state == ST_READY)
 				sched_qDequeueThread(rdyQueues + t->priority,t);
@@ -174,7 +174,7 @@ void sched_adjustPrio(sThread *t,size_t threadCount) {
 		t->prioGoodCnt = 0;
 	}
 	/* otherwise, raise its priority */
-	else if(runtime < threadSlice * PRIO_GOOD_SLICE) {
+	else if(runtime < threadSlice / PRIO_GOOD_SLICE_DIV) {
 		if(t->priority < MAX_PRIO) {
 			if(++t->prioGoodCnt == PRIO_FORGIVE_CNT) {
 				if(t->state == ST_READY)

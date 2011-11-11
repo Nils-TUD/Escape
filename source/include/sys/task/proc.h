@@ -209,56 +209,6 @@ void proc_release(struct sThread *t,sProc *p,size_t l);
 size_t proc_getCount(void);
 
 /**
- * Requests the file for the given file-descriptor and increments the usage-count
- *
- * @param cur the current thread
- * @param fd the file-descriptor
- * @return the file or < 0 if the fd is invalid
- */
-file_t proc_reqFile(struct sThread *cur,int fd);
-
-/**
- * Releases the given file, i.e. decrements the usage-count
- *
- * @param cur the current thread
- * @param file the file
- */
-void proc_relFile(struct sThread *cur,file_t file);
-
-/**
- * Associates a free file-descriptor with the given file-number
- *
- * @param fileNo the file-number
- * @return the file-descriptor on success
- */
-int proc_assocFd(file_t fileNo);
-
-/**
- * Duplicates the given file-descriptor
- *
- * @param fd the file-descriptor
- * @return the error-code or the new file-descriptor
- */
-int proc_dupFd(int fd);
-
-/**
- * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
- *
- * @param src the source-file-descriptor
- * @param dst the destination-file-descriptor
- * @return the error-code or 0 if successfull
- */
-int proc_redirFd(int src,int dst);
-
-/**
- * Releases the given file-descriptor (marks it unused)
- *
- * @param fd the file-descriptor
- * @return the file-number that was associated with the fd (or -EBADF)
- */
-file_t proc_unassocFd(int fd);
-
-/**
  * Searches for a process with given binary
  *
  * @param bin the binary

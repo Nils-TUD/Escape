@@ -32,13 +32,14 @@
 
 #define MAX_PRIO				4
 #define DEFAULT_PRIO			3
-/* the slices for good/bad behaviours. 1000 means, 100% of the timeslice, 0 = 0% of the timeslice */
-#define PRIO_BAD_SLICE			8000
-#define PRIO_GOOD_SLICE			500
+/* 1 means, 100% of the timeslice, 2 = 200% of the timeslice */
+#define PRIO_BAD_SLICE_MULT		4
+/* 1 means, 100% of the timeslice, 2 means 50% of the timeslice */
+#define PRIO_GOOD_SLICE_DIV		2
 /* number of times a good-ratio has to be reached in a row to raise the priority again */
-#define PRIO_FORGIVE_CNT		2
+#define PRIO_FORGIVE_CNT		8
 
-/* reset the runtime every 1sec */
+/* reset the runtime and update priorities every 1sec */
 #define RUNTIME_UPDATE_INTVAL	1000
 
 #define INIT_TID				0
@@ -541,14 +542,6 @@ size_t thread_getThreadFrmCnt(void);
  * @return 0 on success
  */
 int thread_createArch(const sThread *src,sThread *dst,bool cloneProc);
-
-/**
- * Terminates the given thread. That means, it removes it from scheduler and adds it to the
- * termination-module.
- *
- * @param t the thread (may be the current one or run on a different cpu)
- */
-void thread_terminate(sThread *t);
 
 /**
  * Kills the given thread, i.e. releases all resources and destroys it.

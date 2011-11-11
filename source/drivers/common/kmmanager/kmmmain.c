@@ -36,11 +36,9 @@
 #define BUF_SIZE					128
 
 static int kbClientThread(void *arg);
-static void handleKeymap(msgid_t mid,int fd);
-static void handleKeyevents(msgid_t mid,int fd);
+static int keymapThread(A_UNUSED void *arg);
+static int keyeventsThread(A_UNUSED void *arg);
 
-/* file-descriptor for ourself */
-static sMsg msg;
 static sRingBuf *rbuf;
 static sKeymapEntry *map;
 static tULock lck;
@@ -49,16 +47,9 @@ static int ids[2];
 int main(void) {
 	char path[MAX_PATH_LEN];
 	char *newline;
-	sWaitObject waits[2];
-	int drv;
-	msgid_t mid;
 	FILE *f;
 
 	events_init();
-
-	ids[0] = createdev("/dev/kmmanager",DEV_TYPE_CHAR,DEV_READ);
-	if(ids[0] < 0)
-		error("Unable to register device 'kmmanager'");
 
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKmData),BUF_SIZE,RB_OVERWRITE);
@@ -79,37 +70,11 @@ int main(void) {
 	if(!map)
 		error("Unable to load default keymap");
 
-	ids[1] = createdev("/dev/keyevents",DEV_TYPE_SERVICE,0);
-	if(ids[1] < 0)
-		error("Unable to register device 'keyevents'");
-
+	if(startThread(keyeventsThread,NULL) < 0)
+		error("Unable to start thread for keyevents-device");
 	if(startThread(kbClientThread,NULL) < 0)
 		error("Unable to start thread for reading from kb");
-
-	waits[0].events = EV_CLIENT;
-	waits[0].object = ids[0];
-	waits[1].events = EV_CLIENT;
-	waits[1].object = ids[1];
-
-    /* wait for commands */
-	while(1) {
-		int fd = getWork(ids,2,&drv,&mid,&msg,sizeof(msg),GW_NOBLOCK);
-		if(fd < 0) {
-			if(fd != -ENOCLIENT)
-				printe("[KM] Unable to get client");
-			waitm(waits,ARRAY_SIZE(waits));
-		}
-		else {
-			if(drv == ids[0])
-				handleKeymap(mid,fd);
-			else if(drv == ids[1])
-				handleKeyevents(mid,fd);
-			else
-				printe("[KM] Unknown device-id %d\n",drv);
-			close(fd);
-		}
-	}
-	return EXIT_SUCCESS;
+	return keymapThread(NULL);
 }
 
 static int kbClientThread(A_UNUSED void *arg) {
@@ -152,79 +117,107 @@ static int kbClientThread(A_UNUSED void *arg) {
 	return EXIT_SUCCESS;
 }
 
-static void handleKeymap(msgid_t mid,int fd) {
-	switch(mid) {
-		case MSG_DEV_READ: {
-			/* offset is ignored here */
-			size_t count = msg.args.arg2 / sizeof(sKmData);
-			sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
-			msg.args.arg1 = 0;
-			locku(&lck);
-			if(buffer)
-				msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
-			msg.args.arg2 = rb_length(rbuf) > 0;
-			unlocku(&lck);
-			send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-			if(msg.args.arg1) {
-				send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);
-				free(buffer);
-			}
-		}
-		break;
+static int keymapThread(A_UNUSED void *arg) {
+	ids[0] = createdev("/dev/kmmanager",DEV_TYPE_CHAR,DEV_READ);
+	if(ids[0] < 0)
+		error("Unable to register device 'kmmanager'");
+	while(1) {
+		sMsg msg;
+		msgid_t mid;
+		int fd = getWork(&ids[0],1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0)
+			printe("[KMM] Unable to get work");
+		else {
+			switch(mid) {
+				case MSG_DEV_READ: {
+					/* offset is ignored here */
+					size_t count = msg.args.arg2 / sizeof(sKmData);
+					sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
+					msg.args.arg1 = 0;
+					locku(&lck);
+					if(buffer)
+						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
+					msg.args.arg2 = rb_length(rbuf) > 0;
+					unlocku(&lck);
+					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					if(msg.args.arg1) {
+						send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);
+						free(buffer);
+					}
+				}
+				break;
 
-		case MSG_KM_SET: {
-			sKeymapEntry *newMap;
-			char *str = msg.str.s1;
-			str[sizeof(msg.str.s1) - 1] = '\0';
-			newMap = km_parse(str);
-			if(!newMap)
-				msg.str.arg1 = -EINVAL;
-			else {
-				msg.str.arg1 = 0;
-				locku(&lck);
-				free(map);
-				map = newMap;
-				unlocku(&lck);
-			}
-			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.str));
-		}
-		break;
+				case MSG_KM_SET: {
+					sKeymapEntry *newMap;
+					char *str = msg.str.s1;
+					str[sizeof(msg.str.s1) - 1] = '\0';
+					newMap = km_parse(str);
+					if(!newMap)
+						msg.str.arg1 = -EINVAL;
+					else {
+						msg.str.arg1 = 0;
+						locku(&lck);
+						free(map);
+						map = newMap;
+						unlocku(&lck);
+					}
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.str));
+				}
+				break;
 
-		default:
-			msg.args.arg1 = -ENOTSUP;
-			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-			break;
+				default:
+					msg.args.arg1 = -ENOTSUP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					break;
+			}
+			close(fd);
+		}
 	}
+	return 0;
 }
 
-static void handleKeyevents(msgid_t mid,int fd) {
-	switch(mid) {
-		case MSG_KE_ADDLISTENER: {
-			uchar flags = (uchar)msg.args.arg1;
-			uchar key = (uchar)msg.args.arg2;
-			uchar modifier = (uchar)msg.args.arg3;
-			inode_t id = getClientId(fd);
-			locku(&lck);
-			msg.args.arg1 = events_add(id,flags,key,modifier);
-			unlocku(&lck);
-			send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args));
-		}
-		break;
+static int keyeventsThread(A_UNUSED void *arg) {
+	ids[1] = createdev("/dev/keyevents",DEV_TYPE_SERVICE,0);
+	if(ids[1] < 0)
+		error("Unable to register device 'keyevents'");
+	while(1) {
+		sMsg msg;
+		msgid_t mid;
+		int fd = getWork(&ids[1],1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0)
+			printe("[KMM] Unable to get work");
+		else {
+			switch(mid) {
+				case MSG_KE_ADDLISTENER: {
+					uchar flags = (uchar)msg.args.arg1;
+					uchar key = (uchar)msg.args.arg2;
+					uchar modifier = (uchar)msg.args.arg3;
+					inode_t id = getClientId(fd);
+					locku(&lck);
+					msg.args.arg1 = events_add(id,flags,key,modifier);
+					unlocku(&lck);
+					send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args));
+				}
+				break;
 
-		case MSG_KE_REMLISTENER: {
-			uchar flags = (uchar)msg.args.arg1;
-			uchar key = (uchar)msg.args.arg2;
-			uchar modifier = (uchar)msg.args.arg3;
-			inode_t id = getClientId(fd);
-			locku(&lck);
-			events_remove(id,flags,key,modifier);
-			unlocku(&lck);
-		}
-		break;
+				case MSG_KE_REMLISTENER: {
+					uchar flags = (uchar)msg.args.arg1;
+					uchar key = (uchar)msg.args.arg2;
+					uchar modifier = (uchar)msg.args.arg3;
+					inode_t id = getClientId(fd);
+					locku(&lck);
+					events_remove(id,flags,key,modifier);
+					unlocku(&lck);
+				}
+				break;
 
-		default:
-			msg.args.arg1 = -ENOTSUP;
-			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-			break;
+				default:
+					msg.args.arg1 = -ENOTSUP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					break;
+			}
+			close(fd);
+		}
 	}
+	return 0;
 }

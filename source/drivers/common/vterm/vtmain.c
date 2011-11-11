@@ -184,7 +184,7 @@ static void kmMngThread(void) {
 	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
 		error("Unable to announce SIG_USR1-handler");
 
-	kbFd = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
+	kbFd = open("/dev/kmmanager",IO_READ);
 	if(kbFd < 0)
 		error("Unable to open '/dev/kmmanager'");
 
@@ -196,10 +196,8 @@ static void kmMngThread(void) {
 		}
 
 		/* read from keyboard and handle the keys */
-		count = RETRY(read(kbFd,kmData,sizeof(kmData)));
-		if(count <= 0)
-			wait(EV_DATA_READABLE,kbFd);
-		else {
+		count = read(kbFd,kmData,sizeof(kmData));
+		if(count > 0) {
 			sVTerm *vt = vt_getActive();
 			sKmData *kmsg = kmData;
 			count /= sizeof(sKmData);

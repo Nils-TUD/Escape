@@ -32,31 +32,28 @@ void cow_init(void);
  * Handles a pagefault for given address. Assumes that the pagefault was caused by a write access
  * to a copy-on-write page!
  *
- * @param pid the process-id of the current process (locked)
  * @param address the address
  * @param frameNumber the frame for that address
  * @return the number of frames that should be added to the current process
  */
-size_t cow_pagefault(pid_t pid,uintptr_t address,frameno_t frameNumber);
+size_t cow_pagefault(uintptr_t address,frameno_t frameNumber);
 
 /**
- * Adds the given frame and process to the cow-list.
+ * Adds the given frame to the cow-list.
  *
- * @param pid the process-id
  * @param frameNo the frame-number
  * @return true if successfull
  */
-bool cow_add(pid_t pid,frameno_t frameNo);
+bool cow_add(frameno_t frameNo);
 
 /**
- * Removes the given process and frame from the cow-list
+ * Removes the given frame from the cow-list
  *
- * @param pid the process-id
  * @param frameNo the frame-number
  * @param foundOther will be set to true if another process still uses the frame
  * @return the number of frames to remove from <p>
  */
-size_t cow_remove(pid_t pid,frameno_t frameNo,bool *foundOther);
+size_t cow_remove(frameno_t frameNo,bool *foundOther);
 
 /**
  * Note that this is intended for debugging or similar only! (not very efficient)

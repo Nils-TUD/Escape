@@ -23,6 +23,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
+#include <sys/task/fd.h>
 #include <sys/vfs/vfs.h>
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls.h>
@@ -53,7 +54,7 @@ int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with it */
-	fd = proc_assocFd(res);
+	fd = fd_assoc(res);
 	if(fd < 0)
 		SYSC_ERROR(stack,fd);
 	SYSC_RET1(stack,fd);
@@ -65,12 +66,12 @@ int sysc_getClientId(sThread *t,sIntrptStackFrame *stack) {
 	inode_t id;
 	pid_t pid = t->proc->pid;
 
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	id = vfs_getClientId(pid,file);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	if(id < 0)
 		SYSC_ERROR(stack,id);
 	SYSC_RET1(stack,id);
@@ -84,18 +85,18 @@ int sysc_getClient(sThread *t,sIntrptStackFrame *stack) {
 	file_t file,drvFile;
 
 	/* get file */
-	drvFile = proc_reqFile(t,drvFd);
+	drvFile = fd_request(t,drvFd);
 	if(drvFile < 0)
 		SYSC_ERROR(stack,drvFile);
 
 	/* open client */
 	file = vfs_openClient(pid,drvFile,cid);
-	proc_relFile(t,drvFile);
+	fd_release(t,drvFile);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* associate fd with file */
-	fd = proc_assocFd(file);
+	fd = fd_assoc(file);
 	if(fd < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);
@@ -131,10 +132,10 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 
 	/* translate to files */
 	for(i = 0; i < fdCount; i++) {
-		files[i] = proc_reqFile(t,fds[i]);
+		files[i] = fd_request(t,fds[i]);
 		if(files[i] < 0) {
 			for(; i > 0; i--)
-				proc_relFile(t,files[i - 1]);
+				fd_release(t,files[i - 1]);
 			SYSC_ERROR(stack,files[i]);
 		}
 	}
@@ -144,7 +145,7 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 
 	/* release files */
 	for(i = 0; i < fdCount; i++)
-		proc_relFile(t,files[i]);
+		fd_release(t,files[i]);
 
 	if(clientNo < 0)
 		SYSC_ERROR(stack,clientNo);
@@ -162,7 +163,7 @@ int sysc_getWork(sThread *t,sIntrptStackFrame *stack) {
 	}
 
 	/* assoc with fd */
-	fd = proc_assocFd(file);
+	fd = fd_assoc(file);
 	if(fd < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);

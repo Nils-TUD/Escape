@@ -21,6 +21,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cow.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/task/proc.h>
 #include <sys/util.h>
 #include <sys/spinlock.h>
@@ -29,152 +30,91 @@
 #include <assert.h>
 #include <string.h>
 
+#define COW_HEAP_SIZE	64
+
 typedef struct {
 	frameno_t frameNumber;
-	pid_t pid;
+	size_t refCount;
 } sCOW;
 
-/**
- * A list which contains each frame for each process that is marked as copy-on-write.
- * If a process causes a page-fault we will remove it from the list. If there is no other
- * entry for the frame in the list, the process can keep the frame, otherwise it is copied.
- */
-static sSLList *cowFrames = NULL;
+static sCOW *cow_getByFrame(frameno_t frameNo,bool dec);
+
+static sSLList cowFrames[COW_HEAP_SIZE];
 static klock_t cowLock;
 
 void cow_init(void) {
-	cowFrames = sll_create();
-	assert(cowFrames != NULL);
+	size_t i;
+	for(i = 0; i < COW_HEAP_SIZE; i++)
+		sll_init(cowFrames + i,slln_allocNode,slln_freeNode);
 }
 
-size_t cow_pagefault(pid_t pid,uintptr_t address,frameno_t frameNumber) {
-	sSLNode *n,*ln;
+size_t cow_pagefault(uintptr_t address,frameno_t frameNumber) {
 	sCOW *cow;
-	sSLNode *ourCOW,*ourPrevCOW;
-	bool foundOther;
-	size_t frmCount;
 	uint flags;
 
-	/* search through the copy-on-write-list whether there is another one who wants to get
-	 * the frame */
 	spinlock_aquire(&cowLock);
-	frmCount = 0;
-	ourCOW = NULL;
-	ourPrevCOW = NULL;
-	foundOther = false;
-	ln = NULL;
-	for(n = sll_begin(cowFrames); n != NULL; ln = n, n = n->next) {
-		cow = (sCOW*)n->data;
-		if(cow->frameNumber == frameNumber) {
-			if(cow->pid == pid) {
-				ourCOW = n;
-				ourPrevCOW = ln;
-			}
-			else
-				foundOther = true;
-			/* if we have both, we can stop here */
-			if(ourCOW && foundOther)
-				break;
-		}
-	}
+	/* find the cow-entry */
+	cow = cow_getByFrame(frameNumber,true);
+	vassert(cow != NULL,"No COW entry for frame %#x and address %p",frameNumber,address);
 
-	/* should never happen */
-	vassert(ourCOW != NULL,"No COW entry for process %d and address 0x%x",pid,address);
-
-	/* remove our from list and adjust pte */
-	cache_free(ourCOW->data);
-	sll_removeNode(cowFrames,ourCOW,ourPrevCOW);
 	/* if there is another process who wants to get the frame, we make a copy for us */
 	/* otherwise we keep the frame for ourself */
 	flags = PG_PRESENT | PG_WRITABLE;
-	if(!foundOther)
+	if(cow->refCount == 0)
 		flags |= PG_KEEPFRM;
 	/* can't fail, we've already allocated the frame */
 	paging_map(address,NULL,1,flags);
-	frmCount++;
 
 	/* copy? */
-	if(foundOther)
+	if(cow->refCount > 0)
 		paging_copyFromFrame(frameNumber,(void*)(address & ~(PAGE_SIZE - 1)));
+	else
+		cache_free(cow);
 	spinlock_release(&cowLock);
-	return frmCount;
+	return 1;
 }
 
-bool cow_add(pid_t pid,frameno_t frameNo) {
-	sCOW *cc;
-	cc = (sCOW*)cache_alloc(sizeof(sCOW));
-	if(cc == NULL)
-		return false;
-	cc->frameNumber = frameNo;
-	cc->pid = pid;
+bool cow_add(frameno_t frameNo) {
 	spinlock_aquire(&cowLock);
-	if(!sll_append(cowFrames,cc)) {
-		spinlock_release(&cowLock);
-		cache_free(cc);
-		return false;
+	sCOW *cow = cow_getByFrame(frameNo,false);
+	if(!cow) {
+		cow = (sCOW*)cache_alloc(sizeof(sCOW));
+		if(cow == NULL) {
+			spinlock_release(&cowLock);
+			return false;
+		}
+		cow->frameNumber = frameNo;
+		cow->refCount = 0;
+		if(!sll_append(cowFrames + (frameNo % COW_HEAP_SIZE),cow)) {
+			cache_free(cow);
+			spinlock_release(&cowLock);
+			return false;
+		}
 	}
+	cow->refCount++;
 	spinlock_release(&cowLock);
 	return true;
 }
 
-size_t cow_remove(pid_t pid,frameno_t frameNo,bool *foundOther) {
-	sSLNode *n,*tn,*ln;
+size_t cow_remove(frameno_t frameNo,bool *foundOther) {
 	sCOW *cow;
-	size_t frmCount = 0;
-	bool foundOwn = false;
-
-	/* search for the frame in the COW-list */
 	spinlock_aquire(&cowLock);
-	ln = NULL;
-	*foundOther = false;
-	for(n = sll_begin(cowFrames); n != NULL; ) {
-		cow = (sCOW*)n->data;
-		if(cow->pid == pid && cow->frameNumber == frameNo) {
-			/* remove from COW-list */
-			tn = n->next;
-			frmCount++;
-			cache_free(cow);
-			sll_removeNode(cowFrames,n,ln);
-			n = tn;
-			foundOwn = true;
-			continue;
-		}
+	/* find the cow-entry */
+	cow = cow_getByFrame(frameNo,true);
+	vassert(cow != NULL,"For frameNo %#x",frameNo);
 
-		/* usage of other process? */
-		if(cow->frameNumber == frameNo)
-			*foundOther = true;
-		/* we can stop if we have both */
-		if(*foundOther && foundOwn)
-			break;
-		ln = n;
-		n = n->next;
-	}
-	vassert(foundOwn,"For frameNo %#x and proc %d",frameNo,pid);
+	*foundOther = cow->refCount > 0;
+	if(cow->refCount == 0)
+		cache_free(cow);
 	spinlock_release(&cowLock);
-	return frmCount;
+	return 1;
 }
 
 size_t cow_getFrmCount(void) {
-	sSLNode *n;
 	size_t i,count = 0;
-	frameno_t *frames;
 	spinlock_aquire(&cowLock);
-	frames = (frameno_t*)cache_calloc(sll_length(cowFrames),sizeof(frameno_t));
-	if(frames) {
-		for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
-			sCOW *cow = (sCOW*)n->data;
-			bool found = false;
-			for(i = 0; i < count; i++) {
-				if(frames[i] == cow->frameNumber) {
-					found = true;
-					break;
-				}
-			}
-			if(!found)
-				frames[count++] = cow->frameNumber;
-		}
-		cache_free(frames);
-	}
+	for(i = 0; i < COW_HEAP_SIZE; i++)
+		count += sll_length(cowFrames + i);
 	spinlock_release(&cowLock);
 	return count;
 }
@@ -182,10 +122,30 @@ size_t cow_getFrmCount(void) {
 void cow_print(void) {
 	sSLNode *n;
 	sCOW *cow;
+	size_t i;
 	vid_printf("COW-Frames: (%zu frames)\n",cow_getFrmCount());
-	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
-		cow = (sCOW*)n->data;
-		vid_printf("\tframe=0x%x, proc=%d (%s)\n",cow->frameNumber,cow->pid,
-				proc_getByPid(cow->pid)->command);
+	for(i = 0; i < COW_HEAP_SIZE; i++) {
+		vid_printf("\t%zu:\n",i);
+		for(n = sll_begin(cowFrames + i); n != NULL; n = n->next) {
+			cow = (sCOW*)n->data;
+			vid_printf("\t\t%#x (%zu refs)\n",cow->frameNumber,cow->refCount);
+		}
 	}
+}
+
+static sCOW *cow_getByFrame(frameno_t frameNo,bool dec) {
+	sSLNode *n,*p;
+	sSLList *list = cowFrames + (frameNo % COW_HEAP_SIZE);
+	p = NULL;
+	for(n = sll_begin(list); n != NULL; p = n, n = n->next) {
+		sCOW *cow = (sCOW*)n->data;
+		if(cow->frameNumber == frameNo) {
+			if(dec) {
+				if(--cow->refCount == 0)
+					sll_removeNode(list,n,p);
+			}
+			return cow;
+		}
+	}
+	return NULL;
 }

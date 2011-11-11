@@ -34,6 +34,9 @@ int mod_forkbomb(int argc,char *argv[]) {
 	ssize_t i = 0;
 	while(1) {
 		pids[i] = fork();
+		/* the childs break here */
+		if(pids[i] == 0)
+			break;
 		/* failed? so send all created child-procs the kill-signal */
 		if(i >= n || pids[i] < 0) {
 			if(pids[i] < 0)
@@ -49,9 +52,6 @@ int mod_forkbomb(int argc,char *argv[]) {
 			}
 			return 0;
 		}
-		/* the childs break here */
-		if(pids[i] == 0)
-			break;
 		i++;
 	}
 

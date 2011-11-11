@@ -25,6 +25,7 @@
 #include <sys/task/event.h>
 #include <sys/task/lock.h>
 #include <sys/task/timer.h>
+#include <sys/task/fd.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/vfs.h>
@@ -213,10 +214,10 @@ static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCou
 	for(i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* translate fd to node-number */
-			objFiles[i] = proc_reqFile(t,(int)uobjects[i].object);
+			objFiles[i] = fd_request(t,(int)uobjects[i].object);
 			if(objFiles[i] < 0) {
 				for(; i > 0; i--)
-					proc_relFile(t,objFiles[i - 1]);
+					fd_release(t,objFiles[i - 1]);
 				return objFiles[i];
 			}
 		}
@@ -228,7 +229,7 @@ static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCou
 	/* release them */
 	for(i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
-			proc_relFile(t,objFiles[i]);
+			fd_release(t,objFiles[i]);
 	}
 	return res;
 }

@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/elf.h>
 #include <sys/task/proc.h>
+#include <sys/task/fd.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/vmm.h>
@@ -216,13 +217,13 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	}
 
 	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
-	if((fd = proc_assocFd(file)) < 0)
+	if((fd = fd_assoc(file)) < 0)
 		goto failed;
 	if(elf_finishFromFile(file,&eheader,info) < 0) {
-		assert(proc_unassocFd(fd) >= 0);
+		assert(fd_unassoc(fd) >= 0);
 		goto failed;
 	}
-	assert(proc_unassocFd(fd) >= 0);
+	assert(fd_unassoc(fd) >= 0);
 	vfs_closeFile(p->pid,file);
 	return 0;
 

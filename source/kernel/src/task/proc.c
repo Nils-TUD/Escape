@@ -28,6 +28,8 @@
 #include <sys/task/event.h>
 #include <sys/task/uenv.h>
 #include <sys/task/groups.h>
+#include <sys/task/terminator.h>
+#include <sys/task/fd.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/cache.h>
@@ -80,8 +82,6 @@ void proc_preinit(void) {
 }
 
 void proc_init(void) {
-	size_t i;
-	
 	/* init the first process */
 	sProc *p = &first;
 
@@ -113,8 +113,7 @@ void proc_init(void) {
 		util_panic("Not enough mem for init process");
 
 	/* init fds */
-	for(i = 0; i < MAX_FD_COUNT; i++)
-		p->fileDescs[i] = -1;
+	fd_init(p);
 
 	/* create first thread */
 	p->threads = sll_create();
@@ -177,117 +176,6 @@ size_t proc_getCount(void) {
 	return sll_length(procs);
 }
 
-file_t proc_reqFile(sThread *cur,int fd) {
-	file_t fileNo;
-	sProc *p;
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return -EBADF;
-
-	p = proc_request(cur,cur->proc->pid,PLOCK_FDS);
-	fileNo = p->fileDescs[fd];
-	if(fileNo == -1)
-		fileNo = -EBADF;
-	else {
-		vfs_incUsages(fileNo);
-		thread_addFileUsage(cur,fileNo);
-	}
-	proc_release(cur,p,PLOCK_FDS);
-	return fileNo;
-}
-
-void proc_relFile(sThread *cur,file_t file) {
-	thread_remFileUsage(cur,file);
-	vfs_decUsages(file);
-}
-
-int proc_assocFd(file_t fileNo) {
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,t->proc->pid,PLOCK_FDS);
-	const file_t *fds = p->fileDescs;
-	int i,fd = -EMFILE;
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(fds[i] == -1) {
-			fd = i;
-			break;
-		}
-	}
-	if(fd >= 0)
-		p->fileDescs[fd] = fileNo;
-	proc_release(t,p,PLOCK_FDS);
-	return fd;
-}
-
-int proc_dupFd(int fd) {
-	file_t f;
-	int i,nfd = -EBADF;
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,t->proc->pid,PLOCK_FDS);
-	const file_t *fds = p->fileDescs;
-	/* check fd */
-	if(fd < 0 || fd >= MAX_FD_COUNT) {
-		proc_release(t,p,PLOCK_FDS);
-		return -EBADF;
-	}
-
-	f = p->fileDescs[fd];
-	if(f >= 0) {
-		nfd = -EMFILE;
-		for(i = 0; i < MAX_FD_COUNT; i++) {
-			if(fds[i] == -1) {
-				/* increase references */
-				nfd = i;
-				vfs_incRefs(f);
-				p->fileDescs[nfd] = f;
-				break;
-			}
-		}
-	}
-	proc_release(t,p,PLOCK_FDS);
-	return nfd;
-}
-
-int proc_redirFd(int src,int dst) {
-	file_t fSrc,fDst;
-	int err = -EBADF;
-	sProc *p;
-	sThread *t = thread_getRunning();
-
-	/* check fds */
-	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
-		return -EBADF;
-
-	p = proc_request(t,t->proc->pid,PLOCK_FDS);
-	fSrc = p->fileDescs[src];
-	fDst = p->fileDescs[dst];
-	if(fSrc >= 0 && fDst >= 0) {
-		vfs_incRefs(fDst);
-		/* we have to close the source because no one else will do it anymore... */
-		vfs_closeFile(p->pid,fSrc);
-		/* now redirect src to dst */
-		p->fileDescs[src] = fDst;
-		err = 0;
-	}
-	proc_release(t,p,PLOCK_FDS);
-	return err;
-}
-
-file_t proc_unassocFd(int fd) {
-	file_t fileNo;
-	sProc *p;
-	sThread *t = thread_getRunning();
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return -EBADF;
-
-	p = proc_request(t,t->proc->pid,PLOCK_FDS);
-	fileNo = p->fileDescs[fd];
-	if(fileNo >= 0)
-		p->fileDescs[fd] = -1;
-	else
-		fileNo = -EBADF;
-	proc_release(t,p,PLOCK_FDS);
-	return fileNo;
-}
-
 pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno) {
 	sSLNode *n;
 	pid_t res = INVALID_PID;
@@ -337,7 +225,6 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 }
 
 int proc_clone(uint8_t flags) {
-	size_t i;
 	int newPid,res = 0;
 	sProc *p,*cur;
 	sThread *nt,*curThread = thread_getRunning();
@@ -443,13 +330,7 @@ int proc_clone(uint8_t flags) {
 		goto errorThreadAppend;
 
 	/* inherit file-descriptors */
-	proc_request(curThread,cur->pid,PLOCK_FDS);
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		p->fileDescs[i] = cur->fileDescs[i];
-		if(p->fileDescs[i] != -1)
-			vfs_incRefs(p->fileDescs[i]);
-	}
-	proc_release(curThread,cur,PLOCK_FDS);
+	fd_clone(curThread,p);
 
 	res = thread_finishClone(curThread,nt);
 	if(res == 1) {
@@ -615,7 +496,7 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 		file_t file = vfs_openPath(p->pid,VFS_READ,path);
 		if(file < 0)
 			goto error;
-		fd = proc_assocFd(file);
+		fd = fd_assoc(file);
 		if(fd < 0) {
 			vfs_closeFile(p->pid,file);
 			goto error;
@@ -677,7 +558,7 @@ void proc_exit(int exitCode) {
 	sThread *t = thread_getRunning();
 	sProc *p = proc_request(t,t->proc->pid,PLOCK_PROG);
 	if(p) {
-		thread_terminate(t);
+		term_addDead(t);
 		proc_release(t,p,PLOCK_PROG);
 	}
 }
@@ -730,7 +611,8 @@ void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
 		return;
 	}
 
-	vassert(pid != 0,"You can't terminate the initial process");
+	if(pid == 0)
+		util_panic("You can't terminate the initial process");
 
 	/* print information to log */
 	if(signal != SIG_COUNT || exitCode != 0) {
@@ -744,7 +626,7 @@ void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
 	/* terminate all threads */
 	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 		sThread *pt = (sThread*)tn->data;
-		thread_terminate(pt);
+		term_addDead(pt);
 	}
 	p->flags |= P_PREZOMBIE;
 	proc_release(t,p,PLOCK_PROG);
@@ -782,22 +664,10 @@ void proc_destroy(pid_t pid) {
 }
 
 static void proc_doDestroy(sProc *p) {
-	size_t i;
 	sThread *t = thread_getRunning();
 
-	/* release file-descriptors */
-	spinlock_aquire(p->locks + PLOCK_FDS);
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1) {
-			vfs_incUsages(p->fileDescs[i]);
-			if(!vfs_closeFile(p->pid,p->fileDescs[i]))
-				vfs_decUsages(p->fileDescs[i]);
-			p->fileDescs[i] = -1;
-		}
-	}
-	spinlock_release(p->locks + PLOCK_FDS);
-
 	/* release resources */
+	fd_destroy(t,p);
 	groups_leave(p->pid);
 	env_removeFor(p->pid);
 	proc_doRemoveRegions(p,true);
@@ -997,7 +867,7 @@ void proc_printAllPDs(uint parts,bool regions) {
 }
 
 void proc_print(sProc *p) {
-	size_t i,own,shared,swapped;
+	size_t own,shared,swapped;
 	sSLNode *n;
 	vid_printf("Proc %d:\n",p->pid);
 	vid_printf("\tppid=%d, cmd=%s, entry=%#Px\n",p->parentPid,p->command,p->entryPoint);
@@ -1019,13 +889,7 @@ void proc_print(sProc *p) {
 	vid_printf("\tEnvironment:\n");
 	env_printAllOf(p->pid);
 	vid_printf("\tFileDescs:\n");
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1) {
-			vid_printf("\t\t%-2d: ",i);
-			vfs_printFile(p->fileDescs[i]);
-			vid_printf("\n");
-		}
-	}
+	fd_print(p);
 	vid_printf("\tFS-Channels:\n");
 	vfs_fsmsgs_printFSChans(p);
 	if(p->threads) {

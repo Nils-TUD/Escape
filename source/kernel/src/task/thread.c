@@ -417,14 +417,6 @@ errThread:
 	return err;
 }
 
-void thread_terminate(sThread *t) {
-	/* just remove us from scheduler; he will take care that we don't get chosen again. */
-	/* if we are currently running on a different cpu, it will be interrupted and asked to
-	 * terminate the thread */
-	sched_removeThread(t);
-	term_addDead(t);
-}
-
 void thread_kill(sThread *t) {
 	size_t i;
 	/* remove tls */
@@ -475,9 +467,10 @@ static const char *thread_getStateName(uint8_t state) {
 }
 
 void thread_printShort(const sThread *t) {
-	vid_printf("%d [state=%s, ev=",t->tid,thread_getStateName(t->state));
+	vid_printf("%d [state=%s, prio=%d, cpu=%d, time=%Lums, ev=",
+			t->tid,thread_getStateName(t->state),t->priority,t->cpu,thread_getRuntime(t));
 	ev_printEvMask(t);
-	vid_printf(", cpu=%d, time=%Lums]",t->cpu,thread_getRuntime(t));
+	vid_printf("]");
 }
 
 void thread_print(const sThread *t) {
@@ -497,6 +490,7 @@ void thread_print(const sThread *t) {
 			vid_printf(", ");
 	}
 	vid_printf("\n");
+	vid_printf("\tPriority = %d\n",t->priority);
 	vid_printf("\tRuntime = %Lums\n",thread_getRuntime(t));
 	vid_printf("\tScheduled = %u\n",t->stats.schedCount);
 	vid_printf("\tSyscalls = %u\n",t->stats.syscalls);

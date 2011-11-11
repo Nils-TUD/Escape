@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
+#include <sys/task/fd.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/file.h>
@@ -81,9 +82,9 @@ void log_vfsIsReady(void) {
 	 * create new ones (for the vterm of the shell) */
 	assert(vfs_node_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
 	assert((inFile = vfs_openFile(pid,VFS_READ,inodeNo,VFS_DEV_NO)) >= 0);
-	assert(proc_assocFd(inFile) == 0);
-	assert(proc_assocFd(logFile) == 1);
-	assert(proc_assocFd(logFile) == 2);
+	assert(fd_assoc(inFile) == 0);
+	assert(fd_assoc(logFile) == 1);
+	assert(fd_assoc(logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
 	vfsIsReady = true;

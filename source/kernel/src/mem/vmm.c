@@ -268,7 +268,7 @@ int vmm_setRegProt(pid_t pid,uintptr_t addr,ulong flags) {
 	vmreg->reg->flags &= ~RF_WRITABLE;
 	vmreg->reg->flags |= flags;
 	/* change mapping */
-	for(n = sll_begin(vmreg->reg->procs); n != NULL; n = n->next) {
+	for(n = sll_begin(&vmreg->reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
 		vmreg_t mprno = vmm_getRNoByRegion(mp,vmreg->reg);
@@ -316,7 +316,7 @@ void vmm_swapOut(pid_t pid,file_t file,size_t count) {
 				break;
 
 			/* get VM-region of first process */
-			proc = (sProc*)sll_get(reg->procs,0);
+			proc = (sProc*)sll_get(&reg->procs,0);
 			rno = vmm_getRNoByRegion(proc,reg);
 			vmreg = REG(proc,rno);
 
@@ -576,7 +576,7 @@ static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm,bool write) {
 		res = pmem_swapIn(addr);
 	else if(*flags & PF_COPYONWRITE) {
 		frameno_t frameNumber = paging_getFrameNo(&p->pagedir,addr);
-		size_t frmCount = cow_pagefault(p->pid,addr,frameNumber);
+		size_t frmCount = cow_pagefault(addr,frameNumber);
 		p->ownFrames += frmCount;
 		p->sharedFrames -= frmCount;
 		*flags &= ~PF_COPYONWRITE;
@@ -637,7 +637,7 @@ static void vmm_doRemove(sProc *p,vmreg_t reg) {
 				bool foundOther;
 				frameno_t frameNo = paging_getFrameNo(&p->pagedir,virt);
 				/* we can free the frame if there is no other user */
-				p->sharedFrames -= cow_remove(p->pid,frameNo,&foundOther);
+				p->sharedFrames -= cow_remove(frameNo,&foundOther);
 				freeFrame = !foundOther;
 				/* if we'll free the frame with unmap we will substract 1 too much because
 				 * we don't own the frame */
@@ -840,7 +840,7 @@ int vmm_cloneAll(pid_t dstId) {
 							/* if not already done, mark as cow for parent */
 							if(!(vm->reg->pageFlags[j] & PF_COPYONWRITE)) {
 								vm->reg->pageFlags[j] |= PF_COPYONWRITE;
-								if(!cow_add(src->pid,frameNo)) {
+								if(!cow_add(frameNo)) {
 									mutex_release(t,&vm->reg->lock);
 									goto error;
 								}
@@ -849,7 +849,7 @@ int vmm_cloneAll(pid_t dstId) {
 							}
 							/* do it always for the child */
 							nvm->reg->pageFlags[j] |= PF_COPYONWRITE;
-							if(!cow_add(dst->pid,frameNo)) {
+							if(!cow_add(frameNo)) {
 								mutex_release(t,&vm->reg->lock);
 								goto error;
 							}
@@ -1190,7 +1190,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 		mapFlags |= PG_WRITABLE;
 	if(vm->reg->flags & RF_EXECUTABLE)
 		mapFlags |= PG_EXECUTABLE;
-	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
+	for(n = sll_begin(&vm->reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
 		vmreg_t mprno = vmm_getRNoByRegion(mp,vm->reg);
@@ -1275,7 +1275,7 @@ static void vmm_setSwappedOut(sRegion *reg,size_t index) {
 	sSLNode *n;
 	uintptr_t offset = index * PAGE_SIZE;
 	reg->pageFlags[index] |= PF_SWAPPED;
-	for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
+	for(n = sll_begin(&reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
 		vmreg_t mprno = vmm_getRNoByRegion(mp,reg);
@@ -1301,7 +1301,7 @@ static void vmm_setSwappedIn(sRegion *reg,size_t index,frameno_t frameNo) {
 		flags |= PG_EXECUTABLE;
 	reg->pageFlags[index] &= ~PF_SWAPPED;
 	reg_setSwapBlock(reg,index,0);
-	for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
+	for(n = sll_begin(&reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
 		vmreg_t mprno = vmm_getRNoByRegion(mp,reg);

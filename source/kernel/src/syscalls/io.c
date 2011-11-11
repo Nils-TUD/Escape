@@ -23,6 +23,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/task/thread.h>
+#include <sys/task/fd.h>
 #include <sys/syscalls/io.h>
 #include <sys/syscalls.h>
 #include <esc/messages.h>
@@ -51,7 +52,7 @@ int sysc_open(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	/* assoc fd with file */
-	fd = proc_assocFd(file);
+	fd = fd_assoc(file);
 	if(fd < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);
@@ -68,12 +69,12 @@ int sysc_fcntl(sThread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	/* get file */
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	res = vfs_fcntl(pid,file,cmd,arg);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -97,7 +98,7 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with read-file */
-	kreadFd = proc_assocFd(readFile);
+	kreadFd = fd_assoc(readFile);
 	if(kreadFd < 0) {
 		vfs_closeFile(pid,readFile);
 		vfs_closeFile(pid,writeFile);
@@ -105,9 +106,9 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 	}
 
 	/* assoc fd with write-file */
-	kwriteFd = proc_assocFd(writeFile);
+	kwriteFd = fd_assoc(writeFile);
 	if(kwriteFd < 0) {
-		proc_unassocFd(kreadFd);
+		fd_unassoc(kreadFd);
 		vfs_closeFile(pid,readFile);
 		vfs_closeFile(pid,writeFile);
 		SYSC_ERROR(stack,kwriteFd);
@@ -149,12 +150,12 @@ int sysc_fstat(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 	/* get info */
 	res = vfs_fstat(pid,file,info);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -200,13 +201,13 @@ int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* this may fail, but we're requested the file, so it will be released on our termination */
 	*pos = vfs_tell(pid,file);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	SYSC_RET1(stack,0);
 }
 
@@ -222,12 +223,12 @@ int sysc_seek(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* get file */
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	res = vfs_seek(pid,file,offset,whence);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -248,13 +249,13 @@ int sysc_read(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* read */
 	readBytes = vfs_readFile(pid,file,buffer,count);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	if(readBytes < 0)
 		SYSC_ERROR(stack,readBytes);
 	SYSC_RET1(stack,readBytes);
@@ -275,13 +276,13 @@ int sysc_write(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* read */
 	writtenBytes = vfs_writeFile(pid,file,buffer,count);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	if(writtenBytes < 0)
 		SYSC_ERROR(stack,writtenBytes);
 	SYSC_RET1(stack,writtenBytes);
@@ -302,13 +303,13 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EPERM);
 
 	/* get file */
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
 	res = vfs_sendMsg(pid,file,id,data,size,NULL,0);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -326,13 +327,13 @@ int sysc_receive(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	file = proc_reqFile(t,fd);
+	file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
 	res = vfs_receiveMsg(pid,file,id,data,size,false);
-	proc_relFile(t,file);
+	fd_release(t,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -342,7 +343,7 @@ int sysc_dupFd(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	int res;
 
-	res = proc_dupFd(fd);
+	res = fd_dup(fd);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -351,7 +352,7 @@ int sysc_dupFd(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 int sysc_redirFd(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	int src = (int)SYSC_ARG1(stack);
 	int dst = (int)SYSC_ARG2(stack);
-	int err = proc_redirFd(src,dst);
+	int err = fd_redirect(src,dst);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,err);
@@ -361,14 +362,14 @@ int sysc_close(sThread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
 
-	file_t file = proc_reqFile(t,fd);
+	file_t file = fd_request(t,fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* close file */
-	proc_unassocFd(fd);
+	fd_unassoc(fd);
 	if(!vfs_closeFile(pid,file))
-		proc_relFile(t,file);
+		fd_release(t,file);
 	else
 		thread_remFileUsage(t,file);
 	SYSC_RET1(stack,0);

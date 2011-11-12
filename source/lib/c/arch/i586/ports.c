@@ -20,22 +20,22 @@
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
 
-int requestIOPort(uint16_t port) {
-	return requestIOPorts(port,1);
+int reqport(uint16_t port) {
+	return reqports(port,1);
 }
 
-int releaseIOPort(uint16_t port) {
-	return releaseIOPorts(port,1);
+int relport(uint16_t port) {
+	return relports(port,1);
 }
 
-void inWordStr(uint16_t port,void *addr,size_t count) {
+void inwords(uint16_t port,void *addr,size_t count) {
 	__asm__ volatile (
 		"rep; insw"
 		: : "D"(addr), "c"(count), "d"(port)
 	);
 }
 
-void outWordStr(uint16_t port,const void *addr,size_t count) {
+void outwords(uint16_t port,const void *addr,size_t count) {
 	__asm__ volatile (
 		"rep; outsw"
 		: : "S"(addr), "c"(count), "d"(port)

@@ -37,7 +37,7 @@ typedef struct {
 /**
  * Assembler routines
  */
-extern int _startThread(fThreadEntry entryPoint,void *arg);
+extern int _startthread(fThreadEntry entryPoint,void *arg);
 extern void sigRetFunc(void);
 /**
  * Inits the c-library
@@ -59,10 +59,10 @@ static tULock exitLock = 0;
 static size_t exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 
-int startThread(fThreadEntry entryPoint,void *arg) {
+int startthread(fThreadEntry entryPoint,void *arg) {
 	int res;
 	locku(&threadLock);
-	res = _startThread(entryPoint,arg);
+	res = _startthread(entryPoint,arg);
 	if(res >= 0)
 		threadCount++;
 	unlocku(&threadLock);
@@ -97,6 +97,5 @@ void __cxa_finalize(A_UNUSED void *d) {
 
 void __libc_init(void) {
 	/* tell kernel address of sigRetFunc */
-	if(setSigHandler(SIG_RET,(fSignal)&sigRetFunc) < 0)
-		error("Unable to tell kernel sigRet-address");
+	signal(SIG_RET,(fSignal)&sigRetFunc);
 }

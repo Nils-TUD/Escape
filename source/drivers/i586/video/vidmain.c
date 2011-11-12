@@ -73,12 +73,12 @@ int main(void) {
 		error("Unable to register device 'video'");
 
 	/* map video-memory for our process */
-	videoData = (uint8_t*)mapPhysical(VIDEO_MEM,mode->cols * (mode->rows + 1) * 2);
+	videoData = (uint8_t*)mapphys(VIDEO_MEM,mode->cols * (mode->rows + 1) * 2);
 	if(videoData == NULL)
 		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
 
 	/* reserve ports for cursor */
-	if(requestIOPorts(CURSOR_PORT_INDEX,2) < 0)
+	if(reqports(CURSOR_PORT_INDEX,2) < 0)
 		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
 	/* get video-mode and remember it */
@@ -87,7 +87,7 @@ int main(void) {
 
 	/* wait for messages */
 	while(1) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[VIDEO] Unable to get work");
 		else {
@@ -98,7 +98,7 @@ int main(void) {
 					size_t count = msg.args.arg2;
 					msg.args.arg1 = 0;
 					if(offset + count <= mode->rows * mode->cols * 2 && offset + count > offset) {
-						if(RETRY(receive(fd,&mid,videoData + offset,count)) >= 0)
+						if(IGNSIGS(receive(fd,&mid,videoData + offset,count)) >= 0)
 							msg.args.arg1 = count;
 					}
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
@@ -138,7 +138,7 @@ int main(void) {
 	}
 
 	/* clean up */
-	releaseIOPorts(CURSOR_PORT_INDEX,2);
+	relports(CURSOR_PORT_INDEX,2);
 	close(id);
 	return EXIT_SUCCESS;
 }
@@ -166,9 +166,9 @@ static void vid_setCursor(uint row,uint col) {
 	uint position = (row * mode->cols) + col;
 
    /* cursor LOW port to vga INDEX register */
-   outByte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCLOW);
-   outByte(CURSOR_PORT_DATA,(uint8_t)(position & 0xFF));
+   outbyte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCLOW);
+   outbyte(CURSOR_PORT_DATA,(uint8_t)(position & 0xFF));
    /* cursor HIGH port to vga INDEX register */
-   outByte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCHIGH);
-   outByte(CURSOR_PORT_DATA,(uint8_t)((position >> 8) & 0xFF));
+   outbyte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCHIGH);
+   outbyte(CURSOR_PORT_DATA,(uint8_t)((position >> 8) & 0xFF));
 }

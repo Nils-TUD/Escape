@@ -69,7 +69,7 @@ int createdev(const char *path,uint type,uint ops) A_CHECKRET;
  * @param fd the file-descriptor
  * @return the id or an error
  */
-inode_t getClientId(int fd);
+inode_t getclientid(int fd);
 
 /**
  * Opens a file for the client with given client-id.
@@ -78,7 +78,7 @@ inode_t getClientId(int fd);
  * @param cid the client-id
  * @return the file-descriptor or a negative error-code
  */
-int getClient(int fd,inode_t cid) A_CHECKRET;
+int getclient(int fd,inode_t cid) A_CHECKRET;
 
 /**
  * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided
@@ -95,7 +95,7 @@ int getClient(int fd,inode_t cid) A_CHECKRET;
  * @param flags the flags
  * @return the file-descriptor for the communication with the client
  */
-int getWork(int *fds,size_t fdCount,int *drv,msgid_t *mid,void *msg,size_t size,uint flags) A_CHECKRET;
+int getwork(int *fds,size_t fdCount,int *drv,msgid_t *mid,void *msg,size_t size,uint flags) A_CHECKRET;
 
 /**
  * A convenience method which handles the message MSG_DEV_READ for DEV_TYPE_FILE. It extracts

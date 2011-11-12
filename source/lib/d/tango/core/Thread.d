@@ -143,7 +143,7 @@ else version( Escape )
 {
     private
     {
-    	extern (C) int startThread(void *function(void *arg),void *arg);
+    	extern (C) int startthread(void *function(void *arg),void *arg);
     	extern (C) int sleep(uint ms);
     	extern (C) void yield();
 		extern (C) int gettid();
@@ -702,7 +702,7 @@ class Thread
 		        m_isRunning = true;
 		        scope( failure ) m_isRunning = false;
 
-		        if((m_addr = startThread(&thread_entryPoint,cast(void*)this)) < 0)
+		        if((m_addr = startthread(&thread_entryPoint,cast(void*)this)) < 0)
 		        	throw new ThreadException("Error creating thread");
 		    }
             else version( Posix )

@@ -28,12 +28,12 @@ static int threadEntry(A_UNUSED void *arg);
 
 int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	while(true) {
-		if(startThread(threadEntry,NULL) < 0) {
+		if(startthread(threadEntry,NULL) < 0) {
 			printe("Unable to start thread");
 			break;
 		}
 	}
-	sendSignalTo(getpid(),SIG_USR1);
+	kill(getpid(),SIG_USR1);
 	return EXIT_SUCCESS;
 }
 
@@ -42,7 +42,7 @@ static void sigUsr1(A_UNUSED int sig) {
 }
 
 static int threadEntry(A_UNUSED void *arg) {
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to set signal-handler");
 	wait(EV_NOEVENT,0);
 	return 0;

@@ -133,7 +133,7 @@ int main(void) {
 
 	reqc = 0;
 	while(1) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0 || reqc >= MAX_REQC) {
 			reqc = 0;
 			vesa_doUpdate();
@@ -247,7 +247,7 @@ int main(void) {
 
 	close(id);
 	free(cursorCopy);
-	destroySharedMem("vesa");
+	shmdel("vesa");
 	return EXIT_SUCCESS;
 }
 
@@ -279,7 +279,7 @@ static int vesa_setMode(void) {
 		minfo = vbe_getModeInfo(mode);
 		if(minfo) {
 			int res;
-			video = mapPhysical(minfo->physBasePtr,minfo->xResolution *
+			video = mapphys(minfo->physBasePtr,minfo->xResolution *
 					minfo->yResolution * (minfo->bitsPerPixel / 8));
 			printf("[VESA] Setting (%x) %4d x %4d x %2d\n",mode,
 					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
@@ -298,7 +298,7 @@ static int vesa_setMode(void) {
 static int vesa_init(void) {
 	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
 	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
-	shmem = createSharedMem("vesa",minfo->xResolution *
+	shmem = shmcrt("vesa",minfo->xResolution *
 			minfo->yResolution * (minfo->bitsPerPixel / 8));
 	if(shmem == NULL)
 		return -ENOMEM;

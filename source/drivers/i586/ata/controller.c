@@ -68,7 +68,7 @@ void ctrl_init(bool useDma) {
 
 	/* request io-ports for bus-mastering */
 	if(useDma && ideCtrl.bars[IDE_CTRL_BAR].addr) {
-		if(requestIOPorts(ideCtrl.bars[IDE_CTRL_BAR].addr,ideCtrl.bars[IDE_CTRL_BAR].size) < 0) {
+		if(reqports(ideCtrl.bars[IDE_CTRL_BAR].addr,ideCtrl.bars[IDE_CTRL_BAR].size) < 0) {
 			error("Unable to request ATA-ports %d .. %d",ideCtrl.bars[IDE_CTRL_BAR].addr,
 					ideCtrl.bars[IDE_CTRL_BAR].addr + ideCtrl.bars[IDE_CTRL_BAR].size - 1);
 		}
@@ -83,9 +83,9 @@ void ctrl_init(bool useDma) {
 		/* request ports */
 		/* for some reason virtualbox requires an additional port (9 instead of 8). Otherwise
 		 * we are not able to access port (ATA_REG_BASE_PRIMARY + 7). */
-		if(requestIOPorts(ctrls[i].portBase,9) < 0)
+		if(reqports(ctrls[i].portBase,9) < 0)
 			error("Unable to request ATA-ports %d .. %d",ctrls[i].portBase,ctrls[i].portBase + 8);
-		if(requestIOPort(ctrls[i].portBase + ATA_REG_CONTROL) < 0)
+		if(reqport(ctrls[i].portBase + ATA_REG_CONTROL) < 0)
 			error("Unable to request ATA-port %d",ctrls[i].portBase + ATA_REG_CONTROL);
 
 		/* check if the bus is empty */
@@ -96,7 +96,7 @@ void ctrl_init(bool useDma) {
 		}
 
 		/* set interrupt-handler */
-		if(setSigHandler(ctrls[i].irq,ctrl_intrptHandler) < 0)
+		if(signal(ctrls[i].irq,ctrl_intrptHandler) == SIG_ERR)
 			error("Unable to announce sig-handler ctrls %d (%d)",ctrls[i].id,ctrls[i].irq);
 
 		/* init DMA */
@@ -104,10 +104,10 @@ void ctrl_init(bool useDma) {
 		if(useDma && ctrls[i].bmrBase) {
 			ctrls[i].bmrBase += i * BMR_SEC_OFFSET;
 			/* allocate memory for PRDT and buffer */
-			ctrls[i].dma_prdt_virt = allocPhysical((uintptr_t*)&ctrls[i].dma_prdt_phys,8,4096);
+			ctrls[i].dma_prdt_virt = allocphys((uintptr_t*)&ctrls[i].dma_prdt_phys,8,4096);
 			if(!ctrls[i].dma_prdt_virt)
 				error("Unable to allocate PRDT for controller %d",ctrls[i].id);
-			ctrls[i].dma_buf_virt = allocPhysical((uintptr_t*)&ctrls[i].dma_buf_phys,
+			ctrls[i].dma_buf_virt = allocphys((uintptr_t*)&ctrls[i].dma_buf_phys,
 					DMA_BUF_SIZE,DMA_BUF_SIZE);
 			if(!ctrls[i].dma_buf_virt)
 				error("Unable to allocate dma-buffer for controller %d",ctrls[i].id);
@@ -134,35 +134,35 @@ sATAController *ctrl_getCtrl(uchar id) {
 }
 
 void ctrl_outbmrb(sATAController *ctrl,uint16_t reg,uint8_t value) {
-	outByte(ctrl->bmrBase + reg,value);
+	outbyte(ctrl->bmrBase + reg,value);
 }
 
 void ctrl_outbmrl(sATAController *ctrl,uint16_t reg,uint32_t value) {
-	outDWord(ctrl->bmrBase + reg,value);
+	outdword(ctrl->bmrBase + reg,value);
 }
 
 uint8_t ctrl_inbmrb(sATAController *ctrl,uint16_t reg) {
-	return inByte(ctrl->bmrBase + reg);
+	return inbyte(ctrl->bmrBase + reg);
 }
 
 void ctrl_outb(sATAController *ctrl,uint16_t reg,uint8_t value) {
-	outByte(ctrl->portBase + reg,value);
+	outbyte(ctrl->portBase + reg,value);
 }
 
 void ctrl_outwords(sATAController *ctrl,uint16_t reg,const uint16_t *buf,size_t count) {
 	size_t i;
 	for(i = 0; i < count; i++)
-		outWord(ctrl->portBase + reg,buf[i]);
+		outword(ctrl->portBase + reg,buf[i]);
 }
 
 uint8_t ctrl_inb(sATAController *ctrl,uint16_t reg) {
-	return inByte(ctrl->portBase + reg);
+	return inbyte(ctrl->portBase + reg);
 }
 
 void ctrl_inwords(sATAController *ctrl,uint16_t reg,uint16_t *buf,size_t count) {
 	size_t i;
 	for(i = 0; i < count; i++)
-		buf[i] = inWord(ctrl->portBase + reg);
+		buf[i] = inword(ctrl->portBase + reg);
 }
 
 void ctrl_softReset(sATAController *ctrl) {
@@ -227,28 +227,28 @@ static void ctrl_intrptHandler(int sig) {
 }
 
 void ctrl_wait(sATAController *ctrl) {
-	inByte(ctrl->portBase + ATA_REG_STATUS);
-	inByte(ctrl->portBase + ATA_REG_STATUS);
-	inByte(ctrl->portBase + ATA_REG_STATUS);
-	inByte(ctrl->portBase + ATA_REG_STATUS);
+	inbyte(ctrl->portBase + ATA_REG_STATUS);
+	inbyte(ctrl->portBase + ATA_REG_STATUS);
+	inbyte(ctrl->portBase + ATA_REG_STATUS);
+	inbyte(ctrl->portBase + ATA_REG_STATUS);
 }
 
 static bool ctrl_isBusResponding(sATAController* ctrl) {
 	ssize_t i;
 	for(i = 1; i >= 0; i--) {
 		/* begin with slave. master should respond if there is no slave */
-		outByte(ctrl->portBase + ATA_REG_DRIVE_SELECT,i << 4);
+		outbyte(ctrl->portBase + ATA_REG_DRIVE_SELECT,i << 4);
 		ctrl_wait(ctrl);
 
 		/* write some arbitrary values to some registers */
-		outByte(ctrl->portBase + ATA_REG_ADDRESS1,0xF1);
-		outByte(ctrl->portBase + ATA_REG_ADDRESS2,0xF2);
-		outByte(ctrl->portBase + ATA_REG_ADDRESS3,0xF3);
+		outbyte(ctrl->portBase + ATA_REG_ADDRESS1,0xF1);
+		outbyte(ctrl->portBase + ATA_REG_ADDRESS2,0xF2);
+		outbyte(ctrl->portBase + ATA_REG_ADDRESS3,0xF3);
 
 		/* if we can read them back, the bus is present */
-		if(inByte(ctrl->portBase + ATA_REG_ADDRESS1) == 0xF1 &&
-			inByte(ctrl->portBase + ATA_REG_ADDRESS2) == 0xF2 &&
-			inByte(ctrl->portBase + ATA_REG_ADDRESS3) == 0xF3)
+		if(inbyte(ctrl->portBase + ATA_REG_ADDRESS1) == 0xF1 &&
+			inbyte(ctrl->portBase + ATA_REG_ADDRESS2) == 0xF2 &&
+			inbyte(ctrl->portBase + ATA_REG_ADDRESS3) == 0xF3)
 			return true;
 	}
 	return false;

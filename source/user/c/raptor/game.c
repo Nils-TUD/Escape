@@ -42,12 +42,12 @@ static void game_fire(void);
 static void game_addAirplain(void);
 
 static uint score;
-static int timerFreq;
+static long timerFreq;
 static uchar pressed[KEYCODE_COUNT];
 static uint addPlainInt;
 
 bool game_init(void) {
-	timerFreq = getConf(CONF_TIMER_FREQ);
+	timerFreq = sysconf(CONF_TIMER_FREQ);
 	if(timerFreq < 0) {
 		fprintf(stderr,"Unable to get timer-frequency\n");
 		return false;

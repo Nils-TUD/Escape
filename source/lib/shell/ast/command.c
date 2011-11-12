@@ -106,7 +106,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 	if(!setSigHdl) {
 		setSigHdl = true;
-		if(setSigHandler(SIG_CHILD_TERM,ast_sigChildHndl) < 0)
+		if(signal(SIG_CHILD_TERM,ast_sigChildHndl) == SIG_ERR)
 			error("Unable to set child-termination sig-handler");
 	}
 
@@ -176,24 +176,24 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			int fdout = -1,fdin = -1,fderr = -1;
 			pid = 0;
 			if(redirFdesc->type == REDIR_OUT2ERR) {
-				fdout = dupFd(STDOUT_FILENO);
-				redirFd(STDOUT_FILENO,STDERR_FILENO);
+				fdout = dup(STDOUT_FILENO);
+				redirect(STDOUT_FILENO,STDERR_FILENO);
 			}
 			else if(pipeFds[1] >= 0) {
-				fdout = dupFd(STDOUT_FILENO);
-				redirFd(STDOUT_FILENO,pipeFds[1]);
+				fdout = dup(STDOUT_FILENO);
+				redirect(STDOUT_FILENO,pipeFds[1]);
 			}
 			if(prevPipe >= 0) {
-				fdin = dupFd(STDIN_FILENO);
-				redirFd(STDIN_FILENO,prevPipe);
+				fdin = dup(STDIN_FILENO);
+				redirect(STDIN_FILENO,prevPipe);
 			}
 			if(redirFdesc->type == REDIR_ERR2OUT) {
-				fderr = dupFd(STDERR_FILENO);
-				redirFd(STDERR_FILENO,STDOUT_FILENO);
+				fderr = dup(STDERR_FILENO);
+				redirect(STDERR_FILENO,STDOUT_FILENO);
 			}
 			else if(errFd >= 0) {
-				fderr = dupFd(STDERR_FILENO);
-				redirFd(STDERR_FILENO,errFd);
+				fderr = dup(STDERR_FILENO);
+				redirect(STDERR_FILENO,errFd);
 			}
 
 			/* execute it */
@@ -212,19 +212,19 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 			/* restore stdin & stdout & stderr */
 			if(fdout >= 0) {
-				redirFd(STDOUT_FILENO,fdout);
-				/* we have to close fdout here because redirFd() will not do it for us */
+				redirect(STDOUT_FILENO,fdout);
+				/* we have to close fdout here because redirect() will not do it for us */
 				close(fdout);
 				/* close write-end */
 				if(pipeFds[1] >= 0)
 					close(pipeFds[1]);
 			}
 			if(fdin >= 0) {
-				redirFd(STDIN_FILENO,fdin);
+				redirect(STDIN_FILENO,fdin);
 				close(fdin);
 			}
 			if(fderr >= 0) {
-				redirFd(STDERR_FILENO,fderr);
+				redirect(STDERR_FILENO,fderr);
 				close(fderr);
 				if(errFd >= 0)
 					close(errFd);
@@ -243,15 +243,15 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			if((pid = fork()) == 0) {
 				/* redirect fds */
 				if(redirFdesc->type == REDIR_OUT2ERR)
-					redirFd(STDOUT_FILENO,STDERR_FILENO);
+					redirect(STDOUT_FILENO,STDERR_FILENO);
 				else if(pipeFds[1] >= 0)
-					redirFd(STDOUT_FILENO,pipeFds[1]);
+					redirect(STDOUT_FILENO,pipeFds[1]);
 				if(prevPipe >= 0)
-					redirFd(STDIN_FILENO,prevPipe);
+					redirect(STDIN_FILENO,prevPipe);
 				if(redirFdesc->type == REDIR_ERR2OUT)
-					redirFd(STDERR_FILENO,STDOUT_FILENO);
+					redirect(STDERR_FILENO,STDOUT_FILENO);
 				else if(errFd >= 0)
-					redirFd(STDERR_FILENO,errFd);
+					redirect(STDERR_FILENO,errFd);
 				/* close our read-end */
 				if(pipeFds[0] >= 0)
 					close(pipeFds[0]);
@@ -410,7 +410,7 @@ static void ast_termProcsOfCmd(void) {
 	p = run_getXProcOf(curCmd,i);
 	while(p != NULL) {
 		/* send SIG_INTRPT */
-		if(sendSignalTo(p->pid,SIG_INTRPT) < 0)
+		if(kill(p->pid,SIG_INTRPT) < 0)
 			printe("Unable to send SIG_INTRPT to process %d",p->pid);
 		run_remProc(p->pid);
 		/* to next */
@@ -422,7 +422,7 @@ static void ast_termProcsOfCmd(void) {
 static void ast_sigChildHndl(A_UNUSED int sig) {
 	sRunningProc *p;
 	sExitState state;
-	int res = waitChild(&state);
+	int res = waitchild(&state);
 	if(res < 0) {
 		printe("Unable to wait for child");
 		return;

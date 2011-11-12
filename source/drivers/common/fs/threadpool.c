@@ -44,7 +44,7 @@ void tpool_init(void) {
 	size_t i;
 	acceptTid = gettid();
 	for(i = 0; i < REQ_THREAD_COUNT; i++) {
-		int tid = startThread((fThreadEntry)tpool_idle,threads + i);
+		int tid = startthread((fThreadEntry)tpool_idle,threads + i);
 		if(tid < 0)
 			error("[FS] Unable to start request-thread %d\n",i);
 		threads[i].id = i + 1;
@@ -94,7 +94,7 @@ bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,
 			}
 		}
 		/* wait until there is a free slot */
-		waitUnlock(EV_USER2,0,STATE_LOCK);
+		waitunlock(EV_USER2,0,STATE_LOCK);
 	}
 	/* unreachable */
 	return false;
@@ -120,9 +120,9 @@ static int tpool_idle(sReqThread *t) {
 		tpool_lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
 		t->state = RT_STATE_IDLE;
 		notify(acceptTid,EV_USER2);
-		/* we have to use waitUnlock here to ensure that we don't miss the notify from the
+		/* we have to use waitunlock here to ensure that we don't miss the notify from the
 		 * accept thread */
-		waitUnlock(EV_USER1,0,STATE_LOCK);
+		waitunlock(EV_USER1,0,STATE_LOCK);
 	}
 	return 0;
 }

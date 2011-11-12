@@ -103,7 +103,7 @@ int main(void) {
 	msgid_t mid;
 
 	/* request io-ports */
-	if(requestIOPort(IOPORT_KB_CTRL) < 0 || requestIOPort(IOPORT_KB_DATA) < 0)
+	if(reqport(IOPORT_KB_CTRL) < 0 || reqport(IOPORT_KB_DATA) < 0)
 		error("Unable to request io-ports");
 
 	kb_init();
@@ -114,7 +114,7 @@ int main(void) {
 		error("Unable to create ring-buffers");
 
 	/* reg intrpt-handler */
-	if(setSigHandler(SIG_INTRPT_MOUSE,irqHandler) < 0)
+	if(signal(SIG_INTRPT_MOUSE,irqHandler) == SIG_ERR)
 		error("Unable to announce interrupt-handler");
 
 	/* reg device */
@@ -145,7 +145,7 @@ int main(void) {
 				fcntl(sid,F_SETDATA,true);
 		}
 
-		fd = getWork(&sid,1,NULL,&mid,&msg,sizeof(msg),0);
+		fd = getwork(&sid,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[MOUSE] Unable to get work");
@@ -179,8 +179,8 @@ int main(void) {
 
 	/* cleanup */
 	rb_destroy(rbuf);
-	releaseIOPort(IOPORT_KB_CTRL);
-	releaseIOPort(IOPORT_KB_DATA);
+	relport(IOPORT_KB_CTRL);
+	relport(IOPORT_KB_DATA);
 	close(sid);
 	return EXIT_SUCCESS;
 }
@@ -190,29 +190,29 @@ static void irqHandler(A_UNUSED int sig) {
 	sMousePacket *pack;
 
 	/* check if there is mouse-data */
-	status = inByte(IOPORT_KB_CTRL);
+	status = inbyte(IOPORT_KB_CTRL);
 	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
 		return;
 
 	pack = packBuf + packWritePos;
 	switch(byteNo) {
 		case 0:
-			pack->status.all = inByte(IOPORT_KB_DATA);
+			pack->status.all = inbyte(IOPORT_KB_DATA);
 			byteNo++;
 			break;
 		case 1:
-			pack->xcoord = inByte(IOPORT_KB_DATA);
+			pack->xcoord = inbyte(IOPORT_KB_DATA);
 			byteNo++;
 			break;
 		case 2:
-			pack->ycoord = inByte(IOPORT_KB_DATA);
+			pack->ycoord = inbyte(IOPORT_KB_DATA);
 			if(wheel)
 				byteNo++;
 			else
 				byteNo = 0;
 			break;
 		case 3:
-			pack->zcoord = inByte(IOPORT_KB_DATA);
+			pack->zcoord = inbyte(IOPORT_KB_DATA);
 			byteNo = 0;
 			break;
 	}
@@ -223,23 +223,23 @@ static void irqHandler(A_UNUSED int sig) {
 static void kb_init(void) {
 	uint8_t id,cmdByte;
 	/* activate mouse */
-	outByte(IOPORT_KB_CTRL,KBC_CMD_ENABLE_MOUSE);
+	outbyte(IOPORT_KB_CTRL,KBC_CMD_ENABLE_MOUSE);
 	kb_checkCmd();
 
 	/* put mouse in streaming mode */
 	kb_writeMouse(MOUSE_CMD_STREAMING);
 
 	/* read cmd byte */
-	outByte(IOPORT_KB_CTRL,KBC_CMD_READ_STATUS);
+	outbyte(IOPORT_KB_CTRL,KBC_CMD_READ_STATUS);
 	kb_checkCmd();
 	cmdByte = kb_read();
-	outByte(IOPORT_KB_CTRL,KBC_CMD_SET_STATUS);
+	outbyte(IOPORT_KB_CTRL,KBC_CMD_SET_STATUS);
 	kb_checkCmd();
 	/* somehow cmdByte is 0 in vbox and qemu. we have to enable TRANSPSAUX in this case.
 	 * otherwise we get strange scancodes in the keyboard-driver */
 	cmdByte |= KBC_CMDBYTE_TRANSPSAUX | KBC_CMDBYTE_ENABLE_IRQ12 | KBC_CMDBYTE_ENABLE_IRQ1;
 	cmdByte &= ~KBC_CMDBYTE_DISABLE_KB;
-	outByte(IOPORT_KB_DATA,cmdByte);
+	outbyte(IOPORT_KB_DATA,cmdByte);
 	kb_checkCmd();
 
 	/* enable mouse-wheel by setting sample-rate to 200, 100 and 80 and reading the device-id */
@@ -256,22 +256,22 @@ static void kb_init(void) {
 }
 
 static void kb_checkCmd(void) {
-	while(inByte(IOPORT_KB_CTRL) & KBC_STATUS_BUSY);
+	while(inbyte(IOPORT_KB_CTRL) & KBC_STATUS_BUSY);
 }
 
 static uint16_t kb_read(void) {
 	uint16_t c = 0;
 	uint8_t status;
-	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_DATA_AVAIL));
+	while(c++ < 0xFFFF && !((status = inbyte(IOPORT_KB_CTRL)) & KBC_STATUS_DATA_AVAIL));
 	if(!(status & KBC_STATUS_DATA_AVAIL))
 		return 0xFF00;
-	return inByte(IOPORT_KB_DATA);
+	return inbyte(IOPORT_KB_DATA);
 }
 
 static uint8_t kb_writeMouse(uint8_t cmd) {
-	outByte(IOPORT_KB_CTRL,KBC_CMD_NEXT2MOUSE);
+	outbyte(IOPORT_KB_CTRL,KBC_CMD_NEXT2MOUSE);
 	kb_checkCmd();
-	outByte(IOPORT_KB_DATA,cmd);
+	outbyte(IOPORT_KB_DATA,cmd);
 	kb_checkCmd();
 	return kb_read();
 }

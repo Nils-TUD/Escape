@@ -91,7 +91,7 @@ int mod_speed(int argc,char *argv[]) {
 	t = time(NULL);
 	start = cpu_rdtsc();
 	for(i = 0; i < count; i++) {
-		if(RETRY(read(fd,buffer,bufSize)) < 0) {
+		if(IGNSIGS(read(fd,buffer,bufSize)) < 0) {
 			printe("read");
 			break;
 		}

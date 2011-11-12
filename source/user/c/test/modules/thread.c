@@ -47,7 +47,7 @@ int mod_thread(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	int threads[THREAD_COUNT];
 	size_t i;
 	for(i = 0; i < THREAD_COUNT; i++)
-		assert((threads[i] = startThread(myThread,NULL)) >= 0);
+		assert((threads[i] = startthread(myThread,NULL)) >= 0);
 	sleep(100);
 	for(i = 0; i < THREAD_COUNT / 2; i++)
 		assert(suspend(threads[i]) == 0);
@@ -56,6 +56,6 @@ int mod_thread(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		assert(resume(threads[i]) == 0);
 	for(i = 0; i < THREAD_COUNT; i++)
 		join(threads[i]);
-	assert(getThreadCount() == 1);
+	assert(getthreadcnt() == 1);
 	return EXIT_SUCCESS;
 }

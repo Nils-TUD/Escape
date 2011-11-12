@@ -68,7 +68,7 @@ int main(int argc,char **argv) {
 		error("Unable to open '%s' for STDOUT: Got fd %d",drvPath,fd);
 
 	/* dup stdout to stderr */
-	if((fd = dupFd(fd)) != STDERR_FILENO)
+	if((fd = dup(fd)) != STDERR_FILENO)
 		error("Unable to duplicate STDOUT to STDERR: Got fd %d",fd);
 
 	printf("\n\n");
@@ -128,7 +128,7 @@ int main(int argc,char **argv) {
 		error("Unable to set groups");
 
 	/* cd to home-dir */
-	if(is_dir(u->home))
+	if(isdir(u->home))
 		setenv("CWD",u->home);
 	else
 		setenv("CWD","/");

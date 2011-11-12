@@ -67,7 +67,7 @@
 #define SEEK_CUR					1
 #define SEEK_END					2
 
-/* getWork-flags */
+/* getwork-flags */
 #define GW_NOBLOCK					1
 
 /* GFT flags */
@@ -435,7 +435,7 @@ file_t vfs_createdev(pid_t pid,char *path,uint type,uint ops);
  * First, the function checks whether we can wait, i.e. if the event to wait for has already
  * arrived. If not, we wait until one of the events arrived.
  * If <pid> != KERNEL_PID, it calls lock_release(pid,ident) before going to sleep (this is used
- * for waitUnlock).
+ * for waitunlock).
  *
  * @param objects the array of wait-objects (will be changed; files -> nodes)
  * @param objCount the number of wait-objects

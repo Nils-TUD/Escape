@@ -96,7 +96,7 @@ static void usage(const char *name) {
 
 int main(int argc,char **argv) {
 	string ssort("pid");
-	pageSize = getConf(CONF_PAGE_SIZE);
+	pageSize = sysconf(CONF_PAGE_SIZE);
 	bool own = false;
 
 	// parse args

@@ -40,7 +40,7 @@ int main(void) {
 	msgid_t mid;
 	int id;
 
-	if(startThread(refreshThread,NULL) < 0)
+	if(startthread(refreshThread,NULL) < 0)
 		error("Unable to start RTC-thread");
 
 	id = createdev("/dev/rtc",DEV_TYPE_BLOCK,DEV_READ);
@@ -49,7 +49,7 @@ int main(void) {
 
 	/* wait for commands */
 	while(1) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[RTC] Unable to get work");
 		else {

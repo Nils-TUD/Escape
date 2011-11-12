@@ -76,12 +76,12 @@ static void pipeReadChild(void) {
 	else if(child > 0) {
 		/* parent */
 		close(fd[1]);
-		while((c = RETRY(read(fd[0],buf,9))) > 0) {
+		while((c = IGNSIGS(read(fd[0],buf,9))) > 0) {
 			buf[c] = '\0';
 			printf("Read '%s'\n",buf);
 		}
 		close(fd[0]);
-		waitChild(NULL);
+		waitchild(NULL);
 	}
 	else
 		error("fork() failed");
@@ -99,7 +99,7 @@ static void pipeReadParent(void) {
 	if(child == 0) {
 		/* child */
 		close(fd[1]);
-		while((c = RETRY(read(fd[0],buf,9))) > 0) {
+		while((c = IGNSIGS(read(fd[0],buf,9))) > 0) {
 			buf[c] = '\0';
 			printf("Read '%s'\n",buf);
 		}
@@ -116,7 +116,7 @@ static void pipeReadParent(void) {
 			sleep(10);
 		}
 		close(fd[1]);
-		waitChild(NULL);
+		waitchild(NULL);
 	}
 	else
 		error("fork() failed");
@@ -134,7 +134,7 @@ static void pipeChild2Child(void) {
 		const char *args[] = {"/bin/ls",NULL};
 		/* child */
 		close(fd[0]);
-		redirFd(STDOUT_FILENO,fd[1]);
+		redirect(STDOUT_FILENO,fd[1]);
 		exec(args[0],args);
 		error("exec failed");
 	}
@@ -145,7 +145,7 @@ static void pipeChild2Child(void) {
 			const char *args[] = {"/bin/wc",NULL};
 			/* child */
 			close(fd[1]);
-			redirFd(STDIN_FILENO,fd[0]);
+			redirect(STDIN_FILENO,fd[0]);
 			exec(args[0],args);
 			error("exec failed");
 		}
@@ -153,8 +153,8 @@ static void pipeChild2Child(void) {
 			/* parent */
 			close(fd[0]);
 			close(fd[1]);
-			waitChild(NULL);
-			waitChild(NULL);
+			waitchild(NULL);
+			waitchild(NULL);
 		}
 		else
 			error("inner fork() failed");
@@ -175,7 +175,7 @@ static void pipeThrough(void) {
 		const char *args[] = {"/bin/ls",NULL};
 		/* child */
 		close(fd[0]);
-		redirFd(STDOUT_FILENO,fd[1]);
+		redirect(STDOUT_FILENO,fd[1]);
 		exec(args[0],args);
 		error("exec failed");
 	}
@@ -190,8 +190,8 @@ static void pipeThrough(void) {
 			/* child */
 			const char *args[] = {"/bin/wc",NULL};
 			close(fd[2]);
-			redirFd(STDOUT_FILENO,fd[3]);
-			redirFd(STDIN_FILENO,fd[0]);
+			redirect(STDOUT_FILENO,fd[3]);
+			redirect(STDIN_FILENO,fd[0]);
 			exec(args[0],args);
 			error("exec failed");
 		}
@@ -201,13 +201,13 @@ static void pipeThrough(void) {
 			char buf[10];
 			close(fd[0]);
 			close(fd[3]);
-			while((c = RETRY(read(fd[2],buf,9))) > 0) {
+			while((c = IGNSIGS(read(fd[2],buf,9))) > 0) {
 				buf[c] = '\0';
 				printf("Read '%s'\n",buf);
 			}
 			close(fd[2]);
-			waitChild(NULL);
-			waitChild(NULL);
+			waitchild(NULL);
+			waitchild(NULL);
 		}
 		else
 			error("inner fork() failed");

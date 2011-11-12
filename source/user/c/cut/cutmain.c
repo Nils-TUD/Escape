@@ -67,7 +67,7 @@ int main(int argc,const char **argv) {
 	else {
 		FILE *f;
 		while(*args) {
-			if(is_dir(*args)) {
+			if(isdir(*args)) {
 				printe("'%s' is a directory!",*args);
 				continue;
 			}

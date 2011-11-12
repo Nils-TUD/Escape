@@ -363,7 +363,7 @@ static bool loadNewSpace(size_t size) {
 
 	/* determine page-size, if not already done */
 	if(pageSize == 0)
-		pageSize = getConf(CONF_PAGE_SIZE);
+		pageSize = sysconf(CONF_PAGE_SIZE);
 
 	/* no free areas? */
 	if(freeList == NULL) {
@@ -377,7 +377,7 @@ static bool loadNewSpace(size_t size) {
 
 	/* allocate the required pages */
 	count = (size + pageSize - 1) / pageSize;
-	oldEnd = changeSize(count);
+	oldEnd = chgsize(count);
 	if(oldEnd == NULL)
 		return false;
 
@@ -399,10 +399,10 @@ static bool loadNewAreas(void) {
 
 	/* determine page-size, if not already done */
 	if(pageSize == 0)
-		pageSize = getConf(CONF_PAGE_SIZE);
+		pageSize = sysconf(CONF_PAGE_SIZE);
 
 	/* allocate one page for area-structs */
-	oldEnd = changeSize(1);
+	oldEnd = chgsize(1);
 	if(oldEnd == NULL)
 		return false;
 

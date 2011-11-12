@@ -33,7 +33,7 @@ __thread int t3 = 12345;
 
 int mod_tls(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
-	if(startThread(otherThread,NULL) < 0)
+	if(startthread(otherThread,NULL) < 0)
 		error("Unable to start thread");
 	for(i = 0; i < 4; i++) {
 		t1++;

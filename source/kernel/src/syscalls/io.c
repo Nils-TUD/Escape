@@ -339,7 +339,7 @@ int sysc_receive(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_dupFd(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_dup(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	int res;
 
@@ -349,7 +349,7 @@ int sysc_dupFd(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_redirFd(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_redirect(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	int src = (int)SYSC_ARG1(stack);
 	int dst = (int)SYSC_ARG2(stack);
 	int err = fd_redirect(src,dst);

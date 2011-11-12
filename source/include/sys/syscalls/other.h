@@ -24,9 +24,9 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_loadMods(sThread *t,sIntrptStackFrame *stack);
+int sysc_loadmods(sThread *t,sIntrptStackFrame *stack);
 int sysc_debugc(sThread *t,sIntrptStackFrame *stack);
 int sysc_debug(sThread *t,sIntrptStackFrame *stack);
-int sysc_getConf(sThread *t,sIntrptStackFrame *stack);
+int sysc_sysconf(sThread *t,sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_OTHER_H_ */

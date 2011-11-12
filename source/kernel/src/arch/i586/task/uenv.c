@@ -29,12 +29,12 @@
 #include <errno.h>
 #include <assert.h>
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler);
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,fSignal handler);
 static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint);
 static uint32_t *uenv_addArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 
 void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
-	sig_t sig;
+	int sig;
 	fSignal handler;
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
 	if(res == SIG_CHECK_CUR)
@@ -43,7 +43,7 @@ void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
 		thread_switch();
 }
 
-int uenv_finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED sig_t signal) {
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED int signal) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	if(!paging_isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
 		proc_segFault();
@@ -178,7 +178,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return uenv_addArgs(t,esp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler) {
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	/* the ret-instruction of sigRet() should go to the old eip */
 	*--esp = stack->eip;

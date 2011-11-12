@@ -12,7 +12,7 @@ define('CALLERNAME',4);
 $allocs = array();
 $matches = array();
 $content = implode('',file($argv[1]));
-preg_match_all('/\[(A|F)\] ([\da-f]+) (\d+) ([A-Fa-f0-9 ]+)/s',$content,$matches);
+preg_match_all('/\[(A|F)\] ([\da-f]+) (\d+) ([A-Za-z0-9_ ]+)/s',$content,$matches);
 
 foreach($matches[0] as $k => $v) {
 	$addr = $matches[ADDRESS][$k];
@@ -29,8 +29,8 @@ foreach($matches[0] as $k => $v) {
 		$allocs[$addr][0]--;
 }
 
-/*foreach($allocs as $addr => $open) {
+foreach($allocs as $addr => $open) {
 	if($open[0] != 0)
 		echo $addr.' => '.$open[0].' (size='.$open[1].', caller='.strtolower($open[2]).')'."\n";
-}*/
+}
 ?>

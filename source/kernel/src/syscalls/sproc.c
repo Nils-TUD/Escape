@@ -151,7 +151,7 @@ int sysc_fork(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_waitChild(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_waitchild(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
 	int res;
 	if(state != NULL && !paging_isInUserSpace((uintptr_t)state,sizeof(sExitState)))

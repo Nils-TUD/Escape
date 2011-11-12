@@ -39,7 +39,7 @@ time_t timestamp(void) {
 		if(seek(timeFd,0,SEEK_SET) < 0)
 			return 0;
 	}
-	if(RETRY(read(timeFd,&t,sizeof(struct tm))) < 0)
+	if(IGNSIGS(read(timeFd,&t,sizeof(struct tm))) < 0)
 		return 0;
 	return mktime(&t);
 }

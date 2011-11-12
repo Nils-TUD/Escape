@@ -27,10 +27,10 @@ LineContainer::size_type LineContainer::pageSize = 0;
 bool LineContainer::Region::append(size_type size,const char *line) {
 	// extend region?
 	if((_lines + 1) * size >= _pages * pageSize) {
-		uintptr_t oldEnd = (uintptr_t)changeSize(0);
+		uintptr_t oldEnd = (uintptr_t)chgsize(0);
 		if(oldEnd != _begin + _pages * pageSize)
 			return false;
-		if(!changeSize(1))
+		if(!chgsize(1))
 			throw bad_alloc();
 		_pages++;
 	}
@@ -68,7 +68,7 @@ const char *LineContainer::get(size_type index) {
 void LineContainer::append(const char *line) {
 	Region &r = _regions[_regions.size() - 1];
 	if(!r.append(_lineLen,line)) {
-		// appending failed, so probably the heap has used changeSize to get more pages.
+		// appending failed, so probably the heap has used chgsize to get more pages.
 		// thus, we have to add a new region
 		Region nr;
 		nr.append(_lineLen,line);

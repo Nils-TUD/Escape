@@ -45,8 +45,8 @@ int mod_forkbomb(int argc,char *argv[]) {
 			fflush(stdout);
 			while(i >= 0) {
 				if(pids[i] > 0) {
-					sendSignalTo(pids[i],SIG_KILL);
-					waitChild(NULL);
+					kill(pids[i],SIG_KILL);
+					waitchild(NULL);
 				}
 				i--;
 			}

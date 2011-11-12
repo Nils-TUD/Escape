@@ -34,7 +34,7 @@ int keymap_set(const char *map) {
 		close(fd);
 		return res;
 	}
-	res = RETRY(receive(fd,NULL,&msg,sizeof(msg)));
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
 	close(fd);
 	if(res < 0)
 		return res;

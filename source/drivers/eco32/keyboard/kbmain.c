@@ -61,7 +61,7 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	kbRegs = (uint32_t*)mapPhysical(KEYBOARD_BASE,2 * sizeof(uint32_t));
+	kbRegs = (uint32_t*)mapphys(KEYBOARD_BASE,2 * sizeof(uint32_t));
 	if(kbRegs == NULL)
 		error("Unable to map keyboard registers");
 
@@ -71,7 +71,7 @@ int main(void) {
 		error("Unable to create the ring-buffer");
 
 	/* we want to get notified about keyboard interrupts */
-	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
+	if(signal(SIG_INTRPT_KB,kbIntrptHandler) == SIG_ERR)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 
 	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DEV_READ);
@@ -103,7 +103,7 @@ int main(void) {
 				fcntl(id,F_SETDATA,true);
 		}
 
-		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[KB] Unable to get work");

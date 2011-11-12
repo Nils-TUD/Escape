@@ -46,8 +46,8 @@ int mod_pingpong(int argc,char *argv[]) {
 		server();
 	else {
 		client();
-		sendSignalTo(pid,SIG_TERM);
-		waitChild(NULL);
+		kill(pid,SIG_TERM);
+		waitchild(NULL);
 	}
 	return 0;
 }
@@ -82,7 +82,7 @@ static void server(void) {
 	int fd,dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
 	if(dev < 0)
 		error("Unable to create device");
-	fd = getWork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
+	fd = getwork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
 	while(1) {
 		if(send(fd,0,&msg,sizeof(msg)) < 0)
 			printe("Message-sending failed");
@@ -93,7 +93,7 @@ static void server(void) {
 
 	/*while(msg < messageCount) {
 		msgid_t mid;
-		int fd = getWork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			fprintf(stderr,"Unable to get work\n");
 		else {

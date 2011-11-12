@@ -86,7 +86,7 @@ static uchar *buffer = NULL;
 static uchar *backup = NULL;
 
 bool displ_init(void) {
-	int vidMode = getConf(CONF_BOOT_VIDEOMODE);
+	long vidMode = sysconf(CONF_BOOT_VIDEOMODE);
 	if(vidMode == CONF_VIDMODE_VGATEXT)
 		video = open(VIDEO_DEVICE,IO_WRITE | IO_MSGS);
 	else

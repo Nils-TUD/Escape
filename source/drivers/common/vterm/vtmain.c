@@ -69,7 +69,7 @@ int main(void) {
 
 	/* start threads to handle them */
 	for(i = 0; i < VTERM_COUNT; i++) {
-		if(startThread(vtermThread,vt_get(i)) < 0)
+		if(startthread(vtermThread,vt_get(i)) < 0)
 			error("Unable to start thread for vterm %d",i);
 	}
 	kmMngThread();
@@ -87,7 +87,7 @@ static int vtermThread(void *vterm) {
 	sMsg msg;
 	msgid_t mid;
 	while(1) {
-		int fd = getWork(&vt->sid,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&vt->sid,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[VTERM] Unable to get work");
 		else {
@@ -114,7 +114,7 @@ static int vtermThread(void *vterm) {
 					data = (char*)malloc(c + 1);
 					msg.args.arg1 = 0;
 					if(data) {
-						if(RETRY(receive(fd,&mid,data,c + 1)) >= 0) {
+						if(IGNSIGS(receive(fd,&mid,data,c + 1)) >= 0) {
 							data[c] = '\0';
 							vtout_puts(vt,data,c,true);
 							if(cfg.enabled)
@@ -156,7 +156,7 @@ static int vtermThread(void *vterm) {
 						vt_enable();
 					/* wakeup thread to start reading from keyboard again */
 					if(mid == MSG_VT_ENABLE || mid == MSG_VT_EN_RDKB)
-						sendSignalTo(getpid(),SIG_USR1);
+						kill(getpid(),SIG_USR1);
 					vt_update(vt);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
@@ -181,7 +181,7 @@ static void kmMngThread(void) {
 	sKmData kmData[KB_DATA_BUF_SIZE];
 	int kbFd;
 
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce SIG_USR1-handler");
 
 	kbFd = open("/dev/kmmanager",IO_READ);

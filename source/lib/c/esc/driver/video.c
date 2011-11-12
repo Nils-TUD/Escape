@@ -34,7 +34,7 @@ int video_getSize(int fd,sVTSize *size) {
 	int res = send(fd,MSG_VID_GETSIZE,NULL,0);
 	if(res < 0)
 		return res;
-	res = RETRY(receive(fd,NULL,&msg,sizeof(msg)));
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
 	if(msg.arg1 != sizeof(sVTSize))
@@ -48,7 +48,7 @@ int video_setMode(int fd) {
 	int res = send(fd,MSG_VID_SETMODE,NULL,0);
 	if(res < 0)
 		return res;
-	res = RETRY(receive(fd,NULL,&msg,sizeof(msg)));
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
 	return msg.arg1;

@@ -19,53 +19,53 @@
 
 .section .text
 
-.global inByte
-.global inWord
-.global inDWord
-.global outByte
-.global outWord
-.global outDWord
+.global inbyte
+.global inword
+.global indword
+.global outbyte
+.global outword
+.global outdword
 
-# uint8_t inByte(uint16_t port)
-.type inByte, @function
-inByte:
+# uint8_t inbyte(uint16_t port)
+.type inbyte, @function
+inbyte:
 	mov		4(%esp),%dx							# load port
 	in		%dx,%al								# read from port
 	ret
 
-# uint16_t inWord(uint16_t port)
-.type inWord, @function
-inWord:
+# uint16_t inword(uint16_t port)
+.type inword, @function
+inword:
 	mov		4(%esp),%dx							# load port
 	in		%dx,%ax								# read from port
 	ret
 
-# uint32_t inDWord(uint16_t port)
-.type inDWord, @function
-inDWord:
+# uint32_t indword(uint16_t port)
+.type indword, @function
+indword:
 	mov		4(%esp),%dx							# load port
 	in		%dx,%eax							# read from port
 	ret
 
-# void outByte(uint16_t port,uint8_t val)
-.type outByte, @function
-outByte:
+# void outbyte(uint16_t port,uint8_t val)
+.type outbyte, @function
+outbyte:
 	mov		4(%esp),%dx							# load port
 	mov		8(%esp),%al							# load value
 	out		%al,%dx								# write to port
 	ret
 
-# void outWord(uint16_t port,uint16_t val)
-.type outWord, @function
-outWord:
+# void outword(uint16_t port,uint16_t val)
+.type outword, @function
+outword:
 	mov		4(%esp),%dx							# load port
 	mov		8(%esp),%ax							# load value
 	out		%ax,%dx								# write to port
 	ret
 
-# void outDWord(uint16_t port,uint32_t val)
-.type outDWord, @function
-outDWord:
+# void outdword(uint16_t port,uint32_t val)
+.type outdword, @function
+outdword:
 	mov		4(%esp),%dx							# load port
 	mov		8(%esp),%eax						# load value
 	out		%eax,%dx							# write to port

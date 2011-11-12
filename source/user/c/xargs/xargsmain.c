@@ -100,7 +100,7 @@ int main(int argc,const char *argv[]) {
 		error("Not enough mem");
 	i = 0;
 	if(ca_getFreeCount() == 0)
-		args[i++] = "/bin/echo";
+		args[i++] = "echo";
 	else {
 		for(i = 0; i < freeArgs; i++)
 			args[i] = ca_getFree()[i];
@@ -111,7 +111,7 @@ int main(int argc,const char *argv[]) {
 	}
 	args[i] = NULL;
 	/* exchange us with requested command */
-	exec(args[0],args);
+	execp(args[0],args);
 	return EXIT_SUCCESS;
 }
 

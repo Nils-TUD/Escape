@@ -65,7 +65,7 @@ void GUITerm::run() {
 	sMsg msg;
 	msgid_t mid;
 	while(_run) {
-		int fd = getWork(&_sid,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getwork(&_sid,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
 			if(fd != -ENOCLIENT)
 				printe("[GUISH] Unable to get client");
@@ -133,7 +133,7 @@ void GUITerm::write(int fd,sMsg *msg) {
 	char *data = (char*)malloc(c + 1);
 	msg->args.arg1 = 0;
 	if(data) {
-		if(RETRY(receive(fd,&mid,data,c + 1)) >= 0) {
+		if(IGNSIGS(receive(fd,&mid,data,c + 1)) >= 0) {
 			char *dataWork = data;
 			msg->args.arg1 = c;
 			dataWork[c] = '\0';

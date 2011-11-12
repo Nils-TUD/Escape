@@ -25,6 +25,6 @@ extern (C)
 	extern int mkdir(char *path);
 	extern int rmdir(char *path);
 	extern int pipe(int *readFd,int *writeFd);
-	extern int dupFd(int fd);
-	extern int redirFd(int src,int dst);
+	extern int dup(int fd);
+	extern int redirect(int src,int dst);
 }

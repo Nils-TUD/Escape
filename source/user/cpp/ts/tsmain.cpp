@@ -99,7 +99,7 @@ static void usage(const char *name) {
 
 int main(int argc,char **argv) {
 	string ssort("tid");
-	pageSize = getConf(CONF_PAGE_SIZE);
+	pageSize = sysconf(CONF_PAGE_SIZE);
 
 	// parse args
 	cmdargs args(argc,argv,cmdargs::NO_FREE);

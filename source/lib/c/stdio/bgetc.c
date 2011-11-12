@@ -39,7 +39,7 @@ int bgetc(FILE *f) {
 				fflush(stdout);
 		}
 		if(buf->pos >= buf->max) {
-			ssize_t count = RETRY(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
+			ssize_t count = IGNSIGS(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
 			if(count < 0) {
 				f->error = (int)count;
 				return EOF;

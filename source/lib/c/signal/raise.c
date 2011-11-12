@@ -22,5 +22,5 @@
 #include <signal.h>
 
 int raise(int sig) {
-	return sendSignalTo(getpid(),sig);
+	return kill(getpid(),sig);
 }

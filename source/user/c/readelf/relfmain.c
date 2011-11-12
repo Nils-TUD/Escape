@@ -500,6 +500,6 @@ static void printRelocTable(sElfRel *rel,size_t relCount) {
 static void readat(off_t offset,void *buffer,size_t count) {
 	if(seek(fd,offset,SEEK_SET) < 0)
 		error("Unable to seek to %x",offset);
-	if(RETRY(read(fd,buffer,count)) != (ssize_t)count)
+	if(IGNSIGS(read(fd,buffer,count)) != (ssize_t)count)
 		error("Unable to read %d bytes @ %x",count,offset);
 }

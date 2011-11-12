@@ -52,13 +52,13 @@ int main(void) {
 		error("Unable to register device 'video'");
 
 	/* map video-memory for our process */
-	videoData = (uint64_t*)mapPhysical(VIDEO_MEM,MAX_COLS * ROWS * 8);
+	videoData = (uint64_t*)mapphys(VIDEO_MEM,MAX_COLS * ROWS * 8);
 	if(videoData == NULL)
 		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
 
 	/* wait for messages */
 	while(1) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[VIDEO] Unable to get work");
 		else {
@@ -69,7 +69,7 @@ int main(void) {
 					size_t count = msg.args.arg2;
 					msg.args.arg1 = 0;
 					if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
-						if(RETRY(receive(fd,&mid,buffer + offset,count)) >= 0) {
+						if(IGNSIGS(receive(fd,&mid,buffer + offset,count)) >= 0) {
 							copy(offset,count);
 							msg.args.arg1 = count;
 						}

@@ -48,14 +48,14 @@ namespace gui {
 		if(_vesaFd < 0)
 			throw app_error("Unable to open vesa");
 
-		_vesaMem = joinSharedMem("vesa");
+		_vesaMem = shmjoin("vesa");
 		if(_vesaMem == NULL)
 			throw app_error("Unable to open shared memory");
 
 		// request screen infos from vesa
 		if(send(_vesaFd,MSG_VESA_GETMODE,&_msg,sizeof(_msg.args)) < 0)
 			throw app_error("Unable to send get-mode-request to vesa");
-		if(RETRY(receive(_vesaFd,&mid,&_msg,sizeof(_msg))) < 0 || mid != MSG_VESA_GETMODE_RESP ||
+		if(IGNSIGS(receive(_vesaFd,&mid,&_msg,sizeof(_msg))) < 0 || mid != MSG_VESA_GETMODE_RESP ||
 				_msg.data.arg1 != 0) {
 			throw app_error("Unable to read the get-mode-response from vesa");
 		}
@@ -153,7 +153,7 @@ namespace gui {
 	int Application::run() {
 		msgid_t mid;
 		while(_run) {
-			if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
+			if(IGNSIGS(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
 				throw app_error("Read from window-manager failed");
 			handleMessage(mid,&_msg);
 		}

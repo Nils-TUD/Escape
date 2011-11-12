@@ -63,7 +63,7 @@ bool events_send(int device,sKmData *km) {
 			/* character/keycode equal? */
 			if(((l->flags & KE_EV_KEYCODE) && l->key == km->keycode) ||
 					((l->flags & KE_EV_CHARACTER) && l->key == km->character)) {
-				int fd = getClient(device,l->id);
+				int fd = getclient(device,l->id);
 				if(fd >= 0) {
 					if(!copied) {
 						memcpy(&msg.data.d,km,sizeof(sKmData));

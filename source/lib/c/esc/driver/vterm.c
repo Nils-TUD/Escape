@@ -60,7 +60,7 @@ int vterm_setShellPid(int fd,pid_t pid) {
 	res = send(fd,MSG_VT_SHELLPID,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
-	res = RETRY(receive(fd,NULL,&msg,sizeof(msg)));
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -71,7 +71,7 @@ int vterm_getSize(int fd,sVTSize *size) {
 	int res = send(fd,MSG_VT_GETSIZE,NULL,0);
 	if(res < 0)
 		return res;
-	res = RETRY(receive(fd,NULL,&resp,sizeof(resp)));
+	res = IGNSIGS(receive(fd,NULL,&resp,sizeof(resp)));
 	if(res < 0)
 		return res;
 	if(resp.arg1 == sizeof(sVTSize))
@@ -90,7 +90,7 @@ static int vterm_doCtrl(int fd,msgid_t msg) {
 	int res = send(fd,msg,NULL,0);
 	if(res < 0)
 		return res;
-	res = RETRY(receive(fd,NULL,&resp,sizeof(resp)));
+	res = IGNSIGS(receive(fd,NULL,&resp,sizeof(resp)));
 	if(res < 0)
 		return res;
 	return resp.arg1;

@@ -93,13 +93,13 @@ int main(int argc,char **argv) {
 	if(argc < 2)
 		error("Usage: %s <wait>",argv[0]);
 
-	if(setSigHandler(SIG_INTRPT_ATA1,diskInterrupt) < 0)
+	if(signal(SIG_INTRPT_ATA1,diskInterrupt) == SIG_ERR)
 		error("Unable to announce disk-signal-handler");
 
-	diskRegs = (uint32_t*)mapPhysical(DISK_BASE,16);
+	diskRegs = (uint32_t*)mapphys(DISK_BASE,16);
 	if(diskRegs == NULL)
 		error("Unable to map disk registers");
-	diskBuf = (uint32_t*)mapPhysical(DISK_BUF,MAX_RW_SIZE);
+	diskBuf = (uint32_t*)mapphys(DISK_BUF,MAX_RW_SIZE);
 	if(diskBuf == NULL)
 		error("Unable to map disk buffer");
 
@@ -124,7 +124,7 @@ int main(int argc,char **argv) {
 	fclose(f);
 
 	while(1) {
-		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[DISK] Unable to get client");
@@ -160,7 +160,7 @@ int main(int argc,char **argv) {
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 						if(rcount <= MAX_RW_SIZE) {
-							if(RETRY(receive(fd,&mid,buffer,rcount)) > 0) {
+							if(IGNSIGS(receive(fd,&mid,buffer,rcount)) > 0) {
 								if(diskWrite(buffer,START_SECTOR + roffset / SECTOR_SIZE,
 										rcount / SECTOR_SIZE)) {
 									msg.args.arg1 = rcount;

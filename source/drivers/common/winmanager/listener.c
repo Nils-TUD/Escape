@@ -57,7 +57,7 @@ void listener_notify(msgid_t mid,const sMsg *msg,size_t size) {
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		sWinListener *l = (sWinListener*)n->data;
 		if(l->mid == mid) {
-			int fd = getClient(drvId,l->client);
+			int fd = getclient(drvId,l->client);
 			if(fd >= 0) {
 				send(fd,mid,msg,size);
 				close(fd);

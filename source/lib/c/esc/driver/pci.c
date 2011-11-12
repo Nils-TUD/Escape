@@ -50,7 +50,7 @@ static int pci_getDevice(sMsg *msg,msgid_t mid,sPCIDevice *dev) {
 		close(fd);
 		return res;
 	}
-	res = RETRY(receive(fd,NULL,msg,sizeof(msg->data)));
+	res = IGNSIGS(receive(fd,NULL,msg,sizeof(msg->data)));
 	if(res < 0) {
 		close(fd);
 		return res;

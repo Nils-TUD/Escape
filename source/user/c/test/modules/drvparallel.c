@@ -51,14 +51,14 @@ int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		error("Unable to create device '/dev/parallel'");
 
 	for(i = 0; i < clientCount; i++) {
-		if(startThread(clientthread,NULL) < 0)
+		if(startthread(clientthread,NULL) < 0)
 			error("Unable to start client-thread");
 	}
 
 	while(1) {
 		sMsg msg;
 		msgid_t mid;
-		int fd = getWork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			fprintf(stderr,"Unable to get work\n");
 		else {
@@ -66,7 +66,7 @@ int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 			sTask *task = (sTask*)malloc(sizeof(sTask));
 			task->n = msg.args.arg1;
 			task->fd = fd;
-			if((tid = startThread(fibthread,task)) < 0) {
+			if((tid = startthread(fibthread,task)) < 0) {
 				fprintf(stderr,"Unable to start thread\n");
 				close(fd);
 				free(task);
@@ -87,7 +87,7 @@ static int clientthread(A_UNUSED void *arg) {
 		sMsg msg;
 		msg.args.arg1 = n;
 		send(fd,MSG_PARA_FIB,&msg,sizeof(msg));
-		RETRY(receive(fd,NULL,&msg,sizeof(msg)));
+		IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
 		printf("[%d] fib(%d) = %d\n",gettid(),n,msg.args.arg1);
 		fflush(stdout);
 		n++;

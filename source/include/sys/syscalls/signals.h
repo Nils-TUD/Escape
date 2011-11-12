@@ -24,8 +24,8 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_setSigHandler(sThread *t,sIntrptStackFrame *stack);
-int sysc_ackSignal(sThread *t,sIntrptStackFrame *stack);
-int sysc_sendSignalTo(sThread *t,sIntrptStackFrame *stack);
+int sysc_signal(sThread *t,sIntrptStackFrame *stack);
+int sysc_acksignal(sThread *t,sIntrptStackFrame *stack);
+int sysc_kill(sThread *t,sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_SIGNALS_H_ */

@@ -42,7 +42,7 @@ int sysc_getgroups(sThread *t,sIntrptStackFrame *stack);
 int sysc_setgroups(sThread *t,sIntrptStackFrame *stack);
 int sysc_isingroup(sThread *t,sIntrptStackFrame *stack);
 int sysc_fork(sThread *t,sIntrptStackFrame *stack);
-int sysc_waitChild(sThread *t,sIntrptStackFrame *stack);
+int sysc_waitchild(sThread *t,sIntrptStackFrame *stack);
 int sysc_exec(sThread *t,sIntrptStackFrame *stack);
 int sysc_getenvito(sThread *t,sIntrptStackFrame *stack);
 int sysc_getenvto(sThread *t,sIntrptStackFrame *stack);

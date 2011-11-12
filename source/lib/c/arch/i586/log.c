@@ -27,12 +27,12 @@ static bool reqPorts = false;
 void logc(char c) {
 	if(!reqPorts) {
 		/* request io-ports for qemu and bochs */
-		assert(requestIOPort(0xe9) >= 0);
-		assert(requestIOPort(0x3f8) >= 0);
-		assert(requestIOPort(0x3fd) >= 0);
+		assert(reqport(0xe9) >= 0);
+		assert(reqport(0x3f8) >= 0);
+		assert(reqport(0x3fd) >= 0);
 		reqPorts = true;
 	}
-	while((inByte(0x3f8 + 5) & 0x20) == 0)
+	while((inbyte(0x3f8 + 5) & 0x20) == 0)
 		;
-	outByte(0x3f8,c);
+	outbyte(0x3f8,c);
 }

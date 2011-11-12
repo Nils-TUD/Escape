@@ -59,7 +59,7 @@
 typedef void (*fSignal)(int);
 
 typedef struct sPendingSig {
-	sig_t sig;
+	int sig;
 	struct sPendingSig *next;
 } sPendingSig;
 
@@ -75,9 +75,9 @@ typedef struct {
 	/* signal handler */
 	fSignal handler[SIG_COUNT];
 	/* the signal that the thread is currently handling (if > 0) */
-	sig_t currentSignal;
+	int currentSignal;
 	/* the signal that the thread should handle now */
-	sig_t deliveredSignal;
+	int deliveredSignal;
 } sSignals;
 
 /**
@@ -91,7 +91,7 @@ void sig_init(void);
  * @param signal the signal
  * @return true if so
  */
-bool sig_canHandle(sig_t signal);
+bool sig_canHandle(int signal);
 
 /**
  * Checks whether the given signal can be send by user-programs
@@ -99,13 +99,13 @@ bool sig_canHandle(sig_t signal);
  * @param signal the signal
  * @return true if so
  */
-bool sig_canSend(sig_t signal);
+bool sig_canSend(int signal);
 
 /**
  * @param sig the signal
  * @return whether the given signal is a fatal one, i.e. should kill the process
  */
-bool sig_isFatal(sig_t sig);
+bool sig_isFatal(int sig);
 
 /**
  * Sets the given signal-handler for <signal>
@@ -113,17 +113,19 @@ bool sig_isFatal(sig_t sig);
  * @param tid the thread-id
  * @param signal the signal
  * @param func the handler-function
+ * @param old will be set to the old handler
  * @return 0 on success
  */
-int sig_setHandler(tid_t tid,sig_t signal,fSignal func);
+int sig_setHandler(tid_t tid,int signal,fSignal func,fSignal *old);
 
 /**
  * Removes the signal-handler for <signal>
  *
  * @param tid the thread-id
  * @param signal the signal
+ * @return the old handler
  */
-void sig_unsetHandler(tid_t tid,sig_t signal);
+fSignal sig_unsetHandler(tid_t tid,int signal);
 
 /**
  * Removes all handler for the given thread
@@ -158,7 +160,7 @@ bool sig_hasSignalFor(tid_t tid);
  * @param handler will be set to the handler, if the current thread has a signal
  * @return SIG_CHECK_* the result
  */
-int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler);
+int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler);
 
 /**
  * Adds the given signal for the given thread
@@ -167,7 +169,7 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler);
  * @param signal the signal
  * @return true if the signal has been added
  */
-bool sig_addSignalFor(tid_t tid,sig_t signal);
+bool sig_addSignalFor(tid_t tid,int signal);
 
 /**
  * Adds the given signal to all threads that have announced a handler for it
@@ -175,7 +177,7 @@ bool sig_addSignalFor(tid_t tid,sig_t signal);
  * @param signal the signal
  * @return whether the signal has been delivered to somebody
  */
-bool sig_addSignal(sig_t signal);
+bool sig_addSignal(int signal);
 
 /**
  * Acknoledges the current signal with given thread (marks handling as finished)
@@ -183,7 +185,7 @@ bool sig_addSignal(sig_t signal);
  * @param tid the thread-id
  * @return the handled signal
  */
-sig_t sig_ackHandling(tid_t tid);
+int sig_ackHandling(tid_t tid);
 
 /**
  * @return the total number of announced handlers
@@ -194,7 +196,7 @@ size_t sig_dbg_getHandlerCount(void);
  * @param signal the signal-number
  * @return the name of the given signal
  */
-const char *sig_dbg_getName(sig_t signal);
+const char *sig_dbg_getName(int signal);
 
 /**
  * Prints all announced signal-handlers

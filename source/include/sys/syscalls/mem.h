@@ -28,13 +28,13 @@
 #define PROT_READ			1
 #define PROT_WRITE			2
 
-int sysc_changeSize(sThread *t,sIntrptStackFrame *stack);
-int sysc_addRegion(sThread *t,sIntrptStackFrame *stack);
-int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack);
-int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack);
-int sysc_createSharedMem(sThread *t,sIntrptStackFrame *stack);
-int sysc_joinSharedMem(sThread *t,sIntrptStackFrame *stack);
-int sysc_leaveSharedMem(sThread *t,sIntrptStackFrame *stack);
-int sysc_destroySharedMem(sThread *t,sIntrptStackFrame *stack);
+int sysc_chgsize(sThread *t,sIntrptStackFrame *stack);
+int sysc_regadd(sThread *t,sIntrptStackFrame *stack);
+int sysc_regctrl(sThread *t,sIntrptStackFrame *stack);
+int sysc_mapphys(sThread *t,sIntrptStackFrame *stack);
+int sysc_shmcrt(sThread *t,sIntrptStackFrame *stack);
+int sysc_shmjoin(sThread *t,sIntrptStackFrame *stack);
+int sysc_shmleave(sThread *t,sIntrptStackFrame *stack);
+int sysc_shmdel(sThread *t,sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_MEM_H_ */

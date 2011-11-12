@@ -52,7 +52,7 @@
 #define SEEK_END				2
 
 /* retry a syscall until it succeded, skipping tries that failed because of a signal */
-#define RETRY(expr)				({ \
+#define IGNSIGS(expr) ({ \
 		int __err; \
 		do { \
 			__err = (expr); \
@@ -204,7 +204,7 @@ ssize_t receive(int fd,msgid_t *id,void *msg,size_t size) A_CHECKRET;
  * @param fd the file-descriptor
  * @return the error-code or the new file-descriptor
  */
-int dupFd(int fd);
+int dup(int fd);
 
 /**
  * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
@@ -213,7 +213,7 @@ int dupFd(int fd);
  * @param dst the destination-file-descriptor
  * @return the error-code or 0 if successfull
  */
-int redirFd(int src,int dst);
+int redirect(int src,int dst);
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>
@@ -287,7 +287,7 @@ void close(int fd);
  * @param path the (absolute!) path
  * @return true if its a file; false if not or an error occurred
  */
-bool is_file(const char *path);
+bool isfile(const char *path);
 
 /**
  * Checks whether the given path points to a directory
@@ -295,7 +295,7 @@ bool is_file(const char *path);
  * @param path the (absolute!) path
  * @return true if its a directory; false if not or an error occurred
  */
-bool is_dir(const char *path);
+bool isdir(const char *path);
 
 #ifdef __cplusplus
 }

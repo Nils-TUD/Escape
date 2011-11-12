@@ -63,7 +63,7 @@ static sCache caches[] = {
 };
 
 #if DEBUGGING
-static bool aafEnabled = true;
+static bool aafEnabled = false;
 #endif
 
 void *cache_alloc(size_t size) {

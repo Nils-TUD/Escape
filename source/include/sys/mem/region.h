@@ -25,8 +25,6 @@
 #include <esc/sllist.h>
 
 #define PF_BITCOUNT			3		/* number of bits occupied by real flags */
-/* TODO */
-#if 0
 #define PF_COPYONWRITE		1UL
 #define PF_DEMANDLOAD		2UL
 #define PF_SWAPPED			4UL
@@ -35,23 +33,10 @@
 #define RF_SHAREABLE		2UL
 #define RF_WRITABLE			4UL
 #define RF_EXECUTABLE		8UL
-#define RF_STACK			16UL	/* means, grows downwards, and is used to find a free stack-address */
+#define RF_STACK			16UL
 #define RF_NOFREE			32UL	/* means that the memory should not be free'd on release */
 #define RF_TLS				64UL	/* needed to distinguish TLS-regions from others on delete */
 #define RF_GROWS_DOWN		128UL
-#endif
-#define PF_COPYONWRITE		1
-#define PF_DEMANDLOAD		2
-#define PF_SWAPPED			4
-
-#define RF_GROWABLE			1
-#define RF_SHAREABLE		2
-#define RF_WRITABLE			4
-#define RF_EXECUTABLE		8
-#define RF_STACK			16	/* means, grows downwards, and is used to find a free stack-address */
-#define RF_NOFREE			32	/* means that the memory should not be free'd on release */
-#define RF_TLS				64	/* needed to distinguish TLS-regions from others on delete */
-#define RF_GROWS_DOWN		128
 
 typedef struct {
 	inode_t ino;

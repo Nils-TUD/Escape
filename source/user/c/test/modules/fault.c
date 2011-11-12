@@ -28,16 +28,16 @@
 
 static void sig_segf(A_UNUSED int sig) {
 	fflush(stdout);
-	if(setSigHandler(SIG_SEGFAULT,SIG_DFL) < 0)
+	if(signal(SIG_SEGFAULT,SIG_DFL) == SIG_ERR)
 		error("Unable to unset signal-handler");
-	if(sendSignalTo(getpid(),SIG_SEGFAULT) < 0)
+	if(kill(getpid(),SIG_SEGFAULT) < 0)
 		error("Unable to commit suicide");
 }
 
 int mod_fault(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	uint *ptr;
 	int fd;
-	if(setSigHandler(SIG_SEGFAULT,sig_segf) < 0)
+	if(signal(SIG_SEGFAULT,sig_segf) == SIG_ERR)
 		error("Unable to set signal-handler");
 	printf("I am evil ^^\n");
 	fd = open((char*)0x12345678,IO_READ);

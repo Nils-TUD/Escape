@@ -55,10 +55,10 @@ int main(void) {
 	int id;
 
 	/* request io-ports */
-	if(requestIOPorts(IOPORT_CMOS_INDEX,2) < 0)
+	if(reqports(IOPORT_CMOS_INDEX,2) < 0)
 		error("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 
-	if(startThread(refreshThread,NULL) < 0)
+	if(startthread(refreshThread,NULL) < 0)
 		error("Unable to start CMOS-thread");
 
 	id = createdev("/dev/cmos",DEV_TYPE_BLOCK,DEV_READ);
@@ -71,7 +71,7 @@ int main(void) {
 
 	/* wait for commands */
 	while(1) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[CMOS] Unable to get work");
 		else {
@@ -105,7 +105,7 @@ int main(void) {
 
 	/* clean up */
 	close(id);
-	releaseIOPorts(IOPORT_CMOS_INDEX,2);
+	relports(IOPORT_CMOS_INDEX,2);
 	return EXIT_SUCCESS;
 }
 
@@ -137,9 +137,9 @@ static uint cmos_decodeBCD(uint8_t val) {
 }
 
 static uint8_t cmos_read(uint8_t reg) {
-	outByte(IOPORT_CMOS_INDEX,reg);
+	outbyte(IOPORT_CMOS_INDEX,reg);
 	__asm__ volatile ("nop");
 	__asm__ volatile ("nop");
 	__asm__ volatile ("nop");
-	return inByte(IOPORT_CMOS_DATA);
+	return inbyte(IOPORT_CMOS_DATA);
 }

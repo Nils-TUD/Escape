@@ -227,7 +227,7 @@ static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,siz
 	if(stype == REG_TLS)
 		bindesc = NULL;
 	/* add the region */
-	if((addr = addRegion(bindesc,pheader->p_offset,pheader->p_memsz,pheader->p_filesz,stype)) == NULL)
+	if((addr = regadd(bindesc,pheader->p_offset,pheader->p_memsz,pheader->p_filesz,stype)) == NULL)
 		return 0;
 	if(stype == REG_TLS) {
 		/* read tdata and clear tbss */
@@ -240,6 +240,6 @@ static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,siz
 static void load_read(int binFd,uint offset,void *buffer,size_t count) {
 	if(seek(binFd,offset,SEEK_SET) < 0)
 		load_error("Unable to seek to %x",offset);
-	if(RETRY(read(binFd,buffer,count)) != (ssize_t)count)
+	if(IGNSIGS(read(binFd,buffer,count)) != (ssize_t)count)
 		load_error("Unable to read %d bytes @ %x",count,offset);
 }

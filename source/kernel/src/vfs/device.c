@@ -107,7 +107,7 @@ static void vfs_device_destroy(sVFSNode *node) {
 void vfs_device_clientRemoved(sVFSNode *node,const sVFSNode *client) {
 	sDevice *dev = (sDevice*)node->data;
 	/* we don't have to lock this, because its only called in vfs_chan_destroy(), which can only
-	 * be called when this device-node is locked. i.e. it is not possible during getWork() */
+	 * be called when this device-node is locked. i.e. it is not possible during getwork() */
 	if(dev->lastClient == client)
 		dev->lastClient = NULL;
 }

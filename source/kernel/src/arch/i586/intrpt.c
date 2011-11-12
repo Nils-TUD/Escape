@@ -48,7 +48,7 @@ typedef void (*fIntrptHandler)(sThread *t,sIntrptStackFrame *stack);
 typedef struct {
 	fIntrptHandler handler;
 	const char *name;
-	sig_t signal;
+	int signal;
 } sInterrupt;
 
 /**

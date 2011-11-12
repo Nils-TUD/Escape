@@ -31,11 +31,11 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler);
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,fSignal handler);
 static uint32_t *uenv_addArgs(sThread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread);
 
 void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
-	sig_t sig;
+	int sig;
 	fSignal handler;
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
 	if(res == SIG_CHECK_CUR)
@@ -44,7 +44,7 @@ void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
 		thread_switch();
 }
 
-int uenv_finishSignalHandler(sIntrptStackFrame *stack,sig_t signal) {
+int uenv_finishSignalHandler(sIntrptStackFrame *stack,int signal) {
 	uint32_t *regs;
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	memcpy(stack->r,sp,REG_COUNT * sizeof(uint32_t));
@@ -154,7 +154,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return uenv_addArgs(t,sp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,sig_t sig,fSignal handler) {
+static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	if(!paging_isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
 		proc_segFault();

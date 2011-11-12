@@ -59,7 +59,7 @@ extern "C" {
  * @param count the number of pages to add / remove
  * @return the *old* end of the data-segment. NULL indicates an error
  */
-void *changeSize(ssize_t count) A_CHECKRET;
+void *chgsize(ssize_t count) A_CHECKRET;
 
 /**
  * Adds a region to the current process at the appropriate virtual address (depending on
@@ -72,7 +72,7 @@ void *changeSize(ssize_t count) A_CHECKRET;
  * @param type the region-type (see REG_*)
  * @return the address of the region on success, NULL on failure
  */
-void *addRegion(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type);
+void *regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type);
 
 /**
  * Changes the protection of the region denoted by the given address.
@@ -81,7 +81,7 @@ void *addRegion(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCo
  * @param prot the new protection-setting (PROT_*)
  * @return 0 on success
  */
-int setRegProt(uintptr_t addr,uint prot);
+int regctrl(uintptr_t addr,uint prot);
 
 /**
  * Maps <count> bytes at <phys> into the virtual user-space and returns the start-address.
@@ -90,7 +90,7 @@ int setRegProt(uintptr_t addr,uint prot);
  * @param count the number of bytes to map
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
-void *mapPhysical(uintptr_t phys,size_t count) A_CHECKRET;
+void *mapphys(uintptr_t phys,size_t count) A_CHECKRET;
 
 /**
  * Allocates <count> bytes contiguous physical memory, <align>-bytes aligned.
@@ -100,7 +100,7 @@ void *mapPhysical(uintptr_t phys,size_t count) A_CHECKRET;
  * @param aligh the alignment (in bytes)
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
-void *allocPhysical(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
+void *allocphys(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
 
 /**
  * Creates a shared-memory region
@@ -109,7 +109,7 @@ void *allocPhysical(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
  * @param byteCount the number of bytes
  * @return the address on success or NULL
  */
-void *createSharedMem(const char *name,size_t byteCount) A_CHECKRET;
+void *shmcrt(const char *name,size_t byteCount) A_CHECKRET;
 
 /**
  * Joines a shared-memory region
@@ -117,7 +117,7 @@ void *createSharedMem(const char *name,size_t byteCount) A_CHECKRET;
  * @param name the name
  * @return the address on success or NULL
  */
-void *joinSharedMem(const char *name) A_CHECKRET;
+void *shmjoin(const char *name) A_CHECKRET;
 
 /**
  * Leaves a shared-memory region
@@ -125,15 +125,15 @@ void *joinSharedMem(const char *name) A_CHECKRET;
  * @param name the name
  * @return 0 on success
  */
-int leaveSharedMem(const char *name);
+int shmleave(const char *name);
 
 /**
- * Destroys a shared-memory region
+ * Deletes a shared-memory region
  *
  * @param name the name
  * @return 0 on success
  */
-int destroySharedMem(const char *name);
+int shmdel(const char *name);
 
 #ifdef __cplusplus
 }

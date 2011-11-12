@@ -25,15 +25,15 @@
 #include <sys/intrpt.h>
 
 int sysc_gettid(sThread *t,sIntrptStackFrame *stack);
-int sysc_getThreadCount(sThread *t,sIntrptStackFrame *stack);
-int sysc_startThread(sThread *t,sIntrptStackFrame *stack);
+int sysc_getthreadcnt(sThread *t,sIntrptStackFrame *stack);
+int sysc_startthread(sThread *t,sIntrptStackFrame *stack);
 int sysc_exit(sThread *t,sIntrptStackFrame *stack);
-int sysc_getCycles(sThread *t,sIntrptStackFrame *stack);
+int sysc_getcycles(sThread *t,sIntrptStackFrame *stack);
 int sysc_alarm(sThread *t,sIntrptStackFrame *stack);
 int sysc_sleep(sThread *t,sIntrptStackFrame *stack);
 int sysc_yield(sThread *t,sIntrptStackFrame *stack);
 int sysc_wait(sThread *t,sIntrptStackFrame *stack);
-int sysc_waitUnlock(sThread *t,sIntrptStackFrame *stack);
+int sysc_waitunlock(sThread *t,sIntrptStackFrame *stack);
 int sysc_notify(sThread *t,sIntrptStackFrame *stack);
 int sysc_lock(sThread *t,sIntrptStackFrame *stack);
 int sysc_unlock(sThread *t,sIntrptStackFrame *stack);

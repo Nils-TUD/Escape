@@ -54,7 +54,7 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	if(setSigHandler(SIG_INTRPT,interrupted) < 0)
+	if(signal(SIG_INTRPT,interrupted) == SIG_ERR)
 		error("Unable to set sig-handler for SIG_INTRPT");
 
 	if(inFile) {

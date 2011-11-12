@@ -63,7 +63,7 @@ void shell_init(int argc,const char **argv) {
 	run_init();
 	curEnv = env_create(NULL);
 	env_addArgs(curEnv,argc,argv);
-	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
+	if(signal(SIG_INTRPT,shell_sigIntrpt) == SIG_ERR)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT);
 }
 

@@ -97,94 +97,94 @@ int main(void) {
 		error("Unable to create the ring-buffer");
 
 	/* request io-ports */
-	if(requestIOPort(IOPORT_PIC) < 0)
+	if(reqport(IOPORT_PIC) < 0)
 		error("Unable to request io-port %d",IOPORT_PIC);
-	if(requestIOPort(IOPORT_KB_DATA) < 0)
+	if(reqport(IOPORT_KB_DATA) < 0)
 		error("Unable to request io-port",IOPORT_KB_DATA);
-	if(requestIOPort(IOPORT_KB_CTRL) < 0)
+	if(reqport(IOPORT_KB_CTRL) < 0)
 		error("Unable to request io-port",IOPORT_KB_CTRL);
 
 	/* wait for input buffer empty */
 	kb_waitInBuf();
 
 	/* first read all bytes from the buffer; maybe there are scancodes... */
-	while(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL)
-		inByte(IOPORT_KB_DATA);
+	while(inbyte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL)
+		inbyte(IOPORT_KB_DATA);
 
 	/* self test */
-	outByte(IOPORT_KB_CTRL,0xAA);
+	outbyte(IOPORT_KB_CTRL,0xAA);
 	kb_waitOutBuf();
-	kbdata = inByte(IOPORT_KB_DATA);
+	kbdata = inbyte(IOPORT_KB_DATA);
 	if(kbdata != 0x55)
 		error("Keyboard-selftest failed: Got 0x%x, expected 0x55",kbdata);
 
 	/* test interface */
-	outByte(IOPORT_KB_CTRL,0xAB);
+	outbyte(IOPORT_KB_CTRL,0xAB);
 	kb_waitOutBuf();
-	kbdata = inByte(IOPORT_KB_DATA);
+	kbdata = inbyte(IOPORT_KB_DATA);
 	if(kbdata != 0x00)
 		error("Interface-test failed: Got 0x%x, expected 0x00",kbdata);
 
 	/* write command byte */
-	outByte(IOPORT_KB_CTRL,0x60);
+	outbyte(IOPORT_KB_CTRL,0x60);
 	kb_waitInBuf();
-	outByte(IOPORT_KB_DATA,CMD_EN_OUTBUF_INTRPT | CMD_INHIBIT_OVERWRITE | CMD_IBM_COMPAT);
+	outbyte(IOPORT_KB_DATA,CMD_EN_OUTBUF_INTRPT | CMD_INHIBIT_OVERWRITE | CMD_IBM_COMPAT);
 	kb_waitInBuf();
 
 #if 0
 	/* reset */
-	outByte(IOPORT_KB_DATA,0xFF);
+	outbyte(IOPORT_KB_DATA,0xFF);
 	sleep(20);
 	kb_waitOutBuf();
-	kbdata = inByte(IOPORT_KB_DATA);
+	kbdata = inbyte(IOPORT_KB_DATA);
 #endif
 	/* send echo-command */
-	outByte(IOPORT_KB_DATA,0xEE);
+	outbyte(IOPORT_KB_DATA,0xEE);
 	sleep(20);
 	kb_waitOutBuf();
-	kbdata = inByte(IOPORT_KB_DATA);
+	kbdata = inbyte(IOPORT_KB_DATA);
 	sleep(20);
 	if(kbdata != 0xEE)
 		error("Keyboard-echo failed: Got 0x%x, expected 0xEE",kbdata);
 
 	/* enable keyboard */
-	outByte(IOPORT_KB_DATA,0xF4);
+	outbyte(IOPORT_KB_DATA,0xF4);
 	kb_waitOutBuf();
 	/* clear output buffer */
-	kbdata = inByte(IOPORT_KB_DATA);
+	kbdata = inbyte(IOPORT_KB_DATA);
 
 	/* disable LEDs
 	kb_waitInBuf();
-	outByte(IOPORT_KB_DATA,0xED);
+	outbyte(IOPORT_KB_DATA,0xED);
 	kb_waitInBuf();
-	outByte(IOPORT_KB_DATA,0x0);*/
+	outbyte(IOPORT_KB_DATA,0x0);*/
 
 #if 0
 	/* set scancode-set 1 */
-	outByte(IOPORT_KB_DATA,0xF0);
-	outByte(IOPORT_KB_DATA,0x1);
+	outbyte(IOPORT_KB_DATA,0xF0);
+	outbyte(IOPORT_KB_DATA,0x1);
 	sleep(20);
-	kbdata = inByte(IOPORT_KB_DATA);
+	kbdata = inbyte(IOPORT_KB_DATA);
 	printf("Set scancode-set: %x\n",kbdata);
 #endif
 
 #if 0
 	/* TODO doesn't work in qemu (but on real hardware). why? */
 	/* set repeat-rate and delay */
-	outByte(IOPORT_KB_DATA,0xF3);
-	outByte(IOPORT_KB_DATA,0x24);	/*00100100*/
+	outbyte(IOPORT_KB_DATA,0xF3);
+	outbyte(IOPORT_KB_DATA,0x24);	/*00100100*/
 #endif
 
-	/*outByte(IOPORT_KB_DATA,0xF0);
+	/*outbyte(IOPORT_KB_DATA,0xF0);
 	sleep(40);
-	outByte(IOPORT_KB_DATA,0x0);
+	outbyte(IOPORT_KB_DATA,0x0);
 	sleep(40);
-	kbdata = inByte(IOPORT_KB_DATA);
+	kbdata = inbyte(IOPORT_KB_DATA);
 	printf("scancode-set=%x\n",kbdata);
 	while(1);*/
 
 	/* we want to get notified about keyboard interrupts */
-	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
+	if(signal(SIG_INTRPT_KB,kbIntrptHandler) == SIG_ERR)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 
 	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DEV_READ);
@@ -212,7 +212,7 @@ int main(void) {
 				fcntl(id,F_SETDATA,true);
 		}
 
-		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[KB] Unable to get work");
@@ -245,9 +245,9 @@ int main(void) {
 	}
 
 	/* clean up */
-	releaseIOPort(IOPORT_PIC);
-	releaseIOPort(IOPORT_KB_DATA);
-	releaseIOPort(IOPORT_KB_CTRL);
+	relport(IOPORT_PIC);
+	relport(IOPORT_KB_DATA);
+	relport(IOPORT_KB_CTRL);
 	rb_destroy(rbuf);
 	close(id);
 
@@ -276,10 +276,10 @@ static void kbStartDbgConsole(void) {
 }
 
 static void kbIntrptHandler(A_UNUSED int sig) {
-	if(!(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
+	if(!(inbyte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
 		return;
 
-	scBuf[scWritePos] = inByte(IOPORT_KB_DATA);
+	scBuf[scWritePos] = inbyte(IOPORT_KB_DATA);
 	scWritePos = (scWritePos + 1) % SC_BUF_SIZE;
 }
 
@@ -287,7 +287,7 @@ static void kb_waitOutBuf(void) {
 	time_t time = 0;
 	uint8_t status;
 	do {
-		status = inByte(IOPORT_KB_CTRL);
+		status = inbyte(IOPORT_KB_CTRL);
 		if((status & STATUS_OUTBUF_FULL) == 0) {
 			sleep(SLEEP_TIME);
 			time += SLEEP_TIME;
@@ -300,7 +300,7 @@ static void kb_waitInBuf(void) {
 	time_t time = 0;
 	uint8_t status;
 	do {
-		status = inByte(IOPORT_KB_CTRL);
+		status = inbyte(IOPORT_KB_CTRL);
 		if((status & STATUS_INBUF_FULL) != 0) {
 			sleep(SLEEP_TIME);
 			time += SLEEP_TIME;

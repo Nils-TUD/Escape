@@ -17,9 +17,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-.global getConf
-.type getConf, @function
-getConf:
+.global sysconf
+.type sysconf, @function
+sysconf:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_GETCONF,0
 	BZ		$7,1f						# no-error?
@@ -69,9 +69,9 @@ createdev:
 1:
 	POP		1,0							# return value is in $0
 
-.global getClientId
-.type getClientId, @function
-getClientId:
+.global getclientid
+.type getclientid, @function
+getclientid:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_GETCLIENTID,0
 	BZ		$7,1f						# no-error?
@@ -82,9 +82,9 @@ getClientId:
 1:
 	POP		1,0							# return value is in $0
 
-.global getClient
-.type getClient, @function
-getClient:
+.global getclient
+.type getclient, @function
+getclient:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_GETCLIENTPROC,0
 	BZ		$7,1f						# no-error?
@@ -95,9 +95,9 @@ getClient:
 1:
 	POP		1,0							# return value is in $0
 
-.global getWork
-.type getWork, @function
-getWork:
+.global getwork
+.type getwork, @function
+getwork:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_GETWORK,0
 	BZ		$7,1f						# no-error?
@@ -277,9 +277,9 @@ receive:
 1:
 	POP		1,0							# return value is in $0
 
-.global dupFd
-.type dupFd, @function
-dupFd:
+.global dup
+.type dup, @function
+dup:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_DUPFD,0
 	BZ		$7,1f						# no-error?
@@ -290,9 +290,9 @@ dupFd:
 1:
 	POP		1,0							# return value is in $0
 
-.global redirFd
-.type redirFd, @function
-redirFd:
+.global redirect
+.type redirect, @function
+redirect:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_REDIRFD,0
 	BZ		$7,1f						# no-error?
@@ -407,9 +407,9 @@ close:
 1:
 	POP		1,0							# return value is in $0
 
-.global _changeSize
-.type _changeSize, @function
-_changeSize:
+.global _chgsize
+.type _chgsize, @function
+_chgsize:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_CHGSIZE,0
 	BZ		$7,1f						# no-error?
@@ -420,9 +420,9 @@ _changeSize:
 1:
 	POP		1,0							# return value is in $0
 
-.global _addRegion
-.type _addRegion, @function
-_addRegion:
+.global _regadd
+.type _regadd, @function
+_regadd:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_ADDREGION,0
 	BZ		$7,1f						# no-error?
@@ -433,9 +433,9 @@ _addRegion:
 1:
 	POP		1,0							# return value is in $0
 
-.global setRegProt
-.type setRegProt, @function
-setRegProt:
+.global regctrl
+.type regctrl, @function
+regctrl:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_SETREGPROT,0
 	BZ		$7,1f						# no-error?
@@ -446,9 +446,9 @@ setRegProt:
 1:
 	POP		1,0							# return value is in $0
 
-.global _mapPhysical
-.type _mapPhysical, @function
-_mapPhysical:
+.global _mapphys
+.type _mapphys, @function
+_mapphys:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_MAPPHYS,0
 	BZ		$7,1f						# no-error?
@@ -459,9 +459,9 @@ _mapPhysical:
 1:
 	POP		1,0							# return value is in $0
 
-.global _createSharedMem
-.type _createSharedMem, @function
-_createSharedMem:
+.global _shmcrt
+.type _shmcrt, @function
+_shmcrt:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_CREATESHMEM,0
 	BZ		$7,1f						# no-error?
@@ -472,9 +472,9 @@ _createSharedMem:
 1:
 	POP		1,0							# return value is in $0
 
-.global _joinSharedMem
-.type _joinSharedMem, @function
-_joinSharedMem:
+.global _shmjoin
+.type _shmjoin, @function
+_shmjoin:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_JOINSHMEM,0
 	BZ		$7,1f						# no-error?
@@ -485,9 +485,9 @@ _joinSharedMem:
 1:
 	POP		1,0							# return value is in $0
 
-.global leaveSharedMem
-.type leaveSharedMem, @function
-leaveSharedMem:
+.global shmleave
+.type shmleave, @function
+shmleave:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_LEAVESHMEM,0
 	BZ		$7,1f						# no-error?
@@ -498,9 +498,9 @@ leaveSharedMem:
 1:
 	POP		1,0							# return value is in $0
 
-.global destroySharedMem
-.type destroySharedMem, @function
-destroySharedMem:
+.global shmdel
+.type shmdel, @function
+shmdel:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_DESTROYSHMEM,0
 	BZ		$7,1f						# no-error?
@@ -706,9 +706,9 @@ exec:
 1:
 	POP		1,0							# return value is in $0
 
-.global waitChild
-.type waitChild, @function
-waitChild:
+.global waitchild
+.type waitchild, @function
+waitchild:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_WAITCHILD,0
 	BZ		$7,1f						# no-error?
@@ -758,9 +758,9 @@ setenv:
 1:
 	POP		1,0							# return value is in $0
 
-.global setSigHandler
-.type setSigHandler, @function
-setSigHandler:
+.global signal
+.type signal, @function
+signal:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_SETSIGH,0
 	BZ		$7,1f						# no-error?
@@ -771,9 +771,9 @@ setSigHandler:
 1:
 	POP		1,0							# return value is in $0
 
-.global sendSignalTo
-.type sendSignalTo, @function
-sendSignalTo:
+.global kill
+.type kill, @function
+kill:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_SENDSIG,0
 	BZ		$7,1f						# no-error?
@@ -797,9 +797,9 @@ gettid:
 1:
 	POP		1,0							# return value is in $0
 
-.global getThreadCount
-.type getThreadCount, @function
-getThreadCount:
+.global getthreadcnt
+.type getthreadcnt, @function
+getthreadcnt:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_GETTHREADCNT,0
 	BZ		$7,1f						# no-error?
@@ -810,9 +810,9 @@ getThreadCount:
 1:
 	POP		1,0							# return value is in $0
 
-.global _startThread
-.type _startThread, @function
-_startThread:
+.global _startthread
+.type _startthread, @function
+_startthread:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_STARTTHREAD,0
 	BZ		$7,1f						# no-error?
@@ -836,9 +836,9 @@ _exit:
 1:
 	POP		1,0							# return value is in $0
 
-.global getCycles
-.type getCycles, @function
-getCycles:
+.global getcycles
+.type getcycles, @function
+getcycles:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_GETCYCLES,0
 	BZ		$7,1f						# no-error?
@@ -888,9 +888,9 @@ sleep:
 1:
 	POP		1,0							# return value is in $0
 
-.global waitmUntil
-.type waitmUntil, @function
-waitmUntil:
+.global waitmuntil
+.type waitmuntil, @function
+waitmuntil:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_WAIT,0
 	BZ		$7,1f						# no-error?
@@ -901,9 +901,9 @@ waitmUntil:
 1:
 	POP		1,0							# return value is in $0
 
-.global _waitUnlock
-.type _waitUnlock, @function
-_waitUnlock:
+.global _waitunlock
+.type _waitunlock, @function
+_waitunlock:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_WAITUNLOCK,0
 	BZ		$7,1f						# no-error?

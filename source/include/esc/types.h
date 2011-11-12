@@ -103,8 +103,6 @@ typedef int32_t dev_t;
 
 typedef uint8_t cpuid_t;
 
-typedef uint8_t sig_t;
-
 typedef uint32_t msgid_t;
 
 typedef uintptr_t evobj_t;

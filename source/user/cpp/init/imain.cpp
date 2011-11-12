@@ -47,7 +47,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	if(startThread(driverThread,NULL) < 0) {
+	if(startthread(driverThread,NULL) < 0) {
 		cerr << "Unable to start driver-thread" << endl;
 		return EXIT_FAILURE;
 	}
@@ -63,7 +63,7 @@ int main(void) {
 	// loop and wait forever
 	while(1) {
 		sExitState st;
-		waitChild(&st);
+		waitchild(&st);
 		try {
 			if(state != STATE_RUN)
 				pm.died(st.pid);
@@ -85,13 +85,13 @@ static int driverThread(A_UNUSED void *arg) {
 	int drv = createdev("/dev/init",DEV_TYPE_SERVICE,0);
 	if(drv < 0)
 		error("Unable to register device 'init'");
-	if(setSigHandler(SIG_ALARM,sigAlarm) < 0)
+	if(signal(SIG_ALARM,sigAlarm) == SIG_ERR)
 		error("Unable to set alarm-handler");
 
 	while(!timeout) {
 		msgid_t mid;
 		sMsg msg;
-		int fd = getWork(&drv,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&drv,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[INIT] Unable to get work");

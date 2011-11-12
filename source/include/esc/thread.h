@@ -56,7 +56,7 @@ tid_t gettid(void);
 /**
  * @return the number of threads in the current process
  */
-size_t getThreadCount(void);
+size_t getthreadcnt(void);
 
 /**
  * Starts a new thread
@@ -65,7 +65,7 @@ size_t getThreadCount(void);
  * @param arg the argument to pass (just the pointer)
  * @return the new tid, < 0 if failed
  */
-int startThread(fThreadEntry entryPoint,void *arg) A_CHECKRET;
+int startthread(fThreadEntry entryPoint,void *arg) A_CHECKRET;
 
 /**
  * The syscall exit
@@ -77,7 +77,7 @@ void _exit(int exitCode) A_NORETURN;
 /**
  * @return the cpu-cycles of the current thread
  */
-uint64_t getCycles(void);
+uint64_t getcycles(void);
 
 /**
  * Releases the CPU (reschedule)
@@ -120,7 +120,7 @@ int waitm(sWaitObject *objects,size_t objCount);
  * @param max the maximum number of milliseconds to wait (0 = unlimited)
  * @return 0 on success and a negative error-code if failed
  */
-int waitmUntil(sWaitObject *objects,size_t objCount,time_t max);
+int waitmuntil(sWaitObject *objects,size_t objCount,time_t max);
 
 /**
  * Does the same as waitm(), but waits for only one object
@@ -139,7 +139,7 @@ int wait(uint events,evobj_t object);
  * @param max the maximum number of milliseconds to wait (0 = unlimited)
  * @return 0 on success and a negative error-code if failed
  */
-int waitUntil(uint events,evobj_t object,time_t max);
+int waituntil(uint events,evobj_t object,time_t max);
 
 /**
  * Notifies the given thread about the given events. If it was waiting for them, it will be
@@ -226,7 +226,7 @@ int lockg(uint ident,uint flags);
  * thread1:
  *  lock(...);
  *  ...
- *  waitUnlock(...);
+ *  waitunlock(...);
  *
  * thread2:
  *  lock(...);
@@ -238,7 +238,7 @@ int lockg(uint ident,uint flags);
  * @param ident the ident to unlock
  * @return 0 on success
  */
-int waitUnlock(uint events,evobj_t object,uint ident);
+int waitunlock(uint events,evobj_t object,uint ident);
 
 /**
  * First it releases the specified global lock. After that it blocks the thread until one of the
@@ -247,7 +247,7 @@ int waitUnlock(uint events,evobj_t object,uint ident);
  * thread1:
  *  lock(...);
  *  ...
- *  waitUnlock(...);
+ *  waitunlock(...);
  *
  * thread2:
  *  lock(...);
@@ -259,7 +259,7 @@ int waitUnlock(uint events,evobj_t object,uint ident);
  * @param ident the ident to unlock
  * @return 0 on success
  */
-int waitUnlockg(uint events,evobj_t object,uint ident);
+int waitunlockg(uint events,evobj_t object,uint ident);
 
 /**
  * Releases the process-local lock with given ident

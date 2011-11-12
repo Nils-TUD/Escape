@@ -66,9 +66,9 @@ void list_init(void) {
 		error("Unable to create device-list");
 
 	/* we want to access dwords... */
-	if(requestIOPorts(IOPORT_PCI_CFG_DATA,4) < 0)
+	if(reqports(IOPORT_PCI_CFG_DATA,4) < 0)
 		error("Unable to request io-port %x",IOPORT_PCI_CFG_DATA);
-	if(requestIOPorts(IOPORT_PCI_CFG_ADDR,4) < 0)
+	if(reqports(IOPORT_PCI_CFG_ADDR,4) < 0)
 		error("Unable to request io-port %x",IOPORT_PCI_CFG_ADDR);
 
 	if(mkdir("/system/devices/pci") < 0)
@@ -233,12 +233,12 @@ static void pci_fillBar(sPCIDevice *dev,size_t i) {
 
 static uint32_t pci_read(uchar bus,uchar dev,uchar func,uchar offset) {
 	uint32_t addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);
-	outDWord(IOPORT_PCI_CFG_ADDR,addr);
-	return inDWord(IOPORT_PCI_CFG_DATA);
+	outdword(IOPORT_PCI_CFG_ADDR,addr);
+	return indword(IOPORT_PCI_CFG_DATA);
 }
 
 static void pci_write(uchar bus,uchar dev,uchar func,uchar offset,uint32_t value) {
 	uint32_t addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);
-	outDWord(IOPORT_PCI_CFG_ADDR,addr);
-	outDWord(IOPORT_PCI_CFG_DATA,value);
+	outdword(IOPORT_PCI_CFG_ADDR,addr);
+	outdword(IOPORT_PCI_CFG_DATA,value);
 }

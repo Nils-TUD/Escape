@@ -42,7 +42,7 @@ int ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount) {
 		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return off;
 	}
-	res = RETRY(read(fd,buffer,secCount * DISK_SECTOR_SIZE));
+	res = IGNSIGS(read(fd,buffer,secCount * DISK_SECTOR_SIZE));
 	if(res != (ssize_t)secCount * DISK_SECTOR_SIZE) {
 		printe("Unable to read %d sectors @ %x",secCount,lba * DISK_SECTOR_SIZE);
 		return res;

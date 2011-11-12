@@ -46,7 +46,7 @@ int mouse_start(void *drvIdPtr) {
 		error("Unable to open /dev/mouse");
 
 	while(1) {
-		ssize_t count = RETRY(read(mouse,mouseData,sizeof(mouseData)));
+		ssize_t count = IGNSIGS(read(mouse,mouseData,sizeof(mouseData)));
 		if(count < 0)
 			printe("[WINM] Unable to read from mouse");
 		else {
@@ -128,7 +128,7 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 	/* send to window */
 	w = wheelWin ? wheelWin : (mouseWin ? mouseWin : win_getActive());
 	if(w) {
-		int aWin = getClient(drvId,w->owner);
+		int aWin = getclient(drvId,w->owner);
 		if(aWin >= 0) {
 			msg.args.arg1 = curX;
 			msg.args.arg2 = curY;

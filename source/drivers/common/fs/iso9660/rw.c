@@ -40,7 +40,7 @@ int iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount) {
 		printe("Unable to seek to %x",lba * ATAPI_SECTOR_SIZE);
 		return off;
 	}
-	res = RETRY(read(fd,buffer,secCount * ATAPI_SECTOR_SIZE));
+	res = IGNSIGS(read(fd,buffer,secCount * ATAPI_SECTOR_SIZE));
 	if(res != (ssize_t)secCount * ATAPI_SECTOR_SIZE) {
 		printe("Unable to read %d sectors @ %x: %zd",secCount,lba * ATAPI_SECTOR_SIZE,res);
 		return res;

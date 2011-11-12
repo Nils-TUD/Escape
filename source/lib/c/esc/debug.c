@@ -55,7 +55,7 @@ const char *getProcName(void) {
 	snprintf(path,sizeof(path),"/system/processes/%d/info",getpid());
 	fd = open(path,IO_READ);
 	if(fd >= 0) {
-		if(RETRY(read(fd,buffer,PROCINFO_BUF_SIZE - 1)) < 0) {
+		if(IGNSIGS(read(fd,buffer,PROCINFO_BUF_SIZE - 1)) < 0) {
 			close(fd);
 			return NULL;
 		}
@@ -72,12 +72,12 @@ const char *getProcName(void) {
 }
 
 void dbg_startUTimer(void) {
-	start = getCycles();
+	start = getcycles();
 }
 
 void dbg_stopUTimer(const char *prefix) {
 	uLongLong diff;
-	diff.val64 = getCycles() - start;
+	diff.val64 = getcycles() - start;
 	debugf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
 }
 

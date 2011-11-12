@@ -67,32 +67,6 @@ extern "C" {
 #endif
 
 /**
- * Sets a handler-function for a specific signal
- *
- * @param signal the signal-number
- * @param handler the handler-function
- * @return 0 on success
- */
-int setSigHandler(sig_t signal,fSignal handler) A_CHECKRET;
-
-/**
- * Sends the given signal to all process (that have announced a handler)
- *
- * @param signal the signal
- * @return 0 on success
- */
-int sendSignal(sig_t signal) A_CHECKRET;
-
-/**
- * Sends the given signal to given process (interrupts can't be sended)
- *
- * @param pid the process-id
- * @param signal the signal
- * @return 0 on success
- */
-int sendSignalTo(pid_t pid,sig_t signal) A_CHECKRET;
-
-/**
  * The  signal  system call installs a new signal handler for#
  * signal signum.  The signal handler is set to handler which
  * may be a user specified function, or one of the following:
@@ -101,9 +75,18 @@ int sendSignalTo(pid_t pid,sig_t signal) A_CHECKRET;
  *
  * @param sig the signal
  * @param handler the new handler-function
- * @return the previous handler-function
+ * @return the previous handler-function or SIG_ERR
  */
-fSignal signal(int sig,fSignal handler);
+fSignal signal(int sig,fSignal handler) A_CHECKRET;
+
+/**
+ * Sends the given signal to given process (interrupts can't be sended)
+ *
+ * @param pid the process-id
+ * @param signal the signal
+ * @return 0 on success
+ */
+int kill(pid_t pid,int signal) A_CHECKRET;
 
 /**
  * raise()  sends  a  signal  to  the current process.  It is

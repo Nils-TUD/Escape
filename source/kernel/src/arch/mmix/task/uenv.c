@@ -36,12 +36,12 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-static void uenv_startSignalHandler(sThread *t,sig_t sig,fSignal handler);
+static void uenv_startSignalHandler(sThread *t,int sig,fSignal handler);
 static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
 void uenv_handleSignal(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
-	sig_t sig;
+	int sig;
 	fSignal handler;
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
 	if(res == SIG_CHECK_CUR)
@@ -50,7 +50,7 @@ void uenv_handleSignal(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 		thread_switch();
 }
 
-int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,sig_t signal) {
+int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
 	sThread *t = thread_getRunning();
 	sIntrptStackFrame *curStack = thread_getIntrptStack(t);
 	uint64_t *regs;
@@ -228,7 +228,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return ssp;
 }
 
-static void uenv_startSignalHandler(sThread *t,sig_t sig,fSignal handler) {
+static void uenv_startSignalHandler(sThread *t,int sig,fSignal handler) {
 	sIntrptStackFrame *curStack = thread_getIntrptStack(t);
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
 	sKSpecRegs *sregs;

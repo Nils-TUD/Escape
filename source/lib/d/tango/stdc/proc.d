@@ -1,7 +1,7 @@
 module tango.stdc.proc;
 
 alias ushort pid_t;
-alias ubyte sig_t;
+alias ubyte int;
 
 const SIG_COUNT				= 18;
 
@@ -26,7 +26,7 @@ const SIG_INTRPT_MOUSE		= 16;
 struct ExitState {
 	pid_t pid;
 	/* the signal that killed the process (SIG_COUNT if none) */
-	sig_t signal;
+	int signal;
 	/* exit-code the process gave us via exit() */
 	int exitCode;
 	/* total amount of memory it has used */
@@ -40,8 +40,7 @@ extern (C)
 {
 	extern int fork();
 	extern int exec(char *path,char **args);
-	extern int waitChild(ExitState *state);
-	extern int sendSignal(sig_t signal,uint data);
-	extern int sendSignalTo(pid_t pid,sig_t signal);
+	extern int waitchild(ExitState *state);
+	extern int kill(pid_t pid,int signal);
 	extern int sleep(uint ms);
 }

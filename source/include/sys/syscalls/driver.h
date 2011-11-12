@@ -25,8 +25,8 @@
 #include <sys/intrpt.h>
 
 int sysc_createdev(sThread *t,sIntrptStackFrame *stack);
-int sysc_getClientId(sThread *t,sIntrptStackFrame *stack);
-int sysc_getClient(sThread *t,sIntrptStackFrame *stack);
-int sysc_getWork(sThread *t,sIntrptStackFrame *stack);
+int sysc_getclientid(sThread *t,sIntrptStackFrame *stack);
+int sysc_getclient(sThread *t,sIntrptStackFrame *stack);
+int sysc_getwork(sThread *t,sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_DRIVER_H_ */

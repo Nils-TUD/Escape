@@ -41,7 +41,7 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[NULL] Unable to get work");
 		else {
@@ -53,7 +53,7 @@ int main(void) {
 					break;
 				case MSG_DEV_WRITE:
 					/* skip the data-message */
-					if(RETRY(receive(fd,NULL,NULL,0)) < 0)
+					if(IGNSIGS(receive(fd,NULL,NULL,0)) < 0)
 						printe("[NULL] Unable to skip data-msg");
 					/* write response and pretend that we've written everything */
 					msg.args.arg1 = msg.args.arg2;

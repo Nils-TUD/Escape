@@ -64,7 +64,7 @@ int main(int argc,const char *argv[]) {
 		countFile(stdin);
 	else {
 		while(*args) {
-			if(is_dir(*args))
+			if(isdir(*args))
 				fprintf(stderr,"'%s' is a directory!\n",*args);
 			else {
 				FILE *f = fopen(*args,"r");

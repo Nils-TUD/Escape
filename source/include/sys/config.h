@@ -50,7 +50,7 @@ void conf_parseBootParams(int argc,const char *const *argv);
  * @param id the config-id
  * @return the value or NULL
  */
-const char *conf_getStr(uint id);
+const char *conf_getStr(int id);
 
 /**
  * Returns the value for the given configuration-value
@@ -58,6 +58,6 @@ const char *conf_getStr(uint id);
  * @param id the config-id
  * @return the value or < 0 if an error occurred
  */
-long conf_get(uint id);
+long conf_get(int id);
 
 #endif /* CONFIG_H_ */

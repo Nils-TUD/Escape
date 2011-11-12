@@ -87,7 +87,7 @@ static void win1(void) {
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->layout();
-	/*if(startThread(pbThread,pb) < 0)
+	/*if(startthread(pbThread,pb) < 0)
 		std::cerr << "[GUITEST] Unable to start thread" << std::endl;*/
 }
 

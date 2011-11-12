@@ -87,7 +87,7 @@ int main(int argc,char **argv) {
 
 	while(1) {
 		int drvFd;
-		int fd = getWork(devices,drvCount,&drvFd,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(devices,drvCount,&drvFd,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[ATA] Unable to get client");
@@ -145,10 +145,10 @@ int main(int argc,char **argv) {
 	}
 
 	/* clean up */
-	releaseIOPorts(ATA_REG_BASE_PRIMARY,8);
-	releaseIOPorts(ATA_REG_BASE_SECONDARY,8);
-	releaseIOPort(ATA_REG_BASE_PRIMARY + ATA_REG_CONTROL);
-	releaseIOPort(ATA_REG_BASE_SECONDARY + ATA_REG_CONTROL);
+	relports(ATA_REG_BASE_PRIMARY,8);
+	relports(ATA_REG_BASE_SECONDARY,8);
+	relport(ATA_REG_BASE_PRIMARY + ATA_REG_CONTROL);
+	relport(ATA_REG_BASE_SECONDARY + ATA_REG_CONTROL);
 	for(i = 0; i < drvCount; i++)
 		close(devices[i]);
 	return EXIT_SUCCESS;
@@ -186,7 +186,7 @@ static ulong handleWrite(sATADevice *ataDev,sPartition *part,int fd,uint offset,
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
 		if(count <= MAX_RW_SIZE) {
 			size_t i;
-			ssize_t res = RETRY(receive(fd,&mid,buffer,count));
+			ssize_t res = IGNSIGS(receive(fd,&mid,buffer,count));
 			if(res <= 0)
 				return res;
 

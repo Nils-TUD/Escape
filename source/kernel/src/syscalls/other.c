@@ -32,7 +32,7 @@
 #include <sys/video.h>
 #include <errno.h>
 
-int sysc_loadMods(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_loadmods(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	int res = boot_loadModules(stack);
 	SYSC_RET1(stack,res);
 }
@@ -47,22 +47,16 @@ int sysc_debugc(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 int sysc_debug(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 #if 0
 	static size_t foo = 0;
-	if(foo == 0) {
-		proc_dbg_startProf();
-		foo = 1;
-	}
-	else {
-		proc_dbg_stopProf();
-		foo = 0;
-	}
+	cache_dbg_setAaFEnabled(foo == 0);
+	foo = foo ? 0 : 1;
 #else
 	cons_start();
 #endif
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getConf(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
-	uint id = SYSC_ARG1(stack);
+int sysc_sysconf(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+	int id = SYSC_ARG1(stack);
 	long res = conf_get(id);
 	if(res < 0)
 		SYSC_ERROR(stack,res);

@@ -64,7 +64,7 @@ bool vt_initAll(int *ids,sVTermCfg *cfg) {
 	config = cfg;
 
 	/* open video-device */
-	if(getConf(CONF_BOOT_VIDEOMODE) == CONF_VIDMODE_VESATEXT)
+	if(sysconf(CONF_BOOT_VIDEOMODE) == CONF_VIDMODE_VESATEXT)
 		device = VESA_DEVICE;
 	else
 		device = VGA_DEVICE;
@@ -97,7 +97,7 @@ bool vt_initAll(int *ids,sVTermCfg *cfg) {
 		vterms[i].setCursor = vt_setCursor;
 	}
 
-	if(startThread(vt_dateThread,NULL) < 0)
+	if(startthread(vt_dateThread,NULL) < 0)
 		error("Unable to start date-thread");
 	return true;
 }

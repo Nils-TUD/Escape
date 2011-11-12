@@ -119,14 +119,14 @@ int main(void) {
 }
 
 static void writeReg(uint16_t reg,uint8_t value) {
-	outByte(ne2k.basePort + reg,value);
+	outbyte(ne2k.basePort + reg,value);
 }
 
 static void init(sPCIDevice *nic) {
 	size_t i;
 	for(i = 0; i < 6; i++) {
 		if(nic->bars[i].addr && nic->bars[i].type == 1) {
-			if(requestIOPorts(nic->bars[i].addr,nic->bars[i].size) < 0) {
+			if(reqports(nic->bars[i].addr,nic->bars[i].size) < 0) {
 				error("Unable to request io-ports %d..%d",
 						nic->bars[i].addr,nic->bars[i].addr + nic->bars[i].size - 1);
 			}

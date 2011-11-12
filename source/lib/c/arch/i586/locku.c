@@ -34,7 +34,7 @@ fConstr lockConstr[1] A_INIT = {
 static size_t cpuCount;
 
 static void initLock(void) {
-	cpuCount = getConf(CONF_CPU_COUNT) > 1;
+	cpuCount = sysconf(CONF_CPU_COUNT) > 1;
 }
 
 void locku(tULock *l) {

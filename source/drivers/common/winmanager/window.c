@@ -70,14 +70,14 @@ bool win_init(int sid) {
 	/* request screen infos from vesa */
 	if(send(vesa,MSG_VESA_GETMODE,&msg,sizeof(msg.args)) < 0)
 		error("Unable to send get-mode-request to vesa");
-	if(RETRY(receive(vesa,&mid,&msg,sizeof(msg))) < 0 ||
+	if(IGNSIGS(receive(vesa,&mid,&msg,sizeof(msg))) < 0 ||
 			mid != MSG_VESA_GETMODE_RESP || msg.data.arg1 != 0)
 		error("Unable to read the get-mode-response from vesa");
 
 	/* store */
 	memcpy(&vesaInfo,msg.data.d,sizeof(sVESAInfo));
 
-	shmem = (uint8_t*)joinSharedMem("vesa");
+	shmem = (uint8_t*)shmjoin("vesa");
 	if(shmem == NULL)
 		error("Unable to join shared memory 'vesa'");
 
@@ -400,7 +400,7 @@ static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 }
 
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY) {
-	int aWin = getClient(drvId,windows[id].owner);
+	int aWin = getclient(drvId,windows[id].owner);
 	if(aWin >= 0) {
 		msg.args.arg1 = id;
 		msg.args.arg2 = isActive;
@@ -412,7 +412,7 @@ static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY
 }
 
 static void win_sendRepaint(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id) {
-	int aWin = getClient(drvId,windows[id].owner);
+	int aWin = getclient(drvId,windows[id].owner);
 	if(aWin >= 0) {
 		if(x - windows[id].x < 0) {
 			width += x - windows[id].x;

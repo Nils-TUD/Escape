@@ -26,48 +26,48 @@
 #include <sys/syscalls.h>
 #include <errno.h>
 
-int sysc_setSigHandler(sThread *t,sIntrptStackFrame *stack) {
-	sig_t signal = (sig_t)SYSC_ARG1(stack);
+int sysc_signal(sThread *t,sIntrptStackFrame *stack) {
+	int signal = (int)SYSC_ARG1(stack);
 	fSignal handler = (fSignal)SYSC_ARG2(stack);
+	fSignal old = SIG_ERR;
 
 	/* address should be valid */
 	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isInUserSpace((uintptr_t)handler,1))
-		SYSC_ERROR(stack,-EFAULT);
+		SYSC_ERROR(stack,(int)SIG_ERR);
 
-	if(signal == (sig_t)SIG_RET)
+	if(signal == (int)SIG_RET)
 		t->proc->sigRetAddr = (uintptr_t)handler;
 	else {
 		/* no signal-ret-address known yet? */
 		if(t->proc->sigRetAddr == 0)
-			SYSC_ERROR(stack,-EINVAL);
+			SYSC_ERROR(stack,(int)SIG_ERR);
 
 		/* check signal */
 		if(!sig_canHandle(signal))
-			SYSC_ERROR(stack,-EINVAL);
+			SYSC_ERROR(stack,(int)SIG_ERR);
 
 		if(handler == SIG_DFL)
-			sig_unsetHandler(t->tid,signal);
+			old = sig_unsetHandler(t->tid,signal);
 		else {
-			int res = sig_setHandler(t->tid,signal,handler);
-			if(res < 0)
-				SYSC_ERROR(stack,res);
+			if(sig_setHandler(t->tid,signal,handler,&old) < 0)
+				SYSC_ERROR(stack,(int)SIG_ERR);
 		}
 	}
-	SYSC_RET1(stack,0);
+	SYSC_RET1(stack,(int)old);
 }
 
-int sysc_ackSignal(sThread *t,sIntrptStackFrame *stack) {
+int sysc_acksignal(sThread *t,sIntrptStackFrame *stack) {
 	int res;
-	sig_t signal = sig_ackHandling(t->tid);
+	int signal = sig_ackHandling(t->tid);
 	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
 	/* we don't set the error-code on the stack here */
 	return 0;
 }
 
-int sysc_sendSignalTo(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_kill(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
-	sig_t signal = (sig_t)SYSC_ARG2(stack);
+	int signal = (int)SYSC_ARG2(stack);
 
 	if(!sig_canSend(signal))
 		SYSC_ERROR(stack,-EINVAL);

@@ -46,14 +46,14 @@ static uchar keys[] = {
 };
 
 static void childTermHandler(A_UNUSED int sig) {
-	RETRY(waitChild(NULL));
+	IGNSIGS(waitchild(NULL));
 }
 
 int main(void) {
 	msgid_t mid;
 	size_t i;
 	int fd;
-	if(setSigHandler(SIG_CHILD_TERM,&childTermHandler) < 0)
+	if(signal(SIG_CHILD_TERM,&childTermHandler) == SIG_ERR)
 		error("Unable to set SIG_CHILD_TERM-handler");
 
 	/* announce listener */
@@ -65,7 +65,7 @@ int main(void) {
 
 	while(1) {
 		sKmData *km = (sKmData*)&msg.data.d;
-		if(RETRY(receive(fd,&mid,&msg,sizeof(msg.data))) < 0)
+		if(IGNSIGS(receive(fd,&mid,&msg,sizeof(msg.data))) < 0)
 			printe("[UI] Unable to receive event from keyevents");
 		else
 			switchTo(km->keycode - VK_1);
@@ -192,6 +192,6 @@ static void addListener(int fd,uchar flags,uchar key,uchar modifiers) {
 	msg.args.arg3 = modifiers;
 	if(send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args)) < 0)
 		error("Unable to send msg to keyevents");
-	if(RETRY(receive(fd,&mid,&msg,sizeof(msg.args))) < 0 || (int)msg.args.arg1 < 0)
+	if(IGNSIGS(receive(fd,&mid,&msg,sizeof(msg.args))) < 0 || (int)msg.args.arg1 < 0)
 		error("Unable to receive reply or invalid reply from keyevents");
 }

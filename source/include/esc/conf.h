@@ -43,7 +43,7 @@ extern "C" {
  * @param id the id of the config-value (CONF_*)
  * @return the value or the negative error-code
  */
-int getConf(uint id);
+long sysconf(int id);
 
 #ifdef __cplusplus
 }

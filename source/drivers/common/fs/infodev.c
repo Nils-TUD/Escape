@@ -51,7 +51,7 @@ int infodev_thread(A_UNUSED void *arg) {
 	int id;
 	msgid_t mid;
 	size_t i;
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce USR1-signal-handler");
 
 	for(i = 0; i < ARRAY_SIZE(infos); i++) {
@@ -63,7 +63,7 @@ int infodev_thread(A_UNUSED void *arg) {
 	}
 
 	while(run) {
-		int fd = getWork(ids,ARRAY_SIZE(ids),&id,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(ids,ARRAY_SIZE(ids),&id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[FSINFO] Unable to get work");
@@ -94,7 +94,7 @@ int infodev_thread(A_UNUSED void *arg) {
 }
 
 void infodev_shutdown(void) {
-	if(sendSignalTo(getpid(),SIG_USR1) < 0)
+	if(kill(getpid(),SIG_USR1) < 0)
 		printe("[FS] Unable to send signal to me");
 }
 

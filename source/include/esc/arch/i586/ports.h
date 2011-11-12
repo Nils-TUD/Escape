@@ -32,7 +32,7 @@ extern "C" {
  * @param port the port
  * @return a negative error-code or 0 if successfull
  */
-int requestIOPort(uint16_t port) A_CHECKRET;
+int reqport(uint16_t port) A_CHECKRET;
 
 /**
  * Request the given IO-ports
@@ -41,7 +41,7 @@ int requestIOPort(uint16_t port) A_CHECKRET;
  * @param count the number of ports to reserve
  * @return a negative error-code or 0 if successfull
  */
-int requestIOPorts(uint16_t start,size_t count) A_CHECKRET;
+int reqports(uint16_t start,size_t count) A_CHECKRET;
 
 /**
  * Releases the given IO-port
@@ -49,7 +49,7 @@ int requestIOPorts(uint16_t start,size_t count) A_CHECKRET;
  * @param port the port
  * @return a negative error-code or 0 if successfull
  */
-int releaseIOPort(uint16_t port);
+int relport(uint16_t port);
 
 /**
  * Releases the given IO-ports
@@ -58,7 +58,7 @@ int releaseIOPort(uint16_t port);
  * @param count the number of ports to reserve
  * @return a negative error-code or 0 if successfull
  */
-int releaseIOPorts(uint16_t start,size_t count);
+int relports(uint16_t start,size_t count);
 
 /**
  * Outputs the byte <val> to the I/O-Port <port>
@@ -66,7 +66,7 @@ int releaseIOPorts(uint16_t start,size_t count);
  * @param port the port
  * @param val the value
  */
-extern void outByte(uint16_t port,uint8_t val);
+extern void outbyte(uint16_t port,uint8_t val);
 
 /**
  * Outputs the word <val> to the I/O-Port <port>
@@ -74,7 +74,7 @@ extern void outByte(uint16_t port,uint8_t val);
  * @param port the port
  * @param val the value
  */
-extern void outWord(uint16_t port,uint16_t val);
+extern void outword(uint16_t port,uint16_t val);
 
 /**
  * Outputs the dword <val> to the I/O-Port <port>
@@ -82,7 +82,7 @@ extern void outWord(uint16_t port,uint16_t val);
  * @param port the port
  * @param val the value
  */
-extern void outDWord(uint16_t port,uint32_t val);
+extern void outdword(uint16_t port,uint32_t val);
 
 /**
  * Outputs <count> words at <addr> to port <port>
@@ -91,7 +91,7 @@ extern void outDWord(uint16_t port,uint32_t val);
  * @param addr an array of words
  * @param count the number of words to output
  */
-void outWordStr(uint16_t port,const void *addr,size_t count);
+void outwords(uint16_t port,const void *addr,size_t count);
 
 /**
  * Reads a byte from the I/O-Port <port>
@@ -99,7 +99,7 @@ void outWordStr(uint16_t port,const void *addr,size_t count);
  * @param port the port
  * @return the value
  */
-extern uint8_t inByte(uint16_t port);
+extern uint8_t inbyte(uint16_t port);
 
 /**
  * Reads a word from the I/O-Port <port>
@@ -107,7 +107,7 @@ extern uint8_t inByte(uint16_t port);
  * @param port the port
  * @return the value
  */
-extern uint16_t inWord(uint16_t port);
+extern uint16_t inword(uint16_t port);
 
 /**
  * Reads a dword from the I/O-Port <port>
@@ -115,7 +115,7 @@ extern uint16_t inWord(uint16_t port);
  * @param port the port
  * @return the value
  */
-extern uint32_t inDWord(uint16_t port);
+extern uint32_t indword(uint16_t port);
 
 /**
  * Reads <count> words to <addr> from port <port>
@@ -124,7 +124,7 @@ extern uint32_t inDWord(uint16_t port);
  * @param addr the array to write to
  * @param count the number of words to read
  */
-void inWordStr(uint16_t port,void *addr,size_t count);
+void inwords(uint16_t port,void *addr,size_t count);
 
 #ifdef __cplusplus
 }

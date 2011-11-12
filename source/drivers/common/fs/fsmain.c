@@ -58,13 +58,13 @@ int main(int argc,char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(setSigHandler(SIG_TERM,sigTermHndl) < 0)
+	if(signal(SIG_TERM,sigTermHndl) == SIG_ERR)
 		error("Unable to set signal-handler for SIG_TERM");
 
 	tpool_init();
 	mount_init();
 	fslist_init();
-	if(startThread(infodev_thread,NULL) < 0)
+	if(startthread(infodev_thread,NULL) < 0)
 		error("Unable to start infodev-thread");
 
 	/* create root-fs */
@@ -92,7 +92,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to set permissions for /dev/fs");
 
 	while(true) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
 		if(fd < 0) {
 			if(fd != -EINTR) {
 				/* no requests anymore and we should shutdown? */
@@ -105,7 +105,7 @@ int main(int argc,char *argv[]) {
 			void *data = NULL;
 			if(mid == MSG_FS_WRITE) {
 				data = malloc(msg.args.arg4);
-				if(!data || RETRY(receive(fd,NULL,data,msg.args.arg4)) < 0) {
+				if(!data || IGNSIGS(receive(fd,NULL,data,msg.args.arg4)) < 0) {
 					printf("[FS] Illegal request\n");
 					close(fd);
 					continue;

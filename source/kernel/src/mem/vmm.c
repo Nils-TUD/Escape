@@ -236,7 +236,7 @@ errProc:
 	return res;
 }
 
-int vmm_setRegProt(pid_t pid,uintptr_t addr,ulong flags) {
+int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags) {
 	size_t i,pgcount;
 	sSLNode *n;
 	sVMRegion *vmreg;

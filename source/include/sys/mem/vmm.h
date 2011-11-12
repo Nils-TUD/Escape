@@ -104,7 +104,7 @@ vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size
  * @param flags the new flags (RF_WRITABLE or 0)
  * @return 0 on success
  */
-int vmm_setRegProt(pid_t pid,uintptr_t addr,ulong flags);
+int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags);
 
 /**
  * Swaps <count> pages out. It searches for the best suited page to swap out.

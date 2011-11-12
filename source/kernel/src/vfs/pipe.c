@@ -88,8 +88,11 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 
 static void vfs_pipe_destroy(sVFSNode *n) {
 	sPipe *pipe = (sPipe*)n->data;
-	if(pipe)
+	if(pipe) {
 		sll_clear(&pipe->list,true);
+		cache_free(pipe);
+		n->data = NULL;
+	}
 }
 
 static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node) {

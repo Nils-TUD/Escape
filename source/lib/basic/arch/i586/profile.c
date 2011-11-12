@@ -44,14 +44,14 @@
 #else
 #	define gettid()		0
 #endif
-#	define getCycles()	cpu_rdtsc()
+#	define getcycles()	cpu_rdtsc()
 #else
 #	include <esc/arch/i586/ports.h>
 #	include <esc/thread.h>
 #	include <esc/debug.h>
 #	include <stdio.h>
-#	define outb			outByte
-#	define inb			inByte
+#	define outb			outbyte
+#	define inb			inbyte
 #endif
 
 #define STACK_SIZE	1024
@@ -84,9 +84,9 @@ void __cyg_profile_func_enter(void *this_fn,A_UNUSED void *call_site) {
 	inProf = true;
 #if !IN_KERNEL
 	if(!initialized) {
-		requestIOPort(0xe9);
-		requestIOPort(0x3f8);
-		requestIOPort(0x3fd);
+		reqport(0xe9);
+		reqport(0x3f8);
+		reqport(0x3fd);
 		initialized = true;
 	}
 #endif
@@ -95,7 +95,7 @@ void __cyg_profile_func_enter(void *this_fn,A_UNUSED void *call_site) {
 	logChar(':');
 	logUnsigned((unsigned)this_fn,16);
 	logChar('\n');
-	callStack[stackPos++] = getCycles();
+	callStack[stackPos++] = getcycles();
 	inProf = false;
 }
 
@@ -104,7 +104,7 @@ void __cyg_profile_func_exit(A_UNUSED void *this_fn,A_UNUSED void *call_site) {
 	if(inProf || stackPos <= 0)
 		return;
 	inProf = true;
-	now = getCycles();
+	now = getcycles();
 	stackPos--;
 	logChar('<');
 	logUnsigned((unsigned)gettid(),10);

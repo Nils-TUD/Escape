@@ -34,8 +34,8 @@
 #define SIGNAL_COUNT	2048
 #define MAX_SIG_RECV	16
 
-static bool sig_add(sSignals *s,sig_t sig);
-static void sig_removePending(sSignals *s,sig_t sig);
+static bool sig_add(sSignals *s,int sig);
+static void sig_removePending(sSignals *s,int sig);
 static sSignals *sig_getThread(tid_t tid,bool create);
 
 static klock_t sigLock;
@@ -57,21 +57,21 @@ void sig_init(void) {
 	}
 }
 
-bool sig_canHandle(sig_t signal) {
+bool sig_canHandle(int signal) {
 	/* we can't add a handler for SIG_KILL */
 	return signal >= 1 && signal < SIG_COUNT;
 }
 
-bool sig_canSend(sig_t signal) {
+bool sig_canSend(int signal) {
 	return signal < SIG_INTRPT_TIMER || (signal >= SIG_USR1 && signal < SIG_COUNT);
 }
 
-bool sig_isFatal(sig_t sig) {
+bool sig_isFatal(int sig) {
 	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT ||
 		sig == SIG_PIPE_CLOSED;
 }
 
-int sig_setHandler(tid_t tid,sig_t signal,fSignal func) {
+int sig_setHandler(tid_t tid,int signal,fSignal func,fSignal *old) {
 	sSignals *s;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
 	spinlock_aquire(&sigLock);
@@ -82,22 +82,26 @@ int sig_setHandler(tid_t tid,sig_t signal,fSignal func) {
 	}
 	/* set / replace handler */
 	/* note that we discard not yet delivered signals here.. */
+	*old = s->handler[signal];
 	s->handler[signal] = func;
 	sig_removePending(s,signal);
 	spinlock_release(&sigLock);
 	return 0;
 }
 
-void sig_unsetHandler(tid_t tid,sig_t signal) {
+fSignal sig_unsetHandler(tid_t tid,int signal) {
+	fSignal old = NULL;
 	sSignals *s;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
 	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	if(s) {
+		old = s->handler[signal];
 		s->handler[signal] = NULL;
 		sig_removePending(s,signal);
 	}
 	spinlock_release(&sigLock);
+	return old;
 }
 
 void sig_removeHandlerFor(tid_t tid) {
@@ -141,7 +145,7 @@ bool sig_hasSignalFor(tid_t tid) {
 	return res;
 }
 
-int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
+int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler) {
 	sThread *t = thread_getById(tid);
 	sSignals *s;
 	int res = SIG_CHECK_NO;
@@ -193,7 +197,7 @@ int sig_checkAndStart(tid_t tid,sig_t *sig,fSignal *handler) {
 	return res;
 }
 
-bool sig_addSignalFor(tid_t tid,sig_t signal) {
+bool sig_addSignalFor(tid_t tid,int signal) {
 	sSignals *s;
 	bool res = false;
 	spinlock_aquire(&sigLock);
@@ -207,7 +211,7 @@ bool sig_addSignalFor(tid_t tid,sig_t signal) {
 	return res;
 }
 
-bool sig_addSignal(sig_t signal) {
+bool sig_addSignal(int signal) {
 	sSLNode *n;
 	bool res = false;
 	spinlock_aquire(&sigLock);
@@ -222,8 +226,8 @@ bool sig_addSignal(sig_t signal) {
 	return res;
 }
 
-sig_t sig_ackHandling(tid_t tid) {
-	sig_t res;
+int sig_ackHandling(tid_t tid) {
+	int res;
 	sSignals *s;
 	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
@@ -236,7 +240,7 @@ sig_t sig_ackHandling(tid_t tid) {
 	return res;
 }
 
-const char *sig_dbg_getName(sig_t signal) {
+const char *sig_dbg_getName(int signal) {
 	static const char *names[] = {
 		"SIG_KILL",
 		"SIG_TERM",
@@ -294,7 +298,7 @@ size_t sig_dbg_getHandlerCount(void) {
 	return c;
 }
 
-static bool sig_add(sSignals *s,sig_t sig) {
+static bool sig_add(sSignals *s,int sig) {
 	sPendingSig *psig = freelist;
 	if(psig == NULL)
 		return false;
@@ -315,7 +319,7 @@ static bool sig_add(sSignals *s,sig_t sig) {
 	return true;
 }
 
-static void sig_removePending(sSignals *s,sig_t sig) {
+static void sig_removePending(sSignals *s,int sig) {
 	sPendingSig *ps,*prev;
 	if(s->deliveredSignal == sig)
 		s->deliveredSignal = 0;

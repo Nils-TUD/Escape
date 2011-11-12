@@ -36,7 +36,7 @@ int mod_fsreads(int argc,char *argv[]) {
 	size_t count = argc >= 3 ? atoi(argv[2]) : 10;
 	size_t i,j;
 	for(i = 0; i < THREAD_COUNT; i++) {
-		if(startThread(threadFunc,strdup("/zeros")) < 0)
+		if(startthread(threadFunc,strdup("/zeros")) < 0)
 			error("Unable to start thread");
 	}
 
@@ -55,7 +55,7 @@ int mod_fsreads(int argc,char *argv[]) {
 				error("Not enough memory");
 			strcpy(path,"/bin/");
 			strcat(path,e.name);
-			if(startThread(threadFunc,(void*)path) < 0)
+			if(startthread(threadFunc,(void*)path) < 0)
 				error("Unable to start thread");
 		}
 		closedir(dir);

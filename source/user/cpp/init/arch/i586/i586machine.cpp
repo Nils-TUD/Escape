@@ -25,21 +25,21 @@
 void i586Machine::reboot(Progress &pg) {
 	pg.itemStarting("Resetting using pulse-reset line of 8042 controller...");
 
-	if(requestIOPort(PORT_KB_DATA) < 0)
+	if(reqport(PORT_KB_DATA) < 0)
 		throw init_error("Unable to request keyboard data-port");
-	if(requestIOPort(PORT_KB_CTRL) < 0)
+	if(reqport(PORT_KB_CTRL) < 0)
 		throw init_error("Unable to request keyboard-control-port");
 
 	// wait until in-buffer empty
-	while((inByte(PORT_KB_CTRL) & 0x2) != 0)
+	while((inbyte(PORT_KB_CTRL) & 0x2) != 0)
 		;
 	// command 0xD1 to write the outputport
-	outByte(PORT_KB_CTRL,0xD1);
+	outbyte(PORT_KB_CTRL,0xD1);
 	// wait again until in-buffer empty
-	while((inByte(PORT_KB_CTRL) & 0x2) != 0)
+	while((inbyte(PORT_KB_CTRL) & 0x2) != 0)
 		;
 	// now set the new output-port for reset
-	outByte(PORT_KB_DATA,0xFE);
+	outbyte(PORT_KB_DATA,0xFE);
 }
 
 void i586Machine::shutdown(Progress &pg) {

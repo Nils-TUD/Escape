@@ -35,7 +35,7 @@ int main(void) {
 	sVTSize consSize;
 	size_t maxWidth;
 	size_t p,i,j;
-	if(setSigHandler(SIG_TERM,sigTerm) < 0)
+	if(signal(SIG_TERM,sigTerm) == SIG_ERR)
 		error("Unable to set term-handler");
 	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
 		error("Unable to get vterm-size");

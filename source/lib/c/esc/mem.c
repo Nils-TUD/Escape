@@ -22,55 +22,55 @@
 #include <errno.h>
 
 /* the assembler-routine */
-extern ssize_t _changeSize(ssize_t count);
-extern intptr_t _mapPhysical(uintptr_t *phys,size_t count,size_t align);
-extern intptr_t _addRegion(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,
+extern ssize_t _chgsize(ssize_t count);
+extern intptr_t _mapphys(uintptr_t *phys,size_t count,size_t align);
+extern intptr_t _regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,
 		size_t loadCount,uint type);
-extern intptr_t _createSharedMem(const char *name,size_t byteCount);
-extern intptr_t _joinSharedMem(const char *name);
+extern intptr_t _shmcrt(const char *name,size_t byteCount);
+extern intptr_t _shmjoin(const char *name);
 
 /* just a convenience for the user which sets errno if the return-value is zero (not enough mem) */
-void *changeSize(ssize_t count) {
-	size_t addr = _changeSize(count);
+void *chgsize(ssize_t count) {
+	size_t addr = _chgsize(count);
 	if(addr == 0)
 		errno = -ENOMEM;
 	return (void*)addr;
 }
 
-void *mapPhysical(uintptr_t phys,size_t count) {
-	intptr_t addr = _mapPhysical(&phys,count,1);
+void *mapphys(uintptr_t phys,size_t count) {
+	intptr_t addr = _mapphys(&phys,count,1);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
-void *allocPhysical(uintptr_t *phys,size_t count,size_t align) {
-	intptr_t addr = _mapPhysical(phys,count,align);
+void *allocphys(uintptr_t *phys,size_t count,size_t align) {
+	intptr_t addr = _mapphys(phys,count,align);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
-void *addRegion(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type) {
-	intptr_t addr = _addRegion(bin,binOffset,byteCount,loadCount,type);
+void *regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type) {
+	intptr_t addr = _regadd(bin,binOffset,byteCount,loadCount,type);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
-void *createSharedMem(const char *name,size_t byteCount) {
-	intptr_t addr = _createSharedMem(name,byteCount);
+void *shmcrt(const char *name,size_t byteCount) {
+	intptr_t addr = _shmcrt(name,byteCount);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
-void *joinSharedMem(const char *name) {
-	intptr_t addr = _joinSharedMem(name);
+void *shmjoin(const char *name) {
+	intptr_t addr = _shmjoin(name);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;

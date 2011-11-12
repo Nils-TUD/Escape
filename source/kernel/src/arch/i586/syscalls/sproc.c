@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <errno.h>
 
-int sysc_requestIOPorts(sThread *t,sIntrptStackFrame *stack) {
+int sysc_reqports(sThread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	int err;
@@ -43,7 +43,7 @@ int sysc_requestIOPorts(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_releaseIOPorts(sThread *t,sIntrptStackFrame *stack) {
+int sysc_relports(sThread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	int err;

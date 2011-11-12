@@ -133,7 +133,7 @@ namespace std {
 		if(_inPos >= _inMax) {
 			if(!_inBuf)
 				_inBuf = new char[IN_BUF_SIZE];
-			_inMax = RETRY(::read(_fd,_inBuf,IN_BUF_SIZE));
+			_inMax = IGNSIGS(::read(_fd,_inBuf,IN_BUF_SIZE));
 			if((signed)_inMax <= 0) {
 				_inMax = 0;
 				return false;

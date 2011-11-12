@@ -65,7 +65,7 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
 
 	for(i = 0; i < 10; i++) {
-		if(startThread(clientThread,NULL) < 0)
+		if(startthread(clientThread,NULL) < 0)
 			error("Unable to start thread");
 	}
 
@@ -74,7 +74,7 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		error("createdev");
 	fcntl(id,F_SETDATA,true);
 
-	if(startThread(getRequests,NULL) < 0)
+	if(startthread(getRequests,NULL) < 0)
 		error("Unable to start thread");
 
 	join(0);
@@ -94,7 +94,7 @@ static int clientThread(A_UNUSED void *arg) {
 	}
 	while(fd < 0);
 	printffl("[%d] Reading...\n",gettid());
-	if(RETRY(read(fd,buf,sizeof(buf))) < 0)
+	if(IGNSIGS(read(fd,buf,sizeof(buf))) < 0)
 		error("read");
 	printffl("[%d] Got: '%s'\n",gettid(),buf);
 	for(i = 0; i < sizeof(buf) - 1; i++)
@@ -112,10 +112,10 @@ static int getRequests(A_UNUSED void *arg) {
 	msgid_t mid;
 	int tid;
 	clientCount = 0;
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce signal-handler");
 	do {
-		int cfd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int cfd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(cfd < 0)
 			printe("[TEST] Unable to get work");
 		else {
@@ -127,9 +127,9 @@ static int getRequests(A_UNUSED void *arg) {
 			req->data = NULL;
 			if(mid == MSG_DEV_WRITE) {
 				req->data = malloc(msg.args.arg2);
-				RETRY(receive(cfd,NULL,req->data,msg.args.arg2));
+				IGNSIGS(receive(cfd,NULL,req->data,msg.args.arg2));
 			}
-			if((tid = startThread(handleRequest,req)) < 0)
+			if((tid = startthread(handleRequest,req)) < 0)
 				error("Unable to start thread");
 			if(clientCount == 0)
 				join(tid);
@@ -168,7 +168,7 @@ static int handleRequest(void *arg) {
 		case MSG_DEV_CLOSE:
 			printffl("--[%d,%d] Close\n",gettid(),req->fd);
 			clientCount--;
-			if(sendSignalTo(getpid(),SIG_USR1) < 0)
+			if(kill(getpid(),SIG_USR1) < 0)
 				error("Unable to send signal to driver-thread");
 			break;
 		default:

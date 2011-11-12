@@ -23,7 +23,7 @@
 #include <esc/common.h>
 
 #define MAX_PROC_NAME_LEN	30
-#define INVALID_PID			1026
+#define INVALID_PID			8193
 
 #define ROOT_UID			0
 #define ROOT_GID			0
@@ -33,7 +33,7 @@ typedef void (*fExitFunc)(void *arg);
 typedef struct {
 	pid_t pid;
 	/* the signal that killed the process (SIG_COUNT if none) */
-	sig_t signal;
+	int signal;
 	/* exit-code the process gave us via exit() */
 	int exitCode;
 	/* memory it has used */
@@ -170,15 +170,25 @@ int fork(void) A_CHECKRET;
 int exec(const char *path,const char **args);
 
 /**
+ * The same as exec(), but if <file> does not contain a slash, the environment variable PATH
+ * is prepended to <file>. Afterwards exec() is called with that path and <args>.
+ *
+ * @param file the file to execute
+ * @param args a NULL-terminated array of arguments
+ * @return a negative error-code if failed
+ */
+int execp(const char *file,const char **args);
+
+/**
  * Waits until a child terminates and stores information about it into <state>.
  * Note that a child-process is required and only one thread can wait for a child-process!
- * You may get interrupted by a signal (and may want to call waitChild() again in this case). If so
+ * You may get interrupted by a signal (and may want to call waitchild() again in this case). If so
  * you get -EINTR as return-value (and errno will be set).
  *
  * @param state the exit-state (may be NULL)
  * @return 0 on success
  */
-int waitChild(sExitState *state);
+int waitchild(sExitState *state);
 
 /**
  * The system function is used to issue a command. Execution of your program will not

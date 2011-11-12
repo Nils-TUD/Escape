@@ -28,7 +28,7 @@
 #include <string.h>
 #include <errno.h>
 
-int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
+int sysc_chgsize(sThread *t,sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
 	size_t oldEnd;
@@ -50,7 +50,7 @@ int sysc_changeSize(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,oldEnd);
 }
 
-int sysc_addRegion(sThread *t,sIntrptStackFrame *stack) {
+int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 	sBinDesc binCpy;
 	const sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
 	off_t binOffset = SYSC_ARG2(stack);
@@ -105,7 +105,7 @@ int sysc_addRegion(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,start);
 }
 
-int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack) {
+int sysc_regctrl(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	uintptr_t addr = SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
@@ -117,13 +117,13 @@ int sysc_setRegProt(sThread *t,sIntrptStackFrame *stack) {
 	if(prot & PROT_WRITE)
 		flags |= RF_WRITABLE;
 
-	res = vmm_setRegProt(pid,addr,flags);
+	res = vmm_regctrl(pid,addr,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 
-int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
+int sysc_mapphys(sThread *t,sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
@@ -144,7 +144,7 @@ int sysc_mapPhysical(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-int sysc_createSharedMem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_shmcrt(sThread *t,sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	size_t byteCount = SYSC_ARG2(stack);
@@ -161,7 +161,7 @@ int sysc_createSharedMem(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
-int sysc_joinSharedMem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_shmjoin(sThread *t,sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
@@ -174,7 +174,7 @@ int sysc_joinSharedMem(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
-int sysc_leaveSharedMem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_shmleave(sThread *t,sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
@@ -187,7 +187,7 @@ int sysc_leaveSharedMem(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_destroySharedMem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_shmdel(sThread *t,sIntrptStackFrame *stack) {
 	char namecpy[MAX_SHAREDMEM_NAME + 1];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;

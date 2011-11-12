@@ -46,11 +46,11 @@ int sysc_gettid(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->tid);
 }
 
-int sysc_getThreadCount(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getthreadcnt(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,sll_length(t->proc->threads));
 }
 
-int sysc_startThread(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_startthread(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
 	int res = proc_startThread(entryPoint,0,arg);
@@ -67,7 +67,7 @@ int sysc_exit(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getCycles(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getcycles(sThread *t,sIntrptStackFrame *stack) {
 	uLongLong cycles;
 	cycles.val64 = t->stats.curCycleCount;
 	SYSC_SETRET2(stack,cycles.val32.upper);
@@ -118,7 +118,7 @@ int sysc_wait(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_waitUnlock(sThread *t,sIntrptStackFrame *stack) {
+int sysc_waitunlock(sThread *t,sIntrptStackFrame *stack) {
 	const sWaitObject *uobjects = (const sWaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);

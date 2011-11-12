@@ -58,7 +58,7 @@
 
 static void proc_doRemoveRegions(sProc *p,bool remStack);
 static int proc_getExitState(pid_t ppid,USER sExitState *state);
-static void proc_setExitState(sProc *p,int exitCode,sig_t signal);
+static void proc_setExitState(sProc *p,int exitCode,int signal);
 static void proc_doDestroy(sProc *p);
 static void proc_notifyProcDied(pid_t parent);
 static pid_t proc_getFreePid(void);
@@ -571,7 +571,7 @@ void proc_segFault(void) {
 	sig_unsetHandler(t->tid,SIG_SEGFAULT);
 }
 
-void proc_addSignalFor(pid_t pid,sig_t signal) {
+void proc_addSignalFor(pid_t pid,int signal) {
 	sThread *t = thread_getRunning();
 	sProc *p = proc_request(t,pid,PLOCK_PROG);
 	if(p) {
@@ -599,7 +599,7 @@ void proc_addSignalFor(pid_t pid,sig_t signal) {
 	}
 }
 
-void proc_terminate(pid_t pid,int exitCode,sig_t signal) {
+void proc_terminate(pid_t pid,int exitCode,int signal) {
 	sSLNode *tn;
 	sThread *t = thread_getRunning();
 	sProc *p = proc_request(t,pid,PLOCK_PROG);
@@ -784,7 +784,7 @@ static int proc_getExitState(pid_t ppid,USER sExitState *state) {
 	return -ECHILD;
 }
 
-static void proc_setExitState(sProc *p,int exitCode,sig_t signal) {
+static void proc_setExitState(sProc *p,int exitCode,int signal) {
 	if(p->exitState)
 		return;
 

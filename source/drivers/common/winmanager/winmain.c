@@ -54,15 +54,15 @@ int main(void) {
 	screenWidth = win_getScreenWidth();
 	screenHeight = win_getScreenHeight();
 
-	if(startThread(mouse_start,&drvId) < 0)
+	if(startthread(mouse_start,&drvId) < 0)
 		error("Unable to start thread for mouse-handler");
-	if(startThread(keyboard_start,&drvId) < 0)
+	if(startthread(keyboard_start,&drvId) < 0)
 		error("Unable to start thread for keyboard-handler");
-	if(startThread(infodev_thread,NULL) < 0)
+	if(startthread(infodev_thread,NULL) < 0)
 		error("Unable to start thread for the infodev");
 
 	while(1) {
-		int fd = getWork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[WINM] Unable to get work");
 		else {
@@ -76,7 +76,7 @@ int main(void) {
 					uint style = msg.str.arg6;
 					gsize_t titleBarHeight = msg.str.arg7;
 					msg.args.arg1 = tmpWinId;
-					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style,
+					msg.args.arg2 = win_create(x,y,width,height,getclientid(fd),style,
 							titleBarHeight,msg.str.s1);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
 					if(style != WIN_STYLE_DESKTOP)
@@ -148,7 +148,7 @@ int main(void) {
 					msgid_t msgid = (msgid_t)msg.args.arg1;
 					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
 							msgid == MSG_WIN_ACTIVE_EV)
-						listener_add(getClientId(fd),msgid);
+						listener_add(getclientid(fd),msgid);
 				}
 				break;
 
@@ -156,7 +156,7 @@ int main(void) {
 					msgid_t msgid = (msgid_t)msg.args.arg1;
 					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
 							msgid == MSG_WIN_ACTIVE_EV)
-						listener_remove(getClientId(fd),msgid);
+						listener_remove(getclientid(fd),msgid);
 				}
 				break;
 
@@ -164,18 +164,18 @@ int main(void) {
 					win_setEnabled(true);
 					win_updateScreen();
 					/* notify the keyboard-thread; it has announced the handler */
-					if(sendSignalTo(getpid(),SIG_USR1) < 0)
+					if(kill(getpid(),SIG_USR1) < 0)
 						printe("[WINM] Unable to send signal USR1 to keyboard-thread");
 					break;
 
 				case MSG_WIN_DISABLE:
 					win_setEnabled(false);
-					if(sendSignalTo(getpid(),SIG_USR1) < 0)
+					if(kill(getpid(),SIG_USR1) < 0)
 						printe("[WINM] Unable to send signal USR1 to keyboard-thread");
 					break;
 
 				case MSG_DEV_CLOSE:
-					win_destroyWinsOf(getClientId(fd),mouse_getX(),mouse_getY());
+					win_destroyWinsOf(getclientid(fd),mouse_getX(),mouse_getY());
 					break;
 
 				default:

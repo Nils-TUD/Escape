@@ -41,7 +41,7 @@ int main(void) {
 		error("Unable to change permissions of /dev/pci");
 
 	while(1) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[PCI] Unable to get work");
 		else {

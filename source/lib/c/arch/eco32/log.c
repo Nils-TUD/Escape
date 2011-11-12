@@ -28,7 +28,7 @@ static uint32_t *outRegs = NULL;
 
 void logc(char c) {
 	if(outRegs == NULL) {
-		outRegs = mapPhysical(OUTPUT_START_ADDR,8);
+		outRegs = mapphys(OUTPUT_START_ADDR,8);
 		assert(outRegs != NULL);
 	}
 	*outRegs = c;

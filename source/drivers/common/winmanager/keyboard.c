@@ -48,7 +48,7 @@ int keyboard_start(void *drvIdPtr) {
 	if(km < 0)
 		error("Unable to open /dev/kmmanager");
 
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce signal-handler");
 
 	enabled = win_isEnabled();
@@ -57,7 +57,7 @@ int keyboard_start(void *drvIdPtr) {
 		while(!enabled)
 			wait(EV_NOEVENT,0);
 
-		ssize_t count = RETRY(read(km,kbData,sizeof(kbData)));
+		ssize_t count = IGNSIGS(read(km,kbData,sizeof(kbData)));
 		if(count < 0) {
 			if(count != -EINTR)
 				printe("[WINM] Unable to read from kmmanager");
@@ -86,7 +86,7 @@ static void handleKbMessage(sWindow *active,uchar keycode,uchar modifier,char c)
 	msg.args.arg3 = active->id;
 	msg.args.arg4 = c;
 	msg.args.arg5 = modifier;
-	aWin = getClient(drvId,active->owner);
+	aWin = getclient(drvId,active->owner);
 	if(aWin >= 0) {
 		send(aWin,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg.args));
 		close(aWin);

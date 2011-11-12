@@ -27,7 +27,7 @@ static void sigHandler(int sig);
 static void f(int a);
 
 int mod_stack(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	if(setSigHandler(SIG_TERM,sigHandler) < 0)
+	if(signal(SIG_TERM,sigHandler) == SIG_ERR)
 		printe("Unable to set sig-handler");
 	f(0);
 	return 0;
@@ -40,7 +40,7 @@ static void sigHandler(A_UNUSED int sig) {
 static void f(int a) {
 	if(a % 128 == 0)
 		printf("&a = %p\n",&a);
-	if(sendSignalTo(getpid(),SIG_TERM) < 0)
+	if(kill(getpid(),SIG_TERM) < 0)
 		printe("Unable to send signal");
 	f(a + 1);
 }

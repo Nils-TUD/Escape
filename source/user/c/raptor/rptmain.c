@@ -49,9 +49,9 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 
-	if(setSigHandler(SIG_INTRPT_TIMER,sigTimer) < 0)
+	if(signal(SIG_INTRPT_TIMER,sigTimer) == SIG_ERR)
 		qerror("Unable to set sig-handler");
-	if(startThread(kmMngThread,NULL) < 0)
+	if(startthread(kmMngThread,NULL) == SIG_ERR)
 		qerror("Unable to start thread");
 
 	game_tick(time);
@@ -67,7 +67,7 @@ int main(void) {
 }
 
 static int kmMngThread(A_UNUSED void *arg) {
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) < 0)
 		error("Unable to set SIG_USR1-handler");
 	while(1) {
 		int c,cmd,n1,n2,n3;
@@ -104,7 +104,7 @@ static void qerror(const char *msg,...) {
 
 static void quit(void) {
 	game_deinit();
-	if(sendSignalTo(getpid(),SIG_USR1) < 0)
+	if(kill(getpid(),SIG_USR1) < 0)
 		printe("Unable to send SIG_USR1");
 	vterm_setReadline(STDOUT_FILENO,true);
 	vterm_restore(STDOUT_FILENO);

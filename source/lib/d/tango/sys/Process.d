@@ -1275,7 +1275,7 @@ class Process
                     // Replace stdin with the "read" pipe
                     if(pin !is null)
                     {
-                        redirFd(STDIN_FILENO,pin.source.fileHandle());
+                        redirect(STDIN_FILENO,pin.source.fileHandle());
                         pin.sink().close();
                         pin.source.close();
                     }
@@ -1283,7 +1283,7 @@ class Process
                     // Replace stdout with the "write" pipe
                     if(pout !is null)
                     {
-                        redirFd(STDOUT_FILENO,pout.sink.fileHandle());
+                        redirect(STDOUT_FILENO,pout.sink.fileHandle());
                         pout.source.close();
                         pout.sink.close();
                     }
@@ -1291,7 +1291,7 @@ class Process
                     // Replace stderr with the "write" pipe
                     if(perr !is null)
                     {
-                        redirFd(STDERR_FILENO,perr.sink.fileHandle());
+                        redirect(STDERR_FILENO,perr.sink.fileHandle());
                         perr.source.close();
                         perr.sink.close();
                     }
@@ -1300,12 +1300,12 @@ class Process
                     // versa
                     if(_redirect & Redirect.OutputToError)
                     {
-                        redirFd(STDOUT_FILENO,STDERR_FILENO);
+                        redirect(STDOUT_FILENO,STDERR_FILENO);
                     }
 
                     if(_redirect & Redirect.ErrorToOutput)
                     {
-                        redirFd(STDERR_FILENO,STDOUT_FILENO);
+                        redirect(STDERR_FILENO,STDOUT_FILENO);
                     }
 
                     // We close the unneeded part of the execv*() notification pipe
@@ -1641,7 +1641,7 @@ class Process
             	ExitState rc;
 
                 // Wait for child process to end.
-                if (waitChild(&rc) == 0 || rc.pid != _pid)
+                if (waitchild(&rc) == 0 || rc.pid != _pid)
                 {
                 	if(rc.signal != SIG_COUNT)
                 	{
@@ -1849,7 +1849,7 @@ class Process
 
                 assert(_pid > 0);
 
-                if (.sendSignalTo(cast(pid_t)_pid, SIG_TERM) == 0)
+                if (.kill(cast(pid_t)_pid, SIG_TERM) == 0)
                 {
                     // We clean up the process related data and set the _running
                     // flag to false once we're done waiting for the process to
@@ -1866,7 +1866,7 @@ class Process
                     // FIXME: is this loop really needed?
                     for (uint i = 0; i < 100; i++)
                     {
-                        int res = waitChild(&rc);
+                        int res = waitchild(&rc);
                         if (rc.pid == _pid)
                         {
                             break;

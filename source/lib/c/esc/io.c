@@ -24,14 +24,14 @@
 #include <string.h>
 #include <stdarg.h>
 
-bool is_file(const char *path) {
+bool isfile(const char *path) {
 	sFileInfo info;
 	if(stat(path,&info) < 0)
 		return false;
 	return S_ISREG(info.mode);
 }
 
-bool is_dir(const char *path) {
+bool isdir(const char *path) {
 	sFileInfo info;
 	if(stat(path,&info) < 0)
 		return false;

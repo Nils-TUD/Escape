@@ -72,7 +72,7 @@ typedef struct {
 typedef struct {
 	pid_t pid;
 	/* the signal that killed the process (SIG_COUNT if none) */
-	sig_t signal;
+	int signal;
 	/* exit-code the process gave us via exit() */
 	int exitCode;
 	/* memory it has used */
@@ -105,7 +105,7 @@ typedef struct {
 	sProcGroups *groups;
 	/* the physical address for the page-directory of this process */
 	tPageDir pagedir;
-	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.
+	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapphys.
 	 * paging-structures are counted, too */
 	ulong ownFrames;
 	/* the number of frames the process uses, but maybe other processes as well */
@@ -145,7 +145,7 @@ typedef struct {
 	} stats;
 } sProc;
 
-/* the area for proc_changeSize() */
+/* the area for proc_chgsize() */
 typedef enum {CHG_DATA,CHG_STACK} eChgArea;
 
 /**
@@ -248,7 +248,7 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal);
  * @param pid the process-id
  * @param signal the signal
  */
-void proc_addSignalFor(pid_t pid,sig_t signal);
+void proc_addSignalFor(pid_t pid,int signal);
 
 /**
  * Clones the current process, gives the new process a clone of the current thread and saves this
@@ -327,7 +327,7 @@ void proc_segFault(void);
  * @param exitCode the exit-code to store
  * @param signal the signal with which it was killed (SIG_COUNT if none)
  */
-void proc_terminate(pid_t pid,int exitCode,sig_t signal);
+void proc_terminate(pid_t pid,int exitCode,int signal);
 
 /**
  * Kills the given thread. If the process has no threads afterwards, it is destroyed.

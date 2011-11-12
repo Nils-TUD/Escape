@@ -35,7 +35,7 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static int timerFreq;
+static long timerFreq;
 static time_t ms = 0;
 static int waitingPid = 0;
 
@@ -44,34 +44,25 @@ int main(int argc,char **argv) {
 	if(argc < 2 || isHelpCmd(argc,argv))
 		usage(argv[0]);
 
-	timerFreq = getConf(CONF_TIMER_FREQ);
+	timerFreq = sysconf(CONF_TIMER_FREQ);
 	if(timerFreq < 0)
 		error("Unable to get timer-frequency");
 
 	strcat(path,argv[1]);
-	if(setSigHandler(SIG_INTRPT,sigHdlr) < 0)
+	if(signal(SIG_INTRPT,sigHdlr) == SIG_ERR)
 		error("Unable to set sig-handler for signal %d",SIG_INTRPT);
-	if(setSigHandler(SIG_INTRPT_TIMER,sigTimer) < 0)
+	if(signal(SIG_INTRPT_TIMER,sigTimer) == SIG_ERR)
 		error("Unable to set sig-handler for signal %d",SIG_INTRPT_TIMER);
 
 	if((waitingPid = fork()) == 0) {
-		int i;
-		size_t size = 1,pos = 0;
-		const char *args[] = {"/bin/shell","-e",NULL,NULL};
-		char *arg = NULL;
-		for(i = 1; i < argc; i++) {
-			size_t len = strlen(argv[i]);
-			size += len + 1;
-			arg = (char*)realloc(arg,size);
-			if(!arg)
-				error("Not enough memory for arguments");
-			strcpy(arg + pos,argv[i]);
-			pos += len;
-			arg[pos++] = ' ';
-			arg[pos] = '\0';
-		}
-		args[2] = arg;
-		exec(args[0],args);
+		size_t i;
+		const char **args = (const char**)malloc(sizeof(char*) * (argc - 1));
+		if(!args)
+			error("Not enough mem");
+		for(i = 1; i < argc; i++)
+			args[i - 1] = argv[i];
+		args[argc - 1] = NULL;
+		execp(args[0],args);
 		error("Exec failed");
 	}
 	else if(waitingPid < 0)
@@ -80,13 +71,13 @@ int main(int argc,char **argv) {
 		sExitState state;
 		int res;
 		while(1) {
-			res = waitChild(&state);
+			res = waitchild(&state);
 			if(res != -EINTR)
 				break;
 		}
 		if(res < 0)
 			error("Wait failed");
-		if(setSigHandler(SIG_INTRPT_TIMER,SIG_DFL) < 0)
+		if(signal(SIG_INTRPT_TIMER,SIG_DFL) == SIG_ERR)
 			error("Unable to unset signal-handler");
 		printf("\n");
 		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
@@ -111,7 +102,7 @@ static void sigTimer(A_UNUSED int sig) {
 static void sigHdlr(A_UNUSED int sig) {
 	if(waitingPid > 0) {
 		/* send SIG_INTRPT to the child */
-		if(sendSignalTo(waitingPid,SIG_INTRPT) < 0)
+		if(kill(waitingPid,SIG_INTRPT) < 0)
 			printe("Unable to send signal to %d",waitingPid);
 	}
 }

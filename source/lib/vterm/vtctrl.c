@@ -76,7 +76,7 @@ bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
 	vt->readLine = true;
 	vt->navigation = true;
 	vt->printToRL = false;
-	vt->printToCom1 = getConf(CONF_LOG);
+	vt->printToCom1 = sysconf(CONF_LOG);
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;
 	vt->shellPid = 0;

@@ -59,7 +59,7 @@ void conf_parseBootParams(int argc,const char *const *argv) {
 	}
 }
 
-const char *conf_getStr(uint id) {
+const char *conf_getStr(int id) {
 	const char *res = NULL;
 	switch(id) {
 		case CONF_SWAP_DEVICE:
@@ -69,7 +69,7 @@ const char *conf_getStr(uint id) {
 	return res;
 }
 
-long conf_get(uint id) {
+long conf_get(int id) {
 	long res;
 	switch(id) {
 		case CONF_BOOT_VIDEOMODE:

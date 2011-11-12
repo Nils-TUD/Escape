@@ -53,7 +53,7 @@ namespace std {
 	rawfile::size_type rawfile::read(void *data,size_type size,size_type count) {
 		if(_fd < 0 || !(_mode & READ))
 			throw io_exception("File not opened for reading",0);
-		int res = RETRY(::read(_fd,data,size * count));
+		int res = IGNSIGS(::read(_fd,data,size * count));
 		if(res < 0)
 			throw io_exception("Unable to read",-res);
 		return (size_type)res / size;

@@ -137,7 +137,7 @@ int main(void) {
 		error("Unable to register device 'vesatext'");
 
 	while(1) {
-		int fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[VESAT] Unable to get work");
 		else {
@@ -158,7 +158,7 @@ int main(void) {
 						uint8_t *str = (uint8_t*)malloc(count);
 						vassert(str,"Unable to alloc mem");
 						msg.args.arg1 = 0;
-						if(RETRY(receive(fd,&mid,str,count)) >= 0) {
+						if(IGNSIGS(receive(fd,&mid,str,count)) >= 0) {
 							vesa_drawChars((offset / 2) % cols,(offset / 2) / cols,str,count / 2);
 							msg.args.arg1 = count;
 						}
@@ -218,7 +218,7 @@ static int vesa_determineMode(void) {
 	if(mode != 0) {
 		minfo = vbe_getModeInfo(mode);
 		if(minfo) {
-			video = mapPhysical(minfo->physBasePtr,minfo->xResolution *
+			video = mapphys(minfo->physBasePtr,minfo->xResolution *
 					minfo->yResolution * (minfo->bitsPerPixel / 8));
 			printf("[VESATEXT] Setting (%x) %4d x %4d x %2d\n",mode,
 					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);

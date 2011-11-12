@@ -29,7 +29,7 @@ int readdate(struct tm *t) {
 	int fd = open(TIME_DEVICE,IO_READ);
 	if(fd < 0)
 		return fd;
-	if((err = RETRY(read(fd,t,sizeof(struct tm)))) < 0) {
+	if((err = IGNSIGS(read(fd,t,sizeof(struct tm)))) < 0) {
 		close(fd);
 		return err;
 	}

@@ -29,9 +29,9 @@
 #include <assert.h>
 
 /**
- * A container for the lines in less. The basic idea is not to use the heap, but use changeSize()
+ * A container for the lines in less. The basic idea is not to use the heap, but use chgsize()
  * manually to add new pages to the end if necessary and use it as a big array of lines, where
- * each line has the same length. Because the heap uses changeSize() as well, we can't use a single
+ * each line has the same length. Because the heap uses chgsize() as well, we can't use a single
  * expanding array, but have to use multiple ones. Thus, we use a region-based concept.
  */
 class LineContainer {
@@ -50,7 +50,7 @@ private:
 		typedef LineContainer::size_type size_type;
 
 		Region()
-			: _begin((uintptr_t)changeSize(0)), _pages(0), _lines(0) {
+			: _begin((uintptr_t)chgsize(0)), _pages(0), _lines(0) {
 		};
 		~Region() {
 		};
@@ -72,7 +72,7 @@ public:
 	LineContainer(size_type lineLen)
 		// plus null-termination
 		: _regions(std::vector<Region>()), _lines(0), _lineLen(lineLen + 1) {
-		pageSize = getConf(CONF_PAGE_SIZE);
+		pageSize = sysconf(CONF_PAGE_SIZE);
 		_regions.push_back(Region());
 	};
 	~LineContainer() {

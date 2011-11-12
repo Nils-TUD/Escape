@@ -25,8 +25,8 @@
 #include "shmclone.h"
 
 int mod_shmclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	void *p1 = createSharedMem("foo",8192);
-	void *p2 = createSharedMem("bar",4096);
+	void *p1 = shmcrt("foo",8192);
+	void *p2 = shmcrt("bar",4096);
 	strcpy(p1,"test1");
 	strcpy(p2,"test2");
 	if(fork() == 0) {
@@ -36,6 +36,6 @@ int mod_shmclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	}
 	/* parent has to wait; otherwise we'll destroy the shm */
 	else
-		waitChild(NULL);
+		waitchild(NULL);
 	return 0;
 }

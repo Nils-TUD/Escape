@@ -28,7 +28,7 @@ static int evilThread(A_UNUSED void *arg);
 int mod_highcpu(int argc,char *argv[]) {
 	size_t i,count = argc > 2 ? atoi(argv[2]) : 1;
 	for(i = 0; i < count - 1; i++) {
-		if(startThread(evilThread,NULL) < 0)
+		if(startthread(evilThread,NULL) < 0)
 			printe("Unable to start thread");
 	}
 	return evilThread(NULL);

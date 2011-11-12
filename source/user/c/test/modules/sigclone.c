@@ -44,7 +44,7 @@ static void timerIRQ(A_UNUSED int sig) {
 int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	int res;
 	parent = gettid();
-	if(setSigHandler(SIG_INTRPT_TIMER,timerIRQ) < 0)
+	if(signal(SIG_INTRPT_TIMER,timerIRQ) == SIG_ERR)
 		error("Unable to set sighandler");
 
 	if(fork() == 0) {
@@ -58,7 +58,7 @@ int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 
 	/* parent waits */
 	do {
-		res = waitChild(NULL);
+		res = waitchild(NULL);
 	}
 	while(res == -EINTR);
 	printf("Parent got %d\n",parentCount);

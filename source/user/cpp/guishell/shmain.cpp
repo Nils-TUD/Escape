@@ -112,14 +112,14 @@ int main(int argc,char **argv) {
 	while(fin < 0);
 
 	// redirect fds so that stdin, stdout and stderr refer to our device
-	if(redirFd(STDIN_FILENO,fin) < 0)
+	if(redirect(STDIN_FILENO,fin) < 0)
 		error("Unable to redirect STDIN to %d",fin);
 	int fout = open(drvPath,IO_WRITE | IO_MSGS);
 	if(fout < 0)
 		error("Unable to open '%s' for writing",drvPath);
-	if(redirFd(STDOUT_FILENO,fout) < 0)
+	if(redirect(STDOUT_FILENO,fout) < 0)
 		error("Unable to redirect STDOUT to %d",fout);
-	if(redirFd(STDERR_FILENO,fout) < 0)
+	if(redirect(STDERR_FILENO,fout) < 0)
 		error("Unable to redirect STDERR to %d",fout);
 	delete[] drvPath;
 
@@ -131,7 +131,7 @@ int main(int argc,char **argv) {
 	shellMain();
 
 	// notify the child that we're done
-	if(sendSignalTo(childPid,SIG_USR1) < 0)
+	if(kill(childPid,SIG_USR1) < 0)
 		printe("Unable to send SIG_USR1 to child");
 	return EXIT_SUCCESS;
 }
@@ -144,7 +144,7 @@ static int guiProc(void) {
 		error("Unable to re-register device %s",drvName);
 	delete[] drvName;
 
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to set signal-handler");
 
 	// now start GUI
@@ -155,7 +155,7 @@ static int guiProc(void) {
 	root.getTheme().setPadding(0);
 	ShellControl *sh = new ShellControl(0,0,root.getWidth(),root.getHeight());
 	gt = new GUITerm(sid,sh);
-	if(startThread(termThread,gt) < 0)
+	if(startthread(termThread,gt) < 0)
 		error("Unable to start term-thread");
 	root.setLayout(new BorderLayout());
 	root.add(sh,BorderLayout::CENTER);
@@ -167,7 +167,7 @@ static int guiProc(void) {
 }
 
 static int termThread(A_UNUSED void *arg) {
-	if(setSigHandler(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to set signal-handler");
 	gt->run();
 	return 0;

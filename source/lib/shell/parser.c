@@ -1911,9 +1911,9 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 125 "script.y"
     {
-				ast_execute(curEnv,(yyvsp[(1) - (1)].node));
-				ast_destroy((yyvsp[(1) - (1)].node));
-			;}
+		ast_execute(curEnv,(yyvsp[(1) - (1)].node));
+		ast_destroy((yyvsp[(1) - (1)].node));
+	;}
     break;
 
   case 3:
@@ -1956,8 +1956,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 143 "script.y"
     {
-				(yyval.node) = ast_createFunctionStmt((yyvsp[(2) - (5)].strval),(yyvsp[(4) - (5)].node));
-			;}
+		(yyval.node) = ast_createFunctionStmt((yyvsp[(2) - (5)].strval),(yyvsp[(4) - (5)].node));
+	;}
     break;
 
   case 9:
@@ -1965,8 +1965,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 146 "script.y"
     {
-				(yyval.node) = ast_createIfStmt((yyvsp[(3) - (7)].node),(yyvsp[(6) - (7)].node),NULL);
-			;}
+		(yyval.node) = ast_createIfStmt((yyvsp[(3) - (7)].node),(yyvsp[(6) - (7)].node),NULL);
+	;}
     break;
 
   case 10:
@@ -1974,8 +1974,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 149 "script.y"
     {
-				(yyval.node) = ast_createIfStmt((yyvsp[(3) - (9)].node),(yyvsp[(6) - (9)].node),(yyvsp[(8) - (9)].node));
-			;}
+		(yyval.node) = ast_createIfStmt((yyvsp[(3) - (9)].node),(yyvsp[(6) - (9)].node),(yyvsp[(8) - (9)].node));
+	;}
     break;
 
   case 11:
@@ -1983,8 +1983,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 152 "script.y"
     {
-				(yyval.node) = ast_createForStmt((yyvsp[(3) - (11)].node),(yyvsp[(5) - (11)].node),(yyvsp[(7) - (11)].node),(yyvsp[(10) - (11)].node));
-			;}
+		(yyval.node) = ast_createForStmt((yyvsp[(3) - (11)].node),(yyvsp[(5) - (11)].node),(yyvsp[(7) - (11)].node),(yyvsp[(10) - (11)].node));
+	;}
     break;
 
   case 12:
@@ -1992,8 +1992,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 155 "script.y"
     {
-				(yyval.node) = ast_createWhileStmt((yyvsp[(3) - (7)].node),(yyvsp[(6) - (7)].node));
-			;}
+		(yyval.node) = ast_createWhileStmt((yyvsp[(3) - (7)].node),(yyvsp[(6) - (7)].node));
+	;}
     break;
 
   case 13:
@@ -2001,8 +2001,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 158 "script.y"
     {
-				(yyval.node) = (yyvsp[(1) - (1)].node);
-			;}
+		(yyval.node) = (yyvsp[(1) - (1)].node);
+	;}
     break;
 
   case 14:
@@ -2010,8 +2010,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 161 "script.y"
     {
-				(yyval.node) = (yyvsp[(1) - (1)].node);
-			;}
+		(yyval.node) = (yyvsp[(1) - (1)].node);
+	;}
     break;
 
   case 15:
@@ -2278,8 +2278,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 220 "script.y"
     {
-				(yyval.node) = ast_createAssignExpr(ast_createVarExpr((yyvsp[(1) - (3)].strval),NULL),(yyvsp[(3) - (3)].node),false,NULL);
-			;}
+		(yyval.node) = ast_createAssignExpr(ast_createVarExpr((yyvsp[(1) - (3)].strval),NULL),(yyvsp[(3) - (3)].node),false,NULL);
+	;}
     break;
 
   case 53:
@@ -2287,8 +2287,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 223 "script.y"
     {
-				(yyval.node) = ast_createAssignExpr(ast_createVarExpr((yyvsp[(1) - (5)].strval),NULL),(yyvsp[(5) - (5)].node),true,NULL); 
-			;}
+		(yyval.node) = ast_createAssignExpr(ast_createVarExpr((yyvsp[(1) - (5)].strval),NULL),(yyvsp[(5) - (5)].node),true,NULL); 
+	;}
     break;
 
   case 54:
@@ -2296,8 +2296,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 226 "script.y"
     {
-				(yyval.node) = ast_createAssignExpr(ast_createVarExpr((yyvsp[(1) - (6)].strval),NULL),(yyvsp[(6) - (6)].node),true,(yyvsp[(3) - (6)].node));
-			;}
+		(yyval.node) = ast_createAssignExpr(ast_createVarExpr((yyvsp[(1) - (6)].strval),NULL),(yyvsp[(6) - (6)].node),true,(yyvsp[(3) - (6)].node));
+	;}
     break;
 
   case 55:
@@ -2382,9 +2382,9 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 252 "script.y"
     {
-				(yyval.node) = ast_createCommand();
-				ast_addSubCmd((yyval.node),ast_createSubCmd((yyvsp[(1) - (5)].node),(yyvsp[(5) - (5)].node),(yyvsp[(2) - (5)].node),(yyvsp[(3) - (5)].node),(yyvsp[(4) - (5)].node)));
-			;}
+		(yyval.node) = ast_createCommand();
+		ast_addSubCmd((yyval.node),ast_createSubCmd((yyvsp[(1) - (5)].node),(yyvsp[(5) - (5)].node),(yyvsp[(2) - (5)].node),(yyvsp[(3) - (5)].node),(yyvsp[(4) - (5)].node)));
+	;}
     break;
 
   case 67:
@@ -2392,9 +2392,9 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 256 "script.y"
     {
-				(yyval.node) = (yyvsp[(1) - (7)].node);
-				ast_addSubCmd((yyvsp[(1) - (7)].node),ast_createSubCmd((yyvsp[(3) - (7)].node),(yyvsp[(7) - (7)].node),(yyvsp[(4) - (7)].node),(yyvsp[(5) - (7)].node),(yyvsp[(6) - (7)].node)));
-			;}
+		(yyval.node) = (yyvsp[(1) - (7)].node);
+		ast_addSubCmd((yyvsp[(1) - (7)].node),ast_createSubCmd((yyvsp[(3) - (7)].node),(yyvsp[(7) - (7)].node),(yyvsp[(4) - (7)].node),(yyvsp[(5) - (7)].node),(yyvsp[(6) - (7)].node)));
+	;}
     break;
 
   case 68:
@@ -2458,9 +2458,9 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 280 "script.y"
     {
-				(yyval.node) = ast_createCommand();
-				ast_addSubCmd((yyval.node),ast_createSubCmd((yyvsp[(1) - (5)].node),(yyvsp[(5) - (5)].node),(yyvsp[(2) - (5)].node),(yyvsp[(3) - (5)].node),(yyvsp[(4) - (5)].node)));
-			;}
+		(yyval.node) = ast_createCommand();
+		ast_addSubCmd((yyval.node),ast_createSubCmd((yyvsp[(1) - (5)].node),(yyvsp[(5) - (5)].node),(yyvsp[(2) - (5)].node),(yyvsp[(3) - (5)].node),(yyvsp[(4) - (5)].node)));
+	;}
     break;
 
   case 77:
@@ -2468,9 +2468,9 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 284 "script.y"
     {
-				(yyval.node) = (yyvsp[(1) - (7)].node);
-				ast_addSubCmd((yyvsp[(1) - (7)].node),ast_createSubCmd((yyvsp[(3) - (7)].node),(yyvsp[(7) - (7)].node),(yyvsp[(4) - (7)].node),(yyvsp[(5) - (7)].node),(yyvsp[(6) - (7)].node)));
-			;}
+		(yyval.node) = (yyvsp[(1) - (7)].node);
+		ast_addSubCmd((yyvsp[(1) - (7)].node),ast_createSubCmd((yyvsp[(3) - (7)].node),(yyvsp[(7) - (7)].node),(yyvsp[(4) - (7)].node),(yyvsp[(5) - (7)].node),(yyvsp[(6) - (7)].node)));
+	;}
     break;
 
   case 78:

@@ -32,7 +32,7 @@ int fclose(FILE *stream) {
 	free(stream->in.buffer);
 	free(stream->out.buffer);
 	if(stream->in.fd >= 0 || stream->out.fd >= 0) {
-		if(!sll_removeFirstWith(&iostreams,stream))
+		if(sll_removeFirstWith(&iostreams,stream) == -1)
 			res = -1;
 	}
 	free(stream);

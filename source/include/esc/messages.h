@@ -45,35 +45,21 @@
 #define KE_EV_KEYCODE				4
 #define KE_EV_CHARACTER				8
 
-/* == Messages handled by the kernel == */
-/* fs */
-#define MSG_FS_OPEN_RESP			0
-#define MSG_FS_READ_RESP			1
-#define MSG_FS_WRITE_RESP			2
-#define MSG_FS_CLOSE_RESP			3
-#define MSG_FS_STAT_RESP			4
-#define MSG_FS_LINK_RESP			5
-#define MSG_FS_UNLINK_RESP			6
-#define MSG_FS_MKDIR_RESP			7
-#define MSG_FS_RMDIR_RESP			8
-#define MSG_FS_MOUNT_RESP			9
-#define MSG_FS_UNMOUNT_RESP			10
-#define MSG_FS_ISTAT_RESP			11
-#define MSG_FS_CHMOD_RESP			12
-#define MSG_FS_CHOWN_RESP			13
-/* device */
-#define MSG_DEV_OPEN_RESP			14
-#define MSG_DEV_READ_RESP			15
-#define MSG_DEV_WRITE_RESP			16
-#define MSG_DEV_CLOSE_RESP			17
+/* == messages == */
 /* default response */
-#define MSG_DEF_RESPONSE			18
+#define MSG_DEF_RESPONSE			100000
 
 /* requests to device */
 #define MSG_DEV_OPEN				50
 #define MSG_DEV_READ				51
 #define MSG_DEV_WRITE				52
 #define MSG_DEV_CLOSE				53
+
+/* respones of devices */
+#define MSG_DEV_OPEN_RESP			100001
+#define MSG_DEV_READ_RESP			100002
+#define MSG_DEV_WRITE_RESP			100003
+#define MSG_DEV_CLOSE_RESP			100004
 
 /* requests to fs */
 #define MSG_FS_OPEN					54
@@ -92,20 +78,36 @@
 #define MSG_FS_CHMOD				67
 #define MSG_FS_CHOWN				68
 
+/* responses of fs */
+#define MSG_FS_OPEN_RESP			100005
+#define MSG_FS_READ_RESP			100006
+#define MSG_FS_WRITE_RESP			100007
+#define MSG_FS_CLOSE_RESP			100008
+#define MSG_FS_STAT_RESP			100009
+#define MSG_FS_LINK_RESP			100010
+#define MSG_FS_UNLINK_RESP			100011
+#define MSG_FS_MKDIR_RESP			100012
+#define MSG_FS_RMDIR_RESP			100013
+#define MSG_FS_MOUNT_RESP			100014
+#define MSG_FS_UNMOUNT_RESP			100015
+#define MSG_FS_ISTAT_RESP			100016
+#define MSG_FS_CHMOD_RESP			100017
+#define MSG_FS_CHOWN_RESP			100018
+
 /* == Other messages == */
 #define MSG_SPEAKER_BEEP			100	/* performs a beep */
 
 #define MSG_VESA_UPDATE				200	/* updates a region of the screen */
 #define MSG_VESA_CURSOR				201	/* sets the cursor */
 #define MSG_VESA_GETMODE			202	/* gets the vesa-mode */
-#define MSG_VESA_GETMODE_RESP		203	/* response for the get-mode-request */
+#define MSG_VESA_GETMODE_RESP		100203	/* response for the get-mode-request */
 #define MSG_VESA_SETMODE			204	/* sets the vesa-mode */
 #define MSG_VESA_ENABLE				205	/* enables vesa */
 #define MSG_VESA_DISABLE			206	/* disables vesa */
 #define MSG_VESA_PREVIEWRECT		207 /* sets the preview-rectangle */
 
 #define MSG_WIN_CREATE				300	/* creates a window */
-#define MSG_WIN_CREATE_RESP			301	/* the create-response */
+#define MSG_WIN_CREATE_RESP			100301	/* the create-response */
 #define MSG_WIN_MOVE				302	/* moves a window */
 #define MSG_WIN_UPDATE				303	/* requests an update of a window */
 #define MSG_WIN_SET_ACTIVE_EV		304	/* sets the active window */
@@ -151,7 +153,6 @@
 
 #define MSG_PCI_GET_BY_CLASS		900	/* searches for a pci device with given class */
 #define MSG_PCI_GET_BY_ID			901	/* searches for a pci device with given id */
-#define MSG_PCI_DEVICE_RESP			902
 
 #define MSG_INIT_REBOOT				1000 /* requests a reboot */
 #define MSG_INIT_SHUTDOWN			1001 /* requests a shutdown */
@@ -159,6 +160,9 @@
 											and that you promise to terminate as soon as possible */
 
 #define MSG_DISK_GETSIZE			1100 /* get the size of a device */
+
+/* == responses == */
+/* fs */
 
 #define IS_DEVICE_MSG(id)			((id) == MSG_DEV_OPEN || \
 									 (id) == MSG_DEV_READ || \

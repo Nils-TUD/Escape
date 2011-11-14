@@ -25,6 +25,8 @@
 #include <sys/task/event.h>
 #include <sys/task/fd.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
+#include <sys/vfs/channel.h>
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls.h>
 #include <errno.h>
@@ -152,8 +154,11 @@ int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
 
 	/* open file */
 	file = vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,clientNo,VFS_DEV_NO);
-	if(file < 0)
+	if(file < 0) {
+		/* we have to set the channel unused again; otherwise its ignored for ever */
+		vfs_chan_setUsed(vfs_node_get(clientNo),false);
 		SYSC_ERROR(stack,file);
+	}
 
 	/* receive a message */
 	res = vfs_receiveMsg(pid,file,id,data,size,false);

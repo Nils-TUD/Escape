@@ -175,7 +175,8 @@ sSLNode *sll_nodeWith(const sSLList *list,const void *data) {
 }
 
 void *sll_get(const sSLList *list,size_t index) {
-	return (void*)sll_getNode(list,index)->data;
+	sNode *n = sll_getNode(list,index);
+	return n ? n->data : NULL;
 }
 
 void sll_set(sSLList *list,const void *data,size_t index) {
@@ -274,9 +275,10 @@ void *sll_removeFirst(sSLList *list) {
 	return res;
 }
 
-bool sll_removeFirstWith(sSLList *list,const void *data) {
+ssize_t sll_removeFirstWith(sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
+	ssize_t i = 0;
 
 	vassert(list != NULL,"list == NULL");
 
@@ -286,15 +288,16 @@ bool sll_removeFirstWith(sSLList *list,const void *data) {
 				break;
 			ln = n;
 			n = n->next;
+			i++;
 		}
 	}
 
 	/* ignore */
 	if(n == NULL)
-		return false;
+		return -1;
 
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
-	return true;
+	return i;
 }
 
 void *sll_removeIndex(sSLList *list,size_t index) {

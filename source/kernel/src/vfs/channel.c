@@ -42,22 +42,23 @@
 typedef struct {
 	bool used;
 	bool closed;
+	sThread *curClient;
 	/* a list for sending messages to the device */
 	sSLList sendList;
 	/* a list for reading messages from the device */
 	sSLList recvList;
-	/* a list of waiting clients for receiving a message */
-	sSLList waitList;
 } sChannel;
 
 typedef struct {
 	msgid_t id;
 	size_t length;
+	sThread *thread;
 } sMessage;
 
 static void vfs_chan_destroy(sVFSNode *n);
 static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node);
+static sMessage *vfs_chan_getMsg(sThread *t,sSLList *list,ushort flags);
 
 extern klock_t waitLock;
 
@@ -87,7 +88,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	}
 	sll_init(&chan->sendList,slln_allocNode,slln_freeNode);
 	sll_init(&chan->recvList,slln_allocNode,slln_freeNode);
-	sll_init(&chan->waitList,slln_allocNode,slln_freeNode);
+	chan->curClient = NULL;
 	chan->used = false;
 	chan->closed = false;
 	node->data = chan;
@@ -103,7 +104,6 @@ static void vfs_chan_destroy(sVFSNode *n) {
 		/* clear send and receive list */
 		sll_clear(&chan->recvList,true);
 		sll_clear(&chan->sendList,true);
-		/* TODO wake up waiting clients */
 		cache_free(chan);
 		n->data = NULL;
 	}
@@ -128,8 +128,10 @@ static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
 	if(node->name == NULL)
 		vfs_node_destroy(node);
 	else {
-		if(vfs_isDevice(file))
+		if(vfs_isDevice(file)) {
 			chan->used = false;
+			chan->curClient = NULL;
+		}
 
 		if(node->refCount == 0) {
 			/* notify the driver, if it is one */
@@ -170,6 +172,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 	sThread *t = thread_getRunning();
 	sChannel *chan = (sChannel*)n->data;
 	sMessage *msg1,*msg2 = NULL;
+	sThread *recipient = t;
 
 #if PRINT_MSGS
 	sProc *p = proc_getByPid(pid);
@@ -226,6 +229,14 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
 	spinlock_aquire(&waitLock);
+
+	/* set recipient */
+	if(flags & VFS_DEVICE)
+		recipient = id >= MSG_DEF_RESPONSE ? chan->curClient : NULL;
+	msg1->thread = recipient;
+	if(data2)
+		msg2->thread = recipient;
+
 	/* append to list */
 	if(!sll_append(list,msg1))
 		goto error;
@@ -240,12 +251,11 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		ev_wakeup(EVI_CLIENT,(evobj_t)n->parent);
 	}
 	else {
-		/* notify the first thread that waits on this node for a msg */
-		sThread *wt = sll_removeFirst(&chan->waitList);
-		if(wt)
-			ev_unblock(wt);
 		/* notify other possible waiters */
-		ev_wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
+		if(recipient)
+			ev_unblock(recipient);
+		else
+			ev_wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
 	}
 	spinlock_release(&waitLock);
 	spinlock_release(&n->lock);
@@ -291,7 +301,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	}
 
 	/* wait until a message arrives */
-	while(sll_length(list) == 0) {
+	while((msg = vfs_chan_getMsg(t,list,flags)) == NULL) {
 		if(!block) {
 			spinlock_release(&node->lock);
 			return -EWOULDBLOCK;
@@ -301,16 +311,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 			spinlock_release(&node->lock);
 			return -EDESTROYED;
 		}
-		if(list == &chan->recvList) {
-			/* append us to the waiters and block us */
-			if(!sll_append(&chan->waitList,t)) {
-				spinlock_release(&node->lock);
-				return -ENOMEM;
-			}
-			ev_block(t);
-		}
-		else
-			ev_wait(t,event,(evobj_t)waitNode);
+		ev_wait(t,event,(evobj_t)waitNode);
 		spinlock_release(&node->lock);
 
 		if(ignoreSigs)
@@ -328,10 +329,10 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 		}
 	}
 
-	/* get first element and copy data to buffer */
-	msg = (sMessage*)sll_removeFirst(list);
-	if(event == EVI_CLIENT)
+	if(event == EVI_CLIENT) {
 		vfs_device_remMsg(node->parent);
+		chan->curClient = msg->thread;
+	}
 	spinlock_release(&node->lock);
 	if(data && msg->length > size) {
 		cache_free(msg);
@@ -357,6 +358,24 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	return res;
 }
 
+static sMessage *vfs_chan_getMsg(sThread *t,sSLList *list,ushort flags) {
+	sSLNode *n,*p;
+	/* drivers get always the first message */
+	if(flags & VFS_DEVICE)
+		return (sMessage*)sll_removeFirst(list);
+
+	/* find the message for this client-thread */
+	p = NULL;
+	for(n = sll_begin(list); n != NULL; p = n, n = n->next) {
+		sMessage *msg = (sMessage*)n->data;
+		if(msg->thread == NULL || msg->thread == t) {
+			sll_removeNode(list,n,p);
+			return msg;
+		}
+	}
+	return NULL;
+}
+
 void vfs_chan_print(const sVFSNode *n) {
 	size_t i;
 	sChannel *chan = (sChannel*)n->data;
@@ -365,10 +384,14 @@ void vfs_chan_print(const sVFSNode *n) {
 	lists[1] = &chan->recvList;
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
 		size_t j,count = sll_length(lists[i]);
-		vid_printf("\t\tChannel %s %s: (%zu)\n",n->name,i ? "recvs" : "sends",count);
+		vid_printf("\t\tChannel %s %s: (%zu,%s)\n",n->name,i ? "recvs" : "sends",count,
+		                                                     chan->used ? "used" : "-");
 		for(j = 0; j < count; j++) {
 			sMessage *msg = (sMessage*)sll_get(lists[i],j);
-			vid_printf("\t\t\tid=%u len=%zu\n",msg->id,msg->length);
+			vid_printf("\t\t\tid=%u len=%zu, thread=%d:%d:%s\n",msg->id,msg->length,
+					msg->thread ? msg->thread->tid : -1,
+					msg->thread ? msg->thread->proc->pid : -1,
+					msg->thread ? msg->thread->proc->command : "");
 		}
 	}
 }

@@ -55,7 +55,7 @@ int main(void) {
 						msg.data.arg1 = sizeof(sPCIDevice);
 						memcpy(msg.data.d,d,sizeof(sPCIDevice));
 					}
-					send(fd,MSG_PCI_DEVICE_RESP,&msg,sizeof(msg.data));
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 				case MSG_PCI_GET_BY_ID: {
@@ -68,7 +68,7 @@ int main(void) {
 						msg.data.arg1 = sizeof(sPCIDevice);
 						memcpy(msg.data.d,d,sizeof(sPCIDevice));
 					}
-					send(fd,MSG_PCI_DEVICE_RESP,&msg,sizeof(msg.data));
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 				default:

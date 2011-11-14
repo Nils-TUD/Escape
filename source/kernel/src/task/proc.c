@@ -558,9 +558,7 @@ void proc_exit(int exitCode) {
 	sThread *t = thread_getRunning();
 	sProc *p = proc_request(t,t->proc->pid,PLOCK_PROG);
 	if(p) {
-		/* remove us from scheduler to be sure not to be picked again */
-		sched_removeThread(t);
-		term_addDead(t);
+		thread_terminate(t,t);
 		proc_release(t,p,PLOCK_PROG);
 	}
 }
@@ -628,10 +626,7 @@ void proc_terminate(pid_t pid,int exitCode,int signal) {
 	/* terminate all threads */
 	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 		sThread *pt = (sThread*)tn->data;
-		term_addDead(pt);
-		/* if the current one should terminate (e.g. by segfault), it can't be chosen again */
-		if(pt == t)
-			sched_removeThread(pt);
+		thread_terminate(pt,t);
 	}
 	p->flags |= P_PREZOMBIE;
 	proc_release(t,p,PLOCK_PROG);

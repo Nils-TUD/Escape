@@ -544,6 +544,15 @@ size_t thread_getThreadFrmCnt(void);
 int thread_createArch(const sThread *src,sThread *dst,bool cloneProc);
 
 /**
+ * Terminates the given thread, i.e. adds it to the terminator and if its the running thread, it
+ * makes sure that it isn't chosen again.
+ *
+ * @param t the thread to terminate
+ * @param cur the running thread
+ */
+void thread_terminate(sThread *t,sThread *cur);
+
+/**
  * Kills the given thread, i.e. releases all resources and destroys it.
  *
  * @param t the thread

@@ -2,7 +2,7 @@
 ARCH = i586
 GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
@@ -17,7 +17,7 @@ KERNEL = $(BUILDDIR)/$(KERNELNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 # simulators
-#KVM = -enable-kvm
+KVM = -enable-kvm
 QEMU = qemu
 #-net nic,model=ne2k_pci -net user
 QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 256 -localtime

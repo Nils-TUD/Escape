@@ -25,6 +25,8 @@
 #include <sys/task/timer.h>
 #include <sys/task/terminator.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
+#include <sys/vfs/channel.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
@@ -43,6 +45,7 @@
 
 static sThread *thread_createInitial(sProc *p);
 static void thread_initProps(sThread *t);
+static void thread_makeUnrunnable(sThread *t);
 static tid_t thread_getFreeTid(void);
 static bool thread_add(sThread *t);
 static void thread_remove(sThread *t);
@@ -417,6 +420,13 @@ errThread:
 	return err;
 }
 
+void thread_terminate(sThread *t,sThread *cur) {
+	/* if its the current one, it can't be chosen again by the scheduler */
+	if(t == cur)
+		thread_makeUnrunnable(t);
+	term_addDead(t);
+}
+
 void thread_kill(sThread *t) {
 	size_t i;
 	/* remove tls */
@@ -436,8 +446,7 @@ void thread_kill(sThread *t) {
 		t->termCallbacks[i]();
 
 	/* remove from all modules we may be announced */
-	ev_removeThread(t);
-	sched_removeThread(t);
+	thread_makeUnrunnable(t);
 	timer_removeThread(t->tid);
 	sig_removeHandlerFor(t->tid);
 	thread_freeArch(t);
@@ -449,6 +458,11 @@ void thread_kill(sThread *t) {
 	/* finally, destroy thread */
 	thread_remove(t);
 	cache_free(t);
+}
+
+static void thread_makeUnrunnable(sThread *t) {
+	ev_removeThread(t);
+	sched_removeThread(t);
 }
 
 void thread_printAll(void) {

@@ -143,7 +143,7 @@ bool reg_addTo(sRegion *reg,const void *p) {
 }
 
 bool reg_remFrom(sRegion *reg,const void *p) {
-	return sll_removeFirstWith(&reg->procs,(void*)p);
+	return sll_removeFirstWith(&reg->procs,(void*)p) != -1;
 }
 
 ssize_t reg_grow(sRegion *reg,ssize_t amount) {

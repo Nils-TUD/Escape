@@ -223,9 +223,9 @@ void *sll_removeFirst(sSLList *list);
  *
  * @param list the list
  * @param data the data to search for
- * @return true if something has been removed
+ * @return the index if something has been removed or -1
  */
-bool sll_removeFirstWith(sSLList *list,const void *data);
+ssize_t sll_removeFirstWith(sSLList *list,const void *data);
 
 /**
  * Removes the given index from the list

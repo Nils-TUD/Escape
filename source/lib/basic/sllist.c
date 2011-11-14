@@ -176,7 +176,7 @@ sSLNode *sll_nodeWith(const sSLList *list,const void *data) {
 
 void *sll_get(const sSLList *list,size_t index) {
 	sNode *n = sll_getNode(list,index);
-	return n ? n->data : NULL;
+	return n ? (void*)n->data : NULL;
 }
 
 void sll_set(sSLList *list,const void *data,size_t index) {

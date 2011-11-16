@@ -93,13 +93,14 @@ static int kbClientThread(A_UNUSED void *arg) {
 			printe("[KM] Unable to read");
 		else {
 			sKbData *kbd = kbData;
-			bool wasReadable = rb_length(rbuf) > 0;
-			bool readable = false;
+			bool wasReadable,readable;
+			/* use the lock while we're using map, rbuf and the events */
+			locku(&lck);
+			wasReadable = rb_length(rbuf) > 0;
+			readable = false;
 			count /= sizeof(sKbData);
 			while(count-- > 0) {
 				data.keycode = kbd->keycode;
-				/* use the lock while we're using map, rbuf and the events */
-				locku(&lck);
 				data.character = km_translateKeycode(
 						map,kbd->isBreak,kbd->keycode,&(data.modifier));
 				/* if nobody has announced a global key-listener for it, add it to our rb */
@@ -107,11 +108,11 @@ static int kbClientThread(A_UNUSED void *arg) {
 					rb_write(rbuf,&data);
 					readable = true;
 				}
-				unlocku(&lck);
 				kbd++;
 			}
 			if(!wasReadable && readable)
 				fcntl(ids[0],F_SETDATA,true);
+			unlocku(&lck);
 		}
 	}
 	return EXIT_SUCCESS;
@@ -137,8 +138,14 @@ static int keymapThread(A_UNUSED void *arg) {
 					locku(&lck);
 					if(buffer)
 						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
-					msg.args.arg2 = rb_length(rbuf) > 0;
+					/* the problem here is that send() doesn't set immediatly whether data is
+					 * readable or not, because the message is queued and read any time later.
+					 * but we have to make sure that this is done immediatly, i.e. before we unlock
+					 * the lock. therefore we do it manually here with fcntl(). */
+					msg.args.arg2 = READABLE_DONT_SET;
+					fcntl(ids[0],F_SETDATA,rb_length(rbuf) > 0);
 					unlocku(&lck);
+					/* now send the response */
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
 						send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);

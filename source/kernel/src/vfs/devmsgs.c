@@ -108,7 +108,8 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 		return res;
 
 	/* handle response */
-	vfs_device_setReadable(node->parent,msg.arg2);
+	if(msg.arg2 != READABLE_DONT_SET)
+		vfs_device_setReadable(node->parent,msg.arg2);
 	if((long)msg.arg1 <= 0)
 		return msg.arg1;
 

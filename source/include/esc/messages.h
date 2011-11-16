@@ -45,6 +45,9 @@
 #define KE_EV_KEYCODE				4
 #define KE_EV_CHARACTER				8
 
+/* tells the kernel for MSG_DEV_READ_RESP that it shouldn't use arg2 for setting data readable */
+#define READABLE_DONT_SET			2
+
 /* == messages == */
 /* default response */
 #define MSG_DEF_RESPONSE			100000

@@ -95,8 +95,8 @@ extern void tlb_remove(uintptr_t addr);
  */
 static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables);
 
-static uintptr_t paging_getPTables(const tPageDir *pdir);
-static size_t paging_remEmptyPt(tPageDir *pdir,uintptr_t ptables,size_t pti);
+static uintptr_t paging_getPTables(const pagedir_t *pdir);
+static size_t paging_remEmptyPt(pagedir_t *pdir,uintptr_t ptables,size_t pti);
 
 static void paging_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) ;
 static void paging_printPage(sPTEntry *page);
@@ -113,7 +113,7 @@ void paging_init(void) {
 	frame = pmem_allocate(FRM_KERNEL);
 	if(frame == 0)
 		util_panic("Not enough memory for initial page-dir");
-	curPDir = (tPageDir)(frame * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	curPDir = (pagedir_t)(frame * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	pd = (sPDEntry*)curPDir;
 	/* clear */
 	memclear(pd,PAGE_SIZE);
@@ -146,7 +146,7 @@ void paging_init(void) {
 	}
 }
 
-void paging_setFirst(tPageDir *pdir) {
+void paging_setFirst(pagedir_t *pdir) {
 	*pdir = curPDir;
 }
 
@@ -154,7 +154,7 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= KERNEL_AREA && virt + count >= virt;
 }
 
-int paging_cloneKernelspace(tPageDir *pdir) {
+int paging_cloneKernelspace(pagedir_t *pdir) {
 	frameno_t pdirFrame,stackPtFrame;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
@@ -205,7 +205,7 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	return 0;
 }
 
-void paging_destroyPDir(tPageDir *pdir) {
+void paging_destroyPDir(pagedir_t *pdir) {
 	sPDEntry *pde;
 	assert(*pdir != curPDir);
 	/* free page-table for kernel-stack */
@@ -219,7 +219,7 @@ void paging_destroyPDir(tPageDir *pdir) {
 	otherPDir = 0;
 }
 
-bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {
+bool paging_isPresent(pagedir_t *pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPTEntry *pt;
 	sPDEntry *pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir) + ADDR_TO_PDINDEX(virt);
@@ -237,7 +237,7 @@ void paging_removeAccess(void) {
 	/* nothing to do */
 }
 
-frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
+frameno_t paging_getFrameNo(pagedir_t *pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	assert(pt->present && pt->exists);
@@ -286,7 +286,7 @@ void paging_zeroToUser(void *dst,size_t count) {
 	}
 }
 
-ssize_t paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,
+ssize_t paging_clonePages(pagedir_t *src,pagedir_t *dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share) {
 	ssize_t pts = 0;
 	uintptr_t orgVirtSrc = virtSrc,orgVirtDst = virtDst;
@@ -338,7 +338,7 @@ ssize_t paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flag
 	return paging_mapTo(&curPDir,virt,frames,count,flags);
 }
 
-ssize_t paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,size_t count,
+ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size_t count,
 		uint flags) {
 	ssize_t pts = 0;
 	uintptr_t orgVirt = virt;
@@ -417,7 +417,7 @@ size_t paging_unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	return paging_unmapFrom(&curPDir,virt,count,freeFrames);
 }
 
-size_t paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames) {
+size_t paging_unmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,bool freeFrames) {
 	size_t pts = 0;
 	uintptr_t ptables = paging_getPTables(pdir);
 	size_t pti = PT_ENTRY_COUNT;
@@ -454,7 +454,7 @@ size_t paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFram
 	return pts;
 }
 
-static size_t paging_remEmptyPt(tPageDir *pdir,uintptr_t ptables,size_t pti) {
+static size_t paging_remEmptyPt(pagedir_t *pdir,uintptr_t ptables,size_t pti) {
 	size_t i;
 	sPDEntry *pde;
 	uintptr_t virt = pti * PAGE_SIZE * PT_ENTRY_COUNT;
@@ -475,7 +475,7 @@ static size_t paging_remEmptyPt(tPageDir *pdir,uintptr_t ptables,size_t pti) {
 	return 1;
 }
 
-size_t paging_getPTableCount(tPageDir *pdir) {
+size_t paging_getPTableCount(pagedir_t *pdir) {
 	size_t i,count = 0;
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
@@ -485,7 +485,7 @@ size_t paging_getPTableCount(tPageDir *pdir) {
 	return count;
 }
 
-void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
+void paging_sprintfVirtMem(sStringBuffer *buf,pagedir_t *pdir) {
 	size_t i,j;
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir);
@@ -524,7 +524,7 @@ static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables) {
 	}
 }
 
-static uintptr_t paging_getPTables(const tPageDir *pdir) {
+static uintptr_t paging_getPTables(const pagedir_t *pdir) {
 	sPDEntry *pde;
 	if(*pdir == curPDir)
 		return MAPPED_PTS_START;
@@ -569,7 +569,7 @@ size_t paging_dbg_getPageCount(void) {
 	return count;
 }
 
-void paging_printPageOf(tPageDir *pdir,uintptr_t virt) {
+void paging_printPageOf(pagedir_t *pdir,uintptr_t virt) {
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(pdir);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
@@ -584,7 +584,7 @@ void paging_printCur(uint parts) {
 	paging_printPDir(&curPDir,parts);
 }
 
-void paging_printPDir(tPageDir *pdir,uint parts) {
+void paging_printPDir(pagedir_t *pdir,uint parts) {
 	size_t i;
 	uintptr_t ptables = paging_getPTables(pdir);
 	sPDEntry *pdirAddr = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir);

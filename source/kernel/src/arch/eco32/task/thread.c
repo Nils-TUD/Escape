@@ -33,7 +33,7 @@
 
 extern void thread_startup(void);
 extern bool thread_save(sThreadRegs *saveArea);
-extern bool thread_resume(tPageDir pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
+extern bool thread_resume(pagedir_t pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
 
 static sThread *cur = NULL;
 

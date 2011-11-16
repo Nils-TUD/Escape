@@ -166,12 +166,12 @@
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_AREA && \
 								(uintptr_t)(addr) < KERNEL_STACK_AREA)
 
-typedef struct tPageDir {
+typedef struct pagedir_t {
 	uint64_t lastChange;
 	uintptr_t own;
-	struct tPageDir *other;
+	struct pagedir_t *other;
 	uint64_t otherUpdate;
-} tPageDir;
+} pagedir_t;
 
 /**
  * Activates paging
@@ -205,7 +205,7 @@ extern void paging_exchangePDir(uintptr_t physAddr);
  * @param pdir the page-directory
  * @return the used address
  */
-uintptr_t paging_createKernelStack(tPageDir *pdir);
+uintptr_t paging_createKernelStack(pagedir_t *pdir);
 
 /**
  * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you

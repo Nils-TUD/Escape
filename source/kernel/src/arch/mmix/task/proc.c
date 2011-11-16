@@ -32,5 +32,5 @@ void proc_terminateArch(A_UNUSED sProc *p) {
 
 size_t proc_getKMemUsageOf(sProc *p) {
 	/* root-directory, 1 kernelstack for each thread */
-	return sll_length(p->threads) + SEGMENT_COUNT * PTS_PER_SEGMENT;
+	return sll_length(&p->threads) + SEGMENT_COUNT * PTS_PER_SEGMENT;
 }

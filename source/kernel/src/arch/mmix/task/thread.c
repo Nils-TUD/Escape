@@ -79,7 +79,7 @@
 
 extern void thread_startup(void);
 extern int thread_initSave(sThreadRegs *saveArea,void *newStack);
-extern int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tid_t tid);
+extern int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,pagedir_t pdir,tid_t tid);
 
 extern void *stackCopy;
 extern uint64_t stackCopySize;

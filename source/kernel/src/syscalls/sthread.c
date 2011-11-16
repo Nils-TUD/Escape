@@ -47,7 +47,7 @@ int sysc_gettid(sThread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_getthreadcnt(sThread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,sll_length(t->proc->threads));
+	SYSC_RET1(stack,sll_length(&t->proc->threads));
 }
 
 int sysc_startthread(A_UNUSED sThread *t,sIntrptStackFrame *stack) {

@@ -142,11 +142,11 @@ extern void paging_flushTLB(void);
 static void paging_flushPageTable(uintptr_t virt,uintptr_t ptables);
 
 static void paging_setWriteProtection(bool enabled);
-static ssize_t paging_doMapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,
+static ssize_t paging_doMapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,
 		size_t count,uint flags);
-static size_t paging_doUnmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames);
-static tPageDir *paging_getPageDir(void);
-static uintptr_t paging_getPTables(tPageDir *cur,tPageDir *pdir);
+static size_t paging_doUnmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,bool freeFrames);
+static pagedir_t *paging_getPageDir(void);
+static uintptr_t paging_getPTables(pagedir_t *cur,pagedir_t *pdir);
 static size_t paging_remEmptyPt(uintptr_t ptables,size_t pti);
 
 static void paging_printPageTable(uintptr_t ptables,size_t no,sPDEntry *pde) ;
@@ -233,7 +233,7 @@ static void paging_setWriteProtection(bool enabled) {
 		cpu_setCR0(cpu_getCR0() & ~CR0_WRITE_PROTECT);
 }
 
-void paging_setFirst(tPageDir *pdir) {
+void paging_setFirst(pagedir_t *pdir) {
 	pdir->own = (uintptr_t)proc0PD & ~KERNEL_AREA;
 	pdir->other = NULL;
 	pdir->lastChange = cpu_rdtsc();
@@ -291,11 +291,11 @@ void paging_unmapFromTemp(size_t count) {
 	spinlock_release(&tmpMapLock);
 }
 
-int paging_cloneKernelspace(tPageDir *pdir) {
+int paging_cloneKernelspace(pagedir_t *pdir) {
 	uintptr_t kstackAddr;
 	frameno_t pdirFrame,stackPtFrame;
 	sPDEntry *pd,*npd,*tpd;
-	tPageDir *cur = paging_getPageDir();
+	pagedir_t *cur = paging_getPageDir();
 	spinlock_aquire(&pagingLock);
 
 	/* allocate frames */
@@ -352,7 +352,7 @@ int paging_cloneKernelspace(tPageDir *pdir) {
 	return 0;
 }
 
-uintptr_t paging_createKernelStack(tPageDir *pdir) {
+uintptr_t paging_createKernelStack(pagedir_t *pdir) {
 	uintptr_t addr,ptables;
 	size_t i;
 	sPTEntry *pt;
@@ -381,7 +381,7 @@ uintptr_t paging_createKernelStack(tPageDir *pdir) {
 	return addr;
 }
 
-void paging_destroyPDir(tPageDir *pdir) {
+void paging_destroyPDir(pagedir_t *pdir) {
 	uintptr_t ptables;
 	sPDEntry *pde;
 	spinlock_aquire(&pagingLock);
@@ -396,7 +396,7 @@ void paging_destroyPDir(tPageDir *pdir) {
 	spinlock_release(&pagingLock);
 }
 
-bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {
+bool paging_isPresent(pagedir_t *pdir,uintptr_t virt) {
 	uintptr_t ptables;
 	sPTEntry *pt;
 	sPDEntry *pde;
@@ -412,7 +412,7 @@ bool paging_isPresent(tPageDir *pdir,uintptr_t virt) {
 	return res;
 }
 
-frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt) {
+frameno_t paging_getFrameNo(pagedir_t *pdir,uintptr_t virt) {
 	uintptr_t ptables;
 	frameno_t res = -1;
 	sPTEntry *pt;
@@ -438,7 +438,7 @@ void paging_removeAccess(void) {
 
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
 	frameno_t frame;
-	tPageDir *pdir = paging_getPageDir();
+	pagedir_t *pdir = paging_getPageDir();
 	sThread *t = thread_getRunning();
 	spinlock_aquire(&pagingLock);
 	frame = thread_getFrame(t);
@@ -450,7 +450,7 @@ frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlag
 }
 
 void paging_copyToFrame(frameno_t frame,const void *src) {
-	tPageDir *pdir = paging_getPageDir();
+	pagedir_t *pdir = paging_getPageDir();
 	spinlock_aquire(&pagingLock);
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,src,PAGE_SIZE);
@@ -459,7 +459,7 @@ void paging_copyToFrame(frameno_t frame,const void *src) {
 }
 
 void paging_copyFromFrame(frameno_t frame,void *dst) {
-	tPageDir *pdir = paging_getPageDir();
+	pagedir_t *pdir = paging_getPageDir();
 	spinlock_aquire(&pagingLock);
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy(dst,(void*)TEMP_MAP_AREA,PAGE_SIZE);
@@ -480,13 +480,13 @@ void paging_zeroToUser(void *dst,size_t count) {
 	paging_setWriteProtection(true);
 }
 
-ssize_t paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,
+ssize_t paging_clonePages(pagedir_t *src,pagedir_t *dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share) {
 	ssize_t pts = 0;
 	uintptr_t orgVirtSrc = virtSrc,orgVirtDst = virtDst;
 	size_t orgCount = count;
 	uintptr_t srctables;
-	tPageDir *cur = paging_getPageDir();
+	pagedir_t *cur = paging_getPageDir();
 	assert(src != dst && (src == cur || dst == cur));
 	spinlock_aquire(&pagingLock);
 	srctables = paging_getPTables(cur,src);
@@ -539,7 +539,7 @@ ssize_t paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flag
 	return paging_mapTo(paging_getPageDir(),virt,frames,count,flags);
 }
 
-ssize_t paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
+ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
 	ssize_t pts;
 	spinlock_aquire(&pagingLock);
 	pts = paging_doMapTo(pdir,virt,frames,count,flags);
@@ -547,12 +547,12 @@ ssize_t paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,size_
 	return pts;
 }
 
-static ssize_t paging_doMapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,
+static ssize_t paging_doMapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,
 		size_t count,uint flags) {
 	ssize_t pts = 0;
 	uintptr_t orgVirt = virt;
 	size_t orgCount = count;
-	tPageDir *cur = paging_getPageDir();
+	pagedir_t *cur = paging_getPageDir();
 	uintptr_t ptables = paging_getPTables(cur,pdir);
 	uintptr_t pdirAddr = PAGEDIR(ptables);
 	sThread *t = thread_getRunning();
@@ -634,7 +634,7 @@ size_t paging_unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	return paging_unmapFrom(paging_getPageDir(),virt,count,freeFrames);
 }
 
-size_t paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames) {
+size_t paging_unmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,bool freeFrames) {
 	size_t pts;
 	spinlock_aquire(&pagingLock);
 	pts = paging_doUnmapFrom(pdir,virt,count,freeFrames);
@@ -642,9 +642,9 @@ size_t paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFram
 	return pts;
 }
 
-static size_t paging_doUnmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames) {
+static size_t paging_doUnmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,bool freeFrames) {
 	size_t pts = 0;
-	tPageDir *cur = paging_getPageDir();
+	pagedir_t *cur = paging_getPageDir();
 	uintptr_t ptables = paging_getPTables(cur,pdir);
 	size_t pti = PT_ENTRY_COUNT;
 	size_t lastPti = PT_ENTRY_COUNT;
@@ -690,7 +690,7 @@ static size_t paging_doUnmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool
 	return pts;
 }
 
-size_t paging_getPTableCount(tPageDir *pdir) {
+size_t paging_getPTableCount(pagedir_t *pdir) {
 	size_t i,count = 0;
 	uintptr_t ptables;
 	sPDEntry *pdirAddr;
@@ -705,7 +705,7 @@ size_t paging_getPTableCount(tPageDir *pdir) {
 	return count;
 }
 
-void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
+void paging_sprintfVirtMem(sStringBuffer *buf,pagedir_t *pdir) {
 	size_t i,j;
 	uintptr_t ptables;
 	sPDEntry *pdirAddr;
@@ -742,11 +742,11 @@ void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir) {
 	}
 }
 
-static tPageDir *paging_getPageDir(void) {
+static pagedir_t *paging_getPageDir(void) {
 	return proc_getPageDir();
 }
 
-static uintptr_t paging_getPTables(tPageDir *cur,tPageDir *other) {
+static uintptr_t paging_getPTables(pagedir_t *cur,pagedir_t *other) {
 	sPDEntry *pde;
 	if(other == cur)
 		return MAPPED_PTS_START;
@@ -820,12 +820,12 @@ size_t paging_dbg_getPageCount(void) {
 	return count;
 }
 
-void paging_printPageOf(tPageDir *pdir,uintptr_t virt) {
+void paging_printPageOf(pagedir_t *pdir,uintptr_t virt) {
 	/* don't use locking here; its only used in the debugging-console anyway. its better without
 	 * locking to be able to view these things even if somebody currently holds the lock (e.g.
 	 * because a panic occurred during that operation) */
-	tPageDir *cur = proc_getPageDir();
-	tPageDir *old = cur->other;
+	pagedir_t *cur = proc_getPageDir();
+	pagedir_t *old = cur->other;
 	uintptr_t ptables;
 	sPDEntry *pdirAddr;
 	ptables = paging_getPTables(cur,pdir);
@@ -845,10 +845,10 @@ void paging_printCur(uint parts) {
 	paging_printPDir(paging_getPageDir(),parts);
 }
 
-void paging_printPDir(tPageDir *pdir,uint parts) {
+void paging_printPDir(pagedir_t *pdir,uint parts) {
 	size_t i;
-	tPageDir *cur = proc_getPageDir();
-	tPageDir *old = cur->other;
+	pagedir_t *cur = proc_getPageDir();
+	pagedir_t *old = cur->other;
 	uintptr_t ptables;
 	sPDEntry *pdirAddr;
 	ptables = paging_getPTables(cur,pdir);

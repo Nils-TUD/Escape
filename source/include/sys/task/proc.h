@@ -104,7 +104,7 @@ typedef struct {
 	/* all groups (may include egid or not) of this process */
 	sProcGroups *groups;
 	/* the physical address for the page-directory of this process */
-	tPageDir pagedir;
+	pagedir_t pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapphys.
 	 * paging-structures are counted, too */
 	ulong ownFrames;
@@ -133,7 +133,7 @@ typedef struct {
 	/* start-command */
 	const char *command;
 	/* threads of this process */
-	sSLList *threads;
+	sSLList threads;
 	/* the directory-node-number in the VFS of this process */
 	inode_t threadDir;
 	/* locks for this process */
@@ -161,7 +161,7 @@ void proc_init(void);
 /**
  * @return the page-dir of the current process (or the first one)
  */
-tPageDir *proc_getPageDir(void);
+pagedir_t *proc_getPageDir(void);
 
 /**
  * Sets the command of <p> to <cmd> and frees the current command-string, if necessary

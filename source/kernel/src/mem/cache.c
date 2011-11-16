@@ -42,18 +42,17 @@ typedef struct {
 	void *freeList;
 } sCache;
 
+static void cache_printBar(size_t mem,size_t maxMem,size_t total,size_t free);
 static void *cache_get(sCache *c,size_t i);
 
 static klock_t cacheLock;
 static size_t pages = 0;
 static sCache caches[] = {
-	{8,0,0,NULL},
 	{16,0,0,NULL},
 	{32,0,0,NULL},
 	{64,0,0,NULL},
 	{128,0,0,NULL},
 	{256,0,0,NULL},
-	{384,0,0,NULL},	/* e.g. for processes */
 	{512,0,0,NULL},
 	{1024,0,0,NULL},
 	{2048,0,0,NULL},
@@ -182,11 +181,33 @@ size_t cache_getUsedMem(void) {
 
 void cache_print(void) {
 	size_t i;
+	size_t total = 0,maxMem = 0;
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
-		vid_printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
-				caches[i].totalObjs,caches[i].freeObjs,
-				BYTES_2_PAGES(caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3)));
+		size_t amount = caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3);
+		if(amount > maxMem)
+			maxMem = amount;
+		total += amount;
 	}
+	vid_printf("Total: %zu bytes\n",total);
+	for(i = 0; i < ARRAY_SIZE(caches); i++) {
+		size_t mem = caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3);
+		vid_printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
+				caches[i].totalObjs,caches[i].freeObjs,BYTES_2_PAGES(mem));
+		cache_printBar(mem,maxMem,caches[i].totalObjs,caches[i].freeObjs);
+	}
+}
+
+static void cache_printBar(size_t mem,size_t maxMem,size_t total,size_t free) {
+	size_t i;
+	size_t memTotal = (size_t)(VID_COLS * (mem / (double)maxMem));
+	size_t full = (size_t)(memTotal * ((total - free) / (double)total));
+	for(i = 0; i < VID_COLS; i++) {
+		if(i < full)
+			vid_printf("%c",0xDB);
+		else if(i < memTotal)
+			vid_printf("%c",0xB0);
+	}
+	vid_printf("\n");
 }
 
 static void *cache_get(sCache *c,size_t i) {

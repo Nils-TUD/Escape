@@ -316,7 +316,7 @@ thread_initSave:
 	SET		$0,0							# return 0
 	POP		1,0
 
-# int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,tPageDir pdir,tid_t tid)
+# int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,pagedir_t pdir,tid_t tid)
 thread_doSwitchTo:
 	PUT		rF,$3							# just for backtracing: put the thread-id in rF
 	SET		$250,$0							# save $0, SAVE will set rL to 0

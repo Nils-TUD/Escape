@@ -154,7 +154,7 @@
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START || \
 		((uintptr_t)(addr) >= KERNEL_HEAP_START && (uintptr_t)(addr) < KERNEL_STACK))
 
-typedef uintptr_t tPageDir;
+typedef uintptr_t pagedir_t;
 
 /**
  * Sets the entry with index <index> to the given translation

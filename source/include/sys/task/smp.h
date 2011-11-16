@@ -57,7 +57,7 @@ void smp_haltOthers(void);
 void smp_ensureTLBFlushed(void);
 void smp_killThread(sThread *t);
 void smp_wakeupCPU(void);
-void smp_flushTLB(tPageDir *pdir);
+void smp_flushTLB(pagedir_t *pdir);
 void smp_sendIPI(cpuid_t id,uint8_t vector);
 void smp_setId(cpuid_t old,cpuid_t new);
 void smp_start(void);

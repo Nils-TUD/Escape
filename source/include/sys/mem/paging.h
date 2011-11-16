@@ -64,7 +64,7 @@ void paging_init(void);
  *
  * @param pdir the page-directory-container
  */
-void paging_setFirst(tPageDir *pdir);
+void paging_setFirst(pagedir_t *pdir);
 
 /**
  * Checks whether the given range is in user-space
@@ -81,14 +81,14 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count);
  * @param pdir will be set to the page-directory address (physical)
  * @return 0 on success
  */
-int paging_cloneKernelspace(tPageDir *pdir);
+int paging_cloneKernelspace(pagedir_t *pdir);
 
 /**
  * Destroys the given page-directory (not the current!)
  *
  * @param pdir the page-dir
  */
-void paging_destroyPDir(tPageDir *pdir);
+void paging_destroyPDir(pagedir_t *pdir);
 
 /**
  * Determines whether the given page is present
@@ -97,7 +97,7 @@ void paging_destroyPDir(tPageDir *pdir);
  * @param virt the virtual address
  * @return true if so
  */
-bool paging_isPresent(tPageDir *pdir,uintptr_t virt);
+bool paging_isPresent(pagedir_t *pdir,uintptr_t virt);
 
 /**
  * Returns the frame-number of the given virtual address in the given pagedir. Assumes that
@@ -107,7 +107,7 @@ bool paging_isPresent(tPageDir *pdir,uintptr_t virt);
  * @param virt the virtual address
  * @return the frame-number of the given virtual address
  */
-frameno_t paging_getFrameNo(tPageDir *pdir,uintptr_t virt);
+frameno_t paging_getFrameNo(pagedir_t *pdir,uintptr_t virt);
 
 /**
  * Ensures that the content of the given frame can be accessed and returns the address to do so.
@@ -184,7 +184,7 @@ void paging_zeroToUser(void *dst,size_t count);
  * @param share whether to share the frames
  * @return the number of allocated ptables or a negative error-code if it failed
  */
-ssize_t paging_clonePages(tPageDir *src,tPageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,
+ssize_t paging_clonePages(pagedir_t *src,pagedir_t *dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share);
 
 /**
@@ -214,7 +214,7 @@ ssize_t paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flag
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated page-tables or a negative error-code if it failed
  */
-ssize_t paging_mapTo(tPageDir *pdir,uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
+ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the CURRENT page-directory.
@@ -239,7 +239,7 @@ size_t paging_unmap(uintptr_t virt,size_t count,bool freeFrames);
  * @param freeFrames whether the frames should be free'd and not just unmapped
  * @return the number of free'd ptables
  */
-size_t paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFrames);
+size_t paging_unmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,bool freeFrames);
 
 /**
  * Determines the number of page-tables (in the user-area) in the given page-directory
@@ -247,7 +247,7 @@ size_t paging_unmapFrom(tPageDir *pdir,uintptr_t virt,size_t count,bool freeFram
  * @param pdir the page-directory
  * @return the number of present page-tables
  */
-size_t paging_getPTableCount(tPageDir *pdir);
+size_t paging_getPTableCount(pagedir_t *pdir);
 
 /**
  * Prints the user-part of the given page-directory to the given buffer
@@ -255,7 +255,7 @@ size_t paging_getPTableCount(tPageDir *pdir);
  * @param buffer the buffer
  * @param pdir the page-directory
  */
-void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir *pdir);
+void paging_sprintfVirtMem(sStringBuffer *buf,pagedir_t *pdir);
 
 /**
  * Prints the given parts of the current page-directory
@@ -270,7 +270,7 @@ void paging_printCur(uint parts);
  * @param pdir the page-directory
  * @param parts the parts to print
  */
-void paging_printPDir(tPageDir *pdir,uint parts);
+void paging_printPDir(pagedir_t *pdir,uint parts);
 
 /**
  * Counts the number of pages that are currently present in the given page-directory
@@ -286,6 +286,6 @@ size_t paging_dbg_getPageCount(void);
  * @param pdir the page-directory
  * @param virt the virtual address
  */
-void paging_printPageOf(tPageDir *pdir,uintptr_t virt);
+void paging_printPageOf(pagedir_t *pdir,uintptr_t virt);
 
 #endif /*PAGING_H_*/

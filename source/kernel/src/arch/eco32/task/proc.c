@@ -30,5 +30,5 @@ void proc_terminateArch(A_UNUSED sProc *p) {
 
 size_t proc_getKMemUsageOf(sProc *p) {
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 kernelstack for each thread */
-	return sll_length(p->threads) + 2;
+	return sll_length(&p->threads) + 2;
 }

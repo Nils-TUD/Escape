@@ -22,6 +22,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
 #include <sys/mutex.h>
@@ -66,12 +67,11 @@ static sShMem *shm_get(const char *name);
 static sShMemUser *shm_getUser(const sShMem *mem,pid_t pid);
 
 /* list with all shared memories */
-static sSLList *shareList = NULL;
+static sSLList shareList;
 static mutex_t shmLock;
 
 void shm_init(void) {
-	shareList = sll_create();
-	assert(shareList != NULL);
+	sll_init(&shareList,slln_allocNode,slln_freeNode);
 }
 
 ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
@@ -108,7 +108,7 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 		goto errUList;
 	if(!shm_addUser(mem,pid,reg))
 		goto errVmm;
-	if(!sll_append(shareList,mem))
+	if(!sll_append(&shareList,mem))
 		goto errVmm;
 	vmm_getRegRange(pid,reg,&start,NULL,true);
 	mutex_release(t,&shmLock);
@@ -179,7 +179,7 @@ int shm_cloneProc(pid_t parent,pid_t child) {
 	sSLNode *n;
 	sThread *t = thread_getRunning();
 	mutex_aquire(t,&shmLock);
-	for(n = sll_begin(shareList); n != NULL; n = n->next) {
+	for(n = sll_begin(&shareList); n != NULL; n = n->next) {
 		sShMem *mem = (sShMem*)n->data;
 		sShMemUser *user = shm_getUser(mem,parent);
 		if(user) {
@@ -199,7 +199,7 @@ void shm_remProc(pid_t pid) {
 	sSLNode *n,*tn;
 	sThread *t = thread_getRunning();
 	mutex_aquire(t,&shmLock);
-	for(n = sll_begin(shareList); n != NULL; ) {
+	for(n = sll_begin(&shareList); n != NULL; ) {
 		sShMem *mem = (sShMem*)n->data;
 		if(shm_isOwn(mem,pid)) {
 			tn = n->next;
@@ -219,9 +219,7 @@ void shm_remProc(pid_t pid) {
 void shm_print(void) {
 	sSLNode *n,*m;
 	vid_printf("Shared memory:\n");
-	if(shareList == NULL)
-		return;
-	for(n = sll_begin(shareList); n != NULL; n = n->next) {
+	for(n = sll_begin(&shareList); n != NULL; n = n->next) {
 		sShMem *mem = (sShMem*)n->data;
 		vid_printf("\tname=%s, users:\n",mem->name);
 		for(m = sll_begin(mem->users); m != NULL; m = m->next) {
@@ -267,7 +265,7 @@ static int shm_doDestroy(pid_t pid,const char *name) {
 		vmm_remove(user->pid,user->region);
 	}
 	/* free shmem */
-	sll_removeFirstWith(shareList,mem);
+	sll_removeFirstWith(&shareList,mem);
 	sll_destroy(mem->users,true);
 	cache_free(mem);
 	return 0;
@@ -292,9 +290,7 @@ static bool shm_addUser(sShMem *mem,pid_t pid,vmreg_t reg) {
 
 static sShMem *shm_get(const char *name) {
 	sSLNode *n;
-	if(shareList == NULL)
-		return NULL;
-	for(n = sll_begin(shareList); n != NULL; n = n->next) {
+	for(n = sll_begin(&shareList); n != NULL; n = n->next) {
 		sShMem *mem = (sShMem*)n->data;
 		if(strcmp(mem->name,name) == 0)
 			return mem;

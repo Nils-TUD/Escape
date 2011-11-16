@@ -51,17 +51,14 @@ static bool thread_add(sThread *t);
 static void thread_remove(sThread *t);
 
 /* our threads */
-static sSLList *threads;
+static sSLList threads;
 static sThread *tidToThread[MAX_THREAD_COUNT];
 static tid_t nextTid = 0;
 static klock_t threadLock;
 
 sThread *thread_init(sProc *p) {
 	sThread *curThread;
-
-	threads = sll_create();
-	if(!threads)
-		util_panic("Unable to create thread-list");
+	sll_init(&threads,slln_allocNode,slln_freeNode);
 
 	/* create thread for init */
 	curThread = thread_createInitial(p);
@@ -148,7 +145,7 @@ size_t thread_getIntrptLevel(const sThread *t) {
 size_t thread_getCount(void) {
 	size_t len;
 	spinlock_aquire(&threadLock);
-	len = sll_length(threads);
+	len = sll_length(&threads);
 	spinlock_release(&threadLock);
 	return len;
 }
@@ -262,8 +259,8 @@ void thread_updateRuntimes(void) {
 	size_t threadCount;
 	uint64_t cyclesPerSec = cpu_getSpeed();
 	spinlock_aquire(&threadLock);
-	threadCount = sll_length(threads);
-	for(n = sll_begin(threads); n != NULL; n = n->next) {
+	threadCount = sll_length(&threads);
+	for(n = sll_begin(&threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		/* update cycle-stats */
 		if(t->state == ST_RUNNING) {
@@ -467,7 +464,7 @@ static void thread_makeUnrunnable(sThread *t) {
 
 void thread_printAll(void) {
 	sSLNode *n;
-	for(n = sll_begin(threads); n != NULL; n = n->next) {
+	for(n = sll_begin(&threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		thread_print(t);
 	}
@@ -548,7 +545,7 @@ static tid_t thread_getFreeTid(void) {
 static bool thread_add(sThread *t) {
 	bool res = false;
 	spinlock_aquire(&threadLock);
-	if(sll_append(threads,t)) {
+	if(sll_append(&threads,t)) {
 		tidToThread[t->tid] = t;
 		res = true;
 	}
@@ -558,7 +555,7 @@ static bool thread_add(sThread *t) {
 
 static void thread_remove(sThread *t) {
 	spinlock_aquire(&threadLock);
-	sll_removeFirstWith(threads,t);
+	sll_removeFirstWith(&threads,t);
 	tidToThread[t->tid] = NULL;
 	spinlock_release(&threadLock);
 }

@@ -37,9 +37,10 @@ void vfs_fsmsgs_removeProc(pid_t pid);
  * @param pid the process-id
  * @param flags read / write
  * @param path the path
+ * @param file will be set to the opened file
  * @return 0 on success or the error-code
  */
-file_t vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path);
+int vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path,sFile **file);
 
 /**
  * Retrieves information about the given (real!) path

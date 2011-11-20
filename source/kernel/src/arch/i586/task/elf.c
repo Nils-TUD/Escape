@@ -24,7 +24,7 @@ int elf_finishFromMem(A_UNUSED const void *code,A_UNUSED size_t length,A_UNUSED 
 	return 0;
 }
 
-int elf_finishFromFile(A_UNUSED file_t file,A_UNUSED const sElfEHeader *eheader,
+int elf_finishFromFile(A_UNUSED sFile *file,A_UNUSED const sElfEHeader *eheader,
 		A_UNUSED sStartupInfo *info) {
 	return 0;
 }

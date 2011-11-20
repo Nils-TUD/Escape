@@ -34,7 +34,7 @@ static char buffer[512];
 
 int cons_cmd_file(size_t argc,char **argv) {
 	pid_t pid = proc_getRunning();
-	file_t file = -1;
+	sFile *file = NULL;
 	ssize_t i,count;
 	int res;
 	sLines lines;
@@ -51,11 +51,9 @@ int cons_cmd_file(size_t argc,char **argv) {
 	if((res = lines_create(&lines)) < 0)
 		goto error;
 
-	file = vfs_openPath(pid,VFS_READ,argv[1]);
-	if(file < 0) {
-		res = file;
+	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
+	if(res < 0)
 		goto error;
-	}
 	while((count = vfs_readFile(pid,file,buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(i = 0; i < count; i++) {
@@ -67,7 +65,7 @@ int cons_cmd_file(size_t argc,char **argv) {
 	}
 	lines_end(&lines);
 	vfs_closeFile(pid,file);
-	file = -1;
+	file = NULL;
 
 	/* now display lines */
 	cons_viewLines(&lines);
@@ -76,7 +74,7 @@ int cons_cmd_file(size_t argc,char **argv) {
 error:
 	/* clean up */
 	lines_destroy(&lines);
-	if(file >= 0)
+	if(file != NULL)
 		vfs_closeFile(pid,file);
 
 	vid_restore(backup.screen,backup.row,backup.col);

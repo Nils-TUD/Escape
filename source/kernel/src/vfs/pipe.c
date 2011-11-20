@@ -48,10 +48,10 @@ typedef struct {
 } sPipeData;
 
 static void vfs_pipe_destroy(sVFSNode *n);
-static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node);
-static ssize_t vfs_pipe_read(tid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,
+static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node);
+static ssize_t vfs_pipe_read(tid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
-static ssize_t vfs_pipe_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,
+static ssize_t vfs_pipe_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count);
 
 sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
@@ -95,7 +95,7 @@ static void vfs_pipe_destroy(sVFSNode *n) {
 	}
 }
 
-static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node) {
+static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node) {
 	/* last usage? */
 	if(node->name == NULL || node->refCount == 0) {
 		/* remove pipe-nodes if there are no references anymore */
@@ -116,7 +116,7 @@ static void vfs_pipe_close(pid_t pid,file_t file,sVFSNode *node) {
 	}
 }
 
-static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *node,
+static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *node,
 		USER void *buffer,off_t offset,size_t count) {
 	size_t byteCount,total;
 	sThread *t = thread_getRunning();
@@ -200,7 +200,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED file_t file,sVFSNode *n
 	return total;
 }
 
-static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,
+static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node,
 		USER const void *buffer,off_t offset,size_t count) {
 	sPipeData *data;
 	sThread *t = thread_getRunning();

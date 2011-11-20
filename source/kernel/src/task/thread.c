@@ -298,12 +298,12 @@ void thread_remHeapAlloc(sThread *cur,A_UNUSED void *ptr) {
 	cur->termHeapCount--;
 }
 
-void thread_addFileUsage(sThread *cur,file_t file) {
+void thread_addFileUsage(sThread *cur,sFile *file) {
 	assert(cur->termUsageCount < TERM_RESOURCE_CNT);
 	cur->termUsages[cur->termUsageCount++] = file;
 }
 
-void thread_remFileUsage(sThread *cur,A_UNUSED file_t file) {
+void thread_remFileUsage(sThread *cur,A_UNUSED sFile *file) {
 	assert(cur->termUsageCount > 0);
 	cur->termUsageCount--;
 }

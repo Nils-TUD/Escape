@@ -42,7 +42,7 @@
 static void log_printc(char c);
 static uchar log_pipePad(void);
 static void log_escape(const char **str);
-static ssize_t log_write(pid_t pid,file_t file,sVFSNode *n,const void *buffer,
+static ssize_t log_write(pid_t pid,sFile *file,sVFSNode *n,const void *buffer,
 		off_t offset,size_t count);
 static void log_flush(void);
 
@@ -52,7 +52,7 @@ static size_t bufPos;
 static uint col = 0;
 
 static bool logToSer = true;
-static file_t logFile;
+static sFile *logFile;
 static bool vfsIsReady = false;
 static klock_t logLock;
 static sPrintEnv env = {
@@ -64,9 +64,10 @@ static sPrintEnv env = {
 void log_vfsIsReady(void) {
 	inode_t inodeNo;
 	sVFSNode *logNode;
-	file_t inFile;
+	sFile *inFile;
 	char *nameCpy;
-	pid_t pid = proc_getRunning();
+	sThread *t = thread_getRunning();
+	pid_t pid = t->proc->pid;
 
 	/* open log-file */
 	assert(vfs_node_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
@@ -74,17 +75,16 @@ void log_vfsIsReady(void) {
 	assert(nameCpy != NULL);
 	logNode = vfs_file_create(KERNEL_PID,vfs_node_get(inodeNo),nameCpy,vfs_file_read,log_write);
 	assert(logNode != NULL);
-	logFile = vfs_openFile(KERNEL_PID,VFS_WRITE,vfs_node_getNo(logNode),VFS_DEV_NO);
-	assert(logFile >= 0);
+	assert(vfs_openFile(KERNEL_PID,VFS_WRITE,vfs_node_getNo(logNode),VFS_DEV_NO,&logFile) == 0);
 
 	/* create stdin, stdout and stderr for initloader. out and err should write to the log-file */
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
 	 * create new ones (for the vterm of the shell) */
 	assert(vfs_node_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
-	assert((inFile = vfs_openFile(pid,VFS_READ,inodeNo,VFS_DEV_NO)) >= 0);
-	assert(fd_assoc(inFile) == 0);
-	assert(fd_assoc(logFile) == 1);
-	assert(fd_assoc(logFile) == 2);
+	assert(vfs_openFile(pid,VFS_READ,inodeNo,VFS_DEV_NO,&inFile) == 0);
+	assert(fd_assoc(t,inFile) == 0);
+	assert(fd_assoc(t,logFile) == 1);
+	assert(fd_assoc(t,logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
 	vfsIsReady = true;
@@ -148,7 +148,7 @@ static void log_escape(const char **str) {
 	escc_get(str,&n1,&n2,&n3);
 }
 
-static ssize_t log_write(pid_t pid,file_t file,sVFSNode *node,const void *buffer,
+static ssize_t log_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count) {
 	if(conf_get(CONF_LOG) && logToSer) {
 		char *str = (char*)buffer;

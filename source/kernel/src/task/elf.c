@@ -93,7 +93,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
-	file_t file;
+	sFile *file;
 	size_t j,loadSeg = 0;
 	uintptr_t datPtr;
 	sElfEHeader eheader;
@@ -104,9 +104,9 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	int res,fd;
 	char *interpName;
 
-	file = vfs_openPath(p->pid,VFS_READ,path);
-	if(file < 0) {
-		vid_printf("[LOADER] Unable to open path '%s': %s\n",path,strerror(-file));
+	res = vfs_openPath(p->pid,VFS_READ,path,&file);
+	if(res < 0) {
+		vid_printf("[LOADER] Unable to open path '%s': %s\n",path,strerror(-res));
 		return -ENOEXEC;
 	}
 
@@ -217,13 +217,13 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	}
 
 	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
-	if((fd = fd_assoc(file)) < 0)
+	if((fd = fd_assoc(t,file)) < 0)
 		goto failed;
 	if(elf_finishFromFile(file,&eheader,info) < 0) {
-		assert(fd_unassoc(fd) >= 0);
+		assert(fd_unassoc(t,fd) != NULL);
 		goto failed;
 	}
-	assert(fd_unassoc(fd) >= 0);
+	assert(fd_unassoc(t,fd) != NULL);
 	vfs_closeFile(p->pid,file);
 	return 0;
 

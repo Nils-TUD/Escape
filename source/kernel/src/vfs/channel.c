@@ -57,7 +57,7 @@ typedef struct {
 
 static void vfs_chan_destroy(sVFSNode *n);
 static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
-static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node);
+static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node);
 static sMessage *vfs_chan_getMsg(sThread *t,sSLList *list,ushort flags);
 
 extern klock_t waitLock;
@@ -123,7 +123,7 @@ static off_t vfs_chan_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posi
 	}
 }
 
-static void vfs_chan_close(pid_t pid,file_t file,sVFSNode *node) {
+static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
 	if(node->name == NULL)
 		vfs_node_destroy(node);

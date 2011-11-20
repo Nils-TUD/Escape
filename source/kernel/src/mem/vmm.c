@@ -153,8 +153,8 @@ vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 	sVMRegion *vm;
 	vmreg_t rno;
 	int res;
-	uintptr_t virt;
-	ulong pgFlags,flags;
+	uintptr_t virt = 0;
+	ulong pgFlags = 0,flags = 0;
 	sProc *p;
 	sThread *t = thread_getRunning();
 
@@ -186,7 +186,7 @@ vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size
 	vm = vmm_alloc();
 	if(vm == NULL)
 		goto errAdd;
-	vm->binFile = -1;
+	vm->binFile = NULL;
 	vm->reg = reg;
 	vm->proc = p;
 	vm->virt = virt;
@@ -294,7 +294,7 @@ error:
 	return res;
 }
 
-void vmm_swapOut(pid_t pid,file_t file,size_t count) {
+void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
 	sThread *t = thread_getRunning();
 	while(count > 0) {
 		sRegion *reg = vmm_getLRURegion();
@@ -360,7 +360,7 @@ void vmm_swapOut(pid_t pid,file_t file,size_t count) {
 	}
 }
 
-bool vmm_swapIn(pid_t pid,file_t file,sThread *t,uintptr_t addr) {
+bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr) {
 	sVMRegion *vmreg;
 	frameno_t frame;
 	ulong block;
@@ -726,7 +726,7 @@ vmreg_t vmm_join(pid_t srcId,vmreg_t rno,pid_t dstId) {
 	if(nvm == NULL)
 		goto errProc;
 
-	nvm->binFile = -1;
+	nvm->binFile = NULL;
 	nvm->reg = vm->reg;
 	nvm->proc = dst;
 	if(rno == RNO_TEXT)
@@ -796,7 +796,7 @@ int vmm_cloneAll(pid_t dstId) {
 					goto error;
 				mutex_aquire(t,&vm->reg->lock);
 				/* better don't share the file; they may have to read in parallel */
-				nvm->binFile = -1;
+				nvm->binFile = NULL;
 				nvm->virt = vm->virt;
 				nvm->proc = dst;
 				if(vm->reg->flags & RF_SHAREABLE) {
@@ -1149,12 +1149,10 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	uint mapFlags;
 	sThread *t = thread_getRunning();
 
-	if(vm->binFile < 0) {
-		vm->binFile = vfs_openFile(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
-		if(vm->binFile < 0) {
-			err = vm->binFile;
+	if(vm->binFile == NULL) {
+		err = vfs_openFile(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev,&vm->binFile);
+		if(err < 0)
 			goto error;
-		}
 	}
 
 	/* note that we currently ignore that the file might have changed in the meantime */
@@ -1466,9 +1464,9 @@ static void vmm_free(sVMRegion *vm,const sProc *p) {
 	mutex_release(t,&regLock);
 
 	/* close file */
-	if(vm->binFile >= 0) {
+	if(vm->binFile != NULL) {
 		vfs_closeFile(p->pid,vm->binFile);
-		vm->binFile = -1;
+		vm->binFile = NULL;
 	}
 	cache_free(vm);
 }

@@ -118,8 +118,8 @@ typedef struct {
 	void *regions;
 	/* the entrypoint of the binary */
 	uintptr_t entryPoint;
-	/* file descriptors: indices of the global file table */
-	file_t fileDescs[MAX_FD_COUNT];
+	/* file descriptors: point into the global file table */
+	sFile *fileDescs[MAX_FD_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
 	sSLList fsChans;
 	/* environment-variables of this process */

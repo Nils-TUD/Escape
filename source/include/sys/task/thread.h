@@ -133,7 +133,7 @@ struct sThread {
 	/* a list of locks that should be released on thread-termination */
 	klock_t *termLocks[TERM_RESOURCE_CNT];
 	/* a list of file-usages that should be decremented on thread-termination */
-	file_t termUsages[TERM_RESOURCE_CNT];
+	sFile *termUsages[TERM_RESOURCE_CNT];
 	/* a list of callbacks that should be called on thread-termination */
 	fTermCallback termCallbacks[TERM_RESOURCE_CNT];
 	uint8_t termHeapCount;
@@ -470,7 +470,7 @@ void thread_remHeapAlloc(sThread *cur,void *ptr);
  * @param cur the current thread
  * @param file the file
  */
-void thread_addFileUsage(sThread *cur,file_t file);
+void thread_addFileUsage(sThread *cur,sFile *file);
 
 /**
  * Removes the given file from the file-usage-list.
@@ -478,7 +478,7 @@ void thread_addFileUsage(sThread *cur,file_t file);
  * @param cur the current thread
  * @param file the file
  */
-void thread_remFileUsage(sThread *cur,file_t file);
+void thread_remFileUsage(sThread *cur,sFile *file);
 
 /**
  * Adds the given callback to the callback-list. These will be called on thread-termination.

@@ -306,7 +306,7 @@ bool pmem_swapIn(uintptr_t addr) {
 
 void pmem_swapper(void) {
 	size_t free;
-	file_t swapFile;
+	sFile *swapFile;
 	pid_t pid;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
 	swapper = thread_getRunning();
@@ -314,8 +314,7 @@ void pmem_swapper(void) {
 	assert(swapEnabled);
 
 	/* open device */
-	swapFile = vfs_openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,dev);
-	if(swapFile < 0) {
+	if(vfs_openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,dev,&swapFile) < 0) {
 		log_printf("Unable to open swap-device '%s'\n",dev);
 		swapEnabled = false;
 	}

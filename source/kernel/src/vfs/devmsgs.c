@@ -34,7 +34,7 @@
 #include <errno.h>
 #include <assert.h>
 
-ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
+ssize_t vfs_devmsgs_open(pid_t pid,sFile *file,sVFSNode *node,uint flags) {
 	ssize_t res;
 	sArgsMsg msg;
 	msgid_t mid;
@@ -66,7 +66,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,file_t file,sVFSNode *node,uint flags) {
 	return msg.arg1;
 }
 
-ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,off_t offset,
+ssize_t vfs_devmsgs_read(pid_t pid,sFile *file,sVFSNode *node,USER void *buffer,off_t offset,
 		size_t count) {
 	ssize_t res;
 	msgid_t mid;
@@ -82,7 +82,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 
 	/* wait until there is data available, if necessary */
 	obj.events = EV_DATA_READABLE;
-	obj.object = file;
+	obj.object = (evobj_t)file;
 	res = vfs_waitFor(&obj,1,0,vfs_shouldBlock(file),KERNEL_PID,0);
 	if(res < 0)
 		return res;
@@ -122,7 +122,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,file_t file,sVFSNode *node,USER void *buffer,
 	return res;
 }
 
-ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *buffer,off_t offset,
+ssize_t vfs_devmsgs_write(pid_t pid,sFile *file,sVFSNode *node,USER const void *buffer,off_t offset,
 		size_t count) {
 	msgid_t mid;
 	ssize_t res;
@@ -156,7 +156,7 @@ ssize_t vfs_devmsgs_write(pid_t pid,file_t file,sVFSNode *node,USER const void *
 	return msg.arg1;
 }
 
-void vfs_devmsgs_close(pid_t pid,file_t file,sVFSNode *node) {
+void vfs_devmsgs_close(pid_t pid,sFile *file,sVFSNode *node) {
 	/* if the driver doesn't implement close, stop here */
 	if(node->name == NULL || !vfs_device_supports(node->parent,DEV_CLOSE))
 		return;

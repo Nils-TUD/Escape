@@ -30,7 +30,7 @@
 
 #define DIRE_SIZE		(sizeof(sDirEntry) - (MAX_NAME_LEN + 1))
 
-static int cons_cmd_ls_read(pid_t pid,file_t file,sDirEntry *e);
+static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e);
 
 static sScreenBackup backup;
 
@@ -38,7 +38,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	pid_t pid = proc_getRunning();
 	sLines lines;
 	sStringBuffer buf;
-	file_t file;
+	sFile *file;
 	sDirEntry e;
 	int res;
 	if(argc != 2) {
@@ -51,11 +51,9 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	/* create lines and redirect prints */
 	if((res = lines_create(&lines)) < 0)
 		return res;
-	file = vfs_openPath(pid,VFS_READ,argv[1]);
-	if(file < 0) {
-		res = file;
+	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
+	if(res < 0)
 		goto errorLines;
-	}
 	while((res = cons_cmd_ls_read(pid,file,&e)) > 0) {
 		buf.dynamic = true;
 		buf.len = 0;
@@ -85,7 +83,7 @@ errorLines:
 	return res;
 }
 
-static int cons_cmd_ls_read(pid_t pid,file_t file,sDirEntry *e) {
+static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e) {
 	ssize_t res;
 	size_t len;
 	/* default way; read the entry without name first */

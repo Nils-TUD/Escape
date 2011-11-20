@@ -31,7 +31,7 @@
 #include <errno.h>
 
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
-		file_t file,sStartupInfo *info);
+		sFile *file,sStartupInfo *info);
 
 int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info) {
 	sThread *t = thread_getRunning();
@@ -51,7 +51,7 @@ int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info
 	return elf_finish(t,eheader,(sElfSHeader*)((uintptr_t)code + eheader->e_shoff),-1,info);
 }
 
-int elf_finishFromFile(file_t file,const sElfEHeader *eheader,sStartupInfo *info) {
+int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info) {
 	int res = -ENOEXEC;
 	sThread *t = thread_getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
@@ -82,7 +82,7 @@ error:
 }
 
 static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
-		file_t file,sStartupInfo *info) {
+		sFile *file,sStartupInfo *info) {
 	/* build register-stack */
 	int globalNum = 0;
 	size_t j;

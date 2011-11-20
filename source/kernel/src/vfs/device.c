@@ -45,7 +45,7 @@ typedef struct {
 	sVFSNode *lastClient;
 } sDevice;
 
-static void vfs_device_close(pid_t pid,file_t file,sVFSNode *node);
+static void vfs_device_close(pid_t pid,sFile *file,sVFSNode *node);
 static void vfs_device_destroy(sVFSNode *node);
 static void vfs_device_wakeupClients(sVFSNode *node,uint events,bool locked);
 
@@ -89,7 +89,7 @@ sVFSNode *vfs_device_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint
 	return node;
 }
 
-static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node) {
+static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node) {
 	vfs_node_destroy(node);
 }
 

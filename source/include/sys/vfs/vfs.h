@@ -89,12 +89,12 @@ enum {
 typedef struct sVFSNode sVFSNode;
 
 /* the prototypes for the operations on nodes */
-typedef ssize_t (*fRead)(pid_t pid,file_t file,sVFSNode *node,void *buffer,
+typedef ssize_t (*fRead)(pid_t pid,sFile *file,sVFSNode *node,void *buffer,
 			off_t offset,size_t count);
-typedef ssize_t (*fWrite)(pid_t pid,file_t file,sVFSNode *node,const void *buffer,
+typedef ssize_t (*fWrite)(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
 			off_t offset,size_t count);
 typedef off_t (*fSeek)(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
-typedef void (*fClose)(pid_t pid,file_t file,sVFSNode *node);
+typedef void (*fClose)(pid_t pid,sFile *file,sVFSNode *node);
 typedef void (*fDestroy)(sVFSNode *n);
 
 struct sVFSNode {
@@ -125,20 +125,6 @@ struct sVFSNode {
 	void *data;
 };
 
-/* an entry in the request-list */
-typedef struct sRequest {
-	klock_t lock;
-	sThread *thread;
-	sVFSNode *node;
-	uint8_t state;
-	ulong val1;
-	ulong val2;
-	size_t count;
-	void *data;
-	size_t dsize;
-	struct sRequest *next;
-} sRequest;
-
 /**
  * Initializes the virtual file system
  */
@@ -158,28 +144,28 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags);
  * @param file the file
  * @return true if the file was created for a device (and not a client of the device)
  */
-bool vfs_isDevice(file_t file);
+bool vfs_isDevice(sFile *file);
 
 /**
  * Increases the references of the given file
  *
  * @param file the file
  */
-void vfs_incRefs(file_t file);
+void vfs_incRefs(sFile *file);
 
 /**
  * Increments the number of usages of the given file
  *
  * @param file the file
  */
-void vfs_incUsages(file_t file);
+void vfs_incUsages(sFile *file);
 
 /**
  * Decrements the number of usages of the given file
  *
  * @param file the file
  */
-void vfs_decUsages(file_t file);
+void vfs_decUsages(sFile *file);
 
 /**
  * Manipulates the given file, depending on the command
@@ -190,13 +176,13 @@ void vfs_decUsages(file_t file);
  * @param arg the argument (just used for F_SETFL)
  * @return >= 0 on success
  */
-int vfs_fcntl(pid_t pid,file_t file,uint cmd,int arg);
+int vfs_fcntl(pid_t pid,sFile *file,uint cmd,int arg);
 
 /**
  * @param file the file
  * @return whether the file should be used in blocking-mode
  */
-bool vfs_shouldBlock(file_t file);
+bool vfs_shouldBlock(sFile *file);
 
 /**
  * Opens the given path with given flags. That means it walks through the global
@@ -206,9 +192,10 @@ bool vfs_shouldBlock(file_t file);
  * @param pid the process-id with which the file should be opened
  * @param flags whether it is a virtual or real file and whether you want to read or write
  * @param path the path
- * @return the file if successfull or < 0
+ * @param file will be set to the opened file
+ * @return 0 if successfull or < 0
  */
-file_t vfs_openPath(pid_t pid,ushort flags,const char *path);
+int vfs_openPath(pid_t pid,ushort flags,const char *path,sFile **file);
 
 /**
  * Creates a pipe and opens one file for reading and one file for writing.
@@ -218,7 +205,7 @@ file_t vfs_openPath(pid_t pid,ushort flags,const char *path);
  * @param writeFile will be set to the file for writing
  * @return 0 on success
  */
-int vfs_openPipe(pid_t pid,file_t *readFile,file_t *writeFile);
+int vfs_openPipe(pid_t pid,sFile **readFile,sFile **writeFile);
 
 /**
  * Opens the file with given number and given flags. That means it walks through the global
@@ -229,9 +216,10 @@ int vfs_openPipe(pid_t pid,file_t *readFile,file_t *writeFile);
  * @param flags whether it is a virtual or real file and whether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
  * @param devNo the device-number
- * @return the file if successfull or < 0
+ * @param file will be set to the opened file
+ * @return 0 if successfull or < 0
  */
-file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo);
+int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file);
 
 /**
  * Returns the current file-position
@@ -240,7 +228,7 @@ file_t vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo);
  * @param file the file
  * @return the current file-position
  */
-off_t vfs_tell(pid_t pid,file_t file);
+off_t vfs_tell(pid_t pid,sFile *file);
 
 /**
  * Retrieves information about the given path
@@ -281,7 +269,7 @@ int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid);
  * @param info the info to fill
  * @return 0 on success
  */
-int vfs_fstat(pid_t pid,file_t file,sFileInfo *info);
+int vfs_fstat(pid_t pid,sFile *file,sFileInfo *info);
 
 /**
  * Sets the position for the given file
@@ -292,7 +280,7 @@ int vfs_fstat(pid_t pid,file_t file,sFileInfo *info);
  * @param whence the seek-type
  * @return the new position on success
  */
-off_t vfs_seek(pid_t pid,file_t file,off_t offset,uint whence);
+off_t vfs_seek(pid_t pid,sFile *file,off_t offset,uint whence);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number
@@ -304,7 +292,7 @@ off_t vfs_seek(pid_t pid,file_t file,off_t offset,uint whence);
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count);
+ssize_t vfs_readFile(pid_t pid,sFile *file,void *buffer,size_t count);
 
 /**
  * Writes count bytes from the given buffer into the given file and returns the number of written
@@ -316,7 +304,7 @@ ssize_t vfs_readFile(pid_t pid,file_t file,void *buffer,size_t count);
  * @param count the number of bytes to write
  * @return the number of bytes written
  */
-ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count);
+ssize_t vfs_writeFile(pid_t pid,sFile *file,const void *buffer,size_t count);
 
 /**
  * Sends a message to the corresponding device
@@ -330,7 +318,7 @@ ssize_t vfs_writeFile(pid_t pid,file_t file,const void *buffer,size_t count);
  * @param size2 the size of the second message
  * @return 0 on success
  */
-ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size_t size1,
+ssize_t vfs_sendMsg(pid_t pid,sFile *file,msgid_t id,USER const void *data1,size_t size1,
 		USER const void *data2,size_t size2);
 
 /**
@@ -343,7 +331,7 @@ ssize_t vfs_sendMsg(pid_t pid,file_t file,msgid_t id,USER const void *data1,size
  * @param forceBlock if set, the function will block regardless of the NOBLOCK-flag in file
  * @return the number of written bytes (or < 0 if an error occurred)
  */
-ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size,bool forceBlock);
+ssize_t vfs_receiveMsg(pid_t pid,sFile *file,msgid_t *id,void *data,size_t size,bool forceBlock);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count
@@ -353,7 +341,7 @@ ssize_t vfs_receiveMsg(pid_t pid,file_t file,msgid_t *id,void *data,size_t size,
  * @param file the file
  * @return true if the file has really been closed
  */
-bool vfs_closeFile(pid_t pid,file_t file);
+bool vfs_closeFile(pid_t pid,sFile *file);
 
 /**
  * Mounts <device> at <path> with given type.
@@ -426,12 +414,13 @@ int vfs_rmdir(pid_t pid,const char *path);
  * @param path the path to the device
  * @param type the device-type (DEV_TYPE_*)
  * @param ops the supported operations
- * @return the file-number if ok, negative if an error occurred
+ * @param file will be set to the opened file
+ * @return 0 if ok, negative if an error occurred
  */
-file_t vfs_createdev(pid_t pid,char *path,uint type,uint ops);
+int vfs_createdev(pid_t pid,char *path,uint type,uint ops,sFile **file);
 
 /**
- * Waits for the given wait-objects, whereas the objects are expected to be of type file_t.
+ * Waits for the given wait-objects, whereas the objects are expected to be of type sFile*.
  * First, the function checks whether we can wait, i.e. if the event to wait for has already
  * arrived. If not, we wait until one of the events arrived.
  * If <pid> != KERNEL_PID, it calls lock_release(pid,ident) before going to sleep (this is used
@@ -459,7 +448,7 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool blo
  * @param flags the flags (GW_*)
  * @return the error-code or the node-number of the client
  */
-inode_t vfs_getClient(const file_t *files,size_t count,size_t *index,uint flags);
+inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags);
 
 /***
  * Fetches the client-id from the given file
@@ -468,7 +457,7 @@ inode_t vfs_getClient(const file_t *files,size_t count,size_t *index,uint flags)
  * @param file the file for the client
  * @return the client-id or the error-code
  */
-inode_t vfs_getClientId(pid_t pid,file_t file);
+inode_t vfs_getClientId(pid_t pid,sFile *file);
 
 /**
  * Opens a file for the client with given process-id.
@@ -476,9 +465,10 @@ inode_t vfs_getClientId(pid_t pid,file_t file);
  * @param pid the own process-id
  * @param file the file for the device
  * @param clientId the id of the desired client
- * @return the file or a negative error-code
+ * @param cfile will be set to the opened file
+ * @return 0 or a negative error-code
  */
-file_t vfs_openClient(pid_t pid,file_t file,inode_t clientId);
+int vfs_openClient(pid_t pid,sFile *file,inode_t clientId,sFile **cfile);
 
 /**
  * Creates a process-node with given pid
@@ -523,9 +513,9 @@ void vfs_printMsgs(void);
 /**
  * Prints information to the given file
  *
- * @param file the file
+ * @param f the file
  */
-void vfs_printFile(file_t file);
+void vfs_printFile(sFile *f);
 
 /**
  * @return the number of entries in the global file table

@@ -35,6 +35,7 @@ struct sFuncCall {
 	unsigned long long time;
 	unsigned long long begin;
 	unsigned long calls;
+	int running;
 };
 
 struct sContext {
@@ -57,6 +58,7 @@ static void parseMMIX(FILE *f);
 static const char *resolve(const char *name,unsigned long long addr);
 static sFuncCall *getFunc(sFuncCall *cur,const char *name,unsigned long long addr);
 static sFuncCall *append(sFuncCall *cur,const char *name,unsigned long long addr);
+static unsigned long long leaveFuncs(sFuncCall *f);
 static void printFunc(sFuncCall *f,int layer);
 
 static sParser parsers[] = {
@@ -104,18 +106,12 @@ int main(int argc,char *argv[]) {
 	if(haveFile)
 		fclose(f);
 
-	/* calculate total time via sum of the root-child-times */
+	/* calculate total time and leave all functions that have not been left so far (e.g. main) */
 	totalTime = 0;
 	for(tid = 0; tid < contextSize; tid++) {
 		if(contexts[tid].current) {
-			unsigned long long threadTime = 0;
-			sFuncCall *cur = contexts[tid].root->child;
-			while(cur != NULL) {
-				totalTime += cur->time;
-				threadTime += cur->time;
-				cur = cur->next;
-			}
-			contexts[tid].root->time = threadTime;
+			leaveFuncs(contexts[tid].root);
+			totalTime += contexts[tid].root->time;
 		}
 	}
 	/* print header */
@@ -218,6 +214,7 @@ static sContext *getCurrent(unsigned long tid) {
 		sprintf(contexts[tid].root->name,"Thread %lu",tid);
 		contexts[tid].root->time = 0;
 		contexts[tid].root->calls = 0;
+		contexts[tid].root->running = 1;
 		contexts[tid].current = contexts[tid].root;
 	}
 	return contexts + tid;
@@ -230,6 +227,7 @@ static void funcEnter(unsigned long tid,const char *name,unsigned long long addr
 		context->current = append(context->current,name,addr);
 	else
 		context->current = call;
+	context->current->running = 1;
 	context->current->calls++;
 	context->layer++;
 }
@@ -237,6 +235,7 @@ static void funcEnter(unsigned long tid,const char *name,unsigned long long addr
 static void funcLeave(unsigned long tid,unsigned long long time) {
 	sContext *context = getCurrent(tid);
 	if(context->layer > 0) {
+		context->current->running = 0;
 		context->current->time += time;
 		context->current = context->current->parent;
 		context->layer--;
@@ -282,6 +281,7 @@ static sFuncCall *append(sFuncCall *cur,const char *name,unsigned long long addr
 	call->child = NULL;
 	call->next = NULL;
 	call->addr = addr;
+	call->running = 0;
 	strncpy(call->name,resolve(name,addr),MAX_FUNC_LEN);
 
 	c = cur->child;
@@ -293,6 +293,22 @@ static sFuncCall *append(sFuncCall *cur,const char *name,unsigned long long addr
 	else
 		cur->child = call;
 	return call;
+}
+
+static unsigned long long leaveFuncs(sFuncCall *f) {
+	unsigned long long res = f->time;
+	if(f->running) {
+		/* note that we losing the self-time here, because we're only summing up the sub-calls
+		 * and pretending that the function itself has not used any time at all */
+		sFuncCall *c = f->child;
+		while(c != NULL) {
+			f->time += leaveFuncs(c);
+			c = c->next;
+		}
+		f->running = 0;
+		res = f->time;
+	}
+	return res;
 }
 
 static void printFunc(sFuncCall *f,int layer) {

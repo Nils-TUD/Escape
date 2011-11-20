@@ -481,10 +481,10 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	/* if its the dynamic linker, we need to give it the file-descriptor for the program to load */
 	/* we need to do this here without lock, because vfs_openPath will perform a context-switch */
 	if(info.linkerEntry != info.progEntry) {
-		file_t file = vfs_openPath(p->pid,VFS_READ,path);
-		if(file < 0)
+		sFile *file;
+		if(vfs_openPath(p->pid,VFS_READ,path,&file) < 0)
 			goto error;
-		fd = fd_assoc(file);
+		fd = fd_assoc(t,file);
 		if(fd < 0) {
 			vfs_closeFile(p->pid,file);
 			goto error;
@@ -655,7 +655,7 @@ static void proc_doDestroy(sProc *p) {
 	sThread *t = thread_getRunning();
 
 	/* release resources */
-	fd_destroy(t,p);
+	fd_destroy(p);
 	groups_leave(p->pid);
 	env_removeFor(p->pid);
 	proc_doRemoveRegions(p,true);

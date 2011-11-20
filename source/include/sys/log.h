@@ -26,7 +26,7 @@
 /**
  * @return the file used for logging
  */
-file_t log_getFile(void);
+sFile *log_getFile(void);
 
 /**
  * Tells the log that the VFS is usable now

@@ -52,7 +52,7 @@ typedef struct sVMRegion {
 	uintptr_t virt;
 	sProc *proc;
 	/* file for the binary (valid if >= 0) */
-	file_t binFile;
+	sFile *binFile;
 	struct sVMRegion *next;
 } sVMRegion;
 
@@ -113,7 +113,7 @@ int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags);
  * @param file the file to write to
  * @param count the number of pages to swap out
  */
-void vmm_swapOut(pid_t pid,file_t file,size_t count);
+void vmm_swapOut(pid_t pid,sFile *file,size_t count);
 
 /**
  * Swaps the page at given address of the given process in.
@@ -124,7 +124,7 @@ void vmm_swapOut(pid_t pid,file_t file,size_t count);
  * @param addr the address of the page to swap in
  * @return true on success
  */
-bool vmm_swapIn(pid_t pid,file_t file,sThread *t,uintptr_t addr);
+bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr);
 
 /**
  * Sets the timestamp for all regions that are used by the given thread

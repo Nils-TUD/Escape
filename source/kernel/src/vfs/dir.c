@@ -42,7 +42,7 @@ typedef struct {
 	/* name follows (up to 255 bytes) */
 } A_PACKED sVFSDirEntry;
 
-static ssize_t vfs_dir_read(pid_t pid,file_t file,sVFSNode *node,void *buffer,off_t offset,
+static ssize_t vfs_dir_read(pid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
 static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 
@@ -88,7 +88,7 @@ static off_t vfs_dir_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posit
 	}
 }
 
-static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
+static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
@@ -120,10 +120,9 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER v
 			size_t c,curSize = bufSize;
 			fsBytes = cache_alloc(bufSize);
 			if(fsBytes != NULL) {
-				file_t rfile;
+				sFile *rfile;
 				thread_addHeapAlloc(t,fsBytes);
-				rfile = vfs_fsmsgs_openPath(pid,VFS_READ,"/");
-				if(rfile >= 0) {
+				if(vfs_fsmsgs_openPath(pid,VFS_READ,"/",&rfile) == 0) {
 					while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
 						fsByteCount += c;
 						if(c < bufSize)

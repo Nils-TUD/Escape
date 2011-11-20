@@ -35,8 +35,8 @@ int sysc_open(sThread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uint flags = (uint)SYSC_ARG2(stack);
-	file_t file;
-	int fd;
+	sFile *file;
+	int res,fd;
 	pid_t pid = t->proc->pid;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
@@ -47,12 +47,12 @@ int sysc_open(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* open the path */
-	file = vfs_openPath(pid,flags,abspath);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	res = vfs_openPath(pid,flags,abspath,&file);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 
 	/* assoc fd with file */
-	fd = fd_assoc(file);
+	fd = fd_assoc(t,file);
 	if(fd < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);
@@ -65,13 +65,13 @@ int sysc_fcntl(sThread *t,sIntrptStackFrame *stack) {
 	uint cmd = SYSC_ARG2(stack);
 	int arg = (int)SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
-	file_t file;
+	sFile *file;
 	int res;
 
 	/* get file */
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	res = vfs_fcntl(pid,file,cmd,arg);
 	fd_release(t,file);
@@ -84,7 +84,7 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 	int *readFd = (int*)SYSC_ARG1(stack);
 	int *writeFd = (int*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
-	file_t readFile,writeFile;
+	sFile *readFile,*writeFile;
 	int kreadFd,kwriteFd;
 	int res;
 
@@ -98,7 +98,7 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with read-file */
-	kreadFd = fd_assoc(readFile);
+	kreadFd = fd_assoc(t,readFile);
 	if(kreadFd < 0) {
 		vfs_closeFile(pid,readFile);
 		vfs_closeFile(pid,writeFile);
@@ -106,9 +106,9 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 	}
 
 	/* assoc fd with write-file */
-	kwriteFd = fd_assoc(writeFile);
+	kwriteFd = fd_assoc(t,writeFile);
 	if(kwriteFd < 0) {
-		fd_unassoc(kreadFd);
+		fd_unassoc(t,kreadFd);
 		vfs_closeFile(pid,readFile);
 		vfs_closeFile(pid,writeFile);
 		SYSC_ERROR(stack,kwriteFd);
@@ -144,15 +144,15 @@ int sysc_fstat(sThread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
-	file_t file;
+	sFile *file;
 	int res;
 	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 	/* get info */
 	res = vfs_fstat(pid,file,info);
 	fd_release(t,file);
@@ -196,14 +196,14 @@ int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
-	file_t file;
+	sFile *file;
 	if(!paging_isInUserSpace((uintptr_t)pos,sizeof(off_t)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	/* this may fail, but we're requested the file, so it will be released on our termination */
 	*pos = vfs_tell(pid,file);
@@ -216,7 +216,7 @@ int sysc_seek(sThread *t,sIntrptStackFrame *stack) {
 	off_t offset = (off_t)SYSC_ARG2(stack);
 	uint whence = SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
-	file_t file;
+	sFile *file;
 	off_t res;
 
 	if(whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END)
@@ -224,8 +224,8 @@ int sysc_seek(sThread *t,sIntrptStackFrame *stack) {
 
 	/* get file */
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	res = vfs_seek(pid,file,offset,whence);
 	fd_release(t,file);
@@ -240,7 +240,7 @@ int sysc_read(sThread *t,sIntrptStackFrame *stack) {
 	size_t count = SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
 	ssize_t readBytes;
-	file_t file;
+	sFile *file;
 
 	/* validate count and buffer */
 	if(count == 0)
@@ -250,8 +250,8 @@ int sysc_read(sThread *t,sIntrptStackFrame *stack) {
 
 	/* get file */
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	/* read */
 	readBytes = vfs_readFile(pid,file,buffer,count);
@@ -267,7 +267,7 @@ int sysc_write(sThread *t,sIntrptStackFrame *stack) {
 	size_t count = SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
 	ssize_t writtenBytes;
-	file_t file;
+	sFile *file;
 
 	/* validate count and buffer */
 	if(count == 0)
@@ -277,8 +277,8 @@ int sysc_write(sThread *t,sIntrptStackFrame *stack) {
 
 	/* get file */
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	/* read */
 	writtenBytes = vfs_writeFile(pid,file,buffer,count);
@@ -294,7 +294,7 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 	const void *data = (const void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
 	pid_t pid = t->proc->pid;
-	file_t file;
+	sFile *file;
 	ssize_t res;
 	if(!paging_isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,-EFAULT);
@@ -304,8 +304,8 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 
 	/* get file */
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
 	res = vfs_sendMsg(pid,file,id,data,size,NULL,0);
@@ -321,15 +321,15 @@ int sysc_receive(sThread *t,sIntrptStackFrame *stack) {
 	void *data = (void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
 	pid_t pid = t->proc->pid;
-	file_t file;
+	sFile *file;
 	ssize_t res;
 	if(!paging_isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
 	res = vfs_receiveMsg(pid,file,id,data,size,false);
@@ -362,12 +362,12 @@ int sysc_close(sThread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
 
-	file_t file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	sFile *file = fd_request(t,fd);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	/* close file */
-	fd_unassoc(fd);
+	fd_unassoc(t,fd);
 	if(!vfs_closeFile(pid,file))
 		fd_release(t,file);
 	else

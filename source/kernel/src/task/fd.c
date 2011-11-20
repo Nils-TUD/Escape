@@ -22,34 +22,33 @@
 #include <sys/task/thread.h>
 #include <sys/task/fd.h>
 #include <sys/vfs/vfs.h>
+#include <sys/spinlock.h>
 #include <sys/video.h>
+#include <string.h>
 #include <errno.h>
 
 void fd_init(sProc *p) {
-	size_t i;
-	for(i = 0; i < MAX_FD_COUNT; i++)
-		p->fileDescs[i] = -1;
+	memclear(p->fileDescs,MAX_FD_COUNT * sizeof(sFile*));
 }
 
-file_t fd_request(sThread *cur,int fd) {
-	file_t fileNo;
+sFile *fd_request(sThread *cur,int fd) {
+	sFile *file;
 	sProc *p;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return -EBADF;
+		return NULL;
 
-	p = proc_request(cur,cur->proc->pid,PLOCK_FDS);
-	fileNo = p->fileDescs[fd];
-	if(fileNo == -1)
-		fileNo = -EBADF;
-	else {
-		vfs_incUsages(fileNo);
-		thread_addFileUsage(cur,fileNo);
+	p = cur->proc;
+	spinlock_aquire(p->locks + PLOCK_FDS);
+	file = p->fileDescs[fd];
+	if(file != NULL) {
+		vfs_incUsages(file);
+		thread_addFileUsage(cur,file);
 	}
-	proc_release(cur,p,PLOCK_FDS);
-	return fileNo;
+	spinlock_release(p->locks + PLOCK_FDS);
+	return file;
 }
 
-void fd_release(sThread *cur,file_t file) {
+void fd_release(sThread *cur,sFile *file) {
 	thread_remFileUsage(cur,file);
 	vfs_decUsages(file);
 }
@@ -57,64 +56,65 @@ void fd_release(sThread *cur,file_t file) {
 void fd_clone(sThread *t,sProc *p) {
 	size_t i;
 	sProc *cur = t->proc;
-	proc_request(t,cur->pid,PLOCK_FDS);
+	/* don't lock p, because its currently created; thus it can't access its file-descriptors */
+	spinlock_aquire(cur->locks + PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = cur->fileDescs[i];
-		if(p->fileDescs[i] != -1)
+		if(p->fileDescs[i] != NULL)
 			vfs_incRefs(p->fileDescs[i]);
 	}
-	proc_release(t,cur,PLOCK_FDS);
+	spinlock_release(cur->locks + PLOCK_FDS);
 }
 
-void fd_destroy(sThread *t,sProc *p) {
+void fd_destroy(sProc *p) {
 	size_t i;
-	/* release file-descriptors */
-	proc_request(t,p->pid,PLOCK_FDS);
+	spinlock_aquire(p->locks + PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1) {
+		if(p->fileDescs[i] != NULL) {
 			vfs_incUsages(p->fileDescs[i]);
 			if(!vfs_closeFile(p->pid,p->fileDescs[i]))
 				vfs_decUsages(p->fileDescs[i]);
-			p->fileDescs[i] = -1;
+			p->fileDescs[i] = NULL;
 		}
 	}
-	proc_release(t,p,PLOCK_FDS);
+	spinlock_release(p->locks + PLOCK_FDS);
 }
 
-int fd_assoc(file_t fileNo) {
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,t->proc->pid,PLOCK_FDS);
-	const file_t *fds = p->fileDescs;
+int fd_assoc(sThread *t,sFile *fileNo) {
+	sFile *const *fds;
 	int i,fd = -EMFILE;
+	sProc *p = t->proc;
+	spinlock_aquire(p->locks + PLOCK_FDS);
+	fds = p->fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(fds[i] == -1) {
+		if(fds[i] == NULL) {
 			fd = i;
 			break;
 		}
 	}
 	if(fd >= 0)
 		p->fileDescs[fd] = fileNo;
-	proc_release(t,p,PLOCK_FDS);
+	spinlock_release(p->locks + PLOCK_FDS);
 	return fd;
 }
 
 int fd_dup(int fd) {
-	file_t f;
+	sFile *f;
+	sFile *const *fds;
 	int i,nfd = -EBADF;
 	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,t->proc->pid,PLOCK_FDS);
-	const file_t *fds = p->fileDescs;
+	sProc *p = t->proc;
 	/* check fd */
-	if(fd < 0 || fd >= MAX_FD_COUNT) {
-		proc_release(t,p,PLOCK_FDS);
+	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return -EBADF;
-	}
 
+	spinlock_aquire(p->locks + PLOCK_FDS);
+	fds = p->fileDescs;
 	f = p->fileDescs[fd];
-	if(f >= 0) {
+	if(f != NULL) {
 		nfd = -EMFILE;
 		for(i = 0; i < MAX_FD_COUNT; i++) {
-			if(fds[i] == -1) {
+			if(fds[i] == NULL) {
 				/* increase references */
 				nfd = i;
 				vfs_incRefs(f);
@@ -123,24 +123,24 @@ int fd_dup(int fd) {
 			}
 		}
 	}
-	proc_release(t,p,PLOCK_FDS);
+	spinlock_release(p->locks + PLOCK_FDS);
 	return nfd;
 }
 
 int fd_redirect(int src,int dst) {
-	file_t fSrc,fDst;
+	sFile *fSrc,*fDst;
 	int err = -EBADF;
-	sProc *p;
 	sThread *t = thread_getRunning();
+	sProc *p = t->proc;
 
 	/* check fds */
 	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
 		return -EBADF;
 
-	p = proc_request(t,t->proc->pid,PLOCK_FDS);
+	spinlock_aquire(p->locks + PLOCK_FDS);
 	fSrc = p->fileDescs[src];
 	fDst = p->fileDescs[dst];
-	if(fSrc >= 0 && fDst >= 0) {
+	if(fSrc != NULL && fDst != NULL) {
 		vfs_incRefs(fDst);
 		/* we have to close the source because no one else will do it anymore... */
 		vfs_closeFile(p->pid,fSrc);
@@ -148,31 +148,28 @@ int fd_redirect(int src,int dst) {
 		p->fileDescs[src] = fDst;
 		err = 0;
 	}
-	proc_release(t,p,PLOCK_FDS);
+	spinlock_release(p->locks + PLOCK_FDS);
 	return err;
 }
 
-file_t fd_unassoc(int fd) {
-	file_t fileNo;
-	sProc *p;
-	sThread *t = thread_getRunning();
+sFile *fd_unassoc(sThread *t,int fd) {
+	sFile *file;
+	sProc *p = t->proc;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return -EBADF;
+		return NULL;
 
-	p = proc_request(t,t->proc->pid,PLOCK_FDS);
-	fileNo = p->fileDescs[fd];
-	if(fileNo >= 0)
-		p->fileDescs[fd] = -1;
-	else
-		fileNo = -EBADF;
-	proc_release(t,p,PLOCK_FDS);
-	return fileNo;
+	spinlock_aquire(p->locks + PLOCK_FDS);
+	file = p->fileDescs[fd];
+	if(file != NULL)
+		p->fileDescs[fd] = NULL;
+	spinlock_release(p->locks + PLOCK_FDS);
+	return file;
 }
 
 void fd_print(sProc *p) {
 	size_t i;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1) {
+		if(p->fileDescs[i] != NULL) {
 			vid_printf("\t\t%-2d: ",i);
 			vfs_printFile(p->fileDescs[i]);
 			vid_printf("\n");

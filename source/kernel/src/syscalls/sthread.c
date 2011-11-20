@@ -39,8 +39,8 @@
 
 static int sysc_doWait(sThread *t,const sWaitObject *uobjects,size_t objCount,time_t maxWaitTime,
 		pid_t pid,ulong ident);
-static int sysc_doWaitLoop(const sWaitObject *uobjects,size_t objCount,const file_t *objFiles,
-		time_t maxWaitTime,pid_t pid,ulong ident);
+static int sysc_doWaitLoop(const sWaitObject *uobjects,size_t objCount,
+		sFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident);
 
 int sysc_gettid(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->tid);
@@ -207,7 +207,7 @@ int sysc_resume(sThread *t,sIntrptStackFrame *stack) {
 
 static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCount,
 		time_t maxWaitTime,pid_t pid,ulong ident) {
-	file_t objFiles[MAX_WAIT_OBJECTS];
+	sFile *objFiles[MAX_WAIT_OBJECTS];
 	size_t i;
 	int res;
 	/* first request the files from the file-descriptors */
@@ -215,10 +215,10 @@ static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCou
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* translate fd to node-number */
 			objFiles[i] = fd_request(t,(int)uobjects[i].object);
-			if(objFiles[i] < 0) {
+			if(objFiles[i] == NULL) {
 				for(; i > 0; i--)
 					fd_release(t,objFiles[i - 1]);
-				return objFiles[i];
+				return -EBADF;
 			}
 		}
 	}
@@ -234,8 +234,8 @@ static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCou
 	return res;
 }
 
-static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,const file_t *objFiles,
-		time_t maxWaitTime,pid_t pid,ulong ident) {
+static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,
+		sFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident) {
 	sWaitObject kobjects[MAX_WAIT_OBJECTS];
 	size_t i;
 
@@ -252,7 +252,7 @@ static int sysc_doWaitLoop(USER const sWaitObject *uobjects,size_t objCount,cons
 			}
 			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
 				return -EINVAL;
-			kobjects[i].object = objFiles[i];
+			kobjects[i].object = (evobj_t)objFiles[i];
 		}
 		else
 			kobjects[i].object = uobjects[i].object;

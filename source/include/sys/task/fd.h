@@ -35,9 +35,9 @@ void fd_init(sProc *p);
  *
  * @param cur the current thread
  * @param fd the file-descriptor
- * @return the file or < 0 if the fd is invalid
+ * @return the file or NULL if the fd is invalid
  */
-file_t fd_request(sThread *cur,int fd);
+sFile *fd_request(sThread *cur,int fd);
 
 /**
  * Releases the given file, i.e. decrements the usage-count
@@ -45,7 +45,7 @@ file_t fd_request(sThread *cur,int fd);
  * @param cur the current thread
  * @param file the file
  */
-void fd_release(sThread *cur,file_t file);
+void fd_release(sThread *cur,sFile *file);
 
 /**
  * Clones all file-descriptors of the current process to <p>
@@ -58,18 +58,18 @@ void fd_clone(sThread *t,sProc *p);
 /**
  * Destroyes all file-descriptors of <p>
  *
- * @param t the current thread
  * @param p the process to destroy
  */
-void fd_destroy(sThread *t,sProc *p);
+void fd_destroy(sProc *p);
 
 /**
  * Associates a free file-descriptor with the given file-number
  *
+ * @param t the current thread
  * @param fileNo the file-number
  * @return the file-descriptor on success
  */
-int fd_assoc(file_t fileNo);
+int fd_assoc(sThread *t,sFile *fileNo);
 
 /**
  * Duplicates the given file-descriptor
@@ -91,10 +91,11 @@ int fd_redirect(int src,int dst);
 /**
  * Releases the given file-descriptor (marks it unused)
  *
+ * @param t the current thread
  * @param fd the file-descriptor
- * @return the file-number that was associated with the fd (or -EBADF)
+ * @return the file that was associated with the fd (or NULL)
  */
-file_t fd_unassoc(int fd);
+sFile *fd_unassoc(sThread *t,int fd);
 
 /**
  * Prints the file-descriptors of <p>

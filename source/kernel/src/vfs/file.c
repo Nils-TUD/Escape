@@ -98,7 +98,7 @@ static off_t vfs_file_seek(A_UNUSED pid_t pid,sVFSNode *node,off_t position,off_
 	}
 }
 
-ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USER void *buffer,
+ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	size_t byteCount = 0;
 	sFileContent *con = (sFileContent*)node->data;
@@ -122,7 +122,7 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *node,USE
 	return byteCount;
 }
 
-ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED file_t file,sVFSNode *n,USER const void *buffer,
+ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *n,USER const void *buffer,
 		off_t offset,size_t count) {
 	void *oldData;
 	size_t newSize = 0;

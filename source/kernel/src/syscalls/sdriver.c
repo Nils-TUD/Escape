@@ -38,8 +38,8 @@ int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
 	uint type = SYSC_ARG2(stack);
 	uint ops = SYSC_ARG3(stack);
 	pid_t pid = t->proc->pid;
-	int fd;
-	file_t res;
+	int res,fd;
+	sFile *file;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
@@ -51,12 +51,12 @@ int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* create device and open it */
-	res = vfs_createdev(pid,abspath,type,ops);
+	res = vfs_createdev(pid,abspath,type,ops,&file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with it */
-	fd = fd_assoc(res);
+	fd = fd_assoc(t,file);
 	if(fd < 0)
 		SYSC_ERROR(stack,fd);
 	SYSC_RET1(stack,fd);
@@ -64,13 +64,13 @@ int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
 
 int sysc_getclientid(sThread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
-	file_t file;
+	sFile *file;
 	inode_t id;
 	pid_t pid = t->proc->pid;
 
 	file = fd_request(t,fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	id = vfs_getClientId(pid,file);
 	fd_release(t,file);
@@ -83,22 +83,22 @@ int sysc_getclient(sThread *t,sIntrptStackFrame *stack) {
 	int drvFd = (int)SYSC_ARG1(stack);
 	inode_t cid = (inode_t)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
-	int fd;
-	file_t file,drvFile;
+	sFile *file,*drvFile;
+	int res,fd;
 
 	/* get file */
 	drvFile = fd_request(t,drvFd);
-	if(drvFile < 0)
-		SYSC_ERROR(stack,drvFile);
+	if(drvFile == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	/* open client */
-	file = vfs_openClient(pid,drvFile,cid);
+	res = vfs_openClient(pid,drvFile,cid,&file);
 	fd_release(t,drvFile);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 
 	/* associate fd with file */
-	fd = fd_assoc(file);
+	fd = fd_assoc(t,file);
 	if(fd < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);
@@ -107,7 +107,7 @@ int sysc_getclient(sThread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
-	file_t files[MAX_GETWORK_DEVICES];
+	sFile *files[MAX_GETWORK_DEVICES];
 	const int *fds = (const int*)SYSC_ARG1(stack);
 	size_t fdCount = SYSC_ARG2(stack);
 	int *drv = (int*)SYSC_ARG3(stack);
@@ -116,7 +116,7 @@ int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
 	size_t size = SYSC_ARG6(stack);
 	uint flags = (uint)SYSC_ARG7(stack);
 	pid_t pid = t->proc->pid;
-	file_t file;
+	sFile *file;
 	inode_t clientNo;
 	int fd;
 	size_t i,index;
@@ -135,10 +135,10 @@ int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
 	/* translate to files */
 	for(i = 0; i < fdCount; i++) {
 		files[i] = fd_request(t,fds[i]);
-		if(files[i] < 0) {
+		if(files[i] == NULL) {
 			for(; i > 0; i--)
 				fd_release(t,files[i - 1]);
-			SYSC_ERROR(stack,files[i]);
+			SYSC_ERROR(stack,-EBADF);
 		}
 	}
 
@@ -153,11 +153,11 @@ int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,clientNo);
 
 	/* open file */
-	file = vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,clientNo,VFS_DEV_NO);
-	if(file < 0) {
+	res = vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,clientNo,VFS_DEV_NO,&file);
+	if(res < 0) {
 		/* we have to set the channel unused again; otherwise its ignored for ever */
 		vfs_chan_setUsed(vfs_node_get(clientNo),false);
-		SYSC_ERROR(stack,file);
+		SYSC_ERROR(stack,res);
 	}
 
 	/* receive a message */
@@ -168,7 +168,7 @@ int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
 	}
 
 	/* assoc with fd */
-	fd = fd_assoc(file);
+	fd = fd_assoc(t,file);
 	if(fd < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);

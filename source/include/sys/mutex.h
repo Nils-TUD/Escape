@@ -27,26 +27,23 @@
  * Aquires the given mutex. It won't use busy-waiting here, but suspend the thread when the mutex
  * is not available.
  *
- * @param t the current thread
  * @param m the mutex
  */
-void mutex_aquire(sThread *t,mutex_t *m);
+void mutex_aquire(mutex_t *m);
 
 /**
  * Tries to aquire the given mutex. If its locked, it does not block, but return false.
  *
- * @param t the current thread
  * @param m the mutex
  * @return true if the mutex has been aquired
  */
-bool mutex_tryAquire(sThread *t,mutex_t *m);
+bool mutex_tryAquire(mutex_t *m);
 
 /**
  * Releases the given mutex
  *
- * @param t the current thread
  * @param m the mutex
  */
-void mutex_release(sThread *t,mutex_t *m);
+void mutex_release(mutex_t *m);
 
 #endif /* MUTEX_H_ */

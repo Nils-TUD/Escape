@@ -245,8 +245,7 @@ frameno_t paging_getFrameNo(pagedir_t *pdir,uintptr_t virt) {
 }
 
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
-	sThread *t = thread_getRunning();
-	frameno_t frame = thread_getFrame(t);
+	frameno_t frame = thread_getFrame();
 	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),buffer,loadCount);
 	return frame;
 }
@@ -345,7 +344,6 @@ ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size
 	size_t orgCount = count;
 	uintptr_t ptables = paging_getPTables(pdir);
 	uintptr_t pdirAddr = PAGE_DIR_DIRMAP_OF(*pdir);
-	sThread *t = thread_getRunning();
 	sPDEntry *pde;
 	sPTEntry *pte;
 	bool freeFrames;
@@ -386,7 +384,7 @@ ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size
 						goto error;
 				}
 				else
-					pte->frameNumber = thread_getFrame(t);
+					pte->frameNumber = thread_getFrame();
 			}
 			else {
 				if(flags & PG_ADDR_TO_FRAME)

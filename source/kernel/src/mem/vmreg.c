@@ -35,8 +35,7 @@ static sVMRegTree *regList;
 static sVMRegTree *regListEnd;
 
 void vmreg_addTree(pid_t pid,sVMRegTree *tree) {
-	sThread *t = thread_getRunning();
-	mutex_aquire(t,&regMutex);
+	mutex_aquire(&regMutex);
 	if(regListEnd)
 		regListEnd->next = tree;
 	else
@@ -48,14 +47,13 @@ void vmreg_addTree(pid_t pid,sVMRegTree *tree) {
 	tree->end = NULL;
 	tree->root = NULL;
 	tree->priority = 314159265;
-	mutex_release(t,&regMutex);
+	mutex_release(&regMutex);
 }
 
 void vmreg_remTree(sVMRegTree *tree) {
 	sVMRegTree *t,*p;
-	sThread *cur = thread_getRunning();
 	p = NULL;
-	mutex_aquire(cur,&regMutex);
+	mutex_aquire(&regMutex);
 	for(t = regList; t != NULL; p = t, t = t->next) {
 		if(t == tree) {
 			if(p)
@@ -65,18 +63,16 @@ void vmreg_remTree(sVMRegTree *tree) {
 			break;
 		}
 	}
-	mutex_release(cur,&regMutex);
+	mutex_release(&regMutex);
 }
 
 sVMRegTree *vmreg_reqTree(void) {
-	sThread *t = thread_getRunning();
-	mutex_aquire(t,&regMutex);
+	mutex_aquire(&regMutex);
 	return regList;
 }
 
 void vmreg_relTree(void) {
-	sThread *t = thread_getRunning();
-	mutex_release(t,&regMutex);
+	mutex_release(&regMutex);
 }
 
 sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
@@ -94,15 +90,14 @@ sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
 
 sVMRegion *vmreg_getByReg(sVMRegTree *tree,sRegion *reg) {
 	sVMRegion *vm;
-	sThread *t = thread_getRunning();
-	mutex_aquire(t,&regMutex);
+	mutex_aquire(&regMutex);
 	for(vm = tree->begin; vm != NULL; vm = vm->next) {
 		if(vm->reg == reg) {
-			mutex_release(t,&regMutex);
+			mutex_release(&regMutex);
 			return vm;
 		}
 	}
-	mutex_release(t,&regMutex);
+	mutex_release(&regMutex);
 	return NULL;
 }
 
@@ -110,7 +105,6 @@ sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr) {
 	/* find a place for a new node. we want to insert it by priority, so find the first
 	 * node that has <= priority */
 	sVMRegion *p,**q,**l,**r;
-	sThread *t = thread_getRunning();
 	for(p = tree->root, q = &tree->root; p && p->priority < tree->priority; p = *q) {
 		if(addr < p->virt)
 			q = &p->left;
@@ -147,14 +141,14 @@ sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr) {
 	*l = *r = NULL;
 	p = *q;
 	/* insert at the end of the linked list */
-	mutex_aquire(t,&regMutex);
+	mutex_aquire(&regMutex);
 	if(tree->end)
 		tree->end->next = p;
 	else
 		tree->begin = p;
 	tree->end = p;
 	p->next = NULL;
-	mutex_release(t,&regMutex);
+	mutex_release(&regMutex);
 	return p;
 }
 

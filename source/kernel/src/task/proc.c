@@ -63,7 +63,7 @@ static void proc_doDestroy(sProc *p);
 static void proc_notifyProcDied(pid_t parent);
 static pid_t proc_getFreePid(void);
 static bool proc_add(sProc *p);
-static void proc_remove(sThread *t,sProc *p);
+static void proc_remove(sProc *p);
 
 /* we have to put the first one here because we need a process before we can allocate
  * something on the kernel-heap. sounds strange, but the kheap-init stuff uses paging and
@@ -156,20 +156,20 @@ sProc *proc_getByPid(pid_t pid) {
 	return pidToProc[pid];
 }
 
-sProc *proc_request(sThread *t,pid_t pid,size_t l) {
+sProc *proc_request(pid_t pid,size_t l) {
 	sProc *p = proc_getByPid(pid);
 	if(p) {
 		if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-			mutex_aquire(t,p->locks + l);
+			mutex_aquire(p->locks + l);
 		else
 			spinlock_aquire(p->locks + l);
 	}
 	return p;
 }
 
-void proc_release(sThread *t,sProc *p,size_t l) {
+void proc_release(sProc *p,size_t l) {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-		mutex_release(t,p->locks + l);
+		mutex_release(p->locks + l);
 	else
 		spinlock_release(p->locks + l);
 }
@@ -179,12 +179,11 @@ size_t proc_getCount(void) {
 }
 
 void proc_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,pid,PLOCK_REGIONS);
+	sProc *p = proc_request(pid,PLOCK_REGIONS);
 	if(p) {
 		vmm_getMemUsageOf(p,own,shared,swapped);
 		*own = *own + paging_getPTableCount(&p->pagedir) + proc_getKMemUsageOf(p);
-		proc_release(t,p,PLOCK_REGIONS);
+		proc_release(p,PLOCK_REGIONS);
 	}
 }
 
@@ -192,8 +191,7 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 	size_t pages,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
-	sThread *t = thread_getRunning();
-	mutex_aquire(t,&procLock);
+	mutex_aquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		size_t pown,psh,pswap;
 		sProc *p = (sProc*)n->data;
@@ -202,7 +200,7 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 		shMem += psh;
 		dReal += vmm_getMemUsage(p->pid,&pages);
 	}
-	mutex_release(t,&procLock);
+	mutex_release(&procLock);
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
 	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;
@@ -213,7 +211,7 @@ int proc_clone(uint8_t flags) {
 	sProc *p,*cur;
 	sThread *nt,*curThread = thread_getRunning();
 	assert((flags & P_ZOMBIE) == 0);
-	cur = proc_request(curThread,curThread->proc->pid,PLOCK_PROG);
+	cur = proc_request(curThread->proc->pid,PLOCK_PROG);
 	if(!cur) {
 		res = -ESRCH;
 		goto errorReqProc;
@@ -255,10 +253,10 @@ int proc_clone(uint8_t flags) {
 	}
 
 	/* determine pid; ensure that nobody can get this pid, too */
-	mutex_aquire(curThread,&procLock);
+	mutex_aquire(&procLock);
 	newPid = proc_getFreePid();
 	if(newPid < 0) {
-		mutex_release(curThread,&procLock);
+		mutex_release(&procLock);
 		res = -ENOPROCS;
 		goto errorCmd;
 	}
@@ -266,11 +264,11 @@ int proc_clone(uint8_t flags) {
 	/* add to processes */
 	*(pid_t*)&p->pid = newPid;
 	if(!proc_add(p)) {
-		mutex_release(curThread,&procLock);
+		mutex_release(&procLock);
 		res = -ENOMEM;
 		goto errorCmd;
 	}
-	mutex_release(curThread,&procLock);
+	mutex_release(&procLock);
 
 	/* create the VFS node */
 	p->threadDir = vfs_createProcess(p->pid);
@@ -306,7 +304,7 @@ int proc_clone(uint8_t flags) {
 		goto errorThreadAppend;
 
 	/* inherit file-descriptors */
-	fd_clone(curThread,p);
+	fd_clone(p);
 
 	res = thread_finishClone(curThread,nt);
 	if(res == 1) {
@@ -326,9 +324,9 @@ int proc_clone(uint8_t flags) {
 #endif
 #endif
 
-	proc_release(curThread,cur,PLOCK_PROG);
+	proc_release(cur,PLOCK_PROG);
 	/* if we had reserved too many, free them now */
-	thread_discardFrames(curThread);
+	thread_discardFrames();
 	return p->pid;
 
 errorThreadAppend:
@@ -343,7 +341,7 @@ errorVFS:
 	groups_leave(p->pid);
 	vfs_removeProcess(p->pid);
 errorAdd:
-	proc_remove(curThread,p);
+	proc_remove(p);
 errorCmd:
 	cache_free((void*)p->command);
 errorPdir:
@@ -351,7 +349,7 @@ errorPdir:
 errorProc:
 	cache_free(p);
 errorCur:
-	proc_release(curThread,cur,PLOCK_PROG);
+	proc_release(cur,PLOCK_PROG);
 errorReqProc:
 	return res;
 }
@@ -368,9 +366,9 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	pageCount = thread_getThreadFrmCnt();
 	if(thread_getTLSRange(t,&tlsStart,&tlsEnd))
 		pageCount += BYTES_2_PAGES(tlsEnd - tlsStart);
-	thread_reserveFrames(t,pageCount);
+	thread_reserveFrames(pageCount);
 
-	p = proc_request(t,t->proc->pid,PLOCK_PROG);
+	p = proc_request(t->proc->pid,PLOCK_PROG);
 	if(!p) {
 		res = -ESRCH;
 		goto errorReqProc;
@@ -404,14 +402,14 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 #endif
 #endif
 
-	proc_release(t,p,PLOCK_PROG);
-	thread_discardFrames(t);
+	proc_release(p,PLOCK_PROG);
+	thread_discardFrames();
 	return nt->tid;
 
 error:
-	proc_release(t,p,PLOCK_PROG);
+	proc_release(p,PLOCK_PROG);
 errorReqProc:
-	thread_discardFrames(t);
+	thread_discardFrames();
 	return res;
 }
 
@@ -419,7 +417,7 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	char *argBuffer;
 	sStartupInfo info;
 	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,t->proc->pid,PLOCK_PROG);
+	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	size_t argSize;
 	int argc,fd = -1;
 	if(!p)
@@ -427,7 +425,7 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	/* we can't do an exec if we have multiple threads (init can do that, because the threads are
 	 * "kernel-threads") */
 	if(p->pid != 0 && sll_length(&p->threads) > 1) {
-		proc_release(t,p,PLOCK_PROG);
+		proc_release(p,PLOCK_PROG);
 		return -EINVAL;
 	}
 
@@ -435,7 +433,7 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 		/* resolve path; require a path in real fs */
 		inode_t nodeNo;
 		if(vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ) != -EREALPATH) {
-			proc_release(t,p,PLOCK_PROG);
+			proc_release(p,PLOCK_PROG);
 			return -EINVAL;
 		}
 	}
@@ -445,11 +443,11 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	if(args != NULL) {
 		argc = proc_buildArgs(args,&argBuffer,&argSize,!code);
 		if(argc < 0) {
-			proc_release(t,p,PLOCK_PROG);
+			proc_release(p,PLOCK_PROG);
 			return argc;
 		}
 	}
-	thread_addHeapAlloc(t,argBuffer);
+	thread_addHeapAlloc(argBuffer);
 
 	/* remove all except stack */
 	proc_doRemoveRegions(p,false);
@@ -470,7 +468,7 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 		sFile *file;
 		if(vfs_openPath(p->pid,VFS_READ,path,&file) < 0)
 			goto error;
-		fd = fd_assoc(t,file);
+		fd = fd_assoc(file);
 		if(fd < 0) {
 			vfs_closeFile(p->pid,file);
 			goto error;
@@ -492,18 +490,18 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	/* make process ready */
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
-	proc_release(t,p,PLOCK_PROG);
+	proc_release(p,PLOCK_PROG);
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
 	if(!uenv_setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
 		goto errorNoRel;
-	thread_remHeapAlloc(t,argBuffer);
+	thread_remHeapAlloc(argBuffer);
 	cache_free(argBuffer);
 	return 0;
 
 error:
-	proc_release(t,p,PLOCK_PROG);
+	proc_release(p,PLOCK_PROG);
 errorNoRel:
-	thread_remHeapAlloc(t,argBuffer);
+	thread_remHeapAlloc(argBuffer);
 	cache_free(argBuffer);
 	proc_terminate(p->pid,1,SIG_COUNT);
 	thread_switch();
@@ -515,25 +513,25 @@ errorNoRel:
 void proc_join(tid_t tid) {
 	sThread *t = thread_getRunning();
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
-	sProc *p = proc_request(t,t->proc->pid,PLOCK_PROG);
+	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	while((tid == 0 && sll_length(&t->proc->threads) > 1) ||
 			(tid != 0 && thread_getById(tid) != NULL)) {
 		ev_wait(t,EVI_THREAD_DIED,(evobj_t)t->proc);
-		proc_release(t,p,PLOCK_PROG);
+		proc_release(p,PLOCK_PROG);
 
 		thread_switchNoSigs();
 
-		proc_request(t,t->proc->pid,PLOCK_PROG);
+		proc_request(t->proc->pid,PLOCK_PROG);
 	}
-	proc_release(t,p,PLOCK_PROG);
+	proc_release(p,PLOCK_PROG);
 }
 
 void proc_exit(int exitCode) {
 	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,t->proc->pid,PLOCK_PROG);
+	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	if(p) {
-		thread_terminate(t,t);
-		proc_release(t,p,PLOCK_PROG);
+		thread_terminate(t);
+		proc_release(p,PLOCK_PROG);
 	}
 }
 
@@ -546,14 +544,13 @@ void proc_segFault(void) {
 }
 
 void proc_addSignalFor(pid_t pid,int signal) {
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,pid,PLOCK_PROG);
+	sProc *p = proc_request(pid,PLOCK_PROG);
 	if(p) {
 		bool sent = false;
 		sSLNode *n;
 		/* don't send a signal to processes that are dying */
 		if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
-			proc_release(t,p,PLOCK_PROG);
+			proc_release(p,PLOCK_PROG);
 			return;
 		}
 
@@ -562,7 +559,7 @@ void proc_addSignalFor(pid_t pid,int signal) {
 			if(sig_addSignalFor(pt->tid,signal))
 				sent = true;
 		}
-		proc_release(t,p,PLOCK_PROG);
+		proc_release(p,PLOCK_PROG);
 
 		/* no handler and fatal? terminate proc! */
 		if(!sent && sig_isFatal(signal)) {
@@ -575,13 +572,12 @@ void proc_addSignalFor(pid_t pid,int signal) {
 
 void proc_terminate(pid_t pid,int exitCode,int signal) {
 	sSLNode *tn;
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,pid,PLOCK_PROG);
+	sProc *p = proc_request(pid,PLOCK_PROG);
 	if(!p)
 		return;
 	/* don't terminate processes twice */
 	if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
-		proc_release(t,p,PLOCK_PROG);
+		proc_release(p,PLOCK_PROG);
 		return;
 	}
 
@@ -600,29 +596,27 @@ void proc_terminate(pid_t pid,int exitCode,int signal) {
 	/* terminate all threads */
 	for(tn = sll_begin(&p->threads); tn != NULL; tn = tn->next) {
 		sThread *pt = (sThread*)tn->data;
-		thread_terminate(pt,t);
+		thread_terminate(pt);
 	}
 	p->flags |= P_PREZOMBIE;
-	proc_release(t,p,PLOCK_PROG);
+	proc_release(p,PLOCK_PROG);
 }
 
 void proc_killThread(tid_t tid) {
-	sThread *cur = thread_getRunning();
 	sThread *t = thread_getById(tid);
-	sProc *p = proc_request(cur,t->proc->pid,PLOCK_PROG);
+	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	thread_kill(t);
 	sll_removeFirstWith(&p->threads,t);
 	if(sll_length(&p->threads) == 0) {
 		proc_setExitState(p,0,SIG_COUNT);
 		proc_doDestroy(p);
 	}
-	proc_release(cur,p,PLOCK_PROG);
+	proc_release(p,PLOCK_PROG);
 }
 
 void proc_destroy(pid_t pid) {
 	sSLNode *n;
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,pid,PLOCK_PROG);
+	sProc *p = proc_request(pid,PLOCK_PROG);
 	if(!p)
 		return;
 	for(n = sll_begin(&p->threads); n != NULL; ) {
@@ -634,11 +628,10 @@ void proc_destroy(pid_t pid) {
 	}
 	proc_setExitState(p,0,SIG_COUNT);
 	proc_doDestroy(p);
-	proc_release(t,p,PLOCK_PROG);
+	proc_release(p,PLOCK_PROG);
 }
 
 static void proc_doDestroy(sProc *p) {
-	sThread *t = thread_getRunning();
 
 	/* release resources */
 	fd_destroy(p);
@@ -654,21 +647,20 @@ static void proc_doDestroy(sProc *p) {
 	p->flags &= ~P_PREZOMBIE;
 	p->flags |= P_ZOMBIE;
 	/* ensure that the parent-wakeup doesn't get lost */
-	mutex_aquire(t,&childLock);
+	mutex_aquire(&childLock);
 	proc_notifyProcDied(p->parentPid);
-	mutex_release(t,&childLock);
+	mutex_release(&childLock);
 }
 
 void proc_kill(pid_t pid) {
 	sSLNode *n;
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,pid,PLOCK_PROG);
+	sProc *p = proc_request(pid,PLOCK_PROG);
 	if(!p)
 		return;
 
 	/* give childs the ppid 0 */
-	mutex_aquire(t,&childLock);
-	mutex_aquire(t,&procLock);
+	mutex_aquire(&childLock);
+	mutex_aquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		sProc *cp = (sProc*)n->data;
 		if(cp->parentPid == p->pid) {
@@ -679,8 +671,8 @@ void proc_kill(pid_t pid) {
 				proc_notifyProcDied(0);
 		}
 	}
-	mutex_release(t,&procLock);
-	mutex_release(t,&childLock);
+	mutex_release(&procLock);
+	mutex_release(&childLock);
 
 	/* free the last resources and remove us from vfs */
 	cache_free((char*)p->command);
@@ -689,8 +681,8 @@ void proc_kill(pid_t pid) {
 	vfs_removeProcess(p->pid);
 
 	/* remove and free */
-	proc_remove(t,p);
-	proc_release(t,p,PLOCK_PROG);
+	proc_remove(p);
+	proc_release(p,PLOCK_PROG);
 	cache_free(p);
 }
 
@@ -704,12 +696,12 @@ int proc_waitChild(USER sExitState *state) {
 	sProc *p = t->proc;
 	int res;
 	/* check if there is already a dead child-proc */
-	mutex_aquire(t,&childLock);
+	mutex_aquire(&childLock);
 	res = proc_getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
 		ev_wait(t,EVI_CHILD_DIED,(evobj_t)p);
-		mutex_release(t,&childLock);
+		mutex_release(&childLock);
 		thread_switch();
 		/* stop waiting for event; maybe we have been waked up for another reason */
 		ev_removeThread(t);
@@ -721,7 +713,7 @@ int proc_waitChild(USER sExitState *state) {
 			return res;
 	}
 	else
-		mutex_release(t,&childLock);
+		mutex_release(&childLock);
 
 	/* finally kill the process */
 	proc_kill(res);
@@ -730,14 +722,13 @@ int proc_waitChild(USER sExitState *state) {
 
 static int proc_getExitState(pid_t ppid,USER sExitState *state) {
 	sSLNode *n;
-	sThread *t = thread_getRunning();
-	mutex_aquire(t,&procLock);
+	mutex_aquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
 		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
 			/* avoid deadlock; at other places we aquire the PLOCK_PROG first and procLock afterwards */
-			mutex_release(t,&procLock);
-			p = proc_request(t,p->pid,PLOCK_PROG);
+			mutex_release(&procLock);
+			p = proc_request(p->pid,PLOCK_PROG);
 			if(state && p->exitState) {
 				/* copy it to stack first, because the memcpy to state may fail. this way
 				 * we don't get into trouble with the hold mutex (PLOCK_PROG) */
@@ -745,15 +736,15 @@ static int proc_getExitState(pid_t ppid,USER sExitState *state) {
 				memcpy(&tmpState,p->exitState,sizeof(sExitState));
 				cache_free(p->exitState);
 				p->exitState = NULL;
-				proc_release(t,p,PLOCK_PROG);
+				proc_release(p,PLOCK_PROG);
 				memcpy(state,&tmpState,sizeof(sExitState));
 				return p->pid;
 			}
-			proc_release(t,p,PLOCK_PROG);
+			proc_release(p,PLOCK_PROG);
 			return p->pid;
 		}
 	}
-	mutex_release(t,&procLock);
+	mutex_release(&procLock);
 	return -ECHILD;
 }
 
@@ -783,10 +774,9 @@ static void proc_setExitState(sProc *p,int exitCode,int signal) {
 }
 
 void proc_removeRegions(pid_t pid,bool remStack) {
-	sThread *t = thread_getRunning();
-	sProc *p = proc_request(t,pid,PLOCK_PROG);
+	sProc *p = proc_request(pid,PLOCK_PROG);
 	proc_doRemoveRegions(p,remStack);
-	proc_release(t,p,PLOCK_PROG);
+	proc_release(p,PLOCK_PROG);
 }
 
 static void proc_doRemoveRegions(sProc *p,bool remStack) {
@@ -878,7 +868,6 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 	const char *const *arg;
 	char *bufPos;
 	int argc = 0;
-	sThread *t = thread_getRunning();
 	size_t remaining = EXEC_MAX_ARGSIZE;
 	size_t len;
 
@@ -891,7 +880,7 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 	/* note that we have to create a copy since we don't know where the args are. Maybe
 	 * they are on the user-stack at the position we want to copy them for the
 	 * new process... */
-	thread_addHeapAlloc(t,*argBuffer);
+	thread_addHeapAlloc(*argBuffer);
 	bufPos = *argBuffer;
 	arg = args;
 	while(1) {
@@ -918,13 +907,13 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 		arg++;
 		argc++;
 	}
-	thread_remHeapAlloc(t,*argBuffer);
+	thread_remHeapAlloc(*argBuffer);
 	/* store args-size and return argc */
 	*size = EXEC_MAX_ARGSIZE - remaining;
 	return argc;
 
 error:
-	thread_remHeapAlloc(t,*argBuffer);
+	thread_remHeapAlloc(*argBuffer);
 	cache_free(*argBuffer);
 	return -EFAULT;
 }
@@ -950,11 +939,11 @@ static bool proc_add(sProc *p) {
 	return false;
 }
 
-static void proc_remove(sThread *t,sProc *p) {
-	mutex_aquire(t,&procLock);
+static void proc_remove(sProc *p) {
+	mutex_aquire(&procLock);
 	sll_removeFirstWith(&procs,p);
 	pidToProc[p->pid] = NULL;
-	mutex_release(t,&procLock);
+	mutex_release(&procLock);
 }
 
 

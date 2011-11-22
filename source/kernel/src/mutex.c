@@ -29,7 +29,8 @@
 
 static klock_t mutexLock;
 
-void mutex_aquire(sThread *t,mutex_t *m) {
+void mutex_aquire(mutex_t *m) {
+	sThread *t = thread_getRunning();
 	spinlock_aquire(&mutexLock);
 	if(*m & 1) {
 		*m += 2;
@@ -49,7 +50,8 @@ void mutex_aquire(sThread *t,mutex_t *m) {
 	spinlock_release(&mutexLock);
 }
 
-bool mutex_tryAquire(sThread *t,mutex_t *m) {
+bool mutex_tryAquire(mutex_t *m) {
+	sThread *t = thread_getRunning();
 	bool res = false;
 	spinlock_aquire(&mutexLock);
 	if(!(*m & 1)) {
@@ -62,7 +64,8 @@ bool mutex_tryAquire(sThread *t,mutex_t *m) {
 	return res;
 }
 
-void mutex_release(sThread *t,mutex_t *m) {
+void mutex_release(mutex_t *m) {
+	sThread *t = thread_getRunning();
 	spinlock_aquire(&mutexLock);
 	assert(t->resources > 0);
 	*m &= ~1;

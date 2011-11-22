@@ -31,15 +31,14 @@ static sProcGroups *groups_getByPid(pid_t pid);
 bool groups_set(pid_t pid,size_t count,USER const gid_t *groups) {
 	sProcGroups *g;
 	sProc *p;
-	sThread *t = thread_getRunning();
 	gid_t *grpCpy = NULL;
 	if(count > 0) {
 		grpCpy = (gid_t*)cache_alloc(count * sizeof(gid_t));
 		if(!grpCpy)
 			return false;
-		thread_addHeapAlloc(t,grpCpy);
+		thread_addHeapAlloc(grpCpy);
 		memcpy(grpCpy,groups,count * sizeof(gid_t));
-		thread_remHeapAlloc(t,grpCpy);
+		thread_remHeapAlloc(grpCpy);
 	}
 
 	g = (sProcGroups*)cache_alloc(sizeof(sProcGroups));

@@ -157,7 +157,7 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 		return -ESRCH;
 
 	/* ensure that only one thread at a time can use the vm86-task */
-	mutex_aquire(t,&vm86Lock);
+	mutex_aquire(&vm86Lock);
 	/* store information in calling process */
 	caller = t->tid;
 	if(!vm86_copyInfo(interrupt,regs,area)) {
@@ -167,7 +167,7 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 
 	/* reserve frames for vm86-thread */
 	if(info.area) {
-		if(!thread_reserveFrames(vm86t,BYTES_2_PAGES(info.area->size))) {
+		if(!thread_reserveFramesFor(vm86t,BYTES_2_PAGES(info.area->size))) {
 			vm86_finish();
 			return -ENOMEM;
 		}
@@ -183,10 +183,10 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 
 	/* everything is finished :) */
 	if(vm86Res == 0) {
-		thread_addCallback(t,vm86_finish);
+		thread_addCallback(vm86_finish);
 		memcpy(regs,&info.regs,sizeof(sVM86Regs));
 		vm86_copyAreaResult();
-		thread_remCallback(t,vm86_finish);
+		thread_remCallback(vm86_finish);
 	}
 
 	/* mark as done */
@@ -404,12 +404,11 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 }
 
 static void vm86_finish(void) {
-	sThread *t = thread_getById(caller);
 	if(info.area)
-		thread_discardFrames(thread_getById(vm86Tid));
+		thread_discardFramesFor(thread_getById(vm86Tid));
 	vm86_clearInfo();
 	caller = INVALID_TID;
-	mutex_release(t,&vm86Lock);
+	mutex_release(&vm86Lock);
 }
 
 static void vm86_copyRegResult(sIntrptStackFrame *stack) {

@@ -31,17 +31,17 @@ void ioports_init(sProc *p) {
 	p->archAttr.ioMap = NULL;
 }
 
-int ioports_request(sThread *t,uint16_t start,size_t count) {
+int ioports_request(uint16_t start,size_t count) {
 	sProc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return -EINVAL;
 
-	p = proc_request(t,t->proc->pid,PLOCK_PORTS);
+	p = proc_request(proc_getRunning(),PLOCK_PORTS);
 	if(p->archAttr.ioMap == NULL) {
 		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
 		if(p->archAttr.ioMap == NULL) {
-			proc_release(t,p,PLOCK_PORTS);
+			proc_release(p,PLOCK_PORTS);
 			return -ENOMEM;
 		}
 		/* mark all as disallowed */
@@ -55,31 +55,31 @@ int ioports_request(sThread *t,uint16_t start,size_t count) {
 	}
 
 	tss_setIOMap(p->archAttr.ioMap,true);
-	proc_release(t,p,PLOCK_PORTS);
+	proc_release(p,PLOCK_PORTS);
 	return 0;
 }
 
-bool ioports_handleGPF(sThread *t) {
+bool ioports_handleGPF(void) {
 	bool res = false;
-	sProc *p = proc_request(t,t->proc->pid,PLOCK_PORTS);
+	sProc *p = proc_request(proc_getRunning(),PLOCK_PORTS);
 	if(p->archAttr.ioMap != NULL && !tss_ioMapPresent()) {
 		/* load it and give the process another try */
 		tss_setIOMap(p->archAttr.ioMap,false);
 		res = true;
 	}
-	proc_release(t,p,PLOCK_PORTS);
+	proc_release(p,PLOCK_PORTS);
 	return res;
 }
 
-int ioports_release(sThread *t,uint16_t start,size_t count) {
+int ioports_release(uint16_t start,size_t count) {
 	sProc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return -EINVAL;
 
-	p = proc_request(t,t->proc->pid,PLOCK_PORTS);
+	p = proc_request(proc_getRunning(),PLOCK_PORTS);
 	if(p->archAttr.ioMap == NULL) {
-		proc_release(t,p,PLOCK_PORTS);
+		proc_release(p,PLOCK_PORTS);
 		return -EINVAL;
 	}
 
@@ -90,7 +90,7 @@ int ioports_release(sThread *t,uint16_t start,size_t count) {
 	}
 
 	tss_setIOMap(p->archAttr.ioMap,true);
-	proc_release(t,p,PLOCK_PORTS);
+	proc_release(p,PLOCK_PORTS);
 	return 0;
 }
 

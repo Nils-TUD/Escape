@@ -33,10 +33,10 @@ int sysc_chgsize(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	size_t oldEnd;
 	if(count > 0)
-		thread_reserveFrames(t,count);
+		thread_reserveFrames(count);
 	oldEnd = vmm_grow(pid,t->proc->dataAddr,count);
 	if(count > 0)
-		thread_discardFrames(t);
+		thread_discardFrames();
 	SYSC_RET1(stack,oldEnd);
 }
 

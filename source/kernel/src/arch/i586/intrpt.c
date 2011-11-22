@@ -203,7 +203,7 @@ static void intrpt_exGenProtFault(sThread *t,sIntrptStackFrame *stack) {
 	if(stack->eip >= KERNEL_AREA)
 		vid_unsetPrintFunc();
 	/* io-map not loaded yet? */
-	if(ioports_handleGPF(t)) {
+	if(ioports_handleGPF()) {
 		exCount = 0;
 		return;
 	}

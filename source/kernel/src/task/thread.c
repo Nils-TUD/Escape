@@ -278,47 +278,59 @@ void thread_updateRuntimes(void) {
 	spinlock_release(&threadLock);
 }
 
-void thread_addLock(sThread *cur,klock_t *l) {
+void thread_addLock(klock_t *l) {
+	sThread *cur = thread_getRunning();
 	assert(cur->termLockCount < TERM_RESOURCE_CNT);
 	cur->termLocks[cur->termLockCount++] = l;
 }
 
-void thread_remLock(sThread *cur,A_UNUSED klock_t *l) {
+void thread_remLock(A_UNUSED klock_t *l) {
+	sThread *cur = thread_getRunning();
 	assert(cur->termLockCount > 0);
 	cur->termLockCount--;
 }
 
-void thread_addHeapAlloc(sThread *cur,void *ptr) {
+void thread_addHeapAlloc(void *ptr) {
+	sThread *cur = thread_getRunning();
 	assert(cur->termHeapCount < TERM_RESOURCE_CNT);
 	cur->termHeapAllocs[cur->termHeapCount++] = ptr;
 }
 
-void thread_remHeapAlloc(sThread *cur,A_UNUSED void *ptr) {
+void thread_remHeapAlloc(A_UNUSED void *ptr) {
+	sThread *cur = thread_getRunning();
 	assert(cur->termHeapCount > 0);
 	cur->termHeapCount--;
 }
 
-void thread_addFileUsage(sThread *cur,sFile *file) {
+void thread_addFileUsage(sFile *file) {
+	sThread *cur = thread_getRunning();
 	assert(cur->termUsageCount < TERM_RESOURCE_CNT);
 	cur->termUsages[cur->termUsageCount++] = file;
 }
 
-void thread_remFileUsage(sThread *cur,A_UNUSED sFile *file) {
+void thread_remFileUsage(A_UNUSED sFile *file) {
+	sThread *cur = thread_getRunning();
 	assert(cur->termUsageCount > 0);
 	cur->termUsageCount--;
 }
 
-void thread_addCallback(sThread *cur,fTermCallback callback) {
+void thread_addCallback(fTermCallback callback) {
+	sThread *cur = thread_getRunning();
 	assert(cur->termCallbackCount < TERM_RESOURCE_CNT);
 	cur->termCallbacks[cur->termCallbackCount++] = callback;
 }
 
-void thread_remCallback(sThread *cur,A_UNUSED fTermCallback callback) {
+void thread_remCallback(A_UNUSED fTermCallback callback) {
+	sThread *cur = thread_getRunning();
 	assert(cur->termCallbackCount > 0);
 	cur->termCallbackCount--;
 }
 
-bool thread_reserveFrames(sThread *cur,size_t count) {
+bool thread_reserveFrames(size_t count) {
+	return thread_reserveFramesFor(thread_getRunning(),count);
+}
+
+bool thread_reserveFramesFor(sThread *t,size_t count) {
 	while(count > 0) {
 		size_t i;
 		if(!pmem_reserve(count))
@@ -327,22 +339,27 @@ bool thread_reserveFrames(sThread *cur,size_t count) {
 			frameno_t frm = pmem_allocate(FRM_USER);
 			if(!frm)
 				break;
-			sll_append(&cur->reqFrames,(void*)frm);
+			sll_append(&t->reqFrames,(void*)frm);
 			count--;
 		}
 	}
 	return true;
 }
 
-frameno_t thread_getFrame(sThread *cur) {
-	frameno_t frm = (frameno_t)sll_removeFirst(&cur->reqFrames);
+frameno_t thread_getFrame(void) {
+	sThread *t = thread_getRunning();
+	frameno_t frm = (frameno_t)sll_removeFirst(&t->reqFrames);
 	assert(frm != 0);
 	return frm;
 }
 
-void thread_discardFrames(sThread *cur) {
+void thread_discardFrames(void) {
+	thread_discardFramesFor(thread_getRunning());
+}
+
+void thread_discardFramesFor(sThread *t) {
 	frameno_t frm;
-	while((frm = (frameno_t)sll_removeFirst(&cur->reqFrames)) != 0)
+	while((frm = (frameno_t)sll_removeFirst(&t->reqFrames)) != 0)
 		pmem_free(frm,FRM_USER);
 }
 
@@ -420,9 +437,9 @@ errThread:
 	return err;
 }
 
-void thread_terminate(sThread *t,sThread *cur) {
+void thread_terminate(sThread *t) {
 	/* if its the current one, it can't be chosen again by the scheduler */
-	if(t == cur)
+	if(t == thread_getRunning())
 		thread_makeUnrunnable(t);
 	term_addDead(t);
 }

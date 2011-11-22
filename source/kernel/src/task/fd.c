@@ -31,31 +31,30 @@ void fd_init(sProc *p) {
 	memclear(p->fileDescs,MAX_FD_COUNT * sizeof(sFile*));
 }
 
-sFile *fd_request(sThread *cur,int fd) {
+sFile *fd_request(int fd) {
 	sFile *file;
-	sProc *p;
+	sProc *p = thread_getRunning()->proc;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
 
-	p = cur->proc;
 	spinlock_aquire(p->locks + PLOCK_FDS);
 	file = p->fileDescs[fd];
 	if(file != NULL) {
 		vfs_incUsages(file);
-		thread_addFileUsage(cur,file);
+		thread_addFileUsage(file);
 	}
 	spinlock_release(p->locks + PLOCK_FDS);
 	return file;
 }
 
-void fd_release(sThread *cur,sFile *file) {
-	thread_remFileUsage(cur,file);
+void fd_release(sFile *file) {
+	thread_remFileUsage(file);
 	vfs_decUsages(file);
 }
 
-void fd_clone(sThread *t,sProc *p) {
+void fd_clone(sProc *p) {
 	size_t i;
-	sProc *cur = t->proc;
+	sProc *cur = thread_getRunning()->proc;
 	/* don't lock p, because its currently created; thus it can't access its file-descriptors */
 	spinlock_aquire(cur->locks + PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -80,10 +79,10 @@ void fd_destroy(sProc *p) {
 	spinlock_release(p->locks + PLOCK_FDS);
 }
 
-int fd_assoc(sThread *t,sFile *fileNo) {
+int fd_assoc(sFile *fileNo) {
 	sFile *const *fds;
 	int i,fd = -EMFILE;
-	sProc *p = t->proc;
+	sProc *p = thread_getRunning()->proc;
 	spinlock_aquire(p->locks + PLOCK_FDS);
 	fds = p->fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -102,8 +101,7 @@ int fd_dup(int fd) {
 	sFile *f;
 	sFile *const *fds;
 	int i,nfd = -EBADF;
-	sThread *t = thread_getRunning();
-	sProc *p = t->proc;
+	sProc *p = thread_getRunning()->proc;
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return -EBADF;
@@ -130,8 +128,7 @@ int fd_dup(int fd) {
 int fd_redirect(int src,int dst) {
 	sFile *fSrc,*fDst;
 	int err = -EBADF;
-	sThread *t = thread_getRunning();
-	sProc *p = t->proc;
+	sProc *p = thread_getRunning()->proc;
 
 	/* check fds */
 	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
@@ -152,9 +149,9 @@ int fd_redirect(int src,int dst) {
 	return err;
 }
 
-sFile *fd_unassoc(sThread *t,int fd) {
+sFile *fd_unassoc(int fd) {
 	sFile *file;
-	sProc *p = t->proc;
+	sProc *p = thread_getRunning()->proc;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
 

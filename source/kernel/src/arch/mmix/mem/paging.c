@@ -157,8 +157,7 @@ void paging_removeAccess(void) {
 
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
 	/* copy into frame */
-	sThread *t = thread_getRunning();
-	frameno_t frame = thread_getFrame(t);
+	frameno_t frame = thread_getFrame();
 	uintptr_t addr = frame * PAGE_SIZE | DIR_MAPPED_SPACE;
 	memcpy((void*)addr,buffer,loadCount);
 	/* if its an executable region, we have to syncid the memory afterwards */
@@ -223,7 +222,6 @@ void paging_zeroToUser(void *dst,size_t count) {
 ssize_t paging_clonePages(pagedir_t *src,pagedir_t *dst,uintptr_t virtSrc,uintptr_t virtDst,
 		size_t count,bool share) {
 	pagedir_t *cur = paging_getPageDir();
-	sThread *t = thread_getRunning();
 	ssize_t pts = 0;
 	uintptr_t orgVirtSrc = virtSrc,orgVirtDst = virtDst;
 	size_t orgCount = count;
@@ -308,7 +306,6 @@ ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size
 	uintptr_t orgVirt = virt;
 	size_t orgCount = count;
 	ulong pageNo = PAGE_NO(virt);
-	sThread *t = thread_getRunning();
 	uint64_t key,pteFlags = 0;
 	uint64_t pteAttr = 0;
 	uint64_t pte,oldFrame,*pt = NULL;
@@ -343,7 +340,7 @@ ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size
 		else if(flags & PG_PRESENT) {
 			if(frames == NULL) {
 				/* we can't map anything for the kernel on mmix */
-				pte |= thread_getFrame(t) << PAGE_SIZE_SHIFT;
+				pte |= thread_getFrame() << PAGE_SIZE_SHIFT;
 			}
 			else {
 				if(flags & PG_ADDR_TO_FRAME)

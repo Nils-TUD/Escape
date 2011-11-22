@@ -37,7 +37,7 @@
 
 #define MAX_WAIT_OBJECTS		32
 
-static int sysc_doWait(sThread *t,const sWaitObject *uobjects,size_t objCount,time_t maxWaitTime,
+static int sysc_doWait(const sWaitObject *uobjects,size_t objCount,time_t maxWaitTime,
 		pid_t pid,ulong ident);
 static int sysc_doWaitLoop(const sWaitObject *uobjects,size_t objCount,
 		sFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident);
@@ -101,7 +101,7 @@ int sysc_yield(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_wait(sThread *t,sIntrptStackFrame *stack) {
+int sysc_wait(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	const sWaitObject *uobjects = (const sWaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
@@ -112,7 +112,7 @@ int sysc_wait(sThread *t,sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = sysc_doWait(t,uobjects,objCount,maxWaitTime,KERNEL_PID,0);
+	res = sysc_doWait(uobjects,objCount,maxWaitTime,KERNEL_PID,0);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -132,7 +132,7 @@ int sysc_waitunlock(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* wait and release the lock before going to sleep */
-	res = sysc_doWait(t,uobjects,objCount,0,global ? INVALID_PID : pid,ident);
+	res = sysc_doWait(uobjects,objCount,0,global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -205,7 +205,7 @@ int sysc_resume(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCount,
+static int sysc_doWait(USER const sWaitObject *uobjects,size_t objCount,
 		time_t maxWaitTime,pid_t pid,ulong ident) {
 	sFile *objFiles[MAX_WAIT_OBJECTS];
 	size_t i;
@@ -214,10 +214,10 @@ static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCou
 	for(i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* translate fd to node-number */
-			objFiles[i] = fd_request(t,(int)uobjects[i].object);
+			objFiles[i] = fd_request((int)uobjects[i].object);
 			if(objFiles[i] == NULL) {
 				for(; i > 0; i--)
-					fd_release(t,objFiles[i - 1]);
+					fd_release(objFiles[i - 1]);
 				return -EBADF;
 			}
 		}
@@ -229,7 +229,7 @@ static int sysc_doWait(sThread *t,USER const sWaitObject *uobjects,size_t objCou
 	/* release them */
 	for(i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
-			fd_release(t,objFiles[i]);
+			fd_release(objFiles[i]);
 	}
 	return res;
 }

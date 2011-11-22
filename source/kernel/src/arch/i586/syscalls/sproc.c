@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <errno.h>
 
-int sysc_reqports(sThread *t,sIntrptStackFrame *stack) {
+int sysc_reqports(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	int err;
@@ -37,13 +37,13 @@ int sysc_reqports(sThread *t,sIntrptStackFrame *stack) {
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,-EINVAL);
 
-	err = ioports_request(t,start,count);
+	err = ioports_request(start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);
 }
 
-int sysc_relports(sThread *t,sIntrptStackFrame *stack) {
+int sysc_relports(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	int err;
@@ -52,7 +52,7 @@ int sysc_relports(sThread *t,sIntrptStackFrame *stack) {
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,-EINVAL);
 
-	err = ioports_release(t,start,count);
+	err = ioports_release(start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);

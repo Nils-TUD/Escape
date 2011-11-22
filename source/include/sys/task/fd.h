@@ -33,27 +33,24 @@ void fd_init(sProc *p);
 /**
  * Requests the file for the given file-descriptor and increments the usage-count
  *
- * @param cur the current thread
  * @param fd the file-descriptor
  * @return the file or NULL if the fd is invalid
  */
-sFile *fd_request(sThread *cur,int fd);
+sFile *fd_request(int fd);
 
 /**
  * Releases the given file, i.e. decrements the usage-count
  *
- * @param cur the current thread
  * @param file the file
  */
-void fd_release(sThread *cur,sFile *file);
+void fd_release(sFile *file);
 
 /**
  * Clones all file-descriptors of the current process to <p>
  *
- * @param t the current thread
  * @param p the new process
  */
-void fd_clone(sThread *t,sProc *p);
+void fd_clone(sProc *p);
 
 /**
  * Destroyes all file-descriptors of <p>
@@ -65,11 +62,10 @@ void fd_destroy(sProc *p);
 /**
  * Associates a free file-descriptor with the given file-number
  *
- * @param t the current thread
  * @param fileNo the file-number
  * @return the file-descriptor on success
  */
-int fd_assoc(sThread *t,sFile *fileNo);
+int fd_assoc(sFile *fileNo);
 
 /**
  * Duplicates the given file-descriptor
@@ -91,11 +87,10 @@ int fd_redirect(int src,int dst);
 /**
  * Releases the given file-descriptor (marks it unused)
  *
- * @param t the current thread
  * @param fd the file-descriptor
  * @return the file that was associated with the fd (or NULL)
  */
-sFile *fd_unassoc(sThread *t,int fd);
+sFile *fd_unassoc(int fd);
 
 /**
  * Prints the file-descriptors of <p>

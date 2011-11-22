@@ -415,97 +415,101 @@ uint64_t thread_getCycles(const sThread *t);
 void thread_updateRuntimes(void);
 
 /**
- * Reserves <count> frames for the current thread (cur). That means, it swaps in memory, if
+ * Reserves <count> frames for the current thread. That means, it swaps in memory, if
  * necessary, allocates that frames and stores them in the thread. You can get them later with
  * thread_getFrame(). You can free not needed frames with thread_discardFrames().
  *
- * @param cur the current thread
  * @param count the number of frames to reserve
  * @return true on success
  */
-bool thread_reserveFrames(sThread *cur,size_t count);
+bool thread_reserveFrames(size_t count);
 
 /**
- * Removes one frame from the collection of frames of the given thread. This will always succeed,
+ * The same as thread_reserveFrames(), but does it for <t> instead of for the running thread.
+ *
+ * @param t the thread to reserve the frames for
+ * @param count the number of frames to reserve
+ * @return true on success
+ */
+bool thread_reserveFramesFor(sThread *t,size_t count);
+
+/**
+ * Removes one frame from the collection of frames of the current thread. This will always succeed,
  * because the function assumes that you have called thread_reserveFrames() previously.
  *
- * @param cur the current thread
  * @return the frame
  */
-frameno_t thread_getFrame(sThread *cur);
+frameno_t thread_getFrame(void);
 
 /**
- * Free's all frames that the given thread has still reserved. This should be done after an
+ * Free's all frames that the current thread has still reserved. This should be done after an
  * operation that needed more frames to ensure that reserved but not needed frames are free'd.
- *
- * @param cur the current thread
  */
-void thread_discardFrames(sThread *cur);
+void thread_discardFrames(void);
+
+/**
+ * The same as thread_discardFrames(), but does it for <t> instead of for the running thread.
+ *
+ * @param t the thread to discard the frames for
+ */
+void thread_discardFramesFor(sThread *t);
 
 /**
  * Adds the given lock to the term-lock-list
  *
- * @param cur the current thread
  * @param l the lock
  */
-void thread_addLock(sThread *cur,klock_t *l);
+void thread_addLock(klock_t *l);
 
 /**
  * Removes the given lock from the term-lock-list
  *
- * @param cur the current thread
  * @param l the lock
  */
-void thread_remLock(sThread *cur,klock_t *l);
+void thread_remLock(klock_t *l);
 
 /**
  * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies
  * before it is removed.
  *
- * @param cur the current thread
  * @param ptr the pointer to the heap
  */
-void thread_addHeapAlloc(sThread *cur,void *ptr);
+void thread_addHeapAlloc(void *ptr);
 
 /**
  * Removes the given pointer from the term-heap-allocation-list
  *
- * @param cur the current thread
  * @param ptr the pointer to the heap
  */
-void thread_remHeapAlloc(sThread *cur,void *ptr);
+void thread_remHeapAlloc(void *ptr);
 
 /**
  * Adds the given file to the file-usage-list. The file-usages will be decreased if the thread dies.
  *
- * @param cur the current thread
  * @param file the file
  */
-void thread_addFileUsage(sThread *cur,sFile *file);
+void thread_addFileUsage(sFile *file);
 
 /**
  * Removes the given file from the file-usage-list.
  *
- * @param cur the current thread
  * @param file the file
  */
-void thread_remFileUsage(sThread *cur,sFile *file);
+void thread_remFileUsage(sFile *file);
 
 /**
  * Adds the given callback to the callback-list. These will be called on thread-termination.
  *
- * @param cur the current thread
  * @param callback the callback
  */
-void thread_addCallback(sThread *cur,void (*callback)(void));
+void thread_addCallback(void (*callback)(void));
 
 /**
  * Removes the given callback from the callback-list.
  *
- * @param cur the current thread
  * @param callback the callback
  */
-void thread_remCallback(sThread *cur,void (*callback)(void));
+void thread_remCallback(void (*callback)(void));
 
 /**
  * Finishes the clone of a thread
@@ -559,9 +563,8 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc);
  * makes sure that it isn't chosen again.
  *
  * @param t the thread to terminate
- * @param cur the running thread
  */
-void thread_terminate(sThread *t,sThread *cur);
+void thread_terminate(sThread *t);
 
 /**
  * Kills the given thread, i.e. releases all resources and destroys it.

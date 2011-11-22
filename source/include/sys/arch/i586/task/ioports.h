@@ -22,7 +22,6 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
-#include <sys/task/thread.h>
 
 /**
  * Inits the IO-map for the given process
@@ -34,31 +33,28 @@ void ioports_init(sProc *p);
 /**
  * Requests some IO-ports for the current process. Will not replace the IO-Map in TSS!
  *
- * @param t the current thread
  * @param start the start-port
  * @param count the number of ports
  * @return the error-code or 0
  */
-int ioports_request(sThread *t,uint16_t start,size_t count);
+int ioports_request(uint16_t start,size_t count);
 
 /**
  * Handles a GPF for the current process and checks whether the port-map is already set. If not,
  * it will be set.
  *
- * @param t the current thread
  * @return true if the io-map was not present and is present now
  */
-bool ioports_handleGPF(sThread *t);
+bool ioports_handleGPF(void);
 
 /**
  * Releases some IO-ports for the current process. Will not replace the IO-Map in TSS!
  *
- * @param t the current thread
  * @param start the start-port
  * @param count the number of ports
  * @return the error-code or 0
  */
-int ioports_release(sThread *t,uint16_t start,size_t count);
+int ioports_release(uint16_t start,size_t count);
 
 /**
  * Free's the io-ports of the given process

@@ -171,7 +171,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				vid_printf("[LOADER] Allocating memory for dynamic linker name failed\n");
 				goto failed;
 			}
-			thread_addHeapAlloc(t,interpName);
+			thread_addHeapAlloc(interpName);
 			if(vfs_seek(p->pid,file,pheader.p_offset,SEEK_SET) < 0) {
 				vid_printf("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
@@ -183,7 +183,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 			vfs_closeFile(p->pid,file);
 			/* now load him and stop loading the 'real' program */
 			res = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,info);
-			thread_remHeapAlloc(t,interpName);
+			thread_remHeapAlloc(interpName);
 			cache_free(interpName);
 			return res;
 		}
@@ -217,18 +217,18 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	}
 
 	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
-	if((fd = fd_assoc(t,file)) < 0)
+	if((fd = fd_assoc(file)) < 0)
 		goto failed;
 	if(elf_finishFromFile(file,&eheader,info) < 0) {
-		assert(fd_unassoc(t,fd) != NULL);
+		assert(fd_unassoc(fd) != NULL);
 		goto failed;
 	}
-	assert(fd_unassoc(t,fd) != NULL);
+	assert(fd_unassoc(fd) != NULL);
 	vfs_closeFile(p->pid,file);
 	return 0;
 
 failedInterpName:
-	thread_remHeapAlloc(t,interpName);
+	thread_remHeapAlloc(interpName);
 	cache_free(interpName);
 failed:
 	vfs_closeFile(p->pid,file);
@@ -295,16 +295,16 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 
 	/* regions without binary will not be demand-loaded */
 	if(bindesc == NULL)
-		thread_reserveFrames(t,BYTES_2_PAGES(memsz));
+		thread_reserveFrames(BYTES_2_PAGES(memsz));
 
 	/* add the region */
 	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype,&vm)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
-		thread_discardFrames(t);
+		thread_discardFrames();
 		return res;
 	}
 	if(stype == REG_TLS)
 		thread_setTLSRegion(t,vm);
-	thread_discardFrames(t);
+	thread_discardFrames();
 	return stype;
 }

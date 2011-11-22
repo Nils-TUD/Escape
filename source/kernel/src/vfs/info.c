@@ -450,10 +450,9 @@ static ssize_t vfs_info_readHelper(A_UNUSED pid_t pid,sVFSNode *node,USER void *
 	count = MIN(dataSize - offset,count);
 	/* copy */
 	if(count > 0) {
-		sThread *t = thread_getRunning();
-		thread_addHeapAlloc(t,mem);
+		thread_addHeapAlloc(mem);
 		memcpy(buffer,(uint8_t*)mem + offset,count);
-		thread_remHeapAlloc(t,mem);
+		thread_remHeapAlloc(mem);
 	}
 	/* free temp storage */
 	cache_free(mem);

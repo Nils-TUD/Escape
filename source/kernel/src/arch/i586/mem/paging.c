@@ -376,9 +376,8 @@ void paging_removeAccess(void) {
 frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
 	frameno_t frame;
 	pagedir_t *pdir = paging_getPageDir();
-	sThread *t = thread_getRunning();
 	spinlock_aquire(&pagingLock);
-	frame = thread_getFrame(t);
+	frame = thread_getFrame();
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
@@ -519,7 +518,6 @@ static ssize_t paging_doMapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *fr
 	pagedir_t *cur = paging_getPageDir();
 	uintptr_t ptables = paging_getPTables(cur,pdir);
 	pde_t *pdirAddr = (pde_t*)PAGEDIR(ptables);
-	sThread *t = thread_getRunning();
 	bool freeFrames;
 	pte_t *ptep,pte,pteFlags = PTE_EXISTS;
 
@@ -556,7 +554,7 @@ static ssize_t paging_doMapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *fr
 						goto error;
 				}
 				else
-					frame = thread_getFrame(t);
+					frame = thread_getFrame();
 				pte |= frame << PAGE_SIZE_SHIFT;
 			}
 			else {

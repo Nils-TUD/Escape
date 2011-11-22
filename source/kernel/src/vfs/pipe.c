@@ -157,9 +157,9 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
 		byteCount = MIN(data->length - (offset - data->offset),count);
-		thread_addLock(t,&node->lock);
+		thread_addLock(&node->lock);
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
-		thread_remLock(t,&node->lock);
+		thread_remLock(&node->lock);
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
 			cache_free(data);
@@ -246,9 +246,9 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 	data->offset = offset;
 	data->length = count;
 	if(count) {
-		thread_addHeapAlloc(t,data);
+		thread_addHeapAlloc(data);
 		memcpy(data->data,buffer,count);
-		thread_remHeapAlloc(t,data);
+		thread_remHeapAlloc(data);
 	}
 
 	/* append */

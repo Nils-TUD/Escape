@@ -56,7 +56,7 @@ int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with it */
-	fd = fd_assoc(t,file);
+	fd = fd_assoc(file);
 	if(fd < 0)
 		SYSC_ERROR(stack,fd);
 	SYSC_RET1(stack,fd);
@@ -68,12 +68,12 @@ int sysc_getclientid(sThread *t,sIntrptStackFrame *stack) {
 	inode_t id;
 	pid_t pid = t->proc->pid;
 
-	file = fd_request(t,fd);
+	file = fd_request(fd);
 	if(file == NULL)
 		SYSC_ERROR(stack,-EBADF);
 
 	id = vfs_getClientId(pid,file);
-	fd_release(t,file);
+	fd_release(file);
 	if(id < 0)
 		SYSC_ERROR(stack,id);
 	SYSC_RET1(stack,id);
@@ -87,18 +87,18 @@ int sysc_getclient(sThread *t,sIntrptStackFrame *stack) {
 	int res,fd;
 
 	/* get file */
-	drvFile = fd_request(t,drvFd);
+	drvFile = fd_request(drvFd);
 	if(drvFile == NULL)
 		SYSC_ERROR(stack,-EBADF);
 
 	/* open client */
 	res = vfs_openClient(pid,drvFile,cid,&file);
-	fd_release(t,drvFile);
+	fd_release(drvFile);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
 	/* associate fd with file */
-	fd = fd_assoc(t,file);
+	fd = fd_assoc(file);
 	if(fd < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);
@@ -134,10 +134,10 @@ int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
 
 	/* translate to files */
 	for(i = 0; i < fdCount; i++) {
-		files[i] = fd_request(t,fds[i]);
+		files[i] = fd_request(fds[i]);
 		if(files[i] == NULL) {
 			for(; i > 0; i--)
-				fd_release(t,files[i - 1]);
+				fd_release(files[i - 1]);
 			SYSC_ERROR(stack,-EBADF);
 		}
 	}
@@ -147,7 +147,7 @@ int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
 
 	/* release files */
 	for(i = 0; i < fdCount; i++)
-		fd_release(t,files[i]);
+		fd_release(files[i]);
 
 	if(clientNo < 0)
 		SYSC_ERROR(stack,clientNo);
@@ -168,7 +168,7 @@ int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
 	}
 
 	/* assoc with fd */
-	fd = fd_assoc(t,file);
+	fd = fd_assoc(file);
 	if(fd < 0) {
 		vfs_closeFile(pid,file);
 		SYSC_ERROR(stack,fd);

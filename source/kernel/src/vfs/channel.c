@@ -201,9 +201,9 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 	msg1->length = size1;
 	msg1->id = id;
 	if(data1) {
-		thread_addHeapAlloc(t,msg1);
+		thread_addHeapAlloc(msg1);
 		memcpy(msg1 + 1,data1,size1);
-		thread_remHeapAlloc(t,msg1);
+		thread_remHeapAlloc(msg1);
 	}
 
 	if(data2) {
@@ -213,11 +213,11 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 
 		msg2->length = size2;
 		msg2->id = id;
-		thread_addHeapAlloc(t,msg1);
-		thread_addHeapAlloc(t,msg2);
+		thread_addHeapAlloc(msg1);
+		thread_addHeapAlloc(msg2);
 		memcpy(msg2 + 1,data2,size2);
-		thread_remHeapAlloc(t,msg2);
-		thread_remHeapAlloc(t,msg1);
+		thread_remHeapAlloc(msg2);
+		thread_remHeapAlloc(msg1);
 	}
 
 	spinlock_aquire(&n->lock);
@@ -346,12 +346,12 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 #endif
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
-	thread_addHeapAlloc(t,msg);
+	thread_addHeapAlloc(msg);
 	if(data)
 		memcpy(data,msg + 1,msg->length);
 	if(id)
 		*id = msg->id;
-	thread_remHeapAlloc(t,msg);
+	thread_remHeapAlloc(msg);
 
 	res = msg->length;
 	cache_free(msg);

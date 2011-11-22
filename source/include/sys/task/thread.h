@@ -24,7 +24,18 @@
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/vmreg.h>
 #include <esc/hashmap.h>
+
+#ifdef __i386__
+#include <sys/arch/i586/task/threadconf.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/threadconf.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/threadconf.h>
+#endif
 
 #define MAX_INTRPT_LEVELS		3
 #define MAX_STACK_PAGES			128
@@ -53,16 +64,6 @@
 #define TERM_RESOURCE_CNT		4
 
 #define T_IDLE					1
-
-#ifdef __i386__
-#include <sys/arch/i586/task/thread.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/task/thread.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/task/thread.h>
-#endif
 
 typedef void (*fTermCallback)(void);
 
@@ -116,9 +117,9 @@ struct sThread {
 	/* the process we belong to */
 	sProc *const proc;
 	/* the stack-region(s) for this thread */
-	vmreg_t stackRegions[STACK_REG_COUNT];
+	sVMRegion *stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
-	vmreg_t tlsRegion;
+	sVMRegion *tlsRegion;
 	/* stack of pointers to the end of the kernel-stack when entering kernel */
 	sIntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
 	size_t intrptLevel;
@@ -160,6 +161,16 @@ struct sThread {
 	sThread *prev;
 	sThread *next;
 };
+
+#ifdef __i386__
+#include <sys/arch/i586/task/thread.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/thread.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/thread.h>
+#endif
 
 /**
  * The start-function for the idle-thread
@@ -285,17 +296,17 @@ bool thread_getTLSRange(sThread *t,uintptr_t *start,uintptr_t *end);
 
 /**
  * @param t the thread
- * @return the TLS-region number of the given thread (-1 if not existing)
+ * @return the region of the given thread (NULL if not existing)
  */
-vmreg_t thread_getTLSRegion(const sThread *t);
+sVMRegion *thread_getTLSRegion(const sThread *t);
 
 /**
  * Sets the TLS-region for the given thread
  *
  * @param t the thread
- * @param rno the region-number
+ * @param vm the region
  */
-void thread_setTLSRegion(sThread *t,vmreg_t rno);
+void thread_setTLSRegion(sThread *t,sVMRegion *vm);
 
 /**
  * Performs a thread-switch. That means the current thread will be saved and the first thread
@@ -359,13 +370,13 @@ void thread_suspend(sThread *t);
 void thread_unsuspend(sThread *t);
 
 /**
- * Checks whether the given thread has the given region-number for stack
+ * Checks whether the given thread has the given region for stack
  *
  * @param t the thread
- * @param regNo the region-number
+ * @param vm the region
  * @return true if so
  */
-bool thread_hasStackRegion(const sThread *t,vmreg_t regNo);
+bool thread_hasStackRegion(const sThread *t,sVMRegion *vm);
 
 /**
  * Removes the regions for this thread. Optionally the stack as well.

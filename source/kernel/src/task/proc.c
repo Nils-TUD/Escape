@@ -107,6 +107,11 @@ void proc_init(void) {
 	p->stats.output = 0;
 	memclear(p->locks,sizeof(p->locks));
 	p->command = strdup("initloader");
+	/* init region-stuff */
+	p->freeStackAddr = 0;
+	p->freeAreaAddr = 0;
+	p->dataAddr = 0;
+	vmreg_addTree(p->pid,&p->regtree);
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(p->pid);
 	if(p->threadDir < 0)
@@ -171,24 +176,6 @@ void proc_release(sThread *t,sProc *p,size_t l) {
 
 size_t proc_getCount(void) {
 	return sll_length(&procs);
-}
-
-pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno) {
-	sSLNode *n;
-	pid_t res = INVALID_PID;
-	sThread *t = thread_getRunning();
-	mutex_aquire(t,&procLock);
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
-		vmreg_t regno = vmm_hasBinary(p->pid,bin);
-		if(regno != -1) {
-			*rno = regno;
-			res = p->pid;
-			break;
-		}
-	}
-	mutex_release(t,&procLock);
-	return res;
 }
 
 void proc_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
@@ -298,8 +285,7 @@ int proc_clone(uint8_t flags) {
 
 	/* clone regions */
 	p->freeStackAddr = 0;
-	p->regions = NULL;
-	p->regSize = 0;
+	p->freeAreaAddr = 0;
 	if((res = vmm_cloneAll(p->pid)) < 0)
 		goto errorVFS;
 
@@ -869,6 +855,9 @@ void proc_print(sProc *p) {
 		vid_printf("\t\truntime=%ums\n",p->exitState->runtime);
 	}
 	vid_printf("\tRegions:\n");
+	vid_printf("\t\tDataRegion: %p\n",p->dataAddr);
+	vid_printf("\t\tFreeStack: %p\n",p->freeStackAddr);
+	vid_printf("\t\tFreeArea: %p\n",p->freeAreaAddr);
 	vmm_printShort(p->pid);
 	vid_printf("\tEnvironment:\n");
 	env_printAllOf(p->pid);

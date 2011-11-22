@@ -20,41 +20,33 @@
 #ifndef I586_THREAD_H_
 #define I586_THREAD_H_
 
-#include <esc/common.h>
-#include <sys/arch/i586/fpu.h>
+#include <sys/common.h>
 
-#define STACK_REG_COUNT		1
-
-/* the thread-state which will be saved for context-switching */
-typedef struct {
+static A_INLINE sThread *thread_getRunning(void) {
 	uint32_t esp;
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebp;
-	uint32_t eflags;
-	uint32_t ebx;
-	/* note that we don't need to save eip because when we're done in thread_resume() we have
-	 * our kernel-stack back which causes the ret-instruction to return to the point where
-	 * we've called thread_save(). the user-eip is saved on the kernel-stack anyway.. */
-	/* note also that this only works because when we call thread_save() in proc_finishClone
-	 * we take care not to call a function afterwards (since it would overwrite the return-address
-	 * on the stack). When we call it in thread_switch() our return-address gets overwritten, but
-	 * it doesn't really matter because it looks like this:
-	 * if(!thread_save(...)) {
-	 * 		// old thread
-	 * 		// call functions ...
-	 * 		thread_resume(...);
-	 * }
-	 * So whether we return to the instruction after the call of thread_save and jump below this
-	 * if-statement or whether we return to the instruction after thread_resume() doesn't matter.
-	 */
-} sThreadRegs;
+	__asm__ (
+		"mov	%%esp,%0;"
+		/* outputs */
+		: "=r" (esp)
+		/* inputs */
+		:
+	);
+	uint32_t* tptr = (uint32_t*)((esp & 0xFFFFF000) + 0xFFC);
+	return *tptr;
+}
 
-typedef struct {
-	uintptr_t kernelStack;
-	/* FPU-state; initially NULL */
-	sFPUState *fpuState;
-} sThreadArchAttr;
+static A_INLINE void thread_setRunning(sThread *t) {
+	uint32_t esp;
+	__asm__ (
+		"mov	%%esp,%0;"
+		/* outputs */
+		: "=r" (esp)
+		/* inputs */
+		:
+	);
+	sThread** tptr = (sThread**)((esp & 0xFFFFF000) + 0xFFC);
+	*tptr = t;
+}
 
 /**
  * Performs the initial switch for APs, because these don't run a thread yet.

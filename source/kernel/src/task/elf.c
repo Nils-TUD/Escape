@@ -239,6 +239,7 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		size_t loadSegNo,uint type) {
 	sThread *t = thread_getRunning();
 	int stype,res;
+	sVMRegion *vm;
 	size_t memsz = pheader->p_memsz;
 	/* determine type */
 	if(loadSegNo == 0) {
@@ -297,13 +298,13 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		thread_reserveFrames(t,BYTES_2_PAGES(memsz));
 
 	/* add the region */
-	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype)) < 0) {
+	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype,&vm)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
 		thread_discardFrames(t);
 		return res;
 	}
 	if(stype == REG_TLS)
-		thread_setTLSRegion(t,res);
+		thread_setTLSRegion(t,vm);
 	thread_discardFrames(t);
 	return stype;
 }

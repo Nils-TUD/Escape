@@ -166,6 +166,8 @@ ssize_t reg_grow(sRegion *reg,ssize_t amount) {
 				pf[i + count] = 0;
 		}
 		reg->pageFlags = pf;
+		/* round up; if we add a page, we'll always have a complete page before that */
+		reg->byteCount = (reg->byteCount + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 		reg->byteCount += amount * PAGE_SIZE;
 	}
 	else {
@@ -181,6 +183,8 @@ ssize_t reg_grow(sRegion *reg,ssize_t amount) {
 		}
 		if(reg->flags & RF_GROWS_DOWN)
 			memmove(reg->pageFlags,reg->pageFlags + -amount,(count + amount) * sizeof(ulong));
+		/* round up for the same reason */
+		reg->byteCount = (reg->byteCount + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 		reg->byteCount -= -amount * PAGE_SIZE;
 	}
 	return res;

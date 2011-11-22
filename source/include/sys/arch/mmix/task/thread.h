@@ -20,31 +20,7 @@
 #ifndef MMIX_THREAD_H_
 #define MMIX_THREAD_H_
 
-#include <esc/common.h>
-
-/* the thread-state which will be saved for context-switching */
-typedef struct {
-	uintptr_t stackEnd;
-} sThreadRegs;
-
-typedef struct {
-	uint64_t rbb;
-	uint64_t rww;
-	uint64_t rxx;
-	uint64_t ryy;
-	uint64_t rzz;
-} sKSpecRegs;
-
-typedef struct {
-	/* the frame mapped at KERNEL_STACK */
-	frameno_t kstackFrame;
-	/* use as a temporary kernel-stack for cloning */
-	frameno_t tempStack;
-	/* when handling a signal, we have to backup these registers */
-	sKSpecRegs specRegLevels[MAX_INTRPT_LEVELS];
-} sThreadArchAttr;
-
-#define STACK_REG_COUNT		2
+#include <sys/common.h>
 
 sKSpecRegs *thread_getSpecRegs(void);
 void thread_pushSpecRegs(void);

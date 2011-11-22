@@ -98,6 +98,13 @@ size_t pmem_getStackSize(void);
 size_t pmem_getFreeFrames(uint types);
 
 /**
+ * Determines whether the region-timestamp should be set (depending on the still available memory)
+ *
+ * @return true if so
+ */
+bool pmem_shouldSetRegTimestamp(void);
+
+/**
  * Allocates <count> contiguous frames from the MM-bitmap
  *
  * @param count the number of frames

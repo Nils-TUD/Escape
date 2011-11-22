@@ -174,9 +174,7 @@ void thread_doSwitch(void) {
 	if(new->tid != old->tid) {
 		if(!thread_save(&old->save)) {
 			thread_setRunning(new);
-
-			if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-				vmm_setTimestamp(new,timestamp);
+			vmm_setTimestamp(new,timestamp);
 
 			smp_schedule(new->cpu,new,timestamp);
 			new->stats.cycleStart = timestamp;

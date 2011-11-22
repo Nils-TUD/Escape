@@ -22,6 +22,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/region.h>
+#include <sys/mem/vmreg.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/printf.h>
@@ -46,15 +47,6 @@
 #define REG_SHLIBDATA		9
 #define REG_DLDATA			10
 #define REG_PHYS			11
-
-typedef struct sVMRegion {
-	sRegion *reg;
-	uintptr_t virt;
-	sProc *proc;
-	/* file for the binary (valid if >= 0) */
-	sFile *binFile;
-	struct sVMRegion *next;
-} sVMRegion;
 
 /**
  * Initializes the virtual memory management
@@ -91,9 +83,11 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align);
  * @param bCount the number of bytes
  * @param lCount number of bytes to load from disk (the rest is zero'ed)
  * @param type the type of region
- * @return the region-number on success or a negative error-code
+ * @param vmreg will be set to the created region
+ * @return 0 on success or a negative error-code
  */
-vmreg_t vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type);
+int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type,
+		sVMRegion **vmreg);
 
 /**
  * Changes the protection-settings of the region @ <addr>. This is not possible for TLS-, stack-
@@ -132,24 +126,7 @@ bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr);
  * @param t the thread
  * @param timestamp the timestamp to set
  */
-void vmm_setTimestamp(const sThread *t,uint64_t timestamp);
-
-/**
- * Tests whether the region with given number exists
- *
- * @param pid the process-id
- * @param reg the region-number
- * @return true if so
- */
-bool vmm_exists(pid_t pid,vmreg_t reg);
-
-/**
- * Searches for the dynamic-link-data-region (growable)
- *
- * @param pid the process-id
- * @return the region-number of -1 if not found
- */
-vmreg_t vmm_getDLDataReg(pid_t pid);
+void vmm_setTimestamp(sThread *t,uint64_t timestamp);
 
 /**
  * Sets the given pointers to the corresponding number of frames for the given process
@@ -175,11 +152,13 @@ void vmm_getMemUsageOf(sProc *p,size_t *own,size_t *shared,size_t *swapped);
 float vmm_getMemUsage(pid_t pid,size_t *pages);
 
 /**
- * @param pid the process-id
- * @param rno the region-number
- * @return the vm-region with given number
+ * Gets the region at given address
+ *
+ * @param p the process
+ * @param addr the address
+ * @return the region
  */
-sVMRegion *vmm_getRegion(pid_t pid,vmreg_t rno);
+sVMRegion *vmm_getRegion(sProc *p,uintptr_t addr);
 
 /**
  * Queries the start- and end-address of a region
@@ -192,16 +171,7 @@ sVMRegion *vmm_getRegion(pid_t pid,vmreg_t rno);
  * @param locked whether to lock the regions of the given process during the operation
  * @return true if the region exists
  */
-bool vmm_getRegRange(pid_t pid,vmreg_t reg,uintptr_t *start,uintptr_t *end,bool locked);
-
-/**
- * Checks whether the given process has the given binary as text-region
- *
- * @param pid the process-id
- * @param bin the binary
- * @return the region-number if so or -1
- */
-vmreg_t vmm_hasBinary(pid_t pid,const sBinDesc *bin);
+bool vmm_getRegRange(pid_t pid,sVMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked);
 
 /**
  * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
@@ -225,9 +195,9 @@ void vmm_removeAll(pid_t pid,bool remStack);
  * Removes the given region from the given process
  *
  * @param pid the process-id
- * @param reg the region-number
+ * @param vm the region
  */
-void vmm_remove(pid_t pid,vmreg_t reg);
+void vmm_remove(pid_t pid,sVMRegion *vm);
 
 /**
  * Joins process <dst> to the region <rno> of process <src>. This can just be used for shared-
@@ -236,9 +206,10 @@ void vmm_remove(pid_t pid,vmreg_t reg);
  * @param srcId the source-process
  * @param rno the region-number in the source-process
  * @param dstId the destination-process
- * @return the region-number on success or the negative error-code
+ * @param nvm the new created region
+ * @return 0 on success or the negative error-code
  */
-vmreg_t vmm_join(pid_t srcId,vmreg_t rno,pid_t dstId);
+int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm);
 
 /**
  * Clones all regions of the current process into the destination-process
@@ -252,22 +223,22 @@ int vmm_cloneAll(pid_t dstId);
  * Grows the stack of the given thread so that <addr> is accessible, if possible
  *
  * @param pid the process-id
- * @param reg the region
+ * @param vm the region
  * @param addr the address
  * @return 0 on success
  */
-int vmm_growStackTo(pid_t pid,vmreg_t reg,uintptr_t addr);
+int vmm_growStackTo(pid_t pid,sVMRegion *vm,uintptr_t addr);
 
 /**
  * If <amount> is positive, the region will be grown by <amount> pages. If negative it will be
  * shrinked. If 0 it returns the current offset to the region-beginning, in pages.
  *
  * @param pid the process-id
- * @param reg the region-number
+ * @param addr the address of the region
  * @param amount the number of pages to add/remove
  * @return the old region-end or 0 if failed
  */
-size_t vmm_grow(pid_t pid,vmreg_t reg,ssize_t amount);
+size_t vmm_grow(pid_t pid,uintptr_t addr,ssize_t amount);
 
 /**
  * Prints information about all regions in the given process to the given buffer

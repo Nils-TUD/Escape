@@ -17,13 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_THREAD_H_
-#define ECO32_THREAD_H_
+#ifndef ECO32_THREADCONF_H_
+#define ECO32_THREADCONF_H_
 
 #include <sys/common.h>
-/**
- * Performs a thread-switch
- */
-void thread_doSwitch(void);
 
-#endif /* ECO32_THREAD_H_ */
+#define STACK_REG_COUNT			1
+
+/* the thread-state which will be saved for context-switching */
+typedef struct {
+	uint32_t r16;
+	uint32_t r17;
+	uint32_t r18;
+	uint32_t r19;
+	uint32_t r20;
+	uint32_t r21;
+	uint32_t r22;
+	uint32_t r23;
+	uint32_t r25;
+	uint32_t r29;
+	uint32_t r30;
+	uint32_t r31;
+} sThreadRegs;
+
+typedef struct {
+	/* the frame mapped at KERNEL_STACK */
+	frameno_t kstackFrame;
+} sThreadArchAttr;
+
+#endif /* ECO32_THREADCONF_H_ */

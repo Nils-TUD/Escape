@@ -41,6 +41,7 @@
 #include "tshm.h"
 #include "thashmap.h"
 #include "tctype.h"
+#include "tvmreg.h"
 /* TODO find a better solution */
 #ifdef __mmix__
 #include "arch/mmix/taddrspace.h"
@@ -69,6 +70,8 @@ void bspstart(sBootInfo *bootinfo) {
 #ifdef __mmix__
 	test_register(&tModAddrSpace);
 #endif
+	test_register(&tModVMReg);
+#if 0
 	test_register(&tModCtype);
 	test_register(&tModMM);
 	test_register(&tModDynArray);
@@ -87,6 +90,7 @@ void bspstart(sBootInfo *bootinfo) {
 	test_register(&tModEscCodes);
 	test_register(&tModSwapMap);
 	test_register(&tModVmm);
+#endif
 	test_start();
 
 	/* stay here */

@@ -24,6 +24,9 @@
 #include <sys/util.h>
 #include <sys/log.h>
 
+#undef A_INLINE
+#define A_INLINE __attribute__((noinline))
+
 #ifdef __i386__
 static A_INLINE void spinlock_aquire(klock_t *l) {
 	__asm__ (

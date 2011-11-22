@@ -43,7 +43,7 @@ static void test_vmm(void) {
 }
 
 static void test_1(void) {
-	vmreg_t rno,rno2,rno3;
+	sVMRegion *rno,*rno2,*rno3;
 	pid_t cpid;
 	sThread *t = thread_getRunning();
 	pid_t pid = t->proc->pid;
@@ -52,20 +52,16 @@ static void test_1(void) {
 
 	checkMemoryBefore(true);
 	thread_reserveFrames(t,1);
-	rno = vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
-	test_assertInt(rno,RNO_DATA);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA,&rno) == 0);
 	vmm_remove(pid,rno);
 	thread_discardFrames(t);
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
 	thread_reserveFrames(t,9);
-	rno = vmm_add(pid,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_TEXT);
-	test_assertInt(rno,RNO_TEXT);
-	rno2 = vmm_add(pid,NULL,0,PAGE_SIZE * 3,PAGE_SIZE * 3,REG_RODATA);
-	test_assertInt(rno2,RNO_RODATA);
-	rno3 = vmm_add(pid,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_DATA);
-	test_assertInt(rno3,RNO_DATA);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_TEXT,&rno) == 0);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE * 3,PAGE_SIZE * 3,REG_RODATA,&rno2) == 0);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_DATA,&rno3) == 0);
 	vmm_remove(pid,rno);
 	vmm_remove(pid,rno2);
 	vmm_remove(pid,rno3);
@@ -74,12 +70,9 @@ static void test_1(void) {
 
 	checkMemoryBefore(true);
 	thread_reserveFrames(t,8);
-	rno = vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
-	test_assertTrue(rno >= 0);
-	rno2 = vmm_add(pid,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_STACK);
-	test_assertTrue(rno2 >= 0);
-	rno3 = vmm_add(pid,NULL,0,PAGE_SIZE * 5,PAGE_SIZE * 5,REG_STACKUP);
-	test_assertTrue(rno3 >= 0);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK,&rno) == 0);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_STACK,&rno2) == 0);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE * 5,PAGE_SIZE * 5,REG_STACKUP,&rno3) == 0);
 	vmm_remove(pid,rno);
 	vmm_remove(pid,rno2);
 	vmm_remove(pid,rno3);
@@ -92,10 +85,8 @@ static void test_1(void) {
 
 	checkMemoryBefore(true);
 	thread_reserveFrames(t,4);
-	rno = vmm_add(pid,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_SHM);
-	test_assertTrue(rno >= 0);
-	rno2 = vmm_join(pid,rno,clone->pid);
-	test_assertTrue(rno2 >= 0);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_SHM,&rno) == 0);
+	test_assertTrue(vmm_join(pid,rno->virt,clone->pid,&rno2) == 0);
 	vmm_remove(clone->pid,rno2);
 	vmm_remove(pid,rno);
 	thread_discardFrames(t);
@@ -107,7 +98,7 @@ static void test_1(void) {
 }
 
 static void test_2(void) {
-	vmreg_t rno;
+	sVMRegion *rno;
 	uintptr_t start,end;
 	sThread *t = thread_getRunning();
 	pid_t pid = t->proc->pid;
@@ -115,34 +106,32 @@ static void test_2(void) {
 
 	checkMemoryBefore(true);
 	thread_reserveFrames(t,5);
-	rno = vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
-	test_assertTrue(rno >= 0);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA,&rno) == 0);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,3),end);
+	test_assertSSize(vmm_grow(pid,rno->virt,3),end);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,-2),end);
+	test_assertSSize(vmm_grow(pid,rno->virt,-2),end);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,1),end);
+	test_assertSSize(vmm_grow(pid,rno->virt,1),end);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,-3),end);
+	test_assertSSize(vmm_grow(pid,rno->virt,-3),end);
 	vmm_remove(pid,rno);
 	thread_discardFrames(t);
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
 	thread_reserveFrames(t,7);
-	rno = vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
-	test_assertTrue(rno >= 0);
+	test_assertTrue(vmm_add(pid,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK,&rno) == 0);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,3),start);
+	test_assertSSize(vmm_grow(pid,rno->virt,3),start);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,2),start);
+	test_assertSSize(vmm_grow(pid,rno->virt,2),start);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,-4),start);
+	test_assertSSize(vmm_grow(pid,rno->virt,-4),start);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,1),start);
+	test_assertSSize(vmm_grow(pid,rno->virt,1),start);
 	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno,-1),start);
+	test_assertSSize(vmm_grow(pid,rno->virt,-1),start);
 	vmm_remove(pid,rno);
 	thread_discardFrames(t);
 	checkMemoryAfter(true);

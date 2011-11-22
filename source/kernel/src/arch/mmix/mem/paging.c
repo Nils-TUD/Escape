@@ -254,10 +254,6 @@ ssize_t paging_clonePages(pagedir_t *src,pagedir_t *dst,uintptr_t virtSrc,uintpt
 		/* when shared, simply copy the flags; otherwise: if present, we use copy-on-write */
 		if((pte & PTE_WRITABLE) && (!share && (pte & PTE_READABLE)))
 			pte &= ~PTE_WRITABLE;
-		if(!share && !(pte & PTE_READABLE)) {
-			pte &= ~PTE_FRAMENO_MASK;
-			pte |= thread_getFrame(t) << PAGE_SIZE_SHIFT;
-		}
 		pte &= ~PTE_NMASK;
 		pte |= dstAddrSpace;
 		dpt[dstPageNo % PT_ENTRY_COUNT] = pte;

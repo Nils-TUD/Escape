@@ -251,9 +251,7 @@ void thread_doSwitch(void) {
 	if(new->tid != old->tid) {
 		time_t timestamp = timer_getTimestamp();
 		thread_setRunning(new);
-
-		if(conf_getStr(CONF_SWAP_DEVICE))
-			vmm_setTimestamp(new,timestamp);
+		vmm_setTimestamp(new,timestamp);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */

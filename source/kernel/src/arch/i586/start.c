@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/task/thread.h>
 #include <sys/arch/i586/mem/paging.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/idt.h>
@@ -60,6 +59,8 @@ uintptr_t smpstart(void) {
 	sThread *t;
 	sStartupInfo info;
 	size_t i,total = smp_getCPUCount();
+	/* the running thread has been stored on a different stack last time */
+	thread_setRunning(thread_getById(0));
 
 	/* start an idle-thread for each cpu */
 	for(i = 0; i < total; i++)
@@ -82,6 +83,9 @@ uintptr_t smpstart(void) {
 
 void apstart(void) {
 	sProc *p = proc_getByPid(0);
+	/* store the running thread for our temp-stack again, because we might need it in gdt_init_ap
+	 * for example */
+	thread_setRunning(thread_getById(0));
 	/* at first, activate paging and setup the GDT, so that we don't need the "GDT-trick" anymore */
 	paging_activate(p->pagedir.own);
 	gdt_init_ap();

@@ -78,8 +78,8 @@ static sThread *thread_createInitial(sProc *p) {
 	thread_initProps(t);
 	t->state = ST_RUNNING;
 	for(i = 0; i < STACK_REG_COUNT; i++)
-		t->stackRegions[i] = -1;
-	t->tlsRegion = -1;
+		t->stackRegions[i] = NULL;
+	t->tlsRegion = NULL;
 	if(thread_initArch(t) < 0)
 		util_panic("Unable to init the arch-specific attributes of initial thread");
 
@@ -194,41 +194,41 @@ void thread_unsuspend(sThread *t) {
 
 bool thread_getStackRange(sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo) {
 	bool res = false;
-	if(t->stackRegions[stackNo] >= 0)
+	if(t->stackRegions[stackNo] != NULL)
 		res = vmm_getRegRange(t->proc->pid,t->stackRegions[stackNo],start,end,false);
 	return res;
 }
 
 bool thread_getTLSRange(sThread *t,uintptr_t *start,uintptr_t *end) {
 	bool res = false;
-	if(t->tlsRegion >= 0)
+	if(t->tlsRegion != NULL)
 		res = vmm_getRegRange(t->proc->pid,t->tlsRegion,start,end,false);
 	return res;
 }
 
-vmreg_t thread_getTLSRegion(const sThread *t) {
+sVMRegion *thread_getTLSRegion(const sThread *t) {
 	return t->tlsRegion;
 }
 
-void thread_setTLSRegion(sThread *t,vmreg_t rno) {
-	t->tlsRegion = rno;
+void thread_setTLSRegion(sThread *t,sVMRegion *vm) {
+	t->tlsRegion = vm;
 }
 
-bool thread_hasStackRegion(const sThread *t,vmreg_t regNo) {
+bool thread_hasStackRegion(const sThread *t,sVMRegion *vm) {
 	size_t i;
 	for(i = 0; i < STACK_REG_COUNT; i++) {
-		if(t->stackRegions[i] == regNo)
+		if(t->stackRegions[i] == vm)
 			return true;
 	}
 	return false;
 }
 
 void thread_removeRegions(sThread *t,bool remStack) {
-	t->tlsRegion = -1;
+	t->tlsRegion = NULL;
 	if(remStack) {
 		size_t i;
 		for(i = 0; i < STACK_REG_COUNT; i++)
-			t->stackRegions[i] = -1;
+			t->stackRegions[i] = NULL;
 	}
 	/* remove all signal-handler since we've removed the code to handle signals */
 	sig_removeHandlerFor(t->tid);
@@ -240,7 +240,7 @@ int thread_extendStack(uintptr_t address) {
 	int res = 0;
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		/* if it does not yet exist, report an error */
-		if(t->stackRegions[i] < 0)
+		if(t->stackRegions[i] == NULL)
 			return -ENOMEM;
 
 		res = vmm_growStackTo(t->proc->pid,t->stackRegions[i],address);
@@ -364,19 +364,22 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 	if(cloneProc) {
 		size_t i;
 		for(i = 0; i < STACK_REG_COUNT; i++)
-			t->stackRegions[i] = src->stackRegions[i];
-		t->tlsRegion = src->tlsRegion;
+			t->stackRegions[i] = vmm_getRegion(p,src->stackRegions[i]->virt);
+		if(src->tlsRegion)
+			t->tlsRegion = vmm_getRegion(p,src->tlsRegion->virt);
+		else
+			t->tlsRegion = NULL;
 		t->intrptLevel = src->intrptLevel;
 		memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
 	}
 	else {
 		/* add a new tls-region, if its present in the src-thread */
-		t->tlsRegion = -1;
-		if(src->tlsRegion >= 0) {
+		t->tlsRegion = NULL;
+		if(src->tlsRegion != NULL) {
 			uintptr_t tlsStart,tlsEnd;
 			vmm_getRegRange(src->proc->pid,src->tlsRegion,&tlsStart,&tlsEnd,false);
-			t->tlsRegion = vmm_add(p->pid,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS);
-			if(t->tlsRegion < 0)
+			err = vmm_add(p->pid,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS,&t->tlsRegion);
+			if(err < 0)
 				goto errThread;
 		}
 	}
@@ -410,7 +413,7 @@ errAppendIdle:
 errArch:
 	thread_freeArch(t);
 errClone:
-	if(t->tlsRegion >= 0)
+	if(t->tlsRegion != NULL)
 		vmm_remove(p->pid,t->tlsRegion);
 errThread:
 	cache_free(t);
@@ -427,9 +430,9 @@ void thread_terminate(sThread *t,sThread *cur) {
 void thread_kill(sThread *t) {
 	size_t i;
 	/* remove tls */
-	if(t->tlsRegion >= 0) {
+	if(t->tlsRegion != NULL) {
 		vmm_remove(t->proc->pid,t->tlsRegion);
-		t->tlsRegion = -1;
+		t->tlsRegion = NULL;
 	}
 
 	/* release resources */
@@ -494,9 +497,9 @@ void thread_print(const sThread *t) {
 	ev_printEvMask(t);
 	vid_printf("\n");
 	vid_printf("\tLastCPU=%d\n",t->cpu);
-	vid_printf("\tTlsRegion=%d, ",t->tlsRegion);
+	vid_printf("\tTlsRegion=%p, ",t->tlsRegion ? t->tlsRegion->virt : 0);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
-		vid_printf("stackRegion%zu=%d",i,t->stackRegions[i]);
+		vid_printf("stackRegion%zu=%p",i,t->stackRegions[i] ? t->stackRegions[i]->virt : 0);
 		if(i < STACK_REG_COUNT - 1)
 			vid_printf(", ");
 	}

@@ -17,13 +17,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_THREAD_H_
-#define ECO32_THREAD_H_
+#ifndef MMIX_THREADCONF_H_
+#define MMIX_THREADCONF_H_
 
 #include <sys/common.h>
-/**
- * Performs a thread-switch
- */
-void thread_doSwitch(void);
 
-#endif /* ECO32_THREAD_H_ */
+#define STACK_REG_COUNT			2
+
+/* the thread-state which will be saved for context-switching */
+typedef struct {
+	uintptr_t stackEnd;
+} sThreadRegs;
+
+typedef struct {
+	uint64_t rbb;
+	uint64_t rww;
+	uint64_t rxx;
+	uint64_t ryy;
+	uint64_t rzz;
+} sKSpecRegs;
+
+typedef struct {
+	/* the frame mapped at KERNEL_STACK */
+	frameno_t kstackFrame;
+	/* use as a temporary kernel-stack for cloning */
+	frameno_t tempStack;
+	/* when handling a signal, we have to backup these registers */
+	sKSpecRegs specRegLevels[MAX_INTRPT_LEVELS];
+} sThreadArchAttr;
+
+#endif /* MMIX_THREADCONF_H_ */

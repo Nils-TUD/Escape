@@ -23,6 +23,7 @@
 #include <sys/common.h>
 #include <sys/mem/region.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/vmreg.h>
 #include <sys/task/elf.h>
 #include <sys/intrpt.h>
 
@@ -112,10 +113,13 @@ typedef struct {
 	ulong sharedFrames;
 	/* pages that are in swap */
 	ulong swapped;
+	/* for finding free positions more quickly: the start for the stacks and for the free area */
 	uintptr_t freeStackAddr;
+	uintptr_t freeAreaAddr;
+	/* address of the data-region */
+	uintptr_t dataAddr;
 	/* the regions */
-	size_t regSize;
-	void *regions;
+	sVMRegTree regtree;
 	/* the entrypoint of the binary */
 	uintptr_t entryPoint;
 	/* file descriptors: point into the global file table */
@@ -207,15 +211,6 @@ void proc_release(struct sThread *t,sProc *p,size_t l);
  * @return the number of existing processes
  */
 size_t proc_getCount(void);
-
-/**
- * Searches for a process with given binary
- *
- * @param bin the binary
- * @param rno will be set to the region-number if found
- * @return the process-id with the binary or INVALID_PID if not found
- */
-pid_t proc_getProcWithBin(const sBinDesc *bin,vmreg_t *rno);
 
 /**
  * Determines the memory-usage for the given process

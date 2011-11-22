@@ -47,10 +47,11 @@ int thread_initArch(sThread *t) {
 }
 
 void thread_addInitialStack(sThread *t) {
+	int res;
 	assert(t->tid == INIT_TID);
-	t->stackRegions[0] = vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-	assert(t->stackRegions[0] >= 0);
+	res = vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,t->stackRegions + 0);
+	assert(res == 0);
 }
 
 size_t thread_getThreadFrmCnt(void) {
@@ -66,17 +67,18 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 		dst->archAttr.kernelStack = src->archAttr.kernelStack;
 	}
 	else {
+		int res;
 		/* map the kernel-stack at a free address */
 		dst->archAttr.kernelStack = paging_createKernelStack(&dst->proc->pagedir);
 		if(dst->archAttr.kernelStack == 0)
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-		if(dst->stackRegions[0] < 0) {
+		res = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,dst->stackRegions + 0);
+		if(res < 0) {
 			paging_unmapFrom(&dst->proc->pagedir,dst->archAttr.kernelStack,1,true);
-			return dst->stackRegions[0];
+			return res;
 		}
 	}
 	fpu_cloneState(&(dst->archAttr.fpuState),src->archAttr.fpuState);
@@ -84,9 +86,9 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 }
 
 void thread_freeArch(sThread *t) {
-	if(t->stackRegions[0] >= 0) {
+	if(t->stackRegions[0] != NULL) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
-		t->stackRegions[0] = -1;
+		t->stackRegions[0] = NULL;
 	}
 	paging_unmapFrom(&t->proc->pagedir,t->archAttr.kernelStack,1,true);
 	fpu_freeState(&t->archAttr.fpuState);
@@ -112,8 +114,10 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	/* now copy the stack */
 	/* copy manually to prevent a function-call (otherwise we would change the stack) */
 	src = (ulong*)t->archAttr.kernelStack;
-	for(i = 0; i < PT_ENTRY_COUNT; i++)
+	for(i = 0; i < PT_ENTRY_COUNT - 1; i++)
 		*dst++ = *src++;
+	/* store thread at the top */
+	*dst = (ulong)nt;
 
 	paging_unmapFromTemp(1);
 	spinlock_release(&lock);
@@ -127,6 +131,7 @@ void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,ui
 	ulong *dst = (ulong*)paging_mapToTemp(&frame,1);
 	uint32_t sp = nt->archAttr.kernelStack + PAGE_SIZE - sizeof(int) * 6;
 	dst += PT_ENTRY_COUNT - 1;
+	*dst = (uint32_t)nt;
 	*--dst = nt->proc->entryPoint;
 	*--dst = entryPoint;
 	*--dst = (ulong)arg;
@@ -153,6 +158,7 @@ uint64_t thread_getRuntime(const sThread *t) {
 	return t->stats.runtime;
 }
 
+/*
 sThread *thread_getRunning(void) {
 	if(threadSet)
 		return gdt_getRunning();
@@ -163,6 +169,7 @@ void thread_setRunning(sThread *t) {
 	gdt_setRunning(gdt_getCPUId(),t);
 	threadSet = true;
 }
+*/
 
 bool thread_beginTerm(sThread *t) {
 	bool res;
@@ -182,8 +189,7 @@ void thread_initialSwitch(void) {
 	spinlock_aquire(&switchLock);
 	cur = sched_perform(NULL,0);
 	cur->stats.schedCount++;
-	if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-		vmm_setTimestamp(cur,timer_getTimestamp());
+	vmm_setTimestamp(cur,timer_getTimestamp());
 	cur->cpu = gdt_prepareRun(NULL,cur);
 	fpu_lockFPU();
 	cur->stats.cycleStart = cpu_rdtsc();
@@ -211,8 +217,7 @@ void thread_doSwitch(void) {
 	/* switch thread */
 	if(new->tid != old->tid) {
 		time_t timestamp = timer_cyclesToTime(cycles);
-		if(conf_getStr(CONF_SWAP_DEVICE) != NULL)
-			vmm_setTimestamp(new,timestamp);
+		vmm_setTimestamp(new,timestamp);
 		new->cpu = gdt_prepareRun(old,new);
 
 		/* some stats for SMP */

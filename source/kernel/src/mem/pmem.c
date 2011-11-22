@@ -45,6 +45,8 @@
 #define KERNEL_MEM_MIN				750
 #define MAX_SWAP_AT_ONCE			10
 #define SWAPIN_JOB_COUNT			64
+/* the amount of memory at which we should start to set the region-timestamp */
+#define REG_TS_BEGIN				(1024 * PAGE_SIZE)
 
 typedef struct sSwapInJob {
 	uintptr_t addr;
@@ -138,6 +140,16 @@ size_t pmem_getFreeFrames(uint types) {
 	if(types & MM_DEF)
 		count += pmem_getFreeDef();
 	return count;
+}
+
+bool pmem_shouldSetRegTimestamp(void) {
+	bool res;
+	if(!swapEnabled)
+		return false;
+	spinlock_aquire(&defLock);
+	res = pmem_getFreeDef() * PAGE_SIZE < REG_TS_BEGIN;
+	spinlock_release(&defLock);
+	return res;
 }
 
 ssize_t pmem_allocateContiguous(size_t count,size_t align) {

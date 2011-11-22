@@ -99,6 +99,7 @@ void boot_arch_start(sBootInfo *info) {
 	 * and "correct" the GDT */
 	paging_init();
 	gdt_init();
+	thread_setRunning(NULL);
 
 	/* save the multiboot-structure
 	 * (change to 0xC...0 since we get the address at 0x0...0 from GRUB) */

@@ -32,19 +32,9 @@ int sysc_chgsize(sThread *t,sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
 	size_t oldEnd;
-	vmreg_t rno = RNO_DATA;
-
-	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
-	if(!vmm_exists(pid,rno)) {
-		/* if so, grow that region instead */
-		rno = vmm_getDLDataReg(pid);
-		if(rno == -1)
-			SYSC_ERROR(stack,-ENOMEM);
-	}
-
 	if(count > 0)
 		thread_reserveFrames(t,count);
-	oldEnd = vmm_grow(pid,rno,count);
+	oldEnd = vmm_grow(pid,t->proc->dataAddr,count);
 	if(count > 0)
 		thread_discardFrames(t);
 	SYSC_RET1(stack,oldEnd);
@@ -58,8 +48,9 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 	size_t loadCount = SYSC_ARG4(stack);
 	uint type = SYSC_ARG5(stack);
 	pid_t pid = t->proc->pid;
-	vmreg_t rno = -1;
+	sVMRegion *vm;
 	uintptr_t start;
+	int res;
 
 	/* copy the bin-desc, for the case that bin is not accessible */
 	if(bin)
@@ -68,14 +59,8 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 	/* check type */
 	switch(type) {
 		case REG_TEXT:
-			rno = RNO_TEXT;
-			break;
 		case REG_DATA:
-			rno = RNO_DATA;
-			break;
 		case REG_RODATA:
-			rno = RNO_RODATA;
-			break;
 		case REG_SHLIBDATA:
 		case REG_SHLIBTEXT:
 		case REG_SHM:
@@ -88,20 +73,14 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 			break;
 	}
 
-	/* check if the region-type does already exist */
-	if(rno >= 0) {
-		if(vmm_exists(pid,rno))
-			SYSC_ERROR(stack,-EEXIST);
-	}
-
 	/* add region */
-	rno = vmm_add(pid,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type);
-	if(rno < 0)
-		SYSC_ERROR(stack,rno);
+	res = vmm_add(pid,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type,&vm);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 	/* save tls-region-number */
 	if(type == REG_TLS)
-		thread_setTLSRegion(t,rno);
-	vmm_getRegRange(pid,rno,&start,0,true);
+		thread_setTLSRegion(t,vm);
+	vmm_getRegRange(pid,vm,&start,0,true);
 	SYSC_RET1(stack,start);
 }
 

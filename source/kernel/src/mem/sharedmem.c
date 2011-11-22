@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
 	pid_t pid;
-	vmreg_t region;
+	sVMRegion *region;
 } sShMemUser;
 
 /**
@@ -56,7 +56,7 @@ static bool shm_isOwn(const sShMem *mem,pid_t pid);
 /**
  * Creates and adds a new user
  */
-static bool shm_addUser(sShMem *mem,pid_t pid,vmreg_t reg);
+static bool shm_addUser(sShMem *mem,pid_t pid,sVMRegion *reg);
 /**
  * Retrieve the shared-memory-area by name
  */
@@ -77,8 +77,9 @@ void shm_init(void) {
 ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	sShMem *mem;
 	uintptr_t start;
-	vmreg_t reg;
+	sVMRegion *reg;
 	sThread *t = thread_getRunning();
+	int res;
 
 	/* checks */
 	if(strlen(name) > MAX_SHAREDMEM_NAME)
@@ -103,8 +104,8 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	mem->users = sll_create();
 	if(mem == NULL)
 		goto errMem;
-	reg = vmm_add(pid,NULL,0,pageCount * PAGE_SIZE,pageCount * PAGE_SIZE,REG_SHM);
-	if(reg < 0)
+	res = vmm_add(pid,NULL,0,pageCount * PAGE_SIZE,pageCount * PAGE_SIZE,REG_SHM,&reg);
+	if(res < 0)
 		goto errUList;
 	if(!shm_addUser(mem,pid,reg))
 		goto errVmm;
@@ -129,10 +130,11 @@ errLock:
 
 ssize_t shm_join(pid_t pid,const char *name) {
 	uintptr_t start;
-	vmreg_t reg;
+	sVMRegion *reg;
 	sShMemUser *owner;
 	sShMem *mem;
 	sThread *t = thread_getRunning();
+	int res;
 	mutex_aquire(t,&shmLock);
 
 	mem = shm_get(name);
@@ -142,10 +144,10 @@ ssize_t shm_join(pid_t pid,const char *name) {
 	}
 
 	owner = (sShMemUser*)sll_get(mem->users,0);
-	reg = vmm_join(owner->pid,owner->region,pid);
-	if(reg < 0) {
+	res = vmm_join(owner->pid,owner->region->virt,pid,&reg);
+	if(res < 0) {
 		mutex_release(t,&shmLock);
-		return -ENOMEM;
+		return res;
 	}
 	if(!shm_addUser(mem,pid,reg)) {
 		vmm_remove(pid,reg);
@@ -178,12 +180,15 @@ int shm_destroy(pid_t pid,const char *name) {
 int shm_cloneProc(pid_t parent,pid_t child) {
 	sSLNode *n;
 	sThread *t = thread_getRunning();
+	sProc *cproc = proc_getByPid(child);
 	mutex_aquire(t,&shmLock);
 	for(n = sll_begin(&shareList); n != NULL; n = n->next) {
 		sShMem *mem = (sShMem*)n->data;
 		sShMemUser *user = shm_getUser(mem,parent);
 		if(user) {
-			if(!shm_addUser(mem,child,user->region)) {
+			sVMRegion *reg = vmm_getRegion(cproc,user->region->virt);
+			assert(reg != NULL);
+			if(!shm_addUser(mem,child,reg)) {
 				mutex_release(t,&shmLock);
 				/* remove all already created entries */
 				shm_remProc(child);
@@ -275,7 +280,7 @@ static bool shm_isOwn(const sShMem *mem,pid_t pid) {
 	return ((sShMemUser*)sll_get(mem->users,0))->pid == pid;
 }
 
-static bool shm_addUser(sShMem *mem,pid_t pid,vmreg_t reg) {
+static bool shm_addUser(sShMem *mem,pid_t pid,sVMRegion *reg) {
 	sShMemUser *user = (sShMemUser*)cache_alloc(sizeof(sShMemUser));
 	if(user == NULL)
 		return false;

@@ -67,7 +67,8 @@ static void test_canHandle(void) {
 
 static void test_setHandler(void) {
 	sThread *t1 = thread_getRunning();
-	sThread *t2 = thread_getById(1);
+	int tid = proc_startThread(0,0,NULL);
+	sThread *t2 = thread_getById(tid);
 	int sig = 0xFF;
 	fSignal handler,old;
 
@@ -161,4 +162,6 @@ static void test_setHandler(void) {
 	sig_removeHandlerFor(t1->tid);
 	test_assertSize(sig_dbg_getHandlerCount(),0);
 	test_caseSucceeded();
+
+	proc_killThread(tid);
 }

@@ -158,19 +158,6 @@ uint64_t thread_getRuntime(const sThread *t) {
 	return t->stats.runtime;
 }
 
-/*
-sThread *thread_getRunning(void) {
-	if(threadSet)
-		return gdt_getRunning();
-	return NULL;
-}
-
-void thread_setRunning(sThread *t) {
-	gdt_setRunning(gdt_getCPUId(),t);
-	threadSet = true;
-}
-*/
-
 bool thread_beginTerm(sThread *t) {
 	bool res;
 	spinlock_aquire(&switchLock);

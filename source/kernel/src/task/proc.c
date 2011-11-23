@@ -107,11 +107,6 @@ void proc_init(void) {
 	p->stats.output = 0;
 	memclear(p->locks,sizeof(p->locks));
 	p->command = strdup("initloader");
-	/* init region-stuff */
-	p->freeStackAddr = 0;
-	p->freeAreaAddr = 0;
-	p->dataAddr = 0;
-	vmreg_addTree(p->pid,&p->regtree);
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(p->pid);
 	if(p->threadDir < 0)
@@ -124,6 +119,12 @@ void proc_init(void) {
 	sll_init(&p->threads,slln_allocNode,slln_freeNode);
 	if(!sll_append(&p->threads,thread_init(p)))
 		util_panic("Unable to append the initial thread");
+
+	/* init region-stuff */
+	p->freeStackAddr = 0;
+	p->dataAddr = 0;
+	vmfree_init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
+	vmreg_addTree(p->pid,&p->regtree);
 
 	/* add to procs */
 	sll_init(&procs,slln_allocNode,slln_freeNode);
@@ -283,7 +284,7 @@ int proc_clone(uint8_t flags) {
 
 	/* clone regions */
 	p->freeStackAddr = 0;
-	p->freeAreaAddr = 0;
+	vmfree_init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
 	if((res = vmm_cloneAll(p->pid)) < 0)
 		goto errorVFS;
 
@@ -632,12 +633,12 @@ void proc_destroy(pid_t pid) {
 }
 
 static void proc_doDestroy(sProc *p) {
-
 	/* release resources */
 	fd_destroy(p);
 	groups_leave(p->pid);
 	env_removeFor(p->pid);
 	proc_doRemoveRegions(p,true);
+	vmfree_destroy(&p->freemap);
 	paging_destroyPDir(&p->pagedir);
 	lock_releaseAll(p->pid);
 	proc_terminateArch(p);
@@ -844,10 +845,10 @@ void proc_print(sProc *p) {
 				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
 		vid_printf("\t\truntime=%ums\n",p->exitState->runtime);
 	}
+	vmfree_print(&p->freemap);
 	vid_printf("\tRegions:\n");
 	vid_printf("\t\tDataRegion: %p\n",p->dataAddr);
 	vid_printf("\t\tFreeStack: %p\n",p->freeStackAddr);
-	vid_printf("\t\tFreeArea: %p\n",p->freeAreaAddr);
 	vmm_printShort(p->pid);
 	vid_printf("\tEnvironment:\n");
 	env_printAllOf(p->pid);

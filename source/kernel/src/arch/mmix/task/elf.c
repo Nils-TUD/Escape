@@ -38,17 +38,19 @@ int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info
 	sElfEHeader *eheader = (sElfEHeader*)code;
 
 	/* at first, SYNCID the text-region */
-	uintptr_t begin,start,end;
-	vmm_getRegRange(t->proc->pid,REG_TEXT,&start,&end,true);
-	while(start < end) {
-		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,start);
-		size_t amount = MIN(PAGE_SIZE,end - start);
-		begin = DIR_MAPPED_SPACE | frame * PAGE_SIZE;
-		cpu_syncid(begin,begin + amount);
-		start += amount;
+	sVMRegion *textreg = vmm_getRegion(t->proc,TEXT_BEGIN);
+	if(textreg) {
+		uintptr_t begin,start,end;
+		vmm_getRegRange(t->proc->pid,textreg,&start,&end,true);
+		while(start < end) {
+			frameno_t frame = paging_getFrameNo(&t->proc->pagedir,start);
+			size_t amount = MIN(PAGE_SIZE,end - start);
+			begin = DIR_MAPPED_SPACE | frame * PAGE_SIZE;
+			cpu_syncid(begin,begin + amount);
+			start += amount;
+		}
 	}
-
-	return elf_finish(t,eheader,(sElfSHeader*)((uintptr_t)code + eheader->e_shoff),-1,info);
+	return elf_finish(t,eheader,(sElfSHeader*)((uintptr_t)code + eheader->e_shoff),NULL,info);
 }
 
 int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info) {
@@ -61,7 +63,7 @@ int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info
 		return -ENOEXEC;
 	}
 
-	thread_addHeapAlloc(t,secHeaders);
+	thread_addHeapAlloc(secHeaders);
 	if(vfs_seek(t->proc->pid,file,eheader->e_shoff,SEEK_SET) < 0) {
 		vid_printf("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
@@ -76,7 +78,7 @@ int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info
 	res = elf_finish(t,eheader,secHeaders,file,info);
 
 error:
-	thread_remHeapAlloc(t,secHeaders);
+	thread_remHeapAlloc(secHeaders);
 	cache_free(secHeaders);
 	return res;
 }
@@ -108,7 +110,7 @@ static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *h
 		if(sheader->sh_type == SHT_PROGBITS && sheader->sh_flags == SHF_WRITE &&
 				sheader->sh_addr != 0) {
 			/* append global registers */
-			if(file >= 0) {
+			if(file != NULL) {
 				if((res = vfs_seek(t->proc->pid,file,sheader->sh_offset,SEEK_SET)) < 0) {
 					vid_printf("[LOADER] Unable to seek to reg-section: %s\n",strerror(-res));
 					return res;

@@ -53,9 +53,8 @@ int thread_initArch(sThread *t) {
 
 void thread_addInitialStack(sThread *t) {
 	assert(t->tid == INIT_TID);
-	t->stackRegions[0] = vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-	assert(t->stackRegions[0] >= 0);
+	assert(vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,t->stackRegions + 0) == 0);
 }
 
 size_t thread_getThreadFrmCnt(void) {
@@ -75,25 +74,26 @@ int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
 		dst->archAttr.kstackFrame = stackFrame;
 	}
 	else {
+		int res;
 		dst->archAttr.kstackFrame = pmem_allocate(FRM_KERNEL);
 		if(dst->archAttr.kstackFrame == 0)
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-		if(dst->stackRegions[0] < 0) {
+		res = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,dst->stackRegions + 0);
+		if(res < 0) {
 			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
-			return dst->stackRegions[0];
+			return res;
 		}
 	}
 	return 0;
 }
 
 void thread_freeArch(sThread *t) {
-	if(t->stackRegions[0] >= 0) {
+	if(t->stackRegions[0] != NULL) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
-		t->stackRegions[0] = -1;
+		t->stackRegions[0] = NULL;
 	}
 	pmem_free(t->archAttr.kstackFrame,FRM_KERNEL);
 }

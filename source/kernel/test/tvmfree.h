@@ -17,28 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/thread.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include "maxthreads.h"
+#ifndef TVMFREE_H_
+#define TVMFREE_H_
 
-static int threadEntry(A_UNUSED void *arg);
+#include <esc/test.h>
 
-int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	size_t i = 0;
-	while(i++ < 20) {
-		if(startthread(threadEntry,NULL) < 0) {
-			printe("Unable to start thread");
-			break;
-		}
-	}
-	kill(getpid(),SIG_KILL);
-	return EXIT_SUCCESS;
-}
+extern sTestModule tModVMFree;
 
-static int threadEntry(A_UNUSED void *arg) {
-	wait(EV_NOEVENT,0);
-	return 0;
-}
+#endif /* TVMFREE_H_ */

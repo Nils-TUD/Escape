@@ -27,16 +27,6 @@
 #include <sys/mem/vmreg.h>
 #include <esc/hashmap.h>
 
-#ifdef __i386__
-#include <sys/arch/i586/task/threadconf.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/task/threadconf.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/task/threadconf.h>
-#endif
-
 #define MAX_INTRPT_LEVELS		3
 #define MAX_STACK_PAGES			128
 #define INITIAL_STACK_PAGES		1
@@ -64,6 +54,16 @@
 #define TERM_RESOURCE_CNT		4
 
 #define T_IDLE					1
+
+#ifdef __i386__
+#include <sys/arch/i586/task/threadconf.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/task/threadconf.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/task/threadconf.h>
+#endif
 
 typedef void (*fTermCallback)(void);
 

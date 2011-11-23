@@ -54,7 +54,7 @@ int mod_pingpong(int argc,char *argv[]) {
 
 static void client(void) {
 	uint64_t begin,total;
-	size_t i;
+	size_t i,j,num;
 	sIPCMsg msg;
 	int fd;
 	do {

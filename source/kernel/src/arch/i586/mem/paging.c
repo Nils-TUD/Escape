@@ -212,6 +212,7 @@ void paging_gdtFinished(void) {
 	/* we can simply remove the first 2 page-tables since it just a "link" to the "real" page-table
 	 * for the kernel */
 	proc0PD[0] = 0;
+	proc0PD[1] = 0;
 	paging_flushTLB();
 }
 
@@ -841,10 +842,9 @@ static void paging_printPageTable(uintptr_t ptables,size_t no,pde_t pde) {
 
 static void paging_printPage(pte_t page) {
 	if(page & PTE_EXISTS) {
-		vid_printf("r=0x%08x fr=0x%x [%c%c%c%c]",*(uint32_t*)page,
-				PTE_FRAMENO(page),(page & PTE_PRESENT) ? 'p' : '-',
-				(page & PTE_NOTSUPER) ? 'u' : 'k',(page & PTE_WRITABLE) ? 'w' : 'r',
-				(page & PTE_GLOBAL) ? 'g' : '-');
+		vid_printf("r=0x%08x fr=0x%x [%c%c%c%c]",page,PTE_FRAMENO(page),
+				(page & PTE_PRESENT) ? 'p' : '-',(page & PTE_NOTSUPER) ? 'u' : 'k',
+				(page & PTE_WRITABLE) ? 'w' : 'r',(page & PTE_GLOBAL) ? 'g' : '-');
 	}
 	else {
 		vid_printf("-");

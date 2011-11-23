@@ -140,6 +140,7 @@ apProtMode:
 .section .bss
 
 # our temporary kernel stack
+.align PAGE_SIZE
 .rept TMP_STACK_SIZE
 	.byte 0
 .endr

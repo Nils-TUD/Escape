@@ -380,8 +380,12 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 	thread_initProps(t);
 	if(cloneProc) {
 		size_t i;
-		for(i = 0; i < STACK_REG_COUNT; i++)
-			t->stackRegions[i] = vmm_getRegion(p,src->stackRegions[i]->virt);
+		for(i = 0; i < STACK_REG_COUNT; i++) {
+			if(src->stackRegions[i])
+				t->stackRegions[i] = vmm_getRegion(p,src->stackRegions[i]->virt);
+			else
+				t->stackRegions[i] = NULL;
+		}
 		if(src->tlsRegion)
 			t->tlsRegion = vmm_getRegion(p,src->tlsRegion->virt);
 		else

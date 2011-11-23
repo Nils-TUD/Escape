@@ -182,15 +182,14 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 		/* TODO well, its not really nice that we have to read this stuff again for every started
 		 * thread :/ */
 		/* every process has a text-region from his binary */
-		sVMRegion *textreg = vmm_getRegion(t->proc->pid,RNO_TEXT);
+		sVMRegion *textreg = vmm_getRegion(t->proc,TEXT_BEGIN);
 		ssize_t res;
 		sElfEHeader ehd;
-		if(textreg->binFile < 0) {
-			textreg->binFile = vfs_openFile(t->proc->pid,VFS_READ,textreg->reg->binary.ino,
-					textreg->reg->binary.dev);
-			if(textreg->binFile < 0) {
-				vid_printf("[LOADER] Unable to open path '%s': %s\n",t->proc->command,
-						strerror(-textreg->binFile));
+		if(textreg->binFile == NULL) {
+			res = vfs_openFile(t->proc->pid,VFS_READ,textreg->reg->binary.ino,
+					textreg->reg->binary.dev,&textreg->binFile);
+			if(res < 0) {
+				vid_printf("[LOADER] Unable to open path '%s': %s\n",t->proc->command,strerror(-res));
 				return false;
 			}
 		}

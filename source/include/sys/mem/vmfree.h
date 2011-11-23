@@ -17,28 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/thread.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include "maxthreads.h"
+#ifndef VMFREE_H_
+#define VMFREE_H_
 
-static int threadEntry(A_UNUSED void *arg);
+#include <sys/common.h>
 
-int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	size_t i = 0;
-	while(i++ < 20) {
-		if(startthread(threadEntry,NULL) < 0) {
-			printe("Unable to start thread");
-			break;
-		}
-	}
-	kill(getpid(),SIG_KILL);
-	return EXIT_SUCCESS;
-}
+typedef struct sVMFreeArea {
+	uintptr_t addr;
+	size_t size;
+	struct sVMFreeArea *next;
+} sVMFreeArea;
 
-static int threadEntry(A_UNUSED void *arg) {
-	wait(EV_NOEVENT,0);
-	return 0;
-}
+typedef struct {
+	sVMFreeArea *list;
+} sVMFreeMap;
+
+bool vmfree_init(sVMFreeMap *map,uintptr_t addr,size_t size);
+void vmfree_destroy(sVMFreeMap *map);
+uintptr_t vmfree_allocate(sVMFreeMap *map,size_t size);
+bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size);
+void vmfree_free(sVMFreeMap *map,uintptr_t addr,size_t size);
+size_t vmfree_getSize(sVMFreeMap *map,size_t *areas);
+void vmfree_print(sVMFreeMap *map);
+
+#endif /* VMFREE_H_ */

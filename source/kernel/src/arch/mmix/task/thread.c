@@ -87,7 +87,7 @@ static sThread *cur = NULL;
 
 int thread_initArch(sThread *t) {
 	t->archAttr.kstackFrame = pmem_allocate(FRM_KERNEL);
-	if(t->archAttr.kstackFrame < 0)
+	if(t->archAttr.kstackFrame == 0)
 		return -ENOMEM;
 	t->archAttr.tempStack = -1;
 	return 0;
@@ -95,12 +95,10 @@ int thread_initArch(sThread *t) {
 
 void thread_addInitialStack(sThread *t) {
 	assert(t->tid == INIT_TID);
-	t->stackRegions[0] = vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP);
-	assert(t->stackRegions[0] >= 0);
-	t->stackRegions[1] = vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-	assert(t->stackRegions[1] >= 0);
+	assert(vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP,t->stackRegions + 0) == 0);
+	assert(vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,t->stackRegions + 1) == 0);
 }
 
 size_t thread_getThreadFrmCnt(void) {
@@ -113,21 +111,21 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 		return -ENOMEM;
 	if(!cloneProc) {
 		/* add a new stack-region for the register-stack */
-		dst->stackRegions[0] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP);
-		if(dst->stackRegions[0] < 0) {
+		int res = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP,dst->stackRegions + 0);
+		if(res < 0) {
 			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
-			return dst->stackRegions[0];
+			return res;
 		}
 		/* add a new stack-region for the software-stack */
-		dst->stackRegions[1] = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
-		if(dst->stackRegions[1] < 0) {
+		res = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,dst->stackRegions + 1);
+		if(res < 0) {
 			/* remove register-stack */
 			vmm_remove(dst->proc->pid,dst->stackRegions[0]);
-			dst->stackRegions[0] = -1;
+			dst->stackRegions[0] = NULL;
 			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
-			return dst->stackRegions[1];
+			return res;
 		}
 	}
 	memcpy(dst->archAttr.specRegLevels,src->archAttr.specRegLevels,
@@ -138,9 +136,9 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 void thread_freeArch(sThread *t) {
 	int i;
 	for(i = 0; i < 2; i++) {
-		if(t->stackRegions[i] >= 0) {
+		if(t->stackRegions[i] != NULL) {
 			vmm_remove(t->proc->pid,t->stackRegions[i]);
-			t->stackRegions[i] = -1;
+			t->stackRegions[i] = NULL;
 		}
 	}
 	if(t->archAttr.tempStack != (frameno_t)-1) {

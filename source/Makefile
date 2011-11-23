@@ -1,8 +1,8 @@
 # general
-ARCH = i586
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
 TARGET = $(ARCH)-elf-escape
-BUILDDIR = $(abspath build/$(ARCH)-debug)
+BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
@@ -20,7 +20,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 KVM = -enable-kvm
 QEMU = qemu
 #-net nic,model=ne2k_pci -net user
-QEMUARGS = -smp 2 -serial stdio -hda $(HDD) -boot order=d -vga std -m 256 -localtime
+QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
 ECO32 = ../eco32
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin
@@ -78,8 +78,8 @@ ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 	export BUILDTYPE=debug
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -g -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -O3 -D NDEBUG
+	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -Os -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -Os -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 	export BUILDTYPE=release
 endif
@@ -229,7 +229,7 @@ debugqt: all prepareQemuTest prepareTest
 testq: all prepareQemuTest
 	$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) > log.txt 2>&1
 
-testbochs: all prepareBochs prepareTest
+testbochs: all prepareBochsTest
 	bochs -f bochs.cfg -q
 
 testvbox: all prepareVbox prepareTest
@@ -243,6 +243,9 @@ prepareQemu:	hdd cd
 
 prepareBochs:	hdd cd
 	tools/bochshdd.sh bochs.cfg $(HDD) $(ISO) $(BUILDDIR)/kernel.map
+
+prepareBochsTest:
+	tools/bochshdd.sh bochs.cfg $(HDD) $(ISO_TEST) $(BUILDDIR)/kernel_test.map
 
 prepareVbox: cd $(VMDISK)
 	sudo service qemu-kvm stop || true # vbox doesn't like kvm :/

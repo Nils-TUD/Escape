@@ -29,9 +29,12 @@
 /* for offsetof() */
 #include <stddef.h>
 
+/* whether to store the running thread in the gdt (for bochs) */
+#define GDT_STORE_RUN_THREAD	1
+
 /* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data, tls
  * and one entry for our TSS */
-#define GDT_ENTRY_COUNT 8
+#define GDT_ENTRY_COUNT 		8
 
 /* == for the access-field == */
 
@@ -321,14 +324,6 @@ cpuid_t gdt_getCPUId(void) {
 	return -1;
 }
 
-sThread *gdt_getRunning(void) {
-	sGDTTable tbl;
-	sGDTDesc *gdt;
-	gdt_get(&tbl);
-	gdt = (sGDTDesc*)tbl.offset;
-	return (sThread*)((gdt[7].addrHigh << 24) | (gdt[7].addrMiddle << 16) | gdt[7].addrLow);
-}
-
 void gdt_setRunning(cpuid_t id,sThread *t) {
 	/* store the thread-pointer into an unused slot of the gdt */
 	sGDTDesc *gdt = (sGDTDesc*)allgdts[id].offset;
@@ -336,12 +331,12 @@ void gdt_setRunning(cpuid_t id,sThread *t) {
 }
 
 cpuid_t gdt_prepareRun(sThread *old,sThread *new) {
-	uintptr_t tlsEnd;
 	cpuid_t id = old == NULL ? gdt_getCPUId() : old->cpu;
 	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
 	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
 	 * %gs:0xFFFFFFF8 etc. */
-	if(thread_getTLSRange(new,NULL,&tlsEnd)) {
+	if(new->tlsRegion) {
+		uintptr_t tlsEnd = new->tlsRegion->virt + new->tlsRegion->reg->byteCount;
 		gdt_set_desc((sGDTDesc*)allgdts[id].offset,5,tlsEnd - sizeof(void*),
 				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);
@@ -354,7 +349,9 @@ cpuid_t gdt_prepareRun(sThread *old,sThread *new) {
 		alltss[id]->esp0 = new->archAttr.kernelStack + PAGE_SIZE - (1 + 5) * sizeof(int);
 	if(!old || old->proc != new->proc)
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
+#if GDT_STORE_RUN_THREAD
 	gdt_setRunning(id,new);
+#endif
 	return id;
 }
 

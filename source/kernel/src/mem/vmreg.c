@@ -27,6 +27,8 @@
 #include <sys/mutex.h>
 #include <assert.h>
 
+#define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+
 static void vmreg_doRemove(sVMRegion **p,sVMRegion *reg);
 static void vmreg_doPrint(const sVMRegion *n,int layer);
 
@@ -60,6 +62,8 @@ void vmreg_remTree(sVMRegTree *tree) {
 				p->next = t->next;
 			else
 				regList = t->next;
+			if(t == regListEnd)
+				regListEnd = p;
 			break;
 		}
 	}
@@ -78,7 +82,7 @@ void vmreg_relTree(void) {
 sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
 	sVMRegion *vm;
 	for(vm = tree->root; vm != NULL; ) {
-		if(addr >= vm->virt && addr < vm->virt + vm->reg->byteCount)
+		if(addr >= vm->virt && addr < vm->virt + ROUNDUP(vm->reg->byteCount))
 			return vm;
 		if(addr < vm->virt)
 			vm = vm->left;

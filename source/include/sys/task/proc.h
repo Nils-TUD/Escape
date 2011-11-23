@@ -24,6 +24,7 @@
 #include <sys/mem/region.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmreg.h>
+#include <sys/mem/vmfree.h>
 #include <sys/task/elf.h>
 #include <sys/intrpt.h>
 
@@ -113,11 +114,12 @@ typedef struct {
 	ulong sharedFrames;
 	/* pages that are in swap */
 	ulong swapped;
-	/* for finding free positions more quickly: the start for the stacks and for the free area */
+	/* for finding free positions more quickly: the start for the stacks */
 	uintptr_t freeStackAddr;
-	uintptr_t freeAreaAddr;
 	/* address of the data-region */
 	uintptr_t dataAddr;
+	/* area-map for the free area */
+	sVMFreeMap freemap;
 	/* the regions */
 	sVMRegTree regtree;
 	/* the entrypoint of the binary */

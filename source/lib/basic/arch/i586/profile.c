@@ -21,7 +21,6 @@
 #ifdef IN_KERNEL
 #	include <esc/arch/i586/register.h>
 #	include <sys/arch/i586/ports.h>
-#	include <sys/arch/i586/gdt.h>
 #	include <sys/task/thread.h>
 #	include <sys/mem/paging.h>
 #	include <sys/ksymbols.h>
@@ -36,7 +35,7 @@
 	tid_t __tid; \
 	GET_REG("esp",__esp); \
 	if(proc_getByPid(1)) { \
-		sThread *__t = gdt_getRunning(); \
+		sThread *__t = thread_getRunning(); \
 		__tid = ((__esp >= KERNEL_STACK_AREA) && (uintptr_t)__t >= KERNEL_AREA) ? __t->tid : 0; \
 	} \
 	__tid; \

@@ -170,6 +170,7 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
 	vmreg_doRemove(p,reg);
 
 	/* remove from linked list */
+	mutex_aquire(&regMutex);
 	prev = NULL;
 	for(r = tree->begin; r != NULL; prev = r, r = r->next) {
 		if(r == reg) {
@@ -182,6 +183,7 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
 			break;
 		}
 	}
+	mutex_release(&regMutex);
 	/* close file */
 	if(reg->binFile != NULL) {
 		vfs_closeFile(tree->pid,reg->binFile);

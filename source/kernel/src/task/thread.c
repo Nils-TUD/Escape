@@ -72,9 +72,9 @@ static sThread *thread_createInitial(sProc *p) {
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
-	*(uint8_t*)&t->flags = 0;
 	*(tid_t*)&t->tid = nextTid++;
 	*(sProc**)&t->proc = p;
+	t->flags = 0;
 	thread_initProps(t);
 	t->state = ST_RUNNING;
 	for(i = 0; i < STACK_REG_COUNT; i++)
@@ -374,8 +374,8 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 		err = -ENOTHREADS;
 		goto errThread;
 	}
-	*(uint8_t*)&t->flags = flags;
 	*(sProc**)&t->proc = p;
+	t->flags = flags;
 
 	thread_initProps(t);
 	if(cloneProc) {

@@ -53,8 +53,10 @@ void term_start(void) {
 			 * in this time to add another thread */
 			spinlock_release(&termLock);
 
+			log_printf("Waiting for %d\n",dt->tid);
 			while(!thread_beginTerm(dt))
 				thread_switch();
+			log_printf("Killing %d\n",dt->tid);
 			proc_killThread(dt->tid);
 
 			spinlock_aquire(&termLock);
@@ -64,7 +66,12 @@ void term_start(void) {
 
 void term_addDead(sThread *t) {
 	spinlock_aquire(&termLock);
-	assert(sll_append(&deadThreads,t));
-	ev_wakeup(EVI_TERMINATION,0);
+	/* ensure that we don't add a thread twice */
+	if(!(t->flags & T_WILL_DIE)) {
+		t->flags |= T_WILL_DIE;
+		util_printEventTrace(util_getKernelStackTrace(),"Adding %d",t->tid);
+		assert(sll_append(&deadThreads,t));
+		ev_wakeup(EVI_TERMINATION,0);
+	}
 	spinlock_release(&termLock);
 }

@@ -58,7 +58,7 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 	 * whose region-stuff is locked anyway. or its shareable, then byteCount, pfSize and pageFlags
 	 * can't change. */
 	assert((flags & (RF_SHAREABLE | RF_GROWABLE)) != (RF_SHAREABLE | RF_GROWABLE));
-	assert(pgFlags == PF_DEMANDLOAD || pgFlags == 0);
+	assert(pgFlags == (ulong)-1 || pgFlags == PF_DEMANDLOAD || pgFlags == 0);
 
 	reg = (sRegion*)cache_alloc(sizeof(sRegion));
 	if(reg == NULL)
@@ -93,8 +93,11 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 		cache_free(reg);
 		return NULL;
 	}
-	for(i = 0; i < pageCount; i++)
-		reg->pageFlags[i] = pgFlags;
+	/* -1 means its initialized later (for reg_clone) */
+	if(pgFlags != (ulong)-1) {
+		for(i = 0; i < pageCount; i++)
+			reg->pageFlags[i] = pgFlags;
+	}
 	return reg;
 }
 
@@ -193,15 +196,15 @@ ssize_t reg_grow(sRegion *reg,ssize_t amount) {
 sRegion *reg_clone(const void *p,const sRegion *reg) {
 	sRegion *clone;
 	assert(!(reg->flags & RF_SHAREABLE));
-	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,0,reg->flags);
+	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,-1,reg->flags);
 	if(clone) {
 		/* increment references to swap-blocks */
 		size_t i,count = BYTES_2_PAGES(reg->byteCount);
 		for(i = 0; i < count; i++) {
+			clone->pageFlags[i] = reg->pageFlags[i];
 			if(reg->pageFlags[i] & PF_SWAPPED)
 				swmap_incRefs(reg_getSwapBlock(reg,i));
 		}
-		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize * sizeof(ulong));
 		reg_addTo(clone,p);
 	}
 	return clone;

@@ -54,6 +54,7 @@
 #define TERM_RESOURCE_CNT		4
 
 #define T_IDLE					1
+#define T_WILL_DIE				2
 
 #ifdef __i386__
 #include <sys/arch/i586/task/threadconf.h>
@@ -94,7 +95,7 @@ typedef enum {
 /* represents a thread */
 typedef struct sThread sThread;
 struct sThread {
-	const uint8_t flags;
+	uint8_t flags;
 	/* the thread-priority (0..MAX_PRIO) */
 	uint8_t priority;
 	/* a counter used to raise the priority after a certain number of "good behaviours" */

@@ -1,6 +1,6 @@
 # general
-ARCH = mmix
-GCCVER = 4.6.0
+ARCH = i586
+GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
 BUILDDIR = $(abspath build/$(ARCH)-release)
 DIST = ../toolchain/$(ARCH)
@@ -20,7 +20,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 KVM = -enable-kvm
 QEMU = qemu
 #-net nic,model=ne2k_pci -net user
-QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
+QEMUARGS = -smp 16 -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
 ECO32 = ../eco32
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin
@@ -78,8 +78,8 @@ ifneq ($(BUILDDIR),$(abspath build/$(ARCH)-release))
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 	export BUILDTYPE=debug
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -Os -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -Os -D NDEBUG
+	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -fno-builtin -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 	export BUILDTYPE=release
 endif

@@ -24,21 +24,50 @@
 #include <signal.h>
 #include "maxthreads.h"
 
+#define LOCK_IDENT	0x44112241
+
+static void sigUsr1(A_UNUSED int sig);
 static int threadEntry(A_UNUSED void *arg);
+
+static tULock runLock;
+static size_t threadsRunning;
 
 int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i = 0;
-	while(i++ < 20) {
+	while(true) {
 		if(startthread(threadEntry,NULL) < 0) {
 			printe("Unable to start thread");
 			break;
 		}
+		i++;
 	}
-	kill(getpid(),SIG_KILL);
+
+	printf("Started %zu threads; wait until all are running...\n",i);
+	fflush(stdout);
+	while(true) {
+		lock(LOCK_IDENT,LOCK_EXCLUSIVE);
+		if(threadsRunning == i) {
+			unlock(LOCK_IDENT);
+			break;
+		}
+		unlock(LOCK_IDENT);
+		yield();
+	}
+	printf("Kill them...\n");
+	fflush(stdout);
+	kill(getpid(),SIG_USR1);
 	return EXIT_SUCCESS;
 }
 
+static void sigUsr1(A_UNUSED int sig) {
+	/* do nothing */
+}
+
 static int threadEntry(A_UNUSED void *arg) {
-	wait(EV_NOEVENT,0);
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
+		error("Unable to announce signal-handler");
+	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
+	threadsRunning++;
+	waitunlock(EV_NOEVENT,0,LOCK_IDENT);
 	return 0;
 }

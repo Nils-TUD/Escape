@@ -20,7 +20,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 KVM = -enable-kvm
 QEMU = qemu
 #-net nic,model=ne2k_pci -net user
-QEMUARGS = -smp 16 -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
+QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 32 -localtime
 ECO32 = ../eco32
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin

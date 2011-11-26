@@ -25,17 +25,27 @@
 static size_t pages = 0;
 
 uintptr_t kheap_allocAreas(void) {
+	/* heap full? */
+	if((pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+		return 0;
+
 	/* allocate one page for area-structs */
 	if(paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL) < 0)
 		return 0;
+
 	return KERNEL_HEAP_START + pages++ * PAGE_SIZE;
 }
 
 uintptr_t kheap_allocSpace(size_t count) {
+	/* heap full? */
+	if((pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+		return 0;
+
 	if(paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL) < 0)
 		return 0;
+
 	pages += count;
 	return KERNEL_HEAP_START + (pages - count) * PAGE_SIZE;
 }

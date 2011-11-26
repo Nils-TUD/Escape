@@ -185,6 +185,7 @@ void paging_setFirst(pagedir_t *pdir) {
 	pdir->other = NULL;
 	pdir->lastChange = cpu_rdtsc();
 	pdir->otherUpdate = 0;
+	pdir->freeKStack = KERNEL_STACK_AREA;
 }
 
 void paging_mapKernelSpace(void) {
@@ -233,8 +234,8 @@ void paging_unmapFromTemp(size_t count) {
 	spinlock_release(&tmpMapLock);
 }
 
-int paging_cloneKernelspace(pagedir_t *pdir) {
-	uintptr_t kstackAddr;
+int paging_cloneKernelspace(pagedir_t *pdir,uintptr_t kstackAddr) {
+	uintptr_t kstackPtAddr;
 	frameno_t pdirFrame,stackPtFrame;
 	pde_t *pd,*npd;
 	pagedir_t *cur = paging_getPageDir();
@@ -263,7 +264,10 @@ int paging_cloneKernelspace(pagedir_t *pdir) {
 	/* copy kernel-space page-tables */
 	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA),
 			pd + ADDR_TO_PDINDEX(KERNEL_AREA),
-			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_AREA)) * sizeof(pde_t));
+			(ADDR_TO_PDINDEX(KERNEL_STACK_AREA) - ADDR_TO_PDINDEX(KERNEL_AREA)) * sizeof(pde_t));
+	/* clear the remaining page-tables */
+	memclear(npd + ADDR_TO_PDINDEX(KERNEL_STACK_AREA),
+			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_STACK_AREA)) * sizeof(pde_t));
 
 	/* map our new page-dir in the last slot of the new page-dir */
 	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)] =
@@ -273,12 +277,12 @@ int paging_cloneKernelspace(pagedir_t *pdir) {
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
-	npd[ADDR_TO_PDINDEX(KERNEL_STACK_AREA)] =
+	npd[ADDR_TO_PDINDEX(kstackAddr)] =
 			stackPtFrame << PAGE_SIZE_SHIFT | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 	/* clear the page-table */
-	kstackAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,KERNEL_STACK_AREA);
-	FLUSHADDR(kstackAddr);
-	memclear((void*)kstackAddr,PAGE_SIZE);
+	kstackPtAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,kstackAddr);
+	FLUSHADDR(kstackPtAddr);
+	memclear((void*)kstackPtAddr,PAGE_SIZE);
 
 	paging_doUnmapFrom(cur,TEMP_MAP_AREA,1,false);
 
@@ -288,48 +292,64 @@ int paging_cloneKernelspace(pagedir_t *pdir) {
 	pdir->other = NULL;
 	pdir->lastChange = cpu_rdtsc();
 	pdir->otherUpdate = 0;
+	if(kstackAddr == KERNEL_STACK_AREA)
+		pdir->freeKStack = KERNEL_STACK_AREA + PAGE_SIZE;
+	else
+		pdir->freeKStack = KERNEL_STACK_AREA;
 	spinlock_release(&pagingLock);
 	return 0;
 }
 
 uintptr_t paging_createKernelStack(pagedir_t *pdir) {
-	uintptr_t addr,ptables;
-	size_t i;
+	uintptr_t addr,end,ptables;
 	pte_t *pt;
 	pde_t *pd;
 	spinlock_aquire(&pagingLock);
-	addr = 0;
+	addr = pdir->freeKStack;
+	end = KERNEL_STACK_AREA + KERNEL_STACK_AREA_SIZE;
 	ptables = paging_getPTables(paging_getPageDir(),pdir);
 	pd = (pde_t*)PAGEDIR(ptables);
-	/* the page-table isn't present for the initial process */
-	if(pd[ADDR_TO_PDINDEX(KERNEL_STACK_AREA)] & PDE_EXISTS) {
-		pt = (pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,KERNEL_STACK_AREA);
-		for(i = PT_ENTRY_COUNT; i > 0; i--) {
-			if(!(pt[i - 1] & PTE_EXISTS)) {
-				addr = KERNEL_STACK_AREA + (i - 1) * PAGE_SIZE;
-				break;
-			}
+	while(addr < end) {
+		pt = (pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,addr);
+		/* use this address if either the page-table or the page doesn't exist yet */
+		if(!(pd[ADDR_TO_PDINDEX(addr)] & PDE_EXISTS) || !(*pt & PTE_EXISTS)) {
+			if(paging_doMapTo(pdir,addr,NULL,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
+				addr = 0;
+			break;
 		}
+		addr += PAGE_SIZE;
 	}
+	if(addr == end)
+		addr = 0;
 	else
-		addr = KERNEL_STACK_AREA + (PT_ENTRY_COUNT - 1) * PAGE_SIZE;
-	if(addr != 0) {
-		if(paging_doMapTo(pdir,addr,NULL,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
-			addr = 0;
-	}
+		pdir->freeKStack = addr + PAGE_SIZE;
 	spinlock_release(&pagingLock);
 	return addr;
 }
 
+void paging_removeKernelStack(pagedir_t *pdir,uintptr_t addr) {
+	spinlock_aquire(&pagingLock);
+	if(addr < pdir->freeKStack)
+		pdir->freeKStack = addr;
+	paging_doUnmapFrom(pdir,addr,1,true);
+	spinlock_release(&pagingLock);
+}
+
 void paging_destroyPDir(pagedir_t *pdir) {
+	size_t i;
 	uintptr_t ptables;
-	pde_t *pde;
+	pde_t *pd;
 	spinlock_aquire(&pagingLock);
 	ptables = paging_getPTables(paging_getPageDir(),pdir);
-	/* free page-table for kernel-stack */
-	pde = (pde_t*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
-	pmem_free(PDE_FRAMENO(*pde),FRM_KERNEL);
-	*pde = 0;
+	pd = (pde_t*)PAGEDIR(ptables);
+	/* free page-tables for kernel-stack */
+	for(i = ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
+		i < ADDR_TO_PDINDEX(KERNEL_STACK_AREA + KERNEL_STACK_AREA_SIZE); i++) {
+		if(pd[i] & PDE_EXISTS) {
+			pmem_free(PDE_FRAMENO(pd[i]),FRM_KERNEL);
+			pd[i] = 0;
+		}
+	}
 	/* free page-dir */
 	pmem_free(pdir->own >> PAGE_SIZE_SHIFT,FRM_KERNEL);
 	spinlock_release(&pagingLock);
@@ -341,7 +361,7 @@ bool paging_isPresent(pagedir_t *pdir,uintptr_t virt) {
 	bool res = false;
 	spinlock_aquire(&pagingLock);
 	ptables = paging_getPTables(paging_getPageDir(),pdir);
-	pd = (pde_t*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(virt);
+	pd = (pde_t*)PAGEDIR(ptables);
 	if((pd[ADDR_TO_PDINDEX(virt)] & (PDE_PRESENT | PDE_EXISTS)) == (PDE_PRESENT | PDE_EXISTS)) {
 		pte_t *pt = (pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 		res = (*pt & (PTE_PRESENT | PTE_EXISTS)) == (PTE_PRESENT | PTE_EXISTS);

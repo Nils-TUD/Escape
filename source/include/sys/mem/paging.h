@@ -79,9 +79,10 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count);
  * Clones the kernel-space of the current page-dir into a new one.
  *
  * @param pdir will be set to the page-directory address (physical)
+ * @param kstackAddr the address of the kernel-stack for the thread to clone
  * @return 0 on success
  */
-int paging_cloneKernelspace(pagedir_t *pdir);
+int paging_cloneKernelspace(pagedir_t *pdir,uintptr_t kstackAddr);
 
 /**
  * Destroys the given page-directory (not the current!)

@@ -105,7 +105,7 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= DIR_MAPPED_SPACE && virt + count >= virt;
 }
 
-int paging_cloneKernelspace(pagedir_t *pdir) {
+int paging_cloneKernelspace(pagedir_t *pdir,A_UNUSED uintptr_t kstackAddr) {
 	pagedir_t *cur = paging_getPageDir();
 	uintptr_t rootLoc;
 	/* allocate root-location */

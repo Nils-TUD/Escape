@@ -238,7 +238,7 @@ void gdt_init(void) {
 
 	/* tss (leave a bit space for the vm86-segment-registers that will be present at the stack-top
 	 * in vm86-mode. This way we can have the same interrupt-stack for all processes) */
-	bsptss.esp0 = KERNEL_STACK_AREA + PT_ENTRY_COUNT * PAGE_SIZE - (1 + 5) * sizeof(int);
+	bsptss.esp0 = KERNEL_STACK_AREA + PAGE_SIZE - (1 + 5) * sizeof(int);
 	bsptss.ss0 = 0x10;
 	/* init io-map */
 	bsptss.ioMapOffset = IO_MAP_OFFSET_INVALID;
@@ -300,7 +300,7 @@ void gdt_init_ap(void) {
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
 		util_panic("Unable to map memory for TSS");
 	memcpy(tss,&bsptss,sizeof(sTSS));
-	tss->esp0 = KERNEL_STACK_AREA + PT_ENTRY_COUNT * PAGE_SIZE - (1 + 5) * sizeof(int);
+	tss->esp0 = KERNEL_STACK_AREA + PAGE_SIZE - (1 + 5) * sizeof(int);
 	tss->ioMapOffset = IO_MAP_OFFSET_INVALID;
 	tss->ioMapEnd = 0xFF;
 

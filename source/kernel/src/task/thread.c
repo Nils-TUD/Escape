@@ -347,7 +347,10 @@ bool thread_reserveFramesFor(sThread *t,size_t count) {
 }
 
 frameno_t thread_getFrame(void) {
-	sThread *t = thread_getRunning();
+	return thread_getFrameOf(thread_getRunning());
+}
+
+frameno_t thread_getFrameOf(sThread *t) {
 	frameno_t frm = (frameno_t)sll_removeFirst(&t->reqFrames);
 	assert(frm != 0);
 	return frm;

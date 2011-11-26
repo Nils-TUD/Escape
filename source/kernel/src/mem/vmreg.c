@@ -94,14 +94,10 @@ sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
 
 sVMRegion *vmreg_getByReg(sVMRegTree *tree,sRegion *reg) {
 	sVMRegion *vm;
-	mutex_aquire(&regMutex);
 	for(vm = tree->begin; vm != NULL; vm = vm->next) {
-		if(vm->reg == reg) {
-			mutex_release(&regMutex);
+		if(vm->reg == reg)
 			return vm;
-		}
 	}
-	mutex_release(&regMutex);
 	return NULL;
 }
 
@@ -145,14 +141,12 @@ sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr) {
 	*l = *r = NULL;
 	p = *q;
 	/* insert at the end of the linked list */
-	mutex_aquire(&regMutex);
 	if(tree->end)
 		tree->end->next = p;
 	else
 		tree->begin = p;
 	tree->end = p;
 	p->next = NULL;
-	mutex_release(&regMutex);
 	return p;
 }
 
@@ -170,7 +164,6 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
 	vmreg_doRemove(p,reg);
 
 	/* remove from linked list */
-	mutex_aquire(&regMutex);
 	prev = NULL;
 	for(r = tree->begin; r != NULL; prev = r, r = r->next) {
 		if(r == reg) {
@@ -183,7 +176,6 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
 			break;
 		}
 	}
-	mutex_release(&regMutex);
 	/* close file */
 	if(reg->binFile != NULL) {
 		vfs_closeFile(tree->pid,reg->binFile);

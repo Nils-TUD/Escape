@@ -225,7 +225,7 @@ int proc_clone(uint8_t flags) {
 	}
 
 	/* clone page-dir */
-	if((res = paging_cloneKernelspace(&p->pagedir)) < 0)
+	if((res = paging_cloneKernelspace(&p->pagedir,curThread->archAttr.kernelStack)) < 0)
 		goto errorProc;
 
 	/* set basic attributes */

@@ -78,10 +78,10 @@
  *             |             sll nodes             |     |        |
  * 0xD2800000: +-----------------------------------+     |      -----
  *             |                ...                |     |
- * 0xFF400000: +-----------------------------------+     |      -----
+ * 0xFD800000: +-----------------------------------+     |      -----
  *             |           kernel-stacks           |     |        |
  * 0xFF800000: +-----------------------------------+     |
- *             |     temp mapped page-tables       |     |    not shared page-tables (3)
+ *             |     temp mapped page-tables       |     |    not shared page-tables (10)
  * 0xFFC00000: +-----------------------------------+     |
  *             |        mapped page-tables         |     |        |
  * 0xFFFFFFFF: +-----------------------------------+   -----    -----
@@ -109,8 +109,8 @@
 /* needed for building a new page-dir */
 #define PAGE_DIR_TMP_AREA		(TMPMAP_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 /* our kernel-stack */
-#define KERNEL_STACK_AREA		(TMPMAP_PTS_START - PAGE_SIZE * PT_ENTRY_COUNT)
-#define KERNEL_STACK_AREA_SIZE	(PAGE_SIZE * PT_ENTRY_COUNT)
+#define KERNEL_STACK_AREA		(TMPMAP_PTS_START - PAGE_SIZE * PT_ENTRY_COUNT * 8)
+#define KERNEL_STACK_AREA_SIZE	(PAGE_SIZE * PT_ENTRY_COUNT * 8)
 
 /* for mapping some pages of foreign processes */
 #define TEMP_MAP_AREA			(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
@@ -171,6 +171,7 @@ typedef struct pagedir_t {
 	uintptr_t own;
 	struct pagedir_t *other;
 	uint64_t otherUpdate;
+	uintptr_t freeKStack;
 } pagedir_t;
 
 /**
@@ -206,6 +207,14 @@ extern void paging_exchangePDir(uintptr_t physAddr);
  * @return the used address
  */
 uintptr_t paging_createKernelStack(pagedir_t *pdir);
+
+/**
+ * Removes the given kernel-stack
+ *
+ * @param pdir the page-directory
+ * @param addr the address of the kernel-stack
+ */
+void paging_removeKernelStack(pagedir_t *pdir,uintptr_t addr);
 
 /**
  * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you

@@ -31,7 +31,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#define SIGNAL_COUNT	2048
+#define SIGNAL_COUNT	8192
 #define MAX_SIG_RECV	16
 
 static bool sig_add(sSignals *s,int sig);

@@ -90,7 +90,7 @@ void thread_freeArch(sThread *t) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
 		t->stackRegions[0] = NULL;
 	}
-	paging_unmapFrom(&t->proc->pagedir,t->archAttr.kernelStack,1,true);
+	paging_removeKernelStack(&t->proc->pagedir,t->archAttr.kernelStack);
 	fpu_freeState(&t->archAttr.fpuState);
 }
 

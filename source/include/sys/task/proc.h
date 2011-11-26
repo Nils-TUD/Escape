@@ -41,7 +41,6 @@
 /* max number of coexistent processes */
 #define MAX_PROC_COUNT		8192
 #define MAX_FD_COUNT		64
-#define MAX_PROC_THREADS	1024
 
 /* for marking unused */
 #define INVALID_PID			(MAX_PROC_COUNT + 1)

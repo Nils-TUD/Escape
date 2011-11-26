@@ -443,6 +443,14 @@ bool thread_reserveFramesFor(sThread *t,size_t count);
 frameno_t thread_getFrame(void);
 
 /**
+ * The same as thread_getFrame(), but uses <t> instead of the current one.
+ *
+ * @param t the thread to take the frame from
+ * @return the frame
+ */
+frameno_t thread_getFrameOf(sThread *t);
+
+/**
  * Free's all frames that the current thread has still reserved. This should be done after an
  * operation that needed more frames to ensure that reserved but not needed frames are free'd.
  */

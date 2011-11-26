@@ -29,7 +29,6 @@
 static void sigUsr1(A_UNUSED int sig);
 static int threadEntry(A_UNUSED void *arg);
 
-static tULock runLock;
 static size_t threadsRunning;
 
 int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
@@ -64,10 +63,12 @@ static void sigUsr1(A_UNUSED int sig) {
 }
 
 static int threadEntry(A_UNUSED void *arg) {
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
-		error("Unable to announce signal-handler");
 	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
 	threadsRunning++;
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR) {
+		unlock(LOCK_IDENT);
+		error("Unable to announce signal-handler");
+	}
 	waitunlock(EV_NOEVENT,0,LOCK_IDENT);
 	return 0;
 }

@@ -60,6 +60,7 @@ static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags);
 static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end);
 static uintptr_t vmm_getFirstUsableAddr(sProc *p);
 static sProc *vmm_reqProc(pid_t pid);
+static sProc *vmm_tryReqProc(pid_t pid);
 static void vmm_relProc(sProc *p);
 static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,uintptr_t *virt);
 
@@ -372,7 +373,7 @@ bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr) {
 	assert(vfs_readFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
-	frame = thread_getFrame();
+	frame = thread_getFrameOf(t);
 	paging_copyToFrame(frame,buffer);
 
 	/* mark as not-swapped and map into all affected processes */
@@ -1102,38 +1103,44 @@ static sRegion *vmm_getLRURegion(void) {
 	sVMRegion *vm;
 	sRegion *lru = NULL;
 	time_t ts = UINT_MAX;
+	sProc *p;
 	sVMRegTree *tree = vmreg_reqTree();
 	for(; tree != NULL; tree = tree->next) {
 		/* the disk-driver is not swappable */
 		if(tree->pid == DISK_PID)
 			continue;
 
-		for(vm = tree->begin; vm != NULL; vm = vm->next) {
-			size_t j,count = 0,pages;
-			if((vm->reg->flags & RF_NOFREE) || vm->reg->timestamp >= ts)
-				continue;
+		/* same as below; we have to try to aquire the mutex, otherwise we risk a deadlock */
+		p = vmm_tryReqProc(tree->pid);
+		if(p) {
+			for(vm = tree->begin; vm != NULL; vm = vm->next) {
+				size_t j,count = 0,pages;
+				if((vm->reg->flags & RF_NOFREE) || vm->reg->timestamp >= ts)
+					continue;
 
-			/* we can't block here because otherwise we risk a deadlock. suppose that fs has to
-			 * swap out to get more memory. if we want to demand-load something before this operation
-			 * is finished and lock the region for that, the swapper will find this region at this
-			 * place locked. so we have to skip it in this case to be able to continue. */
-			if(mutex_tryAquire(&vm->reg->lock)) {
-				pages = BYTES_2_PAGES(vm->reg->byteCount);
-				for(j = 0; j < pages; j++) {
-					if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
-						count++;
-						break;
+				/* we can't block here because otherwise we risk a deadlock. suppose that fs has to
+				 * swap out to get more memory. if we want to demand-load something before this operation
+				 * is finished and lock the region for that, the swapper will find this region at this
+				 * place locked. so we have to skip it in this case to be able to continue. */
+				if(mutex_tryAquire(&vm->reg->lock)) {
+					pages = BYTES_2_PAGES(vm->reg->byteCount);
+					for(j = 0; j < pages; j++) {
+						if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
+							count++;
+							break;
+						}
 					}
+					if(count > 0) {
+						if(lru)
+							mutex_release(&lru->lock);
+						ts = vm->reg->timestamp;
+						lru = vm->reg;
+					}
+					else
+						mutex_release(&vm->reg->lock);
 				}
-				if(count > 0) {
-					if(lru)
-						mutex_release(&lru->lock);
-					ts = vm->reg->timestamp;
-					lru = vm->reg;
-				}
-				else
-					mutex_release(&vm->reg->lock);
 			}
+			vmm_relProc(p);
 		}
 	}
 	vmreg_relTree();
@@ -1270,6 +1277,15 @@ static sProc *vmm_reqProc(pid_t pid) {
 	if(p)
 		mutex_aquire(p->locks + PLOCK_REGIONS);
 	return p;
+}
+
+static sProc *vmm_tryReqProc(pid_t pid) {
+	sProc *p = proc_getByPid(pid);
+	if(p) {
+		if(mutex_tryAquire(p->locks + PLOCK_REGIONS))
+			return p;
+	}
+	return NULL;
 }
 
 static void vmm_relProc(sProc *p) {

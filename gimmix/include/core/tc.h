@@ -6,6 +6,7 @@
 #define TC_H_
 
 #include "common.h"
+#include "cpu.h"
 
 // the available translation-caches
 #define TC_INSTR		0
@@ -70,9 +71,10 @@ void tc_removeAll(int tc);
 /**
  * Removes the given entry, i.e. it marks it invalid
  *
+ * @param tc the tc: TC_INSTR or TC_DATA
  * @param e the entry
  */
-void tc_remove(sTCEntry *e);
+void tc_remove(int tc,sTCEntry *e);
 
 /**
  * Puts the given key-translation-pair into the given tc
@@ -93,7 +95,13 @@ sTCEntry *tc_set(int tc,octa key,octa translation);
  * @param s the page-size-shift from rV
  * @return the translation
  */
-octa tc_pteToTrans(octa pte,int s);
+static inline octa tc_pteToTrans(octa pte,int s) {
+	// clear OS-specific bits and move out n
+	int rwx = pte & 0x7;
+	// use 56-bit physical-address to include the I/O space
+	pte &= 0xFFFFFFFFFFFFFF & ~(((octa)1 << s) - 1);
+	return (pte >> 10) | rwx;
+}
 
 /**
  * Translates the given address to a key of an TC-entry
@@ -103,6 +111,11 @@ octa tc_pteToTrans(octa pte,int s);
  * @param n the address-space-number from rV
  * @return the key
  */
-octa tc_addrToKey(octa addr,int s,int n);
+static inline octa tc_addrToKey(octa addr,int s,int n) {
+	addr &= ~MSB(64);				// MSB is 0
+	addr &= ~(((octa)1 << s) - 1); 	// zero page-mask
+	addr |= n << 3;					// set process-number
+	return addr;
+}
 
 #endif /* TC_H_ */

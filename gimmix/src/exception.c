@@ -12,12 +12,11 @@
 #include "mmix/error.h"
 
 #define MAX_EXNAME_LEN		256
-#define MAX_ENV_NEST_DEPTH	10
 
-static jmp_buf *envs[MAX_ENV_NEST_DEPTH];
-static int curEnv = -1;
-static int curEx = 0;
-static octa curBits = 0;
+jmp_buf *envs[MAX_ENV_NEST_DEPTH];
+int curEnv = -1;
+int curEx = 0;
+octa curBits = 0;
 
 static const char *exNames[] = {
 	"No exception",
@@ -135,25 +134,4 @@ void ex_throw(int exception,octa bits) {
 void ex_rethrow(void) {
 	assert(curEx != EX_NONE);
 	ex_throw(curEx,curBits);
-}
-
-int ex_getEx(void) {
-	return curEx;
-}
-
-octa ex_getBits(void) {
-	return curBits;
-}
-
-void ex_push(jmp_buf *environment) {
-	assert(curEnv < MAX_ENV_NEST_DEPTH - 1);
-	curEx = 0;
-	curBits = 0;
-	curEnv++;
-	envs[curEnv] = environment;
-}
-
-void ex_pop(void) {
-	assert(curEnv >= 0);
-	curEnv--;
 }

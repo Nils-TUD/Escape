@@ -19,6 +19,8 @@
 
 typedef struct {
 	sTCEntry *entries;
+	octa lastKey;
+	size_t last;
 	size_t size;
 } sTranslationCache;
 
@@ -26,8 +28,8 @@ static int nextIndex;
 static sTCEntry *instrTC;
 static sTCEntry *dataTC;
 static sTranslationCache tcs[] = {
-	/* TC_INSTR */	{NULL,0},
-	/* TC_DATA */	{NULL,0}
+	/* TC_INSTR */	{NULL,-1,-1,0},
+	/* TC_DATA */	{NULL,-1,-1,0}
 };
 
 void tc_init(void) {
@@ -48,6 +50,8 @@ void tc_reset(void) {
 		for(size_t j = 0; j < tcs[i].size; j++) {
 			tcs[i].entries[j].key = MSB(64);
 			tcs[i].entries[j].translation = 0;
+			tcs[i].last = -1;
+			tcs[i].lastKey = -1;
 		}
 	}
 }
@@ -66,11 +70,16 @@ sTCEntry *tc_getByIndex(int tc,size_t index) {
 
 sTCEntry *tc_getByKey(int tc,octa key) {
 	assert(tc == TC_INSTR || tc == TC_DATA);
+	if(tcs[tc].lastKey == key)
+		return tcs[tc].entries + tcs[tc].last;
 	sTCEntry *entries = tcs[tc].entries;
 	size_t size = tcs[tc].size;
 	for(size_t i = 0; i < size; i++) {
-		if(entries[i].key == key)
+		if(entries[i].key == key) {
+			tcs[tc].last = i;
+			tcs[tc].lastKey = key;
 			return entries + i;
+		}
 	}
 	return NULL;
 }
@@ -81,6 +90,8 @@ sTCEntry *tc_set(int tc,octa key,octa translation) {
 		return NULL;
 	size_t index = nextIndex++ % tcs[tc].size;
 	sTCEntry *e = tcs[tc].entries + index;
+	if(tcs[tc].lastKey == e->key)
+		tcs[tc].lastKey = -1;
 	e->key = key;
 	e->translation = translation;
 	return e;
@@ -91,26 +102,14 @@ void tc_removeAll(int tc) {
 	sTCEntry *entries = tcs[tc].entries;
 	size_t size = tcs[tc].size;
 	for(size_t i = 0; i < size; i++)
-		tc_remove(entries + i);
+		tc_remove(tc,entries + i);
 }
 
-void tc_remove(sTCEntry *e) {
+void tc_remove(int tc,sTCEntry *e) {
 	assert(e != NULL);
+	if(tcs[tc].lastKey == e->key)
+		tcs[tc].lastKey = -1;
 	e->key = MSB(64);
 	e->translation = 0;
 }
 
-octa tc_pteToTrans(octa pte,int s) {
-	// clear OS-specific bits and move out n
-	int rwx = pte & 0x7;
-	// use 56-bit physical-address to include the I/O space
-	pte &= 0xFFFFFFFFFFFFFF & ~(((octa)1 << s) - 1);
-	return (pte >> 10) | rwx;
-}
-
-octa tc_addrToKey(octa addr,int s,int n) {
-	addr &= ~MSB(64);					// MSB is 0
-	addr &= ~(((octa)1 << s) - 1); 	// zero page-mask
-	addr |= n << 3;					// set process-number
-	return addr;
-}

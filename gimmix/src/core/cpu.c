@@ -20,11 +20,13 @@ static void cpu_checkForInterrupt(void);
 static void cpu_checkSecurity(void);
 static void cpu_triggerException(int ex,octa bits);
 static void cpu_execInstr(void);
+static bool cpu_handleException(int ex);
+static void cpu_finishInstr(void);
 
-static octa pc;
-static bool pcChanged;
+octa pc;
+bool pcChanged;
+bool halted;
 static bool run;
-static bool halted;
 static byte arithEx;
 static octa pagefaultAddr;
 static octa pagefaultValue;
@@ -63,14 +65,12 @@ void cpu_reset(void) {
 	useResume = false;
 }
 
-octa cpu_getPC(void) {
-	return pc;
+void cpu_setInterrupt(int irq) {
+	reg_setSpecial(rQ,reg_getSpecial(rQ) | ((octa)1 << irq));
 }
 
-void cpu_setPC(octa npc) {
-	pc = npc;
-	halted = false;
-	pcChanged = true;
+void cpu_resetInterrupt(int irq) {
+	reg_setSpecial(rQ,reg_getSpecial(rQ) & ~((octa)1 << irq));
 }
 
 int cpu_getInstrsSinceTick(void) {
@@ -79,29 +79,6 @@ int cpu_getInstrsSinceTick(void) {
 
 void cpu_setInstrsSinceTick(int count) {
 	instrCount = count;
-}
-
-bool cpu_isPriv(void) {
-	return pc & MSB(64);
-}
-
-bool cpu_hasPCChanged(void) {
-	return pcChanged;
-}
-
-bool cpu_isPCOk(octa npc) {
-	// + sizeof(tetra), because the pc will be increased before it is used
-	if(!(pc & MSB(64)) && ((npc + sizeof(tetra)) & MSB(64)))
-		return false;
-	return true;
-}
-
-void cpu_setInterrupt(int irq) {
-	reg_setSpecial(rQ,reg_getSpecial(rQ) | ((octa)1 << irq));
-}
-
-void cpu_resetInterrupt(int irq) {
-	reg_setSpecial(rQ,reg_getSpecial(rQ) & ~((octa)1 << irq));
 }
 
 void cpu_setArithEx(octa bits) {
@@ -154,25 +131,6 @@ bool cpu_setMemEx(int ex,octa bits,octa addr,octa value,bool sideEffects) {
 	return true;
 }
 
-void cpu_step(void) {
-	if(!halted) {
-		run = true;
-		cpu_execInstr();
-		ev_fire(EV_CPU_PAUSE);
-	}
-}
-
-void cpu_run(void) {
-	if(!halted) {
-		run = true;
-		do {
-			cpu_execInstr();
-		}
-		while(run);
-		ev_fire(EV_CPU_PAUSE);
-	}
-}
-
 void cpu_pause(void) {
 	run = false;
 }
@@ -218,54 +176,98 @@ void cpu_setResumeInstrArgs(const sInstrArgs *args) {
 	iargsResume.z = args->z;
 }
 
-static void cpu_execInstr(void) {
-	// execute the instruction and catch exceptions
-	jmp_buf env;
-	int ex = setjmp(env);
-	if(ex != EX_NONE) {
-		if(ex == EX_BREAKPOINT) {
-			run = false;
-			ex_pop();
-			return;
+void cpu_step(void) {
+	if(!halted) {
+		run = true;
+		jmp_buf env;
+		int ex = setjmp(env);
+		if(ex != EX_NONE) {
+			if(cpu_handleException(ex))
+				cpu_finishInstr();
 		}
-		else
-			cpu_triggerException(ex,ex_getBits());
+		else {
+			ex_push(&env);
+			cpu_execInstr();
+			cpu_finishInstr();
+		}
+		ex_pop();
+		ev_fire(EV_CPU_PAUSE);
+	}
+}
+
+void cpu_run(void) {
+	if(!halted) {
+		run = true;
+		do {
+			// execute the instruction and catch exceptions
+			jmp_buf env;
+			int ex = setjmp(env);
+			if(ex != EX_NONE) {
+				if(!cpu_handleException(ex)) {
+					ex_pop();
+					break;
+				}
+				cpu_finishInstr();
+			}
+			else {
+				ex_push(&env);
+				do {
+					cpu_execInstr();
+					cpu_finishInstr();
+				}
+				while(run);
+			}
+			ex_pop();
+		}
+		while(run);
+		ev_fire(EV_CPU_PAUSE);
+	}
+}
+
+static void cpu_execInstr(void) {
+	// fetch instruction
+	ev_fire(EV_BEFORE_FETCH);
+	pcChanged = false;
+	useResume = false;
+	instrLoc = pc;
+	instrRaw = mmu_readInstr(pc,MEM_SIDE_EFFECTS);
+
+	// decode
+	instr = dec_getInstr(OPCODE(instrRaw));
+	cpu_checkSecurity();
+	dec_decode(instrRaw,&iargs);
+
+	// execute
+	ev_fire(EV_BEFORE_EXEC);
+	instr->execute(&iargs);
+
+	// handle realtime tasks
+	if(++instrCount == INSTRS_PER_TICK) {
+		instrCount = 0;
+		timer_tick();
+	}
+	// check for interrupt-request
+	cpu_checkForInterrupt();
+
+	// tick the counters here to count only instructions that have been executed completely
+	cpu_counterTick();
+
+	// don't fire EV_AFTER_EXEC here because the instruction may throw an exception
+	// in this case we would not reach this
+}
+
+static bool cpu_handleException(int ex) {
+	if(ex == EX_BREAKPOINT) {
+		run = false;
+		return false;
 	}
 	else {
-		ex_push(&env);
-
-		// fetch instruction
-		ev_fire(EV_BEFORE_FETCH);
-		pcChanged = false;
-		useResume = false;
-		instrLoc = pc;
-		instrRaw = mmu_readInstr(pc,MEM_SIDE_EFFECTS);
-
-		// decode
-		instr = dec_getInstr(OPCODE(instrRaw));
-		cpu_checkSecurity();
-		dec_decode(instrRaw,&iargs);
-
-		// execute
-		ev_fire(EV_BEFORE_EXEC);
-		instr->execute(&iargs);
-
-		// handle realtime tasks
-		if(++instrCount == INSTRS_PER_TICK) {
-			instrCount = 0;
-			timer_tick();
-		}
-		// check for interrupt-request
-		cpu_checkForInterrupt();
-
-		// tick the counters here to count only instructions that have been executed completely
-		cpu_counterTick();
-
-		// don't fire EV_AFTER_EXEC here because the instruction may throw an exception
-		// in this case we would not reach this
+		cpu_triggerException(ex,ex_getBits());
+		return true;
 	}
-	ex_pop();
+}
 
+static void cpu_finishInstr(void) {
 	// increase cycle-counter (even if we've not really executed the instruction because of an
 	// exception. but doing it always is better because this way stepping 10000 times means that
 	// rC is 10000 afterwards)

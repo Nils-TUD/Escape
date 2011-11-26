@@ -21,6 +21,8 @@
 #include "core/instr/float.h"
 #include "exception.h"
 
+typedef void (*fDecode)(sInstrArgs *iargs,tetra t,int fmt);
+
 static void dec_toDSS(sInstrArgs *iargs,tetra t,int fmt);
 static void dec_toDS(sInstrArgs *iargs,tetra t,int fmt);
 static void dec_toDA(sInstrArgs *iargs,tetra t,int fmt);
@@ -294,6 +296,21 @@ static const sInstr instructions[] = {
 	/* FF: TRIP */		{cpu_instr_trip,	I_I8I8I8,	A_III},
 };
 
+static fDecode decoder[] = {
+	/* A_DSS */		dec_toDSS,
+	/* A_DS */		dec_toDS,
+	/* A_S */		dec_toS,
+	/* A_A */		dec_toA,
+	/* A_CT */		dec_toCT,
+	/* A_DA */		dec_toDA,
+	/* A_SA */		dec_toSA,
+	/* A_MA */		dec_toMA,
+	/* A_III */		dec_toIII,
+	/* A_LA */		dec_toLA,
+	/* A_SAVE */	dec_toSave,
+	/* A_UNSAVE */	dec_toUnsave,
+};
+
 const sInstr *dec_getInstr(int no) {
 	return instructions + no;
 }
@@ -301,49 +318,10 @@ const sInstr *dec_getInstr(int no) {
 void dec_decode(tetra t,sInstrArgs *iargs) {
 	const sInstr *desc = dec_getInstr(OPCODE(t));
 	int format = desc->format;
-	int args = desc->args;
+	size_t args = desc->args;
+	assert(args < ARRAY_SIZE(decoder));
 	iargs->x = iargs->y = iargs->z = 0;
-	switch(args) {
-		case A_DSS:
-			dec_toDSS(iargs,t,format);
-			break;
-		case A_DS:
-			dec_toDS(iargs,t,format);
-			break;
-		case A_DA:
-			dec_toDA(iargs,t,format);
-			break;
-		case A_SA:
-			dec_toSA(iargs,t,format);
-			break;
-		case A_CT:
-			dec_toCT(iargs,t,format);
-			break;
-		case A_A:
-			dec_toA(iargs,t,format);
-			break;
-		case A_III:
-			dec_toIII(iargs,t,format);
-			break;
-		case A_LA:
-			dec_toLA(iargs,t,format);
-			break;
-		case A_MA:
-			dec_toMA(iargs,t,format);
-			break;
-		case A_SAVE:
-			dec_toSave(iargs,t,format);
-			break;
-		case A_UNSAVE:
-			dec_toUnsave(iargs,t,format);
-			break;
-		case A_S:
-			dec_toS(iargs,t,format);
-			break;
-		default:
-			assert(false);
-			break;
-	}
+	decoder[args](iargs,t,format);
 }
 
 static void dec_toDSS(sInstrArgs *iargs,tetra t,int fmt) {

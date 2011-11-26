@@ -18,6 +18,7 @@
 // fully associative, write-back, write-alloc cache, with random replacement policy and
 // configureable block-size and block-count. no victim-cache here.
 
+static void cache_invalidateBlock(sCache *c,sCacheBlock *block);
 static sCacheBlock *cache_get(sCache *cache,octa addr,int flags,bool isWrite);
 static sCacheBlock *cache_findVictim(const sCache *cache);
 static void cache_fill(const sCache *cache,sCacheBlock *block,octa addr,int flags);
@@ -25,8 +26,8 @@ static void cache_flushBlock(const sCache *cache,sCacheBlock *block,int flags);
 
 static octa nextVictim;
 static sCache caches[] = {
-	/* CACHE_INSTR */ {"ICache",ICACHE_BLOCK_NUM,ICACHE_BLOCK_SIZE,0,NULL},
-	/* CACHE_DATA  */ {"DCache",DCACHE_BLOCK_NUM,DCACHE_BLOCK_SIZE,0,NULL},
+	/* CACHE_INSTR */ {"ICache",ICACHE_BLOCK_NUM,ICACHE_BLOCK_SIZE,0,MSB(64),NULL,NULL},
+	/* CACHE_DATA  */ {"DCache",DCACHE_BLOCK_NUM,DCACHE_BLOCK_SIZE,0,MSB(64),NULL,NULL},
 };
 
 void cache_init(void) {
@@ -37,10 +38,8 @@ void cache_init(void) {
 		caches[i].blocks = (sCacheBlock*)mem_alloc(sizeof(sCacheBlock) * caches[i].blockNum);
 		for(size_t b = 0; b < caches[i].blockNum; b++) {
 			sCacheBlock *block = caches[i].blocks + b;
-			// make it invalid and zero the memory
-			block->dirty = false;
-			block->tag = MSB(64);
-			block->data = (octa*)mem_calloc(caches[i].blockSize,1);
+			block->data = (octa*)mem_alloc(caches[i].blockSize);
+			cache_invalidateBlock(caches + i,block);
 		}
 	}
 }
@@ -112,12 +111,8 @@ void cache_flushAll(int cache) {
 void cache_remove(int cache,octa addr) {
 	assert(cache == CACHE_INSTR || cache == CACHE_DATA);
 	sCacheBlock *block = (sCacheBlock*)cache_find(caches + cache,addr);
-	if(block) {
-		block->tag = MSB(64);
-		block->dirty = false;
-		// for testability
-		memset(block->data,0,caches[cache].blockSize);
-	}
+	if(block)
+		cache_invalidateBlock(caches + cache,block);
 }
 
 void cache_removeAll(int cache) {
@@ -125,9 +120,7 @@ void cache_removeAll(int cache) {
 	sCache *c = caches + cache;
 	for(size_t b = 0; b < c->blockNum; b++) {
 		sCacheBlock *block = c->blocks + b;
-		block->tag = MSB(64);
-		block->dirty = false;
-		memset(block->data,0,c->blockSize);
+		cache_invalidateBlock(c,block);
 	}
 }
 
@@ -143,12 +136,29 @@ bool cache_isValid(const sCacheBlock *block) {
 
 const sCacheBlock *cache_find(const sCache *cache,octa addr) {
 	assert(cache != NULL);
+	if(((cache->lastAddr ^ addr) & cache->tagMask) == 0)
+		return cache->lastBlock;
 	for(size_t b = 0; b < cache->blockNum; b++) {
 		sCacheBlock *block = cache->blocks + b;
-		if(((block->tag ^ addr) & cache->tagMask) == 0)
+		if(((block->tag ^ addr) & cache->tagMask) == 0) {
+			sCache *wc = (sCache*)cache;
+			wc->lastAddr = addr;
+			wc->lastBlock = block;
 			return block;
+		}
 	}
 	return NULL;
+}
+
+static void cache_invalidateBlock(sCache *c,sCacheBlock *block) {
+	if(c->lastBlock == block) {
+		c->lastAddr = MSB(64);
+		c->lastBlock = NULL;
+	}
+	block->tag = MSB(64);
+	block->dirty = false;
+	// for testability
+	memset(block->data,0,c->blockSize);
 }
 
 static sCacheBlock *cache_get(sCache *cache,octa addr,int flags,bool isWrite) {
@@ -171,6 +181,8 @@ static sCacheBlock *cache_get(sCache *cache,octa addr,int flags,bool isWrite) {
 					block->tag = addr & cache->tagMask;
 					memset(block->data,0,cache->blockSize);
 				}
+				if(cache->lastBlock == block)
+					cache->lastAddr = MSB(64);
 			}
 		}
 	}

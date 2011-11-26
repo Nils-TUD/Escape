@@ -7,7 +7,7 @@
 
 #include "common.h"
 
-#define MAX_TRACES		64
+#define MAX_TRACES		512
 #define MAX_ARGS		4
 
 typedef unsigned int tTraceId;

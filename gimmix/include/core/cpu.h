@@ -14,6 +14,10 @@
 #define ZEXT(x,n)			((x) & MASK(n))
 #define SEXT(x,n)			(((x) & MSB(n)) ? ((x) | ~MASK(n)) : ((x) & MASK(n)))
 
+extern octa pc;
+extern bool pcChanged;
+extern bool halted;
+
 /**
  * Initializes the CPU
  */
@@ -27,14 +31,47 @@ void cpu_reset(void);
 /**
  * @return the current program counter
  */
-octa cpu_getPC(void);
+static inline octa cpu_getPC(void) {
+	return pc;
+}
 
 /**
  * Sets the PC to <npc>. Unchecked!
  *
  * @param npc the new pc
  */
-void cpu_setPC(octa npc);
+static inline void cpu_setPC(octa npc) {
+	pc = npc;
+	halted = false;
+	pcChanged = true;
+}
+
+/**
+ * @return true if the CPU is in privileged mode
+ */
+static inline bool cpu_isPriv(void) {
+	return pc & MSB(64);
+}
+
+/**
+ * @return true if the last instruction has changed the PC
+ */
+static inline bool cpu_hasPCChanged(void) {
+	return pcChanged;
+}
+
+/**
+ * Checks wether <npc> is OK (depending on the current pc)
+ *
+ * @param npc the new pc
+ * @return true if ok
+ */
+static inline bool cpu_isPCOk(octa npc) {
+	// + sizeof(tetra), because the pc will be increased before it is used
+	if(!(pc & MSB(64)) && ((npc + sizeof(tetra)) & MSB(64)))
+		return false;
+	return true;
+}
 
 /**
  * @return the number of instructions that have been executed since the last tick
@@ -47,24 +84,6 @@ int cpu_getInstrsSinceTick(void);
  * @param count the new value
  */
 void cpu_setInstrsSinceTick(int count);
-
-/**
- * @return true if the CPU is in privileged mode
- */
-bool cpu_isPriv(void);
-
-/**
- * @return true if the last instruction has changed the PC
- */
-bool cpu_hasPCChanged(void);
-
-/**
- * Checks wether <npc> is OK (depending on the current pc)
- *
- * @param npc the new pc
- * @return true if ok
- */
-bool cpu_isPCOk(octa npc);
 
 /**
  * Sets the bit <irq> in rQ. That means it ORs (1 << <irq>) into rQ.

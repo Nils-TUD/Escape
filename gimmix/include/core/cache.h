@@ -23,6 +23,8 @@ typedef struct {
 	size_t blockNum;
 	size_t blockSize;
 	octa tagMask;
+	octa lastAddr;
+	sCacheBlock *lastBlock;
 	sCacheBlock *blocks;
 } sCache;
 

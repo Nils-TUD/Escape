@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "config.h"
+#include <assert.h>
 
 #define LREG_MASK		(LREG_NUM - 1)
 #define GREG_MASK		(256 - 1)		// we have always 256 slots
@@ -54,6 +55,14 @@
 #define RSTACK_SPECIAL	2
 #define RSTACK_RGRA		3
 
+extern int L;
+extern int G;
+extern octa O;
+extern octa S;
+extern octa local[];
+extern octa global[];
+extern octa special[];
+
 /**
  * Initializes the registers
  */
@@ -70,7 +79,9 @@ void reg_reset(void);
  * @param rno the register-number
  * @return the value of the local register <rno>
  */
-octa reg_getLocal(int rno);
+static inline octa reg_getLocal(int rno) {
+	return local[rno & LREG_MASK];
+}
 
 /**
  * Sets l[<rno>] to value
@@ -78,7 +89,9 @@ octa reg_getLocal(int rno);
  * @param rno the register-number
  * @param value the new value
  */
-void reg_setLocal(int rno,octa value);
+static inline void reg_setLocal(int rno,octa value) {
+	local[rno & LREG_MASK] = value;
+}
 
 /**
  * Returns g[<rno>]
@@ -86,7 +99,10 @@ void reg_setLocal(int rno,octa value);
  * @param rno the register-number
  * @return the value of the global register <rno>
  */
-octa reg_getGlobal(int rno);
+static inline octa reg_getGlobal(int rno) {
+	assert(rno >= MAX(256 - GREG_NUM,MIN_GLOBAL));
+	return global[rno & GREG_MASK];
+}
 
 /**
  * Sets g[<rno>] to value
@@ -94,7 +110,10 @@ octa reg_getGlobal(int rno);
  * @param rno the register-number
  * @param value the new value
  */
-void reg_setGlobal(int rno,octa value);
+static inline void reg_setGlobal(int rno,octa value) {
+	assert(rno >= MAX(256 - GREG_NUM,MIN_GLOBAL));
+	global[rno & GREG_MASK] = value;
+}
 
 /**
  * Returns the value of the special-register with given number
@@ -102,7 +121,10 @@ void reg_setGlobal(int rno,octa value);
  * @param rno the register-number: rA,rB,...
  * @return the value
  */
-octa reg_getSpecial(int rno);
+static inline octa reg_getSpecial(int rno) {
+	assert(rno < SPECIAL_NUM);
+	return special[rno];
+}
 
 /**
  * Sets the value of the special-register with given number
@@ -110,7 +132,19 @@ octa reg_getSpecial(int rno);
  * @param rno the register-number: rA,rB,...
  * @param value the new value
  */
-void reg_setSpecial(int rno,octa value);
+static inline void reg_setSpecial(int rno,octa value) {
+	assert(rno < SPECIAL_NUM);
+	special[rno] = value;
+	// update our shortcuts
+	if(rno == rG)
+		G = value;
+	else if(rno == rL)
+		L = value;
+	else if(rno == rS)
+		S = value / sizeof(octa);
+	else if(rno == rO)
+		O = value / sizeof(octa);
+}
 
 /**
  * Returns $<rno>
@@ -118,7 +152,13 @@ void reg_setSpecial(int rno,octa value);
  * @param rno the register-number
  * @return the value of the dynamic register <rno>
  */
-octa reg_get(int rno);
+static inline octa reg_get(int rno) {
+	if(rno >= G)
+		return global[rno & GREG_MASK];
+	if(rno < L)
+		return local[(O + rno) & LREG_MASK];
+	return 0;
+}
 
 /**
  * Sets $<rno> to value

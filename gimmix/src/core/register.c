@@ -23,13 +23,13 @@ static void reg_stackStore(void);
 static void reg_stackStoreVal(octa val,int type,int index);
 static void reg_checkAccessibility(octa begin,octa end);
 
-static octa local[LREG_NUM];
-static octa global[256];	// always 256; GREG_NUM globals available starting at the top
-static octa special[SPECIAL_NUM];
-static int L;	// = special[rL]
-static int G;	// = special[rG]
-static octa S;	// = special[rS]/8: offset in register-ring of the next register to write to stack
-static octa O;	// = special[rO]/8: offset of $0
+octa local[LREG_NUM];
+octa global[256];	// always 256; GREG_NUM globals available starting at the top
+octa special[SPECIAL_NUM];
+int L;	// = special[rL]
+int G;	// = special[rG]
+octa S;	// = special[rS]/8: offset in register-ring of the next register to write to stack
+octa O;	// = special[rO]/8: offset of $0
 
 void reg_init(void) {
 	reg_reset();
@@ -48,51 +48,6 @@ void reg_reset(void) {
 	special[rL] = L = 0;
 	special[rS] = S = 0;
 	special[rO] = O = 0;
-}
-
-octa reg_getLocal(int rno) {
-	return local[rno & LREG_MASK];
-}
-
-void reg_setLocal(int rno,octa value) {
-	local[rno & LREG_MASK] = value;
-}
-
-octa reg_getGlobal(int rno) {
-	assert(rno >= MAX(256 - GREG_NUM,MIN_GLOBAL));
-	return global[rno & GREG_MASK];
-}
-
-void reg_setGlobal(int rno,octa value) {
-	assert(rno >= MAX(256 - GREG_NUM,MIN_GLOBAL));
-	global[rno & GREG_MASK] = value;
-}
-
-octa reg_getSpecial(int rno) {
-	assert(rno < SPECIAL_NUM);
-	return special[rno];
-}
-
-void reg_setSpecial(int rno,octa value) {
-	assert(rno < SPECIAL_NUM);
-	special[rno] = value;
-	// update our shortcuts
-	if(rno == rG)
-		G = value;
-	else if(rno == rL)
-		L = value;
-	else if(rno == rS)
-		S = value / sizeof(octa);
-	else if(rno == rO)
-		O = value / sizeof(octa);
-}
-
-octa reg_get(int rno) {
-	if(rno >= G)
-		return global[rno & GREG_MASK];
-	if(rno < L)
-		return local[(O + rno) & LREG_MASK];
-	return 0;
 }
 
 void reg_set(int rno,octa value) {

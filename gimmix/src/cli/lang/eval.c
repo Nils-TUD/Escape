@@ -378,7 +378,7 @@ static sCmdArg eval_getRangeExp(const sASTNode *node,octa offset,bool *finished)
 	if(node->d.rangeExp.left->type == AST_RANGEEXP || node->d.rangeExp.right->type == AST_RANGEEXP)
 		cmds_throwEx("Sorry, you can't nest ranges!\n");
 
-	bool rangeFinished;
+	bool rangeFinished = false;
 	switch(node->d.rangeExp.op) {
 		case RANGE_FROMTO:
 			// backwards

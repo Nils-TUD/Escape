@@ -6,6 +6,7 @@
 #define ENV_H_
 
 #include <setjmp.h>
+#include <assert.h>
 #include "common.h"
 
 /**
@@ -71,6 +72,13 @@
 
 #define TRIP_RA_OFFSET			8			// offset in rA
 
+#define MAX_ENV_NEST_DEPTH		10
+
+extern jmp_buf *envs[];
+extern int curEnv;
+extern int curEx;
+extern octa curBits;
+
 /**
  * Converts the given exception and exception-bits to string for debugging.
  *
@@ -96,12 +104,16 @@ void ex_rethrow(void);
 /**
  * @return the last thrown exception. will be reset by ex_push()
  */
-int ex_getEx(void);
+static inline int ex_getEx(void) {
+	return curEx;
+}
 
 /**
  * @return the bits of the last thrown exception. will be reset by ex_push()
  */
-octa ex_getBits(void);
+static inline octa ex_getBits(void) {
+	return curBits;
+}
 
 /**
  * Pushes a new environment on the environment stack. If ex_throw() is used, it restores
@@ -109,12 +121,21 @@ octa ex_getBits(void);
  *
  * @param environment the environment
  */
-void ex_push(jmp_buf *environment);
+static inline void ex_push(jmp_buf *environment) {
+	assert(curEnv < MAX_ENV_NEST_DEPTH - 1);
+	curEx = 0;
+	curBits = 0;
+	curEnv++;
+	envs[curEnv] = environment;
+}
 
 /**
  * Pops an environment from the stack. This is required after each push, regardless of whether
  * an exception has been thrown & catched or not.
  */
-void ex_pop(void);
+static inline void ex_pop(void) {
+	assert(curEnv >= 0);
+	curEnv--;
+}
 
 #endif /* ENV_H_ */

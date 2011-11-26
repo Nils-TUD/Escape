@@ -62,7 +62,7 @@ void rom_init(void) {
 
 static void rom_reset(void) {
 	for(size_t i = 0; i < ROM_SIZE; i++)
-		rom[i] = rand();
+		rom[i] = 0;
 	if(romImage != NULL) {
 		fseek(romImage,0,SEEK_SET);
 		if(fread(rom,romSize,1,romImage) != 1)

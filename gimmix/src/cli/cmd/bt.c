@@ -168,34 +168,34 @@ static void afterExec(const sEvArgs *args) {
 		bttree_add(0,true,traces[0].instrCount,oldPC,newPC,threadId,0,0,argCount,callargs);
 	}
 	else if(OPCODE(raw) == POP) {
-		octa pc = cpu_getPC() + sizeof(tetra);
+		octa cpc = cpu_getPC() + sizeof(tetra);
 		octa threadId = getId();
 		if(id != 0) {
-			btsimple_remove(id,true,traces[id].instrCount,pc,threadId);
-			bttree_remove(id,true,traces[id].instrCount,pc,threadId);
+			btsimple_remove(id,true,traces[id].instrCount,cpc,threadId);
+			bttree_remove(id,true,traces[id].instrCount,cpc,threadId);
 		}
-		btsimple_remove(0,true,traces[0].instrCount,pc,threadId);
-		bttree_remove(0,true,traces[0].instrCount,pc,threadId);
+		btsimple_remove(0,true,traces[0].instrCount,cpc,threadId);
+		bttree_remove(0,true,traces[0].instrCount,cpc,threadId);
 	}
 	else if(OPCODE(raw) == RESUME) {
-		octa pc = cpu_getPC() + sizeof(tetra);
+		octa cpc = cpu_getPC() + sizeof(tetra);
 		octa threadId = getId();
 		if(id != 0) {
-			btsimple_remove(id,false,traces[id].instrCount,pc,threadId);
-			bttree_remove(id,false,traces[id].instrCount,pc,threadId);
+			btsimple_remove(id,false,traces[id].instrCount,cpc,threadId);
+			bttree_remove(id,false,traces[id].instrCount,cpc,threadId);
 		}
-		btsimple_remove(0,false,traces[0].instrCount,pc,threadId);
-		bttree_remove(0,false,traces[0].instrCount,pc,threadId);
+		btsimple_remove(0,false,traces[0].instrCount,cpc,threadId);
+		bttree_remove(0,false,traces[0].instrCount,cpc,threadId);
 	}
 	if(ex != EX_NONE) {
-		octa pc = cpu_getPC();
+		octa cpc = cpu_getPC();
 		octa threadId = getId();
 		if(id != 0) {
-			btsimple_add(id,false,traces[id].instrCount,oldPC,pc,threadId,ex,exBits,0,NULL);
-			bttree_add(id,false,traces[id].instrCount,oldPC,pc,threadId,ex,exBits,0,NULL);
+			btsimple_add(id,false,traces[id].instrCount,oldPC,cpc,threadId,ex,exBits,0,NULL);
+			bttree_add(id,false,traces[id].instrCount,oldPC,cpc,threadId,ex,exBits,0,NULL);
 		}
-		btsimple_add(0,false,traces[0].instrCount,oldPC,pc,threadId,ex,exBits,0,NULL);
-		bttree_add(0,false,traces[0].instrCount,oldPC,pc,threadId,ex,exBits,0,NULL);
+		btsimple_add(0,false,traces[0].instrCount,oldPC,cpc,threadId,ex,exBits,0,NULL);
+		bttree_add(0,false,traces[0].instrCount,oldPC,cpc,threadId,ex,exBits,0,NULL);
 		ex = EX_NONE;
 	}
 

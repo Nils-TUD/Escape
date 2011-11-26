@@ -34,7 +34,7 @@ void cpu_instr_ldvts(const sInstrArgs *iargs) {
 				tce->translation |= prot;
 			}
 			else
-				tc_remove(tce);
+				tc_remove(i,tce);
 			res |= 1 << i;
 		}
 	}

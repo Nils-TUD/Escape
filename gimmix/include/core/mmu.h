@@ -20,11 +20,12 @@
 
 // convenience-struct that holds all information from rV
 typedef struct {
-	int b[5];	// segment sizes
-	int s;		// page size = 2^s
-	int n;		// process number
-	octa r;		// root location
-	int f;		// function (hw/sw)
+	int b[5];		// segment sizes
+	int s;			// page size = 2^s
+	int n;			// process number
+	octa r;			// root location
+	int f;			// function (hw/sw)
+	bool invalid;	// whether rV is not valid
 } sVirtTransReg;
 
 /**

@@ -255,9 +255,9 @@ static void evAfterExec(const sEvArgs *args) {
 		}
 	}
 
-	octa pc = cpu_getPC();
+	octa cpc = cpu_getPC();
 	for(i = 0; i < nr_breakpoints; i++) {
-		if(pc == breakpoints[i]) {
+		if(cpc == breakpoints[i]) {
 			GDB_DEBUGV ("found breakpoint at %Ox", pc);
 			last_stop_reason = GDBSTUB_EXECUTION_BREAKPOINT;
 			cpu_pause();

@@ -60,8 +60,8 @@ int main(int argc,char **argv) {
 			interactive = true;
 		}
 		else if(strncmp(argv[i],"--start=",sizeof("--start=") - 1) == 0) {
-			octa pc = mstrtoo(argv[i] + sizeof("--start=") - 1,NULL,0);
-			cfg_setStartAddr(pc);
+			octa cpc = mstrtoo(argv[i] + sizeof("--start=") - 1,NULL,0);
+			cfg_setStartAddr(cpc);
 		}
 		else if(strcmp(argv[i],"--user") == 0) {
 			cfg_setUserMode(true);

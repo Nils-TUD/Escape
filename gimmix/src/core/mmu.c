@@ -172,6 +172,7 @@ sVirtTransReg mmu_unpackrV(octa rv) {
 	v.n = (rv >> 3) & 0x3FF;
 	v.r = rv & 0xFFFFFFE000;
 	v.f = rv & 0x7;
+	v.invalid = v.s < 13 || v.s > 48 || v.f > 1;
 	return v;
 }
 
@@ -192,9 +193,7 @@ octa mmu_translate(octa addr,int mode,int expected,bool sideEffects) {
 		vtr = mmu_unpackrV(rv);
 		oldrV = rv;
 	}
-	if(vtr.s < 13 || vtr.s > 48)
-		ex_throw(EX_DYNAMIC_TRAP,(octa)mode << MMU_EX_OFFSET);
-	if(vtr.f > 1)
+	if(vtr.invalid)
 		ex_throw(EX_DYNAMIC_TRAP,(octa)mode << MMU_EX_OFFSET);
 
 	// first look in TC

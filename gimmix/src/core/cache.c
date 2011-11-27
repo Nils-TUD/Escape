@@ -138,14 +138,18 @@ const sCacheBlock *cache_find(const sCache *cache,octa addr) {
 	assert(cache != NULL);
 	if(((cache->lastAddr ^ addr) & cache->tagMask) == 0)
 		return cache->lastBlock;
-	for(size_t b = 0; b < cache->blockNum; b++) {
-		sCacheBlock *block = cache->blocks + b;
-		if(((block->tag ^ addr) & cache->tagMask) == 0) {
+
+	sCacheBlock *block = cache->blocks;
+	sCacheBlock *end = block + cache->blockNum;
+	octa tagMask = cache->tagMask;
+	while(block < end) {
+		if(((block->tag ^ addr) & tagMask) == 0) {
 			sCache *wc = (sCache*)cache;
 			wc->lastAddr = addr;
 			wc->lastBlock = block;
 			return block;
 		}
+		block++;
 	}
 	return NULL;
 }

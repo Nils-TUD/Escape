@@ -40,6 +40,7 @@ static const sModule modules[] = {
 	{"MMU",			NULL,			NULL,			NULL},
 	{"Register",	reg_init,		reg_reset,		NULL},
 	{"TC",			tc_init,		tc_reset,		tc_shutdown},
+	{"Event",		NULL,			NULL,			ev_shutdown},
 };
 
 static void sim_sigIntrpt(int sig) {

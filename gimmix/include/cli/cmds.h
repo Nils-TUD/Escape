@@ -21,12 +21,14 @@
 typedef void (*fCommand)(size_t argc,const sASTNode **argv);
 typedef void (*fCmdInit)(void);
 typedef void (*fCmdReset)(void);
+typedef void (*fCmdShutdown)(void);
 
 // a command
 typedef struct {
 	const char *name;
 	fCmdInit init;
 	fCmdReset reset;
+	fCmdShutdown shutdown;
 	fCommand cmd;
 	struct {
 		const char *synopsis;
@@ -44,6 +46,11 @@ void cmds_init(void);
  * affected by it are reset. That means, breakpoints for example are NOT deleted and so on.
  */
 void cmds_reset(void);
+
+/**
+ * Shuts all commands down.
+ */
+void cmds_shutdown(void);
 
 /**
  * Interrupts the current command as soon as possible

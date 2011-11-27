@@ -157,6 +157,7 @@ int main(int argc,char **argv) {
 			if(script)
 				cons_exec(script,true);
 			cons_start();
+			cons_shutdown();
 		}
 		else {
 			cpu_run();

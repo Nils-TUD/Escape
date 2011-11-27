@@ -65,6 +65,13 @@ void cli_cmd_breakInit(void) {
 	ev_register(EV_VAT,translationCallback);
 }
 
+void cli_cmd_breakShutdown(void) {
+	for(size_t i = 0; i < MAX_BREAKS; i++) {
+		if(breakpoints[i].enabled)
+			resetBreakpoint(breakpoints + i);
+	}
+}
+
 void cli_cmd_break(size_t argc,const sASTNode **argv) {
 	if(argc != 0 && argc != 1 && argc != 2 && argc != 3)
 		cmds_throwEx(NULL);

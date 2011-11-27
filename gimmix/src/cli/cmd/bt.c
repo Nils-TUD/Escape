@@ -79,6 +79,10 @@ void cli_cmd_btReset(void) {
 	}
 }
 
+void cli_cmd_btShutdown(void) {
+	cli_cmd_btReset();
+}
+
 void cli_cmd_delBt(size_t argc,const sASTNode **argv) {
 	tTraceId id;
 	if(!cfg_useBacktracing())

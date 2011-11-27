@@ -18,6 +18,11 @@ void cli_cmd_btInit(void);
 void cli_cmd_btReset(void);
 
 /**
+ * Shuts the trace-command down
+ */
+void cli_cmd_btShutdown(void);
+
+/**
  * Deletes a stack-trace
  */
 void cli_cmd_delBt(size_t argc,const sASTNode **argv);

@@ -18,6 +18,18 @@ static void ev_doFire(int event,const sEvArgs *args);
 
 static sEventHandler *handler[EV_COUNT];
 
+void ev_shutdown(void) {
+	for(size_t i = 0; i < EV_COUNT; i++) {
+		sEventHandler *p = handler[i];
+		while(p) {
+			sEventHandler *n = p->next;
+			mem_free(p);
+			p = n;
+		}
+		handler[i] = NULL;
+	}
+}
+
 void ev_register(int event,fEvent func) {
 	assert(event < (int)ARRAY_SIZE(handler));
 	sEventHandler *p = handler[event];

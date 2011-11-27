@@ -27,16 +27,16 @@ static FILE *romImage;
 static size_t romSize;
 
 void rom_init(void) {
-	// allocate ROM
-	rom = mem_alloc(ROM_SIZE);
-	if(rom == NULL)
-		sim_error("cannot allocate ROM");
-
 	// possibly load ROM image
 	const char *romImageName = cfg_getROM();
 	if(romImageName == NULL)
 		romImage = NULL;
 	else {
+		// allocate ROM
+		rom = mem_alloc(ROM_SIZE);
+		if(rom == NULL)
+			sim_error("cannot allocate ROM");
+
 		// plug in ROM
 		romImage = fopen(romImageName,"rb");
 		if(romImage == NULL)
@@ -56,8 +56,8 @@ void rom_init(void) {
 		romDev.write = rom_write;
 		romDev.shutdown = rom_shutdown;
 		bus_register(&romDev);
+		rom_reset();
 	}
-	rom_reset();
 }
 
 static void rom_reset(void) {
@@ -73,6 +73,8 @@ static void rom_reset(void) {
 }
 
 static void rom_shutdown(void) {
+	if(romImage != NULL)
+		fclose(romImage);
 	mem_free(rom);
 }
 

@@ -9,6 +9,7 @@
 #include "cli/cmds.h"
 
 void cli_cmd_breakInit(void);
+void cli_cmd_breakShutdown(void);
 void cli_cmd_break(size_t argc,const sASTNode **argv);
 void cli_cmd_delBreak(size_t argc,const sASTNode **argv);
 

@@ -29,7 +29,7 @@ static const char *rangeOps[] = {
 
 sASTNode *ast_createStmtList(sASTNode *head,sASTNode *tail) {
 	sASTNode *n = ast_createNode(AST_STMTLIST);
-	n->d.stmtList.isEmpty = tail == NULL;
+	n->d.stmtList.isEmpty = head == NULL;
 	n->d.stmtList.head = head;
 	n->d.stmtList.tail = tail;
 	return n;
@@ -44,7 +44,7 @@ sASTNode *ast_createCmdStmt(char *name,sASTNode *args) {
 
 sASTNode *ast_createExprList(sASTNode *head,sASTNode *tail) {
 	sASTNode *n = ast_createNode(AST_EXPRLIST);
-	n->d.exprList.isEmpty = tail == NULL;
+	n->d.exprList.isEmpty = head == NULL;
 	n->d.exprList.head = head;
 	n->d.exprList.tail = tail;
 	return n;
@@ -164,9 +164,12 @@ void ast_destroy(sASTNode *node) {
 			while(!list->d.stmtList.isEmpty) {
 				sASTNode *tmp = list->d.stmtList.tail;
 				ast_destroy(list->d.stmtList.head);
+				mem_free(list);
 				list = tmp;
 			}
-			break;
+			mem_free(list);
+			/* node is already free'd */
+			return;
 		case AST_CMDSTMT:
 			mem_free(node->d.cmdStmt.name);
 			ast_destroy(node->d.cmdStmt.args);
@@ -176,9 +179,12 @@ void ast_destroy(sASTNode *node) {
 			while(!list->d.exprList.isEmpty) {
 				sASTNode *tmp = list->d.exprList.tail;
 				ast_destroy(list->d.exprList.head);
+				mem_free(list);
 				list = tmp;
 			}
-			break;
+			mem_free(list);
+			/* node is already free'd */
+			return;
 		case AST_INTEXP:
 			// nothing to do
 			break;

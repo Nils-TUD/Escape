@@ -38,6 +38,11 @@ typedef struct {
 typedef void (*fEvent)(const sEvArgs *args);
 
 /**
+ * Shuts down the event-module
+ */
+void ev_shutdown(void);
+
+/**
  * Registers <func> for the event <event>.
  *
  * @param event the event to listen for

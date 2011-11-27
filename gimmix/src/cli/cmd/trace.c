@@ -25,6 +25,15 @@ void cli_cmd_traceInit(void) {
 	ev_register(EV_CPU_PAUSE,cpuPause);
 }
 
+void cli_cmd_traceShutdown(void) {
+	for(size_t i = 0; i < MAX_TRACE_CMDS; i++) {
+		if(traceCmds[i]) {
+			mem_free(traceCmds[i]);
+			traceCmds[i] = NULL;
+		}
+	}
+}
+
 void cli_cmd_trace(size_t argc,const sASTNode **argv) {
 	if(argc == 0)
 		printTraces();

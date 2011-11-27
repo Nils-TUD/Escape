@@ -45,6 +45,7 @@ static const sCommand commands[] = {
 		"h",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_help,
 		{
 			{"","Print the command-list"},
@@ -55,6 +56,7 @@ static const sCommand commands[] = {
 		"hl",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_lang,
 		{
 			{"","Print the language description"},
@@ -63,6 +65,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"p",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_print,
@@ -76,6 +79,7 @@ static const sCommand commands[] = {
 		"set",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_set,
 		{
 			{"<obj..> <expr..>","Set <obj> to <expr>"},
@@ -84,6 +88,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"d",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_disasm,
@@ -97,6 +102,7 @@ static const sCommand commands[] = {
 		"s",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_step,
 		{
 			{"","Execute 1 instruction"},
@@ -106,6 +112,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"ou",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_stepout,
@@ -119,6 +126,7 @@ static const sCommand commands[] = {
 		"ov",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_stepover,
 		{
 			{"","Step over next instruction (1 time)"},
@@ -128,6 +136,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"c",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_cont,
@@ -141,6 +150,7 @@ static const sCommand commands[] = {
 		"b",
 		cli_cmd_breakInit,
 		NULL,
+		cli_cmd_breakShutdown,
 		cli_cmd_break,
 		{
 			{"","Print breakpoints"},
@@ -156,6 +166,7 @@ static const sCommand commands[] = {
 		"db",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_delBreak,
 		{
 			{"<no..>","Delete breakpoint(s) <no>"},
@@ -165,6 +176,7 @@ static const sCommand commands[] = {
 	{
 		"e",
 		cli_cmd_effectsInit,
+		NULL,
 		NULL,
 		cli_cmd_effects,
 		{
@@ -180,6 +192,7 @@ static const sCommand commands[] = {
 		"tr",
 		cli_cmd_traceInit,
 		NULL,
+		cli_cmd_traceShutdown,
 		cli_cmd_trace,
 		{
 			{"","Print all traces"},
@@ -189,6 +202,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"dtr",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_delTrace,
@@ -201,6 +215,7 @@ static const sCommand commands[] = {
 		"dev",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_devices,
 		{
 			{"","Print the state of all connected devices"},
@@ -211,6 +226,7 @@ static const sCommand commands[] = {
 		"v2p",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_v2p,
 		{
 			{"<addr>","Translate the virtual address <addr>"},
@@ -219,6 +235,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"itc",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_itc,
@@ -232,6 +249,7 @@ static const sCommand commands[] = {
 		"dtc",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_dtc,
 		{
 			{"","Print all Data-TC-entries"},
@@ -241,6 +259,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"ic",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_ic,
@@ -254,6 +273,7 @@ static const sCommand commands[] = {
 		"dc",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_dc,
 		{
 			{"","Print all data-cache-entries"},
@@ -265,6 +285,7 @@ static const sCommand commands[] = {
 		"st",
 		cli_cmd_statInit,
 		cli_cmd_statReset,
+		NULL,
 		cli_cmd_stat,
 		{
 			{"","Print execution statistic"},
@@ -276,6 +297,7 @@ static const sCommand commands[] = {
 		"bt",
 		cli_cmd_btInit,
 		cli_cmd_btReset,
+		cli_cmd_btShutdown,
 		cli_cmd_bt,
 		{
 			{"","Print backtrace"},
@@ -285,6 +307,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"btt",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_btTree,
@@ -298,6 +321,7 @@ static const sCommand commands[] = {
 		"dbt",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_delBt,
 		{
 			{"<no>","Reset the trace with number <no>"},
@@ -308,6 +332,7 @@ static const sCommand commands[] = {
 		"r",
 		NULL,
 		NULL,
+		NULL,
 		cli_cmd_reset,
 		{
 			{"","Reset"},
@@ -316,6 +341,7 @@ static const sCommand commands[] = {
 	},
 	{
 		"q",
+		NULL,
 		NULL,
 		NULL,
 		cli_cmd_quit,
@@ -338,6 +364,13 @@ void cmds_reset(void) {
 	for(size_t i = 0; i < ARRAY_SIZE(commands); i++) {
 		if(commands[i].reset)
 			commands[i].reset();
+	}
+}
+
+void cmds_shutdown(void) {
+	for(size_t i = 0; i < ARRAY_SIZE(commands); i++) {
+		if(commands[i].shutdown)
+			commands[i].shutdown();
 	}
 }
 

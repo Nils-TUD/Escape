@@ -67,6 +67,10 @@ void cons_init(void) {
 	cmds_init();
 }
 
+void cons_shutdown(void) {
+	cmds_shutdown();
+}
+
 void cons_start(void) {
 	while(run) {
 		char *line = gl_getline((char*)"GIMMIX > ");
@@ -89,10 +93,7 @@ void cons_exec(const char *line,bool isFile) {
 	cons_initParsing(line,isFile);
 
 	int res = yyparse();
-	// we need to reset the scanner if an error happened
-	if(res != 0)
-		yylex_destroy();
-	else {
+	if(res == 0) {
 		bool finished = true;
 		jmp_buf env;
 		int ex = setjmp(env);
@@ -104,6 +105,8 @@ void cons_exec(const char *line,bool isFile) {
 		ast_destroy(execEnvs[curExecEnv].tree);
 		ex_pop();
 	}
+	// free resources
+	yylex_destroy();
 
 	cons_finishParsing();
 }

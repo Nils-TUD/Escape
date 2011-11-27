@@ -6,7 +6,7 @@ export CPP = cpp
 export LD = ld
 export CC = gcc
 export AR = ar
-export CFLAGS = -DNDEBUG -g -O3 -Wall -std=c99 -pedantic \
+export CFLAGS = -rdynamic -DNDEBUG -g -Wall -std=c99 -pedantic \
  -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
  -Wmissing-declarations -Wnested-externs -Winline -Wstrict-prototypes
 

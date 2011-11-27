@@ -19,6 +19,11 @@
 void cons_init(void);
 
 /**
+ * Shuts the console down
+ */
+void cons_shutdown(void);
+
+/**
  * Starts the console
  */
 void cons_start(void);

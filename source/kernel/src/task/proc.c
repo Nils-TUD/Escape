@@ -217,6 +217,11 @@ int proc_clone(uint8_t flags) {
 		res = -ESRCH;
 		goto errorReqProc;
 	}
+	/* don't allow cloning when the process should die */
+	if(cur->flags & (P_ZOMBIE | P_PREZOMBIE)) {
+		res = -EDESTROYED;
+		goto errorCur;
+	}
 
 	p = (sProc*)cache_alloc(sizeof(sProc));
 	if(!p) {
@@ -225,7 +230,7 @@ int proc_clone(uint8_t flags) {
 	}
 
 	/* clone page-dir */
-	if((res = paging_cloneKernelspace(&p->pagedir,curThread->archAttr.kernelStack)) < 0)
+	if((res = paging_cloneKernelspace(&p->pagedir,curThread->tid)) < 0)
 		goto errorProc;
 
 	/* set basic attributes */
@@ -362,6 +367,9 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	sProc *p;
 	sThread *nt;
 	int res;
+	/* don't allow new threads when the process should die */
+	if(t->proc->flags & (P_ZOMBIE | P_PREZOMBIE))
+		return -EDESTROYED;
 
 	/* reserve frames for new stack- and tls-region */
 	pageCount = thread_getThreadFrmCnt();
@@ -423,6 +431,11 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	int argc,fd = -1;
 	if(!p)
 		return -ESRCH;
+	/* don't allow exec when the process should die */
+	if(p->flags & (P_ZOMBIE | P_PREZOMBIE)) {
+		proc_release(p,PLOCK_PROG);
+		return -EDESTROYED;
+	}
 	/* we can't do an exec if we have multiple threads (init can do that, because the threads are
 	 * "kernel-threads") */
 	if(p->pid != 0 && sll_length(&p->threads) > 1) {

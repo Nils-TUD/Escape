@@ -23,8 +23,22 @@
 #include <sys/common.h>
 #include <sys/task/thread.h>
 
+/**
+ * Inits the terminator
+ */
 void term_init(void);
+
+/**
+ * The start-function of the terminator. Should be called by a dedicated thread.
+ */
 void term_start(void);
+
+/**
+ * Adds the given thread for termination. If all threads of the process have been terminated,
+ * the process will be terminated as well.
+ *
+ * @param t the thread
+ */
 void term_addDead(sThread *t);
 
 #endif /* TERMINATOR_H_ */

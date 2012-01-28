@@ -27,11 +27,18 @@
 #include <sys/mutex.h>
 #include <assert.h>
 
+/**
+ * We use a treap (combination of binary tree and heap) to be able to find vm-regions by an address
+ * very quickly. To be able to walk through all vm-regions quickly as well, we maintain a linked
+ * list of this vm-regions as well.
+ */
+
 #define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
 static void vmreg_doRemove(sVMRegion **p,sVMRegion *reg);
 static void vmreg_doPrint(const sVMRegion *n,int layer);
 
+/* mutex for accessing/changing the list of all vm-regions */
 static mutex_t regMutex;
 static sVMRegTree *regList;
 static sVMRegTree *regListEnd;

@@ -453,6 +453,7 @@ void thread_terminate(sThread *t) {
 
 void thread_kill(sThread *t) {
 	size_t i;
+	assert(t->state == ST_ZOMBIE);
 	/* remove tls */
 	if(t->tlsRegion != NULL) {
 		vmm_remove(t->proc->pid,t->tlsRegion);

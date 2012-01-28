@@ -23,6 +23,12 @@
 #include <sys/video.h>
 #include <assert.h>
 
+/**
+ * The idea here is to allow a quick allocation and release of areas in the free-area of the
+ * virtual address space (for shared mem, shared libraries, TLS, ...). Therefore, we use a
+ * malloc-like management that keeps track of the free areas (not the used ones).
+ */
+
 bool vmfree_init(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	sVMFreeArea *a = cache_alloc(sizeof(sVMFreeArea));
 	if(!a)
@@ -47,6 +53,7 @@ void vmfree_destroy(sVMFreeMap *map) {
 uintptr_t vmfree_allocate(sVMFreeMap *map,size_t size) {
 	sVMFreeArea *a,*p;
 	uintptr_t res;
+	/* TODO is that correct on archs with page-size != 0x1000? */
 	assert((size & 0xFFF) == 0);
 	p = NULL;
 	for(a = map->list; a != NULL; p = a, a = a->next) {

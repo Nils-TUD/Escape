@@ -70,6 +70,7 @@ int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 				fprintf(stderr,"Unable to start thread\n");
 				close(fd);
 				free(task);
+				break;
 			}
 			printf("[%d] started\n",tid);
 			fflush(stdout);
@@ -86,8 +87,10 @@ static int clientthread(A_UNUSED void *arg) {
 	while(1) {
 		sMsg msg;
 		msg.args.arg1 = n;
-		send(fd,MSG_PARA_FIB,&msg,sizeof(msg));
-		IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+		if(send(fd,MSG_PARA_FIB,&msg,sizeof(msg)) < 0)
+			printe("Unable to send request");
+		if(IGNSIGS(receive(fd,NULL,&msg,sizeof(msg))) < 0)
+			printe("Unable to receive response");
 		printf("[%d] fib(%d) = %d\n",gettid(),n,msg.args.arg1);
 		fflush(stdout);
 		n++;

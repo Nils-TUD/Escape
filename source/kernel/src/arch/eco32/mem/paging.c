@@ -154,7 +154,7 @@ bool paging_isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= KERNEL_AREA && virt + count >= virt;
 }
 
-int paging_cloneKernelspace(pagedir_t *pdir,A_UNUSED uintptr_t kstackAddr) {
+int paging_cloneKernelspace(pagedir_t *pdir,A_UNUSED tid_t tid) {
 	frameno_t pdirFrame,stackPtFrame;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;

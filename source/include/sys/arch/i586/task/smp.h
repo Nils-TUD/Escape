@@ -22,7 +22,15 @@
 
 #include <sys/common.h>
 
+/**
+ * @param logId the logical id
+ * @return the physical id of the CPU with given logical id
+ */
 cpuid_t smp_getPhysId(cpuid_t logId);
+
+/**
+ * Tells the BSP that an AP is running
+ */
 void smp_apIsRunning(void);
 
 #endif /* I586_SMP_H_ */

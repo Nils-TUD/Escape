@@ -26,7 +26,7 @@
 
 #ifdef __i386__
 static A_INLINE void spinlock_aquire(klock_t *l) {
-	__asm__ (
+	__asm__ volatile (
 		"mov	$1,%%ecx;"
 		"1:"
 		"	xor		%%eax,%%eax;"

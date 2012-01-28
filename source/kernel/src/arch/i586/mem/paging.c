@@ -234,10 +234,11 @@ void paging_unmapFromTemp(size_t count) {
 	spinlock_release(&tmpMapLock);
 }
 
-int paging_cloneKernelspace(pagedir_t *pdir,uintptr_t kstackAddr) {
-	uintptr_t kstackPtAddr;
+int paging_cloneKernelspace(pagedir_t *pdir,tid_t tid) {
+	uintptr_t kstackAddr,kstackPtAddr;
 	frameno_t pdirFrame,stackPtFrame;
 	pde_t *pd,*npd;
+	sThread *t = thread_getById(tid);
 	pagedir_t *cur = paging_getPageDir();
 	spinlock_aquire(&pagingLock);
 
@@ -277,6 +278,7 @@ int paging_cloneKernelspace(pagedir_t *pdir,uintptr_t kstackAddr) {
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
+	kstackAddr = t->archAttr.kernelStack;
 	npd[ADDR_TO_PDINDEX(kstackAddr)] =
 			stackPtFrame << PAGE_SIZE_SHIFT | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 	/* clear the page-table */

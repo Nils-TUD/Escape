@@ -22,13 +22,58 @@
 
 #include <sys/common.h>
 
+/**
+ * Allocates <size> bytes from the cache
+ *
+ * @param size the size
+ * @return the pointer to the allocated area or NULL
+ */
 void *cache_alloc(size_t size);
+
+/**
+ * Allocates <num> objects with <size> bytes from the cache and zero's the memory.
+ *
+ * @param num the number of objects
+ * @param size the size of an object
+ * @return the pointer to the allocated area or NULL
+ */
 void *cache_calloc(size_t num,size_t size);
+
+/**
+ * Reallocates the area at <p> to be <size> bytes large. This may involve moving it to a different
+ * location.
+ *
+ * @param p the area
+ * @param size the new size of the area
+ * @return the potentially new location of the area or NULL
+ */
 void *cache_realloc(void *p,size_t size);
+
+/**
+ * Frees the given area
+ *
+ * @param p the area
+ */
 void cache_free(void *p);
+
+/**
+ * @return the number of pages used by the cache
+ */
 size_t cache_getPageCount(void);
+
+/**
+ * @return the occupied memory
+ */
 size_t cache_getOccMem(void);
+
+/**
+ * @return the used memory
+ */
 size_t cache_getUsedMem(void);
+
+/**
+ * Prints the cache
+ */
 void cache_print(void);
 
 

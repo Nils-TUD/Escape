@@ -25,6 +25,8 @@
 #include <sys/mem/vmm.h>
 #include <sys/syscalls/mem.h>
 #include <sys/syscalls.h>
+#include <sys/boot.h>
+#include <esc/fsinterface.h>
 #include <string.h>
 #include <errno.h>
 
@@ -100,6 +102,30 @@ int sysc_regctrl(sThread *t,sIntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
+}
+
+int sysc_mapmod(sThread *t,sIntrptStackFrame *stack) {
+	char namecpy[MAX_NAME_LEN + 1];
+	const char *name = (const char*)SYSC_ARG1(stack);
+	size_t sizecpy,*size = (size_t*)SYSC_ARG2(stack);
+	pid_t pid = t->proc->pid;
+	uintptr_t addr,phys;
+
+	if(!paging_isInUserSpace((uintptr_t)size,sizeof(size_t)))
+		SYSC_ERROR(stack,-EFAULT);
+
+	strnzcpy(namecpy,name,sizeof(namecpy));
+	phys = boot_getModuleRange(namecpy,&sizecpy);
+	if(phys == 0)
+		SYSC_ERROR(stack,-ENOENT);
+
+	/* TODO that means, that everybody can map every module writable! */
+	/* perhaps we should provide a ROM instead of a ramdisk? */
+	addr = vmm_addPhys(pid,&phys,sizecpy,1);
+	if(addr == 0)
+		SYSC_ERROR(stack,-ENOMEM);
+	*size = sizecpy;
+	SYSC_RET1(stack,addr);
 }
 
 int sysc_mapphys(sThread *t,sIntrptStackFrame *stack) {

@@ -90,6 +90,15 @@ size_t boot_getModuleSize(void);
 size_t boot_getUsableMemCount(void);
 
 /**
+ * Determines the physical address range of the multiboot-module with given name
+ *
+ * @param name the module-name
+ * @param size will be set to the size in bytes
+ * @return the address of the module (physical) or 0 if not found
+ */
+uintptr_t boot_getModuleRange(const char *name,size_t *size);
+
+/**
  * Loads all multiboot-modules
  *
  * @param stack the interrupt-stack-frame

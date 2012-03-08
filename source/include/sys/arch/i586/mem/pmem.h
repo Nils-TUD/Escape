@@ -62,10 +62,11 @@
 #define PAGE_SIZE				(4 * K)
 #define PAGE_SIZE_SHIFT			12
 
-#define BITMAP_START			((uintptr_t)bitmap - KERNEL_AREA)
+#define BITMAP_START			bitmapStart
 #define BITMAP_PAGE_COUNT		((2 * M) / PAGE_SIZE)
-#define PMEM_END				KERNEL_HEAP_START
+#define PMEM_END				(BOOTSTRAP_AREA + BOOTSTRAP_AREA_SIZE)
 
 typedef ulong tBitmap;
+extern uintptr_t bitmapStart;
 
 #endif /* I586_PMEM_H_ */

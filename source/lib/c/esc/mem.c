@@ -24,6 +24,7 @@
 /* the assembler-routine */
 extern ssize_t _chgsize(ssize_t count);
 extern intptr_t _mapphys(uintptr_t *phys,size_t count,size_t align);
+extern intptr_t _mapmod(const char *name,size_t *size);
 extern intptr_t _regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,
 		size_t loadCount,uint type);
 extern intptr_t _shmcrt(const char *name,size_t byteCount);
@@ -39,6 +40,14 @@ void *chgsize(ssize_t count) {
 
 void *mapphys(uintptr_t phys,size_t count) {
 	intptr_t addr = _mapphys(&phys,count,1);
+	/* FIXME workaround until we have TLS */
+	if(addr >= -200 && addr < 0)
+		return NULL;
+	return (void*)addr;
+}
+
+void *mapmod(const char *name,size_t *size) {
+	intptr_t addr = _mapmod(name,size);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;

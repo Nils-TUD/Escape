@@ -117,46 +117,45 @@ static void paging_printPage(pte_t page);
 
 /* the page-directory for process 0 */
 static pde_t proc0PD[PAGE_SIZE / sizeof(pde_t)] A_ALIGNED(PAGE_SIZE);
-/* the page-tables for process 0 (two because our mm-stack will get large if we have a lot physmem) */
-static pte_t proc0PT1[PAGE_SIZE / sizeof(pte_t)] A_ALIGNED(PAGE_SIZE);
-static pte_t proc0PT2[PAGE_SIZE / sizeof(pte_t)] A_ALIGNED(PAGE_SIZE);
+/* the page-table for process 0 */
+static pte_t proc0PT[PAGE_SIZE / sizeof(pte_t)] A_ALIGNED(PAGE_SIZE);
 static klock_t tmpMapLock;
 /* TODO we could maintain different locks for userspace and kernelspace; since just the kernel is
  * shared. it would be better to have a global lock for that and a pagedir-lock for the userspace */
 static klock_t pagingLock;
 
 void paging_init(void) {
-	size_t j,i;
-	uintptr_t pd,vaddr,addr,end;
-	pte_t *pts[] = {proc0PT1,proc0PT2};
+	size_t i;
+	uintptr_t pd,addr;
 
-	/* note that we assume here that the kernel including mm-stack is not larger than 2
-	 * complete page-tables (8MiB)! */
+	/* note that we assume here that the kernel is not larger than 1 page-table (4MiB)! */
 
-	/* map 2 page-tables at 0xC0000000 */
-	vaddr = KERNEL_AREA;
-	addr = KERNEL_AREA_P_ADDR;
+	/* map 1 page-table at 0xC0000000 */
 	pd = (uintptr_t)VIRT2PHYS(proc0PD);
-	for(j = 0; j < 2; j++) {
-		uintptr_t pt = VIRT2PHYS(pts[j]);
 
-		/* map one page-table */
-		end = addr + (PT_ENTRY_COUNT) * PAGE_SIZE;
-		for(i = 0; addr < end; i++, addr += PAGE_SIZE) {
-			/* build page-table entry */
-			pts[j][i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
-		}
-
-		/* insert page-table in the page-directory */
-		proc0PD[ADDR_TO_PDINDEX(vaddr)] = pt | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
-		/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
-		proc0PD[j] = pt | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
-
-		vaddr += PT_ENTRY_COUNT * PAGE_SIZE;
+	/* map one page-table */
+	addr = KERNEL_AREA_P_ADDR;
+	for(i = 0; i < PT_ENTRY_COUNT; i++, addr += PAGE_SIZE) {
+		/* build page-table entry */
+		proc0PT[i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
 	}
+
+	/* insert page-table in the page-directory */
+	proc0PD[ADDR_TO_PDINDEX(KERNEL_AREA)] =
+			(uintptr_t)VIRT2PHYS(proc0PT) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
+	/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
+	proc0PD[0] = (uintptr_t)VIRT2PHYS(proc0PT) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 
 	/* put the page-directory in the last page-dir-slot */
 	proc0PD[ADDR_TO_PDINDEX(MAPPED_PTS_START)] = pd | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
+
+	/* create page-tables for multiboot-stuff */
+	addr += PT_ENTRY_COUNT * PAGE_SIZE;
+	for(i = 0; i < BOOTSTRAP_PTS; i++) {
+		memclear((void*)addr,PAGE_SIZE);
+		proc0PD[ADDR_TO_PDINDEX(BOOTSTRAP_AREA) + i] = addr | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
+		addr += PAGE_SIZE;
+	}
 
 	/* now set page-dir and enable paging */
 	paging_activate((uintptr_t)proc0PD & ~KERNEL_AREA);
@@ -191,9 +190,9 @@ void paging_setFirst(pagedir_t *pdir) {
 void paging_mapKernelSpace(void) {
 	uintptr_t addr,end;
 	pde_t *pde;
-	/* insert all page-tables for 0xC0800000 .. 0xFF3FFFFF into the page dir */
-	addr = KERNEL_AREA + (PAGE_SIZE * PT_ENTRY_COUNT * 2);
-	end = KERNEL_STACK_AREA;
+	/* insert all page-tables for 0xC0400000 .. 0xFF3FFFFF into the page dir */
+	addr = KERNEL_AREA + (PAGE_SIZE * PT_ENTRY_COUNT * 1);
+	end = BOOTSTRAP_AREA;
 	pde = (pde_t*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
 		/* get frame and insert into page-dir */

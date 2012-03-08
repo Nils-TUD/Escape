@@ -31,6 +31,7 @@
 int sysc_chgsize(sThread *t,sIntrptStackFrame *stack);
 int sysc_regadd(sThread *t,sIntrptStackFrame *stack);
 int sysc_regctrl(sThread *t,sIntrptStackFrame *stack);
+int sysc_mapmod(sThread *t,sIntrptStackFrame *stack);
 int sysc_mapphys(sThread *t,sIntrptStackFrame *stack);
 int sysc_shmcrt(sThread *t,sIntrptStackFrame *stack);
 int sysc_shmjoin(sThread *t,sIntrptStackFrame *stack);

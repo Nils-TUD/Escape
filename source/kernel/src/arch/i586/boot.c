@@ -50,6 +50,7 @@
 #include <string.h>
 #include <assert.h>
 
+#define MOD_COUNT				5
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 
 static const sBootTask tasks[] = {
@@ -82,18 +83,21 @@ const sBootTaskList bootTaskList = {
 	.tasks = tasks,
 	.count = ARRAY_SIZE(tasks),
 	/* ata, cmos, pci and fs */
-	.moduleCount = 4
+	.moduleCount = MOD_COUNT
 };
+static uintptr_t physModAddrs[MOD_COUNT];
 
 extern uintptr_t KernelStart;
 static sBootInfo *mb;
 static bool loadedMods = false;
+static uintptr_t mmStackBegin;
 
 void boot_arch_start(sBootInfo *info) {
-	size_t i;
+	size_t i,j;
 	sModule *mod;
 	int argc;
 	const char **argv;
+	uintptr_t addr;
 
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
 	 * and "correct" the GDT */
@@ -101,22 +105,81 @@ void boot_arch_start(sBootInfo *info) {
 	gdt_init();
 	thread_setRunning(NULL);
 
-	/* save the multiboot-structure
-	 * (change to 0xC...0 since we get the address at 0x0...0 from GRUB) */
-	mb = (sBootInfo*)((uintptr_t)info | KERNEL_AREA);
+	/* map the multiboot-structure (may be anywhere in memory) */
+	addr = BOOTSTRAP_AREA;
+	mb = (sBootInfo*)(addr + ((uintptr_t)info & (PAGE_SIZE - 1)));
+	uintptr_t mbstart = (uintptr_t)info;
+	uintptr_t mbend = mbstart + sizeof(sBootInfo);
+	for(; mbstart < mbend; mbstart += PAGE_SIZE) {
+		frameno_t frame = mbstart / PAGE_SIZE;
+		paging_map(addr,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+		addr += PAGE_SIZE;
+	}
 
-	/* change the address of the pointers in the structure, too */
-	mb->cmdLine = (char*)((uintptr_t)mb->cmdLine | KERNEL_AREA);
-	mb->modsAddr = (sModule*)((uintptr_t)mb->modsAddr | KERNEL_AREA);
-	mb->mmapAddr = (sMemMap*)((uintptr_t)mb->mmapAddr | KERNEL_AREA);
-	mb->drivesAddr = (sDrive*)((uintptr_t)mb->drivesAddr | KERNEL_AREA);
+	/* determine the address-range for the data mb points to */
+	uintptr_t begin = 0xFFFFFFFF,end = 0,cur;
+	void **ptrs[] = {
+		(void**)&mb->cmdLine,(void**)&mb->modsAddr,(void**)&mb->mmapAddr,(void**)&mb->drivesAddr
+	};
+	j = CHECK_FLAG(mb->flags,7) ? ARRAY_SIZE(ptrs) : ARRAY_SIZE(ptrs) - 1;
+	for(i = 0; i < j; i++) {
+		if((uintptr_t)*(ptrs[i]) < begin)
+			begin = (uintptr_t)*(ptrs[i]);
+		if((uintptr_t)*(ptrs[i]) > end)
+			end = (uintptr_t)*(ptrs[i]);
+	}
+	/* change it */
+	for(i = 0; i < j; i++)
+		*(ptrs[i]) = (void*)((uintptr_t)*(ptrs[i]) - (begin & ~(PAGE_SIZE - 1)) + addr);
+	/* map that area (+2 pages should be enough) */
+	for(cur = begin; cur < end + PAGE_SIZE * 2; cur += PAGE_SIZE) {
+		paging_map(addr,&cur,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
+		addr += PAGE_SIZE;
+	}
+
+	if(mb->modsCount > MOD_COUNT)
+		util_panic("Too many modules (max %u)",MOD_COUNT);
+
+	/* determine module-name range */
+	begin = 0xFFFFFFFF,end = 0;
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
-		mod->modStart |= KERNEL_AREA;
-		mod->modEnd |= KERNEL_AREA;
-		mod->name = (char*)((uintptr_t)mod->name | KERNEL_AREA);
+		if((uintptr_t)mod->name < begin)
+			begin = (uintptr_t)mod->name;
+		if((uintptr_t)mod->name > end)
+			end = (uintptr_t)mod->name;
 		mod++;
 	}
+	/* change it */
+	mod = mb->modsAddr;
+	for(i = 0; i < mb->modsCount; i++) {
+		mod->name = (char*)((uintptr_t)mod->name - (begin & ~(PAGE_SIZE - 1)) + addr);
+		mod++;
+	}
+	/* map module names (+1 page) */
+	for(cur = begin; cur < end + PAGE_SIZE; cur += PAGE_SIZE) {
+		paging_map(addr,&cur,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
+		addr += PAGE_SIZE;
+	}
+
+	/* now map modules */
+	mod = mb->modsAddr;
+	for(i = 0; i < mb->modsCount; i++) {
+		uintptr_t maddr = mod->modStart;
+		size_t size = mod->modEnd - mod->modStart;
+		uintptr_t mend = maddr + size;
+		physModAddrs[i] = maddr;
+		mod->modStart = addr + (mod->modStart & (PAGE_SIZE - 1));
+		mod->modEnd = mod->modStart + size;
+		for(; maddr < mend; maddr += PAGE_SIZE) {
+			if(addr >= BOOTSTRAP_AREA + BOOTSTRAP_AREA_SIZE)
+				util_panic("Multiboot-modules too large");
+			paging_map(addr,&maddr,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
+			addr += PAGE_SIZE;
+		}
+		mod++;
+	}
+	mmStackBegin = addr;
 
 	/* parse boot parameters */
 	argv = boot_parseArgs(mb->cmdLine,&argc);
@@ -129,6 +192,10 @@ void boot_arch_start(sBootInfo *info) {
 
 const sBootInfo *boot_getInfo(void) {
 	return mb;
+}
+
+uintptr_t boot_getMMStackBegin(void) {
+	return mmStackBegin;
 }
 
 size_t boot_getKernelSize(void) {
@@ -155,6 +222,19 @@ size_t boot_getUsableMemCount(void) {
 	return size;
 }
 
+uintptr_t boot_getModuleRange(const char *name,size_t *size) {
+	size_t i;
+	sModule *mod = mb->modsAddr;
+	for(i = 0; i < mb->modsCount; i++) {
+		if(strcmp(mod->name,name) == 0) {
+			*size = mod->modEnd - mod->modStart;
+			return physModAddrs[i];
+		}
+		mod++;
+	}
+	return 0;
+}
+
 int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	char loadingStatus[256];
 	size_t i;
@@ -171,6 +251,12 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 		/* parse args */
 		int argc;
 		const char **argv = boot_parseArgs(mod->name,&argc);
+		/* ignore modules with just a path; this might be a ramdisk */
+		if(argc == 1) {
+			boot_taskFinished();
+			mod++;
+			continue;
+		}
 		if(argc < 2)
 			util_panic("Invalid arguments for multiboot-module: %s\n",mod->name);
 

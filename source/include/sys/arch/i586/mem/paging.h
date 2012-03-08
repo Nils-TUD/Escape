@@ -123,6 +123,11 @@
 /* for mapping the TSS's for APs (have to be page-aligned) */
 #define TSS_AREA				(APIC_AREA + APIC_AREA_SIZE)
 
+/* for mapping the multiboot stuff and the mm-stack */
+#define BOOTSTRAP_AREA			0xE0000000
+#define BOOTSTRAP_PTS			20
+#define BOOTSTRAP_AREA_SIZE		(BOOTSTRAP_PTS * PAGE_SIZE * PT_ENTRY_COUNT)
+
 /* area for global-file-table */
 #define GFT_AREA				0xD0000000
 #define GFT_AREA_SIZE			(4 * M)

@@ -122,11 +122,12 @@ static const sSyscall syscalls[] = {
 	/* 74 */	{sysc_setgroups,			2},
 	/* 75 */	{sysc_isingroup,			2},
 	/* 76 */	{sysc_alarm,				1},
+	/* 77 */	{sysc_mapmod,				2},
 #ifdef __i386__
-	/* 77 */	{sysc_reqports,				2},
-	/* 78 */	{sysc_relports,				2},
-	/* 79 */	{sysc_vm86int,				4},
-	/* 80 */	{sysc_vm86start,			0},
+	/* 78 */	{sysc_reqports,				2},
+	/* 79 */	{sysc_relports,				2},
+	/* 80 */	{sysc_vm86int,				4},
+	/* 81 */	{sysc_vm86start,			0},
 #endif
 };
 

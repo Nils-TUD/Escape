@@ -93,6 +93,16 @@ int regctrl(uintptr_t addr,uint prot);
 void *mapphys(uintptr_t phys,size_t count) A_CHECKRET;
 
 /**
+ * Maps the multiboot module with given name in the virtual address space and returns the
+ * start-address.
+ *
+ * @param name the module-name
+ * @param size will be set to the module size
+ * @return the virtual address where it has been mapped or NULL if an error occurred
+ */
+void *mapmod(const char *name,size_t *size) A_CHECKRET;
+
+/**
  * Allocates <count> bytes contiguous physical memory, <align>-bytes aligned.
  *
  * @param phys will be set to the chosen physical address

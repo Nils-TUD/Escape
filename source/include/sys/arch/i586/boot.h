@@ -110,6 +110,11 @@ typedef struct {
 void boot_arch_start(sBootInfo *info);
 
 /**
+ * @return the address for the mm-stack
+ */
+uintptr_t boot_getMMStackBegin(void);
+
+/**
  * @return the multiboot-info-structure
  */
 const sBootInfo *boot_getInfo(void);

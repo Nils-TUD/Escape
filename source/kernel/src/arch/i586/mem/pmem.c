@@ -25,16 +25,14 @@
 #include <sys/video.h>
 #include <string.h>
 
-static uintptr_t bitmapStart;
+uintptr_t bitmapStart;
 
 void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	size_t memSize,defPageCount;
 	const sBootInfo *mb = boot_getInfo();
 
-	/* put the MM-stack behind the last multiboot-module */
-	if(mb->modsCount == 0)
-		util_panic("No multiboot-modules found");
-	*stackBegin = mb->modsAddr[mb->modsCount - 1].modEnd;
+	/* put the MM-stack behind the multiboot-pagetables */
+	*stackBegin = boot_getMMStackBegin();
 
 	/* calculate mm-stack-size */
 	memSize = mb->memUpper * K;
@@ -44,7 +42,17 @@ void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	/* the first usable frame in the bitmap is behind the mm-stack */
 	*bitmap = (tBitmap*)(*stackBegin + (*stackSize + 1) * PAGE_SIZE);
 	*bitmap = (tBitmap*)(((uintptr_t)*bitmap + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-	bitmapStart = (uintptr_t)*bitmap - KERNEL_AREA;
+
+	/* map that area */
+	uintptr_t phys = (KERNEL_P_ADDR + boot_getModuleSize() + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	uintptr_t virt = *stackBegin,end = (uintptr_t)*bitmap + BITMAP_PAGE_COUNT / 8;
+	bitmapStart = phys + (*stackSize + 1) * PAGE_SIZE;
+	while(virt < end) {
+		paging_map(virt,&phys,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
+		virt += PAGE_SIZE;
+		phys += PAGE_SIZE;
+	}
+
 	/* mark all free */
 	memset(*bitmap,0xFF,BITMAP_PAGE_COUNT / 8);
 }

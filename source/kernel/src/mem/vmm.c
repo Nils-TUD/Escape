@@ -70,7 +70,7 @@ void vmm_init(void) {
 	/* nothing to do */
 }
 
-uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align) {
+uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool writable) {
 	sVMRegion *vm;
 	ssize_t res;
 	sProc *p;
@@ -108,7 +108,8 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align) {
 	p = vmm_reqProc(pid);
 	if(!p)
 		goto errorRem;
-	res = paging_mapTo(&p->pagedir,vm->virt,frames,pages,PG_PRESENT | PG_WRITABLE);
+	res = paging_mapTo(&p->pagedir,vm->virt,frames,pages,
+			writable ? PG_PRESENT | PG_WRITABLE : PG_PRESENT);
 	if(res < 0)
 		goto errorRel;
 	if(*phys) {

@@ -119,9 +119,7 @@ int sysc_mapmod(sThread *t,sIntrptStackFrame *stack) {
 	if(phys == 0)
 		SYSC_ERROR(stack,-ENOENT);
 
-	/* TODO that means, that everybody can map every module writable! */
-	/* perhaps we should provide a ROM instead of a ramdisk? */
-	addr = vmm_addPhys(pid,&phys,sizecpy,1);
+	addr = vmm_addPhys(pid,&phys,sizecpy,1,false);
 	if(addr == 0)
 		SYSC_ERROR(stack,-ENOMEM);
 	*size = sizecpy;
@@ -142,7 +140,7 @@ int sysc_mapphys(sThread *t,sIntrptStackFrame *stack) {
 	if(physCpy && !pmem_canMap(physCpy,bytes))
 		SYSC_ERROR(stack,-EFAULT);
 
-	addr = vmm_addPhys(pid,&physCpy,bytes,align);
+	addr = vmm_addPhys(pid,&physCpy,bytes,align,true);
 	if(addr == 0)
 		SYSC_ERROR(stack,-ENOMEM);
 	*phys = physCpy;

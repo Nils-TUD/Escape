@@ -1,3 +1,3 @@
-NAME=ramdisk
+NAME=romdisk
 
 -include ../../ShlibSimpleMakefile.mk

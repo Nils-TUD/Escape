@@ -62,9 +62,10 @@ void vmm_init(void);
  * 	contiguous physical memory itself and stores the address in *phys
  * @param bCount the number of bytes to map
  * @param align the alignment for the allocated physical-memory (just if *phys = 0)
+ * @param writable whether it should be mapped writable
  * @return the virtual address or 0 if failed
  */
-uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align);
+uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool writable);
 
 /**
  * Adds a region of given type to the given process. Note that you can't add regions in arbitrary

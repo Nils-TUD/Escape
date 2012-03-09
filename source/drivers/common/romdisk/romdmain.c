@@ -36,13 +36,13 @@ int main(int argc,char **argv) {
 	if(argc != 3)
 		error("Usage: %s <wait> <module>",argv[0]);
 
-	id = createdev("/dev/ramdisk",DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE);
+	id = createdev("/dev/romdisk",DEV_TYPE_BLOCK,DEV_READ);
 	if(id < 0)
-		error("Unable to register device 'ramdisk'");
+		error("Unable to register device 'romdisk'");
 
 	addr = (char*)mapmod(argv[2],&size);
 	if(!addr)
-		error("Unable to map module '%s' as ramdisk",argv[2]);
+		error("Unable to map module '%s' as romdisk",argv[2]);
 
 	if(fcntl(id,F_SETDATA,true) < 0)
 		error("fcntl");
@@ -69,16 +69,6 @@ int main(int argc,char **argv) {
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1 > 0)
 						send(fd,MSG_DEV_READ_RESP,addr + offset,msg.data.arg1);
-				}
-				break;
-
-				case MSG_DEV_WRITE: {
-					ulong offset = msg.args.arg1;
-					ulong count = msg.args.arg2;
-					msg.args.arg1 = 0;
-					if(offset + count <= size && offset + count > offset)
-						msg.args.arg1 = IGNSIGS(receive(fd,&mid,addr + offset,count));
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 

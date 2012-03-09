@@ -213,7 +213,7 @@ qemumb:	all prepareQemu prepareRun
 
 qemumbrd:	all prepareQemu prepareRun
 	$(QEMU) $(QEMUARGS) -kernel $(BUILD)/kernel.bin -append 'videomode=vesa' \
-		-initrd "$(RELBUILD)/driver_ramdisk.bin /dev/ramdisk $(RELBUILD)/cd.iso,$(RELBUILD)/driver_cmos.bin /dev/cmos,$(RELBUILD)/driver_fs.bin /dev/fs /dev/ramdisk iso9660,$(RELBUILD)/cd.iso"
+		-initrd "$(RELBUILD)/driver_romdisk.bin /dev/romdisk $(RELBUILD)/cd.iso,$(RELBUILD)/driver_cmos.bin /dev/cmos,$(RELBUILD)/driver_fs.bin /dev/fs /dev/romdisk iso9660,$(RELBUILD)/cd.iso"
 
 bochs: all prepareBochs prepareRun
 	bochs -f bochs.cfg -q

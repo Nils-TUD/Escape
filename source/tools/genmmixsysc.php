@@ -1,15 +1,15 @@
 #!/usr/bin/php
 <?php
 $syscalls = array(
-	array("getConf","SYSCALL_GETCONF"),
-	array("debugChar","SYSCALL_DEBUGCHAR"),
+	array("sysconf","SYSCALL_GETCONF"),
+	array("debugchar","SYSCALL_DEBUGCHAR"),
 	array("debug","SYSCALL_DEBUG"),
 
 	# driver
 	array("createdev","SYSCALL_CRTDEV"),
-	array("getClientId","SYSCALL_GETCLIENTID"),
-	array("getClient","SYSCALL_GETCLIENTPROC"),
-	array("getWork","SYSCALL_GETWORK"),
+	array("getclientid","SYSCALL_GETCLIENTID"),
+	array("getclient","SYSCALL_GETCLIENTPROC"),
+	array("getwork","SYSCALL_GETWORK"),
 
 	# I/O
 	array("open","SYSCALL_OPEN"),
@@ -25,8 +25,8 @@ $syscalls = array(
 	array("write","SYSCALL_WRITE"),
 	array("send","SYSCALL_SEND"),
 	array("receive","SYSCALL_RECEIVE"),
-	array("dupFd","SYSCALL_DUPFD"),
-	array("redirFd","SYSCALL_REDIRFD"),
+	array("dup","SYSCALL_DUPFD"),
+	array("redirect","SYSCALL_REDIRFD"),
 	array("link","SYSCALL_LINK"),
 	array("unlink","SYSCALL_UNLINK"),
 	array("mkdir","SYSCALL_MKDIR"),
@@ -37,14 +37,15 @@ $syscalls = array(
 	array("close","SYSCALL_CLOSE"),
 
 	# memory
-	array("_changeSize","SYSCALL_CHGSIZE"),
-	array("_addRegion","SYSCALL_ADDREGION"),
-	array("setRegProt","SYSCALL_SETREGPROT"),
-	array("_mapPhysical","SYSCALL_MAPPHYS"),
-	array("_createSharedMem","SYSCALL_CREATESHMEM"),
-	array("_joinSharedMem","SYSCALL_JOINSHMEM"),
-	array("leaveSharedMem","SYSCALL_LEAVESHMEM"),
-	array("destroySharedMem","SYSCALL_DESTROYSHMEM"),
+	array("_chgsize","SYSCALL_CHGSIZE"),
+	array("_regadd","SYSCALL_ADDREGION"),
+	array("regctrl","SYSCALL_SETREGPROT"),
+	array("_mapphys","SYSCALL_MAPPHYS"),
+	array("_mapmod","SYSCALL_MAPMOD"),
+	array("_shmcrt","SYSCALL_CREATESHMEM"),
+	array("_shmjoin","SYSCALL_JOINSHMEM"),
+	array("shmleave","SYSCALL_LEAVESHMEM"),
+	array("shmdel","SYSCALL_DESTROYSHMEM"),
 
 	# process
 	array("getpid","SYSCALL_PID"),
@@ -62,26 +63,26 @@ $syscalls = array(
 	array("isingroup","SYSCALL_ISINGROUP"),
 	array("fork","SYSCALL_FORK"),
 	array("exec","SYSCALL_EXEC"),
-	array("waitChild","SYSCALL_WAITCHILD"),
+	array("waitchild","SYSCALL_WAITCHILD"),
 	array("getenvito","SYSCALL_GETENVITO"),
 	array("getenvto","SYSCALL_GETENVTO"),
 	array("setenv","SYSCALL_SETENV"),
 
 	# signals
-	array("setSigHandler","SYSCALL_SETSIGH"),
-	array("sendSignalTo","SYSCALL_SENDSIG"),
+	array("signal","SYSCALL_SETSIGH"),
+	array("kill","SYSCALL_SENDSIG"),
 
 	# thread
 	array("gettid","SYSCALL_GETTID"),
-	array("getThreadCount","SYSCALL_GETTHREADCNT"),
-	array("_startThread","SYSCALL_STARTTHREAD"),
+	array("getthreadcnt","SYSCALL_GETTHREADCNT"),
+	array("_startthread","SYSCALL_STARTTHREAD"),
 	array("_exit","SYSCALL_EXIT"),
-	array("getCycles","SYSCALL_GETCYCLES"),
+	array("getcycles","SYSCALL_GETCYCLES"),
 	array("yield","SYSCALL_YIELD"),
 	array("alarm","SYSCALL_ALARM"),
 	array("sleep","SYSCALL_SLEEP"),
-	array("waitmUntil","SYSCALL_WAIT"),
-	array("_waitUnlock","SYSCALL_WAITUNLOCK"),
+	array("waitmuntil","SYSCALL_WAIT"),
+	array("_waitunlock","SYSCALL_WAITUNLOCK"),
 	array("notify","SYSCALL_NOTIFY"),
 	array("_lock","SYSCALL_LOCK"),
 	array("_unlock","SYSCALL_UNLOCK"),

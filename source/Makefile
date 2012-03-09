@@ -1,6 +1,6 @@
 # general
-ARCH = i586
-GCCVER = 4.4.3
+ARCH = mmix
+GCCVER = 4.6.0
 TARGET = $(ARCH)-elf-escape
 RELBUILD = build/$(ARCH)-release
 BUILDDIR = $(abspath $(RELBUILD))
@@ -31,7 +31,7 @@ GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
 # whether to link drivers and user-apps statically or dynamically (static | dynamic)
-export LINKTYPE = dynamic
+export LINKTYPE = static
 # if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (static | dynamic)
 export LIBGCC = dynamic
 

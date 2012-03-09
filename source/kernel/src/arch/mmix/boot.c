@@ -109,6 +109,17 @@ size_t boot_getModuleSize(void) {
 	return end - start;
 }
 
+uintptr_t boot_getModuleRange(const char *name,size_t *size) {
+	size_t i;
+	for(i = 1; i < info.progCount; i++) {
+		if(strcmp(progs[i].command,name) == 0) {
+			*size = progs[i].size;
+			return progs[i].start;
+		}
+	}
+	return 0;
+}
+
 size_t boot_getUsableMemCount(void) {
 	return info.memSize;
 }

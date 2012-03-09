@@ -43,7 +43,12 @@ void DriverProcess::load() {
 	std::string path = string("/sbin/") + name();
 	_pid = fork();
 	if(_pid == 0) {
-		exec(path.c_str(),NULL);
+		const char **argv = new const char*[_args.size() + 2];
+		argv[0] = path.c_str();
+		for(size_t i = 0; i < _args.size(); i++)
+			argv[i + 1] = _args[i].c_str();
+		argv[_args.size() + 1] = NULL;
+		exec(argv[0],argv);
 		cerr << "Exec of '" << path << "' failed" << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -86,6 +91,11 @@ std::istream& operator >>(std::istream& is,Device& dev) {
 
 std::istream& operator >>(std::istream& is,DriverProcess& drv) {
 	is >> drv._name;
+	while(!is.eof() && is.peek() != '\t') {
+		std::string arg;
+		is >> arg;
+		drv._args.push_back(arg);
+	}
 	while(is.peek() == '\t') {
 		Device dev;
 		is >> dev;

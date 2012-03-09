@@ -22,12 +22,13 @@
 
 #include <esc/common.h>
 #include <string>
+#include <vector>
 
 class Process {
 public:
-	Process(int id = 0) : _pid(id), _alive(false), _dead(false), _name(std::string()) {
+	Process(int id = 0) : _pid(id), _alive(), _dead(), _name(), _args() {
 	};
-	Process(const std::string& procName) : _pid(0), _alive(false), _dead(false), _name(procName) {
+	Process(const std::string& procName) : _pid(), _alive(), _dead(), _name(procName), _args() {
 	};
 	virtual ~Process() {
 	};
@@ -54,6 +55,9 @@ public:
 	const std::string& name() const {
 		return _name;
 	};
+	const std::vector<std::string>& args() const {
+		return _args;
+	};
 
 	virtual void load() {
 		// do nothing by default
@@ -66,6 +70,7 @@ protected:
 	bool _alive;
 	bool _dead;
 	std::string _name;
+	std::vector<std::string> _args;
 };
 
 #endif /* PROCESS_H_ */

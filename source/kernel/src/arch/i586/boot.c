@@ -80,7 +80,7 @@ static const sBootTask tasks[] = {
 	{"Initializing timer...",timer_init},
 	{"Initializing signal handling...",sig_init},
 };
-const sBootTaskList bootTaskList = {
+sBootTaskList bootTaskList = {
 	.tasks = tasks,
 	.count = ARRAY_SIZE(tasks),
 	/* ata, cmos, pci and fs */
@@ -150,6 +150,7 @@ void boot_arch_start(sBootInfo *info) {
 		}
 		mod++;
 	}
+	bootTaskList.moduleCount = mb->modsCount;
 	mmStackBegin = addr;
 
 	/* parse boot parameters */

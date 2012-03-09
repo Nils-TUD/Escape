@@ -1,8 +1,8 @@
 # general
-ARCH = mmix
-GCCVER = 4.6.0
+ARCH = i586
+GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-RELBUILD = build/$(ARCH)-release
+RELBUILD = build/$(ARCH)-debug
 BUILDDIR = $(abspath $(RELBUILD))
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = disk

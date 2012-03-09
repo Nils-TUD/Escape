@@ -28,16 +28,16 @@
 void LoginProcess::load() {
 	_pid = fork();
 	if(_pid == 0) {
-		const char *args[] = {"/bin/login",NULL,NULL};
-		args[1] = _vterm.c_str();
+		const char *argv[] = {"/bin/login",NULL,NULL};
+		argv[1] = _vterm.c_str();
 
 		/* close stdin,stdout and stderr */
 		close(STDIN_FILENO);
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
 
-		exec(args[0],args);
-		error("Exec of '%s' failed",args[0]);
+		exec(argv[0],argv);
+		error("Exec of '%s' failed",argv[0]);
 	}
 	else if(_pid < 0)
 		throw init_error("Fork failed");

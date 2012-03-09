@@ -63,10 +63,17 @@ static sVidMode *mode = modes + MODE;
 /* our state */
 static uint8_t *videoData;
 static sMsg msg;
+static bool usebios = true;
 
-int main(void) {
+int main(int argc,char **argv) {
 	int id;
 	msgid_t mid;
+
+	if(argc > 1 && strcmp(argv[1],"nobios") == 0) {
+		printf("[VGA] Disabled bios-calls; mode-switching will not be possible\n");
+		fflush(stdout);
+		usebios = false;
+	}
 
 	id = createdev("/dev/video",DEV_TYPE_BLOCK,DEV_WRITE);
 	if(id < 0)
@@ -82,8 +89,10 @@ int main(void) {
 		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
 	/* get video-mode and remember it */
-	modes[0].no = 2;/*vid_getMode()*/;
-	/*vid_setMode(false);*/
+	if(usebios) {
+		modes[0].no = vid_getMode();
+		vid_setMode(false);
+	}
 
 	/* wait for messages */
 	while(1) {
@@ -106,7 +115,7 @@ int main(void) {
 				break;
 
 				case MSG_VID_SETMODE: {
-					msg.args.arg1 = 0;/*vid_setMode(true);*/
+					msg.args.arg1 = usebios ? vid_setMode(true) : -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;

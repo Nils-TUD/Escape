@@ -122,6 +122,6 @@ const sBootInfo *boot_getInfo(void);
 /**
  * The boot-tasks to load
  */
-const sBootTaskList bootTaskList;
+sBootTaskList bootTaskList;
 
 #endif /* I586_BOOT_H_ */

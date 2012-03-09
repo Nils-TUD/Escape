@@ -38,20 +38,7 @@
 .set KERNEL_AREA,					0xC0000000
 .set KSTACK_CURTHREAD,				0xFD800FFC
 
-# Multiboot constants
-.set MULTIBOOT_PAGE_ALIGN,			1 << 0
-.set MULTIBOOT_MEMORY_INFO,			1 << 1
-.set MULTIBOOT_HEADER_MAGIC,		0x1BADB002
-.set MULTIBOOT_HEADER_FLAGS,		MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
-.set MULTIBOOT_CHECKSUM,			-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
-
 .section .text
-
-# Multiboot header (needed to boot from GRUB)
-.align 4
-.long		MULTIBOOT_HEADER_MAGIC
-.long		MULTIBOOT_HEADER_FLAGS
-.long		MULTIBOOT_CHECKSUM
 
 higherhalf:
 	# from now the CPU will translate automatically every address

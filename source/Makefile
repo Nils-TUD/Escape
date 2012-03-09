@@ -2,7 +2,7 @@
 ARCH = i586
 GCCVER = 4.4.3
 TARGET = $(ARCH)-elf-escape
-RELBUILD = build/$(ARCH)-debug
+RELBUILD = build/$(ARCH)-release
 BUILDDIR = $(abspath $(RELBUILD))
 DIST = ../toolchain/$(ARCH)
 DISKMOUNT = disk
@@ -16,9 +16,10 @@ VBOXOSTITLE = Escape v0.1
 KERNELNAME = kernel.bin
 KERNEL = $(BUILDDIR)/$(KERNELNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
+NULBUILD = /home/hrniels/nova/nul/build/bin/apps
 
 # simulators
-KVM = -enable-kvm
+#KVM = -enable-kvm
 QEMU = qemu-system-i386
 #-net nic,model=ne2k_pci -net user
 QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
@@ -30,7 +31,7 @@ GIMSIM = $(GIMMIX)/build/gimmix
 GIMMON = $(GIMMIX)/build/tests/manual/hexmon.rom
 
 # whether to link drivers and user-apps statically or dynamically (static | dynamic)
-export LINKTYPE = static
+export LINKTYPE = dynamic
 # if LINKTYPE = dynamic: whether to use the static or dynamic libgcc (static | dynamic)
 export LIBGCC = dynamic
 
@@ -111,6 +112,13 @@ hdd:
 
 cd:
 	$(MAKE) -C dist cd
+
+copy2nul:
+	cp -f $(BUILD)/kernel.bin $(NULBUILD)/escape.bin
+	cp -f $(BUILD)/driver_romdisk.bin $(NULBUILD)/escape_romdisk.bin
+	cp -f $(BUILD)/driver_cmos.bin $(NULBUILD)/escape_cmos.bin
+	cp -f $(BUILD)/driver_fs.bin $(NULBUILD)/escape_fs.bin
+	cp -f $(BUILD)/cd.iso $(NULBUILD)/escape.iso
 
 debughdd:
 	tools/disk.sh mkdiskdev
@@ -212,7 +220,7 @@ qemumb:	all prepareQemu prepareRun
 		-initrd "$(RELBUILD)/driver_pci.bin /dev/pci,$(RELBUILD)/driver_ata.bin /system/devices/ata,$(RELBUILD)/driver_cmos.bin /dev/cmos,$(RELBUILD)/driver_fs.bin /dev/fs cdrom iso9660"
 
 qemumbrd:	all prepareQemu prepareRun
-	$(QEMU) $(QEMUARGS) -kernel $(BUILD)/kernel.bin -append 'videomode=vesa' \
+	$(QEMU) $(QEMUARGS) -kernel $(BUILD)/kernel.bin -append 'videomode=vga' \
 		-initrd "$(RELBUILD)/driver_romdisk.bin /dev/romdisk $(RELBUILD)/cd.iso,$(RELBUILD)/driver_cmos.bin /dev/cmos,$(RELBUILD)/driver_fs.bin /dev/fs /dev/romdisk iso9660,$(RELBUILD)/cd.iso"
 
 bochs: all prepareBochs prepareRun

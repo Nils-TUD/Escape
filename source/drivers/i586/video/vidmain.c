@@ -1,5 +1,5 @@
 /**
- * $Id: vidmain.c 1001 2011-07-30 18:56:36Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -82,8 +82,8 @@ int main(void) {
 		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
 	/* get video-mode and remember it */
-	modes[0].no = vid_getMode();
-	vid_setMode(false);
+	modes[0].no = 2;/*vid_getMode()*/;
+	/*vid_setMode(false);*/
 
 	/* wait for messages */
 	while(1) {
@@ -106,7 +106,7 @@ int main(void) {
 				break;
 
 				case MSG_VID_SETMODE: {
-					msg.args.arg1 = vid_setMode(true);
+					msg.args.arg1 = 0;/*vid_setMode(true);*/
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;

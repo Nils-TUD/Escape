@@ -33,5 +33,5 @@ echo "/etc/keymaps/ger" > $DISK/etc/keymap
 $SUDO touch $DISK/file.txt
 $SUDO chmod 0666 $DISK/file.txt
 echo "This is a test-string!!!" > $DISK/file.txt
-$SUDO dd if=/dev/zero of=$DISK/zeros bs=1024 count=10240
+#$SUDO dd if=/dev/zero of=$DISK/zeros bs=1024 count=10240
 

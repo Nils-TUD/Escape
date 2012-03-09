@@ -34,7 +34,7 @@ int main(int argc,char **argv) {
 	size_t size;
 
 	if(argc != 3)
-		error("Usage: %s <wait> <module>",argv[0]);
+		error("Usage: %s <wait> <module> (got %d==%s==%s==%s)",argv[0],argc,argv[1],argv[2],argv[3]);
 
 	id = createdev("/dev/romdisk",DEV_TYPE_BLOCK,DEV_READ);
 	if(id < 0)

@@ -1,3 +1,3 @@
 NAME=romdisk
 
--include ../../ShlibSimpleMakefile.mk
+-include ../../StlibMakefile.mk

@@ -39,7 +39,7 @@ fi
 
 # change build-dir in makefile
 sed --in-place -e \
-	's/BUILDDIR = \$(abspath build\/\$(ARCH)-'$OLD')/BUILDDIR = \$(abspath build\/\$(ARCH)-'$NEW')/g' \
+	's/RELBUILD = build\/\$(ARCH)-'$OLD'/RELBUILD = build\/\$(ARCH)-'$NEW'/g' \
 	Makefile
 # change arch and gcc-version
 sed --in-place -e 's/ARCH = .*/ARCH = '$ARCH'/g' Makefile

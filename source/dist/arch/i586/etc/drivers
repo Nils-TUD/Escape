@@ -1,7 +1,5 @@
 video
 	/dev/video 0770 output
-vesatext
-	/dev/vesatext 0770 output
 zero
 	/dev/zero 0666 root
 random

@@ -113,13 +113,16 @@ void util_panic(const char *fmt,...) {
 	}
 
 	/* write into log only */
-	vid_setTargets(TARGET_SCREEN);
-	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
-	vid_setTargets(TARGET_LOG);
-	vmm_print(t->proc->pid);
-	paging_printCur(PD_PART_USER);
-	vid_setTargets(TARGET_SCREEN);
-	vid_printf("Done\n\nPress any key to start debugger");
+	if(t) {
+		vid_setTargets(TARGET_SCREEN);
+		vid_printf("\n\nWriting regions and page-directory of the current process to log...");
+		vid_setTargets(TARGET_LOG);
+		vmm_print(t->proc->pid);
+		paging_printCur(PD_PART_USER);
+		vid_setTargets(TARGET_SCREEN);
+		vid_printf("Done\n");
+	}
+	vid_printf("\nPress any key to start debugger");
 	while(1) {
 		kb_get(NULL,KEV_PRESS,true);
 		cons_start();
@@ -155,19 +158,22 @@ sFuncCall *util_getKernelStackTrace(void) {
 	uintptr_t start,end;
 	uint32_t* ebp;
 	sThread *t = thread_getRunning();
-	__asm__ volatile ("mov %%ebp,%0" : "=a" (ebp) : );
+	if(t) {
+		__asm__ volatile ("mov %%ebp,%0" : "=a" (ebp) : );
 
-	/* determine the stack-bounds; we have a temp stack at the beginning */
-	if((uintptr_t)ebp >= t->archAttr.kernelStack &&
-			(uintptr_t)ebp < t->archAttr.kernelStack + PAGE_SIZE) {
-		start = t->archAttr.kernelStack;
-		end = t->archAttr.kernelStack + PAGE_SIZE;
+		/* determine the stack-bounds; we have a temp stack at the beginning */
+		if((uintptr_t)ebp >= t->archAttr.kernelStack &&
+				(uintptr_t)ebp < t->archAttr.kernelStack + PAGE_SIZE) {
+			start = t->archAttr.kernelStack;
+			end = t->archAttr.kernelStack + PAGE_SIZE;
+		}
+		else {
+			start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
+			end = (uintptr_t)&kernelStack;
+		}
+		return util_getStackTrace(ebp,start,start,end);
 	}
-	else {
-		start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
-		end = (uintptr_t)&kernelStack;
-	}
-	return util_getStackTrace(ebp,start,start,end);
+	return NULL;
 }
 
 sFuncCall *util_getUserStackTraceOf(sThread *t) {

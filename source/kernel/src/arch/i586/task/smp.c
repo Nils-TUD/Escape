@@ -56,11 +56,13 @@ bool smp_init_arch(void) {
 	apic_init();
 	if(apic_isAvailable()) {
 		bool enabled = false;
+		/* try ACPI first to find the LAPICs */
 		if(acpi_find()) {
 			apic_enable();
 			acpi_parse();
 			enabled = true;
 		}
+		/* if that's not available, use MPConf */
 		else if(mpconf_find()) {
 			apic_enable();
 			mpconf_parse();
@@ -68,6 +70,11 @@ bool smp_init_arch(void) {
 		}
 
 		if(enabled) {
+			/* if we have not found CPUs by ACPI or MPConf, assume we have only the BSP */
+			if(smp_getCPUCount() == 0) {
+				enabled = false;
+				return false;
+			}
 			/* from now on, we'll use the logical-id as far as possible; but remember the physical
 			 * one for IPIs, e.g. */
 			cpuid_t id = apic_getId();

@@ -229,6 +229,9 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 	bool isValid;
 	if(created)
 		*created = false;
+	/* not initialized? */
+	if(nodeArray.objSize == 0)
+		return -ENOTSUP;
 
 	/* no absolute path? */
 	if(*path != '/')

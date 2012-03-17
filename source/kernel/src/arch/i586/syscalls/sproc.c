@@ -59,9 +59,12 @@ int sysc_relports(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_vm86start(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
-	assert(vm86_create() == 0);
-	/* don't change any registers on the stack here */
-	return 0;
+	int res;
+	if((res = vm86_create()) == 0) {
+		/* don't change any registers on the stack here */
+		return 0;
+	}
+	SYSC_ERROR(stack,res);
 }
 
 int sysc_vm86int(A_UNUSED sThread *t,sIntrptStackFrame *stack) {

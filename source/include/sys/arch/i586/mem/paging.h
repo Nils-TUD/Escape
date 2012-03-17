@@ -65,11 +65,13 @@
  * 0xC0C00000: +-----------------------------------+     r
  *             |           temp map area           |     e
  * 0xC1C00000: +-----------------------------------+     a
- *             |             APIC area             |     e
- * 0xC1C09000: +-----------------------------------+     a
- *             |             TSS area              |     e
- * 0x????????: +-----------------------------------+     a
- *             |                ...                |
+ *             |             APIC area             |
+ * 0xC1C09000: +-----------------------------------+     |
+ *             |             ACPI area             |     |
+ * 0xC1C11000: +-----------------------------------+     |
+ *             |             TSS area              |     |
+ * 0x????????: +-----------------------------------+     |
+ *             |                ...                |     |
  * 0xD0000000: +-----------------------------------+     |      -----
  *             |       VFS global file table       |     |        |
  * 0xD0400000: +-----------------------------------+     |
@@ -77,6 +79,10 @@
  * 0xD0800000: +-----------------------------------+     |
  *             |             sll nodes             |     |        |
  * 0xD2800000: +-----------------------------------+     |      -----
+ *             |                ...                |     |
+ * 0xE0000000: +-----------------------------------+     |
+ *             |           bootstrap area          |     |
+ * 0xE4FFFFFF: +-----------------------------------+     |
  *             |                ...                |     |
  * 0xFD800000: +-----------------------------------+     |      -----
  *             |           kernel-stacks           |     |        |
@@ -120,8 +126,12 @@
 #define APIC_AREA				(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
 #define APIC_AREA_SIZE			(PAGE_SIZE * 9)
 
+/* for mapping the ACPI stuff */
+#define ACPI_AREA				(APIC_AREA + APIC_AREA_SIZE)
+#define ACPI_AREA_SIZE			(PAGE_SIZE * 8)
+
 /* for mapping the TSS's for APs (have to be page-aligned) */
-#define TSS_AREA				(APIC_AREA + APIC_AREA_SIZE)
+#define TSS_AREA				(ACPI_AREA + ACPI_AREA_SIZE)
 
 /* for mapping the multiboot stuff and the mm-stack */
 #define BOOTSTRAP_AREA			0xE0000000

@@ -89,6 +89,9 @@ int vm86_create(void) {
 	sThread *t;
 	size_t i,frameCount;
 	int res;
+	/* already present? */
+	if(vm86Tid != INVALID_TID)
+		return -EINVAL;
 
 	/* create child */
 	/* Note that it is really necessary to set whether we're a VM86-task or not BEFORE we get

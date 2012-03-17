@@ -17,12 +17,13 @@ KERNELNAME = kernel.bin
 KERNEL = $(BUILDDIR)/$(KERNELNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 NULBUILD = /home/hrniels/nova/nul/build/bin/apps
+TFTP = /var/lib/tftpboot/escape
 
 # simulators
 #KVM = -enable-kvm
 QEMU = qemu-system-i386
 #-net nic,model=ne2k_pci -net user
-QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
+QEMUARGS = -smp 8 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
 ECO32 = ../eco32
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin
@@ -119,6 +120,13 @@ copy2nul:
 	cp -f $(BUILD)/driver_cmos.bin $(NULBUILD)/escape_cmos.bin
 	cp -f $(BUILD)/driver_fs.bin $(NULBUILD)/escape_fs.bin
 	cp -f $(BUILD)/cd.iso $(NULBUILD)/escape.iso
+
+copy2tftp:
+	$(SUDO) cp -f $(BUILD)/kernel.bin $(TFTP)/escape.bin
+	$(SUDO) cp -f $(BUILD)/driver_romdisk.bin $(TFTP)/escape_romdisk.bin
+	$(SUDO) cp -f $(BUILD)/driver_cmos.bin $(TFTP)/escape_cmos.bin
+	$(SUDO) cp -f $(BUILD)/driver_fs.bin $(TFTP)/escape_fs.bin
+	$(SUDO) cp -f $(BUILD)/cd.iso $(TFTP)/escape.iso
 
 debughdd:
 	tools/disk.sh mkdiskdev

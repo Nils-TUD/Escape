@@ -68,7 +68,7 @@ void DriverProcess::load() {
 		}
 		while(j++ < MAX_WAIT_RETRIES && res < 0);
 		if(res < 0)
-			throw init_error(string("Max retried reached while waiting for '") + it->name() + "'");
+			throw init_error(string("Max retries reached while waiting for '") + it->name() + "'");
 
 		// set permissions
 		if(chmod(it->name().c_str(),it->permissions()) < 0)

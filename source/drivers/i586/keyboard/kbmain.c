@@ -1,5 +1,5 @@
 /**
- * $Id: kbmain.c 1001 2011-07-30 18:56:36Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2011 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

@@ -42,7 +42,7 @@ int main(int argc,char **argv) {
 
 	addr = (char*)mapmod(argv[2],&size);
 	if(!addr)
-		error("Unable to map module '%s' as romdisk",argv[2]);
+		error("Unable to map module as romdisk",argv[2]);
 
 	if(fcntl(id,F_SETDATA,true) < 0)
 		error("fcntl");

@@ -105,7 +105,7 @@ int sysc_regctrl(sThread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_mapmod(sThread *t,sIntrptStackFrame *stack) {
-	char namecpy[MAX_NAME_LEN + 1];
+	char namecpy[256];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	size_t sizecpy,*size = (size_t*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;

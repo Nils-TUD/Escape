@@ -137,7 +137,7 @@ void acpi_parse(void) {
 	}
 
 	/* map the area, if possible */
-	size_t rsdtSize = (max + PAGE_SIZE - 1) - (min & ~(PAGE_SIZE - 1));
+	size_t rsdtSize = (max + PAGE_SIZE * 2 - 1) - (min & ~(PAGE_SIZE - 1));
 	if(rsdtSize > ACPI_AREA_SIZE - PAGE_SIZE) {
 		log_printf("ACPI RSDT area too large (need %zu bytes). Assuming one CPU.",rsdtSize);
 		return;

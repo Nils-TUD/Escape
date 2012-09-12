@@ -16,14 +16,14 @@ VBOXOSTITLE = Escape v0.1
 KERNELNAME = kernel.bin
 KERNEL = $(BUILDDIR)/$(KERNELNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
-NULBUILD = /home/hrniels/nova/nul/build/bin/apps
+NREBUILD = /home/hrniels/nova/myul/nre/dist/imgs
 TFTP = /var/lib/tftpboot/escape
 
 # simulators
 #KVM = -enable-kvm
 QEMU = qemu-system-i386
 #-net nic,model=ne2k_pci -net user
-QEMUARGS = -smp 8 -serial stdio -hda $(HDD) -boot order=d -vga std -m 128 -localtime
+QEMUARGS = -smp 1 -serial stdio -hda $(HDD) -boot order=c -vga std -m 128 -localtime
 ECO32 = ../eco32
 ECOSIM = $(ECO32)/build/bin/sim
 ECOMON = $(ECO32)/build/monitor/monitor.bin
@@ -114,12 +114,15 @@ hdd:
 cd:
 	$(MAKE) -C dist cd
 
-copy2nul:
-	cp -f $(BUILD)/kernel.bin $(NULBUILD)/escape.bin
-	cp -f $(BUILD)/driver_romdisk.bin $(NULBUILD)/escape_romdisk.bin
-	cp -f $(BUILD)/driver_cmos.bin $(NULBUILD)/escape_cmos.bin
-	cp -f $(BUILD)/driver_fs.bin $(NULBUILD)/escape_fs.bin
-	cp -f $(BUILD)/cd.iso $(NULBUILD)/escape.iso
+copy2nre:
+	cp -f $(BUILD)/kernel.bin $(NREBUILD)/escape.bin
+	cp -f $(BUILD)/driver_pci.bin $(NREBUILD)/escape_pci.bin
+	cp -f $(BUILD)/driver_ata.bin $(NREBUILD)/escape_ata.bin
+	cp -f $(BUILD)/driver_romdisk.bin $(NREBUILD)/escape_romdisk.bin
+	cp -f $(BUILD)/driver_cmos.bin $(NREBUILD)/escape_cmos.bin
+	cp -f $(BUILD)/driver_fs.bin $(NREBUILD)/escape_fs.bin
+	cp -f $(BUILD)/cd.iso $(NREBUILD)/escape.iso
+	cp -f $(BUILD)/hd.img $(NREBUILD)/escape-hd.img
 
 copy2tftp:
 	$(SUDO) cp -f $(BUILD)/kernel.bin $(TFTP)/escape.bin
@@ -246,7 +249,7 @@ debug: all prepareQemu prepareRun
 	/usr/bin/gdbtui --command=gdb.start
 
 debugq: all prepareQemu prepareRun
-	$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -s > log.txt 2>&1 &
+	$(QEMU) $(QEMUARGS) -cdrom $(ISO) -S -gdb tcp::1235 > log.txt 2>&1 &
 
 debugqt: all prepareQemuTest prepareTest
 	$(QEMU) $(QEMUARGS) -cdrom $(ISO_TEST) -S -s > log.txt 2>&1 &

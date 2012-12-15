@@ -1,4 +1,5 @@
 source/build
+source/log.txt
 toolchain
 cross/*/src
 cross/*/build

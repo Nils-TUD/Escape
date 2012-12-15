@@ -26,16 +26,19 @@
 #include "reloc.h"
 #include "setup.h"
 
+typedef void (*fConstr)(void);
+extern fConstr stdioConstr[1];
+
 sSLList *libs = NULL;
 
 void load_error(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
-	printe("[%d] Error: ",getpid());
-	vprinte(fmt,ap);
+	fprintf(stderr,"[dynlink] Error while loading process %d: ",getpid());
+	vfprintf(stderr,fmt,ap);
 	if(errno != 0)
-		printe(": %s",strerror(errno));
-	printe("\n");
+		fprintf(stderr,": %s",strerror(errno));
+	fprintf(stderr,"\n");
 	va_end(ap);
 	exit(1);
 }
@@ -54,6 +57,9 @@ uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 uintptr_t load_setupProg(int binFd) {
 	sSharedLib *prog;
 	uintptr_t entryPoint;
+	/* at first init stdio to be able to print errors */
+	stdioConstr[0]();
+
 	libs = sll_create();
 	if(!libs)
 		load_error("Not enough mem!");

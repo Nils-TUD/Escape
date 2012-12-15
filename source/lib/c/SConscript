@@ -39,3 +39,4 @@ shlib = shenv.SharedLibrary(
 )
 
 env.Install(env['BINDIR'], [stlib, shlib])
+env.Install(env['DISTDIR'] + '/lib', shlib)

@@ -143,6 +143,31 @@
 	ret
 .endm
 
+.macro SYSC_6ARGS name syscno
+.global \name
+.type \name, @function
+\name:
+	push	%ebp
+	mov		%esp,%ebp
+	mov		8(%ebp),%edx					# set arg1
+	pushl	28(%ebp)						# push arg6
+	pushl	24(%ebp)						# push arg5
+	pushl	20(%ebp)						# push arg4
+	pushl	16(%ebp)						# push arg3
+	pushl	12(%ebp)						# push arg2
+	xor		%ecx,%ecx						# clear error-code
+	mov		$\syscno,%eax					# set syscall-number
+	int		$SYSCALL_IRQ
+	add		$20,%esp						# remove args
+	test	%ecx,%ecx
+	jz		1f								# no-error?
+	STORE_ERRNO
+	mov		%ecx,%eax						# return error-code
+1:
+	leave
+	ret
+.endm
+
 .macro SYSC_7ARGS name syscno
 .global \name
 .type \name, @function
@@ -172,7 +197,7 @@
 # stores the received error-code (in ecx) to the global variable errno
 .macro STORE_ERRNO
 	# use GOT for shared-libraries
-	.ifdef SHAREDLIB
+	#ifdef SHAREDLIB
 	# first get address of GOT
 	call	__i686.get_pc_thunk.bx
 	addl	$_GLOBAL_OFFSET_TABLE_,%eax
@@ -180,9 +205,9 @@
 	mov		errno@GOT(%eax),%eax
 	mov		%ecx,(%eax)
 	negl	(%eax)
-	.else
+	#else
 	# otherwise access errno directly
 	mov		%ecx,(errno)					# store error-code
 	negl	(errno)
-	.endif
+	#endif
 .endm

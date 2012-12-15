@@ -38,7 +38,7 @@ int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info
 	sElfEHeader *eheader = (sElfEHeader*)code;
 
 	/* at first, SYNCID the text-region */
-	sVMRegion *textreg = vmm_getRegion(t->proc,TEXT_BEGIN);
+	sVMRegion *textreg = vmm_getRegion(t->proc,t->proc->textAddr);
 	if(textreg) {
 		uintptr_t begin,start,end;
 		vmm_getRegRange(t->proc->pid,textreg,&start,&end,true);

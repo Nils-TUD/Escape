@@ -54,7 +54,7 @@ int thread_initArch(sThread *t) {
 void thread_addInitialStack(sThread *t) {
 	assert(t->tid == INIT_TID);
 	assert(vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,t->stackRegions + 0) == 0);
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,t->stackRegions + 0,0) == 0);
 }
 
 size_t thread_getThreadFrmCnt(void) {
@@ -81,7 +81,7 @@ int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
 
 		/* add a new stack-region */
 		res = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,dst->stackRegions + 0);
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,dst->stackRegions + 0,0);
 		if(res < 0) {
 			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
 			return res;

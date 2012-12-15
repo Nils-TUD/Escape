@@ -116,6 +116,24 @@
 	jr		$31
 .endm
 
+.macro SYSC_6ARGS name syscno
+.global \name
+.type \name, @function
+\name:
+	add		$11,$0,$0						# clear error-code
+	add		$2,$0,\syscno					# set syscall-number
+	ldw		$8,$29,16						# load arg 5 into $8
+	ldw		$9,$29,20						# load arg 6 into $9
+	trap
+	beq		$11,$0,1f
+	add		$8,$0,errno
+	sub		$9,$0,$11
+	stw		$9,$8,0							# store to errno
+	add		$2,$11,$0						# return error-code
+1:
+	jr		$31
+.endm
+
 .macro SYSC_7ARGS name syscno
 .global \name
 .type \name, @function

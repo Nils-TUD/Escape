@@ -182,7 +182,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 		/* TODO well, its not really nice that we have to read this stuff again for every started
 		 * thread :/ */
 		/* every process has a text-region from his binary */
-		sVMRegion *textreg = vmm_getRegion(t->proc,TEXT_BEGIN);
+		sVMRegion *textreg = vmm_getRegion(t->proc,t->proc->textAddr);
 		ssize_t res;
 		sElfEHeader ehd;
 		if(textreg->binFile == NULL) {

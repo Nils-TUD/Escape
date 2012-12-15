@@ -160,8 +160,6 @@
 /* converts pages to page-tables (how many page-tables are required for the pages?) */
 #define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
-/* start-address of the text */
-#define TEXT_BEGIN				0x1000
 /* start-address of the text in dynamic linker */
 #define INTERP_TEXT_BEGIN		0xA0000000
 

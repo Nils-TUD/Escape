@@ -248,10 +248,8 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 			vid_printf("[LOADER] Dynamic linker text does not start at %p\n",INTERP_TEXT_BEGIN);
 			return -ENOEXEC;
 		}
-		if(pheader->p_flags != (PF_X | PF_R) ||
-			(type == ELF_TYPE_PROG && pheader->p_vaddr != TEXT_BEGIN)) {
-			vid_printf("[LOADER] Text does not start at %p or flags are invalid (%x)\n",
-					TEXT_BEGIN,pheader->p_flags);
+		if(pheader->p_flags != (PF_X | PF_R)) {
+			vid_printf("[LOADER] Text flags are invalid (%x)\n",pheader->p_flags);
 			return -ENOEXEC;
 		}
 		stype = type == ELF_TYPE_INTERP ? REG_SHLIBTEXT : REG_TEXT;
@@ -298,7 +296,8 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		thread_reserveFrames(BYTES_2_PAGES(memsz));
 
 	/* add the region */
-	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype,&vm)) < 0) {
+	uintptr_t virt = stype == REG_TEXT || stype == REG_RODATA || stype == REG_DATA ? pheader->p_vaddr : 0;
+	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype,&vm,virt)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
 		thread_discardFrames();
 		return res;

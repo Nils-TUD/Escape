@@ -103,7 +103,7 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	mem->users = sll_create();
 	if(mem == NULL)
 		goto errMem;
-	res = vmm_add(pid,NULL,0,pageCount * PAGE_SIZE,pageCount * PAGE_SIZE,REG_SHM,&reg);
+	res = vmm_add(pid,NULL,0,pageCount * PAGE_SIZE,pageCount * PAGE_SIZE,REG_SHM,&reg,0);
 	if(res < 0)
 		goto errUList;
 	if(!shm_addUser(mem,pid,reg))
@@ -142,7 +142,7 @@ ssize_t shm_join(pid_t pid,const char *name) {
 	}
 
 	owner = (sShMemUser*)sll_get(mem->users,0);
-	res = vmm_join(owner->pid,owner->region->virt,pid,&reg);
+	res = vmm_join(owner->pid,owner->region->virt,pid,&reg,0);
 	if(res < 0) {
 		mutex_release(&shmLock);
 		return res;

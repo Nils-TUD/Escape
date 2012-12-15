@@ -402,7 +402,7 @@ int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool clonePr
 		if(src->tlsRegion != NULL) {
 			uintptr_t tlsStart,tlsEnd;
 			vmm_getRegRange(src->proc->pid,src->tlsRegion,&tlsStart,&tlsEnd,false);
-			err = vmm_add(p->pid,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS,&t->tlsRegion);
+			err = vmm_add(p->pid,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS,&t->tlsRegion,0);
 			if(err < 0)
 				goto errThread;
 		}

@@ -200,7 +200,7 @@ static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,siz
 	/* determine type */
 	if(loadSegNo == 0) {
 		/* dynamic linker has a special entrypoint */
-		if(!isLib && (pheader->p_flags != (PF_X | PF_R) || pheader->p_vaddr != TEXT_BEGIN))
+		if(!isLib && (pheader->p_flags != (PF_X | PF_R)))
 			return 0;
 		stype = isLib ? REG_SHLIBTEXT : REG_TEXT;
 	}
@@ -227,7 +227,8 @@ static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,siz
 	if(stype == REG_TLS)
 		bindesc = NULL;
 	/* add the region */
-	if((addr = regadd(bindesc,pheader->p_offset,pheader->p_memsz,pheader->p_filesz,stype)) == NULL)
+	uintptr_t virt = stype == REG_TEXT || stype == REG_RODATA || stype == REG_DATA ? pheader->p_vaddr : 0;
+	if((addr = regadd(bindesc,pheader->p_offset,pheader->p_memsz,pheader->p_filesz,stype,virt)) == NULL)
 		return 0;
 	if(stype == REG_TLS) {
 		/* read tdata and clear tbss */

@@ -85,10 +85,11 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
  * @param lCount number of bytes to load from disk (the rest is zero'ed)
  * @param type the type of region
  * @param vmreg will be set to the created region
+ * @param virt the virtual address of the region (required for text, rodata and data)
  * @return 0 on success or a negative error-code
  */
 int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type,
-		sVMRegion **vmreg);
+		sVMRegion **vmreg,uintptr_t virt);
 
 /**
  * Changes the protection-settings of the region @ <addr>. This is not possible for TLS-, stack-
@@ -208,9 +209,10 @@ void vmm_remove(pid_t pid,sVMRegion *vm);
  * @param rno the region-number in the source-process
  * @param dstId the destination-process
  * @param nvm the new created region
+ * @param dstVirt the virtual address where to create that region (0 = auto)
  * @return 0 on success or the negative error-code
  */
-int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm);
+int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm,uintptr_t dstVirt);
 
 /**
  * Clones all regions of the current process into the destination-process

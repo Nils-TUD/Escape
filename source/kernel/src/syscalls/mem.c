@@ -49,9 +49,9 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 	size_t byteCount = SYSC_ARG3(stack);
 	size_t loadCount = SYSC_ARG4(stack);
 	uint type = SYSC_ARG5(stack);
+	uintptr_t start = SYSC_ARG6(stack);
 	pid_t pid = t->proc->pid;
 	sVMRegion *vm;
-	uintptr_t start;
 	int res;
 
 	/* copy the bin-desc, for the case that bin is not accessible */
@@ -63,6 +63,10 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 		case REG_TEXT:
 		case REG_DATA:
 		case REG_RODATA:
+			if(start == 0 || start + byteCount < start || start + byteCount > INTERP_TEXT_BEGIN)
+				SYSC_ERROR(stack,-EINVAL);
+			break;
+
 		case REG_SHLIBDATA:
 		case REG_SHLIBTEXT:
 		case REG_SHM:
@@ -76,7 +80,7 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 	}
 
 	/* add region */
-	res = vmm_add(pid,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type,&vm);
+	res = vmm_add(pid,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type,&vm,start);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	/* save tls-region-number */

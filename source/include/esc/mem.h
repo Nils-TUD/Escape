@@ -70,9 +70,11 @@ void *chgsize(ssize_t count) A_CHECKRET;
  * @param byteCount the number of bytes of the region
  * @param loadCount number of bytes to load from disk (the rest is zero'ed)
  * @param type the region-type (see REG_*)
+ * @param virt the virtual address (required for text, rodata and data, otherwise 0)
  * @return the address of the region on success, NULL on failure
  */
-void *regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type);
+void *regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type,
+             uintptr_t virt);
 
 /**
  * Changes the protection of the region denoted by the given address.

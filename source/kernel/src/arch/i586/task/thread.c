@@ -50,7 +50,7 @@ void thread_addInitialStack(sThread *t) {
 	int res;
 	assert(t->tid == INIT_TID);
 	res = vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,t->stackRegions + 0);
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,t->stackRegions + 0,0);
 	assert(res == 0);
 }
 
@@ -75,7 +75,7 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 
 		/* add a new stack-region */
 		res = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,dst->stackRegions + 0);
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,dst->stackRegions + 0,0);
 		if(res < 0) {
 			paging_unmapFrom(&dst->proc->pagedir,dst->archAttr.kernelStack,1,true);
 			return res;

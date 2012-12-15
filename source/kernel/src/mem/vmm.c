@@ -97,7 +97,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 	}
 
 	/* create region */
-	res = vmm_add(pid,NULL,0,bCount,bCount,*phys ? REG_DEVICE : REG_PHYS,&vm);
+	res = vmm_add(pid,NULL,0,bCount,bCount,*phys ? REG_DEVICE : REG_PHYS,&vm,0);
 	if(res < 0) {
 		if(!*phys)
 			pmem_freeContiguous(frames[0],pages);
@@ -138,11 +138,10 @@ error:
 }
 
 int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type,
-		sVMRegion **vmreg) {
+		sVMRegion **vmreg, uintptr_t virt) {
 	sRegion *reg;
 	sVMRegion *vm;
 	int res;
-	uintptr_t virt = 0;
 	ulong pgFlags = 0,flags = 0;
 	sProc *p;
 
@@ -151,13 +150,17 @@ int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t l
 		pid_t binOwner = 0;
 		uintptr_t binVirt = vmm_getBinary(bin,&binOwner);
 		if(binVirt != 0)
-			return vmm_join(binOwner,binVirt,pid,vmreg);
+			return vmm_join(binOwner,binVirt,pid,vmreg,virt);
 	}
 
 	/* get the attributes of the region (depending on type) */
 	p = vmm_reqProc(pid);
 	if(!p)
 		return -ESRCH;
+	if(virt != 0 && vmreg_getByAddr(&p->regtree,virt) != NULL) {
+		res = -EINVAL;
+		goto errProc;
+	}
 	if((res = vmm_getAttr(p,type,bCount,&pgFlags,&flags,&virt)) < 0)
 		goto errProc;
 	/* no demand-loading if the binary isn't present */
@@ -200,6 +203,8 @@ int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t l
 	/* set data-region */
 	if(type == REG_DATA || type == REG_DLDATA)
 		p->dataAddr = virt;
+	else if(type == REG_TEXT)
+		p->textAddr = virt;
 	vmm_relProc(p);
 
 #if DISABLE_DEMLOAD
@@ -593,6 +598,8 @@ static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 			vmfree_free(&p->freemap,vm->virt,ROUNDUP(vm->reg->byteCount));
 		if(vm->virt == p->dataAddr)
 			p->dataAddr = 0;
+		else if(vm->virt == p->textAddr)
+			p->textAddr = 0;
 		/* now destroy region */
 		mutex_release(&vm->reg->lock);
 		reg_destroy(vm->reg);
@@ -615,11 +622,10 @@ static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 	vmreg_remove(&p->regtree,vm);
 }
 
-int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm) {
+int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm,uintptr_t dstAddr) {
 	sProc *src,*dst;
 	ssize_t res;
 	size_t pageCount,swapped;
-	uintptr_t addr;
 	sVMRegion *vm;
 	if(srcId == dstId)
 		return -EINVAL;
@@ -641,13 +647,13 @@ int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm) {
 	mutex_aquire(&vm->reg->lock);
 	assert(vm->reg->flags & RF_SHAREABLE);
 
-	if(vm->virt == TEXT_BEGIN)
-		addr = TEXT_BEGIN;
-	else
-		addr = vmfree_allocate(&dst->freemap,ROUNDUP(vm->reg->byteCount));
-	if(addr == 0)
+	if(dstAddr == 0)
+		dstAddr = vmfree_allocate(&dst->freemap,ROUNDUP(vm->reg->byteCount));
+	else if(vmreg_getByAddr(&dst->regtree,dstAddr) != NULL)
 		goto errReg;
-	*nvm = vmreg_add(&dst->regtree,vm->reg,addr);
+	if(dstAddr == 0)
+		goto errReg;
+	*nvm = vmreg_add(&dst->regtree,vm->reg,dstAddr);
 	if(*nvm == NULL)
 		goto errReg;
 	(*nvm)->binFile = NULL;
@@ -689,6 +695,7 @@ int vmm_cloneAll(pid_t dstId) {
 	dst->sharedFrames = 0;
 	dst->ownFrames = 0;
 	dst->dataAddr = src->dataAddr;
+	dst->textAddr = src->textAddr;
 
 	vmreg_addTree(dstId,&dst->regtree);
 	for(vm = src->regtree.begin; vm != NULL; vm = vm->next) {
@@ -950,7 +957,7 @@ void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
 		for(vm = p->regtree.begin; vm != NULL; vm = vm->next) {
 			const char *name = "";
 			mutex_aquire(&vm->reg->lock);
-			if(vm->virt == TEXT_BEGIN)
+			if(vm->virt == p->textAddr)
 				name = "text";
 			else if(vm->virt == p->dataAddr)
 				name = "data";
@@ -1296,19 +1303,19 @@ static void vmm_relProc(sProc *p) {
 static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,uintptr_t *virt) {
 	switch(type) {
 		case REG_TEXT:
+			assert(*virt != 0);
 			*pgFlags = PF_DEMANDLOAD;
 			*flags = RF_SHAREABLE | RF_EXECUTABLE;
-			*virt = TEXT_BEGIN;
 			break;
 		case REG_RODATA:
+			assert(*virt != 0);
 			*pgFlags = PF_DEMANDLOAD;
 			*flags = 0;
-			*virt = vmm_getFirstUsableAddr(p);
 			break;
 		case REG_DATA:
+			assert(*virt != 0);
 			*pgFlags = PF_DEMANDLOAD;
 			*flags = RF_GROWABLE | RF_WRITABLE;
-			*virt = vmm_getFirstUsableAddr(p);
 			break;
 		case REG_STACKUP:
 		case REG_STACK:

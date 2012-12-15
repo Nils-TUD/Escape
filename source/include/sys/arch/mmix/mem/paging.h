@@ -105,8 +105,6 @@
 #define VFSNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT)
 #define SLLNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT * 8)
 
-/* start-address of the text */
-#define TEXT_BEGIN				0x2000
 /* start-address of the text in dynamic linker */
 #define INTERP_TEXT_BEGIN		((uintptr_t)0x4000000000000000)
 

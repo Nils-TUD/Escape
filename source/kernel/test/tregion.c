@@ -69,6 +69,7 @@ static void test_1(void) {
 	bindesc.modifytime = 1234;
 	bindesc.ino = 42;
 	bindesc.dev = 4;
+	*bindesc.filename = '\0';
 	reg = reg_create(&bindesc,123,PAGE_SIZE + 1,PAGE_SIZE + 1,0,RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	test_assertUInt(reg->binary.modifytime,1234);
@@ -192,6 +193,7 @@ static void test_4(void) {
 	bindesc.modifytime = 444;
 	bindesc.ino = 23;
 	bindesc.dev = 2;
+	*bindesc.filename = '\0';
 	reg = reg_create(&bindesc,123,PAGE_SIZE,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	clone = reg_clone((const void*)0x1234,reg);

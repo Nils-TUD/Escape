@@ -49,6 +49,7 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 	dst->bin.ino = info.inodeNo;
 	dst->bin.dev = info.device;
 	dst->bin.modifytime = info.modifytime;
+	strncpy(dst->bin.filename,dst->name,sizeof(dst->bin.filename));
 	dst->fd = binFd;
 	dst->loadAddr = 0;
 

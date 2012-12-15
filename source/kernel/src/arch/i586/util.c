@@ -117,6 +117,9 @@ void util_panic(const char *fmt,...) {
 		vid_setTargets(TARGET_SCREEN);
 		vid_printf("\n\nWriting regions and page-directory of the current process to log...");
 		vid_setTargets(TARGET_LOG);
+		vid_printf("Region overview:\n");
+		vmm_printShort(t->proc->pid,"\t");
+		vid_printf("\n");
 		vmm_print(t->proc->pid);
 		paging_printCur(PD_PART_USER);
 		vid_setTargets(TARGET_SCREEN);

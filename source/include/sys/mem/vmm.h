@@ -263,8 +263,9 @@ void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid);
  * Prints a short version of the regions of given process
  *
  * @param pid the process-id
+ * @param prefix the print prefix (e.g. tabs)
  */
-void vmm_printShort(pid_t pid);
+void vmm_printShort(pid_t pid,const char *prefix);
 
 /**
  * Prints all regions of the given process

@@ -69,12 +69,14 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 		rbin->ino = bin->ino;
 		rbin->dev = bin->dev;
 		rbin->modifytime = bin->modifytime;
+		memcpy(rbin->filename,bin->filename,sizeof(rbin->filename));
 		*(off_t*)&reg->binOffset = binOffset;
 	}
 	else {
 		rbin->ino = 0;
 		rbin->dev = 0;
 		rbin->modifytime = 0;
+		rbin->filename[0] = '\0';
 		*(off_t*)&reg->binOffset = 0;
 	}
 	*(size_t*)&reg->loadCount = lCount;
@@ -219,8 +221,9 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt) {
 	reg_sprintfFlags(buf,reg);
 	prf_sprintf(buf,"\n");
 	if(reg->binary.ino) {
-		prf_sprintf(buf,"\tbinary: ino=%d dev=%d modified=%u offset=%#Ox\n",
-				reg->binary.ino,reg->binary.dev,reg->binary.modifytime,reg->binOffset);
+		prf_sprintf(buf,"\tbinary: ino=%d dev=%d modified=%u offset=%#Ox filename=%s\n",
+				reg->binary.ino,reg->binary.dev,reg->binary.modifytime,reg->binOffset,
+				reg->binary.filename);
 	}
 	prf_sprintf(buf,"\tTimestamp: %d\n",reg->timestamp);
 	prf_sprintf(buf,"\tProcesses: ");

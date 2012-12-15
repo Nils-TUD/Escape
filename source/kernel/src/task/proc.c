@@ -864,7 +864,7 @@ void proc_print(sProc *p) {
 	vid_printf("\t\tDataRegion: %p\n",p->dataAddr);
 	vid_printf("\t\tTextRegion: %p\n",p->textAddr);
 	vid_printf("\t\tFreeStack: %p\n",p->freeStackAddr);
-	vmm_printShort(p->pid);
+	vmm_printShort(p->pid,"\t\t");
 	vid_printf("\tEnvironment:\n");
 	env_printAllOf(p->pid);
 	vid_printf("\tFileDescs:\n");

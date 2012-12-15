@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg(env, 'sbin', target = 'vesa', source = Glob('*.c'), LIBS = ['vbe'])

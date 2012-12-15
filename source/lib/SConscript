@@ -1,0 +1,5 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+env.SConscript([f for f in Glob('*/SConscript') if 'basic' not in str(f)], 'env')

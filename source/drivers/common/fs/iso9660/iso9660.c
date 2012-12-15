@@ -90,7 +90,7 @@ void *iso_init(const char *device,char **usedDev,int *errcode) {
 			/* try to find our kernel. if we've found it, it's likely that the user wants to
 			 * boot from this device. unfortunatly there doesn't seem to be an easy way
 			 * to find out the real boot-device from GRUB */
-			ino = iso_dir_resolve(iso,&u,"/boot/escape.bin",IO_READ,&dev,false);
+			ino = iso_dir_resolve(iso,&u,"/boot/escape",IO_READ,&dev,false);
 			if(ino >= 0)
 				break;
 

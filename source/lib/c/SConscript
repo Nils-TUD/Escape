@@ -1,0 +1,41 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+acsrc = [Glob('arch/' + env['ARCH'] + '/*.c')]
+assrc = [f for f in Glob('arch/' + env['ARCH'] + '/*.S') if 'crt' not in str(f)]
+assrc += [Glob('esc/*.S')]
+csrc = [Glob('*.c'), Glob('*/*.c'), Glob('basic/*/*.c'), Glob('esc/*/*.c')]
+baseacsrc = [Glob('basic/arch/' + env['ARCH'] + '/*.c')]
+baseassrc = [Glob('basic/arch/' + env['ARCH'] + '/*.S')]
+
+# static library
+stenv = env.Clone()
+crt0 = stenv.Object('crt0.o', 'arch/' + stenv['ARCH'] + '/crt0.S')
+crt1 = stenv.Object('crt1.o', 'arch/' + stenv['ARCH'] + '/crt1.S')
+crtn = stenv.Object('crtn.o', 'arch/' + stenv['ARCH'] + '/crtn.S')
+stenv.Install(stenv['SYSGCCLIBPATH'], [crt0, crt1, crtn])
+
+stlib = stenv.StaticLibrary(
+	target = 'c',
+	source = acsrc + assrc + csrc + baseacsrc + baseassrc
+)
+
+# shared library
+shenv = env.Clone()
+shenv.Append(
+	ASFLAGS = ' -DSHAREDLIB=1',
+	LINKFLAGS = ' -Wl,-shared -Wl,-soname,libc.so'
+)
+crt0 = shenv.Object('crt0S.o', 'arch/' + shenv['ARCH'] + '/crt0.S')
+crt1 = shenv.Object('crt1S.o', 'arch/' + shenv['ARCH'] + '/crt1.S')
+crtn = shenv.Object('crtnS.o', 'arch/' + shenv['ARCH'] + '/crtn.S')
+shenv.Install(shenv['SYSGCCLIBPATH'], [crt0, crt1, crtn])
+
+shlib = shenv.SharedLibrary(
+	target = 'c',
+	source = acsrc + assrc + csrc + baseacsrc + baseassrc,
+	LIBS = ['gcc']
+)
+
+env.Install(env['BINDIR'], [stlib, shlib])

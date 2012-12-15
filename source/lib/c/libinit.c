@@ -38,7 +38,7 @@ typedef struct {
  * Assembler routines
  */
 extern int _startthread(fThreadEntry entryPoint,void *arg);
-extern void sigRetFunc(void);
+extern __attribute__((weak)) void sigRetFunc(void);
 /**
  * Inits the c-library
  */

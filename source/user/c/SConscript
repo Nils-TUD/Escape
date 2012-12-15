@@ -1,0 +1,5 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+env.SConscript(Glob('*/SConscript'), 'env')

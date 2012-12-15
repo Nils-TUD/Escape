@@ -1,0 +1,6 @@
+# -*- Mode: Python -*-
+
+Import('hostenv')
+
+prog = hostenv.Program('hostdump', Glob('*.cpp'))
+hostenv.Install(hostenv['BINDIR'], prog)

@@ -1,0 +1,19 @@
+default 0
+timeout 3
+
+title Escape - VESA-text
+kernel /boot/escape videomode=vesa
+module /sbin/pci /dev/pci
+module /sbin/ata /system/devices/ata
+module /sbin/cmos /dev/cmos
+module /sbin/fs /dev/fs cdrom iso9660
+
+title Escape - VGA-text
+kernel /boot/escape videomode=vga
+module /sbin/pci /dev/pci
+module /sbin/ata /system/devices/ata
+module /sbin/cmos /dev/cmos
+module /sbin/fs /dev/fs cdrom iso9660
+
+title Escape - Test
+kernel /boot/escape_test videomode=vga

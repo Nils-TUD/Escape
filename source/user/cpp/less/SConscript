@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCXXProg(env, 'bin', target = 'less', source = Glob('*.cpp'))

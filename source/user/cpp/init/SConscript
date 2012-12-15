@@ -1,0 +1,6 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+src = [Glob('*.cpp'), Glob('*/*.cpp'), Glob('arch/' + env['ARCH'] + '/*.cpp')]
+env.EscapeCXXProg(env, 'bin', target = 'init', source = src, LIBS = ['usergroup'])

@@ -1,0 +1,37 @@
+# -*- Mode: Python -*-
+
+Import('env')
+import os
+
+kenv = env.Clone()
+ldconf = 'kernel/src/arch/' + kenv['ARCH'] + '/ld.conf'
+kenv.Append(
+	CFLAGS = ' -DIN_KERNEL=1',
+	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldconf
+)
+
+src = [Glob('arch/' + kenv['ARCH'] + '/kernel.S')]
+src += [Glob('*.c'), Glob('*/*.c')]
+src += [f for f in Glob('*/*/*.c') if 'arch/' not in str(f)]
+src += [Glob('arch/' + kenv['ARCH'] + '/*.c'), Glob('arch/' + kenv['ARCH'] + '/*/*.c')]
+src += [Glob('basic/arch/' + kenv['ARCH'] + '/*.c'), Glob('basic/arch/' + kenv['ARCH'] + '/*.S')]
+src += [f for f in Glob('arch/' + kenv['ARCH'] + '/*.S')
+		if 'kernel.S' not in str(f) and 'end.S' not in str(f)]
+src += [f for f in Glob('arch/' + kenv['ARCH'] + '/*/*.S')]
+
+symfile = kenv['BUILDDIR'] + '/kernel_symbols.txt'
+if not os.path.exists(symfile):
+	kenv.Command(symfile, None, 'echo 1 > $TARGET')
+
+kernel = kenv.EscapeCProg(
+	kenv, 'boot', target = 'escape', source = src, force_static = True, LIBS = ['gcc']
+)
+kenv.Depends('ksymbols.c', symfile)
+
+if kenv['ARCH'] == 'i586':
+	tramp = kenv['BUILDDIR'] + '/kernel_tramp.dump'
+	trampobj = kenv['BUILDDIR'] + '/kernel_tramp.o'
+	kenv.Command(trampobj, 'arch/i586/trampoline.asm','nasm -f bin -o $TARGET $SOURCE')
+	dump = env.Command(tramp, trampobj, kenv['BINDIR'][1:] + '/hostdump $SOURCE > $TARGET')
+	kenv.Depends(dump, kenv['BINDIR'] + '/hostdump')
+	kenv.Depends(kernel, tramp)

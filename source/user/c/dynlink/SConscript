@@ -1,0 +1,10 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+myenv = env.Clone()
+myenv.Append(LINKFLAGS = ' -nostartfiles -Wl,-T,user/c/dynlink/ld.conf')
+prog = myenv.EscapeCProg(
+	myenv, 'bin', target = 'dynlink', source = ['startup.S', Glob('*.c')], force_static = True
+)
+myenv.Depends(prog, 'ld.conf')

@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg(env, 'bin', target = 'chown', source = Glob('*.c'))

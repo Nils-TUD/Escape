@@ -1,0 +1,173 @@
+# -*- Mode: Python -*-
+
+import sys, os
+
+target = os.environ.get('ESC_TARGET') or 'x86_64'
+if target == 'i586':
+	cross = 'i586-elf-escape'
+elif target == 'eco32':
+	cross = 'eco32-elf-escape'
+elif target == 'mmix':
+	cross = 'mmix-elf-escape'
+else:
+	print "Please define ESC_TARGET to i586, eco32 or mmix first!"
+	Exit(1)
+crossver = '4.4.3'
+crossdir = os.path.abspath('../toolchain/' + target)
+
+hostenv = Environment(
+	ENV = os.environ,
+	CXXFLAGS = '-Wall -Wextra -ansi -g'
+)
+env = Environment(
+	CFLAGS = '-Wall -ansi -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
+			+ ' -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline'
+			+ ' -Wno-long-long -Wstrict-prototypes -fms-extensions',
+	CXXFLAGS = '-Wall -Wextra -Weffc++ -ansi -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
+			+ ' -Wmissing-declarations -Wno-long-long',
+	ASFLAGS = '-Wa,--warn',
+	ENV = {'PATH' : crossdir + "/bin:" + os.environ['PATH']},
+	CPPPATH = '#include',
+	CXX = cross + '-g++',
+	LD = cross + '-ld',
+	AS = cross + '-as',
+	CC = cross + '-gcc',
+	AR = cross + '-ar',
+	RANLIB = cross + '-ranlib',
+)
+
+linktype = os.environ.get('ESC_LINKTYPE')
+if linktype != 'static':
+	linktype = 'dynamic'
+gcclinktype = os.environ.get('ESC_GCCLINKTYPE')
+if gcclinktype == 'static':
+	env.Append(LINKFLAGS = ' -static-libgcc')
+
+btype = os.environ.get('ESC_BUILD')
+if btype == 'debug':
+	env.Append(
+		CFLAGS = ' -O0 -fno-builtin -ggdb -D LOGSERIAL',
+		CXXFLAGS = ' -O0 -fno-inline -ggdb'
+	)
+else:
+	env.Append(
+		CFLAGS = ' -O3 -fno-builtin -ggdb -DNDEBUG',
+		CXXFLAGS = ' -O3 -ggdb -DNDEBUG'
+	)
+	btype = 'release'
+builddir = 'build/' + target + '-' + btype
+
+if target == 'mmix':
+	env.Append(
+		# atm we have to disable base-addresses, because the mmix-gcc-port seems to be unable to
+		# handle it correctly
+		CFLAGS = ' -mno-base-addresses',
+		CXXFLAGS = ' -mno-base-addresses',
+		# do not warn if instructions are extended to setl,incml,...
+		ASFLAGS = ' -x'
+	)
+
+verbose = os.environ.get('ESC_VERBOSE',0)
+if int(verbose) == 0:
+	hostenv['ASCOMSTR'] = env['ASCOMSTR'] = "AS $TARGET"
+	hostenv['ASPPCOMSTR'] = env['ASPPCOMSTR'] = "ASPP $TARGET"
+	hostenv['CCCOMSTR'] = env['CCCOMSTR'] = "CC $TARGET"
+	hostenv['SHCCCOMSTR'] = env['SHCCCOMSTR'] = "SHCC $TARGET"
+	hostenv['CXXCOMSTR'] = env['CXXCOMSTR'] = "CXX $TARGET"
+	hostenv['SHCXXCOMSTR'] = env['SHCXXCOMSTR'] = "SHCXX $TARGET"
+	hostenv['LINKCOMSTR'] = env['LINKCOMSTR'] = "LD $TARGET"
+	hostenv['SHLINKCOMSTR'] = env['SHLINKCOMSTR'] = "SHLD $TARGET"
+	hostenv['ARCOMSTR'] = env['ARCOMSTR'] = "AR $TARGET"
+	hostenv['RANLIBCOMSTR'] = env['RANLIBCOMSTR'] = "RANLIB $TARGET"
+
+env.Append(
+	ARCH = target,
+	LINKTYPE = linktype,
+	ROOTDIR = '#',
+	BUILDDIR = '#' + builddir,
+	DISTDIR = '#' + builddir + '/dist',
+	BINDIR = '#' + builddir + '/bin',
+	SYSLIBPATH = crossdir + '/lib',
+	SYSGCCLIBPATH = crossdir + '/lib/gcc/' + cross + '/' + crossver,
+	SYSSHGCCPATH = crossdir + '/' + cross + '/lib'
+)
+hostenv['BINDIR'] = env['BINDIR']
+link_addr = 0x1000
+
+def EscapeDump(env, target, source):
+	dump = env.Command(target, source, env['BINDIR'][1:] + '/hostdump $SOURCE > $TARGET')
+	env.Depends(dump, env['BINDIR'] + '/hostdump')
+	env.Install(env['BUILDDIR'], dump)
+
+def ProgDeps(env, prog, force_static, cpp):
+	if force_static:
+		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt0.o')
+		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt1.o')
+		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crtn.o')
+		env.Depends(prog, env['BINDIR'] + '/libc.a')
+		env.Depends(prog, env['BINDIR'] + '/libg.a')
+		env.Depends(prog, env['BINDIR'] + '/libm.a')
+		if cpp:
+			env.Depends(prog, env['BINDIR'] + '/libstdc++.a')
+			env.Depends(prog, env['SYSGCCLIBPATH'] + '/libgcc.a')
+	else:
+		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt0S.o')
+		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt1S.o')
+		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crtnS.o')
+	if cpp:
+		env.Depends(prog, env['SYSLIBPATH'] + '/libsupc++.a')
+
+def EscapeCProg(env, prefix, target, source, force_static = False, LIBS = []):
+	global link_addr
+	myenv = env.Clone()
+	if force_static or env['LINKTYPE'] == 'static':
+		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
+	if target != 'escape' and target != 'dynlink' and target != 'initloader':
+		myenv.Append(LINKFLAGS = ' -Wall -Wl,--section-start=.init=' + ("0x%x" % link_addr))
+		link_addr += 0x20000
+	prog = myenv.Program(target, source, LIBS = LIBS)
+	ProgDeps(myenv, prog, force_static, False)
+	myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
+	myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
+	return prog
+
+def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
+	global link_addr
+	myenv = env.Clone()
+	if force_static or env['LINKTYPE'] == 'static':
+		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
+	myenv.Append(LINKFLAGS = ' -Wl,--section-start=.init=' + ("0x%x" % link_addr))
+	link_addr += 0x100000
+	prog = myenv.Program(
+		target, source, LIBS = ['stdc++', 'supc++'] + LIBS, LIBPATH = myenv['SYSLIBPATH']
+	)
+	ProgDeps(myenv, prog, force_static, True)
+	myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
+	myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
+	return prog
+
+def EscapeLib(env, target, source, LIBS = []):
+	myenv = env.Clone()
+	myenv.Append(LINKFLAGS = ' -nostartfiles -nodefaultlibs')
+	stlib = myenv.StaticLibrary(target, source)
+	shenv = myenv.Clone()
+	shenv.Append(LINKFLAGS = ' -Wl,-shared -Wl,-soname,lib' + target + '.so')
+	shlib = shenv.SharedLibrary(target, source, LIBS = LIBS)
+	env.Install(env['BINDIR'], [stlib, shlib])
+	env.Install(env['DISTDIR'] + '/lib', shlib)
+
+symlink = Builder(action = 'ln -sf ${SOURCE.abspath} $TARGET')
+env.Append(BUILDERS = {'Symlink' : symlink})
+env.EscapeDump = EscapeDump
+env.EscapeCProg = EscapeCProg
+env.EscapeCXXProg = EscapeCXXProg
+env.EscapeLib = EscapeLib
+
+hostenv.SConscript('tools/SConscript', 'hostenv',
+				   variant_dir = builddir + '/tools', duplicate = 0)
+
+for d in ['dist', 'lib', 'drivers', 'user', 'kernel/src']:
+	env.SConscript(d + '/SConscript', 'env',
+				   variant_dir = builddir + '/' + d, duplicate = 0)
+
+# EOF

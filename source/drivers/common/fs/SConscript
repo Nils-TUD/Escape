@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg(env, 'sbin', target = 'fs', source = [Glob('*.c'), Glob('*/*.c')], force_static = True)

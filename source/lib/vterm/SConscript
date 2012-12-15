@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeLib(env, target = 'vterm', source = Glob('*.c'))

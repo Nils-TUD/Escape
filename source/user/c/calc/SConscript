@@ -1,0 +1,19 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+myenv = env.Clone()
+builddir = Dir(myenv['BUILDDIR']).abspath + '/user/c/calc'
+myenv.Append(
+	CFLAGS = ' -DYYERROR_VERBOSE -I user/c/calc -I ' + builddir,
+	LEXFLAGS = '--nounistd',
+	YACCFLAGS = '-t -d'
+)
+
+lexer = myenv.CFile(target = 'lex.c', source = 'calc.l')
+parser = myenv.CFile(target = 'parser', source = 'calc.y')
+
+cfiles = [f for f in Glob('*.c') if 'lex.c' not in str(f) and 'parser.c' not in str(f)]
+myenv.Depends(cfiles, [lexer, parser])
+
+myenv.EscapeCProg(myenv, 'bin', target = 'calc', source = cfiles + [lexer, parser[0]])

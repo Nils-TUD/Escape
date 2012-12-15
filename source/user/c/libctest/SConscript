@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg(env, 'bin', target = 'libctest', source = [Glob('*.c'), Glob('*/*.c')], LIBS = ['usergroup'])

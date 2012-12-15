@@ -1,0 +1,5 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.SConscript('common/SConscript', 'env')
+env.SConscript(env['ARCH'] + '/SConscript', 'env')

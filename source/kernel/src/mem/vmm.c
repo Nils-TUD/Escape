@@ -1216,7 +1216,7 @@ static void vmm_setSwappedIn(sRegion *reg,size_t index,frameno_t frameNo) {
 	}
 }
 
-static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,ulong rflags) {
+static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,A_UNUSED ulong rflags) {
 	uintptr_t addr,end;
 	size_t size = ROUNDUP(byteCount);
 	sVMRegion *dataReg;

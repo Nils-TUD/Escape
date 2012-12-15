@@ -22,7 +22,7 @@ namespace gui {
 		/**
 		 * Copy-constructor
 		 */
-		ActionListener(const ActionListener &l) {
+		ActionListener(const ActionListener &) {
 		};
 		/**
 		 * Destructor
@@ -32,7 +32,7 @@ namespace gui {
 		/**
 		 * Assignment-operator
 		 */
-		ActionListener &operator=(const ActionListener &l) {
+		ActionListener &operator=(const ActionListener &) {
 			return *this;
 		};
 

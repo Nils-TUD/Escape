@@ -34,7 +34,7 @@ namespace gui {
 			: Control(), _focused(false), _pressed(false), _text(text) {
 		};
 		Button(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _focused(false), _pressed(false), _text(string()) {
+			: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
 		};
 		virtual ~Button() {
 		};

@@ -29,11 +29,11 @@ namespace gui {
 		 * Creates an empty panel with given layout. Note that the layout will be owned by the
 		 * panel afterwards. So, it will delete it when the panel is deleted.
 		 *
-		 * @param layout the layout (may be NULL)
+		 * @param l the layout (may be NULL)
 		 */
-		Panel(Layout *layout = NULL)
+		Panel(Layout *l = NULL)
 			: Control(), _focus(NULL), _controls(vector<Control*>()),
-			  _layout(layout), _updateRect(sRectangle()) {
+			  _layout(l), _updateRect(sRectangle()) {
 		};
 		/**
 		 * Creates an empty panel at given position, with given size and with given layout. Note
@@ -44,11 +44,11 @@ namespace gui {
 		 * @param y the y-position
 		 * @param width the width
 		 * @param height the height
-		 * @param layout the layout (may be NULL)
+		 * @param l the layout (may be NULL)
 		 */
-		Panel(gpos_t x,gpos_t y,gsize_t width,gsize_t height,Layout *layout = NULL)
+		Panel(gpos_t x,gpos_t y,gsize_t width,gsize_t height,Layout *l = NULL)
 			: Control(x,y,width,height), _focus(NULL), _controls(vector<Control*>()),
-			  _layout(layout), _updateRect(sRectangle()) {
+			  _layout(l), _updateRect(sRectangle()) {
 		};
 		/**
 		 * Destructor

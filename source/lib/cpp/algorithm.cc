@@ -160,7 +160,7 @@ namespace std {
 	bool equal(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
 			BinaryPredicate pred) {
 		for(; first1 != last1; ++first1, ++first2) {
-			if(!(*first1 == *first2))
+			if(!pred(*first1,*first2))
 				return false;
 		}
 		return true;
@@ -536,11 +536,11 @@ namespace std {
 	size_t count_digits(T n,unsigned int base) {
 		// we have at least one char
 		size_t count = 1;
-		if(numeric_limits<T>::is_signed && n < 0) {
+		if(numeric_limits<T>::is_signed && (signed)n < 0) {
 			count++;
 			n = -n;
 		}
-		while(n >= base) {
+		while(n >= (T)base) {
 			n /= base;
 			count++;
 		}

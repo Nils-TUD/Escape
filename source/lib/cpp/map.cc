@@ -117,9 +117,9 @@ namespace std {
 	// === insert ===
 	template<class Key,class T,class Cmp>
 	pair<typename map<Key,T,Cmp>::iterator,bool> map<Key,T,Cmp>::insert(const value_type& x) {
-		size_type size = _tree.size();
+		size_type s = _tree.size();
 		iterator it = _tree.insert(x,false);
-		return make_pair<iterator,bool>(it,_tree.size() > size);
+		return make_pair<iterator,bool>(it,_tree.size() > s);
 	}
 	template<class Key,class T,class Cmp>
 	typename map<Key,T,Cmp>::iterator map<Key,T,Cmp>::insert(iterator pos,const value_type& x) {

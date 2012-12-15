@@ -124,7 +124,7 @@ void smp_wakeupCPU(void) {
 	}
 }
 
-void smp_flushTLB(pagedir_t *pdir) {
+void smp_flushTLB(A_UNUSED pagedir_t *pdir) {
 #if 0
 	sSLNode *n;
 	cpuid_t cur = smp_getCurId();

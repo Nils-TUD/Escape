@@ -34,7 +34,7 @@ namespace gui {
 		/**
 		 * Copy-constructor
 		 */
-		WindowListener(const WindowListener &l) {
+		WindowListener(const WindowListener &) {
 		};
 		/**
 		 * Destructor
@@ -44,7 +44,7 @@ namespace gui {
 		/**
 		 * Assignment-operator
 		 */
-		WindowListener &operator=(const WindowListener &l) {
+		WindowListener &operator=(const WindowListener &) {
 			return *this;
 		};
 

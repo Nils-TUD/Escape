@@ -51,7 +51,7 @@ int main(void) {
 
 	if(signal(SIG_INTRPT_TIMER,sigTimer) == SIG_ERR)
 		qerror("Unable to set sig-handler");
-	if(startthread(kmMngThread,NULL) == SIG_ERR)
+	if(startthread(kmMngThread,NULL) < 0)
 		qerror("Unable to start thread");
 
 	game_tick(time);
@@ -67,7 +67,7 @@ int main(void) {
 }
 
 static int kmMngThread(A_UNUSED void *arg) {
-	if(signal(SIG_USR1,sigUsr1) < 0)
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to set SIG_USR1-handler");
 	while(1) {
 		int c,cmd,n1,n2,n3;

@@ -48,28 +48,28 @@ namespace gui {
 		 * @param el the ui-element that received this event
 		 * @param e the mouse-event
 		 */
-		virtual void mouseMoved(UIElement& el,const MouseEvent &e) {};
+		virtual void mouseMoved(UIElement &,const MouseEvent &) {};
 		/**
 		 * Is called as soon as a mouse-button has been released
 		 *
 		 * @param el the ui-element that received this event
 		 * @param e the mouse-event
 		 */
-		virtual void mousePressed(UIElement& el,const MouseEvent &e) {};
+		virtual void mousePressed(UIElement &,const MouseEvent &) {};
 		/**
 		 * Is called as soon as a mouse-button has been pressed
 		 *
 		 * @param el the ui-element that received this event
 		 * @param e the mouse-event
 		 */
-		virtual void mouseReleased(UIElement& el,const MouseEvent &e) {};
+		virtual void mouseReleased(UIElement &,const MouseEvent &) {};
 		/**
 		 * Is called as soon as the mouse-wheel has been used
 		 *
 		 * @param el the ui-element that received this event
 		 * @param e the mouse-event
 		 */
-		virtual void mouseWheel(UIElement& el,const MouseEvent &e) {};
+		virtual void mouseWheel(UIElement &,const MouseEvent &) {};
 
 	private:
 		// no copying

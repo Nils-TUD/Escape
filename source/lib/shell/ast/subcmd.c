@@ -184,25 +184,25 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 						else {
 							/* copy path and filename into a new string */
 							size_t totallen = (pathlen ? pathlen + 1 : 0) + e.nameLen + 1;
-							char *dup = (char*)emalloc(totallen + 1);
+							char *duppath = (char*)emalloc(totallen + 1);
 							if(pathlen) {
-								strcpy(dup,path);
-								dup[pathlen] = '/';
-								strcpy(dup + pathlen + 1,e.name);
+								strcpy(duppath,path);
+								duppath[pathlen] = '/';
+								strcpy(duppath + pathlen + 1,e.name);
 							}
 							else
-								strcpy(dup,e.name);
+								strcpy(duppath,e.name);
 							/* append '/' for dirs */
 							if(S_ISDIR(info.mode)) {
-								dup[totallen - 1] = '/';
-								dup[totallen] = '\0';
+								duppath[totallen - 1] = '/';
+								duppath[totallen] = '\0';
 							}
 							/* increase array? */
 							if(*i >= *bufSize - 1) {
 								*bufSize *= 2;
 								buf = erealloc(buf,*bufSize * sizeof(char*));
 							}
-							buf[*i] = dup;
+							buf[*i] = duppath;
 							(*i)++;
 						}
 					}

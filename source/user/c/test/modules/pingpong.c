@@ -36,7 +36,7 @@ typedef struct {
 static void client(void);
 static void server(void);
 
-static int messageCount = 1000;
+static size_t messageCount = 1000;
 
 int mod_pingpong(int argc,char *argv[]) {
 	int pid;
@@ -46,7 +46,8 @@ int mod_pingpong(int argc,char *argv[]) {
 		server();
 	else {
 		client();
-		kill(pid,SIG_TERM);
+		if(kill(pid,SIG_TERM) < 0)
+			perror("kill");
 		waitchild(NULL);
 	}
 	return 0;
@@ -54,7 +55,7 @@ int mod_pingpong(int argc,char *argv[]) {
 
 static void client(void) {
 	uint64_t begin,total;
-	size_t i,j,num;
+	size_t i;
 	sIPCMsg msg;
 	int fd;
 	do {

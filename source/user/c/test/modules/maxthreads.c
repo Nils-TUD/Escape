@@ -54,7 +54,8 @@ int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	}
 	printf("Kill them...\n");
 	fflush(stdout);
-	kill(getpid(),SIG_USR1);
+	if(kill(getpid(),SIG_USR1) < 0)
+		perror("kill");
 	return EXIT_SUCCESS;
 }
 

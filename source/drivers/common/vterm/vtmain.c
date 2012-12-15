@@ -155,8 +155,10 @@ static int vtermThread(void *vterm) {
 					if(mid == MSG_VT_ENABLE)
 						vt_enable();
 					/* wakeup thread to start reading from keyboard again */
-					if(mid == MSG_VT_ENABLE || mid == MSG_VT_EN_RDKB)
-						kill(getpid(),SIG_USR1);
+					if(mid == MSG_VT_ENABLE || mid == MSG_VT_EN_RDKB) {
+						if(kill(getpid(),SIG_USR1) < 0)
+							perror("Unable to send SIG_USR1");
+					}
 					vt_update(vt);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;

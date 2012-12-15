@@ -23,11 +23,11 @@ env = Environment(
 	CFLAGS = '-Wall -ansi -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
 			+ ' -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline'
 			+ ' -Wno-long-long -Wstrict-prototypes -fms-extensions',
-	CXXFLAGS = '-Wall -Wextra -Weffc++ -ansi -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
+	CXXFLAGS = '-Wall -Wextra -ansi -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
 			+ ' -Wmissing-declarations -Wno-long-long',
 	ASFLAGS = '-Wa,--warn',
 	ENV = {'PATH' : crossdir + "/bin:" + os.environ['PATH']},
-	CPPPATH = '#include',
+	CPPPATH = ['#include', '#include/cpp'],
 	CXX = cross + '-g++',
 	LD = cross + '-ld',
 	AS = cross + '-as',

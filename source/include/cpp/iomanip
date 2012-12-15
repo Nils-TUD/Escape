@@ -32,11 +32,11 @@ namespace std {
 			: _mask(mask) {
 		}
 	};
-	std::ostream& operator<<(std::ostream& s,setflagsobj manip) {
+	inline std::ostream& operator<<(std::ostream& s,setflagsobj manip) {
 		s.flags(manip._mask);
 		return s;
 	}
-	std::istream& operator>>(std::istream& s,setflagsobj manip) {
+	inline std::istream& operator>>(std::istream& s,setflagsobj manip) {
 		s.flags(manip._mask);
 		return s;
 	}
@@ -47,11 +47,11 @@ namespace std {
 			: _mask(mask) {
 		}
 	};
-	std::ostream& operator<<(std::ostream& s,resetflagsobj manip) {
+	inline std::ostream& operator<<(std::ostream& s,resetflagsobj manip) {
 		s.setf(ios_base::fmtflags(0),manip._mask);
 		return s;
 	}
-	std::istream& operator>>(std::istream& s,resetflagsobj manip) {
+	inline std::istream& operator>>(std::istream& s,resetflagsobj manip) {
 		s.setf(ios_base::fmtflags(0),manip._mask);
 		return s;
 	}
@@ -62,7 +62,7 @@ namespace std {
 			: _base(base) {
 		}
 	};
-	std::ostream& operator<<(std::ostream& s,setbaseobj manip) {
+	inline std::ostream& operator<<(std::ostream& s,setbaseobj manip) {
 		int base = manip._base;
 		s.setf(base == 8 ? ios_base::oct
 				: base == 10 ? ios_base::dec
@@ -70,7 +70,7 @@ namespace std {
 				: ios_base::fmtflags(0),ios_base::basefield);
 		return s;
 	}
-	std::istream& operator>>(std::istream& s,setbaseobj manip) {
+	inline std::istream& operator>>(std::istream& s,setbaseobj manip) {
 		int base = manip._base;
 		s.setf(base == 8 ? ios_base::oct
 				: base == 10 ? ios_base::dec
@@ -85,11 +85,11 @@ namespace std {
 			: _fill(c) {
 		}
 	};
-	std::ostream& operator<<(std::ostream& s,setfillobj manip) {
+	inline std::ostream& operator<<(std::ostream& s,setfillobj manip) {
 		s.fill(manip._fill);
 		return s;
 	}
-	std::istream& operator>>(std::istream& s,setfillobj manip) {
+	inline std::istream& operator>>(std::istream& s,setfillobj manip) {
 		s.fill(manip._fill);
 		return s;
 	}
@@ -100,11 +100,11 @@ namespace std {
 			: _prec(prec) {
 		}
 	};
-	std::ostream& operator<<(std::ostream& s,setprecobj manip) {
+	inline std::ostream& operator<<(std::ostream& s,setprecobj manip) {
 		s.precision(manip._prec);
 		return s;
 	}
-	std::istream& operator>>(std::istream& s,setprecobj manip) {
+	inline std::istream& operator>>(std::istream& s,setprecobj manip) {
 		s.precision(manip._prec);
 		return s;
 	}
@@ -115,11 +115,11 @@ namespace std {
 			: _width(width) {
 		}
 	};
-	std::ostream& operator<<(std::ostream& s,setwobj manip) {
+	inline std::ostream& operator<<(std::ostream& s,setwobj manip) {
 		s.width(manip._width);
 		return s;
 	}
-	std::istream& operator>>(std::istream& s,setwobj manip) {
+	inline std::istream& operator>>(std::istream& s,setwobj manip) {
 		s.width(manip._width);
 		return s;
 	}

@@ -146,7 +146,7 @@ static void displ_drawObjects(void) {
 	int y;
 	sSLNode *n;
 	sObject *o;
-	uchar *src;
+	const uchar *src;
 	sSLList *objects = objlist_get();
 	for(n = sll_begin(objects); n != NULL; n = n->next) {
 		o = (sObject*)n->data;

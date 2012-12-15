@@ -77,7 +77,6 @@ static void vfs_releaseFile(sFile *file);
 /* global file table (expands dynamically) */
 static sDynArray gftArray;
 static sFile *gftFreeList;
-static sFile *gftUsedList;
 static sVFSNode *procsNode;
 static sVFSNode *devNode;
 static klock_t gftLock;

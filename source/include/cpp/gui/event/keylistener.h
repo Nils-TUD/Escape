@@ -48,7 +48,7 @@ namespace gui {
 		 * @param el the ui-element that received this event
 		 * @param e the key-event
 		 */
-		virtual void keyPressed(UIElement& el,const KeyEvent &e) {};
+		virtual void keyPressed(UIElement &,const KeyEvent &) {};
 
 		/**
 		 * Is called as soon as a key has been released
@@ -56,7 +56,7 @@ namespace gui {
 		 * @param el the ui-element that received this event
 		 * @param e the key-event
 		 */
-		virtual void keyReleased(UIElement& el,const KeyEvent &e) {};
+		virtual void keyReleased(UIElement &,const KeyEvent &) {};
 
 	private:
 		// no copying

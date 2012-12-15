@@ -113,14 +113,14 @@ void ShellControl::update() {
 	if(_vt->upScroll > 0) {
 		size_t lineHeight = g->getFont().getHeight() + PADDING;
 		// move lines up
-		if(_vt->upScroll < _vt->rows) {
+		if((size_t)_vt->upScroll < _vt->rows) {
 			size_t scrollPixel = _vt->upScroll * lineHeight;
 			g->moveRows(TEXTSTARTX,TEXTSTARTY + scrollPixel + lineHeight,
 					getWidth(),getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,scrollPixel);
 		}
 		// (re-)paint rows below
-		if(_vt->rows >= _vt->upScroll) {
-			if(_vt->upLength > 0 && _vt->rows > _vt->upScroll) {
+		if(_vt->rows >= (size_t)_vt->upScroll) {
+			if(_vt->upLength > 0 && _vt->rows > (size_t)_vt->upScroll) {
 				// if the content has changed, too we have to start the refresh one line before
 				clearRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
 				paintRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
@@ -146,7 +146,7 @@ void ShellControl::update() {
 	}
 	else if(_vt->upScroll < 0) {
 		// move lines down
-		if(-_vt->upScroll < _vt->rows) {
+		if((size_t)-_vt->upScroll < _vt->rows) {
 			size_t lineHeight = g->getFont().getHeight() + PADDING;
 			size_t scrollPixel = -_vt->upScroll * lineHeight;
 			g->moveRows(TEXTSTARTX,TEXTSTARTY + lineHeight,
@@ -183,7 +183,7 @@ bool ShellControl::setCursor() {
 		size_t cheight = g->getFont().getHeight();
 		uint8_t *buf = (uint8_t*)_vt->buffer + ((_vt->firstVisLine + _lastRow) *
 				_vt->cols + _lastCol) * 2;
-		assert(buf[1] >> 4 < ARRAY_SIZE(COLORS));
+		assert((size_t)(buf[1] >> 4) < ARRAY_SIZE(COLORS));
 		// clear old cursor
 		g->setColor(COLORS[buf[1] >> 4]);
 		g->fillRect(TEXTSTARTX + _lastCol * cwidth,

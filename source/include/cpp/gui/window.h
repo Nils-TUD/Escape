@@ -249,7 +249,8 @@ namespace gui {
 		 *
 		 * @param active the new value
 		 */
-		inline void setActive(bool active) {
+		inline void setActive(bool) {
+			// TODO what about the bool?
 			Application::getInstance()->requestActiveWindow(_id);
 		};
 

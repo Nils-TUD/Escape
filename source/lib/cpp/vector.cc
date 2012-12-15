@@ -226,7 +226,7 @@ namespace std {
 		position = _elements + i;
 		if(position < end())
 			memmove(position + n,position,(end() - position) * sizeof(T));
-		for(size_type i = 0; i < n; i++)
+		for(size_type j = 0; j < n; j++)
 			*position++ = x;
 		_count += n;
 	}

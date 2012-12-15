@@ -40,7 +40,8 @@ static size_t clientCount = 10;
 static size_t startFib = 20;
 
 int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	int i,dev;
+	size_t i;
+	int dev;
 	if(argc > 2)
 		clientCount = atoi(argv[2]);
 	if(argc > 3)

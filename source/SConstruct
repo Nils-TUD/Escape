@@ -95,6 +95,14 @@ env['LIBPATH'] = [env['BINDIR'], env['SYSLIBPATH']]
 hostenv['BINDIR'] = env['BINDIR']
 link_addr = 0x1000
 
+def SetLibDeps(env, lib, libs):
+	for l in libs:
+		if l != 'gcc':
+			env.Depends(lib, env['BINDIR'] + '/lib' + l + '.so')
+	if str(lib[0]) != 'libc.so' and str(lib[0]) != 'libstdc++.so':
+		env.Depends(lib, env['BINDIR'] + '/libc.so')
+		env.Depends(lib, env['BINDIR'] + '/libstdc++.so')
+
 def SetProgDeps(env, prog, static, libs, cpp):
 	crtsuffix = '.o' if static else 'S.o'
 	libsuffix = '.a' if static else '.so'
@@ -159,6 +167,7 @@ def EscapeLib(env, target, source, LIBS = []):
 	shenv = myenv.Clone()
 	shenv.Append(LINKFLAGS = ' -Wl,-shared -Wl,-soname,lib' + target + '.so')
 	shlib = shenv.SharedLibrary(target, source, LIBS = LIBS)
+	SetLibDeps(env, shlib, LIBS)
 	env.Install(env['BINDIR'], [stlib, shlib])
 	env.Install(env['DISTDIR'] + '/lib', shlib)
 

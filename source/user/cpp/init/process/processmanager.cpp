@@ -54,6 +54,8 @@ void ProcessManager::start() {
 
 	// read drivers from file
 	ifstream ifs("/etc/drivers");
+	if(!ifs)
+		throw init_error("Unable to open /etc/drivers");
 	while(!ifs.eof()) {
 		DriverProcess *drv = new DriverProcess();
 		ifs >> *drv;

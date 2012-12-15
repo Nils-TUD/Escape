@@ -155,7 +155,6 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 
 def EscapeLib(env, target, source, LIBS = []):
 	myenv = env.Clone()
-	myenv.Append(LINKFLAGS = ' -nostartfiles -nodefaultlibs')
 	stlib = myenv.StaticLibrary(target, source)
 	shenv = myenv.Clone()
 	shenv.Append(LINKFLAGS = ' -Wl,-shared -Wl,-soname,lib' + target + '.so')

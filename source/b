@@ -188,7 +188,7 @@ case "$cmd" in
 		;;
 	qemu)
 		build_iso $script
-		$QEMU $QEMU_FLAGS -cdrom $build/cd.iso
+		$QEMU $QEMU_FLAGS -cdrom $build/cd.iso | tee log.txt
 		;;
 	bochs)
 		mkdir -p $build/bin/boot/grub

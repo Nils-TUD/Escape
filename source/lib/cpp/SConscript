@@ -1,6 +1,8 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeLib(
-	env, target = 'stdc++', source = [Glob('*.cpp'), Glob('*/*/*.cpp')], LIBS = ['c', 'gcc_eh']
+myenv = env.Clone()
+myenv.Append(LINKFLAGS = ' -nodefaultlibs')
+myenv.EscapeLib(
+	myenv, target = 'stdc++', source = [Glob('*.cpp'), Glob('*/*/*.cpp')], LIBS = ['c', 'gcc_eh']
 )

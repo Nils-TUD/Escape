@@ -73,7 +73,7 @@ namespace std {
 		 */
 		void open(const char* s,ios_base::openmode mode = ios_base::out | ios_base::in) {
 			if(!rdbuf()->open(s,mode))
-				setf(failbit);
+				setstate(failbit);
 		}
 		/**
 		 * @return if a file has been opened successfully

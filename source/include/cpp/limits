@@ -238,10 +238,10 @@ namespace std {
 		static const bool is_specialized = true;
 
 		static long long min() throw () {
-			return LLONG_MIN;
+			return -9223372036854775807LL - 1;
 		}
 		static long long max() throw () {
-			return LLONG_MAX;
+			return 9223372036854775807LL;
 		}
 
 		static const int digits = 63;
@@ -260,7 +260,7 @@ namespace std {
 			return 0;
 		}
 		static unsigned long long max() throw () {
-			return ULLONG_MAX;
+			return 9223372036854775807LL * 2ULL + 1;
 		}
 
 		static const int digits = 64;

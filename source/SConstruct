@@ -12,8 +12,8 @@ elif target == 'mmix':
 else:
 	print "Please define ESC_TARGET to i586, eco32 or mmix first!"
 	Exit(1)
-crossver = '4.4.3'
-crossdir = os.path.abspath('../toolchain/' + target)
+crossver = '4.6.3'
+crossdir = '/opt/escape-cross-' + target
 
 hostenv = Environment(
 	ENV = os.environ,
@@ -23,7 +23,7 @@ env = Environment(
 	CFLAGS = '-Wall -ansi -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
 			+ ' -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline'
 			+ ' -Wno-long-long -Wstrict-prototypes -fms-extensions',
-	CXXFLAGS = '-Wall -Wextra -ansi -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
+	CXXFLAGS = '-Wall -ansi -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
 			+ ' -Wmissing-declarations -Wno-long-long',
 	ASFLAGS = '-Wa,--warn',
 	ENV = {'PATH' : crossdir + "/bin:" + os.environ['PATH']},
@@ -91,57 +91,64 @@ env.Append(
 	SYSGCCLIBPATH = crossdir + '/lib/gcc/' + cross + '/' + crossver,
 	SYSSHGCCPATH = crossdir + '/' + cross + '/lib'
 )
+env['LIBPATH'] = [env['BINDIR'], env['SYSLIBPATH']]
 hostenv['BINDIR'] = env['BINDIR']
 link_addr = 0x1000
+
+def SetProgDeps(env, prog, static, libs, cpp):
+	crtsuffix = '.o' if static else 'S.o'
+	libsuffix = '.a' if static else '.so'
+	for l in libs:
+		if l != 'gcc':
+			env.Depends(prog, env['BINDIR'] + '/lib' + l + libsuffix)
+	env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt0' + crtsuffix)
+	env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt1' + crtsuffix)
+	env.Depends(prog, env['SYSGCCLIBPATH'] + '/crtn' + crtsuffix)
+	env.Depends(prog, env['BINDIR'] + '/libc' + libsuffix)
+	env.Depends(prog, env['BINDIR'] + '/libg' + libsuffix)
+	env.Depends(prog, env['BINDIR'] + '/libm' + libsuffix)
+	if cpp:
+		env.Depends(prog, env['BINDIR'] + '/libstdc++' + libsuffix)
+		if static:
+			env.Depends(prog, env['SYSGCCLIBPATH'] + '/libgcc.a')
+		else:
+			env.Depends(prog, env['SYSSHGCCPATH'] + '/libgcc_s.so.1')
+		env.Depends(prog, env['SYSLIBPATH'] + '/libsupc++.a')
+
+def SetLinkAddr(env, static):
+	global link_addr
+	if static:
+		env.Append(LINKFLAGS = ' -Wl,--section-start=.init=' + ("0x%x" % link_addr))
+	else:
+		env.Append(LINKFLAGS = ' -Wl,--section-start=.interp=' + ("0x%x" % link_addr))
+	link_addr += 0x20000
 
 def EscapeDump(env, target, source):
 	dump = env.Command(target, source, env['BINDIR'][1:] + '/hostdump $SOURCE > $TARGET')
 	env.Depends(dump, env['BINDIR'] + '/hostdump')
 	env.Install(env['BUILDDIR'], dump)
 
-def ProgDeps(env, prog, force_static, cpp):
-	if force_static:
-		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt0.o')
-		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt1.o')
-		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crtn.o')
-		env.Depends(prog, env['BINDIR'] + '/libc.a')
-		env.Depends(prog, env['BINDIR'] + '/libg.a')
-		env.Depends(prog, env['BINDIR'] + '/libm.a')
-		if cpp:
-			env.Depends(prog, env['BINDIR'] + '/libstdc++.a')
-			env.Depends(prog, env['SYSGCCLIBPATH'] + '/libgcc.a')
-	else:
-		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt0S.o')
-		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt1S.o')
-		env.Depends(prog, env['SYSGCCLIBPATH'] + '/crtnS.o')
-	if cpp:
-		env.Depends(prog, env['SYSLIBPATH'] + '/libsupc++.a')
-
 def EscapeCProg(env, prefix, target, source, force_static = False, LIBS = []):
-	global link_addr
 	myenv = env.Clone()
-	if force_static or env['LINKTYPE'] == 'static':
+	static = force_static or env['LINKTYPE'] == 'static'
+	if static:
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
 	if target != 'escape' and target != 'dynlink' and target != 'initloader':
-		myenv.Append(LINKFLAGS = ' -Wall -Wl,--section-start=.init=' + ("0x%x" % link_addr))
-		link_addr += 0x20000
+		SetLinkAddr(myenv, static)
 	prog = myenv.Program(target, source, LIBS = LIBS)
-	ProgDeps(myenv, prog, force_static, False)
+	SetProgDeps(myenv, prog, static, LIBS, False)
 	myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
 	myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
 	return prog
 
 def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
-	global link_addr
 	myenv = env.Clone()
-	if force_static or env['LINKTYPE'] == 'static':
+	static = force_static or env['LINKTYPE'] == 'static'
+	if static:
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
-	myenv.Append(LINKFLAGS = ' -Wl,--section-start=.init=' + ("0x%x" % link_addr))
-	link_addr += 0x100000
-	prog = myenv.Program(
-		target, source, LIBS = ['stdc++', 'supc++'] + LIBS, LIBPATH = myenv['SYSLIBPATH']
-	)
-	ProgDeps(myenv, prog, force_static, True)
+	SetLinkAddr(myenv, static)
+	prog = myenv.Program(target, source, LIBS = ['stdc++', 'supc++'] + LIBS)
+	SetProgDeps(myenv, prog, static, LIBS, True)
 	myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
 	myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
 	return prog

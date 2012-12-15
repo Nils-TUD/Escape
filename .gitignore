@@ -1,2 +1,4 @@
 source/build
 toolchain
+cross/*/src
+cross/*/build

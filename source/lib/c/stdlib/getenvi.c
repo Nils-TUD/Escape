@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 char *getenvi(size_t index) {
 	static char name[MAX_NAME_LEN];

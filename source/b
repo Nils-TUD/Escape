@@ -40,7 +40,7 @@ else
 fi
 
 # don't change anything below!
-crossdir="../toolchain/$ESC_TARGET"
+crossdir="/opt/escape-cross-$ESC_TARGET"
 build="build/$ESC_TARGET-$ESC_BUILD"
 root=$(dirname $(readlink -f $0))
 bochscfg="bochs.cfg"
@@ -168,6 +168,7 @@ build_iso() {
 	mkdir -p $build/dist/boot/grub
 	cp -R dist/etc dist/scripts dist/testdir $build/dist
 	cp -R dist/arch/$ESC_TARGET/etc $build/dist
+	cp $crossdir/$cross/lib/libgcc_s.so.1 $build/dist/lib
 	cp dist/arch/$ESC_TARGET/boot/* $build/dist/boot/grub
 	cp boot/$ESC_TARGET/$1 $build/dist/boot/grub/menu.lst
 	genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito \
@@ -218,7 +219,7 @@ case "$cmd" in
 		$crossdir/bin/$cross-objdump -SC $build/bin/$binary | less
 		;;
 	elf=*)
-		$crossdir/bin/$cross-readelf -a $build/bin/$binary | less
+		$crossdir/bin/$cross-readelf -aW $build/bin/$binary | c++filt | less
 		;;
 	straddr=*)
 		echo "Strings containing '$script' in $binary:"

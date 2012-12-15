@@ -25,7 +25,7 @@ stlib = stenv.StaticLibrary(
 shenv = env.Clone()
 shenv.Append(
 	ASFLAGS = ' -DSHAREDLIB=1',
-	LINKFLAGS = ' -Wl,-shared -Wl,-soname,libc.so'
+	LINKFLAGS = ' -nodefaultlibs -Wl,-shared -Wl,-soname,libc.so'
 )
 crt0 = shenv.Object('crt0S.o', 'arch/' + shenv['ARCH'] + '/crt0.S')
 crt1 = shenv.Object('crt1S.o', 'arch/' + shenv['ARCH'] + '/crt1.S')
@@ -34,8 +34,7 @@ shenv.Install(shenv['SYSGCCLIBPATH'], [crt0, crt1, crtn])
 
 shlib = shenv.SharedLibrary(
 	target = 'c',
-	source = acsrc + assrc + csrc + baseacsrc + baseassrc,
-	LIBS = ['gcc']
+	source = acsrc + assrc + csrc + baseacsrc + baseassrc
 )
 
 env.Install(env['BINDIR'], [stlib, shlib])

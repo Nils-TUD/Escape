@@ -25,7 +25,7 @@
 #include <functional>
 #include <algorithm>
 #include <utility>
-#include <exception>
+#include <stdexcept>
 #include <limits>
 
 namespace std {

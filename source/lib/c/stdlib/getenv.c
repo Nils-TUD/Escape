@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 char *getenv(const char *name) {
 	static char value[MAX_PATH_LEN];

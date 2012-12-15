@@ -1,9 +1,9 @@
-diff -rcN src/binutils_org/bfd/config.bfd src/binutils/bfd/config.bfd
-*** src/binutils_org/bfd/config.bfd	2009-08-06 19:38:00.000000000 +0200
---- src/binutils/bfd/config.bfd	2010-07-06 13:10:35.000000000 +0200
+diff -rcN src/binutils-org/bfd/config.bfd src/binutils/bfd/config.bfd
+*** src/binutils-org/bfd/config.bfd	2011-04-01 14:02:42.000000000 +0200
+--- src/binutils/bfd/config.bfd	2012-12-15 14:44:40.077256640 +0100
 ***************
-*** 525,530 ****
---- 525,534 ----
+*** 522,527 ****
+--- 522,531 ----
     i[3-7]86-*-chorus*)
       targ_defvec=bfd_elf32_i386_vec
       ;;
@@ -14,11 +14,11 @@ diff -rcN src/binutils_org/bfd/config.bfd src/binutils/bfd/config.bfd
     i[3-7]86-*-dicos*)
       targ_defvec=bfd_elf32_i386_vec
       targ64_selvecs="bfd_elf64_x86_64_vec bfd_elf64_l1om_vec"
-diff -rcN src/binutils_org/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
-*** src/binutils_org/bfd/elf32-i386.c	2010-07-09 19:04:29.000000000 +0200
---- src/binutils/bfd/elf32-i386.c	2010-07-09 19:04:33.000000000 +0200
+diff -rcN src/binutils-org/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
+*** src/binutils-org/bfd/elf32-i386.c	2011-06-27 09:39:04.000000000 +0200
+--- src/binutils/bfd/elf32-i386.c	2012-12-15 14:45:15.301257443 +0100
 ***************
-*** 513,519 ****
+*** 515,521 ****
   /* The name of the dynamic interpreter.  This is put in the .interp
      section.  */
   
@@ -26,7 +26,7 @@ diff -rcN src/binutils_org/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
   
   /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
      copying dynamic variables from a shared lib into an app's dynbss
---- 513,519 ----
+--- 515,521 ----
   /* The name of the dynamic interpreter.  This is put in the .interp
      section.  */
   
@@ -34,42 +34,42 @@ diff -rcN src/binutils_org/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
   
   /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
      copying dynamic variables from a shared lib into an app's dynbss
-diff -rcN src/binutils_org/config.sub src/binutils/config.sub
-*** src/binutils_org/config.sub	2009-08-17 06:10:29.000000000 +0200
---- src/binutils/config.sub	2010-07-05 21:43:58.000000000 +0200
+diff -rcN src/binutils-org/config.sub src/binutils/config.sub
+*** src/binutils-org/config.sub	2010-06-01 19:53:40.000000000 +0200
+--- src/binutils/config.sub	2012-12-15 14:46:04.577258565 +0100
 ***************
-*** 1274,1280 ****
-  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
-  	      | -kopensolaris* \
+*** 1297,1303 ****
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+  	      | -sym* | -kopensolaris* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
---- 1274,1280 ----
-  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
-  	      | -kopensolaris* \
+--- 1297,1303 ----
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+  	      | -sym* | -kopensolaris* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* | -escape* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
-diff -rcN src/binutils_org/gas/configure.tgt src/binutils/gas/configure.tgt
-*** src/binutils_org/gas/configure.tgt	2009-09-09 10:13:28.000000000 +0200
---- src/binutils/gas/configure.tgt	2010-07-05 21:43:58.000000000 +0200
+diff -rcN src/binutils-org/gas/configure.tgt src/binutils/gas/configure.tgt
+*** src/binutils-org/gas/configure.tgt	2011-04-01 14:02:42.000000000 +0200
+--- src/binutils/gas/configure.tgt	2012-12-15 14:46:48.769259571 +0100
 ***************
 *** 96,101 ****
 --- 96,102 ----
   generic_target=${cpu_type}-$vendor-$os
   # Note: This table is alpha-sorted, please try to keep it that way.
   case ${generic_target} in
-+   i386-*-escape*)    fmt=elf ;;
++   i386-*-escape*)           fmt=elf ;;
     alpha-*-*vms*)			fmt=evax ;;
     alpha-*-osf*)				fmt=ecoff ;;
     alpha-*-linuxecoff*)			fmt=ecoff ;;
-diff -rcN src/binutils_org/ld/configure.tgt src/binutils/ld/configure.tgt
-*** src/binutils_org/ld/configure.tgt	2009-08-06 19:38:03.000000000 +0200
---- src/binutils/ld/configure.tgt	2010-07-05 21:43:58.000000000 +0200
+diff -rcN src/binutils-org/ld/configure.tgt src/binutils/ld/configure.tgt
+*** src/binutils-org/ld/configure.tgt	2011-04-01 14:03:54.000000000 +0200
+--- src/binutils/ld/configure.tgt	2012-12-15 14:47:17.437260224 +0100
 ***************
 *** 27,32 ****
 --- 27,33 ----
@@ -80,9 +80,9 @@ diff -rcN src/binutils_org/ld/configure.tgt src/binutils/ld/configure.tgt
   alpha*-*-freebsd* | alpha*-*-kfreebsd*-gnu)
   		        targ_emul=elf64alpha_fbsd
   			targ_extra_emuls="elf64alpha alpha"
-diff -rcN src/binutils_org/ld/emulparams/escape_i386.sh src/binutils/ld/emulparams/escape_i386.sh
-*** src/binutils_org/ld/emulparams/escape_i386.sh	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/ld/emulparams/escape_i386.sh	2010-07-05 21:43:58.000000000 +0200
+diff -rcN src/binutils-org/ld/emulparams/escape_i386.sh src/binutils/ld/emulparams/escape_i386.sh
+*** src/binutils-org/ld/emulparams/escape_i386.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/emulparams/escape_i386.sh	2012-12-15 14:47:54.701261073 +0100
 ***************
 *** 0 ****
 --- 1,15 ----
@@ -101,12 +101,12 @@ diff -rcN src/binutils_org/ld/emulparams/escape_i386.sh src/binutils/ld/emulpara
 + SEPARATE_GOTPLT=12
 + DATA_ADDR="ALIGN(${MAXPAGESIZE})"
 + SHLIB_DATA_ADDR="ALIGN(${MAXPAGESIZE})"
-diff -rcN src/binutils_org/ld/Makefile.in src/binutils/ld/Makefile.in
-*** src/binutils_org/ld/Makefile.in	2009-09-07 14:10:24.000000000 +0200
---- src/binutils/ld/Makefile.in	2010-07-05 21:43:58.000000000 +0200
+diff -rcN src/binutils-org/ld/Makefile.in src/binutils/ld/Makefile.in
+*** src/binutils-org/ld/Makefile.in	2011-03-16 09:37:30.000000000 +0100
+--- src/binutils/ld/Makefile.in	2012-12-15 14:48:34.905261989 +0100
 ***************
-*** 1930,1935 ****
---- 1930,1937 ----
+*** 2059,2064 ****
+--- 2059,2066 ----
   
   @TDIRS@
   

@@ -37,14 +37,13 @@
 #	define DBGDL(x,...)
 #endif
 
-#define TEXT_BEGIN		0x1000
-
 typedef struct sSharedLib sSharedLib;
 struct sSharedLib {
 	uchar isDSO;
 	const char *name;
 	int fd;
 	sBinDesc bin;
+	uintptr_t mainTextAddr;
 	uintptr_t loadAddr;
 	size_t textSize;
 	Elf32_Dyn *dyn;

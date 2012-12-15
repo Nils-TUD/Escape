@@ -38,3 +38,5 @@ namespace std {
 	ostream &clog = _clog;
 	ios_base::Init init;
 }
+
+void *__dso_handle;

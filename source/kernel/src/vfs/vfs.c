@@ -48,7 +48,7 @@
 #define FILE_COUNT					(gftArray.objCount)
 
 /* an entry in the global file table */
-typedef struct sFile {
+struct sFile {
 	klock_t lock;
 	/* read OR write; flags = 0 => entry unused */
 	ushort flags;
@@ -68,7 +68,7 @@ typedef struct sFile {
 	dev_t devNo;
 	/* for the freelist */
 	struct sFile *next;
-} sFile;
+};
 
 static bool vfs_doCloseFile(pid_t pid,sFile *file);
 static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n,sFile **f);

@@ -23,6 +23,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/pmem.h>
 #include <sys/video.h>
+#include <assert.h>
 #include <string.h>
 #include <esc/test.h>
 #include "tpaging.h"
@@ -103,6 +104,7 @@ static void test_paging_foreign(void) {
 	else
 		test_caseSucceeded();
 	proc_terminate(child->pid,0,0);
+	assert(thread_beginTerm((sThread*)sll_get(&child->threads,0)));
 	proc_destroy(child->pid);
 	proc_kill(child->pid);
 }

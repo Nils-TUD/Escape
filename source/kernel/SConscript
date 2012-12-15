@@ -1,0 +1,51 @@
+# -*- Mode: Python -*-
+
+Import('env')
+import os
+
+kenv = env.Clone()
+ldconf = 'kernel/src/arch/' + kenv['ARCH'] + '/ld.conf'
+kenv.Append(
+	CFLAGS = ' -DIN_KERNEL=1',
+	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldconf
+)
+
+src = [Glob('src/arch/' + kenv['ARCH'] + '/kernel.S')]
+src += [Glob('src/*.c'), Glob('src/*/*.c')]
+src += [f for f in Glob('src/*/*/*.c') if 'arch/' not in str(f)]
+src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*.c') if 'start.c' not in str(f)]
+src += [Glob('src/arch/' + kenv['ARCH'] + '/*/*.c')]
+src += [Glob('src/basic/arch/' + kenv['ARCH'] + '/*.c'), Glob('src/basic/arch/' + kenv['ARCH'] + '/*.S')]
+src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*.S')
+		if 'kernel.S' not in str(f) and 'end.S' not in str(f)]
+src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*/*.S')]
+tsrc = [Glob('test/*.c'), Glob('test/arch/' + kenv['ARCH'] + '/*.c')]
+main = 'src/arch/' + kenv['ARCH'] + '/start.c'
+
+# works around the problem that we use those sources for two programs. this way, we isolate each
+# source file in its own environment
+def objects(env, srcs):
+    return [env.Object(src) for src in srcs]
+
+symfile = kenv['BUILDDIR'] + '/kernel_symbols.txt'
+if not os.path.exists(symfile):
+	kenv.Command(symfile, None, 'echo 1 > $TARGET')
+kenv.Depends('ksymbols.c', symfile)
+
+kernel = kenv.EscapeCProg(
+	kenv, 'boot', target = 'escape', source = objects(kenv, src) + [main],
+	force_static = True, LIBS = ['gcc']
+)
+test_kernel = kenv.EscapeCProg(
+	kenv, 'boot', target = 'escape_test', source = objects(kenv, src) + tsrc,
+	force_static = True, LIBS = ['gcc']
+)
+
+if kenv['ARCH'] == 'i586':
+	tramp = kenv['BUILDDIR'] + '/kernel_tramp.dump'
+	trampobj = kenv['BUILDDIR'] + '/kernel_tramp.o'
+	kenv.Command(trampobj, 'src/arch/i586/trampoline.asm','nasm -f bin -o $TARGET $SOURCE')
+	dump = env.Command(tramp, trampobj, kenv['BINDIR'][1:] + '/hostdump $SOURCE > $TARGET')
+	kenv.Depends(dump, kenv['BINDIR'] + '/hostdump')
+	kenv.Depends(kernel, tramp)
+	kenv.Depends(test_kernel, tramp)

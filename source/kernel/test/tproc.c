@@ -23,6 +23,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/video.h>
 #include <esc/test.h>
+#include <assert.h>
 #include "testutils.h"
 #include "tproc.h"
 
@@ -59,6 +60,7 @@ static void test_proc(void) {
 		tprintf("Destroying process\n");
 		/* first terminate it, then free resources and finally remove the process */
 		proc_terminate(pid,0,0);
+		assert(thread_beginTerm((sThread*)sll_get(&proc_getByPid(pid)->threads,0)));
 		proc_destroy(pid);
 		proc_kill(pid);
 	}

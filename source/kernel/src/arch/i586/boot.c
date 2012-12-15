@@ -68,9 +68,7 @@ static const sBootTask tasks[] = {
 	{"Initializing processes...",proc_init},
 	{"Initializing scheduler...",sched_init},
 	{"Initializing terminator...",term_init},
-#ifndef TESTING
 	{"Start logging to VFS...",log_vfsIsReady},
-#endif
 	{"Initializing virtual memory-management...",vmm_init},
 	{"Initializing copy-on-write...",cow_init},
 	{"Initializing shared memory...",shm_init},
@@ -177,6 +175,8 @@ size_t boot_getKernelSize(void) {
 }
 
 size_t boot_getModuleSize(void) {
+	if(mb->modsCount == 0)
+		return 0;
 	uintptr_t start = mb->modsAddr[0].modStart;
 	uintptr_t end = mb->modsAddr[mb->modsCount - 1].modEnd;
 	return end - start;

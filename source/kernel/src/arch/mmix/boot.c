@@ -56,9 +56,7 @@ static const sBootTask tasks[] = {
 	{"Initializing processes...",proc_init},
 	{"Initializing scheduler...",sched_init},
 	{"Initializing terminator...",term_init},
-#ifndef TESTING
 	{"Start logging to VFS...",log_vfsIsReady},
-#endif
 	{"Initializing virtual memory-management...",vmm_init},
 	{"Initializing copy-on-write...",cow_init},
 	{"Initializing shared memory...",shm_init},

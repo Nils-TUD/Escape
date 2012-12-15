@@ -21,6 +21,7 @@
 #include <sys/task/signals.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
+#include <assert.h>
 #include "esc/test.h"
 #include "tsignals.h"
 
@@ -163,5 +164,6 @@ static void test_setHandler(void) {
 	test_assertSize(sig_dbg_getHandlerCount(),0);
 	test_caseSucceeded();
 
+	assert(thread_beginTerm(t2));
 	proc_killThread(tid);
 }

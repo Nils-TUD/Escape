@@ -51,8 +51,8 @@ if btype == 'debug':
 	)
 else:
 	env.Append(
-		CFLAGS = ' -O3 -fno-builtin -ggdb -DNDEBUG',
-		CXXFLAGS = ' -O3 -ggdb -DNDEBUG'
+		CFLAGS = ' -O3 -fno-builtin -DNDEBUG',
+		CXXFLAGS = ' -O3 -DNDEBUG'
 	)
 	btype = 'release'
 builddir = 'build/' + target + '-' + btype
@@ -141,7 +141,7 @@ def EscapeCProg(env, prefix, target, source, force_static = False, LIBS = []):
 	static = force_static or env['LINKTYPE'] == 'static'
 	if static:
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
-	if target != 'escape' and target != 'dynlink' and target != 'initloader':
+	if target != 'escape' and target != 'escape_test' and target != 'dynlink' and target != 'initloader':
 		SetLinkAddr(myenv, static)
 	prog = myenv.Program(target, source, LIBS = LIBS)
 	SetProgDeps(myenv, prog, static, LIBS, False)
@@ -181,7 +181,7 @@ env.EscapeLib = EscapeLib
 hostenv.SConscript('tools/SConscript', 'hostenv',
 				   variant_dir = builddir + '/tools', duplicate = 0)
 
-for d in ['dist', 'lib', 'drivers', 'user', 'kernel/src']:
+for d in ['dist', 'lib', 'drivers', 'user', 'kernel']:
 	env.SConscript(d + '/SConscript', 'env',
 				   variant_dir = builddir + '/' + d, duplicate = 0)
 

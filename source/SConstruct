@@ -51,8 +51,8 @@ if btype == 'debug':
 	)
 else:
 	env.Append(
-		CFLAGS = ' -O3 -fno-builtin -DNDEBUG',
-		CXXFLAGS = ' -O3 -DNDEBUG'
+		CFLAGS = ' -O3 -fno-builtin -DNDEBUG -fno-omit-frame-pointer',
+		CXXFLAGS = ' -O3 -DNDEBUG -fno-omit-frame-pointer'
 	)
 	btype = 'release'
 builddir = 'build/' + target + '-' + btype
@@ -136,17 +136,18 @@ def EscapeDump(env, target, source):
 	env.Depends(dump, env['BINDIR'] + '/hostdump')
 	env.Install(env['BUILDDIR'], dump)
 
-def EscapeCProg(env, prefix, target, source, force_static = False, LIBS = []):
+def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = True, LIBS = []):
 	myenv = env.Clone()
 	static = force_static or env['LINKTYPE'] == 'static'
 	if static:
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
-	if target != 'escape' and target != 'escape_test' and target != 'dynlink' and target != 'initloader':
+	if var_addr:
 		SetLinkAddr(myenv, static)
 	prog = myenv.Program(target, source, LIBS = LIBS)
 	SetProgDeps(myenv, prog, static, LIBS, False)
-	myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
-	myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
+	if prefix != '':
+		myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
+		myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
 	return prog
 
 def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):

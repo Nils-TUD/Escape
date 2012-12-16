@@ -21,33 +21,22 @@
 #include <sys/ksymbols.h>
 #include <sys/video.h>
 
-static sSymbol ksymbols[] = {
-	/* add dummy-entry to prevent empty array */
-	{0,""},
-#ifdef __i386__
-#	include <sys/arch/i586/ksymbols.h>
-#endif
-#ifdef __eco32__
-#	include <sys/arch/eco32/ksymbols.h>
-#endif
-#ifdef __mmix__
-#	include <sys/arch/mmix/ksymbols.h>
-#endif
-};
+extern sSymbol kernel_symbols[];
+extern size_t kernel_symbol_count;
 
 void ksym_print(void) {
 	size_t i;
 	vid_printf("Kernel-Symbols:\n");
-	for(i = 0; i < ARRAY_SIZE(ksymbols); i++)
-		vid_printf("\t%p -> %s\n",ksymbols[i].address,ksymbols[i].funcName);
+	for(i = 0; i < kernel_symbol_count; i++)
+		vid_printf("\t%p -> %s\n",kernel_symbols[i].address,kernel_symbols[i].funcName);
 }
 
 sSymbol *ksym_getSymbolAt(uintptr_t address) {
-	sSymbol *sym = &ksymbols[ARRAY_SIZE(ksymbols) - 1];
-	while(sym >= &ksymbols[0]) {
+	sSymbol *sym = &kernel_symbols[kernel_symbol_count - 1];
+	while(sym >= &kernel_symbols[0]) {
 		if(address >= sym->address)
 			return sym;
 		sym--;
 	}
-	return &ksymbols[0];
+	return &kernel_symbols[0];
 }

@@ -5,9 +5,11 @@ import os
 
 kenv = env.Clone()
 ldconf = 'kernel/src/arch/' + kenv['ARCH'] + '/ld.conf'
+gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
 kenv.Append(
 	CFLAGS = ' -DIN_KERNEL=1',
-	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldconf
+	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldconf,
+	BUILDERS = {'GenSyms' : gensyms}
 )
 
 src = [Glob('src/arch/' + kenv['ARCH'] + '/kernel.S')]
@@ -20,26 +22,35 @@ src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*.S')
 		if 'kernel.S' not in str(f) and 'end.S' not in str(f)]
 src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*/*.S')]
 tsrc = [Glob('test/*.c'), Glob('test/arch/' + kenv['ARCH'] + '/*.c')]
-main = 'src/arch/' + kenv['ARCH'] + '/start.c'
+mainsrc = 'src/arch/' + kenv['ARCH'] + '/start.c'
 
 # works around the problem that we use those sources for two programs. this way, we isolate each
 # source file in its own environment
 def objects(env, srcs):
     return [env.Object(src) for src in srcs]
 
-symfile = kenv['BUILDDIR'] + '/kernel_symbols.txt'
-if not os.path.exists(symfile):
-	kenv.Command(symfile, None, 'echo 1 > $TARGET')
-kenv.Depends('ksymbols.c', symfile)
+def LinkWithSymbols(kenv, name, objects):
+	# generate empty symbol file
+	kenv.GenSyms(name + 'ksyms1.c', kenv.Value('-'))
+	kenv.Object(name + 'ksyms1.o', name + 'ksyms1.c')
+	# build the kernel with it
+	prekernel = kenv.EscapeCProg(
+		kenv, prefix = '', target = 'pre' + name, source = objects + [name + 'ksyms1.o'],
+		force_static = True, var_addr = False, LIBS = ['gcc']
+	)
+	
+	# generate symbol file for built kernel
+	kenv.GenSyms(name + 'ksyms2.c', prekernel)
+	kenv.Object(name + 'ksyms2.o', name + 'ksyms2.c')
+	# now build the real kernel
+	kernel = kenv.EscapeCProg(
+		kenv, prefix = 'boot', target = name, source = objects + [name + 'ksyms2.o'],
+		force_static = True, var_addr = False, LIBS = ['gcc']
+	)
+	return kernel
 
-kernel = kenv.EscapeCProg(
-	kenv, 'boot', target = 'escape', source = objects(kenv, src) + [main],
-	force_static = True, LIBS = ['gcc']
-)
-test_kernel = kenv.EscapeCProg(
-	kenv, 'boot', target = 'escape_test', source = objects(kenv, src) + tsrc,
-	force_static = True, LIBS = ['gcc']
-)
+kernel = LinkWithSymbols(kenv, 'escape', objects(kenv, src + [mainsrc]))
+test_kernel = LinkWithSymbols(kenv, 'escape_test', objects(kenv, src + tsrc))
 
 if kenv['ARCH'] == 'i586':
 	tramp = kenv['BUILDDIR'] + '/kernel_tramp.dump'

@@ -97,82 +97,80 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER v
 	assert(node != NULL);
 	assert(buffer != NULL);
 
-	/* we need the number of bytes first */
-	firstChild = n = vfs_node_openDir(node,true,&isValid);
+	/* the root-directory is distributed on the fs-device and the kernel */
+	/* therefore we have to read it from the fs-device, too */
+	/* but don't do that if we're the kernel (vfsr does not work then) */
 	byteCount = 0;
 	fsByteCount = 0;
+	if(node->parent == NULL && pid != KERNEL_PID) {
+		const size_t bufSize = 1024;
+		size_t c,curSize = bufSize;
+		fsBytes = cache_alloc(bufSize);
+		if(fsBytes != NULL) {
+			sFile *rfile;
+			thread_addHeapAlloc(fsBytes);
+			if(vfs_fsmsgs_openPath(pid,VFS_READ,"/",&rfile) == 0) {
+				while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
+					fsByteCount += c;
+					if(c < bufSize)
+						break;
+
+					curSize += bufSize;
+					fsBytesDup = cache_realloc(fsBytes,curSize);
+					if(fsBytesDup == NULL) {
+						byteCount = 0;
+						goto error;
+					}
+					thread_remHeapAlloc(fsBytes);
+					fsBytes = fsBytesDup;
+					thread_addHeapAlloc(fsBytes);
+				}
+				vfs_closeFile(pid,rfile);
+			}
+			thread_remHeapAlloc(fsBytes);
+		}
+		byteCount += fsByteCount;
+	}
+
+	firstChild = n = vfs_node_openDir(node,true,&isValid);
 	if(isValid) {
+		/* count the number of bytes in the virtual directory */
+		/* note that we do that here because using the fs service involves context-switches,
+		 * which may lead to a deadlock if we hold the node-lock during that time */
 		while(n != NULL) {
 			if(node->parent != NULL || ((n->nameLen != 1 || strcmp(n->name,".") != 0)
 					&& (n->nameLen != 2 || strcmp(n->name,"..") != 0)))
 				byteCount += sizeof(sVFSDirEntry) + n->nameLen;
 			n = n->next;
 		}
-		/* no close here, we iterate over the directory again afterwards. in the meantime, it can't
-		 * be changed */
 
-		/* the root-directory is distributed on the fs-device and the kernel */
-		/* therefore we have to read it from the fs-device, too */
-		/* but don't do that if we're the kernel (vfsr does not work then) */
-		if(node->parent == NULL && pid != KERNEL_PID) {
-			const size_t bufSize = 1024;
-			size_t c,curSize = bufSize;
-			fsBytes = cache_alloc(bufSize);
-			if(fsBytes != NULL) {
-				sFile *rfile;
-				thread_addHeapAlloc(fsBytes);
-				if(vfs_fsmsgs_openPath(pid,VFS_READ,"/",&rfile) == 0) {
-					while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
-						fsByteCount += c;
-						if(c < bufSize)
-							break;
-
-						curSize += bufSize;
-						fsBytesDup = cache_realloc(fsBytes,curSize);
-						if(fsBytesDup == NULL) {
-							byteCount = 0;
-							break;
-						}
-						thread_remHeapAlloc(fsBytes);
-						fsBytes = fsBytesDup;
-						thread_addHeapAlloc(fsBytes);
-					}
-					vfs_closeFile(pid,rfile);
-				}
-				thread_remHeapAlloc(fsBytes);
-			}
-			byteCount += fsByteCount;
-		}
-
-		if(byteCount > 0) {
-			/* now allocate mem on the heap and copy all data into it */
-			fsBytesDup = cache_realloc(fsBytes,byteCount);
-			if(fsBytesDup == NULL)
-				byteCount = 0;
-			else {
-				size_t len;
-				sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
-				fsBytes = fsBytesDup;
-				thread_addHeapAlloc(fsBytes);
-				n = firstChild;
-				while(n != NULL) {
-					if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
-							(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
-						n = n->next;
-						continue;
-					}
-					len = n->nameLen;
-					/* unfortunatly, we have to convert the endianess here, because readdir() expects
-					 * that its encoded in little endian */
-					dirEntry->nodeNo = cputole32(vfs_node_getNo(n));
-					dirEntry->nameLen = cputole16(len);
-					dirEntry->recLen = cputole16(sizeof(sVFSDirEntry) + len);
-					memcpy(dirEntry + 1,n->name,len);
-					dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
+		/* now allocate mem on the heap and copy all data into it */
+		fsBytesDup = cache_realloc(fsBytes,byteCount);
+		if(fsBytesDup == NULL)
+			byteCount = 0;
+		else {
+			size_t len;
+			sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
+			fsBytes = fsBytesDup;
+			thread_addHeapAlloc(fsBytes);
+			n = firstChild;
+			while(n != NULL) {
+				if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
+						(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
 					n = n->next;
+					continue;
 				}
-				thread_remHeapAlloc(fsBytes);
+				len = n->nameLen;
+				/* unfortunatly, we have to convert the endianess here, because readdir() expects
+				 * that its encoded in little endian */
+				dirEntry->nodeNo = cputole32(vfs_node_getNo(n));
+				dirEntry->nameLen = cputole16(len);
+				dirEntry->recLen = cputole16(sizeof(sVFSDirEntry) + len);
+				memcpy(dirEntry + 1,n->name,len);
+				dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
+				n = n->next;
 			}
+			thread_remHeapAlloc(fsBytes);
 		}
 	}
 	vfs_node_closeDir(node,true);
@@ -185,6 +183,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER v
 		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
 		thread_remHeapAlloc(fsBytes);
 	}
+error:
 	cache_free(fsBytes);
 	return byteCount;
 }

@@ -653,6 +653,7 @@ static void proc_doDestroy(sProc *p) {
 	env_removeFor(p->pid);
 	proc_doRemoveRegions(p,true);
 	vmfree_destroy(&p->freemap);
+	vmreg_remTree(&p->regtree);
 	paging_destroyPDir(&p->pagedir);
 	lock_releaseAll(p->pid);
 	proc_terminateArch(p);

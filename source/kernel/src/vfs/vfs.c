@@ -1153,7 +1153,8 @@ inode_t vfs_createProcess(pid_t pid) {
 	n = vfs_node_openDir(proc,true,&isValid);
 	if(!isValid) {
 		vfs_node_closeDir(proc,true);
-		return -EDESTROYED;
+		res = -EDESTROYED;
+		goto errorName;
 	}
 	while(n != NULL) {
 		/* entry already existing? */

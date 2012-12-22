@@ -19,7 +19,7 @@ $(BUILDDIRS):
 
 $(BIN):	$(OBJS) $(LIBS)
 	@echo "	" LINKING $@
-	@$(CC) $(CFLAGS) -o $@ -lm $(OBJS) $(LIBS)
+	@$(CC) $(CFLAGS) -o $@ $(OBJS) $(LIBS) -lm
 
 $(BUILDL)/%.o:	%.c
 	@echo "	" CC $<

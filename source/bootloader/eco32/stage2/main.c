@@ -22,7 +22,7 @@
 #include <esc/endian.h>
 #include <esc/elf.h>
 #include <sys/boot.h>
-#include "../../../../drivers/common/fs/ext2/ext2.h"
+#include "../../../drivers/common/fs/ext2/ext2.h"
 #include <string.h>
 #include <stdarg.h>
 
@@ -36,7 +36,7 @@
 
 /* hardcoded here; the monitor will choose them later */
 #define BOOT_DISK			0
-#define START_SECTOR		32		/* part 0 */
+#define START_SECTOR		128		/* part 0 */
 
 typedef struct {
 	sExt2SuperBlock superBlock;
@@ -51,7 +51,7 @@ extern int sctcapctl(void);
 
 /* the tasks we should load */
 static sLoadProg progs[MAX_PROG_COUNT] = {
-	{"/boot/kernel.bin","/boot/kernel.bin",BL_K_ID,0,0},
+	{"/boot/escape","/boot/escape",BL_K_ID,0,0},
 	{"/sbin/disk","/sbin/disk /system/devices/disk",BL_DISK_ID,0,0},
 	{"/sbin/rtc","/sbin/rtc /dev/rtc",BL_RTC_ID,0,0},
 	{"/sbin/fs","/sbin/fs /dev/fs /dev/hda1 ext2",BL_FS_ID,0,0},

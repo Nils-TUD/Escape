@@ -50,7 +50,8 @@ typedef uint32_t uintptr_t;
 typedef int32_t ssize_t;
 #endif
 
-#ifdef __cplusplus
+/* don't put size_t in std:: for eco32 (we have a different gcc version there) */
+#if defined(__cplusplus) && !defined(__eco32__)
 namespace std {
 #endif
 
@@ -72,7 +73,7 @@ typedef uint32_t size_t;
 #endif
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) && !defined(__eco32__)
 }
 #endif
 

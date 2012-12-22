@@ -4,15 +4,15 @@ import sys, os
 
 target = os.environ.get('ESC_TARGET') or 'x86_64'
 if target == 'i586':
-	cross = 'i586-elf-escape'
+	crossver = '4.6.3'
 elif target == 'eco32':
-	cross = 'eco32-elf-escape'
+	crossver = '4.4.3'
 elif target == 'mmix':
-	cross = 'mmix-elf-escape'
+	crossver = '4.6.3'
 else:
 	print "Please define ESC_TARGET to i586, eco32 or mmix first!"
 	Exit(1)
-crossver = '4.6.3'
+cross = target + '-elf-escape'
 crossdir = '/opt/escape-cross-' + target
 
 hostenv = Environment(

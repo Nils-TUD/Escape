@@ -1,0 +1,16 @@
+diff -rcN include_org/machine/ieeefp.h include/machine/ieeefp.h
+*** include_org/machine/ieeefp.h	2006-11-08 20:26:43.000000000 +0100
+--- include/machine/ieeefp.h	2011-05-31 14:09:40.000000000 +0200
+***************
+*** 154,159 ****
+--- 154,163 ----
+  #define __IEEE_BIG_ENDIAN
+  #endif
+  
++ #ifdef __eco32__
++ #define __IEEE_BIG_ENDIAN
++ #endif
++ 
+  #ifdef __D30V__
+  #define __IEEE_BIG_ENDIAN
+  #endif

@@ -152,7 +152,9 @@
 */
 namespace std
 {
+#ifndef __eco32__
   typedef __SIZE_TYPE__ 	size_t;
+#endif
   typedef __PTRDIFF_TYPE__	ptrdiff_t;
 
 #ifdef __GXX_EXPERIMENTAL_CXX0X__

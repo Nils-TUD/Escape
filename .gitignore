@@ -2,6 +2,16 @@
 /gimmix/build
 /gimmix/org/build
 /eco32/build
+/eco32/asld
+/eco32/disk
+/eco32/hwtests
+/eco32/simtest
+/eco32/monitor
+/eco32/stdalone
 /source/log.txt
 /cross/*/src
 /cross/*/build
+*.o
+*.bin
+*.mak
+*.exo

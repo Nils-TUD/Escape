@@ -193,6 +193,9 @@ case "$cmd" in
 			# which replaces itself with the given program afterwards
 			$build/tools/ignoreint/ignoreint ./boot/$ESC_TARGET/$script $build \
 				"$ESC_SIM_FLAGS -S -s" >log.txt &
+		elif [ "$ESC_TARGET" = "eco32" ]; then
+			echo "Sorry, a gdb is not available for eco32" >&2
+			exit 1
 		else
 			./boot/$ESC_TARGET/$script $build \
 				"$ESC_SIM_FLAGS -s $build/map/$binary.map -p 1234" >log.txt &

@@ -1,5 +1,7 @@
-source/build
-source/log.txt
-toolchain
-cross/*/src
-cross/*/build
+/source/build
+/gimmix/build
+/gimmix/org/build
+/eco32/build
+/source/log.txt
+/cross/*/src
+/cross/*/build

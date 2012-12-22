@@ -1,0 +1,4 @@
+#!/bin/sh
+. boot/$ESC_TARGET/images.sh
+create_cd $1/dist $1/cd.iso
+$ESC_QEMU -m 64 -serial stdio -cdrom $1/cd.iso $2 | tee log.txt

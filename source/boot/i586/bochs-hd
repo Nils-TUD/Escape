@@ -1,0 +1,10 @@
+#!/bin/sh
+. boot/$ESC_TARGET/images.sh
+
+create_disk $1/dist $1/hd.img
+
+cat boot/$ESC_TARGET/bochs.cfg > $1/bochs.cfg
+echo "ata0-master: type=disk, path=`readlink -f $1/hd.img`, cylinders=0" >> $1/bochs.cfg
+echo "boot: disk" >> $1/bochs.cfg
+
+bochs -f $1/bochs.cfg -q

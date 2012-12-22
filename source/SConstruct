@@ -36,12 +36,14 @@ env = Environment(
 	RANLIB = cross + '-ranlib',
 )
 
-linktype = os.environ.get('ESC_LINKTYPE')
-if linktype != 'static':
-	linktype = 'dynamic'
-gcclinktype = os.environ.get('ESC_GCCLINKTYPE')
-if gcclinktype == 'static':
-	env.Append(LINKFLAGS = ' -static-libgcc')
+linktype = 'static'
+if target == 'i586':
+	linktype = os.environ.get('ESC_LINKTYPE')
+	if linktype != 'static':
+		linktype = 'dynamic'
+	gcclinktype = os.environ.get('ESC_GCCLINKTYPE')
+	if gcclinktype == 'static':
+		env.Append(LINKFLAGS = ' -static-libgcc')
 
 btype = os.environ.get('ESC_BUILD')
 if btype == 'debug':
@@ -64,7 +66,7 @@ if target == 'mmix':
 		CFLAGS = ' -mno-base-addresses',
 		CXXFLAGS = ' -mno-base-addresses',
 		# do not warn if instructions are extended to setl,incml,...
-		ASFLAGS = ' -x'
+		ASFLAGS = ' -Wa,-x'
 	)
 
 verbose = os.environ.get('ESC_VERBOSE',0)
@@ -83,10 +85,13 @@ if int(verbose) == 0:
 env.Append(
 	ARCH = target,
 	LINKTYPE = linktype,
+	CROSSDIR = crossdir,
+	CROSS = cross,
 	ROOTDIR = '#',
 	BUILDDIR = '#' + builddir,
 	DISTDIR = '#' + builddir + '/dist',
 	BINDIR = '#' + builddir + '/bin',
+	MAPDIR = '#' + builddir + '/map',
 	SYSLIBPATH = crossdir + '/lib',
 	SYSGCCLIBPATH = crossdir + '/lib/gcc/' + cross + '/' + crossver,
 	SYSSHGCCPATH = crossdir + '/' + cross + '/lib'
@@ -125,11 +130,17 @@ def SetProgDeps(env, prog, static, libs, cpp):
 
 def SetLinkAddr(env, static):
 	global link_addr
-	if static:
-		env.Append(LINKFLAGS = ' -Wl,--section-start=.init=' + ("0x%x" % link_addr))
-	else:
-		env.Append(LINKFLAGS = ' -Wl,--section-start=.interp=' + ("0x%x" % link_addr))
-	link_addr += 0x20000
+	# TODO this doesn't seem to work with MMIX. why?
+	if env['ARCH'] == 'i586':
+		if static:
+			env.Append(LINKFLAGS = ' -Wl,--section-start=.init=' + ("0x%x" % link_addr))
+		else:
+			env.Append(LINKFLAGS = ' -Wl,--section-start=.interp=' + ("0x%x" % link_addr))
+		link_addr += 0x20000
+
+def EscapeMap(env, target, source):
+	map = env.Command(target, source, 'tools/createmap-' + env['ARCH'] + ' $SOURCE > $TARGET')
+	env.Install(env['MAPDIR'], map)
 
 def EscapeDump(env, target, source):
 	dump = env.Command(target, source, env['BINDIR'][1:] + '/hostdump $SOURCE > $TARGET')
@@ -145,6 +156,7 @@ def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = Tr
 		SetLinkAddr(myenv, static)
 	prog = myenv.Program(target, source, LIBS = LIBS)
 	SetProgDeps(myenv, prog, static, LIBS, False)
+	myenv.EscapeMap(myenv, target + '.map', prog)
 	if prefix != '':
 		myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
 		myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
@@ -158,6 +170,7 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 	SetLinkAddr(myenv, static)
 	prog = myenv.Program(target, source, LIBS = ['stdc++', 'supc++'] + LIBS)
 	SetProgDeps(myenv, prog, static, LIBS, True)
+	myenv.EscapeMap(myenv, target + '.map', prog)
 	myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
 	myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
 	return prog
@@ -165,15 +178,18 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 def EscapeLib(env, target, source, LIBS = []):
 	myenv = env.Clone()
 	stlib = myenv.StaticLibrary(target, source)
-	shenv = myenv.Clone()
-	shenv.Append(LINKFLAGS = ' -Wl,-shared -Wl,-soname,lib' + target + '.so')
-	shlib = shenv.SharedLibrary(target, source, LIBS = LIBS)
-	SetLibDeps(env, shlib, LIBS)
-	env.Install(env['BINDIR'], [stlib, shlib])
-	env.Install(env['DISTDIR'] + '/lib', shlib)
+	env.Install(env['BINDIR'], stlib)
+	if env['ARCH'] == 'i586':
+		shenv = myenv.Clone()
+		shenv.Append(LINKFLAGS = ' -Wl,-shared -Wl,-soname,lib' + target + '.so')
+		shlib = shenv.SharedLibrary(target, source, LIBS = LIBS)
+		SetLibDeps(env, shlib, LIBS)
+		env.Install(env['BINDIR'], shlib)
+		env.Install(env['DISTDIR'] + '/lib', shlib)
 
 symlink = Builder(action = 'ln -sf ${SOURCE.abspath} $TARGET')
 env.Append(BUILDERS = {'Symlink' : symlink})
+env.EscapeMap = EscapeMap
 env.EscapeDump = EscapeDump
 env.EscapeCProg = EscapeCProg
 env.EscapeCXXProg = EscapeCXXProg
@@ -182,7 +198,7 @@ env.EscapeLib = EscapeLib
 hostenv.SConscript('tools/SConscript', 'hostenv',
 				   variant_dir = builddir + '/tools', duplicate = 0)
 
-for d in ['dist', 'lib', 'drivers', 'user', 'kernel']:
+for d in ['bootloader', 'lib', 'drivers', 'user', 'kernel']:
 	env.SConscript(d + '/SConscript', 'env',
 				   variant_dir = builddir + '/' + d, duplicate = 0)
 

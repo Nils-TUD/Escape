@@ -20,22 +20,23 @@ stlib = stenv.StaticLibrary(
 	target = 'c',
 	source = acsrc + assrc + csrc + baseacsrc + baseassrc
 )
+env.Install(env['BINDIR'], stlib)
 
 # shared library
-shenv = env.Clone()
-shenv.Append(
-	ASFLAGS = ' -DSHAREDLIB=1',
-	LINKFLAGS = ' -nodefaultlibs -Wl,-shared -Wl,-soname,libc.so'
-)
-crt0 = shenv.Object('crt0S.o', 'arch/' + shenv['ARCH'] + '/crt0.S')
-crt1 = shenv.Object('crt1S.o', 'arch/' + shenv['ARCH'] + '/crt1.S')
-crtn = shenv.Object('crtnS.o', 'arch/' + shenv['ARCH'] + '/crtn.S')
-shenv.Install(shenv['SYSGCCLIBPATH'], [crt0, crt1, crtn])
-
-shlib = shenv.SharedLibrary(
-	target = 'c',
-	source = acsrc + assrc + csrc + baseacsrc + baseassrc
-)
-
-env.Install(env['BINDIR'], [stlib, shlib])
-env.Install(env['DISTDIR'] + '/lib', shlib)
+if env['ARCH'] == 'i586':
+	shenv = env.Clone()
+	shenv.Append(
+		ASFLAGS = ' -DSHAREDLIB=1',
+		LINKFLAGS = ' -nodefaultlibs -Wl,-shared -Wl,-soname,libc.so'
+	)
+	crt0 = shenv.Object('crt0S.o', 'arch/' + shenv['ARCH'] + '/crt0.S')
+	crt1 = shenv.Object('crt1S.o', 'arch/' + shenv['ARCH'] + '/crt1.S')
+	crtn = shenv.Object('crtnS.o', 'arch/' + shenv['ARCH'] + '/crtn.S')
+	shenv.Install(shenv['SYSGCCLIBPATH'], [crt0, crt1, crtn])
+	
+	shlib = shenv.SharedLibrary(
+		target = 'c',
+		source = acsrc + assrc + csrc + baseacsrc + baseassrc
+	)
+	env.Install(env['BINDIR'], shlib)
+	env.Install(env['DISTDIR'] + '/lib', shlib)

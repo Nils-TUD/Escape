@@ -66,6 +66,9 @@
 # Start
 #===========================================
 
+# TODO somehow the mmix-assembler doesn't allow comments after GET/PUT anymore. Perhaps one of our
+# changes to binutils causes that? But I used to work and I can't see any difference :/
+
 .section .text
 _bcode:
 
@@ -126,12 +129,15 @@ start:
 	PUT		rTT,$1
 
 	# go to user mode (initloader)
-	PUT		rWW,$0							# main returned the entry-point
+	# main returned the entry-point
+	PUT		rWW,$0
 	SETH	$0,#8000
-	PUT		rXX,$0							# skip to rWW
+	# skip to rWW
+	PUT		rXX,$0
 	SUBU	$0,$254,8
 	LDOU	$0,$0,0
-	PUT		rSS,$0							# set kernel-stack
+	# set kernel-stack
+	PUT		rSS,$0
 	LDOU	$0,$254,0						# pointer to stackBegin
 	UNSAVE	0,$0							# setup initial stack for initloader
 	NEG		$255,0,1						# set rK = -1
@@ -187,12 +193,14 @@ forcedTrap:
 	SUBU	$254,$0,8
 	SET		$253,$254
 	SETMH	$0,#FE
-	PUT		rK,$0							# enable exception-bits for kernel (to see errors early)
+	# enable exception-bits for kernel (to see errors early)
+	PUT		rK,$0
 	SET		$0,$255							# save $255
 	GET		$2,rS
 	PUSHJ	$1,intrpt_forcedTrap
 	UNSAVE	1,$0
-	PUT		rSS,$255						# after cloning, the new value for rSS will be in $255
+	# after cloning, the new value for rSS will be in $255
+	PUT		rSS,$255
 	NEG		$255,0,1						# rK = -1
 	RESUME	1
 
@@ -224,15 +232,18 @@ dynamicTrap:
 	# what we have to do by ourself anyway.
 	SETMH	$1,#FE
 	ANDN	$0,$0,$1
-	PUT		rQ,$0							# remove that bit from rQ
-	PUT		rK,$1							# enable exception-bits for kernel (to see errors early)
+	# remove that bit from rQ
+	PUT		rQ,$0
+	# enable exception-bits for kernel (to see errors early)
+	PUT		rK,$1
 	# call handler with rS as argument
 	GET		$2,rS
 	SET		$0,$255							# save $255
 	PUSHJ	$1,intrpt_dynTrap				# call intrpt_dynTrap(rS,irqNo)
 	# restore context
 	UNSAVE	1,$0
-	GET		$255,rWW						# check whether rWW is negative
+	# check whether rWW is negative
+	GET		$255,rWW
 	BNN		$255,1f							# if not, set rK to -1
 	NEG		$255,0,1
 	ANDNMH	$255,#0001						# if so, set it to -1, but clear privileged pc bit
@@ -268,9 +279,11 @@ thread_startup:
 	SET		$253,$1
 
 	# go to user mode (initloader)
-	PUT		rWW,$0							# entry-point
+	# entry-point
+	PUT		rWW,$0
 	SETH	$0,#8000
-	PUT		rXX,$0							# skip to rWW
+	# skip to rWW
+	PUT		rXX,$0
 	NEG		$255,0,1						# set rK = -1
 	RESUME	1
 
@@ -278,7 +291,8 @@ thread_startup:
 thread_idle:
 	NEG		$0,0,1
 	ANDNMH	$0,#0001
-	PUT		rK,$0							# enable all bits, except privileged pc
+	# enable all bits, except privileged pc
+	PUT		rK,$0
 1:
 	SYNC	4								# power-saver mode
 	JMP		1b
@@ -287,11 +301,14 @@ thread_idle:
 thread_initSave:
 	SET		$251,$0
 	SET		$252,$1							# save $0 and $1, SAVE will set rL to 0
-	PUT		rL,0							# remove $0, we don't need it anymore
+	# remove $0, we don't need it anymore
+	PUT		rL,0
 	SAVE	$255,0							# save the state on the current stack
 	# copy the register-stack
-	GET		$0,rSS							# stack-begin
-	GET		$1,rS							# stack-end
+	# stack-begin
+	GET		$0,rSS
+	# stack-end
+	GET		$1,rS
 	SUBU	$1,$1,$0						# number of bytes to copy
 1:
 	LDOU	$2,$0,$1
@@ -318,11 +335,13 @@ thread_initSave:
 
 # int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,pagedir_t pdir,tid_t tid)
 thread_doSwitchTo:
-	PUT		rF,$3							# just for backtracing: put the thread-id in rF
+	# just for backtracing: put the thread-id in rF
+	PUT		rF,$3
 	SET		$250,$0							# save $0, SAVE will set rL to 0
 	SET		$251,$1
 	SET		$252,$2
-	PUT		rL,0							# remove $0, we don't need it anymore
+	# remove $0, we don't need it anymore
+	PUT		rL,0
 	# save state of old thread
 	SAVE	$255,0
 	STOU	$255,$250,0						# store stack-end
@@ -332,7 +351,7 @@ thread_doSwitchTo:
 	LDOU	$0,$251,0						# load stackend
 	SET		$1,$0
 	ANDNL	$1,#1FFF						# to page-begin
-	PUT		rSS,$1							# set rSS
+	PUT		rSS,$1
 	UNSAVE	0,$0
 	SET		$0,1							# return 1
 	POP		1,0

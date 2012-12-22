@@ -46,7 +46,8 @@ start:
 	ADDU	$0,$0,$2
 	JMP		1b
 2:
-	PUT		rQ,0						# unset non-existing-memory-exception
+	# unset non-existing-memory-exception
+	PUT		rQ,0
 	SETH	$1,#8000
 	SUBU	$1,$0,$1
 	PUSHJ	$0,bootload					# call bootload function
@@ -96,7 +97,7 @@ sctcapctl:
 
 # void dskio(int sct,void *addr,int nscts)
 dskio:
-	GET		$3,rJ						# save rJ
+	GET		$3,rJ
 	SETH	$4,#8003					# disk-address
 	STOU	$2,$4,#8					# sector-count = nscts
 	STOU	$0,$4,#16					# sector-number = sct
@@ -117,7 +118,7 @@ dskio:
 	ADDU	$5,$5,8						# next octa
 	CMPU	$7,$5,$6					# ready?
 	PBNZ	$7,2b
-	PUT		rJ,$3						# restore rJ
+	PUT		rJ,$3
 	POP		0,0
 
 .section .data

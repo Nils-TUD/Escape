@@ -30,7 +30,7 @@
 #include <errno.h>
 
 #define SECTOR_SIZE			512
-#define START_SECTOR		64		/* part 0 */
+#define START_SECTOR		128		/* part 0 */
 #define MAX_RW_SIZE			(SECTOR_SIZE * 8)
 
 #define DISK_CTRL			0		/* control register */

@@ -113,7 +113,7 @@ if $BUILD_GCC || $BUILD_CPP; then
 	# put the include-files of newlib in the system-include-dir to pretend that we have a full libc
 	# this is necessary for libgcc and libsupc++. we'll provide our own version of the few required
 	# libc-functions later
-	rm -f $DIST/$TARGET/{include,sys-include}
+	rm -Rf $DIST/$TARGET/include $DIST/$TARGET/sys-include
 	mkdir -p tmp
 	cat $ROOT/$NEWLIB_ARCH | gunzip | tar -C tmp -xf - newlib-$NEWLVER/newlib/libc/include
 	mv tmp/newlib-$NEWLVER/newlib/libc/include $DIST/$TARGET
@@ -148,40 +148,42 @@ if $BUILD_GCC; then
 	fi
 	ln -sf $DIST/bin/$TARGET-gcc $DIST/bin/$TARGET-cc
 
-	# libgcc
-	# first, generate crt*S.o and libc for libgcc_s. Its not necessary to have a full libc (we'll have
-	# one later). But at least its necessary to provide the correct startup-files
-	TMPCRT0=`mktemp`
-	TMPCRT1=`mktemp`
-	TMPCRTN=`mktemp`
-	# crt0 can be empty
-	echo ".section .init" >> $TMPCRT1
-	echo ".global _init" >> $TMPCRT1
-	echo "_init:" >> $TMPCRT1
-	echo "	push	%ebp" >> $TMPCRT1
-	echo "	mov		%esp,%ebp" >> $TMPCRT1
-	echo ".section .fini" >> $TMPCRT1
-	echo ".global _fini" >> $TMPCRT1
-	echo "_fini:" >> $TMPCRT1
-	echo "	push	%ebp" >> $TMPCRT1
-	echo "	mov		%esp,%ebp" >> $TMPCRT1
+	# libgcc (only i586 supports dynamic linking)
+	if [ "$TARGET" = "i586" ]; then
+		# first, generate crt*S.o and libc for libgcc_s. Its not necessary to have a full libc (we'll have
+		# one later). But at least its necessary to provide the correct startup-files
+		TMPCRT0=`mktemp`
+		TMPCRT1=`mktemp`
+		TMPCRTN=`mktemp`
+		# crt0 can be empty
+		echo ".section .init" >> $TMPCRT1
+		echo ".global _init" >> $TMPCRT1
+		echo "_init:" >> $TMPCRT1
+		echo "	push	%ebp" >> $TMPCRT1
+		echo "	mov		%esp,%ebp" >> $TMPCRT1
+		echo ".section .fini" >> $TMPCRT1
+		echo ".global _fini" >> $TMPCRT1
+		echo "_fini:" >> $TMPCRT1
+		echo "	push	%ebp" >> $TMPCRT1
+		echo "	mov		%esp,%ebp" >> $TMPCRT1
 
-	echo ".section .init" >> $TMPCRTN
-	echo "	leave" >> $TMPCRTN
-	echo "	ret" >> $TMPCRTN
-	echo ".section .fini" >> $TMPCRTN
-	echo "	leave" >> $TMPCRTN
-	echo "	ret" >> $TMPCRTN
+		echo ".section .init" >> $TMPCRTN
+		echo "	leave" >> $TMPCRTN
+		echo "	ret" >> $TMPCRTN
+		echo ".section .fini" >> $TMPCRTN
+		echo "	leave" >> $TMPCRTN
+		echo "	ret" >> $TMPCRTN
 
-	# assemble them
-	$TARGET-as -o $DIST/$TARGET/lib/crt0S.o $TMPCRT0 || exit 1
-	$TARGET-as -o $DIST/$TARGET/lib/crt1S.o $TMPCRT1 || exit 1
-	$TARGET-as -o $DIST/$TARGET/lib/crtnS.o $TMPCRTN || exit 1
-	# build empty libc
-	$TARGET-gcc -nodefaultlibs -nostartfiles -shared -Wl,-shared -Wl,-soname,libc.so \
-	  -o $DIST/$TARGET/lib/libc.so $DIST/$TARGET/lib/crt0S.o || exit 1
-	# cleanup
-	rm -f $TMPCRT0 $TMPCRT1 $TMPCRTN
+		# assemble them
+		$TARGET-as -o $DIST/$TARGET/lib/crt0S.o $TMPCRT0 || exit 1
+		$TARGET-as -o $DIST/$TARGET/lib/crt1S.o $TMPCRT1 || exit 1
+		$TARGET-as -o $DIST/$TARGET/lib/crtnS.o $TMPCRTN || exit 1
+		# build empty libc
+		$TARGET-gcc -nodefaultlibs -nostartfiles -shared -Wl,-shared -Wl,-soname,libc.so \
+		  -o $DIST/$TARGET/lib/libc.so $DIST/$TARGET/lib/crt0S.o || exit 1
+		# cleanup
+		rm -f $TMPCRT0 $TMPCRT1 $TMPCRTN
+	fi
 
 	# now build libgcc
 	make $MAKE_ARGS all-target-libgcc && make install-target-libgcc

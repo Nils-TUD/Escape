@@ -132,7 +132,7 @@ flushRegion:
 
 # void readSecs(octa sec,octa *buf,octa count)
 readSecs:
-	GET		$3,rJ						# save rJ
+	GET		$3,rJ
 	SETH	$4,#8003					# disk-address
 3:
 	STCO	1,$4,#8						# sector-count = 1
@@ -158,6 +158,6 @@ readSecs:
 	ADDU	$1,$1,$224					# to next sector in the buffer
 	ADDU	$0,$0,1						# next sector
 	PBNZ	$2,3b						# not finished?
-	PUT		rJ,$3						# restore rJ
+	PUT		rJ,$3
 	POP		0,0
 

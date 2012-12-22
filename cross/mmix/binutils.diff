@@ -1,6 +1,6 @@
-diff -rcN src_org/binutils//config.sub src/binutils//config.sub
-*** src_org/binutils//config.sub	2010-06-01 19:53:40.000000000 +0200
---- src/binutils//config.sub	2011-06-14 00:17:10.000000000 +0200
+diff -rcN src/binutils-org/config.sub src/binutils/config.sub
+*** src/binutils-org/config.sub	2010-06-01 19:53:40.000000000 +0200
+--- src/binutils/config.sub	2012-12-16 12:08:11.228372377 +0100
 ***************
 *** 1297,1303 ****
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
@@ -18,9 +18,9 @@ diff -rcN src_org/binutils//config.sub src/binutils//config.sub
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
-diff -rcN src_org/binutils//gas/config/tc-mmix.c src/binutils//gas/config/tc-mmix.c
-*** src_org/binutils//gas/config/tc-mmix.c	2010-06-28 16:06:57.000000000 +0200
---- src/binutils//gas/config/tc-mmix.c	2011-06-14 00:17:10.000000000 +0200
+diff -rcN src/binutils-org/gas/config/tc-mmix.c src/binutils/gas/config/tc-mmix.c
+*** src/binutils-org/gas/config/tc-mmix.c	2010-06-28 16:06:57.000000000 +0200
+--- src/binutils/gas/config/tc-mmix.c	2012-12-16 12:19:51.844388336 +0100
 ***************
 *** 1630,1641 ****
         /* "$X,0"; SAVE.  */
@@ -76,12 +76,12 @@ diff -rcN src_org/binutils//gas/config/tc-mmix.c src/binutils//gas/config/tc-mmi
         if (exp[1].X_op == O_register)
   	opcodep[3] = exp[1].X_add_number;
         else
-diff -rcN src_org/binutils//ld/configure.tgt src/binutils//ld/configure.tgt
-*** src_org/binutils//ld/configure.tgt	2010-12-01 12:03:47.000000000 +0100
---- src/binutils//ld/configure.tgt	2011-06-14 00:17:10.000000000 +0200
+diff -rcN src/binutils-org/ld/configure.tgt src/binutils/ld/configure.tgt
+*** src/binutils-org/ld/configure.tgt	2011-04-01 14:03:54.000000000 +0200
+--- src/binutils/ld/configure.tgt	2012-12-16 12:11:21.676376715 +0100
 ***************
-*** 415,420 ****
---- 415,421 ----
+*** 419,424 ****
+--- 419,425 ----
   mips*-*-lnews*)		targ_emul=mipslnews ;;
   mips*-*-sysv4*)         targ_emul=elf32btsmip
   			;;
@@ -89,9 +89,9 @@ diff -rcN src_org/binutils//ld/configure.tgt src/binutils//ld/configure.tgt
   mmix-*-*)		targ_emul=mmo
   			targ_extra_emuls=elf64mmix
   			;;
-diff -rcN src_org/binutils//ld/emulparams/elf64mmixescape.sh src/binutils//ld/emulparams/elf64mmixescape.sh
-*** src_org/binutils//ld/emulparams/elf64mmixescape.sh	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//ld/emulparams/elf64mmixescape.sh	2011-06-14 00:17:10.000000000 +0200
+diff -rcN src/binutils-org/ld/emulparams/elf64mmixescape.sh src/binutils/ld/emulparams/elf64mmixescape.sh
+*** src/binutils-org/ld/emulparams/elf64mmixescape.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/emulparams/elf64mmixescape.sh	2012-12-16 12:12:27.076378205 +0100
 ***************
 *** 0 ****
 --- 1,61 ----
@@ -156,9 +156,9 @@ diff -rcN src_org/binutils//ld/emulparams/elf64mmixescape.sh src/binutils//ld/em
 + # By default, put the high end of the stack where the register stack
 + # begins.  They grow in opposite directions.  */
 + OTHER_SYMBOLS="PROVIDE (__Stack_start = 0x6000000000000000);"
-diff -rcN src_org/binutils//ld/emultempl/mmixelf.em src/binutils//ld/emultempl/mmixelf.em
-*** src_org/binutils//ld/emultempl/mmixelf.em	2009-09-02 09:25:35.000000000 +0200
---- src/binutils//ld/emultempl/mmixelf.em	2011-06-16 14:34:50.000000000 +0200
+diff -rcN src/binutils-org/ld/emultempl/mmixelf.em src/binutils/ld/emultempl/mmixelf.em
+*** src/binutils-org/ld/emultempl/mmixelf.em	2009-09-02 09:25:35.000000000 +0200
+--- src/binutils/ld/emultempl/mmixelf.em	2012-12-16 12:13:00.268378961 +0100
 ***************
 *** 36,43 ****
        difference to mmo, but the sections in elf64mmix will be aligned to a
@@ -178,15 +178,15 @@ diff -rcN src_org/binutils//ld/emultempl/mmixelf.em src/binutils//ld/emultempl/m
   }
   EOF
   
-diff -rcN src_org/binutils//ld/Makefile.in src/binutils//ld/Makefile.in
-*** src_org/binutils//ld/Makefile.in	2010-11-05 11:34:22.000000000 +0100
---- src/binutils//ld/Makefile.in	2011-06-14 00:17:10.000000000 +0200
+diff -rcN src/binutils-org/ld/Makefile.in src/binutils/ld/Makefile.in
+*** src/binutils-org/ld/Makefile.in	2011-03-16 09:37:30.000000000 +0100
+--- src/binutils/ld/Makefile.in	2012-12-16 12:13:37.020379798 +0100
 ***************
-*** 2568,2573 ****
---- 2568,2577 ----
-    $(ELF_DEPS) $(srcdir)/emultempl/mmix-elfnmmo.em \
-    $(srcdir)/emultempl/mmixelf.em $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
-  	${GENSCRIPTS} elf64mmix "$(tdir_elf64mmix)"
+*** 3319,3324 ****
+--- 3319,3328 ----
+  ehppa64linux.c: $(srcdir)/emulparams/hppa64linux.sh \
+    $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} hppa64linux "$(tdir_hppa64linux)"
 + eelf64mmixescape.c: $(srcdir)/emulparams/elf64mmixescape.sh \
 +   $(ELF_DEPS) $(srcdir)/emultempl/mmix-elfnmmo.em \
 +   $(srcdir)/emultempl/mmixelf.em $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
@@ -194,9 +194,9 @@ diff -rcN src_org/binutils//ld/Makefile.in src/binutils//ld/Makefile.in
   emmo.c: $(srcdir)/emulparams/mmo.sh $(srcdir)/emultempl/mmix-elfnmmo.em \
     $(srcdir)/emultempl/generic.em $(srcdir)/emultempl/elf-generic.em \
     $(srcdir)/emultempl/mmo.em \
-diff -rcN src_org/binutils//opcodes/mmix-dis.c src/binutils//opcodes/mmix-dis.c
-*** src_org/binutils//opcodes/mmix-dis.c	2009-12-11 14:42:17.000000000 +0100
---- src/binutils//opcodes/mmix-dis.c	2011-06-15 17:17:23.000000000 +0200
+diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
+*** src/binutils-org/opcodes/mmix-dis.c	2009-12-11 14:42:17.000000000 +0100
+--- src/binutils/opcodes/mmix-dis.c	2012-12-16 12:15:57.996383009 +0100
 ***************
 *** 59,65 ****
   struct mmix_dis_info
@@ -285,9 +285,9 @@ diff -rcN src_org/binutils//opcodes/mmix-dis.c src/binutils//opcodes/mmix-dis.c
         break;
   
       case mmix_operands_xyz_opt:
-diff -rcN src_org/binutils//opcodes/mmix-opc.c src/binutils//opcodes/mmix-opc.c
-*** src_org/binutils//opcodes/mmix-opc.c	2009-09-02 09:20:30.000000000 +0200
---- src/binutils//opcodes/mmix-opc.c	2011-06-15 17:15:50.000000000 +0200
+diff -rcN src/binutils-org/opcodes/mmix-opc.c src/binutils/opcodes/mmix-opc.c
+*** src/binutils-org/opcodes/mmix-opc.c	2009-09-02 09:20:30.000000000 +0200
+--- src/binutils/opcodes/mmix-opc.c	2012-12-16 12:17:12.284384702 +0100
 ***************
 *** 59,64 ****
 --- 59,65 ----

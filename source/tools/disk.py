@@ -5,56 +5,62 @@ import argparse
 import subprocess
 import sys
 
+DEFAULT_PARTS_START = 128
+
 # stores a new disk to <image> with the partitions <parts>. each item in <parts> is a list of
 # the filesystem, the size in MB and the directory from which to copy the content into the fs
-def create_disk(image, parts):
+def create_disk(image, parts, flat, nogrub):
 	if len(parts) == 0:
 		exit("Please provide at least one partition")
 	if len(parts) > 4:
 		exit("Sorry, the maximum number of partitions is currently 4")
+	if flat and len(parts) != 1:
+		exit("If using flat mode you have to specify exactly 1 partition")
+
+	# default offset when using partitions
+	offset = 2048 if not flat else DEFAULT_PARTS_START
 
 	# determine size of disk
 	totalmb = 0
 	for p in args.part:
 		totalmb += int(p[1])
 	hdcyl = totalmb
-	totalsecs = 2048 + hdheads * hdtracksecs * hdcyl
+	totalsecs = offset + hdheads * hdtracksecs * hdcyl
 	totalbytes = totalsecs * secsize
 
 	# create image
 	subprocess.call(["dd", "if=/dev/zero" , "of=" + str(image), "bs=512", "count=" + str(totalsecs)])
 
-	# build command file for fdisk
-	tmpfile = subprocess.check_output("mktemp").rstrip()
-	with open(tmpfile, "w") as f:
-		i = 1
-		for p in parts:
-			# n = new partition, p = primary, partition number, default offset
-			f.write('n\np\n' + str(i) + '\n\n')
-			# the last partition gets the remaining sectors
-			if i == len(parts):
-				f.write('\n')
-			# all others get all sectors up to the following partition
-			else:
-				f.write(str(block_offset(parts, i) * 2 - 1) + '\n')
-			i += 1
-		# a 1 = make partition 1 bootable, w = write partitions to disk
-		f.write('a\n1\nw\n')
-
-	# create partitions with fdisk
 	lodev = create_loop(image)
-	with open(tmpfile,"r") as fin:
-		p = subprocess.Popen(
-			["sudo", "fdisk", "-u", "-C", str(hdcyl), "-S", str(hdheads), lodev], stdin=fin
-		)
-		p.wait()
-	free_loop(lodev)
-	subprocess.call(["rm", "-Rf", tmpfile])
+	tmpfile = subprocess.check_output("mktemp").rstrip()
+	if not flat:
+		# build command file for fdisk
+		with open(tmpfile, "w") as f:
+			i = 1
+			for p in parts:
+				# n = new partition, p = primary, partition number, default offset
+				f.write('n\np\n' + str(i) + '\n\n')
+				# the last partition gets the remaining sectors
+				if i == len(parts):
+					f.write('\n')
+				# all others get all sectors up to the following partition
+				else:
+					f.write(str(block_offset(parts, offset, i) * 2 - 1) + '\n')
+				i += 1
+			# a 1 = make partition 1 bootable, w = write partitions to disk
+			f.write('a\n1\nw\n')
 
+		# create partitions with fdisk
+		with open(tmpfile, "r") as fin:
+			p = subprocess.Popen(
+				["sudo", "fdisk", "-u", "-C", str(hdcyl), "-S", str(hdheads), lodev], stdin=fin
+			)
+			p.wait()
+	
 	# create filesystems
 	i = 0
 	for p in parts:
-		off = block_offset(parts, i)
+		off = block_offset(parts, offset, i)
 		blocks = mb_to_blocks(int(p[1]))
 		print "Creating ", p[0], " filesystem in partition ", i, " (@ ", off, ",", blocks, " blocks)"
 		create_fs(image, off, p[0], blocks)
@@ -64,8 +70,20 @@ def create_disk(image, parts):
 	i = 0
 	for p in parts:
 		if p[2] != "-":
-			copy_files(image, block_offset(parts, i), p[2])
+			copy_files(image, block_offset(parts, offset, i), p[2])
 		i += 1
+	
+	if not nogrub:
+		# add grub
+		with open(tmpfile, "w") as f:
+			f.write("device (hd0) " + str(image) + "\nroot (hd0,0)\nsetup (hd0)\nquit\n")
+		with open(tmpfile, "r") as fin:
+			p = subprocess.Popen(["grub", "--no-floppy", "--batch"], stdin=fin)
+			p.wait()
+
+	# remove temp file
+	subprocess.call(["rm", "-Rf", tmpfile])
+	free_loop(lodev)
 
 # mounts the partition in <image> @ <offset> to <dest>
 def mount_disk(image, offset, dest):
@@ -85,9 +103,9 @@ def mb_to_blocks(mb):
 	return (mb * hdheads * hdtracksecs) / 2
 
 # determines the block offset for partition <no> in <parts>
-def block_offset(parts, no):
+def block_offset(parts, secoffset, no):
 	i = 0
-	off = 1024
+	off = secoffset / 2
 	for p in parts:
 		if i == no:
 			return off
@@ -110,7 +128,9 @@ def free_loop(lodev):
 # creates filesystem <fs> for the partition @ <offset> in <image> with <blocks> blocks
 def create_fs(image, offset, fs, blocks):
 	lodev = create_loop(image, offset * 1024)
-	if fs == 'ext3' or fs == 'ext2' or fs == 'ext4':
+	if fs == 'ext2r0':
+		subprocess.call(["sudo", "mke2fs", "-r0", "-Onone", "-b1024", lodev, str(blocks)])
+	elif fs == 'ext2' or fs == 'ext3' or fs == 'ext4':
 		subprocess.call(["sudo", "mkfs." + fs, "-b", "1024", lodev, str(blocks)])
 	elif fs == 'fat32':
 		subprocess.call(["sudo", "mkfs.vfat", lodev, str(blocks)])
@@ -124,7 +144,8 @@ def create_fs(image, offset, fs, blocks):
 def copy_files(image, offset, directory):
 	tmpdir = subprocess.check_output(["mktemp", "-d"]).rstrip()
 	mount_disk(image, offset, tmpdir)
-	subprocess.call(["sudo", "cp", "-R", directory, tmpdir])
+	for node in os.listdir(directory):
+		subprocess.call(["sudo", "cp", "--preserve=all", "-R", directory + '/' + node, tmpdir])
 	umount_disk(tmpdir)
 	subprocess.call(["rm", "-Rf", tmpdir])
 
@@ -141,23 +162,37 @@ def run_parted(image):
 	subprocess.call(["sudo", "parted", lodev, "print"])
 	free_loop(lodev)
 
+# run fsck for the partition with offset <offset> in <image>, assuming fs <fstype>
+def run_fsck(image, fstype, offset):
+	lodev = create_loop(image, offset * 1024)
+	subprocess.call(["sudo", "fsck", "-t", fstype, lodev])
+	free_loop(lodev)
 
-# subcommand functions
-def create(args):
-	create_disk(args.disk, args.part)
-def fdisk(args):
-	run_fdisk(args.disk)
-def parted(args):
-	run_parted(args.disk)
-def mount(args):
-	lodev = create_loop(args.disk)
-	print "Determining offset of partition ", args.part, "..."
+def get_part_offset(image, part):
+	if part == 0:
+		return DEFAULT_PARTS_START / 2
+	lodev = create_loop(image)
 	offset = int(subprocess.check_output(
-		"sudo fdisk -l " + lodev + " | grep '^" + lodev + "p" + str(args.part)
+		"sudo fdisk -l " + lodev + " | grep '^" + lodev + "p" + str(part)
 			+ "' | sed -e 's/\*/ /' | xargs | cut -d ' ' -f 2",
 		shell=True
 	).rstrip()) / 2
 	free_loop(lodev)
+	return offset
+
+# subcommand functions
+def create(args):
+	create_disk(args.disk, args.part, args.flat, args.nogrub)
+def fdisk(args):
+	run_fdisk(args.disk)
+def parted(args):
+	run_parted(args.disk)
+def fsck(args):
+	offset = get_part_offset(args.disk, args.part)
+	print "Running fsck for partition ", args.part, " (@", offset, ") of ", args.disk, " with fs ", args.fs
+	run_fsck(args.disk, args.fs, offset)
+def mount(args):
+	offset = get_part_offset(args.disk, args.part)
 	print "Mounting partition ", args.part, " (@", offset, ") of ", args.disk, " at ", args.dest
 	mount_disk(args.disk, offset, args.dest)
 def umount(args):
@@ -180,10 +215,13 @@ parser_create = subparsers.add_parser('create', description='Writes a new disk i
 	+ ' with the partitions specified with --part (at least one, at most four).')
 parser_create.add_argument('disk', metavar='<diskimage>')
 parser_create.add_argument('--part', nargs=3, metavar=('<fs>', '<mb>', '<dir>'), action='append',
-	help='<fs> must be one of ext2, ext3, ext4, ntfs, fat32.'
+	help='<fs> must be one of ext2r0, ext2, ext3, ext4, ntfs, fat32.'
 		+ ' <mb> is the partition size in megabytes.'
 		+ ' <dir> is the directory which content should be copied to the partition. if <dir> is "-"'
 		+ ' nothing will be copied')
+parser_create.add_argument('--flat', action='store_true',
+	help='Do not create partitions. Use the disk for one fs @ offset ' + str(DEFAULT_PARTS_START))
+parser_create.add_argument('--nogrub', action='store_true', help='Don\'t put grub on the disk')
 parser_create.set_defaults(func=create)
 
 parser_fdisk = subparsers.add_parser('fdisk', description='Runs fdisk for <diskimage>.')
@@ -193,6 +231,12 @@ parser_fdisk.set_defaults(func=fdisk)
 parser_parted = subparsers.add_parser('parted', description='Runs parted for <diskimage>.')
 parser_parted.add_argument('disk', metavar='<diskimage>')
 parser_parted.set_defaults(func=parted)
+
+parser_fsck = subparsers.add_parser('fsck', description='Runs fsck for <part> of <diskimage>, assuming <fs>.')
+parser_fsck.add_argument('disk', metavar='<diskimage>')
+parser_fsck.add_argument('fs', metavar='<fs>')
+parser_fsck.add_argument('part', metavar='<number>', type=int)
+parser_fsck.set_defaults(func=fsck)
 
 parser_mount = subparsers.add_parser('mount', description='Mounts <part> of <diskimage> in <dir>.')
 parser_mount.add_argument('disk', metavar='<diskimage>')

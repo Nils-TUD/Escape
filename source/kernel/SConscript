@@ -18,8 +18,7 @@ src += [f for f in Glob('src/*/*/*.c') if 'arch/' not in str(f)]
 src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*.c') if 'start.c' not in str(f)]
 src += [Glob('src/arch/' + kenv['ARCH'] + '/*/*.c')]
 src += [Glob('src/basic/arch/' + kenv['ARCH'] + '/*.c'), Glob('src/basic/arch/' + kenv['ARCH'] + '/*.S')]
-src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*.S')
-		if 'kernel.S' not in str(f) and 'end.S' not in str(f)]
+src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*.S') if 'kernel.S' not in str(f)]
 src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*/*.S')]
 tsrc = [Glob('test/*.c'), Glob('test/arch/' + kenv['ARCH'] + '/*.c')]
 mainsrc = 'src/arch/' + kenv['ARCH'] + '/start.c'

@@ -45,7 +45,7 @@
 #  |    EntryPoint    |  (0 for initial thread, thread-entrypoint for others)
 #  +------------------+
 
-.ifndef SHAREDLIB
+#ifndef SHAREDLIB
 _start:
 	ldw		$4,$29,0			# entrypoint
 	ldw		$5,$29,4			# TLS start
@@ -83,4 +83,4 @@ sigRetFunc:
 	add		$2,$0,SYSCALL_ACKSIG
 	trap
 	# never reached
-.endif
+#endif

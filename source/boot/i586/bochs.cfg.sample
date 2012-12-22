@@ -319,7 +319,7 @@ ata3: enabled=0, ioaddr1=0x168, ioaddr2=0x360, irq=9
 #ata0-slave: type=cdrom, path=/dev/cdrom, status=inserted
 #ata0-slave: type=cdrom, path="drive", status=inserted
 #ata0-slave: type=cdrom, path=/dev/rcd0d, status=inserted 
-ata0-master: type=disk, path=/home/hrniels/escape/source/build/i586-debug/hd.img, translation=none
+#ata0-master: type=disk, path=/home/hrniels/escape/source/build/i586-debug/hd.img, cylinders=0
 ata1-master: type=cdrom, path=/home/hrniels/escape/source/build/i586-debug/cd.iso, status=inserted
 
 #=======================================================================
@@ -835,7 +835,7 @@ port_e9_hack: enabled=1
 #   debug_symbols: file="kernel.sym"
 #   debug_symbols: file="kernel.sym", offset=0x80000000
 #=======================================================================
-debug_symbols: file=/home/hrniels/escape/source/build/i586-debug/kernel.map
+#debug_symbols: file=/home/hrniels/escape/source/build/i586-debug/kernel.map
 
 #=======================================================================
 # other stuff

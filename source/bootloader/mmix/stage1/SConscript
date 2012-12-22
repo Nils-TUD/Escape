@@ -1,0 +1,12 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+myenv = env.Clone()
+ldscript = 'bootloader/mmix/stage1/ld.conf'
+myenv.Append(LINKFLAGS = '-ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldscript)
+elf = myenv.EscapeCProg(
+	myenv, '', 'stage1.elf', 'br.S', force_static = True, var_addr = False
+)
+myenv.Symlink(myenv['BINDIR'] + '/stage1.elf', elf)
+myenv.Command('stage1.bin', elf, myenv['CROSS'] + '-objcopy -O binary $SOURCE $TARGET')

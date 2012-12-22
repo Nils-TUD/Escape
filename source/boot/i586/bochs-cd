@@ -1,0 +1,10 @@
+#!/bin/sh
+. boot/$ESC_TARGET/images.sh
+
+create_cd $1/dist $1/cd.iso
+
+cat boot/$ESC_TARGET/bochs.cfg > $1/bochs.cfg
+echo "ata0-master: type=cdrom, path=`readlink -f $1/cd.iso`, status=inserted" >> $1/bochs.cfg
+echo "boot: cdrom" >> $1/bochs.cfg
+
+bochs -f $1/bochs.cfg -q

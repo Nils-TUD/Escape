@@ -41,7 +41,7 @@
 # $5 = TLSStart (0 if not present)
 # $6 = TLSSize (0 if not present)
 
-.ifndef SHAREDLIB
+#ifndef SHAREDLIB
 _start:
 	LDOU	$0,$254,0
 	UNSAVE	0,$0
@@ -114,4 +114,4 @@ sigRetFunc:
 	PUT		rB,$0
 	# return to above
 	POP		0,0
-.endif
+#endif

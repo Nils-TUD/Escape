@@ -152,7 +152,7 @@ void paging_init(void) {
 	/* create page-tables for multiboot-stuff */
 	addr += PT_ENTRY_COUNT * PAGE_SIZE;
 	for(i = 0; i < BOOTSTRAP_PTS; i++) {
-		memclear((void*)addr,PAGE_SIZE);
+		memclear((void*)(addr | KERNEL_AREA),PAGE_SIZE);
 		proc0PD[ADDR_TO_PDINDEX(BOOTSTRAP_AREA) + i] = addr | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 		addr += PAGE_SIZE;
 	}

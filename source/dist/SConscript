@@ -1,0 +1,10 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+if env['ARCH'] == 'i586':
+	env.Install('$DISTDIR/lib', '$CROSSDIR/$CROSS/lib/libgcc_s.so.1')
+env.InstallFiles('$DISTDIR', 'arch/$ARCH', scan=1)
+env.InstallFiles('$DISTDIR/etc', 'etc', scan=1)
+env.InstallFiles('$DISTDIR/home', 'home', scan=1)
+env.InstallFiles('$DISTDIR/root', 'root', scan=1)

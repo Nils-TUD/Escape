@@ -200,7 +200,7 @@ env.AddMethod(install.InstallFiles)
 hostenv.SConscript('tools/SConscript', 'hostenv',
 				   variant_dir = builddir + '/tools', duplicate = 0)
 
-for d in ['bootloader', 'lib', 'drivers', 'user', 'kernel']:
+for d in ['dist', 'bootloader', 'lib', 'drivers', 'user', 'kernel']:
 	env.SConscript(d + '/SConscript', 'env',
 				   variant_dir = builddir + '/' + d, duplicate = 0)
 

@@ -69,7 +69,7 @@ def create_disk(image, parts, flat, nogrub):
 	# copy content to partitions
 	i = 0
 	for p in parts:
-		if p[2] != "-":
+		if p[2] != "-" and p[0] != 'nofs':
 			copy_files(image, block_offset(parts, offset, i), p[2])
 		i += 1
 	
@@ -136,7 +136,7 @@ def create_fs(image, offset, fs, blocks):
 		subprocess.call(["sudo", "mkfs.vfat", lodev, str(blocks)])
 	elif fs == 'ntfs':
 		subprocess.call(["sudo", "mkfs.ntfs", "-s", "1024", lodev, str(blocks)])
-	else:
+	elif fs != 'nofs':
 		print "Unsupported filesystem"
 	free_loop(lodev)
 
@@ -215,7 +215,7 @@ parser_create = subparsers.add_parser('create', description='Writes a new disk i
 	+ ' with the partitions specified with --part (at least one, at most four).')
 parser_create.add_argument('disk', metavar='<diskimage>')
 parser_create.add_argument('--part', nargs=3, metavar=('<fs>', '<mb>', '<dir>'), action='append',
-	help='<fs> must be one of ext2r0, ext2, ext3, ext4, ntfs, fat32.'
+	help='<fs> must be one of ext2r0, ext2, ext3, ext4, ntfs, fat32, nofs.'
 		+ ' <mb> is the partition size in megabytes.'
 		+ ' <dir> is the directory which content should be copied to the partition. if <dir> is "-"'
 		+ ' nothing will be copied')

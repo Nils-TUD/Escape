@@ -162,16 +162,6 @@ if [ "$binary" != "" ]; then
     fi
 fi
 
-prepare_run() {
-	if [ "$ESC_TARGET" = "i586" ]; then
-		mkdir -p $build/dist/boot/grub
-		cp dist/arch/$ESC_TARGET/boot/* $build/dist/boot/grub
-		cp $crossdir/$cross/lib/libgcc_s.so.1 $build/dist/lib
-	fi
-	cp -R dist/etc dist/scripts dist/testdir $build/dist
-	cp -R dist/arch/$ESC_TARGET/etc $build/dist
-}
-
 # run the specified command, if any
 case "$cmd" in
 	clean)
@@ -181,11 +171,9 @@ case "$cmd" in
 		rm -Rf build/*
 		;;
 	run)
-		prepare_run
 		./boot/$ESC_TARGET/$script $build "$ESC_SIM_FLAGS"
 		;;
 	dbg=*)
-		prepare_run
 		if [ "$ESC_TARGET" = "i586" ]; then
 			# the problem is that qemu terminates if it receives SIGINT. so, if we want to
 			# interrupt the execution and examine the state in gdb by pressing ^C, qemu

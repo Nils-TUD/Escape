@@ -32,19 +32,21 @@ EOF
 create_disk() {
 	src="$1"
 	dst="$2"
-	cat > $src/boot/grub/menu.lst <<EOF
+	dir=`mktemp -d`
+	cp -R $src/* $dir
+	cat > $dir/boot/grub/menu.lst <<EOF
 default 0
 timeout 3
 
 title Escape - VESA-text
-kernel /boot/escape videomode=vesa
+kernel /boot/escape videomode=vesa swapdev=/dev/hda3
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata nodma
 module /sbin/cmos /dev/cmos
 module /sbin/fs /dev/fs /dev/hda1 ext2
 
 title Escape - VGA-text
-kernel /boot/escape videomode=vga
+kernel /boot/escape videomode=vga swapdev=/dev/hda3
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata
 module /sbin/cmos /dev/cmos
@@ -54,6 +56,7 @@ title Escape - Test
 kernel /boot/escape_test videomode=vga
 EOF
 
-	./tools/disk.py create --part ext2r0 64 "$src" "$dst" 1>&2
+	sudo ./boot/perms.sh $dir
+	./tools/disk.py create --part ext2r0 64 "$dir" --part ext2r0 4 - --part nofs 8 - "$dst" 1>&2
+	sudo rm -Rf $dir
 }
-

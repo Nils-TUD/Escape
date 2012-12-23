@@ -32,20 +32,20 @@ _start:
 
 	# now replace with init
 	add		$2,$0,SYSCALL_EXEC				# set syscall-number
-	add		$4,$0,progName						# set path
-	add		$5,$0,args								# set arguments
+	add		$4,$0,progName					# set path
+	add		$5,$0,args						# set arguments
 	trap
 
 	# we should not reach this
 1:
-	j			1b
+	j		1b
 
 # provide just a dummy
 sigRetFunc:
-	j			sigRetFunc
+	j		sigRetFunc
 
 args:
-	.long			progName,0
+	.long	progName,0
 
 progName:
-	.asciz		"/bin/init"
+	.asciz	"/bin/init"

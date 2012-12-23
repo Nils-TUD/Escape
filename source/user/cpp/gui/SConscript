@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg(env, 'bin', target = 'gui', source = Glob('*.cpp'), LIBS = ['gui'])
+env.EscapeCXXProg('bin', target = 'gui', source = env.Glob('*.cpp'), LIBS = ['gui'])

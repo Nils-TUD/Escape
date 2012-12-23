@@ -2,4 +2,4 @@
 
 Import('hostenv')
 
-hostenv.Program('ignoreint', Glob('*.c'))
+hostenv.Program('ignoreint', hostenv.Glob('*.c'))

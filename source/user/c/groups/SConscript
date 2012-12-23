@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg(env, 'bin', target = 'groups', source = Glob('*.c'), LIBS = ['usergroup'])
+env.EscapeCProg('bin', target = 'groups', source = env.Glob('*.c'), LIBS = ['usergroup'])

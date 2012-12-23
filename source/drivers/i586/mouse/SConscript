@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg(env, 'sbin', target = 'mouse', source = Glob('*.c'))
+env.EscapeCProg('sbin', target = 'mouse', source = env.Glob('*.c'))

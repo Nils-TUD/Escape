@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg(env, 'sbin', target = 'pci', source = Glob('*.c'), force_static = True)
+env.EscapeCProg('sbin', target = 'pci', source = env.Glob('*.c'), force_static = True)

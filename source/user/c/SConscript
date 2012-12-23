@@ -2,4 +2,4 @@
 
 Import('env')
 
-env.SConscript(Glob('*/SConscript'), 'env')
+env.SConscript(env.Glob('*/SConscript'), 'env')

@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeLib(env, target = 'usergroup', source = Glob('*.c'))
+env.EscapeLib(target = 'usergroup', source = env.Glob('*.c'))

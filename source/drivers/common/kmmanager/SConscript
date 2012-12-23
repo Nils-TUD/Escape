@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg(env, 'sbin', target = 'kmmanager', source = Glob('*.c'))
+env.EscapeCProg('sbin', target = 'kmmanager', source = env.Glob('*.c'))

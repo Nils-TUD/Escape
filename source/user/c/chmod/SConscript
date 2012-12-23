@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg(env, 'bin', target = 'chmod', source = Glob('*.c'))
+env.EscapeCProg('bin', target = 'chmod', source = env.Glob('*.c'))

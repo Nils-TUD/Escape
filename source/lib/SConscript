@@ -2,4 +2,4 @@
 
 Import('env')
 
-env.SConscript([f for f in Glob('*/SConscript') if 'basic' not in str(f)], 'env')
+env.SConscript([f for f in env.Glob('*/SConscript') if 'basic' not in str(f)], 'env')

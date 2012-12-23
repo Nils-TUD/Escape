@@ -4,7 +4,7 @@ Import('env')
 import os
 
 kenv = env.Clone()
-ldconf = 'kernel/src/arch/' + kenv['ARCH'] + '/ld.conf'
+ldconf = 'kernel/src/arch/$ARCH/ld.conf'
 gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
 kenv.Append(
 	CFLAGS = ' -DIN_KERNEL=1',
@@ -12,16 +12,17 @@ kenv.Append(
 	BUILDERS = {'GenSyms' : gensyms}
 )
 
-src = [Glob('src/arch/' + kenv['ARCH'] + '/kernel.S')]
-src += [Glob('src/*.c'), Glob('src/*/*.c')]
-src += [f for f in Glob('src/*/*/*.c') if 'arch/' not in str(f)]
-src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*.c') if 'start.c' not in str(f)]
-src += [Glob('src/arch/' + kenv['ARCH'] + '/*/*.c')]
-src += [Glob('src/basic/arch/' + kenv['ARCH'] + '/*.c'), Glob('src/basic/arch/' + kenv['ARCH'] + '/*.S')]
-src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*.S') if 'kernel.S' not in str(f)]
-src += [f for f in Glob('src/arch/' + kenv['ARCH'] + '/*/*.S')]
-tsrc = [Glob('test/*.c'), Glob('test/arch/' + kenv['ARCH'] + '/*.c')]
-mainsrc = 'src/arch/' + kenv['ARCH'] + '/start.c'
+src = [kenv.Glob('src/arch/$ARCH/kernel.S')]
+src += [kenv.Glob('src/*.c'), kenv.Glob('src/*/*.c')]
+src += [f for f in kenv.Glob('src/*/*/*.c') if 'arch/' not in str(f)]
+src += [f for f in kenv.Glob('src/arch/$ARCH/*.c') if 'start.c' not in str(f)]
+src += [kenv.Glob('src/arch/$ARCH/*/*.c')]
+src += [kenv.Glob('src/basic/arch/$ARCH/*.c')]
+src += [kenv.Glob('src/basic/arch/$ARCH/*.S')]
+src += [f for f in kenv.Glob('src/arch/$ARCH/*.S') if 'kernel.S' not in str(f)]
+src += [f for f in kenv.Glob('src/arch/$ARCH/*/*.S')]
+tsrc = [kenv.Glob('test/*.c'), kenv.Glob('test/arch/$ARCH/*.c')]
+mainsrc = 'src/arch/$ARCH/start.c'
 
 # works around the problem that we use those sources for two programs. this way, we isolate each
 # source file in its own environment
@@ -34,7 +35,7 @@ def LinkWithSymbols(kenv, name, objects):
 	kenv.Object(name + 'ksyms1.o', name + 'ksyms1.c')
 	# build the kernel with it
 	prekernel = kenv.EscapeCProg(
-		kenv, prefix = '', target = 'pre' + name, source = objects + [name + 'ksyms1.o'],
+		prefix = '', target = 'pre' + name, source = objects + [name + 'ksyms1.o'],
 		force_static = True, var_addr = False, LIBS = ['gcc']
 	)
 	
@@ -43,7 +44,7 @@ def LinkWithSymbols(kenv, name, objects):
 	kenv.Object(name + 'ksyms2.o', name + 'ksyms2.c')
 	# now build the real kernel
 	kernel = kenv.EscapeCProg(
-		kenv, prefix = 'boot', target = name, source = objects + [name + 'ksyms2.o'],
+		prefix = 'boot', target = name, source = objects + [name + 'ksyms2.o'],
 		force_static = True, var_addr = False, LIBS = ['gcc']
 	)
 	return kernel
@@ -52,10 +53,10 @@ kernel = LinkWithSymbols(kenv, 'escape', objects(kenv, src + [mainsrc]))
 test_kernel = LinkWithSymbols(kenv, 'escape_test', objects(kenv, src + tsrc))
 
 if kenv['ARCH'] == 'i586':
-	tramp = kenv['BUILDDIR'] + '/kernel_tramp.dump'
-	trampobj = kenv['BUILDDIR'] + '/kernel_tramp.o'
+	tramp = '$BUILDDIR/kernel_tramp.dump'
+	trampobj = '$BUILDDIR/kernel_tramp.o'
 	kenv.Command(trampobj, 'src/arch/i586/trampoline.asm','nasm -f bin -o $TARGET $SOURCE')
-	dump = env.Command(tramp, trampobj, kenv['BINDIR'][1:] + '/hostdump $SOURCE > $TARGET')
-	kenv.Depends(dump, kenv['BINDIR'] + '/hostdump')
+	dump = env.Command(tramp, trampobj, '$BINDIR/hostdump $SOURCE > $TARGET')
+	kenv.Depends(dump, '$BINDIR/hostdump')
 	kenv.Depends(kernel, tramp)
 	kenv.Depends(test_kernel, tramp)

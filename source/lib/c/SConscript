@@ -2,25 +2,25 @@
 
 Import('env')
 
-acsrc = [Glob('arch/' + env['ARCH'] + '/*.c')]
-assrc = [f for f in Glob('arch/' + env['ARCH'] + '/*.S') if 'crt' not in str(f)]
-assrc += [Glob('esc/*.S')]
-csrc = [Glob('*.c'), Glob('*/*.c'), Glob('basic/*/*.c'), Glob('esc/*/*.c')]
-baseacsrc = [Glob('basic/arch/' + env['ARCH'] + '/*.c')]
-baseassrc = [Glob('basic/arch/' + env['ARCH'] + '/*.S')]
+acsrc = [env.Glob('arch/$ARCH/*.c')]
+assrc = [f for f in env.Glob('arch/$ARCH/*.S') if 'crt' not in str(f)]
+assrc += [env.Glob('esc/*.S')]
+csrc = [env.Glob('*.c'), env.Glob('*/*.c'), env.Glob('basic/*/*.c'), env.Glob('esc/*/*.c')]
+baseacsrc = [env.Glob('basic/arch/$ARCH/*.c')]
+baseassrc = [env.Glob('basic/arch/$ARCH/*.S')]
 
 # static library
 stenv = env.Clone()
-crt0 = stenv.Object('crt0.o', 'arch/' + stenv['ARCH'] + '/crt0.S')
-crt1 = stenv.Object('crt1.o', 'arch/' + stenv['ARCH'] + '/crt1.S')
-crtn = stenv.Object('crtn.o', 'arch/' + stenv['ARCH'] + '/crtn.S')
-stenv.Install(stenv['SYSGCCLIBPATH'], [crt0, crt1, crtn])
+crt0 = stenv.Object('crt0.o', 'arch/$ARCH/crt0.S')
+crt1 = stenv.Object('crt1.o', 'arch/$ARCH/crt1.S')
+crtn = stenv.Object('crtn.o', 'arch/$ARCH/crtn.S')
+stenv.Install('$SYSGCCLIBPATH', [crt0, crt1, crtn])
 
 stlib = stenv.StaticLibrary(
 	target = 'c',
 	source = acsrc + assrc + csrc + baseacsrc + baseassrc
 )
-env.Install(env['BINDIR'], stlib)
+env.Install('$BINDIR', stlib)
 
 # shared library
 if env['ARCH'] == 'i586':
@@ -29,14 +29,14 @@ if env['ARCH'] == 'i586':
 		ASFLAGS = ' -DSHAREDLIB=1',
 		LINKFLAGS = ' -nodefaultlibs -Wl,-shared -Wl,-soname,libc.so'
 	)
-	crt0 = shenv.Object('crt0S.o', 'arch/' + shenv['ARCH'] + '/crt0.S')
-	crt1 = shenv.Object('crt1S.o', 'arch/' + shenv['ARCH'] + '/crt1.S')
-	crtn = shenv.Object('crtnS.o', 'arch/' + shenv['ARCH'] + '/crtn.S')
-	shenv.Install(shenv['SYSGCCLIBPATH'], [crt0, crt1, crtn])
+	crt0 = shenv.Object('crt0S.o', 'arch/$ARCH/crt0.S')
+	crt1 = shenv.Object('crt1S.o', 'arch/$ARCH/crt1.S')
+	crtn = shenv.Object('crtnS.o', 'arch/$ARCH/crtn.S')
+	shenv.Install('$SYSGCCLIBPATH', [crt0, crt1, crtn])
 	
 	shlib = shenv.SharedLibrary(
 		target = 'c',
 		source = acsrc + assrc + csrc + baseacsrc + baseassrc
 	)
-	env.Install(env['BINDIR'], shlib)
-	env.Install(env['DISTDIR'] + '/lib', shlib)
+	env.Install('$BINDIR', shlib)
+	env.Install('$DISTDIR/lib', shlib)

@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg(env, 'bin', target = 'ps', source = Glob('*.cpp'))
+env.EscapeCXXProg('bin', target = 'ps', source = env.Glob('*.cpp'))

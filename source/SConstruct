@@ -1,6 +1,8 @@
 # -*- Mode: Python -*-
 
 import sys, os
+sys.path.insert(0, 'tools')
+import install
 
 target = os.environ.get('ESC_TARGET') or 'x86_64'
 if target == 'i586':
@@ -85,16 +87,15 @@ if int(verbose) == 0:
 env.Append(
 	ARCH = target,
 	LINKTYPE = linktype,
-	CROSSDIR = crossdir,
 	CROSS = cross,
-	ROOTDIR = '#',
-	BUILDDIR = '#' + builddir,
-	DISTDIR = '#' + builddir + '/dist',
-	BINDIR = '#' + builddir + '/bin',
-	MAPDIR = '#' + builddir + '/map',
-	SYSLIBPATH = crossdir + '/lib',
-	SYSGCCLIBPATH = crossdir + '/lib/gcc/' + cross + '/' + crossver,
-	SYSSHGCCPATH = crossdir + '/' + cross + '/lib'
+	CROSSDIR = Dir(crossdir),
+	BUILDDIR = Dir(builddir),
+	DISTDIR = Dir(builddir + '/dist'),
+	BINDIR = Dir(builddir + '/bin'),
+	MAPDIR = Dir(builddir + '/map'),
+	SYSLIBPATH = Dir(crossdir + '/lib'),
+	SYSGCCLIBPATH = Dir(crossdir + '/lib/gcc/' + cross + '/' + crossver),
+	SYSSHGCCPATH = Dir(crossdir + '/' + cross + '/lib')
 )
 env['LIBPATH'] = [env['BINDIR'], env['SYSLIBPATH']]
 hostenv['BINDIR'] = env['BINDIR']
@@ -103,30 +104,30 @@ link_addr = 0x1000
 def SetLibDeps(env, lib, libs):
 	for l in libs:
 		if l != 'gcc':
-			env.Depends(lib, env['BINDIR'] + '/lib' + l + '.so')
+			env.Depends(lib, '$BINDIR/lib' + l + '.so')
 	if str(lib[0]) != 'libc.so' and str(lib[0]) != 'libstdc++.so':
-		env.Depends(lib, env['BINDIR'] + '/libc.so')
-		env.Depends(lib, env['BINDIR'] + '/libstdc++.so')
+		env.Depends(lib, '$BINDIR/libc.so')
+		env.Depends(lib, '$BINDIR/libstdc++.so')
 
 def SetProgDeps(env, prog, static, libs, cpp):
 	crtsuffix = '.o' if static else 'S.o'
 	libsuffix = '.a' if static else '.so'
 	for l in libs:
 		if l != 'gcc':
-			env.Depends(prog, env['BINDIR'] + '/lib' + l + libsuffix)
-	env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt0' + crtsuffix)
-	env.Depends(prog, env['SYSGCCLIBPATH'] + '/crt1' + crtsuffix)
-	env.Depends(prog, env['SYSGCCLIBPATH'] + '/crtn' + crtsuffix)
-	env.Depends(prog, env['BINDIR'] + '/libc' + libsuffix)
-	env.Depends(prog, env['BINDIR'] + '/libg' + libsuffix)
-	env.Depends(prog, env['BINDIR'] + '/libm' + libsuffix)
+			env.Depends(prog, '$BINDIR/lib' + l + libsuffix)
+	env.Depends(prog, '$SYSGCCLIBPATH/crt0' + crtsuffix)
+	env.Depends(prog, '$SYSGCCLIBPATH/crt1' + crtsuffix)
+	env.Depends(prog, '$SYSGCCLIBPATH/crtn' + crtsuffix)
+	env.Depends(prog, '$BINDIR/libc' + libsuffix)
+	env.Depends(prog, '$BINDIR/libg' + libsuffix)
+	env.Depends(prog, '$BINDIR/libm' + libsuffix)
 	if cpp:
-		env.Depends(prog, env['BINDIR'] + '/libstdc++' + libsuffix)
+		env.Depends(prog, '$BINDIR/libstdc++' + libsuffix)
 		if static:
-			env.Depends(prog, env['SYSGCCLIBPATH'] + '/libgcc.a')
+			env.Depends(prog, '$SYSGCCLIBPATH/libgcc.a')
 		else:
-			env.Depends(prog, env['SYSSHGCCPATH'] + '/libgcc_s.so.1')
-		env.Depends(prog, env['SYSLIBPATH'] + '/libsupc++.a')
+			env.Depends(prog, '$SYSSHGCCPATH/libgcc_s.so.1')
+		env.Depends(prog, '$SYSLIBPATH/libsupc++.a')
 
 def SetLinkAddr(env, static):
 	global link_addr
@@ -139,13 +140,13 @@ def SetLinkAddr(env, static):
 		link_addr += 0x20000
 
 def EscapeMap(env, target, source):
-	map = env.Command(target, source, 'tools/createmap-' + env['ARCH'] + ' $SOURCE > $TARGET')
-	env.Install(env['MAPDIR'], map)
+	map = env.Command(target, source, 'tools/createmap-$ARCH $SOURCE > $TARGET')
+	env.Install('$MAPDIR', map)
 
 def EscapeDump(env, target, source):
-	dump = env.Command(target, source, env['BINDIR'][1:] + '/hostdump $SOURCE > $TARGET')
-	env.Depends(dump, env['BINDIR'] + '/hostdump')
-	env.Install(env['BUILDDIR'], dump)
+	dump = env.Command(target, source, '$BINDIR/hostdump $SOURCE > $TARGET')
+	env.Depends(dump, '$BINDIR/hostdump')
+	env.Install('$BUILDDIR', dump)
 
 def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = True, LIBS = []):
 	myenv = env.Clone()
@@ -156,10 +157,10 @@ def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = Tr
 		SetLinkAddr(myenv, static)
 	prog = myenv.Program(target, source, LIBS = LIBS)
 	SetProgDeps(myenv, prog, static, LIBS, False)
-	myenv.EscapeMap(myenv, target + '.map', prog)
+	myenv.EscapeMap(target + '.map', prog)
 	if prefix != '':
-		myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
-		myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
+		myenv.Install('$DISTDIR/' + prefix, prog)
+		myenv.Symlink('$BINDIR/' + target, prog)
 	return prog
 
 def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
@@ -170,30 +171,31 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 	SetLinkAddr(myenv, static)
 	prog = myenv.Program(target, source, LIBS = ['stdc++', 'supc++'] + LIBS)
 	SetProgDeps(myenv, prog, static, LIBS, True)
-	myenv.EscapeMap(myenv, target + '.map', prog)
-	myenv.Install(myenv['DISTDIR'] + '/' + prefix, prog)
-	myenv.Symlink(myenv['BINDIR'] + '/' + target, prog)
+	myenv.EscapeMap(target + '.map', prog)
+	myenv.Install('$DISTDIR/' + prefix, prog)
+	myenv.Symlink('$BINDIR/' + target, prog)
 	return prog
 
 def EscapeLib(env, target, source, LIBS = []):
 	myenv = env.Clone()
 	stlib = myenv.StaticLibrary(target, source)
-	env.Install(env['BINDIR'], stlib)
+	env.Install('$BINDIR', stlib)
 	if env['ARCH'] == 'i586':
 		shenv = myenv.Clone()
 		shenv.Append(LINKFLAGS = ' -Wl,-shared -Wl,-soname,lib' + target + '.so')
 		shlib = shenv.SharedLibrary(target, source, LIBS = LIBS)
 		SetLibDeps(env, shlib, LIBS)
-		env.Install(env['BINDIR'], shlib)
-		env.Install(env['DISTDIR'] + '/lib', shlib)
+		env.Install('$BINDIR', shlib)
+		env.Install('$DISTDIR/lib', shlib)
 
 symlink = Builder(action = 'ln -sf ${SOURCE.abspath} $TARGET')
 env.Append(BUILDERS = {'Symlink' : symlink})
-env.EscapeMap = EscapeMap
-env.EscapeDump = EscapeDump
-env.EscapeCProg = EscapeCProg
-env.EscapeCXXProg = EscapeCXXProg
-env.EscapeLib = EscapeLib
+env.AddMethod(EscapeMap)
+env.AddMethod(EscapeDump)
+env.AddMethod(EscapeCProg)
+env.AddMethod(EscapeCXXProg)
+env.AddMethod(EscapeLib)
+env.AddMethod(install.InstallFiles)
 
 hostenv.SConscript('tools/SConscript', 'hostenv',
 				   variant_dir = builddir + '/tools', duplicate = 0)

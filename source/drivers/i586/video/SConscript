@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg(env, 'sbin', target = 'video', source = Glob('*.c'))
+env.EscapeCProg('sbin', target = 'video', source = env.Glob('*.c'))

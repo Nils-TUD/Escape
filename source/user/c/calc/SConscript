@@ -3,9 +3,9 @@
 Import('env')
 
 myenv = env.Clone()
-builddir = Dir(myenv['BUILDDIR']).abspath + '/user/c/calc'
+builddir = Dir('$BUILDDIR/user/c/calc')
 myenv.Append(
-	CFLAGS = ' -DYYERROR_VERBOSE -I user/c/calc -I ' + builddir,
+	CFLAGS = ' -DYYERROR_VERBOSE -I user/c/calc -I ' + builddir.abspath,
 	LEXFLAGS = '--nounistd',
 	YACCFLAGS = '-t -d'
 )
@@ -13,7 +13,7 @@ myenv.Append(
 lexer = myenv.CFile(target = 'lex.c', source = 'calc.l')
 parser = myenv.CFile(target = 'parser', source = 'calc.y')
 
-cfiles = [f for f in Glob('*.c') if 'lex.c' not in str(f) and 'parser.c' not in str(f)]
+cfiles = [f for f in myenv.Glob('*.c') if 'lex.c' not in str(f) and 'parser.c' not in str(f)]
 myenv.Depends(cfiles, [lexer, parser])
 
-myenv.EscapeCProg(myenv, 'bin', target = 'calc', source = cfiles + [lexer, parser[0]])
+myenv.EscapeCProg('bin', target = 'calc', source = cfiles + [lexer, parser[0]])

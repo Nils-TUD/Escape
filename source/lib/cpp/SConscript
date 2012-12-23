@@ -3,6 +3,4 @@
 Import('env')
 myenv = env.Clone()
 myenv.Append(LINKFLAGS = ' -nodefaultlibs')
-myenv.EscapeLib(
-	myenv, target = 'stdc++', source = [Glob('*.cpp'), Glob('*/*/*.cpp')], LIBS = ['c']
-)
+myenv.EscapeLib(target = 'stdc++', source = [myenv.Glob('*.cpp'), myenv.Glob('*/*/*.cpp')], LIBS = ['c'])

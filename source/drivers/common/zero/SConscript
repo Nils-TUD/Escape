@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg(env, 'sbin', target = 'zero', source = Glob('*.c'))
+env.EscapeCProg('sbin', target = 'zero', source = env.Glob('*.c'))

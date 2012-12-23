@@ -2,5 +2,5 @@
 
 Import('hostenv')
 
-prog = hostenv.Program('hostconv', Glob('*.cpp'))
-hostenv.Install(hostenv['BINDIR'], prog)
+prog = hostenv.Program('hostconv', hostenv.Glob('*.cpp'))
+hostenv.Install('$BINDIR', prog)

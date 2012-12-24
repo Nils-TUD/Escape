@@ -23,6 +23,15 @@
 #include <sys/spinlock.h>
 #include <assert.h>
 
+enum {
+	DLR_LO	= 0,
+	DLR_HI	= 1,
+	IER		= 1,	/* interrupt enable register */
+	FCR		= 2,	/* FIFO control register */
+	LCR		= 3,	/* line control register */
+	MCR		= 4,	/* modem control register */
+};
+
 static int ser_isTransmitEmpty(uint16_t port);
 static void ser_initPort(uint16_t port);
 
@@ -53,11 +62,11 @@ static int ser_isTransmitEmpty(uint16_t port) {
 }
 
 static void ser_initPort(uint16_t port) {
-	ports_outByte(port + 1, 0x00);	/* Disable all interrupts */
-	ports_outByte(port + 3, 0x80);	/* Enable DLAB (set baud rate divisor) */
-	ports_outByte(port + 0, 0x03);	/* Set divisor to 3 (lo byte) 38400 baud */
-	ports_outByte(port + 1, 0x00);	/*                  (hi byte) */
-	ports_outByte(port + 3, 0x03);	/* 8 bits, no parity, one stop bit */
-	ports_outByte(port + 2, 0xC7);	/* Enable FIFO, clear them, with 14-byte threshold */
-	ports_outByte(port + 4, 0x0B);	/* IRQs enabled, RTS/DSR set */
+	ports_outByte(port + LCR,0x80);		/* Enable DLAB (set baud rate divisor) */
+	ports_outByte(port + DLR_LO,0x01);	/* Set divisor to 1 (lo byte) 115200 baud */
+	ports_outByte(port + DLR_HI,0x00);	/*                  (hi byte) */
+	ports_outByte(port + LCR,0x03);	/* 8 bits, no parity, one stop bit */
+	ports_outByte(port + IER,0);		/* disable interrupts */
+	ports_outByte(port + FCR,7);
+	ports_outByte(port + MCR,3);
 }

@@ -56,6 +56,7 @@ typedef struct {
 	uint16_t stepping;
 	uint32_t signature;
 	uint32_t features;
+	uint32_t name[12];
 } sCPUInfo;
 
 enum eCPUIdRequests {

@@ -135,6 +135,7 @@ static uint64_t cpuHz;
 
 void cpu_detect(void) {
 	size_t i;
+	uint32_t eax,ebx,edx,unused;
 	char vendor[VENDOR_STRLEN + 1];
 	cpuid_t id = smp_getCurId();
 	if(cpus == NULL) {
@@ -159,6 +160,24 @@ void cpu_detect(void) {
 		}
 	}
 
+	/* read brand string */
+	cpus[id].name[0] = 0;
+	cpu_getInfo(CPUID_INTELEXTENDED,&eax,&unused,&unused,&unused);
+	if(eax & 0x80000000) {
+		switch((uint8_t)eax) {
+			case 0x4 ... 0x9:
+				cpu_getInfo(CPUID_INTELBRANDSTRINGEND,
+						&cpus[id].name[8],&cpus[id].name[9],&cpus[id].name[10],&cpus[id].name[11]);
+			case 0x3:
+				cpu_getInfo(CPUID_INTELBRANDSTRINGMORE,
+						&cpus[id].name[4],&cpus[id].name[5],&cpus[id].name[6],&cpus[id].name[7]);
+			case 0x2:
+				cpu_getInfo(CPUID_INTELBRANDSTRING,
+						&cpus[id].name[0],&cpus[id].name[1],&cpus[id].name[2],&cpus[id].name[3]);
+				break;
+		}
+	}
+
 	/* set default values */
 	cpus[id].model = 0;
 	cpus[id].family = 0;
@@ -169,8 +188,7 @@ void cpu_detect(void) {
 
 	/* fetch some additional infos for known cpus */
 	switch(cpus[id].vendor) {
-		case CPUID_VENDOR_INTEL: {
-			uint32_t eax,ebx,unused,edx;
+		case CPUID_VENDOR_INTEL:
 			cpu_getInfo(CPUID_GETFEATURES,&eax,&ebx,&unused,&edx);
 			cpus[id].model = (eax >> 4) & 0xf;
 			cpus[id].family = (eax >> 8) & 0xf;
@@ -179,18 +197,15 @@ void cpu_detect(void) {
 			cpus[id].stepping = eax & 0xf;
 			cpus[id].signature = eax;
 			cpus[id].features = edx;
-		}
-		break;
+			break;
 
-		case CPUID_VENDOR_AMD: {
-			uint32_t eax,unused,edx;
+		case CPUID_VENDOR_AMD:
 			cpu_getInfo(CPUID_GETFEATURES,&eax,&unused,&unused,&edx);
 			cpus[id].model = (eax >> 4) & 0xf;
 			cpus[id].family = (eax >> 8) & 0xf;
 			cpus[id].stepping = eax & 0xf;
 			cpus[id].features = edx;
-		}
-		break;
+			break;
 	}
 }
 
@@ -218,6 +233,7 @@ static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu) {
 	size_t size;
 	prf_sprintf(buf,"\t%-12s%Lu Mhz\n","Speed:",cpuHz / 1000000);
 	prf_sprintf(buf,"\t%-12s%s\n","Vendor:",vendors[cpu->vendor]);
+	prf_sprintf(buf,"\t%-12s%s\n","Name:",(char*)cpu->name);
 	switch(cpu->vendor) {
 		case CPUID_VENDOR_INTEL: {
 			const char **models = NULL;

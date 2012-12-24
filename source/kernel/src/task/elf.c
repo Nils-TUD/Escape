@@ -118,11 +118,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	bindesc.ino = finfo.inodeNo;
 	bindesc.dev = finfo.device;
 	bindesc.modifytime = finfo.modifytime;
-	const char *slash = strrchr(path,'/');
-	if(slash)
-		strncpy(bindesc.filename,slash + 1,sizeof(bindesc.filename));
-	else
-		strncpy(bindesc.filename,path,sizeof(bindesc.filename));
+	strncpy(bindesc.filename,path,sizeof(bindesc.filename));
 	bindesc.filename[sizeof(bindesc.filename) - 1] = '\0';
 
 	/* set suid and sgid */

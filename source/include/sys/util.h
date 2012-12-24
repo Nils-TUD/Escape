@@ -52,6 +52,16 @@ typedef struct {
 void util_panic(const char *fmt,...);
 
 /**
+ * Architecture dependent part of panic
+ */
+void util_panic_arch(void);
+
+/**
+ * Prints the user state
+ */
+void util_printUserState(void);
+
+/**
  * Starts the log-viewer
  */
 void util_logViewer(void);

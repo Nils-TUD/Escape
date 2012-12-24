@@ -42,7 +42,7 @@ typedef struct {
 	inode_t ino;
 	dev_t dev;
 	time_t modifytime;
-	char filename[16];
+	char filename[24];
 } sBinDesc;
 
 typedef struct {

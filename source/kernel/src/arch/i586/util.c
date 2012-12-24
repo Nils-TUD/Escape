@@ -22,8 +22,6 @@
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/task/proc.h>
 #include <sys/task/smp.h>
-#include <sys/dbg/kb.h>
-#include <sys/dbg/console.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
@@ -50,10 +48,7 @@ static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t ms
 extern uintptr_t kernelStack;
 static uint64_t profStart;
 
-void util_panic(const char *fmt,...) {
-	static uint32_t regs[REG_COUNT];
-	const sThread *t = thread_getRunning();
-	va_list ap;
+void util_panic_arch(void) {
 	sFile *file;
 
 	/* at first, halt the other CPUs */
@@ -73,62 +68,30 @@ void util_panic(const char *fmt,...) {
 		}
 		vfs_closeFile(KERNEL_PID,file);
 	}
-	vid_clearScreen();
+}
 
-	/* print message */
-	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
-	vid_printf("\n");
-	vid_printf("\033[co;7;4]PANIC: ");
-	va_start(ap,fmt);
-	vid_vprintf(fmt,ap);
-	va_end(ap);
-	vid_printf("%|s\033[co]\n","");
-
-	if(t != NULL)
-		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
-	util_printStackTrace(util_getKernelStackTrace());
-
-	if(t != NULL) {
-		sIntrptStackFrame *kstack = thread_getIntrptStack(t);
-		util_printStackTrace(util_getUserStackTrace());
-		if(kstack) {
-			vid_printf("User-Register:\n");
-			regs[R_EAX] = kstack->eax;
-			regs[R_EBX] = kstack->ebx;
-			regs[R_ECX] = kstack->ecx;
-			regs[R_EDX] = kstack->edx;
-			regs[R_ESI] = kstack->esi;
-			regs[R_EDI] = kstack->edi;
-			regs[R_ESP] = kstack->uesp;
-			regs[R_EBP] = kstack->ebp;
-			regs[R_CS] = kstack->cs;
-			regs[R_DS] = kstack->ds;
-			regs[R_ES] = kstack->es;
-			regs[R_FS] = kstack->fs;
-			regs[R_GS] = kstack->gs;
-			regs[R_SS] = kstack->uss;
-			regs[R_EFLAGS] = kstack->eflags;
-			PRINT_REGS(regs,"\t");
-		}
-	}
-
-	/* write into log only */
-	if(t) {
-		vid_setTargets(TARGET_SCREEN);
-		vid_printf("\n\nWriting regions and page-directory of the current process to log...");
-		vid_setTargets(TARGET_LOG);
-		vid_printf("Region overview:\n");
-		vmm_printShort(t->proc->pid,"\t");
-		vid_printf("\n");
-		vmm_print(t->proc->pid);
-		paging_printCur(PD_PART_USER);
-		vid_setTargets(TARGET_SCREEN);
-		vid_printf("Done\n");
-	}
-	vid_printf("\nPress any key to start debugger");
-	while(1) {
-		kb_get(NULL,KEV_PRESS,true);
-		cons_start();
+void util_printUserState(void) {
+	static uint32_t regs[REG_COUNT];
+	const sThread *t = thread_getRunning();
+	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
+	if(kstack) {
+		vid_printf("User-Register:\n");
+		regs[R_EAX] = kstack->eax;
+		regs[R_EBX] = kstack->ebx;
+		regs[R_ECX] = kstack->ecx;
+		regs[R_EDX] = kstack->edx;
+		regs[R_ESI] = kstack->esi;
+		regs[R_EDI] = kstack->edi;
+		regs[R_ESP] = kstack->uesp;
+		regs[R_EBP] = kstack->ebp;
+		regs[R_CS] = kstack->cs;
+		regs[R_DS] = kstack->ds;
+		regs[R_ES] = kstack->es;
+		regs[R_FS] = kstack->fs;
+		regs[R_GS] = kstack->gs;
+		regs[R_SS] = kstack->uss;
+		regs[R_EFLAGS] = kstack->eflags;
+		PRINT_REGS(regs,"\t");
 	}
 }
 

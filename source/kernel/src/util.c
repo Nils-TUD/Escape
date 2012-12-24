@@ -23,6 +23,8 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/vmm.h>
+#include <sys/dbg/kb.h>
+#include <sys/dbg/console.h>
 #include <sys/intrpt.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
@@ -53,6 +55,59 @@ void util_srand(uint seed) {
 	spinlock_release(&randLock);
 }
 
+void util_panic(const char *fmt, ...) {
+	va_list ap;
+	const sThread *t = thread_getRunning();
+	util_panic_arch();
+	vid_clearScreen();
+
+	/* print message */
+	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+	vid_printf("\n");
+	vid_printf("\033[co;7;4]PANIC: ");
+	va_start(ap,fmt);
+	vid_vprintf(fmt,ap);
+	va_end(ap);
+	vid_printf("%|s\033[co]\n","");
+
+	/* write information about the running thread to log/screen */
+	if(t != NULL)
+		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
+	util_printStackTrace(util_getKernelStackTrace());
+	if(t) {
+		util_printUserState();
+
+		vid_setTargets(TARGET_LOG);
+		vid_printf("\n============= snip =============\n");
+		vid_printf("Region overview:\n");
+		vmm_printShort(t->proc->pid,"\t");
+
+		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+		util_printStackTrace(util_getUserStackTrace());
+
+		vid_setTargets(TARGET_LOG);
+		vid_printf("============= snip =============\n\n");
+		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+	}
+
+	/* write into log only */
+	if(t) {
+		vid_setTargets(TARGET_SCREEN);
+		vid_printf("\n\nWriting regions and page-directory of the current process to log...");
+		vid_setTargets(TARGET_LOG);
+		vmm_print(t->proc->pid);
+		paging_printCur(PD_PART_USER);
+		vid_setTargets(TARGET_SCREEN);
+		vid_printf("Done\n");
+	}
+
+	vid_printf("\nPress any key to start debugger");
+	while(1) {
+		kb_get(NULL,KEV_PRESS,true);
+		cons_start();
+	}
+}
+
 void util_printEventTrace(const sFuncCall *trace,const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
@@ -75,7 +130,7 @@ void util_printEventTrace(const sFuncCall *trace,const char *fmt,...) {
 }
 
 void util_printStackTrace(const sFuncCall *trace) {
-	if(trace) {
+	if(trace && trace->addr) {
 		if(trace->addr < KERNEL_AREA)
 			vid_printf("User-Stacktrace:\n");
 		else

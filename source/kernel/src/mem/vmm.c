@@ -957,7 +957,7 @@ void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
 		sVMRegion *vm;
 		for(vm = p->regtree.begin; vm != NULL; vm = vm->next) {
 			mutex_aquire(&vm->reg->lock);
-			prf_sprintf(buf,"%-16s %p - %p (%5zuK) %c%c%c%c",vmm_getRegName(p,vm),vm->virt,
+			prf_sprintf(buf,"%-24s %p - %p (%5zuK) %c%c%c%c",vmm_getRegName(p,vm),vm->virt,
 					vm->virt + vm->reg->byteCount - 1,vm->reg->byteCount / K,
 					(vm->reg->flags & RF_WRITABLE) ? 'w' : '-',
 					(vm->reg->flags & RF_EXECUTABLE) ? 'x' : '-',
@@ -973,7 +973,7 @@ void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
 static const char *vmm_getRegName(sProc *p,const sVMRegion *vm) {
 	const char *name = "";
 	if(vm->virt == p->textAddr)
-		name = "text";
+		name = p->command;
 	else if(vm->virt == p->dataAddr)
 		name = "data";
 	else if(vm->reg->flags & RF_STACK)
@@ -992,7 +992,7 @@ void vmm_printShort(pid_t pid,const char *prefix) {
 	if(p) {
 		sVMRegion *vm;
 		for(vm = p->regtree.begin; vm != NULL; vm = vm->next) {
-			vid_printf("%s %-16s %p - %p (%5zuK): ",prefix,vmm_getRegName(p,vm),vm->virt,
+			vid_printf("%s%-24s %p - %p (%5zuK): ",prefix,vmm_getRegName(p,vm),vm->virt,
 					vm->virt + vm->reg->byteCount - 1,vm->reg->byteCount / K);
 			reg_printFlags(vm->reg);
 			vid_printf("\n");

@@ -29,6 +29,8 @@
 #include "loader.h"
 #include "setup.h"
 
+#define LIB_PATH	"/lib/"
+
 static void load_library(sSharedLib *dst);
 static sSharedLib *load_addLib(sSharedLib *lib);
 static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
@@ -49,7 +51,8 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 	dst->bin.ino = info.inodeNo;
 	dst->bin.dev = info.device;
 	dst->bin.modifytime = info.modifytime;
-	strncpy(dst->bin.filename,dst->name,sizeof(dst->bin.filename));
+	memcpy(dst->bin.filename,LIB_PATH,SSTRLEN(LIB_PATH));
+	strncpy(dst->bin.filename + SSTRLEN(LIB_PATH),dst->name,sizeof(dst->bin.filename) - SSTRLEN(LIB_PATH));
 	dst->fd = binFd;
 	dst->loadAddr = 0;
 
@@ -179,7 +182,7 @@ uintptr_t load_addSegments(void) {
 static void load_library(sSharedLib *dst) {
 	char path[MAX_PATH_LEN];
 	int fd;
-	snprintf(path,sizeof(path),"/lib/%s",dst->name);
+	snprintf(path,sizeof(path),"%s%s",LIB_PATH,dst->name);
 	fd = open(path,IO_READ);
 	if(fd < 0)
 		load_error("Unable to open '%s'",path);

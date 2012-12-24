@@ -34,41 +34,16 @@ static sFuncCall frames[1] = {
 	{0,0,""}
 };
 
-void util_panic(const char *fmt,...) {
+void util_panic_arch(void) {
+}
+
+void util_printUserState(void) {
+	const sThread *t = thread_getRunning();
 	sKSpecRegs *sregs = thread_getSpecRegs();
-	sThread *t = thread_getRunning();
-	va_list ap;
-
-	/* print message */
-	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
-	vid_printf("\n");
-	vid_printf("\033[co;7;4]PANIC: ");
-	va_start(ap,fmt);
-	vid_vprintf(fmt,ap);
-	va_end(ap);
-	vid_printf("%|s\033[co]\n","");
-
-	if(t != NULL)
-		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
-
 	vid_printf("User state:\n");
 	intrpt_printStackFrame(thread_getIntrptStack(t));
 	vid_printf("\trBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
 	vid_printf("\trYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
-
-	/* write into log only */
-	vid_setTargets(TARGET_SCREEN);
-	vid_printf("\n\nWriting regions and page-directory of the current process to log...");
-	vid_setTargets(TARGET_LOG);
-	vmm_print(t->proc->pid);
-	paging_printCur(PD_PART_USER);
-	cache_print();
-	vid_setTargets(TARGET_SCREEN);
-	vid_printf("Done\n\nPress any key to start debugger");
-	while(1) {
-		kb_get(NULL,KEV_PRESS,true);
-		cons_start();
-	}
 }
 
 sFuncCall *util_getUserStackTrace(void) {

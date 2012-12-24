@@ -24,6 +24,7 @@
 #include <sys/dbg/cmd/log.h>
 #include <sys/dbg/cmd/ls.h>
 #include <sys/dbg/cmd/mem.h>
+#include <sys/dbg/cmd/panic.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/cache.h>
 #include <sys/task/smp.h>
@@ -64,6 +65,7 @@ static sCommand commands[] = {
 	{"log",cons_cmd_log},
 	{"ls",cons_cmd_ls},
 	{"mem",cons_cmd_mem},
+	{"panic",cons_cmd_panic},
 };
 
 void cons_start(void) {

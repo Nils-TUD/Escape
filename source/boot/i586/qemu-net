@@ -1,0 +1,15 @@
+#!/bin/sh
+. boot/$ESC_TARGET/images.sh
+create_cd $1/dist $1/cd.iso
+
+cat >$ESC_TFTPDIR/config-52-54-00-12-34-56 <<EOF
+root escape
+exec escape videomode=vesa
+load romdisk /dev/romdisk cd.iso
+load cmos /dev/cmos
+load fs /dev/fs /dev/romdisk iso9660
+load cd.iso
+EOF
+cp -f $1/dist/boot/escape $1/dist/sbin/* $1/cd.iso $ESC_TFTPDIR/escape
+
+$ESC_QEMU -boot n -bootp pulsar -tftp $ESC_TFTPDIR $2 | tee log.txt

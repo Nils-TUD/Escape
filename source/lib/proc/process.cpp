@@ -1,0 +1,99 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2011 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <proc/process.h>
+#include <proc/thread.h>
+#include <fstream>
+#include <file.h>
+
+using namespace std;
+
+namespace proc {
+	vector<process*> process::get_list(bool own,uid_t uid) {
+		vector<process*> procs;
+		file dir("/system/processes");
+		vector<sDirEntry> files = dir.list_files(false);
+		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
+			try {
+				process *p = get_proc(strtoul(it->name,NULL,10),own,uid);
+				if(p)
+					procs.push_back(p);
+			}
+			catch(const io_exception&) {
+			}
+		}
+		return procs;
+	}
+
+	process* process::get_proc(pid_t pid,bool own,uid_t uid) {
+		char name[12];
+		itoa(name,sizeof(name),pid);
+		string ppath = string("/system/processes/") + name + "/info";
+		ifstream is(ppath.c_str());
+		process* p = new process();
+		is >> *p;
+		is.close();
+
+		if(own && p->uid() != uid) {
+			delete p;
+			return NULL;
+		}
+
+		file dir(string("/system/processes/") + name + "/threads");
+		vector<sDirEntry> files = dir.list_files(false);
+		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
+			thread *t = thread::get_thread(pid,strtoul(it->name,NULL,10));
+			p->add_thread(t);
+		}
+		return p;
+	}
+
+	process::cycle_type process::cycles() const {
+		if(_cycles == (cycle_type)-1) {
+			_cycles = 0;
+			for(vector<thread*>::const_iterator it = _threads.begin(); it != _threads.end(); ++it)
+				_cycles += (*it)->cycles();
+		}
+		return _cycles;
+	}
+	process::cycle_type process::runtime() const {
+		if(_runtime == (time_type)-1) {
+			_runtime = 0;
+			for(vector<thread*>::const_iterator it = _threads.begin(); it != _threads.end(); ++it)
+				_runtime += (*it)->runtime();
+		}
+		return _runtime;
+	}
+
+	istream& operator >>(istream& is,process& p) {
+		istream::size_type unlimited = numeric_limits<streamsize>::max();
+		is.ignore(unlimited,' ') >> p._pid;
+		is.ignore(unlimited,' ') >> p._ppid;
+		is.ignore(unlimited,' ') >> p._uid;
+		is.ignore(unlimited,' ') >> p._gid;
+		is.ignore(unlimited,' ') >> p._cmd;
+		is.ignore(unlimited,' ') >> p._pages;
+		is.ignore(unlimited,' ') >> p._ownFrames;
+		is.ignore(unlimited,' ') >> p._sharedFrames;
+		is.ignore(unlimited,' ') >> p._swapped;
+		is.ignore(unlimited,' ') >> p._input;
+		is.ignore(unlimited,' ') >> p._output;
+		return is;
+	}
+}

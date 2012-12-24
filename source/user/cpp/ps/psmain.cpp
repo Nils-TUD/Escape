@@ -22,6 +22,8 @@
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
+#include <proc/process.h>
+#include <proc/thread.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,12 +34,10 @@
 #include <cmdargs.h>
 #include <file.h>
 
-#include "thread.h"
-#include "process.h"
-
 #define MIN_WIDTH_FOR_UIDGID	90
 
 using namespace std;
+using namespace proc;
 
 struct sort {
 	const static int PID	= 0;
@@ -52,8 +52,6 @@ struct sort {
 };
 
 static bool compareProcs(const process* a,const process* b);
-static vector<process*> getProcs(bool own,uid_t uid);
-static process* getProc(const char* name,bool own,uid_t uid);
 
 static struct sort sorts[] = {
 	{sort::PID,"pid"},
@@ -120,7 +118,7 @@ int main(int argc,char **argv) {
 	}
 
 	uid_t uid = own ? getuid() : 0;
-	vector<process*> procs = getProcs(own,uid);
+	vector<process*> procs = process::get_list(own,uid);
 
 	// determine max-values (we want to have a min-width here :))
 	process::pid_type maxPid = 10;
@@ -253,45 +251,4 @@ static bool compareProcs(const process* a,const process* b) {
 	}
 	// never reached
 	return false;
-}
-
-static vector<process*> getProcs(bool own,uid_t uid) {
-	vector<process*> procs;
-	file dir("/system/processes");
-	vector<sDirEntry> files = dir.list_files(false);
-	for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
-		try {
-			process *p = getProc(it->name,own,uid);
-			if(p)
-				procs.push_back(p);
-		}
-		catch(const io_exception& e) {
-			cerr << "Unable to read process with pid " << it->name << ": " << e.what() << endl;
-		}
-	}
-	return procs;
-}
-
-static process* getProc(const char* name,bool own,uid_t uid) {
-	string ppath = string("/system/processes/") + name + "/info";
-	ifstream is(ppath.c_str());
-	process* p = new process();
-	is >> *p;
-	is.close();
-
-	if(own && p->uid() != uid) {
-		delete p;
-		return NULL;
-	}
-
-	file dir(string("/system/processes/") + name + "/threads");
-	vector<sDirEntry> files = dir.list_files(false);
-	for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
-		string tpath = string("/system/processes/") + name + "/threads/" + it->name + "/info";
-		ifstream tis(tpath.c_str());
-		thread* t = new thread();
-		tis >> *t;
-		p->add_thread(t);
-	}
-	return p;
 }

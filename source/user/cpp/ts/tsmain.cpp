@@ -21,6 +21,7 @@
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
+#include <proc/thread.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,9 +32,8 @@
 #include <cmdargs.h>
 #include <file.h>
 
-#include "tsthread.h"
-
 using namespace std;
+using namespace proc;
 
 struct sort {
 	const static int TID	= 0;
@@ -49,7 +49,6 @@ struct sort {
 };
 
 static bool compareThreads(const thread* a,const thread* b);
-static vector<thread*> getThreads();
 
 static struct sort sorts[] = {
 	{sort::TID,"tid"},
@@ -121,7 +120,7 @@ int main(int argc,char **argv) {
 		}
 	}
 
-	vector<thread*> threads = getThreads();
+	vector<thread*> threads = thread::get_list();
 
 	// determine max-values (we want to have a min-width here :))
 	thread::tid_type maxTid = 10;
@@ -219,28 +218,4 @@ static bool compareThreads(const thread* a,const thread* b) {
 	}
 	// never reached
 	return false;
-}
-
-static vector<thread*> getThreads() {
-	vector<thread*> threads;
-	file dir("/system/processes");
-	vector<sDirEntry> files = dir.list_files(false);
-	for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
-		try {
-			string threadDir(string("/system/processes/") + it->name + "/threads");
-			file tdir(threadDir);
-			vector<sDirEntry> tfiles = tdir.list_files(false);
-			for(vector<sDirEntry>::const_iterator tit = tfiles.begin(); tit != tfiles.end(); ++tit) {
-				string tpath = threadDir + "/" + tit->name + "/info";
-				ifstream tis(tpath.c_str());
-				thread* t = new thread();
-				tis >> *t;
-				threads.push_back(t);
-			}
-		}
-		catch(const io_exception& e) {
-			cerr << "Unable to read process with pid " << it->name << ": " << e.what() << endl;
-		}
-	}
-	return threads;
 }

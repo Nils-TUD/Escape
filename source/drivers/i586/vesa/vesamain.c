@@ -223,6 +223,7 @@ int main(void) {
 						info->blueFieldPosition = minfo->blueFieldPosition;
 						info->blueMaskSize = minfo->blueMaskSize;
 						memcpy(msg.data.d,info,sizeof(sVESAInfo));
+						free(info);
 					}
 					send(fd,MSG_VESA_GETMODE_RESP,&msg,sizeof(msg.data));
 				}

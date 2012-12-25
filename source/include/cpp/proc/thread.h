@@ -27,10 +27,16 @@ namespace proc {
 		friend std::istream& operator >>(std::istream& is,thread& t);
 
 	public:
+		enum Flags {
+			FL_IDLE		= 1
+		};
+
 		typedef int pid_type;
 		typedef int tid_type;
 		typedef int state_type;
+		typedef unsigned flags_type;
 		typedef int prio_type;
+		typedef unsigned cpu_type;
 		typedef size_t size_type;
 		typedef unsigned long long cycle_type;
 		typedef unsigned long long time_type;
@@ -40,13 +46,13 @@ namespace proc {
 
 	public:
 		thread()
-			: _tid(0), _pid(0), _procName(std::string()), _state(0), _prio(0), _stackPages(0),
-			  _schedCount(0), _syscalls(0), _cycles(0), _runtime(0) {
+			: _tid(0), _pid(0), _procName(std::string()), _state(0), _flags(), _prio(0),
+			  _stackPages(0), _schedCount(0), _syscalls(0), _cycles(0), _runtime(0), _cpu(0) {
 		}
 		thread(const thread& t)
-			: _tid(t._tid), _pid(t._pid), _procName(t._procName), _state(t._state), _prio(t._prio),
-			  _stackPages(t._stackPages), _schedCount(t._schedCount), _syscalls(t._syscalls),
-			  _cycles(t._cycles), _runtime(t._runtime) {
+			: _tid(t._tid), _pid(t._pid), _procName(t._procName), _state(t._state), _flags(t._flags),
+			  _prio(t._prio), _stackPages(t._stackPages), _schedCount(t._schedCount),
+			  _syscalls(t._syscalls), _cycles(t._cycles), _runtime(t._runtime), _cpu(t._cpu) {
 		}
 		thread& operator =(const thread& t) {
 			clone(t);
@@ -67,6 +73,9 @@ namespace proc {
 		inline state_type state() const {
 			return _state;
 		};
+		inline Flags flags() const {
+			return (Flags)_flags;
+		};
 		inline prio_type prio() const {
 			return _prio;
 		};
@@ -85,6 +94,9 @@ namespace proc {
 		inline time_type runtime() const {
 			return _runtime;
 		};
+		inline cpu_type cpu() const {
+			return _cpu;
+		};
 
 	private:
 		void clone(const thread& t);
@@ -94,12 +106,14 @@ namespace proc {
 		pid_type _pid;
 		std::string _procName;
 		state_type _state;
+		flags_type _flags;
 		prio_type _prio;
 		size_type _stackPages;
 		size_type _schedCount;
 		size_type _syscalls;
 		cycle_type _cycles;
 		time_type _runtime;
+		cpu_type _cpu;
 	};
 
 	std::istream& operator >>(std::istream& is,thread& t);

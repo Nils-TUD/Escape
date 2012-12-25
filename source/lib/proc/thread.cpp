@@ -61,12 +61,14 @@ namespace proc {
 		_pid = t._pid;
 		_procName = t._procName;
 		_state = t._state;
+		_flags = t._flags;
 		_prio = t._prio;
 		_stackPages = t._stackPages;
 		_schedCount = t._schedCount;
 		_syscalls = t._syscalls;
 		_cycles = t._cycles;
 		_runtime = t._runtime;
+		_cpu = t._cpu;
 	}
 
 	std::istream& operator >>(std::istream& is,thread& t) {
@@ -76,6 +78,7 @@ namespace proc {
 		is.ignore(unlimited,' ') >> t._procName;
 		is.ignore(unlimited,' ') >> std::ws;
 		t._state = is.get() - '0';
+		is.ignore(unlimited,' ') >> t._flags;
 		is.ignore(unlimited,' ') >> t._prio;
 		is.ignore(unlimited,' ') >> t._stackPages;
 		is.ignore(unlimited,' ') >> t._schedCount;
@@ -83,6 +86,8 @@ namespace proc {
 		is.ignore(unlimited,' ') >> t._runtime;
 		is.setf(istream::hex);
 		is.ignore(unlimited,' ') >> t._cycles;
+		is.setf(istream::dec);
+		is.ignore(unlimited,' ') >> t._cpu;
 		return is;
 	}
 }

@@ -197,22 +197,26 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"%-16s%s\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
+		"%-16s%u\n"
 		"%-16s%zu\n"
 		"%-16s%zu\n"
 		"%-16s%zu\n"
 		"%-16s%Lu\n"
 		"%-16s%016Lx\n"
+		"%-16s%u\n"
 		,
 		"Tid:",t->tid,
 		"Pid:",t->proc->pid,
 		"ProcName:",t->proc->command,
 		"State:",t->state,
+		"Flags:",t->flags & T_IDLE,
 		"Priority:",t->priority,
 		"StackPages:",stackPages,
 		"SchedCount:",t->stats.schedCount,
 		"Syscalls:",t->stats.syscalls,
 		"Runtime:",thread_getRuntime(t),
-		"Cycles:",thread_getCycles(t)
+		"Cycles:",thread_getCycles(t),
+		"CPU:",t->cpu
 	);
 	*buffer = buf.str;
 	*dataSize = buf.len;

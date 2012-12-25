@@ -40,7 +40,7 @@ namespace proc {
 		typedef unsigned long long time_type;
 
 		static std::vector<process*> get_list(bool own = false,uid_t uid = 0);
-		static process* get_proc(pid_t pid,bool own,uid_t uid);
+		static process* get_proc(pid_t pid,bool own = false,uid_t uid = 0);
 
 	public:
 		process()

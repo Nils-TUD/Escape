@@ -21,7 +21,7 @@
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
-#include <proc/thread.h>
+#include <info/thread.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +33,7 @@
 #include <file.h>
 
 using namespace std;
-using namespace proc;
+using namespace info;
 
 struct sort {
 	const static int TID	= 0;

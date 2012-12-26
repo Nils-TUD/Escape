@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <proc/thread.h>
+#include <info/thread.h>
 #include <fstream>
 #include <file.h>
 
-namespace proc {
+namespace info {
 	vector<thread*> thread::get_list() {
 		vector<thread*> threads;
 		file dir("/system/processes");
@@ -95,7 +95,7 @@ namespace proc {
 		return is;
 	}
 
-	std::ostream& operator <<(std::ostream& os,thread& t) {
+	std::ostream& operator <<(std::ostream& os,const thread& t) {
 		os << "thread[" << t.tid() << " in " << t.pid() << ":" << t.procName() << "]:\n";
 		os << "\tflags     : " << t.flags() << "\n";
 		os << "\tstate     : " << t.state() << "\n";

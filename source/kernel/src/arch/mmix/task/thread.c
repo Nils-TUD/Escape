@@ -210,6 +210,14 @@ void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,ui
 	nt->archAttr.tempStack = -1;
 }
 
+uint64_t thread_getTSC(void) {
+	return cpu_rdtsc();
+}
+
+uint64_t thread_ticksPerSec(void) {
+	return cpu_getSpeed();
+}
+
 uint64_t thread_getRuntime(const sThread *t) {
 	if(t->state == ST_RUNNING) {
 		/* if the thread is running, we must take the time since the last scheduling of that thread

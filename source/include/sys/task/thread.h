@@ -399,6 +399,16 @@ void thread_removeRegions(sThread *t,bool remStack);
 int thread_extendStack(uintptr_t address);
 
 /**
+ * @return the current timestamp (this should be comparable with stats.cycleStart)
+ */
+uint64_t thread_getTSC(void);
+
+/**
+ * @return the ticks per second (this should be comparable with stats.cycleStart)
+ */
+uint64_t thread_ticksPerSec(void);
+
+/**
  * @param thread the thread
  * @return the runtime of the given thread
  */

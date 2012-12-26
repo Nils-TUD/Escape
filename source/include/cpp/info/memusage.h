@@ -17,30 +17,43 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/kheap.h>
-#include <sys/task/smp.h>
-#include <sys/cpu.h>
-#include <sys/printf.h>
-#include <sys/video.h>
-#include <string.h>
+#pragma once
 
-uint64_t cpu_rdtsc(void) {
-	/* TODO not implemented yet */
-	return 0;
-}
+#include <esc/common.h>
+#include <istream>
 
-uint64_t cpu_getSpeed(void) {
-	/* not available */
-	return 0;
-}
+namespace info {
+	class memusage;
+	std::istream& operator >>(std::istream& is,memusage& mem);
+	std::ostream& operator <<(std::ostream& os,const memusage& mem);
 
-void cpu_sprintf(sStringBuffer *buf) {
-	sCPU *smpcpu = smp_getCPUs()[0];
-	prf_sprintf(buf,"CPU 0:\n");
-	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Total:",smpcpu->lastTotal);
-	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
-	prf_sprintf(buf,"\t%-12s%lu Hz\n","Speed:",0);
-	prf_sprintf(buf,"\t%-12s%s\n","Vendor:","THM");
-	prf_sprintf(buf,"\t%-12s%s\n","Model:","ECO32");
+	class memusage {
+		friend std::istream& operator >>(std::istream& is,memusage& mem);
+	public:
+		typedef size_t size_type;
+
+		static memusage get();
+
+		explicit memusage() : _total(), _used(), _swapTotal(), _swapUsed() {
+		}
+
+		size_type total() const {
+			return _total;
+		}
+		size_type used() const {
+			return _used;
+		}
+		size_type swapTotal() const {
+			return _swapTotal;
+		}
+		size_type swapUsed() const {
+			return _swapUsed;
+		}
+
+	private:
+		size_type _total;
+		size_type _used;
+		size_type _swapTotal;
+		size_type _swapUsed;
+	};
 }

@@ -21,6 +21,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
 #include <sys/task/event.h>
+#include <sys/task/smp.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/spinlock.h>
@@ -149,6 +150,7 @@ bool timer_intrpt(void) {
 
 	if((elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
 		thread_updateRuntimes();
+		smp_updateRuntimes();
 		lastRuntimeUpdate = elapsedMsecs;
 	}
 

@@ -25,7 +25,7 @@
 #include <string>
 #include <limits>
 
-namespace proc {
+namespace info {
 	class thread;
 
 	class process {
@@ -39,22 +39,23 @@ namespace proc {
 		typedef unsigned long long cycle_type;
 		typedef unsigned long long time_type;
 
-		static std::vector<process*> get_list(bool own = false,uid_t uid = 0);
-		static process* get_proc(pid_t pid,bool own = false,uid_t uid = 0);
+		static std::vector<process*> get_list(bool own = false,uid_t uid = 0,bool fullcmd = false);
+		static process* get_proc(pid_t pid,bool own = false,uid_t uid = 0,bool fullcmd = false);
 
 	public:
-		process()
-			: _pid(0), _ppid(0), _uid(0), _gid(0), _pages(0), _ownFrames(0), _sharedFrames(0),
-			  _swapped(0), _input(0), _output(0), _cycles(-1), _runtime(-1),
+		process(bool fullcmd = false)
+			: _fullcmd(fullcmd), _pid(0), _ppid(0), _uid(0), _gid(0), _pages(0), _ownFrames(0),
+			  _sharedFrames(0), _swapped(0), _input(0), _output(0), _cycles(-1), _runtime(-1),
 			  _threads(std::vector<thread*>()), _cmd(std::string()) {
 		}
 		process(const process& p)
-			: _pid(p._pid), _ppid(p._ppid), _uid(p._uid), _gid(p._gid), _pages(p._pages),
-			  _ownFrames(p._ownFrames), _sharedFrames(p._sharedFrames), _swapped(p._swapped),
-			  _input(p._input), _output(p._output), _cycles(p._cycles), _runtime(p._runtime),
-			  _threads(p._threads), _cmd(p._cmd) {
+			: _fullcmd(p._fullcmd), _pid(p._pid), _ppid(p._ppid), _uid(p._uid), _gid(p._gid),
+			  _pages(p._pages), _ownFrames(p._ownFrames), _sharedFrames(p._sharedFrames),
+			  _swapped(p._swapped), _input(p._input), _output(p._output), _cycles(p._cycles),
+			  _runtime(p._runtime), _threads(p._threads), _cmd(p._cmd) {
 		}
 		process& operator =(const process& p) {
+			_fullcmd = p._fullcmd;
 			_pid = p._pid;
 			_ppid = p._ppid;
 			_uid = p._uid;
@@ -71,8 +72,7 @@ namespace proc {
 			_cmd = p._cmd;
 			return *this;
 		}
-		~process() {
-		}
+		~process();
 
 		inline pid_type pid() const {
 			return _pid;
@@ -120,6 +120,7 @@ namespace proc {
 		};
 
 	private:
+		bool _fullcmd;
 		pid_type _pid;
 		pid_type _ppid;
 		uid_type _uid;
@@ -137,7 +138,7 @@ namespace proc {
 	};
 
 	std::istream& operator >>(std::istream& is,process& p);
-	std::ostream& operator <<(std::ostream& os,process& p);
+	std::ostream& operator <<(std::ostream& os,const process& p);
 }
 
 #endif /* PROCESS_H_ */

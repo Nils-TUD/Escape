@@ -149,7 +149,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 			if(argc < 2)
 				util_panic("Invalid arguments for boot-module: %s\n",progs[i].path);
 			/* exec */
-			res = proc_exec(progs[i].path,argv,(void*)progs[i].start,progs[i].size);
+			res = proc_exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
 				util_panic("Unable to exec boot-program %s: %d\n",progs[i].path,res);
 			/* we don't want to continue ;) */

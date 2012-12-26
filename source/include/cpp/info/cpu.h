@@ -17,30 +17,41 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/kheap.h>
-#include <sys/task/smp.h>
-#include <sys/cpu.h>
-#include <sys/printf.h>
-#include <sys/video.h>
-#include <string.h>
+#pragma once
 
-uint64_t cpu_rdtsc(void) {
-	/* TODO not implemented yet */
-	return 0;
-}
+#include <info/process.h>
+#include <istream>
+#include <vector>
 
-uint64_t cpu_getSpeed(void) {
-	/* not available */
-	return 0;
-}
+namespace info {
+	class cpu;
+	std::istream& operator >>(std::istream& is,cpu& ci);
+	std::ostream& operator <<(std::ostream& os,const cpu& ci);
 
-void cpu_sprintf(sStringBuffer *buf) {
-	sCPU *smpcpu = smp_getCPUs()[0];
-	prf_sprintf(buf,"CPU 0:\n");
-	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Total:",smpcpu->lastTotal);
-	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
-	prf_sprintf(buf,"\t%-12s%lu Hz\n","Speed:",0);
-	prf_sprintf(buf,"\t%-12s%s\n","Vendor:","THM");
-	prf_sprintf(buf,"\t%-12s%s\n","Model:","ECO32");
+	class cpu {
+		friend std::istream& operator >>(std::istream& is,cpu& ci);
+	public:
+		typedef unsigned id_type;
+		typedef process::cycle_type cycle_type;
+
+		static std::vector<cpu*> get_list();
+
+		explicit cpu() : _id(), _total(), _used() {
+		}
+
+		id_type id() const {
+			return _id;
+		}
+		cycle_type totalCycles() const {
+			return _total;
+		}
+		cycle_type usedCycles() const {
+			return _used;
+		}
+
+	private:
+		id_type _id;
+		cycle_type _total;
+		cycle_type _used;
+	};
 }

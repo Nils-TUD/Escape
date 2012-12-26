@@ -22,7 +22,7 @@
 
 #include <istream>
 
-namespace proc {
+namespace info {
 	class thread {
 		friend std::istream& operator >>(std::istream& is,thread& t);
 
@@ -117,7 +117,7 @@ namespace proc {
 	};
 
 	std::istream& operator >>(std::istream& is,thread& t);
-	std::ostream& operator <<(std::ostream& os,thread& t);
+	std::ostream& operator <<(std::ostream& os,const thread& t);
 }
 
 #endif /* THREAD_H_ */

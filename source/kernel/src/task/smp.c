@@ -25,6 +25,7 @@
 #include <sys/log.h>
 #include <sys/video.h>
 #include <sys/util.h>
+#include <sys/cpu.h>
 #include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
@@ -63,6 +64,10 @@ void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 	cpu->schedCount = 0;
 	cpu->runtime = 0;
 	cpu->thread = NULL;
+	cpu->curCycles = 0;
+	cpu->lastCycles = 0;
+	cpu->lastTotal = 0;
+	cpu->lastUpdate = 0;
 	if(!sll_append(&cpuList,cpu))
 		util_panic("Unable to append CPU");
 	cpuCount++;
@@ -89,13 +94,30 @@ void smp_setReady(cpuid_t id) {
 
 void smp_schedule(cpuid_t id,sThread *new,uint64_t timestamp) {
 	sCPU *c = cpus[id];
-	if(c->thread && !(c->thread->flags & T_IDLE))
+	if(c->thread && !(c->thread->flags & T_IDLE)) {
+		c->curCycles += thread_getTSC() - c->thread->stats.cycleStart;
 		c->runtime += timestamp - c->lastSched;
+	}
 	if(!(new->flags & T_IDLE)) {
 		c->schedCount++;
 		c->lastSched = timestamp;
 	}
 	c->thread = new;
+}
+
+void smp_updateRuntimes(void) {
+	size_t i;
+	for(i = 0; i < cpuCount; i++) {
+		cpus[i]->lastTotal = thread_getTSC() - cpus[i]->lastUpdate;
+		cpus[i]->lastUpdate = thread_getTSC();
+		if(cpus[i]->thread && !(cpus[i]->thread->flags & T_IDLE)) {
+			/* we want to measure the last second only */
+			uint64_t cycles = thread_getTSC() - cpus[i]->thread->stats.cycleStart;
+			cpus[i]->curCycles = MIN(cpus[i]->lastTotal,cpus[i]->curCycles + cycles);
+		}
+		cpus[i]->lastCycles = cpus[i]->curCycles;
+		cpus[i]->curCycles = 0;
+	}
 }
 
 void smp_killThread(sThread *t) {
@@ -160,9 +182,10 @@ void smp_print(void) {
 	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
 		sCPU *cpu = (sCPU*)n->data;
 		sThread *t = cpu->thread;
-		vid_printf("\t%s:%x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n",
+		vid_printf("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
+				   "\t        lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
 				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->tid,t->proc->pid,t->proc->command,
-				cpu->schedCount,cpu->runtime);
+				cpu->schedCount,cpu->runtime,cpu->lastUpdate,cpu->lastTotal,cpu->lastCycles);
 	}
 }
 

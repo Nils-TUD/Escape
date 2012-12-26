@@ -136,7 +136,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 
 		/* clone proc */
 		if((child = proc_clone(P_BOOT)) == 0) {
-			int res = proc_exec(progs[i].command,argv,(void*)progs[i].start,progs[i].size);
+			int res = proc_exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
 				util_panic("Unable to exec boot-program %s: %d\n",progs[i].command,res);
 			/* we don't want to continue ;) */

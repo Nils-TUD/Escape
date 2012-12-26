@@ -17,21 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <proc/process.h>
-#include <proc/thread.h>
+#include <info/process.h>
+#include <info/thread.h>
 #include <fstream>
 #include <file.h>
 
 using namespace std;
 
-namespace proc {
-	vector<process*> process::get_list(bool own,uid_t uid) {
+namespace info {
+	vector<process*> process::get_list(bool own,uid_t uid,bool fullcmd) {
 		vector<process*> procs;
 		file dir("/system/processes");
 		vector<sDirEntry> files = dir.list_files(false);
 		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
 			try {
-				process *p = get_proc(strtoul(it->name,NULL,10),own,uid);
+				process *p = get_proc(strtoul(it->name,NULL,10),own,uid,fullcmd);
 				if(p)
 					procs.push_back(p);
 			}
@@ -41,12 +41,12 @@ namespace proc {
 		return procs;
 	}
 
-	process* process::get_proc(pid_t pid,bool own,uid_t uid) {
+	process* process::get_proc(pid_t pid,bool own,uid_t uid,bool fullcmd) {
 		char name[12];
 		itoa(name,sizeof(name),pid);
 		string ppath = string("/system/processes/") + name + "/info";
 		ifstream is(ppath.c_str());
-		process* p = new process();
+		process* p = new process(fullcmd);
 		is >> *p;
 		is.close();
 
@@ -62,6 +62,11 @@ namespace proc {
 			p->add_thread(t);
 		}
 		return p;
+	}
+
+	process::~process() {
+		for(std::vector<thread*>::iterator it = _threads.begin(); it != _threads.end(); ++it)
+			delete *it;
 	}
 
 	process::cycle_type process::cycles() const {
@@ -87,7 +92,17 @@ namespace proc {
 		is.ignore(unlimited,' ') >> p._ppid;
 		is.ignore(unlimited,' ') >> p._uid;
 		is.ignore(unlimited,' ') >> p._gid;
-		is.ignore(unlimited,' ') >> p._cmd;
+		is.ignore(unlimited,' ');
+		if(p._fullcmd) {
+			is >> std::ws;
+			is.getline(p._cmd,'\n');
+		}
+		else {
+			is >> p._cmd;
+			is.unget();
+			if(is.peek() != '\n')
+				is.ignore(unlimited,'\n');
+		}
 		is.ignore(unlimited,' ') >> p._pages;
 		is.ignore(unlimited,' ') >> p._ownFrames;
 		is.ignore(unlimited,' ') >> p._sharedFrames;
@@ -97,7 +112,7 @@ namespace proc {
 		return is;
 	}
 
-	std::ostream& operator <<(std::ostream& os,process& p) {
+	std::ostream& operator <<(std::ostream& os,const process& p) {
 		os << "process[" << p.pid() << ":" << p.command() << "]:\n";
 		os << "\tppid      : " << p.ppid() << "\n";
 		os << "\tuid       : " << p.uid() << "\n";

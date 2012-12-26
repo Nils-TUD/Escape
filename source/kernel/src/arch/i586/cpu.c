@@ -49,7 +49,7 @@
 
 #define VENDOR_STRLEN				12
 
-static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu);
+static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,sCPU *smpcpu);
 
 static const char *vendors[] = {
 	"AMDisbetter!",	/* early engineering samples of AMD K5 processor */
@@ -225,13 +225,15 @@ void cpu_sprintf(sStringBuffer *buf) {
 	size_t i,count = smp_getCPUCount();
 	for(i = 0; i < count; i++) {
 		prf_sprintf(buf,"CPU %d:\n",smpCPUs[i]->id);
-		cpu_doSprintf(buf,cpus + i);
+		cpu_doSprintf(buf,cpus + i,smpCPUs[i]);
 	}
 }
 
-static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu) {
+static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,sCPU *smpcpu) {
 	size_t size;
-	prf_sprintf(buf,"\t%-12s%Lu Mhz\n","Speed:",cpuHz / 1000000);
+	prf_sprintf(buf,"\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
+	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
+	prf_sprintf(buf,"\t%-12s%Lu Hz\n","Speed:",cpuHz);
 	prf_sprintf(buf,"\t%-12s%s\n","Vendor:",vendors[cpu->vendor]);
 	prf_sprintf(buf,"\t%-12s%s\n","Name:",(char*)cpu->name);
 	switch(cpu->vendor) {

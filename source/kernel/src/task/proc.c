@@ -141,10 +141,40 @@ pagedir_t *proc_getPageDir(void) {
 	return &t->proc->pagedir;
 }
 
-void proc_setCommand(sProc *p,const char *cmd) {
+void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args) {
+	int i;
+	size_t cmdlen = strlen(cmd);
+	size_t len = cmdlen + 1;
+	const char *curargs = args;
+	char *curdst;
 	if(p->command)
 		cache_free((char*)p->command);
-	p->command = strdup(cmd);
+
+	/* determine total length */
+	for(i = 0; i < argc; ++i) {
+		size_t curlen = strlen(curargs) + 1;
+		if(i > 0)
+			len += curlen;
+		curargs += curlen;
+	}
+
+	/* copy cmd and arguments into buffer */
+	p->command = (char*)cache_alloc(len);
+	curdst = (char*)p->command;
+	memcpy(curdst,cmd,cmdlen);
+	curdst += cmdlen;
+	*curdst++ = ' ';
+	for(i = 0; i < argc; ++i) {
+		size_t curlen = strlen(args);
+		if(i > 0) {
+			memcpy(curdst,args,curlen);
+			curdst += curlen;
+			if(i < argc - 1)
+				*curdst++ = ' ';
+		}
+		args += curlen + 1;
+	}
+	*curdst = '\0';
 }
 
 pid_t proc_getRunning(void) {
@@ -423,7 +453,7 @@ errorReqProc:
 	return res;
 }
 
-int proc_exec(const char *path,const char *const *args,const void *code,size_t size) {
+int proc_exec(const char *path,USER const char *const *args,const void *code,size_t size) {
 	char *argBuffer;
 	sStartupInfo info;
 	sThread *t = thread_getRunning();
@@ -491,7 +521,7 @@ int proc_exec(const char *path,const char *const *args,const void *code,size_t s
 	}
 
 	/* copy path so that we can identify the process */
-	proc_setCommand(p,path);
+	proc_setCommand(p,path,argc,argBuffer);
 
 #if DEBUG_CREATIONS
 #ifdef __eco32__

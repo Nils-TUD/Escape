@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
+#include <sys/task/smp.h>
 #include <sys/cpu.h>
 #include <sys/printf.h>
 #include <sys/video.h>
@@ -78,9 +79,13 @@ const char *cpu_getSpecialName(int rno) {
 
 void cpu_sprintf(sStringBuffer *buf) {
 	uint64_t rn = cpu_getSpecial(rN);
-	prf_sprintf(buf,"%-12s%lu Mhz\n","Speed:",cpuHz / 1000000);
-	prf_sprintf(buf,"%-12s%s\n","Vendor:","THM");
-	prf_sprintf(buf,"%-12s%s\n","Model:","GIMMIX");
-	prf_sprintf(buf,"%-12s%d.%d.%d\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
-	prf_sprintf(buf,"%-12s%lu\n","Builddate",rn & 0xFFFFFFFFFF);
+	sCPU *smpcpu = smp_getCPUs()[0];
+	prf_sprintf(buf,"CPU 0:\n");
+	prf_sprintf(buf,"\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
+	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
+	prf_sprintf(buf,"\t%-12s%lu Hz\n","Speed:",cpuHz);
+	prf_sprintf(buf,"\t%-12s%s\n","Vendor:","THM");
+	prf_sprintf(buf,"\t%-12s%s\n","Model:","GIMMIX");
+	prf_sprintf(buf,"\t%-12s%d.%d.%d\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
+	prf_sprintf(buf,"\t%-12s%lu\n","Builddate",rn & 0xFFFFFFFFFF);
 }

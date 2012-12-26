@@ -133,7 +133,7 @@ int vm86_create(void) {
 		memset(p->archAttr.ioMap,0x00,IO_MAP_SIZE / 8);
 
 	/* give it a name */
-	proc_setCommand(p,"VM86");
+	proc_setCommand(p,"VM86",0,"");
 
 	/* block us; we get waked up as soon as someone wants to use us */
 	ev_block(t);

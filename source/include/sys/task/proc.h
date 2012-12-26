@@ -174,8 +174,10 @@ pagedir_t *proc_getPageDir(void);
  *
  * @param p the process
  * @param cmd the new command-name
+ * @param argc the number of arguments
+ * @param args the arguments, one after another, separated by '\0'
  */
-void proc_setCommand(sProc *p,const char *cmd);
+void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args);
 
 /**
  * @return the pid of the running process

@@ -103,6 +103,10 @@ void swmap_free(ulong block) {
 	spinlock_release(&swmapLock);
 }
 
+size_t swmap_totalSpace(void) {
+	return totalBlocks * PAGE_SIZE;
+}
+
 size_t swmap_freeSpace(void) {
 	return freeBlocks * PAGE_SIZE;
 }

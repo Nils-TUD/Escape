@@ -144,6 +144,14 @@ void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,ui
 	nt->save.r31 = (uint32_t)&thread_startup;
 }
 
+uint64_t thread_getTSC(void) {
+	return timer_getTimestamp();
+}
+
+uint64_t thread_ticksPerSec(void) {
+	return 1000;
+}
+
 uint64_t thread_getRuntime(const sThread *t) {
 	return t->stats.runtime;
 }
@@ -166,6 +174,7 @@ void thread_doSwitch(void) {
 	time_t timestamp = timer_getTimestamp();
 	uint64_t runtime = (timestamp - old->stats.cycleStart) * 1000;
 	old->stats.runtime += runtime;
+	old->stats.curCycleCount += timestamp - old->stats.cycleStart;
 
 	/* choose a new thread to run */
 	new = sched_perform(old,runtime);

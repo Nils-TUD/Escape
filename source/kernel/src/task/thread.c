@@ -257,7 +257,7 @@ uint64_t thread_getCycles(const sThread *t) {
 void thread_updateRuntimes(void) {
 	sSLNode *n;
 	size_t threadCount;
-	uint64_t cyclesPerSec = cpu_getSpeed();
+	uint64_t cyclesPerSec = thread_ticksPerSec();
 	spinlock_aquire(&threadLock);
 	threadCount = sll_length(&threads);
 	for(n = sll_begin(&threads); n != NULL; n = n->next) {
@@ -265,7 +265,7 @@ void thread_updateRuntimes(void) {
 		/* update cycle-stats */
 		if(t->state == ST_RUNNING) {
 			/* we want to measure the last second only */
-			uint64_t cycles = cpu_rdtsc() - t->stats.cycleStart;
+			uint64_t cycles = thread_getTSC() - t->stats.cycleStart;
 			t->stats.lastCycleCount = t->stats.curCycleCount + MIN(cyclesPerSec,cycles);
 		}
 		else

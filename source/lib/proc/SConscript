@@ -1,4 +1,0 @@
-# -*- Mode: Python -*-
-
-Import('env')
-env.EscapeLib(target = 'proc', source = env.Glob('*.cpp'))

@@ -22,8 +22,8 @@
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
-#include <proc/process.h>
-#include <proc/thread.h>
+#include <info/process.h>
+#include <info/thread.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +37,7 @@
 #define MIN_WIDTH_FOR_UIDGID	90
 
 using namespace std;
-using namespace proc;
+using namespace info;
 
 struct sort {
 	const static int PID	= 0;

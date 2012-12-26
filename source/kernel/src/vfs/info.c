@@ -308,10 +308,14 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 		"%-11s%10zu\n"
 		"%-11s%10zu\n"
 		"%-11s%10zu\n"
+		"%-11s%10zu\n"
+		"%-11s%10zu\n"
 		,
 		"Total:",total,
 		"Used:",total - free,
 		"Free:",free,
+		"SwapSpace:",swmap_totalSpace(),
+		"SwapUsed:",swmap_totalSpace() - swmap_freeSpace(),
 		"Kernel:",ksize,
 		"Modules:",msize,
 		"PhysMem:",pmem,

@@ -54,8 +54,11 @@ void swmap_incRefs(ulong block);
 bool swmap_isUsed(ulong block);
 
 /**
- * Determines the free space in the swapmap
- *
+ * @return the total space on the swap device in bytes
+ */
+size_t swmap_totalSpace(void);
+
+/**
  * @return the free space in bytes
  */
 size_t swmap_freeSpace(void);

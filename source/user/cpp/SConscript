@@ -6,5 +6,5 @@ if env['ARCH'] == 'i586':
 	env.SConscript(env.Glob('*/SConscript'), 'env')
 else:
 	# TODO mmix-ld is unable to link some c++ apps
-	for f in ['init', 'less', 'libcpptest', 'ls', 'ps', 'sort', 'ts']:
+	for f in ['init', 'less', 'libcpptest', 'ls', 'ps', 'sort', 'ts', 'top']:
 		env.SConscript(f + '/SConscript', 'env')

@@ -43,6 +43,10 @@ typedef struct {
 	size_t schedCount;
 	uint64_t runtime;
 	uint64_t lastSched;
+	uint64_t curCycles;
+	uint64_t lastCycles;
+	uint64_t lastTotal;
+	uint64_t lastUpdate;
 	sThread *thread;
 } sCPU;
 
@@ -87,6 +91,11 @@ void smp_setReady(cpuid_t id);
  * @param timestamp the current timestamp
  */
 void smp_schedule(cpuid_t id,sThread *new,uint64_t timestamp);
+
+/**
+ * Updates the runtimes of all CPUs
+ */
+void smp_updateRuntimes(void);
 
 /**
  * Pauses all other CPUs until smp_resumeOthers() is called.

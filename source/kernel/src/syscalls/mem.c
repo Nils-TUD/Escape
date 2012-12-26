@@ -69,10 +69,9 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 
 		case REG_SHLIBDATA:
 		case REG_SHLIBTEXT:
-		case REG_SHM:
-		case REG_DEVICE:
+			break;
 		case REG_TLS:
-			/* the user can't create a new stack here */
+			thread_reserveFrames(BYTES_2_PAGES(byteCount));
 			break;
 		default:
 			SYSC_ERROR(stack,-EPERM);
@@ -84,8 +83,10 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	/* save tls-region-number */
-	if(type == REG_TLS)
+	if(type == REG_TLS) {
 		thread_setTLSRegion(t,vm);
+		thread_discardFrames();
+	}
 	vmm_getRegRange(pid,vm,&start,0,true);
 	SYSC_RET1(stack,start);
 }

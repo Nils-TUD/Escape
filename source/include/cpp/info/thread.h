@@ -49,17 +49,6 @@ namespace info {
 			: _tid(0), _pid(0), _procName(std::string()), _state(0), _flags(), _prio(0),
 			  _stackPages(0), _schedCount(0), _syscalls(0), _cycles(0), _runtime(0), _cpu(0) {
 		}
-		thread(const thread& t)
-			: _tid(t._tid), _pid(t._pid), _procName(t._procName), _state(t._state), _flags(t._flags),
-			  _prio(t._prio), _stackPages(t._stackPages), _schedCount(t._schedCount),
-			  _syscalls(t._syscalls), _cycles(t._cycles), _runtime(t._runtime), _cpu(t._cpu) {
-		}
-		thread& operator =(const thread& t) {
-			clone(t);
-			return *this;
-		}
-		~thread() {
-		}
 
 		inline std::string procName() const {
 			return _procName;
@@ -97,9 +86,6 @@ namespace info {
 		inline cpu_type cpu() const {
 			return _cpu;
 		};
-
-	private:
-		void clone(const thread& t);
 
 	private:
 		tid_type _tid;

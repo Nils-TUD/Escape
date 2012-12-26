@@ -56,21 +56,6 @@ namespace info {
 		return t;
 	}
 
-	void thread::clone(const thread& t) {
-		_tid = t._tid;
-		_pid = t._pid;
-		_procName = t._procName;
-		_state = t._state;
-		_flags = t._flags;
-		_prio = t._prio;
-		_stackPages = t._stackPages;
-		_schedCount = t._schedCount;
-		_syscalls = t._syscalls;
-		_cycles = t._cycles;
-		_runtime = t._runtime;
-		_cpu = t._cpu;
-	}
-
 	std::istream& operator >>(std::istream& is,thread& t) {
 		std::istream::size_type unlimited = std::numeric_limits<streamsize>::max();
 		is.ignore(unlimited,' ') >> t._tid;

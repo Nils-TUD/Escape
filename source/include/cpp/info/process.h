@@ -46,33 +46,13 @@ namespace info {
 		process(bool fullcmd = false)
 			: _fullcmd(fullcmd), _pid(0), _ppid(0), _uid(0), _gid(0), _pages(0), _ownFrames(0),
 			  _sharedFrames(0), _swapped(0), _input(0), _output(0), _cycles(-1), _runtime(-1),
-			  _threads(std::vector<thread*>()), _cmd(std::string()) {
+			  _threads(), _cmd() {
 		}
-		process(const process& p)
-			: _fullcmd(p._fullcmd), _pid(p._pid), _ppid(p._ppid), _uid(p._uid), _gid(p._gid),
-			  _pages(p._pages), _ownFrames(p._ownFrames), _sharedFrames(p._sharedFrames),
-			  _swapped(p._swapped), _input(p._input), _output(p._output), _cycles(p._cycles),
-			  _runtime(p._runtime), _threads(p._threads), _cmd(p._cmd) {
+		process(const process& p);
+		process& operator =(const process& p);
+		~process() {
+			destroy();
 		}
-		process& operator =(const process& p) {
-			_fullcmd = p._fullcmd;
-			_pid = p._pid;
-			_ppid = p._ppid;
-			_uid = p._uid;
-			_gid = p._gid;
-			_pages = p._pages;
-			_ownFrames = p._ownFrames;
-			_sharedFrames = p._sharedFrames;
-			_swapped = p._swapped;
-			_cycles = p._cycles;
-			_runtime = p._runtime;
-			_threads = p._threads;
-			_input = p._input;
-			_output = p._output;
-			_cmd = p._cmd;
-			return *this;
-		}
-		~process();
 
 		inline pid_type pid() const {
 			return _pid;
@@ -120,6 +100,8 @@ namespace info {
 		};
 
 	private:
+		void destroy();
+
 		bool _fullcmd;
 		pid_type _pid;
 		pid_type _ppid;

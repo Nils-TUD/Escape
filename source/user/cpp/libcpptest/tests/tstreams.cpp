@@ -99,5 +99,59 @@ static void test_informat(void) {
 		test_assertStr(buf,"myteststr");
 	}
 
+	{
+		const string teststr(
+			"Tid:            9\n"
+			"Pid:            4\n"
+			"ProcName:       /sbin/video\n"
+			"State:          3\n"
+			"Flags:          0\n"
+			"Priority:       4\n"
+			"StackPages:     1\n"
+			"SchedCount:     125\n"
+			"Syscalls:       408\n"
+			"Runtime:        35000\n"
+			"Cycles:         0000000000000000\n"
+			"CPU:            0\n"
+		);
+		istringstream is(teststr);
+
+		int tid,pid,state,prio;
+		unsigned flags,cpu;
+		size_t stackPages,schedCount,syscalls;
+		unsigned long long cycles,runtime;
+		string procName;
+		istream::size_type unlimited = numeric_limits<streamsize>::max();
+
+		is.ignore(unlimited,' ') >> tid;
+		is.ignore(unlimited,' ') >> pid;
+		is.ignore(unlimited,' ') >> procName;
+		is.ignore(unlimited,' ') >> ws;
+		state = is.get() - '0';
+		is.ignore(unlimited,' ') >> flags;
+		is.ignore(unlimited,' ') >> prio;
+		is.ignore(unlimited,' ') >> stackPages;
+		is.ignore(unlimited,' ') >> schedCount;
+		is.ignore(unlimited,' ') >> syscalls;
+		is.ignore(unlimited,' ') >> runtime;
+		is.setf(istream::hex);
+		is.ignore(unlimited,' ') >> cycles;
+		is.setf(istream::dec);
+		is.ignore(unlimited,' ') >> cpu;
+
+		test_assertInt(tid,9);
+		test_assertInt(pid,4);
+		test_assertStr(procName.c_str(),"/sbin/video");
+		test_assertInt(state,3);
+		test_assertUInt(flags,0);
+		test_assertInt(prio,4);
+		test_assertSize(stackPages,1);
+		test_assertSize(schedCount,125);
+		test_assertSize(syscalls,408);
+		test_assertULLInt(runtime,35000);
+		test_assertULLInt(cycles,0);
+		test_assertUInt(cpu,0);
+	}
+
 	test_caseSucceeded();
 }

@@ -96,4 +96,21 @@ namespace proc {
 		is.ignore(unlimited,' ') >> p._output;
 		return is;
 	}
+
+	std::ostream& operator <<(std::ostream& os,process& p) {
+		os << "process[" << p.pid() << ":" << p.command() << "]:\n";
+		os << "\tppid      : " << p.ppid() << "\n";
+		os << "\tuid       : " << p.uid() << "\n";
+		os << "\tgid       : " << p.gid() << "\n";
+		os << "\tpages     : " << p.pages() << "\n";
+		os << "\townFrames : " << p.ownFrames() << "\n";
+		os << "\tshFrames  : " << p.sharedFrames() << "\n";
+		os << "\tswpFrames : " << p.swapped() << "\n";
+		os << "\tinput     : " << p.input() << "\n";
+		os << "\toutput    : " << p.output() << "\n";
+		os << "\tthreads   : " << p.threads().size() << "\n";
+		os << "\truntime   : " << p.runtime() << "\n";
+		os << "\tcycles    : " << p.cycles() << "\n";
+		return os;
+	}
 }

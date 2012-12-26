@@ -117,6 +117,7 @@ namespace proc {
 	};
 
 	std::istream& operator >>(std::istream& is,thread& t);
+	std::ostream& operator <<(std::ostream& os,thread& t);
 }
 
 #endif /* THREAD_H_ */

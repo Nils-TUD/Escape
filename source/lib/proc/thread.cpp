@@ -90,4 +90,18 @@ namespace proc {
 		is.ignore(unlimited,' ') >> t._cpu;
 		return is;
 	}
+
+	std::ostream& operator <<(std::ostream& os,thread& t) {
+		os << "thread[" << t.tid() << " in " << t.pid() << ":" << t.procName() << "]:\n";
+		os << "\tflags     : " << t.flags() << "\n";
+		os << "\tstate     : " << t.state() << "\n";
+		os << "\tpriority  : " << t.prio() << "\n";
+		os << "\tstackPages: " << t.stackPages() << "\n";
+		os << "\tschedCount: " << t.schedCount() << "\n";
+		os << "\tsyscalls  : " << t.syscalls() << "\n";
+		os << "\tcycles    : " << t.cycles() << "\n";
+		os << "\truntime   : " << t.runtime() << "\n";
+		os << "\tlastCPU   : " << t.cpu() << "\n";
+		return os;
+	}
 }

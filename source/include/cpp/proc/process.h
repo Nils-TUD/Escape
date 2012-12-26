@@ -137,6 +137,7 @@ namespace proc {
 	};
 
 	std::istream& operator >>(std::istream& is,process& p);
+	std::ostream& operator <<(std::ostream& os,process& p);
 }
 
 #endif /* PROCESS_H_ */

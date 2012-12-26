@@ -76,8 +76,12 @@ namespace proc {
 		is.ignore(unlimited,' ') >> t._tid;
 		is.ignore(unlimited,' ') >> t._pid;
 		is.ignore(unlimited,' ') >> t._procName;
-		is.ignore(unlimited,' ') >> std::ws;
-		t._state = is.get() - '0';
+		// the process name might be "name" or "name arg1 arg2". so, check if the last read char
+		// was already the newline. if not, skip everything until the next newline.
+		is.unget();
+		if(is.peek() != '\n')
+			is.ignore(unlimited,'\n');
+		is.ignore(unlimited,' ') >> t._state;
 		is.ignore(unlimited,' ') >> t._flags;
 		is.ignore(unlimited,' ') >> t._prio;
 		is.ignore(unlimited,' ') >> t._stackPages;

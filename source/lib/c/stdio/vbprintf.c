@@ -100,11 +100,16 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 		/* read precision */
 		precision = -1;
 		if(*fmt == '.') {
-			fmt++;
-			precision = 0;
-			while(*fmt >= '0' && *fmt <= '9') {
-				precision = precision * 10 + (*fmt - '0');
+			if(*++fmt == '*') {
+				precision = va_arg(ap, int);
 				fmt++;
+			}
+			else {
+				precision = 0;
+				while(*fmt >= '0' && *fmt <= '9') {
+					precision = precision * 10 + (*fmt - '0');
+					fmt++;
+				}
 			}
 		}
 

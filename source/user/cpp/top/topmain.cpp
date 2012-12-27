@@ -41,9 +41,7 @@ using namespace std;
 using namespace info;
 
 static volatile bool run = true;
-static sVTSize consSize;
 static size_t pagesize;
-static size_t cpubarwidth;
 static ssize_t yoffset;
 static sUser *users;
 
@@ -84,6 +82,15 @@ static bool compareProcs(const process* a,const process* b) {
 static void display(void) {
 	static tULock lock;
 	locku(&lock);
+	size_t cpubarwidth;
+	sVTSize consSize;
+	if(vterm_getSize(STDIN_FILENO,&consSize) < 0) {
+		printe("Unable to determine screensize; falling back to 80x25");
+		consSize.width = 80;
+		consSize.height = 25;
+	}
+	cpubarwidth = consSize.width - SSTRLEN("  99 [10000/10000MB]  ");
+
 	vector<cpu*> cpus = cpu::get_list();
 	vector<process*> procs = process::get_list(false,0,true);
 	std::sort(procs.begin(),procs.end(),compareProcs);
@@ -178,14 +185,9 @@ static void display(void) {
 }
 
 static int refreshThread(void*) {
-	pagesize = sysconf(CONF_PAGE_SIZE);
-	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
-		error("Unable to determine screensize");
-
 	size_t usercount;
+	pagesize = sysconf(CONF_PAGE_SIZE);
 	users = user_parseFromFile(USERS_PATH,&usercount);
-
-	cpubarwidth = consSize.width - SSTRLEN("  99 [10000/10000MB]  ");
 	while(run) {
 		display();
 		sleep(1000);

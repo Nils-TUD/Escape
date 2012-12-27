@@ -25,13 +25,11 @@
 
 #define USERS_PATH			"/etc/users"
 #define MAX_USERNAME_LEN	31
-#define MAX_PW_LEN			31
 
 typedef struct sUser {
 	uid_t uid;
 	gid_t gid;
 	char name[MAX_USERNAME_LEN + 1];
-	char pw[MAX_PW_LEN + 1];
 	char home[MAX_PATH_LEN + 1];
 	struct sUser *next;
 } sUser;
@@ -39,6 +37,29 @@ typedef struct sUser {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef void *(*parse_func)(const char *buffer,size_t *count);
+
+/**
+ * Internal function to parse a list of things from a file.
+ *
+ * @param file the file to read
+ * @param count will be set to the number of items in the returned list
+ * @param parse the parse function
+ * @return the list
+ */
+void *user_parseListFromFile(const char *file,size_t *count,parse_func parse);
+
+/**
+ * Internal function to read a string into a buffer.
+ *
+ * @param dst the buffer to write into
+ * @param src the buffer to read from
+ * @param max the space in <dst>
+ * @param last whether it's the last one
+ * @return the new position in <src>
+ */
+const char *user_readStr(char *dst,const char *src,size_t max,bool last);
 
 /**
  * Parses the user-information from given file into a linked list of users.
@@ -100,7 +121,7 @@ sUser *user_getByName(const sUser *u,const char *name);
  * @param uid the user-id
  * @return the user or NULL
  */
-sUser *user_getById(sUser *u,uid_t uid);
+sUser *user_getById(const sUser *u,uid_t uid);
 
 /**
  * Writes the given users to the file with given path

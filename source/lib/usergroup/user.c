@@ -22,11 +22,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static const char *user_readStr(char *dst,const char *src,size_t max,bool last);
-
-sUser *user_parseFromFile(const char *file,size_t *count) {
+void *user_parseListFromFile(const char *file,size_t *count,parse_func parse) {
 	long size;
-	sUser *res = NULL;
+	void *res = NULL;
 	char *buf = NULL;
 	FILE *f = fopen(file,"r");
 	if(!f)
@@ -42,11 +40,30 @@ sUser *user_parseFromFile(const char *file,size_t *count) {
 	if(fread(buf,1,size + 1,f) == 0)
 		goto error;
 	buf[size] = '\0';
-	res = user_parse(buf,count);
+	res = parse(buf,count);
 error:
 	free(buf);
 	fclose(f);
 	return res;
+}
+
+const char *user_readStr(char *dst,const char *src,size_t max,bool last) {
+	size_t i = 0;
+	char c;
+	while((c = *src) && c != ':' && c != '\n' && i < max - 1) {
+		dst[i++] = c;
+		src++;
+	}
+	if(i == 0 || (!last && !*src))
+		return NULL;
+	if(!last)
+		src++;
+	dst[i] = '\0';
+	return src;
+}
+
+sUser *user_parseFromFile(const char *file,size_t *count) {
+	return (sUser*)user_parseListFromFile(file,count,(parse_func)user_parse);
 }
 
 sUser *user_parse(const char *users,size_t *count) {
@@ -80,8 +97,6 @@ sUser *user_parse(const char *users,size_t *count) {
 		u->uid = uid;
 		u->gid = gid;
 		if(!(p = user_readStr(u->name,p,sizeof(u->name),false)))
-			goto error;
-		if(!(p = user_readStr(u->pw,p,sizeof(u->pw),false)))
 			goto error;
 		if(!(p = user_readStr(u->home,p,sizeof(u->home),true)))
 			goto error;
@@ -145,10 +160,10 @@ sUser *user_getByName(const sUser *u,const char *name) {
 	return NULL;
 }
 
-sUser *user_getById(sUser *u,uid_t uid) {
+sUser *user_getById(const sUser *u,uid_t uid) {
 	while(u != NULL) {
 		if(u->uid == uid)
-			return u;
+			return (sUser*)u;
 		u = u->next;
 	}
 	return NULL;
@@ -166,7 +181,7 @@ int user_writeToFile(const sUser *u,const char *path) {
 
 int user_write(const sUser *u,FILE *f) {
 	while(u != NULL && !ferror(f)) {
-		fprintf(f,"%u:%u:%s:%s:%s\n",u->uid,u->gid,u->name,u->pw,u->home);
+		fprintf(f,"%u:%u:%s:%s\n",u->uid,u->gid,u->name,u->home);
 		u = u->next;
 	}
 	return ferror(f);
@@ -184,23 +199,7 @@ void user_print(const sUser *u) {
 	while(u != NULL) {
 		printf("\t%s(%d): ",u->name,u->uid);
 		printf("\t\tdefaultGroup: %u\n",u->gid);
-		printf("\t\tpw: %s\n",u->pw);
 		printf("\t\thome: %s\n",u->home);
 		u = u->next;
 	}
-}
-
-static const char *user_readStr(char *dst,const char *src,size_t max,bool last) {
-	size_t i = 0;
-	char c;
-	while((c = *src) && c != ':' && c != '\n' && i < max - 1) {
-		dst[i++] = c;
-		src++;
-	}
-	if(i == 0 || (!last && !*src))
-		return NULL;
-	if(!last)
-		src++;
-	dst[i] = '\0';
-	return src;
 }

@@ -21,6 +21,7 @@
 #include <esc/driver/vterm.h>
 #include <usergroup/user.h>
 #include <usergroup/group.h>
+#include <usergroup/passwd.h>
 #include <esc/messages.h>
 #include <esc/cmdargs.h>
 #include <stdio.h>
@@ -33,7 +34,7 @@ static void changeName(const char *old,const char *new);
 static void changeHome(const char *name,const char *home);
 static void changePw(const char *name);
 static void deleteUser(const char *name);
-static void readPassword(sUser *u);
+static void readPassword(sPasswd *p);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <cmd>\n",name);
 	fprintf(stderr,"	-l					list all users\n");
@@ -46,9 +47,10 @@ static void usage(const char *name) {
 }
 
 static sUser *userList;
+static sPasswd *pwList;
 
 int main(int argc,char *argv[]) {
-	size_t count;
+	size_t usercount,pwcount;
 	if(argc < 2 || argv[1][0] == '\0' || (argc == 2 && isHelpCmd(argc,argv)))
 		usage(argv[0]);
 
@@ -56,9 +58,12 @@ int main(int argc,char *argv[]) {
 	if(seteuid(ROOT_UID) < 0)
 		error("Unable to set euid to ROOT_UID");
 
-	userList = user_parseFromFile(USERS_PATH,&count);
+	userList = user_parseFromFile(USERS_PATH,&usercount);
 	if(!userList)
 		error("Unable to parse users-file '%s'",USERS_PATH);
+	pwList = pw_parseFromFile(PASSWD_PATH,&pwcount);
+	if(!pwList)
+		error("Unable to parse users-file '%s'",PASSWD_PATH);
 
 	switch(argv[1][1]) {
 		case 'l':
@@ -89,6 +94,7 @@ int main(int argc,char *argv[]) {
 			break;
 		default:
 			usage(argv[0]);
+			break;
 	}
 	return EXIT_SUCCESS;
 }
@@ -105,6 +111,7 @@ static void listUsers(void) {
 static void addUser(const char *name,const char *home) {
 	size_t count;
 	sUser *u;
+	sPasswd *p;
 	sGroup *g,*groupList = group_parseFromFile(GROUPS_PATH,&count);
 	if(!groupList)
 		error("Unable to parse groups from '%s'",GROUPS_PATH);
@@ -136,14 +143,21 @@ static void addUser(const char *name,const char *home) {
 	strnzcpy(u->name,name,sizeof(u->name));
 	strnzcpy(u->home,home,sizeof(u->home));
 	g->users[0] = u->uid;
-	readPassword(u);
 	user_append(userList,u);
+
+	/* create password */
+	p = (sPasswd*)malloc(sizeof(sPasswd));
+	p->uid = u->uid;
+	readPassword(p);
+	pw_append(pwList,p);
 
 	/* write to file */
 	if(user_writeToFile(userList,USERS_PATH) < 0)
 		error("Unable to write users back to file");
 	if(group_writeToFile(groupList,GROUPS_PATH) < 0)
 		error("Unable to write groups back to file");
+	if(pw_writeToFile(pwList,PASSWD_PATH) < 0)
+		error("Unable to write passwords back to file");
 }
 
 static void changeName(const char *old,const char *new) {
@@ -178,21 +192,26 @@ static void changeHome(const char *name,const char *home) {
 
 static void changePw(const char *name) {
 	uid_t uid = getuid();
-	sUser *u = user_getByName(userList,name);
+	sPasswd *p;
+	const sUser *u = user_getByName(userList,name);
 	if(!u)
 		error("A user with name '%s' does not exist",name);
 	if(uid != ROOT_UID && u->uid != uid)
 		error("Only root can do that!");
+	p = pw_getById(pwList,u->uid);
+	if(!p)
+		error("Unable to find password-entry for user '%s'",name);
 
-	readPassword(u);
+	readPassword(p);
 
-	if(user_writeToFile(userList,USERS_PATH) < 0)
-		error("Unable to write users back to file");
+	if(pw_writeToFile(pwList,PASSWD_PATH) < 0)
+		error("Unable to write passwords back to file");
 }
 
 static void deleteUser(const char *name) {
 	size_t count;
 	sGroup *g,*groupList;
+	sPasswd *p;
 	sUser *u = user_getByName(userList,name);
 	if(!u)
 		error("A user with name '%s' does not exist",name);
@@ -205,31 +224,37 @@ static void deleteUser(const char *name) {
 	g = group_getById(groupList,u->gid);
 	if(!g)
 		error("Group with id %d not found",u->gid);
+	p = pw_getById(pwList,u->uid);
+	if(!p)
+		error("Unable to find password-entry for user '%s'",name);
 
 	/* remove group if it contains exactly this user  */
 	if(g->userCount == 1 && g->users[0] == u->uid)
 		group_remove(groupList,g);
 	/* remove user and uid from all groups */
 	group_removeFromAll(groupList,u->uid);
+	pw_remove(pwList,p);
 	user_remove(userList,u);
 
 	if(user_writeToFile(userList,USERS_PATH) < 0)
 		error("Unable to write users back to file");
 	if(group_writeToFile(groupList,GROUPS_PATH) < 0)
 		error("Unable to write groups back to file");
+	if(pw_writeToFile(pwList,PASSWD_PATH) < 0)
+		error("Unable to write passwords back to file");
 }
 
-static void readPassword(sUser *u) {
+static void readPassword(sPasswd *p) {
 	char secondPw[MAX_PW_LEN + 1];
 	/* read in password */
 	vterm_setEcho(STDOUT_FILENO,false);
 	printf("Password: ");
-	fgetl(u->pw,sizeof(u->pw),stdin);
+	fgetl(p->pw,sizeof(p->pw),stdin);
 	putchar('\n');
 	printf("Repeat: ");
 	fgetl(secondPw,sizeof(secondPw),stdin);
 	putchar('\n');
 	vterm_setEcho(STDOUT_FILENO,true);
-	if(strcmp(u->pw,secondPw) != 0)
+	if(strcmp(p->pw,secondPw) != 0)
 		error("Passwords do not match");
 }

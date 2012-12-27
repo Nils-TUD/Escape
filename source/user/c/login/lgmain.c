@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <usergroup/user.h>
 #include <usergroup/group.h>
+#include <usergroup/passwd.h>
 #include <esc/driver/vterm.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
@@ -35,6 +36,7 @@
 
 static sUser *getUser(const char *user,const char *pw);
 
+static sPasswd *pwList = NULL;
 static sGroup *groupList;
 static sUser *userList = NULL;
 
@@ -46,8 +48,7 @@ int main(int argc,char **argv) {
 	sUser *u;
 	sGroup *gvt;
 	gid_t *groups;
-	size_t groupCount;
-	size_t count;
+	size_t groupCount,usercount,pwcount;
 	int vterm;
 	int fd;
 
@@ -92,9 +93,14 @@ int main(int argc,char **argv) {
 
 		/* re-read users */
 		user_free(userList);
-		userList = user_parseFromFile(USERS_PATH,&count);
+		userList = user_parseFromFile(USERS_PATH,&usercount);
 		if(!userList)
 			error("Unable to parse users from '%s'",USERS_PATH);
+
+		pw_free(pwList);
+		pwList = pw_parseFromFile(PASSWD_PATH,&pwcount);
+		if(!pwList)
+			error("Unable to parse passwords from '%s'",PASSWD_PATH);
 
 		u = getUser(un,pw);
 		if(u != NULL)
@@ -107,7 +113,7 @@ int main(int argc,char **argv) {
 	fflush(stdout);
 
 	/* read in groups */
-	groupList = group_parseFromFile(GROUPS_PATH,&count);
+	groupList = group_parseFromFile(GROUPS_PATH,&usercount);
 	if(!groupList)
 		error("Unable to parse groups from '%s'",GROUPS_PATH);
 
@@ -147,7 +153,8 @@ static sUser *getUser(const char *name,const char *pw) {
 	sUser *u = userList;
 	while(u != NULL) {
 		if(strcmp(u->name,name) == 0) {
-			if(strcmp(u->pw,pw) == 0)
+			sPasswd *p = pw_getById(pwList,u->uid);
+			if(p && strcmp(p->pw,pw) == 0)
 				return u;
 			return NULL;
 		}

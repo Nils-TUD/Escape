@@ -17,34 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef TPASSWD_H_
+#define TPASSWD_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
 #include <esc/test.h>
-#include <stdlib.h>
 
-#include "tests/theap.h"
-#include "tests/tfileio.h"
-#include "tests/tdir.h"
-#include "tests/tenv.h"
-#include "tests/tfs.h"
-#include "tests/tgroup.h"
-#include "tests/tuser.h"
-#include "tests/trect.h"
-#include "tests/tpasswd.h"
+extern sTestModule tModPasswd;
 
-int main(void) {
-	if(getuid() != ROOT_UID)
-		error("Please start this program as root!");
-
-	test_register(&tModHeap);
-	test_register(&tModFileio);
-	test_register(&tModDir);
-	test_register(&tModEnv);
-	test_register(&tModFs);
-	test_register(&tModGroup);
-	test_register(&tModUser);
-	test_register(&tModPasswd);
-	test_register(&tModRect);
-	test_start();
-	return EXIT_SUCCESS;
-}
+#endif /* TPASSWD_H_ */

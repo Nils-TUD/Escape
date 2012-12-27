@@ -19,32 +19,12 @@
 
 #include <esc/common.h>
 #include <usergroup/group.h>
+#include <usergroup/user.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 sGroup *group_parseFromFile(const char *file,size_t *count) {
-	long size;
-	sGroup *res = NULL;
-	char *buf = NULL;
-	FILE *f = fopen(file,"r");
-	if(!f)
-		return NULL;
-	if(fseek(f,0,SEEK_END) < 0)
-		goto error;
-	size = ftell(f);
-	if(fseek(f,0,SEEK_SET) < 0)
-		goto error;
-	buf = (char*)malloc(size + 1);
-	if(!buf)
-		goto error;
-	if(fread(buf,1,size + 1,f) == 0)
-		goto error;
-	buf[size] = '\0';
-	res = group_parse(buf,count);
-error:
-	free(buf);
-	fclose(f);
-	return res;
+	return (sGroup*)user_parseListFromFile(file,count,(parse_func)group_parse);
 }
 
 sGroup *group_parse(const char *groups,size_t *count) {

@@ -94,7 +94,7 @@ static int vtermThread(void *vterm) {
 			switch(mid) {
 				case MSG_DEV_READ: {
 					/* offset is ignored here */
-					bool avail;
+					int avail;
 					size_t count = msg.args.arg2;
 					char *data = (char*)malloc(count);
 					msg.args.arg1 = vtin_gets(vt,data,count,&avail);

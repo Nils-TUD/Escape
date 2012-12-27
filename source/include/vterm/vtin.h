@@ -46,7 +46,7 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
  * @param avail will be set to true if there is more input available
  * @return the number of read characters
  */
-size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,bool *avail);
+size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,int *avail);
 
 /**
  * Puts the given charactern into the readline-buffer and handles everything necessary (unlocked)

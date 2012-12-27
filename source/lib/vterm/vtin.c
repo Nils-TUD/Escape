@@ -110,7 +110,7 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	unlocku(&vt->lock);
 }
 
-size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,bool *avail) {
+size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,int *avail) {
 	size_t res = 0;
 	locku(&vt->lock);
 	if(buffer)

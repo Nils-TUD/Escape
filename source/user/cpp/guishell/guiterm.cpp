@@ -116,7 +116,7 @@ void GUITerm::read(int fd,sMsg *msg) {
 	// offset is ignored here
 	size_t count = msg->args.arg2;
 	char *data = (char*)malloc(count);
-	bool avail;
+	int avail;
 	msg->args.arg1 = vtin_gets(_vt,data,count,&avail);
 	msg->args.arg2 = avail;
 	send(fd,MSG_DEV_READ_RESP,msg,sizeof(msg->args));

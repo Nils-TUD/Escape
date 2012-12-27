@@ -21,6 +21,8 @@
 #include <esc/driver/vterm.h>
 #include <esc/width.h>
 #include <esc/messages.h>
+#include <usergroup/user.h>
+#include <usergroup/group.h>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -39,12 +41,14 @@ using namespace std;
 #define F_ALL_SHIFT			2
 #define F_DIRSIZE_SHIFT		3
 #define F_DIRNUM_SHIFT		4
+#define F_NUMERIC_SHIFT		5
 
 #define F_LONG				(1 << F_LONG_SHIFT)
 #define F_INODE				(1 << F_INODE_SHIFT)
 #define F_ALL				(1 << F_ALL_SHIFT)
 #define F_DIRSIZE			(1 << F_DIRSIZE_SHIFT)
 #define F_DIRNUM			(1 << F_DIRNUM_SHIFT)
+#define F_NUMERIC			(1 << F_NUMERIC_SHIFT)
 
 /* for calculating the widths of the fields */
 #define WIDTHS_COUNT		6
@@ -94,12 +98,13 @@ static void printMode(file::mode_type mode);
 static void printPerm(file::mode_type mode,file::mode_type fl,char c);
 
 static void usage(const char *name) {
-	cerr << "Usage: " << name << " [-liasn] [<path>]" << '\n';
-	cerr << "	-l: long listing" << '\n';
-	cerr << "	-i: print inode-numbers" << '\n';
-	cerr << "	-a: print also '.' and '..'" << '\n';
-	cerr << "	-s: print size of dir-content instead of directory-entries (implies -l)" << '\n';
-	cerr << "	-n: print number of directory-entries instead of their size (implies -l)" << '\n';
+	cerr << "Usage: " << name << " [-liasNn] [<path>]\n";
+	cerr << "	-l: long listing\n";
+	cerr << "	-i: print inode-numbers\n";
+	cerr << "	-a: print also '.' and '..'\n";
+	cerr << "	-s: print size of dir-content instead of directory-entries (implies -l)\n";
+	cerr << "	-N: print number of directory-entries instead of their size (implies -l)\n";
+	cerr << "	-n: print numeric user and group-ids\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -108,16 +113,18 @@ static uint flags;
 int main(int argc,char *argv[]) {
 	size_t widths[WIDTHS_COUNT] = {0};
 	sVTSize consSize;
+	sUser *userList = NULL;
+	sGroup *groupList = NULL;
 
 	// parse params
 	cmdargs args(argc,argv,cmdargs::MAX1_FREE);
 	try {
-		bool flong = 0,finode = 0,fall = 0,fdirsize,fdirnum;
-		args.parse("l i a s n",&flong,&finode,&fall,&fdirsize,&fdirnum);
+		bool flong = 0,finode = 0,fall = 0,fdirsize,fnumeric,fdirnum;
+		args.parse("l i a s n N",&flong,&finode,&fall,&fdirsize,&fnumeric,&fdirnum);
 		if(args.is_help())
 			usage(argv[0]);
 		flags = (flong << F_LONG_SHIFT) | (finode << F_INODE_SHIFT) | (fall << F_ALL_SHIFT) |
-			(fdirsize << F_DIRSIZE_SHIFT) | (fdirnum << F_DIRNUM_SHIFT);
+			(fdirsize << F_DIRSIZE_SHIFT) | (fdirnum << F_DIRNUM_SHIFT) | (fnumeric << F_NUMERIC_SHIFT);
 		// dirsize and dirnum imply long
 		if(flags & (F_DIRSIZE | F_DIRNUM))
 			flags |= F_LONG;
@@ -140,7 +147,17 @@ int main(int argc,char *argv[]) {
 	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
 		error("Unable to determine screensize");
 
-	/* get entries and sort them */
+	// read users and groups
+	if(flags & F_LONG) {
+		userList = user_parseFromFile(USERS_PATH,NULL);
+		if(!userList)
+			error("Unable to parse users from file");
+		groupList = group_parseFromFile(GROUPS_PATH,NULL);
+		if(!groupList)
+			error("Unable to parse groups from file");
+	}
+
+	// get entries and sort them
 	vector<lsfile*> entries;
 	try {
 		entries = getEntries(path);
@@ -162,9 +179,19 @@ int main(int argc,char *argv[]) {
 		if(flags & F_LONG) {
 			if((x = count_digits(f->links(),10)) > widths[W_LINKCOUNT])
 				widths[W_LINKCOUNT] = x;
-			if((x = count_digits(f->uid(),10)) > widths[W_UID])
+			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : NULL;
+			if(!u || (flags & F_NUMERIC)) {
+				if((x = count_digits((ulong)f->uid(),10)) > widths[W_UID])
+					widths[W_UID] = x;
+			}
+			else if((x = strlen(u->name)) > widths[W_UID])
 				widths[W_UID] = x;
-			if((x = count_digits(f->gid(),10)) > widths[W_GID])
+			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : NULL;
+			if(!u || (flags & F_NUMERIC)) {
+				if((x = count_digits((ulong)f->gid(),10)) > widths[W_GID])
+					widths[W_GID] = x;
+			}
+			else if((x = strlen(g->name)) > widths[W_GID])
 				widths[W_GID] = x;
 			if((x = count_digits(f->rsize(),10)) > widths[W_SIZE])
 				widths[W_SIZE] = x;
@@ -184,8 +211,18 @@ int main(int argc,char *argv[]) {
 				cout << setw(widths[W_INODE]) << f->inode() << ' ';
 			printMode(f->mode());
 			cout << setw(widths[W_LINKCOUNT]) << f->links() << ' ';
-			cout << setw(widths[W_UID]) << f->uid() << ' ';
-			cout << setw(widths[W_GID]) << f->gid() << ' ';
+
+			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : NULL;
+			if(!u || (flags & F_NUMERIC))
+				cout << setw(widths[W_UID]) << f->uid() << ' ';
+			else
+				cout << setw(widths[W_UID]) << (u ? u->name : "?") << ' ';
+			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : NULL;
+			if(!g || (flags & F_NUMERIC))
+				cout << setw(widths[W_GID]) << f->gid() << ' ';
+			else
+				cout << setw(widths[W_GID]) << (g ? g->name : "?") << ' ';
+
 			cout << setw(widths[W_SIZE]) << f->rsize() << ' ';
 			{
 				char dateStr[DATE_LEN];

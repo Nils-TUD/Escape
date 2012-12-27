@@ -28,7 +28,7 @@ sPasswd *pw_parse(const char *pws,size_t *count) {
 	sPasswd *res = NULL;
 	sPasswd *pw,*last = NULL;
 	const char *p = pws;
-	*count = 0;
+	size_t cnt = 0;
 	while(*p) {
 		int uid;
 		if(sscanf(p,"%u",&uid) != 1)
@@ -55,9 +55,11 @@ sPasswd *pw_parse(const char *pws,size_t *count) {
 			p++;
 		while(*p == '\n')
 			p++;
-		*count = *count + 1;
+		cnt = cnt + 1;
 		last = pw;
 	}
+	if(count)
+		*count = cnt;
 	return res;
 
 error:

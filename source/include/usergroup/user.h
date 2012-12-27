@@ -66,7 +66,7 @@ const char *user_readStr(char *dst,const char *src,size_t max,bool last);
  * Please free the memory with user_free() if you're done.
  *
  * @param file the file to read
- * @param count will be set to the number of users in the returned list
+ * @param count will be set to the number of users in the returned list (if not NULL)
  * @return the users or NULL if failed
  */
 sUser *user_parseFromFile(const char *file,size_t *count);
@@ -76,7 +76,7 @@ sUser *user_parseFromFile(const char *file,size_t *count);
  * Please free the memory with user_free() if you're done.
  *
  * @param users the user-information (null-terminated)
- * @param count will be set to the number of users in the returned list
+ * @param count will be set to the number of users in the returned list (if not NULL)
  * @return the users or NULL if failed
  */
 sUser *user_parse(const char *users,size_t *count);

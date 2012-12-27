@@ -70,7 +70,7 @@ sUser *user_parse(const char *users,size_t *count) {
 	sUser *res = NULL;
 	sUser *u,*last = NULL;
 	const char *p = users;
-	*count = 0;
+	size_t cnt = 0;
 	while(*p) {
 		int uid,gid;
 		if(sscanf(p,"%u:%u",&uid,&gid) != 2)
@@ -105,9 +105,11 @@ sUser *user_parse(const char *users,size_t *count) {
 			p++;
 		while(*p == '\n')
 			p++;
-		*count = *count + 1;
+		cnt = cnt + 1;
 		last = u;
 	}
+	if(count)
+		*count = cnt;
 	return res;
 
 error:

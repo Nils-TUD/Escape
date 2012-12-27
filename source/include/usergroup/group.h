@@ -46,7 +46,7 @@ extern "C" {
  * Please free the memory with group_free() if you're done.
  *
  * @param file the file to read
- * @param count will be set to the number of groups in the returned list
+ * @param count will be set to the number of groups in the returned list (if not NULL)
  * @return the groups or NULL if failed
  */
 sGroup *group_parseFromFile(const char *file,size_t *count);
@@ -56,7 +56,7 @@ sGroup *group_parseFromFile(const char *file,size_t *count);
  * Please free the memory with group_free() if you're done.
  *
  * @param groups the group-information (null-terminated)
- * @param count will be set to the number of groups in the returned list
+ * @param count will be set to the number of groups in the returned list (if not NULL)
  * @return the groups or NULL if failed
  */
 sGroup *group_parse(const char *groups,size_t *count);

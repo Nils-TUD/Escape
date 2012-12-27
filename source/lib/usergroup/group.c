@@ -31,7 +31,7 @@ sGroup *group_parse(const char *groups,size_t *count) {
 	sGroup *res = NULL;
 	sGroup *g,*last = NULL;
 	const char *p = groups;
-	*count = 0;
+	size_t cnt = 0;
 	while(*p) {
 		size_t i,size;
 		int uid,gid;
@@ -86,9 +86,11 @@ sGroup *group_parse(const char *groups,size_t *count) {
 			p++;
 		while(*p == '\n')
 			p++;
-		*count = *count + 1;
+		cnt = cnt + 1;
 		last = g;
 	}
+	if(count)
+		*count = cnt;
 	return res;
 
 error:

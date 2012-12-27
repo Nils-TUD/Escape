@@ -38,7 +38,7 @@ extern "C" {
  * Please free the memory with pw_free() if you're done.
  *
  * @param file the file to read
- * @param count will be set to the number of passwords in the returned list
+ * @param count will be set to the number of passwords in the returned list (if not NULL)
  * @return the passwords or NULL if failed
  */
 sPasswd *pw_parseFromFile(const char *file,size_t *count);
@@ -48,7 +48,7 @@ sPasswd *pw_parseFromFile(const char *file,size_t *count);
  * Please free the memory with pw_free() if you're done.
  *
  * @param pws the password-information (null-terminated)
- * @param count will be set to the number of passwords in the returned list
+ * @param count will be set to the number of passwords in the returned list (if not NULL)
  * @return the passwords or NULL if failed
  */
 sPasswd *pw_parse(const char *pws,size_t *count);

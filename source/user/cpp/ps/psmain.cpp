@@ -24,6 +24,8 @@
 #include <esc/conf.h>
 #include <info/process.h>
 #include <info/thread.h>
+#include <usergroup/user.h>
+#include <usergroup/group.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,6 +70,7 @@ static void usage(const char *name) {
 	size_t i;
 	cerr << "Usage: " << name <<" [-u][-s <sort>]" << '\n';
 	cerr << "	-u		Print only the processes with my uid\n";
+	cerr << "	-n		Print numeric user- and group-ids\n";
 	cerr << "	-s		Sort by ";
 	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
 		cerr << "'" << sorts[i].name << "'";
@@ -79,8 +82,8 @@ static void usage(const char *name) {
 	cerr << "Explanation of the displayed information:\n";
 	cerr << "ID:		The process id\n";
 	cerr << "PID:	The process id of the parent process\n";
-	cerr << "UID:	The user id\n";
-	cerr << "GID:	The group id\n";
+	cerr << "USER:	The user name\n";
+	cerr << "GROUP:	The group name\n";
 	cerr << "PMEM:	The amount of physical memory the process uses on its own (not shared)\n";
 	cerr << "SHMEM:	The amount of physical memory the process shares with other processes\n";
 	cerr << "SMEM:	The amount of physical memory that is currently swapped out\n";
@@ -95,12 +98,14 @@ static void usage(const char *name) {
 int main(int argc,char **argv) {
 	string ssort("pid");
 	pageSize = sysconf(CONF_PAGE_SIZE);
-	bool own = false;
+	bool own = false,numeric = false;
+	sUser *userList = NULL;
+	sGroup *groupList = NULL;
 
 	// parse args
 	cmdargs args(argc,argv,cmdargs::NO_FREE);
 	try {
-		args.parse("s=s u",&ssort,&own);
+		args.parse("s=s u n",&ssort,&own,&numeric);
 		if(args.is_help())
 			usage(argv[0]);
 	}
@@ -117,14 +122,22 @@ int main(int argc,char **argv) {
 		}
 	}
 
+	/* parse users and groups from file */
+	userList = user_parseFromFile(USERS_PATH,NULL);
+	if(!userList)
+		error("Unable to parse users from file");
+	groupList = group_parseFromFile(GROUPS_PATH,NULL);
+	if(!groupList)
+		error("Unable to parse groups from file");
+
 	uid_t uid = own ? getuid() : 0;
-	vector<process*> procs = process::get_list(own,uid);
+	vector<process*> procs = process::get_list();
 
 	// determine max-values (we want to have a min-width here :))
 	process::pid_type maxPid = 10;
 	process::pid_type maxPpid = 100;
-	process::uid_type maxUid = 100;
-	process::gid_type maxGid = 100;
+	process::uid_type maxUid = 4;
+	process::gid_type maxGid = 5;
 	process::size_type maxPmem = (10 * pageSize) / 1024;
 	process::size_type maxShmem = (100 * pageSize) / 1024;
 	process::size_type maxSmem = (10 * pageSize) / 1024;
@@ -133,33 +146,47 @@ int main(int argc,char **argv) {
 	process::size_type maxRuntime = 100;
 	process::cycle_type totalCycles = 0;
 	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
+		size_t x;
 		process *p = *it;
-		if(p->pid() > maxPid)
-			maxPid = p->pid();
-		if(p->ppid() > maxPpid)
-			maxPpid = p->ppid();
-		if(p->uid() > maxUid)
-			maxUid = p->uid();
-		if(p->gid() > maxGid)
-			maxGid = p->gid();
-		if(p->ownFrames() > maxPmem)
-			maxPmem = p->ownFrames();
-		if(p->sharedFrames() > maxShmem)
-			maxShmem = p->sharedFrames();
-		if(p->swapped() > maxSmem)
-			maxSmem = p->swapped();
-		if(p->input() > maxInput)
-			maxInput = p->input();
-		if(p->output() > maxOutput)
-			maxOutput = p->output();
-		if(p->runtime() > maxRuntime)
-			maxRuntime = p->runtime();
+		if(!own || uid == p->uid()) {
+			if(p->pid() > maxPid)
+				maxPid = p->pid();
+			if(p->ppid() > maxPpid)
+				maxPpid = p->ppid();
+
+			sUser *u = !numeric ? user_getById(userList,p->uid()) : NULL;
+			if(!u || numeric) {
+				if((x = count_digits((ulong)p->uid(),10)) > maxUid)
+					maxUid = x;
+			}
+			else if((x = strlen(u->name)) > maxUid)
+				maxUid = x;
+
+			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : NULL;
+			if(!g || numeric) {
+				if((x = count_digits((ulong)p->gid(),10)) > maxGid)
+					maxGid = x;
+			}
+			else if((x = strlen(g->name)) > maxGid)
+				maxGid = x;
+
+			if(p->ownFrames() > maxPmem)
+				maxPmem = p->ownFrames();
+			if(p->sharedFrames() > maxShmem)
+				maxShmem = p->sharedFrames();
+			if(p->swapped() > maxSmem)
+				maxSmem = p->swapped();
+			if(p->input() > maxInput)
+				maxInput = p->input();
+			if(p->output() > maxOutput)
+				maxOutput = p->output();
+			if(p->runtime() > maxRuntime)
+				maxRuntime = p->runtime();
+		}
 		totalCycles += p->cycles();
 	}
 	maxPid = count_digits(maxPid,10);
 	maxPpid = count_digits(maxPpid,10);
-	maxUid = count_digits(maxUid,10);
-	maxGid = count_digits(maxGid,10);
 	// display in KiB, its in pages
 	maxPmem = count_digits((maxPmem * pageSize) / 1024,10);
 	maxSmem = count_digits((maxSmem * pageSize) / 1024,10);
@@ -180,8 +207,8 @@ int main(int argc,char **argv) {
 	// print header
 	cout << setw(maxPid) << "ID";
 	cout << setw(maxPpid + 1) << right << "PID";
-	cout << setw(maxUid + 1) << right << "UID";
-	cout << setw(maxGid + 1) << right << "GID";
+	cout << " " << setw(maxUid) << left << "USER";
+	cout << " " << setw(maxGid) << left << "GROUP";
 	cout << setw((streamsize)maxPmem + 2) << right << "PMEM";
 	cout << setw((streamsize)maxShmem + 2) << right << "SHMEM";
 	cout << setw((streamsize)maxSmem + 2) << right << "SMEM";
@@ -198,31 +225,46 @@ int main(int argc,char **argv) {
 	// print processes (and threads)
 	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
 		process *p = *it;
-		float cyclePercent = 0;
-		if(p->cycles() != 0)
-			cyclePercent = (float)(100. / (totalCycles / (double)p->cycles()));
-		size_t cmdwidth = min(consSize.width - width2cmd,p->command().length());
-		string cmd = p->command().substr(0,cmdwidth);
+		if(!own || uid == p->uid()) {
+			float cyclePercent = 0;
+			if(p->cycles() != 0)
+				cyclePercent = (float)(100. / (totalCycles / (double)p->cycles()));
+			size_t cmdwidth = min(consSize.width - width2cmd,p->command().length());
+			string cmd = p->command().substr(0,cmdwidth);
 
-		cout << setw(maxPid) << p->pid() << " ";
-		cout << setw(maxPpid) << p->ppid() << " ";
-		cout << setw(maxUid) << p->uid() << " ";
-		cout << setw(maxGid) << p->gid() << " ";
-		cout << setw((streamsize)maxPmem) << (p->ownFrames() * pageSize) / 1024 << "K ";
-		cout << setw((streamsize)maxShmem) << (p->sharedFrames() * pageSize) / 1024 << "K ";
-		cout << setw((streamsize)maxSmem) << (p->swapped() * pageSize) / 1024 << "K ";
-		cout << setw((streamsize)maxInput) << p->input() / 1024 << "K ";
-		cout << setw((streamsize)maxOutput) << p->output() / 1024 << "K ";
-		process::time_type time = p->runtime() / 1000;
-		cout << setw(maxRuntime) << time / (1000 * 60) << ":";
-		time %= 1000 * 60;
-		cout << setfillobj('0');
-		cout << setw(2) << time / 1000 << ".";
-		time %= 1000;
-		cout << setw(3) << time << " ";
-		cout << setfillobj(' ');
-		cout << setw(4) << setprecision(1) << cyclePercent << "% ";
-		cout << cmd << '\n';
+			cout << setw(maxPid) << p->pid() << " ";
+			cout << setw(maxPpid) << p->ppid() << " ";
+
+			cout << left;
+			sUser *u = !numeric ? user_getById(userList,p->uid()) : NULL;
+			if(!u || numeric)
+				cout << setw(maxUid) << p->uid() << " ";
+			else
+				cout << setw(maxUid) << u->name << " ";
+
+			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : NULL;
+			if(!g || numeric)
+				cout << setw(maxGid) << p->gid() << " ";
+			else
+				cout << setw(maxGid) << g->name << " ";
+
+			cout << right;
+			cout << setw((streamsize)maxPmem) << (p->ownFrames() * pageSize) / 1024 << "K ";
+			cout << setw((streamsize)maxShmem) << (p->sharedFrames() * pageSize) / 1024 << "K ";
+			cout << setw((streamsize)maxSmem) << (p->swapped() * pageSize) / 1024 << "K ";
+			cout << setw((streamsize)maxInput) << p->input() / 1024 << "K ";
+			cout << setw((streamsize)maxOutput) << p->output() / 1024 << "K ";
+			process::time_type time = p->runtime() / 1000;
+			cout << setw(maxRuntime) << time / (1000 * 60) << ":";
+			time %= 1000 * 60;
+			cout << setfillobj('0');
+			cout << setw(2) << time / 1000 << ".";
+			time %= 1000;
+			cout << setw(3) << time << " ";
+			cout << setfillobj(' ');
+			cout << setw(4) << setprecision(1) << cyclePercent << "% ";
+			cout << cmd << '\n';
+		}
 	}
 
 	return EXIT_SUCCESS;

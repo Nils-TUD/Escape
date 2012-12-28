@@ -195,29 +195,35 @@ static void vbe_detectModes(void) {
 	sVbeModeInfo mode;
 	sVbeModeInfo *modeCpy;
 	FILE *f = fopen("/system/devices/vbe","w");
-	fprintf(f,"VESA VBE Version %d.%d detected (%x)\n",vbeInfo.version >> 8,
-			vbeInfo.version & 0xF,vbeInfo.oemString);
-	fprintf(f,"Capabilities: 0x%x\n",vbeInfo.capabilities);
-	fprintf(f,"Signature: %c%c%c%c\n",vbeInfo.signature[0],
-			vbeInfo.signature[1],vbeInfo.signature[2],vbeInfo.signature[3]);
-	fprintf(f,"totalMemory: %d KiB\n",vbeInfo.totalMemory * 64);
-	fprintf(f,"videoModes: 0x%x\n",vbeInfo.videoModesPtr);
-	fprintf(f,"\n");
-	fprintf(f,"Available video modes:\n");
+	if(!f)
+		printe("Unable to open /system/devices/vbe for writing");
+	else {
+		fprintf(f,"VESA VBE Version %d.%d detected (%x)\n",vbeInfo.version >> 8,
+				vbeInfo.version & 0xF,vbeInfo.oemString);
+		fprintf(f,"Capabilities: 0x%x\n",vbeInfo.capabilities);
+		fprintf(f,"Signature: %c%c%c%c\n",vbeInfo.signature[0],
+				vbeInfo.signature[1],vbeInfo.signature[2],vbeInfo.signature[3]);
+		fprintf(f,"totalMemory: %d KiB\n",vbeInfo.totalMemory * 64);
+		fprintf(f,"videoModes: 0x%x\n",vbeInfo.videoModesPtr);
+		fprintf(f,"\n");
+		fprintf(f,"Available video modes:\n");
+	}
 	p = (uint16_t*)vbeInfo.videoModesPtr;
 	for(i = 0; i < MAX_MODE_COUNT && *p != (uint16_t)-1; i++, p++) {
 		if(vbe_loadModeInfo(&mode,*p)) {
-			fprintf(f,"  %4x: %4d x %4d %2d bpp, %d planes, %s, %s, %s (attr %x) (@%x)\n",mode.modeNo,
-					mode.xResolution,mode.yResolution,
-					mode.bitsPerPixel,mode.numberOfPlanes,
-					(mode.modeAttributes & MODE_GRAPHICS_MODE) ? "graphics" : "    text",
-					(mode.modeAttributes & MODE_COLOR_MODE) ? "     color" : "monochrome",
-					mode.memoryModel == memPL ? " plane" :
-					mode.memoryModel == memPK ? "packed" :
-					mode.memoryModel == memRGB ? "   RGB" :
-					mode.memoryModel == memYUV ? "   YUV" : "??????",
-					mode.modeAttributes,
-					mode.physBasePtr);
+			if(f) {
+				fprintf(f,"  %4x: %4d x %4d %2d bpp, %d planes, %s, %s, %s (attr %x) (@%x)\n",mode.modeNo,
+						mode.xResolution,mode.yResolution,
+						mode.bitsPerPixel,mode.numberOfPlanes,
+						(mode.modeAttributes & MODE_GRAPHICS_MODE) ? "graphics" : "    text",
+						(mode.modeAttributes & MODE_COLOR_MODE) ? "     color" : "monochrome",
+						mode.memoryModel == memPL ? " plane" :
+						mode.memoryModel == memPK ? "packed" :
+						mode.memoryModel == memRGB ? "   RGB" :
+						mode.memoryModel == memYUV ? "   YUV" : "??????",
+						mode.modeAttributes,
+						mode.physBasePtr);
+			}
 			modeCpy = (sVbeModeInfo*)malloc(sizeof(sVbeModeInfo));
 			if(modeCpy != NULL) {
 				memcpy(modeCpy,&mode,sizeof(sVbeModeInfo));
@@ -225,5 +231,6 @@ static void vbe_detectModes(void) {
 			}
 		}
 	}
-	fclose(f);
+	if(f)
+		fclose(f);
 }

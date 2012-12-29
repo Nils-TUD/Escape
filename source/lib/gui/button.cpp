@@ -106,13 +106,14 @@ namespace gui {
 		paintBorder(g);
 
 		g.setColor(getTheme().getColor(Theme::BTN_FOREGROUND));
+		gsize_t count = g.getFont().limitStringTo(_text,getWidth() - 2);
 		if(_pressed) {
-			g.drawString((getWidth() - g.getFont().getStringWidth(_text)) / 2 + 1,
-					(getHeight() - g.getFont().getHeight()) / 2 + 1,_text);
+			g.drawString((getWidth() - g.getFont().getStringWidth(_text.substr(0,count))) / 2 + 1,
+					(getHeight() - g.getFont().getHeight()) / 2 + 1,_text,0,count);
 		}
 		else {
-			g.drawString((getWidth() - g.getFont().getStringWidth(_text)) / 2,
-					(getHeight() - g.getFont().getHeight()) / 2,_text);
+			g.drawString((getWidth() - g.getFont().getStringWidth(_text.substr(0,count))) / 2,
+					(getHeight() - g.getFont().getHeight()) / 2,_text,0,count);
 		}
 	}
 }

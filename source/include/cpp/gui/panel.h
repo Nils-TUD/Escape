@@ -66,6 +66,13 @@ namespace gui {
 			return _layout ? _layout->getMinHeight() + getTheme().getPadding() * 2 : 0;
 		};
 
+		virtual gsize_t getPreferredWidth() const {
+			return _layout ? _layout->getPreferredWidth() + getTheme().getPadding() * 2 : 0;
+		};
+		virtual gsize_t getPreferredHeight() const {
+			return _layout ? _layout->getPreferredHeight() + getTheme().getPadding() * 2 : 0;
+		};
+
 		/**
 		 * @return the layout (NULL if none)
 		 */

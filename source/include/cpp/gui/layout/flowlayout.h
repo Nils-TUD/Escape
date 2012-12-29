@@ -55,7 +55,7 @@ namespace gui {
 		 * @param gap the gap between the controls (default 2)
 		 */
 		FlowLayout(int pos,gsize_t gap = DEF_GAP)
-			: _pos(pos), _gap(gap), _p(NULL), _ctrls(vector<Control*>()) {
+			: Layout(), _pos(pos), _gap(gap), _p(), _ctrls() {
 		};
 		/**
 		 * Destructor
@@ -68,6 +68,9 @@ namespace gui {
 
 		virtual gsize_t getMinWidth() const;
 		virtual gsize_t getMinHeight() const;
+
+		virtual gsize_t getPreferredWidth() const;
+		virtual gsize_t getPreferredHeight() const;
 
 		virtual void rearrange();
 

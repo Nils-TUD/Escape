@@ -119,7 +119,8 @@ namespace gui {
 		 * @param height the height
 		 * @param style the window-style (STYLE_*)
 		 */
-		Window(gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style = STYLE_DEFAULT);
+		Window(gpos_t x,gpos_t y,gsize_t width = MIN_WIDTH,gsize_t height = MIN_HEIGHT,
+		       uchar style = STYLE_DEFAULT);
 		/**
 		 * Creates a new window with titlebar, that displays <title>
 		 *
@@ -130,8 +131,8 @@ namespace gui {
 		 * @param height the height
 		 * @param style the window-style (STYLE_*)
 		 */
-		Window(const string &title,gpos_t x,gpos_t y,gsize_t width,gsize_t height,
-				uchar style = STYLE_DEFAULT);
+		Window(const string &title,gpos_t x,gpos_t y,gsize_t width = MIN_WIDTH,
+		       gsize_t height = MIN_HEIGHT,uchar style = STYLE_DEFAULT);
 		/**
 		 * Destructor
 		 */

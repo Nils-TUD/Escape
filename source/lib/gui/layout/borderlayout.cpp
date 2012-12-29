@@ -51,17 +51,30 @@ namespace gui {
 	gsize_t BorderLayout::getMinHeight() const {
 		gsize_t height = 0;
 		if(_ctrls[NORTH])
-			height += _ctrls[NORTH]->getPreferredWidth();
+			height += _ctrls[NORTH]->getPreferredHeight();
 		if(_ctrls[CENTER]) {
 			if(_ctrls[NORTH])
 				height += _gap;
-			height += _ctrls[CENTER]->getPreferredWidth();
+			height += _ctrls[CENTER]->getPreferredHeight();
 			if(_ctrls[SOUTH])
 				height += _gap;
 		}
 		if(_ctrls[SOUTH])
-			height += _ctrls[SOUTH]->getPreferredWidth();
+			height += _ctrls[SOUTH]->getPreferredHeight();
 		return height;
+	}
+
+	gsize_t BorderLayout::getPreferredWidth() const {
+		gsize_t pad = _p->getTheme().getPadding();
+		if(_ctrls[CENTER])
+			return max<gsize_t>(_p->getParent()->getContentWidth() - pad * 2,getMinWidth());
+		return getMinWidth();
+	}
+	gsize_t BorderLayout::getPreferredHeight() const {
+		gsize_t pad = _p->getTheme().getPadding();
+		if(_ctrls[CENTER])
+			return max<gsize_t>(_p->getParent()->getContentHeight() - pad * 2,getMinHeight());
+		return getMinHeight();
 	}
 
 	void BorderLayout::rearrange() {

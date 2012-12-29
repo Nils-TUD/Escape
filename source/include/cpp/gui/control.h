@@ -28,6 +28,7 @@ namespace gui {
 	class ScrollPane;
 	class BorderLayout;
 	class FlowLayout;
+	class GridLayout;
 
 	/**
 	 * The abstract base class for all controls
@@ -37,6 +38,7 @@ namespace gui {
 		friend class ScrollPane;
 		friend class BorderLayout;
 		friend class FlowLayout;
+		friend class GridLayout;
 
 	public:
 		/**

@@ -23,8 +23,8 @@
 #include <assert.h>
 
 namespace gui {
-	void FlowLayout::add(Panel *p,Control *c,pos_type pos) {
-		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && (_p == NULL || p == _p));
+	void FlowLayout::add(Panel *p,Control *c,A_UNUSED pos_type pos) {
+		assert(_p == NULL || p == _p);
 		_p = p;
 		_ctrls.push_back(c);
 	}
@@ -41,6 +41,13 @@ namespace gui {
 		if(_ctrls.size() == 0)
 			return 0;
 		return getMaxHeight();
+	}
+
+	gsize_t FlowLayout::getPreferredWidth() const {
+		return getMinWidth();
+	}
+	gsize_t FlowLayout::getPreferredHeight() const {
+		return getMinHeight();
 	}
 
 	void FlowLayout::rearrange() {

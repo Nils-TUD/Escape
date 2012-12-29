@@ -70,7 +70,7 @@ namespace gui {
 			_isActive(false), _moveX(x), _moveY(y), _resizeWidth(getWidth()), _resizeHeight(getHeight()),
 			_gbuf(NULL), _header(NULL),
 			_body(Panel(1,1,getWidth() - 2,getHeight() - 2)),
-			_tabCtrls(list<Control*>()), _tabIt(_tabCtrls.begin()) {
+			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
 	Window::Window(const string &title,gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style)
@@ -80,7 +80,7 @@ namespace gui {
 			_isActive(false), _moveX(x), _moveY(y), _resizeWidth(getWidth()), _resizeHeight(getHeight()),
 			_gbuf(NULL), _header(new WindowTitleBar(title,1,1,getWidth() - 2,HEADER_SIZE)),
 			_body(Panel(1,1 + HEADER_SIZE,getWidth() - 2,getHeight() - HEADER_SIZE - 2)),
-			_tabCtrls(list<Control*>()), _tabIt(_tabCtrls.begin()) {
+			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
 

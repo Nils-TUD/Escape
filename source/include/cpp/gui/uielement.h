@@ -51,8 +51,8 @@ namespace gui {
 		 */
 		UIElement()
 			: _g(NULL), _parent(NULL), _theme(Theme(Application::getInstance()->getDefaultTheme())),
-			  _x(0), _y(0), _width(0), _height(0), _prefWidth(0), _prefHeight(0), _mlist(NULL),
-			  _klist(NULL), _enableRepaint(true) {
+			  _x(0), _y(0), _width(0), _height(0), _mlist(NULL), _klist(NULL), _enableRepaint(true),
+			  _prefWidth(0), _prefHeight(0) {
 		};
 		/**
 		 * Constructor that specifies a position and size explicitly. This can be used if no layout
@@ -65,8 +65,8 @@ namespace gui {
 		 */
 		UIElement(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: _g(NULL), _parent(NULL), _theme(Theme(Application::getInstance()->getDefaultTheme())),
-			  _x(x), _y(y), _width(width), _height(height), _prefWidth(width), _prefHeight(height),
-			  _mlist(NULL), _klist(NULL), _enableRepaint(true) {
+			  _x(x), _y(y), _width(width), _height(height), _mlist(NULL), _klist(NULL),
+			  _enableRepaint(true), _prefWidth(width), _prefHeight(height) {
 		};
 		/**
 		 * Destructor. Free's the memory
@@ -144,13 +144,13 @@ namespace gui {
 		/**
 		 * @return the preferred width of this ui-element
 		 */
-		inline gsize_t getPreferredWidth() const {
+		virtual gsize_t getPreferredWidth() const {
 			return _prefWidth ? _prefWidth : getMinWidth();
 		};
 		/**
 		 * @return the preferred height of this ui-element
 		 */
-		inline gsize_t getPreferredHeight() const {
+		virtual gsize_t getPreferredHeight() const {
 			return _prefHeight ? _prefHeight : getMinHeight();
 		};
 
@@ -368,11 +368,12 @@ namespace gui {
 		gpos_t _y;
 		gsize_t _width;
 		gsize_t _height;
-		gsize_t _prefWidth;
-		gsize_t _prefHeight;
 		vector<MouseListener*> *_mlist;
 		vector<KeyListener*> *_klist;
 		bool _enableRepaint;
+	protected:
+		gsize_t _prefWidth;
+		gsize_t _prefHeight;
 	};
 }
 

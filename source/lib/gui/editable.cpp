@@ -27,10 +27,14 @@ namespace gui {
 	const uchar Editable::DIR_RIGHT = 2;
 
 	gsize_t Editable::getMinWidth() const {
-		return DEF_WIDTH + getTheme().getTextPadding() * 2;
+		return getGraphics()->getFont().getStringWidth(_str) + getTheme().getTextPadding() * 2;
 	}
 	gsize_t Editable::getMinHeight() const {
 		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
+	}
+
+	gsize_t Editable::getPreferredWidth() const {
+		return _prefWidth ? _prefWidth : DEF_WIDTH + getTheme().getTextPadding() * 2;
 	}
 
 	void Editable::onFocusGained() {

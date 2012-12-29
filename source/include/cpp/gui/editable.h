@@ -58,6 +58,7 @@ namespace gui {
 
 		virtual gsize_t getMinWidth() const;
 		virtual gsize_t getMinHeight() const;
+		virtual gsize_t getPreferredWidth() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onMouseMoved(const MouseEvent &e);

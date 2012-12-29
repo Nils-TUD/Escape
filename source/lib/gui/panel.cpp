@@ -128,6 +128,7 @@ namespace gui {
 	}
 
 	void Panel::add(Control *c,Layout::pos_type pos) {
+		vassert(getGraphics() != NULL,"Please add the parent to a container before the childs!");
 		_controls.push_back(c);
 		c->setParent(this);
 		if(_layout)

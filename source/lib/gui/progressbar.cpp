@@ -50,7 +50,10 @@ namespace gui {
 
 		// draw text
 		g.setColor(getTheme().getColor(Theme::SEL_FOREGROUND));
-		g.drawString((getWidth() - g.getFont().getStringWidth(_text)) / 2 + 1,
-				(getHeight() - g.getFont().getHeight()) / 2 + 1,_text);
+		gsize_t count = g.getFont().limitStringTo(_text,getWidth());
+		if(count > 0) {
+			g.drawString((getWidth() - g.getFont().getStringWidth(_text.substr(0,count))) / 2 + 1,
+					(getHeight() - g.getFont().getHeight()) / 2 + 1,_text,0,count);
+		}
 	}
 }

@@ -212,7 +212,7 @@ int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t l
 	if(type != REG_DEVICE && type != REG_PHYS) {
 		size_t i;
 		for(i = 0; i < vm->reg->pfSize; i++)
-			vmm_pagefault(vm->virt + i * PAGE_SIZE);
+			vmm_pagefault(vm->virt + i * PAGE_SIZE,false);
 	}
 #endif
 	*vmreg = vm;

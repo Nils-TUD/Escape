@@ -18,29 +18,20 @@
  */
 
 #include <esc/common.h>
-#include <gui/application.h>
-#include <esc/thread.h>
-#include <esc/proc.h>
-#include "desktopwin.h"
+#include <gui/label.h>
+#include <gui/control.h>
 
-static int childWaitThread(void *arg);
+namespace gui {
+	gsize_t Label::getMinWidth() const {
+		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
+	}
+	gsize_t Label::getMinHeight() const {
+		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
+	}
 
-int main(void) {
-	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
-	Shortcut sc2("/etc/calc.bmp","/bin/gtest");
-	gui::Application* app = gui::Application::getInstance();
-	DesktopWin win(app->getScreenWidth(),app->getScreenHeight());
-	win.addShortcut(&sc1);
-	win.addShortcut(&sc2);
-	win.layout();
-	win.show();
-	if(startthread(childWaitThread,NULL) < 0)
-		error("Unable to start thread");
-	return app->run();
-}
-
-static int childWaitThread(A_UNUSED void *arg) {
-	while(1)
-		waitchild(NULL);
-	return 0;
+	void Label::paint(Graphics &g) {
+		gsize_t pad = getTheme().getTextPadding();
+		g.setColor(getTheme().getColor(Theme::CTRL_FOREGROUND));
+		g.drawString(pad,pad,_text);
+	}
 }

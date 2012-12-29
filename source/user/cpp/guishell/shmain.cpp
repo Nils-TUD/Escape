@@ -160,6 +160,7 @@ static int guiProc(void) {
 	root.setLayout(new BorderLayout());
 	root.add(sh,BorderLayout::CENTER);
 	w.layout();
+	w.show();
 	w.setFocus(sh);
 	int res = app->run();
 	sh->sendEOF();

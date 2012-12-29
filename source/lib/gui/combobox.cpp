@@ -157,6 +157,7 @@ namespace gui {
 				const Window *w = getWindow();
 				_win = new ItemWindow(this,w->getX() + getWindowX(),
 						w->getY() + getWindowY() + getHeight(),getWidth(),height);
+				_win->show();
 			}
 		}
 	}

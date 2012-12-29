@@ -31,9 +31,9 @@ namespace gui {
 		static const uchar DIR_LEFT;
 		static const uchar DIR_RIGHT;
 
-		static const gsize_t CURSOR_WIDTH	= 2;
-		static const gsize_t CURSOR_OVERLAP	= 2;
-		static const gsize_t DEF_WIDTH		= 100;
+		static const gsize_t CURSOR_WIDTH;
+		static const gsize_t CURSOR_OVERLAP;
+		static const gsize_t DEF_WIDTH;
 
 	public:
 		Editable()

@@ -35,29 +35,20 @@ namespace gui {
 
 	WindowTitleBar::WindowTitleBar(const string& title,gpos_t x,gpos_t y,
 			gsize_t width,gsize_t height)
-		: Panel(x,y,width,height), ActionListener(), _title(title), _blayout(NULL) {
-	}
-	WindowTitleBar::~WindowTitleBar() {
-		delete _imgs[0];
-	}
-
-	void WindowTitleBar::init() {
-		setLayout(new BorderLayout());
-		_imgs[0] = Image::loadImage(CLOSE_IMG);
-		ImageButton *btn = new ImageButton(_imgs[0],false);
-		btn->addListener(this);
-		add(btn,BorderLayout::EAST);
+		: Panel(x,y,width,height), ActionListener(), _title(new Label(title)) {
 	}
 
 	void WindowTitleBar::actionPerformed(A_UNUSED UIElement& el) {
 		Application::getInstance()->exit();
 	}
 
-	void WindowTitleBar::paint(Graphics& g) {
-		Panel::paint(g);
-
-		g.setColor(getTheme().getColor(Theme::CTRL_FOREGROUND));
-		g.drawString(5,(getHeight() - g.getFont().getHeight()) / 2,_title);
+	void WindowTitleBar::init() {
+		setLayout(new BorderLayout());
+		add(_title,BorderLayout::WEST);
+		Image *img = Image::loadImage(CLOSE_IMG);
+		Button *btn = new ImageButton(img,false);
+		btn->addListener(this);
+		add(btn,BorderLayout::EAST);
 	}
 
 
@@ -96,9 +87,6 @@ namespace gui {
 		getTheme().setPadding(0);
 		_gbuf = new GraphicsBuffer(this,getX(),getY(),getWidth(),getHeight(),app->getColorDepth());
 		_g = GraphicFactory::get(_gbuf,getWidth(),getHeight());
-		// add us to app; we'll receive a "created"-event as soon as the window
-		// manager knows about us
-		app->addWindow(this);
 		gsize_t y = 1;
 		gsize_t height = getHeight() - 1;
 		if(_header) {
@@ -155,20 +143,7 @@ namespace gui {
 			// finish resize-operation
 			if(_moveX != getX() || _resizeWidth != getWidth() || _resizeHeight != getHeight()) {
 				if(resizing) {
-					_gbuf->moveTo(_moveX,_moveY);
-					_gbuf->resizeTo(_resizeWidth,_resizeHeight);
-					_g->setSize(0,0,_resizeWidth,_resizeHeight,_resizeWidth,_resizeHeight);
-					// when resizing left, its both a resize and move
-					setX(_moveX);
-					setY(_moveY);
-					setWidth(_resizeWidth);
-					setHeight(_resizeHeight);
-					if(_header) {
-						_header->resizeTo(_resizeWidth - 2,_header->getHeight());
-						_body.resizeTo(_resizeWidth - 2,_resizeHeight - _header->getHeight() - 2);
-					}
-					else
-						_body.resizeTo(_resizeWidth - 2,_resizeHeight - 2);
+					prepareResize(_moveX,_moveY,_resizeWidth,_resizeHeight);
 					Application::getInstance()->resizeWindow(this,true);
 					repaint();
 				}
@@ -220,6 +195,27 @@ namespace gui {
 
 	void Window::onKeyReleased(const KeyEvent &e) {
 		passToCtrl(e,KeyEvent::KEY_RELEASED);
+	}
+
+	void Window::prepareResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+		_gbuf->moveTo(x,y);
+		_gbuf->resizeTo(width,height);
+		_g->setSize(0,0,width,height,width,height);
+		// when resizing left, its both a resize and move
+		setX(x);
+		setY(y);
+		setWidth(width);
+		setHeight(height);
+		if(_header) {
+			_header->resizeTo(width - 2,_header->getHeight());
+			_body.resizeTo(width - 2,height - _header->getHeight() - 2);
+		}
+		else
+			_body.resizeTo(width - 2,height - 2);
+		_moveX = x;
+		_moveY = y;
+		_resizeWidth = width;
+		_resizeHeight = height;
 	}
 
 	void Window::passToCtrl(const KeyEvent &e,uchar event) {

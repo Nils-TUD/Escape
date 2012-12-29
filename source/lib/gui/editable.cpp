@@ -22,19 +22,24 @@
 #include <esc/keycodes.h>
 
 namespace gui {
-	const uchar Editable::DIR_NONE = 0;
-	const uchar Editable::DIR_LEFT = 1;
-	const uchar Editable::DIR_RIGHT = 2;
+	const uchar Editable::DIR_NONE			= 0;
+	const uchar Editable::DIR_LEFT			= 1;
+	const uchar Editable::DIR_RIGHT			= 2;
+
+	const gsize_t Editable::CURSOR_WIDTH	= 2;
+	const gsize_t Editable::CURSOR_OVERLAP	= 2;
+	const gsize_t Editable::DEF_WIDTH		= 100;
 
 	gsize_t Editable::getMinWidth() const {
-		return getGraphics()->getFont().getStringWidth(_str) + getTheme().getTextPadding() * 2;
+		return DEF_WIDTH + getTheme().getTextPadding() * 2;
 	}
 	gsize_t Editable::getMinHeight() const {
 		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
 	}
 
 	gsize_t Editable::getPreferredWidth() const {
-		return _prefWidth ? _prefWidth : DEF_WIDTH + getTheme().getTextPadding() * 2;
+		gsize_t strwidth = getGraphics()->getFont().getStringWidth(_str);
+		return _prefWidth ? _prefWidth : max(DEF_WIDTH,strwidth) + getTheme().getTextPadding() * 2;
 	}
 
 	void Editable::onFocusGained() {

@@ -61,7 +61,7 @@ int main(void) {
 }
 
 static void win1(void) {
-	Window *w = new Window("Window 1",100,100,300,200);
+	Window *w = new Window("Window 1",100,100);
 	Panel& root = w->getRootPanel();
 	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
@@ -80,13 +80,15 @@ static void win1(void) {
 	p->add(cb,BorderLayout::NORTH);
 	Checkbox *check = new Checkbox("My Checkbox");
 	p->add(check,BorderLayout::SOUTH);
-	ScrollPane *sp2 = new ScrollPane(new ProgressBar("Progress...",0,0,200,30));
-	p->add(sp2,BorderLayout::CENTER);
+	/*ScrollPane *sp2 = new ScrollPane(new ProgressBar("Progress..."));
+	p->add(sp2,BorderLayout::CENTER);*/
+	p->add(new ProgressBar("Progress..."),BorderLayout::CENTER);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->layout();
+	w->show(true);
 	/*if(startthread(pbThread,pb) < 0)
 		std::cerr << "[GUITEST] Unable to start thread" << std::endl;*/
 }
@@ -114,6 +116,7 @@ static void win2(void) {
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->layout();
+	w->show();
 }
 
 static void win3(void) {
@@ -139,6 +142,7 @@ static void win3(void) {
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->layout();
+	w->show();
 }
 
 static void win4(void) {
@@ -168,6 +172,7 @@ static void win4(void) {
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->layout();
+	w->show();
 }
 
 static void win5(void) {
@@ -192,6 +197,7 @@ static void win5(void) {
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->layout();
+	w->show();
 }
 
 static int pbThread(void *arg) {

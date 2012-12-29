@@ -36,31 +36,43 @@ namespace gui {
 	gsize_t BorderLayout::getMinWidth() const {
 		gsize_t width = 0;
 		if(_ctrls[WEST])
-			width += _ctrls[WEST]->getPreferredWidth();
+			width += _ctrls[WEST]->getMinWidth();
 		if(_ctrls[CENTER]) {
 			if(_ctrls[WEST])
 				width += _gap;
-			width += _ctrls[CENTER]->getPreferredWidth();
+			width += _ctrls[CENTER]->getMinWidth();
 			if(_ctrls[EAST])
 				width += _gap;
 		}
 		if(_ctrls[EAST])
-			width += _ctrls[EAST]->getPreferredWidth();
+			width += _ctrls[EAST]->getMinWidth();
+		if(width == 0) {
+			if(_ctrls[NORTH])
+				width = _ctrls[NORTH]->getMinWidth();
+			if(_ctrls[SOUTH])
+				width = max(width,_ctrls[SOUTH]->getMinWidth());
+		}
 		return width;
 	}
 	gsize_t BorderLayout::getMinHeight() const {
 		gsize_t height = 0;
 		if(_ctrls[NORTH])
-			height += _ctrls[NORTH]->getPreferredHeight();
+			height += _ctrls[NORTH]->getMinHeight();
 		if(_ctrls[CENTER]) {
 			if(_ctrls[NORTH])
 				height += _gap;
-			height += _ctrls[CENTER]->getPreferredHeight();
+			height += _ctrls[CENTER]->getMinHeight();
 			if(_ctrls[SOUTH])
 				height += _gap;
 		}
 		if(_ctrls[SOUTH])
-			height += _ctrls[SOUTH]->getPreferredHeight();
+			height += _ctrls[SOUTH]->getMinHeight();
+		if(height == 0) {
+			if(_ctrls[WEST])
+				height = _ctrls[WEST]->getMinHeight();
+			if(_ctrls[EAST])
+				height = max(height,_ctrls[EAST]->getMinHeight());
+		}
 		return height;
 	}
 
@@ -89,31 +101,51 @@ namespace gui {
 		gpos_t y = pad;
 		gsize_t rwidth = width;
 		gsize_t rheight = height;
+
+		gsize_t npheight = _ctrls[NORTH] ? _ctrls[NORTH]->getPreferredHeight() + _gap : 0;
+		gsize_t spheight = _ctrls[SOUTH] ? _ctrls[SOUTH]->getPreferredHeight() + _gap : 0;
+		gsize_t wpwidth = _ctrls[WEST] ? _ctrls[WEST]->getPreferredWidth() + _gap : 0;
+		gsize_t epwidth = _ctrls[EAST] ? _ctrls[EAST]->getPreferredWidth() + _gap : 0;
+		gsize_t cmheight = _ctrls[CENTER] ? _ctrls[CENTER]->getMinHeight() : 0;
+		gsize_t cmwidth = _ctrls[CENTER] ? _ctrls[CENTER]->getMinWidth() : 0;
+
+		// if we can't reach the minimum size for the controls, give each control the corresponding
+		// amount of the space, depending on their share of the required size (this prevents
+		// "size-bouncing")
+		if(npheight + spheight + cmheight > rheight) {
+			double nratio = npheight / (double)(npheight + spheight + cmheight);
+			double sratio = spheight / (double)(npheight + spheight + cmheight);
+			npheight = (gsize_t)(rheight * nratio);
+			spheight = (gsize_t)(rheight * sratio);
+		}
+		if(wpwidth + epwidth + cmwidth > rwidth) {
+			double wratio = wpwidth / (double)(wpwidth + epwidth + cmwidth);
+			double eratio = epwidth / (double)(wpwidth + epwidth + cmwidth);
+			wpwidth = (gsize_t)(rwidth * wratio);
+			epwidth = (gsize_t)(rwidth * eratio);
+		}
+
 		if((c = _ctrls[NORTH])) {
-			gsize_t pheight = c->getPreferredHeight();
 			c->moveTo(x,y);
-			c->resizeTo(width,pheight);
-			y += pheight + _gap;
-			rheight -= pheight + _gap;
+			c->resizeTo(width,npheight - _gap);
+			y += npheight;
+			rheight -= npheight;
 		}
 		if((c = _ctrls[SOUTH])) {
-			gsize_t pheight = c->getPreferredHeight();
-			c->moveTo(x,pad + height - pheight);
-			c->resizeTo(width,pheight);
-			rheight -= pheight + _gap;
+			c->moveTo(x,pad + height - (spheight - _gap));
+			c->resizeTo(width,spheight - _gap);
+			rheight -= spheight;
 		}
 		if((c = _ctrls[WEST])) {
-			gsize_t pwidth = c->getPreferredWidth();
 			c->moveTo(x,y);
-			c->resizeTo(pwidth,rheight);
-			x += pwidth + _gap;
-			rwidth -= pwidth + _gap;
+			c->resizeTo(wpwidth - _gap,rheight);
+			x += wpwidth;
+			rwidth -= wpwidth;
 		}
 		if((c = _ctrls[EAST])) {
-			gsize_t pwidth = c->getPreferredWidth();
-			c->moveTo(pad + width - pwidth,y);
-			c->resizeTo(pwidth,rheight);
-			rwidth -= pwidth + _gap;
+			c->moveTo(pad + width - (epwidth - _gap),y);
+			c->resizeTo(epwidth - _gap,rheight);
+			rwidth -= epwidth;
 		}
 		if((c = _ctrls[CENTER])) {
 			c->moveTo(x,y);

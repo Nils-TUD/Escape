@@ -32,6 +32,7 @@
 #include <gui/button.h>
 #include <gui/control.h>
 #include <gui/panel.h>
+#include <gui/label.h>
 #include <string>
 #include <ostream>
 #include <list>
@@ -45,13 +46,12 @@ namespace gui {
 
 	public:
 		WindowTitleBar(const string& title,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
-		virtual ~WindowTitleBar();
 
 		/**
 		 * @return the title (a copy)
 		 */
 		inline const string &getTitle() const {
-			return _title;
+			return _title->getText();
 		};
 		/**
 		 * Sets the title and requests a repaint
@@ -59,22 +59,15 @@ namespace gui {
 		 * @param title the new title
 		 */
 		inline void setTitle(const string &title) {
-			_title = title;
-			repaint();
+			_title->setText(title);
 		};
 
 		virtual void actionPerformed(UIElement& el);
 
-		virtual void paint(Graphics& g);
-
 	private:
 		void init();
 
-	private:
-		string _title;
-		Image *_imgs[1];
-		Button *_btns[1];
-		BorderLayout *_blayout;
+		Label *_title;
 	};
 
 	/**
@@ -223,14 +216,25 @@ namespace gui {
 			return _body.getMinHeight();
 		};
 
-		/**
-		 * Has to be done once after all controls have been added to calculate the layout of the
-		 * controls on all panels.
-		 */
 		virtual void layout() {
 			if(_header)
 				_header->layout();
 			_body.layout();
+		};
+
+		/**
+		 * Calculates the layout and finally shows the window, i.e. this method has to be called to
+		 * make the window visible.
+		 *
+		 * @param pack whether to pack the window to the minimum required size for the content
+		 */
+		void show(bool pack = false) {
+			if(pack)
+				prepareResize(getX(),getY(),getMinWidth(),getMinHeight());
+			layout();
+			// add us to app; we'll receive a "created"-event as soon as the window
+			// manager knows about us
+			Application::getInstance()->addWindow(this);
 		};
 
 		/**
@@ -345,6 +349,7 @@ namespace gui {
 		void moveTo(gpos_t x,gpos_t y);
 		void resizeMove(short x,short width,short height);
 		void resizeMoveTo(gpos_t x,gsize_t width,gsize_t height);
+		void prepareResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 	private:
 		gwinid_t _id;

@@ -131,7 +131,7 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 			windows[i].owner = owner;
 			windows[i].style = style;
 			windows[i].titleBarHeight = titleBarHeight;
-			if(style != WIN_STYLE_POPUP)
+			if(style != WIN_STYLE_POPUP && style != WIN_STYLE_DESKTOP)
 				win_notifyWinCreate(i,title);
 			return i;
 		}
@@ -156,7 +156,7 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	sRectangle *old;
 	/* mark unused */
 	windows[id].id = WINID_UNSED;
-	if(windows[id].style != WIN_STYLE_POPUP)
+	if(windows[id].style != WIN_STYLE_POPUP && windows[id].style != WIN_STYLE_DESKTOP)
 		win_notifyWinDestroy(id);
 
 	/* repaint window-area */

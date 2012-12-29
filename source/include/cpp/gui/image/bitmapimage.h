@@ -79,7 +79,7 @@ namespace gui {
 
 	public:
 		BitmapImage(const string &filename)
-			: _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
+			: Image(), _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
 				_data(NULL), _dataSize(0) {
 			loadFromFile(filename);
 		};

@@ -34,9 +34,6 @@ namespace gui {
 		ProgressBar(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _position(0), _text(text) {
 		};
-		virtual ~ProgressBar() {
-
-		};
 
 		inline size_t getPosition() const {
 			return _position;

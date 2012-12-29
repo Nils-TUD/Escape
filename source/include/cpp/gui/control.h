@@ -60,11 +60,6 @@ namespace gui {
 		Control(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: UIElement(x,y,width,height) {
 		};
-		/**
-		 * Destructor
-		 */
-		virtual ~Control() {
-		};
 
 		/**
 		 * Does nothing

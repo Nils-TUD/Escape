@@ -32,11 +32,6 @@ namespace gui {
 	class KeyListener {
 	public:
 		/**
-		 * Empty constructor
-		 */
-		KeyListener() {
-		};
-		/**
 		 * Destructor
 		 */
 		virtual ~KeyListener() {

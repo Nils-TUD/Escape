@@ -64,11 +64,6 @@ namespace gui {
 		GridLayout(unsigned cols,unsigned rows)
 			: Layout(), _cols(cols), _rows(rows), _p(), _ctrls() {
 		};
-		/**
-		 * Destructor
-		 */
-		virtual ~GridLayout() {
-		};
 
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);

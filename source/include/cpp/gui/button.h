@@ -36,8 +36,6 @@ namespace gui {
 		Button(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
 		};
-		virtual ~Button() {
-		};
 
 		inline bool isPressed() const {
 			return _pressed;

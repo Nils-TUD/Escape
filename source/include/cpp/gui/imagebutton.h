@@ -18,8 +18,6 @@ namespace gui {
 		ImageButton(Image *img,gpos_t x,gpos_t y,gsize_t width,gsize_t height,bool border = true)
 			: Button("",x,y,width,height), _img(img), _border(border) {
 		};
-		virtual ~ImageButton() {
-		};
 
 		inline Image *getImage() const {
 			return _img;

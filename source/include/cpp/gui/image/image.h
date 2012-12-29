@@ -44,8 +44,6 @@ namespace gui {
 		static Image *loadImage(const string& path);
 
 	public:
-		Image() {
-		};
 		virtual ~Image() {
 		};
 

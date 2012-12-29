@@ -82,7 +82,8 @@ namespace gui {
 		 */
 		Theme(const Theme& t)
 			: _default(t._default), _present(t._present), _padding(t._padding),
-			  _textPadding(t._textPadding), _colors(t._colors) {
+			  _textPadding(t._textPadding), _colors() {
+			_colors = new std::vector<Color>(*t._colors);
 		};
 		/**
 		 * Destructor

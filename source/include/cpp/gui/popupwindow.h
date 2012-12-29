@@ -29,8 +29,6 @@ namespace gui {
 		PopupWindow(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Window(x,y,width,height,STYLE_POPUP) {
 		};
-		virtual ~PopupWindow() {
-		};
 
 		virtual void close(gpos_t x,gpos_t y) = 0;
 	};

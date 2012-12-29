@@ -64,34 +64,6 @@ namespace gui {
 			: _type(type), _movedx(movedx), _movedy(movedy), _movedz(movedz), _x(x), _y(y),
 			  _buttons(buttons) {
 		};
-		/**
-		 * Copy-constructor
-		 *
-		 * @param e the event to copy
-		 */
-		MouseEvent(const MouseEvent &e)
-			: _type(e._type), _movedx(e._movedx), _movedy(e._movedy), _movedz(e._movedz),
-			  _x(e._x), _y(e._y), _buttons(e._buttons) {
-		};
-		/**
-		 * Destructor
-		 */
-		~MouseEvent() {
-		};
-
-		/**
-		 * Assignment-operator
-		 */
-		MouseEvent &operator=(const MouseEvent &e) {
-			_type = e._type;
-			_movedx = e._movedx;
-			_movedy = e._movedy;
-			_movedz = e._movedz;
-			_x = e._x;
-			_y = e._y;
-			_buttons = e._buttons;
-			return *this;
-		}
 
 		/**
 		 * @return the event-type (MOUSE_*)
@@ -191,31 +163,6 @@ namespace gui {
 		 */
 		KeyEvent(event_type type,keycode_type keycode,char character,modifier_type modifier)
 			: _type(type), _keycode(keycode), _character(character), _modifier(modifier) {
-		};
-		/**
-		 * Copy-constructor
-		 *
-		 * @param e the event to copy
-		 */
-		KeyEvent(const KeyEvent &e)
-			: _type(e._type), _keycode(e._keycode), _character(e._character),
-			_modifier(e._modifier) {
-		};
-		/**
-		 * Destructor
-		 */
-		~KeyEvent() {
-		};
-
-		/**
-		 * Assignment-operator
-		 */
-		KeyEvent &operator=(const KeyEvent &e) {
-			_type = e._type;
-			_keycode = e._keycode;
-			_character = e._character;
-			_modifier = e._modifier;
-			return *this;
 		};
 
 		/**

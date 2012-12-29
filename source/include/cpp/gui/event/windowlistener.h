@@ -27,25 +27,9 @@ namespace gui {
 	class WindowListener {
 	public:
 		/**
-		 * Empty constructor
-		 */
-		WindowListener() {
-		};
-		/**
-		 * Copy-constructor
-		 */
-		WindowListener(const WindowListener &) {
-		};
-		/**
 		 * Destructor
 		 */
 		virtual ~WindowListener() {
-		};
-		/**
-		 * Assignment-operator
-		 */
-		WindowListener &operator=(const WindowListener &) {
-			return *this;
 		};
 
 		/**

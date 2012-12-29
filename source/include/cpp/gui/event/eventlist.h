@@ -23,26 +23,7 @@ namespace gui {
 		/**
 		 * Constructor
 		 */
-		EventList() : _listener(std::vector<T*>()) {
-		};
-		/**
-		 * Copy-Constructor
-		 */
-		EventList(const EventList& l) : _listener(l._listener) {
-		};
-		/**
-		 * Destructor
-		 */
-		~EventList() {
-		};
-		/**
-		 * Assignment-operator
-		 */
-		EventList& operator=(const EventList& l) {
-			if(this == &l)
-				return *this;
-			_listener = l._listener;
-			return *this;
+		EventList() : _listener() {
 		};
 
 		/**

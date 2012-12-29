@@ -57,11 +57,6 @@ namespace gui {
 		FlowLayout(int pos,gsize_t gap = DEF_GAP)
 			: Layout(), _pos(pos), _gap(gap), _p(), _ctrls() {
 		};
-		/**
-		 * Destructor
-		 */
-		virtual ~FlowLayout() {
-		};
 
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);

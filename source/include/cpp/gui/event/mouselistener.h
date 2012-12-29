@@ -32,11 +32,6 @@ namespace gui {
 	class MouseListener {
 	public:
 		/**
-		 * Empty constructor
-		 */
-		MouseListener() {
-		};
-		/**
 		 * Destructor
 		 */
 		virtual ~MouseListener() {

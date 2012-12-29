@@ -15,25 +15,9 @@ namespace gui {
 	class ActionListener {
 	public:
 		/**
-		 * Empty constructor
-		 */
-		ActionListener() {
-		};
-		/**
-		 * Copy-constructor
-		 */
-		ActionListener(const ActionListener &) {
-		};
-		/**
 		 * Destructor
 		 */
 		virtual ~ActionListener() {
-		};
-		/**
-		 * Assignment-operator
-		 */
-		ActionListener &operator=(const ActionListener &) {
-			return *this;
 		};
 
 		/**

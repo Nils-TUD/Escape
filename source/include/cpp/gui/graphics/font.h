@@ -29,17 +29,6 @@ namespace gui {
 		static const gsize_t charHeight = 16;
 
 	public:
-		Font() {
-		};
-		Font(A_UNUSED const Font &f) {
-		};
-		~Font() {
-		};
-
-		Font &operator=(A_UNUSED const Font &f) {
-			return *this;
-		};
-
 		inline gsize_t getWidth() const {
 			return charWidth;
 		};

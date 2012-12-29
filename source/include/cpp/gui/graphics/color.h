@@ -53,24 +53,9 @@ namespace gui {
 			setColor(red,green,blue,alpha);
 		};
 		/**
-		 * Copy-constructor
-		 *
-		 * @param col the color to copy
-		 */
-		Color(const Color &col) : _color(col._color) {
-		};
-		/**
 		 * Destructor
 		 */
 		virtual ~Color() {
-		};
-
-		/**
-		 * Assignment-operator
-		 */
-		Color &operator=(const Color &col) {
-			_color = col._color;
-			return *this;
 		};
 
 		/**

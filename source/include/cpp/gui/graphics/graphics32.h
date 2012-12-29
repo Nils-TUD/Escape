@@ -33,8 +33,6 @@ namespace gui {
 		Graphics32(GraphicsBuffer *buf,gsize_t width,gsize_t height)
 			: Graphics(buf,width,height) {
 		};
-		virtual ~Graphics32() {
-		};
 
 		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 

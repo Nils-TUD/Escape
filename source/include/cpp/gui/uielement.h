@@ -50,7 +50,7 @@ namespace gui {
 		 * will determine the actual position and size.
 		 */
 		UIElement()
-			: _g(NULL), _parent(NULL), _theme(Theme(Application::getInstance()->getDefaultTheme())),
+			: _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
 			  _x(0), _y(0), _width(0), _height(0), _mlist(NULL), _klist(NULL), _enableRepaint(true),
 			  _prefWidth(0), _prefHeight(0) {
 		};
@@ -64,7 +64,7 @@ namespace gui {
 		 * @param height the height
 		 */
 		UIElement(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: _g(NULL), _parent(NULL), _theme(Theme(Application::getInstance()->getDefaultTheme())),
+			: _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
 			  _x(x), _y(y), _width(width), _height(height), _mlist(NULL), _klist(NULL),
 			  _enableRepaint(true), _prefWidth(width), _prefHeight(height) {
 		};

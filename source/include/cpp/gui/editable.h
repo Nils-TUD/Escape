@@ -38,13 +38,11 @@ namespace gui {
 	public:
 		Editable()
 			: Control(), _cursor(0), _begin(0), _focused(false), _selecting(false),
-			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(string()) {
+			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		};
 		Editable(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _cursor(0), _begin(0), _focused(false), _selecting(false),
-			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(string()) {
-		};
-		virtual ~Editable() {
+			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		};
 
 		inline const string &getText() const {

@@ -45,8 +45,6 @@ namespace gui {
 			ItemWindow(ComboBox *cb,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 				: PopupWindow(x,y,width,height), _cb(cb), _highlighted(cb->_selected) {
 			};
-			virtual ~ItemWindow() {
-			};
 
 			void onMouseMoved(const MouseEvent &e);
 			void onMouseReleased(const MouseEvent &e);
@@ -54,10 +52,6 @@ namespace gui {
 			void paint(Graphics &g);
 
 		private:
-			// no cloning
-			ItemWindow(const ItemWindow &w);
-			ItemWindow &operator=(const ItemWindow &w);
-
 			void closeImpl();
 			int getItemAt(gpos_t x,gpos_t y);
 
@@ -68,12 +62,10 @@ namespace gui {
 
 	public:
 		ComboBox()
-			: Control(), _items(vector<string>()), _selected(-1),
-				_pressed(false), _win(NULL) {
+			: Control(), _items(), _selected(-1), _pressed(false), _win(NULL) {
 		};
 		ComboBox(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _items(vector<string>()), _selected(-1),
-				_pressed(false), _win(NULL) {
+			: Control(x,y,width,height), _items(), _selected(-1), _pressed(false), _win(NULL) {
 		};
 		virtual ~ComboBox() {
 			delete _win;

@@ -39,8 +39,6 @@ namespace gui {
 		Checkbox(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _checked(false), _text(text) {
 		};
-		virtual ~Checkbox() {
-		};
 
 		inline bool isChecked() const {
 			return _checked;

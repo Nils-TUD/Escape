@@ -32,8 +32,7 @@ namespace gui {
 		 * @param l the layout (may be NULL)
 		 */
 		Panel(Layout *l = NULL)
-			: Control(), _focus(NULL), _controls(vector<Control*>()),
-			  _layout(l), _updateRect(sRectangle()) {
+			: Control(), _focus(NULL), _controls(), _layout(l), _updateRect() {
 		};
 		/**
 		 * Creates an empty panel at given position, with given size and with given layout. Note
@@ -47,8 +46,7 @@ namespace gui {
 		 * @param l the layout (may be NULL)
 		 */
 		Panel(gpos_t x,gpos_t y,gsize_t width,gsize_t height,Layout *l = NULL)
-			: Control(x,y,width,height), _focus(NULL), _controls(vector<Control*>()),
-			  _layout(l), _updateRect(sRectangle()) {
+			: Control(x,y,width,height), _focus(NULL), _controls(), _layout(l), _updateRect() {
 		};
 		/**
 		 * Destructor

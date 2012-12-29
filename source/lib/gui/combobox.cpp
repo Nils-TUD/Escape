@@ -112,28 +112,31 @@ namespace gui {
 
 	void ComboBox::paint(Graphics &g) {
 		gsize_t btnWidth = getHeight();
+		gsize_t textWidth = getWidth() - btnWidth;
 		// paint item
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
-		g.fillRect(1,1,getWidth() - btnWidth - 2,getHeight() - 2);
+		g.fillRect(1,1,textWidth - 2,getHeight() - 2);
 		g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
-		g.drawRect(0,0,getWidth() - btnWidth,getHeight());
+		g.drawRect(0,0,textWidth,getHeight());
 		if(_selected >= 0) {
+			gsize_t textlimit = textWidth - getTheme().getTextPadding() * 2;
 			gpos_t ystart = (getHeight() - g.getFont().getHeight()) / 2;
-			g.drawString(getTheme().getTextPadding(),ystart,_items[_selected]);
+			gsize_t count = getGraphics()->getFont().limitStringTo(_items[_selected],textlimit);
+			g.drawString(getTheme().getTextPadding(),ystart,_items[_selected],0,count);
 		}
 
 		// paint button border and bg
 		g.setColor(getTheme().getColor(Theme::BTN_BACKGROUND));
-		g.fillRect(getWidth() - btnWidth + 2,1,btnWidth - 3,getHeight() - 2);
+		g.fillRect(textWidth + 2,1,btnWidth - 3,getHeight() - 2);
 		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
-		g.drawRect(getWidth() - btnWidth + 1,0,btnWidth - 1,getHeight());
+		g.drawRect(textWidth + 1,0,btnWidth - 1,getHeight());
 
 		// paint triangle
 		size_t pressedPad = _pressed ? 1 : 0;
 		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
-		g.drawLine(getWidth() - btnWidth + ARROW_PAD,ARROW_PAD + pressedPad,
+		g.drawLine(textWidth + ARROW_PAD,ARROW_PAD + pressedPad,
 				getWidth() - ARROW_PAD,ARROW_PAD + pressedPad);
-		g.drawLine(getWidth() - btnWidth + ARROW_PAD,ARROW_PAD + pressedPad,
+		g.drawLine(textWidth + ARROW_PAD,ARROW_PAD + pressedPad,
 				getWidth() - btnWidth / 2,getHeight() - ARROW_PAD + pressedPad);
 		g.drawLine(getWidth() - ARROW_PAD,ARROW_PAD + pressedPad,
 				getWidth() - btnWidth / 2,getHeight() - ARROW_PAD + pressedPad);

@@ -49,7 +49,9 @@ namespace gui {
 			void onMouseMoved(const MouseEvent &e);
 			void onMouseReleased(const MouseEvent &e);
 			void close(gpos_t x,gpos_t y);
-			void paint(Graphics &g);
+
+		protected:
+			virtual void paint(Graphics &g);
 
 		private:
 			void closeImpl();
@@ -89,6 +91,8 @@ namespace gui {
 		virtual gsize_t getMinHeight() const;
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
+
+	protected:
 		virtual void paint(Graphics &g);
 
 	private:

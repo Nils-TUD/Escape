@@ -69,22 +69,22 @@ void DesktopWin::actionPerformed(UIElement& el) {
 	}
 }
 
-void DesktopWin::onWindowCreated(gwinid_t id,const std::string& title) {
+void DesktopWin::onWindowCreated(gwinid_t wid,const std::string& title) {
 	Button *b = new Button(title);
 	b->addListener(this);
-	_windows[id] = b;
+	_windows[wid] = b;
 	_winPanel->add(b);
 	// TODO as soon as we can arrange it that the taskbar is always visible, we don't have to
 	// repaint and relayout everything here
 	layout();
 	repaint();
 }
-void DesktopWin::onWindowActive(gwinid_t id) {
+void DesktopWin::onWindowActive(gwinid_t wid) {
 	if(_active) {
 		_active->getTheme().unsetColor(Theme::BTN_BACKGROUND);
 		_active->repaint();
 	}
-	map<gwinid_t,Button*>::iterator it = _windows.find(id);
+	map<gwinid_t,Button*>::iterator it = _windows.find(wid);
 	if(it != _windows.end()) {
 		const Theme *def = Application::getInstance()->getDefaultTheme();
 		_active = (*it).second;
@@ -94,8 +94,8 @@ void DesktopWin::onWindowActive(gwinid_t id) {
 	else
 		_active = NULL;
 }
-void DesktopWin::onWindowDestroyed(gwinid_t id) {
-	map<gwinid_t,Button*>::iterator it = _windows.find(id);
+void DesktopWin::onWindowDestroyed(gwinid_t wid) {
+	map<gwinid_t,Button*>::iterator it = _windows.find(wid);
 	if(it != _windows.end()) {
 		Button *b = (*it).second;
 		b->removeListener(this);
@@ -103,7 +103,7 @@ void DesktopWin::onWindowDestroyed(gwinid_t id) {
 		if(_active == b)
 			_active = NULL;
 		delete b;
-		_windows.erase(id);
+		_windows.erase(wid);
 		layout();
 		repaint();
 	}

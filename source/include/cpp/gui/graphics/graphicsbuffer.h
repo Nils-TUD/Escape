@@ -81,6 +81,13 @@ namespace gui {
 		};
 
 		/**
+		 * @return the window this buffer belongs to
+		 */
+		inline Window *getWindow() const {
+			return _win;
+		};
+
+		/**
 		 * @return the buffer
 		 */
 		inline uint8_t *getBuffer() const {

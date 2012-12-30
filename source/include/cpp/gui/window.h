@@ -266,13 +266,6 @@ namespace gui {
 		 */
 		void appendTabCtrl(Control &c);
 
-		/**
-		 * Paints the whole window
-		 *
-		 * @param g the graphics-object
-		 */
-		virtual void paint(Graphics &g);
-
 	protected:
 		/**
 		 * Paints only the title of the window
@@ -280,6 +273,7 @@ namespace gui {
 		 * @param g the graphics-object
 		 */
 		void paintTitle(Graphics &g);
+		virtual void paint(Graphics &g);
 
 		/**
 		 * @return the window the ui-element belongs to (this)

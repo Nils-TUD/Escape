@@ -41,6 +41,8 @@ namespace gui {
 
 		virtual gsize_t getMinWidth() const;
 		virtual gsize_t getMinHeight() const;
+
+	protected:
 		virtual void paint(Graphics &g);
 
 	private:

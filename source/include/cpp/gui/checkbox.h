@@ -57,12 +57,13 @@ namespace gui {
 		virtual void onFocusLost();
 		virtual void onKeyReleased(const KeyEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
+
+	protected:
 		virtual void paint(Graphics &g);
 
 	private:
 		void setChecked(bool checked);
 
-	private:
 		bool _focused;
 		bool _checked;
 		string _text;

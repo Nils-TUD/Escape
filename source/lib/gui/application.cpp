@@ -35,10 +35,8 @@ namespace gui {
 	Application *Application::_inst = NULL;
 
 	Application::Application()
-			: _winFd(-1), _msg(sMsg()), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
-			  _vesaInfo(sVESAInfo()), _windows(vector<Window*>()),
-			  _wlisten(std::vector<std::pair<WindowListener*,bool> >()), _listening(false),
-			  _defTheme(Theme(NULL)) {
+			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
+			  _vesaInfo(), _windows(), _wlisten(), _listening(false), _defTheme(NULL) {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)

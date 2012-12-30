@@ -105,12 +105,6 @@ namespace gui {
 		virtual void onMouseWheel(const MouseEvent &e);
 
 		/**
-		 * Overwrite the paint-methods
-		 */
-		virtual void paint(Graphics &g);
-		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
-
-		/**
 		 * Adds the given control to this panel. That means, the panel will own the control
 		 * afterwards. So, it will delete it when the panel is deleted.
 		 *
@@ -129,6 +123,9 @@ namespace gui {
 		void remove(Control *c,Layout::pos_type pos = 0);
 
 	protected:
+		virtual void paint(Graphics &g);
+		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+
 		virtual void resizeTo(gsize_t width,gsize_t height);
 		virtual void moveTo(gpos_t x,gpos_t y);
 		virtual void setRegion();

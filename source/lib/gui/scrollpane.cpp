@@ -159,7 +159,7 @@ namespace gui {
 	}
 
 	void ScrollPane::paint(Graphics &g) {
-		_ctrl->paint(*_ctrl->getGraphics());
+		_ctrl->repaint(false);
 		paintBars(g);
 	}
 

@@ -22,8 +22,12 @@
 #include <gui/uielement.h>
 #include <gui/control.h>
 #include <gui/window.h>
+#include <typeinfo>
+#include <sstream>
 
 namespace gui {
+	UIElement::id_type UIElement::_nextid = 1;
+
 	Window *UIElement::getWindow() {
 		UIElement *p = _parent;
 		// if its the window itself
@@ -144,15 +148,52 @@ namespace gui {
 		}
 	}
 
+	void UIElement::debug() {
+#ifdef DEBUG_GUI
+		static int pos = 0;
+		std::ostringstream ostr;
+		ostr << _id;
+		_g->setColor(Color(0xFF,0,0));
+
+		gpos_t x = 0, y = 0;
+		switch(pos++ % 3) {
+			case 1:
+				x = getWidth() - _g->getFont().getStringWidth(ostr.str());
+				y = getHeight() - _g->getFont().getHeight();
+				break;
+			case 2:
+				x = getWidth() / 2 - _g->getFont().getStringWidth(ostr.str()) / 2;
+				y = getHeight() / 2 - _g->getFont().getHeight() / 2;
+				break;
+		}
+		_g->drawString(x,y,ostr.str());
+
+		_g->drawRect(0,0,getWidth(),getHeight());
+
+		Window *win = _g->getBuffer()->getWindow();
+		if(win->hasTitleBar())
+			std::cout << "[" << win->getTitle();
+		else
+			std::cout << "[#" << win->getId();
+		std::cout << ":" << _id << ":" << typeid(*this).name() << "]";
+		std::cout << " @" << getX() << "," << getY();
+		std::cout << " size:" << getWidth() << "x" << getHeight();
+		std::cout << " min:" << getMinWidth() << "x" << getMinHeight();
+		std::cout << " pref:" << getPreferredWidth() << "x" << getPreferredHeight() << std::endl;
+#endif
+	}
+
 	void UIElement::requestUpdate() {
 		if(_g)
 			_g->requestUpdate();
 	}
 
-	void UIElement::repaint() {
+	void UIElement::repaint(bool update) {
 		if(_g && _enableRepaint) {
 			paint(*_g);
-			_g->requestUpdate();
+			debug();
+			if(update)
+				_g->requestUpdate();
 		}
 	}
 
@@ -178,6 +219,7 @@ namespace gui {
 	void UIElement::repaintRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		if(_g) {
 			paintRect(*_g,x,y,width,height);
+			debug();
 			_g->requestUpdate();
 		}
 	}

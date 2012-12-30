@@ -39,7 +39,6 @@ namespace gui {
 	}
 
 	void ComboBox::ItemWindow::paint(Graphics &g) {
-		Window::paint(g);
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(0,0,getWidth(),getHeight());
 

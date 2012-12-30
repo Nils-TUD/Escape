@@ -45,12 +45,14 @@ namespace gui {
 		friend class ScrollPane;
 
 	public:
+		typedef unsigned id_type;
+
 		/**
 		 * Creates an ui-element at position 0,0 and 0x0 pixels large. When using a layout, this
 		 * will determine the actual position and size.
 		 */
 		UIElement()
-			: _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
+			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
 			  _x(0), _y(0), _width(0), _height(0), _mlist(NULL), _klist(NULL), _enableRepaint(true),
 			  _prefWidth(0), _prefHeight(0) {
 		};
@@ -64,7 +66,7 @@ namespace gui {
 		 * @param height the height
 		 */
 		UIElement(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
+			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
 			  _x(x), _y(y), _width(width), _height(height), _mlist(NULL), _klist(NULL),
 			  _enableRepaint(true), _prefWidth(width), _prefHeight(height) {
 		};
@@ -75,6 +77,13 @@ namespace gui {
 			delete _mlist;
 			delete _klist;
 			delete _g;
+		};
+
+		/**
+		 * @return the id of this UIElement (unique in one application)
+		 */
+		inline id_type id() const {
+			return _id;
 		};
 
 		/**
@@ -171,15 +180,11 @@ namespace gui {
 		virtual void layout() = 0;
 
 		/**
-		 * Paints the control
+		 * Repaints the control, i.e. calls paint()
 		 *
-		 * @param g the graphics-object
+		 * @param update whether to request an update of the painted region
 		 */
-		virtual void paint(Graphics &g) = 0;
-		/**
-		 * Repaints the control, i.e. calls paint() and requests an update of this region
-		 */
-		void repaint();
+		void repaint(bool update = true);
 
 		/**
 		 * Paints the given rectangle of the control
@@ -276,6 +281,13 @@ namespace gui {
 
 	protected:
 		/**
+		 * Does the actual painting and has to be implemented by subclasses.
+		 *
+		 * @param g the graphics object
+		 */
+		virtual void paint(Graphics &g) = 0;
+
+		/**
 		 * @return the minimum width that the ui-element should have to be displayed in a
 		 * 	reasonable way
 		 */
@@ -356,11 +368,17 @@ namespace gui {
 		 */
 		virtual void setFocus(Control *c);
 
+		/**
+		 * Adds some debugging info after drawing an UIElement
+		 */
+		void debug();
+
 		// only used internally
 		void notifyListener(const MouseEvent &e);
 		void notifyListener(const KeyEvent &e);
 
 	private:
+		id_type _id;
 		Graphics *_g;
 		UIElement *_parent;
 		Theme _theme;
@@ -371,6 +389,7 @@ namespace gui {
 		vector<MouseListener*> *_mlist;
 		vector<KeyListener*> *_klist;
 		bool _enableRepaint;
+		static id_type _nextid;
 	protected:
 		gsize_t _prefWidth;
 		gsize_t _prefHeight;

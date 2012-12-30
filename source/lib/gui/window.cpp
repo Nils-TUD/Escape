@@ -390,7 +390,7 @@ namespace gui {
 		if(!_created || _style == STYLE_POPUP || !_header)
 			return;
 
-		_header->paint(*_header->getGraphics());
+		_header->repaint(false);
 	}
 
 	void Window::paint(Graphics &g) {
@@ -404,7 +404,7 @@ namespace gui {
 		g.setColor(getTheme().getColor(Theme::WIN_BORDER));
 		g.drawRect(0,0,getWidth(),getHeight());
 
-		_body.paint(*_body.getGraphics());
+		_body.repaint(false);
 	}
 
 	void Window::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
@@ -434,8 +434,8 @@ namespace gui {
 		}
 	}
 
-	void Window::onCreated(gwinid_t id) {
-		_id = id;
+	void Window::onCreated(gwinid_t wid) {
+		_id = wid;
 		_created = true;
 		repaint();
 	}

@@ -71,10 +71,10 @@ namespace gui {
 			_ctrl->layout();
 		};
 
+	protected:
 		virtual void paint(Graphics &g);
 		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
-	protected:
 		virtual void resizeTo(gsize_t width,gsize_t height);
 		virtual void moveTo(gpos_t x,gpos_t y) {
 			Control::moveTo(x,y);

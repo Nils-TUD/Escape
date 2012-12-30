@@ -54,9 +54,7 @@ namespace gui {
 		 */
 		Graphics(GraphicsBuffer *buf,gsize_t width,gsize_t height)
 			: _buf(buf), _minoffx(0), _minoffy(0), _offx(0), _offy(0), _width(width), _height(height),
-			  _col(0), _colInst(Color(0)),
-			  _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),
-			  _font(Font()) {
+			  _col(0), _colInst(0), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1), _font() {
 		};
 		/**
 		 * Destructor

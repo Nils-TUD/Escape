@@ -114,7 +114,7 @@ namespace gui {
 				}
 			}
 			else
-				c->paint(*c->getGraphics());
+				c->repaint(false);
 		}
 	}
 

@@ -60,8 +60,8 @@ namespace gui {
 			return;
 
 		gsize_t pad = _p->getTheme().getPadding();
-		gsize_t cwidth = getPreferredWidth() / _cols;
-		gsize_t cheight = getPreferredHeight() / _rows;
+		gsize_t cwidth = _p->getWidth() / _cols;
+		gsize_t cheight = _p->getHeight() / _rows;
 
 		for(map<int,Control*>::iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			GridPos pos(it->first);

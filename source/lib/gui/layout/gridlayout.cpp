@@ -47,12 +47,10 @@ namespace gui {
 	}
 
 	gsize_t GridLayout::getPreferredWidth() const {
-		gsize_t pad = _p->getTheme().getPadding();
-		return max<gsize_t>(_p->getParent()->getContentWidth() - pad * 2,getMinWidth());
+		return max<gsize_t>(_p->getParent()->getContentWidth(),getMinWidth());
 	}
 	gsize_t GridLayout::getPreferredHeight() const {
-		gsize_t pad = _p->getTheme().getPadding();
-		return max<gsize_t>(_p->getParent()->getContentHeight() - pad * 2,getMinHeight());
+		return max<gsize_t>(_p->getParent()->getContentHeight(),getMinHeight());
 	}
 
 	void GridLayout::rearrange() {
@@ -60,15 +58,15 @@ namespace gui {
 			return;
 
 		gsize_t pad = _p->getTheme().getPadding();
-		gsize_t cwidth = _p->getWidth() / _cols;
-		gsize_t cheight = _p->getHeight() / _rows;
+		gsize_t cwidth = (_p->getWidth() - (pad * (_cols - 1))) / _cols;
+		gsize_t cheight = (_p->getHeight() - (pad * (_rows - 1))) / _rows;
 
 		for(map<int,Control*>::iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			GridPos pos(it->first);
-			gpos_t x = pad + pos.col() * cwidth;
-			gpos_t y = pad + pos.row() * cheight;
+			gpos_t x = pos.col() * (cwidth + pad);
+			gpos_t y = pos.row() * (cheight + pad);
 			it->second->moveTo(x,y);
-			it->second->resizeTo(cwidth - pad * 2,cheight - pad * 2);
+			it->second->resizeTo(cwidth,cheight);
 		}
 	}
 

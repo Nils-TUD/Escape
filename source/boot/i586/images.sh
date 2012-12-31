@@ -17,7 +17,7 @@ module /sbin/fs /dev/fs cdrom iso9660
 title Escape - VGA-text
 kernel /boot/escape videomode=vga
 module /sbin/pci /dev/pci
-module /sbin/ata /system/devices/ata
+module /sbin/ata /system/devices/ata nodma
 module /sbin/cmos /dev/cmos
 module /sbin/fs /dev/fs cdrom iso9660
 

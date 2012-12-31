@@ -90,13 +90,13 @@
 
 // Macro for constexpr, to support in mixed 03/0x mode.
 #ifndef _GLIBCXX_CONSTEXPR
-# ifdef __GXX_EXPERIMENTAL_CXX0X__
+/*# ifdef __GXX_EXPERIMENTAL_CXX0X__
 #  define _GLIBCXX_CONSTEXPR constexpr
 #  define _GLIBCXX_USE_CONSTEXPR constexpr
-# else
+# else*/
 #  define _GLIBCXX_CONSTEXPR
 #  define _GLIBCXX_USE_CONSTEXPR const
-# endif
+/*# endif*/
 #endif
 
 // Macro for extern template, ie controling template linkage via use
@@ -157,9 +157,11 @@ namespace std
 #endif
   typedef __PTRDIFF_TYPE__	ptrdiff_t;
 
+/*
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
   typedef decltype(nullptr)	nullptr_t;
 #endif
+*/
 }
 
 

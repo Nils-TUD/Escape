@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SHELLCONTROL_H_
-#define SHELLCONTROL_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/control.h>
@@ -90,5 +89,3 @@ private:
 	size_t _lastRow;
 	sVTerm *_vt;
 };
-
-#endif /* SHELLCONTROL_H_ */

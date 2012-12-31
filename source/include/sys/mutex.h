@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MUTEX_H_
-#define MUTEX_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -45,5 +44,3 @@ bool mutex_tryAquire(mutex_t *m);
  * @param m the mutex
  */
 void mutex_release(mutex_t *m);
-
-#endif /* MUTEX_H_ */

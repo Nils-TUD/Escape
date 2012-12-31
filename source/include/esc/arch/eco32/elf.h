@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_ELF_H_
-#define ECO32_ELF_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -37,5 +36,3 @@ typedef Elf32_Dyn sElfDyn;
 typedef Elf32_Rel sElfRel;
 
 #define ELF_TYPE		32
-
-#endif /* ECO32_ELF_H_ */

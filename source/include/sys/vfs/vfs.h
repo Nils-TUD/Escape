@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VFS_H_
-#define VFS_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/event.h>
@@ -521,5 +520,3 @@ void vfs_printFile(sFile *f);
  * @return the number of entries in the global file table
  */
 size_t vfs_dbg_getGFTEntryCount(void);
-
-#endif /* VFS_H_ */

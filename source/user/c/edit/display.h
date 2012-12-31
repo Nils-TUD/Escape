@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DISPLAY_H_
-#define DISPLAY_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -97,5 +96,3 @@ int displ_getSaveFile(char *file,size_t bufSize);
  * @return the display-length of the given character
  */
 size_t displ_getCharLen(char c);
-
-#endif /* DISPLAY_H_ */

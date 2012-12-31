@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GRIDLAYOUT_H_
-#define GRIDLAYOUT_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/layout/layout.h>
@@ -90,5 +89,3 @@ namespace gui {
 		std::map<int,Control*> _ctrls;
 	};
 }
-
-#endif /* GRIDLAYOUT_H_ */

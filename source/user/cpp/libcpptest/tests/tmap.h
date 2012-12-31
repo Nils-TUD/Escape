@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TMAP_H_
-#define TMAP_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/test.h>
 
 extern sTestModule tModMap;
-
-#endif /* TMAP_H_ */

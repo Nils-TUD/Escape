@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STD_UTILITY_
-#define STD_UTILITY_
+#pragma once
 
 #include <stddef.h>
 
@@ -58,5 +57,3 @@ namespace std {
 }
 
 #include "../../lib/cpp/utility.cc"
-
-#endif /* STD_UTILITY_ */

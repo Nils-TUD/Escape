@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VMFREE_H_
-#define VMFREE_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -92,5 +91,3 @@ size_t vmfree_getSize(sVMFreeMap *map,size_t *areas);
  * @param map the map
  */
 void vmfree_print(sVMFreeMap *map);
-
-#endif /* VMFREE_H_ */

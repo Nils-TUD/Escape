@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IO_H_
-#define IO_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
@@ -300,5 +299,3 @@ bool isdir(const char *path);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* IO_H_ */

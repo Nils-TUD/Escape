@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TERMINATOR_H_
-#define TERMINATOR_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -40,5 +39,3 @@ void term_start(void);
  * @param t the thread
  */
 void term_addDead(sThread *t);
-
-#endif /* TERMINATOR_H_ */

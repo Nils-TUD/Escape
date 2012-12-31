@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KEYBOARD_H_
-#define KEYBOARD_H_
+#pragma once
 
 #include <esc/common.h>
 
 int keyboard_start(void *drvIdPtr);
-
-#endif /* KEYBOARD_H_ */

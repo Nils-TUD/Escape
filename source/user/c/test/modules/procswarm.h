@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROCSWARM_H_
-#define PROCSWARM_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Creates many processes that do some work and wait in a loop
  */
 int mod_procswarm(int argc,char *argv[]);
-
-#endif /* PROCSWARM_H_ */

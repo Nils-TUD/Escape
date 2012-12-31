@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ESCCODES_H_
-#define ESCCODES_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -69,5 +68,3 @@ int escc_get(const char **str,int *n1,int *n2,int *n3);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* ESCCODES_H_ */

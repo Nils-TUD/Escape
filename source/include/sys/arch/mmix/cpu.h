@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_CPU_H_
-#define MMIX_CPU_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -123,5 +122,3 @@ extern uint64_t cpu_getGlobal(int rno);
  * @return the value
  */
 extern uint64_t cpu_getSpecial(int rno);
-
-#endif /* MMIX_CPU_H_ */

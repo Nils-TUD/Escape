@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ENV_H_
-#define ENV_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
@@ -68,5 +67,3 @@ void env_removeFor(pid_t pid);
  * @param pid the process-id
  */
 void env_printAllOf(pid_t pid);
-
-#endif /* ENV_H_ */

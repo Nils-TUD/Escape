@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PINGPONG_H_
-#define PINGPONG_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Tests message-ping-pong
  */
 int mod_pingpong(int argc,char *argv[]);
-
-#endif /* PINGPONG_H_ */

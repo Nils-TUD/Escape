@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_MEM_H_
-#define SYSCALLS_MEM_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -37,5 +36,3 @@ int sysc_shmcrt(sThread *t,sIntrptStackFrame *stack);
 int sysc_shmjoin(sThread *t,sIntrptStackFrame *stack);
 int sysc_shmleave(sThread *t,sIntrptStackFrame *stack);
 int sysc_shmdel(sThread *t,sIntrptStackFrame *stack);
-
-#endif /* SYSCALLS_MEM_H_ */

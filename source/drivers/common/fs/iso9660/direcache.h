@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DIRECACHE_H_
-#define DIRECACHE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "iso9660.h"
@@ -47,5 +46,3 @@ const sISOCDirEntry *iso_direc_get(sISO9660 *h,inode_t id);
  * @param h the iso9660 handle
  */
 void iso_dire_print(FILE *f,sISO9660 *h);
-
-#endif /* DIRECACHE_H_ */

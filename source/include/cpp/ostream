@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef OSTREAM_
-#define OSTREAM_
+#pragma once
 
 #include <stddef.h>
 #include <esc/width.h>
@@ -237,5 +236,3 @@ namespace std {
 }
 
 #include "../../lib/cpp/ostream.cc"
-
-#endif /* OSTREAM_ */

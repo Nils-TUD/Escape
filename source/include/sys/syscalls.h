@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_H_
-#define SYSCALLS_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -64,5 +63,3 @@ bool sysc_isStrInUserSpace(const char *str,size_t *len);
  * @return true if the string is valid
  */
 bool sysc_absolutize_path(char *dst,size_t size,const char *src);
-
-#endif /* SYSCALLS_H_ */

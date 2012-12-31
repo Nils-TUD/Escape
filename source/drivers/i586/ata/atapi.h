@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ATAPI_H_
-#define ATAPI_H_
+#pragma once
 
 #include <esc/common.h>
 #include "device.h"
@@ -45,5 +44,3 @@ bool atapi_read(sATADevice *device,uint op,void *buffer,uint64_t lba,size_t secS
  * @return the capacity or 0 if failed
  */
 size_t atapi_getCapacity(sATADevice *device);
-
-#endif /* ATAPI_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PORTS_H_
-#define PORTS_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -69,5 +68,3 @@ extern uint16_t ports_inWord(uint16_t port);
  * @return the value
  */
 extern uint32_t ports_inDWord(uint16_t port);
-
-#endif /* PORTS_H_ */

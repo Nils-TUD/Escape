@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DISPLAY_H_
-#define DISPLAY_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/io.h>
@@ -37,5 +36,3 @@ bool displ_init(void);
 void displ_destroy(void);
 
 void displ_update(void);
-
-#endif /* DISPLAY_H_ */

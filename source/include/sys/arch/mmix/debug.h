@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_DEBUG_H_
-#define MMIX_DEBUG_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stdarg.h>
@@ -74,5 +73,3 @@ void debugi(long n);
  * @param s the string
  */
 void debugs(const char *s);
-
-#endif /* MMIX_DEBUG_H_ */

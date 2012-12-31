@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TRINGBUFFER_H_
-#define TRINGBUFFER_H_
+#pragma once
 
 #include <sys/common.h>
 #include <esc/test.h>
 
 extern sTestModule tModRBuffer;
-
-#endif /* TRINGBUFFER_H_ */

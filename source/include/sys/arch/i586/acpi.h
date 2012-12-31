@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ACPI_H_
-#define ACPI_H_
+#pragma once
 
 #include <sys/common.h>
 
 bool acpi_find(void);
 void acpi_parse(void);
-
-#endif /* ACPI_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VM86_H_
-#define VM86_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -73,5 +72,3 @@ int vm86int(uint16_t interrupt,sVM86Regs *regs,sVM86Memarea *area);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* VM86_H_ */

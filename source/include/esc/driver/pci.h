@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVER_PCI_H_
-#define DRIVER_PCI_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -33,5 +32,3 @@ int pci_getById(uchar bus,uchar dev,uchar func,sPCIDevice *d);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* DRIVER_PCI_H_ */

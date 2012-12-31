@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXT2_H_
-#define EXT2_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -450,5 +449,3 @@ void ext2_print(FILE *f,void *h);
 void ext2_printBlockGroups(sExt2 *e);
 
 #endif
-
-#endif /* EXT2_H_ */

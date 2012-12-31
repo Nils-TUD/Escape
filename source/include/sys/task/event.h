@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EVENT_H_
-#define EVENT_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -182,5 +181,3 @@ void ev_printEvMask(const sThread *t);
  * Prints all waiting threads
  */
 void ev_print(void);
-
-#endif /* EVENT_H_ */

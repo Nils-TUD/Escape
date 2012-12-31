@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef WINDOWLISTENER_H_
-#define WINDOWLISTENER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <string>
@@ -54,5 +53,3 @@ namespace gui {
 		virtual void onWindowDestroyed(gwinid_t id) = 0;
 	};
 }
-
-#endif /* WINDOWLISTENER_H_ */

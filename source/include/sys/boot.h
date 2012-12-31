@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BOOT_H_
-#define BOOT_H_
+#pragma once
 
 #include <esc/common.h>
 #include <sys/intrpt.h>
@@ -109,5 +108,3 @@ int boot_loadModules(sIntrptStackFrame *stack);
  * Prints all interesting elements of the multi-boot-structure
  */
 void boot_print(void);
-
-#endif /* BOOT_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EDITABLE_H_
-#define EDITABLE_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/control.h>
@@ -111,5 +110,3 @@ namespace gui {
 		string _str;
 	};
 }
-
-#endif /* EDITABLE_H_ */

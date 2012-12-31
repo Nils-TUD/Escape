@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VTOUT_H_
-#define VTOUT_H_
+#pragma once
 
 #include <esc/common.h>
 #include "vtctrl.h"
@@ -48,5 +47,3 @@ void vtout_putchar(sVTerm *vt,char c);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* VTOUT_H_ */

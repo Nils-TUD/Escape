@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_PAGING_H_
-#define I586_PAGING_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -245,5 +244,3 @@ uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count);
  * @param count the number of pages
  */
 void paging_unmapFromTemp(size_t count);
-
-#endif /* I586_PAGING_H_ */

@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PWD_H_
-#define PWD_H_
+#pragma once
 
 #include <esc/common.h>
 
 int shell_cmdPwd(int argc,char **argv);
-
-#endif /* PWD_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef UENV_H_
-#define UENV_H_
+#pragma once
 
 #include <esc/common.h>
 #include <sys/intrpt.h>
@@ -66,5 +65,3 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,int signal);
  */
 bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo *info,
 		uintptr_t entryPoint,int fd);
-
-#endif /* UENV_H_ */

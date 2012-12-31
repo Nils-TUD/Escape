@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GRAPHICFACTORY_H_
-#define GRAPHICFACTORY_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/graphics.h>
@@ -49,5 +48,3 @@ namespace gui {
 		GraphicFactory &operator=(const GraphicFactory &g);
 	};
 }
-
-#endif /* GRAPHICFACTORY_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DIR_H_
-#define DIR_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
@@ -76,5 +75,3 @@ void closedir(DIR *dir);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* DIR_H_ */

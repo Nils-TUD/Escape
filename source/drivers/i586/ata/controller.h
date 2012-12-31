@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CTRL_H_
-#define CTRL_H_
+#pragma once
 
 #include <esc/common.h>
 #include "device.h"
@@ -162,5 +161,3 @@ int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t 
  * @param ctrl the controller
  */
 void ctrl_wait(sATAController *ctrl);
-
-#endif /* CTRL_H_ */

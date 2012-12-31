@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VIDEO_H_
-#define VIDEO_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/printf.h>
@@ -111,5 +110,3 @@ void vid_printf(const char *fmt,...);
  * @param ap the argument-list
  */
 void vid_vprintf(const char *fmt,va_list ap);
-
-#endif

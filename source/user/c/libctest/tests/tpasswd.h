@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TPASSWD_H_
-#define TPASSWD_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/test.h>
 
 extern sTestModule tModPasswd;
-
-#endif /* TPASSWD_H_ */

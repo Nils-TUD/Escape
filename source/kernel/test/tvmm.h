@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TVMM_H_
-#define TVMM_H_
+#pragma once
 
 #include <esc/test.h>
 
 extern sTestModule tModVmm;
-
-#endif /* TVMM_H_ */

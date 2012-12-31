@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SWAPMAP_H_
-#define SWAPMAP_H_
+#pragma once
 
 #include <sys/common.h>
 #include <esc/sllist.h>
@@ -74,5 +73,3 @@ void swmap_free(ulong block);
  * Prints the swap-map
  */
 void swmap_print(void);
-
-#endif /* SWAPMAP_H_ */

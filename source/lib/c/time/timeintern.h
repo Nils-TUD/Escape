@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TIMEINTERN_H_
-#define TIMEINTERN_H_
+#pragma once
 
 #include <esc/common.h>
 #include <time.h>
@@ -36,5 +35,3 @@
 extern const uchar daysPerMonth[2][12];
 
 int readdate(struct tm *t);
-
-#endif /* TIMEINTERN_H_ */

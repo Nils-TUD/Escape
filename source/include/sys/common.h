@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYS_COMMON_H_
-#define SYS_COMMON_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/defines.h>
@@ -43,5 +42,3 @@ typedef uint mutex_t;
 #define K						1024
 #define M						(1024 * K)
 #define G						(1024 * M)
-
-#endif /*SYS_COMMON_H_*/

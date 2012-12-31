@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef OBJLIST_H_
-#define OBJLIST_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -31,5 +30,3 @@ void objlist_add(sObject *o);
 sSLList *objlist_get(void);
 
 int objlist_tick(void);
-
-#endif /* OBJLIST_H_ */

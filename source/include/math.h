@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MATH_H_
-#define MATH_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -51,5 +50,3 @@ int isnanf(float x);
 
 int isinf(double x);
 int isinff(float x);
-
-#endif /* MATH_H_ */

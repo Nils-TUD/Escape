@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PIPE_H_
-#define PIPE_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
@@ -31,5 +30,3 @@
  * @return the created node or NULL
  */
 sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent);
-
-#endif /* PIPE_H_ */

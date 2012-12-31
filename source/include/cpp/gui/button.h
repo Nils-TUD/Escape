@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BUTTON_H_
-#define BUTTON_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
@@ -72,5 +71,3 @@ namespace gui {
 		string _text;
 	};
 }
-
-#endif /* BUTTON_H_ */

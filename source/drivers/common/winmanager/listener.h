@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LISTENER_H_
-#define LISTENER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -27,5 +26,3 @@ void listener_init(int id);
 bool listener_add(inode_t client,msgid_t mid);
 void listener_notify(msgid_t mid,const sMsg *msg,size_t size);
 void listener_remove(inode_t client,msgid_t mid);
-
-#endif /* LISTENER_H_ */

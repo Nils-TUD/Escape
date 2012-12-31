@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SLLNODES_H_
-#define SLLNODES_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -36,5 +35,3 @@ void *slln_allocNode(size_t size);
  * @param o the node
  */
 void slln_freeNode(void *o);
-
-#endif /* SLLNODES_H_ */

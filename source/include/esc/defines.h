@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DEFINES_H_
-#define DEFINES_H_
+#pragma once
 
 /* exit-codes */
 #define EXIT_FAILURE			1
@@ -48,5 +47,3 @@
 #define A_INIT					__attribute__((section(".ctors")))
 #define A_UNUSED				__attribute__((unused))
 #define A_INLINE				__attribute__((inline))
-
-#endif /* DEFINES_H_ */

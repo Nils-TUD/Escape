@@ -2,8 +2,7 @@
  * $Id$
  */
 
-#ifndef IMAGEBUTTON_H_
-#define IMAGEBUTTON_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/image/image.h>
@@ -33,5 +32,3 @@ namespace gui {
 		bool _border;
 	};
 }
-
-#endif /* IMAGEBUTTON_H_ */

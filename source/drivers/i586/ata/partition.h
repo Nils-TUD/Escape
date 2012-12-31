@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PARTITION_H_
-#define PARTITION_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -41,5 +40,3 @@ typedef struct {
  * @param mbr the content of the first sector
  */
 void part_fillPartitions(sPartition *table,void *mbr);
-
-#endif /* PARTITION_H_ */

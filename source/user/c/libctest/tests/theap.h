@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef THEAP_H_
-#define THEAP_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/test.h>
 
 extern sTestModule tModHeap;
-
-#endif /* THEAP_H_ */

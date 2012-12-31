@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VFSREAL_H_
-#define VFSREAL_H_
+#pragma once
 
 #include <sys/common.h>
 #include <esc/fsinterface.h>
@@ -193,5 +192,3 @@ void vfs_fsmsgs_close(pid_t pid,inode_t inodeNo,dev_t devNo);
  * @param p the process
  */
 void vfs_fsmsgs_printFSChans(const sProc *p);
-
-#endif /* VFSREAL_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_BOOT_H_
-#define I586_BOOT_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/intrpt.h>
@@ -123,5 +122,3 @@ const sBootInfo *boot_getInfo(void);
  * The boot-tasks to load
  */
 sBootTaskList bootTaskList;
-
-#endif /* I586_BOOT_H_ */

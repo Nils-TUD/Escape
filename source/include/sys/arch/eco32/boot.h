@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_BOOT_H_
-#define ECO32_BOOT_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -63,5 +62,3 @@ const sBootInfo *boot_getInfo(void);
  * The boot-tasks to load
  */
 const sBootTaskList bootTaskList;
-
-#endif /* ECO32_BOOT_H_ */

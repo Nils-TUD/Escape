@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FUNCTIONAL_
-#define FUNCTIONAL_
+#pragma once
 
 #include <stddef.h>
 
@@ -274,5 +273,3 @@ namespace std {
 }
 
 #include "../../lib/cpp/functional.cc"
-
-#endif /* FUNCTIONAL_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef OOC_H_
-#define OOC_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Tests object-orientation in c
  */
 int mod_ooc(int argc,char *argv[]);
-
-#endif /* OOC_H_ */

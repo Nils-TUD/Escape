@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BITMAP_H_
-#define BITMAP_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -62,5 +61,3 @@ block_t ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode);
  * @return 0 on success
  */
 int ext2_bm_freeBlock(sExt2 *e,block_t blockNo);
-
-#endif /* BITMAP_H_ */

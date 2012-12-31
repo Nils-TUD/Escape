@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MESSAGES_H_
-#define MESSAGES_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
@@ -286,5 +285,3 @@ typedef union {
 	sStrMsg str;
 	sDataMsg data;
 } sMsg;
-
-#endif /* MESSAGES_H_ */

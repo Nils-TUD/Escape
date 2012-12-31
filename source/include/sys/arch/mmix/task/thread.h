@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_THREAD_H_
-#define MMIX_THREAD_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -30,5 +29,3 @@ void thread_popSpecRegs(void);
  * Performs a thread-switch
  */
 void thread_doSwitch(void);
-
-#endif /* MMIX_THREAD_H_ */

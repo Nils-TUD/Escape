@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LOG_H_
-#define LOG_H_
+#pragma once
 
 #include <sys/common.h>
 #include <stdarg.h>
@@ -54,5 +53,3 @@ void log_printf(const char *fmt,...);
  * @param ap the argument-list
  */
 void log_vprintf(const char *fmt,va_list ap);
-
-#endif /* LOG_H_ */

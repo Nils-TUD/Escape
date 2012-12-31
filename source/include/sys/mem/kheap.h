@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KHEAP_H_
-#define KHEAP_H_
+#pragma once
 
 #include <sys/common.h>
 #include <assert.h>
@@ -114,5 +113,3 @@ uintptr_t kheap_allocSpace(size_t count);
  * Prints the kernel-heap data-structure
  */
 void kheap_print(void);
-
-#endif /* KHEAP_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROPERTY_H_
-#define PROPERTY_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -63,5 +62,3 @@ void ast_printProperty(sProperty *s,uint layer);
  * @param n the expression
  */
 void ast_destroyProperty(sProperty *n);
-
-#endif /* PROPERTY_H_ */

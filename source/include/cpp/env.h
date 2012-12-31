@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ENV_H_
-#define ENV_H_
+#pragma once
 
 #include <string>
 #include <map>
@@ -71,5 +70,3 @@ namespace std {
 		env& operator =(const env& e);
 	};
 }
-
-#endif /* ENV_H_ */

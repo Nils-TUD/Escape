@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_PAGING_H_
-#define MMIX_PAGING_H_
+#pragma once
 
 #include <esc/common.h>
 #include <sys/arch/mmix/mem/addrspace.h>
@@ -130,5 +129,3 @@ typedef struct {
 	uint64_t rv;
 	ulong ptables;
 } pagedir_t;
-
-#endif /* MMIX_PAGING_H_ */

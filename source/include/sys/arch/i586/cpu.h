@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_CPU_H_
-#define I586_CPU_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/printf.h>
@@ -147,5 +146,3 @@ extern uint64_t cpu_getMSR(uint32_t msr);
  * @param value the new value
  */
 extern void cpu_setMSR(uint32_t msr,uint64_t value);
-
-#endif /*I586_CPU_H_*/

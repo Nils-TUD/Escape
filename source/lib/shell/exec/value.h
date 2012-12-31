@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VALUE_H_
-#define VALUE_H_
+#pragma once
 
 #include <esc/common.h>
 #include <string.h>
@@ -205,5 +204,3 @@ char *val_getStr(const sValue *v);
  * @return the vector with the elements; you have to free it!
  */
 sVector *val_getArray(const sValue *v);
-
-#endif /* VALUE_H_ */

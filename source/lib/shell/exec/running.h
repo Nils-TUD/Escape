@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef RUNNING_H_
-#define RUNNING_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -83,5 +82,3 @@ void run_gc(void);
  * @param pid the pid
  */
 void run_remProc(pid_t pid);
-
-#endif /* RUNNING_H_ */

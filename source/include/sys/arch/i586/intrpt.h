@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_INTRPT_H_
-#define I586_INTRPT_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -218,5 +217,3 @@ typedef struct {
 	uint16_t vm86gs;
 	uint16_t : 16;
 } A_PACKED sIntrptStackFrame;
-
-#endif /* I586_INTRPT_H_ */

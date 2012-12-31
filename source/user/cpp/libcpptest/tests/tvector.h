@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TVECTOR_H_
-#define TVECTOR_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/test.h>
 
 extern sTestModule tModVector;
-
-#endif /* TVECTOR_H_ */

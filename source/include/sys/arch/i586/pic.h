@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PIC_H_
-#define PIC_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -31,5 +30,3 @@ void pic_init(void);
  * Sends an EOI for the given interrupt-number
  */
 void pic_eoi(uint32_t intrptNo);
-
-#endif /* PIC_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_THREADCONF_H_
-#define ECO32_THREADCONF_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -44,5 +43,3 @@ typedef struct {
 	/* the frame mapped at KERNEL_STACK */
 	frameno_t kstackFrame;
 } sThreadArchAttr;
-
-#endif /* ECO32_THREADCONF_H_ */

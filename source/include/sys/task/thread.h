@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef THREAD_H_
-#define THREAD_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
@@ -624,5 +623,3 @@ void thread_print(const sThread *t);
  * @param state the pointer to the state-struct
  */
 void thread_printState(const sThreadRegs *state);
-
-#endif /* THREAD_H_ */

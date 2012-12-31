@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVE_H_
-#define DRIVE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "partition.h"
@@ -338,5 +337,3 @@ void device_init(sATADevice *device);
 void device_dbg_printInfo(sATADevice *device);
 
 #endif
-
-#endif /* DRIVE_H_ */

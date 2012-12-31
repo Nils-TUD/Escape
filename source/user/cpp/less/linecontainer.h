@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LINECONTAINER_H_
-#define LINECONTAINER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/mem.h>
@@ -89,5 +88,3 @@ private:
 	size_type _lines;
 	size_type _lineLen;
 };
-
-#endif /* LINECONTAINER_H_ */

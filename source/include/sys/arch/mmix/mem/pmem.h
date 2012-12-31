@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_PMEM_H_
-#define MMIX_PMEM_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -71,5 +70,3 @@
 #define PMEM_END				0x8000FFFF00000000
 
 typedef ulong tBitmap;
-
-#endif /* MMIX_PMEM_H_ */

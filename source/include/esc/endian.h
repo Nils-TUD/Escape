@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ENDIAN_H_
-#define ENDIAN_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -31,5 +30,3 @@
 #ifdef __mmix__
 #include <esc/arch/mmix/endian.h>
 #endif
-
-#endif /* ENDIAN_H_ */

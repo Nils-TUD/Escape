@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONSOLE_H_
-#define CONSOLE_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/dbg/lines.h>
@@ -49,5 +48,3 @@ void cons_setLogEnabled(bool enabled);
  * @param l the lines
  */
 void cons_viewLines(const sLines *l);
-
-#endif /* CONSOLE_H_ */

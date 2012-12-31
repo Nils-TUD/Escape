@@ -17,9 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FSREADS_H_
-#define FSREADS_H_
+#pragma once
 
 int mod_fsreads(int argc,char *argv[]);
-
-#endif /* FSREADS_H_ */

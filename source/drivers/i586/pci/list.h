@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIST_H_
-#define LIST_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -49,5 +48,3 @@ sPCIDevice *list_getByClass(uchar baseClass,uchar subClass);
  * @return the device or NULL
  */
 sPCIDevice *list_getById(uchar bus,uchar dev,uchar func);
-
-#endif /* LIST_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYS_PROC_H_
-#define SYS_PROC_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/mem/region.h>
@@ -418,5 +417,3 @@ void proc_dbg_startProf(void);
 void proc_dbg_stopProf(void);
 
 #endif
-
-#endif /*SYS_PROC_H_*/

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CTYPE_H_
-#define CTYPE_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -125,5 +124,3 @@ int toupper(int ch);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CTYPE_H_ */

@@ -2,8 +2,7 @@
  * $Id$
  */
 
-#ifndef EVENTLIST_H_
-#define EVENTLIST_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/uielement.h>
@@ -47,5 +46,3 @@ namespace gui {
 		std::vector<T*> _listener;
 	};
 }
-
-#endif /* EVENTLIST_H_ */

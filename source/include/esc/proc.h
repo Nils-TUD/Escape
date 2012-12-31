@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROC_H_
-#define PROC_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -222,5 +221,3 @@ void exit(int errorCode) A_NORETURN;
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* PROC_H_ */

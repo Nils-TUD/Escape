@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IOBUF_H_
-#define IOBUF_H_
+#pragma once
 
+#define IOBUF_H_
 #include <esc/common.h>
 #include <esc/thread.h>
 #include <esc/sllist.h>
@@ -120,5 +120,3 @@ FILE *bcreate(int fd,uint flags,char *buffer,size_t size,bool dynamic);
 extern const char *hexCharsBig;
 extern const char *hexCharsSmall;
 extern sSLList iostreams;
-
-#endif /* IOBUF_H_ */

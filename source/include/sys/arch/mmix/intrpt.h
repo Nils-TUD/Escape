@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_INTRPT_H_
-#define MMIX_INTRPT_H_
+#pragma once
 
 #include <esc/common.h>
 
 typedef uint64_t sIntrptStackFrame;
-
-#endif /* MMIX_INTRPT_H_ */

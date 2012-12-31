@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef APPLICATION_H_
-#define APPLICATION_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -241,5 +240,3 @@ namespace gui {
 		Theme _defTheme;
 	};
 }
-
-#endif /* APPLICATION_H_ */

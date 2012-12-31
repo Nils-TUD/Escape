@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef WHILESTMT_H_
-#define WHILESTMT_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -61,5 +60,3 @@ void ast_printWhileStmt(sWhileStmt *s,uint layer);
  * @param n the statement
  */
 void ast_destroyWhileStmt(sWhileStmt *n);
-
-#endif /* WHILESTMT_H_ */

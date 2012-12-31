@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PATH_H_
-#define PATH_H_
+#pragma once
 
 #include <esc/common.h>
 #include "iso9660.h"
@@ -35,5 +34,3 @@
  * @return the id or < 0
  */
 inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt);
-
-#endif /* PATH_H_ */

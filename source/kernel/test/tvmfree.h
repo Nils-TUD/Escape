@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TVMFREE_H_
-#define TVMFREE_H_
+#pragma once
 
 #include <esc/test.h>
 
 extern sTestModule tModVMFree;
-
-#endif /* TVMFREE_H_ */

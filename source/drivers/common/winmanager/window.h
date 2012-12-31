@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef WINDOW_H_
-#define WINDOW_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -220,5 +219,3 @@ void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 void win_dbg_print(void);
 
 #endif
-
-#endif /* WINDOW_H_ */

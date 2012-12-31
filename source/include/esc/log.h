@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LOG_H_
-#define LOG_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -34,5 +33,3 @@ void logc(char c);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* LOG_H_ */

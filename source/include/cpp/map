@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MAP_
-#define MAP_
+#pragma once
 
 #include <stddef.h>
 #include <impl/map/bintree.h>
@@ -283,5 +282,3 @@ namespace std {
 }
 
 #include "../../lib/cpp/map.cc"
-
-#endif /* MAP_ */

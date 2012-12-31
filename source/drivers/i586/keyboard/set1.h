@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SET1_H_
-#define SET1_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -31,5 +30,3 @@
  * @return true if it was a keycode
  */
 bool kb_set1_getKeycode(uchar *isBreak,uchar *keycode,uchar scanCode);
-
-#endif /* SET1_H_ */

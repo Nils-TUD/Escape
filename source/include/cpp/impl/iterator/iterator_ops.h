@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ITERATOR_OPS_H_
-#define ITERATOR_OPS_H_
+#pragma once
 
 #include <stddef.h>
 
@@ -32,5 +31,3 @@ namespace std {
 }
 
 #include "../../../../lib/cpp/impl/iterator/iterator_ops.cc"
-
-#endif /* ITERATOR_OPS_H_ */

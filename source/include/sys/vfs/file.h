@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FILE_H_
-#define FILE_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
@@ -61,5 +60,3 @@ ssize_t vfs_file_read(pid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t of
  * @return the number of written bytes
  */
 ssize_t vfs_file_write(pid_t pid,sFile *file,sVFSNode *n,const void *buffer,off_t offset,size_t count);
-
-#endif /* FILE_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GROUPS_H_
-#define GROUPS_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
@@ -75,5 +74,3 @@ void groups_leave(pid_t pid);
  * @param pid the process-id
  */
 void groups_print(pid_t pid);
-
-#endif /* GROUPS_H_ */

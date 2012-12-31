@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VFSINFO_H_
-#define VFSINFO_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -62,5 +61,3 @@ ssize_t vfs_info_mapsReadHandler(pid_t pid,sFile *file,sVFSNode *node,USER void 
  */
 ssize_t vfs_info_virtMemReadHandler(pid_t pid,sFile *file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count);
-
-#endif /* VFSINFO_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SHAREDMEM_H_
-#define SHAREDMEM_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
@@ -89,5 +88,3 @@ void shm_remProc(pid_t pid);
  * Prints all shared-memory regions
  */
 void shm_print(void);
-
-#endif /* SHAREDMEM_H_ */

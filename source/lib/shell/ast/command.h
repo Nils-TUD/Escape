@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COMMAND_H_
-#define COMMAND_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -85,5 +84,3 @@ void ast_printCommand(sCommand *s,uint layer);
  * @param n the command
  */
 void ast_destroyCommand(sCommand *n);
-
-#endif /* COMMAND_H_ */

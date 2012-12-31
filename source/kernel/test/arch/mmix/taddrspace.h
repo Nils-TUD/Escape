@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TADDRSPACE_H_
-#define TADDRSPACE_H_
+#pragma once
 
 #include <sys/common.h>
 #include <esc/test.h>
 
 extern sTestModule tModAddrSpace;
-
-#endif /* TADDRSPACE_H_ */

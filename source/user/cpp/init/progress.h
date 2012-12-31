@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROGRESS_H_
-#define PROGRESS_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -66,5 +65,3 @@ private:
 	sVTSize _vtSize;
 	char _emptyBar[BAR_WIDTH * 2];
 };
-
-#endif /* PROGRESS_H_ */

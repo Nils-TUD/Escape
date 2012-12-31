@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ITERATOR_TYPES_H_
-#define ITERATOR_TYPES_H_
+#pragma once
 
 #include <stddef.h>
 
@@ -130,5 +129,3 @@ namespace std {
 	class ostreambuf_iterator;
 #endif
 }
-
-#endif /* ITERATOR_TYPES_H_ */

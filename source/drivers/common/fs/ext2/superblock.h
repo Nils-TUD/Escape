@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SUPERBLOCK_H_
-#define SUPERBLOCK_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -37,5 +36,3 @@ int ext2_super_init(sExt2 *e);
  * @param e the ext2-data
  */
 void ext2_super_update(sExt2 *e);
-
-#endif /* SUPERBLOCK_H_ */

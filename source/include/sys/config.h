@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONFIG_H_
-#define CONFIG_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -59,5 +58,3 @@ const char *conf_getStr(int id);
  * @return the value or < 0 if an error occurred
  */
 long conf_get(int id);
-
-#endif /* CONFIG_H_ */

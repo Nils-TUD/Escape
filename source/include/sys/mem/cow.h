@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COW_H_
-#define COW_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
@@ -66,5 +65,3 @@ size_t cow_getFrmCount(void);
  * Prints the cow-list
  */
 void cow_print(void);
-
-#endif /* COW_H_ */

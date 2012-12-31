@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TIMER_H_
-#define TIMER_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -88,5 +87,3 @@ bool timer_intrpt(void);
  * Prints the timer-queue
  */
 void timer_print(void);
-
-#endif /* TIMER_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IFSTMT_H_
-#define IFSTMT_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -63,5 +62,3 @@ void ast_printIfStmt(sIfStmt *s,uint layer);
  * @param n the statement
  */
 void ast_destroyIfStmt(sIfStmt *n);
-
-#endif /* IFSTMT_H_ */

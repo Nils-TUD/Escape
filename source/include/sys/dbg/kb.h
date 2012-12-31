@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KB_H_
-#define KB_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -52,5 +51,3 @@ uint8_t kb_getKeyCode(uint8_t *flags);
  * @return true if a key could be read. false if not (always true, when <wait> is true)
  */
 bool kb_get(sKeyEvent *ev,uint8_t events,bool wait);
-
-#endif /* KB_H_ */

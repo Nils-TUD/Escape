@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef UTILVECTOR_H_
-#define UTILVECTOR_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stdlib.h>
@@ -142,5 +141,3 @@ void vec_destroy(sVector *v,bool freeElements);
 void vec_dbg_print(sVector *v);
 
 #endif
-
-#endif /* UTILVECTOR_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_UTIL_H_
-#define I586_UTIL_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -33,5 +32,3 @@ void util_startTimer(void);
  * @param prefix the prefix to display
  */
 void util_stopTimer(const char *prefix,...);
-
-#endif /* I586_UTIL_H_ */

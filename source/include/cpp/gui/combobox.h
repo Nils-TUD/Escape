@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COMBOBOX_H_
-#define COMBOBOX_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/popupwindow.h>
@@ -102,5 +101,3 @@ namespace gui {
 		ItemWindow *_win;
 	};
 }
-
-#endif /* COMBOBOX_H_ */

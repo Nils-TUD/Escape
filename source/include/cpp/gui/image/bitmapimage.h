@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BITMAP_H_
-#define BITMAP_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/image/image.h>
@@ -129,5 +128,3 @@ namespace gui {
 		size_t _dataSize;
 	};
 }
-
-#endif /* BITMAP_H_ */

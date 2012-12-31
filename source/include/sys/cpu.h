@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPU_H_
-#define CPU_H_
+#pragma once
 
 #include <esc/common.h>
 #include <sys/printf.h>
@@ -54,5 +53,3 @@ void cpu_sprintf(sStringBuffer *buf);
  * Prints the CPU-information
  */
 void cpu_print(void);
-
-#endif /* CPU_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FD_H_
-#define FD_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -98,5 +97,3 @@ sFile *fd_unassoc(int fd);
  * @param p the process
  */
 void fd_print(sProc *p);
-
-#endif /* FD_H_ */

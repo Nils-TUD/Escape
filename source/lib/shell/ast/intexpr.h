@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INTEXPR_H_
-#define INTEXPR_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -60,5 +59,3 @@ void ast_printIntExpr(sIntExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyIntExpr(sIntExpr *n);
-
-#endif /* INTEXPR_H_ */

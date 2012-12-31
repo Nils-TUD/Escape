@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INTRPT_H_
-#define INTRPT_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -61,5 +60,3 @@ void intrpt_handler(sIntrptStackFrame *stack);
  * @param stack the interrupt-stack
  */
 void intrpt_printStackFrame(const sIntrptStackFrame *stack);
-
-#endif /*INTRPT_H_*/

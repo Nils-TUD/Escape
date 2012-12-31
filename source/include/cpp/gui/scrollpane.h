@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SCROLLVIEW_H_
-#define SCROLLVIEW_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/control.h>
@@ -132,5 +131,3 @@ namespace gui {
 		unsigned int _focus;
 	};
 }
-
-#endif /* SCROLLVIEW_H_ */

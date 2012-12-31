@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MOUSELISTENER_H_
-#define MOUSELISTENER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/event/event.h>
@@ -71,5 +70,3 @@ namespace gui {
 		MouseListener &operator=(const MouseListener &l);
 	};
 }
-
-#endif /* MOUSELISTENER_H_ */

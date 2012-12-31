@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_IO_H_
-#define SYSCALLS_IO_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -48,6 +47,4 @@ int sysc_mkdir(sThread *t,sIntrptStackFrame *stack);
 int sysc_rmdir(sThread *t,sIntrptStackFrame *stack);
 int sysc_mount(sThread *t,sIntrptStackFrame *stack);
 int sysc_unmount(sThread *t,sIntrptStackFrame *stack);
-
-#endif /* SYSCALLS_IO_H_ */
 

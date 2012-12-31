@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FSTIME_H_
-#define FSTIME_H_
+#pragma once
 
 #include <esc/common.h>
 #include <time.h>
 
 time_t timestamp(void);
-
-#endif /* FSTIME_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LINK_H_
-#define LINK_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -49,5 +48,3 @@ int ext2_link_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,sExt2CInode *cnode,con
  */
 int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,const char *name,
 		bool delDir);
-
-#endif /* LINK_H_ */

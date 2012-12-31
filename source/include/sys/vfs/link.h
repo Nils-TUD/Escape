@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LINK_H_
-#define LINK_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
@@ -39,5 +38,3 @@ sVFSNode *vfs_link_create(pid_t pid,sVFSNode *parent,char *name,const sVFSNode *
  * @return the link-target
  */
 sVFSNode *vfs_link_resolve(const sVFSNode *node);
-
-#endif /* LINK_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONTROL_H_
-#define CONTROL_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/uielement.h>
@@ -124,5 +123,3 @@ namespace gui {
 		gpos_t getParentOffY(UIElement *c) const;
 	};
 }
-
-#endif /* CONTROL_H_ */

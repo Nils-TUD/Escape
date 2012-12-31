@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VFSNODE_H_
-#define VFSNODE_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
@@ -213,5 +212,3 @@ void vfs_node_printTree(void);
  * Prints the given VFS node
  */
 void vfs_node_printNode(const sVFSNode *node);
-
-#endif /* VFSNODE_H_ */

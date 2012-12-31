@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KEYMAP_H_
-#define KEYMAP_H_
+#pragma once
 
 /* represents a not-printable character */
 #define NPRINT			'\0'
@@ -50,5 +49,3 @@ sKeymapEntry *km_parse(const char *file);
  * @return the character
  */
 char km_translateKeycode(sKeymapEntry *map,bool isBreak,uchar keycode,uchar *modifier);
-
-#endif /* KEYMAP_H_ */

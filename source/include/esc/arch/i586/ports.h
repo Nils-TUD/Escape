@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PORTS_H_
-#define PORTS_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -129,5 +128,3 @@ void inwords(uint16_t port,void *addr,size_t count);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* PORTS_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVERPROCESS_H_
-#define DRIVERPROCESS_H_
+#pragma once
 
 #include <esc/common.h>
 #include <usergroup/group.h>
@@ -85,5 +84,3 @@ private:
 std::istream& operator >>(std::istream& is,Device& dev);
 std::istream& operator >>(std::istream& is,DriverProcess& drv);
 std::ostream& operator <<(std::ostream& os,const DriverProcess& drv);
-
-#endif /* DRIVERPROCESS_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INIT_H_
-#define INIT_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Calls the init-function in all libraries
  */
 void load_init(void);
-
-#endif /* INIT_H_ */

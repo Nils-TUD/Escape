@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef RAWFILE_H_
-#define RAWFILE_H_
+#pragma once
 
 #include <stddef.h>
 #include <stdio.h>
@@ -138,5 +137,3 @@ namespace std {
 		int _fd;
 	};
 }
-
-#endif /* RAWFILE_H_ */

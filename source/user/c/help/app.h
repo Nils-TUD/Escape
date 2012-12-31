@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef APPSPARSER_H_
-#define APPSPARSER_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -42,5 +41,3 @@ typedef struct {
  * @return the position after parsing in <definition> or NULL if an error occurred
  */
 char *app_fromString(const char *definition,sApp *app);
-
-#endif /* APPSPARSER_H_ */

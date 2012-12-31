@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef HIGHCPU_H_
-#define HIGHCPU_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Causes high cpu-usage
  */
 int mod_highcpu(int argc,char *argv[]);
-
-#endif /* HIGHCPU_H_ */

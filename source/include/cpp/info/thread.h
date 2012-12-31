@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef THREAD_H_
-#define THREAD_H_
+#pragma once
 
 #include <istream>
 
@@ -105,5 +104,3 @@ namespace info {
 	std::istream& operator >>(std::istream& is,thread& t);
 	std::ostream& operator <<(std::ostream& os,const thread& t);
 }
-
-#endif /* THREAD_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VFSDRV_H_
-#define VFSDRV_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/vfs/node.h>
@@ -71,5 +70,3 @@ ssize_t vfs_devmsgs_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffe
  * @param node the VFS-node of the device
  */
 void vfs_devmsgs_close(pid_t pid,sFile *file,sVFSNode *node);
-
-#endif /* VFSDRV_H_ */

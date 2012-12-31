@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DBG_PANIC_H_
-#define DBG_PANIC_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -30,5 +29,3 @@
  * @return 0 on success
  */
 int cons_cmd_panic(size_t argc,char **argv);
-
-#endif /* DBG_PANIC_H_ */

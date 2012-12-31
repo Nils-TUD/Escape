@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SUBCMD_H_
-#define SUBCMD_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -77,5 +76,3 @@ void ast_printSubCmd(sSubCmd *s,uint layer);
  * @param n the command
  */
 void ast_destroySubCmd(sSubCmd *n);
-
-#endif /* SUBCMD_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPPSTRING_H_
-#define CPPSTRING_H_
+#pragma once
 
 #include <stddef.h>
 #include <iterator>
@@ -831,5 +830,3 @@ namespace std {
 }
 
 #include "../../lib/cpp/string.cc"
-
-#endif /* CPPSTRING_H_ */

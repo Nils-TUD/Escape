@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_ELF_H_
-#define MMIX_ELF_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -37,5 +36,3 @@ typedef Elf64_Dyn sElfDyn;
 typedef Elf64_Rel sElfRel;
 
 #define ELF_TYPE		64
-
-#endif /* MMIX_ELF_H_ */

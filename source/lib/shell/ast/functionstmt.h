@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FUNCTIONSTMT_H_
-#define FUNCTIONSTMT_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -80,5 +79,3 @@ void ast_destroyFunctionStmt(sFunctionStmt *n);
  * @param n the statement
  */
 void ast_killFunctionStmt(sFunctionStmt *n);
-
-#endif /* FUNCTIONSTMT_H_ */

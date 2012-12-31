@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_FILEBUF_H_
-#define BASIC_FILEBUF_H_
+#pragma once
 
 #include <stddef.h>
 #include <esc/io.h>
@@ -140,5 +139,3 @@ namespace std {
 		ios_base::openmode _mode;
 	};
 }
-
-#endif /* BASIC_FILEBUF_H_ */

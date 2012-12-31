@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef USER_H_
-#define USER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stdio.h>
@@ -158,5 +157,3 @@ void user_print(const sUser *u);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* USER_H_ */

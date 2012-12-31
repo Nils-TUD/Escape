@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef REVERSE_ITERATOR_H_
-#define REVERSE_ITERATOR_H_
+#pragma once
 
 #include <stddef.h>
 #include <iterator>
@@ -77,5 +76,3 @@ namespace std {
 }
 
 #include "../../../../lib/cpp/impl/iterator/reverse_iterator.cc"
-
-#endif /* REVERSE_ITERATOR_H_ */

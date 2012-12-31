@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_FSTREAM_H_
-#define BASIC_FSTREAM_H_
+#pragma once
 
 #include <impl/streams/filebuf.h>
 #include <iostream>
@@ -89,5 +88,3 @@ namespace std {
 		}
 	};
 }
-
-#endif /* BASIC_FSTREAM_H_ */

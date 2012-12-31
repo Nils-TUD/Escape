@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPP_ITERATOR_
-#define CPP_ITERATOR_
+#pragma once
 
 #include <stddef.h>
 #include <impl/iterator/iterator_types.h>
 #include <impl/iterator/iterator_ops.h>
 #include <impl/iterator/reverse_iterator.h>
-
-#endif /* CPP_ITERATOR_ */

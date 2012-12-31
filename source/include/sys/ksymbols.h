@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KSYMBOLS_H_
-#define KSYMBOLS_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -41,5 +40,3 @@ void ksym_print(void);
  * @return the pointer to the symbol (no copy!)
  */
 sSymbol *ksym_getSymbolAt(uintptr_t address);
-
-#endif /* KSYMBOLS_H_ */

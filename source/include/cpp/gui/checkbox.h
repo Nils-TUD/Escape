@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CHECKBOX_H_
-#define CHECKBOX_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
@@ -69,5 +68,3 @@ namespace gui {
 		string _text;
 	};
 }
-
-#endif /* CHECKBOX_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVER_VTERM_H_
-#define DRIVER_VTERM_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -41,5 +40,3 @@ int vterm_select(int fd,int vterm);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* DRIVER_VTERM_H_ */

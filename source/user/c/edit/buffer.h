@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BUFFER_H_
-#define BUFFER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -93,5 +92,3 @@ void buf_removeCur(int col,int row);
  * @param file the file
  */
 void buf_store(const char *file);
-
-#endif /* BUFFER_H_ */

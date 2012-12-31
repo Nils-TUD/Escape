@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FSINTERFACE_H_
-#define FSINTERFACE_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stddef.h>
@@ -106,5 +105,3 @@ typedef struct {
 	uint16_t nameLen;
 	char name[MAX_NAME_LEN + 1];
 } A_PACKED sDirEntry;
-
-#endif /* FSINTERFACE_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef REGION_H_
-#define REGION_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/printf.h>
@@ -185,5 +184,3 @@ void reg_printFlags(const sRegion *reg);
  * @param reg the region
  */
 void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
-
-#endif /* REGION_H_ */

@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TVMREG_H_
-#define TVMREG_H_
+#pragma once
 
 #include <esc/test.h>
 
 extern sTestModule tModVMReg;
-
-#endif /* TVMREG_H_ */

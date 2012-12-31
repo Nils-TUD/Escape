@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32MACHINE_H_
-#define ECO32MACHINE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "../../machine.h"
@@ -34,5 +33,3 @@ public:
 	virtual void reboot(Progress &pg);
 	virtual void shutdown(Progress &pg);
 };
-
-#endif /* ECO32MACHINE_H_ */

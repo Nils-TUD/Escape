@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef THEME_H_
-#define THEME_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
@@ -158,5 +157,3 @@ namespace gui {
 		std::vector<Color> *_colors;
 	};
 }
-
-#endif /* THEME_H_ */

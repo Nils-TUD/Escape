@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SHMCLONE_H_
-#define SHMCLONE_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Creates shared-memory-regions and clones the process
  */
 int mod_shmclone(int argc,char *argv[]);
-
-#endif /* SHMCLONE_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DSTREXPR_H_
-#define DSTREXPR_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -67,5 +66,3 @@ void ast_printDStrExpr(sDStrExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyDStrExpr(sDStrExpr *n);
-
-#endif /* DSTREXPR_H_ */

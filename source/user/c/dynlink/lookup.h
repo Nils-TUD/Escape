@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LOOKUP_H_
-#define LOOKUP_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/elf.h>
@@ -65,5 +64,3 @@ Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,uintptr_t *value);
  * @return the symbol if successfull or NULL
  */
 Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,uintptr_t *value);
-
-#endif /* LOOKUP_H_ */

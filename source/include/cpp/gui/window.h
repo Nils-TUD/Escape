@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef WINDOW_H_
-#define WINDOW_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/io.h>
@@ -371,5 +370,3 @@ namespace gui {
 	 */
 	std::ostream &operator<<(std::ostream &s,const Window &w);
 }
-
-#endif /* WINDOW_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VM86_H_
-#define VM86_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/intrpt.h>
@@ -83,5 +82,3 @@ int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *area);
  * @param stack the interrupt-stack-frame
  */
 void vm86_handleGPF(sIntrptStackFrame *stack);
-
-#endif /* VM86_H_ */

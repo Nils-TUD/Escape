@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SIG_H_
-#define SIG_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Tests stack-extension
  */
 int mod_stack(int argc,char *argv[]);
-
-#endif /* SIG_H_ */

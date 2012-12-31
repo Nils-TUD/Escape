@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BLOCKGROUP_H_
-#define BLOCKGROUP_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -55,5 +54,3 @@ void ext2_bg_update(sExt2 *e);
 void ext2_bg_print(sExt2 *e,block_t no,sExt2BlockGrp *bg);
 
 #endif
-
-#endif /* BLOCKGROUP_H_ */

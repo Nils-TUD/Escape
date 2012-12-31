@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXPRLIST_H_
-#define EXPRLIST_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -68,5 +67,3 @@ void ast_printExprList(sExprList *s,uint layer);
  * @param n the list
  */
 void ast_destroyExprList(sExprList *n);
-
-#endif /* EXPRLIST_H_ */

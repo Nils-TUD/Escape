@@ -17,9 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_UTIL_H_
-#define ECO32_UTIL_H_
+#pragma once
 
 #include <esc/common.h>
-
-#endif /* ECO32_UTIL_H_ */

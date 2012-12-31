@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STDEXCEPT_
-#define STDEXCEPT_
+#pragma once
 
 #include <exception>
 #include <stddef.h>
@@ -153,5 +152,3 @@ namespace std {
 		string _msg;
 	};
 }
-
-#endif /* STDEXCEPT_ */

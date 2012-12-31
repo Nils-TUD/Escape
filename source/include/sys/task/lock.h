@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LOCK_H_
-#define LOCK_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
@@ -57,5 +56,3 @@ void lock_releaseAll(pid_t pid);
  * Prints all locks
  */
 void lock_print(void);
-
-#endif /* LOCK_H_ */

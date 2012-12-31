@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BORDERLAYOUT_H_
-#define BORDERLAYOUT_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/layout/layout.h>
@@ -84,5 +83,3 @@ namespace gui {
 		Control *_ctrls[5];
 	};
 }
-
-#endif /* BORDERLAYOUT_H_ */

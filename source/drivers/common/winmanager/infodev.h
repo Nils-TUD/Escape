@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INFODEV_H_
-#define INFODEV_H_
+#pragma once
 
 #include <esc/common.h>
 
 int infodev_thread(A_UNUSED void *arg);
-
-#endif /* INFODEV_H_ */

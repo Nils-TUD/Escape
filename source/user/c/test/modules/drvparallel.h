@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRVPARALLEL_H_
-#define DRVPARALLEL_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Tests a parallel working driver
  */
 int mod_drvparallel(int argc,char *argv[]);
-
-#endif /* DRVPARALLEL_H_ */

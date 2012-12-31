@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SCHED_H_
-#define SCHED_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -99,5 +98,3 @@ void sched_removeThread(sThread *t);
  * Prints the status of the scheduler
  */
 void sched_print(void);
-
-#endif /* SCHED_H_ */

@@ -17,13 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VESA_H_
-#define VESA_H_
+#pragma once
 
 #include <esc/common.h>
 
 typedef uint32_t tColor;
 
 typedef void (*fSetPixel)(gpos_t x,gpos_t y,tColor color);
-
-#endif /* VESA_H_ */

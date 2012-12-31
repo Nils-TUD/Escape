@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef UTIL_H_
-#define UTIL_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -139,5 +138,3 @@ void util_dumpMem(const void *addr,size_t dwordCount);
  * @param byteCount the number of bytes
  */
 void util_dumpBytes(const void *addr,size_t byteCount);
-
-#endif /*UTIL_H_*/

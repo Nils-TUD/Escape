@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROCESS_H_
-#define PROCESS_H_
+#pragma once
 
 #include <stddef.h>
 #include <vector>
@@ -122,5 +121,3 @@ namespace info {
 	std::istream& operator >>(std::istream& is,process& p);
 	std::ostream& operator <<(std::ostream& os,const process& p);
 }
-
-#endif /* PROCESS_H_ */

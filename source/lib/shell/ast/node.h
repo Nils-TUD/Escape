@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef NODE_H_
-#define NODE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "../exec/env.h"
@@ -78,5 +77,3 @@ sValue *ast_execute(sEnv *e,sASTNode *n);
  * @param n the node
  */
 void ast_destroy(sASTNode *n);
-
-#endif /* NODE_H_ */

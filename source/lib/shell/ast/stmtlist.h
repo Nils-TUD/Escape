@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STMTLIST_H_
-#define STMTLIST_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -68,5 +67,3 @@ void ast_printStmtList(sStmtList *s,uint layer);
  * @param n the list
  */
 void ast_destroyStmtList(sStmtList *n);
-
-#endif /* STMTLIST_H_ */

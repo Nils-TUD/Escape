@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVER_KEYMAP_H_
-#define DRIVER_KEYMAP_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -31,5 +30,3 @@ int keymap_set(const char *map);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* DRIVER_KEYMAP_H_ */

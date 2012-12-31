@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MEM_H_
-#define MEM_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Allocates "some" mem :)
  */
 int mod_mem(int argc,char *argv[]);
-
-#endif /* MEM_H_ */

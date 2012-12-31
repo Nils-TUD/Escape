@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXPRSTMT_H_
-#define EXPRSTMT_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -59,5 +58,3 @@ void ast_printExprStmt(sExprStmt *s,uint layer);
  * @param n the statement
  */
 void ast_destroyExprStmt(sExprStmt *n);
-
-#endif /* EXPRSTMT_H_ */

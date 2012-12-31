@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ALGORITHM_
-#define ALGORITHM_
+#pragma once
 
 #include <stddef.h>
 #include <iterator>
@@ -530,5 +529,3 @@ namespace std {
 }
 
 #include "../../lib/cpp/algorithm.cc"
-
-#endif /* ALGORITHM_ */

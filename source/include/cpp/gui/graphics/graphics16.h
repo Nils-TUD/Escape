@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GRAPHICS16_H_
-#define GRAPHICS16_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/graphics.h>
@@ -40,5 +39,3 @@ namespace gui {
 		void doSetPixel(gpos_t x,gpos_t y);
 	};
 }
-
-#endif /* GRAPHICS16_H_ */

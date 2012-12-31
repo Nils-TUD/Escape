@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ERRNO_H_
-#define ERRNO_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -73,5 +72,3 @@ extern int errno;
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* ERRNO_H_ */

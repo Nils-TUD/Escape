@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STD_LIST_
-#define STD_LIST_
+#pragma once
 
 #include <stddef.h>
 #include <iterator>
@@ -365,5 +364,3 @@ namespace std {
 }
 
 #include "../../lib/cpp/list.cc"
-
-#endif /* STD_LIST_ */

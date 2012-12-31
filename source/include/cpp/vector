@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STD_VECTOR_
-#define STD_VECTOR_
+#pragma once
 
 #include <stddef.h>
 #include <limits.h>
@@ -322,5 +321,3 @@ namespace std {
 }
 
 #include "../../lib/cpp/vector.cc"
-
-#endif /* STD_VECTOR_ */

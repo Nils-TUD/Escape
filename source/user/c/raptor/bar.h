@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BAR_H_
-#define BAR_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -29,5 +28,3 @@ void bar_getDim(size_t *start,size_t *end);
 void bar_moveLeft(void);
 
 void bar_moveRight(void);
-
-#endif /* BAR_H_ */

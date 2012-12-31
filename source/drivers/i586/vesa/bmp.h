@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BMP_H_
-#define BMP_H_
+#pragma once
 
 #include <esc/common.h>
 #include "vesa.h"
@@ -106,5 +105,3 @@ sBitmap *bmp_loadFromFile(const char *filename);
  * @param bmp the bitmap
  */
 void bmp_destroy(sBitmap *bmp);
-
-#endif /* BMP_H_ */

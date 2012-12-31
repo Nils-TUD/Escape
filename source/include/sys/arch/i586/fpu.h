@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FPU_H_
-#define FPU_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -225,5 +224,3 @@ void fpu_cloneState(sFPUState **dst,const sFPUState *src);
  * @param state the state
  */
 void fpu_freeState(sFPUState **state);
-
-#endif /* FPU_H_ */

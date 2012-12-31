@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FSTREAM_
-#define FSTREAM_
+#pragma once
 
 #include <impl/streams/filebuf.h>
 #include <impl/streams/fstream.h>
 #include <impl/streams/ifstream.h>
 #include <impl/streams/ofstream.h>
-
-#endif /* FSTREAM_ */

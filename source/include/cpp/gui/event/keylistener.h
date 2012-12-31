@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KEYLISTENER_H_
-#define KEYLISTENER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/event/event.h>
@@ -58,5 +57,3 @@ namespace gui {
 		KeyListener &operator=(const KeyListener &l);
 	};
 }
-
-#endif /* KEYLISTENER_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef HASHMAP_H_
-#define HASHMAP_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -130,5 +129,3 @@ void hm_print(sHashMap *m);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* HASHMAP_H_ */

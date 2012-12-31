@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IOS_BASE_H_
-#define IOS_BASE_H_
+#pragma once
 
 #include <stddef.h>
 #include <exception>
@@ -267,5 +266,3 @@ namespace std {
 		ios_base & operator =(const ios_base &);
 	};
 }
-
-#endif /* IOS_BASE_H_ */

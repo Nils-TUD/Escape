@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_SYSCALLS_H_
-#define MMIX_SYSCALLS_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -40,5 +39,3 @@ extern int cpu_getSyscallNo(void);
 #define SYSC_ARG5(stack)				((stack)[4])
 #define SYSC_ARG6(stack)				((stack)[5])
 #define SYSC_ARG7(stack)				((stack)[6])
-
-#endif /* MMIX_SYSCALLS_H_ */

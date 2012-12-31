@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FAULT_H_
-#define FAULT_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Causes a fault
  */
 int mod_fault(int argc,char *argv[]);
-
-#endif /* FAULT_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PASSWD_H_
-#define PASSWD_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stdio.h>
@@ -116,5 +115,3 @@ void pw_print(const sPasswd *pws);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* PASSWD_H_ */

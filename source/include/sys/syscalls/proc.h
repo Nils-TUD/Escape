@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_PROC_H_
-#define SYSCALLS_PROC_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -47,5 +46,3 @@ int sysc_exec(sThread *t,sIntrptStackFrame *stack);
 int sysc_getenvito(sThread *t,sIntrptStackFrame *stack);
 int sysc_getenvto(sThread *t,sIntrptStackFrame *stack);
 int sysc_setenv(sThread *t,sIntrptStackFrame *stack);
-
-#endif /* SYSCALLS_PROC_H_ */

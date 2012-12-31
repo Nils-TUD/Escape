@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KEYCODES_H_
-#define KEYCODES_H_
+#pragma once
 
 #define SHIFT_MASK		1
 #define CTRL_MASK		2
@@ -132,5 +131,3 @@
 #define VK_SCROLL		125
 #define VK_PAUSE		126
 #define VK_PIPE			127
-
-#endif /* KEYCODES_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SHELL_H_
-#define SHELL_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stdio.h>
@@ -99,5 +98,3 @@ void shell_complete(char *line,size_t *cursorPos,size_t *length);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SHELL_H_ */

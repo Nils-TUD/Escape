@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IDT_H_
-#define IDT_H_
+#pragma once
 
 /**
  * Inits the IDT for the current processor
  */
 void idt_init(void);
-
-#endif /* IDT_H_ */

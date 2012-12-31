@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TLS_H_
-#define TLS_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Tests TLS
  */
 int mod_tls(int argc,char *argv[]);
-
-#endif /* TLS_H_ */

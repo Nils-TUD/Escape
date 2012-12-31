@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STDIO_H_
-#define STDIO_H_
+#pragma once
 
 /* Note that most of the comments here are from doc/iso_c99.pdf */
 
@@ -733,5 +732,3 @@ char *asget(FILE *f,size_t *length);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* STDIO_H_ */

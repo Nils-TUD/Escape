@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef KLOCK_H_
-#define KLOCK_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/util.h>
@@ -58,5 +57,3 @@ static A_INLINE void spinlock_release(klock_t *l) {
 #define spinlock_aquire(l)		(void)(l)
 #define spinlock_release(l)		(void)(l)
 #endif
-
-#endif /* KLOCK_H_ */

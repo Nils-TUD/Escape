@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SSTREAM_
-#define SSTREAM_
+#pragma once
 
 #include <stddef.h>
 #include <impl/streams/ios_base.h>
@@ -27,5 +26,3 @@
 #include <impl/streams/istringstream.h>
 #include <impl/streams/ostringstream.h>
 #include <impl/streams/stringstream.h>
-
-#endif /* SSTREAM_ */

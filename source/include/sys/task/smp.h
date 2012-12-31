@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SMP_H_
-#define SMP_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -181,5 +180,3 @@ sCPU **smp_getCPUs(void);
  * Prints all CPUs
  */
 void smp_print(void);
-
-#endif /* SMP_H_ */

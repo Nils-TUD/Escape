@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_DRIVER_H_
-#define ECO32_DRIVER_H_
+#pragma once
 
 #include <esc/common.h>
 
 #define TIME_DEVICE		"/dev/rtc"
-
-#endif /* ECO32_DRIVER_H_ */

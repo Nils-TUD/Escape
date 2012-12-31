@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_TIMER_H_
-#define MMIX_TIMER_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -36,5 +35,3 @@ void timer_ackIntrpt(void);
  * @return the elapsed milliseconds since the last timer-interrupt
  */
 time_t timer_getTimeSinceIRQ(void);
-
-#endif /* MMIX_TIMER_H_ */

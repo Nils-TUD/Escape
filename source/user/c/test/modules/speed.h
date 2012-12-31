@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SPEED_H_
-#define SPEED_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Tests the speed of reading and writing from/to a file
  */
 int mod_speed(int argc,char *argv[]);
-
-#endif /* SPEED_H_ */

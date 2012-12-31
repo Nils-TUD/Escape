@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_THREAD_H_
-#define SYSCALLS_THREAD_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -40,5 +39,3 @@ int sysc_unlock(sThread *t,sIntrptStackFrame *stack);
 int sysc_join(sThread *t,sIntrptStackFrame *stack);
 int sysc_suspend(sThread *t,sIntrptStackFrame *stack);
 int sysc_resume(sThread *t,sIntrptStackFrame *stack);
-
-#endif /* SYSCALLS_THREAD_H_ */

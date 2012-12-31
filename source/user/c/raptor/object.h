@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef OBJECT_H_
-#define OBJECT_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -66,5 +65,3 @@ bool obj_collide(sObject *o1,sObject *o2);
 bool obj_tick(sObject *o);
 
 void obj_destroy(sObject *o);
-
-#endif /* OBJECT_H_ */

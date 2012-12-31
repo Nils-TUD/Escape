@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef POPUPWINDOW_H_
-#define POPUPWINDOW_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/window.h>
@@ -33,5 +32,3 @@ namespace gui {
 		virtual void close(gpos_t x,gpos_t y) = 0;
 	};
 }
-
-#endif /* POPUPWINDOW_H_ */

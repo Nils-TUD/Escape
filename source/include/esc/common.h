@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ESC_COMMON_H_
-#define ESC_COMMON_H_
+#pragma once
 
 #include <stddef.h>
 #include <esc/defines.h>
@@ -30,5 +29,3 @@
 #ifndef NDEBUG
 #define DEBUGGING 1
 #endif
-
-#endif /*ESC_COMMON_H_*/

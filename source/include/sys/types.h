@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYS_TYPES_H_
-#define SYS_TYPES_H_
+#pragma once
 
 #include <esc/common.h>
 
 typedef uintptr_t klock_t;
-
-#endif /* SYS_TYPES_H_ */

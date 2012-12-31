@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FORKBOMB_H_
-#define FORKBOMB_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Creates processes until it fails :)
  */
 int mod_forkbomb(int argc,char *argv[]);
-
-#endif /* FORKBOMB_H_ */

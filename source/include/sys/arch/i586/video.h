@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_VIDEO_H_
-#define I586_VIDEO_H_
+#pragma once
 
 #define VID_COLS				80
 #define VID_ROWS				25
 #define BYTES_PER_COL			2
-
-#endif /* I586_VIDEO_H_ */

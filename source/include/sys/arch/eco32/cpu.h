@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_CPU_H_
-#define ECO32_CPU_H_
+#pragma once
 
 /**
  * @return the pagefault-address
  */
 extern uint cpu_getBadAddr(void);
-
-#endif /* ECO32_CPU_H_ */

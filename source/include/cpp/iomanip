@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IOMANIP_
-#define IOMANIP_
+#pragma once
 
 #include <impl/streams/ios.h>
 #include <impl/streams/ios_ops.h>
@@ -143,5 +142,3 @@ namespace std {
 		return setwobj(n);
 	}
 }
-
-#endif /* IOMANIP_ */

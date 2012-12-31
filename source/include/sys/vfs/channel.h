@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CHANNEL_H_
-#define CHANNEL_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
@@ -94,5 +93,3 @@ ssize_t vfs_chan_receive(pid_t pid,ushort flags,sVFSNode *node,msgid_t *id,void 
  * @param n the channel-node
  */
 void vfs_chan_print(const sVFSNode *n);
-
-#endif /* CHANNEL_H_ */

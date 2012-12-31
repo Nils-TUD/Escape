@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ADDRSPACE_H_
-#define ADDRSPACE_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -31,5 +30,3 @@ typedef struct sAddressSpace {
 void aspace_init(void);
 sAddressSpace *aspace_alloc(void);
 void aspace_free(sAddressSpace *aspace);
-
-#endif /* ADDRSPACE_H_ */

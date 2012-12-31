@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TESTUTILS_H_
-#define TESTUTILS_H_
+#pragma once
 
 #include <sys/common.h>
 
 void checkMemoryBefore(bool checkMappedPages);
 void checkMemoryAfter(bool checkMappedPages);
-
-#endif /* TESTUTILS_H_ */

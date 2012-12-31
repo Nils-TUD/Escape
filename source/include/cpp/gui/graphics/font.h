@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FONT_H_
-#define FONT_H_
+#pragma once
 
 #include <esc/common.h>
 #include <algorithm>
@@ -51,5 +50,3 @@ namespace gui {
 		static char _font[];
 	};
 }
-
-#endif /* FONT_H_ */

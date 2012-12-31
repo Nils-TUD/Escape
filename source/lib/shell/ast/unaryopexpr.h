@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef UNARYOPEXPR_H_
-#define UNARYOPEXPR_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -67,5 +66,3 @@ void ast_printUnaryOpExpr(sUnaryOpExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyUnaryOpExpr(sUnaryOpExpr *n);
-
-#endif /* UNARYOPEXPR_H_ */

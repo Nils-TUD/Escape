@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LAYOUT_H_
-#define LAYOUT_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -93,5 +92,3 @@ namespace gui {
 		Layout& operator=(const Layout& bl);
 	};
 }
-
-#endif /* LAYOUT_H_ */

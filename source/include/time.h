@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TIME_H_
-#define TIME_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -171,5 +170,3 @@ size_t strftime(char *ptr,size_t maxsize,const char *format,const struct tm *tim
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* TIME_H_ */

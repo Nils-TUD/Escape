@@ -2,8 +2,7 @@
  * $Id$
  */
 
-#ifndef ACTIONLISTENER_H_
-#define ACTIONLISTENER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/uielement.h>
@@ -27,5 +26,3 @@ namespace gui {
 		virtual void actionPerformed(UIElement& el) = 0;
 	};
 }
-
-#endif /* ACTIONLISTENER_H_ */

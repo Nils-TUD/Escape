@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef REDIRFILE_H_
-#define REDIRFILE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -55,5 +54,3 @@ void ast_printRedirFile(sRedirFile *s,uint layer);
  * @param n the redirfile
  */
 void ast_destroyRedirFile(sRedirFile *n);
-
-#endif /* REDIRFILE_H_ */

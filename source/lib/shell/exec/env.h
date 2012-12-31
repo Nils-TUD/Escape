@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXECENV_H_
-#define EXECENV_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -99,5 +98,3 @@ sValue *env_set(sEnv *env,const char *name,sValue *val);
  * @param env the env
  */
 void env_destroy(sEnv *env);
-
-#endif /* EXECENV_H_ */

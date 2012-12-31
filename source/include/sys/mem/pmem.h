@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PMEM_H_
-#define PMEM_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -175,5 +174,3 @@ void pmem_printStack(void);
  * Prints the free contiguous frames
  */
 void pmem_printCont(void);
-
-#endif /*PMEM_H_*/

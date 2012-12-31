@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_THREAD_H_
-#define I586_THREAD_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -57,5 +56,3 @@ void thread_initialSwitch(void);
  * Performs a thread-switch
  */
 void thread_doSwitch(void);
-
-#endif /* I586_THREAD_H_ */

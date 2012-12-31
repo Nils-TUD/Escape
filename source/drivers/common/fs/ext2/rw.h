@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef REQUEST_H_
-#define REQUEST_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -66,5 +65,3 @@ int ext2_rw_writeSectors(sExt2 *e,const void *buffer,uint64_t lba,size_t secCoun
  * @return 0 if successfull
  */
 int ext2_rw_writeBlocks(sExt2 *e,const void *buffer,block_t start,size_t blockCount);
-
-#endif /* REQUEST_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MOUNT_H_
-#define MOUNT_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
@@ -163,5 +162,3 @@ dev_t mount_getDevByHandle(void *h);
  * @return the file-system-instance
  */
 sFSInst *mount_get(dev_t dev);
-
-#endif /* MOUNT_H_ */

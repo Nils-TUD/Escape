@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GCALC_H_
-#define GCALC_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,5 +32,3 @@ extern const char *parse_text;
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* GCALC_H_ */

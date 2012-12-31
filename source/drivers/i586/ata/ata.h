@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ATA_H_
-#define ATA_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/debug.h>
@@ -86,5 +85,3 @@ bool ata_transferPIO(sATADevice *device,uint op,void *buffer,size_t secSize,size
  * @return true if successfull
  */
 bool ata_transferDMA(sATADevice *device,uint op,void *buffer,size_t secSize,size_t secCount);
-
-#endif /* ATA_H_ */

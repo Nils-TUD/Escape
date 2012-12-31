@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GRAPHICSBUFFER_H_
-#define GRAPHICSBUFFER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stdlib.h>
@@ -146,5 +145,3 @@ namespace gui {
 		uint8_t *_pixels;
 	};
 }
-
-#endif /* GRAPHICSBUFFER_H_ */

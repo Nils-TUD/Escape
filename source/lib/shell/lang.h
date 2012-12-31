@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LANG_H_
-#define LANG_H_
+#pragma once
 
 typedef int tIntType;
 
@@ -43,5 +42,3 @@ bool lang_isInterrupted(void);
  * @param s the error-message
  */
 void yyerror(char const *s,...);
-
-#endif /* LANG_H_ */

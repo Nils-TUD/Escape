@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CMDARGS_H_
-#define CMDARGS_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -67,5 +66,3 @@ bool isHelpCmd(int argc,char **argv);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CMDARGS_H_ */

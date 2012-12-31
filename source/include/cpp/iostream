@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IOSTREAM_
-#define IOSTREAM_
+#pragma once
 
 #include <impl/streams/ios_base.h>
 #include <impl/streams/ios_ops.h>
@@ -54,5 +53,3 @@ namespace std {
 	extern ostream &cerr;
 	extern ostream &clog;
 }
-
-#endif /* IOSTREAM_ */

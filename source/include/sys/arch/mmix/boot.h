@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_BOOT_H_
-#define MMIX_BOOT_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -66,5 +65,3 @@ const sBootInfo *boot_getInfo(void);
  * The boot-tasks to load
  */
 const sBootTaskList bootTaskList;
-
-#endif /* MMIX_BOOT_H_ */

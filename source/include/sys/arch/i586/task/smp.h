@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_SMP_H_
-#define I586_SMP_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -32,5 +31,3 @@ cpuid_t smp_getPhysId(cpuid_t logId);
  * Tells the BSP that an AP is running
  */
 void smp_apIsRunning(void);
-
-#endif /* I586_SMP_H_ */

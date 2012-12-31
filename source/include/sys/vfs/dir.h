@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DIR_H_
-#define DIR_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
@@ -32,5 +31,3 @@
  * @return the created node or NULL
  */
 sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name);
-
-#endif /* DIR_H_ */

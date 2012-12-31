@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INODE_H_
-#define INODE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -103,5 +102,3 @@ block_t ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,block_t block)
 void ext2_inode_print(sExt2Inode *inode);
 
 #endif
-
-#endif /* INODE_H_ */

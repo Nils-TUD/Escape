@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIMITS_
-#define LIMITS_
+#pragma once
 
 #include <stddef.h>
 #include <limits.h>
@@ -271,5 +270,3 @@ namespace std {
 		static const int radix = 2;
 	};
 }
-
-#endif /* LIMITS_ */

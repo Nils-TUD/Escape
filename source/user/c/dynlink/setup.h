@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LINKER_H_
-#define LINKER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/elf.h>
@@ -81,5 +80,3 @@ uintptr_t load_setupProg(int binFd);
  * @return the value
  */
 uint load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
-
-#endif /* LINKER_H_ */

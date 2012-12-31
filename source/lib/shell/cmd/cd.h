@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CD_H_
-#define CD_H_
+#pragma once
 
 #include <esc/common.h>
 
 int shell_cmdCd(int argc,char **argv);
-
-#endif /* CD_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VBE_H_
-#define VBE_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -122,5 +121,3 @@ int vbe_setMode(uint mode);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* VBE_H_ */

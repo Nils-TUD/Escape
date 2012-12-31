@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ASSERT_H_
-#define ASSERT_H_
+#pragma once
 
 #if IN_KERNEL
 #	include <sys/util.h>
@@ -52,5 +51,3 @@
 #	define vassert(cond,errorMsg,...) (void)(cond)
 
 #endif
-
-#endif /* ASSERT_H_ */

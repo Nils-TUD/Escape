@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GDT_H_
-#define GDT_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -99,5 +98,3 @@ void tss_setIOMap(const uint8_t *ioMap,bool forceCpy);
  * Prints the GDT
  */
 void gdt_print(void);
-
-#endif /*GDT_H_*/

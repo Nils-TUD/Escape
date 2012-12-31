@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IMAGE_H_
-#define IMAGE_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/graphics.h>
@@ -53,5 +52,3 @@ namespace gui {
 		virtual void paint(Graphics &g,gpos_t x,gpos_t y) = 0;
 	};
 }
-
-#endif /* IMAGE_H_ */

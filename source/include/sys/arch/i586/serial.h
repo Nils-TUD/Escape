@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SERIAL_H_
-#define SERIAL_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -39,5 +38,3 @@ void ser_init(void);
  * @param byte the byte
  */
 void ser_out(uint16_t port,uint8_t byte);
-
-#endif /* SERIAL_H_ */

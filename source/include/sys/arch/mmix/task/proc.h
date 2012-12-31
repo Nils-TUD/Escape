@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_PROC_H_
-#define MMIX_PROC_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -30,5 +29,3 @@
 typedef struct {
 	uint8_t dummy;
 } sProcArchAttr;
-
-#endif /* MMIX_PROC_H_ */

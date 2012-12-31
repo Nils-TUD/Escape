@@ -17,13 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_THREAD_H_
-#define ECO32_THREAD_H_
+#pragma once
 
 #include <sys/common.h>
 /**
  * Performs a thread-switch
  */
 void thread_doSwitch(void);
-
-#endif /* ECO32_THREAD_H_ */

@@ -17,9 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INTTYPES_H_
-#define INTTYPES_H_
+#pragma once
 
 #include <esc/common.h>
-
-#endif /* INTTYPES_H_ */

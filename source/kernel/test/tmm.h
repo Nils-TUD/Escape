@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TESTMM_H_
-#define TESTMM_H_
+#pragma once
 
 #include <sys/common.h>
 #include <esc/test.h>
 
 extern sTestModule tModMM;
-
-#endif /* TESTMM_H_ */

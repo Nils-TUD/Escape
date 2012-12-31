@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VTERM_H_
-#define VTERM_H_
+#pragma once
 
 #include <esc/common.h>
 #include <vterm/vtctrl.h>
@@ -61,5 +60,3 @@ sVTerm *vt_getActive(void);
  * @param vt the vterm
  */
 void vt_update(sVTerm *vt);
-
-#endif /* VTERM_H_ */

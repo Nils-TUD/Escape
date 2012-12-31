@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_STRINGSTREAM_H_
-#define BASIC_STRINGSTREAM_H_
+#pragma once
 
 #include <impl/streams/stringbuf.h>
 #include <iostream>
@@ -76,5 +75,3 @@ namespace std {
 		}
 	};
 }
-
-#endif /* BASIC_STRINGSTREAM_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_TIMER_H_
-#define I586_TIMER_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -33,5 +32,3 @@ void timer_arch_init(void);
  * @return the speed in Hz
  */
 uint64_t timer_detectCPUSpeed(void);
-
-#endif /* I586_TIMER_H_ */

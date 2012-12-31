@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TEST_DEBUG_H_
-#define TEST_DEBUG_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Calls the debug()-function
  */
 int mod_debug(int argc,char *argv[]);
-
-#endif /* TEST_DEBUG_H_ */

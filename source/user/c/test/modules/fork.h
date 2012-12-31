@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FORK_H_
-#define FORK_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Fork-bomb ^^
  */
 int mod_fork(int argc,char *argv[]);
-
-#endif /* FORK_H_ */

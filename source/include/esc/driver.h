@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVER_H_
-#define DRIVER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -111,5 +110,3 @@ void handleFileRead(int fd,sMsg *msg,fGetData getData);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* DRIVER_H_ */

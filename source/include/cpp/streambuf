@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STREAMBUF_
-#define STREAMBUF_
+#pragma once
 
 #include <stddef.h>
 #include <exception>
@@ -91,5 +90,3 @@ namespace std {
 		virtual void flush() = 0;
 	};
 }
-
-#endif /* STREAMBUF_ */

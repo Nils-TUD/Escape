@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LOADER_H_
-#define LOADER_H_
+#pragma once
 
 #include <esc/common.h>
 #include "setup.h"
@@ -37,5 +36,3 @@ void load_doLoad(int binFd,sSharedLib *dst);
  * @return the entry-point of the executable
  */
 uintptr_t load_addSegments(void);
-
-#endif /* LOADER_H_ */

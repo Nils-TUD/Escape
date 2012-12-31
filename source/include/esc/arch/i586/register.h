@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef REGISTER_H_
-#define REGISTER_H_
+#pragma once
 
 #include <esc/common.h>
 #ifdef IN_KERNEL
@@ -93,5 +92,3 @@
 		"mov %%" name ",%0" \
 		: "=a" (c) \
 	);
-
-#endif /* REGISTER_H_ */

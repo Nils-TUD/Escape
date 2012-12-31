@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROCESSMANAGER_H_
-#define PROCESSMANAGER_H_
+#pragma once
 
 #include <esc/common.h>
 #include <vector>
@@ -62,5 +61,3 @@ private:
 	Progress *_downProg;
 	std::vector<Process*> _procs;
 };
-
-#endif /* PROCESSMANAGER_H_ */

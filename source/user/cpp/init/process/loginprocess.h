@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LOGINPROCESS_H_
-#define LOGINPROCESS_H_
+#pragma once
 
 #include <esc/common.h>
 #include "process.h"
@@ -36,5 +35,3 @@ public:
 private:
 	std::string _vterm;
 };
-
-#endif /* LOGINPROCESS_H_ */

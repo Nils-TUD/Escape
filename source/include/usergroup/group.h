@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GROUP_H_
-#define GROUP_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stdio.h>
@@ -165,5 +164,3 @@ void group_print(const sGroup *g);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* GROUP_H_ */

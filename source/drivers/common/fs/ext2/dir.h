@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXT2_DIR_H_
-#define EXT2_DIR_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -67,5 +66,3 @@ inode_t ext2_dir_findIn(sExt2DirEntry *buffer,size_t bufSize,const char *name,si
  * @return 0 on success
  */
 int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name);
-
-#endif /* EXT2_DIR_H_ */

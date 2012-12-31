@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VIEW_H_
-#define VIEW_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -31,5 +30,3 @@
  * @return 0 on success
  */
 int cons_cmd_view(size_t argc,char **argv);
-
-#endif /* VIEW_H_ */

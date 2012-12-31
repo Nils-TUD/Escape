@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SIGNAL_H_
-#define SIGNAL_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -100,5 +99,3 @@ int raise(int sig);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SIGNAL_H_ */

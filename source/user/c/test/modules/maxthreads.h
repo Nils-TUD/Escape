@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MAXTHREADS_H_
-#define MAXTHREADS_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Creates as many threads as possible, putting all to sleep
  */
 int mod_maxthreads(int argc,char *argv[]);
-
-#endif /* MAXTHREADS_H_ */

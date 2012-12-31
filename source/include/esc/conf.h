@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONF_H_
-#define CONF_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -48,5 +47,3 @@ long sysconf(int id);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CONF_H_ */

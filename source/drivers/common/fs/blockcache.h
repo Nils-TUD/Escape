@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BLOCKCACHE_H_
-#define BLOCKCACHE_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -130,5 +129,3 @@ void bcache_printStats(FILE *f,sBlockCache *c);
 void bcache_print(sBlockCache *c);
 
 #endif
-
-#endif /* BLOCKCACHE_H_ */

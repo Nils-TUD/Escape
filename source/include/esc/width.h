@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef WIDTH_H_
-#define WIDTH_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -63,5 +62,3 @@ size_t getullwidth(ullong n,uint base);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* WIDTH_H_ */

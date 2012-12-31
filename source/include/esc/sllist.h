@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SLLIST_H_
-#define SLLIST_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -246,5 +245,3 @@ void sll_print(const sSLList *list);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* SLLIST_H_ */

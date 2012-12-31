@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MEM_H_
-#define MEM_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -87,5 +86,3 @@ void esll_append(sSLList *list,const void *data);
  * @param p the pointer to the memory
  */
 void efree(void *p);
-
-#endif /* MEM_H_ */

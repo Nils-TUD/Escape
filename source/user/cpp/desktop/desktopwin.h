@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DESKTOPWIN_H_
-#define DESKTOPWIN_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
@@ -120,5 +119,3 @@ private:
 	map<gwinid_t,Button*> _windows;
 	map<ImageButton*,Shortcut*> _shortcuts;
 };
-
-#endif /* DESKTOPWIN_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CMDEXPRLIST_H_
-#define CMDEXPRLIST_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/sllist.h>
@@ -67,5 +66,3 @@ void ast_printCmdExprList(sCmdExprList *s,uint layer);
  * @param n the list
  */
 void ast_destroyCmdExprList(sCmdExprList *n);
-
-#endif /* CMDEXPRLIST_H_ */

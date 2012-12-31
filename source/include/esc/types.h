@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TYPES_H_
-#define TYPES_H_
+#pragma once
 
 #ifndef __cplusplus
 typedef enum {false = 0, true = 1} bool;
@@ -114,5 +113,3 @@ typedef ushort gsize_t;
 typedef short gpos_t;
 typedef uchar gcoldepth_t;
 typedef ushort gwinid_t;
-
-#endif /* TYPES_H_ */

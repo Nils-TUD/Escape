@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef THREAD_H_
-#define THREAD_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -287,5 +286,3 @@ int unlockg(uint ident);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* THREAD_H_ */

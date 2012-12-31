@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_UENV_H_
-#define MMIX_UENV_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -30,5 +29,3 @@
  * @return the stack-pointer
  */
 uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint);
-
-#endif /* MMIX_UENV_H_ */

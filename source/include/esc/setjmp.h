@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SETJMP_H_
-#define SETJMP_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -34,5 +33,3 @@ typedef struct {
 
 extern int setjmp(sJumpEnv *env);
 extern int longjmp(sJumpEnv *env,int val);
-
-#endif /* SETJMP_H_ */

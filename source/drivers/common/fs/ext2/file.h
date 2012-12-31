@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FILE_H_
-#define FILE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -107,5 +106,3 @@ ssize_t ext2_file_write(sExt2 *e,inode_t inodeNo,const void *buffer,off_t offset
  * @return the number of written bytes
  */
 ssize_t ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,off_t offset,size_t count);
-
-#endif /* FILE_H_ */

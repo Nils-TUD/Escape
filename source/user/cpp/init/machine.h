@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MACHINE_H_
-#define MACHINE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "progress.h"
@@ -36,5 +35,3 @@ public:
 	virtual void reboot(Progress &pg) = 0;
 	virtual void shutdown(Progress &pg) = 0;
 };
-
-#endif /* MACHINE_H_ */

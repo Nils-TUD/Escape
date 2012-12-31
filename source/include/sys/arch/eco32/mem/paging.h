@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_PAGING_H_
-#define ECO32_PAGING_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -163,5 +162,3 @@ extern void tlb_set(int index,uint virt,uint phys);
  * Prints the contents of the TLB
  */
 void paging_printTLB(void);
-
-#endif /* ECO32_PAGING_H_ */

@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INCLUDE_H_
-#define INCLUDE_H_
+#pragma once
 
 #include <esc/common.h>
 
 int shell_cmdInclude(int argc,char **argv);
-
-#endif /* INCLUDE_H_ */

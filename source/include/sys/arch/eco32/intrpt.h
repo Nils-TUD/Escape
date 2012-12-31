@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_INTRPT_H_
-#define ECO32_INTRPT_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -30,5 +29,3 @@ typedef struct {
 	uint32_t psw;
 	uint32_t irqNo;
 } A_PACKED sIntrptStackFrame;
-
-#endif /* ECO32_INTRPT_H_ */

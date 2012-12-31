@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TEST_H_
-#define TEST_H_
+#pragma once
 
 #include <esc/common.h>
 #include <stdarg.h>
@@ -154,5 +153,3 @@ void test_start(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* TEST_H_ */

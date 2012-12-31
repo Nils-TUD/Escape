@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STDLIB_H_
-#define STDLIB_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/proc.h>
@@ -393,5 +392,3 @@ lldiv_t lldiv(llong numer,llong denom);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* STDLIB_H_ */

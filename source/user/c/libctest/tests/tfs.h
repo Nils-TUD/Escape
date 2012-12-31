@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TFS_H_
-#define TFS_H_
+#pragma once
 
 #include <esc/common.h>
 
 extern sTestModule tModFs;
-
-#endif /* TFS_H_ */

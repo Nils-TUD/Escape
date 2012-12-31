@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CMDARGS_H_
-#define CMDARGS_H_
+#pragma once
 
 #include <stddef.h>
 #include <stdarg.h>
@@ -202,5 +201,3 @@ namespace std {
 		vector<string*> _free;
 	};
 }
-
-#endif /* CMDARGS_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_PROC_H_
-#define I586_PROC_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -33,5 +32,3 @@ typedef struct {
 	/* the io-map (NULL by default) */
 	uint8_t *ioMap;
 } sProcArchAttr;
-
-#endif /* I586_PROC_H_ */

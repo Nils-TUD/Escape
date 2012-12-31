@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COMMANDS_H_
-#define COMMANDS_H_
+#pragma once
 
 #include <esc/common.h>
 #include <shell/shell.h>
@@ -69,5 +68,3 @@ void compl_free(sShellCmd **matches);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* COMMANDS_H_ */

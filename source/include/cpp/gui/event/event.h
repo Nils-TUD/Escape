@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EVENT_H_
-#define EVENT_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/keycodes.h>
@@ -218,5 +217,3 @@ namespace gui {
 	std::ostream &operator<<(std::ostream &s,const MouseEvent &e);
 	std::ostream &operator<<(std::ostream &s,const KeyEvent &e);
 }
-
-#endif /* EVENT_H_ */

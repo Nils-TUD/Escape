@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SIGNALS_H_
-#define SIGNALS_H_
+#pragma once
 
 #include <sys/common.h>
 #include <esc/sllist.h>
@@ -202,5 +201,3 @@ const char *sig_dbg_getName(int signal);
  * Prints all announced signal-handlers
  */
 void sig_print(void);
-
-#endif /* SIGNALS_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FLOWLAYOUT_H_
-#define FLOWLAYOUT_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/layout/layout.h>
@@ -80,5 +79,3 @@ namespace gui {
 		vector<Control*> _ctrls;
 	};
 }
-
-#endif /* FLOWLAYOUT_H_ */

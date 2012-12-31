@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MMIX_THREADCONF_H_
-#define MMIX_THREADCONF_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -45,5 +44,3 @@ typedef struct {
 	/* when handling a signal, we have to backup these registers */
 	sKSpecRegs specRegLevels[MAX_INTRPT_LEVELS];
 } sThreadArchAttr;
-
-#endif /* MMIX_THREADCONF_H_ */

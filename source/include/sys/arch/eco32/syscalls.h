@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ECO32_SYSCALLS_H_
-#define ECO32_SYSCALLS_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -35,5 +34,3 @@
 #define SYSC_ARG5(stack)				((stack)->r[8])
 #define SYSC_ARG6(stack)				((stack)->r[9])
 #define SYSC_ARG7(stack)				((stack)->r[10])
-
-#endif /* ECO32_SYSCALLS_H_ */

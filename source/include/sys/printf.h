@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PRINTF_H_
-#define PRINTF_H_
+#pragma once
 
 #include <sys/common.h>
 #include <stdarg.h>
@@ -81,5 +80,3 @@ void prf_printf(sPrintEnv *env,const char *fmt,...);
  * @param ap the argument-list
  */
 void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap);
-
-#endif /* PRINTF_H_ */

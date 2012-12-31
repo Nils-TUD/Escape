@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef APIC_H_
-#define APIC_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -33,5 +32,3 @@ void apic_sendIPITo(cpuid_t id,uint8_t vector);
 void apic_sendInitIPI(void);
 void apic_sendStartupIPI(uintptr_t startAddr);
 void apic_eoi(void);
-
-#endif /* APIC_H_ */

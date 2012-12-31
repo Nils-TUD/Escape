@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SERVER_H_
-#define SERVER_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
@@ -111,5 +110,3 @@ sVFSNode *vfs_device_getWork(sVFSNode *node,bool *cont,bool *retry);
  * @param n the server-node
  */
 void vfs_device_print(sVFSNode *n);
-
-#endif /* SERVER_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LINES_H_
-#define LINES_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -75,5 +74,3 @@ void lines_end(sLines *l);
  * @param l the lines
  */
 void lines_destroy(sLines *l);
-
-#endif /* LINES_H_ */

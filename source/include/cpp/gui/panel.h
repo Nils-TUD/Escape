@@ -2,8 +2,7 @@
  * $Id$
  */
 
-#ifndef PANEL_H_
-#define PANEL_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/event/event.h>
@@ -161,5 +160,3 @@ namespace gui {
 
 	ostream &operator<<(ostream &s,const Panel &p);
 }
-
-#endif /* PANEL_H_ */

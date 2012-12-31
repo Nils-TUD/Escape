@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CACHE_H_
-#define CACHE_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -87,5 +86,3 @@ void cache_print(void);
 void cache_dbg_setAaFEnabled(bool enabled);
 
 #endif
-
-#endif /* CACHE_H_ */

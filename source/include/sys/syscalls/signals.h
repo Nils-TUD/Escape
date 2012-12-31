@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_SIGNALS_H_
-#define SYSCALLS_SIGNALS_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -27,5 +26,3 @@
 int sysc_signal(sThread *t,sIntrptStackFrame *stack);
 int sysc_acksignal(sThread *t,sIntrptStackFrame *stack);
 int sysc_kill(sThread *t,sIntrptStackFrame *stack);
-
-#endif /* SYSCALLS_SIGNALS_H_ */

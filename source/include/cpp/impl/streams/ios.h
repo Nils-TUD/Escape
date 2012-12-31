@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_IOS_H_
-#define BASIC_IOS_H_
+#pragma once
 
 #include <impl/streams/ios_base.h>
 #include <streambuf>
@@ -205,5 +204,3 @@ namespace std {
 		streambuf* _rdbuf;
 	};
 }
-
-#endif /* BASIC_IOS_H_ */

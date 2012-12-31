@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PAGING_H_
-#define PAGING_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/mem/pmem.h>
@@ -288,5 +287,3 @@ size_t paging_dbg_getPageCount(void);
  * @param virt the virtual address
  */
 void paging_printPageOf(pagedir_t *pdir,uintptr_t virt);
-
-#endif /*PAGING_H_*/

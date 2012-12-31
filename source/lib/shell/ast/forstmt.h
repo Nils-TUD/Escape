@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FORSTMT_H_
-#define FORSTMT_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -65,5 +64,3 @@ void ast_printForStmt(sForStmt *s,uint layer);
  * @param n the statement
  */
 void ast_destroyForStmt(sForStmt *n);
-
-#endif /* FORSTMT_H_ */

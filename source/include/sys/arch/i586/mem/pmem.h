@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_PMEM_H_
-#define I586_PMEM_H_
+#pragma once
 
 #include <esc/common.h>
 #include <sys/arch/i586/mem/paging.h>
@@ -68,5 +67,3 @@
 
 typedef ulong tBitmap;
 extern uintptr_t bitmapStart;
-
-#endif /* I586_PMEM_H_ */

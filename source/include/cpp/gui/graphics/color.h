@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COLOR_H_
-#define COLOR_H_
+#pragma once
 
 #include <esc/common.h>
 #include <ostream>
@@ -125,5 +124,3 @@ namespace gui {
 	 */
 	std::ostream &operator<<(std::ostream &s,const Color &c);
 }
-
-#endif /* COLOR_H_ */

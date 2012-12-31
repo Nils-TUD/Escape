@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EVENTS_H_
-#define EVENTS_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -58,5 +57,3 @@ int events_add(inode_t id,uchar flags,uchar key,uchar modifier);
  * @param modifier the modifiers
  */
 void events_remove(inode_t id,uchar flags,uchar key,uchar modifier);
-
-#endif /* EVENTS_H_ */

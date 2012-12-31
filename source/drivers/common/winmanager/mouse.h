@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef MOUSE_H_
-#define MOUSE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "window.h"
@@ -26,5 +25,3 @@
 int mouse_start(void *drvIdPtr);
 gpos_t mouse_getX(void);
 gpos_t mouse_getY(void);
-
-#endif /* MOUSE_H_ */

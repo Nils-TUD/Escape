@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SHELL_ENV_H_
-#define SHELL_ENV_H_
+#pragma once
 
 #include <esc/common.h>
 
 int shell_cmdEnv(int argc,char **argv);
-
-#endif /* SHELL_ENV_H_ */

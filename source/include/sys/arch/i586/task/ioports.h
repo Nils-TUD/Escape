@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_IOPORTS_H_
-#define I586_IOPORTS_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
@@ -74,5 +73,3 @@ void ioports_free(sProc *p);
 void ioports_print(const uint8_t *map);
 
 #endif
-
-#endif /* I586_IOPORTS_H_ */

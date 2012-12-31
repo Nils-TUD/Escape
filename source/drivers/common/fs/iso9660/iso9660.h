@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ISO9660_H_
-#define ISO9660_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
@@ -349,5 +348,3 @@ void iso_dbg_printVolDesc(sISOVolDesc *desc);
 void iso_dbg_printVolDate(sISOVolDate *date);
 
 #endif
-
-#endif /* ISO9660_H_ */

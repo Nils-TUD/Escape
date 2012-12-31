@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INODECACHE_H_
-#define INODECACHE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -74,5 +73,3 @@ void ext2_icache_release(const sExt2CInode *inode);
  * @param e the ext2 handle
  */
 void ext2_icache_print(FILE *f,sExt2 *e);
-
-#endif /* INODECACHE_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_SYSCALLS_H_
-#define I586_SYSCALLS_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -35,5 +34,3 @@
 #define SYSC_ARG5(stack)				(*(((uint32_t*)(stack)->uesp) + 3))
 #define SYSC_ARG6(stack)				(*(((uint32_t*)(stack)->uesp) + 4))
 #define SYSC_ARG7(stack)				(*(((uint32_t*)(stack)->uesp) + 5))
-
-#endif /* I586_SYSCALLS_H_ */

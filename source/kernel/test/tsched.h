@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TESTSCHED_H_
-#define TESTSCHED_H_
+#pragma once
 
 #include <esc/test.h>
 
 extern sTestModule tModSched;
-
-#endif /* TESTSCHED_H_ */

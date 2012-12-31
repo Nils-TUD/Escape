@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef RW_H_
-#define RW_H_
+#pragma once
 
 #include <esc/common.h>
 #include "iso9660.h"
@@ -26,5 +25,3 @@
 int iso_rw_readBlocks(sISO9660 *h,void *buffer,block_t start,size_t blockCount);
 
 int iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount);
-
-#endif /* RW_H_ */

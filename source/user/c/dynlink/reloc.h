@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef RELOC_H_
-#define RELOC_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Relocates all shared libraries
  */
 void load_reloc(void);
-
-#endif /* RELOC_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BINTREE_H_
-#define BINTREE_H_
+#pragma once
 
 #include <stddef.h>
 #include <iterator>
@@ -283,5 +282,3 @@ namespace std {
 }
 
 #include "../../../../lib/cpp/impl/map/bintree.cc"
-
-#endif /* BINTREE_H_ */

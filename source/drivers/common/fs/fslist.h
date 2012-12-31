@@ -17,13 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FSLIST_H_
-#define FSLIST_H_
+#pragma once
 
 #include <esc/common.h>
 
 void fslist_init(void);
 int fslist_getType(const char *name);
 const char *fslist_getName(int type);
-
-#endif /* FSLIST_H_ */

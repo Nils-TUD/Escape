@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PIPE_H_
-#define PIPE_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Tests pipes
  */
 int mod_pipe(int argc,char *argv[]);
-
-#endif /* PIPE_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef THREADPOOL_H_
-#define THREADPOOL_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -53,5 +52,3 @@ void tpool_init(void);
 void tpool_shutdown(void);
 size_t tpool_tidToId(tid_t tid);
 bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,void *data);
-
-#endif /* THREADPOOL_H_ */

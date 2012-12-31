@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BINARYOPEXPR_H_
-#define BINARYOPEXPR_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -63,5 +62,3 @@ void ast_printBinOpExpr(sBinaryOpExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyBinOpExpr(sBinaryOpExpr *n);
-
-#endif /* BINARYOPEXPR_H_ */

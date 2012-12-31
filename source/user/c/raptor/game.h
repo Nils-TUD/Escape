@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GAME_H_
-#define GAME_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -35,5 +34,3 @@ uint game_getScore(void);
 void game_handleKey(uchar keycode,uchar modifiers,A_UNUSED char c);
 
 bool game_tick(time_t time);
-
-#endif /* GAME_H_ */

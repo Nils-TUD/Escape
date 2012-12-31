@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef HISTORY_H_
-#define HISTORY_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -55,5 +54,3 @@ void shell_histPrint(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* HISTORY_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FILE_H_
-#define FILE_H_
+#pragma once
 
 #include <esc/common.h>
 #include "iso9660.h"
@@ -35,5 +34,3 @@
  * @return the number of read bytes
  */
 ssize_t iso_file_read(sISO9660 *h,inode_t id,void *buffer,off_t offset,size_t count);
-
-#endif /* FILE_H_ */

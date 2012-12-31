@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CMPEXPR_H_
-#define CMPEXPR_H_
+#pragma once
 
 #include <esc/common.h>
 #include "node.h"
@@ -70,5 +69,3 @@ void ast_printCmpExpr(sCmpExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyCmpExpr(sCmpExpr *n);
-
-#endif /* CMPEXPR_H_ */

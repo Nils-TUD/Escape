@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_SYSCALLS_PROC_H_
-#define I586_SYSCALLS_PROC_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
@@ -28,5 +27,3 @@ int sysc_reqports(sThread *t,sIntrptStackFrame *stack);
 int sysc_relports(sThread *t,sIntrptStackFrame *stack);
 int sysc_vm86start(sThread *t,sIntrptStackFrame *stack);
 int sysc_vm86int(sThread *t,sIntrptStackFrame *stack);
-
-#endif /* I586_SYSCALLS_PROC_H_ */

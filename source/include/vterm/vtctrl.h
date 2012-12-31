@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VTCTRL_H_
-#define VTCTRL_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/ringbuffer.h>
@@ -204,5 +203,3 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* VTCTRL_H_ */

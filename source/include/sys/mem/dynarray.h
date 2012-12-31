@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DYNARRAY_H_
-#define DYNARRAY_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/spinlock.h>
@@ -119,5 +118,3 @@ bool dyna_extend(sDynArray *d);
  * @param d the dynamic array
  */
 void dyna_destroy(sDynArray *d);
-
-#endif /* DYNARRAY_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VMREG_H_
-#define VMREG_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/mem/region.h>
@@ -118,5 +117,3 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg);
  * @param tree the tree
  */
 void vmreg_print(sVMRegTree *tree);
-
-#endif /* VMREG_H_ */

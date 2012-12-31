@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVER_VIDEO_H_
-#define DRIVER_VIDEO_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -34,5 +33,3 @@ int video_setMode(int fd);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* DRIVER_VIDEO_H_ */

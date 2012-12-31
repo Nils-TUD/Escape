@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GRAPHICS_H_
-#define GRAPHICS_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/graphicsbuffer.h>
@@ -368,5 +367,3 @@ namespace gui {
 		Font _font;
 	};
 }
-
-#endif /* GRAPHICS_H_ */

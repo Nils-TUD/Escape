@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CMDS_H_
-#define CMDS_H_
+#pragma once
 
 #include <esc/common.h>
 #include <esc/messages.h>
@@ -27,5 +26,3 @@
 sFSInst *cmds_getRoot(void);
 void cmds_setRoot(dev_t dev,sFSInst *fs);
 bool cmds_execute(int cmd,int fd,sMsg *msg,void *data);
-
-#endif /* CMDS_H_ */

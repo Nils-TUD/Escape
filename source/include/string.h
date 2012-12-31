@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STRING_H_
-#define STRING_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -503,5 +502,3 @@ char *ecvt(double number,int ndigits,int *decpt,int *sign);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* STRING_H_ */

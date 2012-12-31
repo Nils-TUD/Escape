@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef INITERROR_H_
-#define INITERROR_H_
+#pragma once
 
 #include <esc/common.h>
 #include <exception>
@@ -38,5 +37,3 @@ public:
 private:
 	std::string _msg;
 };
-
-#endif /* INITERROR_H_ */

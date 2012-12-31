@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SIGCLONE_H_
-#define SIGCLONE_H_
+#pragma once
 
 #include <esc/common.h>
 
@@ -26,5 +25,3 @@
  * Announces sig-handler and clones the process
  */
 int mod_sigclone(int argc,char *argv[]);
-
-#endif /* SIGCLONE_H_ */

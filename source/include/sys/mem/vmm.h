@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef REGUSE_H_
-#define REGUSE_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/mem/region.h>
@@ -277,5 +276,3 @@ void vmm_printShort(pid_t pid,const char *prefix);
  * @param pid the process-id
  */
 void vmm_print(pid_t pid);
-
-#endif /* REGUSE_H_ */

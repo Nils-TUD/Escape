@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TSIGNALS_H_
-#define TSIGNALS_H_
+#pragma once
 
 #include <esc/test.h>
 
 extern sTestModule tModSignals;
-
-#endif /* TSIGNALS_H_ */

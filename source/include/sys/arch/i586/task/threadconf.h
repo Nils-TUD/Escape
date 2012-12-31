@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef I586_THREADCONF_H_
-#define I586_THREADCONF_H_
+#pragma once
 
 #include <sys/common.h>
 #include <sys/arch/i586/fpu.h>
@@ -55,5 +54,3 @@ typedef struct {
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
 } sThreadArchAttr;
-
-#endif /* I586_THREADCONF_H_ */

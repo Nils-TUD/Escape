@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYS_DEBUG_H_
-#define SYS_DEBUG_H_
+#pragma once
 
 #include <sys/common.h>
 
@@ -38,5 +37,3 @@ void dbg_startTimer(void);
  * Stops the timer and prints the number of clock-cycles done until startTimer()
  */
 void dbg_stopTimer(const char *prefix);
-
-#endif /* SYS_DEBUG_H_ */

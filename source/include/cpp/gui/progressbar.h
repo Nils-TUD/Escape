@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PROGRESSBAR_H_
-#define PROGRESSBAR_H_
+#pragma once
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
@@ -61,5 +60,3 @@ namespace gui {
 		string _text;
 	};
 }
-
-#endif /* PROGRESSBAR_H_ */

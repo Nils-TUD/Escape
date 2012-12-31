@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef RINGBUFFER_H_
-#define RINGBUFFER_H_
+#pragma once
 
 #define RB_DEFAULT		0x0		/* error if ring-buffer full */
 #define RB_OVERWRITE	0x1		/* overwrite if full */
@@ -113,5 +112,3 @@ void rb_print(sRingBuf *r);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* RINGBUFFER_H_ */

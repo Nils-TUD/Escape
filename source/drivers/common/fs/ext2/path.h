@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PATH_H_
-#define PATH_H_
+#pragma once
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -36,5 +35,3 @@
  */
 inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t *dev,
 		bool resLastMnt);
-
-#endif /* PATH_H_ */

@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GTERM_H_
-#define GTERM_H_
+#pragma once
 
 #include <esc/common.h>
 #include <vterm/vtctrl.h>
@@ -62,5 +61,3 @@ private:
 	char *_rbuffer;
 	size_t _rbufPos;
 };
-
-#endif /* GTERM_H_ */

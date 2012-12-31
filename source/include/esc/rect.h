@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef RECT_H_
-#define RECT_H_
+#pragma once
 
 #include "common.h"
 
@@ -100,5 +99,3 @@ bool rectIntersect(sRectangle *r1,sRectangle *r2,sRectangle *intersect);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* RECT_H_ */

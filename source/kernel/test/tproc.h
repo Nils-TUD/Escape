@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TESTPROC_H_
-#define TESTPROC_H_
+#pragma once
 
 #include <sys/common.h>
 #include <esc/test.h>
 
 extern sTestModule tModProc;
-
-#endif /* TESTPROC_H_ */

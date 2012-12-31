@@ -22,6 +22,7 @@
 #include <esc/common.h>
 #include <gui/control.h>
 #include <string>
+#include <assert.h>
 
 namespace gui {
 	class Editable : public Control {
@@ -57,10 +58,10 @@ namespace gui {
 				_begin = 0;
 		};
 
-		inline const string &getText() const {
+		inline const std::string &getText() const {
 			return _str;
 		};
-		inline void setText(const string &text) {
+		inline void setText(const std::string &text) {
 			_str = text;
 			setCursorPos(text.length());
 			clearSelection();
@@ -68,7 +69,7 @@ namespace gui {
 		};
 
 		void insertAtCursor(char c);
-		void insertAtCursor(const string &str);
+		void insertAtCursor(const std::string &str);
 		void removeLast();
 		void removeNext();
 
@@ -107,6 +108,6 @@ namespace gui {
 		uchar _selDir;
 		int _selStart;
 		int _selEnd;
-		string _str;
+		std::string _str;
 	};
 }

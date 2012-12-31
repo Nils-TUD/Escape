@@ -31,7 +31,7 @@ class Device {
 	typedef unsigned int perm_type;
 
 public:
-	Device(): _name(std::string()), _perms(perm_type()), _group(std::string()) {
+	Device() : _name(), _perms(), _group() {
 	}
 	~Device() {
 	}
@@ -63,8 +63,7 @@ private:
 	static sGroup *groupList;
 
 public:
-	DriverProcess()
-		: Process(), _devices(std::vector<Device>()) {
+	DriverProcess() : Process(), _devices() {
 	};
 	virtual ~DriverProcess() {
 	};

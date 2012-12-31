@@ -33,8 +33,7 @@ private:
 	static const size_t KERNEL_PERCENT	= 40;
 
 public:
-	ProcessManager()
-		: _lock(0), _downProg(NULL), _procs(std::vector<Process*>()) {
+	ProcessManager() : _lock(0), _downProg(NULL), _procs() {
 	};
 	~ProcessManager() {
 	};

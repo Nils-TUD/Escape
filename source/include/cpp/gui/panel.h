@@ -51,7 +51,7 @@ namespace gui {
 		 * Destructor
 		 */
 		virtual ~Panel() {
-			for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+			for(std::vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
 				delete (*it);
 			delete _layout;
 		};
@@ -84,7 +84,7 @@ namespace gui {
 		 */
 		inline void setLayout(Layout *l) {
 			if(_controls.size() > 0) {
-				throw logic_error("This panel does already have controls;"
+				throw std::logic_error("This panel does already have controls;"
 						" you can't change the layout afterwards");
 			}
 			_layout = l;
@@ -153,7 +153,7 @@ namespace gui {
 
 	protected:
 		Control *_focus;
-		vector<Control*> _controls;
+		std::vector<Control*> _controls;
 		Layout *_layout;
 		sRectangle _updateRect;
 	};

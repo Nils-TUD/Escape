@@ -32,20 +32,20 @@ namespace gui {
 		static const gsize_t TEXT_PADDING	= 4;
 
 	public:
-		Checkbox(const string &text)
+		Checkbox(const std::string &text)
 			: Control(), _focused(false), _checked(false), _text(text) {
 		};
-		Checkbox(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
+		Checkbox(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _checked(false), _text(text) {
 		};
 
 		inline bool isChecked() const {
 			return _checked;
 		};
-		inline const string &getText() const {
+		inline const std::string &getText() const {
 			return _text;
 		};
-		inline void setText(const string &text) {
+		inline void setText(const std::string &text) {
 			_text = text;
 			repaint();
 		};
@@ -65,6 +65,6 @@ namespace gui {
 
 		bool _focused;
 		bool _checked;
-		string _text;
+		std::string _text;
 	};
 }

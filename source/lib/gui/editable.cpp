@@ -21,6 +21,8 @@
 #include <gui/editable.h>
 #include <esc/keycodes.h>
 
+using namespace std;
+
 namespace gui {
 	const uchar Editable::DIR_NONE			= 0;
 	const uchar Editable::DIR_LEFT			= 1;

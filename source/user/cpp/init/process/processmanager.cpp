@@ -41,6 +41,8 @@
 #include "../initerror.h"
 #include "../progress.h"
 
+using namespace std;
+
 void ProcessManager::start() {
 	// TODO this is not exception-safe
 	locku(&_lock);

@@ -28,6 +28,8 @@
 #include "driverprocess.h"
 #include "../initerror.h"
 
+using namespace std;
+
 sGroup *DriverProcess::groupList = NULL;
 
 void DriverProcess::load() {
@@ -40,7 +42,7 @@ void DriverProcess::load() {
 	}
 
 	// now load the driver
-	std::string path = string("/sbin/") + name();
+	string path = string("/sbin/") + name();
 	_pid = fork();
 	if(_pid == 0) {
 		const char **argv = new const char*[_args.size() + 2];
@@ -56,7 +58,7 @@ void DriverProcess::load() {
 		throw init_error("fork failed");
 
 	// wait for all specified devices
-	for(std::vector<Device>::const_iterator it = _devices.begin(); it != _devices.end(); ++it) {
+	for(vector<Device>::const_iterator it = _devices.begin(); it != _devices.end(); ++it) {
 		sFileInfo info;
 		sGroup *g;
 		int res;
@@ -82,17 +84,17 @@ void DriverProcess::load() {
 	}
 }
 
-std::istream& operator >>(std::istream& is,Device& dev) {
+istream& operator >>(istream& is,Device& dev) {
 	is >> dev._name;
-	is >> std::oct >> dev._perms;
+	is >> oct >> dev._perms;
 	is >> dev._group;
 	return is;
 }
 
-std::istream& operator >>(std::istream& is,DriverProcess& drv) {
+istream& operator >>(istream& is,DriverProcess& drv) {
 	is >> drv._name;
 	while(!is.eof() && is.peek() != '\t') {
-		std::string arg;
+		string arg;
 		is >> arg;
 		drv._args.push_back(arg);
 	}
@@ -104,13 +106,13 @@ std::istream& operator >>(std::istream& is,DriverProcess& drv) {
 	return is;
 }
 
-std::ostream& operator <<(std::ostream& os,const DriverProcess& drv) {
+ostream& operator <<(ostream& os,const DriverProcess& drv) {
 	os << drv.name() << '\n';
-	const std::vector<Device>& devs = drv.devices();
-	for(std::vector<Device>::const_iterator it = devs.begin(); it != devs.end(); ++it) {
+	const vector<Device>& devs = drv.devices();
+	for(vector<Device>::const_iterator it = devs.begin(); it != devs.end(); ++it) {
 		os << '\t' << it->name() << ' ';
-		os << std::oct << it->permissions() << ' ' << it->group() << '\n';
+		os << oct << it->permissions() << ' ' << it->group() << '\n';
 	}
-	os << std::endl;
+	os << endl;
 	return os;
 }

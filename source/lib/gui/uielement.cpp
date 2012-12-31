@@ -25,6 +25,8 @@
 #include <typeinfo>
 #include <sstream>
 
+using namespace std;
+
 namespace gui {
 	UIElement::id_type UIElement::_nextid = 1;
 
@@ -92,7 +94,7 @@ namespace gui {
 	void UIElement::debug() {
 #ifdef DEBUG_GUI
 		static int pos = 0;
-		std::ostringstream ostr;
+		ostringstream ostr;
 		ostr << _id;
 		_g->setColor(Color(0xFF,0,0));
 
@@ -113,14 +115,14 @@ namespace gui {
 
 		Window *win = _g->getBuffer()->getWindow();
 		if(win->hasTitleBar())
-			std::cout << "[" << win->getTitle();
+			cout << "[" << win->getTitle();
 		else
-			std::cout << "[#" << win->getId();
-		std::cout << ":" << _id << ":" << typeid(*this).name() << "]";
-		std::cout << " @" << getX() << "," << getY();
-		std::cout << " size:" << getWidth() << "x" << getHeight();
-		std::cout << " min:" << getMinWidth() << "x" << getMinHeight();
-		std::cout << " pref:" << getPreferredWidth() << "x" << getPreferredHeight() << std::endl;
+			cout << "[#" << win->getId();
+		cout << ":" << _id << ":" << typeid(*this).name() << "]";
+		cout << " @" << getX() << "," << getY();
+		cout << " size:" << getWidth() << "x" << getHeight();
+		cout << " min:" << getMinWidth() << "x" << getMinHeight();
+		cout << " pref:" << getPreferredWidth() << "x" << getPreferredHeight() << endl;
 #endif
 	}
 

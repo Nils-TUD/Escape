@@ -21,6 +21,8 @@
 #include <gui/graphics/color.h>
 #include <gui/application.h>
 
+using namespace std;
+
 namespace gui {
 	Color::color_type Color::toCurMode() const {
 		const sVESAInfo *vesaInfo = Application::getInstance()->getVesaInfo();
@@ -35,7 +37,7 @@ namespace gui {
 		return val;
 	}
 
-	std::ostream &operator<<(std::ostream &s,const Color &c) {
+	ostream &operator<<(ostream &s,const Color &c) {
 		s << "Color[" << c.getRed() << "," << c.getGreen() << "," << c.getBlue();
 		s << "," << c.getAlpha() << "]";
 		return s;

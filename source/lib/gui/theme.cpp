@@ -20,6 +20,8 @@
 #include <esc/common.h>
 #include <gui/theme.h>
 
+using namespace std;
+
 namespace gui {
 	Theme& Theme::operator=(const Theme& t) {
 		if(&t == this)
@@ -59,11 +61,11 @@ namespace gui {
 			return (*_colors)[id];
 		if(_default)
 			return _default->getColor(id);
-		throw std::logic_error(std::string("Color with id ") + id + " not set");
+		throw logic_error(string("Color with id ") + id + " not set");
 	}
 	void Theme::setColor(colid_type id,const Color& c) {
 		if(_colors == NULL)
-			_colors = new std::vector<Color>();
+			_colors = new vector<Color>();
 		if(id >= _colors->size())
 			_colors->reserve(id + 1);
 		(*_colors)[id] = c;

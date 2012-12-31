@@ -139,7 +139,7 @@ namespace gui {
 		 * @param y the y-coordinate
 		 * @param str the string
 		 */
-		virtual void drawString(gpos_t x,gpos_t y,const string &str);
+		virtual void drawString(gpos_t x,gpos_t y,const std::string &str);
 
 		/**
 		 * Draws the given part of the given string at the given position. Note that the
@@ -151,7 +151,7 @@ namespace gui {
 		 * @param start the start-position in the string
 		 * @param count the number of characters
 		 */
-		virtual void drawString(gpos_t x,gpos_t y,const string &str,size_t start,size_t count);
+		virtual void drawString(gpos_t x,gpos_t y,const std::string &str,size_t start,size_t count);
 
 		/**
 		 * Draws a line from (x0,y0) to (xn,yn)

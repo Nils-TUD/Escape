@@ -22,6 +22,8 @@
 #include <gui/window.h>
 #include <ostream>
 
+using namespace std;
+
 namespace gui {
 	void Panel::onMousePressed(const MouseEvent &e) {
 		passToCtrl(e,true);

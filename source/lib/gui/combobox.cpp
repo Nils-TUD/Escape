@@ -23,6 +23,8 @@
 #include <gui/control.h>
 #include <iterator>
 
+using namespace std;
+
 namespace gui {
 	void ComboBox::ItemWindow::close(gpos_t x,gpos_t y) {
 		// just do this here if we will not receive a mouse-click for the combobox-button
@@ -53,7 +55,7 @@ namespace gui {
 		gsize_t itemHeight = g.getFont().getHeight();
 		g.setColor(tf);
 		for(vector<string>::iterator it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
-			if(_highlighted == (int)std::distance(_cb->_items.begin(),it)) {
+			if(_highlighted == (int)distance(_cb->_items.begin(),it)) {
 				g.setColor(sb);
 				g.fillRect(SELPAD,y + SELPAD,
 						getWidth() - SELPAD * 2,

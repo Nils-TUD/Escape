@@ -21,6 +21,8 @@
 #include <gui/scrollpane.h>
 #include <gui/panel.h>
 
+using namespace std;
+
 namespace gui {
 	void ScrollPane::resizeTo(gsize_t width,gsize_t height) {
 		Control::resizeTo(width,height);

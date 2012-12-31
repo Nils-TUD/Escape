@@ -30,6 +30,7 @@
 #include "gcalc.h"
 
 using namespace gui;
+using namespace std;
 
 static const size_t BTNSIZE	= 30;
 
@@ -42,11 +43,11 @@ static Window *win;
 static Editable *textfield;
 
 void yyerror(char const *s) {
-	std::cerr << "Error: " << s << std::endl;
+	cerr << "Error: " << s << endl;
 }
 
 void callback(double result) {
-	std::ostringstream ostr;
+	ostringstream ostr;
 	ostr << result;
 	textfield->setText(ostr.str());
 }

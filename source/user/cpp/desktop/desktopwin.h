@@ -28,8 +28,6 @@
 #include <gui/imagebutton.h>
 #include <map>
 
-using namespace gui;
-
 class Shortcut {
 	friend class DesktopWin;
 
@@ -38,7 +36,7 @@ public:
 		: _icon(icon), _app(app), _btn(NULL) {
 	};
 	Shortcut(const Shortcut &w)
-		: _icon(w._icon), _app(w._app), _btn(new ImageButton(*w._btn)) {
+		: _icon(w._icon), _app(w._app), _btn(new gui::ImageButton(*w._btn)) {
 	};
 
 	Shortcut &operator=(const Shortcut &w) {
@@ -46,7 +44,7 @@ public:
 			return *this;
 		this->_icon = w._icon;
 		this->_app = w._app;
-		this->_btn = new ImageButton(*w._btn);
+		this->_btn = new gui::ImageButton(*w._btn);
 		return *this;
 	};
 
@@ -58,21 +56,21 @@ public:
 	};
 
 private:
-	inline ImageButton *getButton() const {
+	inline gui::ImageButton *getButton() const {
 		return _btn;
 	};
-	inline void setButton(ImageButton *btn) {
+	inline void setButton(gui::ImageButton *btn) {
 		_btn = btn;
 	};
 
 private:
 	std::string _icon;
 	std::string _app;
-	ImageButton *_btn;
+	gui::ImageButton *_btn;
 };
 
-class DesktopWin : public Window {
-	class WinButton : public Button {
+class DesktopWin : public gui::Window {
+	class WinButton : public gui::Button {
 	public:
 		WinButton(DesktopWin *inst,const string &title)
 			: Button(title), _sub(clicked(),mem_recv(inst,&DesktopWin::onIconClick)) {
@@ -83,13 +81,13 @@ class DesktopWin : public Window {
 	};
 
 	typedef map<gwinid_t,WinButton*> winmap_type;
-	typedef map<ImageButton*,Shortcut*> shortcutmap_type;
+	typedef map<gui::ImageButton*,Shortcut*> shortcutmap_type;
 
 public:
 	static const gsize_t PADDING;
 	static const gsize_t ICON_SIZE;
-	static const Color BGCOLOR;
-	static const Color ACTIVE_COLOR;
+	static const gui::Color BGCOLOR;
+	static const gui::Color ACTIVE_COLOR;
 	static const gsize_t TASKBAR_HEIGHT;
 
 public:
@@ -97,8 +95,8 @@ public:
 
 	inline void addShortcut(Shortcut* sc) {
 		// do that first for exception-safety
-		Image *img = Image::loadImage(sc->getIcon());
-		ImageButton *btn = new ImageButton(img,
+		gui::Image *img = gui::Image::loadImage(sc->getIcon());
+		gui::ImageButton *btn = new gui::ImageButton(img,
 				PADDING,PADDING + _shortcuts.size() * (ICON_SIZE + PADDING),
 				img->getWidth() + 2,img->getHeight() + 2);
 		sc->setButton(btn);
@@ -121,8 +119,8 @@ private:
 	void onIconClick(UIElement& el);
 
 private:
-	Panel *_winPanel;
-	Panel *_iconPanel;
+	gui::Panel *_winPanel;
+	gui::Panel *_iconPanel;
 	WinButton *_active;
 	winmap_type _windows;
 	shortcutmap_type _shortcuts;

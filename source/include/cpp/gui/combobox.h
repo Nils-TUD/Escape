@@ -72,7 +72,7 @@ namespace gui {
 			delete _win;
 		};
 
-		inline void addItem(const string &s) {
+		inline void addItem(const std::string &s) {
 			_items.push_back(s);
 		};
 		inline int getSelectedIndex() const {
@@ -95,7 +95,7 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
-		vector<string> _items;
+		std::vector<std::string> _items;
 		int _selected;
 		bool _pressed;
 		ItemWindow *_win;

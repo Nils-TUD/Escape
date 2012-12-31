@@ -26,17 +26,17 @@
 namespace gui {
 	class Label : public Control {
 	public:
-		Label(const string &text)
+		Label(const std::string &text)
 			: Control(), _text(text) {
 		};
-		Label(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
+		Label(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _text(text) {
 		};
 
-		inline const string &getText() const {
+		inline const std::string &getText() const {
 			return _text;
 		};
-		inline void setText(const string &text) {
+		inline void setText(const std::string &text) {
 			_text = text;
 			repaint();
 		};
@@ -48,6 +48,6 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
-		string _text;
+		std::string _text;
 	};
 }

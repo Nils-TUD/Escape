@@ -60,7 +60,7 @@ namespace gui {
 		friend class Color;
 
 	public:
-		typedef Sender<gwinid_t,const string&> createdev_type;
+		typedef Sender<gwinid_t,const std::string&> createdev_type;
 		typedef Sender<gwinid_t> activatedev_type;
 		typedef Sender<gwinid_t> destroyedev_type;
 

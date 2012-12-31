@@ -26,6 +26,8 @@
 #include <iostream>
 #include "progress.h"
 
+using namespace std;
+
 Progress::Progress(size_t startSkip,size_t finished,size_t itemCount)
 		: _fd(-1), _startSkip(startSkip), _itemCount(itemCount), _finished(finished),
 		  _vtSize(sVTSize()) {
@@ -36,7 +38,7 @@ Progress::~Progress() {
 		close(_fd);
 }
 
-void Progress::itemStarting(const std::string& s) {
+void Progress::itemStarting(const string& s) {
 	if(connect()) {
 		// copy text to bar
 		memclear(_emptyBar,sizeof(_emptyBar));

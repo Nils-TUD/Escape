@@ -67,6 +67,6 @@ namespace gui {
 		Align _pos;
 		gsize_t _gap;
 		Panel *_p;
-		vector<Control*> _ctrls;
+		std::vector<Control*> _ctrls;
 	};
 }

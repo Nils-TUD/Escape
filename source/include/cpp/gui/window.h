@@ -44,12 +44,12 @@ namespace gui {
 		static const char *CLOSE_IMG;
 
 	public:
-		WindowTitleBar(const string& title,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		WindowTitleBar(const std::string& title,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 		/**
 		 * @return the title (a copy)
 		 */
-		inline const string &getTitle() const {
+		inline const std::string &getTitle() const {
 			return _title->getText();
 		};
 		/**
@@ -57,7 +57,7 @@ namespace gui {
 		 *
 		 * @param title the new title
 		 */
-		inline void setTitle(const string &title) {
+		inline void setTitle(const std::string &title) {
 			_title->setText(title);
 		};
 
@@ -122,7 +122,7 @@ namespace gui {
 		 * @param height the height
 		 * @param style the window-style (STYLE_*)
 		 */
-		Window(const string &title,gpos_t x,gpos_t y,gsize_t width = MIN_WIDTH,
+		Window(const std::string &title,gpos_t x,gpos_t y,gsize_t width = MIN_WIDTH,
 		       gsize_t height = MIN_HEIGHT,uchar style = STYLE_DEFAULT);
 		/**
 		 * Destructor
@@ -162,9 +162,9 @@ namespace gui {
 		/**
 		 * @return the title (a copy)
 		 */
-		inline const string &getTitle() const {
+		inline const std::string &getTitle() const {
 			if(!_header)
-				throw logic_error("This window has no title");
+				throw std::logic_error("This window has no title");
 			return _header->getTitle();
 		};
 		/**
@@ -172,9 +172,9 @@ namespace gui {
 		 *
 		 * @param title the new title
 		 */
-		inline void setTitle(const string &title) {
+		inline void setTitle(const std::string &title) {
 			if(!_header)
-				throw logic_error("This window has no title");
+				throw std::logic_error("This window has no title");
 			_header->setTitle(title);
 		};
 		/**
@@ -360,8 +360,8 @@ namespace gui {
 	protected:
 		WindowTitleBar *_header;
 		Panel _body;
-		list<Control*> _tabCtrls;
-		list<Control*>::iterator _tabIt;
+		std::list<Control*> _tabCtrls;
+		std::list<Control*>::iterator _tabIt;
 	};
 
 	/**

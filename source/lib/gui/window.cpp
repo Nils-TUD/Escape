@@ -30,6 +30,8 @@
 #include <string>
 #include <ostream>
 
+using namespace std;
+
 namespace gui {
 	const char *WindowTitleBar::CLOSE_IMG = "/etc/close.bmp";
 

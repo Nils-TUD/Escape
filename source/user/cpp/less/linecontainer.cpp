@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include "linecontainer.h"
 
+using namespace std;
+
 LineContainer::size_type LineContainer::pageSize = 0;
 
 bool LineContainer::Region::append(size_type size,const char *line) {
@@ -56,7 +58,7 @@ char *LineContainer::Region::get(size_type size,size_type i) const {
 
 const char *LineContainer::get(size_type index) {
 	size_type i = index;
-	for(std::vector<Region>::iterator it = _regions.begin(); it != _regions.end(); ++it) {
+	for(vector<Region>::iterator it = _regions.begin(); it != _regions.end(); ++it) {
 		const char *res = it->get(_lineLen,i);
 		if(res)
 			return res;

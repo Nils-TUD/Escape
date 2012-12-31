@@ -77,7 +77,7 @@ namespace gui {
 		} A_PACKED sBMInfoHeader;
 
 	public:
-		BitmapImage(const string &filename)
+		BitmapImage(const std::string &filename)
 			: Image(), _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
 				_data(NULL), _dataSize(0) {
 			loadFromFile(filename);
@@ -115,7 +115,7 @@ namespace gui {
 
 	private:
 		void clone(const BitmapImage &img);
-		void loadFromFile(const string &filename);
+		void loadFromFile(const std::string &filename);
 		void paintRGB(Graphics &g,gpos_t x,gpos_t y);
 		void paintPixel(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol);
 		void paintPixel8(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol);

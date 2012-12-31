@@ -23,12 +23,14 @@
 #include <esc/proc.h>
 #include "desktopwin.h"
 
+using namespace gui;
+
 static int childWaitThread(void *arg);
 
 int main(void) {
 	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
 	Shortcut sc2("/etc/calc.bmp","/bin/gtest");
-	gui::Application* app = gui::Application::getInstance();
+	Application* app = Application::getInstance();
 	DesktopWin win(app->getScreenWidth(),app->getScreenHeight());
 	win.addShortcut(&sc1);
 	win.addShortcut(&sc2);

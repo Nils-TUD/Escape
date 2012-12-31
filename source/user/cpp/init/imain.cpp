@@ -29,6 +29,8 @@
 #include "process/processmanager.h"
 #include "initerror.h"
 
+using namespace std;
+
 #define SHUTDOWN_TIMEOUT		3000
 #define STATE_RUN				0
 #define STATE_REBOOT			1

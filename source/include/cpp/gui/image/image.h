@@ -24,9 +24,9 @@
 #include <exception>
 
 namespace gui {
-	class img_load_error : public exception {
+	class img_load_error : public std::exception {
 	public:
-		img_load_error(const string& str) throw ()
+		img_load_error(const std::string& str) throw ()
 			: exception(), _str(str) {
 		}
 		~img_load_error() throw () {
@@ -35,12 +35,12 @@ namespace gui {
 			return _str.c_str();
 		}
 	private:
-		string _str;
+		std::string _str;
 	};
 
 	class Image {
 	public:
-		static Image *loadImage(const string& path);
+		static Image *loadImage(const std::string& path);
 
 	public:
 		virtual ~Image() {

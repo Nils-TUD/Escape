@@ -25,6 +25,9 @@
 #include <iostream>
 #include "desktopwin.h"
 
+using namespace gui;
+using namespace std;
+
 const gsize_t DesktopWin::PADDING = 10;
 const gsize_t DesktopWin::ICON_SIZE = 30;
 const Color DesktopWin::BGCOLOR = Color(0xd5,0xe6,0xf3);
@@ -71,7 +74,7 @@ void DesktopWin::onIconClick(UIElement& el) {
 	}
 }
 
-void DesktopWin::onWindowCreated(gwinid_t wid,const std::string& title) {
+void DesktopWin::onWindowCreated(gwinid_t wid,const string& title) {
 	WinButton *b = new WinButton(this,title);
 	_windows[wid] = b;
 	_winPanel->add(b);
@@ -80,6 +83,7 @@ void DesktopWin::onWindowCreated(gwinid_t wid,const std::string& title) {
 	layout();
 	repaint();
 }
+
 void DesktopWin::onWindowActive(gwinid_t wid) {
 	if(_active) {
 		_active->getTheme().unsetColor(Theme::BTN_BACKGROUND);
@@ -95,6 +99,7 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 	else
 		_active = NULL;
 }
+
 void DesktopWin::onWindowDestroyed(gwinid_t wid) {
 	winmap_type::iterator it = _windows.find(wid);
 	if(it != _windows.end()) {

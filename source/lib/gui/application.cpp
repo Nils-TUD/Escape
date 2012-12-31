@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <string.h>
 
+using namespace std;
+
 namespace gui {
 	Application *Application::_inst = NULL;
 
@@ -194,7 +196,7 @@ namespace gui {
 
 			case MSG_WIN_CREATE_EV: {
 				gwinid_t win = (gwinid_t)msg->str.arg1;
-				std::string title(msg->str.s1);
+				string title(msg->str.s1);
 				_created.send(win,title);
 			}
 			break;

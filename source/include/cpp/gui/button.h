@@ -30,20 +30,20 @@ namespace gui {
 	public:
 		typedef Sender<UIElement&> onclick_type;
 
-		Button(const string &text)
+		Button(const std::string &text)
 			: Control(), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
-		Button(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
+		Button(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: Control(x,y,width,height), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
 
 		inline bool isPressed() const {
 			return _pressed;
 		};
-		inline const string &getText() const {
+		inline const std::string &getText() const {
 			return _text;
 		};
-		inline void setText(const string &text) {
+		inline void setText(const std::string &text) {
 			_text = text;
 			repaint();
 		};
@@ -72,7 +72,7 @@ namespace gui {
 	private:
 		bool _focused;
 		bool _pressed;
-		string _text;
+		std::string _text;
 		onclick_type _clicked;
 	};
 }

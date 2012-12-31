@@ -25,6 +25,8 @@
 #include <iostream>
 #include <string.h>
 
+using namespace std;
+
 namespace gui {
 	void Graphics::moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
 		gsize_t bwidth = _buf->getWidth();
@@ -164,12 +166,12 @@ namespace gui {
 		}
 		// handle 45° < x < 90°
 		if(dx < dy) {
-			std::swap(x,y);
-			std::swap(px,py);
-			std::swap(dx,dy);
-			std::swap(x0,y0);
-			std::swap(xn,yn);
-			std::swap(incx,incy);
+			swap(x,y);
+			swap(px,py);
+			swap(dx,dy);
+			swap(x0,y0);
+			swap(xn,yn);
+			swap(incx,incy);
 		}
 
 		int d = 2 * dy - dx;
@@ -201,7 +203,7 @@ namespace gui {
 		updateMinMax(x,y1);
 		updateMinMax(x,y2);
 		if(y1 > y2)
-			std::swap(y1,y2);
+			swap(y1,y2);
 		for(; y1 <= y2; y1++)
 			doSetPixel(x,y1);
 	}
@@ -212,7 +214,7 @@ namespace gui {
 		updateMinMax(x1,y);
 		updateMinMax(x2,y);
 		if(x1 > x2)
-			std::swap(x1,x2);
+			swap(x1,x2);
 		for(; x1 <= x2; x1++)
 			doSetPixel(x1,y);
 	}

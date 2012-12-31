@@ -307,6 +307,19 @@ namespace gui {
 			_parent = e;
 		};
 
+		/**
+		 * Notifies all listeners about the given mouse-event
+		 *
+		 * @param e the event
+		 */
+		void notifyListener(const MouseEvent &e);
+		/**
+		 * Notifies all listeners about the given key-event
+		 *
+		 * @param e the event
+		 */
+		void notifyListener(const KeyEvent &e);
+
 	private:
 		// I've decided to make all ui-elements not-clonable for the following reasons:
 		// 1. I can't think of a real reason why cloning is necessary. Of course, one could argue
@@ -372,10 +385,6 @@ namespace gui {
 		 * Adds some debugging info after drawing an UIElement
 		 */
 		void debug();
-
-		// only used internally
-		void notifyListener(const MouseEvent &e);
-		void notifyListener(const KeyEvent &e);
 
 	private:
 		id_type _id;

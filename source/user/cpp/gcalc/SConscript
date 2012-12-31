@@ -1,0 +1,18 @@
+# -*- Mode: Python -*-
+
+Import('env')
+myenv = env.Clone()
+builddir = Dir('$BUILDDIR/user/cpp/gcalc')
+myenv.Append(
+	CFLAGS = ' -DYYERROR_VERBOSE -I user/cpp/gcalc -I ' + builddir.abspath,
+	LEXFLAGS = '--nounistd',
+	YACCFLAGS = '-t -d'
+)
+
+lexer = myenv.CFile(target = 'lex.c', source = 'calc.l')
+parser = myenv.CFile(target = 'parser', source = 'calc.y')
+
+cppfiles = myenv.Glob('*.cpp')
+myenv.Depends(cppfiles, [lexer, parser])
+
+myenv.EscapeCXXProg('bin', target = 'gcalc', source = cppfiles + [lexer, parser[0]], LIBS = ['gui'])

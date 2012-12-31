@@ -91,23 +91,48 @@ namespace gui {
 		return pos;
 	}
 
+	void Editable::insertAtCursor(char c) {
+		char str[] = {c,'\0'};
+		insertAtCursor(str);
+	}
+
+	void Editable::insertAtCursor(const string &str) {
+		deleteSelection();
+		_str.insert(_cursor,str);
+		moveCursor(str.length());
+		repaint();
+	}
+
+	void Editable::removeLast() {
+		if(_selStart != -1) {
+			deleteSelection();
+			repaint();
+		}
+		else if(_cursor > 0) {
+			_str.erase(_cursor - 1,1);
+			moveCursor(-1);
+			repaint();
+		}
+	}
+
+	void Editable::removeNext() {
+		if(_selStart != -1) {
+			deleteSelection();
+			repaint();
+		}
+		else if(_cursor < _str.length()) {
+			_str.erase(_cursor,1);
+			repaint();
+		}
+	}
+
 	void Editable::moveCursor(int amount) {
-		size_t max = getMaxCharNum(*getGraphics());
-		_cursor += amount;
-		if(amount > 0 && _cursor - _begin > max)
-			_begin += amount;
-		else if(amount < 0 && _cursor < _begin)
-			_begin = _cursor;
+		setCursorPos(_cursor + amount);
 	}
 
 	bool Editable::moveCursorTo(size_t pos) {
 		size_t oldCur = _cursor;
-		size_t max = getMaxCharNum(*getGraphics());
-		_cursor = pos;
-		if(_cursor > max)
-			_begin = _cursor - max;
-		else
-			_begin = 0;
+		setCursorPos(pos);
 		return _cursor != oldCur;
 	}
 
@@ -159,36 +184,17 @@ namespace gui {
 
 	void Editable::onKeyPressed(const KeyEvent &e) {
 		UIElement::onKeyPressed(e);
-		if(e.isPrintable()) {
-			deleteSelection();
-			_str.insert(_cursor,1,e.getCharacter());
-			moveCursor(1);
-			repaint();
-		}
+		if(e.isPrintable())
+			insertAtCursor(e.getCharacter());
 		else {
 			size_t oldPos;
 			bool changed = false;
 			switch(e.getKeyCode()) {
 				case VK_DELETE:
-					if(_selStart != -1) {
-						deleteSelection();
-						changed = true;
-					}
-					else if(_cursor < _str.length()) {
-						_str.erase(_cursor,1);
-						changed = true;
-					}
+					removeNext();
 					break;
 				case VK_BACKSP:
-					if(_selStart != -1) {
-						deleteSelection();
-						changed = true;
-					}
-					else if(_cursor > 0) {
-						_str.erase(_cursor - 1,1);
-						moveCursor(-1);
-						changed = true;
-					}
+					removeLast();
 					break;
 				case VK_LEFT:
 					if(_cursor > 0) {

@@ -45,14 +45,33 @@ namespace gui {
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		};
 
+		inline size_t getCursorPos() const {
+			return _cursor;
+		};
+		inline void setCursorPos(size_t pos) {
+			size_t max = getMaxCharNum(*getGraphics());
+			assert(pos <= _str.length());
+			_cursor = pos;
+			if(_cursor > max)
+				_begin = _cursor - max;
+			else
+				_begin = 0;
+		};
+
 		inline const string &getText() const {
 			return _str;
 		};
 		inline void setText(const string &text) {
 			_str = text;
-			_cursor = text.length();
+			setCursorPos(text.length());
+			clearSelection();
 			repaint();
 		};
+
+		void insertAtCursor(char c);
+		void insertAtCursor(const string &str);
+		void removeLast();
+		void removeNext();
 
 		virtual gsize_t getMinWidth() const;
 		virtual gsize_t getMinHeight() const;

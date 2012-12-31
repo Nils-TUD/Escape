@@ -31,9 +31,8 @@ namespace gui {
 	 */
 	class MouseListener {
 	public:
-		/**
-		 * Destructor
-		 */
+		MouseListener() {
+		};
 		virtual ~MouseListener() {
 		};
 

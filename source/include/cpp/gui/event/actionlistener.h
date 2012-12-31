@@ -14,9 +14,8 @@ namespace gui {
 	 */
 	class ActionListener {
 	public:
-		/**
-		 * Destructor
-		 */
+		ActionListener() {
+		};
 		virtual ~ActionListener() {
 		};
 

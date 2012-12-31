@@ -250,6 +250,8 @@ namespace gui {
 			return;
 		}
 
+		notifyListener(e);
+
 		// pass event to focused control
 		Control *focus = getFocus();
 		if(focus) {
@@ -268,6 +270,8 @@ namespace gui {
 		// no events until we're created
 		if(!_created)
 			return;
+
+		notifyListener(e);
 
 		/* if a control is focused and we get a moved or released event we have to pass this
 		 * event to the focused control. otherwise the control wouldn't know of them */

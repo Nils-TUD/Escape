@@ -17,42 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef WINDOWLISTENER_H_
-#define WINDOWLISTENER_H_
+#ifndef GCALC_H_
+#define GCALC_H_
 
-#include <esc/common.h>
-#include <string>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace gui {
-	class WindowListener {
-	public:
-		WindowListener() {
-		};
-		virtual ~WindowListener() {
-		};
+#define YYSTYPE_IS_DECLARED		1
+#define YYSTYPE					double
 
-		/**
-		 * Is called as soon as a window is created
-		 *
-		 * @param id the window-id
-		 * @param title the window-title
-		 */
-		virtual void onWindowCreated(gwinid_t id,const std::string& title) = 0;
+void callback(double result);
+extern const char *parse_text;
 
-		/**
-		 * Is called as soon as the active window changes
-		 *
-		 * @param id the active window-id
-		 */
-		virtual void onWindowActive(gwinid_t id) = 0;
-
-		/**
-		 * Is called as soon as a window is destroyed.
-		 *
-		 * @param id the window-id
-		 */
-		virtual void onWindowDestroyed(gwinid_t id) = 0;
-	};
+#ifdef __cplusplus
 }
+#endif
 
-#endif /* WINDOWLISTENER_H_ */
+#endif /* GCALC_H_ */

@@ -30,30 +30,21 @@ namespace gui {
 	 */
 	class FlowLayout : public Layout {
 	public:
-		/**
-		 * The left-position: align all controls on the left
-		 */
-		static const int LEFT			= 0;
-		/**
-		 * The center-position: align all controls horizontally centered
-		 */
-		static const int CENTER			= 1;
-		/**
-		 * The right-position: align all controls on the right
-		 */
-		static const int RIGHT			= 2;
+		enum Align {
+			LEFT,
+			CENTER,
+			RIGHT,
+		};
 
-	private:
 		static const gsize_t DEF_GAP	= 2;
 
-	public:
 		/**
 		 * Constructor
 		 *
-		 * @param pos the alignment of the controls (LEFT, CENTER, RIGHT)
+		 * @param pos the alignment of the controls
 		 * @param gap the gap between the controls (default 2)
 		 */
-		FlowLayout(int pos,gsize_t gap = DEF_GAP)
+		FlowLayout(Align pos,gsize_t gap = DEF_GAP)
 			: Layout(), _pos(pos), _gap(gap), _p(), _ctrls() {
 		};
 
@@ -73,7 +64,7 @@ namespace gui {
 		gsize_t getMaxHeight() const;
 
 	private:
-		int _pos;
+		Align _pos;
 		gsize_t _gap;
 		Panel *_p;
 		vector<Control*> _ctrls;

@@ -33,31 +33,31 @@ namespace gui {
 	 */
 	class BorderLayout : public Layout {
 	public:
-		/**
-		 * The north-position: receive full width and preferred height
-		 */
-		static const pos_type NORTH		= 0;
-		/**
-		 * The east-position: receive remaining height and preferred width
-		 */
-		static const pos_type EAST		= 1;
-		/**
-		 * The south-position: receive full width and preferred height
-		 */
-		static const pos_type SOUTH		= 2;
-		/**
-		 * The west-position: receive remaining height and preferred width
-		 */
-		static const pos_type WEST		= 3;
-		/**
-		 * The center-position: receive remaining width and height
-		 */
-		static const pos_type CENTER	= 4;
+		enum Position {
+			/**
+			 * receive full width and preferred height
+			 */
+			NORTH,
+			/**
+			 * receive remaining height and preferred width
+			 */
+			EAST,
+			/**
+			 * receive full width and preferred height
+			 */
+			SOUTH,
+			/**
+			 * receive remaining height and preferred width
+			 */
+			WEST,
+			/**
+			 * receive remaining width and height
+			 */
+			CENTER
+		};
 
-	private:
 		static const gsize_t DEF_GAP	= 2;
 
-	public:
 		/**
 		 * Constructor
 		 *

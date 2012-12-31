@@ -37,7 +37,7 @@
 #include <list>
 
 namespace gui {
-	class WindowTitleBar : public Panel, public ActionListener {
+	class WindowTitleBar : public Panel {
 		friend class Window;
 
 	private:
@@ -61,10 +61,9 @@ namespace gui {
 			_title->setText(title);
 		};
 
-		virtual void actionPerformed(UIElement& el);
-
 	private:
 		void init();
+		void onButtonClick(UIElement& el);
 
 		Label *_title;
 	};

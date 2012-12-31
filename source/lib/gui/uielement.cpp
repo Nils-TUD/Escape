@@ -66,86 +66,27 @@ namespace gui {
 		return _y;
 	}
 
-	void UIElement::addMouseListener(MouseListener *l) {
-		if(_mlist == NULL)
-			_mlist = new vector<MouseListener*>();
-		_mlist->push_back(l);
-	}
-	void UIElement::removeMouseListener(MouseListener *l) {
-		if(_mlist != NULL)
-			_mlist->erase_first(l);
-	}
-
-	void UIElement::addKeyListener(KeyListener *l) {
-		if(_klist == NULL)
-			_klist = new vector<KeyListener*>();
-		_klist->push_back(l);
-	}
-	void UIElement::removeKeyListener(KeyListener *l) {
-		if(_klist != NULL)
-			_klist->erase_first(l);
-	}
-
 	void UIElement::onMouseMoved(const MouseEvent &e) {
-		notifyListener(e);
+		_mouseMoved.send(*this,e);
 	}
 	void UIElement::onMouseReleased(const MouseEvent &e) {
-		notifyListener(e);
+		_mouseReleased.send(*this,e);
 	}
 	void UIElement::onMousePressed(const MouseEvent &e) {
-		notifyListener(e);
+		_mousePressed.send(*this,e);
 	}
 	void UIElement::onMouseWheel(const MouseEvent &e) {
-		notifyListener(e);
+		_mouseWheel.send(*this,e);
 	}
 	void UIElement::onKeyPressed(const KeyEvent &e) {
-		notifyListener(e);
+		_keyPressed.send(*this,e);
 	}
 	void UIElement::onKeyReleased(const KeyEvent &e) {
-		notifyListener(e);
+		_keyReleased.send(*this,e);
 	}
 
 	void UIElement::setFocus(A_UNUSED Control *c) {
 		// by default its ignored
-	}
-
-	void UIElement::notifyListener(const MouseEvent &e) {
-		if(_mlist == NULL)
-			return;
-		uchar type = e.getType();
-		for(vector<MouseListener*>::iterator it = _mlist->begin(); it != _mlist->end(); ++it) {
-			MouseListener *l = *it;
-			switch(type) {
-				case MouseEvent::MOUSE_MOVED:
-					l->mouseMoved(*this,e);
-					break;
-				case MouseEvent::MOUSE_PRESSED:
-					l->mousePressed(*this,e);
-					break;
-				case MouseEvent::MOUSE_RELEASED:
-					l->mouseReleased(*this,e);
-					break;
-				case MouseEvent::MOUSE_WHEEL:
-					l->mouseWheel(*this,e);
-					break;
-			}
-		}
-	}
-	void UIElement::notifyListener(const KeyEvent &e) {
-		if(_klist == NULL)
-			return;
-		uchar type = e.getType();
-		for(vector<KeyListener*>::iterator it = _klist->begin(); it != _klist->end(); ++it) {
-			KeyListener *l = *it;
-			switch(type) {
-				case KeyEvent::KEY_PRESSED:
-					l->keyPressed(*this,e);
-					break;
-				case KeyEvent::KEY_RELEASED:
-					l->keyReleased(*this,e);
-					break;
-			}
-		}
 	}
 
 	void UIElement::debug() {

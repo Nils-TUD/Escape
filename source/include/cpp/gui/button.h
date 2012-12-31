@@ -21,19 +21,20 @@
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
-#include <gui/event/eventlist.h>
-#include <gui/event/actionlistener.h>
+#include <gui/event/subscriber.h>
 #include <gui/control.h>
 #include <string>
 
 namespace gui {
-	class Button : public Control, public EventList<ActionListener> {
+	class Button : public Control {
 	public:
+		typedef Sender<UIElement&> onclick_type;
+
 		Button(const string &text)
-			: Control(), _focused(false), _pressed(false), _text(text) {
+			: Control(), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
 		Button(const string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
+			: Control(x,y,width,height), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
 
 		inline bool isPressed() const {
@@ -56,18 +57,22 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 
+		inline onclick_type &clicked() {
+			return _clicked;
+		};
+
 	protected:
 		virtual void paintBackground(Graphics &g);
 		virtual void paintBorder(Graphics &g);
 		virtual void paint(Graphics &g);
 
 	private:
-		void notifyListener();
 		void setPressed(bool pressed);
 
 	private:
 		bool _focused;
 		bool _pressed;
 		string _text;
+		onclick_type _clicked;
 	};
 }

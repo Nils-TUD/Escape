@@ -47,6 +47,6 @@ namespace gui {
 		};
 
 	private:
-		static char _font[];
+		static uint8_t _font[];
 	};
 }

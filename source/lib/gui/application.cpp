@@ -36,7 +36,8 @@ namespace gui {
 
 	Application::Application()
 			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
-			  _vesaInfo(), _windows(), _wlisten(), _listening(false), _defTheme(NULL) {
+			  _vesaInfo(), _windows(), _created(), _activated(), _destroyed(), _listening(false),
+			  _defTheme(NULL) {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)
@@ -57,6 +58,7 @@ namespace gui {
 				_msg.data.arg1 != 0) {
 			throw app_error("Unable to read the get-mode-response from vesa");
 		}
+		memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));
 
 		// init default theme
 		_defTheme.setColor(Theme::CTRL_BACKGROUND,Color(0x88,0x88,0x88));
@@ -80,20 +82,8 @@ namespace gui {
 		_defTheme.setPadding(2);
 		_defTheme.setTextPadding(4);
 
-		// store it
-		memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));
-	}
-
-	Application::~Application() {
-		while(_windows.size() > 0)
-			removeWindow(*_windows.begin());
-		close(_vesaFd);
-		close(_winFd);
-	}
-
-	void Application::addWindowListener(WindowListener *l,bool global) {
-		_wlisten.push_back(make_pair(l,global));
-		if(!_listening) {
+		// subscribe to window-events
+		{
 			_msg.args.arg1 = MSG_WIN_CREATE_EV;
 			if(send(_winFd,MSG_WIN_ADDLISTENER,&_msg,sizeof(_msg.args)) < 0)
 				throw app_error("Unable to announce create-listener");
@@ -103,45 +93,14 @@ namespace gui {
 			_msg.args.arg1 = MSG_WIN_ACTIVE_EV;
 			if(send(_winFd,MSG_WIN_ADDLISTENER,&_msg,sizeof(_msg.args)) < 0)
 				throw app_error("Unable to announce active-listener");
-			_listening = true;
 		}
 	}
 
-	void Application::removeWindowListener(WindowListener *l) {
-		std::vector<std::pair<WindowListener*,bool> >::iterator it;
-		for(it = _wlisten.begin(); it != _wlisten.end(); ++it) {
-			if((*it).first == l) {
-				_wlisten.erase(it);
-				break;
-			}
-		}
-	}
-
-	void Application::notifyCreate(gwinid_t id,const std::string& title) {
-		Window *w = getWindowById(id);
-		std::vector<std::pair<WindowListener*,bool> >::iterator it;
-		for(it = _wlisten.begin(); it != _wlisten.end(); ++it) {
-			if((*it).second || w)
-				(*it).first->onWindowCreated(id,title);
-		}
-	}
-
-	void Application::notifyActive(gwinid_t id) {
-		Window *w = getWindowById(id);
-		std::vector<std::pair<WindowListener*,bool> >::iterator it;
-		for(it = _wlisten.begin(); it != _wlisten.end(); ++it) {
-			if((*it).second || w)
-				(*it).first->onWindowActive(id);
-		}
-	}
-
-	void Application::notifyDestroy(gwinid_t id) {
-		Window *w = getWindowById(id);
-		std::vector<std::pair<WindowListener*,bool> >::iterator it;
-		for(it = _wlisten.begin(); it != _wlisten.end(); ++it) {
-			if((*it).second || w)
-				(*it).first->onWindowDestroyed(id);
-		}
+	Application::~Application() {
+		while(_windows.size() > 0)
+			removeWindow(*_windows.begin());
+		close(_vesaFd);
+		close(_winFd);
 	}
 
 	void Application::exit() {
@@ -236,19 +195,19 @@ namespace gui {
 			case MSG_WIN_CREATE_EV: {
 				gwinid_t win = (gwinid_t)msg->str.arg1;
 				std::string title(msg->str.s1);
-				notifyCreate(win,title);
+				_created.send(win,title);
 			}
 			break;
 
 			case MSG_WIN_ACTIVE_EV: {
 				gwinid_t win = (gwinid_t)msg->args.arg1;
-				notifyActive(win);
+				_activated.send(win);
 			}
 			break;
 
 			case MSG_WIN_DESTROY_EV: {
 				gwinid_t win = (gwinid_t)msg->args.arg1;
-				notifyDestroy(win);
+				_destroyed.send(win);
 			}
 			break;
 		}

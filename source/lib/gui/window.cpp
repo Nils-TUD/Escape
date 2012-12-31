@@ -34,11 +34,10 @@ namespace gui {
 	const char *WindowTitleBar::CLOSE_IMG = "/etc/close.bmp";
 
 	WindowTitleBar::WindowTitleBar(const string& title,gpos_t x,gpos_t y,
-			gsize_t width,gsize_t height)
-		: Panel(x,y,width,height), ActionListener(), _title(new Label(title)) {
+			gsize_t width,gsize_t height) : Panel(x,y,width,height), _title(new Label(title)) {
 	}
 
-	void WindowTitleBar::actionPerformed(A_UNUSED UIElement& el) {
+	void WindowTitleBar::onButtonClick(A_UNUSED UIElement& el) {
 		Application::getInstance()->exit();
 	}
 
@@ -47,7 +46,7 @@ namespace gui {
 		add(_title,BorderLayout::WEST);
 		Image *img = Image::loadImage(CLOSE_IMG);
 		Button *btn = new ImageButton(img,false);
-		btn->addListener(this);
+		btn->clicked().subscribe(mem_recv(this,&WindowTitleBar::onButtonClick));
 		add(btn,BorderLayout::EAST);
 	}
 
@@ -250,19 +249,19 @@ namespace gui {
 			return;
 		}
 
-		notifyListener(e);
-
 		// pass event to focused control
 		Control *focus = getFocus();
-		if(focus) {
-			switch(event) {
-				case KeyEvent::KEY_PRESSED:
+		switch(event) {
+			case KeyEvent::KEY_PRESSED:
+				keyPressed().send(*this,e);
+				if(focus)
 					focus->onKeyPressed(e);
-					break;
-				case KeyEvent::KEY_RELEASED:
+				break;
+			case KeyEvent::KEY_RELEASED:
+				keyReleased().send(*this,e);
+				if(focus)
 					focus->onKeyReleased(e);
-					break;
-			}
+				break;
 		}
 	}
 
@@ -271,14 +270,11 @@ namespace gui {
 		if(!_created)
 			return;
 
-		notifyListener(e);
-
 		/* if a control is focused and we get a moved or released event we have to pass this
 		 * event to the focused control. otherwise the control wouldn't know of them */
 		Control *focus = getFocus();
 		if(event == MouseEvent::MOUSE_MOVED || event == MouseEvent::MOUSE_RELEASED) {
-			if(focus)
-				passMouseToCtrl(focus,e);
+			passMouseToCtrl(focus,e);
 			return;
 		}
 
@@ -298,22 +294,30 @@ namespace gui {
 	}
 
 	void Window::passMouseToCtrl(Control *c,const MouseEvent& e) {
-		gpos_t x = e.getX() - c->getWindowX();
-		gpos_t y = e.getY() - c->getWindowY();
+		gpos_t x = e.getX() - (c ? c->getWindowX() : 0);
+		gpos_t y = e.getY() - (c ? c->getWindowY() : 0);
 		MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
 				x,y,e.getButtonMask());
 		switch(e.getType()) {
 			case MouseEvent::MOUSE_MOVED:
-				c->onMouseMoved(ce);
+				mouseMoved().send(*this,e);
+				if(c)
+					c->onMouseMoved(ce);
 				break;
 			case MouseEvent::MOUSE_PRESSED:
-				c->onMousePressed(ce);
+				mousePressed().send(*this,e);
+				if(c)
+					c->onMousePressed(ce);
 				break;
 			case MouseEvent::MOUSE_RELEASED:
-				c->onMouseReleased(ce);
+				mouseReleased().send(*this,e);
+				if(c)
+					c->onMouseReleased(ce);
 				break;
 			case MouseEvent::MOUSE_WHEEL:
-				c->onMouseWheel(ce);
+				mouseWheel().send(*this,e);
+				if(c)
+					c->onMouseWheel(ce);
 				break;
 		}
 	}

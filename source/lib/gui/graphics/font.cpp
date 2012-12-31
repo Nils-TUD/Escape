@@ -21,7 +21,7 @@
 #include <gui/graphics/font.h>
 
 namespace gui {
-	char Font::_font[] = {
+	uint8_t Font::_font[] = {
 		/* 8x16 */
 		/* 0x00 */
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

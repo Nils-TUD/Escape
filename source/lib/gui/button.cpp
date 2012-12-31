@@ -44,7 +44,7 @@ namespace gui {
 		uchar keycode = e.getKeyCode();
 		UIElement::onKeyPressed(e);
 		if(keycode == VK_ENTER || keycode == VK_SPACE) {
-			notifyListener();
+			_clicked.send(*this);
 			setPressed(true);
 		}
 	}
@@ -58,7 +58,7 @@ namespace gui {
 	void Button::onMousePressed(const MouseEvent &e) {
 		UIElement::onMousePressed(e);
 		if(!_pressed) {
-			notifyListener();
+			_clicked.send(*this);
 			setPressed(true);
 		}
 	}
@@ -71,11 +71,6 @@ namespace gui {
 	void Button::setPressed(bool pressed) {
 		_pressed = pressed;
 		repaint();
-	}
-
-	void Button::notifyListener() {
-		for(vector<ActionListener*>::iterator it = _listener.begin(); it != _listener.end(); ++it)
-			(*it)->actionPerformed(*this);
 	}
 
 	void Button::paintBackground(Graphics &g) {

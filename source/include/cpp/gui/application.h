@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <gui/graphics/graphicsbuffer.h>
-#include <gui/event/windowlistener.h>
+#include <gui/event/subscriber.h>
 #include <gui/theme.h>
 #include <exception>
 #include <vector>
@@ -60,6 +60,10 @@ namespace gui {
 		friend class Color;
 
 	public:
+		typedef Sender<gwinid_t,const string&> createdev_type;
+		typedef Sender<gwinid_t> activatedev_type;
+		typedef Sender<gwinid_t> destroyedev_type;
+
 		/**
 		 * @return the instance of the class
 		 */
@@ -107,22 +111,22 @@ namespace gui {
 		};
 
 		/**
-		 * Adds the given window-listener to the list
-		 *
-		 * @param l the listener
-		 */
-		void addWindowListener(WindowListener *l,bool global);
-		/**
-		 * Removes the given window-listener listener from the list
-		 *
-		 * @param l the listener
-		 */
-		void removeWindowListener(WindowListener *l);
-
-		/**
 		 * Requests that this window should be the active one
 		 */
 		void requestActiveWindow(gwinid_t wid);
+
+		/**
+		 * The event senders
+		 */
+		inline createdev_type &created() {
+			return _created;
+		};
+		inline activatedev_type &activated() {
+			return _activated;
+		};
+		inline destroyedev_type &destroyed() {
+			return _destroyed;
+		};
 
 		/**
 		 * Starts the message-loop
@@ -235,7 +239,9 @@ namespace gui {
 		void *_vesaMem;
 		sVESAInfo _vesaInfo;
 		std::vector<Window*> _windows;
-		std::vector<std::pair<WindowListener*,bool> > _wlisten;
+		createdev_type _created;
+		activatedev_type _activated;
+		destroyedev_type _destroyed;
 		bool _listening;
 		Theme _defTheme;
 	};

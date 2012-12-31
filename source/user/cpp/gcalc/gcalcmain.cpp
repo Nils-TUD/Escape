@@ -31,6 +31,8 @@
 
 using namespace gui;
 
+static const size_t BTNSIZE	= 30;
+
 extern "C" void yylex_destroy(void);
 extern "C" void yyerror(char const *s);
 extern "C" int yyparse(void);
@@ -59,62 +61,50 @@ static void parse() {
 	parse_text = NULL;
 }
 
-struct ButtonListener : public ActionListener {
-	explicit ButtonListener(char c) : _c(c) {
-	}
-	virtual void actionPerformed(UIElement&) {
-		textfield->insertAtCursor(_c);
-	}
+static void onButtonClick(char c,UIElement&) {
+	textfield->insertAtCursor(c);
+}
 
-private:
-	char _c;
-};
+static void onClearButtonClick(UIElement&) {
+	textfield->setText("");
+}
 
-struct ClearButtonListener : public ActionListener {
-	virtual void actionPerformed(UIElement&) {
-		textfield->setText("");
-	}
-};
+static void onSubmitButtonClick(UIElement&) {
+	parse();
+}
 
-struct SubmitButtonListener : public ActionListener {
-	virtual void actionPerformed(UIElement&) {
+static void keyPressed(UIElement &,const KeyEvent &e) {
+	if(e.getKeyCode() == VK_ENTER)
 		parse();
-	}
-};
+	if(win->getFocus() == textfield)
+		return;
 
-struct WindowKeyListener : public KeyListener {
-	virtual void keyPressed(UIElement &,const KeyEvent &e) {
-		if(e.getKeyCode() == VK_ENTER)
-			parse();
-		if(win->getFocus() == textfield)
-			return;
-
-		if(e.getKeyCode() == VK_BACKSP)
-			textfield->removeLast();
-		else if(e.getKeyCode() == VK_DELETE)
-			textfield->removeNext();
-		else {
-			switch(e.getCharacter()) {
-				case '0' ... '9':
-				case '.':
-				case '%':
-				case '+':
-				case '*':
-				case '-':
-				case '/':
-				case '(':
-				case ')':
-					textfield->insertAtCursor(e.getCharacter());
-					break;
-			}
+	if(e.getKeyCode() == VK_BACKSP)
+		textfield->removeLast();
+	else if(e.getKeyCode() == VK_DELETE)
+		textfield->removeNext();
+	else {
+		switch(e.getCharacter()) {
+			case '0' ... '9':
+			case '.':
+			case '%':
+			case '+':
+			case '*':
+			case '-':
+			case '/':
+			case '(':
+			case ')':
+				textfield->insertAtCursor(e.getCharacter());
+				break;
 		}
 	}
-};
+	win->setFocus(textfield);
+}
 
 int main(void) {
 	Application *app = Application::getInstance();
 	win = new Window("Calculator",250,250);
-	win->addKeyListener(new WindowKeyListener);
+	win->keyPressed().subscribe(func_recv(keyPressed));
 	Panel& root = win->getRootPanel();
 	root.getTheme().setPadding(2);
 	root.setLayout(new BorderLayout(2));
@@ -150,20 +140,20 @@ int main(void) {
 	};
 	for(size_t i = 0; i < ARRAY_SIZE(buttons); ++i) {
 		char name[] = {buttons[i].c,'\0'};
-		Button *b = new Button(name,0,0,30,30);
-		b->addListener(new ButtonListener(buttons[i].c));
+		Button *b = new Button(name,0,0,BTNSIZE,BTNSIZE);
+		b->clicked().subscribe(bind1_recv(buttons[i].c,onButtonClick));
 		grid->add(b,buttons[i].pos);
 	}
 
 	{
-		Button *b = new Button("C",0,0,30,30);
-		b->addListener(new ClearButtonListener());
+		Button *b = new Button("C",0,0,BTNSIZE,BTNSIZE);
+		b->clicked().subscribe(func_recv(onClearButtonClick));
 		grid->add(b,GridPos(4,2));
 	}
 
 	{
-		Button *b = new Button("=",0,0,30,30);
-		b->addListener(new SubmitButtonListener());
+		Button *b = new Button("=",0,0,BTNSIZE,BTNSIZE);
+		b->clicked().subscribe(func_recv(onSubmitButtonClick));
 		grid->add(b,GridPos(4,3));
 	}
 

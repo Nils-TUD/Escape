@@ -21,7 +21,6 @@
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
-#include <gui/event/actionlistener.h>
 #include <gui/image/image.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/layout/flowlayout.h>
@@ -40,8 +39,6 @@ public:
 	};
 	Shortcut(const Shortcut &w)
 		: _icon(w._icon), _app(w._app), _btn(new ImageButton(*w._btn)) {
-	};
-	~Shortcut() {
 	};
 
 	Shortcut &operator=(const Shortcut &w) {
@@ -74,7 +71,20 @@ private:
 	ImageButton *_btn;
 };
 
-class DesktopWin : public Window, public ActionListener, public WindowListener {
+class DesktopWin : public Window {
+	class WinButton : public Button {
+	public:
+		WinButton(DesktopWin *inst,const string &title)
+			: Button(title), _sub(clicked(),mem_recv(inst,&DesktopWin::onIconClick)) {
+		};
+
+	private:
+		onclick_type::subscr_type _sub;
+	};
+
+	typedef map<gwinid_t,WinButton*> winmap_type;
+	typedef map<ImageButton*,Shortcut*> shortcutmap_type;
+
 public:
 	static const gsize_t PADDING;
 	static const gsize_t ICON_SIZE;
@@ -84,8 +94,6 @@ public:
 
 public:
 	DesktopWin(gsize_t width,gsize_t height);
-	virtual ~DesktopWin() {
-	};
 
 	inline void addShortcut(Shortcut* sc) {
 		// do that first for exception-safety
@@ -94,28 +102,28 @@ public:
 				PADDING,PADDING + _shortcuts.size() * (ICON_SIZE + PADDING),
 				img->getWidth() + 2,img->getHeight() + 2);
 		sc->setButton(btn);
-		btn->addListener(this);
+		btn->clicked().subscribe(mem_recv(this,&DesktopWin::onIconClick));
 		_shortcuts[btn] = sc;
 		_iconPanel->add(btn);
 		_iconPanel->repaint();
 	};
-
-	virtual void actionPerformed(UIElement& el);
-	virtual void onWindowCreated(gwinid_t id,const std::string& title);
-	virtual void onWindowActive(gwinid_t id);
-	virtual void onWindowDestroyed(gwinid_t id);
 
 	// no cloning
 private:
 	DesktopWin(const DesktopWin &w);
 	DesktopWin &operator=(const DesktopWin &w);
 
+	void onWindowCreated(gwinid_t id,const std::string& title);
+	void onWindowActive(gwinid_t id);
+	void onWindowDestroyed(gwinid_t id);
+
 	void init();
+	void onIconClick(UIElement& el);
 
 private:
 	Panel *_winPanel;
 	Panel *_iconPanel;
-	Button *_active;
-	map<gwinid_t,Button*> _windows;
-	map<ImageButton*,Shortcut*> _shortcuts;
+	WinButton *_active;
+	winmap_type _windows;
+	shortcutmap_type _shortcuts;
 };

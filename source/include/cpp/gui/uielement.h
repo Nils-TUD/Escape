@@ -23,8 +23,7 @@
 #include <esc/messages.h>
 #include <gui/graphics/graphics.h>
 #include <gui/event/event.h>
-#include <gui/event/mouselistener.h>
-#include <gui/event/keylistener.h>
+#include <gui/event/subscriber.h>
 #include <gui/application.h>
 #include <gui/theme.h>
 #include <vector>
@@ -45,6 +44,8 @@ namespace gui {
 
 	public:
 		typedef unsigned id_type;
+		typedef Sender<UIElement&,const MouseEvent&> mouseev_type;
+		typedef Sender<UIElement&,const KeyEvent&> keyev_type;
 
 		/**
 		 * Creates an ui-element at position 0,0 and 0x0 pixels large. When using a layout, this
@@ -52,7 +53,8 @@ namespace gui {
 		 */
 		UIElement()
 			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
-			  _x(0), _y(0), _width(0), _height(0), _mlist(NULL), _klist(NULL), _enableRepaint(true),
+			  _x(0), _y(0), _width(0), _height(0), _mouseMoved(), _mousePressed(), _mouseReleased(),
+			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true),
 			  _prefWidth(0), _prefHeight(0) {
 		};
 		/**
@@ -66,15 +68,14 @@ namespace gui {
 		 */
 		UIElement(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
-			  _x(x), _y(y), _width(width), _height(height), _mlist(NULL), _klist(NULL),
-			  _enableRepaint(true), _prefWidth(width), _prefHeight(height) {
+			  _x(x), _y(y), _width(width), _height(height), _mouseMoved(), _mousePressed(), _mouseReleased(),
+			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true), _prefWidth(width),
+			  _prefHeight(height) {
 		};
 		/**
 		 * Destructor. Free's the memory
 		 */
 		virtual ~UIElement() {
-			delete _mlist;
-			delete _klist;
 			delete _g;
 		};
 
@@ -225,30 +226,26 @@ namespace gui {
 		};
 
 		/**
-		 * Adds the given mouse-listener to this ui-element
-		 *
-		 * @param l the mouse-listener
+		 * The event senders
 		 */
-		void addMouseListener(MouseListener *l);
-		/**
-		 * Removes the given mouse-listener
-		 *
-		 * @param l the mouse-listener
-		 */
-		void removeMouseListener(MouseListener *l);
-
-		/**
-		 * Adds the given key-listener to this ui-element
-		 *
-		 * @param l the key-listener
-		 */
-		void addKeyListener(KeyListener *l);
-		/**
-		 * Removes the given key-listener
-		 *
-		 * @param l the key-listener
-		 */
-		void removeKeyListener(KeyListener *l);
+		inline mouseev_type &mouseMoved() {
+			return _mouseMoved;
+		};
+		inline mouseev_type &mousePressed() {
+			return _mousePressed;
+		};
+		inline mouseev_type &mouseReleased() {
+			return _mouseReleased;
+		};
+		inline mouseev_type &mouseWheel() {
+			return _mouseWheel;
+		};
+		inline keyev_type &keyPressed() {
+			return _keyPressed;
+		};
+		inline keyev_type &keyReleased() {
+			return _keyReleased;
+		};
 
 		/**
 		 * The callback-methods for the events
@@ -305,19 +302,6 @@ namespace gui {
 		virtual void setParent(UIElement *e) {
 			_parent = e;
 		};
-
-		/**
-		 * Notifies all listeners about the given mouse-event
-		 *
-		 * @param e the event
-		 */
-		void notifyListener(const MouseEvent &e);
-		/**
-		 * Notifies all listeners about the given key-event
-		 *
-		 * @param e the event
-		 */
-		void notifyListener(const KeyEvent &e);
 
 	private:
 		// I've decided to make all ui-elements not-clonable for the following reasons:
@@ -394,8 +378,12 @@ namespace gui {
 		gpos_t _y;
 		gsize_t _width;
 		gsize_t _height;
-		vector<MouseListener*> *_mlist;
-		vector<KeyListener*> *_klist;
+		mouseev_type _mouseMoved;
+		mouseev_type _mousePressed;
+		mouseev_type _mouseReleased;
+		mouseev_type _mouseWheel;
+		keyev_type _keyPressed;
+		keyev_type _keyReleased;
 		bool _enableRepaint;
 		static id_type _nextid;
 	protected:

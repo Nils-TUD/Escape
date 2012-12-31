@@ -34,20 +34,22 @@ const gsize_t DesktopWin::TASKBAR_HEIGHT = 24;
 DesktopWin::DesktopWin(gsize_t width,gsize_t height)
 	: Window(0,0,width,height,STYLE_DESKTOP),
 	  _winPanel(new Panel(0,0,0,TASKBAR_HEIGHT,new FlowLayout(FlowLayout::LEFT,4))),
-	  _iconPanel(new Panel()), _active(NULL), _windows(map<gwinid_t,Button*>()),
-	  _shortcuts(map<ImageButton*,Shortcut*>()) {
+	  _iconPanel(new Panel()), _active(NULL), _windows(), _shortcuts() {
 	getRootPanel().setLayout(new BorderLayout());
 	getRootPanel().getTheme().setPadding(0);
 	getRootPanel().add(_winPanel,BorderLayout::SOUTH);
 	getRootPanel().add(_iconPanel,BorderLayout::CENTER);
 	_iconPanel->getTheme().setColor(Theme::CTRL_BACKGROUND,BGCOLOR);
-	Application::getInstance()->addWindowListener(this,true);
+	Application *app = Application::getInstance();
+	app->created().subscribe(mem_recv(this,&DesktopWin::onWindowCreated));
+	app->activated().subscribe(mem_recv(this,&DesktopWin::onWindowActive));
+	app->destroyed().subscribe(mem_recv(this,&DesktopWin::onWindowDestroyed));
 }
 
-void DesktopWin::actionPerformed(UIElement& el) {
+void DesktopWin::onIconClick(UIElement& el) {
 	ImageButton *btn = dynamic_cast<ImageButton*>(&el);
 	if(btn) {
-		map<ImageButton*,Shortcut*>::iterator it = _shortcuts.find(btn);
+		shortcutmap_type::iterator it = _shortcuts.find(btn);
 		if(it != _shortcuts.end()) {
 			int pid = fork();
 			if(pid == 0) {
@@ -60,7 +62,7 @@ void DesktopWin::actionPerformed(UIElement& el) {
 		}
 	}
 	else {
-		for(map<gwinid_t,Button*>::iterator wit = _windows.begin(); wit != _windows.end(); ++wit) {
+		for(winmap_type::iterator wit = _windows.begin(); wit != _windows.end(); ++wit) {
 			if((*wit).second == &el) {
 				Application::getInstance()->requestActiveWindow((*wit).first);
 				break;
@@ -70,8 +72,7 @@ void DesktopWin::actionPerformed(UIElement& el) {
 }
 
 void DesktopWin::onWindowCreated(gwinid_t wid,const std::string& title) {
-	Button *b = new Button(title);
-	b->addListener(this);
+	WinButton *b = new WinButton(this,title);
 	_windows[wid] = b;
 	_winPanel->add(b);
 	// TODO as soon as we can arrange it that the taskbar is always visible, we don't have to
@@ -84,7 +85,7 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 		_active->getTheme().unsetColor(Theme::BTN_BACKGROUND);
 		_active->repaint();
 	}
-	map<gwinid_t,Button*>::iterator it = _windows.find(wid);
+	winmap_type::iterator it = _windows.find(wid);
 	if(it != _windows.end()) {
 		const Theme *def = Application::getInstance()->getDefaultTheme();
 		_active = (*it).second;
@@ -95,10 +96,9 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 		_active = NULL;
 }
 void DesktopWin::onWindowDestroyed(gwinid_t wid) {
-	map<gwinid_t,Button*>::iterator it = _windows.find(wid);
+	winmap_type::iterator it = _windows.find(wid);
 	if(it != _windows.end()) {
-		Button *b = (*it).second;
-		b->removeListener(this);
+		WinButton *b = (*it).second;
 		_winPanel->remove(b);
 		if(_active == b)
 			_active = NULL;

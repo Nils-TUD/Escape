@@ -211,8 +211,13 @@ int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t l
 #if DISABLE_DEMLOAD
 	if(type != REG_DEVICE && type != REG_PHYS) {
 		size_t i;
+		/* ensure that we don't discard frames that we might need afterwards */
+		sThread *t = thread_getRunning();
+		size_t oldres = sll_length(&t->reqFrames);
+		thread_discardFramesFor(t);
 		for(i = 0; i < vm->reg->pfSize; i++)
 			vmm_pagefault(vm->virt + i * PAGE_SIZE,false);
+		thread_reserveFramesFor(t,oldres);
 	}
 #endif
 	*vmreg = vm;

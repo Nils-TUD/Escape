@@ -21,6 +21,7 @@
 #include <gui/image/bitmapimage.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/layout/flowlayout.h>
+#include <gui/layout/iconlayout.h>
 #include <gui/application.h>
 #include <gui/window.h>
 #include <gui/button.h>
@@ -43,6 +44,8 @@ static void win2(void);
 static void win3(void);
 static void win4(void);
 static void win5(void);
+static void win6(void);
+static void win7(void);
 static int pbThread(void *arg);
 
 static volatile bool run = true;
@@ -54,6 +57,8 @@ int main(void) {
 	win3();
 	win4();
 	win5();
+	win6();
+	win7();
 	int res = app->run();
 	run = false;
 	/*join(0);*/
@@ -193,6 +198,42 @@ static void win5(void) {
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->show();
+}
+
+static void win6(void) {
+	Window *win = new Window("Window 6",200,300);
+	Panel& root = win->getRootPanel();
+	root.getTheme().setPadding(2);
+	root.setLayout(new BorderLayout(2));
+
+	Panel *btns = new Panel(new IconLayout(IconLayout::HORIZONTAL));
+	root.add(btns,BorderLayout::CENTER);
+
+	for(size_t i = 0; i < 25; ++i) {
+		char name[12];
+		itoa(name,sizeof(name),i);
+		Button *b = new Button(name,0,0,40,40);
+		btns->add(b);
+	}
+	win->show(true);
+}
+
+static void win7(void) {
+	Window *win = new Window("Window 7",400,300);
+	Panel& root = win->getRootPanel();
+	root.getTheme().setPadding(2);
+	root.setLayout(new BorderLayout(2));
+
+	Panel *btns = new Panel(new IconLayout(IconLayout::VERTICAL));
+	root.add(btns,BorderLayout::CENTER);
+
+	for(size_t i = 0; i < 25; ++i) {
+		char name[12];
+		itoa(name,sizeof(name),i);
+		Button *b = new Button(name,0,0,40,40);
+		btns->add(b);
+	}
+	win->show(true);
 }
 
 static int pbThread(void *arg) {

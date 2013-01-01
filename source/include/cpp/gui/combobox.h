@@ -86,8 +86,8 @@ namespace gui {
 			repaint();
 		};
 
-		virtual gsize_t getMinWidth() const;
-		virtual gsize_t getMinHeight() const;
+		virtual gsize_t getPrefWidth() const;
+		virtual gsize_t getPrefHeight() const;
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 

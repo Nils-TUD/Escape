@@ -153,14 +153,14 @@ namespace gui {
 		/**
 		 * @return the preferred width of this ui-element
 		 */
-		virtual gsize_t getPreferredWidth() const {
-			return _prefWidth ? _prefWidth : getMinWidth();
+		inline gsize_t getPreferredWidth() const {
+			return _prefWidth ? _prefWidth : getPrefWidth();
 		};
 		/**
 		 * @return the preferred height of this ui-element
 		 */
-		virtual gsize_t getPreferredHeight() const {
-			return _prefHeight ? _prefHeight : getMinHeight();
+		inline gsize_t getPreferredHeight() const {
+			return _prefHeight ? _prefHeight : getPrefHeight();
 		};
 
 		/**
@@ -221,7 +221,7 @@ namespace gui {
 		/**
 		 * @return the parent-element (may be NULL if not added to a panel yet or its a window)
 		 */
-		inline UIElement *getParent() {
+		inline UIElement *getParent() const {
 			return _parent;
 		};
 
@@ -284,17 +284,6 @@ namespace gui {
 		virtual void paint(Graphics &g) = 0;
 
 		/**
-		 * @return the minimum width that the ui-element should have to be displayed in a
-		 * 	reasonable way
-		 */
-		virtual gsize_t getMinWidth() const = 0;
-		/**
-		 * @return the minimum height that the ui-element should have to be displayed in a
-		 * 	reasonable way
-		 */
-		virtual gsize_t getMinHeight() const = 0;
-
-		/**
 		 * Sets the parent of this control (used by Panel)
 		 *
 		 * @param e the parent
@@ -323,6 +312,19 @@ namespace gui {
 		// trouble. Means, better don't allow it at all :)
 		UIElement(const UIElement &e);
 		UIElement &operator=(const UIElement &e);
+
+		/**
+		 * Helper for getPreferredWidth(). Has to be implemented by subclasses!
+		 *
+		 * @return the preferred width of this ui-element
+		 */
+		virtual gsize_t getPrefWidth() const = 0;
+		/**
+		 * Helper for getPreferredHeight(). Has to be implemented by subclasses!
+		 *
+		 * @return the preferred height of this ui-element
+		 */
+		virtual gsize_t getPrefHeight() const = 0;
 
 		/**
 		 * Sets the x-position
@@ -385,9 +387,8 @@ namespace gui {
 		keyev_type _keyPressed;
 		keyev_type _keyReleased;
 		bool _enableRepaint;
-		static id_type _nextid;
-	protected:
 		gsize_t _prefWidth;
 		gsize_t _prefHeight;
+		static id_type _nextid;
 	};
 }

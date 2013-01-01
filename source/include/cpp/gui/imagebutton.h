@@ -22,8 +22,8 @@ namespace gui {
 			return _img;
 		};
 
-		virtual gsize_t getMinWidth() const;
-		virtual gsize_t getMinHeight() const;
+		virtual gsize_t getPrefWidth() const;
+		virtual gsize_t getPrefHeight() const;
 		virtual void paintBorder(Graphics &g);
 		virtual void paintBackground(Graphics &g);
 

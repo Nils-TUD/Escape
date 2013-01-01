@@ -32,22 +32,15 @@ namespace gui {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 
-	gsize_t FlowLayout::getMinWidth() const {
+	gsize_t FlowLayout::getPreferredWidth() const {
 		if(_ctrls.size() == 0)
 			return 0;
 		return getMaxWidth() * _ctrls.size() + _gap * (_ctrls.size() - 1);
 	}
-	gsize_t FlowLayout::getMinHeight() const {
+	gsize_t FlowLayout::getPreferredHeight() const {
 		if(_ctrls.size() == 0)
 			return 0;
 		return getMaxHeight();
-	}
-
-	gsize_t FlowLayout::getPreferredWidth() const {
-		return getMinWidth();
-	}
-	gsize_t FlowLayout::getPreferredHeight() const {
-		return getMinHeight();
 	}
 
 	void FlowLayout::rearrange() {

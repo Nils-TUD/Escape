@@ -43,11 +43,11 @@ namespace gui {
 			delete _ctrl;
 		};
 
-		virtual gsize_t getMinWidth() const {
-			return _ctrl->getMinWidth() + BAR_SIZE;
+		virtual gsize_t getPrefWidth() const {
+			return _ctrl->getPreferredWidth() + BAR_SIZE;
 		};
-		virtual gsize_t getMinHeight() const {
-			return _ctrl->getMinHeight() + BAR_SIZE;
+		virtual gsize_t getPrefHeight() const {
+			return _ctrl->getPreferredHeight() + BAR_SIZE;
 		};
 
 		virtual gsize_t getContentWidth() const {

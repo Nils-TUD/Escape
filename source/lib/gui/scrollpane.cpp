@@ -25,12 +25,22 @@ using namespace std;
 
 namespace gui {
 	void ScrollPane::resizeTo(gsize_t width,gsize_t height) {
+		// a scrollpane does never use more space than available. if the content is larger, we
+		// show scrollbars for it.
+		width = min(getParent()->getContentWidth(),width);
+		height = min(getParent()->getContentHeight(),height);
+
 		Control::resizeTo(width,height);
-		_ctrl->resizeTo(_ctrl->getPreferredWidth(),_ctrl->getPreferredHeight());
-		// ensure that the position of the control is in the allowed range; of course, this changes
-		// as soon as the size of the scrollpane or the control changes
 		gsize_t visiblex = getWidth() - BAR_SIZE;
 		gsize_t visibley = getHeight() - BAR_SIZE;
+
+		// let the content be as large as preferred and larger, if possible
+		gsize_t cwidth = max(_ctrl->getPreferredWidth(),visiblex);
+		gsize_t cheight = max(_ctrl->getPreferredHeight(),visibley);
+		_ctrl->resizeTo(cwidth,cheight);
+
+		// ensure that the position of the control is in the allowed range; of course, this changes
+		// as soon as the size of the scrollpane or the control changes
 		gpos_t minX = visiblex - _ctrl->getWidth();
 		gpos_t minY = visibley - _ctrl->getHeight();
 		gpos_t newX = min((gpos_t)0,max(minX,_ctrl->getX()));

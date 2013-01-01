@@ -76,10 +76,10 @@ void ShellControl::sendEOF() {
 	vtin_handleKey(_vt,VK_D,STATE_CTRL,'d');
 }
 
-gsize_t ShellControl::getMinWidth() const {
+gsize_t ShellControl::getPrefWidth() const {
 	return DEF_WIDTH;
 }
-gsize_t ShellControl::getMinHeight() const {
+gsize_t ShellControl::getPrefHeight() const {
 	return DEF_HEIGHT;
 }
 

@@ -32,16 +32,11 @@ namespace gui {
 	const gsize_t Editable::CURSOR_OVERLAP	= 2;
 	const gsize_t Editable::DEF_WIDTH		= 100;
 
-	gsize_t Editable::getMinWidth() const {
+	gsize_t Editable::getPrefWidth() const {
 		return DEF_WIDTH + getTheme().getTextPadding() * 2;
 	}
-	gsize_t Editable::getMinHeight() const {
+	gsize_t Editable::getPrefHeight() const {
 		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
-	}
-
-	gsize_t Editable::getPreferredWidth() const {
-		gsize_t strwidth = getGraphics()->getFont().getStringWidth(_str);
-		return _prefWidth ? _prefWidth : max(DEF_WIDTH,strwidth) + getTheme().getTextPadding() * 2;
 	}
 
 	void Editable::onFocusGained() {

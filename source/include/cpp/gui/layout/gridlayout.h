@@ -57,21 +57,20 @@ namespace gui {
 	 */
 	class GridLayout : public Layout {
 	public:
+		static const gsize_t DEF_GAP	= 2;
+
 		/**
 		 * Constructor
 		 *
 		 * @param cols the number of columns
 		 * @param rows the number of rows
 		 */
-		GridLayout(unsigned cols,unsigned rows)
-			: Layout(), _cols(cols), _rows(rows), _p(), _ctrls() {
+		GridLayout(unsigned cols,unsigned rows,gsize_t gap = DEF_GAP)
+			: Layout(), _cols(cols), _rows(rows), _gap(gap), _p(), _ctrls() {
 		};
 
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);
-
-		virtual gsize_t getMinWidth() const;
-		virtual gsize_t getMinHeight() const;
 
 		virtual gsize_t getPreferredWidth() const;
 		virtual gsize_t getPreferredHeight() const;
@@ -85,6 +84,7 @@ namespace gui {
 	private:
 		unsigned _cols;
 		unsigned _rows;
+		gsize_t _gap;
 		Control *_p;
 		std::map<int,Control*> _ctrls;
 	};

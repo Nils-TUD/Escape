@@ -21,10 +21,10 @@
 #include <gui/imagebutton.h>
 
 namespace gui {
-	gsize_t ImageButton::getMinWidth() const {
+	gsize_t ImageButton::getPrefWidth() const {
 		return _img->getWidth() + getTheme().getPadding() * 2;
 	}
-	gsize_t ImageButton::getMinHeight() const {
+	gsize_t ImageButton::getPrefHeight() const {
 		return _img->getHeight() + getTheme().getPadding() * 2;
 	}
 

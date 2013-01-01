@@ -93,7 +93,7 @@ namespace gui {
 		_cb->repaint();
 	}
 
-	gsize_t ComboBox::getMinWidth() const {
+	gsize_t ComboBox::getPrefWidth() const {
 		gsize_t max = 0;
 		const Font& f = getGraphics()->getFont();
 		for(vector<string>::const_iterator it = _items.begin(); it != _items.end(); ++it) {
@@ -107,7 +107,7 @@ namespace gui {
 		}
 		return max + getTheme().getTextPadding() * 2 + getGraphics()->getFont().getHeight() + ARROW_PAD;
 	}
-	gsize_t ComboBox::getMinHeight() const {
+	gsize_t ComboBox::getPrefHeight() const {
 		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
 	}
 

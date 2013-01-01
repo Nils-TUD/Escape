@@ -83,7 +83,7 @@ namespace gui {
 		static const gsize_t MIN_WIDTH = 40;
 		static const gsize_t MIN_HEIGHT = 40;
 
-		static const gsize_t HEADER_SIZE = 24;
+		static const gsize_t HEADER_SIZE = 28;
 
 	public:
 		/**
@@ -203,15 +203,15 @@ namespace gui {
 			return _body;
 		};
 
-		virtual gsize_t getMinWidth() const {
+		virtual gsize_t getPrefWidth() const {
 			if(_header)
-				return max(_header->getMinWidth(),_body.getMinWidth()) + 2;
-			return _body.getMinWidth() + 2;
+				return max(_header->getPreferredWidth(),_body.getPreferredWidth()) + 2;
+			return _body.getPreferredWidth() + 2;
 		};
-		virtual gsize_t getMinHeight() const {
+		virtual gsize_t getPrefHeight() const {
 			if(_header)
-				return _header->getMinHeight() + _body.getMinHeight() + 2;
-			return _body.getMinHeight();
+				return _header->getPreferredHeight() + _body.getPreferredHeight() + 2;
+			return _body.getPreferredHeight() + 2;
 		};
 
 		virtual void layout() {
@@ -224,11 +224,16 @@ namespace gui {
 		 * Calculates the layout and finally shows the window, i.e. this method has to be called to
 		 * make the window visible.
 		 *
-		 * @param pack whether to pack the window to the minimum required size for the content
+		 * @param pack whether to pack the window to the preferred required size for the content
 		 */
 		void show(bool pack = false) {
-			if(pack)
-				prepareResize(getX(),getY(),getMinWidth(),getMinHeight());
+			if(pack) {
+				// overwrite preferred size
+				_body._prefHeight = _body._prefWidth = 0;
+				if(_header)
+					_header->_prefHeight = _header->_prefWidth = 0;
+				prepareResize(getX(),getY(),getPrefWidth(),getPrefHeight());
+			}
 			layout();
 			// add us to app; we'll receive a "created"-event as soon as the window
 			// manager knows about us

@@ -24,11 +24,11 @@
 namespace gui {
 	const gsize_t Checkbox::CROSS_SIZE = 24;
 
-	gsize_t Checkbox::getMinWidth() const {
+	gsize_t Checkbox::getPrefWidth() const {
 		return getGraphics()->getFont().getStringWidth(_text) +
 				TEXT_PADDING + CROSS_PADDING + CROSS_SIZE;
 	}
-	gsize_t Checkbox::getMinHeight() const {
+	gsize_t Checkbox::getPrefHeight() const {
 		gsize_t fheight = getGraphics()->getFont().getHeight();
 		return max((gsize_t)(fheight + getTheme().getTextPadding() * 2),CROSS_SIZE);
 	}

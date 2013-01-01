@@ -22,10 +22,10 @@
 #include <gui/control.h>
 
 namespace gui {
-	gsize_t ProgressBar::getMinWidth() const {
+	gsize_t ProgressBar::getPrefWidth() const {
 		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
 	}
-	gsize_t ProgressBar::getMinHeight() const {
+	gsize_t ProgressBar::getPrefHeight() const {
 		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
 	}
 

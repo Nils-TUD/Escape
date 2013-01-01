@@ -50,8 +50,8 @@ namespace gui {
 			repaint();
 		};
 
-		virtual gsize_t getMinWidth() const;
-		virtual gsize_t getMinHeight() const;
+		virtual gsize_t getPrefWidth() const;
+		virtual gsize_t getPrefHeight() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onKeyReleased(const KeyEvent &e);

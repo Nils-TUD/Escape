@@ -87,7 +87,6 @@ static void win1(void) {
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
-	w->layout();
 	w->show(true);
 	/*if(startthread(pbThread,pb) < 0)
 		std::cerr << "[GUITEST] Unable to start thread" << std::endl;*/
@@ -115,7 +114,6 @@ static void win2(void) {
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
-	w->layout();
 	w->show();
 }
 
@@ -141,7 +139,6 @@ static void win3(void) {
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
-	w->layout();
 	w->show();
 }
 
@@ -171,7 +168,6 @@ static void win4(void) {
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
-	w->layout();
 	w->show();
 }
 
@@ -196,7 +192,6 @@ static void win5(void) {
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
-	w->layout();
 	w->show();
 }
 

@@ -22,10 +22,10 @@
 #include <gui/control.h>
 
 namespace gui {
-	gsize_t Label::getMinWidth() const {
+	gsize_t Label::getPrefWidth() const {
 		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
 	}
-	gsize_t Label::getMinHeight() const {
+	gsize_t Label::getPrefHeight() const {
 		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
 	}
 

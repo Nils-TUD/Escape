@@ -73,9 +73,8 @@ namespace gui {
 		void removeLast();
 		void removeNext();
 
-		virtual gsize_t getMinWidth() const;
-		virtual gsize_t getMinHeight() const;
-		virtual gsize_t getPreferredWidth() const;
+		virtual gsize_t getPrefWidth() const;
+		virtual gsize_t getPrefHeight() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onMouseMoved(const MouseEvent &e);

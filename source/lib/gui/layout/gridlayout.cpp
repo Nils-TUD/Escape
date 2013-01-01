@@ -35,22 +35,15 @@ namespace gui {
 		_ctrls[pos] = NULL;
 	}
 
-	gsize_t GridLayout::getMinWidth() const {
-		if(_ctrls.size() == 0)
-			return 0;
-		return getMaxWidth() * _cols;
-	}
-	gsize_t GridLayout::getMinHeight() const {
-		if(_ctrls.size() == 0)
-			return 0;
-		return getMaxHeight() * _rows;
-	}
-
 	gsize_t GridLayout::getPreferredWidth() const {
-		return max<gsize_t>(_p->getParent()->getContentWidth(),getMinWidth());
+		if(_ctrls.size() == 0)
+			return 0;
+		return getMaxWidth() * _cols + _gap * (_cols - 1);
 	}
 	gsize_t GridLayout::getPreferredHeight() const {
-		return max<gsize_t>(_p->getParent()->getContentHeight(),getMinHeight());
+		if(_ctrls.size() == 0)
+			return 0;
+		return getMaxHeight() * _rows + _gap * (_rows - 1);
 	}
 
 	void GridLayout::rearrange() {
@@ -58,15 +51,17 @@ namespace gui {
 			return;
 
 		gsize_t pad = _p->getTheme().getPadding();
-		gsize_t cwidth = (_p->getWidth() - (pad * (_cols - 1))) / _cols;
-		gsize_t cheight = (_p->getHeight() - (pad * (_rows - 1))) / _rows;
+		// work with double here to distribute the inaccuracy over all gaps. otherwise it would
+		// be at the end, which looks quite ugly.
+		double cwidth = (_p->getWidth() - pad * 2 - (_gap * (_cols - 1))) / (double)_cols;
+		double cheight = (_p->getHeight() - pad * 2 - (_gap * (_rows - 1))) / (double)_rows;
 
 		for(map<int,Control*>::iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			GridPos pos(it->first);
-			gpos_t x = pos.col() * (cwidth + pad);
-			gpos_t y = pos.row() * (cheight + pad);
+			gpos_t x = (gpos_t)(pad + pos.col() * (cwidth + _gap));
+			gpos_t y = (gpos_t)(pad + pos.row() * (cheight + _gap));
 			it->second->moveTo(x,y);
-			it->second->resizeTo(cwidth,cheight);
+			it->second->resizeTo((gsize_t)cwidth,(gsize_t)cheight);
 		}
 	}
 

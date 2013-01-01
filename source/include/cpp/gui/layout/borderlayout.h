@@ -69,9 +69,6 @@ namespace gui {
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);
 
-		virtual gsize_t getMinWidth() const;
-		virtual gsize_t getMinHeight() const;
-
 		virtual gsize_t getPreferredWidth() const;
 		virtual gsize_t getPreferredHeight() const;
 

@@ -33,60 +33,47 @@ namespace gui {
 		_ctrls[pos] = NULL;
 	}
 
-	gsize_t BorderLayout::getMinWidth() const {
+	gsize_t BorderLayout::getPreferredWidth() const {
 		gsize_t width = 0;
 		if(_ctrls[WEST])
-			width += _ctrls[WEST]->getMinWidth();
+			width += _ctrls[WEST]->getPreferredWidth();
 		if(_ctrls[CENTER]) {
 			if(_ctrls[WEST])
 				width += _gap;
-			width += _ctrls[CENTER]->getMinWidth();
+			width += _ctrls[CENTER]->getPreferredWidth();
 			if(_ctrls[EAST])
 				width += _gap;
 		}
 		if(_ctrls[EAST])
-			width += _ctrls[EAST]->getMinWidth();
+			width += _ctrls[EAST]->getPreferredWidth();
 		if(width == 0) {
 			if(_ctrls[NORTH])
-				width = _ctrls[NORTH]->getMinWidth();
+				width = _ctrls[NORTH]->getPreferredWidth();
 			if(_ctrls[SOUTH])
-				width = max(width,_ctrls[SOUTH]->getMinWidth());
+				width = max(width,_ctrls[SOUTH]->getPreferredWidth());
 		}
 		return width;
 	}
-	gsize_t BorderLayout::getMinHeight() const {
+	gsize_t BorderLayout::getPreferredHeight() const {
 		gsize_t height = 0;
 		if(_ctrls[NORTH])
-			height += _ctrls[NORTH]->getMinHeight();
+			height += _ctrls[NORTH]->getPreferredHeight();
 		if(_ctrls[CENTER]) {
 			if(_ctrls[NORTH])
 				height += _gap;
-			height += _ctrls[CENTER]->getMinHeight();
+			height += _ctrls[CENTER]->getPreferredHeight();
 			if(_ctrls[SOUTH])
 				height += _gap;
 		}
 		if(_ctrls[SOUTH])
-			height += _ctrls[SOUTH]->getMinHeight();
+			height += _ctrls[SOUTH]->getPreferredHeight();
 		if(height == 0) {
 			if(_ctrls[WEST])
-				height = _ctrls[WEST]->getMinHeight();
+				height = _ctrls[WEST]->getPreferredHeight();
 			if(_ctrls[EAST])
-				height = max(height,_ctrls[EAST]->getMinHeight());
+				height = max(height,_ctrls[EAST]->getPreferredHeight());
 		}
 		return height;
-	}
-
-	gsize_t BorderLayout::getPreferredWidth() const {
-		gsize_t pad = _p->getTheme().getPadding();
-		if(_ctrls[CENTER])
-			return max<gsize_t>(_p->getParent()->getContentWidth() - pad * 2,getMinWidth());
-		return getMinWidth();
-	}
-	gsize_t BorderLayout::getPreferredHeight() const {
-		gsize_t pad = _p->getTheme().getPadding();
-		if(_ctrls[CENTER])
-			return max<gsize_t>(_p->getParent()->getContentHeight() - pad * 2,getMinHeight());
-		return getMinHeight();
 	}
 
 	void BorderLayout::rearrange() {
@@ -106,24 +93,12 @@ namespace gui {
 		gsize_t spheight = _ctrls[SOUTH] ? _ctrls[SOUTH]->getPreferredHeight() + _gap : 0;
 		gsize_t wpwidth = _ctrls[WEST] ? _ctrls[WEST]->getPreferredWidth() + _gap : 0;
 		gsize_t epwidth = _ctrls[EAST] ? _ctrls[EAST]->getPreferredWidth() + _gap : 0;
-		gsize_t cmheight = _ctrls[CENTER] ? _ctrls[CENTER]->getMinHeight() : 0;
-		gsize_t cmwidth = _ctrls[CENTER] ? _ctrls[CENTER]->getMinWidth() : 0;
+		gsize_t cpheight = _ctrls[CENTER] ? _ctrls[CENTER]->getPreferredHeight() : 0;
+		gsize_t cpwidth = _ctrls[CENTER] ? _ctrls[CENTER]->getPreferredWidth() : 0;
 
-		// if we can't reach the minimum size for the controls, give each control the corresponding
-		// amount of the space, depending on their share of the required size (this prevents
-		// "size-bouncing")
-		if(npheight + spheight + cmheight > rheight) {
-			double nratio = npheight / (double)(npheight + spheight + cmheight);
-			double sratio = spheight / (double)(npheight + spheight + cmheight);
-			npheight = (gsize_t)(rheight * nratio);
-			spheight = (gsize_t)(rheight * sratio);
-		}
-		if(wpwidth + epwidth + cmwidth > rwidth) {
-			double wratio = wpwidth / (double)(wpwidth + epwidth + cmwidth);
-			double eratio = epwidth / (double)(wpwidth + epwidth + cmwidth);
-			wpwidth = (gsize_t)(rwidth * wratio);
-			epwidth = (gsize_t)(rwidth * eratio);
-		}
+		// ensure that we use at least the minimum space
+		rheight = max<gsize_t>(npheight + spheight + cpheight,rheight);
+		rwidth = max<gsize_t>(wpwidth + epwidth + cpwidth,rwidth);
 
 		if((c = _ctrls[NORTH])) {
 			c->moveTo(x,y);

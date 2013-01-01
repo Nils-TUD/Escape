@@ -121,7 +121,6 @@ namespace gui {
 		cout << ":" << _id << ":" << typeid(*this).name() << "]";
 		cout << " @" << getX() << "," << getY();
 		cout << " size:" << getWidth() << "x" << getHeight();
-		cout << " min:" << getMinWidth() << "x" << getMinHeight();
 		cout << " pref:" << getPreferredWidth() << "x" << getPreferredHeight() << endl;
 #endif
 	}

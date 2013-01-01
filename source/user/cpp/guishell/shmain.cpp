@@ -159,7 +159,6 @@ static int guiProc(void) {
 		error("Unable to start term-thread");
 	root.setLayout(new BorderLayout());
 	root.add(sh,BorderLayout::CENTER);
-	w.layout();
 	w.show();
 	w.setFocus(sh);
 	int res = app->run();

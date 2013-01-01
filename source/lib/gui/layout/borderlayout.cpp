@@ -101,30 +101,24 @@ namespace gui {
 		rwidth = max<gsize_t>(wpwidth + epwidth + cpwidth,rwidth);
 
 		if((c = _ctrls[NORTH])) {
-			c->moveTo(x,y);
-			c->resizeTo(width,npheight - _gap);
+			configureControl(c,x,y,width,npheight - _gap);
 			y += npheight;
 			rheight -= npheight;
 		}
 		if((c = _ctrls[SOUTH])) {
-			c->moveTo(x,pad + height - (spheight - _gap));
-			c->resizeTo(width,spheight - _gap);
+			configureControl(c,x,pad + height - (spheight - _gap),width,spheight - _gap);
 			rheight -= spheight;
 		}
 		if((c = _ctrls[WEST])) {
-			c->moveTo(x,y);
-			c->resizeTo(wpwidth - _gap,rheight);
+			configureControl(c,x,y,wpwidth - _gap,rheight);
 			x += wpwidth;
 			rwidth -= wpwidth;
 		}
 		if((c = _ctrls[EAST])) {
-			c->moveTo(pad + width - (epwidth - _gap),y);
-			c->resizeTo(epwidth - _gap,rheight);
+			configureControl(c,pad + width - (epwidth - _gap),y,epwidth - _gap,rheight);
 			rwidth -= epwidth;
 		}
-		if((c = _ctrls[CENTER])) {
-			c->moveTo(x,y);
-			c->resizeTo(rwidth,rheight);
-		}
+		if((c = _ctrls[CENTER]))
+			configureControl(c,x,y,rwidth,rheight);
 	}
 }

@@ -62,12 +62,7 @@ namespace gui {
 
 		gsize_t width = _p->getWidth();
 		gsize_t height = _p->getHeight();
-		doLayout(0,0,width,height,layoutCtrl);
-	}
-
-	void IconLayout::layoutCtrl(Control *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		c->moveTo(x,y);
-		c->resizeTo(width,height);
+		doLayout(0,0,width,height,&IconLayout::configureControl);
 	}
 
 	void IconLayout::doLayout(size_t cols,size_t rows,gsize_t &width,gsize_t &height,
@@ -91,7 +86,7 @@ namespace gui {
 					}
 
 					if(layout)
-						layout(*it,x,y,size.first,size.second);
+						(this->*layout)(*it,x,y,size.first,size.second);
 					x += size.first + _gap;
 					hmax = std::max(size.second,hmax);
 					col++;
@@ -114,7 +109,7 @@ namespace gui {
 					}
 
 					if(layout)
-						layout(*it,x,y,size.first,size.second);
+						(this->*layout)(*it,x,y,size.first,size.second);
 					y += size.second + _gap;
 					wmax = std::max(size.first,wmax);
 					row++;

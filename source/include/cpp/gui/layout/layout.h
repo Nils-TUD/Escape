@@ -20,11 +20,11 @@
 #pragma once
 
 #include <esc/common.h>
+#include <gui/control.h>
 #include <algorithm>
 #include <utility>
 
 namespace gui {
-	class Control;
 	class Panel;
 
 	/**
@@ -92,6 +92,12 @@ namespace gui {
 		 * perform a repaint!
 		 */
 		virtual void rearrange() = 0;
+
+	protected:
+		inline void configureControl(Control *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height) const {
+			c->moveTo(x,y);
+			c->resizeTo(width,height);
+		};
 
 	private:
 		// no cloning

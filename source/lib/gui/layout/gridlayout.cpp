@@ -60,8 +60,7 @@ namespace gui {
 			GridPos pos(it->first);
 			gpos_t x = (gpos_t)(pad + pos.col() * (cwidth + _gap));
 			gpos_t y = (gpos_t)(pad + pos.row() * (cheight + _gap));
-			it->second->moveTo(x,y);
-			it->second->resizeTo((gsize_t)cwidth,(gsize_t)cheight);
+			configureControl(it->second,x,y,(gsize_t)cwidth,(gsize_t)cheight);
 		}
 	}
 

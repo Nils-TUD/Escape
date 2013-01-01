@@ -70,8 +70,7 @@ namespace gui {
 		}
 
 		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			(*it)->moveTo(x,y);
-			(*it)->resizeTo(cwidth,cheight);
+			configureControl(*it,x,y,cwidth,cheight);
 			x += cwidth + _gap;
 		}
 	}

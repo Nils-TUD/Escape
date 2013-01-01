@@ -29,7 +29,8 @@ namespace gui {
 	 * direction side by side and continues with the next row/column if its full.
 	 */
 	class IconLayout : public Layout {
-		typedef void (*layout_func)(Control *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		typedef void (IconLayout::*layout_func)(Control *c,gpos_t x,gpos_t y,
+												gsize_t width,gsize_t height) const;
 
 	public:
 		enum Preferred {
@@ -61,7 +62,6 @@ namespace gui {
 	private:
 		void doLayout(size_t cols,size_t rows,gsize_t &width,gsize_t &height,
 		              layout_func layout = 0) const;
-		static void layoutCtrl(Control *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 	private:
 		Preferred _pref;

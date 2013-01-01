@@ -997,7 +997,7 @@ void vmm_printShort(pid_t pid,const char *prefix) {
 	if(p) {
 		sVMRegion *vm;
 		for(vm = p->regtree.begin; vm != NULL; vm = vm->next) {
-			vid_printf("%s%-24s %p - %p (%5zuK): ",prefix,vmm_getRegName(p,vm),vm->virt,
+			vid_printf("%s%-24s %p - %p (%5zuK) ",prefix,vmm_getRegName(p,vm),vm->virt,
 					vm->virt + vm->reg->byteCount - 1,vm->reg->byteCount / K);
 			reg_printFlags(vm->reg);
 			vid_printf("\n");

@@ -65,7 +65,7 @@ coderegs = []
 while True:
 	line = sys.stdin.readline()
 	print line[:-1]
-	match = re.match('\\s*(\\S+)\\s+([0-9a-f:]+) - ([0-9a-f:]+) \\(\s*\\d+K\\):.*?Ex.*', line)
+	match = re.match('\\s*(\\S+)\\s+([0-9a-f:]+) - ([0-9a-f:]+) \\(\s*\\d+K\\) (.*?Ex.*|-x-s)', line)
 	if match:
 		syms = get_symbols(match.group(1))
 		coderegs.append((match.group(1), str_to_addr(match.group(2)), str_to_addr(match.group(3)), syms))
@@ -75,7 +75,7 @@ while True:
 # decode backtrace
 while True:
 	line = sys.stdin.readline()
-	match = re.match('\\s*([0-9a-f:]+) -> ([0-9a-f:]+) \\(.*?\\)', line)
+	match = re.match('\\s*([0-9a-f:]+) -> ([0-9a-f:]+)', line)
 	if match:
 		addr = str_to_addr(match.group(2))
 		(lib, sym) = find_symbol(coderegs, addr)

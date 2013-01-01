@@ -24,24 +24,20 @@
 using namespace std;
 
 namespace gui {
-	void ScrollPane::resizeTo(gsize_t width,gsize_t height) {
+	void ScrollPane::resizeTo(const Size &size) {
 		// a scrollpane does never use more space than available. if the content is larger, we
 		// show scrollbars for it.
-		width = min(getParent()->getContentWidth(),width);
-		height = min(getParent()->getContentHeight(),height);
-
-		Control::resizeTo(width,height);
-		gsize_t visiblex = getWidth() - BAR_SIZE;
-		gsize_t visibley = getHeight() - BAR_SIZE;
+		Size rsize = minsize(size,getParent()->getContentSize());
+		Control::resizeTo(rsize);
+		Size visible = rsize - Size(BAR_SIZE,BAR_SIZE);
 
 		// determine what size the control will actually use, if it gets visiblex X visibley.
-		pair<gsize_t,gsize_t> usedsize = _ctrl->getUsedSize(visiblex,visibley);
-		_ctrl->resizeTo(usedsize.first,usedsize.second);
+		_ctrl->resizeTo(_ctrl->getUsedSize(visible));
 
 		// ensure that the position of the control is in the allowed range; of course, this changes
 		// as soon as the size of the scrollpane or the control changes
-		gpos_t minX = visiblex - _ctrl->getWidth();
-		gpos_t minY = visibley - _ctrl->getHeight();
+		gpos_t minX = visible.width - _ctrl->getSize().width;
+		gpos_t minY = visible.height - _ctrl->getSize().height;
 		gpos_t newX = min((gpos_t)0,max(minX,_ctrl->getX()));
 		gpos_t newY = min((gpos_t)0,max(minY,_ctrl->getY()));
 		if(_ctrl->getX() != newX || _ctrl->getY() != newY)
@@ -50,11 +46,11 @@ namespace gui {
 
 	void ScrollPane::scrollBy(short mx,short my) {
 		Graphics *g = getGraphics();
-		gsize_t visibley = max(0,getHeight() - BAR_SIZE);
-		gsize_t visiblex = max(0,getWidth() - BAR_SIZE);
+		gsize_t visibley = max(0,getSize().height - BAR_SIZE);
+		gsize_t visiblex = max(0,getSize().width - BAR_SIZE);
 		if((_focus & FOCUS_HORSB) && mx != 0 && visiblex != 0) {
-			short x = (short)(_ctrl->getWidth() / ((double)visiblex / mx));
-			int minX = visiblex - _ctrl->getWidth();
+			short x = (short)(_ctrl->getSize().width / ((double)visiblex / mx));
+			int minX = visiblex - _ctrl->getSize().width;
 			// scroll left, i.e. move content right
 			if(x < 0 && _ctrl->getX() < 0) {
 				x = max(_ctrl->getX(),x);
@@ -64,7 +60,7 @@ namespace gui {
 				else {
 					// move cols right and repaint the first few cols
 					g->moveCols(0,0,visiblex + x,visibley,x);
-					repaintRect(0,0,-x,visibley);
+					repaintRect(0,0,Size(-x,visibley));
 				}
 			}
 			// scroll right, i.e. move content left
@@ -76,13 +72,13 @@ namespace gui {
 				else {
 					// move cols left and repaint the last few cols
 					g->moveCols(x,0,(gsize_t)(visiblex - x),visibley,x);
-					repaintRect(visiblex - x,0,x,visibley);
+					repaintRect(visiblex - x,0,Size(x,visibley));
 				}
 			}
 		}
 		else if((_focus & FOCUS_VERTSB) && my != 0 && visibley != 0) {
-			short y = (short)(_ctrl->getHeight() / ((double)visibley / my));
-			int minY = visibley - _ctrl->getHeight();
+			short y = (short)(_ctrl->getSize().height / ((double)visibley / my));
+			int minY = visibley - _ctrl->getSize().height;
 			// scroll up, i.e. move content down
 			if(y < 0 && _ctrl->getY() < 0) {
 				y = max(_ctrl->getY(),y);
@@ -92,7 +88,7 @@ namespace gui {
 				else {
 					// move rows down and repaint the first few rows
 					g->moveRows(0,0,visiblex,visibley + y,y);
-					repaintRect(0,0,visiblex,-y);
+					repaintRect(0,0,Size(visiblex,-y));
 				}
 			}
 			// scroll down, i.e. move content up
@@ -104,7 +100,7 @@ namespace gui {
 				else {
 					// move rows up and repaint the last few rows
 					g->moveRows(0,y,visiblex,visibley - y,y);
-					repaintRect(0,visibley - y,visiblex,y);
+					repaintRect(0,visibley - y,Size(visiblex,y));
 				}
 			}
 		}
@@ -117,10 +113,11 @@ namespace gui {
 		_focus &= ~(FOCUS_HORSB | FOCUS_VERTSB);
 	}
 	void ScrollPane::onMousePressed(const MouseEvent &e) {
-		if(e.getY() >= getHeight() - BAR_SIZE) {
-			gsize_t visiblex = getWidth() - BAR_SIZE;
+		Size size = getSize();
+		if(e.getY() >= size.height - BAR_SIZE) {
+			gsize_t visiblex = size.width - BAR_SIZE;
 			if(e.getX() < visiblex) {
-				gsize_t ctrlw = _ctrl->getWidth();
+				gsize_t ctrlw = _ctrl->getSize().width;
 				gpos_t barPos = getBarPos(ctrlw,visiblex,_ctrl->getX());
 				gsize_t barSize = getBarSize(ctrlw,visiblex);
 				_focus = FOCUS_HORSB;
@@ -134,9 +131,9 @@ namespace gui {
 				}
 			}
 		}
-		else if(e.getX() >= getWidth() - BAR_SIZE) {
-			gsize_t ctrlh = _ctrl->getHeight();
-			gsize_t visibley = getHeight() - BAR_SIZE;
+		else if(e.getX() >= size.width - BAR_SIZE) {
+			gsize_t ctrlh = _ctrl->getSize().height;
+			gsize_t visibley = size.height - BAR_SIZE;
 			gpos_t barPos = getBarPos(ctrlh,visibley,_ctrl->getY());
 			gsize_t barSize = getBarSize(ctrlh,visibley);
 			_focus = FOCUS_VERTSB;
@@ -157,8 +154,8 @@ namespace gui {
 		}
 	}
 	void ScrollPane::onMouseWheel(const MouseEvent &e) {
-		gsize_t visibley = getHeight() - BAR_SIZE;
-		if(getBarSize(_ctrl->getHeight(),visibley) < visibley) {
+		gsize_t visibley = getSize().height - BAR_SIZE;
+		if(getBarSize(_ctrl->getSize().height,visibley) < visibley) {
 			_focus = FOCUS_VERTSB;
 			scrollBy(0,e.getWheelMovement() * SCROLL_FACTOR);
 		}
@@ -175,10 +172,9 @@ namespace gui {
 	}
 
 	void ScrollPane::paintBars(Graphics &g) {
-		gsize_t ctrlw = _ctrl->getWidth();
-		gsize_t ctrlh = _ctrl->getHeight();
-		gsize_t visiblex = getWidth() - BAR_SIZE;
-		gsize_t visibley = getHeight() - BAR_SIZE;
+		Size ctrlSize = _ctrl->getSize();
+		gsize_t visiblex = getSize().width - BAR_SIZE;
+		gsize_t visibley = getSize().height - BAR_SIZE;
 
 		// horizontal scrollbar
 		gpos_t ybarPos = visibley;
@@ -186,10 +182,10 @@ namespace gui {
 		g.drawRect(0,ybarPos,visiblex,BAR_SIZE);
 		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBACK));
 		g.fillRect(1,ybarPos + 1,visiblex - 2,BAR_SIZE - 2);
-		if(ctrlw > visiblex) {
+		if(ctrlSize.width > visiblex) {
 			g.setColor(getTheme().getColor(Theme::CTRL_DARKBACK));
-			g.fillRect(getBarPos(ctrlw,visiblex,_ctrl->getX()) + 2,
-					ybarPos + 2,getBarSize(ctrlw,visiblex) - 3,BAR_SIZE - 4);
+			g.fillRect(getBarPos(ctrlSize.width,visiblex,_ctrl->getX()) + 2,
+					ybarPos + 2,getBarSize(ctrlSize.width,visiblex) - 3,BAR_SIZE - 4);
 		}
 
 		// vertical scrollbar
@@ -198,10 +194,10 @@ namespace gui {
 		g.drawRect(xbarPos,0,BAR_SIZE,visibley);
 		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBACK));
 		g.fillRect(xbarPos + 1,1,BAR_SIZE - 2,visibley - 2);
-		if(ctrlh > visibley) {
+		if(ctrlSize.height > visibley) {
 			g.setColor(getTheme().getColor(Theme::CTRL_DARKBACK));
-			g.fillRect(xbarPos + 2,getBarPos(ctrlh,visibley,_ctrl->getY()) + 2,
-					BAR_SIZE - 4,getBarSize(ctrlh,visibley) - 3);
+			g.fillRect(xbarPos + 2,getBarPos(ctrlSize.height,visibley,_ctrl->getY()) + 2,
+					BAR_SIZE - 4,getBarSize(ctrlSize.height,visibley) - 3);
 		}
 
 		// corner
@@ -209,10 +205,11 @@ namespace gui {
 		g.fillRect(xbarPos,ybarPos,BAR_SIZE,BAR_SIZE);
 	}
 
-	void ScrollPane::paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		width = min(width,(gsize_t)(getWidth() - BAR_SIZE));
-		height = min(height,(gsize_t)(getHeight() - BAR_SIZE));
-		_ctrl->paintRect(*_ctrl->getGraphics(),-_ctrl->getX() + x,-_ctrl->getY() + y,width,height);
+	void ScrollPane::paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size) {
+		Size rsize = size;
+		rsize.width = min(rsize.width,(gsize_t)(getSize().width - BAR_SIZE));
+		rsize.height = min(rsize.height,(gsize_t)(getSize().height - BAR_SIZE));
+		_ctrl->paintRect(*_ctrl->getGraphics(),-_ctrl->getX() + x,-_ctrl->getY() + y,rsize);
 		paintBars(g);
 	}
 

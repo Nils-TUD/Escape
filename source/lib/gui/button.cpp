@@ -22,11 +22,10 @@
 #include <gui/control.h>
 
 namespace gui {
-	gsize_t Button::getPrefWidth() const {
-		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
-	}
-	gsize_t Button::getPrefHeight() const {
-		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
+	Size Button::getPrefSize() const {
+		gsize_t pad = getTheme().getTextPadding();
+		return Size(getGraphics()->getFont().getStringWidth(_text) + pad * 2,
+					getGraphics()->getFont().getSize().height + pad * 2);
 	}
 
 	void Button::onFocusGained() {
@@ -74,41 +73,44 @@ namespace gui {
 	}
 
 	void Button::paintBackground(Graphics &g) {
+		Size size = getSize();
 		g.setColor(getTheme().getColor(Theme::BTN_BACKGROUND));
-		g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
+		g.fillRect(1,1,size.width - 2,size.height - 2);
 	}
 
 	void Button::paintBorder(Graphics &g) {
+		Size size = getSize();
 		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
-		g.drawLine(0,0,getWidth() - 1,0);
+		g.drawLine(0,0,size.width - 1,0);
 		if(_focused)
-			g.drawLine(0,1,getWidth() - 1,1);
-		g.drawLine(0,0,0,getHeight() - 1);
+			g.drawLine(0,1,size.width - 1,1);
+		g.drawLine(0,0,0,size.height - 1);
 		if(_focused)
-			g.drawLine(1,0,1,getHeight() - 1);
+			g.drawLine(1,0,1,size.height - 1);
 
 		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
-		g.drawLine(getWidth() - 1,0,getWidth() - 1,getHeight() - 1);
+		g.drawLine(size.width - 1,0,size.width - 1,size.height - 1);
 		if(_focused)
-			g.drawLine(getWidth() - 2,0,getWidth() - 2,getHeight() - 1);
-		g.drawLine(0,getHeight() - 1,getWidth() - 1,getHeight() - 1);
+			g.drawLine(size.width - 2,0,size.width - 2,size.height - 1);
+		g.drawLine(0,size.height - 1,size.width - 1,size.height - 1);
 		if(_focused)
-			g.drawLine(0,getHeight() - 2,getWidth() - 1,getHeight() - 2);
+			g.drawLine(0,size.height - 2,size.width - 1,size.height - 2);
 	}
 
 	void Button::paint(Graphics &g) {
+		Size size = getSize();
 		paintBackground(g);
 		paintBorder(g);
 
 		g.setColor(getTheme().getColor(Theme::BTN_FOREGROUND));
-		gsize_t count = g.getFont().limitStringTo(_text,getWidth() - 2);
+		gsize_t count = g.getFont().limitStringTo(_text,size.width - 2);
 		if(_pressed) {
-			g.drawString((getWidth() - g.getFont().getStringWidth(_text.substr(0,count))) / 2 + 1,
-					(getHeight() - g.getFont().getHeight()) / 2 + 1,_text,0,count);
+			g.drawString((size.width - g.getFont().getStringWidth(_text.substr(0,count))) / 2 + 1,
+					(size.height - g.getFont().getSize().height) / 2 + 1,_text,0,count);
 		}
 		else {
-			g.drawString((getWidth() - g.getFont().getStringWidth(_text.substr(0,count))) / 2,
-					(getHeight() - g.getFont().getHeight()) / 2,_text,0,count);
+			g.drawString((size.width - g.getFont().getStringWidth(_text.substr(0,count))) / 2,
+					(size.height - g.getFont().getSize().height) / 2,_text,0,count);
 		}
 	}
 }

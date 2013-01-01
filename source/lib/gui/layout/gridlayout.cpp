@@ -35,15 +35,11 @@ namespace gui {
 		_ctrls[pos] = NULL;
 	}
 
-	gsize_t GridLayout::getPreferredWidth() const {
+	Size GridLayout::getPreferredSize() const {
 		if(_ctrls.size() == 0)
-			return 0;
-		return getMaxWidth() * _cols + _gap * (_cols - 1);
-	}
-	gsize_t GridLayout::getPreferredHeight() const {
-		if(_ctrls.size() == 0)
-			return 0;
-		return getMaxHeight() * _rows + _gap * (_rows - 1);
+			return Size();
+		Size max = getMaxSize();
+		return Size(max.width * _cols + _gap * (_cols - 1),max.height * _rows + _gap * (_rows - 1));
 	}
 
 	void GridLayout::rearrange() {
@@ -51,35 +47,24 @@ namespace gui {
 			return;
 
 		gsize_t pad = _p->getTheme().getPadding();
+		Size size = _p->getSize();
 		// work with double here to distribute the inaccuracy over all gaps. otherwise it would
 		// be at the end, which looks quite ugly.
-		double cwidth = (_p->getWidth() - pad * 2 - (_gap * (_cols - 1))) / (double)_cols;
-		double cheight = (_p->getHeight() - pad * 2 - (_gap * (_rows - 1))) / (double)_rows;
+		double cwidth = (size.width - pad * 2 - (_gap * (_cols - 1))) / (double)_cols;
+		double cheight = (size.height - pad * 2 - (_gap * (_rows - 1))) / (double)_rows;
 
 		for(map<int,Control*>::iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			GridPos pos(it->first);
 			gpos_t x = (gpos_t)(pad + pos.col() * (cwidth + _gap));
 			gpos_t y = (gpos_t)(pad + pos.row() * (cheight + _gap));
-			configureControl(it->second,x,y,(gsize_t)cwidth,(gsize_t)cheight);
+			configureControl(it->second,x,y,Size((gsize_t)cwidth,(gsize_t)cheight));
 		}
 	}
 
-	gsize_t GridLayout::getMaxWidth() const {
-		gsize_t max = 0;
-		for(map<int,Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			gsize_t width = it->second->getPreferredWidth();
-			if(width > max)
-				max = width;
-		}
-		return max;
-	}
-	gsize_t GridLayout::getMaxHeight() const {
-		gsize_t max = 0;
-		for(map<int,Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			gsize_t height = it->second->getPreferredHeight();
-			if(height > max)
-				max = height;
-		}
+	Size GridLayout::getMaxSize() const {
+		Size max;
+		for(map<int,Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it)
+			max = maxsize(max,it->second->getPreferredSize());
 		return max;
 	}
 }

@@ -37,8 +37,8 @@ namespace gui {
 		gpos_t y = e.getY();
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 			Control *c = *it;
-			if(x >= c->getX() && x < c->getX() + c->getWidth() &&
-				y >= c->getY() && y < c->getY() + c->getHeight()) {
+			if(x >= c->getX() && x < c->getX() + c->getSize().width &&
+				y >= c->getY() && y < c->getY() + c->getSize().height) {
 				MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
 						x - c->getX(),y - c->getY(),e.getButtonMask());
 				if(focus)
@@ -63,11 +63,11 @@ namespace gui {
 			(*it)->layout();
 	}
 
-	void Panel::resizeTo(gsize_t width,gsize_t height) {
-		gpos_t diffw = getWidth() - width;
-		gpos_t diffh = getHeight() - height;
+	void Panel::resizeTo(const Size &size) {
+		gpos_t diffw = getSize().width - size.width;
+		gpos_t diffh = getSize().height - size.height;
 
-		Control::resizeTo(width,height);
+		Control::resizeTo(size);
 		if(diffw || diffh) {
 			if(_layout)
 				_layout->rearrange();
@@ -99,7 +99,7 @@ namespace gui {
 	void Panel::paint(Graphics &g) {
 		// fill bg
 		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
-		g.fillRect(0,0,getWidth(),getHeight());
+		g.fillRect(0,0,getSize());
 
 		// now paint controls
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
@@ -108,11 +108,11 @@ namespace gui {
 				sRectangle ctrlRect,inter;
 				ctrlRect.x = c->getX();
 				ctrlRect.y = c->getY();
-				ctrlRect.width = c->getWidth();
-				ctrlRect.height = c->getHeight();
+				ctrlRect.width = c->getSize().width;
+				ctrlRect.height = c->getSize().height;
 				if(rectIntersect(&_updateRect,&ctrlRect,&inter)) {
 					c->paintRect(*c->getGraphics(),
-							inter.x - c->getX(),inter.y - c->getY(),inter.width,inter.height);
+							inter.x - c->getX(),inter.y - c->getY(),Size(inter.width,inter.height));
 				}
 			}
 			else
@@ -120,12 +120,12 @@ namespace gui {
 		}
 	}
 
-	void Panel::paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	void Panel::paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size) {
 		_updateRect.x = x;
 		_updateRect.y = y;
-		_updateRect.width = width;
-		_updateRect.height = height;
-		UIElement::paintRect(g,x,y,width,height);
+		_updateRect.width = size.width;
+		_updateRect.height = size.height;
+		UIElement::paintRect(g,x,y,size);
 		_updateRect.width = 0;
 	}
 
@@ -146,8 +146,7 @@ namespace gui {
 	}
 
 	ostream &operator<<(ostream &s,const Panel &p) {
-		s << "Panel[@" << p.getX() << "," << p.getY();
-		s << " size=" << p.getWidth() << "," << p.getHeight() << "]";
+		s << "Panel[@" << p.getX() << "," << p.getY() << " size=" << p.getSize() << "]";
 		return s;
 	}
 }

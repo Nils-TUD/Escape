@@ -49,11 +49,10 @@ namespace gui {
 		 *
 		 * @param x the x-position
 		 * @param y the y-position
-		 * @param width the width
-		 * @param height the height
+		 * @param size the size
 		 */
-		Control(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: UIElement(x,y,width,height) {
+		Control(gpos_t x,gpos_t y,const Size &size)
+			: UIElement(x,y,size) {
 		};
 
 		/**
@@ -77,12 +76,11 @@ namespace gui {
 
 	protected:
 		/**
-		 * Resizes the ui-element to width and height
+		 * Resizes the ui-element to given size
 		 *
-		 * @param width the new width
-		 * @param height the new height
+		 * @param size the new size
 		 */
-		virtual void resizeTo(gsize_t width,gsize_t height);
+		virtual void resizeTo(const Size &size);
 		/**
 		 * Moves the ui-element to x,y.
 		 *

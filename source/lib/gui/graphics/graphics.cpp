@@ -29,11 +29,10 @@ using namespace std;
 
 namespace gui {
 	void Graphics::moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
-		gsize_t bwidth = _buf->getWidth();
-		gsize_t bheight = _buf->getHeight();
+		Size bsize = _buf->getSize();
 		gsize_t psize = _buf->getColorDepth() / 8;
 		gsize_t wsize = width * psize;
-		gsize_t bwsize = bwidth * psize;
+		gsize_t bwsize = bsize.width * psize;
 		uint8_t *pixels = _buf->getBuffer();
 		if(!validateParams(x,y,width,height))
 			return;
@@ -45,8 +44,8 @@ namespace gui {
 				up = y;
 		}
 		else {
-			if(starty + height - up > bheight)
-				up = -(bheight - (height + starty));
+			if(starty + height - up > bsize.height)
+				up = -(bsize.height - (height + starty));
 		}
 
 		pixels += startx * psize;
@@ -69,10 +68,10 @@ namespace gui {
 	}
 
 	void Graphics::moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left) {
-		gsize_t bwidth = _buf->getWidth();
+		Size bsize = _buf->getSize();
 		gsize_t psize = _buf->getColorDepth() / 8;
 		gsize_t wsize = width * psize;
-		gsize_t bwsize = bwidth * psize;
+		gsize_t bwsize = bsize.width * psize;
 		uint8_t *pixels = _buf->getBuffer();
 		if(!validateParams(x,y,width,height))
 			return;
@@ -84,8 +83,8 @@ namespace gui {
 				left = x;
 		}
 		else {
-			if(startx + width - left > bwidth)
-				left = -(bwidth - (width + startx));
+			if(startx + width - left > bsize.width)
+				left = -(bsize.width - (width + startx));
 		}
 
 		pixels += startx * psize;
@@ -101,17 +100,16 @@ namespace gui {
 	void Graphics::drawChar(gpos_t x,gpos_t y,char c) {
 		gpos_t orgx = x;
 		gpos_t orgy = y;
-		gsize_t width = _font.getWidth();
-		gsize_t height = _font.getHeight();
-		if(!validateParams(x,y,width,height))
+		Size fsize = _font.getSize();
+		if(!validateParams(x,y,fsize.width,fsize.height))
 			return;
 
 		updateMinMax(x,y);
-		updateMinMax(x + width - 1,y + height - 1);
+		updateMinMax(x + fsize.width - 1,y + fsize.height - 1);
 		gpos_t cx,cy;
 		gpos_t xoff = x - orgx,yoff = y - orgy;
-		gsize_t xend = xoff + width;
-		gsize_t yend = yoff + height;
+		gsize_t xend = xoff + fsize.width;
+		gsize_t yend = yoff + fsize.height;
 		for(cy = yoff; cy < yend; cy++) {
 			for(cx = xoff; cx < xend; cx++) {
 				if(_font.isPixelSet(c,cx,cy))
@@ -125,7 +123,7 @@ namespace gui {
 	}
 
 	void Graphics::drawString(gpos_t x,gpos_t y,const string &str,size_t start,size_t count) {
-		size_t charWidth = _font.getWidth();
+		size_t charWidth = _font.getSize().width;
 		size_t end = start + MIN(str.length(),count);
 		for(size_t i = start; i < end; i++) {
 			drawChar(x,y,str[i]);
@@ -134,7 +132,7 @@ namespace gui {
 	}
 
 	void Graphics::drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn) {
-		if(_width == 0 || _height == 0)
+		if(_size.empty())
 			return;
 		if(x0 == xn) {
 			drawVertLine(x0,y0,yn);
@@ -181,8 +179,8 @@ namespace gui {
 
 		gpos_t minx = _minoffx - _offx;
 		gpos_t miny = _minoffy - _offy;
-		gpos_t maxx = _width - 1;
-		gpos_t maxy = _height - 1;
+		gpos_t maxx = _size.width - 1;
+		gpos_t maxy = _size.height - 1;
 		for(x = x0; x != xn; x += incx) {
 			setLinePixel(minx,miny,maxx,maxy,*px,*py);
 			if(d < 0)
@@ -219,29 +217,30 @@ namespace gui {
 			doSetPixel(x1,y);
 	}
 
-	void Graphics::drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		if(width == 0 || height == 0)
+	void Graphics::drawRect(gpos_t x,gpos_t y,const Size &size) {
+		if(size.empty())
 			return;
 
 		// top
-		drawHorLine(y,x,x + width - 1);
+		drawHorLine(y,x,x + size.width - 1);
 		// right
-		drawVertLine(x + width - 1,y,y + height - 1);
+		drawVertLine(x + size.width - 1,y,y + size.height - 1);
 		// bottom
-		drawHorLine(y + height - 1,x,x + width - 1);
+		drawHorLine(y + size.height - 1,x,x + size.width - 1);
 		// left
-		drawVertLine(x,y,y + height - 1);
+		drawVertLine(x,y,y + size.height - 1);
 	}
 
-	void Graphics::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		if(!validateParams(x,y,width,height))
+	void Graphics::fillRect(gpos_t x,gpos_t y,const Size &size) {
+		Size rsize = size;
+		if(!validateParams(x,y,rsize.width,rsize.height))
 			return;
 
-		gpos_t yend = y + height;
+		gpos_t yend = y + rsize.height;
 		updateMinMax(x,y);
-		updateMinMax(x + width - 1,yend - 1);
+		updateMinMax(x + rsize.width - 1,yend - 1);
 		gpos_t xcur;
-		gpos_t xend = x + width;
+		gpos_t xend = x + rsize.width;
 		for(; y < yend; y++) {
 			for(xcur = x; xcur < xend; xcur++)
 				doSetPixel(xcur,y);
@@ -256,27 +255,27 @@ namespace gui {
 		if(!validateParams(x,y,width,height))
 			return;
 
-		_buf->requestUpdate(_offx + x,_offy + y,width,height);
+		_buf->requestUpdate(_offx + x,_offy + y,Size(width,height));
 		// reset region
-		_minx = _width - 1;
+		_minx = _size.width - 1;
 		_maxx = 0;
-		_miny = _height - 1;
+		_miny = _size.height - 1;
 		_maxy = 0;
 	}
 
-	void Graphics::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		if(!validateParams(x,y,width,height))
+	void Graphics::update(gpos_t x,gpos_t y,const Size &size) {
+		Size rsize = size;
+		if(!validateParams(x,y,rsize.width,rsize.height))
 			return;
 
-		_buf->update(x,y,width,height);
+		_buf->update(x,y,rsize);
 	}
 
-	void Graphics::setSize(gpos_t x,gpos_t y,gsize_t width,gsize_t height,
-			gsize_t pwidth,gsize_t pheight) {
-		_width = getDim(x,width,pwidth);
-		_width = getDim(_offx,_width,_buf->getWidth());
-		_height = getDim(y,height,pheight);
-		_height = getDim(_offy,_height,_buf->getHeight());
+	void Graphics::setSize(gpos_t x,gpos_t y,const Size &size,const Size &psize) {
+		_size.width = getDim(x,size.width,psize.width);
+		_size.width = getDim(_offx,_size.width,_buf->getSize().width);
+		_size.height = getDim(y,size.height,psize.height);
+		_size.height = getDim(_offy,_size.height,_buf->getSize().height);
 	}
 
 	gsize_t Graphics::getDim(gpos_t off,gsize_t size,gsize_t max) {
@@ -289,7 +288,7 @@ namespace gui {
 	}
 
 	bool Graphics::validateLine(gpos_t &x1,gpos_t &y1,gpos_t &x2,gpos_t &y2) {
-		if(_width == 0 || _height == 0)
+		if(_size.empty())
 			return false;
 
 		// ensure that none of the params reference the same variable. otherwise we can't detect
@@ -336,19 +335,19 @@ namespace gui {
 			y = -_offy;
 			res |= OUT_TOP;
 		}
-		if(x >= _width) {
-			x = _width - 1;
+		if(x >= _size.width) {
+			x = _size.width - 1;
 			res |= OUT_RIGHT;
 		}
-		if(y >= _height) {
-			y = _height - 1;
+		if(y >= _size.height) {
+			y = _size.height - 1;
 			res |= OUT_BOTTOM;
 		}
 		return res;
 	}
 
 	bool Graphics::validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height) {
-		if(_width == 0 || _height == 0)
+		if(_size.empty())
 			return false;
 
 		gpos_t minx = _minoffx - _offx;
@@ -377,10 +376,10 @@ namespace gui {
 			width += _offx + x;
 			x = -_offx;
 		}
-		if(x + width > _width)
-			width = max(0,(gpos_t)_width - x);
-		if(y + height > _height)
-			height = max(0,(gpos_t)_height - y);
+		if(x + width > _size.width)
+			width = max(0,(gpos_t)_size.width - x);
+		if(y + height > _size.height)
+			height = max(0,(gpos_t)_size.height - y);
 		return width > 0 && height > 0;
 	}
 }

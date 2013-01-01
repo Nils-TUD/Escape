@@ -22,38 +22,38 @@
 #include <gui/control.h>
 
 namespace gui {
-	gsize_t ProgressBar::getPrefWidth() const {
-		return getGraphics()->getFont().getStringWidth(_text) + getTheme().getTextPadding() * 2;
-	}
-	gsize_t ProgressBar::getPrefHeight() const {
-		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
+	Size ProgressBar::getPrefSize() const {
+		gsize_t pad = getTheme().getTextPadding();
+		const Font &f = getGraphics()->getFont();
+		return Size(f.getStringWidth(_text) + pad * 2,f.getSize().height + pad * 2);
 	}
 
 	void ProgressBar::paint(Graphics &g) {
+		Size size = getSize();
 		// draw border
 		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
-		g.drawRect(0,0,getWidth(),getHeight());
+		g.drawRect(0,0,size);
 
 		// draw bar
 		gsize_t barWidth;
 		if(_position == 0)
 			barWidth = 0;
 		else
-			barWidth = (getWidth() - 2) / (100.0f / _position);
+			barWidth = (size.width - 2) / (100.0f / _position);
 
 		g.setColor(getTheme().getColor(Theme::SEL_BACKGROUND));
-		g.fillRect(1,1,barWidth,getHeight() - 2);
+		g.fillRect(1,1,barWidth,size.height - 2);
 
 		// draw bg
 		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBACK));
-		g.fillRect(1 + barWidth,1,getWidth() - barWidth - 2,getHeight() - 2);
+		g.fillRect(1 + barWidth,1,size.width - barWidth - 2,size.height - 2);
 
 		// draw text
 		g.setColor(getTheme().getColor(Theme::SEL_FOREGROUND));
-		gsize_t count = g.getFont().limitStringTo(_text,getWidth());
+		gsize_t count = g.getFont().limitStringTo(_text,size.width);
 		if(count > 0) {
-			g.drawString((getWidth() - g.getFont().getStringWidth(_text.substr(0,count))) / 2 + 1,
-					(getHeight() - g.getFont().getHeight()) / 2 + 1,_text,0,count);
+			g.drawString((size.width - g.getFont().getStringWidth(_text.substr(0,count))) / 2 + 1,
+					(size.height - g.getFont().getSize().height) / 2 + 1,_text,0,count);
 		}
 	}
 }

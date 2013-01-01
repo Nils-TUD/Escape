@@ -24,13 +24,11 @@
 namespace gui {
 	const gsize_t Checkbox::CROSS_SIZE = 24;
 
-	gsize_t Checkbox::getPrefWidth() const {
-		return getGraphics()->getFont().getStringWidth(_text) +
-				TEXT_PADDING + CROSS_PADDING + CROSS_SIZE;
-	}
-	gsize_t Checkbox::getPrefHeight() const {
-		gsize_t fheight = getGraphics()->getFont().getHeight();
-		return max((gsize_t)(fheight + getTheme().getTextPadding() * 2),CROSS_SIZE);
+	Size Checkbox::getPrefSize() const {
+		gsize_t fwidth = getGraphics()->getFont().getStringWidth(_text);
+		gsize_t fheight = getGraphics()->getFont().getSize().height;
+		return Size(fwidth + TEXT_PADDING + CROSS_PADDING + CROSS_SIZE,
+					max((gsize_t)(fheight + getTheme().getTextPadding() * 2),CROSS_SIZE));
 	}
 
 	void Checkbox::onFocusGained() {
@@ -62,11 +60,11 @@ namespace gui {
 	}
 
 	void Checkbox::paint(Graphics &g) {
-		gsize_t cheight = g.getFont().getHeight();
-		gsize_t boxSize = getHeight();
+		gsize_t cheight = g.getFont().getSize().height;
+		gsize_t boxSize = getSize().height;
 
 		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
-		g.fillRect(0,0,getWidth(),getHeight());
+		g.fillRect(0,0,getSize());
 
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(1,1,boxSize - 2,boxSize - 2);

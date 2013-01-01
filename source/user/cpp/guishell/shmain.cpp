@@ -150,10 +150,11 @@ static int guiProc(void) {
 	// now start GUI
 	Application *app = Application::getInstance();
 	Font font;
-	Window w("Shell",100,100,font.getWidth() * DEF_COLS + 2,font.getHeight() * DEF_ROWS + 4);
+	Window w("Shell",100,100,Size(font.getSize().width * DEF_COLS + 2,
+								  font.getSize().height * DEF_ROWS + 4));
 	Panel& root = w.getRootPanel();
 	root.getTheme().setPadding(0);
-	ShellControl *sh = new ShellControl(0,0,root.getWidth(),root.getHeight());
+	ShellControl *sh = new ShellControl(0,0,root.getSize());
 	gt = new GUITerm(sid,sh);
 	if(startthread(termThread,gt) < 0)
 		error("Unable to start term-thread");

@@ -21,11 +21,9 @@
 #include <gui/imagebutton.h>
 
 namespace gui {
-	gsize_t ImageButton::getPrefWidth() const {
-		return _img->getWidth() + getTheme().getPadding() * 2;
-	}
-	gsize_t ImageButton::getPrefHeight() const {
-		return _img->getHeight() + getTheme().getPadding() * 2;
+	Size ImageButton::getPrefSize() const {
+		gsize_t pad = getTheme().getPadding();
+		return _img->getSize() + Size(pad * 2,pad * 2);
 	}
 
 	void ImageButton::paintBorder(Graphics &g) {
@@ -34,8 +32,8 @@ namespace gui {
 	}
 
 	void ImageButton::paintBackground(Graphics &g) {
-		gpos_t x = (getWidth() / 2) - (_img->getWidth() / 2);
-		gpos_t y = (getHeight() / 2) - (_img->getHeight() / 2);
+		gpos_t x = (getSize().width / 2) - (_img->getSize().width / 2);
+		gpos_t y = (getSize().height / 2) - (_img->getSize().height / 2);
 		_img->paint(g,x,y);
 	}
 }

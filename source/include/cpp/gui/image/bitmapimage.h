@@ -105,11 +105,8 @@ namespace gui {
 			return *this;
 		};
 
-		inline gsize_t getWidth() const {
-			return _infoHeader->width;
-		};
-		inline gsize_t getHeight() const {
-			return _infoHeader->height;
+		virtual Size getSize() const {
+			return Size(_infoHeader->width,_infoHeader->height);
 		};
 		void paint(Graphics &g,gpos_t x,gpos_t y);
 

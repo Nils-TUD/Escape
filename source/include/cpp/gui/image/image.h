@@ -46,8 +46,7 @@ namespace gui {
 		virtual ~Image() {
 		};
 
-		virtual gsize_t getWidth() const = 0;
-		virtual gsize_t getHeight() const = 0;
+		virtual Size getSize() const = 0;
 
 		virtual void paint(Graphics &g,gpos_t x,gpos_t y) = 0;
 	};

@@ -33,92 +33,81 @@ namespace gui {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 
-	gsize_t IconLayout::getPreferredWidth() const {
+	Size IconLayout::getPreferredSize() const {
 		if(_ctrls.size() == 0)
-			return 0;
-		gsize_t width,height;
+			return Size();
+		Size size;
 		size_t cols = (size_t)sqrt(_ctrls.size());
-		doLayout(cols,cols,width,height);
-		return width;
-	}
-	gsize_t IconLayout::getPreferredHeight() const {
-		if(_ctrls.size() == 0)
-			return 0;
-		gsize_t width,height;
-		size_t cols = (size_t)sqrt(_ctrls.size());
-		doLayout(cols,cols,width,height);
-		return height;
+		doLayout(cols,cols,size);
+		return size;
 	}
 
-	std::pair<gsize_t,gsize_t> IconLayout::getUsedSize(gsize_t width,gsize_t height) const {
+	Size IconLayout::getUsedSize(const Size &avail) const {
 		gsize_t pad = _p->getTheme().getPadding();
-		doLayout(0,0,width,height);
-		return std::make_pair(width + pad * 2,height + pad * 2);
+		Size size = avail;
+		doLayout(0,0,size);
+		return size + Size(pad * 2,pad * 2);
 	}
 
 	void IconLayout::rearrange() {
 		if(!_p || _ctrls.size() == 0)
 			return;
 
-		gsize_t width = _p->getWidth();
-		gsize_t height = _p->getHeight();
-		doLayout(0,0,width,height,&IconLayout::configureControl);
+		Size size = _p->getSize();
+		doLayout(0,0,size,&IconLayout::configureControl);
 	}
 
-	void IconLayout::doLayout(size_t cols,size_t rows,gsize_t &width,gsize_t &height,
-	                          layout_func layout) const {
-		gsize_t uwidth = 0, uheight = 0;
-		gsize_t wmax = 0, hmax = 0;
+	void IconLayout::doLayout(size_t cols,size_t rows,Size &size,layout_func layout) const {
+		Size usize,max;
 		gsize_t pad = _p->getTheme().getPadding();
 		switch(_pref) {
 			case HORIZONTAL: {
 				uint col = 0, row = 0;
 				gpos_t x = pad, y = pad;
 				for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-					std::pair<gsize_t,gsize_t> size((*it)->getPreferredWidth(),(*it)->getPreferredHeight());
-					if((cols && col == cols) || (!cols && col > 0 && x + size.first + pad > width)) {
-						uwidth = max<gsize_t>(uwidth,x - _gap - pad);
-						y += hmax + _gap;
+					Size csize = (*it)->getPreferredSize();
+					if((cols && col == cols) || (!cols && col > 0 && x + csize.width + pad > size.width)) {
+						usize.width = std::max<gsize_t>(usize.width,x - _gap - pad);
+						y += max.height + _gap;
 						x = pad;
-						hmax = 0;
+						max.height = 0;
 						col = 0;
 						row++;
 					}
 
 					if(layout)
-						(this->*layout)(*it,x,y,size.first,size.second);
-					x += size.first + _gap;
-					hmax = std::max(size.second,hmax);
+						(this->*layout)(*it,x,y,csize);
+					x += csize.width + _gap;
+					max.height = std::max(csize.height,max.height);
 					col++;
 				}
-				uheight = y + hmax - pad;
+				usize.height = y + max.height - pad;
 				break;
 			}
 			case VERTICAL: {
 				uint col = 0, row = 0;
 				gpos_t x = pad, y = pad;
 				for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-					std::pair<gsize_t,gsize_t> size((*it)->getPreferredWidth(),(*it)->getPreferredHeight());
-					if((rows && row == rows) || (!rows && row > 0 && y + size.second + pad > height)) {
-						uheight = max<gsize_t>(uheight,y - _gap - pad);
-						x += wmax + _gap;
+					Size csize = (*it)->getPreferredSize();
+					if((rows && row == rows) || (!rows && row > 0 && y + csize.height + pad > size.height)) {
+						usize.height = std::max<gsize_t>(usize.height,y - _gap - pad);
+						x += max.width + _gap;
 						y = pad;
-						wmax = 0;
+						max.width = 0;
 						col++;
 						row = 0;
 					}
 
 					if(layout)
-						(this->*layout)(*it,x,y,size.first,size.second);
-					y += size.second + _gap;
-					wmax = std::max(size.first,wmax);
+						(this->*layout)(*it,x,y,csize);
+					y += csize.height + _gap;
+					max.width = std::max(csize.width,max.width);
 					row++;
 				}
-				uwidth = x + wmax - pad;
+				usize.width = x + max.width - pad;
 				break;
 			}
 		}
-		width = uwidth;
-		height = uheight;
+		size = usize;
 	}
 }

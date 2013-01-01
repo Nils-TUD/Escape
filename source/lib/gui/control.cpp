@@ -21,19 +21,20 @@
 #include <gui/graphics/graphicfactory.h>
 #include <gui/control.h>
 #include <gui/window.h>
+#include <typeinfo>
+#include <iostream>
 
 namespace gui {
 	void Control::setParent(UIElement *e) {
 		_parent = e;
 		// we share the memory with the window, so that a control simply paints to that memory
 		// and just the window writes this memory to vesa
-		_g = GraphicFactory::get(e->getGraphics()->getBuffer(),0,0);
+		_g = GraphicFactory::get(e->getGraphics()->getBuffer(),Size(0,0));
 		setRegion();
 	}
 
-	void Control::resizeTo(gsize_t width,gsize_t height) {
-		_width = width;
-		_height = height;
+	void Control::resizeTo(const Size &size) {
+		_size = size;
 		setRegion();
 	}
 
@@ -49,7 +50,10 @@ namespace gui {
 			// don't change the min-offset for the header- and body-panel in the window; they're fixed
 			if(_parent->_parent)
 				_g->setMinOff(getParentOffX(_parent),getParentOffY(_parent));
-			_g->setSize(_x,_y,_width,_height,_parent->getContentWidth(),_parent->getContentHeight());
+			_g->setSize(_x,_y,_size,_parent->getContentSize());
+			/*std::cout << "[" << getId() << ", " << typeid(*this).name() << "] ";
+			std::cout << "@" << _g->getMinX() << "," << _g->getMinY() << ", ";
+			std::cout << "size:" << _g->getSize() << std::endl;*/
 		}
 	}
 

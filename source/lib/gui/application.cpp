@@ -171,11 +171,12 @@ namespace gui {
 				gwinid_t win = (gwinid_t)msg->args.arg5;
 				Window *w = getWindowById(win);
 				if(w) {
-					if(x + width > w->getWidth())
-						width = w->getWidth() - x;
-					if(y + height > w->getHeight())
-						height = w->getHeight() - y;
-					w->update(x,y,width,height);
+					Size size(width,height);
+					if(x + size.width > w->getSize().width)
+						size.width = w->getSize().width - x;
+					if(y + size.height > w->getSize().height)
+						size.height = w->getSize().height - y;
+					w->update(x,y,size);
 				}
 			}
 			break;
@@ -251,28 +252,30 @@ namespace gui {
 	void Application::closePopups(gwinid_t id,gpos_t x,gpos_t y) {
 		for(vector<Window*>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
 			Window *pw = *it;
-			if(pw->getId() != id && pw->getStyle() == Window::STYLE_POPUP) {
+			if(pw->getId() != id && pw->getStyle() == Window::POPUP) {
 				((PopupWindow*)pw)->close(x,y);
 				break;
 			}
 		}
 	}
 
-	void Application::requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	void Application::requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,const Size &size) {
 		Window *w = getWindowById(id);
+		Size wsize = w->getSize();
+		Size rsize = size;
 		if(x < 0)
 			x = 0;
 		if(y < 0)
 			y = 0;
-		if(x + width > w->getWidth())
-			width = w->getWidth() - x;
-		if(y + height > w->getHeight())
-			height = w->getHeight() - y;
+		if(x + rsize.width > wsize.width)
+			rsize.width = wsize.width - x;
+		if(y + rsize.height > wsize.height)
+			rsize.height = wsize.height - y;
 		_msg.args.arg1 = id;
 		_msg.args.arg2 = x;
 		_msg.args.arg3 = y;
-		_msg.args.arg4 = width;
-		_msg.args.arg5 = height;
+		_msg.args.arg4 = rsize.width;
+		_msg.args.arg5 = rsize.height;
 		if(send(_winFd,MSG_WIN_UPDATE,&_msg,sizeof(_msg.args)) < 0)
 			throw app_error("Unable to request win-update");
 	}
@@ -288,8 +291,8 @@ namespace gui {
 
 		_msg.str.arg1 = win->getX();
 		_msg.str.arg2 = win->getY();
-		_msg.str.arg3 = win->getWidth();
-		_msg.str.arg4 = win->getHeight();
+		_msg.str.arg3 = win->getSize().width;
+		_msg.str.arg4 = win->getSize().height;
 		_msg.str.arg5 = win->getId();
 		_msg.str.arg6 = win->getStyle();
 		_msg.str.arg7 = win->getTitleBarHeight();
@@ -325,8 +328,8 @@ namespace gui {
 		_msg.args.arg1 = win->getId();
 		_msg.args.arg2 = win->getMoveX();
 		_msg.args.arg3 = win->getMoveY();
-		_msg.args.arg4 = win->getResizeWidth();
-		_msg.args.arg5 = win->getResizeHeight();
+		_msg.args.arg4 = win->getResizeSize().width;
+		_msg.args.arg5 = win->getResizeSize().height;
 		_msg.args.arg6 = finish;
 		if(send(_winFd,MSG_WIN_RESIZE,&_msg,sizeof(_msg.args)) < 0)
 			throw app_error("Unable to resize window");

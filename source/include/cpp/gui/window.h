@@ -44,7 +44,7 @@ namespace gui {
 		static const char *CLOSE_IMG;
 
 	public:
-		WindowTitleBar(const std::string& title,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		WindowTitleBar(const std::string& title,gpos_t x,gpos_t y,const Size &size);
 
 		/**
 		 * @return the title (a copy)
@@ -80,24 +80,26 @@ namespace gui {
 		static gwinid_t NEXT_TMP_ID;
 
 		// minimum window-size
-		static const gsize_t MIN_WIDTH = 40;
-		static const gsize_t MIN_HEIGHT = 40;
+		static const gsize_t MIN_WIDTH;
+		static const gsize_t MIN_HEIGHT;
 
-		static const gsize_t HEADER_SIZE = 28;
+		static const gsize_t HEADER_SIZE;
 
 	public:
-		/**
-		 * For all ordinary windows
-		 */
-		static const uchar STYLE_DEFAULT = 0;
-		/**
-		 * This is used for popups (e.g. combobox). They are not moveable and resizeable
-		 */
-		static const uchar STYLE_POPUP = 1;
-		/**
-		 * Only for the desktop-application. Not moveable or resizeable and can't be active.
-		 */
-		static const uchar STYLE_DESKTOP = 2;
+		enum Style {
+			/**
+			 * For all ordinary windows
+			 */
+			DEFAULT,
+			/**
+			 * This is used for popups (e.g. combobox). They are not moveable and resizeable
+			 */
+			POPUP,
+			/**
+			 * Only for the desktop-application. Not moveable or resizeable and can't be active.
+			 */
+			DESKTOP
+		};
 
 	public:
 		/**
@@ -106,24 +108,22 @@ namespace gui {
 		 * @param title the window-title
 		 * @param x the x-position
 		 * @param y the y-position
-		 * @param width the width
-		 * @param height the height
+		 * @param size the size
 		 * @param style the window-style (STYLE_*)
 		 */
-		Window(gpos_t x,gpos_t y,gsize_t width = MIN_WIDTH,gsize_t height = MIN_HEIGHT,
-		       uchar style = STYLE_DEFAULT);
+		Window(gpos_t x,gpos_t y,
+		       const Size &size = Size(MIN_WIDTH,MIN_HEIGHT),Style style = DEFAULT);
 		/**
 		 * Creates a new window with titlebar, that displays <title>
 		 *
 		 * @param title the window-title
 		 * @param x the x-position
 		 * @param y the y-position
-		 * @param width the width
-		 * @param height the height
+		 * @param size the size
 		 * @param style the window-style (STYLE_*)
 		 */
-		Window(const std::string &title,gpos_t x,gpos_t y,gsize_t width = MIN_WIDTH,
-		       gsize_t height = MIN_HEIGHT,uchar style = STYLE_DEFAULT);
+		Window(const std::string &title,gpos_t x,gpos_t y,
+		       const Size &size = Size(MIN_WIDTH,MIN_HEIGHT),Style style = DEFAULT);
 		/**
 		 * Destructor
 		 */
@@ -193,7 +193,7 @@ namespace gui {
 		 * @return the height of the title-bar
 		 */
 		inline gsize_t getTitleBarHeight() const {
-			return _header ? _header->getHeight() : 0;
+			return _header ? _header->getSize().height : 0;
 		};
 
 		/**
@@ -203,15 +203,13 @@ namespace gui {
 			return _body;
 		};
 
-		virtual gsize_t getPrefWidth() const {
-			if(_header)
-				return max(_header->getPreferredWidth(),_body.getPreferredWidth()) + 2;
-			return _body.getPreferredWidth() + 2;
-		};
-		virtual gsize_t getPrefHeight() const {
-			if(_header)
-				return _header->getPreferredHeight() + _body.getPreferredHeight() + 2;
-			return _body.getPreferredHeight() + 2;
+		virtual Size getPrefSize() const {
+			Size bsize = _body.getPreferredSize();
+			if(_header) {
+				Size hsize = _header->getPreferredSize();
+				return Size(std::max(hsize.width,bsize.width) + 2,hsize.height + bsize.height + 2);
+			}
+			return Size(bsize.width + 2,bsize.height + 2);
 		};
 
 		virtual void layout() {
@@ -229,10 +227,10 @@ namespace gui {
 		void show(bool pack = false) {
 			if(pack) {
 				// overwrite preferred size
-				_body._prefHeight = _body._prefWidth = 0;
+				_body._prefSize = Size();
 				if(_header)
-					_header->_prefHeight = _header->_prefWidth = 0;
-				prepareResize(getX(),getY(),getPrefWidth(),getPrefHeight());
+					_header->_prefSize = Size();
+				prepareResize(getX(),getY(),getPrefSize());
 			}
 			layout();
 			// add us to app; we'll receive a "created"-event as soon as the window
@@ -302,16 +300,10 @@ namespace gui {
 			return _moveY;
 		};
 		/**
-		 * @return the current width to resize to
+		 * @return the current size to resize to
 		 */
-		inline gsize_t getResizeWidth() const {
-			return _resizeWidth;
-		};
-		/**
-		 * @return the current height to resize to
-		 */
-		inline gsize_t getResizeHeight() const {
-			return _resizeHeight;
+		inline Size getResizeSize() const {
+			return _resizeSize;
 		};
 		/**
 		 * Sets whether this window is active. Requests a repaint, if necessary.
@@ -330,10 +322,9 @@ namespace gui {
 		 *
 		 * @param x the x-position
 		 * @param y the y-position
-		 * @param width the width
-		 * @param height the height
+		 * @param size the size
 		 */
-		void update(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void update(gpos_t x,gpos_t y,const Size &size);
 
 		// only used by Window itself
 		void init();
@@ -341,17 +332,17 @@ namespace gui {
 		void passToCtrl(const MouseEvent &e,uchar event);
 		void passMouseToCtrl(Control *c,const MouseEvent& e);
 		void resize(short width,short height);
-		void resizeTo(gsize_t width,gsize_t height);
+		void resizeTo(const Size &size);
 		void move(short x,short y);
 		void moveTo(gpos_t x,gpos_t y);
 		void resizeMove(short x,short width,short height);
-		void resizeMoveTo(gpos_t x,gsize_t width,gsize_t height);
-		void prepareResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void resizeMoveTo(gpos_t x,const Size &size);
+		void prepareResize(gpos_t x,gpos_t y,const Size &size);
 
 	private:
 		gwinid_t _id;
 		bool _created;
-		uchar _style;
+		Style _style;
 		bool _inTitle;
 		bool _inResizeLeft;
 		bool _inResizeRight;
@@ -359,8 +350,7 @@ namespace gui {
 		bool _isActive;
 		gpos_t _moveX;
 		gpos_t _moveY;
-		gsize_t _resizeWidth;
-		gsize_t _resizeHeight;
+		Size _resizeSize;
 		GraphicsBuffer *_gbuf;
 	protected:
 		WindowTitleBar *_header;

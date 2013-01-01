@@ -36,29 +36,32 @@ namespace gui {
 		ScrollPane(Control *ctrl)
 			: Control(), _ctrl(ctrl), _focus(0) {
 		};
-		ScrollPane(Control *ctrl,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _ctrl(ctrl), _focus(0) {
+		ScrollPane(Control *ctrl,gpos_t x,gpos_t y,const Size &size)
+			: Control(x,y,size), _ctrl(ctrl), _focus(0) {
 		};
 		virtual ~ScrollPane() {
 			delete _ctrl;
 		};
 
-		virtual gsize_t getPrefWidth() const {
-			return _ctrl->getPreferredWidth() + BAR_SIZE;
-		};
-		virtual gsize_t getPrefHeight() const {
-			return _ctrl->getPreferredHeight() + BAR_SIZE;
+		virtual Size getPrefSize() const {
+			return _ctrl->getPreferredSize() + Size(BAR_SIZE,BAR_SIZE);
 		};
 
-		virtual gsize_t getContentWidth() const {
-			if(_width - _ctrl->getX() < BAR_SIZE)
-				return 0;
-			return _width - _ctrl->getX() - BAR_SIZE;
+		virtual Size getUsedSize(const Size &avail) const {
+			return avail;
 		};
-		virtual gsize_t getContentHeight() const {
-			if(_height - _ctrl->getY() < BAR_SIZE)
-				return 0;
-			return _height - _ctrl->getY() - BAR_SIZE;
+
+		virtual Size getContentSize() const {
+			Size size = getParent()->getContentSize();
+			if(size.width - _ctrl->getX() < BAR_SIZE)
+				size.width = 0;
+			else
+				size.width -= _ctrl->getX() + BAR_SIZE;
+			if(size.height - _ctrl->getY() < BAR_SIZE)
+				size.height = 0;
+			else
+				size.height -= _ctrl->getY() + BAR_SIZE;
+			return size;
 		};
 
 		virtual void onMouseMoved(const MouseEvent &e);
@@ -72,9 +75,9 @@ namespace gui {
 
 	protected:
 		virtual void paint(Graphics &g);
-		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size);
 
-		virtual void resizeTo(gsize_t width,gsize_t height);
+		virtual void resizeTo(const Size &size);
 		virtual void moveTo(gpos_t x,gpos_t y) {
 			Control::moveTo(x,y);
 			// don't move the control, its position is relative to us. just refresh the paint-region

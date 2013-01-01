@@ -40,12 +40,11 @@ namespace gui {
 		 *
 		 * @param x the x-position
 		 * @param y the y-position
-		 * @param width the width
-		 * @param height the height
+		 * @param size the size
 		 * @param l the layout (may be NULL)
 		 */
-		Panel(gpos_t x,gpos_t y,gsize_t width,gsize_t height,Layout *l = NULL)
-			: Control(x,y,width,height), _focus(NULL), _controls(), _layout(l), _updateRect() {
+		Panel(gpos_t x,gpos_t y,const Size &size,Layout *l = NULL)
+			: Control(x,y,size), _focus(NULL), _controls(), _layout(l), _updateRect() {
 		};
 		/**
 		 * Destructor
@@ -56,14 +55,12 @@ namespace gui {
 			delete _layout;
 		};
 
-		virtual gsize_t getPrefWidth() const {
-			return _layout ? _layout->getPreferredWidth() + getTheme().getPadding() * 2 : 0;
+		virtual Size getPrefSize() const {
+			gsize_t pad = getTheme().getPadding();
+			return _layout ? _layout->getPreferredSize() + Size(pad * 2,pad * 2) : Size();
 		};
-		virtual gsize_t getPrefHeight() const {
-			return _layout ? _layout->getPreferredHeight() + getTheme().getPadding() * 2 : 0;
-		};
-		virtual std::pair<gsize_t,gsize_t> getUsedSize(gsize_t width,gsize_t height) const {
-			return _layout ? _layout->getUsedSize(width,height) : UIElement::getUsedSize(width,height);
+		virtual Size getUsedSize(const Size &avail) const {
+			return _layout ? _layout->getUsedSize(avail) : UIElement::getUsedSize(avail);
 		};
 
 		/**
@@ -119,9 +116,9 @@ namespace gui {
 
 	protected:
 		virtual void paint(Graphics &g);
-		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size);
 
-		virtual void resizeTo(gsize_t width,gsize_t height);
+		virtual void resizeTo(const Size &size);
 		virtual void moveTo(gpos_t x,gpos_t y);
 		virtual void setRegion();
 
@@ -154,5 +151,5 @@ namespace gui {
 		sRectangle _updateRect;
 	};
 
-	ostream &operator<<(ostream &s,const Panel &p);
+	std::ostream &operator<<(std::ostream &s,const Panel &p);
 }

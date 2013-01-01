@@ -32,15 +32,11 @@ namespace gui {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 
-	gsize_t FlowLayout::getPreferredWidth() const {
+	Size FlowLayout::getPreferredSize() const {
 		if(_ctrls.size() == 0)
-			return 0;
-		return getMaxWidth() * _ctrls.size() + _gap * (_ctrls.size() - 1);
-	}
-	gsize_t FlowLayout::getPreferredHeight() const {
-		if(_ctrls.size() == 0)
-			return 0;
-		return getMaxHeight();
+			return Size();
+		Size max = getMaxSize();
+		return Size(max.width * _ctrls.size() + _gap * (_ctrls.size() - 1),max.height);
 	}
 
 	void FlowLayout::rearrange() {
@@ -48,49 +44,35 @@ namespace gui {
 			return;
 
 		gsize_t pad = _p->getTheme().getPadding();
-		gsize_t width = _p->getWidth() - pad * 2;
-		gsize_t height = _p->getHeight() - pad * 2;
+		Size size = _p->getSize() - Size(pad * 2,pad * 2);
+		Size max = getMaxSize();
 		gpos_t x = pad;
 		gpos_t y = pad;
-		gsize_t cwidth = getMaxWidth();
-		gsize_t cheight = getMaxHeight();
-		gsize_t totalWidth = cwidth * _ctrls.size() + _gap * (_ctrls.size() - 1);
+		gsize_t totalWidth = max.width * _ctrls.size() + _gap * (_ctrls.size() - 1);
 
-		y = height / 2 - cheight / 2;
+		y = size.height / 2 - max.height / 2;
 		switch(_pos) {
 			case LEFT:
 				x = pad;
 				break;
 			case CENTER:
-				x = (width / 2) - (totalWidth / 2);
+				x = (size.width / 2) - (totalWidth / 2);
 				break;
 			case RIGHT:
-				x = pad + width - totalWidth;
+				x = pad + size.width - totalWidth;
 				break;
 		}
 
 		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			configureControl(*it,x,y,cwidth,cheight);
-			x += cwidth + _gap;
+			configureControl(*it,x,y,max);
+			x += max.width + _gap;
 		}
 	}
 
-	gsize_t FlowLayout::getMaxWidth() const {
-		gsize_t max = 0;
-		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			gsize_t width = (*it)->getPreferredWidth();
-			if(width > max)
-				max = width;
-		}
-		return max;
-	}
-	gsize_t FlowLayout::getMaxHeight() const {
-		gsize_t max = 0;
-		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			gsize_t height = (*it)->getPreferredHeight();
-			if(height > max)
-				max = height;
-		}
+	Size FlowLayout::getMaxSize() const {
+		Size max;
+		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it)
+			max = maxsize(max,(*it)->getPreferredSize());
 		return max;
 	}
 }

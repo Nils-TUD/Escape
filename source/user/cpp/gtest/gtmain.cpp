@@ -41,6 +41,7 @@
 
 using namespace gui;
 
+static void win0(void);
 static void win1(void);
 static void win2(void);
 static void win3(void);
@@ -54,6 +55,7 @@ static volatile bool run = true;
 
 int main(void) {
 	Application *app = Application::getInstance();
+	win0();
 	win1();
 	win2();
 	win3();
@@ -63,8 +65,23 @@ int main(void) {
 	win7();
 	int res = app->run();
 	run = false;
-	/*join(0);*/
+	join(0);
 	return res;
+}
+
+static void win0(void) {
+	Window *w = new Window("Window 0",500,200);
+	Panel& root = w->getRootPanel();
+	root.setLayout(new BorderLayout());
+	Panel *p = new Panel(new BorderLayout());
+	ScrollPane *sp = new ScrollPane(p);
+	root.add(sp,BorderLayout::CENTER);
+	ProgressBar *pb = new ProgressBar("Progress...",0,0,Size(150,0));
+	ScrollPane *sp2 = new ScrollPane(pb);
+	p->add(sp2,BorderLayout::CENTER);
+	//if(startthread(pbThread,pb) < 0)
+	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+	w->show(true);
 }
 
 static void win1(void) {
@@ -87,20 +104,21 @@ static void win1(void) {
 	p->add(cb,BorderLayout::NORTH);
 	Checkbox *check = new Checkbox("My Checkbox");
 	p->add(check,BorderLayout::SOUTH);
-	/*ScrollPane *sp2 = new ScrollPane(new ProgressBar("Progress..."));
-	p->add(sp2,BorderLayout::CENTER);*/
-	p->add(new ProgressBar("Progress..."),BorderLayout::CENTER);
+	ProgressBar *pb = new ProgressBar("Progress...",0,0,Size(150,0));
+	ScrollPane *sp2 = new ScrollPane(pb);
+	p->add(sp2,BorderLayout::CENTER);
+	//p->add(new ProgressBar("Progress..."),BorderLayout::CENTER);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->show(true);
-	/*if(startthread(pbThread,pb) < 0)
-		std::cerr << "[GUITEST] Unable to start thread" << std::endl;*/
+	//if(startthread(pbThread,pb) < 0)
+	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
 }
 
 static void win2(void) {
-	Window *w = new Window("Window 2",450,150,400,100);
+	Window *w = new Window("Window 2",450,150,Size(400,100));
 	Panel& root = w->getRootPanel();
 	root.setLayout(new FlowLayout(FlowLayout::LEFT,5));
 
@@ -125,7 +143,7 @@ static void win2(void) {
 }
 
 static void win3(void) {
-	Window *w = new Window("Window 3",450,350,400,100);
+	Window *w = new Window("Window 3",450,350,Size(400,100));
 	Panel& root = w->getRootPanel();
 	root.setLayout(new FlowLayout(FlowLayout::CENTER,1));
 
@@ -150,7 +168,7 @@ static void win3(void) {
 }
 
 static void win4(void) {
-	Window *w = new Window("Window 4",150,350,400,100);
+	Window *w = new Window("Window 4",150,350,Size(400,100));
 	Panel& root = w->getRootPanel();
 	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
@@ -179,7 +197,7 @@ static void win4(void) {
 }
 
 static void win5(void) {
-	Window *w = new Window("Window 5",250,450,200,300);
+	Window *w = new Window("Window 5",250,450,Size(200,300));
 	Panel& root = w->getRootPanel();
 	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
@@ -209,13 +227,13 @@ static void win6(void) {
 	root.setLayout(new BorderLayout(2));
 
 	Panel *btns = new Panel(new IconLayout(IconLayout::HORIZONTAL));
-	ScrollPane *sp = new ScrollPane(btns);
-	root.add(sp,BorderLayout::CENTER);
+	//ScrollPane *sp = new ScrollPane(btns);
+	root.add(btns,BorderLayout::CENTER);
 
 	for(size_t i = 0; i < 23; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
-		Button *b = new Button(name,0,0,40,40);
+		Button *b = new Button(name,0,0,Size(40,40));
 		btns->add(b);
 	}
 	win->show(true);
@@ -228,14 +246,14 @@ static void win7(void) {
 	root.setLayout(new BorderLayout(2));
 
 	Panel *btns = new Panel(new IconLayout(IconLayout::VERTICAL));
-	ScrollPane *sp = new ScrollPane(btns);
-	root.add(sp,BorderLayout::CENTER);
+	//ScrollPane *sp = new ScrollPane(btns);
+	root.add(btns,BorderLayout::CENTER);
 
 	srand(time(NULL));
 	for(size_t i = 0; i < 29; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
-		Button *b = new Button(name,0,0,30 + rand() % 10,30 + rand() % 10);
+		Button *b = new Button(name,0,0,Size(30 + rand() % 10,30 + rand() % 10));
 		btns->add(b);
 	}
 	win->show(true);

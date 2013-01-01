@@ -25,8 +25,7 @@
 namespace gui {
 	class PopupWindow : public Window {
 	public:
-		PopupWindow(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Window(x,y,width,height,STYLE_POPUP) {
+		PopupWindow(gpos_t x,gpos_t y,const Size &size) : Window(x,y,size,POPUP) {
 		};
 
 		virtual void close(gpos_t x,gpos_t y) = 0;

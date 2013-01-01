@@ -35,8 +35,8 @@ namespace gui {
 		Checkbox(const std::string &text)
 			: Control(), _focused(false), _checked(false), _text(text) {
 		};
-		Checkbox(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _focused(false), _checked(false), _text(text) {
+		Checkbox(const std::string &text,gpos_t x,gpos_t y,const Size &size)
+			: Control(x,y,size), _focused(false), _checked(false), _text(text) {
 		};
 
 		inline bool isChecked() const {
@@ -50,8 +50,7 @@ namespace gui {
 			repaint();
 		};
 
-		virtual gsize_t getPrefWidth() const;
-		virtual gsize_t getPrefHeight() const;
+		virtual Size getPrefSize() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onKeyReleased(const KeyEvent &e);

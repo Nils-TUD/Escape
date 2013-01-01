@@ -66,8 +66,8 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 	update();
 }
 
-void ShellControl::resizeTo(gsize_t width,gsize_t height) {
-	Control::resizeTo(width,height);
+void ShellControl::resizeTo(const Size &size) {
+	Control::resizeTo(size);
 	vtctrl_resize(_vt,getCols(),getRows());
 	repaint();
 }
@@ -76,17 +76,14 @@ void ShellControl::sendEOF() {
 	vtin_handleKey(_vt,VK_D,STATE_CTRL,'d');
 }
 
-gsize_t ShellControl::getPrefWidth() const {
-	return DEF_WIDTH;
-}
-gsize_t ShellControl::getPrefHeight() const {
-	return DEF_HEIGHT;
+Size ShellControl::getPrefSize() const {
+	return Size(DEF_WIDTH,DEF_HEIGHT);
 }
 
 void ShellControl::paint(Graphics &g) {
 	// fill bg
 	g.setColor(BGCOLOR);
-	g.fillRect(0,0,getWidth(),getHeight());
+	g.fillRect(0,0,getSize());
 
 	locku(&_vt->lock);
 	paintRows(g,0,_vt->rows);
@@ -94,12 +91,12 @@ void ShellControl::paint(Graphics &g) {
 }
 
 void ShellControl::clearRows(Graphics &g,size_t start,size_t count) {
-	gsize_t cheight = g.getFont().getHeight();
+	gsize_t cheight = g.getFont().getSize().height;
 	gpos_t y = TEXTSTARTY + start * (cheight + PADDING);
 	// overwrite with background
 	g.setColor(BGCOLOR);
 	count = MIN(getRows() - start,count);
-	g.fillRect(TEXTSTARTX,y,getWidth() - TEXTSTARTX * 2,count * (cheight + PADDING) + 2);
+	g.fillRect(TEXTSTARTX,y,getSize().width - TEXTSTARTX * 2,count * (cheight + PADDING) + 2);
 }
 
 void ShellControl::update() {
@@ -111,12 +108,13 @@ void ShellControl::update() {
 
 	locku(&_vt->lock);
 	if(_vt->upScroll > 0) {
-		size_t lineHeight = g->getFont().getHeight() + PADDING;
+		size_t lineHeight = g->getFont().getSize().height + PADDING;
 		// move lines up
 		if((size_t)_vt->upScroll < _vt->rows) {
 			size_t scrollPixel = _vt->upScroll * lineHeight;
 			g->moveRows(TEXTSTARTX,TEXTSTARTY + scrollPixel + lineHeight,
-					getWidth(),getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,scrollPixel);
+					getSize().width,getSize().height - scrollPixel - lineHeight - TEXTSTARTY * 2,
+					scrollPixel);
 		}
 		// (re-)paint rows below
 		if(_vt->rows >= (size_t)_vt->upScroll) {
@@ -140,17 +138,18 @@ void ShellControl::update() {
 		// fill the bg of the left few pixels at the bottom that are not affected
 		g->setColor(BGCOLOR);
 		gpos_t start = TEXTSTARTY + _vt->rows * lineHeight;
-		g->fillRect(0,start,getWidth(),getHeight() - start);
+		g->fillRect(0,start,getSize() - Size(0,start));
 
 		changed = true;
 	}
 	else if(_vt->upScroll < 0) {
 		// move lines down
 		if((size_t)-_vt->upScroll < _vt->rows) {
-			size_t lineHeight = g->getFont().getHeight() + PADDING;
+			size_t lineHeight = g->getFont().getSize().height + PADDING;
 			size_t scrollPixel = -_vt->upScroll * lineHeight;
 			g->moveRows(TEXTSTARTX,TEXTSTARTY + lineHeight,
-					getWidth(),getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,-scrollPixel);
+					getSize().width,getSize().height - scrollPixel - lineHeight - TEXTSTARTY * 2,
+					-scrollPixel);
 		}
 		// repaint first lines (not title-bar)
 		clearRows(*g,1,-_vt->upScroll);
@@ -179,22 +178,21 @@ void ShellControl::update() {
 bool ShellControl::setCursor() {
 	if(_lastCol != _vt->col || _lastRow != _vt->row) {
 		Graphics *g = getGraphics();
-		size_t cwidth = g->getFont().getWidth();
-		size_t cheight = g->getFont().getHeight();
+		Size csize = g->getFont().getSize();
 		uint8_t *buf = (uint8_t*)_vt->buffer + ((_vt->firstVisLine + _lastRow) *
 				_vt->cols + _lastCol) * 2;
 		assert((size_t)(buf[1] >> 4) < ARRAY_SIZE(COLORS));
 		// clear old cursor
 		g->setColor(COLORS[buf[1] >> 4]);
-		g->fillRect(TEXTSTARTX + _lastCol * cwidth,
-				TEXTSTARTY + (_lastRow + 1) * (cheight + PADDING),
-				cwidth,CURSOR_WIDTH);
+		g->fillRect(TEXTSTARTX + _lastCol * csize.width,
+				TEXTSTARTY + (_lastRow + 1) * (csize.height + PADDING),
+				csize.width,CURSOR_WIDTH);
 
 		// draw new one
 		g->setColor(CURSOR_COLOR);
-		g->fillRect(TEXTSTARTX + _vt->col * cwidth,
-				TEXTSTARTY + (_vt->row + 1) * (cheight + PADDING),
-				cwidth,CURSOR_WIDTH);
+		g->fillRect(TEXTSTARTX + _vt->col * csize.width,
+				TEXTSTARTY + (_vt->row + 1) * (csize.height + PADDING),
+				csize.width,CURSOR_WIDTH);
 		_lastCol = _vt->col;
 		_lastRow = _vt->row;
 		return true;
@@ -203,24 +201,23 @@ bool ShellControl::setCursor() {
 }
 
 void ShellControl::paintRows(Graphics &g,size_t start,size_t count) {
-	size_t cwidth = g.getFont().getWidth();
-	size_t cheight = g.getFont().getHeight();
-	gpos_t y = TEXTSTARTY + start * (cheight + PADDING);
+	Size csize = g.getFont().getSize();
+	gpos_t y = TEXTSTARTY + start * (csize.height + PADDING);
 	char *buf = _vt->buffer + (_vt->firstVisLine + start) * _vt->cols * 2;
 	count = MIN(count,_vt->rows - start);
 
 	// paint title-bar?
 	if(start == 0) {
-		paintRow(g,cwidth,cheight,_vt->titleBar,y);
+		paintRow(g,csize.width,csize.height,_vt->titleBar,y);
 		buf += _vt->cols * 2;
-		y += cheight + PADDING;
+		y += csize.height + PADDING;
 		count--;
 	}
 
 	while(count-- > 0) {
-		paintRow(g,cwidth,cheight,buf,y);
+		paintRow(g,csize.width,csize.height,buf,y);
 		buf += _vt->cols * 2;
-		y += cheight + PADDING;
+		y += csize.height + PADDING;
 	}
 }
 

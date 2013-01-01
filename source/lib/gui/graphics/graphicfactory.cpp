@@ -25,14 +25,14 @@
 #include <gui/graphics/graphicfactory.h>
 
 namespace gui {
-	Graphics *GraphicFactory::get(GraphicsBuffer *buf,gsize_t width,gsize_t height) {
+	Graphics *GraphicFactory::get(GraphicsBuffer *buf,const Size &size) {
 		switch(buf->getColorDepth()) {
 			case 32:
-				return new Graphics32(buf,width,height);
+				return new Graphics32(buf,size);
 			case 24:
-				return new Graphics24(buf,width,height);
+				return new Graphics24(buf,size);
 			case 16:
-				return new Graphics16(buf,width,height);
+				return new Graphics16(buf,size);
 			default:
 				return NULL;
 		}

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <gui/graphics/size.h>
 #include <stdlib.h>
 
 namespace gui {
@@ -43,8 +44,8 @@ namespace gui {
 		 * @param height height of the window
 		 * @param bpp the used color-depth
 		 */
-		GraphicsBuffer(Window *win,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gcoldepth_t bpp)
-			: _win(win), _x(x), _y(y), _width(width), _height(height), _bpp(bpp), _pixels(NULL) {
+		GraphicsBuffer(Window *win,gpos_t x,gpos_t y,const Size &size,gcoldepth_t bpp)
+			: _win(win), _x(x), _y(y), _size(size), _bpp(bpp), _pixels(NULL) {
 			allocBuffer();
 		};
 		/**
@@ -67,16 +68,10 @@ namespace gui {
 			return _y;
 		};
 		/**
-		 * @return the width of the buffer
+		 * @return the size of the buffer
 		 */
-		inline gsize_t getWidth() const {
-			return _width;
-		};
-		/**
-		 * @return the height of the buffer
-		 */
-		inline gsize_t getHeight() const {
-			return _height;
+		inline Size getSize() const {
+			return _size;
 		};
 
 		/**
@@ -103,11 +98,11 @@ namespace gui {
 		/**
 		 * Requests an update for the given region
 		 */
-		void requestUpdate(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void requestUpdate(gpos_t x,gpos_t y,const Size &size);
 		/**
 		 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
 		 */
-		void update(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void update(gpos_t x,gpos_t y,const Size &size);
 
 	private:
 		// no cloning
@@ -121,7 +116,7 @@ namespace gui {
 		/**
 		 * Sets the dimensions for this buffer
 		 */
-		void resizeTo(gsize_t width,gsize_t height);
+		void resizeTo(const Size &size);
 		/**
 		 * Allocates _pixels
 		 */
@@ -129,7 +124,7 @@ namespace gui {
 		/**
 		 * Notifies vesa that the given region has changed
 		 */
-		void notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void notifyVesa(gpos_t x,gpos_t y,const Size &size);
 
 	private:
 		// the window instance the buffer belongs to
@@ -137,8 +132,7 @@ namespace gui {
 		// the position of the window on the screen
 		gpos_t _x,_y;
 		// size of the window
-		gsize_t _width;
-		gsize_t _height;
+		Size _size;
 		// used color-depth
 		gcoldepth_t _bpp;
 		// buffer for this window; controls use this, too (don't have their own)

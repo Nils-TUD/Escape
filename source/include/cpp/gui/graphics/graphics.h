@@ -23,6 +23,7 @@
 #include <gui/graphics/graphicsbuffer.h>
 #include <gui/graphics/font.h>
 #include <gui/graphics/color.h>
+#include <gui/graphics/size.h>
 #include <assert.h>
 
 namespace gui {
@@ -48,12 +49,12 @@ namespace gui {
 		 * Constructor
 		 *
 		 * @param buf the graphics-buffer for the window
-		 * @param width the width of the control
-		 * @param height the height of the control
+		 * @param size the size of the control
 		 */
-		Graphics(GraphicsBuffer *buf,gsize_t width,gsize_t height)
-			: _buf(buf), _minoffx(0), _minoffy(0), _offx(0), _offy(0), _width(width), _height(height),
-			  _col(0), _colInst(0), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1), _font() {
+		Graphics(GraphicsBuffer *buf,const Size &size)
+			: _buf(buf), _minoffx(0), _minoffy(0), _offx(0), _offy(0), _size(size), _col(0),
+			  _colInst(0), _minx(0),_miny(0), _maxx(size.width - 1), _maxy(size.height - 1),
+			  _font() {
 		};
 		/**
 		 * Destructor
@@ -186,20 +187,24 @@ namespace gui {
 		 *
 		 * @param x the x-coordinate
 		 * @param y the y-coordinate
-		 * @param width the width
-		 * @param height the height
+		 * @param size the size
 		 */
-		virtual void drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		virtual void drawRect(gpos_t x,gpos_t y,const Size &size);
+		inline void drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+			drawRect(x,y,Size(width,height));
+		};
 
 		/**
 		 * Fills a rectangle
 		 *
 		 * @param x the x-coordinate
 		 * @param y the y-coordinate
-		 * @param width the width
-		 * @param height the height
+		 * @param size the size
 		 */
-		virtual void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		virtual void fillRect(gpos_t x,gpos_t y,const Size &size);
+		inline void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+			fillRect(x,y,Size(width,height));
+		};
 
 		/**
 		 * @return the x-offset of the control in the window
@@ -215,16 +220,10 @@ namespace gui {
 		};
 
 		/**
-		 * @return the width of the paintable area
+		 * @return the size of the paintable area
 		 */
-		inline gsize_t getWidth() const {
-			return _width;
-		};
-		/**
-		 * @return the height of the paintable area
-		 */
-		inline gsize_t getHeight() const {
-			return _height;
+		inline Size getSize() const {
+			return _size;
 		};
 
 	protected:
@@ -259,7 +258,7 @@ namespace gui {
 		/**
 		 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
 		 */
-		void update(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void update(gpos_t x,gpos_t y,const Size &size);
 		/**
 		 * Validates the given line
 		 */
@@ -313,32 +312,22 @@ namespace gui {
 			_minoffy = y;
 		};
 		/**
-		 * Sets the width of the paint-area (unchecked!)
+		 * Sets the size of the paint-area (unchecked!)
 		 *
-		 * @param width the new value
+		 * @param size the new size
 		 */
-		inline void setWidth(gsize_t width) {
-			_width = width;
-		};
-		/**
-		 * Sets the height of the paint-area (unchecked!)
-		 *
-		 * @param height the new value
-		 */
-		inline void setHeight(gsize_t height) {
-			_height = height;
+		inline void setSize(const Size &size) {
+			_size = size;
 		};
 		/**
 		 * Sets the size of the control (checked)
 		 *
 		 * @param x the x-position of the control relative to the parent
 		 * @param y the y-position of the control relative to the parent
-		 * @param width the new value
-		 * @param height the new value
-		 * @param pwidth the width of the parent. the child can't cross that
-		 * @param pheight the height of the parent. the child can't cross that
+		 * @param size the new value
+		 * @param psize the size of the parent. the child can't cross that
 		 */
-		void setSize(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t pwidth,gsize_t pheight);
+		void setSize(gpos_t x,gpos_t y,const Size &size,const Size &psize);
 
 		// used internally
 		gsize_t getDim(gpos_t off,gsize_t size,gsize_t max);
@@ -356,8 +345,7 @@ namespace gui {
 		gpos_t _offx;
 		gpos_t _offy;
 		// the size of the control in the window (i.e. the size of the area that can be painted)
-		gsize_t _width;
-		gsize_t _height;
+		Size _size;
 		// current color
 		Color::color_type _col;
 		Color _colInst;

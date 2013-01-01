@@ -31,7 +31,7 @@ int main(void) {
 	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
 	Shortcut sc2("/etc/calc.bmp","/bin/gtest");
 	Application* app = Application::getInstance();
-	DesktopWin win(app->getScreenWidth(),app->getScreenHeight());
+	DesktopWin win(app->getScreenSize());
 	win.addShortcut(&sc1);
 	win.addShortcut(&sc2);
 	win.show();

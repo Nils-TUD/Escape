@@ -29,11 +29,10 @@ namespace gui {
 	 */
 	class Graphics16 : public Graphics {
 	public:
-		Graphics16(GraphicsBuffer *buf,gsize_t width,gsize_t height)
-			: Graphics(buf,width,height) {
+		Graphics16(GraphicsBuffer *buf,const Size &size) : Graphics(buf,size) {
 		};
 
-		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void fillRect(gpos_t x,gpos_t y,const Size &size);
 
 	protected:
 		void doSetPixel(gpos_t x,gpos_t y);

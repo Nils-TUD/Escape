@@ -51,14 +51,12 @@ namespace gui {
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);
 
-		virtual gsize_t getPreferredWidth() const;
-		virtual gsize_t getPreferredHeight() const;
+		virtual Size getPreferredSize() const;
 
 		virtual void rearrange();
 
 	private:
-		gsize_t getMaxWidth() const;
-		gsize_t getMaxHeight() const;
+		Size getMaxSize() const;
 
 	private:
 		Align _pos;

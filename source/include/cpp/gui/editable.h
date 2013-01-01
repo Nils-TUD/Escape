@@ -40,8 +40,8 @@ namespace gui {
 			: Control(), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		};
-		Editable(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _cursor(0), _begin(0), _focused(false), _selecting(false),
+		Editable(gpos_t x,gpos_t y,const Size &size)
+			: Control(x,y,size), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		};
 
@@ -73,8 +73,7 @@ namespace gui {
 		void removeLast();
 		void removeNext();
 
-		virtual gsize_t getPrefWidth() const;
-		virtual gsize_t getPrefHeight() const;
+		virtual Size getPrefSize() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onMouseMoved(const MouseEvent &e);
@@ -93,9 +92,9 @@ namespace gui {
 		bool changeSelection(int pos,int oldPos,uchar dir);
 		void deleteSelection();
 		inline size_t getMaxCharNum(Graphics &g) {
-			if(getWidth() < getTheme().getTextPadding() * 2)
+			if(getSize().width < getTheme().getTextPadding() * 2)
 				return 0;
-			return (getWidth() - getTheme().getTextPadding() * 2) / g.getFont().getWidth();
+			return (getSize().width - getTheme().getTextPadding() * 2) / g.getFont().getSize().width;
 		};
 
 	private:

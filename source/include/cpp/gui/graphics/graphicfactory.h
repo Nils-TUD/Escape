@@ -33,11 +33,10 @@ namespace gui {
 		 * Returns a graphics-instance that uses buf as buffer.
 		 *
 		 * @param buf the graphics-buffer to use
-		 * @param width the width of the control
-		 * @param height the height of the control
+		 * @param size the size of the control
 		 * @return the graphics-object
 		 */
-		static Graphics *get(GraphicsBuffer *buf,gsize_t width,gsize_t height);
+		static Graphics *get(GraphicsBuffer *buf,const Size &size);
 
 	private:
 		// no instantation

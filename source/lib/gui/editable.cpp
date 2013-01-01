@@ -32,11 +32,9 @@ namespace gui {
 	const gsize_t Editable::CURSOR_OVERLAP	= 2;
 	const gsize_t Editable::DEF_WIDTH		= 100;
 
-	gsize_t Editable::getPrefWidth() const {
-		return DEF_WIDTH + getTheme().getTextPadding() * 2;
-	}
-	gsize_t Editable::getPrefHeight() const {
-		return getGraphics()->getFont().getHeight() + getTheme().getTextPadding() * 2;
+	Size Editable::getPrefSize() const {
+		gsize_t pad = getTheme().getTextPadding();
+		return Size(DEF_WIDTH + pad * 2,getGraphics()->getFont().getSize().height + pad * 2);
 	}
 
 	void Editable::onFocusGained() {
@@ -81,7 +79,7 @@ namespace gui {
 	int Editable::getPosAt(gpos_t x) {
 		int pos = 0;
 		if(x >= 0) {
-			pos = x / getGraphics()->getFont().getWidth();
+			pos = x / getGraphics()->getFont().getSize().width;
 			if(pos > (int)_str.length())
 				pos = _str.length();
 		}
@@ -251,17 +249,17 @@ namespace gui {
 	}
 
 	void Editable::paint(Graphics &g) {
-		gsize_t cwidth = g.getFont().getWidth();
-		gsize_t cheight = g.getFont().getHeight();
+		Size fsize = g.getFont().getSize();
+		Size size = getSize();
 		int count = getMaxCharNum(g);
-		gpos_t ystart = (getHeight() - cheight) / 2;
+		gpos_t ystart = (size.height - fsize.height) / 2;
 		int start = _begin;
 		count = MIN((int)_str.length(),count);
 
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
-		g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
+		g.fillRect(1,1,size.width - 2,size.height - 2);
 		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
-		g.drawRect(0,0,getWidth(),getHeight());
+		g.drawRect(0,0,size);
 
 		gsize_t pad = getTheme().getTextPadding();
 		if(_selStart != -1) {
@@ -269,10 +267,10 @@ namespace gui {
 			/* selection background */
 			g.setColor(getTheme().getColor(Theme::SEL_BACKGROUND));
 			spos = (start > _selStart ? 0 : (_selStart - start));
-			g.fillRect(pad + cwidth * spos,
+			g.fillRect(pad + fsize.width * spos,
 					ystart - CURSOR_OVERLAP,
-					cwidth * (MIN(count - spos,MIN(_selEnd - start,_selEnd - _selStart))),
-					cheight + CURSOR_OVERLAP * 2);
+					fsize.width * (MIN(count - spos,MIN(_selEnd - start,_selEnd - _selStart))),
+					fsize.height + CURSOR_OVERLAP * 2);
 
 			/* part before selection */
 			if(start < _selStart) {
@@ -281,13 +279,13 @@ namespace gui {
 			}
 			/* selection */
 			g.setColor(getTheme().getColor(Theme::SEL_FOREGROUND));
-			g.drawString(pad + cwidth * spos,ystart,_str,MAX(start,_selStart),
+			g.drawString(pad + fsize.width * spos,ystart,_str,MAX(start,_selStart),
 					(MIN(count - spos,MIN(_selEnd - start,_selEnd - _selStart))));
 			/* part behind selection */
 			if(_selEnd < start + count) {
 				g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
 				spos = _selEnd - start;
-				g.drawString(pad + spos * cwidth,ystart,_str,_selEnd,
+				g.drawString(pad + spos * fsize.width,ystart,_str,_selEnd,
 					MIN(count - spos,MIN((int)_str.length() - start,(int)_str.length() - _selEnd)));
 			}
 		}
@@ -298,8 +296,8 @@ namespace gui {
 
 		if(_focused) {
 			g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
-			g.fillRect(pad + cwidth * (_cursor - start),
-					ystart - CURSOR_OVERLAP,CURSOR_WIDTH,cheight + CURSOR_OVERLAP * 2);
+			g.fillRect(pad + fsize.width * (_cursor - start),
+					ystart - CURSOR_OVERLAP,CURSOR_WIDTH,fsize.height + CURSOR_OVERLAP * 2);
 		}
 	}
 }

@@ -53,9 +53,8 @@ namespace gui {
 		 */
 		UIElement()
 			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
-			  _x(0), _y(0), _width(0), _height(0), _mouseMoved(), _mousePressed(), _mouseReleased(),
-			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true),
-			  _prefWidth(0), _prefHeight(0) {
+			  _x(0), _y(0), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
+			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
 		};
 		/**
 		 * Constructor that specifies a position and size explicitly. This can be used if no layout
@@ -66,11 +65,10 @@ namespace gui {
 		 * @param width the width
 		 * @param height the height
 		 */
-		UIElement(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
+		UIElement(gpos_t x,gpos_t y,const Size &size)
 			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
-			  _x(x), _y(y), _width(width), _height(height), _mouseMoved(), _mousePressed(), _mouseReleased(),
-			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true), _prefWidth(width),
-			  _prefHeight(height) {
+			  _x(x), _y(y), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
+			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
 		};
 		/**
 		 * Destructor. Free's the memory
@@ -82,7 +80,7 @@ namespace gui {
 		/**
 		 * @return the id of this UIElement (unique in one application)
 		 */
-		inline id_type id() const {
+		inline id_type getId() const {
 			return _id;
 		};
 
@@ -115,52 +113,34 @@ namespace gui {
 		 */
 		gpos_t getScreenY() const;
 		/**
-		 * @return the width of this element
+		 * @return the size of this element
 		 */
-		inline gsize_t getWidth() const {
-			return _width;
-		};
-		/**
-		 * @return the height of this element
-		 */
-		inline gsize_t getHeight() const {
-			return _height;
+		inline Size getSize() const {
+			return _size;
 		};
 
 		/**
-		 * @return the width of the content of this ui-element. for normal elements its simply
-		 * 	their width. containers may reduce it if they want to paint other stuff besides
+		 * @return the size of the content of this ui-element. for normal elements its simply
+		 * 	their size. containers may reduce it if they want to paint other stuff besides
 		 * 	their children.
 		 */
-		virtual gsize_t getContentWidth() const {
+		virtual Size getContentSize() const {
 			// we have to use the minimum of our size and the parent's because some containers
 			// above us might restrict the size, while some won't.
 			if(_parent)
-				return min(_parent->getContentWidth(),_width);
-			return _width;
-		};
-		/**
-		 * @return the height of the content of this ui-element. for normal elements its simply
-		 * 	their height. containers may reduce it if they want to paint other stuff besides
-		 * 	their children.
-		 */
-		virtual gsize_t getContentHeight() const {
-			if(_parent)
-				return min(_parent->getContentHeight(),_height);
-			return _height;
+				return minsize(_parent->getContentSize(),_size);
+			return _size;
 		};
 
 		/**
-		 * @return the preferred width of this ui-element
+		 * @return the preferred size of this ui-element
 		 */
-		inline gsize_t getPreferredWidth() const {
-			return _prefWidth ? _prefWidth : getPrefWidth();
-		};
-		/**
-		 * @return the preferred height of this ui-element
-		 */
-		inline gsize_t getPreferredHeight() const {
-			return _prefHeight ? _prefHeight : getPrefHeight();
+		inline Size getPreferredSize() const {
+			if(_prefSize.width && _prefSize.height)
+				return _prefSize;
+			Size pref = getPrefSize();
+			return Size(_prefSize.width ? _prefSize.width : pref.width,
+						_prefSize.height ? _prefSize.height : pref.height);
 		};
 
 		/**
@@ -192,15 +172,14 @@ namespace gui {
 		 * @param g the graphics-object
 		 * @param x the x-position relative to this control of the rectangle
 		 * @param y the y-position relative to this control of the rectangle
-		 * @param width the width of the rectangle
-		 * @param height the height of the rectangle
+		 * @param size the size of the rectangle
 		 */
-		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size);
 		/**
 		 * Repaints the given rectangle of the control, i.e. calls paintRect() and requests an
 		 * update of this rectangle.
 		 */
-		void repaintRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void repaintRect(gpos_t x,gpos_t y,const Size &size);
 
 		/**
 		 * Requests an update of the dirty region
@@ -314,29 +293,21 @@ namespace gui {
 		UIElement &operator=(const UIElement &e);
 
 		/**
-		 * Helper for getPreferredWidth(). Has to be implemented by subclasses!
+		 * Helper for getPreferredSize(). Has to be implemented by subclasses!
 		 *
-		 * @return the preferred width of this ui-element
+		 * @return the preferred size of this ui-element
 		 */
-		virtual gsize_t getPrefWidth() const = 0;
-		/**
-		 * Helper for getPreferredHeight(). Has to be implemented by subclasses!
-		 *
-		 * @return the preferred height of this ui-element
-		 */
-		virtual gsize_t getPrefHeight() const = 0;
+		virtual Size getPrefSize() const = 0;
 
 		/**
-		 * Determines what size would be used if <width>X<height> is available. By default, this
-		 * is always the maximum of preferredSize and <width>/<height>.
+		 * Determines what size would be used if <avail> is available. By default, this
+		 * is always the maximum of getPreferredSize() and <avail>.
 		 *
-		 * @param width the available width
-		 * @param height the available height
+		 * @param avail the available size
 		 * @return the size that would be used
 		 */
-		virtual std::pair<gsize_t,gsize_t> getUsedSize(gsize_t width,gsize_t height) const {
-			return std::make_pair(std::max(getPreferredWidth(),width),
-			                      std::max(getPreferredHeight(),height));
+		virtual Size getUsedSize(const Size &avail) const {
+			return maxsize(getPreferredSize(),avail);
 		};
 
 		/**
@@ -356,20 +327,12 @@ namespace gui {
 			_y = y;
 		};
 		/**
-		 * Sets the width
+		 * Sets the size
 		 *
-		 * @param width the new width
+		 * @param size the new size
 		 */
-		inline void setWidth(gsize_t width) {
-			_width = width;
-		};
-		/**
-		 * Sets the height
-		 *
-		 * @param height the new height
-		 */
-		inline void setHeight(gsize_t height) {
-			_height = height;
+		inline void setSize(const Size &size) {
+			_size = size;
 		};
 
 		/**
@@ -391,8 +354,8 @@ namespace gui {
 		Theme _theme;
 		gpos_t _x;
 		gpos_t _y;
-		gsize_t _width;
-		gsize_t _height;
+		Size _size;
+		Size _prefSize;
 		mouseev_type _mouseMoved;
 		mouseev_type _mousePressed;
 		mouseev_type _mouseReleased;
@@ -400,8 +363,6 @@ namespace gui {
 		keyev_type _keyPressed;
 		keyev_type _keyReleased;
 		bool _enableRepaint;
-		gsize_t _prefWidth;
-		gsize_t _prefHeight;
 		static id_type _nextid;
 	};
 }

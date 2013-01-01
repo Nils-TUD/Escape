@@ -41,8 +41,8 @@ namespace gui {
 			static const gsize_t SELPAD		= 2;
 
 		public:
-			ItemWindow(ComboBox *cb,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-				: PopupWindow(x,y,width,height), _cb(cb), _highlighted(cb->_selected) {
+			ItemWindow(ComboBox *cb,gpos_t x,gpos_t y,const Size &size)
+				: PopupWindow(x,y,size), _cb(cb), _highlighted(cb->_selected) {
 			};
 
 			void onMouseMoved(const MouseEvent &e);
@@ -65,8 +65,8 @@ namespace gui {
 		ComboBox()
 			: Control(), _items(), _selected(-1), _pressed(false), _win(NULL) {
 		};
-		ComboBox(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _items(), _selected(-1), _pressed(false), _win(NULL) {
+		ComboBox(gpos_t x,gpos_t y,const Size &size)
+			: Control(x,y,size), _items(), _selected(-1), _pressed(false), _win(NULL) {
 		};
 		virtual ~ComboBox() {
 			delete _win;
@@ -86,8 +86,7 @@ namespace gui {
 			repaint();
 		};
 
-		virtual gsize_t getPrefWidth() const;
-		virtual gsize_t getPrefHeight() const;
+		virtual Size getPrefSize() const;
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 

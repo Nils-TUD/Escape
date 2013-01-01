@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <gui/graphics/size.h>
 #include <algorithm>
 #include <string>
 
@@ -29,11 +30,8 @@ namespace gui {
 		static const gsize_t charHeight = 16;
 
 	public:
-		inline gsize_t getWidth() const {
-			return charWidth;
-		};
-		inline gsize_t getHeight() const {
-			return charHeight;
+		inline Size getSize() const {
+			return Size(charWidth,charHeight);
 		};
 		inline gsize_t getStringWidth(const std::string& str) const {
 			return str.length() * charWidth;

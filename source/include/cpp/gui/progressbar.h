@@ -30,8 +30,8 @@ namespace gui {
 		ProgressBar(const std::string &text)
 			: Control(), _position(0), _text(text) {
 		};
-		ProgressBar(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _position(0), _text(text) {
+		ProgressBar(const std::string &text,gpos_t x,gpos_t y,const Size &size)
+			: Control(x,y,size), _position(0), _text(text) {
 		};
 
 		inline size_t getPosition() const {
@@ -49,8 +49,7 @@ namespace gui {
 			repaint();
 		};
 
-		virtual gsize_t getPrefWidth() const;
-		virtual gsize_t getPrefHeight() const;
+		virtual Size getPrefSize() const;
 
 	protected:
 		virtual void paint(Graphics &g);

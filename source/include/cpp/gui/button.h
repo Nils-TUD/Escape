@@ -33,8 +33,8 @@ namespace gui {
 		Button(const std::string &text)
 			: Control(), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
-		Button(const std::string &text,gpos_t x,gpos_t y,gsize_t width,gsize_t height)
-			: Control(x,y,width,height), _focused(false), _pressed(false), _text(text), _clicked() {
+		Button(const std::string &text,gpos_t x,gpos_t y,const Size &size)
+			: Control(x,y,size), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
 
 		inline bool isPressed() const {
@@ -48,8 +48,7 @@ namespace gui {
 			repaint();
 		};
 
-		virtual gsize_t getPrefWidth() const;
-		virtual gsize_t getPrefHeight() const;
+		virtual Size getPrefSize() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onKeyPressed(const KeyEvent &e);

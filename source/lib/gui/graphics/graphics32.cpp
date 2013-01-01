@@ -22,21 +22,22 @@
 
 namespace gui {
 	void Graphics32::doSetPixel(gpos_t x,gpos_t y) {
-		gsize_t bwidth = _buf->getWidth();
+		gsize_t bwidth = _buf->getSize().width;
 		uint32_t *addr = (uint32_t*)(_buf->getBuffer() + ((_offy + y) * bwidth + (_offx + x)) * 4);
 		*addr = _col;
 	}
 
-	void Graphics32::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		if(!validateParams(x,y,width,height))
+	void Graphics32::fillRect(gpos_t x,gpos_t y,const Size &size) {
+		Size rsize = size;
+		if(!validateParams(x,y,rsize.width,rsize.height))
 			return;
 
-		gpos_t yend = y + height;
+		gpos_t yend = y + rsize.height;
 		updateMinMax(x,y);
-		updateMinMax(x + width - 1,yend - 1);
+		updateMinMax(x + rsize.width - 1,yend - 1);
 		gpos_t xcur;
-		gpos_t xend = x + width;
-		gsize_t bwidth = _buf->getWidth();
+		gpos_t xend = x + rsize.width;
+		gsize_t bwidth = _buf->getSize().width;
 		uint8_t *pixels = _buf->getBuffer();
 		// optimized version for 16bit
 		// This is necessary if we want to have reasonable speed because the simple version

@@ -79,16 +79,10 @@ namespace gui {
 
 	public:
 		/**
-		 * @return the width of the screen
+		 * @return the size of the screen
 		 */
-		inline gsize_t getScreenWidth() const {
-			return _vesaInfo.width;
-		};
-		/**
-		 * @return the height of the screen
-		 */
-		inline gsize_t getScreenHeight() const {
-			return _vesaInfo.height;
+		inline Size getScreenSize() const {
+			return Size(_vesaInfo.width,_vesaInfo.height);
 		};
 		/**
 		 * @return the color-depth
@@ -189,10 +183,9 @@ namespace gui {
 		 * @param id the window-id
 		 * @param x the x-position (global)
 		 * @param y the y-position (global)
-		 * @param width the width
-		 * @param height the height
+		 * @param size the size
 		 */
-		void requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		void requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,const Size &size);
 		/**
 		 * Adds the given window to the window-list. Will announce the window at the window-manager
 		 *

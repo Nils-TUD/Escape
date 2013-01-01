@@ -92,7 +92,7 @@ namespace gui {
 	}
 
 	void UIElement::debug() {
-#ifdef DEBUG_GUI
+#ifndef DEBUG_GUI
 		static int pos = 0;
 		ostringstream ostr;
 		ostr << _id;
@@ -101,27 +101,26 @@ namespace gui {
 		gpos_t x = 0, y = 0;
 		switch(pos++ % 3) {
 			case 1:
-				x = getWidth() - _g->getFont().getStringWidth(ostr.str());
-				y = getHeight() - _g->getFont().getHeight();
+				x = getSize().width - _g->getFont().getStringWidth(ostr.str());
+				y = getSize().height - _g->getFont().getSize().height;
 				break;
 			case 2:
-				x = getWidth() / 2 - _g->getFont().getStringWidth(ostr.str()) / 2;
-				y = getHeight() / 2 - _g->getFont().getHeight() / 2;
+				x = getSize().width / 2 - _g->getFont().getStringWidth(ostr.str()) / 2;
+				y = getSize().height / 2 - _g->getFont().getSize().height / 2;
 				break;
 		}
 		_g->drawString(x,y,ostr.str());
 
-		_g->drawRect(0,0,getWidth(),getHeight());
+		_g->drawRect(0,0,getSize());
 
 		Window *win = _g->getBuffer()->getWindow();
 		if(win->hasTitleBar())
 			cout << "[" << win->getTitle();
 		else
 			cout << "[#" << win->getId();
-		cout << ":" << _id << ":" << typeid(*this).name() << "]";
+		cout << ":" << getId() << ":" << typeid(*this).name() << "]";
 		cout << " @" << getX() << "," << getY();
-		cout << " size:" << getWidth() << "x" << getHeight();
-		cout << " pref:" << getPreferredWidth() << "x" << getPreferredHeight() << endl;
+		cout << " size:" << getSize() << " pref:" << getPreferredSize() << endl;
 #endif
 	}
 
@@ -139,28 +138,27 @@ namespace gui {
 		}
 	}
 
-	void UIElement::paintRect(Graphics &g,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	void UIElement::paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size) {
 		// save old rectangle
 		gpos_t gx = g.getMinX(), gy = g.getMinY();
-		gsize_t gw = g.getWidth(), gh = g.getHeight();
+		Size gs = g.getSize();
 
 		// change g to cover only the rectangle to repaint
 		g.setMinOff(g.getX() + x,g.getY() + y);
-		g.setSize(_x,_y,x + width,y + height,_parent->getContentWidth(),_parent->getContentHeight());
+		g.setSize(_x,_y,Size(x + size.width,y + size.height),_parent->getContentSize());
 
 		// now let the ui-element paint it; this does not make sense if the rectangle is empty
-		if(g.getWidth() != 0 && g.getHeight() != 0)
+		if(!g.getSize().empty())
 			paint(g);
 
 		// restore old rectangle
 		g.setMinOff(gx,gy);
-		g.setWidth(gw);
-		g.setHeight(gh);
+		g.setSize(gs);
 	}
 
-	void UIElement::repaintRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	void UIElement::repaintRect(gpos_t x,gpos_t y,const Size &size) {
 		if(_g) {
-			paintRect(*_g,x,y,width,height);
+			paintRect(*_g,x,y,size);
 			debug();
 			_g->requestUpdate();
 		}

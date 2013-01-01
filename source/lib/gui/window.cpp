@@ -35,8 +35,8 @@ using namespace std;
 namespace gui {
 	const char *WindowTitleBar::CLOSE_IMG = "/etc/close.bmp";
 
-	WindowTitleBar::WindowTitleBar(const string& title,gpos_t x,gpos_t y,
-			gsize_t width,gsize_t height) : Panel(x,y,width,height), _title(new Label(title)) {
+	WindowTitleBar::WindowTitleBar(const string& title,gpos_t x,gpos_t y,const Size &size)
+		: Panel(x,y,size), _title(new Label(title)) {
 	}
 
 	void WindowTitleBar::onButtonClick(A_UNUSED UIElement& el) {
@@ -53,25 +53,26 @@ namespace gui {
 	}
 
 
-	gwinid_t Window::NEXT_TMP_ID = 0xFFFF;
+	gwinid_t Window::NEXT_TMP_ID		= 0xFFFF;
+	const gsize_t Window::MIN_WIDTH		= 40;
+	const gsize_t Window::MIN_HEIGHT	= 40;
+	const gsize_t Window::HEADER_SIZE	= 28;
 
-	Window::Window(gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style)
-		: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
+	Window::Window(gpos_t x,gpos_t y,const Size &size,Style style)
+		: UIElement(x,y,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
-			_isActive(false), _moveX(x), _moveY(y), _resizeWidth(getWidth()), _resizeHeight(getHeight()),
-			_gbuf(NULL), _header(NULL),
-			_body(Panel(1,1,getWidth() - 2,getHeight() - 2)),
-			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
+			_isActive(false), _moveX(x), _moveY(y), _resizeSize(getSize()), _gbuf(NULL), _header(NULL),
+			_body(1,1,getSize() - Size(2,2)), _tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
-	Window::Window(const string &title,gpos_t x,gpos_t y,gsize_t width,gsize_t height,uchar style)
-		: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
+	Window::Window(const string &title,gpos_t x,gpos_t y,const Size &size,Style style)
+		: UIElement(x,y,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
-			_isActive(false), _moveX(x), _moveY(y), _resizeWidth(getWidth()), _resizeHeight(getHeight()),
-			_gbuf(NULL), _header(new WindowTitleBar(title,1,1,getWidth() - 2,HEADER_SIZE)),
-			_body(Panel(1,1 + HEADER_SIZE,getWidth() - 2,getHeight() - HEADER_SIZE - 2)),
+			_isActive(false), _moveX(x), _moveY(y), _resizeSize(getSize()),
+			_gbuf(NULL), _header(new WindowTitleBar(title,1,1,Size(getSize().width - 2,HEADER_SIZE))),
+			_body(1,1 + HEADER_SIZE,getSize() - Size(2,HEADER_SIZE + 2)),
 			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
@@ -86,20 +87,20 @@ namespace gui {
 	void Window::init() {
 		Application *app = Application::getInstance();
 		getTheme().setPadding(0);
-		_gbuf = new GraphicsBuffer(this,getX(),getY(),getWidth(),getHeight(),app->getColorDepth());
-		_g = GraphicFactory::get(_gbuf,getWidth(),getHeight());
+		_gbuf = new GraphicsBuffer(this,getX(),getY(),getSize(),app->getColorDepth());
+		_g = GraphicFactory::get(_gbuf,getSize());
 		gsize_t y = 1;
-		gsize_t height = getHeight() - 1;
+		gsize_t height = getSize().height - 1;
 		if(_header) {
-			_header->_g = GraphicFactory::get(_gbuf,getWidth() - 2,_header->getHeight());
+			_header->_g = GraphicFactory::get(_gbuf,Size(getSize().width - 2,_header->getSize().height));
 			_header->_g->setOff(1,1);
 			_header->_g->setMinOff(1,1);
 			_header->_parent = this;
 			_header->init();
-			y += _header->getHeight();
-			height -= _header->getHeight();
+			y += _header->getSize().height;
+			height -= _header->getSize().height;
 		}
-		_body._g = GraphicFactory::get(_gbuf,getWidth() - 2,height);
+		_body._g = GraphicFactory::get(_gbuf,Size(getSize().width - 2,height));
 		_body._g->setOff(1,y);
 		_body._g->setMinOff(1,y);
 		_body._parent = this;
@@ -132,7 +133,7 @@ namespace gui {
 	}
 
 	void Window::onMouseReleased(const MouseEvent &e) {
-		if(_style == STYLE_DEFAULT) {
+		if(_style == DEFAULT) {
 			bool resizing = _inResizeBottom || _inResizeLeft || _inResizeRight;
 			bool title = _inTitle;
 
@@ -142,9 +143,9 @@ namespace gui {
 			_inResizeRight = false;
 
 			// finish resize-operation
-			if(_moveX != getX() || _resizeWidth != getWidth() || _resizeHeight != getHeight()) {
+			if(_moveX != getX() || _resizeSize != getSize()) {
 				if(resizing) {
-					prepareResize(_moveX,_moveY,_resizeWidth,_resizeHeight);
+					prepareResize(_moveX,_moveY,_resizeSize);
 					Application::getInstance()->resizeWindow(this,true);
 					repaint();
 				}
@@ -168,15 +169,15 @@ namespace gui {
 	}
 
 	void Window::onMousePressed(const MouseEvent &e) {
-		if(_style == STYLE_DEFAULT) {
-			if(_header && e.getY() < _header->getHeight())
+		if(_style == DEFAULT) {
+			if(_header && e.getY() < _header->getSize().height)
 				_inTitle = true;
-			else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
+			else if(e.getY() >= getSize().height - CURSOR_RESIZE_WIDTH)
 				_inResizeBottom = true;
-			if(!_header || e.getY() >= _header->getHeight()) {
+			if(!_header || e.getY() >= _header->getSize().height) {
 				if(e.getX() < CURSOR_RESIZE_WIDTH)
 					_inResizeLeft = true;
-				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
+				else if(e.getX() >= getSize().width - CURSOR_RESIZE_WIDTH)
 					_inResizeRight = true;
 			}
 			// don't pass the event to a control
@@ -198,25 +199,23 @@ namespace gui {
 		passToCtrl(e,KeyEvent::KEY_RELEASED);
 	}
 
-	void Window::prepareResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	void Window::prepareResize(gpos_t x,gpos_t y,const Size &size) {
 		_gbuf->moveTo(x,y);
-		_gbuf->resizeTo(width,height);
-		_g->setSize(0,0,width,height,width,height);
+		_gbuf->resizeTo(size);
+		_g->setSize(0,0,size,size);
 		// when resizing left, its both a resize and move
 		setX(x);
 		setY(y);
-		setWidth(width);
-		setHeight(height);
+		setSize(size);
 		if(_header) {
-			_header->resizeTo(width - 2,_header->getHeight());
-			_body.resizeTo(width - 2,height - _header->getHeight() - 2);
+			_header->resizeTo(Size(size.width - 2,_header->getSize().height));
+			_body.resizeTo(Size(size.width - 2,size.height - _header->getSize().height - 2));
 		}
 		else
-			_body.resizeTo(width - 2,height - 2);
+			_body.resizeTo(Size(size.width - 2,size.height - 2));
 		_moveX = x;
 		_moveY = y;
-		_resizeWidth = width;
-		_resizeHeight = height;
+		_resizeSize = size;
 	}
 
 	void Window::passToCtrl(const KeyEvent &e,uchar event) {
@@ -280,7 +279,7 @@ namespace gui {
 			return;
 		}
 
-		if(_header && e.getY() < _header->getHeight())
+		if(_header && e.getY() < _header->getSize().height)
 			passMouseToCtrl(_header,e);
 		else
 			passMouseToCtrl(&_body,e);
@@ -342,44 +341,42 @@ namespace gui {
 	}
 
 	void Window::resize(short width,short height) {
-		if(_resizeWidth + width < MIN_WIDTH)
-			width = -_resizeWidth + MIN_WIDTH;
-		if(_resizeHeight + height < MIN_HEIGHT)
-			height = -_resizeHeight + MIN_HEIGHT;
-		resizeTo(_resizeWidth + width,_resizeHeight + height);
+		if(_resizeSize.width + width < MIN_WIDTH)
+			width = -_resizeSize.width + MIN_WIDTH;
+		if(_resizeSize.height + height < MIN_HEIGHT)
+			height = -_resizeSize.height + MIN_HEIGHT;
+		resizeTo(Size(_resizeSize.width + width,_resizeSize.height + height));
 	}
 
-	void Window::resizeTo(gsize_t width,gsize_t height) {
-		resizeMoveTo(_moveX,width,height);
+	void Window::resizeTo(const Size &size) {
+		resizeMoveTo(_moveX,size);
 	}
 
 	void Window::resizeMove(short x,short width,short height) {
-		if(_resizeWidth + width >= MIN_WIDTH && _resizeHeight + height >= MIN_HEIGHT)
-			resizeMoveTo(_moveX + x,_resizeWidth + width,_resizeHeight + height);
+		if(_resizeSize.width + width >= MIN_WIDTH && _resizeSize.height + height >= MIN_HEIGHT)
+			resizeMoveTo(_moveX + x,Size(_resizeSize.width + width,_resizeSize.height + height));
 	}
 
-	void Window::resizeMoveTo(gpos_t x,gsize_t width,gsize_t height) {
+	void Window::resizeMoveTo(gpos_t x,const Size &size) {
 		// no resize until we're created
 		if(!_created)
 			return;
 
-		gsize_t screenWidth = Application::getInstance()->getScreenWidth();
-		gsize_t screenHeight = Application::getInstance()->getScreenHeight();
-		width = MIN(screenWidth,width);
-		height = MIN(screenHeight,height);
-		if(_moveX != x || width != _resizeWidth || height != _resizeHeight) {
+		Size rsize = size;
+		Size screenSize = Application::getInstance()->getScreenSize();
+		rsize.width = MIN(screenSize.width,rsize.width);
+		rsize.height = MIN(screenSize.height,rsize.height);
+		if(_moveX != x || rsize != _resizeSize) {
 			_moveX = x;
-			_resizeWidth = width;
-			_resizeHeight = height;
+			_resizeSize = rsize;
 			Application::getInstance()->resizeWindow(this,false);
 		}
 	}
 
 	void Window::move(short x,short y) {
-		gsize_t screenWidth = Application::getInstance()->getScreenWidth();
-		gsize_t screenHeight = Application::getInstance()->getScreenHeight();
-		x = MIN(screenWidth - 1,_moveX + x);
-		y = MAX(0,MIN(screenHeight - 1,_moveY + y));
+		Size screenSize = Application::getInstance()->getScreenSize();
+		x = MIN(screenSize.width - 1,_moveX + x);
+		y = MAX(0,MIN(screenSize.height - 1,_moveY + y));
 		moveTo(x,y);
 	}
 
@@ -397,7 +394,7 @@ namespace gui {
 
 	void Window::paintTitle(A_UNUSED Graphics &g) {
 		// no repaint until we're created and popups have no title-bar
-		if(!_created || _style == STYLE_POPUP || !_header)
+		if(!_created || _style == POPUP || !_header)
 			return;
 
 		_header->repaint(false);
@@ -412,14 +409,14 @@ namespace gui {
 
 		// draw border
 		g.setColor(getTheme().getColor(Theme::WIN_BORDER));
-		g.drawRect(0,0,getWidth(),getHeight());
+		g.drawRect(0,0,getSize());
 
 		_body.repaint(false);
 	}
 
-	void Window::update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	void Window::update(gpos_t x,gpos_t y,const Size &size) {
 		if(_g)
-			_g->update(x,y,width,height);
+			_g->update(x,y,size);
 	}
 
 	void Window::updateActive(bool active) {
@@ -453,8 +450,7 @@ namespace gui {
 	ostream &operator<<(ostream &s,const Window &w) {
 		string title = w.getTitle();
 		s << "Window[id=" << w.getId() << " @" << w.getX() << "," << w.getY();
-		s << " size=" << w.getWidth() << ",";
-		s << w.getHeight() << " title=" << title << "]";
+		s << " size=" << w.getSize() << ", title=" << title << "]";
 		return s;
 	}
 }

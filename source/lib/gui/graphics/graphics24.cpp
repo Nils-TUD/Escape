@@ -23,22 +23,23 @@
 namespace gui {
 	void Graphics24::doSetPixel(gpos_t x,gpos_t y) {
 		uint8_t *col = (uint8_t*)&_col;
-		uint8_t *addr = _buf->getBuffer() + ((_offy + y) * _buf->getWidth() + (_offx + x)) * 3;
+		uint8_t *addr = _buf->getBuffer() + ((_offy + y) * _buf->getSize().width + (_offx + x)) * 3;
 		*addr++ = *col++;
 		*addr++ = *col++;
 		*addr = *col;
 	}
 
-	void Graphics24::fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		if(!validateParams(x,y,width,height))
+	void Graphics24::fillRect(gpos_t x,gpos_t y,const Size &size) {
+		Size rsize = size;
+		if(!validateParams(x,y,rsize.width,rsize.height))
 			return;
 
-		gpos_t yend = y + height;
+		gpos_t yend = y + rsize.height;
 		updateMinMax(x,y);
-		updateMinMax(x + width - 1,yend - 1);
+		updateMinMax(x + rsize.width - 1,yend - 1);
 		gpos_t xcur;
-		gpos_t xend = x + width;
-		gsize_t bwidth = _buf->getWidth();
+		gpos_t xend = x + rsize.width;
+		gsize_t bwidth = _buf->getSize().width;
 		uint8_t *pixels = _buf->getBuffer();
 		// optimized version for 24bit
 		// This is necessary if we want to have reasonable speed because the simple version

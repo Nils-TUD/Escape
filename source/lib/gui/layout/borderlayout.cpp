@@ -33,47 +33,37 @@ namespace gui {
 		_ctrls[pos] = NULL;
 	}
 
-	gsize_t BorderLayout::getPreferredWidth() const {
-		gsize_t width = 0;
+	Size BorderLayout::getPreferredSize() const {
+		Size size;
 		if(_ctrls[WEST])
-			width += _ctrls[WEST]->getPreferredWidth();
+			size.width += _ctrls[WEST]->getPreferredSize().width;
+		if(_ctrls[NORTH])
+			size.height += _ctrls[NORTH]->getPreferredSize().height;
 		if(_ctrls[CENTER]) {
 			if(_ctrls[WEST])
-				width += _gap;
-			width += _ctrls[CENTER]->getPreferredWidth();
+				size += Size(_gap,_gap);
+			size += _ctrls[CENTER]->getPreferredSize();
 			if(_ctrls[EAST])
-				width += _gap;
+				size += Size(_gap,_gap);
 		}
 		if(_ctrls[EAST])
-			width += _ctrls[EAST]->getPreferredWidth();
-		if(width == 0) {
-			if(_ctrls[NORTH])
-				width = _ctrls[NORTH]->getPreferredWidth();
-			if(_ctrls[SOUTH])
-				width = max(width,_ctrls[SOUTH]->getPreferredWidth());
-		}
-		return width;
-	}
-	gsize_t BorderLayout::getPreferredHeight() const {
-		gsize_t height = 0;
-		if(_ctrls[NORTH])
-			height += _ctrls[NORTH]->getPreferredHeight();
-		if(_ctrls[CENTER]) {
-			if(_ctrls[NORTH])
-				height += _gap;
-			height += _ctrls[CENTER]->getPreferredHeight();
-			if(_ctrls[SOUTH])
-				height += _gap;
-		}
+			size.width += _ctrls[EAST]->getPreferredSize().width;
 		if(_ctrls[SOUTH])
-			height += _ctrls[SOUTH]->getPreferredHeight();
-		if(height == 0) {
-			if(_ctrls[WEST])
-				height = _ctrls[WEST]->getPreferredHeight();
-			if(_ctrls[EAST])
-				height = max(height,_ctrls[EAST]->getPreferredHeight());
+			size.height += _ctrls[SOUTH]->getPreferredSize().height;
+
+		if(size.width == 0) {
+			if(_ctrls[NORTH])
+				size.width = _ctrls[NORTH]->getPreferredSize().width;
+			if(_ctrls[SOUTH])
+				size.width = max(size.width,_ctrls[SOUTH]->getPreferredSize().width);
 		}
-		return height;
+		if(size.height == 0) {
+			if(_ctrls[WEST])
+				size.height = _ctrls[WEST]->getPreferredSize().height;
+			if(_ctrls[EAST])
+				size.height = max(size.height,_ctrls[EAST]->getPreferredSize().height);
+		}
+		return size;
 	}
 
 	void BorderLayout::rearrange() {
@@ -82,43 +72,42 @@ namespace gui {
 
 		Control *c;
 		gsize_t pad = _p->getTheme().getPadding();
-		gsize_t width = _p->getWidth() - pad * 2;
-		gsize_t height = _p->getHeight() - pad * 2;
+		Size size = _p->getSize() - Size(pad * 2,pad * 2);
+		Size rsize = size;
 		gpos_t x = pad;
 		gpos_t y = pad;
-		gsize_t rwidth = width;
-		gsize_t rheight = height;
 
-		gsize_t npheight = _ctrls[NORTH] ? _ctrls[NORTH]->getPreferredHeight() + _gap : 0;
-		gsize_t spheight = _ctrls[SOUTH] ? _ctrls[SOUTH]->getPreferredHeight() + _gap : 0;
-		gsize_t wpwidth = _ctrls[WEST] ? _ctrls[WEST]->getPreferredWidth() + _gap : 0;
-		gsize_t epwidth = _ctrls[EAST] ? _ctrls[EAST]->getPreferredWidth() + _gap : 0;
-		gsize_t cpheight = _ctrls[CENTER] ? _ctrls[CENTER]->getPreferredHeight() : 0;
-		gsize_t cpwidth = _ctrls[CENTER] ? _ctrls[CENTER]->getPreferredWidth() : 0;
+		Size ns = _ctrls[NORTH] ? _ctrls[NORTH]->getPreferredSize() + Size(_gap,_gap) : Size();
+		Size ss = _ctrls[SOUTH] ? _ctrls[SOUTH]->getPreferredSize() + Size(_gap,_gap) : Size();
+		Size ws = _ctrls[WEST] ? _ctrls[WEST]->getPreferredSize() + Size(_gap,_gap) : Size();
+		Size es = _ctrls[EAST] ? _ctrls[EAST]->getPreferredSize() + Size(_gap,_gap) : Size();
+		Size cs = _ctrls[CENTER] ? _ctrls[CENTER]->getPreferredSize() : Size();
 
 		// ensure that we use at least the minimum space
-		rheight = max<gsize_t>(npheight + spheight + cpheight,rheight);
-		rwidth = max<gsize_t>(wpwidth + epwidth + cpwidth,rwidth);
+		rsize.height = max<gsize_t>(ns.height + ss.height + cs.height,rsize.height);
+		rsize.width = max<gsize_t>(ws.width + es.width + cs.width,rsize.width);
 
 		if((c = _ctrls[NORTH])) {
-			configureControl(c,x,y,width,npheight - _gap);
-			y += npheight;
-			rheight -= npheight;
+			configureControl(c,x,y,Size(size.width,ns.height - _gap));
+			y += ns.height;
+			rsize.height -= ns.height;
 		}
 		if((c = _ctrls[SOUTH])) {
-			configureControl(c,x,pad + height - (spheight - _gap),width,spheight - _gap);
-			rheight -= spheight;
+			configureControl(c,x,pad + size.height - (ss.height - _gap),
+							 Size(size.width,ss.height - _gap));
+			rsize.height -= ss.height;
 		}
 		if((c = _ctrls[WEST])) {
-			configureControl(c,x,y,wpwidth - _gap,rheight);
-			x += wpwidth;
-			rwidth -= wpwidth;
+			configureControl(c,x,y,Size(ws.width - _gap,rsize.height));
+			x += ws.width;
+			rsize.width -= ws.width;
 		}
 		if((c = _ctrls[EAST])) {
-			configureControl(c,pad + width - (epwidth - _gap),y,epwidth - _gap,rheight);
-			rwidth -= epwidth;
+			configureControl(c,pad + size.width - (es.width - _gap),y,
+							 Size(es.width - _gap,rsize.height));
+			rsize.width -= es.width;
 		}
 		if((c = _ctrls[CENTER]))
-			configureControl(c,x,y,rwidth,rheight);
+			configureControl(c,x,y,rsize);
 	}
 }

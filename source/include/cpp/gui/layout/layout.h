@@ -65,26 +65,21 @@ namespace gui {
 		virtual void remove(Panel *p,Control *c,pos_type pos) = 0;
 
 		/**
-		 * @return the total preferred width of this layout without padding
+		 * @return the total preferred size of this layout without padding
 		 */
-		virtual gsize_t getPreferredWidth() const = 0;
-		/**
-		 * @return the total preferred height of this layout without padding
-		 */
-		virtual gsize_t getPreferredHeight() const = 0;
+		virtual Size getPreferredSize() const = 0;
 
 		/**
 		 * Determines what size would be used if <width>X<height> is available. By default, this
 		 * is always the maximum of preferredSize and <width>/<height>.
 		 * In contrast to getPreferred*(), padding should be included here.
 		 *
-		 * @param width the available width
-		 * @param height the available height
+		 * @param avail the available size
 		 * @return the size that would be used
 		 */
-		virtual std::pair<gsize_t,gsize_t> getUsedSize(gsize_t width,gsize_t height) const {
-			return std::make_pair(std::max(getPreferredWidth(),width),
-			                      std::max(getPreferredHeight(),height));
+		virtual Size getUsedSize(const Size &avail) const {
+			Size pref = getPreferredSize();
+			return Size(std::max(pref.width,avail.width),std::max(pref.height,avail.height));
 		};
 
 		/**
@@ -94,9 +89,9 @@ namespace gui {
 		virtual void rearrange() = 0;
 
 	protected:
-		inline void configureControl(Control *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height) const {
+		inline void configureControl(Control *c,gpos_t x,gpos_t y,const Size &size) const {
 			c->moveTo(x,y);
-			c->resizeTo(width,height);
+			c->resizeTo(size);
 		};
 
 	private:

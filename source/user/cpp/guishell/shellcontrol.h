@@ -46,8 +46,8 @@ private:
 	static const gui::Color CURSOR_COLOR;
 
 public:
-	ShellControl(gpos_t x,gpos_t y,gsize_t width,gsize_t height) :
-		Control(x,y,width,height), _lastCol(0), _lastRow(0), _vt(NULL) {
+	ShellControl(gpos_t x,gpos_t y,const gui::Size &size) :
+		Control(x,y,size), _lastCol(0), _lastRow(0), _vt(NULL) {
 	};
 	virtual ~ShellControl() {
 	};
@@ -57,19 +57,18 @@ public:
 	ShellControl &operator=(const ShellControl &e);
 
 	virtual void onKeyPressed(const gui::KeyEvent &e);
-	virtual void resizeTo(gsize_t width,gsize_t height);
+	virtual void resizeTo(const gui::Size &size);
 
 	inline gsize_t getCols() const {
-		return (getWidth() - TEXTSTARTX * 2) / getGraphics()->getFont().getWidth();
+		return (getSize().width - TEXTSTARTX * 2) / getGraphics()->getFont().getSize().width;
 	};
 	inline gsize_t getRows() const {
-		return (getHeight() - TEXTSTARTY * 2) / (getGraphics()->getFont().getHeight() + PADDING);
+		return (getSize().height - TEXTSTARTY * 2) / (getGraphics()->getFont().getSize().height + PADDING);
 	};
 
 	void sendEOF();
 
-	virtual gsize_t getPrefWidth() const;
-	virtual gsize_t getPrefHeight() const;
+	virtual gui::Size getPrefSize() const;
 	virtual void paint(gui::Graphics &g);
 
 private:

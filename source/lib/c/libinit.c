@@ -85,6 +85,11 @@ int __cxa_atexit(void (*f)(void *),void *p,void *d) {
 }
 
 void __cxa_finalize(A_UNUSED void *d) {
+	/* prevent deadlock; this can happen if an exit-function throws an exception or calls abort()
+	 * or similar */
+	if(threadCount == 0)
+		return;
+
 	locku(&threadLock);
 	/* if we're the last thread, call the exit-functions */
 	if(--threadCount == 0) {

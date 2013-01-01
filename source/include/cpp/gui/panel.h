@@ -62,6 +62,9 @@ namespace gui {
 		virtual gsize_t getPrefHeight() const {
 			return _layout ? _layout->getPreferredHeight() + getTheme().getPadding() * 2 : 0;
 		};
+		virtual std::pair<gsize_t,gsize_t> getUsedSize(gsize_t width,gsize_t height) const {
+			return _layout ? _layout->getUsedSize(width,height) : UIElement::getUsedSize(width,height);
+		};
 
 		/**
 		 * @return the layout (NULL if none)

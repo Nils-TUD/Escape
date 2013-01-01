@@ -34,10 +34,9 @@ namespace gui {
 		gsize_t visiblex = getWidth() - BAR_SIZE;
 		gsize_t visibley = getHeight() - BAR_SIZE;
 
-		// let the content be as large as preferred and larger, if possible
-		gsize_t cwidth = max(_ctrl->getPreferredWidth(),visiblex);
-		gsize_t cheight = max(_ctrl->getPreferredHeight(),visibley);
-		_ctrl->resizeTo(cwidth,cheight);
+		// determine what size the control will actually use, if it gets visiblex X visibley.
+		pair<gsize_t,gsize_t> usedsize = _ctrl->getUsedSize(visiblex,visibley);
+		_ctrl->resizeTo(usedsize.first,usedsize.second);
 
 		// ensure that the position of the control is in the allowed range; of course, this changes
 		// as soon as the size of the scrollpane or the control changes

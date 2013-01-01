@@ -327,6 +327,19 @@ namespace gui {
 		virtual gsize_t getPrefHeight() const = 0;
 
 		/**
+		 * Determines what size would be used if <width>X<height> is available. By default, this
+		 * is always the maximum of preferredSize and <width>/<height>.
+		 *
+		 * @param width the available width
+		 * @param height the available height
+		 * @return the size that would be used
+		 */
+		virtual std::pair<gsize_t,gsize_t> getUsedSize(gsize_t width,gsize_t height) const {
+			return std::make_pair(std::max(getPreferredWidth(),width),
+			                      std::max(getPreferredHeight(),height));
+		};
+
+		/**
 		 * Sets the x-position
 		 *
 		 * @param x the new position

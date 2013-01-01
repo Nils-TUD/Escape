@@ -20,6 +20,8 @@
 #pragma once
 
 #include <esc/common.h>
+#include <algorithm>
+#include <utility>
 
 namespace gui {
 	class Control;
@@ -63,13 +65,27 @@ namespace gui {
 		virtual void remove(Panel *p,Control *c,pos_type pos) = 0;
 
 		/**
-		 * @return the total preferred width of this layout
+		 * @return the total preferred width of this layout without padding
 		 */
 		virtual gsize_t getPreferredWidth() const = 0;
 		/**
-		 * @return the total preferred height of this layout
+		 * @return the total preferred height of this layout without padding
 		 */
 		virtual gsize_t getPreferredHeight() const = 0;
+
+		/**
+		 * Determines what size would be used if <width>X<height> is available. By default, this
+		 * is always the maximum of preferredSize and <width>/<height>.
+		 * In contrast to getPreferred*(), padding should be included here.
+		 *
+		 * @param width the available width
+		 * @param height the available height
+		 * @return the size that would be used
+		 */
+		virtual std::pair<gsize_t,gsize_t> getUsedSize(gsize_t width,gsize_t height) const {
+			return std::make_pair(std::max(getPreferredWidth(),width),
+			                      std::max(getPreferredHeight(),height));
+		};
 
 		/**
 		 * Rearranges the controls, i.e. determines the position and sizes again. Does not

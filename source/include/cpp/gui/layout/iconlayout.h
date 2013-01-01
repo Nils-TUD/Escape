@@ -54,6 +54,7 @@ namespace gui {
 
 		virtual gsize_t getPreferredWidth() const;
 		virtual gsize_t getPreferredHeight() const;
+		virtual std::pair<gsize_t,gsize_t> getUsedSize(gsize_t width,gsize_t height) const;
 
 		virtual void rearrange();
 

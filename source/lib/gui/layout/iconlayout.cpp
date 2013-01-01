@@ -50,6 +50,12 @@ namespace gui {
 		return height;
 	}
 
+	std::pair<gsize_t,gsize_t> IconLayout::getUsedSize(gsize_t width,gsize_t height) const {
+		gsize_t pad = _p->getTheme().getPadding();
+		doLayout(0,0,width,height);
+		return std::make_pair(width + pad * 2,height + pad * 2);
+	}
+
 	void IconLayout::rearrange() {
 		if(!_p || _ctrls.size() == 0)
 			return;
@@ -66,10 +72,9 @@ namespace gui {
 
 	void IconLayout::doLayout(size_t cols,size_t rows,gsize_t &width,gsize_t &height,
 	                          layout_func layout) const {
+		gsize_t uwidth = 0, uheight = 0;
 		gsize_t wmax = 0, hmax = 0;
 		gsize_t pad = _p->getTheme().getPadding();
-		if(cols && rows)
-			width = height = 0;
 		switch(_pref) {
 			case HORIZONTAL: {
 				uint col = 0, row = 0;
@@ -77,8 +82,7 @@ namespace gui {
 				for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 					std::pair<gsize_t,gsize_t> size((*it)->getPreferredWidth(),(*it)->getPreferredHeight());
 					if((cols && col == cols) || (!cols && col > 0 && x + size.first + pad > width)) {
-						if(cols)
-							width = max<gsize_t>(width,x - _gap - pad);
+						uwidth = max<gsize_t>(uwidth,x - _gap - pad);
 						y += hmax + _gap;
 						x = pad;
 						hmax = 0;
@@ -92,8 +96,7 @@ namespace gui {
 					hmax = std::max(size.second,hmax);
 					col++;
 				}
-				if(cols)
-					height = y + hmax - pad;
+				uheight = y + hmax - pad;
 				break;
 			}
 			case VERTICAL: {
@@ -102,8 +105,7 @@ namespace gui {
 				for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 					std::pair<gsize_t,gsize_t> size((*it)->getPreferredWidth(),(*it)->getPreferredHeight());
 					if((rows && row == rows) || (!rows && row > 0 && y + size.second + pad > height)) {
-						if(rows)
-							height = max<gsize_t>(height,y - _gap - pad);
+						uheight = max<gsize_t>(uheight,y - _gap - pad);
 						x += wmax + _gap;
 						y = pad;
 						wmax = 0;
@@ -117,10 +119,11 @@ namespace gui {
 					wmax = std::max(size.first,wmax);
 					row++;
 				}
-				if(rows)
-					width = x + wmax - pad;
+				uwidth = x + wmax - pad;
 				break;
 			}
 		}
+		width = uwidth;
+		height = uheight;
 	}
 }

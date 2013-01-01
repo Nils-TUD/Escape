@@ -36,6 +36,8 @@
 #include <esc/io.h>
 #include <esc/thread.h>
 #include <iostream>
+#include <stdlib.h>
+#include <time.h>
 
 using namespace gui;
 
@@ -207,9 +209,10 @@ static void win6(void) {
 	root.setLayout(new BorderLayout(2));
 
 	Panel *btns = new Panel(new IconLayout(IconLayout::HORIZONTAL));
-	root.add(btns,BorderLayout::CENTER);
+	ScrollPane *sp = new ScrollPane(btns);
+	root.add(sp,BorderLayout::CENTER);
 
-	for(size_t i = 0; i < 25; ++i) {
+	for(size_t i = 0; i < 23; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
 		Button *b = new Button(name,0,0,40,40);
@@ -225,12 +228,14 @@ static void win7(void) {
 	root.setLayout(new BorderLayout(2));
 
 	Panel *btns = new Panel(new IconLayout(IconLayout::VERTICAL));
-	root.add(btns,BorderLayout::CENTER);
+	ScrollPane *sp = new ScrollPane(btns);
+	root.add(sp,BorderLayout::CENTER);
 
-	for(size_t i = 0; i < 25; ++i) {
+	srand(time(NULL));
+	for(size_t i = 0; i < 29; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
-		Button *b = new Button(name,0,0,40,40);
+		Button *b = new Button(name,0,0,30 + rand() % 10,30 + rand() % 10);
 		btns->add(b);
 	}
 	win->show(true);

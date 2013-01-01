@@ -35,8 +35,8 @@ const Color DesktopWin::ACTIVE_COLOR = Color(0x90,0x90,0x90);
 const gsize_t DesktopWin::TASKBAR_HEIGHT = 24;
 
 DesktopWin::DesktopWin(const Size &size)
-	: Window(0,0,size,DESKTOP),
-	  _winPanel(new Panel(0,0,Size(0,TASKBAR_HEIGHT),new FlowLayout(FlowLayout::LEFT,4))),
+	: Window(Pos(0,0),size,DESKTOP),
+	  _winPanel(new Panel(Pos(0,0),Size(0,TASKBAR_HEIGHT),new FlowLayout(FlowLayout::LEFT,4))),
 	  _iconPanel(new Panel()), _active(NULL), _windows(), _shortcuts() {
 	getRootPanel().setLayout(new BorderLayout());
 	getRootPanel().getTheme().setPadding(0);

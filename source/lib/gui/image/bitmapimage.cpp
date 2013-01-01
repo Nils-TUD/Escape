@@ -47,8 +47,8 @@ namespace gui {
 		if(!g.validateParams(x,y,pw,ph))
 			return;
 		g.setColor(Color(0));
-		g.updateMinMax(x,y);
-		g.updateMinMax(x + pw,y + ph);
+		g.updateMinMax(Pos(x,y));
+		g.updateMinMax(Pos(x + pw,y + ph));
 		pad = w % 4;
 		pad = pad ? 4 - pad : 0;
 		data += (h - 1) * ((w * colBytes) + pad);
@@ -123,12 +123,12 @@ namespace gui {
 		g.doSetPixel(x,y);
 	}
 
-	void BitmapImage::paint(Graphics &g,gpos_t x,gpos_t y) {
+	void BitmapImage::paint(Graphics &g,const Pos &pos) {
 		if(_data == NULL)
 			return;
 		switch(_infoHeader->compression) {
 			case BI_RGB:
-				paintRGB(g,x,y);
+				paintRGB(g,pos.x,pos.y);
 				break;
 
 			case BI_BITFIELDS:

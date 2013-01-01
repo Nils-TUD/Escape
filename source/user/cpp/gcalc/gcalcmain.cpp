@@ -104,7 +104,7 @@ static void keyPressed(UIElement &,const KeyEvent &e) {
 
 int main(void) {
 	Application *app = Application::getInstance();
-	win = new Window("Calculator",250,250);
+	win = new Window("Calculator",Pos(250,250));
 	win->keyPressed().subscribe(func_recv(keyPressed));
 	Panel& root = win->getRootPanel();
 	root.getTheme().setPadding(2);
@@ -141,19 +141,19 @@ int main(void) {
 	};
 	for(size_t i = 0; i < ARRAY_SIZE(buttons); ++i) {
 		char name[] = {buttons[i].c,'\0'};
-		Button *b = new Button(name,0,0,BTN_SIZE);
+		Button *b = new Button(name,Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(bind1_recv(buttons[i].c,onButtonClick));
 		grid->add(b,buttons[i].pos);
 	}
 
 	{
-		Button *b = new Button("C",0,0,BTN_SIZE);
+		Button *b = new Button("C",Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(func_recv(onClearButtonClick));
 		grid->add(b,GridPos(4,2));
 	}
 
 	{
-		Button *b = new Button("=",0,0,BTN_SIZE);
+		Button *b = new Button("=",Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(func_recv(onSubmitButtonClick));
 		grid->add(b,GridPos(4,3));
 	}

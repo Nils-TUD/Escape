@@ -63,48 +63,50 @@ namespace gui {
 		switch(_pref) {
 			case HORIZONTAL: {
 				uint col = 0, row = 0;
-				gpos_t x = pad, y = pad;
+				Pos pos(pad,pad);
 				for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 					Size csize = (*it)->getPreferredSize();
-					if((cols && col == cols) || (!cols && col > 0 && x + csize.width + pad > size.width)) {
-						usize.width = std::max<gsize_t>(usize.width,x - _gap - pad);
-						y += max.height + _gap;
-						x = pad;
+					if((cols && col == cols) ||
+							(!cols && col > 0 && pos.x + csize.width + pad > size.width)) {
+						usize.width = std::max<gsize_t>(usize.width,pos.x - _gap - pad);
+						pos.y += max.height + _gap;
+						pos.x = pad;
 						max.height = 0;
 						col = 0;
 						row++;
 					}
 
 					if(layout)
-						(this->*layout)(*it,x,y,csize);
-					x += csize.width + _gap;
+						(this->*layout)(*it,pos,csize);
+					pos.x += csize.width + _gap;
 					max.height = std::max(csize.height,max.height);
 					col++;
 				}
-				usize.height = y + max.height - pad;
+				usize.height = pos.y + max.height - pad;
 				break;
 			}
 			case VERTICAL: {
 				uint col = 0, row = 0;
-				gpos_t x = pad, y = pad;
+				Pos pos(pad,pad);
 				for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 					Size csize = (*it)->getPreferredSize();
-					if((rows && row == rows) || (!rows && row > 0 && y + csize.height + pad > size.height)) {
-						usize.height = std::max<gsize_t>(usize.height,y - _gap - pad);
-						x += max.width + _gap;
-						y = pad;
+					if((rows && row == rows) ||
+							(!rows && row > 0 && pos.y + csize.height + pad > size.height)) {
+						usize.height = std::max<gsize_t>(usize.height,pos.y - _gap - pad);
+						pos.x += max.width + _gap;
+						pos.y = pad;
 						max.width = 0;
 						col++;
 						row = 0;
 					}
 
 					if(layout)
-						(this->*layout)(*it,x,y,csize);
-					y += csize.height + _gap;
+						(this->*layout)(*it,pos,csize);
+					pos.y += csize.height + _gap;
 					max.width = std::max(csize.width,max.width);
 					row++;
 				}
-				usize.width = x + max.width - pad;
+				usize.width = pos.x + max.width - pad;
 				break;
 			}
 		}

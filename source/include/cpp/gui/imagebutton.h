@@ -14,8 +14,8 @@ namespace gui {
 		ImageButton(Image *img,bool border = true)
 			: Button(""), _img(img), _border(border) {
 		};
-		ImageButton(Image *img,gpos_t x,gpos_t y,const Size &size,bool border = true)
-			: Button("",x,y,size), _img(img), _border(border) {
+		ImageButton(Image *img,const Pos &pos,const Size &size,bool border = true)
+			: Button("",pos,size), _img(img), _border(border) {
 		};
 
 		inline Image *getImage() const {

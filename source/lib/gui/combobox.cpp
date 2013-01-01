@@ -26,25 +26,25 @@
 using namespace std;
 
 namespace gui {
-	void ComboBox::ItemWindow::close(gpos_t x,gpos_t y) {
+	void ComboBox::ItemWindow::close(const Pos &pos) {
 		// just do this here if we will not receive a mouse-click for the combobox-button
 		// anyway
-		gpos_t cbx = _cb->getX(), wx = _cb->getWindow()->getX();
-		gpos_t cby = _cb->getY(), wy = _cb->getWindow()->getY();
+		Pos cb = _cb->getPos();
+		Pos w = _cb->getWindow()->getPos();
 		Size cbs = _cb->getSize();
 		gsize_t tbh = _cb->getWindow()->getTitleBarHeight();
-		if(!(x >= wx + cbx + cbs.width - cbs.height && x < wx + cbx + cbs.width &&
-			y >= wy + cby + tbh && y < wy + cby + tbh + cbs.height)) {
+		if(!(pos.x >= w.x + cb.x + cbs.width - cbs.height && pos.x < w.x + cb.x + cbs.width &&
+				pos.y >= w.y + cb.y + tbh && pos.y < w.y + cb.y + tbh + cbs.height)) {
 			closeImpl();
 		}
 	}
 
 	void ComboBox::ItemWindow::paint(Graphics &g) {
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
-		g.fillRect(0,0,getSize());
+		g.fillRect(Pos(0,0),getSize());
 
 		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
-		g.drawRect(0,0,getSize());
+		g.drawRect(Pos(0,0),getSize());
 
 		const Color &tf = getTheme().getColor(Theme::TEXT_FOREGROUND);
 		const Color &sb = getTheme().getColor(Theme::SEL_BACKGROUND);
@@ -68,7 +68,7 @@ namespace gui {
 	}
 
 	void ComboBox::ItemWindow::onMouseMoved(const MouseEvent &e) {
-		int item = getItemAt(e.getX(),e.getY());
+		int item = getItemAt(e.getPos());
 		if(item < (int)_cb->_items.size() && item != _highlighted) {
 			_highlighted = item;
 			repaint();
@@ -80,8 +80,8 @@ namespace gui {
 		closeImpl();
 	}
 
-	int ComboBox::ItemWindow::getItemAt(A_UNUSED gpos_t x,gpos_t y) {
-		return y / (getGraphics()->getFont().getSize().height + getTheme().getTextPadding() * 2);
+	int ComboBox::ItemWindow::getItemAt(const Pos &pos) {
+		return pos.y / (getGraphics()->getFont().getSize().height + getTheme().getTextPadding() * 2);
 	}
 
 	void ComboBox::ItemWindow::closeImpl() {
@@ -154,15 +154,16 @@ namespace gui {
 				gsize_t pad = Application::getInstance()->getDefaultTheme()->getTextPadding();
 				gsize_t height = _items.size() * (getGraphics()->getFont().getSize().height + pad * 2);
 				const Window *w = getWindow();
-				_win = new ItemWindow(this,w->getX() + getWindowX(),
-						w->getY() + getWindowY() + getSize().height,Size(getSize().width,height));
+				Pos pos(w->getPos().x + getWindowPos().x,
+				        w->getPos().y + getWindowPos().y + getSize().height);
+				_win = new ItemWindow(this,pos,Size(getSize().width,height));
 				_win->show();
 			}
 		}
 	}
 	void ComboBox::onMouseReleased(const MouseEvent &e) {
 		UIElement::onMouseReleased(e);
-		if(e.getX() >= getX() + getSize().width - getSize().height + 2 && _pressed) {
+		if(e.getPos().x >= getPos().x + getSize().width - getSize().height + 2 && _pressed) {
 			_pressed = false;
 			repaint();
 		}

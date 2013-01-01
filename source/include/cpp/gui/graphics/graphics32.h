@@ -32,7 +32,7 @@ namespace gui {
 		Graphics32(GraphicsBuffer *buf,const Size &size) : Graphics(buf,size) {
 		};
 
-		void fillRect(gpos_t x,gpos_t y,const Size &size);
+		void fillRect(const Pos &pos,const Size &size);
 
 	protected:
 		void doSetPixel(gpos_t x,gpos_t y);

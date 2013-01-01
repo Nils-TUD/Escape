@@ -29,7 +29,7 @@ namespace gui {
 	 * direction side by side and continues with the next row/column if its full.
 	 */
 	class IconLayout : public Layout {
-		typedef void (IconLayout::*layout_func)(Control *c,gpos_t x,gpos_t y,const Size &size) const;
+		typedef void (IconLayout::*layout_func)(Control *c,const Pos &pos,const Size &size) const;
 
 	public:
 		enum Preferred {

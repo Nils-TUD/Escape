@@ -47,12 +47,11 @@ namespace gui {
 		 * Constructor that specifies a position and size explicitly. This can be used if no layout
 		 * is used or if a different preferred size than the min size is desired.
 		 *
-		 * @param x the x-position
-		 * @param y the y-position
+		 * @param pos the position
 		 * @param size the size
 		 */
-		Control(gpos_t x,gpos_t y,const Size &size)
-			: UIElement(x,y,size) {
+		Control(const Pos &pos,const Size &size)
+			: UIElement(pos,size) {
 		};
 
 		/**
@@ -87,7 +86,7 @@ namespace gui {
 		 * @param x the new x-position
 		 * @param y the new y-position
 		 */
-		virtual void moveTo(gpos_t x,gpos_t y);
+		virtual void moveTo(const Pos &pos);
 
 		/**
 		 * @return the control that has the focus (not a panel!) or NULL if no one
@@ -113,7 +112,6 @@ namespace gui {
 		virtual void setRegion();
 
 	private:
-		gpos_t getParentOffX(UIElement *c) const;
-		gpos_t getParentOffY(UIElement *c) const;
+		Pos getParentOff(UIElement *c) const;
 	};
 }

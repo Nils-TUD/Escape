@@ -40,8 +40,8 @@ namespace gui {
 			: Control(), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		};
-		Editable(gpos_t x,gpos_t y,const Size &size)
-			: Control(x,y,size), _cursor(0), _begin(0), _focused(false), _selecting(false),
+		Editable(const Pos &pos,const Size &size)
+			: Control(pos,size), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		};
 

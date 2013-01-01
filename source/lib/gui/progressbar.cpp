@@ -32,7 +32,7 @@ namespace gui {
 		Size size = getSize();
 		// draw border
 		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
-		g.drawRect(0,0,size);
+		g.drawRect(Pos(0,0),size);
 
 		// draw bar
 		gsize_t barWidth;

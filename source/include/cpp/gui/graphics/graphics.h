@@ -24,6 +24,7 @@
 #include <gui/graphics/font.h>
 #include <gui/graphics/color.h>
 #include <gui/graphics/size.h>
+#include <gui/graphics/pos.h>
 #include <assert.h>
 
 namespace gui {
@@ -52,9 +53,8 @@ namespace gui {
 		 * @param size the size of the control
 		 */
 		Graphics(GraphicsBuffer *buf,const Size &size)
-			: _buf(buf), _minoffx(0), _minoffy(0), _offx(0), _offy(0), _size(size), _col(0),
-			  _colInst(0), _minx(0),_miny(0), _maxx(size.width - 1), _maxy(size.height - 1),
-			  _font() {
+			: _buf(buf), _minoff(), _off(), _size(size), _col(0), _colInst(0), _minx(0),_miny(0),
+			  _maxx(size.width - 1), _maxy(size.height - 1), _font() {
 		};
 		/**
 		 * Destructor
@@ -92,77 +92,87 @@ namespace gui {
 		 * @param x the x-coordinate
 		 * @param y the y-coordinate
 		 */
-		inline void setPixel(gpos_t x,gpos_t y) {
-			if(!validatePoint(x,y))
+		inline void setPixel(const Pos &pos) {
+			Pos rpos = pos;
+			if(!validatePoint(rpos.x,rpos.y))
 				return;
-			updateMinMax(x,y);
-			doSetPixel(x,y);
+			updateMinMax(rpos);
+			doSetPixel(rpos.x,rpos.y);
 		};
 
 		/**
-		 * Moves <height> rows of <width> pixels at <x>,<y> up by <up> rows.
+		 * Moves <height> rows of <width> pixels at <pos> up by <up> rows.
 		 * If <up> is negative, it moves them down.
 		 *
-		 * @param x the x-coordinate where to start
-		 * @param y the y-coordinate where to start
-		 * @param width the width of a row
-		 * @param height the number of rows to move
+		 * @param pos the coordinates where to start
+		 * @param size the width of a row and the number of rows to move
 		 * @param up amount to move up / down
 		 */
-		virtual void moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up);
+		virtual void moveRows(const Pos &pos,const Size &size,int up);
+		inline void moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
+			moveRows(Pos(x,y),Size(width,height),up);
+		};
 
 		/**
-		 * Moves <width> cols of <height> pixels at <x>,<y> left by <left> cols.
+		 * Moves <width> cols of <height> pixels at <pos> left by <left> cols.
 		 * If <left> is negative, it moves them right.
 		 *
-		 * @param x the x-coordinate where to start
-		 * @param y the y-coordinate where to start
-		 * @param width the number of cols to move
-		 * @param height the height of a col
+		 * @param pos the coordinates where to start
+		 * @param size the number of cols to move and the height of a col
 		 * @param left amount to move left / right
 		 */
-		virtual void moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left);
+		virtual void moveCols(const Pos &pos,const Size &size,int left);
+		inline void moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left) {
+			moveCols(Pos(x,y),Size(width,height),left);
+		};
 
 		/**
 		 * Draws the given character at given position
 		 *
-		 * @param x the x-coordinate
-		 * @param y the y-coordinate
+		 * @param pos the position
 		 * @param c the character
 		 */
-		virtual void drawChar(gpos_t x,gpos_t y,char c);
+		virtual void drawChar(const Pos &pos,char c);
+		inline void drawChar(gpos_t x,gpos_t y,char c) {
+			drawChar(Pos(x,y),c);
+		};
 
 		/**
 		 * Draws the given string at the given position. Note that the position is the top
 		 * left of the first character.
 		 *
-		 * @param x the x-coordinate
-		 * @param y the y-coordinate
+		 * @param pos the position
 		 * @param str the string
 		 */
-		virtual void drawString(gpos_t x,gpos_t y,const std::string &str);
+		virtual void drawString(const Pos &pos,const std::string &str);
+		inline void drawString(gpos_t x,gpos_t y,const std::string &str) {
+			drawString(Pos(x,y),str);
+		};
 
 		/**
 		 * Draws the given part of the given string at the given position. Note that the
 		 * position is the top left of the first character.
 		 *
-		 * @param x the x-coordinate
-		 * @param y the y-coordinate
+		 * @param pos the position
 		 * @param str the string
 		 * @param start the start-position in the string
 		 * @param count the number of characters
 		 */
-		virtual void drawString(gpos_t x,gpos_t y,const std::string &str,size_t start,size_t count);
+		virtual void drawString(const Pos &pos,const std::string &str,size_t start,size_t count);
+		inline void drawString(gpos_t x,gpos_t y,const std::string &str,size_t start,size_t count) {
+			drawString(Pos(x,y),str,start,count);
+		};
 
 		/**
-		 * Draws a line from (x0,y0) to (xn,yn)
+		 * Draws a line from p0 to pn
 		 *
-		 * @param x0 first x-coordinate
-		 * @param y0 first y-coordinate
-		 * @param xn last x-coordinate
-		 * @param yn last y-coordinate
+		 * @param p0 first coordinate
+		 * @param pn last coordinate
 		 */
-		virtual void drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn);
+		virtual void drawLine(const Pos &p0,const Pos &pn);
+		inline void drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn) {
+			drawLine(Pos(x0,y0),Pos(xn,yn));
+		};
 
 		/**
 		 * Draws a vertical line (optimized compared to drawLine)
@@ -185,38 +195,30 @@ namespace gui {
 		/**
 		 * Draws a rectangle
 		 *
-		 * @param x the x-coordinate
-		 * @param y the y-coordinate
+		 * @param pos the position
 		 * @param size the size
 		 */
-		virtual void drawRect(gpos_t x,gpos_t y,const Size &size);
+		virtual void drawRect(const Pos &pos,const Size &size);
 		inline void drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-			drawRect(x,y,Size(width,height));
+			drawRect(Pos(x,y),Size(width,height));
 		};
 
 		/**
 		 * Fills a rectangle
 		 *
-		 * @param x the x-coordinate
-		 * @param y the y-coordinate
+		 * @param pos the position
 		 * @param size the size
 		 */
-		virtual void fillRect(gpos_t x,gpos_t y,const Size &size);
+		virtual void fillRect(const Pos &pos,const Size &size);
 		inline void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-			fillRect(x,y,Size(width,height));
+			fillRect(Pos(x,y),Size(width,height));
 		};
 
 		/**
 		 * @return the x-offset of the control in the window
 		 */
-		inline gpos_t getX() const {
-			return _offx;
-		};
-		/**
-		 * @return the y-offset of the control in the window
-		 */
-		inline gpos_t getY() const {
-			return _offy;
+		inline Pos getPos() const {
+			return _off;
 		};
 
 		/**
@@ -230,9 +232,9 @@ namespace gui {
 		/**
 		 * Sets a pixel if in the given bounds
 		 */
-		inline void setLinePixel(gpos_t minx,gpos_t miny,gpos_t maxx,gpos_t maxy,gpos_t x,gpos_t y) {
-			if(x >= minx && y >= miny && x <= maxx && y <= maxy)
-				doSetPixel(x,y);
+		inline void setLinePixel(gpos_t minx,gpos_t miny,gpos_t maxx,gpos_t maxy,const Pos &pos) {
+			if(pos.x >= minx && pos.y >= miny && pos.x <= maxx && pos.y <= maxy)
+				doSetPixel(pos.x,pos.y);
 		};
 		/**
 		 * Sets a pixel (without check)
@@ -241,15 +243,15 @@ namespace gui {
 		/**
 		 * Adds the given position to the dirty region
 		 */
-		inline void updateMinMax(gpos_t x,gpos_t y) {
-			if(x > _maxx)
-				_maxx = x;
-			if(x < _minx)
-				_minx = x;
-			if(y > _maxy)
-				_maxy = y;
-			if(y < _miny)
-				_miny = y;
+		inline void updateMinMax(const Pos &pos) {
+			if(pos.x > _maxx)
+				_maxx = pos.x;
+			if(pos.x < _minx)
+				_minx = pos.x;
+			if(pos.y > _maxy)
+				_maxy = pos.y;
+			if(pos.y < _miny)
+				_miny = pos.y;
 		};
 		/**
 		 * Requests an update for the dirty region
@@ -258,7 +260,7 @@ namespace gui {
 		/**
 		 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
 		 */
-		void update(gpos_t x,gpos_t y,const Size &size);
+		void update(const Pos &pos,const Size &size);
 		/**
 		 * Validates the given line
 		 */
@@ -271,6 +273,9 @@ namespace gui {
 		 * Validates the given parameters
 		 */
 		bool validateParams(gpos_t &x,gpos_t &y,gsize_t &width,gsize_t &height);
+		bool validateParams(Pos &pos,Size &size) {
+			return validateParams(pos.x,pos.y,size.width,size.height);
+		};
 
 	private:
 		/**
@@ -285,31 +290,22 @@ namespace gui {
 		 * @param x the x-offset
 		 * @param y the y-offset
 		 */
-		inline void setOff(gpos_t x,gpos_t y) {
-			_offx = x;
-			_offy = y;
-		};
-		/**
-		 * @return the minimum x-offset in the window at which we can draw
-		 */
-		inline gpos_t getMinX() const {
-			return _minoffx;
+		inline void setOff(const Pos &pos) {
+			_off = pos;
 		};
 		/**
 		 * @return the minimum y-offset in the window at which we can draw
 		 */
-		inline gpos_t getMinY() const {
-			return _minoffy;
+		inline Pos getMinOff() const {
+			return _minoff;
 		};
 		/**
 		 * Sets the minimum offset in the window, i.e. the beginning where we can draw
 		 *
-		 * @param x the x-offset
-		 * @param y the y-offset
+		 * @param pos the offset
 		 */
-		inline void setMinOff(gpos_t x,gpos_t y) {
-			_minoffx = x;
-			_minoffy = y;
+		inline void setMinOff(const Pos &pos) {
+			_minoff = pos;
 		};
 		/**
 		 * Sets the size of the paint-area (unchecked!)
@@ -322,12 +318,11 @@ namespace gui {
 		/**
 		 * Sets the size of the control (checked)
 		 *
-		 * @param x the x-position of the control relative to the parent
-		 * @param y the y-position of the control relative to the parent
+		 * @param pos the position of the control relative to the parent
 		 * @param size the new value
 		 * @param psize the size of the parent. the child can't cross that
 		 */
-		void setSize(gpos_t x,gpos_t y,const Size &size,const Size &psize);
+		void setSize(const Pos &pos,const Size &size,const Size &psize);
 
 		// used internally
 		gsize_t getDim(gpos_t off,gsize_t size,gsize_t max);
@@ -339,11 +334,9 @@ namespace gui {
 	protected:
 		GraphicsBuffer *_buf;
 		// the minimum offset in the window, i.e. the beginning where we can draw
-		gpos_t _minoffx;
-		gpos_t _minoffy;
+		Pos _minoff;
 		// the offset of the control in the window
-		gpos_t _offx;
-		gpos_t _offy;
+		Pos _off;
 		// the size of the control in the window (i.e. the size of the area that can be painted)
 		Size _size;
 		// current color

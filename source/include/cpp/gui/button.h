@@ -33,8 +33,8 @@ namespace gui {
 		Button(const std::string &text)
 			: Control(), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
-		Button(const std::string &text,gpos_t x,gpos_t y,const Size &size)
-			: Control(x,y,size), _focused(false), _pressed(false), _text(text), _clicked() {
+		Button(const std::string &text,const Pos &pos,const Size &size)
+			: Control(pos,size), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
 
 		inline bool isPressed() const {

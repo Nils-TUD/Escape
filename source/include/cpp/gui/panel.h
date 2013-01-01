@@ -38,13 +38,12 @@ namespace gui {
 		 * that the layout will be owned by the panel afterwards. So, it will delete it when the
 		 * panel is deleted.
 		 *
-		 * @param x the x-position
-		 * @param y the y-position
+		 * @param pos the position
 		 * @param size the size
 		 * @param l the layout (may be NULL)
 		 */
-		Panel(gpos_t x,gpos_t y,const Size &size,Layout *l = NULL)
-			: Control(x,y,size), _focus(NULL), _controls(), _layout(l), _updateRect() {
+		Panel(const Pos &pos,const Size &size,Layout *l = NULL)
+			: Control(pos,size), _focus(NULL), _controls(), _layout(l), _updateRect() {
 		};
 		/**
 		 * Destructor
@@ -116,10 +115,10 @@ namespace gui {
 
 	protected:
 		virtual void paint(Graphics &g);
-		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size);
+		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
 
 		virtual void resizeTo(const Size &size);
-		virtual void moveTo(gpos_t x,gpos_t y);
+		virtual void moveTo(const Pos &pos);
 		virtual void setRegion();
 
 		/**

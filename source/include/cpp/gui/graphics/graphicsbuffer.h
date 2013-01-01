@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <gui/graphics/size.h>
+#include <gui/graphics/pos.h>
 #include <stdlib.h>
 
 namespace gui {
@@ -38,14 +39,13 @@ namespace gui {
 		/**
 		 * Constructor
 		 *
-		 * @param x the x-coordinate of the window
-		 * @param y the y-coordinate of the window
+		 * @param pos the coordinates of the window
 		 * @param width width of the window
 		 * @param height height of the window
 		 * @param bpp the used color-depth
 		 */
-		GraphicsBuffer(Window *win,gpos_t x,gpos_t y,const Size &size,gcoldepth_t bpp)
-			: _win(win), _x(x), _y(y), _size(size), _bpp(bpp), _pixels(NULL) {
+		GraphicsBuffer(Window *win,const Pos &pos,const Size &size,gcoldepth_t bpp)
+			: _win(win), _pos(pos), _size(size), _bpp(bpp), _pixels(NULL) {
 			allocBuffer();
 		};
 		/**
@@ -56,16 +56,10 @@ namespace gui {
 		};
 
 		/**
-		 * @return the x-position of the buffer (global)
+		 * @return the position of the buffer (global)
 		 */
-		inline gpos_t getX() const {
-			return _x;
-		};
-		/**
-		 * @return the y-position of the buffer (global)
-		 */
-		inline gpos_t getY() const {
-			return _y;
+		inline Pos getPos() const {
+			return _pos;
 		};
 		/**
 		 * @return the size of the buffer
@@ -98,11 +92,11 @@ namespace gui {
 		/**
 		 * Requests an update for the given region
 		 */
-		void requestUpdate(gpos_t x,gpos_t y,const Size &size);
+		void requestUpdate(const Pos &pos,const Size &size);
 		/**
 		 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
 		 */
-		void update(gpos_t x,gpos_t y,const Size &size);
+		void update(const Pos &pos,const Size &size);
 
 	private:
 		// no cloning
@@ -112,7 +106,7 @@ namespace gui {
 		/**
 		 * Sets the coordinates for this buffer
 		 */
-		void moveTo(gpos_t x,gpos_t y);
+		void moveTo(const Pos &pos);
 		/**
 		 * Sets the dimensions for this buffer
 		 */
@@ -124,13 +118,13 @@ namespace gui {
 		/**
 		 * Notifies vesa that the given region has changed
 		 */
-		void notifyVesa(gpos_t x,gpos_t y,const Size &size);
+		void notifyVesa(const Pos &pos,const Size &size);
 
 	private:
 		// the window instance the buffer belongs to
 		Window *_win;
 		// the position of the window on the screen
-		gpos_t _x,_y;
+		Pos _pos;
 		// size of the window
 		Size _size;
 		// used color-depth

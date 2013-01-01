@@ -89,8 +89,8 @@ namespace gui {
 		virtual void rearrange() = 0;
 
 	protected:
-		inline void configureControl(Control *c,gpos_t x,gpos_t y,const Size &size) const {
-			c->moveTo(x,y);
+		inline void configureControl(Control *c,const Pos &pos,const Size &size) const {
+			c->moveTo(pos);
 			c->resizeTo(size);
 		};
 

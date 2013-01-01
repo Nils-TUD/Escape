@@ -23,22 +23,23 @@
 namespace gui {
 	void Graphics24::doSetPixel(gpos_t x,gpos_t y) {
 		uint8_t *col = (uint8_t*)&_col;
-		uint8_t *addr = _buf->getBuffer() + ((_offy + y) * _buf->getSize().width + (_offx + x)) * 3;
+		uint8_t *addr = _buf->getBuffer() + ((_off.y + y) * _buf->getSize().width + (_off.x + x)) * 3;
 		*addr++ = *col++;
 		*addr++ = *col++;
 		*addr = *col;
 	}
 
-	void Graphics24::fillRect(gpos_t x,gpos_t y,const Size &size) {
+	void Graphics24::fillRect(const Pos &pos,const Size &size) {
+		Pos rpos = pos;
 		Size rsize = size;
-		if(!validateParams(x,y,rsize.width,rsize.height))
+		if(!validateParams(rpos,rsize))
 			return;
 
-		gpos_t yend = y + rsize.height;
-		updateMinMax(x,y);
-		updateMinMax(x + rsize.width - 1,yend - 1);
+		gpos_t yend = rpos.y + rsize.height;
+		updateMinMax(rpos);
+		updateMinMax(Pos(rpos.x + rsize.width - 1,yend - 1));
 		gpos_t xcur;
-		gpos_t xend = x + rsize.width;
+		gpos_t xend = rpos.x + rsize.width;
 		gsize_t bwidth = _buf->getSize().width;
 		uint8_t *pixels = _buf->getBuffer();
 		// optimized version for 24bit
@@ -50,10 +51,10 @@ namespace gui {
 		uint8_t *col = (uint8_t*)&_col;
 		gsize_t widthadd = bwidth * 3;
 		uint8_t *addr;
-		uint8_t *orgaddr = pixels + (((_offy + y) * bwidth + (_offx + x)) * 3);
-		for(; y < yend; y++) {
+		uint8_t *orgaddr = pixels + (((_off.y + rpos.y) * bwidth + (_off.x + rpos.x)) * 3);
+		for(; rpos.y < yend; rpos.y++) {
 			addr = orgaddr;
-			for(xcur = x; xcur < xend; xcur++) {
+			for(xcur = rpos.x; xcur < xend; xcur++) {
 				*addr++ = *col;
 				*addr++ = *(col + 1);
 				*addr++ = *(col + 2);

@@ -21,6 +21,8 @@
 #include <gui/checkbox.h>
 #include <gui/control.h>
 
+using namespace std;
+
 namespace gui {
 	const gsize_t Checkbox::CROSS_SIZE = 24;
 
@@ -64,7 +66,7 @@ namespace gui {
 		gsize_t boxSize = getSize().height;
 
 		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
-		g.fillRect(0,0,getSize());
+		g.fillRect(Pos(0,0),getSize());
 
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(1,1,boxSize - 2,boxSize - 2);

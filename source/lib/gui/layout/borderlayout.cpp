@@ -41,10 +41,14 @@ namespace gui {
 			size.height += _ctrls[NORTH]->getPreferredSize().height;
 		if(_ctrls[CENTER]) {
 			if(_ctrls[WEST])
-				size += Size(_gap,_gap);
+				size.width += _gap;
+			if(_ctrls[NORTH])
+				size.height += _gap;
 			size += _ctrls[CENTER]->getPreferredSize();
 			if(_ctrls[EAST])
-				size += Size(_gap,_gap);
+				size.width += _gap;
+			if(_ctrls[SOUTH])
+				size.height += _gap;
 		}
 		if(_ctrls[EAST])
 			size.width += _ctrls[EAST]->getPreferredSize().width;
@@ -74,8 +78,7 @@ namespace gui {
 		gsize_t pad = _p->getTheme().getPadding();
 		Size size = _p->getSize() - Size(pad * 2,pad * 2);
 		Size rsize = size;
-		gpos_t x = pad;
-		gpos_t y = pad;
+		Pos pos(pad,pad);
 
 		Size ns = _ctrls[NORTH] ? _ctrls[NORTH]->getPreferredSize() + Size(_gap,_gap) : Size();
 		Size ss = _ctrls[SOUTH] ? _ctrls[SOUTH]->getPreferredSize() + Size(_gap,_gap) : Size();
@@ -88,26 +91,26 @@ namespace gui {
 		rsize.width = max<gsize_t>(ws.width + es.width + cs.width,rsize.width);
 
 		if((c = _ctrls[NORTH])) {
-			configureControl(c,x,y,Size(size.width,ns.height - _gap));
-			y += ns.height;
+			configureControl(c,pos,Size(size.width,ns.height - _gap));
+			pos.y += ns.height;
 			rsize.height -= ns.height;
 		}
 		if((c = _ctrls[SOUTH])) {
-			configureControl(c,x,pad + size.height - (ss.height - _gap),
+			configureControl(c,Pos(pos.x,pad + size.height - (ss.height - _gap)),
 							 Size(size.width,ss.height - _gap));
 			rsize.height -= ss.height;
 		}
 		if((c = _ctrls[WEST])) {
-			configureControl(c,x,y,Size(ws.width - _gap,rsize.height));
-			x += ws.width;
+			configureControl(c,pos,Size(ws.width - _gap,rsize.height));
+			pos.x += ws.width;
 			rsize.width -= ws.width;
 		}
 		if((c = _ctrls[EAST])) {
-			configureControl(c,pad + size.width - (es.width - _gap),y,
+			configureControl(c,Pos(pad + size.width - (es.width - _gap),pos.y),
 							 Size(es.width - _gap,rsize.height));
 			rsize.width -= es.width;
 		}
 		if((c = _ctrls[CENTER]))
-			configureControl(c,x,y,rsize);
+			configureControl(c,pos,rsize);
 	}
 }

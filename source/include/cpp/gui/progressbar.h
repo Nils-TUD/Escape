@@ -30,8 +30,8 @@ namespace gui {
 		ProgressBar(const std::string &text)
 			: Control(), _position(0), _text(text) {
 		};
-		ProgressBar(const std::string &text,gpos_t x,gpos_t y,const Size &size)
-			: Control(x,y,size), _position(0), _text(text) {
+		ProgressBar(const std::string &text,const Pos &pos,const Size &size)
+			: Control(pos,size), _position(0), _text(text) {
 		};
 
 		inline size_t getPosition() const {

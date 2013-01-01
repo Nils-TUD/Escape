@@ -139,7 +139,7 @@ namespace gui {
 				short movedZ = (short)msg->args.arg5;
 				uchar buttons = (uchar)msg->args.arg6;
 				gwinid_t win = (gwinid_t)msg->args.arg7;
-				passToWindow(win,x,y,movedX,movedY,movedZ,buttons);
+				passToWindow(win,Pos(x,y),movedX,movedY,movedZ,buttons);
 			}
 			break;
 
@@ -176,7 +176,7 @@ namespace gui {
 						size.width = w->getSize().width - x;
 					if(y + size.height > w->getSize().height)
 						size.height = w->getSize().height - y;
-					w->update(x,y,size);
+					w->update(Pos(x,y),size);
 				}
 			}
 			break;
@@ -190,7 +190,7 @@ namespace gui {
 				if(w) {
 					w->updateActive(isActive);
 					if(isActive)
-						closePopups(w->getId(),mouseX,mouseY);
+						closePopups(w->getId(),Pos(mouseX,mouseY));
 				}
 			}
 			break;
@@ -216,7 +216,7 @@ namespace gui {
 		}
 	}
 
-	void Application::passToWindow(gwinid_t win,gpos_t x,gpos_t y,short movedX,short movedY,
+	void Application::passToWindow(gwinid_t win,const Pos &pos,short movedX,short movedY,
 			short movedZ,uchar buttons) {
 		bool moved,released,pressed;
 
@@ -227,53 +227,53 @@ namespace gui {
 
 		Window *w = getWindowById(win);
 		if(w) {
-			gpos_t nx = MAX(0,MIN(_vesaInfo.width - 1,x - w->getX()));
-			gpos_t ny = MAX(0,MIN(_vesaInfo.height - 1,y - w->getY()));
-
+			Pos npos(max<gpos_t>(0,min<gpos_t>(_vesaInfo.width - 1,pos.x - w->getPos().x)),
+			         max<gpos_t>(0,min<gpos_t>(_vesaInfo.height - 1,pos.y - w->getPos().y)));
 			if(released) {
-				MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,movedZ,nx,ny,_mouseBtns);
+				MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,movedZ,npos,_mouseBtns);
 				w->onMouseReleased(event);
 			}
 			else if(pressed) {
-				MouseEvent event(MouseEvent::MOUSE_PRESSED,movedX,movedY,movedZ,nx,ny,_mouseBtns);
+				MouseEvent event(MouseEvent::MOUSE_PRESSED,movedX,movedY,movedZ,npos,_mouseBtns);
 				w->onMousePressed(event);
 			}
 			else if(moved) {
-				MouseEvent event(MouseEvent::MOUSE_MOVED,movedX,movedY,movedZ,nx,ny,_mouseBtns);
+				MouseEvent event(MouseEvent::MOUSE_MOVED,movedX,movedY,movedZ,npos,_mouseBtns);
 				w->onMouseMoved(event);
 			}
 			else if(movedZ) {
-				MouseEvent event(MouseEvent::MOUSE_WHEEL,movedX,movedY,movedZ,nx,ny,_mouseBtns);
+				MouseEvent event(MouseEvent::MOUSE_WHEEL,movedX,movedY,movedZ,npos,_mouseBtns);
 				w->onMouseWheel(event);
 			}
 		}
 	}
 
-	void Application::closePopups(gwinid_t id,gpos_t x,gpos_t y) {
+	void Application::closePopups(gwinid_t id,const Pos &pos) {
 		for(vector<Window*>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
 			Window *pw = *it;
 			if(pw->getId() != id && pw->getStyle() == Window::POPUP) {
-				((PopupWindow*)pw)->close(x,y);
+				((PopupWindow*)pw)->close(pos);
 				break;
 			}
 		}
 	}
 
-	void Application::requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,const Size &size) {
+	void Application::requestWinUpdate(gwinid_t id,const Pos &pos,const Size &size) {
 		Window *w = getWindowById(id);
 		Size wsize = w->getSize();
 		Size rsize = size;
-		if(x < 0)
-			x = 0;
-		if(y < 0)
-			y = 0;
-		if(x + rsize.width > wsize.width)
-			rsize.width = wsize.width - x;
-		if(y + rsize.height > wsize.height)
-			rsize.height = wsize.height - y;
+		Pos rpos = pos;
+		if(rpos.x < 0)
+			rpos.x = 0;
+		if(rpos.y < 0)
+			rpos.y = 0;
+		if(rpos.x + rsize.width > wsize.width)
+			rsize.width = wsize.width - rpos.x;
+		if(rpos.y + rsize.height > wsize.height)
+			rsize.height = wsize.height - rpos.y;
 		_msg.args.arg1 = id;
-		_msg.args.arg2 = x;
-		_msg.args.arg3 = y;
+		_msg.args.arg2 = rpos.x;
+		_msg.args.arg3 = rpos.y;
 		_msg.args.arg4 = rsize.width;
 		_msg.args.arg5 = rsize.height;
 		if(send(_winFd,MSG_WIN_UPDATE,&_msg,sizeof(_msg.args)) < 0)
@@ -289,8 +289,8 @@ namespace gui {
 	void Application::addWindow(Window *win) {
 		_windows.push_back(win);
 
-		_msg.str.arg1 = win->getX();
-		_msg.str.arg2 = win->getY();
+		_msg.str.arg1 = win->getPos().x;
+		_msg.str.arg2 = win->getPos().y;
 		_msg.str.arg3 = win->getSize().width;
 		_msg.str.arg4 = win->getSize().height;
 		_msg.str.arg5 = win->getId();
@@ -317,8 +317,8 @@ namespace gui {
 
 	void Application::moveWindow(Window *win,bool finish) {
 		_msg.args.arg1 = win->getId();
-		_msg.args.arg2 = win->getMoveX();
-		_msg.args.arg3 = win->getMoveY();
+		_msg.args.arg2 = win->getMovePos().x;
+		_msg.args.arg3 = win->getMovePos().y;
 		_msg.args.arg4 = finish;
 		if(send(_winFd,MSG_WIN_MOVE,&_msg,sizeof(_msg.args)) < 0)
 			throw app_error("Unable to move window");
@@ -326,8 +326,8 @@ namespace gui {
 
 	void Application::resizeWindow(Window *win,bool finish) {
 		_msg.args.arg1 = win->getId();
-		_msg.args.arg2 = win->getMoveX();
-		_msg.args.arg3 = win->getMoveY();
+		_msg.args.arg2 = win->getMovePos().x;
+		_msg.args.arg3 = win->getMovePos().y;
 		_msg.args.arg4 = win->getResizeSize().width;
 		_msg.args.arg5 = win->getResizeSize().height;
 		_msg.args.arg6 = finish;

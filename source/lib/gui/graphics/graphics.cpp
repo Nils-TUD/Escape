@@ -28,122 +28,131 @@
 using namespace std;
 
 namespace gui {
-	void Graphics::moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
+	void Graphics::moveRows(const Pos &pos,const Size &size,int up) {
+		Size rsize = size;
+		Pos rpos = pos;
 		Size bsize = _buf->getSize();
 		gsize_t psize = _buf->getColorDepth() / 8;
-		gsize_t wsize = width * psize;
+		// TODO really size.width?
+		gsize_t wsize = size.width * psize;
 		gsize_t bwsize = bsize.width * psize;
 		uint8_t *pixels = _buf->getBuffer();
-		if(!validateParams(x,y,width,height))
+		if(!validateParams(rpos,rsize))
 			return;
 
-		gpos_t startx = _offx + x;
-		gpos_t starty = _offy + y;
+		gpos_t startx = _off.x + rpos.x;
+		gpos_t starty = _off.y + rpos.y;
 		if(up > 0) {
-			if(y < up)
-				up = y;
+			if(rpos.y < up)
+				up = rpos.y;
 		}
 		else {
-			if(starty + height - up > bsize.height)
-				up = -(bsize.height - (height + starty));
+			if(starty + rsize.height - up > bsize.height)
+				up = -(bsize.height - (rsize.height + starty));
 		}
 
 		pixels += startx * psize;
 		if(up > 0) {
-			for(gsize_t i = 0; i < height; i++) {
+			for(gsize_t i = 0; i < rsize.height; i++) {
 				memcpy(pixels + (starty + i - up) * bwsize,
 					pixels + (starty + i) * bwsize,
 					wsize);
 			}
 		}
 		else {
-			for(gsize_t i = 0; i < height; i++) {
-				memcpy(pixels + (starty + height - 1 - i - up) * bwsize,
-					pixels + (starty + height - 1 - i) * bwsize,
+			for(gsize_t i = 0; i < rsize.height; i++) {
+				memcpy(pixels + (starty + rsize.height - 1 - i - up) * bwsize,
+					pixels + (starty + rsize.height - 1 - i) * bwsize,
 					wsize);
 			}
 		}
-		updateMinMax(x,y - up);
-		updateMinMax(width - 1,y + height - up - 1);
+		updateMinMax(Pos(rpos.x,rpos.y - up));
+		updateMinMax(Pos(rsize.width - 1,rpos.y + rsize.height - up - 1));
 	}
 
-	void Graphics::moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left) {
+	void Graphics::moveCols(const Pos &pos,const Size &size,int left) {
+		Size rsize = size;
+		Pos rpos = pos;
 		Size bsize = _buf->getSize();
 		gsize_t psize = _buf->getColorDepth() / 8;
-		gsize_t wsize = width * psize;
+		gsize_t wsize = size.width * psize;
 		gsize_t bwsize = bsize.width * psize;
 		uint8_t *pixels = _buf->getBuffer();
-		if(!validateParams(x,y,width,height))
+		if(!validateParams(rpos,rsize))
 			return;
 
-		gpos_t startx = _offx + x;
-		gpos_t starty = _offy + y;
+		gpos_t startx = _off.x + rpos.x;
+		gpos_t starty = _off.y + rpos.y;
 		if(left > 0) {
-			if(x < left)
-				left = x;
+			if(rpos.x < left)
+				left = rpos.x;
 		}
 		else {
-			if(startx + width - left > bsize.width)
-				left = -(bsize.width - (width + startx));
+			if(startx + rsize.width - left > bsize.width)
+				left = -(bsize.width - (rsize.width + startx));
 		}
 
 		pixels += startx * psize;
-		for(gsize_t i = 0; i < height; i++) {
+		for(gsize_t i = 0; i < rsize.height; i++) {
 			memmove(pixels + (starty + i) * bwsize - left * psize,
 				pixels + (starty + i) * bwsize,
 				wsize);
 		}
-		updateMinMax(x - left,y);
-		updateMinMax(x + width - left - 1,height - 1);
+		updateMinMax(Pos(rpos.x - left,rpos.y));
+		updateMinMax(Pos(rpos.x + rsize.width - left - 1,rsize.height - 1));
 	}
 
-	void Graphics::drawChar(gpos_t x,gpos_t y,char c) {
-		gpos_t orgx = x;
-		gpos_t orgy = y;
+	void Graphics::drawChar(const Pos &pos,char c) {
+		Pos rpos = pos;
 		Size fsize = _font.getSize();
-		if(!validateParams(x,y,fsize.width,fsize.height))
+		if(!validateParams(rpos,fsize))
 			return;
 
-		updateMinMax(x,y);
-		updateMinMax(x + fsize.width - 1,y + fsize.height - 1);
+		updateMinMax(rpos);
+		updateMinMax(Pos(rpos.x + fsize.width - 1,rpos.y + fsize.height - 1));
 		gpos_t cx,cy;
-		gpos_t xoff = x - orgx,yoff = y - orgy;
+		gpos_t xoff = rpos.x - pos.x,yoff = rpos.y - pos.y;
 		gsize_t xend = xoff + fsize.width;
 		gsize_t yend = yoff + fsize.height;
 		for(cy = yoff; cy < yend; cy++) {
 			for(cx = xoff; cx < xend; cx++) {
 				if(_font.isPixelSet(c,cx,cy))
-					doSetPixel(orgx + cx,orgy + cy);
+					doSetPixel(pos.x + cx,pos.y + cy);
 			}
 		}
 	}
 
-	void Graphics::drawString(gpos_t x,gpos_t y,const string &str) {
-		drawString(x,y,str,0,str.length());
+	void Graphics::drawString(const Pos &pos,const string &str) {
+		drawString(pos,str,0,str.length());
 	}
 
-	void Graphics::drawString(gpos_t x,gpos_t y,const string &str,size_t start,size_t count) {
+	void Graphics::drawString(const Pos &pos,const string &str,size_t start,size_t count) {
+		Pos rpos = pos;
 		size_t charWidth = _font.getSize().width;
-		size_t end = start + MIN(str.length(),count);
+		size_t end = start + min(str.length(),count);
 		for(size_t i = start; i < end; i++) {
-			drawChar(x,y,str[i]);
-			x += charWidth;
+			drawChar(rpos,str[i]);
+			rpos.x += charWidth;
 		}
 	}
 
-	void Graphics::drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn) {
+	void Graphics::drawLine(const Pos &p0,const Pos &pn) {
 		if(_size.empty())
 			return;
-		if(x0 == xn) {
-			drawVertLine(x0,y0,yn);
+		if(p0.x == pn.x) {
+			drawVertLine(p0.x,p0.y,pn.y);
 			return;
 		}
-		if(y0 == yn) {
-			drawHorLine(y0,x0,xn);
+		if(p0.y == pn.y) {
+			drawHorLine(p0.y,p0.x,pn.x);
 			return;
 		}
 
 		// default settings
+		gpos_t x0 = p0.x;
+		gpos_t y0 = p0.y;
+		gpos_t xn = pn.x;
+		gpos_t yn = pn.y;
 		gpos_t x = x0;
 		gpos_t y = y0;
 		gpos_t *px = &x;
@@ -177,12 +186,12 @@ namespace gui {
 		int incrE = 2 * dy;
 		int incrNE = 2 * (dy - dx);
 
-		gpos_t minx = _minoffx - _offx;
-		gpos_t miny = _minoffy - _offy;
+		gpos_t minx = _minoff.x - _off.x;
+		gpos_t miny = _minoff.y - _off.y;
 		gpos_t maxx = _size.width - 1;
 		gpos_t maxy = _size.height - 1;
 		for(x = x0; x != xn; x += incx) {
-			setLinePixel(minx,miny,maxx,maxy,*px,*py);
+			setLinePixel(minx,miny,maxx,maxy,Pos(*px,*py));
 			if(d < 0)
 				d += incrE;
 			else {
@@ -190,16 +199,16 @@ namespace gui {
 				y += incy;
 			}
 		}
-		setLinePixel(minx,miny,maxx,maxy,*px,*py);
-		updateMinMax(max(minx,min(maxx,x0)),max(miny,min(maxy,y0)));
-		updateMinMax(max(minx,min(maxx,xn)),max(miny,min(maxy,yn)));
+		setLinePixel(minx,miny,maxx,maxy,Pos(*px,*py));
+		updateMinMax(Pos(max(minx,min(maxx,x0)),max(miny,min(maxy,y0))));
+		updateMinMax(Pos(max(minx,min(maxx,xn)),max(miny,min(maxy,yn))));
 	}
 
 	void Graphics::drawVertLine(gpos_t x,gpos_t y1,gpos_t y2) {
 		if(!validateLine(x,y1,x,y2))
 			return;
-		updateMinMax(x,y1);
-		updateMinMax(x,y2);
+		updateMinMax(Pos(x,y1));
+		updateMinMax(Pos(x,y2));
 		if(y1 > y2)
 			swap(y1,y2);
 		for(; y1 <= y2; y1++)
@@ -209,41 +218,42 @@ namespace gui {
 	void Graphics::drawHorLine(gpos_t y,gpos_t x1,gpos_t x2) {
 		if(!validateLine(x1,y,x2,y))
 			return;
-		updateMinMax(x1,y);
-		updateMinMax(x2,y);
+		updateMinMax(Pos(x1,y));
+		updateMinMax(Pos(x2,y));
 		if(x1 > x2)
 			swap(x1,x2);
 		for(; x1 <= x2; x1++)
 			doSetPixel(x1,y);
 	}
 
-	void Graphics::drawRect(gpos_t x,gpos_t y,const Size &size) {
+	void Graphics::drawRect(const Pos &pos,const Size &size) {
 		if(size.empty())
 			return;
 
 		// top
-		drawHorLine(y,x,x + size.width - 1);
+		drawHorLine(pos.y,pos.x,pos.x + size.width - 1);
 		// right
-		drawVertLine(x + size.width - 1,y,y + size.height - 1);
+		drawVertLine(pos.x + size.width - 1,pos.y,pos.y + size.height - 1);
 		// bottom
-		drawHorLine(y + size.height - 1,x,x + size.width - 1);
+		drawHorLine(pos.y + size.height - 1,pos.x,pos.x + size.width - 1);
 		// left
-		drawVertLine(x,y,y + size.height - 1);
+		drawVertLine(pos.x,pos.y,pos.y + size.height - 1);
 	}
 
-	void Graphics::fillRect(gpos_t x,gpos_t y,const Size &size) {
+	void Graphics::fillRect(const Pos &pos,const Size &size) {
+		Pos rpos = pos;
 		Size rsize = size;
-		if(!validateParams(x,y,rsize.width,rsize.height))
+		if(!validateParams(rpos,rsize))
 			return;
 
-		gpos_t yend = y + rsize.height;
-		updateMinMax(x,y);
-		updateMinMax(x + rsize.width - 1,yend - 1);
+		gpos_t yend = rpos.y + rsize.height;
+		updateMinMax(rpos);
+		updateMinMax(Pos(rpos.x + rsize.width - 1,yend - 1));
 		gpos_t xcur;
-		gpos_t xend = x + rsize.width;
-		for(; y < yend; y++) {
-			for(xcur = x; xcur < xend; xcur++)
-				doSetPixel(xcur,y);
+		gpos_t xend = rpos.x + rsize.width;
+		for(; rpos.y < yend; rpos.y++) {
+			for(xcur = rpos.x; xcur < xend; xcur++)
+				doSetPixel(xcur,rpos.y);
 		}
 	}
 
@@ -255,7 +265,7 @@ namespace gui {
 		if(!validateParams(x,y,width,height))
 			return;
 
-		_buf->requestUpdate(_offx + x,_offy + y,Size(width,height));
+		_buf->requestUpdate(Pos(_off.x + x,_off.y + y),Size(width,height));
 		// reset region
 		_minx = _size.width - 1;
 		_maxx = 0;
@@ -263,19 +273,20 @@ namespace gui {
 		_maxy = 0;
 	}
 
-	void Graphics::update(gpos_t x,gpos_t y,const Size &size) {
+	void Graphics::update(const Pos &pos,const Size &size) {
+		Pos rpos = pos;
 		Size rsize = size;
-		if(!validateParams(x,y,rsize.width,rsize.height))
+		if(!validateParams(rpos,rsize))
 			return;
 
-		_buf->update(x,y,rsize);
+		_buf->update(rpos,rsize);
 	}
 
-	void Graphics::setSize(gpos_t x,gpos_t y,const Size &size,const Size &psize) {
-		_size.width = getDim(x,size.width,psize.width);
-		_size.width = getDim(_offx,_size.width,_buf->getSize().width);
-		_size.height = getDim(y,size.height,psize.height);
-		_size.height = getDim(_offy,_size.height,_buf->getSize().height);
+	void Graphics::setSize(const Pos &pos,const Size &size,const Size &psize) {
+		_size.width = getDim(pos.x,size.width,psize.width);
+		_size.width = getDim(_off.x,_size.width,_buf->getSize().width);
+		_size.height = getDim(pos.y,size.height,psize.height);
+		_size.height = getDim(_off.y,_size.height,_buf->getSize().height);
 	}
 
 	gsize_t Graphics::getDim(gpos_t off,gsize_t size,gsize_t max) {
@@ -317,8 +328,8 @@ namespace gui {
 
 	int Graphics::validatePoint(gpos_t &x,gpos_t &y) {
 		int res = 0;
-		gpos_t minx = _minoffx - _offx;
-		gpos_t miny = _minoffy - _offy;
+		gpos_t minx = _minoff.x - _off.x;
+		gpos_t miny = _minoff.y - _off.y;
 		if(x < minx) {
 			x = minx;
 			res |= OUT_LEFT;
@@ -327,12 +338,12 @@ namespace gui {
 			y = miny;
 			res |= OUT_TOP;
 		}
-		if(_offx + x < 0) {
-			x = -_offx;
+		if(_off.x + x < 0) {
+			x = -_off.x;
 			res |= OUT_LEFT;
 		}
-		if(_offy + y < 0) {
-			y = -_offy;
+		if(_off.y + y < 0) {
+			y = -_off.y;
 			res |= OUT_TOP;
 		}
 		if(x >= _size.width) {
@@ -350,8 +361,8 @@ namespace gui {
 		if(_size.empty())
 			return false;
 
-		gpos_t minx = _minoffx - _offx;
-		gpos_t miny = _minoffy - _offy;
+		gpos_t minx = _minoff.x - _off.x;
+		gpos_t miny = _minoff.y - _off.y;
 		if(x < minx) {
 			if(width < minx - x)
 				return false;
@@ -364,17 +375,17 @@ namespace gui {
 			height -= miny - y;
 			y = miny;
 		}
-		if(_offy + y < 0) {
-			if(height < -(_offy + y))
+		if(_off.y + y < 0) {
+			if(height < -(_off.y + y))
 				return false;
-			height += _offy + y;
-			y = -_offy;
+			height += _off.y + y;
+			y = -_off.y;
 		}
-		if(_offx + x < 0) {
-			if(width < -(_offx + x))
+		if(_off.x + x < 0) {
+			if(width < -(_off.x + x))
 				return false;
-			width += _offx + x;
-			x = -_offx;
+			width += _off.x + x;
+			x = -_off.x;
 		}
 		if(x + width > _size.width)
 			width = max(0,(gpos_t)_size.width - x);

@@ -44,7 +44,7 @@ namespace gui {
 		static const char *CLOSE_IMG;
 
 	public:
-		WindowTitleBar(const std::string& title,gpos_t x,gpos_t y,const Size &size);
+		WindowTitleBar(const std::string& title,const Pos &pos,const Size &size);
 
 		/**
 		 * @return the title (a copy)
@@ -106,23 +106,20 @@ namespace gui {
 		 * Creates a new window without titlebar
 		 *
 		 * @param title the window-title
-		 * @param x the x-position
-		 * @param y the y-position
+		 * @param pos the position
 		 * @param size the size
 		 * @param style the window-style (STYLE_*)
 		 */
-		Window(gpos_t x,gpos_t y,
-		       const Size &size = Size(MIN_WIDTH,MIN_HEIGHT),Style style = DEFAULT);
+		Window(const Pos &pos,const Size &size = Size(MIN_WIDTH,MIN_HEIGHT),Style style = DEFAULT);
 		/**
 		 * Creates a new window with titlebar, that displays <title>
 		 *
 		 * @param title the window-title
-		 * @param x the x-position
-		 * @param y the y-position
+		 * @param pos the position
 		 * @param size the size
 		 * @param style the window-style (STYLE_*)
 		 */
-		Window(const std::string &title,gpos_t x,gpos_t y,
+		Window(const std::string &title,const Pos &pos,
 		       const Size &size = Size(MIN_WIDTH,MIN_HEIGHT),Style style = DEFAULT);
 		/**
 		 * Destructor
@@ -230,7 +227,7 @@ namespace gui {
 				_body._prefSize = Size();
 				if(_header)
 					_header->_prefSize = Size();
-				prepareResize(getX(),getY(),getPrefSize());
+				prepareResize(getPos(),getPrefSize());
 			}
 			layout();
 			// add us to app; we'll receive a "created"-event as soon as the window
@@ -288,16 +285,10 @@ namespace gui {
 
 	private:
 		/**
-		 * @return the current x-position to move to
+		 * @return the current position to move to
 		 */
-		inline gpos_t getMoveX() const {
-			return _moveX;
-		};
-		/**
-		 * @return the current y-position to move to
-		 */
-		inline gpos_t getMoveY() const {
-			return _moveY;
+		inline Pos getMovePos() const {
+			return _movePos;
 		};
 		/**
 		 * @return the current size to resize to
@@ -320,11 +311,10 @@ namespace gui {
 		/**
 		 * Updates the given rectangle (copies from buffer to shared-mem and notifies vesa)
 		 *
-		 * @param x the x-position
-		 * @param y the y-position
+		 * @param pos the position
 		 * @param size the size
 		 */
-		void update(gpos_t x,gpos_t y,const Size &size);
+		void update(const Pos &pos,const Size &size);
 
 		// only used by Window itself
 		void init();
@@ -334,10 +324,10 @@ namespace gui {
 		void resize(short width,short height);
 		void resizeTo(const Size &size);
 		void move(short x,short y);
-		void moveTo(gpos_t x,gpos_t y);
+		void moveTo(const Pos &pos);
 		void resizeMove(short x,short width,short height);
 		void resizeMoveTo(gpos_t x,const Size &size);
-		void prepareResize(gpos_t x,gpos_t y,const Size &size);
+		void prepareResize(const Pos &pos,const Size &size);
 
 	private:
 		gwinid_t _id;
@@ -348,8 +338,7 @@ namespace gui {
 		bool _inResizeRight;
 		bool _inResizeBottom;
 		bool _isActive;
-		gpos_t _moveX;
-		gpos_t _moveY;
+		Pos _movePos;
 		Size _resizeSize;
 		GraphicsBuffer *_gbuf;
 	protected:

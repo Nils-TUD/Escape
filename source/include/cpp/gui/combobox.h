@@ -41,20 +41,20 @@ namespace gui {
 			static const gsize_t SELPAD		= 2;
 
 		public:
-			ItemWindow(ComboBox *cb,gpos_t x,gpos_t y,const Size &size)
-				: PopupWindow(x,y,size), _cb(cb), _highlighted(cb->_selected) {
+			ItemWindow(ComboBox *cb,const Pos &pos,const Size &size)
+				: PopupWindow(pos,size), _cb(cb), _highlighted(cb->_selected) {
 			};
 
 			void onMouseMoved(const MouseEvent &e);
 			void onMouseReleased(const MouseEvent &e);
-			void close(gpos_t x,gpos_t y);
+			void close(const Pos &pos);
 
 		protected:
 			virtual void paint(Graphics &g);
 
 		private:
 			void closeImpl();
-			int getItemAt(gpos_t x,gpos_t y);
+			int getItemAt(const Pos &pos);
 
 		private:
 			ComboBox *_cb;
@@ -65,8 +65,8 @@ namespace gui {
 		ComboBox()
 			: Control(), _items(), _selected(-1), _pressed(false), _win(NULL) {
 		};
-		ComboBox(gpos_t x,gpos_t y,const Size &size)
-			: Control(x,y,size), _items(), _selected(-1), _pressed(false), _win(NULL) {
+		ComboBox(const Pos &pos,const Size &size)
+			: Control(pos,size), _items(), _selected(-1), _pressed(false), _win(NULL) {
 		};
 		virtual ~ComboBox() {
 			delete _win;

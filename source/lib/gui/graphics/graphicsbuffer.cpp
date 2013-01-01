@@ -36,10 +36,10 @@ namespace gui {
 		}
 	}
 
-	void GraphicsBuffer::moveTo(gpos_t x,gpos_t y) {
+	void GraphicsBuffer::moveTo(const Pos &pos) {
 		Size screenSize = Application::getInstance()->getScreenSize();
-		_x = min<gpos_t>(screenSize.width - 1,x);
-		_y = min<gpos_t>(screenSize.height - 1,y);
+		_pos.x = min<gpos_t>(screenSize.width - 1,pos.x);
+		_pos.y = min<gpos_t>(screenSize.height - 1,pos.y);
 	}
 
 	void GraphicsBuffer::resizeTo(const Size &size) {
@@ -50,64 +50,68 @@ namespace gui {
 		}
 	}
 
-	void GraphicsBuffer::requestUpdate(gpos_t x,gpos_t y,const Size &size) {
+	void GraphicsBuffer::requestUpdate(const Pos &pos,const Size &size) {
 		if(_win->isCreated()) {
 			// if we are the active (=top) window, we can update directly
 			if(_win->isActive())
-				update(x,y,size);
+				update(pos,size);
 			else {
 				// notify winmanager that we want to repaint this area; after a while we'll get multiple
 				// (ok, maybe just one) update-events with specific areas to update
-				Application::getInstance()->requestWinUpdate(_win->getId(),x,y,size);
+				Application::getInstance()->requestWinUpdate(_win->getId(),pos,size);
 			}
 		}
 	}
 
-	void GraphicsBuffer::update(gpos_t x,gpos_t y,const Size &size) {
+	void GraphicsBuffer::update(const Pos &pos,const Size &size) {
 		// is there anything to update?
 		if(!size.empty()) {
 			Size rsize = size;
+			Pos rpos = pos;
 			// validate params
 			Size screenSize = Application::getInstance()->getScreenSize();
-			if(_x + x >= screenSize.width || _y + y >= screenSize.height)
+			if(_pos.x + rpos.x >= screenSize.width || _pos.y + rpos.y >= screenSize.height)
 				return;
-			if(_x < 0 && _x + x < 0) {
-				rsize.width += _x + x;
-				x = -_x;
+			if(_pos.x < 0 && _pos.x + rpos.x < 0) {
+				rsize.width += _pos.x + rpos.x;
+				rpos.x = -_pos.x;
 			}
-			rsize.width = MIN(screenSize.width - (x + _x),MIN(_size.width - x,rsize.width));
-			rsize.height = MIN(screenSize.height - (y + _y),MIN(_size.height - y,rsize.height));
+			rsize.width = min<gsize_t>(screenSize.width - (rpos.x + _pos.x),
+					min<gsize_t>(_size.width - rpos.x,rsize.width));
+			rsize.height = min<gsize_t>(screenSize.height - (rpos.y + _pos.y),
+					min<gsize_t>(_size.height - rpos.y,rsize.height));
 
 			void *vesaMem = Application::getInstance()->getScreenMem();
 			uint8_t *src,*dst;
-			gpos_t endy = y + rsize.height;
+			gpos_t endy = rpos.y + rsize.height;
 			size_t psize = _bpp / 8;
 			size_t count = rsize.width * psize;
 			size_t srcAdd = _size.width * psize;
 			size_t dstAdd = screenSize.width * psize;
-			src = _pixels + (y * _size.width + x) * psize;
-			dst = (uint8_t*)vesaMem + ((_y + y) * screenSize.width + (_x + x)) * psize;
-			while(y < endy) {
+			src = _pixels + (rpos.y * _size.width + rpos.x) * psize;
+			dst = (uint8_t*)vesaMem + ((_pos.y + rpos.y) * screenSize.width + (_pos.x + rpos.x)) * psize;
+			while(rpos.y < endy) {
 				memcpy(dst,src,count);
 				src += srcAdd;
 				dst += dstAdd;
-				y++;
+				rpos.y++;
 			}
 
-			notifyVesa(_x + x,_y + endy - rsize.height,rsize);
+			notifyVesa(Pos(_pos.x + rpos.x,_pos.y + endy - rsize.height),rsize);
 		}
 	}
 
-	void GraphicsBuffer::notifyVesa(gpos_t x,gpos_t y,const Size &size) {
+	void GraphicsBuffer::notifyVesa(const Pos &pos,const Size &size) {
+		Pos rpos = pos;
 		Size rsize = size;
 		int vesaFd = Application::getInstance()->getVesaFd();
 		sMsg msg;
-		if(x < 0) {
-			rsize.width += x;
-			x = 0;
+		if(rpos.x < 0) {
+			rsize.width += rpos.x;
+			rpos.x = 0;
 		}
-		msg.args.arg1 = x;
-		msg.args.arg2 = y;
+		msg.args.arg1 = rpos.x;
+		msg.args.arg2 = rpos.y;
 		msg.args.arg3 = rsize.width;
 		msg.args.arg4 = rsize.height;
 		if(send(vesaFd,MSG_VESA_UPDATE,&msg,sizeof(msg.args)) < 0)

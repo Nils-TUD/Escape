@@ -23,20 +23,21 @@
 namespace gui {
 	void Graphics32::doSetPixel(gpos_t x,gpos_t y) {
 		gsize_t bwidth = _buf->getSize().width;
-		uint32_t *addr = (uint32_t*)(_buf->getBuffer() + ((_offy + y) * bwidth + (_offx + x)) * 4);
+		uint32_t *addr = (uint32_t*)(_buf->getBuffer() + ((_off.y + y) * bwidth + (_off.x + x)) * 4);
 		*addr = _col;
 	}
 
-	void Graphics32::fillRect(gpos_t x,gpos_t y,const Size &size) {
+	void Graphics32::fillRect(const Pos &pos,const Size &size) {
+		Pos rpos = pos;
 		Size rsize = size;
-		if(!validateParams(x,y,rsize.width,rsize.height))
+		if(!validateParams(rpos,rsize))
 			return;
 
-		gpos_t yend = y + rsize.height;
-		updateMinMax(x,y);
-		updateMinMax(x + rsize.width - 1,yend - 1);
+		gpos_t yend = rpos.y + rsize.height;
+		updateMinMax(rpos);
+		updateMinMax(Pos(rpos.x + rsize.width - 1,yend - 1));
 		gpos_t xcur;
-		gpos_t xend = x + rsize.width;
+		gpos_t xend = rpos.x + rsize.width;
 		gsize_t bwidth = _buf->getSize().width;
 		uint8_t *pixels = _buf->getBuffer();
 		// optimized version for 16bit
@@ -47,10 +48,10 @@ namespace gui {
 		// This version is much quicker :)
 		gsize_t widthadd = bwidth;
 		uint32_t *addr;
-		uint32_t *orgaddr = (uint32_t*)(pixels + (((_offy + y) * bwidth + (_offx + x)) * 4));
-		for(; y < yend; y++) {
+		uint32_t *orgaddr = (uint32_t*)(pixels + (((_off.y + rpos.y) * bwidth + (_off.x + rpos.x)) * 4));
+		for(; rpos.y < yend; rpos.y++) {
 			addr = orgaddr;
-			for(xcur = x; xcur < xend; xcur++)
+			for(xcur = rpos.x; xcur < xend; xcur++)
 				*addr++ = _col;
 			orgaddr += widthadd;
 		}

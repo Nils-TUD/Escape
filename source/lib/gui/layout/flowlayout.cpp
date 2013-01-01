@@ -46,26 +46,25 @@ namespace gui {
 		gsize_t pad = _p->getTheme().getPadding();
 		Size size = _p->getSize() - Size(pad * 2,pad * 2);
 		Size max = getMaxSize();
-		gpos_t x = pad;
-		gpos_t y = pad;
+		Pos pos(pad,pad);
 		gsize_t totalWidth = max.width * _ctrls.size() + _gap * (_ctrls.size() - 1);
 
-		y = size.height / 2 - max.height / 2;
+		pos.y = size.height / 2 - max.height / 2;
 		switch(_pos) {
 			case LEFT:
-				x = pad;
+				pos.x = pad;
 				break;
 			case CENTER:
-				x = (size.width / 2) - (totalWidth / 2);
+				pos.x = (size.width / 2) - (totalWidth / 2);
 				break;
 			case RIGHT:
-				x = pad + size.width - totalWidth;
+				pos.x = pad + size.width - totalWidth;
 				break;
 		}
 
 		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			configureControl(*it,x,y,max);
-			x += max.width + _gap;
+			configureControl(*it,pos,max);
+			pos.x += max.width + _gap;
 		}
 	}
 

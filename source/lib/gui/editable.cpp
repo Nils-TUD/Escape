@@ -52,7 +52,7 @@ namespace gui {
 		UIElement::onMouseMoved(e);
 		if(_selecting) {
 			bool changed = false;
-			int pos = getPosAt(e.getX());
+			int pos = getPosAt(e.getPos().x);
 			uchar dir = pos > (int)_cursor ? DIR_RIGHT : DIR_LEFT;
 			changed |= changeSelection(pos,pos,dir);
 			changed |= moveCursorTo(pos);
@@ -63,7 +63,7 @@ namespace gui {
 	void Editable::onMouseReleased(const MouseEvent &e) {
 		UIElement::onMouseReleased(e);
 		if(_startSel) {
-			moveCursorTo(getPosAt(e.getX()));
+			moveCursorTo(getPosAt(e.getPos().x));
 			clearSelection();
 			repaint();
 		}
@@ -259,7 +259,7 @@ namespace gui {
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(1,1,size.width - 2,size.height - 2);
 		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
-		g.drawRect(0,0,size);
+		g.drawRect(Pos(0,0),size);
 
 		gsize_t pad = getTheme().getTextPadding();
 		if(_selStart != -1) {

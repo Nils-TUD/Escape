@@ -108,7 +108,7 @@ namespace gui {
 		virtual Size getSize() const {
 			return Size(_infoHeader->width,_infoHeader->height);
 		};
-		void paint(Graphics &g,gpos_t x,gpos_t y);
+		void paint(Graphics &g,const Pos &pos);
 
 	private:
 		void clone(const BitmapImage &img);

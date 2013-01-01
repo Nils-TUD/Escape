@@ -20,6 +20,8 @@
 #include <iostream>
 
 namespace gui {
+	struct Pos;
+
 	/**
 	 * Holds the width and height of an object
 	 */
@@ -28,6 +30,7 @@ namespace gui {
 		}
 		explicit Size(gsize_t _width,gsize_t _height) : width(_width), height(_height) {
 		}
+		explicit Size(const Pos &pos);
 
 		inline bool empty() const {
 			return width == 0 || height == 0;

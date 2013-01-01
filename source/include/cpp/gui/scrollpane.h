@@ -36,8 +36,8 @@ namespace gui {
 		ScrollPane(Control *ctrl)
 			: Control(), _ctrl(ctrl), _focus(0) {
 		};
-		ScrollPane(Control *ctrl,gpos_t x,gpos_t y,const Size &size)
-			: Control(x,y,size), _ctrl(ctrl), _focus(0) {
+		ScrollPane(Control *ctrl,const Pos &pos,const Size &size)
+			: Control(pos,size), _ctrl(ctrl), _focus(0) {
 		};
 		virtual ~ScrollPane() {
 			delete _ctrl;
@@ -53,14 +53,14 @@ namespace gui {
 
 		virtual Size getContentSize() const {
 			Size size = getParent()->getContentSize();
-			if(size.width - _ctrl->getX() < BAR_SIZE)
+			if(size.width - _ctrl->getPos().x < BAR_SIZE)
 				size.width = 0;
 			else
-				size.width -= _ctrl->getX() + BAR_SIZE;
-			if(size.height - _ctrl->getY() < BAR_SIZE)
+				size.width -= _ctrl->getPos().x + BAR_SIZE;
+			if(size.height - _ctrl->getPos().y < BAR_SIZE)
 				size.height = 0;
 			else
-				size.height -= _ctrl->getY() + BAR_SIZE;
+				size.height -= _ctrl->getPos().y + BAR_SIZE;
 			return size;
 		};
 
@@ -75,11 +75,11 @@ namespace gui {
 
 	protected:
 		virtual void paint(Graphics &g);
-		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size);
+		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
 
 		virtual void resizeTo(const Size &size);
-		virtual void moveTo(gpos_t x,gpos_t y) {
-			Control::moveTo(x,y);
+		virtual void moveTo(const Pos &pos) {
+			Control::moveTo(pos);
 			// don't move the control, its position is relative to us. just refresh the paint-region
 			_ctrl->setRegion();
 		};

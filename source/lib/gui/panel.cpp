@@ -33,14 +33,14 @@ namespace gui {
 	}
 
 	void Panel::passToCtrl(const MouseEvent &e,bool focus) {
-		gpos_t x = e.getX();
-		gpos_t y = e.getY();
+		Pos pos = e.getPos();
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 			Control *c = *it;
-			if(x >= c->getX() && x < c->getX() + c->getSize().width &&
-				y >= c->getY() && y < c->getY() + c->getSize().height) {
+			Pos cpos = c->getPos();
+			if(pos.x >= cpos.x && pos.x < cpos.x + c->getSize().width &&
+				pos.y >= cpos.y && pos.y < cpos.y + c->getSize().height) {
 				MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
-						x - c->getX(),y - c->getY(),e.getButtonMask());
+					  pos - cpos,e.getButtonMask());
 				if(focus)
 					_focus = c;
 				if(e.getType() == MouseEvent::MOUSE_PRESSED)
@@ -74,13 +74,12 @@ namespace gui {
 		}
 	}
 
-	void Panel::moveTo(gpos_t x,gpos_t y) {
-		gpos_t diffx = getX() - x;
-		gpos_t diffy = getY() - y;
-		Control::moveTo(x,y);
+	void Panel::moveTo(const Pos &pos) {
+		Pos cur = getPos();
+		Control::moveTo(pos);
 
 		// don't move the controls, their position is relative to us. just refresh the paint-region
-		if(diffx || diffy) {
+		if(cur != pos) {
 			for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 				Control *c = *it;
 				c->setRegion();
@@ -99,20 +98,21 @@ namespace gui {
 	void Panel::paint(Graphics &g) {
 		// fill bg
 		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
-		g.fillRect(0,0,getSize());
+		g.fillRect(Pos(0,0),getSize());
 
 		// now paint controls
 		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
 			Control *c = *it;
 			if(_updateRect.width) {
 				sRectangle ctrlRect,inter;
-				ctrlRect.x = c->getX();
-				ctrlRect.y = c->getY();
+				ctrlRect.x = c->getPos().x;
+				ctrlRect.y = c->getPos().y;
 				ctrlRect.width = c->getSize().width;
 				ctrlRect.height = c->getSize().height;
 				if(rectIntersect(&_updateRect,&ctrlRect,&inter)) {
 					c->paintRect(*c->getGraphics(),
-							inter.x - c->getX(),inter.y - c->getY(),Size(inter.width,inter.height));
+							Pos(inter.x - c->getPos().x,inter.y - c->getPos().y),
+							Size(inter.width,inter.height));
 				}
 			}
 			else
@@ -120,12 +120,12 @@ namespace gui {
 		}
 	}
 
-	void Panel::paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size) {
-		_updateRect.x = x;
-		_updateRect.y = y;
+	void Panel::paintRect(Graphics &g,const Pos &pos,const Size &size) {
+		_updateRect.x = pos.x;
+		_updateRect.y = pos.y;
 		_updateRect.width = size.width;
 		_updateRect.height = size.height;
-		UIElement::paintRect(g,x,y,size);
+		UIElement::paintRect(g,pos,size);
 		_updateRect.width = 0;
 	}
 
@@ -146,7 +146,7 @@ namespace gui {
 	}
 
 	ostream &operator<<(ostream &s,const Panel &p) {
-		s << "Panel[@" << p.getX() << "," << p.getY() << " size=" << p.getSize() << "]";
+		s << "Panel[@" << p.getPos() << " size=" << p.getSize() << "]";
 		return s;
 	}
 }

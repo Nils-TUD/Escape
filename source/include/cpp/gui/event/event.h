@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/keycodes.h>
+#include <gui/graphics/pos.h>
 #include <ctype.h>
 #include <ostream>
 
@@ -59,8 +60,8 @@ namespace gui {
 		 * @param buttons the button-state (BUTTON*)
 		 */
 		MouseEvent(event_type type,short movedx,short movedy,short movedz,
-				gpos_t x,gpos_t y,button_type buttons)
-			: _type(type), _movedx(movedx), _movedy(movedy), _movedz(movedz), _x(x), _y(y),
+		           const Pos &pos,button_type buttons)
+			: _type(type), _movedx(movedx), _movedy(movedy), _movedz(movedz), _pos(pos),
 			  _buttons(buttons) {
 		};
 
@@ -71,16 +72,10 @@ namespace gui {
 			return _type;
 		};
 		/**
-		 * @return the mouse-x-position
+		 * @return the mouse-position
 		 */
-		inline gpos_t getX() const {
-			return _x;
-		};
-		/**
-		 * @return the mouse-y-position
-		 */
-		inline gpos_t getY() const {
-			return _y;
+		inline Pos getPos() const {
+			return _pos;
 		};
 		/**
 		 * @return the mouse-x-movement
@@ -130,8 +125,7 @@ namespace gui {
 		short _movedx;
 		short _movedy;
 		short _movedz;
-		gpos_t _x;
-		gpos_t _y;
+		Pos _pos;
 		button_type _buttons;
 	};
 

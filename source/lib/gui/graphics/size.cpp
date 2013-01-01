@@ -17,24 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
-#include <esc/common.h>
-#include <gui/graphics/graphics.h>
-#include <gui/graphics/graphicsbuffer.h>
+#include <gui/graphics/size.h>
+#include <gui/graphics/pos.h>
 
 namespace gui {
-	/**
-	 * The implementation of graphics for 16bit
-	 */
-	class Graphics16 : public Graphics {
-	public:
-		Graphics16(GraphicsBuffer *buf,const Size &size) : Graphics(buf,size) {
-		};
-
-		void fillRect(const Pos &pos,const Size &size);
-
-	protected:
-		void doSetPixel(gpos_t x,gpos_t y);
-	};
+	Size::Size(const Pos &pos) : width(pos.x), height(pos.y) {
+	}
 }

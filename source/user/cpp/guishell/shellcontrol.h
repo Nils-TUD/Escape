@@ -46,8 +46,8 @@ private:
 	static const gui::Color CURSOR_COLOR;
 
 public:
-	ShellControl(gpos_t x,gpos_t y,const gui::Size &size) :
-		Control(x,y,size), _lastCol(0), _lastRow(0), _vt(NULL) {
+	ShellControl(const gui::Pos &pos,const gui::Size &size) :
+		Control(pos,size), _lastCol(0), _lastRow(0), _vt(NULL) {
 	};
 	virtual ~ShellControl() {
 	};

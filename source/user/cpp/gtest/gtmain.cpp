@@ -70,13 +70,13 @@ int main(void) {
 }
 
 static void win0(void) {
-	Window *w = new Window("Window 0",500,200);
+	Window *w = new Window("Window 0",Pos(500,200));
 	Panel& root = w->getRootPanel();
 	root.setLayout(new BorderLayout());
 	Panel *p = new Panel(new BorderLayout());
 	ScrollPane *sp = new ScrollPane(p);
 	root.add(sp,BorderLayout::CENTER);
-	ProgressBar *pb = new ProgressBar("Progress...",0,0,Size(150,0));
+	ProgressBar *pb = new ProgressBar("Progress...",Pos(0,0),Size(150,0));
 	ScrollPane *sp2 = new ScrollPane(pb);
 	p->add(sp2,BorderLayout::CENTER);
 	//if(startthread(pbThread,pb) < 0)
@@ -85,7 +85,7 @@ static void win0(void) {
 }
 
 static void win1(void) {
-	Window *w = new Window("Window 1",100,100);
+	Window *w = new Window("Window 1",Pos(100,100));
 	Panel& root = w->getRootPanel();
 	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
@@ -104,7 +104,7 @@ static void win1(void) {
 	p->add(cb,BorderLayout::NORTH);
 	Checkbox *check = new Checkbox("My Checkbox");
 	p->add(check,BorderLayout::SOUTH);
-	ProgressBar *pb = new ProgressBar("Progress...",0,0,Size(150,0));
+	ProgressBar *pb = new ProgressBar("Progress...",Pos(0,0),Size(150,0));
 	ScrollPane *sp2 = new ScrollPane(pb);
 	p->add(sp2,BorderLayout::CENTER);
 	//p->add(new ProgressBar("Progress..."),BorderLayout::CENTER);
@@ -118,7 +118,7 @@ static void win1(void) {
 }
 
 static void win2(void) {
-	Window *w = new Window("Window 2",450,150,Size(400,100));
+	Window *w = new Window("Window 2",Pos(450,150),Size(400,100));
 	Panel& root = w->getRootPanel();
 	root.setLayout(new FlowLayout(FlowLayout::LEFT,5));
 
@@ -143,7 +143,7 @@ static void win2(void) {
 }
 
 static void win3(void) {
-	Window *w = new Window("Window 3",450,350,Size(400,100));
+	Window *w = new Window("Window 3",Pos(450,350),Size(400,100));
 	Panel& root = w->getRootPanel();
 	root.setLayout(new FlowLayout(FlowLayout::CENTER,1));
 
@@ -168,7 +168,7 @@ static void win3(void) {
 }
 
 static void win4(void) {
-	Window *w = new Window("Window 4",150,350,Size(400,100));
+	Window *w = new Window("Window 4",Pos(150,350),Size(400,100));
 	Panel& root = w->getRootPanel();
 	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
@@ -197,7 +197,7 @@ static void win4(void) {
 }
 
 static void win5(void) {
-	Window *w = new Window("Window 5",250,450,Size(200,300));
+	Window *w = new Window("Window 5",Pos(250,450),Size(200,300));
 	Panel& root = w->getRootPanel();
 	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
@@ -221,7 +221,7 @@ static void win5(void) {
 }
 
 static void win6(void) {
-	Window *win = new Window("Window 6",200,300);
+	Window *win = new Window("Window 6",Pos(200,300));
 	Panel& root = win->getRootPanel();
 	root.getTheme().setPadding(2);
 	root.setLayout(new BorderLayout(2));
@@ -233,14 +233,14 @@ static void win6(void) {
 	for(size_t i = 0; i < 23; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
-		Button *b = new Button(name,0,0,Size(40,40));
+		Button *b = new Button(name,Pos(0,0),Size(40,40));
 		btns->add(b);
 	}
 	win->show(true);
 }
 
 static void win7(void) {
-	Window *win = new Window("Window 7",400,300);
+	Window *win = new Window("Window 7",Pos(400,300));
 	Panel& root = win->getRootPanel();
 	root.getTheme().setPadding(2);
 	root.setLayout(new BorderLayout(2));
@@ -253,7 +253,7 @@ static void win7(void) {
 	for(size_t i = 0; i < 29; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
-		Button *b = new Button(name,0,0,Size(30 + rand() % 10,30 + rand() % 10));
+		Button *b = new Button(name,Pos(0,0),Size(30 + rand() % 10,30 + rand() % 10));
 		btns->add(b);
 	}
 	win->show(true);

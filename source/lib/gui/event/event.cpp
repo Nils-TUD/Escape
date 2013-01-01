@@ -26,8 +26,7 @@ using namespace std;
 namespace gui {
 	ostream &operator<<(ostream &s,const MouseEvent &e) {
 		s << "MouseEvent[mx=" << e._movedx << ",my=" << e._movedy;
-		s << ",x=" << e._x << ",y=" << e._y;
-		s << ",buttons=" << hex << showbase << e._buttons << "]";
+		s << ",pos=" << e._pos << ",buttons=" << hex << showbase << e._buttons << "]";
 		return s;
 	}
 

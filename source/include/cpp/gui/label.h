@@ -29,8 +29,8 @@ namespace gui {
 		Label(const std::string &text)
 			: Control(), _text(text) {
 		};
-		Label(const std::string &text,gpos_t x,gpos_t y,const Size &size)
-			: Control(x,y,size), _text(text) {
+		Label(const std::string &text,const Pos &pos,const Size &size)
+			: Control(pos,size), _text(text) {
 		};
 
 		inline const std::string &getText() const {

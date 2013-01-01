@@ -34,6 +34,6 @@ namespace gui {
 	void ImageButton::paintBackground(Graphics &g) {
 		gpos_t x = (getSize().width / 2) - (_img->getSize().width / 2);
 		gpos_t y = (getSize().height / 2) - (_img->getSize().height / 2);
-		_img->paint(g,x,y);
+		_img->paint(g,Pos(x,y));
 	}
 }

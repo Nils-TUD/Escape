@@ -48,6 +48,6 @@ namespace gui {
 
 		virtual Size getSize() const = 0;
 
-		virtual void paint(Graphics &g,gpos_t x,gpos_t y) = 0;
+		virtual void paint(Graphics &g,const Pos &pos) = 0;
 	};
 }

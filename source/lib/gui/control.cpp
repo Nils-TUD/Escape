@@ -38,39 +38,30 @@ namespace gui {
 		setRegion();
 	}
 
-	void Control::moveTo(gpos_t x,gpos_t y) {
-		_x = x;
-		_y = y;
+	void Control::moveTo(const Pos &pos) {
+		_pos = pos;
 		setRegion();
 	}
 
 	void Control::setRegion() {
 		if(_g) {
-			_g->setOff(getWindowX(),getWindowY());
+			_g->setOff(getWindowPos());
 			// don't change the min-offset for the header- and body-panel in the window; they're fixed
 			if(_parent->_parent)
-				_g->setMinOff(getParentOffX(_parent),getParentOffY(_parent));
-			_g->setSize(_x,_y,_size,_parent->getContentSize());
+				_g->setMinOff(getParentOff(_parent));
+			_g->setSize(_pos,_size,_parent->getContentSize());
 			/*std::cout << "[" << getId() << ", " << typeid(*this).name() << "] ";
 			std::cout << "@" << _g->getMinX() << "," << _g->getMinY() << ", ";
 			std::cout << "size:" << _g->getSize() << std::endl;*/
 		}
 	}
 
-	gpos_t Control::getParentOffX(UIElement *c) const {
-		gpos_t x = c->getWindowX();
+	Pos Control::getParentOff(UIElement *c) const {
+		Pos pos = c->getWindowPos();
 		while(c->_parent && c->_parent->_parent) {
-			x = max(x,c->_parent->getWindowX());
+			pos = maxpos(pos,c->_parent->getWindowPos());
 			c = c->_parent;
 		}
-		return x;
-	}
-	gpos_t Control::getParentOffY(UIElement *c) const {
-		gpos_t y = c->getWindowY();
-		while(c->_parent && c->_parent->_parent) {
-			y = max(y,c->_parent->getWindowY());
-			c = c->_parent;
-		}
-		return y;
+		return pos;
 	}
 }

@@ -83,7 +83,7 @@ Size ShellControl::getPrefSize() const {
 void ShellControl::paint(Graphics &g) {
 	// fill bg
 	g.setColor(BGCOLOR);
-	g.fillRect(0,0,getSize());
+	g.fillRect(Pos(0,0),getSize());
 
 	locku(&_vt->lock);
 	paintRows(g,0,_vt->rows);
@@ -138,7 +138,7 @@ void ShellControl::update() {
 		// fill the bg of the left few pixels at the bottom that are not affected
 		g->setColor(BGCOLOR);
 		gpos_t start = TEXTSTARTY + _vt->rows * lineHeight;
-		g->fillRect(0,start,getSize() - Size(0,start));
+		g->fillRect(Pos(0,start),getSize() - Size(0,start));
 
 		changed = true;
 	}

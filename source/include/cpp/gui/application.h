@@ -181,11 +181,10 @@ namespace gui {
 		 * Ensures that the update does only affect the given window
 		 *
 		 * @param id the window-id
-		 * @param x the x-position (global)
-		 * @param y the y-position (global)
+		 * @param pos the position (global)
 		 * @param size the size
 		 */
-		void requestWinUpdate(gwinid_t id,gpos_t x,gpos_t y,const Size &size);
+		void requestWinUpdate(gwinid_t id,const Pos &pos,const Size &size);
 		/**
 		 * Adds the given window to the window-list. Will announce the window at the window-manager
 		 *
@@ -219,9 +218,9 @@ namespace gui {
 		void resizeWindow(Window *win,bool finish);
 
 		// only used in Application itself
-		void passToWindow(gwinid_t win,gpos_t x,gpos_t y,short movedX,short movedY,
+		void passToWindow(gwinid_t win,const Pos &pos,short movedX,short movedY,
 				short movedZ,uchar buttons);
-		void closePopups(gwinid_t id,gpos_t x,gpos_t y);
+		void closePopups(gwinid_t id,const Pos &pos);
 
 	private:
 		int _winFd;

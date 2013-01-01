@@ -97,7 +97,7 @@ public:
 		// do that first for exception-safety
 		gui::Image *img = gui::Image::loadImage(sc->getIcon());
 		gui::ImageButton *btn = new gui::ImageButton(img,
-				PADDING,PADDING + _shortcuts.size() * (ICON_SIZE + PADDING),
+				gui::Pos(PADDING,PADDING + _shortcuts.size() * (ICON_SIZE + PADDING)),
 				img->getSize() + gui::Size(2,2));
 		sc->setButton(btn);
 		btn->clicked().subscribe(mem_recv(this,&DesktopWin::onIconClick));

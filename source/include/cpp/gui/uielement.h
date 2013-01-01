@@ -53,7 +53,7 @@ namespace gui {
 		 */
 		UIElement()
 			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
-			  _x(0), _y(0), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
+			  _pos(), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
 			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
 		};
 		/**
@@ -65,9 +65,9 @@ namespace gui {
 		 * @param width the width
 		 * @param height the height
 		 */
-		UIElement(gpos_t x,gpos_t y,const Size &size)
+		UIElement(const Pos &pos,const Size &size)
 			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
-			  _x(x), _y(y), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
+			  _pos(pos), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
 			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
 		};
 		/**
@@ -85,33 +85,19 @@ namespace gui {
 		};
 
 		/**
-		 * @return the x-position of this element relative to the parent
+		 * @return the position in the window
 		 */
-		inline gpos_t getX() const {
-			return _x;
+		Pos getWindowPos() const;
+		/**
+		 * @return the position on the screen
+		 */
+		Pos getScreenPos() const;
+		/**
+		 * @return the position of this element relative to the parent
+		 */
+		inline Pos getPos() const {
+			return _pos;
 		};
-		/**
-		 * @return the x-position in the window
-		 */
-		gpos_t getWindowX() const;
-		/**
-		 * @return the x-position on the screen
-		 */
-		gpos_t getScreenX() const;
-		/**
-		 * @return the y-position of this element relative to the parent
-		 */
-		inline gpos_t getY() const {
-			return _y;
-		};
-		/**
-		 * @return the y-position in the window
-		 */
-		gpos_t getWindowY() const;
-		/**
-		 * @return the y-position on the screen
-		 */
-		gpos_t getScreenY() const;
 		/**
 		 * @return the size of this element
 		 */
@@ -170,16 +156,15 @@ namespace gui {
 		 * Paints the given rectangle of the control
 		 *
 		 * @param g the graphics-object
-		 * @param x the x-position relative to this control of the rectangle
-		 * @param y the y-position relative to this control of the rectangle
+		 * @param pos the position relative to this control of the rectangle
 		 * @param size the size of the rectangle
 		 */
-		virtual void paintRect(Graphics &g,gpos_t x,gpos_t y,const Size &size);
+		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
 		/**
 		 * Repaints the given rectangle of the control, i.e. calls paintRect() and requests an
 		 * update of this rectangle.
 		 */
-		void repaintRect(gpos_t x,gpos_t y,const Size &size);
+		void repaintRect(const Pos &pos,const Size &size);
 
 		/**
 		 * Requests an update of the dirty region
@@ -311,20 +296,12 @@ namespace gui {
 		};
 
 		/**
-		 * Sets the x-position
+		 * Sets the position
 		 *
-		 * @param x the new position
+		 * @param pos the new position
 		 */
-		inline void setX(gpos_t x) {
-			_x = x;
-		};
-		/**
-		 * Sets the y-position
-		 *
-		 * @param y the new position
-		 */
-		inline void setY(gpos_t y) {
-			_y = y;
+		inline void setPos(const Pos &pos) {
+			_pos = pos;
 		};
 		/**
 		 * Sets the size
@@ -352,8 +329,7 @@ namespace gui {
 		Graphics *_g;
 		UIElement *_parent;
 		Theme _theme;
-		gpos_t _x;
-		gpos_t _y;
+		Pos _pos;
 		Size _size;
 		Size _prefSize;
 		mouseev_type _mouseMoved;

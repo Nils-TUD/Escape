@@ -38,7 +38,7 @@ DesktopWin::DesktopWin(const Size &size)
 	: Window(Pos(0,0),size,DESKTOP),
 	  _winPanel(new Panel(Pos(0,0),Size(0,TASKBAR_HEIGHT),
 			  	new FlowLayout(FlowLayout::FRONT,FlowLayout::HORIZONTAL,4))),
-	  _iconPanel(new Panel()), _active(NULL), _windows(), _shortcuts() {
+	  _iconPanel(new Panel()), _active(nullptr), _windows(), _shortcuts() {
 	getRootPanel().setLayout(new BorderLayout());
 	getRootPanel().getTheme().setPadding(0);
 	getRootPanel().add(_winPanel,BorderLayout::SOUTH);
@@ -57,7 +57,7 @@ void DesktopWin::onIconClick(UIElement& el) {
 		if(it != _shortcuts.end()) {
 			int pid = fork();
 			if(pid == 0) {
-				const char *args[2] = {NULL,NULL};
+				const char *args[2] = {nullptr,nullptr};
 				args[0] = it->second->getApp().c_str();
 				exec(args[0],args);
 			}
@@ -98,7 +98,7 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 		_active->repaint();
 	}
 	else
-		_active = NULL;
+		_active = nullptr;
 }
 
 void DesktopWin::onWindowDestroyed(gwinid_t wid) {
@@ -107,7 +107,7 @@ void DesktopWin::onWindowDestroyed(gwinid_t wid) {
 		WinButton *b = (*it).second;
 		_winPanel->remove(b);
 		if(_active == b)
-			_active = NULL;
+			_active = nullptr;
 		delete b;
 		_windows.erase(wid);
 		layout();

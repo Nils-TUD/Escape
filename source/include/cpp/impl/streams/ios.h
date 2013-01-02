@@ -42,7 +42,7 @@ namespace std {
 		 * objects by calling init(sb).
 		 */
 		explicit ios(streambuf* sb)
-			: _fill(char_type()), _rdst(iostate()), _exceptions(iostate()), _tie(NULL), _rdbuf(NULL) {
+			: _fill(char_type()), _rdst(iostate()), _exceptions(iostate()), _tie(nullptr), _rdbuf(nullptr) {
 			init(sb);
 		}
 		/**
@@ -56,7 +56,7 @@ namespace std {
 		 * success
 		 */
 		operator void*() const {
-			return fail() ? NULL : const_cast<ios*>(this);
+			return fail() ? nullptr : const_cast<ios*>(this);
 		}
 		/**
 		 * @return fail()
@@ -185,7 +185,7 @@ namespace std {
 		 * If it is destroyed before it has been initialized the behavior is undefined.
 		 */
 		ios()
-			: _fill(char_type()), _rdst(iostate()), _exceptions(iostate()), _tie(NULL), _rdbuf(NULL) {
+			: _fill(char_type()), _rdst(iostate()), _exceptions(iostate()), _tie(nullptr), _rdbuf(nullptr) {
 		}
 		/**
 		 * Initializes the object

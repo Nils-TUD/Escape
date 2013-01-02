@@ -54,7 +54,7 @@ namespace gui {
 		 * will determine the actual position and size.
 		 */
 		UIElement()
-			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
+			: _id(_nextid++), _g(nullptr), _parent(nullptr), _theme(Application::getInstance()->getDefaultTheme()),
 			  _pos(), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
 			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
 		}
@@ -68,7 +68,7 @@ namespace gui {
 		 * @param height the height
 		 */
 		UIElement(const Pos &pos,const Size &size)
-			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
+			: _id(_nextid++), _g(nullptr), _parent(nullptr), _theme(Application::getInstance()->getDefaultTheme()),
 			  _pos(pos), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
 			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
 		}
@@ -189,7 +189,7 @@ namespace gui {
 		 */
 		Window *getWindow();
 		/**
-		 * @return the parent-element (may be NULL if not added to a panel yet or its a window)
+		 * @return the parent-element (may be nullptr if not added to a panel yet or its a window)
 		 */
 		UIElement *getParent() const {
 			return _parent;

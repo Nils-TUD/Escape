@@ -101,14 +101,14 @@ namespace gui {
 				return _ctrl->getFocus();
 			if(_focus)
 				return this;
-			return NULL;
+			return nullptr;
 		}
 		virtual const Control *getFocus() const {
 			if(_focus & FOCUS_CTRL)
 				return _ctrl->getFocus();
 			if(_focus)
 				return this;
-			return NULL;
+			return nullptr;
 		}
 
 		virtual void setParent(UIElement *e) {

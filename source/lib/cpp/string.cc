@@ -20,7 +20,7 @@
 namespace std {
 	template<class InputIterator>
 	string::string(InputIterator b,InputIterator e)
-		: _str(NULL), _size(0), _length(0) {
+		: _str(nullptr), _size(0), _length(0) {
 		append(b,e);
 	}
 

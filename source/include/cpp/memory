@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <bits/c++config.h>
 #include <stddef.h>
 
 namespace std {
@@ -33,7 +34,7 @@ namespace std {
 	public:
 		typedef X element_type;
 
-		explicit auto_ptr(X* p = 0) throw();
+		explicit auto_ptr(X* p = nullptr) throw();
 		auto_ptr(auto_ptr& ptr) throw();
 		template<class Y>
 		auto_ptr(auto_ptr<Y>& ptr) throw();
@@ -48,7 +49,7 @@ namespace std {
 		X* operator ->() const throw();
 		X* get() const throw();
 		X* release() throw();
-		virtual void reset(X* p = 0) throw();
+		virtual void reset(X* p = nullptr) throw();
 
 		auto_ptr(auto_ptr_ref<X> r) throw();
 		template<class Y>
@@ -65,13 +66,14 @@ namespace std {
 	public:
 		typedef typename auto_ptr<X>::element_type element_type;
 
-		explicit auto_array(X* p = 0) throw();
+		explicit auto_array(X* p = nullptr) throw();
 		~auto_array() throw();
 
 		X& operator [](int index) const throw();
 
-		virtual void reset(X* p = 0) throw();
+		virtual void reset(X* p = nullptr) throw();
 	};
+
 }
 
 #include "../../lib/cpp/memory.cc"

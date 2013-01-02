@@ -32,7 +32,7 @@ namespace std {
 
 	public:
 		inline listnode()
-			: _prev(NULL), _next(NULL), _data(T()) {
+			: _prev(nullptr), _next(nullptr), _data(T()) {
 		}
 		inline listnode(listnode<T> *p,listnode<T> *n)
 			: _prev(p), _next(n), _data(T()) {
@@ -84,7 +84,7 @@ namespace std {
 
 	public:
 		inline listiterator()
-			: _node(NULL) {
+			: _node(nullptr) {
 		}
 		inline listiterator(listnode<T> *n)
 			: _node(n) {
@@ -161,7 +161,7 @@ namespace std {
 
 	public:
 		inline const_listiterator()
-			: _node(NULL) {
+			: _node(nullptr) {
 		}
 		inline const_listiterator(const listnode<T> *n)
 			: _node(n) {
@@ -234,13 +234,13 @@ namespace std {
 	// === constructors/destructors ===
 	template<class T>
 	list<T>::list()
-		: _count(0), _head(listnode<T>(NULL,NULL,T())), _foot(NULL,NULL,T()) {
+		: _count(0), _head(listnode<T>(nullptr,nullptr,T())), _foot(nullptr,nullptr,T()) {
 		_head.next(&_foot);
 		_foot.prev(&_head);
 	}
 	template<class T>
 	list<T>::list(size_type n,const T& value)
-		: _count(0), _head(listnode<T>(NULL,NULL,T())), _foot(NULL,NULL,T()) {
+		: _count(0), _head(listnode<T>(nullptr,nullptr,T())), _foot(nullptr,nullptr,T()) {
 		_head.next(&_foot);
 		_foot.prev(&_head);
 		insert(begin(),n,value);
@@ -248,14 +248,14 @@ namespace std {
 	template<class T>
 	template<class InputIterator>
 	list<T>::list(InputIterator first,InputIterator last)
-		: _count(0), _head(listnode<T>(NULL,NULL,T())), _foot(NULL,NULL,T()) {
+		: _count(0), _head(listnode<T>(nullptr,nullptr,T())), _foot(nullptr,nullptr,T()) {
 		_head.next(&_foot);
 		_foot.prev(&_head);
 		insert(begin(),first,last);
 	}
 	template<class T>
 	list<T>::list(const list<T>& x)
-		: _count(0), _head(listnode<T>(NULL,NULL,T())), _foot(NULL,NULL,T()) {
+		: _count(0), _head(listnode<T>(nullptr,nullptr,T())), _foot(nullptr,nullptr,T()) {
 		_head.next(&_foot);
 		_foot.prev(&_head);
 		insert(begin(),x.begin(),x.end());

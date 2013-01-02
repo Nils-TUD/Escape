@@ -62,7 +62,7 @@ namespace gui {
 		: UIElement(pos,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
-			_isActive(false), _movePos(pos), _resizeSize(getSize()), _gbuf(NULL), _header(NULL),
+			_isActive(false), _movePos(pos), _resizeSize(getSize()), _gbuf(nullptr), _header(nullptr),
 			_body(Pos(1,1),getSize() - Size(2,2)), _tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
@@ -71,7 +71,7 @@ namespace gui {
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
 			_isActive(false), _movePos(pos), _resizeSize(getSize()),
-			_gbuf(NULL), _header(new WindowTitleBar(title,Pos(1,1),Size(getSize().width - 2,HEADER_SIZE))),
+			_gbuf(nullptr), _header(new WindowTitleBar(title,Pos(1,1),Size(getSize().width - 2,HEADER_SIZE))),
 			_body(Pos(1,1 + HEADER_SIZE),getSize() - Size(2,HEADER_SIZE + 2)),
 			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();

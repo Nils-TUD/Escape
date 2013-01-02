@@ -34,7 +34,7 @@ namespace gui {
 			case 16:
 				return new Graphics16(buf,size);
 			default:
-				return NULL;
+				return nullptr;
 		}
 	}
 }

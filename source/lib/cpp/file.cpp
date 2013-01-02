@@ -50,7 +50,7 @@ namespace std {
 		if(!is_dir())
 			throw io_exception("list_files failed: No directory",0);
 		DIR *dir = opendir(path().c_str());
-		if(dir == NULL)
+		if(dir == nullptr)
 			throw io_exception("opendir failed",errno);
 		bool res;
 		while((res = readdir(dir,&e))) {

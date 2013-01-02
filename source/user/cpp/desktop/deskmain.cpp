@@ -35,13 +35,13 @@ int main(void) {
 	win.addShortcut(&sc1);
 	win.addShortcut(&sc2);
 	win.show();
-	if(startthread(childWaitThread,NULL) < 0)
+	if(startthread(childWaitThread,nullptr) < 0)
 		error("Unable to start thread");
 	return app->run();
 }
 
 static int childWaitThread(A_UNUSED void *arg) {
 	while(1)
-		waitchild(NULL);
+		waitchild(nullptr);
 	return 0;
 }

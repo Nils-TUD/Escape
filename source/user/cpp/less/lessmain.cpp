@@ -91,7 +91,7 @@ int main(int argc,char *argv[]) {
 	if(args.get_free().size() > 0) {
 		filename = *args.get_free().at(0);
 		in = fopen(filename.c_str(),"r");
-		if(in == NULL)
+		if(in == nullptr)
 			error("Unable to open '%s'",filename.c_str());
 	}
 	else if(isatty(STDIN_FILENO))
@@ -214,7 +214,7 @@ static void refreshScreen(void) {
 		if(j < consSize.height - 1)
 			cout << '\n';
 	}
-	printStatus(seenEOF ? NULL : "?");
+	printStatus(seenEOF ? nullptr : "?");
 	cout.flush();
 }
 

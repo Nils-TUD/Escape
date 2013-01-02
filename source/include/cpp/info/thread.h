@@ -45,7 +45,7 @@ namespace info {
 
 	public:
 		thread()
-			: _tid(0), _pid(0), _procName(std::string()), _state(0), _flags(), _prio(0),
+			: _tid(0), _pid(0), _procName(), _state(0), _flags(), _prio(0),
 			  _stackPages(0), _schedCount(0), _syscalls(0), _cycles(0), _runtime(0), _cpu(0) {
 		}
 

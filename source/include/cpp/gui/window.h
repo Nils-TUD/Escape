@@ -154,7 +154,7 @@ namespace gui {
 		 * @return whether this window has a title-bar
 		 */
 		bool hasTitleBar() const {
-			return _header != NULL;
+			return _header != nullptr;
 		}
 		/**
 		 * @return the title (a copy)
@@ -175,7 +175,7 @@ namespace gui {
 			_header->setTitle(title);
 		}
 		/**
-		 * @return the focused control (NULL if none)
+		 * @return the focused control (nullptr if none)
 		 */
 		Control *getFocus() {
 			return _body.getFocus();

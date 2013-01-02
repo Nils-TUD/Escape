@@ -124,7 +124,7 @@ namespace gui {
 	}
 
 	void BitmapImage::paint(Graphics &g,const Pos &pos) {
-		if(_data == NULL)
+		if(_data == nullptr)
 			return;
 		switch(_infoHeader->compression) {
 			case BI_RGB:

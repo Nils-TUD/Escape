@@ -49,7 +49,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	if(startthread(driverThread,NULL) < 0) {
+	if(startthread(driverThread,nullptr) < 0) {
 		cerr << "Unable to start driver-thread" << endl;
 		return EXIT_FAILURE;
 	}
@@ -93,7 +93,7 @@ static int driverThread(A_UNUSED void *arg) {
 	while(!timeout) {
 		msgid_t mid;
 		sMsg msg;
-		int fd = getwork(&drv,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(&drv,1,nullptr,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[INIT] Unable to get work");

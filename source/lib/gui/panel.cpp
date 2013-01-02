@@ -53,7 +53,7 @@ namespace gui {
 
 		// if we're here the user has not clicked on a control, so set the focus to "nothing"
 		if(focus)
-			_focus = NULL;
+			_focus = nullptr;
 	}
 
 	void Panel::layout() {
@@ -130,7 +130,7 @@ namespace gui {
 	}
 
 	void Panel::add(Control *c,Layout::pos_type pos) {
-		vassert(getGraphics() != NULL,"Please add the parent to a container before the childs!");
+		vassert(getGraphics() != nullptr,"Please add the parent to a container before the childs!");
 		_controls.push_back(c);
 		c->setParent(this);
 		if(_layout)
@@ -140,9 +140,15 @@ namespace gui {
 	void Panel::remove(Control *c,Layout::pos_type pos) {
 		_controls.erase_first(c);
 		if(c == _focus)
-			setFocus(NULL);
+			setFocus(nullptr);
 		if(_layout)
 			_layout->remove(this,c,pos);
+	}
+
+	void Panel::removeAll() {
+		_controls.clear();
+		setFocus(nullptr);
+			_layout->removeAll();
 	}
 
 	ostream &operator<<(ostream &s,const Panel &p) {

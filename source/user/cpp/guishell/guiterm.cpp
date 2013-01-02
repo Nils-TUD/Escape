@@ -29,7 +29,7 @@
 #include "guiterm.h"
 
 GUITerm::GUITerm(int sid,ShellControl *sh)
-	: _sid(sid), _run(true), _vt(NULL), _sh(sh), _cfg(sVTermCfg()),
+	: _sid(sid), _run(true), _vt(nullptr), _sh(sh), _cfg(sVTermCfg()),
 	  _rbuffer(new char[READ_BUF_SIZE]), _rbufPos(0) {
 	sVTSize size;
 	size.width = sh->getCols();
@@ -65,7 +65,7 @@ void GUITerm::run() {
 	sMsg msg;
 	msgid_t mid;
 	while(_run) {
-		int fd = getwork(&_sid,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getwork(&_sid,1,nullptr,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
 			if(fd != -ENOCLIENT)
 				printe("[GUISH] Unable to get client");

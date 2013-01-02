@@ -193,9 +193,9 @@ namespace gui {
 		 * @return the id for unsubscribe()
 		 */
 		sub_type subscribe(sub_type recv) {
-			sub_type p = NULL;
+			sub_type p = nullptr;
 			sub_type s = _list;
-			while(s != NULL) {
+			while(s != nullptr) {
 				p = s;
 				s = s->_next;
 			}
@@ -203,7 +203,7 @@ namespace gui {
 				p->_next = recv;
 			else
 				_list = recv;
-			recv->_next = NULL;
+			recv->_next = nullptr;
 			return recv;
 		}
 		/**
@@ -212,9 +212,9 @@ namespace gui {
 		 * @param recv the receiver (see subscribe())
 		 */
 		void unsubscribe(sub_type recv) {
-			sub_type p = NULL;
+			sub_type p = nullptr;
 			sub_type s = _list;
-			while(s != NULL && s != recv) {
+			while(s != nullptr && s != recv) {
 				p = s;
 				s = s->_next;
 			}
@@ -232,7 +232,7 @@ namespace gui {
 		 * @param args the arguments to send
 		 */
 		void send(ARGS... args) {
-			for(sub_type s = _list; s != NULL; s = s->_next)
+			for(sub_type s = _list; s != nullptr; s = s->_next)
 				s->send(args...);
 		}
 

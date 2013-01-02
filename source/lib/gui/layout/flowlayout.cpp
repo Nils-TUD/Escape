@@ -24,12 +24,15 @@
 
 namespace gui {
 	void FlowLayout::add(Panel *p,Control *c,A_UNUSED pos_type pos) {
-		assert(_p == NULL || p == _p);
+		assert(_p == nullptr || p == _p);
 		_p = p;
 		_ctrls.push_back(c);
 	}
 	void FlowLayout::remove(Panel *p,Control *c,A_UNUSED pos_type pos) {
 		assert(_p == p && _ctrls.erase_first(c));
+	}
+	void FlowLayout::removeAll() {
+		_ctrls.clear();
 	}
 
 	Size FlowLayout::getSizeWith(const Size&,size_func) const {

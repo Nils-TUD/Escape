@@ -175,7 +175,7 @@ void ProcessManager::addRunning() {
 	vector<sDirEntry> procs = procDir.list_files(false);
 	for(vector<sDirEntry>::iterator it = procs.begin(); it != procs.end(); ++it) {
 		int pid = atoi(it->name);
-		if(pid != 0 && getByPid(pid) == NULL)
+		if(pid != 0 && getByPid(pid) == nullptr)
 			_procs.push_back(new Process(pid));
 	}
 	sort(_procs.begin(),_procs.end());
@@ -186,7 +186,7 @@ Process *ProcessManager::getByPid(pid_t pid) {
 		if((*it)->pid() == pid)
 			return *it;
 	}
-	return NULL;
+	return nullptr;
 }
 
 void ProcessManager::waitForFS() {

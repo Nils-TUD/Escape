@@ -45,7 +45,7 @@ namespace gui {
 		 * @param bpp the used color-depth
 		 */
 		GraphicsBuffer(Window *win,const Pos &pos,const Size &size,gcoldepth_t bpp)
-			: _win(win), _pos(pos), _size(size), _bpp(bpp), _pixels(NULL) {
+			: _win(win), _pos(pos), _size(size), _bpp(bpp), _pixels(nullptr) {
 			allocBuffer();
 		}
 		/**

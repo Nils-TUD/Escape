@@ -72,6 +72,7 @@ namespace gui {
 
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);
+		virtual void removeAll();
 
 		virtual void rearrange();
 

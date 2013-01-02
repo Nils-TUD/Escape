@@ -38,7 +38,7 @@ extern "C" void yylex_destroy(void);
 extern "C" void yyerror(char const *s);
 extern "C" int yyparse(void);
 
-const char *parse_text = NULL;
+const char *parse_text = nullptr;
 static Window *win;
 static Editable *textfield;
 
@@ -59,7 +59,7 @@ static void parse() {
 	if(yyparse() != 0)
 		yylex_destroy();
 	free(text);
-	parse_text = NULL;
+	parse_text = nullptr;
 }
 
 static void onButtonClick(char c,UIElement&) {

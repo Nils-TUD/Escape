@@ -41,8 +41,8 @@ namespace std {
 		 * Creates a new filebuf
 		 */
 		explicit filebuf()
-			: _fd(-1), _inPos(0), _inMax(0), _inBuf(NULL), _totalInPos(0), _outPos(0),
-			  _outBuf(NULL), _mode(0) {
+			: _fd(-1), _inPos(0), _inMax(0), _inBuf(nullptr), _totalInPos(0), _outPos(0),
+			  _outBuf(nullptr), _mode(0) {
 		}
 		/**
 		 * Destructor

@@ -28,10 +28,10 @@ namespace gui {
 		 * Creates an empty panel with given layout. Note that the layout will be owned by the
 		 * panel afterwards. So, it will delete it when the panel is deleted.
 		 *
-		 * @param l the layout (may be NULL)
+		 * @param l the layout (may be nullptr)
 		 */
-		Panel(Layout *l = NULL)
-			: Control(), _focus(NULL), _controls(), _layout(l), _updateRect() {
+		Panel(Layout *l = nullptr)
+			: Control(), _focus(nullptr), _controls(), _layout(l), _updateRect() {
 		}
 		/**
 		 * Creates an empty panel at given position, with given size and with given layout. Note
@@ -40,10 +40,10 @@ namespace gui {
 		 *
 		 * @param pos the position
 		 * @param size the size
-		 * @param l the layout (may be NULL)
+		 * @param l the layout (may be nullptr)
 		 */
-		Panel(const Pos &pos,const Size &size,Layout *l = NULL)
-			: Control(pos,size), _focus(NULL), _controls(), _layout(l), _updateRect() {
+		Panel(const Pos &pos,const Size &size,Layout *l = nullptr)
+			: Control(pos,size), _focus(nullptr), _controls(), _layout(l), _updateRect() {
 		}
 		/**
 		 * Destructor
@@ -71,7 +71,7 @@ namespace gui {
 		}
 
 		/**
-		 * @return the layout (NULL if none)
+		 * @return the layout (nullptr if none)
 		 */
 		Layout *getLayout() const {
 			return _layout;
@@ -121,6 +121,13 @@ namespace gui {
 		 */
 		void remove(Control *c,Layout::pos_type pos = 0);
 
+		/**
+		 * Removes all controls from this panel That means, the panel will no longer own
+		 * the controls afterwards. So, you can add them to a different panel afterwards, for
+		 * example.
+		 */
+		void removeAll();
+
 	protected:
 		virtual void paint(Graphics &g);
 		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
@@ -130,17 +137,17 @@ namespace gui {
 		virtual void setRegion();
 
 		/**
-		 * @return the control that has the focus (not a panel!) or NULL if no one
+		 * @return the control that has the focus (not a panel!) or nullptr if no one
 		 */
 		virtual const Control *getFocus() const {
 			if(_focus)
 				return _focus->getFocus();
-			return NULL;
+			return nullptr;
 		}
 		virtual Control *getFocus() {
 			if(_focus)
 				return _focus->getFocus();
-			return NULL;
+			return nullptr;
 		}
 
 	private:

@@ -186,7 +186,7 @@ static int shellMain(void) {
 	while(1) {
 		// create buffer (history will free it)
 		char *buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
-		if(buffer == NULL)
+		if(buffer == nullptr)
 			error("Not enough memory");
 
 		if(!shell_prompt())

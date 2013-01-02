@@ -26,7 +26,7 @@ using namespace std;
 
 namespace gui {
 	void GridLayout::add(Panel *p,Control *c,pos_type pos) {
-		assert(_p == NULL || p == _p);
+		assert(_p == nullptr || p == _p);
 		assert(GridPos(pos).col() < _cols && GridPos(pos).row() < _rows);
 		_p = p;
 		_ctrls[pos] = c;
@@ -34,7 +34,10 @@ namespace gui {
 	void GridLayout::remove(Panel *p,Control *c,pos_type pos) {
 		assert(_p == p && _ctrls[pos] == c);
 		assert(GridPos(pos).col() < _cols && GridPos(pos).row() < _rows);
-		_ctrls[pos] = NULL;
+		_ctrls[pos] = nullptr;
+	}
+	void GridLayout::removeAll() {
+		_ctrls.clear();
 	}
 
 	Size GridLayout::getSizeWith(const Size &avail,size_func) const {

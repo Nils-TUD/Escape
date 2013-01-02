@@ -52,7 +52,7 @@ bool LineContainer::Region::append(size_type size,const char *line) {
 
 char *LineContainer::Region::get(size_type size,size_type i) const {
 	if(i >= _lines)
-		return NULL;
+		return nullptr;
 	return (char*)(_begin + i * size);
 }
 
@@ -64,7 +64,7 @@ const char *LineContainer::get(size_type index) {
 			return res;
 		i -= it->lines();
 	}
-	return NULL;
+	return nullptr;
 }
 
 void LineContainer::append(const char *line) {

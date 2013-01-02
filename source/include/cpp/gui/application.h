@@ -69,7 +69,7 @@ namespace gui {
 		 */
 		static Application *getInstance() {
 			// TODO multithreading..
-			if(_inst == NULL)
+			if(_inst == nullptr)
 				_inst = new Application();
 			return _inst;
 		}
@@ -93,7 +93,7 @@ namespace gui {
 
 		/**
 		 * @param id the window-id
-		 * @return the window with given id or NULL
+		 * @return the window with given id or nullptr
 		 */
 		Window *getWindowById(gwinid_t id);
 

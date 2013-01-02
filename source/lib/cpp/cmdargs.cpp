@@ -203,14 +203,14 @@ namespace std {
 				case 'd':
 				case 'i': {
 					int *n = (int*)ptr;
-					*n = strtol(arg.c_str(),NULL,10);
+					*n = strtol(arg.c_str(),nullptr,10);
 				}
 				break;
 
 				case 'x':
 				case 'X': {
 					unsigned int *u = (unsigned int*)ptr;
-					*u = strtoul(arg.c_str(),NULL,16);
+					*u = strtoul(arg.c_str(),nullptr,16);
 				}
 				break;
 

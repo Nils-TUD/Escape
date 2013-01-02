@@ -30,11 +30,11 @@
 
 using namespace std;
 
-sGroup *DriverProcess::groupList = NULL;
+sGroup *DriverProcess::groupList = nullptr;
 
 void DriverProcess::load() {
 	// load groups from file, if not already done
-	if(groupList == NULL) {
+	if(groupList == nullptr) {
 		size_t count;
 		groupList = group_parseFromFile(GROUPS_PATH,&count);
 		if(!groupList)
@@ -49,7 +49,7 @@ void DriverProcess::load() {
 		argv[0] = path.c_str();
 		for(size_t i = 0; i < _args.size(); i++)
 			argv[i + 1] = _args[i].c_str();
-		argv[_args.size() + 1] = NULL;
+		argv[_args.size() + 1] = nullptr;
 		exec(argv[0],argv);
 		cerr << "Exec of '" << path << "' failed" << endl;
 		exit(EXIT_FAILURE);

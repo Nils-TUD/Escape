@@ -186,7 +186,7 @@ namespace std
   };
   
   /** 
-   *  @brief Thrown when a NULL pointer in a @c typeid expression is used.
+   *  @brief Thrown when a nullptr pointer in a @c typeid expression is used.
    *  @ingroup exceptions
    */
   class bad_typeid : public exception 

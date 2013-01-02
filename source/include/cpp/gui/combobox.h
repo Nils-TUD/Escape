@@ -63,10 +63,10 @@ namespace gui {
 
 	public:
 		ComboBox()
-			: Control(), _items(), _selected(-1), _pressed(false), _win(NULL) {
+			: Control(), _items(), _selected(-1), _pressed(false), _win(nullptr) {
 		}
 		ComboBox(const Pos &pos,const Size &size)
-			: Control(pos,size), _items(), _selected(-1), _pressed(false), _win(NULL) {
+			: Control(pos,size), _items(), _selected(-1), _pressed(false), _win(nullptr) {
 		}
 		virtual ~ComboBox() {
 			delete _win;

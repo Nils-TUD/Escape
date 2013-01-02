@@ -49,10 +49,10 @@ static void test_flags(void) {
 
 	before = heapspace();
 	{
-		const char * const argv1[] = {"progname",NULL};
-		const char * const argv2[] = {"progname","-flag",NULL};
-		const char * const argv3[] = {"progname","--flag1x","--flag2",NULL};
-		const char * const argv4[] = {"progname","--flag1","--flag2",NULL};
+		const char * const argv1[] = {"progname",nullptr};
+		const char * const argv2[] = {"progname","-flag",nullptr};
+		const char * const argv3[] = {"progname","--flag1x","--flag2",nullptr};
+		const char * const argv4[] = {"progname","--flag1","--flag2",nullptr};
 		const char *format = "flag1 flag2";
 		bool flag1,flag2;
 		cmdargs *a;
@@ -96,9 +96,9 @@ static void test_vals(void) {
 
 	before = heapspace();
 	{
-		const char * const argv1[] = {"progname",NULL};
-		const char * const argv2[] = {"progname","-a","test","-b=4","-c","-12","-d","0xabc","--long=4",NULL};
-		const char * const argv3[] = {"progname","-a=test","--long","444",NULL};
+		const char * const argv1[] = {"progname",nullptr};
+		const char * const argv2[] = {"progname","-a","test","-b=4","-c","-12","-d","0xabc","--long=4",nullptr};
+		const char * const argv3[] = {"progname","-a=test","--long","444",nullptr};
 		const char *format = "a=s b=d c=i d=x long=d";
 		string a;
 		int b,c,_long;
@@ -157,10 +157,10 @@ static void test_reqNFree(void) {
 
 	before = heapspace();
 	{
-		const char * const argv1[] = {"progname",NULL};
-		const char * const argv2[] = {"progname","-b","12",NULL};
-		const char * const argv3[] = {"progname","-b=123","--req","val",NULL};
-		const char * const argv4[] = {"progname","-b=12","--nreq=f","--req=test","free1","-free2","--req",NULL};
+		const char * const argv1[] = {"progname",nullptr};
+		const char * const argv2[] = {"progname","-b","12",nullptr};
+		const char * const argv3[] = {"progname","-b=123","--req","val",nullptr};
+		const char * const argv4[] = {"progname","-b=12","--nreq=f","--req=test","free1","-free2","--req",nullptr};
 		const char *format = "b=d* req=s* nreq=X";
 		bool ex;
 		int b;

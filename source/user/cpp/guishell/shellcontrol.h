@@ -47,7 +47,7 @@ private:
 
 public:
 	ShellControl(const gui::Pos &pos,const gui::Size &size) :
-		Control(pos,size), _lastCol(0), _lastRow(0), _vt(NULL) {
+		Control(pos,size), _lastCol(0), _lastRow(0), _vt(nullptr) {
 	}
 	virtual ~ShellControl() {
 	}

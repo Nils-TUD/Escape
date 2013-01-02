@@ -99,8 +99,8 @@ int main(int argc,char **argv) {
 	string ssort("pid");
 	pageSize = sysconf(CONF_PAGE_SIZE);
 	bool own = false,numeric = false;
-	sUser *userList = NULL;
-	sGroup *groupList = NULL;
+	sUser *userList = nullptr;
+	sGroup *groupList = nullptr;
 
 	// parse args
 	cmdargs args(argc,argv,cmdargs::NO_FREE);
@@ -123,10 +123,10 @@ int main(int argc,char **argv) {
 	}
 
 	/* parse users and groups from file */
-	userList = user_parseFromFile(USERS_PATH,NULL);
+	userList = user_parseFromFile(USERS_PATH,nullptr);
 	if(!userList)
 		error("Unable to parse users from file");
-	groupList = group_parseFromFile(GROUPS_PATH,NULL);
+	groupList = group_parseFromFile(GROUPS_PATH,nullptr);
 	if(!groupList)
 		error("Unable to parse groups from file");
 
@@ -154,7 +154,7 @@ int main(int argc,char **argv) {
 			if(p->ppid() > maxPpid)
 				maxPpid = p->ppid();
 
-			sUser *u = !numeric ? user_getById(userList,p->uid()) : NULL;
+			sUser *u = !numeric ? user_getById(userList,p->uid()) : nullptr;
 			if(!u || numeric) {
 				if((x = count_digits((ulong)p->uid(),10)) > maxUid)
 					maxUid = x;
@@ -162,7 +162,7 @@ int main(int argc,char **argv) {
 			else if((x = strlen(u->name)) > maxUid)
 				maxUid = x;
 
-			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : NULL;
+			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : nullptr;
 			if(!g || numeric) {
 				if((x = count_digits((ulong)p->gid(),10)) > maxGid)
 					maxGid = x;
@@ -236,13 +236,13 @@ int main(int argc,char **argv) {
 			cout << setw(maxPpid) << p->ppid() << " ";
 
 			cout << left;
-			sUser *u = !numeric ? user_getById(userList,p->uid()) : NULL;
+			sUser *u = !numeric ? user_getById(userList,p->uid()) : nullptr;
 			if(!u || numeric)
 				cout << setw(maxUid) << p->uid() << " ";
 			else
 				cout << setw(maxUid) << u->name << " ";
 
-			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : NULL;
+			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : nullptr;
 			if(!g || numeric)
 				cout << setw(maxGid) << p->gid() << " ";
 			else

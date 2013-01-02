@@ -25,12 +25,15 @@
 
 namespace gui {
 	void IconLayout::add(Panel *p,Control *c,A_UNUSED pos_type pos) {
-		assert(_p == NULL || p == _p);
+		assert(_p == nullptr || p == _p);
 		_p = p;
 		_ctrls.push_back(c);
 	}
 	void IconLayout::remove(Panel *p,Control *c,A_UNUSED pos_type pos) {
 		assert(_p == p && _ctrls.erase_first(c));
+	}
+	void IconLayout::removeAll() {
+		_ctrls.clear();
 	}
 
 	Size IconLayout::getSizeWith(const Size &avail,size_func) const {

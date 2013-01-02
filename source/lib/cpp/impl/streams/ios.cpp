@@ -22,7 +22,7 @@
 namespace std {
 	void ios::init(streambuf* sb) {
 		rdbuf(sb);
-		tie(NULL);
+		tie(nullptr);
 		_rdst = sb ? goodbit : badbit;
 		exceptions(goodbit);
 		flags(skipws | dec | right);
@@ -32,7 +32,7 @@ namespace std {
 	}
 
 	void ios::clear(iostate state) {
-		if(rdbuf() != 0)
+		if(rdbuf() != nullptr)
 			_rdst = state;
 		else
 			_rdst = state | badbit;

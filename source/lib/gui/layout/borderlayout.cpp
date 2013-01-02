@@ -24,13 +24,16 @@
 
 namespace gui {
 	void BorderLayout::add(Panel *p,Control *c,pos_type pos) {
-		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && (_p == NULL || p == _p));
+		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && (_p == nullptr || p == _p));
 		_p = p;
 		_ctrls[pos] = c;
 	}
 	void BorderLayout::remove(Panel *p,Control *c,pos_type pos) {
 		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && _p == p && _ctrls[pos] == c);
-		_ctrls[pos] = NULL;
+		_ctrls[pos] = nullptr;
+	}
+	void BorderLayout::removeAll() {
+		_ctrls[WEST] = _ctrls[NORTH] = _ctrls[SOUTH] = _ctrls[EAST] = _ctrls[CENTER] = nullptr;
 	}
 
 	Size BorderLayout::getSizeWith(const Size &avail,size_func func) const {

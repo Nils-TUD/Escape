@@ -64,7 +64,7 @@ namespace gui {
 		throw logic_error(string("Color with id ") + id + " not set");
 	}
 	void Theme::setColor(colid_type id,const Color& c) {
-		if(_colors == NULL)
+		if(_colors == nullptr)
 			_colors = new vector<Color>();
 		if(id >= _colors->size())
 			_colors->reserve(id + 1);

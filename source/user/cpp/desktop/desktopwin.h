@@ -33,7 +33,7 @@ class Shortcut {
 
 public:
 	Shortcut(const std::string& icon,const std::string& app)
-		: _icon(icon), _app(app), _btn(NULL) {
+		: _icon(icon), _app(app), _btn(nullptr) {
 	}
 	Shortcut(const Shortcut &w)
 		: _icon(w._icon), _app(w._app), _btn(new gui::ImageButton(*w._btn)) {

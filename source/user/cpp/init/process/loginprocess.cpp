@@ -28,7 +28,7 @@
 void LoginProcess::load() {
 	_pid = fork();
 	if(_pid == 0) {
-		const char *argv[] = {"/bin/login",NULL,NULL};
+		const char *argv[] = {"/bin/login",nullptr,nullptr};
 		argv[1] = _vterm.c_str();
 
 		/* close stdin,stdout and stderr */

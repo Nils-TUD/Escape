@@ -84,7 +84,7 @@ namespace std
  *  - normal single new and delete (no arguments, throw @c bad_alloc on error)
  *  - normal array new and delete (same)
  *  - @c nothrow single new and delete (take a @c nothrow argument, return
- *    @c NULL on error)
+ *    @c nullptr on error)
  *  - @c nothrow array new and delete (same)
  *
  *  Placement new and delete signatures (take a memory address argument,

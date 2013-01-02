@@ -30,14 +30,14 @@ namespace std {
 
 	template<class X>
 	inline auto_ptr<X>::auto_ptr(auto_ptr<X>& ptr) throw()
-		: _p(NULL) {
+		: _p(nullptr) {
 		_p = ptr.release();
 	}
 
 	template<class X>
 	template<class Y>
 	inline auto_ptr<X>::auto_ptr(auto_ptr<Y>& ptr) throw()
-		: _p(NULL) {
+		: _p(nullptr) {
 		_p = ptr.release();
 	}
 
@@ -56,7 +56,7 @@ namespace std {
 
 	template<class X>
 	inline auto_ptr<X>::~auto_ptr() throw() {
-		reset(NULL);
+		reset(nullptr);
 	}
 
 	template<class X>
@@ -74,7 +74,7 @@ namespace std {
 	template<class X>
 	X* auto_ptr<X>::release() throw() {
 		X* p = _p;
-		_p = NULL;
+		_p = nullptr;
 		return p;
 	}
 	template<class X>

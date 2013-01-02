@@ -34,12 +34,12 @@
 using namespace std;
 
 namespace gui {
-	Application *Application::_inst = NULL;
+	Application *Application::_inst = nullptr;
 
 	Application::Application()
-			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
+			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(nullptr),
 			  _vesaInfo(), _windows(), _created(), _activated(), _destroyed(), _listening(false),
-			  _defTheme(NULL) {
+			  _defTheme(nullptr) {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)
@@ -50,7 +50,7 @@ namespace gui {
 			throw app_error("Unable to open vesa");
 
 		_vesaMem = shmjoin("vesa");
-		if(_vesaMem == NULL)
+		if(_vesaMem == nullptr)
 			throw app_error("Unable to open shared memory");
 
 		// request screen infos from vesa
@@ -340,6 +340,6 @@ namespace gui {
 			if((*it)->getId() == id)
 				return *it;
 		}
-		return NULL;
+		return nullptr;
 	}
 }

@@ -66,6 +66,11 @@ namespace gui {
 		virtual void remove(Panel *p,Control *c,pos_type pos) = 0;
 
 		/**
+		 * Removes all controls from the layout
+		 */
+		virtual void removeAll() = 0;
+
+		/**
 		 * @return the total preferred size of this layout without padding
 		 */
 		Size getPreferredSize() const {

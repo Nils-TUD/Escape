@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <bits/c++config.h>
 #include <stddef.h>
 #include <impl/map/bintree.h>
 #include <functional>

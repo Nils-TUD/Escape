@@ -25,7 +25,7 @@ namespace std {
 		map<string,string> res;
 		for(int i = 0; ; ++i) {
 			char *name = getenvi(i);
-			if(name == NULL)
+			if(name == nullptr)
 				break;
 			res[name] = get(name);
 		}

@@ -88,7 +88,7 @@ namespace gui {
 		delete this;
 		// notify combo
 		_cb->_pressed = false;
-		_cb->_win = NULL;
+		_cb->_win = nullptr;
 		_cb->repaint();
 	}
 
@@ -148,7 +148,7 @@ namespace gui {
 			repaint();
 			if(_win) {
 				delete _win;
-				_win = NULL;
+				_win = nullptr;
 			}
 			else {
 				gsize_t pad = Application::getInstance()->getDefaultTheme()->getTextPadding();

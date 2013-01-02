@@ -71,10 +71,10 @@ namespace gui {
 		/**
 		 * Constructor
 		 *
-		 * @param def the default theme (NULL if no default should be used)
+		 * @param def the default theme (nullptr if no default should be used)
 		 */
 		Theme(const Theme *def)
-			: _default(def), _present(0), _padding(0), _textPadding(0), _colors(NULL) {
+			: _default(def), _present(0), _padding(0), _textPadding(0), _colors(nullptr) {
 		}
 		/**
 		 * Copy-constructor

@@ -113,8 +113,8 @@ static uint flags;
 int main(int argc,char *argv[]) {
 	size_t widths[WIDTHS_COUNT] = {0};
 	sVTSize consSize;
-	sUser *userList = NULL;
-	sGroup *groupList = NULL;
+	sUser *userList = nullptr;
+	sGroup *groupList = nullptr;
 
 	// parse params
 	cmdargs args(argc,argv,cmdargs::MAX1_FREE);
@@ -149,10 +149,10 @@ int main(int argc,char *argv[]) {
 
 	// read users and groups
 	if(flags & F_LONG) {
-		userList = user_parseFromFile(USERS_PATH,NULL);
+		userList = user_parseFromFile(USERS_PATH,nullptr);
 		if(!userList)
 			error("Unable to parse users from file");
-		groupList = group_parseFromFile(GROUPS_PATH,NULL);
+		groupList = group_parseFromFile(GROUPS_PATH,nullptr);
 		if(!groupList)
 			error("Unable to parse groups from file");
 	}
@@ -179,14 +179,14 @@ int main(int argc,char *argv[]) {
 		if(flags & F_LONG) {
 			if((x = count_digits(f->links(),10)) > widths[W_LINKCOUNT])
 				widths[W_LINKCOUNT] = x;
-			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : NULL;
+			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : nullptr;
 			if(!u || (flags & F_NUMERIC)) {
 				if((x = count_digits((ulong)f->uid(),10)) > widths[W_UID])
 					widths[W_UID] = x;
 			}
 			else if((x = strlen(u->name)) > widths[W_UID])
 				widths[W_UID] = x;
-			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : NULL;
+			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : nullptr;
 			if(!u || (flags & F_NUMERIC)) {
 				if((x = count_digits((ulong)f->gid(),10)) > widths[W_GID])
 					widths[W_GID] = x;
@@ -212,12 +212,12 @@ int main(int argc,char *argv[]) {
 			printMode(f->mode());
 			cout << setw(widths[W_LINKCOUNT]) << f->links() << ' ';
 
-			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : NULL;
+			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : nullptr;
 			if(!u || (flags & F_NUMERIC))
 				cout << setw(widths[W_UID]) << f->uid() << ' ';
 			else
 				cout << setw(widths[W_UID]) << (u ? u->name : "?") << ' ';
-			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : NULL;
+			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : nullptr;
 			if(!g || (flags & F_NUMERIC))
 				cout << setw(widths[W_GID]) << f->gid() << ' ';
 			else

@@ -70,7 +70,7 @@ namespace gui {
 		 * Is called as soon as this control lost the focus
 		 */
 		virtual void onFocusLost() {
-			getParent()->setFocus(NULL);
+			getParent()->setFocus(nullptr);
 		}
 
 	protected:
@@ -89,7 +89,7 @@ namespace gui {
 		virtual void moveTo(const Pos &pos);
 
 		/**
-		 * @return the control that has the focus (not a panel!) or NULL if no one
+		 * @return the control that has the focus (not a panel!) or nullptr if no one
 		 */
 		virtual Control *getFocus() {
 			// panel returns the focused control on the panel; a control does already return itself

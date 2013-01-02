@@ -27,7 +27,7 @@ namespace std {
 		unsigned char omode = getMode(mode);
 		_fd = ::open(s,omode);
 		if(_fd < 0)
-			return NULL;
+			return nullptr;
 		_mode = mode;
 		_totalInPos = 0;
 		_inPos = 0;
@@ -66,12 +66,12 @@ namespace std {
 	filebuf* filebuf::close() {
 		if(_inBuf) {
 			delete[] _inBuf;
-			_inBuf = NULL;
+			_inBuf = nullptr;
 		}
 		if(_outBuf) {
 			flush();
 			delete[] _outBuf;
-			_outBuf = NULL;
+			_outBuf = nullptr;
 		}
 		if(_fd >= 0) {
 			::close(_fd);

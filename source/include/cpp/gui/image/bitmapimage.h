@@ -78,8 +78,8 @@ namespace gui {
 
 	public:
 		BitmapImage(const std::string &filename)
-			: Image(), _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
-				_data(NULL), _dataSize(0) {
+			: Image(), _fileHeader(nullptr), _infoHeader(nullptr), _colorTable(nullptr), _tableSize(0),
+				_data(nullptr), _dataSize(0) {
 			loadFromFile(filename);
 		}
 		virtual ~BitmapImage() {
@@ -90,8 +90,8 @@ namespace gui {
 		}
 
 		BitmapImage(const BitmapImage &img)
-			: Image(img), _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL),
-			  _tableSize(0), _data(NULL), _dataSize(0) {
+			: Image(img), _fileHeader(nullptr), _infoHeader(nullptr), _colorTable(nullptr),
+			  _tableSize(0), _data(nullptr), _dataSize(0) {
 			clone(img);
 		}
 		BitmapImage &operator=(const BitmapImage &img) {

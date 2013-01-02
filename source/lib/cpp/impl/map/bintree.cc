@@ -36,11 +36,11 @@ namespace std {
 	class bintree_node {
 	public:
 		bintree_node()
-			: _prev(NULL), _next(NULL), _parent(NULL), _left(NULL), _right(NULL),
+			: _prev(nullptr), _next(nullptr), _parent(nullptr), _left(nullptr), _right(nullptr),
 			  _data(make_pair<Key,T>(Key(),T())) {
 		}
 		bintree_node(const Key& k,bintree_node* l,bintree_node* r)
-			: _prev(NULL), _next(NULL), _parent(NULL), _left(l), _right(r),
+			: _prev(nullptr), _next(nullptr), _parent(nullptr), _left(l), _right(r),
 			  _data(make_pair<Key,T>(k,T())) {
 		}
 		bintree_node(const bintree_node& c)
@@ -122,7 +122,7 @@ namespace std {
 		friend class bintree<Key,T,Cmp>;
 	public:
 		bintree_iterator()
-			: _node(NULL) {
+			: _node(nullptr) {
 		}
 		bintree_iterator(bintree_node<Key,T,Cmp> *n)
 			: _node(n) {
@@ -177,7 +177,7 @@ namespace std {
 		friend class bintree<Key,T,Cmp>;
 	public:
 		const_bintree_iterator()
-			: _node(NULL) {
+			: _node(nullptr) {
 		}
 		const_bintree_iterator(const bintree_node<Key,T,Cmp> *n)
 			: _node(n) {
@@ -344,7 +344,7 @@ namespace std {
 	template<class Key,class T,class Cmp>
 	typename bintree<Key,T,Cmp>::iterator bintree<Key,T,Cmp>::find(const Key& k) {
 		bintree_node<Key,T,Cmp>* node = _head.right();
-		while(node != NULL) {
+		while(node != nullptr) {
 			// less?
 			if(_cmp(k,node->key()))
 				node = node->left();
@@ -366,7 +366,7 @@ namespace std {
 	template<class Key,class T,class Cmp>
 	inline typename bintree<Key,T,Cmp>::iterator bintree<Key,T,Cmp>::lower_bound(const key_type &x) {
 		bintree_node<Key,T,Cmp>* node = _head.right();
-		while(node != NULL) {
+		while(node != nullptr) {
 			if(_cmp(x,node->key())) {
 				if(!node->left() || !_cmp(x,node->left()->key()))
 					return iterator(node);
@@ -388,7 +388,7 @@ namespace std {
 	template<class Key,class T,class Cmp>
 	typename bintree<Key,T,Cmp>::iterator bintree<Key,T,Cmp>::upper_bound(const key_type &x) {
 		bintree_node<Key,T,Cmp>* node = _head.right();
-		while(node != NULL) {
+		while(node != nullptr) {
 			if(_cmp(x,node->key())) {
 				if(!node->left() || !_cmp(x,node->left()->key()))
 					return iterator(node);
@@ -443,7 +443,7 @@ namespace std {
 			node = next;
 		}
 		_elCount = 0;
-		_head.right(NULL);
+		_head.right(nullptr);
 		_head.next(&_foot);
 		_foot.prev(&_head);
 	}
@@ -453,8 +453,8 @@ namespace std {
 	typename bintree<Key,T,Cmp>::iterator bintree<Key,T,Cmp>::do_insert(bintree_node<Key,T,Cmp>* node,
 			const Key& k,const T& v,bool replace) {
 		bool left = false;
-		bintree_node<Key,T,Cmp>* prev = node ? node->parent() : NULL;
-		while(node != NULL) {
+		bintree_node<Key,T,Cmp>* prev = node ? node->parent() : nullptr;
+		while(node != nullptr) {
 			prev = node;
 			// less?
 			if(_cmp(k,node->key())) {
@@ -474,7 +474,7 @@ namespace std {
 		}
 
 		// node is null, so create a new node
-		node = new bintree_node<Key,T,Cmp>(k,NULL,NULL);
+		node = new bintree_node<Key,T,Cmp>(k,nullptr,nullptr);
 		node->value(v);
 		if(!prev)
 			prev = &_head;
@@ -561,7 +561,7 @@ namespace std {
 				replace_in_parent(n,n->right());
 		}
 		else
-			replace_in_parent(n,NULL);
+			replace_in_parent(n,nullptr);
 		_elCount--;
 	}
 

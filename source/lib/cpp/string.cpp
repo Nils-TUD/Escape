@@ -29,7 +29,7 @@
 namespace std {
 	// === constructors ===
 	string::string(const string& str,size_type pos,size_type n)
-		: _str(NULL), _size(0), _length(0) {
+		: _str(nullptr), _size(0), _length(0) {
 		if(n == npos)
 			n = str._length - pos;
 		assign(str,pos,n);
@@ -40,7 +40,7 @@ namespace std {
 		_str[n] = '\0';
 	}
 	string::string(const char* s)
-		: _str(NULL), _size(0), _length(0) {
+		: _str(nullptr), _size(0), _length(0) {
 		size_type len = strlen(s);
 		_str = new char[len + 1];
 		_size = len + 1;

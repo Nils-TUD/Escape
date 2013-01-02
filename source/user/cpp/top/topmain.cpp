@@ -200,7 +200,7 @@ int main(void) {
 	vterm_setReadline(STDIN_FILENO,false);
 	vterm_backup(STDIN_FILENO);
 
-	int tid = startthread(refreshThread,NULL);
+	int tid = startthread(refreshThread,nullptr);
 	if(tid < 0)
 		error("startthread");
 

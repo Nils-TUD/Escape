@@ -263,7 +263,7 @@ static void win7(void) {
 	ScrollPane *sp = new ScrollPane(btns);
 	root.add(sp,BorderLayout::CENTER);
 
-	srand(time(NULL));
+	srand(time(nullptr));
 	for(size_t i = 0; i < 29; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
@@ -286,7 +286,7 @@ static int pbThread(void *arg) {
 		else if(w->getY() == 0)
 			y = 10;
 		w->move(x,y);*/
-		if(pb != NULL) {
+		if(pb != nullptr) {
 			size_t pos = pb->getPosition();
 			if(forward) {
 				if(pos < 100)

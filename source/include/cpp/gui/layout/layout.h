@@ -106,7 +106,7 @@ namespace gui {
 			return c->getUsedSize(avail);
 		};
 
-		inline void configureControl(Control *c,const Pos &pos,const Size &size) const {
+		void configureControl(Control *c,const Pos &pos,const Size &size) const {
 			c->moveTo(pos);
 			c->resizeTo(size);
 		};

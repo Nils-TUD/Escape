@@ -18,7 +18,7 @@ namespace gui {
 			: Button("",pos,size), _img(img), _border(border) {
 		};
 
-		inline Image *getImage() const {
+		Image *getImage() const {
 			return _img;
 		};
 

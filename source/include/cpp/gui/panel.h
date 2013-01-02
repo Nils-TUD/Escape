@@ -73,7 +73,7 @@ namespace gui {
 		/**
 		 * @return the layout (NULL if none)
 		 */
-		inline Layout *getLayout() const {
+		Layout *getLayout() const {
 			return _layout;
 		};
 		/**
@@ -82,7 +82,7 @@ namespace gui {
 		 *
 		 * @param l the layout
 		 */
-		inline void setLayout(Layout *l) {
+		void setLayout(Layout *l) {
 			if(_controls.size() > 0) {
 				throw std::logic_error("This panel does already have controls;"
 						" you can't change the layout afterwards");

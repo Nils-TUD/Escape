@@ -48,18 +48,18 @@ public:
 		return *this;
 	};
 
-	inline const string& getIcon() const {
+	const string& getIcon() const {
 		return _icon;
 	};
-	inline const string& getApp() const {
+	const string& getApp() const {
 		return _app;
 	};
 
 private:
-	inline gui::ImageButton *getButton() const {
+	gui::ImageButton *getButton() const {
 		return _btn;
 	};
-	inline void setButton(gui::ImageButton *btn) {
+	void setButton(gui::ImageButton *btn) {
 		_btn = btn;
 	};
 
@@ -93,7 +93,7 @@ public:
 public:
 	DesktopWin(const gui::Size &size);
 
-	inline void addShortcut(Shortcut* sc) {
+	void addShortcut(Shortcut* sc) {
 		// do that first for exception-safety
 		gui::Image *img = gui::Image::loadImage(sc->getIcon());
 		gui::ImageButton *btn = new gui::ImageButton(img,

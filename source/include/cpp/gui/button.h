@@ -37,13 +37,13 @@ namespace gui {
 			: Control(pos,size), _focused(false), _pressed(false), _text(text), _clicked() {
 		};
 
-		inline bool isPressed() const {
+		bool isPressed() const {
 			return _pressed;
 		};
-		inline const std::string &getText() const {
+		const std::string &getText() const {
 			return _text;
 		};
-		inline void setText(const std::string &text) {
+		void setText(const std::string &text) {
 			_text = text;
 			repaint();
 		};
@@ -56,7 +56,7 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 
-		inline onclick_type &clicked() {
+		onclick_type &clicked() {
 			return _clicked;
 		};
 

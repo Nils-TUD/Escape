@@ -81,13 +81,13 @@ namespace gui {
 		/**
 		 * @return the size of the screen
 		 */
-		inline Size getScreenSize() const {
+		Size getScreenSize() const {
 			return Size(_vesaInfo.width,_vesaInfo.height);
 		};
 		/**
 		 * @return the color-depth
 		 */
-		inline uchar getColorDepth() const {
+		uchar getColorDepth() const {
 			return _vesaInfo.bitsPerPixel;
 		};
 
@@ -100,7 +100,7 @@ namespace gui {
 		/**
 		 * @return the default-theme
 		 */
-		inline const Theme *getDefaultTheme() {
+		const Theme *getDefaultTheme() {
 			return &_defTheme;
 		};
 
@@ -112,13 +112,13 @@ namespace gui {
 		/**
 		 * The event senders
 		 */
-		inline createdev_type &created() {
+		createdev_type &created() {
 			return _created;
 		};
-		inline activatedev_type &activated() {
+		activatedev_type &activated() {
 			return _activated;
 		};
-		inline destroyedev_type &destroyed() {
+		destroyedev_type &destroyed() {
 			return _destroyed;
 		};
 
@@ -161,19 +161,19 @@ namespace gui {
 		/**
 		 * @return the information received from vesa
 		 */
-		inline const sVESAInfo *getVesaInfo() const {
+		const sVESAInfo *getVesaInfo() const {
 			return &_vesaInfo;
 		};
 		/**
 		 * @return the file-descriptor for vesa
 		 */
-		inline int getVesaFd() const {
+		int getVesaFd() const {
 			return _vesaFd;
 		};
 		/**
 		 * @return the shared-memory for the screen
 		 */
-		inline void *getScreenMem() const {
+		void *getScreenMem() const {
 			return _vesaMem;
 		};
 		/**

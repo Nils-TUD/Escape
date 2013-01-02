@@ -59,10 +59,10 @@ public:
 	virtual void onKeyPressed(const gui::KeyEvent &e);
 	virtual void resizeTo(const gui::Size &size);
 
-	inline gsize_t getCols() const {
+	gsize_t getCols() const {
 		return (getSize().width - TEXTSTARTX * 2) / getGraphics()->getFont().getSize().width;
 	};
-	inline gsize_t getRows() const {
+	gsize_t getRows() const {
 		return (getSize().height - TEXTSTARTY * 2) / (getGraphics()->getFont().getSize().height + PADDING);
 	};
 
@@ -72,7 +72,7 @@ public:
 	virtual void paint(gui::Graphics &g);
 
 private:
-	inline void setVTerm(sVTerm *vt) {
+	void setVTerm(sVTerm *vt) {
 		_vt = vt;
 	};
 

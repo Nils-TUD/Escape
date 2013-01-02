@@ -49,7 +49,7 @@ namespace gui {
 		/**
 		 * @return the title (a copy)
 		 */
-		inline const std::string &getTitle() const {
+		const std::string &getTitle() const {
 			return _title->getText();
 		};
 		/**
@@ -57,7 +57,7 @@ namespace gui {
 		 *
 		 * @param title the new title
 		 */
-		inline void setTitle(const std::string &title) {
+		void setTitle(const std::string &title) {
 			_title->setText(title);
 		};
 
@@ -129,37 +129,37 @@ namespace gui {
 		/**
 		 * @return the id of the window
 		 */
-		inline gwinid_t getId() const {
+		gwinid_t getId() const {
 			return _id;
 		};
 		/**
 		 * @return the style of the window (STYLE_*)
 		 */
-		inline uchar getStyle() const {
+		uchar getStyle() const {
 			return _style;
 		};
 		/**
 		 * @return true if this is the active window
 		 */
-		inline bool isActive() const {
+		bool isActive() const {
 			return _isActive;
 		};
 		/**
 		 * @return true if the creation of the window is finished
 		 */
-		inline bool isCreated() const {
+		bool isCreated() const {
 			return _created;
 		};
 		/**
 		 * @return whether this window has a title-bar
 		 */
-		inline bool hasTitleBar() const {
+		bool hasTitleBar() const {
 			return _header != NULL;
 		};
 		/**
 		 * @return the title (a copy)
 		 */
-		inline const std::string &getTitle() const {
+		const std::string &getTitle() const {
 			if(!_header)
 				throw std::logic_error("This window has no title");
 			return _header->getTitle();
@@ -169,7 +169,7 @@ namespace gui {
 		 *
 		 * @param title the new title
 		 */
-		inline void setTitle(const std::string &title) {
+		void setTitle(const std::string &title) {
 			if(!_header)
 				throw std::logic_error("This window has no title");
 			_header->setTitle(title);
@@ -177,7 +177,7 @@ namespace gui {
 		/**
 		 * @return the focused control (NULL if none)
 		 */
-		inline Control *getFocus() {
+		Control *getFocus() {
 			return _body.getFocus();
 		};
 		/**
@@ -189,14 +189,14 @@ namespace gui {
 		/**
 		 * @return the height of the title-bar
 		 */
-		inline gsize_t getTitleBarHeight() const {
+		gsize_t getTitleBarHeight() const {
 			return _header ? _header->getSize().height : 0;
 		};
 
 		/**
 		 * @return the root-panel to which you can add controls
 		 */
-		inline Panel &getRootPanel() {
+		Panel &getRootPanel() {
 			return _body;
 		};
 
@@ -252,7 +252,7 @@ namespace gui {
 		 *
 		 * @param active the new value
 		 */
-		inline void setActive(bool) {
+		void setActive(bool) {
 			// TODO what about the bool?
 			Application::getInstance()->requestActiveWindow(_id);
 		};
@@ -287,13 +287,13 @@ namespace gui {
 		/**
 		 * @return the current position to move to
 		 */
-		inline Pos getMovePos() const {
+		Pos getMovePos() const {
 			return _movePos;
 		};
 		/**
 		 * @return the current size to resize to
 		 */
-		inline Size getResizeSize() const {
+		Size getResizeSize() const {
 			return _resizeSize;
 		};
 		/**

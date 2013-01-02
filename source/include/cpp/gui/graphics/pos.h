@@ -33,11 +33,11 @@ namespace gui {
 		explicit Pos(gpos_t _x,gpos_t _y) : x(_x), y(_y) {
 		}
 
-		inline void operator +=(const Size &s) {
+		void operator +=(const Size &s) {
 			x += s.width;
 			y += s.height;
 		};
-		inline void operator -=(const Size &s) {
+		void operator -=(const Size &s) {
 			x -= s.width;
 			y -= s.height;
 		};

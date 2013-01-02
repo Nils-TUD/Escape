@@ -60,7 +60,7 @@ namespace gui {
 		/**
 		 * @return the color as 32-bit value
 		 */
-		inline color_type getColor() const {
+		color_type getColor() const {
 			return _color;
 		};
 		/**
@@ -68,7 +68,7 @@ namespace gui {
 		 *
 		 * @param color the new value (32-bit value)
 		 */
-		inline void setColor(color_type color) {
+		void setColor(color_type color) {
 			_color = color;
 		};
 		/**
@@ -79,32 +79,32 @@ namespace gui {
 		 * @param blue the blue-component
 		 * @param alpha the alpha-component (0 by default)
 		 */
-		inline void setColor(comp_type red,comp_type green,comp_type blue,comp_type alpha = 0) {
+		void setColor(comp_type red,comp_type green,comp_type blue,comp_type alpha = 0) {
 			_color = (alpha << 24) | (red << 16) | (green << 8) | blue;
 		};
 
 		/**
 		 * @return the red-component
 		 */
-		inline comp_type getRed() const {
+		comp_type getRed() const {
 			return (comp_type)(_color >> 16);
 		};
 		/**
 		 * @return the green-component
 		 */
-		inline comp_type getGreen() const {
+		comp_type getGreen() const {
 			return (comp_type)(_color >> 8);
 		};
 		/**
 		 * @return the blue-component
 		 */
-		inline comp_type getBlue() const {
+		comp_type getBlue() const {
 			return (comp_type)(_color & 0xFF);
 		};
 		/**
 		 * @return the alpha-component
 		 */
-		inline comp_type getAlpha() const {
+		comp_type getAlpha() const {
 			return (comp_type)(_color >> 24);
 		};
 		/**

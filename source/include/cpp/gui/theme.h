@@ -145,7 +145,7 @@ namespace gui {
 		 *
 		 * @param id the color-id
 		 */
-		inline void unsetColor(colid_type id) {
+		void unsetColor(colid_type id) {
 			_present &= ~(1 << id);
 		};
 

@@ -82,7 +82,7 @@ namespace gui {
 		/**
 		 * @return the id of this UIElement (unique in one application)
 		 */
-		inline id_type getId() const {
+		id_type getId() const {
 			return _id;
 		};
 
@@ -97,13 +97,13 @@ namespace gui {
 		/**
 		 * @return the position of this element relative to the parent
 		 */
-		inline Pos getPos() const {
+		Pos getPos() const {
 			return _pos;
 		};
 		/**
 		 * @return the size of this element
 		 */
-		inline Size getSize() const {
+		Size getSize() const {
 			return _size;
 		};
 
@@ -123,7 +123,7 @@ namespace gui {
 		/**
 		 * @return the preferred size of this ui-element
 		 */
-		inline Size getPreferredSize() const {
+		Size getPreferredSize() const {
 			if(_prefSize.width && _prefSize.height)
 				return _prefSize;
 			Size pref = getPrefSize();
@@ -134,10 +134,10 @@ namespace gui {
 		/**
 		 * @return the theme of this ui-element
 		 */
-		inline Theme &getTheme() {
+		Theme &getTheme() {
 			return _theme;
 		};
-		inline const Theme &getTheme() const {
+		const Theme &getTheme() const {
 			return _theme;
 		};
 
@@ -180,7 +180,7 @@ namespace gui {
 		/**
 		 * @return the graphics-object
 		 */
-		inline Graphics *getGraphics() const {
+		Graphics *getGraphics() const {
 			return _g;
 		};
 
@@ -191,29 +191,29 @@ namespace gui {
 		/**
 		 * @return the parent-element (may be NULL if not added to a panel yet or its a window)
 		 */
-		inline UIElement *getParent() const {
+		UIElement *getParent() const {
 			return _parent;
 		};
 
 		/**
 		 * The event senders
 		 */
-		inline mouseev_type &mouseMoved() {
+		mouseev_type &mouseMoved() {
 			return _mouseMoved;
 		};
-		inline mouseev_type &mousePressed() {
+		mouseev_type &mousePressed() {
 			return _mousePressed;
 		};
-		inline mouseev_type &mouseReleased() {
+		mouseev_type &mouseReleased() {
 			return _mouseReleased;
 		};
-		inline mouseev_type &mouseWheel() {
+		mouseev_type &mouseWheel() {
 			return _mouseWheel;
 		};
-		inline keyev_type &keyPressed() {
+		keyev_type &keyPressed() {
 			return _keyPressed;
 		};
-		inline keyev_type &keyReleased() {
+		keyev_type &keyReleased() {
 			return _keyReleased;
 		};
 
@@ -232,7 +232,7 @@ namespace gui {
 		/**
 		 * @return whether calls of repaint() actually perform a repaint
 		 */
-		inline bool isRepaintEnabled() const {
+		bool isRepaintEnabled() const {
 			return _enableRepaint;
 		};
 		/**
@@ -241,7 +241,7 @@ namespace gui {
 		 *
 		 * @param en the new value
 		 */
-		inline void setRepaintEnabled(bool en) {
+		void setRepaintEnabled(bool en) {
 			_enableRepaint = en;
 		};
 
@@ -306,7 +306,7 @@ namespace gui {
 		 *
 		 * @param pos the new position
 		 */
-		inline void setPos(const Pos &pos) {
+		void setPos(const Pos &pos) {
 			_pos = pos;
 		};
 		/**
@@ -314,7 +314,7 @@ namespace gui {
 		 *
 		 * @param size the new size
 		 */
-		inline void setSize(const Size &size) {
+		void setSize(const Size &size) {
 			_size = size;
 		};
 

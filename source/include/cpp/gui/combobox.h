@@ -72,13 +72,13 @@ namespace gui {
 			delete _win;
 		};
 
-		inline void addItem(const std::string &s) {
+		void addItem(const std::string &s) {
 			_items.push_back(s);
 		};
-		inline int getSelectedIndex() const {
+		int getSelectedIndex() const {
 			return _selected;
 		};
-		inline void setSelectedIndex(int index) {
+		void setSelectedIndex(int index) {
 			if(index >= 0 && index < (int)_items.size())
 				_selected = index;
 			else

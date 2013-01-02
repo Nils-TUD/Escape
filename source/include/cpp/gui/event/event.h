@@ -68,55 +68,55 @@ namespace gui {
 		/**
 		 * @return the event-type (MOUSE_*)
 		 */
-		inline event_type getType() const {
+		event_type getType() const {
 			return _type;
 		};
 		/**
 		 * @return the mouse-position
 		 */
-		inline Pos getPos() const {
+		Pos getPos() const {
 			return _pos;
 		};
 		/**
 		 * @return the mouse-x-movement
 		 */
-		inline short getXMovement() const {
+		short getXMovement() const {
 			return _movedx;
 		};
 		/**
 		 * @return the mouse-y-movement
 		 */
-		inline short getYMovement() const {
+		short getYMovement() const {
 			return _movedy;
 		};
 		/**
 		 * @return the mousewheel movement
 		 */
-		inline short getWheelMovement() const {
+		short getWheelMovement() const {
 			return _movedz;
 		};
 		/**
 		 * @return the button-mask
 		 */
-		inline button_type getButtonMask() const {
+		button_type getButtonMask() const {
 			return _buttons;
 		};
 		/**
 		 * @return true if button 1 is pressed
 		 */
-		inline bool isButton1Down() const {
+		bool isButton1Down() const {
 			return _buttons & BUTTON1_MASK;
 		};
 		/**
 		 * @return true if button 2 is pressed
 		 */
-		inline bool isButton2Down() const {
+		bool isButton2Down() const {
 			return _buttons & BUTTON2_MASK;
 		};
 		/**
 		 * @return true if button 3 is pressed
 		 */
-		inline bool isButton3Down() const {
+		bool isButton3Down() const {
 			return _buttons & BUTTON3_MASK;
 		};
 
@@ -161,43 +161,43 @@ namespace gui {
 		/**
 		 * @return the event-type (KEY_*)
 		 */
-		inline event_type getType() const {
+		event_type getType() const {
 			return _type;
 		};
 		/**
 		 * @return the keycode
 		 */
-		inline keycode_type getKeyCode() const {
+		keycode_type getKeyCode() const {
 			return _keycode;
 		};
 		/**
 		 * @return the character
 		 */
-		inline char getCharacter() const {
+		char getCharacter() const {
 			return _character;
 		};
 		/**
 		 * whether the character is printable
 		 */
-		inline bool isPrintable() const {
+		bool isPrintable() const {
 			return isprint(_character);
 		};
 		/**
 		 * @return whether shift is currently pressed
 		 */
-		inline bool isShiftDown() const {
+		bool isShiftDown() const {
 			return _modifier & SHIFT_MASK;
 		};
 		/**
 		 * @return whether control is currently pressed
 		 */
-		inline bool isCtrlDown() const {
+		bool isCtrlDown() const {
 			return _modifier & CTRL_MASK;
 		};
 		/**
 		 * @return whether alt is currently pressed
 		 */
-		inline bool isAltDown() const {
+		bool isAltDown() const {
 			return _modifier & ALT_MASK;
 		};
 

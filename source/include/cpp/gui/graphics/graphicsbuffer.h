@@ -58,34 +58,34 @@ namespace gui {
 		/**
 		 * @return the position of the buffer (global)
 		 */
-		inline Pos getPos() const {
+		Pos getPos() const {
 			return _pos;
 		};
 		/**
 		 * @return the size of the buffer
 		 */
-		inline Size getSize() const {
+		Size getSize() const {
 			return _size;
 		};
 
 		/**
 		 * @return the window this buffer belongs to
 		 */
-		inline Window *getWindow() const {
+		Window *getWindow() const {
 			return _win;
 		};
 
 		/**
 		 * @return the buffer
 		 */
-		inline uint8_t *getBuffer() const {
+		uint8_t *getBuffer() const {
 			return _pixels;
 		};
 
 		/**
 		 * @return the color-depth
 		 */
-		inline gcoldepth_t getColorDepth() const {
+		gcoldepth_t getColorDepth() const {
 			return _bpp;
 		};
 

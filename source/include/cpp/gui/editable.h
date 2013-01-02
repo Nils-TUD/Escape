@@ -45,10 +45,10 @@ namespace gui {
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		};
 
-		inline size_t getCursorPos() const {
+		size_t getCursorPos() const {
 			return _cursor;
 		};
-		inline void setCursorPos(size_t pos) {
+		void setCursorPos(size_t pos) {
 			size_t max = getMaxCharNum(*getGraphics());
 			assert(pos <= _str.length());
 			_cursor = pos;
@@ -58,10 +58,10 @@ namespace gui {
 				_begin = 0;
 		};
 
-		inline const std::string &getText() const {
+		const std::string &getText() const {
 			return _str;
 		};
-		inline void setText(const std::string &text) {
+		void setText(const std::string &text) {
 			_str = text;
 			setCursorPos(text.length());
 			clearSelection();
@@ -91,7 +91,7 @@ namespace gui {
 		void clearSelection();
 		bool changeSelection(int pos,int oldPos,uchar dir);
 		void deleteSelection();
-		inline size_t getMaxCharNum(Graphics &g) {
+		size_t getMaxCharNum(Graphics &g) {
 			if(getSize().width < getTheme().getTextPadding() * 2)
 				return 0;
 			return (getSize().width - getTheme().getTextPadding() * 2) / g.getFont().getSize().width;

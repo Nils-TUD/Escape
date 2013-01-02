@@ -53,48 +53,48 @@ namespace info {
 			destroy();
 		}
 
-		inline pid_type pid() const {
+		pid_type pid() const {
 			return _pid;
 		};
-		inline pid_type ppid() const {
+		pid_type ppid() const {
 			return _ppid;
 		};
-		inline uid_type uid() const {
+		uid_type uid() const {
 			return _uid;
 		};
-		inline gid_type gid() const {
+		gid_type gid() const {
 			return _gid;
 		};
-		inline size_type pages() const {
+		size_type pages() const {
 			return _pages;
 		};
-		inline size_type ownFrames() const {
+		size_type ownFrames() const {
 			return _ownFrames;
 		};
-		inline size_type sharedFrames() const {
+		size_type sharedFrames() const {
 			return _sharedFrames;
 		};
-		inline size_type swapped() const {
+		size_type swapped() const {
 			return _swapped;
 		};
 		cycle_type cycles() const;
 		cycle_type runtime() const;
-		inline size_type input() const {
+		size_type input() const {
 			return _input;
 		};
-		inline size_type output() const {
+		size_type output() const {
 			return _output;
 		};
-		inline const std::vector<thread*>& threads() const {
+		const std::vector<thread*>& threads() const {
 			return _threads;
 		};
-		inline void add_thread(thread* t) {
+		void add_thread(thread* t) {
 			_threads.push_back(t);
 			// we need to refresh that afterwards
 			_cycles = -1;
 			_runtime = -1;
 		};
-		inline const std::string& command() const {
+		const std::string& command() const {
 			return _cmd;
 		};
 

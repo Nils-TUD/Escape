@@ -39,13 +39,13 @@ namespace gui {
 			: Control(pos,size), _focused(false), _checked(false), _text(text) {
 		};
 
-		inline bool isChecked() const {
+		bool isChecked() const {
 			return _checked;
 		};
-		inline const std::string &getText() const {
+		const std::string &getText() const {
 			return _text;
 		};
-		inline void setText(const std::string &text) {
+		void setText(const std::string &text) {
 			_text = text;
 			repaint();
 		};

@@ -32,15 +32,15 @@ namespace gui {
 		}
 		explicit Size(const Pos &pos);
 
-		inline bool empty() const {
+		bool empty() const {
 			return width == 0 || height == 0;
 		};
 
-		inline void operator += (const Size &size) {
+		void operator += (const Size &size) {
 			width += size.width;
 			height += size.height;
 		};
-		inline void operator -= (const Size &size) {
+		void operator -= (const Size &size) {
 			width -= size.width;
 			height -= size.height;
 		};

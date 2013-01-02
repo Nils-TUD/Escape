@@ -30,17 +30,17 @@ namespace gui {
 		static const gsize_t charHeight = 16;
 
 	public:
-		inline Size getSize() const {
+		Size getSize() const {
 			return Size(charWidth,charHeight);
 		};
-		inline gsize_t getStringWidth(const std::string& str) const {
+		gsize_t getStringWidth(const std::string& str) const {
 			return str.length() * charWidth;
 		};
-		inline gsize_t limitStringTo(A_UNUSED const std::string& str,gsize_t width,
+		gsize_t limitStringTo(A_UNUSED const std::string& str,gsize_t width,
 		                             A_UNUSED gsize_t start = 0) const {
 			return std::min<gsize_t>(str.length(),width / charWidth);
 		};
-		inline bool isPixelSet(char c,gpos_t x,gpos_t y) const {
+		bool isPixelSet(char c,gpos_t x,gpos_t y) const {
 			return _font[(uchar)c * charHeight + y] & (1 << (charWidth - x - 1));
 		};
 

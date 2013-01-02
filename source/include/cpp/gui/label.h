@@ -33,10 +33,10 @@ namespace gui {
 			: Control(pos,size), _text(text) {
 		};
 
-		inline const std::string &getText() const {
+		const std::string &getText() const {
 			return _text;
 		};
-		inline void setText(const std::string &text) {
+		void setText(const std::string &text) {
 			_text = text;
 			repaint();
 		};

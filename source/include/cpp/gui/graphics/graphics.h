@@ -65,14 +65,14 @@ namespace gui {
 		/**
 		 * @return the current font
 		 */
-		inline const Font &getFont() const {
+		const Font &getFont() const {
 			return _font;
 		};
 
 		/**
 		 * @return the current color
 		 */
-		inline Color getColor() const {
+		Color getColor() const {
 			return _colInst;
 		};
 
@@ -81,7 +81,7 @@ namespace gui {
 		 *
 		 * @param col the new color
 		 */
-		inline void setColor(const Color &col) {
+		void setColor(const Color &col) {
 			_col = col.toCurMode();
 			_colInst = col;
 		};
@@ -92,7 +92,7 @@ namespace gui {
 		 * @param x the x-coordinate
 		 * @param y the y-coordinate
 		 */
-		inline void setPixel(const Pos &pos) {
+		void setPixel(const Pos &pos) {
 			Pos rpos = pos;
 			if(!validatePoint(rpos.x,rpos.y))
 				return;
@@ -109,7 +109,7 @@ namespace gui {
 		 * @param up amount to move up / down
 		 */
 		virtual void moveRows(const Pos &pos,const Size &size,int up);
-		inline void moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
+		void moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
 			moveRows(Pos(x,y),Size(width,height),up);
 		};
 
@@ -122,7 +122,7 @@ namespace gui {
 		 * @param left amount to move left / right
 		 */
 		virtual void moveCols(const Pos &pos,const Size &size,int left);
-		inline void moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left) {
+		void moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left) {
 			moveCols(Pos(x,y),Size(width,height),left);
 		};
 
@@ -133,7 +133,7 @@ namespace gui {
 		 * @param c the character
 		 */
 		virtual void drawChar(const Pos &pos,char c);
-		inline void drawChar(gpos_t x,gpos_t y,char c) {
+		void drawChar(gpos_t x,gpos_t y,char c) {
 			drawChar(Pos(x,y),c);
 		};
 
@@ -145,7 +145,7 @@ namespace gui {
 		 * @param str the string
 		 */
 		virtual void drawString(const Pos &pos,const std::string &str);
-		inline void drawString(gpos_t x,gpos_t y,const std::string &str) {
+		void drawString(gpos_t x,gpos_t y,const std::string &str) {
 			drawString(Pos(x,y),str);
 		};
 
@@ -159,7 +159,7 @@ namespace gui {
 		 * @param count the number of characters
 		 */
 		virtual void drawString(const Pos &pos,const std::string &str,size_t start,size_t count);
-		inline void drawString(gpos_t x,gpos_t y,const std::string &str,size_t start,size_t count) {
+		void drawString(gpos_t x,gpos_t y,const std::string &str,size_t start,size_t count) {
 			drawString(Pos(x,y),str,start,count);
 		};
 
@@ -170,7 +170,7 @@ namespace gui {
 		 * @param pn last coordinate
 		 */
 		virtual void drawLine(const Pos &p0,const Pos &pn);
-		inline void drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn) {
+		void drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn) {
 			drawLine(Pos(x0,y0),Pos(xn,yn));
 		};
 
@@ -199,7 +199,7 @@ namespace gui {
 		 * @param size the size
 		 */
 		virtual void drawRect(const Pos &pos,const Size &size);
-		inline void drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+		void drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 			drawRect(Pos(x,y),Size(width,height));
 		};
 
@@ -210,21 +210,21 @@ namespace gui {
 		 * @param size the size
 		 */
 		virtual void fillRect(const Pos &pos,const Size &size);
-		inline void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 			fillRect(Pos(x,y),Size(width,height));
 		};
 
 		/**
 		 * @return the x-offset of the control in the window
 		 */
-		inline Pos getPos() const {
+		Pos getPos() const {
 			return _off;
 		};
 
 		/**
 		 * @return the size of the paintable area
 		 */
-		inline Size getSize() const {
+		Size getSize() const {
 			return _size;
 		};
 
@@ -232,7 +232,7 @@ namespace gui {
 		/**
 		 * Sets a pixel if in the given bounds
 		 */
-		inline void setLinePixel(gpos_t minx,gpos_t miny,gpos_t maxx,gpos_t maxy,const Pos &pos) {
+		void setLinePixel(gpos_t minx,gpos_t miny,gpos_t maxx,gpos_t maxy,const Pos &pos) {
 			if(pos.x >= minx && pos.y >= miny && pos.x <= maxx && pos.y <= maxy)
 				doSetPixel(pos.x,pos.y);
 		};
@@ -243,7 +243,7 @@ namespace gui {
 		/**
 		 * Adds the given position to the dirty region
 		 */
-		inline void updateMinMax(const Pos &pos) {
+		void updateMinMax(const Pos &pos) {
 			if(pos.x > _maxx)
 				_maxx = pos.x;
 			if(pos.x < _minx)
@@ -281,7 +281,7 @@ namespace gui {
 		/**
 		 * @return the graphics-buffer
 		 */
-		inline GraphicsBuffer* getBuffer() const {
+		GraphicsBuffer* getBuffer() const {
 			return _buf;
 		};
 		/**
@@ -290,13 +290,13 @@ namespace gui {
 		 * @param x the x-offset
 		 * @param y the y-offset
 		 */
-		inline void setOff(const Pos &pos) {
+		void setOff(const Pos &pos) {
 			_off = pos;
 		};
 		/**
 		 * @return the minimum y-offset in the window at which we can draw
 		 */
-		inline Pos getMinOff() const {
+		Pos getMinOff() const {
 			return _minoff;
 		};
 		/**
@@ -304,7 +304,7 @@ namespace gui {
 		 *
 		 * @param pos the offset
 		 */
-		inline void setMinOff(const Pos &pos) {
+		void setMinOff(const Pos &pos) {
 			_minoff = pos;
 		};
 		/**
@@ -312,7 +312,7 @@ namespace gui {
 		 *
 		 * @param size the new size
 		 */
-		inline void setSize(const Size &size) {
+		void setSize(const Size &size) {
 			_size = size;
 		};
 		/**

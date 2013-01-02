@@ -34,17 +34,17 @@ namespace gui {
 			: Control(pos,size), _position(0), _text(text) {
 		};
 
-		inline size_t getPosition() const {
+		size_t getPosition() const {
 			return _position;
 		};
-		inline void setPosition(size_t pos) {
+		void setPosition(size_t pos) {
 			_position = std::min((size_t)100,pos);
 			repaint();
 		};
-		inline const std::string &getText() const {
+		const std::string &getText() const {
 			return _text;
 		};
-		inline void setText(const std::string &text) {
+		void setText(const std::string &text) {
 			_text = text;
 			repaint();
 		};

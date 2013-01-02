@@ -49,40 +49,40 @@ namespace info {
 			  _stackPages(0), _schedCount(0), _syscalls(0), _cycles(0), _runtime(0), _cpu(0) {
 		}
 
-		inline std::string procName() const {
+		std::string procName() const {
 			return _procName;
 		};
-		inline tid_type tid() const {
+		tid_type tid() const {
 			return _tid;
 		};
-		inline tid_type pid() const {
+		tid_type pid() const {
 			return _pid;
 		};
-		inline state_type state() const {
+		state_type state() const {
 			return _state;
 		};
-		inline Flags flags() const {
+		Flags flags() const {
 			return (Flags)_flags;
 		};
-		inline prio_type prio() const {
+		prio_type prio() const {
 			return _prio;
 		};
-		inline size_type stackPages() const {
+		size_type stackPages() const {
 			return _stackPages;
 		};
-		inline size_type schedCount() const {
+		size_type schedCount() const {
 			return _schedCount;
 		};
-		inline size_type syscalls() const {
+		size_type syscalls() const {
 			return _syscalls;
 		};
-		inline cycle_type cycles() const {
+		cycle_type cycles() const {
 			return _cycles;
 		};
-		inline time_type runtime() const {
+		time_type runtime() const {
 			return _runtime;
 		};
-		inline cpu_type cpu() const {
+		cpu_type cpu() const {
 			return _cpu;
 		};
 

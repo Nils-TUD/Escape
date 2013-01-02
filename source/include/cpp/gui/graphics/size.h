@@ -34,21 +34,21 @@ namespace gui {
 
 		bool empty() const {
 			return width == 0 || height == 0;
-		};
+		}
 
 		void operator += (const Size &size) {
 			width += size.width;
 			height += size.height;
-		};
+		}
 		void operator -= (const Size &size) {
 			width -= size.width;
 			height -= size.height;
-		};
+		}
 
 		friend std::ostream &operator <<(std::ostream &os, const Size &s) {
 			os << s.width << "x" << s.height;
 			return os;
-		};
+		}
 
 		gsize_t width;
 		gsize_t height;

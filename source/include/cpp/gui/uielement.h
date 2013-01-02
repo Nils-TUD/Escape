@@ -57,7 +57,7 @@ namespace gui {
 			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
 			  _pos(), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
 			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
-		};
+		}
 		/**
 		 * Constructor that specifies a position and size explicitly. This can be used if no layout
 		 * is used or if a different preferred size than the min size is desired.
@@ -71,20 +71,20 @@ namespace gui {
 			: _id(_nextid++), _g(NULL), _parent(NULL), _theme(Application::getInstance()->getDefaultTheme()),
 			  _pos(pos), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
 			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
-		};
+		}
 		/**
 		 * Destructor. Free's the memory
 		 */
 		virtual ~UIElement() {
 			delete _g;
-		};
+		}
 
 		/**
 		 * @return the id of this UIElement (unique in one application)
 		 */
 		id_type getId() const {
 			return _id;
-		};
+		}
 
 		/**
 		 * @return the position in the window
@@ -99,13 +99,13 @@ namespace gui {
 		 */
 		Pos getPos() const {
 			return _pos;
-		};
+		}
 		/**
 		 * @return the size of this element
 		 */
 		Size getSize() const {
 			return _size;
-		};
+		}
 
 		/**
 		 * @return the size of the content of this ui-element. for normal elements its simply
@@ -118,7 +118,7 @@ namespace gui {
 			if(_parent)
 				return minsize(_parent->getContentSize(),_size);
 			return _size;
-		};
+		}
 
 		/**
 		 * @return the preferred size of this ui-element
@@ -129,17 +129,17 @@ namespace gui {
 			Size pref = getPrefSize();
 			return Size(_prefSize.width ? _prefSize.width : pref.width,
 						_prefSize.height ? _prefSize.height : pref.height);
-		};
+		}
 
 		/**
 		 * @return the theme of this ui-element
 		 */
 		Theme &getTheme() {
 			return _theme;
-		};
+		}
 		const Theme &getTheme() const {
 			return _theme;
-		};
+		}
 
 		/**
 		 * Performs the layout-calculation for this ui-element. This is only used by Window and
@@ -182,7 +182,7 @@ namespace gui {
 		 */
 		Graphics *getGraphics() const {
 			return _g;
-		};
+		}
 
 		/**
 		 * @return the window this ui-element belongs to
@@ -193,29 +193,29 @@ namespace gui {
 		 */
 		UIElement *getParent() const {
 			return _parent;
-		};
+		}
 
 		/**
 		 * The event senders
 		 */
 		mouseev_type &mouseMoved() {
 			return _mouseMoved;
-		};
+		}
 		mouseev_type &mousePressed() {
 			return _mousePressed;
-		};
+		}
 		mouseev_type &mouseReleased() {
 			return _mouseReleased;
-		};
+		}
 		mouseev_type &mouseWheel() {
 			return _mouseWheel;
-		};
+		}
 		keyev_type &keyPressed() {
 			return _keyPressed;
-		};
+		}
 		keyev_type &keyReleased() {
 			return _keyReleased;
-		};
+		}
 
 		/**
 		 * The callback-methods for the events
@@ -234,7 +234,7 @@ namespace gui {
 		 */
 		bool isRepaintEnabled() const {
 			return _enableRepaint;
-		};
+		}
 		/**
 		 * Sets whether calls of repaint() actually perform a repaint. That is, by setting it to
 		 * false, calls of repaint() are ignored.
@@ -243,7 +243,7 @@ namespace gui {
 		 */
 		void setRepaintEnabled(bool en) {
 			_enableRepaint = en;
-		};
+		}
 
 	protected:
 		/**
@@ -260,7 +260,7 @@ namespace gui {
 		 */
 		virtual void setParent(UIElement *e) {
 			_parent = e;
-		};
+		}
 
 	private:
 		// I've decided to make all ui-elements not-clonable for the following reasons:
@@ -299,7 +299,7 @@ namespace gui {
 		 */
 		virtual Size getUsedSize(const Size &avail) const {
 			return maxsize(getPreferredSize(),avail);
-		};
+		}
 
 		/**
 		 * Sets the position
@@ -308,7 +308,7 @@ namespace gui {
 		 */
 		void setPos(const Pos &pos) {
 			_pos = pos;
-		};
+		}
 		/**
 		 * Sets the size
 		 *
@@ -316,7 +316,7 @@ namespace gui {
 		 */
 		void setSize(const Size &size) {
 			_size = size;
-		};
+		}
 
 		/**
 		 * Informs the ui-element that the child c currently has the focus

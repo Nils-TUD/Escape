@@ -33,43 +33,43 @@ namespace std {
 	public:
 		inline listnode()
 			: _prev(NULL), _next(NULL), _data(T()) {
-		};
+		}
 		inline listnode(listnode<T> *p,listnode<T> *n)
 			: _prev(p), _next(n), _data(T()) {
-		};
+		}
 		inline listnode(listnode<T> *p,listnode<T> *n,T d)
 			: _prev(p), _next(n), _data(d) {
-		};
+		}
 		inline ~listnode() {
-		};
+		}
 
 		inline listnode(const listnode<T>& l) : _prev(l.prev()), _next(l.next()), _data(l.data()) {
-		};
+		}
 		listnode<T>& operator=(const listnode<T>& l) {
 			_prev = l.prev();
 			_next = l.next();
 			_data = l.data();
 			return *this;
-		};
+		}
 
 		inline listnode<T>* prev() const {
 			return _prev;
-		};
+		}
 		inline void prev(listnode<T>* p) {
 			_prev = p;
-		};
+		}
 		inline listnode<T>* next() const {
 			return _next;
-		};
+		}
 		inline void next(listnode<T>* n) {
 			_next = n;
-		};
+		}
 		inline T data() const {
 			return _data;
-		};
+		}
 		inline void data(T d) {
 			_data = d;
-		};
+		}
 
 	private:
 		listnode<T>* _prev;
@@ -85,70 +85,70 @@ namespace std {
 	public:
 		inline listiterator()
 			: _node(NULL) {
-		};
+		}
 		inline listiterator(listnode<T> *n)
 			: _node(n) {
-		};
+		}
 		inline ~listiterator() {
-		};
+		}
 
 		inline T& operator *() const {
 			return _node->_data;
-		};
+		}
 		inline T* operator ->() const {
 			return &(operator*());
-		};
+		}
 		inline listiterator operator +(typename listiterator<T>::difference_type n) const {
 			listnode<T> *nd = _node;
 			while(n-- > 0)
 				nd = nd->next();
 			return listiterator<T>(nd);
-		};
+		}
 		listiterator& operator +=(typename listiterator<T>::difference_type n) {
 			while(n-- > 0)
 				_node = _node->next();
 			return *this;
-		};
+		}
 		listiterator operator -(typename listiterator<T>::difference_type n) const {
 			listnode<T> *nd = _node;
 			while(n-- > 0)
 				nd = nd->prev();
 			return listiterator<T>(nd);
-		};
+		}
 		listiterator& operator -=(typename listiterator<T>::difference_type n) {
 			while(n-- > 0)
 				_node = _node->prev();
 			return *this;
-		};
+		}
 		inline listiterator& operator ++() {
 			_node = _node->next();
 			return *this;
-		};
+		}
 		inline listiterator operator ++(int) {
 			listiterator<T> tmp(*this);
 			operator++();
 			return tmp;
-		};
+		}
 		inline listiterator& operator --() {
 			_node = _node->prev();
 			return *this;
-		};
+		}
 		inline listiterator operator --(int) {
 			listiterator<T> tmp(*this);
 			operator--();
 			return tmp;
-		};
+		}
 		inline bool operator ==(const listiterator<T>& rhs) {
 			return _node == rhs._node;
-		};
+		}
 		inline bool operator !=(const listiterator<T>& rhs) {
 			return _node != rhs._node;
-		};
+		}
 
 	private:
 		inline listnode<T>* node() const {
 			return _node;
-		};
+		}
 
 	private:
 		listnode<T>* _node;
@@ -162,70 +162,70 @@ namespace std {
 	public:
 		inline const_listiterator()
 			: _node(NULL) {
-		};
+		}
 		inline const_listiterator(const listnode<T> *n)
 			: _node(n) {
-		};
+		}
 		inline ~const_listiterator() {
-		};
+		}
 
 		inline const T& operator *() const {
 			return _node->_data;
-		};
+		}
 		inline const T* operator ->() const {
 			return &(operator*());
-		};
+		}
 		const_listiterator operator +(typename const_listiterator<T>::difference_type n) const {
 			listnode<T> *nd = _node;
 			while(n-- > 0)
 				nd = nd->next();
 			return const_listiterator<T>(nd);
-		};
+		}
 		const_listiterator& operator +=(typename const_listiterator<T>::difference_type n) {
 			while(n-- > 0)
 				_node = _node->next();
 			return *this;
-		};
+		}
 		const_listiterator operator -(typename const_listiterator<T>::difference_type n) const {
 			listnode<T> *nd = _node;
 			while(n-- > 0)
 				nd = nd->prev();
 			return const_listiterator<T>(nd);
-		};
+		}
 		const_listiterator& operator -=(typename const_listiterator<T>::difference_type n) {
 			while(n-- > 0)
 				_node = _node->prev();
 			return *this;
-		};
+		}
 		inline const_listiterator& operator ++() {
 			_node = _node->next();
 			return *this;
-		};
+		}
 		inline const_listiterator operator ++(int) {
 			const_listiterator<T> tmp(*this);
 			operator++();
 			return tmp;
-		};
+		}
 		inline const_listiterator& operator --() {
 			_node = _node->prev();
 			return *this;
-		};
+		}
 		inline const_listiterator operator --(int) {
 			const_listiterator<T> tmp(*this);
 			operator--();
 			return tmp;
-		};
+		}
 		inline bool operator ==(const const_listiterator<T>& rhs) {
 			return _node == rhs._node;
-		};
+		}
 		inline bool operator !=(const const_listiterator<T>& rhs) {
 			return _node != rhs._node;
-		};
+		}
 
 	private:
 		inline const listnode<T>* node() const {
 			return _node;
-		};
+		}
 
 	private:
 		const listnode<T>* _node;

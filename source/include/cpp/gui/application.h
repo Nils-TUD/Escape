@@ -72,7 +72,7 @@ namespace gui {
 			if(_inst == NULL)
 				_inst = new Application();
 			return _inst;
-		};
+		}
 
 	private:
 		static Application *_inst;
@@ -83,13 +83,13 @@ namespace gui {
 		 */
 		Size getScreenSize() const {
 			return Size(_vesaInfo.width,_vesaInfo.height);
-		};
+		}
 		/**
 		 * @return the color-depth
 		 */
 		uchar getColorDepth() const {
 			return _vesaInfo.bitsPerPixel;
-		};
+		}
 
 		/**
 		 * @param id the window-id
@@ -102,7 +102,7 @@ namespace gui {
 		 */
 		const Theme *getDefaultTheme() {
 			return &_defTheme;
-		};
+		}
 
 		/**
 		 * Requests that this window should be the active one
@@ -114,13 +114,13 @@ namespace gui {
 		 */
 		createdev_type &created() {
 			return _created;
-		};
+		}
 		activatedev_type &activated() {
 			return _activated;
-		};
+		}
 		destroyedev_type &destroyed() {
 			return _destroyed;
-		};
+		}
 
 		/**
 		 * Starts the message-loop
@@ -163,19 +163,19 @@ namespace gui {
 		 */
 		const sVESAInfo *getVesaInfo() const {
 			return &_vesaInfo;
-		};
+		}
 		/**
 		 * @return the file-descriptor for vesa
 		 */
 		int getVesaFd() const {
 			return _vesaFd;
-		};
+		}
 		/**
 		 * @return the shared-memory for the screen
 		 */
 		void *getScreenMem() const {
 			return _vesaMem;
-		};
+		}
 		/**
 		 * Requests an update for the window with given id and the given rectangle.
 		 * Ensures that the update does only affect the given window

@@ -142,21 +142,21 @@ namespace std {
 		 */
 		bool is_help() const {
 			return _ishelp;
-		};
+		}
 
 		/**
 		 * @return a vector with all arguments (including the progname)
 		 */
 		const vector<string*> &get_args() const {
 			return _args;
-		};
+		}
 
 		/**
 		 * @return a vector with all free arguments
 		 */
 		const vector<string*> &get_free() const {
 			return _free;
-		};
+		}
 
 	private:
 		// no cloning

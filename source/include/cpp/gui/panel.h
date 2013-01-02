@@ -32,7 +32,7 @@ namespace gui {
 		 */
 		Panel(Layout *l = NULL)
 			: Control(), _focus(NULL), _controls(), _layout(l), _updateRect() {
-		};
+		}
 		/**
 		 * Creates an empty panel at given position, with given size and with given layout. Note
 		 * that the layout will be owned by the panel afterwards. So, it will delete it when the
@@ -44,7 +44,7 @@ namespace gui {
 		 */
 		Panel(const Pos &pos,const Size &size,Layout *l = NULL)
 			: Control(pos,size), _focus(NULL), _controls(), _layout(l), _updateRect() {
-		};
+		}
 		/**
 		 * Destructor
 		 */
@@ -52,7 +52,7 @@ namespace gui {
 			for(std::vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
 				delete (*it);
 			delete _layout;
-		};
+		}
 
 		virtual Size getPrefSize() const {
 			if(_layout) {
@@ -60,7 +60,7 @@ namespace gui {
 				return _layout->getPreferredSize() + Size(pad * 2,pad * 2);
 			}
 			return Size();
-		};
+		}
 		virtual Size getUsedSize(const Size &avail) const {
 			if(_layout) {
 				gsize_t pad = getTheme().getPadding();
@@ -68,14 +68,14 @@ namespace gui {
 				return _layout->getUsedSize(subsize(avail,padsize)) + padsize;
 			}
 			return UIElement::getUsedSize(avail);
-		};
+		}
 
 		/**
 		 * @return the layout (NULL if none)
 		 */
 		Layout *getLayout() const {
 			return _layout;
-		};
+		}
 		/**
 		 * Sets the used layout for this panel. This is only possible if no controls have been
 		 * added yet.
@@ -88,7 +88,7 @@ namespace gui {
 						" you can't change the layout afterwards");
 			}
 			_layout = l;
-		};
+		}
 
 		/**
 		 * Performs a layout-calculation for this panel and all childs
@@ -136,12 +136,12 @@ namespace gui {
 			if(_focus)
 				return _focus->getFocus();
 			return NULL;
-		};
+		}
 		virtual Control *getFocus() {
 			if(_focus)
 				return _focus->getFocus();
 			return NULL;
-		};
+		}
 
 	private:
 		void passToCtrl(const MouseEvent &e,bool focus);
@@ -149,7 +149,7 @@ namespace gui {
 			_focus = c;
 			if(_parent)
 				_parent->setFocus(this);
-		};
+		}
 
 	protected:
 		Control *_focus;

@@ -63,62 +63,62 @@ namespace gui {
 		           const Pos &pos,button_type buttons)
 			: _type(type), _movedx(movedx), _movedy(movedy), _movedz(movedz), _pos(pos),
 			  _buttons(buttons) {
-		};
+		}
 
 		/**
 		 * @return the event-type (MOUSE_*)
 		 */
 		event_type getType() const {
 			return _type;
-		};
+		}
 		/**
 		 * @return the mouse-position
 		 */
 		Pos getPos() const {
 			return _pos;
-		};
+		}
 		/**
 		 * @return the mouse-x-movement
 		 */
 		short getXMovement() const {
 			return _movedx;
-		};
+		}
 		/**
 		 * @return the mouse-y-movement
 		 */
 		short getYMovement() const {
 			return _movedy;
-		};
+		}
 		/**
 		 * @return the mousewheel movement
 		 */
 		short getWheelMovement() const {
 			return _movedz;
-		};
+		}
 		/**
 		 * @return the button-mask
 		 */
 		button_type getButtonMask() const {
 			return _buttons;
-		};
+		}
 		/**
 		 * @return true if button 1 is pressed
 		 */
 		bool isButton1Down() const {
 			return _buttons & BUTTON1_MASK;
-		};
+		}
 		/**
 		 * @return true if button 2 is pressed
 		 */
 		bool isButton2Down() const {
 			return _buttons & BUTTON2_MASK;
-		};
+		}
 		/**
 		 * @return true if button 3 is pressed
 		 */
 		bool isButton3Down() const {
 			return _buttons & BUTTON3_MASK;
-		};
+		}
 
 	private:
 		event_type _type;
@@ -156,50 +156,50 @@ namespace gui {
 		 */
 		KeyEvent(event_type type,keycode_type keycode,char character,modifier_type modifier)
 			: _type(type), _keycode(keycode), _character(character), _modifier(modifier) {
-		};
+		}
 
 		/**
 		 * @return the event-type (KEY_*)
 		 */
 		event_type getType() const {
 			return _type;
-		};
+		}
 		/**
 		 * @return the keycode
 		 */
 		keycode_type getKeyCode() const {
 			return _keycode;
-		};
+		}
 		/**
 		 * @return the character
 		 */
 		char getCharacter() const {
 			return _character;
-		};
+		}
 		/**
 		 * whether the character is printable
 		 */
 		bool isPrintable() const {
 			return isprint(_character);
-		};
+		}
 		/**
 		 * @return whether shift is currently pressed
 		 */
 		bool isShiftDown() const {
 			return _modifier & SHIFT_MASK;
-		};
+		}
 		/**
 		 * @return whether control is currently pressed
 		 */
 		bool isCtrlDown() const {
 			return _modifier & CTRL_MASK;
-		};
+		}
 		/**
 		 * @return whether alt is currently pressed
 		 */
 		bool isAltDown() const {
 			return _modifier & ALT_MASK;
-		};
+		}
 
 	private:
 		event_type _type;

@@ -64,16 +64,16 @@ private:
 
 public:
 	DriverProcess() : Process(), _devices() {
-	};
+	}
 	virtual ~DriverProcess() {
-	};
+	}
 
 	virtual bool isKillable() const {
 		return name() != "video";
-	};
+	}
 	const std::vector<Device>& devices() const {
 		return _devices;
-	};
+	}
 	virtual void load();
 
 private:

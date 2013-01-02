@@ -47,7 +47,7 @@ namespace gui {
 		 */
 		IconLayout(Preferred pref,gsize_t gap = DEF_GAP)
 			: Layout(), _pref(pref), _gap(gap), _p(), _ctrls() {
-		};
+		}
 
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);

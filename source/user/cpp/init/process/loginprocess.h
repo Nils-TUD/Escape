@@ -26,9 +26,9 @@ class LoginProcess : public Process {
 public:
 	LoginProcess(const std::string& procName,const std::string& vterm)
 		: Process(procName), _vterm(vterm) {
-	};
+	}
 	virtual ~LoginProcess() {
-	};
+	}
 
 	virtual void load();
 

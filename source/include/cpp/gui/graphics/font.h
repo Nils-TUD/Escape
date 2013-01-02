@@ -32,17 +32,17 @@ namespace gui {
 	public:
 		Size getSize() const {
 			return Size(charWidth,charHeight);
-		};
+		}
 		gsize_t getStringWidth(const std::string& str) const {
 			return str.length() * charWidth;
-		};
+		}
 		gsize_t limitStringTo(A_UNUSED const std::string& str,gsize_t width,
 		                             A_UNUSED gsize_t start = 0) const {
 			return std::min<gsize_t>(str.length(),width / charWidth);
-		};
+		}
 		bool isPixelSet(char c,gpos_t x,gpos_t y) const {
 			return _font[(uchar)c * charHeight + y] & (1 << (charWidth - x - 1));
-		};
+		}
 
 	private:
 		static uint8_t _font[];

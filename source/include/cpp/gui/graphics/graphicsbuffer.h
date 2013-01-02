@@ -47,47 +47,47 @@ namespace gui {
 		GraphicsBuffer(Window *win,const Pos &pos,const Size &size,gcoldepth_t bpp)
 			: _win(win), _pos(pos), _size(size), _bpp(bpp), _pixels(NULL) {
 			allocBuffer();
-		};
+		}
 		/**
 		 * Destructor
 		 */
 		virtual ~GraphicsBuffer() {
 			free(_pixels);
-		};
+		}
 
 		/**
 		 * @return the position of the buffer (global)
 		 */
 		Pos getPos() const {
 			return _pos;
-		};
+		}
 		/**
 		 * @return the size of the buffer
 		 */
 		Size getSize() const {
 			return _size;
-		};
+		}
 
 		/**
 		 * @return the window this buffer belongs to
 		 */
 		Window *getWindow() const {
 			return _win;
-		};
+		}
 
 		/**
 		 * @return the buffer
 		 */
 		uint8_t *getBuffer() const {
 			return _pixels;
-		};
+		}
 
 		/**
 		 * @return the color-depth
 		 */
 		gcoldepth_t getColorDepth() const {
 			return _bpp;
-		};
+		}
 
 		/**
 		 * Requests an update for the given region

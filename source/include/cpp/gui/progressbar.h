@@ -29,25 +29,25 @@ namespace gui {
 	public:
 		ProgressBar(const std::string &text)
 			: Control(), _position(0), _text(text) {
-		};
+		}
 		ProgressBar(const std::string &text,const Pos &pos,const Size &size)
 			: Control(pos,size), _position(0), _text(text) {
-		};
+		}
 
 		size_t getPosition() const {
 			return _position;
-		};
+		}
 		void setPosition(size_t pos) {
 			_position = std::min((size_t)100,pos);
 			repaint();
-		};
+		}
 		const std::string &getText() const {
 			return _text;
-		};
+		}
 		void setText(const std::string &text) {
 			_text = text;
 			repaint();
-		};
+		}
 
 		virtual Size getPrefSize() const;
 

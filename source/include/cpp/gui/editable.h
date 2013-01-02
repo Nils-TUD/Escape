@@ -39,15 +39,15 @@ namespace gui {
 		Editable()
 			: Control(), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
-		};
+		}
 		Editable(const Pos &pos,const Size &size)
 			: Control(pos,size), _cursor(0), _begin(0), _focused(false), _selecting(false),
 			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
-		};
+		}
 
 		size_t getCursorPos() const {
 			return _cursor;
-		};
+		}
 		void setCursorPos(size_t pos) {
 			size_t max = getMaxCharNum(*getGraphics());
 			assert(pos <= _str.length());
@@ -56,17 +56,17 @@ namespace gui {
 				_begin = _cursor - max;
 			else
 				_begin = 0;
-		};
+		}
 
 		const std::string &getText() const {
 			return _str;
-		};
+		}
 		void setText(const std::string &text) {
 			_str = text;
 			setCursorPos(text.length());
 			clearSelection();
 			repaint();
-		};
+		}
 
 		void insertAtCursor(char c);
 		void insertAtCursor(const std::string &str);
@@ -95,7 +95,7 @@ namespace gui {
 			if(getSize().width < getTheme().getTextPadding() * 2)
 				return 0;
 			return (getSize().width - getTheme().getTextPadding() * 2) / g.getFont().getSize().width;
-		};
+		}
 
 	private:
 		size_t _cursor;

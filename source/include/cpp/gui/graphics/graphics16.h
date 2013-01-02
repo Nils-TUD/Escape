@@ -30,7 +30,7 @@ namespace gui {
 	class Graphics16 : public Graphics {
 	public:
 		Graphics16(GraphicsBuffer *buf,const Size &size) : Graphics(buf,size) {
-		};
+		}
 
 		void fillRect(const Pos &pos,const Size &size);
 

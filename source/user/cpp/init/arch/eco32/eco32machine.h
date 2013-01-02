@@ -26,9 +26,9 @@ class ECO32Machine : public Machine {
 public:
 	ECO32Machine()
 		: Machine() {
-	};
+	}
 	virtual ~ECO32Machine() {
-	};
+	}
 
 	virtual void reboot(Progress &pg);
 	virtual void shutdown(Progress &pg);

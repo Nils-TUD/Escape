@@ -123,49 +123,49 @@ namespace std {
 	public:
 		bintree_iterator()
 			: _node(NULL) {
-		};
+		}
 		bintree_iterator(bintree_node<Key,T,Cmp> *n)
 			: _node(n) {
-		};
+		}
 		~bintree_iterator() {
-		};
+		}
 
 		pair<Key,T>& operator *() const {
 			// TODO const?
 			return const_cast<pair<Key,T>&>(_node->data());
-		};
+		}
 		pair<Key,T>* operator ->() const {
 			return &(operator*());
-		};
+		}
 		bintree_iterator& operator ++() {
 			_node = _node->next();
 			return *this;
-		};
+		}
 		bintree_iterator operator ++(int) {
 			bintree_iterator<Key,T,Cmp> tmp(*this);
 			operator++();
 			return tmp;
-		};
+		}
 		bintree_iterator& operator --() {
 			_node = _node->prev();
 			return *this;
-		};
+		}
 		bintree_iterator operator --(int) {
 			bintree_iterator<Key,T,Cmp> tmp(*this);
 			operator--();
 			return tmp;
-		};
+		}
 		bool operator ==(const bintree_iterator<Key,T,Cmp>& rhs) {
 			return _node == rhs._node;
-		};
+		}
 		bool operator !=(const bintree_iterator<Key,T,Cmp>& rhs) {
 			return _node != rhs._node;
-		};
+		}
 
 	private:
 		bintree_node<Key,T,Cmp>* node() const {
 			return _node;
-		};
+		}
 
 	private:
 		bintree_node<Key,T,Cmp>* _node;
@@ -178,48 +178,48 @@ namespace std {
 	public:
 		const_bintree_iterator()
 			: _node(NULL) {
-		};
+		}
 		const_bintree_iterator(const bintree_node<Key,T,Cmp> *n)
 			: _node(n) {
-		};
+		}
 		~const_bintree_iterator() {
-		};
+		}
 
 		const pair<Key,T>& operator *() const {
 			return _node->data();
-		};
+		}
 		const pair<Key,T>* operator ->() const {
 			return &(operator*());
-		};
+		}
 		const_bintree_iterator& operator ++() {
 			_node = _node->next();
 			return *this;
-		};
+		}
 		const_bintree_iterator operator ++(int) {
 			const_bintree_iterator<Key,T,Cmp> tmp(*this);
 			operator++();
 			return tmp;
-		};
+		}
 		const_bintree_iterator& operator --() {
 			_node = _node->prev();
 			return *this;
-		};
+		}
 		const_bintree_iterator operator --(int) {
 			const_bintree_iterator<Key,T,Cmp> tmp(*this);
 			operator--();
 			return tmp;
-		};
+		}
 		bool operator ==(const const_bintree_iterator<Key,T,Cmp>& rhs) {
 			return _node == rhs._node;
-		};
+		}
 		bool operator !=(const const_bintree_iterator<Key,T,Cmp>& rhs) {
 			return _node != rhs._node;
-		};
+		}
 
 	private:
 		const bintree_node<Key,T,Cmp>* node() const {
 			return _node;
-		};
+		}
 
 	private:
 		const bintree_node<Key,T,Cmp>* _node;

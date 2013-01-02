@@ -44,7 +44,7 @@ namespace gui {
 
 	public:
 		virtual ~Image() {
-		};
+		}
 
 		virtual Size getSize() const = 0;
 

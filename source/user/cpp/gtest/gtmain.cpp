@@ -241,8 +241,8 @@ static void win6(void) {
 	root.setLayout(new BorderLayout(2));
 
 	Panel *btns = new Panel(new IconLayout(IconLayout::HORIZONTAL));
-	//ScrollPane *sp = new ScrollPane(btns);
-	root.add(btns,BorderLayout::CENTER);
+	ScrollPane *sp = new ScrollPane(btns);
+	root.add(sp,BorderLayout::CENTER);
 
 	for(size_t i = 0; i < 23; ++i) {
 		char name[12];
@@ -260,8 +260,8 @@ static void win7(void) {
 	root.setLayout(new BorderLayout(2));
 
 	Panel *btns = new Panel(new IconLayout(IconLayout::VERTICAL));
-	//ScrollPane *sp = new ScrollPane(btns);
-	root.add(btns,BorderLayout::CENTER);
+	ScrollPane *sp = new ScrollPane(btns);
+	root.add(sp,BorderLayout::CENTER);
 
 	srand(time(NULL));
 	for(size_t i = 0; i < 29; ++i) {

@@ -48,9 +48,9 @@ private:
 public:
 	ShellControl(const gui::Pos &pos,const gui::Size &size) :
 		Control(pos,size), _lastCol(0), _lastRow(0), _vt(NULL) {
-	};
+	}
 	virtual ~ShellControl() {
-	};
+	}
 
 	// no cloning
 	ShellControl(const ShellControl &e);
@@ -61,10 +61,10 @@ public:
 
 	gsize_t getCols() const {
 		return (getSize().width - TEXTSTARTX * 2) / getGraphics()->getFont().getSize().width;
-	};
+	}
 	gsize_t getRows() const {
 		return (getSize().height - TEXTSTARTY * 2) / (getGraphics()->getFont().getSize().height + PADDING);
-	};
+	}
 
 	void sendEOF();
 
@@ -74,7 +74,7 @@ public:
 private:
 	void setVTerm(sVTerm *vt) {
 		_vt = vt;
-	};
+	}
 
 	void clearRows(gui::Graphics &g,size_t start,size_t count);
 	void paintRows(gui::Graphics &g,size_t start,size_t count);

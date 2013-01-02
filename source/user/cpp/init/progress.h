@@ -44,15 +44,15 @@ public:
 	void allTerminated() {
 		_finished = 0;
 		updateBar();
-	};
+	}
 
 private:
 	size_type getPadX() const {
 		return (_vtSize.width - BAR_WIDTH) / 2;
-	};
+	}
 	size_type getPadY() const {
 		return (_vtSize.height / 2) - ((BAR_HEIGHT + 2) / 2) - 1;
-	};
+	}
 	void updateBar();
 	void paintTo(const void *data,int x,int y,size_t size);
 	bool connect();

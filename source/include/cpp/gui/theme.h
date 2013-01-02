@@ -75,7 +75,7 @@ namespace gui {
 		 */
 		Theme(const Theme *def)
 			: _default(def), _present(0), _padding(0), _textPadding(0), _colors(NULL) {
-		};
+		}
 		/**
 		 * Copy-constructor
 		 */
@@ -83,13 +83,13 @@ namespace gui {
 			: _default(t._default), _present(t._present), _padding(t._padding),
 			  _textPadding(t._textPadding), _colors() {
 			_colors = new std::vector<Color>(*t._colors);
-		};
+		}
 		/**
 		 * Destructor
 		 */
 		~Theme() {
 			delete _colors;
-		};
+		}
 
 		/**
 		 * Assignment-operator
@@ -147,7 +147,7 @@ namespace gui {
 		 */
 		void unsetColor(colid_type id) {
 			_present &= ~(1 << id);
-		};
+		}
 
 	private:
 		const Theme *_default;

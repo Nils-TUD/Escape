@@ -34,10 +34,10 @@ class Shortcut {
 public:
 	Shortcut(const std::string& icon,const std::string& app)
 		: _icon(icon), _app(app), _btn(NULL) {
-	};
+	}
 	Shortcut(const Shortcut &w)
 		: _icon(w._icon), _app(w._app), _btn(new gui::ImageButton(*w._btn)) {
-	};
+	}
 
 	Shortcut &operator=(const Shortcut &w) {
 		if(this == &w)
@@ -46,22 +46,22 @@ public:
 		this->_app = w._app;
 		this->_btn = new gui::ImageButton(*w._btn);
 		return *this;
-	};
+	}
 
 	const string& getIcon() const {
 		return _icon;
-	};
+	}
 	const string& getApp() const {
 		return _app;
-	};
+	}
 
 private:
 	gui::ImageButton *getButton() const {
 		return _btn;
-	};
+	}
 	void setButton(gui::ImageButton *btn) {
 		_btn = btn;
-	};
+	}
 
 private:
 	std::string _icon;
@@ -74,7 +74,7 @@ class DesktopWin : public gui::Window {
 	public:
 		WinButton(DesktopWin *inst,const string &title)
 			: Button(title), _sub(clicked(),mem_recv(inst,&DesktopWin::onIconClick)) {
-		};
+		}
 
 	private:
 		onclick_type::subscr_type _sub;
@@ -104,7 +104,7 @@ public:
 		_shortcuts[btn] = sc;
 		_iconPanel->add(btn);
 		_iconPanel->repaint();
-	};
+	}
 
 	// no cloning
 private:

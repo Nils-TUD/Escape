@@ -51,7 +51,7 @@ namespace gui {
 		 */
 		const std::string &getTitle() const {
 			return _title->getText();
-		};
+		}
 		/**
 		 * Sets the title and requests a repaint
 		 *
@@ -59,7 +59,7 @@ namespace gui {
 		 */
 		void setTitle(const std::string &title) {
 			_title->setText(title);
-		};
+		}
 
 	private:
 		void init();
@@ -131,31 +131,31 @@ namespace gui {
 		 */
 		gwinid_t getId() const {
 			return _id;
-		};
+		}
 		/**
 		 * @return the style of the window (STYLE_*)
 		 */
 		uchar getStyle() const {
 			return _style;
-		};
+		}
 		/**
 		 * @return true if this is the active window
 		 */
 		bool isActive() const {
 			return _isActive;
-		};
+		}
 		/**
 		 * @return true if the creation of the window is finished
 		 */
 		bool isCreated() const {
 			return _created;
-		};
+		}
 		/**
 		 * @return whether this window has a title-bar
 		 */
 		bool hasTitleBar() const {
 			return _header != NULL;
-		};
+		}
 		/**
 		 * @return the title (a copy)
 		 */
@@ -163,7 +163,7 @@ namespace gui {
 			if(!_header)
 				throw std::logic_error("This window has no title");
 			return _header->getTitle();
-		};
+		}
 		/**
 		 * Sets the title and requests a repaint
 		 *
@@ -173,13 +173,13 @@ namespace gui {
 			if(!_header)
 				throw std::logic_error("This window has no title");
 			_header->setTitle(title);
-		};
+		}
 		/**
 		 * @return the focused control (NULL if none)
 		 */
 		Control *getFocus() {
 			return _body.getFocus();
-		};
+		}
 		/**
 		 * Sets the focus on the given control.
 		 *
@@ -191,14 +191,14 @@ namespace gui {
 		 */
 		gsize_t getTitleBarHeight() const {
 			return _header ? _header->getSize().height : 0;
-		};
+		}
 
 		/**
 		 * @return the root-panel to which you can add controls
 		 */
 		Panel &getRootPanel() {
 			return _body;
-		};
+		}
 
 		virtual Size getPrefSize() const {
 			Size bsize = _body.getPreferredSize();
@@ -207,13 +207,13 @@ namespace gui {
 				return Size(std::max(hsize.width,bsize.width) + 2,hsize.height + bsize.height + 2);
 			}
 			return Size(bsize.width + 2,bsize.height + 2);
-		};
+		}
 
 		virtual void layout() {
 			if(_header)
 				_header->layout();
 			_body.layout();
-		};
+		}
 
 		/**
 		 * Calculates the layout and finally shows the window, i.e. this method has to be called to
@@ -233,7 +233,7 @@ namespace gui {
 			// add us to app; we'll receive a "created"-event as soon as the window
 			// manager knows about us
 			Application::getInstance()->addWindow(this);
-		};
+		}
 
 		/**
 		 * The event-callbacks
@@ -255,7 +255,7 @@ namespace gui {
 		void setActive(bool) {
 			// TODO what about the bool?
 			Application::getInstance()->requestActiveWindow(_id);
-		};
+		}
 
 		/**
 		 * Adds the given control as tab-control to this window
@@ -278,10 +278,10 @@ namespace gui {
 		 */
 		virtual Window *getWindow() {
 			return this;
-		};
+		}
 		virtual const Window *getWindow() const {
 			return this;
-		};
+		}
 
 	private:
 		/**
@@ -289,13 +289,13 @@ namespace gui {
 		 */
 		Pos getMovePos() const {
 			return _movePos;
-		};
+		}
 		/**
 		 * @return the current size to resize to
 		 */
 		Size getResizeSize() const {
 			return _resizeSize;
-		};
+		}
 		/**
 		 * Sets whether this window is active. Requests a repaint, if necessary.
 		 *

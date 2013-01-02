@@ -81,19 +81,19 @@ namespace gui {
 			: Image(), _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
 				_data(NULL), _dataSize(0) {
 			loadFromFile(filename);
-		};
+		}
 		virtual ~BitmapImage() {
 			delete[] _fileHeader;
 			// don't delete _infoHeader since it's in the heap-area of fileHeader
 			delete[] _colorTable;
 			delete[] _data;
-		};
+		}
 
 		BitmapImage(const BitmapImage &img)
 			: Image(img), _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL),
 			  _tableSize(0), _data(NULL), _dataSize(0) {
 			clone(img);
-		};
+		}
 		BitmapImage &operator=(const BitmapImage &img) {
 			if(&img == this)
 				return *this;
@@ -103,11 +103,11 @@ namespace gui {
 			delete[] _data;
 			clone(img);
 			return *this;
-		};
+		}
 
 		virtual Size getSize() const {
 			return Size(_infoHeader->width,_infoHeader->height);
-		};
+		}
 		void paint(Graphics &g,const Pos &pos);
 
 	private:

@@ -51,40 +51,40 @@ namespace info {
 
 		std::string procName() const {
 			return _procName;
-		};
+		}
 		tid_type tid() const {
 			return _tid;
-		};
+		}
 		tid_type pid() const {
 			return _pid;
-		};
+		}
 		state_type state() const {
 			return _state;
-		};
+		}
 		Flags flags() const {
 			return (Flags)_flags;
-		};
+		}
 		prio_type prio() const {
 			return _prio;
-		};
+		}
 		size_type stackPages() const {
 			return _stackPages;
-		};
+		}
 		size_type schedCount() const {
 			return _schedCount;
-		};
+		}
 		size_type syscalls() const {
 			return _syscalls;
-		};
+		}
 		cycle_type cycles() const {
 			return _cycles;
-		};
+		}
 		time_type runtime() const {
 			return _runtime;
-		};
+		}
 		cpu_type cpu() const {
 			return _cpu;
-		};
+		}
 
 	private:
 		tid_type _tid;

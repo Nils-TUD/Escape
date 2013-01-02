@@ -30,9 +30,9 @@ private:
 public:
 	i586Machine()
 		: Machine() {
-	};
+	}
 	virtual ~i586Machine() {
-	};
+	}
 
 	virtual void reboot(Progress &pg);
 	virtual void shutdown(Progress &pg);

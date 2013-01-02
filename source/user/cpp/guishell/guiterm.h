@@ -42,7 +42,7 @@ public:
 	void run();
 	void stop() {
 		_run = false;
-	};
+	}
 
 private:
 	// no cloning

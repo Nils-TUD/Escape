@@ -28,9 +28,9 @@ public:
 
 public:
 	Machine() {
-	};
+	}
 	virtual ~Machine() {
-	};
+	}
 
 	virtual void reboot(Progress &pg) = 0;
 	virtual void shutdown(Progress &pg) = 0;

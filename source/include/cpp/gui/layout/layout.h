@@ -41,12 +41,12 @@ namespace gui {
 		 * Constructor
 		 */
 		Layout() {
-		};
+		}
 		/**
 		 * Destructor
 		 */
 		virtual ~Layout() {
-		};
+		}
 
 		/**
 		 * Adds the given control to the layout
@@ -70,7 +70,7 @@ namespace gui {
 		 */
 		Size getPreferredSize() const {
 			return getSizeWith(Size(),getPrefSizeOf);
-		};
+		}
 
 		/**
 		 * Determines what size would be used if <width>X<height> is available.
@@ -80,7 +80,7 @@ namespace gui {
 		 */
 		Size getUsedSize(const Size &avail) const {
 			return getSizeWith(avail,getUsedSizeOf);
-		};
+		}
 
 		/**
 		 * Rearranges the controls, i.e. determines the position and sizes again. Does not
@@ -101,15 +101,15 @@ namespace gui {
 
 		static inline Size getPrefSizeOf(Control *c,const Size &) {
 			return c->getPreferredSize();
-		};
+		}
 		static inline Size getUsedSizeOf(Control *c,const Size &avail) {
 			return c->getUsedSize(avail);
-		};
+		}
 
 		void configureControl(Control *c,const Pos &pos,const Size &size) const {
 			c->moveTo(pos);
 			c->resizeTo(size);
-		};
+		}
 
 	private:
 		// no cloning

@@ -26,41 +26,41 @@
 class Process {
 public:
 	Process(int id = 0) : _pid(id), _alive(), _dead(), _name(), _args() {
-	};
+	}
 	Process(const std::string& procName) : _pid(), _alive(), _dead(), _name(procName), _args() {
-	};
+	}
 	virtual ~Process() {
-	};
+	}
 
 	bool isAlive() const {
 		return _alive;
-	};
+	}
 	void setAlive() {
 		_alive = true;
-	};
+	}
 	bool isDead() const {
 		return _dead;
-	};
+	}
 	void setDead() {
 		_dead = true;
-	};
+	}
 
 	virtual bool isKillable() const {
 		return true;
-	};
+	}
 	int pid() const {
 		return _pid;
-	};
+	}
 	const std::string& name() const {
 		return _name;
-	};
+	}
 	const std::vector<std::string>& args() const {
 		return _args;
-	};
+	}
 
 	virtual void load() {
 		// do nothing by default
-	};
+	}
 
 	friend bool operator<(Process &p1,Process &p2);
 

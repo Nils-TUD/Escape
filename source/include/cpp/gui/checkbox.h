@@ -34,21 +34,21 @@ namespace gui {
 	public:
 		Checkbox(const std::string &text)
 			: Control(), _focused(false), _checked(false), _text(text) {
-		};
+		}
 		Checkbox(const std::string &text,const Pos &pos,const Size &size)
 			: Control(pos,size), _focused(false), _checked(false), _text(text) {
-		};
+		}
 
 		bool isChecked() const {
 			return _checked;
-		};
+		}
 		const std::string &getText() const {
 			return _text;
-		};
+		}
 		void setText(const std::string &text) {
 			_text = text;
 			repaint();
-		};
+		}
 
 		virtual Size getPrefSize() const;
 		virtual void onFocusGained();

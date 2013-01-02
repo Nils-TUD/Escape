@@ -32,21 +32,21 @@ namespace gui {
 
 		Button(const std::string &text)
 			: Control(), _focused(false), _pressed(false), _text(text), _clicked() {
-		};
+		}
 		Button(const std::string &text,const Pos &pos,const Size &size)
 			: Control(pos,size), _focused(false), _pressed(false), _text(text), _clicked() {
-		};
+		}
 
 		bool isPressed() const {
 			return _pressed;
-		};
+		}
 		const std::string &getText() const {
 			return _text;
-		};
+		}
 		void setText(const std::string &text) {
 			_text = text;
 			repaint();
-		};
+		}
 
 		virtual Size getPrefSize() const;
 		virtual void onFocusGained();
@@ -58,7 +58,7 @@ namespace gui {
 
 		onclick_type &clicked() {
 			return _clicked;
-		};
+		}
 
 	protected:
 		virtual void paintBackground(Graphics &g);

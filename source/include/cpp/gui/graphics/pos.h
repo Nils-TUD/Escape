@@ -36,16 +36,16 @@ namespace gui {
 		void operator +=(const Size &s) {
 			x += s.width;
 			y += s.height;
-		};
+		}
 		void operator -=(const Size &s) {
 			x -= s.width;
 			y -= s.height;
-		};
+		}
 
 		friend std::ostream &operator <<(std::ostream &os, const Pos &p) {
 			os << "(" << p.x << "," << p.y << ")";
 			return os;
-		};
+		}
 
 		gpos_t x;
 		gpos_t y;

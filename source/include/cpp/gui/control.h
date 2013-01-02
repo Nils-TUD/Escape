@@ -42,7 +42,7 @@ namespace gui {
 		 */
 		Control()
 			: UIElement() {
-		};
+		}
 		/**
 		 * Constructor that specifies a position and size explicitly. This can be used if no layout
 		 * is used or if a different preferred size than the min size is desired.
@@ -52,26 +52,26 @@ namespace gui {
 		 */
 		Control(const Pos &pos,const Size &size)
 			: UIElement(pos,size) {
-		};
+		}
 
 		/**
 		 * Does nothing
 		 */
 		virtual void layout() {
-		};
+		}
 
 		/**
 		 * Is called as soon as this control received the focus
 		 */
 		virtual void onFocusGained() {
 			getParent()->setFocus(this);
-		};
+		}
 		/**
 		 * Is called as soon as this control lost the focus
 		 */
 		virtual void onFocusLost() {
 			getParent()->setFocus(NULL);
-		};
+		}
 
 	protected:
 		/**
@@ -94,10 +94,10 @@ namespace gui {
 		virtual Control *getFocus() {
 			// panel returns the focused control on the panel; a control does already return itself
 			return this;
-		};
+		}
 		virtual const Control *getFocus() const {
 			return this;
-		};
+		}
 
 		/**
 		 * Sets the parent of this control (used by Panel)

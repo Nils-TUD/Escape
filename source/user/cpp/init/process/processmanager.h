@@ -34,9 +34,9 @@ private:
 
 public:
 	ProcessManager() : _lock(0), _downProg(NULL), _procs() {
-	};
+	}
 	~ProcessManager() {
-	};
+	}
 
 	void start();
 	void restart(pid_t pid);

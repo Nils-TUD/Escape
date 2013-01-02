@@ -26,9 +26,9 @@ class MMIXMachine : public Machine {
 public:
 	MMIXMachine()
 		: Machine() {
-	};
+	}
 	virtual ~MMIXMachine() {
-	};
+	}
 
 	virtual void reboot(Progress &pg);
 	virtual void shutdown(Progress &pg);

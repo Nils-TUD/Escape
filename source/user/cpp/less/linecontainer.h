@@ -50,16 +50,16 @@ private:
 
 		Region()
 			: _begin((uintptr_t)chgsize(0)), _pages(0), _lines(0) {
-		};
+		}
 		~Region() {
-		};
+		}
 
 		bool append(size_type size,const char *line);
 		char *get(size_type size,size_type i) const;
 
 		size_type lines() const {
 			return _lines;
-		};
+		}
 
 	private:
 		uintptr_t _begin;
@@ -73,15 +73,15 @@ public:
 		: _regions(std::vector<Region>()), _lines(0), _lineLen(lineLen + 1) {
 		pageSize = sysconf(CONF_PAGE_SIZE);
 		_regions.push_back(Region());
-	};
+	}
 	~LineContainer() {
-	};
+	}
 
 	const char *get(size_type index);
 	void append(const char *line);
 	size_type size() const {
 		return _lines;
-	};
+	}
 
 private:
 	std::vector<Region> _regions;

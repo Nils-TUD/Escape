@@ -13,14 +13,14 @@ namespace gui {
 	public:
 		ImageButton(Image *img,bool border = true)
 			: Button(""), _img(img), _border(border) {
-		};
+		}
 		ImageButton(Image *img,const Pos &pos,const Size &size,bool border = true)
 			: Button("",pos,size), _img(img), _border(border) {
-		};
+		}
 
 		Image *getImage() const {
 			return _img;
-		};
+		}
 
 		virtual Size getPrefSize() const;
 		virtual void paintBorder(Graphics &g);

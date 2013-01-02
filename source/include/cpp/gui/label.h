@@ -28,18 +28,18 @@ namespace gui {
 	public:
 		Label(const std::string &text)
 			: Control(), _text(text) {
-		};
+		}
 		Label(const std::string &text,const Pos &pos,const Size &size)
 			: Control(pos,size), _text(text) {
-		};
+		}
 
 		const std::string &getText() const {
 			return _text;
-		};
+		}
 		void setText(const std::string &text) {
 			_text = text;
 			repaint();
-		};
+		}
 
 		virtual Size getPrefSize() const;
 

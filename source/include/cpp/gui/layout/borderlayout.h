@@ -64,7 +64,7 @@ namespace gui {
 		 * @param gap the gap between the controls (default 2)
 		 */
 		BorderLayout(gsize_t gap = DEF_GAP) : Layout(), _gap(gap), _p(NULL), _ctrls() {
-		};
+		}
 
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);

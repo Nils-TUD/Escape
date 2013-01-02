@@ -43,7 +43,7 @@ namespace gui {
 		public:
 			ItemWindow(ComboBox *cb,const Pos &pos,const Size &size)
 				: PopupWindow(pos,size), _cb(cb), _highlighted(cb->_selected) {
-			};
+			}
 
 			void onMouseMoved(const MouseEvent &e);
 			void onMouseReleased(const MouseEvent &e);
@@ -64,27 +64,27 @@ namespace gui {
 	public:
 		ComboBox()
 			: Control(), _items(), _selected(-1), _pressed(false), _win(NULL) {
-		};
+		}
 		ComboBox(const Pos &pos,const Size &size)
 			: Control(pos,size), _items(), _selected(-1), _pressed(false), _win(NULL) {
-		};
+		}
 		virtual ~ComboBox() {
 			delete _win;
-		};
+		}
 
 		void addItem(const std::string &s) {
 			_items.push_back(s);
-		};
+		}
 		int getSelectedIndex() const {
 			return _selected;
-		};
+		}
 		void setSelectedIndex(int index) {
 			if(index >= 0 && index < (int)_items.size())
 				_selected = index;
 			else
 				_selected = -1;
 			repaint();
-		};
+		}
 
 		virtual Size getPrefSize() const;
 		virtual void onMousePressed(const MouseEvent &e);

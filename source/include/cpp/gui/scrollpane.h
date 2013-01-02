@@ -37,21 +37,21 @@ namespace gui {
 	public:
 		ScrollPane(Control *ctrl)
 			: Control(), _ctrl(ctrl), _focus(0) {
-		};
+		}
 		ScrollPane(Control *ctrl,const Pos &pos,const Size &size)
 			: Control(pos,size), _ctrl(ctrl), _focus(0) {
-		};
+		}
 		virtual ~ScrollPane() {
 			delete _ctrl;
-		};
+		}
 
 		virtual Size getPrefSize() const {
 			return maxsize(_ctrl->getPreferredSize() + Size(BAR_SIZE,BAR_SIZE),Size(MIN_SIZE,MIN_SIZE));
-		};
+		}
 
 		virtual Size getUsedSize(const Size &avail) const {
 			return maxsize(avail,Size(MIN_SIZE,MIN_SIZE));
-		};
+		}
 
 		virtual Size getContentSize() const {
 			Size size = getSize();
@@ -64,7 +64,7 @@ namespace gui {
 			else
 				size.height -= _ctrl->getPos().y + BAR_SIZE;
 			return size;
-		};
+		}
 
 		virtual void onMouseMoved(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
@@ -73,7 +73,7 @@ namespace gui {
 
 		virtual void layout() {
 			_ctrl->layout();
-		};
+		}
 
 	protected:
 		virtual void paint(Graphics &g);
@@ -84,17 +84,17 @@ namespace gui {
 			Control::moveTo(pos);
 			// don't move the control, its position is relative to us. just refresh the paint-region
 			_ctrl->setRegion();
-		};
+		}
 		virtual void setRegion() {
 			Control::setRegion();
 			_ctrl->setRegion();
-		};
+		}
 
 		virtual void onFocusGained() {
 			Control::onFocusGained();
 			if(_focus & FOCUS_CTRL)
 				_ctrl->onFocusGained();
-		};
+		}
 
 		virtual Control *getFocus() {
 			if(_focus & FOCUS_CTRL)
@@ -102,19 +102,19 @@ namespace gui {
 			if(_focus)
 				return this;
 			return NULL;
-		};
+		}
 		virtual const Control *getFocus() const {
 			if(_focus & FOCUS_CTRL)
 				return _ctrl->getFocus();
 			if(_focus)
 				return this;
 			return NULL;
-		};
+		}
 
 		virtual void setParent(UIElement *e) {
 			Control::setParent(e);
 			_ctrl->setParent(this);
-		};
+		}
 
 	private:
 		void scrollBy(short mx,short my);
@@ -124,7 +124,7 @@ namespace gui {
 			else
 				_focus &= ~FOCUS_CTRL;
 			_parent->setFocus(this);
-		};
+		}
 
 	private:
 		void paintBars(Graphics &g);

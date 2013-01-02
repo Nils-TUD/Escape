@@ -68,8 +68,8 @@ namespace std {
 		/**
 		 * Builds a vector with all entries in the directory denoted by this file-object.
 		 *
-		 * @param pattern a pattern the files have to match
 		 * @param showHidden whether to include hidden files/folders
+		 * @param pattern a pattern the files have to match
 		 * @return the vector
 		 */
 		vector<sDirEntry> list_files(bool showHidden,const string& pattern = string()) const;

@@ -24,14 +24,18 @@
 using namespace std;
 
 namespace gui {
+	const gsize_t ScrollPane::BAR_SIZE			= 20;
+	const gsize_t ScrollPane::MIN_SIZE			= BAR_SIZE + 40;
+	const gsize_t ScrollPane::MIN_BAR_SIZE		= 10;
+	const gsize_t ScrollPane::SCROLL_FACTOR		= 10;
+
 	void ScrollPane::resizeTo(const Size &size) {
-		// a scrollpane does never use more space than available. if the content is larger, we
-		// show scrollbars for it.
-		Size rsize = minsize(size,getParent()->getContentSize());
+		// ensure that we reach the minimum size
+		Size rsize = maxsize(Size(MIN_SIZE,MIN_SIZE),size);
 		Control::resizeTo(rsize);
-		Size visible = rsize - Size(BAR_SIZE,BAR_SIZE);
 
 		// determine what size the control will actually use, if it gets visiblex X visibley.
+		Size visible = rsize - Size(BAR_SIZE,BAR_SIZE);
 		_ctrl->resizeTo(_ctrl->getUsedSize(visible));
 
 		// ensure that the position of the control is in the allowed range; of course, this changes
@@ -224,6 +228,6 @@ namespace gui {
 	gsize_t ScrollPane::getBarSize(gsize_t ctrlSize,gsize_t viewable) {
 		if(viewable == 0 || ctrlSize == 0)
 			return 0;
-		return (gsize_t)(viewable / ((double)ctrlSize / viewable));
+		return max<gsize_t>(MIN_BAR_SIZE,(gsize_t)(viewable / ((double)ctrlSize / viewable)));
 	}
 }

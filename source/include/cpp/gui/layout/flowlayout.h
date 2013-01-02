@@ -51,14 +51,14 @@ namespace gui {
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);
 
-		virtual Size getPreferredSize() const;
-
 		virtual void rearrange();
+
+	protected:
+		virtual Size getSizeWith(const Size &avail,size_func func) const;
 
 	private:
 		Size getMaxSize() const;
 
-	private:
 		Align _pos;
 		gsize_t _gap;
 		Panel *_p;

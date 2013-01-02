@@ -54,13 +54,6 @@ namespace gui {
 		gsize_t height;
 	};
 
-	static inline Size minsize(const Size &a,const Size &b) {
-		return Size(std::min(a.width,b.width),std::min(a.height,b.height));
-	}
-	static inline Size maxsize(const Size &a,const Size &b) {
-		return Size(std::max(a.width,b.width),std::max(a.height,b.height));
-	}
-
 	static inline Size operator +(const Size &a,const Size &b) {
 		return Size(a.width + b.width,a.height + b.height);
 	}
@@ -73,5 +66,21 @@ namespace gui {
 	}
 	static inline bool operator !=(const Size &a,const Size &b) {
 		return !(a == b);
+	}
+
+	static inline Size minsize(const Size &a,const Size &b) {
+		return Size(std::min(a.width,b.width),std::min(a.height,b.height));
+	}
+	static inline Size maxsize(const Size &a,const Size &b) {
+		return Size(std::max(a.width,b.width),std::max(a.height,b.height));
+	}
+
+	static inline Size subsize(const Size &a,const Size &b) {
+		Size res = a - b;
+		if(res.width > a.width)
+			res.width = 0;
+		if(res.height > a.height)
+			res.height = 0;
+		return res;
 	}
 }

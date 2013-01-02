@@ -33,27 +33,28 @@ namespace gui {
 		_ctrls[pos] = NULL;
 	}
 
-	Size BorderLayout::getPreferredSize() const {
+	Size BorderLayout::getSizeWith(const Size &avail,size_func func) const {
 		Size size;
 		if(_ctrls[WEST])
 			size.width += _ctrls[WEST]->getPreferredSize().width;
 		if(_ctrls[NORTH])
 			size.height += _ctrls[NORTH]->getPreferredSize().height;
+		if(_ctrls[EAST])
+			size.width += _ctrls[EAST]->getPreferredSize().width;
+		if(_ctrls[SOUTH])
+			size.height += _ctrls[SOUTH]->getPreferredSize().height;
+
 		if(_ctrls[CENTER]) {
 			if(_ctrls[WEST])
 				size.width += _gap;
 			if(_ctrls[NORTH])
 				size.height += _gap;
-			size += _ctrls[CENTER]->getPreferredSize();
 			if(_ctrls[EAST])
 				size.width += _gap;
 			if(_ctrls[SOUTH])
 				size.height += _gap;
+			size += func(_ctrls[CENTER],subsize(avail,size));
 		}
-		if(_ctrls[EAST])
-			size.width += _ctrls[EAST]->getPreferredSize().width;
-		if(_ctrls[SOUTH])
-			size.height += _ctrls[SOUTH]->getPreferredSize().height;
 
 		if(size.width == 0) {
 			if(_ctrls[NORTH])
@@ -76,19 +77,15 @@ namespace gui {
 
 		Control *c;
 		gsize_t pad = _p->getTheme().getPadding();
-		Size size = _p->getSize() - Size(pad * 2,pad * 2);
-		Size rsize = size;
+		Size orgsize = _p->getSize() - Size(pad * 2,pad * 2);
+		Size rsize = getSizeWith(orgsize,getUsedSizeOf);
+		Size size = maxsize(orgsize,rsize);
 		Pos pos(pad,pad);
 
 		Size ns = _ctrls[NORTH] ? _ctrls[NORTH]->getPreferredSize() + Size(_gap,_gap) : Size();
 		Size ss = _ctrls[SOUTH] ? _ctrls[SOUTH]->getPreferredSize() + Size(_gap,_gap) : Size();
 		Size ws = _ctrls[WEST] ? _ctrls[WEST]->getPreferredSize() + Size(_gap,_gap) : Size();
 		Size es = _ctrls[EAST] ? _ctrls[EAST]->getPreferredSize() + Size(_gap,_gap) : Size();
-		Size cs = _ctrls[CENTER] ? _ctrls[CENTER]->getPreferredSize() : Size();
-
-		// ensure that we use at least the minimum space
-		rsize.height = max<gsize_t>(ns.height + ss.height + cs.height,rsize.height);
-		rsize.width = max<gsize_t>(ws.width + es.width + cs.width,rsize.width);
 
 		if((c = _ctrls[NORTH])) {
 			configureControl(c,pos,Size(size.width,ns.height - _gap));

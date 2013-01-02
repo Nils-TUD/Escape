@@ -42,6 +42,7 @@
 using namespace gui;
 
 static void win0(void);
+static void win01(void);
 static void win1(void);
 static void win2(void);
 static void win3(void);
@@ -56,6 +57,7 @@ static volatile bool run = true;
 int main(void) {
 	Application *app = Application::getInstance();
 	win0();
+	win01();
 	win1();
 	win2();
 	win3();
@@ -76,11 +78,23 @@ static void win0(void) {
 	Panel *p = new Panel(new BorderLayout());
 	ScrollPane *sp = new ScrollPane(p);
 	root.add(sp,BorderLayout::CENTER);
-	ProgressBar *pb = new ProgressBar("Progress...",Pos(0,0),Size(150,0));
-	ScrollPane *sp2 = new ScrollPane(pb);
-	p->add(sp2,BorderLayout::CENTER);
+	p->add(new ScrollPane(new ProgressBar("Progress1...",Pos(0,0),Size(150,0))),BorderLayout::CENTER);
+	p->add(new ScrollPane(new ProgressBar("Progress2...",Pos(0,0),Size(100,0))),BorderLayout::NORTH);
+	p->add(new ScrollPane(new ProgressBar("Progress3...",Pos(0,0),Size(50,0))),BorderLayout::SOUTH);
+	p->add(new ScrollPane(new ProgressBar("Progress4...")),BorderLayout::WEST);
 	//if(startthread(pbThread,pb) < 0)
 	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+	w->show(true);
+}
+
+static void win01(void) {
+	Window *w = new Window("Window 01",Pos(600,250));
+	Panel& root = w->getRootPanel();
+	root.setLayout(new BorderLayout());
+	Panel *p = new Panel(new BorderLayout());
+	ScrollPane *sp = new ScrollPane(p);
+	root.add(sp,BorderLayout::CENTER);
+	p->add(new ScrollPane(new ProgressBar("Progress1...",Pos(0,0),Size(150,0))),BorderLayout::CENTER);
 	w->show(true);
 }
 

@@ -22,6 +22,8 @@
 #include <gui/panel.h>
 #include <assert.h>
 
+using namespace std;
+
 namespace gui {
 	void GridLayout::add(Panel *p,Control *c,pos_type pos) {
 		assert(_p == NULL || p == _p);
@@ -35,9 +37,11 @@ namespace gui {
 		_ctrls[pos] = NULL;
 	}
 
-	Size GridLayout::getPreferredSize() const {
+	Size GridLayout::getSizeWith(const Size &avail,size_func) const {
 		if(_ctrls.size() == 0)
 			return Size();
+		if(!avail.empty())
+			return avail;
 		Size max = getMaxSize();
 		return Size(max.width * _cols + _gap * (_cols - 1),max.height * _rows + _gap * (_rows - 1));
 	}

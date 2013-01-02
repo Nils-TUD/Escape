@@ -34,6 +34,7 @@ namespace gui {
 	class Layout {
 	public:
 		typedef int pos_type;
+		typedef Size (*size_func)(Control*,const Size&);
 
 	public:
 		/**
@@ -67,19 +68,18 @@ namespace gui {
 		/**
 		 * @return the total preferred size of this layout without padding
 		 */
-		virtual Size getPreferredSize() const = 0;
+		Size getPreferredSize() const {
+			return getSizeWith(Size(),getPrefSizeOf);
+		};
 
 		/**
-		 * Determines what size would be used if <width>X<height> is available. By default, this
-		 * is always the maximum of preferredSize and <width>/<height>.
-		 * In contrast to getPreferred*(), padding should be included here.
+		 * Determines what size would be used if <width>X<height> is available.
 		 *
 		 * @param avail the available size
 		 * @return the size that would be used
 		 */
-		virtual Size getUsedSize(const Size &avail) const {
-			Size pref = getPreferredSize();
-			return Size(std::max(pref.width,avail.width),std::max(pref.height,avail.height));
+		Size getUsedSize(const Size &avail) const {
+			return getSizeWith(avail,getUsedSizeOf);
 		};
 
 		/**
@@ -89,6 +89,23 @@ namespace gui {
 		virtual void rearrange() = 0;
 
 	protected:
+		/**
+		 * Helper for getPreferredSize() and getUsedSize(). Should use func(ctrl,avail) to determine
+		 * the size of one control and calculate the total size in the appropriate way for the layout.
+		 *
+		 * @param avail the available size
+		 * @param func the function to call
+		 * @return the size
+		 */
+		virtual Size getSizeWith(const Size &avail,size_func func) const = 0;
+
+		static inline Size getPrefSizeOf(Control *c,const Size &) {
+			return c->getPreferredSize();
+		};
+		static inline Size getUsedSizeOf(Control *c,const Size &avail) {
+			return c->getUsedSize(avail);
+		};
+
 		inline void configureControl(Control *c,const Pos &pos,const Size &size) const {
 			c->moveTo(pos);
 			c->resizeTo(size);

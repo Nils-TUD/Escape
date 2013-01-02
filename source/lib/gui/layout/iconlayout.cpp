@@ -33,20 +33,19 @@ namespace gui {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 
-	Size IconLayout::getPreferredSize() const {
+	Size IconLayout::getSizeWith(const Size &avail,size_func) const {
 		if(_ctrls.size() == 0)
 			return Size();
 		Size size;
-		size_t cols = (size_t)sqrt(_ctrls.size());
-		doLayout(cols,cols,size);
+		if(avail.empty()) {
+			size_t cols = (size_t)sqrt(_ctrls.size());
+			doLayout(cols,cols,0,size);
+		}
+		else {
+			size = avail;
+			doLayout(0,0,0,size);
+		}
 		return size;
-	}
-
-	Size IconLayout::getUsedSize(const Size &avail) const {
-		gsize_t pad = _p->getTheme().getPadding();
-		Size size = avail;
-		doLayout(0,0,size);
-		return size + Size(pad * 2,pad * 2);
 	}
 
 	void IconLayout::rearrange() {
@@ -54,12 +53,12 @@ namespace gui {
 			return;
 
 		Size size = _p->getSize();
-		doLayout(0,0,size,&IconLayout::configureControl);
+		gsize_t pad = _p->getTheme().getPadding();
+		doLayout(0,0,pad,size,&IconLayout::configureControl);
 	}
 
-	void IconLayout::doLayout(size_t cols,size_t rows,Size &size,layout_func layout) const {
+	void IconLayout::doLayout(size_t cols,size_t rows,gsize_t pad,Size &size,layout_func layout) const {
 		Size usize,max;
-		gsize_t pad = _p->getTheme().getPadding();
 		switch(_pref) {
 			case HORIZONTAL: {
 				uint col = 0, row = 0;

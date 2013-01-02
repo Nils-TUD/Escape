@@ -25,8 +25,10 @@
 namespace gui {
 	class ScrollPane : public Control {
 	private:
-		static const gsize_t BAR_SIZE			= 20;
-		static const gsize_t SCROLL_FACTOR		= 10;
+		static const gsize_t BAR_SIZE;
+		static const gsize_t MIN_SIZE;
+		static const gsize_t MIN_BAR_SIZE;
+		static const gsize_t SCROLL_FACTOR;
 
 		static const unsigned int FOCUS_CTRL	= 1;
 		static const unsigned int FOCUS_HORSB	= 2;
@@ -44,11 +46,11 @@ namespace gui {
 		};
 
 		virtual Size getPrefSize() const {
-			return _ctrl->getPreferredSize() + Size(BAR_SIZE,BAR_SIZE);
+			return maxsize(_ctrl->getPreferredSize() + Size(BAR_SIZE,BAR_SIZE),Size(MIN_SIZE,MIN_SIZE));
 		};
 
 		virtual Size getUsedSize(const Size &avail) const {
-			return avail;
+			return maxsize(avail,Size(MIN_SIZE,MIN_SIZE));
 		};
 
 		virtual Size getContentSize() const {

@@ -31,6 +31,7 @@
 namespace gui {
 	class Control;
 	class ScrollPane;
+	class Layout;
 
 	/**
 	 * The abstract base class for all UI-elements (windows, controls). It has a position, a size,
@@ -41,6 +42,7 @@ namespace gui {
 		friend class Panel;
 		friend class Control;
 		friend class ScrollPane;
+		friend class Layout;
 
 	public:
 		typedef unsigned id_type;

@@ -22,6 +22,7 @@
 #include <esc/common.h>
 #include <gui/layout/layout.h>
 #include <gui/control.h>
+#include <utility>
 #include <map>
 
 namespace gui {
@@ -72,12 +73,11 @@ namespace gui {
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);
 
-		virtual Size getPreferredSize() const;
-
 		virtual void rearrange();
 
 	private:
 		Size getMaxSize() const;
+		virtual Size getSizeWith(const Size &avail,size_func func) const;
 
 	private:
 		unsigned _cols;

@@ -52,13 +52,11 @@ namespace gui {
 		virtual void add(Panel *p,Control *c,pos_type pos);
 		virtual void remove(Panel *p,Control *c,pos_type pos);
 
-		virtual Size getPreferredSize() const;
-		virtual Size getUsedSize(const Size &avail) const;
-
 		virtual void rearrange();
 
 	private:
-		void doLayout(size_t cols,size_t rows,Size &size,layout_func layout = 0) const;
+		virtual Size getSizeWith(const Size &avail,size_func func) const;
+		void doLayout(size_t cols,size_t rows,gsize_t pad,Size &size,layout_func layout = 0) const;
 
 	private:
 		Preferred _pref;

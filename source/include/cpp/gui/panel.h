@@ -55,11 +55,19 @@ namespace gui {
 		};
 
 		virtual Size getPrefSize() const {
-			gsize_t pad = getTheme().getPadding();
-			return _layout ? _layout->getPreferredSize() + Size(pad * 2,pad * 2) : Size();
+			if(_layout) {
+				gsize_t pad = getTheme().getPadding();
+				return _layout->getPreferredSize() + Size(pad * 2,pad * 2);
+			}
+			return Size();
 		};
 		virtual Size getUsedSize(const Size &avail) const {
-			return _layout ? _layout->getUsedSize(avail) : UIElement::getUsedSize(avail);
+			if(_layout) {
+				gsize_t pad = getTheme().getPadding();
+				Size padsize = Size(pad * 2,pad * 2);
+				return _layout->getUsedSize(subsize(avail,padsize)) + padsize;
+			}
+			return UIElement::getUsedSize(avail);
 		};
 
 		/**

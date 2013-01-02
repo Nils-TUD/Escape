@@ -32,7 +32,7 @@ namespace gui {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 
-	Size FlowLayout::getPreferredSize() const {
+	Size FlowLayout::getSizeWith(const Size&,size_func) const {
 		if(_ctrls.size() == 0)
 			return Size();
 		Size max = getMaxSize();

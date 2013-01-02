@@ -36,7 +36,9 @@ namespace gui {
 		if(_ctrls.size() == 0)
 			return Size();
 		Size max = getMaxSize();
-		return Size(max.width * _ctrls.size() + _gap * (_ctrls.size() - 1),max.height);
+		if(_orientation == HORIZONTAL)
+			return Size(max.width * _ctrls.size() + _gap * (_ctrls.size() - 1),max.height);
+		return Size(max.width,max.height * _ctrls.size() + _gap * (_ctrls.size() - 1));
 	}
 
 	void FlowLayout::rearrange() {
@@ -47,24 +49,38 @@ namespace gui {
 		Size size = _p->getSize() - Size(pad * 2,pad * 2);
 		Size max = getMaxSize();
 		Pos pos(pad,pad);
-		gsize_t totalWidth = max.width * _ctrls.size() + _gap * (_ctrls.size() - 1);
 
+		if(_orientation == VERTICAL) {
+			swap(pos.x,pos.y);
+			swap(size.width,size.height);
+			swap(max.width,max.height);
+		}
+
+		gsize_t totalWidth = max.width * _ctrls.size() + _gap * (_ctrls.size() - 1);
 		pos.y = size.height / 2 - max.height / 2;
-		switch(_pos) {
-			case LEFT:
+		switch(_align) {
+			case FRONT:
 				pos.x = pad;
 				break;
 			case CENTER:
 				pos.x = (size.width / 2) - (totalWidth / 2);
 				break;
-			case RIGHT:
+			case BACK:
 				pos.x = pad + size.width - totalWidth;
 				break;
 		}
 
+		if(_orientation == VERTICAL) {
+			swap(pos.x,pos.y);
+			swap(max.width,max.height);
+		}
+
 		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			configureControl(*it,pos,max);
-			pos.x += max.width + _gap;
+			if(_orientation == VERTICAL)
+				pos.y += max.height + _gap;
+			else
+				pos.x += max.width + _gap;
 		}
 	}
 

@@ -31,9 +31,13 @@ namespace gui {
 	class FlowLayout : public Layout {
 	public:
 		enum Align {
-			LEFT,
+			FRONT,
 			CENTER,
-			RIGHT,
+			BACK,
+		};
+		enum Orientation {
+			HORIZONTAL,
+			VERTICAL
 		};
 
 		static const gsize_t DEF_GAP	= 2;
@@ -41,11 +45,12 @@ namespace gui {
 		/**
 		 * Constructor
 		 *
-		 * @param pos the alignment of the controls
+		 * @param align the alignment of the controls
+		 * @param orientation the orientation
 		 * @param gap the gap between the controls (default 2)
 		 */
-		FlowLayout(Align pos,gsize_t gap = DEF_GAP)
-			: Layout(), _pos(pos), _gap(gap), _p(), _ctrls() {
+		FlowLayout(Align align,Orientation orientation = HORIZONTAL,gsize_t gap = DEF_GAP)
+			: Layout(), _align(align), _orientation(orientation), _gap(gap), _p(), _ctrls() {
 		}
 
 		virtual void add(Panel *p,Control *c,pos_type pos);
@@ -59,7 +64,8 @@ namespace gui {
 	private:
 		Size getMaxSize() const;
 
-		Align _pos;
+		Align _align;
+		Orientation _orientation;
 		gsize_t _gap;
 		Panel *_p;
 		std::vector<Control*> _ctrls;

@@ -134,7 +134,7 @@ static void win1(void) {
 static void win2(void) {
 	Window *w = new Window("Window 2",Pos(450,150),Size(400,100));
 	Panel& root = w->getRootPanel();
-	root.setLayout(new FlowLayout(FlowLayout::LEFT,5));
+	root.setLayout(new FlowLayout(FlowLayout::FRONT,FlowLayout::HORIZONTAL,5));
 
 	Button *b = new Button("Try it!");
 	root.add(b);
@@ -159,7 +159,7 @@ static void win2(void) {
 static void win3(void) {
 	Window *w = new Window("Window 3",Pos(450,350),Size(400,100));
 	Panel& root = w->getRootPanel();
-	root.setLayout(new FlowLayout(FlowLayout::CENTER,1));
+	root.setLayout(new FlowLayout(FlowLayout::CENTER,FlowLayout::HORIZONTAL,1));
 
 	Button *b = new Button("Try it!");
 	root.add(b);
@@ -186,7 +186,7 @@ static void win4(void) {
 	Panel& root = w->getRootPanel();
 	root.getTheme().setPadding(0);
 	root.setLayout(new BorderLayout());
-	Panel *p = new Panel(new FlowLayout(FlowLayout::RIGHT,10));
+	Panel *p = new Panel(new FlowLayout(FlowLayout::BACK,FlowLayout::VERTICAL,10));
 	ScrollPane *sp = new ScrollPane(p);
 	root.add(sp,BorderLayout::CENTER);
 

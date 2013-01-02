@@ -173,7 +173,8 @@ namespace gui {
 	}
 
 	void ScrollPane::paint(Graphics &g) {
-		_ctrl->repaint(false);
+		Size size = getSize() - Size(_ctrl->getPos() + Pos(BAR_SIZE,BAR_SIZE));
+		_ctrl->repaintRect(Pos(0,0) - _ctrl->getPos(),size,false);
 		paintBars(g);
 	}
 

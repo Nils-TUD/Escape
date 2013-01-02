@@ -54,7 +54,7 @@ namespace gui {
 		};
 
 		virtual Size getContentSize() const {
-			Size size = getParent()->getContentSize();
+			Size size = getSize();
 			if(size.width - _ctrl->getPos().x < BAR_SIZE)
 				size.width = 0;
 			else

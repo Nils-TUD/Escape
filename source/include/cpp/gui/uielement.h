@@ -158,15 +158,19 @@ namespace gui {
 		 * Paints the given rectangle of the control
 		 *
 		 * @param g the graphics-object
-		 * @param pos the position relative to this control of the rectangle
+		 * @param pos the position relative to this control
 		 * @param size the size of the rectangle
 		 */
 		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
+
 		/**
-		 * Repaints the given rectangle of the control, i.e. calls paintRect() and requests an
-		 * update of this rectangle.
+		 * Repaints the given rectangle of the control, i.e. calls paintRect()
+		 *
+		 * @param pos the position relative to this control
+		 * @param size the size of the rectangle
+		 * @param update whether to request an update of the painted region
 		 */
-		void repaintRect(const Pos &pos,const Size &size);
+		void repaintRect(const Pos &pos,const Size &size,bool update = true);
 
 		/**
 		 * Requests an update of the dirty region

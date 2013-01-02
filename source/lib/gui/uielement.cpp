@@ -142,11 +142,12 @@ namespace gui {
 		g.setSize(gs);
 	}
 
-	void UIElement::repaintRect(const Pos &pos,const Size &size) {
+	void UIElement::repaintRect(const Pos &pos,const Size &size,bool update) {
 		if(_g) {
 			paintRect(*_g,pos,size);
 			debug();
-			_g->requestUpdate();
+			if(update)
+				_g->requestUpdate();
 		}
 	}
 }

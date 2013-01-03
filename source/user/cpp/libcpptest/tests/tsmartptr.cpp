@@ -31,9 +31,10 @@ struct B : public A {};
 
 /* forward declarations */
 static void test_smartptr(void);
-static void test_basic(void);
-static void test_modifiers(void);
-static void test_casts(void);
+static void test_shared_basic(void);
+static void test_shared_modifiers(void);
+static void test_shared_casts(void);
+static void test_unique_basic(void);
 
 /* our test-module */
 sTestModule tModSmartPtr = {
@@ -42,18 +43,20 @@ sTestModule tModSmartPtr = {
 };
 
 static void test_smartptr(void) {
-	test_basic();
-	test_modifiers();
-	test_casts();
+	test_shared_basic();
+	test_shared_modifiers();
+	test_shared_casts();
+	test_unique_basic();
 }
 
-static void test_basic(void) {
+static void test_shared_basic(void) {
 	size_t before,after;
-	test_caseStart("Testing basic operations");
+	test_caseStart("Testing basic operations of shared_ptr");
 
 	before = heapspace();
 	{
 		shared_ptr<int> a;
+		test_assertFalse((bool)a);
 		test_assertLInt(a.use_count(),0);
 		test_assertPtr(a.get(),nullptr);
 	}
@@ -63,6 +66,7 @@ static void test_basic(void) {
 	before = heapspace();
 	{
 		shared_ptr<int> a(new int(3));
+		test_assertTrue((bool)a);
 		test_assertLInt(a.use_count(),1);
 		test_assertInt(*a.get(),3);
 	}
@@ -107,12 +111,55 @@ static void test_basic(void) {
 	after = heapspace();
 	test_assertSize(after,before);
 
+	before = heapspace();
+	{
+		A *obj1 = new A;
+		A *obj2 = new A;
+		shared_ptr<A> a(obj1);
+		shared_ptr<A> b(a);
+		shared_ptr<A> c(obj2);
+		test_assertTrue(a == b);
+		test_assertFalse(a != b);
+		if(obj1 < obj2) {
+			test_assertTrue(a < c);
+			test_assertFalse(a >= c);
+			test_assertFalse(a > c);
+		}
+		else {
+			test_assertFalse(a < c);
+			test_assertTrue(a >= c);
+			test_assertTrue(a > c);
+		}
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
+	before = heapspace();
+	{
+		shared_ptr<int> a = shared_ptr<int>(unique_ptr<int>());
+		shared_ptr<int> b = shared_ptr<int>(unique_ptr<int>(new int(3)));
+		shared_ptr<int> c;
+		c = unique_ptr<int>();
+		shared_ptr<int> d;
+		d = unique_ptr<int>(new int(4));
+		test_assertLInt(a.use_count(),0);
+		test_assertPtr(a.get(),nullptr);
+		test_assertLInt(b.use_count(),1);
+		test_assertInt(*b.get(),3);
+		test_assertLInt(c.use_count(),0);
+		test_assertPtr(c.get(),nullptr);
+		test_assertLInt(d.use_count(),1);
+		test_assertInt(*d.get(),4);
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
 	test_caseSucceeded();
 }
 
-static void test_modifiers(void) {
+static void test_shared_modifiers(void) {
 	size_t before,after;
-	test_caseStart("Testing modifiers");
+	test_caseStart("Testing modifiers of shared_ptr");
 
 	before = heapspace();
 	{
@@ -142,9 +189,9 @@ static void test_modifiers(void) {
 	test_caseSucceeded();
 }
 
-static void test_casts(void) {
+static void test_shared_casts(void) {
 	size_t before,after;
-	test_caseStart("Testing casts");
+	test_caseStart("Testing casts of shared_ptr");
 
 	before = heapspace();
 	{
@@ -159,6 +206,74 @@ static void test_casts(void) {
 		test_assertLInt(a2.use_count(),2);
 		test_assertPtr(b2.get(),nullptr);
 		test_assertLInt(b2.use_count(),0);
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
+	test_caseSucceeded();
+}
+
+static void test_unique_basic(void) {
+	size_t before,after;
+	test_caseStart("Testing basic operations of unique_ptr");
+
+	before = heapspace();
+	{
+		unique_ptr<int> a = unique_ptr<int>(unique_ptr<int>());
+		unique_ptr<int> b;
+		b = unique_ptr<int>();
+		test_assertFalse((bool)a);
+		test_assertPtr(a.get(),nullptr);
+		test_assertFalse((bool)b);
+		test_assertPtr(b.get(),nullptr);
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
+	before = heapspace();
+	{
+		unique_ptr<int> a = unique_ptr<int>(unique_ptr<int>(new int(3)));
+		unique_ptr<int> b;
+		b = unique_ptr<int>(new int(4));
+		test_assertTrue((bool)a);
+		test_assertInt(*a.get(),3);
+		test_assertTrue((bool)b);
+		test_assertInt(*b.get(),4);
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
+	before = heapspace();
+	{
+		unique_ptr<A> a = unique_ptr<B>(unique_ptr<B>(new B));
+		unique_ptr<A> b;
+		b = unique_ptr<B>(new B);
+		test_assertTrue((bool)a);
+		test_assertTrue((bool)b);
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
+	before = heapspace();
+	{
+		A *obj1 = new A;
+		A *obj2 = new A;
+		unique_ptr<A> a(obj1);
+		unique_ptr<A> b(obj1);
+		unique_ptr<A> c(obj2);
+		test_assertTrue(a == b);
+		test_assertFalse(a != b);
+		if(obj1 < obj2) {
+			test_assertTrue(a < c);
+			test_assertFalse(a >= c);
+			test_assertFalse(a > c);
+		}
+		else {
+			test_assertFalse(a < c);
+			test_assertTrue(a >= c);
+			test_assertTrue(a > c);
+		}
+		b.release();
 	}
 	after = heapspace();
 	test_assertSize(after,before);

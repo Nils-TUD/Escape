@@ -131,6 +131,182 @@ namespace std {
 		}
 	};
 
+	template<class T>
+	class unique_ptr {
+		template<class T2>
+		friend class unique_ptr;
+	public:
+		typedef T* pointer;
+		typedef T element_type;
+
+		// 20.7.1.2.1, constructors
+		constexpr unique_ptr() noexcept
+			: _ptr() {
+		}
+		explicit unique_ptr(pointer p) noexcept
+			: _ptr(p) {
+		}
+		unique_ptr(unique_ptr&& u) noexcept
+			: _ptr(u.release()) {
+		}
+		template<class U>
+		unique_ptr(unique_ptr<U>&& u) noexcept
+			: _ptr(u.release()) {
+		}
+
+		// 20.7.1.2.2, destructor
+		~unique_ptr() {
+			delete _ptr;
+		}
+
+		// 20.7.1.2.3, assignment
+		unique_ptr& operator=(unique_ptr&& u) noexcept {
+			if(_ptr != u._ptr)
+				reset(u.release());
+			return *this;
+		}
+		template<class U>
+		unique_ptr& operator=(unique_ptr<U>&& u) noexcept {
+			if(_ptr != u._ptr)
+				reset(u.release());
+			return *this;
+		}
+
+		// 20.7.1.2.4, observers
+		T& operator*() const {
+			assert(get() != nullptr);
+			return *get();
+		}
+		pointer operator->() const noexcept {
+			assert(get() != nullptr);
+			return get();
+		}
+		pointer get() const noexcept {
+			return _ptr;
+		}
+		CASTOP_EXPLICIT operator bool() const noexcept {
+			return get() != nullptr;
+		}
+
+		// 20.7.1.2.5 modifiers
+		pointer release() noexcept {
+			pointer p = _ptr;
+			_ptr = nullptr;
+			return p;
+		}
+		void reset(pointer p = pointer()) noexcept {
+			delete _ptr;
+			_ptr = p;
+		}
+		void swap(unique_ptr& u) noexcept {
+			std::swap(_ptr,u._ptr);
+		}
+
+		// disable copy from lvalue
+		unique_ptr(const unique_ptr&) = delete;
+		unique_ptr& operator=(const unique_ptr&) = delete;
+
+	private:
+		T *_ptr;
+	};
+
+	template<class T>
+	class unique_ptr<T[]> {
+		template<class T2>
+		friend class unique_ptr;
+	public:
+		typedef T* pointer;
+		typedef T element_type;
+
+		// 20.7.1.3.1, constructors
+		constexpr unique_ptr() noexcept
+			: _ptr() {
+		}
+		explicit unique_ptr(pointer p) noexcept
+			: _ptr(p) {
+		}
+		unique_ptr(unique_ptr&& u) noexcept
+			: _ptr(u.release()) {
+		}
+
+		// destructor
+		~unique_ptr() {
+			delete[] _ptr;
+		}
+
+		// assignment
+		unique_ptr& operator=(unique_ptr&& u) noexcept {
+			if(_ptr != u._ptr)
+				reset(u.release());
+			return *this;
+		}
+
+		// 20.7.1.3.2, observers
+		T& operator[](size_t i) const {
+			assert(get() != nullptr);
+			return _ptr[i];
+		}
+		pointer get() const noexcept {
+			return _ptr;
+		}
+		CASTOP_EXPLICIT operator bool() const noexcept {
+			return get() != nullptr;
+		}
+
+		// 20.7.1.3.3 modifiers
+		pointer release() noexcept {
+			pointer p = _ptr;
+			_ptr = nullptr;
+			return p;
+		}
+		void reset(pointer p = pointer()) noexcept {
+			delete[] _ptr;
+			_ptr = p;
+		}
+		template<class U>
+		void reset(U) = delete;
+		void swap(unique_ptr& u) noexcept {
+			std::swap(_ptr,u._ptr);
+		}
+
+		// disable copy from lvalue
+		unique_ptr(const unique_ptr&) = delete;
+		unique_ptr& operator=(const unique_ptr&) = delete;
+
+	private:
+		T *_ptr;
+	};
+
+	template<class T>
+	void swap(unique_ptr<T>& x, unique_ptr<T>& y) noexcept {
+		x.swap(y);
+	}
+
+	template<class T1,class T2>
+	inline bool operator==(const unique_ptr<T1>& x, const unique_ptr<T2>& y) {
+		return x.get() == y.get();
+	}
+	template<class T1, class T2>
+	inline bool operator!=(const unique_ptr<T1>& x, const unique_ptr<T2>& y) {
+		return !(x == y);
+	}
+	template<class T1, class T2>
+	inline bool operator<(const unique_ptr<T1>& x, const unique_ptr<T2>& y) {
+		return x.get() < y.get();
+	}
+	template<class T1, class T2>
+	inline bool operator<=(const unique_ptr<T1>& x, const unique_ptr<T2>& y) {
+		return !(x > y);
+	}
+	template<class T1, class T2>
+	inline bool operator>(const unique_ptr<T1>& x, const unique_ptr<T2>& y) {
+		return x.get() > y.get();
+	}
+	template<class T1, class T2>
+	inline bool operator>=(const unique_ptr<T1>& x, const unique_ptr<T2>& y) {
+		return !(x < y);
+	}
+
 	class refcount {
 	public:
 		explicit refcount(long refs) noexcept
@@ -189,13 +365,17 @@ namespace std {
 			r._ptr = nullptr;
 		}
 		template<class Y>
-		shared_ptr(shared_ptr<Y> && r) noexcept
+		shared_ptr(shared_ptr<Y>&& r) noexcept
 			: _refs(r._refs), _ptr(r._ptr) {
 			r._refs = nullptr;
 			r._ptr = nullptr;
 		}
 		/* TODO template<class Y>
 		explicit shared_ptr(const weak_ptr<Y>& r);*/
+		template<class Y>
+		shared_ptr(unique_ptr<Y>&& r)
+			: _refs(r.get() ? new refcount(1) : nullptr), _ptr(r.release()) {
+		}
 
 		// 20.7.2.2.2, destructor:
 		~shared_ptr() {
@@ -228,7 +408,7 @@ namespace std {
 			return *this;
 		}
 		template<class Y>
-		shared_ptr& operator=(shared_ptr<Y> && r) noexcept {
+		shared_ptr& operator=(shared_ptr<Y>&& r) noexcept {
 			if(_ptr != r._ptr) {
 				detach();
 				_refs = r._refs;
@@ -237,8 +417,13 @@ namespace std {
 			}
 			return *this;
 		}
-		/* TODO template<class Y,class D>
-		shared_ptr& operator=(unique_ptr<Y,D> && r);*/
+		template<class Y>
+		shared_ptr& operator=(unique_ptr<Y>&& r) {
+			detach();
+			_refs = r.get() ? new refcount(1) : nullptr;
+			_ptr = r.release();
+			return *this;
+		}
 
 		// 20.7.2.2.4, modifiers:
 		void swap(shared_ptr& r) noexcept {
@@ -273,11 +458,7 @@ namespace std {
 		bool unique() const noexcept {
 			return use_count() == 1;
 		}
-#ifdef __eco32__
-		operator bool() const noexcept; {
-#else
-		explicit operator bool() const noexcept {
-#endif
+		CASTOP_EXPLICIT operator bool() const noexcept {
 			return get() != nullptr;
 		}
 		template<class U>
@@ -332,11 +513,11 @@ namespace std {
 	}
 	template<class T,class U>
 	inline bool operator<(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {
-		return std::less<T>(a.get(),b.get());
+		return a.get() < b.get();
 	}
 	template<class T,class U>
 	inline bool operator>(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {
-		return std::less<T>(b.get(),a.get());
+		return a.get() > b.get();
 	}
 	template<class T,class U>
 	inline bool operator<=(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {

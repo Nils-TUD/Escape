@@ -166,7 +166,7 @@ static void test_reqNFree(void) {
 		int b;
 		string req;
 		uint nreq;
-		cmdargs *a;
+		cmdargs *a = nullptr;
 
 		try {
 			b = nreq = ex = 0;

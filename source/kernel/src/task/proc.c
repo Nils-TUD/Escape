@@ -163,10 +163,11 @@ void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args) {
 	curdst = (char*)p->command;
 	memcpy(curdst,cmd,cmdlen);
 	curdst += cmdlen;
-	*curdst++ = ' ';
 	for(i = 0; i < argc; ++i) {
 		size_t curlen = strlen(args);
 		if(i > 0) {
+			if(i == 1)
+				*curdst++ = ' ';
 			memcpy(curdst,args,curlen);
 			curdst += curlen;
 			if(i < argc - 1)

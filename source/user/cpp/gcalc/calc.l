@@ -12,14 +12,14 @@
 	#define YY_INPUT(buf,result,max_size) \
 		{ \
 			int c = *parse_text++; \
-			result = (c == '\0') ? YY_nullptr : (buf[0] = c, 1); \
+			result = (c == '\0') ? YY_NULL : (buf[0] = c, 1); \
 		}
 %}
 
 %%
 
 [0-9\.]+ {
-	yylval = strtod(yytext,nullptr);
+	yylval = strtod(yytext,NULL);
 	return T_NUMBER;
 }
 

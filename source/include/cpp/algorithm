@@ -22,8 +22,18 @@
 #include <stddef.h>
 #include <iterator>
 #include <utility>
+#include <limits>
 
 namespace std {
+	template<class T1,class T2>
+	bool defEqual(T1 a,T2 b) {
+		return a == b;
+	}
+	template<class T1,class T2>
+	bool defLessThan(T1 a,T2 b) {
+		return a < b;
+	}
+
 	/**
 	 * Applies function <f> to each of the elements in the range [<first> .. <last>).
 	 *
@@ -32,7 +42,11 @@ namespace std {
 	 * @param f the function
 	 */
 	template<class InputIterator,class Function>
-	Function for_each(InputIterator first,InputIterator last,Function f);
+	Function for_each(InputIterator first,InputIterator last,Function f) {
+		for(; first != last; ++first)
+			f(*first);
+		return f;
+	}
 
 	/**
 	 * Returns an iterator to the first element in the range [<first> .. <last>) that compares
@@ -44,7 +58,13 @@ namespace std {
 	 * @return the position or last
 	 */
 	template<class InputIterator,class T>
-	InputIterator find(InputIterator first,InputIterator last,const T& value);
+	InputIterator find(InputIterator first,InputIterator last,const T& value) {
+		for(; first != last; ++first) {
+			if(*first == value)
+				break;
+		}
+		return first;
+	}
 
 	/**
 	 * Returns an iterator to the first element in the range [<first> .. <last>) for which
@@ -56,7 +76,13 @@ namespace std {
 	 * @return the position or last
 	 */
 	template<class InputIterator,class Predicate>
-	InputIterator find_if(InputIterator first,InputIterator last,Predicate pred);
+	InputIterator find_if(InputIterator first,InputIterator last,Predicate pred) {
+		for(; first != last; ++first) {
+			if(pred(*first))
+				break;
+		}
+		return first;
+	}
 
 	/**
 	 * Searches the range [<first1> .. <last1>) for the last occurrence of the sequence
@@ -73,12 +99,38 @@ namespace std {
 	 * @param pred the predicate
 	 * @return the position or last1
 	 */
-	template<class ForwardIterator1,class ForwardIterator2>
-	ForwardIterator1 find_end(ForwardIterator1 first1,ForwardIterator1 last1,
-			ForwardIterator2 first2,ForwardIterator2 last2);
 	template<class ForwardIterator1,class ForwardIterator2,class BinaryPredicate>
 	ForwardIterator1 find_end(ForwardIterator1 first1,ForwardIterator1 last1,
-			ForwardIterator2 first2,ForwardIterator2 last2,BinaryPredicate pred);
+			ForwardIterator2 first2,ForwardIterator2 last2,BinaryPredicate pred) {
+		ForwardIterator1 it1,limit,ret;
+		ForwardIterator2 it2;
+
+		limit = first1;
+		advance(limit,1 + distance(first1,last1) - distance(first2,last2));
+		ret = last1;
+
+		while(first1 != limit) {
+			it1 = first1;
+			it2 = first2;
+			while(pred(*it1,*it2)) {
+				++it1;
+				++it2;
+				if(it2 == last2) {
+					ret = first1;
+					break;
+				}
+			}
+			++first1;
+		}
+		return ret;
+	}
+	template<class ForwardIterator1,class ForwardIterator2>
+	ForwardIterator1 find_end(ForwardIterator1 first1,ForwardIterator1 last1,
+			ForwardIterator2 first2,ForwardIterator2 last2) {
+	    typedef typename std::iterator_traits<ForwardIterator1>::value_type T1;
+	    typedef typename std::iterator_traits<ForwardIterator2>::value_type T2;
+		return find_end(first1,last1,first2,last2,defEqual<T1,T2>);
+	}
 
 	/**
 	 * Returns an iterator to the first occurrence in the range [<first1> .. <last1>) of any
@@ -94,12 +146,24 @@ namespace std {
 	 * @param pred the predicate
 	 * @return the position or last1
 	 */
-	template<class ForwardIterator1,class ForwardIterator2>
-	ForwardIterator1 find_first_of(ForwardIterator1 first1,ForwardIterator1 last1,
-			ForwardIterator2 first2,ForwardIterator2 last2);
 	template<class ForwardIterator1,class ForwardIterator2,class BinaryPredicate>
 	ForwardIterator1 find_first_of(ForwardIterator1 first1,ForwardIterator1 last1,
-			ForwardIterator2 first2,ForwardIterator2 last2,BinaryPredicate pred);
+			ForwardIterator2 first2,ForwardIterator2 last2,BinaryPredicate pred) {
+		for(; first1 != last1; ++first1) {
+			for(ForwardIterator2 it2 = first2; it2 != last2; ++it2) {
+				if(pred(*first1,*it2))
+					return first1;
+			}
+		}
+		return last1;
+	}
+	template<class ForwardIterator1,class ForwardIterator2>
+	ForwardIterator1 find_first_of(ForwardIterator1 first1,ForwardIterator1 last1,
+			ForwardIterator2 first2,ForwardIterator2 last2) {
+	    typedef typename std::iterator_traits<ForwardIterator1>::value_type T1;
+	    typedef typename std::iterator_traits<ForwardIterator2>::value_type T2;
+		return find_first_of(first1,last1,first2,last2,defEqual<T1,T2>);
+	}
 
 	/**
 	 * Returns the number of elements in the range [<first> .. <last>) that compare equal to value
@@ -113,10 +177,24 @@ namespace std {
 	 */
 	template<class InputIterator,class T>
 	typename iterator_traits<InputIterator>::difference_type count(
-			InputIterator first,InputIterator last,const T& value);
+			InputIterator first,InputIterator last,const T& value) {
+		typename iterator_traits<InputIterator>::difference_type count = 0;
+		for(; first != last; ++first) {
+			if(*first == value)
+				count++;
+		}
+		return count;
+	}
 	template<class InputIterator,class Predicate>
 	typename iterator_traits<InputIterator>::difference_type count_if(
-			InputIterator first,InputIterator last,Predicate pred);
+			InputIterator first,InputIterator last,Predicate pred) {
+		typename iterator_traits<InputIterator>::difference_type count = 0;
+		for(; first != last; ++first) {
+			if(pred(*first))
+				count++;
+		}
+		return count;
+	}
 
 	/**
 	 * Compares the elements in the range [<first1> .. <last1>) against those in the range
@@ -136,10 +214,26 @@ namespace std {
 	 */
 	template<class InputIterator1,class InputIterator2>
 	pair<InputIterator1,InputIterator2> mismatch(InputIterator1 first1,
-			InputIterator1 last1,InputIterator2 first2);
+			InputIterator1 last1,InputIterator2 first2) {
+		while(first1 != last1) {
+			if(*first1 != *first2)
+				break;
+			++first1;
+			++first2;
+		}
+		return make_pair(first1,first2);
+	}
 	template<class InputIterator1,class InputIterator2,class BinaryPredicate>
 	pair<InputIterator1,InputIterator2> mismatch(InputIterator1 first1,
-			InputIterator1 last1,InputIterator2 first2,BinaryPredicate pred);
+			InputIterator1 last1,InputIterator2 first2,BinaryPredicate pred) {
+		while(first1 != last1) {
+			if(!pred(*first1,*first2))
+				break;
+			++first1;
+			++first2;
+		}
+		return make_pair(first1,first2);
+	}
 
 	/**
 	 * Compares the elements in the range [<first1> .. <last1>) with those in the range beginning
@@ -153,11 +247,21 @@ namespace std {
 	 * @param pred the predicate
 	 * @return true if equal
 	 */
-	template<class InputIterator1,class InputIterator2>
-	bool equal(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2);
 	template<class InputIterator1,class InputIterator2,class BinaryPredicate>
 	bool equal(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
-			BinaryPredicate pred);
+			BinaryPredicate pred) {
+		for(; first1 != last1; ++first1, ++first2) {
+			if(!pred(*first1,*first2))
+				return false;
+		}
+		return true;
+	}
+	template<class InputIterator1,class InputIterator2>
+	bool equal(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2) {
+	    typedef typename std::iterator_traits<InputIterator1>::value_type T1;
+	    typedef typename std::iterator_traits<InputIterator2>::value_type T2;
+		return equal(first1,last1,first2,defEqual<T1,T2>);
+	}
 
 	/**
 	 * Searches the range [<first1> .. <last1>) for the first occurrence of the sequence defined
@@ -173,12 +277,35 @@ namespace std {
 	 * @param pred the predicate
 	 * @return the position or last1
 	 */
-	template<class ForwardIterator1,class ForwardIterator2>
-	ForwardIterator1 search(ForwardIterator1 first1,ForwardIterator1 last1,ForwardIterator2 first2,
-			ForwardIterator2 last2);
 	template<class ForwardIterator1,class ForwardIterator2,class BinaryPredicate>
 	ForwardIterator1 search(ForwardIterator1 first1,ForwardIterator1 last1,ForwardIterator2 first2,
-			ForwardIterator2 last2,BinaryPredicate pred);
+			ForwardIterator2 last2,BinaryPredicate pred) {
+		ForwardIterator1 it1,limit;
+		ForwardIterator2 it2;
+
+		limit = first1;
+		advance(limit,1 + distance(first1,last1) - distance(first2,last2));
+
+		while(first1 != limit) {
+			it1 = first1;
+			it2 = first2;
+			while(pred(*it1,*it2)) {
+				++it1;
+				++it2;
+				if(it2 == last2)
+					return first1;
+			}
+			++first1;
+		}
+		return last1;
+	}
+	template<class ForwardIterator1,class ForwardIterator2>
+	ForwardIterator1 search(ForwardIterator1 first1,ForwardIterator1 last1,ForwardIterator2 first2,
+			ForwardIterator2 last2) {
+	    typedef typename std::iterator_traits<ForwardIterator1>::value_type T1;
+	    typedef typename std::iterator_traits<ForwardIterator2>::value_type T2;
+		return search(first1,last1,first2,last2,defEqual<T1,T2>);
+	}
 
 	/**
 	 * Copies the elements in the range [<first> .. <last>) into a range beginning at result.
@@ -189,7 +316,11 @@ namespace std {
 	 * @return an iterator to the last element in the destination range.
 	 */
 	template<class InputIterator,class OutputIterator>
-	OutputIterator copy(InputIterator first,InputIterator last,OutputIterator result);
+	OutputIterator copy(InputIterator first,InputIterator last,OutputIterator result) {
+		for(; first != last; ++result, ++first)
+			*result = *first;
+		return result;
+	}
 
 	/**
 	 * Assigns the content of <a> to <b> and the content of <b> to <a>.
@@ -198,7 +329,11 @@ namespace std {
 	 * @param b the second value
 	 */
 	template<class T>
-	void swap(T& a,T& b);
+	void swap(T& a,T& b) {
+		T tmp(a);
+		a = b;
+		b = tmp;
+	}
 
 	/**
 	 * Exchange values of objects pointed by two iterators
@@ -207,7 +342,9 @@ namespace std {
 	 * @param b the second position
 	 */
 	template<class ForwardIterator1,class ForwardIterator2>
-	void iter_swap(ForwardIterator1 a,ForwardIterator2 b);
+	void iter_swap(ForwardIterator1 a,ForwardIterator2 b) {
+		swap(*a,*b);
+	}
 
 	/**
 	 * The first version applies op to all the elements in the input range [<first1> .. <last1>)
@@ -227,10 +364,18 @@ namespace std {
 	 */
 	template<class InputIterator,class OutputIterator,class UnaryOperator>
 	OutputIterator transform(InputIterator first1,InputIterator last1,OutputIterator result,
-			UnaryOperator op);
+			UnaryOperator op) {
+		for(; first1 != last1; ++result, ++first1)
+			*result = op(*first1);
+		return result;
+	}
 	template<class InputIterator1,class InputIterator2,class OutputIterator,class BinaryOperator>
 	OutputIterator transform(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
-			OutputIterator result,BinaryOperator binary_op);
+			OutputIterator result,BinaryOperator binary_op) {
+		for(; first1 != last1; ++result, ++first1, ++first2)
+			*result = binary_op(*first1,*first2);
+		return result;
+	}
 
 	/**
 	 * The first version sets all the elements in the range [<first> .. <last>) whose current
@@ -245,9 +390,19 @@ namespace std {
 	 * @param new_value the new value
 	 */
 	template<class ForwardIterator,class T>
-	void replace(ForwardIterator first,ForwardIterator last,const T& old_value,const T& new_value);
+	void replace(ForwardIterator first,ForwardIterator last,const T& old_value,const T& new_value) {
+		for(; first != last; ++first) {
+			if(*first == old_value)
+				*first = new_value;
+		}
+	}
 	template<class ForwardIterator,class Predicate,class T>
-	void replace_if(ForwardIterator first,ForwardIterator last,Predicate pred,const T& new_value);
+	void replace_if(ForwardIterator first,ForwardIterator last,Predicate pred,const T& new_value) {
+		for(; first != last; ++first) {
+			if(pred(*first))
+				*first = new_value;
+		}
+	}
 
 	/**
 	 * The first version sets <value> to all elements in the range [<first> .. <last>).
@@ -259,9 +414,15 @@ namespace std {
 	 * @param value the value to fill with
 	 */
 	template<class ForwardIterator,class T>
-	void fill(ForwardIterator first,ForwardIterator last,const T& value);
+	void fill(ForwardIterator first,ForwardIterator last,const T& value) {
+		while(first != last)
+			*first++ = value;
+	}
 	template<class OutputIterator,class Size,class T>
-	void fill_n(OutputIterator first,Size n,const T& value);
+	void fill_n(OutputIterator first,Size n,const T& value) {
+		while(n-- > 0)
+			*first++ = value;
+	}
 
 	/**
 	 * The first version sets the value of the elements in the range [<first> .. <last>) to the
@@ -275,9 +436,15 @@ namespace std {
 	 * @param gen the generator
 	 */
 	template<class ForwardIterator,class Generator>
-	void generate(ForwardIterator first,ForwardIterator last,Generator gen);
+	void generate(ForwardIterator first,ForwardIterator last,Generator gen) {
+		while(first != last)
+			*first++ = gen();
+	}
 	template<class OutputIterator,class Size,class Generator>
-	void generate_n(OutputIterator first,Size n,Generator gen);
+	void generate_n(OutputIterator first,Size n,Generator gen) {
+		while(n-- > 0)
+			*first++ = gen();
+	}
 
 	/**
 	 * The first version removes from the range [<first> .. <last>) the elements with a value equal
@@ -292,9 +459,21 @@ namespace std {
 	 * @return an iterator to the new end of the range
 	 */
 	template<class ForwardIterator,class T>
-	ForwardIterator remove(ForwardIterator first,ForwardIterator last,const T& value);
+	ForwardIterator remove(ForwardIterator first,ForwardIterator last,const T& value) {
+		ForwardIterator result = first;
+		for(; first != last; ++first)
+			if(!(*first == value))
+				*result++ = *first;
+		return result;
+	}
 	template<class ForwardIterator,class Predicate>
-	ForwardIterator remove_if(ForwardIterator first,ForwardIterator last,Predicate pred);
+	ForwardIterator remove_if(ForwardIterator first,ForwardIterator last,Predicate pred) {
+		ForwardIterator result = first;
+		for(; first != last; ++first)
+			if(!pred(*first))
+				*result++ = *first;
+		return result;
+	}
 
 	/**
 	 * The first version reverses the order of the elements in the range [<first> .. <last>).
@@ -307,10 +486,55 @@ namespace std {
 	 * @return An output iterator pointing to the end of the copied range
 	 */
 	template<class BidirectionalIterator>
-	void reverse(BidirectionalIterator first,BidirectionalIterator last);
+	void reverse(BidirectionalIterator first,BidirectionalIterator last) {
+		while((first != last) && (first != --last))
+			swap(*first++,*last);
+	}
 	template<class BidirectionalIterator,class OutputIterator>
 	OutputIterator reverse_copy(BidirectionalIterator first,BidirectionalIterator last,
-			OutputIterator result);
+			OutputIterator result) {
+		while(first != last)
+			*result++ = *--last;
+		return result;
+	}
+
+	template<class RandAccIt,class Compare>
+	RandAccIt divide(RandAccIt ileft,RandAccIt ipiv,Compare comp) {
+		RandAccIt i = ileft;
+		RandAccIt j = ipiv - 1;
+		do {
+			// right until the element is > piv
+			while(!comp(*ipiv,*i) && i < ipiv)
+				++i;
+			// left until the element is < piv
+			while(!comp(*j,*ipiv) && j > ileft)
+				--j;
+
+			// swap
+			if(i < j) {
+				swap(*i,*j);
+				++i;
+				--j;
+			}
+		}
+		while(i < j);
+
+		// swap piv with element i
+		if(comp(*ipiv,*i))
+			swap(*i,*ipiv);
+		return i;
+	}
+
+	template<class RandAccIt,class Compare>
+	void qsort(RandAccIt left,RandAccIt right,Compare comp) {
+		// TODO someday we should provide a better implementation which uses another sort-algo
+		// for small arrays, don't uses recursion and so on
+		if(left < right) {
+			RandAccIt i = divide(left,right,comp);
+			qsort(left,i - 1,comp);
+			qsort(i + 1,right,comp);
+		}
+	}
 
 	/**
 	 * Sorts the elements in the range [<first> .. <last>) into ascending order.
@@ -322,10 +546,15 @@ namespace std {
 	 * @param last the end-position (exclusive)
 	 * @param comp the compare-"function"
 	 */
-	template<class RandomAccessIterator>
-	void sort(RandomAccessIterator first,RandomAccessIterator last);
 	template<class RandomAccessIterator,class Compare>
-	void sort(RandomAccessIterator first,RandomAccessIterator last,Compare comp);
+	void sort(RandomAccessIterator first,RandomAccessIterator last,Compare comp) {
+		qsort(first,last - 1,comp);
+	}
+	template<class RandomAccessIterator>
+	void sort(RandomAccessIterator first,RandomAccessIterator last) {
+	    typedef typename iterator_traits<RandomAccessIterator>::value_type T;
+		sort(first,last,defLessThan<T,T>);
+	}
 
 	/**
 	 * Returns an iterator pointing to the first element in the sorted range [<first> .. <last>)
@@ -342,11 +571,29 @@ namespace std {
 	 * @param comp the compare-"function" that returns true if a is less than b
 	 * @return Iterator to the lower bound position for <value> in the range.
 	 */
-	template<class ForwardIterator,class T>
-	ForwardIterator lower_bound(ForwardIterator first,ForwardIterator last,const T& value);
 	template<class ForwardIterator,class T,class Compare>
 	ForwardIterator lower_bound(ForwardIterator first,ForwardIterator last,const T& value,
-			Compare comp);
+			Compare comp) {
+		ForwardIterator it;
+		typename iterator_traits<ForwardIterator>::difference_type count,step;
+		count = distance(first,last);
+		while(count > 0) {
+			it = first;
+			step = count / 2;
+			advance(it,step);
+			if(comp(*it,value)) {
+				first = ++it;
+				count -= step + 1;
+			}
+			else
+				count = step;
+		}
+		return first;
+	}
+	template<class ForwardIterator,class T>
+	ForwardIterator lower_bound(ForwardIterator first,ForwardIterator last,const T& value) {
+		return lower_bound(first,last,value,defLessThan<T,T>);
+	}
 
 	/**
 	 * Returns an iterator pointing to the first element in the sorted range [<first> .. <last>)
@@ -363,11 +610,29 @@ namespace std {
 	 * @param comp the compare-"function" that returns true if a is less than b
 	 * @return Iterator to the upper bound position for value in the range.
 	 */
-	template<class ForwardIterator,class T>
-	ForwardIterator upper_bound(ForwardIterator first,ForwardIterator last,const T& value);
 	template<class ForwardIterator,class T,class Compare>
 	ForwardIterator upper_bound(ForwardIterator first,ForwardIterator last,const T& value,
-			Compare comp);
+			Compare comp) {
+		ForwardIterator it;
+		typename iterator_traits<ForwardIterator>::difference_type count,step;
+		count = distance(first,last);
+		while(count > 0) {
+			it = first;
+			step = count / 2;
+			advance(it,step);
+			if(!comp(value,*it)) {
+				first = ++it;
+				count -= step + 1;
+			}
+			else
+				count = step;
+		}
+		return first;
+	}
+	template<class ForwardIterator,class T>
+	ForwardIterator upper_bound(ForwardIterator first,ForwardIterator last,const T& value) {
+		return upper_bound(first,last,value,defLessThan<T,T>);
+	}
 
 	/**
 	 * Returns true if an element in the range [<first> .. <last>) is equivalent to <value>, and
@@ -385,9 +650,15 @@ namespace std {
 	 * @return true if the element was found
 	 */
 	template<class ForwardIterator,class T>
-	bool binary_search(ForwardIterator first,ForwardIterator last,const T& value);
+	bool binary_search(ForwardIterator first,ForwardIterator last,const T& value) {
+		first = lower_bound(first,last,value);
+		return (first != last && !(value < *first));
+	}
 	template<class ForwardIterator,class T,class Compare>
-	bool binary_search(ForwardIterator first,ForwardIterator last,const T& value,Compare comp);
+	bool binary_search(ForwardIterator first,ForwardIterator last,const T& value,Compare comp) {
+		first = lower_bound(first,last,value,comp);
+		return (first != last && !comp(value,*first));
+	}
 
 	/**
 	 * Combines the elements in the sorted ranges [<first1> .. <last1>) and [<first2> .. <last2>),
@@ -406,10 +677,26 @@ namespace std {
 	 */
 	template<class InputIterator1,class InputIterator2,class OutputIterator>
 	OutputIterator merge(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
-			InputIterator2 last2,OutputIterator result);
+			InputIterator2 last2,OutputIterator result) {
+		while(true) {
+			*result++ = (*first2 < *first1) ? *first2++ : *first1++;
+			if(first1 == last1)
+				return copy(first2,last2,result);
+			if(first2 == last2)
+				return copy(first1,last1,result);
+		}
+	}
 	template<class InputIterator1,class InputIterator2,class OutputIterator,class Compare>
 	OutputIterator merge(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
-			InputIterator2 last2,OutputIterator result,Compare comp);
+			InputIterator2 last2,OutputIterator result,Compare comp) {
+		while(true) {
+			*result++ = comp(*first2,*first1) ? *first2++ : *first1++;
+			if(first1 == last1)
+				return copy(first2,last2,result);
+			if(first2 == last2)
+				return copy(first1,last1,result);
+		}
+	}
 
 	/**
 	 * Returns true if all the elements in the range [<first2> .. <last2>) are equivalent to some
@@ -426,12 +713,30 @@ namespace std {
 	 * @param comp the compare-"function" that returns true if a is less than b
 	 * @return true if range [<first2> .. <last2>) is contained in [<first1> .. <last1>)
 	 */
-	template<class InputIterator1,class InputIterator2>
-	bool includes(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
-			InputIterator2 last2);
 	template<class InputIterator1,class InputIterator2,class Compare>
 	bool includes(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
-			InputIterator2 last2,Compare comp);
+			InputIterator2 last2,Compare comp) {
+		while(first1 != last1) {
+			if(comp(*first2,*first1))
+				break;
+			else if(comp(*first1,*first2))
+				++first1;
+			else {
+				++first1;
+				++first2;
+			}
+			if(first2 == last2)
+				return true;
+		}
+		return false;
+	}
+	template<class InputIterator1,class InputIterator2>
+	bool includes(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			InputIterator2 last2) {
+		typedef typename std::iterator_traits<InputIterator1>::value_type T1;
+		typedef typename std::iterator_traits<InputIterator2>::value_type T2;
+		return includes(first1,last1,first2,last2,defLessThan<T1,T2>);
+	}
 
 	/**
 	 * Returns the lesser of <a> and <b>.
@@ -443,9 +748,13 @@ namespace std {
 	 * @return the lesser one
 	 */
 	template<class T>
-	const T& min(const T& a,const T& b);
+	const T& min(const T& a,const T& b) {
+		return (a < b) ? a : b;
+	}
 	template<class T,class Compare>
-	const T& min(const T& a,const T& b,Compare comp);
+	const T& min(const T& a,const T& b,Compare comp) {
+		return comp(a,b) ? a : b;
+	}
 
 	/**
 	 * Returns the greater of <a> and <b>.
@@ -457,9 +766,13 @@ namespace std {
 	 * @return the larger one
 	 */
 	template<class T>
-	const T& max(const T& a,const T& b);
+	const T& max(const T& a,const T& b) {
+		return (a < b) ? b : a;
+	}
 	template<class T,class Compare>
-	const T& max(const T& a,const T& b,Compare comp);
+	const T& max(const T& a,const T& b,Compare comp) {
+		return comp(a,b) ? b : a;
+	}
 
 	/**
 	 * Returns an iterator pointing to the element with the smallest value in the range
@@ -473,9 +786,25 @@ namespace std {
 	 * @return Iterator to smallest value in the range.
 	 */
 	template<class ForwardIterator>
-	ForwardIterator min_element(ForwardIterator first,ForwardIterator last);
+	ForwardIterator min_element(ForwardIterator first,ForwardIterator last) {
+		ForwardIterator lowest = first;
+		if(first == last)
+			return last;
+		while(++first != last)
+			if(*first < *lowest)
+				lowest = first;
+		return lowest;
+	}
 	template<class ForwardIterator,class Compare>
-	ForwardIterator min_element(ForwardIterator first,ForwardIterator last,Compare comp);
+	ForwardIterator min_element(ForwardIterator first,ForwardIterator last,Compare comp) {
+		ForwardIterator lowest = first;
+		if(first == last)
+			return last;
+		while(++first != last)
+			if(comp(*first,*lowest))
+				lowest = first;
+		return lowest;
+	}
 
 	/**
 	 * Returns an iterator pointing to the element with the largest value in the range
@@ -489,9 +818,25 @@ namespace std {
 	 * @return Iterator to largest value in the range.
 	 */
 	template<class ForwardIterator>
-	ForwardIterator max_element(ForwardIterator first,ForwardIterator last);
+	ForwardIterator max_element(ForwardIterator first,ForwardIterator last) {
+		ForwardIterator largest = first;
+		if(first == last)
+			return last;
+		while(++first != last)
+			if(*largest < *first)
+				largest = first;
+		return largest;
+	}
 	template<class ForwardIterator,class Compare>
-	ForwardIterator max_element(ForwardIterator first,ForwardIterator last,Compare comp);
+	ForwardIterator max_element(ForwardIterator first,ForwardIterator last,Compare comp) {
+		ForwardIterator largest = first;
+		if(first == last)
+			return last;
+		while(++first != last)
+			if(comp(*largest < *first))
+				largest = first;
+		return largest;
+	}
 
 	/**
 	 * Returns true if range [<first1> .. <last1>) compares lexicographically less than the range
@@ -509,12 +854,26 @@ namespace std {
 	 * @param comp function object that returns true if the first arg is lesser than the second
 	 * @return true if the first range compares lexicographically less than than the second.
 	 */
-	template<class InputIterator1,class InputIterator2>
-	bool lexicographical_compare(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
-			InputIterator2 last2);
 	template<class InputIterator1,class InputIterator2,class Compare>
 	bool lexicographical_compare(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
-			InputIterator2 last2,Compare comp);
+			InputIterator2 last2,Compare comp) {
+		while(first1 != last1) {
+			if(comp(*first2,*first1) || first2 == last2)
+				return false;
+			else if(comp(*first1,*first2))
+				return true;
+			first1++;
+			first2++;
+		}
+		return (first2 != last2);
+	}
+	template<class InputIterator1,class InputIterator2>
+	bool lexicographical_compare(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			InputIterator2 last2) {
+	    typedef typename std::iterator_traits<InputIterator1>::value_type T1;
+	    typedef typename std::iterator_traits<InputIterator2>::value_type T2;
+		return lexicographical_compare(first1,last1,first2,last2,defLessThan<T1,T2>);
+	}
 
 	/**
 	 * Non-standard: Count the number of digits that are used when printing the given number in
@@ -525,7 +884,17 @@ namespace std {
 	 * @return the number of digits
 	 */
 	template<class T>
-	size_t count_digits(T n,unsigned int base);
+	size_t count_digits(T n,unsigned int base) {
+		// we have at least one char
+		size_t count = 1;
+		if(numeric_limits<T>::is_signed && (signed)n < 0) {
+			count++;
+			n = -n;
+		}
+		while(n >= (T)base) {
+			n /= base;
+			count++;
+		}
+		return count;
+	}
 }
-
-#include "../../lib/cpp/algorithm.cc"

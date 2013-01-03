@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <bits/c++config.h>
 #include <stddef.h>
 
 namespace std {
@@ -30,30 +31,76 @@ namespace std {
 		T1 first;
 		T2 second;
 
-		pair();
-		pair(const T1& x,const T2& y);
+		pair()
+			: first(T1()), second(T2()) {
+		}
+		pair(const T1& x,const T2& y)
+			: first(x), second(y) {
+		}
 		template<class U,class V>
-		pair(const pair<U,V> &p);
+		pair(const pair<U,V> &p)
+			: first(p.first), second(p.second) {
+		}
 
-		pair& operator=(const pair<T1,T2>& p2);
+		pair& operator=(const pair<T1,T2>& p2) {
+			first = p2.first;
+			second = p2.second;
+			return (*this);
+		}
 	};
 
 	template<class T1,class T2>
-	pair<T1,T2> make_pair(T1 x,T2 y);
+	inline pair<T1,T2> make_pair(T1 x,T2 y) {
+		return pair<T1,T2>(x,y);
+	}
 
 	template<class T1,class T2>
-	bool operator==(const pair<T1,T2>& x,const pair<T1,T2>& y);
+	inline bool operator==(const pair<T1,T2>& x,const pair<T1,T2>& y) {
+		return x.first == y.first && x.second == y.second;
+	}
 
 	namespace rel_ops {
 		template<class T>
-		bool operator!=(const T& x,const T& y);
+		bool operator!=(const T& x,const T& y) {
+			return !(x == y);
+		}
 		template<class T>
-		bool operator>(const T& x,const T& y);
+		bool operator>(const T& x,const T& y) {
+			return y < x;
+		}
 		template<class T>
-		bool operator<=(const T& x,const T& y);
+		bool operator<=(const T& x,const T& y) {
+			return !(y < x);
+		}
 		template<class T>
-		bool operator>=(const T& x,const T& y);
+		bool operator>=(const T& x,const T& y) {
+			return !(x < y);
+		}
 	}
-}
 
-#include "../../lib/cpp/utility.cc"
+	template<typename T>
+	struct remove_reference {
+	    typedef T type;
+	};
+	template<typename T>
+	struct remove_reference<T&> {
+	    typedef T type;
+	};
+	template<typename T>
+	struct remove_reference<T&&> {
+	    typedef T type;
+	};
+
+    template<typename T>
+    inline typename remove_reference<T>::type && move(T &&t) noexcept {
+        return static_cast<typename remove_reference<T>::type&&>(t);
+    }
+    template<typename T>
+    inline constexpr T&& forward(typename remove_reference<T>::type& a) noexcept {
+        return static_cast<T&&>(a);
+    }
+    template<typename T>
+    inline constexpr T&& forward(typename remove_reference<T>::type&& a) noexcept {
+        return static_cast<T&&>(a);
+    }
+}

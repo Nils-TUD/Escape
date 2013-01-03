@@ -21,12 +21,19 @@
 
 #include <bits/c++config.h>
 #include <stddef.h>
+#include <functional>
+#include <algorithm>
+#include <utility>
+#include <ostream>
+#include <assert.h>
 
 namespace std {
 	template<class Y>
 	struct auto_ptr_ref {
 		Y* _p;
-		explicit auto_ptr_ref(Y *p);
+		explicit auto_ptr_ref(Y *p)
+			: _p(p) {
+		}
 	};
 
 	template<class X>
@@ -34,28 +41,68 @@ namespace std {
 	public:
 		typedef X element_type;
 
-		explicit auto_ptr(X* p = nullptr) throw();
-		auto_ptr(auto_ptr& ptr) throw();
+		explicit auto_ptr(X* p = nullptr) throw()
+			: _p(p) {
+		}
+		auto_ptr(auto_ptr& ptr) throw()
+			: _p(nullptr) {
+			_p = ptr.release();
+		}
 		template<class Y>
-		auto_ptr(auto_ptr<Y>& ptr) throw();
-		~auto_ptr() throw();
+		auto_ptr(auto_ptr<Y>& ptr) throw()
+			: _p(nullptr) {
+			_p = ptr.release();
+		}
+		auto_ptr(auto_ptr_ref<X> r) throw()
+			: _p(r._p) {
+		}
+		~auto_ptr() throw() {
+			reset(nullptr);
+		}
 
-		auto_ptr& operator =(auto_ptr& ptr) throw();
+		auto_ptr& operator =(auto_ptr& ptr) throw() {
+			reset(ptr.release());
+			return *this;
+		}
 		template<class Y>
-		auto_ptr& operator =(auto_ptr<Y>& ptr) throw();
-		auto_ptr& operator =(auto_ptr_ref<X> r) throw();
+		auto_ptr& operator =(auto_ptr<Y>& ptr) throw() {
+			reset(ptr.release());
+			return *this;
+		}
+		auto_ptr& operator =(auto_ptr_ref<X> r) throw() {
+			reset(r._p);
+			return *this;
+		}
 
-		X& operator *() const throw();
-		X* operator ->() const throw();
-		X* get() const throw();
-		X* release() throw();
-		virtual void reset(X* p = nullptr) throw();
+		X& operator *() const throw() {
+			return *_p;
+		}
+		X* operator ->() const throw() {
+			return _p;
+		}
+		X* get() const throw() {
+			return _p;
+		}
+		X* release() throw() {
+			X* p = _p;
+			_p = nullptr;
+			return p;
+		}
+		virtual void reset(X* p = nullptr) throw() {
+			if(_p != p) {
+				delete _p;
+				_p = p;
+			}
+		}
 
-		auto_ptr(auto_ptr_ref<X> r) throw();
 		template<class Y>
-		operator auto_ptr_ref <Y>() throw();
+		operator auto_ptr_ref<Y>() throw() {
+			return auto_ptr_ref<Y>(release());
+		}
 		template<class Y>
-		operator auto_ptr <Y>() throw();
+		operator auto_ptr<Y>() throw() {
+			return auto_ptr<Y>(release());
+		}
 
 	protected:
 		X* _p;
@@ -66,14 +113,271 @@ namespace std {
 	public:
 		typedef typename auto_ptr<X>::element_type element_type;
 
-		explicit auto_array(X* p = nullptr) throw();
-		~auto_array() throw();
+		explicit auto_array(X* p = nullptr) throw()
+			: auto_ptr<X>(p) {
+		}
+		~auto_array() throw() {
+		}
 
-		X& operator [](int index) const throw();
+		X& operator [](int index) const throw() {
+			return this->_p[index];
+		}
 
-		virtual void reset(X* p = nullptr) throw();
+		virtual void reset(X* p = nullptr) throw() {
+			if(this->_p != p) {
+				delete[] this->_p;
+				this->_p = p;
+			}
+		}
 	};
 
-}
+	class refcount {
+	public:
+		explicit refcount(long refs) noexcept
+			: _refs(refs) {
+		}
+		void increment() noexcept {
+			_refs++;
+		}
+		bool decrement() noexcept {
+			bool res = false;
+			if(_refs > 0) {
+				if(--_refs == 0)
+					res = true;
+			}
+			return res;
+		}
+		long count() noexcept {
+			return _refs;
+		}
 
-#include "../../lib/cpp/memory.cc"
+	private:
+		refcount(const refcount&);
+		refcount& operator=(const refcount&);
+
+		long _refs;
+	};
+
+	template<class T>
+	class shared_ptr {
+		template<class Y>
+		friend class shared_ptr;
+
+	public:
+		typedef T element_type;
+
+		// 20.7.2.2.1, constructors:
+		constexpr shared_ptr() noexcept
+			: _refs(), _ptr() {
+		}
+		template<class Y>
+		explicit shared_ptr(Y* p)
+			: _refs(p ? new refcount(1) : nullptr), _ptr(p) {
+		}
+		shared_ptr(const shared_ptr& r) noexcept
+			: _refs(r._refs), _ptr(r._ptr) {
+			attach();
+		}
+		template<class Y>
+		shared_ptr(const shared_ptr<Y>& r) noexcept
+			: _refs(r._refs), _ptr(r._ptr) {
+			attach();
+		}
+		shared_ptr(shared_ptr&& r) noexcept
+			: _refs(r._refs), _ptr(r._ptr) {
+			r._refs = nullptr;
+			r._ptr = nullptr;
+		}
+		template<class Y>
+		shared_ptr(shared_ptr<Y> && r) noexcept
+			: _refs(r._refs), _ptr(r._ptr) {
+			r._refs = nullptr;
+			r._ptr = nullptr;
+		}
+		/* TODO template<class Y>
+		explicit shared_ptr(const weak_ptr<Y>& r);*/
+
+		// 20.7.2.2.2, destructor:
+		~shared_ptr() {
+			detach();
+		}
+
+		// 20.7.2.2.3, assignment:
+		shared_ptr& operator=(const shared_ptr& r) noexcept {
+			if(_ptr != r._ptr) {
+				detach();
+				attachTo(r._refs,r._ptr);
+			}
+			return *this;
+		}
+		template<class Y>
+		shared_ptr& operator=(const shared_ptr<Y>& r) noexcept {
+			if(_ptr != r._ptr) {
+				detach();
+				attachTo(r._refs,r._ptr);
+			}
+			return *this;
+		}
+		shared_ptr& operator=(shared_ptr&& r) noexcept {
+			if(_ptr != r._ptr) {
+				detach();
+				_refs = r._refs;
+				_ptr = r._ptr;
+				r._refs = nullptr;
+			}
+			return *this;
+		}
+		template<class Y>
+		shared_ptr& operator=(shared_ptr<Y> && r) noexcept {
+			if(_ptr != r._ptr) {
+				detach();
+				_refs = r._refs;
+				_ptr = r._ptr;
+				r._refs = nullptr;
+			}
+			return *this;
+		}
+		/* TODO template<class Y,class D>
+		shared_ptr& operator=(unique_ptr<Y,D> && r);*/
+
+		// 20.7.2.2.4, modifiers:
+		void swap(shared_ptr& r) noexcept {
+			//_refs->swap(*r._refs);
+			std::swap(_refs,r._refs);
+			std::swap(_ptr,r._ptr);
+		}
+		void reset() noexcept {
+			shared_ptr().swap(*this);
+		}
+		template<class Y>
+		void reset(Y* p) {
+			shared_ptr(p).swap(*this);
+		}
+
+		// 20.7.2.2.5, observers:
+		T* get() const noexcept {
+			return _ptr;
+		}
+		T& operator*() const noexcept {
+			assert(_ptr != nullptr);
+			return *_ptr;
+		}
+		T* operator->() const noexcept {
+			assert(_ptr != nullptr);
+			return get();
+		}
+
+		long use_count() const noexcept {
+			return _refs ? _refs->count() : 0;
+		}
+		bool unique() const noexcept {
+			return use_count() == 1;
+		}
+#ifdef __eco32__
+		operator bool() const noexcept; {
+#else
+		explicit operator bool() const noexcept {
+#endif
+			return get() != nullptr;
+		}
+		template<class U>
+		bool owner_before(shared_ptr<U> const& b) const {
+			return _ptr < b._ptr;
+		}
+		/* TODO template<class U>
+		bool owner_before(weak_ptr<U> const& b) const;*/
+
+		template<class T2,class U>
+		friend shared_ptr<T2> static_pointer_cast(const shared_ptr<U>& r) noexcept;
+		template<class T2,class U>
+		friend shared_ptr<T2> dynamic_pointer_cast(const shared_ptr<U>& r) noexcept;
+		template<class T2,class U>
+		friend shared_ptr<T2> const_pointer_cast(const shared_ptr<U>& r) noexcept;
+
+	private:
+		void attach() {
+			if(_refs)
+				_refs->increment();
+		}
+		void attachTo(refcount *refs,T *ptr) {
+			_refs = refs;
+			_ptr = ptr;
+			attach();
+		}
+		void detach() {
+			if(_refs && _refs->decrement()) {
+				delete _ptr;
+				delete _refs;
+			}
+		}
+
+		refcount *_refs;
+		T *_ptr;
+	};
+
+	// 20.7.2.2.6, shared_ptr creation
+	template<class T,class ... Args>
+	inline shared_ptr<T> make_shared(Args&&... args) {
+		return shared_ptr<T>(new T(std::forward<Args...>(args...)));
+	}
+
+	// 20.7.2.2.7, shared_ptr comparisons:
+	template<class T,class U>
+	inline bool operator==(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {
+		return a.get() == b.get();
+	}
+	template<class T,class U>
+	inline bool operator!=(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {
+		return !(a == b);
+	}
+	template<class T,class U>
+	inline bool operator<(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {
+		return std::less<T>(a.get(),b.get());
+	}
+	template<class T,class U>
+	inline bool operator>(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {
+		return std::less<T>(b.get(),a.get());
+	}
+	template<class T,class U>
+	inline bool operator<=(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {
+		return !(a > b);
+	}
+	template<class T,class U>
+	inline bool operator>=(const shared_ptr<T>& a,const shared_ptr<U>& b) noexcept {
+		return !(a < b);
+	}
+
+	// 20.7.2.2.8, shared_ptr specialized algorithms:
+	template<class T>
+	inline void swap(shared_ptr<T>& a,shared_ptr<T>& b) noexcept {
+		return a.swap(b);
+	}
+
+	// 20.7.2.2.9, shared_ptr casts:
+	template<class T,class U>
+	inline shared_ptr<T> static_pointer_cast(const shared_ptr<U>& r) noexcept {
+		shared_ptr<T> res;
+		res.attachTo(r._refs,static_cast<T*>(r._ptr));
+		return res;
+	}
+	template<class T,class U>
+	inline shared_ptr<T> dynamic_pointer_cast(const shared_ptr<U>& r) noexcept {
+		shared_ptr<T> res;
+		if(T *t = dynamic_cast<T*>(r._ptr))
+			res.attachTo(r._refs,t);
+		return res;
+	}
+	template<class T,class U>
+	inline shared_ptr<T> const_pointer_cast(const shared_ptr<U>& r) noexcept {
+		shared_ptr<T> res;
+		res.attachTo(r._refs,const_cast<T*>(r._ptr));
+		return res;
+	}
+
+	// 20.7.2.2.11, shared_ptr I/O:
+	template<class Y>
+	inline ostream& operator<<(ostream& os,const shared_ptr<Y>& p) {
+		os << p.get();
+		return os;
+	}
+}

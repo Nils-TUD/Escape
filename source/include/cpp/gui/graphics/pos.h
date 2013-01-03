@@ -51,31 +51,31 @@ namespace gui {
 		gpos_t y;
 	};
 
-	static inline Pos minpos(const Pos &a,const Pos &b) {
+	inline Pos minpos(const Pos &a,const Pos &b) {
 		return Pos(std::min(a.x,b.x),std::min(a.y,b.y));
 	}
-	static inline Pos maxpos(const Pos &a,const Pos &b) {
+	inline Pos maxpos(const Pos &a,const Pos &b) {
 		return Pos(std::max(a.x,b.x),std::max(a.y,b.y));
 	}
 
-	static inline Pos operator +(const Pos &a,const Pos &b) {
+	inline Pos operator +(const Pos &a,const Pos &b) {
 		return Pos(a.x + b.x,a.y + b.y);
 	}
-	static inline Pos operator -(const Pos &a,const Pos &b) {
+	inline Pos operator -(const Pos &a,const Pos &b) {
 		return Pos(a.x - b.x,a.y - b.y);
 	}
 
-	static inline Pos operator +(const Pos &a,const Size &s) {
+	inline Pos operator +(const Pos &a,const Size &s) {
 		return Pos(a.x + s.width,a.y + s.height);
 	}
-	static inline Pos operator -(const Pos &a,const Size &s) {
+	inline Pos operator -(const Pos &a,const Size &s) {
 		return Pos(a.x - s.width,a.y - s.height);
 	}
 
-	static inline bool operator ==(const Pos &a,const Pos &b) {
+	inline bool operator ==(const Pos &a,const Pos &b) {
 		return a.x == b.x && a.y == b.y;
 	}
-	static inline bool operator !=(const Pos &a,const Pos &b) {
+	inline bool operator !=(const Pos &a,const Pos &b) {
 		return !(a == b);
 	}
 }

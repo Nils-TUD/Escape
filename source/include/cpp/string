@@ -99,7 +99,10 @@ namespace std {
 		 * to the element right before the one referred by iterator end.
 		 */
 		template<class InputIterator>
-		string(InputIterator begin,InputIterator end);
+		string(InputIterator b,InputIterator e)
+			: _str(nullptr), _size(0), _length(0) {
+			append(b,e);
+		}
 
 		/**
 		 * Destructor
@@ -318,7 +321,12 @@ namespace std {
 		 * one referred by iterator last.
 		 */
 		template<class InputIterator>
-		string& append(InputIterator first,InputIterator last);
+		string& append(InputIterator first,InputIterator last) {
+			reserve(length() + distance(first,last));
+			for(; first != last; ++first)
+				append(first,1);
+			return *this;
+		}
 
 		/**
 		 * Appends a single character to the string content, increasing its size by one.
@@ -360,7 +368,10 @@ namespace std {
 		 * to by iterator last.
 		 */
 		template<class InputIterator>
-		string& assign(InputIterator first,InputIterator last);
+		string& assign(InputIterator first,InputIterator last) {
+			clear();
+			return append(first,last);
+		}
 
 		/**
 		 * Inserts a copy of the entire string  object str at character position pos1.
@@ -398,7 +409,17 @@ namespace std {
 		 * one referred by iterator last.
 		 */
 		template<class InputIterator>
-		void insert(iterator p,InputIterator first,InputIterator last);
+		void insert(iterator p,InputIterator first,InputIterator last) {
+			size_type pos1 = distance(begin(),p);
+			size_type n = distance(first,last);
+			reserve(_length + n);
+			if(pos1 < _length)
+				memmove(_str + pos1 + n,_str + pos1,(_length - pos1) * sizeof(char));
+			for(; first != last; ++first)
+				_str[pos1++] = *first;
+			_length += n;
+			_str[_length] = '\0';
+		}
 
 		/**
 		 * Erases a sequence of n characters starting at position pos. Notice that both parameters
@@ -477,7 +498,11 @@ namespace std {
 		 * iterator j2.
 		 */
 		template<class InputIterator>
-		string& replace(iterator i1,iterator i2,InputIterator j1,InputIterator j2);
+		string& replace(iterator i1,iterator i2,InputIterator j1,InputIterator j2) {
+			iterator pos = erase(i1,i2);
+			insert(pos,j1,j2);
+			return *this;
+		}
 
 		/**
 		 * Copies a sequence of characters from the string content to the array pointed by s.
@@ -829,5 +854,3 @@ namespace std {
 		return lhs.compare(rhs) >= 0;
 	}
 }
-
-#include "../../lib/cpp/string.cc"

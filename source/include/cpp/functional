@@ -39,75 +39,109 @@ namespace std {
 	// === arithmetical ===
 	template<class T>
 	struct plus : binary_function<T,T,T> {
-		T operator()(const T& x,const T& y);
+		T operator()(const T& x,const T& y) {
+			return x + y;
+		}
 	};
 	template <class T>
 	struct minus : binary_function<T,T,T> {
-		T operator()(const T& x,const T& y) const;
+		T operator()(const T& x,const T& y) const {
+			return x - y;
+		}
 	};
 	template<class T>
 	struct multiplies : binary_function<T,T,T> {
-		T operator()(const T& x,const T& y) const;
+		T operator()(const T& x,const T& y) const {
+			return x * y;
+		}
 	};
 	template<class T>
 	struct divides : binary_function<T,T,T> {
-		T operator()(const T& x,const T& y) const;
+		T operator()(const T& x,const T& y) const {
+			return x / y;
+		}
 	};
 	template<class T>
 	struct modulus : binary_function<T,T,T> {
-		T operator()(const T& x,const T& y) const;
+		T operator()(const T& x,const T& y) const {
+			return x % y;
+		}
 	};
 	template<class T>
 	struct negate : unary_function<T,T> {
-		T operator()(const T& x) const;
+		T operator()(const T& x) const {
+			return -x;
+		}
 	};
 
 	// === comparison ===
 	template<class T>
 	struct equal_to : binary_function<T,T,bool> {
-		bool operator()(const T& x,const T& y) const;
+		bool operator()(const T& x,const T& y) const {
+			return x == y;
+		}
 	};
 	template<class T>
 	struct not_equal_to : binary_function<T,T,bool> {
-		bool operator()(const T& x,const T& y) const;
+		bool operator()(const T& x,const T& y) const {
+			return x != y;
+		}
 	};
 	template<class T>
 	struct greater : binary_function<T,T,bool> {
-		bool operator()(const T& x,const T& y) const;
+		bool operator()(const T& x,const T& y) const {
+			return x > y;
+		}
 	};
 	template<class T>
 	struct less : binary_function<T,T,bool> {
-		bool operator()(const T& x,const T& y) const;
+		bool operator()(const T& x,const T& y) const {
+			return x < y;
+		}
 	};
 	template<class T>
 	struct greater_equal : binary_function<T,T,bool> {
-		bool operator()(const T& x,const T& y) const;
+		bool operator()(const T& x,const T& y) const {
+			return x >= y;
+		}
 	};
 	template<class T>
 	struct less_equal : binary_function<T,T,bool> {
-		bool operator()(const T& x,const T& y) const;
+		bool operator()(const T& x,const T& y) const {
+			return x <= y;
+		}
 	};
 
 	// === logical ===
 	template<class T>
 	struct logical_and : binary_function<T,T,bool> {
-		bool operator()(const T& x,const T& y) const;
+		bool operator()(const T& x,const T& y) const {
+			return x && y;
+		}
 	};
 	template<class T>
 	struct logical_or : binary_function<T,T,bool> {
-		bool operator()(const T& x,const T& y) const;
+		bool operator()(const T& x,const T& y) const {
+			return x || y;
+		}
 	};
 	template<class T>
 	struct logical_not : unary_function<T,bool> {
-		bool operator()(const T& x) const;
+		bool operator()(const T& x) const {
+			return !x;
+		}
 	};
 
 	// === instrumental types ===
 	template<class Predicate>
 	class unary_negate: public unary_function<typename Predicate::argument_type,bool> {
 	public:
-		explicit unary_negate(const Predicate& pred);
-		bool operator()(const typename Predicate::argument_type& x) const;
+		explicit unary_negate(const Predicate& pred)
+			: fn(pred) {
+		}
+		bool operator()(const typename Predicate::argument_type& x) const {
+			return !fn(x);
+		}
 	protected:
 		Predicate fn;
 	};
@@ -116,9 +150,13 @@ namespace std {
 	class binary_negate: public binary_function<typename Predicate::first_argument_type,
 		typename Predicate::second_argument_type,bool> {
 	public:
-		explicit binary_negate(const Predicate& pred);
+		explicit binary_negate(const Predicate& pred)
+			: fn(pred) {
+		}
 		bool operator()(const typename Predicate::first_argument_type& x,
-				const typename Predicate::second_argument_type& y) const;
+				const typename Predicate::second_argument_type& y) const {
+			return !fn(x,y);
+		}
 	protected:
 		Predicate fn;
 	};
@@ -127,9 +165,13 @@ namespace std {
 	class binder1st: public unary_function<typename Operation::second_argument_type,
 		typename Operation::result_type> {
 	public:
-		binder1st(const Operation& x,const typename Operation::first_argument_type& y);
+		binder1st(const Operation& x,const typename Operation::first_argument_type& y)
+			: op(x), value(y) {
+		}
 		typename Operation::result_type operator()(
-				const typename Operation::second_argument_type& x) const;
+				const typename Operation::second_argument_type& x) const {
+			return op(value,x);
+		}
 	protected:
 		Operation op;
 		typename Operation::first_argument_type value;
@@ -139,9 +181,13 @@ namespace std {
 	class binder2nd: public unary_function<typename Operation::first_argument_type,
 		typename Operation::result_type> {
 	public:
-		binder2nd(const Operation& x,const typename Operation::second_argument_type& y);
+		binder2nd(const Operation& x,const typename Operation::second_argument_type& y)
+			: op(x), value(y) {
+		}
 		typename Operation::result_type operator()(
-				const typename Operation::first_argument_type& x) const;
+				const typename Operation::first_argument_type& x) const {
+			return op(x,value);
+		}
 	protected:
 		Operation op;
 		typename Operation::second_argument_type value;
@@ -150,8 +196,12 @@ namespace std {
 	template<class Arg,class Result>
 	class pointer_to_unary_function: public unary_function<Arg,Result> {
 	public:
-		explicit pointer_to_unary_function(Result(*f)(Arg));
-		Result operator()(Arg x) const;
+		explicit pointer_to_unary_function(Result(*f)(Arg))
+			: pfunc(f) {
+		}
+		Result operator()(Arg x) const {
+			return pfunc(x);
+		}
 	protected:
 		Result(*pfunc)(Arg);
 	};
@@ -159,8 +209,12 @@ namespace std {
 	template<class Arg1,class Arg2,class Result>
 	class pointer_to_binary_function: public binary_function<Arg1,Arg2,Result> {
 	public:
-		explicit pointer_to_binary_function(Result(*f)(Arg1,Arg2));
-		Result operator()(Arg1 x,Arg2 y) const;
+		explicit pointer_to_binary_function(Result(*f)(Arg1,Arg2))
+			: pfunc(f) {
+		}
+		Result operator()(Arg1 x,Arg2 y) const {
+			return pfunc(x,y);
+		}
 	protected:
 		Result(*pfunc)(Arg1,Arg2);
 	};
@@ -168,8 +222,12 @@ namespace std {
 	template<class S,class T>
 	class mem_fun_t: public unary_function<T*,S> {
 	public:
-		explicit mem_fun_t(S(T::*p)());
-		S operator()(T* p) const;
+		explicit mem_fun_t(S(T::*p)())
+			: pmem(p) {
+		}
+		S operator()(T* p) const {
+			return (p->*pmem)();
+		}
 	private:
 		S (T::*pmem)();
 	};
@@ -177,8 +235,12 @@ namespace std {
 	template<class S,class T,class A>
 	class mem_fun1_t: public binary_function<T*,A,S> {
 	public:
-		explicit mem_fun1_t(S(T::*p)(A));
-		S operator()(T* p,A x) const;
+		explicit mem_fun1_t(S(T::*p)(A))
+			: pmem(p) {
+		}
+		S operator()(T* p,A x) const {
+			return (p->*pmem)(x);
+		}
 	private:
 		S (T::*pmem)(A);
 	};
@@ -186,8 +248,12 @@ namespace std {
 	template<class S,class T>
 	class const_mem_fun_t: public unary_function<T*,S> {
 	public:
-		explicit const_mem_fun_t(S(T::*p)() const);
-		S operator()(T* p) const;
+		explicit const_mem_fun_t(S(T::*p)() const)
+			: pmem(p) {
+		}
+		S operator()(T* p) const {
+			return (p->*pmem)();
+		}
 	private:
 		S (T::*pmem)() const;
 	};
@@ -195,8 +261,12 @@ namespace std {
 	template<class S,class T,class A>
 	class const_mem_fun1_t: public binary_function<T*,A,S> {
 	public:
-		explicit const_mem_fun1_t(S(T::*p)(A) const);
-		S operator()(T* p,A x) const;
+		explicit const_mem_fun1_t(S(T::*p)(A) const)
+			: pmem(p) {
+		}
+		S operator()(T* p,A x) const {
+			return (p->*pmem)(x);
+		}
 	private:
 		S (T::*pmem)(A) const;
 	};
@@ -204,8 +274,12 @@ namespace std {
 	template<class S,class T>
 	class mem_fun_ref_t: public unary_function<T,S> {
 	public:
-		explicit mem_fun_ref_t(S(T::*p)());
-		S operator()(T& p) const;
+		explicit mem_fun_ref_t(S(T::*p)())
+			: pmem(p) {
+		}
+		S operator()(T& p) const {
+			return (p.*pmem)();
+		}
 	private:
 		S (T::*pmem)();
 	};
@@ -213,8 +287,12 @@ namespace std {
 	template<class S,class T,class A>
 	class mem_fun1_ref_t: public binary_function<T,A,S> {
 	public:
-		explicit mem_fun1_ref_t(S(T::*p)(A));
-		S operator()(T& p,A x) const;
+		explicit mem_fun1_ref_t(S(T::*p)(A))
+			: pmem(p) {
+		}
+		S operator()(T& p,A x) const {
+			return (p.*pmem)(x);
+		}
 	private:
 		S (T::*pmem)(A);
 	};
@@ -222,8 +300,12 @@ namespace std {
 	template<class S,class T>
 	class const_mem_fun_ref_t: public unary_function<T,S> {
 	public:
-		explicit const_mem_fun_ref_t(S(T::*p)() const);
-		S operator()(T& p) const;
+		explicit const_mem_fun_ref_t(S(T::*p)() const)
+			: pmem(p) {
+		}
+		S operator()(T& p) const {
+			return (p.*pmem)();
+		}
 	private:
 		S (T::*pmem)() const;
 	};
@@ -231,45 +313,75 @@ namespace std {
 	template<class S,class T,class A>
 	class const_mem_fun1_ref_t: public binary_function<T,A,S> {
 	public:
-		explicit const_mem_fun1_ref_t(S(T::*p)(A) const);
-		S operator()(T& p,A x) const;
+		explicit const_mem_fun1_ref_t(S(T::*p)(A) const)
+			: pmem(p) {
+		}
+		S operator()(T& p,A x) const {
+			return (p.*pmem)(x);
+		}
 	private:
 		S (T::*pmem)(A) const;
 	};
 
 	// negator adaptors
 	template<class Predicate>
-	unary_negate<Predicate> not1(const Predicate& pred);
+	unary_negate<Predicate> not1(const Predicate& pred) {
+		return unary_negate<Predicate>(pred);
+	}
 	template<class Predicate>
-	binary_negate<Predicate> not2(const Predicate& pred);
+	binary_negate<Predicate> not2(const Predicate& pred) {
+		return binary_negate<Predicate>(pred);
+	}
 
 	// parameter binder adaptors
 	template<class Operation,class T>
-	binder1st<Operation> bind1st(const Operation& op,const T& x);
+	binder1st<Operation> bind1st(const Operation& op,const T& x) {
+		return binder1st<Operation>(op,typename Operation::first_argument_type(x));
+	}
 	template<class Operation,class T>
-	binder2nd<Operation> bind2nd(const Operation& op,const T& x);
+	binder2nd<Operation> bind2nd(const Operation& op,const T& x) {
+		return binder2nd<Operation>(op,typename Operation::second_argument_type(x));
+	}
 
 	// conversor adaptors
 	template<class Arg,class Result>
-	pointer_to_unary_function<Arg,Result> ptr_fun(Result(*f)(Arg));
+	pointer_to_unary_function<Arg,Result> ptr_fun(Result(*f)(Arg)) {
+		return pointer_to_unary_function<Arg,Result>(f);
+	}
 	template<class Arg1,class Arg2,class Result>
-	pointer_to_binary_function<Arg1,Arg2,Result> ptr_fun(Result(*f)(Arg1,Arg2));
+	pointer_to_binary_function<Arg1,Arg2,Result> ptr_fun(Result(*f)(Arg1,Arg2)) {
+		return pointer_to_binary_function<Arg1,Arg2,Result>(f);
+	}
 	template<class S,class T>
-	mem_fun_t<S,T> mem_fun(S(T::*f)());
+	mem_fun_t<S,T> mem_fun(S(T::*f)()) {
+		return mem_fun_t<S,T> (f);
+	}
 	template<class S,class T,class A>
-	mem_fun1_t<S,T,A> mem_fun(S(T::*f)(A));
+	mem_fun1_t<S,T,A> mem_fun(S(T::*f)(A)) {
+		return mem_fun1_t<S,T,A> (f);
+	}
 	template<class S,class T>
-	const_mem_fun_t<S,T> mem_fun(S(T::*f)() const);
+	const_mem_fun_t<S,T> mem_fun(S(T::*f)() const) {
+		return const_mem_fun_t<S,T> (f);
+	}
 	template<class S,class T,class A>
-	const_mem_fun1_t<S,T,A> mem_fun(S(T::*f)(A) const);
+	const_mem_fun1_t<S,T,A> mem_fun(S(T::*f)(A) const) {
+		return const_mem_fun1_t<S,T,A> (f);
+	}
 	template<class S,class T>
-	mem_fun_ref_t<S,T> mem_fun_ref(S(T::*f)());
+	mem_fun_ref_t<S,T> mem_fun_ref(S(T::*f)()) {
+		return mem_fun_ref_t<S,T> (f);
+	}
 	template<class S,class T,class A>
-	mem_fun1_ref_t<S,T,A> mem_fun_ref(S(T::*f)(A));
+	mem_fun1_ref_t<S,T,A> mem_fun_ref(S(T::*f)(A)) {
+		return mem_fun1_ref_t<S,T,A> (f);
+	}
 	template<class S,class T>
-	const_mem_fun_ref_t<S,T> mem_fun_ref(S(T::*f)() const);
+	const_mem_fun_ref_t<S,T> mem_fun_ref(S(T::*f)() const) {
+		return const_mem_fun_ref_t<S,T> (f);
+	}
 	template<class S,class T,class A>
-	const_mem_fun1_ref_t<S,T,A> mem_fun_ref(S(T::*f)(A) const);
+	const_mem_fun1_ref_t<S,T,A> mem_fun_ref(S(T::*f)(A) const) {
+		return const_mem_fun1_ref_t<S,T,A> (f);
+	}
 }
-
-#include "../../lib/cpp/functional.cc"

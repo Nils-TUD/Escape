@@ -28,113 +28,11 @@
 #include <assert.h>
 
 namespace std {
-	template<class Y>
-	struct auto_ptr_ref {
-		Y* _p;
-		explicit auto_ptr_ref(Y *p)
-			: _p(p) {
-		}
-	};
-
-	template<class X>
-	class auto_ptr {
-	public:
-		typedef X element_type;
-
-		explicit auto_ptr(X* p = nullptr) throw()
-			: _p(p) {
-		}
-		auto_ptr(auto_ptr& ptr) throw()
-			: _p(nullptr) {
-			_p = ptr.release();
-		}
-		template<class Y>
-		auto_ptr(auto_ptr<Y>& ptr) throw()
-			: _p(nullptr) {
-			_p = ptr.release();
-		}
-		auto_ptr(auto_ptr_ref<X> r) throw()
-			: _p(r._p) {
-		}
-		~auto_ptr() throw() {
-			reset(nullptr);
-		}
-
-		auto_ptr& operator =(auto_ptr& ptr) throw() {
-			reset(ptr.release());
-			return *this;
-		}
-		template<class Y>
-		auto_ptr& operator =(auto_ptr<Y>& ptr) throw() {
-			reset(ptr.release());
-			return *this;
-		}
-		auto_ptr& operator =(auto_ptr_ref<X> r) throw() {
-			reset(r._p);
-			return *this;
-		}
-
-		X& operator *() const throw() {
-			return *_p;
-		}
-		X* operator ->() const throw() {
-			return _p;
-		}
-		X* get() const throw() {
-			return _p;
-		}
-		X* release() throw() {
-			X* p = _p;
-			_p = nullptr;
-			return p;
-		}
-		virtual void reset(X* p = nullptr) throw() {
-			if(_p != p) {
-				delete _p;
-				_p = p;
-			}
-		}
-
-		template<class Y>
-		operator auto_ptr_ref<Y>() throw() {
-			return auto_ptr_ref<Y>(release());
-		}
-		template<class Y>
-		operator auto_ptr<Y>() throw() {
-			return auto_ptr<Y>(release());
-		}
-
-	protected:
-		X* _p;
-	};
-
-	template<class X>
-	class auto_array : public auto_ptr<X> {
-	public:
-		typedef typename auto_ptr<X>::element_type element_type;
-
-		explicit auto_array(X* p = nullptr) throw()
-			: auto_ptr<X>(p) {
-		}
-		~auto_array() throw() {
-		}
-
-		X& operator [](int index) const throw() {
-			return this->_p[index];
-		}
-
-		virtual void reset(X* p = nullptr) throw() {
-			if(this->_p != p) {
-				delete[] this->_p;
-				this->_p = p;
-			}
-		}
-	};
-
 	template<class T>
 	class unique_ptr {
 		template<class T2>
 		friend class unique_ptr;
+
 	public:
 		typedef T* pointer;
 		typedef T element_type;
@@ -214,6 +112,7 @@ namespace std {
 	class unique_ptr<T[]> {
 		template<class T2>
 		friend class unique_ptr;
+
 	public:
 		typedef T* pointer;
 		typedef T element_type;
@@ -307,74 +206,108 @@ namespace std {
 		return !(x < y);
 	}
 
-	class refcount {
+	class bad_weak_ptr : public std::exception {
 	public:
-		explicit refcount(long refs) noexcept
-			: _refs(refs) {
+		bad_weak_ptr() noexcept
+			: exception() {
 		}
-		void increment() noexcept {
-			_refs++;
-		}
-		bool decrement() noexcept {
-			bool res = false;
-			if(_refs > 0) {
-				if(--_refs == 0)
-					res = true;
-			}
-			return res;
-		}
-		long count() noexcept {
-			return _refs;
-		}
-
-	private:
-		refcount(const refcount&);
-		refcount& operator=(const refcount&);
-
-		long _refs;
+	    virtual const char* what() const throw() {
+	    	return "bad_weak_ptr";
+	    }
 	};
+
+	template<class T>
+	class refobject {
+	public:
+		explicit refobject(T *ptr_,long shared,long weak) noexcept
+			: shared_refs(shared), weak_refs(weak), ptr(ptr_) {
+		}
+
+		refobject(const refobject&) = delete;
+		refobject& operator=(const refobject&) = delete;
+
+		long shared_refs;
+		long weak_refs;
+		T *ptr;
+	};
+
+	template<class T>
+	class weak_ptr;
+
+	template<class From,class To>
+	struct IsConvertible {
+		void check() {
+			To y A_UNUSED = _x;
+		}
+		From _x;
+	};
+	template<class From,class To>
+	struct IsConstConvertible {
+		void check() {
+			To y A_UNUSED = const_cast<To>(_x);
+		}
+		From _x;
+	};
+	template<class From,class To>
+	struct IsStaticConvertible {
+		void check() {
+			To y A_UNUSED = static_cast<To>(_x);
+		}
+		From _x;
+	};
+
+	template<class Concept>
+	inline void function_requires() {
+		void (Concept::*_x)() A_UNUSED = &Concept::check;
+	}
 
 	template<class T>
 	class shared_ptr {
 		template<class Y>
 		friend class shared_ptr;
+		template<class Y>
+		friend class weak_ptr;
 
 	public:
 		typedef T element_type;
 
 		// 20.7.2.2.1, constructors:
 		constexpr shared_ptr() noexcept
-			: _refs(), _ptr() {
+			: _obj() {
 		}
 		template<class Y>
 		explicit shared_ptr(Y* p)
-			: _refs(p ? new refcount(1) : nullptr), _ptr(p) {
+			: _obj(p ? new refobject<T>(p,1,0) : nullptr) {
 		}
 		shared_ptr(const shared_ptr& r) noexcept
-			: _refs(r._refs), _ptr(r._ptr) {
+			: _obj(r._obj) {
 			attach();
 		}
 		template<class Y>
 		shared_ptr(const shared_ptr<Y>& r) noexcept
-			: _refs(r._refs), _ptr(r._ptr) {
+			: _obj((refobject<T>*)r._obj) {
+			function_requires<IsConvertible<Y*,T*>>();
 			attach();
 		}
 		shared_ptr(shared_ptr&& r) noexcept
-			: _refs(r._refs), _ptr(r._ptr) {
-			r._refs = nullptr;
-			r._ptr = nullptr;
+			: _obj(r._obj) {
+			r._obj = nullptr;
 		}
 		template<class Y>
 		shared_ptr(shared_ptr<Y>&& r) noexcept
-			: _refs(r._refs), _ptr(r._ptr) {
-			r._refs = nullptr;
-			r._ptr = nullptr;
+			: _obj((refobject<T>*)r._obj) {
+			function_requires<IsConvertible<Y*,T*>>();
+			r._obj = nullptr;
 		}
-		/* TODO template<class Y>
-		explicit shared_ptr(const weak_ptr<Y>& r);*/
+		template<class Y>
+		explicit shared_ptr(const weak_ptr<Y>& r)
+			: _obj((refobject<T>*)r._obj) {
+			function_requires<IsConvertible<Y*,T*>>();
+			attach();
+		}
 		template<class Y>
 		shared_ptr(unique_ptr<Y>&& r)
-			: _refs(r.get() ? new refcount(1) : nullptr), _ptr(r.release()) {
+			: _obj(r.get() ? new refobject<T>(r.release(),1,0) : nullptr) {
 		}
 
 		// 20.7.2.2.2, destructor:
@@ -384,52 +317,49 @@ namespace std {
 
 		// 20.7.2.2.3, assignment:
 		shared_ptr& operator=(const shared_ptr& r) noexcept {
-			if(_ptr != r._ptr) {
+			if(_obj != r._obj) {
 				detach();
-				attachTo(r._refs,r._ptr);
+				attachTo(r._obj);
 			}
 			return *this;
 		}
 		template<class Y>
 		shared_ptr& operator=(const shared_ptr<Y>& r) noexcept {
-			if(_ptr != r._ptr) {
+			function_requires<IsConvertible<Y*,T*>>();
+			if(_obj != (refobject<T>*)r._obj) {
 				detach();
-				attachTo(r._refs,r._ptr);
+				attachTo((refobject<T>*)r._obj);
 			}
 			return *this;
 		}
 		shared_ptr& operator=(shared_ptr&& r) noexcept {
-			if(_ptr != r._ptr) {
+			if(_obj != r._obj) {
 				detach();
-				_refs = r._refs;
-				_ptr = r._ptr;
-				r._refs = nullptr;
+				_obj = r._obj;
+				r._obj = nullptr;
 			}
 			return *this;
 		}
 		template<class Y>
 		shared_ptr& operator=(shared_ptr<Y>&& r) noexcept {
-			if(_ptr != r._ptr) {
+			function_requires<IsConvertible<Y*,T*>>();
+			if(_obj != (refobject<T>*)r._obj) {
 				detach();
-				_refs = r._refs;
-				_ptr = r._ptr;
-				r._refs = nullptr;
+				_obj = (refobject<T>*)r._obj;
+				r._obj = nullptr;
 			}
 			return *this;
 		}
 		template<class Y>
 		shared_ptr& operator=(unique_ptr<Y>&& r) {
 			detach();
-			_refs = r.get() ? new refcount(1) : nullptr;
-			_ptr = r.release();
+			_obj = r.get() ? new refobject<T>(r.release(),1,0) : nullptr;
 			return *this;
 		}
 
 		// 20.7.2.2.4, modifiers:
 		void swap(shared_ptr& r) noexcept {
-			//_refs->swap(*r._refs);
-			std::swap(_refs,r._refs);
-			std::swap(_ptr,r._ptr);
+			std::swap(_obj,r._obj);
 		}
 		void reset() noexcept {
 			shared_ptr().swap(*this);
@@ -441,19 +371,19 @@ namespace std {
 
 		// 20.7.2.2.5, observers:
 		T* get() const noexcept {
-			return _ptr;
+			return _obj ? _obj->ptr : nullptr;
 		}
 		T& operator*() const noexcept {
-			assert(_ptr != nullptr);
-			return *_ptr;
+			assert(get() != nullptr);
+			return *get();
 		}
 		T* operator->() const noexcept {
-			assert(_ptr != nullptr);
+			assert(get() != nullptr);
 			return get();
 		}
 
 		long use_count() const noexcept {
-			return _refs ? _refs->count() : 0;
+			return _obj ? _obj->shared_refs : 0;
 		}
 		bool unique() const noexcept {
 			return use_count() == 1;
@@ -461,12 +391,6 @@ namespace std {
 		CASTOP_EXPLICIT operator bool() const noexcept {
 			return get() != nullptr;
 		}
-		template<class U>
-		bool owner_before(shared_ptr<U> const& b) const {
-			return _ptr < b._ptr;
-		}
-		/* TODO template<class U>
-		bool owner_before(weak_ptr<U> const& b) const;*/
 
 		template<class T2,class U>
 		friend shared_ptr<T2> static_pointer_cast(const shared_ptr<U>& r) noexcept;
@@ -477,23 +401,23 @@ namespace std {
 
 	private:
 		void attach() {
-			if(_refs)
-				_refs->increment();
+			if(_obj)
+				_obj->shared_refs++;
 		}
-		void attachTo(refcount *refs,T *ptr) {
-			_refs = refs;
-			_ptr = ptr;
+		void attachTo(refobject<T> *obj) {
+			_obj = obj;
 			attach();
 		}
 		void detach() {
-			if(_refs && _refs->decrement()) {
-				delete _ptr;
-				delete _refs;
+			if(_obj && --_obj->shared_refs == 0) {
+				delete _obj->ptr;
+				_obj->ptr = nullptr;
+				if(_obj->weak_refs == 0)
+					delete _obj;
 			}
 		}
 
-		refcount *_refs;
-		T *_ptr;
+		refobject<T> *_obj;
 	};
 
 	// 20.7.2.2.6, shared_ptr creation
@@ -537,21 +461,24 @@ namespace std {
 	// 20.7.2.2.9, shared_ptr casts:
 	template<class T,class U>
 	inline shared_ptr<T> static_pointer_cast(const shared_ptr<U>& r) noexcept {
+		function_requires<IsStaticConvertible<U*,T*>>();
 		shared_ptr<T> res;
-		res.attachTo(r._refs,static_cast<T*>(r._ptr));
+		res.attachTo((refobject<T>*)r._obj);
 		return res;
 	}
 	template<class T,class U>
 	inline shared_ptr<T> dynamic_pointer_cast(const shared_ptr<U>& r) noexcept {
 		shared_ptr<T> res;
-		if(T *t = dynamic_cast<T*>(r._ptr))
-			res.attachTo(r._refs,t);
+		T *t;
+		if(r && (t = dynamic_cast<T*>(r.get())))
+			res.attachTo((refobject<T>*)r._obj);
 		return res;
 	}
 	template<class T,class U>
 	inline shared_ptr<T> const_pointer_cast(const shared_ptr<U>& r) noexcept {
+		function_requires<IsConstConvertible<U*,T*>>();
 		shared_ptr<T> res;
-		res.attachTo(r._refs,const_cast<T*>(r._ptr));
+		res.attachTo((refobject<T>*)r._obj);
 		return res;
 	}
 
@@ -560,5 +487,105 @@ namespace std {
 	inline ostream& operator<<(ostream& os,const shared_ptr<Y>& p) {
 		os << p.get();
 		return os;
+	}
+
+	template<class T>
+	class weak_ptr {
+		template<class Y>
+		friend class weak_ptr;
+		template<class Y>
+		friend class shared_ptr;
+
+	public:
+		typedef T element_type;
+
+		// 20.7.2.3.1, constructors
+		constexpr weak_ptr() noexcept
+			: _obj() {
+		}
+		template<class Y>
+		weak_ptr(shared_ptr<Y> const& r) noexcept
+			: _obj((refobject<T>*)r._obj) {
+			function_requires<IsConvertible<Y*,T*>>();
+			attach();
+		}
+		weak_ptr(weak_ptr const& r) noexcept
+			: _obj(r._obj) {
+			attach();
+		}
+		template<class Y>
+		weak_ptr(weak_ptr<Y> const& r) noexcept
+			: _obj((refobject<T>*)r._obj) {
+			function_requires<IsConvertible<Y*,T*>>();
+			attach();
+		}
+
+		// 20.7.2.3.2, destructor
+		~weak_ptr() {
+			detach();
+		}
+
+		// 20.7.2.3.3, assignment
+		weak_ptr& operator=(weak_ptr const& r) noexcept {
+			detach();
+			_obj = r._obj;
+			attach();
+			return *this;
+		}
+		template<class Y>
+		weak_ptr& operator=(weak_ptr<Y> const& r) noexcept {
+			function_requires<IsConvertible<Y*,T*>>();
+			detach();
+			_obj = (refobject<T>*)r._obj;
+			attach();
+			return *this;
+		}
+		template<class Y>
+		weak_ptr& operator=(shared_ptr<Y> const& r) noexcept {
+			function_requires<IsConvertible<Y*,T*>>();
+			detach();
+			_obj = (refobject<T>*)r._obj;
+			attach();
+			return *this;
+		}
+
+		// 20.7.2.3.4, modifiers
+		void swap(weak_ptr& r) noexcept {
+			std::swap(_obj,r._obj);
+		}
+		void reset() noexcept {
+			weak_ptr().swap(*this);
+		}
+
+		// 20.7.2.3.5, observers
+		long use_count() const noexcept {
+			return _obj ? _obj->shared_refs : 0;
+		}
+		bool expired() const noexcept {
+			return use_count() == 0;
+		}
+		shared_ptr<T> lock() const noexcept {
+			return expired() ? shared_ptr<T>() : shared_ptr<T>(*this);
+		}
+
+	private:
+		void attach() {
+			if(_obj)
+				_obj->weak_refs++;
+		}
+		void detach() {
+			if(_obj && --_obj->weak_refs == 0) {
+				if(_obj->shared_refs == 0)
+					delete _obj;
+			}
+		}
+
+		refobject<T> *_obj;
+	};
+
+	// 20.7.2.3.6, specialized algorithms
+	template<class T>
+	void swap(weak_ptr<T>& a, weak_ptr<T>& b) noexcept {
+		a.swap(b);
 	}
 }

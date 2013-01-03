@@ -35,6 +35,7 @@ static void test_shared_basic(void);
 static void test_shared_modifiers(void);
 static void test_shared_casts(void);
 static void test_unique_basic(void);
+static void test_weak_basics(void);
 
 /* our test-module */
 sTestModule tModSmartPtr = {
@@ -47,6 +48,7 @@ static void test_smartptr(void) {
 	test_shared_modifiers();
 	test_shared_casts();
 	test_unique_basic();
+	test_weak_basics();
 }
 
 static void test_shared_basic(void) {
@@ -200,12 +202,17 @@ static void test_shared_casts(void) {
 		shared_ptr<const A> a1(new A);
 		shared_ptr<A> a2 = const_pointer_cast<A>(a1);
 		shared_ptr<B> b2 = dynamic_pointer_cast<B>(a);
-		test_assertLInt(a.use_count(),2);
-		test_assertLInt(b.use_count(),2);
+		shared_ptr<B> b3 = dynamic_pointer_cast<B>(shared_ptr<A>());
+		shared_ptr<A> b4 = dynamic_pointer_cast<B>(b);
+		test_assertLInt(a.use_count(),3);
+		test_assertLInt(b.use_count(),3);
 		test_assertLInt(a1.use_count(),2);
 		test_assertLInt(a2.use_count(),2);
 		test_assertPtr(b2.get(),nullptr);
 		test_assertLInt(b2.use_count(),0);
+		test_assertPtr(b3.get(),nullptr);
+		test_assertLInt(b3.use_count(),0);
+		test_assertLInt(b4.use_count(),3);
 	}
 	after = heapspace();
 	test_assertSize(after,before);
@@ -274,6 +281,62 @@ static void test_unique_basic(void) {
 			test_assertTrue(a > c);
 		}
 		b.release();
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
+	test_caseSucceeded();
+}
+
+static void test_weak_basics(void) {
+	size_t before,after;
+	test_caseStart("Testing basic operations of weak_ptr");
+
+	before = heapspace();
+	{
+		weak_ptr<int> a;
+		shared_ptr<int> b(new int(5));
+		weak_ptr<int> c(b);
+		weak_ptr<int> d;
+		d = b;
+		weak_ptr<int> e;
+		e = d;
+		test_assertLInt(a.use_count(),0);
+		test_assertLInt(b.use_count(),1);
+		test_assertLInt(c.use_count(),1);
+		test_assertTrue(a.expired());
+		test_assertFalse(e.expired());
+
+		if(shared_ptr<int> s = e.lock()) {
+			test_assertLInt(b.use_count(),2);
+			test_assertLInt(e.use_count(),2);
+			test_assertLInt(s.use_count(),2);
+			test_assertInt(*s.get(),5);
+		}
+		else
+			test_assertFalse(true);
+
+		test_assertLInt(b.use_count(),1);
+		test_assertLInt(c.use_count(),1);
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
+	before = heapspace();
+	{
+		weak_ptr<int> a;
+		{
+			shared_ptr<int> b(new int(4));
+			weak_ptr<int> c(b);
+			a = b;
+			test_assertLInt(b.use_count(),1);
+			test_assertLInt(c.use_count(),1);
+			test_assertInt(*b.get(),4);
+		}
+
+		test_assertLInt(a.use_count(),0);
+		test_assertTrue(a.expired());
+		test_assertFalse((bool)a.lock());
 	}
 	after = heapspace();
 	test_assertSize(after,before);

@@ -39,8 +39,8 @@ extern "C" void yyerror(char const *s);
 extern "C" int yyparse(void);
 
 const char *parse_text = nullptr;
-static Window *win;
-static Editable *textfield;
+static shared_ptr<Window> win;
+static shared_ptr<Editable> textfield;
 
 void yyerror(char const *s) {
 	cerr << "Error: " << s << endl;
@@ -77,7 +77,7 @@ static void onSubmitButtonClick(UIElement&) {
 static void keyPressed(UIElement &,const KeyEvent &e) {
 	if(e.getKeyCode() == VK_ENTER)
 		parse();
-	if(win->getFocus() == textfield)
+	if(win->getFocus() == textfield.get())
 		return;
 
 	if(e.getKeyCode() == VK_BACKSP)
@@ -99,22 +99,22 @@ static void keyPressed(UIElement &,const KeyEvent &e) {
 				break;
 		}
 	}
-	win->setFocus(textfield);
+	win->setFocus(textfield.get());
 }
 
 int main(void) {
 	Application *app = Application::getInstance();
-	win = new Window("Calculator",Pos(250,250));
+	win = make_control<Window>("Calculator",Pos(250,250));
 	win->keyPressed().subscribe(func_recv(keyPressed));
-	Panel& root = win->getRootPanel();
-	root.getTheme().setPadding(2);
-	root.setLayout(new BorderLayout(2));
+	shared_ptr<Panel> root = win->getRootPanel();
+	root->getTheme().setPadding(2);
+	root->setLayout(make_layout<BorderLayout>(2));
 
-	Panel *grid = new Panel(new GridLayout(5,4));
-	root.add(grid,BorderLayout::CENTER);
+	shared_ptr<Panel> grid = make_control<Panel>(make_layout<GridLayout>(5,4));
+	root->add(grid,BorderLayout::CENTER);
 
-	textfield = new Editable();
-	root.add(textfield,BorderLayout::NORTH);
+	textfield = make_control<Editable>();
+	root->add(textfield,BorderLayout::NORTH);
 
 	struct sCalcButton {
 		char c;
@@ -141,23 +141,24 @@ int main(void) {
 	};
 	for(size_t i = 0; i < ARRAY_SIZE(buttons); ++i) {
 		char name[] = {buttons[i].c,'\0'};
-		Button *b = new Button(name,Pos(0,0),BTN_SIZE);
+		shared_ptr<Button> b = make_control<Button>(name,Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(bind1_recv(buttons[i].c,onButtonClick));
 		grid->add(b,buttons[i].pos);
 	}
 
 	{
-		Button *b = new Button("C",Pos(0,0),BTN_SIZE);
+		shared_ptr<Button> b = make_control<Button>("C",Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(func_recv(onClearButtonClick));
 		grid->add(b,GridPos(4,2));
 	}
 
 	{
-		Button *b = new Button("=",Pos(0,0),BTN_SIZE);
+		shared_ptr<Button> b = make_control<Button>("=",Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(func_recv(onSubmitButtonClick));
 		grid->add(b,GridPos(4,3));
 	}
 
 	win->show(true);
+	app->addWindow(win);
 	return app->run();
 }

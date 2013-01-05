@@ -28,9 +28,9 @@ namespace gui {
 		 * Creates an empty panel with given layout. Note that the layout will be owned by the
 		 * panel afterwards. So, it will delete it when the panel is deleted.
 		 *
-		 * @param l the layout (may be nullptr)
+		 * @param l the layout (may be empty)
 		 */
-		Panel(Layout *l = nullptr)
+		Panel(std::shared_ptr<Layout> l = std::shared_ptr<Layout>())
 			: Control(), _focus(nullptr), _controls(), _layout(l), _updateRect() {
 		}
 		/**
@@ -40,18 +40,10 @@ namespace gui {
 		 *
 		 * @param pos the position
 		 * @param size the size
-		 * @param l the layout (may be nullptr)
+		 * @param l the layout (may be empty)
 		 */
-		Panel(const Pos &pos,const Size &size,Layout *l = nullptr)
+		Panel(const Pos &pos,const Size &size,std::shared_ptr<Layout> l = std::shared_ptr<Layout>())
 			: Control(pos,size), _focus(nullptr), _controls(), _layout(l), _updateRect() {
-		}
-		/**
-		 * Destructor
-		 */
-		virtual ~Panel() {
-			for(std::vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
-				delete (*it);
-			delete _layout;
 		}
 
 		virtual Size getPrefSize() const {
@@ -71,9 +63,9 @@ namespace gui {
 		}
 
 		/**
-		 * @return the layout (nullptr if none)
+		 * @return the layout
 		 */
-		Layout *getLayout() const {
+		std::shared_ptr<Layout> getLayout() const {
 			return _layout;
 		}
 		/**
@@ -82,7 +74,7 @@ namespace gui {
 		 *
 		 * @param l the layout
 		 */
-		void setLayout(Layout *l) {
+		void setLayout(std::shared_ptr<Layout> l) {
 			if(_controls.size() > 0) {
 				throw std::logic_error("This panel does already have controls;"
 						" you can't change the layout afterwards");
@@ -110,7 +102,7 @@ namespace gui {
 		 * @param c the control
 		 * @param pos the position-specification for the layout
 		 */
-		void add(Control *c,Layout::pos_type pos = 0);
+		void add(std::shared_ptr<Control> c,Layout::pos_type pos = 0);
 
 		/**
 		 * Removes the given control from this panel. That means, the panel will no longer own
@@ -119,7 +111,7 @@ namespace gui {
 		 * @param c the control
 		 * @param pos the position-specification for the layout
 		 */
-		void remove(Control *c,Layout::pos_type pos = 0);
+		void remove(std::shared_ptr<Control> c,Layout::pos_type pos = 0);
 
 		/**
 		 * Removes all controls from this panel That means, the panel will no longer own
@@ -160,8 +152,8 @@ namespace gui {
 
 	protected:
 		Control *_focus;
-		std::vector<Control*> _controls;
-		Layout *_layout;
+		std::vector<std::shared_ptr<Control>> _controls;
+		std::shared_ptr<Layout> _layout;
 		sRectangle _updateRect;
 	};
 

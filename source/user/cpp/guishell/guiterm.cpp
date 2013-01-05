@@ -28,7 +28,7 @@
 #include <errno.h>
 #include "guiterm.h"
 
-GUITerm::GUITerm(int sid,ShellControl *sh)
+GUITerm::GUITerm(int sid,std::shared_ptr<ShellControl> sh)
 	: _sid(sid), _run(true), _vt(nullptr), _sh(sh), _cfg(sVTermCfg()),
 	  _rbuffer(new char[READ_BUF_SIZE]), _rbufPos(0) {
 	sVTSize size;

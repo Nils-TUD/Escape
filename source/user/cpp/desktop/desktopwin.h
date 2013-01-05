@@ -33,19 +33,7 @@ class Shortcut {
 
 public:
 	Shortcut(const std::string& icon,const std::string& app)
-		: _icon(icon), _app(app), _btn(nullptr) {
-	}
-	Shortcut(const Shortcut &w)
-		: _icon(w._icon), _app(w._app), _btn(new gui::ImageButton(*w._btn)) {
-	}
-
-	Shortcut &operator=(const Shortcut &w) {
-		if(this == &w)
-			return *this;
-		this->_icon = w._icon;
-		this->_app = w._app;
-		this->_btn = new gui::ImageButton(*w._btn);
-		return *this;
+		: _icon(icon), _app(app), _btn() {
 	}
 
 	const string& getIcon() const {
@@ -56,17 +44,17 @@ public:
 	}
 
 private:
-	gui::ImageButton *getButton() const {
+	std::shared_ptr<gui::ImageButton> getButton() const {
 		return _btn;
 	}
-	void setButton(gui::ImageButton *btn) {
+	void setButton(std::shared_ptr<gui::ImageButton> btn) {
 		_btn = btn;
 	}
 
 private:
 	std::string _icon;
 	std::string _app;
-	gui::ImageButton *_btn;
+	std::shared_ptr<gui::ImageButton> _btn;
 };
 
 class DesktopWin : public gui::Window {
@@ -80,8 +68,8 @@ class DesktopWin : public gui::Window {
 		onclick_type::subscr_type _sub;
 	};
 
-	typedef map<gwinid_t,WinButton*> winmap_type;
-	typedef map<gui::ImageButton*,Shortcut*> shortcutmap_type;
+	typedef map<gwinid_t,std::shared_ptr<WinButton>> winmap_type;
+	typedef map<std::shared_ptr<gui::ImageButton>,Shortcut*> shortcutmap_type;
 
 public:
 	static const gsize_t PADDING;
@@ -93,12 +81,12 @@ public:
 public:
 	DesktopWin(const gui::Size &size);
 
-	void addShortcut(Shortcut* sc) {
+	void addShortcut(Shortcut *sc) {
 		// do that first for exception-safety
-		gui::Image *img = gui::Image::loadImage(sc->getIcon());
-		gui::ImageButton *btn = new gui::ImageButton(img,
+		std::shared_ptr<gui::Image> img = gui::Image::loadImage(sc->getIcon());
+		std::shared_ptr<gui::ImageButton> btn(gui::make_control<gui::ImageButton>(img,
 				gui::Pos(PADDING,PADDING + _shortcuts.size() * (ICON_SIZE + PADDING)),
-				img->getSize() + gui::Size(2,2));
+				img->getSize() + gui::Size(2,2)));
 		sc->setButton(btn);
 		btn->clicked().subscribe(mem_recv(this,&DesktopWin::onIconClick));
 		_shortcuts[btn] = sc;
@@ -119,8 +107,8 @@ private:
 	void onIconClick(UIElement& el);
 
 private:
-	gui::Panel *_winPanel;
-	gui::Panel *_iconPanel;
+	std::shared_ptr<gui::Panel> _winPanel;
+	std::shared_ptr<gui::Panel> _iconPanel;
 	WinButton *_active;
 	winmap_type _windows;
 	shortcutmap_type _shortcuts;

@@ -36,14 +36,17 @@ const gsize_t DesktopWin::TASKBAR_HEIGHT = 24;
 
 DesktopWin::DesktopWin(const Size &size)
 	: Window(Pos(0,0),size,DESKTOP),
-	  _winPanel(new Panel(Pos(0,0),Size(0,TASKBAR_HEIGHT),
-			  	new FlowLayout(FlowLayout::FRONT,FlowLayout::HORIZONTAL,4))),
-	  _iconPanel(new Panel()), _active(nullptr), _windows(), _shortcuts() {
-	getRootPanel().setLayout(new BorderLayout());
-	getRootPanel().getTheme().setPadding(0);
-	getRootPanel().add(_winPanel,BorderLayout::SOUTH);
-	getRootPanel().add(_iconPanel,BorderLayout::CENTER);
+	  _winPanel(make_control<Panel>(Pos(0,0),Size(0,TASKBAR_HEIGHT),
+			  	make_layout<FlowLayout>(FlowLayout::FRONT,FlowLayout::HORIZONTAL,4))),
+	  _iconPanel(make_control<Panel>()), _active(nullptr), _windows(), _shortcuts() {
+	shared_ptr<Panel> root = getRootPanel();
+	root->setLayout(make_layout<BorderLayout>());
+	root->getTheme().setPadding(0);
+	root->add(_winPanel,BorderLayout::SOUTH);
+	root->add(_iconPanel,BorderLayout::CENTER);
+
 	_iconPanel->getTheme().setColor(Theme::CTRL_BACKGROUND,BGCOLOR);
+
 	Application *app = Application::getInstance();
 	app->created().subscribe(mem_recv(this,&DesktopWin::onWindowCreated));
 	app->activated().subscribe(mem_recv(this,&DesktopWin::onWindowActive));
@@ -53,7 +56,11 @@ DesktopWin::DesktopWin(const Size &size)
 void DesktopWin::onIconClick(UIElement& el) {
 	ImageButton *btn = dynamic_cast<ImageButton*>(&el);
 	if(btn) {
-		shortcutmap_type::iterator it = _shortcuts.find(btn);
+		shortcutmap_type::iterator it = std::find_if(_shortcuts.begin(),_shortcuts.end(),
+			[btn] (const pair<std::shared_ptr<gui::ImageButton>,Shortcut*> &pair) {
+				return btn == pair.first.get();
+			}
+		);
 		if(it != _shortcuts.end()) {
 			int pid = fork();
 			if(pid == 0) {
@@ -67,7 +74,7 @@ void DesktopWin::onIconClick(UIElement& el) {
 	}
 	else {
 		for(winmap_type::iterator wit = _windows.begin(); wit != _windows.end(); ++wit) {
-			if((*wit).second == &el) {
+			if((*wit).second.get() == &el) {
 				Application::getInstance()->requestActiveWindow((*wit).first);
 				break;
 			}
@@ -76,7 +83,7 @@ void DesktopWin::onIconClick(UIElement& el) {
 }
 
 void DesktopWin::onWindowCreated(gwinid_t wid,const string& title) {
-	WinButton *b = new WinButton(this,title);
+	shared_ptr<WinButton> b = make_control<WinButton>(this,title);
 	_windows[wid] = b;
 	_winPanel->add(b);
 	// TODO as soon as we can arrange it that the taskbar is always visible, we don't have to
@@ -93,7 +100,7 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 	winmap_type::iterator it = _windows.find(wid);
 	if(it != _windows.end()) {
 		const Theme *def = Application::getInstance()->getDefaultTheme();
-		_active = (*it).second;
+		_active = it->second.get();
 		_active->getTheme().setColor(Theme::BTN_BACKGROUND,def->getColor(Theme::WIN_TITLE_ACT_BG));
 		_active->repaint();
 	}
@@ -104,11 +111,10 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 void DesktopWin::onWindowDestroyed(gwinid_t wid) {
 	winmap_type::iterator it = _windows.find(wid);
 	if(it != _windows.end()) {
-		WinButton *b = (*it).second;
+		shared_ptr<WinButton> b = (*it).second;
 		_winPanel->remove(b);
-		if(_active == b)
+		if(_active == b.get())
 			_active = nullptr;
-		delete b;
 		_windows.erase(wid);
 		layout();
 		repaint();

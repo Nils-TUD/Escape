@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 namespace gui {
-	Image *Image::loadImage(const string& path) {
+	std::shared_ptr<Image> Image::loadImage(const string& path) {
 		char header[3];
 		FILE *f = fopen(path.c_str(),"r");
 		if(!f)
@@ -35,7 +35,7 @@ namespace gui {
 		fclose(f);
 		// check header-type
 		if(header[0] == 'B' && header[1] == 'M')
-			return new BitmapImage(path);
+			return std::shared_ptr<Image>(new BitmapImage(path));
 		// unknown image-type
 		throw img_load_error(path + ": Unknown image-type (header " + header + ")");
 	}

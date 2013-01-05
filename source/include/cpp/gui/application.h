@@ -25,6 +25,7 @@
 #include <gui/event/subscriber.h>
 #include <gui/theme.h>
 #include <exception>
+#include <memory>
 #include <vector>
 
 namespace gui {
@@ -123,6 +124,19 @@ namespace gui {
 		}
 
 		/**
+		 * Adds the given window to the window-list. Will announce the window at the window-manager
+		 *
+		 * @param win the window
+		 */
+		void addWindow(shared_ptr<Window> win);
+		/**
+		 * Removes the given window from the window-list. Will remove it from the window-manager
+		 *
+		 * @param win the window
+		 */
+		void removeWindow(shared_ptr<Window> win);
+
+		/**
 		 * Starts the message-loop
 		 */
 		int run();
@@ -186,18 +200,6 @@ namespace gui {
 		 */
 		void requestWinUpdate(gwinid_t id,const Pos &pos,const Size &size);
 		/**
-		 * Adds the given window to the window-list. Will announce the window at the window-manager
-		 *
-		 * @param win the window
-		 */
-		void addWindow(Window *win);
-		/**
-		 * Removes the given window from the window-list. Will remove it from the window-manager
-		 *
-		 * @param win the window
-		 */
-		void removeWindow(Window *win);
-		/**
 		 * Performs a move-operation with the given window. It will use getMoveX() and getMoveY()
 		 * as destination. If finish is true, the window will really be moved, otherwise the preview
 		 * rectangle will be displayed/moved.
@@ -230,7 +232,7 @@ namespace gui {
 		int _vesaFd;
 		void *_vesaMem;
 		sVESAInfo _vesaInfo;
-		std::vector<Window*> _windows;
+		std::vector<std::shared_ptr<Window>> _windows;
 		createdev_type _created;
 		activatedev_type _activated;
 		destroyedev_type _destroyed;

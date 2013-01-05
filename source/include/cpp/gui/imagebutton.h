@@ -11,14 +11,14 @@
 namespace gui {
 	class ImageButton : public Button {
 	public:
-		ImageButton(Image *img,bool border = true)
+		ImageButton(std::shared_ptr<Image> img,bool border = true)
 			: Button(""), _img(img), _border(border) {
 		}
-		ImageButton(Image *img,const Pos &pos,const Size &size,bool border = true)
+		ImageButton(std::shared_ptr<Image> img,const Pos &pos,const Size &size,bool border = true)
 			: Button("",pos,size), _img(img), _border(border) {
 		}
 
-		Image *getImage() const {
+		std::shared_ptr<Image> getImage() const {
 			return _img;
 		}
 
@@ -27,7 +27,7 @@ namespace gui {
 		virtual void paintBackground(Graphics &g);
 
 	private:
-		Image *_img;
+		std::shared_ptr<Image> _img;
 		bool _border;
 	};
 }

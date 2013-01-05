@@ -41,85 +41,92 @@
 
 using namespace gui;
 
-static void win0(void);
-static void win01(void);
-static void win1(void);
-static void win2(void);
-static void win3(void);
-static void win4(void);
-static void win5(void);
-static void win6(void);
-static void win7(void);
+static shared_ptr<Window> win0(void);
+static shared_ptr<Window> win01(void);
+static shared_ptr<Window> win1(void);
+static shared_ptr<Window> win2(void);
+static shared_ptr<Window> win3(void);
+static shared_ptr<Window> win4(void);
+static shared_ptr<Window> win5(void);
+static shared_ptr<Window> win6(void);
+static shared_ptr<Window> win7(void);
 static int pbThread(void *arg);
 
 static volatile bool run = true;
 
 int main(void) {
 	Application *app = Application::getInstance();
-	win0();
-	win01();
-	win1();
-	win2();
-	win3();
-	win4();
-	win5();
-	win6();
-	win7();
+	app->addWindow(win0());
+	app->addWindow(win01());
+	app->addWindow(win1());
+	app->addWindow(win2());
+	app->addWindow(win3());
+	app->addWindow(win4());
+	app->addWindow(win5());
+	app->addWindow(win6());
+	app->addWindow(win7());
 	int res = app->run();
 	run = false;
 	join(0);
 	return res;
 }
 
-static void win0(void) {
-	Window *w = new Window("Window 0",Pos(500,200));
-	Panel& root = w->getRootPanel();
-	root.setLayout(new BorderLayout());
-	Panel *p = new Panel(new BorderLayout());
-	ScrollPane *sp = new ScrollPane(p);
-	root.add(sp,BorderLayout::CENTER);
-	p->add(new ScrollPane(new ProgressBar("Progress1...",Pos(0,0),Size(150,0))),BorderLayout::CENTER);
-	p->add(new ScrollPane(new ProgressBar("Progress2...",Pos(0,0),Size(100,0))),BorderLayout::NORTH);
-	p->add(new ScrollPane(new ProgressBar("Progress3...",Pos(0,0),Size(50,0))),BorderLayout::SOUTH);
-	p->add(new ScrollPane(new ProgressBar("Progress4...")),BorderLayout::WEST);
+static shared_ptr<Window> win0(void) {
+	shared_ptr<Window> w = make_control<Window>("Window 0",Pos(500,200));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->setLayout(make_layout<BorderLayout>());
+	shared_ptr<Panel> p = make_control<Panel>(make_layout<BorderLayout>());
+	shared_ptr<ScrollPane> sp = make_control<ScrollPane>(p);
+	root->add(sp,BorderLayout::CENTER);
+	p->add(make_control<ScrollPane>(
+			make_control<ProgressBar>("Progress1...",Pos(0,0),Size(150,0))),BorderLayout::CENTER);
+	p->add(make_control<ScrollPane>(
+			make_control<ProgressBar>("Progress2...",Pos(0,0),Size(100,0))),BorderLayout::NORTH);
+	p->add(make_control<ScrollPane>(
+			make_control<ProgressBar>("Progress3...",Pos(0,0),Size(50,0))),BorderLayout::SOUTH);
+	p->add(make_control<ScrollPane>(
+			make_control<ProgressBar>("Progress4...")),BorderLayout::WEST);
 	//if(startthread(pbThread,pb) < 0)
 	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
 	w->show(true);
+	return w;
 }
 
-static void win01(void) {
-	Window *w = new Window("Window 01",Pos(600,250));
-	Panel& root = w->getRootPanel();
-	root.setLayout(new BorderLayout());
-	Panel *p = new Panel(new BorderLayout());
-	ScrollPane *sp = new ScrollPane(p);
-	root.add(sp,BorderLayout::CENTER);
-	p->add(new ScrollPane(new ProgressBar("Progress1...",Pos(0,0),Size(150,0))),BorderLayout::CENTER);
+static shared_ptr<Window> win01(void) {
+	shared_ptr<Window> w = make_control<Window>("Window 01",Pos(600,250));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->setLayout(make_layout<BorderLayout>());
+	shared_ptr<Panel> p = make_control<Panel>(make_layout<BorderLayout>());
+	shared_ptr<ScrollPane> sp = make_control<ScrollPane>(p);
+	root->add(sp,BorderLayout::CENTER);
+	p->add(make_control<ScrollPane>(
+			make_control<ProgressBar>("Progress1...",Pos(0,0),Size(150,0))),BorderLayout::CENTER);
 	w->show(true);
+	return w;
 }
 
-static void win1(void) {
-	Window *w = new Window("Window 1",Pos(100,100));
-	Panel& root = w->getRootPanel();
-	root.getTheme().setPadding(0);
-	root.setLayout(new BorderLayout());
-	Panel *p = new Panel(new BorderLayout());
-	ScrollPane *sp = new ScrollPane(p);
-	root.add(sp,BorderLayout::CENTER);
+static shared_ptr<Window> win1(void) {
+	shared_ptr<Window> w = make_control<Window>("Window 1",Pos(100,100));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->getTheme().setPadding(0);
+	root->setLayout(make_layout<BorderLayout>());
+	shared_ptr<Panel> p = make_control<Panel>(make_layout<BorderLayout>());
+	shared_ptr<ScrollPane> sp = make_control<ScrollPane>(p);
+	root->add(sp,BorderLayout::CENTER);
 
-	Button *b = new Button("Click me!!");
+	shared_ptr<Button> b = make_control<Button>("Click me!!");
 	p->add(b,BorderLayout::WEST);
-	Editable *e = new Editable();
+	shared_ptr<Editable> e = make_control<Editable>();
 	p->add(e,BorderLayout::EAST);
-	ComboBox *cb = new ComboBox();
+	shared_ptr<ComboBox> cb = make_control<ComboBox>();
 	cb->addItem("Test item");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
 	p->add(cb,BorderLayout::NORTH);
-	Checkbox *check = new Checkbox("My Checkbox");
+	shared_ptr<Checkbox> check = make_control<Checkbox>("My Checkbox");
 	p->add(check,BorderLayout::SOUTH);
-	ProgressBar *pb = new ProgressBar("Progress...",Pos(0,0),Size(150,0));
-	ScrollPane *sp2 = new ScrollPane(pb);
+	shared_ptr<ProgressBar> pb = make_control<ProgressBar>("Progress...",Pos(0,0),Size(150,0));
+	shared_ptr<ScrollPane> sp2 = make_control<ScrollPane>(pb);
 	p->add(sp2,BorderLayout::CENTER);
 	//p->add(new ProgressBar("Progress..."),BorderLayout::CENTER);
 
@@ -129,101 +136,106 @@ static void win1(void) {
 	w->show(true);
 	//if(startthread(pbThread,pb) < 0)
 	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+	return w;
 }
 
-static void win2(void) {
-	Window *w = new Window("Window 2",Pos(450,150),Size(400,100));
-	Panel& root = w->getRootPanel();
-	root.setLayout(new FlowLayout(FlowLayout::FRONT,FlowLayout::HORIZONTAL,5));
+static shared_ptr<Window> win2(void) {
+	shared_ptr<Window> w = make_control<Window>("Window 2",Pos(450,150),Size(400,100));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->setLayout(make_layout<FlowLayout>(FlowLayout::FRONT,FlowLayout::HORIZONTAL,5));
 
-	Button *b = new Button("Try it!");
-	root.add(b);
-	Editable *e = new Editable();
-	root.add(e);
-	ComboBox *cb = new ComboBox();
+	shared_ptr<Button> b = make_control<Button>("Try it!");
+	root->add(b);
+	shared_ptr<Editable> e = make_control<Editable>();
+	root->add(e);
+	shared_ptr<ComboBox> cb = make_control<ComboBox>();
 	cb->addItem("Huhu!");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
-	root.add(cb);
-	Checkbox *check = new Checkbox("My Checkbox");
-	root.add(check);
-	ProgressBar *pb = new ProgressBar("Running");
-	root.add(pb);
+	root->add(cb);
+	shared_ptr<Checkbox> check = make_control<Checkbox>("My Checkbox");
+	root->add(check);
+	shared_ptr<ProgressBar> pb = make_control<ProgressBar>("Running");
+	root->add(pb);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->show();
+	return w;
 }
 
-static void win3(void) {
-	Window *w = new Window("Window 3",Pos(450,350),Size(400,100));
-	Panel& root = w->getRootPanel();
-	root.setLayout(new FlowLayout(FlowLayout::CENTER,FlowLayout::HORIZONTAL,1));
+static shared_ptr<Window> win3(void) {
+	shared_ptr<Window> w = make_control<Window>("Window 3",Pos(450,350),Size(400,100));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->setLayout(make_layout<FlowLayout>(FlowLayout::CENTER,FlowLayout::HORIZONTAL,1));
 
-	Button *b = new Button("Try it!");
-	root.add(b);
-	Editable *e = new Editable();
-	root.add(e);
-	ComboBox *cb = new ComboBox();
+	shared_ptr<Button> b = make_control<Button>("Try it!");
+	root->add(b);
+	shared_ptr<Editable> e = make_control<Editable>();
+	root->add(e);
+	shared_ptr<ComboBox> cb = make_control<ComboBox>();
 	cb->addItem("Huhu!");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
-	root.add(cb);
-	Checkbox *check = new Checkbox("My Checkbox");
-	root.add(check);
-	ProgressBar *pb = new ProgressBar("Running");
-	root.add(pb);
+	root->add(cb);
+	shared_ptr<Checkbox> check = make_control<Checkbox>("My Checkbox");
+	root->add(check);
+	shared_ptr<ProgressBar> pb = make_control<ProgressBar>("Running");
+	root->add(pb);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->show();
+	return w;
 }
 
-static void win4(void) {
-	Window *w = new Window("Window 4",Pos(150,350),Size(400,100));
-	Panel& root = w->getRootPanel();
-	root.getTheme().setPadding(0);
-	root.setLayout(new BorderLayout());
-	Panel *p = new Panel(new FlowLayout(FlowLayout::BACK,FlowLayout::VERTICAL,10));
-	ScrollPane *sp = new ScrollPane(p);
-	root.add(sp,BorderLayout::CENTER);
+static shared_ptr<Window> win4(void) {
+	shared_ptr<Window> w = make_control<Window>("Window 4",Pos(150,350),Size(400,100));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->getTheme().setPadding(0);
+	root->setLayout(make_layout<BorderLayout>());
+	shared_ptr<Panel> p = make_control<Panel>(
+			make_layout<FlowLayout>(FlowLayout::BACK,FlowLayout::VERTICAL,10));
+	shared_ptr<ScrollPane> sp = make_control<ScrollPane>(p);
+	root->add(sp,BorderLayout::CENTER);
 
-	Button *b = new Button("Try it!");
+	shared_ptr<Button> b = make_control<Button>("Try it!");
 	p->add(b);
-	Editable *e = new Editable();
+	shared_ptr<Editable> e = make_control<Editable>();
 	p->add(e);
-	ComboBox *cb = new ComboBox();
+	shared_ptr<ComboBox> cb = make_control<ComboBox>();
 	cb->addItem("Huhu!");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
 	p->add(cb);
-	Checkbox *check = new Checkbox("My Checkbox");
+	shared_ptr<Checkbox> check = make_control<Checkbox>("My Checkbox");
 	p->add(check);
-	ProgressBar *pb = new ProgressBar("Running");
+	shared_ptr<ProgressBar> pb = make_control<ProgressBar>("Running");
 	p->add(pb);
 
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	w->show();
+	return w;
 }
 
-static void win5(void) {
-	Window *w = new Window("Window 5",Pos(250,450),Size(200,300));
-	Panel& root = w->getRootPanel();
-	root.getTheme().setPadding(0);
-	root.setLayout(new BorderLayout());
-	Panel *p = new Panel(new BorderLayout(10));
-	ScrollPane *sp = new ScrollPane(p);
-	root.add(sp,BorderLayout::CENTER);
+static shared_ptr<Window> win5(void) {
+	shared_ptr<Window> w = make_control<Window>("Window 5",Pos(250,450),Size(200,300));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->getTheme().setPadding(0);
+	root->setLayout(make_layout<BorderLayout>());
+	shared_ptr<Panel> p = make_control<Panel>(make_layout<BorderLayout>(10));
+	shared_ptr<ScrollPane> sp = make_control<ScrollPane>(p);
+	root->add(sp,BorderLayout::CENTER);
 
-	Button *b = new Button("Try it!");
+	shared_ptr<Button> b = make_control<Button>("Try it!");
 	p->add(b,BorderLayout::NORTH);
-	Editable *e = new Editable();
+	shared_ptr<Editable> e = make_control<Editable>();
 	p->add(e,BorderLayout::CENTER);
-	ComboBox *cb = new ComboBox();
+	shared_ptr<ComboBox> cb = make_control<ComboBox>();
 	cb->addItem("Huhu!");
 	cb->addItem("Foo bar");
 	cb->addItem("abc 123");
@@ -232,45 +244,47 @@ static void win5(void) {
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->show();
+	return w;
 }
 
-static void win6(void) {
-	Window *win = new Window("Window 6",Pos(200,300));
-	Panel& root = win->getRootPanel();
-	root.getTheme().setPadding(2);
-	root.setLayout(new BorderLayout(2));
+static shared_ptr<Window> win6(void) {
+	shared_ptr<Window> win = make_control<Window>("Window 6",Pos(200,300));
+	shared_ptr<Panel> root = win->getRootPanel();
+	root->getTheme().setPadding(2);
+	root->setLayout(make_layout<BorderLayout>(2));
 
-	Panel *btns = new Panel(new IconLayout(IconLayout::HORIZONTAL));
-	ScrollPane *sp = new ScrollPane(btns);
-	root.add(sp,BorderLayout::CENTER);
+	shared_ptr<Panel> btns = make_control<Panel>(make_layout<IconLayout>(IconLayout::HORIZONTAL));
+	shared_ptr<ScrollPane> sp = make_control<ScrollPane>(btns);
+	root->add(sp,BorderLayout::CENTER);
 
 	for(size_t i = 0; i < 23; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
-		Button *b = new Button(name,Pos(0,0),Size(40,40));
+		shared_ptr<Button> b = make_control<Button>(name,Pos(0,0),Size(40,40));
 		btns->add(b);
 	}
 	win->show(true);
+	return win;
 }
 
-static void win7(void) {
-	Window *win = new Window("Window 7",Pos(400,300));
-	Panel& root = win->getRootPanel();
-	root.getTheme().setPadding(2);
-	root.setLayout(new BorderLayout(2));
+static shared_ptr<Window> win7(void) {
+	shared_ptr<Window> win = make_control<Window>("Window 7",Pos(400,300));
+	shared_ptr<Panel> root = win->getRootPanel();
+	root->getTheme().setPadding(2);
+	root->setLayout(make_layout<BorderLayout>(2));
 
-	Panel *btns = new Panel(new IconLayout(IconLayout::VERTICAL));
-	ScrollPane *sp = new ScrollPane(btns);
-	root.add(sp,BorderLayout::CENTER);
+	shared_ptr<Panel> btns = make_control<Panel>(make_layout<IconLayout>(IconLayout::VERTICAL));
+	shared_ptr<ScrollPane> sp = make_control<ScrollPane>(btns);
+	root->add(sp,BorderLayout::CENTER);
 
 	srand(time(nullptr));
 	for(size_t i = 0; i < 29; ++i) {
 		char name[12];
 		itoa(name,sizeof(name),i);
-		Button *b = new Button(name,Pos(0,0),Size(30 + rand() % 10,30 + rand() % 10));
-		btns->add(b);
+		btns->add(make_control<Button>(name,Pos(0,0),Size(30 + rand() % 10,30 + rand() % 10)));
 	}
 	win->show(true);
+	return win;
 }
 
 static int pbThread(void *arg) {

@@ -22,18 +22,21 @@
 #include <gui/panel.h>
 #include <assert.h>
 
+using namespace std;
+
 namespace gui {
-	void BorderLayout::add(Panel *p,Control *c,pos_type pos) {
+	void BorderLayout::add(Panel *p,shared_ptr<Control> c,pos_type pos) {
 		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && (_p == nullptr || p == _p));
 		_p = p;
 		_ctrls[pos] = c;
 	}
-	void BorderLayout::remove(Panel *p,Control *c,pos_type pos) {
+	void BorderLayout::remove(Panel *p,shared_ptr<Control> c,pos_type pos) {
 		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && _p == p && _ctrls[pos] == c);
-		_ctrls[pos] = nullptr;
+		_ctrls[pos].reset();
 	}
 	void BorderLayout::removeAll() {
-		_ctrls[WEST] = _ctrls[NORTH] = _ctrls[SOUTH] = _ctrls[EAST] = _ctrls[CENTER] = nullptr;
+		_ctrls[WEST] = _ctrls[NORTH] = _ctrls[SOUTH] = shared_ptr<Control>();
+		_ctrls[EAST] = _ctrls[CENTER] = shared_ptr<Control>();
 	}
 
 	Size BorderLayout::getSizeWith(const Size &avail,size_func func) const {
@@ -78,7 +81,7 @@ namespace gui {
 		if(!_p)
 			return;
 
-		Control *c;
+		shared_ptr<Control> c;
 		gsize_t pad = _p->getTheme().getPadding();
 		Size orgsize = _p->getSize() - Size(pad * 2,pad * 2);
 		Size rsize = getSizeWith(orgsize,getUsedSizeOf);

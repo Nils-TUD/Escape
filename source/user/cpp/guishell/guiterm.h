@@ -36,7 +36,7 @@ private:
 	static const size_t READ_BUF_SIZE	= 512;
 
 public:
-	GUITerm(int sid,ShellControl *sh);
+	GUITerm(int sid,std::shared_ptr<ShellControl> sh);
 	virtual ~GUITerm();
 
 	void run();
@@ -56,7 +56,7 @@ private:
 	int _sid;
 	volatile bool _run;
 	sVTerm *_vt;
-	ShellControl *_sh;
+	std::shared_ptr<ShellControl> _sh;
 	sVTermCfg _cfg;
 	char *_rbuffer;
 	size_t _rbufPos;

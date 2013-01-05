@@ -85,10 +85,10 @@ namespace gui {
 	}
 
 	void ComboBox::ItemWindow::closeImpl() {
-		delete this;
+		Application::getInstance()->removeWindow(_cb->_win);
 		// notify combo
+		_cb->_win.reset();
 		_cb->_pressed = false;
-		_cb->_win = nullptr;
 		_cb->repaint();
 	}
 
@@ -146,18 +146,17 @@ namespace gui {
 		if(!_pressed) {
 			_pressed = true;
 			repaint();
-			if(_win) {
-				delete _win;
-				_win = nullptr;
-			}
+			if(_win)
+				Application::getInstance()->removeWindow(_win);
 			else {
 				gsize_t pad = Application::getInstance()->getDefaultTheme()->getTextPadding();
 				gsize_t height = _items.size() * (getGraphics()->getFont().getSize().height + pad * 2);
 				const Window *w = getWindow();
 				Pos pos(w->getPos().x + getWindowPos().x,
 				        w->getPos().y + getWindowPos().y + getSize().height);
-				_win = new ItemWindow(this,pos,Size(getSize().width,height));
+				_win = make_control<ItemWindow>(this,pos,Size(getSize().width,height));
 				_win->show();
+				Application::getInstance()->addWindow(_win);
 			}
 		}
 	}

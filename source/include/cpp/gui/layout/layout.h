@@ -27,6 +27,11 @@
 namespace gui {
 	class Panel;
 
+	template<typename T,typename... Args>
+	inline std::shared_ptr<T> make_layout(Args&&... args) {
+		return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
+	}
+
 	/**
 	 * The interface for all layouts. Layouts are used to auto-position and -size the controls on
 	 * a panel.
@@ -34,17 +39,10 @@ namespace gui {
 	class Layout {
 	public:
 		typedef int pos_type;
-		typedef Size (*size_func)(Control*,const Size&);
+		typedef Size (*size_func)(std::shared_ptr<Control>,const Size&);
 
-	public:
-		/**
-		 * Constructor
-		 */
 		Layout() {
 		}
-		/**
-		 * Destructor
-		 */
 		virtual ~Layout() {
 		}
 
@@ -55,7 +53,7 @@ namespace gui {
 		 * @param c the control
 		 * @param pos specifies the position (layout-implementation-dependend)
 		 */
-		virtual void add(Panel *p,Control *c,pos_type pos) = 0;
+		virtual void add(Panel *p,std::shared_ptr<Control> c,pos_type pos) = 0;
 		/**
 		 * Removes the given control/position from the layout
 		 *
@@ -63,7 +61,7 @@ namespace gui {
 		 * @param c the control
 		 * @param pos specifies the position (layout-implementation-dependend)
 		 */
-		virtual void remove(Panel *p,Control *c,pos_type pos) = 0;
+		virtual void remove(Panel *p,std::shared_ptr<Control> c,pos_type pos) = 0;
 
 		/**
 		 * Removes all controls from the layout
@@ -104,14 +102,14 @@ namespace gui {
 		 */
 		virtual Size getSizeWith(const Size &avail,size_func func) const = 0;
 
-		static inline Size getPrefSizeOf(Control *c,const Size &) {
+		static inline Size getPrefSizeOf(std::shared_ptr<Control> c,const Size &) {
 			return c->getPreferredSize();
 		}
-		static inline Size getUsedSizeOf(Control *c,const Size &avail) {
+		static inline Size getUsedSizeOf(std::shared_ptr<Control> c,const Size &avail) {
 			return c->getUsedSize(avail);
 		}
 
-		void configureControl(Control *c,const Pos &pos,const Size &size) const {
+		void configureControl(std::shared_ptr<Control> c,const Pos &pos,const Size &size) const {
 			c->moveTo(pos);
 			c->resizeTo(size);
 		}

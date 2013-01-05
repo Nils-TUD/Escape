@@ -24,12 +24,12 @@
 #include <math.h>
 
 namespace gui {
-	void IconLayout::add(Panel *p,Control *c,A_UNUSED pos_type pos) {
+	void IconLayout::add(Panel *p,std::shared_ptr<Control> c,A_UNUSED pos_type pos) {
 		assert(_p == nullptr || p == _p);
 		_p = p;
 		_ctrls.push_back(c);
 	}
-	void IconLayout::remove(Panel *p,Control *c,A_UNUSED pos_type pos) {
+	void IconLayout::remove(Panel *p,std::shared_ptr<Control> c,A_UNUSED pos_type pos) {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 	void IconLayout::removeAll() {
@@ -66,7 +66,8 @@ namespace gui {
 			case HORIZONTAL: {
 				uint col = 0, row = 0;
 				Pos pos(pad,pad);
-				for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+				vector<shared_ptr<Control>>::const_iterator it;
+				for(it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 					Size csize = (*it)->getPreferredSize();
 					if((cols && col == cols) ||
 							(!cols && col > 0 && pos.x + csize.width + pad > size.width)) {
@@ -90,7 +91,8 @@ namespace gui {
 			case VERTICAL: {
 				uint col = 0, row = 0;
 				Pos pos(pad,pad);
-				for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+				vector<shared_ptr<Control>>::const_iterator it;
+				for(it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 					Size csize = (*it)->getPreferredSize();
 					if((rows && row == rows) ||
 							(!rows && row > 0 && pos.y + csize.height + pad > size.height)) {

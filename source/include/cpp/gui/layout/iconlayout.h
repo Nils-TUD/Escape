@@ -29,7 +29,8 @@ namespace gui {
 	 * direction side by side and continues with the next row/column if its full.
 	 */
 	class IconLayout : public Layout {
-		typedef void (IconLayout::*layout_func)(Control *c,const Pos &pos,const Size &size) const;
+		typedef void (IconLayout::*layout_func)(std::shared_ptr<Control> c,const Pos &pos,
+												const Size &size) const;
 
 	public:
 		enum Preferred {
@@ -49,8 +50,8 @@ namespace gui {
 			: Layout(), _pref(pref), _gap(gap), _p(), _ctrls() {
 		}
 
-		virtual void add(Panel *p,Control *c,pos_type pos);
-		virtual void remove(Panel *p,Control *c,pos_type pos);
+		virtual void add(Panel *p,std::shared_ptr<Control> c,pos_type pos);
+		virtual void remove(Panel *p,std::shared_ptr<Control> c,pos_type pos);
 		virtual void removeAll();
 
 		virtual void rearrange();
@@ -63,6 +64,6 @@ namespace gui {
 		Preferred _pref;
 		gsize_t _gap;
 		Panel *_p;
-		std::vector<Control*> _ctrls;
+		std::vector<std::shared_ptr<Control>> _ctrls;
 	};
 }

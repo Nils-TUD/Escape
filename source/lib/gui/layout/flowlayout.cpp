@@ -22,13 +22,15 @@
 #include <gui/panel.h>
 #include <assert.h>
 
+using namespace std;
+
 namespace gui {
-	void FlowLayout::add(Panel *p,Control *c,A_UNUSED pos_type pos) {
+	void FlowLayout::add(Panel *p,shared_ptr<Control> c,A_UNUSED pos_type pos) {
 		assert(_p == nullptr || p == _p);
 		_p = p;
 		_ctrls.push_back(c);
 	}
-	void FlowLayout::remove(Panel *p,Control *c,A_UNUSED pos_type pos) {
+	void FlowLayout::remove(Panel *p,shared_ptr<Control> c,A_UNUSED pos_type pos) {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 	void FlowLayout::removeAll() {
@@ -78,7 +80,7 @@ namespace gui {
 			swap(max.width,max.height);
 		}
 
-		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+		for(vector<shared_ptr<Control>>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			configureControl(*it,pos,max);
 			if(_orientation == VERTICAL)
 				pos.y += max.height + _gap;
@@ -89,7 +91,7 @@ namespace gui {
 
 	Size FlowLayout::getMaxSize() const {
 		Size max;
-		for(vector<Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it)
+		for(vector<shared_ptr<Control>>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it)
 			max = maxsize(max,(*it)->getPreferredSize());
 		return max;
 	}

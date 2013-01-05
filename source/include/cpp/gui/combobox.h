@@ -63,13 +63,10 @@ namespace gui {
 
 	public:
 		ComboBox()
-			: Control(), _items(), _selected(-1), _pressed(false), _win(nullptr) {
+			: Control(), _selected(-1), _pressed(false), _win(), _items() {
 		}
 		ComboBox(const Pos &pos,const Size &size)
-			: Control(pos,size), _items(), _selected(-1), _pressed(false), _win(nullptr) {
-		}
-		virtual ~ComboBox() {
-			delete _win;
+			: Control(pos,size), _selected(-1), _pressed(false), _win(), _items() {
 		}
 
 		void addItem(const std::string &s) {
@@ -94,9 +91,9 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
-		std::vector<std::string> _items;
 		int _selected;
 		bool _pressed;
-		ItemWindow *_win;
+		std::shared_ptr<ItemWindow> _win;
+		std::vector<std::string> _items;
 	};
 }

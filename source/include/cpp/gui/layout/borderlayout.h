@@ -66,8 +66,8 @@ namespace gui {
 		BorderLayout(gsize_t gap = DEF_GAP) : Layout(), _gap(gap), _p(nullptr), _ctrls() {
 		}
 
-		virtual void add(Panel *p,Control *c,pos_type pos);
-		virtual void remove(Panel *p,Control *c,pos_type pos);
+		virtual void add(Panel *p,std::shared_ptr<Control> c,pos_type pos);
+		virtual void remove(Panel *p,std::shared_ptr<Control> c,pos_type pos);
 		virtual void removeAll();
 
 		virtual void rearrange();
@@ -77,6 +77,6 @@ namespace gui {
 
 		gsize_t _gap;
 		Panel *_p;
-		Control *_ctrls[5];
+		std::shared_ptr<Control> _ctrls[5];
 	};
 }

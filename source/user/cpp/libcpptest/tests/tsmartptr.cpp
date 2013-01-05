@@ -29,13 +29,16 @@ struct A {
 };
 struct B : public A {};
 
+struct C : public enable_shared_from_this<C> {
+};
+
 /* forward declarations */
 static void test_smartptr(void);
-static void test_shared_basic(void);
-static void test_shared_modifiers(void);
-static void test_shared_casts(void);
-static void test_unique_basic(void);
-static void test_weak_basics(void);
+static void test_shared_ptr_basic(void);
+static void test_shared_ptr_modifiers(void);
+static void test_shared_ptr_casts(void);
+static void test_unique_ptr(void);
+static void test_weak_ptr(void);
 
 /* our test-module */
 sTestModule tModSmartPtr = {
@@ -44,14 +47,14 @@ sTestModule tModSmartPtr = {
 };
 
 static void test_smartptr(void) {
-	test_shared_basic();
-	test_shared_modifiers();
-	test_shared_casts();
-	test_unique_basic();
-	test_weak_basics();
+	test_shared_ptr_basic();
+	test_shared_ptr_modifiers();
+	test_shared_ptr_casts();
+	test_unique_ptr();
+	test_weak_ptr();
 }
 
-static void test_shared_basic(void) {
+static void test_shared_ptr_basic(void) {
 	size_t before,after;
 	test_caseStart("Testing basic operations of shared_ptr");
 
@@ -156,10 +159,27 @@ static void test_shared_basic(void) {
 	after = heapspace();
 	test_assertSize(after,before);
 
+	before = heapspace();
+	{
+		C *obj = new C;
+		shared_ptr<C> a(obj);
+		shared_ptr<C> b(obj->shared_from_this());
+		shared_ptr<C> c;
+		c = obj->shared_from_this();
+		test_assertLInt(a.use_count(),3);
+		test_assertLInt(b.use_count(),3);
+		test_assertLInt(c.use_count(),3);
+		test_assertPtr(a.get(),obj);
+		test_assertPtr(b.get(),obj);
+		test_assertPtr(c.get(),obj);
+	}
+	after = heapspace();
+	test_assertSize(after,before);
+
 	test_caseSucceeded();
 }
 
-static void test_shared_modifiers(void) {
+static void test_shared_ptr_modifiers(void) {
 	size_t before,after;
 	test_caseStart("Testing modifiers of shared_ptr");
 
@@ -180,10 +200,13 @@ static void test_shared_modifiers(void) {
 	{
 		shared_ptr<B> b(new B);
 		shared_ptr<A> a(new A);
+		shared_ptr<int> c(new int(3));
 		b.reset(new B);
 		a.reset(new B);
+		c.reset();
 		test_assertLInt(b.use_count(),1);
 		test_assertLInt(a.use_count(),1);
+		test_assertLInt(c.use_count(),0);
 	}
 	after = heapspace();
 	test_assertSize(after,before);
@@ -191,7 +214,7 @@ static void test_shared_modifiers(void) {
 	test_caseSucceeded();
 }
 
-static void test_shared_casts(void) {
+static void test_shared_ptr_casts(void) {
 	size_t before,after;
 	test_caseStart("Testing casts of shared_ptr");
 
@@ -220,9 +243,9 @@ static void test_shared_casts(void) {
 	test_caseSucceeded();
 }
 
-static void test_unique_basic(void) {
+static void test_unique_ptr(void) {
 	size_t before,after;
-	test_caseStart("Testing basic operations of unique_ptr");
+	test_caseStart("Testing unique_ptr");
 
 	before = heapspace();
 	{
@@ -288,9 +311,9 @@ static void test_unique_basic(void) {
 	test_caseSucceeded();
 }
 
-static void test_weak_basics(void) {
+static void test_weak_ptr(void) {
 	size_t before,after;
-	test_caseStart("Testing basic operations of weak_ptr");
+	test_caseStart("Testing weak_ptr");
 
 	before = heapspace();
 	{

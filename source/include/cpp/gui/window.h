@@ -65,7 +65,7 @@ namespace gui {
 		void init();
 		void onButtonClick(UIElement& el);
 
-		Label *_title;
+		std::shared_ptr<Label> _title;
 	};
 
 	/**
@@ -154,7 +154,7 @@ namespace gui {
 		 * @return whether this window has a title-bar
 		 */
 		bool hasTitleBar() const {
-			return _header != nullptr;
+			return (bool)_header;
 		}
 		/**
 		 * @return the title (a copy)
@@ -178,7 +178,7 @@ namespace gui {
 		 * @return the focused control (nullptr if none)
 		 */
 		Control *getFocus() {
-			return _body.getFocus();
+			return _body->getFocus();
 		}
 		/**
 		 * Sets the focus on the given control.
@@ -196,12 +196,12 @@ namespace gui {
 		/**
 		 * @return the root-panel to which you can add controls
 		 */
-		Panel &getRootPanel() {
+		std::shared_ptr<Panel> getRootPanel() {
 			return _body;
 		}
 
 		virtual Size getPrefSize() const {
-			Size bsize = _body.getPreferredSize();
+			Size bsize = _body->getPreferredSize();
 			if(_header) {
 				Size hsize = _header->getPreferredSize();
 				return Size(std::max(hsize.width,bsize.width) + 2,hsize.height + bsize.height + 2);
@@ -212,7 +212,7 @@ namespace gui {
 		virtual void layout() {
 			if(_header)
 				_header->layout();
-			_body.layout();
+			_body->layout();
 		}
 
 		/**
@@ -224,15 +224,12 @@ namespace gui {
 		void show(bool pack = false) {
 			if(pack) {
 				// overwrite preferred size
-				_body._prefSize = Size();
+				_body->_prefSize = Size();
 				if(_header)
 					_header->_prefSize = Size();
 				prepareResize(getPos(),getPrefSize());
 			}
 			layout();
-			// add us to app; we'll receive a "created"-event as soon as the window
-			// manager knows about us
-			Application::getInstance()->addWindow(this);
 		}
 
 		/**
@@ -342,8 +339,8 @@ namespace gui {
 		Size _resizeSize;
 		GraphicsBuffer *_gbuf;
 	protected:
-		WindowTitleBar *_header;
-		Panel _body;
+		std::shared_ptr<WindowTitleBar> _header;
+		std::shared_ptr<Panel> _body;
 		std::list<Control*> _tabCtrls;
 		std::list<Control*>::iterator _tabIt;
 	};

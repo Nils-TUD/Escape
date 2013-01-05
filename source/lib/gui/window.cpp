@@ -36,7 +36,7 @@ namespace gui {
 	const char *WindowTitleBar::CLOSE_IMG = "/etc/close.bmp";
 
 	WindowTitleBar::WindowTitleBar(const string& title,const Pos &pos,const Size &size)
-		: Panel(pos,size), _title(new Label(title)) {
+		: Panel(pos,size), _title(make_control<Label>(title)) {
 	}
 
 	void WindowTitleBar::onButtonClick(A_UNUSED UIElement& el) {
@@ -44,10 +44,9 @@ namespace gui {
 	}
 
 	void WindowTitleBar::init() {
-		setLayout(new BorderLayout());
+		setLayout(make_layout<BorderLayout>());
 		add(_title,BorderLayout::WEST);
-		Image *img = Image::loadImage(CLOSE_IMG);
-		Button *btn = new ImageButton(img,false);
+		shared_ptr<Button> btn = make_control<ImageButton>(Image::loadImage(CLOSE_IMG),false);
 		btn->clicked().subscribe(mem_recv(this,&WindowTitleBar::onButtonClick));
 		add(btn,BorderLayout::EAST);
 	}
@@ -62,25 +61,23 @@ namespace gui {
 		: UIElement(pos,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
-			_isActive(false), _movePos(pos), _resizeSize(getSize()), _gbuf(nullptr), _header(nullptr),
-			_body(Pos(1,1),getSize() - Size(2,2)), _tabCtrls(), _tabIt(_tabCtrls.begin()) {
+			_isActive(false), _movePos(pos), _resizeSize(getSize()), _gbuf(nullptr), _header(),
+			_body(make_control<Panel>(Pos(1,1),getSize() - Size(2,2))),
+			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
 	Window::Window(const string &title,const Pos &pos,const Size &size,Style style)
 		: UIElement(pos,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
-			_isActive(false), _movePos(pos), _resizeSize(getSize()),
-			_gbuf(nullptr), _header(new WindowTitleBar(title,Pos(1,1),Size(getSize().width - 2,HEADER_SIZE))),
-			_body(Pos(1,1 + HEADER_SIZE),getSize() - Size(2,HEADER_SIZE + 2)),
+			_isActive(false), _movePos(pos), _resizeSize(getSize()), _gbuf(nullptr),
+			_header(make_control<WindowTitleBar>(title,Pos(1,1),Size(getSize().width - 2,HEADER_SIZE))),
+			_body(make_control<Panel>(Pos(1,1 + HEADER_SIZE),getSize() - Size(2,HEADER_SIZE + 2))),
 			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
 
 	Window::~Window() {
-		// remove us from app
-		Application::getInstance()->removeWindow(this);
-		delete _header;
 		delete _gbuf;
 	}
 
@@ -100,10 +97,10 @@ namespace gui {
 			y += _header->getSize().height;
 			height -= _header->getSize().height;
 		}
-		_body._g = GraphicFactory::get(_gbuf,Size(getSize().width - 2,height));
-		_body._g->setOff(Pos(1,y));
-		_body._g->setMinOff(Pos(1,y));
-		_body._parent = this;
+		_body->_g = GraphicFactory::get(_gbuf,Size(getSize().width - 2,height));
+		_body->_g->setOff(Pos(1,y));
+		_body->_g->setMinOff(Pos(1,y));
+		_body->_parent = this;
 	}
 
 	void Window::onMouseMoved(const MouseEvent &e) {
@@ -207,10 +204,10 @@ namespace gui {
 		setSize(size);
 		if(_header) {
 			_header->resizeTo(Size(size.width - 2,_header->getSize().height));
-			_body.resizeTo(Size(size.width - 2,size.height - _header->getSize().height - 2));
+			_body->resizeTo(Size(size.width - 2,size.height - _header->getSize().height - 2));
 		}
 		else
-			_body.resizeTo(Size(size.width - 2,size.height - 2));
+			_body->resizeTo(Size(size.width - 2,size.height - 2));
 		_movePos = pos;
 		_resizeSize = size;
 	}
@@ -277,9 +274,9 @@ namespace gui {
 		}
 
 		if(_header && e.getPos().y < _header->getSize().height)
-			passMouseToCtrl(_header,e);
+			passMouseToCtrl(_header.get(),e);
 		else
-			passMouseToCtrl(&_body,e);
+			passMouseToCtrl(_body.get(),e);
 
 		// handle focus-change
 		Control *newFocus = getFocus();
@@ -320,7 +317,12 @@ namespace gui {
 	}
 
 	void Window::setFocus(Control *c) {
-		if(find(_body._controls.begin(),_body._controls.end(),c) != _body._controls.end()) {
+		auto res = find_if(_body->_controls.begin(),_body->_controls.end(),
+			[c] (const shared_ptr<Control> &b) {
+				return c == b.get();
+			}
+		);
+		if(res != _body->_controls.end()) {
 			Control *old = getFocus();
 			if(old != c) {
 				if(old)
@@ -403,7 +405,7 @@ namespace gui {
 		g.setColor(getTheme().getColor(Theme::WIN_BORDER));
 		g.drawRect(Pos(0,0),getSize());
 
-		_body.repaint(false);
+		_body->repaint(false);
 	}
 
 	void Window::update(const Pos &pos,const Size &size) {

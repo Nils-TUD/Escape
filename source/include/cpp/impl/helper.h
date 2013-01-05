@@ -20,37 +20,40 @@
 #pragma once
 
 #include <esc/common.h>
-#include <gui/graphics/graphics.h>
-#include <exception>
-#include <memory>
 
-namespace gui {
-	class img_load_error : public std::exception {
-	public:
-		img_load_error(const std::string& str) throw ()
-			: exception(), _str(str) {
-		}
-		~img_load_error() throw () {
-		}
-		virtual const char *what() const throw () {
-			return _str.c_str();
-		}
-	private:
-		std::string _str;
+namespace std {
+	// this is mostly inspired by the stuff from gcc's libstdc++.
+
+	template<typename Base,typename Derived>
+	struct is_base_of {
+		static const bool value = __is_base_of(Base,Derived);
 	};
 
-	class Image {
-	public:
-		static std::shared_ptr<Image> loadImage(const std::string& path);
-
-	public:
-		Image() {
+	// convertible
+	template<class From,class To>
+	struct is_convertible {
+		void check() {
+			To y A_UNUSED = _x;
 		}
-		virtual ~Image() {
-		}
-
-		virtual Size getSize() const = 0;
-
-		virtual void paint(Graphics &g,const Pos &pos) = 0;
+		From _x;
 	};
+	template<class From,class To>
+	struct is_const_convertible {
+		void check() {
+			To y A_UNUSED = const_cast<To>(_x);
+		}
+		From _x;
+	};
+	template<class From,class To>
+	struct is_static_convertible {
+		void check() {
+			To y A_UNUSED = static_cast<To>(_x);
+		}
+		From _x;
+	};
+
+	template<class Concept>
+	inline void function_requires() {
+		void (Concept::*_x)() A_UNUSED = &Concept::check;
+	}
 }

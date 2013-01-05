@@ -25,16 +25,16 @@
 using namespace std;
 
 namespace gui {
-	void GridLayout::add(Panel *p,Control *c,pos_type pos) {
+	void GridLayout::add(Panel *p,shared_ptr<Control> c,pos_type pos) {
 		assert(_p == nullptr || p == _p);
 		assert(GridPos(pos).col() < _cols && GridPos(pos).row() < _rows);
 		_p = p;
 		_ctrls[pos] = c;
 	}
-	void GridLayout::remove(Panel *p,Control *c,pos_type pos) {
+	void GridLayout::remove(Panel *p,shared_ptr<Control> c,pos_type pos) {
 		assert(_p == p && _ctrls[pos] == c);
 		assert(GridPos(pos).col() < _cols && GridPos(pos).row() < _rows);
-		_ctrls[pos] = nullptr;
+		_ctrls[pos].reset();
 	}
 	void GridLayout::removeAll() {
 		_ctrls.clear();
@@ -60,7 +60,7 @@ namespace gui {
 		double cwidth = (size.width - pad * 2 - (_gap * (_cols - 1))) / (double)_cols;
 		double cheight = (size.height - pad * 2 - (_gap * (_rows - 1))) / (double)_rows;
 
-		for(map<int,Control*>::iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+		for(map<int,shared_ptr<Control>>::iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			GridPos pos(it->first);
 			gpos_t x = (gpos_t)(pad + pos.col() * (cwidth + _gap));
 			gpos_t y = (gpos_t)(pad + pos.row() * (cheight + _gap));
@@ -70,7 +70,7 @@ namespace gui {
 
 	Size GridLayout::getMaxSize() const {
 		Size max;
-		for(map<int,Control*>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it)
+		for(map<int,shared_ptr<Control>>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it)
 			max = maxsize(max,it->second->getPreferredSize());
 		return max;
 	}

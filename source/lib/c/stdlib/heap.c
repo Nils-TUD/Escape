@@ -64,6 +64,7 @@ static sMemArea *usableList = NULL;
 /* a linked list of free but not usable areas. That means the areas have no address and size */
 static sMemArea *freeList = NULL;
 /* total number of pages we're using */
+static uintptr_t heapstart = 0;
 static size_t pageCount = 0;
 static size_t pageSize = 0;
 
@@ -381,6 +382,9 @@ static bool loadNewSpace(size_t size) {
 	if(oldEnd == NULL)
 		return false;
 
+	if(pageCount == 0)
+		heapstart = (uintptr_t)oldEnd;
+
 	pageCount += count;
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
@@ -406,6 +410,9 @@ static bool loadNewAreas(void) {
 	if(oldEnd == NULL)
 		return false;
 
+	if(pageCount == 0)
+		heapstart = (uintptr_t)oldEnd;
+
 	/* determine start- and end-address */
 	pageCount++;
 	area = (sMemArea*)oldEnd;
@@ -422,6 +429,10 @@ static bool loadNewAreas(void) {
 	}
 
 	return true;
+}
+
+bool isOnHeap(const void *ptr) {
+	return (uintptr_t)ptr >= heapstart && (uintptr_t)ptr < heapstart + pageCount * pageSize;
 }
 
 size_t heapspace(void) {

@@ -26,12 +26,18 @@
 #include <gui/event/subscriber.h>
 #include <gui/application.h>
 #include <gui/theme.h>
+#include <memory>
 #include <vector>
 
 namespace gui {
 	class Control;
 	class ScrollPane;
 	class Layout;
+
+	template<typename T,typename... Args>
+	inline std::shared_ptr<T> make_control(Args&&... args) {
+		return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
+	}
 
 	/**
 	 * The abstract base class for all UI-elements (windows, controls). It has a position, a size,
@@ -49,12 +55,14 @@ namespace gui {
 		typedef Sender<UIElement&,const MouseEvent&> mouseev_type;
 		typedef Sender<UIElement&,const KeyEvent&> keyev_type;
 
+	protected:
 		/**
 		 * Creates an ui-element at position 0,0 and 0x0 pixels large. When using a layout, this
 		 * will determine the actual position and size.
 		 */
 		UIElement()
-			: _id(_nextid++), _g(nullptr), _parent(nullptr), _theme(Application::getInstance()->getDefaultTheme()),
+			: _id(_nextid++), _g(nullptr), _parent(nullptr),
+			  _theme(Application::getInstance()->getDefaultTheme()),
 			  _pos(), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
 			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
 		}
@@ -68,7 +76,8 @@ namespace gui {
 		 * @param height the height
 		 */
 		UIElement(const Pos &pos,const Size &size)
-			: _id(_nextid++), _g(nullptr), _parent(nullptr), _theme(Application::getInstance()->getDefaultTheme()),
+			: _id(_nextid++), _g(nullptr), _parent(nullptr),
+			  _theme(Application::getInstance()->getDefaultTheme()),
 			  _pos(pos), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
 			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
 		}
@@ -79,6 +88,7 @@ namespace gui {
 			delete _g;
 		}
 
+	public:
 		/**
 		 * @return the id of this UIElement (unique in one application)
 		 */

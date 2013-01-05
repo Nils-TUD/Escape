@@ -70,8 +70,8 @@ namespace gui {
 			: Layout(), _cols(cols), _rows(rows), _gap(gap), _p(), _ctrls() {
 		}
 
-		virtual void add(Panel *p,Control *c,pos_type pos);
-		virtual void remove(Panel *p,Control *c,pos_type pos);
+		virtual void add(Panel *p,std::shared_ptr<Control> c,pos_type pos);
+		virtual void remove(Panel *p,std::shared_ptr<Control> c,pos_type pos);
 		virtual void removeAll();
 
 		virtual void rearrange();
@@ -84,7 +84,7 @@ namespace gui {
 		unsigned _cols;
 		unsigned _rows;
 		gsize_t _gap;
-		Control *_p;
-		std::map<int,Control*> _ctrls;
+		Panel *_p;
+		std::map<int,std::shared_ptr<Control>> _ctrls;
 	};
 }

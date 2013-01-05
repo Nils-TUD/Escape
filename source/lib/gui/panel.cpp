@@ -34,15 +34,15 @@ namespace gui {
 
 	void Panel::passToCtrl(const MouseEvent &e,bool focus) {
 		Pos pos = e.getPos();
-		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
-			Control *c = *it;
+		for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
+			shared_ptr<Control> c = *it;
 			Pos cpos = c->getPos();
 			if(pos.x >= cpos.x && pos.x < cpos.x + c->getSize().width &&
 				pos.y >= cpos.y && pos.y < cpos.y + c->getSize().height) {
 				MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
 					  pos - cpos,e.getButtonMask());
 				if(focus)
-					_focus = c;
+					_focus = c.get();
 				if(e.getType() == MouseEvent::MOUSE_PRESSED)
 					c->onMousePressed(ce);
 				else
@@ -59,7 +59,7 @@ namespace gui {
 	void Panel::layout() {
 		if(_layout)
 			_layout->rearrange();
-		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+		for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it)
 			(*it)->layout();
 	}
 
@@ -80,19 +80,15 @@ namespace gui {
 
 		// don't move the controls, their position is relative to us. just refresh the paint-region
 		if(cur != pos) {
-			for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
-				Control *c = *it;
-				c->setRegion();
-			}
+			for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+				(*it)->setRegion();
 		}
 	}
 
 	void Panel::setRegion() {
 		Control::setRegion();
-		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
-			Control *c = *it;
-			c->setRegion();
-		}
+		for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+			(*it)->setRegion();
 	}
 
 	void Panel::paint(Graphics &g) {
@@ -101,8 +97,8 @@ namespace gui {
 		g.fillRect(Pos(0,0),getSize());
 
 		// now paint controls
-		for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
-			Control *c = *it;
+		for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
+			shared_ptr<Control> c = *it;
 			if(_updateRect.width) {
 				sRectangle ctrlRect,inter;
 				ctrlRect.x = c->getPos().x;
@@ -129,7 +125,7 @@ namespace gui {
 		_updateRect.width = 0;
 	}
 
-	void Panel::add(Control *c,Layout::pos_type pos) {
+	void Panel::add(shared_ptr<Control> c,Layout::pos_type pos) {
 		vassert(getGraphics() != nullptr,"Please add the parent to a container before the childs!");
 		_controls.push_back(c);
 		c->setParent(this);
@@ -137,9 +133,9 @@ namespace gui {
 			_layout->add(this,c,pos);
 	}
 
-	void Panel::remove(Control *c,Layout::pos_type pos) {
+	void Panel::remove(shared_ptr<Control> c,Layout::pos_type pos) {
 		_controls.erase_first(c);
-		if(c == _focus)
+		if(c.get() == _focus)
 			setFocus(nullptr);
 		if(_layout)
 			_layout->remove(this,c,pos);

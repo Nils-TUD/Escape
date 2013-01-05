@@ -35,14 +35,11 @@ namespace gui {
 		static const unsigned int FOCUS_VERTSB	= 4;
 
 	public:
-		ScrollPane(Control *ctrl)
+		ScrollPane(std::shared_ptr<Control> ctrl)
 			: Control(), _ctrl(ctrl), _focus(0) {
 		}
-		ScrollPane(Control *ctrl,const Pos &pos,const Size &size)
+		ScrollPane(std::shared_ptr<Control> ctrl,const Pos &pos,const Size &size)
 			: Control(pos,size), _ctrl(ctrl), _focus(0) {
-		}
-		virtual ~ScrollPane() {
-			delete _ctrl;
 		}
 
 		virtual Size getPrefSize() const {
@@ -132,7 +129,7 @@ namespace gui {
 		gsize_t getBarSize(gsize_t ctrlSize,gsize_t viewable);
 
 	private:
-		Control *_ctrl;
+		std::shared_ptr<Control> _ctrl;
 		unsigned int _focus;
 	};
 }

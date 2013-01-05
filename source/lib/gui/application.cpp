@@ -249,10 +249,10 @@ namespace gui {
 	}
 
 	void Application::closePopups(gwinid_t id,const Pos &pos) {
-		for(vector<Window*>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
-			Window *pw = *it;
-			if(pw->getId() != id && pw->getStyle() == Window::POPUP) {
-				((PopupWindow*)pw)->close(pos);
+		for(vector<shared_ptr<Window>>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
+			if((*it)->getId() != id && (*it)->getStyle() == Window::POPUP) {
+				shared_ptr<PopupWindow> pw = static_pointer_cast<PopupWindow>(*it);
+				pw->close(pos);
 				break;
 			}
 		}
@@ -286,7 +286,7 @@ namespace gui {
 			throw app_error("Unable to set window to active");
 	}
 
-	void Application::addWindow(Window *win) {
+	void Application::addWindow(shared_ptr<Window> win) {
 		_windows.push_back(win);
 
 		_msg.str.arg1 = win->getPos().x;
@@ -306,7 +306,7 @@ namespace gui {
 		}
 	}
 
-	void Application::removeWindow(Window *win) {
+	void Application::removeWindow(shared_ptr<Window> win) {
 		if(_windows.erase_first(win)) {
 			// let window-manager destroy our window
 			_msg.args.arg1 = win->getId();
@@ -336,9 +336,9 @@ namespace gui {
 	}
 
 	Window *Application::getWindowById(gwinid_t id) {
-		for(vector<Window*>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
+		for(vector<shared_ptr<Window>>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
 			if((*it)->getId() == id)
-				return *it;
+				return it->get();
 		}
 		return nullptr;
 	}

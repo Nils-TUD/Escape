@@ -148,20 +148,21 @@ static int guiProc(void) {
 		error("Unable to set signal-handler");
 
 	// now start GUI
-	Application *app = Application::getInstance();
 	Font font;
-	Window w("Shell",Pos(100,100),Size(font.getSize().width * DEF_COLS + 2,
-								  	   font.getSize().height * DEF_ROWS + 4));
-	Panel& root = w.getRootPanel();
-	root.getTheme().setPadding(0);
-	ShellControl *sh = new ShellControl(Pos(0,0),root.getSize());
+	Application *app = Application::getInstance();
+	shared_ptr<Window> w = make_control<Window>("Shell",Pos(100,100),
+			Size(font.getSize().width * DEF_COLS + 2,font.getSize().height * DEF_ROWS + 4));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->getTheme().setPadding(0);
+	shared_ptr<ShellControl> sh = make_control<ShellControl>(Pos(0,0),root->getSize());
 	gt = new GUITerm(sid,sh);
 	if(startthread(termThread,gt) < 0)
 		error("Unable to start term-thread");
-	root.setLayout(new BorderLayout());
-	root.add(sh,BorderLayout::CENTER);
-	w.show();
-	w.setFocus(sh);
+	root->setLayout(make_layout<BorderLayout>());
+	root->add(sh,BorderLayout::CENTER);
+	w->show();
+	w->setFocus(sh.get());
+	app->addWindow(w);
 	int res = app->run();
 	sh->sendEOF();
 	return res;

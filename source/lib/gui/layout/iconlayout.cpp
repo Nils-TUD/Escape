@@ -66,8 +66,7 @@ namespace gui {
 			case HORIZONTAL: {
 				uint col = 0, row = 0;
 				Pos pos(pad,pad);
-				vector<shared_ptr<Control>>::const_iterator it;
-				for(it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+				for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 					Size csize = (*it)->getPreferredSize();
 					if((cols && col == cols) ||
 							(!cols && col > 0 && pos.x + csize.width + pad > size.width)) {
@@ -91,8 +90,7 @@ namespace gui {
 			case VERTICAL: {
 				uint col = 0, row = 0;
 				Pos pos(pad,pad);
-				vector<shared_ptr<Control>>::const_iterator it;
-				for(it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+				for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 					Size csize = (*it)->getPreferredSize();
 					if((rows && row == rows) ||
 							(!rows && row > 0 && pos.y + csize.height + pad > size.height)) {

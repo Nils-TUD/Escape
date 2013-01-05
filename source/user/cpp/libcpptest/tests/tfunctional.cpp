@@ -40,7 +40,7 @@ static void check_content(const vector<T> &l,size_t count,...) {
 	va_list ap;
 	va_start(ap,count);
 	test_assertUInt(l.size(),count);
-	for(typename vector<T>::const_iterator it = l.begin(); it != l.end(); it++)
+	for(auto it = l.begin(); it != l.end(); it++)
 		test_assertInt(*it,va_arg(ap,int));
 	va_end(ap);
 }

@@ -80,7 +80,7 @@ namespace gui {
 			swap(max.width,max.height);
 		}
 
-		for(vector<shared_ptr<Control>>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+		for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			configureControl(*it,pos,max);
 			if(_orientation == VERTICAL)
 				pos.y += max.height + _gap;
@@ -91,7 +91,7 @@ namespace gui {
 
 	Size FlowLayout::getMaxSize() const {
 		Size max;
-		for(vector<shared_ptr<Control>>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it)
+		for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it)
 			max = maxsize(max,(*it)->getPreferredSize());
 		return max;
 	}

@@ -129,7 +129,7 @@ int main(int argc,char **argv) {
 	thread::size_type maxSyscalls = 1000;
 	thread::time_type maxRuntime = 100;
 	thread::cycle_type totalCycles = 0;
-	for(vector<thread*>::const_iterator it = threads.begin(); it != threads.end(); ++it) {
+	for(auto it = threads.begin(); it != threads.end(); ++it) {
 		thread *t = *it;
 		if(t->tid() > maxTid)
 			maxTid = t->tid();
@@ -165,7 +165,7 @@ int main(int argc,char **argv) {
 	cout << "    CPU PROC" << '\n';
 
 	// print threads
-	for(vector<thread*>::const_iterator it = threads.begin(); it != threads.end(); ++it) {
+	for(auto it = threads.begin(); it != threads.end(); ++it) {
 		thread *t = *it;
 		float cyclePercent = 0;
 		if(t->cycles() != 0)

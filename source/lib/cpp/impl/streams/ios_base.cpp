@@ -88,14 +88,12 @@ namespace std {
 	const ios_base::seekdir ios_base::end			= SEEK_END;
 
 	ios_base::ios_base()
-		: _flags(fmtflags()), _prec(streamsize()), _width(streamsize()),
-		  _callbacks(vector<pair<event_callback,int> >()) {
+		: _flags(), _prec(), _width(), _callbacks() {
 		// do nothing here
 	}
 
 	void ios_base::raise_event(event ev) {
-		vector<pair<event_callback,int> >::reverse_iterator it = _callbacks.rbegin();
-		for(; it != _callbacks.rend(); ++it)
+		for(auto it = _callbacks.rbegin(); it != _callbacks.rend(); ++it)
 			it->first(ev,*this,it->second);
 	}
 

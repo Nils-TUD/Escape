@@ -164,7 +164,7 @@ static void test_order(void) {
 	t.insert(3,3);
 
 	int i = 0;
-	for(bintree<int,int>::iterator it = t.begin(); it != t.end(); ++it)
+	for(auto it = t.begin(); it != t.end(); ++it)
 		test_assertInt((*it).first,ints[i++]);
 
 	test_caseSucceeded();
@@ -398,14 +398,14 @@ static void test_iterators(void) {
 		t.insert(i,i + 1);
 
 	int i = 0;
-	for(bintree<int,int>::iterator it = t.begin(); it != t.end(); ++it) {
+	for(auto it = t.begin(); it != t.end(); ++it) {
 		test_assertInt(it->first,i);
 		test_assertInt(it->second,i + 1);
 		i++;
 	}
 
 	i = 7;
-	for(bintree<int,int>::reverse_iterator it = t.rbegin(); it != t.rend(); ++it) {
+	for(auto it = t.rbegin(); it != t.rend(); ++it) {
 		test_assertInt(it->first,i);
 		test_assertInt(it->second,i + 1);
 		i--;

@@ -169,7 +169,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	// calc widths
-	for(vector<lsfile*>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
+	for(auto it = entries.begin(); it != entries.end(); ++it) {
 		size_t x;
 		lsfile *f = *it;
 		if(flags & F_INODE) {
@@ -204,7 +204,7 @@ int main(int argc,char *argv[]) {
 
 	// display
 	size_t pos = 0;
-	for(vector<lsfile*>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
+	for(auto it = entries.begin(); it != entries.end(); ++it) {
 		lsfile *f = *it;
 		if(flags & F_LONG) {
 			if(flags & F_INODE)
@@ -275,7 +275,7 @@ static vector<lsfile*> getEntries(const string& path) {
 	vector<lsfile*> res;
 	if(dir.is_dir()) {
 		vector<sDirEntry> files = dir.list_files(flags & F_ALL);
-		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it)
+		for(auto it = files.begin(); it != files.end(); ++it)
 			res.push_back(buildFile(file(path,it->name)));
 	}
 	else
@@ -302,7 +302,7 @@ static file::size_type getDirSize(const file& d) {
 	file::size_type res = 0;
 	string path = d.path();
 	vector<sDirEntry> files = d.list_files((flags & F_ALL) != 0);
-	for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
+	for(auto it = files.begin(); it != files.end(); ++it) {
 		file f(path,it->name);
 		if(f.is_dir()) {
 			string name = f.name();

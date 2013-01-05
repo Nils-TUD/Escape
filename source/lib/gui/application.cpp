@@ -249,7 +249,7 @@ namespace gui {
 	}
 
 	void Application::closePopups(gwinid_t id,const Pos &pos) {
-		for(vector<shared_ptr<Window>>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
+		for(auto it = _windows.begin(); it != _windows.end(); ++it) {
 			if((*it)->getId() != id && (*it)->getStyle() == Window::POPUP) {
 				shared_ptr<PopupWindow> pw = static_pointer_cast<PopupWindow>(*it);
 				pw->close(pos);
@@ -336,7 +336,7 @@ namespace gui {
 	}
 
 	Window *Application::getWindowById(gwinid_t id) {
-		for(vector<shared_ptr<Window>>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
+		for(auto it = _windows.begin(); it != _windows.end(); ++it) {
 			if((*it)->getId() == id)
 				return it->get();
 		}

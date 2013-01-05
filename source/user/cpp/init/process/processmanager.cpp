@@ -74,7 +74,7 @@ void ProcessManager::start() {
 
 	// load processes
 	Progress pg(KERNEL_PERCENT,0,_procs.size());
-	for(vector<Process*>::iterator it = _procs.begin(); it != _procs.end(); ++it) {
+	for(auto  it = _procs.begin(); it != _procs.end(); ++it) {
 		pg.itemStarting(string("Loading ") + (*it)->name() + "...");
 		(*it)->load();
 		pg.itemLoaded();
@@ -123,7 +123,7 @@ void ProcessManager::shutdown() {
 	_downProg = new Progress(0,_procs.size(),_procs.size());
 	_downProg->paintBar();
 	_downProg->itemStarting("Terminating all processes...");
-	for(vector<Process*>::reverse_iterator it = _procs.rbegin(); it != _procs.rend(); ++it) {
+	for(auto  it = _procs.rbegin(); it != _procs.rend(); ++it) {
 		Process *p = *it;
 		if(!p->isDead() && p->isKillable()) {
 			cout << "Sending SIG_TERM to " << p->pid() << endl;
@@ -140,7 +140,7 @@ void ProcessManager::finalize(int task) {
 
 	// remove all except video (we don't get notified about all terminated processes; just about
 	// our childs)
-	for(vector<Process*>::iterator it = _procs.begin(); it != _procs.end(); ) {
+	for(auto  it = _procs.begin(); it != _procs.end(); ) {
 		if((*it)->isKillable()) {
 			delete *it;
 			_procs.erase(it);
@@ -151,7 +151,7 @@ void ProcessManager::finalize(int task) {
 
 	// now add all still running processes and kill them
 	addRunning();
-	for(vector<Process*>::reverse_iterator it = _procs.rbegin(); it != _procs.rend(); ++it) {
+	for(auto  it = _procs.rbegin(); it != _procs.rend(); ++it) {
 		Process *p = *it;
 		if(!p->isAlive() && !p->isDead() && p->isKillable()) {
 			cout << "Sending SIG_KILL to " << p->pid() << endl;
@@ -173,7 +173,7 @@ void ProcessManager::finalize(int task) {
 void ProcessManager::addRunning() {
 	file procDir("/system/processes");
 	vector<sDirEntry> procs = procDir.list_files(false);
-	for(vector<sDirEntry>::iterator it = procs.begin(); it != procs.end(); ++it) {
+	for(auto  it = procs.begin(); it != procs.end(); ++it) {
 		int pid = atoi(it->name);
 		if(pid != 0 && getByPid(pid) == nullptr)
 			_procs.push_back(new Process(pid));
@@ -182,7 +182,7 @@ void ProcessManager::addRunning() {
 }
 
 Process *ProcessManager::getByPid(pid_t pid) {
-	for(vector<Process*>::iterator it = _procs.begin(); it != _procs.end(); ++it) {
+	for(auto it = _procs.begin(); it != _procs.end(); ++it) {
 		if((*it)->pid() == pid)
 			return *it;
 	}

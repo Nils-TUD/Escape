@@ -53,7 +53,7 @@ namespace gui {
 		gpos_t y = 0;
 		gsize_t itemHeight = g.getFont().getSize().height;
 		g.setColor(tf);
-		for(vector<string>::iterator it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
+		for(auto it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
 			if(_highlighted == (int)distance(_cb->_items.begin(),it)) {
 				g.setColor(sb);
 				g.fillRect(SELPAD,y + SELPAD,
@@ -96,7 +96,7 @@ namespace gui {
 		gsize_t max = 0;
 		gsize_t pad = getTheme().getTextPadding();
 		const Font& f = getGraphics()->getFont();
-		for(vector<string>::const_iterator it = _items.begin(); it != _items.end(); ++it) {
+		for(auto it = _items.begin(); it != _items.end(); ++it) {
 			gsize_t width = f.getStringWidth(*it);
 			if(width > max)
 				max = width;

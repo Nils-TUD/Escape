@@ -56,7 +56,7 @@ DesktopWin::DesktopWin(const Size &size)
 void DesktopWin::onIconClick(UIElement& el) {
 	ImageButton *btn = dynamic_cast<ImageButton*>(&el);
 	if(btn) {
-		shortcutmap_type::iterator it = std::find_if(_shortcuts.begin(),_shortcuts.end(),
+		auto it = std::find_if(_shortcuts.begin(),_shortcuts.end(),
 			[btn] (const pair<std::shared_ptr<gui::ImageButton>,Shortcut*> &pair) {
 				return btn == pair.first.get();
 			}
@@ -73,7 +73,7 @@ void DesktopWin::onIconClick(UIElement& el) {
 		}
 	}
 	else {
-		for(winmap_type::iterator wit = _windows.begin(); wit != _windows.end(); ++wit) {
+		for(auto wit = _windows.begin(); wit != _windows.end(); ++wit) {
 			if((*wit).second.get() == &el) {
 				Application::getInstance()->requestActiveWindow((*wit).first);
 				break;
@@ -97,7 +97,7 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 		_active->getTheme().unsetColor(Theme::BTN_BACKGROUND);
 		_active->repaint();
 	}
-	winmap_type::iterator it = _windows.find(wid);
+	auto it = _windows.find(wid);
 	if(it != _windows.end()) {
 		const Theme *def = Application::getInstance()->getDefaultTheme();
 		_active = it->second.get();
@@ -109,7 +109,7 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 }
 
 void DesktopWin::onWindowDestroyed(gwinid_t wid) {
-	winmap_type::iterator it = _windows.find(wid);
+	auto it = _windows.find(wid);
 	if(it != _windows.end()) {
 		shared_ptr<WinButton> b = (*it).second;
 		_winPanel->remove(b);

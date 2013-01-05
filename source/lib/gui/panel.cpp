@@ -34,7 +34,7 @@ namespace gui {
 
 	void Panel::passToCtrl(const MouseEvent &e,bool focus) {
 		Pos pos = e.getPos();
-		for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
+		for(auto it = _controls.begin(); it != _controls.end(); ++it) {
 			shared_ptr<Control> c = *it;
 			Pos cpos = c->getPos();
 			if(pos.x >= cpos.x && pos.x < cpos.x + c->getSize().width &&
@@ -59,7 +59,7 @@ namespace gui {
 	void Panel::layout() {
 		if(_layout)
 			_layout->rearrange();
-		for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+		for(auto it = _controls.begin(); it != _controls.end(); ++it)
 			(*it)->layout();
 	}
 
@@ -80,14 +80,14 @@ namespace gui {
 
 		// don't move the controls, their position is relative to us. just refresh the paint-region
 		if(cur != pos) {
-			for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+			for(auto it = _controls.begin(); it != _controls.end(); ++it)
 				(*it)->setRegion();
 		}
 	}
 
 	void Panel::setRegion() {
 		Control::setRegion();
-		for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+		for(auto it = _controls.begin(); it != _controls.end(); ++it)
 			(*it)->setRegion();
 	}
 
@@ -97,7 +97,7 @@ namespace gui {
 		g.fillRect(Pos(0,0),getSize());
 
 		// now paint controls
-		for(vector<shared_ptr<Control>>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
+		for(auto it = _controls.begin(); it != _controls.end(); ++it) {
 			shared_ptr<Control> c = *it;
 			if(_updateRect.width) {
 				sRectangle ctrlRect,inter;

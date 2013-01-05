@@ -58,7 +58,7 @@ char *LineContainer::Region::get(size_type size,size_type i) const {
 
 const char *LineContainer::get(size_type index) {
 	size_type i = index;
-	for(vector<Region>::iterator it = _regions.begin(); it != _regions.end(); ++it) {
+	for(auto it = _regions.begin(); it != _regions.end(); ++it) {
 		const char *res = it->get(_lineLen,i);
 		if(res)
 			return res;

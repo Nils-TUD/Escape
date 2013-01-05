@@ -43,7 +43,7 @@ static void check_content(const list<int> &l,size_t count,...) {
 	va_list ap;
 	va_start(ap,count);
 	test_assertSize(l.size(),count);
-	for(list<int>::const_iterator it = l.begin(); it != l.end(); it++)
+	for(auto it = l.begin(); it != l.end(); it++)
 		test_assertInt(*it,va_arg(ap,int));
 	va_end(ap);
 }
@@ -121,10 +121,10 @@ static void test_iterators(void) {
 	v1.push_back(3);
 	v1.push_back(4);
 	int i = 1;
-	for(list<int>::iterator it = v1.begin(); it != v1.end(); it++)
+	for(auto it = v1.begin(); it != v1.end(); it++)
 		test_assertInt(*it,i++);
 	i = 4;
-	for(list<int>::reverse_iterator it = v1.rbegin(); it != v1.rend(); it++)
+	for(auto it = v1.rbegin(); it != v1.rend(); it++)
 		test_assertInt(*it,i--);
 
 	test_caseSucceeded();

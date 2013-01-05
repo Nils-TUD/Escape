@@ -31,7 +31,7 @@ namespace std {
 	}
 
 	cmdargs::~cmdargs() {
-		for(vector<string*>::iterator it = _args.begin(); it != _args.end(); ++it)
+		for(auto it = _args.begin(); it != _args.end(); ++it)
 			delete *it;
 	}
 
@@ -123,7 +123,7 @@ namespace std {
 			pos = _args.begin();
 			return string(*(_free[0]));
 		}
-		for(vector<string*>::iterator it = _args.begin(); it != _args.end(); ++it) {
+		for(auto it = _args.begin(); it != _args.end(); ++it) {
 			string *arg = *it;
 			unsigned int index;
 			if(name.size() == 1) {
@@ -230,7 +230,7 @@ namespace std {
 	}
 
 	unsigned int cmdargs::readk(const string& arg) {
-		string::const_iterator it = arg.begin();
+		auto it = arg.begin();
 		unsigned int val = 0;
 		for(; isdigit(*it) && it != arg.end(); ++it)
 			val = val * 10 + (*it - '0');

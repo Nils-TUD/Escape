@@ -145,7 +145,7 @@ int main(int argc,char **argv) {
 	process::size_type maxOutput = 10 * 1024;
 	process::size_type maxRuntime = 100;
 	process::cycle_type totalCycles = 0;
-	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
+	for(auto it = procs.begin(); it != procs.end(); ++it) {
 		size_t x;
 		process *p = *it;
 		if(!own || uid == p->uid()) {
@@ -223,7 +223,7 @@ int main(int argc,char **argv) {
 	width2cmd += 2 * 5 + 4 + SSTRLEN("  CPU ");
 
 	// print processes (and threads)
-	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
+	for(auto it = procs.begin(); it != procs.end(); ++it) {
 		process *p = *it;
 		if(!own || uid == p->uid()) {
 			float cyclePercent = 0;

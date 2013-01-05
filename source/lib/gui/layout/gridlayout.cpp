@@ -60,7 +60,7 @@ namespace gui {
 		double cwidth = (size.width - pad * 2 - (_gap * (_cols - 1))) / (double)_cols;
 		double cheight = (size.height - pad * 2 - (_gap * (_rows - 1))) / (double)_rows;
 
-		for(map<int,shared_ptr<Control>>::iterator it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+		for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
 			GridPos pos(it->first);
 			gpos_t x = (gpos_t)(pad + pos.col() * (cwidth + _gap));
 			gpos_t y = (gpos_t)(pad + pos.row() * (cheight + _gap));
@@ -70,7 +70,7 @@ namespace gui {
 
 	Size GridLayout::getMaxSize() const {
 		Size max;
-		for(map<int,shared_ptr<Control>>::const_iterator it = _ctrls.begin(); it != _ctrls.end(); ++it)
+		for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it)
 			max = maxsize(max,it->second->getPreferredSize());
 		return max;
 	}

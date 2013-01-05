@@ -58,7 +58,7 @@ void DriverProcess::load() {
 		throw init_error("fork failed");
 
 	// wait for all specified devices
-	for(vector<Device>::const_iterator it = _devices.begin(); it != _devices.end(); ++it) {
+	for(auto it = _devices.begin(); it != _devices.end(); ++it) {
 		sFileInfo info;
 		sGroup *g;
 		int res;
@@ -109,7 +109,7 @@ istream& operator >>(istream& is,DriverProcess& drv) {
 ostream& operator <<(ostream& os,const DriverProcess& drv) {
 	os << drv.name() << '\n';
 	const vector<Device>& devs = drv.devices();
-	for(vector<Device>::const_iterator it = devs.begin(); it != devs.end(); ++it) {
+	for(auto it = devs.begin(); it != devs.end(); ++it) {
 		os << '\t' << it->name() << ' ';
 		os << oct << it->permissions() << ' ' << it->group() << '\n';
 	}

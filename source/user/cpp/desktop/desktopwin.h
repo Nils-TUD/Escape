@@ -68,9 +68,6 @@ class DesktopWin : public gui::Window {
 		onclick_type::subscr_type _sub;
 	};
 
-	typedef map<gwinid_t,std::shared_ptr<WinButton>> winmap_type;
-	typedef map<std::shared_ptr<gui::ImageButton>,Shortcut*> shortcutmap_type;
-
 public:
 	static const gsize_t PADDING;
 	static const gsize_t ICON_SIZE;
@@ -110,6 +107,6 @@ private:
 	std::shared_ptr<gui::Panel> _winPanel;
 	std::shared_ptr<gui::Panel> _iconPanel;
 	WinButton *_active;
-	winmap_type _windows;
-	shortcutmap_type _shortcuts;
+	map<gwinid_t,std::shared_ptr<WinButton>> _windows;
+	map<std::shared_ptr<gui::ImageButton>,Shortcut*> _shortcuts;
 };

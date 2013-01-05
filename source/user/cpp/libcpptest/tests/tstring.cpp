@@ -128,10 +128,10 @@ static void test_iterators(void) {
 
 	string s1("0123456789");
 	int i = '0';
-	for(string::iterator it = s1.begin(); it != s1.end(); ++it)
+	for(auto it = s1.begin(); it != s1.end(); ++it)
 		test_assertInt(*it,i++);
 	i = '9';
-	for(string::reverse_iterator it = s1.rbegin(); it != s1.rend(); ++it)
+	for(auto it = s1.rbegin(); it != s1.rend(); ++it)
 		test_assertInt(*it,i--);
 
 	test_caseSucceeded();

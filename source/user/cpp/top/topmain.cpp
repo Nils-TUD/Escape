@@ -71,7 +71,7 @@ static void printMemBar(size_t barwidth,size_t used,size_t total,const char *nam
 
 template<class T>
 static void freevector(vector<T*> vec) {
-	for(typename vector<T*>::iterator it = vec.begin(); it != vec.end(); ++it)
+	for(auto it = vec.begin(); it != vec.end(); ++it)
 		delete *it;
 }
 
@@ -103,7 +103,7 @@ static void display(void) {
 	}
 	cout << "\e[go;0;0]";
 
-	for(vector<cpu*>::const_iterator it = cpus.begin(); it != cpus.end(); ++it) {
+	for(auto it = cpus.begin(); it != cpus.end(); ++it) {
 		double ratio = (*it)->usedCycles() / (double)((*it)->totalCycles());
 		printCPUBar(cpubarwidth,ratio,(*it)->id());
 	}
@@ -136,7 +136,7 @@ static void display(void) {
 	// print threads
 	size_t totalframes = 0;
 	cpu::cycle_type totalcycles = 0;
-	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
+	for(auto it = procs.begin(); it != procs.end(); ++it) {
 		totalframes += (*it)->ownFrames();
 		totalcycles += (*it)->cycles();
 	}
@@ -144,7 +144,7 @@ static void display(void) {
 	size_t i = 0;
 	size_t y = cpus.size() + 4;
 	size_t yoff = MIN(yoffset,MAX(0,(ssize_t)procs.size() - (ssize_t)(consSize.height - y)));
-	vector<process*>::const_iterator it = procs.begin();
+	auto it = procs.begin();
 	advance(it,yoff);
 	for(; y < consSize.height && it != procs.end(); ++it, ++i) {
 		char time[12];

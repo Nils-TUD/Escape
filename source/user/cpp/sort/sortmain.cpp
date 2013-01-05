@@ -71,7 +71,7 @@ int main(int argc,char *argv[]) {
 
 	// sort and print
 	sort(lines.begin(),lines.end(),compareStrs);
-	for(vector<string>::iterator it = lines.begin(); it != lines.end(); ++it)
+	for(auto it = lines.begin(); it != lines.end(); ++it)
 		cout << *it << '\n';
 	return EXIT_SUCCESS;
 }

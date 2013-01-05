@@ -46,7 +46,7 @@ static void check_content(const list<int> &l,size_t count,...) {
 	va_list ap;
 	va_start(ap,count);
 	test_assertUInt(l.size(),count);
-	for(list<int>::const_iterator it = l.begin(); it != l.end(); it++)
+	for(auto it = l.begin(); it != l.end(); it++)
 		test_assertInt(*it,va_arg(ap,int));
 	va_end(ap);
 }

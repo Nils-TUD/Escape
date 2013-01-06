@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCXXProg('bin', target = 'libguitest', source = [env.Glob('*.cpp'), env.Glob('*/*.cpp')])

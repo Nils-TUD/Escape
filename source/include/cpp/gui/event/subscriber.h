@@ -34,7 +34,17 @@ namespace gui {
 	template<typename CLS,typename... ARGS>
 	Receiver<ARGS...> *mem_recv(CLS *obj,void (CLS::*cb)(ARGS...));
 	template<typename T,typename... ARGS>
-	Receiver<ARGS...> *bind1_recv(T arg1,void (*cb)(T,ARGS...));
+	Receiver<ARGS...> *bind1_func_recv(T arg1,void (*cb)(T,ARGS...));
+	template<typename T,typename... ARGS>
+	Receiver<ARGS...> *bind1_func_recv(T& arg1,void (*cb)(T&,ARGS...));
+	template<typename T,typename CLS,typename... ARGS>
+	Receiver<ARGS...> *bind1_mem_recv(T arg1,CLS *obj,void (CLS::*cb)(T,ARGS...));
+	template<typename T,typename CLS,typename... ARGS>
+	Receiver<ARGS...> *bind1_mem_recv(T& arg1,CLS *obj,void (CLS::*cb)(T&,ARGS...));
+	template<typename T,typename CLS,typename... ARGS>
+	Receiver<ARGS...> *bind1_mem_recv(T arg1,const CLS *obj,void (CLS::*cb)(T,ARGS...) const);
+	template<typename T,typename CLS,typename... ARGS>
+	Receiver<ARGS...> *bind1_mem_recv(T& arg1,const CLS *obj,void (CLS::*cb)(T&,ARGS...) const);
 
 	/**
 	 * The base class for all receivers. We use polymorphism here to allow different kind of
@@ -65,7 +75,7 @@ namespace gui {
 		template<typename... RARGS>
 		friend Receiver<RARGS...> *func_recv(void (*cb)(RARGS...));
 
-	    typedef void (*callback_type)(ARGS... args);
+	    typedef void (*callback_type)(ARGS...);
 
 		explicit FuncReceiver(callback_type cb) : Receiver<ARGS...>(), _cb(cb) {
 		}
@@ -85,7 +95,7 @@ namespace gui {
 		template<typename RCLS,typename... RARGS>
 		friend Receiver<RARGS...> *mem_recv(RCLS *obj,void (RCLS::*cb)(RARGS...));
 
-	    typedef void (CLS::*callback_type)(ARGS... args);
+	    typedef void (CLS::*callback_type)(ARGS...);
 
 		explicit MemberReceiver(CLS *obj,callback_type cb) : Receiver<ARGS...>(), _obj(obj), _cb(cb) {
 		}
@@ -99,16 +109,18 @@ namespace gui {
 	};
 
 	/**
-	 * The receiver to bind an arbitrary value to the function as first argument.
+	 * The receiver to bind an arbitrary value to a function as first argument.
 	 */
 	template<typename T,typename... ARGS>
-	class Bind1Receiver : public Receiver<ARGS...> {
+	class Bind1FuncReceiver : public Receiver<ARGS...> {
 		template<typename T1,typename... RARGS>
-		friend Receiver<RARGS...> *bind1_recv(T1 val,void (*cb)(T1,RARGS...));
+		friend Receiver<RARGS...> *bind1_func_recv(T1 val,void (*cb)(T1,RARGS...));
+		template<typename T1,typename... RARGS>
+		friend Receiver<RARGS...> *bind1_func_recv(T1& val,void (*cb)(T1&,RARGS...));
 
-	    typedef void (*callback_type)(T arg1,ARGS... args);
+	    typedef void (*callback_type)(T,ARGS...);
 
-		explicit Bind1Receiver(T arg1,callback_type cb) : Receiver<ARGS...>(), _arg1(arg1), _cb(cb) {
+		explicit Bind1FuncReceiver(T arg1,callback_type cb) : Receiver<ARGS...>(), _arg1(arg1), _cb(cb) {
 		}
 
 		virtual void send(ARGS... args) {
@@ -120,13 +132,64 @@ namespace gui {
 	};
 
 	/**
+	 * The receiver to bind an arbitrary value to a member function as first argument.
+	 */
+	template<typename T,class CLS,typename... ARGS>
+	class Bind1MemberReceiver : public Receiver<ARGS...> {
+		template<typename T1,typename RCLS,typename... RARGS>
+		friend Receiver<RARGS...> *bind1_mem_recv(T1 val,RCLS *obj,void (RCLS::*cb)(T1,RARGS...));
+		template<typename T1,typename RCLS,typename... RARGS>
+		friend Receiver<RARGS...> *bind1_mem_recv(T1& val,RCLS *obj,void (RCLS::*cb)(T1&,RARGS...));
+
+	    typedef void (CLS::*callback_type)(T,ARGS...);
+
+		explicit Bind1MemberReceiver(T arg1,CLS *obj,callback_type cb)
+			: Receiver<ARGS...>(), _arg1(arg1), _obj(obj), _cb(cb) {
+		}
+
+		virtual void send(ARGS... args) {
+			(_obj->*_cb)(_arg1,args...);
+		}
+
+		T _arg1;
+		CLS *_obj;
+		callback_type _cb;
+	};
+	/**
+	 * Template specialization for const member functions
+	 */
+	template<typename T,class CLS,typename... ARGS>
+	class Bind1MemberReceiver<T,const CLS,ARGS...> : public Receiver<ARGS...> {
+		template<typename T1,typename RCLS,typename... RARGS>
+		friend Receiver<RARGS...> *bind1_mem_recv(
+				T1 val,const RCLS *obj,void (RCLS::*cb)(T1,RARGS...) const);
+		template<typename T1,typename RCLS,typename... RARGS>
+		friend Receiver<RARGS...> *bind1_mem_recv(
+				T1& val,const RCLS *obj,void (RCLS::*cb)(T1&,RARGS...) const);
+
+	    typedef void (CLS::*callback_type)(T,ARGS...) const;
+
+		explicit Bind1MemberReceiver(T arg1,const CLS *obj,callback_type cb)
+			: Receiver<ARGS...>(), _arg1(arg1), _obj(obj), _cb(cb) {
+		}
+
+		virtual void send(ARGS... args) {
+			(_obj->*_cb)(_arg1,args...);
+		}
+
+		T _arg1;
+		const CLS *_obj;
+		callback_type _cb;
+	};
+
+	/**
 	 * Creates a function-receiver
 	 *
 	 * @param cb the callback
 	 * @return the receiver
 	 */
 	template<typename... ARGS>
-	Receiver<ARGS...> *func_recv(void (*cb)(ARGS...)) {
+	inline Receiver<ARGS...> *func_recv(void (*cb)(ARGS...)) {
 		return new FuncReceiver<ARGS...>(cb);
 	}
 
@@ -138,20 +201,49 @@ namespace gui {
 	 * @return the receiver
 	 */
 	template<typename CLS,typename... ARGS>
-	Receiver<ARGS...> *mem_recv(CLS *obj,void (CLS::*cb)(ARGS...)) {
+	inline Receiver<ARGS...> *mem_recv(CLS *obj,void (CLS::*cb)(ARGS...)) {
 		return new MemberReceiver<CLS,ARGS...>(obj,cb);
 	}
 
 	/**
-	 * Creates a bind-receiver
+	 * Creates a function receiver with one argument bound to it.
 	 *
 	 * @param arg1 the value to bind
 	 * @param cb the callback
 	 * @return the receiver
 	 */
 	template<typename T,typename... ARGS>
-	Receiver<ARGS...> *bind1_recv(T arg1,void (*cb)(T,ARGS...)) {
-		return new Bind1Receiver<T,ARGS...>(arg1,cb);
+	inline Receiver<ARGS...> *bind1_func_recv(T arg1,void (*cb)(T,ARGS...)) {
+		return new Bind1FuncReceiver<T,ARGS...>(arg1,cb);
+	}
+	template<typename T,typename... ARGS>
+	inline Receiver<ARGS...> *bind1_func_recv(T& arg1,void (*cb)(T&,ARGS...)) {
+		return new Bind1FuncReceiver<T&,ARGS...>(arg1,cb);
+	}
+
+	/**
+	 * Creates a member function receiver with one argument bound to it.
+	 *
+	 * @param arg1 the value to bind
+	 * @param obj the object
+	 * @param cb the callback
+	 * @return the receiver
+	 */
+	template<typename T,typename CLS,typename... ARGS>
+	inline Receiver<ARGS...> *bind1_mem_recv(T arg1,CLS *obj,void (CLS::*cb)(T,ARGS...)) {
+		return new Bind1MemberReceiver<T,CLS,ARGS...>(arg1,obj,cb);
+	}
+	template<typename T,typename CLS,typename... ARGS>
+	inline Receiver<ARGS...> *bind1_mem_recv(T& arg1,CLS *obj,void (CLS::*cb)(T&,ARGS...)) {
+		return new Bind1MemberReceiver<T&,CLS,ARGS...>(arg1,obj,cb);
+	}
+	template<typename T,typename CLS,typename... ARGS>
+	inline Receiver<ARGS...> *bind1_mem_recv(T arg1,const CLS *obj,void (CLS::*cb)(T,ARGS...) const) {
+		return new Bind1MemberReceiver<T,const CLS,ARGS...>(arg1,obj,cb);
+	}
+	template<typename T,typename CLS,typename... ARGS>
+	inline Receiver<ARGS...> *bind1_mem_recv(T& arg1,const CLS *obj,void (CLS::*cb)(T&,ARGS...) const) {
+		return new Bind1MemberReceiver<T&,const CLS,ARGS...>(arg1,obj,cb);
 	}
 
 	/**

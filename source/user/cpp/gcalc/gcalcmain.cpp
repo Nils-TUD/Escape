@@ -142,7 +142,7 @@ int main(void) {
 	for(size_t i = 0; i < ARRAY_SIZE(buttons); ++i) {
 		char name[] = {buttons[i].c,'\0'};
 		shared_ptr<Button> b = make_control<Button>(name,Pos(0,0),BTN_SIZE);
-		b->clicked().subscribe(bind1_recv(buttons[i].c,onButtonClick));
+		b->clicked().subscribe(bind1_func_recv(buttons[i].c,onButtonClick));
 		grid->add(b,buttons[i].pos);
 	}
 

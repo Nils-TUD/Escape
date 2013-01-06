@@ -22,8 +22,10 @@
 #include <bits/c++config.h>
 #include <stddef.h>
 #include <iterator>
+#include <algorithm>
 #include <string.h>
 #include <limits.h>
+#include <assert.h>
 
 namespace std {
 	class istream;
@@ -61,15 +63,14 @@ namespace std {
 		 * Content is initialized to an empty string.
 		 */
 		explicit string()
-			: _str(new char[INIT_SIZE]), _size(INIT_SIZE), _length(0) {
-			_str[0] = '\0';
+			: _str(), _size(), _length(0) {
 		}
 		/**
 		 * Content is initialized to a copy of the string object str.
 		 */
 		string(const string& str)
-			: _str(new char[str._size]), _size(str._size), _length(str._length) {
-			memcpy(_str,str._str,_size * sizeof(char));
+			: _str(str._str ? new char[str._size] : nullptr), _size(str._size), _length(str._length) {
+				memcpy(_str,str._str,_size * sizeof(char));
 		}
 		/**
 		 * Content is initialized to a copy of a substring of str. The substring is the portion of
@@ -103,6 +104,13 @@ namespace std {
 			: _str(nullptr), _size(0), _length(0) {
 			append(b,e);
 		}
+		/**
+		 * Move constructor
+		 */
+		string(string&& str) : _str(str._str), _size(str._size), _length(str._length) {
+			str._size = 0;
+			str._str = nullptr;
+		}
 
 		/**
 		 * Destructor
@@ -123,6 +131,17 @@ namespace std {
 			return assign(s);
 		}
 		string& operator=(char c);
+		/**
+		 * Move assignment operator
+		 */
+		string& operator=(string&& str) {
+			_str = str._str;
+			_size = str._size;
+			_length = str._length;
+			str._str = nullptr;
+			str._size = 0;
+			return *this;
+		}
 
 		/**
 		 * @return the beginning of the string
@@ -245,9 +264,11 @@ namespace std {
 		 * also performs a range check.
 		 */
 		const_reference operator[](size_type pos) const {
+			assert(pos < _length);
 			return _str[pos];
 		}
 		reference operator[](size_type pos) {
+			assert(pos < _length);
 			return _str[pos];
 		}
 
@@ -538,7 +559,7 @@ namespace std {
 		 * unchanged until the next call to a non-constant member function of the string object.
 		 */
 		const_pointer c_str() const {
-			return _str;
+			return _str ? _str : "";
 		}
 
 		/**
@@ -550,7 +571,7 @@ namespace std {
 		 * call to a non-constant member function of the string object.
 		 */
 		const_pointer data() const {
-			return _str;
+			return c_str();
 		}
 
 		/**
@@ -688,23 +709,24 @@ namespace std {
 		 * specific traits::compare function, where traits is one of the class template parameters.
 		 */
 		int compare(const string& str) const {
-			return strcmp(_str,str._str);
+			return compare(str._str,str._length,0,max(_length,str._length));
 		}
 		int compare(const char* s) const {
-			return strcmp(_str,s);
+			size_type len = strlen(s);
+			return compare(s,len,0,max(_length,len));
 		}
 		int compare(size_type pos1,size_type n1,const string& str) const {
-			return strncmp(_str + pos1,str._str,n1);
+			return compare(str._str,str._length,pos1,n1);
 		}
 		int compare(size_type pos1,size_type n1,const char* s) const {
-			return strncmp(_str + pos1,s,n1);
+			return compare(s,strlen(s),pos1,n1);
 		}
 		int compare(size_type pos1,size_type n1,const string& str,size_type pos2,
 					size_type n2) const {
 			return substr(pos1,n1).compare(str.substr(pos2,n2));
 		}
 		int compare(size_type pos1,size_type n1,const char* s,size_type n2) const {
-			return strncmp(substr(pos1,n1)._str,s,n2);
+			return substr(pos1,n1).compare(pos1,n2,s);
 		}
 
 		/**
@@ -720,6 +742,16 @@ namespace std {
 		size_type rtrim();
 
 	private:
+		int compare(const char *s,size_type len,size_type pos1,size_type n1) const {
+			if(_length == 0 && len == 0)
+				return 0;
+			if(_length == 0)
+				return -1;
+			if(len == 0)
+				return 1;
+			return strncmp(_str + pos1,s,n1);
+		}
+
 		char* _str;
 		size_type _size;
 		size_type _length;

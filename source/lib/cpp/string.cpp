@@ -29,7 +29,7 @@
 namespace std {
 	// === constructors ===
 	string::string(const string& str,size_type pos,size_type n)
-		: _str(nullptr), _size(0), _length(0) {
+		: _str(), _size(0), _length(0) {
 		if(n == npos)
 			n = str._length - pos;
 		assign(str,pos,n);
@@ -42,11 +42,13 @@ namespace std {
 	string::string(const char* s)
 		: _str(nullptr), _size(0), _length(0) {
 		size_type len = strlen(s);
-		_str = new char[len + 1];
-		_size = len + 1;
-		_length = len;
-		memcpy(_str,s,len * sizeof(char));
-		_str[len] = '\0';
+		if(len) {
+			_str = new char[len + 1];
+			_size = len + 1;
+			_length = len;
+			memcpy(_str,s,len * sizeof(char));
+			_str[len] = '\0';
+		}
 	}
 	string::string(size_type n,char c)
 		: _str(new char[n + 1]), _size(n + 1), _length(n) {
@@ -78,7 +80,7 @@ namespace std {
 	void string::reserve(size_type n) {
 		if(n + 1 > _size) {
 			// reserve at least the double of the current size to prevent reallocations
-			n = max(_size * 2,n + 1);
+			n = max((_size == 0 ? INIT_SIZE : _size) * 2,n + 1);
 			char *tmp = new char[n];
 			if(_size > 0)
 				memcpy(tmp,_str,_size * sizeof(char));
@@ -91,11 +93,9 @@ namespace std {
 
 	// === clear() and empty() ===
 	void string::clear() {
-		if(!_str) {
-			_str = new char[INIT_SIZE];
-			_size = INIT_SIZE;
-		}
-		_str[0] = '\0';
+		delete[] _str;
+		_str = nullptr;
+		_size = 0;
 		_length = 0;
 	}
 
@@ -208,7 +208,7 @@ namespace std {
 	// === find() ===
 	string::size_type string::find(const char* s,size_type pos,size_type n) const {
 		// handle special case to prevent looping the string
-		if(n == 0)
+		if(n == 0 || s == nullptr || _str == nullptr)
 			return npos;
 		char *str1 = _str + pos;
 		for(size_type i = pos; *str1; i++) {
@@ -221,7 +221,7 @@ namespace std {
 	// === rfind() ===
 	string::size_type string::rfind(const char* s,size_type pos,size_type n) const {
 		// handle special case to prevent looping the string
-		if(n == 0 || pos < (n - 1))
+		if(n == 0 || s == nullptr || _str == nullptr || pos < (n - 1))
 			return npos;
 		if(pos == npos)
 			pos = _length - 1;
@@ -237,7 +237,7 @@ namespace std {
 
 	// === find_first_of() ===
 	string::size_type string::find_first_of(const char* s,size_type pos,size_type n) const {
-		if(n == 0)
+		if(n == 0 || s == nullptr || _str == nullptr)
 			return npos;
 		for(size_type i = pos; i < _length; i++) {
 			for(size_type j = 0; j < n; j++) {
@@ -250,7 +250,7 @@ namespace std {
 
 	// === find_last_of() ===
 	string::size_type string::find_last_of(const char* s,size_type pos,size_type n) const {
-		if(n == 0)
+		if(n == 0 || s == nullptr || _str == nullptr)
 			return npos;
 		if(pos == npos)
 			pos = _length - 1;

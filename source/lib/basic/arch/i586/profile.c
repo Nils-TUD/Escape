@@ -29,8 +29,8 @@
 #	include <sys/util.h>
 #	define outb			ports_outByte
 #	define inb			ports_inByte
-#if 1
-#	define gettid()		({ \
+#	if 1
+#		define gettid()		({ \
 	uintptr_t __esp; \
 	tid_t __tid; \
 	GET_REG("esp",__esp); \
@@ -40,9 +40,9 @@
 	} \
 	__tid; \
 })
-#else
-#	define gettid()		0
-#endif
+#	else
+#		define gettid()		0
+#	endif
 #	define getcycles()	cpu_rdtsc()
 #else
 #	include <esc/arch/i586/ports.h>

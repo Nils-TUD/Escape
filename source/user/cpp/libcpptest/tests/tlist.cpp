@@ -381,6 +381,9 @@ static void test_sort(void) {
 		l2.push_back(1);
 		l2.sort();
 		check_content(l2,5,1,2,3,4,5);
+
+		list<int> l3;
+		l3.sort();
 	}
 
 	size_t after = heapspace();

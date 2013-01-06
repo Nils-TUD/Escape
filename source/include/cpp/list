@@ -539,6 +539,9 @@ namespace std {
 		 */
 		template<class Compare>
 		void sort(Compare comp) {
+			if(_count == 0)
+				return;
+
 			// bubblesort is enough for now :P
 			iterator first = begin();
 			iterator last = end();

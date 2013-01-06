@@ -115,17 +115,29 @@ static void test_assign(void) {
 static void test_iterators(void) {
 	test_caseStart("Testing iterators");
 
-	list<int> v1;
-	v1.push_back(1);
-	v1.push_back(2);
-	v1.push_back(3);
-	v1.push_back(4);
-	int i = 1;
-	for(auto it = v1.begin(); it != v1.end(); it++)
-		test_assertInt(*it,i++);
-	i = 4;
-	for(auto it = v1.rbegin(); it != v1.rend(); it++)
-		test_assertInt(*it,i--);
+	{
+		list<int> v1;
+		test_assertTrue(v1.begin() == v1.end());
+		test_assertTrue(v1.rbegin() == v1.rend());
+		for(auto it = v1.begin(); it != v1.end(); it++)
+			;
+		for(auto it = v1.rbegin(); it != v1.rend(); it++)
+			;
+	}
+
+	{
+		list<int> v1;
+		v1.push_back(1);
+		v1.push_back(2);
+		v1.push_back(3);
+		v1.push_back(4);
+		int i = 1;
+		for(auto it = v1.begin(); it != v1.end(); it++)
+			test_assertInt(*it,i++);
+		i = 4;
+		for(auto it = v1.rbegin(); it != v1.rend(); it++)
+			test_assertInt(*it,i--);
+	}
 
 	test_caseSucceeded();
 }
@@ -231,6 +243,10 @@ static void test_splice(void) {
 
 		mylist1.splice(mylist1.begin(),mylist1,it,mylist1.end());
 		check_content(mylist1,6,30,3,4,1,10,20);
+
+		list<int> l1,l2;
+		l1.splice(l1.begin(),l1,l1.begin(),l1.end());
+		l1.splice(l1.begin(),l2,l2.begin(),l2.end());
 	}
 
 	size_t after = heapspace();

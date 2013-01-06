@@ -29,10 +29,14 @@ namespace std {
 
 	public:
 		inline listiterator()
-			: _node(nullptr) {
+			: _node(), _prev() {
 		}
 		inline listiterator(listnode<T> *n)
-			: _node(n) {
+			: _node(n), _prev(n->prev()) {
+			assert(n != nullptr);
+		}
+		inline listiterator(listnode<T> *p,listnode<T> *n)
+			: _node(n), _prev(p) {
 		}
 		inline ~listiterator() {
 		}
@@ -44,28 +48,31 @@ namespace std {
 			return &(operator*());
 		}
 		inline listiterator operator +(typename listiterator<T>::difference_type n) const {
-			listnode<T> *nd = _node;
-			while(n-- > 0)
-				nd = nd->next();
-			return listiterator<T>(nd);
+			listiterator it(_prev,_node);
+			it += n;
+			return it;
 		}
 		listiterator& operator +=(typename listiterator<T>::difference_type n) {
-			while(n-- > 0)
+			while(n-- > 0) {
+				_prev = _node;
 				_node = _node->next();
+			}
 			return *this;
 		}
 		listiterator operator -(typename listiterator<T>::difference_type n) const {
-			listnode<T> *nd = _node;
-			while(n-- > 0)
-				nd = nd->prev();
-			return listiterator<T>(nd);
+			listiterator it(_prev,_node);
+			it -= n;
+			return it;
 		}
 		listiterator& operator -=(typename listiterator<T>::difference_type n) {
-			while(n-- > 0)
-				_node = _node->prev();
+			while(n-- > 0) {
+				_node = _prev;
+				_prev = _prev->prev();
+			}
 			return *this;
 		}
 		inline listiterator& operator ++() {
+			_prev = _node;
 			_node = _node->next();
 			return *this;
 		}
@@ -75,7 +82,8 @@ namespace std {
 			return tmp;
 		}
 		inline listiterator& operator --() {
-			_node = _node->prev();
+			_node = _prev;
+			_prev = _prev->prev();
 			return *this;
 		}
 		inline listiterator operator --(int) {
@@ -94,9 +102,13 @@ namespace std {
 		inline listnode<T>* node() const {
 			return _node;
 		}
+		inline listnode<T>* prev() const {
+			return _prev;
+		}
 
 	private:
 		listnode<T>* _node;
+		listnode<T>* _prev;
 	};
 
 	template<class T>
@@ -105,10 +117,14 @@ namespace std {
 
 	public:
 		inline const_listiterator()
-			: _node(nullptr) {
+			: _node(), _prev() {
 		}
 		inline const_listiterator(const listnode<T> *n)
-			: _node(n) {
+			: _node(n), _prev(n->prev()) {
+			assert(n != nullptr);
+		}
+		inline const_listiterator(const listnode<T> *p,const listnode<T> *n)
+			: _node(n), _prev(p) {
 		}
 		inline ~const_listiterator() {
 		}
@@ -120,28 +136,31 @@ namespace std {
 			return &(operator*());
 		}
 		const_listiterator operator +(typename const_listiterator<T>::difference_type n) const {
-			listnode<T> *nd = _node;
-			while(n-- > 0)
-				nd = nd->next();
-			return const_listiterator<T>(nd);
+			const_listiterator it(_prev,_node);
+			it += n;
+			return it;
 		}
 		const_listiterator& operator +=(typename const_listiterator<T>::difference_type n) {
-			while(n-- > 0)
+			while(n-- > 0) {
+				_prev = _node;
 				_node = _node->next();
+			}
 			return *this;
 		}
 		const_listiterator operator -(typename const_listiterator<T>::difference_type n) const {
-			listnode<T> *nd = _node;
-			while(n-- > 0)
-				nd = nd->prev();
-			return const_listiterator<T>(nd);
+			const_listiterator it(_prev,_node);
+			it -= n;
+			return it;
 		}
 		const_listiterator& operator -=(typename const_listiterator<T>::difference_type n) {
-			while(n-- > 0)
-				_node = _node->prev();
+			while(n-- > 0) {
+				_node = _prev;
+				_prev = _prev->prev();
+			}
 			return *this;
 		}
 		inline const_listiterator& operator ++() {
+			_prev = _node;
 			_node = _node->next();
 			return *this;
 		}
@@ -151,7 +170,8 @@ namespace std {
 			return tmp;
 		}
 		inline const_listiterator& operator --() {
-			_node = _node->prev();
+			_node = _prev;
+			_prev = _prev->prev();
 			return *this;
 		}
 		inline const_listiterator operator --(int) {
@@ -170,8 +190,12 @@ namespace std {
 		inline const listnode<T>* node() const {
 			return _node;
 		}
+		inline const listnode<T>* prev() const {
+			return _prev;
+		}
 
 	private:
 		const listnode<T>* _node;
+		const listnode<T>* _prev;
 	};
 }

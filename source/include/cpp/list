@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <algorithm>
 #include <functional>
+#include <assert.h>
 
 #include <impl/list/listnode.h>
 #include <impl/list/listiterator.h>
@@ -59,9 +60,7 @@ namespace std {
 		 * Creates an empty list
 		 */
 		explicit list()
-			: _count(0), _head(listnode<T>(nullptr,nullptr,T())), _foot(nullptr,nullptr,T()) {
-			_head.next(&_foot);
-			_foot.prev(&_head);
+			: _count(0), _first(), _last() {
 		}
 		/**
 		 * Creates a list with <n> times <value> as elements
@@ -70,9 +69,7 @@ namespace std {
 		 * @param value the value
 		 */
 		explicit list(size_type n,const T& value = T())
-			: _count(0), _head(listnode<T>(nullptr,nullptr,T())), _foot(nullptr,nullptr,T()) {
-			_head.next(&_foot);
-			_foot.prev(&_head);
+			: _count(0), _first(), _last() {
 			insert(begin(),n,value);
 		}
 		/**
@@ -83,9 +80,7 @@ namespace std {
 		 */
 		template<class InputIterator>
 		list(InputIterator first,InputIterator last)
-			: _count(0), _head(listnode<T>(nullptr,nullptr,T())), _foot(nullptr,nullptr,T()) {
-			_head.next(&_foot);
-			_foot.prev(&_head);
+			: _count(0), _first(), _last() {
 			insert(begin(),first,last);
 		}
 		/**
@@ -94,9 +89,7 @@ namespace std {
 		 * @param x the list to copy
 		 */
 		list(const list<T>& x)
-			: _count(0), _head(listnode<T>(nullptr,nullptr,T())), _foot(nullptr,nullptr,T()) {
-			_head.next(&_foot);
-			_foot.prev(&_head);
+			: _count(0), _first(), _last() {
 			insert(begin(),x.begin(),x.end());
 		}
 		/**
@@ -143,49 +136,49 @@ namespace std {
 		 * @return the beginning of the list
 		 */
 		iterator begin() {
-			return iterator(_head.next());
+			return iterator(nullptr,_first);
 		}
 		/**
 		 * @return the beginning of the list, as const-iterator
 		 */
 		const_iterator begin() const {
-			return const_iterator(_head.next());
+			return const_iterator(nullptr,_first);
 		}
 		/**
 		 * @return the end of the list
 		 */
 		iterator end() {
-			return iterator(&_foot);
+			return iterator(_last,nullptr);
 		}
 		/**
 		 * @return the end of the list, as const-iterator
 		 */
 		const_iterator end() const {
-			return const_iterator(&_foot);
+			return const_iterator(_last,nullptr);
 		}
 		/**
 		 * @return the beginning of the list for the reverse-iterator (i.e. the end)
 		 */
 		reverse_iterator rbegin() {
-			return reverse_iterator(&_foot);
+			return reverse_iterator(end());
 		}
 		/**
 		 * @return the beginning of the list for the const-reverse-iterator (i.e. the end)
 		 */
 		const_reverse_iterator rbegin() const {
-			return const_reverse_iterator(&_foot);
+			return const_reverse_iterator(end());
 		}
 		/**
 		 * @return the end of the list for the reverse-iterator (i.e. the beginning)
 		 */
 		reverse_iterator rend() {
-			return reverse_iterator(_head.next());
+			return reverse_iterator(begin());
 		}
 		/**
 		 * @return the end of the list for the const-reverse-iterator (i.e. the beginning)
 		 */
 		const_reverse_iterator rend() const {
-			return const_reverse_iterator(_head.next());
+			return const_reverse_iterator(begin());
 		}
 
 		/**
@@ -281,11 +274,18 @@ namespace std {
 		 */
 		iterator insert(iterator position,const T& x) {
 			listnode<T>* node = position.node();
-			listnode<T>* prev = new listnode<T>(node->prev(),node,x);
-			node->prev()->next(prev);
-			node->prev(prev);
+			listnode<T>* prev = position.prev();
+			listnode<T>* newnode = new listnode<T>(prev,node,x);
+			if(prev)
+				prev->next(newnode);
+			else
+				_first = newnode;
+			if(node)
+				node->prev(newnode);
+			else
+				_last = newnode;
 			_count++;
-			return prev;
+			return newnode;
 		}
 		/**
 		 * Inserts <n> times <x> at <position> into the list.
@@ -323,12 +323,19 @@ namespace std {
 		 */
 		iterator erase(iterator position) {
 			listnode<T>* node = position.node();
+			assert(node != nullptr);
 			listnode<T>* next = node->next(), *prev = node->prev();
-			prev->next(next);
-			next->prev(prev);
+			if(!next)
+				_last = prev;
+			else
+				next->prev(prev);
+			if(!prev)
+				_first = next;
+			else
+				prev->next(next);
 			delete node;
 			_count--;
-			return next;
+			return iterator(prev,next);
 		}
 		/**
 		 * Erases all elements in [<position> .. <last>)
@@ -347,16 +354,16 @@ namespace std {
 		 */
 		void clear() {
 			// free mem
-			listnode<T>* node = _head.next();
-			while(node != &_foot) {
+			listnode<T>* node = _first;
+			size_t c = _count;
+			while(c-- > 0) {
 				listnode<T> *tmp = node;
 				node = node->next();
 				delete tmp;
 			}
 			// reset
 			_count = 0;
-			_head.next(&_foot);
-			_foot.prev(&_head);
+			_first = _last = nullptr;
 		}
 
 		/**
@@ -392,17 +399,34 @@ namespace std {
 		 */
 		void splice(iterator position,list<T>& x,iterator first,iterator last) {
 			if(&x == this) {
+				if(_count == 0)
+					return;
+
 				listnode<T>* pnode = position.node();
 				listnode<T>* fnode = first.node();
-				listnode<T>* lnode = last.node()->prev();
+				listnode<T>* lnode = last.prev();
+
 				// remove
-				fnode->prev()->next(lnode->next());
-				lnode->next()->prev(fnode->prev());
+				if(fnode->prev())
+					fnode->prev()->next(lnode->next());
+				else
+					_first = lnode->next();
+				if(lnode->next())
+					lnode->next()->prev(fnode->prev());
+				else
+					_last = fnode->prev();
+
 				// insert
-				pnode->prev()->next(fnode);
+				if(pnode->prev())
+					pnode->prev()->next(fnode);
+				else
+					_first = fnode;
 				fnode->prev(pnode->prev());
 				pnode->prev(lnode);
-				lnode->next(pnode);
+				if(lnode)
+					lnode->next(pnode);
+				else
+					_last = pnode;
 			}
 			else {
 				while(first != last) {
@@ -558,8 +582,8 @@ namespace std {
 		}
 
 		size_type _count;
-		listnode<T> _head;
-		listnode<T> _foot;
+		listnode<T> *_first;
+		listnode<T> *_last;
 	};
 
 	// compare-operators

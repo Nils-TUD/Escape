@@ -27,10 +27,14 @@
 namespace gui {
 	void Control::setParent(UIElement *e) {
 		_parent = e;
-		// we share the memory with the window, so that a control simply paints to that memory
-		// and just the window writes this memory to vesa
-		_g = GraphicFactory::get(e->getGraphics()->getBuffer(),Size(0,0));
-		setRegion();
+		// only do that if the parent has already been added to a container. if not, we'll try that
+		// again later when the parent is added.
+		if(e->getGraphics()) {
+			// we share the memory with the window, so that a control simply paints to that memory
+			// and just the window writes this memory to vesa
+			_g = GraphicFactory::get(e->getGraphics()->getBuffer(),Size(0,0));
+			setRegion();
+		}
 	}
 
 	void Control::resizeTo(const Size &size) {

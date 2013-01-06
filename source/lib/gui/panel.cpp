@@ -126,7 +126,6 @@ namespace gui {
 	}
 
 	void Panel::add(shared_ptr<Control> c,Layout::pos_type pos) {
-		vassert(getGraphics() != nullptr,"Please add the parent to a container before the childs!");
 		_controls.push_back(c);
 		c->setParent(this);
 		if(_layout)
@@ -143,8 +142,9 @@ namespace gui {
 
 	void Panel::removeAll() {
 		_controls.clear();
-		setFocus(nullptr);
-			_layout->removeAll();
+		if(_focus)
+			setFocus(nullptr);
+		_layout->removeAll();
 	}
 
 	ostream &operator<<(ostream &s,const Panel &p) {

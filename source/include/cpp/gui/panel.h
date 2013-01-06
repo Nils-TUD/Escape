@@ -144,6 +144,12 @@ namespace gui {
 
 	private:
 		void passToCtrl(const MouseEvent &e,bool focus);
+
+		virtual void setParent(UIElement *e) {
+			Control::setParent(e);
+			for(auto it = _controls.begin(); it != _controls.end(); ++it)
+				(*it)->setParent(this);
+		}
 		virtual void setFocus(Control *c) {
 			_focus = c;
 			if(_parent)

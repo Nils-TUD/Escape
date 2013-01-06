@@ -57,10 +57,13 @@ namespace gui {
 	}
 
 	void Panel::layout() {
+		_doingLayout = true;
 		if(_layout)
 			_layout->rearrange();
 		for(auto it = _controls.begin(); it != _controls.end(); ++it)
 			(*it)->layout();
+		_doingLayout = false;
+		getParent()->layoutChanged();
 	}
 
 	void Panel::resizeTo(const Size &size) {
@@ -69,8 +72,12 @@ namespace gui {
 
 		Control::resizeTo(size);
 		if(diffw || diffh) {
-			if(_layout)
+			if(_layout) {
+				_doingLayout = true;
 				_layout->rearrange();
+				_doingLayout = false;
+				getParent()->layoutChanged();
+			}
 		}
 	}
 

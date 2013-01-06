@@ -31,7 +31,7 @@ namespace gui {
 		 * @param l the layout (may be empty)
 		 */
 		Panel(std::shared_ptr<Layout> l = std::shared_ptr<Layout>())
-			: Control(), _focus(nullptr), _controls(), _layout(l), _updateRect() {
+			: Control(), _focus(nullptr), _controls(), _layout(l), _updateRect(), _doingLayout() {
 		}
 		/**
 		 * Creates an empty panel at given position, with given size and with given layout. Note
@@ -43,7 +43,7 @@ namespace gui {
 		 * @param l the layout (may be empty)
 		 */
 		Panel(const Pos &pos,const Size &size,std::shared_ptr<Layout> l = std::shared_ptr<Layout>())
-			: Control(pos,size), _focus(nullptr), _controls(), _layout(l), _updateRect() {
+			: Control(pos,size), _focus(nullptr), _controls(), _layout(l), _updateRect(), _doingLayout() {
 		}
 
 		virtual Size getPrefSize() const {
@@ -142,6 +142,13 @@ namespace gui {
 			return nullptr;
 		}
 
+		virtual void layoutChanged() {
+			if(_doingLayout)
+				return;
+			layout();
+			repaint();
+		}
+
 	private:
 		void passToCtrl(const MouseEvent &e,bool focus);
 
@@ -161,6 +168,7 @@ namespace gui {
 		std::vector<std::shared_ptr<Control>> _controls;
 		std::shared_ptr<Layout> _layout;
 		sRectangle _updateRect;
+		bool _doingLayout;
 	};
 
 	std::ostream &operator<<(std::ostream &s,const Panel &p);

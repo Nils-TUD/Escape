@@ -36,10 +36,10 @@ namespace gui {
 
 	public:
 		ScrollPane(std::shared_ptr<Control> ctrl)
-			: Control(), _ctrl(ctrl), _focus(0) {
+			: Control(), _ctrl(ctrl), _focus(0), _doingLayout() {
 		}
 		ScrollPane(std::shared_ptr<Control> ctrl,const Pos &pos,const Size &size)
-			: Control(pos,size), _ctrl(ctrl), _focus(0) {
+			: Control(pos,size), _ctrl(ctrl), _focus(0), _doingLayout() {
 		}
 
 		virtual Size getPrefSize() const {
@@ -69,7 +69,10 @@ namespace gui {
 		virtual void onMouseWheel(const MouseEvent &e);
 
 		virtual void layout() {
+			_doingLayout = true;
 			_ctrl->layout();
+			_doingLayout = false;
+			getParent()->layoutChanged();
 		}
 
 	protected:
@@ -113,6 +116,13 @@ namespace gui {
 			_ctrl->setParent(this);
 		}
 
+		virtual void layoutChanged() {
+			if(_doingLayout)
+				return;
+			layout();
+			repaint();
+		}
+
 	private:
 		void scrollBy(short mx,short my);
 		virtual void setFocus(Control *c) {
@@ -131,5 +141,6 @@ namespace gui {
 	private:
 		std::shared_ptr<Control> _ctrl;
 		unsigned int _focus;
+		bool _doingLayout;
 	};
 }

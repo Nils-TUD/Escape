@@ -294,6 +294,12 @@ namespace gui {
 		UIElement &operator=(const UIElement &e);
 
 		/**
+		 * Will be called by a child if it's layout has changed
+		 */
+		virtual void layoutChanged() {
+		}
+
+		/**
 		 * Helper for getPreferredSize(). Has to be implemented by subclasses!
 		 *
 		 * @return the preferred size of this ui-element

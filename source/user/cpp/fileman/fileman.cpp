@@ -17,37 +17,37 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <gui/application.h>
-#include <esc/thread.h>
-#include <esc/proc.h>
-#include "desktopwin.h"
+#include <gui/window.h>
+#include <env.h>
 
-using namespace gui;
+#include "model/favorite.h"
+#include "view/favorites.h"
+#include "view/filelist.h"
+
 using namespace std;
+using namespace gui;
 
-static int childWaitThread(void *arg);
+int main() {
+	vector<Favorite> favlist;
+	favlist.push_back(Favorite("Root","/"));
+	try {
+		favlist.push_back(Favorite("Home",env::get("HOME")));
+	}
+	catch(const io_exception& e) {
+		// TODO temporary
+		favlist.push_back(Favorite("Home","/home/hrniels"));
+		cerr << e.what() << endl;
+	}
 
-int main(void) {
-	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
-	Shortcut sc2("/etc/calc.bmp","/bin/gcalc");
-	Shortcut sc3("/etc/fileman.bmp","/bin/fileman");
-	Shortcut sc4("/etc/gtest.bmp","/bin/gtest");
 	Application *app = Application::getInstance();
-	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize());
-	win->addShortcut(&sc1);
-	win->addShortcut(&sc2);
-	win->addShortcut(&sc3);
-	win->addShortcut(&sc4);
-	win->show();
-	if(startthread(childWaitThread,nullptr) < 0)
-		error("Unable to start thread");
-	app->addWindow(win);
+	shared_ptr<Window> w = make_control<Window>("File manager",Pos(100,100),Size(400,300));
+	shared_ptr<Panel> root = w->getRootPanel();
+	shared_ptr<FileList> filelist = make_control<FileList>();
+	root->setLayout(make_layout<BorderLayout>());
+	root->add(make_control<Favorites>(filelist,favlist),BorderLayout::WEST);
+	root->add(filelist,BorderLayout::CENTER);
+	filelist->loadDir("/");
+	w->show();
+	app->addWindow(w);
 	return app->run();
-}
-
-static int childWaitThread(A_UNUSED void *arg) {
-	while(1)
-		waitchild(nullptr);
-	return 0;
 }

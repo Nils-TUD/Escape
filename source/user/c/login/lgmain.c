@@ -138,6 +138,7 @@ int main(int argc,char **argv) {
 		setenv("CWD",u->home);
 	else
 		setenv("CWD","/");
+	setenv("HOME",getenv("CWD"));
 	setenv("USER",u->name);
 
 	/* exchange with shell */

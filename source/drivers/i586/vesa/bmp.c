@@ -111,6 +111,7 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	bmp->data = malloc(bmp->dataSize);
 	if(bmp->data == NULL)
 		goto errorColorTbl;
+	seek(fd,bmp->fileHeader->dataOffset,SEEK_SET);
 	res = IGNSIGS(read(fd,bmp->data,bmp->dataSize));
 	if(res != (ssize_t)bmp->dataSize) {
 		printe("Invalid image '%s'",filename);

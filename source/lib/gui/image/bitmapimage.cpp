@@ -42,7 +42,7 @@ namespace gui {
 		gsize_t w = _infoHeader->width, h = _infoHeader->height;
 		gsize_t pw = w, ph = h, pad;
 		gpos_t cx,cy;
-		size_t lastCol = 0;
+		uint32_t lastCol = 0;
 		gsize_t colBytes = bitCount / 8;
 		if(!g.validateParams(x,y,pw,ph))
 			return;
@@ -58,7 +58,7 @@ namespace gui {
 				oldData = data;
 				for(cx = 0; cx < w; cx++) {
 					if(cx < pw) {
-						size_t col = *data;
+						uint32_t col = *data;
 						paintPixel8(g,cx + x,y + (ph - 1 - cy),col,lastCol);
 					}
 					data += colBytes;
@@ -71,7 +71,7 @@ namespace gui {
 				oldData = data;
 				for(cx = 0; cx < w; cx++) {
 					if(cx < pw) {
-						size_t col = *(uint16_t*)data;
+						uint32_t col = *(uint16_t*)data;
 						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
 					}
 					data += colBytes;
@@ -84,7 +84,7 @@ namespace gui {
 				oldData = data;
 				for(cx = 0; cx < w; cx++) {
 					if(cx < pw) {
-						size_t col = (data[0] | (data[1] << 8) | (data[2] << 16));
+						uint32_t col = (data[0] | (data[1] << 8) | (data[2] << 16));
 						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
 					}
 					data += colBytes;
@@ -97,7 +97,7 @@ namespace gui {
 				oldData = data;
 				for(cx = 0; cx < w; cx++) {
 					if(cx < pw) {
-						size_t col = *(uint32_t*)data;
+						uint32_t col = *(uint32_t*)data;
 						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
 					}
 					data += colBytes;
@@ -107,20 +107,24 @@ namespace gui {
 		}
 	}
 
-	void BitmapImage::paintPixel(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol) {
-		if(col != lastCol) {
-			g.setColor(Color(col));
-			lastCol = col;
+	void BitmapImage::paintPixel(Graphics &g,gpos_t x,gpos_t y,uint32_t col,uint32_t &lastCol) {
+		if(col != TRANSPARENT) {
+			if(col != lastCol) {
+				g.setColor(Color(col));
+				lastCol = col;
+			}
+			g.doSetPixel(x,y);
 		}
-		g.doSetPixel(x,y);
 	}
 
-	void BitmapImage::paintPixel8(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol) {
-		if(col != lastCol) {
-			g.setColor(Color(_colorTable[col]));
-			lastCol = col;
+	void BitmapImage::paintPixel8(Graphics &g,gpos_t x,gpos_t y,uint32_t col,uint32_t &lastCol) {
+		if(col != TRANSPARENT) {
+			if(col != lastCol) {
+				g.setColor(Color(_colorTable[col]));
+				lastCol = col;
+			}
+			g.doSetPixel(x,y);
 		}
-		g.doSetPixel(x,y);
 	}
 
 	void BitmapImage::paint(Graphics &g,const Pos &pos) {
@@ -196,10 +200,14 @@ namespace gui {
 			bytesPerLine = (bytesPerLine + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
 			_dataSize = bytesPerLine * _infoHeader->height;
 		}
-		else
+		else {
+			throw img_load_error(filename + ": Sorry, only RGB is supported");
 			_dataSize = _infoHeader->sizeImage;
+		}
+
 		_data = new uint8_t[_dataSize];
 		try {
+			f.seek(_fileHeader->dataOffset,rawfile::SET);
 			f.read(_data,sizeof(uint8_t),_dataSize);
 		}
 		catch(io_exception &e) {

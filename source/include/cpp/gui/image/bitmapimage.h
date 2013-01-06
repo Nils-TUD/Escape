@@ -28,11 +28,13 @@ namespace gui {
 	class BitmapImage : public Image {
 	private:
 		/* compression-modes */
-		static const uint BI_RGB		= 0;	/* uncompressed */
-		static const uint BI_RLE8		= 1;	/* valid if bitCount == 8 and height > 0 */
-		static const uint BI_RLE4		= 2;	/* valid if bitCount == 4 and height > 0 */
-		static const uint BI_BITFIELDS	= 3;	/* valid for bitCount == 16 or 32. uncompressed
-													with colormasks */
+		static const uint BI_RGB			= 0;	/* uncompressed */
+		static const uint BI_RLE8			= 1;	/* valid if bitCount == 8 and height > 0 */
+		static const uint BI_RLE4			= 2;	/* valid if bitCount == 4 and height > 0 */
+		static const uint BI_BITFIELDS		= 3;	/* valid for bitCount == 16 or 32. uncompressed
+													   with colormasks */
+
+		static const uint32_t TRANSPARENT	= 0x00FF00FF;
 
 		/* the file-header */
 		typedef struct {
@@ -114,8 +116,8 @@ namespace gui {
 		void clone(const BitmapImage &img);
 		void loadFromFile(const std::string &filename);
 		void paintRGB(Graphics &g,gpos_t x,gpos_t y);
-		void paintPixel(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol);
-		void paintPixel8(Graphics &g,gpos_t x,gpos_t y,size_t col,size_t &lastCol);
+		void paintPixel(Graphics &g,gpos_t x,gpos_t y,uint32_t col,uint32_t &lastCol);
+		void paintPixel8(Graphics &g,gpos_t x,gpos_t y,uint32_t col,uint32_t &lastCol);
 
 		sBMFileHeader *_fileHeader;
 		sBMInfoHeader *_infoHeader;

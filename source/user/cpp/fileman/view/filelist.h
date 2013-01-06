@@ -62,15 +62,20 @@ public:
 
 	void loadDir(const std::string &path) {
 		std::list<std::file> files;
-		std::vector<sDirEntry> entries = std::file(path).list_files(false);
-		for(auto it = entries.begin(); it != entries.end(); ++it)
-			files.push_back(std::file(path,it->name));
-		files.sort([] (const std::file &a,const std::file &b) {
-			if(a.is_dir() == b.is_dir())
-				return a.name() < b.name();
-			return a.is_dir();
-		});
-		setList(files);
+		try {
+			std::vector<sDirEntry> entries = std::file(path).list_files(false);
+			for(auto it = entries.begin(); it != entries.end(); ++it)
+				files.push_back(std::file(path,it->name));
+			files.sort([] (const std::file &a,const std::file &b) {
+				if(a.is_dir() == b.is_dir())
+					return a.name() < b.name();
+				return a.is_dir();
+			});
+			setList(files);
+		}
+		catch(const io_exception& e) {
+			std::cerr << e.what() << std::endl;
+		}
 	}
 	void setList(const std::list<std::file> &files) {
 		removeAll();

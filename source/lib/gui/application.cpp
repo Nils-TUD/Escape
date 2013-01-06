@@ -33,6 +33,9 @@
 
 using namespace std;
 
+static void sighandler(int) {
+}
+
 namespace gui {
 	Application *Application::_inst = nullptr;
 
@@ -61,6 +64,9 @@ namespace gui {
 			throw app_error("Unable to read the get-mode-response from vesa");
 		}
 		memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));
+
+		if(signal(SIG_USR1,sighandler) == SIG_ERR)
+			throw app_error("Unable to announce USR1 signal handler");
 
 		// init default theme
 		_defTheme.setColor(Theme::CTRL_BACKGROUND,Color(0x88,0x88,0x88));
@@ -112,11 +118,22 @@ namespace gui {
 	int Application::run() {
 		msgid_t mid;
 		while(_run) {
-			if(IGNSIGS(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
+			int res = receive(_winFd,&mid,&_msg,sizeof(_msg));
+			if(res < 0 && res != EINTR)
 				throw app_error("Read from window-manager failed");
-			handleMessage(mid,&_msg);
+			if(res >= 0)
+				handleMessage(mid,&_msg);
+			handleQueue();
 		}
 		return EXIT_SUCCESS;
+	}
+
+	void Application::handleQueue() {
+		while(!_queue.empty()) {
+			std::Functor<void> *functor = _queue.front();
+			(*functor)();
+			_queue.erase(_queue.begin());
+		}
 	}
 
 	void Application::handleMessage(msgid_t mid,sMsg *msg) {

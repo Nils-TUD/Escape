@@ -25,8 +25,10 @@
 #include <gui/event/subscriber.h>
 #include <gui/theme.h>
 #include <exception>
+#include <functor.h>
 #include <memory>
 #include <vector>
+#include <signal.h>
 
 namespace gui {
 	class Window;
@@ -137,6 +139,21 @@ namespace gui {
 		void removeWindow(shared_ptr<Window> win);
 
 		/**
+		 * Puts the given functor into the event-queue and calls it later, i.e. when the run-loop
+		 * looks into the queue again. This is intended to execute GUI-code from a different
+		 * thread (of course it is executed in the GUI thread later) or to execute a piece of code
+		 * after an event passed through the whole chain. The latter is required if you want to
+		 * remove controls as a reaction on an event.
+		 *
+		 * @param functor the functor to call
+		 */
+		void executeLater(std::Functor<void> *functor) {
+			// TODO not thread-safe!
+			_queue.push_back(functor);
+			kill(getpid(),SIG_USR1);
+		}
+
+		/**
 		 * Starts the message-loop
 		 */
 		int run();
@@ -162,6 +179,10 @@ namespace gui {
 		 * @param msg the received message
 		 */
 		virtual void handleMessage(msgid_t mid,sMsg *msg);
+		/**
+		 * Calls all functors in the queue
+		 */
+		void handleQueue();
 
 	private:
 		// prevent copying
@@ -236,6 +257,7 @@ namespace gui {
 		createdev_type _created;
 		activatedev_type _activated;
 		destroyedev_type _destroyed;
+		std::vector<Functor<void>*> _queue;
 		bool _listening;
 		Theme _defTheme;
 	};

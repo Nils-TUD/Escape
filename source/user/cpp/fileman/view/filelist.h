@@ -44,10 +44,15 @@ class FileList : public gui::Panel {
 		}
 
 		void onClick(const std::file &file,UIElement&) {
-			_list.loadDir(file.path());
+			gui::Application::getInstance()->executeLater(
+					std::make_bind1_memfun(file,this,&FileObject::loadDir));
 		}
 
 	private:
+		void loadDir(const std::file &file) {
+			_list.loadDir(file.path());
+		}
+
 		FileList &_list;
 	};
 

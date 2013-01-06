@@ -54,9 +54,6 @@ namespace gui {
 			if(_parent->_parent)
 				_g->setMinOff(getParentOff(_parent));
 			_g->setSize(_pos,_size,_parent->getContentSize());
-			/*std::cout << "[" << getId() << ", " << typeid(*this).name() << "] ";
-			std::cout << "@" << _g->getMinX() << "," << _g->getMinY() << ", ";
-			std::cout << "size:" << _g->getSize() << std::endl;*/
 		}
 	}
 

@@ -44,11 +44,7 @@ namespace gui {
 		gpos_t cx,cy;
 		uint32_t lastCol = 0;
 		gsize_t colBytes = bitCount / 8;
-		if(!g.validateParams(x,y,pw,ph))
-			return;
 		g.setColor(Color(0));
-		g.updateMinMax(Pos(x,y));
-		g.updateMinMax(Pos(x + pw,y + ph));
 		pad = w % 4;
 		pad = pad ? 4 - pad : 0;
 		data += (h - 1) * ((w * colBytes) + pad);
@@ -113,7 +109,7 @@ namespace gui {
 				g.setColor(Color(col));
 				lastCol = col;
 			}
-			g.doSetPixel(x,y);
+			g.setPixel(Pos(x,y));
 		}
 	}
 
@@ -123,7 +119,7 @@ namespace gui {
 				g.setColor(Color(_colorTable[col]));
 				lastCol = col;
 			}
-			g.doSetPixel(x,y);
+			g.setPixel(Pos(x,y));
 		}
 	}
 

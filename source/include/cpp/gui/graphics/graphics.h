@@ -94,7 +94,7 @@ namespace gui {
 		 */
 		void setPixel(const Pos &pos) {
 			Pos rpos = pos;
-			if(!validatePoint(rpos.x,rpos.y))
+			if(validatePoint(rpos.x,rpos.y) != 0)
 				return;
 			updateMinMax(rpos);
 			doSetPixel(rpos.x,rpos.y);

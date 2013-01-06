@@ -18,6 +18,7 @@
  */
 
 #include <gui/window.h>
+#include <gui/scrollpane.h>
 #include <env.h>
 
 #include "model/favorite.h"
@@ -45,7 +46,7 @@ int main() {
 	shared_ptr<FileList> filelist = make_control<FileList>();
 	root->setLayout(make_layout<BorderLayout>());
 	root->add(make_control<Favorites>(filelist,favlist),BorderLayout::WEST);
-	root->add(filelist,BorderLayout::CENTER);
+	root->add(make_control<ScrollPane>(filelist),BorderLayout::CENTER);
 	filelist->loadDir("/");
 	w->show();
 	app->addWindow(w);

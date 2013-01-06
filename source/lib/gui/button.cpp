@@ -98,19 +98,21 @@ namespace gui {
 	}
 
 	void Button::paint(Graphics &g) {
-		Size size = getSize();
 		paintBackground(g);
 		paintBorder(g);
 
-		g.setColor(getTheme().getColor(Theme::BTN_FOREGROUND));
-		gsize_t count = g.getFont().limitStringTo(_text,size.width - 2);
-		if(_pressed) {
-			g.drawString((size.width - g.getFont().getStringWidth(_text.substr(0,count))) / 2 + 1,
-					(size.height - g.getFont().getSize().height) / 2 + 1,_text,0,count);
-		}
-		else {
-			g.drawString((size.width - g.getFont().getStringWidth(_text.substr(0,count))) / 2,
-					(size.height - g.getFont().getSize().height) / 2,_text,0,count);
+		if(!_text.empty()) {
+			Size size = getSize();
+			g.setColor(getTheme().getColor(Theme::BTN_FOREGROUND));
+			gsize_t count = g.getFont().limitStringTo(_text,size.width - 2);
+			if(_pressed) {
+				g.drawString((size.width - g.getFont().getStringWidth(_text.substr(0,count))) / 2 + 1,
+						(size.height - g.getFont().getSize().height) / 2 + 1,_text,0,count);
+			}
+			else {
+				g.drawString((size.width - g.getFont().getStringWidth(_text.substr(0,count))) / 2,
+						(size.height - g.getFont().getSize().height) / 2,_text,0,count);
+			}
 		}
 	}
 }

@@ -57,6 +57,9 @@ namespace gui {
 		virtual void rearrange();
 
 	private:
+		void doConfigureControl(std::shared_ptr<Control> c,const Pos &pos,const Size &max);
+		Size getDim(const Size &avail,Size &max) const;
+		Size getMaxSize() const;
 		virtual Size getSizeWith(const Size &avail,size_func func) const;
 		void doLayout(size_t cols,size_t rows,gsize_t pad,Size &size,layout_func layout = 0) const;
 

@@ -59,6 +59,8 @@ typedef struct {
 #define test_assertULInt(recv,exp) test_doAssertULInt((recv),(exp),__FUNCTION__,__LINE__)
 #define test_assertLLInt(recv,exp) test_doAssertLLInt((recv),(exp),__FUNCTION__,__LINE__)
 #define test_assertULLInt(recv,exp) test_doAssertULLInt((recv),(exp),__FUNCTION__,__LINE__)
+#define test_assertFloat(recv,exp) test_doAssertFloat((recv),(exp),__FUNCTION__,__LINE__)
+#define test_assertDouble(recv,exp) test_doAssertDouble((recv),(exp),__FUNCTION__,__LINE__)
 #define test_assertStr(recv,exp) test_doAssertStr((recv),(exp),__FUNCTION__,__LINE__)
 
 #ifdef __cplusplus
@@ -136,6 +138,8 @@ bool test_doAssertUIntPtr(uintptr_t received,uintptr_t expected,const char *func
 bool test_doAssertSize(size_t received,size_t expected,const char *func,int line);
 bool test_doAssertSSize(ssize_t received,ssize_t expected,const char *func,int line);
 bool test_doAssertOff(off_t received,off_t expected,const char *func,int line);
+bool test_doAssertFloat(float received,float expected,const char *func,int line);
+bool test_doAssertDouble(double received,double expected,const char *func,int line);
 bool test_doAssertStr(const char *received,const char *expected,const char *func,int line);
 
 /**

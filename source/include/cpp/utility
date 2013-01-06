@@ -22,7 +22,22 @@
 #include <bits/c++config.h>
 #include <stddef.h>
 
+#include <impl/helper.h>
+
 namespace std {
+	template<typename T>
+	inline typename remove_reference<T>::type && move(T &&t) noexcept {
+		return static_cast<typename remove_reference<T>::type&&>(t);
+	}
+	template<typename T>
+	inline constexpr T&& forward(typename remove_reference<T>::type& a) noexcept {
+		return static_cast<T&&>(a);
+	}
+	template<typename T>
+	inline constexpr T&& forward(typename remove_reference<T>::type&& a) noexcept {
+		return static_cast<T&&>(a);
+	}
+
 	template<class T1,class T2>
 	struct pair {
 		typedef T1 first_type;
@@ -36,6 +51,9 @@ namespace std {
 		}
 		pair(const T1& x,const T2& y)
 			: first(x), second(y) {
+		}
+		pair(T1&& x,T2 &&y)
+			: first(forward<T1>(x)), second(forward<T2>(y)) {
 		}
 		template<class U,class V>
 		pair(const pair<U,V> &p)
@@ -77,30 +95,4 @@ namespace std {
 			return !(x < y);
 		}
 	}
-
-	template<typename T>
-	struct remove_reference {
-	    typedef T type;
-	};
-	template<typename T>
-	struct remove_reference<T&> {
-	    typedef T type;
-	};
-	template<typename T>
-	struct remove_reference<T&&> {
-	    typedef T type;
-	};
-
-    template<typename T>
-    inline typename remove_reference<T>::type && move(T &&t) noexcept {
-        return static_cast<typename remove_reference<T>::type&&>(t);
-    }
-    template<typename T>
-    inline constexpr T&& forward(typename remove_reference<T>::type& a) noexcept {
-        return static_cast<T&&>(a);
-    }
-    template<typename T>
-    inline constexpr T&& forward(typename remove_reference<T>::type&& a) noexcept {
-        return static_cast<T&&>(a);
-    }
 }

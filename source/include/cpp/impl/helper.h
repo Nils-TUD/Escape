@@ -24,6 +24,143 @@
 namespace std {
 	// this is mostly inspired by the stuff from gcc's libstdc++.
 
+	// bool types
+	template<bool V>
+	struct bool_base {
+		static const bool value = V;
+	};
+	typedef bool_base<true> true_type;
+	typedef bool_base<false> false_type;
+
+	// is_array
+	template<typename T>
+	struct is_array : public false_type {
+	};
+	template<typename T,size_t Size>
+	struct is_array<T[Size]> : public true_type {
+	};
+	template<typename T>
+	struct is_array<T[]> : public true_type {
+	};
+
+	// is_function
+	template<typename T>
+	struct is_function : public false_type {
+	};
+	template<typename Res,typename... Args>
+	struct is_function<Res(Args...)> : public true_type {
+	};
+	template<typename Res,typename... Args>
+	struct is_function<Res(Args...) const> : public true_type {
+	};
+	template<typename Res,typename... Args>
+	struct is_function<Res(Args...) volatile> : public true_type {
+	};
+	template<typename Res,typename... Args>
+	struct is_function<Res(Args...) const volatile> : public true_type {
+	};
+
+	// remove_reference
+	template<typename T>
+	struct remove_reference {
+	    typedef T type;
+	};
+	template<typename T>
+	struct remove_reference<T&> {
+	    typedef T type;
+	};
+	template<typename T>
+	struct remove_reference<T&&> {
+	    typedef T type;
+	};
+
+	// remove_const
+	template<typename T>
+	struct remove_const {
+		typedef T type;
+	};
+	template<typename T>
+	struct remove_const<const T> {
+		typedef T type;
+	};
+	// remove_volatile
+	template<typename T>
+	struct remove_volatile {
+		typedef T type;
+	};
+	template<typename T>
+	struct remove_volatile<volatile T> {
+		typedef T type;
+	};
+	// remove_cv
+	template<typename T>
+	struct remove_cv {
+		typedef typename remove_volatile<typename remove_const<T>::type>::type type;
+	};
+	// remove_pointer
+	template<typename T,typename>
+	struct remove_pointer_base {
+		typedef T type;
+	};
+	template<typename T,typename U>
+	struct remove_pointer_base<T,U*> {
+		typedef U type;
+	};
+	template<typename T>
+	struct remove_pointer : public remove_pointer_base<T,typename remove_cv<T>::type> {
+	};
+	// remove_extent
+	template<typename T>
+	struct remove_extent {
+		typedef T type;
+	};
+	template<typename T,size_t Size>
+	struct remove_extent<T[Size]> {
+		typedef T type;
+	};
+	template<typename T>
+	struct remove_extent<T[]> {
+		typedef T type;
+	};
+
+	// add_const
+	template<typename T>
+	struct add_const {
+		typedef const T type;
+	};
+	template<typename T>
+	struct add_const<const T> {
+		typedef T type;
+	};
+	// add_volatile
+	template<typename T>
+	struct add_volatile {
+		typedef volatile T type;
+	};
+	template<typename T>
+	struct add_volatile<volatile T> {
+		typedef T type;
+	};
+	// add_cv
+	template<typename T>
+	struct add_cv {
+		typedef typename add_volatile<typename add_const<T>::type>::type type;
+	};
+	// add_pointer
+	template<typename T>
+	struct add_pointer {
+		typedef typename remove_reference<T>::type* type;
+	};
+
+	// enable_if
+	template<bool,typename T = void>
+	struct enable_if {
+	};
+	template<typename T>
+	struct enable_if<true,T> {
+		typedef T type;
+	};
+
 	template<typename Base,typename Derived>
 	struct is_base_of {
 		static const bool value = __is_base_of(Base,Derived);

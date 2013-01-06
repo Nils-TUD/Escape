@@ -1,0 +1,226 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2011 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#pragma once
+
+#include <esc/common.h>
+#include <algorithm>
+#include <utility>
+
+#include <impl/helper.h>
+
+namespace std {
+	namespace detail {
+		// template-specialization is a workaround for gcc's limitation regarding variadic templates
+		// (sorry, unimplemented: cannot expand Args... into a fixed-length argument list)
+		template<size_t I,typename... Args>
+		class tuple_elements;
+
+		template<size_t V>
+		struct Size2Type {
+			enum { value = V };
+		};
+
+		template<size_t I,typename T,typename... Args>
+		class tuple_elements<I,T,Args...> : public tuple_elements<I - 1,Args...> {
+			typedef tuple_elements<I - 1,Args...> base_type;
+			typedef T type;
+
+		public:
+			explicit tuple_elements() : base_type(), value() {
+			}
+			explicit tuple_elements(const T &value_,const Args&... args)
+				: base_type(args...), value(value_) {
+			}
+			template<typename... Args2>
+			explicit tuple_elements(T&& value_,Args2&&... args)
+				: base_type(forward<Args2>(args)...), value(forward<T>(value_)) {
+			}
+			template<typename... Args2>
+			tuple_elements(const tuple_elements<I,T,Args2...>& t)
+				: base_type(t), value(t.value) {
+			}
+			template<typename... Args2>
+			tuple_elements(tuple_elements<I,T,Args2...>&& t)
+				: base_type(forward(t)), value(forward<T>(t.value)) {
+			}
+
+			template<typename... Args2>
+			tuple_elements& operator=(const tuple_elements<I,T,Args2...>& t) {
+				base_type::operator=(t);
+				value = t.value;
+				return *this;
+			}
+
+			using base_type::get;
+			type &get(const Size2Type<I>&) {
+				return value;
+			}
+			const type &get(const Size2Type<I>&) const {
+				return value;
+			}
+			void swap(tuple_elements<I,T,Args...>& t) {
+				base_type::swap(t);
+				std::swap<T>(value,t.value);
+			}
+
+			T value;
+		};
+		template<typename T,typename... Args>
+		class tuple_elements<1,T,Args...> {
+			typedef T type;
+
+		public:
+			explicit tuple_elements() : value() {
+			}
+			explicit tuple_elements(const T& value_) : value(value_) {
+			}
+			template<typename T2>
+			explicit tuple_elements(T2&& t) : value(forward<T2>(t)) {
+			}
+			template<typename T2>
+			tuple_elements(const tuple_elements<1,T2>& t) : value(t.value) {
+			}
+			template<typename T2>
+			tuple_elements(tuple_elements<1,T2>&& t) : value(forward<T2>(t.value)) {
+			}
+
+			template<typename T2>
+			tuple_elements& operator=(const tuple_elements<1,T2>& t) {
+				value = t.value;
+				return *this;
+			}
+
+			type &get(const Size2Type<1>&) {
+				return value;
+			}
+			const type &get(const Size2Type<1>&) const {
+				return value;
+			}
+			void swap(tuple_elements<1,T>& t) {
+				std::swap<T>(value,t.value);
+			}
+
+			T value;
+		};
+	}
+
+	template<typename... Args>
+	class tuple;
+
+	// 20.4.2.5 Tuple helper classes
+	template<class... Args>
+	struct tuple_size;
+	template<class... Args>
+	struct tuple_size<tuple<Args...>> {
+		static const size_t value = sizeof...(Args);
+	};
+
+	template<size_t I,typename... Args>
+	struct tuple_element;
+	template<size_t I,typename T,typename... Args>
+	struct tuple_element<I,T,Args...> {
+		typedef typename tuple_element<I - 1,Args...>::type type;
+	};
+	template<typename T,typename... Args>
+	struct tuple_element<0,T,Args...> {
+		typedef T type;
+	};
+
+	template<size_t I,typename... Args2>
+	typename tuple_element<I,Args2...>::type& get(tuple<Args2...>& t) noexcept;
+	template<size_t I,typename... Args2>
+	const typename tuple_element<I,Args2...>::type& get(const tuple<Args2...>& t) noexcept;
+
+	template<typename... Args>
+	class tuple {
+		template<size_t I,typename... Args2>
+		friend typename tuple_element<I,Args2...>::type& get(tuple<Args2...>& t) noexcept;
+		template<size_t I,typename... Args2>
+		friend const typename tuple_element<I,Args2...>::type& get(const tuple<Args2...>& t) noexcept;
+		template<typename... Args2>
+		friend class tuple;
+
+	public:
+		// 20.4.2.1, tuple construction
+		constexpr tuple() : _elements() {
+		}
+		explicit tuple(const Args&... args) : _elements(args...) {
+		}
+
+		// we have to remove this constructor if the number of elements isn't equal. otherwise
+		// the constructor for pair isn't considered
+		template<
+			typename... Args2,
+			typename = typename enable_if<sizeof...(Args) == sizeof...(Args2)>::type
+		>
+		explicit tuple(Args2&&... args) : _elements(forward<Args2>(args)...) {
+		}
+
+		tuple(const tuple&) = default;
+		tuple(tuple&&) = default;
+
+		template<typename... Args2>
+		tuple(const tuple<Args2...>& t) : _elements(t._elements) {
+		}
+		template<typename... Args2>
+		tuple(tuple<Args2...>&& t) : _elements(forward<Args2...>(t._elements)) {
+		}
+
+		template<typename T1, typename T2>
+		tuple(const pair<T1,T2>& p) : _elements(p.first,p.second) {
+			static_assert(sizeof...(Args) == 2,"Tuple does not have exactly 2 elements");
+		}
+		template<typename T1, typename T2>
+		tuple(pair<T1,T2>&& p) : _elements(forward<T1>(p.first),forward<T2>(p.second)) {
+			static_assert(sizeof...(Args) == 2,"Tuple does not have exactly 2 elements");
+		}
+
+		// 20.4.2.2, tuple assignment
+		template<typename... Args2>
+		tuple& operator=(const tuple<Args2...>& t) {
+			_elements = t._elements;
+			return *this;
+		}
+
+		// 20.4.2.3, tuple swap
+		void swap(tuple& t) {
+			_elements.swap(t._elements);
+		}
+
+	private:
+		detail::tuple_elements<sizeof...(Args),Args...> _elements;
+	};
+
+	// 20.4.2.4 Tuple creation functions
+	template<typename... Args>
+	inline tuple<Args...> make_tuple(Args&&... args) {
+		return tuple<Args...>(std::forward<Args>(args)...);
+	}
+
+	// 20.4.2.6 Element access
+	template<size_t I,typename... Args>
+	inline typename tuple_element<I,Args...>::type& get(tuple<Args...>& t) noexcept {
+		return t._elements.get(detail::Size2Type<sizeof...(Args) - I>());
+	}
+	template<size_t I,typename... Args>
+	inline const typename tuple_element<I,Args...>::type& get(const tuple<Args...>& t) noexcept {
+		return t._elements.get(detail::Size2Type<sizeof...(Args) - I>());
+	}
+}

@@ -203,6 +203,26 @@ bool test_doAssertOff(off_t received,off_t expected,const char *func,int line) {
 	return true;
 }
 
+bool test_doAssertFloat(float received,float expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Floats are not equal: Expected %f, got %f",
+				assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_doAssertDouble(double received,double expected,const char *func,int line) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d in %s line %d: Doubles are not equal: Expected %lf, got %lf",
+				assertCount,func,line,expected,received);
+		return false;
+	}
+	return true;
+}
+
 bool test_doAssertStr(const char *received,const char *expected,const char *func,int line) {
 	char *s1 = (char*)expected;
 	char *s2 = (char*)received;

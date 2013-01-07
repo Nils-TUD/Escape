@@ -95,7 +95,7 @@ static void prf_aprintc(char c) {
 					curbuf->str = dup;
 			}
 		}
-		if(curbuf->str) {
+		if(curbuf->str && (curbuf->dynamic || c == '\0' || curbuf->len + 1 < curbuf->size)) {
 			curbuf->str[curbuf->len] = c;
 			if(c != '\0')
 				curbuf->len++;

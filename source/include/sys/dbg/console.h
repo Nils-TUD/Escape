@@ -23,6 +23,9 @@
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
 
+#define BYTES_PER_LINE	16
+#define SCROLL_LINES	(VID_ROWS - 1)
+
 /* to make a screen-backup */
 typedef struct {
 	char screen[VID_COLS * VID_ROWS * 2];
@@ -41,6 +44,24 @@ void cons_start(void);
  * @param enabled the new value
  */
 void cons_setLogEnabled(bool enabled);
+
+/**
+ * Prints a dump of one line from <bytes> whose origin is <addr>.
+ *
+ * @param addr the address
+ * @param bytes the bytes to print. has to contain at least BYTES_PER_LINE bytes!
+ */
+void cons_dumpLine(uintptr_t addr,uint8_t *bytes);
+
+/**
+ * Runs a navigation loop, i.e. reads from keyboard and lets the user navigate via certain key-
+ * strokes. It calls fDisplay() after every change.
+ *
+ * @param addr the starting address
+ * @param fDisplay the callback. Receives the current goto-address you might want to print and
+ * 	the address that you user chose
+ */
+void cons_navigation(uintptr_t addr,void (*fDisplay)(const char* gotoAddr,uintptr_t addr));
 
 /**
  * Displays the given lines and provides a navigation through them

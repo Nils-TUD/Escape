@@ -29,27 +29,20 @@
 #include <errno.h>
 #include <string.h>
 
-#define BYTES_PER_LINE	16
-#define LINES			(VID_ROWS - 1)
-
-static void displayMem(sProc *p,uintptr_t addr);
+static void displayMem(const char *gotoAddr,uintptr_t addr);
 
 static sScreenBackup backup;
-static char gotoAddr[9];
-static size_t gotoPos = 0;
+static sProc *proc;
 
 int cons_cmd_mem(size_t argc,char **argv) {
-	sProc *p;
-	sKeyEvent ev;
 	uintptr_t addr = 0;
-	bool run = true;
 	if(argc < 2 || argc > 3) {
 		vid_printf("Usage: %s <pid> [<addr>]\n",argv[0]);
 		return -EINVAL;
 	}
 
-	p = proc_getByPid(strtoul(argv[1],NULL,10));
-	if(!p) {
+	proc = proc_getByPid(strtoul(argv[1],NULL,10));
+	if(!proc) {
 		vid_printf("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
 		return -ESRCH;
 	}
@@ -57,70 +50,24 @@ int cons_cmd_mem(size_t argc,char **argv) {
 		addr = (uintptr_t)strtoul(argv[2],NULL,16);
 
 	vid_backup(backup.screen,&backup.row,&backup.col);
-	while(run) {
-		displayMem(p,addr);
-		kb_get(&ev,KEV_PRESS,true);
-		switch(ev.keycode) {
-			case VK_UP:
-				addr -= BYTES_PER_LINE;
-				break;
-			case VK_DOWN:
-				addr += BYTES_PER_LINE;
-				break;
-			case VK_PGUP:
-				addr -= BYTES_PER_LINE * LINES;
-				break;
-			case VK_PGDOWN:
-				addr += BYTES_PER_LINE * LINES;
-				break;
-			case VK_0 ... VK_9:
-			case VK_A:
-			case VK_B:
-			case VK_C:
-			case VK_D:
-			case VK_E:
-			case VK_F:
-				if(gotoPos < sizeof(gotoAddr) - 1) {
-					gotoAddr[gotoPos++] = ev.character;
-					gotoAddr[gotoPos] = '\0';
-				}
-				break;
-			case VK_BACKSP:
-				if(gotoPos > 0)
-					gotoAddr[--gotoPos] = '\0';
-				break;
-			case VK_ENTER:
-				if(gotoPos > 0) {
-					addr = strtoul(gotoAddr,NULL,16);
-					gotoPos = 0;
-					gotoAddr[0] = '\0';
-				}
-				break;
-			case VK_ESC:
-			case VK_Q:
-				run = false;
-				break;
-		}
-	}
+	cons_navigation(addr,displayMem);
 	vid_restore(backup.screen,backup.row,backup.col);
 	return 0;
 }
 
-static void displayMem(sProc *p,uintptr_t addr) {
-	char procName[50];
+static void displayMem(const char *gotoAddr,uintptr_t addr) {
 	sStringBuffer buf;
-	uint y,i;
+	char procName[60];
+	uint y;
 	uint8_t *page = NULL;
 	uintptr_t lastAddr = 0;
-	addr &= ~((uintptr_t)BYTES_PER_LINE - 1);
 	vid_goto(0,0);
-	for(y = 0; y < LINES; y++) {
-		vid_printf("%p: ",addr);
+	for(y = 0; y < VID_ROWS - 1; y++) {
 		if(y == 0 || addr / PAGE_SIZE != lastAddr / PAGE_SIZE) {
 			if(page)
 				paging_removeAccess();
-			if(paging_isPresent(&p->pagedir,addr)) {
-				frameno_t frame = paging_getFrameNo(&p->pagedir,addr);
+			if(paging_isPresent(&proc->pagedir,addr)) {
+				frameno_t frame = paging_getFrameNo(&proc->pagedir,addr);
 				page = (uint8_t*)paging_getAccess(frame);
 			}
 			else
@@ -128,26 +75,7 @@ static void displayMem(sProc *p,uintptr_t addr) {
 			lastAddr = addr;
 		}
 
-		if(page) {
-			uint8_t *bytes = page + (addr & (PAGE_SIZE - 1));
-			for(i = 0; i < BYTES_PER_LINE; i++)
-				vid_printf("%02X ",bytes[i]);
-			vid_printf("| ");
-			for(i = 0; i < BYTES_PER_LINE; i++) {
-				if(isprint(bytes[i]) && bytes[i] < 0x80 && !isspace(bytes[i]))
-					vid_printf("%c",bytes[i]);
-				else
-					vid_printf(".");
-			}
-		}
-		else {
-			for(i = 0; i < BYTES_PER_LINE; i++)
-				vid_printf("?? ");
-			vid_printf("| ");
-			for(i = 0; i < BYTES_PER_LINE; i++)
-				vid_printf(".");
-		}
-		vid_printf("\n");
+		cons_dumpLine(addr,page ? page + (addr & (PAGE_SIZE - 1)) : NULL);
 		addr += BYTES_PER_LINE;
 	}
 	if(page)
@@ -157,6 +85,6 @@ static void displayMem(sProc *p,uintptr_t addr) {
 	buf.len = 0;
 	buf.size = sizeof(procName);
 	buf.str = procName;
-	prf_sprintf(&buf,"Process %d (%s)",p->pid,p->command);
+	prf_sprintf(&buf,"Process %d (%s)",proc->pid,proc->command);
 	vid_printf("\033[co;0;7]Goto: %s%|s\033[co]",gotoAddr,procName);
 }

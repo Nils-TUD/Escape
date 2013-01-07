@@ -25,6 +25,7 @@
 #include <sys/dbg/cmd/ls.h>
 #include <sys/dbg/cmd/mem.h>
 #include <sys/dbg/cmd/panic.h>
+#include <sys/dbg/cmd/dump.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/cache.h>
 #include <sys/task/smp.h>
@@ -61,6 +62,7 @@ static sCommand commands[] = {
 	{"help",NULL},
 	{"exit",NULL},
 	{"file",cons_cmd_file},
+	{"dump",cons_cmd_dump},
 	{"view",cons_cmd_view},
 	{"log",cons_cmd_log},
 	{"ls",cons_cmd_ls},
@@ -137,6 +139,83 @@ void cons_setLogEnabled(bool enabled) {
 		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	else
 		vid_setTargets(TARGET_SCREEN);
+}
+
+void cons_dumpLine(uintptr_t addr,uint8_t *bytes) {
+	size_t i;
+	vid_printf("%p: ",addr);
+	if(bytes) {
+		for(i = 0; i < BYTES_PER_LINE; i++)
+			vid_printf("%02X ",bytes[i]);
+		vid_printf("| ");
+		for(i = 0; i < BYTES_PER_LINE; i++) {
+			if(isprint(bytes[i]) && bytes[i] < 0x80 && !isspace(bytes[i]))
+				vid_printf("%c",bytes[i]);
+			else
+				vid_printf(".");
+		}
+	}
+	else {
+		for(i = 0; i < BYTES_PER_LINE; i++)
+			vid_printf("?? ");
+		vid_printf("| ");
+		for(i = 0; i < BYTES_PER_LINE; i++)
+			vid_printf(".");
+	}
+	vid_printf("\n");
+}
+
+void cons_navigation(uintptr_t addr,void (*fDisplay)(const char*,uintptr_t)) {
+	char gotoAddr[9] = "";
+	size_t gotoPos = 0;
+	sKeyEvent ev;
+	bool run = true;
+	while(run) {
+		fDisplay(gotoAddr,addr);
+		kb_get(&ev,KEV_PRESS,true);
+		switch(ev.keycode) {
+			case VK_UP:
+				addr -= BYTES_PER_LINE;
+				break;
+			case VK_DOWN:
+				addr += BYTES_PER_LINE;
+				break;
+			case VK_PGUP:
+				addr -= BYTES_PER_LINE * SCROLL_LINES;
+				break;
+			case VK_PGDOWN:
+				addr += BYTES_PER_LINE * SCROLL_LINES;
+				break;
+			case VK_0 ... VK_9:
+			case VK_A:
+			case VK_B:
+			case VK_C:
+			case VK_D:
+			case VK_E:
+			case VK_F:
+				if(gotoPos < sizeof(gotoAddr) - 1) {
+					gotoAddr[gotoPos++] = ev.character;
+					gotoAddr[gotoPos] = '\0';
+				}
+				break;
+			case VK_BACKSP:
+				if(gotoPos > 0)
+					gotoAddr[--gotoPos] = '\0';
+				break;
+			case VK_ENTER:
+				if(gotoPos > 0) {
+					addr = strtoul(gotoAddr,NULL,16);
+					addr &= ~((uintptr_t)BYTES_PER_LINE - 1);
+					gotoPos = 0;
+					gotoAddr[0] = '\0';
+				}
+				break;
+			case VK_ESC:
+			case VK_Q:
+				run = false;
+				break;
+		}
+	}
 }
 
 void cons_viewLines(const sLines *l) {

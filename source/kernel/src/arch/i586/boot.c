@@ -315,8 +315,8 @@ void boot_print(void) {
 			(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
 			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
 			if(mmap != NULL) {
-				vid_printf("\t%d: addr=%p, size=0x%08x, type=%s\n",
-						x,(uintptr_t)mmap->baseAddr,(size_t)mmap->length,
+				vid_printf("\t%d: addr=%#012Lx, size=%#012Lx, type=%s\n",
+						x,mmap->baseAddr,mmap->length,
 						mmap->type == MMAP_TYPE_AVAILABLE ? "free" : "used");
 				x++;
 			}

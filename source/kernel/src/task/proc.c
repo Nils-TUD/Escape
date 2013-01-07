@@ -150,6 +150,10 @@ void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args) {
 	if(p->command)
 		cache_free((char*)p->command);
 
+	/* store flag for the fs driver; TODO this is an ugly hack */
+	if(strstr(cmd,"/dev/fs") != NULL)
+		p->flags |= P_FS;
+
 	/* determine total length */
 	for(i = 0; i < argc; ++i) {
 		size_t curlen = strlen(curargs) + 1;

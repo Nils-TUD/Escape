@@ -210,11 +210,12 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,sFile **file) {
 	/* resolve path */
 	err = vfs_node_resolvePath(path,&nodeNo,&created,flags);
 	if(err == -EREALPATH) {
-		/* unfortunatly we have to check for the process-ids of ata and fs here. because e.g.
-		 * if the user tries to mount the device "/realfile" the userspace has no opportunity
-		 * to distinguish between virtual and real files. therefore fs will try to open this
-		 * path and shoot itself in the foot... */
-		if(pid == DISK_PID || pid == FS_PID)
+		const sProc *p = proc_getByPid(pid);
+		/* unfortunatly we have to check for fs here. because e.g. if the user tries to mount the
+		 * device "/realfile" the userspace has no opportunity to distinguish between virtual
+		 * and real files. therefore fs will try to open this path and shoot itself in the foot... */
+		/* TODO there has to be a better solution */
+		if(p->flags & P_FS)
 			return -ENOENT;
 
 		/* send msg to fs and wait for reply */

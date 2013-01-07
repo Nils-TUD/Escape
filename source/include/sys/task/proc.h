@@ -51,7 +51,8 @@
 /* process flags */
 #define P_ZOMBIE			1
 #define P_PREZOMBIE			2
-#define P_BOOT				4
+#define P_FS				4
+#define P_BOOT				8
 
 #define PLOCK_COUNT			5
 #define PLOCK_ENV			0

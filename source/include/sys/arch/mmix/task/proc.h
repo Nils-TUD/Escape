@@ -22,8 +22,6 @@
 #include <esc/common.h>
 
 #define DISK_PID			1
-#define RTC_PID				2
-#define FS_PID				3
 #define KEYBOARD_PID		8	/* just for debugging */
 
 typedef struct {

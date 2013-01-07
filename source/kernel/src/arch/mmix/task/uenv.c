@@ -167,7 +167,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	 * therefore, we have to prepare this again with the ELF-finisher. additionally, we have to
 	 * take care that we use elf_finishFromMem() for boot-modules and elf_finishFromFile() other-
 	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
-	if(t->proc->pid == DISK_PID || t->proc->pid == RTC_PID || t->proc->pid == FS_PID) {
+	if(t->proc->flags & P_BOOT) {
 		size_t i;
 		const sBootInfo *info = boot_getInfo();
 		for(i = 1; i < info->progCount; i++) {

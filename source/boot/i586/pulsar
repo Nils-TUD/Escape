@@ -2,12 +2,16 @@
 . boot/$ESC_TARGET/images.sh
 create_cd $1/dist $1/cd.iso
 
-cat >$ESC_TFTPDIR/config-$ESC_MAC <<EOF
+cat >$1/config-$ESC_MAC <<EOF
 root escape
-exec escape videomode=vesa
-load romdisk /dev/romdisk cd.iso
-load cmos /dev/cmos
-load fs /dev/fs /dev/romdisk iso9660
+exec boot/escape videomode=vesa
+load sbin/romdisk /dev/romdisk cd.iso
+load sbin/cmos /dev/cmos
+load sbin/fs /dev/fs /dev/romdisk iso9660
 load cd.iso
 EOF
-rsync --progress -RLp $1/dist/boot/escape $1/dist/sbin/* $1/cd.iso $ESC_SERVER
+
+files="boot/escape sbin/romdisk sbin/cmos sbin/fs"
+( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp cd.iso $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp config-$ESC_MAC $ESC_SERVER )

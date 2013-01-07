@@ -16,7 +16,7 @@ if [ "$ESC_BUILD" != "debug" ]; then
 	export ESC_BUILD="release"
 fi
 if [ -z "$ESC_SERVER" ]; then
-	export ESC_SERVER=localhost:/var/lib/tftpboot
+	export ESC_SERVER=/var/lib/tftpboot
 fi
 if [ -z "$ESC_MAC" ]; then
 	export ESC_MAC="00-04-75-d7-0c-f8"

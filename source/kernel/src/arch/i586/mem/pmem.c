@@ -23,6 +23,7 @@
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/log.h>
 #include <string.h>
 
 uintptr_t bitmapStart;
@@ -47,6 +48,7 @@ void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	/* FIXME that does not really work; we have to get more control about the physical memory */
 	uintptr_t phys = KERNEL_P_ADDR + boot_getKernelSize() + boot_getModuleSize() + PAGE_SIZE - 1;
 	phys &= ~(PAGE_SIZE - 1);
+
 	uintptr_t virt = *stackBegin,end = (uintptr_t)*bitmap + BITMAP_PAGE_COUNT / 8;
 	bitmapStart = phys + (*stackSize + 1) * PAGE_SIZE;
 	while(virt < end) {
@@ -81,8 +83,20 @@ void pmem_markAvailable(void) {
 	/* now walk through the memory-map and mark all free areas as free */
 	for(mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
 			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
-			pmem_markRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
+		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
+			/* take care that we don't use memory above 4G */
+			if(mmap->baseAddr >= 0x100000000ULL) {
+				log_printf("Skipping memory above 4G: %#Lx .. %#Lx\n",
+						mmap->baseAddr,mmap->baseAddr + mmap->length);
+				continue;
+			}
+			uint64_t end = mmap->baseAddr + mmap->length;
+			if(end >= 0x100000000ULL) {
+				log_printf("Skipping memory above 4G: %#Lx .. %#Lx\n",0x100000000ULL,end);
+				end = 0xFFFFFFFF;
+			}
+			pmem_markRangeUsed(mmap->baseAddr,end,false);
+		}
 	}
 
 	/* mark the bitmap used in itself */

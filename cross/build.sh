@@ -166,7 +166,7 @@ if $BUILD_GCC; then
 	ln -sf $DIST/bin/$TARGET-gcc $DIST/bin/$TARGET-cc
 
 	# libgcc (only i586 supports dynamic linking)
-	if [ "$TARGET" = "i586" ]; then
+	if [ "$ARCH" = "i586" ]; then
 		# first, generate crt*S.o and libc for libgcc_s. Its not necessary to have a full libc (we'll have
 		# one later). But at least its necessary to provide the correct startup-files
 		TMPCRT0=`mktemp`

@@ -51,7 +51,7 @@ int cons_cmd_mem(size_t argc,char **argv) {
 			addr = (uintptr_t)strtoul(argv[2],NULL,16);
 	}
 	else
-		proc = proc_getRunning();
+		proc = proc_getByPid(proc_getRunning());
 
 	vid_backup(backup.screen,&backup.row,&backup.col);
 	cons_navigation(addr,displayMem);

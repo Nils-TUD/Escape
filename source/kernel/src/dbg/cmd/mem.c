@@ -36,18 +36,22 @@ static sProc *proc;
 
 int cons_cmd_mem(size_t argc,char **argv) {
 	uintptr_t addr = 0;
-	if(argc < 2 || argc > 3) {
-		vid_printf("Usage: %s <pid> [<addr>]\n",argv[0]);
+	if(argc < 1 || argc > 3) {
+		vid_printf("Usage: %s [<pid> [<addr>]]\n",argv[0]);
 		return -EINVAL;
 	}
 
-	proc = proc_getByPid(strtoul(argv[1],NULL,10));
-	if(!proc) {
-		vid_printf("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
-		return -ESRCH;
+	if(argc > 1) {
+		proc = proc_getByPid(strtoul(argv[1],NULL,10));
+		if(!proc) {
+			vid_printf("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
+			return -ESRCH;
+		}
+		if(argc > 2)
+			addr = (uintptr_t)strtoul(argv[2],NULL,16);
 	}
-	if(argc > 2)
-		addr = (uintptr_t)strtoul(argv[2],NULL,16);
+	else
+		proc = proc_getRunning();
 
 	vid_backup(backup.screen,&backup.row,&backup.col);
 	cons_navigation(addr,displayMem);

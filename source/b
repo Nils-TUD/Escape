@@ -15,8 +15,8 @@ fi
 if [ "$ESC_BUILD" != "debug" ]; then
 	export ESC_BUILD="release"
 fi
-if [ -z "$ESC_TFTPDIR" ]; then
-	export ESC_TFTPDIR=/var/lib/tftpboot
+if [ -z "$ESC_SERVER" ]; then
+	export ESC_SERVER=localhost:/var/lib/tftpboot
 fi
 if [ -z "$ESC_MAC" ]; then
 	export ESC_MAC="00-04-75-d7-0c-f8"
@@ -28,7 +28,7 @@ if [ -z "$ESC_GDB_MMIX" ]; then
 	export ESC_GDB_MMIX="/opt/mmix/bin/mmix-gdbtui"
 fi
 if [ -z "$ESC_QEMU" ]; then
-   export ESC_QEMU=qemu-system-i386
+	export ESC_QEMU=qemu-system-i386
 fi
 
 # target dependend values
@@ -82,12 +82,12 @@ help() {
 	echo "    ESC_SIM:                 the simulator to use. This does only affect i586."
 	echo "                             You can choose between 'bochs', 'vbox', 'vmware'"
 	echo "                             and 'qemu' (=default)."
-    echo "    ESC_TFTPDIR:             the directory of your tftp-server which is used for"
-    echo "                             qemu network booting. The default is"
-    echo "                             /var/lib/tftpboot."
-    echo "    ESC_MAC:                 the MAC address of the real machine for which to"
-    echo "                             write the pulsar config for. The default is"
-    echo "                             00-04-75-d7-0c-f8."
+	echo "    ESC_SERVER:              the host and directory of your tftp-server which"
+	echo "                             is used for network booting. The default is"
+	echo "                             localhost:/var/lib/tftpboot."
+	echo "    ESC_MAC:                 the MAC address of the real machine for which to"
+	echo "                             write the pulsar config for. The default is"
+	echo "                             00-04-75-d7-0c-f8."
 	echo "    ESC_GDB_I586:            the executable of gdb to use for ESC_TARGET=i586."
 	echo "                             The default is 'gdb --tui'."
 	echo "    ESC_GDB_MMIX:            the executable of gdb to use for ESC_TARGET=mmix."

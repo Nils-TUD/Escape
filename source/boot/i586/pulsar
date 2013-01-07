@@ -10,4 +10,4 @@ load cmos /dev/cmos
 load fs /dev/fs /dev/romdisk iso9660
 load cd.iso
 EOF
-cp -f $1/dist/boot/escape $1/dist/sbin/* $1/cd.iso $ESC_TFTPDIR/escape
+rsync --progress -RLp $1/dist/boot/escape $1/dist/sbin/* $1/cd.iso $ESC_SERVER

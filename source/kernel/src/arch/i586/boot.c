@@ -188,8 +188,15 @@ size_t boot_getUsableMemCount(void) {
 	for(mmap = mb->mmapAddr;
 		(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
 		mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
-			size += mmap->length;
+		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
+			/* take care that we don't use memory above 4G */
+			if(mmap->baseAddr >= 0x100000000ULL)
+				continue;
+			size_t len = mmap->length;
+			if(mmap->baseAddr + mmap->length >= 0x100000000ULL)
+				len = 0x100000000ULL - mmap->baseAddr;
+			size += len;
+		}
 	}
 	return size;
 }

@@ -30,13 +30,12 @@ uintptr_t bitmapStart;
 
 void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	size_t memSize,defPageCount;
-	const sBootInfo *mb = boot_getInfo();
 
 	/* put the MM-stack behind the multiboot-pagetables */
 	*stackBegin = boot_getMMStackBegin();
 
 	/* calculate mm-stack-size */
-	memSize = mb->memUpper * K;
+	memSize = boot_getUsableMemCount();
 	defPageCount = (memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT / PAGE_SIZE);
 	*stackSize = (defPageCount + (PAGE_SIZE - 1) / sizeof(frameno_t)) / (PAGE_SIZE / sizeof(frameno_t));
 

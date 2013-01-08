@@ -137,7 +137,6 @@ int main(void) {
 	sleep(20);
 	kb_waitOutBuf();
 	kbdata = inbyte(IOPORT_KB_DATA);
-#endif
 	/* send echo-command */
 	outbyte(IOPORT_KB_DATA,0xEE);
 	sleep(20);
@@ -146,6 +145,7 @@ int main(void) {
 	sleep(20);
 	if(kbdata != 0xEE)
 		error("Keyboard-echo failed: Got 0x%x, expected 0xEE",kbdata);
+#endif
 
 	/* enable keyboard */
 	outbyte(IOPORT_KB_DATA,0xF4);

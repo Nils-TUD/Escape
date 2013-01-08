@@ -28,6 +28,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/smp.h>
 #include <sys/intrpt.h>
+#include <sys/boot.h>
 #include <sys/cpu.h>
 #include <sys/util.h>
 #include <sys/video.h>
@@ -150,7 +151,8 @@ void paging_init(void) {
 	proc0PD[ADDR_TO_PDINDEX(MAPPED_PTS_START)] = pd | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 
 	/* create page-tables for multiboot-stuff */
-	addr += PT_ENTRY_COUNT * PAGE_SIZE;
+	addr = MAX(addr,KERNEL_P_ADDR + boot_getKernelSize() + boot_getModuleSize());
+	addr = (addr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	for(i = 0; i < BOOTSTRAP_PTS; i++) {
 		memclear((void*)(addr | KERNEL_AREA),PAGE_SIZE);
 		proc0PD[ADDR_TO_PDINDEX(BOOTSTRAP_AREA) + i] = addr | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;

@@ -44,9 +44,9 @@ void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	*bitmap = (tBitmap*)(((uintptr_t)*bitmap + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
 
 	/* map that area */
-	/* FIXME that does not really work; we have to get more control about the physical memory */
-	uintptr_t phys = KERNEL_P_ADDR + boot_getKernelSize() + boot_getModuleSize() + PAGE_SIZE - 1;
-	phys &= ~(PAGE_SIZE - 1);
+	uintptr_t phys = KERNEL_P_ADDR + boot_getKernelSize() + boot_getModuleSize()
+			+ BOOTSTRAP_PTS * PAGE_SIZE;
+	phys = (phys + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
 	uintptr_t virt = *stackBegin,end = (uintptr_t)*bitmap + BITMAP_PAGE_COUNT / 8;
 	bitmapStart = phys + (*stackSize + 1) * PAGE_SIZE;

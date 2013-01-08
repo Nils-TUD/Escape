@@ -22,8 +22,10 @@
 #include <sys/arch/i586/apic.h>
 #include <sys/task/smp.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/sllnodes.h>
 #include <sys/log.h>
 #include <sys/util.h>
+#include <sys/video.h>
 #include <string.h>
 
 #define BDA_EBDA			0x40E	/* TODO not always available? */
@@ -88,6 +90,7 @@ static bool acpi_checksumValid(const void *r,size_t len);
 static sRSDP *acpi_findIn(uintptr_t start,size_t len);
 
 static sRSDP *rsdp;
+static sSLList acpiTables;
 
 bool acpi_find(void) {
 	/* first kb of extended bios data area (EBDA) */
@@ -109,6 +112,8 @@ void acpi_parse(void) {
 		size = sizeof(uint64_t);
 	}
 
+	sll_init(&acpiTables,slln_allocNode,slln_freeNode);
+
 	/* first map the RSDT. we assume that it covers only one page */
 	uintptr_t addr = (uintptr_t)rsdt;
 	size_t off = addr & (PAGE_SIZE - 1);
@@ -121,7 +126,6 @@ void acpi_parse(void) {
 	}
 
 	/* now walk through the tables behind the RSDT */
-	uintptr_t tables[count];
 	uintptr_t curDest = ACPI_AREA + off + rsdt->length;
 	uintptr_t curPage = curDest & ~(PAGE_SIZE - 1);
 	uintptr_t start = (uintptr_t)(rsdt + 1);
@@ -139,13 +143,14 @@ void acpi_parse(void) {
 		uintptr_t tmp = paging_mapToTemp(&frm,1);
 		sRSDT *tmptbl = (sRSDT*)(tmp + tbloff);
 		if((uintptr_t)tmptbl + tmptbl->length > tmp + PAGE_SIZE) {
+			size_t tbllen = tmptbl->length;
+			paging_unmapFromTemp(1);
 			/* determine the real number of required pages */
-			tmpPages = (tbloff + tmptbl->length + PAGE_SIZE - 1) / PAGE_SIZE;
+			tmpPages = (tbloff + tbllen + PAGE_SIZE - 1) / PAGE_SIZE;
 			if(tmpPages > TEMP_MAP_AREA_SIZE / PAGE_SIZE) {
-				log_printf("Skipping ACPI table %zu (too large: %zu)\n",i,tmptbl->length);
+				log_printf("Skipping ACPI table %zu (too large: %zu)\n",i,tbllen);
 				continue;
 			}
-			paging_unmapFromTemp(1);
 			/* map it again */
 			frameno_t framenos[tmpPages];
 			for(j = 0; j < tmpPages; ++j)
@@ -175,17 +180,22 @@ void acpi_parse(void) {
 			}
 		}
 
-		/* copy the table */
-		memcpy((void*)curDest,tmptbl,tmptbl->length);
-		tables[i] = curDest;
-		curDest += tmptbl->length;
+		if(acpi_checksumValid(tmptbl,tmptbl->length)) {
+			/* copy the table */
+			memcpy((void*)curDest,tmptbl,tmptbl->length);
+			sll_append(&acpiTables,(void*)curDest);
+			curDest += tmptbl->length;
+		}
+		else
+			log_printf("Checksum of table %zu is invalid. Skipping\n",i);
 		paging_unmapFromTemp(tmpPages);
 	}
 
 	/* walk through the table and search for APIC entries */
 	cpuid_t id = apic_getId();
-	for(i = 0; i < count; i++) {
-		sRSDT *tbl = (sRSDT*)tables[i];
+	sSLNode *n;
+	for(n = sll_begin(&acpiTables); n != NULL; n = n->next) {
+		sRSDT *tbl = (sRSDT*)n->data;
 		if(acpi_checksumValid(tbl,tbl->length) && tbl->signature == SIG('A','P','I','C')) {
 			sRSDTAPIC *rapic = (sRSDTAPIC*)tbl;
 			sAPIC *apic = rapic->apics;
@@ -222,4 +232,20 @@ static sRSDP *acpi_findIn(uintptr_t start,size_t len) {
 			return r;
 	}
 	return NULL;
+}
+
+void acpi_print(void) {
+	sSLNode *n;
+	size_t i = 0;
+	vid_printf("ACPI tables:\n");
+	for(n = sll_begin(&acpiTables); n != NULL; n = n->next, i++) {
+		sRSDT *tbl = (sRSDT*)n->data;
+		vid_printf("\tTable%zu:\n",i);
+		vid_printf("\t\tsignature: %.4s\n",(char*)&tbl->signature);
+		vid_printf("\t\tlength: %u\n",tbl->length);
+		vid_printf("\t\trevision: %u\n",tbl->revision);
+		vid_printf("\t\toemId: %.6s\n",tbl->oemId);
+		vid_printf("\t\toemTableId: %.8s\n",tbl->oemTableId);
+		vid_printf("\n");
+	}
 }

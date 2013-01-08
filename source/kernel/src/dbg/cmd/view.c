@@ -23,6 +23,7 @@
 #ifdef __i386__
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/ioapic.h>
+#include <sys/arch/i586/acpi.h>
 #endif
 #include <sys/task/proc.h>
 #include <sys/task/sched.h>
@@ -57,36 +58,11 @@ typedef struct {
 
 static void view_printc(char c);
 static void view_proc(size_t argc,char **argv);
-static void view_procs(void);
-static void view_sched(void);
-static void view_signals(void);
 static void view_thread(size_t argc,char **argv);
-static void view_threads(void);
-static void view_vfstree(void);
-static void view_gft(void);
-static void view_msgs(void);
-static void view_cow(void);
-static void view_cache(void);
-static void view_kheap(void);
 static void view_pdirall(size_t argc,char **argv);
 static void view_pdiruser(size_t argc,char **argv);
 static void view_pdirkernel(size_t argc,char **argv);
 static void view_regions(size_t argc,char **argv);
-static void view_pmem(void);
-static void view_pmemcont(void);
-static void view_pmemstack(void);
-static void view_shm(void);
-static void view_swapmap(void);
-static void view_cpu(void);
-#ifdef __i386__
-static void view_gdt(void);
-static void view_ioapic(void);
-#endif
-static void view_timer(void);
-static void view_boot(void);
-static void view_locks(void);
-static void view_events(void);
-static void view_smp(void);
 
 static sProc *view_getProc(size_t argc,char **argv);
 static const sThread *view_getThread(size_t argc,char **argv);
@@ -95,36 +71,37 @@ static sLines lines;
 static sScreenBackup backup;
 static sView views[] = {
 	{"proc",(fView)view_proc},
-	{"procs",(fView)view_procs},
-	{"sched",(fView)view_sched},
-	{"signals",(fView)view_signals},
+	{"procs",(fView)proc_printAll},
+	{"sched",(fView)sched_print},
+	{"signals",(fView)sig_print},
 	{"thread",(fView)view_thread},
-	{"threads",(fView)view_threads},
-	{"vfstree",(fView)view_vfstree},
-	{"gft",(fView)view_gft},
-	{"msgs",(fView)view_msgs},
-	{"cow",(fView)view_cow},
-	{"cache",(fView)view_cache},
-	{"kheap",(fView)view_kheap},
+	{"threads",(fView)thread_printAll},
+	{"vfstree",(fView)vfs_node_printTree},
+	{"gft",(fView)vfs_printGFT},
+	{"msgs",(fView)vfs_printMsgs},
+	{"cow",(fView)cow_print},
+	{"cache",(fView)cache_print},
+	{"kheap",(fView)kheap_print},
 	{"pdirall",(fView)view_pdirall},
 	{"pdiruser",(fView)view_pdiruser},
 	{"pdirkernel",(fView)view_pdirkernel},
 	{"regions",(fView)view_regions},
-	{"pmem",(fView)view_pmem},
-	{"pmemcont",(fView)view_pmemcont},
-	{"pmemstack",(fView)view_pmemstack},
-	{"shm",(fView)view_shm},
-	{"swapmap",(fView)view_swapmap},
-	{"cpu",(fView)view_cpu},
+	{"pmem",(fView)pmem_print},
+	{"pmemcont",(fView)pmem_printCont},
+	{"pmemstack",(fView)pmem_printStack},
+	{"shm",(fView)shm_print},
+	{"swapmap",(fView)swmap_print},
+	{"cpu",(fView)cpu_print},
 #ifdef __i386__
-	{"gdt",(fView)view_gdt},
-	{"ioapic",(fView)view_ioapic},
+	{"gdt",(fView)gdt_print},
+	{"ioapic",(fView)ioapic_print},
+	{"acpi",(fView)acpi_print},
 #endif
-	{"timer",(fView)view_timer},
-	{"boot",(fView)view_boot},
-	{"locks",(fView)view_locks},
-	{"events",(fView)view_events},
-	{"smp",(fView)view_smp},
+	{"timer",(fView)timer_print},
+	{"boot",(fView)boot_print},
+	{"locks",(fView)lock_print},
+	{"events",(fView)ev_print},
+	{"smp",(fView)smp_print},
 };
 
 int cons_cmd_view(size_t argc,char **argv) {
@@ -180,40 +157,10 @@ static void view_proc(size_t argc,char **argv) {
 	if(p != NULL)
 		proc_print(p);
 }
-static void view_procs(void) {
-	proc_printAll();
-}
-static void view_sched(void) {
-	sched_print();
-}
-static void view_signals(void) {
-	sig_print();
-}
 static void view_thread(size_t argc,char **argv) {
 	const sThread *t = view_getThread(argc,argv);
 	if(t != NULL)
 		thread_print(t);
-}
-static void view_threads(void) {
-	thread_printAll();
-}
-static void view_vfstree(void) {
-	vfs_node_printTree();
-}
-static void view_gft(void) {
-	vfs_printGFT();
-}
-static void view_msgs(void) {
-	vfs_printMsgs();
-}
-static void view_cow(void) {
-	cow_print();
-}
-static void view_cache(void) {
-	cache_print();
-}
-static void view_kheap(void) {
-	kheap_print();
 }
 static void view_pdirall(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
@@ -238,47 +185,6 @@ static void view_regions(size_t argc,char **argv) {
 		if(p != NULL)
 			vmm_print(p->pid);
 	}
-}
-static void view_pmem(void) {
-	pmem_print();
-}
-static void view_pmemcont(void) {
-	pmem_printCont();
-}
-static void view_pmemstack(void) {
-	pmem_printStack();
-}
-static void view_shm(void) {
-	shm_print();
-}
-static void view_swapmap(void) {
-	swmap_print();
-}
-static void view_cpu(void) {
-	cpu_print();
-}
-#ifdef __i386__
-static void view_gdt(void) {
-	gdt_print();
-}
-static void view_ioapic(void) {
-	ioapic_print();
-}
-#endif
-static void view_timer(void) {
-	timer_print();
-}
-static void view_boot(void) {
-	boot_print();
-}
-static void view_locks(void) {
-	lock_print();
-}
-static void view_events(void) {
-	ev_print();
-}
-static void view_smp(void) {
-	smp_print();
 }
 
 static sProc *view_getProc(size_t argc,char **argv) {

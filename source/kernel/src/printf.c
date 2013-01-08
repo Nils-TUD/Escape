@@ -46,7 +46,7 @@ static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags)
 static int prf_printpad(sPrintEnv *env,int count,uint flags);
 static int prf_printu(sPrintEnv *env,ullong n,uint base,char *chars);
 static int prf_printn(sPrintEnv *env,llong n);
-static int prf_puts(sPrintEnv *env,const char *str);
+static int prf_puts(sPrintEnv *env,const char *str,ssize_t len);
 static void prf_aprintc(char c);
 
 static char hexCharsBig[] = "0123456789ABCDEF";
@@ -116,8 +116,9 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 	llong n;
 	ullong u;
 	size_t size;
-	uint pad,width,base,flags;
+	uint pad,base,flags;
 	bool readFlags;
+	int precision;
 
 	while(1) {
 		/* wait for a '%' */
@@ -179,6 +180,22 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 			while(*fmt >= '0' && *fmt <= '9') {
 				pad = pad * 10 + (*fmt - '0');
 				fmt++;
+			}
+		}
+
+		/* read precision */
+		precision = -1;
+		if(*fmt == '.') {
+			if(*++fmt == '*') {
+				precision = va_arg(ap, int);
+				fmt++;
+			}
+			else {
+				precision = 0;
+				while(*fmt >= '0' && *fmt <= '9') {
+					precision = precision * 10 + (*fmt - '0');
+					fmt++;
+				}
 			}
 		}
 
@@ -268,11 +285,11 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 			/* string */
 			case 's':
 				s = va_arg(ap, char*);
-				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
-					width = strlen(s);
-					prf_printpad(env,pad - width,flags);
-				}
-				n = prf_puts(env,s);
+				if(precision == -1)
+					precision = strlen(s);
+				if(pad > 0 && !(flags & FFL_PADRIGHT))
+					prf_printpad(env,pad - precision,flags);
+				n = prf_puts(env,s,precision);
 				if(pad > 0 && (flags & FFL_PADRIGHT))
 					prf_printpad(env,pad - n,flags);
 				break;
@@ -381,10 +398,10 @@ static int prf_printn(sPrintEnv *env,llong n) {
 	return res + 1;
 }
 
-static int prf_puts(sPrintEnv *env,const char *str) {
+static int prf_puts(sPrintEnv *env,const char *str,ssize_t len) {
 	const char *begin = str;
 	char c;
-	while((c = *str)) {
+	while((len == -1 || len-- > 0) && (c = *str)) {
 		env->print(c);
 		str++;
 	}

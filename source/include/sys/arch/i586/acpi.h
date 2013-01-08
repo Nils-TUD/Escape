@@ -23,3 +23,4 @@
 
 bool acpi_find(void);
 void acpi_parse(void);
+void acpi_print(void);

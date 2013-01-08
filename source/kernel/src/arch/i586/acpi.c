@@ -141,11 +141,11 @@ void acpi_parse(void) {
 		if((uintptr_t)tmptbl + tmptbl->length > tmp + PAGE_SIZE) {
 			/* determine the real number of required pages */
 			tmpPages = (tbloff + tmptbl->length + PAGE_SIZE - 1) / PAGE_SIZE;
-			paging_unmapFromTemp(1);
 			if(tmpPages > TEMP_MAP_AREA_SIZE / PAGE_SIZE) {
 				log_printf("Skipping ACPI table %zu (too large: %zu)\n",i,tmptbl->length);
 				continue;
 			}
+			paging_unmapFromTemp(1);
 			/* map it again */
 			frameno_t framenos[tmpPages];
 			for(j = 0; j < tmpPages; ++j)

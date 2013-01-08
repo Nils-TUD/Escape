@@ -67,7 +67,7 @@
  *             |             APIC area             |
  * 0xC1C09000: +-----------------------------------+     |
  *             |             ACPI area             |     |
- * 0xC1C11000: +-----------------------------------+     |
+ * 0xC1C19000: +-----------------------------------+     |
  *             |             TSS area              |     |
  * 0x????????: +-----------------------------------+     |
  *             |                ...                |     |
@@ -127,7 +127,7 @@
 
 /* for mapping the ACPI stuff */
 #define ACPI_AREA				(APIC_AREA + APIC_AREA_SIZE)
-#define ACPI_AREA_SIZE			(PAGE_SIZE * 8)
+#define ACPI_AREA_SIZE			(PAGE_SIZE * 16)
 
 /* for mapping the TSS's for APs (have to be page-aligned) */
 #define TSS_AREA				(ACPI_AREA + ACPI_AREA_SIZE)

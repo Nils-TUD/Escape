@@ -24,6 +24,7 @@
 #include <sys/mem/paging.h>
 #include <sys/log.h>
 #include <sys/util.h>
+#include <string.h>
 
 #define BDA_EBDA			0x40E	/* TODO not always available? */
 #define BIOS_AREA			0xE0000
@@ -111,50 +112,80 @@ void acpi_parse(void) {
 	/* first map the RSDT. we assume that it covers only one page */
 	uintptr_t addr = (uintptr_t)rsdt;
 	size_t off = addr & (PAGE_SIZE - 1);
-	paging_map(ACPI_AREA,&addr,1,PG_PRESENT | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
+	paging_map(ACPI_AREA,&addr,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
 	rsdt = (sRSDT*)(ACPI_AREA + off);
-	size_t i,count = (rsdt->length - sizeof(sRSDT)) / size;
-
-	/* now walk through the tables behind the RSDT */
-	uintptr_t table[count];
-	uintptr_t min = 0xFFFFFFFF, max = 0;
-	uintptr_t start = (uintptr_t)(rsdt + 1);
-	for(i = 0; i < count; i++) {
-		if(start + (i + 1) * size > ACPI_AREA + PAGE_SIZE) {
-			log_printf("ACPI RSDT pointer @ %p out of bounce (%p..%p). Assuming one CPU.",
-					start + i * size,ACPI_AREA,ACPI_AREA + PAGE_SIZE);
-			return;
-		}
-		if(size == sizeof(uint32_t))
-			table[i] = *(uint32_t*)(start + i * size);
-		else
-			table[i] = *(uint64_t*)(start + i * size);
-		/* determine the address range for the RSDT's */
-		if(table[i] < min)
-			min = table[i];
-		if(table[i] > max)
-			max = table[i];
-	}
-
-	/* map the area, if possible */
-	size_t rsdtSize = (max + PAGE_SIZE * 2 - 1) - (min & ~(PAGE_SIZE - 1));
-	if(rsdtSize > ACPI_AREA_SIZE - PAGE_SIZE) {
-		log_printf("ACPI RSDT area too large (need %zu bytes). Assuming one CPU.",rsdtSize);
+	size_t i,j,count = (rsdt->length - sizeof(sRSDT)) / size;
+	if((uintptr_t)rsdt + rsdt->length > ACPI_AREA + PAGE_SIZE) {
+		log_printf("RSDT larger than one page. Assuming one CPU.\n");
 		return;
 	}
-	addr = min;
-	for(i = 0; i < rsdtSize / PAGE_SIZE; i++, addr += PAGE_SIZE) {
-		paging_map(ACPI_AREA + PAGE_SIZE * (i + 1),&addr,1,
-				PG_PRESENT | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
+
+	/* now walk through the tables behind the RSDT */
+	uintptr_t tables[count];
+	uintptr_t curDest = ACPI_AREA + off + rsdt->length;
+	uintptr_t curPage = curDest & ~(PAGE_SIZE - 1);
+	uintptr_t start = (uintptr_t)(rsdt + 1);
+	for(i = 0; i < count; i++) {
+		sRSDT *tbl;
+		if(size == sizeof(uint32_t))
+			tbl = (sRSDT*)*(uint32_t*)(start + i * size);
+		else
+			tbl = (sRSDT*)*(uint64_t*)(start + i * size);
+
+		/* map it to a temporary place; try one page first and extend it if necessary */
+		size_t tmpPages = 1;
+		size_t tbloff = (uintptr_t)tbl & (PAGE_SIZE - 1);
+		frameno_t frm = (uintptr_t)tbl / PAGE_SIZE;
+		uintptr_t tmp = paging_mapToTemp(&frm,1);
+		sRSDT *tmptbl = (sRSDT*)(tmp + tbloff);
+		if((uintptr_t)tmptbl + tmptbl->length > tmp + PAGE_SIZE) {
+			/* determine the real number of required pages */
+			tmpPages = (tbloff + tmptbl->length + PAGE_SIZE - 1) / PAGE_SIZE;
+			paging_unmapFromTemp(1);
+			if(tmpPages > TEMP_MAP_AREA_SIZE / PAGE_SIZE) {
+				log_printf("Skipping ACPI table %zu (too large: %zu)\n",i,tmptbl->length);
+				continue;
+			}
+			/* map it again */
+			frameno_t framenos[tmpPages];
+			for(j = 0; j < tmpPages; ++j)
+				framenos[j] = ((uintptr_t)tbl + j * PAGE_SIZE) / PAGE_SIZE;
+			tmp  = paging_mapToTemp(framenos,tmpPages);
+			tmptbl = (sRSDT*)(tmp + tbloff);
+		}
+
+		/* do we have to extend the mapping in the ACPI-area? */
+		if((curDest + tmptbl->length) > curPage + PAGE_SIZE) {
+			uintptr_t nextPage = (curDest + tmptbl->length + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+			size_t pages = (nextPage - curPage) / PAGE_SIZE;
+			if(nextPage + PAGE_SIZE > ACPI_AREA + ACPI_AREA_SIZE) {
+				log_printf("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
+						nextPage + PAGE_SIZE,ACPI_AREA + ACPI_AREA_SIZE);
+				paging_unmapFromTemp(tmpPages);
+				continue;
+			}
+			while(pages-- > 0) {
+				frameno_t frame = pmem_allocate(FRM_KERNEL);
+				if(!frame) {
+					log_printf("Not enough memory for ACPI tables. Assuming one CPU.\n");
+					return;
+				}
+				curPage += PAGE_SIZE;
+				paging_map(curPage,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+			}
+		}
+
+		/* copy the table */
+		memcpy((void*)curDest,tmptbl,tmptbl->length);
+		tables[i] = curDest;
+		curDest += tmptbl->length;
+		paging_unmapFromTemp(tmpPages);
 	}
-	/* change addresses accordingly */
-	for(i = 0; i < count; i++)
-		table[i] = ACPI_AREA + PAGE_SIZE + (min & (PAGE_SIZE - 1)) + table[i] - min;
 
 	/* walk through the table and search for APIC entries */
 	cpuid_t id = apic_getId();
 	for(i = 0; i < count; i++) {
-		sRSDT *tbl = (sRSDT*)table[i];
+		sRSDT *tbl = (sRSDT*)tables[i];
 		if(acpi_checksumValid(tbl,tbl->length) && tbl->signature == SIG('A','P','I','C')) {
 			sRSDTAPIC *rapic = (sRSDTAPIC*)tbl;
 			sAPIC *apic = rapic->apics;

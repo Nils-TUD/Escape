@@ -40,3 +40,4 @@ if env['ARCH'] == 'i586':
 	)
 	env.Install('$BINDIR', shlib)
 	env.Install('$DISTDIR/lib', shlib)
+	env.EscapeMap('libc.map', shlib)

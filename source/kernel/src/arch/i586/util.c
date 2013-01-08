@@ -203,7 +203,7 @@ static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t ms
 		if(rstart != ((uintptr_t)&kernelStack) - TMP_STACK_SIZE && rstart != mstart)
 			ebp = (uint32_t*)(mstart + ((uintptr_t)ebp & (PAGE_SIZE - 1)));
 		/* prevent page-fault */
-		if((uintptr_t)ebp < mstart ||
+		if((uintptr_t)ebp < mstart || (uintptr_t)(ebp + 1) < mstart ||
 				(((uintptr_t)(ebp + 1) + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1)) >= mend)
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;

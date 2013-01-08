@@ -44,14 +44,13 @@ static void vid_removeBIOSCursor(void);
 static fPrintc printFunc = vid_putchar;
 static ushort col = 0;
 static ushort row = 0;
-static uchar color = 0;
+static uchar color = (BLACK << 4) | WHITE;
 static uint targets = TARGET_SCREEN | TARGET_LOG;
 static klock_t vidLock;
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
 	vid_clearScreen();
-	color = (BLACK << 4) | WHITE;
 }
 
 void vid_goto(ushort r,ushort c) {

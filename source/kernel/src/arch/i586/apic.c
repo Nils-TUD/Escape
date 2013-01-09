@@ -60,6 +60,7 @@
 #define ICR_DESTSHORT_ALL		(0x2 << 18)
 #define ICR_DESTSHORT_NOTSELF	(0x3 << 18)
 
+static void apic_writeIPI(uint32_t high,uint32_t low);
 static uint32_t apic_read(uint32_t reg);
 static void apic_write(uint32_t reg,uint32_t value);
 
@@ -95,25 +96,29 @@ void apic_enable(void) {
 }
 
 void apic_sendIPITo(cpuid_t id,uint8_t vector) {
-	apic_write(APIC_REG_ICR_HIGH,id << 24);
-	apic_write(APIC_REG_ICR_LOW,ICR_DESTSHORT_NO | ICR_LEVEL_ASSERT |
+	apic_writeIPI(id << 24,ICR_DESTSHORT_NO | ICR_LEVEL_ASSERT |
 			ICR_DEST_PHYS | ICR_DELMODE_FIXED | vector);
 }
 
 void apic_sendInitIPI(void) {
-	apic_write(APIC_REG_ICR_HIGH,0);
-	apic_write(APIC_REG_ICR_LOW,ICR_DESTSHORT_NOTSELF | ICR_LEVEL_ASSERT |
+	apic_writeIPI(0,ICR_DESTSHORT_NOTSELF | ICR_LEVEL_ASSERT |
 			ICR_DEST_PHYS | ICR_DELMODE_INIT);
 }
 
 void apic_sendStartupIPI(uintptr_t startAddr) {
-	apic_write(APIC_REG_ICR_HIGH,0);
-	apic_write(APIC_REG_ICR_LOW,ICR_DESTSHORT_NOTSELF | ICR_LEVEL_ASSERT |
+	apic_writeIPI(0,ICR_DESTSHORT_NOTSELF | ICR_LEVEL_ASSERT |
 			ICR_DEST_PHYS | ICR_DELMODE_STARTUP | ((startAddr / PAGE_SIZE) & 0xFF));
 }
 
 void apic_eoi(void) {
 	apic_write(APIC_REG_EOI,0);
+}
+
+static void apic_writeIPI(uint32_t high,uint32_t low) {
+	while((apic_read(APIC_REG_ICR_LOW) & ICR_DELSTAT_PENDING))
+		__asm__ ("pause");
+	apic_write(APIC_REG_ICR_HIGH,high);
+	apic_write(APIC_REG_ICR_LOW,low);
 }
 
 static uint32_t apic_read(uint32_t reg) {

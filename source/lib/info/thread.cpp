@@ -60,12 +60,8 @@ namespace info {
 		std::istream::size_type unlimited = std::numeric_limits<streamsize>::max();
 		is.ignore(unlimited,' ') >> t._tid;
 		is.ignore(unlimited,' ') >> t._pid;
-		is.ignore(unlimited,' ') >> t._procName;
-		// the process name might be "name" or "name arg1 arg2". so, check if the last read char
-		// was already the newline. if not, skip everything until the next newline.
-		is.unget();
-		if(is.peek() != '\n')
-			is.ignore(unlimited,'\n');
+		is.ignore(unlimited,' ') >> std::ws;
+		is.getline(t._procName,'\n');
 		is.ignore(unlimited,' ') >> t._state;
 		is.ignore(unlimited,' ') >> t._flags;
 		is.ignore(unlimited,' ') >> t._prio;

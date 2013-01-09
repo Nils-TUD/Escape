@@ -21,6 +21,7 @@
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
+#include <esc/driver/vterm.h>
 #include <info/thread.h>
 #include <string.h>
 #include <stdio.h>
@@ -153,16 +154,26 @@ int main(int argc,char **argv) {
 	// sort
 	std::sort(threads.begin(),threads.end(),compareThreads);
 
+	// get console-size
+	sVTSize consSize;
+	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
+		error("Unable to determine screensize");
+
 	// print header
 	cout << right;
 	cout << setw(maxTid) << "ID";
-	cout << " STATE";
-	cout << " PRIO";
-	cout << setw(maxStack + 1) << "STACK";
-	cout << setw(maxScheds + 1) << "SCHED";
-	cout << setw(maxSyscalls + 1) << "SYSC";
-	cout << setw(maxRuntime + 8) << "TIME";
+	cout << " " << "STATE";
+	cout << " " << "PRIO";
+	cout << " " << setw(maxStack) << "STACK";
+	cout << " " << setw(maxScheds) << "SCHED";
+	cout << " " << setw(maxSyscalls) << "SYSC";
+	cout << " " << setw(maxRuntime + 7) << "TIME";
 	cout << "    CPU PROC" << '\n';
+
+	// calc with to the proc-command
+	size_t width2cmd = maxTid + SSTRLEN("STATE") + SSTRLEN("PRIO") + maxStack + maxScheds +
+			maxSyscalls + maxRuntime;
+	width2cmd += 7 + 7 + SSTRLEN("   CPU ");
 
 	// print threads
 	for(auto it = threads.begin(); it != threads.end(); ++it) {
@@ -170,6 +181,9 @@ int main(int argc,char **argv) {
 		float cyclePercent = 0;
 		if(t->cycles() != 0)
 			cyclePercent = (float)(100. / (totalCycles / (double)t->cycles()));
+		size_t cmdwidth = min(consSize.width - (width2cmd + 1 + count_digits(t->pid(),10)),
+				t->procName().length());
+		string procName = t->procName().substr(0,cmdwidth);
 
 		cout << setw(maxTid) << t->tid() << " ";
 		cout << setw(5) << states[t->state()] << " ";
@@ -186,7 +200,7 @@ int main(int argc,char **argv) {
 		cout << setw(3) << time << " ";
 		cout << setfillobj(' ');
 		cout << setw(5) << setprecision(1) << cyclePercent << "% ";
-		cout << t->pid() << ':' << t->procName() << '\n';
+		cout << t->pid() << ':' << procName << '\n';
 	}
 
 	return EXIT_SUCCESS;

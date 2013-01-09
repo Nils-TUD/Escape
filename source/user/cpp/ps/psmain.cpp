@@ -131,7 +131,7 @@ int main(int argc,char **argv) {
 		error("Unable to parse groups from file");
 
 	uid_t uid = own ? getuid() : 0;
-	vector<process*> procs = process::get_list();
+	vector<process*> procs = process::get_list(false,0,true);
 
 	// determine max-values (we want to have a min-width here :))
 	process::pid_type maxPid = 10;
@@ -206,21 +206,21 @@ int main(int argc,char **argv) {
 
 	// print header
 	cout << setw(maxPid) << "ID";
-	cout << setw(maxPpid + 1) << right << "PID";
+	cout << " " << setw(maxPpid) << right << "PID";
 	cout << " " << setw(maxUid) << left << "USER";
 	cout << " " << setw(maxGid) << left << "GROUP";
-	cout << setw((streamsize)maxPmem + 2) << right << "PMEM";
-	cout << setw((streamsize)maxShmem + 2) << right << "SHMEM";
-	cout << setw((streamsize)maxSmem + 2) << right << "SMEM";
-	cout << setw((streamsize)maxInput + 2) << right << "IN";
-	cout << setw((streamsize)maxOutput + 2) << right << "OUT";
-	cout << setw((streamsize)maxRuntime + 8) << right << "TIME";
+	cout << " " << setw((streamsize)maxPmem + 1) << right << "PMEM";
+	cout << " " << setw((streamsize)maxShmem + 1) << right << "SHMEM";
+	cout << " " << setw((streamsize)maxSmem + 1) << right << "SMEM";
+	cout << " " << setw((streamsize)maxInput + 1) << right << "IN";
+	cout << " " << setw((streamsize)maxOutput + 1) << right << "OUT";
+	cout << " " << setw((streamsize)maxRuntime + 7) << right << "TIME";
 	cout << "   CPU NAME" << '\n';
 
 	// calc with to the process-command
 	size_t width2cmd = maxPid + maxPpid + maxGid + maxUid + maxPmem + maxShmem + maxSmem +
 			maxInput + maxOutput + maxRuntime;
-	width2cmd += 2 * 5 + 4 + SSTRLEN("  CPU ");
+	width2cmd += 10 + 5 + 7 + SSTRLEN("  CPU ");
 
 	// print processes (and threads)
 	for(auto it = procs.begin(); it != procs.end(); ++it) {

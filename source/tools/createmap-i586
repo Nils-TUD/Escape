@@ -1,2 +1,2 @@
-#!/bin/bash
-nm $1 | grep " T " | awk '{ print $1" "$3 }'
+#!/bin/sh
+nm $1 | grep " T\|t " | awk '{ print $1" "$3 }'

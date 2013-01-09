@@ -141,6 +141,7 @@ def SetLinkAddr(env, static):
 
 def EscapeMap(env, target, source):
 	map = env.Command(target, source, 'tools/createmap-$ARCH $SOURCE > $TARGET')
+	env.Depends(map, '#tools/createmap-$ARCH')
 	env.Install('$MAPDIR', map)
 
 def EscapeDump(env, target, source):

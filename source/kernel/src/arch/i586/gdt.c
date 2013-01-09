@@ -416,7 +416,7 @@ static sTSS *gdt_getFreeTSS(size_t *index) {
 }
 
 void gdt_print(void) {
-	size_t i;
+	size_t i,j;
 	size_t count = smp_getCPUCount();
 	sCPU **cpus = smp_getCPUs();
 	vid_printf("GDTs:\n");
@@ -424,10 +424,10 @@ void gdt_print(void) {
 		sGDTDesc *gdt = (sGDTDesc*)allgdts[cpus[i]->id].offset;
 		vid_printf("\tGDT of CPU %d\n",cpus[i]->id);
 		if(gdt) {
-			for(i = 0;i < GDT_ENTRY_COUNT; i++) {
+			for(j = 0; j < GDT_ENTRY_COUNT; j++) {
 				vid_printf("\t\t%d: address=%02x%02x:%04x, size=%02x%04x, access=%02x\n",
-						i,gdt[i].addrHigh,gdt[i].addrMiddle,gdt[i].addrLow,
-						gdt[i].sizeHigh,gdt[i].sizeLow,gdt[i].access);
+						j,gdt[j].addrHigh,gdt[j].addrMiddle,gdt[j].addrLow,
+						gdt[j].sizeHigh,gdt[j].sizeLow,gdt[j].access);
 			}
 		}
 		else

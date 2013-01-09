@@ -483,6 +483,7 @@ ssize_t paging_clonePages(pagedir_t *src,pagedir_t *dst,uintptr_t virtSrc,uintpt
 		virtDst += PAGE_SIZE;
 		count--;
 	}
+	smp_flushTLB(src);
 	spinlock_release(&pagingLock);
 	return pts;
 

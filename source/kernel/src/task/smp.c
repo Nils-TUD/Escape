@@ -80,7 +80,7 @@ void smp_setId(cpuid_t old,cpuid_t new) {
 	if(cpu)
 		cpu->id = new;
 	if(!cpus) {
-		cpus = (sCPU**)cache_alloc(cpuCount * sizeof(sCPU*));
+		cpus = (sCPU**)cache_calloc(cpuCount,sizeof(sCPU*));
 		if(!cpus)
 			util_panic("Not enough mem for cpu-array");
 	}
@@ -146,21 +146,20 @@ void smp_wakeupCPU(void) {
 	}
 }
 
-void smp_flushTLB(A_UNUSED pagedir_t *pdir) {
-#if 0
-	sSLNode *n;
+void smp_flushTLB(pagedir_t *pdir) {
+	if(!cpus || cpuCount == 1)
+		return;
+
+	size_t i;
 	cpuid_t cur = smp_getCurId();
-	for(n = sll_begin(&cpus); n != NULL; n = n->next) {
-		sCPU *cpu = (sCPU*)n->data;
-		if(cpu->ready && cpu->id != cur) {
-			sThread *t = smp_getThreadOf(cpu->id);
-			if((uintptr_t)t == 0xc084fdbc - 0x18)
-				util_panic("hier");
-			if(&t->proc->pagedir == pdir)
-				smp_sendIPI(cpu->id,IPI_FLUSH_TLB);
+	for(i = 0; i < cpuCount; i++) {
+		sCPU *cpu = cpus[i];
+		if(cpu && cpu->ready && i != cur) {
+			sThread *t = cpu->thread;
+			if(t && &t->proc->pagedir == pdir)
+				smp_sendIPI(i,IPI_FLUSH_TLB);
 		}
 	}
-#endif
 }
 
 bool smp_isBSP(void) {

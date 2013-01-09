@@ -24,12 +24,12 @@
 #include <esc/sllist.h>
 
 /* the IPIs we can send */
-#define IPI_WORK			0x31
-#define IPI_TERM			0x32
-#define IPI_FLUSH_TLB		0x33
-#define IPI_WAIT			0x34
-#define IPI_HALT			0x35
-#define IPI_FLUSH_TLB_ACK	0x36
+#define IPI_WORK			49
+#define IPI_TERM			50
+#define IPI_FLUSH_TLB		51
+#define IPI_WAIT			52
+#define IPI_HALT			53
+#define IPI_FLUSH_TLB_ACK	54
 
 #ifdef __i386__
 #include <sys/arch/i586/task/smp.h>

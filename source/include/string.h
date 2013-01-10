@@ -282,6 +282,17 @@ char *strrchr(const char *str,int ch);
 char *strstr(const char *str1,const char *str2);
 
 /**
+ * The function strcasestr() returns a pointer to the first occurrence of str2 in str1, or NULL
+ * if no match is found. If the length of str2 is zero, then strstr () will simply return str1.
+ * In contrast to strstr(), it uses case-insensitive comparison.
+ *
+ * @param str1 the string to search
+ * @param str2 the substring to search for
+ * @return the pointer to the match or NULL
+ */
+char *strcasestr(const char *str1,const char *str2);
+
+/**
  * Returns the length of the initial portion of str1 which consists only of characters that are
  * part of str2.
  *

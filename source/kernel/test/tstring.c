@@ -50,6 +50,7 @@ static void test_strchr(void);
 static void test_strchri(void);
 static void test_strrchr(void);
 static void test_strstr(void);
+static void test_strcasestr(void);
 static void test_strspn(void);
 static void test_strcspn(void);
 static void test_strpbrk(void);
@@ -93,6 +94,7 @@ static void test_string(void) {
 	test_strchri();
 	test_strrchr();
 	test_strstr();
+	test_strcasestr();
 	test_strspn();
 	test_strcspn();
 	test_strpbrk();
@@ -620,6 +622,25 @@ static void test_strstr(void) {
 	test_assertTrue(strstr(str1,"g") == str1 + 8);
 	test_assertTrue(strstr("","abc") == NULL);
 	test_assertTrue(strstr("","") == NULL);
+
+	test_caseSucceeded();
+}
+
+static void test_strcasestr(void) {
+	char str1[] = "aBc DeF gHi";
+	test_caseStart("Testing strcasestr()");
+
+	test_assertTrue(strcasestr(str1,"Abc") == str1);
+	test_assertTrue(strcasestr(str1,"deF") == str1 + 4);
+	test_assertTrue(strcasestr(str1,"ghI") == str1 + 8);
+	test_assertTrue(strcasestr(str1,"A") == str1);
+	test_assertTrue(strcasestr(str1,"aBC DEf ghi") == str1);
+	test_assertTrue(strcasestr(str1,"aBc ghi") == NULL);
+	test_assertTrue(strcasestr(str1,"") == NULL);
+	test_assertTrue(strcasestr(str1,"dEF ghi") == str1 + 4);
+	test_assertTrue(strcasestr(str1,"G") == str1 + 8);
+	test_assertTrue(strcasestr("","ABC") == NULL);
+	test_assertTrue(strcasestr("","") == NULL);
 
 	test_caseSucceeded();
 }

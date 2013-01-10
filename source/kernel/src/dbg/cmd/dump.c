@@ -67,7 +67,7 @@ int cons_cmd_dump(size_t argc,char **argv) {
 
 		off_t end = vfs_seek(pid,file,0,SEEK_END);
 		backend.startPos = 0;
-		backend.maxPos = end;
+		backend.maxPos = end & ~(BYTES_PER_LINE - 1);
 		backend.loadLine = loadLine;
 		backend.getInfo = getLineInfo;
 		backend.lineMatches = lineMatches;

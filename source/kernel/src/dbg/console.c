@@ -184,7 +184,9 @@ void cons_navigation(const sNaviBackend *backend,void *data) {
 	size_t searchPos = 0;
 	sKeyEvent ev;
 	bool run = true;
+	assert((backend->maxPos & (BYTES_PER_LINE - 1)) == 0);
 	while(run) {
+		assert((addr & (BYTES_PER_LINE - 1)) == 0);
 		cons_convSearch(search,searchClone,searchPos);
 		cons_display(backend,data,search,searchClone,searchMode,&addr);
 		searchMode = SEARCH_NONE;

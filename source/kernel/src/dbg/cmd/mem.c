@@ -63,7 +63,7 @@ int cons_cmd_mem(size_t argc,char **argv) {
 	vid_backup(backup.screen,&backup.row,&backup.col);
 
 	backend.startPos = addr;
-	backend.maxPos = 0xFFFFFFFF;
+	backend.maxPos = 0xFFFFFFFF & ~(BYTES_PER_LINE - 1);
 	backend.loadLine = loadLine;
 	backend.getInfo = getLineInfo;
 	backend.lineMatches = lineMatches;

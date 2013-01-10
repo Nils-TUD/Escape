@@ -2,14 +2,18 @@
 . boot/$ESC_TARGET/images.sh
 create_cd $1/dist $1/cd.iso
 
-cat >$ESC_TFTPDIR/config-52-54-00-12-34-56 <<EOF
+cat >$1/config-52-54-00-12-34-56 <<EOF
 root escape
-exec escape videomode=vesa
-load romdisk /dev/romdisk cd.iso
-load cmos /dev/cmos
-load fs /dev/fs /dev/romdisk iso9660
+exec boot/escape videomode=vesa
+load sbin/romdisk /dev/romdisk cd.iso
+load sbin/cmos /dev/cmos
+load sbin/fs /dev/fs /dev/romdisk iso9660
 load cd.iso
 EOF
-rsync -RLp $1/dist/boot/escape $1/dist/sbin/* $1/cd.iso $ESC_SERVER
+
+files="boot/escape sbin/romdisk sbin/cmos sbin/fs"
+( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp cd.iso $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp config-52-54-00-12-34-56 $ESC_SERVER )
 
 $ESC_QEMU -boot n -bootp pulsar -tftp $ESC_SERVER $2 | tee log.txt

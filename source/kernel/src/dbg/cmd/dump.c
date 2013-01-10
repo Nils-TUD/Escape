@@ -30,13 +30,18 @@
 #include <errno.h>
 #include <string.h>
 
-static void displayContent(const char *gotoAddr,uintptr_t offset);
+static const char *getLineInfo(void *data,uintptr_t addr);
+static uint8_t *loadLine(void *data,uintptr_t addr);
+static bool lineMatches(void *data,uintptr_t addr,const char *search,size_t searchlen);
+static void displayLine(void *data,uintptr_t addr,uint8_t *bytes);
+static uintptr_t gotoAddr(void *data,const char *gotoAddr);
 
 static sScreenBackup backup;
-static uint8_t buffer[(VID_ROWS - 1) * BYTES_PER_LINE];
+static uint8_t buffer[BYTES_PER_LINE + 1];
 static pid_t pid;
 static sFile *file = NULL;
 static char filename[50];
+static sNaviBackend backend;
 
 int cons_cmd_dump(size_t argc,char **argv) {
 	sStringBuffer buf;
@@ -59,7 +64,17 @@ int cons_cmd_dump(size_t argc,char **argv) {
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res >= 0) {
 		vid_backup(backup.screen,&backup.row,&backup.col);
-		cons_navigation(0,displayContent);
+
+		off_t end = vfs_seek(pid,file,0,SEEK_END);
+		backend.startPos = 0;
+		backend.maxPos = end;
+		backend.loadLine = loadLine;
+		backend.getInfo = getLineInfo;
+		backend.lineMatches = lineMatches;
+		backend.displayLine = displayLine;
+		backend.gotoAddr = gotoAddr;
+		cons_navigation(&backend,NULL);
+
 		vid_restore(backup.screen,backup.row,backup.col);
 
 		vfs_closeFile(pid,file);
@@ -67,22 +82,35 @@ int cons_cmd_dump(size_t argc,char **argv) {
 	return res;
 }
 
-static void displayContent(const char *gotoAddr,uintptr_t offset) {
-	memclear(buffer,sizeof(buffer));
+static const char *getLineInfo(A_UNUSED void *data,A_UNUSED uintptr_t addr) {
+	return filename;
+}
 
+static uint8_t *loadLine(A_UNUSED void *data,uintptr_t addr) {
+	static uintptr_t lastAddr = -1;
 	bool valid = true;
-	if(vfs_seek(pid,file,offset,SEEK_SET) < 0)
-		valid = false;
-	if(valid && vfs_readFile(pid,file,buffer,sizeof(buffer)) < 0)
-		valid = false;
-
-	uint y;
-	uint8_t *bytes = buffer;
-	vid_goto(0,0);
-	for(y = 0; y < VID_ROWS - 1; y++) {
-		cons_dumpLine(offset,valid ? bytes : NULL);
-		bytes += BYTES_PER_LINE;
-		offset += BYTES_PER_LINE;
+	if(lastAddr != addr) {
+		memclear(buffer,sizeof(buffer));
+		if(vfs_seek(pid,file,addr,SEEK_SET) < 0)
+			valid = false;
+		if(valid && vfs_readFile(pid,file,buffer,sizeof(buffer)) < 0)
+			valid = false;
+		if(valid)
+			buffer[sizeof(buffer) - 1] = '\0';
+		lastAddr = addr;
 	}
-	vid_printf("\033[co;0;7]Goto: %s%|s\033[co]",gotoAddr,filename);
+	return valid ? buffer : NULL;
+}
+
+static bool lineMatches(void *data,uintptr_t addr,const char *search,size_t searchlen) {
+	return cons_multiLineMatches(&backend,data,addr,search,searchlen);
+}
+
+static void displayLine(A_UNUSED void *data,uintptr_t addr,uint8_t *bytes) {
+	cons_dumpLine(addr,bytes);
+}
+
+static uintptr_t gotoAddr(A_UNUSED void *data,const char *addr) {
+	uintptr_t off = strtoul(addr,NULL,16);
+	return off & ~((uintptr_t)BYTES_PER_LINE - 1);
 }

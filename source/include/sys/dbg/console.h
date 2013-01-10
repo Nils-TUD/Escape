@@ -23,8 +23,11 @@
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
 
-#define BYTES_PER_LINE	16
-#define SCROLL_LINES	(VID_ROWS - 1)
+#define BYTES_PER_LINE		16
+#define SCROLL_LINES		(VID_ROWS - 1)
+#define SEARCH_NONE			0
+#define SEARCH_FORWARD		1
+#define SEARCH_BACKWARDS	2
 
 /* to make a screen-backup */
 typedef struct {
@@ -32,6 +35,22 @@ typedef struct {
 	ushort row;
 	ushort col;
 } sScreenBackup;
+
+typedef uint8_t *(*fLoadLine)(void *data,uintptr_t addr);
+typedef const char *(*fGetInfo)(void *data,uintptr_t addr);
+typedef bool (*fLineMatches)(void *data,uintptr_t addr,const char *search,size_t searchlen);
+typedef void (*fDisplayLine)(void *data,uintptr_t addr,uint8_t *bytes);
+typedef uintptr_t (*fGotoAddr)(void *data,const char *gotoAddr);
+
+typedef struct {
+	fLoadLine loadLine;
+	fGetInfo getInfo;
+	fLineMatches lineMatches;
+	fDisplayLine displayLine;
+	fGotoAddr gotoAddr;
+	uintptr_t startPos;
+	uintptr_t maxPos;
+} sNaviBackend;
 
 /**
  * Starts the debugging-console
@@ -55,13 +74,12 @@ void cons_dumpLine(uintptr_t addr,uint8_t *bytes);
 
 /**
  * Runs a navigation loop, i.e. reads from keyboard and lets the user navigate via certain key-
- * strokes. It calls fDisplay() after every change.
+ * strokes. It calls backend->loadLine() to get the content.
  *
- * @param addr the starting address
- * @param fDisplay the callback. Receives the current goto-address you might want to print and
- * 	the address that you user chose
+ * @param backend the backend to use
+ * @param data will be passed to all backend-functions
  */
-void cons_navigation(uintptr_t addr,void (*fDisplay)(const char* gotoAddr,uintptr_t addr));
+void cons_navigation(const sNaviBackend *backend,void *data);
 
 /**
  * Displays the given lines and provides a navigation through them
@@ -69,3 +87,16 @@ void cons_navigation(uintptr_t addr,void (*fDisplay)(const char* gotoAddr,uintpt
  * @param l the lines
  */
 void cons_viewLines(const sLines *l);
+
+/**
+ * Uses <backend> to search for matches that may span multiple lines.
+ *
+ * @param backend the backend
+ * @param data will be passed to all backend-functions
+ * @param addr the current address
+ * @param search the term to search for
+ * @param searchlen the length of the search term
+ * @return true if the line @ <addr> matches
+ */
+bool cons_multiLineMatches(const sNaviBackend *backend,void *data,uintptr_t addr,
+                           const char *search,size_t searchlen);

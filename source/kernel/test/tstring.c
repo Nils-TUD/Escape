@@ -111,20 +111,20 @@ static void test_string(void) {
 static void test_atoi(void) {
 	test_caseStart("Testing atoi()");
 
-	if(!test_assertInt(atoi("123"),123)) return;
-	if(!test_assertInt(atoi("1"),1)) return;
-	if(!test_assertInt(atoi("0"),0)) return;
-	if(!test_assertInt(atoi("123456789"),123456789)) return;
-	if(!test_assertInt(atoi("-1"),-1)) return;
-	if(!test_assertInt(atoi("-546"),-546)) return;
-	if(!test_assertInt(atoi("  45  "),45)) return;
-	if(!test_assertInt(atoi("\t\n\r12.4\n"),12)) return;
-	if(!test_assertInt(atoi("2147483647"),2147483647LL)) return;
-	if(!test_assertInt(atoi("-2147483648"),-2147483648LL)) return;
-	if(!test_assertInt(atoi(""),0)) return;
-	if(!test_assertInt(atoi("-"),0)) return;
-	if(!test_assertInt(atoi("abc"),0)) return;
-	if(!test_assertInt(atoi("a123b"),0)) return;
+	test_assertInt(atoi("123"),123);
+	test_assertInt(atoi("1"),1);
+	test_assertInt(atoi("0"),0);
+	test_assertInt(atoi("123456789"),123456789);
+	test_assertInt(atoi("-1"),-1);
+	test_assertInt(atoi("-546"),-546);
+	test_assertInt(atoi("  45  "),45);
+	test_assertInt(atoi("\t\n\r12.4\n"),12);
+	test_assertInt(atoi("2147483647"),2147483647LL);
+	test_assertInt(atoi("-2147483648"),-2147483648LL);
+	test_assertInt(atoi(""),0);
+	test_assertInt(atoi("-"),0);
+	test_assertInt(atoi("abc"),0);
+	test_assertInt(atoi("a123b"),0);
 
 	test_caseSucceeded();
 }
@@ -132,24 +132,24 @@ static void test_atoi(void) {
 static void test_atoll(void) {
 	test_caseStart("Testing atoll()");
 
-	if(!test_assertLLInt(atoll("123"),123)) return;
-	if(!test_assertLLInt(atoll("1"),1)) return;
-	if(!test_assertLLInt(atoll("0"),0)) return;
-	if(!test_assertLLInt(atoll("123456789"),123456789)) return;
-	if(!test_assertLLInt(atoll("-1"),-1)) return;
-	if(!test_assertLLInt(atoll("-546"),-546)) return;
-	if(!test_assertLLInt(atoll("  45  "),45)) return;
-	if(!test_assertLLInt(atoll("\t\n\r12.4\n"),12)) return;
-	if(!test_assertLLInt(atoll("2147483647"),2147483647LL)) return;
-	if(!test_assertLLInt(atoll("-2147483648"),-2147483648LL)) return;
-	if(!test_assertLLInt(atoll("8278217191231"),8278217191231LL)) return;
-	if(!test_assertLLInt(atoll("-8278217191231"),-8278217191231LL)) return;
-	if(!test_assertLLInt(atoll("9223372036854775807"),9223372036854775807LL)) return;
-	if(!test_assertLLInt(atoll("-9223372036854775808"),-9223372036854775808LL)) return;
-	if(!test_assertLLInt(atoll(""),0)) return;
-	if(!test_assertLLInt(atoll("-"),0)) return;
-	if(!test_assertLLInt(atoll("abc"),0)) return;
-	if(!test_assertLLInt(atoll("a123b"),0)) return;
+	test_assertLLInt(atoll("123"),123);
+	test_assertLLInt(atoll("1"),1);
+	test_assertLLInt(atoll("0"),0);
+	test_assertLLInt(atoll("123456789"),123456789);
+	test_assertLLInt(atoll("-1"),-1);
+	test_assertLLInt(atoll("-546"),-546);
+	test_assertLLInt(atoll("  45  "),45);
+	test_assertLLInt(atoll("\t\n\r12.4\n"),12);
+	test_assertLLInt(atoll("2147483647"),2147483647LL);
+	test_assertLLInt(atoll("-2147483648"),-2147483648LL);
+	test_assertLLInt(atoll("8278217191231"),8278217191231LL);
+	test_assertLLInt(atoll("-8278217191231"),-8278217191231LL);
+	test_assertLLInt(atoll("9223372036854775807"),9223372036854775807LL);
+	test_assertLLInt(atoll("-9223372036854775808"),-9223372036854775808LL);
+	test_assertLLInt(atoll(""),0);
+	test_assertLLInt(atoll("-"),0);
+	test_assertLLInt(atoll("abc"),0);
+	test_assertLLInt(atoll("a123b"),0);
 
 	test_caseSucceeded();
 }
@@ -163,17 +163,17 @@ static bool test_itoacpy(int n,const char *expected) {
 static void test_itoa(void) {
 	test_caseStart("Testing itoa()");
 
-	if(!test_itoacpy(1,"1")) return;
-	if(!test_itoacpy(2,"2")) return;
-	if(!test_itoacpy(8,"8")) return;
-	if(!test_itoacpy(12,"12")) return;
-	if(!test_itoacpy(7123,"7123")) return;
-	if(!test_itoacpy(2147483647LL,"2147483647")) return;
-	if(!test_itoacpy(0,"0")) return;
-	if(!test_itoacpy(-1,"-1")) return;
-	if(!test_itoacpy(-10,"-10")) return;
-	if(!test_itoacpy(-8123,"-8123")) return;
-	if(!test_itoacpy(-2147483648LL,"-2147483648")) return;
+	test_itoacpy(1,"1");
+	test_itoacpy(2,"2");
+	test_itoacpy(8,"8");
+	test_itoacpy(12,"12");
+	test_itoacpy(7123,"7123");
+	test_itoacpy(2147483647LL,"2147483647");
+	test_itoacpy(0,"0");
+	test_itoacpy(-1,"-1");
+	test_itoacpy(-10,"-10");
+	test_itoacpy(-8123,"-8123");
+	test_itoacpy(-2147483648LL,"-2147483648");
 
 	test_caseSucceeded();
 }
@@ -204,24 +204,24 @@ static void test_memset(void) {
 	test_caseStart("Testing memset()");
 
 	memset(buf,' ',10);
-	if(!test_assertStr((char*)buf,"          ")) return;
+	test_assertStr((char*)buf,"          ");
 	memset(buf,'a',10);
-	if(!test_assertStr((char*)buf,"aaaaaaaaaa")) return;
+	test_assertStr((char*)buf,"aaaaaaaaaa");
 	memset(buf,'a',1);
 	memset(buf + 1,'b',2);
 	memset(buf + 3,'c',3);
 	memset(buf + 6,'d',4);
-	if(!test_assertStr((char*)buf,"abbcccdddd")) return;
+	test_assertStr((char*)buf,"abbcccdddd");
 	memset(buf,'X',0);
-	if(!test_assertStr((char*)buf,"abbcccdddd")) return;
+	test_assertStr((char*)buf,"abbcccdddd");
 	memset(buf,'X',5);
-	if(!test_assertStr((char*)buf,"XXXXXcdddd")) return;
+	test_assertStr((char*)buf,"XXXXXcdddd");
 	memset(buf,'X',6);
-	if(!test_assertStr((char*)buf,"XXXXXXdddd")) return;
+	test_assertStr((char*)buf,"XXXXXXdddd");
 	memset(buf,'X',7);
-	if(!test_assertStr((char*)buf,"XXXXXXXddd")) return;
+	test_assertStr((char*)buf,"XXXXXXXddd");
 	memset(buf,'X',8);
-	if(!test_assertStr((char*)buf,"XXXXXXXXdd")) return;
+	test_assertStr((char*)buf,"XXXXXXXXdd");
 
 	/* test alignment */
 	for(i = 0; i < 8; i++) {
@@ -272,13 +272,13 @@ static void test_memcpy(void) {
 
 	test_assertPtr(memcpy(dest,src,10),dest);
 	dest[10] = '\0';
-	if(!test_assertStr((char*)dest,"0123456789")) return;
+	test_assertStr((char*)dest,"0123456789");
 	test_assertPtr(memcpy(dest,src,4),dest);
 	dest[4] = '\0';
-	if(!test_assertStr((char*)dest,"0123")) return;
+	test_assertStr((char*)dest,"0123");
 	test_assertPtr(memcpy(dest,src,0),dest);
 	dest[0] = '\0';
-	if(!test_assertStr((char*)dest,"")) return;
+	test_assertStr((char*)dest,"");
 
 	/* test alignment */
 	for(i = 0; i < 8; i++) {
@@ -305,11 +305,11 @@ static void test_memmove(void) {
 	char dest[4];
 	test_caseStart("Testing memmove()");
 
-	if(!test_assertStr(memmove(dest,str1,4),"abc")) return;
-	if(!test_assertStr(memmove(str1 + 1,str1,4),"abc") || !test_assertStr(str1,"aabc")) return;
-	if(!test_assertStr(memmove(str2,str2 + 1,3),"ef") || !test_assertStr(str2,"ef")) return;
-	if(!test_assertStr(memmove(str3,str3,0),"")) return;
-	if(!test_assertStr(memmove(str3,"abcdef",7),"abcdef")) return;
+	test_assertStr(memmove(dest,str1,4),"abc");
+	test_assertStr(memmove(str1 + 1,str1,4),"abc") || !test_assertStr(str1,"aabc");
+	test_assertStr(memmove(str2,str2 + 1,3),"ef") || !test_assertStr(str2,"ef");
+	test_assertStr(memmove(str3,str3,0),"");
+	test_assertStr(memmove(str3,"abcdef",7),"abcdef");
 
 	/* test alignment */
 	for(i = 0; i < 8; i++) {
@@ -329,12 +329,12 @@ static void test_memchr(void) {
 	const char *s2 = "def123456";
 	test_caseStart("Testing memchr()");
 
-	if(!test_assertPtr(memchr(s1,'a',3),(void*)s1)) return;
-	if(!test_assertPtr(memchr(s1,'b',3),(void*)(s1 + 1))) return;
-	if(!test_assertPtr(memchr(s1,'c',3),(void*)(s1 + 2))) return;
-	if(!test_assertPtr(memchr(s1,'d',3),NULL)) return;
-	if(!test_assertPtr(memchr(s2,'d',1),(void*)s2)) return;
-	if(!test_assertPtr(memchr(s2,'e',1),NULL)) return;
+	test_assertPtr(memchr(s1,'a',3),(void*)s1);
+	test_assertPtr(memchr(s1,'b',3),(void*)(s1 + 1));
+	test_assertPtr(memchr(s1,'c',3),(void*)(s1 + 2));
+	test_assertPtr(memchr(s1,'d',3),NULL);
+	test_assertPtr(memchr(s2,'d',1),(void*)s2);
+	test_assertPtr(memchr(s2,'e',1),NULL);
 
 	test_caseSucceeded();
 }
@@ -343,12 +343,12 @@ static void test_memcmp(void) {
 	const char *str1 = "abc", *str2 = "abcdef", *str3 = "def";
 	test_caseStart("Testing memcmp()");
 
-	if(!test_assertTrue(memcmp(str1,str2,3) == 0)) return;
-	if(!test_assertTrue(memcmp(str1,str2,0) == 0)) return;
-	if(!test_assertTrue(memcmp(str1,str2,1) == 0)) return;
-	if(!test_assertTrue(memcmp(str2+3,str3,3) == 0)) return;
-	if(!test_assertFalse(memcmp(str1,str2,4) == 0)) return;
-	if(!test_assertFalse(memcmp(str2,str3,2) == 0)) return;
+	test_assertTrue(memcmp(str1,str2,3) == 0);
+	test_assertTrue(memcmp(str1,str2,0) == 0);
+	test_assertTrue(memcmp(str1,str2,1) == 0);
+	test_assertTrue(memcmp(str2+3,str3,3) == 0);
+	test_assertFalse(memcmp(str1,str2,4) == 0);
+	test_assertFalse(memcmp(str2,str3,2) == 0);
 
 	test_caseSucceeded();
 }
@@ -357,10 +357,10 @@ static void test_strcpy(void) {
 	char target[20];
 	test_caseStart("Testing strcpy()");
 
-	if(!test_assertStr(strcpy(target,"abc"),"abc")) return;
-	if(!test_assertStr(strcpy(target,""),"")) return;
-	if(!test_assertStr(strcpy(target,"0123456789012345678"),"0123456789012345678")) return;
-	if(!test_assertStr(strcpy(target,"123"),"123")) return;
+	test_assertStr(strcpy(target,"abc"),"abc");
+	test_assertStr(strcpy(target,""),"");
+	test_assertStr(strcpy(target,"0123456789012345678"),"0123456789012345678");
+	test_assertStr(strcpy(target,"123"),"123");
 
 	test_caseSucceeded();
 }
@@ -374,31 +374,31 @@ static void test_strncpy(void) {
 
 	str = strncpy(target,"abc",3);
 	str[3] = '\0';
-	if(!test_assertStr(str,"abc")) return;
+	test_assertStr(str,"abc");
 
 	str = strncpy(target,"",0);
 	str[0] = '\0';
-	if(!test_assertStr(str,"")) return;
+	test_assertStr(str,"");
 
 	str = strncpy(target,"0123456789012345678",19);
 	str[19] = '\0';
-	if(!test_assertStr(str,"0123456789012345678")) return;
+	test_assertStr(str,"0123456789012345678");
 
 	str = strncpy(target,"123",3);
 	str[3] = '\0';
-	if(!test_assertStr(str,"123")) return;
+	test_assertStr(str,"123");
 
 	str = strncpy(target,"abc",1);
 	str[1] = '\0';
-	if(!test_assertStr(str,"a")) return;
+	test_assertStr(str,"a");
 
 	str = strncpy(target,"abc",1);
 	str[1] = '\0';
-	if(!test_assertStr(str,cmp1)) return;
+	test_assertStr(str,cmp1);
 
 	str = strncpy(target,"defghi",3);
 	str[3] = '\0';
-	if(!test_assertStr(str,cmp2)) return;
+	test_assertStr(str,cmp2);
 
 	test_caseSucceeded();
 }
@@ -416,54 +416,54 @@ static void test_strtok(void) {
 
 	/* str1 */
 	p = strtok(str1," -,.");
-	if(!test_assertStr(p,"This")) return;
+	test_assertStr(p,"This");
 	p = strtok(NULL," -,.");
-	if(!test_assertStr(p,"a")) return;
+	test_assertStr(p,"a");
 	p = strtok(NULL," -,.");
-	if(!test_assertStr(p,"sample")) return;
+	test_assertStr(p,"sample");
 	p = strtok(NULL," -,.");
-	if(!test_assertStr(p,"string")) return;
+	test_assertStr(p,"string");
 	p = strtok(NULL," -,.");
-	if(!test_assertTrue(p == NULL)) return;
+	test_assertTrue(p == NULL);
 
 	/* str2 */
 	p = strtok(str2," -,.");
-	if(!test_assertTrue(p == NULL)) return;
+	test_assertTrue(p == NULL);
 
 	/* str3 */
 	p = strtok(str3,".,");
-	if(!test_assertTrue(p == NULL)) return;
+	test_assertTrue(p == NULL);
 
 	/* str4 */
 	p = strtok(str4,"X");
-	if(!test_assertStr(p,"abcdef")) return;
+	test_assertStr(p,"abcdef");
 	p = strtok(NULL," -,.");
-	if(!test_assertTrue(p == NULL)) return;
+	test_assertTrue(p == NULL);
 
 	/* str5 */
 	p = strtok(str5,",");
-	if(!test_assertStr(p,"abc")) return;
+	test_assertStr(p,"abc");
 	p = strtok(NULL," -,.");
-	if(!test_assertStr(p,"def")) return;
+	test_assertStr(p,"def");
 	p = strtok(NULL," -,.");
-	if(!test_assertTrue(p == NULL)) return;
+	test_assertTrue(p == NULL);
 
 	/* str6 */
 	p = strtok(str6,",");
-	if(!test_assertStr(p,"abc")) return;
+	test_assertStr(p,"abc");
 	p = strtok(NULL," -,.");
-	if(!test_assertStr(p,"def")) return;
+	test_assertStr(p,"def");
 	p = strtok(NULL," -,.");
-	if(!test_assertTrue(p == NULL)) return;
+	test_assertTrue(p == NULL);
 
 	p = strtok(str7,"?");
-	if(!test_assertStr(p,"a")) return;
+	test_assertStr(p,"a");
 	p = strtok(NULL,",");
-	if(!test_assertStr(p,"??b")) return;
+	test_assertStr(p,"??b");
 	p = strtok(NULL,"#,");
-	if(!test_assertStr(p,"c")) return;
+	test_assertStr(p,"c");
 	p = strtok(NULL,"?");
-	if(!test_assertStr(p,NULL)) return;
+	test_assertStr(p,NULL);
 
 	test_caseSucceeded();
 }
@@ -473,8 +473,8 @@ static void test_strcat(void) {
 	char str2[] = "def";
 	test_caseStart("Testing strcat()");
 
-	if(!test_assertStr(strcat(str1,str2),"abcdef")) return;
-	if(!test_assertStr(strcat(str1,""),"abcdef")) return;
+	test_assertStr(strcat(str1,str2),"abcdef");
+	test_assertStr(strcat(str1,""),"abcdef");
 
 	test_caseSucceeded();
 }
@@ -489,12 +489,12 @@ static void test_strncat(void) {
 	char app[] = "def123";
 	test_caseStart("Testing strnat()");
 
-	if(!test_assertStr(strncat(str1,app,3),"abcdef")) return;
-	if(!test_assertStr(strncat(str2,app,1),"abcd")) return;
-	if(!test_assertStr(strncat(str3,app,0),"abc")) return;
-	if(!test_assertStr(strncat(str4,app,4),"abcdef1")) return;
-	if(!test_assertStr(strncat(str5,app,5),"abcdef12")) return;
-	if(!test_assertStr(strncat(str6,app,6),"abcdef123")) return;
+	test_assertStr(strncat(str1,app,3),"abcdef");
+	test_assertStr(strncat(str2,app,1),"abcd");
+	test_assertStr(strncat(str3,app,0),"abc");
+	test_assertStr(strncat(str4,app,4),"abcdef1");
+	test_assertStr(strncat(str5,app,5),"abcdef12");
+	test_assertStr(strncat(str6,app,6),"abcdef123");
 
 	test_caseSucceeded();
 }
@@ -502,14 +502,14 @@ static void test_strncat(void) {
 static void test_strcmp(void) {
 	test_caseStart("Testing strcmp()");
 
-	if(!test_assertTrue(strcmp("","") == 0)) return;
-	if(!test_assertTrue(strcmp("abc","abd") < 0)) return;
-	if(!test_assertTrue(strcmp("abc","abb") > 0)) return;
-	if(!test_assertTrue(strcmp("a","abc") < 0)) return;
-	if(!test_assertTrue(strcmp("b","a") > 0)) return;
-	if(!test_assertTrue(strcmp("1234","5678") < 0)) return;
-	if(!test_assertTrue(strcmp("abc def","abc def") == 0)) return;
-	if(!test_assertTrue(strcmp("123","123") == 0)) return;
+	test_assertTrue(strcmp("","") == 0);
+	test_assertTrue(strcmp("abc","abd") < 0);
+	test_assertTrue(strcmp("abc","abb") > 0);
+	test_assertTrue(strcmp("a","abc") < 0);
+	test_assertTrue(strcmp("b","a") > 0);
+	test_assertTrue(strcmp("1234","5678") < 0);
+	test_assertTrue(strcmp("abc def","abc def") == 0);
+	test_assertTrue(strcmp("123","123") == 0);
 
 	test_caseSucceeded();
 }
@@ -517,18 +517,18 @@ static void test_strcmp(void) {
 static void test_strncmp(void) {
 	test_caseStart("Testing strncmp()");
 
-	if(!test_assertTrue(strncmp("","",0) == 0)) return;
-	if(!test_assertTrue(strncmp("abc","abd",3) < 0)) return;
-	if(!test_assertTrue(strncmp("abc","abb",3) > 0)) return;
-	if(!test_assertTrue(strncmp("a","abc",1) == 0)) return;
-	if(!test_assertTrue(strncmp("b","a",1) > 0)) return;
-	if(!test_assertTrue(strncmp("1234","5678",4) < 0)) return;
-	if(!test_assertTrue(strncmp("abc def","abc def",7) == 0)) return;
-	if(!test_assertTrue(strncmp("123","123",3) == 0)) return;
-	if(!test_assertTrue(strncmp("ab","ab",1) == 0)) return;
-	if(!test_assertTrue(strncmp("abc","abd",2) == 0)) return;
-	if(!test_assertTrue(strncmp("abc","abd",0) == 0)) return;
-	if(!test_assertTrue(strncmp("xyz","abc",3) > 0)) return;
+	test_assertTrue(strncmp("","",0) == 0);
+	test_assertTrue(strncmp("abc","abd",3) < 0);
+	test_assertTrue(strncmp("abc","abb",3) > 0);
+	test_assertTrue(strncmp("a","abc",1) == 0);
+	test_assertTrue(strncmp("b","a",1) > 0);
+	test_assertTrue(strncmp("1234","5678",4) < 0);
+	test_assertTrue(strncmp("abc def","abc def",7) == 0);
+	test_assertTrue(strncmp("123","123",3) == 0);
+	test_assertTrue(strncmp("ab","ab",1) == 0);
+	test_assertTrue(strncmp("abc","abd",2) == 0);
+	test_assertTrue(strncmp("abc","abd",0) == 0);
+	test_assertTrue(strncmp("xyz","abc",3) > 0);
 
 	test_caseSucceeded();
 }
@@ -536,14 +536,14 @@ static void test_strncmp(void) {
 static void test_strcasecmp(void) {
 	test_caseStart("Testing strcasecmp()");
 
-	if(!test_assertTrue(strcasecmp("","") == 0)) return;
-	if(!test_assertTrue(strcasecmp("aBc","abd") < 0)) return;
-	if(!test_assertTrue(strcasecmp("abc","ABB") > 0)) return;
-	if(!test_assertTrue(strcasecmp("A","Abc") < 0)) return;
-	if(!test_assertTrue(strcasecmp("b","A") > 0)) return;
-	if(!test_assertTrue(strcasecmp("1234","5678") < 0)) return;
-	if(!test_assertTrue(strcasecmp("abc DEF","ABC def") == 0)) return;
-	if(!test_assertTrue(strcasecmp("123","123") == 0)) return;
+	test_assertTrue(strcasecmp("","") == 0);
+	test_assertTrue(strcasecmp("aBc","abd") < 0);
+	test_assertTrue(strcasecmp("abc","ABB") > 0);
+	test_assertTrue(strcasecmp("A","Abc") < 0);
+	test_assertTrue(strcasecmp("b","A") > 0);
+	test_assertTrue(strcasecmp("1234","5678") < 0);
+	test_assertTrue(strcasecmp("abc DEF","ABC def") == 0);
+	test_assertTrue(strcasecmp("123","123") == 0);
 
 	test_caseSucceeded();
 }
@@ -551,18 +551,19 @@ static void test_strcasecmp(void) {
 static void test_strncasecmp(void) {
 	test_caseStart("Testing strncasecmp()");
 
-	if(!test_assertTrue(strncasecmp("","",0) == 0)) return;
-	if(!test_assertTrue(strncasecmp("abc","ABd",3) < 0)) return;
-	if(!test_assertTrue(strncasecmp("aBC","abb",3) > 0)) return;
-	if(!test_assertTrue(strncasecmp("a","ABC",1) == 0)) return;
-	if(!test_assertTrue(strncasecmp("b","a",1) > 0)) return;
-	if(!test_assertTrue(strncasecmp("1234","5678",4) < 0)) return;
-	if(!test_assertTrue(strncasecmp("abc DEF","ABC def",7) == 0)) return;
-	if(!test_assertTrue(strncasecmp("123","123",3) == 0)) return;
-	if(!test_assertTrue(strncasecmp("ab","aB",1) == 0)) return;
-	if(!test_assertTrue(strncasecmp("aBc","Abd",2) == 0)) return;
-	if(!test_assertTrue(strncasecmp("aBC","ABd",0) == 0)) return;
-	if(!test_assertTrue(strncasecmp("xyz","aBc",3) > 0)) return;
+	test_assertTrue(strncasecmp("","abc",0) == 0);
+	test_assertTrue(strncasecmp("","",0) == 0);
+	test_assertTrue(strncasecmp("abc","ABd",3) < 0);
+	test_assertTrue(strncasecmp("aBC","abb",3) > 0);
+	test_assertTrue(strncasecmp("a","ABC",1) == 0);
+	test_assertTrue(strncasecmp("b","a",1) > 0);
+	test_assertTrue(strncasecmp("1234","5678",4) < 0);
+	test_assertTrue(strncasecmp("abc DEF","ABC def",7) == 0);
+	test_assertTrue(strncasecmp("123","123",3) == 0);
+	test_assertTrue(strncasecmp("ab","aB",1) == 0);
+	test_assertTrue(strncasecmp("aBc","Abd",2) == 0);
+	test_assertTrue(strncasecmp("aBC","ABd",0) == 0);
+	test_assertTrue(strncasecmp("xyz","aBc",3) > 0);
 
 	test_caseSucceeded();
 }
@@ -571,10 +572,10 @@ static void test_strchr(void) {
 	char str1[] = "abcdef";
 	test_caseStart("Testing strchr()");
 
-	if(!test_assertTrue(strchr(str1,'a') == str1)) return;
-	if(!test_assertTrue(strchr(str1,'b') == str1 + 1)) return;
-	if(!test_assertTrue(strchr(str1,'c') == str1 + 2)) return;
-	if(!test_assertTrue(strchr(str1,'g') == NULL)) return;
+	test_assertTrue(strchr(str1,'a') == str1);
+	test_assertTrue(strchr(str1,'b') == str1 + 1);
+	test_assertTrue(strchr(str1,'c') == str1 + 2);
+	test_assertTrue(strchr(str1,'g') == NULL);
 
 	test_caseSucceeded();
 }
@@ -583,10 +584,10 @@ static void test_strchri(void) {
 	char str1[] = "abcdef";
 	test_caseStart("Testing strchri()");
 
-	if(!test_assertTrue(strchri(str1,'a') == 0)) return;
-	if(!test_assertTrue(strchri(str1,'b') == 1)) return;
-	if(!test_assertTrue(strchri(str1,'c') == 2)) return;
-	if(!test_assertTrue(strchri(str1,'g') == (ssize_t)strlen(str1))) return;
+	test_assertTrue(strchri(str1,'a') == 0);
+	test_assertTrue(strchri(str1,'b') == 1);
+	test_assertTrue(strchri(str1,'c') == 2);
+	test_assertTrue(strchri(str1,'g') == (ssize_t)strlen(str1));
 
 	test_caseSucceeded();
 }
@@ -595,11 +596,11 @@ static void test_strrchr(void) {
 	char str1[] = "abcdefabc";
 	test_caseStart("Testing strrchr()");
 
-	if(!test_assertTrue(strrchr(str1,'a') == str1 + 6)) return;
-	if(!test_assertTrue(strrchr(str1,'b') == str1 + 7)) return;
-	if(!test_assertTrue(strrchr(str1,'c') == str1 + 8)) return;
-	if(!test_assertTrue(strrchr(str1,'g') == NULL)) return;
-	if(!test_assertTrue(strrchr(str1,'d') == str1 + 3)) return;
+	test_assertTrue(strrchr(str1,'a') == str1 + 6);
+	test_assertTrue(strrchr(str1,'b') == str1 + 7);
+	test_assertTrue(strrchr(str1,'c') == str1 + 8);
+	test_assertTrue(strrchr(str1,'g') == NULL);
+	test_assertTrue(strrchr(str1,'d') == str1 + 3);
 
 	test_caseSucceeded();
 }
@@ -608,17 +609,17 @@ static void test_strstr(void) {
 	char str1[] = "abc def ghi";
 	test_caseStart("Testing strstr()");
 
-	if(!test_assertTrue(strstr(str1,"abc") == str1)) return;
-	if(!test_assertTrue(strstr(str1,"def") == str1 + 4)) return;
-	if(!test_assertTrue(strstr(str1,"ghi") == str1 + 8)) return;
-	if(!test_assertTrue(strstr(str1,"a") == str1)) return;
-	if(!test_assertTrue(strstr(str1,"abc def ghi") == str1)) return;
-	if(!test_assertTrue(strstr(str1,"abc ghi") == NULL)) return;
-	if(!test_assertTrue(strstr(str1,"") == NULL)) return;
-	if(!test_assertTrue(strstr(str1,"def ghi") == str1 + 4)) return;
-	if(!test_assertTrue(strstr(str1,"g") == str1 + 8)) return;
-	if(!test_assertTrue(strstr("","abc") == NULL)) return;
-	if(!test_assertTrue(strstr("","") == NULL)) return;
+	test_assertTrue(strstr(str1,"abc") == str1);
+	test_assertTrue(strstr(str1,"def") == str1 + 4);
+	test_assertTrue(strstr(str1,"ghi") == str1 + 8);
+	test_assertTrue(strstr(str1,"a") == str1);
+	test_assertTrue(strstr(str1,"abc def ghi") == str1);
+	test_assertTrue(strstr(str1,"abc ghi") == NULL);
+	test_assertTrue(strstr(str1,"") == NULL);
+	test_assertTrue(strstr(str1,"def ghi") == str1 + 4);
+	test_assertTrue(strstr(str1,"g") == str1 + 8);
+	test_assertTrue(strstr("","abc") == NULL);
+	test_assertTrue(strstr("","") == NULL);
 
 	test_caseSucceeded();
 }
@@ -626,18 +627,18 @@ static void test_strstr(void) {
 static void test_strspn(void) {
 	test_caseStart("Testing strspn()");
 
-	if(!test_assertSize(strspn("abc","def"),0)) return;
-	if(!test_assertSize(strspn("abc","a"),1)) return;
-	if(!test_assertSize(strspn("abc","ab"),2)) return;
-	if(!test_assertSize(strspn("abc","abc"),3)) return;
-	if(!test_assertSize(strspn("abc","bca"),3)) return;
-	if(!test_assertSize(strspn("abc","cab"),3)) return;
-	if(!test_assertSize(strspn("abc","cba"),3)) return;
-	if(!test_assertSize(strspn("abc","bac"),3)) return;
-	if(!test_assertSize(strspn("abc","b"),0)) return;
-	if(!test_assertSize(strspn("abc","cdef"),0)) return;
-	if(!test_assertSize(strspn("","123"),0)) return;
-	if(!test_assertSize(strspn("",""),0)) return;
+	test_assertSize(strspn("abc","def"),0);
+	test_assertSize(strspn("abc","a"),1);
+	test_assertSize(strspn("abc","ab"),2);
+	test_assertSize(strspn("abc","abc"),3);
+	test_assertSize(strspn("abc","bca"),3);
+	test_assertSize(strspn("abc","cab"),3);
+	test_assertSize(strspn("abc","cba"),3);
+	test_assertSize(strspn("abc","bac"),3);
+	test_assertSize(strspn("abc","b"),0);
+	test_assertSize(strspn("abc","cdef"),0);
+	test_assertSize(strspn("","123"),0);
+	test_assertSize(strspn("",""),0);
 
 	test_caseSucceeded();
 }
@@ -645,12 +646,12 @@ static void test_strspn(void) {
 static void test_strcspn(void) {
 	test_caseStart("Testing strcspn()");
 
-	if(!test_assertSize(strcspn("abc","def"),3)) return;
-	if(!test_assertSize(strcspn("abc","a"),0)) return;
-	if(!test_assertSize(strcspn("abc","b"),1)) return;
-	if(!test_assertSize(strcspn("abc","cdef"),2)) return;
-	if(!test_assertSize(strcspn("","123"),0)) return;
-	if(!test_assertSize(strcspn("",""),0)) return;
+	test_assertSize(strcspn("abc","def"),3);
+	test_assertSize(strcspn("abc","a"),0);
+	test_assertSize(strcspn("abc","b"),1);
+	test_assertSize(strcspn("abc","cdef"),2);
+	test_assertSize(strcspn("","123"),0);
+	test_assertSize(strcspn("",""),0);
 
 	test_caseSucceeded();
 }
@@ -661,20 +662,20 @@ static void test_strpbrk(void) {
 	char str3[] = "";
 	test_caseStart("Testing strpbrk()");
 
-	if(!test_assertStr(strpbrk(str1,"test"),str1)) return;
-	if(!test_assertStr(strpbrk(str1,"t"),str1)) return;
-	if(!test_assertStr(strpbrk(str1,"e"),str1 + 1)) return;
-	if(!test_assertStr(strpbrk(str1,"s"),str1 + 2)) return;
-	if(!test_assertStr(strpbrk(str2,"fde"),str2 + 4)) return;
-	if(!test_assertStr(strpbrk(str2,"def"),str2 + 4)) return;
-	if(!test_assertStr(strpbrk(str2,"fed"),str2 + 4)) return;
-	if(!test_assertStr(strpbrk(str2,"__"),str2 + 3)) return;
-	if(!test_assertTrue(strpbrk(str2,"ghxyz") == NULL)) return;
-	if(!test_assertTrue(strpbrk(str3,"a") == NULL)) return;
-	if(!test_assertTrue(strpbrk(str3,"xyz") == NULL)) return;
-	if(!test_assertTrue(strpbrk(str3,"") == NULL)) return;
-	if(!test_assertTrue(strpbrk(str2,"") == NULL)) return;
-	if(!test_assertTrue(strpbrk(str1,"") == NULL)) return;
+	test_assertStr(strpbrk(str1,"test"),str1);
+	test_assertStr(strpbrk(str1,"t"),str1);
+	test_assertStr(strpbrk(str1,"e"),str1 + 1);
+	test_assertStr(strpbrk(str1,"s"),str1 + 2);
+	test_assertStr(strpbrk(str2,"fde"),str2 + 4);
+	test_assertStr(strpbrk(str2,"def"),str2 + 4);
+	test_assertStr(strpbrk(str2,"fed"),str2 + 4);
+	test_assertStr(strpbrk(str2,"__"),str2 + 3);
+	test_assertTrue(strpbrk(str2,"ghxyz") == NULL);
+	test_assertTrue(strpbrk(str3,"a") == NULL);
+	test_assertTrue(strpbrk(str3,"xyz") == NULL);
+	test_assertTrue(strpbrk(str3,"") == NULL);
+	test_assertTrue(strpbrk(str2,"") == NULL);
+	test_assertTrue(strpbrk(str1,"") == NULL);
 
 	test_caseSucceeded();
 }
@@ -687,11 +688,11 @@ static void test_strcut(void) {
 	char str5[] = "123456";
 	test_caseStart("Testing strcut()");
 
-	if(!test_assertStr(strcut(str1,4),"def ghi")) return;
-	if(!test_assertStr(strcut(str2,3),"")) return;
-	if(!test_assertStr(strcut(str3,0),"a")) return;
-	if(!test_assertStr(strcut(str4,0),"")) return;
-	if(!test_assertStr(strcut(str5,5),"6")) return;
+	test_assertStr(strcut(str1,4),"def ghi");
+	test_assertStr(strcut(str2,3),"");
+	test_assertStr(strcut(str3,0),"a");
+	test_assertStr(strcut(str4,0),"");
+	test_assertStr(strcut(str5,5),"6");
 
 	test_caseSucceeded();
 }
@@ -699,10 +700,10 @@ static void test_strcut(void) {
 static void test_strlen(void) {
 	test_caseStart("Testing strlen()");
 
-	if(!test_assertSize(strlen("abc"),3)) return;
-	if(!test_assertSize(strlen(""),0)) return;
-	if(!test_assertSize(strlen("abcdef"),6)) return;
-	if(!test_assertSize(strlen("1"),1)) return;
+	test_assertSize(strlen("abc"),3);
+	test_assertSize(strlen(""),0);
+	test_assertSize(strlen("abcdef"),6);
+	test_assertSize(strlen("1"),1);
 
 	test_caseSucceeded();
 }
@@ -710,17 +711,17 @@ static void test_strlen(void) {
 static void test_strnlen(void) {
 	test_caseStart("Testing strnlen()");
 
-	if(!test_assertSSize(strnlen("abc",10),3)) return;
-	if(!test_assertSSize(strnlen("",10),0)) return;
-	if(!test_assertSSize(strnlen("abcdef",10),6)) return;
-	if(!test_assertSSize(strnlen("1",10),1)) return;
-	if(!test_assertSSize(strnlen("abc",3),3)) return;
-	if(!test_assertSSize(strnlen("",0),0)) return;
-	if(!test_assertSSize(strnlen("abcdef",6),6)) return;
-	if(!test_assertSSize(strnlen("1",1),1)) return;
-	if(!test_assertSSize(strnlen("abc",2),-1)) return;
-	if(!test_assertSSize(strnlen("abcdef",5),-1)) return;
-	if(!test_assertSSize(strnlen("1",0),-1)) return;
+	test_assertSSize(strnlen("abc",10),3);
+	test_assertSSize(strnlen("",10),0);
+	test_assertSSize(strnlen("abcdef",10),6);
+	test_assertSSize(strnlen("1",10),1);
+	test_assertSSize(strnlen("abc",3),3);
+	test_assertSSize(strnlen("",0),0);
+	test_assertSSize(strnlen("abcdef",6),6);
+	test_assertSSize(strnlen("1",1),1);
+	test_assertSSize(strnlen("abc",2),-1);
+	test_assertSSize(strnlen("abcdef",5),-1);
+	test_assertSSize(strnlen("1",0),-1);
 
 	test_caseSucceeded();
 }
@@ -728,12 +729,12 @@ static void test_strnlen(void) {
 static void test_tolower(void) {
 	test_caseStart("Testing tolower()");
 
-	if(!test_assertInt(tolower('C'),'c')) return;
-	if(!test_assertInt(tolower('A'),'a')) return;
-	if(!test_assertInt(tolower('Z'),'z')) return;
-	if(!test_assertInt(tolower('a'),'a')) return;
-	if(!test_assertInt(tolower('x'),'x')) return;
-	if(!test_assertInt(tolower('z'),'z')) return;
+	test_assertInt(tolower('C'),'c');
+	test_assertInt(tolower('A'),'a');
+	test_assertInt(tolower('Z'),'z');
+	test_assertInt(tolower('a'),'a');
+	test_assertInt(tolower('x'),'x');
+	test_assertInt(tolower('z'),'z');
 
 	test_caseSucceeded();
 }
@@ -741,12 +742,12 @@ static void test_tolower(void) {
 static void test_toupper(void) {
 	test_caseStart("Testing toupper()");
 
-	if(!test_assertInt(toupper('c'),'C')) return;
-	if(!test_assertInt(toupper('a'),'A')) return;
-	if(!test_assertInt(toupper('z'),'Z')) return;
-	if(!test_assertInt(toupper('A'),'A')) return;
-	if(!test_assertInt(toupper('X'),'X')) return;
-	if(!test_assertInt(toupper('Z'),'Z')) return;
+	test_assertInt(toupper('c'),'C');
+	test_assertInt(toupper('a'),'A');
+	test_assertInt(toupper('z'),'Z');
+	test_assertInt(toupper('A'),'A');
+	test_assertInt(toupper('X'),'X');
+	test_assertInt(toupper('Z'),'Z');
 
 	test_caseSucceeded();
 }
@@ -754,15 +755,15 @@ static void test_toupper(void) {
 static void test_isalnumstr(void) {
 	test_caseStart("Testing isalnumstr()");
 
-	if(!test_assertTrue(isalnumstr("abc123"))) return;
-	if(!test_assertTrue(isalnumstr("Axer123084"))) return;
-	if(!test_assertTrue(isalnumstr(""))) return;
-	if(!test_assertTrue(isalnumstr("a"))) return;
-	if(!test_assertTrue(isalnumstr("0"))) return;
-	if(!test_assertFalse(isalnumstr("_"))) return;
-	if(!test_assertFalse(isalnumstr("abc123*"))) return;
-	if(!test_assertFalse(isalnumstr("../*/\\"))) return;
-	if(!test_assertFalse(isalnumstr("12.5"))) return;
+	test_assertTrue(isalnumstr("abc123"));
+	test_assertTrue(isalnumstr("Axer123084"));
+	test_assertTrue(isalnumstr(""));
+	test_assertTrue(isalnumstr("a"));
+	test_assertTrue(isalnumstr("0"));
+	test_assertFalse(isalnumstr("_"));
+	test_assertFalse(isalnumstr("abc123*"));
+	test_assertFalse(isalnumstr("../*/\\"));
+	test_assertFalse(isalnumstr("12.5"));
 
 	test_caseSucceeded();
 }
@@ -770,46 +771,46 @@ static void test_isalnumstr(void) {
 static void test_strmatch(void) {
 	test_caseStart("Testing strmatch()");
 
-	if(!test_assertTrue(strmatch("abc*def","abcdef"))) return;
-	if(!test_assertTrue(strmatch("abc*def","abcxdef"))) return;
-	if(!test_assertTrue(strmatch("abc*def","abcTESTdef"))) return;
-	if(!test_assertFalse(strmatch("abc*def","bcde"))) return;
-	if(!test_assertFalse(strmatch("abc*def",""))) return;
-	if(!test_assertFalse(strmatch("abc*def","abc"))) return;
-	if(!test_assertFalse(strmatch("abc*def","abcde"))) return;
-	if(!test_assertTrue(strmatch("abc*","abc"))) return;
-	if(!test_assertTrue(strmatch("abc*","abcd"))) return;
-	if(!test_assertTrue(strmatch("abc*","abcdef"))) return;
-	if(!test_assertFalse(strmatch("abc*","bcdef"))) return;
-	if(!test_assertFalse(strmatch("abc*","bc"))) return;
-	if(!test_assertFalse(strmatch("abc*",""))) return;
-	if(!test_assertTrue(strmatch("*def","def"))) return;
-	if(!test_assertTrue(strmatch("*def","cdef"))) return;
-	if(!test_assertTrue(strmatch("*def","abcdef"))) return;
-	if(!test_assertFalse(strmatch("*def","abcde"))) return;
-	if(!test_assertFalse(strmatch("*def","de"))) return;
-	if(!test_assertFalse(strmatch("*def",""))) return;
-	if(!test_assertTrue(strmatch("*",""))) return;
-	if(!test_assertTrue(strmatch("*","a"))) return;
-	if(!test_assertTrue(strmatch("*","abc"))) return;
-	if(!test_assertTrue(strmatch("abc*x*def","abcxdef"))) return;
-	if(!test_assertTrue(strmatch("abc*x*def","abcdddxbbbdef"))) return;
-	if(!test_assertTrue(strmatch("abc*x*def","abcabcxdefdef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*def","abcdef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*def","abcdddef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*def",""))) return;
-	if(!test_assertTrue(strmatch("abc*x*DEF*def","abcxDEFdef"))) return;
-	if(!test_assertTrue(strmatch("abc*x*DEF*def","abcbbxccDEFdddef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcxDEdef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcbxcDEddef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcDEFdef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcDEFxdef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcbDEFcdef"))) return;
-	if(!test_assertFalse(strmatch("abc*x*DEF*def",""))) return;
-	if(!test_assertTrue(strmatch("abc","abc"))) return;
-	if(!test_assertFalse(strmatch("abc","ab"))) return;
-	if(!test_assertFalse(strmatch("abc","test"))) return;
-	if(!test_assertFalse(strmatch("abc",""))) return;
+	test_assertTrue(strmatch("abc*def","abcdef"));
+	test_assertTrue(strmatch("abc*def","abcxdef"));
+	test_assertTrue(strmatch("abc*def","abcTESTdef"));
+	test_assertFalse(strmatch("abc*def","bcde"));
+	test_assertFalse(strmatch("abc*def",""));
+	test_assertFalse(strmatch("abc*def","abc"));
+	test_assertFalse(strmatch("abc*def","abcde"));
+	test_assertTrue(strmatch("abc*","abc"));
+	test_assertTrue(strmatch("abc*","abcd"));
+	test_assertTrue(strmatch("abc*","abcdef"));
+	test_assertFalse(strmatch("abc*","bcdef"));
+	test_assertFalse(strmatch("abc*","bc"));
+	test_assertFalse(strmatch("abc*",""));
+	test_assertTrue(strmatch("*def","def"));
+	test_assertTrue(strmatch("*def","cdef"));
+	test_assertTrue(strmatch("*def","abcdef"));
+	test_assertFalse(strmatch("*def","abcde"));
+	test_assertFalse(strmatch("*def","de"));
+	test_assertFalse(strmatch("*def",""));
+	test_assertTrue(strmatch("*",""));
+	test_assertTrue(strmatch("*","a"));
+	test_assertTrue(strmatch("*","abc"));
+	test_assertTrue(strmatch("abc*x*def","abcxdef"));
+	test_assertTrue(strmatch("abc*x*def","abcdddxbbbdef"));
+	test_assertTrue(strmatch("abc*x*def","abcabcxdefdef"));
+	test_assertFalse(strmatch("abc*x*def","abcdef"));
+	test_assertFalse(strmatch("abc*x*def","abcdddef"));
+	test_assertFalse(strmatch("abc*x*def",""));
+	test_assertTrue(strmatch("abc*x*DEF*def","abcxDEFdef"));
+	test_assertTrue(strmatch("abc*x*DEF*def","abcbbxccDEFdddef"));
+	test_assertFalse(strmatch("abc*x*DEF*def","abcxDEdef"));
+	test_assertFalse(strmatch("abc*x*DEF*def","abcbxcDEddef"));
+	test_assertFalse(strmatch("abc*x*DEF*def","abcDEFdef"));
+	test_assertFalse(strmatch("abc*x*DEF*def","abcDEFxdef"));
+	test_assertFalse(strmatch("abc*x*DEF*def","abcbDEFcdef"));
+	test_assertFalse(strmatch("abc*x*DEF*def",""));
+	test_assertTrue(strmatch("abc","abc"));
+	test_assertFalse(strmatch("abc","ab"));
+	test_assertFalse(strmatch("abc","test"));
+	test_assertFalse(strmatch("abc",""));
 
 	test_caseSucceeded();
 }

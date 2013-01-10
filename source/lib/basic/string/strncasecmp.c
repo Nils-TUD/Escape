@@ -23,12 +23,12 @@
 #include <string.h>
 
 int strncasecmp(const char *str1,const char *str2,size_t count) {
-	char c1,c2;
+	char c1 = 0,c2 = 0;
 	ssize_t rem = count;
 	vassert(str1 != NULL,"str1 == NULL");
 	vassert(str2 != NULL,"str2 == NULL");
 
-	while(rem-- > 0 && (c1 = tolower(*str1)) && (c2 = tolower(*str2))) {
+	while(rem > 0 && (c1 = tolower(*str1)) && (c2 = tolower(*str2))) {
 		if(c1 != c2) {
 			if(c1 < c2)
 				return -1;
@@ -36,6 +36,7 @@ int strncasecmp(const char *str1,const char *str2,size_t count) {
 		}
 		str1++;
 		str2++;
+		rem--;
 	}
 	if(rem <= 0)
 		return 0;

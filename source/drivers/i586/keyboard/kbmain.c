@@ -262,13 +262,17 @@ static void kbStartDbgConsole(void) {
 		close(fd);
 	}
 
+	/* disable vterm to prevent that it writes to VESA memory or so (might write garbage to VGA) */
+	fd = open("/dev/vterm0",IO_MSGS);
+	if(fd >= 0)
+		vterm_setEnabled(fd,false);
+
 	/* start debugger */
 	debug();
 
 	/* restore video-mode */
 	/* TODO this is not perfect since it causes problems when we're in GUI-mode.
 	 * But its for debugging, so its ok, I think :) */
-	fd = open("/dev/vterm0",IO_MSGS);
 	if(fd >= 0) {
 		vterm_setEnabled(fd,true);
 		close(fd);

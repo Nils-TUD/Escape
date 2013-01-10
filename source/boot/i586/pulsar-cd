@@ -1,0 +1,16 @@
+#!/bin/sh
+. boot/$ESC_TARGET/images.sh
+create_cd $1/dist $1/cd.iso
+
+cat >$1/config-$ESC_MAC <<EOF
+root escape
+exec boot/escape videomode=vesa
+load sbin/pci /dev/pci
+load sbin/ata /system/devices/ata nodma
+load sbin/cmos /dev/cmos
+load sbin/fs /dev/fs cdrom iso9660
+EOF
+
+files="boot/escape sbin/cmos sbin/fs sbin/ata sbin/pci"
+( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp config-$ESC_MAC $ESC_SERVER )

@@ -301,8 +301,9 @@ void boot_print(void) {
 		sModule *mod = mb->modsAddr;
 		vid_printf("modsCount=%d:\n",mb->modsCount);
 		for(i = 0; i < mb->modsCount; i++) {
-			vid_printf("\t%s [%p .. %p]\n",mod->name ? mod->name : "<NULL>",
-					mod->modStart,mod->modEnd);
+			vid_printf("\t[%zu]: virt: %p..%p, phys: %p..%p\n",i,mod->modStart,mod->modEnd,
+					physModAddrs[i],physModAddrs[i] + (mod->modEnd - mod->modStart));
+			vid_printf("\t     cmdline: %s\n",mod->name ? mod->name : "<NULL>");
 			mod++;
 		}
 	}

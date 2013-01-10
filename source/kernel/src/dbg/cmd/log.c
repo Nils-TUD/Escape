@@ -23,7 +23,7 @@
 #include <string.h>
 
 int cons_cmd_log(size_t argc,char **argv) {
-	if(argc != 2) {
+	if(cons_isHelp(argc,argv) || argc != 2) {
 		vid_printf("Usage: %s on|off\n",argv[0]);
 		return 0;
 	}

@@ -41,7 +41,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	sFile *file;
 	sDirEntry e;
 	int res;
-	if(argc != 2) {
+	if(cons_isHelp(argc,argv) || argc != 2) {
 		vid_printf("Usage: %s <dir>\n",argv[0]);
 		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
 		vid_printf("\tSo, I hope, you know what you're doing ;)\n");

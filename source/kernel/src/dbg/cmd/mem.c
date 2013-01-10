@@ -43,9 +43,9 @@ static sNaviBackend backend;
 
 int cons_cmd_mem(size_t argc,char **argv) {
 	uintptr_t addr = 0;
-	if(argc < 1 || argc > 3) {
+	if(cons_isHelp(argc,argv) || argc > 3) {
 		vid_printf("Usage: %s [<pid> [<addr>]]\n",argv[0]);
-		return -EINVAL;
+		return 0;
 	}
 
 	if(argc > 1) {

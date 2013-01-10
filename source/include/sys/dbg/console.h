@@ -58,6 +58,13 @@ typedef struct {
 void cons_start(void);
 
 /**
+ * @param argc the number of args
+ * @param argv the args
+ * @return true if the given arguments contain a help-request
+ */
+bool cons_isHelp(int argc,char **argv);
+
+/**
  * Enables/disables writing to log
  *
  * @param enabled the new value

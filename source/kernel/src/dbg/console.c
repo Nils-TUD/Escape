@@ -121,7 +121,10 @@ void cons_start(void) {
 			vid_printf("All commands use a viewer, that supports the following key-strokes:\n");
 			vid_printf(" - up/down/pageup/pagedown/home/end: navigate through the data\n");
 			vid_printf(" - left/right: to previous/next search result\n");
+			vid_printf(" - enter: jump to entered line/address\n");
+			vid_printf(" - s: stop searching\n");
 			vid_printf(" - esc: quit\n");
+			vid_printf("Note also that you can use '\\XX' to enter a character in hex when searching.\n");
 		}
 		else {
 			cmd = cons_getCommand(argv[0]);
@@ -142,6 +145,11 @@ void cons_start(void) {
 
 	/* now let the other CPUs continue */
 	smp_resumeOthers();
+}
+
+bool cons_isHelp(int argc,char **argv) {
+	return argc > 1 && (strcmp(argv[1],"-h") == 0 || strcmp(argv[1],"-?") == 0 ||
+			strcmp(argv[1],"--help") == 0);
 }
 
 void cons_setLogEnabled(bool enabled) {

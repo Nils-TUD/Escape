@@ -39,7 +39,7 @@ int cons_cmd_file(size_t argc,char **argv) {
 	int res;
 	sLines lines;
 
-	if(argc != 2) {
+	if(cons_isHelp(argc,argv) || argc != 2) {
 		vid_printf("Usage: %s <file>\n",argv[0]);
 		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
 		vid_printf("\tSo, I hope, you know what you're doing ;)\n");

@@ -107,7 +107,7 @@ static sView views[] = {
 int cons_cmd_view(size_t argc,char **argv) {
 	size_t i;
 	int res;
-	if(argc < 2) {
+	if(cons_isHelp(argc,argv) || argc < 2) {
 		vid_printf("Usage: %s <what>\n",argv[0]);
 		vid_printf("Available 'whats':\n");
 		for(i = 0; i < ARRAY_SIZE(views); i++) {

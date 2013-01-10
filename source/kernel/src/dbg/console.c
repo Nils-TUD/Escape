@@ -33,6 +33,7 @@
 #include <esc/keycodes.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 
 #define HISTORY_SIZE	32
 #define MAX_ARG_COUNT	5
@@ -373,7 +374,7 @@ static void cons_display(const sNaviBackend *backend,void *data,
 	}
 
 	if(startAddr > cons_getMaxAddr(backend->maxPos))
-		startAddr = cons_getMaxAddr(backend->maxPos);
+		startAddr = cons_getMaxAddr(backend->maxPos) & ~(BYTES_PER_LINE - 1);
 	if(found)
 		*addr = startAddr;
 
@@ -414,7 +415,7 @@ static void cons_convSearch(const char *src,char *dst,size_t len) {
 			dst[j++] = (cons_charToInt(src[i + 1]) << 4) | cons_charToInt(src[i + 2]);
 			i += 2;
 		}
-		else
+		else if(src[i] != '\\')
 			dst[j++] = src[i];
 	}
 	dst[j] = '\0';

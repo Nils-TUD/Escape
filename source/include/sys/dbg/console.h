@@ -23,7 +23,7 @@
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
 
-#define BYTES_PER_LINE		16
+#define BYTES_PER_LINE		16	/* has to be a power of 2 */
 #define SCROLL_LINES		(VID_ROWS - 1)
 #define SEARCH_NONE			0
 #define SEARCH_FORWARD		1

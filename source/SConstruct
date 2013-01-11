@@ -188,7 +188,7 @@ def EscapeLib(env, target, source, LIBS = []):
 		SetLibDeps(env, shlib, LIBS)
 		env.Install('$BINDIR', shlib)
 		env.Install('$DISTDIR/lib', shlib)
-        env.EscapeMap('lib' + target + '.map', shlib)
+		env.EscapeMap('lib' + target + '.map', shlib)
 
 symlink = Builder(action = 'ln -sf ${SOURCE.abspath} $TARGET')
 env.Append(BUILDERS = {'Symlink' : symlink})

@@ -26,6 +26,7 @@
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
+#include <esc/driver/vterm.h>
 #include <esc/mem.h>
 #include <string.h>
 #include <stdlib.h>
@@ -91,7 +92,14 @@ int main(void) {
 				sKbData data;
 				if(kb_set2_getKeycode(&data.isBreak,&data.keycode,scBuf[scReadPos])) {
 					if(!data.isBreak && data.keycode == VK_F12) {
+						int vtfd = open("/dev/vterm0",IO_MSGS);
+						if(vtfd >= 0)
+							vterm_setEnabled(vtfd,false);
 						debug();
+						if(vtfd >= 0) {
+							vterm_setEnabled(vtfd,true);
+							close(vtfd);
+						}
 						kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 					}
 					else

@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <string.h>
+#include <limits.h>
 
 static const char *getLineInfo(void *data,uintptr_t addr);
 static uint8_t *loadLine(void *data,uintptr_t addr);
@@ -63,7 +64,7 @@ int cons_cmd_mem(size_t argc,char **argv) {
 	vid_backup(backup.screen,&backup.row,&backup.col);
 
 	backend.startPos = addr;
-	backend.maxPos = 0xFFFFFFFF & ~(BYTES_PER_LINE - 1);
+	backend.maxPos = ULONG_MAX & ~(BYTES_PER_LINE - 1);
 	backend.loadLine = loadLine;
 	backend.getInfo = getLineInfo;
 	backend.lineMatches = lineMatches;

@@ -26,6 +26,7 @@
 #include <sys/dbg/cmd/mem.h>
 #include <sys/dbg/cmd/panic.h>
 #include <sys/dbg/cmd/dump.h>
+#include <sys/dbg/cmd/step.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/cache.h>
 #include <sys/task/smp.h>
@@ -58,7 +59,7 @@ static void cons_display(const sNaviBackend *backend,void *data,
                          const char *searchInfo,const char *search,int searchMode,uintptr_t *addr);
 static uint8_t cons_charToInt(char c);
 static void cons_convSearch(const char *src,char *dst,size_t len);
-static char **cons_readCommand(size_t *argc);
+static char **cons_parseLine(const char *line,size_t *argc);
 static char *cons_readLine(void);
 static sCommand *cons_getCommand(const char *name);
 
@@ -78,9 +79,10 @@ static sCommand commands[] = {
 	{"ls",cons_cmd_ls},
 	{"mem",cons_cmd_mem},
 	{"panic",cons_cmd_panic},
+	{"step",cons_cmd_step},
 };
 
-void cons_start(void) {
+void cons_start(const char *initialcmd) {
 	size_t i,argc;
 	int res;
 	sCommand *cmd;
@@ -97,22 +99,44 @@ void cons_start(void) {
 		vid_printf("\n");
 	vid_printf("Welcome to the debugging console!\nType 'help' to get a list of commands!\n\n");
 
-	histWritePos = histReadPos = histSize = 0;
-	memclear(history,sizeof(char*) * HISTORY_SIZE);
-
 	memset(emptyLine,' ',VID_COLS - 1);
 	emptyLine[VID_COLS - 1] = '\0';
 
 	while(true) {
 		vid_printf("# ");
 
-		argv = cons_readCommand(&argc);
-		vid_printf("\n");
+		if(initialcmd != NULL) {
+			argv = cons_parseLine(initialcmd,&argc);
+			initialcmd = NULL;
+		}
+		else {
+			argv = cons_parseLine(cons_readLine(),&argc);
+			vid_printf("\n");
+		}
 
-		if(argc == 0)
-			continue;
-		if(strcmp(argv[0],"exit") == 0)
+		/* repeat last command when no args are given */
+		if(argc == 0) {
+			size_t last = (histReadPos - 1) % histSize;
+			if(history[last]) {
+				argv = cons_parseLine(history[last],&argc);
+				if(argc == 0)
+					continue;
+			}
+			else
+				continue;
+		}
+
+		if(strcmp(argv[0],"exit") == 0) {
+			/* remove this command from history */
+			size_t last = (histReadPos - 1) % histSize;
+			cache_free(history[last]);
+			history[last] = NULL;
+			histReadPos = last;
+			histWritePos = last;
+			histSize--;
 			break;
+		}
+
 		if(strcmp(argv[0],"help") == 0) {
 			vid_printf("Available commands:\n");
 			for(i = 0; i < ARRAY_SIZE(commands); i++)
@@ -130,6 +154,8 @@ void cons_start(void) {
 			cmd = cons_getCommand(argv[0]);
 			if(cmd) {
 				res = cmd->exec(argc,argv);
+				if(res == CONS_EXIT)
+					break;
 				if(res != 0)
 					vid_printf("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(-res),res);
 			}
@@ -138,8 +164,6 @@ void cons_start(void) {
 		}
 	}
 
-	for(i = 0; i < HISTORY_SIZE; i++)
-		cache_free(history[i]);
 	vid_restore(backup.screen,backup.row,backup.col);
 	vid_setTargets(TARGET_LOG);
 
@@ -431,11 +455,10 @@ static void cons_convSearch(const char *src,char *dst,size_t len) {
 	dst[j] = '\0';
 }
 
-static char **cons_readCommand(size_t *argc) {
+static char **cons_parseLine(const char *line,size_t *argc) {
 	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
 	static char *args[MAX_ARG_COUNT];
 	size_t i = 0,j = 0;
-	char *line = cons_readLine();
 	args[0] = argvals[0];
 	while(*line) {
 		if(*line == ' ') {
@@ -469,6 +492,14 @@ static char *cons_readLine(void) {
 		kb_get(&ev,KEV_PRESS,true);
 		if(i >= sizeof(line) - 1 || ev.keycode == VK_ENTER)
 			break;
+
+		/* emulate exit for ^D on an empty line */
+		if(i == 0 && (ev.flags & KE_CTRL) && ev.keycode == VK_D) {
+			strcpy(line,"exit");
+			i = SSTRLEN("exit");
+			break;
+		}
+
 		if((ev.keycode == VK_UP || ev.keycode == VK_DOWN) && histSize > 0) {
 			if(ev.keycode == VK_UP) {
 				if(histReadPos == 0)
@@ -496,10 +527,14 @@ static char *cons_readLine(void) {
 		}
 	}
 	line[i] = '\0';
-	history[histWritePos] = strdup(line);
-	histWritePos = (histWritePos + 1) % HISTORY_SIZE;
-	histReadPos = histWritePos;
-	histSize = MIN(histSize + 1,HISTORY_SIZE);
+
+	/* add to history */
+	if(strlen(line) > 0 && (!history[histReadPos] || strcmp(history[histReadPos],line) != 0)) {
+		history[histWritePos] = strdup(line);
+		histWritePos = (histWritePos + 1) % HISTORY_SIZE;
+		histReadPos = histWritePos;
+		histSize = MIN(histSize + 1,HISTORY_SIZE);
+	}
 	return line;
 }
 

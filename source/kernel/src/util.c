@@ -104,7 +104,7 @@ void util_panic(const char *fmt, ...) {
 	vid_printf("\nPress any key to start debugger");
 	while(1) {
 		kb_get(NULL,KEV_PRESS,true);
-		cons_start();
+		cons_start(NULL);
 	}
 }
 
@@ -155,9 +155,12 @@ void util_dumpBytes(const void *addr,size_t byteCount) {
 	size_t i = 0;
 	uchar *ptr = (uchar*)addr;
 	for(i = 0; byteCount-- > 0; i++) {
-		vid_printf("%02x ",*ptr);
+		if(i % 16 == 0) {
+			if(i > 0)
+				vid_printf("\n");
+			vid_printf("%p:",ptr);
+		}
+		vid_printf(" %02x",*ptr);
 		ptr++;
-		if(i % 16 == 15)
-			vid_printf("\n");
 	}
 }

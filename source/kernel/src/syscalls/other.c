@@ -50,7 +50,7 @@ int sysc_debug(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 	cache_dbg_setAaFEnabled(foo == 0);
 	foo = foo ? 0 : 1;
 #else
-	cons_start();
+	cons_start(NULL);
 #endif
 	SYSC_RET1(stack,0);
 }

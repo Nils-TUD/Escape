@@ -91,6 +91,7 @@ void util_printUserState(void) {
 		regs[R_GS] = kstack->gs;
 		regs[R_SS] = kstack->uss;
 		regs[R_EFLAGS] = kstack->eflags;
+		regs[R_EIP] = kstack->eip;
 		PRINT_REGS(regs,"\t");
 	}
 }

@@ -44,8 +44,9 @@
 #define R_GS		12
 #define R_SS		13
 #define R_EFLAGS	14
+#define R_EIP		15
 /* number of registers GET_REGS and PRINT_REGS will need */
-#define REG_COUNT	15
+#define REG_COUNT	16
 
 /* prints the values in the general-purpose-, segment- and eflags-registers */
 #define PRINT_CURREGS(pad) \
@@ -60,9 +61,9 @@
 			regs[R_EAX],regs[R_EBX],regs[R_ECX],regs[R_EDX]); \
 	rprintf(pad "esi=0x%08x, edi=0x%08x, esp=0x%08x, ebp=0x%08x\n", \
 			regs[R_ESI],regs[R_EDI],regs[R_ESP],regs[R_EBP]); \
+	rprintf(pad "eip=0x%08x, eflags=0x%08x\n",regs[R_EIP],regs[R_EFLAGS]); \
 	rprintf(pad "cs=0x%02x, ds=0x%02x, es=0x%02x, fs=0x%02x, gs=0x%02x, ss=0x%02x\n", \
-			regs[R_CS],regs[R_DS],regs[R_ES],regs[R_FS],regs[R_GS],regs[R_SS]); \
-	rprintf(pad "eflags=0x%08x\n",regs[R_EFLAGS]);
+			regs[R_CS],regs[R_DS],regs[R_ES],regs[R_FS],regs[R_GS],regs[R_SS]);
 
 /* writes the register-values in the given buffer */
 #define GET_REGS(buffer) \
@@ -74,6 +75,7 @@
 	GET_REG("edi",buffer[R_EDI]); \
 	GET_REG("esp",buffer[R_ESP]); \
 	GET_REG("ebp",buffer[R_EBP]); \
+	GER_REG["eip",buffer[R_EIP]); \
 	GET_REG("cs",buffer[R_CS]); \
 	GET_REG("ds",buffer[R_DS]); \
 	GET_REG("es",buffer[R_ES]); \

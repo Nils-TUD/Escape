@@ -255,7 +255,7 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 		 * (before viewing the log ;)) */
 		sKeyEvent ev;
 		if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
-			cons_start();
+			cons_start(NULL);
 	}
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might

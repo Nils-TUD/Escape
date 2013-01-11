@@ -23,7 +23,13 @@
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
 
-#define BYTES_PER_LINE		16	/* has to be a power of 2 */
+#define CONS_EXIT			-1234
+/* has to be a power of 2 */
+#ifdef __mmix__
+#	define BYTES_PER_LINE		8
+#else
+#	define BYTES_PER_LINE		16
+#endif
 #define SCROLL_LINES		(VID_ROWS - 1)
 #define SEARCH_NONE			0
 #define SEARCH_FORWARD		1
@@ -54,8 +60,10 @@ typedef struct {
 
 /**
  * Starts the debugging-console
+ *
+ * @param initialcmd the initial command to execute (NULL = none)
  */
-void cons_start(void);
+void cons_start(const char *initialcmd);
 
 /**
  * @param argc the number of args

@@ -118,6 +118,7 @@ void boot_arch_start(sBootInfo *info) {
 	mod = info->modsAddr;
 	for(i = 0; i < info->modsCount; i++) {
 		mod->name = boot_copy_mbinfo(mod->name,strlen(PHYS2VIRT(mod->name)) + 1);
+		physModAddrs[i] = mod->modStart;
 		mod++;
 	}
 	mb = info;
@@ -137,7 +138,6 @@ void boot_arch_start(sBootInfo *info) {
 		uintptr_t maddr = mod->modStart;
 		size_t size = mod->modEnd - mod->modStart;
 		uintptr_t mend = maddr + size;
-		physModAddrs[i] = maddr;
 		mod->modStart = addr + (maddr & (PAGE_SIZE - 1));
 		mod->modEnd = mod->modStart + size;
 		for(; maddr < mend; maddr += PAGE_SIZE) {
@@ -180,6 +180,13 @@ size_t boot_getModuleSize(void) {
 	uintptr_t start = mb->modsAddr[0].modStart;
 	uintptr_t end = mb->modsAddr[mb->modsCount - 1].modEnd;
 	return end - start;
+}
+
+uintptr_t boot_getModulesEnd(void) {
+	assert(mb->modsCount > 0);
+	uintptr_t start = mb->modsAddr[0].modStart;
+	uintptr_t end = mb->modsAddr[mb->modsCount - 1].modEnd;
+	return physModAddrs[mb->modsCount - 1] + (end - start);
 }
 
 size_t boot_getUsableMemCount(void) {

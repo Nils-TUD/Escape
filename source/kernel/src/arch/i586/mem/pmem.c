@@ -44,8 +44,7 @@ void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap) {
 	*bitmap = (tBitmap*)(((uintptr_t)*bitmap + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
 
 	/* map that area */
-	uintptr_t phys = KERNEL_P_ADDR + boot_getKernelSize() + boot_getModuleSize()
-			+ BOOTSTRAP_PTS * PAGE_SIZE;
+	uintptr_t phys = boot_getModulesEnd() + BOOTSTRAP_PTS * PAGE_SIZE;
 	phys = (phys + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
 	uintptr_t virt = *stackBegin,end = (uintptr_t)*bitmap + BITMAP_PAGE_COUNT / 8;

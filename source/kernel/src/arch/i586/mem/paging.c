@@ -138,7 +138,11 @@ void paging_init(void) {
 	addr = KERNEL_AREA_P_ADDR;
 	for(i = 0; i < PT_ENTRY_COUNT; i++, addr += PAGE_SIZE) {
 		/* build page-table entry */
-		proc0PT[i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
+		/* we need only 0x7000 (trampoline) and 0xB8000 (vga mem) writable in the first megabyte */
+		if(addr < 1 * M && addr != 0x7000 && addr != 0xB8000)
+			proc0PT[i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_EXISTS;
+		else
+			proc0PT[i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
 	}
 
 	/* insert page-table in the page-directory */

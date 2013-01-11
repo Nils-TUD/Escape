@@ -80,8 +80,8 @@ static void test_informat(void) {
 		const string teststr("123 456 abc 1 false 0 myteststringfoo");
 		istringstream istr(teststr);
 		char buf[10];
-		int i1,i2,i3;
-		bool b1,b2,b3;
+		int i1 = 0, i2 = 0, i3 = 0;
+		bool b1 = false, b2 = false, b3 = false;
 		istr >> i1;
 		istr >> i2;
 		istr >> hex >> i3;
@@ -116,10 +116,10 @@ static void test_informat(void) {
 		);
 		istringstream is(teststr);
 
-		int tid,pid,state,prio;
-		unsigned flags,cpu;
-		size_t stackPages,schedCount,syscalls;
-		unsigned long long cycles,runtime;
+		int tid = 0, pid = 0, state = 0, prio = 0;
+		unsigned flags = 0, cpu = 0;
+		size_t stackPages = 0, schedCount = 0, syscalls = 0;
+		unsigned long long cycles = 0, runtime = 0;
 		string procName;
 		istream::size_type unlimited = numeric_limits<streamsize>::max();
 

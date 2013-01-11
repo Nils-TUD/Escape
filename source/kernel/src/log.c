@@ -155,7 +155,9 @@ static ssize_t log_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer
 		for(i = 0; i < count; i++)
 			log_writeChar(str[i]);
 	}
-	return vfs_file_write(pid,file,node,buffer,offset,count);
+	/* ignore errors here */
+	vfs_file_write(pid,file,node,buffer,offset,count);
+	return count;
 }
 
 static void log_flush(void) {

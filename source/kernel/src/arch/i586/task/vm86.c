@@ -366,8 +366,9 @@ static void vm86_start(void) {
 	}
 
 	/* set stack-pointer (in an unsed area) */
-	istack->uss = 0x9000;
-	istack->uesp = 0x0FFC;
+	/* TODO is there any location where we can be sure that it is unused?? */
+	istack->uss = 0x2000;
+	istack->uesp = 0x5FFC;
 	/* enable VM flag */
 	istack->eflags |= 1 << 17;
 	/* set entrypoint */

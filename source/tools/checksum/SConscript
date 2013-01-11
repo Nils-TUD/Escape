@@ -1,0 +1,6 @@
+# -*- Mode: Python -*-
+
+Import('hostenv')
+
+prog = hostenv.Program('checksum', hostenv.Glob('*.cpp'))
+hostenv.Install('$BINDIR', prog)

@@ -401,7 +401,7 @@ void paging_removeAccess(void) {
 	paging_unmapFromTemp(1);
 }
 
-frameno_t paging_demandLoad(void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
+frameno_t paging_demandLoad(const void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
 	frameno_t frame;
 	pagedir_t *pdir = paging_getPageDir();
 	spinlock_aquire(&pagingLock);

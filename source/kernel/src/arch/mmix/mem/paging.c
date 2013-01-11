@@ -155,7 +155,7 @@ void paging_removeAccess(void) {
 	/* nothing to do */
 }
 
-frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags) {
+frameno_t paging_demandLoad(const void *buffer,size_t loadCount,ulong regFlags) {
 	/* copy into frame */
 	frameno_t frame = thread_getFrame();
 	uintptr_t addr = frame * PAGE_SIZE | DIR_MAPPED_SPACE;

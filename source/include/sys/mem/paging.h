@@ -133,7 +133,7 @@ void paging_removeAccess(void);
  * @param regFlags the flags of the affected region
  * @return the frame-number
  */
-frameno_t paging_demandLoad(void *buffer,size_t loadCount,ulong regFlags);
+frameno_t paging_demandLoad(const void *buffer,size_t loadCount,ulong regFlags);
 
 /**
  * Copies the memory (size=PAGE_SIZE) from <src> into the given frame.

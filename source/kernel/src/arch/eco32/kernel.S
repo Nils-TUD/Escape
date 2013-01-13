@@ -23,14 +23,6 @@
 
 	.extern	bspstart
 
-	.extern	_ecode
-	.extern	_edata
-	.extern	_ebss
-
-	.global	_bcode
-	.global	_bdata
-	.global	_bbss
-
 	.extern	dbg_prints
 	.extern intrpt_handler
 	.extern curPDir
@@ -94,7 +86,6 @@
 #===========================================
 
 .section .text
-_bcode:
 
 reset:
 	j		start
@@ -525,13 +516,3 @@ resumeClearTLBLoop:
 
 	add		$2,$0,1							# return 1
 	jr		$31
-
-#===========================================
-# Data
-#===========================================
-
-.section .data
-_bdata:
-
-.section .bss
-_bbss:

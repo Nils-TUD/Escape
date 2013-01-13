@@ -88,7 +88,8 @@ static uintptr_t physModAddrs[MOD_COUNT];
 static char mbbuf[PAGE_SIZE];
 static size_t mbbufpos = 0;
 
-extern uintptr_t KernelStart;
+extern void *_btext;
+extern void *_ebss;
 static sBootInfo *mb;
 static bool loadedMods = false;
 static uintptr_t mmStackBegin;
@@ -169,8 +170,8 @@ uintptr_t boot_getMMStackBegin(void) {
 }
 
 size_t boot_getKernelSize(void) {
-	uintptr_t start = (uintptr_t)&KernelStart;
-	uintptr_t end = physModAddrs[0];
+	uintptr_t start = (uintptr_t)&_btext;
+	uintptr_t end = (uintptr_t)&_ebss;
 	return end - start;
 }
 

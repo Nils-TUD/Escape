@@ -29,14 +29,6 @@
 
 	.extern	bootload
 
-	.extern	_ecode
-	.extern	_edata
-	.extern	_ebss
-
-	.global	_bcode
-	.global	_bdata
-	.global	_bbss
-
 	.extern	debugString
 	.extern	sctcapctl
 	.extern	sctioctl
@@ -47,7 +39,6 @@
 
 
 .section .text
-_bcode:
 
 reset:
 	j 		start
@@ -135,12 +126,8 @@ dskio:
 	j		sctioctl
 
 .section .data
-_bdata:
 
 errIntrpt:
 	.asciz	"unexpected interrupt\r\n"
 errUserMiss:
 	.asciz	"unexpected user-miss\r\n"
-
-.section .bss
-_bbss:

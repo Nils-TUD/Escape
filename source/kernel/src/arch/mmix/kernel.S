@@ -21,10 +21,6 @@
 # Imports / Exports
 #===========================================
 
-	.global	_bcode
-	.global	_bdata
-	.global	_bbss
-
 	.extern	bspstart
 	.extern intrpt_forcedTrap
 	.extern intrpt_dynTrap
@@ -70,7 +66,6 @@
 # changes to binutils causes that? But I used to work and I can't see any difference :/
 
 .section .text
-_bcode:
 
 start:
 	# copy the current stack to stackCopy
@@ -485,11 +480,7 @@ krg:
 # Data
 #===========================================
 
-.section .data
-_bdata:
-
 .section .bss
-_bbss:
 
 # one page for the stack-copy; this is used for starting threads (to give them their initial
 # kernelstack)

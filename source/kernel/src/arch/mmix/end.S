@@ -17,21 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-	.global	_ecode
-	.global	_edata
-	.global	_ebss
-
-.section .text
-	.align	8
-_ecode:
-
-.section .data
-	.align	8
-_edata:
-
 .section .bss
 	.align	8
-_ebss:
 
 % This must be the last file on the link-line, allocating global registers
 % from the top.

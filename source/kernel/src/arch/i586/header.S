@@ -22,7 +22,6 @@
 
 .extern higherhalf
 .global loader
-.global KernelStart
 
 # Multiboot constants
 .set MULTIBOOT_PAGE_ALIGN,			1 << 0
@@ -38,7 +37,6 @@
 .long		MULTIBOOT_CHECKSUM
 
 # the kernel entry point
-KernelStart:
 loader:
 	# here is the trick: we load a GDT with a base address
 	# of 0x40000000 for the code (0x08) and data (0x10) segments

@@ -2,15 +2,6 @@
 # c1.s -- end-of-segment labels
 #
 
-	.global	_ecode
-	.global	_edata
-	.global	_ebss
-	.global stack
-
-.section .text
-	.align	8
-_ecode:
-
 .section .data
 	# stack for unsave
 	OCTA	#0								% rL
@@ -30,11 +21,9 @@ _ecode:
 stack:
 	OCTA	#FF00000000000000	% rG | rA
 	.align	8
-_edata:
 
 .section .bss
 	.align	8
-_ebss:
 
 % This must be the last file on the link-line, allocating global registers
 % from the top.

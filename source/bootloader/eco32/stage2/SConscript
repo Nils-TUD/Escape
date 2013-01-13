@@ -6,7 +6,7 @@ myenv = env.Clone()
 ldscript = 'bootloader/eco32/stage2/ld.conf'
 myenv.Append(LINKFLAGS = '-ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldscript)
 elf = myenv.EscapeCProg(
-	'', 'stage2.elf', ['c0.S', myenv.Glob('*.c'), 'sctio-ctl.S', 'c1.S'], force_static = True,
+	'', 'stage2.elf', ['c0.S', myenv.Glob('*.c'), 'sctio-ctl.S'], force_static = True,
 	var_addr = False, LIBS = ['c']
 )
 myenv.Symlink('$BINDIR/stage2.elf', elf)

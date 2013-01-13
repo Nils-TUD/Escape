@@ -5,10 +5,6 @@
 	.extern	bootload
 	.extern stack
 
-	.global	_bcode
-	.global	_bdata
-	.global	_bbss
-
 	.extern	debugString
 
 	.global start
@@ -22,7 +18,6 @@
 	.set	STACK_SIZE,					PAGE_SIZE
 
 .section .text
-_bcode:
 
 start:
 	# setup global and special registers; the MBR has setup $0 for us
@@ -120,9 +115,3 @@ dskio:
 	PBNZ	$7,2b
 	PUT		rJ,$3
 	POP		0,0
-
-.section .data
-_bdata:
-
-.section .bss
-_bbss:

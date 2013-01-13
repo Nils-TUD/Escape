@@ -156,7 +156,7 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 	size_t i,c = 0;
 	spinlock_aquire(&contLock);
 	/* align in physical memory */
-	i = (BITMAP_START_FRAME + align - 1) & ~(align - 1);
+	i = ROUND_UP(BITMAP_START_FRAME,align);
 	i -= BITMAP_START_FRAME;
 	for(; i < BITMAP_PAGE_COUNT; ) {
 		/* walk forward until we find an occupied frame */
@@ -171,7 +171,7 @@ ssize_t pmem_allocateContiguous(size_t count,size_t align) {
 		if(c == count)
 			break;
 		/* ok, to next aligned frame */
-		i = (BITMAP_START_FRAME + j + 1 + align - 1) & ~(align - 1);
+		i = ROUND_UP(BITMAP_START_FRAME + j + 1,align);
 		i -= BITMAP_START_FRAME;
 	}
 

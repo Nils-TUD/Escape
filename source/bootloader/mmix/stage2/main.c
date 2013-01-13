@@ -308,7 +308,7 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	prog->size = loadAddr - 0x8000000000000000;
 
 	/* to next page for the stack */
-	loadAddr = (loadAddr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	loadAddr = ROUND_UP(loadAddr,PAGE_SIZE);
 	bootinfo.kstackBegin = loadAddr;
 
 	/* load the regs-section */
@@ -348,7 +348,7 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 
 static int readInProg(sLoadProg *prog,sExt2Inode *ino) {
 	/* make page-boundary */
-	loadAddr = (loadAddr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	loadAddr = ROUND_PAGE_UP(loadAddr);
 	prog->start = loadAddr;
 	prog->size = le32tocpu(ino->size);
 

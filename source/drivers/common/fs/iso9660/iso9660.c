@@ -255,7 +255,7 @@ void iso_print(FILE *f,void *h) {
 void iso_dbg_printPathTbl(sISO9660 *h) {
 	size_t tblSize = h->primary.data.primary.pathTableSize.littleEndian;
 	size_t secCount = (tblSize + ATAPI_SECTOR_SIZE - 1) / ATAPI_SECTOR_SIZE;
-	sISOPathTblEntry *pe = malloc((tblSize + ATAPI_SECTOR_SIZE - 1) & ~(ATAPI_SECTOR_SIZE - 1));
+	sISOPathTblEntry *pe = malloc(ROUND_UP(tblSize,ATAPI_SECTOR_SIZE));
 	sISOPathTblEntry *start = pe;
 	if(iso_rw_readSectors(h,pe,h->primary.data.primary.lPathTblLoc,secCount) != 0) {
 		free(start);

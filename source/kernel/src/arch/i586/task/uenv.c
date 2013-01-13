@@ -96,7 +96,7 @@ bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo
 	totalSize = 0;
 	if(argc > 0) {
 		/* first round the size of the arguments up. then we need argc+1 pointer */
-		totalSize += (argsSize + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
+		totalSize += ROUND_UP(argsSize,sizeof(uint32_t));
 		totalSize += sizeof(void*) * (argc + 1);
 	}
 	/* finally we need argc, argv, tlsSize, tlsStart and entryPoint */

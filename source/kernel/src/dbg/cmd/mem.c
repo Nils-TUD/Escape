@@ -64,7 +64,7 @@ int cons_cmd_mem(size_t argc,char **argv) {
 	vid_backup(backup.screen,&backup.row,&backup.col);
 
 	backend.startPos = addr;
-	backend.maxPos = ULONG_MAX & ~(BYTES_PER_LINE - 1);
+	backend.maxPos = ROUND_DN(ULONG_MAX,(ulong)BYTES_PER_LINE);
 	backend.loadLine = loadLine;
 	backend.getInfo = getLineInfo;
 	backend.lineMatches = lineMatches;
@@ -114,5 +114,5 @@ static void displayLine(A_UNUSED void *data,uintptr_t addr,uint8_t *bytes) {
 
 static uintptr_t gotoAddr(A_UNUSED void *data,const char *addr) {
 	uintptr_t off = strtoul(addr,NULL,16);
-	return off & ~((uintptr_t)BYTES_PER_LINE - 1);
+	return ROUND_DN(off,(uintptr_t)BYTES_PER_LINE);
 }

@@ -33,7 +33,7 @@
  * list of this vm-regions as well.
  */
 
-#define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+#define ROUNDUP(bytes)		ROUND_PAGE_UP(((bytes)))
 
 static void vmreg_doRemove(sVMRegion **p,sVMRegion *reg);
 static void vmreg_doPrint(const sVMRegion *n,int layer);

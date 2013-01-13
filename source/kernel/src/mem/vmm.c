@@ -44,7 +44,6 @@
  */
 
 #define DEBUG_SWAP			0
-#define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
 static sRegion *vmm_getLRURegion(void);
 static ssize_t vmm_getPgIdxForSwap(const sRegion *reg);
@@ -601,7 +600,7 @@ static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 			p->freeStackAddr = vm->virt + vm->reg->byteCount;
 		/* give the memory back to the free-area, if its in there */
 		else if(vm->virt >= FREE_AREA_BEGIN)
-			vmfree_free(&p->freemap,vm->virt,ROUNDUP(vm->reg->byteCount));
+			vmfree_free(&p->freemap,vm->virt,ROUND_PAGE_UP(vm->reg->byteCount));
 		if(vm->virt == p->dataAddr)
 			p->dataAddr = 0;
 		else if(vm->virt == p->textAddr)
@@ -622,7 +621,7 @@ static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 		p->swapped -= swapped;
 		/* give the memory back to the free-area, if its in there */
 		if(vm->virt >= FREE_AREA_BEGIN)
-			vmfree_free(&p->freemap,vm->virt,ROUNDUP(vm->reg->byteCount));
+			vmfree_free(&p->freemap,vm->virt,ROUND_PAGE_UP(vm->reg->byteCount));
 		mutex_release(&vm->reg->lock);
 	}
 	vmreg_remove(&p->regtree,vm);
@@ -654,7 +653,7 @@ int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm,uintptr_t
 	assert(vm->reg->flags & RF_SHAREABLE);
 
 	if(dstAddr == 0)
-		dstAddr = vmfree_allocate(&dst->freemap,ROUNDUP(vm->reg->byteCount));
+		dstAddr = vmfree_allocate(&dst->freemap,ROUND_PAGE_UP(vm->reg->byteCount));
 	else if(vmreg_getByAddr(&dst->regtree,dstAddr) != NULL)
 		goto errReg;
 	if(dstAddr == 0)
@@ -730,7 +729,7 @@ int vmm_cloneAll(pid_t dstId) {
 
 			/* remove regions in the free area from the free-map */
 			if(vm->virt >= FREE_AREA_BEGIN) {
-				if(!vmfree_allocateAt(&dst->freemap,nvm->virt,ROUNDUP(nvm->reg->byteCount)))
+				if(!vmfree_allocateAt(&dst->freemap,nvm->virt,ROUND_PAGE_UP(nvm->reg->byteCount)))
 					goto error;
 			}
 
@@ -809,15 +808,15 @@ int vmm_growStackTo(pid_t pid,sVMRegion *vm,uintptr_t addr) {
 	/* note that we assume here that if a thread has multiple stack-regions, they grow towards
 	 * each other */
 	if(vm->reg->flags & RF_GROWS_DOWN) {
-		if(addr < vm->virt + ROUNDUP(vm->reg->byteCount) && addr < vm->virt) {
+		if(addr < vm->virt + ROUND_PAGE_UP(vm->reg->byteCount) && addr < vm->virt) {
 			res = 0;
 			newPages = (vm->virt - addr) / PAGE_SIZE;
 		}
 	}
 	else {
-		if(addr >= vm->virt && addr >= vm->virt + ROUNDUP(vm->reg->byteCount)) {
+		if(addr >= vm->virt && addr >= vm->virt + ROUND_PAGE_UP(vm->reg->byteCount)) {
 			res = 0;
-			newPages = ROUNDUP(addr - (vm->virt + ROUNDUP(vm->reg->byteCount) - 1)) / PAGE_SIZE;
+			newPages = ROUND_PAGE_UP(addr - (vm->virt + ROUND_PAGE_UP(vm->reg->byteCount) - 1)) / PAGE_SIZE;
 		}
 	}
 
@@ -880,7 +879,7 @@ static size_t vmm_doGrow(sProc *p,sVMRegion *vm,ssize_t amount) {
 				}
 			}
 			else {
-				uintptr_t end = oldVirt + ROUNDUP(vm->reg->byteCount);
+				uintptr_t end = oldVirt + ROUND_PAGE_UP(vm->reg->byteCount);
 				if(vmm_isOccupied(p,end,end + amount * PAGE_SIZE)) {
 					mutex_release(&vm->reg->lock);
 					return 0;
@@ -903,7 +902,7 @@ static size_t vmm_doGrow(sProc *p,sVMRegion *vm,ssize_t amount) {
 				virt = vm->virt;
 			}
 			else
-				virt = vm->virt + ROUNDUP(oldSize);
+				virt = vm->virt + ROUND_PAGE_UP(oldSize);
 			pts = paging_mapTo(&p->pagedir,virt,NULL,amount,mapFlags);
 			if(pts < 0) {
 				if(vm->reg->flags & RF_GROWS_DOWN)
@@ -923,7 +922,7 @@ static size_t vmm_doGrow(sProc *p,sVMRegion *vm,ssize_t amount) {
 				vm->virt += -amount * PAGE_SIZE;
 			}
 			else
-				virt = vm->virt + ROUNDUP(vm->reg->byteCount);
+				virt = vm->virt + ROUND_PAGE_UP(vm->reg->byteCount);
 			/* give it back to the free area */
 			if(vm->virt >= FREE_AREA_BEGIN)
 				vmfree_free(&p->freemap,virt,-amount * PAGE_SIZE);
@@ -933,7 +932,7 @@ static size_t vmm_doGrow(sProc *p,sVMRegion *vm,ssize_t amount) {
 		}
 	}
 
-	res = (vm->reg->flags & RF_GROWS_DOWN) ? oldVirt : oldVirt + ROUNDUP(oldSize);
+	res = (vm->reg->flags & RF_GROWS_DOWN) ? oldVirt : oldVirt + ROUND_PAGE_UP(oldSize);
 	mutex_release(&vm->reg->lock);
 	return res;
 }
@@ -1230,7 +1229,7 @@ static void vmm_setSwappedIn(sRegion *reg,size_t index,frameno_t frameNo) {
 
 static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,A_UNUSED ulong rflags) {
 	uintptr_t addr,end;
-	size_t size = ROUNDUP(byteCount);
+	size_t size = ROUND_PAGE_UP(byteCount);
 	sVMRegion *dataReg;
 	/* leave a gap between the stacks as a guard */
 	if(byteCount > (MAX_STACK_PAGES - 1) * PAGE_SIZE)
@@ -1239,7 +1238,7 @@ static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,A_UNUSED ulong rfla
 	/* find end address */
 	dataReg = vmreg_getByAddr(&p->regtree,p->dataAddr);
 	if(dataReg)
-		end = dataReg->virt + ROUNDUP(dataReg->reg->byteCount);
+		end = dataReg->virt + ROUND_PAGE_UP(dataReg->reg->byteCount);
 	else
 		end = vmm_getFirstUsableAddr(p);
 	/* determine start address */
@@ -1261,7 +1260,7 @@ static uintptr_t vmm_findFreeStack(sProc *p,size_t byteCount,A_UNUSED ulong rfla
 	for(addr = STACK_AREA_BEGIN; addr < STACK_AREA_END; addr += MAX_STACK_PAGES * PAGE_SIZE) {
 		if(vmm_isOccupied(p,addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE) == NULL) {
 			if(rflags & RF_GROWS_DOWN)
-				return addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE - ROUNDUP(byteCount);
+				return addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE - ROUND_PAGE_UP(byteCount);
 			return addr;
 		}
 	}
@@ -1273,7 +1272,7 @@ static sVMRegion *vmm_isOccupied(sProc *p,uintptr_t start,uintptr_t end) {
 	sVMRegion *vm;
 	for(vm = p->regtree.begin; vm != NULL; vm = vm->next) {
 		uintptr_t rstart = vm->virt;
-		uintptr_t rend = vm->virt + ROUNDUP(vm->reg->byteCount);
+		uintptr_t rend = vm->virt + ROUND_PAGE_UP(vm->reg->byteCount);
 		if(OVERLAPS(rstart,rend,start,end))
 			return vm;
 	}
@@ -1289,7 +1288,7 @@ static uintptr_t vmm_getFirstUsableAddr(sProc *p) {
 			addr = vm->virt + vm->reg->byteCount;
 		}
 	}
-	return ROUNDUP(addr);
+	return ROUND_PAGE_UP(addr);
 }
 
 static sProc *vmm_reqProc(pid_t pid) {
@@ -1373,7 +1372,7 @@ static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *fl
 				*flags = RF_WRITABLE;
 				*pgFlags = PF_DEMANDLOAD;
 			}
-			*virt = vmfree_allocate(&p->freemap,ROUNDUP(bCount));
+			*virt = vmfree_allocate(&p->freemap,ROUND_PAGE_UP(bCount));
 			if(*virt == 0)
 				return -ENOMEM;
 			break;

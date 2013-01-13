@@ -299,13 +299,13 @@ static int loadKernel(sLoadProg *prog,sExt2Inode *ino) {
 	prog->size = loadAddr - 0xC0000000;
 
 	/* leave one page for stack */
-	loadAddr += (PAGE_SIZE + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	loadAddr = ROUND_UP(loadAddr + PAGE_SIZE,PAGE_SIZE);
 	return 1;
 }
 
 static int readInProg(sLoadProg *prog,sExt2Inode *ino) {
 	/* make page-boundary */
-	loadAddr = (loadAddr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	loadAddr = ROUND_UP(loadAddr,PAGE_SIZE);
 	prog->start = loadAddr;
 	prog->size = le32tocpu(ino->size);
 

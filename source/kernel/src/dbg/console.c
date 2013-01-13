@@ -408,7 +408,7 @@ static void cons_display(const sNaviBackend *backend,void *data,
 	}
 
 	if(startAddr > cons_getMaxAddr(backend->maxPos))
-		startAddr = cons_getMaxAddr(backend->maxPos) & ~(BYTES_PER_LINE - 1);
+		startAddr = ROUND_DN(cons_getMaxAddr(backend->maxPos),(uintptr_t)BYTES_PER_LINE);
 	if(found)
 		*addr = startAddr;
 

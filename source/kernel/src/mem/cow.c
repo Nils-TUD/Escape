@@ -67,7 +67,7 @@ size_t cow_pagefault(uintptr_t address,frameno_t frameNumber) {
 
 	/* copy? */
 	if(cow->refCount > 0)
-		paging_copyFromFrame(frameNumber,(void*)(address & ~(PAGE_SIZE - 1)));
+		paging_copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
 	else
 		cache_free(cow);
 	spinlock_release(&cowLock);

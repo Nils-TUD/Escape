@@ -134,8 +134,8 @@ int main(int argc,char **argv) {
 				case MSG_DEV_READ: {
 					ulong offset = msg.args.arg1;
 					ulong count = msg.args.arg2;
-					ulong roffset = offset & ~(SECTOR_SIZE - 1);
-					ulong rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
+					ulong roffset = ROUND_DN(offset,SECTOR_SIZE);
+					ulong rcount = ROUND_UP(count,SECTOR_SIZE);
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 						if(rcount <= MAX_RW_SIZE) {
@@ -155,8 +155,8 @@ int main(int argc,char **argv) {
 				case MSG_DEV_WRITE: {
 					ulong offset = msg.args.arg1;
 					ulong count = msg.args.arg2;
-					ulong roffset = offset & ~(SECTOR_SIZE - 1);
-					ulong rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
+					ulong roffset = ROUND_DN(offset,SECTOR_SIZE);
+					ulong rcount = ROUND_UP(count,SECTOR_SIZE);
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 						if(rcount <= MAX_RW_SIZE) {

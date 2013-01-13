@@ -193,7 +193,7 @@ namespace gui {
 		if(_infoHeader->compression == BI_RGB) {
 			size_t bytesPerLine;
 			bytesPerLine = _infoHeader->width * (_infoHeader->bitCount / 8);
-			bytesPerLine = (bytesPerLine + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
+			bytesPerLine = ROUND_UP(bytesPerLine,sizeof(uint32_t));
 			_dataSize = bytesPerLine * _infoHeader->height;
 		}
 		else {

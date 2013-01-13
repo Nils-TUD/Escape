@@ -158,7 +158,7 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint offset,uint cou
 	/* we have to check whether it is at least one sector. otherwise ATA can't
 	 * handle the request */
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
-		uint rcount = (count + ataDev->secSize - 1) & ~(ataDev->secSize - 1);
+		uint rcount = ROUND_UP(count,ataDev->secSize);
 		if(rcount <= MAX_RW_SIZE) {
 			size_t i;
 			ATA_PR2("Reading %d bytes @ %x from device %d",

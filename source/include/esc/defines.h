@@ -39,6 +39,11 @@
 	((end1) > (start2) && (end1) <= (end2)) ||			/* end in range */		\
 	((start1) < (start2) && (end1) > (end2)))			/* complete overlapped */
 
+#define ROUND_DN(count,align)	((count) & ~((align) - 1))
+#define ROUND_UP(count,align)	(((count) + (align) - 1) & ~((align) - 1))
+#define ROUND_PAGE_DN(count)	ROUND_DN(count,PAGE_SIZE)
+#define ROUND_PAGE_UP(count)	ROUND_UP(count,PAGE_SIZE)
+
 /* gcc-attributes */
 #define A_PACKED				__attribute__((packed))
 #define A_ALIGNED(x)			__attribute__((aligned (x)))

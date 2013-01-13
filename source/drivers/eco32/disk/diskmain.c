@@ -134,8 +134,8 @@ int main(int argc,char **argv) {
 				case MSG_DEV_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
-					uint roffset = offset & ~(SECTOR_SIZE - 1);
-					uint rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
+					uint roffset = ROUND_DN(offset,SECTOR_SIZE);
+					uint rcount = ROUND_UP(count,SECTOR_SIZE);
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 						if(rcount <= MAX_RW_SIZE) {
@@ -155,8 +155,8 @@ int main(int argc,char **argv) {
 				case MSG_DEV_WRITE: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
-					uint roffset = offset & ~(SECTOR_SIZE - 1);
-					uint rcount = (count + SECTOR_SIZE - 1) & ~(SECTOR_SIZE - 1);
+					uint roffset = ROUND_DN(offset,SECTOR_SIZE);
+					uint rcount = ROUND_UP(count,SECTOR_SIZE);
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 						if(rcount <= MAX_RW_SIZE) {

@@ -34,7 +34,6 @@
 
 #define GUARD_MAGIC				0xDEADBEEF
 #define FREE_MAGIC				0xFEEEFEEE
-#define ALIGN(count,align)		(((count) + (align) - 1) & ~((align) - 1))
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -81,7 +80,7 @@ void *malloc(size_t size) {
 	locku(&mlock);
 
 	/* align and we need 3 ulongs for the guards */
-	size = ALIGN(size,sizeof(ulong)) + sizeof(ulong) * 4;
+	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 4;
 
 	/* find a suitable area */
 	prev = NULL;
@@ -294,7 +293,7 @@ void *realloc(void *addr,size_t size) {
 	locku(&mlock);
 
 	/* align and we need 3 ulongs for the guards */
-	size = ALIGN(size,sizeof(ulong)) + sizeof(ulong) * 4;
+	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 4;
 
 	/* ignore shrinks */
 	if(size < area->size) {

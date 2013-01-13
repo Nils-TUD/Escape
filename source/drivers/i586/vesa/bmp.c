@@ -103,7 +103,7 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	if(bmp->infoHeader->compression == BI_RGB) {
 		size_t bytesPerLine;
 		bytesPerLine = bmp->infoHeader->width * (bmp->infoHeader->bitCount / 8);
-		bytesPerLine = (bytesPerLine + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
+		bytesPerLine = ROUND_UP(bytesPerLine,sizeof(uint32_t));
 		bmp->dataSize = bytesPerLine * bmp->infoHeader->height;
 	}
 	else

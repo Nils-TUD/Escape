@@ -31,7 +31,6 @@
 #define OCC_MAP_SIZE			1024
 
 #define GUARD_MAGIC				0xDEADBEEF
-#define ALIGN(count,align)		(((count) + (align) - 1) & ~((align) - 1))
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -66,7 +65,7 @@ void *kheap_alloc(size_t size) {
 		return NULL;
 
 	/* align and we need 3 ulongs for the guards */
-	size = ALIGN(size,sizeof(ulong)) + sizeof(ulong) * 3;
+	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
 	spinlock_aquire(&kheapLock);
 
@@ -283,7 +282,7 @@ void *kheap_realloc(void *addr,size_t size) {
 	}
 
 	/* align and we need 3 ulongs for the guards */
-	size = ALIGN(size,sizeof(ulong)) + sizeof(ulong) * 3;
+	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
 	/* ignore shrinks */
 	if(size < area->size) {

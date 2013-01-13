@@ -1,6 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-
-env.SConscript('c/SConscript', 'env')
-env.SConscript('cpp/SConscript', 'env')
+env.SConscript(env.Glob('*/SConscript'), 'env')

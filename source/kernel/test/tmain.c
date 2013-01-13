@@ -43,6 +43,7 @@
 #include "tctype.h"
 #include "tvmreg.h"
 #include "tvmfree.h"
+#include "tpmemareas.h"
 /* TODO find a better solution */
 #ifdef __mmix__
 #include "arch/mmix/taddrspace.h"
@@ -91,6 +92,7 @@ void bspstart(sBootInfo *bootinfo) {
 	test_register(&tModEscCodes);
 	test_register(&tModSwapMap);
 	test_register(&tModVmm);
+	test_register(&tModPmemAreas);
 	test_start();
 
 	/* stay here */

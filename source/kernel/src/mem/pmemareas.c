@@ -62,7 +62,6 @@ size_t pmemareas_getAvailable(void) {
 }
 
 void pmemareas_add(uintptr_t addr,uintptr_t end) {
-	assert((addr & (PAGE_SIZE - 1)) == 0);
 	sPhysMemArea *area = pmemareas_allocArea();
 	addr = ROUND_PAGE_UP(addr);
 	end = ROUND_PAGE_UP(end);
@@ -88,6 +87,10 @@ void pmemareas_rem(uintptr_t addr,uintptr_t end) {
 				prev->next = area->next;
 			else
 				list = area->next;
+			if(area == listend)
+				listend = prev;
+			area = area->next;
+			continue;
 		}
 		/* in the middle of the area */
 		else if(addr > area->addr && end < area->addr + area->size) {
@@ -102,6 +105,8 @@ void pmemareas_rem(uintptr_t addr,uintptr_t end) {
 		/* end covered, i.e. begin is within the area */
 		else if(addr > area->addr && addr < area->addr + area->size)
 			area->size = addr - area->addr;
+
+		prev = area;
 		area = area->next;
 	}
 }

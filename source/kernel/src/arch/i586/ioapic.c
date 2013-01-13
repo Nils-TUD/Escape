@@ -60,10 +60,8 @@ void ioapic_add(uint8_t id,uint8_t version,uintptr_t addr) {
 
 	ioapics[count].id = id;
 	ioapics[count].version = version;
-	ioapics[count].addr = (uint32_t*)(APIC_AREA + PAGE_SIZE * (count + 1));
-	frame = addr / PAGE_SIZE;
+	ioapics[count].addr = (uint32_t*)paging_makeAccessible(addr,1);
 	assert((addr & (PAGE_SIZE - 1)) == 0);
-	paging_map((uintptr_t)ioapics[count].addr,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	count++;
 }
 

@@ -28,6 +28,7 @@
 #include <sys/video.h>
 #include <string.h>
 
+#define MAX_ACPI_PAGES		16
 #define BDA_EBDA			0x40E	/* TODO not always available? */
 #define BIOS_AREA			0xE0000
 #define SIG(A,B,C,D)		(A + (B << 8) + (C << 16) + (D << 24))
@@ -115,19 +116,17 @@ void acpi_parse(void) {
 	sll_init(&acpiTables,slln_allocNode,slln_freeNode);
 
 	/* first map the RSDT. we assume that it covers only one page */
-	uintptr_t addr = (uintptr_t)rsdt;
-	size_t off = addr & (PAGE_SIZE - 1);
-	paging_map(ACPI_AREA,&addr,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
-	rsdt = (sRSDT*)(ACPI_AREA + off);
+	size_t off = (uintptr_t)rsdt & (PAGE_SIZE - 1);
+	rsdt = (sRSDT*)(paging_makeAccessible((uintptr_t)rsdt,1) + off);
 	size_t i,j,count = (rsdt->length - sizeof(sRSDT)) / size;
-	if((uintptr_t)rsdt + rsdt->length > ACPI_AREA + PAGE_SIZE) {
-		log_printf("RSDT larger than one page. Assuming one CPU.\n");
-		return;
+	if(off + rsdt->length > PAGE_SIZE) {
+		size_t pages = BYTES_2_PAGES(off + rsdt->length);
+		rsdt = (sRSDT*)(paging_makeAccessible((uintptr_t)rsdt,pages) + off);
 	}
 
 	/* now walk through the tables behind the RSDT */
-	uintptr_t curDest = ACPI_AREA + off + rsdt->length;
-	uintptr_t curPage = curDest & ~(PAGE_SIZE - 1);
+	uintptr_t curDest = paging_makeAccessible(0,MAX_ACPI_PAGES);
+	uintptr_t destEnd = curDest + MAX_ACPI_PAGES * PAGE_SIZE;
 	uintptr_t start = (uintptr_t)(rsdt + 1);
 	for(i = 0; i < count; i++) {
 		sRSDT *tbl;
@@ -160,24 +159,11 @@ void acpi_parse(void) {
 		}
 
 		/* do we have to extend the mapping in the ACPI-area? */
-		if((curDest + tmptbl->length) > curPage + PAGE_SIZE) {
-			uintptr_t nextPage = (curDest + tmptbl->length + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-			size_t pages = (nextPage - curPage) / PAGE_SIZE;
-			if(nextPage + PAGE_SIZE > ACPI_AREA + ACPI_AREA_SIZE) {
-				log_printf("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
-						nextPage + PAGE_SIZE,ACPI_AREA + ACPI_AREA_SIZE);
-				paging_unmapFromTemp(tmpPages);
-				continue;
-			}
-			while(pages-- > 0) {
-				frameno_t frame = pmem_allocate(FRM_KERNEL);
-				if(!frame) {
-					log_printf("Not enough memory for ACPI tables. Assuming one CPU.\n");
-					return;
-				}
-				curPage += PAGE_SIZE;
-				paging_map(curPage,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-			}
+		if(curDest + tmptbl->length > destEnd) {
+			log_printf("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
+					curDest + tmptbl->length,destEnd);
+			paging_unmapFromTemp(tmpPages);
+			continue;
 		}
 
 		if(acpi_checksumValid(tmptbl,tmptbl->length)) {

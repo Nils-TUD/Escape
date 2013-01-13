@@ -23,6 +23,7 @@
 #include <sys/mem/sllnodes.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/pmemareas.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
 #include <sys/vfs/vfs.h>
@@ -39,7 +40,7 @@
 #define util_printEventTrace(...)
 
 #define BITS_PER_BMWORD				(sizeof(tBitmap) * 8)
-#define BITMAP_START_FRAME			(BITMAP_START / PAGE_SIZE)
+#define BITMAP_START_FRAME			(bitmapStart / PAGE_SIZE)
 
 #define KERNEL_MEM_PERCENT			20
 #define KERNEL_MEM_MIN				750
@@ -55,6 +56,7 @@ typedef struct sSwapInJob {
 } sSwapInJob;
 
 static size_t pmem_getFreeDef(void);
+static void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used);
 static void pmem_doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used);
 static void pmem_markUsed(frameno_t frame,bool used);
 static void pmem_appendJob(sSwapInJob *job);
@@ -63,16 +65,17 @@ static void pmem_freeJob(sSwapInJob *job);
 
 /* the bitmap for the frames of the lowest few MB; 0 = free, 1 = used */
 static tBitmap *bitmap;
+static uintptr_t bitmapStart;
 static size_t freeCont = 0;
 
 /* We use a stack for the remaining memory
  * TODO Currently we don't free the frames for the stack */
-static size_t stackSize = 0;
+static size_t stackPages = 0;
 static uintptr_t stackBegin = 0;
 static frameno_t *stack = NULL;
 static klock_t contLock;
 static klock_t defLock;
-static bool initializing;
+static bool initialized = false;
 
 /* for swapping */
 static size_t swappedOut = 0;
@@ -91,15 +94,47 @@ static sSwapInJob *siJobEnd = NULL;
 static size_t jobWaiters = 0;
 
 void pmem_init(void) {
-	size_t i,free;
-	initializing = true;
-	pmem_initArch(&stackBegin,&stackSize,&bitmap);
+	sPhysMemArea *area;
+
+	/* determine the available memory */
+	pmemareas_initArch();
+
+	/* calculate mm-stack-size */
+	size_t bmFrmCnt;
+	size_t memSize = pmemareas_getAvailable();
+	size_t defPageCount = (memSize / PAGE_SIZE) - BITMAP_PAGE_COUNT;
+	stackPages = (defPageCount + (PAGE_SIZE - 1) / sizeof(frameno_t)) / (PAGE_SIZE / sizeof(frameno_t));
+
+	/* map it so that we can access it; this will automatically remove some frames from the
+	 * available memory. */
+	stackBegin = paging_makeAccessible(0,stackPages);
 	stack = (frameno_t*)stackBegin;
-	pmem_markAvailable();
-	initializing = false;
+
+	/* map bitmap behind it */
+	bmFrmCnt = BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8);
+	bitmap = (tBitmap*)paging_makeAccessible(0,bmFrmCnt);
+	/* mark all free */
+	memclear(bitmap,BITMAP_PAGE_COUNT / 8);
+
+	/* first, search memory that will be managed with the bitmap */
+	for(area = pmemareas_get(); area != NULL; area = area->next) {
+		if(area->size >= BITMAP_PAGE_COUNT * PAGE_SIZE) {
+			bitmapStart = area->addr;
+			pmemareas_rem(area->addr,area->addr + BITMAP_PAGE_COUNT * PAGE_SIZE);
+			break;
+		}
+	}
+
+	/* now mark the remaining memory as free on stack */
+	for(area = pmemareas_get(); area != NULL; area = area->next)
+		pmem_markRangeUsed(area->addr,area->addr + area->size,false);
+
+	/* stack and bitmap is ready */
+	initialized = true;
 
 	/* test whether a swap-device is present */
 	if(conf_getStr(CONF_SWAP_DEVICE) != NULL) {
+		size_t i,free;
 		/* build freelist */
 		siFreelist = siJobs + 0;
 		siJobs[0].next = NULL;
@@ -129,7 +164,7 @@ bool pmem_canSwap(void) {
 }
 
 size_t pmem_getStackSize(void) {
-	return stackSize * PAGE_SIZE;
+	return stackPages * PAGE_SIZE;
 }
 
 size_t pmem_getFreeFrames(uint types) {
@@ -234,7 +269,10 @@ frameno_t pmem_allocate(eFrmType type) {
 	frameno_t frm = 0;
 	spinlock_aquire(&defLock);
 	util_printEventTrace(util_getKernelStackTrace(),"[A] %x ",*(stack - 1));
-	if(swapEnabled && type == FRM_CRIT) {
+	/* remove the memory from the available one when we're not yet initialized */
+	if(!initialized)
+		frm = pmemareas_alloc(1);
+	else if(swapEnabled && type == FRM_CRIT) {
 		if(cframes > 0) {
 			frm = *(--stack);
 			cframes--;
@@ -387,11 +425,6 @@ void pmem_swapper(void) {
 	spinlock_release(&defLock);
 }
 
-void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
-	assert(initializing);
-	pmem_doMarkRangeUsed(from,to,used);
-}
-
 void pmem_print(void) {
 	sSwapInJob *job;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
@@ -413,10 +446,10 @@ void pmem_print(void) {
 }
 
 void pmem_printStack(void) {
-	size_t i = BITMAP_START;
+	size_t i;
 	frameno_t *ptr;
 	vid_printf("Stack: (frame numbers)\n");
-	for(i = 0,ptr = stack - 1;(uintptr_t)ptr >= stackBegin; i++,ptr--) {
+	for(i = 0, ptr = stack - 1; (uintptr_t)ptr >= stackBegin; i++, ptr--) {
 		vid_printf("0x%08Px, ",*ptr);
 		if(i % 6 == 5)
 			vid_printf("\n");
@@ -424,7 +457,7 @@ void pmem_printStack(void) {
 }
 
 void pmem_printCont(void) {
-	size_t i,pos = BITMAP_START;
+	size_t i,pos = bitmapStart;
 	vid_printf("Bitmap: (frame numbers)\n");
 	for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
 		vid_printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
@@ -434,6 +467,10 @@ void pmem_printCont(void) {
 
 static size_t pmem_getFreeDef(void) {
 	return ((uintptr_t)stack - stackBegin) / sizeof(frameno_t);
+}
+
+static void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
+	pmem_doMarkRangeUsed(from,to,used);
 }
 
 static void pmem_doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used) {
@@ -468,7 +505,7 @@ static void pmem_markUsed(frameno_t frame,bool used) {
 		/* we don't mark frames as used since this function is just used for initializing the
 		 * memory-management */
 		if(!used) {
-			if((uintptr_t)stack >= PMEM_END)
+			if((uintptr_t)stack >= stackBegin + stackPages * PAGE_SIZE)
 				util_panic("MM-Stack too small for physical memory!");
 			*stack = frame;
 			stack++;

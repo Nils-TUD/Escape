@@ -65,6 +65,7 @@ static uint32_t apic_read(uint32_t reg);
 static void apic_write(uint32_t reg,uint32_t value);
 
 static bool enabled;
+static uintptr_t apicAddr;
 
 void apic_init(void) {
 	enabled = false;
@@ -73,9 +74,7 @@ void apic_init(void) {
 		/* TODO every APIC may have a different address */
 		uint64_t apicBase = cpu_getMSR(MSR_APIC_BASE);
 		if(apicBase & APIC_BASE_EN) {
-			uintptr_t physAddr = APIC_BASE_ADDR(apicBase);
-			frameno_t frame = physAddr / PAGE_SIZE;
-			paging_map(APIC_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+			apicAddr = paging_makeAccessible(APIC_BASE_ADDR(apicBase),1);
 			enabled = true;
 		}
 	}
@@ -124,10 +123,10 @@ static void apic_writeIPI(uint32_t high,uint32_t low) {
 static uint32_t apic_read(uint32_t reg) {
 	assert(enabled);
 	/* volatile is necessary to enforce dword-accesses */
-	return *(volatile uint32_t*)(APIC_AREA + reg);
+	return *(volatile uint32_t*)(apicAddr + reg);
 }
 
 static void apic_write(uint32_t reg,uint32_t value) {
 	assert(enabled);
-	*(volatile uint32_t*)(APIC_AREA + reg) = value;
+	*(volatile uint32_t*)(apicAddr + reg) = value;
 }

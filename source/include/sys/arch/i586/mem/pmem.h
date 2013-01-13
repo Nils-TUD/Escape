@@ -24,33 +24,17 @@
 
 /**
  * Physical memory layout:
- * 0x00000000: +-----------------------------------+   -----
- *             |                                   |     |
- *             |                VM86               |     |
- *             |                                   |     |
- * 0x00100000: +-----------------------------------+     |
+ * 0x00000000: +-----------------------------------+
  *             |                                   |
- *             |          kernel code+data         |  unmanaged
+ *             |             BIOS stuff            |
  *             |                                   |
- *             +-----------------------------------+     |
- *             |         multiboot-modules         |     |
- *             +-----------------------------------+     |
- *             |              MM-stack             |     |
- *             +-----------------------------------+   -----
- *             |             MM-bitmap             |     |
- *             +-----------------------------------+     |
+ * 0x00100000: +-----------------------------------+
  *             |                                   |
- *             |                                   |  bitmap managed (2 MiB)
+ *             |          kernel code+data         |
+ *             |                                   |
+ *             +-----------------------------------+
  *             |                ...                |
- *             |                                   |     |
- *             |                                   |     |
- *             +-----------------------------------+   -----
- *             |                                   |     |
- *             |                                   |
- *             |                ...                |  stack managed (remaining)
- *             |                                   |
- *             |                                   |     |
- * 0xFFFFFFFF: +-----------------------------------+   -----
+ * 0xFFFFFFFF: +-----------------------------------+
  */
 
 /* the physical start-address of the kernel-area */
@@ -61,9 +45,6 @@
 #define PAGE_SIZE				(4 * K)
 #define PAGE_SIZE_SHIFT			12
 
-#define BITMAP_START			bitmapStart
 #define BITMAP_PAGE_COUNT		((2 * M) / PAGE_SIZE)
-#define PMEM_END				(BOOTSTRAP_AREA + BOOTSTRAP_AREA_SIZE)
 
 typedef ulong tBitmap;
-extern uintptr_t bitmapStart;

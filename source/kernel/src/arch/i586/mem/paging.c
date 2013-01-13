@@ -124,6 +124,7 @@ static klock_t tmpMapLock;
 /* TODO we could maintain different locks for userspace and kernelspace; since just the kernel is
  * shared. it would be better to have a global lock for that and a pagedir-lock for the userspace */
 static klock_t pagingLock;
+static uintptr_t freeAreaAddr = FREE_KERNEL_AREA;
 
 void paging_init(void) {
 	size_t i;
@@ -153,15 +154,6 @@ void paging_init(void) {
 
 	/* put the page-directory in the last page-dir-slot */
 	proc0PD[ADDR_TO_PDINDEX(MAPPED_PTS_START)] = pd | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
-
-	/* create page-tables for multiboot-stuff */
-	addr = MAX(addr,boot_getModulesEnd());
-	addr = (addr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	for(i = 0; i < BOOTSTRAP_PTS; i++) {
-		memclear((void*)(addr | KERNEL_AREA),PAGE_SIZE);
-		proc0PD[ADDR_TO_PDINDEX(BOOTSTRAP_AREA) + i] = addr | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
-		addr += PAGE_SIZE;
-	}
 
 	/* now set page-dir and enable paging */
 	paging_activate((uintptr_t)proc0PD & ~KERNEL_AREA);
@@ -194,23 +186,18 @@ void paging_setFirst(pagedir_t *pdir) {
 }
 
 void paging_mapKernelSpace(void) {
-	uintptr_t addr,end;
-	pde_t *pde;
-	/* insert all page-tables for 0xC0400000 .. 0xFF3FFFFF into the page dir */
-	addr = KERNEL_AREA + (PAGE_SIZE * PT_ENTRY_COUNT * 1);
-	end = BOOTSTRAP_AREA;
-	pde = (pde_t*)(proc0PD + ADDR_TO_PDINDEX(addr));
-	while(addr < end) {
-		/* get frame and insert into page-dir */
-		frameno_t frame = pmem_allocate(FRM_KERNEL);
-		if(frame == 0)
-			util_panic("Not enough kernel-memory");
-		*pde = frame << PAGE_SIZE_SHIFT | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
-		/* clear */
-		memclear((void*)ADDR_TO_MAPPED(addr),PAGE_SIZE);
-		/* to next */
-		pde++;
-		addr += PAGE_SIZE * PT_ENTRY_COUNT;
+	uintptr_t addr;
+	/* map kernel heap and temp area*/
+	for(addr = KERNEL_HEAP_START;
+		addr < TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE;
+		addr += PAGE_SIZE * PT_ENTRY_COUNT) {
+		if(paging_crtPageTable(proc0PD,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
+			util_panic("Not enough kernel-memory for page tables");
+	}
+	/* map dynamically extending regions */
+	for(addr = GFT_AREA; addr < SLLNODE_AREA + SLLNODE_AREA_SIZE; addr += PAGE_SIZE * PT_ENTRY_COUNT) {
+		if(paging_crtPageTable(proc0PD,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
+			util_panic("Not enough kernel-memory for page tables");
 	}
 }
 
@@ -220,6 +207,25 @@ void paging_gdtFinished(void) {
 	proc0PD[0] = 0;
 	proc0PD[1] = 0;
 	paging_flushTLB();
+}
+
+uintptr_t paging_makeAccessible(uintptr_t phys,size_t pages) {
+	uintptr_t addr = freeAreaAddr;
+	if(addr + pages * PAGE_SIZE > FREE_KERNEL_AREA + FREE_KERNEL_AREA_SIZE)
+		util_panic("Bootstrap area too small");
+	if(phys) {
+		size_t i;
+		for(i = 0; i < pages; ++i) {
+			frameno_t frame = phys / PAGE_SIZE + i;
+			paging_map(freeAreaAddr,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+			freeAreaAddr += PAGE_SIZE;
+		}
+	}
+	else {
+		paging_map(addr,NULL,pages,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+		freeAreaAddr += pages * PAGE_SIZE;
+	}
+	return addr;
 }
 
 bool paging_isInUserSpace(uintptr_t virt,size_t count) {

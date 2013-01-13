@@ -118,10 +118,6 @@ uintptr_t boot_getModuleRange(const char *name,size_t *size) {
 	return 0;
 }
 
-size_t boot_getUsableMemCount(void) {
-	return info.memSize;
-}
-
 int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	size_t i;
 	int child;

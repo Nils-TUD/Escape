@@ -66,6 +66,16 @@ void paging_init(void);
 void paging_setFirst(pagedir_t *pdir);
 
 /**
+ * Ensures that <pages> pages are accessible somewhere. If <phys> is not 0, this physical memory
+ * should be made accessible, otherwise arbitrary memory.
+ *
+ * @param phys the physical memory or 0 for any
+ * @param pages the number of pages
+ * @return the chosen address
+ */
+uintptr_t paging_makeAccessible(uintptr_t phys,size_t pages);
+
+/**
  * Checks whether the given range is in user-space
  *
  * @param virt the start-address

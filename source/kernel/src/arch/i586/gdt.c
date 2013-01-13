@@ -196,16 +196,16 @@ extern void tss_load(size_t gdtOffset);
 static void gdt_set_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size,uint8_t access,
 		uint8_t ringLevel);
 static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size);
-static sGDTTable *gdt_getFreeGDT(void);
-static sTSS *gdt_getFreeTSS(size_t *index);
 
 /* the GDTs */
 static sGDTDesc bspgdt[GDT_ENTRY_COUNT];
 static sGDTTable *allgdts;
+static size_t gdtCount = 1;
 
 /* our TSS's (should not contain a page-boundary) */
 static sTSS bsptss A_ALIGNED(PAGE_SIZE);
 static sTSS **alltss;
+static size_t tssCount = 1;
 
 /* I/O maps for all TSSs; just to remember the last set I/O map */
 static const uint8_t **ioMaps;
@@ -273,7 +273,7 @@ void gdt_init_bsp(void) {
 }
 
 void gdt_init_ap(void) {
-	size_t i = 0;
+	size_t i;
 	sGDTDesc *apgdt;
 	sGDTTable *gdttbl;
 	sTSS *tss;
@@ -283,8 +283,9 @@ void gdt_init_ap(void) {
 	tmpTable.size = GDT_ENTRY_COUNT * sizeof(sGDTDesc) - 1;
 	gdt_flush(&tmpTable);
 
-	gdttbl = gdt_getFreeGDT();
-	tss = gdt_getFreeTSS(&i);
+	gdttbl = allgdts + gdtCount++;
+	i = tssCount++;
+	tss = (sTSS*)paging_makeAccessible(0,BYTES_2_PAGES(sizeof(sTSS)));
 
 	/* create GDT (copy from first one) */
 	apgdt = (sGDTDesc*)cache_alloc(GDT_ENTRY_COUNT * sizeof(sGDTDesc));
@@ -296,9 +297,6 @@ void gdt_init_ap(void) {
 
 	/* create TSS (copy from first one) */
 	alltss[i] = tss;
-	if(paging_map((uintptr_t)tss,NULL,BYTES_2_PAGES(sizeof(sTSS)),
-			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
-		util_panic("Unable to map memory for TSS");
 	memcpy(tss,&bsptss,sizeof(sTSS));
 	tss->esp0 = KERNEL_STACK_AREA + PAGE_SIZE - (1 + 5) * sizeof(int);
 	tss->ioMapOffset = IO_MAP_OFFSET_INVALID;
@@ -393,26 +391,6 @@ static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t
 	gdt[index].sizeLow = size & 0xFFFF;
 	gdt[index].sizeHigh = ((size >> 16) & 0xF) | GDT_32BIT_PMODE;
 	gdt[index].access = GDT_PRESENT | GDT_TYPE_32BIT_TSS | (GDT_DPL_KERNEL << 5);
-}
-
-static sGDTTable *gdt_getFreeGDT(void) {
-	size_t i;
-	for(i = 0; i < cpuCount; i++) {
-		if(allgdts[i].offset == 0)
-			return allgdts + i;
-	}
-	return NULL;
-}
-
-static sTSS *gdt_getFreeTSS(size_t *index) {
-	size_t i;
-	for(i = 0; i < cpuCount; i++) {
-		if(alltss[i] == NULL) {
-			*index = i;
-			return (sTSS*)(TSS_AREA + i * BYTES_2_PAGES(sizeof(sTSS)) * PAGE_SIZE);
-		}
-	}
-	return NULL;
 }
 
 void gdt_print(void) {

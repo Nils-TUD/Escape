@@ -18,9 +18,24 @@
  */
 
 #include <sys/common.h>
+#include <sys/mem/pmemareas.h>
 #include <sys/mem/pmem.h>
+#include <sys/mem/paging.h>
+#include <sys/boot.h>
+#include <sys/util.h>
 
-bool pmem_canMap(uintptr_t addr,size_t size) {
-	/* only the IO-space can be mapped */
-	return addr >= 0x30000000 && addr + size < 0x40000000;
+void pmemareas_initArch(void) {
+	const sBootInfo *binfo = boot_getInfo();
+	const sLoadProg *last;
+
+	/* mark everything behind the modules as free */
+	if(binfo->progCount == 0)
+		util_panic("No boot-modules found");
+	last = binfo->progs + binfo->progCount - 1;
+	pmemareas_add(ROUND_PAGE_UP(last->start - KERNEL_START + last->size),binfo->memSize);
+}
+
+size_t pmemareas_getTotal(void) {
+	const sBootInfo *binfo = boot_getInfo();
+	return binfo->memSize;
 }

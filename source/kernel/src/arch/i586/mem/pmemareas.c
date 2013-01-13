@@ -18,26 +18,52 @@
  */
 
 #include <sys/common.h>
+#include <sys/mem/pmemareas.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/boot.h>
-#include <sys/util.h>
-#include <sys/video.h>
 #include <sys/log.h>
-#include <string.h>
 
-bool pmem_canMap(uintptr_t addr,size_t size) {
+extern void *_ebss;
+static size_t total;
+
+void pmemareas_initArch(void) {
+	size_t i;
 	sMemMap *mmap;
+	sModule *mod;
 	const sBootInfo *mb = boot_getInfo();
-	if(mb->mmapAddr == NULL)
-		return false;
-	/* go through the memory-map; if it overlaps with one of the free areas, its not allowed */
+
+	/* walk through the memory-map and mark all free areas as free */
 	for(mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
 			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap->type == MMAP_TYPE_AVAILABLE) {
-			if(OVERLAPS(addr,addr + size,mmap->baseAddr,mmap->baseAddr + mmap->length))
-				return false;
+		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
+			/* take care that we don't use memory above 4G */
+			if(mmap->baseAddr >= 0x100000000ULL) {
+				log_printf("Skipping memory above 4G: %#Lx .. %#Lx\n",
+						mmap->baseAddr,mmap->baseAddr + mmap->length);
+				continue;
+			}
+			uint64_t end = mmap->baseAddr + mmap->length;
+			if(end >= 0x100000000ULL) {
+				log_printf("Skipping memory above 4G: %#Lx .. %#Lx\n",0x100000000ULL,end);
+				end = 0xFFFFFFFF;
+			}
+			pmemareas_add((uintptr_t)mmap->baseAddr,(uintptr_t)end);
 		}
 	}
-	return true;
+	total = pmemareas_getAvailable();
+
+	/* remove kernel and the first MB */
+	pmemareas_rem(0,(uintptr_t)&_ebss - KERNEL_AREA);
+
+	/* remove modules */
+	mod = mb->modsAddr;
+	for(i = 0; i < mb->modsCount; i++) {
+		pmemareas_rem(mod->modStart,mod->modEnd);
+		mod++;
+	}
+}
+
+size_t pmemareas_getTotal(void) {
+	return total;
 }

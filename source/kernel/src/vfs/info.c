@@ -23,6 +23,8 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/swapmap.h>
+#include <sys/mem/pmemareas.h>
 #include <sys/task/timer.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
@@ -277,8 +279,7 @@ static ssize_t vfs_info_memUsageReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSN
 
 static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
-	size_t free,total;
-	size_t dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
+	size_t free,total,dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -286,7 +287,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 
 	/* TODO change that (kframes, swapping, ...) */
 	free = pmem_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
-	total = boot_getUsableMemCount();
+	total = pmemareas_getTotal();
 	ksize = boot_getKernelSize();
 	msize = boot_getModuleSize();
 	kheap = kheap_getOccupiedMem();

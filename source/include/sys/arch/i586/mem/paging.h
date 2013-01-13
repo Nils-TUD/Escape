@@ -54,34 +54,28 @@
  * 0xC0100000: +-----------------------------------+     |
  *             |         kernel code+data          |     |
  *             +-----------------------------------+
- *      |      |             mm-stack              |     k
- *      v      +-----------------------------------+     e
- *             |                ...                |     r
- * 0xC0800000: +-----------------------------------+     n
- *             |                                   |     e
- *      |      |            kernel-heap            |     l
- *      v      |                                   |     a
- * 0xC0C00000: +-----------------------------------+     r
- *             |           temp map area           |     e
- * 0xC1C00000: +-----------------------------------+     a
- *             |             APIC area             |
- * 0xC1C09000: +-----------------------------------+     |
- *             |             ACPI area             |     |
- * 0xC1C19000: +-----------------------------------+     |
- *             |             TSS area              |     |
- * 0x????????: +-----------------------------------+     |
- *             |                ...                |     |
- * 0xD0000000: +-----------------------------------+     |      -----
- *             |       VFS global file table       |     |        |
+ *             |                ...                |     k
+ * 0xC0800000: +-----------------------------------+     e
+ *             |                                   |     r
+ *      |      |            kernel-heap            |     n
+ *      v      |                                   |     e
+ * 0xC0C00000: +-----------------------------------+     l
+ *             |           temp map area           |     a
+ * 0xC1C00000: +-----------------------------------+     r
+ *             |                ...                |     e
+ * 0xD0000000: +-----------------------------------+     a      -----
+ *             |       VFS global file table       |              |
  * 0xD0400000: +-----------------------------------+     |
  *             |             VFS nodes             |     |    dynamically extending regions
  * 0xD0800000: +-----------------------------------+     |
  *             |             sll nodes             |     |        |
  * 0xD2800000: +-----------------------------------+     |      -----
  *             |                ...                |     |
- * 0xE0000000: +-----------------------------------+     |
- *             |           bootstrap area          |     |
- * 0xE4FFFFFF: +-----------------------------------+     |
+ * 0xE0000000: +-----------------------------------+     |      -----
+ *             |                                   |     |        |
+ *      |      |             free area             |     |    unmanaged
+ *      v      |                                   |     |        |
+ * 0xEFFFFFFF: +-----------------------------------+     |      -----
  *             |                ...                |     |
  * 0xFD800000: +-----------------------------------+     |      -----
  *             |           kernel-stacks           |     |        |
@@ -121,21 +115,10 @@
 #define TEMP_MAP_AREA			(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 #define TEMP_MAP_AREA_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE * 4)
 
-/* for mapping the APIC */
-#define APIC_AREA				(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
-#define APIC_AREA_SIZE			(PAGE_SIZE * 9)
-
-/* for mapping the ACPI stuff */
-#define ACPI_AREA				(APIC_AREA + APIC_AREA_SIZE)
-#define ACPI_AREA_SIZE			(PAGE_SIZE * 16)
-
-/* for mapping the TSS's for APs (have to be page-aligned) */
-#define TSS_AREA				(ACPI_AREA + ACPI_AREA_SIZE)
-
-/* for mapping the multiboot stuff and the mm-stack */
-#define BOOTSTRAP_AREA			0xE0000000
-#define BOOTSTRAP_PTS			20
-#define BOOTSTRAP_AREA_SIZE		(BOOTSTRAP_PTS * PAGE_SIZE * PT_ENTRY_COUNT)
+/* this area is not managed, but we map all stuff one after another and never unmap it */
+/* this is used for multiboot-modules, pmem, ACPI, ... */
+#define FREE_KERNEL_AREA		0xE0000000
+#define FREE_KERNEL_AREA_SIZE	(64 * PAGE_SIZE * PT_ENTRY_COUNT)
 
 /* area for global-file-table */
 #define GFT_AREA				0xD0000000

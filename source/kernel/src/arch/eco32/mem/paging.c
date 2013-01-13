@@ -21,6 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/pmemareas.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/util.h>
@@ -148,6 +149,11 @@ void paging_init(void) {
 
 void paging_setFirst(pagedir_t *pdir) {
 	*pdir = curPDir;
+}
+
+uintptr_t paging_makeAccessible(uintptr_t phys,size_t pages) {
+	assert(phys == 0);
+	return DIR_MAPPED_SPACE | (pmemareas_alloc(pages) * PAGE_SIZE);
 }
 
 bool paging_isInUserSpace(uintptr_t virt,size_t count) {

@@ -74,16 +74,6 @@ bool pmem_canSwap(void);
 void pmem_markAvailable(void);
 
 /**
- * Marks the given range as used or not used.
- * This function should not be called by other modules!
- *
- * @param from the start-address
- * @param to the end-address
- * @param used whether the frame is used
- */
-void pmem_markRangeUsed(uintptr_t from,uintptr_t to,bool used);
-
-/**
  * @return the number of bytes used for the mm-stack
  */
 size_t pmem_getStackSize(void);

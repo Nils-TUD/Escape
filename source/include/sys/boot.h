@@ -84,16 +84,6 @@ size_t boot_getKernelSize(void);
 size_t boot_getModuleSize(void);
 
 /**
- * @return the end of all modules
- */
-uintptr_t boot_getModulesEnd(void);
-
-/**
- * @return the usable memory in bytes
- */
-size_t boot_getUsableMemCount(void);
-
-/**
  * Determines the physical address range of the multiboot-module with given name
  *
  * @param name the module-name

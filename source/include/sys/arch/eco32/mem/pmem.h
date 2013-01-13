@@ -23,29 +23,11 @@
 
 /**
  * Physical memory layout:
- * 0x00000000: +-----------------------------------+   -----
- *             |                                   |     |
- *             |          kernel code+data         |     |
+ * 0x00000000: +-----------------------------------+
  *             |                                   |
- *             +-----------------------------------+  unmanaged
- *             |         multiboot-modules         |
- *             +-----------------------------------+     |
- *             |              MM-stack             |     |
- *             +-----------------------------------+   -----
- *             |             MM-bitmap             |     |
- *             +-----------------------------------+     |
+ *             |          kernel code+data         |
  *             |                                   |
- *             |                                   |  bitmap managed (2 MiB)
- *             |                ...                |
- *             |                                   |     |
- *             |                                   |     |
- *             +-----------------------------------+   -----
- *             |                                   |     |
- *             |                                   |
- *             |                ...                |  stack managed (remaining)
- *             |                                   |
- *             |                                   |     |
- *             +-----------------------------------+   -----
+ *             +-----------------------------------+
  *             |                ...                |
  * 0x20000000: +-----------------------------------+
  *             |                                   |
@@ -61,10 +43,6 @@
 #define PAGE_SIZE				(4 * K)
 #define PAGE_SIZE_SHIFT			12
 
-#define BITMAP_START			((uintptr_t)bitmap - KERNEL_START)
 #define BITMAP_PAGE_COUNT		((2 * M) / PAGE_SIZE)
-/* the end is not important here, since the mm-stack lies in physical memory and we will simply
- * use as much as we need, without the possibility to overwrite anything */
-#define PMEM_END				0xE0000000
 
 typedef ulong tBitmap;

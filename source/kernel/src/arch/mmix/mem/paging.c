@@ -22,6 +22,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/cache.h>
+#include <sys/mem/pmemareas.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/cpu.h>
@@ -99,6 +100,11 @@ void paging_setFirst(pagedir_t *pdir) {
 	pdir->addrSpace = firstCon.addrSpace;
 	pdir->rv = firstCon.rv;
 	pdir->ptables = firstCon.ptables;
+}
+
+uintptr_t paging_makeAccessible(uintptr_t phys,size_t pages) {
+	assert(phys == 0);
+	return DIR_MAPPED_SPACE | (pmemareas_alloc(pages) * PAGE_SIZE);
 }
 
 bool paging_isInUserSpace(uintptr_t virt,size_t count) {
@@ -538,7 +544,7 @@ static size_t paging_remEmptyPts(pagedir_t *pdir,uintptr_t virt) {
 
 static void paging_tcRemPT(pagedir_t *pdir,uintptr_t virt) {
 	size_t i;
-	uint64_t key = (virt & ~(PAGE_SIZE - 1)) | (pdir->addrSpace->no << 3);
+	uint64_t key = ROUND_PAGE_DN(virt) | (pdir->addrSpace->no << 3);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		tc_update(key);
 		key += PAGE_SIZE;

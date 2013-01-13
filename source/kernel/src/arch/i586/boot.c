@@ -30,6 +30,7 @@
 #include <sys/mem/cow.h>
 #include <sys/mem/sharedmem.h>
 #include <sys/mem/dynarray.h>
+#include <sys/mem/pmemareas.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
@@ -50,14 +51,11 @@
 #include <string.h>
 #include <assert.h>
 
-#define MOD_COUNT				5
+#define MAX_MOD_COUNT			10
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 #define PHYS2VIRT(x)			((void*)((uintptr_t)x + KERNEL_AREA))
 
 static const sBootTask tasks[] = {
-	{"Preinit processes...",proc_preinit},
-	{"Initializing physical memory-management...",pmem_init},
-	{"Initializing paging...",paging_mapKernelSpace},
 	{"Initializing dynarray...",dyna_init},
 	{"Initializing SMP...",smp_init},
 	{"Initializing GDT...",gdt_init_bsp},
@@ -81,10 +79,9 @@ static const sBootTask tasks[] = {
 sBootTaskList bootTaskList = {
 	.tasks = tasks,
 	.count = ARRAY_SIZE(tasks),
-	/* ata, cmos, pci and fs */
-	.moduleCount = MOD_COUNT
+	.moduleCount = 0
 };
-static uintptr_t physModAddrs[MOD_COUNT];
+static uintptr_t physModAddrs[MAX_MOD_COUNT];
 static char mbbuf[PAGE_SIZE];
 static size_t mbbufpos = 0;
 
@@ -92,7 +89,6 @@ extern void *_btext;
 extern void *_ebss;
 static sBootInfo *mb;
 static bool loadedMods = false;
-static uintptr_t mmStackBegin;
 
 static void *boot_copy_mbinfo(void *info,size_t len) {
 	void *res = mbbuf + mbbufpos;
@@ -108,7 +104,6 @@ void boot_arch_start(sBootInfo *info) {
 	sModule *mod;
 	int argc;
 	const char **argv;
-	uintptr_t addr;
 
 	/* copy mb-stuff into buffer */
 	info = boot_copy_mbinfo(info,sizeof(sBootInfo));
@@ -123,50 +118,41 @@ void boot_arch_start(sBootInfo *info) {
 		mod++;
 	}
 	mb = info;
-	if(mb->modsCount > MOD_COUNT)
-		util_panic("Too many modules (max %u)",MOD_COUNT);
+	if(mb->modsCount > MAX_MOD_COUNT)
+		util_panic("Too many modules (max %u)",MAX_MOD_COUNT);
+	bootTaskList.moduleCount = mb->modsCount;
 
-	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
-	 * and "correct" the GDT */
+	/* set up the page-dir and page-table for the kernel and so on and "correct" the GDT */
 	paging_init();
 	gdt_init();
 	thread_setRunning(NULL);
 
-	/* now map modules */
-	addr = BOOTSTRAP_AREA;
-	mod = mb->modsAddr;
-	for(i = 0; i < mb->modsCount; i++) {
-		uintptr_t maddr = mod->modStart;
-		size_t size = mod->modEnd - mod->modStart;
-		uintptr_t mend = maddr + size;
-		mod->modStart = addr + (maddr & (PAGE_SIZE - 1));
-		mod->modEnd = mod->modStart + size;
-		for(; maddr < mend; maddr += PAGE_SIZE) {
-			if(addr >= BOOTSTRAP_AREA + BOOTSTRAP_AREA_SIZE)
-				util_panic("Multiboot-modules too large");
-			paging_map(addr,&maddr,1,PG_PRESENT | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
-			addr += PAGE_SIZE;
-		}
-		mod++;
-	}
-	bootTaskList.moduleCount = mb->modsCount;
-	mmStackBegin = addr;
-
-	/* parse boot parameters */
-	argv = boot_parseArgs(mb->cmdLine,&argc);
-	conf_parseBootParams(argc,argv);
 	/* init basic modules */
 	vid_init();
 	fpu_preinit();
 	ser_init();
+
+	/* init physical memory and paging */
+	proc_preinit();
+	pmem_init();
+	paging_mapKernelSpace();
+
+	/* now map modules */
+	mod = mb->modsAddr;
+	for(i = 0; i < mb->modsCount; i++) {
+		size_t size = mod->modEnd - mod->modStart;
+		mod->modStart = paging_makeAccessible(mod->modStart,BYTES_2_PAGES(size));
+		mod->modEnd = mod->modStart + size;
+		mod++;
+	}
+
+	/* parse boot parameters */
+	argv = boot_parseArgs(mb->cmdLine,&argc);
+	conf_parseBootParams(argc,argv);
 }
 
 const sBootInfo *boot_getInfo(void) {
 	return mb;
-}
-
-uintptr_t boot_getMMStackBegin(void) {
-	return mmStackBegin;
 }
 
 size_t boot_getKernelSize(void) {
@@ -181,32 +167,6 @@ size_t boot_getModuleSize(void) {
 	uintptr_t start = mb->modsAddr[0].modStart;
 	uintptr_t end = mb->modsAddr[mb->modsCount - 1].modEnd;
 	return end - start;
-}
-
-uintptr_t boot_getModulesEnd(void) {
-	assert(mb->modsCount > 0);
-	uintptr_t start = mb->modsAddr[0].modStart;
-	uintptr_t end = mb->modsAddr[mb->modsCount - 1].modEnd;
-	return physModAddrs[mb->modsCount - 1] + (end - start);
-}
-
-size_t boot_getUsableMemCount(void) {
-	sMemMap *mmap;
-	size_t size = 0;
-	for(mmap = mb->mmapAddr;
-		(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
-		mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
-			/* take care that we don't use memory above 4G */
-			if(mmap->baseAddr >= 0x100000000ULL)
-				continue;
-			size_t len = mmap->length;
-			if(mmap->baseAddr + mmap->length >= 0x100000000ULL)
-				len = 0x100000000ULL - mmap->baseAddr;
-			size += len;
-		}
-	}
-	return size;
 }
 
 uintptr_t boot_getModuleRange(const char *name,size_t *size) {

@@ -10,7 +10,7 @@
 #define K		1024		/* Kilo */
 #define M		(K * K)		/* Mega */
 
-#define MEMORY_SIZE	(12 * M)		/* size of main memory */
+#define MEMORY_SIZE	(24 * M)		/* size of main memory */
 #define ROM_BASE	0x20000000	/* physical ROM base address */
 #define ROM_SIZE	(256 * K)	/* ROM size */
 #define IO_BASE		0x30000000	/* physical I/O base address */

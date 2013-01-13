@@ -11,6 +11,10 @@
 /source/log.txt
 /cross/*/src
 /cross/*/build
+/source/.*project
+/source/.*settings
+/eco32/.*project
+/gimmix/.*project
 *.o
 *.bin
 *.mak

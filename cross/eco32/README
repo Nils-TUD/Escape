@@ -1,0 +1,3 @@
+The most important parts, i.e. the eco32 specific backend for gcc and binutils, have been written
+by Johannes Schaub (aka litb) and were only slightly adjusted for my purposes here.
+Thanks for your work litb! :)

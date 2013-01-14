@@ -369,7 +369,10 @@ static void vm86_start(void) {
 	/* the BIOS puts the bootloader to 0x7C00. it is 512 bytes large, so that the area
 	 * 0x7C00 .. 0x7E00 should always be available (we don't need it anymore). */
 	istack->uss = 0x700;
-	istack->uesp = 0xDFC;
+	istack->uesp = 0xDF8;
+	/* ensure that the last 2 words on the stack are 0. it is required for the last iret that
+	 * indicates that vm86 is finished */
+	memclear((void*)0x7DF8,0x8);
 	/* enable VM flag */
 	istack->eflags |= 1 << 17;
 	/* set entrypoint */

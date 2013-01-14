@@ -198,13 +198,13 @@ static void vbe_detectModes(void) {
 	if(!f)
 		printe("Unable to open /system/devices/vbe for writing");
 	else {
-		fprintf(f,"VESA VBE Version %d.%d detected (%x)\n",vbeInfo.version >> 8,
+		fprintf(f,"VESA VBE Version %d.%d detected (%#x)\n",vbeInfo.version >> 8,
 				vbeInfo.version & 0xF,vbeInfo.oemString);
-		fprintf(f,"Capabilities: 0x%x\n",vbeInfo.capabilities);
+		fprintf(f,"Capabilities: %#x\n",vbeInfo.capabilities);
 		fprintf(f,"Signature: %c%c%c%c\n",vbeInfo.signature[0],
 				vbeInfo.signature[1],vbeInfo.signature[2],vbeInfo.signature[3]);
-		fprintf(f,"totalMemory: %d KiB\n",vbeInfo.totalMemory * 64);
-		fprintf(f,"videoModes: 0x%x\n",vbeInfo.videoModesPtr);
+		fprintf(f,"VideoMemory: %d KiB\n",vbeInfo.totalMemory * 64);
+		fprintf(f,"VideoModes: %#x\n",vbeInfo.videoModesPtr);
 		fprintf(f,"\n");
 		fprintf(f,"Available video modes:\n");
 	}
@@ -212,11 +212,11 @@ static void vbe_detectModes(void) {
 	for(i = 0; i < MAX_MODE_COUNT && *p != (uint16_t)-1; i++, p++) {
 		if(vbe_loadModeInfo(&mode,*p)) {
 			if(f) {
-				fprintf(f,"  %4x: %4d x %4d %2d bpp, %d planes, %s, %s, %s (attr %x) (@%x)\n",mode.modeNo,
+				fprintf(f,"  %4x: %4d x %4d %2d bpp, %d planes, %s, %s %s (%x), @%p\n",mode.modeNo,
 						mode.xResolution,mode.yResolution,
 						mode.bitsPerPixel,mode.numberOfPlanes,
 						(mode.modeAttributes & MODE_GRAPHICS_MODE) ? "graphics" : "    text",
-						(mode.modeAttributes & MODE_COLOR_MODE) ? "     color" : "monochrome",
+						(mode.modeAttributes & MODE_COLOR_MODE) ? "color" : " mono",
 						mode.memoryModel == memPL ? " plane" :
 						mode.memoryModel == memPK ? "packed" :
 						mode.memoryModel == memRGB ? "   RGB" :

@@ -366,9 +366,10 @@ static void vm86_start(void) {
 	}
 
 	/* set stack-pointer (in an unsed area) */
-	/* TODO is there any location where we can be sure that it is unused?? */
-	istack->uss = 0x2000;
-	istack->uesp = 0x5FFC;
+	/* the BIOS puts the bootloader to 0x7C00. it is 512 bytes large, so that the area
+	 * 0x7C00 .. 0x7E00 should always be available (we don't need it anymore). */
+	istack->uss = 0x700;
+	istack->uesp = 0xDFC;
 	/* enable VM flag */
 	istack->eflags |= 1 << 17;
 	/* set entrypoint */

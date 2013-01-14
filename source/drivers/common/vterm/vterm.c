@@ -132,6 +132,8 @@ void vt_enable(void) {
 	if(vt) {
 		locku(&vt->lock);
 		video_setMode(vt->video);
+		/* ensure that we redraw everything and re-set the cursor */
+		vt->lastCol = vt->lastRow = -1;
 		vtctrl_markScrDirty(vt);
 		unlocku(&vt->lock);
 	}

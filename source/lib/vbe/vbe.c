@@ -21,6 +21,7 @@
 #include <esc/arch/i586/vm86.h>
 #include <esc/debug.h>
 #include <esc/sllist.h>
+#include <esc/messages.h>
 #include <esc/mem.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -49,6 +50,7 @@ typedef struct {
 	uint8_t reserved[236];		/* Pad to 256 byte block size   */
 } A_PACKED sVbeInfo;
 
+static bool vbe_isSupported(sVbeModeInfo *info);
 static int vbe_loadInfo(void);
 static bool vbe_loadModeInfo(sVbeModeInfo *info,uint mode);
 static void vbe_detectModes(void);
@@ -81,6 +83,29 @@ sVbeModeInfo *vbe_getModeInfo(uint mode) {
 	return NULL;
 }
 
+sVTMode *vbe_collectModes(size_t *count) {
+	sSLNode *n;
+	sVTMode *res = (sVTMode*)malloc(sizeof(sVTMode) * sll_length(modes));
+	*count = 0;
+	for(n = sll_begin(modes); n != NULL ; n = n->next) {
+		sVbeModeInfo *info = (sVbeModeInfo*)n->data;
+		if(!vbe_isSupported(info))
+			continue;
+		res[*count].id = info->modeNo;
+		res[*count].width = info->xResolution;
+		res[*count].height = info->yResolution;
+		res[*count].bitsPerPixel = info->bitsPerPixel;
+		/* a text mode wouldn't be supported (see above) */
+		res[*count].type = VT_MODE_TYPE_GRAPHICAL;
+		(*count)++;
+	}
+	return res;
+}
+
+void vbe_freeModes(sVTMode *m) {
+	free(m);
+}
+
 uint vbe_findMode(uint resX,uint resY,uint bpp) {
 	sSLNode *n;
 	sVbeModeInfo *info;
@@ -90,15 +115,7 @@ uint vbe_findMode(uint resX,uint resY,uint bpp) {
 	for(n = sll_begin(modes); n != NULL; n = n->next) {
 		info = (sVbeModeInfo*)n->data;
 		/* skip unsupported modes */
-		if(!(info->modeAttributes & MODE_COLOR_MODE))
-			continue;
-		if(!(info->modeAttributes & MODE_GRAPHICS_MODE))
-			continue;
-		if(!(info->modeAttributes & MODE_LIN_FRAME_BUFFER))
-			continue;
-		if(info->memoryModel != memRGB/* && info->memoryModel != memPK*/)
-			continue;
-		if(info->bitsPerPixel != 16 && info->bitsPerPixel != 24 && info->bitsPerPixel != 32)
+		if(!vbe_isSupported(info))
 			continue;
 
 		/* exact match? */
@@ -133,6 +150,21 @@ int vbe_setMode(uint mode) {
 	regs.ax = 0x4F02;
 	regs.bx = mode | VBE_MODE_SET_LFB;
 	return vm86int(0x10,&regs,NULL);
+}
+
+static bool vbe_isSupported(sVbeModeInfo *info) {
+	/* skip unsupported modes */
+	if(!(info->modeAttributes & MODE_COLOR_MODE))
+		return false;
+	if(!(info->modeAttributes & MODE_GRAPHICS_MODE))
+		return false;
+	if(!(info->modeAttributes & MODE_LIN_FRAME_BUFFER))
+		return false;
+	if(info->memoryModel != memRGB/* && info->memoryModel != memPK*/)
+		return false;
+	if(info->bitsPerPixel != 16 && info->bitsPerPixel != 24 && info->bitsPerPixel != 32)
+		return false;
+	return true;
 }
 
 static int vbe_loadInfo(void) {

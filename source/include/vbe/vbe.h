@@ -96,6 +96,21 @@ void vbe_init(void);
 sVbeModeInfo *vbe_getModeInfo(uint mode);
 
 /**
+ * Allocates an array of sVTMode-objects and fills them with the supported modes.
+ *
+ * @param count will be set to the number of found modes
+ * @return the array
+ */
+sVTMode *vbe_collectModes(size_t *count);
+
+/**
+ * Free's the previously via vbe_collectModes allocated mode.
+ *
+ * @param modes the modes
+ */
+void vbe_freeModes(sVTMode *modes);
+
+/**
  * Tries to find the most suitable mode for the given settings
  *
  * @param resX the x-resolution

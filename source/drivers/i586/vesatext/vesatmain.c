@@ -168,6 +168,18 @@ int main(void) {
 				}
 				break;
 
+				case MSG_VID_GETMODES: {
+					size_t i, count = 0;
+					sVTMode *modes = vbe_collectModes(&count);
+					for(i = 0; i < count; i++) {
+						modes[i].width /= FONT_WIDTH + PAD * 2;
+						modes[i].height /= FONT_HEIGHT + PAD * 2;
+					}
+					send(fd,MSG_DEF_RESPONSE,modes,sizeof(sVTMode) * count);
+					vbe_freeModes(modes);
+				}
+				break;
+
 				case MSG_VID_SETMODE: {
 					msg.args.arg1 = -ENOTSUP;
 					if(minfo) {

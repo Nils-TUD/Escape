@@ -47,6 +47,10 @@
 /* tells the kernel for MSG_DEV_READ_RESP that it shouldn't use arg2 for setting data readable */
 #define READABLE_DONT_SET			2
 
+/* the mode types */
+#define VT_MODE_TYPE_TEXT           0
+#define VT_MODE_TYPE_GRAPHICAL      1
+
 /* == messages == */
 /* default response */
 #define MSG_DEF_RESPONSE			100000
@@ -130,6 +134,7 @@
 #define MSG_VID_SETCURSOR			500	/* expects sVTPos */
 #define MSG_VID_GETSIZE				501	/* writes into sVTSize */
 #define MSG_VID_SETMODE				502	/* sets the video-mode */
+#define MSG_VID_GETMODES            503 /* gets all video-modes */
 
 #define MSG_VT_EN_ECHO				600	/* enables that the vterm echo's typed characters */
 #define MSG_VT_DIS_ECHO				601	/* disables echo */
@@ -207,6 +212,14 @@ typedef struct {
 	uchar blueMaskSize;				/* Size of direct color blue mask  */
 	uchar blueFieldPosition;		/* Bit posn of lsb of blue mask    */
 } sVESAInfo;
+
+typedef struct {
+	uint id;
+	uint width;
+	uint height;
+	uchar bitsPerPixel;
+	uchar type;
+} sVTMode;
 
 typedef struct {
 	uint col;

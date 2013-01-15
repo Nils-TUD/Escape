@@ -48,8 +48,8 @@
 #define READABLE_DONT_SET			2
 
 /* the mode types */
-#define VT_MODE_TYPE_TEXT           0
-#define VT_MODE_TYPE_GRAPHICAL      1
+#define VID_MODE_TYPE_TEXT			0
+#define VID_MODE_TYPE_GRAPHICAL		1
 
 /* == messages == */
 /* default response */
@@ -133,8 +133,9 @@
 
 #define MSG_VID_SETCURSOR			500	/* expects sVTPos */
 #define MSG_VID_GETSIZE				501	/* writes into sVTSize */
-#define MSG_VID_SETMODE				502	/* sets the video-mode */
-#define MSG_VID_GETMODES            503 /* gets all video-modes */
+#define MSG_VID_GETMODE				502 /* gets the current video-mode */
+#define MSG_VID_SETMODE				503	/* sets the video-mode */
+#define MSG_VID_GETMODES            504 /* gets all video-modes */
 
 #define MSG_VT_EN_ECHO				600	/* enables that the vterm echo's typed characters */
 #define MSG_VT_DIS_ECHO				601	/* disables echo */
@@ -151,6 +152,9 @@
 #define MSG_VT_ENABLE				612	/* enables vterm */
 #define MSG_VT_DISABLE				613	/* disables vterm */
 #define MSG_VT_SELECT				614	/* selects the vterm */
+#define MSG_VT_GETMODES				615 /* like MSG_VID_GETMODES, but for all available backends */
+#define MSG_VT_GETMODE				616 /* get the current video mode */
+#define MSG_VT_SETMODE				617 /* sets a specified video mode */
 
 #define MSG_KM_SET					700	/* sets a keymap, expects the keymap-path as argument */
 #define MSG_KM_EVENT				701	/* the message-id for sending events to the listeners */
@@ -214,7 +218,7 @@ typedef struct {
 } sVESAInfo;
 
 typedef struct {
-	uint id;
+	int id;
 	uint width;
 	uint height;
 	uchar bitsPerPixel;

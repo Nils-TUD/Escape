@@ -36,6 +36,10 @@ int vterm_restore(int fd);
 int vterm_setShellPid(int fd,pid_t pid);
 int vterm_getSize(int fd,sVTSize *size);
 int vterm_select(int fd,int vterm);
+int vterm_getMode(int fd);
+int vterm_setMode(int fd,int mode);
+ssize_t vterm_getModeCount(int fd);
+int vterm_getModes(int fd,sVTMode *modes,size_t count);
 
 #ifdef __cplusplus
 }

@@ -46,6 +46,8 @@ typedef void (*fSetCursor)(sVTerm *vt);
 typedef struct {
 	bool readKb;
 	bool enabled;
+	int *devFds;
+	size_t devCount;
 } sVTermCfg;
 
 /* our vterm-state */
@@ -61,6 +63,8 @@ struct sVTerm {
 	/* number of cols/rows on the screen */
 	size_t cols;
 	size_t rows;
+	/* the current video mode */
+	int mode;
 	/* position (on the current page) */
 	size_t col;
 	size_t row;
@@ -160,6 +164,16 @@ bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd);
 int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data);
 
 /**
+ * Collects the available modes from all video-devices.
+ *
+ * @param cfg the config
+ * @param n the number of modes to collect (0 = count)
+ * @param count will be set to the number of collected modes or the total number
+ * @return the modes array or NULL
+ */
+sVTMode *vtctrl_getModes(sVTermCfg *cfg,size_t n,size_t *count);
+
+/**
  * Scrolls the screen by <lines> up (positive) or down (negative) (unlocked)
  *
  * @param vt the vterm
@@ -189,6 +203,16 @@ void vtctrl_markDirty(sVTerm *vt,size_t start,size_t length);
  * @param vt the vterm
  */
 void vtctrl_destroy(sVTerm *vt);
+
+/**
+ * Sets the video mode <mode> and resizes the vterm accordingly.
+ *
+ * @param cfg the config
+ * @param vt the terminal
+ * @param mode the mode to set
+ * @return 0 on success
+ */
+int vtctrl_setVideoMode(sVTermCfg *cfg,sVTerm *vt,int mode);
 
 /**
  * Resizes the size of the terminal to <cols> x <rows>.

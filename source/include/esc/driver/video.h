@@ -28,7 +28,8 @@ extern "C" {
 
 int video_setCursor(int fd,const sVTPos *pos);
 int video_getSize(int fd,sVTSize *size);
-int video_setMode(int fd);
+int video_getMode(int fd);
+int video_setMode(int fd,int mode);
 
 #ifdef __cplusplus
 }

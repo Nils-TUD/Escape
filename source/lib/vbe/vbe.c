@@ -83,20 +83,26 @@ sVbeModeInfo *vbe_getModeInfo(uint mode) {
 	return NULL;
 }
 
-sVTMode *vbe_collectModes(size_t *count) {
-	sSLNode *n;
-	sVTMode *res = (sVTMode*)malloc(sizeof(sVTMode) * sll_length(modes));
+sVTMode *vbe_collectModes(size_t n,size_t *count) {
+	sSLNode *node;
+	sVTMode *res = NULL;
+	ssize_t max = n ? (ssize_t)MIN(n,sll_length(modes)) : -1;
+	if(n)
+		res = (sVTMode*)malloc(sizeof(sVTMode) * max);
 	*count = 0;
-	for(n = sll_begin(modes); n != NULL ; n = n->next) {
-		sVbeModeInfo *info = (sVbeModeInfo*)n->data;
+	for(node = sll_begin(modes); (max == -1 || max > 0) && node != NULL ; node = node->next) {
+		sVbeModeInfo *info = (sVbeModeInfo*)node->data;
 		if(!vbe_isSupported(info))
 			continue;
-		res[*count].id = info->modeNo;
-		res[*count].width = info->xResolution;
-		res[*count].height = info->yResolution;
-		res[*count].bitsPerPixel = info->bitsPerPixel;
-		/* a text mode wouldn't be supported (see above) */
-		res[*count].type = VT_MODE_TYPE_GRAPHICAL;
+		if(n) {
+			res[*count].id = info->modeNo;
+			res[*count].width = info->xResolution;
+			res[*count].height = info->yResolution;
+			res[*count].bitsPerPixel = info->bitsPerPixel;
+			/* a text mode wouldn't be supported (see above) */
+			res[*count].type = VID_MODE_TYPE_GRAPHICAL;
+			max--;
+		}
 		(*count)++;
 	}
 	return res;
@@ -244,7 +250,7 @@ static void vbe_detectModes(void) {
 	for(i = 0; i < MAX_MODE_COUNT && *p != (uint16_t)-1; i++, p++) {
 		if(vbe_loadModeInfo(&mode,*p)) {
 			if(f) {
-				fprintf(f,"  %4x: %4d x %4d %2d bpp, %d planes, %s, %s %s (%x), @%p\n",mode.modeNo,
+				fprintf(f,"  %5d: %4d x %4d %2d bpp, %d planes, %s, %s %s (%x), @%p\n",mode.modeNo,
 						mode.xResolution,mode.yResolution,
 						mode.bitsPerPixel,mode.numberOfPlanes,
 						(mode.modeAttributes & MODE_GRAPHICS_MODE) ? "graphics" : "    text",

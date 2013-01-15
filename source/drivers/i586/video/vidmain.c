@@ -40,25 +40,15 @@
 #define CURSOR_DATA_LOCLOW		0x0F
 #define CURSOR_DATA_LOCHIGH		0x0E
 
-#define MODE_80x25				0
-#define MODE_80x50				1
-#define MODE					MODE_80x25
-
-typedef struct {
-	uint cols;
-	uint rows;
-	uint no;
-} sVidMode;
-
 static uint16_t vid_getMode(void);
-static int vid_setMode(bool clear);
+static int vid_setMode(int mid,bool clear);
 static void vid_setCursor(uint row,uint col);
 
-static sVidMode modes[] = {
-	{80,25,0x0002},
-	{80,50,0x1112}
+static sVTMode modes[] = {
+	{0x0002,80,25,2,VID_MODE_TYPE_TEXT},
+	{0x1112,80,50,2,VID_MODE_TYPE_TEXT}
 };
-static sVidMode *mode = modes + MODE;
+static sVTMode *mode;
 
 /* our state */
 static uint8_t *videoData;
@@ -79,20 +69,14 @@ int main(int argc,char **argv) {
 	if(id < 0)
 		error("Unable to register device 'video'");
 
-	/* map video-memory for our process */
-	videoData = (uint8_t*)mapphys(VIDEO_MEM,mode->cols * (mode->rows + 1) * 2);
-	if(videoData == NULL)
-		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
-
 	/* reserve ports for cursor */
 	if(reqports(CURSOR_PORT_INDEX,2) < 0)
 		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
-	/* get video-mode and remember it */
-	if(usebios) {
-		modes[0].no = vid_getMode();
-		vid_setMode(false);
-	}
+	/* use current mode */
+	modes[0].id = vid_getMode();
+	if(vid_setMode(modes[1].id,false) < 0)
+		printe("Unable to set VGA mode");
 
 	/* wait for messages */
 	while(1) {
@@ -106,7 +90,7 @@ int main(int argc,char **argv) {
 					uint offset = msg.args.arg1;
 					size_t count = msg.args.arg2;
 					msg.args.arg1 = 0;
-					if(offset + count <= mode->rows * mode->cols * 2 && offset + count > offset) {
+					if(offset + count <= mode->height * mode->width * 2 && offset + count > offset) {
 						if(IGNSIGS(receive(fd,&mid,videoData + offset,count)) >= 0)
 							msg.args.arg1 = count;
 					}
@@ -114,24 +98,53 @@ int main(int argc,char **argv) {
 				}
 				break;
 
+				case MSG_VID_GETMODES: {
+					if(msg.args.arg1 == 0) {
+						msg.args.arg1 = ARRAY_SIZE(modes);
+						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					}
+					else
+						send(fd,MSG_DEF_RESPONSE,modes,sizeof(modes));
+				}
+				break;
+
+				case MSG_VID_GETMODE: {
+					msg.args.arg1 = mode->id;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
 				case MSG_VID_SETMODE: {
-					msg.args.arg1 = usebios ? vid_setMode(true) : -ENOTSUP;
+					if(!usebios)
+						msg.args.arg1 = -ENOTSUP;
+					else {
+						size_t i;
+						int mode = msg.args.arg1;
+						msg.args.arg1 = -EINVAL;
+						for(i = 0; i < ARRAY_SIZE(modes); i++) {
+							if(mode == modes[i].id) {
+								vid_setMode(modes[i].id,false);
+								msg.args.arg1 = 0;
+								break;
+							}
+						}
+					}
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
 				case MSG_VID_SETCURSOR: {
 					sVTPos *pos = (sVTPos*)msg.data.d;
-					pos->col = MIN(pos->col,mode->cols);
-					pos->row = MIN(pos->row,mode->rows);
+					pos->col = MIN(pos->col,mode->width);
+					pos->row = MIN(pos->row,mode->height);
 					vid_setCursor(pos->row,pos->col);
 				}
 				break;
 
 				case MSG_VID_GETSIZE: {
 					sVTSize *size = (sVTSize*)msg.data.d;
-					size->width = mode->cols;
-					size->height = mode->rows;
+					size->width = mode->width;
+					size->height = mode->height;
 					msg.data.arg1 = sizeof(sVTSize);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
@@ -161,18 +174,39 @@ static uint16_t vid_getMode(void) {
 	return regs.ax & 0xFF;
 }
 
-static int vid_setMode(bool clear) {
+static int vid_setMode(int mid,bool clear) {
+	int res;
+	size_t i;
 	sVM86Regs regs;
 	memclear(&regs,sizeof(regs));
-	regs.ax = mode->no;
+	regs.ax = mid;
 	/* don't clear the screen */
 	if(!clear)
 		regs.ax |= 0x80;
-	return vm86int(0x10,&regs,NULL);
+	res = vm86int(0x10,&regs,NULL);
+	if(res < 0)
+		return res;
+
+	/* find mode */
+	mode = NULL;
+	for(i = 0; i < ARRAY_SIZE(modes); i++) {
+		if(modes[i].id == mid) {
+			mode = modes + i;
+			break;
+		}
+	}
+	if(mode == NULL)
+		return -EINVAL;
+
+	/* map video-memory for our process */
+	videoData = (uint8_t*)mapphys(VIDEO_MEM,mode->width * (mode->height + 1) * 2);
+	if(videoData == NULL)
+		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
+	return 0;
 }
 
 static void vid_setCursor(uint row,uint col) {
-	uint position = (row * mode->cols) + col;
+	uint position = (row * mode->width) + col;
 
    /* cursor LOW port to vga INDEX register */
    outbyte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCLOW);

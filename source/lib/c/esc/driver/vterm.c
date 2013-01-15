@@ -85,6 +85,43 @@ int vterm_select(int fd,int vterm) {
 	return send(fd,MSG_VT_SELECT,&msg,sizeof(msg));
 }
 
+ssize_t vterm_getModeCount(int fd) {
+	sArgsMsg msg;
+	msg.arg1 = 0;
+	int res = send(fd,MSG_VT_GETMODES,&msg,sizeof(msg));
+	if(res < 0)
+		return res;
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	if(res < 0)
+		return res;
+	return msg.arg1;
+}
+
+int vterm_getMode(int fd) {
+	return vterm_doCtrl(fd,MSG_VT_GETMODE);
+}
+
+int vterm_setMode(int fd,int mode) {
+	sArgsMsg msg;
+	msg.arg1 = mode;
+	int res = send(fd,MSG_VT_SETMODE,&msg,sizeof(msg));
+	if(res < 0)
+		return res;
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	if(res < 0)
+		return res;
+	return msg.arg1;
+}
+
+int vterm_getModes(int fd,sVTMode *modes,size_t count) {
+	sArgsMsg msg;
+	msg.arg1 = count;
+	int res = send(fd,MSG_VT_GETMODES,&msg,sizeof(msg));
+	if(res < 0)
+		return res;
+	return IGNSIGS(receive(fd,NULL,modes,sizeof(sVTMode) * count));
+}
+
 static int vterm_doCtrl(int fd,msgid_t msg) {
 	sDataMsg resp;
 	int res = send(fd,msg,NULL,0);

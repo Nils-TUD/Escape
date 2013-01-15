@@ -46,8 +46,10 @@ void vt_selectVTerm(size_t index);
 
 /**
  * Enables the vterm and marks the screen of the active one dirty
+ *
+ * @param setMode whether to set the mode again
  */
-void vt_enable(void);
+void vt_enable(bool setMode);
 
 /**
  * @return the currently active vterm

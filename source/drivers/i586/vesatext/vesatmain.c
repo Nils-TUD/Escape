@@ -71,6 +71,7 @@ typedef enum {
 typedef uint8_t *(*fSetPixel)(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);
 
 static int vesa_determineMode(void);
+static int vesa_setMode(int mode);
 static int vesa_init(void);
 static void vesa_drawChars(gpos_t col,gpos_t row,const uint8_t *str,size_t len);
 static void vesa_drawChar(gpos_t col,gpos_t row,uint8_t c,uint8_t color);
@@ -139,7 +140,7 @@ int main(void) {
 	while(1) {
 		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[VESAT] Unable to get work");
+			printe("[VESATEXT] Unable to get work");
 		else {
 			switch(mid) {
 				case MSG_DEV_OPEN: {
@@ -151,7 +152,7 @@ int main(void) {
 				case MSG_DEV_WRITE: {
 					uint offset = msg.args.arg1;
 					size_t count = msg.args.arg2;
-					msg.args.arg1 = 0;
+					msg.args.arg1 = -EINVAL;
 					if(video == NULL || minfo == NULL)
 						msg.args.arg1 = -ENOTSUP;
 					else if(offset + count <= (size_t)(rows * cols * 2) && offset + count > offset) {
@@ -164,30 +165,55 @@ int main(void) {
 						}
 						free(str);
 					}
+					/* skip the data if there was an error */
+					if((int)msg.args.arg1 < 0)
+						IGNSIGS(receive(fd,NULL,NULL,0));
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_VID_GETMODE: {
+					msg.args.arg1 = minfo->modeNo;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_VID_SETMODE: {
+					if(!minfo)
+						msg.args.arg1 = -ENOTSUP;
+					else {
+						sVbeModeInfo *modeinfo = vbe_getModeInfo(msg.args.arg1);
+						if(modeinfo == NULL)
+							msg.args.arg1 = -EINVAL;
+						else {
+							msg.args.arg1 = vesa_setMode(modeinfo->modeNo);
+							if((int)msg.args.arg1 == 0)
+								msg.args.arg1 = vbe_setMode(modeinfo->modeNo);
+							if((int)msg.args.arg1 == 0)
+								minfo = modeinfo;
+						}
+						/* TODO force refresh on next update
+						memclear(content,rows * cols * 2);*/
+					}
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
 				case MSG_VID_GETMODES: {
 					size_t i, count = 0;
-					sVTMode *modes = vbe_collectModes(&count);
-					for(i = 0; i < count; i++) {
-						modes[i].width /= FONT_WIDTH + PAD * 2;
-						modes[i].height /= FONT_HEIGHT + PAD * 2;
+					sVTMode *modes = vbe_collectModes(msg.args.arg1,&count);
+					if(modes) {
+						for(i = 0; i < count; i++) {
+							modes[i].width /= FONT_WIDTH + PAD * 2;
+							modes[i].height = (modes[i].height - 1) / (FONT_HEIGHT + PAD * 2);
+						}
+						send(fd,MSG_DEF_RESPONSE,modes,sizeof(sVTMode) * count);
+						vbe_freeModes(modes);
 					}
-					send(fd,MSG_DEF_RESPONSE,modes,sizeof(sVTMode) * count);
-					vbe_freeModes(modes);
-				}
-				break;
-
-				case MSG_VID_SETMODE: {
-					msg.args.arg1 = -ENOTSUP;
-					if(minfo) {
-						msg.args.arg1 = vbe_setMode(minfo->modeNo);
-						/* force refresh on next update */
-						memclear(content,rows * cols * 2);
+					else {
+						msg.args.arg1 = count;
+						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					}
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
@@ -222,45 +248,50 @@ int main(void) {
 }
 
 static int vesa_determineMode(void) {
-	uint mode;
-	if(minfo)
-		return 0;
+	uint mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
+	if(mode == 0)
+		return -ENOENT;
+	return vesa_setMode(mode);
+}
 
-	mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
-	if(mode != 0) {
-		minfo = vbe_getModeInfo(mode);
-		if(minfo) {
-			video = mapphys(minfo->physBasePtr,minfo->xResolution *
-					minfo->yResolution * (minfo->bitsPerPixel / 8));
-			printf("[VESATEXT] Setting (%x) %4d x %4d x %2d\n",mode,
-					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
-			fflush(stdout);
-			if(video == NULL)
-				return -errno;
-			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
-			rows = minfo->yResolution / (FONT_HEIGHT + PAD * 2);
-			return vesa_init();
-		}
+static int vesa_setMode(int mode) {
+	minfo = vbe_getModeInfo(mode);
+	if(minfo) {
+		video = mapphys(minfo->physBasePtr,minfo->xResolution *
+				minfo->yResolution * (minfo->bitsPerPixel / 8));
+		printf("[VESATEXT] Setting (%d) %4d x %4d x %2d\n",mode,
+				minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
+		fflush(stdout);
+		if(video == NULL)
+			return -errno;
+		cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
+		/* leave at least one pixel free for the cursor */
+		rows = (minfo->yResolution - 1) / (FONT_HEIGHT + PAD * 2);
+		return vesa_init();
 	}
 	return -ENOENT;
 }
 
 static int vesa_init(void) {
 	int x,y;
-	if(content == NULL) {
-		content = (uint8_t*)malloc(cols * rows * 2);
-		if(content == NULL)
-			return -ENOMEM;
-		for(y = 0; y < rows; y++) {
-			for(x = 0; x < cols; x++) {
-				content[y * cols * 2 + x * 2] = ' ';
-				content[y * cols * 2 + x * 2 + 1] = 0x07;
-			}
+	if(content)
+		free(content);
+
+	content = (uint8_t*)malloc(cols * rows * 2);
+	if(content == NULL)
+		return -ENOMEM;
+	for(y = 0; y < rows; y++) {
+		for(x = 0; x < cols; x++) {
+			content[y * cols * 2 + x * 2] = ' ';
+			content[y * cols * 2 + x * 2 + 1] = 0x07;
 		}
 	}
 
 	/* init cache for white-on-black-chars */
-	if(whOnBlCache == NULL) {
+	if(whOnBlCache)
+		free(whOnBlCache);
+
+	{
 		uint8_t *cc;
 		size_t i;
 		whOnBlCache = (uint8_t*)malloc((FONT_WIDTH + PAD * 2) * (FONT_HEIGHT + PAD * 2) *

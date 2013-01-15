@@ -48,12 +48,26 @@ static void kmMngThread(void);
 
 static sVTermCfg cfg;
 
-int main(void) {
+int main(int argc,char **argv) {
 	size_t i;
 	int drvIds[VTERM_COUNT] = {-1};
 	char name[MAX_VT_NAME_LEN + 5 + 1];
 	cfg.readKb = true;
 	cfg.enabled = false;
+	/* open video-devices */
+	cfg.devCount = argc - 1;
+	cfg.devFds = (int*)malloc(sizeof(int) * cfg.devCount);
+	for(i = 1; i < (size_t)argc; i++) {
+		cfg.devFds[i - 1] = open(argv[i],IO_READ | IO_WRITE | IO_MSGS);
+		if(cfg.devFds[i - 1] < 0) {
+			printe("Unable to open '%s'",cfg.devFds[i - 1]);
+			return EXIT_FAILURE;
+		}
+	}
+	if(cfg.devCount == 0) {
+		fprintf(stderr,"No video devices\n");
+		return EXIT_FAILURE;
+	}
 
 	/* reg devices */
 	for(i = 0; i < VTERM_COUNT; i++) {
@@ -136,6 +150,28 @@ static int vtermThread(void *vterm) {
 				}
 				break;
 
+				case MSG_VT_GETMODES: {
+					size_t count;
+					sVTMode *modes = vtctrl_getModes(&cfg,msg.args.arg1,&count);
+					if(modes) {
+						send(fd,MSG_DEF_RESPONSE,modes,sizeof(sVTMode) * count);
+						free(modes);
+					}
+					else {
+						msg.args.arg1 = count;
+						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					}
+				}
+				break;
+
+				case MSG_VT_SETMODE: {
+					msg.args.arg1 = vtctrl_setVideoMode(&cfg,vt,msg.args.arg1);
+					if((int)msg.args.arg1 >= 0)
+						vt_enable(false);
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
 				case MSG_VT_SHELLPID:
 				case MSG_VT_ENABLE:
 				case MSG_VT_DISABLE:
@@ -150,10 +186,11 @@ static int vtermThread(void *vterm) {
 				case MSG_VT_BACKUP:
 				case MSG_VT_RESTORE:
 				case MSG_VT_GETSIZE:
+				case MSG_VT_GETMODE:
 					msg.data.arg1 = vtctrl_control(vt,&cfg,mid,msg.data.d);
 					/* reenable us, if necessary */
 					if(mid == MSG_VT_ENABLE)
-						vt_enable();
+						vt_enable(true);
 					/* wakeup thread to start reading from keyboard again */
 					if(mid == MSG_VT_ENABLE || mid == MSG_VT_EN_RDKB) {
 						if(kill(getpid(),SIG_USR1) < 0)

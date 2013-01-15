@@ -43,9 +43,21 @@ int video_getSize(int fd,sVTSize *size) {
 	return 0;
 }
 
-int video_setMode(int fd) {
+int video_getMode(int fd) {
 	sArgsMsg msg;
-	int res = send(fd,MSG_VID_SETMODE,NULL,0);
+	int res = send(fd,MSG_VID_GETMODE,NULL,0);
+	if(res < 0)
+		return res;
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	if(res < 0)
+		return res;
+	return msg.arg1;
+}
+
+int video_setMode(int fd,int mode) {
+	sArgsMsg msg;
+	msg.arg1 = mode;
+	int res = send(fd,MSG_VID_SETMODE,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));

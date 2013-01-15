@@ -222,7 +222,7 @@ void ProcessManager::setVTermEnabled(bool enabled) {
 		int vidFd = open("/dev/video",IO_MSGS);
 		if(vidFd < 0)
 			throw init_error("Unable to open /dev/video");
-		if(video_setMode(vidFd) < 0)
+		if(video_setMode(vidFd,video_getMode(vidFd)) < 0)
 			throw init_error("Unable to switch to video");
 		close(vidFd);
 

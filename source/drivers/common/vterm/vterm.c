@@ -55,27 +55,15 @@ sVTerm *vt_get(size_t index) {
 }
 
 bool vt_initAll(int *ids,sVTermCfg *cfg) {
-	int vidFd,speakerFd;
+	int speakerFd;
 	sVTSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
-	const char *device;
 	size_t i;
 
 	config = cfg;
 
-	/* open video-device */
-	if(sysconf(CONF_BOOT_VIDEOMODE) == CONF_VIDMODE_VESATEXT)
-		device = VESA_DEVICE;
-	else
-		device = VGA_DEVICE;
-	vidFd = open(device,IO_READ | IO_WRITE | IO_MSGS);
-	if(vidFd < 0) {
-		printe("Unable to open '%s'",device);
-		return false;
-	}
-
 	/* request screensize from video-device */
-	if(video_getSize(vidFd,&vidSize) < 0) {
+	if(video_getSize(cfg->devFds[0],&vidSize) < 0) {
 		printe("Getting screensize failed");
 		return false;
 	}
@@ -91,7 +79,7 @@ bool vt_initAll(int *ids,sVTermCfg *cfg) {
 		vterms[i].defBackground = BLACK;
 		snprintf(name,sizeof(name),"vterm%d",i);
 		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
-		if(!vtctrl_init(vterms + i,&vidSize,vidFd,speakerFd))
+		if(!vtctrl_init(vterms + i,&vidSize,cfg->devFds[0],speakerFd))
 			return false;
 
 		vterms[i].setCursor = vt_setCursor;
@@ -109,6 +97,7 @@ sVTerm *vt_getActive(void) {
 void vt_selectVTerm(size_t index) {
 	locku(&vtLock);
 	if(!activeVT || activeVT->index != index) {
+		sVTerm *old = activeVT;
 		sVTerm *vt = vterms + index;
 		if(activeVT != NULL)
 			activeVT->active = false;
@@ -119,6 +108,8 @@ void vt_selectVTerm(size_t index) {
 
 		/* refresh screen and write titlebar */
 		locku(&vt->lock);
+		if(old && old->mode != vt->mode)
+			video_setMode(vt->video,vt->mode);
 		vtctrl_markScrDirty(vt);
 		vt_setCursor(vt);
 		vt_doUpdate(vt);
@@ -127,11 +118,12 @@ void vt_selectVTerm(size_t index) {
 	unlocku(&vtLock);
 }
 
-void vt_enable(void) {
+void vt_enable(bool setMode) {
 	sVTerm* vt = vt_getActive();
 	if(vt) {
 		locku(&vt->lock);
-		video_setMode(vt->video);
+		if(setMode)
+			video_setMode(vt->video,video_getMode(vt->video));
 		/* ensure that we redraw everything and re-set the cursor */
 		vt->lastCol = vt->lastRow = -1;
 		vtctrl_markScrDirty(vt);

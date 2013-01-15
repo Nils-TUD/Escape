@@ -258,7 +258,7 @@ static void kbStartDbgConsole(void) {
 	/* switch to vga-text-mode */
 	int fd = open("/dev/video",IO_MSGS);
 	if(fd >= 0) {
-		video_setMode(fd);
+		video_setMode(fd,video_getMode(fd));
 		close(fd);
 	}
 

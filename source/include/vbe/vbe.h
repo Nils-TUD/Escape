@@ -96,12 +96,14 @@ void vbe_init(void);
 sVbeModeInfo *vbe_getModeInfo(uint mode);
 
 /**
- * Allocates an array of sVTMode-objects and fills them with the supported modes.
+ * Allocates an array of sVTMode-objects and fills them with the supported modes. If n is 0, only
+ * the number of modes will be counted and NULL will be returned.
  *
+ * @param n the number of modes to collect (0 = count the available ones)
  * @param count will be set to the number of found modes
- * @return the array
+ * @return the array or NULL
  */
-sVTMode *vbe_collectModes(size_t *count);
+sVTMode *vbe_collectModes(size_t n,size_t *count);
 
 /**
  * Free's the previously via vbe_collectModes allocated mode.

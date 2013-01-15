@@ -34,7 +34,7 @@ int main(int argc,const char *argv[]) {
 	bool list;
 	int mode = -1;
 	int res = ca_parse(argc,argv,CA_NO_FREE,"l s=d",&list,&mode);
-	if(argc == 0 || res < 0 || ca_hasHelp()) {
+	if(argc == 1 || res < 0 || ca_hasHelp()) {
 		if(argc == 0 || res < 0)
 			fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);

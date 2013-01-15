@@ -69,7 +69,7 @@ bool vt_initAll(int *ids,sVTermCfg *cfg,uint cols,uint rows) {
 	config = cfg;
 	res = vt_findMode(cfg,cols,rows,&mode);
 	if(res < 0) {
-		fprintf(stderr,"Unable to find a suitable mode: %s\n",strerror(res));
+		fprintf(stderr,"Unable to find a suitable mode: %s\n",strerror(-res));
 		return false;
 	}
 
@@ -93,7 +93,7 @@ bool vt_initAll(int *ids,sVTermCfg *cfg,uint cols,uint rows) {
 	/* set video mode */
 	res = video_setMode(cfg->devFds[mode.device],mode.id);
 	if(res < 0) {
-		fprintf(stderr,"Unable to set mode: %s\n",strerror(res));
+		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
 		return false;
 	}
 

@@ -86,11 +86,8 @@ static uchar *buffer = NULL;
 static uchar *backup = NULL;
 
 bool displ_init(void) {
-	long vidMode = sysconf(CONF_BOOT_VIDEOMODE);
-	if(vidMode == CONF_VIDMODE_VGATEXT)
-		video = open(VIDEO_DEVICE,IO_WRITE | IO_MSGS);
-	else
-		video = open(VESA_DEVICE,IO_WRITE | IO_MSGS);
+	/* TODO support different devices */
+	video = open(VESA_DEVICE,IO_WRITE | IO_MSGS);
 	if(video < 0) {
 		fprintf(stderr,"Unable to open video-device\n");
 		return false;
@@ -173,6 +170,7 @@ static void displ_drawObjects(void) {
 				src = explo3;
 				break;
 			case TYPE_EXPLO4:
+			default:
 				src = explo4;
 				break;
 		}

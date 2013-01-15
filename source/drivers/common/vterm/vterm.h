@@ -27,9 +27,11 @@
  *
  * @param ids the device-ids
  * @param cfg the global config
+ * @param cols the number of desired cols
+ * @param rows the number of desired rows
  * @return true if successfull
  */
-bool vt_initAll(int *ids,sVTermCfg *cfg);
+bool vt_initAll(int *ids,sVTermCfg *cfg,uint cols,uint rows);
 
 /**
  * @param index the index

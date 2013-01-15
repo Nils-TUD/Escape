@@ -52,15 +52,21 @@ int main(int argc,char **argv) {
 	size_t i;
 	int drvIds[VTERM_COUNT] = {-1};
 	char name[MAX_VT_NAME_LEN + 5 + 1];
+
+	if(argc < 4) {
+		fprintf(stderr,"Usage: %s <cols> <rows> <driver>...\n",argv[0]);
+		return EXIT_FAILURE;
+	}
+
 	cfg.readKb = true;
 	cfg.enabled = false;
 	/* open video-devices */
-	cfg.devCount = argc - 1;
+	cfg.devCount = argc - 3;
 	cfg.devFds = (int*)malloc(sizeof(int) * cfg.devCount);
-	for(i = 1; i < (size_t)argc; i++) {
-		cfg.devFds[i - 1] = open(argv[i],IO_READ | IO_WRITE | IO_MSGS);
-		if(cfg.devFds[i - 1] < 0) {
-			printe("Unable to open '%s'",cfg.devFds[i - 1]);
+	for(i = 3; i < (size_t)argc; i++) {
+		cfg.devFds[i - 3] = open(argv[i],IO_READ | IO_WRITE | IO_MSGS);
+		if(cfg.devFds[i - 3] < 0) {
+			printe("Unable to open '%s'",cfg.devFds[i - 3]);
 			return EXIT_FAILURE;
 		}
 	}
@@ -78,7 +84,7 @@ int main(int argc,char **argv) {
 	}
 
 	/* init vterms */
-	if(!vt_initAll(drvIds,&cfg))
+	if(!vt_initAll(drvIds,&cfg,atoi(argv[1]),atoi(argv[2])))
 		error("Unable to init vterms");
 
 	/* start threads to handle them */
@@ -152,7 +158,7 @@ static int vtermThread(void *vterm) {
 
 				case MSG_VT_GETMODES: {
 					size_t count;
-					sVTMode *modes = vtctrl_getModes(&cfg,msg.args.arg1,&count);
+					sVTMode *modes = vtctrl_getModes(&cfg,msg.args.arg1,&count,false);
 					if(modes) {
 						send(fd,MSG_DEF_RESPONSE,modes,sizeof(sVTMode) * count);
 						free(modes);

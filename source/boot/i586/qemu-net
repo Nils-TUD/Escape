@@ -4,7 +4,7 @@ create_cd $1/dist $1/cd.iso
 
 cat >$1/config-52-54-00-12-34-56 <<EOF
 root escape
-exec boot/escape videomode=vesa
+exec boot/escape
 load sbin/romdisk /dev/romdisk cd.iso
 load sbin/cmos /dev/cmos
 load sbin/fs /dev/fs /dev/romdisk iso9660

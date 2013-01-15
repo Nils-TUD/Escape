@@ -1,6 +1,6 @@
 #!/bin/sh
 . boot/$ESC_TARGET/images.sh
 create_cd $1/dist $1/cd.iso
-$ESC_QEMU -m 64 -serial stdio -kernel $1/dist/boot/escape -append 'videomode=vesa' \
+$ESC_QEMU -m 64 -serial stdio -kernel $1/dist/boot/escape \
 	-initrd "$1/dist/sbin/romdisk /dev/romdisk $1/cd.iso,$1/dist/sbin/cmos /dev/cmos,$1/dist/sbin/fs /dev/fs /dev/romdisk iso9660,$1/cd.iso" \
 	$2 | tee log.txt

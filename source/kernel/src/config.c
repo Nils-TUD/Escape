@@ -32,7 +32,6 @@
 
 static void conf_set(const char *name,const char *value);
 
-static uchar bootVidMode;
 static bool lineByLine = false;
 static bool doLog = true;
 static bool log2scr = false;
@@ -72,9 +71,6 @@ const char *conf_getStr(int id) {
 long conf_get(int id) {
 	long res;
 	switch(id) {
-		case CONF_BOOT_VIDEOMODE:
-			res = bootVidMode;
-			break;
 		case CONF_TIMER_FREQ:
 			res = TIMER_FREQUENCY_DIV;
 			break;
@@ -107,13 +103,7 @@ long conf_get(int id) {
 }
 
 static void conf_set(const char *name,const char *value) {
-	if(strcmp(name,"videomode") == 0) {
-		if(strcmp(value,"vesa") == 0)
-			bootVidMode = CONF_VIDMODE_VESATEXT;
-		else
-			bootVidMode = CONF_VIDMODE_VGATEXT;
-	}
-	else if(strcmp(name,"swapdev") == 0)
+	if(strcmp(name,"swapdev") == 0)
 		strcpy(swapDev,value);
 	else if(strcmp(name,"nolog") == 0)
 		doLog = false;

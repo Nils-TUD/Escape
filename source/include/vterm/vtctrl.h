@@ -145,12 +145,14 @@ typedef enum {
  * Inits the vterm
  *
  * @param vt the vterm
- * @param vidSize the size of the screen
+ * @param cols the number of cols
+ * @param rows the number of rows
+ * @param vidMode the video mode to use
  * @param vidFd the file-descriptor for the video-device (or whatever you need :))
  * @param speakerFd the file-descriptor for the speaker-device
  * @return true if successfull
  */
-bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd);
+bool vtctrl_init(sVTerm *vt,uint cols,uint rows,int vidMode,int vidFd,int speakerFd);
 
 /**
  * Handles the control-commands
@@ -169,9 +171,10 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data);
  * @param cfg the config
  * @param n the number of modes to collect (0 = count)
  * @param count will be set to the number of collected modes or the total number
+ * @param setDev whether to change the device-field to the device-index in cfg
  * @return the modes array or NULL
  */
-sVTMode *vtctrl_getModes(sVTermCfg *cfg,size_t n,size_t *count);
+sVTMode *vtctrl_getModes(sVTermCfg *cfg,size_t n,size_t *count,bool setDev);
 
 /**
  * Scrolls the screen by <lines> up (positive) or down (negative) (unlocked)

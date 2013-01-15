@@ -95,8 +95,31 @@ int main(void) {
 				}
 				break;
 
-				/* set-mode is not supported */
-				case MSG_VID_SETMODE:
+				case MSG_VID_GETMODES: {
+					if(msg.args.arg1 == 0) {
+						msg.args.arg1 = 1;
+						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					}
+					else {
+						sVTMode mode = {0,COLS,ROWS,4,VID_MODE_TYPE_TEXT};
+						send(fd,MSG_DEF_RESPONSE,&mode,sizeof(sVTMode));
+					}
+				}
+				break;
+
+				case MSG_VID_GETMODE: {
+					msg.args.arg1 = 0;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_VID_SETMODE: {
+					/* pretend that we've set it */
+					msg.args.arg1 = 0;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

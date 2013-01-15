@@ -42,17 +42,16 @@
 #define TITLE_BAR_COLOR		0x17
 #define OS_TITLE			"Escape v"ESCAPE_VERSION
 
-static ssize_t vtctrl_getModesOf(int fd,sVTMode *modes,size_t count);
 static ssize_t vtctrl_getModeCount(sVTermCfg *cfg);
 static void vtctrl_buildTitle(sVTerm *vt);
 
-bool vtctrl_init(sVTerm *vt,sVTSize *vidSize,int vidFd,int speakerFd) {
+bool vtctrl_init(sVTerm *vt,uint cols,uint rows,int vidMode,int vidFd,int speakerFd) {
 	size_t i,len;
 	uchar color;
 	char *ptr;
-	vt->cols = vidSize->width;
-	vt->rows = vidSize->height;
-	vt->mode = video_getMode(vidFd);
+	vt->cols = cols;
+	vt->rows = rows;
+	vt->mode = vidMode;
 
 	/* by default we have no handlers for that */
 	vt->setCursor = NULL;
@@ -130,54 +129,41 @@ void vtctrl_destroy(sVTerm *vt) {
 
 int vtctrl_setVideoMode(sVTermCfg *cfg,sVTerm *vt,int mode) {
 	sVTMode *modes;
-	size_t i;
-	ssize_t j,res,n = vtctrl_getModeCount(cfg);
+	ssize_t res,n = vtctrl_getModeCount(cfg);
+	size_t i,count;
 	if(n < 0)
 		return n;
-	/* allocate the memory that we need in the worstcase */
-	modes = (sVTMode*)malloc(sizeof(sVTMode) * n);
-	if(!modes)
-		return -ENOMEM;
 
-	/* find the device to which the mode belongs */
-	for(i = 0; i < cfg->devCount; i++) {
-		/* we don't know the real count of modes, so make them invalid */
-		memclear(modes,sizeof(sVTMode) * n);
-
-		res = vtctrl_getModesOf(cfg->devFds[i],modes,n);
-		if(res < 0)
-			goto error;
-
-		for(j = 0; j < n; j++) {
-			if(modes[j].id == mode) {
-				/* save old values */
-				int old = vt->video;
-				int oldmode = video_getMode(old);
-				if(oldmode < 0) {
-					res = oldmode;
-					goto error;
-				}
-
-				/* change mode */
-				vt->video = cfg->devFds[i];
-				res = video_setMode(cfg->devFds[i],mode);
-				if(res < 0)
-					goto error;
-
-				/* resize vterm if necessary */
-				if(vt->cols != modes[j].width || vt->rows != modes[j].height) {
-					if(!vtctrl_resize(vt,modes[j].width,modes[j].height)) {
-						/* restore old values */
-						video_setMode(old,oldmode);
-						vt->video = old;
-						res = -ENOMEM;
-						goto error;
-					}
-				}
-				vt->mode = mode;
-				free(modes);
-				return 0;
+	modes = vtctrl_getModes(cfg,n,&count,true);
+	for(i = 0; i < count; i++) {
+		if(modes[i].id == mode) {
+			/* save old values */
+			int old = vt->video;
+			int oldmode = video_getMode(old);
+			if(oldmode < 0) {
+				res = oldmode;
+				goto error;
 			}
+
+			/* change mode */
+			vt->video = cfg->devFds[modes[i].device];
+			res = video_setMode(vt->video,mode);
+			if(res < 0)
+				goto error;
+
+			/* resize vterm if necessary */
+			if(vt->cols != modes[i].width || vt->rows != modes[i].height) {
+				if(!vtctrl_resize(vt,modes[i].width,modes[i].height)) {
+					/* restore old values */
+					video_setMode(old,oldmode);
+					vt->video = old;
+					res = -ENOMEM;
+					goto error;
+				}
+			}
+			vt->mode = mode;
+			free(modes);
+			return 0;
 		}
 	}
 	res = -EINVAL;
@@ -344,19 +330,24 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 	return res;
 }
 
-sVTMode *vtctrl_getModes(sVTermCfg *cfg,size_t n,size_t *count) {
+sVTMode *vtctrl_getModes(sVTermCfg *cfg,size_t n,size_t *count,bool setDev) {
 	sVTMode *res = NULL;
 	ssize_t err;
-	size_t i,rem,total = vtctrl_getModeCount(cfg);
+	size_t i,j,rem,total = vtctrl_getModeCount(cfg);
 	*count = total;
 	if(n != 0) {
 		n = MIN(n,total);
 		rem = n;
 		res = (sVTMode*)malloc(sizeof(sVTMode) * n);
 		for(i = 0; i < cfg->devCount; i++) {
-			if((err = vtctrl_getModesOf(cfg->devFds[i],res + (n - rem),rem)) < 0) {
+			if((err = video_getModes(cfg->devFds[i],res + (n - rem),rem)) < 0) {
 				*count = err;
 				return NULL;
+			}
+			/* set device number */
+			if(setDev) {
+				for(j = 0; j < err / sizeof(sVTMode); ++j)
+					res[n - rem + j].device = i;
 			}
 			rem -= err / sizeof(sVTMode);
 		}
@@ -398,28 +389,13 @@ void vtctrl_markDirty(sVTerm *vt,size_t start,size_t length) {
 	}
 }
 
-static ssize_t vtctrl_getModesOf(int fd,sVTMode *modes,size_t count) {
-	sArgsMsg msg;
-	ssize_t err;
-	msg.arg1 = count;
-	err = send(fd,MSG_VID_GETMODES,&msg,sizeof(msg));
-	if(err < 0)
-		return err;
-	return IGNSIGS(receive(fd,NULL,modes,sizeof(sVTMode) * count));
-}
-
 static ssize_t vtctrl_getModeCount(sVTermCfg *cfg) {
-	sMsg msg;
 	size_t i,count = 0;
 	for(i = 0; i < cfg->devCount; i++) {
-		msg.args.arg1 = 0;
-		ssize_t res = send(cfg->devFds[i],MSG_VID_GETMODES,&msg,sizeof(msg.args));
+		ssize_t res = video_getModeCount(cfg->devFds[i]);
 		if(res < 0)
 			return res;
-		res = IGNSIGS(receive(cfg->devFds[i],NULL,&msg,sizeof(msg.args)));
-		if(res < 0)
-			return res;
-		count += msg.args.arg1;
+		count += res;
 	}
 	return count;
 }

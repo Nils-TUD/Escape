@@ -34,10 +34,6 @@
 #include <vbe/vbe.h>
 #include "font.h"
 
-#define RESOLUTION_X					800
-#define RESOLUTION_Y					600
-#define BITS_PER_PIXEL					24
-
 #define CURSOR_LEN						FONT_WIDTH
 #define CURSOR_COLOR					0xFFFFFF
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
@@ -70,7 +66,6 @@ typedef enum {
 
 typedef uint8_t *(*fSetPixel)(uint8_t *vidwork,uint8_t r,uint8_t g,uint8_t b);
 
-static int vesa_determineMode(void);
 static int vesa_setMode(int mode);
 static int vesa_init(void);
 static void vesa_drawChars(gpos_t col,gpos_t row,const uint8_t *str,size_t len);
@@ -133,7 +128,7 @@ int main(void) {
 	/* load available modes etc. */
 	vbe_init();
 
-	id = createdev("/dev/vesatext",DEV_TYPE_BLOCK,DEV_OPEN | DEV_WRITE);
+	id = createdev("/dev/vesatext",DEV_TYPE_BLOCK,DEV_WRITE);
 	if(id < 0)
 		error("Unable to register device 'vesatext'");
 
@@ -143,12 +138,6 @@ int main(void) {
 			printe("[VESATEXT] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DEV_OPEN: {
-					msg.args.arg1 = vesa_determineMode();
-					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
 				case MSG_DEV_WRITE: {
 					uint offset = msg.args.arg1;
 					size_t count = msg.args.arg2;
@@ -173,27 +162,21 @@ int main(void) {
 				break;
 
 				case MSG_VID_GETMODE: {
-					msg.args.arg1 = minfo->modeNo;
+					msg.args.arg1 = minfo ? minfo->modeNo : -EINVAL;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
 				case MSG_VID_SETMODE: {
-					if(!minfo)
-						msg.args.arg1 = -ENOTSUP;
+					sVbeModeInfo *modeinfo = vbe_getModeInfo(msg.args.arg1);
+					if(modeinfo == NULL)
+						msg.args.arg1 = -EINVAL;
 					else {
-						sVbeModeInfo *modeinfo = vbe_getModeInfo(msg.args.arg1);
-						if(modeinfo == NULL)
-							msg.args.arg1 = -EINVAL;
-						else {
-							msg.args.arg1 = vesa_setMode(modeinfo->modeNo);
-							if((int)msg.args.arg1 == 0)
-								msg.args.arg1 = vbe_setMode(modeinfo->modeNo);
-							if((int)msg.args.arg1 == 0)
-								minfo = modeinfo;
-						}
-						/* TODO force refresh on next update
-						memclear(content,rows * cols * 2);*/
+						msg.args.arg1 = vesa_setMode(modeinfo->modeNo);
+						if((int)msg.args.arg1 == 0)
+							msg.args.arg1 = vbe_setMode(modeinfo->modeNo);
+						if((int)msg.args.arg1 == 0)
+							minfo = modeinfo;
 					}
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
@@ -221,7 +204,8 @@ int main(void) {
 					sVTPos *pos = (sVTPos*)msg.data.d;
 					pos->col = MIN(pos->col,(uint)(cols - 1));
 					pos->row = MIN(pos->row,(uint)(rows - 1));
-					vesa_setCursor(pos->col,pos->row);
+					if(minfo)
+						vesa_setCursor(pos->col,pos->row);
 				}
 				break;
 
@@ -247,21 +231,11 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static int vesa_determineMode(void) {
-	uint mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
-	if(mode == 0)
-		return -ENOENT;
-	return vesa_setMode(mode);
-}
-
 static int vesa_setMode(int mode) {
 	minfo = vbe_getModeInfo(mode);
 	if(minfo) {
 		video = mapphys(minfo->physBasePtr,minfo->xResolution *
 				minfo->yResolution * (minfo->bitsPerPixel / 8));
-		printf("[VESATEXT] Setting (%d) %4d x %4d x %2d\n",mode,
-				minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
-		fflush(stdout);
 		if(video == NULL)
 			return -errno;
 		cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);

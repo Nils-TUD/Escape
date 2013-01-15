@@ -7,22 +7,15 @@ create_cd() {
 default 0
 timeout 3
 
-title Escape - VESA-text
-kernel /boot/escape videomode=vesa
-module /sbin/pci /dev/pci
-module /sbin/ata /system/devices/ata nodma
-module /sbin/cmos /dev/cmos
-module /sbin/fs /dev/fs cdrom iso9660
-
-title Escape - VGA-text
-kernel /boot/escape videomode=vga
+title Escape
+kernel /boot/escape
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata nodma
 module /sbin/cmos /dev/cmos
 module /sbin/fs /dev/fs cdrom iso9660
 
 title Escape - Test
-kernel /boot/escape_test videomode=vga
+kernel /boot/escape_test
 EOF
 	
 	genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito -no-emul-boot \
@@ -38,22 +31,15 @@ create_disk() {
 default 0
 timeout 3
 
-title Escape - VESA-text
-kernel /boot/escape videomode=vesa swapdev=/dev/hda3
+title Escape
+kernel /boot/escape swapdev=/dev/hda3
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata nodma
 module /sbin/cmos /dev/cmos
 module /sbin/fs /dev/fs /dev/hda1 ext2
 
-title Escape - VGA-text
-kernel /boot/escape videomode=vga swapdev=/dev/hda3
-module /sbin/pci /dev/pci
-module /sbin/ata /system/devices/ata
-module /sbin/cmos /dev/cmos
-module /sbin/fs /dev/fs /dev/hda1 ext2
-
 title Escape - Test
-kernel /boot/escape_test videomode=vga
+kernel /boot/escape_test
 EOF
 
 	sudo ./boot/perms.sh $dir

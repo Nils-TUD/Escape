@@ -31,15 +31,19 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
 #include <vterm/vtout.h>
 #include "vterm.h"
 
+#define ABS(x)			((x) > 0 ? (x) : -(x))
+
 #define VGA_DEVICE		"/dev/video"
 #define VESA_DEVICE		"/dev/vesatext"
 
+static int vt_findMode(sVTermCfg *cfg,uint cols,uint rows,sVTMode *mode);
 static void vt_doUpdate(sVTerm *vt);
 static void vt_setCursor(sVTerm *vt);
 static int vt_dateThread(void *arg);
@@ -54,17 +58,18 @@ sVTerm *vt_get(size_t index) {
 	return vterms + index;
 }
 
-bool vt_initAll(int *ids,sVTermCfg *cfg) {
+bool vt_initAll(int *ids,sVTermCfg *cfg,uint cols,uint rows) {
 	int speakerFd;
-	sVTSize vidSize;
+	sVTMode mode;
 	char name[MAX_VT_NAME_LEN + 1];
 	size_t i;
+	int res;
 
+	/* find a suitable mode */
 	config = cfg;
-
-	/* request screensize from video-device */
-	if(video_getSize(cfg->devFds[0],&vidSize) < 0) {
-		printe("Getting screensize failed");
+	res = vt_findMode(cfg,cols,rows,&mode);
+	if(res < 0) {
+		fprintf(stderr,"Unable to find a suitable mode: %s\n",strerror(res));
 		return false;
 	}
 
@@ -79,10 +84,17 @@ bool vt_initAll(int *ids,sVTermCfg *cfg) {
 		vterms[i].defBackground = BLACK;
 		snprintf(name,sizeof(name),"vterm%d",i);
 		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
-		if(!vtctrl_init(vterms + i,&vidSize,cfg->devFds[0],speakerFd))
+		if(!vtctrl_init(vterms + i,mode.width,mode.height,mode.id,cfg->devFds[mode.device],speakerFd))
 			return false;
 
 		vterms[i].setCursor = vt_setCursor;
+	}
+
+	/* set video mode */
+	res = video_setMode(cfg->devFds[mode.device],mode.id);
+	if(res < 0) {
+		fprintf(stderr,"Unable to set mode: %s\n",strerror(res));
+		return false;
 	}
 
 	if(startthread(vt_dateThread,NULL) < 0)
@@ -138,6 +150,31 @@ void vt_update(sVTerm *vt) {
 	locku(&vt->lock);
 	vt_doUpdate(vt);
 	unlocku(&vt->lock);
+}
+
+static int vt_findMode(sVTermCfg *cfg,uint cols,uint rows,sVTMode *mode) {
+	size_t i,count,bestmode;
+	uint bestdiff = UINT_MAX;
+	sVTMode *modes;
+
+	/* get all modes */
+	vtctrl_getModes(cfg,0,&count,true);
+	modes = vtctrl_getModes(cfg,count,&count,true);
+	if(!modes)
+		return -ENOENT;
+
+	/* search for the best matching mode */
+	bestmode = count;
+	for(i = 0; i < count; i++) {
+		uint pixdiff = ABS(modes[i].width * modes[i].height - cols * rows);
+		if(pixdiff < bestdiff) {
+			bestmode = i;
+			bestdiff = pixdiff;
+		}
+	}
+	memcpy(mode,modes + bestmode,sizeof(sVTMode));
+	free(modes);
+	return 0;
 }
 
 static void vt_doUpdate(sVTerm *vt) {

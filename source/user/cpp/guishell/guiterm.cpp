@@ -31,15 +31,17 @@
 GUITerm::GUITerm(int sid,std::shared_ptr<ShellControl> sh)
 	: _sid(sid), _run(true), _vt(nullptr), _sh(sh), _cfg(sVTermCfg()),
 	  _rbuffer(new char[READ_BUF_SIZE]), _rbufPos(0) {
-	sVTSize size;
-	size.width = sh->getCols();
-	size.height = sh->getRows();
-
 	// open speaker
 	int speakerFd = open("/dev/speaker",IO_MSGS);
 	if(speakerFd < 0)
 		error("Unable to open '/dev/speaker'");
 
+	// give term a dummy video-device
+	_cfg.devCount = 1;
+	_cfg.devFds = (int*)malloc(sizeof(int) * 1);
+	_cfg.devFds[0] = -1;
+
+	// create and init vterm
 	_vt = (sVTerm*)malloc(sizeof(sVTerm));
 	if(!_vt)
 		error("Not enough mem for vterm");
@@ -49,7 +51,7 @@ GUITerm::GUITerm(int sid,std::shared_ptr<ShellControl> sh)
 	_vt->defBackground = WHITE;
 	if(getenvto(_vt->name,sizeof(_vt->name),"TERM") < 0)
 		error("Unable to get env-var TERM");
-	if(!vtctrl_init(_vt,&size,-1,speakerFd))
+	if(!vtctrl_init(_vt,sh->getCols(),sh->getRows(),0,-1,speakerFd))
 		error("Unable to init vterm");
 	_vt->active = true;
 	_sh->setVTerm(_vt);
@@ -88,6 +90,25 @@ void GUITerm::run() {
 					write(fd,&msg);
 					break;
 
+				case MSG_VT_GETMODES: {
+					if(msg.args.arg1 == 0) {
+						msg.args.arg1 = 1;
+						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					}
+					else {
+						gui::Application *app = gui::Application::getInstance();
+						sVTMode mode = {0,_vt->cols,_vt->rows,app->getColorDepth(),VID_MODE_TYPE_GRAPHICAL};
+						send(fd,MSG_DEF_RESPONSE,&mode,sizeof(sVTMode));
+					}
+				}
+				break;
+
+				case MSG_VT_SETMODE: {
+					msg.args.arg1 = -ENOTSUP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
 				case MSG_VT_SHELLPID:
 				case MSG_VT_ENABLE:
 				case MSG_VT_DISABLE:
@@ -102,6 +123,7 @@ void GUITerm::run() {
 				case MSG_VT_BACKUP:
 				case MSG_VT_RESTORE:
 				case MSG_VT_GETSIZE:
+				case MSG_VT_GETMODE:
 					msg.data.arg1 = vtctrl_control(_vt,&_cfg,mid,msg.data.d);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;

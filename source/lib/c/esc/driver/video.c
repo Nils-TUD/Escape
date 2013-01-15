@@ -65,3 +65,25 @@ int video_setMode(int fd,int mode) {
 		return res;
 	return msg.arg1;
 }
+
+ssize_t video_getModeCount(int fd) {
+	sMsg msg;
+	msg.args.arg1 = 0;
+	ssize_t res = send(fd,MSG_VID_GETMODES,&msg,sizeof(msg.args));
+	if(res < 0)
+		return res;
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg.args)));
+	if(res < 0)
+		return res;
+	return msg.args.arg1;
+}
+
+ssize_t video_getModes(int fd,sVTMode *modes,size_t count) {
+	sArgsMsg msg;
+	ssize_t err;
+	msg.arg1 = count;
+	err = send(fd,MSG_VID_GETMODES,&msg,sizeof(msg));
+	if(err < 0)
+		return err;
+	return IGNSIGS(receive(fd,NULL,modes,sizeof(sVTMode) * count));
+}

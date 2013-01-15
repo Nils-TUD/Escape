@@ -4,7 +4,7 @@ create_cd $1/dist $1/cd.iso
 
 cat >$1/config-$ESC_MAC <<EOF
 root escape
-exec boot/escape videomode=vesa
+exec boot/escape
 load sbin/pci /dev/pci
 load sbin/ata /system/devices/ata nodma
 load sbin/cmos /dev/cmos

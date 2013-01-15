@@ -222,7 +222,7 @@ typedef struct {
 	uint width;
 	uint height;
 	uchar bitsPerPixel;
-	uchar type;
+	size_t device;
 } sVTMode;
 
 typedef struct {

@@ -155,6 +155,7 @@
 #define MSG_VT_GETMODES				615 /* like MSG_VID_GETMODES, but for all available backends */
 #define MSG_VT_GETMODE				616 /* get the current video mode */
 #define MSG_VT_SETMODE				617 /* sets a specified video mode */
+#define MSG_VT_GETDEVICE			618 /* returns the path to the current video device */
 
 #define MSG_KM_SET					700	/* sets a keymap, expects the keymap-path as argument */
 #define MSG_KM_EVENT				701	/* the message-id for sending events to the listeners */

@@ -103,12 +103,6 @@ void GUITerm::run() {
 				}
 				break;
 
-				case MSG_VT_SETMODE: {
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-				}
-				break;
-
 				case MSG_VT_SHELLPID:
 				case MSG_VT_ENABLE:
 				case MSG_VT_DISABLE:
@@ -127,6 +121,13 @@ void GUITerm::run() {
 					msg.data.arg1 = vtctrl_control(_vt,&_cfg,mid,msg.data.d);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
+
+				default:
+				case MSG_VT_SETMODE: {
+					msg.args.arg1 = -ENOTSUP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
 			}
 			_sh->update();
 			close(fd);

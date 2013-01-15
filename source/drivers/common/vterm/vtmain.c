@@ -63,7 +63,13 @@ int main(int argc,char **argv) {
 	/* open video-devices */
 	cfg.devCount = argc - 3;
 	cfg.devFds = (int*)malloc(sizeof(int) * cfg.devCount);
+	cfg.devNames = (char**)malloc(sizeof(char*) * cfg.devCount);
 	for(i = 3; i < (size_t)argc; i++) {
+		cfg.devNames[i - 3] = strdup(argv[i]);
+		if(cfg.devNames[i - 3] == NULL) {
+			printe("Unable to clone device name");
+			return EXIT_FAILURE;
+		}
 		cfg.devFds[i - 3] = open(argv[i],IO_READ | IO_WRITE | IO_MSGS);
 		if(cfg.devFds[i - 3] < 0) {
 			printe("Unable to open '%s'",cfg.devFds[i - 3]);
@@ -193,6 +199,7 @@ static int vtermThread(void *vterm) {
 				case MSG_VT_RESTORE:
 				case MSG_VT_GETSIZE:
 				case MSG_VT_GETMODE:
+				case MSG_VT_GETDEVICE:
 					msg.data.arg1 = vtctrl_control(vt,&cfg,mid,msg.data.d);
 					/* reenable us, if necessary */
 					if(mid == MSG_VT_ENABLE)

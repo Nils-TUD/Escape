@@ -23,34 +23,50 @@
 #include <esc/io.h>
 #include <string.h>
 
-static int vterm_doCtrl(int fd,msgid_t msg);
+static int vterm_doCtrl(int fd,msgid_t msgid,ulong arg1,sDataMsg *resp);
 
 int vterm_setEnabled(int fd,bool enabled) {
-	return vterm_doCtrl(fd,enabled ? MSG_VT_ENABLE : MSG_VT_DISABLE);
+	sDataMsg resp;
+	return vterm_doCtrl(fd,enabled ? MSG_VT_ENABLE : MSG_VT_DISABLE,0,&resp);
 }
 
 int vterm_setEcho(int fd,bool echo) {
-	return vterm_doCtrl(fd,echo ? MSG_VT_EN_ECHO : MSG_VT_DIS_ECHO);
+	sDataMsg resp;
+	return vterm_doCtrl(fd,echo ? MSG_VT_EN_ECHO : MSG_VT_DIS_ECHO,0,&resp);
 }
 
 int vterm_setReadline(int fd,bool readline) {
-	return vterm_doCtrl(fd,readline ? MSG_VT_EN_RDLINE : MSG_VT_DIS_RDLINE);
+	sDataMsg resp;
+	return vterm_doCtrl(fd,readline ? MSG_VT_EN_RDLINE : MSG_VT_DIS_RDLINE,0,&resp);
 }
 
 int vterm_setReadKB(int fd,bool enRead) {
-	return vterm_doCtrl(fd,enRead ? MSG_VT_EN_RDKB : MSG_VT_DIS_RDKB);
+	sDataMsg resp;
+	return vterm_doCtrl(fd,enRead ? MSG_VT_EN_RDKB : MSG_VT_DIS_RDKB,0,&resp);
 }
 
 int vterm_setNavi(int fd,bool navi) {
-	return vterm_doCtrl(fd,navi ? MSG_VT_EN_NAVI : MSG_VT_DIS_NAVI);
+	sDataMsg resp;
+	return vterm_doCtrl(fd,navi ? MSG_VT_EN_NAVI : MSG_VT_DIS_NAVI,0,&resp);
 }
 
 int vterm_backup(int fd) {
-	return vterm_doCtrl(fd,MSG_VT_BACKUP);
+	sDataMsg resp;
+	return vterm_doCtrl(fd,MSG_VT_BACKUP,0,&resp);
 }
 
 int vterm_restore(int fd) {
-	return vterm_doCtrl(fd,MSG_VT_RESTORE);
+	sDataMsg resp;
+	return vterm_doCtrl(fd,MSG_VT_RESTORE,0,&resp);
+}
+
+int vterm_getDevice(int fd,char *buffer,size_t max) {
+	sDataMsg resp;
+	int res = vterm_doCtrl(fd,MSG_VT_GETDEVICE,0,&resp);
+	if(res < 0)
+		return res;
+	strnzcpy(buffer,resp.d,max);
+	return 0;
 }
 
 int vterm_setShellPid(int fd,pid_t pid) {
@@ -68,10 +84,7 @@ int vterm_setShellPid(int fd,pid_t pid) {
 
 int vterm_getSize(int fd,sVTSize *size) {
 	sDataMsg resp;
-	int res = send(fd,MSG_VT_GETSIZE,NULL,0);
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&resp,sizeof(resp)));
+	int res = vterm_doCtrl(fd,MSG_VT_GETSIZE,0,&resp);
 	if(res < 0)
 		return res;
 	if(resp.arg1 == sizeof(sVTSize))
@@ -86,31 +99,18 @@ int vterm_select(int fd,int vterm) {
 }
 
 ssize_t vterm_getModeCount(int fd) {
-	sArgsMsg msg;
-	msg.arg1 = 0;
-	int res = send(fd,MSG_VT_GETMODES,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	if(res < 0)
-		return res;
-	return msg.arg1;
+	sDataMsg resp;
+	return vterm_doCtrl(fd,MSG_VT_GETMODES,0,&resp);
 }
 
 int vterm_getMode(int fd) {
-	return vterm_doCtrl(fd,MSG_VT_GETMODE);
+	sDataMsg resp;
+	return vterm_doCtrl(fd,MSG_VT_GETMODE,0,&resp);
 }
 
 int vterm_setMode(int fd,int mode) {
-	sArgsMsg msg;
-	msg.arg1 = mode;
-	int res = send(fd,MSG_VT_SETMODE,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	if(res < 0)
-		return res;
-	return msg.arg1;
+	sDataMsg resp;
+	return vterm_doCtrl(fd,MSG_VT_SETMODE,mode,&resp);
 }
 
 int vterm_getModes(int fd,sVTMode *modes,size_t count) {
@@ -122,13 +122,14 @@ int vterm_getModes(int fd,sVTMode *modes,size_t count) {
 	return IGNSIGS(receive(fd,NULL,modes,sizeof(sVTMode) * count));
 }
 
-static int vterm_doCtrl(int fd,msgid_t msg) {
-	sDataMsg resp;
-	int res = send(fd,msg,NULL,0);
+static int vterm_doCtrl(int fd,msgid_t msgid,ulong arg1,sDataMsg *resp) {
+	sArgsMsg msg;
+	msg.arg1 = arg1;
+	int res = send(fd,msgid,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
-	res = IGNSIGS(receive(fd,NULL,&resp,sizeof(resp)));
+	res = IGNSIGS(receive(fd,NULL,resp,sizeof(sDataMsg)));
 	if(res < 0)
 		return res;
-	return resp.arg1;
+	return resp->arg1;
 }

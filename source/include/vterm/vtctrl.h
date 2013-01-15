@@ -47,6 +47,7 @@ typedef struct {
 	bool readKb;
 	bool enabled;
 	int *devFds;
+	char **devNames;
 	size_t devCount;
 } sVTermCfg;
 

@@ -325,6 +325,18 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 			res = sizeof(sVTSize);
 		}
 		break;
+		case MSG_VT_GETDEVICE: {
+			size_t i;
+			res = -EINVAL;
+			for(i = 0; i < cfg->devCount; i++) {
+				if(cfg->devFds[i] == vt->video) {
+					strnzcpy(data,cfg->devNames[i],MAX_MSG_SIZE);
+					res = 0;
+					break;
+				}
+			}
+		}
+		break;
 	}
 	unlocku(&vt->lock);
 	return res;

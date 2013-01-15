@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/driver/video.h>
+#include <esc/driver/vterm.h>
 #include <esc/io.h>
 #include <esc/conf.h>
 #include <esc/messages.h>
@@ -30,9 +31,6 @@
 #include "object.h"
 #include "objlist.h"
 #include "game.h"
-
-#define VIDEO_DEVICE		"/dev/video"
-#define VESA_DEVICE			"/dev/vesatext"
 
 #define SCORE_WIDTH			10
 #define SCORE_HEIGHT		4
@@ -86,28 +84,37 @@ static uchar *buffer = NULL;
 static uchar *backup = NULL;
 
 bool displ_init(void) {
-	/* TODO support different devices */
-	video = open(VESA_DEVICE,IO_WRITE | IO_MSGS);
+	/* get current device */
+	char device[MAX_PATH_LEN];
+	int res = vterm_getDevice(STDIN_FILENO,device,sizeof(device));
+	if(res < 0) {
+		fprintf(stderr,"Unable to get video-device: %s\n",strerror(-res));
+		return false;
+	}
+
+	/* open it */
+	video = open(device,IO_WRITE | IO_MSGS);
 	if(video < 0) {
-		fprintf(stderr,"Unable to open video-device\n");
+		fprintf(stderr,"Unable to open video-device '%s': %s\n",device,strerror(-video));
 		return false;
 	}
 
 	/* get screen size */
-	if(video_getSize(video,&ssize) < 0) {
-		fprintf(stderr,"Unable to get screensize\n");
+	if((res = video_getSize(video,&ssize)) < 0) {
+		fprintf(stderr,"Unable to get screensize: %s\n",strerror(-res));
 		return false;
 	}
+
 	/* first line is the title */
 	HEIGHT--;
 	buffer = (uchar*)malloc(WIDTH * HEIGHT * 2);
 	if(!buffer) {
-		fprintf(stderr,"Unable to alloc mem for buffer\n");
+		printe("Unable to alloc mem for buffer");
 		return false;
 	}
 	backup = (uchar*)malloc(WIDTH * HEIGHT * 2);
 	if(!backup) {
-		fprintf(stderr,"Unable to alloc mem for backup\n");
+		printe("Unable to alloc mem for backup");
 		return false;
 	}
 	displ_setBackup();

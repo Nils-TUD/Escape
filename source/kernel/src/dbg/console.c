@@ -116,6 +116,8 @@ void cons_start(const char *initialcmd) {
 
 		/* repeat last command when no args are given */
 		if(argc == 0) {
+			if(!histSize)
+				continue;
 			size_t last = (histReadPos - 1) % histSize;
 			if(history[last]) {
 				argv = cons_parseLine(history[last],&argc);
@@ -128,6 +130,7 @@ void cons_start(const char *initialcmd) {
 
 		if(strcmp(argv[0],"exit") == 0) {
 			/* remove this command from history */
+			assert(histSize > 0);
 			size_t last = (histReadPos - 1) % histSize;
 			cache_free(history[last]);
 			history[last] = NULL;

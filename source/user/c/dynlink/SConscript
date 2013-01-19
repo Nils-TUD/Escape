@@ -5,6 +5,7 @@ Import('env')
 if env['ARCH'] == 'i586':
 	myenv = env.Clone()
 	myenv.Append(LINKFLAGS = ' -nostartfiles -Wl,-T,user/c/dynlink/ld.conf')
+	#myenv.Append(CFLAGS = ' -DCALLTRACE_PID=6', ASFLAGS = ' -DCALLTRACE_PID=6')
 	prog = myenv.EscapeCProg(
 		'bin', target = 'dynlink', source = ['startup.S', myenv.Glob('*.c')],
 		force_static = True, var_addr = False

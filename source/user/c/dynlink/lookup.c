@@ -53,8 +53,7 @@ uintptr_t lookup_resolve(sSharedLib *lib,size_t offset) {
 		error("Unable to find symbol %s",lib->dynstrtbl + sym->st_name);
 	addr = (uintptr_t*)(rel->r_offset + lib->loadAddr);
 #ifdef CALLTRACE_PID
-	if(pid == -1)
-		pid = getpid();
+	pid = getpid();
 	if(pid == CALLTRACE_PID) {
 		if(depth < 100) {
 			sSLNode *n;

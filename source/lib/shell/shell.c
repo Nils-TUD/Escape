@@ -134,7 +134,11 @@ int shell_readLine(char *buffer,size_t max) {
 		/* ensure that stdout is flushed and wait until input is available; wait gets interrupted
 		 * for signals; fgetc() won't (more precisely: it is, but it repeats the call) */
 		fflush(stdout);
-		wait(EV_DATA_READABLE,STDIN_FILENO);
+		/* only wait if the buffer is empty; otherwise we might wait until the next keypress
+		 * because if we have already read everything from vterm, we'll wait until there is
+		 * more data to read. */
+		if(favail(stdin) == 0)
+			wait(EV_DATA_READABLE,STDIN_FILENO);
 		/* maybe we've received a ^C. if so do a reset */
 		if(resetReadLine) {
 			i = 0;

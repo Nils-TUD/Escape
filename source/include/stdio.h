@@ -164,6 +164,12 @@ FILE *fopen(const char *filename,const char *mode);
 FILE *freopen(const char *filename,const char *mode,FILE *stream);
 
 /**
+ * @param stream the stream
+ * @return the number of bytes that are still available in the buffer for reading
+ */
+size_t favail(FILE *stream);
+
+/**
  * Except that it returns no value, the setbuf function is equivalent to the setvbuf
  * function invoked with the values _IOFBF for mode and BUFSIZ for size, or (if buf
  * is a null pointer), with the value _IONBF for mode.

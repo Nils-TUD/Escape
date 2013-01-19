@@ -35,6 +35,7 @@
 #define ROWS					30
 #define MAX_COLS				128
 
+static void drawCursor(uint row,uint col,uchar color);
 static void setCursor(uint row,uint col);
 static void copy(uint offset,size_t count);
 
@@ -42,6 +43,9 @@ static void copy(uint offset,size_t count);
 static uint32_t *videoData;
 static sMsg msg;
 static char buffer[COLS * ROWS * 2];
+static uint lastCol = COLS;
+static uint lastRow = ROWS;
+static uchar color;
 
 int main(void) {
 	int id;
@@ -80,8 +84,6 @@ int main(void) {
 
 				case MSG_VID_SETCURSOR: {
 					sVTPos *pos = (sVTPos*)msg.data.d;
-					pos->col = MIN(pos->col,COLS - 1);
-					pos->row = MIN(pos->row,ROWS - 1);
 					setCursor(pos->row,pos->col);
 				}
 				break;
@@ -134,9 +136,20 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void setCursor(uint row,uint col) {
+static void drawCursor(uint row,uint col,uchar color) {
 	uint32_t *pos = videoData + row * MAX_COLS + col;
-	*pos = (0x78 << 8) | (*pos & 0xFF);
+	*pos = (color << 8) | (*pos & 0xFF);
+}
+
+static void setCursor(uint row,uint col) {
+	if(lastRow < ROWS && lastCol < COLS)
+		drawCursor(lastRow,lastCol,color);
+	if(row < ROWS && col < COLS) {
+		color = *(videoData + row * MAX_COLS + col) >> 8;
+		drawCursor(row,col,0x78);
+	}
+	lastCol = col;
+	lastRow = row;
 }
 
 static void copy(uint offset,size_t count) {
@@ -144,15 +157,25 @@ static void copy(uint offset,size_t count) {
 	size_t x = (offset / 2) % COLS;
 	size_t y = (offset / 2) / COLS;
 	size_t begin = y;
+	size_t rem = count;
 	uint32_t *screen = videoData + y * MAX_COLS + x;
-	for(; count > 0 && y < ROWS; y++) {
+	for(; rem > 0 && y < ROWS; y++) {
 		if(y != begin)
 			x = 0;
-		for(; count > 0 && x < COLS; x++) {
+		for(; rem > 0 && x < COLS; x++) {
 			uint16_t d = *buf++;
 			*screen++ = (d >> 8) | (d & 0xFF) << 8;
-			count -= 2;
+			rem -= 2;
 		}
 		screen += MAX_COLS - COLS;
+	}
+
+	if(lastCol < COLS && lastRow < ROWS) {
+		/* update color and draw the cursor again if it has been overwritten */
+		size_t cursorOff = lastRow * COLS * 2 + lastCol * 2;
+		if(cursorOff >= offset && cursorOff < offset + count) {
+			color = *(videoData + lastRow * MAX_COLS + lastCol) >> 8;
+			drawCursor(lastRow,lastCol,0x78);
+		}
 	}
 }

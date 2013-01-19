@@ -115,7 +115,7 @@ void vt_selectVTerm(size_t index) {
 			activeVT->active = false;
 		vt->active = true;
 		/* force cursor-update */
-		vt->lastCol = vt->cols;
+		vt->lastCol = vt->lastRow = -1;
 		activeVT = vt;
 
 		/* refresh screen and write titlebar */
@@ -123,8 +123,8 @@ void vt_selectVTerm(size_t index) {
 		if(old && old->mode != vt->mode)
 			video_setMode(vt->video,vt->mode);
 		vtctrl_markScrDirty(vt);
-		vt_setCursor(vt);
 		vt_doUpdate(vt);
+		vt_setCursor(vt);
 		unlocku(&vt->lock);
 	}
 	unlocku(&vtLock);
@@ -218,12 +218,19 @@ static void vt_doUpdate(sVTerm *vt) {
 static void vt_setCursor(sVTerm *vt) {
 	if(vt->active) {
 		sVTPos pos;
-		if(vt->col != vt->lastCol || vt->row != vt->lastRow) {
-			pos.col = vt->col;
-			pos.row = vt->row;
+		if(vt->upScroll != 0 || vt->col != vt->lastCol || vt->row != vt->lastRow) {
+			/* draw no cursor if it's not visible by setting it to an invalid location */
+			if(vt->firstVisLine + vt->rows <= vt->currLine + vt->row) {
+				pos.col = vt->cols;
+				pos.row = vt->rows;
+			}
+			else {
+				pos.col = vt->col;
+				pos.row = vt->row;
+			}
 			video_setCursor(vt->video,&pos);
-			vt->lastCol = vt->col;
-			vt->lastRow = vt->row;
+			vt->lastCol = pos.col;
+			vt->lastRow = pos.row;
 		}
 	}
 }

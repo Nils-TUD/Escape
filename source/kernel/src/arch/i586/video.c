@@ -47,6 +47,7 @@ static ushort row = 0;
 static uchar color = (BLACK << 4) | WHITE;
 static uint targets = TARGET_SCREEN | TARGET_LOG;
 static klock_t vidLock;
+static bool lastWasLineStart = true;
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
@@ -100,13 +101,15 @@ void vid_printf(const char *fmt,...) {
 }
 
 void vid_vprintf(const char *fmt,va_list ap) {
-	sPrintEnv env;
-	env.print = printFunc;
-	env.escape = vid_handleColorCode;
-	env.pipePad = vid_handlePipePad;
 	if(targets & TARGET_SCREEN) {
 		spinlock_aquire(&vidLock);
+		sPrintEnv env;
+		env.print = printFunc;
+		env.escape = vid_handleColorCode;
+		env.pipePad = vid_handlePipePad;
+		env.lineStart = lastWasLineStart;
 		prf_vprintf(&env,fmt,ap);
+		lastWasLineStart = env.lineStart;
 		spinlock_release(&vidLock);
 	}
 	if(targets & TARGET_LOG)
@@ -153,7 +156,8 @@ static void vid_move(void) {
 	/* last line? */
 	if(row >= VID_ROWS) {
 		/* copy all chars one line back */
-		memmove((void*)VIDEO_BASE,(uint8_t*)VIDEO_BASE + VID_COLS * 2,VID_ROWS * VID_COLS * 2);
+		memmove((void*)VIDEO_BASE,(void*)(VIDEO_BASE + VID_COLS * 2),(VID_ROWS - 1) * VID_COLS * 2);
+		memclear((void*)(VIDEO_BASE + (VID_ROWS - 1) * VID_COLS * 2),VID_COLS * 2);
 		row--;
 	}
 }

@@ -70,12 +70,15 @@ void util_panic_arch(void) {
 	}
 }
 
-void util_printUserState(void) {
+void util_printUserStateOf(const sThread *t) {
 	static uint32_t regs[REG_COUNT];
-	const sThread *t = thread_getRunning();
-	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
-	if(kstack) {
+	if(thread_getIntrptStack(t)) {
+		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,t->archAttr.kernelStack);
+		uintptr_t kstackAddr = paging_mapToTemp(&frame,1);
+		size_t kstackOff = (uintptr_t)thread_getIntrptStack(t) & (PAGE_SIZE - 1);
+		sIntrptStackFrame *kstack = (sIntrptStackFrame*)(kstackAddr + kstackOff);
 		vid_printf("User-Register:\n");
+		prf_pushIndent();
 		regs[R_EAX] = kstack->eax;
 		regs[R_EBX] = kstack->ebx;
 		regs[R_ECX] = kstack->ecx;
@@ -92,8 +95,15 @@ void util_printUserState(void) {
 		regs[R_SS] = kstack->uss;
 		regs[R_EFLAGS] = kstack->eflags;
 		regs[R_EIP] = kstack->eip;
-		PRINT_REGS(regs,"\t");
+		PRINT_REGS(regs);
+		prf_popIndent();
+		paging_unmapFromTemp(1);
 	}
+}
+
+void util_printUserState(void) {
+	const sThread *t = thread_getRunning();
+	util_printUserStateOf(t);
 }
 
 void util_startTimer(void) {

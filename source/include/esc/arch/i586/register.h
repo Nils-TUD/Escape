@@ -49,20 +49,20 @@
 #define REG_COUNT	16
 
 /* prints the values in the general-purpose-, segment- and eflags-registers */
-#define PRINT_CURREGS(pad) \
+#define PRINT_CURREGS() \
 	uint32_t ___regs[REG_COUNT]; \
 	GET_REGS(___regs); \
-	PRINT_REGS(___regs,pad);
+	PRINT_REGS(___regs);
 
 /* prints the values of the given registers. expects all above defined registers
  * at the indices R_*. */
-#define PRINT_REGS(regs,pad) \
-	rprintf(pad "eax=0x%08x, ebx=0x%08x, ecx=0x%08x, edx=0x%08x\n", \
+#define PRINT_REGS(regs) \
+	rprintf("eax=0x%08x, ebx=0x%08x, ecx=0x%08x, edx=0x%08x\n", \
 			regs[R_EAX],regs[R_EBX],regs[R_ECX],regs[R_EDX]); \
-	rprintf(pad "esi=0x%08x, edi=0x%08x, esp=0x%08x, ebp=0x%08x\n", \
+	rprintf("esi=0x%08x, edi=0x%08x, esp=0x%08x, ebp=0x%08x\n", \
 			regs[R_ESI],regs[R_EDI],regs[R_ESP],regs[R_EBP]); \
-	rprintf(pad "eip=0x%08x, eflags=0x%08x\n",regs[R_EIP],regs[R_EFLAGS]); \
-	rprintf(pad "cs=0x%02x, ds=0x%02x, es=0x%02x, fs=0x%02x, gs=0x%02x, ss=0x%02x\n", \
+	rprintf("eip=0x%08x, eflags=0x%08x\n",regs[R_EIP],regs[R_EFLAGS]); \
+	rprintf("cs=0x%02x, ds=0x%02x, es=0x%02x, fs=0x%02x, gs=0x%02x, ss=0x%02x\n", \
 			regs[R_CS],regs[R_DS],regs[R_ES],regs[R_FS],regs[R_GS],regs[R_SS]);
 
 /* writes the register-values in the given buffer */

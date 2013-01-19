@@ -38,19 +38,27 @@ static sFuncCall frames[1] = {
 void util_panic_arch(void) {
 }
 
-void util_printUserState(void) {
+void util_printUserStateOf(const sThread *t) {
 	size_t i;
-	const sThread *t = thread_getRunning();
-	sIntrptStackFrame *istack = thread_getIntrptStack(t);
-	vid_printf("User state:\n");
-	vid_printf("\tPSW: 0x%08x\n\t",istack->psw);
-	for(i = 0; i < REG_COUNT; i++) {
-		int row = i / 4;
-		int col = i % 4;
-		vid_printf("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
-		if(i % 4 == 3)
-			vid_printf("\n\t");
+	uintptr_t kstackAddr = DIR_MAPPED_SPACE | (t->archAttr.kstackFrame << PAGE_SIZE_SHIFT);
+	uintptr_t istackAddr = (uintptr_t)thread_getIntrptStack(t);
+	if(istackAddr) {
+		sIntrptStackFrame *istack = (sIntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));
+		vid_printf("User state:\n");
+		vid_printf("\tPSW: 0x%08x\n\t",istack->psw);
+		for(i = 0; i < REG_COUNT; i++) {
+			int row = i / 4;
+			int col = i % 4;
+			vid_printf("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
+			if(i % 4 == 3)
+				vid_printf("\n\t");
+		}
 	}
+}
+
+void util_printUserState(void) {
+	const sThread *t = thread_getRunning();
+	util_printUserStateOf(t);
 }
 
 sFuncCall *util_getUserStackTrace(void) {

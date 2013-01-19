@@ -895,18 +895,19 @@ void proc_print(sProc *p) {
 				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
 		vid_printf("\t\truntime=%ums\n",p->exitState->runtime);
 	}
+	prf_pushIndent();
 	vmfree_print(&p->freemap);
+	prf_popIndent();
 	vid_printf("\tRegions:\n");
 	vid_printf("\t\tDataRegion: %p\n",p->dataAddr);
 	vid_printf("\t\tTextRegion: %p\n",p->textAddr);
 	vid_printf("\t\tFreeStack: %p\n",p->freeStackAddr);
 	vmm_printShort(p->pid,"\t\t");
-	vid_printf("\tEnvironment:\n");
+	prf_pushIndent();
 	env_printAllOf(p->pid);
-	vid_printf("\tFileDescs:\n");
 	fd_print(p);
-	vid_printf("\tFS-Channels:\n");
 	vfs_fsmsgs_printFSChans(p);
+	prf_popIndent();
 	vid_printf("\tThreads:\n");
 	for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
 		vid_printf("\t\t");

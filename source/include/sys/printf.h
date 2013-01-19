@@ -27,9 +27,10 @@ typedef void (*fEscape)(const char **fmt);
 typedef uchar (*fPipePad)(void);
 
 typedef struct {
-	fPrintc print;		/* must be provided */
-	fEscape escape;		/* optional, for handling escape-sequences */
-	fPipePad pipePad;	/* optional, for returning the pad-value for '|' */
+	fPrintc print;				/* must be provided */
+	fEscape escape;				/* optional, for handling escape-sequences */
+	fPipePad pipePad;			/* optional, for returning the pad-value for '|' */
+	bool lineStart;				/* indicates whether we're at a line-start */
 } sPrintEnv;
 
 /**
@@ -41,6 +42,16 @@ typedef struct {
 	size_t size;
 	size_t len;
 } sStringBuffer;
+
+/**
+ * Increases the indent-level by 1. The indent is applied after every newline.
+ */
+void prf_pushIndent(void);
+
+/**
+ * Decreases the indent-level by 1.
+ */
+void prf_popIndent(void);
 
 /**
  * Kernel-version of sprintf

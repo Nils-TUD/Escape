@@ -234,7 +234,7 @@ static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(thread_extendStack(pfaddr) < 0) {
 			pid_t pid = proc_getRunning();
-			sKSpecRegs *sregs = thread_getSpecRegs();
+			sKSpecRegs *sregs = thread_getSpecRegsOf(thread_getRunning());
 			vid_printf("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
 					pfaddr,sregs->rww);
 			proc_segFault();
@@ -291,32 +291,31 @@ void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	int i,j,rl,rg = *stack >> 56;
 	int changedStack = (*stack >> 32) & 0x1;
 	static int spregs[] = {rZ,rY,rX,rW,rP,rR,rM,rJ,rH,rE,rD,rB};
-	vid_printf("\trG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
-	vid_printf("\t");
+	vid_printf("rG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
 	for(j = 0, i = 1; i <= (int)ARRAY_SIZE(spregs); j++, i++) {
 		vid_printf("%-4s: #%016lx ",cpu_getSpecialName(spregs[i - 1]),*stack--);
 		if(j % 3 == 2)
-			vid_printf("\n\t");
+			vid_printf("\n");
 	}
 	if(j % 3 != 0)
-		vid_printf("\n\t");
+		vid_printf("\n");
 	for(j = 0, i = 255; i >= rg; j++, i--) {
 		vid_printf("$%-3d: #%016lx ",i,*stack--);
 		if(j % 3 == 2)
-			vid_printf("\n\t");
+			vid_printf("\n");
 	}
 	if(j % 3 != 0)
-		vid_printf("\n\t");
+		vid_printf("\n");
 	if(changedStack) {
 		vid_printf("rS  : #%016lx",*stack--);
-		vid_printf(" rO  : #%016lx\n\t",*stack--);
+		vid_printf(" rO  : #%016lx\n",*stack--);
 	}
 	rl = *stack--;
-	vid_printf("rL  : %d\n\t",rl);
+	vid_printf("rL  : %d\n",rl);
 	for(j = 0, i = rl - 1; i >= 0; j++, i--) {
 		vid_printf("$%-3d: #%016lx ",i,*stack--);
 		if(i > 0 && j % 3 == 2)
-			vid_printf("\n\t");
+			vid_printf("\n");
 	}
 	vid_printf("\n");
 }

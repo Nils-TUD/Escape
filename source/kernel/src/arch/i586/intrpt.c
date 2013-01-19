@@ -322,8 +322,6 @@ static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t addr) {
 			(stack->errorCode & 0x16) ? "instruction-fetch" : "");
 }
 
-#if DEBUGGING
-
 void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	vid_printf("stack-frame @ 0x%x\n",stack);
 	vid_printf("\tcs=%02x\n",stack->cs);
@@ -344,5 +342,3 @@ void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	vid_printf("\terrorCode=%d\n",stack->errorCode);
 	vid_printf("\tintrptNo=%d\n",stack->intrptNo);
 }
-
-#endif

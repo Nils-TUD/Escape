@@ -516,41 +516,48 @@ void thread_print(const sThread *t) {
 	size_t i;
 	sFuncCall *calls;
 	vid_printf("Thread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
-	vid_printf("\tFlags=%#x\n",t->flags);
-	vid_printf("\tState=%s\n",thread_getStateName(t->state));
-	vid_printf("\tEvents=");
+	prf_pushIndent();
+	vid_printf("Flags=%#x\n",t->flags);
+	vid_printf("State=%s\n",thread_getStateName(t->state));
+	vid_printf("Events=");
 	ev_printEvMask(t);
 	vid_printf("\n");
-	vid_printf("\tLastCPU=%d\n",t->cpu);
-	vid_printf("\tTlsRegion=%p, ",t->tlsRegion ? t->tlsRegion->virt : 0);
+	vid_printf("LastCPU=%d\n",t->cpu);
+	vid_printf("TlsRegion=%p, ",t->tlsRegion ? t->tlsRegion->virt : 0);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		vid_printf("stackRegion%zu=%p",i,t->stackRegions[i] ? t->stackRegions[i]->virt : 0);
 		if(i < STACK_REG_COUNT - 1)
 			vid_printf(", ");
 	}
 	vid_printf("\n");
-	vid_printf("\tPriority = %d\n",t->priority);
-	vid_printf("\tRuntime = %Lums\n",thread_getRuntime(t));
-	vid_printf("\tScheduled = %u\n",t->stats.schedCount);
-	vid_printf("\tSyscalls = %u\n",t->stats.syscalls);
-	vid_printf("\tCurCycleCount = %Lu\n",t->stats.curCycleCount);
-	vid_printf("\tLastCycleCount = %Lu\n",t->stats.lastCycleCount);
-	vid_printf("\tcycleStart = %Lu\n",t->stats.cycleStart);
-	vid_printf("\tKernel-trace:\n");
+	vid_printf("Priority = %d\n",t->priority);
+	vid_printf("Runtime = %Lums\n",thread_getRuntime(t));
+	vid_printf("Scheduled = %u\n",t->stats.schedCount);
+	vid_printf("Syscalls = %u\n",t->stats.syscalls);
+	vid_printf("CurCycleCount = %Lu\n",t->stats.curCycleCount);
+	vid_printf("LastCycleCount = %Lu\n",t->stats.lastCycleCount);
+	vid_printf("cycleStart = %Lu\n",t->stats.cycleStart);
+	vid_printf("Kernel-trace:\n");
+	prf_pushIndent();
 	calls = util_getKernelStackTraceOf(t);
 	while(calls->addr != 0) {
-		vid_printf("\t\t%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+		vid_printf("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
 		calls++;
 	}
+	prf_popIndent();
 	calls = util_getUserStackTraceOf((sThread*)t);
 	if(calls) {
-		vid_printf("\tUser-trace:\n");
+		vid_printf("User-trace:\n");
+		prf_pushIndent();
 		while(calls->addr != 0) {
-			vid_printf("\t\t%p -> %p (%s)\n",
+			vid_printf("%p -> %p (%s)\n",
 					(calls + 1)->addr,calls->funcAddr,calls->funcName);
 			calls++;
 		}
+		prf_popIndent();
 	}
+	util_printUserStateOf(t);
+	prf_popIndent();
 }
 
 static tid_t thread_getFreeTid(void) {

@@ -165,9 +165,10 @@ sFile *fd_unassoc(int fd) {
 
 void fd_print(sProc *p) {
 	size_t i;
+	vid_printf("File descriptors of %d:\n",p->pid);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
-			vid_printf("\t\t%-2d: ",i);
+			vid_printf("\t%-2d: ",i);
 			vfs_printFile(p->fileDescs[i]);
 			vid_printf("\n");
 		}

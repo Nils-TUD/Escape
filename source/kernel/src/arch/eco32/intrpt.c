@@ -228,9 +228,6 @@ static void intrpt_irqDisk(A_UNUSED sIntrptStackFrame *stack) {
 		diskRegs[DISK_CTRL] |= DISK_IEN;
 }
 
-
-#if DEBUGGING
-
 void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	int i;
 	vid_printf("stack-frame @ 0x%Px\n",stack);
@@ -240,5 +237,3 @@ void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	for(i = 0; i < REG_COUNT; i++)
 		vid_printf("\tr[%d]=#%08x\n",i,stack->r[i]);
 }
-
-#endif

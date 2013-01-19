@@ -60,7 +60,7 @@ int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
 	/* restore rBB, rWW, rXX, rYY and rZZ */
 	sp += 2;
 	curStack[-9] = *sp++;			/* rJ */
-	sregs = thread_getSpecRegs();
+	sregs = thread_getSpecRegsOf(t);
 	memcpy(sregs,sp,sizeof(sKSpecRegs));
 	sp += 5;
 	curStack[-15] = (uint64_t)sp;	/* $254 */
@@ -238,7 +238,7 @@ static void uenv_startSignalHandler(sThread *t,int sig,fSignal handler) {
 	}
 
 	/* backup rBB, rWW, rXX, rYY and rZZ */
-	sregs = thread_getSpecRegs();
+	sregs = thread_getSpecRegsOf(t);
 	memcpy(sp - 5,sregs,sizeof(sKSpecRegs));
 	sp -= 6;
 	*sp-- = curStack[-9];			/* rJ */
@@ -274,7 +274,7 @@ static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint6
 		frame[-(12 + 2 + 2)] = (uint64_t)ssp;
 
 		/* setup start */
-		sregs = thread_getSpecRegs();
+		sregs = thread_getSpecRegsOf(t);
 		sregs->rww = entry;
 		sregs->rxx = 1UL << 63;
 	}

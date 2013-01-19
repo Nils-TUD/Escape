@@ -1302,8 +1302,11 @@ void vfs_printMsgs(void) {
 	if(isValid) {
 		vid_printf("Messages:\n");
 		while(drv != NULL) {
-			if(IS_DEVICE(drv->mode))
+			if(IS_DEVICE(drv->mode)) {
+				prf_pushIndent();
 				vfs_device_print(drv);
+				prf_popIndent();
+			}
 			drv = drv->next;
 		}
 	}

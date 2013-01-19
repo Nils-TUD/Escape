@@ -384,11 +384,11 @@ void vfs_chan_print(const sVFSNode *n) {
 	lists[1] = &chan->recvList;
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
 		size_t j,count = sll_length(lists[i]);
-		vid_printf("\t\tChannel %s %s: (%zu,%s)\n",n->name,i ? "recvs" : "sends",count,
+		vid_printf("Channel %s %s: (%zu,%s)\n",n->name,i ? "recvs" : "sends",count,
 		                                                     chan->used ? "used" : "-");
 		for(j = 0; j < count; j++) {
 			sMessage *msg = (sMessage*)sll_get(lists[i],j);
-			vid_printf("\t\t\tid=%u len=%zu, thread=%d:%d:%s\n",msg->id,msg->length,
+			vid_printf("\tid=%u len=%zu, thread=%d:%d:%s\n",msg->id,msg->length,
 					msg->thread ? msg->thread->tid : -1,
 					msg->thread ? msg->thread->proc->pid : -1,
 					msg->thread ? msg->thread->proc->command : "");

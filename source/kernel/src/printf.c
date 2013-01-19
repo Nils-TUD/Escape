@@ -41,6 +41,7 @@
 /* the initial space for prf_aprintc() */
 #define SPRINTF_INIT_SIZE	16
 
+static void prf_putc(sPrintEnv *env,char c);
 static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags);
 static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags);
 static int prf_printpad(sPrintEnv *env,int count,uint flags);
@@ -53,6 +54,15 @@ static char hexCharsBig[] = "0123456789ABCDEF";
 static char hexCharsSmall[] = "0123456789abcdef";
 static sStringBuffer *curbuf = NULL;
 static klock_t bufLock;
+static size_t indent = 0;
+
+void prf_pushIndent(void) {
+	indent++;
+}
+
+void prf_popIndent(void) {
+	indent--;
+}
 
 void prf_sprintf(sStringBuffer *buf,const char *fmt,...) {
 	va_list ap;
@@ -66,6 +76,7 @@ void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 	env.print = prf_aprintc;
 	env.escape = NULL;
 	env.pipePad = NULL;
+	env.lineStart = true;
 	spinlock_aquire(&bufLock);
 	curbuf = buf;
 	prf_vprintf(&env,fmt,ap);
@@ -131,7 +142,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 			/* finished? */
 			if(c == '\0')
 				return;
-			env->print(c);
+			prf_putc(env,c);
 		}
 
 		/* read flags */
@@ -254,7 +265,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 					prf_printupad(env,(u >> (size * 8 - 16)) & 0xFFFF,16,4,flags);
 					size -= 2;
 					if(size > 0)
-						env->print(':');
+						prf_putc(env,':');
 				}
 				break;
 
@@ -297,14 +308,26 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 			/* character */
 			case 'c':
 				b = (char)va_arg(ap, uint);
-				env->print(b);
+				prf_putc(env,b);
 				break;
 
 			default:
-				env->print(c);
+				prf_putc(env,c);
 				break;
 		}
 	}
+}
+
+static void prf_putc(sPrintEnv *env,char c) {
+	if(env->lineStart) {
+		size_t i;
+		for(i = 0; i < indent; ++i)
+			env->print('\t');
+		env->lineStart = false;
+	}
+	env->print(c);
+	if(c == '\n')
+		env->lineStart = true;
 }
 
 static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags) {
@@ -319,11 +342,11 @@ static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags) {
 	/* print '+' or ' ' instead of '-' */
 	if(n > 0) {
 		if((flags & FFL_FORCESIGN)) {
-			env->print('+');
+			prf_putc(env,'+');
 			count++;
 		}
 		else if(((flags) & FFL_SPACESIGN)) {
-			env->print(' ');
+			prf_putc(env,' ');
 			count++;
 		}
 	}
@@ -344,12 +367,12 @@ static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags)
 	/* print base-prefix */
 	if((flags & FFL_PRINTBASE)) {
 		if(base == 16 || base == 8) {
-			env->print('0');
+			prf_putc(env,'0');
 			count++;
 		}
 		if(base == 16) {
 			char c = (flags & FFL_CAPHEX) ? 'X' : 'x';
-			env->print(c);
+			prf_putc(env,c);
 			count++;
 		}
 	}
@@ -372,7 +395,7 @@ static int prf_printpad(sPrintEnv *env,int count,uint flags) {
 	int res = count;
 	char c = flags & FFL_PADZEROS ? '0' : ' ';
 	while(count-- > 0)
-		env->print(c);
+		prf_putc(env,c);
 	return res;
 }
 
@@ -380,21 +403,21 @@ static int prf_printu(sPrintEnv *env,ullong n,uint base,char *chars) {
 	int res = 0;
 	if(n >= base)
 		res += prf_printu(env,n / base,base,chars);
-	env->print(chars[(n % base)]);
+	prf_putc(env,chars[(n % base)]);
 	return res + 1;
 }
 
 static int prf_printn(sPrintEnv *env,llong n) {
 	int res = 0;
 	if(n < 0) {
-		env->print('-');
+		prf_putc(env,'-');
 		n = -n;
 		res++;
 	}
 
 	if(n >= 10)
 		res += prf_printn(env,n / 10);
-	env->print('0' + n % 10);
+	prf_putc(env,'0' + n % 10);
 	return res + 1;
 }
 
@@ -402,7 +425,7 @@ static int prf_puts(sPrintEnv *env,const char *str,ssize_t len) {
 	const char *begin = str;
 	char c;
 	while((len == -1 || len-- > 0) && (c = *str)) {
-		env->print(c);
+		prf_putc(env,c);
 		str++;
 	}
 	return str - begin;

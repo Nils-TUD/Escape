@@ -156,8 +156,7 @@ void thread_setRunning(sThread *t) {
 	cur = t;
 }
 
-sKSpecRegs *thread_getSpecRegs(void) {
-	sThread *t = thread_getRunning();
+sKSpecRegs *thread_getSpecRegsOf(const sThread *t) {
 	return t->archAttr.specRegLevels + t->intrptLevel - 1;
 }
 
@@ -282,8 +281,8 @@ void thread_doSwitch(void) {
 #if DEBUGGING
 
 void thread_printState(const sThreadRegs *state) {
-	vid_printf("\tState:\n",state);
-	vid_printf("\t\tStackend = %p\n",state->stackEnd);
+	vid_printf("State:\n",state);
+	vid_printf("\tStackend = %p\n",state->stackEnd);
 }
 
 #endif

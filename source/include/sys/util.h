@@ -56,9 +56,16 @@ void util_panic(const char *fmt,...);
 void util_panic_arch(void);
 
 /**
- * Prints the user state
+ * Prints the user state of the current thread.
  */
 void util_printUserState(void);
+
+/**
+ * Prints the user state of the given thread
+ *
+ * @param t the thread
+ */
+void util_printUserStateOf(const sThread *t);
 
 /**
  * Starts the log-viewer

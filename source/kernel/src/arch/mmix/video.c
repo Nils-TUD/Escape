@@ -48,6 +48,7 @@ static ulong col = 0;
 static ulong row = 0;
 static uchar color = 0;
 static ulong targets = TARGET_SCREEN | TARGET_LOG;
+static bool lastWasLineStart = true;
 
 void vid_init(void) {
 	vid_clearScreen();
@@ -97,12 +98,15 @@ void vid_printf(const char *fmt,...) {
 }
 
 void vid_vprintf(const char *fmt,va_list ap) {
-	sPrintEnv env;
-	env.print = printFunc;
-	env.escape = vid_handleColorCode;
-	env.pipePad = vid_handlePipePad;
-	if(targets & TARGET_SCREEN)
+	if(targets & TARGET_SCREEN) {
+		sPrintEnv env;
+		env.print = printFunc;
+		env.escape = vid_handleColorCode;
+		env.pipePad = vid_handlePipePad;
+		env.lineStart = lastWasLineStart;
 		prf_vprintf(&env,fmt,ap);
+		lastWasLineStart = env.lineStart;
+	}
 	if(targets & TARGET_LOG)
 		log_vprintf(fmt,ap);
 }

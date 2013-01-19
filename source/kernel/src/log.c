@@ -58,7 +58,8 @@ static klock_t logLock;
 static sPrintEnv env = {
 	.print = log_printc,
 	.escape = log_escape,
-	.pipePad = log_pipePad
+	.pipePad = log_pipePad,
+	.lineStart = true,
 };
 
 void log_vfsIsReady(void) {

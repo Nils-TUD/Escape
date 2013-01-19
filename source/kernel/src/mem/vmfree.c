@@ -175,8 +175,8 @@ size_t vmfree_getSize(sVMFreeMap *map,size_t *areas) {
 void vmfree_print(sVMFreeMap *map) {
 	sVMFreeArea *a;
 	size_t areas;
-	vid_printf("\tFree area with %zu bytes:\n",vmfree_getSize(map,&areas));
+	vid_printf("Free area with %zu bytes:\n",vmfree_getSize(map,&areas));
 	for(a = map->list; a != NULL; a = a->next) {
-		vid_printf("\t\t@ %p, %zu bytes\n",a->addr,a->size);
+		vid_printf("\t@ %p, %zu bytes\n",a->addr,a->size);
 	}
 }

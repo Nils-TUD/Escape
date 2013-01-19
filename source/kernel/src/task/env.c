@@ -177,11 +177,12 @@ void env_printAllOf(pid_t pid) {
 	char name[64];
 	char value[64];
 	size_t i;
+	vid_printf("Environment of %d:\n",pid);
 	for(i = 0; ; i++) {
 		if(!env_geti(pid,i,name,sizeof(name)))
 			break;
 		env_get(pid,name,value,sizeof(value));
-		vid_printf("\t\t'%s' = '%s'\n",name,value);
+		vid_printf("\t'%s' = '%s'\n",name,value);
 	}
 }
 

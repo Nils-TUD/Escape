@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 
-sKSpecRegs *thread_getSpecRegs(void);
+sKSpecRegs *thread_getSpecRegsOf(const sThread *t);
 void thread_pushSpecRegs(void);
 void thread_popSpecRegs(void);
 

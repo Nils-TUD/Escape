@@ -236,12 +236,12 @@ void thread_doSwitch(void) {
 #if DEBUGGING
 
 void thread_printState(const sThreadRegs *state) {
-	vid_printf("\tState @ 0x%08Px:\n",state);
-	vid_printf("\t\tesp = %#08x\n",state->esp);
-	vid_printf("\t\tedi = %#08x\n",state->edi);
-	vid_printf("\t\tesi = %#08x\n",state->esi);
-	vid_printf("\t\tebp = %#08x\n",state->ebp);
-	vid_printf("\t\teflags = %#08x\n",state->eflags);
+	vid_printf("State @ 0x%08Px:\n",state);
+	vid_printf("\tesp = %#08x\n",state->esp);
+	vid_printf("\tedi = %#08x\n",state->edi);
+	vid_printf("\tesi = %#08x\n",state->esi);
+	vid_printf("\tebp = %#08x\n",state->ebp);
+	vid_printf("\teflags = %#08x\n",state->eflags);
 }
 
 #endif

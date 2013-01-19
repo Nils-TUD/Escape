@@ -258,7 +258,7 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 	locku(&vt->lock);
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
-			vt->shellPid = *(long*)data;
+			vt->shellPid = *(pid_t*)data;
 			break;
 		case MSG_VT_ENABLE:
 			cfg->enabled = true;

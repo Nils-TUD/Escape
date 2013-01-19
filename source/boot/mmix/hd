@@ -13,4 +13,4 @@ dd if=$1/bootloader/mmix/stage1/stage1.bin of=$1/hd.img bs=512 count=1 conv=notr
 dd if=$1/bootloader/mmix/stage2/stage2.elf of=$1/hd.img bs=512 seek=1 conv=notrunc 1>&2
 
 $gimsim -r $gimmon -o log.txt -c -t 1 -i --script=boot/$ESC_TARGET/gimmix.start \
-	-b -s $1/map/escape.map -d $1/hd.img $2
+	-d $1/hd.img -b -s $1/map/escape.map $2

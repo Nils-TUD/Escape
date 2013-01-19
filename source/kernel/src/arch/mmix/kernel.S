@@ -231,18 +231,26 @@ dynamicTrap:
 	PUT		rQ,$0
 	# enable exception-bits for kernel (to see errors early)
 	PUT		rK,$1
+
 	# call handler with rS as argument
 	GET		$2,rS
 	SET		$0,$255							# save $255
 	PUSHJ	$1,intrpt_dynTrap				# call intrpt_dynTrap(rS,irqNo)
+	PBZ		$1,2f							# $1 = 1 -> we're the idle-thread
+
+	# restore context for the idle-thread
+	UNSAVE	1,$0
+	NEG		$255,0,1
+	ANDNMH	$255,#0001						# if so, set it to -1, but clear privileged pc bit
+	RESUME	1								# this is only required for the idle-thread
+2:
 	# restore context
 	UNSAVE	1,$0
 	# check whether rWW is negative
 	GET		$255,rWW
 	BNN		$255,1f							# if not, set rK to -1
-	NEG		$255,0,1
-	ANDNMH	$255,#0001						# if so, set it to -1, but clear privileged pc bit
-	RESUME	1								# this is only required for the idle-thread
+	SETMH	$255,#FE						# otherwise only set the exception-bits
+	RESUME	1
 1:
 	NEG		$255,0,1						# rK = -1
 	RESUME	1

@@ -77,7 +77,7 @@ typedef struct {
 } sInterrupt;
 
 void intrpt_forcedTrap(sIntrptStackFrame *stack);
-void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo);
+bool intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo);
 
 static void intrpt_enterKernel(sThread *t,sIntrptStackFrame *stack);
 static void intrpt_leaveKernel(sThread *t);
@@ -178,7 +178,7 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	intrpt_leaveKernel(t);
 }
 
-void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
+bool intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	sInterrupt *intrpt;
 	sThread *t = thread_getRunning();
 	intrpt_enterKernel(t,stack);
@@ -193,6 +193,7 @@ void intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0)
 		uenv_handleSignal(t,stack);
 	intrpt_leaveKernel(t);
+	return t->flags & T_IDLE;
 }
 
 static void intrpt_enterKernel(sThread *t,sIntrptStackFrame *stack) {
@@ -208,7 +209,7 @@ static void intrpt_leaveKernel(sThread *t) {
 static void intrpt_defHandler(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 	uint64_t rww = cpu_getSpecial(rWW);
 	/* do nothing */
-	util_panic("Got interrupt %d (%s) @ %p\n",
+	util_panic("Got interrupt %d (%s) @ %p",
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 

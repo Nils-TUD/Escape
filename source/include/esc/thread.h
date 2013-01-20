@@ -26,8 +26,8 @@
 #define EV_CLIENT				(1 << 0)	/* if there's a client to be served */
 #define EV_RECEIVED_MSG			(1 << 1)	/* if a device has a msg for us */
 #define EV_DATA_READABLE		(1 << 2)	/* if we can read from a device (data available) */
-#define EV_USER1				(1 << 8)	/* an event we can send */
-#define EV_USER2				(1 << 9)	/* an event we can send */
+#define EV_USER1				(1 << 9)	/* an event we can send */
+#define EV_USER2				(1 << 10)	/* an event we can send */
 
 #define LOCK_EXCLUSIVE			1
 #define LOCK_KEEP				2

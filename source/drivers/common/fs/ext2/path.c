@@ -52,14 +52,14 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 	while(*p) {
 		/* we need execute-permission to access the directory */
 		if((err = ext2_hasPermission(cnode,u,MODE_EXEC)) < 0) {
-			ext2_icache_release(cnode);
+			ext2_icache_release(e,cnode);
 			return err;
 		}
 
 		res = ext2_dir_find(e,cnode,p,pos);
 		if(res >= 0) {
 			p += pos;
-			ext2_icache_release(cnode);
+			ext2_icache_release(e,cnode);
 			cnode = ext2_icache_request(e,res,IMODE_READ);
 			if(cnode == NULL)
 				return -ENOBUFS;
@@ -76,7 +76,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 			if(mntDev >= 0) {
 				sFSInst *inst = mount_get(mntDev);
 				*dev = mntDev;
-				ext2_icache_release(cnode);
+				ext2_icache_release(e,cnode);
 				return inst->fs->resPath(inst->handle,u,p,flags,dev,resLastMnt);
 			}
 			if(!*p)
@@ -85,7 +85,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 			/* move to childs of this node */
 			pos = strchri(p,'/');
 			if((le16tocpu(cnode->inode.mode) & EXT2_S_IFDIR) == 0) {
-				ext2_icache_release(cnode);
+				ext2_icache_release(e,cnode);
 				return -ENOTDIR;
 			}
 		}
@@ -96,7 +96,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 			if((slash == NULL || *(slash + 1) == '\0') && (flags & IO_CREATE)) {
 				/* rerequest inode for writing */
 				res = cnode->inodeNo;
-				ext2_icache_release(cnode);
+				ext2_icache_release(e,cnode);
 				cnode = ext2_icache_request(e,res,IMODE_WRITE);
 				if(cnode == NULL)
 					return -ENOENT;
@@ -104,20 +104,20 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 				if(slash)
 					*slash = '\0';
 				err = ext2_file_create(e,u,cnode,p,&res,false);
-				ext2_icache_release(cnode);
+				ext2_icache_release(e,cnode);
 				if(err < 0)
 					return err;
 				return res;
 			}
 			else {
-				ext2_icache_release(cnode);
+				ext2_icache_release(e,cnode);
 				return -ENOENT;
 			}
 		}
 	}
 
 	res = cnode->inodeNo;
-	ext2_icache_release(cnode);
+	ext2_icache_release(e,cnode);
 	if(res != EXT2_BAD_INO)
 		return res;
 	return -ENOENT;

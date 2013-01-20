@@ -105,7 +105,7 @@ int ext2_inode_chmod(sExt2 *e,sFSUser *u,inode_t inodeNo,mode_t mode) {
 	oldMode = le16tocpu(cnode->inode.mode);
 	cnode->inode.mode = cputole16((oldMode & ~EXT2_S_PERMS) | (mode & EXT2_S_PERMS));
 	ext2_icache_markDirty(cnode);
-	ext2_icache_release(cnode);
+	ext2_icache_release(e,cnode);
 	return 0;
 }
 
@@ -135,7 +135,7 @@ int ext2_inode_chown(sExt2 *e,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
 	if(gid != (gid_t)-1)
 		cnode->inode.gid = cputole16(gid);
 	ext2_icache_markDirty(cnode);
-	ext2_icache_release(cnode);
+	ext2_icache_release(e,cnode);
 	return 0;
 }
 

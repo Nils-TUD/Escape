@@ -149,7 +149,7 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 			}
 			if(!delDir && S_ISDIR(le16tocpu(cnode->inode.mode))) {
 				if(cnode != pdir && cnode != dir)
-					ext2_icache_release(cnode);
+					ext2_icache_release(e,cnode);
 				free(buf);
 				return -EISDIR;
 			}
@@ -176,7 +176,7 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 	/* write it back */
 	if((res = ext2_file_writeIno(e,dir,buf,0,dirSize)) != dirSize) {
 		if(cnode && cnode != pdir && cnode != dir)
-			ext2_icache_release(cnode);
+			ext2_icache_release(e,cnode);
 		free(buf);
 		return res;
 	}
@@ -189,16 +189,10 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 		ext2_icache_markDirty(cnode);
 		linkCount = le16tocpu(cnode->inode.linkCount) - 1;
 		cnode->inode.linkCount = cputole16(linkCount);
-		if(linkCount == 0) {
-			/* delete the file if there are no references anymore */
-			if((res = ext2_file_delete(e,cnode)) < 0) {
-				if(cnode != pdir && cnode != dir)
-					ext2_icache_release(cnode);
-				return res;
-			}
-		}
+		/* don't delete the file here if linkCount is 0. we'll do that later when the last reference
+		 * is gone */
 		if(cnode != pdir && cnode != dir)
-			ext2_icache_release(cnode);
+			ext2_icache_release(e,cnode);
 	}
 	return 0;
 }

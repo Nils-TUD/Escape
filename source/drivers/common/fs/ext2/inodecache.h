@@ -62,9 +62,10 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode);
  * Releases the given inode. That means the references will be decreased and the inode will be
  * removed from cache if there are no more references.
  *
+ * @param e the ext2-handle
  * @param inode the inode
  */
-void ext2_icache_release(const sExt2CInode *inode);
+void ext2_icache_release(sExt2 *e,const sExt2CInode *inode);
 
 /**
  * Prints statistics and information about the inode-cache into the givne file

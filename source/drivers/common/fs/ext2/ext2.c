@@ -261,23 +261,34 @@ static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
 	if(flags & IO_WRITE)
 		mode |= MODE_WRITE;
 	/* TODO exec? */
-	if((err = ext2_hasPermission(cnode,u,mode)) < 0)
+	if((err = ext2_hasPermission(cnode,u,mode)) < 0) {
+		ext2_icache_release(e,cnode);
 		return err;
-	ext2_icache_release(cnode);
+	}
+	/* increase references so that the inode stays in cache until we close it. this is necessary
+	 * to prevent that somebody else deletes the file while another one uses it. of course, this
+	 * means that we can never have more open files that inode-cache-slots. so, we might have to
+	 * increase that at sometime. */
+	cnode->refs++;
+	ext2_icache_release(e,cnode);
 
 	/* truncate? */
 	if(flags & IO_TRUNCATE) {
 		cnode = ext2_icache_request(e,ino,IMODE_WRITE);
 		if(cnode != NULL) {
 			ext2_file_truncate(e,cnode,false);
-			ext2_icache_release(cnode);
+			ext2_icache_release(e,cnode);
 		}
 	}
 	return ino;
 }
 
-static void ext2_close(A_UNUSED void *h,A_UNUSED inode_t ino) {
-	/* nothing to do */
+static void ext2_close(void *h,inode_t ino) {
+	sExt2 *e = (sExt2*)h;
+	/* decrease references so that we can remove the cached inode and maybe even delete the file */
+	sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
+	cnode->refs--;
+	ext2_icache_release(e,cnode);
 }
 
 static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
@@ -298,7 +309,7 @@ static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
 	info->linkCount = le16tocpu(cnode->inode.linkCount);
 	info->mode = le16tocpu(cnode->inode.mode);
 	info->size = le32tocpu(cnode->inode.size);
-	ext2_icache_release(cnode);
+	ext2_icache_release(e,cnode);
 	return 0;
 }
 
@@ -330,8 +341,8 @@ static int ext2_link(void *h,sFSUser *u,inode_t dstIno,inode_t dirIno,const char
 		res = -EISDIR;
 	else
 		res = ext2_link_create(e,u,dir,ino,name);
-	ext2_icache_release(dir);
-	ext2_icache_release(ino);
+	ext2_icache_release(e,dir);
+	ext2_icache_release(e,ino);
 	return res;
 }
 
@@ -343,7 +354,7 @@ static int ext2_unlink(void *h,sFSUser *u,inode_t dirIno,const char *name) {
 		return -ENOBUFS;
 
 	res = ext2_link_delete(e,u,NULL,dir,name,false);
-	ext2_icache_release(dir);
+	ext2_icache_release(e,dir);
 	return res;
 }
 
@@ -354,7 +365,7 @@ static int ext2_mkdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
 	if(dir == NULL)
 		return -ENOBUFS;
 	res = ext2_dir_create(e,u,dir,name);
-	ext2_icache_release(dir);
+	ext2_icache_release(e,dir);
 	return res;
 }
 
@@ -367,7 +378,7 @@ static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
 	if(!S_ISDIR(le16tocpu(dir->inode.mode)))
 		return -ENOTDIR;
 	res = ext2_dir_delete(e,u,dir,name);
-	ext2_icache_release(dir);
+	ext2_icache_release(e,dir);
 	return res;
 }
 

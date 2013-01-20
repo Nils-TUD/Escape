@@ -46,19 +46,19 @@ int ext2_dir_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
 	/* create '.' and '..' */
 	if((res = ext2_link_create(e,u,cnode,cnode,".")) < 0) {
 		ext2_file_delete(e,cnode);
-		ext2_icache_release(cnode);
+		ext2_icache_release(e,cnode);
 		return res;
 	}
 	if((res = ext2_link_create(e,u,cnode,dir,"..")) < 0) {
 		ext2_link_delete(e,u,dir,cnode,".",true);
 		ext2_file_delete(e,cnode);
-		ext2_icache_release(cnode);
+		ext2_icache_release(e,cnode);
 		return res;
 	}
 
 	/* just to be sure */
 	ext2_icache_markDirty(cnode);
-	ext2_icache_release(cnode);
+	ext2_icache_release(e,cnode);
 	return 0;
 }
 
@@ -153,7 +153,7 @@ int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
 			(res = ext2_link_delete(e,u,dir,delIno,"..",true)) < 0)
 		goto error;
 	/* first release the del-inode, since ext2_link_delete will request it again */
-	ext2_icache_release(delIno);
+	ext2_icache_release(e,delIno);
 	/* now remove directory from parent, which will delete it because of no more references */
 	res = ext2_link_delete(e,u,NULL,dir,name,true);
 	free(buffer);
@@ -161,6 +161,6 @@ int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name) {
 
 error:
 	free(buffer);
-	ext2_icache_release(delIno);
+	ext2_icache_release(e,delIno);
 	return res;
 }

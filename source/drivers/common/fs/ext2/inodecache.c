@@ -28,6 +28,7 @@
 
 #include "ext2.h"
 #include "../blockcache.h"
+#include "file.h"
 #include "rw.h"
 #include "inodecache.h"
 
@@ -41,7 +42,7 @@ static void ext2_icache_aquire(sExt2CInode *inode,uint mode);
 /**
  * Releases the given inode
  */
-static void ext2_icache_doRelease(sExt2CInode *ino,bool unlockAlloc);
+static void ext2_icache_doRelease(sExt2 *e,sExt2CInode *ino,bool unlockAlloc);
 /**
  * Reads the inode from block-cache. Requires inode->inodeNo to be valid!
  */
@@ -71,7 +72,7 @@ void ext2_icache_flush(sExt2 *e) {
 			assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 			ext2_icache_aquire(inode,IMODE_READ);
 			ext2_icache_write(e,inode);
-			ext2_icache_release(inode);
+			ext2_icache_release(e,inode);
 		}
 	}
 }
@@ -133,7 +134,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 	if(inode->dirty && inode->inodeNo != EXT2_BAD_INO) {
 		ext2_icache_aquire(inode,IMODE_READ);
 		ext2_icache_write(e,inode);
-		ext2_icache_doRelease(inode,false);
+		ext2_icache_doRelease(e,inode,false);
 	}
 
 	/* build node */
@@ -146,7 +147,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 
 	/* now use for the requested mode */
 	if(mode != IMODE_WRITE) {
-		ext2_icache_doRelease(inode,false);
+		ext2_icache_doRelease(e,inode,false);
 		ext2_icache_aquire(inode,mode);
 	}
 
@@ -154,8 +155,8 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 	return inode;
 }
 
-void ext2_icache_release(const sExt2CInode *inode) {
-	ext2_icache_doRelease((sExt2CInode*)inode,true);
+void ext2_icache_release(sExt2 *e,const sExt2CInode *inode) {
+	ext2_icache_doRelease(e,(sExt2CInode*)inode,true);
 }
 
 void ext2_icache_print(FILE *f,sExt2 *e) {
@@ -186,14 +187,22 @@ static void ext2_icache_aquire(sExt2CInode *inode,A_UNUSED uint mode) {
 	assert(tpool_lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 }
 
-static void ext2_icache_doRelease(sExt2CInode *ino,bool unlockAlloc) {
+static void ext2_icache_doRelease(sExt2 *e,sExt2CInode *ino,bool unlockAlloc) {
 	if(ino == NULL)
 		return;
 
 	/* don't write dirty blocks back here, because this would lead to too many writes. */
 	/* skipping it until the inode-cache-entry should be reused, is better */
 	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
-	ino->refs--;
+	/* if there are no references and no links anymore, we have to delete the file */
+	if(--ino->refs == 0) {
+		if(ino->inode.linkCount == 0) {
+			ext2_file_delete(e,ino);
+			/* ensure that we don't use the cached inode again */
+			ino->inodeNo = EXT2_BAD_INO;
+			ino->dirty = false;
+		}
+	}
 	if(unlockAlloc)
 		assert(tpool_unlock(ALLOC_LOCK) == 0);
 	assert(tpool_unlock((uint)ino) == 0);

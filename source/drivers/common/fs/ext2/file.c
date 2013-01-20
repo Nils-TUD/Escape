@@ -59,12 +59,12 @@ int ext2_file_create(sExt2 *e,sFSUser *u,sExt2CInode *dirNode,const char *name,i
 	/* link it to the directory */
 	if((res = ext2_link_create(e,u,dirNode,cnode,name)) < 0) {
 		ext2_inode_destroy(e,cnode);
-		ext2_icache_release(cnode);
+		ext2_icache_release(e,cnode);
 		return res;
 	}
 
 	*ino = cnode->inodeNo;
-	ext2_icache_release(cnode);
+	ext2_icache_release(e,cnode);
 	return 0;
 }
 
@@ -151,14 +151,14 @@ ssize_t ext2_file_read(sExt2 *e,inode_t inodeNo,void *buffer,off_t offset,size_t
 	/* read */
 	res = ext2_file_readIno(e,cnode,buffer,offset,count);
 	if(res <= 0) {
-		ext2_icache_release(cnode);
+		ext2_icache_release(e,cnode);
 		return res;
 	}
 
 	/* mark accessed */
 	cnode->inode.accesstime = cputole32(timestamp());
 	ext2_icache_markDirty(cnode);
-	ext2_icache_release(cnode);
+	ext2_icache_release(e,cnode);
 
 	return res;
 }
@@ -217,7 +217,7 @@ ssize_t ext2_file_write(sExt2 *e,inode_t inodeNo,const void *buffer,off_t offset
 
 	/* write to it */
 	count = ext2_file_writeIno(e,cnode,buffer,offset,count);
-	ext2_icache_release(cnode);
+	ext2_icache_release(e,cnode);
 	return count;
 }
 

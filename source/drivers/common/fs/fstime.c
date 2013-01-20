@@ -26,7 +26,7 @@
 static int timeFd = -1;
 
 time_t timestamp(void) {
-	struct tm t;
+	sRTCInfo info;
 	/* open CMOS and read date */
 	if(timeFd < 0) {
 		/* not already open, so do it */
@@ -39,7 +39,7 @@ time_t timestamp(void) {
 		if(seek(timeFd,0,SEEK_SET) < 0)
 			return 0;
 	}
-	if(IGNSIGS(read(timeFd,&t,sizeof(struct tm))) < 0)
+	if(IGNSIGS(read(timeFd,&info,sizeof(info))) < 0)
 		return 0;
-	return mktime(&t);
+	return mktime(&info.time);
 }

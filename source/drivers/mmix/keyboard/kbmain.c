@@ -61,8 +61,10 @@ static size_t scWritePos = 0;
 int main(void) {
 	int id;
 	msgid_t mid;
+	uintptr_t phys;
 
-	kbRegs = (uint64_t*)mapphys(KEYBOARD_BASE,2 * sizeof(uint64_t));
+	phys = KEYBOARD_BASE;
+	kbRegs = (uint64_t*)regaddphys(&phys,2 * sizeof(uint64_t),0);
 	if(kbRegs == NULL)
 		error("Unable to map keyboard registers");
 
@@ -145,6 +147,7 @@ int main(void) {
 
 	/* clean up */
 	rb_destroy(rbuf);
+	regrem(kbRegs);
 	close(id);
 	return EXIT_SUCCESS;
 }

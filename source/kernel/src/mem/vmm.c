@@ -82,11 +82,17 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 	/* if *phys is not set yet, we should allocate physical contiguous memory */
 	thread_addHeapAlloc(frames);
 	if(*phys == 0) {
-		ssize_t first = pmem_allocateContiguous(pages,align / PAGE_SIZE);
-		if(first < 0)
-			goto error;
-		for(i = 0; i < pages; i++)
-			frames[i] = first + i;
+		if(align) {
+			ssize_t first = pmem_allocateContiguous(pages,align / PAGE_SIZE);
+			if(first < 0)
+				goto error;
+			for(i = 0; i < pages; i++)
+				frames[i] = first + i;
+		}
+		else {
+			for(i = 0; i < pages; i++)
+				frames[i] = pmem_allocate(FRM_USER);
+		}
 	}
 	/* otherwise use the specified one */
 	else {

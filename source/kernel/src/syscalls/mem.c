@@ -71,6 +71,8 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 		case REG_SHLIBTEXT:
 			break;
 		case REG_TLS:
+			if(thread_getTLSRegion(t) != NULL)
+				SYSC_ERROR(stack,-EINVAL);
 			thread_reserveFrames(BYTES_2_PAGES(byteCount));
 			break;
 		default:
@@ -93,7 +95,7 @@ int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
 
 int sysc_regctrl(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
-	uintptr_t addr = SYSC_ARG1(stack);
+	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 	ulong flags = 0;
 	int res;
@@ -103,13 +105,22 @@ int sysc_regctrl(sThread *t,sIntrptStackFrame *stack) {
 	if(prot & PROT_WRITE)
 		flags |= RF_WRITABLE;
 
-	res = vmm_regctrl(pid,addr,flags);
+	res = vmm_regctrl(pid,(uintptr_t)addr,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 
-int sysc_mapmod(sThread *t,sIntrptStackFrame *stack) {
+int sysc_regrem(sThread *t,sIntrptStackFrame *stack) {
+	void *virt = (void*)SYSC_ARG1(stack);
+	sVMRegion *reg = vmm_getRegion(t->proc,(uintptr_t)virt);
+	if(reg == NULL)
+		SYSC_ERROR(stack,-ENOENT);
+	vmm_remove(t->proc->pid,reg);
+	SYSC_RET1(stack,0);
+}
+
+int sysc_regaddmod(sThread *t,sIntrptStackFrame *stack) {
 	char namecpy[256];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	size_t sizecpy,*size = (size_t*)SYSC_ARG2(stack);
@@ -131,7 +142,7 @@ int sysc_mapmod(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-int sysc_mapphys(sThread *t,sIntrptStackFrame *stack) {
+int sysc_regaddphys(sThread *t,sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
@@ -144,6 +155,9 @@ int sysc_mapphys(sThread *t,sIntrptStackFrame *stack) {
 	/* ensure that its allowed to map this area (if the address is specified) */
 	if(physCpy && !pmem_canMap(physCpy,bytes))
 		SYSC_ERROR(stack,-EFAULT);
+	/* reserve frames if we don't want to use contiguous physical memory */
+	if(!physCpy && !align)
+		thread_reserveFrames(BYTES_2_PAGES(bytes));
 
 	addr = vmm_addPhys(pid,&physCpy,bytes,align,true);
 	if(addr == 0)

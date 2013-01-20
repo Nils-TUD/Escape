@@ -106,7 +106,7 @@ typedef struct {
 	sProcGroups *groups;
 	/* the physical address for the page-directory of this process */
 	pagedir_t pagedir;
-	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapphys.
+	/* the number of frames the process owns, i.e. no cow, no shared stuff, no regaddphys.
 	 * paging-structures are counted, too */
 	ulong ownFrames;
 	/* the number of frames the process uses, but maybe other processes as well */

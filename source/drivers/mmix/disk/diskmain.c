@@ -89,6 +89,7 @@ static uint64_t buffer[MAX_RW_SIZE / sizeof(uint64_t)];
 
 int main(int argc,char **argv) {
 	msgid_t mid;
+	uintptr_t phys;
 
 	if(argc < 2)
 		error("Usage: %s <wait>",argv[0]);
@@ -96,10 +97,12 @@ int main(int argc,char **argv) {
 	if(signal(SIG_INTRPT_ATA1,diskInterrupt) == SIG_ERR)
 		error("Unable to announce disk-signal-handler");
 
-	diskRegs = (uint64_t*)mapphys(DISK_BASE,16);
+	phys = DISK_BASE;
+	diskRegs = (uint64_t*)regaddphys(&phys,16,0);
 	if(diskRegs == NULL)
 		error("Unable to map disk registers");
-	diskBuf = (uint64_t*)mapphys(DISK_BUF,MAX_RW_SIZE);
+	phys = DISK_BUF;
+	diskBuf = (uint64_t*)regaddphys(&phys,MAX_RW_SIZE,0);
 	if(diskBuf == NULL)
 		error("Unable to map disk buffer");
 
@@ -188,6 +191,8 @@ int main(int argc,char **argv) {
 	}
 
 	/* clean up */
+	regrem(diskBuf);
+	regrem(diskRegs);
 	close(drvId);
 	return EXIT_SUCCESS;
 }

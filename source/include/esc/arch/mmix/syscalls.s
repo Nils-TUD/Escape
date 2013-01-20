@@ -459,9 +459,22 @@ regctrl:
 1:
 	POP		1,0							# return value is in $0
 
-.global _mapphys
-.type _mapphys, @function
-_mapphys:
+.global regrem
+.type regrem, @function
+regrem:
+	SET		$7,0						# clear error-code
+	TRAP	0,SYSCALL_REMREGION,0
+	BZ		$7,1f						# no-error?
+	GETA	$3,errno
+	NEG		$1,0,$7
+	STTU	$1,$3,0
+	SET		$0,$7
+1:
+	POP		1,0							# return value is in $0
+
+.global _regaddphys
+.type _regaddphys, @function
+_regaddphys:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_MAPPHYS,0
 	BZ		$7,1f						# no-error?
@@ -472,9 +485,9 @@ _mapphys:
 1:
 	POP		1,0							# return value is in $0
 
-.global _mapmod
-.type _mapmod, @function
-_mapmod:
+.global _regaddmod
+.type _regaddmod, @function
+_regaddmod:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_MAPMOD,0
 	BZ		$7,1f						# no-error?

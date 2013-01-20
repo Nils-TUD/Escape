@@ -227,6 +227,7 @@ int main(void) {
 		}
 	}
 
+	regrem(video);
 	close(id);
 	return EXIT_SUCCESS;
 }
@@ -234,10 +235,15 @@ int main(void) {
 static int vesa_setMode(int mode) {
 	minfo = vbe_getModeInfo(mode);
 	if(minfo) {
-		video = mapphys(minfo->physBasePtr,minfo->xResolution *
-				minfo->yResolution * (minfo->bitsPerPixel / 8));
-		if(video == NULL)
+		uintptr_t phys;
+		if(video)
+			regrem(video);
+		phys = minfo->physBasePtr;
+		video = regaddphys(&phys,minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8),0);
+		if(video == NULL) {
+			minfo = NULL;
 			return -errno;
+		}
 		cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
 		/* leave at least one pixel free for the cursor */
 		rows = (minfo->yResolution - 1) / (FONT_HEIGHT + PAD * 2);

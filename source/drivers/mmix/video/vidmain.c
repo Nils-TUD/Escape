@@ -50,13 +50,15 @@ static uchar color;
 int main(void) {
 	int id;
 	msgid_t mid;
+	uintptr_t phys;
 
 	id = createdev("/dev/video",DEV_TYPE_BLOCK,DEV_WRITE);
 	if(id < 0)
 		error("Unable to register device 'video'");
 
 	/* map video-memory for our process */
-	videoData = (uint64_t*)mapphys(VIDEO_MEM,MAX_COLS * ROWS * 8);
+	phys = VIDEO_MEM;
+	videoData = (uint64_t*)regaddphys(&phys,MAX_COLS * ROWS * 8,0);
 	if(videoData == NULL)
 		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
 
@@ -132,6 +134,7 @@ int main(void) {
 	}
 
 	/* clean up */
+	regrem(videoData);
 	close(id);
 	return EXIT_SUCCESS;
 }

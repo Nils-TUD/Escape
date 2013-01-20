@@ -40,7 +40,7 @@ int main(int argc,char **argv) {
 	if(id < 0)
 		error("Unable to register device 'romdisk'");
 
-	addr = (char*)mapmod(argv[2],&size);
+	addr = (char*)regaddmod(argv[2],&size);
 	if(!addr)
 		error("Unable to map module '%s' as romdisk",argv[2]);
 
@@ -88,6 +88,7 @@ int main(int argc,char **argv) {
 	}
 
 	/* clean up */
+	regrem(addr);
 	close(id);
 	return EXIT_SUCCESS;
 }

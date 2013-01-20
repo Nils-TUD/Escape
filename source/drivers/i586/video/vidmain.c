@@ -167,6 +167,7 @@ int main(int argc,char **argv) {
 	}
 
 	/* clean up */
+	regrem(videoData);
 	relports(CURSOR_PORT_INDEX,2);
 	close(id);
 	return EXIT_SUCCESS;
@@ -207,8 +208,12 @@ static int vid_setMode(int mid,bool clear) {
 	if(mode == NULL)
 		return -EINVAL;
 
+	/* undo previous mapping */
+	if(videoData)
+		regrem(videoData);
+
 	/* map video-memory for our process */
-	videoData = (uint8_t*)mapphys(mode->addr,mode->info->width * (mode->info->height + 1) * 2);
+	videoData = (uint8_t*)regaddphys(&mode->addr,mode->info->width * (mode->info->height + 1) * 2,0);
 	if(videoData == NULL)
 		error("Unable to aquire video-memory (%p)",mode->addr);
 	return 0;

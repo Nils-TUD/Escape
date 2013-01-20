@@ -246,6 +246,7 @@ int main(void) {
 		}
 	}
 
+	regrem(video);
 	close(id);
 	free(cursorCopy);
 	shmdel("vesa");
@@ -280,8 +281,8 @@ static int vesa_setMode(void) {
 		minfo = vbe_getModeInfo(mode);
 		if(minfo) {
 			int res;
-			video = mapphys(minfo->physBasePtr,minfo->xResolution *
-					minfo->yResolution * (minfo->bitsPerPixel / 8));
+			uintptr_t phys = minfo->physBasePtr;
+			video = regaddphys(&phys,minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8),0);
 			printf("[VESA] Setting (%x) %4d x %4d x %2d\n",mode,
 					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
 			fflush(stdout);

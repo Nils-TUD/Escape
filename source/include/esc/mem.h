@@ -30,18 +30,12 @@ typedef struct {
 } sBinDesc;
 
 /* the region-types */
-#define REG_TEXT			0
-#define REG_RODATA			1
-#define REG_DATA			2
-#define REG_STACK			3
-#define REG_STACKUP			4
-#define REG_SHM				5
-#define REG_DEVICE			6
-#define REG_TLS				7
-#define REG_SHLIBTEXT		8
-#define REG_SHLIBDATA		9
-#define REG_DLDATA			10
-#define REG_PHYS			11
+#define REG_TEXT			0	/* text-region of the program; only for dynamic linker */
+#define REG_RODATA			1	/* rodata-region of the program; only for dynamic linker */
+#define REG_DATA			2	/* data-region of the program; only for dynamic linker */
+#define REG_TLS				7	/* TLS of the current thread; only for dynamic linker */
+#define REG_SHLIBTEXT		8	/* shared library text; only for dynamic linker */
+#define REG_SHLIBDATA		9	/* shared library data; only for dynamic linker */
 
 /* protection-flags */
 #define PROT_READ			1
@@ -66,33 +60,27 @@ void *chgsize(ssize_t count) A_CHECKRET;
  * existing regions and the region-type) from given binary.
  *
  * @param bin the binary (may be NULL; means: no demand-loading possible)
- * @param binOffset the offset of the region in the binary (for demand-loading)
+ * @param offset the offset of the region in the binary (for demand-loading)
  * @param byteCount the number of bytes of the region
  * @param loadCount number of bytes to load from disk (the rest is zero'ed)
  * @param type the region-type (see REG_*)
  * @param virt the virtual address (required for text, rodata and data, otherwise 0)
  * @return the address of the region on success, NULL on failure
  */
-void *regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type,
+void *regadd(sBinDesc *bin,uintptr_t offset,size_t byteCount,size_t loadCount,uint type,
              uintptr_t virt);
 
 /**
- * Changes the protection of the region denoted by the given address.
+ * Maps <count> bytes at *<phys> into the virtual user-space and returns the start-address.
  *
- * @param addr the virtual address
- * @param prot the new protection-setting (PROT_*)
- * @return 0 on success
- */
-int regctrl(uintptr_t addr,uint prot);
-
-/**
- * Maps <count> bytes at <phys> into the virtual user-space and returns the start-address.
- *
- * @param phys the physical start-address to map
+ * @param phys will be set to the chosen physical address; if *phys != 0, this address will
+ *   be used.
  * @param count the number of bytes to map
+ * @param aligh the alignment (in bytes); if not 0, contiguous physical memory, aligned by <align>
+ *   will be used.
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
-void *mapphys(uintptr_t phys,size_t count) A_CHECKRET;
+void *regaddphys(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
 
 /**
  * Maps the multiboot module with given name in the virtual address space and returns the
@@ -102,17 +90,25 @@ void *mapphys(uintptr_t phys,size_t count) A_CHECKRET;
  * @param size will be set to the module size
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
-void *mapmod(const char *name,size_t *size) A_CHECKRET;
+void *regaddmod(const char *name,size_t *size) A_CHECKRET;
 
 /**
- * Allocates <count> bytes contiguous physical memory, <align>-bytes aligned.
+ * Changes the protection of the region denoted by the given address.
  *
- * @param phys will be set to the chosen physical address
- * @param count the byte-count
- * @param aligh the alignment (in bytes)
- * @return the virtual address where it has been mapped or NULL if an error occurred
+ * @param addr the virtual address
+ * @param prot the new protection-setting (PROT_*)
+ * @return 0 on success
  */
-void *allocphys(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
+int regctrl(void *addr,uint prot);
+
+/**
+ * Removes the region denoted by the virtual address of the region, <addr>, from the address
+ * space of the current process.
+ *
+ * @param addr the address of the region
+ * @return 0 on success
+ */
+int regrem(void *addr);
 
 /**
  * Creates a shared-memory region

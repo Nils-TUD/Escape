@@ -181,25 +181,25 @@ void ctrl_resetIrq(sATAController *ctrl) {
 }
 
 void ctrl_waitIntrpt(sATAController *ctrl) {
-	time_t time = 0;
+	time_t elapsed = 0;
 	if(!ctrl->useIrq)
 		return;
 	while(!ctrl->gotIrq) {
 		/* if we reached the timeout, it seems that waiting for interrupts does not work for
 		 * this controller. so disable it */
-		if(time > IRQ_TIMEOUT) {
+		if(elapsed > IRQ_TIMEOUT) {
 			ATA_LOG("Controller %d: IRQ-Timeout reached; stopping to use interrupts",ctrl->id);
 			ctrl->useIrq = false;
 			return;
 		}
 		sleep(IRQ_POLL_INTERVAL);
-		time += IRQ_POLL_INTERVAL;
+		elapsed += IRQ_POLL_INTERVAL;
 	}
 }
 
 int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t set,uint8_t unset) {
-	time_t time = 0;
-	while(time < timeout) {
+	time_t elapsed = 0;
+	while(elapsed < timeout) {
 		uint8_t status = ctrl_inb(ctrl,ATA_REG_STATUS);
 		if(status & CMD_ST_ERROR)
 			return ctrl_inb(ctrl,ATA_REG_ERROR);
@@ -208,10 +208,10 @@ int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t 
 		ATA_PR1("Status %#x",status);
 		if(sleepTime) {
 			sleep(sleepTime);
-			time += sleepTime;
+			elapsed += sleepTime;
 		}
 		else
-			time++;
+			elapsed++;
 	}
 	return -1;
 }

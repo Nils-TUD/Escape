@@ -58,7 +58,6 @@
 
 static void proc_doRemoveRegions(sProc *p,bool remStack);
 static int proc_getExitState(pid_t ppid,USER sExitState *state);
-static void proc_setExitState(sProc *p,int exitCode,int signal);
 static void proc_doDestroy(sProc *p);
 static void proc_notifyProcDied(pid_t parent);
 static pid_t proc_getFreePid(void);
@@ -97,7 +96,6 @@ void proc_init(void) {
 	p->ownFrames = 0;
 	p->sharedFrames = 0;
 	p->swapped = 0;
-	p->exitState = NULL;
 	p->sigRetAddr = 0;
 	p->flags = 0;
 	p->entryPoint = 0;
@@ -105,6 +103,14 @@ void proc_init(void) {
 	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
+	p->stats.peakOwnFrames = 0;
+	p->stats.peakSharedFrames = 0;
+	p->stats.swapCount = 0;
+	p->stats.totalRuntime = 0;
+	p->stats.totalSyscalls = 0;
+	p->stats.totalScheds = 0;
+	p->stats.exitCode = 0;
+	p->stats.exitSignal = SIG_COUNT;
 	memclear(p->locks,sizeof(p->locks));
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
@@ -139,6 +145,24 @@ pagedir_t *proc_getPageDir(void) {
 	if(t == NULL)
 		return &first.pagedir;
 	return &t->proc->pagedir;
+}
+
+void proc_addOwn(sProc *p,long amount) {
+	assert(amount > 0 || p->ownFrames >= (ulong)-amount);
+	p->ownFrames += amount;
+	p->stats.peakOwnFrames = MAX(p->ownFrames,p->stats.peakOwnFrames);
+}
+
+void proc_addShared(sProc *p,long amount) {
+	assert(amount > 0 || p->sharedFrames >= (ulong)-amount);
+	p->sharedFrames += amount;
+	p->stats.peakSharedFrames = MAX(p->sharedFrames,p->stats.peakSharedFrames);
+}
+
+void proc_addSwap(sProc *p,long amount) {
+	assert(amount > 0 || p->swapped >= (ulong)-amount);
+	p->swapped += amount;
+	p->stats.swapCount += amount < 0 ? -amount : amount;
 }
 
 void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args) {
@@ -278,15 +302,22 @@ int proc_clone(uint8_t flags) {
 	p->rgid = cur->rgid;
 	p->egid = cur->egid;
 	p->sgid = cur->sgid;
-	p->exitState = NULL;
 	p->sigRetAddr = cur->sigRetAddr;
 	p->flags = 0;
 	p->entryPoint = cur->entryPoint;
 	sll_init(&p->fsChans,slln_allocNode,slln_freeNode);
 	p->env = NULL;
+	p->flags = flags;
 	p->stats.input = 0;
 	p->stats.output = 0;
-	p->flags = flags;
+	p->stats.peakOwnFrames = 0;
+	p->stats.peakSharedFrames = 0;
+	p->stats.swapCount = 0;
+	p->stats.totalRuntime = 0;
+	p->stats.totalSyscalls = 0;
+	p->stats.totalScheds = 0;
+	p->stats.exitCode = 0;
+	p->stats.exitSignal = SIG_COUNT;
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
 	if(p->command == NULL) {
@@ -527,6 +558,15 @@ int proc_exec(const char *path,USER const char *const *args,const void *code,siz
 
 	/* copy path so that we can identify the process */
 	proc_setCommand(p,path,argc,argBuffer);
+	/* reset stats */
+	p->stats.input = 0;
+	p->stats.output = 0;
+	p->stats.peakOwnFrames = p->ownFrames;
+	p->stats.peakSharedFrames = p->sharedFrames;
+	p->stats.swapCount = 0;
+	p->stats.totalRuntime = 0;
+	p->stats.totalSyscalls = 0;
+	p->stats.totalScheds = 0;
 
 #if DEBUG_CREATIONS
 #ifdef __eco32__
@@ -580,6 +620,7 @@ void proc_exit(int exitCode) {
 	sThread *t = thread_getRunning();
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	if(p) {
+		p->stats.exitCode = exitCode;
 		thread_terminate(t);
 		proc_release(p,PLOCK_PROG);
 	}
@@ -641,7 +682,8 @@ void proc_terminate(pid_t pid,int exitCode,int signal) {
 	}
 
 	/* store exit-conditions */
-	proc_setExitState(p,exitCode,signal);
+	p->stats.exitCode = exitCode;
+	p->stats.exitSignal = signal;
 
 	/* terminate all threads */
 	for(tn = sll_begin(&p->threads); tn != NULL; tn = tn->next) {
@@ -655,10 +697,14 @@ void proc_terminate(pid_t pid,int exitCode,int signal) {
 void proc_killThread(tid_t tid) {
 	sThread *t = thread_getById(tid);
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
+	assert(p != NULL);
+	p->stats.totalRuntime += t->stats.runtime;
+	p->stats.totalSyscalls += t->stats.syscalls;
+	p->stats.totalScheds += t->stats.schedCount;
 	thread_kill(t);
 	sll_removeFirstWith(&p->threads,t);
 	if(sll_length(&p->threads) == 0) {
-		proc_setExitState(p,0,SIG_COUNT);
+		p->stats.exitCode = 0;
 		proc_doDestroy(p);
 	}
 	proc_release(p,PLOCK_PROG);
@@ -676,7 +722,7 @@ void proc_destroy(pid_t pid) {
 		sll_removeFirstWith(&p->threads,pt);
 		n = next;
 	}
-	proc_setExitState(p,0,SIG_COUNT);
+	p->stats.exitCode = 0;
 	proc_doDestroy(p);
 	proc_release(p,PLOCK_PROG);
 }
@@ -727,8 +773,6 @@ void proc_kill(pid_t pid) {
 
 	/* free the last resources and remove us from vfs */
 	cache_free((char*)p->command);
-	if(p->exitState)
-		cache_free(p->exitState);
 	vfs_removeProcess(p->pid);
 
 	/* remove and free */
@@ -780,15 +824,17 @@ static int proc_getExitState(pid_t ppid,USER sExitState *state) {
 			/* avoid deadlock; at other places we aquire the PLOCK_PROG first and procLock afterwards */
 			mutex_release(&procLock);
 			p = proc_request(p->pid,PLOCK_PROG);
-			if(state && p->exitState) {
-				/* copy it to stack first, because the memcpy to state may fail. this way
-				 * we don't get into trouble with the hold mutex (PLOCK_PROG) */
-				sExitState tmpState;
-				memcpy(&tmpState,p->exitState,sizeof(sExitState));
-				cache_free(p->exitState);
-				p->exitState = NULL;
+			if(state) {
+				state->pid = p->pid;
+				state->exitCode = p->stats.exitCode;
+				state->signal = p->stats.exitSignal;
+				state->runtime = p->stats.totalRuntime;
+				state->schedCount = p->stats.totalScheds;
+				state->syscalls = p->stats.totalSyscalls;
+				state->ownFrames = p->stats.peakOwnFrames;
+				state->sharedFrames = p->stats.peakSharedFrames;
+				state->swapped = p->stats.swapCount;
 				proc_release(p,PLOCK_PROG);
-				memcpy(state,&tmpState,sizeof(sExitState));
 				return p->pid;
 			}
 			proc_release(p,PLOCK_PROG);
@@ -797,31 +843,6 @@ static int proc_getExitState(pid_t ppid,USER sExitState *state) {
 	}
 	mutex_release(&procLock);
 	return -ECHILD;
-}
-
-static void proc_setExitState(sProc *p,int exitCode,int signal) {
-	if(p->exitState)
-		return;
-
-	p->exitState = (sExitState*)cache_alloc(sizeof(sExitState));
-	if(p->exitState) {
-		sSLNode *tn;
-		p->exitState->pid = p->pid;
-		p->exitState->exitCode = exitCode;
-		p->exitState->signal = signal;
-		p->exitState->runtime = 0;
-		p->exitState->schedCount = 0;
-		p->exitState->syscalls = 0;
-		for(tn = sll_begin(&p->threads); tn != NULL; tn = tn->next) {
-			sThread *t = (sThread*)tn->data;
-			p->exitState->runtime += t->stats.runtime;
-			p->exitState->schedCount += t->stats.schedCount;
-			p->exitState->syscalls += t->stats.syscalls;
-		}
-		p->exitState->ownFrames = p->ownFrames;
-		p->exitState->sharedFrames = p->sharedFrames;
-		p->exitState->swapped = p->swapped;
-	}
 }
 
 void proc_removeRegions(pid_t pid,bool remStack) {
@@ -889,12 +910,11 @@ void proc_print(sProc *p) {
 	vid_printf("\n");
 	proc_getMemUsageOf(p->pid,&own,&shared,&swapped);
 	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swapped);
-	if(p->exitState) {
-		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
-		vid_printf("\t\town=%lu, shared=%lu, swap=%lu\n",
-				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
-		vid_printf("\t\truntime=%ums\n",p->exitState->runtime);
-	}
+	vid_printf("\tExitInfo: code=%u, signal=%u\n",p->stats.exitCode,p->stats.exitSignal);
+	vid_printf("\tMemPeak: own=%lu, shared=%lu, swapped=%lu\n",
+	           p->stats.peakOwnFrames,p->stats.peakSharedFrames,p->stats.swapCount);
+	vid_printf("\tRunStats: runtime=%lu, scheds=%lu, syscalls=%lu\n",
+	           p->stats.totalRuntime,p->stats.totalScheds,p->stats.totalSyscalls);
 	prf_pushIndent();
 	vmfree_print(&p->freemap);
 	prf_popIndent();

@@ -22,38 +22,32 @@
 #include <esc/proc.h>
 #include <esc/dir.h>
 #include <esc/conf.h>
+#include <esc/time.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
-static void sigTimer(int sig);
 static void sigHdlr(int sig);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <program> [arguments...]\n",name);
 	exit(EXIT_FAILURE);
 }
 
-static long timerFreq;
-static time_t ms = 0;
 static int waitingPid = 0;
 
 int main(int argc,char **argv) {
+	uint64_t start,end;
 	char path[MAX_PATH_LEN + 1] = "/bin/";
 	if(argc < 2 || isHelpCmd(argc,argv))
 		usage(argv[0]);
 
-	timerFreq = sysconf(CONF_TIMER_FREQ);
-	if(timerFreq < 0)
-		error("Unable to get timer-frequency");
-
 	strcat(path,argv[1]);
 	if(signal(SIG_INTRPT,sigHdlr) == SIG_ERR)
 		error("Unable to set sig-handler for signal %d",SIG_INTRPT);
-	if(signal(SIG_INTRPT_TIMER,sigTimer) == SIG_ERR)
-		error("Unable to set sig-handler for signal %d",SIG_INTRPT_TIMER);
 
+	start = rdtsc();
 	if((waitingPid = fork()) == 0) {
 		size_t i;
 		const char **args = (const char**)malloc(sizeof(char*) * (argc - 1));
@@ -75,6 +69,7 @@ int main(int argc,char **argv) {
 			if(res != -EINTR)
 				break;
 		}
+		end = rdtsc();
 		if(res < 0)
 			error("Wait failed");
 		if(signal(SIG_INTRPT_TIMER,SIG_DFL) == SIG_ERR)
@@ -83,20 +78,16 @@ int main(int argc,char **argv) {
 		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
 		if(state.signal != SIG_COUNT)
 			printf("It was terminated by signal %d\n",state.signal);
-		printf("Total time:		%u us\n",ms * 1000);
 		printf("Runtime:		%Lu us\n",state.runtime);
-		printf("Own mem:		%lu KiB\n",state.ownFrames * 4);
-		printf("Shared mem:		%lu KiB\n",state.sharedFrames * 4);
-		printf("Swap mem:		%lu KiB\n",state.swapped * 4);
+		printf("Realtime:		%Lu us\n",tsctotime(end - start));
 		printf("Scheduled:		%lu times\n",state.schedCount);
 		printf("Syscalls:		%lu\n",state.syscalls);
+		printf("Own mem:		%lu KiB\n",state.ownFrames * 4);
+		printf("Shared mem:		%lu KiB\n",state.sharedFrames * 4);
+		printf("Swapped:		%lu KiB\n",state.swapped * 4);
 	}
 
 	return EXIT_SUCCESS;
-}
-
-static void sigTimer(A_UNUSED int sig) {
-	ms += 1000 / timerFreq;
 }
 
 static void sigHdlr(A_UNUSED int sig) {

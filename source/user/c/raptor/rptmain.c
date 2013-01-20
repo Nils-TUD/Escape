@@ -37,7 +37,7 @@ static void sigTimer(int sig);
 static void qerror(const char *msg,...);
 static void quit(void);
 
-static time_t time = 0;
+static time_t tsc = 0;
 
 int main(void) {
 	/* backup screen and stop vterm to read from keyboard */
@@ -54,11 +54,11 @@ int main(void) {
 	if(startthread(kmMngThread,NULL) < 0)
 		qerror("Unable to start thread");
 
-	game_tick(time);
+	game_tick(tsc);
 	while(1) {
 		/* wait until we get a signal */
 		wait(EV_NOEVENT,0);
-		if(!game_tick(time))
+		if(!game_tick(tsc))
 			break;
 	}
 
@@ -90,7 +90,7 @@ static void sigUsr1(A_UNUSED int sig) {
 }
 
 static void sigTimer(A_UNUSED int sig) {
-	time++;
+	tsc++;
 }
 
 static void qerror(const char *msg,...) {

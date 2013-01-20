@@ -11,7 +11,7 @@ title Escape
 kernel /boot/escape
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata nodma
-module /sbin/cmos /dev/cmos
+module /sbin/rtc /dev/rtc
 module /sbin/fs /dev/fs cdrom iso9660
 
 title Escape - Test
@@ -35,7 +35,7 @@ title Escape
 kernel /boot/escape swapdev=/dev/hda3
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata nodma
-module /sbin/cmos /dev/cmos
+module /sbin/rtc /dev/rtc
 module /sbin/fs /dev/fs /dev/hda1 ext2
 
 title Escape - Test

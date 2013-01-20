@@ -27,3 +27,4 @@ int sysc_loadmods(sThread *t,sIntrptStackFrame *stack);
 int sysc_debugc(sThread *t,sIntrptStackFrame *stack);
 int sysc_debug(sThread *t,sIntrptStackFrame *stack);
 int sysc_sysconf(sThread *t,sIntrptStackFrame *stack);
+int sysc_tsctotime(sThread *t,sIntrptStackFrame *stack);

@@ -25,6 +25,7 @@
 #define CLOCKS_PER_SEC		(clock_t)0
 
 typedef uint32_t clock_t;
+typedef uint suseconds_t;
 
 /* time-struct */
 struct tm {
@@ -37,6 +38,11 @@ struct tm {
 	int tm_wday;
 	int tm_yday;
 	int tm_isdst;
+};
+
+struct timeval {
+	time_t tv_sec;
+	suseconds_t tv_usec;
 };
 
 #ifdef __cplusplus
@@ -53,6 +59,13 @@ extern "C" {
  */
 clock_t clock(void);
 
+/**
+ * Gets the current time splitted up in seconds since 1.1.1970 and microseconds.
+ *
+ * @param tv the destination
+ * @return 0 on success
+ */
+int gettimeofday(struct timeval *tv);
 
 /**
  * Calculates the difference in seconds between time1 and time2.

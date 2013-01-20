@@ -62,7 +62,7 @@ int mod_speed(int argc,char *argv[]) {
 
 	/* write */
 	t = time(NULL);
-	start = cpu_rdtsc();
+	start = rdtsc();
 	for(i = 0; i < count; i++) {
 		if(write(fd,buffer,bufSize) < 0) {
 			printe("write");
@@ -80,7 +80,7 @@ int mod_speed(int argc,char *argv[]) {
 		}
 	}
 
-	total = cpu_rdtsc() - start;
+	total = rdtsc() - start;
 	diff = time(NULL) - t;
 	printf("\n");
 	printf("Instructions:	%016Lx\n",total);
@@ -89,7 +89,7 @@ int mod_speed(int argc,char *argv[]) {
 
 	/* read */
 	t = time(NULL);
-	start = cpu_rdtsc();
+	start = rdtsc();
 	for(i = 0; i < count; i++) {
 		if(IGNSIGS(read(fd,buffer,bufSize)) < 0) {
 			printe("read");
@@ -107,7 +107,7 @@ int mod_speed(int argc,char *argv[]) {
 		}
 	}
 
-	total = cpu_rdtsc() - start;
+	total = rdtsc() - start;
 	diff = time(NULL) - t;
 	printf("\n");
 	printf("Instructions:	%016Lx\n",total);

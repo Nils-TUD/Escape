@@ -65,14 +65,14 @@ static void client(void) {
 	}
 	while(fd < 0);
 
-	begin = cpu_rdtsc();
+	begin = rdtsc();
 	for(i = 0; i < messageCount; i++) {
 		if(send(fd,0,&msg,sizeof(msg)) < 0)
 			printe("Message-sending failed");
 		if(receive(fd,NULL,&msg,sizeof(msg)) < 0)
 			printe("Message-receiving failed");
 	}
-	total = cpu_rdtsc() - begin;
+	total = rdtsc() - begin;
 	printf("Cycles: %Lu, per msg: %Lu\n",total,total / messageCount);
 	close(fd);
 }

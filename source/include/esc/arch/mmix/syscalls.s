@@ -56,6 +56,19 @@ debug:
 1:
 	POP		1,0							# return value is in $0
 
+.global _tsctotime
+.type _tsctotime, @function
+_tsctotime:
+	SET		$7,0						# clear error-code
+	TRAP	0,SYSCALL_TSCTOTIME,0
+	BZ		$7,1f						# no-error?
+	GETA	$3,errno
+	NEG		$1,0,$7
+	STTU	$1,$3,0
+	SET		$0,$7
+1:
+	POP		1,0							# return value is in $0
+
 .global createdev
 .type createdev, @function
 createdev:

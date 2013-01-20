@@ -288,27 +288,27 @@ static void kbIntrptHandler(A_UNUSED int sig) {
 }
 
 static void kb_waitOutBuf(void) {
-	time_t time = 0;
+	time_t elapsed = 0;
 	uint8_t status;
 	do {
 		status = inbyte(IOPORT_KB_CTRL);
 		if((status & STATUS_OUTBUF_FULL) == 0) {
 			sleep(SLEEP_TIME);
-			time += SLEEP_TIME;
+			elapsed += SLEEP_TIME;
 		}
 	}
-	while((status & STATUS_OUTBUF_FULL) == 0 && time < TIMEOUT);
+	while((status & STATUS_OUTBUF_FULL) == 0 && elapsed < TIMEOUT);
 }
 
 static void kb_waitInBuf(void) {
-	time_t time = 0;
+	time_t elapsed = 0;
 	uint8_t status;
 	do {
 		status = inbyte(IOPORT_KB_CTRL);
 		if((status & STATUS_INBUF_FULL) != 0) {
 			sleep(SLEEP_TIME);
-			time += SLEEP_TIME;
+			elapsed += SLEEP_TIME;
 		}
 	}
-	while((status & STATUS_INBUF_FULL) != 0 && time < TIMEOUT);
+	while((status & STATUS_INBUF_FULL) != 0 && elapsed < TIMEOUT);
 }

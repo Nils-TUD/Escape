@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg('sbin', target = 'rtc', source = env.Glob('*.c'), force_static = True)

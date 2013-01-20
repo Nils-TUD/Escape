@@ -22,6 +22,7 @@
 #include <esc/common.h>
 #include <esc/fsinterface.h>
 #include <stddef.h>
+#include <time.h>
 
 /* general */
 #define MAX_MSG_ARGS				10
@@ -235,6 +236,11 @@ typedef struct {
 	uint width;
 	uint height;
 } sVTSize;
+
+typedef struct {
+	struct tm time;
+	uint microsecs;
+} sRTCInfo;
 
 typedef struct {
 	enum {BAR_MEM,BAR_IO} type;

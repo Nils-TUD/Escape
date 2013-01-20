@@ -130,8 +130,6 @@ typedef struct {
 	sSLList fsChans;
 	/* environment-variables of this process */
 	sSLList *env;
-	/* for the waiting parent */
-	sExitState *exitState;
 	/* the address of the sigRet "function" */
 	uintptr_t sigRetAddr;
 	/* architecture-specific attributes */
@@ -145,9 +143,20 @@ typedef struct {
 	/* locks for this process */
 	klock_t locks[PLOCK_COUNT];
 	struct {
+		/* mem stats */
+		ulong peakOwnFrames;
+		ulong peakSharedFrames;
+		ulong swapCount;
+		/* thread stats */
+		ulong totalRuntime;
+		ulong totalSyscalls;
+		ulong totalScheds;
 		/* I/O stats */
 		ulong input;
 		ulong output;
+		/* exit */
+		ushort exitCode;
+		ushort exitSignal;
 	} stats;
 } sProc;
 
@@ -168,6 +177,16 @@ void proc_init(void);
  * @return the page-dir of the current process (or the first one)
  */
 pagedir_t *proc_getPageDir(void);
+
+/**
+ * Adds/subtracts own-, shared- or swapped frames to/from the given process.
+ *
+ * @param p the process
+ * @param amount the number of frames (positive or negative)
+ */
+void proc_addOwn(sProc *p,long amount);
+void proc_addShared(sProc *p,long amount);
+void proc_addSwap(sProc *p,long amount);
 
 /**
  * Sets the command of <p> to <cmd> and frees the current command-string, if necessary

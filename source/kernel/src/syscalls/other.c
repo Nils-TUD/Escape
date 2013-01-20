@@ -63,3 +63,11 @@ int sysc_sysconf(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
+
+int sysc_tsctotime(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+	uint64_t *tsc = (uint64_t*)SYSC_ARG1(stack);
+	if(!paging_isInUserSpace((uintptr_t)tsc,sizeof(uint64_t)))
+		SYSC_ERROR(stack,-EINVAL);
+	*tsc = timer_cyclesToTime(*tsc);
+	SYSC_RET1(stack,0);
+}

@@ -46,13 +46,6 @@ void printStackTrace(void);
 const char *getProcName(void);
 
 /**
- * Reads the timestamp-counter
- *
- * @return the number of cycles
- */
-extern uint64_t cpu_rdtsc(void);
-
-/**
  * Starts the timer, i.e. reads the current cpu-cycle count for this thread
  */
 void dbg_startUTimer(void);
@@ -66,7 +59,7 @@ void dbg_startUTimer(void);
 void dbg_stopUTimer(const char *prefix);
 
 /**
- * Starts the timer (cpu_rdtsc())
+ * Starts the timer (rdtsc())
  */
 void dbg_startTimer(void);
 

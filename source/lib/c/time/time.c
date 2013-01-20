@@ -23,11 +23,11 @@
 
 time_t time(time_t *timer) {
 	time_t ts;
-	struct tm t;
-	int res = readdate(&t);
+	sRTCInfo info;
+	int res = readdate(&info);
 	if(res < 0)
 		return 0;
-	ts = mktime(&t);
+	ts = mktime(&info.time);
 	if(timer)
 		*timer = ts;
 	return ts;

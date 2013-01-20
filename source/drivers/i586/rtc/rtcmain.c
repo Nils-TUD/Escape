@@ -24,6 +24,7 @@
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <esc/thread.h>
+#include <esc/time.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -41,14 +42,11 @@
 #define CMOS_REG_MONTH		0x8		/* 01-12 */
 #define CMOS_REG_YEAR		0x9		/* 00-99 */
 
-static int refreshThread(void *arg);
-static void cmos_refresh(void);
-static uint cmos_decodeBCD(uint8_t val);
-static uint8_t cmos_read(uint8_t reg);
+static void rtc_readInfo(sRTCInfo *info);
+static uint rtc_decodeBCD(uint8_t val);
+static uint8_t rtc_read(uint8_t reg);
 
-static tULock dlock;
 static sMsg msg;
-static struct tm date;
 
 int main(void) {
 	msgid_t mid;
@@ -58,22 +56,19 @@ int main(void) {
 	if(reqports(IOPORT_CMOS_INDEX,2) < 0)
 		error("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 
-	if(startthread(refreshThread,NULL) < 0)
-		error("Unable to start CMOS-thread");
-
-	id = createdev("/dev/cmos",DEV_TYPE_BLOCK,DEV_READ);
+	id = createdev("/dev/rtc",DEV_TYPE_BLOCK,DEV_READ);
 	if(id < 0)
-		error("Unable to register device 'cmos'");
+		error("Unable to register device 'rtc'");
 
 	/* give all read- and write-permission */
-	if(chmod("/dev/cmos",S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
-		error("Unable to set permissions for /dev/cmos");
+	if(chmod("/dev/rtc",S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
+		error("Unable to set permissions for /dev/rtc");
 
 	/* wait for commands */
 	while(1) {
 		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[CMOS] Unable to get work");
+			printe("[RTC] Unable to get work");
 		else {
 			switch(mid) {
 				case MSG_DEV_READ: {
@@ -81,15 +76,16 @@ int main(void) {
 					uint count = msg.args.arg2;
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
-					if(offset + count <= offset || offset + count > sizeof(struct tm))
+					if(offset + count <= offset || offset + count > sizeof(sRTCInfo))
 						msg.args.arg1 = 0;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
-						/* ensure that the refresh-thread doesn't access the date in the
-						 * meanwhile */
-						locku(&dlock);
-						send(fd,MSG_DEV_READ_RESP,(uchar*)&date + offset,msg.args.arg1);
-						unlocku(&dlock);
+						/* we assume that the system booted at X secs + 0 us, because we don't know
+						 * the microseconds at boot-time. */
+						sRTCInfo info;
+						rtc_readInfo(&info);
+						info.microsecs = (uint)(tsctotime(rdtsc())) % 1000000;
+						send(fd,MSG_DEV_READ_RESP,(uchar*)&info + offset,msg.args.arg1);
 					}
 				}
 				break;
@@ -109,34 +105,23 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static int refreshThread(A_UNUSED void *arg) {
-	while(1) {
-		/* ensure that the driver-loop doesn't access the date in the meanwhile */
-		locku(&dlock);
-		cmos_refresh();
-		unlocku(&dlock);
-		sleep(1000);
-	}
-	return 0;
+static void rtc_readInfo(sRTCInfo *info) {
+	info->time.tm_mday = rtc_decodeBCD(rtc_read(CMOS_REG_MONTHDAY)) - 1;
+	info->time.tm_mon = rtc_decodeBCD(rtc_read(CMOS_REG_MONTH)) - 1;
+	info->time.tm_year = rtc_decodeBCD(rtc_read(CMOS_REG_YEAR));
+	if(info->time.tm_year < 70)
+		info->time.tm_year += 100;
+	info->time.tm_hour = rtc_decodeBCD(rtc_read(CMOS_REG_HOUR));
+	info->time.tm_min = rtc_decodeBCD(rtc_read(CMOS_REG_MIN));
+	info->time.tm_sec = rtc_decodeBCD(rtc_read(CMOS_REG_SEC));
+	info->time.tm_wday = rtc_decodeBCD(rtc_read(CMOS_REG_WEEKDAY)) - 1;
 }
 
-static void cmos_refresh(void) {
-	date.tm_mday = cmos_decodeBCD(cmos_read(CMOS_REG_MONTHDAY)) - 1;
-	date.tm_mon = cmos_decodeBCD(cmos_read(CMOS_REG_MONTH)) - 1;
-	date.tm_year = cmos_decodeBCD(cmos_read(CMOS_REG_YEAR));
-	if(date.tm_year < 70)
-		date.tm_year += 100;
-	date.tm_hour = cmos_decodeBCD(cmos_read(CMOS_REG_HOUR));
-	date.tm_min = cmos_decodeBCD(cmos_read(CMOS_REG_MIN));
-	date.tm_sec = cmos_decodeBCD(cmos_read(CMOS_REG_SEC));
-	date.tm_wday = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY)) - 1;
-}
-
-static uint cmos_decodeBCD(uint8_t val) {
+static uint rtc_decodeBCD(uint8_t val) {
 	return (val >> 4) * 10 + (val & 0xF);
 }
 
-static uint8_t cmos_read(uint8_t reg) {
+static uint8_t rtc_read(uint8_t reg) {
 	outbyte(IOPORT_CMOS_INDEX,reg);
 	__asm__ volatile ("nop");
 	__asm__ volatile ("nop");

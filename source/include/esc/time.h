@@ -20,18 +20,26 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
 
-/* timestamp stuff */
-#define SECS_PER_MIN			60
-#define SECS_PER_HOUR			(60 * SECS_PER_MIN)
-#define SECS_PER_DAY			(24 * SECS_PER_HOUR)
-#define SECS_PER_YEAR			(365 * SECS_PER_DAY)
-#define SECS_PER_LEAPYEAR		(366 * SECS_PER_DAY)
-#define IS_LEAP_YEAR(y)			(((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))
-#define DEF_YEAR				0
-#define LEAP_YEAR				1
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-extern const uchar daysPerMonth[2][12];
+/**
+ * Reads the timestamp-counter
+ *
+ * @return the number of cycles
+ */
+extern uint64_t rdtsc(void);
 
-int readdate(sRTCInfo *info);
+/**
+ * Converts the given TSC value to microseconds.
+ *
+ * @param tsc the TSC value
+ * @return the number of microseconds
+ */
+uint64_t tsctotime(uint64_t tsc);
+
+#ifdef __cplusplus
+}
+#endif

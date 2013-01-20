@@ -32,7 +32,7 @@ static int refreshThread(void *arg);
 
 static tULock dlock;
 static sMsg msg;
-static struct tm date;
+static sRTCInfo info;
 static time_t timestamp;
 
 int main(void) {
@@ -58,14 +58,14 @@ int main(void) {
 					uint count = msg.args.arg2;
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
-					if(offset + count <= offset || offset + count > sizeof(struct tm))
+					if(offset + count <= offset || offset + count > sizeof(sRTCInfo))
 						msg.args.arg1 = 0;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
 						/* ensure that the refresh-thread doesn't access the date in the
 						 * meanwhile */
 						locku(&dlock);
-						send(fd,MSG_DEV_READ_RESP,(uchar*)&date + offset,msg.args.arg1);
+						send(fd,MSG_DEV_READ_RESP,(uchar*)&info + offset,msg.args.arg1);
 						unlocku(&dlock);
 					}
 				}
@@ -92,10 +92,9 @@ static int refreshThread(A_UNUSED void *arg) {
 		locku(&dlock);
 		timestamp++;
 		gmt = gmtime(&timestamp);
-		memcpy(&date,gmt,sizeof(struct tm));
+		memcpy(&info.time,gmt,sizeof(struct tm));
 		unlocku(&dlock);
 		sleep(1000);
 	}
 	return 0;
 }
-

@@ -114,12 +114,12 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 		goto errorRel;
 	if(*phys) {
 		/* the page-tables are ours, the pages may be used by others, too */
-		p->ownFrames += res;
-		p->sharedFrames += pages;
+		proc_addOwn(p,res);
+		proc_addShared(p,pages);
 	}
 	else {
 		/* its our own mem; store physical address for the caller */
-		p->ownFrames += res;
+		proc_addOwn(p,res);
 		*phys = frames[0] * PAGE_SIZE;
 	}
 	vmm_relProc(p);
@@ -195,10 +195,10 @@ int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t l
 		if(pts < 0)
 			goto errMap;
 		if(flags & RF_SHAREABLE)
-			p->sharedFrames += pageCount;
+			proc_addShared(p,pageCount);
 		else
-			p->ownFrames += pageCount;
-		p->ownFrames += pts;
+			proc_addOwn(p,pageCount);
+		proc_addOwn(p,pts);
 	}
 	/* set data-region */
 	if(type == REG_DATA || type == REG_DLDATA)
@@ -522,8 +522,8 @@ static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm,bool write) {
 	else if(*flags & PF_COPYONWRITE) {
 		frameno_t frameNumber = paging_getFrameNo(&p->pagedir,addr);
 		size_t frmCount = cow_pagefault(addr,frameNumber);
-		p->ownFrames += frmCount;
-		p->sharedFrames -= frmCount;
+		proc_addOwn(p,frmCount);
+		proc_addShared(p,-frmCount);
 		*flags &= ~PF_COPYONWRITE;
 		res = true;
 	}
@@ -576,23 +576,23 @@ static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 				bool foundOther;
 				frameno_t frameNo = paging_getFrameNo(&p->pagedir,virt);
 				/* we can free the frame if there is no other user */
-				p->sharedFrames -= cow_remove(frameNo,&foundOther);
+				proc_addShared(p,-cow_remove(frameNo,&foundOther));
 				freeFrame = !foundOther;
 				/* if we'll free the frame with unmap we will substract 1 too much because
 				 * we don't own the frame */
 				if(freeFrame)
-					p->ownFrames++;
+					proc_addOwn(p,1);
 			}
 			if(vm->reg->pageFlags[i] & PF_SWAPPED)
-				p->swapped--;
+				proc_addSwap(p,-1);
 			pts = paging_unmapFrom(&p->pagedir,virt,1,freeFrame);
 			if(freeFrame) {
 				if(vm->reg->flags & RF_SHAREABLE)
-					p->sharedFrames--;
+					proc_addShared(p,-1);
 				else
-					p->ownFrames--;
+					proc_addOwn(p,-1);
 			}
-			p->ownFrames -= pts;
+			proc_addOwn(p,-pts);
 			virt += PAGE_SIZE;
 		}
 		/* store next free stack-address, if its a stack */
@@ -616,9 +616,9 @@ static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 		/* in this case its always a shared region because otherwise there wouldn't be other users */
 		/* so we have to substract the present content-frames from the shared ones,
 		 * and the ptables from ours */
-		p->sharedFrames -= reg_pageCount(vm->reg,&swapped);
-		p->ownFrames -= pts;
-		p->swapped -= swapped;
+		proc_addShared(p,-reg_pageCount(vm->reg,&swapped));
+		proc_addOwn(p,-pts);
+		proc_addSwap(p,-swapped);
 		/* give the memory back to the free-area, if its in there */
 		if(vm->virt >= FREE_AREA_BEGIN)
 			vmfree_free(&p->freemap,vm->virt,ROUND_PAGE_UP(vm->reg->byteCount));
@@ -670,9 +670,9 @@ int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm,uintptr_t
 	res = paging_clonePages(&src->pagedir,&dst->pagedir,vm->virt,(*nvm)->virt,pageCount,true);
 	if(res < 0)
 		goto errRem;
-	dst->sharedFrames += reg_pageCount(vm->reg,&swapped);
-	dst->ownFrames += res;
-	dst->swapped += swapped;
+	proc_addShared(dst,reg_pageCount(vm->reg,&swapped));
+	proc_addOwn(dst,res);
+	proc_addSwap(dst,swapped);
 	mutex_release(&vm->reg->lock);
 	vmm_relProc(dst);
 	vmm_relProc(src);
@@ -741,19 +741,19 @@ int vmm_cloneAll(pid_t dstId) {
 				mutex_release(&vm->reg->lock);
 				goto error;
 			}
-			dst->ownFrames += res;
+			proc_addOwn(dst,res);
 
 			/* update stats */
 			if(vm->reg->flags & RF_SHAREABLE) {
-				dst->sharedFrames += reg_pageCount(nvm->reg,&swapped);
-				dst->swapped += swapped;
+				proc_addShared(dst,reg_pageCount(nvm->reg,&swapped));
+				proc_addSwap(dst,swapped);
 			}
 			/* add frames to copy-on-write, if not shared */
 			else {
 				uintptr_t virt = nvm->virt;
 				for(j = 0; j < pageCount; j++) {
 					if(vm->reg->pageFlags[j] & PF_SWAPPED)
-						dst->swapped++;
+						proc_addSwap(dst,1);
 					/* not when demand-load or swapping is outstanding since we've not loaded it
 					 * from disk yet */
 					else if(!(vm->reg->pageFlags[j] & (PF_DEMANDLOAD | PF_SWAPPED))) {
@@ -765,8 +765,8 @@ int vmm_cloneAll(pid_t dstId) {
 								mutex_release(&vm->reg->lock);
 								goto error;
 							}
-							src->sharedFrames++;
-							src->ownFrames--;
+							proc_addShared(src,1);
+							proc_addOwn(src,-1);
 						}
 						/* do it always for the child */
 						nvm->reg->pageFlags[j] |= PF_COPYONWRITE;
@@ -774,7 +774,7 @@ int vmm_cloneAll(pid_t dstId) {
 							mutex_release(&vm->reg->lock);
 							goto error;
 						}
-						dst->sharedFrames++;
+						proc_addShared(dst,1);
 					}
 					virt += PAGE_SIZE;
 				}
@@ -910,7 +910,7 @@ static size_t vmm_doGrow(sProc *p,sVMRegion *vm,ssize_t amount) {
 				mutex_release(&vm->reg->lock);
 				return 0;
 			}
-			p->ownFrames += pts + amount;
+			proc_addOwn(p,pts + amount);
 			/* remove it from the free area (used by the dynlinker for its data-region only) */
 			/* note that we assume here that we get the location at the end of the data-region */
 			if(vm->virt >= FREE_AREA_BEGIN)
@@ -927,8 +927,8 @@ static size_t vmm_doGrow(sProc *p,sVMRegion *vm,ssize_t amount) {
 			if(vm->virt >= FREE_AREA_BEGIN)
 				vmfree_free(&p->freemap,virt,-amount * PAGE_SIZE);
 			pts = paging_unmapFrom(&p->pagedir,virt,-amount,true);
-			p->ownFrames -= pts - amount;
-			p->swapped -= res;
+			proc_addOwn(p,-(pts - amount));
+			proc_addSwap(p,-res);
 		}
 	}
 
@@ -1043,7 +1043,7 @@ static bool vmm_demandLoad(sProc *p,sVMRegion *vm,uintptr_t addr) {
 		if(!loadCount) {
 			/* can't fail because we've requested the frame previously and the page-table is present */
 			assert(paging_map(addr,NULL,1,PG_PRESENT | PG_WRITABLE) == 0);
-			p->ownFrames++;
+			proc_addOwn(p,1);
 		}
 		memclear((void*)(addr + loadCount),zeroCount);
 	}
@@ -1104,9 +1104,9 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 		/* can't fail */
 		assert(paging_mapTo(&mp->pagedir,mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
 		if(vm->reg->flags & RF_SHAREABLE)
-			mp->sharedFrames++;
+			proc_addShared(mp,1);
 		else
-			mp->ownFrames++;
+			proc_addOwn(mp,1);
 	}
 	return true;
 
@@ -1196,10 +1196,10 @@ static void vmm_setSwappedOut(sRegion *reg,size_t index) {
 		/* can't fail */
 		assert(paging_mapTo(&mp->pagedir,mpreg->virt + offset,NULL,1,0) == 0);
 		if(reg->flags & RF_SHAREABLE)
-			mp->sharedFrames--;
+			proc_addShared(mp,-1);
 		else
-			mp->ownFrames--;
-		mp->swapped++;
+			proc_addOwn(mp,-1);
+		proc_addSwap(mp,1);
 	}
 }
 
@@ -1220,10 +1220,10 @@ static void vmm_setSwappedIn(sRegion *reg,size_t index,frameno_t frameNo) {
 		/* can't fail */
 		assert(paging_mapTo(&mp->pagedir,mpreg->virt + offset,&frameNo,1,flags) == 0);
 		if(reg->flags & RF_SHAREABLE)
-			mp->sharedFrames++;
+			proc_addShared(mp,1);
 		else
-			mp->ownFrames++;
-		mp->swapped--;
+			proc_addOwn(mp,1);
+		proc_addSwap(mp,-1);
 	}
 }
 

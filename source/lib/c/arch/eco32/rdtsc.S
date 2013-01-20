@@ -19,11 +19,11 @@
 
 .section .text
 
-.global cpu_rdtsc
+.global rdtsc
 
-# uint64_t cpu_rdtsc(void);
-.type cpu_rdtsc, @function
-cpu_rdtsc:
+# uint64_t rdtsc(void);
+.type rdtsc, @function
+rdtsc:
 	add		$2,$0,$0
 	add		$3,$0,$0
 	jr		$31

@@ -23,13 +23,13 @@
 #include <time.h>
 #include "timeintern.h"
 
-int readdate(struct tm *t) {
+int readdate(sRTCInfo *info) {
 	/* open CMOS and read date */
 	int err;
 	int fd = open(TIME_DEVICE,IO_READ);
 	if(fd < 0)
 		return fd;
-	if((err = IGNSIGS(read(fd,t,sizeof(struct tm)))) < 0) {
+	if((err = IGNSIGS(read(fd,info,sizeof(sRTCInfo)))) < 0) {
 		close(fd);
 		return err;
 	}

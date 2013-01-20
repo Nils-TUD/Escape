@@ -21,4 +21,4 @@
 
 #include <esc/common.h>
 
-#define TIME_DEVICE		"/dev/cmos"
+#define TIME_DEVICE		"/dev/rtc"

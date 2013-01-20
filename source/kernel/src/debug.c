@@ -21,6 +21,7 @@
 #include <esc/debug.h>
 #include <esc/thread.h>
 #include <sys/video.h>
+#include <sys/cpu.h>
 #include <string.h>
 #include <stdarg.h>
 

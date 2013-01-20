@@ -24,6 +24,7 @@
 #include <esc/width.h>
 #include <esc/thread.h>
 #include <esc/proc.h>
+#include <esc/time.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -82,12 +83,12 @@ void dbg_stopUTimer(const char *prefix) {
 }
 
 void dbg_startTimer(void) {
-	start = cpu_rdtsc();
+	start = rdtsc();
 }
 
 void dbg_stopTimer(const char *prefix) {
 	uLongLong diff;
-	diff.val64 = cpu_rdtsc() - start;
+	diff.val64 = rdtsc() - start;
 	debugf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
 }
 

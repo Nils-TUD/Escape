@@ -93,6 +93,7 @@ typedef ssize_t (*fRead)(pid_t pid,sFile *file,sVFSNode *node,void *buffer,
 typedef ssize_t (*fWrite)(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
 			off_t offset,size_t count);
 typedef off_t (*fSeek)(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
+typedef size_t (*fGetSize)(pid_t pid,sVFSNode *node);
 typedef void (*fClose)(pid_t pid,sFile *file,sVFSNode *node);
 typedef void (*fDestroy)(sVFSNode *n);
 
@@ -118,6 +119,7 @@ struct sVFSNode {
 	fRead read;
 	fWrite write;
 	fSeek seek;
+	fGetSize getSize;
 	fClose close;
 	fDestroy destroy;
 	/* data in various forms, depending on the node-type */

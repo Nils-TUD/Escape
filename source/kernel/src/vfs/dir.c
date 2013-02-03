@@ -45,6 +45,7 @@ typedef struct {
 static ssize_t vfs_dir_read(pid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
 static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
+static size_t vfs_dir_getSize(pid_t pid,sVFSNode *node);
 
 sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	sVFSNode *target;
@@ -67,6 +68,7 @@ sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
 	node->read = vfs_dir_read;
 	node->write = NULL;
 	node->seek = vfs_dir_seek;
+	node->getSize = vfs_dir_getSize;
 	node->destroy = NULL;
 	node->close = NULL;
 	vfs_node_append(parent,node);
@@ -86,6 +88,18 @@ static off_t vfs_dir_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posit
 		case SEEK_END:
 			return 0;
 	}
+}
+
+static size_t vfs_dir_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
+	bool isValid;
+	size_t byteCount = 0;
+	/* node is already locked */
+	sVFSNode *n = vfs_node_openDir(node,false,&isValid);
+	while(n != NULL) {
+		byteCount += sizeof(sVFSDirEntry) + n->nameLen;
+		n = n->next;
+	}
+	return byteCount;
 }
 
 static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,

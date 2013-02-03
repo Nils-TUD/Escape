@@ -30,6 +30,7 @@ sVFSNode *vfs_link_create(pid_t pid,sVFSNode *parent,char *name,const sVFSNode *
 	child->read = NULL;
 	child->write = NULL;
 	child->seek = NULL;
+	child->getSize = NULL;
 	child->destroy = NULL;
 	child->close = NULL;
 	child->mode = S_IFLNK | (target->mode & MODE_PERM);

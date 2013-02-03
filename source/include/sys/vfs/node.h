@@ -93,11 +93,12 @@ const char *vfs_node_getPath(inode_t nodeNo);
 /**
  * Retrieves information about the given node
  *
+ * @param pid the process-id
  * @param nodeNo the node-number
  * @param info will be filled
  * @return 0 on success
  */
-int vfs_node_getInfo(inode_t nodeNo,sFileInfo *info);
+int vfs_node_getInfo(pid_t pid,inode_t nodeNo,sFileInfo *info);
 
 /**
  * Changes the mode of the given node

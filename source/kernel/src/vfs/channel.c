@@ -57,6 +57,7 @@ typedef struct {
 
 static void vfs_chan_destroy(sVFSNode *n);
 static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
+static size_t vfs_chan_getSize(pid_t pid,sVFSNode *node);
 static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node);
 static sMessage *vfs_chan_getMsg(sThread *t,sSLList *list,ushort flags);
 
@@ -78,6 +79,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	node->read = (fRead)vfs_devmsgs_read;
 	node->write = (fWrite)vfs_devmsgs_write;
 	node->seek = vfs_chan_seek;
+	node->getSize = vfs_chan_getSize;
 	node->close = vfs_chan_close;
 	node->destroy = vfs_chan_destroy;
 	node->data = NULL;
@@ -121,6 +123,11 @@ static off_t vfs_chan_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posi
 			/* not supported for devices */
 			return -ESPIPE;
 	}
+}
+
+static size_t vfs_chan_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
+	sChannel *chan = (sChannel*)node->data;
+	return chan ? sll_length(&chan->sendList) + sll_length(&chan->recvList) : 0;
 }
 
 static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node) {

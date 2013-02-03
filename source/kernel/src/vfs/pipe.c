@@ -47,6 +47,7 @@ typedef struct {
 	uint8_t data[];
 } sPipeData;
 
+static size_t vfs_pipe_getSize(pid_t pid,sVFSNode *node);
 static void vfs_pipe_destroy(sVFSNode *n);
 static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node);
 static ssize_t vfs_pipe_read(tid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t offset,
@@ -70,6 +71,7 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	node->read = vfs_pipe_read;
 	node->write = vfs_pipe_write;
 	node->seek = NULL;
+	node->getSize = vfs_pipe_getSize;
 	node->destroy = vfs_pipe_destroy;
 	node->close = vfs_pipe_close;
 	node->data = NULL;
@@ -84,6 +86,11 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	node->data = pipe;
 	vfs_node_append(parent,node);
 	return node;
+}
+
+static size_t vfs_pipe_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
+	sPipe *pipe = (sPipe*)node->data;
+	return pipe ? pipe->total : 0;
 }
 
 static void vfs_pipe_destroy(sVFSNode *n) {

@@ -42,6 +42,7 @@ typedef struct {
 
 static void vfs_file_destroy(sVFSNode *n);
 static off_t vfs_file_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
+static size_t vfs_file_getSize(pid_t pid,sVFSNode *node);
 
 sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrite write) {
 	sVFSNode *node;
@@ -53,6 +54,7 @@ sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrit
 	node->read = read;
 	node->write = write;
 	node->seek = vfs_file_seek;
+	node->getSize = vfs_file_getSize;
 	node->close = NULL;
 	node->destroy = vfs_file_destroy;
 	node->data = NULL;
@@ -96,6 +98,11 @@ static off_t vfs_file_seek(A_UNUSED pid_t pid,sVFSNode *node,off_t position,off_
 			return 0;
 		}
 	}
+}
+
+static size_t vfs_file_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
+	sFileContent *con = (sFileContent*)node->data;
+	return con ? con->pos : 0;
 }
 
 ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,

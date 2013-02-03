@@ -119,7 +119,7 @@ void vfs_node_closeDir(sVFSNode *dir,bool locked) {
 		spinlock_release(&parent->lock);
 }
 
-int vfs_node_getInfo(inode_t nodeNo,USER sFileInfo *info) {
+int vfs_node_getInfo(pid_t pid,inode_t nodeNo,USER sFileInfo *info) {
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
 		return -ENOENT;
@@ -137,19 +137,19 @@ int vfs_node_getInfo(inode_t nodeNo,USER sFileInfo *info) {
 	info->uid = n->uid;
 	info->gid = n->gid;
 	info->mode = n->mode;
-	info->size = 0;
+	info->size = n->getSize ? n->getSize(pid,n) : 0;
 	vfs_node_release(n);
 	return 0;
 }
 
 int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
 	int res = 0;
-	const sProc *p = proc_getByPid(pid);
+	const sProc *p = pid == KERNEL_PID ? NULL : proc_getByPid(pid);
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
 		return -ENOENT;
 	/* root can chmod everything; others can only chmod their own files */
-	if(p->euid != n->uid && p->euid != ROOT_UID)
+	if(p && p->euid != n->uid && p->euid != ROOT_UID)
 		res = -EPERM;
 	else
 		n->mode = (n->mode & ~MODE_PERM) | (mode & MODE_PERM);
@@ -159,15 +159,15 @@ int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
 
 int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
 	int res = 0;
-	const sProc *p = proc_getByPid(pid);
+	const sProc *p = pid == KERNEL_PID ? NULL : proc_getByPid(pid);
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
 		return -ENOENT;
 
 	/* root can chown everything; others can only chown their own files */
-	if(p->euid != n->uid && p->euid != ROOT_UID)
+	if(p && p->euid != n->uid && p->euid != ROOT_UID)
 		res = -EPERM;
-	else if(p->euid != ROOT_UID) {
+	else if(p && p->euid != ROOT_UID) {
 		/* users can't change the owner */
 		if(uid != (uid_t)-1 && uid != n->uid && uid != p->euid)
 			res = -EPERM;

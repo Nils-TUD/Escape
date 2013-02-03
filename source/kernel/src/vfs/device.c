@@ -45,6 +45,7 @@ typedef struct {
 	sVFSNode *lastClient;
 } sDevice;
 
+static size_t vfs_device_getSize(pid_t pid,sVFSNode *node);
 static void vfs_device_close(pid_t pid,sFile *file,sVFSNode *node);
 static void vfs_device_destroy(sVFSNode *node);
 static void vfs_device_wakeupClients(sVFSNode *node,uint events,bool locked);
@@ -71,6 +72,7 @@ sVFSNode *vfs_device_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint
 	node->read = NULL;
 	node->write = NULL;
 	node->seek = NULL;
+	node->getSize = vfs_device_getSize;
 	node->close = vfs_device_close;
 	node->destroy = vfs_device_destroy;
 	node->data = NULL;
@@ -87,6 +89,11 @@ sVFSNode *vfs_device_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint
 	node->data = dev;
 	vfs_node_append(parent,node);
 	return node;
+}
+
+static size_t vfs_device_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
+	sDevice *dev = (sDevice*)node->data;
+	return dev ? dev->msgCount : 0;
 }
 
 static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node) {

@@ -5,7 +5,7 @@ create_cd $1/dist $1/cd.iso
 cat >$1/config-52-54-00-12-34-56 <<EOF
 root escape
 exec boot/escape
-load sbin/romdisk /dev/romdisk cd.iso
+load sbin/romdisk /dev/romdisk /system/mbmods/3
 load sbin/rtc /dev/rtc
 load sbin/fs /dev/fs /dev/romdisk iso9660
 load cd.iso

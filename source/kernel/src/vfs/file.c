@@ -33,6 +33,7 @@
 #define VFS_INITIAL_WRITECACHE		128
 
 typedef struct {
+	bool dynamic;
 	/* size of the buffer */
 	size_t size;
 	/* currently used size */
@@ -64,6 +65,7 @@ sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrit
 			vfs_node_destroy(node);
 			return NULL;
 		}
+		con->dynamic = true;
 		con->data = NULL;
 		con->size = 0;
 		con->pos = 0;
@@ -73,10 +75,20 @@ sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrit
 	return node;
 }
 
+sVFSNode *vfs_file_create_for(pid_t pid,sVFSNode *parent,char *name,void *data,size_t len) {
+	sVFSNode *n = vfs_file_create(pid,parent,name,vfs_file_read,vfs_file_write);
+	sFileContent *con = (sFileContent*)n->data;
+	con->dynamic = false;
+	con->data = data;
+	con->pos = len;
+	return n;
+}
+
 static void vfs_file_destroy(sVFSNode *n) {
 	sFileContent *con = (sFileContent*)n->data;
 	if(con) {
-		cache_free(con->data);
+		if(con->dynamic)
+			cache_free(con->data);
 		cache_free(con);
 		n->data = NULL;
 	}
@@ -155,6 +167,10 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *n,USER 
 	}
 	/* need to increase cache-size? */
 	else if(con->size < offset + count) {
+		if(!con->dynamic) {
+			spinlock_release(&n->lock);
+			return -ENOTSUP;
+		}
 		/* ensure that we allocate enough memory */
 		newSize = MAX(offset + count,con->size * 2);
 		if(newSize > MAX_VFS_FILE_SIZE) {

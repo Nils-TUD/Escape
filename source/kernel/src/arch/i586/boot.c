@@ -39,6 +39,7 @@
 #include <sys/task/uenv.h>
 #include <sys/task/smp.h>
 #include <sys/task/terminator.h>
+#include <sys/vfs/file.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
 #include <sys/log.h>
@@ -185,15 +186,34 @@ uintptr_t boot_getModuleRange(const char *name,size_t *size) {
 int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	char loadingStatus[256];
 	size_t i;
-	int child;
+	int child,res;
 	inode_t nodeNo;
-	sModule *mod = mb->modsAddr;
+	sVFSNode *mbmods;
+	sModule *mod;
 
 	/* it's not good to do this twice.. */
 	if(loadedMods)
 		return 0;
 
+	/* create module files */
+	res = vfs_node_resolvePath("/system/mbmods",&nodeNo,NULL,0);
+	if(res < 0)
+		util_panic("Unable to resolve /system/mbmods");
+	mbmods = vfs_node_get(nodeNo);
+	mod = mb->modsAddr;
+	for(i = 0; i < mb->modsCount; i++) {
+		char *modname = (char*)cache_alloc(12);
+		itoa(modname,sizeof(modname),i);
+		sVFSNode *n = vfs_file_create_for(KERNEL_PID,mbmods,modname,(void*)mod->modStart,
+				mod->modEnd - mod->modStart);
+		if(!n || vfs_node_chmod(KERNEL_PID,vfs_node_getNo(n),S_IRUSR | S_IRGRP | S_IROTH) != 0)
+			util_panic("Unable to create/chmod mbmod-file for '%s'",modname);
+		mod++;
+	}
+
+	/* load modules */
 	loadedMods = true;
+	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
 		/* parse args */
 		int argc;
@@ -213,7 +233,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 		boot_taskStarted(loadingStatus);
 
 		if((child = proc_clone(P_BOOT)) == 0) {
-			int res = proc_exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
+			res = proc_exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
 			if(res < 0)
 				util_panic("Unable to exec boot-program %s: %d\n",argv[0],res);
 			/* we don't want to continue ;) */

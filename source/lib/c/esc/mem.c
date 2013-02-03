@@ -24,7 +24,6 @@
 /* the assembler-routine */
 extern ssize_t _chgsize(ssize_t count);
 extern intptr_t _regaddphys(uintptr_t *phys,size_t count,size_t align);
-extern intptr_t _regaddmod(const char *name,size_t *size);
 extern intptr_t _mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,off_t offset);
 extern intptr_t _shmcrt(const char *name,size_t byteCount);
 extern intptr_t _shmjoin(const char *name);
@@ -39,14 +38,6 @@ void *chgsize(ssize_t count) {
 
 void *regaddphys(uintptr_t *phys,size_t count,size_t align) {
 	intptr_t addr = _regaddphys(phys,count,align);
-	/* FIXME workaround until we have TLS */
-	if(addr >= -200 && addr < 0)
-		return NULL;
-	return (void*)addr;
-}
-
-void *regaddmod(const char *name,size_t *size) {
-	intptr_t addr = _regaddmod(name,size);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;

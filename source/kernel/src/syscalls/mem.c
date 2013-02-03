@@ -118,28 +118,6 @@ int sysc_munmap(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_regaddmod(sThread *t,sIntrptStackFrame *stack) {
-	char namecpy[256];
-	const char *name = (const char*)SYSC_ARG1(stack);
-	size_t sizecpy,*size = (size_t*)SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
-	uintptr_t addr,phys;
-
-	if(!paging_isInUserSpace((uintptr_t)size,sizeof(size_t)))
-		SYSC_ERROR(stack,-EFAULT);
-
-	strnzcpy(namecpy,name,sizeof(namecpy));
-	phys = boot_getModuleRange(namecpy,&sizecpy);
-	if(phys == 0)
-		SYSC_ERROR(stack,-ENOENT);
-
-	addr = vmm_addPhys(pid,&phys,sizecpy,1,false);
-	if(addr == 0)
-		SYSC_ERROR(stack,-ENOMEM);
-	*size = sizecpy;
-	SYSC_RET1(stack,addr);
-}
-
 int sysc_regaddphys(sThread *t,sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);

@@ -485,19 +485,6 @@ _regaddphys:
 1:
 	POP		1,0							# return value is in $0
 
-.global _regaddmod
-.type _regaddmod, @function
-_regaddmod:
-	SET		$7,0						# clear error-code
-	TRAP	0,SYSCALL_MAPMOD,0
-	BZ		$7,1f						# no-error?
-	GETA	$3,errno
-	NEG		$1,0,$7
-	STTU	$1,$3,0
-	SET		$0,$7
-1:
-	POP		1,0							# return value is in $0
-
 .global _shmcrt
 .type _shmcrt, @function
 _shmcrt:

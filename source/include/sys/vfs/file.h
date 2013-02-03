@@ -36,6 +36,18 @@
 sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrite write);
 
 /**
+ * Creates a new file for the memory <data>..<data>+<len>.
+ *
+ * @param pid the process-id
+ * @param parent the parent-node
+ * @param name the name
+ * @param data the data to make available with that file
+ * @param len the length of the data in bytes
+ * @return the created node or NULL
+ */
+sVFSNode *vfs_file_create_for(pid_t pid,sVFSNode *parent,char *name,void *data,size_t len);
+
+/**
  * The default-read-handler
  *
  * @param pid the process-id

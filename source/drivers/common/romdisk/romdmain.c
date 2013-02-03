@@ -29,32 +29,38 @@
 static sMsg msg;
 
 int main(int argc,char **argv) {
-	int id;
+	int id,fd;
 	char *addr;
 	size_t size;
+	sFileInfo info;
 
 	if(argc != 3)
 		error("Usage: %s <wait> <module>",argv[0]);
 
+	/* mmap the module */
+	if(stat(argv[2],&info) < 0)
+		error("Unable to stat '%s'",argv[2]);
+	fd = open(argv[2],IO_READ);
+	if(fd < 0)
+		error("Unable to open module '%s'",argv[2]);
+	size = info.size;
+	addr = mmap(NULL,size,size,PROT_READ,MAP_PRIVATE,fd,0);
+	if(!addr)
+		error("Unable to map file '%s'",argv[2]);
+
+	/* create device */
 	id = createdev("/dev/romdisk",DEV_TYPE_BLOCK,DEV_READ);
 	if(id < 0)
 		error("Unable to register device 'romdisk'");
 
-	addr = (char*)regaddmod(argv[2],&size);
-	if(!addr)
-		error("Unable to map module '%s' as romdisk",argv[2]);
-
+	/* data is always available */
 	if(fcntl(id,F_SETDATA,true) < 0)
 		error("fcntl");
-
-	/* we're ready now, so create a dummy-vfs-node that tells fs that the disk is registered */
-	FILE *f = fopen("/system/devices/disk","w");
-	fclose(f);
 
     /* wait for commands */
 	while(1) {
 		msgid_t mid;
-		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[RAND] Unable to get work");
 		else {

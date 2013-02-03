@@ -93,12 +93,14 @@ void vfs_init(void) {
 	 *   |- system
 	 *   |   |-pipe
 	 *   |   |-processes
+	 *   |   |-mbmods
 	 *   |   \-devices
 	 *   \- dev
 	 */
 	root = vfs_dir_create(KERNEL_PID,NULL,(char*)"");
 	sys = vfs_dir_create(KERNEL_PID,root,(char*)"system");
 	vfs_dir_create(KERNEL_PID,sys,(char*)"pipe");
+	vfs_dir_create(KERNEL_PID,sys,(char*)"mbmods");
 	procsNode = vfs_dir_create(KERNEL_PID,sys,(char*)"processes");
 	vfs_dir_create(KERNEL_PID,sys,(char*)"devices");
 	devNode = vfs_dir_create(KERNEL_PID,root,(char*)"dev");
@@ -453,14 +455,14 @@ int vfs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
 	if(res == -EREALPATH)
 		res = vfs_fsmsgs_stat(pid,path,info);
 	else if(res == 0)
-		res = vfs_node_getInfo(nodeNo,info);
+		res = vfs_node_getInfo(pid,nodeNo,info);
 	return res;
 }
 
 int vfs_fstat(pid_t pid,sFile *file,USER sFileInfo *info) {
 	int res;
 	if(file->devNo == VFS_DEV_NO)
-		res = vfs_node_getInfo(file->nodeNo,info);
+		res = vfs_node_getInfo(pid,file->nodeNo,info);
 	else
 		res = vfs_fsmsgs_istat(pid,file->nodeNo,file->devNo,info);
 	return res;

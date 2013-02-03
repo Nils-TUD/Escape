@@ -81,16 +81,6 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
 void *regaddphys(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
 
 /**
- * Maps the multiboot module with given name in the virtual address space and returns the
- * start-address.
- *
- * @param name the module-name
- * @param size will be set to the module size
- * @return the virtual address where it has been mapped or NULL if an error occurred
- */
-void *regaddmod(const char *name,size_t *size) A_CHECKRET;
-
-/**
  * Changes the protection of the region denoted by the given address.
  *
  * @param addr the virtual address

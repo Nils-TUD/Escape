@@ -586,6 +586,18 @@ void vmm_remove(pid_t pid,sVMRegion *vm) {
 	}
 }
 
+static void vmm_sync(sProc *p,sVMRegion *vm) {
+	if((vm->reg->flags & RF_SHAREABLE) && (vm->reg->flags & RF_WRITABLE) && vm->reg->file) {
+		size_t i,pcount = BYTES_2_PAGES(vm->reg->byteCount);
+		for(i = 0; i < pcount; i++) {
+			size_t amount = i < pcount - 1 ? PAGE_SIZE : (vm->reg->byteCount - i * PAGE_SIZE);
+			if(vfs_seek(p->pid,vm->reg->file,vm->reg->offset + i * PAGE_SIZE,SEEK_SET) < 0)
+				return;
+			vfs_writeFile(p->pid,vm->reg->file,(void*)(vm->virt + i * PAGE_SIZE),amount);
+		}
+	}
+}
+
 static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 	size_t i = 0;
 	size_t pcount;
@@ -594,6 +606,8 @@ static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 	assert(reg_remFrom(vm->reg,p));
 	if(reg_refCount(vm->reg) == 0) {
 		uintptr_t virt = vm->virt;
+		/* first, write the content of the memory back to the file, if necessary */
+		vmm_sync(p,vm);
 		/* remove us from cow and unmap the pages (and free frames, if necessary) */
 		for(i = 0; i < pcount; i++) {
 			ssize_t pts;

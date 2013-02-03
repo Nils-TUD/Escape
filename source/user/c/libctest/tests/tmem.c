@@ -30,6 +30,7 @@
 /* forward declarations */
 static void test_mem(void);
 static void test_mmap_file(void);
+static void test_mmap_shared_file(void);
 
 /* our test-module */
 sTestModule tModMem = {
@@ -39,14 +40,14 @@ sTestModule tModMem = {
 
 static void test_mem(void) {
 	test_mmap_file();
+	test_mmap_shared_file();
 }
 
 static void test_mmap_file(void) {
 	void *addr;
 	sElfEHeader *header;
-	sFileInfo info;
 
-	test_caseStart("Testing regadd with a file");
+	test_caseStart("Testing mmap() with a file");
 
 	int fd = open("/bin/libctest",IO_READ);
 	if(fd < 0) {
@@ -64,6 +65,60 @@ static void test_mmap_file(void) {
 	test_assertUInt(header->e_ident[2],'L');
 	test_assertUInt(header->e_ident[3],'F');
 	munmap(addr);
+
+	test_caseSucceeded();
+}
+
+static void test_mmap_shared_file(void) {
+	void *addr;
+	size_t i;
+	FILE *f;
+	int fd;
+
+	test_caseStart("Testing mmap() with a file and write-back");
+
+	/* create file with test content */
+	f = fopen("foobar","w+");
+	if(!f) {
+		test_assertFalse(true);
+		return;
+	}
+	for(i = 0; i < 9000; ++i)
+		fputc('0' + i % 10,f);
+	fclose(f);
+
+	/* open file and mmap it */
+	fd = open("foobar",IO_READ | IO_WRITE);
+	if(fd < 0) {
+		test_assertFalse(true);
+		return;
+	}
+	addr = mmap(NULL,9000,9000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
+	if(!addr) {
+		test_assertFalse(true);
+		return;
+	}
+	/* check content */
+	for(i = 0; i < 9000; ++i) {
+		char c = ((char*)addr)[i];
+		test_assertInt(c,'0' + i % 10);
+	}
+	/* write new content */
+	for(i = 0; i < 9000; ++i)
+		((char*)addr)[i] = '0' + (10 - (i % 10));
+	munmap(addr);
+
+	/* check new content */
+	f = fopen("foobar","r");
+	if(!f) {
+		test_assertFalse(true);
+		return;
+	}
+	for(i = 0; i < 9000; ++i)
+		test_assertInt(fgetc(f),'0' + (10 - (i % 10)));
+	fclose(f);
+
+	test_assertInt(unlink("foobar"),0);
 
 	test_caseSucceeded();
 }

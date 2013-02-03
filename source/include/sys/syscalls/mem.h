@@ -23,14 +23,10 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-/* protection-flags */
-#define PROT_READ			1
-#define PROT_WRITE			2
-
 int sysc_chgsize(sThread *t,sIntrptStackFrame *stack);
-int sysc_regadd(sThread *t,sIntrptStackFrame *stack);
-int sysc_regctrl(sThread *t,sIntrptStackFrame *stack);
-int sysc_regrem(sThread *t,sIntrptStackFrame *stack);
+int sysc_mmap(sThread *t,sIntrptStackFrame *stack);
+int sysc_mprotect(sThread *t,sIntrptStackFrame *stack);
+int sysc_munmap(sThread *t,sIntrptStackFrame *stack);
 int sysc_regaddmod(sThread *t,sIntrptStackFrame *stack);
 int sysc_regaddphys(sThread *t,sIntrptStackFrame *stack);
 int sysc_shmcrt(sThread *t,sIntrptStackFrame *stack);

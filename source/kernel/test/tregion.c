@@ -48,16 +48,12 @@ static void test_region(void) {
 
 static void test_1(void) {
 	sRegion *reg;
-	sBinDesc bindesc;
 	test_caseStart("Testing reg_create() & reg_destroy()");
 
 	checkMemoryBefore(false);
-	reg = reg_create(NULL,123,124,124,PF_DEMANDLOAD,RF_GROWABLE);
+	reg = reg_create(NULL,124,124,123,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
-	test_assertUInt(reg->binary.modifytime,0);
-	test_assertInt(reg->binary.ino,0);
-	test_assertInt(reg->binary.dev,0);
-	test_assertOff(reg->binOffset,0);
+	test_assertPtr(reg->file,NULL);
 	test_assertULInt(reg->flags,RF_GROWABLE);
 	test_assertSize(reg->byteCount,124);
 	test_assertSize(reg_refCount(reg),0);
@@ -66,16 +62,9 @@ static void test_1(void) {
 	checkMemoryAfter(false);
 
 	checkMemoryBefore(false);
-	bindesc.modifytime = 1234;
-	bindesc.ino = 42;
-	bindesc.dev = 4;
-	*bindesc.filename = '\0';
-	reg = reg_create(&bindesc,123,PAGE_SIZE + 1,PAGE_SIZE + 1,0,RF_STACK | RF_GROWS_DOWN);
+	reg = reg_create((void*)0x1234,PAGE_SIZE + 1,PAGE_SIZE + 1,124,0,RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
-	test_assertUInt(reg->binary.modifytime,1234);
-	test_assertInt(reg->binary.ino,42);
-	test_assertInt(reg->binary.dev,4);
-	test_assertOff(reg->binOffset,123);
+	test_assertPtr(reg->file,(void*)0x1234);
 	test_assertULInt(reg->flags,RF_STACK | RF_GROWS_DOWN);
 	test_assertSize(reg->byteCount,PAGE_SIZE + 1);
 	test_assertSize(reg_refCount(reg),0);
@@ -92,7 +81,7 @@ static void test_2(void) {
 	test_caseStart("Testing reg_addTo() & reg_remFrom()");
 
 	checkMemoryBefore(false);
-	reg = reg_create(NULL,123,124,124,PF_DEMANDLOAD,RF_SHAREABLE);
+	reg = reg_create(NULL,124,124,123,PF_DEMANDLOAD,RF_SHAREABLE);
 	test_assertTrue(reg != NULL);
 	test_assertTrue(reg_addTo(reg,(const void*)0x1234));
 	test_assertTrue(reg_addTo(reg,(const void*)0x5678));
@@ -113,7 +102,7 @@ static void test_3(void) {
 	test_caseStart("Testing reg_grow()");
 
 	checkMemoryBefore(false);
-	reg = reg_create(NULL,123,PAGE_SIZE,PAGE_SIZE,PF_DEMANDLOAD,RF_GROWABLE);
+	reg = reg_create(NULL,PAGE_SIZE,PAGE_SIZE,123,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
@@ -132,7 +121,7 @@ static void test_3(void) {
 	checkMemoryAfter(false);
 
 	checkMemoryBefore(false);
-	reg = reg_create(NULL,123,PAGE_SIZE,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
+	reg = reg_create(NULL,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
@@ -157,7 +146,7 @@ static void test_3(void) {
 	checkMemoryAfter(false);
 
 	checkMemoryBefore(false);
-	reg = reg_create(NULL,123,PAGE_SIZE,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
+	reg = reg_create(NULL,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->byteCount,PAGE_SIZE);
 	test_assertULInt(reg->pageFlags[0],PF_DEMANDLOAD);
@@ -186,22 +175,14 @@ static void test_3(void) {
 
 static void test_4(void) {
 	sRegion *reg,*clone;
-	sBinDesc bindesc;
 	test_caseStart("Testing reg_clone()");
 
 	checkMemoryBefore(false);
-	bindesc.modifytime = 444;
-	bindesc.ino = 23;
-	bindesc.dev = 2;
-	*bindesc.filename = '\0';
-	reg = reg_create(&bindesc,123,PAGE_SIZE,0,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
+	reg = reg_create((void*)0x1234,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	clone = reg_clone((const void*)0x1234,reg);
 	test_assertTrue(clone != NULL);
-	test_assertUInt(clone->binary.modifytime,444);
-	test_assertInt(clone->binary.ino,23);
-	test_assertInt(clone->binary.dev,2);
-	test_assertOff(clone->binOffset,123);
+	test_assertPtr(clone->file,(void*)0x1234);
 	test_assertULInt(clone->flags,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
 	test_assertSize(clone->byteCount,PAGE_SIZE);
 	test_assertSize(reg_refCount(reg),0);

@@ -106,6 +106,10 @@ void vfs_init(void) {
 	vfs_info_init();
 }
 
+bool vfs_isSameFile(sFile *f1,sFile *f2) {
+	return f1->devNo == f2->devNo && f1->nodeNo == f2->nodeNo;
+}
+
 int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 	const sProc *p;
 	uint mode;

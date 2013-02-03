@@ -167,7 +167,7 @@ int main(int argc,char **argv) {
 	}
 
 	/* clean up */
-	regrem(videoData);
+	munmap(videoData);
 	relports(CURSOR_PORT_INDEX,2);
 	close(id);
 	return EXIT_SUCCESS;
@@ -210,7 +210,7 @@ static int vid_setMode(int mid,bool clear) {
 
 	/* undo previous mapping */
 	if(videoData)
-		regrem(videoData);
+		munmap(videoData);
 
 	/* map video-memory for our process */
 	videoData = (uint8_t*)regaddphys(&mode->addr,mode->info->width * (mode->info->height + 1) * 2,0);

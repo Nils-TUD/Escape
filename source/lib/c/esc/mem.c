@@ -25,8 +25,7 @@
 extern ssize_t _chgsize(ssize_t count);
 extern intptr_t _regaddphys(uintptr_t *phys,size_t count,size_t align);
 extern intptr_t _regaddmod(const char *name,size_t *size);
-extern intptr_t _regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,
-		size_t loadCount,uint type,uintptr_t virt);
+extern intptr_t _mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,off_t offset);
 extern intptr_t _shmcrt(const char *name,size_t byteCount);
 extern intptr_t _shmjoin(const char *name);
 
@@ -54,13 +53,12 @@ void *regaddmod(const char *name,size_t *size) {
 	return (void*)addr;
 }
 
-void *regadd(sBinDesc *bin,uintptr_t binOffset,size_t byteCount,size_t loadCount,uint type,
-             uintptr_t virt) {
-	intptr_t addr = _regadd(bin,binOffset,byteCount,loadCount,type,virt);
+void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,off_t offset) {
+	intptr_t res = _mmap(addr,length,loadLength,prot,flags,fd,offset);
 	/* FIXME workaround until we have TLS */
-	if(addr >= -200 && addr < 0)
+	if(res >= -200 && res < 0)
 		return NULL;
-	return (void*)addr;
+	return (void*)res;
 }
 
 void *shmcrt(const char *name,size_t byteCount) {

@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
+#include <sys/task/fd.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/sharedmem.h>
@@ -42,76 +43,73 @@ int sysc_chgsize(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,oldEnd);
 }
 
-int sysc_regadd(sThread *t,sIntrptStackFrame *stack) {
-	sBinDesc binCpy;
-	const sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
-	off_t binOffset = SYSC_ARG2(stack);
-	size_t byteCount = SYSC_ARG3(stack);
-	size_t loadCount = SYSC_ARG4(stack);
-	uint type = SYSC_ARG5(stack);
-	uintptr_t start = SYSC_ARG6(stack);
+int sysc_mmap(sThread *t,sIntrptStackFrame *stack) {
+	uintptr_t addr = SYSC_ARG1(stack);
+	size_t byteCount = SYSC_ARG2(stack);
+	size_t loadCount = SYSC_ARG3(stack);
+	int prot = SYSC_ARG4(stack);
+	int flags = SYSC_ARG5(stack);
+	int fd = SYSC_ARG6(stack);
+	off_t binOffset = SYSC_ARG7(stack);
 	pid_t pid = t->proc->pid;
+	sFile *f = NULL;
 	sVMRegion *vm;
 	int res;
 
-	/* copy the bin-desc, for the case that bin is not accessible */
-	if(bin)
-		memcpy(&binCpy,bin,sizeof(sBinDesc));
-
-	/* check type */
-	switch(type) {
-		case REG_TEXT:
-		case REG_DATA:
-		case REG_RODATA:
-			if(start == 0 || start + byteCount < start || start + byteCount > INTERP_TEXT_BEGIN)
-				SYSC_ERROR(stack,-EINVAL);
-			break;
-
-		case REG_SHLIBDATA:
-		case REG_SHLIBTEXT:
-			break;
-		case REG_TLS:
-			if(thread_getTLSRegion(t) != NULL)
-				SYSC_ERROR(stack,-EINVAL);
-			thread_reserveFrames(BYTES_2_PAGES(byteCount));
-			break;
-		default:
-			SYSC_ERROR(stack,-EPERM);
-			break;
+	/* check args */
+	if(loadCount > byteCount)
+		SYSC_ERROR(stack,-EINVAL);
+	if(flags & MAP_FIXED) {
+		if(addr & (PAGE_SIZE - 1))
+			SYSC_ERROR(stack,-EINVAL);
+		if(addr == 0 || addr + byteCount < addr || addr + byteCount > INTERP_TEXT_BEGIN)
+			SYSC_ERROR(stack,-EINVAL);
+	}
+	if(flags & MAP_TLS) {
+		if(thread_getTLSRegion(t) != NULL)
+			SYSC_ERROR(stack,-EINVAL);
+		thread_reserveFrames(BYTES_2_PAGES(byteCount));
+	}
+	if(fd != -1) {
+		/* get file */
+		f = fd_request(fd);
+		if(f == NULL)
+			SYSC_ERROR(stack,-EBADF);
 	}
 
 	/* add region */
-	res = vmm_add(pid,bin ? &binCpy : NULL,binOffset,byteCount,loadCount,type,&vm,start);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
+	res = vmm_map(pid,addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
+	if(f)
+		fd_release(f);
 	/* save tls-region-number */
-	if(type == REG_TLS) {
-		thread_setTLSRegion(t,vm);
+	if(flags & MAP_TLS) {
+		if(res == 0)
+			thread_setTLSRegion(t,vm);
 		thread_discardFrames();
 	}
-	vmm_getRegRange(pid,vm,&start,0,true);
-	SYSC_RET1(stack,start);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+
+	vmm_getRegRange(pid,vm,&addr,0,true);
+	SYSC_RET1(stack,addr);
 }
 
-int sysc_regctrl(sThread *t,sIntrptStackFrame *stack) {
+int sysc_mprotect(sThread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
-	ulong flags = 0;
 	int res;
 
-	if(!(prot & (PROT_WRITE | PROT_READ)))
+	if(!(prot & (PROT_WRITE | PROT_READ | PROT_EXEC)))
 		SYSC_ERROR(stack,-EINVAL);
-	if(prot & PROT_WRITE)
-		flags |= RF_WRITABLE;
 
-	res = vmm_regctrl(pid,(uintptr_t)addr,flags);
+	res = vmm_regctrl(pid,(uintptr_t)addr,prot);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 
-int sysc_regrem(sThread *t,sIntrptStackFrame *stack) {
+int sysc_munmap(sThread *t,sIntrptStackFrame *stack) {
 	void *virt = (void*)SYSC_ARG1(stack);
 	sVMRegion *reg = vmm_getRegion(t->proc,(uintptr_t)virt);
 	if(reg == NULL)

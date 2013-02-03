@@ -147,7 +147,7 @@ int main(void) {
 
 	/* clean up */
 	rb_destroy(rbuf);
-	regrem(kbRegs);
+	munmap(kbRegs);
 	close(id);
 	return EXIT_SUCCESS;
 }

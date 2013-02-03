@@ -129,7 +129,6 @@ void proc_init(void) {
 	/* init region-stuff */
 	p->freeStackAddr = 0;
 	p->dataAddr = 0;
-	p->textAddr = 0;
 	vmfree_init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
 	vmreg_addTree(p->pid,&p->regtree);
 
@@ -920,7 +919,6 @@ void proc_print(sProc *p) {
 	prf_popIndent();
 	vid_printf("\tRegions:\n");
 	vid_printf("\t\tDataRegion: %p\n",p->dataAddr);
-	vid_printf("\t\tTextRegion: %p\n",p->textAddr);
 	vid_printf("\t\tFreeStack: %p\n",p->freeStackAddr);
 	vmm_printShort(p->pid,"\t\t");
 	prf_pushIndent();

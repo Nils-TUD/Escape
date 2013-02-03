@@ -25,8 +25,6 @@
 typedef struct sVMRegion {
 	sRegion *reg;
 	uintptr_t virt;
-	/* file for the binary (valid if >= 0) */
-	sFile *binFile;
 	/* for the treap */
 	uint32_t priority;
 	struct sVMRegion *left;
@@ -72,6 +70,16 @@ sVMRegTree *vmreg_reqTree(void);
  * Releases the linked list of trees again
  */
 void vmreg_relTree(void);
+
+/**
+ * Checks whether <addr>..<addr>+<size> is still available.
+ *
+ * @param tree the tree
+ * @param addr the start-address
+ * @param size the size of the region
+ * @return true if it's still free
+ */
+bool vmreg_available(sVMRegTree *tree,uintptr_t addr,size_t size);
 
 /**
  * Finds a vm-region in the given tree by an address. That is, it walks through the binary tree,

@@ -88,7 +88,7 @@ int main(int argc,char **argv) {
 	}
 
 	/* clean up */
-	regrem(addr);
+	munmap(addr);
 	close(id);
 	return EXIT_SUCCESS;
 }

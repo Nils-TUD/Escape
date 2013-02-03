@@ -20,26 +20,24 @@
 #pragma once
 
 #include <esc/common.h>
-
-/* description of a binary */
-typedef struct {
-	inode_t ino;
-	dev_t dev;
-	time_t modifytime;
-	char filename[24];
-} sBinDesc;
-
-/* the region-types */
-#define REG_TEXT			0	/* text-region of the program; only for dynamic linker */
-#define REG_RODATA			1	/* rodata-region of the program; only for dynamic linker */
-#define REG_DATA			2	/* data-region of the program; only for dynamic linker */
-#define REG_TLS				7	/* TLS of the current thread; only for dynamic linker */
-#define REG_SHLIBTEXT		8	/* shared library text; only for dynamic linker */
-#define REG_SHLIBDATA		9	/* shared library data; only for dynamic linker */
+#include <sys/mem/region.h>
 
 /* protection-flags */
-#define PROT_READ			1
-#define PROT_WRITE			2
+#define PROT_READ			0
+#define PROT_WRITE			RF_WRITABLE
+#define PROT_EXEC			RF_EXECUTABLE
+
+/* mapping flags */
+#define MAP_SHARED			RF_SHAREABLE
+#define MAP_PRIVATE			0
+#define MAP_STACK			RF_STACK
+#define MAP_GROWABLE		RF_GROWABLE
+#define MAP_GROWSDOWN		RF_GROWS_DOWN
+#define MAP_NOFREE			RF_NOFREE
+#define MAP_TLS				RF_TLS
+#define MAP_POPULATE		256UL
+#define MAP_NOMAP			512UL
+#define MAP_FIXED			1024UL
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,19 +54,19 @@ extern "C" {
 void *chgsize(ssize_t count) A_CHECKRET;
 
 /**
- * Adds a region to the current process at the appropriate virtual address (depending on
- * existing regions and the region-type) from given binary.
+ * Creates a new mapping in the virtual address space of the calling process. This might be anonymous
+ * memory or a file, denoted by <fd>.
  *
- * @param bin the binary (may be NULL; means: no demand-loading possible)
- * @param offset the offset of the region in the binary (for demand-loading)
- * @param byteCount the number of bytes of the region
- * @param loadCount number of bytes to load from disk (the rest is zero'ed)
- * @param type the region-type (see REG_*)
- * @param virt the virtual address (required for text, rodata and data, otherwise 0)
- * @return the address of the region on success, NULL on failure
+ * @param addr the desired address (might be ignored)
+ * @param length the number of bytes
+ * @param loadLength the number of bytes that should be loaded from the given file (the rest is zero'd)
+ * @param prot the protection flags (PROT_*)
+ * @param flags the mapping flags (MAP_*)
+ * @param fd optionally, a file descriptor of the file to map
+ * @param offset the offset in the file
+ * @return the virtual address or NULL if the mapping failed
  */
-void *regadd(sBinDesc *bin,uintptr_t offset,size_t byteCount,size_t loadCount,uint type,
-             uintptr_t virt);
+void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,off_t offset);
 
 /**
  * Maps <count> bytes at *<phys> into the virtual user-space and returns the start-address.
@@ -99,16 +97,15 @@ void *regaddmod(const char *name,size_t *size) A_CHECKRET;
  * @param prot the new protection-setting (PROT_*)
  * @return 0 on success
  */
-int regctrl(void *addr,uint prot);
+int mprotect(void *addr,uint prot);
 
 /**
- * Removes the region denoted by the virtual address of the region, <addr>, from the address
- * space of the current process.
+ * Unmaps the region denoted by <addr>
  *
  * @param addr the address of the region
  * @return 0 on success
  */
-int regrem(void *addr);
+int munmap(void *addr);
 
 /**
  * Creates a shared-memory region

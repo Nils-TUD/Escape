@@ -103,7 +103,7 @@ ssize_t shm_create(pid_t pid,const char *name,size_t pageCount) {
 	mem->users = sll_create();
 	if(mem == NULL)
 		goto errMem;
-	res = vmm_add(pid,NULL,0,pageCount * PAGE_SIZE,pageCount * PAGE_SIZE,REG_SHM,&reg,0);
+	res = vmm_map(pid,0,pageCount * PAGE_SIZE,0,PROT_READ | PROT_WRITE,MAP_SHARED,NULL,0,&reg);
 	if(res < 0)
 		goto errUList;
 	if(!shm_addUser(mem,pid,reg))

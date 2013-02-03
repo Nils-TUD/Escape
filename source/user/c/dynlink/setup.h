@@ -39,7 +39,6 @@ struct sSharedLib {
 	uchar isDSO;
 	const char *name;
 	int fd;
-	sBinDesc bin;
 	uintptr_t mainTextAddr;
 	uintptr_t loadAddr;
 	size_t textSize;

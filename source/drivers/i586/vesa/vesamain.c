@@ -246,7 +246,7 @@ int main(void) {
 		}
 	}
 
-	regrem(video);
+	munmap(video);
 	close(id);
 	free(cursorCopy);
 	shmdel("vesa");

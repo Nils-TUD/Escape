@@ -134,7 +134,7 @@ int main(void) {
 	}
 
 	/* clean up */
-	regrem(videoData);
+	munmap(videoData);
 	close(id);
 	return EXIT_SUCCESS;
 }

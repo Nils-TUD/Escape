@@ -87,7 +87,7 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 
 	/* create */
 	for(i = 0; i < TEST_REG_COUNT; i++) {
-		sRegion *r = reg_create(NULL,0,PAGE_SIZE,PAGE_SIZE,0,0);
+		sRegion *r = reg_create(NULL,PAGE_SIZE,0,0,0,0);
 		regs[i] = vmreg_add(&tree,r,addrs[i]);
 	}
 

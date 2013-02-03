@@ -95,10 +95,10 @@ int thread_initArch(sThread *t) {
 
 void thread_addInitialStack(sThread *t) {
 	assert(t->tid == INIT_TID);
-	assert(vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP,t->stackRegions + 0,0) == 0);
-	assert(vmm_add(t->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,t->stackRegions + 1,0) == 0);
+	assert(vmm_map(t->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+			MAP_STACK | MAP_GROWABLE,NULL,0,t->stackRegions + 0) == 0);
+	assert(vmm_map(t->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,t->stackRegions + 1) == 0);
 }
 
 size_t thread_getThreadFrmCnt(void) {
@@ -111,15 +111,15 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 		return -ENOMEM;
 	if(!cloneProc) {
 		/* add a new stack-region for the register-stack */
-		int res = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACKUP,dst->stackRegions + 0,0);
+		int res = vmm_map(dst->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+				MAP_STACK | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
 			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
 			return res;
 		}
 		/* add a new stack-region for the software-stack */
-		res = vmm_add(dst->proc->pid,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
-				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK,dst->stackRegions + 1,0);
+		res = vmm_map(dst->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 1);
 		if(res < 0) {
 			/* remove register-stack */
 			vmm_remove(dst->proc->pid,dst->stackRegions[0]);

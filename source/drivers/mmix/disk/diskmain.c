@@ -191,8 +191,8 @@ int main(int argc,char **argv) {
 	}
 
 	/* clean up */
-	regrem(diskBuf);
-	regrem(diskRegs);
+	munmap(diskBuf);
+	munmap(diskRegs);
 	close(drvId);
 	return EXIT_SUCCESS;
 }

@@ -433,11 +433,11 @@ _chgsize:
 1:
 	POP		1,0							# return value is in $0
 
-.global _regadd
-.type _regadd, @function
-_regadd:
+.global _mmap
+.type _mmap, @function
+_mmap:
 	SET		$7,0						# clear error-code
-	TRAP	0,SYSCALL_ADDREGION,0
+	TRAP	0,SYSCALL_MMAP,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
 	NEG		$1,0,$7
@@ -446,11 +446,11 @@ _regadd:
 1:
 	POP		1,0							# return value is in $0
 
-.global regctrl
-.type regctrl, @function
-regctrl:
+.global mprotect
+.type mprotect, @function
+mprotect:
 	SET		$7,0						# clear error-code
-	TRAP	0,SYSCALL_SETREGPROT,0
+	TRAP	0,SYSCALL_MPROTECT,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
 	NEG		$1,0,$7
@@ -459,11 +459,11 @@ regctrl:
 1:
 	POP		1,0							# return value is in $0
 
-.global regrem
-.type regrem, @function
-regrem:
+.global munmap
+.type munmap, @function
+munmap:
 	SET		$7,0						# clear error-code
-	TRAP	0,SYSCALL_REMREGION,0
+	TRAP	0,SYSCALL_MUNMAP,0
 	BZ		$7,1f						# no-error?
 	GETA	$3,errno
 	NEG		$1,0,$7

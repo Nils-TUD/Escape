@@ -48,6 +48,8 @@ _start:
 sigRetFunc:
 	jmp		sigRetFunc
 
+.section .data
+
 args:
 	.long	progName,0
 

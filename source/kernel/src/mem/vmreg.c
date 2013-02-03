@@ -33,8 +33,6 @@
  * list of this vm-regions as well.
  */
 
-#define ROUNDUP(bytes)		ROUND_PAGE_UP(((bytes)))
-
 static void vmreg_doRemove(sVMRegion **p,sVMRegion *reg);
 static void vmreg_doPrint(const sVMRegion *n,int layer);
 
@@ -86,10 +84,20 @@ void vmreg_relTree(void) {
 	mutex_release(&regMutex);
 }
 
+bool vmreg_available(sVMRegTree *tree,uintptr_t addr,size_t size) {
+	sVMRegion *vm;
+	for(vm = tree->begin; vm != NULL; vm = vm->next) {
+		uintptr_t end = vm->virt + ROUND_PAGE_UP(vm->reg->byteCount);
+		if(OVERLAPS(addr,addr + size,vm->virt,end))
+			return false;
+	}
+	return true;
+}
+
 sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
 	sVMRegion *vm;
 	for(vm = tree->root; vm != NULL; ) {
-		if(addr >= vm->virt && addr < vm->virt + ROUNDUP(vm->reg->byteCount))
+		if(addr >= vm->virt && addr < vm->virt + ROUND_PAGE_UP(vm->reg->byteCount))
 			return vm;
 		if(addr < vm->virt)
 			vm = vm->left;
@@ -122,12 +130,14 @@ sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr) {
 	*q = cache_alloc(sizeof(sVMRegion));
 	if(!*q)
 		return NULL;
+	/* we have a reference to that file now. we'll release it on unmap */
+	if(reg->file)
+		vfs_incRefs(reg->file);
 	/* fibonacci hashing to spread the priorities very even in the 32-bit room */
 	(*q)->priority = tree->priority;
 	tree->priority += 0x9e3779b9;	/* floor(2^32 / phi), with phi = golden ratio */
 	(*q)->reg = reg;
 	(*q)->virt = addr;
-	(*q)->binFile = NULL;
 	/* At this point we want to split the binary search tree p into two parts based on the
 	 * given key, forming the left and right subtrees of the new node q. The effect will be
 	 * as if key had been inserted before all of p’s nodes. */
@@ -184,10 +194,8 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
 		}
 	}
 	/* close file */
-	if(reg->binFile != NULL) {
-		vfs_closeFile(tree->pid,reg->binFile);
-		reg->binFile = NULL;
-	}
+	if(reg->reg->file)
+		vfs_closeFile(tree->pid,reg->reg->file);
 	cache_free(reg);
 }
 

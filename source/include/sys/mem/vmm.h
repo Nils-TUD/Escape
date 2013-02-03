@@ -38,18 +38,20 @@
 #define RNO_RODATA			1
 #define RNO_DATA			2
 
-#define REG_TEXT			0
-#define REG_RODATA			1
-#define REG_DATA			2
-#define REG_STACK			3
-#define REG_STACKUP			4
-#define REG_SHM				5
-#define REG_DEVICE			6
-#define REG_TLS				7
-#define REG_SHLIBTEXT		8
-#define REG_SHLIBDATA		9
-#define REG_DLDATA			10
-#define REG_PHYS			11
+#define PROT_READ			0
+#define PROT_WRITE			RF_WRITABLE
+#define PROT_EXEC			RF_EXECUTABLE
+
+#define MAP_SHARED			RF_SHAREABLE
+#define MAP_PRIVATE			0
+#define MAP_STACK			RF_STACK
+#define MAP_GROWABLE		RF_GROWABLE
+#define MAP_GROWSDOWN		RF_GROWS_DOWN
+#define MAP_NOFREE			RF_NOFREE
+#define MAP_TLS				RF_TLS
+#define MAP_POPULATE		256UL
+#define MAP_NOMAP			512UL
+#define MAP_FIXED			1024UL
 
 /**
  * Initializes the virtual memory management
@@ -71,28 +73,21 @@ void vmm_init(void);
 uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool writable);
 
 /**
- * Adds a region of given type to the given process. Note that you can't add regions in arbitrary
- * order. Text, rodata, bss and data are put in the VM in this order and can therefore only be
- * created in this order (but you can leave out regions; e.g. you can add text, bss and data).
- * Stack, shared-memory and physical memory can be added in arbitrary order.
- *
- * If the region comes from a binary (text, data, ...), you have to provide the binary because
- * it will be loaded on demand.
- *
- * Note: Please use vmm_addPhys() when adding a region that maps physical memory!
+ * Maps a region to the given process.
  *
  * @param pid the process-id
- * @param bin the binary (may be NULL; in this case no demand-loading is supported)
- * @param binOffset the offset in the binary from where to load the region (ignored if bin is NULL)
- * @param bCount the number of bytes
- * @param lCount number of bytes to load from disk (the rest is zero'ed)
- * @param type the type of region
+ * @param addr the virtual address of the region (ignored if MAP_FIXED is not set in <flags>)
+ * @param length the number of bytes
+ * @param loadCount the number of bytes to demand-load
+ * @param prot the protection flags (PROT_*)
+ * @param flags the map flags (MAP_*)
+ * @param f the file to map (may be NULL)
+ * @param offset the offset in the binary from where to load the region (ignored if bin is NULL)
  * @param vmreg will be set to the created region
- * @param virt the virtual address of the region (required for text, rodata and data)
  * @return 0 on success or a negative error-code
  */
-int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type,
-		sVMRegion **vmreg,uintptr_t virt);
+int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
+            off_t offset,sVMRegion **vmreg);
 
 /**
  * Changes the protection-settings of the region @ <addr>. This is not possible for TLS-, stack-

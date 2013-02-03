@@ -34,21 +34,14 @@
 #define RF_EXECUTABLE		8UL
 #define RF_STACK			16UL
 #define RF_NOFREE			32UL	/* means that the memory should not be free'd on release */
-#define RF_TLS				64UL	/* needed to distinguish TLS-regions from others on delete */
+#define RF_TLS				64UL	/* needed to distinguish TLS-regions from others */
 #define RF_GROWS_DOWN		128UL
 
 typedef struct {
-	inode_t ino;
-	dev_t dev;
-	time_t modifytime;
-	char filename[24];
-} sBinDesc;
-
-typedef struct {
 	ulong flags;			/* flags that specify the attributes of this region */
-	const sBinDesc binary;	/* the source-binary (for demand-paging) */
-	const off_t binOffset;	/* offset in the binary */
-	const size_t loadCount;	/* number of bytes to load from disk (the rest is zero'ed) */
+	sFile *file;			/* NULL if the region is not backed by a file */
+	off_t offset;			/* offset in the binary */
+	size_t loadCount;		/* number of bytes to load from file */
 	size_t byteCount;		/* number of bytes */
 	uint64_t timestamp;		/* timestamp of last usage (for swapping) */
 	size_t pfSize;			/* size of pageFlags */
@@ -59,19 +52,18 @@ typedef struct {
 } sRegion;
 
 /**
- * Creates a new region with given attributes. Note that the path in <bin> will be copied
- * to the heap. Initially the process-collection that use the region will be empty!
+ * Creates a new region with given attributes. Initially the process-collection that use the
+ * region will be empty!
  *
- * @param bin the binary (may be NULL)
- * @param binOffset the offset in the binary (ignored if bin is NULL)
+ * @param file the file
  * @param bCount the number of bytes
- * @param lCount number of bytes to load from disk (the rest is zero'ed)
+ * @param lCount the number of bytes to load from file
+ * @param offset the offset in the binary (ignored if bin is NULL)
  * @param pgFlags the flags of the pages (PF_*)
  * @param flags the flags of the region (RF_*)
  * @return the region or NULL if failed
  */
-sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,
-		ulong pgFlags,ulong flags);
+sRegion *reg_create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags);
 
 /**
  * Destroys the given region (regardless of the number of users!)

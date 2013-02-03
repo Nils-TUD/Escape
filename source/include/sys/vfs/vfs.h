@@ -130,6 +130,15 @@ struct sVFSNode {
 void vfs_init(void);
 
 /**
+ * Checks whether they point to the same file
+ *
+ * @param f1 the first file
+ * @param f2 the second file
+ * @return true if device and node number are the same
+ */
+bool vfs_isSameFile(sFile *f1,sFile *f2);
+
+/**
  * Checks whether the process with given id has permission to use <n> with the given flags
  *
  * @param pid the process-id

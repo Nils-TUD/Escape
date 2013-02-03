@@ -38,8 +38,8 @@ $syscalls = array(
 
 	# memory
 	array("_chgsize","SYSCALL_CHGSIZE"),
-	array("_regadd","SYSCALL_ADDREGION"),
-	array("regctrl","SYSCALL_SETREGPROT"),
+	array("_mmap","SYSCALL_MMAP"),
+	array("mprotect","SYSCALL_MPROTECT"),
 	array("_regaddphys","SYSCALL_MAPPHYS"),
 	array("_regaddmod","SYSCALL_MAPMOD"),
 	array("_shmcrt","SYSCALL_CREATESHMEM"),

@@ -23,6 +23,7 @@
 #include <sys/mem/region.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/sllnodes.h>
+#include <sys/vfs/vfs.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>
@@ -48,10 +49,8 @@
  * in the page-table-entries. That is, for 3/4 flags and the swap-block, if the page is not in
  * memory. */
 
-sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,
-		ulong pgFlags,ulong flags) {
+sRegion *reg_create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags) {
 	size_t i,pageCount;
-	sBinDesc *rbin;
 	sRegion *reg;
 	/* a region can never be shareable AND growable. this way, we don't need to lock every region-
 	 * access. because either its growable, then there is only one process that uses the region,
@@ -64,22 +63,16 @@ sRegion *reg_create(const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCo
 	if(reg == NULL)
 		return NULL;
 	sll_init(&reg->procs,slln_allocNode,slln_freeNode);
-	rbin = (sBinDesc*)&reg->binary;
-	if(bin != NULL && bin->ino) {
-		rbin->ino = bin->ino;
-		rbin->dev = bin->dev;
-		rbin->modifytime = bin->modifytime;
-		memcpy(rbin->filename,bin->filename,sizeof(rbin->filename));
-		*(off_t*)&reg->binOffset = binOffset;
+	if(file) {
+		reg->offset = offset;
+		reg->file = file;
+		reg->loadCount = lCount;
 	}
 	else {
-		rbin->ino = 0;
-		rbin->dev = 0;
-		rbin->modifytime = 0;
-		rbin->filename[0] = '\0';
-		*(off_t*)&reg->binOffset = 0;
+		reg->file = NULL;
+		reg->offset = 0;
+		reg->loadCount = 0;
 	}
-	*(size_t*)&reg->loadCount = lCount;
 	reg->flags = flags;
 	reg->byteCount = bCount;
 	reg->timestamp = 0;
@@ -198,7 +191,7 @@ ssize_t reg_grow(sRegion *reg,ssize_t amount) {
 sRegion *reg_clone(const void *p,const sRegion *reg) {
 	sRegion *clone;
 	assert(!(reg->flags & RF_SHAREABLE));
-	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,-1,reg->flags);
+	clone = reg_create(reg->file,reg->byteCount,reg->loadCount,reg->offset,-1,reg->flags);
 	if(clone) {
 		/* increment references to swap-blocks */
 		size_t i,count = BYTES_2_PAGES(reg->byteCount);
@@ -220,10 +213,10 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt) {
 	prf_sprintf(buf,"\tflags: ");
 	reg_sprintfFlags(buf,reg);
 	prf_sprintf(buf,"\n");
-	if(reg->binary.ino) {
-		prf_sprintf(buf,"\tbinary: ino=%d dev=%d modified=%u offset=%#Ox filename=%s\n",
-				reg->binary.ino,reg->binary.dev,reg->binary.modifytime,reg->binOffset,
-				reg->binary.filename);
+	if(reg->file) {
+		prf_pushIndent();
+		vfs_printFile(reg->file);
+		prf_popIndent();
 	}
 	prf_sprintf(buf,"\tTimestamp: %d\n",reg->timestamp);
 	prf_sprintf(buf,"\tProcesses: ");

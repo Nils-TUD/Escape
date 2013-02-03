@@ -115,8 +115,7 @@ typedef struct {
 	ulong swapped;
 	/* for finding free positions more quickly: the start for the stacks */
 	uintptr_t freeStackAddr;
-	/* address of the text- and data-region */
-	uintptr_t textAddr;
+	/* address of the data-region; required for chgsize */
 	uintptr_t dataAddr;
 	/* area-map for the free area */
 	sVMFreeMap freemap;

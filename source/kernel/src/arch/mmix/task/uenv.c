@@ -182,33 +182,26 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 		/* TODO well, its not really nice that we have to read this stuff again for every started
 		 * thread :/ */
 		/* every process has a text-region from his binary */
-		sVMRegion *textreg = vmm_getRegion(t->proc,t->proc->textAddr);
+		sVMRegion *textreg = vmm_getRegion(t->proc,t->proc->entryPoint);
+		assert(textreg->reg->file != NULL);
 		ssize_t res;
 		sElfEHeader ehd;
-		if(textreg->binFile == NULL) {
-			res = vfs_openFile(t->proc->pid,VFS_READ,textreg->reg->binary.ino,
-					textreg->reg->binary.dev,&textreg->binFile);
-			if(res < 0) {
-				vid_printf("[LOADER] Unable to open path '%s': %s\n",t->proc->command,strerror(-res));
-				return false;
-			}
-		}
 
 		/* seek to header */
-		if(vfs_seek(t->proc->pid,textreg->binFile,0,SEEK_SET) < 0) {
+		if(vfs_seek(t->proc->pid,textreg->reg->file,0,SEEK_SET) < 0) {
 			vid_printf("[LOADER] Unable to seek to header of '%s'\n",t->proc->command);
 			return false;
 		}
 
 		/* read the header */
-		if((res = vfs_readFile(t->proc->pid,textreg->binFile,&ehd,sizeof(sElfEHeader))) !=
+		if((res = vfs_readFile(t->proc->pid,textreg->reg->file,&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
 			vid_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 					t->proc->command,strerror(-res));
 			return false;
 		}
 
-		res = elf_finishFromFile(textreg->binFile,&ehd,&sinfo);
+		res = elf_finishFromFile(textreg->reg->file,&ehd,&sinfo);
 		if(res < 0)
 			return false;
 	}

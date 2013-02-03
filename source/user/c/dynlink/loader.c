@@ -33,8 +33,7 @@
 
 static void load_library(sSharedLib *dst);
 static sSharedLib *load_addLib(sSharedLib *lib);
-static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
-		bool isLib);
+static uintptr_t load_addSeg(int binFd,Elf32_Phdr *pheader,size_t loadSegNo,bool isLib);
 static void load_read(int binFd,uint offset,void *buffer,size_t count);
 
 void load_doLoad(int binFd,sSharedLib *dst) {
@@ -48,11 +47,6 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 	/* build bindesc */
 	if(fstat(binFd,&info) < 0)
 		load_error("stat() for binary failed");
-	dst->bin.ino = info.inodeNo;
-	dst->bin.dev = info.device;
-	dst->bin.modifytime = info.modifytime;
-	memcpy(dst->bin.filename,LIB_PATH,SSTRLEN(LIB_PATH));
-	strncpy(dst->bin.filename + SSTRLEN(LIB_PATH),dst->name,sizeof(dst->bin.filename) - SSTRLEN(LIB_PATH));
 	dst->fd = binFd;
 	dst->loadAddr = 0;
 
@@ -144,7 +138,7 @@ uintptr_t load_addSegments(void) {
 			/* read pheader */
 			load_read(l->fd,(uint)datPtr,&pheader,sizeof(Elf32_Phdr));
 			if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
-				uintptr_t addr = load_addSeg(l->fd,&l->bin,&pheader,loadSeg,l->isDSO);
+				uintptr_t addr = load_addSeg(l->fd,&pheader,loadSeg,l->isDSO);
 				if(addr == 0)
 					load_error("Unable to add segment %d (type %d)",j,pheader.p_type);
 				/* store load-address of text */
@@ -201,44 +195,53 @@ static sSharedLib *load_addLib(sSharedLib *lib) {
 	return NULL;
 }
 
-static uintptr_t load_addSeg(int binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,size_t loadSegNo,
-		bool isLib) {
-	uint stype;
+static uintptr_t load_addSeg(int binFd,Elf32_Phdr *pheader,size_t loadSegNo,bool isLib) {
+	int prot = 0,flags = isLib ? 0 : MAP_FIXED;
+	int fd = binFd;
 	void *addr;
-	/* determine type */
-	if(loadSegNo == 0) {
-		/* dynamic linker has a special entrypoint */
-		if(!isLib && (pheader->p_flags != (PF_X | PF_R)))
-			return 0;
-		stype = isLib ? REG_SHLIBTEXT : REG_TEXT;
-	}
-	else if(pheader->p_type == PT_TLS) {
-		/* TODO not supported atm */
-		if(isLib)
-			return 0;
-		stype = REG_TLS;
-		/* we need the thread-control-block at the end */
-		pheader->p_memsz += sizeof(void*);
-	}
-	else if(pheader->p_flags == PF_R)
-		stype = REG_RODATA;
-	else if(pheader->p_flags == (PF_R | PF_W))
-		stype = isLib ? REG_SHLIBDATA : REG_DATA;
-	else
-		return 0;
+	size_t memsz = pheader->p_memsz;
 
 	/* check if the sizes are valid */
 	if(pheader->p_filesz > pheader->p_memsz)
 		return 0;
 
-	/* tls needs no binary */
-	if(stype == REG_TLS)
-		bindesc = NULL;
-	/* add the region */
-	uintptr_t virt = stype == REG_TEXT || stype == REG_RODATA || stype == REG_DATA ? pheader->p_vaddr : 0;
-	if((addr = regadd(bindesc,pheader->p_offset,pheader->p_memsz,pheader->p_filesz,stype,virt)) == NULL)
+	/* determine protection flags */
+	if(pheader->p_flags & PF_R)
+		prot |= PROT_READ;
+	if(pheader->p_flags & PF_W)
+		prot |= PROT_WRITE;
+	if(pheader->p_flags & PF_X)
+		prot |= PROT_EXEC;
+
+	/* determine type */
+	if(loadSegNo == 0) {
+		if(!isLib && (pheader->p_flags != (PF_X | PF_R)))
+			return 0;
+		/* text regions are shared */
+		flags |= MAP_SHARED;
+	}
+	else if(pheader->p_type == PT_TLS) {
+		/* TODO not supported atm */
+		if(isLib)
+			return 0;
+		/* we need the thread-control-block at the end */
+		memsz += sizeof(void*);
+		/* tls needs no file */
+		fd = -1;
+		flags &= ~MAP_FIXED;
+		flags |= MAP_TLS;
+	}
+	else if(pheader->p_flags == (PF_R | PF_W))
+		flags |= MAP_GROWABLE;
+	else
 		return 0;
-	if(stype == REG_TLS) {
+
+	/* add the region */
+	addr = mmap((void*)pheader->p_vaddr,pheader->p_memsz,pheader->p_filesz,
+			prot,flags,fd,pheader->p_offset);
+	if(addr == NULL)
+		return 0;
+	if(flags & MAP_TLS) {
 		/* read tdata and clear tbss */
 		load_read(binFd,(uint)pheader->p_offset,addr,pheader->p_filesz);
 		memclear((void*)((uintptr_t)addr + pheader->p_filesz),pheader->p_memsz - pheader->p_filesz);

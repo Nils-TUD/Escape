@@ -70,8 +70,8 @@ static void test_2(void) {
 	 * whether all memory is freed correctly */
 	checkMemoryBefore(true);
 	thread_reserveFrames(2);
-	test_assertTrue(vmm_add(pid1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM,&reg1,0) == 0);
-	test_assertTrue(vmm_add(pid2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM,&reg2,0) == 0);
+	test_assertTrue(vmm_map(pid1,0,PAGE_SIZE,PAGE_SIZE,PROT_READ,MAP_SHARED,NULL,0,&reg1) == 0);
+	test_assertTrue(vmm_map(pid2,0,PAGE_SIZE,PAGE_SIZE,PROT_READ,MAP_SHARED,NULL,0,&reg2) == 0);
 	thread_discardFrames();
 	test_assertTrue(shm_create(pid,"myshm",3) >= 0);
 	test_assertTrue(shm_join(pid1,"myshm") >= 0);
@@ -85,8 +85,8 @@ static void test_2(void) {
 
 	checkMemoryBefore(true);
 	thread_reserveFrames(2);
-	test_assertTrue(vmm_add(pid1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM,&reg1,0) == 0);
-	test_assertTrue(vmm_add(pid2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM,&reg2,0) == 0);
+	test_assertTrue(vmm_map(pid1,0,PAGE_SIZE,PAGE_SIZE,PROT_READ,MAP_SHARED,NULL,0,&reg1) == 0);
+	test_assertTrue(vmm_map(pid2,0,PAGE_SIZE,PAGE_SIZE,PROT_READ,MAP_SHARED,NULL,0,&reg2) == 0);
 	thread_discardFrames();
 	test_assertTrue(shm_create(pid,"myshm",3) >= 0);
 	test_assertTrue(shm_join(pid1,"myshm") >= 0);
@@ -98,8 +98,8 @@ static void test_2(void) {
 
 	checkMemoryBefore(true);
 	thread_reserveFrames(2);
-	test_assertTrue(vmm_add(pid1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM,&reg1,0) == 0);
-	test_assertTrue(vmm_add(pid2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM,&reg2,0) == 0);
+	test_assertTrue(vmm_map(pid1,0,PAGE_SIZE,PAGE_SIZE,PROT_READ,MAP_SHARED,NULL,0,&reg1) == 0);
+	test_assertTrue(vmm_map(pid2,0,PAGE_SIZE,PAGE_SIZE,PROT_READ,MAP_SHARED,NULL,0,&reg2) == 0);
 	thread_discardFrames();
 	test_assertTrue(shm_create(pid,"myshm",6) >= 0);
 	test_assertTrue(shm_join(pid1,"myshm") >= 0);

@@ -37,8 +37,7 @@
 #define ELF_TYPE_INTERP		1
 
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info);
-static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
-		size_t loadSegNo,uint type);
+static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,uint type);
 
 int elf_loadFromFile(const char *path,sStartupInfo *info) {
 	return elf_doLoadFromFile(path,ELF_TYPE_PROG,info);
@@ -99,7 +98,6 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	sElfEHeader eheader;
 	sElfPHeader pheader;
 	sFileInfo finfo;
-	sBinDesc bindesc;
 	ssize_t readRes;
 	int res,fd;
 	char *interpName;
@@ -115,12 +113,6 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 		vid_printf("[LOADER] Unable to stat '%s': %s\n",path,strerror(-res));
 		goto failed;
 	}
-	bindesc.ino = finfo.inodeNo;
-	bindesc.dev = finfo.device;
-	bindesc.modifytime = finfo.modifytime;
-	strncpy(bindesc.filename,path,sizeof(bindesc.filename));
-	bindesc.filename[sizeof(bindesc.filename) - 1] = '\0';
-
 	/* set suid and sgid */
 	if(finfo.mode & S_ISUID)
 		p->suid = finfo.uid;
@@ -191,11 +183,9 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 		}
 
 		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
-			int stype;
-			stype = elf_addSegment(&bindesc,&pheader,loadSeg,type);
-			if(stype < 0)
+			if(elf_addSegment(file,&pheader,loadSeg,type) < 0)
 				goto failed;
-			if(stype == REG_TLS) {
+			if(pheader.p_type == PT_TLS) {
 				uintptr_t tlsStart;
 				if(thread_getTLSRange(t,&tlsStart,NULL)) {
 					/* read tdata */
@@ -237,12 +227,20 @@ failed:
 	return -ENOEXEC;
 }
 
-static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
-		size_t loadSegNo,uint type) {
+static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,uint type) {
 	sThread *t = thread_getRunning();
-	int stype,res;
+	int res,prot = 0,flags = type == ELF_TYPE_INTERP ? 0 : MAP_FIXED;
 	sVMRegion *vm;
 	size_t memsz = pheader->p_memsz;
+
+	/* determine protection flags */
+	if(pheader->p_flags & PF_R)
+		prot |= PROT_READ;
+	if(pheader->p_flags & PF_W)
+		prot |= PROT_WRITE;
+	if(pheader->p_flags & PF_X)
+		prot |= PROT_EXEC;
+
 	/* determine type */
 	if(loadSegNo == 0) {
 		/* dynamic linker has a special entrypoint */
@@ -250,11 +248,8 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 			vid_printf("[LOADER] Dynamic linker text does not start at %p\n",INTERP_TEXT_BEGIN);
 			return -ENOEXEC;
 		}
-		if(pheader->p_flags != (PF_X | PF_R)) {
-			vid_printf("[LOADER] Text flags are invalid (%x)\n",pheader->p_flags);
-			return -ENOEXEC;
-		}
-		stype = type == ELF_TYPE_INTERP ? REG_SHLIBTEXT : REG_TEXT;
+		/* text regions are shared */
+		flags |= MAP_SHARED;
 	}
 	else if(pheader->p_type == PT_TLS) {
 		/* not allowed for the dynamic linker */
@@ -262,20 +257,15 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 			vid_printf("[LOADER] TLS segment not allowed for dynamic linker\n");
 			return -ENOEXEC;
 		}
-		stype = REG_TLS;
 		/* we need the thread-control-block at the end */
 		memsz += sizeof(void*);
-	}
-	else if(pheader->p_flags == PF_R) {
-		/* not allowed for the dynamic linker */
-		if(type == ELF_TYPE_INTERP) {
-			vid_printf("[LOADER] Readonly-data segment not allowed for dynamic linker\n");
-			return -ENOEXEC;
-		}
-		stype = REG_RODATA;
+		/* tls needs no binary */
+		file = NULL;
+		flags &= ~MAP_FIXED;
+		flags |= MAP_TLS;
 	}
 	else if(pheader->p_flags == (PF_R | PF_W))
-		stype = type == ELF_TYPE_INTERP ? REG_DLDATA : REG_DATA;
+		flags |= MAP_GROWABLE;
 	else {
 		vid_printf("[LOADER] Unrecognized load segment (no=%d, type=%x, flags=%x)\n",
 				loadSegNo,pheader->p_type,pheader->p_flags);
@@ -289,23 +279,19 @@ static int elf_addSegment(const sBinDesc *bindesc,const sElfPHeader *pheader,
 		return -ENOEXEC;
 	}
 
-	/* tls needs no binary */
-	if(stype == REG_TLS)
-		bindesc = NULL;
-
 	/* regions without binary will not be demand-loaded */
-	if(bindesc == NULL)
+	if(file == NULL)
 		thread_reserveFrames(BYTES_2_PAGES(memsz));
 
 	/* add the region */
-	uintptr_t virt = stype == REG_TEXT || stype == REG_RODATA || stype == REG_DATA ? pheader->p_vaddr : 0;
-	if((res = vmm_add(t->proc->pid,bindesc,pheader->p_offset,memsz,pheader->p_filesz,stype,&vm,virt)) < 0) {
+	if((res = vmm_map(t->proc->pid,pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
+			pheader->p_offset,&vm)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
 		thread_discardFrames();
 		return res;
 	}
-	if(stype == REG_TLS)
+	if(pheader->p_type == PT_TLS)
 		thread_setTLSRegion(t,vm);
 	thread_discardFrames();
-	return stype;
+	return 0;
 }

@@ -227,7 +227,7 @@ int main(void) {
 		}
 	}
 
-	regrem(video);
+	munmap(video);
 	close(id);
 	return EXIT_SUCCESS;
 }
@@ -237,7 +237,7 @@ static int vesa_setMode(int mode) {
 	if(minfo) {
 		uintptr_t phys;
 		if(video)
-			regrem(video);
+			munmap(video);
 		phys = minfo->physBasePtr;
 		video = regaddphys(&phys,minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8),0);
 		if(video == NULL) {

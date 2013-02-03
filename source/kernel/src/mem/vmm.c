@@ -49,7 +49,7 @@ static sRegion *vmm_getLRURegion(void);
 static ssize_t vmm_getPgIdxForSwap(const sRegion *reg);
 static void vmm_setSwappedOut(sRegion *reg,size_t index);
 static void vmm_setSwappedIn(sRegion *reg,size_t index,frameno_t frameNo);
-static uintptr_t vmm_getBinary(const sBinDesc *bin,pid_t *binOwner);
+static uintptr_t vmm_getBinary(sFile *file,pid_t *binOwner);
 static bool vmm_doPagefault(uintptr_t addr,sProc *p,sVMRegion *vm,bool write);
 static void vmm_doRemove(sProc *p,sVMRegion *vm);
 static size_t vmm_doGrow(sProc *p,sVMRegion *vm,ssize_t amount);
@@ -61,7 +61,6 @@ static uintptr_t vmm_getFirstUsableAddr(sProc *p);
 static sProc *vmm_reqProc(pid_t pid);
 static sProc *vmm_tryReqProc(pid_t pid);
 static void vmm_relProc(sProc *p);
-static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,uintptr_t *virt);
 static const char *vmm_getRegName(sProc *p,const sVMRegion *vm);
 
 static uint8_t buffer[PAGE_SIZE];
@@ -103,7 +102,8 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 	}
 
 	/* create region */
-	res = vmm_add(pid,NULL,0,bCount,bCount,*phys ? REG_DEVICE : REG_PHYS,&vm,0);
+	res = vmm_map(pid,0,bCount,0,PROT_READ | (writable ? PROT_WRITE : 0),
+			*phys ? (MAP_NOMAP | MAP_NOFREE) : MAP_NOMAP,NULL,0,&vm);
 	if(res < 0) {
 		if(!*phys)
 			pmem_freeContiguous(frames[0],pages);
@@ -143,78 +143,96 @@ error:
 	return 0;
 }
 
-int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t lCount,uint type,
-		sVMRegion **vmreg, uintptr_t virt) {
+int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
+            off_t offset,sVMRegion **vmreg) {
 	sRegion *reg;
 	sVMRegion *vm;
 	int res;
-	ulong pgFlags = 0,flags = 0;
+	ulong pgFlags = f != NULL ? PF_DEMANDLOAD : 0;
+	ulong rflags = flags | prot;
 	sProc *p;
 
-	/* for text and shared-library-text: try to find another process with that text */
-	if(bin && (type == REG_TEXT || type == REG_SHLIBTEXT)) {
+	/* for files: try to find another process with that file */
+	if(f && (rflags & MAP_SHARED)) {
 		pid_t binOwner = 0;
-		uintptr_t binVirt = vmm_getBinary(bin,&binOwner);
+		uintptr_t binVirt = vmm_getBinary(f,&binOwner);
 		if(binVirt != 0)
-			return vmm_join(binOwner,binVirt,pid,vmreg,virt);
+			return vmm_join(binOwner,binVirt,pid,vmreg,rflags & MAP_FIXED ? addr : 0);
 	}
 
 	/* get the attributes of the region (depending on type) */
 	p = vmm_reqProc(pid);
 	if(!p)
 		return -ESRCH;
-	if(virt != 0 && vmreg_getByAddr(&p->regtree,virt) != NULL) {
-		res = -EINVAL;
-		goto errProc;
+
+	/* if it's a data-region.. */
+	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE)) {
+		/* if we already have the real data-region */
+		if(p->dataAddr && p->dataAddr < FREE_AREA_BEGIN) {
+			/* using a fixed address is not allowed in this case */
+			if(rflags & MAP_FIXED)
+				return -EINVAL;
+			/* in every case, it can't be growable */
+			rflags &= ~MAP_GROWABLE;
+		}
+		/* otherwise, it's either the dynlink-data-region or the real one. both is ok */
 	}
-	if((res = vmm_getAttr(p,type,bCount,&pgFlags,&flags,&virt)) < 0)
-		goto errProc;
-	/* no demand-loading if the binary isn't present */
-	if(bin == NULL)
-		pgFlags &= ~PF_DEMANDLOAD;
+
+	/* determine address */
+	res = -EINVAL;
+	if(rflags & MAP_FIXED) {
+		/* ok, the user has choosen a place. check it */
+		if(!vmreg_available(&p->regtree,addr,length))
+			goto errProc;
+	}
+	else {
+		/* find a suitable place */
+		if(rflags & MAP_STACK)
+			addr = vmm_findFreeStack(p,length,rflags);
+		else
+			addr = vmfree_allocate(&p->freemap,ROUND_PAGE_UP(length));
+		if(addr == 0)
+			goto errProc;
+	}
 
 	/* create region */
 	res = -ENOMEM;
-	reg = reg_create(bin,binOffset,bCount,lCount,pgFlags,flags);
+	reg = reg_create(f,length,loadCount,offset,pgFlags,rflags);
 	if(!reg)
 		goto errProc;
 	if(!reg_addTo(reg,p))
 		goto errReg;
-	vm = vmreg_add(&p->regtree,reg,virt);
+	vm = vmreg_add(&p->regtree,reg,addr);
 	if(vm == NULL)
 		goto errAdd;
-	vm->binFile = NULL;
 
 	/* map into process */
-	if(type != REG_DEVICE && type != REG_PHYS) {
+	if(~rflags & MAP_NOMAP) {
 		ssize_t pts;
 		uint mapFlags = 0;
 		size_t pageCount = BYTES_2_PAGES(vm->reg->byteCount);
 		if(!(pgFlags & PF_DEMANDLOAD)) {
 			mapFlags |= PG_PRESENT;
-			if(flags & RF_EXECUTABLE)
+			if(rflags & PROT_EXEC)
 				mapFlags |= PG_EXECUTABLE;
 		}
-		if(flags & RF_WRITABLE)
+		if(rflags & PROT_WRITE)
 			mapFlags |= PG_WRITABLE;
-		pts = paging_mapTo(&p->pagedir,virt,NULL,pageCount,mapFlags);
+		pts = paging_mapTo(&p->pagedir,addr,NULL,pageCount,mapFlags);
 		if(pts < 0)
 			goto errMap;
-		if(flags & RF_SHAREABLE)
+		if(rflags & MAP_SHARED)
 			proc_addShared(p,pageCount);
 		else
 			proc_addOwn(p,pageCount);
 		proc_addOwn(p,pts);
 	}
 	/* set data-region */
-	if(type == REG_DATA || type == REG_DLDATA)
-		p->dataAddr = virt;
-	else if(type == REG_TEXT)
-		p->textAddr = virt;
+	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE))
+		p->dataAddr = addr;
 	vmm_relProc(p);
 
-#if DISABLE_DEMLOAD
-	if(type != REG_DEVICE && type != REG_PHYS) {
+	if(DISABLE_DEMLOAD || (rflags & MAP_POPULATE)) {
 		size_t i;
 		/* ensure that we don't discard frames that we might need afterwards */
 		sThread *t = thread_getRunning();
@@ -224,7 +242,6 @@ int vmm_add(pid_t pid,const sBinDesc *bin,off_t binOffset,size_t bCount,size_t l
 			vmm_pagefault(vm->virt + i * PAGE_SIZE,false);
 		thread_reserveFramesFor(t,oldres);
 	}
-#endif
 	*vmreg = vm;
 	return 0;
 
@@ -245,28 +262,32 @@ int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags) {
 	sVMRegion *vmreg;
 	sProc *p;
 	int res = -EPERM;
-	if(!(flags & RF_WRITABLE) && flags != 0)
-		return -EINVAL;
+
 	p = vmm_reqProc(pid);
 	if(!p)
 		return -ESRCH;
+
 	vmreg = vmreg_getByAddr(&p->regtree,addr);
 	if(vmreg == NULL) {
 		vmm_relProc(p);
 		return -ENXIO;
 	}
+
 	mutex_aquire(&vmreg->reg->lock);
 	if(!vmreg || (vmreg->reg->flags & (RF_NOFREE | RF_STACK | RF_TLS)))
 		goto error;
+
 	/* check if COW is enabled for a page */
 	pgcount = BYTES_2_PAGES(vmreg->reg->byteCount);
 	for(i = 0; i < pgcount; i++) {
 		if(vmreg->reg->pageFlags[i] & PF_COPYONWRITE)
 			goto error;
 	}
+
 	/* change reg flags */
-	vmreg->reg->flags &= ~RF_WRITABLE;
+	vmreg->reg->flags &= ~(RF_WRITABLE | RF_EXECUTABLE);
 	vmreg->reg->flags |= flags;
+
 	/* change mapping */
 	for(n = sll_begin(&vmreg->reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
@@ -278,7 +299,7 @@ int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags) {
 			uint mapFlags = PG_KEEPFRM;
 			if(!(vmreg->reg->pageFlags[i] & (PF_DEMANDLOAD | PF_SWAPPED)))
 				mapFlags |= PG_PRESENT;
-			if(vmreg->reg->flags & RF_EXECUTABLE)
+			if(flags & RF_EXECUTABLE)
 				mapFlags |= PG_EXECUTABLE;
 			if(flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
@@ -287,6 +308,7 @@ int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags) {
 		}
 	}
 	res = 0;
+
 error:
 	mutex_release(&vmreg->reg->lock);
 	vmm_relProc(p);
@@ -469,16 +491,14 @@ bool vmm_getRegRange(pid_t pid,sVMRegion *vm,uintptr_t *start,uintptr_t *end,boo
 	return res;
 }
 
-static uintptr_t vmm_getBinary(const sBinDesc *bin,pid_t *binOwner) {
+static uintptr_t vmm_getBinary(sFile *file,pid_t *binOwner) {
 	uintptr_t res = 0;
 	sVMRegTree *tree = vmreg_reqTree();
 	for(; tree != NULL; tree = tree->next) {
 		sVMRegion *vm;
 		for(vm = tree->begin; vm != NULL; vm = vm->next) {
 			/* if its shareable and the binary fits, return region-number */
-			if((vm->reg->flags & RF_SHAREABLE) &&
-					vm->reg->binary.modifytime == bin->modifytime &&
-					vm->reg->binary.ino == bin->ino && vm->reg->binary.dev == bin->dev) {
+			if((vm->reg->flags & RF_SHAREABLE) && vm->reg->file && vfs_isSameFile(vm->reg->file,file)) {
 				res = vm->virt;
 				*binOwner = tree->pid;
 				break;
@@ -609,8 +629,6 @@ static void vmm_doRemove(sProc *p,sVMRegion *vm) {
 			vmfree_free(&p->freemap,vm->virt,ROUND_PAGE_UP(vm->reg->byteCount));
 		if(vm->virt == p->dataAddr)
 			p->dataAddr = 0;
-		else if(vm->virt == p->textAddr)
-			p->textAddr = 0;
 		/* now destroy region */
 		mutex_release(&vm->reg->lock);
 		reg_destroy(vm->reg);
@@ -667,7 +685,6 @@ int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm,uintptr_t
 	*nvm = vmreg_add(&dst->regtree,vm->reg,dstAddr);
 	if(*nvm == NULL)
 		goto errReg;
-	(*nvm)->binFile = NULL;
 	if(!reg_addTo(vm->reg,dst))
 		goto errAdd;
 
@@ -706,7 +723,6 @@ int vmm_cloneAll(pid_t dstId) {
 	dst->sharedFrames = 0;
 	dst->ownFrames = 0;
 	dst->dataAddr = src->dataAddr;
-	dst->textAddr = src->textAddr;
 
 	vmreg_addTree(dstId,&dst->regtree);
 	for(vm = src->regtree.begin; vm != NULL; vm = vm->next) {
@@ -719,8 +735,7 @@ int vmm_cloneAll(pid_t dstId) {
 			if(nvm == NULL)
 				goto error;
 			mutex_aquire(&vm->reg->lock);
-			/* better don't share the file; they may have to read in parallel */
-			nvm->binFile = NULL;
+			/* TODO ?? better don't share the file; they may have to read in parallel */
 			if(vm->reg->flags & RF_SHAREABLE) {
 				reg_addTo(vm->reg,dst);
 				nvm->reg = vm->reg;
@@ -982,7 +997,7 @@ void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
 
 static const char *vmm_getRegName(sProc *p,const sVMRegion *vm) {
 	const char *name = "";
-	if(vm->virt == p->textAddr)
+	if(p->entryPoint >= vm->virt && p->entryPoint < vm->virt + vm->reg->byteCount)
 		name = p->command;
 	else if(vm->virt == p->dataAddr)
 		name = "data";
@@ -993,7 +1008,7 @@ static const char *vmm_getRegName(sProc *p,const sVMRegion *vm) {
 	else if(vm->reg->flags & RF_NOFREE)
 		name = "phys";
 	else
-		name = vm->reg->binary.filename;
+		name = "???";
 	return name;
 }
 
@@ -1064,14 +1079,8 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	frameno_t frame;
 	uint mapFlags;
 
-	if(vm->binFile == NULL) {
-		err = vfs_openFile(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev,&vm->binFile);
-		if(err < 0)
-			goto error;
-	}
-
 	/* note that we currently ignore that the file might have changed in the meantime */
-	if((err = vfs_seek(pid,vm->binFile,vm->reg->binOffset + (addr - vm->virt),SEEK_SET)) < 0)
+	if((err = vfs_seek(pid,vm->reg->file,vm->reg->offset + (addr - vm->virt),SEEK_SET)) < 0)
 		goto error;
 
 	/* first read into a temp-buffer because we can't mark the page as present until
@@ -1083,7 +1092,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 		goto error;
 	}
 	thread_addHeapAlloc(tempBuf);
-	err = vfs_readFile(pid,vm->binFile,tempBuf,loadCount);
+	err = vfs_readFile(pid,vm->reg->file,tempBuf,loadCount);
 	if(err != (ssize_t)loadCount) {
 		if(err >= 0)
 			err = -ENOMEM;
@@ -1315,76 +1324,4 @@ static sProc *vmm_tryReqProc(pid_t pid) {
 
 static void vmm_relProc(sProc *p) {
 	mutex_release(p->locks + PLOCK_REGIONS);
-}
-
-static int vmm_getAttr(sProc *p,uint type,size_t bCount,ulong *pgFlags,ulong *flags,uintptr_t *virt) {
-	switch(type) {
-		case REG_TEXT:
-			assert(*virt != 0);
-			*pgFlags = PF_DEMANDLOAD;
-			*flags = RF_SHAREABLE | RF_EXECUTABLE;
-			break;
-		case REG_RODATA:
-			assert(*virt != 0);
-			*pgFlags = PF_DEMANDLOAD;
-			*flags = 0;
-			break;
-		case REG_DATA:
-			assert(*virt != 0);
-			*pgFlags = PF_DEMANDLOAD;
-			*flags = RF_GROWABLE | RF_WRITABLE;
-			break;
-		case REG_STACKUP:
-		case REG_STACK:
-			*pgFlags = 0;
-			*flags = RF_GROWABLE | RF_WRITABLE | RF_STACK;
-			if(type == REG_STACK)
-				*flags |= RF_GROWS_DOWN;
-			*virt = vmm_findFreeStack(p,bCount,*flags);
-			if(*virt == 0)
-				return -ENOMEM;
-			break;
-
-		case REG_SHLIBTEXT:
-		case REG_SHLIBDATA:
-		case REG_DLDATA:
-		case REG_TLS:
-		case REG_DEVICE:
-		case REG_PHYS:
-		case REG_SHM:
-			*pgFlags = 0;
-			if(type == REG_TLS)
-				*flags = RF_WRITABLE | RF_TLS;
-			else if(type == REG_DEVICE)
-				*flags = RF_WRITABLE | RF_NOFREE;
-			else if(type == REG_PHYS)
-				*flags = RF_WRITABLE;
-			else if(type == REG_SHM)
-				*flags = RF_SHAREABLE | RF_WRITABLE;
-			/* Note that this assumes for the dynamic linker that everything is put one after
-			 * another @ INTERP_TEXT_BEGIN (begin of free area, too). But this is always the
-			 * case since when doing exec(), the process is empty except stacks. */
-			else if(type == REG_SHLIBTEXT) {
-				*flags = RF_SHAREABLE | RF_EXECUTABLE;
-				*pgFlags = PF_DEMANDLOAD;
-			}
-			else if(type == REG_DLDATA) {
-				/* its growable to give the dynamic linker the chance to use dynamic memory
-				 * (at least until he maps the first region behind this one) */
-				*flags = RF_WRITABLE | RF_GROWABLE;
-				*pgFlags = PF_DEMANDLOAD;
-			}
-			else if(type == REG_SHLIBDATA) {
-				*flags = RF_WRITABLE;
-				*pgFlags = PF_DEMANDLOAD;
-			}
-			*virt = vmfree_allocate(&p->freemap,ROUND_PAGE_UP(bCount));
-			if(*virt == 0)
-				return -ENOMEM;
-			break;
-		default:
-			assert(false);
-			break;
-	}
-	return 0;
 }

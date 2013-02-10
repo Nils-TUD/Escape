@@ -230,6 +230,8 @@ static uintptr_t load_addSeg(int binFd,Elf32_Phdr *pheader,size_t loadSegNo,bool
 		fd = -1;
 		flags &= ~MAP_FIXED;
 		flags |= MAP_TLS;
+		/* the linker seems to think that readible is enough for TLS. so set the protection explicitly */
+		prot = PROT_READ | PROT_WRITE;
 	}
 	else if(pheader->p_flags == (PF_R | PF_W))
 		flags |= MAP_GROWABLE;

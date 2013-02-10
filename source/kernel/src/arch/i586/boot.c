@@ -203,7 +203,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
 		char *modname = (char*)cache_alloc(12);
-		itoa(modname,sizeof(modname),i);
+		itoa(modname,12,i);
 		sVFSNode *n = vfs_file_create_for(KERNEL_PID,mbmods,modname,(void*)mod->modStart,
 				mod->modEnd - mod->modStart);
 		if(!n || vfs_node_chmod(KERNEL_PID,vfs_node_getNo(n),S_IRUSR | S_IRGRP | S_IROTH) != 0)

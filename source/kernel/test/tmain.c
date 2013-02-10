@@ -38,7 +38,6 @@
 #include "tswapmap.h"
 #include "tregion.h"
 #include "tvmm.h"
-#include "tshm.h"
 #include "thashmap.h"
 #include "tctype.h"
 #include "tvmreg.h"
@@ -83,7 +82,6 @@ void bspstart(sBootInfo *bootinfo) {
 	test_register(&tModKHeap);
 	test_register(&tModRegion);
 	test_register(&tModRBuffer);
-	test_register(&tModShm);
 	test_register(&tModSLList);
 	test_register(&tModSched);
 	test_register(&tModString);

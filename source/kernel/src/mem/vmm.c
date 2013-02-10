@@ -1075,13 +1075,26 @@ static bool vmm_demandLoad(sProc *p,sVMRegion *vm,uintptr_t addr) {
 
 	/* zero the rest, if necessary */
 	if(res && zeroCount) {
-		assert(!(vm->reg->flags & RF_SHAREABLE));
+		/* do the memclear before the mapping to ensure that it's ready when the first CPU sees it */
+		frameno_t frame = loadCount ? paging_getFrameNo(proc_getPageDir(),addr) : thread_getFrame();
+		uintptr_t frameAddr = paging_getAccess(frame);
+		memclear((void*)(frameAddr + loadCount),zeroCount);
+		paging_removeAccess();
+		/* if the pages weren't present so far, map them into every process that has this region */
 		if(!loadCount) {
-			/* can't fail because we've requested the frame previously and the page-table is present */
-			assert(paging_map(addr,NULL,1,PG_PRESENT | PG_WRITABLE) == 0);
-			proc_addOwn(p,1);
+			sSLNode *n;
+			uint mapFlags = PG_PRESENT;
+			if(vm->reg->flags & RF_WRITABLE)
+				mapFlags |= PG_WRITABLE;
+			for(n = sll_begin(&vm->reg->procs); n != NULL; n = n->next) {
+				sProc *mp = (sProc*)n->data;
+				/* the region may be mapped to a different virtual address */
+				sVMRegion *mpreg = vmreg_getByReg(&mp->regtree,vm->reg);
+				/* can't fail */
+				assert(paging_mapTo(&mp->pagedir,mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
+				proc_addShared(mp,1);
+			}
 		}
-		memclear((void*)(addr + loadCount),zeroCount);
 	}
 	return res;
 }

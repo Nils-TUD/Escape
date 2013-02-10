@@ -98,37 +98,22 @@ int mprotect(void *addr,uint prot);
 int munmap(void *addr);
 
 /**
- * Creates a shared-memory region
+ * Creates a file in /system/shm/ with given name and opens it with <oflag>. If <oflag> contains
+ * IO_CREATE, <mode> is set via chmod. This file is intended to be mapped with mmap().
  *
- * @param name the name
- * @param byteCount the number of bytes
- * @return the address on success or NULL
+ * @param name the filename
+ * @param oflag the open flags
+ * @param mode the mode to set
+ * @return the file descriptor on success
  */
-void *shmcrt(const char *name,size_t byteCount) A_CHECKRET;
+int shm_open(const char *name,int oflag,mode_t mode);
 
 /**
- * Joines a shared-memory region
+ * Unlinks the file previously created by shm_open.
  *
- * @param name the name
- * @return the address on success or NULL
+ * @parma name the filename
  */
-void *shmjoin(const char *name) A_CHECKRET;
-
-/**
- * Leaves a shared-memory region
- *
- * @param name the name
- * @return 0 on success
- */
-int shmleave(const char *name);
-
-/**
- * Deletes a shared-memory region
- *
- * @param name the name
- * @return 0 on success
- */
-int shmdel(const char *name);
+int shm_unlink(const char *name);
 
 #ifdef __cplusplus
 }

@@ -41,10 +41,6 @@ $syscalls = array(
 	array("_mmap","SYSCALL_MMAP"),
 	array("mprotect","SYSCALL_MPROTECT"),
 	array("_regaddphys","SYSCALL_MAPPHYS"),
-	array("_shmcrt","SYSCALL_CREATESHMEM"),
-	array("_shmjoin","SYSCALL_JOINSHMEM"),
-	array("shmleave","SYSCALL_LEAVESHMEM"),
-	array("shmdel","SYSCALL_DESTROYSHMEM"),
 
 	# process
 	array("getpid","SYSCALL_PID"),

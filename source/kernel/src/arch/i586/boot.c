@@ -28,7 +28,6 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
-#include <sys/mem/sharedmem.h>
 #include <sys/mem/dynarray.h>
 #include <sys/mem/pmemareas.h>
 #include <sys/task/proc.h>
@@ -70,7 +69,6 @@ static const sBootTask tasks[] = {
 	{"Start logging to VFS...",log_vfsIsReady},
 	{"Initializing virtual memory-management...",vmm_init},
 	{"Initializing copy-on-write...",cow_init},
-	{"Initializing shared memory...",shm_init},
 	{"Initializing interrupts...",intrpt_init},
 	{"Initializing PIC...",pic_init},
 	{"Initializing IDT...",idt_init},

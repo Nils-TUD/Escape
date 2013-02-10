@@ -35,7 +35,6 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
-#include <sys/mem/sharedmem.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/intrpt.h>
 #include <sys/vfs/vfs.h>
@@ -359,13 +358,9 @@ int proc_clone(uint8_t flags) {
 	if((res = vmm_cloneAll(p->pid)) < 0)
 		goto errorVFS;
 
-	/* clone shared-memory-regions */
-	if((res = shm_cloneProc(cur->pid,p->pid)) < 0)
-		goto errorRegs;
-
 	/* clone current thread */
 	if((res = thread_create(curThread,&nt,p,0,true)) < 0)
-		goto errorShm;
+		goto errorRegs;
 	sll_init(&p->threads,slln_allocNode,slln_freeNode);
 	if(!sll_append(&p->threads,nt)) {
 		res = -ENOMEM;
@@ -405,8 +400,6 @@ errorThreadAppend:
 	sll_removeFirstWith(&p->threads,nt);
 errorThread:
 	thread_kill(nt);
-errorShm:
-	shm_remProc(p->pid);
 errorRegs:
 	proc_doRemoveRegions(p,true);
 errorVFS:
@@ -859,9 +852,6 @@ static void proc_doRemoveRegions(sProc *p,bool remStack) {
 		sThread *t = (sThread*)n->data;
 		thread_removeRegions(t,remStack);
 	}
-	/* remove from shared-memory; do this first because it will remove the region and simply
-	 * assumes that the region still exists. */
-	shm_remProc(p->pid);
 	vmm_removeAll(p->pid,remStack);
 }
 

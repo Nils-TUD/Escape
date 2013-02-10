@@ -22,7 +22,6 @@
 #include <sys/task/fd.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
-#include <sys/mem/sharedmem.h>
 #include <sys/mem/vmm.h>
 #include <sys/syscalls/mem.h>
 #include <sys/syscalls.h>
@@ -140,60 +139,4 @@ int sysc_regaddphys(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-ENOMEM);
 	*phys = physCpy;
 	SYSC_RET1(stack,addr);
-}
-
-int sysc_shmcrt(sThread *t,sIntrptStackFrame *stack) {
-	char namecpy[MAX_SHAREDMEM_NAME + 1];
-	const char *name = (const char*)SYSC_ARG1(stack);
-	size_t byteCount = SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
-	int res;
-
-	if(byteCount == 0)
-		SYSC_ERROR(stack,-EINVAL);
-	strnzcpy(namecpy,name,sizeof(namecpy));
-
-	res = shm_create(pid,namecpy,BYTES_2_PAGES(byteCount));
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res * PAGE_SIZE);
-}
-
-int sysc_shmjoin(sThread *t,sIntrptStackFrame *stack) {
-	char namecpy[MAX_SHAREDMEM_NAME + 1];
-	const char *name = (const char*)SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
-	int res;
-
-	strnzcpy(namecpy,name,sizeof(namecpy));
-	res = shm_join(pid,namecpy);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res * PAGE_SIZE);
-}
-
-int sysc_shmleave(sThread *t,sIntrptStackFrame *stack) {
-	char namecpy[MAX_SHAREDMEM_NAME + 1];
-	const char *name = (const char*)SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
-	int res;
-
-	strnzcpy(namecpy,name,sizeof(namecpy));
-	res = shm_leave(pid,namecpy);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
-}
-
-int sysc_shmdel(sThread *t,sIntrptStackFrame *stack) {
-	char namecpy[MAX_SHAREDMEM_NAME + 1];
-	const char *name = (const char*)SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
-	int res;
-
-	strnzcpy(namecpy,name,sizeof(namecpy));
-	res = shm_destroy(pid,namecpy);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
 }

@@ -92,8 +92,9 @@ void vfs_init(void) {
 	 *  /
 	 *   |- system
 	 *   |   |-pipe
-	 *   |   |-processes
 	 *   |   |-mbmods
+	 *   |   |-shm
+	 *   |   |-processes
 	 *   |   \-devices
 	 *   \- dev
 	 */
@@ -101,6 +102,7 @@ void vfs_init(void) {
 	sys = vfs_dir_create(KERNEL_PID,root,(char*)"system");
 	vfs_dir_create(KERNEL_PID,sys,(char*)"pipe");
 	vfs_dir_create(KERNEL_PID,sys,(char*)"mbmods");
+	vfs_dir_create(KERNEL_PID,sys,(char*)"shm");
 	procsNode = vfs_dir_create(KERNEL_PID,sys,(char*)"processes");
 	vfs_dir_create(KERNEL_PID,sys,(char*)"devices");
 	devNode = vfs_dir_create(KERNEL_PID,root,(char*)"dev");

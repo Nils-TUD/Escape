@@ -24,9 +24,10 @@
 #include <esc/driver.h>
 #include <esc/debug.h>
 #include <esc/io.h>
+#include <esc/sllist.h>
+#include <esc/driver/vesa.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <esc/sllist.h>
 #include <string.h>
 
 #include "window.h"
@@ -56,6 +57,7 @@ static sWindow windows[WINDOW_COUNT];
 bool win_init(int sid) {
 	msgid_t mid;
 	gwinid_t i;
+	int fd;
 
 	drvId = sid;
 
@@ -77,10 +79,13 @@ bool win_init(int sid) {
 	/* store */
 	memcpy(&vesaInfo,msg.data.d,sizeof(sVESAInfo));
 
-	shmem = (uint8_t*)shmjoin("vesa");
+	fd = shm_open(VESA_SHM_NAME,IO_READ | IO_WRITE,VESA_SHM_PERM);
+	if(fd < 0)
+		error("Unable to open shm file '%s'",VESA_SHM_NAME);
+	size_t screenSize = vesaInfo.width * vesaInfo.height * (vesaInfo.bitsPerPixel / 8);
+	shmem = (uint8_t*)mmap(NULL,screenSize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 	if(shmem == NULL)
 		error("Unable to join shared memory 'vesa'");
-
 	return true;
 }
 

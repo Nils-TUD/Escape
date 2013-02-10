@@ -19,14 +19,14 @@
 
 #include <esc/common.h>
 #include <esc/mem.h>
+#include <esc/fsinterface.h>
+#include <stdio.h>
 #include <errno.h>
 
 /* the assembler-routine */
 extern ssize_t _chgsize(ssize_t count);
 extern intptr_t _regaddphys(uintptr_t *phys,size_t count,size_t align);
 extern intptr_t _mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,off_t offset);
-extern intptr_t _shmcrt(const char *name,size_t byteCount);
-extern intptr_t _shmjoin(const char *name);
 
 /* just a convenience for the user which sets errno if the return-value is zero (not enough mem) */
 void *chgsize(ssize_t count) {
@@ -52,18 +52,24 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
 	return (void*)res;
 }
 
-void *shmcrt(const char *name,size_t byteCount) {
-	intptr_t addr = _shmcrt(name,byteCount);
-	/* FIXME workaround until we have TLS */
-	if(addr >= -200 && addr < 0)
-		return NULL;
-	return (void*)addr;
+int shm_open(const char *name,int oflag,mode_t mode) {
+	int fd;
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"/system/shm/%s",name);
+	fd = open(path,oflag);
+	/* TODO race-condition... */
+	if(fd >= 0 && (oflag & IO_CREATE)) {
+		int res = chmod(path,mode);
+		if(res < 0) {
+			close(fd);
+			return res;
+		}
+	}
+	return fd;
 }
 
-void *shmjoin(const char *name) {
-	intptr_t addr = _shmjoin(name);
-	/* FIXME workaround until we have TLS */
-	if(addr >= -200 && addr < 0)
-		return NULL;
-	return (void*)addr;
+int shm_unlink(const char *name) {
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"/system/shm/%s",name);
+	return unlink(path);
 }

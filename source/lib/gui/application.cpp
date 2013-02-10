@@ -26,6 +26,7 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/mem.h>
+#include <esc/driver/vesa.h>
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
@@ -52,10 +53,6 @@ namespace gui {
 		if(_vesaFd < 0)
 			throw app_error("Unable to open vesa");
 
-		_vesaMem = shmjoin("vesa");
-		if(_vesaMem == nullptr)
-			throw app_error("Unable to open shared memory");
-
 		// request screen infos from vesa
 		if(send(_vesaFd,MSG_VESA_GETMODE,&_msg,sizeof(_msg.args)) < 0)
 			throw app_error("Unable to send get-mode-request to vesa");
@@ -64,6 +61,14 @@ namespace gui {
 			throw app_error("Unable to read the get-mode-response from vesa");
 		}
 		memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));
+
+		int fd = shm_open(VESA_SHM_NAME,IO_READ | IO_WRITE,VESA_SHM_PERM);
+		if(fd < 0)
+			throw app_error("Unable to open shm file");
+		size_t screenSize = _vesaInfo.width * _vesaInfo.height * (_vesaInfo.bitsPerPixel / 8);
+		_vesaMem = mmap(nullptr,screenSize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
+		if(_vesaMem == nullptr)
+			throw app_error("Unable to map shared memory");
 
 		if(signal(SIG_USR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");

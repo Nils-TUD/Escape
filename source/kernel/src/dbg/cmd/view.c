@@ -41,7 +41,6 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/pmemareas.h>
-#include <sys/mem/sharedmem.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/swapmap.h>
 #include <sys/boot.h>
@@ -91,7 +90,6 @@ static sView views[] = {
 	{"pmemcont",(fView)pmem_printCont},
 	{"pmemstack",(fView)pmem_printStack},
 	{"pmemareas",(fView)pmemareas_print},
-	{"shm",(fView)shm_print},
 	{"swapmap",(fView)swmap_print},
 	{"cpu",(fView)cpu_print},
 #ifdef __i386__

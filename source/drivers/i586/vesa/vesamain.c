@@ -28,6 +28,7 @@
 #include <esc/thread.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
+#include <esc/driver/vesa.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -249,7 +250,7 @@ int main(void) {
 	munmap(video);
 	close(id);
 	free(cursorCopy);
-	shmdel("vesa");
+	shm_unlink(VESA_SHM_NAME);
 	return EXIT_SUCCESS;
 }
 
@@ -300,8 +301,11 @@ static int vesa_setMode(void) {
 static int vesa_init(void) {
 	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
 	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
-	shmem = shmcrt("vesa",minfo->xResolution *
-			minfo->yResolution * (minfo->bitsPerPixel / 8));
+	size_t screenSize = minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8);
+	int fd = shm_open(VESA_SHM_NAME,IO_READ | IO_WRITE | IO_CREATE,VESA_SHM_PERM);
+	if(fd < 0)
+		return fd;
+	shmem = (uint8_t*)mmap(NULL,screenSize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 	if(shmem == NULL)
 		return -ENOMEM;
 
@@ -310,7 +314,7 @@ static int vesa_init(void) {
 		return -ENOMEM;
 
 	/* black screen */
-	memclear(video,minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8));
+	memclear(video,screenSize);
 	return 0;
 }
 

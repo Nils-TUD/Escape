@@ -22,7 +22,6 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/swapmap.h>
-#include <sys/mem/sharedmem.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>

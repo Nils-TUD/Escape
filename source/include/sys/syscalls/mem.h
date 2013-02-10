@@ -28,7 +28,3 @@ int sysc_mmap(sThread *t,sIntrptStackFrame *stack);
 int sysc_mprotect(sThread *t,sIntrptStackFrame *stack);
 int sysc_munmap(sThread *t,sIntrptStackFrame *stack);
 int sysc_regaddphys(sThread *t,sIntrptStackFrame *stack);
-int sysc_shmcrt(sThread *t,sIntrptStackFrame *stack);
-int sysc_shmjoin(sThread *t,sIntrptStackFrame *stack);
-int sysc_shmleave(sThread *t,sIntrptStackFrame *stack);
-int sysc_shmdel(sThread *t,sIntrptStackFrame *stack);

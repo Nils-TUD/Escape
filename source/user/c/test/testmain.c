@@ -35,7 +35,6 @@
 #include "modules/forkbomb.h"
 #include "modules/tls.h"
 #include "modules/pipe.h"
-#include "modules/shmclone.h"
 #include "modules/sigclone.h"
 #include "modules/fsreads.h"
 #include "modules/ooc.h"
@@ -65,7 +64,6 @@ static sTestModule modules[] = {
 	{"stack",mod_stack},
 	{"tls",mod_tls},
 	{"pipe",mod_pipe},
-	{"shmclone",mod_shmclone},
 	{"sigclone",mod_sigclone},
 	{"fsreads",mod_fsreads},
 	{"ooc",mod_ooc},

@@ -60,11 +60,22 @@ void util_panic_arch(void) {
 	 * kernel-debugging :) */
 	if(vfs_openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/video",&file) == 0) {
 		ssize_t i,res;
-		vfs_sendMsg(KERNEL_PID,file,MSG_VID_SETMODE,NULL,0,NULL,0);
-		for(i = 0; i < 10000; i++) {
-			res = vfs_receiveMsg(KERNEL_PID,file,NULL,NULL,0,false);
+		sArgsMsg msg;
+		vfs_sendMsg(KERNEL_PID,file,MSG_VID_GETMODE,NULL,0,NULL,0);
+		for(i = 0; i < 100; i++) {
+			res = vfs_receiveMsg(KERNEL_PID,file,NULL,&msg,sizeof(msg),false);
 			if(res >= 0)
 				break;
+			thread_switch();
+		}
+		if(res >= 0) {
+			vfs_sendMsg(KERNEL_PID,file,MSG_VID_SETMODE,&msg,sizeof(msg),NULL,0);
+			for(i = 0; i < 100; i++) {
+				res = vfs_receiveMsg(KERNEL_PID,file,NULL,NULL,0,false);
+				if(res >= 0)
+					break;
+				thread_switch();
+			}
 		}
 		vfs_closeFile(KERNEL_PID,file);
 	}

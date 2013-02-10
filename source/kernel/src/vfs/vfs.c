@@ -376,7 +376,7 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file)
 }
 
 static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n,sFile **f) {
-	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE;
+	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
 	size_t i;
 	bool isDrvUse = false;
 	sFile *e;
@@ -388,6 +388,9 @@ static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVF
 		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
 		isDrvUse = (n->mode & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
 	}
+	/* doesn't work for channels and pipes */
+	if(isDrvUse && (flags & VFS_EXCLUSIVE))
+		return -EINVAL;
 
 	/* for devices it doesn't matter whether we use an existing file or a new one, because it is
 	 * no problem when multiple threads use it for writing */
@@ -407,8 +410,7 @@ static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVF
 							return 0;
 						}
 					}
-					/* two procs that want to write at the same time? no! */
-					else if(!isDrvUse && (rwFlags & VFS_WRITE) && (e->flags & VFS_WRITE))
+					else if((rwFlags & VFS_EXCLUSIVE) || (e->flags & VFS_EXCLUSIVE))
 						return -EBUSY;
 				}
 			}

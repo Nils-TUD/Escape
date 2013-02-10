@@ -42,7 +42,7 @@ int sysc_open(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* check flags */
-	flags &= VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | VFS_APPEND | VFS_NOBLOCK;
+	flags &= VFS_USER_FLAGS;
 	if((flags & (VFS_READ | VFS_WRITE | VFS_MSGS)) == 0)
 		SYSC_ERROR(stack,-EINVAL);
 

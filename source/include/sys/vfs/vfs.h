@@ -79,10 +79,15 @@ enum {
 	VFS_APPEND = 16,
 	VFS_NOBLOCK = 32,
 	VFS_MSGS = 64,			/* exchange msgs with a device */
-	VFS_NOLINKRES = 128,	/* kernel-intern: don't resolve last link in path */
-	VFS_DEVICE = 256,		/* kernel-intern: whether the file was created for a device */
-	VFS_EXEC = 512,			/* kernel-intern: for accessing directories */
+	VFS_EXCLUSIVE = 128,	/* disallow other accesses */
+	VFS_NOLINKRES = 256,	/* kernel-intern: don't resolve last link in path */
+	VFS_DEVICE = 512,		/* kernel-intern: whether the file was created for a device */
+	VFS_EXEC = 1024,		/* kernel-intern: for accessing directories */
 };
+
+/* all flags that the user can use */
+#define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | \
+									 VFS_APPEND | VFS_NOBLOCK | VFS_EXCLUSIVE)
 
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;

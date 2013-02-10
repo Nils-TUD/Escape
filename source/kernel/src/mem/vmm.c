@@ -151,6 +151,7 @@ int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int
 	ulong pgFlags = f != NULL ? PF_DEMANDLOAD : 0;
 	ulong rflags = flags | prot;
 	sProc *p;
+	assert(length > 0 && length >= loadCount);
 
 	/* for files: try to find another process with that file */
 	if(f && (rflags & MAP_SHARED)) {

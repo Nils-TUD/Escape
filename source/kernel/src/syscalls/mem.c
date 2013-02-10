@@ -57,7 +57,7 @@ int sysc_mmap(sThread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	/* check args */
-	if(loadCount > byteCount)
+	if(byteCount == 0 || loadCount > byteCount)
 		SYSC_ERROR(stack,-EINVAL);
 	if(flags & MAP_FIXED) {
 		if(addr & (PAGE_SIZE - 1))

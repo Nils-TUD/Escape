@@ -146,6 +146,12 @@ void vfs_init(void);
 bool vfs_isSameFile(sFile *f1,sFile *f2);
 
 /**
+ * @param f the file
+ * @return the path with which the given file has been opened
+ */
+const char *vfs_getPath(sFile *f);
+
+/**
  * Checks whether the process with given id has permission to use <n> with the given flags
  *
  * @param pid the process-id

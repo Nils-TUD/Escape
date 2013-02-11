@@ -1012,9 +1012,7 @@ void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
 
 static const char *vmm_getRegName(sProc *p,const sVMRegion *vm) {
 	const char *name = "";
-	if(p->entryPoint >= vm->virt && p->entryPoint < vm->virt + vm->reg->byteCount)
-		name = p->command;
-	else if(vm->virt == p->dataAddr)
+	if(vm->virt == p->dataAddr)
 		name = "data";
 	else if(vm->reg->flags & RF_STACK)
 		name = "stack";
@@ -1022,6 +1020,10 @@ static const char *vmm_getRegName(sProc *p,const sVMRegion *vm) {
 		name = "tls";
 	else if(vm->reg->flags & RF_NOFREE)
 		name = "phys";
+	else if(vm->reg->file)
+		name = vfs_getPath(vm->reg->file);
+	else if(p->entryPoint >= vm->virt && p->entryPoint < vm->virt + vm->reg->byteCount)
+		name = p->command;
 	else
 		name = "???";
 	return name;

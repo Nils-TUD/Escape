@@ -66,6 +66,8 @@ struct sFile {
 	sVFSNode *node;
 	/* the device-number */
 	dev_t devNo;
+	/* for real files: the path; for virt files: NULL */
+	char *path;
 	/* for the freelist */
 	struct sFile *next;
 };
@@ -112,6 +114,15 @@ void vfs_init(void) {
 
 bool vfs_isSameFile(sFile *f1,sFile *f2) {
 	return f1->devNo == f2->devNo && f1->nodeNo == f2->nodeNo;
+}
+
+const char *vfs_getPath(sFile *f) {
+	if(f->path) {
+		assert(f->devNo != VFS_DEV_NO);
+		return f->path;
+	}
+	assert(f->devNo == VFS_DEV_NO);
+	return vfs_node_getPath(f->nodeNo);
 }
 
 int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
@@ -230,6 +241,9 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,sFile **file) {
 		err = vfs_fsmsgs_openPath(pid,flags,path,file);
 		if(err < 0)
 			return err;
+
+		/* store the path for debugging purposes */
+		(*file)->path = strdup(path);
 	}
 	else {
 		sVFSNode *node;
@@ -368,6 +382,7 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file)
 		f->position = 0;
 		f->devNo = devNo;
 		f->nodeNo = nodeNo;
+		f->path = NULL;
 	}
 	else
 		f->refCount++;
@@ -680,6 +695,7 @@ static bool vfs_doCloseFile(pid_t pid,sFile *file) {
 				vfs_fsmsgs_close(pid,file->nodeNo,file->devNo);
 
 			/* mark unused */
+			cache_free(file->path);
 			file->flags = 0;
 			vfs_releaseFile(file);
 			return true;
@@ -1367,11 +1383,11 @@ void vfs_printGFT(void) {
 				sVFSNode *n = f->node;
 				if(n->name == NULL)
 					vid_printf("\t\tFile: <destroyed>\n");
-				else if(IS_CHANNEL(n->mode))
-					vid_printf("\t\tChannel: %s @ %s\n",n->name,n->parent->name);
 				else
-					vid_printf("\t\tFile: '%s'\n",vfs_node_getPath(vfs_node_getNo(n)));
+					vid_printf("\t\tFile: '%s'\n",vfs_getPath(f));
 			}
+			else
+				vid_printf("\t\tFile: '%s'\n",vfs_getPath(f));
 		}
 	}
 }

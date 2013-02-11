@@ -65,6 +65,17 @@ uint64_t timer_cyclesToTime(uint64_t cycles) {
 	return cycles / cpuMhz;
 }
 
+uint64_t timer_timeToCycles(uint us) {
+	return cpuMhz * us;
+}
+
+void timer_wait(uint us) {
+	uint64_t start = cpu_rdtsc();
+	uint64_t end = start + timer_timeToCycles(us);
+	while(cpu_rdtsc() < end)
+		__asm__ volatile ("pause");
+}
+
 uint64_t timer_detectCPUSpeed(void) {
 	int i,j;
 	int bestMatches = -1;

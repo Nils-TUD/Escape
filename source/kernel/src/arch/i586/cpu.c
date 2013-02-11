@@ -25,6 +25,7 @@
 #include <sys/cpu.h>
 #include <sys/printf.h>
 #include <sys/video.h>
+#include <sys/log.h>
 #include <string.h>
 
 /* based on http://forum.osdev.org/viewtopic.php?t=11998 */
@@ -145,6 +146,7 @@ void cpu_detect(void) {
 
 		/* detect the speed just once */
 		cpuHz = timer_detectCPUSpeed();
+		log_printf("Detected %zu Mhz CPU",cpuHz / 1000000);
 	}
 
 	/* get vendor-string */

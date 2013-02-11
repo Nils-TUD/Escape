@@ -46,3 +46,7 @@ uint64_t timer_cyclesToTime(uint64_t cycles) {
 	/* can't be implemented (not used anyway) */
 	return cycles;
 }
+
+uint64_t timer_timeToCycles(uint us) {
+	return us;
+}

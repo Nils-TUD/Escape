@@ -25,9 +25,11 @@
 #include <sys/arch/i586/acpi.h>
 #include <sys/arch/i586/mpconfig.h>
 #include <sys/task/smp.h>
+#include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
+#include <sys/cpu.h>
 #include <sys/spinlock.h>
 #include <sys/util.h>
 #include <string.h>
@@ -167,26 +169,33 @@ void smp_apIsRunning(void) {
 
 void smp_start(void) {
 	if(smp_isEnabled()) {
-		size_t total,i;
+		size_t total;
+		uint64_t start,end;
 		/* TODO thats not completely correct, according to the MP specification */
-		/* we have to wait, check if apic is an 82489DX, ... */
-
-		apic_sendInitIPI();
-
-		/* simulate a delay of > 10ms; TODO we should use a timer for that */
-		for(i = 0; i < 10000000; i++)
-			;
+		/* we have to check if apic is an 82489DX */
 
 		memcpy((void*)(TRAMPOLINE_ADDR | KERNEL_AREA),trampoline,ARRAY_SIZE(trampoline));
 		/* give the trampoline the start-address */
 		*(uint32_t*)((TRAMPOLINE_ADDR | KERNEL_AREA) + 2) = (uint32_t)&apProtMode;
 
+		apic_sendInitIPI();
+		timer_wait(10000);
+
 		apic_sendStartupIPI(TRAMPOLINE_ADDR);
+		timer_wait(200);
+		apic_sendStartupIPI(TRAMPOLINE_ADDR);
+		timer_wait(200);
 
 		/* wait until all APs are running */
 		total = smp_getCPUCount() - 1;
-		while(seenAPs != total)
-			;
+		start = cpu_rdtsc();
+		end = start + timer_timeToCycles(2000000);
+		while(cpu_rdtsc() < end && seenAPs != total)
+			__asm__ ("pause");
+		if(seenAPs != total) {
+			log_printf("Found %zu CPUs in 2s, expected %zu. Disabling SMP",seenAPs,total);
+			smp_disable();
+		}
 	}
 
 	/* We needed the area 0x0 .. 0x00400000 because in the first phase the GDT was setup so that

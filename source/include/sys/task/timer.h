@@ -54,6 +54,12 @@ size_t timer_getIntrptCount(void);
 uint64_t timer_cyclesToTime(uint64_t cycles);
 
 /**
+ * @param us the number of microseconds
+ * @return the number of cycles
+ */
+uint64_t timer_timeToCycles(uint us);
+
+/**
  * @return the kernel-internal timestamp; starts from zero, in milliseconds, increased by timer-irq
  */
 time_t timer_getTimestamp(void);

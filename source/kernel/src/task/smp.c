@@ -50,6 +50,14 @@ void smp_init(void) {
 	log_printf("%zu CPUs found",cpuCount);
 }
 
+void smp_disable(void) {
+	cpuCount = 1;
+	while(sll_length(&cpuList) > 1) {
+		void *res = sll_removeIndex(&cpuList,1);
+		cache_free(res);
+	}
+}
+
 bool smp_isEnabled(void) {
 	return enabled;
 }

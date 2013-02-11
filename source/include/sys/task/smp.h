@@ -62,6 +62,11 @@ void smp_init(void);
 bool smp_init_arch(void);
 
 /**
+ * Disables SMP. This is possible even after some CPUs have been added.
+ */
+void smp_disable(void);
+
+/**
  * @return whether SMP is enabled, i.e. there are multiple CPUs/cores
  */
 bool smp_isEnabled(void);

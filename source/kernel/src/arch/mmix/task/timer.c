@@ -46,3 +46,7 @@ void timer_ackIntrpt(void) {
 uint64_t timer_cyclesToTime(uint64_t cycles) {
 	return cycles / (cpu_getSpeed() / 1000000);
 }
+
+uint64_t timer_timeToCycles(uint us) {
+	return (cpu_getSpeed() / 1000000) * us;
+}

@@ -27,6 +27,13 @@
 void timer_arch_init(void);
 
 /**
+ * Waits for <us> microseconds.
+ *
+ * @param ms the number of microseconds
+ */
+void timer_wait(uint us);
+
+/**
  * Detects the CPU-speed
  *
  * @return the speed in Hz

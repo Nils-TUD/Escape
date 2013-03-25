@@ -232,9 +232,9 @@ void vm86_handleGPF(sIntrptStackFrame *stack) {
 			stack->uesp -= sizeof(uint16_t) * 3;
 			sp = (uint16_t*)(stack->uesp + (stack->uss << 4));
 			/* save eflags and ip on stack */
-			sp[0] = (uint16_t)stack->eflags;
+			sp[2] = (uint16_t)stack->eflags;
 			sp[1] = (uint16_t)stack->cs;
-			sp[2] = (uint16_t)stack->eip + 2;
+			sp[0] = (uint16_t)stack->eip + 2;
 			/* set new ip */
 			ivt = (uint32_t*)0;
 			assert(intno < VM86_IVT_SIZE);
@@ -247,14 +247,14 @@ void vm86_handleGPF(sIntrptStackFrame *stack) {
 		case X86OP_IRET: {
 			uint32_t newip,newcs,newflags;
 			if(data32) {
-				newflags = vm86_popl(stack);
-				newcs = vm86_popl(stack);
 				newip = vm86_popl(stack);
+				newcs = vm86_popl(stack) & 0xFFFF;
+				newflags = vm86_popl(stack);
 			}
 			else {
-				newflags = (stack->eflags & 0xFFFF0000) | vm86_popw(stack);
-				newcs = vm86_popw(stack);
 				newip = vm86_popw(stack);
+				newcs = vm86_popw(stack);
+				newflags = (stack->eflags & 0xFFFF0000) | vm86_popw(stack);
 			}
 			DBGVM86("[VM86] iret -> (%x:%x,0x%x)\n",newcs,newip,newflags);
 			/* eip = cs = 0 means we're done */

@@ -69,7 +69,6 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 void ShellControl::resizeTo(const Size &size) {
 	Control::resizeTo(size);
 	vtctrl_resize(_vt,getCols(),getRows());
-	repaint();
 }
 
 void ShellControl::sendEOF() {

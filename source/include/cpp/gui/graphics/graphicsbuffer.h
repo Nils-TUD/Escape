@@ -26,6 +26,7 @@
 
 namespace gui {
 	class Window;
+	class Graphics;
 
 	/**
 	 * The graphics-buffer holds an array of a specific size and provides access to it. This is
@@ -34,6 +35,7 @@ namespace gui {
 	 */
 	class GraphicsBuffer {
 		friend class Window;
+		friend class Graphics;
 
 	public:
 		/**
@@ -46,7 +48,6 @@ namespace gui {
 		 */
 		GraphicsBuffer(Window *win,const Pos &pos,const Size &size,gcoldepth_t bpp)
 			: _win(win), _pos(pos), _size(size), _bpp(bpp), _pixels(nullptr) {
-			allocBuffer();
 		}
 		/**
 		 * Destructor
@@ -76,13 +77,6 @@ namespace gui {
 		}
 
 		/**
-		 * @return the buffer
-		 */
-		uint8_t *getBuffer() const {
-			return _pixels;
-		}
-
-		/**
 		 * @return the color-depth
 		 */
 		gcoldepth_t getColorDepth() const {
@@ -103,6 +97,12 @@ namespace gui {
 		GraphicsBuffer(const GraphicsBuffer &g);
 		GraphicsBuffer &operator=(const GraphicsBuffer &g);
 
+		/**
+		 * @return the buffer (might be nullptr)
+		 */
+		uint8_t *getBuffer() const {
+			return _pixels;
+		}
 		/**
 		 * Sets the coordinates for this buffer
 		 */

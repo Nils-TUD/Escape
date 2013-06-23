@@ -438,6 +438,7 @@ namespace gui {
 	void Window::onCreated(gwinid_t wid) {
 		_id = wid;
 		_created = true;
+		_gbuf->allocBuffer();
 		repaint();
 	}
 

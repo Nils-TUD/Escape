@@ -36,8 +36,8 @@ namespace gui {
 		// TODO really size.width?
 		gsize_t wsize = size.width * psize;
 		gsize_t bwsize = bsize.width * psize;
-		uint8_t *pixels = _buf->getBuffer();
-		if(!validateParams(rpos,rsize))
+		uint8_t *pixels = getPixels();
+		if(!pixels || !validateParams(rpos,rsize))
 			return;
 
 		gpos_t startx = _off.x + rpos.x;
@@ -77,8 +77,8 @@ namespace gui {
 		gsize_t psize = _buf->getColorDepth() / 8;
 		gsize_t wsize = size.width * psize;
 		gsize_t bwsize = bsize.width * psize;
-		uint8_t *pixels = _buf->getBuffer();
-		if(!validateParams(rpos,rsize))
+		uint8_t *pixels = getPixels();
+		if(!pixels || !validateParams(rpos,rsize))
 			return;
 
 		gpos_t startx = _off.x + rpos.x;
@@ -105,7 +105,7 @@ namespace gui {
 	void Graphics::drawChar(const Pos &pos,char c) {
 		Pos rpos = pos;
 		Size fsize = _font.getSize();
-		if(!validateParams(rpos,fsize))
+		if(!getPixels() || !validateParams(rpos,fsize))
 			return;
 
 		updateMinMax(rpos);
@@ -137,7 +137,7 @@ namespace gui {
 	}
 
 	void Graphics::drawLine(const Pos &p0,const Pos &pn) {
-		if(_size.empty())
+		if(!getPixels() || _size.empty())
 			return;
 		if(p0.x == pn.x) {
 			drawVertLine(p0.x,p0.y,pn.y);
@@ -205,7 +205,7 @@ namespace gui {
 	}
 
 	void Graphics::drawVertLine(gpos_t x,gpos_t y1,gpos_t y2) {
-		if(!validateLine(x,y1,x,y2))
+		if(!getPixels() || !validateLine(x,y1,x,y2))
 			return;
 		updateMinMax(Pos(x,y1));
 		updateMinMax(Pos(x,y2));
@@ -216,7 +216,7 @@ namespace gui {
 	}
 
 	void Graphics::drawHorLine(gpos_t y,gpos_t x1,gpos_t x2) {
-		if(!validateLine(x1,y,x2,y))
+		if(!getPixels() || !validateLine(x1,y,x2,y))
 			return;
 		updateMinMax(Pos(x1,y));
 		updateMinMax(Pos(x2,y));
@@ -227,7 +227,7 @@ namespace gui {
 	}
 
 	void Graphics::drawRect(const Pos &pos,const Size &size) {
-		if(size.empty())
+		if(!getPixels() || size.empty())
 			return;
 
 		// top
@@ -243,7 +243,7 @@ namespace gui {
 	void Graphics::fillRect(const Pos &pos,const Size &size) {
 		Pos rpos = pos;
 		Size rsize = size;
-		if(!validateParams(rpos,rsize))
+		if(!getPixels() || !validateParams(rpos,rsize))
 			return;
 
 		gpos_t yend = rpos.y + rsize.height;

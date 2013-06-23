@@ -94,7 +94,7 @@ namespace gui {
 		 */
 		void setPixel(const Pos &pos) {
 			Pos rpos = pos;
-			if(validatePoint(rpos.x,rpos.y) != 0)
+			if(!getPixels() || validatePoint(rpos.x,rpos.y) != 0)
 				return;
 			updateMinMax(rpos);
 			doSetPixel(rpos.x,rpos.y);
@@ -229,6 +229,12 @@ namespace gui {
 		}
 
 	protected:
+		/**
+		 * @return the pixel buffer (might be nullptr)
+		 */
+		uint8_t *getPixels() {
+			return _buf->getBuffer();
+		}
 		/**
 		 * Sets a pixel if in the given bounds
 		 */

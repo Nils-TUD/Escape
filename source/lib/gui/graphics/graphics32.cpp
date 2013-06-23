@@ -23,14 +23,15 @@
 namespace gui {
 	void Graphics32::doSetPixel(gpos_t x,gpos_t y) {
 		gsize_t bwidth = _buf->getSize().width;
-		uint32_t *addr = (uint32_t*)(_buf->getBuffer() + ((_off.y + y) * bwidth + (_off.x + x)) * 4);
+		uint32_t *addr = (uint32_t*)(getPixels() + ((_off.y + y) * bwidth + (_off.x + x)) * 4);
 		*addr = _col;
 	}
 
 	void Graphics32::fillRect(const Pos &pos,const Size &size) {
 		Pos rpos = pos;
 		Size rsize = size;
-		if(!validateParams(rpos,rsize))
+		uint8_t *pixels = getPixels();
+		if(!pixels || !validateParams(rpos,rsize))
 			return;
 
 		gpos_t yend = rpos.y + rsize.height;
@@ -39,7 +40,6 @@ namespace gui {
 		gpos_t xcur;
 		gpos_t xend = rpos.x + rsize.width;
 		gsize_t bwidth = _buf->getSize().width;
-		uint8_t *pixels = _buf->getBuffer();
 		// optimized version for 16bit
 		// This is necessary if we want to have reasonable speed because the simple version
 		// performs too many function-calls (one to a virtual-function and one to memcpy

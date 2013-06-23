@@ -15,6 +15,9 @@ using namespace std;
 
 namespace gui {
 	void GraphicsBuffer::allocBuffer() {
+		if(!_win->isCreated())
+			return;
+
 		switch(_bpp) {
 			case 32:
 				_pixels = (uint8_t*)calloc(_size.width * _size.height,4);
@@ -65,7 +68,7 @@ namespace gui {
 
 	void GraphicsBuffer::update(const Pos &pos,const Size &size) {
 		// is there anything to update?
-		if(!size.empty()) {
+		if(_pixels && !size.empty()) {
 			Size rsize = size;
 			Pos rpos = pos;
 			// validate params

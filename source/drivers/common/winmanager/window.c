@@ -411,7 +411,8 @@ static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY
 		msg.args.arg2 = isActive;
 		msg.args.arg3 = mouseX;
 		msg.args.arg4 = mouseY;
-		send(aWin,MSG_WIN_SET_ACTIVE_EV,&msg,sizeof(msg.args));
+		if(send(aWin,MSG_WIN_SET_ACTIVE_EV,&msg,sizeof(msg.args)) < 0)
+			printe("[WINM] Unable to send active-event for window %u",id);
 		close(aWin);
 	}
 }
@@ -428,7 +429,8 @@ static void win_sendRepaint(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwini
 		msg.args.arg3 = width;
 		msg.args.arg4 = height;
 		msg.args.arg5 = id;
-		send(aWin,MSG_WIN_UPDATE_EV,&msg,sizeof(msg.args));
+		if(send(aWin,MSG_WIN_UPDATE_EV,&msg,sizeof(msg.args)) < 0)
+			printe("[WINM] Unable to send update-event for window %u",id);
 		close(aWin);
 	}
 }

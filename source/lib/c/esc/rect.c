@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void rectAdd(sRectangle *r1,sRectangle *r2) {
+void rectAdd(sRectangle *r1,const sRectangle *r2) {
 	int x = r1->x, y = r1->y;
 	r1->x = MIN(r1->x,r2->x);
 	r1->y = MIN(r1->y,r2->y);
@@ -30,12 +30,12 @@ void rectAdd(sRectangle *r1,sRectangle *r2) {
 	r1->height = MAX(y + r1->height,r2->y + r2->height) - r1->y;
 }
 
-bool rectContains(sRectangle *r,int x,int y) {
+bool rectContains(const sRectangle *r,int x,int y) {
 	return x >= r->x && x < r->x + r->width &&
 		y >= r->y && y < r->y + r->height;
 }
 
-sRectangle **rectSubstract(sRectangle *r1,sRectangle *r2,size_t *rectCount) {
+sRectangle **rectSubstract(const sRectangle *r1,const sRectangle *r2,size_t *rectCount) {
 	size_t i,orgCount,count = 0;
 	sRectangle **res;
 	bool other = false;
@@ -261,7 +261,7 @@ void rectFree(sRectangle **rects,size_t count) {
 	}
 }
 
-bool rectIntersect(sRectangle *r1,sRectangle *r2,sRectangle *intersect) {
+bool rectIntersect(const sRectangle *r1,const sRectangle *r2,sRectangle *intersect) {
 	bool p1in,p2in,p3in,p4in;
 	bool op1in,op2in,op3in,op4in;
 	p1in = rectContains(r1,r2->x,r2->y);

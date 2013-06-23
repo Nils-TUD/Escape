@@ -41,7 +41,7 @@ extern "C" {
  * @param r1 the first rectangle
  * @param r2 the second rectangle
  */
-void rectAdd(sRectangle *r1,sRectangle *r2);
+void rectAdd(sRectangle *r1,const sRectangle *r2);
 
 /**
  * @param r the rectangle
@@ -49,7 +49,7 @@ void rectAdd(sRectangle *r1,sRectangle *r2);
  * @param y the y-coordinate
  * @return whether the rectangle contains the given point
  */
-bool rectContains(sRectangle *r,int x,int y);
+bool rectContains(const sRectangle *r,int x,int y);
 
 /**
  * Substracts <r2> from <r1> and creates an array of rectangles that are parts of <r1> and not
@@ -76,7 +76,7 @@ bool rectContains(sRectangle *r,int x,int y);
  * @param rectCount will be set to the number of created rects
  * @return the rectangle array, allocated on the heap; NULL if rectCount = 0
  */
-sRectangle **rectSubstract(sRectangle *r1,sRectangle *r2,size_t *rectCount) A_CHECKRET;
+sRectangle **rectSubstract(const sRectangle *r1,const sRectangle *r2,size_t *rectCount) A_CHECKRET;
 
 /**
  * Frees the given rectangles
@@ -94,7 +94,7 @@ void rectFree(sRectangle **rects,size_t count);
  * @param intersect will be set to the intersection
  * @return true if there is an intersection
  */
-bool rectIntersect(sRectangle *r1,sRectangle *r2,sRectangle *intersect);
+bool rectIntersect(const sRectangle *r1,const sRectangle *r2,sRectangle *intersect);
 
 #ifdef __cplusplus
 }

@@ -32,6 +32,7 @@ static void test_iterators(void);
 static void test_insert(void);
 static void test_at(void);
 static void test_erase(void);
+static void test_nonpod(void);
 
 /* our test-module */
 sTestModule tModVector = {
@@ -46,6 +47,7 @@ static void test_vector(void) {
 	test_insert();
 	test_at();
 	test_erase();
+	test_nonpod();
 }
 
 static void test_constr(void) {
@@ -256,6 +258,79 @@ static void test_erase(void) {
 		it = v1.erase(v1.begin(),v1.end());
 		test_assertTrue(it == v1.end());
 		test_assertSize(v1.size(),0);
+	}
+
+	size_t after = heapspace();
+	test_assertSize(after,before);
+
+	test_caseSucceeded();
+}
+
+static unsigned counter = 0;
+
+struct NonPOD {
+	NonPOD() : x(0) {
+	}
+	NonPOD(int _x) : x(_x) {
+		attach();
+	}
+	NonPOD(const NonPOD &a) : x(a.x) {
+		attach();
+	}
+	NonPOD &operator=(const NonPOD &a) {
+		if(&a != this) {
+			detach();
+			x = a.x;
+			attach();
+		}
+		return *this;
+	}
+	~NonPOD() {
+		detach();
+	}
+
+private:
+	void attach() {
+		if(x)
+			counter++;
+	}
+	void detach() {
+		if(x)
+			counter--;
+		x = 0;
+	}
+
+	int x;
+};
+
+static void test_nonpod(void) {
+	test_caseStart("Testing non-POD");
+
+	size_t before = heapspace();
+
+	{
+		vector<NonPOD> v1;
+		v1.push_back(NonPOD(1));
+		v1.push_back(NonPOD(2));
+		v1.push_back(NonPOD(3));
+		v1.push_back(NonPOD(4));
+		v1.push_back(NonPOD(5));
+		test_assertUInt(counter,5);
+
+		v1.insert(v1.begin() + 1,NonPOD(6));
+		test_assertUInt(counter,6);
+
+		v1.insert(v1.end() - 1,NonPOD(7));
+		test_assertUInt(counter,7);
+
+		v1.erase(v1.begin());
+		test_assertUInt(counter,6);
+
+		v1.erase(v1.end() - 1);
+		test_assertUInt(counter,5);
+
+		v1.erase(v1.begin(),v1.end());
+		test_assertUInt(counter,0);
 	}
 
 	size_t after = heapspace();

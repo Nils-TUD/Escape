@@ -347,8 +347,10 @@ namespace std {
 			size_type i = position - _elements;
 			reserve(_count + 1);
 			position = _elements + i;
-			if(position < end())
-				memmove(position + 1,position,(end() - position) * sizeof(T));
+			if(position < end()) {
+				for(iterator pos = end() - 1; pos >= position; --pos)
+					*(pos + 1) = *pos;
+			}
 			*position = x;
 			_count++;
 			return position;
@@ -365,8 +367,10 @@ namespace std {
 			size_type i = position - _elements;
 			reserve(_count + n);
 			position = _elements + i;
-			if(position < end())
-				memmove(position + n,position,(end() - position) * sizeof(T));
+			if(position < end()) {
+				for(iterator pos = end() - 1; pos >= position; --pos)
+					*(pos + n) = *pos;
+			}
 			for(size_type j = 0; j < n; j++)
 				*position++ = x;
 			_count += n;
@@ -386,8 +390,10 @@ namespace std {
 			size_type n = last - first;
 			reserve(_count + n);
 			position = _elements + i;
-			if(position < end())
-				memmove(position + n,position,(end() - position) * sizeof(T));
+			if(position < end()) {
+				for(iterator pos = end() - 1; pos >= position; --pos)
+					*(pos + n) = *pos;
+			}
 			while(first < last)
 				*position++ = *first++;
 			_count += n;
@@ -409,8 +415,15 @@ namespace std {
 		 * @return the position of the next element (end() if it were the last elements)
 		 */
 		iterator erase(iterator first,iterator last) {
-			memmove(first,last,(end() - last) * sizeof(T));
-			_count -= last - first;
+			size_type count = last - first;
+			for(iterator pos = first; pos != last; ++pos)
+				*pos = T();
+			for(iterator pos = last; pos != end(); ++pos) {
+				*(pos - count) = *pos;
+				if(pos >= end() - count)
+					*pos = T();
+			}
+			_count -= count;
 			return first;
 		}
 		/**

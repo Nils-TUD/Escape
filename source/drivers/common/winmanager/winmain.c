@@ -122,8 +122,11 @@ int main(void) {
 					gsize_t height = (gsize_t)msg.args.arg5;
 					bool finish = (bool)msg.args.arg6;
 					if(win_isEnabled() && win_exists(wid)) {
-						if(finish)
+						if(finish) {
 							win_resize(wid,x,y,width,height);
+							/* wid is already set */
+							send(fd,MSG_WIN_RESIZE_RESP,&msg,sizeof(msg.args));
+						}
 						else
 							win_previewResize(x,y,width,height);
 					}
@@ -140,6 +143,8 @@ int main(void) {
 					if(win_isEnabled() && win != NULL && x + width > x && y + height > y &&
 						x + width <= win->width && y + height <= win->height) {
 						win_update(wid,x,y,width,height);
+						/* wid is already set */
+						send(fd,MSG_WIN_UPDATE_RESP,&msg,sizeof(msg.args));
 					}
 				}
 				break;

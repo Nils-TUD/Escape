@@ -273,15 +273,6 @@ namespace gui {
 		_maxy = 0;
 	}
 
-	void Graphics::update(const Pos &pos,const Size &size) {
-		Pos rpos = pos;
-		Size rsize = size;
-		if(!validateParams(rpos,rsize))
-			return;
-
-		_buf->update(rpos,rsize);
-	}
-
 	void Graphics::setSize(const Pos &pos,const Size &size,const Size &psize) {
 		_size.width = getDim(pos.x,size.width,psize.width);
 		_size.width = getDim(_off.x,_size.width,_buf->getSize().width);

@@ -264,10 +264,6 @@ namespace gui {
 		 */
 		void requestUpdate();
 		/**
-		 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
-		 */
-		void update(const Pos &pos,const Size &size);
-		/**
 		 * Validates the given line
 		 */
 		bool validateLine(gpos_t &x1,gpos_t &y1,gpos_t &x2,gpos_t &y2);

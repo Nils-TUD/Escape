@@ -306,12 +306,13 @@ namespace gui {
 		 */
 		void onCreated(gwinid_t id);
 		/**
-		 * Updates the given rectangle (copies from buffer to shared-mem and notifies vesa)
-		 *
-		 * @param pos the position
-		 * @param size the size
+		 * Called by Application when the window has been resized successfully.
 		 */
-		void update(const Pos &pos,const Size &size);
+		void onResized();
+		/**
+		 * Called by Application when the window has been updated successfully.
+		 */
+		void onUpdated();
 
 		// only used by Window itself
 		void init();

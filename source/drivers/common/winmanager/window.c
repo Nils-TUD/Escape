@@ -29,16 +29,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "window.h"
 #include "listener.h"
 
+static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height);
+static void win_destroyBuf(sWindow *win);
 static gwinid_t win_getTop(void);
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z);
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY);
-static void win_sendRepaint(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id);
 static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r);
 static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+static void win_copyRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id);
 static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 static void win_notifyWinCreate(gwinid_t id,const char *title);
 static void win_notifyWinActive(gwinid_t id);
@@ -63,7 +66,7 @@ bool win_init(int sid) {
 
 	/* mark windows unused */
 	for(i = 0; i < WINDOW_COUNT; i++)
-		windows[i].id = WINID_UNSED;
+		windows[i].id = WINID_UNUSED;
 
 	vesa = open("/dev/vesa",IO_WRITE | IO_MSGS);
 	if(vesa < 0)
@@ -114,11 +117,39 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
+static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height) {
+	char name[16];
+	snprintf(name,sizeof(name),"win-%d",id);
+	win->shmfd = shm_open(name,IO_READ | IO_WRITE | IO_CREATE | IO_EXCLUSIVE,0644);
+	if(win->shmfd < 0)
+		return win->shmfd;
+	win->shmaddr = mmap(NULL,width * height * (vesaInfo.bitsPerPixel / 8),0,
+			PROT_READ | PROT_WRITE,MAP_SHARED,win->shmfd,0);
+	if(win->shmaddr == NULL) {
+		close(win->shmfd);
+		shm_unlink(name);
+		return errno;
+	}
+	memclear(win->shmaddr,width * height * (vesaInfo.bitsPerPixel / 8));
+	return 0;
+}
+
+static void win_destroyBuf(sWindow *win) {
+	char name[16];
+	snprintf(name,sizeof(name),"win-%d",win->id);
+	close(win->shmfd);
+	munmap(win->shmaddr);
+	shm_unlink(name);
+}
+
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
 		gsize_t titleBarHeight,const char *title) {
 	gwinid_t i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(windows[i].id == WINID_UNSED) {
+		if(windows[i].id == WINID_UNUSED) {
+			if(win_createBuf(windows + i,i,width,height) < 0)
+				return WINID_UNUSED;
+
 			windows[i].id = i;
 			windows[i].x = x;
 			windows[i].y = y;
@@ -126,7 +157,7 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 				windows[i].z = 0;
 			else {
 				gwinid_t top = win_getTop();
-				if(top != WINID_UNSED)
+				if(top != WINID_UNUSED)
 					windows[i].z = windows[top].z + 1;
 				else
 					windows[i].z = 1;
@@ -141,7 +172,7 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 			return i;
 		}
 	}
-	return WINID_UNSED;
+	return WINID_UNUSED;
 }
 
 void win_updateScreen(void) {
@@ -152,15 +183,18 @@ void win_updateScreen(void) {
 void win_destroyWinsOf(inode_t cid,gpos_t mouseX,gpos_t mouseY) {
 	gwinid_t id;
 	for(id = 0; id < WINDOW_COUNT; id++) {
-		if(windows[id].id != WINID_UNSED && windows[id].owner == cid)
+		if(windows[id].id != WINID_UNUSED && windows[id].owner == cid)
 			win_destroy(id,mouseX,mouseY);
 	}
 }
 
 void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	sRectangle *old;
+	/* destroy shm area */
+	win_destroyBuf(windows + id);
+
 	/* mark unused */
-	windows[id].id = WINID_UNSED;
+	windows[id].id = WINID_UNUSED;
 	if(windows[id].style != WIN_STYLE_POPUP && windows[id].style != WIN_STYLE_DESKTOP)
 		win_notifyWinDestroy(id);
 
@@ -176,19 +210,19 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	/* set highest window active */
 	if(activeWindow == id) {
 		gwinid_t winId = win_getTop();
-		if(winId != WINID_UNSED)
+		if(winId != WINID_UNUSED)
 			win_setActive(winId,false,mouseX,mouseY);
 	}
 }
 
 sWindow *win_get(gwinid_t id) {
-	if(id >= WINDOW_COUNT || windows[id].id == WINID_UNSED)
+	if(id >= WINDOW_COUNT || windows[id].id == WINID_UNUSED)
 		return NULL;
 	return windows + id;
 }
 
 bool win_exists(gwinid_t id) {
-	return id < WINDOW_COUNT && windows[id].id != WINID_UNSED;
+	return id < WINDOW_COUNT && windows[id].id != WINID_UNUSED;
 }
 
 sWindow *win_getAt(gpos_t x,gpos_t y) {
@@ -197,7 +231,7 @@ sWindow *win_getAt(gpos_t x,gpos_t y) {
 	gwinid_t winId = WINDOW_COUNT;
 	sWindow *w = windows;
 	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(w->id != WINID_UNSED && w->z > maxz &&
+		if(w->id != WINID_UNUSED && w->z > maxz &&
 				x >= w->x && x < w->x + w->width &&
 				y >= w->y && y < w->y + w->height) {
 			winId = i;
@@ -223,7 +257,7 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 	sWindow *w = windows;
 	if(id != WINDOW_COUNT) {
 		for(i = 0; i < WINDOW_COUNT; i++) {
-			if(w->id != WINID_UNSED && w->z > curz && w->style != WIN_STYLE_POPUP) {
+			if(w->id != WINID_UNUSED && w->z > curz && w->style != WIN_STYLE_POPUP) {
 				if(w->z > maxz)
 					maxz = w->z;
 				w->z--;
@@ -278,6 +312,10 @@ void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
 }
 
 void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	/* exchange buffer */
+	win_destroyBuf(windows + window);
+	assert(win_createBuf(windows + window,window,width,height) == 0);
+
 	if(x != windows[window].x || y != windows[window].y)
 		win_moveTo(window,x,y,width,height);
 	else {
@@ -356,21 +394,25 @@ void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 
 void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sWindow *win = windows + window;
-	sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
-	r->x = win->x + x;
-	r->y = win->y + y;
-	r->width = width;
-	r->height = height;
-	r->window = win->id;
-	win_repaint(r,win,win->z);
+	if(activeWindow == window)
+		win_copyRegion(shmem,win->x + x,win->y + y,width,height,window);
+	else {
+		sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
+		r->x = win->x + x;
+		r->y = win->y + y;
+		r->width = width;
+		r->height = height;
+		r->window = win->id;
+		win_repaint(r,win,win->z);
+	}
 }
 
 static gwinid_t win_getTop(void) {
-	gwinid_t i,winId = WINID_UNSED;
+	gwinid_t i,winId = WINID_UNUSED;
 	int maxz = -1;
 	sWindow *w = windows;
 	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(w->id != WINID_UNSED && w->z > maxz) {
+		if(w->id != WINID_UNUSED && w->z > maxz) {
 			winId = i;
 			maxz = w->z;
 		}
@@ -382,26 +424,37 @@ static gwinid_t win_getTop(void) {
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 	sRectangle *rect;
 	sSLNode *n;
-	sSLList *list = sll_create();
-	if(list == NULL) {
-		printe("Unable to create list");
-		exit(EXIT_FAILURE);
-	}
+	sSLList list;
+	sll_init(&list,malloc,free);
 
-	win_getRepaintRegions(list,0,win,z,r);
-	for(n = sll_begin(list); n != NULL; n = n->next) {
+	win_getRepaintRegions(&list,0,win,z,r);
+	for(n = sll_begin(&list); n != NULL; n = n->next) {
 		rect = (sRectangle*)n->data;
+
+		/* validate rect */
+		gpos_t x = rect->x;
+		gsize_t width = rect->width, height = rect->height;
+		if(x < 0) {
+			if(-x > width)
+				continue;
+			width += x;
+			x = 0;
+		}
+		if(x >= vesaInfo.width || rect->y >= vesaInfo.height)
+			continue;
+		width = MIN(vesaInfo.width - x,width);
+		height = MIN(vesaInfo.height - rect->y,height);
 
 		/* if it doesn't belong to a window, we have to clear it */
 		if(rect->window == WINDOW_COUNT)
-			win_clearRegion(shmem,rect->x,rect->y,rect->width,rect->height);
-		/* send the window a repaint-request */
+			win_clearRegion(shmem,x,rect->y,width,height);
+		/* otherwise copy from the window buffer */
 		else
-			win_sendRepaint(rect->x,rect->y,rect->width,rect->height,rect->window);
+			win_copyRegion(shmem,x,rect->y,width,height,rect->window);
 	}
 
-	/* free data, too */
-	sll_destroy(list,true);
+	/* free list elements */
+	sll_clear(&list,true);
 }
 
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY) {
@@ -417,24 +470,6 @@ static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY
 	}
 }
 
-static void win_sendRepaint(gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id) {
-	int aWin = getclient(drvId,windows[id].owner);
-	if(aWin >= 0) {
-		if(x - windows[id].x < 0) {
-			width += x - windows[id].x;
-			x = -windows[id].x;
-		}
-		msg.args.arg1 = x - windows[id].x;
-		msg.args.arg2 = y - windows[id].y;
-		msg.args.arg3 = width;
-		msg.args.arg4 = height;
-		msg.args.arg5 = id;
-		if(send(aWin,MSG_WIN_UPDATE_EV,&msg,sizeof(msg.args)) < 0)
-			printe("[WINM] Unable to send update-event for window %u",id);
-		close(aWin);
-	}
-}
-
 static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r) {
 	sRectangle **rects;
 	sRectangle wr;
@@ -445,7 +480,7 @@ static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t 
 	for(; id < WINDOW_COUNT; id++) {
 		w = windows + id;
 		/* skip unused, ourself and rects behind ourself */
-		if((win && w->id == win->id) || w->id == WINID_UNSED || w->z < z)
+		if((win && w->id == win->id) || w->id == WINID_UNUSED || w->z < z)
 			continue;
 
 		/* build window-rect */
@@ -493,19 +528,8 @@ static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t 
 
 static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	gpos_t ysave = y;
-	gpos_t maxy;
-	size_t count;
-	if(x < 0) {
-		if(-x > width)
-			return;
-		width += x;
-		x = 0;
-	}
-	if(x >= vesaInfo.width || y >= vesaInfo.height)
-		return;
-	width = MIN(vesaInfo.width - x,width);
-	count = width * PIXEL_SIZE;
-	maxy = MIN(vesaInfo.height,y + height);
+	size_t count = width * PIXEL_SIZE;
+	gpos_t maxy = y + height;
 	mem += (y * vesaInfo.width + x) * PIXEL_SIZE;
 	while(y < maxy) {
 		memclear(mem,count);
@@ -514,6 +538,28 @@ static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t
 	}
 
 	win_notifyVesa(x,ysave,width,height);
+}
+
+static void win_copyRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id) {
+	x -= windows[id].x;
+	y -= windows[id].y;
+
+	uint8_t *src,*dst;
+	gpos_t endy = y + height;
+	size_t count = width * PIXEL_SIZE;
+	size_t srcAdd = windows[id].width * PIXEL_SIZE;
+	size_t dstAdd = vesaInfo.width * PIXEL_SIZE;
+	src = (uint8_t*)windows[id].shmaddr + (y * windows[id].width + x) * PIXEL_SIZE;
+	dst = mem + ((windows[id].y + y) * vesaInfo.width + (windows[id].x + x)) * PIXEL_SIZE;
+
+	while(y < endy) {
+		memcpy(dst,src,count);
+		src += srcAdd;
+		dst += dstAdd;
+		y++;
+	}
+
+	win_notifyVesa(windows[id].x + x,windows[id].y + (endy - height),width,height);
 }
 
 static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
@@ -552,7 +598,7 @@ void win_dbg_print(void) {
 	sWindow *w = windows;
 	printf("Windows:\n");
 	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(w->id != WINID_UNSED) {
+		if(w->id != WINID_UNUSED) {
 			printf("\t[%d] @(%d,%d), size=(%d,%d), z=%d, owner=%d, style=%d\n",
 					i,w->x,w->y,w->width,w->height,w->z,w->owner,w->style);
 		}

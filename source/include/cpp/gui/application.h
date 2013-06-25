@@ -200,18 +200,6 @@ namespace gui {
 			return &_vesaInfo;
 		}
 		/**
-		 * @return the file-descriptor for vesa
-		 */
-		int getVesaFd() const {
-			return _vesaFd;
-		}
-		/**
-		 * @return the shared-memory for the screen
-		 */
-		void *getScreenMem() const {
-			return _vesaMem;
-		}
-		/**
 		 * Requests an update for the window with given id and the given rectangle.
 		 * Ensures that the update does only affect the given window
 		 *
@@ -250,8 +238,6 @@ namespace gui {
 		sMsg _msg;
 		bool _run;
 		uchar _mouseBtns;
-		int _vesaFd;
-		void *_vesaMem;
 		sVESAInfo _vesaInfo;
 		std::vector<std::shared_ptr<Window>> _windows;
 		createdev_type _created;

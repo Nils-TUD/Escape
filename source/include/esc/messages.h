@@ -122,15 +122,16 @@
 #define MSG_WIN_RESIZE				306	/* resizes a window */
 #define MSG_WIN_ENABLE				307	/* enables the window-manager */
 #define MSG_WIN_DISABLE				308	/* disables the window-manager */
-#define MSG_WIN_UPDATE_EV			309	/* is sent by the window-manager to a window to do an update */
-#define MSG_WIN_MOUSE_EV			310	/* a mouse-event sent by the window-manager */
-#define MSG_WIN_KEYBOARD_EV			311	/* a keyboard-event sent by the window-manager */
-#define MSG_WIN_CREATE_EV			312	/* a window has been created */
-#define MSG_WIN_DESTROY_EV			313	/* a window has been destroyed */
-#define MSG_WIN_ADDLISTENER			314	/* announces a listener for CREATE_EV or DESTROY_EV */
-#define MSG_WIN_REMLISTENER			315	/* removes a listener for CREATE_EV or DESTROY_EV */
-#define MSG_WIN_SET_ACTIVE			316	/* requests that a window is set to the active one */
-#define MSG_WIN_ACTIVE_EV			317	/* a window has been set to active */
+#define MSG_WIN_MOUSE_EV			309	/* a mouse-event sent by the window-manager */
+#define MSG_WIN_KEYBOARD_EV			310	/* a keyboard-event sent by the window-manager */
+#define MSG_WIN_CREATE_EV			311	/* a window has been created */
+#define MSG_WIN_DESTROY_EV			312	/* a window has been destroyed */
+#define MSG_WIN_ADDLISTENER			313	/* announces a listener for CREATE_EV or DESTROY_EV */
+#define MSG_WIN_REMLISTENER			314	/* removes a listener for CREATE_EV or DESTROY_EV */
+#define MSG_WIN_SET_ACTIVE			315	/* requests that a window is set to the active one */
+#define MSG_WIN_ACTIVE_EV			316	/* a window has been set to active */
+#define MSG_WIN_RESIZE_RESP			317	/* a resize has been finished */
+#define MSG_WIN_UPDATE_RESP			318 /* an update has been finished */
 
 #define MSG_VID_SETCURSOR			500	/* expects sVTPos */
 #define MSG_VID_GETSIZE				501	/* writes into sVTSize */

@@ -24,7 +24,7 @@
 #include <esc/rect.h>
 
 #define WINDOW_COUNT					32
-#define WINID_UNSED						WINDOW_COUNT
+#define WINID_UNUSED					WINDOW_COUNT
 
 #define PIXEL_SIZE						(vesaInfo.bitsPerPixel / 8)
 
@@ -45,6 +45,8 @@ typedef struct {
 	inode_t owner;
 	uint style;
 	gsize_t titleBarHeight;
+	int shmfd;
+	void *shmaddr;
 } sWindow;
 
 /**
@@ -100,7 +102,7 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor);
  * @return the window-id or WINID_UNUSED if no slot is free
  */
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
-		gsize_t titleBarHeight,const char *title);
+	gsize_t titleBarHeight,const char *title);
 
 /**
  * Updates the whole screen

@@ -88,8 +88,8 @@ void DesktopWin::onWindowCreated(gwinid_t wid,const string& title) {
 	_winPanel->add(b);
 	// TODO as soon as we can arrange it that the taskbar is always visible, we don't have to
 	// repaint and relayout everything here
-	layout();
-	repaint();
+	_winPanel->layout();
+	_winPanel->repaint();
 }
 
 void DesktopWin::onWindowActive(gwinid_t wid) {
@@ -116,7 +116,7 @@ void DesktopWin::onWindowDestroyed(gwinid_t wid) {
 		if(_active == b.get())
 			_active = nullptr;
 		_windows.erase(wid);
-		layout();
-		repaint();
+		_winPanel->layout();
+		_winPanel->repaint();
 	}
 }

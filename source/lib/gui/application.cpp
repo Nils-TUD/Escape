@@ -41,34 +41,28 @@ namespace gui {
 	Application *Application::_inst = nullptr;
 
 	Application::Application()
-			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaFd(-1), _vesaMem(nullptr),
-			  _vesaInfo(), _windows(), _created(), _activated(), _destroyed(), _listening(false),
-			  _defTheme(nullptr) {
+			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaInfo(), _windows(), _created(),
+			  _activated(), _destroyed(), _listening(false), _defTheme(nullptr) {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)
 			throw app_error("Unable to open window-manager");
 
-		_vesaFd = open("/dev/vesa",IO_MSGS);
-		if(_vesaFd < 0)
-			throw app_error("Unable to open vesa");
+		{
+			int fd = open("/dev/vesa",IO_MSGS);
+			if(fd < 0)
+				throw app_error("Unable to open vesa");
 
-		// request screen infos from vesa
-		if(send(_vesaFd,MSG_VESA_GETMODE,&_msg,sizeof(_msg.args)) < 0)
-			throw app_error("Unable to send get-mode-request to vesa");
-		if(IGNSIGS(receive(_vesaFd,&mid,&_msg,sizeof(_msg))) < 0 || mid != MSG_VESA_GETMODE_RESP ||
-				_msg.data.arg1 != 0) {
-			throw app_error("Unable to read the get-mode-response from vesa");
+			// request screen infos from vesa
+			if(send(fd,MSG_VESA_GETMODE,&_msg,sizeof(_msg.args)) < 0)
+				throw app_error("Unable to send get-mode-request to vesa");
+			if(IGNSIGS(receive(fd,&mid,&_msg,sizeof(_msg))) < 0 || mid != MSG_VESA_GETMODE_RESP ||
+					_msg.data.arg1 != 0) {
+				throw app_error("Unable to read the get-mode-response from vesa");
+			}
+			memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));
+			close(fd);
 		}
-		memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));
-
-		int fd = shm_open(VESA_SHM_NAME,IO_READ | IO_WRITE,VESA_SHM_PERM);
-		if(fd < 0)
-			throw app_error("Unable to open shm file");
-		size_t screenSize = _vesaInfo.width * _vesaInfo.height * (_vesaInfo.bitsPerPixel / 8);
-		_vesaMem = mmap(nullptr,screenSize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
-		if(_vesaMem == nullptr)
-			throw app_error("Unable to map shared memory");
 
 		if(signal(SIG_USR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");
@@ -112,7 +106,6 @@ namespace gui {
 	Application::~Application() {
 		while(_windows.size() > 0)
 			removeWindow(*_windows.begin());
-		close(_vesaFd);
 		close(_winFd);
 	}
 
@@ -153,6 +146,22 @@ namespace gui {
 			}
 			break;
 
+			case MSG_WIN_RESIZE_RESP: {
+				gwinid_t win = (gwinid_t)msg->args.arg1;
+				Window *w = getWindowById(win);
+				if(w)
+					w->onResized();
+			}
+			break;
+
+			case MSG_WIN_UPDATE_RESP: {
+				gwinid_t win = (gwinid_t)msg->args.arg1;
+				Window *w = getWindowById(win);
+				if(w)
+					w->onUpdated();
+			}
+			break;
+
 			case MSG_WIN_MOUSE_EV: {
 				gpos_t x = (gpos_t)msg->args.arg1;
 				gpos_t y = (gpos_t)msg->args.arg2;
@@ -181,24 +190,6 @@ namespace gui {
 						KeyEvent e(KeyEvent::KEY_PRESSED,keycode,character,modifier);
 						w->onKeyPressed(e);
 					}
-				}
-			}
-			break;
-
-			case MSG_WIN_UPDATE_EV: {
-				gpos_t x = (gpos_t)msg->args.arg1;
-				gpos_t y = (gpos_t)msg->args.arg2;
-				gsize_t width = (gsize_t)msg->args.arg3;
-				gsize_t height = (gsize_t)msg->args.arg4;
-				gwinid_t win = (gwinid_t)msg->args.arg5;
-				Window *w = getWindowById(win);
-				if(w) {
-					Size size(width,height);
-					if(x + size.width > w->getSize().width)
-						size.width = w->getSize().width - x;
-					if(y + size.height > w->getSize().height)
-						size.height = w->getSize().height - y;
-					w->update(Pos(x,y),size);
 				}
 			}
 			break;

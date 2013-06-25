@@ -144,7 +144,6 @@ namespace gui {
 				if(resizing) {
 					prepareResize(_movePos,_resizeSize);
 					Application::getInstance()->resizeWindow(this,true);
-					repaint();
 				}
 			}
 
@@ -196,6 +195,7 @@ namespace gui {
 	}
 
 	void Window::prepareResize(const Pos &pos,const Size &size) {
+		_gbuf->freeBuffer();
 		_gbuf->moveTo(pos);
 		_gbuf->resizeTo(size);
 		_g->setSize(Pos(0,0),size,size);
@@ -408,11 +408,6 @@ namespace gui {
 		_body->repaint(false);
 	}
 
-	void Window::update(const Pos &pos,const Size &size) {
-		if(_g)
-			_g->update(pos,size);
-	}
-
 	void Window::updateActive(bool active) {
 		if(active != _isActive) {
 			_isActive = active;
@@ -440,6 +435,16 @@ namespace gui {
 		_created = true;
 		_gbuf->allocBuffer();
 		repaint();
+	}
+
+	void Window::onResized() {
+		_gbuf->allocBuffer();
+		repaint();
+	}
+
+	void Window::onUpdated() {
+		if(_gbuf->onUpdated())
+			repaint();
 	}
 
 	ostream &operator<<(ostream &s,const Window &w) {

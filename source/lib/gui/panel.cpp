@@ -154,6 +154,13 @@ namespace gui {
 		_layout->removeAll();
 	}
 
+	void Panel::layoutChanged() {
+		if(_doingLayout)
+			return;
+		layout();
+		repaint();
+	}
+
 	ostream &operator<<(ostream &s,const Panel &p) {
 		s << "Panel[@" << p.getPos() << " size=" << p.getSize() << "]";
 		return s;

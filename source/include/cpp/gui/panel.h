@@ -142,12 +142,7 @@ namespace gui {
 			return nullptr;
 		}
 
-		virtual void layoutChanged() {
-			if(_doingLayout)
-				return;
-			layout();
-			repaint();
-		}
+		virtual void layoutChanged();
 
 	private:
 		void passToCtrl(const MouseEvent &e,bool focus);

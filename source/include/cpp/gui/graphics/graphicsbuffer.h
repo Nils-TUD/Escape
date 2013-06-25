@@ -47,13 +47,14 @@ namespace gui {
 		 * @param bpp the used color-depth
 		 */
 		GraphicsBuffer(Window *win,const Pos &pos,const Size &size,gcoldepth_t bpp)
-			: _win(win), _pos(pos), _size(size), _bpp(bpp), _pixels(nullptr) {
+			: _win(win), _pos(pos), _size(size), _bpp(bpp), _fd(-1), _pixels(nullptr),
+			  _lostpaint(false), _updating(false) {
 		}
 		/**
 		 * Destructor
 		 */
 		virtual ~GraphicsBuffer() {
-			free(_pixels);
+			freeBuffer();
 		}
 
 		/**
@@ -87,10 +88,6 @@ namespace gui {
 		 * Requests an update for the given region
 		 */
 		void requestUpdate(const Pos &pos,const Size &size);
-		/**
-		 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
-		 */
-		void update(const Pos &pos,const Size &size);
 
 	private:
 		// no cloning
@@ -101,6 +98,10 @@ namespace gui {
 		 * @return the buffer (might be nullptr)
 		 */
 		uint8_t *getBuffer() const {
+			if(_updating) {
+				_lostpaint = true;
+				return nullptr;
+			}
 			return _pixels;
 		}
 		/**
@@ -110,15 +111,21 @@ namespace gui {
 		/**
 		 * Sets the dimensions for this buffer
 		 */
-		void resizeTo(const Size &size);
+		void resizeTo(const Size &size) {
+			_size = size;
+		}
+		/**
+		 * Called on a finished update
+		 */
+		bool onUpdated();
 		/**
 		 * Allocates _pixels
 		 */
 		void allocBuffer();
 		/**
-		 * Notifies vesa that the given region has changed
+		 * Frees _pixels
 		 */
-		void notifyVesa(const Pos &pos,const Size &size);
+		void freeBuffer();
 
 	private:
 		// the window instance the buffer belongs to
@@ -130,6 +137,9 @@ namespace gui {
 		// used color-depth
 		gcoldepth_t _bpp;
 		// buffer for this window; controls use this, too (don't have their own)
+		int _fd;
 		uint8_t *_pixels;
+		mutable bool _lostpaint;
+		bool _updating;
 	};
 }

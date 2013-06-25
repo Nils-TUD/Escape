@@ -255,6 +255,14 @@ namespace gui {
 			_enableRepaint = en;
 		}
 
+		/**
+		 * Prints this UI element recursively to <os>, starting with given indent.
+		 *
+		 * @param os the ostream
+		 * @param indent the indent
+		 */
+		virtual void print(std::ostream &os, size_t indent = 0) const;
+
 	protected:
 		/**
 		 * Does the actual painting and has to be implemented by subclasses.
@@ -363,4 +371,9 @@ namespace gui {
 		bool _enableRepaint;
 		static id_type _nextid;
 	};
+
+	static inline std::ostream &operator<<(std::ostream &os,const UIElement &ui) {
+		ui.print(os);
+		return os;
+	}
 }

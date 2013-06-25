@@ -75,6 +75,8 @@ namespace gui {
 			getParent()->layoutChanged();
 		}
 
+		virtual void print(std::ostream &os, size_t indent = 0) const;
+
 	protected:
 		virtual void paint(Graphics &g);
 		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);

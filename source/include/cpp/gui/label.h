@@ -43,6 +43,11 @@ namespace gui {
 
 		virtual Size getPrefSize() const;
 
+		virtual void print(std::ostream &os, size_t indent = 0) const {
+			UIElement::print(os, indent);
+			os << " text='" << _text << "'";
+		}
+
 	protected:
 		virtual void paint(Graphics &g);
 

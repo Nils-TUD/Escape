@@ -120,6 +120,8 @@ namespace gui {
 		 */
 		void removeAll();
 
+		virtual void print(std::ostream &os, size_t indent = 0) const;
+
 	protected:
 		virtual void paint(Graphics &g);
 		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
@@ -165,6 +167,4 @@ namespace gui {
 		sRectangle _updateRect;
 		bool _doingLayout;
 	};
-
-	std::ostream &operator<<(std::ostream &s,const Panel &p);
 }

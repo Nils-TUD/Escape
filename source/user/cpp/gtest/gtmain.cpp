@@ -41,6 +41,7 @@
 
 using namespace gui;
 
+static void addWindow(Application *app,shared_ptr<Window> win);
 static shared_ptr<Window> win0(void);
 static shared_ptr<Window> win01(void);
 static shared_ptr<Window> win1(void);
@@ -56,19 +57,25 @@ static volatile bool run = true;
 
 int main(void) {
 	Application *app = Application::getInstance();
-	app->addWindow(win0());
-	app->addWindow(win01());
-	app->addWindow(win1());
-	app->addWindow(win2());
-	app->addWindow(win3());
-	app->addWindow(win4());
-	app->addWindow(win5());
-	app->addWindow(win6());
-	app->addWindow(win7());
+	addWindow(app,win0());
+	addWindow(app,win01());
+	addWindow(app,win1());
+	addWindow(app,win2());
+	addWindow(app,win3());
+	addWindow(app,win4());
+	addWindow(app,win5());
+	addWindow(app,win6());
+	addWindow(app,win7());
+	cout.flush();
 	int res = app->run();
 	run = false;
 	join(0);
 	return res;
+}
+
+static void addWindow(Application *app,shared_ptr<Window> win) {
+	win->print(cout);
+	app->addWindow(win);
 }
 
 static shared_ptr<Window> win0(void) {

@@ -29,6 +29,7 @@
 #include <esc/io.h>
 #include <string>
 #include <ostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -447,10 +448,12 @@ namespace gui {
 			repaint();
 	}
 
-	ostream &operator<<(ostream &s,const Window &w) {
-		string title = w.getTitle();
-		s << "Window[id=" << w.getId() << " @" << w.getPos();
-		s << " size=" << w.getSize() << ", title=" << title << "]";
-		return s;
+	void Window::print(std::ostream &os, size_t indent) const {
+		UIElement::print(os, indent);
+		os << " {\n";
+		_header->print(os,indent + 2);
+		os << "\n";
+		_body->print(os,indent + 2);
+		os << "\n" << std::setw(indent) << "" << "}";
 	}
 }

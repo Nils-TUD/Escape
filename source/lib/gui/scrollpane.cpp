@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <gui/scrollpane.h>
 #include <gui/panel.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -230,5 +231,12 @@ namespace gui {
 		if(viewable == 0 || ctrlSize == 0)
 			return 0;
 		return max<gsize_t>(MIN_BAR_SIZE,(gsize_t)(viewable / ((double)ctrlSize / viewable)));
+	}
+
+	void ScrollPane::print(std::ostream &os, size_t indent) const {
+		UIElement::print(os, indent);
+		os << " {\n";
+		_ctrl->print(os,indent + 2);
+		os << '\n' << std::setw(indent) << "" << "}";
 	}
 }

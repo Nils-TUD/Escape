@@ -24,6 +24,7 @@
 #include <gui/window.h>
 #include <typeinfo>
 #include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -149,5 +150,10 @@ namespace gui {
 			if(update)
 				_g->requestUpdate();
 		}
+	}
+
+	void UIElement::print(std::ostream &os, size_t indent) const {
+		os << std::setw(indent) << "" << "[" << typeid(*this).name() << "]";
+		os << " id=" << getId() << " pos=" << getScreenPos() << " size=" << getSize();
 	}
 }

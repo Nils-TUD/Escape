@@ -56,6 +56,11 @@ namespace gui {
 		virtual void onKeyReleased(const KeyEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 
+		virtual void print(std::ostream &os, size_t indent = 0) const {
+			UIElement::print(os, indent);
+			os << " text='" << _text << "' checked=" << _checked;
+		}
+
 	protected:
 		virtual void paint(Graphics &g);
 

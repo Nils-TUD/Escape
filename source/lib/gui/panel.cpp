@@ -20,7 +20,10 @@
 #include <esc/common.h>
 #include <gui/panel.h>
 #include <gui/window.h>
+#include <functor.h>
+#include <typeinfo>
 #include <ostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -161,8 +164,13 @@ namespace gui {
 		repaint();
 	}
 
-	ostream &operator<<(ostream &s,const Panel &p) {
-		s << "Panel[@" << p.getPos() << " size=" << p.getSize() << "]";
-		return s;
+	void Panel::print(std::ostream &os, size_t indent) const {
+		UIElement::print(os, indent);
+		os << " layout=" << (_layout ? typeid(*_layout).name() : "(null)") << " {\n";
+		for(auto it = _controls.begin(); it != _controls.end(); ++it) {
+			(*it)->print(os,indent + 2);
+			os << '\n';
+		}
+		os << std::setw(indent) << "" << "}";
 	}
 }

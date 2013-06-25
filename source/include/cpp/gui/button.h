@@ -60,6 +60,11 @@ namespace gui {
 			return _clicked;
 		}
 
+		virtual void print(std::ostream &os, size_t indent = 0) const {
+			UIElement::print(os, indent);
+			os << " text='" << _text << "'";
+		}
+
 	protected:
 		virtual void paintBackground(Graphics &g);
 		virtual void paintBorder(Graphics &g);

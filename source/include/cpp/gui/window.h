@@ -261,6 +261,8 @@ namespace gui {
 		 */
 		void appendTabCtrl(Control &c);
 
+		virtual void print(std::ostream &os, size_t indent = 0) const;
+
 	protected:
 		/**
 		 * Paints only the title of the window
@@ -345,9 +347,4 @@ namespace gui {
 		std::list<Control*> _tabCtrls;
 		std::list<Control*>::iterator _tabIt;
 	};
-
-	/**
-	 * Writes the window to the given stream
-	 */
-	std::ostream &operator<<(std::ostream &s,const Window &w);
 }

@@ -459,6 +459,10 @@ void vfs_node_destroy(sVFSNode *n) {
 	/* take care that we don't destroy the node twice */
 	if(n->name) {
 		/* let the node clean up */
+		/* TODO is it really correct to do that here? I mean, if someone unlinks a file, it should
+		 * stay alive until all references are gone, right? E.g. if two processes share a file,
+		 * one writes to it and closes and unlinks it afterwards, the other one should still be
+		 * able to read the file. But what consequences has it to change that? */
 		if(n->destroy)
 			n->destroy(n);
 

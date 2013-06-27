@@ -342,7 +342,7 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file)
 	int err;
 
 	/* cleanup flags */
-	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE;
+	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
 
 	if(devNo == VFS_DEV_NO) {
 		n = vfs_node_request(nodeNo);

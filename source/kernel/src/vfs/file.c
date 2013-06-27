@@ -146,13 +146,13 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *n,USER 
 	size_t newSize = 0;
 	sFileContent *con = (sFileContent*)n->data;
 	spinlock_aquire(&n->lock);
-	oldData = con->data;
 	if(n->name == NULL) {
 		spinlock_release(&n->lock);
 		return -EDESTROYED;
 	}
 
 	/* need to create cache? */
+	oldData = con->data;
 	if(con->data == NULL) {
 		newSize = MAX(count,VFS_INITIAL_WRITECACHE);
 		/* check for overflow */

@@ -117,8 +117,8 @@ namespace gui {
 		msgid_t mid;
 		while(_run) {
 			int res = receive(_winFd,&mid,&_msg,sizeof(_msg));
-			if(res < 0 && res != EINTR)
-				throw app_error("Read from window-manager failed");
+			if(res < 0 && res != -EINTR)
+				throw app_error(string("Read from window-manager failed: ") + strerror(-res));
 			if(res >= 0)
 				handleMessage(mid,&_msg);
 			handleQueue();

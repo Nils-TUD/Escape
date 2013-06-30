@@ -164,15 +164,20 @@ namespace gui {
 	}
 
 	void ScrollPane::paint(Graphics &g) {
-		Size size = getSize() - Size(_ctrl->getPos() + Pos(BAR_SIZE,BAR_SIZE));
+		Size visible = getVisible();
 
-		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
-		g.fillRect(Pos(0,0),size);
+		// only paint the background, if the control doesn't use up all space
+		if(_ctrl->getSize().width < visible.width || _ctrl->getSize().height < visible.height) {
+			g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
+			g.fillRect(Pos(0,0),visible);
+		}
 
-		if(_update.empty())
+		if(_update.empty()) {
+			Size size = visible - Size(_ctrl->getPos());
 			_ctrl->repaintRect(Pos(0,0) - _ctrl->getPos(),size,false);
+		}
 		else {
-			Size rsize = minsize(_update.getSize(),getVisible());
+			Size rsize = minsize(_update.getSize(),visible);
 			_ctrl->paintRect(*_ctrl->getGraphics(),_update.getPos() - _ctrl->getPos(),rsize);
 		}
 		paintBars(g);

@@ -85,7 +85,7 @@ namespace gui {
 		/**
 		 * Performs a layout-calculation for this panel and all childs
 		 */
-		virtual void layout();
+		virtual bool layout();
 		
 		/**
 		 * The event-callbacks

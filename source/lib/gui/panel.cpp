@@ -59,14 +59,17 @@ namespace gui {
 			_focus = nullptr;
 	}
 
-	void Panel::layout() {
+	bool Panel::layout() {
+		bool res = false;
 		_doingLayout = true;
 		if(_layout)
-			_layout->rearrange();
+			res |= _layout->rearrange();
 		for(auto it = _controls.begin(); it != _controls.end(); ++it)
-			(*it)->layout();
+			res |= (*it)->layout();
 		_doingLayout = false;
-		getParent()->layoutChanged();
+		if(res)
+			getParent()->layoutChanged();
+		return res;
 	}
 
 	void Panel::resizeTo(const Size &size) {
@@ -167,8 +170,8 @@ namespace gui {
 	void Panel::layoutChanged() {
 		if(_doingLayout)
 			return;
-		layout();
-		repaint();
+		if(layout())
+			repaint();
 	}
 
 	void Panel::print(std::ostream &os, bool rec, size_t indent) const {

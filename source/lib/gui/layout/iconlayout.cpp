@@ -45,10 +45,11 @@ namespace gui {
 					dim.height * max.height + (dim.height - 1) * _gap);
 	}
 
-	void IconLayout::rearrange() {
+	bool IconLayout::rearrange() {
 		if(!_p || _ctrls.size() == 0)
-			return;
+			return false;
 
+		bool res = false;
 		Size max;
 		gsize_t pad = _p->getTheme().getPadding();
 		Size dim = getDim(_p->getSize() - Size(pad * 2,pad * 2),max);
@@ -58,7 +59,7 @@ namespace gui {
 		switch(_pref) {
 			case HORIZONTAL: {
 				for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-					doConfigureControl(*it,pos,max);
+					res |= doConfigureControl(*it,pos,max);
 					pos.x += max.width + _gap;
 					if(++col == dim.width) {
 						pos.x = pad;
@@ -72,7 +73,7 @@ namespace gui {
 
 			case VERTICAL: {
 				for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-					doConfigureControl(*it,pos,max);
+					res |= doConfigureControl(*it,pos,max);
 					pos.y += max.height + _gap;
 					if(++row == dim.height) {
 						pos.y = pad;
@@ -84,13 +85,14 @@ namespace gui {
 				break;
 			}
 		}
+		return res;
 	}
 
-	void IconLayout::doConfigureControl(shared_ptr<Control> c,const Pos &pos,const Size &max) {
+	bool IconLayout::doConfigureControl(shared_ptr<Control> c,const Pos &pos,const Size &max) {
 		Size pref = c->getPreferredSize();
 		Pos cpos(pos.x + (max.width - pref.width) / 2,
 		         pos.y + (max.height - pref.height) / 2);
-		configureControl(c,cpos,pref);
+		return configureControl(c,cpos,pref);
 	}
 
 	Size IconLayout::getDim(const Size &avail,Size &max) const {

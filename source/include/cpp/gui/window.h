@@ -210,10 +210,12 @@ namespace gui {
 			return Size(bsize.width + 2,bsize.height + 2);
 		}
 
-		virtual void layout() {
+		virtual bool layout() {
+			bool res = false;
 			if(_header)
-				_header->layout();
-			_body->layout();
+				res |= _header->layout();
+			res |= _body->layout();
+			return res;
 		}
 
 		/**

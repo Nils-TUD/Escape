@@ -57,7 +57,8 @@ namespace gui {
 		/**
 		 * Does nothing
 		 */
-		virtual void layout() {
+		virtual bool layout() {
+			return false;
 		}
 
 		/**

@@ -154,8 +154,9 @@ namespace gui {
 		/**
 		 * Performs the layout-calculation for this ui-element. This is only used by Window and
 		 * Panel.
+		 * @return true if something has changed
 		 */
-		virtual void layout() = 0;
+		virtual bool layout() = 0;
 
 		/**
 		 * Repaints the control, i.e. calls paint()

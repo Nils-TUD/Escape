@@ -70,7 +70,7 @@ namespace gui {
 		virtual void remove(Panel *p,std::shared_ptr<Control> c,pos_type pos);
 		virtual void removeAll();
 
-		virtual void rearrange();
+		virtual bool rearrange();
 
 	private:
 		virtual Size getSizeWith(const Size &avail,size_func func) const;

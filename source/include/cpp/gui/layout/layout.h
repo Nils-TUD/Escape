@@ -88,8 +88,10 @@ namespace gui {
 		/**
 		 * Rearranges the controls, i.e. determines the position and sizes again. Does not
 		 * perform a repaint!
+		 *
+		 * @return true if something changed
 		 */
-		virtual void rearrange() = 0;
+		virtual bool rearrange() = 0;
 
 	protected:
 		/**
@@ -109,9 +111,11 @@ namespace gui {
 			return c->getUsedSize(avail);
 		}
 
-		void configureControl(std::shared_ptr<Control> c,const Pos &pos,const Size &size) const {
+		bool configureControl(std::shared_ptr<Control> c,const Pos &pos,const Size &size) const {
+			bool res = c->getPos() != pos || c->getSize() != size;
 			c->moveTo(pos);
 			c->resizeTo(size);
+			return res;
 		}
 
 	private:

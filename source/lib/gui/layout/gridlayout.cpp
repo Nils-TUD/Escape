@@ -49,10 +49,11 @@ namespace gui {
 		return Size(max.width * _cols + _gap * (_cols - 1),max.height * _rows + _gap * (_rows - 1));
 	}
 
-	void GridLayout::rearrange() {
+	bool GridLayout::rearrange() {
 		if(!_p || _ctrls.size() == 0)
-			return;
+			return false;
 
+		bool res = false;
 		gsize_t pad = _p->getTheme().getPadding();
 		Size size = _p->getSize();
 		// work with double here to distribute the inaccuracy over all gaps. otherwise it would
@@ -64,8 +65,9 @@ namespace gui {
 			GridPos pos(it->first);
 			gpos_t x = (gpos_t)(pad + pos.col() * (cwidth + _gap));
 			gpos_t y = (gpos_t)(pad + pos.row() * (cheight + _gap));
-			configureControl(it->second,Pos(x,y),Size((gsize_t)cwidth,(gsize_t)cheight));
+			res |= configureControl(it->second,Pos(x,y),Size((gsize_t)cwidth,(gsize_t)cheight));
 		}
+		return res;
 	}
 
 	Size GridLayout::getMaxSize() const {

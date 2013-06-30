@@ -77,10 +77,11 @@ namespace gui {
 		return size;
 	}
 
-	void BorderLayout::rearrange() {
+	bool BorderLayout::rearrange() {
 		if(!_p)
-			return;
+			return false;
 
+		bool res = false;
 		shared_ptr<Control> c;
 		gsize_t pad = _p->getTheme().getPadding();
 		Size orgsize = _p->getSize() - Size(pad * 2,pad * 2);
@@ -94,26 +95,27 @@ namespace gui {
 		Size es = _ctrls[EAST] ? _ctrls[EAST]->getPreferredSize() + Size(_gap,_gap) : Size();
 
 		if((c = _ctrls[NORTH])) {
-			configureControl(c,pos,Size(size.width,ns.height - _gap));
+			res |= configureControl(c,pos,Size(size.width,ns.height - _gap));
 			pos.y += ns.height;
 			rsize.height -= ns.height;
 		}
 		if((c = _ctrls[SOUTH])) {
-			configureControl(c,Pos(pos.x,pad + size.height - (ss.height - _gap)),
-							 Size(size.width,ss.height - _gap));
+			res |= configureControl(c,Pos(pos.x,pad + size.height - (ss.height - _gap)),
+							 	    Size(size.width,ss.height - _gap));
 			rsize.height -= ss.height;
 		}
 		if((c = _ctrls[WEST])) {
-			configureControl(c,pos,Size(ws.width - _gap,rsize.height));
+			res |= configureControl(c,pos,Size(ws.width - _gap,rsize.height));
 			pos.x += ws.width;
 			rsize.width -= ws.width;
 		}
 		if((c = _ctrls[EAST])) {
-			configureControl(c,Pos(pad + size.width - (es.width - _gap),pos.y),
-							 Size(es.width - _gap,rsize.height));
+			res |= configureControl(c,Pos(pad + size.width - (es.width - _gap),pos.y),
+							 	 	Size(es.width - _gap,rsize.height));
 			rsize.width -= es.width;
 		}
 		if((c = _ctrls[CENTER]))
-			configureControl(c,pos,rsize);
+			res |= configureControl(c,pos,rsize);
+		return res;
 	}
 }

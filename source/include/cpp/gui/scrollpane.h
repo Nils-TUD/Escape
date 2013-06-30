@@ -68,11 +68,12 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseWheel(const MouseEvent &e);
 
-		virtual void layout() {
+		virtual bool layout() {
 			_doingLayout = true;
-			_ctrl->layout();
+			bool res = _ctrl->layout();
 			_doingLayout = false;
 			getParent()->layoutChanged();
+			return res;
 		}
 
 		virtual bool isDirty() const {
@@ -125,8 +126,8 @@ namespace gui {
 		virtual void layoutChanged() {
 			if(_doingLayout)
 				return;
-			layout();
-			repaint();
+			if(layout())
+				repaint();
 		}
 
 	private:

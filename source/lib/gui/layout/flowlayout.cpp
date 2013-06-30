@@ -46,10 +46,11 @@ namespace gui {
 		return Size(max.width,max.height * _ctrls.size() + _gap * (_ctrls.size() - 1));
 	}
 
-	void FlowLayout::rearrange() {
+	bool FlowLayout::rearrange() {
 		if(!_p || _ctrls.size() == 0)
-			return;
+			return false;
 
+		bool res = false;
 		gsize_t pad = _p->getTheme().getPadding();
 		Size size = _p->getSize() - Size(pad * 2,pad * 2);
 		Size max = getMaxSize();
@@ -81,12 +82,13 @@ namespace gui {
 		}
 
 		for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			configureControl(*it,pos,max);
+			res |= configureControl(*it,pos,max);
 			if(_orientation == VERTICAL)
 				pos.y += max.height + _gap;
 			else
 				pos.x += max.width + _gap;
 		}
+		return res;
 	}
 
 	Size FlowLayout::getMaxSize() const {

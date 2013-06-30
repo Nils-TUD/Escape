@@ -105,7 +105,7 @@ int main(void) {
 					gpos_t y = (gpos_t)msg.args.arg3;
 					bool finish = (bool)msg.args.arg4;
 					sWindow *win = win_get(wid);
-					if(win_isEnabled() && win && x < screenWidth && y < screenHeight) {
+					if(win_isEnabled() && win && x < (gpos_t)screenWidth && y < (gpos_t)screenHeight) {
 						if(finish)
 							win_moveTo(wid,x,y,win->width,win->height);
 						else
@@ -140,11 +140,18 @@ int main(void) {
 					gsize_t width = (gsize_t)msg.args.arg4;
 					gsize_t height = (gsize_t)msg.args.arg5;
 					sWindow *win = win_get(wid);
-					if(win_isEnabled() && win != NULL && x + width > x && y + height > y &&
-						x + width <= win->width && y + height <= win->height) {
-						win_update(wid,x,y,width,height);
-						/* wid is already set */
-						send(fd,MSG_WIN_UPDATE_RESP,&msg,sizeof(msg.args));
+					if(win_isEnabled() && win != NULL) {
+						if((gpos_t)(x + width) > x &&
+								(gpos_t)(y + height) > y && x + width <= win->width &&
+								y + height <= win->height) {
+							win_update(wid,x,y,width,height);
+							/* wid is already set */
+							send(fd,MSG_WIN_UPDATE_RESP,&msg,sizeof(msg.args));
+						}
+						else {
+							printe("[WINM] Got illegal update-params: %d,%d %zu,%zu",
+									x,y,width,height);
+						}
 					}
 				}
 				break;

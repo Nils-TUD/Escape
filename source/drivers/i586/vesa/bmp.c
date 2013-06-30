@@ -27,7 +27,7 @@
 
 void bmp_draw(sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
 	uint8_t *data = (uint8_t*)bmp->data;
-	gsize_t w = bmp->infoHeader->width, h = bmp->infoHeader->height;
+	gpos_t w = bmp->infoHeader->width, h = bmp->infoHeader->height;
 	gpos_t cx,cy;
 	/* we assume RGB 24bit here */
 	assert(bmp->infoHeader->compression == BI_RGB);

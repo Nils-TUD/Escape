@@ -240,8 +240,8 @@ namespace gui {
 
 		Window *w = getWindowById(win);
 		if(w) {
-			Pos npos(max<gpos_t>(0,min<gpos_t>(_vesaInfo.width - 1,pos.x - w->getPos().x)),
-			         max<gpos_t>(0,min<gpos_t>(_vesaInfo.height - 1,pos.y - w->getPos().y)));
+			Pos npos(max(0,min((gpos_t)_vesaInfo.width - 1,pos.x - w->getPos().x)),
+			         max(0,min((gpos_t)_vesaInfo.height - 1,pos.y - w->getPos().y)));
 			if(released) {
 				MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,movedZ,npos,_mouseBtns);
 				w->onMouseReleased(event);

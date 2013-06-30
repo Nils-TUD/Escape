@@ -39,8 +39,8 @@ namespace gui {
 	void BitmapImage::paintRGB(Graphics &g,gpos_t x,gpos_t y) {
 		size_t bitCount = _infoHeader->bitCount;
 		uint8_t *oldData,*data = _data;
-		gsize_t w = _infoHeader->width, h = _infoHeader->height;
-		gsize_t pw = w, ph = h, pad;
+		gpos_t w = _infoHeader->width, h = _infoHeader->height;
+		gpos_t pw = w, ph = h, pad;
 		gpos_t cx,cy;
 		uint32_t lastCol = 0;
 		gsize_t colBytes = bitCount / 8;

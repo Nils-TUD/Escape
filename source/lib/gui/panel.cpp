@@ -40,8 +40,8 @@ namespace gui {
 		for(auto it = _controls.begin(); it != _controls.end(); ++it) {
 			shared_ptr<Control> c = *it;
 			Pos cpos = c->getPos();
-			if(pos.x >= cpos.x && pos.x < cpos.x + c->getSize().width &&
-				pos.y >= cpos.y && pos.y < cpos.y + c->getSize().height) {
+			if(pos.x >= cpos.x && pos.x < (gpos_t)(cpos.x + c->getSize().width) &&
+				pos.y >= cpos.y && pos.y < (gpos_t)(cpos.y + c->getSize().height)) {
 				MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
 					  pos - cpos,e.getButtonMask());
 				if(focus)

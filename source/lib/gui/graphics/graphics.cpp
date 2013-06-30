@@ -112,8 +112,8 @@ namespace gui {
 		updateMinMax(Pos(rpos.x + fsize.width - 1,rpos.y + fsize.height - 1));
 		gpos_t cx,cy;
 		gpos_t xoff = rpos.x - pos.x,yoff = rpos.y - pos.y;
-		gsize_t xend = xoff + fsize.width;
-		gsize_t yend = yoff + fsize.height;
+		gpos_t xend = xoff + fsize.width;
+		gpos_t yend = yoff + fsize.height;
 		for(cy = yoff; cy < yend; cy++) {
 			for(cx = xoff; cx < xend; cx++) {
 				if(_font.isPixelSet(c,cx,cy))
@@ -281,8 +281,8 @@ namespace gui {
 	}
 
 	gsize_t Graphics::getDim(gpos_t off,gsize_t size,gsize_t max) {
-		if(off + size > max) {
-			if(off < max)
+		if((gpos_t)(off + size) > (gpos_t)max) {
+			if(off < (gpos_t)max)
 				return max - off;
 			return 0;
 		}
@@ -337,11 +337,11 @@ namespace gui {
 			y = -_off.y;
 			res |= OUT_TOP;
 		}
-		if(x >= _size.width) {
+		if(x >= (gpos_t)_size.width) {
 			x = _size.width - 1;
 			res |= OUT_RIGHT;
 		}
-		if(y >= _size.height) {
+		if(y >= (gpos_t)_size.height) {
 			y = _size.height - 1;
 			res |= OUT_BOTTOM;
 		}
@@ -355,25 +355,25 @@ namespace gui {
 		gpos_t minx = _minoff.x - _off.x;
 		gpos_t miny = _minoff.y - _off.y;
 		if(x < minx) {
-			if(width < minx - x)
+			if((gpos_t)width < minx - x)
 				return false;
 			width -= minx - x;
 			x = minx;
 		}
 		if(y < miny) {
-			if(height < miny - y)
+			if((gpos_t)height < miny - y)
 				return false;
 			height -= miny - y;
 			y = miny;
 		}
 		if(_off.y + y < 0) {
-			if(height < -(_off.y + y))
+			if((gpos_t)height < -(_off.y + y))
 				return false;
 			height += _off.y + y;
 			y = -_off.y;
 		}
 		if(_off.x + x < 0) {
-			if(width < -(_off.x + x))
+			if((gpos_t)width < -(_off.x + x))
 				return false;
 			width += _off.x + x;
 			x = -_off.x;

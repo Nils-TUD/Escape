@@ -109,7 +109,7 @@ typedef uintptr_t evobj_t;
 
 typedef uint32_t time_t;
 
-typedef ushort gsize_t;
-typedef short gpos_t;
+typedef size_t gsize_t;
+typedef int gpos_t;
 typedef uchar gcoldepth_t;
 typedef ushort gwinid_t;

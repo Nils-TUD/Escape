@@ -233,8 +233,8 @@ sWindow *win_getAt(gpos_t x,gpos_t y) {
 	sWindow *w = windows;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(w->id != WINID_UNUSED && w->z > maxz &&
-				x >= w->x && x < w->x + w->width &&
-				y >= w->y && y < w->y + w->height) {
+				x >= w->x && x < (gpos_t)(w->x + w->width) &&
+				y >= w->y && y < (gpos_t)(w->y + w->height)) {
 			winId = i;
 			maxz = w->z;
 		}
@@ -437,12 +437,12 @@ static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 		gpos_t x = rect->x;
 		gsize_t width = rect->width, height = rect->height;
 		if(x < 0) {
-			if(-x > width)
+			if(-x > (gpos_t)width)
 				continue;
 			width += x;
 			x = 0;
 		}
-		if(x >= vesaInfo.width || rect->y >= vesaInfo.height)
+		if(x >= (gpos_t)vesaInfo.width || rect->y >= (gpos_t)vesaInfo.height)
 			continue;
 		width = MIN(vesaInfo.width - x,width);
 		height = MIN(vesaInfo.height - rect->y,height);

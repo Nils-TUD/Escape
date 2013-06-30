@@ -326,11 +326,11 @@ namespace gui {
 		void passToCtrl(const KeyEvent &e,uchar event);
 		void passToCtrl(const MouseEvent &e,uchar event);
 		void passMouseToCtrl(Control *c,const MouseEvent& e);
-		void resize(short width,short height);
+		void resize(int width,int height);
 		void resizeTo(const Size &size);
-		void move(short x,short y);
+		void move(int x,int y);
 		void moveTo(const Pos &pos);
-		void resizeMove(short x,short width,short height);
+		void resizeMove(int x,int width,int height);
 		void resizeMoveTo(gpos_t x,const Size &size);
 		void prepareResize(const Pos &pos,const Size &size);
 

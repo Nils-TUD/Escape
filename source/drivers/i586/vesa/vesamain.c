@@ -153,7 +153,7 @@ int main(void) {
 							x >= 0 && y >= 0 && x < minfo->xResolution && y < minfo->yResolution &&
 							x + width <= minfo->xResolution && y + height <= minfo->yResolution &&
 							/* check for overflow */
-							x + width > x && y + height > y) {
+							(int)(x + width) > x && (int)(y + height) > y) {
 						/* first check if we can merge this rectangle with another one.
 						 * maybe we have even got exactly this rectangle... */
 						sSLNode *n;
@@ -395,7 +395,7 @@ static void vesa_handlePreviewIntersec(sRectangle *curRec,sRectangle *intersec,s
 
 static void vesa_setPixel16(gpos_t x,gpos_t y,tColor col) {
 	gsize_t xres = minfo->xResolution;
-	if(x < xres && y < minfo->yResolution) {
+	if(x < (int)xres && y < (int)minfo->yResolution) {
 		uint16_t *data = (uint16_t*)((uintptr_t)video + (y * xres + x) * 2);
 		uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
 		uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
@@ -409,7 +409,7 @@ static void vesa_setPixel16(gpos_t x,gpos_t y,tColor col) {
 
 static void vesa_setPixel24(gpos_t x,gpos_t y,tColor col) {
 	gsize_t xres = minfo->xResolution;
-	if(x < xres && y < minfo->yResolution) {
+	if(x < (int)xres && y < (int)minfo->yResolution) {
 		uint8_t *data = (uint8_t*)video + (y * xres + x) * 3;
 		uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
 		uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
@@ -425,7 +425,7 @@ static void vesa_setPixel24(gpos_t x,gpos_t y,tColor col) {
 
 static void vesa_setPixel32(gpos_t x,gpos_t y,tColor col) {
 	gsize_t xres = minfo->xResolution;
-	if(x < xres && y < minfo->yResolution) {
+	if(x < (int)xres && y < (int)minfo->yResolution) {
 		uint8_t *data = (uint8_t*)video + (y * xres + x) * 4;
 		uint8_t red = (col >> 16) >> (8 - minfo->redMaskSize);
 		uint8_t green = (col >> 8) >> (8 - minfo->greenMaskSize);
@@ -486,14 +486,14 @@ static void vesa_setPreview(sRectangle *rect,gsize_t thickness) {
 		}
 
 		if(rect->x < 0) {
-			rect->width = MAX(0,rect->width + rect->x);
+			rect->width = MAX(0,(int)(rect->width + rect->x));
 			rect->x = 0;
 		}
-		if(rect->x > xres)
+		if(rect->x > (int)xres)
 			rect->x = xres;
 		if(rect->x + rect->width >= xres)
 			rect->width = xres - rect->x;
-		if(rect->y > yres)
+		if(rect->y > (int)yres)
 			rect->y = yres;
 		if(rect->y + rect->height >= yres)
 			rect->height = yres - rect->y;
@@ -536,8 +536,8 @@ static void vesa_setCursor(gpos_t x,gpos_t y) {
 	gsize_t xres = minfo->xResolution;
 	gsize_t yres = minfo->yResolution;
 	/* validate position */
-	x = MIN(x,xres - 1);
-	y = MIN(y,yres - 1);
+	x = MIN(x,(int)(xres - 1));
+	y = MIN(y,(int)(yres - 1));
 
 	if(lastX != x || lastY != y) {
 		gsize_t upHeight = MIN(curHeight,yres - lastY);

@@ -33,8 +33,10 @@ namespace gui {
 		Pos w = _cb->getWindow()->getPos();
 		Size cbs = _cb->getSize();
 		gsize_t tbh = _cb->getWindow()->getTitleBarHeight();
-		if(!(pos.x >= w.x + cb.x + cbs.width - cbs.height && pos.x < w.x + cb.x + cbs.width &&
-				pos.y >= w.y + cb.y + tbh && pos.y < w.y + cb.y + tbh + cbs.height)) {
+		if(!(pos.x >= (gpos_t)(w.x + cb.x + cbs.width - cbs.height) &&
+				pos.x < (gpos_t)(w.x + cb.x + cbs.width) &&
+				pos.y >= (gpos_t)(w.y + cb.y + tbh) &&
+				pos.y < (gpos_t)(w.y + cb.y + tbh + cbs.height))) {
 			closeImpl();
 		}
 	}
@@ -159,7 +161,7 @@ namespace gui {
 	}
 	void ComboBox::onMouseReleased(const MouseEvent &e) {
 		UIElement::onMouseReleased(e);
-		if(_pressed && e.getPos().x >= getPos().x + getSize().width - getSize().height + 2)
+		if(_pressed && e.getPos().x >= (gpos_t)(getPos().x + getSize().width - getSize().height + 2))
 			setPressed(false);
 	}
 }

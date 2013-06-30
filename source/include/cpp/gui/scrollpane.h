@@ -130,7 +130,11 @@ namespace gui {
 		}
 
 	private:
-		void scrollBy(short mx,short my);
+		void scrollBy(int mx,int my);
+		Size getVisible() {
+			return Size(max<gsize_t>(0,getSize().width - BAR_SIZE),
+					max<gsize_t>(0,getSize().height - BAR_SIZE));
+		}
 		virtual void setFocus(Control *c) {
 			if(c)
 				_focus = FOCUS_CTRL;

@@ -25,8 +25,8 @@
 typedef struct {
 	int x;
 	int y;
-	ushort width;
-	ushort height;
+	size_t width;
+	size_t height;
 	/* TODO remove! */
 	ushort window;
 } sRectangle;

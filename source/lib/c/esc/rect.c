@@ -31,8 +31,8 @@ void rectAdd(sRectangle *r1,const sRectangle *r2) {
 }
 
 bool rectContains(const sRectangle *r,int x,int y) {
-	return x >= r->x && x < r->x + r->width &&
-		y >= r->y && y < r->y + r->height;
+	return x >= r->x && x < (int)(r->x + r->width) &&
+		y >= r->y && y < (int)(r->y + r->height);
 }
 
 sRectangle **rectSubstract(const sRectangle *r1,const sRectangle *r2,size_t *rectCount) {
@@ -74,9 +74,9 @@ sRectangle **rectSubstract(const sRectangle *r1,const sRectangle *r2,size_t *rec
 		 * is 2 rects */
 		other = true;
 		if(!op1in && !op2in && !op3in && !op4in) {
-			if(!(r2->x >= r1->x && r2->x < r1->x + r1->width &&
+			if(!(r2->x >= r1->x && r2->x < (int)(r1->x + r1->width) &&
 					r2->y < r1->y && r2->y + r2->height >= r1->y + r1->height) &&
-				!(r2->y >= r1->y && r2->y < r1->y + r1->height &&
+				!(r2->y >= r1->y && r2->y < (int)(r1->y + r1->height) &&
 					r2->x < r1->x && r2->x + r2->width >= r1->x + r1->width)) {
 				/* no intersection */
 				*rectCount = 0;
@@ -297,9 +297,9 @@ bool rectIntersect(const sRectangle *r1,const sRectangle *r2,sRectangle *interse
 
 		/* no points of r1 are in r2 and no points of r2 are in r1 */
 		if(!op1in && !op2in && !op3in && !op4in) {
-			if(!(r2->x >= r1->x && r2->x < r1->x + r1->width &&
+			if(!(r2->x >= r1->x && r2->x < (int)(r1->x + r1->width) &&
 					r2->y < r1->y && r2->y + r2->height >= r1->y + r1->height) &&
-				!(r2->y >= r1->y && r2->y < r1->y + r1->height &&
+				!(r2->y >= r1->y && r2->y < (int)(r1->y + r1->height) &&
 					r2->x < r1->x && r2->x + r2->width >= r1->x + r1->width)) {
 				/* no intersection */
 				return false;

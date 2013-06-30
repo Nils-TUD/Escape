@@ -167,14 +167,14 @@ namespace gui {
 
 	void Window::onMousePressed(const MouseEvent &e) {
 		if(_style == DEFAULT) {
-			if(_header && e.getPos().y < _header->getSize().height)
+			if(_header && e.getPos().y < (gpos_t)_header->getSize().height)
 				_inTitle = true;
-			else if(e.getPos().y >= getSize().height - CURSOR_RESIZE_WIDTH)
+			else if(e.getPos().y >= (gpos_t)(getSize().height - CURSOR_RESIZE_WIDTH))
 				_inResizeBottom = true;
-			if(!_header || e.getPos().y >= _header->getSize().height) {
+			if(!_header || e.getPos().y >= (gpos_t)_header->getSize().height) {
 				if(e.getPos().x < CURSOR_RESIZE_WIDTH)
 					_inResizeLeft = true;
-				else if(e.getPos().x >= getSize().width - CURSOR_RESIZE_WIDTH)
+				else if(e.getPos().x >= (gpos_t)(getSize().width - CURSOR_RESIZE_WIDTH))
 					_inResizeRight = true;
 			}
 			// don't pass the event to a control
@@ -275,7 +275,7 @@ namespace gui {
 			return;
 		}
 
-		if(_header && e.getPos().y < _header->getSize().height)
+		if(_header && e.getPos().y < (gpos_t)_header->getSize().height)
 			passMouseToCtrl(_header.get(),e);
 		else
 			passMouseToCtrl(_body.get(),e);
@@ -340,7 +340,7 @@ namespace gui {
 		_tabIt = _tabCtrls.end();
 	}
 
-	void Window::resize(short width,short height) {
+	void Window::resize(int width,int height) {
 		if(_resizeSize.width + width < MIN_WIDTH)
 			width = -_resizeSize.width + MIN_WIDTH;
 		if(_resizeSize.height + height < MIN_HEIGHT)
@@ -352,7 +352,7 @@ namespace gui {
 		resizeMoveTo(_movePos.x,size);
 	}
 
-	void Window::resizeMove(short x,short width,short height) {
+	void Window::resizeMove(int x,int width,int height) {
 		if(_resizeSize.width + width >= MIN_WIDTH && _resizeSize.height + height >= MIN_HEIGHT)
 			resizeMoveTo(_movePos.x + x,Size(_resizeSize.width + width,_resizeSize.height + height));
 	}
@@ -371,10 +371,10 @@ namespace gui {
 		}
 	}
 
-	void Window::move(short x,short y) {
+	void Window::move(int x,int y) {
 		Size screenSize = Application::getInstance()->getScreenSize();
-		x = min(screenSize.width - 1,_movePos.x + x);
-		y = max(0,min(screenSize.height - 1,_movePos.y + y));
+		x = min((gpos_t)screenSize.width - 1,_movePos.x + x);
+		y = max(0,min((gpos_t)screenSize.height - 1,_movePos.y + y));
 		moveTo(Pos(x,y));
 	}
 

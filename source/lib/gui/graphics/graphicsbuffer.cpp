@@ -43,8 +43,8 @@ namespace gui {
 
 	void GraphicsBuffer::moveTo(const Pos &pos) {
 		Size screenSize = Application::getInstance()->getScreenSize();
-		_pos.x = min<gpos_t>(screenSize.width - 1,pos.x);
-		_pos.y = min<gpos_t>(screenSize.height - 1,pos.y);
+		_pos.x = min((gpos_t)screenSize.width - 1,pos.x);
+		_pos.y = min((gpos_t)screenSize.height - 1,pos.y);
 	}
 
 	bool GraphicsBuffer::onUpdated() {

@@ -318,6 +318,18 @@ namespace gui {
 		}
 	}
 
+	void Window::requestFocus(Control *c) {
+		if(c == nullptr || c->getWindow() == this) {
+			Control *old = getFocus();
+			if(old != c) {
+				if(old)
+					old->onFocusLost();
+				if(c)
+					c->onFocusGained();
+			}
+		}
+	}
+
 	void Window::setFocus(Control *c) {
 		auto res = find_if(_body->_controls.begin(),_body->_controls.end(),
 			[c] (const shared_ptr<Control> &b) {

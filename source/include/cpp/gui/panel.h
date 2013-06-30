@@ -163,7 +163,7 @@ namespace gui {
 		virtual void setFocus(Control *c) {
 			_focus = c;
 			if(_parent)
-				_parent->setFocus(this);
+				_parent->setFocus(c ? this : nullptr);
 		}
 
 	protected:

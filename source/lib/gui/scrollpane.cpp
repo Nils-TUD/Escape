@@ -118,6 +118,7 @@ namespace gui {
 	}
 	void ScrollPane::onMouseReleased(A_UNUSED const MouseEvent &e) {
 		_focus &= ~(FOCUS_HORSB | FOCUS_VERTSB);
+		setFocus(_ctrl.get());
 	}
 	void ScrollPane::onMousePressed(const MouseEvent &e) {
 		Size size = getSize();

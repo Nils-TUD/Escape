@@ -162,6 +162,7 @@ static int guiProc(void) {
 	root->setLayout(make_layout<BorderLayout>());
 	root->add(make_control<ScrollPane>(sh),BorderLayout::CENTER);
 	w->show();
+	w->requestFocus(sh.get());
 	app->addWindow(w);
 	int res = app->run();
 	sh->sendEOF();

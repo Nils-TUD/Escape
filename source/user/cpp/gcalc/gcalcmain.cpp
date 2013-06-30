@@ -102,7 +102,7 @@ static void keyPressed(UIElement &,const KeyEvent &e) {
 				break;
 		}
 	}
-	win->setFocus(textfield.get());
+	win->requestFocus(textfield.get());
 	textfield->repaint();
 }
 

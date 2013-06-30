@@ -186,7 +186,7 @@ namespace gui {
 		 *
 		 * @param c the control
 		 */
-		void setFocus(Control *c);
+		void requestFocus(Control *c);
 		/**
 		 * @return the height of the title-bar
 		 */
@@ -290,6 +290,7 @@ namespace gui {
 		}
 
 	private:
+		virtual void setFocus(Control *c);
 		/**
 		 * @return the current position to move to
 		 */

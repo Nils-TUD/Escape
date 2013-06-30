@@ -86,8 +86,6 @@ void DesktopWin::onWindowCreated(gwinid_t wid,const string& title) {
 	shared_ptr<WinButton> b = make_control<WinButton>(this,title);
 	_windows[wid] = b;
 	_winPanel->add(b);
-	// TODO as soon as we can arrange it that the taskbar is always visible, we don't have to
-	// repaint and relayout everything here
 	_winPanel->layout();
 	_winPanel->repaint();
 }

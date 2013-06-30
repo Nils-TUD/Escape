@@ -25,8 +25,7 @@ namespace gui {
 
 	public:
 		/**
-		 * Creates an empty panel with given layout. Note that the layout will be owned by the
-		 * panel afterwards. So, it will delete it when the panel is deleted.
+		 * Creates an empty panel with given layout.
 		 *
 		 * @param l the layout (may be empty)
 		 */
@@ -34,9 +33,7 @@ namespace gui {
 			: Control(), _focus(nullptr), _controls(), _layout(l), _updateRect(), _doingLayout() {
 		}
 		/**
-		 * Creates an empty panel at given position, with given size and with given layout. Note
-		 * that the layout will be owned by the panel afterwards. So, it will delete it when the
-		 * panel is deleted.
+		 * Creates an empty panel at given position, with given size and with given layout.
 		 *
 		 * @param pos the position
 		 * @param size the size
@@ -101,8 +98,7 @@ namespace gui {
 		virtual void onMouseWheel(const MouseEvent &e);
 
 		/**
-		 * Adds the given control to this panel. That means, the panel will own the control
-		 * afterwards. So, it will delete it when the panel is deleted.
+		 * Adds the given control to this panel.
 		 *
 		 * @param c the control
 		 * @param pos the position-specification for the layout
@@ -110,8 +106,7 @@ namespace gui {
 		void add(std::shared_ptr<Control> c,Layout::pos_type pos = 0);
 
 		/**
-		 * Removes the given control from this panel. That means, the panel will no longer own
-		 * the control afterwards. So, you can add it to a different panel afterwards, for example.
+		 * Removes the given control from this panel.
 		 *
 		 * @param c the control
 		 * @param pos the position-specification for the layout
@@ -119,9 +114,7 @@ namespace gui {
 		void remove(std::shared_ptr<Control> c,Layout::pos_type pos = 0);
 
 		/**
-		 * Removes all controls from this panel That means, the panel will no longer own
-		 * the controls afterwards. So, you can add them to a different panel afterwards, for
-		 * example.
+		 * Removes all controls from this panel.
 		 */
 		void removeAll();
 

@@ -155,6 +155,7 @@ namespace gui {
 		/**
 		 * Performs the layout-calculation for this ui-element. This is only used by Window and
 		 * Panel.
+		 *
 		 * @return true if something has changed
 		 */
 		virtual bool layout() = 0;
@@ -317,7 +318,7 @@ namespace gui {
 		virtual Size getPrefSize() const = 0;
 
 		/**
-		 * Determines what size would be used if <avail> is available. By default, this
+		 * Determines what size would be used if <avail> was available. By default, this
 		 * is always the maximum of getPreferredSize() and <avail>.
 		 *
 		 * @param avail the available size

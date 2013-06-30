@@ -216,7 +216,7 @@ namespace gui {
 		}
 
 		/**
-		 * @return the x-offset of the control in the window
+		 * @return the offset of the control in the window
 		 */
 		Pos getPos() const {
 			return _off;
@@ -304,7 +304,7 @@ namespace gui {
 			_off = pos;
 		}
 		/**
-		 * @return the minimum y-offset in the window at which we can draw
+		 * @return the minimum offset in the window at which we can draw
 		 */
 		Pos getMinOff() const {
 			return _minoff;

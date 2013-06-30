@@ -22,7 +22,7 @@ namespace gui {
 		// attach to shared memory region, created by winmanager
 		char name[16];
 		snprintf(name, sizeof(name), "win-%d", _win->getId());
-		_fd = shm_open(name,IO_READ | IO_WRITE | IO_CREATE | IO_EXCLUSIVE,0644);
+		_fd = shm_open(name,IO_READ | IO_WRITE,0644);
 		if(_fd < 0)
 			throw std::io_exception(string("Unable to open shm file ") + name, _fd);
 		_pixels = static_cast<uint8_t*>(mmap(NULL,_size.width * _size.height * (_bpp / 8),0,

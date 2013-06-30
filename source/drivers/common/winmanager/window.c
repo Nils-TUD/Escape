@@ -120,7 +120,7 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height) {
 	char name[16];
 	snprintf(name,sizeof(name),"win-%d",id);
-	win->shmfd = shm_open(name,IO_READ | IO_WRITE | IO_CREATE | IO_EXCLUSIVE,0644);
+	win->shmfd = shm_open(name,IO_READ | IO_WRITE | IO_CREATE,0644);
 	if(win->shmfd < 0)
 		return win->shmfd;
 	win->shmaddr = mmap(NULL,width * height * (vesaInfo.bitsPerPixel / 8),0,

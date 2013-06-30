@@ -200,7 +200,7 @@ namespace gui {
 		_gbuf->freeBuffer();
 		_gbuf->moveTo(pos);
 		_gbuf->resizeTo(size);
-		_g->setSize(Pos(0,0),size,size);
+		_g->setSize(size);
 		// when resizing left, its both a resize and move
 		setPos(pos);
 		setSize(size);

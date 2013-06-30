@@ -258,6 +258,9 @@ namespace gui {
 	}
 
 	void Graphics::requestUpdate() {
+		if(_minx > _maxx)
+			return;
+
 		gpos_t x = _minx;
 		gpos_t y = _miny;
 		gsize_t width = _maxx - _minx + 1;
@@ -273,11 +276,9 @@ namespace gui {
 		_maxy = 0;
 	}
 
-	void Graphics::setSize(const Pos &pos,const Size &size,const Size &psize) {
-		_size.width = getDim(pos.x,size.width,psize.width);
-		_size.width = getDim(_off.x,_size.width,_buf->getSize().width);
-		_size.height = getDim(pos.y,size.height,psize.height);
-		_size.height = getDim(_off.y,_size.height,_buf->getSize().height);
+	void Graphics::setSize(const Size &size) {
+		_size.width = getDim(_off.x,size.width,_buf->getSize().width);
+		_size.height = getDim(_off.y,size.height,_buf->getSize().height);
 	}
 
 	gsize_t Graphics::getDim(gpos_t off,gsize_t size,gsize_t max) {
@@ -337,12 +338,12 @@ namespace gui {
 			y = -_off.y;
 			res |= OUT_TOP;
 		}
-		if(x >= (gpos_t)_size.width) {
-			x = _size.width - 1;
+		if(x >= (gpos_t)_size.width + minx) {
+			x = _size.width + minx - 1;
 			res |= OUT_RIGHT;
 		}
-		if(y >= (gpos_t)_size.height) {
-			y = _size.height - 1;
+		if(y >= (gpos_t)_size.height + miny) {
+			y = _size.height + miny - 1;
 			res |= OUT_BOTTOM;
 		}
 		return res;
@@ -378,10 +379,10 @@ namespace gui {
 			width += _off.x + x;
 			x = -_off.x;
 		}
-		if(x + width > _size.width)
-			width = max(0,(gpos_t)_size.width - x);
-		if(y + height > _size.height)
-			height = max(0,(gpos_t)_size.height - y);
+		if(x + width > _size.width + minx)
+			width = max(0,(gpos_t)_size.width + minx - x);
+		if(y + height > _size.height + miny)
+			height = max(0,(gpos_t)_size.height + miny - y);
 		return width > 0 && height > 0;
 	}
 }

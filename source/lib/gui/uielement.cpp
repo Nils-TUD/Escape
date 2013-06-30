@@ -136,9 +136,9 @@ namespace gui {
 		Size gs = g.getSize();
 
 		// change g to cover only the rectangle to repaint
-		g.setMinOff(g.getPos() + pos);
-		g.setSize(_pos,Size(pos + size),_parent->getContentSize());
-
+		Rectangle rect = _parent->getVisibleRect(Rectangle(g.getPos() + pos,size));
+		g.setMinOff(rect.getPos());
+		g.setSize(rect.getSize());
 		// now let the ui-element paint it; this does not make sense if the rectangle is empty
 		if(!g.getSize().empty())
 			paint(g);

@@ -54,10 +54,11 @@ namespace gui {
 	void Control::setRegion() {
 		if(_g) {
 			_g->setOff(getWindowPos());
+			Rectangle rect = _parent->getVisibleRect(Rectangle(_g->getPos(),_size));
 			// don't change the min-offset for the header- and body-panel in the window; they're fixed
 			if(_parent->_parent)
-				_g->setMinOff(getParentOff(_parent));
-			_g->setSize(_pos,_size,_parent->getContentSize());
+				_g->setMinOff(rect.getPos());
+			_g->setSize(rect.getSize());
 		}
 	}
 

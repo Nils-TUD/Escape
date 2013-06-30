@@ -118,16 +118,17 @@ namespace gui {
 		}
 
 		/**
-		 * @return the size of the content of this ui-element. for normal elements its simply
-		 * 	their size. containers may reduce it if they want to paint other stuff besides
-		 * 	their children.
+		 * Calculates the part of <rect> that is visible according to the parent controls.
+		 *
+		 * @param rect the rectangle
+		 * @return the visible part of it
 		 */
-		virtual Size getContentSize() const {
-			// we have to use the minimum of our size and the parent's because some containers
-			// above us might restrict the size, while some won't.
-			if(_parent)
-				return minsize(_parent->getContentSize(),_size);
-			return _size;
+		virtual Rectangle getVisibleRect(const Rectangle &rect) const {
+			if(_parent) {
+				Rectangle r = _parent->getVisibleRect(rect);
+				return Rectangle(minpos(r.getPos(),rect.getPos()),minsize(r.getSize(),rect.getSize()));
+			}
+			return rect;
 		}
 
 		/**

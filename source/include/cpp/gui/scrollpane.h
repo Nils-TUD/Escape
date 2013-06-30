@@ -24,22 +24,22 @@
 
 namespace gui {
 	class ScrollPane : public Control {
-	private:
-		static const gsize_t BAR_SIZE;
-		static const gsize_t MIN_SIZE;
-		static const gsize_t MIN_BAR_SIZE;
-		static const gsize_t SCROLL_FACTOR;
-
 		static const unsigned int FOCUS_CTRL	= 1;
 		static const unsigned int FOCUS_HORSB	= 2;
 		static const unsigned int FOCUS_VERTSB	= 4;
 
+		static const gsize_t SCROLL_FACTOR;
+		static const gsize_t MIN_BAR_SIZE;
+
 	public:
+		static const gsize_t BAR_SIZE;
+		static const gsize_t MIN_SIZE;
+
 		ScrollPane(std::shared_ptr<Control> ctrl)
-			: Control(), _ctrl(ctrl), _focus(0), _doingLayout() {
+			: Control(), _ctrl(ctrl), _update(), _focus(0), _doingLayout() {
 		}
 		ScrollPane(std::shared_ptr<Control> ctrl,const Pos &pos,const Size &size)
-			: Control(pos,size), _ctrl(ctrl), _focus(0), _doingLayout() {
+			: Control(pos,size), _ctrl(ctrl), _update(), _focus(0), _doingLayout() {
 		}
 
 		virtual Size getPrefSize() const {
@@ -50,23 +50,49 @@ namespace gui {
 			return maxsize(avail,Size(MIN_SIZE,MIN_SIZE));
 		}
 
-		virtual Size getContentSize() const {
-			Size size = getSize();
-			if(size.width - _ctrl->getPos().x < BAR_SIZE)
-				size.width = 0;
-			else
-				size.width -= _ctrl->getPos().x + BAR_SIZE;
-			if(size.height - _ctrl->getPos().y < BAR_SIZE)
-				size.height = 0;
-			else
-				size.height -= _ctrl->getPos().y + BAR_SIZE;
-			return size;
+		virtual Rectangle getVisibleRect(const Rectangle &rect) const {
+			if(rect.empty())
+				return rect;
+			Size visible = getSize() - Size(BAR_SIZE,BAR_SIZE);
+			return intersection(rect,Rectangle(getWindowPos(),visible));
 		}
 
 		virtual void onMouseMoved(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseWheel(const MouseEvent &e);
+
+		/**
+		 * Scrolls horizontally by <x> pixels and vertically by <y>.
+		 *
+		 * @param x the amount to scroll horizontally (negative for left, positive for right)
+		 * @param y the amount to scroll vertically (negative for up, positive for down)
+		 */
+		void scrollBy(int x,int y);
+		/**
+		 * Scrolls up/down by the given amount of pages
+		 *
+		 * @param x the pages in x-direction (negative for left, positive for right)
+		 * @param y the pages in y-direction (negative for up, positive for down)
+		 */
+		void scrollPages(int x,int y) {
+			scrollBy(x * SCROLL_FACTOR,y * SCROLL_FACTOR);
+		}
+
+		/**
+		 * Scrolls to the left
+		 */
+		void scrollToTop() {
+			scrollBy(0,std::min(0,_ctrl->getPos().y));
+		}
+		/**
+		 * Scrolls to the bottom
+		 */
+		void scrollToBottom() {
+			Size visible = getVisible();
+			Size max = visible - _ctrl->getSize();
+			scrollBy(0,_ctrl->getPos().y - max.height);
+		}
 
 		virtual bool layout() {
 			_doingLayout = true;
@@ -131,10 +157,15 @@ namespace gui {
 		}
 
 	private:
-		void scrollBy(int mx,int my);
 		Size getVisible() {
 			return Size(max<gsize_t>(0,getSize().width - BAR_SIZE),
 					max<gsize_t>(0,getSize().height - BAR_SIZE));
+		}
+		void scrollRelatively(int x,int y) {
+			Size visible = getVisible();
+			x = (int)(_ctrl->getSize().width / ((double)visible.width / x));
+			y = (int)(_ctrl->getSize().height / ((double)visible.height / y));
+			scrollBy(x,y);
 		}
 		virtual void setFocus(Control *c) {
 			if(c)
@@ -151,6 +182,7 @@ namespace gui {
 
 	private:
 		std::shared_ptr<Control> _ctrl;
+		Rectangle _update;
 		unsigned int _focus;
 		bool _doingLayout;
 	};

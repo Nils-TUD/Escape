@@ -25,6 +25,7 @@
 #include <gui/graphics/color.h>
 #include <gui/graphics/size.h>
 #include <gui/graphics/pos.h>
+#include <gui/graphics/rectangle.h>
 #include <assert.h>
 
 namespace gui {
@@ -228,6 +229,13 @@ namespace gui {
 			return _size;
 		}
 
+		/**
+		 * @return the current paint rectangle. every paint outside this rectangle is ignored.
+		 */
+		Rectangle getPaintRect() {
+			return Rectangle(_minoff - _off, _size);
+		}
+
 	protected:
 		/**
 		 * @return the pixel buffer (might be nullptr)
@@ -310,21 +318,11 @@ namespace gui {
 			_minoff = pos;
 		}
 		/**
-		 * Sets the size of the paint-area (unchecked!)
+		 * Sets the size of the paint-area
 		 *
 		 * @param size the new size
 		 */
-		void setSize(const Size &size) {
-			_size = size;
-		}
-		/**
-		 * Sets the size of the control (checked)
-		 *
-		 * @param pos the position of the control relative to the parent
-		 * @param size the new value
-		 * @param psize the size of the parent. the child can't cross that
-		 */
-		void setSize(const Pos &pos,const Size &size,const Size &psize);
+		void setSize(const Size &size);
 
 		// used internally
 		gsize_t getDim(gpos_t off,gsize_t size,gsize_t max);

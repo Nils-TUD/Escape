@@ -61,6 +61,11 @@ namespace gui {
 			}
 			return UIElement::getUsedSize(avail);
 		}
+		virtual Rectangle getVisibleRect(const Rectangle &rect) const {
+			if(rect.empty())
+				return rect;
+			return _parent->getVisibleRect(intersection(rect,Rectangle(getWindowPos(),getSize())));
+		}
 
 		/**
 		 * @return the layout

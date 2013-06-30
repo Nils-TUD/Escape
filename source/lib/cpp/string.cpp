@@ -172,16 +172,18 @@ namespace std {
 
 	// === erase() ===
 	string& string::erase(size_type pos,size_type n) {
-		if(pos > _length)
-			throw out_of_range("Index out of range");
-		if(n == npos)
-			n = _length - pos;
-		if(pos + n > _length)
-			n = _length - pos;
-		if(pos + n < _length)
-			memmove(_str + pos,_str + pos + n,(_length - (pos + n)) * sizeof(char));
-		_length -= n;
-		_str[_length] = '\0';
+		if(n) {
+			if(pos > _length)
+				throw out_of_range("Index out of range");
+			if(n == npos)
+				n = _length - pos;
+			if(pos + n > _length)
+				n = _length - pos;
+			if(pos + n < _length)
+				memmove(_str + pos,_str + pos + n,(_length - (pos + n)) * sizeof(char));
+			_length -= n;
+			_str[_length] = '\0';
+		}
 		return *this;
 	}
 	string::iterator string::erase(iterator first,iterator last) {

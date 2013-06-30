@@ -300,20 +300,22 @@ static int pbThread(void *arg) {
 	bool forward = true;
 	while(run) {
 		if(pb != nullptr) {
-			size_t pos = pb->getPosition();
-			if(forward) {
-				if(pos < 100)
-					pb->setPosition(pos + 1);
-				else
-					forward = false;
-			}
-			else {
-				if(pos > 0)
-					pb->setPosition(pos - 1);
-				else
-					forward = true;
-			}
-			pb->repaint();
+			Application::getInstance()->executeLater(make_lambda([pb,&forward] {
+				size_t pos = pb->getPosition();
+				if(forward) {
+					if(pos < 100)
+						pb->setPosition(pos + 1);
+					else
+						forward = false;
+				}
+				else {
+					if(pos > 0)
+						pb->setPosition(pos - 1);
+					else
+						forward = true;
+				}
+				pb->repaint();
+			}));
 		}
 		sleep(10);
 	}

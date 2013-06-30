@@ -36,6 +36,27 @@ namespace std {
 
 	namespace detail {
 		/**
+		 * The functor for lambda functions
+		 */
+		template<
+			template<typename Result2,typename... Args2> class Base,
+			typename Lambda,
+			typename Result
+		>
+		class LambdaFunctor : public Base<Result> {
+		public:
+			explicit LambdaFunctor(Lambda cb) : Base<Result>(), _cb(cb) {
+			}
+
+			virtual Result operator()() {
+				return _cb();
+			}
+
+		private:
+			Lambda _cb;
+		};
+
+		/**
 		 * The functor for plain functions
 		 */
 		template<
@@ -166,6 +187,20 @@ namespace std {
 			const Cls *_obj;
 			callback_type _cb;
 		};
+	}
+
+	/**
+	 * Creates a functor for a lambda function. These don't have arguments.
+	 *
+	 * @param cb the callback
+	 * @return the functor
+	 */
+	// the problem is that we can't find out the return-type with arguments because we would need
+	// to pass them to decltype. thus, we can't use this function for all types of functions, but
+	// just for lambda functions, which don't have arguments.
+	template<typename Lambda>
+	inline auto make_lambda(Lambda cb) -> Functor<decltype(cb())> * {
+		return new detail::LambdaFunctor<Functor,Lambda,decltype(cb())>(cb);
 	}
 
 	/**

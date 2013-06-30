@@ -60,8 +60,8 @@ namespace gui {
 			return _clicked;
 		}
 
-		virtual void print(std::ostream &os, size_t indent = 0) const {
-			UIElement::print(os, indent);
+		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const {
+			UIElement::print(os, rec, indent);
 			os << " text='" << _text << "'";
 		}
 

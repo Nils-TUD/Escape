@@ -448,12 +448,14 @@ namespace gui {
 			repaint();
 	}
 
-	void Window::print(std::ostream &os, size_t indent) const {
-		UIElement::print(os, indent);
-		os << " {\n";
-		_header->print(os,indent + 2);
-		os << "\n";
-		_body->print(os,indent + 2);
-		os << "\n" << std::setw(indent) << "" << "}";
+	void Window::print(std::ostream &os, bool rec, size_t indent) const {
+		UIElement::print(os,rec,indent);
+		if(rec) {
+			os << " {\n";
+			_header->print(os,rec,indent + 2);
+			os << "\n";
+			_body->print(os,rec,indent + 2);
+			os << "\n" << std::setw(indent) << "" << "}";
+		}
 	}
 }

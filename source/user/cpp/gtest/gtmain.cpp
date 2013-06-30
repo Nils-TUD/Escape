@@ -74,7 +74,6 @@ int main(void) {
 }
 
 static void addWindow(Application *app,shared_ptr<Window> win) {
-	win->print(cout);
 	app->addWindow(win);
 }
 

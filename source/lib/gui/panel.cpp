@@ -164,13 +164,16 @@ namespace gui {
 		repaint();
 	}
 
-	void Panel::print(std::ostream &os, size_t indent) const {
-		UIElement::print(os, indent);
-		os << " layout=" << (_layout ? typeid(*_layout).name() : "(null)") << " {\n";
-		for(auto it = _controls.begin(); it != _controls.end(); ++it) {
-			(*it)->print(os,indent + 2);
-			os << '\n';
+	void Panel::print(std::ostream &os, bool rec, size_t indent) const {
+		UIElement::print(os, rec, indent);
+		os << " layout=" << (_layout ? typeid(*_layout).name() : "(null)");
+		if(rec) {
+			os << " {\n";
+			for(auto it = _controls.begin(); it != _controls.end(); ++it) {
+				(*it)->print(os,rec,indent + 2);
+				os << '\n';
+			}
+			os << std::setw(indent) << "" << "}";
 		}
-		os << std::setw(indent) << "" << "}";
 	}
 }

@@ -261,7 +261,8 @@ namespace gui {
 		 */
 		void appendTabCtrl(Control &c);
 
-		virtual void print(std::ostream &os, size_t indent = 0) const;
+
+		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
 
 	protected:
 		/**

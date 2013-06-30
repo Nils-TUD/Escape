@@ -256,12 +256,13 @@ namespace gui {
 		}
 
 		/**
-		 * Prints this UI element recursively to <os>, starting with given indent.
+		 * Prints this UI element to <os>, starting with given indent.
 		 *
 		 * @param os the ostream
+		 * @param rec whether to print recursively
 		 * @param indent the indent
 		 */
-		virtual void print(std::ostream &os, size_t indent = 0) const;
+		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
 
 	protected:
 		/**

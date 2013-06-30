@@ -87,8 +87,8 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 
-		virtual void print(std::ostream &os, size_t indent = 0) const {
-			UIElement::print(os, indent);
+		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const {
+			UIElement::print(os, rec, indent);
 			os << " selected='" << (_selected != -1 ? _items[_selected] : "---") << "'";
 		}
 

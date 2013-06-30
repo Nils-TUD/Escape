@@ -49,6 +49,8 @@ namespace gui {
 			return _cursor;
 		}
 		void setCursorPos(size_t pos) {
+			size_t oldcursor = _cursor;
+			size_t oldbegin = _begin;
 			size_t max = getMaxCharNum(*getGraphics());
 			assert(pos <= _str.length());
 			_cursor = pos;
@@ -56,6 +58,7 @@ namespace gui {
 				_begin = _cursor - max;
 			else
 				_begin = 0;
+			makeDirty(oldcursor != _cursor || oldbegin != _begin);
 		}
 
 		const std::string &getText() const {
@@ -65,7 +68,6 @@ namespace gui {
 			_str = text;
 			setCursorPos(text.length());
 			clearSelection();
-			repaint();
 		}
 
 		void insertAtCursor(char c);
@@ -87,14 +89,19 @@ namespace gui {
 	private:
 		int getPosAt(gpos_t x);
 		void moveCursor(int amount);
-		bool moveCursorTo(size_t pos);
+		void moveCursorTo(size_t pos);
 		void clearSelection();
-		bool changeSelection(int pos,int oldPos,uchar dir);
+		void changeSelection(int pos,int oldPos,uchar dir);
 		void deleteSelection();
 		size_t getMaxCharNum(Graphics &g) {
 			if(getSize().width < getTheme().getTextPadding() * 2)
 				return 0;
 			return (getSize().width - getTheme().getTextPadding() * 2) / g.getFont().getSize().width;
+		}
+		void setFocused(bool focused) {
+			_focused = focused;
+			makeDirty(true);
+			repaint();
 		}
 
 	private:

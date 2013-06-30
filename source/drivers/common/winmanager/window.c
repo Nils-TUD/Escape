@@ -167,6 +167,7 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 			windows[i].owner = owner;
 			windows[i].style = style;
 			windows[i].titleBarHeight = titleBarHeight;
+			windows[i].ready = false;
 			if(style != WIN_STYLE_POPUP && style != WIN_STYLE_DESKTOP)
 				win_notifyWinCreate(i,title);
 			return i;
@@ -394,6 +395,7 @@ void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 
 void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sWindow *win = windows + window;
+	win->ready = true;
 	if(activeWindow == window)
 		win_copyRegion(shmem,win->x + x,win->y + y,width,height,window);
 	else {
@@ -480,7 +482,7 @@ static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t 
 	for(; id < WINDOW_COUNT; id++) {
 		w = windows + id;
 		/* skip unused, ourself and rects behind ourself */
-		if((win && w->id == win->id) || w->id == WINID_UNUSED || w->z < z)
+		if((win && w->id == win->id) || w->id == WINID_UNUSED || w->z < z || !w->ready)
 			continue;
 
 		/* build window-rect */

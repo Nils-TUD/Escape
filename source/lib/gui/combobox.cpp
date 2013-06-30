@@ -71,12 +71,13 @@ namespace gui {
 		int item = getItemAt(e.getPos());
 		if(item < (int)_cb->_items.size() && item != _highlighted) {
 			_highlighted = item;
+			makeDirty(true);
 			repaint();
 		}
 	}
 
 	void ComboBox::ItemWindow::onMouseReleased(A_UNUSED const MouseEvent &e) {
-		_cb->_selected = _highlighted;
+		_cb->setSelectedIndex(_highlighted);
 		closeImpl();
 	}
 
@@ -85,11 +86,8 @@ namespace gui {
 	}
 
 	void ComboBox::ItemWindow::closeImpl() {
-		Application::getInstance()->removeWindow(_cb->_win);
-		// notify combo
-		_cb->_win.reset();
-		_cb->_pressed = false;
-		_cb->repaint();
+		_cb->removeWindow();
+		_cb->setPressed(false);
 	}
 
 	Size ComboBox::getPrefSize() const {
@@ -144,10 +142,9 @@ namespace gui {
 	void ComboBox::onMousePressed(const MouseEvent &e) {
 		UIElement::onMousePressed(e);
 		if(!_pressed) {
-			_pressed = true;
-			repaint();
+			setPressed(true);
 			if(_win)
-				Application::getInstance()->removeWindow(_win);
+				removeWindow();
 			else {
 				gsize_t pad = Application::getInstance()->getDefaultTheme()->getTextPadding();
 				gsize_t height = _items.size() * (getGraphics()->getFont().getSize().height + pad * 2);
@@ -162,9 +159,7 @@ namespace gui {
 	}
 	void ComboBox::onMouseReleased(const MouseEvent &e) {
 		UIElement::onMouseReleased(e);
-		if(e.getPos().x >= getPos().x + getSize().width - getSize().height + 2 && _pressed) {
-			_pressed = false;
-			repaint();
-		}
+		if(_pressed && e.getPos().x >= getPos().x + getSize().width - getSize().height + 2)
+			setPressed(false);
 	}
 }

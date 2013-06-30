@@ -71,6 +71,7 @@ namespace gui {
 
 		void addItem(const std::string &s) {
 			_items.push_back(s);
+			makeDirty(true);
 		}
 		int getSelectedIndex() const {
 			return _selected;
@@ -80,7 +81,7 @@ namespace gui {
 				_selected = index;
 			else
 				_selected = -1;
-			repaint();
+			makeDirty(true);
 		}
 
 		virtual Size getPrefSize() const;
@@ -93,6 +94,15 @@ namespace gui {
 		}
 
 	protected:
+		void removeWindow() {
+			Application::getInstance()->removeWindow(_win);
+			_win.reset();
+		}
+		void setPressed(bool pressed) {
+			_pressed = pressed;
+			makeDirty(true);
+			repaint();
+		}
 		virtual void paint(Graphics &g);
 
 	private:

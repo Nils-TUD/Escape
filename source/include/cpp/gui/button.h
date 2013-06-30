@@ -45,7 +45,7 @@ namespace gui {
 		}
 		void setText(const std::string &text) {
 			_text = text;
-			repaint();
+			makeDirty(true);
 		}
 
 		virtual Size getPrefSize() const;
@@ -71,7 +71,16 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
-		void setPressed(bool pressed);
+		void setPressed(bool pressed) {
+			_pressed = pressed;
+			makeDirty(true);
+			repaint();
+		}
+		void setFocused(bool focused) {
+			_focused = focused;
+			makeDirty(true);
+			repaint();
+		}
 
 	private:
 		bool _focused;

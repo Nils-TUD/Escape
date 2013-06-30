@@ -50,6 +50,7 @@ void callback(double result) {
 	ostringstream ostr;
 	ostr << result;
 	textfield->setText(ostr.str());
+	textfield->repaint();
 }
 
 static void parse() {
@@ -64,10 +65,12 @@ static void parse() {
 
 static void onButtonClick(char c,UIElement&) {
 	textfield->insertAtCursor(c);
+	textfield->repaint();
 }
 
 static void onClearButtonClick(UIElement&) {
 	textfield->setText("");
+	textfield->repaint();
 }
 
 static void onSubmitButtonClick(UIElement&) {
@@ -100,6 +103,7 @@ static void keyPressed(UIElement &,const KeyEvent &e) {
 		}
 	}
 	win->setFocus(textfield.get());
+	textfield->repaint();
 }
 
 int main(void) {

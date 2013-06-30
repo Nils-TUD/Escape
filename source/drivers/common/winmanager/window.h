@@ -47,6 +47,7 @@ typedef struct {
 	gsize_t titleBarHeight;
 	int shmfd;
 	void *shmaddr;
+	bool ready;
 } sWindow;
 
 /**

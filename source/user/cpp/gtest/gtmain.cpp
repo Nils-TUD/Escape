@@ -224,6 +224,8 @@ static shared_ptr<Window> win4(void) {
 	w->appendTabCtrl(*b);
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
+	//if(startthread(pbThread,pb.get()) < 0)
+	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
 	w->show();
 	return w;
 }
@@ -297,15 +299,6 @@ static int pbThread(void *arg) {
 	ProgressBar *pb = (ProgressBar*)arg;
 	bool forward = true;
 	while(run) {
-		/*if(w->getX() + w->getWidth() >= Application::getInstance()->getScreenWidth() - 1)
-			x = -10;
-		else if(w->getX() == 0)
-			x = 10;
-		if(w->getY() + w->getHeight() >= Application::getInstance()->getScreenHeight() - 1)
-			y = -10;
-		else if(w->getY() == 0)
-			y = 10;
-		w->move(x,y);*/
 		if(pb != nullptr) {
 			size_t pos = pb->getPosition();
 			if(forward) {
@@ -320,8 +313,9 @@ static int pbThread(void *arg) {
 				else
 					forward = true;
 			}
+			pb->repaint();
 		}
-		sleep(50);
+		sleep(10);
 	}
 	return 0;
 }

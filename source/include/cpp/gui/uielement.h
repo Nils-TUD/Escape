@@ -64,7 +64,7 @@ namespace gui {
 			: _id(_nextid++), _g(nullptr), _parent(nullptr),
 			  _theme(Application::getInstance()->getDefaultTheme()),
 			  _pos(), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
-			  _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
+			  _mouseWheel(), _keyPressed(), _keyReleased(), _dirty(true) {
 		}
 		/**
 		 * Constructor that specifies a position and size explicitly. This can be used if no layout
@@ -79,7 +79,7 @@ namespace gui {
 			: _id(_nextid++), _g(nullptr), _parent(nullptr),
 			  _theme(Application::getInstance()->getDefaultTheme()),
 			  _pos(pos), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
-			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _enableRepaint(true) {
+			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _dirty(true) {
 		}
 		/**
 		 * Destructor. Free's the memory
@@ -240,19 +240,18 @@ namespace gui {
 		virtual void onKeyReleased(const KeyEvent &e);
 
 		/**
-		 * @return whether calls of repaint() actually perform a repaint
+		 * @return whether this UIElement needs a repaint
 		 */
-		bool isRepaintEnabled() const {
-			return _enableRepaint;
+		virtual bool isDirty() const {
+			return _dirty || _theme.isDirty();
 		}
 		/**
-		 * Sets whether calls of repaint() actually perform a repaint. That is, by setting it to
-		 * false, calls of repaint() are ignored.
+		 * Sets that this UIElement needs a repaint. Note that you can't make it undirty.
 		 *
-		 * @param en the new value
+		 * @param dirty the value
 		 */
-		void setRepaintEnabled(bool en) {
-			_enableRepaint = en;
+		void makeDirty(bool dirty) {
+			_dirty |= dirty;
 		}
 
 		/**
@@ -355,6 +354,8 @@ namespace gui {
 		 */
 		void debug();
 
+		void makeClean();
+
 	private:
 		id_type _id;
 		Graphics *_g;
@@ -369,7 +370,7 @@ namespace gui {
 		mouseev_type _mouseWheel;
 		keyev_type _keyPressed;
 		keyev_type _keyReleased;
-		bool _enableRepaint;
+		bool _dirty;
 		static id_type _nextid;
 	};
 

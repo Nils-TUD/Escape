@@ -74,14 +74,14 @@ namespace gui {
 		 * @param def the default theme (nullptr if no default should be used)
 		 */
 		Theme(const Theme *def)
-			: _default(def), _present(0), _padding(0), _textPadding(0), _colors(nullptr) {
+			: _default(def), _present(0), _padding(0), _textPadding(0), _colors(nullptr), _dirty(false) {
 		}
 		/**
 		 * Copy-constructor
 		 */
 		Theme(const Theme& t)
 			: _default(t._default), _present(t._present), _padding(t._padding),
-			  _textPadding(t._textPadding), _colors() {
+			  _textPadding(t._textPadding), _colors(), _dirty(t._dirty) {
 			if(t._colors)
 				_colors = new std::vector<Color>(*t._colors);
 		}
@@ -148,6 +148,22 @@ namespace gui {
 		 */
 		void unsetColor(colid_type id) {
 			_present &= ~(1 << id);
+			_dirty = true;
+		}
+
+		/**
+		 * @return true if the theme has changed
+		 */
+		bool isDirty() const {
+			return _dirty;
+		}
+		/**
+		 * Sets whether the theme is dirty.
+		 *
+		 * @param dirty the new value
+		 */
+		void setDirty(bool dirty) {
+			_dirty = dirty;
 		}
 
 	private:
@@ -156,5 +172,6 @@ namespace gui {
 		gsize_t _padding;
 		gsize_t _textPadding;
 		std::vector<Color> *_colors;
+		bool _dirty;
 	};
 }

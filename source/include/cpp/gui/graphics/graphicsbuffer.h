@@ -27,6 +27,7 @@
 namespace gui {
 	class Window;
 	class Graphics;
+	class UIElement;
 
 	/**
 	 * The graphics-buffer holds an array of a specific size and provides access to it. This is
@@ -36,6 +37,7 @@ namespace gui {
 	class GraphicsBuffer {
 		friend class Window;
 		friend class Graphics;
+		friend class UIElement;
 
 	public:
 		/**
@@ -85,6 +87,13 @@ namespace gui {
 		}
 
 		/**
+		 * @return true if we're ready to paint
+		 */
+		bool isReady() const {
+			return !_updating && _pixels;
+		}
+
+		/**
 		 * Requests an update for the given region
 		 */
 		void requestUpdate(const Pos &pos,const Size &size);
@@ -98,11 +107,7 @@ namespace gui {
 		 * @return the buffer (might be nullptr)
 		 */
 		uint8_t *getBuffer() const {
-			if(_updating) {
-				_lostpaint = true;
-				return nullptr;
-			}
-			return _pixels;
+			return _updating ? nullptr : _pixels;
 		}
 		/**
 		 * Sets the coordinates for this buffer
@@ -113,6 +118,18 @@ namespace gui {
 		 */
 		void resizeTo(const Size &size) {
 			_size = size;
+		}
+		/**
+		 * Sets that we're currently updating.
+		 */
+		void setUpdating() {
+			_updating = true;
+		}
+		/**
+		 * Sets that we wanted to paint, but couldn't because we weren't ready.
+		 */
+		void lostPaint() {
+			_lostpaint = true;
 		}
 		/**
 		 * Called on a finished update

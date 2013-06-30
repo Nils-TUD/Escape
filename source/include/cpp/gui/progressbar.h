@@ -39,14 +39,14 @@ namespace gui {
 		}
 		void setPosition(size_t pos) {
 			_position = std::min((size_t)100,pos);
-			repaint();
+			makeDirty(true);
 		}
 		const std::string &getText() const {
 			return _text;
 		}
 		void setText(const std::string &text) {
 			_text = text;
-			repaint();
+			makeDirty(true);
 		}
 
 		virtual Size getPrefSize() const;

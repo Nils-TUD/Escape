@@ -42,6 +42,7 @@ namespace gui {
 	void Theme::setPadding(gsize_t pad) {
 		_padding = pad;
 		_present |= 1 << PADDING;
+		_dirty = true;
 	}
 
 	gsize_t Theme::getTextPadding() const {
@@ -54,6 +55,7 @@ namespace gui {
 	void Theme::setTextPadding(gsize_t pad) {
 		_textPadding = pad;
 		_present |= 1 << TEXT_PADDING;
+		_dirty = true;
 	}
 
 	const Color& Theme::getColor(colid_type id) const {
@@ -70,5 +72,6 @@ namespace gui {
 			_colors->reserve(id + 1);
 		(*_colors)[id] = c;
 		_present |= 1 << id;
+		_dirty = true;
 	}
 }

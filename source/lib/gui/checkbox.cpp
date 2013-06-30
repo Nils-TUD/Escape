@@ -35,13 +35,11 @@ namespace gui {
 
 	void Checkbox::onFocusGained() {
 		Control::onFocusGained();
-		_focused = true;
-		repaint();
+		setFocused(true);
 	}
 	void Checkbox::onFocusLost() {
 		Control::onFocusLost();
-		_focused = false;
-		repaint();
+		setFocused(false);
 	}
 
 	void Checkbox::onKeyReleased(const KeyEvent &e) {
@@ -54,11 +52,6 @@ namespace gui {
 	void Checkbox::onMouseReleased(const MouseEvent &e) {
 		UIElement::onMouseReleased(e);
 		setChecked(!_checked);
-	}
-
-	void Checkbox::setChecked(bool checked) {
-		_checked = checked;
-		repaint();
 	}
 
 	void Checkbox::paint(Graphics &g) {

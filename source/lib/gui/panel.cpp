@@ -102,13 +102,17 @@ namespace gui {
 	}
 
 	void Panel::paint(Graphics &g) {
-		// fill bg
-		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
-		g.fillRect(Pos(0,0),getSize());
+		bool dirty = UIElement::isDirty();
+		if(dirty) {
+			// fill bg
+			g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
+			g.fillRect(Pos(0,0),getSize());
+		}
 
 		// now paint controls
 		for(auto it = _controls.begin(); it != _controls.end(); ++it) {
 			shared_ptr<Control> c = *it;
+			c->makeDirty(dirty);
 			if(_updateRect.width) {
 				sRectangle ctrlRect,inter;
 				ctrlRect.x = c->getPos().x;
@@ -140,6 +144,7 @@ namespace gui {
 		c->setParent(this);
 		if(_layout)
 			_layout->add(this,c,pos);
+		makeDirty(true);
 	}
 
 	void Panel::remove(shared_ptr<Control> c,Layout::pos_type pos) {
@@ -148,6 +153,7 @@ namespace gui {
 			setFocus(nullptr);
 		if(_layout)
 			_layout->remove(this,c,pos);
+		makeDirty(true);
 	}
 
 	void Panel::removeAll() {
@@ -155,6 +161,7 @@ namespace gui {
 		if(_focus)
 			setFocus(nullptr);
 		_layout->removeAll();
+		makeDirty(true);
 	}
 
 	void Panel::layoutChanged() {

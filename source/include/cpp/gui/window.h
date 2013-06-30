@@ -59,6 +59,7 @@ namespace gui {
 		 */
 		void setTitle(const std::string &title) {
 			_title->setText(title);
+			makeDirty(true);
 		}
 
 	private:
@@ -261,6 +262,9 @@ namespace gui {
 		 */
 		void appendTabCtrl(Control &c);
 
+		virtual bool isDirty() const {
+			return (_header && _header->isDirty()) || _body->isDirty() || UIElement::isDirty();
+		}
 
 		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
 

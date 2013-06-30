@@ -117,11 +117,16 @@ namespace gui {
 	}
 
 	void UIElement::repaint(bool update) {
-		if(_g && _enableRepaint) {
-			paint(*_g);
-			debug();
-			if(update)
-				_g->requestUpdate();
+		if(_g && isDirty()) {
+			if(!_g->getBuffer()->isReady())
+				_g->getBuffer()->lostPaint();
+			else {
+				paint(*_g);
+				debug();
+				if(update)
+					_g->requestUpdate();
+				makeClean();
+			}
 		}
 	}
 
@@ -144,11 +149,23 @@ namespace gui {
 	}
 
 	void UIElement::repaintRect(const Pos &pos,const Size &size,bool update) {
-		if(_g) {
-			paintRect(*_g,pos,size);
-			debug();
-			if(update)
-				_g->requestUpdate();
+		if(_g && isDirty()) {
+			if(!_g->getBuffer()->isReady())
+				_g->getBuffer()->lostPaint();
+			else {
+				paintRect(*_g,pos,size);
+				debug();
+				if(update)
+					_g->requestUpdate();
+				makeClean();
+			}
+		}
+	}
+
+	void UIElement::makeClean() {
+		if(getGraphics()->getBuffer()->isReady()) {
+			_dirty = false;
+			_theme.setDirty(false);
 		}
 	}
 

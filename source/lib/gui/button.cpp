@@ -30,13 +30,11 @@ namespace gui {
 
 	void Button::onFocusGained() {
 		Control::onFocusGained();
-		_focused = true;
-		repaint();
+		setFocused(true);
 	}
 	void Button::onFocusLost() {
 		Control::onFocusLost();
-		_focused = false;
-		repaint();
+		setFocused(false);
 	}
 
 	void Button::onKeyPressed(const KeyEvent &e) {
@@ -65,11 +63,6 @@ namespace gui {
 		UIElement::onMouseReleased(e);
 		if(_pressed)
 			setPressed(false);
-	}
-
-	void Button::setPressed(bool pressed) {
-		_pressed = pressed;
-		repaint();
 	}
 
 	void Button::paintBackground(Graphics &g) {

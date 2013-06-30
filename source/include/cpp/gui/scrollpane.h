@@ -75,6 +75,9 @@ namespace gui {
 			getParent()->layoutChanged();
 		}
 
+		virtual bool isDirty() const {
+			return UIElement::isDirty() || _ctrl->isDirty();
+		}
 
 		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
 

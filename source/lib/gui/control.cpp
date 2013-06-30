@@ -38,11 +38,15 @@ namespace gui {
 	}
 
 	void Control::resizeTo(const Size &size) {
+		makeDirty(_size != size);
+		getParent()->makeDirty(_size != size);
 		_size = size;
 		setRegion();
 	}
 
 	void Control::moveTo(const Pos &pos) {
+		makeDirty(_pos != pos);
+		getParent()->makeDirty(_pos != pos);
 		_pos = pos;
 		setRegion();
 	}

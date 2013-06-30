@@ -38,7 +38,7 @@ namespace gui {
 		}
 		void setText(const std::string &text) {
 			_text = text;
-			repaint();
+			makeDirty(true);
 		}
 
 		virtual Size getPrefSize() const;

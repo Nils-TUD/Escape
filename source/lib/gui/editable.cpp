@@ -39,25 +39,21 @@ namespace gui {
 
 	void Editable::onFocusGained() {
 		Control::onFocusGained();
-		_focused = true;
-		repaint();
+		setFocused(true);
 	}
 	void Editable::onFocusLost() {
 		Control::onFocusLost();
-		_focused = false;
-		repaint();
+		setFocused(false);
 	}
 
 	void Editable::onMouseMoved(const MouseEvent &e) {
 		UIElement::onMouseMoved(e);
 		if(_selecting) {
-			bool changed = false;
 			int pos = getPosAt(e.getPos().x);
 			uchar dir = pos > (int)_cursor ? DIR_RIGHT : DIR_LEFT;
-			changed |= changeSelection(pos,pos,dir);
-			changed |= moveCursorTo(pos);
-			if(changed)
-				repaint();
+			changeSelection(pos,pos,dir);
+			moveCursorTo(pos);
+			repaint();
 		}
 	}
 	void Editable::onMouseReleased(const MouseEvent &e) {
@@ -94,30 +90,26 @@ namespace gui {
 	void Editable::insertAtCursor(const string &str) {
 		deleteSelection();
 		_str.insert(_cursor,str);
+		makeDirty(true);
 		moveCursor(str.length());
-		repaint();
 	}
 
 	void Editable::removeLast() {
-		if(_selStart != -1) {
+		if(_selStart != -1)
 			deleteSelection();
-			repaint();
-		}
 		else if(_cursor > 0) {
 			_str.erase(_cursor - 1,1);
+			makeDirty(true);
 			moveCursor(-1);
-			repaint();
 		}
 	}
 
 	void Editable::removeNext() {
-		if(_selStart != -1) {
+		if(_selStart != -1)
 			deleteSelection();
-			repaint();
-		}
 		else if(_cursor < _str.length()) {
 			_str.erase(_cursor,1);
-			repaint();
+			makeDirty(true);
 		}
 	}
 
@@ -125,19 +117,18 @@ namespace gui {
 		setCursorPos(_cursor + amount);
 	}
 
-	bool Editable::moveCursorTo(size_t pos) {
-		size_t oldCur = _cursor;
+	void Editable::moveCursorTo(size_t pos) {
 		setCursorPos(pos);
-		return _cursor != oldCur;
 	}
 
 	void Editable::clearSelection() {
+		makeDirty(_selStart != -1 || _selEnd != -1);
 		_selStart = -1;
 		_selEnd = -1;
 		_selDir = DIR_NONE;
 	}
 
-	bool Editable::changeSelection(int pos,int oldPos,uchar dir) {
+	void Editable::changeSelection(int pos,int oldPos,uchar dir) {
 		int oldStart = _selStart;
 		int oldEnd = _selEnd;
 		if(_startSel || _selStart == -1) {
@@ -166,12 +157,13 @@ namespace gui {
 					_selEnd = pos;
 			}
 		}
-		return _selStart != oldStart || _selEnd != oldEnd;
+		makeDirty(_selStart != oldStart || _selEnd != oldEnd);
 	}
 
 	void Editable::deleteSelection() {
 		if(_selStart != -1) {
 			_str.erase(_selStart,_selEnd - _selStart);
+			makeDirty(true);
 			moveCursorTo(_selStart);
 			clearSelection();
 		}
@@ -183,7 +175,6 @@ namespace gui {
 			insertAtCursor(e.getCharacter());
 		else {
 			size_t oldPos;
-			bool changed = false;
 			switch(e.getKeyCode()) {
 				case VK_DELETE:
 					removeNext();
@@ -192,60 +183,42 @@ namespace gui {
 					removeLast();
 					break;
 				case VK_LEFT:
-					if(_cursor > 0) {
+					if(_cursor > 0)
 						moveCursor(-1);
-						changed = true;
-					}
 					if(e.isShiftDown())
-						changed |= changeSelection(_cursor,_cursor + 1,DIR_LEFT);
-					else if(_selStart != -1) {
+						changeSelection(_cursor,_cursor + 1,DIR_LEFT);
+					else if(_selStart != -1)
 						clearSelection();
-						changed = true;
-					}
 					break;
 				case VK_RIGHT:
-					if(_cursor < _str.length()) {
+					if(_cursor < _str.length())
 						moveCursor(1);
-						changed = true;
-					}
 					if(e.isShiftDown())
-						changed |= changeSelection(_cursor,_cursor - 1,DIR_RIGHT);
-					else if(_selStart != -1) {
+						changeSelection(_cursor,_cursor - 1,DIR_RIGHT);
+					else if(_selStart != -1)
 						clearSelection();
-						changed = true;
-					}
 					break;
 				case VK_HOME:
 					oldPos = _cursor;
-					if(_cursor != 0) {
+					if(_cursor != 0)
 						moveCursorTo(0);
-						changed = true;
-					}
 					if(e.isShiftDown())
-						changed |= changeSelection(_cursor,oldPos,DIR_LEFT);
-					else if(_selStart != -1) {
+						changeSelection(_cursor,oldPos,DIR_LEFT);
+					else if(_selStart != -1)
 						clearSelection();
-						changed = true;
-					}
 					break;
 				case VK_END:
 					oldPos = _cursor;
-					if(_cursor != _str.length()) {
+					if(_cursor != _str.length())
 						moveCursorTo(_str.length());
-						changed = true;
-					}
 					if(e.isShiftDown())
-						changed |= changeSelection(_cursor,oldPos,DIR_RIGHT);
-					else if(_selStart != -1) {
+						changeSelection(_cursor,oldPos,DIR_RIGHT);
+					else if(_selStart != -1)
 						clearSelection();
-						changed = true;
-					}
 					break;
 			}
-
-			if(changed)
-				repaint();
 		}
+		repaint();
 	}
 
 	void Editable::paint(Graphics &g) {

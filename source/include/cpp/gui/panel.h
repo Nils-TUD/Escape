@@ -120,6 +120,13 @@ namespace gui {
 		 */
 		void removeAll();
 
+		virtual bool isDirty() const {
+			for(auto it = _controls.begin(); it != _controls.end(); ++it) {
+				if((*it)->isDirty())
+					return true;
+			}
+			return UIElement::isDirty();
+		}
 
 		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
 

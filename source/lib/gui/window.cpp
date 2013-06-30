@@ -144,6 +144,7 @@ namespace gui {
 			if(_movePos.x != getPos().x || _resizeSize != getSize()) {
 				if(resizing) {
 					prepareResize(_movePos,_resizeSize);
+					_gbuf->setUpdating();
 					Application::getInstance()->resizeWindow(this,true);
 				}
 			}
@@ -365,6 +366,7 @@ namespace gui {
 		if(_movePos.x != x || rsize != _resizeSize) {
 			_movePos.x = x;
 			_resizeSize = rsize;
+			_gbuf->setUpdating();
 			Application::getInstance()->resizeWindow(this,false);
 		}
 	}
@@ -440,6 +442,11 @@ namespace gui {
 
 	void Window::onResized() {
 		_gbuf->allocBuffer();
+		_gbuf->onUpdated();
+		// force a complete repaint
+		if(_header)
+			_header->makeDirty(true);
+		_body->makeDirty(true);
 		repaint();
 	}
 

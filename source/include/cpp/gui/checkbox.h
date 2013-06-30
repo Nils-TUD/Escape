@@ -47,7 +47,7 @@ namespace gui {
 		}
 		void setText(const std::string &text) {
 			_text = text;
-			repaint();
+			makeDirty(true);
 		}
 
 		virtual Size getPrefSize() const;
@@ -65,7 +65,16 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
-		void setChecked(bool checked);
+		void setChecked(bool checked) {
+			_checked = checked;
+			makeDirty(true);
+			repaint();
+		}
+		void setFocused(bool focused) {
+			_focused = focused;
+			makeDirty(true);
+			repaint();
+		}
 
 		bool _focused;
 		bool _checked;

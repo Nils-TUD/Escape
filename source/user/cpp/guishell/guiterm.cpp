@@ -28,8 +28,8 @@
 #include <errno.h>
 #include "guiterm.h"
 
-GUITerm::GUITerm(int sid,std::shared_ptr<ShellControl> sh)
-	: _sid(sid), _run(true), _vt(nullptr), _sh(sh), _cfg(sVTermCfg()),
+GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh)
+	: _sid(sid), _run(true), _vt(nullptr), _sh(sh), _cfg(),
 	  _rbuffer(new char[READ_BUF_SIZE]), _rbufPos(0) {
 	// open speaker
 	int speakerFd = open("/dev/speaker",IO_MSGS);
@@ -51,7 +51,7 @@ GUITerm::GUITerm(int sid,std::shared_ptr<ShellControl> sh)
 	_vt->defBackground = WHITE;
 	if(getenvto(_vt->name,sizeof(_vt->name),"TERM") < 0)
 		error("Unable to get env-var TERM");
-	if(!vtctrl_init(_vt,sh->getCols(),sh->getRows(),0,-1,speakerFd))
+	if(!vtctrl_init(_vt,DEF_COLS,DEF_ROWS,0,-1,speakerFd))
 		error("Unable to init vterm");
 	_vt->active = true;
 	_sh->setVTerm(_vt);

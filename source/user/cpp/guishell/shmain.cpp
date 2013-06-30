@@ -26,6 +26,7 @@
 #include <esc/thread.h>
 #include <gui/application.h>
 #include <gui/window.h>
+#include <gui/scrollpane.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -38,8 +39,6 @@
 
 #define GUI_SHELL_LOCK		0x4129927
 #define MAX_VTERM_NAME_LEN	10
-#define DEF_COLS			80
-#define DEF_ROWS			30
 
 using namespace gui;
 
@@ -91,7 +90,9 @@ int main(int argc,char **argv) {
 	close(sid);
 
 	// set term as env-variable
-	setenv("TERM",drvName);
+	char tmppath[SSTRLEN("guiterm") + 12];
+	snprintf(tmppath,MAX_PATH_LEN + 1,"guiterm%d",no);
+	setenv("TERM",tmppath);
 
 	// start the gui and the device in a separate process. this way, the forks the shell performs
 	// are cheaper because its address-space is smaller.
@@ -131,7 +132,7 @@ int main(int argc,char **argv) {
 	shellMain();
 
 	// notify the child that we're done
-	if(kill(childPid,SIG_USR1) < 0)
+	if(kill(childPid,SIG_USR2) < 0)
 		printe("Unable to send SIG_USR1 to child");
 	return EXIT_SUCCESS;
 }
@@ -144,7 +145,7 @@ static int guiProc(void) {
 		error("Unable to re-register device %s",drvName);
 	delete[] drvName;
 
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
+	if(signal(SIG_USR2,sigUsr1) == SIG_ERR)
 		error("Unable to set signal-handler");
 
 	// now start GUI
@@ -154,14 +155,13 @@ static int guiProc(void) {
 			Size(font.getSize().width * DEF_COLS + 2,font.getSize().height * DEF_ROWS + 4));
 	shared_ptr<Panel> root = w->getRootPanel();
 	root->getTheme().setPadding(0);
-	shared_ptr<ShellControl> sh = make_control<ShellControl>(Pos(0,0),root->getSize());
+	shared_ptr<ShellControl> sh = make_control<ShellControl>();
 	gt = new GUITerm(sid,sh);
 	if(startthread(termThread,gt) < 0)
 		error("Unable to start term-thread");
 	root->setLayout(make_layout<BorderLayout>());
-	root->add(sh,BorderLayout::CENTER);
+	root->add(make_control<ScrollPane>(sh),BorderLayout::CENTER);
 	w->show();
-	w->setFocus(sh.get());
 	app->addWindow(w);
 	int res = app->run();
 	sh->sendEOF();
@@ -169,7 +169,7 @@ static int guiProc(void) {
 }
 
 static int termThread(A_UNUSED void *arg) {
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
+	if(signal(SIG_USR2,sigUsr1) == SIG_ERR)
 		error("Unable to set signal-handler");
 	gt->run();
 	return 0;

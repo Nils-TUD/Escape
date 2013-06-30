@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
+#include <gui/window.h>
 #include <esc/debug.h>
 #include <esc/driver.h>
 #include <signal.h>
@@ -55,6 +56,31 @@ const Color ShellControl::CURSOR_COLOR = Color(0x0,0x0,0x0);
 
 void ShellControl::onKeyPressed(const KeyEvent &e) {
 	Control::onKeyPressed(e);
+	if(e.isShiftDown()) {
+		switch(e.getKeyCode()) {
+			case VK_HOME:
+				static_cast<ScrollPane*>(getParent())->scrollToTop();
+				return;
+			case VK_END:
+				static_cast<ScrollPane*>(getParent())->scrollToBottom();
+				return;
+			case VK_UP:
+				static_cast<ScrollPane*>(getParent())->scrollBy(0,
+						-(getGraphics()->getFont().getSize().height + PADDING));
+				return;
+			case VK_DOWN:
+				static_cast<ScrollPane*>(getParent())->scrollBy(0,
+						getGraphics()->getFont().getSize().height + PADDING);
+				return;
+			case VK_PGUP:
+				static_cast<ScrollPane*>(getParent())->scrollPages(0,-1);
+				return;
+			case VK_PGDOWN:
+				static_cast<ScrollPane*>(getParent())->scrollPages(0,1);
+				return;
+		}
+	}
+
 	uchar modifier = 0;
 	if(e.isAltDown())
 		modifier |= STATE_ALT;
@@ -63,12 +89,13 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 	if(e.isCtrlDown())
 		modifier |= STATE_CTRL;
 	vtin_handleKey(_vt,e.getKeyCode(),modifier,e.getCharacter());
-	update();
+	doUpdate();
 }
 
 void ShellControl::resizeTo(const Size &size) {
 	Control::resizeTo(size);
-	vtctrl_resize(_vt,getCols(),getRows());
+	size_t parentheight = getParent()->getSize().height - gui::ScrollPane::BAR_SIZE;
+	vtctrl_resize(_vt,getCols(size.width),getRows(parentheight));
 }
 
 void ShellControl::sendEOF() {
@@ -76,102 +103,66 @@ void ShellControl::sendEOF() {
 }
 
 Size ShellControl::getPrefSize() const {
-	return Size(DEF_WIDTH,DEF_HEIGHT);
+	size_t rows = (HISTORY_SIZE * _vt->rows) - _vt->firstLine;
+	Size font = getGraphics()->getFont().getSize();
+	return Size(TEXTSTARTX + _vt->cols * font.width,TEXTSTARTY + rows * (font.height + PADDING));
+}
+
+Size ShellControl::getUsedSize(const Size &avail) const {
+	// we have to take the change in vtctrl_resize into account that will follow based on our result
+	size_t rows = (HISTORY_SIZE * _vt->rows) - (_vt->firstLine + (_vt->rows - getRows(avail.height)));
+	Size font = getGraphics()->getFont().getSize();
+	return Size(avail.width,TEXTSTARTY + rows * (font.height + PADDING));
+}
+
+Size ShellControl::rectToLines(const Rectangle &r) const {
+	Size font = getGraphics()->getFont().getSize();
+	size_t start = r.getPos().y / (font.height + PADDING);
+	size_t end = (r.getPos().y + r.getSize().height + font.height + PADDING - 1) / (font.height + PADDING);
+	return Size(start, end - start);
+}
+
+Rectangle ShellControl::linesToRect(size_t start,size_t count) const {
+	Size font = getGraphics()->getFont().getSize();
+	Pos pos(0,start == 0 ? 0 : TEXTSTARTY + start * (font.height + PADDING));
+	Size size(getSize().width,count * (font.height + PADDING));
+	return Rectangle(pos,size);
 }
 
 void ShellControl::paint(Graphics &g) {
-	// fill bg
-	g.setColor(BGCOLOR);
-	g.fillRect(Pos(0,0),getSize());
-
 	locku(&_vt->lock);
-	paintRows(g,0,_vt->rows);
+	Rectangle paintrect = g.getPaintRect();
+	if(!paintrect.empty()) {
+		Size dirty = rectToLines(paintrect);
+
+		// fill bg
+		g.setColor(BGCOLOR);
+		g.fillRect(paintrect.getPos(),paintrect.getSize());
+
+		paintRows(g,dirty.width,dirty.height);
+	}
 	unlocku(&_vt->lock);
 }
 
-void ShellControl::clearRows(Graphics &g,size_t start,size_t count) {
-	gsize_t cheight = g.getFont().getSize().height;
-	gpos_t y = TEXTSTARTY + start * (cheight + PADDING);
-	// overwrite with background
-	g.setColor(BGCOLOR);
-	count = MIN(getRows() - start,count);
-	g.fillRect(TEXTSTARTX,y,getSize().width - TEXTSTARTX * 2,count * (cheight + PADDING) + 2);
+void ShellControl::doUpdate() {
+	if(_vt->upLength > 0) {
+		makeDirty(true);
+		getWindow()->layout();
+		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
+		sp->scrollToBottom();
+
+		size_t startRow = _vt->upStart / (_vt->cols * 2);
+		size_t rowCount = (_vt->upLength + _vt->cols * 2 - 1) / (_vt->cols * 2);
+		Rectangle up = linesToRect(startRow,rowCount);
+		Size font = getGraphics()->getFont().getSize();
+		repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1));
+		_vt->upStart = 0;
+		_vt->upLength = 0;
+	}
 }
 
 void ShellControl::update() {
-	bool changed = false;
-	Graphics *g = getGraphics();
-	/* if the window isn't created yet, g is nullptr */
-	if(g == nullptr)
-		return;
-
-	locku(&_vt->lock);
-	if(_vt->upScroll > 0) {
-		size_t lineHeight = g->getFont().getSize().height + PADDING;
-		// move lines up
-		if((size_t)_vt->upScroll < _vt->rows) {
-			size_t scrollPixel = _vt->upScroll * lineHeight;
-			g->moveRows(TEXTSTARTX,TEXTSTARTY + scrollPixel + lineHeight,
-					getSize().width,getSize().height - scrollPixel - lineHeight - TEXTSTARTY * 2,
-					scrollPixel);
-		}
-		// (re-)paint rows below
-		if(_vt->rows >= (size_t)_vt->upScroll) {
-			if(_vt->upLength > 0 && _vt->rows > (size_t)_vt->upScroll) {
-				// if the content has changed, too we have to start the refresh one line before
-				clearRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
-				paintRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
-			}
-			else {
-				// no content-change, i.e. just scrolling
-				clearRows(*g,_vt->rows - _vt->upScroll,_vt->upScroll + 1);
-				paintRows(*g,_vt->rows - _vt->upScroll,_vt->upScroll + 1);
-			}
-		}
-		// repaint all
-		else {
-			clearRows(*g,0,_vt->rows);
-			paintRows(*g,0,_vt->rows);
-		}
-
-		// fill the bg of the left few pixels at the bottom that are not affected
-		g->setColor(BGCOLOR);
-		gpos_t start = TEXTSTARTY + _vt->rows * lineHeight;
-		g->fillRect(Pos(0,start),getSize() - Size(0,start));
-
-		changed = true;
-	}
-	else if(_vt->upScroll < 0) {
-		// move lines down
-		if((size_t)-_vt->upScroll < _vt->rows) {
-			size_t lineHeight = g->getFont().getSize().height + PADDING;
-			size_t scrollPixel = -_vt->upScroll * lineHeight;
-			g->moveRows(TEXTSTARTX,TEXTSTARTY + lineHeight,
-					getSize().width,getSize().height - scrollPixel - lineHeight - TEXTSTARTY * 2,
-					-scrollPixel);
-		}
-		// repaint first lines (not title-bar)
-		clearRows(*g,1,-_vt->upScroll);
-		paintRows(*g,1,-_vt->upScroll);
-		changed = true;
-	}
-	else if(_vt->upLength > 0) {
-		// repaint all dirty lines
-		size_t startRow = _vt->upStart / (_vt->cols * 2);
-		size_t rowCount = (_vt->upLength + _vt->cols * 2 - 1) / (_vt->cols * 2);
-		clearRows(*g,startRow,rowCount);
-		paintRows(*g,startRow,rowCount);
-		changed = true;
-	}
-	changed |= setCursor();
-	if(changed)
-		requestUpdate();
-
-	// all synchronized now
-	_vt->upStart = 0;
-	_vt->upLength = 0;
-	_vt->upScroll = 0;
-	unlocku(&_vt->lock);
+	Application::getInstance()->executeLater(make_memfun(this,&ShellControl::doUpdate));
 }
 
 bool ShellControl::setCursor() {
@@ -202,8 +193,7 @@ bool ShellControl::setCursor() {
 void ShellControl::paintRows(Graphics &g,size_t start,size_t count) {
 	Size csize = g.getFont().getSize();
 	gpos_t y = TEXTSTARTY + start * (csize.height + PADDING);
-	char *buf = _vt->buffer + (_vt->firstVisLine + start) * _vt->cols * 2;
-	count = MIN(count,_vt->rows - start);
+	char *buf = _vt->buffer + (_vt->firstLine + start) * _vt->cols * 2;
 
 	// paint title-bar?
 	if(start == 0) {

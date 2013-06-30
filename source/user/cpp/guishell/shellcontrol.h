@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <gui/control.h>
+#include <gui/scrollpane.h>
 #include <esc/esccodes.h>
 #include <esc/thread.h>
 #include <stdlib.h>
@@ -46,8 +47,7 @@ private:
 	static const gui::Color CURSOR_COLOR;
 
 public:
-	ShellControl(const gui::Pos &pos,const gui::Size &size) :
-		Control(pos,size), _lastCol(0), _lastRow(0), _vt(nullptr) {
+	ShellControl() : Control(), _lastCol(0), _lastRow(0), _vt(nullptr) {
 	}
 	virtual ~ShellControl() {
 	}
@@ -59,27 +59,32 @@ public:
 	virtual void onKeyPressed(const gui::KeyEvent &e);
 	virtual void resizeTo(const gui::Size &size);
 
-	gsize_t getCols() const {
-		return (getSize().width - TEXTSTARTX * 2) / getGraphics()->getFont().getSize().width;
+	gsize_t getCols(size_t avail) const {
+		size_t fontwidth = getGraphics()->getFont().getSize().width;
+		return (avail - TEXTSTARTX * 2) / fontwidth;
 	}
-	gsize_t getRows() const {
-		return (getSize().height - TEXTSTARTY * 2) / (getGraphics()->getFont().getSize().height + PADDING);
+	gsize_t getRows(size_t avail) const {
+		size_t fontheight = getGraphics()->getFont().getSize().height;
+		return (avail - TEXTSTARTY * 2) / (fontheight + PADDING);
 	}
 
 	void sendEOF();
 
 	virtual gui::Size getPrefSize() const;
+	virtual gui::Size getUsedSize(const gui::Size &avail) const;
 	virtual void paint(gui::Graphics &g);
 
 private:
+	gui::Size rectToLines(const gui::Rectangle &r) const;
+	gui::Rectangle linesToRect(size_t start,size_t count) const;
 	void setVTerm(sVTerm *vt) {
 		_vt = vt;
 	}
 
-	void clearRows(gui::Graphics &g,size_t start,size_t count);
 	void paintRows(gui::Graphics &g,size_t start,size_t count);
 	void paintRow(gui::Graphics &g,size_t cwidth,size_t cheight,char *buf,gpos_t y);
 	void update();
+	void doUpdate();
 	bool setCursor();
 
 	size_t _lastCol;

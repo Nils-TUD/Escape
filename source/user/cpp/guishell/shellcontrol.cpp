@@ -151,11 +151,16 @@ void ShellControl::doUpdate() {
 		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
 		sp->scrollToBottom();
 
-		size_t startRow = _vt->upStart / (_vt->cols * 2);
-		size_t rowCount = (_vt->upLength + _vt->cols * 2 - 1) / (_vt->cols * 2);
-		Rectangle up = linesToRect(startRow,rowCount);
-		Size font = getGraphics()->getFont().getSize();
-		repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1));
+		if(_vt->upScroll != 0)
+			repaint();
+		else {
+			size_t startRow = _vt->upStart / (_vt->cols * 2);
+			size_t rowCount = (_vt->upLength + _vt->cols * 2 - 1) / (_vt->cols * 2);
+			Rectangle up = linesToRect(startRow,rowCount);
+			Size font = getGraphics()->getFont().getSize();
+			repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1));
+		}
+		_vt->upScroll = 0;
 		_vt->upStart = 0;
 		_vt->upLength = 0;
 	}

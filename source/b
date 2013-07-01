@@ -95,6 +95,9 @@ help() {
 	echo "    ESC_QEMU:                The qemu executable to use (default is"
 	echo "                             qemu-system-i386)."
 	echo "    ESC_SIM_FLAGS:           Pass additional arguments to qemu/gimmix/eco32."
+	echo "    ESC_DBGKERN:             Add debugging symbols of escape to gdb when"
+	echo "                             debugging (i.e. has only an effect when dbg= is"
+	echo "                             used)."
 	exit 0
 }
 
@@ -207,6 +210,11 @@ case "$cmd" in
 		tmp=$(mktemp)
 		echo "target remote localhost:1234" >> $tmp
 		echo "display/i \$pc" >> $tmp
+		if [ "$ESC_DBGKERN" = "1" ]; then
+			addr=`$crossdir/bin/$cross-readelf -S $build/bin/escape | grep .text | \
+				xargs | cut -d ' ' -f 5`
+			echo "add-symbol-file $build/bin/escape 0x$addr" >> $tmp
+		fi
 		$gdb $build/bin/$binary --command=$tmp
 		rm -f $tmp
 		;;

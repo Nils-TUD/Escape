@@ -42,7 +42,7 @@ namespace gui {
 
 	Application::Application()
 			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaInfo(), _windows(), _created(),
-			  _activated(), _destroyed(), _listening(false), _defTheme(nullptr) {
+			  _activated(), _destroyed(), _queuelock(), _listening(false), _defTheme(nullptr) {
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)
@@ -127,11 +127,15 @@ namespace gui {
 	}
 
 	void Application::handleQueue() {
+		locku(&_queuelock);
 		while(!_queue.empty()) {
 			std::Functor<void> *functor = _queue.front();
+			unlocku(&_queuelock);
 			(*functor)();
+			locku(&_queuelock);
 			_queue.erase(_queue.begin());
 		}
+		unlocku(&_queuelock);
 	}
 
 	void Application::handleMessage(msgid_t mid,sMsg *msg) {

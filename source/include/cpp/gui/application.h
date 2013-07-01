@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <esc/thread.h>
 #include <gui/graphics/graphicsbuffer.h>
 #include <gui/event/subscriber.h>
 #include <gui/theme.h>
@@ -148,8 +149,9 @@ namespace gui {
 		 * @param functor the functor to call
 		 */
 		void executeLater(std::Functor<void> *functor) {
-			// TODO not thread-safe!
+			locku(&_queuelock);
 			_queue.push_back(functor);
+			unlocku(&_queuelock);
 			kill(getpid(),SIG_USR1);
 		}
 
@@ -244,6 +246,7 @@ namespace gui {
 		activatedev_type _activated;
 		destroyedev_type _destroyed;
 		std::vector<Functor<void>*> _queue;
+		tULock _queuelock;
 		bool _listening;
 		Theme _defTheme;
 	};

@@ -168,8 +168,7 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 			windows[i].style = style;
 			windows[i].titleBarHeight = titleBarHeight;
 			windows[i].ready = false;
-			if(style != WIN_STYLE_POPUP && style != WIN_STYLE_DESKTOP)
-				win_notifyWinCreate(i,title);
+			win_notifyWinCreate(i,title);
 			return i;
 		}
 	}
@@ -196,8 +195,7 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 
 	/* mark unused */
 	windows[id].id = WINID_UNUSED;
-	if(windows[id].style != WIN_STYLE_POPUP && windows[id].style != WIN_STYLE_DESKTOP)
-		win_notifyWinDestroy(id);
+	win_notifyWinDestroy(id);
 
 	/* repaint window-area */
 	old = (sRectangle*)malloc(sizeof(sRectangle));
@@ -277,8 +275,7 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 		if(activeWindow != WINDOW_COUNT) {
 			sRectangle *new;
 			win_sendActive(activeWindow,true,mouseX,mouseY);
-			if(windows[activeWindow].style != WIN_STYLE_POPUP)
-				win_notifyWinActive(activeWindow);
+			win_notifyWinActive(activeWindow);
 
 			if(repaint) {
 				new = (sRectangle*)malloc(sizeof(sRectangle));
@@ -577,17 +574,23 @@ static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 }
 
 static void win_notifyWinCreate(gwinid_t id,const char *title) {
+	if(windows[id].style == WIN_STYLE_POPUP || windows[id].style == WIN_STYLE_DESKTOP)
+		return;
 	msg.str.arg1 = id;
 	strcpy(msg.str.s1,title);
 	listener_notify(MSG_WIN_CREATE_EV,&msg,sizeof(msg.str));
 }
 
 static void win_notifyWinActive(gwinid_t id) {
+	if(windows[id].style == WIN_STYLE_POPUP)
+		return;
 	msg.args.arg1 = id;
 	listener_notify(MSG_WIN_ACTIVE_EV,&msg,sizeof(msg.args));
 }
 
 static void win_notifyWinDestroy(gwinid_t id) {
+	if(windows[id].style == WIN_STYLE_POPUP || windows[id].style == WIN_STYLE_DESKTOP)
+		return;
 	msg.args.arg1 = id;
 	listener_notify(MSG_WIN_DESTROY_EV,&msg,sizeof(msg.args));
 }

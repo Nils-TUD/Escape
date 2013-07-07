@@ -395,17 +395,16 @@ void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 	sWindow *win = windows + window;
 	win->ready = true;
 
-	sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
+	sRectangle rect;
+	sRectangle *r = activeWindow == window ? &rect : (sRectangle*)malloc(sizeof(sRectangle));
 	r->x = win->x + x;
 	r->y = win->y + y;
 	r->width = width;
 	r->height = height;
 	r->window = win->id;
 	if(win_validateRect(r)) {
-		if(activeWindow == window) {
+		if(activeWindow == window)
 			win_copyRegion(shmem,r->x,r->y,r->width,r->height,window);
-			free(r);
-		}
 		else
 			win_repaint(r,win,win->z);
 	}

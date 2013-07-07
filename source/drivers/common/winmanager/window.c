@@ -37,6 +37,7 @@
 static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height);
 static void win_destroyBuf(sWindow *win);
 static gwinid_t win_getTop(void);
+static bool win_validateRect(sRectangle *r);
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z);
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY);
 static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r);
@@ -393,16 +394,20 @@ void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sWindow *win = windows + window;
 	win->ready = true;
-	if(activeWindow == window)
-		win_copyRegion(shmem,win->x + x,win->y + y,width,height,window);
-	else {
-		sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
-		r->x = win->x + x;
-		r->y = win->y + y;
-		r->width = width;
-		r->height = height;
-		r->window = win->id;
-		win_repaint(r,win,win->z);
+
+	sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
+	r->x = win->x + x;
+	r->y = win->y + y;
+	r->width = width;
+	r->height = height;
+	r->window = win->id;
+	if(win_validateRect(r)) {
+		if(activeWindow == window) {
+			win_copyRegion(shmem,r->x,r->y,r->width,r->height,window);
+			free(r);
+		}
+		else
+			win_repaint(r,win,win->z);
 	}
 }
 
@@ -420,6 +425,20 @@ static gwinid_t win_getTop(void) {
 	return winId;
 }
 
+static bool win_validateRect(sRectangle *r) {
+	if(r->x < 0) {
+		if(-r->x > (gpos_t)r->width)
+			return false;
+		r->width += r->x;
+		r->x = 0;
+	}
+	if(r->x >= (gpos_t)vesaInfo.width || r->y >= (gpos_t)vesaInfo.height)
+		return false;
+	r->width = MIN(vesaInfo.width - r->x,r->width);
+	r->height = MIN(vesaInfo.height - r->y,r->height);
+	return true;
+}
+
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 	sRectangle *rect;
 	sSLNode *n;
@@ -431,25 +450,15 @@ static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 		rect = (sRectangle*)n->data;
 
 		/* validate rect */
-		gpos_t x = rect->x;
-		gsize_t width = rect->width, height = rect->height;
-		if(x < 0) {
-			if(-x > (gpos_t)width)
-				continue;
-			width += x;
-			x = 0;
-		}
-		if(x >= (gpos_t)vesaInfo.width || rect->y >= (gpos_t)vesaInfo.height)
+		if(!win_validateRect(rect))
 			continue;
-		width = MIN(vesaInfo.width - x,width);
-		height = MIN(vesaInfo.height - rect->y,height);
 
 		/* if it doesn't belong to a window, we have to clear it */
 		if(rect->window == WINDOW_COUNT)
-			win_clearRegion(shmem,x,rect->y,width,height);
+			win_clearRegion(shmem,rect->x,rect->y,rect->width,rect->height);
 		/* otherwise copy from the window buffer */
 		else
-			win_copyRegion(shmem,x,rect->y,width,height,rect->window);
+			win_copyRegion(shmem,rect->x,rect->y,rect->width,rect->height,rect->window);
 	}
 
 	/* free list elements */

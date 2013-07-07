@@ -590,11 +590,37 @@ void vmm_remove(pid_t pid,sVMRegion *vm) {
 static void vmm_sync(sProc *p,sVMRegion *vm) {
 	if((vm->reg->flags & RF_SHAREABLE) && (vm->reg->flags & RF_WRITABLE) && vm->reg->file) {
 		size_t i,pcount = BYTES_2_PAGES(vm->reg->byteCount);
+		/* this is more complicated because p might not be the current process. in this case we
+		 * can't directly access the memory. */
+		pid_t cur = proc_getRunning();
+		uint8_t *buf;
+		if(cur != p->pid) {
+			buf = cache_alloc(PAGE_SIZE);
+			if(buf == NULL)
+				return;
+			thread_addHeapAlloc(buf);
+		}
+
 		for(i = 0; i < pcount; i++) {
 			size_t amount = i < pcount - 1 ? PAGE_SIZE : (vm->reg->byteCount - i * PAGE_SIZE);
 			if(vfs_seek(p->pid,vm->reg->file,vm->reg->offset + i * PAGE_SIZE,SEEK_SET) < 0)
 				return;
-			vfs_writeFile(p->pid,vm->reg->file,(void*)(vm->virt + i * PAGE_SIZE),amount);
+			if(p->pid == cur)
+				vfs_writeFile(p->pid,vm->reg->file,(void*)(vm->virt + i * PAGE_SIZE),amount);
+			else {
+				/* we can't use the temp mapping during vfs_writeFile because we might perform a
+				 * context-switch in between. */
+				frameno_t frame = paging_getFrameNo(&p->pagedir,vm->virt + i * PAGE_SIZE);
+				uintptr_t addr = paging_getAccess(frame);
+				memcpy(buf,(void*)addr,amount);
+				paging_removeAccess();
+				vfs_writeFile(p->pid,vm->reg->file,buf,amount);
+			}
+		}
+
+		if(cur != p->pid) {
+			thread_remHeapAlloc(buf);
+			cache_free(buf);
 		}
 	}
 }

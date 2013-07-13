@@ -30,7 +30,7 @@
 
 GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh)
 	: _sid(sid), _run(true), _vt(nullptr), _sh(sh), _cfg(),
-	  _rbuffer(new char[READ_BUF_SIZE]), _rbufPos(0) {
+	  _rbuffer(new char[READ_BUF_SIZE + 1]), _rbufPos(0) {
 	// open speaker
 	int speakerFd = open("/dev/speaker",IO_MSGS);
 	if(speakerFd < 0)
@@ -59,8 +59,10 @@ GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh)
 
 GUITerm::~GUITerm() {
 	delete[] _rbuffer;
+	free(_cfg.devFds);
 	vtctrl_destroy(_vt);
 	free(_vt);
+	close(_sid);
 }
 
 void GUITerm::run() {

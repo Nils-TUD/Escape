@@ -99,6 +99,7 @@ void ShellControl::resizeTo(const Size &size) {
 }
 
 void ShellControl::sendEOF() {
+	vtin_handleKey(_vt,VK_C,STATE_CTRL,'c');
 	vtin_handleKey(_vt,VK_D,STATE_CTRL,'d');
 }
 

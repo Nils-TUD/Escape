@@ -49,10 +49,10 @@ static int shellMain(void);
 static char *drvName;
 static GUITerm *gt;
 static int childPid;
+static int maintid;
 
 static void sigUsr1(A_UNUSED int sig) {
 	Application::getInstance()->exit();
-	gt->stop();
 }
 
 int main(int argc,char **argv) {
@@ -70,6 +70,8 @@ int main(int argc,char **argv) {
 		fprintf(stderr,"Invalid shell-usage; Please use %s -e <cmd>\n",argv[1]);
 		return EXIT_FAILURE;
 	}
+
+	maintid = gettid();
 
 	// use a lock here to ensure that no one uses our guiterm-number
 	lockg(GUI_SHELL_LOCK,LOCK_EXCLUSIVE);
@@ -166,6 +168,9 @@ static int guiProc(void) {
 	app->addWindow(w);
 	int res = app->run();
 	sh->sendEOF();
+	// wait until the shell has terminated the child processes
+	IGNSIGS(join(maintid));
+	gt->stop();
 	return res;
 }
 
@@ -173,6 +178,7 @@ static int termThread(A_UNUSED void *arg) {
 	if(signal(SIG_USR2,sigUsr1) == SIG_ERR)
 		error("Unable to set signal-handler");
 	gt->run();
+	delete gt;
 	return 0;
 }
 

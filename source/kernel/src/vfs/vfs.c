@@ -744,6 +744,7 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool blo
 			if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 				sVFSNode *n = (sVFSNode*)objects[i].object;
 				if(n->name == NULL) {
+					spinlock_release(&waitLock);
 					res = -EDESTROYED;
 					goto error;
 				}

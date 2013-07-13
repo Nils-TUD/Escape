@@ -97,6 +97,8 @@ static size_t vfs_device_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
 }
 
 static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node) {
+	/* do that first because otherwise the client-nodes are already gone :) */
+	vfs_device_destroy(node);
 	vfs_node_destroy(node);
 }
 
@@ -115,7 +117,7 @@ void vfs_device_clientRemoved(sVFSNode *node,const sVFSNode *client) {
 	sDevice *dev = (sDevice*)node->data;
 	/* we don't have to lock this, because its only called in vfs_chan_destroy(), which can only
 	 * be called when this device-node is locked. i.e. it is not possible during getwork() */
-	if(dev->lastClient == client)
+	if(dev && dev->lastClient == client)
 		dev->lastClient = NULL;
 }
 

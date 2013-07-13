@@ -53,8 +53,11 @@ void term_start(void) {
 			 * in this time to add another thread */
 			spinlock_release(&termLock);
 
-			while(!thread_beginTerm(dt))
+			while(!thread_beginTerm(dt)) {
+				/* ensure that we idle to receive interrupts */
+				timer_sleepFor(t->tid,20,true);
 				thread_switch();
+			}
 			proc_killThread(dt->tid);
 
 			spinlock_aquire(&termLock);

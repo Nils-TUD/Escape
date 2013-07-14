@@ -56,6 +56,7 @@ static bool enabled = false;
 static sMsg msg;
 static uint8_t *shmem;
 static size_t activeWindow = WINDOW_COUNT;
+static size_t topWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
 
 bool win_init(int sid) {
@@ -208,7 +209,7 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	win_repaint(old,NULL,-1);
 
 	/* set highest window active */
-	if(activeWindow == id) {
+	if(activeWindow == id || topWindow == id) {
 		gwinid_t winId = win_getTop();
 		if(winId != WINID_UNUSED)
 			win_setActive(winId,false,mouseX,mouseY);
@@ -255,7 +256,7 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 	gpos_t curz = windows[id].z;
 	gpos_t maxz = 0;
 	sWindow *w = windows;
-	if(id != WINDOW_COUNT) {
+	if(id != WINDOW_COUNT && windows[id].style != WIN_STYLE_DESKTOP) {
 		for(i = 0; i < WINDOW_COUNT; i++) {
 			if(w->id != WINID_UNUSED && w->z > curz && w->style != WIN_STYLE_POPUP) {
 				if(w->z > maxz)
@@ -273,12 +274,14 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 			win_sendActive(activeWindow,false,mouseX,mouseY);
 
 		activeWindow = id;
+		if(windows[activeWindow].style != WIN_STYLE_DESKTOP)
+			topWindow = id;
 		if(activeWindow != WINDOW_COUNT) {
 			sRectangle *new;
 			win_sendActive(activeWindow,true,mouseX,mouseY);
 			win_notifyWinActive(activeWindow);
 
-			if(repaint) {
+			if(repaint && windows[activeWindow].style != WIN_STYLE_DESKTOP) {
 				new = (sRectangle*)malloc(sizeof(sRectangle));
 				new->x = windows[activeWindow].x;
 				new->y = windows[activeWindow].y;
@@ -396,14 +399,14 @@ void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 	win->ready = true;
 
 	sRectangle rect;
-	sRectangle *r = activeWindow == window ? &rect : (sRectangle*)malloc(sizeof(sRectangle));
+	sRectangle *r = topWindow == window ? &rect : (sRectangle*)malloc(sizeof(sRectangle));
 	r->x = win->x + x;
 	r->y = win->y + y;
 	r->width = width;
 	r->height = height;
 	r->window = win->id;
 	if(win_validateRect(r)) {
-		if(activeWindow == window)
+		if(topWindow == window)
 			win_copyRegion(shmem,r->x,r->y,r->width,r->height,window);
 		else
 			win_repaint(r,win,win->z);

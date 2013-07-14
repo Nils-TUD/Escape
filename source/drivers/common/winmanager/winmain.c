@@ -87,7 +87,7 @@ int main(void) {
 				case MSG_WIN_SET_ACTIVE: {
 					gwinid_t wid = (gwinid_t)msg.args.arg1;
 					sWindow *win = win_get(wid);
-					if(win && win->style != WIN_STYLE_DESKTOP)
+					if(win)
 						win_setActive(wid,true,mouse_getX(),mouse_getY());
 				}
 				break;

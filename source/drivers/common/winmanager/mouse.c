@@ -38,12 +38,16 @@ static gpos_t curY = 0;
 static uchar cursor = CURSOR_DEFAULT;
 static sMouseData mouseData[MOUSE_DATA_BUF_SIZE];
 static sWindow *mouseWin = NULL;
+static int winmng = -1;
 
 int mouse_start(void *drvIdPtr) {
 	int drvId = *(int*)drvIdPtr;
 	int mouse = open("/dev/mouse",IO_READ);
 	if(mouse < 0)
 		error("Unable to open /dev/mouse");
+	winmng = open("/dev/winmanager",IO_MSGS);
+	if(winmng < 0)
+		error("Unable to open /dev/winmanager");
 
 	while(1) {
 		ssize_t count = IGNSIGS(read(mouse,mouseData,sizeof(mouseData)));
@@ -62,6 +66,7 @@ int mouse_start(void *drvIdPtr) {
 			}
 		}
 	}
+	close(winmng);
 	close(mouse);
 	return 0;
 }
@@ -87,8 +92,12 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 		buttons = mdata->buttons;
 		if(buttons) {
 			w = win_getAt(curX,curY);
-			if(w)
-				win_setActive(w->id,true,curX,curY);
+			if(w) {
+				/* do that via message passing so that only one thread performs changes on the
+				 * windows */
+				msg.args.arg1 = w->id;
+				send(winmng,MSG_WIN_SET_ACTIVE,&msg,sizeof(msg.args));
+			}
 			mouseWin = w;
 		}
 	}

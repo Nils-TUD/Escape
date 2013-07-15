@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <gui/imagebutton.h>
 #include <gui/application.h>
+#include <gui/layout/iconlayout.h>
 #include <esc/proc.h>
 #include <stdio.h>
 #include <iostream>
@@ -38,7 +39,8 @@ DesktopWin::DesktopWin(const Size &size)
 	: Window(Pos(0,0),size,DESKTOP),
 	  _winPanel(make_control<Panel>(Pos(0,0),Size(0,TASKBAR_HEIGHT),
 			  	make_layout<FlowLayout>(FlowLayout::FRONT,FlowLayout::HORIZONTAL,4))),
-	  _iconPanel(make_control<Panel>()), _active(nullptr), _windows(), _shortcuts() {
+	  _iconPanel(make_control<Panel>(make_layout<IconLayout>(IconLayout::VERTICAL,PADDING))),
+	  _active(nullptr), _windows(), _shortcuts() {
 	shared_ptr<Panel> root = getRootPanel();
 	root->setLayout(make_layout<BorderLayout>());
 	root->getTheme().setPadding(0);
@@ -54,30 +56,28 @@ DesktopWin::DesktopWin(const Size &size)
 }
 
 void DesktopWin::onIconClick(UIElement& el) {
-	ImageButton *btn = dynamic_cast<ImageButton*>(&el);
-	if(btn) {
-		auto it = std::find_if(_shortcuts.begin(),_shortcuts.end(),
-			[btn] (const pair<std::shared_ptr<gui::ImageButton>,Shortcut*> &pair) {
-				return btn == pair.first.get();
-			}
-		);
-		if(it != _shortcuts.end()) {
-			int pid = fork();
-			if(pid == 0) {
-				const char *args[2] = {nullptr,nullptr};
-				args[0] = it->second->getApp().c_str();
-				exec(args[0],args);
-			}
-			else if(pid < 0)
-				printe("[DESKTOP] Unable to create child-process");
+	auto it = std::find_if(_shortcuts.begin(),_shortcuts.end(),
+		[&el] (const pair<std::shared_ptr<gui::ImageButton>,Shortcut*> &pair) {
+			return &el == pair.first.get();
 		}
+	);
+	if(it != _shortcuts.end()) {
+		int pid = fork();
+		if(pid == 0) {
+			const char *args[2] = {nullptr,nullptr};
+			args[0] = it->second->getApp().c_str();
+			exec(args[0],args);
+		}
+		else if(pid < 0)
+			printe("[DESKTOP] Unable to create child-process");
 	}
-	else {
-		for(auto wit = _windows.begin(); wit != _windows.end(); ++wit) {
-			if((*wit).second.get() == &el) {
-				Application::getInstance()->requestActiveWindow((*wit).first);
-				break;
-			}
+}
+
+void DesktopWin::onWinBtnClicked(UIElement& el) {
+	for(auto wit = _windows.begin(); wit != _windows.end(); ++wit) {
+		if((*wit).second.get() == &el) {
+			Application::getInstance()->requestActiveWindow((*wit).first);
+			break;
 		}
 	}
 }

@@ -61,7 +61,7 @@ class DesktopWin : public gui::Window {
 	class WinButton : public gui::Button {
 	public:
 		WinButton(DesktopWin *inst,const string &title)
-			: Button(title), _sub(clicked(),mem_recv(inst,&DesktopWin::onIconClick)) {
+			: Button(title), _sub(clicked(),mem_recv(inst,&DesktopWin::onWinBtnClicked)) {
 		}
 
 	private:
@@ -81,9 +81,7 @@ public:
 	void addShortcut(Shortcut *sc) {
 		// do that first for exception-safety
 		std::shared_ptr<gui::Image> img = gui::Image::loadImage(sc->getIcon());
-		std::shared_ptr<gui::ImageButton> btn(gui::make_control<gui::ImageButton>(img,
-				gui::Pos(PADDING,PADDING + _shortcuts.size() * (ICON_SIZE + PADDING)),
-				img->getSize() + gui::Size(2,2)));
+		std::shared_ptr<gui::ImageButton> btn(gui::make_control<gui::ImageButton>(img));
 		sc->setButton(btn);
 		btn->clicked().subscribe(mem_recv(this,&DesktopWin::onIconClick));
 		_shortcuts[btn] = sc;
@@ -96,6 +94,7 @@ private:
 	DesktopWin(const DesktopWin &w);
 	DesktopWin &operator=(const DesktopWin &w);
 
+	void onWinBtnClicked(UIElement& el);
 	void onWindowCreated(gwinid_t id,const std::string& title);
 	void onWindowActive(gwinid_t id);
 	void onWindowDestroyed(gwinid_t id);

@@ -63,7 +63,8 @@ namespace gui {
 				else {
 					// move cols right and repaint the first few cols
 					g->moveCols(0,0,visible.width + x,visible.height,x);
-					repaintRect(Pos(0,0),Size(-x,visible.height),false);
+					repaintRect(Pos(0,0),Size(-x,visible.height));
+					makeDirty(true);
 					repaintRect(Pos(0,visible.height),Size(getSize().width,BAR_SIZE));
 				}
 			}
@@ -76,7 +77,8 @@ namespace gui {
 				else {
 					// move cols left and repaint the last few cols
 					g->moveCols(x,0,(gsize_t)(visible.width - x),visible.height,x);
-					repaintRect(Pos(visible.width - x,0),Size(x,visible.height),false);
+					repaintRect(Pos(visible.width - x,0),Size(x,visible.height));
+					makeDirty(true);
 					repaintRect(Pos(0,visible.height),Size(getSize().width,BAR_SIZE));
 				}
 			}
@@ -92,7 +94,8 @@ namespace gui {
 				else {
 					// move rows down and repaint the first few rows
 					g->moveRows(0,0,visible.width,visible.height + y,y);
-					repaintRect(Pos(0,0),Size(visible.width,-y),false);
+					repaintRect(Pos(0,0),Size(visible.width,-y));
+					makeDirty(true);
 					repaintRect(Pos(visible.width,0),Size(BAR_SIZE,getSize().height));
 				}
 			}
@@ -105,7 +108,8 @@ namespace gui {
 				else {
 					// move rows up and repaint the last few rows
 					g->moveRows(0,y,visible.width,visible.height - y,y);
-					repaintRect(Pos(0,visible.height - y),Size(visible.width,y),false);
+					repaintRect(Pos(0,visible.height - y),Size(visible.width,y));
+					makeDirty(true);
 					repaintRect(Pos(visible.width,0),Size(BAR_SIZE,getSize().height));
 				}
 			}
@@ -172,13 +176,14 @@ namespace gui {
 			g.fillRect(Pos(0,0),visible);
 		}
 
+		_ctrl->makeDirty(true);
 		if(_update.empty()) {
 			Size size = visible - Size(_ctrl->getPos());
 			_ctrl->repaintRect(Pos(0,0) - _ctrl->getPos(),size,false);
 		}
 		else {
 			Size rsize = minsize(_update.getSize(),visible);
-			_ctrl->paintRect(*_ctrl->getGraphics(),_update.getPos() - _ctrl->getPos(),rsize);
+			_ctrl->repaintRect(_update.getPos() - _ctrl->getPos(),rsize,false);
 		}
 		paintBars(g);
 	}

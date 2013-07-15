@@ -40,6 +40,9 @@ namespace gui {
 		bool isPressed() const {
 			return _pressed;
 		}
+		bool isFocused() const {
+			return _focused;
+		}
 		const std::string &getText() const {
 			return _text;
 		}

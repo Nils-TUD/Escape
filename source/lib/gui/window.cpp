@@ -62,8 +62,8 @@ namespace gui {
 		: UIElement(pos,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
-			_isActive(false), _movePos(pos), _resizeSize(getSize()), _gbuf(nullptr), _header(),
-			_body(make_control<Panel>(Pos(1,1),getSize() - Size(2,2))),
+			_isActive(false), _repainting(false), _movePos(pos), _resizeSize(getSize()),
+			_gbuf(nullptr), _header(), _body(make_control<Panel>(Pos(1,1),getSize() - Size(2,2))),
 			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
 		init();
 	}
@@ -71,7 +71,7 @@ namespace gui {
 		: UIElement(pos,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
 			_id(NEXT_TMP_ID--), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
-			_isActive(false), _movePos(pos), _resizeSize(getSize()), _gbuf(nullptr),
+			_isActive(false), _repainting(false), _movePos(pos), _resizeSize(getSize()), _gbuf(nullptr),
 			_header(make_control<WindowTitleBar>(title,Pos(1,1),Size(getSize().width - 2,HEADER_SIZE))),
 			_body(make_control<Panel>(Pos(1,1 + HEADER_SIZE),getSize() - Size(2,HEADER_SIZE + 2))),
 			_tabCtrls(), _tabIt(_tabCtrls.begin()) {
@@ -420,7 +420,20 @@ namespace gui {
 		g.setColor(getTheme().getColor(Theme::WIN_BORDER));
 		g.drawRect(Pos(0,0),getSize());
 
-		_body->repaint(false);
+		if(_repainting) {
+			Rectangle inter = intersection(g.getPaintRect(),
+					Rectangle(_body->getPos(),_body->getSize()));
+			if(!inter.empty())
+				_body->repaintRect(inter.getPos() - _body->getPos(),inter.getSize(),false);
+		}
+		else
+			_body->repaint(false);
+	}
+
+	void Window::paintRect(Graphics &g,const Pos &pos,const Size &size) {
+		_repainting = true;
+		UIElement::paintRect(g,pos,size);
+		_repainting = false;
 	}
 
 	void Window::updateActive(bool active) {
@@ -463,8 +476,7 @@ namespace gui {
 	}
 
 	void Window::onUpdated() {
-		if(_gbuf->onUpdated())
-			repaint();
+		_gbuf->onUpdated();
 	}
 
 	void Window::print(std::ostream &os, bool rec, size_t indent) const {

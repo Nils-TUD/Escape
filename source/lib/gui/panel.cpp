@@ -106,40 +106,27 @@ namespace gui {
 
 	void Panel::paint(Graphics &g) {
 		bool dirty = UIElement::isDirty();
-		if(dirty) {
-			// fill bg
-			g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
-			g.fillRect(Pos(0,0),getSize());
-		}
+		Rectangle prect = g.getPaintRect();
+		bool ispart = prect.getSize() != getSize();
+		// fill bg
+		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
+		g.fillRect(prect.getPos(),prect.getSize());
 
 		// now paint controls
 		for(auto it = _controls.begin(); it != _controls.end(); ++it) {
 			shared_ptr<Control> c = *it;
 			c->makeDirty(dirty);
-			if(_updateRect.width) {
-				sRectangle ctrlRect,inter;
-				ctrlRect.x = c->getPos().x;
-				ctrlRect.y = c->getPos().y;
-				ctrlRect.width = c->getSize().width;
-				ctrlRect.height = c->getSize().height;
-				if(rectIntersect(&_updateRect,&ctrlRect,&inter)) {
-					c->paintRect(*c->getGraphics(),
-							Pos(inter.x - c->getPos().x,inter.y - c->getPos().y),
-							Size(inter.width,inter.height));
+			if(!c->isDirty() || ispart) {
+				Rectangle ctrlRect(c->getPos(),c->getSize());
+				Rectangle inter = intersection(ctrlRect,prect);
+				if(!inter.empty()) {
+					c->makeDirty(true);
+					c->repaintRect(inter.getPos() - c->getPos(),inter.getSize(),false);
 				}
 			}
 			else
 				c->repaint(false);
 		}
-	}
-
-	void Panel::paintRect(Graphics &g,const Pos &pos,const Size &size) {
-		_updateRect.x = pos.x;
-		_updateRect.y = pos.y;
-		_updateRect.width = size.width;
-		_updateRect.height = size.height;
-		UIElement::paintRect(g,pos,size);
-		_updateRect.width = 0;
 	}
 
 	void Panel::add(shared_ptr<Control> c,Layout::pos_type pos) {

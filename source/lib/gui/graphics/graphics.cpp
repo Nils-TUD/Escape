@@ -258,22 +258,14 @@ namespace gui {
 	}
 
 	void Graphics::requestUpdate() {
-		if(_minx > _maxx)
+		Rectangle dirty = _buf->getDirtyRect();
+		if(dirty.empty())
+			return;
+		if(!validateParams(dirty.getPos(),dirty.getSize()))
 			return;
 
-		gpos_t x = _minx;
-		gpos_t y = _miny;
-		gsize_t width = _maxx - _minx + 1;
-		gsize_t height = _maxy - _miny + 1;
-		if(!validateParams(x,y,width,height))
-			return;
-
-		_buf->requestUpdate(Pos(_off.x + x,_off.y + y),Size(width,height));
-		// reset region
-		_minx = _size.width - 1;
-		_maxx = 0;
-		_miny = _size.height - 1;
-		_maxy = 0;
+		_buf->requestUpdate(dirty.getPos(),dirty.getSize());
+		_buf->resetDirty();
 	}
 
 	void Graphics::setSize(const Size &size) {

@@ -22,6 +22,7 @@
 #include <esc/common.h>
 #include <gui/graphics/size.h>
 #include <gui/graphics/pos.h>
+#include <gui/graphics/rectangle.h>
 #include <stdlib.h>
 
 namespace gui {
@@ -39,6 +40,16 @@ namespace gui {
 		friend class Graphics;
 		friend class UIElement;
 
+		struct LostRepaint {
+			UIElement *el;
+			Rectangle rect;
+
+			LostRepaint() : el(), rect() {
+			}
+			LostRepaint(UIElement* _el,const Rectangle &_rect) : el(_el), rect(_rect) {
+			}
+		};
+
 	public:
 		/**
 		 * Constructor
@@ -49,8 +60,9 @@ namespace gui {
 		 * @param bpp the used color-depth
 		 */
 		GraphicsBuffer(Window *win,const Pos &pos,const Size &size,gcoldepth_t bpp)
-			: _win(win), _pos(pos), _size(size), _bpp(bpp), _fd(-1), _pixels(nullptr),
-			  _lostpaint(false), _updating(false) {
+			: _win(win), _pos(pos), _size(size), _bpp(bpp), _minx(0),_miny(0),
+			  _maxx(size.width - 1), _maxy(size.height - 1), _lost(),
+			  _fd(-1), _pixels(nullptr), _updating(false) {
 		}
 		/**
 		 * Destructor
@@ -126,15 +138,22 @@ namespace gui {
 			_updating = true;
 		}
 		/**
-		 * Sets that we wanted to paint, but couldn't because we weren't ready.
+		 * Ensures that there is no outstanding repaint for the given UIElement anymore.
+		 *
+		 * @param el the UIElement
 		 */
-		void lostPaint() {
-			_lostpaint = true;
-		}
+		void detach(UIElement *el);
+		/**
+		 * Stores the repaint description for execution as soon as the last repaint was acknowledged.
+		 *
+		 * @param el the UIElement
+		 * @param rect the rectangle (optional)
+		 */
+		void lostPaint(UIElement* el,Rectangle rect = Rectangle());
 		/**
 		 * Called on a finished update
 		 */
-		bool onUpdated();
+		void onUpdated();
 		/**
 		 * Allocates _pixels
 		 */
@@ -143,6 +162,36 @@ namespace gui {
 		 * Frees _pixels
 		 */
 		void freeBuffer();
+		/**
+		 * @return the dirty rectangle
+		 */
+		Rectangle getDirtyRect() {
+			if(_minx > _maxx)
+				return Rectangle();
+			return Rectangle(Pos(_minx,_miny),Size(_maxx - _minx + 1,_maxy - _miny + 1));
+		}
+		/**
+		 * Marks everything clean
+		 */
+		void resetDirty() {
+			_minx = _size.width - 1;
+			_maxx = 0;
+			_miny = _size.height - 1;
+			_maxy = 0;
+		}
+		/**
+		 * Adds the given position to the dirty region
+		 */
+		void updateDirty(const Pos &pos) {
+			if(pos.x > _maxx)
+				_maxx = pos.x;
+			if(pos.x < _minx)
+				_minx = pos.x;
+			if(pos.y > _maxy)
+				_maxy = pos.y;
+			if(pos.y < _miny)
+				_miny = pos.y;
+		}
 
 	private:
 		// the window instance the buffer belongs to
@@ -153,10 +202,12 @@ namespace gui {
 		Size _size;
 		// used color-depth
 		gcoldepth_t _bpp;
+		// dirty region
+		gpos_t _minx,_miny,_maxx,_maxy;
+		LostRepaint _lost;
 		// buffer for this window; controls use this, too (don't have their own)
 		int _fd;
 		uint8_t *_pixels;
-		mutable bool _lostpaint;
 		bool _updating;
 	};
 }

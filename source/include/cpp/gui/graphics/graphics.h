@@ -54,8 +54,7 @@ namespace gui {
 		 * @param size the size of the control
 		 */
 		Graphics(GraphicsBuffer *buf,const Size &size)
-			: _buf(buf), _minoff(), _off(), _size(size), _col(0), _colInst(0), _minx(0),_miny(0),
-			  _maxx(size.width - 1), _maxy(size.height - 1), _font() {
+			: _buf(buf), _minoff(), _off(), _size(size), _col(0), _colInst(0), _font() {
 		}
 		/**
 		 * Destructor
@@ -241,7 +240,8 @@ namespace gui {
 		 * @return the pixel buffer (might be nullptr)
 		 */
 		uint8_t *getPixels() {
-			return _buf->getBuffer();
+			// don't paint anything if a transparent color is set
+			return _colInst.isTransparent() ? nullptr : _buf->getBuffer();
 		}
 		/**
 		 * Sets a pixel if in the given bounds
@@ -258,14 +258,7 @@ namespace gui {
 		 * Adds the given position to the dirty region
 		 */
 		void updateMinMax(const Pos &pos) {
-			if(pos.x > _maxx)
-				_maxx = pos.x;
-			if(pos.x < _minx)
-				_minx = pos.x;
-			if(pos.y > _maxy)
-				_maxy = pos.y;
-			if(pos.y < _miny)
-				_miny = pos.y;
+			_buf->updateDirty(Pos(_off.x,_off.y) + pos);
 		}
 		/**
 		 * Requests an update for the dirty region
@@ -288,6 +281,14 @@ namespace gui {
 		}
 
 	private:
+		/**
+		 * Ensures that there is no outstanding repaint for the given UIElement anymore.
+		 *
+		 * @param el the UIElement
+		 */
+		void detach(UIElement *el) {
+			_buf->detach(el);
+		}
 		/**
 		 * @return the graphics-buffer
 		 */
@@ -342,8 +343,6 @@ namespace gui {
 		// current color
 		Color::color_type _col;
 		Color _colInst;
-		// dirty region
-		gpos_t _minx,_miny,_maxx,_maxy;
 		// current font
 		Font _font;
 	};

@@ -32,8 +32,14 @@ namespace gui {
 		explicit Rectangle(const Pos &pos,const Size &size) : _pos(pos), _size(size) {
 		}
 
+		Pos &getPos() {
+			return _pos;
+		}
 		const Pos &getPos() const {
 			return _pos;
+		}
+		Size &getSize() {
+			return _size;
 		}
 		const Size &getSize() const {
 			return _size;

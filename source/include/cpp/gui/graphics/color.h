@@ -84,6 +84,12 @@ namespace gui {
 		}
 
 		/**
+		 * @return true if this color is completely transparent
+		 */
+		bool isTransparent() const {
+			return getAlpha() == 0xFF;
+		}
+		/**
 		 * @return the red-component
 		 */
 		comp_type getRed() const {

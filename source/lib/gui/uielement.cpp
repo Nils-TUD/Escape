@@ -119,12 +119,17 @@ namespace gui {
 	void UIElement::repaint(bool update) {
 		if(_g && isDirty()) {
 			if(!_g->getBuffer()->isReady())
-				_g->getBuffer()->lostPaint();
+				_g->getBuffer()->lostPaint(this);
 			else {
-				paint(*_g);
-				debug();
-				if(update)
-					_g->requestUpdate();
+				Window *win;
+				if(_parent && (win = getWindow()) && !win->_repainting)
+					win->repaintRect(getWindowPos(),getSize(),update);
+				else {
+					paint(*_g);
+					debug();
+					if(update)
+						_g->requestUpdate();
+				}
 				makeClean();
 			}
 		}
@@ -136,7 +141,9 @@ namespace gui {
 		Size gs = g.getSize();
 
 		// change g to cover only the rectangle to repaint
-		Rectangle rect = _parent->getVisibleRect(Rectangle(g.getPos() + pos,size));
+		Rectangle rect(g.getPos() + pos,size);
+		if(_parent)
+			rect = _parent->getVisibleRect(rect);
 		g.setMinOff(rect.getPos());
 		g.setSize(rect.getSize());
 		// now let the ui-element paint it; this does not make sense if the rectangle is empty
@@ -151,12 +158,17 @@ namespace gui {
 	void UIElement::repaintRect(const Pos &pos,const Size &size,bool update) {
 		if(_g && isDirty()) {
 			if(!_g->getBuffer()->isReady())
-				_g->getBuffer()->lostPaint();
+				_g->getBuffer()->lostPaint(this,Rectangle(pos,size));
 			else {
-				paintRect(*_g,pos,size);
-				debug();
-				if(update)
-					_g->requestUpdate();
+				Window *win;
+				if(_parent && (win = getWindow()) && !win->_repainting)
+					win->repaintRect(getWindowPos() + pos,size,update);
+				else {
+					paintRect(*_g,pos,size);
+					debug();
+					if(update)
+						_g->requestUpdate();
+				}
 				makeClean();
 			}
 		}

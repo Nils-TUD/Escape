@@ -81,14 +81,17 @@ namespace gui {
 			  _pos(pos), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
 			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _dirty(true) {
 		}
+
+	public:
 		/**
 		 * Destructor. Free's the memory
 		 */
 		virtual ~UIElement() {
+			if(_g)
+				_g->detach(this);
 			delete _g;
 		}
 
-	public:
 		/**
 		 * @return the id of this UIElement (unique in one application)
 		 */
@@ -166,15 +169,6 @@ namespace gui {
 		 * @param update whether to request an update of the painted region
 		 */
 		void repaint(bool update = true);
-
-		/**
-		 * Paints the given rectangle of the control
-		 *
-		 * @param g the graphics-object
-		 * @param pos the position relative to this control
-		 * @param size the size of the rectangle
-		 */
-		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
 
 		/**
 		 * Repaints the given rectangle of the control, i.e. calls paintRect()
@@ -273,6 +267,15 @@ namespace gui {
 		 * @param g the graphics object
 		 */
 		virtual void paint(Graphics &g) = 0;
+
+		/**
+		 * Paints the given rectangle of the control
+		 *
+		 * @param g the graphics-object
+		 * @param pos the position relative to this control
+		 * @param size the size of the rectangle
+		 */
+		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
 
 		/**
 		 * Sets the parent of this control (used by Panel)

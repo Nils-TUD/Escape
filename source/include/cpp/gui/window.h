@@ -75,6 +75,7 @@ namespace gui {
 	class Window : public UIElement {
 		friend class Application;
 		friend class Panel;
+		friend class UIElement;
 
 	private:
 		// used for creation
@@ -278,6 +279,7 @@ namespace gui {
 		 */
 		void paintTitle(Graphics &g);
 		virtual void paint(Graphics &g);
+		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
 
 		/**
 		 * @return the window the ui-element belongs to (this)
@@ -346,6 +348,7 @@ namespace gui {
 		bool _inResizeRight;
 		bool _inResizeBottom;
 		bool _isActive;
+		bool _repainting;
 		Pos _movePos;
 		Size _resizeSize;
 		GraphicsBuffer *_gbuf;

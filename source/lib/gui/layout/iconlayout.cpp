@@ -41,8 +41,9 @@ namespace gui {
 			return Size();
 		Size max;
 		Size dim = getDim(avail,max);
-		return Size(dim.width * max.width + (dim.width - 1) * _gap,
-					dim.height * max.height + (dim.height - 1) * _gap);
+		Size req =  Size(dim.width * max.width + (dim.width - 1) * _gap,
+				dim.height * max.height + (dim.height - 1) * _gap);
+		return maxsize(avail,req);
 	}
 
 	bool IconLayout::rearrange() {

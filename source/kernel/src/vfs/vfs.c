@@ -371,7 +371,6 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file)
 		if(devNo == VFS_DEV_NO) {
 			n->refCount++;
 			f->node = n;
-			vfs_node_release(n);
 		}
 		else
 			f->node = NULL;
@@ -386,6 +385,8 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file)
 	}
 	else
 		f->refCount++;
+	if(devNo == VFS_DEV_NO)
+		vfs_node_release(n);
 	spinlock_release(&f->lock);
 	spinlock_release(&gftLock);
 	*file = f;
@@ -686,9 +687,10 @@ static bool vfs_doCloseFile(pid_t pid,sFile *file) {
 		if(file->usageCount <= 1) {
 			if(file->devNo == VFS_DEV_NO) {
 				sVFSNode *n = file->node;
-				n->refCount--;
 				if(n->close)
 					n->close(pid,file,n);
+				else
+					vfs_node_destroy(n);
 			}
 			/* vfs_fsmsgs_close won't cause a context-switch; therefore we can keep the lock */
 			else
@@ -1022,7 +1024,7 @@ int vfs_unlink(pid_t pid,const char *path) {
 		return -EPERM;
 	}
 	vfs_node_release(n);
-	vfs_node_destroy(n);
+	vfs_node_destroyNow(n);
 	return 0;
 }
 
@@ -1103,7 +1105,7 @@ int vfs_rmdir(pid_t pid,const char *path) {
 		return -ENOTDIR;
 	}
 	vfs_node_release(node);
-	vfs_node_destroy(node);
+	vfs_node_destroyNow(node);
 	return 0;
 }
 
@@ -1243,7 +1245,7 @@ void vfs_removeProcess(pid_t pid) {
 	/* remove from /system/processes */
 	const sProc *p = proc_getByPid(pid);
 	sVFSNode *node = vfs_node_get(p->threadDir);
-	vfs_node_destroy(node->parent);
+	vfs_node_destroyNow(node->parent);
 	vfs_fsmsgs_removeProc(pid);
 }
 
@@ -1310,7 +1312,7 @@ void vfs_removeThread(tid_t tid) {
 	}
 	vfs_node_closeDir(dir,true);
 	if(n)
-		vfs_node_destroy(n);
+		vfs_node_destroyNow(n);
 }
 
 size_t vfs_dbg_getGFTEntryCount(void) {

@@ -94,6 +94,8 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	chan->used = false;
 	chan->closed = false;
 	node->data = chan;
+	/* auto-destroy on the last close() */
+	node->refCount--;
 	vfs_node_append(parent,node);
 	return node;
 }
@@ -102,7 +104,8 @@ static void vfs_chan_destroy(sVFSNode *n) {
 	sChannel *chan = (sChannel*)n->data;
 	if(chan) {
 		/* we have to reset the last client for the device here */
-		vfs_device_clientRemoved(n->parent,n);
+		if(n->parent)
+			vfs_device_clientRemoved(n->parent,n);
 		/* clear send and receive list */
 		sll_clear(&chan->recvList,true);
 		sll_clear(&chan->sendList,true);
@@ -140,7 +143,9 @@ static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node) {
 			chan->curClient = NULL;
 		}
 
-		if(node->refCount == 0) {
+		if(node->refCount > 1)
+			vfs_node_destroy(node);
+		else {
 			/* notify the driver, if it is one */
 			vfs_devmsgs_close(pid,file,node);
 
@@ -160,17 +165,18 @@ static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node) {
 
 void vfs_chan_setUsed(sVFSNode *node,bool used) {
 	sChannel *chan = (sChannel*)node->data;
-	chan->used = used;
+	if(chan)
+		chan->used = used;
 }
 
 bool vfs_chan_hasReply(const sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
-	return sll_length(&chan->recvList) > 0;
+	return chan && sll_length(&chan->recvList) > 0;
 }
 
 bool vfs_chan_hasWork(const sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
-	return !chan->used && sll_length(&chan->sendList) > 0;
+	return chan && !chan->used && sll_length(&chan->sendList) > 0;
 }
 
 ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,

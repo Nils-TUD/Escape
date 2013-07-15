@@ -87,6 +87,8 @@ sVFSNode *vfs_device_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint
 	dev->lastClient = NULL;
 	dev->msgCount = 0;
 	node->data = dev;
+	/* auto-destroy on the last close() */
+	node->refCount--;
 	vfs_node_append(parent,node);
 	return node;
 }
@@ -97,17 +99,16 @@ static size_t vfs_device_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
 }
 
 static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node) {
+	/* wakeup all threads that may be waiting for this node so they can check
+	 * whether they are affected by the remove of this device and perform the corresponding
+	 * action */
 	/* do that first because otherwise the client-nodes are already gone :) */
-	vfs_device_destroy(node);
-	vfs_node_destroy(node);
+	vfs_device_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE,true);
+	vfs_node_destroyNow(node);
 }
 
 static void vfs_device_destroy(sVFSNode *node) {
 	if(node->data) {
-		/* wakeup all threads that may be waiting for this node so they can check
-		 * whether they are affected by the remove of this device and perform the corresponding
-		 * action */
-		vfs_device_wakeupClients(node,EV_RECEIVED_MSG | EV_DATA_READABLE,false);
 		cache_free(node->data);
 		node->data = NULL;
 	}
@@ -129,12 +130,12 @@ bool vfs_device_accepts(const sVFSNode *node,uint id) {
 
 bool vfs_device_supports(const sVFSNode *node,uint funcs) {
 	sDevice *dev = (sDevice*)node->data;
-	return DRV_IMPL(dev->funcs,funcs);
+	return dev && DRV_IMPL(dev->funcs,funcs);
 }
 
 bool vfs_device_isReadable(const sVFSNode *node) {
 	sDevice *dev = (sDevice*)node->data;
-	return !dev->isEmpty;
+	return dev && !dev->isEmpty;
 }
 
 int vfs_device_setReadable(sVFSNode *node,bool readable) {
@@ -151,6 +152,8 @@ int vfs_device_setReadable(sVFSNode *node,bool readable) {
 
 void vfs_device_addMsg(sVFSNode *node) {
 	sDevice *dev = (sDevice*)node->data;
+	if(!dev)
+		return;
 	spinlock_aquire(&node->lock);
 	dev->msgCount++;
 	spinlock_release(&node->lock);
@@ -158,6 +161,8 @@ void vfs_device_addMsg(sVFSNode *node) {
 
 void vfs_device_remMsg(sVFSNode *node) {
 	sDevice *dev = (sDevice*)node->data;
+	if(!dev)
+		return;
 	spinlock_aquire(&node->lock);
 	assert(dev->msgCount > 0);
 	dev->msgCount--;
@@ -166,7 +171,7 @@ void vfs_device_remMsg(sVFSNode *node) {
 
 bool vfs_device_hasWork(sVFSNode *node) {
 	sDevice *dev = (sDevice*)node->data;
-	return dev->msgCount > 0;
+	return dev && dev->msgCount > 0;
 }
 
 sVFSNode *vfs_device_getWork(sVFSNode *node,bool *cont,bool *retry) {

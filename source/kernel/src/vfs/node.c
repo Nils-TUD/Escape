@@ -40,6 +40,7 @@
 
 static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t *nodeNo,
 		bool *created);
+static void vfs_node_doDestroy(sVFSNode *n,bool remove);
 static sVFSNode *vfs_node_requestNode(void);
 static void vfs_node_releaseNode(sVFSNode *node);
 static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent);
@@ -415,7 +416,7 @@ sVFSNode *vfs_node_create(pid_t pid,char *name) {
 	*(char**)&node->name = name;
 	*(size_t*)&node->nameLen = nameLen;
 	node->mode = 0;
-	node->refCount = 0;
+	node->refCount = 1;
 	node->next = NULL;
 	node->prev = NULL;
 	node->firstChild = NULL;
@@ -438,15 +439,30 @@ void vfs_node_append(sVFSNode *parent,sVFSNode *node) {
 }
 
 void vfs_node_destroy(sVFSNode *n) {
+	vfs_node_doDestroy(n,false);
+}
+
+void vfs_node_destroyNow(sVFSNode *n) {
+	vfs_node_doDestroy(n,true);
+}
+
+static void vfs_node_doDestroy(sVFSNode *n,bool remove) {
 	/* remove childs */
 	sVFSNode *parent;
 	sVFSNode *tn;
 	sVFSNode *child;
-	child = n->firstChild;
-	while(child != NULL) {
-		tn = child->next;
-		vfs_node_destroy(child);
-		child = tn;
+	bool norefs;
+	spinlock_aquire(&n->lock);
+	norefs = --n->refCount == 0;
+	spinlock_release(&n->lock);
+
+	if(norefs || remove) {
+		child = n->firstChild;
+		while(child != NULL) {
+			tn = child->next;
+			vfs_node_doDestroy(child,remove);
+			child = tn;
+		}
 	}
 
 	/* aquire both locks before n->destroy(). we can't destroy the node-data without lock because
@@ -457,14 +473,12 @@ void vfs_node_destroy(sVFSNode *n) {
 		spinlock_aquire(&parent->lock);
 
 	/* take care that we don't destroy the node twice */
-	if(n->name) {
-		/* let the node clean up */
-		/* TODO is it really correct to do that here? I mean, if someone unlinks a file, it should
-		 * stay alive until all references are gone, right? E.g. if two processes share a file,
-		 * one writes to it and closes and unlinks it afterwards, the other one should still be
-		 * able to read the file. But what consequences has it to change that? */
-		if(n->destroy)
-			n->destroy(n);
+	if((norefs || remove) && n->name) {
+		if(norefs) {
+			/* let the node clean up */
+			if(n->destroy)
+				n->destroy(n);
+		}
 
 		/* free name */
 		if(IS_ON_HEAP(n->name))
@@ -487,14 +501,13 @@ void vfs_node_destroy(sVFSNode *n) {
 		*(sVFSNode**)&n->parent = NULL;
 	}
 
-	/* if there are no references anymore, we can put the node on the freelist */
-	/* we will check on every access if the node is still alive; if not, we will close the file
-	 * so that the node will be free'd as soon as the last user has closed it */
-	if(n->refCount == 0)
-		vfs_node_releaseNode(n);
 	if(parent)
 		spinlock_release(&parent->lock);
 	spinlock_release(&n->lock);
+
+	/* if there are no references anymore, we can put the node on the freelist */
+	if(norefs)
+		vfs_node_releaseNode(n);
 }
 
 char *vfs_node_getId(pid_t pid) {

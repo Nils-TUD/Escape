@@ -84,6 +84,8 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	pipe->total = 0;
 	sll_init(&pipe->list,slln_allocNode,slln_freeNode);
 	node->data = pipe;
+	/* auto-destroy on the last close() */
+	node->refCount--;
 	vfs_node_append(parent,node);
 	return node;
 }
@@ -103,14 +105,8 @@ static void vfs_pipe_destroy(sVFSNode *n) {
 }
 
 static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node) {
-	/* last usage? */
-	if(node->name == NULL || node->refCount == 0) {
-		/* remove pipe-nodes if there are no references anymore */
-		vfs_node_destroy(node);
-	}
-	/* there are still references to the pipe, write an EOF into it (0 references
-	 * mean that the pipe should be removed) */
-	else {
+	/* if there are still more than 1 user, notify the other */
+	if(node->name != NULL && node->refCount > 1) {
 		/* if thats the read-end, save that there is no reader anymore and wakeup the writers */
 		if(vfs_fcntl(pid,file,F_GETACCESS,0) == VFS_READ) {
 			sPipe *pipe = (sPipe*)node->data;
@@ -121,6 +117,8 @@ static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node) {
 		else
 			vfs_writeFile(pid,file,NULL,0);
 	}
+	/* in any case, destroy the node, i.e. decrease references */
+	vfs_node_destroy(node);
 }
 
 static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *node,

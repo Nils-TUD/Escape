@@ -189,12 +189,20 @@ sVFSNode *vfs_node_create(pid_t pid,char *name);
 void vfs_node_append(sVFSNode *parent,sVFSNode *node);
 
 /**
- * Removes the given node including all child-nodes from the parent-node and free's all
- * allocated stuff in it depending on the type.
+ * Decrements the references of the given node including all child-nodes. Nodes that have no refs
+ * anymore, are destroyed and released.
  *
  * @param n the node
  */
 void vfs_node_destroy(sVFSNode *n);
+
+/**
+ * Decrements the references of the given node including all child-nodes and removes them from the
+ * VFS. They are only destroyed and released if there are no references anymore.
+ *
+ * @param n the node
+ */
+void vfs_node_destroyNow(sVFSNode *n);
 
 /**
  * Generates a unique id for given pid

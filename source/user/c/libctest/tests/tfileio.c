@@ -140,6 +140,14 @@ static void test_fileio_print(void) {
 	if(!test_fileio_checkPrint(res,-1,str,""))
 		return;
 
+	res = snprintf(str,sizeof(str),"%s",NULL);
+	if(!test_fileio_checkPrint(res,-1,str,"(null)"))
+		return;
+
+	res = snprintf(str,sizeof(str),"%.2s %8s",NULL,NULL);
+	if(!test_fileio_checkPrint(res,-1,str,"(n   (null)"))
+		return;
+
 	res = snprintf(str,sizeof(str),"%10s","padme");
 	if(!test_fileio_checkPrint(res,-1,str,"     padme"))
 		return;

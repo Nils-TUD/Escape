@@ -24,6 +24,7 @@
 #include <stdarg.h>
 
 int vbprintf(FILE *f,const char *fmt,va_list ap) {
+	static char nullbuf[] = "(null)";
 	char c,b,pad;
 	char *s;
 	int *ptr;
@@ -228,6 +229,8 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 			case 's':
 				b = 0;
 				s = va_arg(ap, char*);
+				if(!s)
+					s = nullbuf;
 				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
 					width = precision == -1 ? strlen(s) : (uint)precision;
 					if(pad > (int)width)

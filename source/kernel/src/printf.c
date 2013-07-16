@@ -297,10 +297,10 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 			case 's':
 				s = va_arg(ap, char*);
 				if(precision == -1)
-					precision = strlen(s);
+					precision = s ? strlen(s) : 6;
 				if(pad > 0 && !(flags & FFL_PADRIGHT))
 					prf_printpad(env,pad - precision,flags);
-				n = prf_puts(env,s,precision);
+				n = prf_puts(env,s ? s : "(null)",precision);
 				if(pad > 0 && (flags & FFL_PADRIGHT))
 					prf_printpad(env,pad - n,flags);
 				break;

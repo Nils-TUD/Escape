@@ -1019,7 +1019,7 @@ int vfs_unlink(pid_t pid,const char *path) {
 	n = vfs_node_request(ino);
 	if(!n)
 		return -ENOENT;
-	if(!S_ISREG(n->mode) && !S_ISLNK(n->mode)) {
+	if(n->owner == KERNEL_PID) {
 		vfs_node_release(n);
 		return -EPERM;
 	}
@@ -1100,6 +1100,10 @@ int vfs_rmdir(pid_t pid,const char *path) {
 	node = vfs_node_request(inodeNo);
 	if(!node)
 		return -ENOENT;
+	if(node->owner == KERNEL_PID) {
+		vfs_node_release(node);
+		return -EPERM;
+	}
 	if(!S_ISDIR(node->mode)) {
 		vfs_node_release(node);
 		return -ENOTDIR;

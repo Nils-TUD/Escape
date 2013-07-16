@@ -229,8 +229,11 @@ bool test_doAssertStr(const char *received,const char *expected,const char *func
 	assertCount++;
 	if(s1 == NULL && s2 == NULL)
 		return true;
-	if(s1 == NULL || s2 == NULL)
+	if(s1 == NULL || s2 == NULL) {
+		test_caseFailed("Assert %d in %s line %d: Strings are not equal: Expected '%s', got '%s'",
+				assertCount,func,line,expected,received);
 		return false;
+	}
 	while(*s1 && *s2) {
 		if(*s1 != *s2) {
 			test_caseFailed("Assert %d in %s line %d: Strings are not equal: Expected '%s', got '%s'",

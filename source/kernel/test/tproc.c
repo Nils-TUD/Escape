@@ -29,12 +29,19 @@
 
 /* forward declarations */
 static void test_proc(void);
+static void test_proc_clone(void);
+static void test_thread(void);
 
 /* our test-module */
 sTestModule tModProc = {
 	"Process-Management",
 	&test_proc
 };
+
+static void test_proc(void) {
+	test_proc_clone();
+	test_thread();
+}
 
 /**
  * Stores the current page-count and free frames and starts a test-case
@@ -47,7 +54,7 @@ static void test_init(const char *fmt,...) {
 	checkMemoryBefore(false);
 }
 
-static void test_proc(void) {
+static void test_proc_clone(void) {
 	size_t x;
 
 	/* test process clone & destroy */
@@ -59,11 +66,35 @@ static void test_proc(void) {
 		test_assertTrue(pid > 0);
 		tprintf("Destroying process\n");
 		/* first terminate it, then free resources and finally remove the process */
-		proc_terminate(pid,0,0);
 		assert(thread_beginTerm((sThread*)sll_get(&proc_getByPid(pid)->threads,0)));
 		proc_destroy(pid);
 		proc_kill(pid);
 	}
 	checkMemoryAfter(false);
+	test_caseSucceeded();
+}
+
+static int threadcnt = 0;
+
+static void thread_test(void) {
+	vid_printf("thread %d is running...\n",thread_getRunning()->tid);
+	threadcnt++;
+
+	proc_exit(0);
+	thread_switch();
+}
+
+static void test_thread(void) {
+	test_init("Starting threads and joining them");
+
+	int tid = proc_startThread((uintptr_t)&thread_test,0,NULL);
+	test_assertTrue(tid >= 0);
+	int tid2 = proc_startThread((uintptr_t)&thread_test,0,NULL);
+	test_assertTrue(tid2 >= 0);
+	proc_join(tid);
+	proc_join(tid2);
+	test_assertInt(threadcnt,2);
+	vid_printf("threads finished\n");
+
 	test_caseSucceeded();
 }

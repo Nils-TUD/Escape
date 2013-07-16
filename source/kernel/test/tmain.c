@@ -20,6 +20,8 @@
 #include <sys/common.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/paging.h>
+#include <sys/task/thread.h>
+#include <sys/task/terminator.h>
 #include <sys/boot.h>
 #include <sys/video.h>
 
@@ -56,6 +58,10 @@ void apstart(void);
 void bspstart(sBootInfo *bootinfo) {
 	/* init the kernel */
 	boot_start(bootinfo);
+
+	proc_startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
+	proc_startThread((uintptr_t)&term_start,0,NULL);
+
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	/* TODO find a better solution */
 #ifdef __i386__

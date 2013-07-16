@@ -163,6 +163,12 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags);
 
 /**
  * @param file the file
+ * @return the node of the given file (might be NULL)
+ */
+sVFSNode *vfs_getNode(sFile *file);
+
+/**
+ * @param file the file
  * @return true if the file was created for a device (and not a client of the device)
  */
 bool vfs_isDevice(sFile *file);

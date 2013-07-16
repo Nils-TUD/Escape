@@ -163,6 +163,10 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 	return 0;
 }
 
+sVFSNode *vfs_getNode(sFile *file) {
+	return file->node;
+}
+
 bool vfs_isDevice(sFile *file) {
 	return file->flags & VFS_DEVICE;
 }
@@ -948,7 +952,6 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 		return -EEXIST;
 
 	/* TODO prevent recursion? */
-	/* TODO check access-rights */
 
 	/* copy path because we have to change it */
 	len = strlen(newPath);
@@ -990,6 +993,9 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 		res = -ENOENT;
 		goto errorName;
 	}
+	/* check permissions */
+	if((res = vfs_hasAccess(pid,dir,VFS_WRITE)) < 0)
+		goto errorDir;
 	if(vfs_link_create(pid,dir,namecpy,target) == NULL) {
 		res = -ENOMEM;
 		goto errorDir;
@@ -1015,13 +1021,15 @@ int vfs_unlink(pid_t pid,const char *path) {
 		return vfs_fsmsgs_unlink(pid,path);
 	if(res < 0)
 		return -ENOENT;
-	/* TODO check access-rights */
+
 	n = vfs_node_request(ino);
 	if(!n)
 		return -ENOENT;
-	if(n->owner == KERNEL_PID) {
+	/* check permissions */
+	res = -EPERM;
+	if(n->owner == KERNEL_PID || (res = vfs_hasAccess(pid,n,VFS_WRITE)) < 0) {
 		vfs_node_release(n);
-		return -EPERM;
+		return res;
 	}
 	vfs_node_release(n);
 	vfs_node_destroyNow(n);
@@ -1066,24 +1074,31 @@ int vfs_mkdir(pid_t pid,const char *path) {
 	strcpy(namecpy,name);
 	/* does it exist? */
 	if(vfs_node_findInDirOf(inodeNo,namecpy,len) != NULL) {
-		cache_free(namecpy);
-		return -EEXIST;
+		res = -EEXIST;
+		goto error;
 	}
-	/* TODO check access-rights */
 	/* create dir */
 	node = vfs_node_request(inodeNo);
 	if(!node) {
-		cache_free(namecpy);
-		return -ENOENT;
+		res = -ENOENT;
+		goto error;
 	}
+	/* check permissions */
+	if((res = vfs_hasAccess(pid,node,VFS_WRITE)) < 0)
+		goto errorRel;
 	child = vfs_dir_create(pid,node,namecpy);
 	if(child == NULL) {
-		vfs_node_release(node);
-		cache_free(namecpy);
-		return -ENOMEM;
+		res = -ENOMEM;
+		goto errorRel;
 	}
 	vfs_node_release(node);
 	return 0;
+
+errorRel:
+	vfs_node_release(node);
+error:
+	cache_free(namecpy);
+	return res;
 }
 
 int vfs_rmdir(pid_t pid,const char *path) {
@@ -1096,17 +1111,19 @@ int vfs_rmdir(pid_t pid,const char *path) {
 	if(res < 0)
 		return -ENOENT;
 
-	/* TODO check access-rights */
 	node = vfs_node_request(inodeNo);
 	if(!node)
 		return -ENOENT;
-	if(node->owner == KERNEL_PID) {
+	/* check permissions */
+	res = -EPERM;
+	if(node->owner == KERNEL_PID || (res = vfs_hasAccess(pid,node,VFS_WRITE)) < 0) {
 		vfs_node_release(node);
-		return -EPERM;
+		return res;
 	}
-	if(!S_ISDIR(node->mode)) {
+	res = vfs_node_isEmptyDir(node);
+	if(res < 0) {
 		vfs_node_release(node);
-		return -ENOTDIR;
+		return res;
 	}
 	vfs_node_release(node);
 	vfs_node_destroyNow(node);

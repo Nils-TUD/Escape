@@ -82,6 +82,12 @@ sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked,bool *isValid);
 void vfs_node_closeDir(sVFSNode *dir,bool locked);
 
 /**
+ * @param node the node (is assumed to be locked)
+ * @return 0 if the given node is a dir and empty
+ */
+int vfs_node_isEmptyDir(sVFSNode *node);
+
+/**
  * Determines the path for the given node. Note that static memory will be used for that!
  * So you have to copy the path to another location if you want to keep the path.
  *

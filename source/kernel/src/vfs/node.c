@@ -120,6 +120,19 @@ void vfs_node_closeDir(sVFSNode *dir,bool locked) {
 		spinlock_release(&parent->lock);
 }
 
+int vfs_node_isEmptyDir(sVFSNode *node) {
+	bool valid;
+	if(!S_ISDIR(node->mode))
+		return -ENOTDIR;
+	sVFSNode *c = vfs_node_openDir(node,false,&valid);
+	if(valid) {
+		bool res = c->next && !c->next->next;
+		vfs_node_closeDir(node,false);
+		return res ? 0 : -ENOTEMPTY;
+	}
+	return -EDESTROYED;
+}
+
 int vfs_node_getInfo(pid_t pid,inode_t nodeNo,USER sFileInfo *info) {
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
@@ -473,13 +486,12 @@ static void vfs_node_doDestroy(sVFSNode *n,bool remove) {
 		spinlock_aquire(&parent->lock);
 
 	/* take care that we don't destroy the node twice */
+	if(norefs) {
+		/* let the node clean up */
+		if(n->destroy)
+			n->destroy(n);
+	}
 	if((norefs || remove) && n->name) {
-		if(norefs) {
-			/* let the node clean up */
-			if(n->destroy)
-				n->destroy(n);
-		}
-
 		/* free name */
 		if(IS_ON_HEAP(n->name))
 			cache_free((void*)n->name);

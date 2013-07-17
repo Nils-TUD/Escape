@@ -190,7 +190,7 @@ static ssize_t lock_get(pid_t pid,ulong ident,bool free) {
 			lockCount = 8;
 		else
 			lockCount *= 2;
-		nlocks = cache_realloc(locks,lockCount * sizeof(sLock));
+		nlocks = (sLock*)cache_realloc(locks,lockCount * sizeof(sLock));
 		if(nlocks == NULL) {
 			lockCount = oldCount;
 			return -ENOMEM;

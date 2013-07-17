@@ -81,18 +81,18 @@ void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 	cpuCount++;
 }
 
-void smp_setId(cpuid_t old,cpuid_t new) {
+void smp_setId(cpuid_t old,cpuid_t newid) {
 	sCPU *cpu;
-	assert(new < cpuCount);
+	assert(newid < cpuCount);
 	cpu = smp_getCPUById(old);
 	if(cpu)
-		cpu->id = new;
+		cpu->id = newid;
 	if(!cpus) {
 		cpus = (sCPU**)cache_calloc(cpuCount,sizeof(sCPU*));
 		if(!cpus)
 			util_panic("Not enough mem for cpu-array");
 	}
-	cpus[new] = cpu;
+	cpus[newid] = cpu;
 }
 
 void smp_setReady(cpuid_t id) {
@@ -100,17 +100,17 @@ void smp_setReady(cpuid_t id) {
 	cpus[id]->ready = true;
 }
 
-void smp_schedule(cpuid_t id,sThread *new,uint64_t timestamp) {
+void smp_schedule(cpuid_t id,sThread *n,uint64_t timestamp) {
 	sCPU *c = cpus[id];
 	if(c->thread && !(c->thread->flags & T_IDLE)) {
 		c->curCycles += thread_getTSC() - c->thread->stats.cycleStart;
 		c->runtime += timestamp - c->lastSched;
 	}
-	if(!(new->flags & T_IDLE)) {
+	if(!(n->flags & T_IDLE)) {
 		c->schedCount++;
 		c->lastSched = timestamp;
 	}
-	c->thread = new;
+	c->thread = n;
 }
 
 void smp_updateRuntimes(void) {

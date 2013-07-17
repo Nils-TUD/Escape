@@ -190,9 +190,9 @@ typedef struct {
 	uint8_t ioMapEnd;
 } A_PACKED sTSS;
 
-extern void gdt_flush(sGDTTable *gdt);
-extern void gdt_get(sGDTTable *gdt);
-extern void tss_load(size_t gdtOffset);
+extern "C" void gdt_flush(sGDTTable *gdt);
+extern "C" void gdt_get(sGDTTable *gdt);
+extern "C" void tss_load(size_t gdtOffset);
 static void gdt_set_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size,uint8_t access,
 		uint8_t ringLevel);
 static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size);
@@ -255,13 +255,13 @@ void gdt_init(void) {
 
 void gdt_init_bsp(void) {
 	cpuCount = smp_getCPUCount();
-	allgdts = cache_calloc(cpuCount,sizeof(sGDTTable));
+	allgdts = (sGDTTable*)cache_calloc(cpuCount,sizeof(sGDTTable));
 	if(!allgdts)
 		util_panic("Unable to allocate GDT-Tables for APs");
-	alltss = cache_calloc(cpuCount,sizeof(sTSS*));
+	alltss = (sTSS**)cache_calloc(cpuCount,sizeof(sTSS*));
 	if(!alltss)
 		util_panic("Unable to allocate TSS-pointers for APs");
-	ioMaps = cache_calloc(cpuCount,sizeof(uint8_t*));
+	ioMaps = (const uint8_t**)cache_calloc(cpuCount,sizeof(uint8_t*));
 	if(!ioMaps)
 		util_panic("Unable to allocate IO-Map-Pointers for APs");
 
@@ -328,27 +328,27 @@ void gdt_setRunning(cpuid_t id,sThread *t) {
 	gdt_set_desc(gdt,7,(uintptr_t)t,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
 }
 
-cpuid_t gdt_prepareRun(sThread *old,sThread *new) {
+cpuid_t gdt_prepareRun(sThread *old,sThread *n) {
 	cpuid_t id = old == NULL ? gdt_getCPUId() : old->cpu;
 	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
 	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
 	 * %gs:0xFFFFFFF8 etc. */
-	if(new->tlsRegion) {
-		uintptr_t tlsEnd = new->tlsRegion->virt + new->tlsRegion->reg->byteCount;
+	if(n->tlsRegion) {
+		uintptr_t tlsEnd = n->tlsRegion->virt + n->tlsRegion->reg->byteCount;
 		gdt_set_desc((sGDTDesc*)allgdts[id].offset,5,tlsEnd - sizeof(void*),
 				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);
 	}
 	/* VM86-tasks should start at the beginning because the segment-registers are saved on the
 	 * stack first (not in protected mode) */
-	if(new->proc->flags & P_VM86)
-		alltss[id]->esp0 = new->archAttr.kernelStack + PAGE_SIZE - 2 * sizeof(int);
+	if(n->proc->flags & P_VM86)
+		alltss[id]->esp0 = n->archAttr.kernelStack + PAGE_SIZE - 2 * sizeof(int);
 	else
-		alltss[id]->esp0 = new->archAttr.kernelStack + PAGE_SIZE - (1 + 5) * sizeof(int);
-	if(!old || old->proc != new->proc)
+		alltss[id]->esp0 = n->archAttr.kernelStack + PAGE_SIZE - (1 + 5) * sizeof(int);
+	if(!old || old->proc != n->proc)
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
 #if GDT_STORE_RUN_THREAD
-	gdt_setRunning(id,new);
+	gdt_setRunning(id,n);
 #endif
 	return id;
 }

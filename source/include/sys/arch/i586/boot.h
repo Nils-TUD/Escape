@@ -116,4 +116,4 @@ const sBootInfo *boot_getInfo(void);
 /**
  * The boot-tasks to load
  */
-sBootTaskList bootTaskList;
+extern sBootTaskList bootTaskList;

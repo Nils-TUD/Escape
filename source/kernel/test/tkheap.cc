@@ -210,7 +210,7 @@ static void test_kheap_t3(void) {
 	test_caseStart("Allocate %d times 1 byte",SINGLE_BYTE_COUNT);
 	checkMemoryBefore(false);
 	for(i = 0; i < SINGLE_BYTE_COUNT; i++) {
-		ptrsSingle[i] = kheap_alloc(1);
+		ptrsSingle[i] = (uint*)kheap_alloc(1);
 	}
 	for(i = 0; i < SINGLE_BYTE_COUNT; i++) {
 		kheap_free(ptrsSingle[i]);
@@ -224,22 +224,22 @@ static void test_kheap_t5(void) {
 	uint *ptr1,*ptr2,*ptr3,*ptr4,*ptr5;
 	test_caseStart("Allocating 3 regions");
 	checkMemoryBefore(false);
-	ptr1 = kheap_alloc(4 * sizeof(uint));
+	ptr1 = (uint*)kheap_alloc(4 * sizeof(uint));
 	for(i = 0;i < 4;i++)
 		*(ptr1+i) = 1;
-	ptr2 = kheap_alloc(8 * sizeof(uint));
+	ptr2 = (uint*)kheap_alloc(8 * sizeof(uint));
 	for(i = 0;i < 8;i++)
 		*(ptr2+i) = 2;
-	ptr3 = kheap_alloc(12 * sizeof(uint));
+	ptr3 = (uint*)kheap_alloc(12 * sizeof(uint));
 	for(i = 0;i < 12;i++)
 		*(ptr3+i) = 3;
 	tprintf("Freeing region 2...\n");
 	kheap_free(ptr2);
 	tprintf("Reusing region 2...\n");
-	ptr4 = kheap_alloc(6 * sizeof(uint));
+	ptr4 = (uint*)kheap_alloc(6 * sizeof(uint));
 	for(i = 0;i < 6;i++)
 		*(ptr4+i) = 4;
-	ptr5 = kheap_alloc(2 * sizeof(uint));
+	ptr5 = (uint*)kheap_alloc(2 * sizeof(uint));
 	for(i = 0;i < 2;i++)
 		*(ptr5+i) = 5;
 

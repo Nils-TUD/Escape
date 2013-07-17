@@ -26,11 +26,20 @@ typedef void (*fPrintc)(char c);
 typedef void (*fEscape)(const char **fmt);
 typedef uchar (*fPipePad)(void);
 
-typedef struct {
+typedef struct sPrintEnv {
 	fPrintc print;				/* must be provided */
 	fEscape escape;				/* optional, for handling escape-sequences */
 	fPipePad pipePad;			/* optional, for returning the pad-value for '|' */
 	bool lineStart;				/* indicates whether we're at a line-start */
+
+	/* FIXME bad */
+#ifdef __cplusplus
+	sPrintEnv() : print(), escape(), pipePad(), lineStart(true) {
+	}
+	sPrintEnv(fPrintc print,fEscape escape,fPipePad pipePad)
+		: print(print), escape(escape), pipePad(pipePad), lineStart(true) {
+	}
+#endif
 } sPrintEnv;
 
 /**

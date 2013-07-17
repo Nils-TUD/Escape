@@ -88,12 +88,12 @@ typedef uint32_t pde_t;
 /**
  * Assembler routine to enable paging
  */
-extern void paging_enable(void);
+extern "C" void paging_enable(void);
 
 /**
  * Assembler routine to flush the TLB
  */
-extern void paging_flushTLB(void);
+extern "C" void paging_flushTLB(void);
 
 /**
  * Flushes the whole page-table including the page in the mapped page-table-area

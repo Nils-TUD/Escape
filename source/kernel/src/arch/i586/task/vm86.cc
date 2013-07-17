@@ -478,7 +478,7 @@ static bool vm86_copyInfo(uint16_t interrupt,USER const sVM86Regs *regs,
 		/* copy ptrs */
 		info.area->ptr = NULL;
 		if(info.area->ptrCount > 0) {
-			info.area->ptr = cache_alloc(sizeof(sVM86AreaPtr) * info.area->ptrCount);
+			info.area->ptr = (sVM86AreaPtr*)cache_alloc(sizeof(sVM86AreaPtr) * info.area->ptrCount);
 			if(!info.area->ptr) {
 				vm86_clearInfo();
 				return false;

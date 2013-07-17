@@ -35,7 +35,7 @@ static A_ALIGNED(8) uint8_t initloader[] = {
 #endif
 };
 
-uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
+extern "C" uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	sThread *t;
 	sStartupInfo info;
 

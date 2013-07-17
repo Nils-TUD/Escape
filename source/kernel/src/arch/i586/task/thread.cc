@@ -33,9 +33,9 @@
 #include <assert.h>
 #include <errno.h>
 
-extern void thread_startup(void);
-extern bool thread_save(sThreadRegs *saveArea);
-extern bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock,bool newProc);
+extern "C" void thread_startup(void);
+extern "C" bool thread_save(sThreadRegs *saveArea);
+extern "C" bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock,bool newProc);
 
 static klock_t switchLock;
 static bool threadSet = false;
@@ -194,7 +194,7 @@ void thread_initialSwitch(void) {
 void thread_doSwitch(void) {
 	uint64_t cycles,runtime;
 	sThread *old = thread_getRunning();
-	sThread *new;
+	sThread *n;
 	/* lock this, because sched_perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
 	spinlock_aquire(&switchLock);
@@ -206,29 +206,29 @@ void thread_doSwitch(void) {
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	new = sched_perform(old,runtime);
-	new->stats.schedCount++;
+	n = sched_perform(old,runtime);
+	n->stats.schedCount++;
 
 	/* switch thread */
-	if(new->tid != old->tid) {
+	if(n->tid != old->tid) {
 		time_t timestamp = timer_cyclesToTime(cycles);
-		vmm_setTimestamp(new,timestamp);
-		new->cpu = gdt_prepareRun(old,new);
+		vmm_setTimestamp(n,timestamp);
+		n->cpu = gdt_prepareRun(old,n);
 
 		/* some stats for SMP */
-		smp_schedule(new->cpu,new,timestamp);
+		smp_schedule(n->cpu,n,timestamp);
 
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		fpu_lockFPU();
 		if(!thread_save(&old->save)) {
 			/* old thread */
-			new->stats.cycleStart = cpu_rdtsc();
-			thread_resume(new->proc->pagedir.own,&new->save,&switchLock,new->proc != old->proc);
+			n->stats.cycleStart = cpu_rdtsc();
+			thread_resume(n->proc->pagedir.own,&n->save,&switchLock,n->proc != old->proc);
 		}
 	}
 	else {
-		new->stats.cycleStart = cpu_rdtsc();
+		n->stats.cycleStart = cpu_rdtsc();
 		spinlock_release(&switchLock);
 	}
 }

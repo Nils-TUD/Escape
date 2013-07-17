@@ -55,12 +55,7 @@ static bool logToSer = true;
 static sFile *logFile;
 static bool vfsIsReady = false;
 static klock_t logLock;
-static sPrintEnv env = {
-	.print = log_printc,
-	.escape = log_escape,
-	.pipePad = log_pipePad,
-	.lineStart = true,
-};
+static sPrintEnv env(log_printc,log_escape,log_pipePad);
 
 void log_vfsIsReady(void) {
 	inode_t inodeNo;

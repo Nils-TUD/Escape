@@ -28,10 +28,13 @@ typedef struct {
 	fBootTask execute;
 } sBootTask;
 
-typedef struct {
+typedef struct sBootTaskList {
 	const sBootTask *tasks;
 	size_t count;
 	size_t moduleCount;
+
+	sBootTaskList(const sBootTask *tasks,size_t count) : tasks(tasks), count(count), moduleCount(0) {
+	}
 } sBootTaskList;
 
 #ifdef __i386__

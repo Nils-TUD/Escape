@@ -30,7 +30,7 @@
  */
 
 bool vmfree_init(sVMFreeMap *map,uintptr_t addr,size_t size) {
-	sVMFreeArea *a = cache_alloc(sizeof(sVMFreeArea));
+	sVMFreeArea *a = (sVMFreeArea*)cache_alloc(sizeof(sVMFreeArea));
 	if(!a)
 		return false;
 	a->addr = addr;
@@ -106,7 +106,7 @@ bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	}
 	/* in the middle */
 	else {
-		sVMFreeArea *na = cache_alloc(sizeof(sVMFreeArea));
+		sVMFreeArea *na = (sVMFreeArea*)cache_alloc(sizeof(sVMFreeArea));
 		if(!na)
 			return false;
 		na->addr = a->addr;
@@ -147,7 +147,7 @@ void vmfree_free(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	}
 	/* create new area between them */
 	else {
-		sVMFreeArea *a = cache_alloc(sizeof(sVMFreeArea));
+		sVMFreeArea *a = (sVMFreeArea*)cache_alloc(sizeof(sVMFreeArea));
 		/* if this fails, ignore it; we can't really do something about it */
 		if(!a)
 			return;

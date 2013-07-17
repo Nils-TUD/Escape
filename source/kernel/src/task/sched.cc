@@ -141,7 +141,7 @@ sThread *sched_perform(sThread *old,uint64_t runtime) {
 	}
 	if(t == NULL) {
 		/* choose an idle-thread */
-		t = sll_removeFirst(&idleThreads);
+		t = (sThread*)sll_removeFirst(&idleThreads);
 		t->state = ST_RUNNING;
 	}
 	else {

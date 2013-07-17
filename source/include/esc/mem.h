@@ -20,21 +20,20 @@
 #pragma once
 
 #include <esc/common.h>
-#include <sys/mem/region.h>
 
 /* protection-flags */
 #define PROT_READ			0
-#define PROT_WRITE			RF_WRITABLE
-#define PROT_EXEC			RF_EXECUTABLE
+#define PROT_WRITE			4UL
+#define PROT_EXEC			8UL
 
 /* mapping flags */
-#define MAP_SHARED			RF_SHAREABLE
 #define MAP_PRIVATE			0
-#define MAP_STACK			RF_STACK
-#define MAP_GROWABLE		RF_GROWABLE
-#define MAP_GROWSDOWN		RF_GROWS_DOWN
-#define MAP_NOFREE			RF_NOFREE
-#define MAP_TLS				RF_TLS
+#define MAP_GROWABLE		1UL
+#define MAP_SHARED			2UL
+#define MAP_STACK			16UL
+#define MAP_NOFREE			32UL
+#define MAP_TLS				64UL
+#define MAP_GROWSDOWN		128UL
 #define MAP_POPULATE		256UL
 #define MAP_NOMAP			512UL
 #define MAP_FIXED			1024UL

@@ -30,7 +30,7 @@ static A_INLINE sThread *thread_getRunning(void) {
 		/* inputs */
 		:
 	);
-	uint32_t* tptr = (uint32_t*)((esp & 0xFFFFF000) + 0xFFC);
+	sThread** tptr = (sThread**)((esp & 0xFFFFF000) + 0xFFC);
 	return *tptr;
 }
 

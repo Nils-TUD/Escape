@@ -976,7 +976,7 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 	/* make copy of name */
 	*name = backup;
 	len = strlen(name);
-	namecpy = cache_alloc(len + 1);
+	namecpy = (char*)cache_alloc(len + 1);
 	if(namecpy == NULL) {
 		res = -ENOMEM;
 		goto errorTarget;
@@ -1068,7 +1068,7 @@ int vfs_mkdir(pid_t pid,const char *path) {
 	/* alloc space for name and copy it over */
 	*name = backup;
 	len = strlen(name);
-	namecpy = cache_alloc(len + 1);
+	namecpy = (char*)cache_alloc(len + 1);
 	if(namecpy == NULL)
 		return -ENOMEM;
 	strcpy(namecpy,name);

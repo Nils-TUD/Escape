@@ -149,7 +149,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 		}
 	}
 
-	data = sll_get(&pipe->list,0);
+	data = (sPipeData*)sll_get(&pipe->list,0);
 	/* empty message indicates EOF */
 	if(data->length == 0) {
 		spinlock_release(&node->lock);
@@ -194,7 +194,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 				return -EDESTROYED;
 			}
 		}
-		data = sll_get(&pipe->list,0);
+		data = (sPipeData*)sll_get(&pipe->list,0);
 		/* keep the empty one for the next transfer */
 		if(data->length == 0)
 			break;

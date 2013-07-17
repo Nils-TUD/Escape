@@ -138,7 +138,7 @@ static pid_t lastPFProc = INVALID_PID;
 #endif
 
 void intrpt_init(void) {
-	pfAddrs = cache_alloc(smp_getCPUCount() * sizeof(uintptr_t));
+	pfAddrs = (uintptr_t*)cache_alloc(smp_getCPUCount() * sizeof(uintptr_t));
 	if(pfAddrs == NULL)
 		util_panic("Unable to alloc memory for pagefault-addresses");
 }

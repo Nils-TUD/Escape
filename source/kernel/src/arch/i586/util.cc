@@ -169,7 +169,7 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 	if(thread_getStackRange(t,&start,&end,0)) {
 		sFuncCall *calls;
 		size_t pcount = (end - start) / PAGE_SIZE;
-		frameno_t *frames = cache_alloc((pcount + 2) * sizeof(frameno_t));
+		frameno_t *frames = (frameno_t*)cache_alloc((pcount + 2) * sizeof(frameno_t));
 		if(frames) {
 			sIntrptStackFrame *istack = thread_getIntrptStack(t);
 			uintptr_t temp,startCpy = start;

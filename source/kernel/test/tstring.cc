@@ -268,8 +268,8 @@ static void test_memclear(void) {
 
 static void test_memcpy(void) {
 	int i,j;
-	uint8_t zeros[16] = {0};
-	uint8_t src[16] = "0123456789ABCDEF",dest[16];
+	uint8_t zeros[17] = {0};
+	uint8_t src[17] = "0123456789ABCDEF",dest[17];
 	test_caseStart("Testing memcpy()");
 
 	test_assertPtr(memcpy(dest,src,10),dest);
@@ -285,9 +285,9 @@ static void test_memcpy(void) {
 	/* test alignment */
 	for(i = 0; i < 8; i++) {
 		for(j = 0; j < 8; j++) {
-			memset(dest,0xFF,16);
+			memset(dest,0xFF,sizeof(dest));
 			test_assertPtr(memcpy(dest + i,zeros + i,j),dest + i);
-			checkZero(dest,i,j,16);
+			checkZero(dest,i,j,sizeof(dest));
 		}
 	}
 
@@ -307,11 +307,11 @@ static void test_memmove(void) {
 	char dest[4];
 	test_caseStart("Testing memmove()");
 
-	test_assertStr(memmove(dest,str1,4),"abc");
-	test_assertStr(memmove(str1 + 1,str1,4),"abc") || !test_assertStr(str1,"aabc");
-	test_assertStr(memmove(str2,str2 + 1,3),"ef") || !test_assertStr(str2,"ef");
-	test_assertStr(memmove(str3,str3,0),"");
-	test_assertStr(memmove(str3,"abcdef",7),"abcdef");
+	test_assertStr((char*)memmove(dest,str1,4),"abc");
+	test_assertStr((char*)memmove(str1 + 1,str1,4),"abc") || !test_assertStr(str1,"aabc");
+	test_assertStr((char*)memmove(str2,str2 + 1,3),"ef") || !test_assertStr(str2,"ef");
+	test_assertStr((char*)memmove(str3,str3,0),"");
+	test_assertStr((char*)memmove(str3,"abcdef",7),"abcdef");
 
 	/* test alignment */
 	for(i = 0; i < 8; i++) {

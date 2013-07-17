@@ -595,7 +595,7 @@ static void vmm_sync(sProc *p,sVMRegion *vm) {
 		pid_t cur = proc_getRunning();
 		uint8_t *buf;
 		if(cur != p->pid) {
-			buf = cache_alloc(PAGE_SIZE);
+			buf = (uint8_t*)cache_alloc(PAGE_SIZE);
 			if(buf == NULL)
 				return;
 			thread_addHeapAlloc(buf);

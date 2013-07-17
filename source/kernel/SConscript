@@ -7,22 +7,25 @@ kenv = env.Clone()
 ldconf = 'kernel/src/arch/$ARCH/ld.conf'
 gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
 kenv.Append(
-	CFLAGS = ' -DIN_KERNEL=1',
+	CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-rtti',
+	CPPFLAGS = ' -DIN_KERNEL=1',
 	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldconf,
 	BUILDERS = {'GenSyms' : gensyms}
 )
 
 src = [kenv.Glob('src/arch/$ARCH/kernel.S')]
 src += [kenv.Glob('src/*.c'), kenv.Glob('src/*/*.c')]
+src += [kenv.Glob('src/*.cc'), kenv.Glob('src/*/*.cc')]
 src += [f for f in kenv.Glob('src/*/*/*.c') if 'arch/' not in str(f)]
-src += [f for f in kenv.Glob('src/arch/$ARCH/*.c') if 'start.c' not in str(f)]
-src += [kenv.Glob('src/arch/$ARCH/*/*.c')]
+src += [f for f in kenv.Glob('src/*/*/*.cc') if 'arch/' not in str(f)]
+src += [f for f in kenv.Glob('src/arch/$ARCH/*.cc') if 'start.cc' not in str(f)]
+src += [kenv.Glob('src/arch/$ARCH/*/*.cc')]
 src += [kenv.Glob('src/basic/arch/$ARCH/*.c')]
 src += [kenv.Glob('src/basic/arch/$ARCH/*.S')]
 src += [f for f in kenv.Glob('src/arch/$ARCH/*.S') if 'kernel.S' not in str(f)]
 src += [f for f in kenv.Glob('src/arch/$ARCH/*/*.S')]
-tsrc = [kenv.Glob('test/*.c'), kenv.Glob('test/arch/$ARCH/*.c')]
-mainsrc = 'src/arch/$ARCH/start.c'
+tsrc = [kenv.Glob('test/*.cc'), kenv.Glob('test/arch/$ARCH/*.cc')]
+mainsrc = 'src/arch/$ARCH/start.cc'
 
 # works around the problem that we use those sources for two programs. this way, we isolate each
 # source file in its own environment
@@ -31,8 +34,8 @@ def objects(env, srcs):
 
 def LinkWithSymbols(kenv, name, objects):
 	# generate empty symbol file
-	kenv.GenSyms(name + 'ksyms1.c', kenv.Value('-'))
-	kenv.Object(name + 'ksyms1.o', name + 'ksyms1.c')
+	kenv.GenSyms(name + 'ksyms1.cc', kenv.Value('-'))
+	kenv.Object(name + 'ksyms1.o', name + 'ksyms1.cc')
 	# build the kernel with it
 	prekernel = kenv.EscapeCProg(
 		prefix = '', target = 'pre' + name, source = objects + [name + 'ksyms1.o'],
@@ -40,8 +43,8 @@ def LinkWithSymbols(kenv, name, objects):
 	)
 	
 	# generate symbol file for built kernel
-	kenv.GenSyms(name + 'ksyms2.c', prekernel)
-	kenv.Object(name + 'ksyms2.o', name + 'ksyms2.c')
+	kenv.GenSyms(name + 'ksyms2.cc', prekernel)
+	kenv.Object(name + 'ksyms2.o', name + 'ksyms2.cc')
 	# now build the real kernel
 	kernel = kenv.EscapeCProg(
 		prefix = 'boot', target = name, source = objects + [name + 'ksyms2.o'],

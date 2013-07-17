@@ -49,7 +49,7 @@ static void test_dynarray(void) {
 		size_t oldCount = da.objCount;
 		test_assertTrue(dyna_extend(&da));
 		for(i = oldCount; i < da.objCount; i++) {
-			uint *l = dyna_getObj(&da,i);
+			uint *l = (uint*)dyna_getObj(&da,i);
 			*l = i;
 		}
 	}
@@ -57,7 +57,7 @@ static void test_dynarray(void) {
 	test_assertFalse(dyna_extend(&da));
 
 	for(i = 0, j = 0; j < REGION_SIZE; i++, j += sizeof(uint)) {
-		uint *l = dyna_getObj(&da,i);
+		uint *l = (uint*)dyna_getObj(&da,i);
 		test_assertSSize(dyna_getIndex(&da,l),i);
 		test_assertUInt(*l,i);
 	}

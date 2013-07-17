@@ -30,7 +30,7 @@ int lines_create(sLines *l) {
 	l->lines = (char**)cache_alloc(l->lineSize * sizeof(char*));
 	if(!l->lines)
 		return -ENOMEM;
-	l->lines[l->lineCount] = cache_alloc(VID_COLS + 1);
+	l->lines[l->lineCount] = (char*)cache_alloc(VID_COLS + 1);
 	if(!l->lines[l->lineCount]) {
 		lines_destroy(l);
 		return -ENOMEM;
@@ -75,7 +75,7 @@ void lines_newline(sLines *l) {
 		l->lines = lines;
 	}
 	/* allocate new line */
-	l->lines[l->lineCount] = cache_alloc(VID_COLS + 1);
+	l->lines[l->lineCount] = (char*)cache_alloc(VID_COLS + 1);
 	if(!l->lines[l->lineCount]) {
 		l->lineCount--;
 		l->lineSize = (size_t)-1;

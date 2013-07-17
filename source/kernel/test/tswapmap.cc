@@ -151,7 +151,7 @@ static void test_swapmap5(void) {
 static void test_swapmap6(void) {
 	size_t i;
 	size_t total = swmap_freeSpace() / PAGE_SIZE;
-	ulong *blocks = cache_alloc(total * sizeof(ulong));
+	ulong *blocks = (ulong*)cache_alloc(total * sizeof(ulong));
 	test_doStart("Testing alloc all & free");
 
 	for(i = 0; i < total; i++) {

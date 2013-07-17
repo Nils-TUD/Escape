@@ -91,7 +91,7 @@ typedef struct {
 	/* flags for vm86 and zombie */
 	uint8_t flags;
 	/* process id (2^16 processes should be enough :)) */
-	const pid_t pid;
+	/*const*/ pid_t pid;
 	/* parent process id */
 	pid_t parentPid;
 	/* real, effective and saved user-id */

@@ -127,7 +127,7 @@ sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr) {
 			q = &p->right;
 	}
 	/* create new node */
-	*q = cache_alloc(sizeof(sVMRegion));
+	*q = (sVMRegion*)cache_alloc(sizeof(sVMRegion));
 	if(!*q)
 		return NULL;
 	/* we have a reference to that file now. we'll release it on unmap */

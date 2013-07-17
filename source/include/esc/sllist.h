@@ -25,7 +25,7 @@
 typedef struct sSLNode sSLNode;
 struct sSLNode {
 	/* the user should not be able to change them */
-	sSLNode *const next;
+	sSLNode */*const*/ next;
 	void *data;
 };
 
@@ -37,11 +37,11 @@ typedef void (*fNodeFree)(void *n);
 /*typedef void* sSLList;*/
 /* but for debugging, it is helpful :) */
 typedef struct {
-	const fNodeAlloc falloc;
-	const fNodeFree ffree;
-	const sSLNode *const first;
-	const sSLNode *const last;
-	const size_t length;
+	/*const*/ fNodeAlloc falloc;
+	/*const*/ fNodeFree ffree;
+	/*const*/ sSLNode */*const*/ first;
+	/*const*/ sSLNode */*const*/ last;
+	/*const*/ size_t length;
 } sSLList;
 
 #ifdef __cplusplus

@@ -91,10 +91,10 @@ void smp_setReady(cpuid_t id);
  * Should be called if thread <new> is scheduled on CPU <id>
  *
  * @param id the CPU-id
- * @param new the thread to run
+ * @param n the thread to run
  * @param timestamp the current timestamp
  */
-void smp_schedule(cpuid_t id,sThread *new,uint64_t timestamp);
+void smp_schedule(cpuid_t id,sThread *n,uint64_t timestamp);
 
 /**
  * Updates the runtimes of all CPUs
@@ -152,9 +152,9 @@ void smp_sendIPI(cpuid_t id,uint8_t vector);
  * Renames CPU <old> to CPU <new>
  *
  * @param old the old CPU-id
- * @param new the new CPU-id
+ * @param newid the new CPU-id
  */
-void smp_setId(cpuid_t old,cpuid_t new);
+void smp_setId(cpuid_t old,cpuid_t newid);
 
 /**
  * Starts the SMP-system, i.e. the other CPUs

@@ -61,7 +61,7 @@ void *slln_allocNode(size_t size) {
 			return NULL;
 		}
 		for(i = oldCount; i < nodeArray.objCount; i++) {
-			n = dyna_getObj(&nodeArray,i);
+			n = (sListNode*)dyna_getObj(&nodeArray,i);
 			n->next = freelist;
 			freelist = n;
 		}

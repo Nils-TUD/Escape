@@ -73,10 +73,10 @@ void gdt_setRunning(cpuid_t id,sThread *t);
  * the I/O map and sets the TLS-register.
  *
  * @param old the old thread (may be NULL)
- * @param new the thread to run
+ * @param n the thread to run
  * @return the cpu-id for the new thread
  */
-cpuid_t gdt_prepareRun(sThread *old,sThread *new);
+cpuid_t gdt_prepareRun(sThread *old,sThread *n);
 
 /**
  * Checks whether the io-map is set

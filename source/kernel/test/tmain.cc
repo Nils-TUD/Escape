@@ -51,9 +51,9 @@
 #endif
 
 /* make gcc happy */
-void bspstart(sBootInfo *mbp);
-uintptr_t smpstart(void);
-void apstart(void);
+extern "C" void bspstart(sBootInfo *mbp);
+extern "C" uintptr_t smpstart(void);
+extern "C" void apstart(void);
 
 void bspstart(sBootInfo *bootinfo) {
 	/* init the kernel */

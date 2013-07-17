@@ -75,11 +75,7 @@ static const sBootTask tasks[] = {
 	{"Initializing timer...",timer_init},
 	{"Initializing signal handling...",sig_init},
 };
-sBootTaskList bootTaskList = {
-	.tasks = tasks,
-	.count = ARRAY_SIZE(tasks),
-	.moduleCount = 0
-};
+sBootTaskList bootTaskList(tasks,ARRAY_SIZE(tasks));
 static uintptr_t physModAddrs[MAX_MOD_COUNT];
 static char mbbuf[PAGE_SIZE];
 static size_t mbbufpos = 0;
@@ -89,7 +85,7 @@ extern void *_ebss;
 static sBootInfo *mb;
 static bool loadedMods = false;
 
-static void *boot_copy_mbinfo(void *info,size_t len) {
+static void *boot_copy_mbinfo(const void *info,size_t len) {
 	void *res = mbbuf + mbbufpos;
 	if(mbbufpos + len > sizeof(mbbuf))
 		util_panic("Multiboot-buffer too small");
@@ -105,14 +101,14 @@ void boot_arch_start(sBootInfo *info) {
 	const char **argv;
 
 	/* copy mb-stuff into buffer */
-	info = boot_copy_mbinfo(info,sizeof(sBootInfo));
-	info->cmdLine = boot_copy_mbinfo(info->cmdLine,strlen(PHYS2VIRT(info->cmdLine)) + 1);
-	info->modsAddr = boot_copy_mbinfo(info->modsAddr,sizeof(sModule) * info->modsCount);
-	info->mmapAddr = boot_copy_mbinfo(info->mmapAddr,info->mmapLength);
-	info->drivesAddr = boot_copy_mbinfo(info->drivesAddr,info->drivesLength);
+	info = (sBootInfo*)boot_copy_mbinfo(info,sizeof(sBootInfo));
+	info->cmdLine = (char*)boot_copy_mbinfo(info->cmdLine,strlen((char*)PHYS2VIRT(info->cmdLine)) + 1);
+	info->modsAddr = (sModule*)boot_copy_mbinfo(info->modsAddr,sizeof(sModule) * info->modsCount);
+	info->mmapAddr = (sMemMap*)boot_copy_mbinfo(info->mmapAddr,info->mmapLength);
+	info->drivesAddr = (sDrive*)boot_copy_mbinfo(info->drivesAddr,info->drivesLength);
 	mod = info->modsAddr;
 	for(i = 0; i < info->modsCount; i++) {
-		mod->name = boot_copy_mbinfo(mod->name,strlen(PHYS2VIRT(mod->name)) + 1);
+		mod->name = (char*)boot_copy_mbinfo(mod->name,strlen((char*)PHYS2VIRT(mod->name)) + 1);
 		physModAddrs[i] = mod->modStart;
 		mod++;
 	}

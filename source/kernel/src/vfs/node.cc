@@ -584,7 +584,7 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 	else
 		nameLen = strlen(path);
 	/* copy the name because vfs_file_create() will store the pointer */
-	nameCpy = cache_alloc(nameLen + 1);
+	nameCpy = (char*)cache_alloc(nameLen + 1);
 	if(nameCpy == NULL)
 		return -ENOMEM;
 	memcpy(nameCpy,path,nameLen + 1);

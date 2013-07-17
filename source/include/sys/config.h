@@ -30,6 +30,7 @@
 #define CONF_LINEBYLINE			7
 #define CONF_LOG2SCR			8
 #define CONF_CPU_COUNT			9
+#define CONF_SMP				10
 
 /**
  * Parses the given boot-parameter and sets the configuration-options correspondingly

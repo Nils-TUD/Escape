@@ -24,6 +24,7 @@
 #include <sys/task/smp.h>
 #include <sys/log.h>
 #include <sys/video.h>
+#include <sys/config.h>
 #include <sys/util.h>
 #include <sys/cpu.h>
 #include <esc/sllist.h>
@@ -41,7 +42,7 @@ void smp_init(void) {
 	sll_init(&cpuList,slln_allocNode,slln_freeNode);
 
 	cpuCount = 0;
-	enabled = smp_init_arch();
+	enabled = conf_get(CONF_SMP) ? smp_init_arch() : false;
 	if(!enabled) {
 		smp_addCPU(true,0,true);
 		smp_setId(0,0);

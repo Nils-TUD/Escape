@@ -35,6 +35,7 @@ static void conf_set(const char *name,const char *value);
 static bool lineByLine = false;
 static bool doLog = true;
 static bool log2scr = false;
+static bool smp = true;
 static char swapDev[MAX_BPVAL_LEN + 1] = "";
 
 void conf_parseBootParams(int argc,const char *const *argv) {
@@ -95,6 +96,9 @@ long conf_get(int id) {
 		case CONF_CPU_COUNT:
 			res = smp_getCPUCount();
 			break;
+		case CONF_SMP:
+			res = smp;
+			break;
 		default:
 			res = -EINVAL;
 			break;
@@ -111,4 +115,6 @@ static void conf_set(const char *name,const char *value) {
 		lineByLine = true;
 	else if(strcmp(name,"log2scr") == 0)
 		log2scr = true;
+	else if(strcmp(name,"nosmp") == 0)
+		smp = false;
 }

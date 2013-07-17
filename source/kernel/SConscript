@@ -4,12 +4,12 @@ Import('env')
 import os
 
 kenv = env.Clone()
-ldconf = 'kernel/src/arch/$ARCH/ld.conf'
+ldconf = 'src/arch/$ARCH/ld.conf'
 gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
 kenv.Append(
 	CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-rtti',
 	CPPFLAGS = ' -DIN_KERNEL=1',
-	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldconf,
+	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,kernel/' + ldconf,
 	BUILDERS = {'GenSyms' : gensyms}
 )
 
@@ -54,6 +54,9 @@ def LinkWithSymbols(kenv, name, objects):
 
 kernel = LinkWithSymbols(kenv, 'escape', objects(kenv, src + [mainsrc]))
 test_kernel = LinkWithSymbols(kenv, 'escape_test', objects(kenv, src + tsrc))
+
+kenv.Depends(kernel, ldconf)
+kenv.Depends(test_kernel, ldconf)
 
 if kenv['ARCH'] == 'i586':
 	tramp = '$BUILDDIR/kernel_tramp.dump'

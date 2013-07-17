@@ -22,6 +22,7 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <esc/debug.h>
+#include <esc/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -54,7 +55,7 @@ int mod_pingpong(int argc,char *argv[]) {
 }
 
 static void client(void) {
-	uint64_t begin,total;
+	uint64_t begin,total,end;
 	size_t i;
 	sIPCMsg msg;
 	int fd;
@@ -72,7 +73,8 @@ static void client(void) {
 		if(receive(fd,NULL,&msg,sizeof(msg)) < 0)
 			printe("Message-receiving failed");
 	}
-	total = rdtsc() - begin;
+	end = rdtsc();
+	total = end - begin;
 	printf("Cycles: %Lu, per msg: %Lu\n",total,total / messageCount);
 	close(fd);
 }

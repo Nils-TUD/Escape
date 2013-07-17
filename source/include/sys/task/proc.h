@@ -87,7 +87,7 @@ typedef struct {
 } sExitState;
 
 /* represents a process */
-typedef struct {
+struct sProc {
 	/* flags for vm86 and zombie */
 	uint8_t flags;
 	/* process id (2^16 processes should be enough :)) */
@@ -157,7 +157,7 @@ typedef struct {
 		ushort exitCode;
 		ushort exitSignal;
 	} stats;
-} sProc;
+};
 
 /* the area for proc_chgsize() */
 typedef enum {CHG_DATA,CHG_STACK} eChgArea;

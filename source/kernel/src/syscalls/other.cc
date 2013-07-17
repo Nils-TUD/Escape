@@ -32,12 +32,12 @@
 #include <sys/video.h>
 #include <errno.h>
 
-int sysc_loadmods(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_loadmods(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int res = boot_loadModules(stack);
 	SYSC_RET1(stack,res);
 }
 
-int sysc_debugc(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_debugc(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	char c = (char)SYSC_ARG1(stack);
 	vid_setTargets(TARGET_LOG);
 	vid_printf("%c",c);
@@ -45,7 +45,7 @@ int sysc_debugc(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_debug(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+int sysc_debug(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 #if 0
 	static size_t foo = 0;
 	cache_dbg_setAaFEnabled(foo == 0);
@@ -56,7 +56,7 @@ int sysc_debug(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_sysconf(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_sysconf(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int id = SYSC_ARG1(stack);
 	long res = conf_get(id);
 	if(res < 0)
@@ -64,7 +64,7 @@ int sysc_sysconf(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_tsctotime(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_tsctotime(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint64_t *tsc = (uint64_t*)SYSC_ARG1(stack);
 	if(!paging_isInUserSpace((uintptr_t)tsc,sizeof(uint64_t)))
 		SYSC_ERROR(stack,-EINVAL);

@@ -23,8 +23,8 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_chgsize(sThread *t,sIntrptStackFrame *stack);
-int sysc_mmap(sThread *t,sIntrptStackFrame *stack);
-int sysc_mprotect(sThread *t,sIntrptStackFrame *stack);
-int sysc_munmap(sThread *t,sIntrptStackFrame *stack);
-int sysc_regaddphys(sThread *t,sIntrptStackFrame *stack);
+int sysc_chgsize(Thread *t,sIntrptStackFrame *stack);
+int sysc_mmap(Thread *t,sIntrptStackFrame *stack);
+int sysc_mprotect(Thread *t,sIntrptStackFrame *stack);
+int sysc_munmap(Thread *t,sIntrptStackFrame *stack);
+int sysc_regaddphys(Thread *t,sIntrptStackFrame *stack);

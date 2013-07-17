@@ -122,7 +122,7 @@ void proc_init(void) {
 
 	/* create first thread */
 	sll_init(&p->threads,slln_allocNode,slln_freeNode);
-	if(!sll_append(&p->threads,thread_init(p)))
+	if(!sll_append(&p->threads,Thread::init(p)))
 		util_panic("Unable to append the initial thread");
 
 	/* init region-stuff */
@@ -138,7 +138,7 @@ void proc_init(void) {
 }
 
 pagedir_t *proc_getPageDir(void) {
-	const sThread *t = thread_getRunning();
+	const Thread *t = Thread::getRunning();
 	/* just needed at the beginning */
 	if(t == NULL)
 		return &first.pagedir;
@@ -205,7 +205,7 @@ void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args) {
 }
 
 pid_t proc_getRunning(void) {
-	const sThread *t = thread_getRunning();
+	const Thread *t = Thread::getRunning();
 	return t->proc->pid;
 }
 
@@ -268,7 +268,7 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 int proc_clone(uint8_t flags) {
 	int newPid,res = 0;
 	sProc *p,*cur;
-	sThread *nt,*curThread = thread_getRunning();
+	Thread *nt,*curThread = Thread::getRunning();
 	assert((flags & P_ZOMBIE) == 0);
 	cur = proc_request(curThread->proc->pid,PLOCK_PROG);
 	if(!cur) {
@@ -359,7 +359,7 @@ int proc_clone(uint8_t flags) {
 		goto errorVFS;
 
 	/* clone current thread */
-	if((res = thread_create(curThread,&nt,p,0,true)) < 0)
+	if((res = Thread::create(curThread,&nt,p,0,true)) < 0)
 		goto errorRegs;
 	sll_init(&p->threads,slln_allocNode,slln_freeNode);
 	if(!sll_append(&p->threads,nt)) {
@@ -373,7 +373,7 @@ int proc_clone(uint8_t flags) {
 	/* inherit file-descriptors */
 	fd_clone(p);
 
-	res = thread_finishClone(curThread,nt);
+	res = Thread::finishClone(curThread,nt);
 	if(res == 1) {
 		/* child */
 		return 0;
@@ -393,13 +393,13 @@ int proc_clone(uint8_t flags) {
 
 	proc_release(cur,PLOCK_PROG);
 	/* if we had reserved too many, free them now */
-	thread_discardFrames();
+	curThread->discardFrames();
 	return p->pid;
 
 errorThreadAppend:
 	sll_removeFirstWith(&p->threads,nt);
 errorThread:
-	thread_kill(nt);
+	nt->kill();
 errorRegs:
 	proc_doRemoveRegions(p,true);
 errorVFS:
@@ -422,19 +422,19 @@ errorReqProc:
 int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	uintptr_t tlsStart,tlsEnd;
 	size_t pageCount;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sProc *p;
-	sThread *nt;
+	Thread *nt;
 	int res;
 	/* don't allow new threads when the process should die */
 	if(t->proc->flags & (P_ZOMBIE | P_PREZOMBIE))
 		return -EDESTROYED;
 
 	/* reserve frames for new stack- and tls-region */
-	pageCount = thread_getThreadFrmCnt();
-	if(thread_getTLSRange(t,&tlsStart,&tlsEnd))
+	pageCount = Thread::getThreadFrmCnt();
+	if(t->getTLSRange(&tlsStart,&tlsEnd))
 		pageCount += BYTES_2_PAGES(tlsEnd - tlsStart);
-	thread_reserveFrames(pageCount);
+	t->reserveFrames(pageCount);
 
 	p = proc_request(t->proc->pid,PLOCK_PROG);
 	if(!p) {
@@ -442,20 +442,20 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 		goto errorReqProc;
 	}
 
-	if((res = thread_create(t,&nt,p,flags,false)) < 0)
+	if((res = Thread::create(t,&nt,p,flags,false)) < 0)
 		goto error;
 
 	/* append thread */
 	if(!sll_append(&p->threads,nt)) {
-		thread_kill(nt);
+		nt->kill();
 		res = -ENOMEM;
 		goto error;
 	}
 
-	thread_finishThreadStart(t,nt,arg,entryPoint);
+	Thread::finishThreadStart(t,nt,arg,entryPoint);
 
 	/* mark ready (idle is always blocked because we choose it explicitly when no other can run) */
-	if(nt->flags & T_IDLE)
+	if(nt->getFlags() & T_IDLE)
 		ev_block(nt);
 	else
 		ev_unblock(nt);
@@ -471,20 +471,20 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 #endif
 
 	proc_release(p,PLOCK_PROG);
-	thread_discardFrames();
+	t->discardFrames();
 	return nt->tid;
 
 error:
 	proc_release(p,PLOCK_PROG);
 errorReqProc:
-	thread_discardFrames();
+	t->discardFrames();
 	return res;
 }
 
 int proc_exec(const char *path,USER const char *const *args,const void *code,size_t size) {
 	char *argBuffer;
 	sStartupInfo info;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	size_t argSize;
 	int argc,fd = -1;
@@ -520,7 +520,7 @@ int proc_exec(const char *path,USER const char *const *args,const void *code,siz
 			return argc;
 		}
 	}
-	thread_addHeapAlloc(argBuffer);
+	Thread::addHeapAlloc(argBuffer);
 
 	/* remove all except stack */
 	proc_doRemoveRegions(p,false);
@@ -576,32 +576,32 @@ int proc_exec(const char *path,USER const char *const *args,const void *code,siz
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
 	if(!uenv_setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
 		goto errorNoRel;
-	thread_remHeapAlloc(argBuffer);
+	Thread::remHeapAlloc(argBuffer);
 	cache_free(argBuffer);
 	return 0;
 
 error:
 	proc_release(p,PLOCK_PROG);
 errorNoRel:
-	thread_remHeapAlloc(argBuffer);
+	Thread::remHeapAlloc(argBuffer);
 	cache_free(argBuffer);
 	proc_terminate(p->pid,1,SIG_COUNT);
-	thread_switch();
+	Thread::switchAway();
 	util_panic("We should not reach this!");
 	/* not reached */
 	return 0;
 }
 
 void proc_join(tid_t tid) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	while((tid == 0 && sll_length(&t->proc->threads) > 1) ||
-			(tid != 0 && thread_getById(tid) != NULL)) {
+			(tid != 0 && Thread::getById(tid) != NULL)) {
 		ev_wait(t,EVI_THREAD_DIED,(evobj_t)t->proc);
 		proc_release(p,PLOCK_PROG);
 
-		thread_switchNoSigs();
+		Thread::switchNoSigs();
 
 		proc_request(t->proc->pid,PLOCK_PROG);
 	}
@@ -609,17 +609,17 @@ void proc_join(tid_t tid) {
 }
 
 void proc_exit(int exitCode) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	if(p) {
 		p->stats.exitCode = exitCode;
-		thread_terminate(t);
+		t->terminate();
 		proc_release(p,PLOCK_PROG);
 	}
 }
 
 void proc_segFault(void) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	proc_addSignalFor(t->proc->pid,SIG_SEGFAULT);
 	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
 	 * we might get in an endless-loop */
@@ -638,7 +638,7 @@ void proc_addSignalFor(pid_t pid,int signal) {
 		}
 
 		for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
-			sThread *pt = (sThread*)n->data;
+			Thread *pt = (Thread*)n->data;
 			if(sig_addSignalFor(pt->tid,signal))
 				sent = true;
 		}
@@ -648,7 +648,7 @@ void proc_addSignalFor(pid_t pid,int signal) {
 		if(!sent && sig_isFatal(signal)) {
 			proc_terminate(pid,1,signal);
 			if(pid == proc_getRunning())
-				thread_switch();
+				Thread::switchAway();
 		}
 	}
 }
@@ -679,21 +679,21 @@ void proc_terminate(pid_t pid,int exitCode,int signal) {
 
 	/* terminate all threads */
 	for(tn = sll_begin(&p->threads); tn != NULL; tn = tn->next) {
-		sThread *pt = (sThread*)tn->data;
-		thread_terminate(pt);
+		Thread *pt = (Thread*)tn->data;
+		pt->terminate();
 	}
 	p->flags |= P_PREZOMBIE;
 	proc_release(p,PLOCK_PROG);
 }
 
 void proc_killThread(tid_t tid) {
-	sThread *t = thread_getById(tid);
+	Thread *t = Thread::getById(tid);
 	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
 	assert(p != NULL);
-	p->stats.totalRuntime += t->stats.runtime;
-	p->stats.totalSyscalls += t->stats.syscalls;
-	p->stats.totalScheds += t->stats.schedCount;
-	thread_kill(t);
+	p->stats.totalRuntime += t->getStats().runtime;
+	p->stats.totalSyscalls += t->getStats().syscalls;
+	p->stats.totalScheds += t->getStats().schedCount;
+	t->kill();
 	sll_removeFirstWith(&p->threads,t);
 	if(sll_length(&p->threads) == 0) {
 		p->stats.exitCode = 0;
@@ -709,8 +709,8 @@ void proc_destroy(pid_t pid) {
 		return;
 	for(n = sll_begin(&p->threads); n != NULL; ) {
 		sSLNode *next = n->next;
-		sThread *pt = (sThread*)n->data;
-		thread_kill(pt);
+		Thread *pt = (Thread*)n->data;
+		pt->kill();
 		sll_removeFirstWith(&p->threads,pt);
 		n = next;
 	}
@@ -779,7 +779,7 @@ static void proc_notifyProcDied(pid_t parent) {
 }
 
 int proc_waitChild(USER sExitState *state) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sProc *p = t->proc;
 	int res;
 	/* check if there is already a dead child-proc */
@@ -789,7 +789,7 @@ int proc_waitChild(USER sExitState *state) {
 		/* wait for child */
 		ev_wait(t,EVI_CHILD_DIED,(evobj_t)p);
 		mutex_release(&childLock);
-		thread_switch();
+		Thread::switchAway();
 		/* stop waiting for event; maybe we have been waked up for another reason */
 		ev_removeThread(t);
 		/* don't continue here if we were interrupted by a signal */
@@ -849,8 +849,8 @@ static void proc_doRemoveRegions(sProc *p,bool remStack) {
 	 * soon as vmm_removeAll is finished, somebody might use the stack-region-number to get the
 	 * region-range, which is not possible anymore, because the region is already gone. */
 	for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
-		sThread *t = (sThread*)n->data;
-		thread_removeRegions(t,remStack);
+		Thread *t = (Thread*)n->data;
+		t->removeRegions(remStack);
 	}
 	vmm_removeAll(p->pid,remStack);
 }
@@ -919,7 +919,7 @@ void proc_print(sProc *p) {
 	vid_printf("\tThreads:\n");
 	for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
 		vid_printf("\t\t");
-		thread_printShort((sThread*)n->data);
+		((Thread*)n->data)->printShort();
 		vid_printf("\n");
 	}
 	vid_printf("\n");
@@ -941,7 +941,7 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 	/* note that we have to create a copy since we don't know where the args are. Maybe
 	 * they are on the user-stack at the position we want to copy them for the
 	 * new process... */
-	thread_addHeapAlloc(*argBuffer);
+	Thread::addHeapAlloc(*argBuffer);
 	bufPos = *argBuffer;
 	arg = args;
 	while(1) {
@@ -968,13 +968,13 @@ int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bo
 		arg++;
 		argc++;
 	}
-	thread_remHeapAlloc(*argBuffer);
+	Thread::remHeapAlloc(*argBuffer);
 	/* store args-size and return argc */
 	*size = EXEC_MAX_ARGSIZE - remaining;
 	return argc;
 
 error:
-	thread_remHeapAlloc(*argBuffer);
+	Thread::remHeapAlloc(*argBuffer);
 	cache_free(*argBuffer);
 	return -EFAULT;
 }
@@ -1017,13 +1017,13 @@ static time_t proctimes[PROF_PROC_COUNT];
 
 void proc_dbg_startProf(void) {
 	sSLNode *n,*m;
-	sThread *t;
+	Thread *t;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		const sProc *p = (const sProc*)n->data;
 		assert(p->pid < PROF_PROC_COUNT);
 		proctimes[p->pid] = 0;
 		for(m = sll_begin(&p->threads); m != NULL; m = m->next) {
-			t = (sThread*)m->data;
+			t = (Thread*)m->data;
 			proctimes[p->pid] += t->stats.runtime;
 		}
 	}
@@ -1031,13 +1031,13 @@ void proc_dbg_startProf(void) {
 
 void proc_dbg_stopProf(void) {
 	sSLNode *n,*m;
-	sThread *t;
+	Thread *t;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		const sProc *p = (const sProc*)n->data;
 		time_t curtime = 0;
 		assert(p->pid < PROF_PROC_COUNT);
 		for(m = sll_begin(&p->threads); m != NULL; m = m->next) {
-			t = (sThread*)m->data;
+			t = (Thread*)m->data;
 			curtime += t->stats.runtime;
 		}
 		curtime -= proctimes[p->pid];

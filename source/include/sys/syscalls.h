@@ -39,7 +39,7 @@
  * @param t the running thread
  * @param intrptStack the pointer to the interrupt-stack
  */
-void sysc_handle(sThread *t,sIntrptStackFrame *intrptStack);
+void sysc_handle(Thread *t,sIntrptStackFrame *intrptStack);
 
 /**
  * @param sysCallNo the syscall-number

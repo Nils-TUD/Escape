@@ -46,7 +46,7 @@ typedef struct {
 	uint64_t lastCycles;
 	uint64_t lastTotal;
 	uint64_t lastUpdate;
-	sThread *thread;
+	Thread *thread;
 } sCPU;
 
 /**
@@ -94,7 +94,7 @@ void smp_setReady(cpuid_t id);
  * @param n the thread to run
  * @param timestamp the current timestamp
  */
-void smp_schedule(cpuid_t id,sThread *n,uint64_t timestamp);
+void smp_schedule(cpuid_t id,Thread *n,uint64_t timestamp);
 
 /**
  * Updates the runtimes of all CPUs
@@ -126,7 +126,7 @@ void smp_ensureTLBFlushed(void);
  *
  * @param t the thread
  */
-void smp_killThread(sThread *t);
+void smp_killThread(Thread *t);
 
 /**
  * Wakes up another CPU, so that it can run a thread

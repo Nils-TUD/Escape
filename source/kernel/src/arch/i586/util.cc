@@ -66,7 +66,7 @@ void util_panic_arch(void) {
 			res = vfs_receiveMsg(KERNEL_PID,file,NULL,&msg,sizeof(msg),false);
 			if(res >= 0)
 				break;
-			thread_switch();
+			Thread::switchAway();
 		}
 		if(res >= 0) {
 			vfs_sendMsg(KERNEL_PID,file,MSG_VID_SETMODE,&msg,sizeof(msg),NULL,0);
@@ -74,19 +74,19 @@ void util_panic_arch(void) {
 				res = vfs_receiveMsg(KERNEL_PID,file,NULL,NULL,0,false);
 				if(res >= 0)
 					break;
-				thread_switch();
+				Thread::switchAway();
 			}
 		}
 		vfs_closeFile(KERNEL_PID,file);
 	}
 }
 
-void util_printUserStateOf(const sThread *t) {
+void util_printUserStateOf(const Thread *t) {
 	static uint32_t regs[REG_COUNT];
-	if(thread_getIntrptStack(t)) {
-		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,t->archAttr.kernelStack);
+	if(t->getIntrptStack()) {
+		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,t->getKernelStack());
 		uintptr_t kstackAddr = paging_mapToTemp(&frame,1);
-		size_t kstackOff = (uintptr_t)thread_getIntrptStack(t) & (PAGE_SIZE - 1);
+		size_t kstackOff = (uintptr_t)t->getIntrptStack() & (PAGE_SIZE - 1);
 		sIntrptStackFrame *kstack = (sIntrptStackFrame*)(kstackAddr + kstackOff);
 		vid_printf("User-Register:\n");
 		prf_pushIndent();
@@ -113,7 +113,7 @@ void util_printUserStateOf(const sThread *t) {
 }
 
 void util_printUserState(void) {
-	const sThread *t = thread_getRunning();
+	const Thread *t = Thread::getRunning();
 	util_printUserStateOf(t);
 }
 
@@ -133,10 +133,10 @@ void util_stopTimer(const char *prefix,...) {
 
 sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
-	sThread *t = thread_getRunning();
-	sIntrptStackFrame *kstack = thread_getIntrptStack(t);
+	Thread *t = Thread::getRunning();
+	sIntrptStackFrame *kstack = t->getIntrptStack();
 	if(kstack) {
-		if(thread_getStackRange(t,&start,&end,0))
+		if(t->getStackRange(&start,&end,0))
 			return util_getStackTrace((uint32_t*)kstack->ebp,start,start,end);
 	}
 	return NULL;
@@ -145,15 +145,15 @@ sFuncCall *util_getUserStackTrace(void) {
 sFuncCall *util_getKernelStackTrace(void) {
 	uintptr_t start,end;
 	uint32_t* ebp;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	if(t) {
 		__asm__ volatile ("mov %%ebp,%0" : "=a" (ebp) : );
 
 		/* determine the stack-bounds; we have a temp stack at the beginning */
-		if((uintptr_t)ebp >= t->archAttr.kernelStack &&
-				(uintptr_t)ebp < t->archAttr.kernelStack + PAGE_SIZE) {
-			start = t->archAttr.kernelStack;
-			end = t->archAttr.kernelStack + PAGE_SIZE;
+		if((uintptr_t)ebp >= t->getKernelStack() &&
+				(uintptr_t)ebp < t->getKernelStack() + PAGE_SIZE) {
+			start = t->getKernelStack();
+			end = t->getKernelStack() + PAGE_SIZE;
 		}
 		else {
 			start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
@@ -164,17 +164,17 @@ sFuncCall *util_getKernelStackTrace(void) {
 	return NULL;
 }
 
-sFuncCall *util_getUserStackTraceOf(sThread *t) {
+sFuncCall *util_getUserStackTraceOf(Thread *t) {
 	uintptr_t start,end;
-	if(thread_getStackRange(t,&start,&end,0)) {
+	if(t->getStackRange(&start,&end,0)) {
 		sFuncCall *calls;
 		size_t pcount = (end - start) / PAGE_SIZE;
 		frameno_t *frames = (frameno_t*)cache_alloc((pcount + 2) * sizeof(frameno_t));
 		if(frames) {
-			sIntrptStackFrame *istack = thread_getIntrptStack(t);
+			sIntrptStackFrame *istack = t->getIntrptStack();
 			uintptr_t temp,startCpy = start;
 			size_t i;
-			frames[0] = paging_getFrameNo(&t->proc->pagedir,t->archAttr.kernelStack);
+			frames[0] = paging_getFrameNo(&t->proc->pagedir,t->getKernelStack());
 			for(i = 0; startCpy < end; i++) {
 				if(!paging_isPresent(&t->proc->pagedir,startCpy)) {
 					cache_free(frames);
@@ -195,15 +195,15 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 	return NULL;
 }
 
-sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
-	sThread *run = thread_getRunning();
+sFuncCall *util_getKernelStackTraceOf(const Thread *t) {
+	Thread *run = Thread::getRunning();
 	if(run == t)
 		return util_getKernelStackTrace();
 	else {
-		uint32_t ebp = t->save.ebp;
-		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,t->archAttr.kernelStack);
+		uint32_t ebp = t->getRegs().ebp;
+		frameno_t frame = paging_getFrameNo(&t->proc->pagedir,t->getKernelStack());
 		uintptr_t temp = paging_mapToTemp(&frame,1);
-		sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,t->archAttr.kernelStack,temp,temp + PAGE_SIZE);
+		sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,t->getKernelStack(),temp,temp + PAGE_SIZE);
 		paging_unmapFromTemp(1);
 		return calls;
 	}

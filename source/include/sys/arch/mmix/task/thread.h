@@ -20,12 +20,72 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/cpu.h>
 
-sKSpecRegs *thread_getSpecRegsOf(const sThread *t);
-void thread_pushSpecRegs(void);
-void thread_popSpecRegs(void);
+class Thread : public ThreadBase {
+	friend class ThreadBase;
+public:
+	static void pushSpecRegs();
+	static void popSpecRegs();
+	sKSpecRegs *getSpecRegs() const;
 
-/**
- * Performs a thread-switch
- */
-void thread_doSwitch(void);
+	/**
+	 * @return the frame mapped at KERNEL_STACK
+	 */
+	frameno_t getKernelStack() const {
+		return kstackFrame;
+	}
+
+private:
+	/* the frame mapped at KERNEL_STACK */
+	frameno_t kstackFrame;
+	/* use as a temporary kernel-stack for cloning */
+	frameno_t tempStack;
+	/* when handling a signal, we have to backup these registers */
+	sKSpecRegs specRegLevels[MAX_INTRPT_LEVELS];
+	static Thread *cur;
+};
+
+inline void ThreadBase::addInitialStack() {
+	assert(tid == INIT_TID);
+	assert(vmm_map(proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+			MAP_STACK | MAP_GROWABLE,NULL,0,stackRegions + 0) == 0);
+	assert(vmm_map(proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 1) == 0);
+}
+
+inline size_t ThreadBase::getThreadFrmCnt() {
+	return INITIAL_STACK_PAGES * 2;
+}
+
+inline Thread *ThreadBase::getRunning() {
+	return Thread::cur;
+}
+
+inline void ThreadBase::setRunning(Thread *t) {
+	Thread::cur = t;
+}
+
+inline sKSpecRegs *Thread::getSpecRegs() const {
+	return const_cast<sKSpecRegs*>(specRegLevels) + intrptLevel - 1;
+}
+
+inline void Thread::pushSpecRegs() {
+	Thread *t = Thread::getRunning();
+	sKSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
+	cpu_getKSpecials(&sregs->rbb,&sregs->rww,&sregs->rxx,&sregs->ryy,&sregs->rzz);
+}
+
+inline void Thread::popSpecRegs() {
+	Thread *t = Thread::getRunning();
+	sKSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
+	cpu_setKSpecials(sregs->rbb,sregs->rww,sregs->rxx,sregs->ryy,sregs->rzz);
+}
+
+inline uint64_t ThreadBase::getTSC() {
+	return cpu_rdtsc();
+}
+
+inline uint64_t ThreadBase::ticksPerSec() {
+	return cpu_getSpeed();
+}

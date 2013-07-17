@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/task/thread.h>
 
 typedef struct {
 	/* the events to wait for */
@@ -77,6 +76,8 @@ typedef struct {
 /* the events a user-thread can fire */
 #define EV_USER_NOTIFY_MASK		(EV_USER1 | EV_USER2)
 
+class Thread;
+
 /**
  * Inits the event-system
  */
@@ -87,35 +88,35 @@ void ev_init(void);
  *
  * @param t the thread
  */
-void ev_block(sThread *t);
+void ev_block(Thread *t);
 
 /**
  * Unblocks the given thread
  *
  * @param t the thread
  */
-void ev_unblock(sThread *t);
+void ev_unblock(Thread *t);
 
 /**
  * Unblocks the given thread and puts it to the beginning of the ready-list
  *
  * @param t the thread
  */
-void ev_unblockQuick(sThread *t);
+void ev_unblockQuick(Thread *t);
 
 /**
  * Suspends the given thread
  *
  * @param t the thread
  */
-void ev_suspend(sThread *t);
+void ev_suspend(Thread *t);
 
 /**
  * Resumes the given thread
  *
  * @param t the thread
  */
-void ev_unsuspend(sThread *t);
+void ev_unsuspend(Thread *t);
 
 /**
  * Lets <tid> wait for the given event and object
@@ -125,7 +126,7 @@ void ev_unsuspend(sThread *t);
  * @param object the object (0 = ignore)
  * @return true if successfull
  */
-bool ev_wait(sThread *t,size_t evi,evobj_t object);
+bool ev_wait(Thread *t,size_t evi,evobj_t object);
 
 /**
  * Lets <tid> wait for the given objects
@@ -135,7 +136,7 @@ bool ev_wait(sThread *t,size_t evi,evobj_t object);
  * @param objCount the number of objects
  * @return true if successfull
  */
-bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount);
+bool ev_waitObjects(Thread *t,const sWaitObject *objects,size_t objCount);
 
 /**
  * Wakes up all threads that wait for given event and object
@@ -161,21 +162,21 @@ void ev_wakeupm(uint events,evobj_t object);
  * @param events the event-mask (not index!)
  * @return true if waked up
  */
-bool ev_wakeupThread(sThread *t,uint events);
+bool ev_wakeupThread(Thread *t,uint events);
 
 /**
  * Removes the given thread from the event-system. Note that it will set it to the ready-state!
  *
  * @param t the thread
  */
-void ev_removeThread(sThread *t);
+void ev_removeThread(Thread *t);
 
 /**
  * Prints the event-mask of given thread
  *
  * @param t the thread
  */
-void ev_printEvMask(const sThread *t);
+void ev_printEvMask(const Thread *t);
 
 /**
  * Prints all waiting threads

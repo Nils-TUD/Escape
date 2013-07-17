@@ -110,7 +110,7 @@ int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
 
 	/* put process to sleep */
 	if(block)
-		ev_block(thread_getById(tid));
+		ev_block(Thread::getById(tid));
 	spinlock_release(&timerLock);
 	return 0;
 }
@@ -149,7 +149,7 @@ bool timer_intrpt(void) {
 	elapsedMsecs += timeInc;
 
 	if((elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
-		thread_updateRuntimes();
+		Thread::updateRuntimes();
 		smp_updateRuntimes();
 		lastRuntimeUpdate = elapsedMsecs;
 	}
@@ -166,7 +166,7 @@ bool timer_intrpt(void) {
 		timeInc -= l->time;
 		/* wake up thread */
 		if(l->block) {
-			ev_unblock(thread_getById(l->tid));
+			ev_unblock(Thread::getById(l->tid));
 			foundThread = true;
 		}
 		else
@@ -199,6 +199,6 @@ void timer_print(void) {
 	for(l = listener; l != NULL; l = l->next) {
 		time += l->time;
 		vid_printf("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
-				thread_getById(l->tid)->proc->command,l->block);
+				Thread::getById(l->tid)->proc->command,l->block);
 	}
 }

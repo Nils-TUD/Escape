@@ -19,19 +19,17 @@
 
 #pragma once
 
-#include <sys/common.h>
+#include <esc/common.h>
 
-#define STACK_REG_COUNT			2
+EXTERN_C void *cache_alloc(size_t size);
+EXTERN_C void *cache_calloc(size_t num,size_t size);
+EXTERN_C void *cache_realloc(void *p,size_t size);
+EXTERN_C void cache_free(void *p);
 
-/* the thread-state which will be saved for context-switching */
-typedef struct {
-	uintptr_t stackEnd;
-} sThreadRegs;
+EXTERN_C void *slln_allocNode(size_t size);
+EXTERN_C void slln_freeNode(void *o);
 
-typedef struct {
-	uint64_t rbb;
-	uint64_t rww;
-	uint64_t rxx;
-	uint64_t ryy;
-	uint64_t rzz;
-} sKSpecRegs;
+EXTERN_C void util_panic(const char *fmt,...);
+
+EXTERN_C void vid_printf(const char *fmt,...);
+EXTERN_C void vid_vprintf(const char *fmt,va_list ap);

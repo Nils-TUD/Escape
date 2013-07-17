@@ -29,18 +29,18 @@
 #include <errno.h>
 #include <assert.h>
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,fSignal handler);
+static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler);
 static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint);
-static uint32_t *uenv_addArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
+static uint32_t *uenv_addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 
-void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
+void uenv_handleSignal(Thread *t,sIntrptStackFrame *stack) {
 	int sig;
 	fSignal handler;
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,stack,sig,handler);
 	else if(res == SIG_CHECK_OTHER)
-		thread_switch();
+		Thread::switchAway();
 }
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED int signal) {
@@ -71,8 +71,8 @@ bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo
 	uint32_t *esp;
 	char **argv;
 	size_t totalSize;
-	sThread *t = thread_getRunning();
-	sIntrptStackFrame *frame = thread_getIntrptStack(t);
+	Thread *t = Thread::getRunning();
+	sIntrptStackFrame *frame = t->getIntrptStack();
 
 	/*
 	 * Initial stack:
@@ -103,7 +103,7 @@ bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo
 	totalSize += sizeof(uint32_t) * 5;
 
 	/* get esp */
-	thread_getStackRange(t,NULL,(uintptr_t*)&esp,0);
+	t->getStackRange(NULL,(uintptr_t*)&esp,0);
 
 	/* copy arguments on the user-stack (4byte space) */
 	esp--;
@@ -153,7 +153,7 @@ bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo
 
 uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *esp;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 
 	/*
 	 * Initial stack:
@@ -169,7 +169,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	 */
 
 	/* get esp */
-	thread_getStackRange(t,NULL,(uintptr_t*)&esp,0);
+	t->getStackRange(NULL,(uintptr_t*)&esp,0);
 
 	/* put arg on stack */
 	esp--;
@@ -178,7 +178,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return uenv_addArgs(t,esp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
+static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	/* the ret-instruction of sigRet() should go to the old eip */
 	*--esp = stack->eip;
@@ -218,10 +218,10 @@ static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint) {
 	frame->edi = 0;
 }
 
-static uint32_t *uenv_addArgs(sThread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
+static uint32_t *uenv_addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	uintptr_t tlsStart,tlsEnd;
-	if(thread_getTLSRange(t,&tlsStart,&tlsEnd)) {
+	if(t->getTLSRange(&tlsStart,&tlsEnd)) {
 		*esp-- = tlsEnd - tlsStart;
 		*esp-- = tlsStart;
 	}

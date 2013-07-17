@@ -20,8 +20,34 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/task/timer.h>
+#include <sys/cpu.h>
 
-static A_INLINE sThread *thread_getRunning(void) {
+class Thread : public ThreadBase {
+	friend class ThreadBase;
+public:
+	/**
+	 * Performs the initial switch for APs, because these don't run a thread yet.
+	 */
+	static void initialSwitch();
+
+	/**
+	 * @return lower end of the kernel-stack
+	 */
+	uintptr_t getKernelStack() const {
+		return kernelStack;
+	}
+	sFPUState **getFPUState() {
+		return &fpuState;
+	}
+
+private:
+	uintptr_t kernelStack;
+	/* FPU-state; initially NULL */
+	sFPUState *fpuState;
+};
+
+inline Thread *ThreadBase::getRunning() {
 	uint32_t esp;
 	__asm__ (
 		"mov	%%esp,%0;"
@@ -30,11 +56,11 @@ static A_INLINE sThread *thread_getRunning(void) {
 		/* inputs */
 		:
 	);
-	sThread** tptr = (sThread**)((esp & 0xFFFFF000) + 0xFFC);
+	Thread** tptr = (Thread**)((esp & 0xFFFFF000) + 0xFFC);
 	return *tptr;
 }
 
-static A_INLINE void thread_setRunning(sThread *t) {
+inline void ThreadBase::setRunning(Thread *t) {
 	uint32_t esp;
 	__asm__ (
 		"mov	%%esp,%0;"
@@ -43,16 +69,34 @@ static A_INLINE void thread_setRunning(sThread *t) {
 		/* inputs */
 		:
 	);
-	sThread** tptr = (sThread**)((esp & 0xFFFFF000) + 0xFFC);
+	ThreadBase** tptr = (ThreadBase**)((esp & 0xFFFFF000) + 0xFFC);
 	*tptr = t;
 }
 
-/**
- * Performs the initial switch for APs, because these don't run a thread yet.
- */
-void thread_initialSwitch(void);
+inline int ThreadBase::initArch(Thread *t) {
+	t->kernelStack = paging_createKernelStack(&t->proc->pagedir);
+	t->fpuState = NULL;
+	return 0;
+}
 
-/**
- * Performs a thread-switch
- */
-void thread_doSwitch(void);
+inline size_t ThreadBase::getThreadFrmCnt(void) {
+	return INITIAL_STACK_PAGES;
+}
+
+inline uint64_t ThreadBase::getTSC(void) {
+	return cpu_rdtsc();
+}
+
+inline uint64_t ThreadBase::ticksPerSec(void) {
+	return cpu_getSpeed();
+}
+
+inline uint64_t ThreadBase::getRuntime() const {
+	if(state == Thread::RUNNING) {
+		/* if the thread is running, we must take the time since the last scheduling of that thread
+		 * into account. this is especially a problem with idle-threads */
+		uint64_t cycles = cpu_rdtsc();
+		return (stats.runtime + timer_cyclesToTime(cycles - stats.cycleStart));
+	}
+	return stats.runtime;
+}

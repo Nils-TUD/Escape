@@ -37,8 +37,8 @@ typedef struct {
 	sWait *last;
 } sWaitList;
 
-static void ev_doRemoveThread(sThread *t);
-static sWait *ev_doWait(sThread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev);
+static void ev_doRemoveThread(Thread *t);
+static sWait *ev_doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev);
 static sWait *ev_allocWait(void);
 static void ev_freeWait(sWait *w);
 static const char *ev_getName(size_t evi);
@@ -63,29 +63,29 @@ void ev_init(void) {
 	}
 }
 
-void ev_block(sThread *t) {
-	thread_block(t);
+void ev_block(Thread *t) {
+	t->block();
 }
 
-void ev_unblock(sThread *t) {
+void ev_unblock(Thread *t) {
 	ev_removeThread(t);
-	thread_unblock(t);
+	t->unblock();
 }
 
-void ev_unblockQuick(sThread *t) {
+void ev_unblockQuick(Thread *t) {
 	ev_removeThread(t);
-	thread_unblockQuick(t);
+	t->unblockQuick();
 }
 
-void ev_suspend(sThread *t) {
-	thread_suspend(t);
+void ev_suspend(Thread *t) {
+	t->suspend();
 }
 
-void ev_unsuspend(sThread *t) {
-	thread_unsuspend(t);
+void ev_unsuspend(Thread *t) {
+	t->unsuspend();
 }
 
-bool ev_wait(sThread *t,size_t evi,evobj_t object) {
+bool ev_wait(Thread *t,size_t evi,evobj_t object) {
 	bool res = false;
 	sWait *w;
 	spinlock_aquire(&evLock);
@@ -93,14 +93,14 @@ bool ev_wait(sThread *t,size_t evi,evobj_t object) {
 	while(w && w->tnext)
 		w = w->tnext;
 	if(ev_doWait(t,evi,object,&t->waits,w) != NULL) {
-		thread_block(t);
+		t->block();
 		res = true;
 	}
 	spinlock_release(&evLock);
 	return res;
 }
 
-bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
+bool ev_waitObjects(Thread *t,const sWaitObject *objects,size_t objCount) {
 	size_t i,e;
 	sWait *w;
 	spinlock_aquire(&evLock);
@@ -124,7 +124,7 @@ bool ev_waitObjects(sThread *t,const sWaitObject *objects,size_t objCount) {
 			}
 		}
 	}
-	thread_block(t);
+	t->block();
 	spinlock_release(&evLock);
 	return true;
 }
@@ -144,9 +144,9 @@ void ev_wakeup(size_t evi,evobj_t object) {
 				/* all slots in use, so remove this threads and start from the beginning to find
 				 * more. hopefully, this will happen nearly never :) */
 				for(; i > 0; i--) {
-					sThread *t = thread_getById(tids[i - 1]);
+					Thread *t = Thread::getById(tids[i - 1]);
 					ev_doRemoveThread(t);
-					thread_unblock(t);
+					t->unblock();
 				}
 				w = list->begin;
 				continue;
@@ -155,9 +155,9 @@ void ev_wakeup(size_t evi,evobj_t object) {
 		w = w->next;
 	}
 	for(; i > 0; i--) {
-		sThread *t = thread_getById(tids[i - 1]);
+		Thread *t = Thread::getById(tids[i - 1]);
 		ev_doRemoveThread(t);
-		thread_unblock(t);
+		t->unblock();
 	}
 	spinlock_release(&evLock);
 }
@@ -172,25 +172,25 @@ void ev_wakeupm(uint events,evobj_t object) {
 	}
 }
 
-bool ev_wakeupThread(sThread *t,uint events) {
+bool ev_wakeupThread(Thread *t,uint events) {
 	bool res = false;
 	spinlock_aquire(&evLock);
 	if(t->events & events) {
 		ev_doRemoveThread(t);
-		thread_unblock(t);
+		t->unblock();
 		res = true;
 	}
 	spinlock_release(&evLock);
 	return res;
 }
 
-void ev_removeThread(sThread *t) {
+void ev_removeThread(Thread *t) {
 	spinlock_aquire(&evLock);
 	ev_doRemoveThread(t);
 	spinlock_release(&evLock);
 }
 
-void ev_printEvMask(const sThread *t) {
+void ev_printEvMask(const Thread *t) {
 	uint e;
 	if(t->events == 0)
 		vid_printf("-");
@@ -211,7 +211,7 @@ void ev_print(void) {
 		vid_printf("\t%s:\n",ev_getName(e));
 		while(w != NULL) {
 			inode_t nodeNo;
-			sThread *t = thread_getById(w->tid);
+			Thread *t = Thread::getById(w->tid);
 			vid_printf("\t\tthread=%d (%d:%s), object=%x",
 					t->tid,t->proc->pid,t->proc->command,w->object);
 			nodeNo = vfs_node_getNo((sVFSNode*)w->object);
@@ -223,7 +223,7 @@ void ev_print(void) {
 	}
 }
 
-static void ev_doRemoveThread(sThread *t) {
+static void ev_doRemoveThread(Thread *t) {
 	if(t->events) {
 		sWait *w = t->waits;
 		while(w != NULL) {
@@ -244,7 +244,7 @@ static void ev_doRemoveThread(sThread *t) {
 	}
 }
 
-static sWait *ev_doWait(sThread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev) {
+static sWait *ev_doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev) {
 	sWaitList *list = evlists + evi;
 	sWait *w = ev_allocWait();
 	if(!w)

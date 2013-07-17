@@ -26,7 +26,7 @@
 #include <sys/syscalls.h>
 #include <errno.h>
 
-int sysc_signal(sThread *t,sIntrptStackFrame *stack) {
+int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 	int signal = (int)SYSC_ARG1(stack);
 	fSignal handler = (fSignal)SYSC_ARG2(stack);
 	fSignal old = SIG_ERR;
@@ -56,7 +56,7 @@ int sysc_signal(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,(long)old);
 }
 
-int sysc_acksignal(sThread *t,sIntrptStackFrame *stack) {
+int sysc_acksignal(Thread *t,sIntrptStackFrame *stack) {
 	int res;
 	int signal = sig_ackHandling(t->tid);
 	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
@@ -65,7 +65,7 @@ int sysc_acksignal(sThread *t,sIntrptStackFrame *stack) {
 	return 0;
 }
 
-int sysc_kill(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_kill(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	int signal = (int)SYSC_ARG2(stack);
 

@@ -64,7 +64,7 @@ static bool lock_isLocked(const sLock *l,ushort flags) {
 }
 
 int lock_aquire(pid_t pid,ulong ident,ushort flags) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	ssize_t i;
 	sLock *l;
 	spinlock_aquire(&klock);
@@ -87,7 +87,7 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 			ev_wait(t,event,(evobj_t)ident);
 			spinlock_release(&klock);
 
-			thread_switchNoSigs();
+			Thread::switchNoSigs();
 
 			spinlock_aquire(&klock);
 			locks[i].waitCount--;

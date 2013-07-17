@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifdef PROFILE
 #include <assert.h>
 #ifdef IN_KERNEL
 #	include <esc/arch/i586/register.h>
@@ -35,7 +36,7 @@
 	tid_t __tid; \
 	GET_REG("esp",__esp); \
 	if(proc_getByPid(1)) { \
-		sThread *__t = thread_getRunning(); \
+		Thread *__t = Thread::getRunning(); \
 		__tid = ((__esp >= KERNEL_STACK_AREA) && (uintptr_t)__t >= KERNEL_AREA) ? __t->tid : 0; \
 	} \
 	__tid; \
@@ -55,7 +56,6 @@
 
 #define STACK_SIZE	1024
 
-#ifdef PROFILE
 static void logUnsigned(ullong n,uint base);
 static void logChar(char c);
 

@@ -322,19 +322,19 @@ cpuid_t gdt_getCPUId(void) {
 	return -1;
 }
 
-void gdt_setRunning(cpuid_t id,sThread *t) {
+void gdt_setRunning(cpuid_t id,Thread *t) {
 	/* store the thread-pointer into an unused slot of the gdt */
 	sGDTDesc *gdt = (sGDTDesc*)allgdts[id].offset;
 	gdt_set_desc(gdt,7,(uintptr_t)t,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
 }
 
-cpuid_t gdt_prepareRun(sThread *old,sThread *n) {
-	cpuid_t id = old == NULL ? gdt_getCPUId() : old->cpu;
+cpuid_t gdt_prepareRun(Thread *old,Thread *n) {
+	cpuid_t id = old == NULL ? gdt_getCPUId() : old->getCPU();
 	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
 	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
 	 * %gs:0xFFFFFFF8 etc. */
-	if(n->tlsRegion) {
-		uintptr_t tlsEnd = n->tlsRegion->virt + n->tlsRegion->reg->byteCount;
+	if(n->getTLSRegion()) {
+		uintptr_t tlsEnd = n->getTLSRegion()->virt + n->getTLSRegion()->reg->byteCount;
 		gdt_set_desc((sGDTDesc*)allgdts[id].offset,5,tlsEnd - sizeof(void*),
 				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);
@@ -342,9 +342,9 @@ cpuid_t gdt_prepareRun(sThread *old,sThread *n) {
 	/* VM86-tasks should start at the beginning because the segment-registers are saved on the
 	 * stack first (not in protected mode) */
 	if(n->proc->flags & P_VM86)
-		alltss[id]->esp0 = n->archAttr.kernelStack + PAGE_SIZE - 2 * sizeof(int);
+		alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - 2 * sizeof(int);
 	else
-		alltss[id]->esp0 = n->archAttr.kernelStack + PAGE_SIZE - (1 + 5) * sizeof(int);
+		alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - (1 + 5) * sizeof(int);
 	if(!old || old->proc != n->proc)
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
 #if GDT_STORE_RUN_THREAD
@@ -354,24 +354,24 @@ cpuid_t gdt_prepareRun(sThread *old,sThread *n) {
 }
 
 bool tss_ioMapPresent(void) {
-	sThread *t = thread_getRunning();
-	return alltss[t->cpu]->ioMapOffset != IO_MAP_OFFSET_INVALID;
+	Thread *t = Thread::getRunning();
+	return alltss[t->getCPU()]->ioMapOffset != IO_MAP_OFFSET_INVALID;
 }
 
 void tss_setIOMap(const uint8_t *ioMap,bool forceCpy) {
-	sThread *t = thread_getRunning();
-	alltss[t->cpu]->ioMapOffset = IO_MAP_OFFSET;
-	if(forceCpy || ioMap != ioMaps[t->cpu])
-		memcpy(alltss[t->cpu]->ioMap,ioMap,IO_MAP_SIZE / 8);
+	Thread *t = Thread::getRunning();
+	alltss[t->getCPU()]->ioMapOffset = IO_MAP_OFFSET;
+	if(forceCpy || ioMap != ioMaps[t->getCPU()])
+		memcpy(alltss[t->getCPU()]->ioMap,ioMap,IO_MAP_SIZE / 8);
 	/* remove the map from other cpus; we have to copy it again because it has changed */
 	if(forceCpy) {
 		size_t i;
 		for(i = 0; i < cpuCount; i++) {
-			if(i != t->cpu && ioMaps[i] == ioMap)
+			if(i != t->getCPU() && ioMaps[i] == ioMap)
 				ioMaps[i] = NULL;
 		}
 	}
-	ioMaps[t->cpu] = ioMap;
+	ioMaps[t->getCPU()] = ioMap;
 }
 
 static void gdt_set_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size,uint8_t access,

@@ -36,23 +36,23 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-static void uenv_startSignalHandler(sThread *t,int sig,fSignal handler);
-static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+static void uenv_startSignalHandler(Thread *t,int sig,fSignal handler);
+static void uenv_addArgs(Thread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
-void uenv_handleSignal(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+void uenv_handleSignal(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	int sig;
 	fSignal handler;
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,sig,handler);
 	else if(res == SIG_CHECK_OTHER)
-		thread_switch();
+		Thread::switchAway();
 }
 
 int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
-	sThread *t = thread_getRunning();
-	sIntrptStackFrame *curStack = thread_getIntrptStack(t);
+	Thread *t = Thread::getRunning();
+	sIntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *regs;
 	uint64_t *sp = (uint64_t*)(curStack[-15]);	/* $254 */
 	sKSpecRegs *sregs;
@@ -60,7 +60,7 @@ int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
 	/* restore rBB, rWW, rXX, rYY and rZZ */
 	sp += 2;
 	curStack[-9] = *sp++;			/* rJ */
-	sregs = thread_getSpecRegsOf(t);
+	sregs = t->getSpecRegs();
 	memcpy(sregs,sp,sizeof(sKSpecRegs));
 	sp += 5;
 	curStack[-15] = (uint64_t)sp;	/* $254 */
@@ -81,7 +81,7 @@ bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sSt
 		uintptr_t entryPoint,A_UNUSED int fd) {
 	uint64_t *ssp,*rsp;
 	char **argv;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 
 	/*
 	 * Initial software stack:
@@ -101,9 +101,9 @@ bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sSt
 	 */
 
 	/* get register-stack */
-	thread_getStackRange(t,(uintptr_t*)&rsp,NULL,0);
+	t->getStackRange((uintptr_t*)&rsp,NULL,0);
 	/* get software-stack */
-	thread_getStackRange(t,NULL,(uintptr_t*)&ssp,1);
+	t->getStackRange(NULL,(uintptr_t*)&ssp,1);
 
 	/* copy arguments on the user-stack (8byte space) */
 	ssp--;
@@ -144,7 +144,7 @@ bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sSt
 
 uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint64_t *rsp,*ssp;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sStartupInfo sinfo;
 	sinfo.progEntry = t->proc->entryPoint;
 	sinfo.linkerEntry = 0;
@@ -207,9 +207,9 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	}
 
 	/* get register-stack */
-	thread_getStackRange(t,(uintptr_t*)&rsp,NULL,0);
+	t->getStackRange((uintptr_t*)&rsp,NULL,0);
 	/* get software-stack */
-	thread_getStackRange(t,NULL,(uintptr_t*)&ssp,1);
+	t->getStackRange(NULL,(uintptr_t*)&ssp,1);
 
 	/* store location to UNSAVE from and the thread-argument */
 	*--ssp = sinfo.stackBegin;
@@ -220,8 +220,8 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return ssp;
 }
 
-static void uenv_startSignalHandler(sThread *t,int sig,fSignal handler) {
-	sIntrptStackFrame *curStack = thread_getIntrptStack(t);
+static void uenv_startSignalHandler(Thread *t,int sig,fSignal handler) {
+	sIntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
 	sKSpecRegs *sregs;
 	if(!paging_isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(uint64_t))) {
@@ -231,7 +231,7 @@ static void uenv_startSignalHandler(sThread *t,int sig,fSignal handler) {
 	}
 
 	/* backup rBB, rWW, rXX, rYY and rZZ */
-	sregs = thread_getSpecRegsOf(t);
+	sregs = t->getSpecRegs();
 	memcpy(sp - 5,sregs,sizeof(sKSpecRegs));
 	sp -= 6;
 	*sp-- = curStack[-9];			/* rJ */
@@ -244,12 +244,12 @@ static void uenv_startSignalHandler(sThread *t,int sig,fSignal handler) {
 	sregs->rxx = 1UL << 63;
 }
 
-static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+static void uenv_addArgs(Thread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread) {
 	/* put address and size of the tls-region on the stack */
 	sKSpecRegs *sregs;
 	uintptr_t tlsStart,tlsEnd;
-	if(thread_getTLSRange(t,&tlsStart,&tlsEnd)) {
+	if(t->getTLSRange(&tlsStart,&tlsEnd)) {
 		rsp[5] = tlsStart;
 		rsp[6] = tlsEnd - tlsStart;
 	}
@@ -262,12 +262,12 @@ static void uenv_addArgs(sThread *t,const sStartupInfo *info,uint64_t *rsp,uint6
 
 	if(!thread) {
 		/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
-		uint64_t *frame = thread_getIntrptStack(t);
+		uint64_t *frame = t->getIntrptStack();
 		frame[-(12 + 2 + 1)] = (uint64_t)ssp;
 		frame[-(12 + 2 + 2)] = (uint64_t)ssp;
 
 		/* setup start */
-		sregs = thread_getSpecRegsOf(t);
+		sregs = t->getSpecRegs();
 		sregs->rww = entry;
 		sregs->rxx = 1UL << 63;
 	}

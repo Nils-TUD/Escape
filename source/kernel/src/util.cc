@@ -57,7 +57,7 @@ void util_srand(uint seed) {
 
 void util_panic(const char *fmt, ...) {
 	va_list ap;
-	const sThread *t = thread_getRunning();
+	const Thread *t = Thread::getRunning();
 	util_panic_arch();
 	vid_clearScreen();
 

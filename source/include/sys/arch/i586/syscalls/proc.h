@@ -23,7 +23,7 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_reqports(sThread *t,sIntrptStackFrame *stack);
-int sysc_relports(sThread *t,sIntrptStackFrame *stack);
-int sysc_vm86start(sThread *t,sIntrptStackFrame *stack);
-int sysc_vm86int(sThread *t,sIntrptStackFrame *stack);
+int sysc_reqports(Thread *t,sIntrptStackFrame *stack);
+int sysc_relports(Thread *t,sIntrptStackFrame *stack);
+int sysc_vm86start(Thread *t,sIntrptStackFrame *stack);
+int sysc_vm86int(Thread *t,sIntrptStackFrame *stack);

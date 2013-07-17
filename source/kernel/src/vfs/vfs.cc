@@ -724,7 +724,7 @@ static bool vfs_hasWork(sVFSNode *node) {
 
 int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
 		pid_t pid,ulong ident) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	size_t i;
 	bool isFirstWait = true;
 	int res;
@@ -780,7 +780,7 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool blo
 			timer_sleepFor(t->tid,maxWaitTime,true);
 		spinlock_release(&waitLock);
 
-		thread_switch();
+		Thread::switchAway();
 		if(sig_hasSignalFor(t->tid)) {
 			res = -EINTR;
 			goto error;
@@ -845,7 +845,7 @@ static inode_t vfs_doGetClient(sFile *const *files,size_t count,size_t *index) {
 
 inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags) {
 	sWaitObject waits[MAX_GETWORK_DEVICES];
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	bool inited = false;
 	inode_t clientNo;
 	while(true) {
@@ -876,7 +876,7 @@ inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags)
 		ev_waitObjects(t,waits,count);
 		spinlock_release(&waitLock);
 
-		thread_switch();
+		Thread::switchAway();
 		if(sig_hasSignalFor(t->tid)) {
 			clientNo = -EINTR;
 			break;
@@ -1273,7 +1273,7 @@ void vfs_removeProcess(pid_t pid) {
 bool vfs_createThread(tid_t tid) {
 	char *name;
 	sVFSNode *n,*dir;
-	const sThread *t = thread_getById(tid);
+	const Thread *t = Thread::getById(tid);
 
 	/* build name */
 	name = (char*)cache_alloc(12);
@@ -1312,7 +1312,7 @@ errorDir:
 
 void vfs_removeThread(tid_t tid) {
 	char name[12];
-	sThread *t = thread_getById(tid);
+	Thread *t = Thread::getById(tid);
 	sVFSNode *n,*dir;
 	bool isValid;
 

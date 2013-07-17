@@ -50,7 +50,7 @@ static void test_sched(void) {
 	/* dequeue */
 	pp = (sProc*)x;
 	while((p = sched_dequeueReady()) != NULL) {
-		p->state = ST_UNUSED;
+		p->state = Thread::UNUSED;
 		if(p != pp) {
 			res = false;
 			break;
@@ -74,7 +74,7 @@ static void test_sched(void) {
 	for(i = 4; i >= 0; i--) {
 		res = res && sched_dequeueReadyProc(p);
 		res = res && !sched_dequeueReadyProc(p);
-		p->state = ST_UNUSED;
+		p->state = Thread::UNUSED;
 		p--;
 	}
 	if(res)
@@ -93,7 +93,7 @@ static void test_sched(void) {
 	for(i = 0; i < 5; i++) {
 		res = res && sched_dequeueReadyProc(rand[i]);
 		res = res && !sched_dequeueReadyProc(rand[i]);
-		rand[i]->state = ST_UNUSED;
+		rand[i]->state = Thread::UNUSED;
 	}
 	if(res)
 		test_caseSucceeded();

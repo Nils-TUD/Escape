@@ -23,7 +23,7 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_createdev(sThread *t,sIntrptStackFrame *stack);
-int sysc_getclientid(sThread *t,sIntrptStackFrame *stack);
-int sysc_getclient(sThread *t,sIntrptStackFrame *stack);
-int sysc_getwork(sThread *t,sIntrptStackFrame *stack);
+int sysc_createdev(Thread *t,sIntrptStackFrame *stack);
+int sysc_getclientid(Thread *t,sIntrptStackFrame *stack);
+int sysc_getclient(Thread *t,sIntrptStackFrame *stack);
+int sysc_getwork(Thread *t,sIntrptStackFrame *stack);

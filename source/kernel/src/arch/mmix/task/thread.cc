@@ -83,38 +83,26 @@ EXTERN_C int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,pagedir
 
 extern void *stackCopy;
 extern uint64_t stackCopySize;
-static sThread *cur = NULL;
+Thread *Thread::cur = NULL;
 
-int thread_initArch(sThread *t) {
-	t->archAttr.kstackFrame = pmem_allocate(FRM_KERNEL);
-	if(t->archAttr.kstackFrame == 0)
+int ThreadBase::initArch(Thread *t) {
+	t->kstackFrame = pmem_allocate(FRM_KERNEL);
+	if(t->kstackFrame == 0)
 		return -ENOMEM;
-	t->archAttr.tempStack = -1;
+	t->tempStack = -1;
 	return 0;
 }
 
-void thread_addInitialStack(sThread *t) {
-	assert(t->tid == INIT_TID);
-	assert(vmm_map(t->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-			MAP_STACK | MAP_GROWABLE,NULL,0,t->stackRegions + 0) == 0);
-	assert(vmm_map(t->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,t->stackRegions + 1) == 0);
-}
-
-size_t thread_getThreadFrmCnt(void) {
-	return INITIAL_STACK_PAGES * 2;
-}
-
-int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
-	dst->archAttr.kstackFrame = pmem_allocate(FRM_KERNEL);
-	if(dst->archAttr.kstackFrame == 0)
+int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
+	dst->kstackFrame = pmem_allocate(FRM_KERNEL);
+	if(dst->kstackFrame == 0)
 		return -ENOMEM;
 	if(!cloneProc) {
 		/* add a new stack-region for the register-stack */
 		int res = vmm_map(dst->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
-			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
+			pmem_free(dst->kstackFrame,FRM_KERNEL);
 			return res;
 		}
 		/* add a new stack-region for the software-stack */
@@ -124,16 +112,15 @@ int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
 			/* remove register-stack */
 			vmm_remove(dst->proc->pid,dst->stackRegions[0]);
 			dst->stackRegions[0] = NULL;
-			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
+			pmem_free(dst->kstackFrame,FRM_KERNEL);
 			return res;
 		}
 	}
-	memcpy(dst->archAttr.specRegLevels,src->archAttr.specRegLevels,
-			sizeof(sKSpecRegs) * MAX_INTRPT_LEVELS);
+	memcpy(dst->specRegLevels,src->specRegLevels,sizeof(sKSpecRegs) * MAX_INTRPT_LEVELS);
 	return 0;
 }
 
-void thread_freeArch(sThread *t) {
+void ThreadBase::freeArch(Thread *t) {
 	int i;
 	for(i = 0; i < 2; i++) {
 		if(t->stackRegions[i] != NULL) {
@@ -141,56 +128,32 @@ void thread_freeArch(sThread *t) {
 			t->stackRegions[i] = NULL;
 		}
 	}
-	if(t->archAttr.tempStack != (frameno_t)-1) {
-		pmem_free(t->archAttr.tempStack,FRM_KERNEL);
-		t->archAttr.tempStack = -1;
+	if(t->tempStack != (frameno_t)-1) {
+		pmem_free(t->tempStack,FRM_KERNEL);
+		t->tempStack = -1;
 	}
-	pmem_free(t->archAttr.kstackFrame,FRM_KERNEL);
+	pmem_free(t->kstackFrame,FRM_KERNEL);
 }
 
-sThread *thread_getRunning(void) {
-	return cur;
-}
-
-void thread_setRunning(sThread *t) {
-	cur = t;
-}
-
-sKSpecRegs *thread_getSpecRegsOf(const sThread *t) {
-	return const_cast<sKSpecRegs*>(t->archAttr.specRegLevels) + t->intrptLevel - 1;
-}
-
-void thread_pushSpecRegs(void) {
-	sThread *t = thread_getRunning();
-	sKSpecRegs *sregs = t->archAttr.specRegLevels + t->intrptLevel - 1;
-	cpu_getKSpecials(&sregs->rbb,&sregs->rww,&sregs->rxx,&sregs->ryy,&sregs->rzz);
-}
-
-void thread_popSpecRegs(void) {
-	sThread *t = thread_getRunning();
-	sKSpecRegs *sregs = t->archAttr.specRegLevels + t->intrptLevel - 1;
-	cpu_setKSpecials(sregs->rbb,sregs->rww,sregs->rxx,sregs->ryy,sregs->rzz);
-}
-
-int thread_finishClone(sThread *t,sThread *nt) {
+int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	int res;
-	nt->archAttr.tempStack = pmem_allocate(FRM_KERNEL);
-	if(nt->archAttr.tempStack == 0)
+	nt->tempStack = pmem_allocate(FRM_KERNEL);
+	if(nt->tempStack == 0)
 		return -ENOMEM;
-	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->archAttr.tempStack * PAGE_SIZE)));
+	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->tempStack * PAGE_SIZE)));
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
 		/* switch stacks */
-		frameno_t kstack = t->archAttr.kstackFrame;
-		t->archAttr.kstackFrame = nt->archAttr.kstackFrame;
-		nt->archAttr.kstackFrame = kstack;
+		frameno_t kstack = t->kstackFrame;
+		t->kstackFrame = nt->kstackFrame;
+		nt->kstackFrame = kstack;
 	}
 	return res;
 }
 
-void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint) {
 	/* copy stack of kernel-start */
-	uint64_t *ssp,*rsp = (uint64_t*)(DIR_MAPPED_SPACE | (nt->archAttr.kstackFrame * PAGE_SIZE));
+	uint64_t *ssp,*rsp = (uint64_t*)(DIR_MAPPED_SPACE | (nt->kstackFrame * PAGE_SIZE));
 	uintptr_t start = (uintptr_t)rsp;
 	memcpy(rsp,&stackCopy,stackCopySize);
 	rsp += stackCopySize / sizeof(uint64_t) - 1;
@@ -206,41 +169,33 @@ void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,ui
 	rsp[-(13 + 1)] = (uint64_t)ssp;									/* $254 */
 	rsp[-(13 + 2)] = (uint64_t)ssp;									/* $253 */
 	/* no tempstack here */
-	nt->archAttr.tempStack = -1;
+	nt->tempStack = -1;
 }
 
-uint64_t thread_getTSC(void) {
-	return cpu_rdtsc();
-}
-
-uint64_t thread_ticksPerSec(void) {
-	return cpu_getSpeed();
-}
-
-uint64_t thread_getRuntime(const sThread *t) {
-	if(t->state == ST_RUNNING) {
+uint64_t ThreadBase::getRuntime() const {
+	if(getState() == Thread::RUNNING) {
 		/* if the thread is running, we must take the time since the last scheduling of that thread
 		 * into account. this is especially a problem with idle-threads */
 		uint64_t cycles = cpu_rdtsc();
-		return (t->stats.runtime + timer_cyclesToTime(cycles - t->stats.cycleStart));
+		return (stats.runtime + timer_cyclesToTime(cycles - stats.cycleStart));
 	}
-	return t->stats.runtime;
+	return stats.runtime;
 }
 
-bool thread_beginTerm(sThread *t) {
+bool ThreadBase::beginTerm() {
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	bool res = t->state != ST_RUNNING && t->termHeapCount == 0 && t->resources == 0;
+	bool res = getState() != Thread::RUNNING && termHeapCount == 0 && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
-		sched_removeThread(t);
+		sched_removeThread(static_cast<Thread*>(this));
 	return res;
 }
 
-void thread_doSwitch(void) {
+void ThreadBase::doSwitch(void) {
 	uint64_t cycles,runtime;
-	sThread *old = thread_getRunning();
-	sThread *n;
+	Thread *old = Thread::getRunning();
+	Thread *n;
 
 	/* update runtime-stats */
 	cycles = cpu_rdtsc();
@@ -255,21 +210,21 @@ void thread_doSwitch(void) {
 	/* switch thread */
 	if(n->tid != old->tid) {
 		time_t timestamp = timer_getTimestamp();
-		thread_setRunning(n);
+		setRunning(n);
 		vmm_setTimestamp(n,timestamp);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
-		if(n->archAttr.tempStack != (frameno_t)-1) {
-			memcpy((void*)(DIR_MAPPED_SPACE | n->archAttr.kstackFrame * PAGE_SIZE),
-					(void*)(DIR_MAPPED_SPACE | n->archAttr.tempStack * PAGE_SIZE),
+		if(n->tempStack != (frameno_t)-1) {
+			memcpy((void*)(DIR_MAPPED_SPACE | n->kstackFrame * PAGE_SIZE),
+					(void*)(DIR_MAPPED_SPACE | n->tempStack * PAGE_SIZE),
 					PAGE_SIZE);
-			pmem_free(n->archAttr.tempStack,FRM_KERNEL);
-			n->archAttr.tempStack = -1;
+			pmem_free(n->tempStack,FRM_KERNEL);
+			n->tempStack = -1;
 		}
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
-		smp_schedule(n->cpu,n,timestamp);
+		smp_schedule(n->getCPU(),n,timestamp);
 		n->stats.cycleStart = cpu_rdtsc();
 		thread_doSwitchTo(&old->save,&n->save,n->proc->pagedir,n->tid);
 	}

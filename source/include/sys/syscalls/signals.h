@@ -23,6 +23,6 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_signal(sThread *t,sIntrptStackFrame *stack);
-int sysc_acksignal(sThread *t,sIntrptStackFrame *stack);
-int sysc_kill(sThread *t,sIntrptStackFrame *stack);
+int sysc_signal(Thread *t,sIntrptStackFrame *stack);
+int sysc_acksignal(Thread *t,sIntrptStackFrame *stack);
+int sysc_kill(Thread *t,sIntrptStackFrame *stack);

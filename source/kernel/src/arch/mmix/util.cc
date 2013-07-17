@@ -37,18 +37,18 @@ static sFuncCall frames[1] = {
 void util_panic_arch(void) {
 }
 
-void util_printUserStateOf(const sThread *t) {
-	sKSpecRegs *sregs = thread_getSpecRegsOf(t);
+void util_printUserStateOf(const Thread *t) {
+	sKSpecRegs *sregs = t->getSpecRegs();
 	vid_printf("User state:\n");
 	prf_pushIndent();
-	intrpt_printStackFrame(thread_getIntrptStack(t));
+	intrpt_printStackFrame(t->getIntrptStack());
 	vid_printf("rBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
 	vid_printf("rYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
 	prf_popIndent();
 }
 
 void util_printUserState(void) {
-	const sThread *t = thread_getRunning();
+	const Thread *t = Thread::getRunning();
 	util_printUserStateOf(t);
 }
 
@@ -64,10 +64,10 @@ sFuncCall *util_getKernelStackTrace(void) {
 	return frames;
 }
 
-sFuncCall *util_getUserStackTraceOf(A_UNUSED sThread *t) {
+sFuncCall *util_getUserStackTraceOf(A_UNUSED Thread *t) {
 	return frames;
 }
 
-sFuncCall *util_getKernelStackTraceOf(A_UNUSED const sThread *t) {
+sFuncCall *util_getKernelStackTraceOf(A_UNUSED const Thread *t) {
 	return frames;
 }

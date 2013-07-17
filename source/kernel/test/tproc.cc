@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
+#include <sys/task/thread.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/video.h>
@@ -66,7 +67,7 @@ static void test_proc_clone(void) {
 		test_assertTrue(pid > 0);
 		tprintf("Destroying process\n");
 		/* first terminate it, then free resources and finally remove the process */
-		assert(thread_beginTerm((sThread*)sll_get(&proc_getByPid(pid)->threads,0)));
+		assert(((Thread*)sll_get(&proc_getByPid(pid)->threads,0))->beginTerm());
 		proc_destroy(pid);
 		proc_kill(pid);
 	}
@@ -77,11 +78,11 @@ static void test_proc_clone(void) {
 static int threadcnt = 0;
 
 static void thread_test(void) {
-	vid_printf("thread %d is running...\n",thread_getRunning()->tid);
+	vid_printf("thread %d is running...\n",Thread::getRunning()->tid);
 	threadcnt++;
 
 	proc_exit(0);
-	thread_switch();
+	Thread::switchAway();
 }
 
 static void test_thread(void) {

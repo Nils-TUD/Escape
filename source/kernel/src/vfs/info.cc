@@ -53,7 +53,7 @@ static ssize_t vfs_info_readHelper(pid_t pid,sVFSNode *node,void *buffer,off_t o
 
 static sProc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer);
 static pid_t vfs_info_getPid(sVFSNode *node,size_t *dataSize,void **buffer);
-static sThread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer);
+static Thread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer);
 
 static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **buffer);
 static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buffer);
@@ -93,7 +93,7 @@ ssize_t vfs_info_traceReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,
 static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sFuncCall *call;
 	sStringBuffer buf;
-	sThread *t = vfs_info_getThread(node,dataSize,buffer);
+	Thread *t = vfs_info_getThread(node,dataSize,buffer);
 	if(!t)
 		return;
 	buf.dynamic = true;
@@ -178,7 +178,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 	sStringBuffer buf;
 	size_t i;
 	ulong stackPages = 0;
-	sThread *t = vfs_info_getThread(node,dataSize,buffer);
+	Thread *t = vfs_info_getThread(node,dataSize,buffer);
 	if(!t)
 		return;
 
@@ -188,7 +188,7 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 	buf.len = 0;
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		uintptr_t stackBegin = 0,stackEnd = 0;
-		if(thread_getStackRange(t,&stackBegin,&stackEnd,i))
+		if(t->getStackRange(&stackBegin,&stackEnd,i))
 			stackPages += (stackEnd - stackBegin) / PAGE_SIZE;
 	}
 
@@ -210,15 +210,15 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"Tid:",t->tid,
 		"Pid:",t->proc->pid,
 		"ProcName:",t->proc->command,
-		"State:",t->state,
-		"Flags:",t->flags & T_IDLE,
-		"Priority:",t->priority,
+		"State:",t->getState(),
+		"Flags:",t->getFlags() & T_IDLE,
+		"Priority:",t->getPriority(),
 		"StackPages:",stackPages,
-		"SchedCount:",t->stats.schedCount,
-		"Syscalls:",t->stats.syscalls,
-		"Runtime:",thread_getRuntime(t),
-		"Cycles:",thread_getCycles(t),
-		"CPU:",t->cpu
+		"SchedCount:",t->getStats().schedCount,
+		"Syscalls:",t->getStats().syscalls,
+		"Runtime:",t->getRuntime(),
+		"Cycles:",t->getStats().lastCycleCount,
+		"CPU:",t->getCPU()
 	);
 	*buffer = buf.str;
 	*dataSize = buf.len;
@@ -263,7 +263,7 @@ static void vfs_info_statsReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,
 		"%-16s%zus\n"
 		,
 		"Processes:",proc_getCount(),
-		"Threads:",thread_getCount(),
+		"Threads:",Thread::getCount(),
 		"Interrupts:",intrpt_getCount(),
 		"CPUCycles:",cycles.val64,
 		"UpTime:",timer_getIntrptCount() / TIMER_FREQUENCY_DIV
@@ -417,8 +417,8 @@ static pid_t vfs_info_getPid(sVFSNode *node,size_t *dataSize,void **buffer) {
 	return pid;
 }
 
-static sThread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sThread *t;
+static Thread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer) {
+	Thread *t;
 	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
@@ -426,7 +426,7 @@ static sThread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer
 		spinlock_release(&node->lock);
 		return NULL;
 	}
-	t = thread_getById(atoi(node->parent->name));
+	t = Thread::getById(atoi(node->parent->name));
 	spinlock_release(&node->lock);
 	return t;
 }
@@ -459,9 +459,9 @@ static ssize_t vfs_info_readHelper(A_UNUSED pid_t pid,sVFSNode *node,USER void *
 	count = MIN(dataSize - offset,count);
 	/* copy */
 	if(count > 0) {
-		thread_addHeapAlloc(mem);
+		Thread::addHeapAlloc(mem);
 		memcpy(buffer,(uint8_t*)mem + offset,count);
-		thread_remHeapAlloc(mem);
+		Thread::remHeapAlloc(mem);
 	}
 	/* free temp storage */
 	cache_free(mem);

@@ -20,7 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/task/thread.h>
+
+class Thread;
 
 /**
  * Inits the terminator
@@ -38,4 +39,4 @@ void term_start(void);
  *
  * @param t the thread
  */
-void term_addDead(sThread *t);
+void term_addDead(Thread *t);

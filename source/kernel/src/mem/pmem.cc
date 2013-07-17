@@ -51,7 +51,7 @@
 
 typedef struct sSwapInJob {
 	uintptr_t addr;
-	sThread *thread;
+	Thread *thread;
 	struct sSwapInJob *next;
 } sSwapInJob;
 
@@ -82,7 +82,7 @@ static size_t swappedOut = 0;
 static size_t swappedIn = 0;
 static bool swapEnabled = false;
 static bool swapping = false;
-static sThread *swapper = NULL;
+static Thread *swapper = NULL;
 static size_t cframes = 0;	/* critical frames; for dynarea, cache and heap */
 static size_t kframes = 0;	/* kernel frames: for pagedirs, page-tables, kstacks, ... */
 static size_t uframes = 0;	/* user frames */
@@ -232,7 +232,7 @@ void pmem_freeContiguous(frameno_t first,size_t count) {
 
 bool pmem_reserve(size_t frameCount) {
 	size_t free;
-	sThread *t;
+	Thread *t;
 	spinlock_aquire(&defLock);
 	free = pmem_getFreeDef();
 	uframes += frameCount;
@@ -243,7 +243,7 @@ bool pmem_reserve(size_t frameCount) {
 	}
 
 	/* swapping not possible? */
-	t = thread_getRunning();
+	t = Thread::getRunning();
 	if(!swapEnabled || t->tid == ATA_TID || t->tid == swapper->tid) {
 		spinlock_release(&defLock);
 		return false;
@@ -256,7 +256,7 @@ bool pmem_reserve(size_t frameCount) {
 			ev_wakeupThread(swapper,EV_SWAP_WORK);
 		ev_wait(t,EVI_SWAP_FREE,0);
 		spinlock_release(&defLock);
-		thread_switchNoSigs();
+		Thread::switchNoSigs();
 		spinlock_aquire(&defLock);
 		free = pmem_getFreeDef();
 	}
@@ -317,13 +317,13 @@ void pmem_free(frameno_t frame,eFrmType type) {
 }
 
 bool pmem_swapIn(uintptr_t addr) {
-	sThread *t;
+	Thread *t;
 	sSwapInJob *job;
 	if(!swapEnabled)
 		return false;
 
 	/* get a free job */
-	t = thread_getRunning();
+	t = Thread::getRunning();
 	spinlock_aquire(&defLock);
 	do {
 		job = siFreelist;
@@ -331,7 +331,7 @@ bool pmem_swapIn(uintptr_t addr) {
 			ev_wait(t,EVI_SWAP_JOB,0);
 			jobWaiters++;
 			spinlock_release(&defLock);
-			thread_switchNoSigs();
+			Thread::switchNoSigs();
 			spinlock_aquire(&defLock);
 			jobWaiters--;
 		}
@@ -350,7 +350,7 @@ bool pmem_swapIn(uintptr_t addr) {
 	/* wait until its done */
 	ev_block(t);
 	spinlock_release(&defLock);
-	thread_switchNoSigs();
+	Thread::switchNoSigs();
 	return true;
 }
 
@@ -359,7 +359,7 @@ void pmem_swapper(void) {
 	sFile *swapFile;
 	pid_t pid;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
-	swapper = thread_getRunning();
+	swapper = Thread::getRunning();
 	pid = swapper->proc->pid;
 	assert(swapEnabled);
 
@@ -418,7 +418,7 @@ void pmem_swapper(void) {
 			/* we may receive new work now */
 			ev_wait(swapper,EVI_SWAP_WORK,0);
 			spinlock_release(&defLock);
-			thread_switch();
+			Thread::switchAway();
 			spinlock_aquire(&defLock);
 		}
 	}

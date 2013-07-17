@@ -131,9 +131,9 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USE
 			offset = con->pos;
 		byteCount = MIN((size_t)(con->pos - offset),count);
 		if(byteCount > 0) {
-			thread_addLock(&node->lock);
+			Thread::addLock(&node->lock);
 			memcpy(buffer,(uint8_t*)con->data + offset,byteCount);
-			thread_remLock(&node->lock);
+			Thread::remLock(&node->lock);
 		}
 	}
 	spinlock_release(&node->lock);
@@ -194,9 +194,9 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *n,USER 
 		con->size = newSize;
 	/* copy the data into the cache; this may segfault, which will leave the the state of the
 	 * file as it was before, except that we've increased the buffer-size */
-	thread_addLock(&n->lock);
+	Thread::addLock(&n->lock);
 	memcpy((uint8_t*)con->data + offset,buffer,count);
-	thread_remLock(&n->lock);
+	Thread::remLock(&n->lock);
 	/* we have checked size for overflow. so it is ok here */
 	con->pos = MAX(con->pos,(off_t)(offset + count));
 	spinlock_release(&n->lock);

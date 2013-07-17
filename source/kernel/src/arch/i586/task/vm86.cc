@@ -86,7 +86,7 @@ static mutex_t vm86Lock;
 
 int vm86_create(void) {
 	sProc *p;
-	sThread *t;
+	Thread *t;
 	size_t i,frameCount;
 	int res;
 	/* already present? */
@@ -104,7 +104,7 @@ int vm86_create(void) {
 	if(res != 0)
 		return 0;
 
-	t = thread_getRunning();
+	t = Thread::getRunning();
 	p = t->proc;
 	vm86Tid = t->tid;
 
@@ -137,7 +137,7 @@ int vm86_create(void) {
 
 	/* block us; we get waked up as soon as someone wants to use us */
 	ev_block(t);
-	thread_switch();
+	Thread::switchAway();
 
 	/* ok, we're back again... */
 	vm86_start();
@@ -146,16 +146,16 @@ int vm86_create(void) {
 }
 
 int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *area) {
-	sThread *t;
-	sThread *vm86t;
+	Thread *t;
+	Thread *vm86t;
 	if(area && BYTES_2_PAGES(area->size) > VM86_MAX_MEMPAGES)
 		return -EINVAL;
 	if(interrupt >= VM86_IVT_SIZE)
 		return -EINVAL;
-	t = thread_getRunning();
+	t = Thread::getRunning();
 
 	/* check whether there still is a vm86-task */
-	vm86t = thread_getById(vm86Tid);
+	vm86t = Thread::getById(vm86Tid);
 	if(vm86t == NULL || !(vm86t->proc->flags & P_VM86))
 		return -ESRCH;
 
@@ -170,7 +170,7 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 
 	/* reserve frames for vm86-thread */
 	if(info.area) {
-		if(!thread_reserveFramesFor(vm86t,BYTES_2_PAGES(info.area->size))) {
+		if(!vm86t->reserveFrames(BYTES_2_PAGES(info.area->size))) {
 			vm86_finish();
 			return -ENOMEM;
 		}
@@ -182,14 +182,14 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
 	ev_block(t);
-	thread_switch();
+	Thread::switchAway();
 
 	/* everything is finished :) */
 	if(vm86Res == 0) {
-		thread_addCallback(vm86_finish);
+		Thread::addCallback(vm86_finish);
 		memcpy(regs,&info.regs,sizeof(sVM86Regs));
 		vm86_copyAreaResult();
-		thread_remCallback(vm86_finish);
+		Thread::remCallback(vm86_finish);
 	}
 
 	/* mark as done */
@@ -351,10 +351,10 @@ static void vm86_pushl(sIntrptStackFrame *stack,uint32_t l) {
 static void vm86_start(void) {
 	volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
 	sIntrptStackFrame *istack;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	assert(caller != INVALID_TID);
 
-	istack = thread_getIntrptStack(t);
+	istack = t->getIntrptStack();
 
 	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
@@ -394,8 +394,8 @@ static void vm86_start(void) {
 }
 
 static void vm86_stop(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
-	sThread *ct = thread_getById(caller);
+	Thread *t = Thread::getRunning();
+	Thread *ct = Thread::getById(caller);
 	vm86Res = 0;
 	if(ct != NULL) {
 		vm86_copyRegResult(stack);
@@ -405,7 +405,7 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 
 	/* block us and do a switch */
 	ev_block(t);
-	thread_switch();
+	Thread::switchAway();
 
 	/* lets start with a new request :) */
 	vm86_start();
@@ -413,7 +413,7 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 
 static void vm86_finish(void) {
 	if(info.area)
-		thread_discardFramesFor(thread_getById(vm86Tid));
+		Thread::getById(vm86Tid)->discardFrames();
 	vm86_clearInfo();
 	caller = INVALID_TID;
 	mutex_release(&vm86Lock);

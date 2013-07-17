@@ -38,10 +38,10 @@ static sFuncCall frames[1] = {
 void util_panic_arch(void) {
 }
 
-void util_printUserStateOf(const sThread *t) {
+void util_printUserStateOf(const Thread *t) {
 	size_t i;
-	uintptr_t kstackAddr = DIR_MAPPED_SPACE | (t->archAttr.kstackFrame << PAGE_SIZE_SHIFT);
-	uintptr_t istackAddr = (uintptr_t)thread_getIntrptStack(t);
+	uintptr_t kstackAddr = DIR_MAPPED_SPACE | (t->getKernelStack() << PAGE_SIZE_SHIFT);
+	uintptr_t istackAddr = (uintptr_t)t->getIntrptStack();
 	if(istackAddr) {
 		sIntrptStackFrame *istack = (sIntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));
 		vid_printf("User state:\n");
@@ -57,7 +57,7 @@ void util_printUserStateOf(const sThread *t) {
 }
 
 void util_printUserState(void) {
-	const sThread *t = thread_getRunning();
+	const Thread *t = Thread::getRunning();
 	util_printUserStateOf(t);
 }
 
@@ -71,10 +71,10 @@ sFuncCall *util_getKernelStackTrace(void) {
 	return frames;
 }
 
-sFuncCall *util_getUserStackTraceOf(A_UNUSED sThread *t) {
+sFuncCall *util_getUserStackTraceOf(A_UNUSED Thread *t) {
 	return frames;
 }
 
-sFuncCall *util_getKernelStackTraceOf(A_UNUSED const sThread *t) {
+sFuncCall *util_getKernelStackTraceOf(A_UNUSED const Thread *t) {
 	return frames;
 }

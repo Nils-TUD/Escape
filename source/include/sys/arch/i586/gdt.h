@@ -66,7 +66,7 @@ cpuid_t gdt_getCPUId(void);
  * @param id the cpu-id
  * @param t the thread
  */
-void gdt_setRunning(cpuid_t id,sThread *t);
+void gdt_setRunning(cpuid_t id,Thread *t);
 
 /**
  * Prepares the run of the given thread, i.e. sets the stack-pointer for interrupts, removes
@@ -76,7 +76,7 @@ void gdt_setRunning(cpuid_t id,sThread *t);
  * @param n the thread to run
  * @return the cpu-id for the new thread
  */
-cpuid_t gdt_prepareRun(sThread *old,sThread *n);
+cpuid_t gdt_prepareRun(Thread *old,Thread *n);
 
 /**
  * Checks whether the io-map is set

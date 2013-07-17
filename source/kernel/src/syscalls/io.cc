@@ -31,7 +31,7 @@
 #include <string.h>
 #include <assert.h>
 
-int sysc_open(sThread *t,sIntrptStackFrame *stack) {
+int sysc_open(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uint flags = (uint)SYSC_ARG2(stack);
@@ -60,7 +60,7 @@ int sysc_open(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-int sysc_fcntl(sThread *t,sIntrptStackFrame *stack) {
+int sysc_fcntl(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	uint cmd = SYSC_ARG2(stack);
 	int arg = (int)SYSC_ARG3(stack);
@@ -80,7 +80,7 @@ int sysc_fcntl(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
+int sysc_pipe(Thread *t,sIntrptStackFrame *stack) {
 	int *readFd = (int*)SYSC_ARG1(stack);
 	int *writeFd = (int*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
@@ -123,7 +123,7 @@ int sysc_pipe(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_stat(sThread *t,sIntrptStackFrame *stack) {
+int sysc_stat(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
@@ -140,7 +140,7 @@ int sysc_stat(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_fstat(sThread *t,sIntrptStackFrame *stack) {
+int sysc_fstat(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
@@ -161,7 +161,7 @@ int sysc_fstat(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_chmod(sThread *t,sIntrptStackFrame *stack) {
+int sysc_chmod(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	mode_t mode = (mode_t)SYSC_ARG2(stack);
@@ -176,7 +176,7 @@ int sysc_chmod(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_chown(sThread *t,sIntrptStackFrame *stack) {
+int sysc_chown(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uid_t uid = (uid_t)SYSC_ARG2(stack);
@@ -192,7 +192,7 @@ int sysc_chown(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
+int sysc_tell(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
@@ -211,7 +211,7 @@ int sysc_tell(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_seek(sThread *t,sIntrptStackFrame *stack) {
+int sysc_seek(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t offset = (off_t)SYSC_ARG2(stack);
 	uint whence = SYSC_ARG3(stack);
@@ -234,7 +234,7 @@ int sysc_seek(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_read(sThread *t,sIntrptStackFrame *stack) {
+int sysc_read(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
@@ -261,7 +261,7 @@ int sysc_read(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,readBytes);
 }
 
-int sysc_write(sThread *t,sIntrptStackFrame *stack) {
+int sysc_write(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	const void *buffer = (const void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
@@ -288,7 +288,7 @@ int sysc_write(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,writtenBytes);
 }
 
-int sysc_send(sThread *t,sIntrptStackFrame *stack) {
+int sysc_send(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	msgid_t id = (msgid_t)SYSC_ARG2(stack);
 	const void *data = (const void*)SYSC_ARG3(stack);
@@ -315,7 +315,7 @@ int sysc_send(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_receive(sThread *t,sIntrptStackFrame *stack) {
+int sysc_receive(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);
 	void *data = (void*)SYSC_ARG3(stack);
@@ -339,7 +339,7 @@ int sysc_receive(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_dup(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_dup(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	int res;
 
@@ -349,7 +349,7 @@ int sysc_dup(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_redirect(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_redirect(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int src = (int)SYSC_ARG1(stack);
 	int dst = (int)SYSC_ARG2(stack);
 	int err = fd_redirect(src,dst);
@@ -358,7 +358,7 @@ int sysc_redirect(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,err);
 }
 
-int sysc_close(sThread *t,sIntrptStackFrame *stack) {
+int sysc_close(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
 
@@ -371,11 +371,11 @@ int sysc_close(sThread *t,sIntrptStackFrame *stack) {
 	if(!vfs_closeFile(pid,file))
 		fd_release(file);
 	else
-		thread_remFileUsage(file);
+		Thread::remFileUsage(file);
 	SYSC_RET1(stack,0);
 }
 
-int sysc_sync(sThread *t,sIntrptStackFrame *stack) {
+int sysc_sync(Thread *t,sIntrptStackFrame *stack) {
 	int res;
 	pid_t pid = t->proc->pid;
 	res = vfs_sync(pid);
@@ -384,7 +384,7 @@ int sysc_sync(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_link(sThread *t,sIntrptStackFrame *stack) {
+int sysc_link(Thread *t,sIntrptStackFrame *stack) {
 	char oldabs[MAX_PATH_LEN + 1];
 	char newabs[MAX_PATH_LEN + 1];
 	int res;
@@ -402,7 +402,7 @@ int sysc_link(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_unlink(sThread *t,sIntrptStackFrame *stack) {
+int sysc_unlink(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
 	pid_t pid = t->proc->pid;
@@ -416,7 +416,7 @@ int sysc_unlink(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_mkdir(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_mkdir(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
 	pid_t pid = proc_getRunning();
@@ -430,7 +430,7 @@ int sysc_mkdir(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_rmdir(sThread *t,sIntrptStackFrame *stack) {
+int sysc_rmdir(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
 	pid_t pid = t->proc->pid;
@@ -444,7 +444,7 @@ int sysc_rmdir(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_mount(sThread *t,sIntrptStackFrame *stack) {
+int sysc_mount(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	char absdev[MAX_PATH_LEN + 1];
 	int res;
@@ -463,7 +463,7 @@ int sysc_mount(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_unmount(sThread *t,sIntrptStackFrame *stack) {
+int sysc_unmount(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
 	pid_t pid = t->proc->pid;

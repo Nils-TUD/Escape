@@ -44,7 +44,7 @@
 /* maximum number of a exception in a row */
 #define MAX_EX_COUNT			10
 
-typedef void (*fIntrptHandler)(sThread *t,sIntrptStackFrame *stack);
+typedef void (*fIntrptHandler)(Thread *t,sIntrptStackFrame *stack);
 typedef struct {
 	fIntrptHandler handler;
 	const char *name;
@@ -54,16 +54,16 @@ typedef struct {
 /**
  * The exception and interrupt-handlers
  */
-static void intrpt_exFatal(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_exSStep(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_exGPF(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_exCoProcNA(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_exPF(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_irqTimer(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_irqDefault(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_syscall(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_ipiWork(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_ipiTerm(sThread *t,sIntrptStackFrame *stack);
+static void intrpt_exFatal(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_exSStep(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_exCoProcNA(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_irqTimer(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_irqDefault(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_syscall(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_ipiWork(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_ipiTerm(Thread *t,sIntrptStackFrame *stack);
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t pfaddr);
 
 static const sInterrupt intrptList[] = {
@@ -152,14 +152,14 @@ uint8_t intrpt_getVectorFor(uint8_t irq) {
 }
 
 void intrpt_handler(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	const sInterrupt *intrpt;
-	size_t level = thread_pushIntrptLevel(t,stack);
+	size_t level = t->pushIntrptLevel(stack);
 	intrptCount++;
 
 	/* we need to save the page-fault address here because swapping may cause other ones */
 	if(stack->intrptNo == EX_PAGE_FAULT)
-		pfAddrs[t->cpu] = cpu_getCR2();
+		pfAddrs[t->getCPU()] = cpu_getCR2();
 
 	intrpt = intrptList + stack->intrptNo;
 	if(intrpt->handler)
@@ -170,14 +170,14 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	}
 
 	/* handle signal */
-	t = thread_getRunning();
+	t = Thread::getRunning();
 	if(level == 1)
 		uenv_handleSignal(t,stack);
 
-	thread_popIntrptLevel(t);
+	t->popIntrptLevel();
 }
 
-static void intrpt_exFatal(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_exFatal(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	vid_printf("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
 			t->proc->pid,t->proc->command);
 	/* count consecutive occurrences */
@@ -199,7 +199,7 @@ static void intrpt_exFatal(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_exGPF(sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack) {
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_AREA)
 		vid_unsetPrintFunc();
@@ -218,16 +218,16 @@ static void intrpt_exGPF(sThread *t,sIntrptStackFrame *stack) {
 	util_panic("GPF @ 0x%x",stack->eip);
 }
 
-static void intrpt_exSStep(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+static void intrpt_exSStep(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	cons_start("step show");
 }
 
-static void intrpt_exCoProcNA(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
-	fpu_handleCoProcNA(&t->archAttr.fpuState);
+static void intrpt_exCoProcNA(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+	fpu_handleCoProcNA(t->getFPUState());
 }
 
-static void intrpt_exPF(sThread *t,sIntrptStackFrame *stack) {
-	uintptr_t addr = pfAddrs[t->cpu];
+static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack) {
+	uintptr_t addr = pfAddrs[t->getCPU()];
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_AREA) {
 		vid_setTargets(TARGET_LOG | TARGET_SCREEN);
@@ -250,7 +250,7 @@ static void intrpt_exPF(sThread *t,sIntrptStackFrame *stack) {
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
 	if(!vmm_pagefault(addr,stack->errorCode & 0x2)) {
 		/* ok, now lets check if the thread wants more stack-pages */
-		if(thread_extendStack(addr) < 0) {
+		if(Thread::extendStack(addr) < 0) {
 			intrpt_printPFInfo(stack,addr);
 			/* TODO proc_segFault();*/
 			util_panic("Process segfaulted");
@@ -258,7 +258,7 @@ static void intrpt_exPF(sThread *t,sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqTimer(sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_irqTimer(Thread *t,sIntrptStackFrame *stack) {
 	bool res;
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
@@ -266,12 +266,12 @@ static void intrpt_irqTimer(sThread *t,sIntrptStackFrame *stack) {
 	res = timer_intrpt();
 	pic_eoi(stack->intrptNo);
 	if(res) {
-		if(thread_getIntrptLevel(t) == 0)
-			thread_switch();
+		if(t->getIntrptLevel() == 0)
+			Thread::switchAway();
 	}
 }
 
-static void intrpt_irqDefault(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+static void intrpt_irqDefault(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
@@ -287,27 +287,27 @@ static void intrpt_irqDefault(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_syscall(sThread *t,sIntrptStackFrame *stack) {
-	t->stats.syscalls++;
+static void intrpt_syscall(Thread *t,sIntrptStackFrame *stack) {
+	t->getStats().syscalls++;
 	sysc_handle(t,stack);
 }
 
-static void intrpt_ipiWork(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+static void intrpt_ipiWork(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	apic_eoi();
 	/* if we have been waked up, but are not idling anymore, wakeup another cpu */
 	/* this may happen if we're about to switch to a non-idle-thread and have idled previously,
 	 * while smp_wakeupCPU() was called. */
-	if(!(t->flags & T_IDLE))
+	if(!(t->getFlags() & T_IDLE))
 		smp_wakeupCPU();
 	/* otherwise switch to non-idle-thread (if there is any) */
 	else
-		thread_switch();
+		Thread::switchAway();
 }
 
-static void intrpt_ipiTerm(sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+static void intrpt_ipiTerm(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	/* stop running the thread, if it should die */
-	if(t->newState == ST_ZOMBIE)
-		thread_switch();
+	if(t->getNewState() == Thread::ZOMBIE)
+		Thread::switchAway();
 }
 
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t addr) {

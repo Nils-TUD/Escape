@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <errno.h>
 
-int sysc_reqports(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_reqports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	int err;
@@ -43,7 +43,7 @@ int sysc_reqports(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_relports(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_relports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	int err;
@@ -58,7 +58,7 @@ int sysc_relports(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_vm86start(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
+int sysc_vm86start(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	int res;
 	if((res = vm86_create()) == 0) {
 		/* don't change any registers on the stack here */
@@ -67,7 +67,7 @@ int sysc_vm86start(A_UNUSED sThread *t,A_UNUSED sIntrptStackFrame *stack) {
 	SYSC_ERROR(stack,res);
 }
 
-int sysc_vm86int(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_vm86int(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	sVM86Regs *regs = (sVM86Regs*)SYSC_ARG2(stack);
 	sVM86Memarea *mArea = (sVM86Memarea*)SYSC_ARG3(stack);

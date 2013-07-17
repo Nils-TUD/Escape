@@ -21,7 +21,7 @@
 #include <string.h>
 
 #ifdef IN_KERNEL
-#	include <sys/mem/cache.h>
+#	include <sys/cwrap.h>
 #	define malloc cache_alloc
 #else
 #	include <stdlib.h>

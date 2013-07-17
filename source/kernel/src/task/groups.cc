@@ -36,9 +36,9 @@ bool groups_set(pid_t pid,size_t count,USER const gid_t *groups) {
 		grpCpy = (gid_t*)cache_alloc(count * sizeof(gid_t));
 		if(!grpCpy)
 			return false;
-		thread_addHeapAlloc(grpCpy);
+		Thread::addHeapAlloc(grpCpy);
 		memcpy(grpCpy,groups,count * sizeof(gid_t));
-		thread_remHeapAlloc(grpCpy);
+		Thread::remHeapAlloc(grpCpy);
 	}
 
 	g = (sProcGroups*)cache_alloc(sizeof(sProcGroups));

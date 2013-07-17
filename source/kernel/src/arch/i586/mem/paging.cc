@@ -248,7 +248,7 @@ int paging_cloneKernelspace(pagedir_t *pdir,tid_t tid) {
 	uintptr_t kstackAddr,kstackPtAddr;
 	frameno_t pdirFrame,stackPtFrame;
 	pde_t *pd,*npd;
-	sThread *t = thread_getById(tid);
+	Thread *t = Thread::getById(tid);
 	pagedir_t *cur = paging_getPageDir();
 	spinlock_aquire(&pagingLock);
 
@@ -288,7 +288,7 @@ int paging_cloneKernelspace(pagedir_t *pdir,tid_t tid) {
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
-	kstackAddr = t->archAttr.kernelStack;
+	kstackAddr = t->getKernelStack();
 	npd[ADDR_TO_PDINDEX(kstackAddr)] =
 			stackPtFrame << PAGE_SIZE_SHIFT | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 	/* clear the page-table */
@@ -410,7 +410,7 @@ frameno_t paging_demandLoad(const void *buffer,size_t loadCount,A_UNUSED ulong r
 	frameno_t frame;
 	pagedir_t *pdir = paging_getPageDir();
 	spinlock_aquire(&pagingLock);
-	frame = thread_getFrame();
+	frame = Thread::getRunning()->getFrame();
 	paging_doMapTo(pdir,TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
 	paging_doUnmapFrom(pdir,TEMP_MAP_AREA,1,false);
@@ -588,7 +588,7 @@ static ssize_t paging_doMapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *fr
 						goto error;
 				}
 				else
-					frame = thread_getFrame();
+					frame = Thread::getRunning()->getFrame();
 				pte |= frame << PAGE_SIZE_SHIFT;
 			}
 			else {

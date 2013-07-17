@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 #ifdef IN_KERNEL
-#	include <sys/video.h>
+#	include <sys/cwrap.h>
 #	define rprintf	vid_printf
 #else
 #	include <stdio.h>

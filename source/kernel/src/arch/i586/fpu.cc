@@ -65,8 +65,8 @@ void fpu_lockFPU(void) {
 }
 
 void fpu_handleCoProcNA(sFPUState **state) {
-	sThread *t = thread_getRunning();
-	sFPUState **current = curStates[t->cpu];
+	Thread *t = Thread::getRunning();
+	sFPUState **current = curStates[t->getCPU()];
 	if(current != state) {
 		/* if any process has used the FPU in the past */
 		if(current != NULL) {
@@ -89,7 +89,7 @@ void fpu_handleCoProcNA(sFPUState **state) {
 			cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
 
 		/* init FPU for new process */
-		curStates[t->cpu] = state;
+		curStates[t->getCPU()] = state;
 		if(*state != NULL) {
 			__asm__ volatile (
 				"frstor %0" : : "m" (**state)

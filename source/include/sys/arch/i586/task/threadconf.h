@@ -48,9 +48,3 @@ typedef struct {
 	 * if-statement or whether we return to the instruction after thread_resume() doesn't matter.
 	 */
 } sThreadRegs;
-
-typedef struct {
-	uintptr_t kernelStack;
-	/* FPU-state; initially NULL */
-	sFPUState *fpuState;
-} sThreadArchAttr;

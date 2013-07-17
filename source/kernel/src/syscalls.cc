@@ -35,7 +35,7 @@
 #include <errno.h>
 
 /* syscall-handlers */
-typedef int (*fSyscall)(sThread *t,sIntrptStackFrame *stack);
+typedef int (*fSyscall)(Thread *t,sIntrptStackFrame *stack);
 
 /* for syscall-definitions */
 typedef struct {
@@ -128,7 +128,7 @@ static const sSyscall syscalls[] = {
 #endif
 };
 
-void sysc_handle(sThread *t,sIntrptStackFrame *stack) {
+void sysc_handle(Thread *t,sIntrptStackFrame *stack) {
 	uint sysCallNo = SYSC_NUMBER(stack);
 	if(sysCallNo >= ARRAY_SIZE(syscalls)) {
 		SYSC_SETERROR(stack,-EINVAL);

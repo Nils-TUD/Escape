@@ -39,11 +39,11 @@
 #include <errno.h>
 #include <string.h>
 
-int sysc_getpid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getpid(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->proc->pid);
 }
 
-int sysc_getppid(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_getppid(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	sProc *p = proc_getByPid(pid);
 	if(!p)
@@ -52,11 +52,11 @@ int sysc_getppid(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,p->parentPid);
 }
 
-int sysc_getuid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getuid(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->proc->ruid);
 }
 
-int sysc_setuid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_setuid(Thread *t,sIntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
 	sProc *p = t->proc;
 	if(p->euid != ROOT_UID)
@@ -68,11 +68,11 @@ int sysc_setuid(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getgid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getgid(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->proc->rgid);
 }
 
-int sysc_setgid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_setgid(Thread *t,sIntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
 	sProc *p = t->proc;
 	if(p->euid != ROOT_UID)
@@ -84,11 +84,11 @@ int sysc_setgid(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_geteuid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_geteuid(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->proc->euid);
 }
 
-int sysc_seteuid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_seteuid(Thread *t,sIntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
 	sProc *p = t->proc;
 	/* if not root, it has to be either ruid, euid or suid */
@@ -99,11 +99,11 @@ int sysc_seteuid(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getegid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getegid(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->proc->egid);
 }
 
-int sysc_setegid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_setegid(Thread *t,sIntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
 	sProc *p = t->proc;
 	/* if not root, it has to be either rgid, egid or sgid */
@@ -114,7 +114,7 @@ int sysc_setegid(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getgroups(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getgroups(Thread *t,sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	gid_t *list = (gid_t*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
@@ -125,7 +125,7 @@ int sysc_getgroups(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,size);
 }
 
-int sysc_setgroups(sThread *t,sIntrptStackFrame *stack) {
+int sysc_setgroups(Thread *t,sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
@@ -137,13 +137,13 @@ int sysc_setgroups(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_isingroup(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_isingroup(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	gid_t gid = (gid_t)SYSC_ARG2(stack);
 	SYSC_RET1(stack,groups_contains(pid,gid));
 }
 
-int sysc_fork(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_fork(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int res = proc_clone(0);
 	/* error? */
 	if(res < 0)
@@ -151,7 +151,7 @@ int sysc_fork(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_waitchild(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_waitchild(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
 	int res;
 	if(state != NULL && !paging_isInUserSpace((uintptr_t)state,sizeof(sExitState)))
@@ -163,7 +163,7 @@ int sysc_waitchild(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getenvito(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getenvito(Thread *t,sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	size_t index = SYSC_ARG3(stack);
@@ -178,7 +178,7 @@ int sysc_getenvito(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getenvto(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getenvto(Thread *t,sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
@@ -195,7 +195,7 @@ int sysc_getenvto(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_setenv(sThread *t,sIntrptStackFrame *stack) {
+int sysc_setenv(Thread *t,sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
@@ -207,7 +207,7 @@ int sysc_setenv(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_exec(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_exec(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);

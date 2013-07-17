@@ -20,7 +20,57 @@
 #pragma once
 
 #include <sys/common.h>
-/**
- * Performs a thread-switch
- */
-void thread_doSwitch(void);
+#include <sys/task/timer.h>
+
+class Thread : public ThreadBase {
+	friend class ThreadBase;
+public:
+	/**
+	 * @return the frame mapped at KERNEL_STACK
+	 */
+	frameno_t getKernelStack() const {
+		return kstackFrame;
+	}
+
+private:
+	frameno_t kstackFrame;
+	static Thread *cur;
+};
+
+inline void ThreadBase::addInitialStack() {
+	assert(tid == INIT_TID);
+	assert(vmm_map(proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+			MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,stackRegions + 0) == 0);
+}
+
+inline size_t ThreadBase::getThreadFrmCnt() {
+	return INITIAL_STACK_PAGES;
+}
+
+inline void ThreadBase::freeArch(Thread *t) {
+	if(t->stackRegions[0] != NULL) {
+		vmm_remove(t->proc->pid,t->stackRegions[0]);
+		t->stackRegions[0] = NULL;
+	}
+	pmem_free(t->kstackFrame,FRM_KERNEL);
+}
+
+inline Thread *ThreadBase::getRunning() {
+	return Thread::cur;
+}
+
+inline void ThreadBase::setRunning(Thread *t) {
+	Thread::cur = t;
+}
+
+inline uint64_t ThreadBase::getTSC() {
+	return timer_getTimestamp();
+}
+
+inline uint64_t ThreadBase::ticksPerSec() {
+	return 1000;
+}
+
+inline uint64_t ThreadBase::getRuntime() const {
+	return stats.runtime;
+}

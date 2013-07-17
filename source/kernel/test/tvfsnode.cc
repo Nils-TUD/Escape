@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
+#include <sys/task/thread.h>
 #include <sys/video.h>
 #include "tvfsnode.h"
 #include "testutils.h"
@@ -98,7 +99,7 @@ static void test_vfs_node_getPath(void) {
 }
 
 static void test_vfs_node_file_refs(void) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	pid_t pid = t->proc->pid;
 	sFile *f1,*f2;
 	sVFSNode *n;
@@ -129,7 +130,7 @@ static void test_vfs_node_file_refs(void) {
 }
 
 static void test_vfs_node_dir_refs(void) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	pid_t pid = t->proc->pid;
 	sFile *f1;
 	sVFSNode *n,*f;

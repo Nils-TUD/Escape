@@ -30,11 +30,11 @@
 #include <string.h>
 #include <errno.h>
 
-static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
+static int elf_finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
 		sFile *file,sStartupInfo *info);
 
 int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sElfEHeader *eheader = (sElfEHeader*)code;
 
 	/* at first, SYNCID the text-region */
@@ -55,7 +55,7 @@ int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info
 
 int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info) {
 	int res = -ENOEXEC;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
 	sElfSHeader *secHeaders = (sElfSHeader*)cache_alloc(headerSize);
 	if(secHeaders == NULL) {
@@ -63,7 +63,7 @@ int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info
 		return -ENOEXEC;
 	}
 
-	thread_addHeapAlloc(secHeaders);
+	Thread::addHeapAlloc(secHeaders);
 	if(vfs_seek(t->proc->pid,file,eheader->e_shoff,SEEK_SET) < 0) {
 		vid_printf("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
@@ -78,19 +78,19 @@ int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info
 	res = elf_finish(t,eheader,secHeaders,file,info);
 
 error:
-	thread_remHeapAlloc(secHeaders);
+	Thread::remHeapAlloc(secHeaders);
 	cache_free(secHeaders);
 	return res;
 }
 
-static int elf_finish(sThread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
+static int elf_finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
 		sFile *file,sStartupInfo *info) {
 	/* build register-stack */
 	int globalNum = 0;
 	size_t j;
 	ssize_t res;
 	uint64_t *stack;
-	if(!thread_getStackRange(t,(uintptr_t*)&stack,NULL,0))
+	if(!t->getStackRange((uintptr_t*)&stack,NULL,0))
 		return -ENOMEM;
 	*stack++ = 0;	/* $0 */
 	*stack++ = 0;	/* $1 */

@@ -30,19 +30,19 @@
 #include <string.h>
 #include <errno.h>
 
-int sysc_chgsize(sThread *t,sIntrptStackFrame *stack) {
+int sysc_chgsize(Thread *t,sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	pid_t pid = t->proc->pid;
 	size_t oldEnd;
 	if(count > 0)
-		thread_reserveFrames(count);
+		t->reserveFrames(count);
 	oldEnd = vmm_grow(pid,t->proc->dataAddr,count);
 	if(count > 0)
-		thread_discardFrames();
+		t->discardFrames();
 	SYSC_RET1(stack,oldEnd);
 }
 
-int sysc_mmap(sThread *t,sIntrptStackFrame *stack) {
+int sysc_mmap(Thread *t,sIntrptStackFrame *stack) {
 	uintptr_t addr = SYSC_ARG1(stack);
 	size_t byteCount = SYSC_ARG2(stack);
 	size_t loadCount = SYSC_ARG3(stack);
@@ -65,9 +65,9 @@ int sysc_mmap(sThread *t,sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,-EINVAL);
 	}
 	if(flags & MAP_TLS) {
-		if(thread_getTLSRegion(t) != NULL)
+		if(t->getTLSRegion() != NULL)
 			SYSC_ERROR(stack,-EINVAL);
-		thread_reserveFrames(BYTES_2_PAGES(byteCount));
+		t->reserveFrames(BYTES_2_PAGES(byteCount));
 	}
 	if(fd != -1) {
 		/* get file */
@@ -83,8 +83,8 @@ int sysc_mmap(sThread *t,sIntrptStackFrame *stack) {
 	/* save tls-region-number */
 	if(flags & MAP_TLS) {
 		if(res == 0)
-			thread_setTLSRegion(t,vm);
-		thread_discardFrames();
+			t->setTLSRegion(vm);
+		t->discardFrames();
 	}
 	if(res < 0)
 		SYSC_ERROR(stack,res);
@@ -93,7 +93,7 @@ int sysc_mmap(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-int sysc_mprotect(sThread *t,sIntrptStackFrame *stack) {
+int sysc_mprotect(Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->proc->pid;
 	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
@@ -108,7 +108,7 @@ int sysc_mprotect(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_munmap(sThread *t,sIntrptStackFrame *stack) {
+int sysc_munmap(Thread *t,sIntrptStackFrame *stack) {
 	void *virt = (void*)SYSC_ARG1(stack);
 	sVMRegion *reg = vmm_getRegion(t->proc,(uintptr_t)virt);
 	if(reg == NULL)
@@ -117,7 +117,7 @@ int sysc_munmap(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_regaddphys(sThread *t,sIntrptStackFrame *stack) {
+int sysc_regaddphys(Thread *t,sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
@@ -132,7 +132,7 @@ int sysc_regaddphys(sThread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 	/* reserve frames if we don't want to use contiguous physical memory */
 	if(!physCpy && !align)
-		thread_reserveFrames(BYTES_2_PAGES(bytes));
+		t->reserveFrames(BYTES_2_PAGES(bytes));
 
 	addr = vmm_addPhys(pid,&physCpy,bytes,align,true);
 	if(addr == 0)

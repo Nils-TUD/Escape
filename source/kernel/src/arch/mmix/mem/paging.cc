@@ -163,7 +163,7 @@ void paging_removeAccess(void) {
 
 frameno_t paging_demandLoad(const void *buffer,size_t loadCount,ulong regFlags) {
 	/* copy into frame */
-	frameno_t frame = thread_getFrame();
+	frameno_t frame = Thread::getRunning()->getFrame();
 	uintptr_t addr = frame * PAGE_SIZE | DIR_MAPPED_SPACE;
 	memcpy((void*)addr,buffer,loadCount);
 	/* if its an executable region, we have to syncid the memory afterwards */
@@ -346,7 +346,7 @@ ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size
 		else if(flags & PG_PRESENT) {
 			if(frames == NULL) {
 				/* we can't map anything for the kernel on mmix */
-				pte |= thread_getFrame() << PAGE_SIZE_SHIFT;
+				pte |= Thread::getRunning()->getFrame() << PAGE_SIZE_SHIFT;
 			}
 			else {
 				if(flags & PG_ADDR_TO_FRAME)

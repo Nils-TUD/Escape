@@ -26,6 +26,8 @@
 #include <sys/mem/swapmap.h>
 #include <sys/task/event.h>
 #include <sys/task/smp.h>
+#include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
@@ -79,7 +81,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 		return 0;
 
 	/* if *phys is not set yet, we should allocate physical contiguous memory */
-	thread_addHeapAlloc(frames);
+	Thread::addHeapAlloc(frames);
 	if(*phys == 0) {
 		if(align) {
 			ssize_t first = pmem_allocateContiguous(pages,align / PAGE_SIZE);
@@ -129,7 +131,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 		*phys = frames[0] * PAGE_SIZE;
 	}
 	vmm_relProc(p);
-	thread_remHeapAlloc(frames);
+	Thread::remHeapAlloc(frames);
 	cache_free(frames);
 	return vm->virt;
 
@@ -138,7 +140,7 @@ errorRel:
 errorRem:
 	vmm_remove(pid,vm);
 error:
-	thread_remHeapAlloc(frames);
+	Thread::remHeapAlloc(frames);
 	cache_free(frames);
 	return 0;
 }
@@ -236,12 +238,12 @@ int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int
 	if(DISABLE_DEMLOAD || (rflags & MAP_POPULATE)) {
 		size_t i;
 		/* ensure that we don't discard frames that we might need afterwards */
-		sThread *t = thread_getRunning();
-		size_t oldres = sll_length(&t->reqFrames);
-		thread_discardFramesFor(t);
+		Thread *t = Thread::getRunning();
+		size_t oldres = t->getReservedFrmCnt();
+		t->discardFrames();
 		for(i = 0; i < vm->reg->pfSize; i++)
 			vmm_pagefault(vm->virt + i * PAGE_SIZE,false);
-		thread_reserveFramesFor(t,oldres);
+		t->reserveFrames(oldres);
 	}
 	*vmreg = vm;
 	return 0;
@@ -378,7 +380,7 @@ void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
 	}
 }
 
-bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr) {
+bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 	frameno_t frame;
 	ulong block;
 	size_t index;
@@ -413,7 +415,7 @@ bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr) {
 	assert(vfs_readFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
-	frame = thread_getFrameOf(t);
+	frame = t->getFrame();
 	paging_copyToFrame(frame,buffer);
 
 	/* mark as not-swapped and map into all affected processes */
@@ -423,20 +425,20 @@ bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr) {
 	return true;
 }
 
-void vmm_setTimestamp(sThread *t,uint64_t timestamp) {
+void vmm_setTimestamp(Thread *t,uint64_t timestamp) {
 	if(!pmem_shouldSetRegTimestamp())
 		return;
 	/* ignore setting the timestamp if the process is currently locked; its not that critical and
-	 * we can't wait for the mutex here because this is called from thread_switch() and the wait
+	 * we can't wait for the mutex here because this is called from Thread::switchAway() and the wait
 	 * for the mutex would call that as well */
 	if(mutex_tryAquire(t->proc->locks + PLOCK_REGIONS)) {
 		sVMRegion *vm;
 		size_t i;
-		if(t->tlsRegion)
-			t->tlsRegion->reg->timestamp = timestamp;
+		if(t->getTLSRegion())
+			t->getTLSRegion()->reg->timestamp = timestamp;
 		for(i = 0; i < STACK_REG_COUNT; i++) {
-			if(t->stackRegions[i])
-				t->stackRegions[i]->reg->timestamp = timestamp;
+			if(t->getStackRegion(i))
+				t->getStackRegion(i)->reg->timestamp = timestamp;
 		}
 		for(vm = t->proc->regtree.begin; vm != NULL; vm = vm->next) {
 			if(!(vm->reg->flags & (RF_TLS | RF_STACK)))
@@ -512,24 +514,24 @@ static uintptr_t vmm_getBinary(sFile *file,pid_t *binOwner) {
 
 bool vmm_pagefault(uintptr_t addr,bool write) {
 	sProc *p;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sVMRegion *vm;
 	bool res = false;
 
 	/* we can swap here; note that we don't need page-tables in this case, they're always present */
-	if(!thread_reserveFrames(1))
+	if(!t->reserveFrames(1))
 		return false;
 
 	p = vmm_reqProc(t->proc->pid);
 	vm = vmreg_getByAddr(&p->regtree,addr);
 	if(vm == NULL) {
 		vmm_relProc(p);
-		thread_discardFrames();
+		t->discardFrames();
 		return false;
 	}
 	res = vmm_doPagefault(addr,p,vm,write);
 	vmm_relProc(p);
-	thread_discardFrames();
+	t->discardFrames();
 	return res;
 }
 
@@ -598,7 +600,7 @@ static void vmm_sync(sProc *p,sVMRegion *vm) {
 			buf = (uint8_t*)cache_alloc(PAGE_SIZE);
 			if(buf == NULL)
 				return;
-			thread_addHeapAlloc(buf);
+			Thread::addHeapAlloc(buf);
 		}
 
 		for(i = 0; i < pcount; i++) {
@@ -619,7 +621,7 @@ static void vmm_sync(sProc *p,sVMRegion *vm) {
 		}
 
 		if(cur != p->pid) {
-			thread_remHeapAlloc(buf);
+			Thread::remHeapAlloc(buf);
 			cache_free(buf);
 		}
 	}
@@ -756,7 +758,7 @@ errProc:
 
 int vmm_cloneAll(pid_t dstId) {
 	size_t j;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sProc *dst = vmm_reqProc(dstId);
 	sProc *src = vmm_reqProc(t->proc->pid);
 	sVMRegion *vm;
@@ -768,8 +770,8 @@ int vmm_cloneAll(pid_t dstId) {
 	vmreg_addTree(dstId,&dst->regtree);
 	for(vm = src->regtree.begin; vm != NULL; vm = vm->next) {
 		/* just clone the tls- and stack-region of the current thread */
-		if((!(vm->reg->flags & RF_STACK) || thread_hasStackRegion(t,vm)) &&
-				(!(vm->reg->flags & RF_TLS) || t->tlsRegion == vm)) {
+		if((!(vm->reg->flags & RF_STACK) || t->hasStackRegion(vm)) &&
+				(!(vm->reg->flags & RF_TLS) || t->getTLSRegion() == vm)) {
 			ssize_t res;
 			size_t pageCount,swapped;
 			sVMRegion *nvm = vmreg_add(&dst->regtree,vm->reg,vm->virt);
@@ -888,12 +890,13 @@ int vmm_growStackTo(pid_t pid,sVMRegion *vm,uintptr_t addr) {
 			res = -ENOMEM;
 		/* new pages necessary? */
 		else if(newPages > 0) {
-			if(!thread_reserveFrames(newPages)) {
+			Thread *t = Thread::getRunning();
+			if(!t->reserveFrames(newPages)) {
 				vmm_relProc(p);
 				return -ENOMEM;
 			}
 			res = vmm_doGrow(p,vm,newPages) != 0 ? 0 : -ENOMEM;
-			thread_discardFrames();
+			t->discardFrames();
 		}
 	}
 	vmm_relProc(p);
@@ -1104,7 +1107,8 @@ static bool vmm_demandLoad(sProc *p,sVMRegion *vm,uintptr_t addr) {
 	/* zero the rest, if necessary */
 	if(res && zeroCount) {
 		/* do the memclear before the mapping to ensure that it's ready when the first CPU sees it */
-		frameno_t frame = loadCount ? paging_getFrameNo(proc_getPageDir(),addr) : thread_getFrame();
+		frameno_t frame = loadCount ? paging_getFrameNo(proc_getPageDir(),addr)
+									: Thread::getRunning()->getFrame();
 		uintptr_t frameAddr = paging_getAccess(frame);
 		memclear((void*)(frameAddr + loadCount),zeroCount);
 		paging_removeAccess();
@@ -1147,7 +1151,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 		err = -ENOMEM;
 		goto error;
 	}
-	thread_addHeapAlloc(tempBuf);
+	Thread::addHeapAlloc(tempBuf);
 	err = vfs_readFile(pid,vm->reg->file,tempBuf,loadCount);
 	if(err != (ssize_t)loadCount) {
 		if(err >= 0)
@@ -1159,7 +1163,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	frame = paging_demandLoad(tempBuf,loadCount,vm->reg->flags);
 
 	/* free resources not needed anymore */
-	thread_remHeapAlloc(tempBuf);
+	Thread::remHeapAlloc(tempBuf);
 	cache_free(tempBuf);
 
 	/* map into all pagedirs */
@@ -1182,7 +1186,7 @@ static bool vmm_loadFromFile(sProc *p,sVMRegion *vm,uintptr_t addr,size_t loadCo
 	return true;
 
 errorFree:
-	thread_remHeapAlloc(tempBuf);
+	Thread::remHeapAlloc(tempBuf);
 	cache_free(tempBuf);
 error:
 	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,p->command,strerror(-err),err);

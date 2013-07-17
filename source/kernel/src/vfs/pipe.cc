@@ -124,7 +124,7 @@ static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node) {
 static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *node,
 		USER void *buffer,off_t offset,size_t count) {
 	size_t byteCount,total;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 	sPipeData *data;
 
@@ -138,7 +138,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 		ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
 		spinlock_release(&node->lock);
 
-		thread_switch();
+		Thread::switchAway();
 
 		if(sig_hasSignalFor(t->tid))
 			return -EINTR;
@@ -162,9 +162,9 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
 		byteCount = MIN(data->length - (offset - data->offset),count);
-		thread_addLock(&node->lock);
+		Thread::addLock(&node->lock);
 		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
-		thread_remLock(&node->lock);
+		Thread::remLock(&node->lock);
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
 			cache_free(data);
@@ -186,7 +186,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back.. */
-			thread_switchNoSigs();
+			Thread::switchNoSigs();
 
 			spinlock_aquire(&node->lock);
 			if(node->name == NULL) {
@@ -208,7 +208,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node,
 		USER const void *buffer,off_t offset,size_t count) {
 	sPipeData *data;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sPipe *pipe = (sPipe*)node->data;
 
 	/* Note that the size-check doesn't ensure that the total pipe-size can't be larger than the
@@ -226,7 +226,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 			ev_wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
 			spinlock_release(&node->lock);
 
-			thread_switchNoSigs();
+			Thread::switchNoSigs();
 
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
@@ -251,9 +251,9 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 	data->offset = offset;
 	data->length = count;
 	if(count) {
-		thread_addHeapAlloc(data);
+		Thread::addHeapAlloc(data);
 		memcpy(data->data,buffer,count);
-		thread_remHeapAlloc(data);
+		Thread::remHeapAlloc(data);
 	}
 
 	/* append */

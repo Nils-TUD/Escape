@@ -120,7 +120,7 @@ void boot_arch_start(sBootInfo *info) {
 	/* set up the page-dir and page-table for the kernel and so on and "correct" the GDT */
 	paging_init();
 	gdt_init();
-	thread_setRunning(NULL);
+	Thread::setRunning(NULL);
 
 	/* init basic modules */
 	vid_init();
@@ -243,8 +243,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
 			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
 			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
-			timer_sleepFor(thread_getRunning()->tid,20,true);
-			thread_switch();
+			timer_sleepFor(Thread::getRunning()->tid,20,true);
+			Thread::switchAway();
 		}
 
 		boot_taskFinished();

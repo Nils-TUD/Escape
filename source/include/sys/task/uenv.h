@@ -41,7 +41,7 @@
  * @param t the current thread
  * @param stack the interrupt-stack-frame
  */
-void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack);
+void uenv_handleSignal(Thread *t,sIntrptStackFrame *stack);
 
 /**
  * Finishes the signal-handling-process

@@ -65,7 +65,7 @@ static void view_pdirkernel(size_t argc,char **argv);
 static void view_regions(size_t argc,char **argv);
 
 static sProc *view_getProc(size_t argc,char **argv);
-static const sThread *view_getThread(size_t argc,char **argv);
+static const Thread *view_getThread(size_t argc,char **argv);
 
 static sLines lines;
 static sScreenBackup backup;
@@ -75,7 +75,7 @@ static sView views[] = {
 	{"sched",(fView)sched_print},
 	{"signals",(fView)sig_print},
 	{"thread",(fView)view_thread},
-	{"threads",(fView)thread_printAll},
+	{"threads",(fView)Thread::printAll},
 	{"vfstree",(fView)vfs_node_printTree},
 	{"gft",(fView)vfs_printGFT},
 	{"msgs",(fView)vfs_printMsgs},
@@ -158,9 +158,9 @@ static void view_proc(size_t argc,char **argv) {
 		proc_print(p);
 }
 static void view_thread(size_t argc,char **argv) {
-	const sThread *t = view_getThread(argc,argv);
+	const Thread *t = view_getThread(argc,argv);
 	if(t != NULL)
-		thread_print(t);
+		t->print();
 }
 static void view_pdirall(size_t argc,char **argv) {
 	sProc *p = view_getProc(argc,argv);
@@ -198,12 +198,12 @@ static sProc *view_getProc(size_t argc,char **argv) {
 	return p;
 }
 
-static const sThread *view_getThread(size_t argc,char **argv) {
-	const sThread *t;
+static const Thread *view_getThread(size_t argc,char **argv) {
+	const Thread *t;
 	if(argc > 2)
-		t = thread_getById(atoi(argv[2]));
+		t = Thread::getById(atoi(argv[2]));
 	else
-		t = thread_getRunning();
+		t = Thread::getRunning();
 	if(t == NULL)
 		vid_printf("Unable to find thread '%s'\n",argv[2]);
 	return t;

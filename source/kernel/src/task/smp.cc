@@ -101,13 +101,13 @@ void smp_setReady(cpuid_t id) {
 	cpus[id]->ready = true;
 }
 
-void smp_schedule(cpuid_t id,sThread *n,uint64_t timestamp) {
+void smp_schedule(cpuid_t id,Thread *n,uint64_t timestamp) {
 	sCPU *c = cpus[id];
-	if(c->thread && !(c->thread->flags & T_IDLE)) {
-		c->curCycles += thread_getTSC() - c->thread->stats.cycleStart;
+	if(c->thread && !(c->thread->getFlags() & T_IDLE)) {
+		c->curCycles += Thread::getTSC() - c->thread->getStats().cycleStart;
 		c->runtime += timestamp - c->lastSched;
 	}
-	if(!(n->flags & T_IDLE)) {
+	if(!(n->getFlags() & T_IDLE)) {
 		c->schedCount++;
 		c->lastSched = timestamp;
 	}
@@ -117,11 +117,11 @@ void smp_schedule(cpuid_t id,sThread *n,uint64_t timestamp) {
 void smp_updateRuntimes(void) {
 	size_t i;
 	for(i = 0; i < cpuCount; i++) {
-		cpus[i]->lastTotal = thread_getTSC() - cpus[i]->lastUpdate;
-		cpus[i]->lastUpdate = thread_getTSC();
-		if(cpus[i]->thread && !(cpus[i]->thread->flags & T_IDLE)) {
+		cpus[i]->lastTotal = Thread::getTSC() - cpus[i]->lastUpdate;
+		cpus[i]->lastUpdate = Thread::getTSC();
+		if(cpus[i]->thread && !(cpus[i]->thread->getFlags() & T_IDLE)) {
 			/* we want to measure the last second only */
-			uint64_t cycles = thread_getTSC() - cpus[i]->thread->stats.cycleStart;
+			uint64_t cycles = Thread::getTSC() - cpus[i]->thread->getStats().cycleStart;
 			cpus[i]->curCycles = MIN(cpus[i]->lastTotal,cpus[i]->curCycles + cycles);
 		}
 		cpus[i]->lastCycles = cpus[i]->curCycles;
@@ -129,7 +129,7 @@ void smp_updateRuntimes(void) {
 	}
 }
 
-void smp_killThread(sThread *t) {
+void smp_killThread(Thread *t) {
 	if(cpuCount > 1) {
 		size_t i;
 		cpuid_t cur = smp_getCurId();
@@ -147,7 +147,8 @@ void smp_wakeupCPU(void) {
 		size_t i;
 		cpuid_t cur = smp_getCurId();
 		for(i = 0; i < cpuCount; i++) {
-			if(i != cur && cpus[i]->ready && (!cpus[i]->thread || (cpus[i]->thread->flags & T_IDLE))) {
+			if(i != cur && cpus[i]->ready && (!cpus[i]->thread ||
+					(cpus[i]->thread->getFlags() & T_IDLE))) {
 				smp_sendIPI(i,IPI_WORK);
 				break;
 			}
@@ -164,7 +165,7 @@ void smp_flushTLB(pagedir_t *pdir) {
 	for(i = 0; i < cpuCount; i++) {
 		sCPU *cpu = cpus[i];
 		if(cpu && cpu->ready && i != cur) {
-			sThread *t = cpu->thread;
+			Thread *t = cpu->thread;
 			if(t && &t->proc->pagedir == pdir)
 				smp_sendIPI(i,IPI_FLUSH_TLB);
 		}
@@ -189,7 +190,7 @@ void smp_print(void) {
 	vid_printf("CPUs:\n");
 	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
 		sCPU *cpu = (sCPU*)n->data;
-		sThread *t = cpu->thread;
+		Thread *t = cpu->thread;
 		vid_printf("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
 				   "\t        lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
 				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->tid,t->proc->pid,t->proc->command,

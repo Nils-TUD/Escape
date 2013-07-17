@@ -48,9 +48,9 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 		if(var != NULL) {
 			bool res = true;
 			if(dst) {
-				thread_addLock(p->locks + PLOCK_ENV);
+				Thread::addLock(p->locks + PLOCK_ENV);
 				strnzcpy(dst,var->name,size);
-				thread_remLock(p->locks + PLOCK_ENV);
+				Thread::remLock(p->locks + PLOCK_ENV);
 			}
 			proc_release(p,PLOCK_ENV);
 			return res;
@@ -71,16 +71,16 @@ bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 		sProc *p = proc_request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
-		thread_addLock(p->locks + PLOCK_ENV);
+		Thread::addLock(p->locks + PLOCK_ENV);
 		var = env_getOf(p,name);
 		if(var != NULL) {
 			if(dst)
 				strnzcpy(dst,var->value,size);
-			thread_remLock(p->locks + PLOCK_ENV);
+			Thread::remLock(p->locks + PLOCK_ENV);
 			proc_release(p,PLOCK_ENV);
 			return true;
 		}
-		thread_remLock(p->locks + PLOCK_ENV);
+		Thread::remLock(p->locks + PLOCK_ENV);
 		if(p->pid == 0) {
 			proc_release(p,PLOCK_ENV);
 			break;
@@ -98,9 +98,9 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 	nameCpy = strdup(name);
 	if(!nameCpy)
 		return false;
-	thread_addHeapAlloc(nameCpy);
+	Thread::addHeapAlloc(nameCpy);
 	valueCpy = strdup(value);
-	thread_remHeapAlloc(nameCpy);
+	Thread::remHeapAlloc(nameCpy);
 	if(!valueCpy)
 		goto errorNameCpy;
 

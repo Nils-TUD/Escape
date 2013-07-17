@@ -23,11 +23,7 @@
 #include <assert.h>
 
 #ifdef IN_KERNEL
-#	include <sys/mem/cache.h>
-#	include <sys/mem/sllnodes.h>
-#	include <sys/video.h>
-/* for util_panic (vassert) */
-#	include <sys/util.h>
+#	include <sys/cwrap.h>
 #	define sllprintf	vid_printf
 #	define heapalloc	cache_alloc
 #	define heapfree		cache_free

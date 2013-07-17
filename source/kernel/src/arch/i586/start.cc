@@ -56,11 +56,11 @@ void bspstart(sBootInfo *mbp) {
 }
 
 uintptr_t smpstart(void) {
-	sThread *t;
+	Thread *t;
 	sStartupInfo info;
 	size_t i,total = smp_getCPUCount();
 	/* the running thread has been stored on a different stack last time */
-	thread_setRunning(thread_getById(0));
+	Thread::setRunning(Thread::getById(0));
 
 	/* start an idle-thread for each cpu */
 	for(i = 0; i < total; i++)
@@ -73,11 +73,11 @@ uintptr_t smpstart(void) {
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
 	/* give the process some stack pages */
-	t = thread_getRunning();
-	if(!thread_reserveFrames(INITIAL_STACK_PAGES))
+	t = Thread::getRunning();
+	if(!t->reserveFrames(INITIAL_STACK_PAGES))
 		util_panic("Not enough mem for initloader-stack");
-	thread_addInitialStack(t);
-	thread_discardFrames();
+	t->addInitialStack();
+	t->discardFrames();
 	return info.progEntry;
 }
 
@@ -85,7 +85,7 @@ void apstart(void) {
 	sProc *p = proc_getByPid(0);
 	/* store the running thread for our temp-stack again, because we might need it in gdt_init_ap
 	 * for example */
-	thread_setRunning(thread_getById(0));
+	Thread::setRunning(Thread::getById(0));
 	/* at first, activate paging and setup the GDT, so that we don't need the "GDT-trick" anymore */
 	paging_activate(p->pagedir.own);
 	gdt_init_ap();
@@ -98,7 +98,7 @@ void apstart(void) {
 	/* notify the BSP that we're running */
 	smp_apIsRunning();
 	/* choose a thread to run */
-	thread_initialSwitch();
+	Thread::initialSwitch();
 }
 
 static void idlestart(void) {

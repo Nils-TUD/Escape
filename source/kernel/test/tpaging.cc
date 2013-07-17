@@ -62,6 +62,7 @@ static void test_paging(void) {
 static void test_paging_foreign(void) {
 	size_t ownFrames, sharedFrames;
 	sProc *child;
+	Thread *t = Thread::getRunning();
 	pid_t pid = proc_clone(0);
 	test_assertTrue(pid > 0);
 	child = proc_getByPid(pid);
@@ -71,10 +72,10 @@ static void test_paging_foreign(void) {
 	sharedFrames = child->sharedFrames;
 	checkMemoryBefore(true);
 
-	thread_reserveFrames(3);
+	t->reserveFrames(3);
 	paging_mapTo(&child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
 	paging_unmapFrom(&child->pagedir,0,3,true);
-	thread_discardFrames();
+	t->discardFrames();
 
 	checkMemoryAfter(true);
 	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
@@ -89,12 +90,12 @@ static void test_paging_foreign(void) {
 	sharedFrames = child->sharedFrames;
 	checkMemoryBefore(true);
 
-	thread_reserveFrames(6);
+	t->reserveFrames(6);
 	paging_mapTo(&child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
 	paging_mapTo(&child->pagedir,0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
 	paging_unmapFrom(&child->pagedir,0x40000000,1,true);
 	paging_unmapFrom(&child->pagedir,0x40000000 + PAGE_SIZE * 1,5,true);
-	thread_discardFrames();
+	t->discardFrames();
 
 	checkMemoryAfter(true);
 	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
@@ -103,20 +104,21 @@ static void test_paging_foreign(void) {
 	}
 	else
 		test_caseSucceeded();
-	assert(thread_beginTerm((sThread*)sll_get(&child->threads,0)));
+	assert(((Thread*)sll_get(&child->threads,0))->beginTerm());
 	proc_destroy(child->pid);
 	proc_kill(child->pid);
 }
 
 static bool test_paging_cycle(uintptr_t addr,size_t count) {
+	Thread *t = Thread::getRunning();
 	test_caseStart("Mapping %zu pages to %p",count,addr);
 	checkMemoryBefore(true);
 
-	thread_reserveFrames(count);
+	t->reserveFrames(count);
 	test_paging_allocate(addr,count);
 	test_paging_access(addr,count);
 	test_paging_free(addr,count);
-	thread_discardFrames();
+	t->discardFrames();
 
 	checkMemoryAfter(true);
 

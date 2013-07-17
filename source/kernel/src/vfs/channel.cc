@@ -42,7 +42,7 @@
 typedef struct {
 	bool used;
 	bool closed;
-	sThread *curClient;
+	Thread *curClient;
 	/* a list for sending messages to the device */
 	sSLList sendList;
 	/* a list for reading messages from the device */
@@ -52,14 +52,14 @@ typedef struct {
 typedef struct {
 	msgid_t id;
 	size_t length;
-	sThread *thread;
+	Thread *thread;
 } sMessage;
 
 static void vfs_chan_destroy(sVFSNode *n);
 static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 static size_t vfs_chan_getSize(pid_t pid,sVFSNode *node);
 static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node);
-static sMessage *vfs_chan_getMsg(sThread *t,sSLList *list,ushort flags);
+static sMessage *vfs_chan_getMsg(Thread *t,sSLList *list,ushort flags);
 
 extern klock_t waitLock;
 
@@ -182,10 +182,10 @@ bool vfs_chan_hasWork(const sVFSNode *node) {
 ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		USER const void *data1,size_t size1,USER const void *data2,size_t size2) {
 	sSLList *list;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sChannel *chan = (sChannel*)n->data;
 	sMessage *msg1,*msg2 = NULL;
-	sThread *recipient = t;
+	Thread *recipient = t;
 
 #if PRINT_MSGS
 	sProc *p = proc_getByPid(pid);
@@ -214,9 +214,9 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 	msg1->length = size1;
 	msg1->id = id;
 	if(data1) {
-		thread_addHeapAlloc(msg1);
+		Thread::addHeapAlloc(msg1);
 		memcpy(msg1 + 1,data1,size1);
-		thread_remHeapAlloc(msg1);
+		Thread::remHeapAlloc(msg1);
 	}
 
 	if(data2) {
@@ -226,11 +226,11 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 
 		msg2->length = size2;
 		msg2->id = id;
-		thread_addHeapAlloc(msg1);
-		thread_addHeapAlloc(msg2);
+		Thread::addHeapAlloc(msg1);
+		Thread::addHeapAlloc(msg2);
 		memcpy(msg2 + 1,data2,size2);
-		thread_remHeapAlloc(msg2);
-		thread_remHeapAlloc(msg1);
+		Thread::remHeapAlloc(msg2);
+		Thread::remHeapAlloc(msg1);
 	}
 
 	spinlock_aquire(&n->lock);
@@ -287,7 +287,7 @@ error:
 ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msgid_t *id,
 		USER void *data,size_t size,bool block,bool ignoreSigs) {
 	sSLList *list;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sChannel *chan = (sChannel*)node->data;
 	sVFSNode *waitNode;
 	sMessage *msg;
@@ -328,9 +328,9 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 		spinlock_release(&node->lock);
 
 		if(ignoreSigs)
-			thread_switchNoSigs();
+			Thread::switchNoSigs();
 		else
-			thread_switch();
+			Thread::switchAway();
 
 		if(sig_hasSignalFor(t->tid))
 			return -EINTR;
@@ -359,19 +359,19 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 #endif
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
-	thread_addHeapAlloc(msg);
+	Thread::addHeapAlloc(msg);
 	if(data)
 		memcpy(data,msg + 1,msg->length);
 	if(id)
 		*id = msg->id;
-	thread_remHeapAlloc(msg);
+	Thread::remHeapAlloc(msg);
 
 	res = msg->length;
 	cache_free(msg);
 	return res;
 }
 
-static sMessage *vfs_chan_getMsg(sThread *t,sSLList *list,ushort flags) {
+static sMessage *vfs_chan_getMsg(Thread *t,sSLList *list,ushort flags) {
 	sSLNode *n,*p;
 	/* drivers get always the first message */
 	if(flags & VFS_DEVICE)

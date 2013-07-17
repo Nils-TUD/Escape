@@ -251,7 +251,7 @@ frameno_t paging_getFrameNo(pagedir_t *pdir,uintptr_t virt) {
 }
 
 frameno_t paging_demandLoad(const void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
-	frameno_t frame = thread_getFrame();
+	frameno_t frame = Thread::getRunning()->getFrame();
 	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),buffer,loadCount);
 	return frame;
 }
@@ -390,7 +390,7 @@ ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size
 						goto error;
 				}
 				else
-					pte->frameNumber = thread_getFrame();
+					pte->frameNumber = Thread::getRunning()->getFrame();
 			}
 			else {
 				if(flags & PG_ADDR_TO_FRAME)

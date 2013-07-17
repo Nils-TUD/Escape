@@ -26,6 +26,8 @@
 #include <sys/util.h>
 #include <assert.h>
 
+EXTERN_C uintptr_t bspstart(sBootInfo *bootinfo);
+
 static A_ALIGNED(4) uint8_t initloader[] = {
 #if DEBUGGING
 #	include "../../../../build/eco32-debug/user_initloader.dump"
@@ -34,8 +36,8 @@ static A_ALIGNED(4) uint8_t initloader[] = {
 #endif
 };
 
-EXTERN_C uintptr_t bspstart(sBootInfo *bootinfo) {
-	sThread *t;
+uintptr_t bspstart(sBootInfo *bootinfo) {
+	Thread *t;
 	sStartupInfo info;
 
 	boot_start(bootinfo);
@@ -43,12 +45,12 @@ EXTERN_C uintptr_t bspstart(sBootInfo *bootinfo) {
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
-	t = thread_getRunning();
-	if(!thread_reserveFrames(INITIAL_STACK_PAGES))
+	t = Thread::getRunning();
+	if(!t->reserveFrames(INITIAL_STACK_PAGES))
 		util_panic("Not enough mem for initloader-stack");
-	thread_addInitialStack(t);
-	thread_discardFrames();
+	t->addInitialStack();
+	t->discardFrames();
 	/* we have to set the kernel-stack for the first process */
-	tlb_set(0,KERNEL_STACK,(t->archAttr.kstackFrame * PAGE_SIZE) | 0x3);
+	tlb_set(0,KERNEL_STACK,(t->getKernelStack() * PAGE_SIZE) | 0x3);
 	return info.progEntry;
 }

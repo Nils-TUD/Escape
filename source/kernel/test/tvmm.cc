@@ -21,6 +21,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
+#include <sys/task/thread.h>
 #include <sys/video.h>
 #include <esc/test.h>
 #include "tvmm.h"
@@ -45,21 +46,21 @@ static void test_vmm(void) {
 static void test_1(void) {
 	sVMRegion *rno,*rno2,*rno3;
 	pid_t cpid;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	pid_t pid = t->proc->pid;
 	sProc *clone;
 	test_caseStart("Testing vmm_add() and vmm_remove()");
 
 	checkMemoryBefore(true);
-	thread_reserveFrames(1);
+	t->reserveFrames(1);
 	test_assertTrue(vmm_map(pid,0x1000,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_FIXED,NULL,0,&rno) == 0);
 	vmm_remove(pid,rno);
-	thread_discardFrames();
+	t->discardFrames();
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
-	thread_reserveFrames(9);
+	t->reserveFrames(9);
 	test_assertTrue(vmm_map(pid,0x1000,PAGE_SIZE * 2,PAGE_SIZE * 2,PROT_READ | PROT_EXEC,
 			MAP_SHARED | MAP_FIXED,NULL,0,&rno) == 0);
 	test_assertTrue(vmm_map(pid,0x8000,PAGE_SIZE * 3,PAGE_SIZE * 3,PROT_READ,
@@ -69,11 +70,11 @@ static void test_1(void) {
 	vmm_remove(pid,rno);
 	vmm_remove(pid,rno2);
 	vmm_remove(pid,rno3);
-	thread_discardFrames();
+	t->discardFrames();
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
-	thread_reserveFrames(8);
+	t->reserveFrames(8);
 	test_assertTrue(vmm_map(pid,0,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,&rno) == 0);
 	test_assertTrue(vmm_map(pid,0,PAGE_SIZE * 2,PAGE_SIZE * 2,PROT_READ | PROT_WRITE,
@@ -83,7 +84,7 @@ static void test_1(void) {
 	vmm_remove(pid,rno);
 	vmm_remove(pid,rno2);
 	vmm_remove(pid,rno3);
-	thread_discardFrames();
+	t->discardFrames();
 	checkMemoryAfter(true);
 
 	cpid = proc_clone(0);
@@ -91,12 +92,12 @@ static void test_1(void) {
 	clone = proc_getByPid(cpid);
 
 	checkMemoryBefore(true);
-	thread_reserveFrames(4);
+	t->reserveFrames(4);
 	test_assertTrue(vmm_map(pid,0,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ,MAP_SHARED,NULL,0,&rno) == 0);
 	test_assertTrue(vmm_join(pid,rno->virt,clone->pid,&rno2,0) == 0);
 	vmm_remove(clone->pid,rno2);
 	vmm_remove(pid,rno);
-	thread_discardFrames();
+	t->discardFrames();
 	checkMemoryAfter(true);
 
 	proc_kill(clone->pid);
@@ -107,12 +108,12 @@ static void test_1(void) {
 static void test_2(void) {
 	sVMRegion *rno;
 	uintptr_t start,end;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	pid_t pid = t->proc->pid;
 	test_caseStart("Testing vmm_grow()");
 
 	checkMemoryBefore(true);
-	thread_reserveFrames(5);
+	t->reserveFrames(5);
 	test_assertTrue(vmm_map(pid,0x1000,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_FIXED | MAP_GROWABLE,NULL,0,&rno) == 0);
 	vmm_getRegRange(pid,rno,&start,&end,true);
@@ -124,11 +125,11 @@ static void test_2(void) {
 	vmm_getRegRange(pid,rno,&start,&end,true);
 	test_assertSSize(vmm_grow(pid,rno->virt,-3),end);
 	vmm_remove(pid,rno);
-	thread_discardFrames();
+	t->discardFrames();
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
-	thread_reserveFrames(7);
+	t->reserveFrames(7);
 	test_assertTrue(vmm_map(pid,0,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,&rno) == 0);
 	vmm_getRegRange(pid,rno,&start,&end,true);
@@ -142,7 +143,7 @@ static void test_2(void) {
 	vmm_getRegRange(pid,rno,&start,&end,true);
 	test_assertSSize(vmm_grow(pid,rno->virt,-1),start);
 	vmm_remove(pid,rno);
-	thread_discardFrames();
+	t->discardFrames();
 	checkMemoryAfter(true);
 
 	test_caseSucceeded();

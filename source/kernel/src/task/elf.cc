@@ -90,7 +90,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 }
 
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	sProc *p = t->proc;
 	sFile *file;
 	size_t j,loadSeg = 0;
@@ -165,7 +165,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				vid_printf("[LOADER] Allocating memory for dynamic linker name failed\n");
 				goto failed;
 			}
-			thread_addHeapAlloc(interpName);
+			Thread::addHeapAlloc(interpName);
 			if(vfs_seek(p->pid,file,pheader.p_offset,SEEK_SET) < 0) {
 				vid_printf("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
@@ -177,7 +177,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 			vfs_closeFile(p->pid,file);
 			/* now load him and stop loading the 'real' program */
 			res = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,info);
-			thread_remHeapAlloc(interpName);
+			Thread::remHeapAlloc(interpName);
 			cache_free(interpName);
 			return res;
 		}
@@ -187,7 +187,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				goto failed;
 			if(pheader.p_type == PT_TLS) {
 				uintptr_t tlsStart;
-				if(thread_getTLSRange(t,&tlsStart,NULL)) {
+				if(t->getTLSRange(&tlsStart,NULL)) {
 					/* read tdata */
 					if(vfs_seek(p->pid,file,(off_t)pheader.p_offset,SEEK_SET) < 0) {
 						vid_printf("[LOADER] Seeking to load segment %d (%Ox) failed\n",
@@ -220,7 +220,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	return 0;
 
 failedInterpName:
-	thread_remHeapAlloc(interpName);
+	Thread::remHeapAlloc(interpName);
 	cache_free(interpName);
 failed:
 	vfs_closeFile(p->pid,file);
@@ -228,7 +228,7 @@ failed:
 }
 
 static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,uint type) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	int res,prot = 0,flags = type == ELF_TYPE_INTERP ? 0 : MAP_FIXED;
 	sVMRegion *vm;
 	size_t memsz = pheader->p_memsz;
@@ -283,17 +283,17 @@ static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegN
 
 	/* regions without binary will not be demand-loaded */
 	if(file == NULL)
-		thread_reserveFrames(BYTES_2_PAGES(memsz));
+		t->reserveFrames(BYTES_2_PAGES(memsz));
 
 	/* add the region */
 	if((res = vmm_map(t->proc->pid,pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
 			pheader->p_offset,&vm)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
-		thread_discardFrames();
+		t->discardFrames();
 		return res;
 	}
 	if(pheader->p_type == PT_TLS)
-		thread_setTLSRegion(t,vm);
-	thread_discardFrames();
+		t->setTLSRegion(vm);
+	t->discardFrames();
 	return 0;
 }

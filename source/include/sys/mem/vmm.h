@@ -22,8 +22,6 @@
 #include <sys/common.h>
 #include <sys/mem/region.h>
 #include <sys/mem/vmreg.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
 #include <sys/printf.h>
 
 #ifdef DEBUGGING
@@ -52,6 +50,9 @@
 #define MAP_POPULATE		256UL
 #define MAP_NOMAP			512UL
 #define MAP_FIXED			1024UL
+
+struct sProc;
+class Thread;
 
 /**
  * Initializes the virtual memory management
@@ -118,7 +119,7 @@ void vmm_swapOut(pid_t pid,sFile *file,size_t count);
  * @param addr the address of the page to swap in
  * @return true on success
  */
-bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr);
+bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr);
 
 /**
  * Sets the timestamp for all regions that are used by the given thread
@@ -126,7 +127,7 @@ bool vmm_swapIn(pid_t pid,sFile *file,sThread *t,uintptr_t addr);
  * @param t the thread
  * @param timestamp the timestamp to set
  */
-void vmm_setTimestamp(sThread *t,uint64_t timestamp);
+void vmm_setTimestamp(Thread *t,uint64_t timestamp);
 
 /**
  * Sets the given pointers to the corresponding number of frames for the given process

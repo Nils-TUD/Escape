@@ -38,22 +38,22 @@ static A_ALIGNED(8) uint8_t initloader[] = {
 };
 
 uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
-	sThread *t;
+	Thread *t;
 	sStartupInfo info;
 
 	boot_start(bootinfo);
 
 	/* give the process some stack pages */
-	t = thread_getRunning();
-	if(!thread_reserveFrames(INITIAL_STACK_PAGES * 2))
+	t = Thread::getRunning();
+	if(!t->reserveFrames(INITIAL_STACK_PAGES * 2))
 		util_panic("Not enough mem for initloader-stack");
-	thread_addInitialStack(t);
-	thread_discardFrames();
+	t->addInitialStack();
+	t->discardFrames();
 
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
 	*stackBegin = info.stackBegin;
-	*rss = DIR_MAPPED_SPACE | (t->archAttr.kstackFrame * PAGE_SIZE);
+	*rss = DIR_MAPPED_SPACE | (t->getKernelStack() * PAGE_SIZE);
 	return info.progEntry;
 }

@@ -40,61 +40,51 @@ EXTERN_C bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_
 static klock_t switchLock;
 static bool threadSet = false;
 
-int thread_initArch(sThread *t) {
-	t->archAttr.kernelStack = paging_createKernelStack(&t->proc->pagedir);
-	t->archAttr.fpuState = NULL;
-	return 0;
-}
-
-void thread_addInitialStack(sThread *t) {
+void ThreadBase::addInitialStack() {
 	int res;
-	assert(t->tid == INIT_TID);
-	res = vmm_map(t->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,t->stackRegions + 0);
+	assert(tid == INIT_TID);
+	res = vmm_map(proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 0);
 	assert(res == 0);
 }
 
-size_t thread_getThreadFrmCnt(void) {
-	return INITIAL_STACK_PAGES;
-}
-
-int thread_createArch(const sThread *src,sThread *dst,bool cloneProc) {
+int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 	if(cloneProc) {
 		/* map the kernel-stack at the same address */
-		if(paging_mapTo(&dst->proc->pagedir,src->archAttr.kernelStack,NULL,1,
+		if(paging_mapTo(&dst->proc->pagedir,src->kernelStack,NULL,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
 			return -ENOMEM;
-		dst->archAttr.kernelStack = src->archAttr.kernelStack;
+		dst->kernelStack = src->kernelStack;
 	}
 	else {
 		int res;
 		/* map the kernel-stack at a free address */
-		dst->archAttr.kernelStack = paging_createKernelStack(&dst->proc->pagedir);
-		if(dst->archAttr.kernelStack == 0)
+		dst->kernelStack = paging_createKernelStack(&dst->proc->pagedir);
+		if(dst->kernelStack == 0)
 			return -ENOMEM;
 
 		/* add a new stack-region */
 		res = vmm_map(dst->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
-			paging_unmapFrom(&dst->proc->pagedir,dst->archAttr.kernelStack,1,true);
+			paging_unmapFrom(&dst->proc->pagedir,dst->kernelStack,1,true);
 			return res;
 		}
 	}
-	fpu_cloneState(&(dst->archAttr.fpuState),src->archAttr.fpuState);
+	fpu_cloneState(&(dst->fpuState),src->fpuState);
 	return 0;
 }
 
-void thread_freeArch(sThread *t) {
+void ThreadBase::freeArch(Thread *t) {
 	if(t->stackRegions[0] != NULL) {
 		vmm_remove(t->proc->pid,t->stackRegions[0]);
 		t->stackRegions[0] = NULL;
 	}
-	paging_removeKernelStack(&t->proc->pagedir,t->archAttr.kernelStack);
-	fpu_freeState(&t->archAttr.fpuState);
+	paging_removeKernelStack(&t->proc->pagedir,t->kernelStack);
+	fpu_freeState(&t->fpuState);
 }
 
-int thread_finishClone(sThread *t,sThread *nt) {
+int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	ulong *src,*dst;
 	size_t i;
 	frameno_t frame;
@@ -103,7 +93,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	spinlock_aquire(&lock);
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
+	frame = paging_getFrameNo(&nt->proc->pagedir,nt->kernelStack);
 	dst = (ulong*)paging_mapToTemp(&frame,1);
 
 	if(thread_save(&nt->save)) {
@@ -113,7 +103,7 @@ int thread_finishClone(sThread *t,sThread *nt) {
 
 	/* now copy the stack */
 	/* copy manually to prevent a function-call (otherwise we would change the stack) */
-	src = (ulong*)t->archAttr.kernelStack;
+	src = (ulong*)t->kernelStack;
 	for(i = 0; i < PT_ENTRY_COUNT - 1; i++)
 		*dst++ = *src++;
 	/* store thread at the top */
@@ -125,11 +115,11 @@ int thread_finishClone(sThread *t,sThread *nt) {
 	return 0;
 }
 
-void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint) {
 	/* setup kernel-stack */
-	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->archAttr.kernelStack);
+	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->kernelStack);
 	ulong *dst = (ulong*)paging_mapToTemp(&frame,1);
-	uint32_t sp = nt->archAttr.kernelStack + PAGE_SIZE - sizeof(int) * 6;
+	uint32_t sp = nt->kernelStack + PAGE_SIZE - sizeof(int) * 6;
 	dst += PT_ENTRY_COUNT - 1;
 	*dst = (uint32_t)nt;
 	*--dst = nt->proc->entryPoint;
@@ -148,53 +138,35 @@ void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,ui
 	nt->save.eflags = 0;
 }
 
-uint64_t thread_getTSC(void) {
-	return cpu_rdtsc();
-}
-
-uint64_t thread_ticksPerSec(void) {
-	return cpu_getSpeed();
-}
-
-uint64_t thread_getRuntime(const sThread *t) {
-	if(t->state == ST_RUNNING) {
-		/* if the thread is running, we must take the time since the last scheduling of that thread
-		 * into account. this is especially a problem with idle-threads */
-		uint64_t cycles = cpu_rdtsc();
-		return (t->stats.runtime + timer_cyclesToTime(cycles - t->stats.cycleStart));
-	}
-	return t->stats.runtime;
-}
-
-bool thread_beginTerm(sThread *t) {
+bool ThreadBase::beginTerm() {
 	bool res;
 	spinlock_aquire(&switchLock);
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	res = t->state != ST_RUNNING && t->termHeapCount == 0 && t->resources == 0;
+	res = state != Thread::RUNNING && termHeapCount == 0 && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
-		sched_removeThread(t);
+		sched_removeThread(static_cast<Thread*>(this));
 	spinlock_release(&switchLock);
 	return res;
 }
 
-void thread_initialSwitch(void) {
-	sThread *cur;
+void Thread::initialSwitch() {
+	Thread *cur;
 	spinlock_aquire(&switchLock);
 	cur = sched_perform(NULL,0);
 	cur->stats.schedCount++;
 	vmm_setTimestamp(cur,timer_getTimestamp());
-	cur->cpu = gdt_prepareRun(NULL,cur);
+	cur->setCPU(gdt_prepareRun(NULL,cur));
 	fpu_lockFPU();
 	cur->stats.cycleStart = cpu_rdtsc();
 	thread_resume(cur->proc->pagedir.own,&cur->save,&switchLock,true);
 }
 
-void thread_doSwitch(void) {
+void ThreadBase::doSwitch() {
 	uint64_t cycles,runtime;
-	sThread *old = thread_getRunning();
-	sThread *n;
+	Thread *old = Thread::getRunning();
+	Thread *n;
 	/* lock this, because sched_perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
 	spinlock_aquire(&switchLock);
@@ -213,10 +185,10 @@ void thread_doSwitch(void) {
 	if(n->tid != old->tid) {
 		time_t timestamp = timer_cyclesToTime(cycles);
 		vmm_setTimestamp(n,timestamp);
-		n->cpu = gdt_prepareRun(old,n);
+		n->setCPU(gdt_prepareRun(old,n));
 
 		/* some stats for SMP */
-		smp_schedule(n->cpu,n,timestamp);
+		smp_schedule(n->getCPU(),n,timestamp);
 
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
@@ -235,7 +207,7 @@ void thread_doSwitch(void) {
 
 #if DEBUGGING
 
-void thread_printState(const sThreadRegs *state) {
+void ThreadBase::printState(const sThreadRegs *state) {
 	vid_printf("State @ 0x%08Px:\n",state);
 	vid_printf("\tesp = %#08x\n",state->esp);
 	vid_printf("\tedi = %#08x\n",state->edi);

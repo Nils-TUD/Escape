@@ -23,8 +23,8 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_loadmods(sThread *t,sIntrptStackFrame *stack);
-int sysc_debugc(sThread *t,sIntrptStackFrame *stack);
-int sysc_debug(sThread *t,sIntrptStackFrame *stack);
-int sysc_sysconf(sThread *t,sIntrptStackFrame *stack);
-int sysc_tsctotime(sThread *t,sIntrptStackFrame *stack);
+int sysc_loadmods(Thread *t,sIntrptStackFrame *stack);
+int sysc_debugc(Thread *t,sIntrptStackFrame *stack);
+int sysc_debug(Thread *t,sIntrptStackFrame *stack);
+int sysc_sysconf(Thread *t,sIntrptStackFrame *stack);
+int sysc_tsctotime(Thread *t,sIntrptStackFrame *stack);

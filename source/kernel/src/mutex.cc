@@ -30,7 +30,7 @@
 static klock_t mutexLock;
 
 void mutex_aquire(mutex_t *m) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	spinlock_aquire(&mutexLock);
 	if(*m & 1) {
 		*m += 2;
@@ -38,26 +38,26 @@ void mutex_aquire(mutex_t *m) {
 		do {
 			ev_wait(t,EVI_MUTEX,(evobj_t)m);
 			spinlock_release(&mutexLock);
-			thread_switchNoSigs();
+			Thread::switchNoSigs();
 			spinlock_aquire(&mutexLock);
 		}
 		while(*m & 1);
 		*m -= 2;
 	}
-	util_printEventTrace(util_getKernelStackTrace(),"[%d] L %#x ",thread_getRunning()->tid,m);
+	util_printEventTrace(util_getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->tid,m);
 	*m |= 1;
-	t->resources++;
+	t->addResource();
 	spinlock_release(&mutexLock);
 }
 
 bool mutex_tryAquire(mutex_t *m) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	bool res = false;
 	spinlock_aquire(&mutexLock);
 	if(!(*m & 1)) {
-		util_printEventTrace(util_getKernelStackTrace(),"[%d] L %#x ",thread_getRunning()->tid,m);
+		util_printEventTrace(util_getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->tid,m);
 		*m |= 1;
-		t->resources++;
+		t->addResource();
 		res = true;
 	}
 	spinlock_release(&mutexLock);
@@ -65,14 +65,13 @@ bool mutex_tryAquire(mutex_t *m) {
 }
 
 void mutex_release(mutex_t *m) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	spinlock_aquire(&mutexLock);
-	assert(t->resources > 0);
 	*m &= ~1;
-	t->resources--;
+	t->remResource();
 	if(*m > 0)
 		ev_wakeup(EVI_MUTEX,(evobj_t)m);
-	util_printEventTrace(util_getKernelStackTrace(),"[%d] U %#x %s ",thread_getRunning()->tid,m,
+	util_printEventTrace(util_getKernelStackTrace(),"[%d] U %#x %s ",Thread::getRunning()->tid,m,
 			*m > 0 ? "(Waking up)" : "(No wakeup)");
 	spinlock_release(&mutexLock);
 }

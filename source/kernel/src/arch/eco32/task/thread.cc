@@ -31,13 +31,13 @@
 #include <assert.h>
 #include <errno.h>
 
+Thread *Thread::cur = NULL;
+
 EXTERN_C void thread_startup(void);
 EXTERN_C bool thread_save(sThreadRegs *saveArea);
 EXTERN_C bool thread_resume(pagedir_t pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
 
-static sThread *cur = NULL;
-
-int thread_initArch(sThread *t) {
+int ThreadBase::initArch(Thread *t) {
 	/* setup kernel-stack for us */
 	frameno_t stackFrame = pmem_allocate(FRM_KERNEL);
 	if(stackFrame == 0)
@@ -47,21 +47,11 @@ int thread_initArch(sThread *t) {
 		pmem_free(stackFrame,FRM_KERNEL);
 		return -ENOMEM;
 	}
-	t->archAttr.kstackFrame = stackFrame;
+	t->kstackFrame = stackFrame;
 	return 0;
 }
 
-void thread_addInitialStack(sThread *t) {
-	assert(t->tid == INIT_TID);
-	assert(vmm_map(t->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-			MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,t->stackRegions + 0) == 0);
-}
-
-size_t thread_getThreadFrmCnt(void) {
-	return INITIAL_STACK_PAGES;
-}
-
-int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
+int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc) {
 	if(cloneProc) {
 		frameno_t stackFrame = pmem_allocate(FRM_KERNEL);
 		if(stackFrame == 0)
@@ -71,47 +61,31 @@ int thread_createArch(A_UNUSED const sThread *src,sThread *dst,bool cloneProc) {
 			pmem_free(stackFrame,FRM_KERNEL);
 			return -ENOMEM;
 		}
-		dst->archAttr.kstackFrame = stackFrame;
+		dst->kstackFrame = stackFrame;
 	}
 	else {
 		int res;
-		dst->archAttr.kstackFrame = pmem_allocate(FRM_KERNEL);
-		if(dst->archAttr.kstackFrame == 0)
+		dst->kstackFrame = pmem_allocate(FRM_KERNEL);
+		if(dst->kstackFrame == 0)
 			return -ENOMEM;
 
 		/* add a new stack-region */
 		res = vmm_map(dst->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
-			pmem_free(dst->archAttr.kstackFrame,FRM_KERNEL);
+			pmem_free(dst->kstackFrame,FRM_KERNEL);
 			return res;
 		}
 	}
 	return 0;
 }
 
-void thread_freeArch(sThread *t) {
-	if(t->stackRegions[0] != NULL) {
-		vmm_remove(t->proc->pid,t->stackRegions[0]);
-		t->stackRegions[0] = NULL;
-	}
-	pmem_free(t->archAttr.kstackFrame,FRM_KERNEL);
-}
-
-sThread *thread_getRunning(void) {
-	return cur;
-}
-
-void thread_setRunning(sThread *t) {
-	cur = t;
-}
-
-int thread_finishClone(A_UNUSED sThread *t,sThread *nt) {
+int ThreadBase::finishClone(A_UNUSED Thread *t,Thread *nt) {
 	ulong *src;
 	size_t i;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	ulong *dst = (ulong*)(DIR_MAPPED_SPACE | (nt->archAttr.kstackFrame * PAGE_SIZE));
+	ulong *dst = (ulong*)(DIR_MAPPED_SPACE | (nt->kstackFrame * PAGE_SIZE));
 
 	if(thread_save(&nt->save)) {
 		/* child */
@@ -128,7 +102,7 @@ int thread_finishClone(A_UNUSED sThread *t,sThread *nt) {
 	return 0;
 }
 
-void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint) {
+void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint) {
 	/* prepare registers for the first thread_resume() */
 	nt->save.r16 = nt->proc->entryPoint;
 	nt->save.r17 = entryPoint;
@@ -144,31 +118,19 @@ void thread_finishThreadStart(A_UNUSED sThread *t,sThread *nt,const void *arg,ui
 	nt->save.r31 = (uint32_t)&thread_startup;
 }
 
-uint64_t thread_getTSC(void) {
-	return timer_getTimestamp();
-}
-
-uint64_t thread_ticksPerSec(void) {
-	return 1000;
-}
-
-uint64_t thread_getRuntime(const sThread *t) {
-	return t->stats.runtime;
-}
-
-bool thread_beginTerm(sThread *t) {
+bool ThreadBase::beginTerm() {
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	bool res = t->state != ST_RUNNING && t->termHeapCount == 0 && t->resources == 0;
+	bool res = getState() != Thread::RUNNING && termHeapCount == 0 && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
-		sched_removeThread(t);
+		sched_removeThread(static_cast<Thread*>(this));
 	return res;
 }
 
-void thread_doSwitch(void) {
-	sThread *old = thread_getRunning();
-	sThread *n;
+void ThreadBase::doSwitch(void) {
+	Thread *old = Thread::getRunning();
+	Thread *n;
 	/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-
 	 * measurement */
 	time_t timestamp = timer_getTimestamp();
@@ -182,12 +144,12 @@ void thread_doSwitch(void) {
 
 	if(n->tid != old->tid) {
 		if(!thread_save(&old->save)) {
-			thread_setRunning(n);
+			setRunning(n);
 			vmm_setTimestamp(n,timestamp);
 
-			smp_schedule(n->cpu,n,timestamp);
+			smp_schedule(n->getCPU(),n,timestamp);
 			n->stats.cycleStart = timestamp;
-			thread_resume(n->proc->pagedir,&n->save,n->archAttr.kstackFrame);
+			thread_resume(n->proc->pagedir,&n->save,n->kstackFrame);
 		}
 	}
 	else
@@ -197,7 +159,7 @@ void thread_doSwitch(void) {
 
 #if DEBUGGING
 
-void thread_printState(const sThreadRegs *state) {
+void ThreadBase::printState(const sThreadRegs *state) {
 	vid_printf("State:\n",state);
 	vid_printf("\t$16 = %#08x\n",state->r16);
 	vid_printf("\t$17 = %#08x\n",state->r17);

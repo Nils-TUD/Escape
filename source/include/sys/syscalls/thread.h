@@ -23,19 +23,19 @@
 #include <sys/task/thread.h>
 #include <sys/intrpt.h>
 
-int sysc_gettid(sThread *t,sIntrptStackFrame *stack);
-int sysc_getthreadcnt(sThread *t,sIntrptStackFrame *stack);
-int sysc_startthread(sThread *t,sIntrptStackFrame *stack);
-int sysc_exit(sThread *t,sIntrptStackFrame *stack);
-int sysc_getcycles(sThread *t,sIntrptStackFrame *stack);
-int sysc_alarm(sThread *t,sIntrptStackFrame *stack);
-int sysc_sleep(sThread *t,sIntrptStackFrame *stack);
-int sysc_yield(sThread *t,sIntrptStackFrame *stack);
-int sysc_wait(sThread *t,sIntrptStackFrame *stack);
-int sysc_waitunlock(sThread *t,sIntrptStackFrame *stack);
-int sysc_notify(sThread *t,sIntrptStackFrame *stack);
-int sysc_lock(sThread *t,sIntrptStackFrame *stack);
-int sysc_unlock(sThread *t,sIntrptStackFrame *stack);
-int sysc_join(sThread *t,sIntrptStackFrame *stack);
-int sysc_suspend(sThread *t,sIntrptStackFrame *stack);
-int sysc_resume(sThread *t,sIntrptStackFrame *stack);
+int sysc_gettid(Thread *t,sIntrptStackFrame *stack);
+int sysc_getthreadcnt(Thread *t,sIntrptStackFrame *stack);
+int sysc_startthread(Thread *t,sIntrptStackFrame *stack);
+int sysc_exit(Thread *t,sIntrptStackFrame *stack);
+int sysc_getcycles(Thread *t,sIntrptStackFrame *stack);
+int sysc_alarm(Thread *t,sIntrptStackFrame *stack);
+int sysc_sleep(Thread *t,sIntrptStackFrame *stack);
+int sysc_yield(Thread *t,sIntrptStackFrame *stack);
+int sysc_wait(Thread *t,sIntrptStackFrame *stack);
+int sysc_waitunlock(Thread *t,sIntrptStackFrame *stack);
+int sysc_notify(Thread *t,sIntrptStackFrame *stack);
+int sysc_lock(Thread *t,sIntrptStackFrame *stack);
+int sysc_unlock(Thread *t,sIntrptStackFrame *stack);
+int sysc_join(Thread *t,sIntrptStackFrame *stack);
+int sysc_suspend(Thread *t,sIntrptStackFrame *stack);
+int sysc_resume(Thread *t,sIntrptStackFrame *stack);

@@ -115,12 +115,12 @@ static size_t irqCount = 0;
 static uintptr_t pfaddr = 0;
 
 void intrpt_handler(sIntrptStackFrame *stack) {
-	sThread *t;
+	Thread *t;
 	sInterrupt *intrpt;
 	/* note: we have to do that before there is a chance for a kernel-miss */
 	pfaddr = cpu_getBadAddr();
-	t = thread_getRunning();
-	thread_pushIntrptLevel(t,stack);
+	t = Thread::getRunning();
+	t->pushIntrptLevel(stack);
 	irqCount++;
 
 	/* call handler */
@@ -130,10 +130,10 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	/* only handle signals, if we come directly from user-mode */
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
-	t = thread_getRunning();
-	if(t != NULL && ((t->flags & T_IDLE) || (stack->psw & PSW_PUM)))
+	t = Thread::getRunning();
+	if(t != NULL && ((t->getFlags() & T_IDLE) || (stack->psw & PSW_PUM)))
 		uenv_handleSignal(t,stack);
-	thread_popIntrptLevel(t);
+	t->popIntrptLevel();
 }
 
 size_t intrpt_getCount(void) {
@@ -147,8 +147,8 @@ static void intrpt_defHandler(sIntrptStackFrame *stack) {
 }
 
 static void intrpt_exTrap(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
-	t->stats.syscalls++;
+	Thread *t = Thread::getRunning();
+	t->getStats().syscalls++;
 	sysc_handle(t,stack);
 	/* skip trap-instruction */
 	stack->r[30] += 4;
@@ -176,7 +176,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
 	if(!vmm_pagefault(pfaddr,stack->irqNo == EXC_TLB_WRITE)) {
 		/* ok, now lets check if the thread wants more stack-pages */
-		if(thread_extendStack(pfaddr) < 0) {
+		if(Thread::extendStack(pfaddr) < 0) {
 			pid_t pid = proc_getRunning();
 			vid_printf("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
 			proc_segFault();
@@ -190,9 +190,9 @@ static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack) {
 	res = timer_intrpt();
 	timer_ackIntrpt();
 	if(res) {
-		sThread *t = thread_getRunning();
-		if(thread_getIntrptLevel(t) == 0)
-			thread_switch();
+		Thread *t = Thread::getRunning();
+		if(t->getIntrptLevel() == 0)
+			Thread::switchAway();
 	}
 }
 

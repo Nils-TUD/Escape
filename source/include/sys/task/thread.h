@@ -22,9 +22,14 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
+#include <sys/task/event.h>
+#include <sys/task/sched.h>
+#include <sys/task/terminator.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmreg.h>
+#include <sys/mem/vmm.h>
 #include <esc/hashmap.h>
+#include <assert.h>
 
 #define MAX_INTRPT_LEVELS		3
 #define MAX_STACK_PAGES			128
@@ -76,46 +81,567 @@ typedef struct sWait {
 	struct sWait *tnext;
 } sWait;
 
-/* the thread states */
-typedef enum {
-	ST_UNUSED = 0,
-	ST_RUNNING = 1,
-	ST_READY = 2,
-	ST_BLOCKED = 3,
-	ST_ZOMBIE = 4,
-	/* suspended => CAN'T run. will be set to blocked when resumed (also used for swapping) */
-	ST_BLOCKED_SUSP = 5,
-	/* same as ST_BLOCKED_SUSP, but will be set to ready when done */
-	ST_READY_SUSP = 6,
-	/* same as ST_BLOCKED_SUSP, but will be set to zombie when done */
-	ST_ZOMBIE_SUSP = 7
-} eThreadState;
+class Thread;
 
-/* represents a thread */
-typedef struct sThread sThread;
-struct sThread {
-	uint8_t flags;
-	/* the thread-priority (0..MAX_PRIO) */
-	uint8_t priority;
-	/* a counter used to raise the priority after a certain number of "good behaviours" */
-	uint8_t prioGoodCnt;
-	/* the current thread state. see eThreadState */
-	uint8_t state;
-	/* the next state it will receive on context-switch */
-	uint8_t newState;
-	/* the current or last cpu that executed this thread */
-	cpuid_t cpu;
-	/* whether signals should be ignored (while being blocked) */
-	uint8_t ignoreSignals;
+class ThreadBase {
+	struct Stats {
+		uint64_t timeslice;
+		/* number of microseconds of runtime this thread has got so far */
+		uint64_t runtime;
+		/* executed cycles in this second */
+		uint64_t curCycleCount;
+		uint64_t cycleStart;
+		/* executed cycles in the previous second */
+		uint64_t lastCycleCount;
+		/* the number of times we got chosen so far */
+		ulong syscalls;
+		ulong schedCount;
+	};
+
+public:
+	/* the thread states */
+	enum State {
+		UNUSED			= 0,
+		RUNNING			= 1,
+		READY			= 2,
+		BLOCKED			= 3,
+		ZOMBIE			= 4,
+		/* suspended => CAN'T run. will be set to blocked when resumed (also used for swapping) */
+		BLOCKED_SUSP	= 5,
+		/* same as ST_BLOCKED_SUSP, but will be set to ready when done */
+		READY_SUSP		= 6,
+		/* same as ST_BLOCKED_SUSP, but will be set to zombie when done */
+		ZOMBIE_SUSP		= 7
+	};
+
+	ThreadBase() = delete;
+
+	/**
+	 * Inits the threading-stuff. Uses <p> as first process
+	 *
+	 * @param p the first process
+	 * @return the first thread
+	 */
+	static Thread *init(sProc *p);
+
+	/**
+	 * Clones <src> to <dst>. That means a new thread will be created and <src> will be copied to the
+	 * new one.
+	 *
+	 * @param src the thread to copy
+	 * @param dst will contain a pointer to the new thread
+	 * @param p the process the thread should belong to
+	 * @param flags the flags for the thread (T_*)
+	 * @param cloneProc whether a process is cloned or just a thread
+	 * @return 0 on success
+	 */
+	static int create(Thread *src,Thread **dst,sProc *p,uint8_t flags,bool cloneProc);
+
+	/**
+	 * Finishes the clone of a thread
+	 *
+	 * @param t the original thread
+	 * @param nt the new thread
+	 * @return 0 for the parent, 1 for the child
+	 */
+	static int finishClone(Thread *t,Thread *nt);
+
+	/**
+	 * Performs the finish-operations after the thread nt has been started, but before it runs.
+	 *
+	 * @param t the running thread
+	 * @param tn the started thread
+	 * @param arg the argument
+	 * @param entryPoint the entry-point of the thread (in kernel or in user-space)
+	 */
+	static void finishThreadStart(Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint);
+
+	/**
+	 * Determines the number of necessary frames to start a new thread
+	 */
+	static size_t getThreadFrmCnt();
+
+	/**
+	 * @return the number of existing threads
+	 */
+	static size_t getCount();
+
+	/**
+	 * @return the currently running thread
+	 */
+	static Thread *getRunning();
+
+	/**
+	 * Sets the currently running thread. Should ONLY be called by switchTo()!
+	 */
+	static void setRunning(Thread *t);
+
+	/**
+	 * Fetches the thread with given id from the internal thread-map
+	 *
+	 * @param tid the thread-id
+	 * @return the thread or NULL if not found
+	 */
+	static Thread *getById(tid_t tid);
+
+	/**
+	 * Pushes the given thread back to the idle-list
+	 *
+	 * @param t the idle-thread
+	 */
+	static void pushIdle(Thread *t);
+
+	/**
+	 * Pops an idle-thread from the idle-list
+	 *
+	 * @return the thread
+	 */
+	static Thread *popIdle();
+
+	/**
+	 * Performs a thread-switch. That means the current thread will be saved and the first thread
+	 * will be picked from the ready-queue and resumed.
+	 */
+	static void switchAway() {
+		doSwitch();
+	}
+
+	/**
+	 * Switches the thread and remembers that we are waiting in the kernel. That means if you want
+	 * to wait in the kernel for something, use this function so that other modules know that the
+	 * current thread waits and should for example not receive signals.
+	 */
+	static void switchNoSigs();
+
+	/**
+	 * Switches to the given thread
+	 *
+	 * @param tid the thread-id
+	 */
+	static void switchTo(tid_t tid);
+
+	/**
+	 * Kills dead threads, if there are any; is called by switchTo(). Should NOT be called by
+	 * anyone else.
+	 */
+	static void killDead();
+
+	/**
+	 * Extends the stack of the current thread so that the given address is accessible. If that
+	 * is not possible the function returns a negative error-code
+	 *
+	 * IMPORTANT: May cause a thread-switch for swapping!
+	 *
+	 * @param address the address that should be accessible
+	 * @return 0 on success
+	 */
+	static int extendStack(uintptr_t address);
+
+	/**
+	 * @return the current timestamp (this should be comparable with stats.cycleStart)
+	 */
+	static uint64_t getTSC();
+
+	/**
+	 * @return the ticks per second (this should be comparable with stats.cycleStart)
+	 */
+	static uint64_t ticksPerSec();
+
+	/**
+	 * Updates the runtime-percentage of all threads
+	 */
+	static void updateRuntimes();
+
+	/**
+	 * Adds the given lock to the term-lock-list
+	 *
+	 * @param l the lock
+	 */
+	static void addLock(klock_t *l);
+
+	/**
+	 * Removes the given lock from the term-lock-list
+	 *
+	 * @param l the lock
+	 */
+	static void remLock(klock_t *l);
+
+	/**
+	 * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies
+	 * before it is removed.
+	 *
+	 * @param ptr the pointer to the heap
+	 */
+	static void addHeapAlloc(void *ptr);
+
+	/**
+	 * Removes the given pointer from the term-heap-allocation-list
+	 *
+	 * @param ptr the pointer to the heap
+	 */
+	static void remHeapAlloc(void *ptr);
+
+	/**
+	 * Adds the given file to the file-usage-list. The file-usages will be decreased if the thread dies.
+	 *
+	 * @param file the file
+	 */
+	static void addFileUsage(sFile *file);
+
+	/**
+	 * Removes the given file from the file-usage-list.
+	 *
+	 * @param file the file
+	 */
+	static void remFileUsage(sFile *file);
+
+	/**
+	 * Adds the given callback to the callback-list. These will be called on thread-termination.
+	 *
+	 * @param callback the callback
+	 */
+	static void addCallback(void (*callback)(void));
+
+	/**
+	 * Removes the given callback from the callback-list.
+	 *
+	 * @param callback the callback
+	 */
+	static void remCallback(void (*callback)(void));
+
+	/**
+	 * Prints all threads
+	 */
+	static void printAll();
+
+
+	/**
+	 * Adds a stack to the given initial thread. This is just used for initloader.
+	 *
+	 * @param t the thread
+	 */
+	void addInitialStack();
+
+	/**
+	 * @return the flags of this thread (T_*)
+	 */
+	uint8_t getFlags() const {
+		return flags;
+	}
+	void setFlags(uint8_t flags) {
+		this->flags = flags;
+	}
+	/**
+	 * @return the priority of this thread (0..MAX_PRIO)
+	 */
+	uint8_t getPriority() const {
+		return priority;
+	}
+	void setPriority(uint8_t prio) {
+		assert(prio <= MAX_PRIO);
+		priority = prio;
+	}
+	/**
+	 * @return the state of this thread (ST_*)
+	 */
+	uint8_t getState() const {
+		return state;
+	}
+	void setState(uint8_t state) {
+		this->state = state;
+	}
+	/* TODO temp */
+	uint8_t getNewState() const {
+		return newState;
+	}
+	void setNewState(uint8_t state) {
+		newState = state;
+	}
+
+	/**
+	 * @return the current or last cpu that executed this thread
+	 */
+	cpuid_t getCPU() const {
+		return cpu;
+	}
+	void setCPU(cpuid_t cpu) {
+		this->cpu = cpu;
+	}
+
+	/**
+	 * @return the region of this thread (NULL if not existing)
+	 */
+	sVMRegion *getTLSRegion() const {
+		return tlsRegion;
+	}
+	void setTLSRegion(sVMRegion *vm) {
+		tlsRegion = vm;
+	}
+
+	/**
+	 * @return the stack region with given number
+	 */
+	sVMRegion *getStackRegion(size_t no) const {
+		return stackRegions[no];
+	}
+
+	/**
+	 * @return true if the thread ignores signals currently
+	 */
+	bool isIgnoringSigs() const {
+		return ignoreSignals;
+	}
+
+	/**
+	 * @return true if this thread has active resources
+	 */
+	bool hasResources() const {
+		return resources > 0;
+	}
+	/**
+	 * Increments the resource-counter
+	 */
+	void addResource() {
+		resources++;
+	}
+	/**
+	 * Decrements the resource-counter
+	 */
+	void remResource() {
+		assert(resources > 0);
+		resources--;
+	}
+
+	/**
+	 * @param thread the thread
+	 * @return the runtime of the given thread
+	 */
+	uint64_t getRuntime() const;
+
+	/**
+	 * @param thread the thread
+	 * @return the cycles of the given thread
+	 */
+	Stats &getStats() {
+		return stats;
+	}
+	const Stats &getStats() const {
+		return stats;
+	}
+
+	/**
+	 * @return the register state of the thread
+	 */
+	const sThreadRegs &getRegs() const {
+		return save;
+	}
+
+	/**
+	 * @return the current interrupt-stack, i.e. the innermost-level
+	 */
+	sIntrptStackFrame *getIntrptStack() const;
+
+	/**
+	 * Pushes the given kernel-stack onto the interrupt-level-stack
+	 *
+	 * @param stack the kernel-stack
+	 * @return the current level
+	 */
+	size_t pushIntrptLevel(sIntrptStackFrame *stack);
+
+	/**
+	 * Removes the topmost interrupt-level-stack
+	 */
+	void popIntrptLevel();
+
+	/**
+	 * @param t the thread
+	 * @return the interrupt-level (0 .. MAX_INTRPT_LEVEL - 1)
+	 */
+	size_t getIntrptLevel() const;
+
+	/**
+	 * Checks whether the thread can be terminated. If so, it ensures that it won't be scheduled again.
+	 *
+	 * @return true if it can be terminated now
+	 */
+	bool beginTerm();
+
+	/**
+	 * Retrieves the range of the stack with given number.
+	 *
+	 * @param start will be set to the start-address (may be NULL)
+	 * @param end will be set to the end-address (may be NULL)
+	 * @param stackNo the stack-number
+	 * @return true if the stack-region exists
+	 */
+	bool getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo);
+
+	/**
+	 * Retrieves the range of the TLS region
+	 *
+	 * @param start will be set to the start-address (may be NULL)
+	 * @param end will be set to the end-address (may be NULL)
+	 * @return true if the TLS-region exists
+	 */
+	bool getTLSRange(uintptr_t *start,uintptr_t *end);
+
+	/**
+	 * Blocks this thread. ONLY CALLED by event.
+	 */
+	void block();
+
+	/**
+	 * Unblocks this thread. ONLY CALLED by event.
+	 */
+	void unblock();
+
+	/**
+	 * Unblocks this thread and puts it to the beginning of the ready-list. ONLY CALLED by event.
+	 */
+	void unblockQuick();
+
+	/**
+	 * Suspends this thread. ONLY CALLED by event.
+	 */
+	void suspend();
+
+	/**
+	 * Resumes this thread. ONLY CALLED by event.
+	 */
+	void unsuspend();
+
+	/**
+	 * Checks whether this thread has the given region for stack
+	 *
+	 * @param vm the region
+	 * @return true if so
+	 */
+	bool hasStackRegion(sVMRegion *vm) const;
+
+	/**
+	 * Removes the regions for this thread. Optionally the stack as well.
+	 *
+	 * @param remStack whether to remove the stack
+	 */
+	void removeRegions(bool remStack);
+
+	/**
+	 * @return the number of reserved frames
+	 */
+	size_t getReservedFrmCnt() const {
+		return sll_length(&reqFrames);
+	}
+
+	/**
+	 * Reserves <count> frames for this thread. That means, it swaps in memory, if
+	 * necessary, allocates that frames and stores them in the thread. You can get them later with
+	 * getFrame(). You can free not needed frames with discardFrames().
+	 *
+	 * @param count the number of frames to reserve
+	 * @return true on success
+	 */
+	bool reserveFrames(size_t count);
+
+	/**
+	 * Removes one frame from the collection of frames of this thread. This will always succeed,
+	 * because the function assumes that you have called reserveFrames() previously.
+	 *
+	 * @return the frame
+	 */
+	frameno_t getFrame();
+
+	/**
+	 * Free's all frames that this thread has still reserved. This should be done after an
+	 * operation that needed more frames to ensure that reserved but not needed frames are free'd.
+	 */
+	void discardFrames();
+
+	/**
+	 * Terminates this thread, i.e. adds it to the terminator and if its the running thread, it
+	 * makes sure that it isn't chosen again.
+	 */
+	void terminate();
+
+	/**
+	 * Kills this thread, i.e. releases all resources and destroys it.
+	 */
+	void kill();
+
+	/**
+	 * Prints a short info about this thread
+	 */
+	void printShort() const;
+
+	/**
+	 * Prints this thread
+	 */
+	void print() const;
+
+	/**
+	 * Prints the given thread-state
+	 *
+	 * @param state the pointer to the state-struct
+	 */
+	void printState(const sThreadRegs *state);
+
+private:
+	/**
+	 * Clones the architecture-specific attributes of the given thread
+	 *
+	 * @param src the thread to copy
+	 * @param dst will contain a pointer to the new thread
+	 * @param cloneProc whether a process is cloned or just a thread
+	 * @return 0 on success
+	 */
+	static int createArch(const Thread *src,Thread *dst,bool cloneProc);
+
+	/**
+	 * Inits the architecture-specific attributes of the given thread
+	 */
+	static int initArch(Thread *t);
+
+	/**
+	 * Frees the architecture-specific attributes of the given thread
+	 */
+	static void freeArch(Thread *t);
+
+	void makeUnrunnable();
+	void initProps();
+	static void doSwitch();
+	static Thread *createInitial(sProc *p);
+	static tid_t getFreeTid(void);
+	bool add();
+	void remove();
+
+	/* TODO temporary; restrict it later */
+public:
 	/* the signal-data, managed by the signals-module */
 	sSignals *signals;
 	/* thread id */
 	const tid_t tid;
+	/* a counter used to raise the priority after a certain number of "good behaviours" */
+	uint8_t prioGoodCnt;
 	/* the events the thread waits for (if waiting) */
 	uint events;
 	sWait *waits;
 	/* the process we belong to */
 	sProc *const proc;
+	/* for the scheduler */
+	Thread *prev;
+	Thread *next;
+
+protected:
+	uint8_t flags;
+	uint8_t priority;
+	uint8_t state;
+	/* the next state it will receive on context-switch */
+	uint8_t newState;
+	cpuid_t cpu;
+	/* whether signals should be ignored (while being blocked) */
+	uint8_t ignoreSignals;
+	/* the number of allocated resources (thread can't die until resources=0) */
+	uint8_t resources;
 	/* the stack-region(s) for this thread */
 	sVMRegion *stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
@@ -125,10 +651,6 @@ struct sThread {
 	size_t intrptLevel;
 	/* the save-area for registers */
 	sThreadRegs save;
-	/* architecture-specific attributes */
-	sThreadArchAttr archAttr;
-	/* the number of allocated resources (thread can't die until resources=0) */
-	uint8_t resources;
 	/* a list with heap-allocations that should be free'd on thread-termination */
 	void *termHeapAllocs[TERM_RESOURCE_CNT];
 	/* a list of locks that should be released on thread-termination */
@@ -144,22 +666,13 @@ struct sThread {
 	/* a list of currently requested frames, i.e. frames that are not free anymore, but were
 	 * reserved for this thread and have not yet been used */
 	sSLList reqFrames;
-	struct {
-		uint64_t timeslice;
-		/* number of microseconds of runtime this thread has got so far */
-		uint64_t runtime;
-		/* executed cycles in this second */
-		uint64_t curCycleCount;
-		uint64_t cycleStart;
-		/* executed cycles in the previous second */
-		uint64_t lastCycleCount;
-		/* the number of times we got chosen so far */
-		ulong syscalls;
-		ulong schedCount;
-	} stats;
-	/* for the scheduler */
-	sThread *prev;
-	sThread *next;
+	Stats stats;
+
+private:
+	static sSLList threads;
+	static Thread *tidToThread[MAX_THREAD_COUNT];
+	static tid_t nextTid;
+	static klock_t threadLock;
 };
 
 #ifdef __i386__
@@ -172,454 +685,173 @@ struct sThread {
 #include <sys/arch/mmix/task/thread.h>
 #endif
 
+inline Thread *ThreadBase::getById(tid_t tid) {
+	if(tid >= ARRAY_SIZE(tidToThread))
+		return NULL;
+	return tidToThread[tid];
+}
+
+inline void ThreadBase::switchNoSigs() {
+	ThreadBase *t = getRunning();
+	/* remember that the current thread wants to ignore signals */
+	t->ignoreSignals = 1;
+	switchAway();
+	t->ignoreSignals = 0;
+}
+
+inline void ThreadBase::addLock(klock_t *l) {
+	Thread *cur = getRunning();
+	assert(cur->termLockCount < TERM_RESOURCE_CNT);
+	cur->termLocks[cur->termLockCount++] = l;
+}
+
+inline void ThreadBase::remLock(klock_t *l) {
+	Thread *cur = getRunning();
+	assert(cur->termLockCount > 0);
+	cur->termLockCount--;
+}
+
+inline void ThreadBase::addHeapAlloc(void *ptr) {
+	Thread *cur = getRunning();
+	assert(cur->termHeapCount < TERM_RESOURCE_CNT);
+	cur->termHeapAllocs[cur->termHeapCount++] = ptr;
+}
+
+inline void ThreadBase::remHeapAlloc(void *ptr) {
+	Thread *cur = getRunning();
+	assert(cur->termHeapCount > 0);
+	cur->termHeapCount--;
+}
+
+inline void ThreadBase::addFileUsage(sFile *file) {
+	Thread *cur = getRunning();
+	assert(cur->termUsageCount < TERM_RESOURCE_CNT);
+	cur->termUsages[cur->termUsageCount++] = file;
+}
+
+inline void ThreadBase::remFileUsage(sFile *file) {
+	Thread *cur = getRunning();
+	assert(cur->termUsageCount > 0);
+	cur->termUsageCount--;
+}
+
+inline void ThreadBase::addCallback(void (*callback)(void)) {
+	Thread *cur = getRunning();
+	assert(cur->termCallbackCount < TERM_RESOURCE_CNT);
+	cur->termCallbacks[cur->termCallbackCount++] = callback;
+}
+
+inline void ThreadBase::remCallback(void (*callback)(void)) {
+	Thread *cur = getRunning();
+	assert(cur->termCallbackCount > 0);
+	cur->termCallbackCount--;
+}
+
+inline sIntrptStackFrame *ThreadBase::getIntrptStack() const {
+	if(intrptLevel > 0)
+		return intrptLevels[intrptLevel - 1];
+	return NULL;
+}
+
+inline size_t ThreadBase::pushIntrptLevel(sIntrptStackFrame *stack) {
+	assert(intrptLevel < MAX_INTRPT_LEVELS);
+	intrptLevels[intrptLevel++] = stack;
+	return intrptLevel;
+}
+
+inline void ThreadBase::popIntrptLevel() {
+	assert(intrptLevel > 0);
+	intrptLevel--;
+}
+
+inline size_t ThreadBase::getIntrptLevel() const {
+	assert(intrptLevel > 0);
+	return intrptLevel - 1;
+}
+
+inline bool ThreadBase::getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) {
+	bool res = false;
+	if(stackRegions[stackNo] != NULL)
+		res = vmm_getRegRange(proc->pid,stackRegions[stackNo],start,end,false);
+	return res;
+}
+
+inline bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) {
+	bool res = false;
+	if(tlsRegion != NULL)
+		res = vmm_getRegRange(proc->pid,tlsRegion,start,end,false);
+	return res;
+}
+
+inline void ThreadBase::block() {
+	assert(this != NULL);
+	sched_setBlocked(static_cast<Thread*>(this));
+}
+
+inline void ThreadBase::unblock() {
+	assert(this != NULL);
+	sched_setReady(static_cast<Thread*>(this));
+}
+
+inline void ThreadBase::unblockQuick() {
+	sched_setReadyQuick(static_cast<Thread*>(this));
+}
+
+inline void ThreadBase::suspend() {
+	assert(this != NULL);
+	sched_setSuspended(static_cast<Thread*>(this),true);
+}
+
+inline void ThreadBase::unsuspend() {
+	assert(this != NULL);
+	sched_setSuspended(static_cast<Thread*>(this),false);
+}
+
+inline bool ThreadBase::hasStackRegion(sVMRegion *vm) const {
+	size_t i;
+	for(i = 0; i < STACK_REG_COUNT; i++) {
+		if(stackRegions[i] == vm)
+			return true;
+	}
+	return false;
+}
+
+inline void ThreadBase::removeRegions(bool remStack) {
+	tlsRegion = NULL;
+	if(remStack) {
+		size_t i;
+		for(i = 0; i < STACK_REG_COUNT; i++)
+			stackRegions[i] = NULL;
+	}
+	/* remove all signal-handler since we've removed the code to handle signals */
+	sig_removeHandlerFor(tid);
+}
+
+inline frameno_t ThreadBase::getFrame() {
+	frameno_t frm = (frameno_t)sll_removeFirst(&reqFrames);
+	assert(frm != 0);
+	return frm;
+}
+
+inline void ThreadBase::discardFrames() {
+	frameno_t frm;
+	while((frm = (frameno_t)sll_removeFirst(&reqFrames)) != 0)
+		pmem_free(frm,FRM_USER);
+}
+
+inline void ThreadBase::terminate() {
+	/* if its the current one, it can't be chosen again by the scheduler */
+	if(this == getRunning())
+		makeUnrunnable();
+	term_addDead(static_cast<Thread*>(this));
+}
+
+inline void ThreadBase::makeUnrunnable() {
+	ev_removeThread(static_cast<Thread*>(this));
+	sched_removeThread(static_cast<Thread*>(this));
+}
+
 /**
  * The start-function for the idle-thread
  */
 EXTERN_C void thread_idle(void);
-
-/**
- * Inits the threading-stuff. Uses <p> as first process
- *
- * @param p the first process
- * @return the first thread
- */
-sThread *thread_init(sProc *p);
-
-/**
- * Inits the architecture-specific attributes of the given thread
- */
-int thread_initArch(sThread *t);
-
-/**
- * Adds a stack to the given initial thread. This is just used for initloader.
- *
- * @param t the thread
- */
-void thread_addInitialStack(sThread *t);
-
-/**
- * @return the current interrupt-stack, i.e. the innermost-level
- *
- * @param t the thread
- */
-sIntrptStackFrame *thread_getIntrptStack(const sThread *t);
-
-/**
- * Pushes the given kernel-stack onto the interrupt-level-stack
- *
- * @param t the thread
- * @param stack the kernel-stack
- * @return the current level
- */
-size_t thread_pushIntrptLevel(sThread *t,sIntrptStackFrame *stack);
-
-/**
- * Removes the topmost interrupt-level-stack
- *
- * @param t the thread
- */
-void thread_popIntrptLevel(sThread *t);
-
-/**
- * @param t the thread
- * @return the interrupt-level (0 .. MAX_INTRPT_LEVEL - 1)
- */
-size_t thread_getIntrptLevel(const sThread *t);
-
-/**
- * @return the number of existing threads
- */
-size_t thread_getCount(void);
-
-/**
- * @return the currently running thread
- */
-sThread *thread_getRunning(void);
-
-/**
- * Sets the currently running thread. Should ONLY be called by thread_switchTo()!
- *
- * @param t the thread
- */
-void thread_setRunning(sThread *t);
-
-/**
- * Checks whether the thread can be terminated. If so, it ensures that it won't be scheduled again.
- *
- * @param t the thread
- * @return true if it can be terminated now
- */
-bool thread_beginTerm(sThread *t);
-
-/**
- * Fetches the thread with given id from the internal thread-map
- *
- * @param tid the thread-id
- * @return the thread or NULL if not found
- */
-sThread *thread_getById(tid_t tid);
-
-/**
- * Pushes the given thread back to the idle-list
- *
- * @param t the idle-thread
- */
-void thread_pushIdle(sThread *t);
-
-/**
- * Pops an idle-thread from the idle-list
- *
- * @return the thread
- */
-sThread *thread_popIdle(void);
-
-/**
- * Retrieves the range of the stack with given number.
- *
- * @param t the thread
- * @param start will be set to the start-address (may be NULL)
- * @param end will be set to the end-address (may be NULL)
- * @param stackNo the stack-number
- * @return true if the stack-region exists
- */
-bool thread_getStackRange(sThread *t,uintptr_t *start,uintptr_t *end,size_t stackNo);
-
-/**
- * Retrieves the range of the TLS region
- *
- * @param t the thread
- * @param start will be set to the start-address (may be NULL)
- * @param end will be set to the end-address (may be NULL)
- * @return true if the TLS-region exists
- */
-bool thread_getTLSRange(sThread *t,uintptr_t *start,uintptr_t *end);
-
-/**
- * @param t the thread
- * @return the region of the given thread (NULL if not existing)
- */
-sVMRegion *thread_getTLSRegion(const sThread *t);
-
-/**
- * Sets the TLS-region for the given thread
- *
- * @param t the thread
- * @param vm the region
- */
-void thread_setTLSRegion(sThread *t,sVMRegion *vm);
-
-/**
- * Performs a thread-switch. That means the current thread will be saved and the first thread
- * will be picked from the ready-queue and resumed.
- */
-void thread_switch(void);
-
-/**
- * Switches the thread and remembers that we are waiting in the kernel. That means if you want
- * to wait in the kernel for something, use this function so that other modules know that the
- * current thread waits and should for example not receive signals.
- */
-void thread_switchNoSigs(void);
-
-/**
- * Switches to the given thread
- *
- * @param tid the thread-id
- */
-void thread_switchTo(tid_t tid);
-
-/**
- * Kills dead threads, if there are any; is called by thread_switchTo(). Should NOT be called by
- * anyone else.
- */
-void thread_killDead(void);
-
-/**
- * Blocks the given thread. ONLY CALLED by event.
- *
- * @param t the thread
- */
-void thread_block(sThread *t);
-
-/**
- * Unblocks the given thread. ONLY CALLED by event.
- *
- * @param t the thread
- */
-void thread_unblock(sThread *t);
-
-/**
- * Unblocks the given thread and puts it to the beginning of the ready-list. ONLY CALLED by event.
- *
- * @param t the thread
- */
-void thread_unblockQuick(sThread *t);
-
-/**
- * Suspends the given thread. ONLY CALLED by event.
- *
- * @param t the thread
- */
-void thread_suspend(sThread *t);
-
-/**
- * Resumes the given thread. ONLY CALLED by event.
- *
- * @param t the thread
- */
-void thread_unsuspend(sThread *t);
-
-/**
- * Checks whether the given thread has the given region for stack
- *
- * @param t the thread
- * @param vm the region
- * @return true if so
- */
-bool thread_hasStackRegion(const sThread *t,sVMRegion *vm);
-
-/**
- * Removes the regions for this thread. Optionally the stack as well.
- *
- * @param t the thread
- * @param remStack whether to remove the stack
- */
-void thread_removeRegions(sThread *t,bool remStack);
-
-/**
- * Extends the stack of the current thread so that the given address is accessible. If that
- * is not possible the function returns a negative error-code
- *
- * IMPORTANT: May cause a thread-switch for swapping!
- *
- * @param address the address that should be accessible
- * @return 0 on success
- */
-int thread_extendStack(uintptr_t address);
-
-/**
- * @return the current timestamp (this should be comparable with stats.cycleStart)
- */
-uint64_t thread_getTSC(void);
-
-/**
- * @return the ticks per second (this should be comparable with stats.cycleStart)
- */
-uint64_t thread_ticksPerSec(void);
-
-/**
- * @param thread the thread
- * @return the runtime of the given thread
- */
-uint64_t thread_getRuntime(const sThread *t);
-
-/**
- * @param thread the thread
- * @return the cycles of the given thread
- */
-uint64_t thread_getCycles(const sThread *t);
-
-/**
- * Updates the runtime-percentage of all threads
- */
-void thread_updateRuntimes(void);
-
-/**
- * Reserves <count> frames for the current thread. That means, it swaps in memory, if
- * necessary, allocates that frames and stores them in the thread. You can get them later with
- * thread_getFrame(). You can free not needed frames with thread_discardFrames().
- *
- * @param count the number of frames to reserve
- * @return true on success
- */
-bool thread_reserveFrames(size_t count);
-
-/**
- * The same as thread_reserveFrames(), but does it for <t> instead of for the running thread.
- *
- * @param t the thread to reserve the frames for
- * @param count the number of frames to reserve
- * @return true on success
- */
-bool thread_reserveFramesFor(sThread *t,size_t count);
-
-/**
- * Removes one frame from the collection of frames of the current thread. This will always succeed,
- * because the function assumes that you have called thread_reserveFrames() previously.
- *
- * @return the frame
- */
-frameno_t thread_getFrame(void);
-
-/**
- * The same as thread_getFrame(), but uses <t> instead of the current one.
- *
- * @param t the thread to take the frame from
- * @return the frame
- */
-frameno_t thread_getFrameOf(sThread *t);
-
-/**
- * Free's all frames that the current thread has still reserved. This should be done after an
- * operation that needed more frames to ensure that reserved but not needed frames are free'd.
- */
-void thread_discardFrames(void);
-
-/**
- * The same as thread_discardFrames(), but does it for <t> instead of for the running thread.
- *
- * @param t the thread to discard the frames for
- */
-void thread_discardFramesFor(sThread *t);
-
-/**
- * Adds the given lock to the term-lock-list
- *
- * @param l the lock
- */
-void thread_addLock(klock_t *l);
-
-/**
- * Removes the given lock from the term-lock-list
- *
- * @param l the lock
- */
-void thread_remLock(klock_t *l);
-
-/**
- * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies
- * before it is removed.
- *
- * @param ptr the pointer to the heap
- */
-void thread_addHeapAlloc(void *ptr);
-
-/**
- * Removes the given pointer from the term-heap-allocation-list
- *
- * @param ptr the pointer to the heap
- */
-void thread_remHeapAlloc(void *ptr);
-
-/**
- * Adds the given file to the file-usage-list. The file-usages will be decreased if the thread dies.
- *
- * @param file the file
- */
-void thread_addFileUsage(sFile *file);
-
-/**
- * Removes the given file from the file-usage-list.
- *
- * @param file the file
- */
-void thread_remFileUsage(sFile *file);
-
-/**
- * Adds the given callback to the callback-list. These will be called on thread-termination.
- *
- * @param callback the callback
- */
-void thread_addCallback(void (*callback)(void));
-
-/**
- * Removes the given callback from the callback-list.
- *
- * @param callback the callback
- */
-void thread_remCallback(void (*callback)(void));
-
-/**
- * Finishes the clone of a thread
- *
- * @param t the original thread
- * @param nt the new thread
- * @return 0 for the parent, 1 for the child
- */
-int thread_finishClone(sThread *t,sThread *nt);
-
-/**
- * Performs the finish-operations after the thread nt has been started, but before it runs.
- *
- * @param t the running thread
- * @param tn the started thread
- * @param arg the argument
- * @param entryPoint the entry-point of the thread (in kernel or in user-space)
- */
-void thread_finishThreadStart(sThread *t,sThread *nt,const void *arg,uintptr_t entryPoint);
-
-/**
- * Clones <src> to <dst>. That means a new thread will be created and <src> will be copied to the
- * new one.
- *
- * @param src the thread to copy
- * @param dst will contain a pointer to the new thread
- * @param p the process the thread should belong to
- * @param flags the flags for the thread (T_*)
- * @param cloneProc whether a process is cloned or just a thread
- * @return 0 on success
- */
-int thread_create(sThread *src,sThread **dst,sProc *p,uint8_t flags,bool cloneProc);
-
-/**
- * Determines the number of necessary frames to start a new thread
- */
-size_t thread_getThreadFrmCnt(void);
-
-/**
- * Clones the architecture-specific attributes of the given thread
- *
- * @param src the thread to copy
- * @param dst will contain a pointer to the new thread
- * @param cloneProc whether a process is cloned or just a thread
- * @return 0 on success
- */
-int thread_createArch(const sThread *src,sThread *dst,bool cloneProc);
-
-/**
- * Terminates the given thread, i.e. adds it to the terminator and if its the running thread, it
- * makes sure that it isn't chosen again.
- *
- * @param t the thread to terminate
- */
-void thread_terminate(sThread *t);
-
-/**
- * Kills the given thread, i.e. releases all resources and destroys it.
- *
- * @param t the thread
- */
-void thread_kill(sThread *t);
-
-/**
- * Frees the architecture-specific attributes of the given thread
- *
- * @param t the thread
- */
-void thread_freeArch(sThread *t);
-
-/**
- * Prints all threads
- */
-void thread_printAll(void);
-
-/**
- * Prints a short info about the given thread
- *
- * @param t the thread
- */
-void thread_printShort(const sThread *t);
-
-/**
- * Prints the given thread
- *
- * @param t the thread
- */
-void thread_print(const sThread *t);
-
-/**
- * Prints the given thread-state
- *
- * @param state the pointer to the state-struct
- */
-void thread_printState(const sThreadRegs *state);

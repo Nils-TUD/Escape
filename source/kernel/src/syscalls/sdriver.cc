@@ -32,7 +32,7 @@
 #include <errno.h>
 #include <string.h>
 
-int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
+int sysc_createdev(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uint type = SYSC_ARG2(stack);
@@ -62,7 +62,7 @@ int sysc_createdev(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-int sysc_getclientid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getclientid(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	sFile *file;
 	inode_t id;
@@ -79,7 +79,7 @@ int sysc_getclientid(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,id);
 }
 
-int sysc_getclient(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getclient(Thread *t,sIntrptStackFrame *stack) {
 	int drvFd = (int)SYSC_ARG1(stack);
 	inode_t cid = (inode_t)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
@@ -106,7 +106,7 @@ int sysc_getclient(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-int sysc_getwork(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getwork(Thread *t,sIntrptStackFrame *stack) {
 	sFile *files[MAX_GETWORK_DEVICES];
 	const int *fds = (const int*)SYSC_ARG1(stack);
 	size_t fdCount = SYSC_ARG2(stack);

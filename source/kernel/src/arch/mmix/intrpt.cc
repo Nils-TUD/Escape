@@ -79,8 +79,8 @@ typedef struct {
 EXTERN_C void intrpt_forcedTrap(sIntrptStackFrame *stack);
 EXTERN_C bool intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo);
 
-static void intrpt_enterKernel(sThread *t,sIntrptStackFrame *stack);
-static void intrpt_leaveKernel(sThread *t);
+static void intrpt_enterKernel(Thread *t,sIntrptStackFrame *stack);
+static void intrpt_leaveKernel(Thread *t);
 static void intrpt_defHandler(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_exProtFault(sIntrptStackFrame *stack,int irqNo);
 static void intrpt_irqKB(sIntrptStackFrame *stack,int irqNo);
@@ -160,27 +160,27 @@ size_t intrpt_getCount(void) {
 }
 
 void intrpt_forcedTrap(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	intrpt_enterKernel(t,stack);
 	/* calculate offset of registers on the stack */
 	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
 	begin -= *begin;
-	t->stats.syscalls++;
+	t->getStats().syscalls++;
 	sysc_handle(t,begin);
 
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
-	t = thread_getRunning(); /* thread might have changed */
-	stack[-14] = DIR_MAPPED_SPACE | (t->archAttr.kstackFrame * PAGE_SIZE);
+	t = Thread::getRunning(); /* thread might have changed */
+	stack[-14] = DIR_MAPPED_SPACE | (t->getKernelStack() * PAGE_SIZE);
 
 	/* only handle signals, if we come directly from user-mode */
-	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0)
+	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0)
 		uenv_handleSignal(t,stack);
 	intrpt_leaveKernel(t);
 }
 
 bool intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	sInterrupt *intrpt;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	intrpt_enterKernel(t,stack);
 	irqCount++;
 
@@ -189,21 +189,21 @@ bool intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	intrpt->handler(stack,irqNo);
 
 	/* only handle signals, if we come directly from user-mode */
-	t = thread_getRunning();
-	if((t->flags & T_IDLE) || thread_getIntrptLevel(t) == 0)
+	t = Thread::getRunning();
+	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0)
 		uenv_handleSignal(t,stack);
 	intrpt_leaveKernel(t);
-	return t->flags & T_IDLE;
+	return t->getFlags() & T_IDLE;
 }
 
-static void intrpt_enterKernel(sThread *t,sIntrptStackFrame *stack) {
-	thread_pushIntrptLevel(t,stack);
-	thread_pushSpecRegs();
+static void intrpt_enterKernel(Thread *t,sIntrptStackFrame *stack) {
+	t->pushIntrptLevel(stack);
+	Thread::pushSpecRegs();
 }
 
-static void intrpt_leaveKernel(sThread *t) {
-	thread_popSpecRegs();
-	thread_popIntrptLevel(t);
+static void intrpt_leaveKernel(Thread *t) {
+	Thread::popSpecRegs();
+	t->popIntrptLevel();
 }
 
 static void intrpt_defHandler(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
@@ -233,9 +233,9 @@ static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
 	if(!vmm_pagefault(pfaddr,irqNo == TRAP_PROT_WRITE)) {
 		/* ok, now lets check if the thread wants more stack-pages */
-		if(thread_extendStack(pfaddr) < 0) {
+		if(Thread::extendStack(pfaddr) < 0) {
 			pid_t pid = proc_getRunning();
-			sKSpecRegs *sregs = thread_getSpecRegsOf(thread_getRunning());
+			sKSpecRegs *sregs = Thread::getRunning()->getSpecRegs();
 			vid_printf("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
 					pfaddr,sregs->rww);
 			proc_segFault();
@@ -273,9 +273,9 @@ static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo
 	res = timer_intrpt();
 	timer_ackIntrpt();
 	if(res) {
-		sThread *t = thread_getRunning();
-		if(thread_getIntrptLevel(t) == 0)
-			thread_switch();
+		Thread *t = Thread::getRunning();
+		if(t->getIntrptLevel() == 0)
+			Thread::switchAway();
 	}
 }
 

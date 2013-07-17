@@ -236,7 +236,7 @@ const char *vfs_node_getPath(inode_t nodeNo) {
 
 int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint flags) {
 	sVFSNode *dir,*n = vfs_node_get(0);
-	const sThread *t = thread_getRunning();
+	const Thread *t = Thread::getRunning();
 	/* at the beginning, t might be NULL */
 	pid_t pid = t ? t->proc->pid : KERNEL_PID;
 	int pos = 0,err,depth,lastdepth;

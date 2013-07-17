@@ -38,8 +38,3 @@ typedef struct {
 	uint32_t r30;
 	uint32_t r31;
 } sThreadRegs;
-
-typedef struct {
-	/* the frame mapped at KERNEL_STACK */
-	frameno_t kstackFrame;
-} sThreadArchAttr;

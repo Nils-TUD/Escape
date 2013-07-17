@@ -38,7 +38,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,sFile *file,sVFSNode *node,uint flags) {
 	ssize_t res;
 	sArgsMsg msg;
 	msgid_t mid;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 
 	if(node->name == NULL)
 		return -EDESTROYED;
@@ -53,14 +53,14 @@ ssize_t vfs_devmsgs_open(pid_t pid,sFile *file,sVFSNode *node,uint flags) {
 		return res;
 
 	/* receive response */
-	t->resources++;
+	t->addResource();
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
 		vassert(res < 0 || mid == MSG_DEV_OPEN_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,vfs_node_getPath(vfs_node_getNo(node)),node);
 	}
 	while(res == -EINTR);
-	t->resources--;
+	t->remResource();
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -72,7 +72,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,sFile *file,sVFSNode *node,USER void *buffer,
 	msgid_t mid;
 	sArgsMsg msg;
 	sWaitObject obj;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 
 	if(node->name == NULL)
 		return -EDESTROYED;
@@ -96,14 +96,14 @@ ssize_t vfs_devmsgs_read(pid_t pid,sFile *file,sVFSNode *node,USER void *buffer,
 
 	/* read response and ensure that we don't get killed until we've received both messages
 	 * (otherwise the channel might get in an inconsistent state) */
-	t->resources++;
+	t->addResource();
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
 		vassert(res < 0 || mid == MSG_DEV_READ_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,vfs_node_getPath(vfs_node_getNo(node)),node);
 	}
 	while(res == -EINTR);
-	t->resources--;
+	t->remResource();
 	if(res < 0)
 		return res;
 
@@ -114,11 +114,11 @@ ssize_t vfs_devmsgs_read(pid_t pid,sFile *file,sVFSNode *node,USER void *buffer,
 		return msg.arg1;
 
 	/* read data */
-	t->resources++;
+	t->addResource();
 	do
 		res = vfs_receiveMsg(pid,file,NULL,buffer,count,true);
 	while(res == -EINTR);
-	t->resources--;
+	t->remResource();
 	return res;
 }
 
@@ -127,7 +127,7 @@ ssize_t vfs_devmsgs_write(pid_t pid,sFile *file,sVFSNode *node,USER const void *
 	msgid_t mid;
 	ssize_t res;
 	sArgsMsg msg;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 
 	if(node->name == NULL)
 		return -EDESTROYED;
@@ -143,14 +143,14 @@ ssize_t vfs_devmsgs_write(pid_t pid,sFile *file,sVFSNode *node,USER const void *
 		return res;
 
 	/* read response */
-	t->resources++;
+	t->addResource();
 	do {
 		res = vfs_receiveMsg(pid,file,&mid,&msg,sizeof(msg),true);
 		vassert(res < 0 || mid == MSG_DEV_WRITE_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,vfs_node_getPath(vfs_node_getNo(node)),node);
 	}
 	while(res == -EINTR);
-	t->resources--;
+	t->remResource();
 	if(res < 0)
 		return res;
 	return msg.arg1;

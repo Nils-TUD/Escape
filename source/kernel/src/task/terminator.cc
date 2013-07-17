@@ -36,28 +36,28 @@ void term_init(void) {
 }
 
 void term_start(void) {
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 	spinlock_aquire(&termLock);
 	while(1) {
 		if(sll_length(&deadThreads) == 0) {
 			ev_wait(t,EVI_TERMINATION,0);
 			spinlock_release(&termLock);
 
-			thread_switch();
+			Thread::switchAway();
 
 			spinlock_aquire(&termLock);
 		}
 
 		while(sll_length(&deadThreads) > 0) {
-			sThread *dt = (sThread*)sll_removeFirst(&deadThreads);
+			Thread *dt = (Thread*)sll_removeFirst(&deadThreads);
 			/* release the lock while we're killing the thread; the process-module may use us
 			 * in this time to add another thread */
 			spinlock_release(&termLock);
 
-			while(!thread_beginTerm(dt)) {
+			while(!dt->beginTerm()) {
 				/* ensure that we idle to receive interrupts */
 				timer_sleepFor(t->tid,20,true);
-				thread_switch();
+				Thread::switchAway();
 			}
 			proc_killThread(dt->tid);
 
@@ -66,11 +66,11 @@ void term_start(void) {
 	}
 }
 
-void term_addDead(sThread *t) {
+void term_addDead(Thread *t) {
 	spinlock_aquire(&termLock);
 	/* ensure that we don't add a thread twice */
-	if(!(t->flags & T_WILL_DIE)) {
-		t->flags |= T_WILL_DIE;
+	if(!(t->getFlags() & T_WILL_DIE)) {
+		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(sll_append(&deadThreads,t));
 		ev_wakeup(EVI_TERMINATION,0);
 	}

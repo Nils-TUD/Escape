@@ -31,17 +31,17 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,fSignal handler);
-static uint32_t *uenv_addArgs(sThread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread);
+static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler);
+static uint32_t *uenv_addArgs(Thread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread);
 
-void uenv_handleSignal(sThread *t,sIntrptStackFrame *stack) {
+void uenv_handleSignal(Thread *t,sIntrptStackFrame *stack) {
 	int sig;
 	fSignal handler;
 	int res = sig_checkAndStart(t->tid,&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,stack,sig,handler);
 	else if(res == SIG_CHECK_OTHER)
-		thread_switch();
+		Thread::switchAway();
 }
 
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,int signal) {
@@ -64,8 +64,8 @@ bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sSt
 		uintptr_t entryPoint,A_UNUSED int fd) {
 	uint32_t *sp;
 	char **argv;
-	sThread *t = thread_getRunning();
-	sIntrptStackFrame *frame = thread_getIntrptStack(t);
+	Thread *t = Thread::getRunning();
+	sIntrptStackFrame *frame = t->getIntrptStack();
 
 	/*
 	 * Initial stack:
@@ -86,7 +86,7 @@ bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sSt
 	 */
 
 	/* get esp */
-	thread_getStackRange(t,NULL,(uintptr_t*)&sp,0);
+	t->getStackRange(NULL,(uintptr_t*)&sp,0);
 
 	/* copy arguments on the user-stack (4byte space) */
 	sp--;
@@ -129,7 +129,7 @@ bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sSt
 
 uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *sp;
-	sThread *t = thread_getRunning();
+	Thread *t = Thread::getRunning();
 
 	/*
 	 * Initial stack:
@@ -145,7 +145,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	 */
 
 	/* get esp */
-	thread_getStackRange(t,NULL,(uintptr_t*)&sp,0);
+	t->getStackRange(NULL,(uintptr_t*)&sp,0);
 	sp--;
 
 	/* put arg on stack */
@@ -154,7 +154,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return uenv_addArgs(t,sp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
+static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	if(!paging_isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
 		proc_segFault();
@@ -178,10 +178,10 @@ static void uenv_startSignalHandler(sThread *t,sIntrptStackFrame *stack,int sig,
 	stack->r[31] = t->proc->sigRetAddr;
 }
 
-static uint32_t *uenv_addArgs(sThread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread) {
+static uint32_t *uenv_addArgs(Thread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	uintptr_t tlsStart,tlsEnd;
-	if(thread_getTLSRange(t,&tlsStart,&tlsEnd)) {
+	if(t->getTLSRange(&tlsStart,&tlsEnd)) {
 		*sp-- = tlsStart;
 		*sp-- = tlsEnd - tlsStart;
 	}

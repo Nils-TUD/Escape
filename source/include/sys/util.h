@@ -66,7 +66,7 @@ void util_printUserState(void);
  *
  * @param t the thread
  */
-void util_printUserStateOf(const sThread *t);
+void util_printUserStateOf(const Thread *t);
 
 /**
  * Starts the log-viewer
@@ -99,7 +99,7 @@ sFuncCall *util_getUserStackTrace(void);
  * @param t the thread
  * @return the first function-call (for util_printStackTrace()) or NULL if failed
  */
-sFuncCall *util_getUserStackTraceOf(sThread *t);
+sFuncCall *util_getUserStackTraceOf(Thread *t);
 
 /**
  * Builds the kernel-stack-trace of the given thread
@@ -107,7 +107,7 @@ sFuncCall *util_getUserStackTraceOf(sThread *t);
  * @param t the thread
  * @return the first function-call (for util_printStackTrace())
  */
-sFuncCall *util_getKernelStackTraceOf(const sThread *t);
+sFuncCall *util_getKernelStackTraceOf(const Thread *t);
 
 /**
  * Builds the stack-trace for the kernel

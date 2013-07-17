@@ -109,7 +109,7 @@ void sig_removeHandlerFor(tid_t tid) {
 	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	if(s) {
-		sThread *t = thread_getById(tid);
+		Thread *t = Thread::getById(tid);
 		/* remove all pending */
 		sig_removePending(s,0);
 		sll_removeFirstWith(&sigThreads,t);
@@ -138,20 +138,20 @@ bool sig_hasSignalFor(tid_t tid) {
 	spinlock_aquire(&sigLock);
 	s = sig_getThread(tid,false);
 	if(s && !s->currentSignal && (s->deliveredSignal || s->pending.count > 0)) {
-		sThread *t = thread_getById(tid);
-		res = !t->ignoreSignals;
+		Thread *t = Thread::getById(tid);
+		res = !t->isIgnoringSigs();
 	}
 	spinlock_release(&sigLock);
 	return res;
 }
 
 int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler) {
-	sThread *t = thread_getById(tid);
+	Thread *t = Thread::getById(tid);
 	sSignals *s;
 	int res = SIG_CHECK_NO;
 	spinlock_aquire(&sigLock);
 	s = t->signals;
-	assert(t->ignoreSignals == 0);
+	assert(t->isIgnoringSigs() == 0);
 	if(s && s->deliveredSignal && !s->currentSignal) {
 		*handler = s->handler[s->deliveredSignal];
 		*sig = s->deliveredSignal;
@@ -163,9 +163,9 @@ int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler) {
 	if(res == SIG_CHECK_NO && pendingSignals > 0) {
 		sSLNode *n;
 		for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
-			t = (sThread*)n->data;
+			t = (Thread*)n->data;
 			s = t->signals;
-			if(!t->ignoreSignals && !s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
+			if(!t->isIgnoringSigs() && !s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
 				sPendingSig *psig = s->pending.first;
 				if(t->tid == tid) {
 					*handler = s->handler[psig->sig];
@@ -216,7 +216,7 @@ bool sig_addSignal(int signal) {
 	bool res = false;
 	spinlock_aquire(&sigLock);
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
-		sThread *t = (sThread*)n->data;
+		Thread *t = (Thread*)n->data;
 		if(t->signals->handler[signal] && t->signals->handler[signal] != SIG_IGN) {
 			sig_add(t->signals,signal);
 			res = true;
@@ -272,7 +272,7 @@ void sig_print(void) {
 	sSLNode *n;
 	vid_printf("Signal handler:\n");
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
-		sThread *t = (sThread*)n->data;
+		Thread *t = (Thread*)n->data;
 		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 		vid_printf("\t\tpending: %zu\n",t->signals->pending.count);
 		vid_printf("\t\tdeliver: %d\n",t->signals->deliveredSignal);
@@ -289,7 +289,7 @@ size_t sig_dbg_getHandlerCount(void) {
 	sSLNode *n;
 	size_t i,c = 0;
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
-		sThread *t = (sThread*)n->data;
+		Thread *t = (Thread*)n->data;
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(t->signals->handler[i])
 				c++;
@@ -348,7 +348,7 @@ static void sig_removePending(sSignals *s,int sig) {
 }
 
 static sSignals *sig_getThread(tid_t tid,bool create) {
-	sThread *t = thread_getById(tid);
+	Thread *t = Thread::getById(tid);
 	if(t->signals == NULL) {
 		if(!create)
 			return NULL;

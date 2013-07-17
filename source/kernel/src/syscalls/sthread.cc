@@ -42,15 +42,15 @@ static int sysc_doWait(const sWaitObject *uobjects,size_t objCount,time_t maxWai
 static int sysc_doWaitLoop(const sWaitObject *uobjects,size_t objCount,
 		sFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident);
 
-int sysc_gettid(sThread *t,sIntrptStackFrame *stack) {
+int sysc_gettid(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->tid);
 }
 
-int sysc_getthreadcnt(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getthreadcnt(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,sll_length(&t->proc->threads));
 }
 
-int sysc_startthread(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_startthread(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
 	int res = proc_startThread(entryPoint,0,arg);
@@ -59,22 +59,22 @@ int sysc_startthread(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_exit(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_exit(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int exitCode = (int)SYSC_ARG1(stack);
 	proc_exit(exitCode);
-	thread_switch();
+	Thread::switchAway();
 	util_panic("We shouldn't get here...");
 	SYSC_RET1(stack,0);
 }
 
-int sysc_getcycles(sThread *t,sIntrptStackFrame *stack) {
+int sysc_getcycles(Thread *t,sIntrptStackFrame *stack) {
 	uLongLong cycles;
-	cycles.val64 = t->stats.curCycleCount;
+	cycles.val64 = t->getStats().curCycleCount;
 	SYSC_SETRET2(stack,cycles.val32.upper);
 	SYSC_RET1(stack,cycles.val32.lower);
 }
 
-int sysc_alarm(sThread *t,sIntrptStackFrame *stack) {
+int sysc_alarm(Thread *t,sIntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
 	if((res = timer_sleepFor(t->tid,msecs,false)) < 0)
@@ -82,12 +82,12 @@ int sysc_alarm(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_sleep(sThread *t,sIntrptStackFrame *stack) {
+int sysc_sleep(Thread *t,sIntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
 	if((res = timer_sleepFor(t->tid,msecs,true)) < 0)
 		SYSC_ERROR(stack,res);
-	thread_switch();
+	Thread::switchAway();
 	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
 	 * and the sleep-time was not over yet. */
 	timer_removeThread(t->tid);
@@ -96,12 +96,12 @@ int sysc_sleep(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_yield(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
-	thread_switch();
+int sysc_yield(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+	Thread::switchAway();
 	SYSC_RET1(stack,0);
 }
 
-int sysc_wait(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_wait(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	const sWaitObject *uobjects = (const sWaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
@@ -118,7 +118,7 @@ int sysc_wait(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_waitunlock(sThread *t,sIntrptStackFrame *stack) {
+int sysc_waitunlock(Thread *t,sIntrptStackFrame *stack) {
 	const sWaitObject *uobjects = (const sWaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
@@ -138,10 +138,10 @@ int sysc_waitunlock(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_notify(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
+int sysc_notify(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	uint events = SYSC_ARG2(stack);
-	sThread *nt = thread_getById(tid);
+	Thread *nt = Thread::getById(tid);
 
 	if((events & ~EV_USER_NOTIFY_MASK) != 0 || nt == NULL)
 		SYSC_ERROR(stack,-EINVAL);
@@ -149,7 +149,7 @@ int sysc_notify(A_UNUSED sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_lock(sThread *t,sIntrptStackFrame *stack) {
+int sysc_lock(Thread *t,sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	ushort flags = (uint)SYSC_ARG3(stack);
@@ -161,7 +161,7 @@ int sysc_lock(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_unlock(sThread *t,sIntrptStackFrame *stack) {
+int sysc_unlock(Thread *t,sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	pid_t pid = t->proc->pid;
@@ -172,10 +172,10 @@ int sysc_unlock(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int sysc_join(sThread *t,sIntrptStackFrame *stack) {
+int sysc_join(Thread *t,sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	if(tid != 0) {
-		const sThread *tt = thread_getById(tid);
+		const Thread *tt = Thread::getById(tid);
 		/* just threads from the own process */
 		if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 			SYSC_ERROR(stack,-EINVAL);
@@ -185,9 +185,9 @@ int sysc_join(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_suspend(sThread *t,sIntrptStackFrame *stack) {
+int sysc_suspend(Thread *t,sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	sThread *tt = thread_getById(tid);
+	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 		SYSC_ERROR(stack,-EINVAL);
@@ -195,9 +195,9 @@ int sysc_suspend(sThread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_resume(sThread *t,sIntrptStackFrame *stack) {
+int sysc_resume(Thread *t,sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	sThread *tt = thread_getById(tid);
+	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 		SYSC_ERROR(stack,-EINVAL);

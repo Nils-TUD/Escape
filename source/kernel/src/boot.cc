@@ -35,11 +35,16 @@
 #define BAR_PADY		((VID_ROWS / 2) - ((BAR_HEIGHT + 2) / 2) - 1)
 
 static void drawProgressBar(void);
+extern void (*CTORS_BEGIN)();
+extern void (*CTORS_END)();
 
 static size_t finished = 0;
 
 void boot_start(sBootInfo *info) {
 	size_t i;
+	for(void (**func)() = &CTORS_BEGIN; func != &CTORS_END; func++)
+		(*func)();
+
 	boot_arch_start(info);
 	vid_setTargets(TARGET_SCREEN);
 	drawProgressBar();

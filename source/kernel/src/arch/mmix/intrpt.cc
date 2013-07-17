@@ -76,8 +76,8 @@ typedef struct {
 	int signal;
 } sInterrupt;
 
-void intrpt_forcedTrap(sIntrptStackFrame *stack);
-bool intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo);
+EXTERN_C void intrpt_forcedTrap(sIntrptStackFrame *stack);
+EXTERN_C bool intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo);
 
 static void intrpt_enterKernel(sThread *t,sIntrptStackFrame *stack);
 static void intrpt_leaveKernel(sThread *t);

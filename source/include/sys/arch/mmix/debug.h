@@ -27,7 +27,7 @@
  *
  * @param c the character
  */
-extern void debugc(char c);
+EXTERN_C void debugc(char c);
 
 /**
  * Same as debugf, but with the va_list as argument

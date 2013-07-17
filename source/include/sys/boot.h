@@ -33,8 +33,10 @@ typedef struct sBootTaskList {
 	size_t count;
 	size_t moduleCount;
 
+#ifdef __cplusplus
 	sBootTaskList(const sBootTask *tasks,size_t count) : tasks(tasks), count(count), moduleCount(0) {
 	}
+#endif
 } sBootTaskList;
 
 #ifdef __i386__

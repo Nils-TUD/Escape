@@ -35,7 +35,7 @@
 /**
  * @return the timestamp-counter value
  */
-uint64_t cpu_rdtsc(void);
+EXTERN_C uint64_t cpu_rdtsc(void);
 
 /**
  * @return the speed of the CPU in Hz

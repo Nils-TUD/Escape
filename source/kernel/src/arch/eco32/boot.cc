@@ -58,10 +58,7 @@ static const sBootTask tasks[] = {
 	{"Initializing timer...",timer_init},
 	{"Initializing signal handling...",sig_init},
 };
-const sBootTaskList bootTaskList = {
-	.tasks = tasks,
-	.count = ARRAY_SIZE(tasks)
-};
+const sBootTaskList bootTaskList(tasks,ARRAY_SIZE(tasks));
 
 static bool loadedMods = false;
 static sLoadProg progs[MAX_PROG_COUNT];

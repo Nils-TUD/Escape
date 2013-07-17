@@ -36,7 +36,7 @@
 
 #define TRAMPOLINE_ADDR		0x7000
 
-extern "C" void apProtMode(void);
+EXTERN_C void apProtMode(void);
 
 static klock_t smpLock;
 static volatile size_t seenAPs = 0;

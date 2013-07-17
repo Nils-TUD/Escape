@@ -24,7 +24,7 @@
 /**
  * @return the system-call-number
  */
-extern int cpu_getSyscallNo(void);
+EXTERN_C int cpu_getSyscallNo(void);
 
 /* some convenience-macros */
 #define SYSC_SETERROR(stack,errorCode)	((stack)[7] = (errorCode))

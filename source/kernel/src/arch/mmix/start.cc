@@ -27,6 +27,8 @@
 #include <sys/util.h>
 #include <assert.h>
 
+EXTERN_C uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss);
+
 static A_ALIGNED(8) uint8_t initloader[] = {
 #if DEBUGGING
 #	include "../../../../build/mmix-debug/user_initloader.dump"
@@ -35,7 +37,7 @@ static A_ALIGNED(8) uint8_t initloader[] = {
 #endif
 };
 
-extern "C" uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
+uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	sThread *t;
 	sStartupInfo info;
 

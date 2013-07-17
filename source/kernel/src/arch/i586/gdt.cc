@@ -190,9 +190,9 @@ typedef struct {
 	uint8_t ioMapEnd;
 } A_PACKED sTSS;
 
-extern "C" void gdt_flush(sGDTTable *gdt);
-extern "C" void gdt_get(sGDTTable *gdt);
-extern "C" void tss_load(size_t gdtOffset);
+EXTERN_C void gdt_flush(sGDTTable *gdt);
+EXTERN_C void gdt_get(sGDTTable *gdt);
+EXTERN_C void tss_load(size_t gdtOffset);
 static void gdt_set_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size,uint8_t access,
 		uint8_t ringLevel);
 static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size);

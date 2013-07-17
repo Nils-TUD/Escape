@@ -48,7 +48,8 @@ typedef struct {
  *
  * @param fmt the format of the message to display
  */
-void util_panic(const char *fmt,...);
+/* TODO temporary! */
+EXTERN_C void util_panic(const char *fmt,...);
 
 /**
  * Architecture dependent part of panic

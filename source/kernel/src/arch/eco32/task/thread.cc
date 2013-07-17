@@ -31,9 +31,9 @@
 #include <assert.h>
 #include <errno.h>
 
-extern void thread_startup(void);
-extern bool thread_save(sThreadRegs *saveArea);
-extern bool thread_resume(pagedir_t pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
+EXTERN_C void thread_startup(void);
+EXTERN_C bool thread_save(sThreadRegs *saveArea);
+EXTERN_C bool thread_resume(pagedir_t pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
 
 static sThread *cur = NULL;
 
@@ -168,7 +168,7 @@ bool thread_beginTerm(sThread *t) {
 
 void thread_doSwitch(void) {
 	sThread *old = thread_getRunning();
-	sThread *new;
+	sThread *n;
 	/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-
 	 * measurement */
 	time_t timestamp = timer_getTimestamp();
@@ -177,21 +177,21 @@ void thread_doSwitch(void) {
 	old->stats.curCycleCount += timestamp - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	new = sched_perform(old,runtime);
-	new->stats.schedCount++;
+	n = sched_perform(old,runtime);
+	n->stats.schedCount++;
 
-	if(new->tid != old->tid) {
+	if(n->tid != old->tid) {
 		if(!thread_save(&old->save)) {
-			thread_setRunning(new);
-			vmm_setTimestamp(new,timestamp);
+			thread_setRunning(n);
+			vmm_setTimestamp(n,timestamp);
 
-			smp_schedule(new->cpu,new,timestamp);
-			new->stats.cycleStart = timestamp;
-			thread_resume(new->proc->pagedir,&new->save,new->archAttr.kstackFrame);
+			smp_schedule(n->cpu,n,timestamp);
+			n->stats.cycleStart = timestamp;
+			thread_resume(n->proc->pagedir,&n->save,n->archAttr.kstackFrame);
 		}
 	}
 	else
-		new->stats.cycleStart = timestamp;
+		n->stats.cycleStart = timestamp;
 }
 
 

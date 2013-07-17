@@ -33,9 +33,9 @@
 #include <assert.h>
 #include <errno.h>
 
-extern "C" void thread_startup(void);
-extern "C" bool thread_save(sThreadRegs *saveArea);
-extern "C" bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock,bool newProc);
+EXTERN_C void thread_startup(void);
+EXTERN_C bool thread_save(sThreadRegs *saveArea);
+EXTERN_C bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock,bool newProc);
 
 static klock_t switchLock;
 static bool threadSet = false;

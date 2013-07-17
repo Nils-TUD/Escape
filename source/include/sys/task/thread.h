@@ -175,7 +175,7 @@ struct sThread {
 /**
  * The start-function for the idle-thread
  */
-extern void thread_idle(void);
+EXTERN_C void thread_idle(void);
 
 /**
  * Inits the threading-stuff. Uses <p> as first process

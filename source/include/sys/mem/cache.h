@@ -27,7 +27,8 @@
  * @param size the size
  * @return the pointer to the allocated area or NULL
  */
-void *cache_alloc(size_t size);
+/* TODO temporary! */
+EXTERN_C void *cache_alloc(size_t size);
 
 /**
  * Allocates <num> objects with <size> bytes from the cache and zero's the memory.
@@ -36,7 +37,7 @@ void *cache_alloc(size_t size);
  * @param size the size of an object
  * @return the pointer to the allocated area or NULL
  */
-void *cache_calloc(size_t num,size_t size);
+EXTERN_C void *cache_calloc(size_t num,size_t size);
 
 /**
  * Reallocates the area at <p> to be <size> bytes large. This may involve moving it to a different
@@ -46,14 +47,14 @@ void *cache_calloc(size_t num,size_t size);
  * @param size the new size of the area
  * @return the potentially new location of the area or NULL
  */
-void *cache_realloc(void *p,size_t size);
+EXTERN_C void *cache_realloc(void *p,size_t size);
 
 /**
  * Frees the given area
  *
  * @param p the area
  */
-void cache_free(void *p);
+EXTERN_C void cache_free(void *p);
 
 /**
  * @return the number of pages used by the cache

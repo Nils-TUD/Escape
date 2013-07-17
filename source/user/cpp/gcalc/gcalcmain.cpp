@@ -34,9 +34,9 @@ using namespace std;
 
 static const Size BTN_SIZE(30,30);
 
-extern "C" void yylex_destroy(void);
-extern "C" void yyerror(char const *s);
-extern "C" int yyparse(void);
+EXTERN_C void yylex_destroy(void);
+EXTERN_C void yyerror(char const *s);
+EXTERN_C int yyparse(void);
 
 const char *parse_text = nullptr;
 static shared_ptr<Window> win;

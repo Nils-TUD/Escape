@@ -70,9 +70,9 @@ static uint64_t paging_getPTEOf(const pagedir_t *pdir,uintptr_t virt);
 static size_t paging_removePts(pagedir_t *pdir,uint64_t pageNo,uint64_t c,ulong level,ulong depth);
 static size_t paging_remEmptyPts(pagedir_t *pdir,uintptr_t virt);
 static void paging_tcRemPT(pagedir_t *pdir,uintptr_t virt);
-extern void tc_clear(void);
-extern void tc_update(uint64_t key);
-extern void paging_setrV(uint64_t rv);
+EXTERN_C void tc_clear(void);
+EXTERN_C void tc_update(uint64_t key);
+EXTERN_C void paging_setrV(uint64_t rv);
 static void paging_printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
 static void paging_printPage(uint64_t pte);
 

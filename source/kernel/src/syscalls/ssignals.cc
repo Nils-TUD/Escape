@@ -33,27 +33,27 @@ int sysc_signal(sThread *t,sIntrptStackFrame *stack) {
 
 	/* address should be valid */
 	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isInUserSpace((uintptr_t)handler,1))
-		SYSC_ERROR(stack,(int)SIG_ERR);
+		SYSC_ERROR(stack,(long)SIG_ERR);
 
 	if(signal == (int)SIG_RET)
 		t->proc->sigRetAddr = (uintptr_t)handler;
 	else {
 		/* no signal-ret-address known yet? */
 		if(t->proc->sigRetAddr == 0)
-			SYSC_ERROR(stack,(int)SIG_ERR);
+			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		/* check signal */
 		if(!sig_canHandle(signal))
-			SYSC_ERROR(stack,(int)SIG_ERR);
+			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		if(handler == SIG_DFL)
 			old = sig_unsetHandler(t->tid,signal);
 		else {
 			if(sig_setHandler(t->tid,signal,handler,&old) < 0)
-				SYSC_ERROR(stack,(int)SIG_ERR);
+				SYSC_ERROR(stack,(long)SIG_ERR);
 		}
 	}
-	SYSC_RET1(stack,(int)old);
+	SYSC_RET1(stack,(long)old);
 }
 
 int sysc_acksignal(sThread *t,sIntrptStackFrame *stack) {

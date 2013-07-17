@@ -52,3 +52,9 @@
 #define A_INIT					__attribute__((section(".ctors")))
 #define A_UNUSED				__attribute__((unused))
 #define A_INLINE				__attribute__((inline))
+
+#ifdef __cplusplus
+#	define EXTERN_C				extern "C"
+#else
+#	define EXTERN_C
+#endif

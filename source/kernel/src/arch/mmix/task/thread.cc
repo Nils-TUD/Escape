@@ -77,9 +77,9 @@
  * are rS and rO, which can't be set directly.
  */
 
-extern void thread_startup(void);
-extern int thread_initSave(sThreadRegs *saveArea,void *newStack);
-extern int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,pagedir_t pdir,tid_t tid);
+EXTERN_C void thread_startup(void);
+EXTERN_C int thread_initSave(sThreadRegs *saveArea,void *newStack);
+EXTERN_C int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,pagedir_t pdir,tid_t tid);
 
 extern void *stackCopy;
 extern uint64_t stackCopySize;
@@ -157,7 +157,7 @@ void thread_setRunning(sThread *t) {
 }
 
 sKSpecRegs *thread_getSpecRegsOf(const sThread *t) {
-	return t->archAttr.specRegLevels + t->intrptLevel - 1;
+	return const_cast<sKSpecRegs*>(t->archAttr.specRegLevels) + t->intrptLevel - 1;
 }
 
 void thread_pushSpecRegs(void) {
@@ -240,7 +240,7 @@ bool thread_beginTerm(sThread *t) {
 void thread_doSwitch(void) {
 	uint64_t cycles,runtime;
 	sThread *old = thread_getRunning();
-	sThread *new;
+	sThread *n;
 
 	/* update runtime-stats */
 	cycles = cpu_rdtsc();
@@ -249,32 +249,32 @@ void thread_doSwitch(void) {
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	new = sched_perform(old,runtime);
-	new->stats.schedCount++;
+	n = sched_perform(old,runtime);
+	n->stats.schedCount++;
 
 	/* switch thread */
-	if(new->tid != old->tid) {
+	if(n->tid != old->tid) {
 		time_t timestamp = timer_getTimestamp();
-		thread_setRunning(new);
-		vmm_setTimestamp(new,timestamp);
+		thread_setRunning(n);
+		vmm_setTimestamp(n,timestamp);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
-		if(new->archAttr.tempStack != (frameno_t)-1) {
-			memcpy((void*)(DIR_MAPPED_SPACE | new->archAttr.kstackFrame * PAGE_SIZE),
-					(void*)(DIR_MAPPED_SPACE | new->archAttr.tempStack * PAGE_SIZE),
+		if(n->archAttr.tempStack != (frameno_t)-1) {
+			memcpy((void*)(DIR_MAPPED_SPACE | n->archAttr.kstackFrame * PAGE_SIZE),
+					(void*)(DIR_MAPPED_SPACE | n->archAttr.tempStack * PAGE_SIZE),
 					PAGE_SIZE);
-			pmem_free(new->archAttr.tempStack,FRM_KERNEL);
-			new->archAttr.tempStack = -1;
+			pmem_free(n->archAttr.tempStack,FRM_KERNEL);
+			n->archAttr.tempStack = -1;
 		}
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
-		smp_schedule(new->cpu,new,timestamp);
-		new->stats.cycleStart = cpu_rdtsc();
-		thread_doSwitchTo(&old->save,&new->save,new->proc->pagedir,new->tid);
+		smp_schedule(n->cpu,n,timestamp);
+		n->stats.cycleStart = cpu_rdtsc();
+		thread_doSwitchTo(&old->save,&n->save,n->proc->pagedir,n->tid);
 	}
 	else
-		new->stats.cycleStart = cpu_rdtsc();
+		n->stats.cycleStart = cpu_rdtsc();
 }
 
 

@@ -66,16 +66,8 @@ static size_t stackPos = 0;
 static bool inProf = false;
 static uint64_t callStack[STACK_SIZE];
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void __cyg_profile_func_enter(void *this_fn,void *call_site);
-void __cyg_profile_func_exit(void *this_fn,void *call_site);
-
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C void __cyg_profile_func_enter(void *this_fn,void *call_site);
+EXTERN_C void __cyg_profile_func_exit(void *this_fn,void *call_site);
 
 void __cyg_profile_func_enter(void *this_fn,A_UNUSED void *call_site) {
 	if(inProf)

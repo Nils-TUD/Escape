@@ -82,11 +82,11 @@ typedef struct {
  * Fetches the entry at index <index> from the TLB and puts the virtual address into *entryHi and
  * the physical address including flags into *entryLo.
  */
-extern void tlb_get(int index,uint *entryHi,uint *entryLo);
+EXTERN_C void tlb_get(int index,uint *entryHi,uint *entryLo);
 /**
  * Removes the entry for <addr> from the TLB
  */
-extern void tlb_remove(uintptr_t addr);
+EXTERN_C void tlb_remove(uintptr_t addr);
 
 /**
  * Flushes the whole page-table including the page in the mapped page-table-area

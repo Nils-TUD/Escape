@@ -101,7 +101,8 @@ void vid_unsetPrintFunc(void);
  *
  * @param fmt the format
  */
-void vid_printf(const char *fmt,...);
+/* TODO temporary! */
+EXTERN_C void vid_printf(const char *fmt,...);
 
 /**
  * Same as vid_printf, but with the va_list as argument
@@ -109,4 +110,4 @@ void vid_printf(const char *fmt,...);
  * @param fmt the format
  * @param ap the argument-list
  */
-void vid_vprintf(const char *fmt,va_list ap);
+EXTERN_C void vid_vprintf(const char *fmt,va_list ap);

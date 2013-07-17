@@ -80,7 +80,7 @@ void cpu_setSpeed(uint64_t hz);
  * @param ryy the pointer to rYY
  * @param rzz the pointer to rZZ
  */
-void cpu_getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy,uint64_t *rzz);
+EXTERN_C void cpu_getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy,uint64_t *rzz);
 
 /**
  * Sets rBB, rWW, rXX, rYY and rZZ to the current values of rbb, rww, rxx, ryy and rzz,
@@ -92,12 +92,12 @@ void cpu_getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy,ui
  * @param ryy the new value of rYY
  * @param rzz the new value of rZZ
  */
-void cpu_setKSpecials(uint64_t rbb,uint64_t rww,uint64_t rxx,uint64_t ryy,uint64_t rzz);
+EXTERN_C void cpu_setKSpecials(uint64_t rbb,uint64_t rww,uint64_t rxx,uint64_t ryy,uint64_t rzz);
 
 /**
  * @return the fault-location for protection-faults
  */
-extern uintptr_t cpu_getFaultLoc(void);
+EXTERN_C uintptr_t cpu_getFaultLoc(void);
 
 /**
  * Performs a SYNCD and SYNCID for the given region to ensure that the IC agrees with the DC
@@ -105,7 +105,7 @@ extern uintptr_t cpu_getFaultLoc(void);
  * @param start the start-address
  * @param end the end-address
  */
-extern void cpu_syncid(uintptr_t start,uintptr_t end);
+EXTERN_C void cpu_syncid(uintptr_t start,uintptr_t end);
 
 /**
  * Retrieves the value of the global-register with given number
@@ -113,7 +113,7 @@ extern void cpu_syncid(uintptr_t start,uintptr_t end);
  * @param rno the global-number
  * @return the value
  */
-extern uint64_t cpu_getGlobal(int rno);
+EXTERN_C uint64_t cpu_getGlobal(int rno);
 
 /**
  * Retrieves the value of the special-register with given number
@@ -121,4 +121,4 @@ extern uint64_t cpu_getGlobal(int rno);
  * @param rno the special-number
  * @return the value
  */
-extern uint64_t cpu_getSpecial(int rno);
+EXTERN_C uint64_t cpu_getSpecial(int rno);

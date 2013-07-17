@@ -28,4 +28,5 @@
  * @param tentryPoint the entry-point
  * @return the stack-pointer
  */
-uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint);
+/* TODO why C linkage? */
+EXTERN_C uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint);

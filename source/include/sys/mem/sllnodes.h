@@ -27,11 +27,12 @@
  * @param size the size of it
  * @return the node or NULL if failed
  */
-void *slln_allocNode(size_t size);
+/* TODO temporary! */
+EXTERN_C void *slln_allocNode(size_t size);
 
 /**
  * Free's the given node
  *
  * @param o the node
  */
-void slln_freeNode(void *o);
+EXTERN_C void slln_freeNode(void *o);

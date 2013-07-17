@@ -31,7 +31,7 @@ char *strcasestr(const char *str1,const char *str2) {
 
 	/* handle special case to prevent looping the string */
 	if(!*str2)
-		return NULL;
+		return (char*)str1;
 	while(*str1) {
 		/* matching char? */
 		if(tolower(*str1++) == tolower(*str2)) {

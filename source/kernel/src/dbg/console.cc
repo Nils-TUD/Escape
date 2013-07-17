@@ -361,7 +361,7 @@ static const char *cons_getLineInfo(void *data,uintptr_t addr) {
 
 static bool cons_lineMatches(void *data,uintptr_t addr,const char *search,A_UNUSED size_t searchlen) {
 	uint8_t *bytes = cons_loadLine(data,addr);
-	return bytes != NULL && strcasestr((char*)bytes,search) != NULL;
+	return bytes != NULL && *search && strcasestr((char*)bytes,search) != NULL;
 }
 
 static void cons_displayLine(A_UNUSED void *data,A_UNUSED uintptr_t addr,uint8_t *bytes) {

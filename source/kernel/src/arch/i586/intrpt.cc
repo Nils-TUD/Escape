@@ -262,7 +262,7 @@ static void intrpt_irqTimer(Thread *t,sIntrptStackFrame *stack) {
 	bool res;
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
-		sig_addSignal(intrpt->signal);
+		Signals::addSignal(intrpt->signal);
 	res = Timer::intrpt();
 	pic_eoi(stack->intrptNo);
 	if(res) {
@@ -274,7 +274,7 @@ static void intrpt_irqTimer(Thread *t,sIntrptStackFrame *stack) {
 static void intrpt_irqDefault(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
-		sig_addSignal(intrpt->signal);
+		Signals::addSignal(intrpt->signal);
 	pic_eoi(stack->intrptNo);
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
 	/* (with a present keyboard-device we would steal him the scancodes) */

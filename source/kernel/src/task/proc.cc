@@ -552,7 +552,7 @@ void ProcBase::segFault() {
 	addSignalFor(t->getProc()->pid,SIG_SEGFAULT);
 	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
 	 * we might get in an endless-loop */
-	sig_unsetHandler(t->getTid(),SIG_SEGFAULT);
+	Signals::unsetHandler(t->getTid(),SIG_SEGFAULT);
 }
 
 void ProcBase::addSignalFor(pid_t pid,int signal) {
@@ -568,13 +568,13 @@ void ProcBase::addSignalFor(pid_t pid,int signal) {
 
 		for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
 			Thread *pt = (Thread*)n->data;
-			if(sig_addSignalFor(pt->getTid(),signal))
+			if(Signals::addSignalFor(pt->getTid(),signal))
 				sent = true;
 		}
 		release(p,PLOCK_PROG);
 
 		/* no handler and fatal? terminate proc! */
-		if(!sent && sig_isFatal(signal)) {
+		if(!sent && Signals::isFatal(signal)) {
 			terminate(pid,1,signal);
 			if(pid == getRunning())
 				Thread::switchAway();
@@ -722,7 +722,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 		/* stop waiting for event; maybe we have been waked up for another reason */
 		Event::removeThread(t);
 		/* don't continue here if we were interrupted by a signal */
-		if(sig_hasSignalFor(t->getTid()))
+		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
 		res = getExitState(p->pid,state);
 		if(res < 0)

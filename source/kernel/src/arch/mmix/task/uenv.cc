@@ -37,14 +37,14 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-static void uenv_startSignalHandler(Thread *t,int sig,fSignal handler);
+static void uenv_startSignalHandler(Thread *t,int sig,Signals::handler_func handler);
 static void uenv_addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
 void uenv_handleSignal(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	int sig;
-	fSignal handler;
-	int res = sig_checkAndStart(t->getTid(),&sig,&handler);
+	Signals::handler_func handler;
+	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,sig,handler);
 	else if(res == SIG_CHECK_OTHER)
@@ -221,7 +221,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return ssp;
 }
 
-static void uenv_startSignalHandler(Thread *t,int sig,fSignal handler) {
+static void uenv_startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	sIntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
 	sKSpecRegs *sregs;

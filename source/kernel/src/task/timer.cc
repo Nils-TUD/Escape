@@ -149,7 +149,7 @@ bool TimerBase::intrpt(void) {
 			foundThread = true;
 		}
 		else
-			sig_addSignalFor(l->tid,SIG_ALARM);
+			Signals::addSignalFor(l->tid,SIG_ALARM);
 		/* remove from list */
 		listener = l->next;
 		tl = l->next;

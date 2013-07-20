@@ -781,7 +781,7 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 		spinlock_release(&waitLock);
 
 		Thread::switchAway();
-		if(sig_hasSignalFor(t->getTid())) {
+		if(Signals::hasSignalFor(t->getTid())) {
 			res = -EINTR;
 			goto error;
 		}
@@ -877,7 +877,7 @@ inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags)
 		spinlock_release(&waitLock);
 
 		Thread::switchAway();
-		if(sig_hasSignalFor(t->getTid())) {
+		if(Signals::hasSignalFor(t->getTid())) {
 			clientNo = -EINTR;
 			break;
 		}

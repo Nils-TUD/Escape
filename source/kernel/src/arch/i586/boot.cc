@@ -73,7 +73,7 @@ static const sBootTask tasks[] = {
 	{"Initializing PIC...",pic_init},
 	{"Initializing IDT...",idt_init},
 	{"Initializing timer...",Timer::init},
-	{"Initializing signal handling...",sig_init},
+	{"Initializing signal handling...",Signals::init},
 };
 sBootTaskList bootTaskList(tasks,ARRAY_SIZE(tasks));
 static uintptr_t physModAddrs[MAX_MOD_COUNT];

@@ -31,20 +31,13 @@
 #include <errno.h>
 #include <assert.h>
 
-#define SIGNAL_COUNT	8192
-#define MAX_SIG_RECV	16
+klock_t Signals::sigLock;
+size_t Signals::pendingSignals = 0;
+sSLList Signals::sigThreads;
+Signals::PendingSig Signals::signals[SIGNAL_COUNT];
+Signals::PendingSig *Signals::freelist;
 
-static bool sig_add(sSignals *s,int sig);
-static void sig_removePending(sSignals *s,int sig);
-static sSignals *sig_getThread(tid_t tid,bool create);
-
-static klock_t sigLock;
-static size_t pendingSignals = 0;
-static sSLList sigThreads;
-static sPendingSig signals[SIGNAL_COUNT];
-static sPendingSig *freelist;
-
-void sig_init(void) {
+void Signals::init(void) {
 	size_t i;
 	sll_init(&sigThreads,slln_allocNode,slln_freeNode);
 
@@ -57,25 +50,11 @@ void sig_init(void) {
 	}
 }
 
-bool sig_canHandle(int signal) {
-	/* we can't add a handler for SIG_KILL */
-	return signal >= 1 && signal < SIG_COUNT;
-}
-
-bool sig_canSend(int signal) {
-	return signal < SIG_INTRPT_TIMER || (signal >= SIG_USR1 && signal < SIG_COUNT);
-}
-
-bool sig_isFatal(int sig) {
-	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT ||
-		sig == SIG_PIPE_CLOSED;
-}
-
-int sig_setHandler(tid_t tid,int signal,fSignal func,fSignal *old) {
-	sSignals *s;
-	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
+int Signals::setHandler(tid_t tid,int signal,handler_func func,handler_func *old) {
+	Data *s;
+	vassert(canHandle(signal),"Unable to handle signal %d",signal);
 	spinlock_aquire(&sigLock);
-	s = sig_getThread(tid,true);
+	s = getThread(tid,true);
 	if(!s) {
 		spinlock_release(&sigLock);
 		return -ENOMEM;
@@ -84,34 +63,34 @@ int sig_setHandler(tid_t tid,int signal,fSignal func,fSignal *old) {
 	/* note that we discard not yet delivered signals here.. */
 	*old = s->handler[signal];
 	s->handler[signal] = func;
-	sig_removePending(s,signal);
+	removePending(s,signal);
 	spinlock_release(&sigLock);
 	return 0;
 }
 
-fSignal sig_unsetHandler(tid_t tid,int signal) {
-	fSignal old = NULL;
-	sSignals *s;
-	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
+Signals::handler_func Signals::unsetHandler(tid_t tid,int signal) {
+	handler_func old = NULL;
+	Data *s;
+	vassert(canHandle(signal),"Unable to handle signal %d",signal);
 	spinlock_aquire(&sigLock);
-	s = sig_getThread(tid,false);
+	s = getThread(tid,false);
 	if(s) {
 		old = s->handler[signal];
 		s->handler[signal] = NULL;
-		sig_removePending(s,signal);
+		removePending(s,signal);
 	}
 	spinlock_release(&sigLock);
 	return old;
 }
 
-void sig_removeHandlerFor(tid_t tid) {
-	sSignals *s;
+void Signals::removeHandlerFor(tid_t tid) {
+	Data *s;
 	spinlock_aquire(&sigLock);
-	s = sig_getThread(tid,false);
+	s = getThread(tid,false);
 	if(s) {
 		Thread *t = Thread::getById(tid);
 		/* remove all pending */
-		sig_removePending(s,0);
+		removePending(s,0);
 		sll_removeFirstWith(&sigThreads,t);
 		cache_free(s);
 		t->signals = NULL;
@@ -119,24 +98,24 @@ void sig_removeHandlerFor(tid_t tid) {
 	spinlock_release(&sigLock);
 }
 
-void sig_cloneHandler(tid_t parent,tid_t child) {
-	sSignals *p;
-	sSignals *c;
+void Signals::cloneHandler(tid_t parent,tid_t child) {
+	Data *p;
+	Data *c;
 	spinlock_aquire(&sigLock);
-	p = sig_getThread(parent,false);
+	p = getThread(parent,false);
 	if(p) {
-		c = sig_getThread(child,true);
+		c = getThread(child,true);
 		if(c)
 			memcpy(c->handler,p->handler,sizeof(p->handler));
 	}
 	spinlock_release(&sigLock);
 }
 
-bool sig_hasSignalFor(tid_t tid) {
-	sSignals *s;
+bool Signals::hasSignalFor(tid_t tid) {
+	Data *s;
 	bool res = false;
 	spinlock_aquire(&sigLock);
-	s = sig_getThread(tid,false);
+	s = getThread(tid,false);
 	if(s && !s->currentSignal && (s->deliveredSignal || s->pending.count > 0)) {
 		Thread *t = Thread::getById(tid);
 		res = !t->isIgnoringSigs();
@@ -145,9 +124,9 @@ bool sig_hasSignalFor(tid_t tid) {
 	return res;
 }
 
-int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler) {
+int Signals::checkAndStart(tid_t tid,int *sig,handler_func *handler) {
 	Thread *t = Thread::getById(tid);
-	sSignals *s;
+	Data *s;
 	int res = SIG_CHECK_NO;
 	spinlock_aquire(&sigLock);
 	s = t->signals;
@@ -166,7 +145,7 @@ int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler) {
 			t = (Thread*)n->data;
 			s = t->signals;
 			if(!t->isIgnoringSigs() && !s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
-				sPendingSig *psig = s->pending.first;
+				PendingSig *psig = s->pending.first;
 				if(t->getTid() == tid) {
 					*handler = s->handler[psig->sig];
 					*sig = psig->sig;
@@ -191,34 +170,34 @@ int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler) {
 		}
 	}
 	spinlock_release(&sigLock);
-	/* without locking because the scheduler calls sig_hasSignalFor() */
+	/* without locking because the scheduler calls Signals::hasSignalFor) */
 	if(res == SIG_CHECK_OTHER)
 		Event::unblockQuick(t);
 	return res;
 }
 
-bool sig_addSignalFor(tid_t tid,int signal) {
-	sSignals *s;
+bool Signals::addSignalFor(tid_t tid,int signal) {
+	Data *s;
 	bool res = false;
 	spinlock_aquire(&sigLock);
-	s = sig_getThread(tid,false);
+	s = getThread(tid,false);
 	if(s && s->handler[signal]) {
 		if(s->handler[signal] != SIG_IGN)
-			sig_add(s,signal);
+			add(s,signal);
 		res = true;
 	}
 	spinlock_release(&sigLock);
 	return res;
 }
 
-bool sig_addSignal(int signal) {
+bool Signals::addSignal(int signal) {
 	sSLNode *n;
 	bool res = false;
 	spinlock_aquire(&sigLock);
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		Thread *t = (Thread*)n->data;
 		if(t->signals->handler[signal] && t->signals->handler[signal] != SIG_IGN) {
-			sig_add(t->signals,signal);
+			add(t->signals,signal);
 			res = true;
 		}
 	}
@@ -226,21 +205,21 @@ bool sig_addSignal(int signal) {
 	return res;
 }
 
-int sig_ackHandling(tid_t tid) {
+int Signals::ackHandling(tid_t tid) {
 	int res;
-	sSignals *s;
+	Data *s;
 	spinlock_aquire(&sigLock);
-	s = sig_getThread(tid,false);
+	s = getThread(tid,false);
 	assert(s != NULL);
 	vassert(s->currentSignal != 0,"No signal handling");
-	vassert(sig_canHandle(s->currentSignal),"Unable to handle signal %d",s->currentSignal);
+	vassert(canHandle(s->currentSignal),"Unable to handle signal %d",s->currentSignal);
 	res = s->currentSignal;
 	s->currentSignal = 0;
 	spinlock_release(&sigLock);
 	return res;
 }
 
-const char *sig_dbg_getName(int signal) {
+const char *Signals::dbg_getName(int signal) {
 	static const char *names[] = {
 		"SIG_KILL",
 		"SIG_TERM",
@@ -267,7 +246,7 @@ const char *sig_dbg_getName(int signal) {
 	return "Unknown signal";
 }
 
-void sig_print(void) {
+void Signals::print(void) {
 	size_t i;
 	sSLNode *n;
 	vid_printf("Signal handler:\n");
@@ -280,12 +259,12 @@ void sig_print(void) {
 		vid_printf("\t\thandler:\n");
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(t->signals->handler[i])
-				vid_printf("\t\t\t%s: handler=%p\n",sig_dbg_getName(i),t->signals->handler[i]);
+				vid_printf("\t\t\t%s: handler=%p\n",dbg_getName(i),t->signals->handler[i]);
 		}
 	}
 }
 
-size_t sig_dbg_getHandlerCount(void) {
+size_t Signals::dbg_getHandlerCount(void) {
 	sSLNode *n;
 	size_t i,c = 0;
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
@@ -298,8 +277,8 @@ size_t sig_dbg_getHandlerCount(void) {
 	return c;
 }
 
-static bool sig_add(sSignals *s,int sig) {
-	sPendingSig *psig = freelist;
+bool Signals::add(Data *s,int sig) {
+	PendingSig *psig = freelist;
 	if(psig == NULL)
 		return false;
 
@@ -319,14 +298,14 @@ static bool sig_add(sSignals *s,int sig) {
 	return true;
 }
 
-static void sig_removePending(sSignals *s,int sig) {
-	sPendingSig *ps,*prev;
+void Signals::removePending(Data *s,int sig) {
+	PendingSig *ps,*prev;
 	if(s->deliveredSignal == sig)
 		s->deliveredSignal = 0;
 	prev = NULL;
 	for(ps = s->pending.first; ps != NULL; ) {
 		if(sig == 0 || ps->sig == sig) {
-			sPendingSig *tps = ps->next;
+			PendingSig *tps = ps->next;
 			ps->next = freelist;
 			freelist = ps;
 			ps = tps;
@@ -347,12 +326,12 @@ static void sig_removePending(sSignals *s,int sig) {
 	}
 }
 
-static sSignals *sig_getThread(tid_t tid,bool create) {
+Signals::Data *Signals::getThread(tid_t tid,bool create) {
 	Thread *t = Thread::getById(tid);
 	if(t->signals == NULL) {
 		if(!create)
 			return NULL;
-		t->signals = (sSignals*)cache_calloc(1,sizeof(sSignals));
+		t->signals = (Data*)cache_calloc(1,sizeof(Data));
 		if(!t->signals)
 			return NULL;
 		if(!sll_append(&sigThreads,t)) {

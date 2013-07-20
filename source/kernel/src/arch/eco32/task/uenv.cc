@@ -32,13 +32,13 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler);
+static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler);
 static uint32_t *uenv_addArgs(Thread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread);
 
 void uenv_handleSignal(Thread *t,sIntrptStackFrame *stack) {
 	int sig;
-	fSignal handler;
-	int res = sig_checkAndStart(t->getTid(),&sig,&handler);
+	Signals::handler_func handler;
+	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,stack,sig,handler);
 	else if(res == SIG_CHECK_OTHER)
@@ -155,7 +155,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return uenv_addArgs(t,sp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
+static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	if(!paging_isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
 		Proc::segFault();

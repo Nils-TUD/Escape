@@ -187,7 +187,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 
 static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack) {
 	bool res;
-	sig_addSignal(SIG_INTRPT_TIMER);
+	Signals::addSignal(SIG_INTRPT_TIMER);
 	res = Timer::intrpt();
 	Timer::ackIntrpt();
 	if(res) {
@@ -215,7 +215,7 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack) {
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call uenv_handleSignal(), which might cause a thread-switch */
-	if(!sig_addSignal(SIG_INTRPT_KB)) {
+	if(!Signals::addSignal(SIG_INTRPT_KB)) {
 		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
@@ -225,7 +225,7 @@ static void intrpt_irqDisk(A_UNUSED sIntrptStackFrame *stack) {
 	/* see interrupt_irqKb() */
 	uint32_t *diskRegs = (uint32_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
-	if(!sig_addSignal(SIG_INTRPT_ATA1))
+	if(!Signals::addSignal(SIG_INTRPT_ATA1))
 		diskRegs[DISK_CTRL] |= DISK_IEN;
 }
 

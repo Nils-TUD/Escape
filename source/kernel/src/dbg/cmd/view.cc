@@ -73,7 +73,7 @@ static sView views[] = {
 	{"proc",(fView)view_proc},
 	{"procs",(fView)Proc::printAll},
 	{"sched",(fView)Sched::print},
-	{"signals",(fView)sig_print},
+	{"signals",(fView)Signals::print},
 	{"thread",(fView)view_thread},
 	{"threads",(fView)Thread::printAll},
 	{"vfstree",(fView)vfs_node_printTree},

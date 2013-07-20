@@ -30,14 +30,14 @@
 #include <errno.h>
 #include <assert.h>
 
-static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler);
+static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler);
 static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint);
 static uint32_t *uenv_addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
 
 void uenv_handleSignal(Thread *t,sIntrptStackFrame *stack) {
 	int sig;
-	fSignal handler;
-	int res = sig_checkAndStart(t->getTid(),&sig,&handler);
+	Signals::handler_func handler;
+	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,stack,sig,handler);
 	else if(res == SIG_CHECK_OTHER)
@@ -179,7 +179,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	return uenv_addArgs(t,esp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
+static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	/* the ret-instruction of sigRet() should go to the old eip */
 	*--esp = stack->eip;

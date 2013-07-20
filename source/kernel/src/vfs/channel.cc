@@ -332,7 +332,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 		else
 			Thread::switchAway();
 
-		if(sig_hasSignalFor(t->getTid()))
+		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
 		spinlock_aquire(&node->lock);

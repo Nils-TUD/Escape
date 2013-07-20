@@ -247,7 +247,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
 	if(cloneProc)
-		sig_cloneHandler(src->getTid(),t->getTid());
+		Signals::cloneHandler(src->getTid(),t->getTid());
 
 	/* insert in VFS; thread needs to be inserted for it */
 	if(!vfs_createThread(t->getTid()))
@@ -257,7 +257,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 	return 0;
 
 errAppendIdle:
-	sig_removeHandlerFor(t->getTid());
+	Signals::removeHandlerFor(t->getTid());
 	t->remove();
 errArch:
 	freeArch(t);
@@ -291,7 +291,7 @@ void ThreadBase::kill() {
 	/* remove from all modules we may be announced */
 	makeUnrunnable();
 	Timer::removeThread(tid);
-	sig_removeHandlerFor(tid);
+	Signals::removeHandlerFor(tid);
 	freeArch(static_cast<Thread*>(this));
 	vfs_removeThread(tid);
 

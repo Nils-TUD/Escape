@@ -59,7 +59,7 @@ static const sBootTask tasks[] = {
 	{"Initializing virtual memory-management...",vmm_init},
 	{"Initializing copy-on-write...",cow_init},
 	{"Initializing timer...",Timer::init},
-	{"Initializing signal handling...",sig_init},
+	{"Initializing signal handling...",Signals::init},
 };
 const sBootTaskList bootTaskList(tasks,ARRAY_SIZE(tasks));
 

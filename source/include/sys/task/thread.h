@@ -632,7 +632,7 @@ private:
 	/* TODO temporary; restrict it later */
 public:
 	/* the signal-data, managed by the signals-module */
-	sSignals *signals;
+	Signals::Data *signals;
 	/* a counter used to raise the priority after a certain number of "good behaviours" */
 	uint8_t prioGoodCnt;
 	/* the events the thread waits for (if waiting) */
@@ -821,7 +821,7 @@ inline void ThreadBase::removeRegions(bool remStack) {
 			stackRegions[i] = NULL;
 	}
 	/* remove all signal-handler since we've removed the code to handle signals */
-	sig_removeHandlerFor(tid);
+	Signals::removeHandlerFor(tid);
 }
 
 inline frameno_t ThreadBase::getFrame() {

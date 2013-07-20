@@ -29,8 +29,8 @@
 
 int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 	int signal = (int)SYSC_ARG1(stack);
-	fSignal handler = (fSignal)SYSC_ARG2(stack);
-	fSignal old = SIG_ERR;
+	Signals::handler_func handler = (Signals::handler_func)SYSC_ARG2(stack);
+	Signals::handler_func old = SIG_ERR;
 
 	/* address should be valid */
 	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isInUserSpace((uintptr_t)handler,1))
@@ -44,13 +44,13 @@ int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		/* check signal */
-		if(!sig_canHandle(signal))
+		if(!Signals::canHandle(signal))
 			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		if(handler == SIG_DFL)
-			old = sig_unsetHandler(t->getTid(),signal);
+			old = Signals::unsetHandler(t->getTid(),signal);
 		else {
-			if(sig_setHandler(t->getTid(),signal,handler,&old) < 0)
+			if(Signals::setHandler(t->getTid(),signal,handler,&old) < 0)
 				SYSC_ERROR(stack,(long)SIG_ERR);
 		}
 	}
@@ -59,7 +59,7 @@ int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 
 int sysc_acksignal(Thread *t,sIntrptStackFrame *stack) {
 	int res;
-	int signal = sig_ackHandling(t->getTid());
+	int signal = Signals::ackHandling(t->getTid());
 	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
 	/* we don't set the error-code on the stack here */
@@ -70,12 +70,12 @@ int sysc_kill(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	int signal = (int)SYSC_ARG2(stack);
 
-	if(!sig_canSend(signal))
+	if(!Signals::canSend(signal))
 		SYSC_ERROR(stack,-EINVAL);
 
 	if(pid != INVALID_PID)
 		Proc::addSignalFor(pid,signal);
 	else
-		sig_addSignal(signal);
+		Signals::addSignal(signal);
 	SYSC_RET1(stack,0);
 }

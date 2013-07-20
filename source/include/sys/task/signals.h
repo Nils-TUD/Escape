@@ -24,9 +24,9 @@
 
 #define SIG_COUNT			19
 
-#define SIG_IGN				((fSignal)-3)			/* ignore signal */
-#define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
-#define SIG_ERR				((fSignal)-1)			/* error-return */
+#define SIG_IGN				((Signals::handler_func)-3)			/* ignore signal */
+#define SIG_DFL				((Signals::handler_func)-2)			/* reset to default behaviour */
+#define SIG_ERR				((Signals::handler_func)-1)			/* error-return */
 
 /* the signals */
 #define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
@@ -54,150 +54,188 @@
 #define SIG_CHECK_OTHER		1
 #define SIG_CHECK_NO		2
 
-/* signal-handler-signature */
-typedef void (*fSignal)(int);
+class ThreadBase;
 
-typedef struct sPendingSig {
-	int sig;
-	struct sPendingSig *next;
-} sPendingSig;
+class Signals {
+	friend class ThreadBase;
 
-typedef struct {
-	sPendingSig *first;
-	sPendingSig *last;
-	size_t count;
-} sPendingQueue;
+	Signals() = delete;
 
-typedef struct {
-	/* list of pending signals */
-	sPendingQueue pending;
-	/* signal handler */
-	fSignal handler[SIG_COUNT];
-	/* the signal that the thread is currently handling (if > 0) */
-	int currentSignal;
-	/* the signal that the thread should handle now */
-	int deliveredSignal;
-} sSignals;
+public:
+	/* signal-handler-signature */
+	typedef void (*handler_func)(int);
 
-/**
- * Initializes the signal-handling
- */
-void sig_init(void);
+private:
+	struct PendingSig {
+		int sig;
+		PendingSig *next;
+	};
 
-/**
- * Checks whether we can handle the given signal
- *
- * @param signal the signal
- * @return true if so
- */
-bool sig_canHandle(int signal);
+	struct PendingQueue {
+		PendingSig *first;
+		PendingSig *last;
+		size_t count;
+	};
 
-/**
- * Checks whether the given signal can be send by user-programs
- *
- * @param signal the signal
- * @return true if so
- */
-bool sig_canSend(int signal);
+	struct Data {
+		/* list of pending signals */
+		PendingQueue pending;
+		/* signal handler */
+		handler_func handler[SIG_COUNT];
+		/* the signal that the thread is currently handling (if > 0) */
+		int currentSignal;
+		/* the signal that the thread should handle now */
+		int deliveredSignal;
+	};
 
-/**
- * @param sig the signal
- * @return whether the given signal is a fatal one, i.e. should kill the process
- */
-bool sig_isFatal(int sig);
+	static const size_t SIGNAL_COUNT	= 8192;
 
-/**
- * Sets the given signal-handler for <signal>
- *
- * @param tid the thread-id
- * @param signal the signal
- * @param func the handler-function
- * @param old will be set to the old handler
- * @return 0 on success
- */
-int sig_setHandler(tid_t tid,int signal,fSignal func,fSignal *old);
+public:
+	/**
+	 * Initializes the signal-handling
+	 */
+	static void init();
 
-/**
- * Removes the signal-handler for <signal>
- *
- * @param tid the thread-id
- * @param signal the signal
- * @return the old handler
- */
-fSignal sig_unsetHandler(tid_t tid,int signal);
+	/**
+	 * Checks whether we can handle the given signal
+	 *
+	 * @param signal the signal
+	 * @return true if so
+	 */
+	static bool canHandle(int signal);
 
-/**
- * Removes all handler for the given thread
- *
- * @param tid the thread-id
- */
-void sig_removeHandlerFor(tid_t tid);
+	/**
+	 * Checks whether the given signal can be send by user-programs
+	 *
+	 * @param signal the signal
+	 * @return true if so
+	 */
+	static bool canSend(int signal);
 
-/**
- * Clones all handler of <parent> for <child>.
- *
- * @param parent the parent-thread-id
- * @param child the child-thread-id
- */
-void sig_cloneHandler(tid_t parent,tid_t child);
+	/**
+	 * @param sig the signal
+	 * @return whether the given signal is a fatal one, i.e. should kill the process
+	 */
+	static bool isFatal(int sig);
 
-/**
- * Checks whether <tid> has a signal
- *
- * @param tid the thread-id
- * @return true if so
- */
-bool sig_hasSignalFor(tid_t tid);
+	/**
+	 * Sets the given signal-handler for <signal>
+	 *
+	 * @param tid the thread-id
+	 * @param signal the signal
+	 * @param func the handler-function
+	 * @param old will be set to the old handler
+	 * @return 0 on success
+	 */
+	static int setHandler(tid_t tid,int signal,handler_func func,handler_func *old);
 
-/**
- * Checks whether a signal should be handled. If the current thread has a signal, it returns
- * SIG_CHECK_CUR and sets *sig and *handler correspondingly. If another thread has a signal, it
- * delivers it and returns SIG_CHECK_OTHER. Otherwise, it returns SIG_CHECK_NO.
- *
- * @param tid the thread-id of the current thread
- * @param sig will be set to the signal to handle, if the current thread has a signal
- * @param handler will be set to the handler, if the current thread has a signal
- * @return SIG_CHECK_* the result
- */
-int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler);
+	/**
+	 * Removes the signal-handler for <signal>
+	 *
+	 * @param tid the thread-id
+	 * @param signal the signal
+	 * @return the old handler
+	 */
+	static handler_func unsetHandler(tid_t tid,int signal);
 
-/**
- * Adds the given signal for the given thread
- *
- * @param tid the thread-id
- * @param signal the signal
- * @return true if the signal has been added
- */
-bool sig_addSignalFor(tid_t tid,int signal);
+	/**
+	 * Removes all handler for the given thread
+	 *
+	 * @param tid the thread-id
+	 */
+	static void removeHandlerFor(tid_t tid);
 
-/**
- * Adds the given signal to all threads that have announced a handler for it
- *
- * @param signal the signal
- * @return whether the signal has been delivered to somebody
- */
-bool sig_addSignal(int signal);
+	/**
+	 * Clones all handler of <parent> for <child>.
+	 *
+	 * @param parent the parent-thread-id
+	 * @param child the child-thread-id
+	 */
+	static void cloneHandler(tid_t parent,tid_t child);
 
-/**
- * Acknoledges the current signal with given thread (marks handling as finished)
- *
- * @param tid the thread-id
- * @return the handled signal
- */
-int sig_ackHandling(tid_t tid);
+	/**
+	 * Checks whether <tid> has a signal
+	 *
+	 * @param tid the thread-id
+	 * @return true if so
+	 */
+	static bool hasSignalFor(tid_t tid);
 
-/**
- * @return the total number of announced handlers
- */
-size_t sig_dbg_getHandlerCount(void);
+	/**
+	 * Checks whether a signal should be handled. If the current thread has a signal, it returns
+	 * SIG_CHECK_CUR and sets *sig and *handler correspondingly. If another thread has a signal, it
+	 * delivers it and returns SIG_CHECK_OTHER. Otherwise, it returns SIG_CHECK_NO.
+	 *
+	 * @param tid the thread-id of the current thread
+	 * @param sig will be set to the signal to handle, if the current thread has a signal
+	 * @param handler will be set to the handler, if the current thread has a signal
+	 * @return SIG_CHECK_* the result
+	 */
+	static int checkAndStart(tid_t tid,int *sig,handler_func *handler);
 
-/**
- * @param signal the signal-number
- * @return the name of the given signal
- */
-const char *sig_dbg_getName(int signal);
+	/**
+	 * Adds the given signal for the given thread
+	 *
+	 * @param tid the thread-id
+	 * @param signal the signal
+	 * @return true if the signal has been added
+	 */
+	static bool addSignalFor(tid_t tid,int signal);
 
-/**
- * Prints all announced signal-handlers
- */
-void sig_print(void);
+	/**
+	 * Adds the given signal to all threads that have announced a handler for it
+	 *
+	 * @param signal the signal
+	 * @return whether the signal has been delivered to somebody
+	 */
+	static bool addSignal(int signal);
+
+	/**
+	 * Acknoledges the current signal with given thread (marks handling as finished)
+	 *
+	 * @param tid the thread-id
+	 * @return the handled signal
+	 */
+	static int ackHandling(tid_t tid);
+
+	/**
+	 * @return the total number of announced handlers
+	 */
+	static size_t dbg_getHandlerCount();
+
+	/**
+	 * @param signal the signal-number
+	 * @return the name of the given signal
+	 */
+	static const char *dbg_getName(int signal);
+
+	/**
+	 * Prints all announced signal-handlers
+	 */
+	static void print();
+
+private:
+	static bool add(Data *s,int sig);
+	static void removePending(Data *s,int sig);
+	static Data *getThread(tid_t tid,bool create);
+
+	static klock_t sigLock;
+	static size_t pendingSignals;
+	static sSLList sigThreads;
+	static PendingSig signals[SIGNAL_COUNT];
+	static PendingSig *freelist;
+};
+
+inline bool Signals::canHandle(int signal) {
+	/* we can't add a handler for SIG_KILL */
+	return signal >= 1 && signal < SIG_COUNT;
+}
+
+inline bool Signals::canSend(int signal) {
+	return signal < SIG_INTRPT_TIMER || (signal >= SIG_USR1 && signal < SIG_COUNT);
+}
+
+inline bool Signals::isFatal(int sig) {
+	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT ||
+		sig == SIG_PIPE_CLOSED;
+}

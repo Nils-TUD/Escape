@@ -79,7 +79,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 					old->getState());
 			/* we have to check for a signal here, because otherwise we might miss it */
 			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
-			if(old->getState() != Thread::ZOMBIE && sig_hasSignalFor(old->getTid())) {
+			if(old->getState() != Thread::ZOMBIE && Signals::hasSignalFor(old->getTid())) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->setNewState(Thread::READY);
 				spinlock_release(&schedLock);

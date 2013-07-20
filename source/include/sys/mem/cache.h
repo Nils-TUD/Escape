@@ -20,70 +20,94 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/mem/paging.h>
 
-/**
- * Allocates <size> bytes from the cache
- *
- * @param size the size
- * @return the pointer to the allocated area or NULL
- */
-/* TODO temporary! */
-EXTERN_C void *cache_alloc(size_t size);
+class Cache {
+	Cache() = delete;
 
-/**
- * Allocates <num> objects with <size> bytes from the cache and zero's the memory.
- *
- * @param num the number of objects
- * @param size the size of an object
- * @return the pointer to the allocated area or NULL
- */
-EXTERN_C void *cache_calloc(size_t num,size_t size);
+	struct Entry {
+		const size_t objSize;
+		size_t totalObjs;
+		size_t freeObjs;
+		void *freeList;
+	};
 
-/**
- * Reallocates the area at <p> to be <size> bytes large. This may involve moving it to a different
- * location.
- *
- * @param p the area
- * @param size the new size of the area
- * @return the potentially new location of the area or NULL
- */
-EXTERN_C void *cache_realloc(void *p,size_t size);
+public:
+	/**
+	 * Allocates <size> bytes from the cache
+	 *
+	 * @param size the size
+	 * @return the pointer to the allocated area or NULL
+	 */
+	static void *alloc(size_t size) asm("cache_alloc");
 
-/**
- * Frees the given area
- *
- * @param p the area
- */
-EXTERN_C void cache_free(void *p);
+	/**
+	 * Allocates <num> objects with <size> bytes from the cache and zero's the memory.
+	 *
+	 * @param num the number of objects
+	 * @param size the size of an object
+	 * @return the pointer to the allocated area or NULL
+	 */
+	static void *calloc(size_t num,size_t size) asm("cache_calloc");
 
-/**
- * @return the number of pages used by the cache
- */
-size_t cache_getPageCount(void);
+	/**
+	 * Reallocates the area at <p> to be <size> bytes large. This may involve moving it to a different
+	 * location.
+	 *
+	 * @param p the area
+	 * @param size the new size of the area
+	 * @return the potentially new location of the area or NULL
+	 */
+	static void *realloc(void *p,size_t size) asm("cache_realloc");
 
-/**
- * @return the occupied memory
- */
-size_t cache_getOccMem(void);
+	/**
+	 * Frees the given area
+	 *
+	 * @param p the area
+	 */
+	static void free(void *p) asm("cache_free");
 
-/**
- * @return the used memory
- */
-size_t cache_getUsedMem(void);
+	/**
+	 * @return the number of pages used by the cache
+	 */
+	static size_t getPageCount() {
+		return pages;
+	}
 
-/**
- * Prints the cache
- */
-void cache_print(void);
+	/**
+	 * @return the occupied memory
+	 */
+	static size_t getOccMem();
 
+	/**
+	 * @return the used memory
+	 */
+	static size_t getUsedMem();
+
+	/**
+	 * Prints the cache
+	 */
+	static void print();
+
+	#if DEBUGGING
+	/**
+	 * Enables/disables "allocate and free" prints
+	 *
+	 * @param enabled the new value
+	 */
+	static void dbg_setAaFEnabled(bool enabled) {
+		aafEnabled = enabled;
+	}
+	#endif
+
+private:
+	static void printBar(size_t mem,size_t maxMem,size_t total,size_t free);
+	static void *get(Entry *c,size_t i);
 
 #if DEBUGGING
-
-/**
- * Enables/disables "allocate and free" prints
- *
- * @param enabled the new value
- */
-void cache_dbg_setAaFEnabled(bool enabled);
-
+	static bool aafEnabled;
 #endif
+	static klock_t cacheLock;
+	static size_t pages;
+	static Entry caches[];
+};

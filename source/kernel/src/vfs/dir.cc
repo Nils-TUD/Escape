@@ -120,7 +120,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER v
 	if(node->parent == NULL && pid != KERNEL_PID) {
 		const size_t bufSize = 1024;
 		size_t c,curSize = bufSize;
-		fsBytes = cache_alloc(bufSize);
+		fsBytes = Cache::alloc(bufSize);
 		if(fsBytes != NULL) {
 			sFile *rfile;
 			Thread::addHeapAlloc(fsBytes);
@@ -131,7 +131,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER v
 						break;
 
 					curSize += bufSize;
-					fsBytesDup = cache_realloc(fsBytes,curSize);
+					fsBytesDup = Cache::realloc(fsBytes,curSize);
 					if(fsBytesDup == NULL) {
 						byteCount = 0;
 						goto error;
@@ -160,7 +160,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER v
 		}
 
 		/* now allocate mem on the heap and copy all data into it */
-		fsBytesDup = cache_realloc(fsBytes,byteCount);
+		fsBytesDup = Cache::realloc(fsBytes,byteCount);
 		if(fsBytesDup == NULL)
 			byteCount = 0;
 		else {
@@ -199,6 +199,6 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER v
 		Thread::remHeapAlloc(fsBytes);
 	}
 error:
-	cache_free(fsBytes);
+	Cache::free(fsBytes);
 	return byteCount;
 }

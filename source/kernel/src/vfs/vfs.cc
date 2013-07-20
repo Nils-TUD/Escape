@@ -701,7 +701,7 @@ static bool vfs_doCloseFile(pid_t pid,sFile *file) {
 				vfs_fsmsgs_close(pid,file->nodeNo,file->devNo);
 
 			/* mark unused */
-			cache_free(file->path);
+			Cache::free(file->path);
 			file->flags = 0;
 			vfs_releaseFile(file);
 			return true;
@@ -976,7 +976,7 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 	/* make copy of name */
 	*name = backup;
 	len = strlen(name);
-	namecpy = (char*)cache_alloc(len + 1);
+	namecpy = (char*)Cache::alloc(len + 1);
 	if(namecpy == NULL) {
 		res = -ENOMEM;
 		goto errorTarget;
@@ -1006,7 +1006,7 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 errorDir:
 	vfs_node_release(dir);
 errorName:
-	cache_free(namecpy);
+	Cache::free(namecpy);
 errorTarget:
 	vfs_node_release(target);
 	return res;
@@ -1068,7 +1068,7 @@ int vfs_mkdir(pid_t pid,const char *path) {
 	/* alloc space for name and copy it over */
 	*name = backup;
 	len = strlen(name);
-	namecpy = (char*)cache_alloc(len + 1);
+	namecpy = (char*)Cache::alloc(len + 1);
 	if(namecpy == NULL)
 		return -ENOMEM;
 	strcpy(namecpy,name);
@@ -1097,7 +1097,7 @@ int vfs_mkdir(pid_t pid,const char *path) {
 errorRel:
 	vfs_node_release(node);
 error:
-	cache_free(namecpy);
+	Cache::free(namecpy);
 	return res;
 }
 
@@ -1181,7 +1181,7 @@ errDevice:
 errorDir:
 	vfs_node_release(dir);
 errorName:
-	cache_free(name);
+	Cache::free(name);
 	return err;
 }
 
@@ -1194,7 +1194,7 @@ inode_t vfs_createProcess(pid_t pid) {
 	int res = -ENOMEM;
 
 	/* build name */
-	name = (char*)cache_alloc(12);
+	name = (char*)Cache::alloc(12);
 	if(name == NULL)
 		return -ENOMEM;
 
@@ -1258,7 +1258,7 @@ errorDir:
 	vfs_node_release(dir);
 	vfs_node_destroy(dir);
 errorName:
-	cache_free(name);
+	Cache::free(name);
 	return res;
 }
 
@@ -1276,7 +1276,7 @@ bool vfs_createThread(tid_t tid) {
 	const Thread *t = Thread::getById(tid);
 
 	/* build name */
-	name = (char*)cache_alloc(12);
+	name = (char*)Cache::alloc(12);
 	if(name == NULL)
 		return false;
 	itoa(name,12,tid);
@@ -1306,7 +1306,7 @@ errorInfo:
 	vfs_node_release(dir);
 	vfs_node_destroy(dir);
 errorDir:
-	cache_free(name);
+	Cache::free(name);
 	return false;
 }
 

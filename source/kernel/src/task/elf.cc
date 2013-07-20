@@ -150,7 +150,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 				goto failed;
 			}
 			/* read name of dynamic linker */
-			interpName = (char*)cache_alloc(pheader.p_filesz);
+			interpName = (char*)Cache::alloc(pheader.p_filesz);
 			if(interpName == NULL) {
 				vid_printf("[LOADER] Allocating memory for dynamic linker name failed\n");
 				goto failed;
@@ -168,7 +168,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 			/* now load him and stop loading the 'real' program */
 			res = doLoadFromFile(interpName,TYPE_INTERP,info);
 			Thread::remHeapAlloc(interpName);
-			cache_free(interpName);
+			Cache::free(interpName);
 			return res;
 		}
 
@@ -211,7 +211,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 
 failedInterpName:
 	Thread::remHeapAlloc(interpName);
-	cache_free(interpName);
+	Cache::free(interpName);
 failed:
 	vfs_closeFile(p->getPid(),file);
 	return -ENOEXEC;

@@ -104,13 +104,13 @@ bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
 		/* set value */
 		var->value = valueCpy;
 		/* we don't need the previous value anymore */
-		cache_free(oldVal);
-		cache_free(nameCpy);
+		Cache::free(oldVal);
+		Cache::free(nameCpy);
 		Proc::release(p,PLOCK_ENV);
 		return true;
 	}
 
-	var = (EnvVar*)cache_alloc(sizeof(EnvVar));
+	var = (EnvVar*)Cache::alloc(sizeof(EnvVar));
 	if(var == NULL)
 		goto errorProc;
 
@@ -135,13 +135,13 @@ errorList:
 	if(sll_length(p->env) == 0)
 		sll_destroy(p->env,false);
 errorVar:
-	cache_free(var);
+	Cache::free(var);
 errorProc:
 	Proc::release(p,PLOCK_ENV);
 errorValCpy:
-	cache_free(valueCpy);
+	Cache::free(valueCpy);
 errorNameCpy:
-	cache_free(nameCpy);
+	Cache::free(nameCpy);
 	return false;
 }
 
@@ -152,9 +152,9 @@ void Env::removeFor(pid_t pid) {
 			sSLNode *n;
 			for(n = sll_begin(p->env); n != NULL; n = n->next) {
 				EnvVar *var = (EnvVar*)n->data;
-				cache_free(var->name);
-				cache_free(var->value);
-				cache_free(var);
+				Cache::free(var->name);
+				Cache::free(var->value);
+				Cache::free(var);
 			}
 			sll_destroy(p->env,false);
 			p->env = NULL;

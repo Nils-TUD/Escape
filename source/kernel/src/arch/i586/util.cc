@@ -169,7 +169,7 @@ sFuncCall *util_getUserStackTraceOf(Thread *t) {
 	if(t->getStackRange(&start,&end,0)) {
 		sFuncCall *calls;
 		size_t pcount = (end - start) / PAGE_SIZE;
-		frameno_t *frames = (frameno_t*)cache_alloc((pcount + 2) * sizeof(frameno_t));
+		frameno_t *frames = (frameno_t*)Cache::alloc((pcount + 2) * sizeof(frameno_t));
 		if(frames) {
 			sIntrptStackFrame *istack = t->getIntrptStack();
 			uintptr_t temp,startCpy = start;
@@ -177,7 +177,7 @@ sFuncCall *util_getUserStackTraceOf(Thread *t) {
 			frames[0] = paging_getFrameNo(t->getProc()->getPageDir(),t->getKernelStack());
 			for(i = 0; startCpy < end; i++) {
 				if(!paging_isPresent(t->getProc()->getPageDir(),startCpy)) {
-					cache_free(frames);
+					Cache::free(frames);
 					return NULL;
 				}
 				frames[i + 1] = paging_getFrameNo(t->getProc()->getPageDir(),startCpy);
@@ -188,7 +188,7 @@ sFuncCall *util_getUserStackTraceOf(Thread *t) {
 			calls = util_getStackTrace((uint32_t*)istack->ebp,start,
 					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
 			paging_unmapFromTemp(pcount + 1);
-			cache_free(frames);
+			Cache::free(frames);
 			return calls;
 		}
 	}

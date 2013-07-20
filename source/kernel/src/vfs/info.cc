@@ -291,7 +291,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 	ksize = boot_getKernelSize();
 	msize = boot_getModuleSize();
 	kheap = kheap_getOccupiedMem();
-	cache = cache_getOccMem();
+	cache = Cache::getOccMem();
 	pmem = pmem_getStackSize();
 	Proc::getMemUsage(&dataShared,&dataOwn,&dataReal);
 	prf_sprintf(
@@ -323,7 +323,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 		"KHeapSize:",kheap,
 		"KHeapUsage:",kheap_getUsedMem(),
 		"CacheSize:",cache,
-		"CacheUsage:",cache_getUsedMem(),
+		"CacheUsage:",Cache::getUsedMem(),
 		"UserShared:",dataShared,
 		"UserOwn:",dataOwn,
 		"UserReal:",dataReal
@@ -443,7 +443,7 @@ static ssize_t vfs_info_readHelper(A_UNUSED pid_t pid,sVFSNode *node,USER void *
 		if(offset >= (off_t)dataSize)
 			return 0;
 		/* ok, use the heap as temporary storage */
-		mem = cache_alloc(dataSize);
+		mem = Cache::alloc(dataSize);
 		if(mem == NULL)
 			return 0;
 	}
@@ -464,7 +464,7 @@ static ssize_t vfs_info_readHelper(A_UNUSED pid_t pid,sVFSNode *node,USER void *
 		Thread::remHeapAlloc(mem);
 	}
 	/* free temp storage */
-	cache_free(mem);
+	Cache::free(mem);
 
 	return count;
 }

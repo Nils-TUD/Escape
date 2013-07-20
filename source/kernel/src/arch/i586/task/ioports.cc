@@ -39,7 +39,7 @@ int IOPorts::request(uint16_t start,size_t count) {
 
 	p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
 	if(p->ioMap == NULL) {
-		p->ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)Cache::alloc(IO_MAP_SIZE / 8);
 		if(p->ioMap == NULL) {
 			Proc::release(p,PLOCK_PORTS);
 			return -ENOMEM;
@@ -96,7 +96,7 @@ int IOPorts::release(uint16_t start,size_t count) {
 
 void IOPorts::free(Proc *p) {
 	if(p->ioMap != NULL) {
-		cache_free(p->ioMap);
+		Cache::free(p->ioMap);
 		p->ioMap = NULL;
 	}
 }

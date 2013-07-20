@@ -30,5 +30,5 @@ void CPUBase::print() {
 	buf.str = NULL;
 	sprintf(&buf);
 	vid_printf("%s",buf.str);
-	cache_free(buf.str);
+	Cache::free(buf.str);
 }

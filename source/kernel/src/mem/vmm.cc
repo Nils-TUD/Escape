@@ -76,7 +76,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 	ssize_t res;
 	Proc *p;
 	size_t i,pages = BYTES_2_PAGES(bCount);
-	frameno_t *frames = (frameno_t*)cache_alloc(sizeof(frameno_t) * pages);
+	frameno_t *frames = (frameno_t*)Cache::alloc(sizeof(frameno_t) * pages);
 	if(frames == NULL)
 		return 0;
 
@@ -132,7 +132,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 	}
 	vmm_relProc(p);
 	Thread::remHeapAlloc(frames);
-	cache_free(frames);
+	Cache::free(frames);
 	return vm->virt;
 
 errorRel:
@@ -141,7 +141,7 @@ errorRem:
 	vmm_remove(pid,vm);
 error:
 	Thread::remHeapAlloc(frames);
-	cache_free(frames);
+	Cache::free(frames);
 	return 0;
 }
 
@@ -598,7 +598,7 @@ static void vmm_sync(Proc *p,sVMRegion *vm) {
 		pid_t cur = Proc::getRunning();
 		uint8_t *buf;
 		if(cur != p->getPid()) {
-			buf = (uint8_t*)cache_alloc(PAGE_SIZE);
+			buf = (uint8_t*)Cache::alloc(PAGE_SIZE);
 			if(buf == NULL)
 				return;
 			Thread::addHeapAlloc(buf);
@@ -623,7 +623,7 @@ static void vmm_sync(Proc *p,sVMRegion *vm) {
 
 		if(cur != p->getPid()) {
 			Thread::remHeapAlloc(buf);
-			cache_free(buf);
+			Cache::free(buf);
 		}
 	}
 }
@@ -1148,7 +1148,7 @@ static bool vmm_loadFromFile(Proc *p,sVMRegion *vm,uintptr_t addr,size_t loadCou
 	/* first read into a temp-buffer because we can't mark the page as present until
 	 * its read from disk. and we can't use a temporary mapping when switching
 	 * threads. */
-	tempBuf = cache_alloc(PAGE_SIZE);
+	tempBuf = Cache::alloc(PAGE_SIZE);
 	if(tempBuf == NULL) {
 		err = -ENOMEM;
 		goto error;
@@ -1166,7 +1166,7 @@ static bool vmm_loadFromFile(Proc *p,sVMRegion *vm,uintptr_t addr,size_t loadCou
 
 	/* free resources not needed anymore */
 	Thread::remHeapAlloc(tempBuf);
-	cache_free(tempBuf);
+	Cache::free(tempBuf);
 
 	/* map into all pagedirs */
 	mapFlags = PG_PRESENT;
@@ -1189,7 +1189,7 @@ static bool vmm_loadFromFile(Proc *p,sVMRegion *vm,uintptr_t addr,size_t loadCou
 
 errorFree:
 	Thread::remHeapAlloc(tempBuf);
-	cache_free(tempBuf);
+	Cache::free(tempBuf);
 error:
 	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,p->getCommand(),strerror(-err),err);
 	return false;

@@ -90,12 +90,12 @@ static void prf_aprintc(char c) {
 		if(curbuf->dynamic) {
 			if(curbuf->str == NULL) {
 				curbuf->size = SPRINTF_INIT_SIZE;
-				curbuf->str = (char*)cache_alloc(SPRINTF_INIT_SIZE * sizeof(char));
+				curbuf->str = (char*)Cache::alloc(SPRINTF_INIT_SIZE * sizeof(char));
 			}
 			if(curbuf->len >= curbuf->size) {
 				char *dup;
 				curbuf->size *= 2;
-				dup = (char*)cache_realloc(curbuf->str,curbuf->size * sizeof(char));
+				dup = (char*)Cache::realloc(curbuf->str,curbuf->size * sizeof(char));
 				if(!dup) {
 					/* make end visible */
 					curbuf->str[curbuf->len - 1] = 0xBA;

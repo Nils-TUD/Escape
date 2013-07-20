@@ -62,7 +62,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 		prf_sprintf(&buf,"%d %s",e.nodeNo,e.name);
 		if(buf.str) {
 			lines_appendStr(&lines,buf.str);
-			cache_free(buf.str);
+			Cache::free(buf.str);
 		}
 		lines_newline(&lines);
 	}

@@ -132,7 +132,7 @@ void cons_start(const char *initialcmd) {
 			/* remove this command from history */
 			assert(histSize > 0);
 			size_t last = (histReadPos - 1) % histSize;
-			cache_free(history[last]);
+			Cache::free(history[last]);
 			history[last] = NULL;
 			histReadPos = last;
 			histWritePos = last;

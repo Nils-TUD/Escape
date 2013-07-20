@@ -58,7 +58,7 @@ int ELF::finishFromFile(sFile *file,const sElfEHeader *eheader,StartupInfo *info
 	int res = -ENOEXEC;
 	Thread *t = Thread::getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
-	sElfSHeader *secHeaders = (sElfSHeader*)cache_alloc(headerSize);
+	sElfSHeader *secHeaders = (sElfSHeader*)Cache::alloc(headerSize);
 	if(secHeaders == NULL) {
 		vid_printf("[LOADER] Unable to allocate memory for ELF-header (%zu bytes)\n",headerSize);
 		return -ENOEXEC;
@@ -80,7 +80,7 @@ int ELF::finishFromFile(sFile *file,const sElfEHeader *eheader,StartupInfo *info
 
 error:
 	Thread::remHeapAlloc(secHeaders);
-	cache_free(secHeaders);
+	Cache::free(secHeaders);
 	return res;
 }
 

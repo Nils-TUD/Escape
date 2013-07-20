@@ -60,7 +60,7 @@ sRegion *reg_create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong 
 	assert((flags & (RF_SHAREABLE | RF_GROWABLE)) != (RF_SHAREABLE | RF_GROWABLE));
 	assert(pgFlags == (ulong)-1 || pgFlags == PF_DEMANDLOAD || pgFlags == 0);
 
-	reg = (sRegion*)cache_alloc(sizeof(sRegion));
+	reg = (sRegion*)Cache::alloc(sizeof(sRegion));
 	if(reg == NULL)
 		return NULL;
 	sll_init(&reg->procs,slln_allocNode,slln_freeNode);
@@ -83,10 +83,10 @@ sRegion *reg_create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong 
 	 * happen for data-regions of zero-size. We want to be able to increase their size, so they
 	 * must exist. */
 	reg->pfSize = MAX(1,pageCount);
-	reg->pageFlags = (ulong*)cache_alloc(reg->pfSize * sizeof(ulong));
+	reg->pageFlags = (ulong*)Cache::alloc(reg->pfSize * sizeof(ulong));
 	if(reg->pageFlags == NULL) {
 		sll_clear(&reg->procs,false);
-		cache_free(reg);
+		Cache::free(reg);
 		return NULL;
 	}
 	/* -1 means its initialized later (for reg_clone) */
@@ -104,9 +104,9 @@ void reg_destroy(sRegion *reg) {
 		if(reg->pageFlags[i] & PF_SWAPPED)
 			swmap_free(reg_getSwapBlock(reg,i));
 	}
-	cache_free(reg->pageFlags);
+	Cache::free(reg->pageFlags);
 	sll_clear(&reg->procs,false);
-	cache_free(reg);
+	Cache::free(reg);
 }
 
 size_t reg_pageCount(const sRegion *reg,size_t *swapped) {
@@ -151,7 +151,7 @@ ssize_t reg_grow(sRegion *reg,ssize_t amount) {
 	assert((reg->flags & RF_GROWABLE));
 	if(amount > 0) {
 		ssize_t i;
-		ulong *pf = (ulong*)cache_realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(ulong));
+		ulong *pf = (ulong*)Cache::realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(ulong));
 		if(pf == NULL)
 			return -ENOMEM;
 		reg->pfSize += amount;
@@ -243,7 +243,7 @@ void reg_printFlags(const sRegion *reg) {
 	reg_sprintfFlags(&buf,reg);
 	if(buf.str) {
 		vid_printf("%s",buf.str);
-		cache_free(buf.str);
+		Cache::free(buf.str);
 	}
 }
 
@@ -258,7 +258,7 @@ void reg_print(sRegion *reg,uintptr_t virt) {
 		vid_printf("%s",buf.str);
 	else
 		vid_printf("- no regions -\n");
-	cache_free(buf.str);
+	Cache::free(buf.str);
 }
 
 void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {

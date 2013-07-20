@@ -25,6 +25,7 @@
 #include <sys/log.h>
 #include <sys/video.h>
 #include <string.h>
+#include <assert.h>
 
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE	0
@@ -35,19 +36,9 @@
 #define SIZE_THRESHOLD		128
 #define HEAP_THRESHOLD		512
 
-typedef struct {
-	const size_t objSize;
-	size_t totalObjs;
-	size_t freeObjs;
-	void *freeList;
-} sCache;
-
-static void cache_printBar(size_t mem,size_t maxMem,size_t total,size_t free);
-static void *cache_get(sCache *c,size_t i);
-
-static klock_t cacheLock;
-static size_t pages = 0;
-static sCache caches[] = {
+klock_t Cache::cacheLock;
+size_t Cache::pages = 0;
+Cache::Entry Cache::caches[] = {
 	{16,0,0,NULL},
 	{32,0,0,NULL},
 	{64,0,0,NULL},
@@ -60,12 +51,11 @@ static sCache caches[] = {
 	{8192,0,0,NULL},
 	{16384,0,0,NULL},
 };
-
 #if DEBUGGING
-static bool aafEnabled = false;
+bool Cache::aafEnabled = false;
 #endif
 
-void *cache_alloc(size_t size) {
+void *Cache::alloc(size_t size) {
 	size_t i;
 	void *res;
 	if(size == 0)
@@ -76,7 +66,7 @@ void *cache_alloc(size_t size) {
 		if(objSize >= size) {
 			if((objSize - size) >= SIZE_THRESHOLD)
 				break;
-			res = cache_get(caches + i,i);
+			res = get(caches + i,i);
 			goto done;
 		}
 	}
@@ -93,19 +83,19 @@ done:
 	return res;
 }
 
-void *cache_calloc(size_t num,size_t size) {
-	void *p = cache_alloc(num * size);
+void *Cache::calloc(size_t num,size_t size) {
+	void *p = alloc(num * size);
 	if(p)
 		memclear(p,num * size);
 	return p;
 }
 
-void *cache_realloc(void *p,size_t size) {
+void *Cache::realloc(void *p,size_t size) {
 	ulong *area;
 	size_t objSize;
 	void *res;
 	if(p == NULL)
-		return cache_alloc(size);
+		return alloc(size);
 
 	area = (ulong*)p - 2;
 	/* if the guard is not ours, perhaps it has been allocated on the fallback-heap */
@@ -116,16 +106,16 @@ void *cache_realloc(void *p,size_t size) {
 	objSize = caches[area[0]].objSize;
 	if(objSize >= size)
 		return p;
-	res = cache_alloc(size);
+	res = alloc(size);
 	if(res) {
 		memcpy(res,p,objSize);
-		cache_free(p);
+		free(p);
 	}
 	return res;
 }
 
-void cache_free(void *p) {
-	sCache *c;
+void Cache::free(void *p) {
+	Entry *c;
 	ulong *area = (ulong*)p - 2;
 	size_t objSize;
 	if(p == NULL)
@@ -161,25 +151,21 @@ void cache_free(void *p) {
 	spinlock_release(&cacheLock);
 }
 
-size_t cache_getPageCount(void) {
-	return pages;
-}
-
-size_t cache_getOccMem(void) {
+size_t Cache::getOccMem(void) {
 	size_t i,count = 0;
 	for(i = 0; i < ARRAY_SIZE(caches); i++)
 		count += BYTES_2_PAGES(caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3));
 	return count * PAGE_SIZE;
 }
 
-size_t cache_getUsedMem(void) {
+size_t Cache::getUsedMem(void) {
 	size_t i,count = 0;
 	for(i = 0; i < ARRAY_SIZE(caches); i++)
 		count += (caches[i].totalObjs - caches[i].freeObjs) * (caches[i].objSize + sizeof(ulong) * 3);
 	return count;
 }
 
-void cache_print(void) {
+void Cache::print(void) {
 	size_t i;
 	size_t total = 0,maxMem = 0;
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
@@ -193,11 +179,11 @@ void cache_print(void) {
 		size_t mem = caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3);
 		vid_printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
 				caches[i].totalObjs,caches[i].freeObjs,BYTES_2_PAGES(mem));
-		cache_printBar(mem,maxMem,caches[i].totalObjs,caches[i].freeObjs);
+		printBar(mem,maxMem,caches[i].totalObjs,caches[i].freeObjs);
 	}
 }
 
-static void cache_printBar(size_t mem,size_t maxMem,size_t total,size_t free) {
+void Cache::printBar(size_t mem,size_t maxMem,size_t total,size_t free) {
 	size_t i;
 	size_t memTotal = (size_t)(VID_COLS * (mem / (double)maxMem));
 	size_t full = (size_t)(memTotal * ((total - free) / (double)total));
@@ -210,7 +196,7 @@ static void cache_printBar(size_t mem,size_t maxMem,size_t total,size_t free) {
 	vid_printf("\n");
 }
 
-static void *cache_get(sCache *c,size_t i) {
+void *Cache::get(Entry *c,size_t i) {
 	ulong *area;
 	spinlock_aquire(&cacheLock);
 	if(!c->freeList) {
@@ -252,11 +238,3 @@ static void *cache_get(sCache *c,size_t i) {
 	spinlock_release(&cacheLock);
 	return area + 2;
 }
-
-#if DEBUGGING
-
-void cache_dbg_setAaFEnabled(bool enabled) {
-	aafEnabled = enabled;
-}
-
-#endif

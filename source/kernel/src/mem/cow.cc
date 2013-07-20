@@ -69,7 +69,7 @@ size_t cow_pagefault(uintptr_t address,frameno_t frameNumber) {
 	if(cow->refCount > 0)
 		paging_copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
 	else
-		cache_free(cow);
+		Cache::free(cow);
 	spinlock_release(&cowLock);
 	return 1;
 }
@@ -78,7 +78,7 @@ bool cow_add(frameno_t frameNo) {
 	spinlock_aquire(&cowLock);
 	sCOW *cow = cow_getByFrame(frameNo,false);
 	if(!cow) {
-		cow = (sCOW*)cache_alloc(sizeof(sCOW));
+		cow = (sCOW*)Cache::alloc(sizeof(sCOW));
 		if(cow == NULL) {
 			spinlock_release(&cowLock);
 			return false;
@@ -86,7 +86,7 @@ bool cow_add(frameno_t frameNo) {
 		cow->frameNumber = frameNo;
 		cow->refCount = 0;
 		if(!sll_append(cowFrames + (frameNo % COW_HEAP_SIZE),cow)) {
-			cache_free(cow);
+			Cache::free(cow);
 			spinlock_release(&cowLock);
 			return false;
 		}
@@ -105,7 +105,7 @@ size_t cow_remove(frameno_t frameNo,bool *foundOther) {
 
 	*foundOther = cow->refCount > 0;
 	if(cow->refCount == 0)
-		cache_free(cow);
+		Cache::free(cow);
 	spinlock_release(&cowLock);
 	return 1;
 }

@@ -495,7 +495,7 @@ static void vfs_node_doDestroy(sVFSNode *n,bool remove) {
 	if((norefs || remove) && n->name) {
 		/* free name */
 		if(IS_ON_HEAP(n->name))
-			cache_free((void*)n->name);
+			Cache::free((void*)n->name);
 		*(char**)&n->name = NULL;
 
 		/* remove from parent and release (attention: maybe its not yet in the tree) */
@@ -530,7 +530,7 @@ char *vfs_node_getId(pid_t pid) {
 	/* we want a id in the form <pid>.<x>, i.e. 2 ints, a '.' and '\0'. thus, allowing up to 31
 	 * digits per int is enough, even for 64-bit ints */
 	const size_t size = 64;
-	name = (char*)cache_alloc(size);
+	name = (char*)Cache::alloc(size);
 	if(name == NULL)
 		return NULL;
 
@@ -585,13 +585,13 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 	else
 		nameLen = strlen(path);
 	/* copy the name because vfs_file_create() will store the pointer */
-	nameCpy = (char*)cache_alloc(nameLen + 1);
+	nameCpy = (char*)Cache::alloc(nameLen + 1);
 	if(nameCpy == NULL)
 		return -ENOMEM;
 	memcpy(nameCpy,path,nameLen + 1);
 	/* now create the node and pass the node-number back */
 	if((child = vfs_file_create(pid,dir,nameCpy,vfs_file_read,vfs_file_write)) == NULL) {
-		cache_free(nameCpy);
+		Cache::free(nameCpy);
 		return -ENOMEM;
 	}
 	if(created)

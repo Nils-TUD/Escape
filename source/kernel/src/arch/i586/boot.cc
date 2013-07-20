@@ -196,7 +196,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	mbmods = vfs_node_get(nodeNo);
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
-		char *modname = (char*)cache_alloc(12);
+		char *modname = (char*)Cache::alloc(12);
 		itoa(modname,12,i);
 		sVFSNode *n = vfs_file_create_for(KERNEL_PID,mbmods,modname,(void*)mod->modStart,
 				mod->modEnd - mod->modStart);

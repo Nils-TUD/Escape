@@ -63,7 +63,7 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 		return NULL;
 	node = vfs_node_create(pid,name);
 	if(node == NULL) {
-		cache_free(name);
+		Cache::free(name);
 		return NULL;
 	}
 
@@ -75,7 +75,7 @@ sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
 	node->destroy = vfs_pipe_destroy;
 	node->close = vfs_pipe_close;
 	node->data = NULL;
-	pipe = (sPipe*)cache_alloc(sizeof(sPipe));
+	pipe = (sPipe*)Cache::alloc(sizeof(sPipe));
 	if(!pipe) {
 		vfs_node_destroy(node);
 		return NULL;
@@ -99,7 +99,7 @@ static void vfs_pipe_destroy(sVFSNode *n) {
 	sPipe *pipe = (sPipe*)n->data;
 	if(pipe) {
 		sll_clear(&pipe->list,true);
-		cache_free(pipe);
+		Cache::free(pipe);
 		n->data = NULL;
 	}
 }
@@ -167,7 +167,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 		Thread::remLock(&node->lock);
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
-			cache_free(data);
+			Cache::free(data);
 			sll_removeFirst(&pipe->list);
 		}
 		count -= byteCount;
@@ -245,7 +245,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 	}
 
 	/* build pipe-data */
-	data = (sPipeData*)cache_alloc(sizeof(sPipeData) + count);
+	data = (sPipeData*)Cache::alloc(sizeof(sPipeData) + count);
 	if(data == NULL)
 		return -ENOMEM;
 	data->offset = offset;
@@ -260,12 +260,12 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
 		spinlock_release(&node->lock);
-		cache_free(data);
+		Cache::free(data);
 		return -EDESTROYED;
 	}
 	if(!sll_append(&pipe->list,data)) {
 		spinlock_release(&node->lock);
-		cache_free(data);
+		Cache::free(data);
 		return -ENOMEM;
 	}
 	pipe->total += count;

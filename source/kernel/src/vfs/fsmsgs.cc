@@ -357,7 +357,7 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,sFile **file) {
 			if(chan->node->name == NULL) {
 				/* remove channel */
 				sll_removeFirstWith(&p->fsChans,chan);
-				cache_free(chan);
+				Cache::free(chan);
 				spinlock_release(&fsChanLock);
 				return -EDESTROYED;
 			}
@@ -371,7 +371,7 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,sFile **file) {
 	}
 	spinlock_release(&fsChanLock);
 
-	chan = (sFSChan*)cache_alloc(sizeof(sFSChan));
+	chan = (sFSChan*)Cache::alloc(sizeof(sFSChan));
 	if(!chan)
 		return -ENOMEM;
 	chan->active = true;
@@ -416,7 +416,7 @@ errorChild:
 errorNode:
 	vfs_node_release(fsnode);
 errorChan:
-	cache_free(chan);
+	Cache::free(chan);
 	return err;
 }
 

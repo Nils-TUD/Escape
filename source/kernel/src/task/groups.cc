@@ -32,7 +32,7 @@ bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 	Proc *p;
 	gid_t *grpCpy = NULL;
 	if(count > 0) {
-		grpCpy = (gid_t*)cache_alloc(count * sizeof(gid_t));
+		grpCpy = (gid_t*)Cache::alloc(count * sizeof(gid_t));
 		if(!grpCpy)
 			return false;
 		Thread::addHeapAlloc(grpCpy);
@@ -40,9 +40,9 @@ bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 		Thread::remHeapAlloc(grpCpy);
 	}
 
-	g = (Entries*)cache_alloc(sizeof(Entries));
+	g = (Entries*)Cache::alloc(sizeof(Entries));
 	if(!g) {
-		cache_free(grpCpy);
+		Cache::free(grpCpy);
 		return false;
 	}
 	g->lock = 0;
@@ -52,8 +52,8 @@ bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 	leave(pid);
 	p = Proc::getByPid(pid);
 	if(!p) {
-		cache_free(g);
-		cache_free(grpCpy);
+		Cache::free(g);
+		Cache::free(grpCpy);
 		return false;
 	}
 	p->groups = g;
@@ -103,8 +103,8 @@ void Groups::leave(pid_t pid) {
 	if(g) {
 		spinlock_aquire(&g->lock);
 		if(--g->refCount == 0) {
-			cache_free(g->groups);
-			cache_free(g);
+			Cache::free(g->groups);
+			Cache::free(g);
 		}
 		spinlock_release(&g->lock);
 	}

@@ -61,7 +61,7 @@ Thread *ThreadBase::init(Proc *p) {
 
 Thread *ThreadBase::createInitial(Proc *p) {
 	size_t i;
-	Thread *t = (Thread*)cache_alloc(sizeof(Thread));
+	Thread *t = (Thread*)Cache::alloc(sizeof(Thread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
@@ -193,7 +193,7 @@ bool ThreadBase::reserveFrames(size_t count) {
 
 int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool cloneProc) {
 	int err = -ENOMEM;
-	Thread *t = (Thread*)cache_alloc(sizeof(Thread));
+	Thread *t = (Thread*)Cache::alloc(sizeof(Thread));
 	if(t == NULL)
 		return -ENOMEM;
 
@@ -265,7 +265,7 @@ errClone:
 	if(t->tlsRegion != NULL)
 		vmm_remove(p->getPid(),t->tlsRegion);
 errThread:
-	cache_free(t);
+	Cache::free(t);
 	return err;
 }
 
@@ -282,7 +282,7 @@ void ThreadBase::kill() {
 	for(i = 0; i < termLockCount; i++)
 		spinlock_release(termLocks[i]);
 	for(i = 0; i < termHeapCount; i++)
-		cache_free(termHeapAllocs[i]);
+		Cache::free(termHeapAllocs[i]);
 	for(i = 0; i < termUsageCount; i++)
 		vfs_decUsages(termUsages[i]);
 	for(i = 0; i < termCallbackCount; i++)
@@ -300,7 +300,7 @@ void ThreadBase::kill() {
 
 	/* finally, destroy thread */
 	remove();
-	cache_free(this);
+	Cache::free(this);
 }
 
 void ThreadBase::makeUnrunnable() {

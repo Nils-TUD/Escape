@@ -47,7 +47,7 @@ int Syscalls::debugc(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 #if 0
 	static size_t foo = 0;
-	cache_dbg_setAaFEnabled(foo == 0);
+	Cache::dbg_setAaFEnabled(foo == 0);
 	foo = foo ? 0 : 1;
 #else
 	cons_start(NULL);

@@ -71,7 +71,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 		return NULL;
 	node = vfs_node_create(pid,name);
 	if(node == NULL) {
-		cache_free(name);
+		Cache::free(name);
 		return NULL;
 	}
 
@@ -83,7 +83,7 @@ sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
 	node->close = vfs_chan_close;
 	node->destroy = vfs_chan_destroy;
 	node->data = NULL;
-	chan = (sChannel*)cache_alloc(sizeof(sChannel));
+	chan = (sChannel*)Cache::alloc(sizeof(sChannel));
 	if(!chan) {
 		vfs_node_destroy(node);
 		return NULL;
@@ -109,7 +109,7 @@ static void vfs_chan_destroy(sVFSNode *n) {
 		/* clear send and receive list */
 		sll_clear(&chan->recvList,true);
 		sll_clear(&chan->sendList,true);
-		cache_free(chan);
+		Cache::free(chan);
 		n->data = NULL;
 	}
 }
@@ -207,7 +207,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		list = &chan->sendList;
 
 	/* create message and copy data to it */
-	msg1 = (sMessage*)cache_alloc(sizeof(sMessage) + size1);
+	msg1 = (sMessage*)Cache::alloc(sizeof(sMessage) + size1);
 	if(msg1 == NULL)
 		return -ENOMEM;
 
@@ -220,7 +220,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 	}
 
 	if(data2) {
-		msg2 = (sMessage*)cache_alloc(sizeof(sMessage) + size2);
+		msg2 = (sMessage*)Cache::alloc(sizeof(sMessage) + size2);
 		if(msg2 == NULL)
 			return -ENOMEM;
 
@@ -279,8 +279,8 @@ errorRem:
 error:
 	spinlock_release(&waitLock);
 	spinlock_release(&n->lock);
-	cache_free(msg1);
-	cache_free(msg2);
+	Cache::free(msg1);
+	Cache::free(msg2);
 	return -ENOMEM;
 }
 
@@ -348,7 +348,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	}
 	spinlock_release(&node->lock);
 	if(data && msg->length > size) {
-		cache_free(msg);
+		Cache::free(msg);
 		return -EINVAL;
 	}
 
@@ -367,7 +367,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	Thread::remHeapAlloc(msg);
 
 	res = msg->length;
-	cache_free(msg);
+	Cache::free(msg);
 	return res;
 }
 

@@ -138,7 +138,7 @@ void CPU::detect() {
 	char vendor[VENDOR_STRLEN + 1];
 	cpuid_t id = SMP::getCurId();
 	if(cpus == NULL) {
-		cpus = (Info*)cache_alloc(sizeof(Info) * SMP::getCPUCount());
+		cpus = (Info*)Cache::alloc(sizeof(Info) * SMP::getCPUCount());
 		if(!cpus)
 			util_panic("Not enough mem for CPU-infos");
 

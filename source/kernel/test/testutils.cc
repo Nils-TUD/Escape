@@ -36,8 +36,8 @@ void checkMemoryBefore(bool checkMappedPages) {
 		mappedPages = paging_dbg_getPageCount();
 	heapPages = kheap_getPageCount();
 	heapUsed = kheap_getUsedMem();
-	cachePages = cache_getPageCount();
-	cacheUsed = cache_getUsedMem();
+	cachePages = Cache::getPageCount();
+	cacheUsed = Cache::getUsedMem();
 	daPages = dyna_getTotalPages();
 	freeFrames = pmem_getFreeFrames(MM_DEF | MM_CONT);
 }
@@ -49,8 +49,8 @@ void checkMemoryAfter(bool checkMappedPages) {
 	size_t newDaPages;
 	newHeapPages = kheap_getPageCount();
 	newHeapUsed = kheap_getUsedMem();
-	newCachePages = cache_getPageCount();
-	newCacheUsed = cache_getUsedMem();
+	newCachePages = Cache::getPageCount();
+	newCacheUsed = Cache::getUsedMem();
 	newDaPages = dyna_getTotalPages();
 	newFreeFrames = pmem_getFreeFrames(MM_DEF | MM_CONT);
 	if(checkMappedPages) {

@@ -30,7 +30,7 @@
  */
 
 bool vmfree_init(sVMFreeMap *map,uintptr_t addr,size_t size) {
-	sVMFreeArea *a = (sVMFreeArea*)cache_alloc(sizeof(sVMFreeArea));
+	sVMFreeArea *a = (sVMFreeArea*)Cache::alloc(sizeof(sVMFreeArea));
 	if(!a)
 		return false;
 	a->addr = addr;
@@ -44,7 +44,7 @@ void vmfree_destroy(sVMFreeMap *map) {
 	sVMFreeArea *a;
 	for(a = map->list; a != NULL; ) {
 		sVMFreeArea *n = a->next;
-		cache_free(a);
+		Cache::free(a);
 		a = n;
 	}
 	map->list = NULL;
@@ -73,7 +73,7 @@ uintptr_t vmfree_allocate(sVMFreeMap *map,size_t size) {
 			p->next = a->next;
 		else
 			map->list = a->next;
-		cache_free(a);
+		Cache::free(a);
 	}
 	return res;
 }
@@ -93,7 +93,7 @@ bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size) {
 			p->next = a->next;
 		else
 			map->list = a->next;
-		cache_free(a);
+		Cache::free(a);
 	}
 	/* at the beginning? */
 	else if(addr == a->addr) {
@@ -106,7 +106,7 @@ bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	}
 	/* in the middle */
 	else {
-		sVMFreeArea *na = (sVMFreeArea*)cache_alloc(sizeof(sVMFreeArea));
+		sVMFreeArea *na = (sVMFreeArea*)Cache::alloc(sizeof(sVMFreeArea));
 		if(!na)
 			return false;
 		na->addr = a->addr;
@@ -134,7 +134,7 @@ void vmfree_free(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	if(p && p->addr + p->size == addr && n && addr + size == n->addr) {
 		p->size += size + n->size;
 		p->next = n->next;
-		cache_free(n);
+		Cache::free(n);
 	}
 	/* merge with prev */
 	else if(p && p->addr + p->size == addr) {
@@ -147,7 +147,7 @@ void vmfree_free(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	}
 	/* create new area between them */
 	else {
-		sVMFreeArea *a = (sVMFreeArea*)cache_alloc(sizeof(sVMFreeArea));
+		sVMFreeArea *a = (sVMFreeArea*)Cache::alloc(sizeof(sVMFreeArea));
 		/* if this fails, ignore it; we can't really do something about it */
 		if(!a)
 			return;

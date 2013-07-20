@@ -80,7 +80,7 @@ bool SMPBase::init_arch() {
 			/* from now on, we'll use the logical-id as far as possible; but remember the physical
 			 * one for IPIs, e.g. */
 			cpuid_t id = apic_getId();
-			SMP::log2Phys = (cpuid_t*)cache_alloc(getCPUCount() * sizeof(cpuid_t));
+			SMP::log2Phys = (cpuid_t*)Cache::alloc(getCPUCount() * sizeof(cpuid_t));
 			SMP::log2Phys[0] = id;
 			setId(id,0);
 			return true;

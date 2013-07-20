@@ -92,7 +92,7 @@ void Signals::removeHandlerFor(tid_t tid) {
 		/* remove all pending */
 		removePending(s,0);
 		sll_removeFirstWith(&sigThreads,t);
-		cache_free(s);
+		Cache::free(s);
 		t->signals = NULL;
 	}
 	spinlock_release(&sigLock);
@@ -331,11 +331,11 @@ Signals::Data *Signals::getThread(tid_t tid,bool create) {
 	if(t->signals == NULL) {
 		if(!create)
 			return NULL;
-		t->signals = (Data*)cache_calloc(1,sizeof(Data));
+		t->signals = (Data*)Cache::calloc(1,sizeof(Data));
 		if(!t->signals)
 			return NULL;
 		if(!sll_append(&sigThreads,t)) {
-			cache_free(t->signals);
+			Cache::free(t->signals);
 			t->signals = NULL;
 			return NULL;
 		}

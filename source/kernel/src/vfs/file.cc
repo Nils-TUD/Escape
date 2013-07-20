@@ -60,7 +60,7 @@ sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrit
 	node->destroy = vfs_file_destroy;
 	node->data = NULL;
 	if(read == vfs_file_read) {
-		sFileContent *con = (sFileContent*)cache_alloc(sizeof(sFileContent));
+		sFileContent *con = (sFileContent*)Cache::alloc(sizeof(sFileContent));
 		if(!con) {
 			vfs_node_destroy(node);
 			return NULL;
@@ -88,8 +88,8 @@ static void vfs_file_destroy(sVFSNode *n) {
 	sFileContent *con = (sFileContent*)n->data;
 	if(con) {
 		if(con->dynamic)
-			cache_free(con->data);
-		cache_free(con);
+			Cache::free(con->data);
+		Cache::free(con);
 		n->data = NULL;
 	}
 }
@@ -161,7 +161,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *n,USER 
 			return -ENOMEM;
 		}
 
-		con->data = cache_alloc(newSize);
+		con->data = Cache::alloc(newSize);
 		/* reset position */
 		con->pos = 0;
 	}
@@ -178,7 +178,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *n,USER 
 			return -ENOMEM;
 		}
 
-		con->data = cache_realloc(con->data,newSize);
+		con->data = Cache::realloc(con->data,newSize);
 	}
 
 	/* failed? */

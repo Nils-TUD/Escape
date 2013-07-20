@@ -27,10 +27,10 @@ int lines_create(sLines *l) {
 	l->lineCount = 0;
 	l->linePos = 0;
 	l->lineSize = 16;
-	l->lines = (char**)cache_alloc(l->lineSize * sizeof(char*));
+	l->lines = (char**)Cache::alloc(l->lineSize * sizeof(char*));
 	if(!l->lines)
 		return -ENOMEM;
-	l->lines[l->lineCount] = (char*)cache_alloc(VID_COLS + 1);
+	l->lines[l->lineCount] = (char*)Cache::alloc(VID_COLS + 1);
 	if(!l->lines[l->lineCount]) {
 		lines_destroy(l);
 		return -ENOMEM;
@@ -67,7 +67,7 @@ void lines_newline(sLines *l) {
 	if(l->lineCount >= l->lineSize) {
 		char **lines;
 		l->lineSize *= 2;
-		lines = (char**)cache_realloc(l->lines,l->lineSize * sizeof(char*));
+		lines = (char**)Cache::realloc(l->lines,l->lineSize * sizeof(char*));
 		if(!lines) {
 			l->lineSize = (size_t)-1;
 			return;
@@ -75,7 +75,7 @@ void lines_newline(sLines *l) {
 		l->lines = lines;
 	}
 	/* allocate new line */
-	l->lines[l->lineCount] = (char*)cache_alloc(VID_COLS + 1);
+	l->lines[l->lineCount] = (char*)Cache::alloc(VID_COLS + 1);
 	if(!l->lines[l->lineCount]) {
 		l->lineCount--;
 		l->lineSize = (size_t)-1;
@@ -94,7 +94,7 @@ void lines_destroy(sLines *l) {
 	if(l->lines) {
 		size_t i;
 		for(i = 0; i < l->lineCount; i++)
-			cache_free(l->lines[i]);
-		cache_free(l->lines);
+			Cache::free(l->lines[i]);
+		Cache::free(l->lines);
 	}
 }

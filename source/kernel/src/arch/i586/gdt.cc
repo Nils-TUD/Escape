@@ -256,13 +256,13 @@ void gdt_init(void) {
 
 void gdt_init_bsp(void) {
 	cpuCount = SMP::getCPUCount();
-	allgdts = (sGDTTable*)cache_calloc(cpuCount,sizeof(sGDTTable));
+	allgdts = (sGDTTable*)Cache::calloc(cpuCount,sizeof(sGDTTable));
 	if(!allgdts)
 		util_panic("Unable to allocate GDT-Tables for APs");
-	alltss = (sTSS**)cache_calloc(cpuCount,sizeof(sTSS*));
+	alltss = (sTSS**)Cache::calloc(cpuCount,sizeof(sTSS*));
 	if(!alltss)
 		util_panic("Unable to allocate TSS-pointers for APs");
-	ioMaps = (const uint8_t**)cache_calloc(cpuCount,sizeof(uint8_t*));
+	ioMaps = (const uint8_t**)Cache::calloc(cpuCount,sizeof(uint8_t*));
 	if(!ioMaps)
 		util_panic("Unable to allocate IO-Map-Pointers for APs");
 
@@ -289,7 +289,7 @@ void gdt_init_ap(void) {
 	tss = (sTSS*)paging_makeAccessible(0,BYTES_2_PAGES(sizeof(sTSS)));
 
 	/* create GDT (copy from first one) */
-	apgdt = (sGDTDesc*)cache_alloc(GDT_ENTRY_COUNT * sizeof(sGDTDesc));
+	apgdt = (sGDTDesc*)Cache::alloc(GDT_ENTRY_COUNT * sizeof(sGDTDesc));
 	if(!apgdt)
 		util_panic("Unable to allocate GDT for AP");
 	gdttbl->offset = (uintptr_t)apgdt;

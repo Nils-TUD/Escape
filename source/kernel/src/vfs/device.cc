@@ -76,7 +76,7 @@ sVFSNode *vfs_device_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint
 	node->close = vfs_device_close;
 	node->destroy = vfs_device_destroy;
 	node->data = NULL;
-	dev = (sDevice*)cache_alloc(sizeof(sDevice));
+	dev = (sDevice*)Cache::alloc(sizeof(sDevice));
 	if(!dev) {
 		vfs_node_destroy(node);
 		return NULL;
@@ -109,7 +109,7 @@ static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *n
 
 static void vfs_device_destroy(sVFSNode *node) {
 	if(node->data) {
-		cache_free(node->data);
+		Cache::free(node->data);
 		node->data = NULL;
 	}
 }

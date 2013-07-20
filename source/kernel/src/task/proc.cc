@@ -132,7 +132,7 @@ void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 	const char *curargs = args;
 	char *curdst;
 	if(command)
-		cache_free((char*)command);
+		Cache::free((char*)command);
 
 	/* store flag for the fs driver; TODO this is an ugly hack */
 	if(strstr(cmd,"/dev/fs") != NULL)
@@ -147,7 +147,7 @@ void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 	}
 
 	/* copy cmd and arguments into buffer */
-	command = (char*)cache_alloc(len);
+	command = (char*)Cache::alloc(len);
 	curdst = (char*)command;
 	memcpy(curdst,cmd,cmdlen);
 	curdst += cmdlen;
@@ -210,7 +210,7 @@ int ProcBase::clone(uint8_t flags) {
 		goto errorCur;
 	}
 
-	p = (Proc*)cache_alloc(sizeof(Proc));
+	p = (Proc*)Cache::alloc(sizeof(Proc));
 	if(!p) {
 		res = -ENOMEM;
 		goto errorCur;
@@ -337,11 +337,11 @@ errorVFS:
 errorAdd:
 	remove(p);
 errorCmd:
-	cache_free((void*)p->command);
+	Cache::free((void*)p->command);
 errorPdir:
 	paging_destroyPDir(p->getPageDir());
 errorProc:
-	cache_free(p);
+	Cache::free(p);
 errorCur:
 	release(cur,PLOCK_PROG);
 errorReqProc:
@@ -506,14 +506,14 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	if(!UEnv::setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
 		goto errorNoRel;
 	Thread::remHeapAlloc(argBuffer);
-	cache_free(argBuffer);
+	Cache::free(argBuffer);
 	return 0;
 
 error:
 	release(p,PLOCK_PROG);
 errorNoRel:
 	Thread::remHeapAlloc(argBuffer);
-	cache_free(argBuffer);
+	Cache::free(argBuffer);
 	terminate(p->pid,1,SIG_COUNT);
 	Thread::switchAway();
 	util_panic("We should not reach this!");
@@ -693,13 +693,13 @@ void ProcBase::kill(pid_t pid) {
 	mutex_release(&childLock);
 
 	/* free the last resources and remove us from vfs */
-	cache_free((char*)p->command);
+	Cache::free((char*)p->command);
 	vfs_removeProcess(p->pid);
 
 	/* remove and free */
 	remove(p);
 	release(p,PLOCK_PROG);
-	cache_free(p);
+	Cache::free(p);
 }
 
 void ProcBase::notifyProcDied(pid_t parent) {
@@ -856,7 +856,7 @@ int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *si
 	size_t len;
 
 	/* alloc space for the arguments */
-	*argBuffer = (char*)cache_alloc(EXEC_MAX_ARGSIZE);
+	*argBuffer = (char*)Cache::alloc(EXEC_MAX_ARGSIZE);
 	if(*argBuffer == NULL)
 		return -ENOMEM;
 
@@ -898,7 +898,7 @@ int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *si
 
 error:
 	Thread::remHeapAlloc(*argBuffer);
-	cache_free(*argBuffer);
+	Cache::free(*argBuffer);
 	return -EFAULT;
 }
 

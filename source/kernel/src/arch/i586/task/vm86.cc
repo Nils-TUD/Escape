@@ -112,7 +112,7 @@ int VM86::create(void) {
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
 	if(p->ioMap == NULL)
-		p->ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)Cache::alloc(IO_MAP_SIZE / 8);
 	/* note that we HAVE TO request all ports (even the reserved ones); otherwise it doesn't work
 	 * everywhere (e.g. my notebook needs it) */
 	if(p->ioMap != NULL)
@@ -456,14 +456,14 @@ bool VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea 
 	if(area) {
 		size_t i;
 		/* copy area */
-		info.area = (Memarea*)cache_alloc(sizeof(Memarea));
+		info.area = (Memarea*)Cache::alloc(sizeof(Memarea));
 		if(info.area == NULL)
 			return false;
 		memcpy(info.area,area,sizeof(Memarea));
 		/* copy ptrs */
 		info.area->ptr = NULL;
 		if(info.area->ptrCount > 0) {
-			info.area->ptr = (AreaPtr*)cache_alloc(sizeof(AreaPtr) * info.area->ptrCount);
+			info.area->ptr = (AreaPtr*)Cache::alloc(sizeof(AreaPtr) * info.area->ptrCount);
 			if(!info.area->ptr) {
 				clearInfo();
 				return false;
@@ -471,15 +471,15 @@ bool VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea 
 			memcpy(info.area->ptr,area->ptr,sizeof(AreaPtr) * info.area->ptrCount);
 		}
 		/* create buffers for the data-exchange */
-		info.copies = (void**)cache_calloc(1 + area->ptrCount,sizeof(void*));
-		info.copies[0] = cache_alloc(info.area->size);
+		info.copies = (void**)Cache::calloc(1 + area->ptrCount,sizeof(void*));
+		info.copies[0] = Cache::alloc(info.area->size);
 		if(!info.copies[0]) {
 			clearInfo();
 			return false;
 		}
 		memcpy(info.copies[0],area->src,area->size);
 		for(i = 0; i < area->ptrCount; i++) {
-			void *copy = cache_alloc(area->ptr[i].size);
+			void *copy = Cache::alloc(area->ptr[i].size);
 			if(!copy) {
 				clearInfo();
 				return false;
@@ -494,9 +494,9 @@ void VM86::clearInfo(void) {
 	size_t i;
 	if(info.area) {
 		for(i = 0; i <= info.area->ptrCount; i++)
-			cache_free(info.copies[i]);
-		cache_free(info.area->ptr);
-		cache_free(info.copies);
-		cache_free(info.area);
+			Cache::free(info.copies[i]);
+		Cache::free(info.area->ptr);
+		Cache::free(info.copies);
+		Cache::free(info.area);
 	}
 }

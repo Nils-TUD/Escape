@@ -127,7 +127,7 @@ sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr) {
 			q = &p->right;
 	}
 	/* create new node */
-	*q = (sVMRegion*)cache_alloc(sizeof(sVMRegion));
+	*q = (sVMRegion*)Cache::alloc(sizeof(sVMRegion));
 	if(!*q)
 		return NULL;
 	/* we have a reference to that file now. we'll release it on unmap */
@@ -196,7 +196,7 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
 	/* close file */
 	if(reg->reg->file)
 		vfs_closeFile(tree->pid,reg->reg->file);
-	cache_free(reg);
+	Cache::free(reg);
 }
 
 static void vmreg_doRemove(sVMRegion **p,sVMRegion *reg) {

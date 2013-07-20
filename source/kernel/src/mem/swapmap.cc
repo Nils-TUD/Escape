@@ -45,7 +45,7 @@ bool swmap_init(size_t swapSize) {
 	size_t i;
 	totalBlocks = swapSize / PAGE_SIZE;
 	freeBlocks = totalBlocks;
-	swapBlocks = (sSwapBlock*)cache_alloc(totalBlocks * sizeof(sSwapBlock));
+	swapBlocks = (sSwapBlock*)Cache::alloc(totalBlocks * sizeof(sSwapBlock));
 	if(swapBlocks == NULL)
 		return false;
 

@@ -79,7 +79,7 @@ const char *cpu_getSpecialName(int rno) {
 
 void cpu_sprintf(sStringBuffer *buf) {
 	uint64_t rn = cpu_getSpecial(rN);
-	sCPU *smpcpu = smp_getCPUs()[0];
+	const SMP::CPU *smpcpu = SMP::getCPUs()[0];
 	prf_sprintf(buf,"CPU 0:\n");
 	prf_sprintf(buf,"\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
 	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);

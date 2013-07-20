@@ -190,7 +190,7 @@ void acpi_parse(void) {
 				if(apic->type == LAPIC) {
 					sLAPIC *lapic = (sLAPIC*)apic;
 					if(lapic->flags & 0x1)
-						smp_addCPU(lapic->id == id,lapic->id,false);
+						SMP::addCPU(lapic->id == id,lapic->id,false);
 				}
 				apic = (sAPIC*)((uintptr_t)apic + apic->length);
 			}

@@ -492,7 +492,7 @@ ssize_t paging_clonePages(pagedir_t *src,pagedir_t *dst,uintptr_t virtSrc,uintpt
 		virtDst += PAGE_SIZE;
 		count--;
 	}
-	smp_flushTLB(src);
+	SMP::flushTLB(src);
 	spinlock_release(&pagingLock);
 	return pts;
 
@@ -610,7 +610,7 @@ static ssize_t paging_doMapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *fr
 	}
 
 	pdir->lastChange = cpu_rdtsc();
-	smp_flushTLB(pdir);
+	SMP::flushTLB(pdir);
 	return pts;
 
 error:
@@ -676,7 +676,7 @@ static size_t paging_doUnmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,boo
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
 		pts += paging_remEmptyPt(ptables,pti);
 	pdir->lastChange = cpu_rdtsc();
-	smp_flushTLB(pdir);
+	SMP::flushTLB(pdir);
 	return pts;
 }
 

@@ -151,7 +151,7 @@ bool timer_intrpt(void) {
 
 	if((elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
 		Thread::updateRuntimes();
-		smp_updateRuntimes();
+		SMP::updateRuntimes();
 		lastRuntimeUpdate = elapsedMsecs;
 	}
 

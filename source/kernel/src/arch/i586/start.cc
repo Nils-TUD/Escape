@@ -59,7 +59,7 @@ void bspstart(sBootInfo *mbp) {
 uintptr_t smpstart(void) {
 	Thread *t;
 	sStartupInfo info;
-	size_t i,total = smp_getCPUCount();
+	size_t i,total = SMP::getCPUCount();
 	/* the running thread has been stored on a different stack last time */
 	Thread::setRunning(Thread::getById(0));
 
@@ -68,7 +68,7 @@ uintptr_t smpstart(void) {
 		Proc::startThread((uintptr_t)&idlestart,T_IDLE,NULL);
 
 	/* start all APs */
-	smp_start();
+	SMP::start();
 
 	/* load initloader */
 	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
@@ -97,13 +97,13 @@ void apstart(void) {
 	fpu_preinit();
 	cpu_detect();
 	/* notify the BSP that we're running */
-	smp_apIsRunning();
+	SMP::apIsRunning();
 	/* choose a thread to run */
 	Thread::initialSwitch();
 }
 
 static void idlestart(void) {
-	if(!smp_isBSP()) {
+	if(!SMP::isBSP()) {
 		/* unlock the temporary kernel-stack, so that other CPUs can use it */
 		spinlock_release(&aplock);
 	}

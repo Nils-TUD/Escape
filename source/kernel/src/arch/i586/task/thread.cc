@@ -195,7 +195,7 @@ void ThreadBase::doSwitch() {
 		n->setCPU(gdt_prepareRun(old,n));
 
 		/* some stats for SMP */
-		smp_schedule(n->getCPU(),n,timestamp);
+		SMP::schedule(n->getCPU(),n,timestamp);
 
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */

@@ -53,7 +53,7 @@ void fpu_preinit(void) {
 
 void fpu_init(void) {
 	/* allocate a state-pointer for each cpu */
-	curStates = (sFPUState***)cache_calloc(smp_getCPUCount(),sizeof(sFPUState**));
+	curStates = (sFPUState***)cache_calloc(SMP::getCPUCount(),sizeof(sFPUState**));
 	if(!curStates)
 		util_panic("Unable to allocate memory for FPU-states");
 }
@@ -124,7 +124,7 @@ void fpu_freeState(sFPUState **state) {
 	*state = NULL;
 	/* we have to unset the current state because maybe the next created process gets
 	 * the same slot, so that the pointer is the same. */
-	for(i = 0, n = smp_getCPUCount(); i < n; i++) {
+	for(i = 0, n = SMP::getCPUCount(); i < n; i++) {
 		if(curStates[i] == state)
 			curStates[i] = NULL;
 	}

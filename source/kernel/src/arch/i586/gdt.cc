@@ -255,7 +255,7 @@ void gdt_init(void) {
 }
 
 void gdt_init_bsp(void) {
-	cpuCount = smp_getCPUCount();
+	cpuCount = SMP::getCPUCount();
 	allgdts = (sGDTTable*)cache_calloc(cpuCount,sizeof(sGDTTable));
 	if(!allgdts)
 		util_panic("Unable to allocate GDT-Tables for APs");
@@ -396,8 +396,8 @@ static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t
 
 void gdt_print(void) {
 	size_t i,j;
-	size_t count = smp_getCPUCount();
-	sCPU **cpus = smp_getCPUs();
+	size_t count = SMP::getCPUCount();
+	const SMP::CPU **cpus = SMP::getCPUs();
 	vid_printf("GDTs:\n");
 	for(i = 0; i < count; i++) {
 		sGDTDesc *gdt = (sGDTDesc*)allgdts[cpus[i]->id].offset;

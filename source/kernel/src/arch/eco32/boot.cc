@@ -46,7 +46,7 @@ static const sBootTask tasks[] = {
 	{"Initializing paging...",paging_init},
 	{"Preinit processes...",Proc::preinit},
 	{"Initializing dynarray...",dyna_init},
-	{"Initializing SMP...",smp_init},
+	{"Initializing SMP...",SMP::init},
 	{"Initializing VFS...",vfs_init},
 	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},

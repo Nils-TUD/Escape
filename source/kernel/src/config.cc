@@ -94,7 +94,7 @@ long conf_get(int id) {
 			res = log2scr;
 			break;
 		case CONF_CPU_COUNT:
-			res = smp_getCPUCount();
+			res = SMP::getCPUCount();
 			break;
 		case CONF_SMP:
 			res = smp;

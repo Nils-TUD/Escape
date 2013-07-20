@@ -69,7 +69,7 @@ void ioapic_setRedirection(uint8_t dstApic,uint8_t srcIRQ,uint8_t dstInt,uint8_t
 		uint8_t polarity,uint8_t triggerMode) {
 #if 0
 	uint8_t vector = intrpt_getVectorFor(srcIRQ);
-	cpuid_t lapicId = smp_getCurId();
+	cpuid_t lapicId = SMP::getCurId();
 	sIOAPIC *ioapic = ioapic_get(dstApic);
 	if(ioapic == NULL)
 		util_panic("Unable to find I/O APIC with id %#x\n",dstApic);

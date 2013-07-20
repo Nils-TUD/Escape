@@ -233,7 +233,7 @@ void ThreadBase::doSwitch(void) {
 		}
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
-		smp_schedule(n->getCPU(),n,timestamp);
+		SMP::schedule(n->getCPU(),n,timestamp);
 		n->stats.cycleStart = cpu_rdtsc();
 		thread_doSwitchTo(&old->save,&n->save,*n->getProc()->getPageDir(),n->getTid());
 	}

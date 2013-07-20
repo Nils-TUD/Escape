@@ -52,7 +52,7 @@ void util_panic_arch(void) {
 	sFile *file;
 
 	/* at first, halt the other CPUs */
-	smp_haltOthers();
+	SMP::haltOthers();
 
 	/* enter vga-mode to be sure that the user can see the panic :) */
 	/* actually it may fail depending on what caused the panic. this may make it more difficult

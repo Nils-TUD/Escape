@@ -140,7 +140,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 
 	/* if there is another thread ready, check if we have another cpu that we can start for it */
 	if(rdyCount > 0)
-		smp_wakeupCPU();
+		SMP::wakeupCPU();
 
 	spinlock_release(&schedLock);
 	return t;
@@ -312,7 +312,7 @@ void Sched::removeThread(Thread *t) {
 	switch(t->getState()) {
 		case Thread::RUNNING:
 			t->setNewState(Thread::ZOMBIE);
-			smp_killThread(t);
+			SMP::killThread(t);
 			spinlock_release(&schedLock);
 			return;
 		case Thread::ZOMBIE:

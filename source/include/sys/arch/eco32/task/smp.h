@@ -17,34 +17,38 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/smp.h>
+#pragma once
 
-bool smp_init_arch(void) {
+#include <sys/common.h>
+
+class SMP : public SMPBase {
+};
+
+inline bool SMPBase::init_arch() {
 	/* mmix does not support SMP */
 	return false;
 }
 
-cpuid_t smp_getCurId(void) {
+inline cpuid_t SMPBase::getCurId() {
 	return 0;
 }
 
-void smp_pauseOthers(void) {
+inline void SMPBase::pauseOthers() {
 	/* nothing to do */
 }
 
-void smp_resumeOthers(void) {
+inline void SMPBase::resumeOthers() {
 	/* nothing to do */
 }
 
-void smp_haltOthers(void) {
+inline void SMPBase::haltOthers() {
 	/* nothing to do */
 }
 
-void smp_ensureTLBFlushed(void) {
+inline void SMPBase::ensureTLBFlushed() {
 	/* nothing to do */
 }
 
-void smp_sendIPI(A_UNUSED cpuid_t id,A_UNUSED uint8_t vector) {
+inline void SMPBase::sendIPI(A_UNUSED cpuid_t id,A_UNUSED uint8_t vector) {
 	/* ignored */
 }

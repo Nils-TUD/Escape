@@ -32,27 +32,25 @@
 #include <assert.h>
 #include <string.h>
 
-static sCPU *smp_getCPUById(cpuid_t id);
+bool SMPBase::enabled;
+sSLList SMPBase::cpuList;
+SMP::CPU **SMPBase::cpus;
+size_t SMPBase::cpuCount;
 
-static bool enabled;
-static sSLList cpuList;
-static sCPU **cpus;
-static size_t cpuCount;
-
-void smp_init(void) {
+void SMPBase::init() {
 	sll_init(&cpuList,slln_allocNode,slln_freeNode);
 
 	cpuCount = 0;
-	enabled = conf_get(CONF_SMP) ? smp_init_arch() : false;
+	enabled = conf_get(CONF_SMP) ? SMP::init_arch() : false;
 	if(!enabled) {
-		smp_addCPU(true,0,true);
-		smp_setId(0,0);
+		addCPU(true,0,true);
+		setId(0,0);
 	}
 
 	log_printf("%zu CPUs found",cpuCount);
 }
 
-void smp_disable(void) {
+void SMPBase::disable() {
 	cpuCount = 1;
 	while(sll_length(&cpuList) > 1) {
 		void *res = sll_removeIndex(&cpuList,1);
@@ -60,12 +58,8 @@ void smp_disable(void) {
 	}
 }
 
-bool smp_isEnabled(void) {
-	return enabled;
-}
-
-void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
-	sCPU *cpu = (sCPU*)cache_alloc(sizeof(sCPU));
+void SMPBase::addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
+	CPU *cpu = (CPU*)cache_alloc(sizeof(CPU));
 	if(!cpu)
 		util_panic("Unable to allocate mem for CPU");
 	cpu->bootstrap = bootstrap;
@@ -83,27 +77,22 @@ void smp_addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 	cpuCount++;
 }
 
-void smp_setId(cpuid_t old,cpuid_t newid) {
-	sCPU *cpu;
+void SMPBase::setId(cpuid_t old,cpuid_t newid) {
+	CPU *cpu;
 	assert(newid < cpuCount);
-	cpu = smp_getCPUById(old);
+	cpu = getCPUById(old);
 	if(cpu)
 		cpu->id = newid;
 	if(!cpus) {
-		cpus = (sCPU**)cache_calloc(cpuCount,sizeof(sCPU*));
+		cpus = (CPU**)cache_calloc(cpuCount,sizeof(CPU*));
 		if(!cpus)
 			util_panic("Not enough mem for cpu-array");
 	}
 	cpus[newid] = cpu;
 }
 
-void smp_setReady(cpuid_t id) {
-	assert(cpus[id]);
-	cpus[id]->ready = true;
-}
-
-void smp_schedule(cpuid_t id,Thread *n,uint64_t timestamp) {
-	sCPU *c = cpus[id];
+void SMPBase::schedule(cpuid_t id,Thread *n,uint64_t timestamp) {
+	CPU *c = cpus[id];
 	if(c->thread && !(c->thread->getFlags() & T_IDLE)) {
 		c->curCycles += Thread::getTSC() - c->thread->getStats().cycleStart;
 		c->runtime += timestamp - c->lastSched;
@@ -115,7 +104,7 @@ void smp_schedule(cpuid_t id,Thread *n,uint64_t timestamp) {
 	c->thread = n;
 }
 
-void smp_updateRuntimes(void) {
+void SMPBase::updateRuntimes() {
 	size_t i;
 	for(i = 0; i < cpuCount; i++) {
 		cpus[i]->lastTotal = Thread::getTSC() - cpus[i]->lastUpdate;
@@ -130,67 +119,54 @@ void smp_updateRuntimes(void) {
 	}
 }
 
-void smp_killThread(Thread *t) {
+void SMPBase::killThread(Thread *t) {
 	if(cpuCount > 1) {
 		size_t i;
-		cpuid_t cur = smp_getCurId();
+		cpuid_t cur = getCurId();
 		for(i = 0; i < cpuCount; i++) {
 			if(i != cur && cpus[i]->ready && cpus[i]->thread == t) {
-				smp_sendIPI(i,IPI_TERM);
+				sendIPI(i,IPI_TERM);
 				break;
 			}
 		}
 	}
 }
 
-void smp_wakeupCPU(void) {
+void SMPBase::wakeupCPU() {
 	if(cpuCount > 1) {
 		size_t i;
-		cpuid_t cur = smp_getCurId();
+		cpuid_t cur = getCurId();
 		for(i = 0; i < cpuCount; i++) {
 			if(i != cur && cpus[i]->ready && (!cpus[i]->thread ||
 					(cpus[i]->thread->getFlags() & T_IDLE))) {
-				smp_sendIPI(i,IPI_WORK);
+				sendIPI(i,IPI_WORK);
 				break;
 			}
 		}
 	}
 }
 
-void smp_flushTLB(pagedir_t *pdir) {
+void SMPBase::flushTLB(pagedir_t *pdir) {
 	if(!cpus || cpuCount == 1)
 		return;
 
 	size_t i;
-	cpuid_t cur = smp_getCurId();
+	cpuid_t cur = getCurId();
 	for(i = 0; i < cpuCount; i++) {
-		sCPU *cpu = cpus[i];
+		CPU *cpu = cpus[i];
 		if(cpu && cpu->ready && i != cur) {
 			Thread *t = cpu->thread;
 			if(t && t->getProc()->getPageDir() == pdir)
-				smp_sendIPI(i,IPI_FLUSH_TLB);
+				sendIPI(i,IPI_FLUSH_TLB);
 		}
 	}
 }
 
-bool smp_isBSP(void) {
-	cpuid_t cur = smp_getCurId();
-	return cpus[cur]->bootstrap;
-}
-
-size_t smp_getCPUCount(void) {
-	return cpuCount;
-}
-
-sCPU **smp_getCPUs(void) {
-	return cpus;
-}
-
-void smp_print(void) {
+void SMPBase::print() {
 	sSLNode *n;
 	vid_printf("CPUs:\n");
 	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
-		sCPU *cpu = (sCPU*)n->data;
+		CPU *cpu = (CPU*)n->data;
 		Thread *t = cpu->thread;
 		vid_printf("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
 				   "\t        lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
@@ -199,10 +175,10 @@ void smp_print(void) {
 	}
 }
 
-static sCPU *smp_getCPUById(cpuid_t id) {
+SMP::CPU *SMPBase::getCPUById(cpuid_t id) {
 	sSLNode *n;
 	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
-		sCPU *cpu = (sCPU*)n->data;
+		CPU *cpu = (CPU*)n->data;
 		if(cpu->id == id)
 			return cpu;
 	}

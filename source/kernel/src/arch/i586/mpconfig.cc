@@ -140,7 +140,7 @@ void mpconf_parse(void) {
 				proc = (sMPConfProc*)ptr;
 				/* cpu usable? */
 				if(proc->cpuFlags & 0x1)
-					smp_addCPU((proc->cpuFlags & 0x2) ? true : false,proc->localAPICId,false);
+					SMP::addCPU((proc->cpuFlags & 0x2) ? true : false,proc->localAPICId,false);
 				ptr += MPCTE_LEN_PROC;
 				break;
 			case MPCTE_TYPE_BUS:

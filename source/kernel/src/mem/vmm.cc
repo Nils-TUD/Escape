@@ -364,7 +364,7 @@ void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
 			 * cause a page-fault and will wait until we release the region-mutex */
 			vmm_setSwappedOut(reg,index);
 			reg_setSwapBlock(reg,index,block);
-			smp_ensureTLBFlushed();
+			SMP::ensureTLBFlushed();
 
 			/* copy to a temporary buffer because we can't use the temp-area when switching threads */
 			paging_copyFromFrame(frameNo,buffer);

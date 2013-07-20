@@ -101,7 +101,7 @@ static sView views[] = {
 	{"boot",(fView)boot_print},
 	{"locks",(fView)lock_print},
 	{"events",(fView)Event::print},
-	{"smp",(fView)smp_print},
+	{"smp",(fView)SMP::print},
 };
 
 int cons_cmd_view(size_t argc,char **argv) {

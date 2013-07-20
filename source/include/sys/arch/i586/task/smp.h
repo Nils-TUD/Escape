@@ -20,14 +20,38 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/arch/i586/gdt.h>
+#include <sys/arch/i586/apic.h>
 
-/**
- * @param logId the logical id
- * @return the physical id of the CPU with given logical id
- */
-cpuid_t smp_getPhysId(cpuid_t logId);
+class SMP : public SMPBase {
+	friend class SMPBase;
 
-/**
- * Tells the BSP that an AP is running
- */
-void smp_apIsRunning(void);
+	SMP() = delete;
+
+public:
+	/**
+	 * @param logId the logical id
+	 * @return the physical id of the CPU with given logical id
+	 */
+	static cpuid_t getPhysId(cpuid_t logId);
+
+	/**
+	 * Tells the BSP that an AP is running
+	 */
+	static void apIsRunning(void);
+
+private:
+	static cpuid_t *log2Phys;
+};
+
+inline cpuid_t SMP::getPhysId(cpuid_t logId) {
+	return log2Phys[logId];
+}
+
+inline void SMPBase::sendIPI(cpuid_t id,uint8_t vector) {
+	apic_sendIPITo(SMP::getPhysId(id),vector);
+}
+
+inline cpuid_t SMPBase::getCurId(void) {
+	return gdt_getCPUId();
+}

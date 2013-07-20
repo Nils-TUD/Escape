@@ -50,7 +50,7 @@
 
 #define VENDOR_STRLEN				12
 
-static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,sCPU *smpcpu);
+static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,const SMP::CPU *smpcpu);
 
 static const char *vendors[] = {
 	"AMDisbetter!",	/* early engineering samples of AMD K5 processor */
@@ -138,9 +138,9 @@ void cpu_detect(void) {
 	size_t i;
 	uint32_t eax,ebx,edx,unused;
 	char vendor[VENDOR_STRLEN + 1];
-	cpuid_t id = smp_getCurId();
+	cpuid_t id = SMP::getCurId();
 	if(cpus == NULL) {
-		cpus = (sCPUInfo*)cache_alloc(sizeof(sCPUInfo) * smp_getCPUCount());
+		cpus = (sCPUInfo*)cache_alloc(sizeof(sCPUInfo) * SMP::getCPUCount());
 		if(!cpus)
 			util_panic("Not enough mem for CPU-infos");
 
@@ -223,15 +223,15 @@ bool cpu_hasLocalAPIC(void) {
 }
 
 void cpu_sprintf(sStringBuffer *buf) {
-	sCPU **smpCPUs = smp_getCPUs();
-	size_t i,count = smp_getCPUCount();
+	const SMP::CPU **smpCPUs = SMP::getCPUs();
+	size_t i,count = SMP::getCPUCount();
 	for(i = 0; i < count; i++) {
 		prf_sprintf(buf,"CPU %d:\n",smpCPUs[i]->id);
 		cpu_doSprintf(buf,cpus + i,smpCPUs[i]);
 	}
 }
 
-static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,sCPU *smpcpu) {
+static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,const SMP::CPU *smpcpu) {
 	size_t size;
 	prf_sprintf(buf,"\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
 	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);

@@ -36,11 +36,12 @@
 
 #define TRAMPOLINE_ADDR		0x7000
 
-EXTERN_C void apProtMode(void);
+EXTERN_C void apProtMode();
+
+cpuid_t *SMP::log2Phys;
 
 static klock_t smpLock;
 static volatile size_t seenAPs = 0;
-static cpuid_t *log2Phys;
 static uint8_t trampoline[] = {
 #if DEBUGGING
 #	include "../../../../../build/i586-debug/kernel_tramp.dump"
@@ -54,7 +55,7 @@ extern volatile uint waitlock;
 extern volatile uint halting;
 extern volatile uint flushed;
 
-bool smp_init_arch(void) {
+bool SMPBase::init_arch() {
 	apic_init();
 	if(apic_isAvailable()) {
 		bool enabled = false;
@@ -73,36 +74,32 @@ bool smp_init_arch(void) {
 
 		if(enabled) {
 			/* if we have not found CPUs by ACPI or MPConf, assume we have only the BSP */
-			if(smp_getCPUCount() == 0) {
+			if(getCPUCount() == 0) {
 				enabled = false;
 				return false;
 			}
 			/* from now on, we'll use the logical-id as far as possible; but remember the physical
 			 * one for IPIs, e.g. */
 			cpuid_t id = apic_getId();
-			log2Phys = (cpuid_t*)cache_alloc(smp_getCPUCount() * sizeof(cpuid_t));
-			log2Phys[0] = id;
-			smp_setId(id,0);
+			SMP::log2Phys = (cpuid_t*)cache_alloc(getCPUCount() * sizeof(cpuid_t));
+			SMP::log2Phys[0] = id;
+			setId(id,0);
 			return true;
 		}
 	}
 	return false;
 }
 
-cpuid_t smp_getPhysId(cpuid_t logId) {
-	return log2Phys[logId];
-}
-
-void smp_pauseOthers(void) {
-	sCPU **cpus = smp_getCPUs();
-	size_t i,count,cpuCount = smp_getCPUCount();
-	cpuid_t cur = smp_getCurId();
+void SMPBase::pauseOthers() {
+	const CPU **cpus = getCPUs();
+	size_t i,count,cpuCount = getCPUCount();
+	cpuid_t cur = getCurId();
 	waiting = 0;
 	waitlock = 1;
 	count = 0;
 	for(i = 0; i < cpuCount; i++) {
 		if(i != cur && cpus[i]->ready) {
-			smp_sendIPI(i,IPI_WAIT);
+			sendIPI(i,IPI_WAIT);
 			count++;
 		}
 	}
@@ -111,21 +108,21 @@ void smp_pauseOthers(void) {
 		__asm__ ("pause");
 }
 
-void smp_resumeOthers(void) {
+void SMPBase::resumeOthers() {
 	waitlock = 0;
 }
 
-void smp_haltOthers(void) {
-	sCPU **cpus = smp_getCPUs();
-	size_t i,count,cpuCount = smp_getCPUCount();
-	cpuid_t cur = smp_getCurId();
+void SMPBase::haltOthers() {
+	const CPU **cpus = getCPUs();
+	size_t i,count,cpuCount = getCPUCount();
+	cpuid_t cur = getCurId();
 	halting = 0;
 	count = 0;
 	for(i = 0; i < cpuCount; i++) {
 		if(i != cur && cpus[i]->ready) {
 			/* prevent that we want to halt/pause this one again */
-			cpus[i]->ready = false;
-			smp_sendIPI(i,IPI_HALT);
+			getCPUById(i)->ready = false;
+			sendIPI(i,IPI_HALT);
 			count++;
 		}
 	}
@@ -134,15 +131,15 @@ void smp_haltOthers(void) {
 		__asm__ ("pause");
 }
 
-void smp_ensureTLBFlushed(void) {
-	sCPU **cpus = smp_getCPUs();
-	size_t i,count,cpuCount = smp_getCPUCount();;
-	cpuid_t cur = smp_getCurId();
+void SMPBase::ensureTLBFlushed() {
+	const CPU **cpus = getCPUs();
+	size_t i,count,cpuCount = getCPUCount();;
+	cpuid_t cur = getCurId();
 	flushed = 0;
 	count = 0;
 	for(i = 0; i < cpuCount; i++) {
 		if(i != cur && cpus[i]->ready) {
-			smp_sendIPI(i,IPI_FLUSH_TLB_ACK);
+			sendIPI(i,IPI_FLUSH_TLB_ACK);
 			count++;
 		}
 	}
@@ -151,24 +148,20 @@ void smp_ensureTLBFlushed(void) {
 		__asm__ ("pause");
 }
 
-void smp_sendIPI(cpuid_t id,uint8_t vector) {
-	apic_sendIPITo(smp_getPhysId(id),vector);
-}
-
-void smp_apIsRunning(void) {
+void SMP::apIsRunning() {
 	cpuid_t phys,log;
 	spinlock_aquire(&smpLock);
 	phys = apic_getId();
 	log = gdt_getCPUId();
 	log2Phys[log] = phys;
-	smp_setId(phys,log);
-	smp_setReady(log);
+	setId(phys,log);
+	setReady(log);
 	seenAPs++;
 	spinlock_release(&smpLock);
 }
 
-void smp_start(void) {
-	if(smp_isEnabled()) {
+void SMPBase::start() {
+	if(isEnabled()) {
 		size_t total;
 		uint64_t start,end;
 		/* TODO thats not completely correct, according to the MP specification */
@@ -187,14 +180,14 @@ void smp_start(void) {
 		timer_wait(200);
 
 		/* wait until all APs are running */
-		total = smp_getCPUCount() - 1;
+		total = getCPUCount() - 1;
 		start = cpu_rdtsc();
 		end = start + timer_timeToCycles(2000000);
 		while(cpu_rdtsc() < end && seenAPs != total)
 			__asm__ ("pause");
 		if(seenAPs != total) {
 			log_printf("Found %zu CPUs in 2s, expected %zu. Disabling SMP",seenAPs,total);
-			smp_disable();
+			disable();
 		}
 	}
 
@@ -206,9 +199,5 @@ void smp_start(void) {
 	 * Now our GDT is setup in the "right" way, so that 0xC0000000 will arrive at the MMU.
 	 * Therefore we can unmap the 0x0 area. */
 	paging_gdtFinished();
-	smp_setReady(0);
-}
-
-cpuid_t smp_getCurId(void) {
-	return gdt_getCPUId();
+	setReady(0);
 }

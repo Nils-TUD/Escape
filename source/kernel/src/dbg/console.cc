@@ -89,7 +89,7 @@ void cons_start(const char *initialcmd) {
 	char **argv;
 
 	/* first, pause all other CPUs to ensure that we're alone */
-	smp_pauseOthers();
+	SMP::pauseOthers();
 
 	vid_setTargets(TARGET_SCREEN);
 	vid_backup(backup.screen,&backup.row,&backup.col);
@@ -171,7 +171,7 @@ void cons_start(const char *initialcmd) {
 	vid_setTargets(TARGET_LOG);
 
 	/* now let the other CPUs continue */
-	smp_resumeOthers();
+	SMP::resumeOthers();
 }
 
 bool cons_isHelp(int argc,char **argv) {

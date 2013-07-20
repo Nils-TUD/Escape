@@ -138,7 +138,7 @@ static pid_t lastPFProc = INVALID_PID;
 #endif
 
 void intrpt_init(void) {
-	pfAddrs = (uintptr_t*)cache_alloc(smp_getCPUCount() * sizeof(uintptr_t));
+	pfAddrs = (uintptr_t*)cache_alloc(SMP::getCPUCount() * sizeof(uintptr_t));
 	if(pfAddrs == NULL)
 		util_panic("Unable to alloc memory for pagefault-addresses");
 }
@@ -296,9 +296,9 @@ static void intrpt_ipiWork(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	apic_eoi();
 	/* if we have been waked up, but are not idling anymore, wakeup another cpu */
 	/* this may happen if we're about to switch to a non-idle-thread and have idled previously,
-	 * while smp_wakeupCPU() was called. */
+	 * while SMP::wakeupCPU() was called. */
 	if(!(t->getFlags() & T_IDLE))
-		smp_wakeupCPU();
+		SMP::wakeupCPU();
 	/* otherwise switch to non-idle-thread (if there is any) */
 	else
 		Thread::switchAway();

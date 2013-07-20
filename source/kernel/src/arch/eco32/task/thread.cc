@@ -162,7 +162,7 @@ void ThreadBase::doSwitch(void) {
 			setRunning(n);
 			vmm_setTimestamp(n,timestamp);
 
-			smp_schedule(n->getCPU(),n,timestamp);
+			SMP::schedule(n->getCPU(),n,timestamp);
 			n->stats.cycleStart = timestamp;
 			thread_resume(*n->getProc()->getPageDir(),&n->save,n->kstackFrame);
 		}

@@ -767,26 +767,26 @@ inline size_t ThreadBase::getIntrptLevel() const {
 
 inline void ThreadBase::block() {
 	assert(this != NULL);
-	sched_setBlocked(static_cast<Thread*>(this));
+	Sched::setBlocked(static_cast<Thread*>(this));
 }
 
 inline void ThreadBase::unblock() {
 	assert(this != NULL);
-	sched_setReady(static_cast<Thread*>(this));
+	Sched::setReady(static_cast<Thread*>(this));
 }
 
 inline void ThreadBase::unblockQuick() {
-	sched_setReadyQuick(static_cast<Thread*>(this));
+	Sched::setReadyQuick(static_cast<Thread*>(this));
 }
 
 inline void ThreadBase::suspend() {
 	assert(this != NULL);
-	sched_setSuspended(static_cast<Thread*>(this),true);
+	Sched::setSuspended(static_cast<Thread*>(this),true);
 }
 
 inline void ThreadBase::unsuspend() {
 	assert(this != NULL);
-	sched_setSuspended(static_cast<Thread*>(this),false);
+	Sched::setSuspended(static_cast<Thread*>(this),false);
 }
 
 inline bool ThreadBase::hasStackRegion(sVMRegion *vm) const {

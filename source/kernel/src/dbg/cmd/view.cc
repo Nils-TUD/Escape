@@ -72,7 +72,7 @@ static sScreenBackup backup;
 static sView views[] = {
 	{"proc",(fView)view_proc},
 	{"procs",(fView)Proc::printAll},
-	{"sched",(fView)sched_print},
+	{"sched",(fView)Sched::print},
 	{"signals",(fView)sig_print},
 	{"thread",(fView)view_thread},
 	{"threads",(fView)Thread::printAll},

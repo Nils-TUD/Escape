@@ -44,39 +44,26 @@
  * a static storage of nodes for the linked list; we use the threads itself)
  */
 
-typedef struct {
-	Thread *first;
-	Thread *last;
-} sQueue;
+klock_t Sched::schedLock;
+Sched::Queue Sched::rdyQueues[MAX_PRIO + 1];
+size_t Sched::rdyCount;
+sSLList Sched::idleThreads;
 
-static bool sched_setReadyState(Thread *t);
-static void sched_qInit(sQueue *q);
-static Thread *sched_qDequeue(sQueue *q);
-static void sched_qDequeueThread(sQueue *q,Thread *t);
-static void sched_qAppend(sQueue *q,Thread *t);
-static void sched_qPrepend(sQueue *q,Thread *t);
-static void sched_qPrint(sQueue *q);
-
-static klock_t schedLock;
-static sQueue rdyQueues[MAX_PRIO + 1];
-static size_t rdyCount;
-static sSLList idleThreads;
-
-void sched_init(void) {
+void Sched::init(void) {
 	size_t i;
 	rdyCount = 0;
 	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++)
-		sched_qInit(rdyQueues + i);
+		qInit(rdyQueues + i);
 	sll_init(&idleThreads,slln_allocNode,slln_freeNode);
 }
 
-void sched_addIdleThread(Thread *t) {
+void Sched::addIdleThread(Thread *t) {
 	spinlock_aquire(&schedLock);
 	sll_append(&idleThreads,t);
 	spinlock_release(&schedLock);
 }
 
-Thread *sched_perform(Thread *old,uint64_t runtime) {
+Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	ssize_t i;
 	Thread *t;
 	spinlock_aquire(&schedLock);
@@ -110,7 +97,7 @@ Thread *sched_perform(Thread *old,uint64_t runtime) {
 				case Thread::UNUSED:
 				case Thread::READY:
 					old->setState(Thread::READY);
-					sched_qAppend(rdyQueues + old->getPriority(),old);
+					qAppend(rdyQueues + old->getPriority(),old);
 					rdyCount++;
 					break;
 				case Thread::BLOCKED:
@@ -128,13 +115,13 @@ Thread *sched_perform(Thread *old,uint64_t runtime) {
 
 	/* get new thread */
 	for(i = MAX_PRIO; i >= 0; i--) {
-		t = sched_qDequeue(rdyQueues + i);
+		t = qDequeue(rdyQueues + i);
 		if(t) {
 			/* if its the old thread again and we have more ready threads, don't take this one again.
 			 * because we assume that Thread::switchAway() has been called for a reason. therefore, it
 			 * should be better to take a thread with a lower priority than taking the same again */
 			if(rdyCount > 1 && t == old) {
-				sched_qAppend(rdyQueues + i,t);
+				qAppend(rdyQueues + i,t);
 				continue;
 			}
 			rdyCount--;
@@ -159,7 +146,7 @@ Thread *sched_perform(Thread *old,uint64_t runtime) {
 	return t;
 }
 
-void sched_adjustPrio(Thread *t,size_t threadCount) {
+void Sched::adjustPrio(Thread *t,size_t threadCount) {
 	const uint64_t threadSlice = (RUNTIME_UPDATE_INTVAL * 1000) / threadCount;
 	uint64_t runtime;
 	spinlock_aquire(&schedLock);
@@ -168,10 +155,10 @@ void sched_adjustPrio(Thread *t,size_t threadCount) {
 	if(runtime >= threadSlice * PRIO_BAD_SLICE_MULT) {
 		if(t->getPriority() > 0) {
 			if(t->getState() == Thread::READY)
-				sched_qDequeueThread(rdyQueues + t->getPriority(),t);
+				qDequeueThread(rdyQueues + t->getPriority(),t);
 			t->setPriority(t->getPriority() - 1);
 			if(t->getState() == Thread::READY)
-				sched_qAppend(rdyQueues + t->getPriority(),t);
+				qAppend(rdyQueues + t->getPriority(),t);
 		}
 		t->prioGoodCnt = 0;
 	}
@@ -180,10 +167,10 @@ void sched_adjustPrio(Thread *t,size_t threadCount) {
 		if(t->getPriority() < MAX_PRIO) {
 			if(++t->prioGoodCnt == PRIO_FORGIVE_CNT) {
 				if(t->getState() == Thread::READY)
-					sched_qDequeueThread(rdyQueues + t->getPriority(),t);
+					qDequeueThread(rdyQueues + t->getPriority(),t);
 				t->setPriority(t->getPriority() + 1);
 				if(t->getState() == Thread::READY)
-					sched_qAppend(rdyQueues + t->getPriority(),t);
+					qAppend(rdyQueues + t->getPriority(),t);
 				t->prioGoodCnt = 0;
 			}
 		}
@@ -192,7 +179,7 @@ void sched_adjustPrio(Thread *t,size_t threadCount) {
 	spinlock_release(&schedLock);
 }
 
-bool sched_setReady(Thread *t) {
+bool Sched::setReady(Thread *t) {
 	bool res = false;
 	assert(t != NULL);
 	if(t->getFlags() & T_IDLE)
@@ -204,8 +191,8 @@ bool sched_setReady(Thread *t) {
 		t->setNewState(Thread::READY);
 	}
 	else {
-		if(sched_setReadyState(t)) {
-			sched_qAppend(rdyQueues + t->getPriority(),t);
+		if(setReadyState(t)) {
+			qAppend(rdyQueues + t->getPriority(),t);
 			rdyCount++;
 			res = true;
 		}
@@ -214,7 +201,7 @@ bool sched_setReady(Thread *t) {
 	return res;
 }
 
-bool sched_setReadyQuick(Thread *t) {
+bool Sched::setReadyQuick(Thread *t) {
 	bool res = false;
 	assert(t != NULL);
 	if(t->getFlags() & T_IDLE)
@@ -227,11 +214,11 @@ bool sched_setReadyQuick(Thread *t) {
 	}
 	else {
 		if(t->getState() == Thread::READY) {
-			sched_qDequeueThread(rdyQueues + t->getPriority(),t);
-			sched_qPrepend(rdyQueues + t->getPriority(),t);
+			qDequeueThread(rdyQueues + t->getPriority(),t);
+			qPrepend(rdyQueues + t->getPriority(),t);
 		}
-		else if(sched_setReadyState(t)) {
-			sched_qPrepend(rdyQueues + t->getPriority(),t);
+		else if(setReadyState(t)) {
+			qPrepend(rdyQueues + t->getPriority(),t);
 			rdyCount++;
 			res = true;
 		}
@@ -240,27 +227,7 @@ bool sched_setReadyQuick(Thread *t) {
 	return res;
 }
 
-static bool sched_setReadyState(Thread *t) {
-	switch(t->getState()) {
-		case Thread::ZOMBIE:
-		case Thread::ZOMBIE_SUSP:
-		case Thread::READY:
-		case Thread::READY_SUSP:
-			return false;
-		case Thread::BLOCKED_SUSP:
-			t->setState(Thread::READY_SUSP);
-			return false;
-		case Thread::BLOCKED:
-			break;
-		default:
-			vassert(false,"Invalid state for setReady (%d)",t->getState());
-			break;
-	}
-	t->setState(Thread::READY);
-	return true;
-}
-
-void sched_setBlocked(Thread *t) {
+void Sched::setBlocked(Thread *t) {
 	assert(t != NULL);
 	spinlock_aquire(&schedLock);
 	switch(t->getState()) {
@@ -277,7 +244,7 @@ void sched_setBlocked(Thread *t) {
 			break;
 		case Thread::READY:
 			t->setState(Thread::BLOCKED);
-			sched_qDequeueThread(rdyQueues + t->getPriority(),t);
+			qDequeueThread(rdyQueues + t->getPriority(),t);
 			rdyCount--;
 			break;
 		default:
@@ -287,7 +254,7 @@ void sched_setBlocked(Thread *t) {
 	spinlock_release(&schedLock);
 }
 
-void sched_setSuspended(Thread *t,bool blocked) {
+void Sched::setSuspended(Thread *t,bool blocked) {
 	assert(t != NULL);
 
 	spinlock_aquire(&schedLock);
@@ -306,7 +273,7 @@ void sched_setSuspended(Thread *t,bool blocked) {
 				break;
 			case Thread::READY:
 				t->setState(Thread::READY_SUSP);
-				sched_qDequeueThread(rdyQueues + t->getPriority(),t);
+				qDequeueThread(rdyQueues + t->getPriority(),t);
 				rdyCount--;
 				break;
 			default:
@@ -329,7 +296,7 @@ void sched_setSuspended(Thread *t,bool blocked) {
 				break;
 			case Thread::READY_SUSP:
 				t->setState(Thread::READY);
-				sched_qAppend(rdyQueues + t->getPriority(),t);
+				qAppend(rdyQueues + t->getPriority(),t);
 				rdyCount++;
 				break;
 			default:
@@ -340,7 +307,7 @@ void sched_setSuspended(Thread *t,bool blocked) {
 	spinlock_release(&schedLock);
 }
 
-void sched_removeThread(Thread *t) {
+void Sched::removeThread(Thread *t) {
 	spinlock_aquire(&schedLock);
 	switch(t->getState()) {
 		case Thread::RUNNING:
@@ -352,7 +319,7 @@ void sched_removeThread(Thread *t) {
 		case Thread::BLOCKED:
 			break;
 		case Thread::READY:
-			sched_qDequeueThread(rdyQueues + t->getPriority(),t);
+			qDequeueThread(rdyQueues + t->getPriority(),t);
 			rdyCount--;
 			break;
 		default:
@@ -365,22 +332,42 @@ void sched_removeThread(Thread *t) {
 	spinlock_release(&schedLock);
 }
 
-void sched_print(void) {
+void Sched::print(void) {
 	size_t i;
 	vid_printf("Ready queues:\n");
 	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++) {
 		vid_printf("\t[%d]:\n",i);
-		sched_qPrint(rdyQueues + i);
+		qPrint(rdyQueues + i);
 		vid_printf("\n");
 	}
 }
 
-static void sched_qInit(sQueue *q) {
+bool Sched::setReadyState(Thread *t) {
+	switch(t->getState()) {
+		case Thread::ZOMBIE:
+		case Thread::ZOMBIE_SUSP:
+		case Thread::READY:
+		case Thread::READY_SUSP:
+			return false;
+		case Thread::BLOCKED_SUSP:
+			t->setState(Thread::READY_SUSP);
+			return false;
+		case Thread::BLOCKED:
+			break;
+		default:
+			vassert(false,"Invalid state for setReady (%d)",t->getState());
+			break;
+	}
+	t->setState(Thread::READY);
+	return true;
+}
+
+void Sched::qInit(Sched::Queue *q) {
 	q->first = NULL;
 	q->last = NULL;
 }
 
-static Thread *sched_qDequeue(sQueue *q) {
+Thread *Sched::qDequeue(Sched::Queue *q) {
 	Thread *t = q->first;
 	if(t == NULL)
 		return NULL;
@@ -393,7 +380,7 @@ static Thread *sched_qDequeue(sQueue *q) {
 	return t;
 }
 
-static void sched_qDequeueThread(sQueue *q,Thread *t) {
+void Sched::qDequeueThread(Sched::Queue *q,Thread *t) {
 	if(q->first == t)
 		q->first = t->next;
 	else
@@ -404,7 +391,7 @@ static void sched_qDequeueThread(sQueue *q,Thread *t) {
 		t->next->prev = t->prev;
 }
 
-static void sched_qAppend(sQueue *q,Thread *t) {
+void Sched::qAppend(Sched::Queue *q,Thread *t) {
 	t->prev = q->last;
 	t->next = NULL;
 	if(t->prev)
@@ -414,7 +401,7 @@ static void sched_qAppend(sQueue *q,Thread *t) {
 	q->last = t;
 }
 
-static void sched_qPrepend(sQueue *q,Thread *t) {
+void Sched::qPrepend(Sched::Queue *q,Thread *t) {
 	t->prev = NULL;
 	t->next = q->first;
 	if(q->first)
@@ -424,7 +411,7 @@ static void sched_qPrepend(sQueue *q,Thread *t) {
 	q->first = t;
 }
 
-static void sched_qPrint(sQueue *q) {
+void Sched::qPrint(Sched::Queue *q) {
 	const Thread *t = q->first;
 	while(t != NULL) {
 		vid_printf("\t\t%d:%d:%s\n",t->tid,t->proc->getPid(),t->proc->getCommand());

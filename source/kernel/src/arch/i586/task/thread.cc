@@ -153,7 +153,7 @@ bool ThreadBase::beginTerm() {
 	res = state != Thread::RUNNING && termHeapCount == 0 && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
-		sched_removeThread(static_cast<Thread*>(this));
+		Sched::removeThread(static_cast<Thread*>(this));
 	spinlock_release(&switchLock);
 	return res;
 }
@@ -161,7 +161,7 @@ bool ThreadBase::beginTerm() {
 void Thread::initialSwitch() {
 	Thread *cur;
 	spinlock_aquire(&switchLock);
-	cur = sched_perform(NULL,0);
+	cur = Sched::perform(NULL,0);
 	cur->stats.schedCount++;
 	vmm_setTimestamp(cur,timer_getTimestamp());
 	cur->setCPU(gdt_prepareRun(NULL,cur));
@@ -185,7 +185,7 @@ void ThreadBase::doSwitch() {
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	n = sched_perform(old,runtime);
+	n = Sched::perform(old,runtime);
 	n->stats.schedCount++;
 
 	/* switch thread */

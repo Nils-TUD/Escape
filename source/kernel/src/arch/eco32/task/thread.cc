@@ -139,7 +139,7 @@ bool ThreadBase::beginTerm() {
 	bool res = getState() != Thread::RUNNING && termHeapCount == 0 && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
-		sched_removeThread(static_cast<Thread*>(this));
+		Sched::removeThread(static_cast<Thread*>(this));
 	return res;
 }
 
@@ -154,7 +154,7 @@ void ThreadBase::doSwitch(void) {
 	old->stats.curCycleCount += timestamp - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	n = sched_perform(old,runtime);
+	n = Sched::perform(old,runtime);
 	n->stats.schedCount++;
 
 	if(n->tid != old->tid) {

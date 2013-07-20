@@ -170,7 +170,7 @@ void ThreadBase::updateRuntimes(void) {
 		t->stats.curCycleCount = 0;
 
 		/* raise/lower the priority if necessary */
-		sched_adjustPrio(t,threadCount);
+		Sched::adjustPrio(t,threadCount);
 	}
 	spinlock_release(&threadLock);
 }
@@ -243,7 +243,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 
 	/* append to idle-list if its an idle-thread */
 	if(flags & T_IDLE)
-		sched_addIdleThread(t);
+		Sched::addIdleThread(t);
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
 	if(cloneProc)
@@ -305,7 +305,7 @@ void ThreadBase::kill() {
 
 void ThreadBase::makeUnrunnable() {
 	Event::removeThread(static_cast<Thread*>(this));
-	sched_removeThread(static_cast<Thread*>(this));
+	Sched::removeThread(static_cast<Thread*>(this));
 }
 
 void ThreadBase::printAll() {

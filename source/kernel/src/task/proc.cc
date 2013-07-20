@@ -191,7 +191,7 @@ void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) 
 	mutex_release(&procLock);
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
-	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;
+	*dataReal = (size_t)(dReal + CopyOnWrite::getFrmCount()) * PAGE_SIZE;
 }
 
 int ProcBase::clone(uint8_t flags) {

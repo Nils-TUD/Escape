@@ -551,7 +551,7 @@ static bool vmm_doPagefault(uintptr_t addr,Proc *p,sVMRegion *vm,bool write) {
 		res = pmem_swapIn(addr);
 	else if(*flags & PF_COPYONWRITE) {
 		frameno_t frameNumber = paging_getFrameNo(p->getPageDir(),addr);
-		size_t frmCount = cow_pagefault(addr,frameNumber);
+		size_t frmCount = CopyOnWrite::pagefault(addr,frameNumber);
 		p->addOwn(frmCount);
 		p->addShared(-frmCount);
 		*flags &= ~PF_COPYONWRITE;
@@ -646,7 +646,7 @@ static void vmm_doRemove(Proc *p,sVMRegion *vm) {
 				bool foundOther;
 				frameno_t frameNo = paging_getFrameNo(p->getPageDir(),virt);
 				/* we can free the frame if there is no other user */
-				p->addShared(-cow_remove(frameNo,&foundOther));
+				p->addShared(-CopyOnWrite::remove(frameNo,&foundOther));
 				freeFrame = !foundOther;
 				/* if we'll free the frame with unmap we will substract 1 too much because
 				 * we don't own the frame */
@@ -827,7 +827,7 @@ int vmm_cloneAll(pid_t dstId) {
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->pageFlags[j] & PF_COPYONWRITE)) {
 							vm->reg->pageFlags[j] |= PF_COPYONWRITE;
-							if(!cow_add(frameNo)) {
+							if(!CopyOnWrite::add(frameNo)) {
 								mutex_release(&vm->reg->lock);
 								goto error;
 							}
@@ -836,7 +836,7 @@ int vmm_cloneAll(pid_t dstId) {
 						}
 						/* do it always for the child */
 						nvm->reg->pageFlags[j] |= PF_COPYONWRITE;
-						if(!cow_add(frameNo)) {
+						if(!CopyOnWrite::add(frameNo)) {
 							mutex_release(&vm->reg->lock);
 							goto error;
 						}

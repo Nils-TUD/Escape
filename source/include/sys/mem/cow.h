@@ -22,46 +22,64 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 
-/**
- * Initializes copy-on-write
- */
-void cow_init(void);
+class CopyOnWrite {
+	CopyOnWrite() = delete;
 
-/**
- * Handles a pagefault for given address. Assumes that the pagefault was caused by a write access
- * to a copy-on-write page!
- *
- * @param address the address
- * @param frameNumber the frame for that address
- * @return the number of frames that should be added to the current process
- */
-size_t cow_pagefault(uintptr_t address,frameno_t frameNumber);
+	struct Entry {
+		frameno_t frameNumber;
+		size_t refCount;
+	};
 
-/**
- * Adds the given frame to the cow-list.
- *
- * @param frameNo the frame-number
- * @return true if successfull
- */
-bool cow_add(frameno_t frameNo);
+	static const size_t HEAP_SIZE	= 64;
 
-/**
- * Removes the given frame from the cow-list
- *
- * @param frameNo the frame-number
- * @param foundOther will be set to true if another process still uses the frame
- * @return the number of frames to remove from <p>
- */
-size_t cow_remove(frameno_t frameNo,bool *foundOther);
+public:
+	/**
+	 * Initializes copy-on-write
+	 */
+	static void init();
 
-/**
- * Note that this is intended for debugging or similar only! (not very efficient)
- *
- * @return the number of different frames that are in the cow-list
- */
-size_t cow_getFrmCount(void);
+	/**
+	 * Handles a pagefault for given address. Assumes that the pagefault was caused by a write access
+	 * to a copy-on-write page!
+	 *
+	 * @param address the address
+	 * @param frameNumber the frame for that address
+	 * @return the number of frames that should be added to the current process
+	 */
+	static size_t pagefault(uintptr_t address,frameno_t frameNumber);
 
-/**
- * Prints the cow-list
- */
-void cow_print(void);
+	/**
+	 * Adds the given frame to the cow-list.
+	 *
+	 * @param frameNo the frame-number
+	 * @return true if successfull
+	 */
+	static bool add(frameno_t frameNo);
+
+	/**
+	 * Removes the given frame from the cow-list
+	 *
+	 * @param frameNo the frame-number
+	 * @param foundOther will be set to true if another process still uses the frame
+	 * @return the number of frames to remove from <p>
+	 */
+	static size_t remove(frameno_t frameNo,bool *foundOther);
+
+	/**
+	 * Note that this is intended for debugging or similar only! (not very efficient)
+	 *
+	 * @return the number of different frames that are in the cow-list
+	 */
+	static size_t getFrmCount();
+
+	/**
+	 * Prints the cow-list
+	 */
+	static void print();
+
+private:
+	static Entry *getByFrame(frameno_t frameNo,bool dec);
+
+	static sSLList frames[];
+	static klock_t lock;
+};

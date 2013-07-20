@@ -30,31 +30,22 @@
 #include <assert.h>
 #include <string.h>
 
-#define COW_HEAP_SIZE	64
+sSLList CopyOnWrite::frames[HEAP_SIZE];
+klock_t CopyOnWrite::lock;
 
-typedef struct {
-	frameno_t frameNumber;
-	size_t refCount;
-} sCOW;
-
-static sCOW *cow_getByFrame(frameno_t frameNo,bool dec);
-
-static sSLList cowFrames[COW_HEAP_SIZE];
-static klock_t cowLock;
-
-void cow_init(void) {
+void CopyOnWrite::init(void) {
 	size_t i;
-	for(i = 0; i < COW_HEAP_SIZE; i++)
-		sll_init(cowFrames + i,slln_allocNode,slln_freeNode);
+	for(i = 0; i < HEAP_SIZE; i++)
+		sll_init(frames + i,slln_allocNode,slln_freeNode);
 }
 
-size_t cow_pagefault(uintptr_t address,frameno_t frameNumber) {
-	sCOW *cow;
+size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
+	Entry *cow;
 	uint flags;
 
-	spinlock_aquire(&cowLock);
+	spinlock_aquire(&lock);
 	/* find the cow-entry */
-	cow = cow_getByFrame(frameNumber,true);
+	cow = getByFrame(frameNumber,true);
 	vassert(cow != NULL,"No COW entry for frame %#x and address %p",frameNumber,address);
 
 	/* if there is another process who wants to get the frame, we make a copy for us */
@@ -70,75 +61,75 @@ size_t cow_pagefault(uintptr_t address,frameno_t frameNumber) {
 		paging_copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
 	else
 		Cache::free(cow);
-	spinlock_release(&cowLock);
+	spinlock_release(&lock);
 	return 1;
 }
 
-bool cow_add(frameno_t frameNo) {
-	spinlock_aquire(&cowLock);
-	sCOW *cow = cow_getByFrame(frameNo,false);
+bool CopyOnWrite::add(frameno_t frameNo) {
+	spinlock_aquire(&lock);
+	Entry *cow = getByFrame(frameNo,false);
 	if(!cow) {
-		cow = (sCOW*)Cache::alloc(sizeof(sCOW));
+		cow = (Entry*)Cache::alloc(sizeof(Entry));
 		if(cow == NULL) {
-			spinlock_release(&cowLock);
+			spinlock_release(&lock);
 			return false;
 		}
 		cow->frameNumber = frameNo;
 		cow->refCount = 0;
-		if(!sll_append(cowFrames + (frameNo % COW_HEAP_SIZE),cow)) {
+		if(!sll_append(frames + (frameNo % HEAP_SIZE),cow)) {
 			Cache::free(cow);
-			spinlock_release(&cowLock);
+			spinlock_release(&lock);
 			return false;
 		}
 	}
 	cow->refCount++;
-	spinlock_release(&cowLock);
+	spinlock_release(&lock);
 	return true;
 }
 
-size_t cow_remove(frameno_t frameNo,bool *foundOther) {
-	sCOW *cow;
-	spinlock_aquire(&cowLock);
+size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
+	Entry *cow;
+	spinlock_aquire(&lock);
 	/* find the cow-entry */
-	cow = cow_getByFrame(frameNo,true);
+	cow = getByFrame(frameNo,true);
 	vassert(cow != NULL,"For frameNo %#x",frameNo);
 
 	*foundOther = cow->refCount > 0;
 	if(cow->refCount == 0)
 		Cache::free(cow);
-	spinlock_release(&cowLock);
+	spinlock_release(&lock);
 	return 1;
 }
 
-size_t cow_getFrmCount(void) {
+size_t CopyOnWrite::getFrmCount(void) {
 	size_t i,count = 0;
-	spinlock_aquire(&cowLock);
-	for(i = 0; i < COW_HEAP_SIZE; i++)
-		count += sll_length(cowFrames + i);
-	spinlock_release(&cowLock);
+	spinlock_aquire(&lock);
+	for(i = 0; i < HEAP_SIZE; i++)
+		count += sll_length(frames + i);
+	spinlock_release(&lock);
 	return count;
 }
 
-void cow_print(void) {
+void CopyOnWrite::print(void) {
 	sSLNode *n;
-	sCOW *cow;
+	Entry *cow;
 	size_t i;
-	vid_printf("COW-Frames: (%zu frames)\n",cow_getFrmCount());
-	for(i = 0; i < COW_HEAP_SIZE; i++) {
+	vid_printf("COW-Frames: (%zu frames)\n",getFrmCount());
+	for(i = 0; i < HEAP_SIZE; i++) {
 		vid_printf("\t%zu:\n",i);
-		for(n = sll_begin(cowFrames + i); n != NULL; n = n->next) {
-			cow = (sCOW*)n->data;
+		for(n = sll_begin(frames + i); n != NULL; n = n->next) {
+			cow = (Entry*)n->data;
 			vid_printf("\t\t%#x (%zu refs)\n",cow->frameNumber,cow->refCount);
 		}
 	}
 }
 
-static sCOW *cow_getByFrame(frameno_t frameNo,bool dec) {
+CopyOnWrite::Entry *CopyOnWrite::getByFrame(frameno_t frameNo,bool dec) {
 	sSLNode *n,*p;
-	sSLList *list = cowFrames + (frameNo % COW_HEAP_SIZE);
+	sSLList *list = frames + (frameNo % HEAP_SIZE);
 	p = NULL;
 	for(n = sll_begin(list); n != NULL; p = n, n = n->next) {
-		sCOW *cow = (sCOW*)n->data;
+		Entry *cow = (Entry*)n->data;
 		if(cow->frameNumber == frameNo) {
 			if(dec) {
 				if(--cow->refCount == 0)

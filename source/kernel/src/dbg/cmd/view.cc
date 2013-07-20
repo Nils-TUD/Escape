@@ -79,7 +79,7 @@ static sView views[] = {
 	{"vfstree",(fView)vfs_node_printTree},
 	{"gft",(fView)vfs_printGFT},
 	{"msgs",(fView)vfs_printMsgs},
-	{"cow",(fView)cow_print},
+	{"cow",(fView)CopyOnWrite::print},
 	{"cache",(fView)Cache::print},
 	{"kheap",(fView)kheap_print},
 	{"pdirall",(fView)view_pdirall},

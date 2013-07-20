@@ -235,7 +235,7 @@ static void vfs_info_cpuReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,vo
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	cpu_sprintf(&buf);
+	CPU::sprintf(&buf);
 	*buffer = buf.str;
 	*dataSize = buf.len;
 }
@@ -253,7 +253,7 @@ static void vfs_info_statsReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,
 	buf.size = 0;
 	buf.len = 0;
 
-	cycles.val64 = cpu_rdtsc();
+	cycles.val64 = CPU::rdtsc();
 	prf_sprintf(
 		&buf,
 		"%-16s%zu\n"

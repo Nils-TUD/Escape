@@ -102,7 +102,7 @@ void ThreadBase::initProps() {
 	stats.runtime = 0;
 	stats.curCycleCount = 0;
 	stats.lastCycleCount = 0;
-	stats.cycleStart = cpu_rdtsc();
+	stats.cycleStart = CPU::rdtsc();
 	stats.schedCount = 0;
 	stats.syscalls = 0;
 	resources = 0;

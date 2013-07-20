@@ -25,7 +25,7 @@
 #include <sys/video.h>
 #include <string.h>
 
-static const char *specialRegs[] = {
+const char *CPU::specialRegs[] = {
 	/* 00 */	"rB",
 	/* 01 */	"rD",
 	/* 02 */	"rE",
@@ -61,29 +61,15 @@ static const char *specialRegs[] = {
 	/* 20 */	"rSS"
 };
 
-static uint64_t cpuHz;
+uint64_t CPU::cpuHz;
 
-uint64_t cpu_getSpeed(void) {
-	return cpuHz;
-}
-
-void cpu_setSpeed(uint64_t hz) {
-	cpuHz = hz;
-}
-
-const char *cpu_getSpecialName(int rno) {
-	if(rno >= (int)ARRAY_SIZE(specialRegs))
-		return "??";
-	return specialRegs[rno];
-}
-
-void cpu_sprintf(sStringBuffer *buf) {
-	uint64_t rn = cpu_getSpecial(rN);
+void CPUBase::sprintf(sStringBuffer *buf) {
+	uint64_t rn = CPU::getSpecial(rN);
 	const SMP::CPU *smpcpu = SMP::getCPUs()[0];
 	prf_sprintf(buf,"CPU 0:\n");
 	prf_sprintf(buf,"\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
 	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
-	prf_sprintf(buf,"\t%-12s%lu Hz\n","Speed:",cpuHz);
+	prf_sprintf(buf,"\t%-12s%lu Hz\n","Speed:",CPU::getSpeed());
 	prf_sprintf(buf,"\t%-12s%s\n","Vendor:","THM");
 	prf_sprintf(buf,"\t%-12s%s\n","Model:","GIMMIX");
 	prf_sprintf(buf,"\t%-12s%d.%d.%d\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);

@@ -78,18 +78,18 @@ inline size_t ThreadBase::getThreadFrmCnt(void) {
 }
 
 inline uint64_t ThreadBase::getTSC(void) {
-	return cpu_rdtsc();
+	return CPU::rdtsc();
 }
 
 inline uint64_t ThreadBase::ticksPerSec(void) {
-	return cpu_getSpeed();
+	return CPU::getSpeed();
 }
 
 inline uint64_t ThreadBase::getRuntime() const {
 	if(state == Thread::RUNNING) {
 		/* if the thread is running, we must take the time since the last scheduling of that thread
 		 * into account. this is especially a problem with idle-threads */
-		uint64_t cycles = cpu_rdtsc();
+		uint64_t cycles = CPU::rdtsc();
 		return (stats.runtime + Timer::cyclesToTime(cycles - stats.cycleStart));
 	}
 	return stats.runtime;

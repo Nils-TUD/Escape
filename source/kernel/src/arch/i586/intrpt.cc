@@ -159,7 +159,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 	/* we need to save the page-fault address here because swapping may cause other ones */
 	if(stack->intrptNo == EX_PAGE_FAULT)
-		pfAddrs[t->getCPU()] = cpu_getCR2();
+		pfAddrs[t->getCPU()] = CPU::getCR2();
 
 	intrpt = intrptList + stack->intrptNo;
 	if(intrpt->handler)

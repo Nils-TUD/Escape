@@ -18,19 +18,10 @@
  */
 
 .global cpu_cpuidSupported
-.global cpu_rdtsc
 .global cpu_getInfo
 .global cpu_getStrInfo
-.global cpu_getCR0
-.global cpu_setCR0
-.global cpu_getCR2
-.global cpu_getCR3
-.global cpu_getCR4
-.global cpu_setCR4
-.global cpu_getMSR
-.global cpu_setMSR
 
-# bool cpu_cpuidSupported(void);
+# bool CPU::cpuidSupported(void);
 cpu_cpuidSupported:
 	pushfl
 	pop		%eax					# load eflags into eax
@@ -46,58 +37,7 @@ cpu_cpuidSupported:
 	shr		$21,%eax				# if so, return 1 (cpuid supported)
 	ret
 
-# uint64_t cpu_rdtsc(void);
-cpu_rdtsc:
-	rdtsc
-	ret
-
-# uint32_t cpu_getCR0(void);
-cpu_getCR0:
-	mov		%cr0,%eax
-	ret
-
-# void cpu_setCR0(uint32_t cr0);
-cpu_setCR0:
-	mov		4(%esp),%eax
-	mov		%eax,%cr0
-	ret
-
-# uint32_t cpu_getCR2(void);
-cpu_getCR2:
-	mov		%cr2,%eax
-	ret
-
-# uint32_t cpu_getCR3(void);
-cpu_getCR3:
-	mov		%cr3,%eax
-	ret
-
-# uint32_t cpu_getCR4(void);
-cpu_getCR4:
-	mov		%cr4,%eax
-	ret
-
-# void cpu_setCR4(uint32_t cr4);
-cpu_setCR4:
-	mov		4(%esp),%eax
-	mov		%eax,%cr4
-	ret
-
-# uint64_t cpu_getMSR(uint32_t msr)
-cpu_getMSR:
-	mov		4(%esp),%ecx
-	rdmsr
-	ret
-
-# void cpu_setMSR(uint32_t msr,uint64_t value)
-cpu_setMSR:
-	mov		4(%esp),%ecx
-	mov		8(%esp),%eax
-	mov		12(%esp),%edx
-	wrmsr
-	ret
-
-# void cpu_getInfo(uint32_t code,uint32_t *a,uint32_t *b,uint32_t *c,uint32_t *d);
+# void CPU::getInfo(uint32_t code,uint32_t *a,uint32_t *b,uint32_t *c,uint32_t *d);
 cpu_getInfo:
 	push	%ebp
 	mov		%esp,%ebp
@@ -118,7 +58,7 @@ cpu_getInfo:
 	leave
 	ret
 
-# void cpu_getStrInfo(uint32_t code,char *res);
+# void CPU::getStrInfo(uint32_t code,char *res);
 cpu_getStrInfo:
 	push	%ebp
 	mov		%esp,%ebp

@@ -34,9 +34,9 @@ void TimerBase::archInit() {
 }
 
 void Timer::wait(uint us) {
-	uint64_t start = cpu_rdtsc();
+	uint64_t start = CPU::rdtsc();
 	uint64_t end = start + timeToCycles(us);
-	while(cpu_rdtsc() < end)
+	while(CPU::rdtsc() < end)
 		__asm__ volatile ("pause");
 }
 
@@ -87,10 +87,10 @@ uint64_t Timer::determineSpeed(int instrCount) {
 	ports_outByte(IOPORT_CHAN0DIV,0xFF);
 
 	/* now spend some time and measure the number of cycles */
-	before = cpu_rdtsc();
+	before = CPU::rdtsc();
 	for(i = instrCount; i > 0; i--)
 		;
-	after = cpu_rdtsc();
+	after = CPU::rdtsc();
 
 	/* read current count */
 	ports_outByte(IOPORT_CTRL,CTRL_CHAN0);

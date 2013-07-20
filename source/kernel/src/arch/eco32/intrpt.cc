@@ -119,7 +119,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	Thread *t;
 	sInterrupt *intrpt;
 	/* note: we have to do that before there is a chance for a kernel-miss */
-	pfaddr = cpu_getBadAddr();
+	pfaddr = CPU::getBadAddr();
 	t = Thread::getRunning();
 	t->pushIntrptLevel(stack);
 	irqCount++;

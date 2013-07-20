@@ -47,7 +47,7 @@ int ELF::finishFromMem(const void *code,A_UNUSED size_t length,StartupInfo *info
 			frameno_t frame = paging_getFrameNo(t->getProc()->getPageDir(),start);
 			size_t amount = MIN(PAGE_SIZE,end - start);
 			begin = DIR_MAPPED_SPACE | frame * PAGE_SIZE;
-			cpu_syncid(begin,begin + amount);
+			CPU::syncid(begin,begin + amount);
 			start += amount;
 		}
 	}

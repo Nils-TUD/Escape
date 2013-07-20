@@ -166,7 +166,7 @@ void Thread::initialSwitch() {
 	vmm_setTimestamp(cur,Timer::getTimestamp());
 	cur->setCPU(gdt_prepareRun(NULL,cur));
 	fpu_lockFPU();
-	cur->stats.cycleStart = cpu_rdtsc();
+	cur->stats.cycleStart = CPU::rdtsc();
 	thread_resume(cur->getProc()->getPageDir()->own,&cur->save,&switchLock,true);
 }
 
@@ -179,7 +179,7 @@ void ThreadBase::doSwitch() {
 	spinlock_aquire(&switchLock);
 
 	/* update runtime-stats */
-	cycles = cpu_rdtsc();
+	cycles = CPU::rdtsc();
 	runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
@@ -202,12 +202,12 @@ void ThreadBase::doSwitch() {
 		fpu_lockFPU();
 		if(!thread_save(&old->save)) {
 			/* old thread */
-			n->stats.cycleStart = cpu_rdtsc();
+			n->stats.cycleStart = CPU::rdtsc();
 			thread_resume(n->getProc()->getPageDir()->own,&n->save,&switchLock,n->getProc() != old->getProc());
 		}
 	}
 	else {
-		n->stats.cycleStart = cpu_rdtsc();
+		n->stats.cycleStart = CPU::rdtsc();
 		spinlock_release(&switchLock);
 	}
 }

@@ -168,7 +168,7 @@ frameno_t paging_demandLoad(const void *buffer,size_t loadCount,ulong regFlags) 
 	memcpy((void*)addr,buffer,loadCount);
 	/* if its an executable region, we have to syncid the memory afterwards */
 	if(regFlags & RF_EXECUTABLE)
-		cpu_syncid(addr,addr + loadCount);
+		CPU::syncid(addr,addr + loadCount);
 	return frame;
 }
 

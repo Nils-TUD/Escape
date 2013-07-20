@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/cpu.h>
 #include <sys/arch/i586/apic.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/ioapic.h>
@@ -181,9 +180,9 @@ void SMPBase::start() {
 
 		/* wait until all APs are running */
 		total = getCPUCount() - 1;
-		start = cpu_rdtsc();
+		start = ::CPU::rdtsc();
 		end = start + Timer::timeToCycles(2000000);
-		while(cpu_rdtsc() < end && seenAPs != total)
+		while(::CPU::rdtsc() < end && seenAPs != total)
 			__asm__ ("pause");
 		if(seenAPs != total) {
 			log_printf("Found %zu CPUs in 2s, expected %zu. Disabling SMP",seenAPs,total);

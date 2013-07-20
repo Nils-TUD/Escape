@@ -57,68 +57,120 @@
 #define rZZ				31				// Z operand (trap)
 #define rSS				32				// kernel-stack location (GIMMIX only)
 
-/**
- * @param rno the special-number
- * @return the name of the given special-register
- */
-const char *cpu_getSpecialName(int rno);
+class CPU : public CPUBase {
+	friend class CPUBase;
 
-/**
- * Sets the given CPU-speed (no, the hardware is not changed ;))
- *
- * @param hz the CPU-speed in Hz
- */
-void cpu_setSpeed(uint64_t hz);
+	CPU() = delete;
 
-/**
- * Sets rbb, rww, rxx, ryy and rzz to the current values of rBB, rWW, rXX, rYY and rZZ,
- * respectively.
- *
- * @param rbb the pointer to rBB
- * @param rww the pointer to rWW
- * @param rxx the pointer to rXX
- * @param ryy the pointer to rYY
- * @param rzz the pointer to rZZ
- */
-EXTERN_C void cpu_getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy,uint64_t *rzz);
+public:
+	/**
+	 * @param rno the special-number
+	 * @return the name of the given special-register
+	 */
+	static const char *getSpecialName(int rno) {
+		if(rno >= (int)ARRAY_SIZE(specialRegs))
+			return "??";
+		return specialRegs[rno];
+	}
 
-/**
- * Sets rBB, rWW, rXX, rYY and rZZ to the current values of rbb, rww, rxx, ryy and rzz,
- * respectively.
- *
- * @param rbb the new value of rBB
- * @param rww the new value of rWW
- * @param rxx the new value of rXX
- * @param ryy the new value of rYY
- * @param rzz the new value of rZZ
- */
-EXTERN_C void cpu_setKSpecials(uint64_t rbb,uint64_t rww,uint64_t rxx,uint64_t ryy,uint64_t rzz);
+	/**
+	 * Sets the given CPU-speed (no, the hardware is not changed ;))
+	 *
+	 * @param hz the CPU-speed in Hz
+	 */
+	static void setSpeed(uint64_t hz) {
+		cpuHz = hz;
+	}
 
-/**
- * @return the fault-location for protection-faults
- */
-EXTERN_C uintptr_t cpu_getFaultLoc(void);
+	/**
+	 * Sets rbb, rww, rxx, ryy and rzz to the current values of rBB, rWW, rXX, rYY and rZZ,
+	 * respectively.
+	 *
+	 * @param rbb the pointer to rBB
+	 * @param rww the pointer to rWW
+	 * @param rxx the pointer to rXX
+	 * @param ryy the pointer to rYY
+	 * @param rzz the pointer to rZZ
+	 */
+	static void getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy, uint64_t *rzz) {
+		asm volatile ("GET	%0, rBB" : "=r"(*rbb));
+		asm volatile ("GET	%0, rWW" : "=r"(*rww));
+		asm volatile ("GET	%0, rXX" : "=r"(*rxx));
+		asm volatile ("GET	%0, rYY" : "=r"(*ryy));
+		asm volatile ("GET	%0, rZZ" : "=r"(*rzz));
+	}
 
-/**
- * Performs a SYNCD and SYNCID for the given region to ensure that the IC agrees with the DC
- *
- * @param start the start-address
- * @param end the end-address
- */
-EXTERN_C void cpu_syncid(uintptr_t start,uintptr_t end);
+	/**
+	 * Sets rBB, rWW, rXX, rYY and rZZ to the current values of rbb, rww, rxx, ryy and rzz,
+	 * respectively.
+	 *
+	 * @param rbb the new value of rBB
+	 * @param rww the new value of rWW
+	 * @param rxx the new value of rXX
+	 * @param ryy the new value of rYY
+	 * @param rzz the new value of rZZ
+	 */
+	static void setKSpecials(uint64_t rbb,uint64_t rww,uint64_t rxx,uint64_t ryy,uint64_t rzz) {
+		asm volatile ("PUT	rBB, %0" : : "r"(rbb));
+		asm volatile ("PUT	rWW, %0" : : "r"(rww));
+		asm volatile ("PUT	rXX, %0" : : "r"(rxx));
+		asm volatile ("PUT	rYY, %0" : : "r"(ryy));
+		asm volatile ("PUT	rZZ, %0" : : "r"(rzz));
+	}
 
-/**
- * Retrieves the value of the global-register with given number
- *
- * @param rno the global-number
- * @return the value
- */
-EXTERN_C uint64_t cpu_getGlobal(int rno);
+	/**
+	 * @return the fault-location for protection-faults
+	 */
+	static uintptr_t getFaultLoc(void) {
+		uintptr_t res;
+		asm volatile ("GET %0, rYY" : "=r"(res));
+		return res;
+	}
 
-/**
- * Retrieves the value of the special-register with given number
- *
- * @param rno the special-number
- * @return the value
- */
-EXTERN_C uint64_t cpu_getSpecial(int rno);
+	/**
+	 * @return the system-call-number
+	 */
+	static int getSyscallNo() {
+		uint64_t rxx;
+		asm volatile ("GET %0, rXX" : "=r"(rxx));
+		return (rxx >> 8) & 0xFF;
+	}
+
+	/**
+	 * Performs a SYNCD and SYNCID for the given region to ensure that the IC agrees with the DC
+	 *
+	 * @param start the start-address
+	 * @param end the end-address
+	 */
+	static void syncid(uintptr_t start,uintptr_t end) asm("cpu_syncid");
+
+	/**
+	 * Retrieves the value of the global-register with given number
+	 *
+	 * @param rno the global-number
+	 * @return the value
+	 */
+	static uint64_t getGlobal(int rno) asm("cpu_getGlobal");
+
+	/**
+	 * Retrieves the value of the special-register with given number
+	 *
+	 * @param rno the special-number
+	 * @return the value
+	 */
+	static uint64_t getSpecial(int rno) asm("cpu_getSpecial");
+
+private:
+	static const char *specialRegs[33];
+	static uint64_t cpuHz;
+};
+
+inline uint64_t CPUBase::rdtsc(void) {
+	uint64_t res;
+	asm volatile ("GET %0, rC" : "=r"(res));
+	return res;
+}
+
+inline uint64_t CPUBase::getSpeed(void) {
+	return CPU::cpuHz;
+}

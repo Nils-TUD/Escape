@@ -31,26 +31,24 @@
 /* based on http://forum.osdev.org/viewtopic.php?t=11998 */
 
 /* the cpu-vendors; index in vendors-array */
-#define CPUID_VENDOR_OLDAMD			0
-#define CPUID_VENDOR_AMD			1
-#define CPUID_VENDOR_INTEL			2
-#define CPUID_VENDOR_VIA			3
-#define CPUID_VENDOR_OLDTRANSMETA	4
-#define CPUID_VENDOR_TRANSMETA		5
-#define CPUID_VENDOR_CYRIX			6
-#define CPUID_VENDOR_CENTAUR		7
-#define CPUID_VENDOR_NEXGEN			8
-#define CPUID_VENDOR_UMC			9
-#define CPUID_VENDOR_SIS			10
-#define CPUID_VENDOR_NSC			11
-#define CPUID_VENDOR_RISE			12
-#define CPUID_VENDOR_UNKNOWN		13
+enum Vendors {
+	VENDOR_OLDAMD,
+	VENDOR_AMD,
+	VENDOR_INTEL,
+	VENDOR_VIA,
+	VENDOR_OLDTRANSMETA,
+	VENDOR_TRANSMETA,
+	VENDOR_CYRIX,
+	VENDOR_CENTAUR,
+	VENDOR_NEXGEN,
+	VENDOR_UMC,
+	VENDOR_SIS,
+	VENDOR_NSC,
+	VENDOR_RISE,
+	VENDOR_UNKNOWN
+};
 
-#define FEATURE_LAPIC				(1 << 9)
-
-#define VENDOR_STRLEN				12
-
-static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,const SMP::CPU *smpcpu);
+static void doSprintf(sStringBuffer *buf,CPU::Info *cpu,const SMP::CPU *smpcpu);
 
 static const char *vendors[] = {
 	"AMDisbetter!",	/* early engineering samples of AMD K5 processor */
@@ -131,16 +129,16 @@ static const char *intel6Models[] = {
 };
 
 /* the information about our cpu */
-static sCPUInfo *cpus;
-static uint64_t cpuHz;
+CPU::Info *CPU::cpus;
+uint64_t CPU::cpuHz;
 
-void cpu_detect(void) {
+void CPU::detect() {
 	size_t i;
 	uint32_t eax,ebx,edx,unused;
 	char vendor[VENDOR_STRLEN + 1];
 	cpuid_t id = SMP::getCurId();
 	if(cpus == NULL) {
-		cpus = (sCPUInfo*)cache_alloc(sizeof(sCPUInfo) * SMP::getCPUCount());
+		cpus = (Info*)cache_alloc(sizeof(Info) * SMP::getCPUCount());
 		if(!cpus)
 			util_panic("Not enough mem for CPU-infos");
 
@@ -150,11 +148,11 @@ void cpu_detect(void) {
 	}
 
 	/* get vendor-string */
-	cpu_getStrInfo(CPUID_GETVENDORSTRING,vendor);
+	getStrInfo(CPUID_GETVENDORSTRING,vendor);
 	vendor[VENDOR_STRLEN] = '\0';
 
 	/* check which one it is */
-	cpus[id].vendor = CPUID_VENDOR_UNKNOWN;
+	cpus[id].vendor = VENDOR_UNKNOWN;
 	for(i = 0; i < ARRAY_SIZE(vendors) - 1; i++) {
 		if(strcmp(vendors[i],vendor) == 0) {
 			cpus[id].vendor = i;
@@ -164,17 +162,17 @@ void cpu_detect(void) {
 
 	/* read brand string */
 	cpus[id].name[0] = 0;
-	cpu_getInfo(CPUID_INTELEXTENDED,&eax,&unused,&unused,&unused);
+	getInfo(CPUID_INTELEXTENDED,&eax,&unused,&unused,&unused);
 	if(eax & 0x80000000) {
 		switch((uint8_t)eax) {
 			case 0x4 ... 0x9:
-				cpu_getInfo(CPUID_INTELBRANDSTRINGEND,
+				getInfo(CPUID_INTELBRANDSTRINGEND,
 						&cpus[id].name[8],&cpus[id].name[9],&cpus[id].name[10],&cpus[id].name[11]);
 			case 0x3:
-				cpu_getInfo(CPUID_INTELBRANDSTRINGMORE,
+				getInfo(CPUID_INTELBRANDSTRINGMORE,
 						&cpus[id].name[4],&cpus[id].name[5],&cpus[id].name[6],&cpus[id].name[7]);
 			case 0x2:
-				cpu_getInfo(CPUID_INTELBRANDSTRING,
+				getInfo(CPUID_INTELBRANDSTRING,
 						&cpus[id].name[0],&cpus[id].name[1],&cpus[id].name[2],&cpus[id].name[3]);
 				break;
 		}
@@ -190,8 +188,8 @@ void cpu_detect(void) {
 
 	/* fetch some additional infos for known cpus */
 	switch(cpus[id].vendor) {
-		case CPUID_VENDOR_INTEL:
-			cpu_getInfo(CPUID_GETFEATURES,&eax,&ebx,&unused,&edx);
+		case VENDOR_INTEL:
+			getInfo(CPUID_GETFEATURES,&eax,&ebx,&unused,&edx);
 			cpus[id].model = (eax >> 4) & 0xf;
 			cpus[id].family = (eax >> 8) & 0xf;
 			cpus[id].type = (eax >> 12) & 0x3;
@@ -201,8 +199,8 @@ void cpu_detect(void) {
 			cpus[id].features = edx;
 			break;
 
-		case CPUID_VENDOR_AMD:
-			cpu_getInfo(CPUID_GETFEATURES,&eax,&unused,&unused,&edx);
+		case VENDOR_AMD:
+			getInfo(CPUID_GETFEATURES,&eax,&unused,&unused,&edx);
 			cpus[id].model = (eax >> 4) & 0xf;
 			cpus[id].family = (eax >> 8) & 0xf;
 			cpus[id].stepping = eax & 0xf;
@@ -211,35 +209,31 @@ void cpu_detect(void) {
 	}
 }
 
-uint64_t cpu_getSpeed(void) {
-	return cpuHz;
-}
-
-bool cpu_hasLocalAPIC(void) {
-	/* don't use the cpus-array here, since it is called before cpu_detect() */
+bool CPU::hasLocalAPIC() {
+	/* don't use the cpus-array here, since it is called before CPU::detect() */
 	uint32_t unused,edx;
-	cpu_getInfo(CPUID_GETFEATURES,&unused,&unused,&unused,&edx);
+	getInfo(CPUID_GETFEATURES,&unused,&unused,&unused,&edx);
 	return (edx & FEATURE_LAPIC) ? true : false;
 }
 
-void cpu_sprintf(sStringBuffer *buf) {
+void CPUBase::sprintf(sStringBuffer *buf) {
 	const SMP::CPU **smpCPUs = SMP::getCPUs();
 	size_t i,count = SMP::getCPUCount();
 	for(i = 0; i < count; i++) {
 		prf_sprintf(buf,"CPU %d:\n",smpCPUs[i]->id);
-		cpu_doSprintf(buf,cpus + i,smpCPUs[i]);
+		doSprintf(buf,CPU::cpus + i,smpCPUs[i]);
 	}
 }
 
-static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,const SMP::CPU *smpcpu) {
+static void doSprintf(sStringBuffer *buf,CPU::Info *cpu,const SMP::CPU *smpcpu) {
 	size_t size;
 	prf_sprintf(buf,"\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
 	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
-	prf_sprintf(buf,"\t%-12s%Lu Hz\n","Speed:",cpuHz);
+	prf_sprintf(buf,"\t%-12s%Lu Hz\n","Speed:",CPU::getSpeed());
 	prf_sprintf(buf,"\t%-12s%s\n","Vendor:",vendors[cpu->vendor]);
 	prf_sprintf(buf,"\t%-12s%s\n","Name:",(char*)cpu->name);
 	switch(cpu->vendor) {
-		case CPUID_VENDOR_INTEL: {
+		case VENDOR_INTEL: {
 			const char **models = NULL;
 			if(cpu->type < ARRAY_SIZE(intelTypes))
 				prf_sprintf(buf,"\t%-12s%s\n","Type:",intelTypes[cpu->type]);
@@ -275,7 +269,7 @@ static void cpu_doSprintf(sStringBuffer *buf,sCPUInfo *cpu,const SMP::CPU *smpcp
 		}
 		break;
 
-		case CPUID_VENDOR_AMD:
+		case VENDOR_AMD:
 			prf_sprintf(buf,"\t%-12s%d\n","Family:",cpu->family);
 			prf_sprintf(buf,"\t%-12s","Model:");
 			switch(cpu->family) {

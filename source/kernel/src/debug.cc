@@ -28,11 +28,11 @@
 static uint64_t start = 0;
 
 void dbg_startTimer(void) {
-	start = cpu_rdtsc();
+	start = CPU::rdtsc();
 }
 
 void dbg_stopTimer(const char *prefix) {
 	uLongLong diff;
-	diff.val64 = cpu_rdtsc() - start;
+	diff.val64 = CPU::rdtsc() - start;
 	vid_printf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
 }

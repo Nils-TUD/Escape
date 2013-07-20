@@ -22,13 +22,13 @@
 #include <sys/cpu.h>
 #include <sys/video.h>
 
-void cpu_print(void) {
+void CPUBase::print() {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.len = 0;
 	buf.size = 0;
 	buf.str = NULL;
-	cpu_sprintf(&buf);
+	sprintf(&buf);
 	vid_printf("%s",buf.str);
 	cache_free(buf.str);
 }

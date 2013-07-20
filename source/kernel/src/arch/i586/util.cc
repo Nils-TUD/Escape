@@ -118,13 +118,13 @@ void util_printUserState(void) {
 }
 
 void util_startTimer(void) {
-	profStart = cpu_rdtsc();
+	profStart = CPU::rdtsc();
 }
 
 void util_stopTimer(const char *prefix,...) {
 	va_list l;
 	uLongLong diff;
-	diff.val64 = cpu_rdtsc() - profStart;
+	diff.val64 = CPU::rdtsc() - profStart;
 	va_start(l,prefix);
 	vid_vprintf(prefix,l);
 	va_end(l);

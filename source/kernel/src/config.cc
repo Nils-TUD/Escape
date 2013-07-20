@@ -46,7 +46,7 @@ void Config::parseBootParams(int argc,const char *const *argv) {
 			continue;
 		strncpy(name,argv[i],eq);
 		name[eq] = '\0';
-		if(eq != (ssize_t)len)
+		if(eq != len)
 			strnzcpy(value,argv[i] + eq + 1,sizeof(value));
 		else
 			value[0] = '\0';

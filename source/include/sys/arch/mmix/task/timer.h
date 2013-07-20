@@ -62,9 +62,9 @@ inline void Timer::ackIntrpt() {
 }
 
 inline uint64_t TimerBase::cyclesToTime(uint64_t cycles) {
-	return cycles / (cpu_getSpeed() / 1000000);
+	return cycles / (CPU::getSpeed() / 1000000);
 }
 
 inline uint64_t TimerBase::timeToCycles(uint us) {
-	return (cpu_getSpeed() / 1000000) * us;
+	return (CPU::getSpeed() / 1000000) * us;
 }

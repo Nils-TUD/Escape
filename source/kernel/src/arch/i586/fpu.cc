@@ -35,16 +35,16 @@ extern void fpu_restoreState(sFPUState *state);
 static sFPUState ***curStates = NULL;
 
 void fpu_preinit(void) {
-	uint32_t cr0 = cpu_getCR0();
+	uint32_t cr0 = CPU::getCR0();
 	/* enable coprocessor monitoring */
-	cr0 |= CR0_MONITOR_COPROC;
+	cr0 |= CPU::CR0_MONITOR_COPROC;
 	/* disable emulate */
-	cr0 &= ~CR0_EMULATE;
-	cpu_setCR0(cr0);
+	cr0 &= ~CPU::CR0_EMULATE;
+	CPU::setCR0(cr0);
 
 	/* TODO check whether we have a FPU */
 	/* set the OSFXSR bit
-	cpu_setCR4(cpu_getCR4() | 0x200);*/
+	CPU::setCR4(CPU::getCR4() | 0x200);*/
 	/* init the fpu */
 	__asm__ volatile (
 		"finit"
@@ -61,7 +61,7 @@ void fpu_init(void) {
 void fpu_lockFPU(void) {
 	/* set the task-switched-bit in CR0. as soon as a process uses any FPU instruction
 	 * we'll get a EX_CO_PROC_NA and call fpu_handleCoProcNA() */
-	cpu_setCR0(cpu_getCR0() | CR0_TASK_SWITCHED);
+	CPU::setCR0(CPU::getCR0() | CPU::CR0_TASK_SWITCHED);
 }
 
 void fpu_handleCoProcNA(sFPUState **state) {
@@ -79,14 +79,14 @@ void fpu_handleCoProcNA(sFPUState **state) {
 					return;
 			}
 			/* unlock FPU (necessary here because otherwise fpu_saveState would cause a #NM) */
-			cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
+			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 			/* save state */
 			__asm__ volatile (
 				"fsave %0" : : "m" (**current)
 			);
 		}
 		else
-			cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
+			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 
 		/* init FPU for new process */
 		curStates[t->getCPU()] = state;
@@ -103,7 +103,7 @@ void fpu_handleCoProcNA(sFPUState **state) {
 	}
 	/* just unlock */
 	else
-		cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
+		CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 }
 
 void fpu_cloneState(sFPUState **dst,const sFPUState *src) {

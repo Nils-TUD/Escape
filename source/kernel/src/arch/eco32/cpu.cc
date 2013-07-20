@@ -25,17 +25,7 @@
 #include <sys/video.h>
 #include <string.h>
 
-uint64_t cpu_rdtsc(void) {
-	/* TODO not implemented yet */
-	return 0;
-}
-
-uint64_t cpu_getSpeed(void) {
-	/* not available */
-	return 0;
-}
-
-void cpu_sprintf(sStringBuffer *buf) {
+void CPUBase::sprintf(sStringBuffer *buf) {
 	const SMP::CPU *smpcpu = SMP::getCPUs()[0];
 	prf_sprintf(buf,"CPU 0:\n");
 	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Total:",smpcpu->lastTotal);

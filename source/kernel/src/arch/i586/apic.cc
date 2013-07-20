@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/apic.h>
-#include <sys/arch/i586/cpu.h>
 #include <sys/mem/paging.h>
+#include <sys/cpu.h>
 #include <assert.h>
 
 #define MSR_APIC_BASE			0x1B
@@ -70,9 +70,9 @@ static uintptr_t apicAddr;
 void apic_init(void) {
 	enabled = false;
 
-	if(cpu_hasLocalAPIC()) {
+	if(CPU::hasLocalAPIC()) {
 		/* TODO every APIC may have a different address */
-		uint64_t apicBase = cpu_getMSR(MSR_APIC_BASE);
+		uint64_t apicBase = CPU::getMSR(MSR_APIC_BASE);
 		if(apicBase & APIC_BASE_EN) {
 			apicAddr = paging_makeAccessible(APIC_BASE_ADDR(apicBase),1);
 			enabled = true;

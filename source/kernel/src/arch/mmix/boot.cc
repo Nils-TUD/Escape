@@ -81,7 +81,7 @@ void boot_arch_start(sBootInfo *binfo) {
 	bootFinished = (info.progCount - 1) * 2 + 1;
 
 	vid_init();
-	cpu_setSpeed(info.cpuHz);
+	CPU::setSpeed(info.cpuHz);
 
 	/* parse the boot parameter */
 	argv = boot_parseArgs(binfo->progs[0].command,&argc);

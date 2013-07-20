@@ -185,7 +185,7 @@ uint64_t ThreadBase::getRuntime() const {
 	if(getState() == Thread::RUNNING) {
 		/* if the thread is running, we must take the time since the last scheduling of that thread
 		 * into account. this is especially a problem with idle-threads */
-		uint64_t cycles = cpu_rdtsc();
+		uint64_t cycles = CPU::rdtsc();
 		return (stats.runtime + Timer::cyclesToTime(cycles - stats.cycleStart));
 	}
 	return stats.runtime;
@@ -207,7 +207,7 @@ void ThreadBase::doSwitch(void) {
 	Thread *n;
 
 	/* update runtime-stats */
-	cycles = cpu_rdtsc();
+	cycles = CPU::rdtsc();
 	runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
@@ -234,11 +234,11 @@ void ThreadBase::doSwitch(void) {
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
 		SMP::schedule(n->getCPU(),n,timestamp);
-		n->stats.cycleStart = cpu_rdtsc();
+		n->stats.cycleStart = CPU::rdtsc();
 		thread_doSwitchTo(&old->save,&n->save,*n->getProc()->getPageDir(),n->getTid());
 	}
 	else
-		n->stats.cycleStart = cpu_rdtsc();
+		n->stats.cycleStart = CPU::rdtsc();
 }
 
 

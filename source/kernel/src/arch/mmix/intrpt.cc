@@ -208,14 +208,14 @@ static void intrpt_leaveKernel(Thread *t) {
 }
 
 static void intrpt_defHandler(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
-	uint64_t rww = cpu_getSpecial(rWW);
+	uint64_t rww = CPU::getSpecial(rWW);
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ %p",
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 
 static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
-	uintptr_t pfaddr = cpu_getFaultLoc();
+	uintptr_t pfaddr = CPU::getFaultLoc();
 
 #if DEBUG_PAGEFAULTS
 	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {
@@ -295,7 +295,7 @@ void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
 	static int spregs[] = {rZ,rY,rX,rW,rP,rR,rM,rJ,rH,rE,rD,rB};
 	vid_printf("rG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
 	for(j = 0, i = 1; i <= (int)ARRAY_SIZE(spregs); j++, i++) {
-		vid_printf("%-4s: #%016lx ",cpu_getSpecialName(spregs[i - 1]),*stack--);
+		vid_printf("%-4s: #%016lx ",CPU::getSpecialName(spregs[i - 1]),*stack--);
 		if(j % 3 == 2)
 			vid_printf("\n");
 	}

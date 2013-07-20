@@ -166,20 +166,20 @@ void paging_activate(uintptr_t pageDir) {
 	 * on before writing to user-space-memory in kernel */
 	paging_setWriteProtection(true);
 	/* enable global pages (TODO just possible for >= pentium pro (family 6)) */
-	cpu_setCR4(cpu_getCR4() | (1 << 7));
+	CPU::setCR4(CPU::getCR4() | (1 << 7));
 }
 
 static void paging_setWriteProtection(bool enabled) {
 	if(enabled)
-		cpu_setCR0(cpu_getCR0() | CR0_WRITE_PROTECT);
+		CPU::setCR0(CPU::getCR0() | CPU::CR0_WRITE_PROTECT);
 	else
-		cpu_setCR0(cpu_getCR0() & ~CR0_WRITE_PROTECT);
+		CPU::setCR0(CPU::getCR0() & ~CPU::CR0_WRITE_PROTECT);
 }
 
 void paging_setFirst(pagedir_t *pdir) {
 	pdir->own = (uintptr_t)proc0PD & ~KERNEL_AREA;
 	pdir->other = NULL;
-	pdir->lastChange = cpu_rdtsc();
+	pdir->lastChange = CPU::rdtsc();
 	pdir->otherUpdate = 0;
 	pdir->freeKStack = KERNEL_STACK_AREA;
 }
@@ -302,7 +302,7 @@ int paging_cloneKernelspace(pagedir_t *pdir,tid_t tid) {
 	paging_flushTLB();
 	pdir->own = pdirFrame << PAGE_SIZE_SHIFT;
 	pdir->other = NULL;
-	pdir->lastChange = cpu_rdtsc();
+	pdir->lastChange = CPU::rdtsc();
 	pdir->otherUpdate = 0;
 	if(kstackAddr == KERNEL_STACK_AREA)
 		pdir->freeKStack = KERNEL_STACK_AREA + PAGE_SIZE;
@@ -609,7 +609,7 @@ static ssize_t paging_doMapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *fr
 		count--;
 	}
 
-	pdir->lastChange = cpu_rdtsc();
+	pdir->lastChange = CPU::rdtsc();
 	SMP::flushTLB(pdir);
 	return pts;
 
@@ -675,7 +675,7 @@ static size_t paging_doUnmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,boo
 	/* check if the last changed pagetable is empty */
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
 		pts += paging_remEmptyPt(ptables,pti);
-	pdir->lastChange = cpu_rdtsc();
+	pdir->lastChange = CPU::rdtsc();
 	SMP::flushTLB(pdir);
 	return pts;
 }
@@ -751,7 +751,7 @@ static uintptr_t paging_getPTables(pagedir_t *cur,pagedir_t *other) {
 	/* we want to access the whole page-table */
 	paging_flushPageTable(TMPMAP_PTS_START,MAPPED_PTS_START);
 	cur->other = other;
-	cur->otherUpdate = cpu_rdtsc();
+	cur->otherUpdate = CPU::rdtsc();
 	return TMPMAP_PTS_START;
 }
 

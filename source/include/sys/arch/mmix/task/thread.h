@@ -65,19 +65,19 @@ inline sKSpecRegs *Thread::getSpecRegs() const {
 inline void Thread::pushSpecRegs() {
 	Thread *t = Thread::getRunning();
 	sKSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
-	cpu_getKSpecials(&sregs->rbb,&sregs->rww,&sregs->rxx,&sregs->ryy,&sregs->rzz);
+	CPU::getKSpecials(&sregs->rbb,&sregs->rww,&sregs->rxx,&sregs->ryy,&sregs->rzz);
 }
 
 inline void Thread::popSpecRegs() {
 	Thread *t = Thread::getRunning();
 	sKSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
-	cpu_setKSpecials(sregs->rbb,sregs->rww,sregs->rxx,sregs->ryy,sregs->rzz);
+	CPU::setKSpecials(sregs->rbb,sregs->rww,sregs->rxx,sregs->ryy,sregs->rzz);
 }
 
 inline uint64_t ThreadBase::getTSC() {
-	return cpu_rdtsc();
+	return CPU::rdtsc();
 }
 
 inline uint64_t ThreadBase::ticksPerSec() {
-	return cpu_getSpeed();
+	return CPU::getSpeed();
 }

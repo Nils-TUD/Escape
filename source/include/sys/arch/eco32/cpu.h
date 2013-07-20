@@ -19,7 +19,22 @@
 
 #pragma once
 
-/**
- * @return the pagefault-address
- */
-extern uint cpu_getBadAddr(void);
+class CPU : public CPUBase {
+	CPU() = delete;
+
+public:
+	/**
+	 * @return the pagefault-address
+	 */
+	static uint getBadAddr(void) asm("cpu_getBadAddr");
+};
+
+inline uint64_t CPUBase::rdtsc(void) {
+	/* TODO not implemented yet */
+	return 0;
+}
+
+inline uint64_t CPUBase::getSpeed(void) {
+	/* not available */
+	return 0;
+}

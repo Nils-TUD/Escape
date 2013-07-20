@@ -95,7 +95,7 @@ void apstart(void) {
 	apic_enable();
 	/* init FPU and detect our CPU */
 	fpu_preinit();
-	cpu_detect();
+	CPU::detect();
 	/* notify the BSP that we're running */
 	SMP::apIsRunning();
 	/* choose a thread to run */

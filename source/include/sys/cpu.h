@@ -22,6 +22,33 @@
 #include <esc/common.h>
 #include <sys/printf.h>
 
+class CPUBase {
+	CPUBase() = delete;
+
+public:
+	/**
+	 * @return the timestamp-counter value
+	 */
+	static uint64_t rdtsc();
+
+	/**
+	 * @return the speed of the CPU in Hz
+	 */
+	static uint64_t getSpeed();
+
+	/**
+	 * Prints information about the used CPU into the given string-buffer
+	 *
+	 * @param buf the string-buffer
+	 */
+	static void sprintf(sStringBuffer *buf);
+
+	/**
+	 * Prints the CPU-information
+	 */
+	static void print();
+};
+
 #ifdef __i386__
 #include <sys/arch/i586/cpu.h>
 #endif
@@ -31,25 +58,3 @@
 #ifdef __mmix__
 #include <sys/arch/mmix/cpu.h>
 #endif
-
-/**
- * @return the timestamp-counter value
- */
-EXTERN_C uint64_t cpu_rdtsc(void);
-
-/**
- * @return the speed of the CPU in Hz
- */
-uint64_t cpu_getSpeed(void);
-
-/**
- * Prints information about the used CPU into the given string-buffer
- *
- * @param buf the string-buffer
- */
-void cpu_sprintf(sStringBuffer *buf);
-
-/**
- * Prints the CPU-information
- */
-void cpu_print(void);

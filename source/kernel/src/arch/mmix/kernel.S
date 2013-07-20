@@ -386,18 +386,6 @@ tc_update:
 # CPU
 #===========================================
 
-# int cpu_getSyscallNo(void)
-cpu_getSyscallNo:
-	GET		$0,rXX
-	SRU		$0,$0,8
-	AND		$0,$0,0xFF
-	POP		1,0
-
-# uintptr_t cpu_getFaultLoc(void)
-cpu_getFaultLoc:
-	GET		$0,rYY
-	POP		1,0
-
 # void cpu_syncid(uintptr_t start,uintptr_t end)
 cpu_syncid:
 	SETL	$3,#100
@@ -408,11 +396,6 @@ cpu_syncid:
 	CMPU	$2,$0,$1
 	BN		$2,1b
 	POP		0,0
-
-# uint64_t cpu_rdtsc(void)
-cpu_rdtsc:
-	GET		$0,rC
-	POP		1,0
 
 # uint64_t cpu_getGlobal(int rno)
 cpu_getGlobal:
@@ -436,29 +419,6 @@ cpu_getSpecial:
 	PUT		rW,$0
 	RESUME	0
 	POP		1,0
-
-# void cpu_getKSpecials(uint64_t *rbb,uint64_t *rww,uint64_t *rxx,uint64_t *ryy,uint64_t *rzz)
-cpu_getKSpecials:
-	GET		$5,rBB
-	STOU	$5,$0,0
-	GET		$5,rWW
-	STOU	$5,$1,0
-	GET		$5,rXX
-	STOU	$5,$2,0
-	GET		$5,rYY
-	STOU	$5,$3,0
-	GET		$5,rZZ
-	STOU	$5,$4,0
-	POP		0,0
-
-# void cpu_setKSpecials(uint64_t rbb,uint64_t rww,uint64_t rxx,uint64_t ryy,uint64_t rzz)
-cpu_setKSpecials:
-	PUT		rBB,$0
-	PUT		rWW,$1
-	PUT		rXX,$2
-	PUT		rYY,$3
-	PUT		rZZ,$4
-	POP		0,0
 
 #===========================================
 # Input/Output

@@ -21,17 +21,12 @@
 
 #include <esc/common.h>
 
-/**
- * @return the system-call-number
- */
-EXTERN_C int cpu_getSyscallNo(void);
-
 /* some convenience-macros */
 #define SYSC_SETERROR(stack,errorCode)	((stack)[7] = (errorCode))
 #define SYSC_ERROR(stack,errorCode)		do { ((stack)[7] = (errorCode)); return (errorCode); } while(0)
 #define SYSC_RET1(stack,val)			do { ((stack)[0] = (val)); return 0; } while(0)
 #define SYSC_SETRET2(stack,val)			((stack)[1] = (val))
-#define SYSC_NUMBER(stack)				(cpu_getSyscallNo())
+#define SYSC_NUMBER(stack)				(CPU::getSyscallNo())
 #define SYSC_ARG1(stack)				((stack)[0])
 #define SYSC_ARG2(stack)				((stack)[1])
 #define SYSC_ARG3(stack)				((stack)[2])

@@ -96,7 +96,7 @@ Thread *sched_perform(Thread *old,uint64_t runtime) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->setNewState(Thread::READY);
 				spinlock_release(&schedLock);
-				ev_removeThread(old);
+				Event::removeThread(old);
 				return old;
 			}
 

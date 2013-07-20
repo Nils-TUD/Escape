@@ -111,7 +111,7 @@ static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node) {
 		if(vfs_fcntl(pid,file,F_GETACCESS,0) == VFS_READ) {
 			sPipe *pipe = (sPipe*)node->data;
 			pipe->noReader = true;
-			ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
+			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 		}
 		/* otherwise write EOF in the pipe */
 		else
@@ -135,7 +135,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 		return -EDESTROYED;
 	}
 	while(sll_length(&pipe->list) == 0) {
-		ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
+		Event::wait(t,EVI_PIPE_FULL,(evobj_t)node);
 		spinlock_release(&node->lock);
 
 		Thread::switchAway();
@@ -180,8 +180,8 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 		while(sll_length(&pipe->list) == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
-			ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
-			ev_wait(t,EVI_PIPE_FULL,(evobj_t)node);
+			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
+			Event::wait(t,EVI_PIPE_FULL,(evobj_t)node);
 			spinlock_release(&node->lock);
 
 			/* TODO we can't accept signals here, right? since we've already read something, which
@@ -201,7 +201,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 	}
 	spinlock_release(&node->lock);
 	/* wakeup all threads that wait for writing in this node */
-	ev_wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
+	Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 	return total;
 }
 
@@ -223,7 +223,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 			return -EDESTROYED;
 		}
 		while((pipe->total + count) >= MAX_VFS_FILE_SIZE) {
-			ev_wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
+			Event::wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
 			spinlock_release(&node->lock);
 
 			Thread::switchNoSigs();
@@ -270,6 +270,6 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 	}
 	pipe->total += count;
 	spinlock_release(&node->lock);
-	ev_wakeup(EVI_PIPE_FULL,(evobj_t)node);
+	Event::wakeup(EVI_PIPE_FULL,(evobj_t)node);
 	return count;
 }

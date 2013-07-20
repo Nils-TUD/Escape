@@ -36,7 +36,7 @@ void mutex_aquire(mutex_t *m) {
 		*m += 2;
 		util_printEventTrace(util_getKernelStackTrace(),"[%d] Waiting for %#x ",t->tid,m);
 		do {
-			ev_wait(t,EVI_MUTEX,(evobj_t)m);
+			Event::wait(t,EVI_MUTEX,(evobj_t)m);
 			spinlock_release(&mutexLock);
 			Thread::switchNoSigs();
 			spinlock_aquire(&mutexLock);
@@ -70,7 +70,7 @@ void mutex_release(mutex_t *m) {
 	*m &= ~1;
 	t->remResource();
 	if(*m > 0)
-		ev_wakeup(EVI_MUTEX,(evobj_t)m);
+		Event::wakeup(EVI_MUTEX,(evobj_t)m);
 	util_printEventTrace(util_getKernelStackTrace(),"[%d] U %#x %s ",Thread::getRunning()->tid,m,
 			*m > 0 ? "(Waking up)" : "(No wakeup)");
 	spinlock_release(&mutexLock);

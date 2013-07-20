@@ -722,7 +722,7 @@ static bool vfs_hasWork(sVFSNode *node) {
 	return IS_DEVICE(node->mode) && vfs_device_hasWork(node);
 }
 
-int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
+int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
 		pid_t pid,ulong ident) {
 	Thread *t = Thread::getRunning();
 	size_t i;
@@ -741,7 +741,7 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool blo
 
 	while(true) {
 		/* we have to lock this region to ensure that if we've found out that we can sleep, no one
-		 * sends us an event before we've finished the ev_waitObjects(). otherwise, it would be
+		 * sends us an event before we've finished the Event::waitObjects(). otherwise, it would be
 		 * possible that we never wake up again, because we have missed the event and get no other
 		 * one. */
 		spinlock_aquire(&waitLock);
@@ -769,7 +769,7 @@ int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool blo
 		}
 
 		/* wait */
-		if(!ev_waitObjects(t,objects,objCount)) {
+		if(!Event::waitObjects(t,objects,objCount)) {
 			spinlock_release(&waitLock);
 			res = -ENOMEM;
 			goto error;
@@ -844,7 +844,7 @@ static inode_t vfs_doGetClient(sFile *const *files,size_t count,size_t *index) {
 }
 
 inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags) {
-	sWaitObject waits[MAX_GETWORK_DEVICES];
+	Event::WaitObject waits[MAX_GETWORK_DEVICES];
 	Thread *t = Thread::getRunning();
 	bool inited = false;
 	inode_t clientNo;
@@ -873,7 +873,7 @@ inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags)
 		}
 
 		/* wait for a client (accept signals) */
-		ev_waitObjects(t,waits,count);
+		Event::waitObjects(t,waits,count);
 		spinlock_release(&waitLock);
 
 		Thread::switchAway();

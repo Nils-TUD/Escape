@@ -20,13 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-
-typedef struct {
-	/* the events to wait for */
-	uint events;
-	/* the object (0 = ignore) */
-	evobj_t object;
-} sWaitObject;
+#include <sys/task/thread.h>
+#include <sys/spinlock.h>
 
 /* the event-indices */
 #define EVI_CLIENT				0
@@ -76,109 +71,167 @@ typedef struct {
 /* the events a user-thread can fire */
 #define EV_USER_NOTIFY_MASK		(EV_USER1 | EV_USER2)
 
-class Thread;
+class Event {
+	Event() = delete;
 
-/**
- * Inits the event-system
- */
-void ev_init(void);
+	static const size_t MAX_WAIT_COUNT		= 2048;
+	static const size_t MAX_WAKEUPS			= 8;
 
-/**
- * Blocks the given thread
- *
- * @param t the thread
- */
-void ev_block(Thread *t);
+	struct WaitList {
+		sWait *begin;
+		sWait *last;
+	};
 
-/**
- * Unblocks the given thread
- *
- * @param t the thread
- */
-void ev_unblock(Thread *t);
+public:
+	struct WaitObject {
+		/* the events to wait for */
+		uint events;
+		/* the object (0 = ignore) */
+		evobj_t object;
+	};
 
-/**
- * Unblocks the given thread and puts it to the beginning of the ready-list
- *
- * @param t the thread
- */
-void ev_unblockQuick(Thread *t);
+	/**
+	 * Inits the event-system
+	 */
+	static void init();
 
-/**
- * Suspends the given thread
- *
- * @param t the thread
- */
-void ev_suspend(Thread *t);
+	/**
+	 * Blocks the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void block(Thread *t);
 
-/**
- * Resumes the given thread
- *
- * @param t the thread
- */
-void ev_unsuspend(Thread *t);
+	/**
+	 * Unblocks the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void unblock(Thread *t);
 
-/**
- * Lets <tid> wait for the given event and object
- *
- * @param t the thread
- * @param evi the event-index(!)
- * @param object the object (0 = ignore)
- * @return true if successfull
- */
-bool ev_wait(Thread *t,size_t evi,evobj_t object);
+	/**
+	 * Unblocks the given thread and puts it to the beginning of the ready-list
+	 *
+	 * @param t the thread
+	 */
+	static void unblockQuick(Thread *t);
 
-/**
- * Lets <tid> wait for the given objects
- *
- * @param t the thread
- * @param objects the objects to wait for
- * @param objCount the number of objects
- * @return true if successfull
- */
-bool ev_waitObjects(Thread *t,const sWaitObject *objects,size_t objCount);
+	/**
+	 * Suspends the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void suspend(Thread *t);
 
-/**
- * Wakes up all threads that wait for given event and object
- *
- * @param evi the event-index(!)
- * @param object the object
- */
-void ev_wakeup(size_t evi,evobj_t object);
+	/**
+	 * Resumes the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void unsuspend(Thread *t);
 
-/**
- * Wakes up all threads that wait for given events and the given object
- *
- * @param events the event-mask (not index!)
- * @param object the object
- */
-void ev_wakeupm(uint events,evobj_t object);
+	/**
+	 * Lets <tid> wait for the given event and object
+	 *
+	 * @param t the thread
+	 * @param evi the event-index(!)
+	 * @param object the object (0 = ignore)
+	 * @return true if successfull
+	 */
+	static bool wait(Thread *t,size_t evi,evobj_t object);
 
-/**
- * Wakes up the thread <tid> for given events. That means, if it does not wait for them, it is
- * not waked up.
- *
- * @param t the thread
- * @param events the event-mask (not index!)
- * @return true if waked up
- */
-bool ev_wakeupThread(Thread *t,uint events);
+	/**
+	 * Lets <tid> wait for the given objects
+	 *
+	 * @param t the thread
+	 * @param objects the objects to wait for
+	 * @param objCount the number of objects
+	 * @return true if successfull
+	 */
+	static bool waitObjects(Thread *t,const WaitObject *objects,size_t objCount);
 
-/**
- * Removes the given thread from the event-system. Note that it will set it to the ready-state!
- *
- * @param t the thread
- */
-void ev_removeThread(Thread *t);
+	/**
+	 * Wakes up all threads that wait for given event and object
+	 *
+	 * @param evi the event-index(!)
+	 * @param object the object
+	 */
+	static void wakeup(size_t evi,evobj_t object);
 
-/**
- * Prints the event-mask of given thread
- *
- * @param t the thread
- */
-void ev_printEvMask(const Thread *t);
+	/**
+	 * Wakes up all threads that wait for given events and the given object
+	 *
+	 * @param events the event-mask (not index!)
+	 * @param object the object
+	 */
+	static void wakeupm(uint events,evobj_t object);
 
-/**
- * Prints all waiting threads
- */
-void ev_print(void);
+	/**
+	 * Wakes up the thread <tid> for given events. That means, if it does not wait for them, it is
+	 * not waked up.
+	 *
+	 * @param t the thread
+	 * @param events the event-mask (not index!)
+	 * @return true if waked up
+	 */
+	static bool wakeupThread(Thread *t,uint events);
+
+	/**
+	 * Removes the given thread from the event-system. Note that it will set it to the ready-state!
+	 *
+	 * @param t the thread
+	 */
+	static void removeThread(Thread *t);
+
+	/**
+	 * Prints the event-mask of given thread
+	 *
+	 * @param t the thread
+	 */
+	static void printEvMask(const Thread *t);
+
+	/**
+	 * Prints all waiting threads
+	 */
+	static void print();
+
+private:
+	static void doRemoveThread(Thread *t);
+	static sWait *doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev);
+	static sWait *allocWait(void);
+	static void freeWait(sWait *w);
+	static const char *getName(size_t evi);
+
+	static klock_t evLock;
+	static sWait waits[MAX_WAIT_COUNT];
+	static sWait *waitFree;
+	static WaitList evlists[EV_COUNT];
+};
+
+inline void Event::block(Thread *t) {
+	t->block();
+}
+
+inline void Event::unblock(Thread *t) {
+	removeThread(t);
+	t->unblock();
+}
+
+inline void Event::unblockQuick(Thread *t) {
+	removeThread(t);
+	t->unblockQuick();
+}
+
+inline void Event::suspend(Thread *t) {
+	t->suspend();
+}
+
+inline void Event::unsuspend(Thread *t) {
+	t->unsuspend();
+}
+
+inline void Event::removeThread(Thread *t) {
+	spinlock_aquire(&evLock);
+	doRemoveThread(t);
+	spinlock_release(&evLock);
+}

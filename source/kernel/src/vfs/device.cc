@@ -257,7 +257,7 @@ static void vfs_device_wakeupClients(sVFSNode *node,uint events,bool locked) {
 	sVFSNode *n = vfs_node_openDir(node,locked,&isValid);
 	if(isValid) {
 		while(n != NULL) {
-			ev_wakeupm(events,(evobj_t)n);
+			Event::wakeupm(events,(evobj_t)n);
 			n = n->next;
 		}
 	}

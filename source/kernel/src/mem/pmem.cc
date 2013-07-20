@@ -254,8 +254,8 @@ bool pmem_reserve(size_t frameCount) {
 	do {
 		/* notify swapper-thread */
 		if(!swapping)
-			ev_wakeupThread(swapper,EV_SWAP_WORK);
-		ev_wait(t,EVI_SWAP_FREE,0);
+			Event::wakeupThread(swapper,EV_SWAP_WORK);
+		Event::wait(t,EVI_SWAP_FREE,0);
 		spinlock_release(&defLock);
 		Thread::switchNoSigs();
 		spinlock_aquire(&defLock);
@@ -329,7 +329,7 @@ bool pmem_swapIn(uintptr_t addr) {
 	do {
 		job = siFreelist;
 		if(job == NULL) {
-			ev_wait(t,EVI_SWAP_JOB,0);
+			Event::wait(t,EVI_SWAP_JOB,0);
 			jobWaiters++;
 			spinlock_release(&defLock);
 			Thread::switchNoSigs();
@@ -347,9 +347,9 @@ bool pmem_swapIn(uintptr_t addr) {
 
 	/* notify the swapper, if necessary */
 	if(!swapping)
-		ev_wakeupThread(swapper,EV_SWAP_WORK);
+		Event::wakeupThread(swapper,EV_SWAP_WORK);
 	/* wait until its done */
-	ev_block(t);
+	Event::block(t);
 	spinlock_release(&defLock);
 	Thread::switchNoSigs();
 	return true;
@@ -399,7 +399,7 @@ void pmem_swapper(void) {
 		}
 		/* wakeup in every case because its possible that the frames are available now but weren't
 		 * previously */
-		ev_wakeup(EVI_SWAP_FREE,0);
+		Event::wakeup(EVI_SWAP_FREE,0);
 
 		/* handle swap-in-jobs */
 		while((job = pmem_getJob()) != NULL) {
@@ -410,14 +410,14 @@ void pmem_swapper(void) {
 				swappedIn++;
 
 			spinlock_aquire(&defLock);
-			ev_unblock(job->thread);
+			Event::unblock(job->thread);
 			pmem_freeJob(job);
 			swapping = false;
 		}
 
 		if(pmem_getFreeDef() - (kframes + cframes) >= uframes) {
 			/* we may receive new work now */
-			ev_wait(swapper,EVI_SWAP_WORK,0);
+			Event::wait(swapper,EVI_SWAP_WORK,0);
 			spinlock_release(&defLock);
 			Thread::switchAway();
 			spinlock_aquire(&defLock);
@@ -538,5 +538,5 @@ static void pmem_freeJob(sSwapInJob *job) {
 	job->next = siFreelist;
 	siFreelist = job;
 	if(jobWaiters > 0)
-		ev_wakeup(EVI_SWAP_JOB,0);
+		Event::wakeup(EVI_SWAP_JOB,0);
 }

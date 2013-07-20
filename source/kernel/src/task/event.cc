@@ -30,26 +30,12 @@
 #include <sys/video.h>
 #include <assert.h>
 
-#define MAX_WAIT_COUNT		2048
-#define MAX_WAKEUPS			8
+klock_t Event::evLock;
+sWait Event::waits[MAX_WAIT_COUNT];
+sWait *Event::waitFree;
+Event::WaitList Event::evlists[EV_COUNT];
 
-typedef struct {
-	sWait *begin;
-	sWait *last;
-} sWaitList;
-
-static void ev_doRemoveThread(Thread *t);
-static sWait *ev_doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev);
-static sWait *ev_allocWait(void);
-static void ev_freeWait(sWait *w);
-static const char *ev_getName(size_t evi);
-
-static klock_t evLock;
-static sWait waits[MAX_WAIT_COUNT];
-static sWait *waitFree;
-static sWaitList evlists[EV_COUNT];
-
-void ev_init(void) {
+void Event::init(void) {
 	size_t i;
 	for(i = 0; i < EV_COUNT; i++) {
 		evlists[i].begin = NULL;
@@ -64,36 +50,14 @@ void ev_init(void) {
 	}
 }
 
-void ev_block(Thread *t) {
-	t->block();
-}
-
-void ev_unblock(Thread *t) {
-	ev_removeThread(t);
-	t->unblock();
-}
-
-void ev_unblockQuick(Thread *t) {
-	ev_removeThread(t);
-	t->unblockQuick();
-}
-
-void ev_suspend(Thread *t) {
-	t->suspend();
-}
-
-void ev_unsuspend(Thread *t) {
-	t->unsuspend();
-}
-
-bool ev_wait(Thread *t,size_t evi,evobj_t object) {
+bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 	bool res = false;
 	sWait *w;
 	spinlock_aquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
-	if(ev_doWait(t,evi,object,&t->waits,w) != NULL) {
+	if(doWait(t,evi,object,&t->waits,w) != NULL) {
 		t->block();
 		res = true;
 	}
@@ -101,7 +65,7 @@ bool ev_wait(Thread *t,size_t evi,evobj_t object) {
 	return res;
 }
 
-bool ev_waitObjects(Thread *t,const sWaitObject *objects,size_t objCount) {
+bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 	size_t i,e;
 	sWait *w;
 	spinlock_aquire(&evLock);
@@ -114,9 +78,9 @@ bool ev_waitObjects(Thread *t,const sWaitObject *objects,size_t objCount) {
 		if(events != 0) {
 			for(e = 0; events && e < EV_COUNT; e++) {
 				if(events & (1 << e)) {
-					w = ev_doWait(t,e,objects[i].object,&t->waits,w);
+					w = doWait(t,e,objects[i].object,&t->waits,w);
 					if(w == NULL) {
-						ev_doRemoveThread(t);
+						doRemoveThread(t);
 						spinlock_release(&evLock);
 						return false;
 					}
@@ -130,9 +94,9 @@ bool ev_waitObjects(Thread *t,const sWaitObject *objects,size_t objCount) {
 	return true;
 }
 
-void ev_wakeup(size_t evi,evobj_t object) {
+void Event::wakeup(size_t evi,evobj_t object) {
 	tid_t tids[MAX_WAKEUPS];
-	sWaitList *list = evlists + evi;
+	WaitList *list = evlists + evi;
 	sWait *w;
 	size_t i = 0;
 	spinlock_aquire(&evLock);
@@ -146,7 +110,7 @@ void ev_wakeup(size_t evi,evobj_t object) {
 				 * more. hopefully, this will happen nearly never :) */
 				for(; i > 0; i--) {
 					Thread *t = Thread::getById(tids[i - 1]);
-					ev_doRemoveThread(t);
+					doRemoveThread(t);
 					t->unblock();
 				}
 				w = list->begin;
@@ -157,27 +121,27 @@ void ev_wakeup(size_t evi,evobj_t object) {
 	}
 	for(; i > 0; i--) {
 		Thread *t = Thread::getById(tids[i - 1]);
-		ev_doRemoveThread(t);
+		doRemoveThread(t);
 		t->unblock();
 	}
 	spinlock_release(&evLock);
 }
 
-void ev_wakeupm(uint events,evobj_t object) {
+void Event::wakeupm(uint events,evobj_t object) {
 	size_t e;
 	for(e = 0; events && e < EV_COUNT; e++) {
 		if(events & (1 << e)) {
-			ev_wakeup(e,object);
+			wakeup(e,object);
 			events &= ~(1 << e);
 		}
 	}
 }
 
-bool ev_wakeupThread(Thread *t,uint events) {
+bool Event::wakeupThread(Thread *t,uint events) {
 	bool res = false;
 	spinlock_aquire(&evLock);
 	if(t->events & events) {
-		ev_doRemoveThread(t);
+		doRemoveThread(t);
 		t->unblock();
 		res = true;
 	}
@@ -185,31 +149,25 @@ bool ev_wakeupThread(Thread *t,uint events) {
 	return res;
 }
 
-void ev_removeThread(Thread *t) {
-	spinlock_aquire(&evLock);
-	ev_doRemoveThread(t);
-	spinlock_release(&evLock);
-}
-
-void ev_printEvMask(const Thread *t) {
+void Event::printEvMask(const Thread *t) {
 	uint e;
 	if(t->events == 0)
 		vid_printf("-");
 	else {
 		for(e = 0; e < EV_COUNT; e++) {
 			if(t->events & (1 << e))
-				vid_printf("%s ",ev_getName(e));
+				vid_printf("%s ",getName(e));
 		}
 	}
 }
 
-void ev_print(void) {
+void Event::print(void) {
 	size_t e;
 	vid_printf("Eventlists:\n");
 	for(e = 0; e < EV_COUNT; e++) {
-		sWaitList *list = evlists + e;
+		WaitList *list = evlists + e;
 		sWait *w = list->begin;
-		vid_printf("\t%s:\n",ev_getName(e));
+		vid_printf("\t%s:\n",getName(e));
 		while(w != NULL) {
 			inode_t nodeNo;
 			Thread *t = Thread::getById(w->tid);
@@ -224,7 +182,7 @@ void ev_print(void) {
 	}
 }
 
-static void ev_doRemoveThread(Thread *t) {
+void Event::doRemoveThread(Thread *t) {
 	if(t->events) {
 		sWait *w = t->waits;
 		while(w != NULL) {
@@ -237,7 +195,7 @@ static void ev_doRemoveThread(Thread *t) {
 				w->next->prev = w->prev;
 			else
 				evlists[w->evi].last = w->prev;
-			ev_freeWait(w);
+			freeWait(w);
 			w = nw;
 		}
 		t->waits = NULL;
@@ -245,9 +203,9 @@ static void ev_doRemoveThread(Thread *t) {
 	}
 }
 
-static sWait *ev_doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev) {
-	sWaitList *list = evlists + evi;
-	sWait *w = ev_allocWait();
+sWait *Event::doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev) {
+	WaitList *list = evlists + evi;
+	sWait *w = allocWait();
 	if(!w)
 		return NULL;
 	w->tid = t->tid;
@@ -271,7 +229,7 @@ static sWait *ev_doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait 
 	return w;
 }
 
-static sWait *ev_allocWait(void) {
+sWait *Event::allocWait(void) {
 	sWait *res = waitFree;
 	if(res == NULL)
 		return NULL;
@@ -279,12 +237,12 @@ static sWait *ev_allocWait(void) {
 	return res;
 }
 
-static void ev_freeWait(sWait *w) {
+void Event::freeWait(sWait *w) {
 	w->next = waitFree;
 	waitFree = w;
 }
 
-static const char *ev_getName(size_t evi) {
+const char *Event::getName(size_t evi) {
 	static const char *names[] = {
 		"CLIENT",
 		"RECEIVED_MSG",

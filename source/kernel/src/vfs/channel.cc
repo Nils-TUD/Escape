@@ -261,14 +261,14 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		vfs_device_addMsg(n->parent);
 		if(msg2)
 			vfs_device_addMsg(n->parent);
-		ev_wakeup(EVI_CLIENT,(evobj_t)n->parent);
+		Event::wakeup(EVI_CLIENT,(evobj_t)n->parent);
 	}
 	else {
 		/* notify other possible waiters */
 		if(recipient)
-			ev_unblock(recipient);
+			Event::unblock(recipient);
 		else
-			ev_wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
+			Event::wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
 	}
 	spinlock_release(&waitLock);
 	spinlock_release(&n->lock);
@@ -324,7 +324,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 			spinlock_release(&node->lock);
 			return -EDESTROYED;
 		}
-		ev_wait(t,event,(evobj_t)waitNode);
+		Event::wait(t,event,(evobj_t)waitNode);
 		spinlock_release(&node->lock);
 
 		if(ignoreSigs)

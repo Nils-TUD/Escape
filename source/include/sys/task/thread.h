@@ -21,7 +21,6 @@
 
 #include <sys/common.h>
 #include <sys/task/signals.h>
-#include <sys/task/event.h>
 #include <sys/task/sched.h>
 #include <sys/task/terminator.h>
 #include <sys/mem/paging.h>
@@ -827,11 +826,6 @@ inline void ThreadBase::terminate() {
 	if(this == getRunning())
 		makeUnrunnable();
 	term_addDead(static_cast<Thread*>(this));
-}
-
-inline void ThreadBase::makeUnrunnable() {
-	ev_removeThread(static_cast<Thread*>(this));
-	sched_removeThread(static_cast<Thread*>(this));
 }
 
 /**

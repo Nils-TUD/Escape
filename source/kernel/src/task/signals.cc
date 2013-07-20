@@ -193,7 +193,7 @@ int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler) {
 	spinlock_release(&sigLock);
 	/* without locking because the scheduler calls sig_hasSignalFor() */
 	if(res == SIG_CHECK_OTHER)
-		ev_unblockQuick(t);
+		Event::unblockQuick(t);
 	return res;
 }
 

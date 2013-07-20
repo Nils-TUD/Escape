@@ -72,7 +72,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,sFile *file,sVFSNode *node,USER void *buffer,
 	ssize_t res;
 	msgid_t mid;
 	sArgsMsg msg;
-	sWaitObject obj;
+	Event::WaitObject obj;
 	Thread *t = Thread::getRunning();
 
 	if(node->name == NULL)

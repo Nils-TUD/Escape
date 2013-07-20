@@ -136,7 +136,7 @@ int vm86_create(void) {
 	p->setCommand("VM86",0,"");
 
 	/* block us; we get waked up as soon as someone wants to use us */
-	ev_block(t);
+	Event::block(t);
 	Thread::switchAway();
 
 	/* ok, we're back again... */
@@ -177,11 +177,11 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 	}
 
 	/* make vm86 ready */
-	ev_unblock(vm86t);
+	Event::unblock(vm86t);
 
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
-	ev_block(t);
+	Event::block(t);
 	Thread::switchAway();
 
 	/* everything is finished :) */
@@ -400,11 +400,11 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 	if(ct != NULL) {
 		vm86_copyRegResult(stack);
 		vm86Res = vm86_storeAreaResult();
-		ev_unblock(ct);
+		Event::unblock(ct);
 	}
 
 	/* block us and do a switch */
-	ev_block(t);
+	Event::block(t);
 	Thread::switchAway();
 
 	/* lets start with a new request :) */

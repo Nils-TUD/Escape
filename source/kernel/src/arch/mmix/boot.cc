@@ -51,7 +51,7 @@ static const sBootTask tasks[] = {
 	{"Initializing dynarray...",dyna_init},
 	{"Initializing SMP...",smp_init},
 	{"Initializing VFS...",vfs_init},
-	{"Initializing event system...",ev_init},
+	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",sched_init},
 	{"Initializing terminator...",term_init},

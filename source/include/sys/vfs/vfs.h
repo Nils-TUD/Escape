@@ -462,7 +462,7 @@ int vfs_createdev(pid_t pid,char *path,uint type,uint ops,sFile **file);
  * @param ident the ident for lock_release
  * @return 0 on success
  */
-int vfs_waitFor(sWaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
+int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
 		pid_t pid,ulong ident);
 
 /**

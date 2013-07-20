@@ -296,11 +296,16 @@ void ThreadBase::kill() {
 	vfs_removeThread(tid);
 
 	/* notify the process about it */
-	ev_wakeup(EVI_THREAD_DIED,(evobj_t)proc);
+	Event::wakeup(EVI_THREAD_DIED,(evobj_t)proc);
 
 	/* finally, destroy thread */
 	remove();
 	cache_free(this);
+}
+
+void ThreadBase::makeUnrunnable() {
+	Event::removeThread(static_cast<Thread*>(this));
+	sched_removeThread(static_cast<Thread*>(this));
 }
 
 void ThreadBase::printAll() {
@@ -321,7 +326,7 @@ static const char *getStateName(uint8_t state) {
 void ThreadBase::printShort() const {
 	vid_printf("%d [state=%s, prio=%d, cpu=%d, time=%Lums, ev=",
 			tid,getStateName(state),priority,cpu,getRuntime());
-	ev_printEvMask(static_cast<const Thread*>(this));
+	Event::printEvMask(static_cast<const Thread*>(this));
 	vid_printf("]");
 }
 
@@ -333,7 +338,7 @@ void ThreadBase::print() const {
 	vid_printf("Flags=%#x\n",flags);
 	vid_printf("State=%s\n",getStateName(state));
 	vid_printf("Events=");
-	ev_printEvMask(static_cast<const Thread*>(this));
+	Event::printEvMask(static_cast<const Thread*>(this));
 	vid_printf("\n");
 	vid_printf("LastCPU=%d\n",cpu);
 	vid_printf("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt : 0);

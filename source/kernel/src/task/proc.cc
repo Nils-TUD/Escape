@@ -308,7 +308,7 @@ int ProcBase::clone(uint8_t flags) {
 		return 0;
 	}
 	/* parent */
-	ev_unblock(nt);
+	Event::unblock(nt);
 
 #if DEBUG_CREATIONS
 #ifdef __eco32__
@@ -385,9 +385,9 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 
 	/* mark ready (idle is always blocked because we choose it explicitly when no other can run) */
 	if(nt->getFlags() & T_IDLE)
-		ev_block(nt);
+		Event::block(nt);
 	else
-		ev_unblock(nt);
+		Event::unblock(nt);
 
 #if DEBUG_CREATIONS
 #ifdef __eco32__
@@ -527,7 +527,7 @@ void ProcBase::join(tid_t tid) {
 	Proc *p = request(t->proc->pid,PLOCK_PROG);
 	while((tid == 0 && sll_length(&t->proc->threads) > 1) ||
 			(tid != 0 && Thread::getById(tid) != NULL)) {
-		ev_wait(t,EVI_THREAD_DIED,(evobj_t)t->proc);
+		Event::wait(t,EVI_THREAD_DIED,(evobj_t)t->proc);
 		release(p,PLOCK_PROG);
 
 		Thread::switchNoSigs();
@@ -704,7 +704,7 @@ void ProcBase::kill(pid_t pid) {
 
 void ProcBase::notifyProcDied(pid_t parent) {
 	addSignalFor(parent,SIG_CHILD_TERM);
-	ev_wakeup(EVI_CHILD_DIED,(evobj_t)getByPid(parent));
+	Event::wakeup(EVI_CHILD_DIED,(evobj_t)getByPid(parent));
 }
 
 int ProcBase::waitChild(USER ExitState *state) {
@@ -716,11 +716,11 @@ int ProcBase::waitChild(USER ExitState *state) {
 	res = getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		ev_wait(t,EVI_CHILD_DIED,(evobj_t)p);
+		Event::wait(t,EVI_CHILD_DIED,(evobj_t)p);
 		mutex_release(&childLock);
 		Thread::switchAway();
 		/* stop waiting for event; maybe we have been waked up for another reason */
-		ev_removeThread(t);
+		Event::removeThread(t);
 		/* don't continue here if we were interrupted by a signal */
 		if(sig_hasSignalFor(t->tid))
 			return -EINTR;

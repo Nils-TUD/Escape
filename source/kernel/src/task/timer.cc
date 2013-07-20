@@ -111,7 +111,7 @@ int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
 
 	/* put process to sleep */
 	if(block)
-		ev_block(Thread::getById(tid));
+		Event::block(Thread::getById(tid));
 	spinlock_release(&timerLock);
 	return 0;
 }
@@ -167,7 +167,7 @@ bool timer_intrpt(void) {
 		timeInc -= l->time;
 		/* wake up thread */
 		if(l->block) {
-			ev_unblock(Thread::getById(l->tid));
+			Event::unblock(Thread::getById(l->tid));
 			foundThread = true;
 		}
 		else

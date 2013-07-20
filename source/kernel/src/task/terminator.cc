@@ -40,7 +40,7 @@ void term_start(void) {
 	spinlock_aquire(&termLock);
 	while(1) {
 		if(sll_length(&deadThreads) == 0) {
-			ev_wait(t,EVI_TERMINATION,0);
+			Event::wait(t,EVI_TERMINATION,0);
 			spinlock_release(&termLock);
 
 			Thread::switchAway();
@@ -72,7 +72,7 @@ void term_addDead(Thread *t) {
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(sll_append(&deadThreads,t));
-		ev_wakeup(EVI_TERMINATION,0);
+		Event::wakeup(EVI_TERMINATION,0);
 	}
 	spinlock_release(&termLock);
 }

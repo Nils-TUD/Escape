@@ -100,7 +100,7 @@ static sView views[] = {
 	{"timer",(fView)timer_print},
 	{"boot",(fView)boot_print},
 	{"locks",(fView)lock_print},
-	{"events",(fView)ev_print},
+	{"events",(fView)Event::print},
 	{"smp",(fView)smp_print},
 };
 

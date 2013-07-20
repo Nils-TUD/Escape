@@ -22,12 +22,12 @@
 #include <sys/task/proc.h>
 
 int ProcBase::cloneArch(Proc *dst,A_UNUSED const Proc *src) {
-	ioports_init(dst);
+	IOPorts::init(dst);
 	return 0;
 }
 
 void ProcBase::terminateArch(Proc *p) {
-	ioports_free(p);
+	IOPorts::free(p);
 }
 
 size_t ProcBase::getKMemUsage() {

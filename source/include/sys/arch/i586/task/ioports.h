@@ -22,54 +22,57 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 
-/**
- * Inits the IO-map for the given process
- *
- * @param p the process
- */
-void ioports_init(Proc *p);
+class IOPorts {
+public:
+	/**
+	 * Inits the IO-map for the given process
+	 *
+	 * @param p the process
+	 */
+	static void init(Proc *p);
 
-/**
- * Requests some IO-ports for the current process. Will not replace the IO-Map in TSS!
- *
- * @param start the start-port
- * @param count the number of ports
- * @return the error-code or 0
- */
-int ioports_request(uint16_t start,size_t count);
+	/**
+	 * Requests some IO-ports for the current process. Will not replace the IO-Map in TSS!
+	 *
+	 * @param start the start-port
+	 * @param count the number of ports
+	 * @return the error-code or 0
+	 */
+	static int request(uint16_t start,size_t count);
 
-/**
- * Handles a GPF for the current process and checks whether the port-map is already set. If not,
- * it will be set.
- *
- * @return true if the io-map was not present and is present now
- */
-bool ioports_handleGPF(void);
+	/**
+	 * Handles a GPF for the current process and checks whether the port-map is already set. If not,
+	 * it will be set.
+	 *
+	 * @return true if the io-map was not present and is present now
+	 */
+	static bool handleGPF();
 
-/**
- * Releases some IO-ports for the current process. Will not replace the IO-Map in TSS!
- *
- * @param start the start-port
- * @param count the number of ports
- * @return the error-code or 0
- */
-int ioports_release(uint16_t start,size_t count);
+	/**
+	 * Releases some IO-ports for the current process. Will not replace the IO-Map in TSS!
+	 *
+	 * @param start the start-port
+	 * @param count the number of ports
+	 * @return the error-code or 0
+	 */
+	static int release(uint16_t start,size_t count);
 
-/**
- * Free's the io-ports of the given process
- *
- * @param p the process
- */
-void ioports_free(Proc *p);
+	/**
+	 * Free's the io-ports of the given process
+	 *
+	 * @param p the process
+	 */
+	static void free(Proc *p);
 
 
-#if DEBUGGING
+	#if DEBUGGING
 
-/**
- * Prints the given IO-map
- *
- * @param map the io-map
- */
-void ioports_print(const uint8_t *map);
+	/**
+	 * Prints the given IO-map
+	 *
+	 * @param map the io-map
+	 */
+	static void print(const uint8_t *map);
 
-#endif
+	#endif
+};

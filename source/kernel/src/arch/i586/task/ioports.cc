@@ -27,11 +27,11 @@
 #include <errno.h>
 #include <string.h>
 
-void ioports_init(Proc *p) {
+void IOPorts::init(Proc *p) {
 	p->ioMap = NULL;
 }
 
-int ioports_request(uint16_t start,size_t count) {
+int IOPorts::request(uint16_t start,size_t count) {
 	Proc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
@@ -59,7 +59,7 @@ int ioports_request(uint16_t start,size_t count) {
 	return 0;
 }
 
-bool ioports_handleGPF(void) {
+bool IOPorts::handleGPF(void) {
 	bool res = false;
 	Proc *p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
 	if(p->ioMap != NULL && !tss_ioMapPresent()) {
@@ -71,7 +71,7 @@ bool ioports_handleGPF(void) {
 	return res;
 }
 
-int ioports_release(uint16_t start,size_t count) {
+int IOPorts::release(uint16_t start,size_t count) {
 	Proc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
@@ -94,7 +94,7 @@ int ioports_release(uint16_t start,size_t count) {
 	return 0;
 }
 
-void ioports_free(Proc *p) {
+void IOPorts::free(Proc *p) {
 	if(p->ioMap != NULL) {
 		cache_free(p->ioMap);
 		p->ioMap = NULL;
@@ -104,7 +104,7 @@ void ioports_free(Proc *p) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void ioports_print(const uint8_t *map) {
+void IOPorts::print(const uint8_t *map) {
 	size_t i,j,c = 0;
 	vid_printf("Reserved IO-ports:\n\t");
 	for(i = 0; i < IO_MAP_SIZE / 8; i++) {

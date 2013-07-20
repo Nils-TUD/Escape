@@ -204,7 +204,7 @@ static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack) {
 	if(stack->eip >= KERNEL_AREA)
 		vid_unsetPrintFunc();
 	/* io-map not loaded yet? */
-	if(ioports_handleGPF()) {
+	if(IOPorts::handleGPF()) {
 		exCount = 0;
 		return;
 	}

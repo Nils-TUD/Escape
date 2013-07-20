@@ -412,7 +412,7 @@ errorReqProc:
 
 int ProcBase::exec(const char *path,USER const char *const *args,const void *code,size_t size) {
 	char *argBuffer;
-	sStartupInfo info;
+	ELF::StartupInfo info;
 	Thread *t = Thread::getRunning();
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	size_t argSize;
@@ -456,11 +456,11 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 
 	/* load program */
 	if(code) {
-		if(elf_loadFromMem(code,size,&info) < 0)
+		if(ELF::loadFromMem(code,size,&info) < 0)
 			goto error;
 	}
 	else {
-		if(elf_loadFromFile(path,&info) < 0)
+		if(ELF::loadFromFile(path,&info) < 0)
 			goto error;
 	}
 

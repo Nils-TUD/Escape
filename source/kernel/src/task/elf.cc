@@ -33,17 +33,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#define ELF_TYPE_PROG		0
-#define ELF_TYPE_INTERP		1
-
-static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info);
-static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,uint type);
-
-int elf_loadFromFile(const char *path,sStartupInfo *info) {
-	return elf_doLoadFromFile(path,ELF_TYPE_PROG,info);
-}
-
-int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
+int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
 	size_t j,loadSegNo = 0;
 	uintptr_t datPtr;
 	sElfEHeader *eheader = (sElfEHeader*)code;
@@ -71,7 +61,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 				vid_printf("[LOADER] Unexpected end; load segment %d not finished\n",loadSegNo);
 				return -ENOEXEC;
 			}
-			if(elf_addSegment(NULL,pheader,loadSegNo,ELF_TYPE_PROG) < 0)
+			if(addSegment(NULL,pheader,loadSegNo,TYPE_PROG) < 0)
 				return -ENOEXEC;
 			/* copy the data and zero the rest, if necessary */
 			paging_copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
@@ -82,14 +72,14 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 		}
 	}
 
-	if(elf_finishFromMem(code,length,info) < 0)
+	if(finishFromMem(code,length,info) < 0)
 		return -ENOEXEC;
 
 	info->linkerEntry = info->progEntry = eheader->e_entry;
 	return 0;
 }
 
-static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
+int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
 	sFile *file;
@@ -133,7 +123,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	}
 
 	/* by default set the same; the dl will overwrite it when needed */
-	if(type == ELF_TYPE_PROG)
+	if(type == TYPE_PROG)
 		info->linkerEntry = info->progEntry = eheader.e_entry;
 	else
 		info->linkerEntry = eheader.e_entry;
@@ -155,7 +145,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 
 		if(pheader.p_type == PT_INTERP) {
 			/* has to be the first segment and is not allowed for the dynamic linker */
-			if(loadSeg > 0 || type != ELF_TYPE_PROG) {
+			if(loadSeg > 0 || type != TYPE_PROG) {
 				vid_printf("[LOADER] PT_INTERP segment is not first or we're loading the dynlinker\n");
 				goto failed;
 			}
@@ -176,14 +166,14 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 			}
 			vfs_closeFile(p->getPid(),file);
 			/* now load him and stop loading the 'real' program */
-			res = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,info);
+			res = doLoadFromFile(interpName,TYPE_INTERP,info);
 			Thread::remHeapAlloc(interpName);
 			cache_free(interpName);
 			return res;
 		}
 
 		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
-			if(elf_addSegment(file,&pheader,loadSeg,type) < 0)
+			if(addSegment(file,&pheader,loadSeg,type) < 0)
 				goto failed;
 			if(pheader.p_type == PT_TLS) {
 				uintptr_t tlsStart;
@@ -211,7 +201,7 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
 	if((fd = fd_assoc(file)) < 0)
 		goto failed;
-	if(elf_finishFromFile(file,&eheader,info) < 0) {
+	if(finishFromFile(file,&eheader,info) < 0) {
 		assert(fd_unassoc(fd) != NULL);
 		goto failed;
 	}
@@ -227,9 +217,9 @@ failed:
 	return -ENOEXEC;
 }
 
-static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,uint type) {
+int ELF::addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type) {
 	Thread *t = Thread::getRunning();
-	int res,prot = 0,flags = type == ELF_TYPE_INTERP ? 0 : MAP_FIXED;
+	int res,prot = 0,flags = type == TYPE_INTERP ? 0 : MAP_FIXED;
 	sVMRegion *vm;
 	size_t memsz = pheader->p_memsz;
 
@@ -244,7 +234,7 @@ static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegN
 	/* determine type */
 	if(loadSegNo == 0) {
 		/* dynamic linker has a special entrypoint */
-		if(type == ELF_TYPE_INTERP && pheader->p_vaddr != INTERP_TEXT_BEGIN) {
+		if(type == TYPE_INTERP && pheader->p_vaddr != INTERP_TEXT_BEGIN) {
 			vid_printf("[LOADER] Dynamic linker text does not start at %p\n",INTERP_TEXT_BEGIN);
 			return -ENOEXEC;
 		}
@@ -253,7 +243,7 @@ static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegN
 	}
 	else if(pheader->p_type == PT_TLS) {
 		/* not allowed for the dynamic linker */
-		if(type == ELF_TYPE_INTERP) {
+		if(type == TYPE_INTERP) {
 			vid_printf("[LOADER] TLS segment not allowed for dynamic linker\n");
 			return -ENOEXEC;
 		}

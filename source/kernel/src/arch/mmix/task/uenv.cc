@@ -38,7 +38,7 @@
 #define KEYBOARD_IEN		0x02
 
 static void uenv_startSignalHandler(Thread *t,int sig,fSignal handler);
-static void uenv_addArgs(Thread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+static void uenv_addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread);
 
 void uenv_handleSignal(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
@@ -78,7 +78,7 @@ int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
 	return 0;
 }
 
-bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sStartupInfo *info,
+bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const ELF::StartupInfo *info,
 		uintptr_t entryPoint,A_UNUSED int fd) {
 	uint64_t *ssp,*rsp;
 	char **argv;
@@ -146,7 +146,7 @@ bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sSt
 uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint64_t *rsp,*ssp;
 	Thread *t = Thread::getRunning();
-	sStartupInfo sinfo;
+	ELF::StartupInfo sinfo;
 	sinfo.progEntry = t->getProc()->getEntryPoint();
 	sinfo.linkerEntry = 0;
 	sinfo.stackBegin = 0;
@@ -173,7 +173,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 		const sBootInfo *info = boot_getInfo();
 		for(i = 1; i < info->progCount; i++) {
 			if(info->progs[i].id == t->getProc()->getPid()) {
-				if(elf_finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)
+				if(ELF::finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)
 					return false;
 				break;
 			}
@@ -202,7 +202,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 			return false;
 		}
 
-		res = elf_finishFromFile(textreg->reg->file,&ehd,&sinfo);
+		res = ELF::finishFromFile(textreg->reg->file,&ehd,&sinfo);
 		if(res < 0)
 			return false;
 	}
@@ -245,7 +245,7 @@ static void uenv_startSignalHandler(Thread *t,int sig,fSignal handler) {
 	sregs->rxx = 1UL << 63;
 }
 
-static void uenv_addArgs(Thread *t,const sStartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+static void uenv_addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
 		uintptr_t entry,uintptr_t tentry,bool thread) {
 	/* put address and size of the tls-region on the stack */
 	sKSpecRegs *sregs;

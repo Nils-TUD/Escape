@@ -63,5 +63,5 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,int signal);
  * @param fd the file-descriptor for the executable for the dynamic linker (-1 if not needed)
  * @return true if successfull
  */
-bool uenv_setupProc(int argc,const char *args,size_t argsSize,const sStartupInfo *info,
+bool uenv_setupProc(int argc,const char *args,size_t argsSize,const ELF::StartupInfo *info,
 		uintptr_t entryPoint,int fd);

@@ -31,10 +31,10 @@
 #include <string.h>
 #include <errno.h>
 
-static int elf_finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
-		sFile *file,sStartupInfo *info);
+static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
+		sFile *file,ELF::StartupInfo *info);
 
-int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info) {
+int ELF::finishFromMem(const void *code,A_UNUSED size_t length,StartupInfo *info) {
 	Thread *t = Thread::getRunning();
 	sElfEHeader *eheader = (sElfEHeader*)code;
 
@@ -51,10 +51,10 @@ int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info
 			start += amount;
 		}
 	}
-	return elf_finish(t,eheader,(sElfSHeader*)((uintptr_t)code + eheader->e_shoff),NULL,info);
+	return finish(t,eheader,(sElfSHeader*)((uintptr_t)code + eheader->e_shoff),NULL,info);
 }
 
-int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info) {
+int ELF::finishFromFile(sFile *file,const sElfEHeader *eheader,StartupInfo *info) {
 	int res = -ENOEXEC;
 	Thread *t = Thread::getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
@@ -76,7 +76,7 @@ int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info
 	}
 
 	/* elf_finish might segfault */
-	res = elf_finish(t,eheader,secHeaders,file,info);
+	res = finish(t,eheader,secHeaders,file,info);
 
 error:
 	Thread::remHeapAlloc(secHeaders);
@@ -84,8 +84,8 @@ error:
 	return res;
 }
 
-static int elf_finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
-		sFile *file,sStartupInfo *info) {
+static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
+		sFile *file,ELF::StartupInfo *info) {
 	/* build register-stack */
 	int globalNum = 0;
 	size_t j;

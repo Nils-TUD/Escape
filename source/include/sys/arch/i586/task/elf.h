@@ -17,14 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/elf.h>
+#pragma once
 
-int elf_finishFromMem(A_UNUSED const void *code,A_UNUSED size_t length,A_UNUSED sStartupInfo *info) {
+inline int ELF::finishFromMem(const void *,size_t,StartupInfo *) {
 	return 0;
 }
 
-int elf_finishFromFile(A_UNUSED sFile *file,A_UNUSED const sElfEHeader *eheader,
-		A_UNUSED sStartupInfo *info) {
+inline int ELF::finishFromFile(sFile *,const sElfEHeader *,StartupInfo *) {
 	return 0;
 }

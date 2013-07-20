@@ -58,7 +58,7 @@ void bspstart(sBootInfo *mbp) {
 
 uintptr_t smpstart(void) {
 	Thread *t;
-	sStartupInfo info;
+	ELF::StartupInfo info;
 	size_t i,total = SMP::getCPUCount();
 	/* the running thread has been stored on a different stack last time */
 	Thread::setRunning(Thread::getById(0));
@@ -71,7 +71,7 @@ uintptr_t smpstart(void) {
 	SMP::start();
 
 	/* load initloader */
-	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
+	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
 	/* give the process some stack pages */
 	t = Thread::getRunning();

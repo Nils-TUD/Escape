@@ -38,12 +38,12 @@ static A_ALIGNED(4) uint8_t initloader[] = {
 
 uintptr_t bspstart(sBootInfo *bootinfo) {
 	Thread *t;
-	sStartupInfo info;
+	ELF::StartupInfo info;
 
 	boot_start(bootinfo);
 
 	/* load initloader */
-	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
+	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		util_panic("Unable to load initloader");
 	t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))

@@ -61,7 +61,7 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,int signal) {
 	return 0;
 }
 
-bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const sStartupInfo *info,
+bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const ELF::StartupInfo *info,
 		uintptr_t entryPoint,A_UNUSED int fd) {
 	uint32_t *sp;
 	char **argv;

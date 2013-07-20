@@ -210,7 +210,7 @@ static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack) {
 	}
 	/* vm86-task? */
 	if(t->getProc()->getFlags() & P_VM86) {
-		vm86_handleGPF(stack);
+		VM86::handleGPF(stack);
 		exCount = 0;
 		return;
 	}

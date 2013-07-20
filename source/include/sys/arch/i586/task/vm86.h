@@ -22,63 +22,89 @@
 #include <sys/common.h>
 #include <sys/intrpt.h>
 
-typedef struct {
-	uint16_t ax;
-	uint16_t bx;
-	uint16_t cx;
-	uint16_t dx;
-	uint16_t si;
-	uint16_t di;
-	uint16_t ds;
-	uint16_t es;
-} sVM86Regs;
+class VM86 {
+public:
+	struct Regs {
+		uint16_t ax;
+		uint16_t bx;
+		uint16_t cx;
+		uint16_t dx;
+		uint16_t si;
+		uint16_t di;
+		uint16_t ds;
+		uint16_t es;
+	};
 
-typedef struct {
-	uintptr_t offset;	/* the offset to <dst> */
-	uintptr_t result;	/* the address in your address-space where to copy the data */
-	size_t size;		/* the size of the data */
-} sVM86AreaPtr;
+	struct AreaPtr {
+		uintptr_t offset;	/* the offset to <dst> */
+		uintptr_t result;	/* the address in your address-space where to copy the data */
+		size_t size;		/* the size of the data */
+	};
 
-typedef struct {
-	/* copy <src> in your process to <dst> in vm86-task before start and the other way around
-	 * when finished */
-	void *src;
-	uintptr_t dst;
-	size_t size;
-	/* optionally, <ptrCount> pointers to <dst> which are copied to your address-space, that is
-	 * if the result produced by the bios (at <dst>) contains pointers to other areas, you can
-	 * copy the data in these areas to your address-space as well. */
-	sVM86AreaPtr *ptr;
-	size_t ptrCount;
-} sVM86Memarea;
+	struct Memarea {
+		/* copy <src> in your process to <dst> in vm86-task before start and the other way around
+		 * when finished */
+		void *src;
+		uintptr_t dst;
+		size_t size;
+		/* optionally, <ptrCount> pointers to <dst> which are copied to your address-space, that is
+		 * if the result produced by the bios (at <dst>) contains pointers to other areas, you can
+		 * copy the data in these areas to your address-space as well. */
+		AreaPtr *ptr;
+		size_t ptrCount;
+	};
 
-typedef struct {
-	uint16_t interrupt;
-	sVM86Regs regs;
-	sVM86Memarea *area;
-	void **copies;
-} sVM86Info;
+private:
+	struct Info {
+		uint16_t interrupt;
+		Regs regs;
+		Memarea *area;
+		void **copies;
+	};
 
-/**
- * Creates a vm86-task
- *
- * @return 0 on success
- */
-int vm86_create(void);
+public:
+	/**
+	 * Creates a vm86-task
+	 *
+	 * @return 0 on success
+	 */
+	static int create(void);
 
-/**
- * Performs a VM86-interrupt
- *
- * @param interrupt the interrupt-number
- * @param regs the register
- * @param area the memarea
- * @return 0 on success
- */
-int vm86_int(uint16_t interrupt,sVM86Regs *regs,const sVM86Memarea *area);
+	/**
+	 * Performs a VM86-interrupt
+	 *
+	 * @param interrupt the interrupt-number
+	 * @param regs the register
+	 * @param area the memarea
+	 * @return 0 on success
+	 */
+	static int interrupt(uint16_t interrupt,Regs *regs,const Memarea *area);
 
-/**
- * Handles a GPF
- *
- * @param stack the interrupt-stack-frame
- */
-void vm86_handleGPF(sIntrptStackFrame *stack);
+	/**
+	 * Handles a GPF
+	 *
+	 * @param stack the interrupt-stack-frame
+	 */
+	static void handleGPF(sIntrptStackFrame *stack);
+
+private:
+	static uint16_t popw(sIntrptStackFrame *stack);
+	static uint32_t popl(sIntrptStackFrame *stack);
+	static void pushw(sIntrptStackFrame *stack,uint16_t word);
+	static void pushl(sIntrptStackFrame *stack,uint32_t l);
+	static void start(void);
+	static void stop(sIntrptStackFrame *stack);
+	static void finish(void);
+	static void copyRegResult(sIntrptStackFrame* stack);
+	static int storeAreaResult(void);
+	static void copyAreaResult(void);
+	static bool copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area);
+	static void clearInfo(void);
+
+	static frameno_t frameNos[];
+	static tid_t vm86Tid;
+	static volatile tid_t caller;
+	static Info info;
+	static int vm86Res;
+	static mutex_t vm86Lock;
+};

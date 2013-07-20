@@ -60,7 +60,7 @@ int sysc_relports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 
 int sysc_vm86start(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	int res;
-	if((res = vm86_create()) == 0) {
+	if((res = VM86::create()) == 0) {
 		/* don't change any registers on the stack here */
 		return 0;
 	}
@@ -69,16 +69,16 @@ int sysc_vm86start(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 
 int sysc_vm86int(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
-	sVM86Regs *regs = (sVM86Regs*)SYSC_ARG2(stack);
-	sVM86Memarea *mArea = (sVM86Memarea*)SYSC_ARG3(stack);
+	VM86::Regs *regs = (VM86::Regs*)SYSC_ARG2(stack);
+	VM86::Memarea *mArea = (VM86::Memarea*)SYSC_ARG3(stack);
 	int res;
 
 	/* check args */
-	if(!paging_isInUserSpace((uintptr_t)regs,sizeof(sVM86Regs)))
+	if(!paging_isInUserSpace((uintptr_t)regs,sizeof(VM86::Regs)))
 		SYSC_ERROR(stack,-EFAULT);
 	if(mArea != NULL) {
 		size_t j;
-		if(!paging_isInUserSpace((uintptr_t)mArea,sizeof(sVM86Memarea)))
+		if(!paging_isInUserSpace((uintptr_t)mArea,sizeof(VM86::Memarea)))
 			SYSC_ERROR(stack,-EFAULT);
 		/* ensure that only memory from the real-mode-memory can be copied */
 		if(mArea->dst + mArea->size < mArea->dst || mArea->dst + mArea->size >= (1 * M + 64 * K))
@@ -94,7 +94,7 @@ int sysc_vm86int(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	}
 
 	/* do vm86-interrupt */
-	res = vm86_int(interrupt,regs,mArea);
+	res = VM86::interrupt(interrupt,regs,mArea);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

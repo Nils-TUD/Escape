@@ -63,28 +63,14 @@
 
 #define DBGVM86(fmt...)		/*vid_printf(fmt)*/
 
-static uint16_t vm86_popw(sIntrptStackFrame *stack);
-static uint32_t vm86_popl(sIntrptStackFrame *stack);
-static void vm86_pushw(sIntrptStackFrame *stack,uint16_t word);
-static void vm86_pushl(sIntrptStackFrame *stack,uint32_t l);
-static void vm86_start(void);
-static void vm86_stop(sIntrptStackFrame *stack);
-static void vm86_finish(void);
-static void vm86_copyRegResult(sIntrptStackFrame* stack);
-static int vm86_storeAreaResult(void);
-static void vm86_copyAreaResult(void);
-static bool vm86_copyInfo(uint16_t interrupt,USER const sVM86Regs *regs,
-		USER const sVM86Memarea *area);
-static void vm86_clearInfo(void);
+frameno_t VM86::frameNos[(1024 * K) / PAGE_SIZE];
+tid_t VM86::vm86Tid = INVALID_TID;
+volatile tid_t VM86::caller = INVALID_TID;
+VM86::Info VM86::info;
+int VM86::vm86Res = -1;
+mutex_t VM86::vm86Lock;
 
-static frameno_t frameNos[(1024 * K) / PAGE_SIZE];
-static tid_t vm86Tid = INVALID_TID;
-static volatile tid_t caller = INVALID_TID;
-static sVM86Info info;
-static int vm86Res = -1;
-static mutex_t vm86Lock;
-
-int vm86_create(void) {
+int VM86::create(void) {
 	Proc *p;
 	Thread *t;
 	size_t i,frameCount;
@@ -140,12 +126,12 @@ int vm86_create(void) {
 	Thread::switchAway();
 
 	/* ok, we're back again... */
-	vm86_start();
+	start();
 	/* never reached */
 	return 0;
 }
 
-int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *area) {
+int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area) {
 	Thread *t;
 	Thread *vm86t;
 	if(area && BYTES_2_PAGES(area->size) > VM86_MAX_MEMPAGES)
@@ -163,15 +149,15 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 	mutex_aquire(&vm86Lock);
 	/* store information in calling process */
 	caller = t->getTid();
-	if(!vm86_copyInfo(interrupt,regs,area)) {
-		vm86_finish();
+	if(!copyInfo(interrupt,regs,area)) {
+		finish();
 		return -ENOMEM;
 	}
 
 	/* reserve frames for vm86-thread */
 	if(info.area) {
 		if(!vm86t->reserveFrames(BYTES_2_PAGES(info.area->size))) {
-			vm86_finish();
+			finish();
 			return -ENOMEM;
 		}
 	}
@@ -186,18 +172,18 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 
 	/* everything is finished :) */
 	if(vm86Res == 0) {
-		Thread::addCallback(vm86_finish);
-		memcpy(regs,&info.regs,sizeof(sVM86Regs));
-		vm86_copyAreaResult();
-		Thread::remCallback(vm86_finish);
+		Thread::addCallback(finish);
+		memcpy(regs,&info.regs,sizeof(Regs));
+		copyAreaResult();
+		Thread::remCallback(finish);
 	}
 
 	/* mark as done */
-	vm86_finish();
+	finish();
 	return vm86Res;
 }
 
-void vm86_handleGPF(sIntrptStackFrame *stack) {
+void VM86::handleGPF(sIntrptStackFrame *stack) {
 	uint8_t *ops = (uint8_t*)(stack->eip + (stack->cs << 4));
 	uint8_t opCode;
 	bool data32 = false;
@@ -247,20 +233,20 @@ void vm86_handleGPF(sIntrptStackFrame *stack) {
 		case X86OP_IRET: {
 			uint32_t newip,newcs,newflags;
 			if(data32) {
-				newip = vm86_popl(stack);
-				newcs = vm86_popl(stack) & 0xFFFF;
-				newflags = vm86_popl(stack);
+				newip = popl(stack);
+				newcs = popl(stack) & 0xFFFF;
+				newflags = popl(stack);
 			}
 			else {
-				newip = vm86_popw(stack);
-				newcs = vm86_popw(stack);
-				newflags = (stack->eflags & 0xFFFF0000) | vm86_popw(stack);
+				newip = popw(stack);
+				newcs = popw(stack);
+				newflags = (stack->eflags & 0xFFFF0000) | popw(stack);
 			}
 			DBGVM86("[VM86] iret -> (%x:%x,0x%x)\n",newcs,newip,newflags);
 			/* eip = cs = 0 means we're done */
 			if(newip == 0 && newcs == 0) {
 				DBGVM86("[VM86] done\n");
-				vm86_stop(stack);
+				stop(stack);
 				/* don't continue here */
 				return;
 			}
@@ -274,17 +260,17 @@ void vm86_handleGPF(sIntrptStackFrame *stack) {
 			/* save eflags */
 			DBGVM86("[VM86] pushf (0x%x)\n",stack->eflags);
 			if(data32)
-				vm86_pushl(stack,stack->eflags);
+				pushl(stack,stack->eflags);
 			else
-				vm86_pushw(stack,(uint16_t)stack->eflags);
+				pushw(stack,(uint16_t)stack->eflags);
 			stack->eip++;
 			break;
 		case X86OP_POPF:
 			/* restore eflags (don't disable interrupts) */
 			if(data32)
-				stack->eflags = vm86_popl(stack) | (1 << 9);
+				stack->eflags = popl(stack) | (1 << 9);
 			else
-				stack->eflags = (stack->eflags & 0xFFFF0000) | vm86_popw(stack) | (1 << 9);
+				stack->eflags = (stack->eflags & 0xFFFF0000) | popw(stack) | (1 << 9);
 			DBGVM86("[VM86] popf (0x%x)\n",stack->eflags);
 			stack->eip++;
 			break;
@@ -326,29 +312,29 @@ void vm86_handleGPF(sIntrptStackFrame *stack) {
 	}
 }
 
-static uint16_t vm86_popw(sIntrptStackFrame *stack) {
+uint16_t VM86::popw(sIntrptStackFrame *stack) {
 	uint16_t *sp = (uint16_t*)(stack->uesp + (stack->uss << 4));
 	stack->uesp += sizeof(uint16_t);
 	return *sp;
 }
 
-static uint32_t vm86_popl(sIntrptStackFrame *stack) {
+uint32_t VM86::popl(sIntrptStackFrame *stack) {
 	uint32_t *sp = (uint32_t*)(stack->uesp + (stack->uss << 4));
 	stack->uesp += sizeof(uint32_t);
 	return *sp;
 }
 
-static void vm86_pushw(sIntrptStackFrame *stack,uint16_t word) {
+void VM86::pushw(sIntrptStackFrame *stack,uint16_t word) {
 	stack->uesp -= sizeof(uint16_t);
 	*((uint16_t*)(stack->uesp + (stack->uss << 4))) = word;
 }
 
-static void vm86_pushl(sIntrptStackFrame *stack,uint32_t l) {
+void VM86::pushl(sIntrptStackFrame *stack,uint32_t l) {
 	stack->uesp -= sizeof(uint32_t);
 	*((uint32_t*)(stack->uesp + (stack->uss << 4))) = l;
 }
 
-static void vm86_start(void) {
+void VM86::start(void) {
 	volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
 	sIntrptStackFrame *istack;
 	Thread *t = Thread::getRunning();
@@ -393,13 +379,13 @@ static void vm86_start(void) {
 	istack->edi = info.regs.di;
 }
 
-static void vm86_stop(sIntrptStackFrame *stack) {
+void VM86::stop(sIntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	Thread *ct = Thread::getById(caller);
 	vm86Res = 0;
 	if(ct != NULL) {
-		vm86_copyRegResult(stack);
-		vm86Res = vm86_storeAreaResult();
+		copyRegResult(stack);
+		vm86Res = storeAreaResult();
 		Event::unblock(ct);
 	}
 
@@ -408,18 +394,18 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 	Thread::switchAway();
 
 	/* lets start with a new request :) */
-	vm86_start();
+	start();
 }
 
-static void vm86_finish(void) {
+void VM86::finish(void) {
 	if(info.area)
 		Thread::getById(vm86Tid)->discardFrames();
-	vm86_clearInfo();
+	clearInfo();
 	caller = INVALID_TID;
 	mutex_release(&vm86Lock);
 }
 
-static void vm86_copyRegResult(sIntrptStackFrame *stack) {
+void VM86::copyRegResult(sIntrptStackFrame *stack) {
 	info.regs.ax = stack->eax;
 	info.regs.bx = stack->ebx;
 	info.regs.cx = stack->ecx;
@@ -430,7 +416,7 @@ static void vm86_copyRegResult(sIntrptStackFrame *stack) {
 	info.regs.es = stack->vm86es;
 }
 
-static int vm86_storeAreaResult(void) {
+int VM86::storeAreaResult(void) {
 	size_t i;
 	if(info.area) {
 		uintptr_t start = info.area->dst / PAGE_SIZE;
@@ -451,7 +437,7 @@ static int vm86_storeAreaResult(void) {
 	return 0;
 }
 
-static void vm86_copyAreaResult(void) {
+void VM86::copyAreaResult(void) {
 	size_t i;
 	if(info.area) {
 		memcpy(info.area->src,info.copies[0],info.area->size);
@@ -462,41 +448,40 @@ static void vm86_copyAreaResult(void) {
 	}
 }
 
-static bool vm86_copyInfo(uint16_t interrupt,USER const sVM86Regs *regs,
-		USER const sVM86Memarea *area) {
+bool VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area) {
 	info.interrupt = interrupt;
-	memcpy(&info.regs,regs,sizeof(sVM86Regs));
+	memcpy(&info.regs,regs,sizeof(Regs));
 	info.copies = NULL;
 	info.area = NULL;
 	if(area) {
 		size_t i;
 		/* copy area */
-		info.area = (sVM86Memarea*)cache_alloc(sizeof(sVM86Memarea));
+		info.area = (Memarea*)cache_alloc(sizeof(Memarea));
 		if(info.area == NULL)
 			return false;
-		memcpy(info.area,area,sizeof(sVM86Memarea));
+		memcpy(info.area,area,sizeof(Memarea));
 		/* copy ptrs */
 		info.area->ptr = NULL;
 		if(info.area->ptrCount > 0) {
-			info.area->ptr = (sVM86AreaPtr*)cache_alloc(sizeof(sVM86AreaPtr) * info.area->ptrCount);
+			info.area->ptr = (AreaPtr*)cache_alloc(sizeof(AreaPtr) * info.area->ptrCount);
 			if(!info.area->ptr) {
-				vm86_clearInfo();
+				clearInfo();
 				return false;
 			}
-			memcpy(info.area->ptr,area->ptr,sizeof(sVM86AreaPtr) * info.area->ptrCount);
+			memcpy(info.area->ptr,area->ptr,sizeof(AreaPtr) * info.area->ptrCount);
 		}
 		/* create buffers for the data-exchange */
 		info.copies = (void**)cache_calloc(1 + area->ptrCount,sizeof(void*));
 		info.copies[0] = cache_alloc(info.area->size);
 		if(!info.copies[0]) {
-			vm86_clearInfo();
+			clearInfo();
 			return false;
 		}
 		memcpy(info.copies[0],area->src,area->size);
 		for(i = 0; i < area->ptrCount; i++) {
 			void *copy = cache_alloc(area->ptr[i].size);
 			if(!copy) {
-				vm86_clearInfo();
+				clearInfo();
 				return false;
 			}
 			info.copies[i + 1] = copy;
@@ -505,7 +490,7 @@ static bool vm86_copyInfo(uint16_t interrupt,USER const sVM86Regs *regs,
 	return true;
 }
 
-static void vm86_clearInfo(void) {
+void VM86::clearInfo(void) {
 	size_t i;
 	if(info.area) {
 		for(i = 0; i <= info.area->ptrCount; i++)
